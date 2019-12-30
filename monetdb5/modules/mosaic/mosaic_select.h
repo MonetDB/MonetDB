@@ -247,8 +247,6 @@ MOStask task, void* low, void* hgh, bit* li, bit* hi, bit* anti)\
 		}\
 	}\
 \
-	assert(MOSgetTag(task->blk) == MOSAIC_EOL);\
-\
 	return MAL_SUCCEED;\
 }
 

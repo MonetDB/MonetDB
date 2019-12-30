@@ -112,8 +112,6 @@ static str MOSprojection_##TPE(MOStask task)\
 		}\
 	}\
 \
-	assert(MOSgetTag(task->blk) == MOSAIC_EOL);\
-\
 	return MAL_SUCCEED;\
 }
 

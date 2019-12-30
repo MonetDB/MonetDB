@@ -25,7 +25,7 @@ MOSupdateHeader(MOStask task)
     hdr->blks[MOSgetTag(task->blk)]++;
     hdr->elms[MOSgetTag(task->blk)] += MOSgetCnt(task->blk);
 
-	if( hdr->top < MOSAIC_METHODS-1 ){
+	if( hdr->top < METHOD_NOT_AVAILABLE -1 ){
 		if( hdr->top == 0){
 			hdr->top++;
 		}

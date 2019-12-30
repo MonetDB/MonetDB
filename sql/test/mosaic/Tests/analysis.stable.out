@@ -32,7 +32,7 @@ stdout of test 'analysis` in directory 'sql/test/mosaic` itself:
 % technique,	factor # name
 % clob,	double # type
 % 10,	24 # length
-[ "linear ",	175438.593	]
+[ "linear ",	188679.25	]
 [ "delta ",	15.998	]
 [ "frame ",	2.132	]
 [ "prefix ",	2.132	]
@@ -45,8 +45,8 @@ stdout of test 'analysis` in directory 'sql/test/mosaic` itself:
 % technique,	factor # name
 % clob,	double # type
 % 17,	24 # length
-[ "runlength linear ",	333333.343	]
-[ "linear ",	327868.843	]
+[ "runlength linear ",	357142.843	]
+[ "linear ",	350877.187	]
 [ "runlength delta ",	19.072	]
 [ "capped delta ",	17.401	]
 [ "delta frame ",	17.401	]
@@ -66,8 +66,8 @@ stdout of test 'analysis` in directory 'sql/test/mosaic` itself:
 % technique,	factor # name
 % clob,	double # type
 % 17,	24 # length
-[ "runlength linear ",	333333.343	]
-[ "linear ",	327868.843	]
+[ "runlength linear ",	357142.843	]
+[ "linear ",	350877.187	]
 [ "runlength ",	0.666	]
 #set optimizer='mosaic_pipe';
 #alter table tmp4 alter column i set storage 'var';
@@ -76,8 +76,8 @@ stdout of test 'analysis` in directory 'sql/test/mosaic` itself:
 % technique,	factor # name
 % clob,	double # type
 % 17,	24 # length
-[ "runlength linear ",	333333.343	]
-[ "linear ",	327868.843	]
+[ "runlength linear ",	357142.843	]
+[ "linear ",	350877.187	]
 [ "runlength delta ",	19.072	]
 [ "capped delta ",	17.401	]
 [ "delta frame ",	17.401	]
@@ -97,8 +97,8 @@ stdout of test 'analysis` in directory 'sql/test/mosaic` itself:
 % technique,	factor # name
 % clob,	double # type
 % 17,	24 # length
-[ "runlength linear ",	333333.343	]
-[ "linear ",	327868.843	]
+[ "runlength linear ",	357142.843	]
+[ "linear ",	350877.187	]
 [ "runlength ",	0.666	]
 #drop table tmp4;
 

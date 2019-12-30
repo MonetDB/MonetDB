@@ -927,8 +927,8 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 
 				int contains_explicit_raw = strstr(c->storage_type,"raw") != NULL ? 1 : 0;
 
-				for(int i = 0, nr_strategies = 0; i< MOSAIC_METHODS-1; i++){
-					if ( (strstr(c->storage_type,MOSfiltername[i]) && MOSisTypeAllowed(i, b) ))
+				for(int i = 0, nr_strategies = 0; i< MOSAIC_METHODS; i++){
+					if ( (strstr(c->storage_type,MOSmethods[i].name) && MOSisTypeAllowed(i, b) ))
 					{
 						if ( (++nr_strategies - contains_explicit_raw) > 1) {
 							BBPunfix(b->batCacheid);

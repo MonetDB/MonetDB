@@ -28,22 +28,35 @@
 /* do not invest in compressing BATs smaller than this */
 #define MOSAIC_THRESHOLD 1
 
-/* The compressor kinds currently hardwired */
-#define MOSAIC_METHODS	9
-#define MOSAIC_RAW	0		// no compression at all
-#define MOSAIC_RLE      1		// use run-length encoding
-#define MOSAIC_CAPPED   2		// capped global dictionary encoding
-#define MOSAIC_VAR      3		// variable global dictionary encoding
-#define MOSAIC_DELTA	4		// use delta encoding
-#define MOSAIC_LINEAR 	5		// use an encoding for a linear sequence
-#define MOSAIC_FRAME	6		// delta dictionary for frame of reference value
-#define MOSAIC_PREFIX	7		// prefix/postfix bitwise compression
-#define MOSAIC_EOL	8		// marker for the last block
+#define MOSAIC_RAW		raw		// no compression at all
+#define MOSAIC_RLE      runlength		// use run-length encoding
+#define MOSAIC_CAPPED   capped		// capped global dictionary encoding
+#define MOSAIC_VAR      var		// variable global dictionary encoding
+#define MOSAIC_DELTA	delta		// use delta encoding
+#define MOSAIC_LINEAR 	linear		// use an encoding for a linear sequence
+#define MOSAIC_FRAME	frame		// delta dictionary for frame of reference value
+#define MOSAIC_PREFIX	prefix		// prefix/postfix bitwise compression
 
-#define METHOD_NOT_AVAILABLE -1
+typedef enum {
+	MOSAIC_RAW = 0,
+	MOSAIC_RLE,
+	MOSAIC_CAPPED,
+	MOSAIC_VAR,
+	MOSAIC_DELTA,
+	MOSAIC_LINEAR,
+	MOSAIC_FRAME,
+	MOSAIC_PREFIX,
+	nr_methods // Must be the last.
+} EMethod;
 
-/*
- * The header is reserved for meta information, e.g. oid indices.
+#define MOSAIC_METHODS nr_methods
+
+typedef struct {
+	const uint16_t	bit;
+	const char*		name;
+} Method;
+
+/* The header is reserved for meta information, e.g. oid indices.
  * The block header encodes the information needed for the chunk decompressor
  */
 typedef Heap *mosaic;	// compressed data is stored on a heap.
@@ -52,7 +65,7 @@ typedef Heap *mosaic;	// compressed data is stored on a heap.
 #define IS_NIL(TPE, VAL) is_##TPE##_nil(VAL)
 #define ARE_EQUAL(v, w, HAS_NIL, TPE) ((v == w || (HAS_NIL && IS_NIL(TPE, v) && IS_NIL(TPE, w)) ) )
 
-/* For compression techniques based on value differences, we need the storage type */
+/* For compression MOSmethods based on value differences, we need the storage type */
 #define Deltabte uint8_t
 #define Deltasht uint16_t
 #define Deltaint uint32_t
@@ -84,6 +97,7 @@ typedef Heap *mosaic;	// compressed data is stored on a heap.
 
 #define IPTpe(TPE) IP##TPE
 
+#define METHOD_NOT_AVAILABLE -1
 typedef struct MOSAICHEADER{
 	int version;		// to recognize the underlying implementation used.
 	int top; 			// TODO: rename to e.g. nblocks because it is the number of blocks
@@ -93,8 +107,8 @@ typedef struct MOSAICHEADER{
 	 */
 	lng blks[MOSAIC_METHODS]; // number of blks per method.
 	lng elms[MOSAIC_METHODS]; // number of compressed values in all blocks for this method.
-	/* The var(iable sized) and capped dictionary compression techniques are the only
-	 * compression techniques that have global properties which are stored in mosaic global header.
+	/* The var(iable sized) and capped dictionary compression MOSmethods are the only
+	 * compression MOSmethods that have global properties which are stored in mosaic global header.
 	 */
 	bte bits_var;
 	BUN pos_var;
@@ -143,7 +157,7 @@ typedef struct _GlobalVarInfo GlobalVarInfo;
 /* The (de) compression task descriptor */
 typedef struct MOSTASK{
 	int type;		// one of the permissible compression types
-	int filter[MOSAIC_METHODS];// algorithmic (de)compression mix
+	sht mask;		// In this bit field each set bit corresponds to a specific applied compression technique.
 
 	MosaicHdr hdr;	// header block with index/synopsis information
 	MosaicBlk blk;	// current block header in scan
@@ -215,8 +229,8 @@ typedef struct _MosaicEstimation {
 	(void) alignment;\
 }
 
-mal_export char *MOSfiltername[];
-mal_export bool MOSisTypeAllowed(int compression, BAT* b);
+mal_export const Method MOSmethods[];
+mal_export bit MOSisTypeAllowed(char compression, BAT* b);
 mal_export str MOScompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str MOSdecompress(bat* ret, const bat* bid);
 mal_export str MOScompressInternal(BAT* bsrc, const char* compressions);
