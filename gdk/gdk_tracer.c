@@ -10,17 +10,6 @@
 #include "gdk.h"
 #include "gdk_tracer.h"
 
-// We need to get rid of macros defined in gdk.h. Those are using GDKtracer in order to produce 
-// messages. At the point malloc is called in gdk_tracer.c (in function _GDKtracer_fill_tracer)
-// a lock has already being acquired. Using the macro malloc in gdk.h a call to GDKtracer 
-// acquires another lock and results in deadlock.
-#ifdef malloc
-    #undef malloc
-#endif
-#ifdef free
-    #undef free
-#endif
-
 static gdk_tracer tracer = { .id = 0, .allocated_size = 0 };
 static gdk_tracer *active_tracer = &tracer;
 MT_Lock lock = MT_LOCK_INITIALIZER("GDKtracer_1");
@@ -126,40 +115,14 @@ _GDKtracer_fill_tracer(gdk_tracer *sel_tracer, char *fmt, va_list va) __attribut
 static int 
 _GDKtracer_fill_tracer(gdk_tracer *sel_tracer, char *fmt, va_list va)
 {
-    char *tmp = NULL;
-    const char* msg = NULL;
     size_t fmt_len = strlen(fmt);
     int bytes_written = 0;
 
+    // vsnprintf(char *str, size_t count, ...) -> including null terminating character
+    bytes_written = vsnprintf(sel_tracer->buffer + sel_tracer->allocated_size, BUFFER_SIZE - sel_tracer->allocated_size, fmt, va);
     // Add \n if it doesn't exist
-    if(fmt[fmt_len - 1] != NEW_LINE)
-    {
-        tmp = malloc(sizeof(char) * (fmt_len + 2));
-        if(!tmp)
-        {
-            // Let GDKtracer_log to know about the failure
-            GDK_TRACER_EXCEPTION("Memory allocation failed\n");
-            return -1;
-        }
-        else
-        {
-            strcpy(tmp, fmt);
-            tmp[fmt_len] = NEW_LINE;
-            tmp[fmt_len + 1] = NULL_CHAR;
-            msg = tmp;    
-        }    
-    }
-    else
-    {
-        msg = fmt;
-    }
-        
-    if(msg)
-        // vsnprintf(char *str, size_t count, ...) -> including null terminating character
-        bytes_written = vsnprintf(sel_tracer->buffer + sel_tracer->allocated_size, BUFFER_SIZE - sel_tracer->allocated_size, msg, va);
-        
-    if(tmp)
-        free(tmp);
+    if(bytes_written && fmt[fmt_len - 1] != NEW_LINE)
+    	bytes_written += snprintf(sel_tracer->buffer + sel_tracer->allocated_size, BUFFER_SIZE - sel_tracer->allocated_size, "\n");
 
     // Let GDKtracer_log to know about the failure
     if(bytes_written < 0)
