@@ -852,7 +852,7 @@ MT_path_absolute(const char *pathname)
 		  ('A' <= pathname[0] && pathname[0] <= 'Z')) &&
 		 pathname[1] == ':' &&
 		 (pathname[2] == '/' || pathname[2] == '\\')) ||
-		(pathname[0] == '\\' && pathname[1] == '\\'));
+		(pathname[0] == '\\')); // && pathname[1] == '\\'));
 }
 
 #ifndef HAVE_GETTIMEOFDAY

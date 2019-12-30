@@ -6,13 +6,6 @@
  * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
-#include <assert.h>
-#include <stdarg.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
-
 #include "monetdb_config.h"
 #include "gdk.h"
 #include "gdk_tracer.h"
@@ -60,7 +53,7 @@ static gdk_return
 _GDKtracer_init_basic_adptr(void)
 {
     char file_name[FILENAME_MAX];
-    sprintf(file_name, "%s%c%s%c%s%s", GDKgetenv("gdk_dbpath"), DIR_SEP, FILE_NAME, NAME_SEP, GDKtracer_get_timestamp("%Y-%m-%dT%H:%M:%S"), ".log");
+    snprintf(file_name, sizeof(file_name), "%s%c%s%c%s%s", GDKgetenv("gdk_dbpath"), DIR_SEP, FILE_NAME, NAME_SEP, GDKtracer_get_timestamp("%Y%m%d_%H%M%S"), ".log");
 
     output_file = fopen(file_name, "w");
 
@@ -180,41 +173,29 @@ _GDKtracer_fill_tracer(gdk_tracer *sel_tracer, char *fmt, va_list va)
 static gdk_return
 _GDKtracer_layer_level_helper(int *layer, int *lvl)
 {
-    char *tmp = NULL;
-    char *tok = NULL;
+    const char *tok = NULL;
     LOG_LEVEL level = (LOG_LEVEL)*lvl;
 
-    for(int i = 0; i < COMPONENTS_COUNT; i++)
-    {
-        if(*layer == MDB_ALL)
-        {
+    for(int i = 0; i < COMPONENTS_COUNT; i++) {
+        if(*layer == MDB_ALL) {
             if(LVL_PER_COMPONENT[i] != level)
                 LVL_PER_COMPONENT[i] = level;
-        }
-        else
-        {
-            tmp = strdup(COMPONENT_STR[i]);
-            if(!tmp)
-                return GDK_FAIL;
+        } else {
+            tok = COMPONENT_STR[i];
 
-            tok = strtok(tmp, "_");
-            if(!tok)
-                return GDK_FAIL;
-
-            switch(*layer)
-            {
+            switch(*layer) {
                 case SQL_ALL:
-                    if(strcmp(tok, "SQL") == 0)
+                    if(strncmp(tok, "SQL_", 4) == 0)
                         if(LVL_PER_COMPONENT[i] != level)
                             LVL_PER_COMPONENT[i] = level;
                     break;
                 case MAL_ALL:
-                    if(strcmp(tok, "MAL") == 0)
+                    if(strncmp(tok, "MAL_", 4) == 0)
                         if(LVL_PER_COMPONENT[i] != level)
                             LVL_PER_COMPONENT[i] = level;
                     break;
                 case GDK_ALL:
-                    if(strcmp(tok, "GDK") == 0)
+                    if(strncmp(tok, "GDK_", 4) == 0)
                         if(LVL_PER_COMPONENT[i] != level)
                             LVL_PER_COMPONENT[i] = level;
                     break;
@@ -223,7 +204,6 @@ _GDKtracer_layer_level_helper(int *layer, int *lvl)
             }
         }
     }
-
     return GDK_SUCCEED;
 }
 
@@ -239,8 +219,13 @@ GDKtracer_get_timestamp(char* fmt)
 {
     static char datetime[20];
     time_t now = time(NULL);
-    struct tm *tmp = localtime(&now);
-    strftime(datetime, sizeof(datetime), fmt, tmp);
+    struct tm tmp; 
+#ifdef HAVE_LOCALTIME_R
+    (void) localtime_r(&now, &tmp);
+#else
+    tmp = *localtime(&now);
+#endif
+    strftime(datetime, sizeof(datetime), fmt, &tmp);
     return datetime;
 }
 
@@ -392,17 +377,13 @@ GDKtracer_log(LOG_LEVEL level, char *fmt, ...)
     bytes_written = _GDKtracer_fill_tracer(active_tracer, fmt, va);
     va_end(va);
     
-    if(bytes_written >= 0)
-    {
+    if(bytes_written >= 0) {
         // The message fits the buffer OR the buffer is empty but the message does not fit (we cut it off)
         if(bytes_written < (BUFFER_SIZE - active_tracer->allocated_size) || 
-            active_tracer->allocated_size == 0)
-        {
+            active_tracer->allocated_size == 0) {
             active_tracer->allocated_size += bytes_written;
             MT_lock_unset(&lock);
-        }
-        else
-        {
+        } else {
             MT_lock_unset(&lock);
 
             GDKtracer_flush_buffer();
@@ -413,16 +394,13 @@ GDKtracer_log(LOG_LEVEL level, char *fmt, ...)
             bytes_written = _GDKtracer_fill_tracer(active_tracer, fmt, va);
             va_end(va);
 
-            if(bytes_written >= 0)
-            {
+            if(bytes_written >= 0) {
                 // The second buffer will always be empty at start
                 // So if the message does not fit we cut it off
                 // message might be > BUFFER_SIZE
                 active_tracer->allocated_size += bytes_written;  
                 MT_lock_unset(&lock);
-            }
-            else
-            {
+            } else {
                 MT_lock_unset(&lock);
 
                 // Failed to write to the buffer - bytes_written < 0
@@ -433,9 +411,7 @@ GDKtracer_log(LOG_LEVEL level, char *fmt, ...)
                 va_end(va);
             }
         }
-    }
-    else
-    {
+    } else {
         MT_lock_unset(&lock);
 
         // Failed to write to the buffer - bytes_written < 0
@@ -454,11 +430,9 @@ GDKtracer_log(LOG_LEVEL level, char *fmt, ...)
     // is still in the buffer which it never gets flushed.
     if(level == CUR_FLUSH_LEVEL || 
        level == M_CRITICAL      || 
-       level == M_ERROR)
-    {
+       level == M_ERROR) {
         GDKtracer_flush_buffer();
     }
-
     return GDK_SUCCEED;
 }
 
@@ -468,29 +442,24 @@ GDKtracer_flush_buffer(void)
 {
     // No reason to flush a buffer with no content 
     MT_lock_set(&lock);
-    if(active_tracer->allocated_size == 0)
-    {
+    if(active_tracer->allocated_size == 0) {
         MT_lock_unset(&lock);
         return GDK_SUCCEED;
     }
     MT_lock_unset(&lock);
 
-    if(ATOMIC_GET(&CUR_ADAPTER) == BASIC)
-    {
-        MT_lock_set(&lock);
-        {
+    if(ATOMIC_GET(&CUR_ADAPTER) == BASIC) {
+        MT_lock_set(&lock); {
             // Check if file is open - if not send the output to GDKstdout. There are cases that 
             // this is needed - e.g: on startup of mserver5 GDKmalloc is called before GDKinit. 
             // In GDKinit GDKtracer is getting initialized (open_file and initialize log level 
             // per component). Since the file is not open yet and there is an assert, we need 
             // to do something - and as a backup plan we send the logs to GDKstdout.
-            if(output_file)
-            {
+            if(output_file) {
                 size_t nitems = 1;
                 size_t w = fwrite(&active_tracer->buffer, active_tracer->allocated_size, nitems, output_file);
 
-                if(w == nitems)
-                {   
+                if(w == nitems) {   
                     USE_STREAM = false;
                     fflush(output_file);
                 }
@@ -506,9 +475,7 @@ GDKtracer_flush_buffer(void)
             active_tracer->allocated_size = 0;
         }
         MT_lock_unset(&lock);
-    }
-    else
-    {
+    } else {
         MT_lock_set(&lock);
         memset(active_tracer->buffer, 0, BUFFER_SIZE);
         active_tracer->allocated_size = 0;
@@ -535,8 +502,7 @@ GDKtracer_show_info(void)
     int space = 0;
 
     // Find max width from components
-    for(i = 0; i < COMPONENTS_COUNT; i++)
-    {
+    for(i = 0; i < COMPONENTS_COUNT; i++) {
         size_t comp_width = strlen(COMPONENT_STR[i]);
         if(comp_width > max_width)
             max_width = comp_width;
@@ -544,20 +510,17 @@ GDKtracer_show_info(void)
 
     GDK_TRACER_OSTREAM("\n###############################################################\n");
     GDK_TRACER_OSTREAM("# Available logging levels\n");
-    for(i = 0; i < LOG_LEVELS_COUNT; i++)
-    {
+    for(i = 0; i < LOG_LEVELS_COUNT; i++) {
         GDK_TRACER_OSTREAM("# (%d) %s\n", i, LEVEL_STR[i]);
     }
 
     GDK_TRACER_OSTREAM("\n# You can use one of the following layers to massively set the LOG level\n");
-    for(i = 0; i < LAYERS_COUNT; i++)
-    {
+    for(i = 0; i < LAYERS_COUNT; i++) {
         GDK_TRACER_OSTREAM("# (%d) %s\n", i, LAYER_STR[i]);
     }
 
     GDK_TRACER_OSTREAM("\n# LOG level per component\n");
-    for(i = 0; i < COMPONENTS_COUNT; i++)
-    {
+    for(i = 0; i < COMPONENTS_COUNT; i++) {
         space = (int)(max_width - strlen(COMPONENT_STR[i]) + 30);
         if(i < 10)
             GDK_TRACER_OSTREAM("# (%d)  %s %*s\n", i, COMPONENT_STR[i], space, LEVEL_STR[LVL_PER_COMPONENT[i]]);
