@@ -23,11 +23,11 @@
 #define DICTSIZE 256
 
 bool MOStypes_dict(BAT* b);
-mal_export void MOScreatevar(MOStask task);
-mal_export void MOSlayout_dict(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
-mal_export void MOSlayout_dict_hdr(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
-mal_export str MOSprepareEstimate_dict(MOStask task);
-mal_export str finalizeDictionary_dict(MOStask task);
+mal_export void MOScreatevar(MOStask* task);
+mal_export void MOSlayout_dict(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
+mal_export void MOSlayout_dict_hdr(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
+mal_export str MOSprepareEstimate_dict(MOStask* task);
+mal_export str finalizeDictionary_dict(MOStask* task);
 
 #define MosaicBlkHeader_DEF_dict(TPE) MosaicBlkHeader_DEF_dictionary(dict, TPE)
 

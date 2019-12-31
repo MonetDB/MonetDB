@@ -18,7 +18,7 @@
 
 // add the chunk to the index to facilitate 'fast' OID-based access
 void
-MOSupdateHeader(MOStask task)
+MOSupdateHeader(MOStask* task)
 {
 	MosaicHdr hdr = (MosaicHdr) task->hdr;
 
@@ -34,7 +34,7 @@ MOSupdateHeader(MOStask task)
 }
 
 void
-MOSinitHeader(MOStask task)
+MOSinitHeader(MOStask* task)
 {
 	MosaicHdr hdr = (MosaicHdr) task->hdr;
 	int i;
@@ -54,7 +54,7 @@ MOSinitHeader(MOStask task)
 
 // position the task on the mosaic blk to be scanned
 void
-MOSinitializeScan(MOStask task, BAT* /*compressed*/ b)
+MOSinitializeScan(MOStask* task, BAT* /*compressed*/ b)
 {
 	task->blk = (MosaicBlk) (((char*)task->hdr) + MosaicHdrSize);
 

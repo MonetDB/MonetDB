@@ -16,7 +16,7 @@
 
 #define MOSprojection_SIGNATURE(NAME, TPE) \
 str								\
-MOSprojection_##NAME##_##TPE(MOStask task)\
+MOSprojection_##NAME##_##TPE(MOStask* task)\
 
 #define MOSprojection_DEF(NAME, TPE)\
 MOSprojection_SIGNATURE(NAME, TPE)\
@@ -66,7 +66,7 @@ MOSprojection_SIGNATURE(NAME, TPE)\
 }
 
 #define MOSprojection_generic_DEF(TPE) \
-static str MOSprojection_##TPE(MOStask task)\
+static str MOSprojection_##TPE(MOStask* task)\
 {\
 	while(task->start < task->stop ){\
 		switch(MOSgetTag(task->blk)){\

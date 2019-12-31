@@ -39,7 +39,7 @@ bool MOStypes_runlength(BAT* b) {
 }
 
 void
-MOSlayout_runlength(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
+MOSlayout_runlength(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
 {
 	MosaicBlk blk = task->blk;
 	lng cnt = MOSgetCnt(blk), input=0, output= 0;

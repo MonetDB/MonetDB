@@ -26,11 +26,11 @@ ALIGNMENT_HELPER_TPE(NAME, TPE)\
 	MOSBlockHeaderTpe(NAME, TPE) b;\
 };
 
-#define MOSadvance_SIGNATURE(NAME, TPE) void MOSadvance_##NAME##_##TPE(MOStask task)
-#define MOSestimate_SIGNATURE(NAME, TPE) str MOSestimate_##NAME##_##TPE(MOStask task, MosaicEstimation* current, const MosaicEstimation* previous)
-#define MOSpostEstimate_SIGNATURE(NAME, TPE) void MOSpostEstimate_##NAME##_##TPE(MOStask task)
-#define MOScompress_SIGNATURE(NAME, TPE) void MOScompress_##NAME##_##TPE(MOStask task, MosaicBlkRec* estimate)
-#define MOSdecompress_SIGNATURE(NAME, TPE) void MOSdecompress_##NAME##_##TPE(MOStask task)
+#define MOSadvance_SIGNATURE(NAME, TPE) void MOSadvance_##NAME##_##TPE(MOStask* task)
+#define MOSestimate_SIGNATURE(NAME, TPE) str MOSestimate_##NAME##_##TPE(MOStask* task, MosaicEstimation* current, const MosaicEstimation* previous)
+#define MOSpostEstimate_SIGNATURE(NAME, TPE) void MOSpostEstimate_##NAME##_##TPE(MOStask* task)
+#define MOScompress_SIGNATURE(NAME, TPE) void MOScompress_##NAME##_##TPE(MOStask* task, MosaicBlkRec* estimate)
+#define MOSdecompress_SIGNATURE(NAME, TPE) void MOSdecompress_##NAME##_##TPE(MOStask* task)
 #define MOSBlockHeader_DEF(NAME, TPE) MosaicBlkHeader_DEF_##NAME(TPE)
 
 #define ALGEBRA_INTERFACE(NAME, TPE) \

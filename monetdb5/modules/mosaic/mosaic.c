@@ -88,7 +88,7 @@ _construct_compression_mask(sht* compression_mask, char* compressions) {
 }
 
 static str
-construct_compression_mask(MOStask task, const char* compressions) {
+construct_compression_mask(MOStask* task, const char* compressions) {
 
 	char* copy = NULL;
 	if (compressions) {
@@ -125,7 +125,7 @@ construct_compression_mask(MOStask task, const char* compressions) {
 }
 
 static void
-MOSinit(MOStask task, BAT *b) {
+MOSinit(MOStask* task, BAT *b) {
 	char *base;
 	if( VIEWmosaictparent(b) != 0)
 		b= BATdescriptor(VIEWmosaictparent(b));
@@ -152,25 +152,20 @@ void MOSblk(MosaicBlk blk)
 str
 MOSlayout(BAT *b, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
 {
-	MOStask task=0;
+	MOStask task = {0};
 	unsigned i;
 	char buf[BUFSIZ];
 	lng zero=0;
 
-	task= (MOStask) GDKzalloc(sizeof(*task));
-	if( task == NULL)
-		throw(SQL,"mosaic",MAL_MALLOC_FAIL);
-
 	if( b->tmosaic == NULL) {
-			GDKfree(task);
 			throw(MAL,"mosaic.layout","Compression heap missing");
 	}
 
-	MOSinit(task,b);
-	MOSinitializeScan(task, b);
+	MOSinit(&task,b);
+	MOSinitializeScan(&task, b);
 	// safe the general properties
 
-		snprintf(buf,BUFSIZ,"%g", task->hdr->ratio);
+		snprintf(buf,BUFSIZ,"%g", (task.hdr)->ratio);
 		if( BUNappend(btech, "ratio", false) != GDK_SUCCEED ||
 			BUNappend(bcount, &zero, false) != GDK_SUCCEED ||
 			BUNappend(binput, &zero, false) != GDK_SUCCEED ||
@@ -181,16 +176,16 @@ MOSlayout(BAT *b, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bprop
 		lng zero = 0;
 		snprintf(buf,BUFSIZ,"%s blocks", MOSmethods[i].name);
 		if( BUNappend(btech, buf, false) != GDK_SUCCEED ||
-			BUNappend(bcount, &task->hdr->blks[i], false) != GDK_SUCCEED ||
-			BUNappend(binput, &task->hdr->elms[i], false) != GDK_SUCCEED ||
+			BUNappend(bcount, &(task.hdr)->blks[i], false) != GDK_SUCCEED ||
+			BUNappend(binput, &(task.hdr)->elms[i], false) != GDK_SUCCEED ||
 			BUNappend(boutput, &zero , false) != GDK_SUCCEED ||
 			BUNappend(bproperties, "", false) != GDK_SUCCEED)
 				throw(MAL,"mosaic.layout", MAL_MALLOC_FAIL);
 	}
-	if( task->hdr->blks[MOSAIC_DICT256])
-		MOSlayout_dict256_hdr(task,btech,bcount,binput,boutput,bproperties);
-	if( task->hdr->blks[MOSAIC_DICT])
-		MOSlayout_dict_hdr(task,btech,bcount,binput,boutput,bproperties);
+	if( (task.hdr)->blks[MOSAIC_DICT256])
+		MOSlayout_dict256_hdr(&task,btech,bcount,binput,boutput,bproperties);
+	if( (task.hdr)->blks[MOSAIC_DICT])
+		MOSlayout_dict_hdr(&task,btech,bcount,binput,boutput,bproperties);
 
 	if( BUNappend(btech, "========", false) != GDK_SUCCEED ||
 		BUNappend(bcount, &zero, false) != GDK_SUCCEED ||
@@ -273,7 +268,7 @@ static inline BUN get_normalized_compression(MosaicEstimation* current, const Mo
 
 
 static str
-MOSprepareEstimate(MOStask task) {
+MOSprepareEstimate(MOStask* task) {
 
 	str error;
 	if (METHOD_IS_SET(task->mask, MOSAIC_DICT256)){
@@ -301,7 +296,7 @@ MOSprepareEstimate(MOStask task) {
 #define postEstimate(NAME, TPE, DUMMY_ARGUMENT) MOSpostEstimate_##NAME##_##TPE(task);
 
 #define MOSestimate_AND_MOSoptimizerCost_DEF(TPE) \
-static str MOSestimate_inner_##TPE(MOStask task, MosaicEstimation* current, const MosaicEstimation* previous) {\
+static str MOSestimate_inner_##TPE(MOStask* task, MosaicEstimation* current, const MosaicEstimation* previous) {\
 \
 	BUN max_compression_length = 0;\
 	MosaicEstimation estimations[MOSAIC_METHODS];\
@@ -373,7 +368,7 @@ static str MOSestimate_inner_##TPE(MOStask task, MosaicEstimation* current, cons
 \
 	return MAL_SUCCEED;\
 }\
-static str MOSestimate_##TPE(MOStask task, BAT* estimates, size_t* compressed_size) {\
+static str MOSestimate_##TPE(MOStask* task, BAT* estimates, size_t* compressed_size) {\
 	str result = MAL_SUCCEED;\
 \
 	*compressed_size = 0;\
@@ -440,7 +435,7 @@ MOSestimate_AND_MOSoptimizerCost_DEF(hge)
 
 
 static
-str MOSestimate(MOStask task, BAT* estimates, size_t* compressed_size) {
+str MOSestimate(MOStask* task, BAT* estimates, size_t* compressed_size) {
 	switch(ATOMbasetype(task->type)){
 	case TYPE_bte: return MOSestimate_bte(task, estimates, compressed_size);
 	case TYPE_sht: return MOSestimate_sht(task, estimates, compressed_size);
@@ -460,7 +455,7 @@ str MOSestimate(MOStask task, BAT* estimates, size_t* compressed_size) {
 }
 
 static str
-MOSfinalizeDictionary(MOStask task) {
+MOSfinalizeDictionary(MOStask* task) {
 
 	str error;
 
@@ -490,7 +485,7 @@ MOSfinalizeDictionary(MOStask task) {
 
 #define MOScompressInternal_DEF(TPE)\
 static void \
-MOScompressInternal_##TPE(MOStask task, BAT* estimates)\
+MOScompressInternal_##TPE(MOStask* task, BAT* estimates)\
 {\
 	/* second pass: compression phase*/\
 	for(BUN i = 0; i < BATcount(estimates); i++) {\
@@ -543,7 +538,7 @@ MOScompressInternal_DEF(hge)
 str
 MOScompressInternal(BAT* bsrc, const char* compressions)
 {
-	MOStask task;
+	MOStask task = {0};
 	str msg = MAL_SUCCEED;
 	lng t0,t1;
 
@@ -572,28 +567,23 @@ MOScompressInternal(BAT* bsrc, const char* compressions)
 	}
 	assert(bsrc->tmosaic->parentid == bsrc->batCacheid);
 
-	if((task = (MOStask) GDKzalloc(sizeof(*task))) == NULL) {
-		MOSdestroy(bsrc);
-		throw(MAL, "mosaic.compress", MAL_MALLOC_FAIL);
-	}
-
 	// initialize the non-compressed read pointer
-	task->src = Tloc(bsrc, 0);
-	task->start = 0;
-	task->stop = BATcount(bsrc);
-	task->timer = GDKusec();
+	task.src = Tloc(bsrc, 0);
+	task.start = 0;
+	task.stop = BATcount(bsrc);
+	task.timer = GDKusec();
 
-	MOSinit(task,bsrc);
-	task->blk->cnt= 0;
-	MOSinitHeader(task);
+	MOSinit(&task,bsrc);
+	task.blk->cnt= 0;
+	MOSinitHeader(&task);
 
-	if ( (msg = construct_compression_mask(task, compressions)) != MAL_SUCCEED) {
+	if ( (msg = construct_compression_mask(&task, compressions)) != MAL_SUCCEED) {
 			MOSdestroy(bsrc);
 			goto finalize;
 	}
 
 	// Zero pass: estimation preparation phase
-	if ((msg = MOSprepareEstimate(task))) {
+	if ((msg = MOSprepareEstimate(&task))) {
 		MOSdestroy(bsrc);
 		goto finalize;
 	}
@@ -607,13 +597,13 @@ MOScompressInternal(BAT* bsrc, const char* compressions)
 
 	size_t compressed_size_bytes;
 	// First pass: estimation phase
-	if ( ( msg = MOSestimate(task, estimates, &compressed_size_bytes) )) {
+	if ( ( msg = MOSestimate(&task, estimates, &compressed_size_bytes) )) {
 		BBPreclaim(estimates);
 		MOSdestroy(bsrc);
 		goto finalize;
 	}
 
-	if ((msg = MOSfinalizeDictionary(task))) {
+	if ((msg = MOSfinalizeDictionary(&task))) {
 		BBPreclaim(estimates);
 		MOSdestroy(bsrc);
 		goto finalize;
@@ -626,35 +616,34 @@ MOScompressInternal(BAT* bsrc, const char* compressions)
 		goto finalize;
 	}
 
-	MOSinit(task, bsrc);
+	MOSinit(&task, bsrc);
 
-	task->start = 0;
+	task.start = 0;
 
-	switch(ATOMbasetype(task->type)){
-	case TYPE_bte: MOScompressInternal_bte(task, estimates); break;
-	case TYPE_sht: MOScompressInternal_sht(task, estimates); break;
-	case TYPE_int: MOScompressInternal_int(task, estimates); break;
-	case TYPE_lng: MOScompressInternal_lng(task, estimates); break;
-	case TYPE_flt: MOScompressInternal_flt(task, estimates); break;
-	case TYPE_dbl: MOScompressInternal_dbl(task, estimates); break;
+	switch(ATOMbasetype(task.type)){
+	case TYPE_bte: MOScompressInternal_bte(&task, estimates); break;
+	case TYPE_sht: MOScompressInternal_sht(&task, estimates); break;
+	case TYPE_int: MOScompressInternal_int(&task, estimates); break;
+	case TYPE_lng: MOScompressInternal_lng(&task, estimates); break;
+	case TYPE_flt: MOScompressInternal_flt(&task, estimates); break;
+	case TYPE_dbl: MOScompressInternal_dbl(&task, estimates); break;
 #ifdef HAVE_HGE
-	case TYPE_hge: MOScompressInternal_hge(task, estimates); break;
+	case TYPE_hge: MOScompressInternal_hge(&task, estimates); break;
 #endif
 	default: // Unknown block type. Should not happen.
 		assert(0);
 	}
 
-	task->bsrc->tmosaic->free = (task->dst - (char*)task->hdr);
-	task->timer = GDKusec() - task->timer;
+	task.bsrc->tmosaic->free = (task.dst - (char*)task.hdr);
+	task.timer = GDKusec() - task.timer;
 
 	// TODO: if we couldnt compress well enough, ignore the result
 
 	bsrc->batDirtydesc = true;
-	task->hdr->ratio =
-		(flt)task->bsrc->theap.free /
-		(task->bsrc->tmosaic->free + (task->bsrc->tvmosaic? task->bsrc->tvmosaic->free : 0));
+	task.hdr->ratio =
+		(flt)task.bsrc->theap.free /
+		(task.bsrc->tmosaic->free + (task.bsrc->tvmosaic? task.bsrc->tvmosaic->free : 0));
 finalize:
-	GDKfree(task);
 
 	t1 = GDKusec();
 	ALGODEBUG mnstr_printf(GDKstdout, "##BATmosaic: mosaic construction " LLFMT " usec\n", t1 - t0);
@@ -706,7 +695,7 @@ MOScompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 #define MOSdecompressInternal_DEF(TPE) \
-static void MOSdecompressInternal_##TPE(MOStask task)\
+static void MOSdecompressInternal_##TPE(MOStask* task)\
 {\
 	while(task->start != task->stop){\
 		switch(MOSgetTag(task->blk)){\
@@ -753,7 +742,7 @@ MOSdecompressInternal_DEF(hge)
 static str
 MOSdecompressInternal(BAT** res, BAT* bsrc)
 {	
-	MOStask task;
+	MOStask task = {0};
 
 	if (BATcheckmosaic(bsrc) == 0 ){
 		*res = bsrc;
@@ -763,12 +752,6 @@ MOSdecompressInternal(BAT** res, BAT* bsrc)
 
 	if (VIEWtparent(bsrc)) {
 		throw(MAL, "mosaic.decompress", "cannot decompress tail-VIEW");
-	}
-
-	// use the original heap for reconstruction
-	task= (MOStask) GDKzalloc(sizeof(*task));
-	if( task == NULL){
-		throw(MAL, "mosaic.decompress", MAL_MALLOC_FAIL);
 	}
 
 	BBPshare(bsrc->tmosaic->parentid);
@@ -792,34 +775,30 @@ MOSdecompressInternal(BAT** res, BAT* bsrc)
 	(*res)->tnonil = bsrc->tnonil;
 	(*res)->tnil = bsrc->tnil;
 
-	MOSinit(task,bsrc);
+	MOSinit(&task,bsrc);
 
-	task->bsrc = *res;
-	task->src = Tloc(*res, 0);
+	task.bsrc = *res;
+	task.src = Tloc(*res, 0);
 
-	task->timer = GDKusec();
+	task.timer = GDKusec();
 
-	MOSinitializeScan(task, task->bsrc);
+	MOSinitializeScan(&task, task.bsrc);
 
-	switch(ATOMbasetype(task->type)){
-	case TYPE_bte: MOSdecompressInternal_bte(task); break;
-	case TYPE_sht: MOSdecompressInternal_sht(task); break;
-	case TYPE_int: MOSdecompressInternal_int(task); break;
-	case TYPE_lng: MOSdecompressInternal_lng(task); break;
-	case TYPE_flt: MOSdecompressInternal_flt(task); break;
-	case TYPE_dbl: MOSdecompressInternal_dbl(task); break;
+	switch(ATOMbasetype(task.type)){
+	case TYPE_bte: MOSdecompressInternal_bte(&task); break;
+	case TYPE_sht: MOSdecompressInternal_sht(&task); break;
+	case TYPE_int: MOSdecompressInternal_int(&task); break;
+	case TYPE_lng: MOSdecompressInternal_lng(&task); break;
+	case TYPE_flt: MOSdecompressInternal_flt(&task); break;
+	case TYPE_dbl: MOSdecompressInternal_dbl(&task); break;
 #ifdef HAVE_HGE
-	case TYPE_hge: MOSdecompressInternal_hge(task); break;
+	case TYPE_hge: MOSdecompressInternal_hge(&task); break;
 #endif
 	default: // Unknown block type. Should not happen.
 		assert(0);
 	}
 
-	task->timer = GDKusec() - task->timer;
-
-	// remove the compressed mirror
-	GDKfree(task); // TODO should there not be a more thorough clean up function for tasks
-	// continue with all work
+	task.timer = GDKusec() - task.timer;
 
 	BATsettrivprop(bsrc); // TODO: What's the purpose of this statement?
 
@@ -895,7 +874,7 @@ MOSselect2(bat *ret, const bat *bid, const bat *cid, void *low, void *hgh, bit *
 	BAT *b, *bn, *cand = NULL;
 	str msg = MAL_SUCCEED;
 	BUN cnt = 0;
-	MOStask task;
+	MOStask task = {0};
 	//
 	// use default implementation if possible
 	if( !isCompressed(*bid)){
@@ -909,40 +888,31 @@ MOSselect2(bat *ret, const bat *bid, const bat *cid, void *low, void *hgh, bit *
 	if( b == NULL)
 			throw(MAL, "mosaic.select",RUNTIME_OBJECT_MISSING);
 
-	// TODO: why is this task on the heap?
-	task= (MOStask) GDKzalloc(sizeof(*task));
-	if( task == NULL){
-		BBPunfix(b->batCacheid);
-		throw(MAL, "mosaic.select", RUNTIME_OBJECT_MISSING);
-	}
-
 	// accumulator for the oids
 	bn = COLnew((oid)0, TYPE_oid, BATcount(b), TRANSIENT);
 	if( bn == NULL){
-		GDKfree(task);
 		BBPunfix(b->batCacheid);
 		throw(MAL, "mosaic.select", RUNTIME_OBJECT_MISSING);
 	}
-	task->lb = (oid*) Tloc(bn,0);
+	task.lb = (oid*) Tloc(bn,0);
 
-	MOSinit(task,b);
-	MOSinitializeScan(task, b);
+	MOSinit(&task,b);
+	MOSinitializeScan(&task, b);
 	// drag along the candidate list into the task descriptor
 	if (cid) {
 		cand = BATdescriptor(*cid);
 		if (cand == NULL){
 			BBPunfix(b->batCacheid);
 			BBPunfix(bn->batCacheid);
-			GDKfree(task);
 			throw(MAL, "mosaic.select", RUNTIME_OBJECT_MISSING);
 		}
-		task->cl = (oid*) Tloc(cand, 0);
-		task->n = BATcount(cand);
+		task.cl = (oid*) Tloc(cand, 0);
+		task.n = BATcount(cand);
 	}
 
 	struct canditer ci;
-	task->ci = &ci;
-	canditer_init(task->ci, b, cand);
+	task.ci = &ci;
+	canditer_init(task.ci, b, cand);
 
 	// determine block range to scan for partitioned columns
 	/*
@@ -950,19 +920,19 @@ MOSselect2(bat *ret, const bat *bid, const bat *cid, void *low, void *hgh, bit *
 	** Is it a good idea to set the capacity to the total size of the select operand b?
 	*/
 
-	switch(ATOMbasetype(task->type)){
-	case TYPE_bte: MOSselect_bte(task, low, hgh, li, hi, anti); break;
-	case TYPE_sht: MOSselect_sht(task, low, hgh, li, hi, anti); break;
-	case TYPE_int: MOSselect_int(task, low, hgh, li, hi, anti); break;
-	case TYPE_lng: MOSselect_lng(task, low, hgh, li, hi, anti); break;
-	case TYPE_flt: MOSselect_flt(task, low, hgh, li, hi, anti); break;
-	case TYPE_dbl: MOSselect_dbl(task, low, hgh, li, hi, anti); break;
+	switch(ATOMbasetype(task.type)){
+	case TYPE_bte: MOSselect_bte(&task, low, hgh, li, hi, anti); break;
+	case TYPE_sht: MOSselect_sht(&task, low, hgh, li, hi, anti); break;
+	case TYPE_int: MOSselect_int(&task, low, hgh, li, hi, anti); break;
+	case TYPE_lng: MOSselect_lng(&task, low, hgh, li, hi, anti); break;
+	case TYPE_flt: MOSselect_flt(&task, low, hgh, li, hi, anti); break;
+	case TYPE_dbl: MOSselect_dbl(&task, low, hgh, li, hi, anti); break;
 #ifdef HAVE_HGE
-	case TYPE_hge: MOSselect_hge(task, low, hgh, li, hi, anti); break;
+	case TYPE_hge: MOSselect_hge(&task, low, hgh, li, hi, anti); break;
 #endif
 	}
 	// derive the filling
-	cnt = (BUN) (task->lb - (oid*) Tloc(bn,0));
+	cnt = (BUN) (task.lb - (oid*) Tloc(bn,0));
 	assert(bn->batCapacity >= cnt);
 	BATsetcount(bn,cnt);
 	bn->tnil = false;
@@ -973,7 +943,6 @@ MOSselect2(bat *ret, const bat *bid, const bat *cid, void *low, void *hgh, bit *
 	MOSvirtualize(bn);
 
 	*ret = bn->batCacheid;
-	GDKfree(task);
 
 	BBPunfix(b->batCacheid);
 	if (cand != NULL) BBPunfix(cand->batCacheid);
@@ -1118,7 +1087,7 @@ str MOSprojection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BUN cnt;
 	oid *ol =0, o = 0;
 	str msg= MAL_SUCCEED;
-	MOStask task;
+	MOStask task = {0};
 
 	(void) cntxt;
 	(void) mb;
@@ -1184,33 +1153,26 @@ str MOSprojection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) o;
 
-	task= (MOStask) GDKzalloc(sizeof(*task));
-	if( task == NULL){
-		BBPunfix(*lid);
-		BBPunfix(*rid);
-		GDKfree(task);
-		throw(MAL, "mosaic.projection", RUNTIME_OBJECT_MISSING);
-	}
-	MOSinit(task,br);
-	MOSinitializeScan(task, br);
-	task->src = (char*) Tloc(bn,0);
+	MOSinit(&task,br);
+	MOSinitializeScan(&task, br);
+	task.src = (char*) Tloc(bn,0);
 
-	task->cl = ol;
-	task->n = cnt;
+	task.cl = ol;
+	task.n = cnt;
 
 	struct canditer ci;
-	task->ci = &ci;
-	canditer_init(task->ci, NULL, bl);
+	task.ci = &ci;
+	canditer_init(task.ci, NULL, bl);
 
-	switch(ATOMbasetype(task->type)){
-	case TYPE_bte: MOSprojection_bte(task); break;
-	case TYPE_sht: MOSprojection_sht(task); break;
-	case TYPE_int: MOSprojection_int(task); break;
-	case TYPE_lng: MOSprojection_lng(task); break;
-	case TYPE_flt: MOSprojection_flt(task); break;
-	case TYPE_dbl: MOSprojection_dbl(task); break;
+	switch(ATOMbasetype(task.type)){
+	case TYPE_bte: MOSprojection_bte(&task); break;
+	case TYPE_sht: MOSprojection_sht(&task); break;
+	case TYPE_int: MOSprojection_int(&task); break;
+	case TYPE_lng: MOSprojection_lng(&task); break;
+	case TYPE_flt: MOSprojection_flt(&task); break;
+	case TYPE_dbl: MOSprojection_dbl(&task); break;
 #ifdef HAVE_HGE
-	case TYPE_hge: MOSprojection_hge(task); break;
+	case TYPE_hge: MOSprojection_hge(&task); break;
 #endif
 	}
 
@@ -1218,12 +1180,11 @@ str MOSprojection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPunfix(*lid);
 	BBPunfix(*rid);
 
-	BATsetcount(bn,task->cnt);
+	BATsetcount(bn,task.cnt);
 	bn->tnil = 0;
 	bn->tnonil = br->tnonil;
 	bn->tsorted = bn->trevsorted = cnt <= 1;
 	BBPkeepref(*ret = bn->batCacheid);
-	GDKfree(task);
 	return msg;
 }
 
@@ -1255,10 +1216,10 @@ MOSjoin_generic_DEF(hge)
 
 #define PREPARE_JOIN_CONTEXT(COMPRESSED_BAT, COMPRESSED_BAT_CL, UNCOMPRESSED_BAT, UNCOMPRESSED_BAT_CL) \
 {\
-	MOSinit(task,COMPRESSED_BAT);\
-	MOSinitializeScan(task, COMPRESSED_BAT);\
-	task->stop = BATcount(COMPRESSED_BAT);\
-	task->src= Tloc(UNCOMPRESSED_BAT,0);\
+	MOSinit(&task,COMPRESSED_BAT);\
+	MOSinitializeScan(&task, COMPRESSED_BAT);\
+	task.stop = BATcount(COMPRESSED_BAT);\
+	task.src= Tloc(UNCOMPRESSED_BAT,0);\
 	if (*COMPRESSED_BAT_CL != bat_nil && ((cand_c = BATdescriptor(*COMPRESSED_BAT_CL)) == NULL))\
 		throw(MAL,"mosaic.join",RUNTIME_OBJECT_MISSING);\
 	if (*UNCOMPRESSED_BAT_CL != bat_nil && ((cand_u = BATdescriptor(*UNCOMPRESSED_BAT_CL)) == NULL))\
@@ -1278,7 +1239,7 @@ MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BUN cnt = 0;
 	int swapped = 0;
 	str msg = MAL_SUCCEED;
-	MOStask task;
+	MOStask task = {0};
 
 	(void) cntxt;
 	(void) mb;
@@ -1306,8 +1267,7 @@ MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	// result set preparation
 	bln = COLnew((oid)0,TYPE_oid, cnt, TRANSIENT);
 	brn = COLnew((oid)0,TYPE_oid, cnt, TRANSIENT);
-	task= (MOStask) GDKzalloc(sizeof(*task));
-	if( bln == NULL || brn == NULL || task == NULL){
+	if( bln == NULL || brn == NULL){
 		if( bln) BBPunfix(bln->batCacheid);
 		if( brn) BBPunfix(brn->batCacheid);
 		BBPunfix(bl->batCacheid);
@@ -1324,7 +1284,7 @@ MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	struct canditer ci_c;
 	struct canditer ci_u;
 
-	task->ci = &ci_c;
+	task.ci = &ci_c;
 
 	if ( bl->tmosaic){
 		PREPARE_JOIN_CONTEXT(bl, sl, br, sr);
@@ -1332,34 +1292,34 @@ MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		PREPARE_JOIN_CONTEXT(br, sr, bl, sl);
 		swapped=1;
 	}
-	task->lbat = bln;
-	task->rbat = brn;
+	task.lbat = bln;
+	task.rbat = brn;
 
 	bit* COUI = NULL;
 
 	if ((pci->argc != 9) || ((*(COUI = getArgReference_bit(stk,pci,8))) == bit_nil) || (*COUI == false)) {
-		switch(ATOMbasetype(task->type)){
-		case TYPE_bte: msg = MOSjoin_bte(task, u, &ci_u, *nil_matches); break;
-		case TYPE_sht: msg = MOSjoin_sht(task, u, &ci_u, *nil_matches); break;
-		case TYPE_int: msg = MOSjoin_int(task, u, &ci_u, *nil_matches); break;
-		case TYPE_lng: msg = MOSjoin_lng(task, u, &ci_u, *nil_matches); break;
-		case TYPE_flt: msg = MOSjoin_flt(task, u, &ci_u, *nil_matches); break;
-		case TYPE_dbl: msg = MOSjoin_dbl(task, u, &ci_u, *nil_matches); break;
+		switch(ATOMbasetype(task.type)){
+		case TYPE_bte: msg = MOSjoin_bte(&task, u, &ci_u, *nil_matches); break;
+		case TYPE_sht: msg = MOSjoin_sht(&task, u, &ci_u, *nil_matches); break;
+		case TYPE_int: msg = MOSjoin_int(&task, u, &ci_u, *nil_matches); break;
+		case TYPE_lng: msg = MOSjoin_lng(&task, u, &ci_u, *nil_matches); break;
+		case TYPE_flt: msg = MOSjoin_flt(&task, u, &ci_u, *nil_matches); break;
+		case TYPE_dbl: msg = MOSjoin_dbl(&task, u, &ci_u, *nil_matches); break;
 #ifdef HAVE_HGE
-		case TYPE_hge: msg = MOSjoin_hge(task, u, &ci_u, *nil_matches); break;
+		case TYPE_hge: msg = MOSjoin_hge(&task, u, &ci_u, *nil_matches); break;
 #endif
 		}
 	}
 	else {
-		switch(ATOMbasetype(task->type)){
-		case TYPE_bte: msg = MOSjoin_COUI_bte(task, u, &ci_u, *nil_matches); break;
-		case TYPE_sht: msg = MOSjoin_COUI_sht(task, u, &ci_u, *nil_matches); break;
-		case TYPE_int: msg = MOSjoin_COUI_int(task, u, &ci_u, *nil_matches); break;
-		case TYPE_lng: msg = MOSjoin_COUI_lng(task, u, &ci_u, *nil_matches); break;
-		case TYPE_flt: msg = MOSjoin_COUI_flt(task, u, &ci_u, *nil_matches); break;
-		case TYPE_dbl: msg = MOSjoin_COUI_dbl(task, u, &ci_u, *nil_matches); break;
+		switch(ATOMbasetype(task.type)){
+		case TYPE_bte: msg = MOSjoin_COUI_bte(&task, u, &ci_u, *nil_matches); break;
+		case TYPE_sht: msg = MOSjoin_COUI_sht(&task, u, &ci_u, *nil_matches); break;
+		case TYPE_int: msg = MOSjoin_COUI_int(&task, u, &ci_u, *nil_matches); break;
+		case TYPE_lng: msg = MOSjoin_COUI_lng(&task, u, &ci_u, *nil_matches); break;
+		case TYPE_flt: msg = MOSjoin_COUI_flt(&task, u, &ci_u, *nil_matches); break;
+		case TYPE_dbl: msg = MOSjoin_COUI_dbl(&task, u, &ci_u, *nil_matches); break;
 #ifdef HAVE_HGE
-		case TYPE_hge: msg = MOSjoin_COUI_hge(task, u, &ci_u, *nil_matches); break;
+		case TYPE_hge: msg = MOSjoin_COUI_hge(&task, u, &ci_u, *nil_matches); break;
 #endif
 		}
 	}
@@ -1386,7 +1346,6 @@ MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
         BBPkeepref(*ret2= brn->batCacheid);
     }
 
-	GDKfree(task);
     return msg;
 }
 

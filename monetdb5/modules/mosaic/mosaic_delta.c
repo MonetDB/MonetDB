@@ -68,7 +68,7 @@ MOSadvance_DEF(hge)
 #endif
 
 void
-MOSlayout_delta(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
+MOSlayout_delta(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
 {
 	MosaicBlk blk = task->blk;
 	lng cnt = MOSgetCnt(blk), input=0, output= 0;

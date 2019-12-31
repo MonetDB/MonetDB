@@ -181,7 +181,7 @@ typedef struct MOSTASK{
 
 	BAT *lbat, *rbat; // for the joins, where we dont know their size upfront
 
-} *MOStask;
+} MOStask;
 
 /* The compressor is built around a two phase process
  * where in the first phase we collect the structure of

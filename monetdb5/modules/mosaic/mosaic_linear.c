@@ -38,7 +38,7 @@ bool MOStypes_linear(BAT* b) {
 }
 
 void
-MOSlayout_linear(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
+MOSlayout_linear(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
 {
 	MosaicBlk blk = task->blk;
 	lng cnt = MOSgetCnt(blk), input=0, output= 0;

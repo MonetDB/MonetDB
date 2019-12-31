@@ -123,7 +123,7 @@ MOSadvance_DEF(hge)
 #endif
 
 void
-MOSlayout_dict256_hdr(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
+MOSlayout_dict256_hdr(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
 {
 	lng zero=0;
 	unsigned int i;
@@ -145,7 +145,7 @@ MOSlayout_dict256_hdr(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *b
 }
 
 void
-MOSlayout_dict256(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
+MOSlayout_dict256(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
 {
 	MosaicBlk blk = task->blk;
 	BUN cnt = MOSgetCnt(blk), input=0, output= 0;
@@ -161,7 +161,7 @@ MOSlayout_dict256(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutp
 }
 
 str
-MOSprepareEstimate_dict256(MOStask task)
+MOSprepareEstimate_dict256(MOStask* task)
 {
 	str error;
 
@@ -385,7 +385,7 @@ _finalizeDictionary(BAT* b, GlobalCappedInfo* info, BUN* pos_dict, BUN* length_d
 }
 
 str
-finalizeDictionary_dict256(MOStask task) {
+finalizeDictionary_dict256(MOStask* task) {
 	return _finalizeDictionary(
 		task->bsrc,
 		task->dict256_info,

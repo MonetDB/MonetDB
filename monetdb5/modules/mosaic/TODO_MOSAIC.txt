@@ -21,6 +21,5 @@ Create a plug-in estimation model framework.
 
 ####code issues####
 See if the iteration algorithms can be improved.
-Get rid of (most of) MOStask and/or don't allocate it on the heap.
 Use GDK naming conventions, e.g. o for stuff coming out if canditer_next.
 Update copyright in 2020.

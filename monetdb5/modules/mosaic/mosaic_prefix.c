@@ -42,7 +42,7 @@ bool MOStypes_prefix(BAT* b) {
 }
 
 void
-MOSlayout_prefix(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
+MOSlayout_prefix(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
 {
 	MosaicBlk blk = task->blk;
 	BUN cnt = MOSgetCnt(blk), input=0, output= 0, bytes = 0;

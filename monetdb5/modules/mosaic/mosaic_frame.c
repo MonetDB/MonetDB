@@ -75,7 +75,7 @@ MOSadvance_DEF(hge)
 #endif
 
 void
-MOSlayout_frame(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
+MOSlayout_frame(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
 {
 	(void) boutput;
 	MosaicBlk blk = task->blk;

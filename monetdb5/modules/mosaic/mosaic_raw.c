@@ -39,7 +39,7 @@ bool MOStypes_raw(BAT* b) {
 }
 
 void
-MOSlayout_raw(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
+MOSlayout_raw(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
 {
 	MosaicBlk blk = (MosaicBlk) task->blk;
 	lng cnt = MOSgetCnt(blk), input=0, output= 0;

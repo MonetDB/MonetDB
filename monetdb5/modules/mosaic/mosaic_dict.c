@@ -88,7 +88,7 @@ DictionaryClass(hge)
 #define GetSizeInBytes(INFO) (BATcount((INFO)->dict) * (INFO)->dict->twidth)
 
 void
-MOSlayout_dict_hdr(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
+MOSlayout_dict_hdr(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
 {
 	lng zero=0;
 	unsigned int i;
@@ -110,7 +110,7 @@ MOSlayout_dict_hdr(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *bout
 }
 
 void
-MOSlayout_dict(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
+MOSlayout_dict(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
 {
 	MosaicBlk blk = task->blk;
 	lng cnt = MOSgetCnt(blk), input=0, output= 0;
@@ -126,7 +126,7 @@ MOSlayout_dict(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput,
 }
 
 str
-MOSprepareEstimate_dict(MOStask task)
+MOSprepareEstimate_dict(MOStask* task)
 {
 	str error;
 
@@ -250,7 +250,7 @@ _finalizeDictionary(BAT* b, GlobalVarInfo* info, BUN* pos_dict, BUN* length_dict
 }
 
 str
-finalizeDictionary_dict(MOStask task) {
+finalizeDictionary_dict(MOStask* task) {
 	return _finalizeDictionary(
 		task->bsrc,
 		task->dict_info,

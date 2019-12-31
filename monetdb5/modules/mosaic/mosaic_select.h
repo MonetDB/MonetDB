@@ -120,7 +120,7 @@ do {\
 
 #define MOSselect_SIGNATURE(NAME, TPE) \
 str								\
-MOSselect_##NAME##_##TPE(MOStask task,		\
+MOSselect_##NAME##_##TPE(MOStask* task,		\
 	      TPE tl, TPE th, bool li, bool hi,		\
 	      bool anti)	\
 
@@ -201,7 +201,7 @@ MOSselect_SIGNATURE(NAME, TPE) {\
 
 #define MOSselect_generic_DEF(TPE) \
 static str MOSselect_##TPE(\
-MOStask task, void* low, void* hgh, bit* li, bit* hi, bit* anti)\
+MOStask* task, void* low, void* hgh, bit* li, bit* hi, bit* anti)\
 {\
 	while(task->start < task->stop ){\
 		switch(MOSgetTag(task->blk)){\

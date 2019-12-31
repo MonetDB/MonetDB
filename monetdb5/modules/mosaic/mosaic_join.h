@@ -20,7 +20,7 @@
 #define MOSjoin_COUI_SIGNATURE(NAME, TPE) \
 str								\
 MOSjoin_COUI_##NAME##_##TPE(BAT* r1p, BAT* r2p,\
-    MOStask task, BAT* r, struct canditer* rci, bool nil_matches)\
+    MOStask* task, BAT* r, struct canditer* rci, bool nil_matches)\
 
 #define INNER_LOOP_UNCOMPRESSED(HAS_NIL, TPE, RIGHT_CI_NEXT) \
 {\
@@ -116,7 +116,7 @@ MOSjoin_COUI_SIGNATURE(NAME, TPE)\
  * and the right (U)ncompressed side in the (I)nner loop.
  */
 #define MOSjoin_generic_COUI_DEF(TPE) \
-static str MOSjoin_COUI_##TPE(MOStask task, BAT* r, struct canditer* rci, bool nil_matches)\
+static str MOSjoin_COUI_##TPE(MOStask* task, BAT* r, struct canditer* rci, bool nil_matches)\
 {\
     BAT* r1p = task->lbat;\
     BAT* r2p = task->rbat;\
@@ -262,7 +262,7 @@ static str MOSjoin_COUI_##TPE(MOStask task, BAT* r, struct canditer* rci, bool n
 }
 
 #define MOSjoin_generic_DEF(TPE) \
-static str MOSjoin_##TPE(MOStask task, BAT* l, struct canditer* lci, bool nil_matches)\
+static str MOSjoin_##TPE(MOStask* task, BAT* l, struct canditer* lci, bool nil_matches)\
 {\
     BAT* r1p = task->lbat;\
     BAT* r2p = task->rbat;\
