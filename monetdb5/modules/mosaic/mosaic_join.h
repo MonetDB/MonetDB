@@ -130,13 +130,13 @@ static str MOSjoin_COUI_##TPE(MOStask task, BAT* r, struct canditer* rci, bool n
 			ALGODEBUG mnstr_printf(GDKstdout, "#MOSjoin_COUI_runlength\n");\
 			DO_OPERATION_IF_ALLOWED(join_COUI, runlength, TPE);\
 			break;\
-		case MOSAIC_CAPPED:\
-			ALGODEBUG mnstr_printf(GDKstdout, "#MOSjoin_COUI_capped\n");\
-			DO_OPERATION_IF_ALLOWED(join_COUI, capped, TPE);\
+		case MOSAIC_DICT256:\
+			ALGODEBUG mnstr_printf(GDKstdout, "#MOSjoin_COUI_dict256\n");\
+			DO_OPERATION_IF_ALLOWED(join_COUI, dict256, TPE);\
 			break;\
-		case MOSAIC_VAR:\
-			ALGODEBUG mnstr_printf(GDKstdout, "#MOSjoin_COUI_var\n");\
-			DO_OPERATION_IF_ALLOWED(join_COUI, var, TPE);\
+		case MOSAIC_DICT:\
+			ALGODEBUG mnstr_printf(GDKstdout, "#MOSjoin_COUI_dict\n");\
+			DO_OPERATION_IF_ALLOWED(join_COUI, dict, TPE);\
 			break;\
 		case MOSAIC_FRAME:\
 			ALGODEBUG mnstr_printf(GDKstdout, "#MOSjoin_COUI_frame\n");\
@@ -214,13 +214,13 @@ static str MOSjoin_COUI_##TPE(MOStask task, BAT* r, struct canditer* rci, bool n
 				ALGODEBUG mnstr_printf(GDKstdout, "#MOSjoin_runlength\n");\
 				DO_OPERATION_IF_ALLOWED_VARIADIC(join_inner_loop, runlength, TPE, HAS_NIL, RIGHT_CI_NEXT);\
 				break;\
-			case MOSAIC_CAPPED:\
-				ALGODEBUG mnstr_printf(GDKstdout, "#MOSjoin_capped\n");\
-				DO_OPERATION_IF_ALLOWED_VARIADIC(join_inner_loop, capped, TPE, HAS_NIL, RIGHT_CI_NEXT);\
+			case MOSAIC_DICT256:\
+				ALGODEBUG mnstr_printf(GDKstdout, "#MOSjoin_dict256\n");\
+				DO_OPERATION_IF_ALLOWED_VARIADIC(join_inner_loop, dict256, TPE, HAS_NIL, RIGHT_CI_NEXT);\
 				break;\
-			case MOSAIC_VAR:\
-				ALGODEBUG mnstr_printf(GDKstdout, "#MOSjoin_var\n");\
-				DO_OPERATION_IF_ALLOWED_VARIADIC(join_inner_loop, var, TPE, HAS_NIL, RIGHT_CI_NEXT);\
+			case MOSAIC_DICT:\
+				ALGODEBUG mnstr_printf(GDKstdout, "#MOSjoin_dict\n");\
+				DO_OPERATION_IF_ALLOWED_VARIADIC(join_inner_loop, dict, TPE, HAS_NIL, RIGHT_CI_NEXT);\
 				break;\
 			case MOSAIC_FRAME:\
 				ALGODEBUG mnstr_printf(GDKstdout, "#MOSjoin_frame\n");\

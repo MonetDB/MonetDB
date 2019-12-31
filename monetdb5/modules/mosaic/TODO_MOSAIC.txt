@@ -1,5 +1,4 @@
 ####technical depth####
-Rename 'capped' and 'var' to 'dict256' and 'dict' respectively.
 Fix/check/test MOSlayout.
 Add negative values to tests
 Add test for huge

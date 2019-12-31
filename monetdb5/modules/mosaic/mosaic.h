@@ -28,10 +28,10 @@
 /* do not invest in compressing BATs smaller than this */
 #define MOSAIC_THRESHOLD 1
 
-#define MOSAIC_RAW		raw		// no compression at all
-#define MOSAIC_RLE      runlength		// use run-length encoding
-#define MOSAIC_CAPPED   capped		// capped global dictionary encoding
-#define MOSAIC_VAR      var		// variable global dictionary encoding
+#define MOSAIC_RAW		raw			// no compression at all
+#define MOSAIC_RLE      runlength	// use run-length encoding
+#define MOSAIC_DICT256	dict256		// dict256 global dictionary encoding
+#define MOSAIC_DICT     dict		// variable global dictionary encoding
 #define MOSAIC_DELTA	delta		// use delta encoding
 #define MOSAIC_LINEAR 	linear		// use an encoding for a linear sequence
 #define MOSAIC_FRAME	frame		// delta dictionary for frame of reference value
@@ -40,8 +40,8 @@
 typedef enum {
 	MOSAIC_RAW = 0,
 	MOSAIC_RLE,
-	MOSAIC_CAPPED,
-	MOSAIC_VAR,
+	MOSAIC_DICT256,
+	MOSAIC_DICT,
 	MOSAIC_DELTA,
 	MOSAIC_LINEAR,
 	MOSAIC_FRAME,
@@ -107,15 +107,15 @@ typedef struct MOSAICHEADER{
 	 */
 	lng blks[MOSAIC_METHODS]; // number of blks per method.
 	lng elms[MOSAIC_METHODS]; // number of compressed values in all blocks for this method.
-	/* The var(iable sized) and capped dictionary compression MOSmethods are the only
-	 * compression MOSmethods that have global properties which are stored in mosaic global header.
+	/* The variable sized 'dict' and capped 'dict256' dictionary compression methods are the only
+	 * compression methods that have global properties which are stored in mosaic global header.
 	 */
-	bte bits_var;
-	BUN pos_var;
-	BUN length_var;
-	bte bits_capped;
-	BUN pos_capped;
-	BUN length_capped;
+	bte bits_dict;
+	BUN pos_dict;
+	BUN length_dict;
+	bte bits_dict256;
+	BUN pos_dict256;
+	BUN length_dict256;
 } * MosaicHdr;
 
 /* Each compressed block comes with a small header.
@@ -161,8 +161,8 @@ typedef struct MOSTASK{
 
 	MosaicHdr hdr;	// header block with index/synopsis information
 	MosaicBlk blk;	// current block header in scan
-	GlobalVarInfo* var_info;
-	GlobalCappedInfo* capped_info;
+	GlobalVarInfo* dict_info;
+	GlobalCappedInfo* dict256_info;
 	char 	 *dst;		// write pointer into current compressed blocks
 	oid 	start;		// oid of first element in current blk
 	oid		stop;		// last oid of range to be scanned
@@ -194,12 +194,12 @@ typedef struct _MosaicEstimation {
 	MosaicBlkRec compression_strategy;
 	bool is_applicable;
 	bool must_be_merged_with_previous;
-	BUN nr_var_encoded_elements;
-	BUN nr_var_encoded_blocks;
-	BUN* var_limit;
-	BUN* capped_limit;
-	BUN nr_capped_encoded_elements;
-	BUN nr_capped_encoded_blocks;
+	BUN nr_dict_encoded_elements;
+	BUN nr_dict_encoded_blocks;
+	BUN* dict_limit;
+	BUN* dict256_limit;
+	BUN nr_dict256_encoded_elements;
+	BUN nr_dict256_encoded_blocks;
 	BUN* max_compression_length;
 } MosaicEstimation;
 

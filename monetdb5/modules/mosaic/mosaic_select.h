@@ -209,13 +209,13 @@ MOStask task, void* low, void* hgh, bit* li, bit* hi, bit* anti)\
 			ALGODEBUG mnstr_printf(GDKstdout, "#MOSselect_runlength\n");\
 			DO_OPERATION_IF_ALLOWED(select, runlength, TPE);\
 			break;\
-		case MOSAIC_CAPPED:\
-			ALGODEBUG mnstr_printf(GDKstdout, "#MOSselect_capped\n");\
-			DO_OPERATION_IF_ALLOWED(select, capped, TPE);\
+		case MOSAIC_DICT256:\
+			ALGODEBUG mnstr_printf(GDKstdout, "#MOSselect_dict256\n");\
+			DO_OPERATION_IF_ALLOWED(select, dict256, TPE);\
 			break;\
-		case MOSAIC_VAR:\
+		case MOSAIC_DICT:\
 			ALGODEBUG mnstr_printf(GDKstdout, "#MOSselect_var\n");\
-			DO_OPERATION_IF_ALLOWED(select, var, TPE);\
+			DO_OPERATION_IF_ALLOWED(select, dict, TPE);\
 			break;\
 		case MOSAIC_FRAME:\
 			ALGODEBUG mnstr_printf(GDKstdout, "#MOSselect_frame\n");\

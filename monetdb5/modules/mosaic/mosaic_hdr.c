@@ -44,12 +44,12 @@ MOSinitHeader(MOStask task)
 	hdr->ratio = 0;
 	hdr->version = MOSAIC_VERSION;
 	hdr->top = 0;
-	hdr->bits_var = 0;
-	hdr->pos_var = 0;
-	hdr->length_var = 0;
-	hdr->bits_capped = 0;
-	hdr->pos_capped = 0;
-	hdr->length_capped = 0;
+	hdr->bits_dict = 0;
+	hdr->pos_dict = 0;
+	hdr->length_dict = 0;
+	hdr->bits_dict256 = 0;
+	hdr->pos_dict256 = 0;
+	hdr->length_dict256 = 0;
 }
 
 // position the task on the mosaic blk to be scanned

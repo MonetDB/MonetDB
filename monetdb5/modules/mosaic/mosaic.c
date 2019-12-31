@@ -17,8 +17,8 @@
 #include "mosaic_hdr.h"
 #include "mosaic_raw.h"
 #include "mosaic_runlength.h"
-#include "mosaic_capped.h"
-#include "mosaic_var.h"
+#include "mosaic_dict256.h"
+#include "mosaic_dict.h"
 #include "mosaic_delta.h"
 #include "mosaic_linear.h"
 #include "mosaic_frame.h"
@@ -33,8 +33,8 @@
 const Method MOSmethods[] = {
 	DEFINE_METHOD(raw),
 	DEFINE_METHOD(runlength),
-	DEFINE_METHOD(capped),
-	DEFINE_METHOD(var),
+	DEFINE_METHOD(dict256),
+	DEFINE_METHOD(dict),
 	DEFINE_METHOD(delta),
 	DEFINE_METHOD(linear),
 	DEFINE_METHOD(frame),
@@ -49,8 +49,8 @@ bit MOSisTypeAllowed(char compression, BAT* b) {
 	switch (compression) {
 	case raw:		return MOStypes_raw(b);
 	case runlength:	return MOStypes_runlength(b);
-	case capped:	return MOStypes_capped(b);
-	case var:		return MOStypes_var(b);
+	case dict256:	return MOStypes_dict256(b);
+	case dict:		return MOStypes_dict(b);
 	case delta:		return MOStypes_delta(b);
 	case linear:	return MOStypes_linear(b);
 	case frame:		return MOStypes_frame(b);
@@ -62,7 +62,7 @@ bit MOSisTypeAllowed(char compression, BAT* b) {
 }
 
 static void
-construct_compression_mask(sht* compression_mask, char* compressions) {
+_construct_compression_mask(sht* compression_mask, char* compressions) {
 	if (GDK_STRNIL(compressions)) {
 		*compression_mask = ~0;
 		return;
@@ -71,13 +71,13 @@ construct_compression_mask(sht* compression_mask, char* compressions) {
 	*compression_mask = 0;
 
 	char* _dict256;
-	/* The capped dictionary technique 'capped' has to be processed upfront
+	/* The dict256 dictionary technique 'dict256' has to be processed upfront
 	 * to prevent search collision with the variable dictionary technique 'dict'.
 	 */
-	while ( (_dict256 = strstr(compressions, MOSmethods[capped].name)) ) {
-		strncpy (_dict256,"______", 6);
+	while ( (_dict256 = strstr(compressions, MOSmethods[dict256].name)) ) {
+		strncpy (_dict256,"_______", 7);
 
-		*compression_mask |= MOSmethods[capped].bit;
+		*compression_mask |= MOSmethods[dict256].bit;
 	}
 
 	for(unsigned i = 0; i< MOSAIC_METHODS; i++) {
@@ -87,26 +87,41 @@ construct_compression_mask(sht* compression_mask, char* compressions) {
 	}
 }
 
-static bool
-initialize_filter(MOStask task) {
+static str
+construct_compression_mask(MOStask task, const char* compressions) {
 
-	bool is_not_compressible = true;
+	char* copy = NULL;
+	if (compressions) {
+		copy = GDKzalloc(strlen(compressions)+1);
+		strcpy(copy, compressions);
+		if (copy == NULL) {
+			throw(MAL, "mosaic.construct_compression_mask", MAL_MALLOC_FAIL);
+		}
+	}
+
+	sht compression_mask;
+	_construct_compression_mask(&compression_mask, copy);
+
+	if (copy) {
+		GDKfree(copy);
+	}
+
+	task->mask = compression_mask;
+
+	bool type_is_allowed = false;
 
 	for(unsigned i = 0; i< MOSAIC_METHODS; i++) {
 		if ( METHOD_IS_SET(task->mask, i) && MOSisTypeAllowed(i, task->bsrc) ) {
 			task->hdr->elms[i] = task->hdr->blks[i] = 0;
-			is_not_compressible = false;
+			type_is_allowed = true;
 		}
 	}
 
-	return is_not_compressible;
-}
+	if (!type_is_allowed) {
+		throw(MAL, "mosaic.construct_compression_mask", "No valid compression technique given or available for type: %s", ATOMname(task->type));
+	}
 
-static bool
-MOSinitializeFilter(MOStask task, const sht compression_mask) {
-	task->mask = compression_mask;
-
-	return initialize_filter(task);
+	return MAL_SUCCEED;
 }
 
 static void
@@ -124,8 +139,8 @@ MOSinit(MOStask task, BAT *b) {
 	base += MosaicHdrSize;
 	task->blk = (MosaicBlk)  base;
 	task->dst = MOScodevector(task);
-	task->capped_info = NULL;
-	task->var_info = NULL;
+	task->dict256_info = NULL;
+	task->dict_info = NULL;
 	task->padding = NULL;
 }
 
@@ -172,10 +187,10 @@ MOSlayout(BAT *b, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bprop
 			BUNappend(bproperties, "", false) != GDK_SUCCEED)
 				throw(MAL,"mosaic.layout", MAL_MALLOC_FAIL);
 	}
-	if( task->hdr->blks[MOSAIC_CAPPED])
-		MOSlayout_capped_hdr(task,btech,bcount,binput,boutput,bproperties);
-	if( task->hdr->blks[MOSAIC_VAR])
-		MOSlayout_var_hdr(task,btech,bcount,binput,boutput,bproperties);
+	if( task->hdr->blks[MOSAIC_DICT256])
+		MOSlayout_dict256_hdr(task,btech,bcount,binput,boutput,bproperties);
+	if( task->hdr->blks[MOSAIC_DICT])
+		MOSlayout_dict_hdr(task,btech,bcount,binput,boutput,bproperties);
 
 	if( BUNappend(btech, "========", false) != GDK_SUCCEED ||
 		BUNappend(bcount, &zero, false) != GDK_SUCCEED ||
@@ -197,15 +212,15 @@ MOSlayout(BAT *b, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bprop
 			MOSlayout_runlength(task,btech,bcount,binput,boutput,bproperties);
 			MOSadvance_runlength(task);
 			break;
-		case MOSAIC_CAPPED:
-			ALGODEBUG mnstr_printf(GDKstdout, "#MOSlayout_capped\n");
-			MOSlayout_capped(task,btech,bcount,binput,boutput,bproperties);
-			MOSadvance_capped(task);
+		case MOSAIC_DICT256:
+			ALGODEBUG mnstr_printf(GDKstdout, "#MOSlayout_dict256\n");
+			MOSlayout_dict256(task,btech,bcount,binput,boutput,bproperties);
+			MOSadvance_dict256(task);
 			break;
-		case MOSAIC_VAR:
-			ALGODEBUG mnstr_printf(GDKstdout, "#MOSlayout_var\n");
-			MOSlayout_var(task,btech,bcount,binput,boutput,bproperties);
-			MOSadvance_var(task);
+		case MOSAIC_DICT:
+			ALGODEBUG mnstr_printf(GDKstdout, "#MOSlayout_dict\n");
+			MOSlayout_dict(task,btech,bcount,binput,boutput,bproperties);
+			MOSadvance_dict(task);
 			break;
 		case MOSAIC_DELTA:
 			ALGODEBUG mnstr_printf(GDKstdout, "#MOSlayout_delta\n");
@@ -261,14 +276,14 @@ static str
 MOSprepareEstimate(MOStask task) {
 
 	str error;
-	if (METHOD_IS_SET(task->mask, MOSAIC_CAPPED)){
-		if ( (error = MOSprepareEstimate_capped(task))) {
+	if (METHOD_IS_SET(task->mask, MOSAIC_DICT256)){
+		if ( (error = MOSprepareEstimate_dict256(task))) {
 			return error;
 		}
 	}
 
-	if (METHOD_IS_SET(task->mask, MOSAIC_VAR)){
-		if ( (error = MOSprepareEstimate_var(task))) {
+	if (METHOD_IS_SET(task->mask, MOSAIC_DICT)){
+		if ( (error = MOSprepareEstimate_dict(task))) {
 			return error;
 		}
 	}
@@ -296,12 +311,12 @@ static str MOSestimate_inner_##TPE(MOStask task, MosaicEstimation* current, cons
 		estimations[i].uncompressed_size = previous->uncompressed_size;\
 		estimations[i].compressed_size = previous->compressed_size;\
 		estimations[i].compression_strategy = previous->compression_strategy;\
-		estimations[i].nr_var_encoded_blocks = previous->nr_var_encoded_blocks;\
-		estimations[i].nr_var_encoded_elements = previous->nr_var_encoded_elements;\
-		estimations[i].nr_capped_encoded_elements = previous->nr_capped_encoded_elements;\
-		estimations[i].nr_capped_encoded_blocks = previous->nr_capped_encoded_blocks;\
-		estimations[i].var_limit = previous->var_limit;\
-		estimations[i].capped_limit = previous->capped_limit;\
+		estimations[i].nr_dict_encoded_blocks = previous->nr_dict_encoded_blocks;\
+		estimations[i].nr_dict_encoded_elements = previous->nr_dict_encoded_elements;\
+		estimations[i].nr_dict256_encoded_elements = previous->nr_dict256_encoded_elements;\
+		estimations[i].nr_dict256_encoded_blocks = previous->nr_dict256_encoded_blocks;\
+		estimations[i].dict_limit = previous->dict_limit;\
+		estimations[i].dict256_limit = previous->dict256_limit;\
 		estimations[i].must_be_merged_with_previous = false;\
 		estimations[i].is_applicable = false;\
 		estimations[i].max_compression_length = &max_compression_length;\
@@ -323,11 +338,11 @@ static str MOSestimate_inner_##TPE(MOStask task, MosaicEstimation* current, cons
 	if (METHOD_IS_SET(task->mask, MOSAIC_PREFIX))	{\
 		DO_OPERATION_IF_ALLOWED_VARIADIC(estimate, prefix, TPE, MOSAIC_PREFIX);\
 	}\
-	if (METHOD_IS_SET(task->mask, MOSAIC_CAPPED))	{\
-		DO_OPERATION_IF_ALLOWED_VARIADIC(estimate, capped, TPE, MOSAIC_CAPPED);\
+	if (METHOD_IS_SET(task->mask, MOSAIC_DICT256))	{\
+		DO_OPERATION_IF_ALLOWED_VARIADIC(estimate, dict256, TPE, MOSAIC_DICT256);\
 	}\
-	if (METHOD_IS_SET(task->mask, MOSAIC_VAR))		{\
-		DO_OPERATION_IF_ALLOWED_VARIADIC(estimate, var,	TPE, MOSAIC_VAR);\
+	if (METHOD_IS_SET(task->mask, MOSAIC_DICT))		{\
+		DO_OPERATION_IF_ALLOWED_VARIADIC(estimate, dict,	TPE, MOSAIC_DICT);\
 	}\
 	if (METHOD_IS_SET(task->mask, MOSAIC_RAW))		{\
 		DO_OPERATION_IF_ALLOWED_VARIADIC(estimate, raw,	TPE, MOSAIC_RAW);\
@@ -349,8 +364,8 @@ static str MOSestimate_inner_##TPE(MOStask task, MosaicEstimation* current, cons
 \
 	if (current->compression_strategy.tag == MOSAIC_RAW)	DO_OPERATION_IF_ALLOWED(postEstimate, raw, TPE);\
 	if (current->compression_strategy.tag == MOSAIC_RLE)	DO_OPERATION_IF_ALLOWED(postEstimate, runlength, TPE);\
-	if (current->compression_strategy.tag == MOSAIC_CAPPED)	DO_OPERATION_IF_ALLOWED(postEstimate, capped, TPE);\
-	if (current->compression_strategy.tag == MOSAIC_VAR)	DO_OPERATION_IF_ALLOWED(postEstimate, var, TPE);\
+	if (current->compression_strategy.tag == MOSAIC_DICT256)	DO_OPERATION_IF_ALLOWED(postEstimate, dict256, TPE);\
+	if (current->compression_strategy.tag == MOSAIC_DICT)	DO_OPERATION_IF_ALLOWED(postEstimate, dict, TPE);\
 	if (current->compression_strategy.tag == MOSAIC_DELTA)	DO_OPERATION_IF_ALLOWED(postEstimate, delta, TPE);\
 	if (current->compression_strategy.tag == MOSAIC_LINEAR)	DO_OPERATION_IF_ALLOWED(postEstimate, linear, TPE);\
 	if (current->compression_strategy.tag == MOSAIC_FRAME)	DO_OPERATION_IF_ALLOWED(postEstimate, frame, TPE);\
@@ -364,19 +379,19 @@ static str MOSestimate_##TPE(MOStask task, BAT* estimates, size_t* compressed_si
 	*compressed_size = 0;\
 \
 \
-	BUN var_limit = 0;\
-	BUN capped_limit = 0;\
+	BUN dict_limit = 0;\
+	BUN dict256_limit = 0;\
 	MosaicEstimation previous = {\
 		.is_applicable = false,\
 		.uncompressed_size = 0,\
 		.previous_compressed_size = 0,\
 		.compressed_size = 0,\
-		.nr_var_encoded_elements = 0,\
-		.nr_var_encoded_blocks = 0,\
-		.capped_limit = &capped_limit,\
-		.var_limit = &var_limit,\
-		.nr_capped_encoded_elements = 0,\
-		.nr_capped_encoded_blocks = 0,\
+		.nr_dict_encoded_elements = 0,\
+		.nr_dict_encoded_blocks = 0,\
+		.dict256_limit = &dict256_limit,\
+		.dict_limit = &dict_limit,\
+		.nr_dict256_encoded_elements = 0,\
+		.nr_dict256_encoded_blocks = 0,\
 		.compression_strategy = {.cnt = 0},\
 		.must_be_merged_with_previous = false\
 	};\
@@ -449,13 +464,13 @@ MOSfinalizeDictionary(MOStask task) {
 
 	str error;
 
-	if (METHOD_IS_SET(task->mask, MOSAIC_VAR)) {
-		if ((error = finalizeDictionary_var(task))) {
+	if (METHOD_IS_SET(task->mask, MOSAIC_DICT)) {
+		if ((error = finalizeDictionary_dict(task))) {
 			return error;
 		}
 	}
-	if (METHOD_IS_SET(task->mask, MOSAIC_CAPPED)) {
-		if ((error = finalizeDictionary_capped(task))) {
+	if (METHOD_IS_SET(task->mask, MOSAIC_DICT256)) {
+		if ((error = finalizeDictionary_dict256(task))) {
 			return error;
 		}
 	}
@@ -487,11 +502,11 @@ MOScompressInternal_##TPE(MOStask task, BAT* estimates)\
 		case MOSAIC_RLE:\
 			DO_OPERATION_IF_ALLOWED(compress, runlength, TPE);\
 			break;\
-		case MOSAIC_CAPPED:\
-			DO_OPERATION_IF_ALLOWED(compress, capped, TPE);\
+		case MOSAIC_DICT256:\
+			DO_OPERATION_IF_ALLOWED(compress, dict256, TPE);\
 			break;\
-		case MOSAIC_VAR:\
-			DO_OPERATION_IF_ALLOWED(compress, var, TPE);\
+		case MOSAIC_DICT:\
+			DO_OPERATION_IF_ALLOWED(compress, dict, TPE);\
 			break;\
 		case MOSAIC_DELTA:\
 			DO_OPERATION_IF_ALLOWED(compress, delta, TPE);\
@@ -572,27 +587,9 @@ MOScompressInternal(BAT* bsrc, const char* compressions)
 	task->blk->cnt= 0;
 	MOSinitHeader(task);
 
-	char* copy = NULL;
-	
-	if (compressions) {
-		copy = GDKzalloc(strlen(compressions)+1);
-		strcpy(copy, compressions);
-		if (copy == NULL) {
+	if ( (msg = construct_compression_mask(task, compressions)) != MAL_SUCCEED) {
 			MOSdestroy(bsrc);
-			throw(MAL, "mosaic.compress", MAL_MALLOC_FAIL);
-		}
-	}
-	sht compression_mask;
-	construct_compression_mask(&compression_mask, copy);
-
-	if (copy) {
-		GDKfree(copy);
-	}
-
-	if (MOSinitializeFilter(task, compression_mask)) {
-		msg = createException(MAL, "mosaic.compress", "No valid compression technique given or available for type: %s", ATOMname(task->type));
-		MOSdestroy(bsrc);
-		goto finalize;
+			goto finalize;
 	}
 
 	// Zero pass: estimation preparation phase
@@ -719,11 +716,11 @@ static void MOSdecompressInternal_##TPE(MOStask task)\
 		case MOSAIC_RLE:\
 			DO_OPERATION_IF_ALLOWED(decompress, runlength, TPE);\
 			break;\
-		case MOSAIC_CAPPED:\
-			DO_OPERATION_IF_ALLOWED(decompress, capped, TPE);\
+		case MOSAIC_DICT256:\
+			DO_OPERATION_IF_ALLOWED(decompress, dict256, TPE);\
 			break;\
-		case MOSAIC_VAR:\
-			DO_OPERATION_IF_ALLOWED(decompress, var, TPE);\
+		case MOSAIC_DICT:\
+			DO_OPERATION_IF_ALLOWED(decompress, dict, TPE);\
 			break;\
 		case MOSAIC_DELTA:\
 			DO_OPERATION_IF_ALLOWED(decompress, delta, TPE);\
@@ -1409,7 +1406,7 @@ makepatterns(uint16_t *patterns, int size, str compressions, BAT* b)
 	// int candidate[MOSAIC_METHODS]= {0};
 	sht compression_mask = 0;
 
-	construct_compression_mask(&compression_mask, compressions);
+	_construct_compression_mask(&compression_mask, compressions);
 
 	for(unsigned i = 0; i< MOSAIC_METHODS; i++) {
 		if ( METHOD_IS_SET(compression_mask, i) && !MOSisTypeAllowed(i, b) ) {

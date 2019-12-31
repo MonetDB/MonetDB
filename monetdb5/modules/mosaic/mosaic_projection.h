@@ -74,13 +74,13 @@ static str MOSprojection_##TPE(MOStask task)\
 			ALGODEBUG mnstr_printf(GDKstdout, "#MOSprojection_runlength\n");\
 			DO_OPERATION_IF_ALLOWED(projection, runlength, TPE);\
 			break;\
-		case MOSAIC_CAPPED:\
-			ALGODEBUG mnstr_printf(GDKstdout, "#MOSprojection_capped\n");\
-			DO_OPERATION_IF_ALLOWED(projection, capped, TPE);\
+		case MOSAIC_DICT256:\
+			ALGODEBUG mnstr_printf(GDKstdout, "#MOSprojection_dict256\n");\
+			DO_OPERATION_IF_ALLOWED(projection, dict256, TPE);\
 			break;\
-		case MOSAIC_VAR:\
+		case MOSAIC_DICT:\
 			ALGODEBUG mnstr_printf(GDKstdout, "#MOSprojection_var\n");\
-			DO_OPERATION_IF_ALLOWED(projection, var, TPE);\
+			DO_OPERATION_IF_ALLOWED(projection, dict, TPE);\
 			break;\
 		case MOSAIC_FRAME:\
 			ALGODEBUG mnstr_printf(GDKstdout, "#MOSprojection_frame\n");\

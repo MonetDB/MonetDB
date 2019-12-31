@@ -22,7 +22,7 @@ select technique, factor from mosaic.analysis('sys', 'tmp4', 'i', 'linear, runle
 
 set optimizer='mosaic_pipe';
 
-alter table tmp4 alter column i set storage 'var';
+alter table tmp4 alter column i set storage 'dict';
 
 select technique, factor from mosaic.analysis('sys', 'tmp4', 'i') order by factor desc, technique;
 
