@@ -105,7 +105,7 @@ MOSjoin_COUI_SIGNATURE(NAME, TPE)\
 	return MAL_SUCCEED;\
 }
 
-#define do_join_COUI(NAME, TPE, DUMMY_ARGUMENT)\
+#define join_COUI(NAME, TPE, DUMMY_ARGUMENT)\
 {\
 	str msg = MOSjoin_COUI_##NAME##_##TPE(r1p, r2p, task, r, rci, nil_matches);\
 	if (msg != MAL_SUCCEED) return msg;\
@@ -175,7 +175,7 @@ static str MOSjoin_COUI_##TPE(MOStask task, BAT* r, struct canditer* rci, bool n
  * and the right compressed side in the inner loop.
  */
 
-#define do_join_inner_loop(NAME, TPE, HAS_NIL, RIGHT_CI_NEXT)\
+#define join_inner_loop(NAME, TPE, HAS_NIL, RIGHT_CI_NEXT)\
 {\
 	join_inner_loop_##NAME(TPE, HAS_NIL, RIGHT_CI_NEXT);\
 	MOSadvance_##NAME##_##TPE(task);\

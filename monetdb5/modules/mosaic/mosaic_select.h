@@ -187,7 +187,7 @@ MOSselect_SIGNATURE(NAME, TPE) {\
 	return MAL_SUCCEED;\
 }
 
-#define do_select(NAME, TPE, DUMMY_ARGUMENT)\
+#define select(NAME, TPE, DUMMY_ARGUMENT)\
 {\
     MOSselect_##NAME##_##TPE(\
         task,\

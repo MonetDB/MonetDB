@@ -20,7 +20,6 @@ Find a more 'generic' model to estimate and explore compression space perhaps Mo
 Create a plug-in estimation model framework.
 
 ####code issues####
-# Improve macro code style: remove do_ from do_OPERATION-like macro's, NAME -> TECHNIQUE, small caps technique identifier -> CAPITAL CAPS technique identifier.
 See if the iteration algorithms can be improved.
 Get rid of (most of) MOStask and/or don't allocate it on the heap.
 Make sure the parameters.bits fields are always char.

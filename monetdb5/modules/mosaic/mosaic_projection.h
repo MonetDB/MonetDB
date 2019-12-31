@@ -59,7 +59,7 @@ MOSprojection_SIGNATURE(NAME, TPE)\
 	return MAL_SUCCEED;\
 }
 
-#define do_projection(NAME, TPE, DUMMY_ARGUMENT)\
+#define projection(NAME, TPE, DUMMY_ARGUMENT)\
 {\
 	MOSprojection_##NAME##_##TPE(task);\
 	MOSadvance_##NAME##_##TPE(task);\

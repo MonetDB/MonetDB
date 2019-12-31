@@ -292,13 +292,13 @@ MOSprepareEstimate(MOStask task) {
 }
 
 
-#define do_estimate(NAME, TPE, NAME_TAG)\
+#define estimate(NAME, TPE, NAME_TAG)\
 {\
 	str msg = MOSestimate_##NAME##_##TPE(task, &estimations[NAME_TAG], previous);\
 	if (msg != MAL_SUCCEED) return msg;\
 }
 
-#define do_postEstimate(NAME, TPE, DUMMY_ARGUMENT) MOSpostEstimate_##NAME##_##TPE(task);
+#define postEstimate(NAME, TPE, DUMMY_ARGUMENT) MOSpostEstimate_##NAME##_##TPE(task);
 
 #define MOSestimate_AND_MOSoptimizerCost_DEF(TPE) \
 static str MOSestimate_inner_##TPE(MOStask task, MosaicEstimation* current, const MosaicEstimation* previous) {\
@@ -479,7 +479,7 @@ MOSfinalizeDictionary(MOStask task) {
 }
 
 
-#define do_compress(NAME, TPE, DUMMY_ARGUMENT)\
+#define compress(NAME, TPE, DUMMY_ARGUMENT)\
 {\
 	ALGODEBUG mnstr_printf(GDKstdout, "#MOScompress_" #NAME "\n");\
 	MOScompress_##NAME##_##TPE(task, estimate);\
@@ -698,7 +698,7 @@ MOScompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 
-#define do_decompress(NAME, TPE, DUMMY_ARGUMENT)\
+#define decompress(NAME, TPE, DUMMY_ARGUMENT)\
 {\
 	ALGODEBUG mnstr_printf(GDKstdout, "#MOSdecompress_" #NAME "\n");\
 	MOSdecompress_##NAME##_##TPE(task);\
