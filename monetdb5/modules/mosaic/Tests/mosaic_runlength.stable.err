@@ -243,8 +243,7 @@ QUERY = # OID list compressions
         mosaic.compress(s);
         s:= mosaic.decompress(s);
         io.print(s);
-ERROR = !MALException:mosaic.compress:No valid compression technique given or available for type: str
-
+ERROR = !MALException:mosaic.construct_compression_mask:No valid compression technique given or available for type: str
 
 
 # 16:49:24 >  
