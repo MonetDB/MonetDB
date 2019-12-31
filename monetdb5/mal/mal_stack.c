@@ -59,7 +59,7 @@ newGlobalStack(int size)
 {
 	MalStkPtr s;
 
-	s = (MalStkPtr) GDKzalloc(stackSize(size) + offsetof(MalStack, stk));
+	s = (MalStkPtr) GDKzalloc(stackSize(size));
 	if (!s)
 		return NULL;
 	s->stksize = size;
@@ -108,9 +108,8 @@ clearStack(MalStkPtr s)
 
 	if (!s) return;
 	
-	i = s->stktop;
-
-	for (v = s->stk; i >= 0; i--, v++)
+	i = s->stktop - 1;
+	for (v = s->stk; i > 0; i--, v++)
 		if (ATOMextern(v->vtype) && v->val.pval) {
 			GDKfree(v->val.pval);
 			v->vtype = 0;

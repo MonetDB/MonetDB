@@ -257,11 +257,8 @@ prepareMALstack(MalBlkPtr mb, int size)
 	ValPtr lhs, rhs;
 
 	stk = newGlobalStack(size);
-	if (!stk) {
+	if (!stk)
 		return NULL;
-	}
-	//memset((char *)stk, 0, stackSize(size)); already set
-	//stk->stksize = size;
 	stk->stktop = mb->vtop;
 	stk->blk = mb;
 	stk->workers = 0;
