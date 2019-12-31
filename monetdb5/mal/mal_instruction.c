@@ -489,7 +489,7 @@ newInstruction(MalBlkPtr mb, str modnme, str fcnnme)
 InstrPtr
 copyInstruction(InstrPtr p)
 {
-	InstrPtr new = (InstrPtr) GDKmalloc(offsetof(InstrRecord, argv) + p->maxarg * sizeof(p->maxarg));
+	InstrPtr new = (InstrPtr) GDKmalloc(offsetof(InstrRecord, argv) + p->maxarg * sizeof(p->argv[0]));
 	if(new == NULL) 
 		return new;
 	oldmoveInstruction(new, p);
@@ -1077,6 +1077,7 @@ defConstant(MalBlkPtr mb, int type, ValPtr cst)
 			GDKfree(ft);
 			GDKfree(tt);
 			freeException(msg);
+			return -1;
 		} else {
 			assert(cst->vtype == type);
 		}
@@ -1112,7 +1113,8 @@ static InstrPtr
 extendInstruction(MalBlkPtr mb, InstrPtr p)
 {
 	InstrPtr pn = p;
-	if (p->argc + 1 == p->maxarg) {
+
+	if (p->argc == p->maxarg) {
 		int space = p->maxarg * sizeof(p->argv[0]) + offsetof(InstrRecord, argv);
 		pn = (InstrPtr) GDKrealloc(p,space + MAXARG * sizeof(p->argv[0]));
 
@@ -1134,6 +1136,7 @@ InstrPtr
 pushArgument(MalBlkPtr mb, InstrPtr p, int varid)
 {
 	InstrPtr pn;
+
 	if (p == NULL)
 		return NULL;
 	if (varid < 0) {
@@ -1141,34 +1144,27 @@ pushArgument(MalBlkPtr mb, InstrPtr p, int varid)
 		mb->errors = createMalException(mb, 0, TYPE,"improper variable id");
 		return p;
 	}
-
-	if (p->argc + 1 == p->maxarg) {
-		int i = 0;
+	if (p->argc == p->maxarg) {
 		pn = extendInstruction(mb, p);
-		if ( mb->errors)
+		if (mb->errors)
 			return p;
 
 		/* if the instruction is already stored in the MAL block
 		 * it should be replaced by an extended version.
 		 */
-		if( p != pn)
-			for (i = mb->stop - 1; i >= 0; i--)
+		if (p != pn) {
+			for (int i = mb->stop - 1; i >= 0; i--)
 				if (mb->stmt[i] == p) {
 					mb->stmt[i] =  pn;
 					break;
 				}
-
+		}
 		p = pn;
-		/* we have to keep track on the maximal arguments/block
-		 * because it is needed by the interpreter */
-		if (mb->maxarg < pn->maxarg)
-			mb->maxarg = pn->maxarg;
 	}
 	/* protect against the case that the instruction is malloced
 	 * in isolation */
 	if( mb->maxarg < p->maxarg)
 		mb->maxarg= p->maxarg;
-
 	p->argv[p->argc++] = varid;
 	return p;
 }
@@ -1191,10 +1187,15 @@ addArgument(MalBlkPtr mb, InstrPtr p, int varid)
 		return p;
 	}
 
-	if (p->argc + 1 == p->maxarg) {
+	if (p->argc == p->maxarg) {
 		pn = extendInstruction(mb, p);
 		if ( mb->errors)
 			return p;
+#ifndef NDEBUG
+               if( p != pn)
+                       for (int i = mb->stop - 1; i >= 0; i--)
+                               assert(mb->stmt[i] != p);
+#endif
 		p = pn;
 	}
 	/* protect against the case that the instruction is malloced in isolation */

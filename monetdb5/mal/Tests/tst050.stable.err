@@ -43,24 +43,24 @@ QUERY = # Variables names may be tagged with a type upfront.
         end f;
         
         # type resolver should complain on the rest
-        function f();
+        function g();
         j:sht := 1:lng;
-        end f;
-        function f();
+        end g;
+        function h();
         k:lng := 1:sht;
-        end f;
-        function f();
+        end h;
+        function k();
         y:bat[:str]:= bat.new(:int);
-        end f;
-        function f();
-        f:flt := "wrong";
-        end f;
-ERROR = !TypeException:user.f[1]:type mismatch sht := lng
-        !TypeException:user.f[1]:type mismatch lng := sht
-        !TypeException:user.f[1]:'bat.new' undefined in:     y:bat[:str] := bat.new(:int);
-        !TypeException:user.f[1]:type mismatch flt := str
+        end k;
+        function l();
+        l:flt := "wrong";
+        end l;
+ERROR = !TypeException:user.g[1]:type mismatch sht := lng
+        !TypeException:user.h[1]:type mismatch lng := sht
+        !TypeException:user.k[1]:'bat.new' undefined in:     y:bat[:str] := bat.new(:int);
+        !TypeException:user.l[1]:type mismatch flt := str
 
-# 13:48:37 >  
-# 13:48:37 >  "Done."
-# 13:48:37 >  
+# 22:14:56 >  
+# 22:14:56 >  "Done."
+# 22:14:56 >  
 
