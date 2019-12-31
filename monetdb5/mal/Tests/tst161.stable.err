@@ -42,6 +42,7 @@ QUERY = # testing definition of new atom type based on ptr
         z:= mytype.l();
         io.print(z);
 ERROR = !TypeException:mytype.l[0]:constant coercion error from int to mytype
+        !TypeException:mytype.l[0]:improper variable id
 
 # 13:20:34 >  
 # 13:20:34 >  "Done."
