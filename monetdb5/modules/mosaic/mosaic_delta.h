@@ -50,7 +50,7 @@ ALGEBRA_INTERFACES_INTEGERS_ONLY(delta);
 	MOSBlockHeaderTpe(delta, TPE)* parameters = (MOSBlockHeaderTpe(delta, TPE)*) task->blk;\
 	BitVector base = MOScodevectorDelta(task, TPE);\
 	DeltaTpe(TPE) acc = (DeltaTpe(TPE)) parameters->init; /*previous value*/\
-	char bits = parameters->bits;\
+	const bte bits = parameters->bits;\
 	DeltaTpe(TPE) sign_mask = (DeltaTpe(TPE)) ((IPTpe(TPE)) 1) << (bits - 1);\
     TPE rval = (TPE) acc;\
     BUN j = 0;\

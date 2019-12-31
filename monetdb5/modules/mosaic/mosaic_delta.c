@@ -94,7 +94,7 @@ MOSlayout_delta(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput
 #define determineDeltaParameters(PARAMETERS, SRC, LIMIT, TPE) \
 do {\
 	TPE *val = SRC;\
-	int bits = 1;\
+	bte bits = 1;\
 	unsigned int i;\
 	DeltaTpe(TPE) unsigned_delta = 0;\
 	TPE prev_val;\
@@ -111,7 +111,7 @@ do {\
 		}\
 \
 		if (current_unsigned_delta > unsigned_delta) {\
-			int current_bits = bits;\
+			bte current_bits = bits;\
 			while (current_unsigned_delta > ((DeltaTpe(TPE))(-1)) >> (sizeof(DeltaTpe(TPE)) * CHAR_BIT - current_bits) ) {\
 				/*keep track of number of BITS necessary to store the difference*/\
 				current_bits++;\
@@ -247,7 +247,7 @@ MOSdecompress_DEF(hge)
 	MOSBlockHeaderTpe(delta, TPE)* parameters = (MOSBlockHeaderTpe(delta, TPE)*) task->blk;\
 	BitVector base = (BitVector) MOScodevectorDelta(task, TPE);\
 	DeltaTpe(TPE) acc = (DeltaTpe(TPE)) parameters->init; /*previous value*/\
-	int bits = parameters->bits;\
+	const bte bits = parameters->bits;\
 	DeltaTpe(TPE) sign_mask = (DeltaTpe(TPE)) ((IPTpe(TPE)) 1) << (bits - 1);\
     v = (TPE) acc;\
     BUN j = 0;\
@@ -276,7 +276,7 @@ MOSselect_DEF(delta, hge)
 	MOSBlockHeaderTpe(delta, TPE)* parameters = (MOSBlockHeaderTpe(delta, TPE)*) task->blk;\
 	BitVector base = (BitVector) MOScodevectorDelta(task, TPE);\
 	DeltaTpe(TPE) acc = (DeltaTpe(TPE)) parameters->init; /*previous value*/\
-	int bits = parameters->bits;\
+	const bte bits = parameters->bits;\
 	DeltaTpe(TPE) sign_mask = (DeltaTpe(TPE)) ((IPTpe(TPE)) 1) << (bits - 1);\
     TPE v = (TPE) acc;\
     BUN j = 0;\
@@ -304,7 +304,7 @@ MOSprojection_DEF(delta, hge)
 	MOSBlockHeaderTpe(delta, TPE)* parameters = (MOSBlockHeaderTpe(delta, TPE)*) task->blk;\
 	BitVector base = (BitVector) MOScodevectorDelta(task, TPE);\
 	DeltaTpe(TPE) acc = (DeltaTpe(TPE)) parameters->init; /*previous value*/\
-	int bits = parameters->bits;\
+	const bte bits = parameters->bits;\
 	DeltaTpe(TPE) sign_mask = (DeltaTpe(TPE)) ((IPTpe(TPE)) 1) << (bits - 1);\
     TPE lval = (TPE) acc;\
     BUN j = 0;\

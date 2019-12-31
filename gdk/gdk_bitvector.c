@@ -61,7 +61,7 @@ newBitVector(BUN cnt, int width)
 
 // get the bits of cell i 
 int
-getBitVector(BitVector vector, BUN i, int bits)
+getBitVector(BitVector vector, BUN i, const bte bits)
 {
 	BUN cid;
 	unsigned int value = 0, shift, m1;
@@ -93,7 +93,7 @@ getBitVector(BitVector vector, BUN i, int bits)
 
 // set the bits of cell idx to the lower number of bits of the value
 void
-setBitVector(BitVector vector, const BUN i, const int bits, const BitVectorChunk value)
+setBitVector(BitVector vector, const BUN i, const bte bits, const BitVectorChunk value)
 {
 	BUN cid;
 	unsigned int m1,  shift;
@@ -129,14 +129,14 @@ setBitVector(BitVector vector, const BUN i, const int bits, const BitVectorChunk
 
 // clear a cell
 void
-clrBitVector(BitVector vector, BUN i, int bits)
+clrBitVector(BitVector vector, BUN i, const bte bits)
 {
 	setBitVector(vector,i,bits, 0);
 }
 
 
 int
-tstBitVector(BitVector m, BUN idx, int width)
+tstBitVector(BitVector m, BUN idx, const bte width)
 {
 	return getBitVector(m,idx,width) > 0;
 }

@@ -56,7 +56,7 @@ ALGEBRA_INTERFACES_INTEGERS_ONLY(prefix);
     MOSBlockHeaderTpe(prefix, TPE)* parameters = (MOSBlockHeaderTpe(prefix, TPE)*) task->blk;\
 	BitVector base = (BitVector) MOScodevectorPrefix(task, TPE);\
 	PrefixTpe(TPE) prefix = parameters->prefix;\
-	int suffix_bits = parameters->suffix_bits;\
+	bte suffix_bits = parameters->suffix_bits;\
     for (oid ro = canditer_peekprev(task->ci); !is_oid_nil(ro) && ro < last; ro = RIGHT_CI_NEXT(task->ci)) {\
 		BUN i = (BUN) (ro - first);\
 		TPE rval =  (TPE) (prefix | getBitVector(base,i,suffix_bits));\

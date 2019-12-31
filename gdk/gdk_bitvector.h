@@ -24,10 +24,10 @@ typedef BitVectorChunk *BitVector;
 gdk_export void initBitMasks(void);
 gdk_export size_t getBitVectorSize(const BUN cnt, const int width);
 gdk_export BitVector newBitVector(BUN cnt, int width);
-gdk_export void setBitVector(BitVector vector, const BUN i, const int bits, const BitVectorChunk value);
-gdk_export void clrBitVector(BitVector vector, BUN i, int bits);
-gdk_export int tstBitVector(BitVector vector, BUN i, int bits);
-gdk_export int getBitVector(BitVector vector, BUN i, int bits);
+gdk_export void setBitVector(BitVector vector, const BUN i, const bte bits, const BitVectorChunk value);
+gdk_export void clrBitVector(BitVector vector, BUN i, const bte bits);
+gdk_export int tstBitVector(BitVector vector, BUN i, const bte bits);
+gdk_export int getBitVector(BitVector vector, BUN i, const bte bits);
 
 #define BitVectorSize(CNT, BITS) wordaligned(((CNT) * (BITS) / CHAR_BIT) + ( ((CNT) * (BITS)) % CHAR_BIT != 0 ), BitVectorChunk)
 

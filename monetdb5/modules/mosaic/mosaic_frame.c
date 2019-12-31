@@ -92,7 +92,7 @@ MOSlayout_frame(MOStask task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput
 #define determineFrameParameters(PARAMETERS, SRC, LIMIT, TPE) \
 do {\
 	TPE *val = SRC, max, min;\
-	int bits = 1;\
+	bte bits = 1;\
 	unsigned int i;\
 	max = *val;\
 	min = *val;\
@@ -111,7 +111,7 @@ do {\
 		}\
 		if (evaluate_bits) {\
 		 	DeltaTpe(TPE) width = GET_DELTA(TPE, current_max, current_min);\
-			int current_bits = bits;\
+			bte current_bits = bits;\
 			while (width > ((DeltaTpe(TPE))(-1)) >> (sizeof(DeltaTpe(TPE)) * CHAR_BIT - current_bits) ) {/*keep track of number of BITS necessary to store difference*/\
 				current_bits++;\
 			}\

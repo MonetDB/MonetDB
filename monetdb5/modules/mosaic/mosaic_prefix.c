@@ -133,15 +133,15 @@ MOSadvance_DEF(hge)
 do {\
 	PrefixTpe(TPE) *val = (PrefixTpe(TPE)*) (SRC);\
 	const int type_size_in_bits = sizeof(PrefixTpe(TPE))  * CHAR_BIT;\
-	int suffix_bits = 1;\
-	int prefix_bits = type_size_in_bits - suffix_bits;\
+	bte suffix_bits = 1;\
+	bte prefix_bits = type_size_in_bits - suffix_bits;\
 	PrefixTpe(TPE) prefix_mask = getPrefixMask(prefix_bits, TPE);\
 	PrefixTpe(TPE) prefix = *val & prefix_mask;\
 	/*TODO: add additional loop to find best bit wise upper bound*/\
 	BUN i;\
 	for(i = 0; i < (LIMIT); i++, val++){\
-		int current_prefix_bits = prefix_bits;\
-		int current_suffix_bits = suffix_bits;\
+		bte current_prefix_bits = prefix_bits;\
+		bte current_suffix_bits = suffix_bits;\
 		PrefixTpe(TPE) current_prefix = prefix;\
 		PrefixTpe(TPE) current_prefix_mask =  prefix_mask;\
 \
@@ -291,7 +291,7 @@ MOSdecompress_DEF(hge)
 	MOSBlockHeaderTpe(prefix, TPE)* parameters = (MOSBlockHeaderTpe(prefix, TPE)*) task->blk;\
 	BitVector base = (BitVector) MOScodevectorPrefix(task, TPE);\
 	PrefixTpe(TPE) prefix = parameters->prefix;\
-	int suffix_bits = parameters->suffix_bits;\
+	bte suffix_bits = parameters->suffix_bits;\
     for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = CI_NEXT(task->ci)) {\
         BUN i = (BUN) (c - first);\
         v = (TPE) (prefix | getBitVector(base,i,suffix_bits));\
@@ -314,7 +314,7 @@ MOSselect_DEF(prefix, hge)
     MOSBlockHeaderTpe(prefix, TPE)* parameters = (MOSBlockHeaderTpe(prefix, TPE)*) task->blk;\
 	BitVector base = (BitVector) MOScodevectorPrefix(task, TPE);\
 	PrefixTpe(TPE) prefix = parameters->prefix;\
-	int suffix_bits = parameters->suffix_bits;\
+	bte suffix_bits = parameters->suffix_bits;\
 	for (oid o = canditer_peekprev(task->ci); !is_oid_nil(o) && o < last; o = CI_NEXT(task->ci)) {\
 		BUN i = (BUN) (o - first);\
 		TPE value =  (TPE) (prefix | getBitVector(base,i,suffix_bits));\
@@ -336,7 +336,7 @@ MOSprojection_DEF(prefix, hge)
     MOSBlockHeaderTpe(prefix, TPE)* parameters = (MOSBlockHeaderTpe(prefix, TPE)*) task->blk;\
 	BitVector base = (BitVector) MOScodevectorPrefix(task, TPE);\
 	PrefixTpe(TPE) prefix = parameters->prefix;\
-	int suffix_bits = parameters->suffix_bits;\
+	bte suffix_bits = parameters->suffix_bits;\
 	for (oid lo = canditer_peekprev(task->ci); !is_oid_nil(lo) && lo < last; lo = LEFT_CI_NEXT(task->ci)) {\
 		BUN i = (BUN) (lo - first);\
 		TPE lval =  (TPE) (prefix | getBitVector(base,i,suffix_bits));\
