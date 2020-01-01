@@ -145,11 +145,6 @@ MOSinit(MOStask* task, BAT *b) {
 	task->padding = NULL;
 }
 
-void MOSblk(MosaicBlk blk)
-{
-	printf("Block tag %d cnt "BUNFMT"\n", MOSgetTag(blk),MOSgetCnt(blk));
-}
-
 str
 MOSlayout(BAT *b, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
 {
@@ -1572,83 +1567,4 @@ MOSAnalysis(BAT *b, BAT *btech, BAT *boutput, BAT *bratio, BAT *bcompress, BAT *
 	}
 
 	return msg;
-}
-
-/* slice a fixed size atom into thin bte-wide columns, used for experiments */
-str
-MOSsliceInternal(bat *slices, BUN size, BAT *b)
-{
-	BUN i;
-	BUN cnt= BATcount(b);
-	BAT *bats[8];
-	bte *thin[8];
-	assert(size < 8);
-
-	for( i = 0; i< size; i++){
-		bats[i] = COLnew((oid)0,TYPE_bte, cnt, TRANSIENT);
-		if ( bats[i] == NULL){
-			for( ;i>0; i--)
-				BBPunfix(bats[--i]->batCacheid);
-			throw(MAL,"mosaic.slice", MAL_MALLOC_FAIL);
-		}
-		slices[i] = bats[i]->batCacheid;
-		thin[i]= (bte*) Tloc(bats[i],0);
-		BATsetcount(bats[i], cnt);
-	}
-	switch(b->ttype){
-	case TYPE_int:
-	{ union {
-		unsigned int val;
-		bte thin[4];
-	  } map;
-	  unsigned int *val = (unsigned int*) Tloc(b,0);
-	  for(i=0; i < cnt; i++, val++){
-		map.val = *val;
-		*thin[0] = map.thin[0]; thin[0]++;
-		*thin[1] = map.thin[1]; thin[1]++;
-		*thin[2] = map.thin[2]; thin[2]++;
-		*thin[3] = map.thin[3]; thin[3]++;
-	  }
-	}
-	break;
-	case TYPE_lng:
-	{ union {
-		lng val;
-		bte thin[8];
-	  } map;
-	  unsigned int *val = (unsigned int*) Tloc(b,0);
-	  for(i=0; i < cnt; i++, val++){
-		map.val = *val;
-		*thin[0] = map.thin[0]; thin[0]++;
-		*thin[1] = map.thin[1]; thin[1]++;
-		*thin[2] = map.thin[2]; thin[2]++;
-		*thin[3] = map.thin[3]; thin[3]++;
-		*thin[4] = map.thin[4]; thin[4]++;
-		*thin[5] = map.thin[5]; thin[5]++;
-		*thin[6] = map.thin[6]; thin[6]++;
-		*thin[7] = map.thin[7]; thin[7]++;
-	  }
-	}
-	break;
-	default:
-		assert(0);
-	}
-	return MAL_SUCCEED;
-}
-
-str
-MOSslice(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	bat slices[8];
-	BAT *b;
-	BUN s;
-
-	(void) cntxt;
-	s = (BUN) ATOMsize(getArgType(mb,pci,pci->retc));
-	if( s > 8)
-		throw(MAL,"mosaic.slice", "illegal type witdh");
-	b = BATdescriptor(* getArgReference_bat(stk,pci, pci->retc));
-	if ( b == NULL)
-		throw(MAL,"mosaic.slice", RUNTIME_OBJECT_MISSING);
-	return MOSsliceInternal( slices, s,b);
 }

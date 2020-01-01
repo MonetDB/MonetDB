@@ -11453,7 +11453,6 @@ stdout of test 'MAL-signatures` in directory 'clients` itself:
 [ "mosaic",	"select",	"pattern mosaic.select(b:bat[:str], low:str, high:str, li:bit, hi:bit, anti:bit):bat[:oid] ",	"MOSselect;",	""	]
 [ "mosaic",	"select",	"pattern mosaic.select(b:bat[:timestamp], cand:bat[:oid], low:timestamp, high:timestamp, li:bit, hi:bit, anti:bit):bat[:oid] ",	"MOSselect;",	"Overloaded selection routine"	]
 [ "mosaic",	"select",	"pattern mosaic.select(b:bat[:timestamp], low:timestamp, high:timestamp, li:bit, hi:bit, anti:bit):bat[:oid] ",	"MOSselect;",	"Overloaded selection routine"	]
-[ "mosaic",	"slice",	"pattern mosaic.slice(bid:lng) (b0:bte, b1:bte, b2:bte, b3:bte, b4:bte, b5:bte, b6:bte, b7:bte) ",	"MOSslice;",	"Break column into verticalslices"	]
 [ "mosaic",	"thetaselect",	"pattern mosaic.thetaselect(b:bat[:bit], c:bat[:oid], low:bit, oper:str):bat[:oid] ",	"MOSthetaselect;",	""	]
 [ "mosaic",	"thetaselect",	"pattern mosaic.thetaselect(b:bat[:bit], low:bit, oper:str):bat[:oid] ",	"MOSthetaselect;",	""	]
 [ "mosaic",	"thetaselect",	"pattern mosaic.thetaselect(b:bat[:bte], c:bat[:oid], low:bte, oper:str):bat[:oid] ",	"MOSthetaselect;",	""	]

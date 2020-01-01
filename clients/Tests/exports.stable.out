@@ -1535,14 +1535,11 @@ void MOSlayout_linear(MOStask *task, BAT *btech, BAT *bcount, BAT *binput, BAT *
 void MOSlayout_prefix(MOStask *task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
 void MOSlayout_raw(MOStask *task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
 void MOSlayout_runlength(MOStask *task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
-BUN MOSlimit(void);
 const Method MOSmethods[];
 str MOSprepareEstimate_dict(MOStask *task);
 str MOSprepareEstimate_dict256(MOStask *task);
 str MOSprojection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str MOSselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-str MOSslice(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-str MOSsliceInternal(bat *slices, BUN size, BAT *b);
 str MOSthetaselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 void MOSupdateHeader(MOStask *task);
 void MPresetProfiler(stream *fdout);

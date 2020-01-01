@@ -12,10 +12,6 @@ command decompress(b:bat[:any_1]) :bat[:any_1]
 address MOSdecompress
 comment "Apply dynamic decompression over chunks producing a temporary version";
 
-pattern slice(bid:lng)(b0:bte,b1:bte,b2:bte,b3:bte,b4:bte,b5:bte,b6:bte,b7:bte)
-address MOSslice
-comment "Break column into verticalslices";
-
 pattern select(b:bat[:bte], low:bte, high:bte, li:bit, hi:bit, anti:bit) :bat[:oid]
 address MOSselect;
 

@@ -21,7 +21,6 @@ Find a more 'generic' model to estimate and explore compression space perhaps Mo
 Create a plug-in estimation model framework.
 
 ####code issues####
-Get rid of unsused functions. limit/blk etc.
 See if the iteration algorithms can be improved.
 Use GDK naming conventions, e.g. o for stuff coming out if canditer_next.
 Update copyright in 2020.
