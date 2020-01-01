@@ -133,6 +133,10 @@ pattern prelude()
 address optimizer_prelude
 comment "Initialize the optimizer";
 
+command epilogue():void
+address optimizer_epilogue
+comment "release the resources held by the optimizer module";
+
 pattern optimize(mod:str, fcn:str)
 address QOToptimize
 comment "Optimize a specific operation";

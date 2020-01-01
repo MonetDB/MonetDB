@@ -21,9 +21,9 @@ ALGprojectionpath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 
 	if(pci->argc <= 1)
-		throw(MAL, "algebra.projectionpath", SQLSTATE(HY001) "INTERNAL ERROR");
+		throw(MAL, "algebra.projectionpath", SQLSTATE(HY013) "INTERNAL ERROR");
 	if ( joins == NULL)
-		throw(MAL, "algebra.projectionpath", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "algebra.projectionpath", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	for (i = pci->retc; i < pci->argc; i++) {
 		bid = *getArgReference_bat(stk, pci, i);
 		b = BATdescriptor(bid);

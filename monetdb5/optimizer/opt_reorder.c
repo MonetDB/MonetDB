@@ -286,7 +286,7 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	if ( newMalBlkStmt(mb, mb->ssize) < 0) {
 		GDKfree(uselist);
 		OPTremoveDep(dep, limit);
-		throw(MAL,"optimizer.reorder", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL,"optimizer.reorder", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	pushInstruction(mb,old[0]);
@@ -299,7 +299,7 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			continue;
 		if( p->token == ENDsymbol)
 			break;
-		if( hasSideEffects(mb, p,FALSE) || isUnsafeFunction(p) || p->barrier ){
+		if( hasSideEffects(mb, p,FALSE) || p->barrier ){
 			if (OPTbreadthfirst(cntxt, mb, i, i, old, dep, uselist) < 0)
 				break;
 			/* remove last instruction and keep for later */
@@ -313,14 +313,6 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			/* collect all seen sofar by backward grouping */
 			/* since p has side-effects, we should secure all seen sofar */
 			for(j=i-1; j>=start;j--) {
-
-				if( OPTdebug &  OPTreorder){
-					if( old[j]){
-						fprintf(stderr,"leftover: %d",start+1);
-						fprintInstruction(stderr,mb,0,old[j],LIST_MAL_ALL);
-					}
-				}
-
 				if (OPTbreadthfirst(cntxt, mb, j, i, old, dep, uselist) < 0) {
 					i = limit;	/* cause break from outer loop */
 					break;
@@ -353,10 +345,5 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","reorder",1,usec);
     newComment(mb,buf);
 	addtoMalBlkHistory(mb);
-
-    if( OPTdebug &  OPTreorder){
-        fprintf(stderr, "#reorder optimizer entry\n");
-        fprintFunction(stderr, mb, 0,  LIST_MAL_ALL);
-    }
 	return msg;
 }

@@ -2119,13 +2119,14 @@ clear_del(sql_trans *tr, sql_table *t)
 static int 
 gtr_update_delta( sql_trans *tr, sql_delta *cbat, int *changes, int id, int tpe)
 {
-	int ok = LOG_OK;
+	int ok = LOG_OK, cleared = 0;
 	BAT *ins, *cur;
 
 	(void)tr;
 	assert(ATOMIC_GET(&store_nr_active)==0);
 	
 	if (!cbat->bid) {
+		cleared = 1;
 		cbat->bid = logger_find_bat(bat_logger, cbat->name, tpe, id);
 		temp_dup(cbat->bid);
 	}
@@ -2139,6 +2140,14 @@ gtr_update_delta( sql_trans *tr, sql_delta *cbat, int *changes, int id, int tpe)
 		return LOG_ERR;
 	}
 	assert(!isEbat(cur));
+	/* A snapshot column after being cleared */
+	if (cbat->bid == cbat->ibid && cleared) {
+		cbat->cnt = cbat->ibase = BATcount(cur);
+		temp_destroy(cbat->ibid);
+		cbat->ibid = e_bat(cur->ttype);
+		if(cbat->ibid == BID_NIL)
+			ok = LOG_ERR;
+	} else
 	/* any inserts */
 	if (BUNlast(ins) > 0 || cbat->cleared) {
 		(*changes)++;
@@ -2799,12 +2808,11 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 		if (!cc->def)
 			oc->def = NULL;
 
-		if (isRenamed(cc)) { /* apply possible renaming */
+		if (strcmp(cc->base.name, oc->base.name) != 0) { /* apply possible renaming */
 			list_hash_delete(oc->t->columns.set, oc, NULL);
 			oc->base.name = sa_strdup(tr->parent->sa, cc->base.name);
 			if (!list_hash_add(oc->t->columns.set, oc, NULL))
 				ok = LOG_ERR;
-			setRenamedFlag(oc); /* propagate the change to the upper transaction */
 		}
 
 		if (oc->base.rtime < cc->base.rtime)

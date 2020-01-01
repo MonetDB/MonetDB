@@ -81,7 +81,7 @@ stdout of test 'select-in-from.Bug-6121` in directory 'sql/test/BugTracker-2016`
 #INSERT INTO table_two VALUES (2);
 [ 1	]
 #SELECT ( table_one.this_column IN ( SELECT this_column FROM table_two ) ) AS new_column FROM table_one;
-% .%11 # table_name
+% . # table_name
 % new_column # name
 % boolean # type
 % 5 # length
@@ -91,7 +91,7 @@ stdout of test 'select-in-from.Bug-6121` in directory 'sql/test/BugTracker-2016`
 [ false	]
 [ false	]
 #SELECT ( CASE WHEN ( table_one.this_column IN ( SELECT this_column FROM table_two ) ) THEN 1 ELSE 0 END ) AS new_column FROM table_one;
-% .%13 # table_name
+% . # table_name
 % new_column # name
 % tinyint # type
 % 1 # length
@@ -108,7 +108,7 @@ stdout of test 'select-in-from.Bug-6121` in directory 'sql/test/BugTracker-2016`
 [ 2,	1	]
 [ 3,	0	]
 #SELECT this_column, (SELECT COUNT(*) FROM table_two t2 WHERE t2.this_column = table_one.this_column) AS new_column FROM table_one;
-% .table_one,	.%1 # table_name
+% .table_one,	. # table_name
 % this_column,	new_column # name
 % int,	bigint # type
 % 1,	1 # length
@@ -118,7 +118,7 @@ stdout of test 'select-in-from.Bug-6121` in directory 'sql/test/BugTracker-2016`
 [ 4,	0	]
 [ 5,	0	]
 #SELECT this_column, (CASE WHEN (SELECT COUNT(*) FROM table_two t2 WHERE t2.this_column = table_one.this_column) = 0 THEN 0 ELSE 1 END) AS new_column FROM table_one;
-% .table_one,	.%22 # table_name
+% .table_one,	. # table_name
 % this_column,	new_column # name
 % int,	tinyint # type
 % 1,	1 # length
@@ -128,14 +128,14 @@ stdout of test 'select-in-from.Bug-6121` in directory 'sql/test/BugTracker-2016`
 [ 4,	0	]
 [ 5,	0	]
 #SELECT COUNT(*) AS count, (CASE WHEN (SELECT COUNT(*) FROM table_two t2 WHERE t2.this_column = table_one.this_column) = 0 THEN 0 ELSE 1 END) AS new_column  FROM table_one GROUP BY new_column;
-% .%2,	. # table_name
+% .,	. # table_name
 % count,	new_column # name
 % bigint,	tinyint # type
 % 1,	1 # length
 [ 2,	1	]
 [ 3,	0	]
 #WITH table_one_cte AS (SELECT this_column, (CASE (SELECT COUNT(*) FROM table_two t2 WHERE t2.this_column = table_one.this_column) WHEN 0 THEN 0 ELSE 1 END) AS new_column FROM table_one) SELECT COUNT(*) AS count, MIN(this_column) AS min_this_column, MAX(this_column) AS max_this_column, AVG(this_column) AS avg_this_column, CAST(SUM(this_column) AS bigint) AS sum_this_column, new_column FROM table_one_cte GROUP BY new_column;
-% .%30,	.%31,	.%32,	.%33,	.%34,	.table_one_cte # table_name
+% .,	.,	.,	.,	.,	.table_one_cte # table_name
 % count,	min_this_column,	max_this_column,	avg_this_column,	sum_this_column,	new_column # name
 % bigint,	int,	int,	double,	bigint,	tinyint # type
 % 1,	1,	1,	24,	2,	1 # length
@@ -151,7 +151,7 @@ stdout of test 'select-in-from.Bug-6121` in directory 'sql/test/BugTracker-2016`
 [ 2,	1	]
 [ 3,	0	]
 #SELECT COUNT(*) AS count, MIN(this_column) AS min_this_column, MAX(this_column) AS max_this_column, AVG(this_column) AS avg_this_column, CAST(SUM(this_column) AS bigint) AS sum_this_column, new_column FROM table_one_vw GROUP BY new_column;
-% .%27,	.%30,	.%31,	.%32,	.%33,	.table_one_vw # table_name
+% .,	.,	.,	.,	.,	.table_one_vw # table_name
 % count,	min_this_column,	max_this_column,	avg_this_column,	sum_this_column,	new_column # name
 % bigint,	int,	int,	double,	bigint,	tinyint # type
 % 1,	1,	1,	24,	2,	1 # length
@@ -171,7 +171,7 @@ stdout of test 'select-in-from.Bug-6121` in directory 'sql/test/BugTracker-2016`
 #SELECT COUNT(*) AS count, (CASE WHEN t2.this_column IS NULL THEN 0 ELSE 1 END) AS new_column
 #  FROM table_one t1 LEFT OUTER JOIN table_two t2 ON t1.this_column = t2.this_column
 # GROUP BY new_column;
-% .%3,	. # table_name
+% .,	. # table_name
 % count,	new_column # name
 % bigint,	tinyint # type
 % 1,	1 # length
@@ -188,8 +188,8 @@ stdout of test 'select-in-from.Bug-6121` in directory 'sql/test/BugTracker-2016`
 #    except
 #    (select this_column from table_two)
 #) as "missing";
-% .%27,	.%27 # table_name
-% count,	%22 # name
+% .%25,	.%25 # table_name
+% count,	%20 # name
 % bigint,	tinyint # type
 % 1,	1 # length
 [ 2,	1	]

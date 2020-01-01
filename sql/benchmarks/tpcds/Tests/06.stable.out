@@ -43,7 +43,7 @@ stdout of test '06` in directory 'sql/benchmarks/tpcds` itself:
 #    (SELECT avg(j.i_current_price)
 #     FROM item j
 #     WHERE j.i_category = i.i_category)
-% sys.a,	sys.%4 # table_name
+% sys.,	sys. # table_name
 % state,	cnt # name
 % char,	bigint # type
 % 2,	3 # length

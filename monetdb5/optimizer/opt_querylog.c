@@ -46,13 +46,13 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	limit= mb->stop;
 	slimit= mb->ssize;
 	if ( newMalBlkStmt(mb, mb->ssize) < 0)
-		throw(MAL,"optimizer.querylog", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL,"optimizer.querylog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	pushInstruction(mb, old[0]);
 	/* run the querylog.define operation */
 	defineQuery = copyInstruction(defineQuery);
 	if( defineQuery == NULL)
-		throw(MAL,"optimizer.querylog", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL,"optimizer.querylog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	defineQuery->argc--;  // remove MAL instruction count
 	setFunctionId(defineQuery, appendRef);
@@ -63,10 +63,10 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	/* collect the initial statistics */
 	q = newStmt(mb, "clients", "getUsername");
 	name= getArg(q,0)= newVariable(mb,"name",4,TYPE_str);
-	defineQuery = pushArgument(mb,defineQuery,name);
+	defineQuery = addArgument(mb,defineQuery,name);
 	q = newStmt(mb, "mtime", "current_timestamp");
 	start= getArg(q,0)= newVariable(mb,"start",5,TYPE_timestamp);
-	defineQuery = pushArgument(mb,defineQuery,start);
+	defineQuery = addArgument(mb,defineQuery,start);
 	pushInstruction(mb, defineQuery);
 
 	q = newStmt(mb, sqlRef, "argRecord");
@@ -201,9 +201,5 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	snprintf(buf,256,"%-20s actions= 1 time=" LLFMT " usec","querylog", usec);
 	newComment(mb,buf);
 	addtoMalBlkHistory(mb);
-    if( OPTdebug &  OPTquerylog){
-        fprintf(stderr, "#QUERYLOG optimizer exit\n");
-        fprintFunction(stderr, mb, 0,  LIST_MAL_ALL);
-    }
 	return msg;
 }

@@ -163,6 +163,10 @@
 #include "mal_builder.h"
 #include "wlc.h"
 
+#ifdef _MSC_VER
+#define access(f, m)    _access(f, m)
+#endif
+
 #undef _WLC_DEBUG_
 
 MT_Lock     wlc_lock = MT_LOCK_INITIALIZER("wlc_lock");
@@ -333,10 +337,13 @@ WLCflush(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return WLCsetConfig();
 }
 
-void
-WLCreset(void)
+str 
+WLCepilogue(void *ret)
 {
 	str msg = MAL_SUCCEED;
+
+	(void)ret;
+
 	MT_lock_set(&wlc_lock);
 	msg = WLCcloselogger();
 	wlc_snapshot[0]=0;
@@ -344,8 +351,8 @@ WLCreset(void)
 	wlc_name[0]= 0;
 	wlc_write[0] =0;
 	MT_lock_unset(&wlc_lock);
-	if(msg) //TODO we have to return a possible error message somehow
-		freeException(msg);
+       	//TODO we have to return a possible error message somehow
+	return(msg);
 }
 
 /*
@@ -782,7 +789,7 @@ WLCdatashipping(Client cntxt, MalBlkPtr mb, InstrPtr pci, int bid)
 	tbl = GDKstrdup(getVarConstant(cntxt->wlc, getArg(pci,2)).val.sval);
 	col = GDKstrdup(getVarConstant(cntxt->wlc, getArg(pci,3)).val.sval);
 	if(!sch || !tbl || !col) {
-		msg = createException(MAL, "wlc.datashipping", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		msg = createException(MAL, "wlc.datashipping", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto finish;
 	}
 	if (cntxt->wlc_kind < WLC_UPDATE)
@@ -909,7 +916,7 @@ WLCdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		} else {
 			ol = (oid*) Tloc(b,0);
-			for( ; o < last; o++, k++){
+			for( ; o < last; o++, k++, ol++){
 				if( k%32 == 31){
 					p = newStmt(cntxt->wlc, "wlr","delete");
 					p = pushStr(cntxt->wlc, p, getVarConstant(mb, getArg(pci,1)).val.sval);

@@ -25,7 +25,7 @@ stdout of test 'systemfunctions` in directory 'sql/test/sys-schema` itself:
 #   and f.id = a.func_id
 #   and f.system
 # order by s.name, f.name, f.id, a.number;
-% sys.s,	sys.f,	sys.a,	sys.a,	sys. # table_name
+% sys.,	sys.,	sys.,	sys.,	sys. # table_name
 % schema,	function,	argno,	argtype,	definition # name
 % varchar,	varchar,	int,	varchar,	varchar # type
 % 8,	24,	2,	14,	705 # length
@@ -1579,6 +1579,20 @@ stdout of test 'systemfunctions` in directory 'sql/test/sys-schema` itself:
 [ "sys",	"power",	0,	"double",	"pow"	]
 [ "sys",	"power",	1,	"double",	""	]
 [ "sys",	"power",	2,	"double",	""	]
+[ "sys",	"prepared_statements",	0,	"int",	"create function sys.prepared_statements()\nreturns table(\n \"sessionid\" int,\n \"username\" string,\n \"statementid\" int,\n \"statement\" string,\n \"created\" timestamp\n)\nexternal name sql.prepared_statements;"	]
+[ "sys",	"prepared_statements",	1,	"clob",	""	]
+[ "sys",	"prepared_statements",	2,	"int",	""	]
+[ "sys",	"prepared_statements",	3,	"clob",	""	]
+[ "sys",	"prepared_statements",	4,	"timestamp",	""	]
+[ "sys",	"prepared_statements_args",	0,	"int",	"create function sys.prepared_statements_args()\nreturns table(\n \"statementid\" int,\n \"type\" string,\n \"type_digits\" int,\n \"type_scale\" int,\n \"inout\" tinyint,\n \"number\" int,\n \"schema\" string,\n \"table\" string,\n \"column\" string\n)\nexternal name sql.prepared_statements_args;"	]
+[ "sys",	"prepared_statements_args",	1,	"clob",	""	]
+[ "sys",	"prepared_statements_args",	2,	"int",	""	]
+[ "sys",	"prepared_statements_args",	3,	"int",	""	]
+[ "sys",	"prepared_statements_args",	4,	"tinyint",	""	]
+[ "sys",	"prepared_statements_args",	5,	"int",	""	]
+[ "sys",	"prepared_statements_args",	6,	"clob",	""	]
+[ "sys",	"prepared_statements_args",	7,	"clob",	""	]
+[ "sys",	"prepared_statements_args",	8,	"clob",	""	]
 [ "sys",	"prod",	0,	"hugeint",	"prod"	]
 [ "sys",	"prod",	1,	"tinyint",	""	]
 [ "sys",	"prod",	0,	"hugeint",	"prod"	]
@@ -1703,7 +1717,7 @@ stdout of test 'systemfunctions` in directory 'sql/test/sys-schema` itself:
 [ "sys",	"querylog_catalog",	6,	"int",	""	]
 [ "sys",	"querylog_catalog",	7,	"bigint",	""	]
 [ "sys",	"querylog_enable",	0,	"int",	"create procedure sys.querylog_enable(threshold integer)\nexternal name sql.querylog_enable;"	]
-[ "sys",	"queue",	0,	"bigint",	"create function sys.queue()\nreturns table(\n tag bigint,\n sessionid int,\n \"user\" string,\n started timestamp,\n status string, \n query string,\n progress int, \n workers int,\n memory int\n)\nexternal name sql.sysmon_queue;"	]
+[ "sys",	"queue",	0,	"bigint",	"create function sys.queue()\nreturns table(\n \"tag\" bigint,\n \"sessionid\" int,\n \"username\" string,\n \"started\" timestamp,\n \"status\" string, \n \"query\" string,\n \"progress\" int, \n \"workers\" int,\n \"memory\" int\n)\nexternal name sql.sysmon_queue;"	]
 [ "sys",	"queue",	1,	"int",	""	]
 [ "sys",	"queue",	2,	"clob",	""	]
 [ "sys",	"queue",	3,	"timestamp",	""	]
@@ -3715,7 +3729,7 @@ stdout of test 'systemfunctions` in directory 'sql/test/sys-schema` itself:
 [ "sys",	"second",	1,	"timestamptz",	""	]
 [ "sys",	"second",	0,	"int",	"seconds"	]
 [ "sys",	"second",	1,	"sec_interval",	""	]
-[ "sys",	"sessions",	0,	"int",	"create function sys.sessions()\nreturns table(\n \"sessionid\" int,\n \"user\" string,\n \"login\" timestamp,\n \"idle\" timestamp,\n \"optimizer\" string,\n \"sessiontimeout\" int,\n \"querytimeout\" int,\n \"workerlimit\" int,\n \"memorylimit\" int\n )\nexternal name sql.sessions;"	]
+[ "sys",	"sessions",	0,	"int",	"create function sys.sessions()\nreturns table(\n \"sessionid\" int,\n \"username\" string,\n \"login\" timestamp,\n \"idle\" timestamp,\n \"optimizer\" string,\n \"sessiontimeout\" int,\n \"querytimeout\" int,\n \"workerlimit\" int,\n \"memorylimit\" int\n)\nexternal name sql.sessions;"	]
 [ "sys",	"sessions",	1,	"clob",	""	]
 [ "sys",	"sessions",	2,	"timestamp",	""	]
 [ "sys",	"sessions",	3,	"timestamp",	""	]

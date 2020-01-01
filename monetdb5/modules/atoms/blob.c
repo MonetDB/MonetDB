@@ -193,7 +193,7 @@ BLOBtoblob(blob **retval, str *s)
 	blob *b = (blob *) GDKmalloc(blobsize(len));
 
 	if( b == NULL)
-		throw(MAL, "blob.toblob", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "blob.toblob", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	b->nitems = len;
 	memcpy(b->data, *s, len);
 	*retval = b;
@@ -339,7 +339,7 @@ BLOBblob_blob(blob **d, blob **s)
 
 	*d = b = GDKmalloc(len);
 	if (b == NULL)
-		throw(MAL,"blob", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL,"blob", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	b->nitems = (*s)->nitems;
 	if (b->nitems != ~(size_t) 0 && b->nitems != 0)
 		memcpy(b->data, (*s)->data, b->nitems);

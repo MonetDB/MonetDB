@@ -178,7 +178,7 @@ OPTstatistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		BBPreclaim(n);
 		BBPreclaim(c);
 		BBPreclaim(t);
-		throw(MAL,"optimizer.statistics", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL,"optimizer.statistics", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	for( i= 0; codes[i].nme; i++){
 		if (BUNappend(n, codes[i].nme, false) != GDK_SUCCEED ||
@@ -187,7 +187,7 @@ OPTstatistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			BBPreclaim(n);
 			BBPreclaim(c);
 			BBPreclaim(t);
-			throw(MAL,"optimizer.statistics", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL,"optimizer.statistics", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 	}
 	BBPkeepref( *nme = n->batCacheid);

@@ -39,7 +39,7 @@ stdout of test '14b` in directory 'sql/benchmarks/tpcds` itself:
 #               ics.i_class_id,
 #               ics.i_category_id
 #        FROM catalog_sales,
-% .this_year,	sys.this_year,	sys.this_year,	sys.this_year,	sys.this_year,	sys.this_year,	.last_year,	sys.last_year,	sys.last_year,	sys.last_year,	sys.last_year,	sys.last_year # table_name
+% .,	sys.,	sys.,	sys.,	sys.,	sys.,	.,	sys.,	sys.,	sys.,	sys.,	sys. # table_name
 % ty_channel,	ty_brand,	ty_class,	ty_category,	ty_sales,	ty_number_sales,	ly_channel,	ly_brand,	ly_class,	ly_category,	ly_sales,	ly_number_sales # name
 % char,	int,	int,	int,	decimal,	bigint,	char,	int,	int,	int,	decimal,	bigint # type
 % 5,	7,	1,	1,	40,	3,	5,	7,	1,	1,	40,	3 # length

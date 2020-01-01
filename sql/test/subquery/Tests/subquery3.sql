@@ -299,6 +299,47 @@ SELECT
     (SELECT SUM(t1.col1) OVER (ORDER BY (SELECT SUM(t1.col1 + t2.col1) FROM another_T t2) ROWS UNBOUNDED PRECEDING) FROM tbl_ProductSales)
 FROM another_T t1;
 
+SELECT
+    CAST(SUM(CAST(SUM(CAST (NOT t1.col1 IN (SELECT 1) AS INTEGER)) < ANY (SELECT 1) AS INT)) OVER () AS BIGINT)
+FROM another_T t1
+GROUP BY t1.col6;
+	-- 1
+	-- 1
+	-- 1
+	-- 1
+
+SELECT
+    SUM(SUM(t1.col7) * CAST (NOT t1.col1 IN (SELECT 1) AS INTEGER)) OVER ()
+FROM another_T t1
+GROUP BY t1.col7; --error, column "t1.col1" must appear in the GROUP BY clause or be used in an aggregate function
+
+SELECT
+    SUM(CAST(SUM(t1.col6 * CAST (NOT t1.col1 IN (SELECT t2.col2 FROM another_T t2 GROUP BY t2.col2) AS INTEGER)) < ANY (SELECT MAX(ColID + t1.col7 - t1.col2) FROM tbl_ProductSales) AS INT)) OVER (PARTITION BY SUM(t1.col5) ORDER BY (SELECT MIN(t1.col6 + t1.col5 - t2.col2) FROM another_T t2))
+FROM another_T t1
+GROUP BY t1.col7, t1.col6; --error, subquery uses ungrouped column "t1.col2" from outer query
+
+SELECT
+    (SELECT 1 FROM integers i2 GROUP BY SUM(i1.i))
+FROM integers i1; --The sum at group by is a correlation from the outer query, so it's allowed inside the GROUP BY at this case
+	-- 1
+
+SELECT
+    (SELECT 1 FROM integers i2 GROUP BY SUM(i2.i))
+FROM integers i1; --error, aggregates not allowed in group by clause
+
+SELECT 
+    (SELECT SUM(SUM(i1.i) + i2.i) FROM integers i2 GROUP BY i2.i)
+FROM integers i1; --SUM(i1.i) is a correlation from the outer query, so the sum aggregates can be nested at this case
+	--error, more than one row returned by a subquery used as an expression
+
+SELECT 
+    (SELECT SUM(SUM(i1.i)) FROM integers i2 GROUP BY i2.i)
+FROM integers i1; --error, more than one row returned by a subquery used as an expression
+
+SELECT 
+    (SELECT SUM(SUM(i2.i)) FROM integers i2 GROUP BY i2.i)
+FROM integers i1; --error, aggregation functions cannot be nested
+
 /* We shouldn't allow the following internal functions/procedures to be called from regular queries */
 --SELECT "identity"(col1) FROM another_T;
 --SELECT "rowid"(col1) FROM another_T;

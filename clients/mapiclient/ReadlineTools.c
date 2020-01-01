@@ -86,7 +86,6 @@ sql_tablename_generator(const char *text, int state)
 static char *
 sql_command_generator(const char *text, int state)
 {
-
 	static int idx, len;
 	const char *name;
 
@@ -95,19 +94,13 @@ sql_command_generator(const char *text, int state)
 		len = strlen(text);
 	}
 
-
 	while ((name = sql_commands[idx++])) {
-#ifdef HAVE_STRNCASECMP
 		if (strncasecmp(name, text, len) == 0)
-#else
-		if (strncmp(name, text, len) == 0)
-#endif
 			return strdup(name);
 	}
 
 	return NULL;
 }
-
 
 static char **
 sql_completion(const char *text, int start, int end)
@@ -224,11 +217,7 @@ mal_command_generator(const char *text, int state)
 	printf("currentline:%s\n",rl_line_buffer); */
 
 	while (mal_commands[idx] && (name = mal_commands[idx++])) {
-#ifdef HAVE_STRNCASECMP
 		if (strncasecmp(name, text, len) == 0)
-#else
-		if (strncmp(name, text, len) == 0)
-#endif
 			return strdup(name);
 	}
 	/* try the server to answer */

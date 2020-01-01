@@ -1785,7 +1785,7 @@ AS_VAR_IF([enable_py3integration], [no], [],
 				 enable_py3integration=no
 				 why_not_py3integration="(numpy/arrayobject.h not found)"])],
 			[libpy3_CFLAGS=`$PYTHON3 -c "from distutils.sysconfig import get_python_inc; import numpy; print(' -I' + get_python_inc() + ' -I' + numpy.get_include());" 2> /dev/null`
-			 libpy3_LIBS=`$PY3CONFIG --ldflags`
+			 libpy3_LIBS=`$PY3CONFIG --embed --ldflags` || libpy3_LIBS=`$PY3CONFIG --ldflags`
 			 HAVEPYTHONHEADER=`$PYTHON3 -c "import distutils.sysconfig, os; print(os.path.isfile(os.path.join(distutils.sysconfig.get_python_inc(), 'Python.h')))" 2> /dev/null`
 			 AS_VAR_IF([HAVEPYTHONHEADER], [True],
 				[have_libpy3=yes
@@ -2175,7 +2175,6 @@ AC_CHECK_HEADERS([ \
 	dirent.h \
 	dispatch/dispatch.h \
 	dlfcn.h \
-	execinfo.h \
 	fcntl.h \
 	getopt.h \
 	iconv.h \
@@ -2396,7 +2395,6 @@ LIBS="$LIBS $MATH_LIBS"
 AC_CHECK_FUNCS([\
 	accept4 \
 	asctime_r \
-	backtrace \
 	cbrt \
 	clock_gettime \
 	ctime_r \
@@ -2427,7 +2425,6 @@ AC_CHECK_FUNCS([\
 	posix_fallocate \
 	posix_madvise \
 	putenv \
-	setenv \
 	setsid \
 	shutdown \
 	sigaction \
@@ -2666,6 +2663,8 @@ typedef enum {
 @%:@include <inttypes.h>
 @%:@include <stdbool.h>
 @%:@include <assert.h>
+@%:@include <string.h>
+@%:@include <ctype.h>
 
 @%:@ifndef static_assert
 /* static_assert is a C11 feature, defined in assert.h which also exists
@@ -2683,6 +2682,35 @@ stpcpy(char *restrict dst, const char *restrict src)
 	dst[i] = 0;
 	return dst + i;
 }
+@%:@endif
+
+@%:@ifndef HAVE_STPCPY
+#ifndef HAVE_STRNCASECMP
+#ifdef WIN32
+#ifndef strncasecmp
+#define strncasecmp _strnicmp
+#endif
+#else
+static inline int
+strncasecmp(const char *s1, const char *s2, size_t n)
+{
+	int c1, c2;
+
+	while (n > 0) {
+		c1 = (unsigned char) *s1++;
+		c2 = (unsigned char) *s2++;
+		if (c1 == 0)
+			return -c2;
+		if (c2 == 0)
+			return c1;
+		if (c1 != c2 && tolower(c1) != tolower(c2))
+			return tolower(c1) - tolower(c2);
+		n--;
+	}
+	return 0;
+}
+#endif
+#endif
 @%:@endif
 
 @%:@if defined(HAVE___INT128)

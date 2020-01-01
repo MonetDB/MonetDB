@@ -39,7 +39,7 @@ stdout of test '92` in directory 'sql/benchmarks/tpcds` itself:
 #       AND d_date BETWEEN '2000-01-27' AND cast('2000-04-26' AS date)
 #       AND d_date_sk = ws_sold_date_sk )
 #ORDER BY sum(ws_ext_discount_amt)
-% .%5 # table_name
+% . # table_name
 % "Excess Discount Amount" # name
 % decimal # type
 % 20 # length

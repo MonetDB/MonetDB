@@ -116,7 +116,7 @@ rel_create_seq(
 	/* for multi statements we keep the sequence around */
 	if (res && stack_has_frame(sql, "MUL") != 0) {
 		if(!stack_push_rel_view(sql, name, rel_dup(res)))
-			return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	return res;
@@ -295,7 +295,7 @@ rel_alter_seq(
 	}
 	if (val && val->card > CARD_ATOM) {
 		sql_subaggr *zero_or_one = sql_bind_aggr(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(val));
-		val = exp_aggr1(sql->sa, val, zero_or_one, 0, 0, CARD_ATOM, 0);
+		val = exp_aggr1(sql->sa, val, zero_or_one, 0, 0, CARD_ATOM, has_nil(val));
 	}
 	return rel_seq(sql->sa, ddl_alter_seq, s->base.name, seq, r, val);
 }

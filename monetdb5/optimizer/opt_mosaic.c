@@ -119,7 +119,7 @@ OPTmosaicImplementationInternal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 			setModuleId(p, mosaicRef);
 			if (coui) {
 				/*This will push and set the COUI flag true.*/
-				pushBit(mb, p, 1);
+				p = pushBit(mb, p, 1);
 			}
 			actions++;
 		}

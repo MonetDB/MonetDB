@@ -136,7 +136,7 @@ MSinitClientPrg(Client cntxt, str mod, str nme)
 		return MSresetClientPrg(cntxt, putName(mod), putName(nme));
 	cntxt->curprg = newFunction(putName(mod), putName(nme), FUNCTIONsymbol);
 	if( cntxt->curprg == 0)
-		throw(MAL, "initClientPrg", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "initClientPrg", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	if( (idx= findVariable(cntxt->curprg->def,"main")) >=0)
 		setVarType(cntxt->curprg->def, idx, TYPE_void);
 	insertSymbol(cntxt->usermodule,cntxt->curprg);
@@ -144,7 +144,7 @@ MSinitClientPrg(Client cntxt, str mod, str nme)
 	if (cntxt->glb == NULL )
 		cntxt->glb = newGlobalStack(MAXGLOBALS + cntxt->curprg->def->vsize);
 	if( cntxt->glb == NULL)
-		throw(MAL,"initClientPrg", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL,"initClientPrg", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	assert(cntxt->curprg->def != NULL);
 	assert(cntxt->curprg->def->vtop >0);
 	return MAL_SUCCEED;
@@ -486,7 +486,7 @@ MSserveClient(Client c)
 		c->glb = newGlobalStack(MAXGLOBALS + mb->vsize);
 	if (c->glb == NULL) {
 		c->mode = RUNCLIENT;
-		throw(MAL, "serveClient", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "serveClient", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	} else {
 		c->glb->stktop = mb->vtop;
 		c->glb->blk = mb;
@@ -601,7 +601,8 @@ MALparser(Client c)
 	c->curprg->def->errors = 0;
 	oldstate = *c->curprg->def;
 
-	prepareMalBlk(c->curprg->def, CURRENT(c));
+	if( prepareMalBlk(c->curprg->def, CURRENT(c)) < 0)
+		throw(MAL, "mal.parser", "Failed to prepare");
 	parseMAL(c, c->curprg, 0, INT_MAX);
 
 	/* now the parsing is done we should advance the stream */
@@ -700,7 +701,7 @@ MALengine(Client c)
 		if (prg->def && c->glb->stksize < prg->def->vsize){
 			c->glb = reallocGlobalStack(c->glb, prg->def->vsize);
 			if( c->glb == NULL)
-				throw(MAL, "mal.engine", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				throw(MAL, "mal.engine", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		c->glb->stktop = prg->def->vtop;
 		c->glb->blk = prg->def;

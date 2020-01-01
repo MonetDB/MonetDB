@@ -114,7 +114,7 @@ Group: Applications/Databases
 License: MPLv2.0
 URL: https://www.monetdb.org/
 BugURL: https://bugs.monetdb.org/
-Source: https://www.monetdb.org/downloads/sources/Nov2019/%{name}-%{version}.tar.bz2
+Source: https://www.monetdb.org/downloads/sources/Nov2019-SP1/%{name}-%{version}.tar.bz2
 
 # we need systemd for the _unitdir macro to exist
 # we need checkpolicy and selinux-policy-devel for the SELinux policy
@@ -635,7 +635,6 @@ exit 0
 %if %{with fits}
 %exclude %{_libdir}/monetdb5/fits.mal
 %exclude %{_libdir}/monetdb5/autoload/*_fits.mal
-%exclude %{_libdir}/monetdb5/createdb/*_fits.sql
 %endif
 %if %{with geos}
 %exclude %{_libdir}/monetdb5/geom.mal
@@ -774,6 +773,9 @@ use SQL with MonetDB, you will need to install this package.
 %{_libdir}/monetdb5/autoload/??_sql.mal
 %{_libdir}/monetdb5/lib_sql.so
 %dir %{_libdir}/monetdb5/createdb
+%if %{with fits}
+%exclude %{_libdir}/monetdb5/createdb/*_fits.sql
+%endif
 %if %{with geos}
 %exclude %{_libdir}/monetdb5/createdb/*_geom.sql
 %endif
@@ -1059,6 +1061,34 @@ fi
 %postun -p /sbin/ldconfig
 
 %changelog
+* Wed Dec 18 2019 Sjoerd Mullender <sjoerd@acm.org> - 11.35.9-20191218
+- Rebuilt.
+- BZ#6804: DNS resolution of 0.0.0.0 fails on recent Ubuntus
+
+* Tue Dec 17 2019 Sjoerd Mullender <sjoerd@acm.org> - 11.35.7-20191217
+- Rebuilt.
+
+* Thu Dec 12 2019 Sjoerd Mullender <sjoerd@acm.org> - 11.35.5-20191212
+- Rebuilt.
+- BZ#6723: columns aliases duplicates should not be allowed. automatic
+  aliasing required.
+- BZ#6724: Prepare confuses types when more than one argument is used
+- BZ#6726: Python aggregation does not create aggr_group when aggregating
+  over all rows
+- BZ#6765: GRANT SELECT privilege on a subset of table columns results
+  in access denied error when selecting the same columns from the table
+- BZ#6790: Count distinct giving wrong results
+- BZ#6791: str_to_time('11:40', '%H:%M') creates wrong time value
+- BZ#6792: JSON path compiler accepts invalid input
+- BZ#6793: cast(interval second value to int or decimal) is wrong (by
+  a factor of 1000), cast(interval month value to decimal or floating
+  point) fails
+- BZ#6794: external name fits.listdir not bound (sys.listdir) Fatal
+  error during initialization:
+- BZ#6796: Incorrect crash time reported by monetdb tool after crash
+  of mserver5
+- BZ#6798: json.text off by one error
+
 * Mon Nov 25 2019 Sjoerd Mullender <sjoerd@acm.org> - 11.35.3-20191125
 - Rebuilt.
 - BZ#3533: SQL aggregate functions avg(), sum() and median() return an

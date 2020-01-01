@@ -80,7 +80,7 @@ FUN(bat,TP1,_num2dec_,TP2) (bat *res, const bat *bid, const int *d2, const int *
 	dst = COLnew(b->hseqbase, TPE(TP2), BATcount(b), TRANSIENT);
 	if (dst == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(SQL, "sql."STRNG(FUN(,TP1,_num2dec_,TP2)), SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(SQL, "sql."STRNG(FUN(,TP1,_num2dec_,TP2)), SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	const TP1 *v = (const TP1 *) Tloc(b, 0);
 	BATloop(b, p, q) {
@@ -94,7 +94,7 @@ FUN(bat,TP1,_num2dec_,TP2) (bat *res, const bat *bid, const int *d2, const int *
 		if (BUNappend(dst, &r, false) != GDK_SUCCEED) {
 			BBPunfix(dst->batCacheid);
 			BBPunfix(b->batCacheid);
-			throw(SQL, "sql."STRNG(FUN(,TP1,_num2dec_,TP2)), SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(SQL, "sql."STRNG(FUN(,TP1,_num2dec_,TP2)), SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		v++;
 	}

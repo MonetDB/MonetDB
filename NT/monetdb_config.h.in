@@ -112,9 +112,6 @@
 /* there is something very similar to asctime_r on Windows: */
 #define asctime_r(t,b,s)	asctime_s(b,s,t)
 
-/* Define to 1 if you have the `backtrace' function. */
-/* #undef HAVE_BACKTRACE */
-
 /* Define to 1 if you have the <bam/bam.h> header file. */
 /* #undef HAVE_BAM_BAM_H */
 
@@ -162,9 +159,6 @@
 
 /* Support for MonetDB as a library for R */
 /* #undef HAVE_EMBEDDED_R */
-
-/* Define to 1 if you have the <execinfo.h> header file. */
-/* #undef HAVE_EXECINFO_H */
 
 /* Define to 1 if you have the `fallocate' function. */
 /* #undef HAVE_FALLOCATE */
@@ -393,9 +387,6 @@
 
 /* Define if semtimedop exists */
 /* #undef HAVE_SEMTIMEDOP */
-
-/* Define to 1 if you have the `setenv' function. */
-/* #undef HAVE_SETENV */
 
 /* Define to 1 if you have the `setsid' function. */
 /* #undef HAVE_SETSID */

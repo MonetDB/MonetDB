@@ -108,7 +108,7 @@ OPTcoercionImplementation(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	str msg = MAL_SUCCEED;
 
 	if( coerce == NULL)
-		throw(MAL,"optimizer.coercion", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL,"optimizer.coercion", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	(void) cntxt;
 	(void) pci;
 	(void) stk;		/* to fool compilers */
@@ -181,13 +181,7 @@ OPTcoercionImplementation(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	usec = GDKusec()- usec;
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","coercion",actions, usec);
     newComment(mb,buf);
-	if( actions >= 0)
+	if( actions > 0)
 		addtoMalBlkHistory(mb);
-	/* else we can also remove the request to apply the next alias optimizer */
-
-    if( OPTdebug &  OPTcoercion){
-        fprintf(stderr, "#COERCION optimizer entry\n");
-        fprintFunction(stderr, mb, 0,  LIST_MAL_ALL);
-    }
 	return msg;
 }

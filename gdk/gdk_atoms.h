@@ -149,7 +149,7 @@ gdk_export const ptr ptr_nil;
 #define is_oid_nil(v)	((v) == oid_nil)
 #define is_flt_nil(v)	isnan(v)
 #define is_dbl_nil(v)	isnan(v)
-#define is_bat_nil(v)	((v) == bat_nil || (v) == 0)
+#define is_bat_nil(v)	(((v) & 0x7FFFFFFF) == 0) /* v == bat_nil || v == 0 */
 
 #include <math.h>
 
@@ -223,67 +223,66 @@ gdk_export const ptr ptr_nil;
  * of BATs but also BATs of ODMG odSet) can never be persistent, as
  * this would make the commit tremendously complicated.
  */
+
+static inline gdk_return ATOMputVAR(int type, Heap *heap, var_t *dst, const void *src)
+	__attribute__((__warn_unused_result__));
+static inline gdk_return
+ATOMputVAR(int type, Heap *heap, var_t *dst, const void *src)
+{
+	assert(BATatoms[type].atomPut != NULL);
+	if ((*BATatoms[type].atomPut)(heap, dst, src) == 0)
+		return GDK_FAIL;
+	return GDK_SUCCEED;
+}
+
+
+static inline void
+ATOMputFIX(int type, void *dst, const void *src)
+{
+	assert(BATatoms[type].atomPut == NULL);
+	ATOMfix(type, src);
+	switch (ATOMsize(type)) {
+	case 0:		/* void */
+		break;
+	case 1:
+		* (bte *) dst = * (bte *) src;
+		break;
+	case 2:
+		* (sht *) dst = * (sht *) src;
+		break;
+	case 4:
+		* (int *) dst = * (int *) src;
+		break;
+	case 8:
+		* (lng *) dst = * (lng *) src;
+		break;
 #ifdef HAVE_HGE
-#define ATOM_CASE_16_hge						\
-		case 16:						\
-			* (hge *) d_ = * (hge *) s_;			\
-			break
-#else
-#define ATOM_CASE_16_hge
+	case 16:
+		* (hge *) dst = * (hge *) src;
+		break;
 #endif
+	default:
+		memcpy(dst, src, ATOMsize(type));
+		break;
+	}
+}
 
-#define ATOMputVAR(type, heap, dst, src)				\
-	do {								\
-		assert(BATatoms[type].atomPut != NULL);			\
-		if ((*BATatoms[type].atomPut)(heap, dst, src) == 0)	\
-			goto bunins_failed;				\
-	} while (0)
-#define ATOMputFIX(type, dst, src)			\
-	do {						\
-		int t_ = (type);			\
-		void *d_ = (dst);			\
-		const void *s_ = (src);			\
-							\
-		assert(BATatoms[t_].atomPut == NULL);	\
-		ATOMfix(t_, s_);			\
-		switch (ATOMsize(t_)) {			\
-		case 0:		/* void */		\
-			break;				\
-		case 1:					\
-			* (bte *) d_ = * (bte *) s_;	\
-			break;				\
-		case 2:					\
-			* (sht *) d_ = * (sht *) s_;	\
-			break;				\
-		case 4:					\
-			* (int *) d_ = * (int *) s_;	\
-			break;				\
-		case 8:					\
-			* (lng *) d_ = * (lng *) s_;	\
-			break;				\
-		ATOM_CASE_16_hge;			\
-		default:				\
-			memcpy(d_, s_, ATOMsize(t_));	\
-			break;				\
-		}					\
-	} while (0)
+static inline gdk_return ATOMreplaceVAR(int type, Heap *heap, var_t *dst, const void *src)
+	__attribute__((__warn_unused_result__));
+static inline gdk_return
+ATOMreplaceVAR(int type, Heap *heap, var_t *dst, const void *src)
+{
+	var_t loc = *dst;
 
-#define ATOMreplaceVAR(type, heap, dst, src)				\
-	do {								\
-		int t_ = (type);					\
-		var_t *d_ = (var_t *) (dst);				\
-		const void *s_ = (src);					\
-		var_t loc_ = *d_;					\
-		Heap *h_ = (heap);					\
-									\
-		assert(BATatoms[t_].atomPut != NULL);			\
-		if ((*BATatoms[t_].atomPut)(h_, &loc_, s_) == 0)	\
-			goto bunins_failed;				\
-		ATOMunfix(t_, d_);					\
-		ATOMdel(t_, h_, d_);					\
-		*d_ = loc_;						\
-		ATOMfix(t_, s_);					\
-	} while (0)
+	assert(BATatoms[type].atomPut != NULL);
+	if ((*BATatoms[type].atomPut)(heap, &loc, src) == 0)
+		return GDK_FAIL;
+	ATOMunfix(type, dst);
+	ATOMdel(type, heap, dst);
+	*dst = loc;
+	ATOMfix(type, src);
+	return GDK_SUCCEED;
+}
 
 /* string heaps:
  * - strings are 8 byte aligned
@@ -324,12 +323,33 @@ gdk_export const ptr ptr_nil;
  * though we have to take corrective action to ensure that str(nil) is
  * the smallest value of the domain.
  */
-#define GDK_STRNIL(s)    ((s) == NULL || *(const char*) (s) == '\200')
-#define GDK_STRLEN(s)    ((GDK_STRNIL(s)?1:strlen(s))+1)
-#define GDK_STRCMP(l,r)  (GDK_STRNIL(l)?(GDK_STRNIL(r)?0:-1):GDK_STRNIL(r)?1: \
-			  (*(const unsigned char*)(l) < *(const unsigned char*)(r))?-1: \
-			  (*(const unsigned char*)(l) > *(const unsigned char*)(r))?1: \
-			  strCmpNoNil((const unsigned char*)(l),(const unsigned char*)(r)))
+#define GDK_STREQ(l,r)	(strcmp(l,r) == 0)
+#define GDK_STRNIL(s)	((s) == NULL || *(const char*) (s) == '\200')
+#define GDK_STRLEN(s)	((GDK_STRNIL(s)?1:strlen(s))+1)
+#define GDK_STRCMP(l,r)	(GDK_STRNIL(l)?(GDK_STRNIL(r)?0:-1):GDK_STRNIL(r)?1: \
+			 (*(const unsigned char*)(l) < *(const unsigned char*)(r))?-1: \
+			 (*(const unsigned char*)(l) > *(const unsigned char*)(r))?1: \
+			 strCmpNoNil((const unsigned char*)(l),(const unsigned char*)(r)))
+
+static inline var_t
+VarHeapValRaw(const void *b, BUN p, int w)
+{
+	switch (w) {
+	case 1:
+		return (var_t) ((const uint8_t *) b)[p] + GDK_VAROFFSET;
+	case 2:
+		return (var_t) ((const uint16_t *) b)[p] + GDK_VAROFFSET;
+#if SIZEOF_VAR_T == 8
+	case 4:
+		return (var_t) ((const uint32_t *) b)[p];
+#endif
+	default:
+		return ((const var_t *) b)[p];
+	}
+}
+
+#define VarHeapVal(b,p,w)	((size_t) VarHeapValRaw(b,p,w))
+
 /*
  * @- Hash Function
  * The string hash function is a very simple hash function that xors
@@ -337,18 +357,20 @@ gdk_export const ptr ptr_nil;
  * characters at a time (adding 16-bits to the hash value each
  * iteration).
  */
-#define GDK_STRHASH(x,y)				\
-	do {						\
-		const char *_key = (const char *) (x);	\
-		BUN _i;					\
-		for (_i = y = 0; _key[_i]; _i++) {	\
-		    y += _key[_i];			\
-		    y += (y << 10);			\
-		    y ^= (y >> 6);			\
-		}					\
-		y += (y << 3);				\
-		y ^= (y >> 11);				\
-		y += (y << 15);				\
-	} while (0)
+static inline BUN
+GDK_STRHASH(const char *key)
+{
+	BUN y = 0;
+
+	for (BUN i = 0; key[i]; i++) {
+		y += key[i];
+		y += (y << 10);
+		y ^= (y >> 6);
+	}
+	y += (y << 3);
+	y ^= (y >> 11);
+	y += (y << 15);
+	return y;
+}
 
 #endif /* _GDK_ATOMS_H_ */

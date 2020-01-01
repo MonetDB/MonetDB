@@ -36,7 +36,7 @@ OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	limit = mb->stop;
 	slimit = mb->ssize;
 	if (newMalBlkStmt(mb, mb->ssize) < 0) {
-		msg= createException(MAL,"optimizer.deadcode", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		msg= createException(MAL,"optimizer.deadcode", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto wrapup;
 	}
 
@@ -137,15 +137,11 @@ OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	usec = GDKusec()- usec;
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","deadcode",actions, usec);
     newComment(mb,buf);
-	if( actions >= 0)
+	if( actions > 0)
 		addtoMalBlkHistory(mb);
 
 wrapup:
 	if(old) GDKfree(old);
 	if(varused) GDKfree(varused);
-    if( OPTdebug &  OPTdeadcode){
-        fprintf(stderr, "#DEADCODE optimizer exit\n");
-        fprintFunction(stderr, mb, 0,  LIST_MAL_ALL);
-    }
 	return msg;
 }

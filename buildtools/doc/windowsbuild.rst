@@ -340,7 +340,7 @@ optional prerequisites iconv_ and zlib_, for which see below).
 Run the following commands in the ``win32`` subfolder, substituting
 the correct locations for the iconv and zlib libraries::
 
- cscript configure.js compiler=msvc prefix=C:\Libraries\libxml2-2.9.8.win64 ^
+ cscript configure.js compiler=msvc prefix=C:\Libraries\libxml2-2.9.9.win64 ^
   include=C:\Libraries\iconv-1.15.win64\include;C:\Libraries\zlib-1.2.11.win64\include ^
   lib=C:\Libraries\iconv-1.15.win64\lib;C:\Libraries\zlib-1.2.11.win64\lib ^
   iconv=yes zlib=yes vcmanifest=yes
@@ -476,8 +476,6 @@ the following extra Cygwin packages in order to build successfully:
    prefix=/cygdrive/c/Libraries/iconv-1.16.win64-vs2019
    export INCLUDE LIB PATH
    win32_target=_WIN32_WINNT_WIN7
-   prefix=/cygdrive/c/Libraries/iconv-1.15.win32-vs2015
-   PATH="$prefix/bin:$PATH"
    ./configure --host=i686-w64-mingw32 --prefix="$prefix" \
 	       CC="$PWD/build-aux/compile cl -nologo" \
 	       CXX="$PWD/build-aux/compile cl -nologo" \

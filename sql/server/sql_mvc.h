@@ -49,6 +49,7 @@
 
 /* different query execution modes (emode) */
 #define m_normal 	0
+#define m_deallocate 1
 #define m_execute 	2
 #define m_prepare 	3
 #define m_plan 		4
@@ -141,6 +142,9 @@ typedef struct mvc {
 	char *query;		/* string, identify whatever we're working on */
 } mvc;
 
+/* NR_GLOBAL_VAR should match exactly the number of variables created in global_variables */
+#define NR_GLOBAL_VARS 9
+
 extern sql_table *mvc_init_create_view(mvc *sql, sql_schema *s, const char *name, const char *query);
 extern int mvc_init(int debug, store_type store, int ro, int su, backend_stack stk);
 extern void mvc_exit(void);
@@ -148,7 +152,7 @@ extern void mvc_logmanager(void);
 extern void mvc_idlemanager(void);
 
 extern mvc *mvc_create(int clientid, backend_stack stk, int debug, bstream *rs, stream *ws);
-extern int mvc_reset(mvc *m, bstream *rs, stream *ws, int debug, int globalvars);
+extern int mvc_reset(mvc *m, bstream *rs, stream *ws, int debug);
 extern void mvc_destroy(mvc *c);
 
 extern int mvc_status(mvc *c);

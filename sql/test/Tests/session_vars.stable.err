@@ -79,14 +79,30 @@ stderr of test 'session_vars` in directory 'sql/test` itself:
 # 20:30:42 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=39627 
 # 20:30:42 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
-QUERY = set test_nr = 'help';
+MAPI  = (monetdb) /var/tmp/mtest-222303/.s.monetdb.38750
+QUERY = set test_nr = 'help'; --error, conversion failed
 ERROR = !conversion of string 'help' to type int failed.
 CODE  = 22018
-MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
-QUERY = set test_boolean = 'help';
-ERROR = !conversion of string 'help' to type bit failed.
-CODE  = 22018
+MAPI  = (monetdb) /var/tmp/mtest-222303/.s.monetdb.38750
+QUERY = set test_str = 1; --error, variable no longer in cache
+ERROR = !Variable test_str unknown
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-222303/.s.monetdb.38750
+QUERY = set test_boolean = 'help'; --error, variable no longer in cache
+ERROR = !Variable test_boolean unknown
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-222303/.s.monetdb.38750
+QUERY = select @test_nr; --error, variable no longer in cache
+ERROR = !SELECT: '@test_nr' unknown
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-222303/.s.monetdb.38750
+QUERY = select @test_str; --error, variable no longer in cache
+ERROR = !SELECT: '@test_str' unknown
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-222303/.s.monetdb.38750
+QUERY = select @test_boolean; --error, variable no longer in cache
+ERROR = !SELECT: '@test_boolean' unknown
+CODE  = 42000
 
 # 20:30:43 >  
 # 20:30:43 >  Done.

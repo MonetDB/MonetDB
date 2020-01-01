@@ -22,7 +22,7 @@ addLock(Client cntxt, OLTPlocks locks, MalBlkPtr mb, InstrPtr p, int sch, int tb
 	(void) cntxt;
 	r =(sch?getVarConstant(mb, getArg(p,sch)).val.sval : "sqlcatalog");
 	s =(tbl? getVarConstant(mb, getArg(p,tbl)).val.sval : "");
-	hash = (strHash(r)  ^ strHash(s)) % MAXOLTPLOCKS ;
+	hash = (GDK_STRHASH(r)  ^ GDK_STRHASH(s)) % MAXOLTPLOCKS ;
 	hash += (hash == 0);
 	locks[hash] = 1;
 }
@@ -116,7 +116,7 @@ OPToltpImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					if( old[i])
 						freeInstruction(old[i]);
 				GDKfree(old);
-				throw(MAL,"optimizer.oltp", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				throw(MAL,"optimizer.oltp", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 			setFunctionId(q, releaseRef);
 			pushInstruction(mb,q);
@@ -136,11 +136,7 @@ OPToltpImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	usec = GDKusec()- usec;
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","oltp",actions, usec);
     newComment(mb,buf);
-	if( actions >= 0)
+	if( actions > 0)
 		addtoMalBlkHistory(mb);
-    if( OPTdebug &  OPToltp){
-        fprintf(stderr, "#OLTP optimizer exit\n");
-        fprintFunction(stderr, mb, 0,  LIST_MAL_ALL);
-    }
 	return msg;
 }

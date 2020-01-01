@@ -191,18 +191,12 @@ MALoptimizer(Client c)
 int hasSameSignature(MalBlkPtr mb, InstrPtr p, InstrPtr q){
 	int i;
 
-	if ( getFunctionId(q) == getFunctionId(p) &&
-		 getModuleId(q) == getModuleId(p) &&
-		 getFunctionId(q) != 0 &&
-		 getModuleId(q) != 0) {
-			if( q->retc != p->retc || q->argc != p->argc) 
-				return FALSE;
-			for( i=0; i < p->argc; i++)
-				if (getArgType(mb,p,i) != getArgType(mb,q,i))
-					return FALSE;
-			return TRUE;
-		}
-	return FALSE;
+	if( q->retc != p->retc || q->argc != p->argc) 
+		return FALSE;
+	for( i=0; i < p->argc; i++)
+		if (getArgType(mb,p,i) != getArgType(mb,q,i))
+			return FALSE;
+	return TRUE;
 }
 
 /* Only used by opt_commonTerms! */

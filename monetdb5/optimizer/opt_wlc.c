@@ -12,6 +12,7 @@
  */
 #include "monetdb_config.h"
 #include "opt_wlc.h"
+#include "wlc.h"
 
 str
 OPTwlcImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -59,7 +60,7 @@ OPTwlcImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	// Now optimize the code
 	if (newMalBlkStmt(mb,mb->ssize + updates) < 0)
-		return createException(MAL, "wlcr.optimizer", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		return createException(MAL, "wlcr.optimizer", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	for (i = 0; i < limit; i++) {
 		p = old[i];
 		pushInstruction(mb,p);
@@ -72,7 +73,7 @@ OPTwlcImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				mb->stmt = old;
 				mb->stop = limit;
 				mb->ssize = slimit;
-				return createException(MAL, "wlcr.optimizer", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				return createException(MAL, "wlcr.optimizer", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 			setModuleId(q, wlcRef);
 			setFunctionId(q,queryRef);
@@ -101,7 +102,7 @@ OPTwlcImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					mb->stmt = old;
 					mb->stop = limit;
 					mb->ssize = slimit;
-					return createException(MAL, "wlcr.optimizer", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+					return createException(MAL, "wlcr.optimizer", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				}
 				setModuleId(q, wlcRef);
 				for( j=0; j< p->retc; j++)
@@ -125,7 +126,7 @@ OPTwlcImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					mb->stmt = old;
 					mb->stop = limit;
 					mb->ssize = slimit;
-					return createException(MAL, "wlcr.optimizer", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+					return createException(MAL, "wlcr.optimizer", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				}
 				delArgument(q, q->retc);
 				setModuleId(q, wlcRef);
@@ -149,9 +150,7 @@ OPTwlcImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 wrapup:
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","wlc",updates,GDKusec() - usec);
     newComment(mb,buf);
-    if( OPTdebug &  OPTwlc){
-        fprintf(stderr, "#wlc optimizer exit\n");
-        fprintFunction(stderr, mb, 0,  LIST_MAL_ALL);
-    }
+	if( updates > 0)
+		addtoMalBlkHistory(mb);
 	return MAL_SUCCEED;
 }

@@ -213,6 +213,7 @@ MEROgetStatus(sabdb **ret, char *database)
 	char *p;
 	char *buf;
 	char *e;
+	char *sp;
 
 	if (database == NULL)
 		database = "#all";
@@ -224,14 +225,14 @@ MEROgetStatus(sabdb **ret, char *database)
 
 	sw = malloc(sizeof(sabdb *) * swlen);
 	orig = NULL;
-	if ((p = strtok(buf, "\n")) != NULL) {
+	if ((p = strtok_r(buf, "\n", &sp)) != NULL) {
 		if (strcmp(p, "OK") != 0) {
 			p = strdup(p);
 			free(buf);
 			free(sw);
 			return(p);
 		}
-		for (swpos = 0; (p = strtok(NULL, "\n")) != NULL; swpos++) {
+		for (swpos = 0; (p = strtok_r(NULL, "\n", &sp)) != NULL; swpos++) {
 			e = msab_deserialise(&stats, p);
 			if (e != NULL) {
 				printf("WARNING: failed to parse response from "
@@ -282,7 +283,7 @@ printStatus(sabdb *stats, int mode, int dbwidth, int uriwidth)
 		char locked = '\0';
 		char uptime[12];
 		char avg[8];
-		char info[32];
+		char info[64];
 		char *dbname;
 		char *uri;
 
@@ -318,7 +319,7 @@ printStatus(sabdb *stats, int mode, int dbwidth, int uriwidth)
 		{
 			struct tm *t;
 			t = localtime(&uplog.lastcrash);
-			strftime(info, sizeof(info), "crashed on %Y-%m-%d %H:%M:%S", t);
+			strftime(info, sizeof(info), "crashed (started on %Y-%m-%d %H:%M:%S)", t);
 		}
 
 		switch (stats->state) {
@@ -461,7 +462,7 @@ printStatus(sabdb *stats, int mode, int dbwidth, int uriwidth)
 			break;
 			case SABdbCrashed:
 				t = localtime(&uplog.lastcrash);
-				strftime(buf, sizeof(buf), "crashed on %Y-%m-%d %H:%M:%S", t);
+				strftime(buf, sizeof(buf), "crashed (started on %Y-%m-%d %H:%M:%S)", t);
 			break;
 			case SABdbInactive:
 				snprintf(buf, sizeof(buf), "not running");
@@ -807,13 +808,12 @@ command_status(int argc, char *argv[])
 		int len = 0;
 
 		/* calculate dbwidth and uriwidth */
+		uriwidth = 32;
 		for (stats = orig; stats != NULL; stats = stats->next) {
 			if ((t = strlen(stats->dbname)) > dbwidth)
 				dbwidth = t;
 			if (stats->uri != NULL && (t = strlen(stats->uri)) > uriwidth)
 				uriwidth = t;
-			if (uriwidth < 32)
-				uriwidth = 32;
 		}
 
 		/* Ultra Condensed State(tm) since Feb2013:
@@ -899,6 +899,7 @@ command_discover(int argc, char *argv[])
 	size_t posloc = 0;
 	size_t loclen = 0;
 	char **locations = malloc(sizeof(char*) * numlocs);
+	char *sp;
 
 	if (argc == 0) {
 		exit(2);
@@ -922,14 +923,14 @@ command_discover(int argc, char *argv[])
 		exit(2);
 	}
 
-	if ((p = strtok(buf, "\n")) != NULL) {
+	if ((p = strtok_r(buf, "\n", &sp)) != NULL) {
 		if (strcmp(p, "OK") != 0) {
 			fprintf(stderr, "%s: %s\n", argv[0], p);
 			exit(1);
 		}
 		if (twidth > 0)
 			location = malloc(twidth + 1);
-		while ((p = strtok(NULL, "\n")) != NULL) {
+		while ((p = strtok_r(NULL, "\n", &sp)) != NULL) {
 			if ((q = strchr(p, '\t')) == NULL) {
 				/* doesn't look correct */
 				printf("%s: WARNING: discarding incorrect line: %s\n",
@@ -1377,9 +1378,10 @@ command_get(int argc, char *argv[])
 		} else {
 			/* check validity of properties before printing them */
 			if (stats == orig) {
+				char *sp;
 				snprintf(vbuf, sizeof(vbuf), "%s", property);
 				buf = vbuf;
-				while ((p = strtok(buf, ",")) != NULL) {
+				while ((p = strtok_r(buf, ",", &sp)) != NULL) {
 					buf = NULL;
 					if (strcmp(p, "name") == 0)
 						continue;
@@ -1395,7 +1397,8 @@ command_get(int argc, char *argv[])
 		if (stats == orig)
 			printf("     name          prop     source           value\n");
 
-		while ((p = strtok(buf, ",")) != NULL) {
+		char *sp;
+		while ((p = strtok_r(buf, ",", &sp)) != NULL) {
 			buf = NULL;
 
 			/* filter properties based on object type */

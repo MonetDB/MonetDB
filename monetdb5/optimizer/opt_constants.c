@@ -36,16 +36,12 @@ OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	lng usec = GDKusec();
 	str msg = MAL_SUCCEED;
 
-    if( OPTdebug &  OPTconstants){
-        fprintf(stderr, "#CONSTANTS optimizer exit\n");
-        fprintFunction(stderr, mb, 0,  LIST_MAL_ALL);
-    }
 	alias= (int*) GDKzalloc(sizeof(int) * mb->vtop);
 	cst= (VarPtr*) GDKzalloc(sizeof(VarPtr) * mb->vtop);
 	index= (int*) GDKzalloc(sizeof(int) * mb->vtop);
 
 	if ( alias == NULL || cst == NULL || index == NULL){
-		msg = createException(MAL,"optimizer.constants", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		msg = createException(MAL,"optimizer.constants", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto wrapup;
 	}
 
@@ -103,16 +99,12 @@ OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	usec = GDKusec()- usec;
 	snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","constants",actions,usec);
 	newComment(mb,buf);
-	if (actions >= 0)
+	if (actions > 0)
 		addtoMalBlkHistory(mb);
 
 wrapup:
 	if( alias) GDKfree(alias);
 	if( cst) GDKfree(cst);
 	if( index) GDKfree(index);
-    if( OPTdebug &  OPTconstants){
-        fprintf(stderr, "#CONSTANTS optimizer exit\n");
-        fprintFunction(stderr, mb, 0,  LIST_MAL_ALL);
-    }
 	return msg;
 }

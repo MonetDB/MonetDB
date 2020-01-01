@@ -423,7 +423,7 @@ stdout of test 'bram` in directory 'sql/test/ADT2006` itself:
 [ 12,	"Rose Mylett"	]
 #select v.name, count(w.name) as witness_count from victim v JOIN witness w ON (w.victim = v.name)
 #GROUP BY v.name HAVING count(w.name) >= 2;
-% sys.v,	sys.%3 # table_name
+% sys.v,	sys. # table_name
 % name,	witness_count # name
 % varchar,	bigint # type
 % 17,	1 # length
@@ -435,7 +435,7 @@ stdout of test 'bram` in directory 'sql/test/ADT2006` itself:
 [ "Frances Coles",	2	]
 #select i.name, count(v.victim) AS cases from inspector i JOIN inspector_victim v ON (v.inspector = i.name)
 #GROUP BY i.name HAVING count(v.victim) > 1 order by i.name;
-% sys.i,	sys.%3 # table_name
+% sys.i,	sys. # table_name
 % name,	cases # name
 % varchar,	bigint # type
 % 23,	1 # length
@@ -472,14 +472,14 @@ stdout of test 'bram` in directory 'sql/test/ADT2006` itself:
 #UNION ALL
 #(select name, (12*cast(substring(length from 0 for (position('''' in length) - 1)) AS integer)
 #    + cast(substring(length from (position('''' in length) + 1) for (position('"' in length) - position('''' in length) - 1)) AS integer)) as height from victim v
-% .%45,	.%45 # table_name
-% %40,	average_height # name
+% .%27,	.%27 # table_name
+% %22,	average_height # name
 % char,	varchar # type
 % 6,	4 # length
 [ "blonde",	"5'7\""	]
 [ "brown",	"5'6\""	]
 #SELECT name as victim FROM victim WHERE date_of_birth is null or date_of_birth = 'unknown';
-% sys.victim # table_name
+% sys. # table_name
 % victim # name
 % varchar # type
 % 42 # length
@@ -503,7 +503,7 @@ stdout of test 'bram` in directory 'sql/test/ADT2006` itself:
 [ "Carrie Brown"	]
 #select d.name as doctor, d.victim, v.date from doctor d JOIN victim v ON (d.victim = v.name)
 #WHERE not exists (select doc.name from doctor doc where doc.victim = v.name and doc.name <> d.name);
-% sys.d,	sys.d,	sys.v # table_name
+% sys.,	sys.d,	sys.v # table_name
 % doctor,	victim,	date # name
 % varchar,	varchar,	date # type
 % 0,	0,	10 # length

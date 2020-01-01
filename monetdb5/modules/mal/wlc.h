@@ -11,6 +11,7 @@
 
 #include "gdk.h"
 #include <time.h>
+#include "mal.h"
 #include "mal_exception.h"
 #include "mal_interpreter.h"
 
@@ -18,7 +19,7 @@
 
 #define WLC_QUERY		1
 #define WLC_UPDATE 		2
-#define WLC_CATALOG 	3
+#define WLC_CATALOG 		3
 #define WLC_IGNORE		4
 
 /* WLC modes */
@@ -33,9 +34,6 @@
 #ifndef F_OK
 #define F_OK 0
 #endif
-#ifdef _MSC_VER
-#define access(f, m)    _access(f, m)
-#endif
 
 mal_export MT_Lock wlc_lock;
 mal_export char wlc_dir[FILENAME_MAX];
@@ -48,7 +46,7 @@ mal_export char wlc_write[26];
 
 mal_export str WLCinit(void);
 mal_export int WLCused(void);
-mal_export void WLCreset(void);
+mal_export str WLCepilogue(void *ret);
 mal_export str WLCgetConfig(void);
 mal_export str WLCreadConfig(FILE *fd);
 mal_export str WLCflush(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

@@ -20,7 +20,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	BUN r = 0, rowcnt = 0;    /* table should be sizeable to consider parallel execution*/
 	InstrPtr q, *old, target = 0;
 	size_t argsize = 6 * sizeof(lng), m = 0;
-	/*     per op:   6 = (2+1)*2   <=  2 args + 1 res, each with head & tail */
+	/*     per op estimate:   4 args + 2 res*/
 	int threads = GDKnr_threads ? GDKnr_threads : 1;
 	int activeClients;
 	char buf[256];
@@ -97,7 +97,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		 * single subplan should ideally fit together.
 		 */
 		r = getRowCnt(mb, getArg(p, 0));
-		if (r >= rowcnt) {
+		if (r > rowcnt) {
 			/* the rowsize depends on the column types, assume void-headed */
 			row_size = ATOMsize(getBatType(getArgType(mb,p,0)));
 			rowcnt = r;
@@ -124,12 +124,15 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	 */
 	activeClients = mb->activeClients = MCactiveClients();
 
+/* This code was used to experiment with block sizes, mis-using the memorylimit  variable 
 	if (cntxt->memorylimit){
-		/* the new mitosis scheme uses a maximum chunck size in MB from the client context */
+		// the new mitosis scheme uses a maximum chunck size in MB from the client context 
 		m = (size_t) ((cntxt->memorylimit * 1024 *1024) / row_size);
 		pieces = (int) (rowcnt / m + (rowcnt - m * pieces > 0));
 	}
 	if (cntxt->memorylimit == 0 || pieces <= 1){
+*/
+	if (pieces <= 1){
 		/* the old allocation scheme */
 		m = GDK_mem_maxsize / argsize;
 		/* if data exceeds memory size,
@@ -170,16 +173,6 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	if (mito_size > 0) 
 		pieces = (int) ((rowcnt * row_size) / (mito_size * 1024));
 
-    if(OPTdebug &  OPTmitosis){
-		fprintf(stderr, "#opt_mitosis: target is %s.%s "
-							   " with " BUNFMT " rows of size %d into %zu"
-								" rows/piece %d threads %d pieces"
-								" fixed parts %d fixed size %d chunk = "BUNFMT"\n",
-				 getVarConstant(mb, getArg(target, 2)).val.sval,
-				 getVarConstant(mb, getArg(target, 3)).val.sval,
-				 rowcnt, row_size, m, threads, pieces, mito_parts, mito_size, rowcnt / pieces * row_size);
-	}
-
 	if (pieces <= 1)
 		goto bailout;
 
@@ -187,7 +180,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	limit = mb->stop;
 	slimit = mb->ssize;
 	if (newMalBlkStmt(mb, mb->stop + 2 * estimate) < 0)
-		throw(MAL,"optimizer.mitosis", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL,"optimizer.mitosis", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	estimate = 0;
 
 	schema = getVarConstant(mb, getArg(target, 2)).val.sval;
@@ -222,14 +215,8 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		}
 		if (p->retc == 2)
 			upd = 1;
-		if( mt == -1)
-			mt = getMitosisPartition(p);
 		if (mt < 0 && (strcmp(schema, getVarConstant(mb, getArg(p, 2 + upd)).val.sval) ||
 			       strcmp(table, getVarConstant(mb, getArg(p, 3 + upd)).val.sval))) {
-			pushInstruction(mb, p);
-			continue;
-		}
-		if (mt >= 0 && getMitosisPartition(p) != mt) {
 			pushInstruction(mb, p);
 			continue;
 		}
@@ -255,7 +242,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 					if (old[i])
 						pushInstruction(mb,old[i]);
 				GDKfree(old);
-				throw(MAL,"optimizer.mitosis", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				throw(MAL,"optimizer.mitosis", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 			q = pushInt(mb, q, j);
 			q = pushInt(mb, q, pieces);
@@ -267,9 +254,9 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				setVarUDFtype(mb, rv);
 			}
 			pushInstruction(mb, q);
-			matq = pushArgument(mb, matq, qv);
+			matq = addArgument(mb, matq, qv);
 			if (upd)
-				matr = pushArgument(mb, matr, rv);
+				matr = addArgument(mb, matr, rv);
 		}
 		pushInstruction(mb, matq);
 		if (upd)
@@ -289,13 +276,9 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
     /* keep all actions taken as a post block comment */
 bailout:
 	usec = GDKusec()- usec;
-    snprintf(buf,256,"%-20s actions=1 time=" LLFMT " usec","mitosis", usec);
+    snprintf(buf,256,"%-20s actions=%d time=" LLFMT " usec","mitosis", pieces, usec);
     newComment(mb,buf);
-	addtoMalBlkHistory(mb);
-
-    if( OPTdebug &  OPTmitosis){
-        fprintf(stderr, "#MITOSIS optimizer exit\n");
-        fprintFunction(stderr, mb, 0,  LIST_MAL_ALL);
-    }
+	if( pieces > 0)
+		addtoMalBlkHistory(mb);
 	return msg;
 }

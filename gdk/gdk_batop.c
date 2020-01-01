@@ -148,7 +148,7 @@ insert_string_bat(BAT *b, BAT *n, BAT *s, bool force)
 				if (off < b->tvheap->free &&
 				    strcmp(b->tvheap->base + off, n->tvheap->base + off) == 0 &&
 				    (!b->tvheap->hashash ||
-				     ((BUN *) (b->tvheap->base + off))[-1] == (n->tvheap->hashash ? ((BUN *) (n->tvheap->base + off))[-1] : strHash(n->tvheap->base + off))))
+				     ((BUN *) (b->tvheap->base + off))[-1] == (n->tvheap->hashash ? ((BUN *) (n->tvheap->base + off))[-1] : GDK_STRHASH(n->tvheap->base + off))))
 					match++;
 				len += (strlen(n->tvheap->base + off) + 8) & ~7;
 			}
@@ -161,7 +161,7 @@ insert_string_bat(BAT *b, BAT *n, BAT *s, bool force)
 				 * shared when memory mapped */
 				if (HEAPextend(b->tvheap, toff + n->tvheap->size, force) != GDK_SUCCEED) {
 					toff = ~(size_t) 0;
-					goto bunins_failed;
+					return GDK_FAIL;
 				}
 				memcpy(b->tvheap->base + toff, n->tvheap->base, n->tvheap->free);
 				b->tvheap->free = toff + n->tvheap->free;
@@ -187,7 +187,7 @@ insert_string_bat(BAT *b, BAT *n, BAT *s, bool force)
 				 * widen offset heap */
 				if (GDKupgradevarheap(b, (var_t) b->tvheap->size, false, force) != GDK_SUCCEED) {
 					toff = ~(size_t) 0;
-					goto bunins_failed;
+					return GDK_FAIL;
 				}
 			}
 		}
@@ -314,7 +314,8 @@ insert_string_bat(BAT *b, BAT *n, BAT *s, bool force)
 			cnt--;
 			p = canditer_next(&ci) - hseq;
 			tp = BUNtvar(ni, p);
-			bunfastappVAR(b, tp);
+			if (bunfastappVAR(b, tp) != GDK_SUCCEED)
+				goto bunins_failed;
 			HASHins(b, r, tp);
 			r++;
 		}
@@ -334,7 +335,7 @@ insert_string_bat(BAT *b, BAT *n, BAT *s, bool force)
 			if (off < b->tvheap->free &&
 			    strcmp(b->tvheap->base + off, tp) == 0 &&
 			    (!b->tvheap->hashash ||
-			     ((BUN *) (b->tvheap->base + off))[-1] == (n->tvheap->hashash ? ((BUN *) tp)[-1] : strHash(tp)))) {
+			     ((BUN *) (b->tvheap->base + off))[-1] == (n->tvheap->hashash ? ((BUN *) tp)[-1] : GDK_STRHASH(tp)))) {
 				/* we found the string at the same
 				 * offset in b's string heap as it was
 				 * in n's string heap, so we don't
@@ -374,7 +375,8 @@ insert_string_bat(BAT *b, BAT *n, BAT *s, bool force)
 				}
 				b->batCount++;
 			} else {
-				bunfastappVAR(b, tp);
+				if (bunfastappVAR(b, tp) != GDK_SUCCEED)
+					goto bunins_failed;
 			}
 			HASHins(b, r, tp);
 			r++;
@@ -470,15 +472,13 @@ append_varsized_bat(BAT *b, BAT *n, BAT *s)
 		cnt--;
 		BUN p = canditer_next(&ci) - hseq;
 		const void *t = BUNtvar(ni, p);
-		bunfastapp_nocheckVAR(b, r, t, Tsize(b));
+		if (bunfastapp_nocheckVAR(b, r, t, Tsize(b)) != GDK_SUCCEED)
+			return GDK_FAIL;
 		HASHins(b, r, t);
 		r++;
 	}
 	b->theap.dirty = true;
 	return GDK_SUCCEED;
-
-      bunins_failed:
-	return GDK_FAIL;
 }
 
 /* Append the contents of BAT n (subject to the optional candidate
@@ -600,7 +600,7 @@ BATappend(BAT *b, BAT *n, BAT *s, bool force)
 		/* we need to materialize b; allocate enough capacity */
 		b->batCapacity = BATcount(b) + cnt;
 		if (BATmaterialize(b) != GDK_SUCCEED)
-			goto bunins_failed;
+			return GDK_FAIL;
 	} else if (cnt > BATcapacity(b) - BATcount(b)) {
 		/* if needed space exceeds a normal growth extend just
 		 * with what's needed */
@@ -610,7 +610,7 @@ BATappend(BAT *b, BAT *n, BAT *s, bool force)
 		if (ncap > grows)
 			grows = ncap;
 		if (BATextend(b, grows) != GDK_SUCCEED)
-			goto bunins_failed;
+			return GDK_FAIL;
 	}
 
 	/* if growing too much, remove the hash, else we maintain it */
@@ -708,7 +708,8 @@ BATappend(BAT *b, BAT *n, BAT *s, bool force)
 				cnt--;
 				BUN p = canditer_next(&ci) - hseq;
 				const void *t = BUNtail(ni, p);
-				bunfastapp_nocheck(b, r, t, Tsize(b));
+				if (bunfastapp_nocheck(b, r, t, Tsize(b)) != GDK_SUCCEED)
+					return GDK_FAIL;
 				HASHins(b, r, t);
 				r++;
 			}
@@ -716,9 +717,6 @@ BATappend(BAT *b, BAT *n, BAT *s, bool force)
 		b->theap.dirty = true;
 	}
 	return GDK_SUCCEED;
-
-      bunins_failed:
-	return GDK_FAIL;
 }
 
 gdk_return
@@ -841,6 +839,10 @@ BATdel(BAT *b, BAT *d)
 gdk_return
 BATreplace(BAT *b, BAT *p, BAT *n, bool force)
 {
+	lng t0 = 0;
+
+	ALGODEBUG t0 = GDKusec();
+
 	if (b == NULL || b->ttype == TYPE_void || p == NULL || n == NULL) {
 		return GDK_SUCCEED;
 	}
@@ -867,6 +869,7 @@ BATreplace(BAT *b, BAT *p, BAT *n, bool force)
 
 	b->tsorted = b->trevsorted = false;
 	b->tnosorted = b->tnorevsorted = 0;
+	b->tseqbase = oid_nil;
 	b->tkey = false;
 	b->tnokey[0] = b->tnokey[1] = 0;
 
@@ -964,12 +967,13 @@ BATreplace(BAT *b, BAT *p, BAT *n, bool force)
 				break;
 #endif
 			}
-			ATOMreplaceVAR(b->ttype, b->tvheap, &d, new);
+			if (ATOMreplaceVAR(b->ttype, b->tvheap, &d, new) != GDK_SUCCEED)
+				return GDK_FAIL;
 			if (b->twidth < SIZEOF_VAR_T &&
 			    (b->twidth <= 2 ? d - GDK_VAROFFSET : d) >= ((size_t) 1 << (8 * b->twidth))) {
 				/* doesn't fit in current heap, upgrade it */
 				if (GDKupgradevarheap(b, d, false, b->batRestricted == BAT_READ) != GDK_SUCCEED)
-					goto bunins_failed;
+					return GDK_FAIL;
 			}
 			switch (b->twidth) {
 			case 1:
@@ -986,6 +990,87 @@ BATreplace(BAT *b, BAT *p, BAT *n, bool force)
 				((uint64_t *) b->theap.base)[updid] = (uint64_t) d;
 				break;
 #endif
+			}
+		}
+	} else if (BATtdense(p)) {
+		oid updid = BUNtoid(p, 0);
+
+		if (updid < b->hseqbase || updid + BATcount(p) > hseqend) {
+			GDKerror("BATreplace: id out of range\n");
+			return GDK_FAIL;
+		}
+		updid -= b->hseqbase;
+		if (!force && updid < b->batInserted) {
+			GDKerror("BATreplace: updating committed value\n");
+			return GDK_FAIL;
+		}
+
+		/* we copy all of n, so if there are nils in n we get
+		 * nils in b (and else we don't know) */
+		b->tnil = n->tnil;
+		/* we may not copy over all of b, so we only know that
+		 * there are no nils in b afterward if there weren't
+		 * any in either b or n to begin with */
+		b->tnonil &= n->tnonil;
+		if (n->ttype == TYPE_void) {
+			assert(b->ttype == TYPE_oid);
+			oid *o = Tloc(b, updid);
+			if (is_oid_nil(n->tseqbase)) {
+				/* we may or may not overwrite the old
+				 * min/max values */
+				BATrmprop(b, GDK_MAX_VALUE);
+				BATrmprop(b, GDK_MIN_VALUE);
+				for (BUN i = 0, j = BATcount(p); i < j; i++)
+					o[i] = oid_nil;
+				b->tnil = true;
+			} else {
+				oid v = n->tseqbase;
+				/* we know min/max of n, so we know
+				 * the new min/max of b if those of n
+				 * are smaller/larger than the old */
+				if (minprop && v <= minprop->v.val.oval)
+					BATsetprop(b, GDK_MIN_VALUE, TYPE_oid, &v);
+				else
+					BATrmprop(b, GDK_MIN_VALUE);
+				for (BUN i = 0, j = BATcount(p); i < j; i++)
+					o[i] = v++;
+				if (maxprop && --v >= maxprop->v.val.oval)
+					BATsetprop(b, GDK_MAX_VALUE, TYPE_oid, &v);
+				else
+					BATrmprop(b, GDK_MAX_VALUE);
+			}
+		} else {
+			/* if the extremes of n are at least as
+			 * extreme as those of b, we can replace b's
+			 * min/max, else we don't know what b's new
+			 * min/max are*/
+			PROPrec *prop;
+			if (maxprop != NULL &&
+			    (prop = BATgetprop(n, GDK_MAX_VALUE)) != NULL &&
+			    atomcmp(VALptr(&maxprop->v), VALptr(&prop->v)) <= 0)
+				BATsetprop(b, GDK_MAX_VALUE, b->ttype, VALptr(&prop->v));
+			else
+				BATrmprop(b, GDK_MAX_VALUE);
+			if (minprop != NULL &&
+			    (prop = BATgetprop(n, GDK_MIN_VALUE)) != NULL &&
+			    atomcmp(VALptr(&minprop->v), VALptr(&prop->v)) >= 0)
+				BATsetprop(b, GDK_MIN_VALUE, b->ttype, VALptr(&prop->v));
+			else
+				BATrmprop(b, GDK_MIN_VALUE);
+			memcpy(Tloc(b, updid), Tloc(n, 0),
+			       BATcount(p) * b->twidth);
+		}
+		if (BATcount(p) == BATcount(b)) {
+			/* if we replaced all values of b by values
+			 * from n, we can also copy the min/max
+			 * properties */
+			if ((minprop = BATgetprop(n, GDK_MIN_VALUE)) != NULL)
+				BATsetprop(b, GDK_MIN_VALUE, b->ttype, VALptr(&minprop->v));
+			if ((maxprop = BATgetprop(n, GDK_MAX_VALUE)) != NULL)
+				BATsetprop(b, GDK_MAX_VALUE, b->ttype, VALptr(&maxprop->v));
+			if (BATtdense(n)) {
+				/* replaced all of b with a dense sequence */
+				BATtseqbase(b, n->tseqbase);
 			}
 		}
 	} else {
@@ -1078,10 +1163,12 @@ BATreplace(BAT *b, BAT *p, BAT *n, bool force)
 			}
 		}
 	}
+	ALGODEBUG fprintf(stderr,
+			  "#%s: BATreplace(" ALGOBATFMT "," ALGOBATFMT "," ALGOBATFMT ") " LLFMT " usec\n",
+			  MT_thread_getname(),
+			  ALGOBATPAR(b), ALGOBATPAR(p), ALGOBATPAR(n),
+			  GDKusec() - t0);
 	return GDK_SUCCEED;
-
-  bunins_failed:
-	return GDK_FAIL;
 }
 
 
@@ -1157,7 +1244,10 @@ BATslice(BAT *b, BUN l, BUN h)
 			BATsetcount(bn, h - l);
 		} else {
 			for (; p < q; p++) {
-				bunfastapp(bn, BUNtail(bi, p));
+				if (bunfastapp(bn, BUNtail(bi, p)) != GDK_SUCCEED) {
+					BBPreclaim(bn);
+					return NULL;
+				}
 			}
 		}
 		bn->theap.dirty = true;
@@ -1210,13 +1300,10 @@ BATslice(BAT *b, BUN l, BUN h)
 		BATkey(bn, BATtkey(b));
 	}
 	ALGODEBUG fprintf(stderr,
-			  "#BATslice(" ALGOBATFMT "," BUNFMT "," BUNFMT ")"
-			  "=" ALGOBATFMT "\n",
+			  "#%s: BATslice(" ALGOBATFMT "," BUNFMT "," BUNFMT ")"
+			  "=" ALGOBATFMT "\n", MT_thread_getname(),
 			  ALGOBATPAR(b), l, h, ALGOBATPAR(bn));
 	return bn;
-      bunins_failed:
-	BBPreclaim(bn);
-	return NULL;
 }
 
 /* Return whether the BAT has all unique values or not.  It we don't
@@ -1252,7 +1339,7 @@ BATkeyed(BAT *b)
 				if ((*cmpf)(prev, cur) == 0) {
 					b->tnokey[0] = p - 1;
 					b->tnokey[1] = p;
-					ALGODEBUG fprintf(stderr, "#BATkeyed: fixed nokey(" BUNFMT "," BUNFMT ") for %s#" BUNFMT " (" LLFMT " usec)\n", p - 1, p, BATgetId(b), BATcount(b), GDKusec() - t0);
+					ALGODEBUG fprintf(stderr, "#%s: BATkeyed: fixed nokey(" BUNFMT "," BUNFMT ") for %s#" BUNFMT " (" LLFMT " usec)\n", MT_thread_getname(), p - 1, p, BATgetId(b), BATcount(b), GDKusec() - t0);
 					goto doreturn;
 				}
 				prev = cur;
@@ -1285,7 +1372,7 @@ BATkeyed(BAT *b)
 					if ((*cmpf)(v, BUNtail(bi, hb - lo)) == 0) {
 						b->tnokey[0] = hb - lo;
 						b->tnokey[1] = p;
-					ALGODEBUG fprintf(stderr, "#BATkeyed: fixed nokey(" BUNFMT "," BUNFMT ") for %s#" BUNFMT " (" LLFMT " usec)\n", hb - lo, p, BATgetId(b), BATcount(b), GDKusec() - t0);
+					ALGODEBUG fprintf(stderr, "#%s: BATkeyed: fixed nokey(" BUNFMT "," BUNFMT ") for %s#" BUNFMT " (" LLFMT " usec)\n", MT_thread_getname(), hb - lo, p, BATgetId(b), BATcount(b), GDKusec() - t0);
 						goto doreturn;
 					}
 				}
@@ -1330,7 +1417,7 @@ BATkeyed(BAT *b)
 					    (*cmpf)(v, BUNtail(bi, hb)) == 0) {
 						b->tnokey[0] = hb;
 						b->tnokey[1] = p;
-						ALGODEBUG fprintf(stderr, "#BATkeyed: fixed nokey(" BUNFMT "," BUNFMT ") for %s#" BUNFMT " (" LLFMT " usec)\n", hb, p, BATgetId(b), BATcount(b), GDKusec() - t0);
+						ALGODEBUG fprintf(stderr, "#%s: BATkeyed: fixed nokey(" BUNFMT "," BUNFMT ") for %s#" BUNFMT " (" LLFMT " usec)\n", MT_thread_getname(), hb, p, BATgetId(b), BATcount(b), GDKusec() - t0);
 						goto doreturn_free;
 					}
 				}
@@ -1382,13 +1469,13 @@ BATordered(BAT *b)
 			for (q = BUNlast(b), p = 1; p < q; p++) {
 				if (iptr[p - 1] > iptr[p]) {
 					b->tnosorted = p;
-					ALGODEBUG fprintf(stderr, "#BATordered: fixed nosorted(" BUNFMT ") for %s#" BUNFMT " (" LLFMT " usec)\n", p, BATgetId(b), BATcount(b), GDKusec() - t0);
+					ALGODEBUG fprintf(stderr, "#%s: BATordered: fixed nosorted(" BUNFMT ") for %s#" BUNFMT " (" LLFMT " usec)\n", MT_thread_getname(), p, BATgetId(b), BATcount(b), GDKusec() - t0);
 					goto doreturn;
 				} else if (!b->trevsorted &&
 					   b->tnorevsorted == 0 &&
 					   iptr[p - 1] < iptr[p]) {
 					b->tnorevsorted = p;
-					ALGODEBUG fprintf(stderr, "#BATordered: fixed norevsorted(" BUNFMT ") for %s#" BUNFMT "\n", p, BATgetId(b), BATcount(b));
+					ALGODEBUG fprintf(stderr, "#%s: BATordered: fixed norevsorted(" BUNFMT ") for %s#" BUNFMT "\n", MT_thread_getname(), p, BATgetId(b), BATcount(b));
 				}
 			}
 			break;
@@ -1398,13 +1485,13 @@ BATordered(BAT *b)
 			for (q = BUNlast(b), p = 1; p < q; p++) {
 				if (lptr[p - 1] > lptr[p]) {
 					b->tnosorted = p;
-					ALGODEBUG fprintf(stderr, "#BATordered: fixed nosorted(" BUNFMT ") for %s#" BUNFMT " (" LLFMT " usec)\n", p, BATgetId(b), BATcount(b), GDKusec() - t0);
+					ALGODEBUG fprintf(stderr, "#%s: BATordered: fixed nosorted(" BUNFMT ") for %s#" BUNFMT " (" LLFMT " usec)\n", MT_thread_getname(), p, BATgetId(b), BATcount(b), GDKusec() - t0);
 					goto doreturn;
 				} else if (!b->trevsorted &&
 					   b->tnorevsorted == 0 &&
 					   lptr[p - 1] < lptr[p]) {
 					b->tnorevsorted = p;
-					ALGODEBUG fprintf(stderr, "#BATordered: fixed norevsorted(" BUNFMT ") for %s#" BUNFMT "\n", p, BATgetId(b), BATcount(b));
+					ALGODEBUG fprintf(stderr, "#%s: BATordered: fixed norevsorted(" BUNFMT ") for %s#" BUNFMT "\n", MT_thread_getname(), p, BATgetId(b), BATcount(b));
 				}
 			}
 			break;
@@ -1414,13 +1501,13 @@ BATordered(BAT *b)
 				int c;
 				if ((c = cmpf(BUNtail(bi, p - 1), BUNtail(bi, p))) > 0) {
 					b->tnosorted = p;
-					ALGODEBUG fprintf(stderr, "#BATordered: fixed nosorted(" BUNFMT ") for %s#" BUNFMT " (" LLFMT " usec)\n", p, BATgetId(b), BATcount(b), GDKusec() - t0);
+					ALGODEBUG fprintf(stderr, "#%s: BATordered: fixed nosorted(" BUNFMT ") for %s#" BUNFMT " (" LLFMT " usec)\n", MT_thread_getname(), p, BATgetId(b), BATcount(b), GDKusec() - t0);
 					goto doreturn;
 				} else if (!b->trevsorted &&
 					   b->tnorevsorted == 0 &&
 					   c < 0) {
 					b->tnorevsorted = p;
-					ALGODEBUG fprintf(stderr, "#BATordered: fixed norevsorted(" BUNFMT ") for %s#" BUNFMT "\n", p, BATgetId(b), BATcount(b));
+					ALGODEBUG fprintf(stderr, "#%s: BATordered: fixed norevsorted(" BUNFMT ") for %s#" BUNFMT "\n", MT_thread_getname(), p, BATgetId(b), BATcount(b));
 				}
 			}
 			break;
@@ -1430,10 +1517,10 @@ BATordered(BAT *b)
 		 * sortedness, we know that the BAT is also reverse
 		 * sorted */
 		b->tsorted = true;
-		ALGODEBUG fprintf(stderr, "#BATordered: fixed sorted for %s#" BUNFMT " (" LLFMT " usec)\n", BATgetId(b), BATcount(b), GDKusec() - t0);
+		ALGODEBUG fprintf(stderr, "#%s: BATordered: fixed sorted for %s#" BUNFMT " (" LLFMT " usec)\n", MT_thread_getname(), BATgetId(b), BATcount(b), GDKusec() - t0);
 		if (!b->trevsorted && b->tnorevsorted == 0) {
 			b->trevsorted = true;
-			ALGODEBUG fprintf(stderr, "#BATordered: fixed revsorted for %s#" BUNFMT "\n", BATgetId(b), BATcount(b));
+			ALGODEBUG fprintf(stderr, "#%s: BATordered: fixed revsorted for %s#" BUNFMT "\n", MT_thread_getname(), BATgetId(b), BATcount(b));
 		}
 	}
   doreturn:
@@ -1468,12 +1555,12 @@ BATordered_rev(BAT *b)
 		for (q = BUNlast(b), p = 1; p < q; p++) {
 			if (cmpf(BUNtail(bi, p - 1), BUNtail(bi, p)) < 0) {
 				b->tnorevsorted = p;
-				ALGODEBUG fprintf(stderr, "#BATordered_rev: fixed norevsorted(" BUNFMT ") for %s#" BUNFMT " (" LLFMT " usec)\n", p, BATgetId(b), BATcount(b), GDKusec() - t0);
+				ALGODEBUG fprintf(stderr, "#%s: BATordered_rev: fixed norevsorted(" BUNFMT ") for %s#" BUNFMT " (" LLFMT " usec)\n", MT_thread_getname(), p, BATgetId(b), BATcount(b), GDKusec() - t0);
 				goto doreturn;
 			}
 		}
 		b->trevsorted = true;
-		ALGODEBUG fprintf(stderr, "#BATordered_rev: fixed revsorted for %s#" BUNFMT " (" LLFMT " usec)\n", BATgetId(b), BATcount(b), GDKusec() - t0);
+		ALGODEBUG fprintf(stderr, "#%s: BATordered_rev: fixed revsorted for %s#" BUNFMT " (" LLFMT " usec)\n", MT_thread_getname(), BATgetId(b), BATcount(b), GDKusec() - t0);
 	}
   doreturn:
 	MT_lock_unset(&b->batIdxLock);
@@ -1660,12 +1747,12 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 			}
 			*groups = gn;
 		}
-		ALGODEBUG fprintf(stderr, "#BATsort(b=" ALGOBATFMT ",o="
+		ALGODEBUG fprintf(stderr, "#%s: BATsort(b=" ALGOBATFMT ",o="
 				  ALGOOPTBATFMT ",g=" ALGOOPTBATFMT
 				  ",reverse=%d,nilslast=%d,stable=%d) = ("
 				  ALGOOPTBATFMT "," ALGOOPTBATFMT ","
 				  ALGOOPTBATFMT ") -- trivial (" LLFMT
-				  " usec)\n",
+				  " usec)\n", MT_thread_getname(),
 				  ALGOBATPAR(b), ALGOOPTBATPAR(o),
 				  ALGOOPTBATPAR(g), reverse, nilslast, stable,
 				  ALGOOPTBATPAR(bn), ALGOOPTBATPAR(gn),
@@ -1747,12 +1834,12 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 			BBPunfix(on->batCacheid);
 			on = NULL;
 		}
-		ALGODEBUG fprintf(stderr, "#BATsort(b=" ALGOBATFMT ",o="
+		ALGODEBUG fprintf(stderr, "#%s: BATsort(b=" ALGOBATFMT ",o="
 				  ALGOOPTBATFMT ",g=" ALGOOPTBATFMT
 				  ",reverse=%d,nilslast=%d,stable=%d) = ("
 				  ALGOOPTBATFMT "," ALGOOPTBATFMT ","
 				  ALGOOPTBATFMT ") -- orderidx (" LLFMT
-				  " usec)\n",
+				  " usec)\n", MT_thread_getname(),
 				  ALGOBATPAR(b), ALGOOPTBATPAR(o),
 				  ALGOOPTBATPAR(g), reverse, nilslast, stable,
 				  ALGOOPTBATPAR(bn), ALGOOPTBATPAR(gn),
@@ -1849,12 +1936,12 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 					goto error;
 				*groups = gn;
 			}
-			ALGODEBUG fprintf(stderr, "#BATsort(b=" ALGOBATFMT
+			ALGODEBUG fprintf(stderr, "#%s: BATsort(b=" ALGOBATFMT
 					  ",o=" ALGOOPTBATFMT ",g=" ALGOBATFMT
 					  ",reverse=%d,nilslast=%d,stable=%d"
 					  ") = (" ALGOOPTBATFMT ","
 					  ALGOOPTBATFMT "," ALGOOPTBATFMT
-					  ") -- key group (" LLFMT " usec)\n",
+					  ") -- key group (" LLFMT " usec)\n", MT_thread_getname(),
 					  ALGOBATPAR(b), ALGOOPTBATPAR(o),
 					  ALGOBATPAR(g), reverse, nilslast,
 					  stable, ALGOOPTBATPAR(bn),
@@ -1971,10 +2058,10 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 		bn = NULL;
 	}
 
-	ALGODEBUG fprintf(stderr, "#BATsort(b=" ALGOBATFMT ",o=" ALGOOPTBATFMT
+	ALGODEBUG fprintf(stderr, "#%s: BATsort(b=" ALGOBATFMT ",o=" ALGOOPTBATFMT
 			  ",g=" ALGOOPTBATFMT ",reverse=%d,nilslast=%d,"
 			  "stable=%d) = (" ALGOOPTBATFMT "," ALGOOPTBATFMT ","
-			  ALGOOPTBATFMT ") -- %ssort (" LLFMT " usec)\n",
+			  ALGOOPTBATFMT ") -- %ssort (" LLFMT " usec)\n", MT_thread_getname(),
 			  ALGOBATPAR(b), ALGOOPTBATPAR(o), ALGOOPTBATPAR(g),
 			  reverse, nilslast, stable, ALGOOPTBATPAR(bn),
 			  ALGOOPTBATPAR(gn), ALGOOPTBATPAR(on),
@@ -2044,7 +2131,10 @@ BATconstant(oid hseq, int tailtype, const void *v, BUN n, role_t role)
 #endif
 		default:
 			for (i = 0, n += i; i < n; i++)
-				tfastins_nocheck(bn, i, v, Tsize(bn));
+				if (tfastins_nocheck(bn, i, v, Tsize(bn)) != GDK_SUCCEED) {
+					BBPreclaim(bn);
+					return NULL;
+				}
 			break;
 		}
 		bn->theap.dirty = true;
@@ -2060,10 +2150,6 @@ BATconstant(oid hseq, int tailtype, const void *v, BUN n, role_t role)
 			  MT_thread_getname(), __func__,
 			  ALGOOPTBATPAR(bn), GDKusec() - t0);
 	return bn;
-
-  bunins_failed:
-	BBPreclaim(bn);
-	return NULL;
 }
 
 /*

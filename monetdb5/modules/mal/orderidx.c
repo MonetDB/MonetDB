@@ -101,25 +101,26 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 	snew = newFunction(putName("user"), putName(name),
 	       FUNCTIONsymbol);
 	if(snew == NULL) {
-		msg = createException(MAL, "bat.orderidx", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		msg = createException(MAL, "bat.orderidx", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 	smb = snew->def;
 	q = getInstrPtr(smb, 0);
 	arg = newTmpVariable(smb, tpe);
-	q= pushArgument(smb, q, arg);
+	q= addArgument(smb, q, arg);
 	getArg(q,0) = newTmpVariable(smb, TYPE_void);
 
-	resizeMalBlk(smb, 2*pieces+10); // large enough
+	if( resizeMalBlk(smb, 2*pieces+10) < 0)
+		goto bailout; // large enough
 	/* create the pack instruction first, as it will hold
 	 * intermediate variables */
 	pack = newInstruction(0, putName("bat"), putName("orderidx"));
 	if(pack == NULL) {
-		msg = createException(MAL, "bat.orderidx", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		msg = createException(MAL, "bat.orderidx", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 	pack->argv[0] = newTmpVariable(smb, TYPE_void);
-	pack = pushArgument(smb, pack, arg);
+	pack = addArgument(smb, pack, arg);
 	setVarFixed(smb, getArg(pack, 0));
 
 	/* the costly part executed as a parallel block */
@@ -133,11 +134,11 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 	o = 0;
 	for (i = 0; i < pieces; i++) {
 		/* add slice instruction */
-		q = newStmt(smb, putName("algebra"),putName("slice"));
+		q = newInstruction(smb, putName("algebra"),putName("slice"));
 		setVarType(smb, getArg(q,0), tpe);
 		setVarFixed(smb, getArg(q,0));
-		q = pushArgument(smb, q, arg);
-		pack = pushArgument(smb, pack, getArg(q,0));
+		q = addArgument(smb, q, arg);
+		pack = addArgument(smb, pack, getArg(q,0));
 		q = pushOid(smb, q, o);
 		if (i == pieces-1) {
 			o = cnt;
@@ -145,21 +146,23 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 			o += step;
 		}
 		q = pushOid(smb, q, o - 1);
+		pushInstruction(smb, q);
 	}
 	for (i = 0; i < pieces; i++) {
 		/* add sort instruction */
-		q = newStmt(smb, putName("algebra"), putName("orderidx"));
+		q = newInstruction(smb, putName("algebra"), putName("orderidx"));
 		setVarType(smb, getArg(q, 0), tpe);
 		setVarFixed(smb, getArg(q, 0));
-		q = pushArgument(smb, q, pack->argv[2+i]);
+		q = addArgument(smb, q, pack->argv[2+i]);
 		q = pushBit(smb, q, 1);
 		pack->argv[2+i] = getArg(q, 0);
+		pushInstruction(smb, q);
 	}
 	/* finalize OID packing, check, and evaluate */
 	pushInstruction(smb,pack);
 	q = newAssignment(smb);
 	if(q == NULL) {
-		msg = createException(MAL, "bat.orderidx", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		msg = createException(MAL, "bat.orderidx", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 	q->barrier = EXITsymbol;
@@ -174,7 +177,7 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 		/* evaluate MAL block and keep the ordered OID bat */
 		newstk = prepareMALstack(smb, smb->vsize);
 		if (newstk == NULL) {
-			msg = createException(MAL, "bat.orderidx", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			msg = createException(MAL, "bat.orderidx", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto bailout;
 		}
 		newstk->up = 0;
@@ -256,7 +259,7 @@ OIDXgetorderidx(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if ((bn = COLnew(0, TYPE_oid, BATcount(b), TRANSIENT)) == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(MAL, "bat.getorderidx", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "bat.getorderidx", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	memcpy(Tloc(bn, 0), (const oid *) b->torderidx->base + ORDERIDXOFF,
 		   BATcount(b) * SIZEOF_OID);
@@ -285,7 +288,7 @@ OIDXorderidx(bat *ret, const bat *bid, const bit *stable)
 	r = BATorderidx(b, *stable);
 	if (r != GDK_SUCCEED) {
 		BBPunfix(*bid);
-		throw(MAL, "algebra.orderidx", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "algebra.orderidx", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	*ret = *bid;
 	BBPkeepref(*ret);
@@ -346,7 +349,7 @@ OIDXmerge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if ((a = (BAT **) GDKmalloc(n_ar*sizeof(BAT *))) == NULL) {
 		BBPunfix(bid);
-		throw(MAL, "bat.orderidx", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "bat.orderidx", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	m_sz = 0;
 	for (i = 0; i < n_ar; i++) {
@@ -390,7 +393,7 @@ OIDXmerge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPunfix(bid);
 
 	if (rc != GDK_SUCCEED)
-		throw(MAL, "bat.orderidx", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "bat.orderidx", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	return MAL_SUCCEED;
 }
