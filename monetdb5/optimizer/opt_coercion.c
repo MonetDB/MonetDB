@@ -165,7 +165,7 @@ OPTcoercionImplementation(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
     if( actions > 0){
         chkTypes(cntxt->usermodule, mb, FALSE);
         chkFlow(mb);
-        chkDeclarations(mb);
+        msg = chkDeclarations(mb);
     } 
     /* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;

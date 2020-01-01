@@ -70,6 +70,7 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	str dblRef = getName("dbl");
 	char buf[256];
 	lng usec= GDKusec();
+	str msg = MAL_SUCCEED;
 
 	(void) cntxt;
 	(void) stk;
@@ -166,12 +167,12 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	/* all new/modified statements are already checked */
 	//chkTypes(cntxt->usermodule, mb, FALSE);
 	//chkFlow(mb);
-	//chkDeclarations(mb);
+	//if( msg == MAL_SUCCEED) msg = chkDeclarations(mb);
     /* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","generator",actions, usec);
     newComment(mb,buf);
 	if( actions > 0)
 		addtoMalBlkHistory(mb);
-	return MAL_SUCCEED;
+	return msg;
 }

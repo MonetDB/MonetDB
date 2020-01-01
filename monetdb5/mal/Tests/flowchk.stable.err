@@ -77,8 +77,7 @@ QUERY = function tst();
         exit go;
         	c:=a;
         end tst;
-ERROR = !TypeException:user.tst[5]:'a' may not be used before being initialized
-
+ERROR = !MALException:user.tst:'a' may not be used before being initialized
 
 # 07:33:12 >  
 # 07:33:12 >  "Done."

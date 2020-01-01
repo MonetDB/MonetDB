@@ -2277,7 +2277,7 @@ cleanup:
     if( actions > 0 && msg == MAL_SUCCEED){
         chkTypes(cntxt->usermodule, mb, FALSE);
         chkFlow(mb);
-        chkDeclarations(mb);
+        if(msg == MAL_SUCCEED) chkDeclarations(mb);
     }
     /* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;

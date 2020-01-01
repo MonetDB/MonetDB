@@ -42,11 +42,11 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	int *alias;
 	int *hash, h;
 	int *list;	
+	str msg = MAL_SUCCEED;
 
 	InstrPtr *old = NULL;
 	char buf[256];
 	lng usec = GDKusec();
-	str msg = MAL_SUCCEED;
 
 	(void) cntxt;
 	(void) stk;
@@ -204,7 +204,7 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
     if( actions > 0){
         chkTypes(cntxt->usermodule, mb, FALSE);
         chkFlow(mb);
-        chkDeclarations(mb);
+        msg = chkDeclarations(mb);
     }
     /* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;

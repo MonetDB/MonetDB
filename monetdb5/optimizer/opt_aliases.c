@@ -27,6 +27,7 @@ OPTaliasesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	int *alias = 0;
 	char buf[256];
 	lng usec = GDKusec();
+	str msg = MAL_SUCCEED;
 
 	(void) stk;
 	(void) cntxt;
@@ -74,7 +75,7 @@ OPTaliasesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	/* Plan is unaffected */
 	//chkTypes(cntxt->usermodule, mb, FALSE);
 	//chkFlow(mb);
-	//chkDeclarations(mb);
+	// if ( msg == MAL_SUCCEED) msg = chkDeclarations(mb);
 	//
     /* keep all actions taken as a post block comment
 	 * and update statics */
@@ -83,5 +84,5 @@ OPTaliasesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
     newComment(mb,buf);
 	if( actions > 0)
 		addtoMalBlkHistory(mb);
-	return MAL_SUCCEED;
+	return msg;
 }

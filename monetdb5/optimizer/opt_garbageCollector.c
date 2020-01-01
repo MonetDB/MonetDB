@@ -89,7 +89,7 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	if( actions > 0){
 		chkTypes(cntxt->usermodule, mb, FALSE);
 		chkFlow(mb);
-		chkDeclarations(mb);
+		if( msg == MAL_SUCCEED) msg = chkDeclarations(mb);
 	}
 
 	/* keep all actions taken as a post block comment */

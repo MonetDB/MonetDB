@@ -22,6 +22,7 @@ OPTmatpackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	InstrPtr *old;
 	char buf[256];
 	lng usec = GDKusec();
+	str msg = MAL_SUCCEED;
 
 	//if ( !optimizerIsApplied(mb,"multiplex") )
 		//return 0;
@@ -76,7 +77,7 @@ OPTmatpackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
     if( actions > 0){
         //chkTypes(cntxt->usermodule, mb, FALSE);
         //chkFlow(mb);
-        //chkDeclarations(mb);
+        // if(msg == MAL_SUCCEED) msg = chkDeclarations(mb);
     }
     /* keep all actions taken as a post block comment */
 wrapup:
@@ -85,5 +86,5 @@ wrapup:
     newComment(mb,buf);
 	if( actions >= 0)
 		addtoMalBlkHistory(mb);
-	return MAL_SUCCEED;
+	return msg;
 }

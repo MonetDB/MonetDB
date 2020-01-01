@@ -219,8 +219,9 @@ _create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *
 	if (curBlk->inlineProp == 0 && !c->curprg->def->errors) {
 		msg = SQLoptimizeQuery(c, c->curprg->def);
 	} else if (curBlk->inlineProp != 0) {
-		chkProgram(c->usermodule, c->curprg->def);
-		if (!c->curprg->def->errors)
+		if( msg == MAL_SUCCEED) 
+			msg = chkProgram(c->usermodule, c->curprg->def);
+		if (msg == MAL_SUCCEED && !c->curprg->def->errors)
 			msg = SQLoptimizeFunction(c,c->curprg->def);
 	}
 	if (msg) {
@@ -574,7 +575,7 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 	//curBlk->inlineProp = 1;
 
 	SQLaddQueryToCache(c);
-	//chkProgram(c->usermodule, c->curprg->def);
+	// (str) chkProgram(c->usermodule, c->curprg->def);
 	if (!c->curprg->def->errors)
 		c->curprg->def->errors = SQLoptimizeFunction(c, c->curprg->def);
 	if (c->curprg->def->errors)
@@ -1304,8 +1305,9 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 	if (curBlk->inlineProp == 0 && !c->curprg->def->errors) {
 		msg = SQLoptimizeFunction(c, c->curprg->def);
 	} else if (curBlk->inlineProp != 0) {
-		chkProgram(c->usermodule, c->curprg->def);
-		if (!c->curprg->def->errors)
+		if( msg == MAL_SUCCEED)
+			msg = chkProgram(c->usermodule, c->curprg->def);
+		if (msg == MAL_SUCCEED && !c->curprg->def->errors)
 			msg = SQLoptimizeFunction(c,c->curprg->def);
 	}
 	if (msg) {

@@ -344,6 +344,7 @@ cloneFunction(Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p)
 	Symbol new;
 	int i,v;
 	InstrPtr pp;
+	str msg = MAL_SUCCEED;
 
 	new = newFunction(scope->name, proc->name, getSignature(proc)->token);
 	if( new == NULL){
@@ -385,7 +386,10 @@ cloneFunction(Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p)
 	/* check for errors after fixation , TODO*/
 	/* beware, we should now ignore any cloning */
 	if (proc->def->errors == 0) {
-		chkProgram(scope,new->def);
+		msg = chkProgram(scope,new->def);
+		if( msg)
+			mb->errors = msg;
+		else
 		if(new->def->errors){
 			assert(mb->errors == NULL);
 			mb->errors = new->def->errors;
@@ -675,15 +679,17 @@ void clrDeclarations(MalBlkPtr mb){
 	}
 }
 
-void chkDeclarations(MalBlkPtr mb){
+str
+chkDeclarations(MalBlkPtr mb){
 	int pc,i, k,l;
 	InstrPtr p;
 	short blks[MAXDEPTH], top= 0, blkId=1;
 	int dflow = -1;
+	char buf[IDLENGTH * 2 +2];
 	str msg = MAL_SUCCEED;
 
 	if( mb->errors)
-		return;
+		return GDKstrdup(mb->errors);
 	blks[top] = blkId;
 
 	/* initialize the scope */
@@ -694,6 +700,7 @@ void chkDeclarations(MalBlkPtr mb){
 	p= getInstrPtr(mb,0);
 	for(k=0;k<p->argc; k++)
 		setVarScope(mb, getArg(p,k), blkId);
+	snprintf(buf, IDLENGTH * 2 +2, "%s.%s", getModuleId(p), getFunctionId(p));
 
 	for(pc=1;pc<mb->stop; pc++){
 		p= getInstrPtr(mb,pc);
@@ -717,20 +724,15 @@ void chkDeclarations(MalBlkPtr mb){
 					setVarScope(mb, l, blks[0]);
 				} else if( !( isVarConstant(mb, l) || isVarTypedef(mb,l)) &&
 					!isVarInit(mb,l) ) {
-					mb->errors = createMalException( mb,pc,TYPE,
-						"'%s' may not be used before being initialized",
-						getVarName(mb,l));
+					throw(MAL, buf, "'%s' may not be used before being initialized", getVarName(mb,l));
 				}
 			} else if( !isVarInit(mb,l) ){
 			    /* is the block still active ? */
 			    for( i=0; i<= top; i++)
 				if( blks[i] == getVarScope(mb,l) )
 					break;
-			    if( i> top || blks[i]!= getVarScope(mb,l) ){
-			        mb->errors = createMalException( mb,pc,TYPE,
-							"'%s' used outside scope",
-							getVarName(mb,l));
-			    }
+			    if( i> top || blks[i]!= getVarScope(mb,l) )
+			        throw( MAL, buf, "'%s' used outside scope", getVarName(mb,l));
 			}
 			if( blockCntrl(p) || blockStart(p) )
 				setVarInit(mb, l);
@@ -757,15 +759,12 @@ void chkDeclarations(MalBlkPtr mb){
 		}
 		if( p->barrier && msg == MAL_SUCCEED){
 			if ( blockStart(p)){
-				if( top == MAXDEPTH-2){
-					mb->errors = createMalException(mb,pc,SYNTAX, "too deeply nested  MAL program");
-					return;
-				}
+				if( top == MAXDEPTH-2)
+					throw(MAL, buf, "too deeply nested  MAL program");
 				blkId++;
 				if (getModuleId(p) && getFunctionId(p) && strcmp(getModuleId(p),"language")==0 && strcmp(getFunctionId(p),"dataflow")== 0){
-					if( dflow != -1){
-						mb->errors = createMalException(mb,0, TYPE,"setLifeSpan nested dataflow blocks not allowed" );
-					}
+					if( dflow != -1)
+						throw(MAL, buf, "setLifeSpan nested dataflow blocks not allowed" );
 					dflow= blkId;
 				} 
 				blks[++top]= blkId;
@@ -788,4 +787,5 @@ void chkDeclarations(MalBlkPtr mb){
 			}
 		}
 	}
+	return msg;
 }

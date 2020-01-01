@@ -2067,10 +2067,10 @@ str callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *glb, ValPtr argv[], char debu
 str callString(Client c, str s, int listing);
 str capiRef;
 str catalogRef;
-void chkDeclarations(MalBlkPtr mb);
+str chkDeclarations(MalBlkPtr mb);
 void chkFlow(MalBlkPtr mb);
 int chkInstruction(Module s, MalBlkPtr mb, InstrPtr p);
-void chkProgram(Module s, MalBlkPtr mb);
+str chkProgram(Module s, MalBlkPtr mb);
 void chkTypes(Module s, MalBlkPtr mb, int silent);
 str cleanupTraces(Client cntxt);
 void clearStack(MalStkPtr s);

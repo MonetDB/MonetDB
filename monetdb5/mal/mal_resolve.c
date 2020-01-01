@@ -669,20 +669,23 @@ chkInstruction(Module s, MalBlkPtr mb, InstrPtr p)
 /*
  * Perform silent check on the program, merely setting the error flag.
  */
-void
+str
 chkProgram(Module s, MalBlkPtr mb)
 {
+	str msg = MAL_SUCCEED;
 /* it is not ready yet, too fragile
 		mb->typefixed = mb->stop == chk; ignored END */
 /*	if( mb->flowfixed == 0)*/
 
 	chkTypes(s, mb, FALSE);
 	if (mb->errors)
-		return;
+		return msg;
 	chkFlow(mb);
 	if (mb->errors)
-		return;
-	chkDeclarations(mb);
+		return msg;
+	if(msg == MAL_SUCCEED)
+		msg = chkDeclarations(mb);
+	return msg;
 }
 
 /*

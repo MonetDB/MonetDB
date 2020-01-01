@@ -22,7 +22,7 @@ mal_export int      getPC(MalBlkPtr mb, InstrPtr p);
 
 mal_export Symbol   getFunctionSymbol(Module scope, InstrPtr p);
 mal_export void chkFlow(MalBlkPtr mb);
-mal_export void chkDeclarations(MalBlkPtr mb);
+mal_export str chkDeclarations(MalBlkPtr mb);
 mal_export void clrDeclarations(MalBlkPtr mb);
 mal_export int isLoopBarrier(MalBlkPtr mb, int pc);
 mal_export int getBlockExit(MalBlkPtr mb,int pc);
