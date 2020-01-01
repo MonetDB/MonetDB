@@ -4,6 +4,7 @@ Fix/check/test MOSlayout.
 Add negative values to tests
 Add test for huge
 create mix compression test cases.
+Introduce a custom pre-processor to expand macro's efficiently for debugging purposes.
 Introduce mosaic into gdk: create hooks in scanselect functions/macro's, joins and projections.
 make mitosis work with mosaic and see how this relates to the previous landmark stuff.
 Transform control dependency into data dependency select loops.
