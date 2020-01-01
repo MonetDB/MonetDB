@@ -1161,20 +1161,21 @@ pushArgument(MalBlkPtr mb, InstrPtr p, int varid)
 	}
 	if (p->argc == p->maxarg) {
 		pn = extendInstruction(mb, p);
-		if (mb->errors)
-			return p;
 
 		/* if the instruction is already stored in the MAL block
 		 * it should be replaced by an extended version.
 		 */
 		if (p != pn) {
-			for (int i = mb->stop - 1; i >= 0; i--)
+			for (int i = mb->stop - 1; i >= 0; i--) {
 				if (mb->stmt[i] == p) {
 					mb->stmt[i] =  pn;
 					break;
 				}
+			}
 		}
 		p = pn;
+		if (mb->errors)
+			return p;
 	}
 	/* protect against the case that the instruction is malloced
 	 * in isolation */
@@ -1204,14 +1205,15 @@ addArgument(MalBlkPtr mb, InstrPtr p, int varid)
 
 	if (p->argc == p->maxarg) {
 		pn = extendInstruction(mb, p);
-		if ( mb->errors)
-			return p;
 #ifndef NDEBUG
-               if( p != pn)
+               if (p != pn) {
                        for (int i = mb->stop - 1; i >= 0; i--)
                                assert(mb->stmt[i] != p);
+	       }
 #endif
 		p = pn;
+		if (mb->errors)
+			return p;
 	}
 	/* protect against the case that the instruction is malloced in isolation */
 	if( mb->maxarg < p->maxarg)
