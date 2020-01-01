@@ -1204,8 +1204,7 @@ MOSjoin_generic_DEF(dbl)
 MOSjoin_generic_DEF(hge)
 #endif
 
-/* A mosaic join operator that works when either the left or the right side is compressed
- * and there are no additional candidate lists.
+/* A mosaic join operator that works when either the left or the right side is compressed.
  * Furthermore if both sides are in possesion of a mosaic index,
  * the operator implementation currently only uses the mosaic index of the left side.
  */
