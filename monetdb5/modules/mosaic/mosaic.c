@@ -74,8 +74,9 @@ _construct_compression_mask(sht* compression_mask, char* compressions) {
 	/* The dict256 dictionary technique 'dict256' has to be processed upfront
 	 * to prevent search collision with the variable dictionary technique 'dict'.
 	 */
+	const char* erased = "_______";
 	while ( (_dict256 = strstr(compressions, MOSmethods[dict256].name)) ) {
-		strncpy (_dict256,"_______", 7);
+		memcpy (_dict256, erased, strlen(erased));
 
 		*compression_mask |= MOSmethods[dict256].bit;
 	}
