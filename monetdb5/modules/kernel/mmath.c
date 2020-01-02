@@ -291,6 +291,7 @@ str
 MATHsqlrandint(int *res, const int *seed)
 {
 #ifdef STATIC_CODE_ANALYSIS
+	(void) seed;
 	*res = 0;
 #else
 	MT_lock_set(&mmath_rse_lock);
