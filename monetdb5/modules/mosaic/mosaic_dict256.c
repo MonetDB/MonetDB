@@ -174,34 +174,40 @@ MOSprepareEstimate_dict256(MOStask* task)
 
 	BAT *ngid, *next, *freq;
 
-	BAT * source_view;
-	if ((source_view = VIEWcreate(source->hseqbase, source)) == NULL) {
-		throw(MAL, "mosaic.createGlobalDictInfo.VIEWcreate", GDK_EXCEPTION);
+	BAT* source_copy;
+	/* Work around to prevent re-entering batIdxLock in BATsort when it decides to create an ordered/hash indices.
+	 * This is some what expensive since it requires a full copy of the original bat.
+	 */
+	if ( (source_copy = COLcopy(source, source->ttype, true /*writable = true*/, TRANSIENT)) == NULL) {
+		error = createException(MAL, "mosaic.dict256.COLcopy", GDK_EXCEPTION);
+		return error;
 	}
 
-	if (BATgroup(&ngid, &next, &freq, source_view, NULL, NULL, NULL, NULL) != GDK_SUCCEED) {
-		BBPunfix(source_view->batCacheid);
+	if (BATgroup(&ngid, &next, &freq, source_copy, NULL, NULL, NULL, NULL) != GDK_SUCCEED) {
+		BBPunfix(source_copy->batCacheid);
 		throw(MAL, "mosaic.createGlobalDictInfo.BATgroup", GDK_EXCEPTION);
 	}
-	BBPunfix(source_view->batCacheid);
 	BBPunfix(ngid->batCacheid);
 
 	BAT *cand_dict256_dict;
 	if (BATfirstn(&cand_dict256_dict, NULL, freq, NULL, NULL, CAPPEDDICT, false, true, false) != GDK_SUCCEED) {
 		BBPunfix(next->batCacheid);
 		BBPunfix(freq->batCacheid);
+		BBPunfix(source_copy->batCacheid);
 		error = createException(MAL, "mosaic.dict256.BATfirstn_unique", GDK_EXCEPTION);
 		return error;
 	}
 	BBPunfix(freq->batCacheid);
 
 	BAT* dict;
-	if ( (dict = BATproject(next, source)) == NULL) {
+	if ( (dict = BATproject(next, source_copy)) == NULL) {
 		BBPunfix(next->batCacheid);
 		BBPunfix(cand_dict256_dict->batCacheid);
+		BBPunfix(source_copy->batCacheid);
 		throw(MAL, "mosaic.createGlobalDictInfo.BATproject", GDK_EXCEPTION);
 	}
 	BBPunfix(next->batCacheid);
+	BBPunfix(source_copy->batCacheid);
 
 	BAT *dict256_dict;
 	if ((dict256_dict = BATproject(cand_dict256_dict, dict)) == NULL) {
