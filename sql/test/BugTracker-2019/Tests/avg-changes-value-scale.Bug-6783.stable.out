@@ -11,7 +11,7 @@ stdout of test 'avg-changes-value-scale.Bug-6783` in directory 'sql/test/BugTrac
 # Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
 # Found 5.821 GiB available main-memory.
 # Copyright (c) 1993 - July 2008 CWI.
-# Copyright (c) August 2008 - 2019 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008 - 2020 MonetDB B.V., all rights reserved
 # Visit https://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://ubuntu-bionic:33971/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-2655/.s.monetdb.33971
