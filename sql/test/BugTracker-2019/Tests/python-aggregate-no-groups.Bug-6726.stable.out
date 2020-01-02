@@ -11,7 +11,7 @@ stdout of test 'python-aggregate-no-groups.Bug-6726` in directory 'sql/test/BugT
 # Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
 # Found 31.243 GiB available main-memory of which we use 25.463 GiB
 # Copyright (c) 1993 - July 2008 CWI.
-# Copyright (c) August 2008 - 2019 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008 - 2020 MonetDB B.V., all rights reserved
 # Visit https://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://localhost.localdomain:31329/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-13339/.s.monetdb.31329

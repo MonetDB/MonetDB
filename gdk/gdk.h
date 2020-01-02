@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -1574,17 +1574,14 @@ gdk_export BBPrec *BBP[N_BBPINIT];
 #define BBP_lrefs(i)	BBP[(i)>>BBPINITLOG][(i)&(BBPINIT-1)].lrefs
 #define BBP_status(i)	BBP[(i)>>BBPINITLOG][(i)&(BBPINIT-1)].status
 #define BBP_pid(i)	BBP[(i)>>BBPINITLOG][(i)&(BBPINIT-1)].pid
+#define BATgetId(b)	BBP_logical((b)->batCacheid)
+#define BBPvalid(i)	(BBP_logical(i) != NULL && *BBP_logical(i) != '.')
 
 /* macros that nicely check parameters */
 #define BBPstatus(i)	(BBPcheck((i),"BBPstatus")?BBP_status(i):0)
 #define BBPrefs(i)	(BBPcheck((i),"BBPrefs")?BBP_refs(i):-1)
 #define BBPcache(i)	(BBPcheck((i),"BBPcache")?BBP_cache(i):(BAT*) NULL)
-#define BBPname(i)						\
-	(BBPcheck((i), "BBPname") ?				\
-	 BBP[(i) >> BBPINITLOG][(i) & (BBPINIT - 1)].logical :	\
-	 "")
-#define BBPvalid(i)	(BBP_logical(i) != NULL && *BBP_logical(i) != '.')
-#define BATgetId(b)	BBPname((b)->batCacheid)
+#define BBPname(i)	(BBPcheck((i), "BBPname") ? BBP_logical(i) : "")
 
 #define BBPRENAME_ALREADY	(-1)
 #define BBPRENAME_ILLEGAL	(-2)

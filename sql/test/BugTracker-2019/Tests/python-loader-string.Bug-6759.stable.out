@@ -46,7 +46,7 @@ COMMIT;
 # Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
 # Found 15.527 GiB available main-memory.
 # Copyright (c) 1993 - July 2008 CWI.
-# Copyright (c) August 2008 - 2019 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008 - 2020 MonetDB B.V., all rights reserved
 # Visit https://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://localhost.localdomain:34149/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-6899/.s.monetdb.34149
