@@ -47,7 +47,7 @@ stdout of test 'push_subslice.Bug-6322` in directory 'sql/test/BugTracker-2017` 
 #where (true)
 #  or ((select pc from sys.tracelog)
 #       is not NULL);
-% . # table_name
+% sys. # table_name
 % c2 # name
 % int # type
 % 4 # length

@@ -503,6 +503,8 @@ void
 listFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg, int first, int size)
 {
 	int i;
+	int sample = 256;
+
 	if (mb == NULL) {
 		mnstr_printf(fd, "# function definition missing\n");
 		return;
@@ -519,7 +521,7 @@ listFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg, int first, int si
 		mnstr_printf(fd, "%% .explain # table_name\n");
 		mnstr_printf(fd, "%% mal # name\n");
 		mnstr_printf(fd, "%% clob # type\n");
-		for (i = first; i < first +size && i < mb->stop; i++) {
+		for (i = first; i < first +size && i < mb->stop && sample-- > 0; i++) {
 			ps = instruction2str(mb, stk, getInstrPtr(mb, i), flg);
 			if (ps) {
 				size_t l = strlen(ps);

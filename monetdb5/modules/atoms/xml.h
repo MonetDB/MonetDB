@@ -48,5 +48,6 @@ mal_export size_t XMLquotestring(const char *s, char *buf, size_t len);
 mal_export size_t XMLunquotestring(const char **p, char q, char *buf);
 
 mal_export str XMLprelude(void *ret);
+mal_export str XMLepilogue(void *ret);
 
 #endif /* XML_H */

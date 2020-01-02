@@ -189,7 +189,9 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 				VALcopy(&cst, &env->stk[getArg(p, 0)]);
 				/* You may not overwrite constants.  They may be used by
 				 * other instructions */
-				nvar = getArg(p, 1) = defConstant(mb, getArgType(mb, p, 0), &cst);
+				nvar = defConstant(mb, getArgType(mb, p, 0), &cst);
+				if( nvar >= 0)
+					getArg(p,1) = nvar;
 				if (nvar >= env->stktop) {
 					VALcopy(&env->stk[getArg(p, 1)], &getVarConstant(mb, getArg(p, 1)));
 					env->stktop = getArg(p, 1) + 1;

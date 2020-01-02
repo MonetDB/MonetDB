@@ -163,6 +163,10 @@
 #include "mal_builder.h"
 #include "wlc.h"
 
+#ifdef _MSC_VER
+#define access(f, m)    _access(f, m)
+#endif
+
 #undef _WLC_DEBUG_
 
 MT_Lock     wlc_lock = MT_LOCK_INITIALIZER("wlc_lock");
@@ -729,7 +733,8 @@ WLCgeneric(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			break;
 		default:
 			varid = defConstant(cntxt->wlc, tpe, getArgReference(stk, pci, i));
-			p = pushArgument(cntxt->wlc, p, varid);
+			if( varid >= 0)
+				p = pushArgument(cntxt->wlc, p, varid);
 		}
 	}
 	p->ticks = GDKms();
@@ -860,7 +865,8 @@ WLCappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		ValRecord cst;
 		if (VALcopy(&cst, getArgReference(stk,pci,4)) != NULL){
 			varid = defConstant(cntxt->wlc, tpe, &cst);
-			p = pushArgument(cntxt->wlc, p, varid);
+			if( varid >=0)
+				p = pushArgument(cntxt->wlc, p, varid);
 		}
 	}
 	if( cntxt->wlc_kind < WLC_UPDATE)
@@ -912,7 +918,7 @@ WLCdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		} else {
 			ol = (oid*) Tloc(b,0);
-			for( ; o < last; o++, k++){
+			for( ; o < last; o++, k++, ol++){
 				if( k%32 == 31){
 					p = newStmt(cntxt->wlc, "wlr","delete");
 					p = pushStr(cntxt->wlc, p, getVarConstant(mb, getArg(pci,1)).val.sval);
@@ -1000,7 +1006,8 @@ WLCupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		p = pushOid(cntxt->wlc,p, o);
 		if (VALcopy(&cst, getArgReference(stk,pci,5)) != NULL){
 			varid = defConstant(cntxt->wlc, tpe, &cst);
-			p = pushArgument(cntxt->wlc, p, varid);
+			if( varid >= 0)
+				p = pushArgument(cntxt->wlc, p, varid);
 		}
 	}
 

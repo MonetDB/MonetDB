@@ -1063,7 +1063,7 @@ mvc_export_prepare(mvc *c, stream *out, cq *q, str w)
 	if (!out)
 		return 0;
 
-	if (is_topn(r->op))
+	if (r && is_topn(r->op))
 		r = r->l;
 	if (r && is_project(r->op) && r->exps) {
 		unsigned int max2 = 10, max3 = 10;	/* to help calculate widths */
@@ -1173,7 +1173,6 @@ mvc_export_prepare(mvc *c, stream *out, cq *q, str w)
 		return -1;
 	return 0;
 }
-
 
 /*
  * improved formatting of positive integers

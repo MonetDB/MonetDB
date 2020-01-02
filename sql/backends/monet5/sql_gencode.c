@@ -707,7 +707,7 @@ backend_callinline(backend *be, Client c)
 	if (m->argc) {	
 		int argc = 0;
 
-		for (; argc < m->argc; argc++) {
+		for (; argc < m->argc && !curBlk->errors; argc++) {
 			atom *a = m->args[argc];
 			int type = atom_type(a)->type->localtype;
 			int varid = 0;
@@ -731,6 +731,8 @@ backend_callinline(backend *be, Client c)
 		}
 	}
 	c->curprg->def = curBlk;
+	if (curBlk->errors)
+		return -1;
 	return 0;
 }
 
@@ -778,7 +780,7 @@ backend_dumpproc(backend *be, Client c, cq *cq, sql_rel *r)
 			a->varid = varid = newVariable(mb, arg,strlen(arg), type);
 			curInstr = pushArgument(mb, curInstr, varid);
 			assert(curInstr);
-			if (curInstr == NULL) 
+			if (curInstr == NULL || mb->errors) 
 				goto cleanup;
 			setVarType(mb, varid, type);
 			setVarUDFtype(mb, 0);
@@ -799,7 +801,7 @@ backend_dumpproc(backend *be, Client c, cq *cq, sql_rel *r)
 			varid = newVariable(mb, arg,strlen(arg), type);
 			curInstr = pushArgument(mb, curInstr, varid);
 			assert(curInstr);
-			if (curInstr == NULL) 
+			if (curInstr == NULL || mb->errors) 
 				goto cleanup;
 			setVarType(mb, varid, type);
 			setVarUDFtype(mb, varid);
@@ -839,7 +841,7 @@ cleanup:
 	return NULL;
 }
 
-void
+int
 backend_call(backend *be, Client c, cq *cq)
 {
 	mvc *m = be->mvc;
@@ -849,11 +851,11 @@ backend_call(backend *be, Client c, cq *cq)
 	q = newStmt(mb, userRef, cq->name);
 	if (!q) {
 		m->session->status = -3;
-		return;
+		return -1;
 	}
 	if (m->emode == m_execute && be->q->paramlen != m->argc) {
 		sql_error(m, 003, SQLSTATE(42000) "EXEC called with wrong number of arguments: expected %d, got %d", be->q->paramlen, m->argc);
-		return;
+		return -1;
 	}
 	/* cached (factorized queries return bit??) */
 	if (cq->code && getInstrPtr(((Symbol)cq->code)->def, 0)->token == FACTORYsymbol) {
@@ -866,12 +868,13 @@ backend_call(backend *be, Client c, cq *cq)
 	if (m->argc) {
 		int i;
 
-		for (i = 0; i < m->argc; i++) {
+		for (i = 0; i < m->argc && q && !mb->errors; i++) {
 			atom *a = m->args[i];
 			sql_subtype *pt = cq->params + i;
 
 			if (!atom_cast(m->sa, a, pt)) {
 				sql_error(m, 003, SQLSTATE(42000) "wrong type for argument %d of function call: %s, expected %s\n", i + 1, atom_type(a)->type->sqlname, pt->type->sqlname);
+				q = NULL;
 				break;
 			}
 			if (atom_null(a)) {
@@ -888,6 +891,9 @@ backend_call(backend *be, Client c, cq *cq)
 			}
 		}
 	}
+	if (!q || mb->errors)
+		return -1;
+	return 0;
 }
 
 int

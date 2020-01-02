@@ -902,9 +902,10 @@ SQLinsert_val(READERtask *task, int col, int idx)
 		adt = fmt->nildata;
 		fmt->c->tnonil = false;
 	}
-	bunfastapp(fmt->c, adt);
-	return ret;
-  bunins_failed:
+	if (bunfastapp(fmt->c, adt) == GDK_SUCCEED)
+		return ret;
+
+	/* failure */
 	if (task->rowerror) {
 		lng row = BATcount(fmt->c);
 		MT_lock_set(&errorlock);
@@ -1534,14 +1535,7 @@ SQLproducer(void *p)
 			fprintf(stderr, "#shuffle %zu: %.63s\n", strlen(s), s);
 #endif
 		/* move the non-parsed correct row data to the head of the next buffer */
-		s = task->input[cur];
-		if (partial == 0 || cnt >= task->maxrow) {
-			memcpy(s, task->b->buf + task->b->pos, task->b->len - task->b->pos);
-			end = s + task->b->len - task->b->pos;
-		} else {
-			end = s;
-		}
-		*end = '\0';	/* this is safe, as the stream ensures an extra byte */
+		end = s = task->input[cur];
 	}
 	if (cnt < task->maxrow && task->maxrow != BUN_NONE) {
 		char msg[256];
@@ -1763,7 +1757,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 		/* block until the producer has data available */
 		MT_sema_down(&task.consumer);
 		cnt += task.top[task.cur];
-		if (task.ateof)
+		if (task.ateof && !task.top[task.cur])
 			break;
 		t1 = GDKusec() - t1;
 		total += t1;

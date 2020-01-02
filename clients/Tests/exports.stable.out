@@ -1956,6 +1956,7 @@ str XMLcontent(xml *x, str *s);
 str XMLdocument(xml *x, str *s);
 str XMLelement(xml *ret, str *name, xml *nspace, xml *attr, xml *val);
 str XMLelementSmall(xml *ret, str *name, xml *val);
+str XMLepilogue(void *ret);
 str XMLforest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 ssize_t XMLfromString(const char *src, size_t *len, xml *x, bool external);
 str XMLisdocument(bit *x, str *s);

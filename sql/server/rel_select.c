@@ -1259,7 +1259,7 @@ rel_set_type_param(mvc *sql, sql_subtype *type, sql_rel *rel, sql_exp *rel_exp, 
 		type = sql_bind_localtype("dbl");
 
 	if ((rel_exp->type == e_atom || rel_exp->type == e_column) && (rel_exp->l || rel_exp->r || rel_exp->f)) {
-		/* it's not a parameter set possible parameters bellow */
+		/* it's not a parameter set possible parameters below */
 		const char *relname = exp_relname(rel_exp), *expname = exp_name(rel_exp);
 		return rel_set_type_recurse(sql, type, rel, &relname, &expname);
 	} else if (set_type_param(sql, type, rel_exp->flag) == 0) {
@@ -2392,54 +2392,12 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 	}
 	case SQL_AND:
 	{
-		/* split into 2 lists, simle logical expressions and or's */
-		list *nors = sa_list(sql->sa);
-		list *ors = sa_list(sql->sa);
-
 		symbol *lo = sc->data.lval->h->data.sym;
 		symbol *ro = sc->data.lval->h->next->data.sym;
-		node *n;
-
-		while (lo->token == SQL_AND) {
-			symbol *s;
-
-			sc = lo;
-			lo = sc->data.lval->h->data.sym;
-			s = sc->data.lval->h->next->data.sym;
-
-			if (s->token != SQL_OR)
-				list_prepend(nors, s);
-			else 
-				list_prepend(ors, s);
-		}
-		if (lo->token != SQL_OR)
-			list_prepend(nors, lo);
-		else 
-			list_prepend(ors, lo);
-		if (ro->token != SQL_OR)
-			append(nors, ro);
-		else 
-			append(ors, ro);
-
-		for(n=nors->h; n; n = n->next) {
-			symbol *lo = n->data;
-			rel = rel_logical_exp(query, rel, lo, f);
-			if (!rel)
-				return NULL;
-		}
-		for(n=ors->h; n; n = n->next) {
-			symbol *lo = n->data;
-			rel = rel_logical_exp(query, rel, lo, f);
-			if (!rel)
-				return NULL;
-		}
-		return rel;
-		/*
 		rel = rel_logical_exp(query, rel, lo, f);
 		if (!rel)
 			return NULL;
 		return rel_logical_exp(query, rel, ro, f);
-		*/
 	}
 	case SQL_FILTER:
 		/* [ x,..] filter [ y,..] */
@@ -3211,7 +3169,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 		return e;
 	}
 
-	if (is_sql_groupby(f)) {
+	if (!query_has_outer(query) && is_sql_groupby(f)) {
 		char *uaname = GDKmalloc(strlen(aname) + 1);
 		sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate function '%s' not allowed in GROUP BY clause",
 							   uaname ? toUpperCopy(uaname, aname) : aname, aname);
@@ -3232,7 +3190,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 		if (uaname)
 			GDKfree(uaname);
 		return e;
-	} else if (is_sql_aggr(f)) {
+	} else if (!query_has_outer(query) && is_sql_aggr(f)) {
 		char *uaname = GDKmalloc(strlen(aname) + 1);
 		sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions cannot be nested",
 				       uaname ? toUpperCopy(uaname, aname) : aname);
@@ -3243,6 +3201,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 
 	exps = sa_list(sql->sa);
 	if (args && args->data.sym) {
+		int all_aggr = query_has_outer(query);
 		all_freevar = 1;
 		for (	; args; args = args->next ) {
 			int base = (!groupby || !is_project(groupby->op) || is_base(groupby->op) || is_processed(groupby));
@@ -3257,9 +3216,26 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 			}
 			if (!e || !exp_subtype(e)) /* we also do not expect parameters here */
 				return NULL;
+			all_aggr &= (exp_card(e) <= CARD_AGGR && !exp_is_atom(e) && !is_func(e->type) && (!groupby->r || !exps_find_exp(groupby->r, e)));
 			has_freevar |= exp_has_freevar(sql, e);
 			all_freevar &= (is_freevar(e)>0);
 			list_append(exps, e);
+		}
+		if (all_aggr && !all_freevar) {
+			char *uaname = GDKmalloc(strlen(aname) + 1);
+			sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions cannot be nested",
+				       uaname ? toUpperCopy(uaname, aname) : aname);
+			if (uaname)
+				GDKfree(uaname);
+			return e;
+		}
+		if (is_sql_groupby(f) && !all_freevar) {
+			char *uaname = GDKmalloc(strlen(aname) + 1);
+			sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate function '%s' not allowed in GROUP BY clause",
+							   uaname ? toUpperCopy(uaname, aname) : aname, aname);
+			if (uaname)
+				GDKfree(uaname);
+			return e;
 		}
 	}
 
@@ -4529,6 +4505,13 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 		const char *clause = is_sql_join(f)?"JOIN conditions":is_sql_where(f)?"WHERE clause":is_sql_groupby(f)?"GROUP BY clause":"HAVING clause";
 		(void) sql_error(sql, 02, SQLSTATE(42000) "%s: window function '%s' not allowed in %s",
 						 uaname ? toUpperCopy(uaname, aname) : aname, aname, clause);
+		if (uaname)
+			GDKfree(uaname);
+		return NULL;
+	} else if (is_sql_aggr(f)) {
+		char *uaname = GDKmalloc(strlen(aname) + 1);
+		(void) sql_error(sql, 02, SQLSTATE(42000) "%s: window functions not allowed inside aggregation functions",
+						 uaname ? toUpperCopy(uaname, aname) : aname);
 		if (uaname)
 			GDKfree(uaname);
 		return NULL;

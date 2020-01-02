@@ -142,11 +142,11 @@ str
 OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	InstrPtr p, q, r, *old;
-	int i, j, cnt, limit, slimit, doit=0;
+	int i, j, k, cnt, limit, slimit, doit=0;
 	int remoteSite,collectFirst;
 	int *location;
 	DBalias *dbalias;
-	int dbtop,k;
+	int dbtop;
 	char buf[BUFSIZ],*s, *db;
 	ValRecord cst;
 	lng usec = GDKusec();
@@ -244,11 +244,13 @@ OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 				lookupServer(4)
 
 				/* turn the instruction into a local one */
-				getArg(p,4)= defConstant(mb, TYPE_int, &cst);
-
-				prepareRemote(tpe)
-				putRemoteVariables()
-				remoteAction()
+				k = defConstant(mb, TYPE_int, &cst);
+				if( k>=0){
+					getArg(p,4)= k;
+					prepareRemote(tpe)
+					putRemoteVariables()
+					remoteAction()
+				}
 			} else
 				pushInstruction(mb,p);
 		} else
@@ -258,11 +260,13 @@ OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 				lookupServer(3)
 
 				/* turn the instruction into a local one */
-				getArg(p,3)= defConstant(mb, TYPE_int, &cst);
-
-				prepareRemote(TYPE_void)
-				putRemoteVariables()
-				remoteAction()
+				k= defConstant(mb, TYPE_int, &cst);
+				if( k >= 0){
+					getArg(p,3)= defConstant(mb, TYPE_int, &cst);
+					prepareRemote(TYPE_void)
+					putRemoteVariables()
+					remoteAction()
+				}
 			} else {
 				pushInstruction(mb,p);
 			}
