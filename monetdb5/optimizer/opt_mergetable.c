@@ -2256,8 +2256,8 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		pushInstruction(mb, cp);
 	}
 	(void) stk; 
-	chkTypes(cntxt->usermodule,mb, TRUE);
-	if( mb->errors != MAL_SUCCEED)
+	msg = chkTypes(cntxt->usermodule,mb, TRUE);
+	if( msg)
 		goto cleanup;
 
 	if ( mb->errors == MAL_SUCCEED) {
@@ -2277,7 +2277,8 @@ cleanup:
 	if (ml.vars) GDKfree(ml.vars);
     /* Defense line against incorrect plans */
     if( actions > 0 && msg == MAL_SUCCEED){
-        chkTypes(cntxt->usermodule, mb, FALSE);
+        if( msg == MAL_SUCCEED)
+			msg = chkTypes(cntxt->usermodule, mb, FALSE);
         if( msg == MAL_SUCCEED) 
 			msg = chkFlow(mb);
         if(msg == MAL_SUCCEED) 

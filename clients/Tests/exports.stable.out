@@ -2071,7 +2071,7 @@ str chkDeclarations(MalBlkPtr mb);
 str chkFlow(MalBlkPtr mb);
 int chkInstruction(Module s, MalBlkPtr mb, InstrPtr p);
 str chkProgram(Module s, MalBlkPtr mb);
-void chkTypes(Module s, MalBlkPtr mb, int silent);
+str chkTypes(Module s, MalBlkPtr mb, int silent);
 str cleanupTraces(Client cntxt);
 void clearStack(MalStkPtr s);
 void clearTrace(Client cntxt);

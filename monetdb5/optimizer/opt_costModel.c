@@ -144,7 +144,7 @@ OPTcostModelImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	}
     /* Defense line against incorrect plans */
 	/* plan remains unaffected */
-	//chkTypes(cntxt->usermodule, mb, FALSE);
+	//c msg = hkTypes(cntxt->usermodule, mb, FALSE);
 	// if( msg == MAL_SUCCEED)  msg = chkFlow(mb);
 	// if( msg == MAL_SUCCEED) msg = chkDeclarations(mb);
     /* keep all actions taken as a post block comment */

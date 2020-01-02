@@ -254,7 +254,7 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	GDKfree(empty);
 	GDKfree(updated);
     /* Defense line against incorrect plans */
-	chkTypes(cntxt->usermodule, mb, FALSE);
+	msg = chkTypes(cntxt->usermodule, mb, FALSE);
 	if( msg == MAL_SUCCEED)
 		msg = chkFlow(mb);
 	if( msg == MAL_SUCCEED) 

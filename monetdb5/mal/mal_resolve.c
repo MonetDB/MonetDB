@@ -640,20 +640,25 @@ typeChecker(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
  * as well, because a dynamically typed instruction should later on not
  * lead to a re-check when it was already fully analyzed.
  */
-void
+str
 chkTypes(Module s, MalBlkPtr mb, int silent)
 {
 	InstrPtr p = 0;
 	int i;
+	str msg= MAL_SUCCEED;
 
 	for (i = 0; i < mb->stop; i++) {
 		p = getInstrPtr(mb, i);
 		assert (p != NULL);
 		if (p->typechk != TYPE_RESOLVED)
 			typeChecker(s, mb, p, i, silent);
-		if (mb->errors)
-			return;
+		if (mb->errors){
+			msg = mb->errors;
+			mb->errors = NULL;
+			return msg;
+		}
 	}
+	return msg;
 }
 
 /*
@@ -681,12 +686,9 @@ chkProgram(Module s, MalBlkPtr mb)
 		mb->typefixed = mb->stop == chk; ignored END */
 /*	if( mb->flowfixed == 0)*/
 
-	chkTypes(s, mb, FALSE);
-	if (mb->errors)
-		return msg;
-	msg = chkFlow(mb);
-	if (mb->errors)
-		return msg;
+	msg = chkTypes(s, mb, FALSE);
+	if( msg == MAL_SUCCEED)
+		msg = chkFlow(mb);
 	if(msg == MAL_SUCCEED)
 		msg = chkDeclarations(mb);
 	return msg;

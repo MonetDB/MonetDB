@@ -110,7 +110,7 @@ OPTremoveUnusedBlocks(Client cntxt, MalBlkPtr mb)
 			mb->stmt[j] = NULL;
 	}
 	if (action)
-		chkTypes(cntxt->usermodule, mb, TRUE);
+		msg = chkTypes(cntxt->usermodule, mb, TRUE);
 	return msg;
 }
 
@@ -221,7 +221,7 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 
     /* Defense line against incorrect plans */
 	/* Plan is unaffected */
-	chkTypes(cntxt->usermodule, mb, FALSE);
+	msg = chkTypes(cntxt->usermodule, mb, FALSE);
 	if( msg == MAL_SUCCEED)
 		msg = chkFlow(mb);
 	if( msg == MAL_SUCCEED) 

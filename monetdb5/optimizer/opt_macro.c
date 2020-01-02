@@ -374,7 +374,8 @@ ORCAMprocessor(Client cntxt, MalBlkPtr mb, Symbol t)
 			} else
 				break;
 		}
-	chkTypes(cntxt->usermodule, mb, FALSE);
+	if( msg == MAL_SUCCEED)
+		msg = chkTypes(cntxt->usermodule, mb, FALSE);
 	if( msg == MAL_SUCCEED)
 		msg = chkFlow(mb);
 	if( msg == MAL_SUCCEED)
@@ -507,7 +508,8 @@ str OPTmacro(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	}
 
     /* Defense line against incorrect plans */
-	chkTypes(cntxt->usermodule, mb, FALSE);
+	if( msg == MAL_SUCCEED)
+		msg = chkTypes(cntxt->usermodule, mb, FALSE);
 	if( msg == MAL_SUCCEED) 
 		msg = chkFlow(mb);
 	if( msg == MAL_SUCCEED)

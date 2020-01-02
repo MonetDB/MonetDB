@@ -192,7 +192,7 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	GDKfree(old);
 	    /* Defense line against incorrect plans */
     if( 1){
-        chkTypes(cntxt->usermodule, mb, FALSE);
+        msg = chkTypes(cntxt->usermodule, mb, FALSE);
         if( msg == MAL_SUCCEED)
 			msg = chkFlow(mb);
         if( msg == MAL_SUCCEED) 

@@ -433,10 +433,10 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	GDKfree(old);
 
 	if (doit) 
-		chkTypes(cntxt->usermodule,mb,TRUE);
+		msg = chkTypes(cntxt->usermodule,mb,TRUE);
     /* Defense line against incorrect plans */
-    if( mb->errors == MAL_SUCCEED && doit > 0){
-        chkTypes(cntxt->usermodule, mb, FALSE);
+    if( msg == MAL_SUCCEED && doit > 0){
+        msg = chkTypes(cntxt->usermodule, mb, FALSE);
         if( msg == MAL_SUCCEED) 
 			msg = chkFlow(mb);
         if( msg == MAL_SUCCEED) 

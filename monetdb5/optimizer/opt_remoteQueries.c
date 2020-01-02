@@ -359,7 +359,7 @@ OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 
     /* Defense line against incorrect plans */
     if( doit){
-        chkTypes(cntxt->usermodule, mb, FALSE);
+        msg = chkTypes(cntxt->usermodule, mb, FALSE);
         if( msg == MAL_SUCCEED) 
 			msg = chkFlow(mb);
         if( msg == MAL_SUCCEED) 

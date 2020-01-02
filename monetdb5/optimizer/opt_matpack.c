@@ -75,7 +75,7 @@ OPTmatpackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 
     /* Defense line against incorrect plans */
     if( actions > 0){
-        //chkTypes(cntxt->usermodule, mb, FALSE);
+        //if( msg == MAL_SUCCEED) msg = chkTypes(cntxt->usermodule, mb, FALSE);
         //if( msg == MAL_SUCCEED) msg = chkFlow(mb);
         // if(msg == MAL_SUCCEED) msg = chkDeclarations(mb);
     }

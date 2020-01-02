@@ -321,7 +321,8 @@ WLRprocessBatch(Client cntxt)
 			if ( getModuleId(q) == wlrRef && getFunctionId(q) ==commitRef  && (tag > wlr_tag || ( wlr_timelimit[0] && strcmp(tag_read, wlr_timelimit) > 0))){
 				pushEndInstruction(mb);
 				// execute this block if no errors are found
-				chkTypes(c->usermodule, mb, FALSE);
+				if( msg == MAL_SUCCEED)
+					msg = chkTypes(c->usermodule, mb, FALSE);
 				if( msg == MAL_SUCCEED)
 						msg = chkFlow(mb);
 				if( msg == MAL_SUCCEED) 

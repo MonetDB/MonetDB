@@ -94,7 +94,7 @@ OPTvolcanoImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 
     /* Defense line against incorrect plans */
     if( count){
-        chkTypes(cntxt->usermodule, mb, FALSE);
+        msg = chkTypes(cntxt->usermodule, mb, FALSE);
         if( msg == MAL_SUCCEED)
 			msg = chkFlow(mb);
         if( msg == MAL_SUCCEED) 
