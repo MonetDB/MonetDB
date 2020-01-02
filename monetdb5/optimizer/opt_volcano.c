@@ -95,8 +95,10 @@ OPTvolcanoImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
     /* Defense line against incorrect plans */
     if( count){
         chkTypes(cntxt->usermodule, mb, FALSE);
-        chkFlow(mb);
-        if( msg == MAL_SUCCEED) msg = chkDeclarations(mb);
+        if( msg == MAL_SUCCEED)
+			msg = chkFlow(mb);
+        if( msg == MAL_SUCCEED) 
+			msg = chkDeclarations(mb);
     }
     /* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;

@@ -2278,8 +2278,10 @@ cleanup:
     /* Defense line against incorrect plans */
     if( actions > 0 && msg == MAL_SUCCEED){
         chkTypes(cntxt->usermodule, mb, FALSE);
-        chkFlow(mb);
-        if(msg == MAL_SUCCEED) chkDeclarations(mb);
+        if( msg == MAL_SUCCEED) 
+			msg = chkFlow(mb);
+        if(msg == MAL_SUCCEED) 
+			msg = chkDeclarations(mb);
     }
     /* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;

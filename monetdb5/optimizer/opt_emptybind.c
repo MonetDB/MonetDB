@@ -255,8 +255,10 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	GDKfree(updated);
     /* Defense line against incorrect plans */
 	chkTypes(cntxt->usermodule, mb, FALSE);
-	chkFlow(mb);
-	if( msg == MAL_SUCCEED) msg = chkDeclarations(mb);
+	if( msg == MAL_SUCCEED)
+		msg = chkFlow(mb);
+	if( msg == MAL_SUCCEED) 
+		msg = chkDeclarations(mb);
     /* keep all actions taken as a post block comment */
 wrapup:
 	usec = GDKusec()- usec;

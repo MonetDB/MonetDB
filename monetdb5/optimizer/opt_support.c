@@ -106,8 +106,10 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 	if( mb->errors == 0 && mb->stop > 1){
 		resetMalBlk(mb, mb->stop);
 		chkTypes(cntxt->usermodule, mb, FALSE);
-		chkFlow(mb);
-		if( msg == MAL_SUCCEED) msg = chkDeclarations(mb);
+		if( msg == MAL_SUCCEED)
+			msg = chkFlow(mb);
+		if( msg == MAL_SUCCEED)
+			msg = chkDeclarations(mb);
 		if( msg) 
 			return msg;
 		if( mb->errors != MAL_SUCCEED){

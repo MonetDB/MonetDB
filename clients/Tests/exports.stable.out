@@ -2068,7 +2068,7 @@ str callString(Client c, str s, int listing);
 str capiRef;
 str catalogRef;
 str chkDeclarations(MalBlkPtr mb);
-void chkFlow(MalBlkPtr mb);
+str chkFlow(MalBlkPtr mb);
 int chkInstruction(Module s, MalBlkPtr mb, InstrPtr p);
 str chkProgram(Module s, MalBlkPtr mb);
 void chkTypes(Module s, MalBlkPtr mb, int silent);

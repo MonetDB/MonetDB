@@ -203,8 +203,10 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
     /* Defense line against incorrect plans */
     if( actions > 0){
         chkTypes(cntxt->usermodule, mb, FALSE);
-        chkFlow(mb);
-        msg = chkDeclarations(mb);
+        if( msg == MAL_SUCCEED) 
+			msg = chkFlow(mb);
+        if( msg == MAL_SUCCEED) 
+			msg = chkDeclarations(mb);
     }
     /* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;
