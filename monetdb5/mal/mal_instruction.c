@@ -1066,6 +1066,8 @@ cpyConstant(MalBlkPtr mb, VarPtr vr)
 		return -1;
 
 	i = defConstant(mb, vr->type, &cst);
+	if( i<0)
+		return -1;
 	return i;
 }
 
