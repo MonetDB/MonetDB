@@ -11,7 +11,7 @@ stdout of test 'systemfunctions` in directory 'sql/test/sys-schema` itself:
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit integers
 # Found 31.305 GiB available main-memory.
 # Copyright (c) 1993 - July 2008 CWI.
-# Copyright (c) August 2008 - 2019 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008 - 2020 MonetDB B.V., all rights reserved
 # Visit https://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://madrid.ins.cwi.nl:36066/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-26153/.s.monetdb.36066

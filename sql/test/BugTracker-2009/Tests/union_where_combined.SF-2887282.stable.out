@@ -11,7 +11,7 @@ stdout of test 'union_where_combined.SF-2887282` in directory 'sql/test/BugTrack
 # Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
 # Found 15.384 GiB available main-memory.
 # Copyright (c) 1993 - July 2008 CWI.
-# Copyright (c) August 2008 - 2019 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008 - 2020 MonetDB B.V., all rights reserved
 # Visit https://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://localhost.localdomain:33945/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-14741/.s.monetdb.33945
