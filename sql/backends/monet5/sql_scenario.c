@@ -1296,21 +1296,24 @@ SQLparser(Client c)
 				err = mvc_export_prepare(m, c->fdout, be->q, "");
 			} else if (m->emode == m_execute || m->emode == m_normal || m->emode == m_plan) {
 				/* call procedure generation (only in cache mode) */
-				backend_call(be, c, be->q);
+				if (backend_call(be, c, be->q) < 0)
+					err = 3;
 			}
 		}
 
-		pushEndInstruction(c->curprg->def);
-		/* check the query wrapper for errors */
-		chkTypes(c->usermodule, c->curprg->def, TRUE);
+		if (!err) {
+			pushEndInstruction(c->curprg->def);
+			/* check the query wrapper for errors */
+			chkTypes(c->usermodule, c->curprg->def, TRUE);
 
-		/* in case we had produced a non-cachable plan, the optimizer should be called */
-		if (opt ) {
-			msg = SQLoptimizeQuery(c, c->curprg->def);
+			/* in case we had produced a non-cachable plan, the optimizer should be called */
+			if (opt ) {
+				msg = SQLoptimizeQuery(c, c->curprg->def);
 
-			if (msg != MAL_SUCCEED) {
-				sqlcleanup(m, err);
-				goto finalize;
+				if (msg != MAL_SUCCEED) {
+					sqlcleanup(m, err);
+					goto finalize;
+				}
 			}
 		}
 		//printFunction(c->fdout, c->curprg->def, 0, LIST_MAL_ALL);

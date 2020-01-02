@@ -733,7 +733,8 @@ WLCgeneric(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			break;
 		default:
 			varid = defConstant(cntxt->wlc, tpe, getArgReference(stk, pci, i));
-			p = pushArgument(cntxt->wlc, p, varid);
+			if( varid >= 0)
+				p = pushArgument(cntxt->wlc, p, varid);
 		}
 	}
 	p->ticks = GDKms();
@@ -864,7 +865,8 @@ WLCappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		ValRecord cst;
 		if (VALcopy(&cst, getArgReference(stk,pci,4)) != NULL){
 			varid = defConstant(cntxt->wlc, tpe, &cst);
-			p = pushArgument(cntxt->wlc, p, varid);
+			if( varid >=0)
+				p = pushArgument(cntxt->wlc, p, varid);
 		}
 	}
 	if( cntxt->wlc_kind < WLC_UPDATE)
@@ -1004,7 +1006,8 @@ WLCupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		p = pushOid(cntxt->wlc,p, o);
 		if (VALcopy(&cst, getArgReference(stk,pci,5)) != NULL){
 			varid = defConstant(cntxt->wlc, tpe, &cst);
-			p = pushArgument(cntxt->wlc, p, varid);
+			if( varid >= 0)
+				p = pushArgument(cntxt->wlc, p, varid);
 		}
 	}
 

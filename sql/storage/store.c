@@ -225,7 +225,7 @@ sql_trans_destroy(sql_trans *t, bool try_spare)
 	fprintf(stderr, "#destroy trans (%p)\n", t);
 #endif
 
-	if (res == gtrans && spares < MAX_SPARES && !t->name && try_spare) {
+	if (res == gtrans && spares < ((GDKdebug & FORCEMITOMASK) ? 2 : MAX_SPARES) && !t->name && try_spare) {
 #ifdef STORE_DEBUG
 		fprintf(stderr, "#spared (%d) trans (%p)\n", spares, t);
 #endif
@@ -249,7 +249,7 @@ destroy_spare_transactions(void)
 {
 	int i, s = spares;
 
-	spares = MAX_SPARES; /* ie now there not spared anymore */
+	spares = (GDKdebug & FORCEMITOMASK)? 2 : MAX_SPARES; /* ie now there not spared anymore */
 	for (i = 0; i < s; i++) {
 		sql_trans_destroy(spare_trans[i], false);
 	}

@@ -1653,6 +1653,8 @@ mat_topn(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n, int o)
 		cst.val.lval= 0;
 		cst.len = 0;
 		zero = defConstant(mb, cst.vtype, &cst);
+		if( zero < 0)
+			return -1;
 	}
 	assert( (n<0 && o<0) || 
 		(ml->v[m].mi->argc == ml->v[n].mi->argc && 

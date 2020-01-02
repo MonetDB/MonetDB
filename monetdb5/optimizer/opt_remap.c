@@ -98,7 +98,7 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 	MalBlkPtr mq;
 	InstrPtr q = NULL, sig;
 	char buf[1024];
-	int i,j,k, actions=0;
+	int i,j,k,m, actions=0;
 	int refbat=0, retc = p->retc;
 	bit *upgrade;
 	Symbol s;
@@ -186,8 +186,11 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 				cst.vtype = TYPE_bat;
 				cst.val.bval = bat_nil;
 				cst.len = 0;
-				getArg(q,1) = defConstant(mq, tpe, &cst);
-				setVarType(mq, getArg(q,1), tpe);
+				m =defConstant(mq, tpe, &cst);
+				if( m >= 0){
+					getArg(q,1) = m;
+					setVarType(mq, getArg(q,1), tpe);
+				}
 			} else{
 				/* handle constant tail setting */
 				int tpe = newBatType(getArgType(mq, q, 1));

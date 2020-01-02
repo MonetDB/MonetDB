@@ -92,6 +92,7 @@ newComment(MalBlkPtr mb, const char *val)
 {
 	InstrPtr q = newInstruction(mb, NULL, NULL);
 	ValRecord cst;
+	int k;
 
 	assert(q);
 	q->token = REMsymbol;
@@ -101,9 +102,12 @@ newComment(MalBlkPtr mb, const char *val)
 		addMalException(mb, createException(MAL, "newComment", "Can not allocate comment"));
 	
 	cst.len = strlen(cst.val.sval);
-	getArg(q,0) = defConstant(mb,TYPE_str,&cst);
-	clrVarConstant(mb,getArg(q,0));
-	setVarDisabled(mb,getArg(q,0));
+	k = defConstant(mb, TYPE_str, &cst);
+	if( k >= 0){
+		getArg(q,0) = k;
+		clrVarConstant(mb,getArg(q,0));
+		setVarDisabled(mb,getArg(q,0));
+	}
 	pushInstruction(mb, q);
 	return q;
 }
@@ -182,7 +186,8 @@ getIntConstant(MalBlkPtr mb, int val)
 	cst.len = 0;
 	_t= fndConstant(mb, &cst, mb->vtop);
 	if( _t < 0)
-		_t = defConstant(mb, TYPE_int,&cst);
+		_t = defConstant(mb, TYPE_int, &cst);
+	assert(_t >= 0);
 	return _t;
 }
 
@@ -197,8 +202,10 @@ pushInt(MalBlkPtr mb, InstrPtr q, int val)
 	cst.vtype= TYPE_int;
 	cst.val.ival= val;
 	cst.len = 0;
-	_t = defConstant(mb, TYPE_int,&cst);
-	return pushArgument(mb, q, _t);
+	_t = defConstant(mb, TYPE_int, &cst);
+	if( _t >= 0)
+		return pushArgument(mb, q, _t);
+	return q;
 }
 
 int
@@ -213,6 +220,7 @@ getBteConstant(MalBlkPtr mb, bte val)
 	_t= fndConstant(mb, &cst, mb->vtop);
 	if( _t < 0)
 		_t = defConstant(mb, TYPE_bte, &cst);
+	assert(_t >= 0);
 	return _t;
 }
 
@@ -227,7 +235,9 @@ pushBte(MalBlkPtr mb, InstrPtr q, bte val)
 	cst.val.btval= val;
 	cst.len = 0;
 	_t = defConstant(mb, TYPE_bte,&cst);
-	return pushArgument(mb, q, _t);
+	if( _t >= 0)
+		return pushArgument(mb, q, _t);
+	return q;
 }
 
 int
@@ -242,6 +252,7 @@ getOidConstant(MalBlkPtr mb, oid val)
 	_t= fndConstant(mb, &cst, mb->vtop);
 	if( _t < 0)
 		_t = defConstant(mb, TYPE_oid, &cst);
+	assert(_t >= 0);
 	return _t;
 }
 
@@ -256,7 +267,9 @@ pushOid(MalBlkPtr mb, InstrPtr q, oid val)
 	cst.val.oval= val;
 	cst.len = 0;
 	_t = defConstant(mb,TYPE_oid,&cst);
-	return pushArgument(mb, q, _t);
+	if( _t >= 0)
+		return pushArgument(mb, q, _t);
+	return q;
 }
 
 InstrPtr
@@ -270,7 +283,9 @@ pushVoid(MalBlkPtr mb, InstrPtr q)
 	cst.val.oval= oid_nil;
 	cst.len = 0;
 	_t = defConstant(mb,TYPE_void,&cst);
-	return pushArgument(mb, q, _t);
+	if( _t >= 0)
+		return pushArgument(mb, q, _t);
+	return q;
 }
 
 int
@@ -285,6 +300,7 @@ getLngConstant(MalBlkPtr mb, lng val)
 	_t= fndConstant(mb, &cst, mb->vtop);
 	if( _t < 0)
 		_t = defConstant(mb, TYPE_lng, &cst);
+	assert(_t >= 0);
 	return _t;
 }
 
@@ -299,7 +315,9 @@ pushLng(MalBlkPtr mb, InstrPtr q, lng val)
 	cst.val.lval= val;
 	cst.len = 0;
 	_t = defConstant(mb,TYPE_lng,&cst);
-	return pushArgument(mb, q, _t);
+	if( _t >= 0)
+		return pushArgument(mb, q, _t);
+	return q;
 }
 
 int
@@ -314,6 +332,7 @@ getShtConstant(MalBlkPtr mb, sht val)
 	_t= fndConstant(mb, &cst, mb->vtop);
 	if( _t < 0)
 		_t = defConstant(mb, TYPE_sht, &cst);
+	assert(_t >=0);
 	return _t;
 }
 
@@ -328,7 +347,9 @@ pushSht(MalBlkPtr mb, InstrPtr q, sht val)
 	cst.val.shval= val;
 	cst.len = 0;
 	_t = defConstant(mb,TYPE_sht,&cst);
-	return pushArgument(mb, q, _t);
+	if( _t >= 0)
+		return pushArgument(mb, q, _t);
+	return q;
 }
 
 #ifdef HAVE_HGE
@@ -344,6 +365,7 @@ getHgeConstant(MalBlkPtr mb, hge val)
 	_t= fndConstant(mb, &cst, mb->vtop);
 	if( _t < 0)
 		_t = defConstant(mb, TYPE_hge, &cst);
+	assert(_t >= 0);
 	return _t;
 }
 
@@ -358,7 +380,9 @@ pushHge(MalBlkPtr mb, InstrPtr q, hge val)
 	cst.val.hval= val;
 	cst.len = 0;
 	_t = defConstant(mb,TYPE_hge,&cst);
-	return pushArgument(mb, q, _t);
+	if (_t >= 0)
+		return pushArgument(mb, q, _t);
+	return q;
 }
 #endif
 
@@ -374,6 +398,7 @@ getDblConstant(MalBlkPtr mb, dbl val)
 	_t= fndConstant(mb, &cst, mb->vtop);
 	if( _t < 0)
 		_t = defConstant(mb, TYPE_dbl, &cst);
+	assert(_t >= 0);
 	return _t;
 }
 
@@ -388,7 +413,9 @@ pushDbl(MalBlkPtr mb, InstrPtr q, dbl val)
 	cst.val.dval= val;
 	cst.len = 0;
 	_t = defConstant(mb,TYPE_dbl,&cst);
-	return pushArgument(mb, q, _t);
+	if( _t >= 0)
+		return pushArgument(mb, q, _t);
+	return q;
 }
 
 int
@@ -403,6 +430,7 @@ getFltConstant(MalBlkPtr mb, flt val)
 	_t= fndConstant(mb, &cst, mb->vtop);
 	if( _t < 0)
 		_t = defConstant(mb, TYPE_flt, &cst);
+	assert(_t >= 0);
 	return _t;
 }
 
@@ -417,7 +445,9 @@ pushFlt(MalBlkPtr mb, InstrPtr q, flt val)
 	cst.val.fval= val;
 	cst.len = 0;
 	_t = defConstant(mb,TYPE_flt,&cst);
-	return pushArgument(mb, q, _t);
+	if( _t >= 0)
+		return pushArgument(mb, q, _t);
+	return q;
 }
 
 int
@@ -435,6 +465,7 @@ getStrConstant(MalBlkPtr mb, str val)
 			return -1;
 		_t = defConstant(mb, TYPE_str, &cst);
 	}
+	assert(_t >= 0);
 	return _t;
 }
 
@@ -450,7 +481,9 @@ pushStr(MalBlkPtr mb, InstrPtr q, const char *Val)
 		addMalException(mb, createException(MAL, "pushStr", "Can not allocate string variable"));
 	cst.len = strlen(cst.val.sval);
 	_t = defConstant(mb,TYPE_str,&cst);
-	return pushArgument(mb, q, _t);
+	if( _t >= 0)
+		return pushArgument(mb, q, _t);
+	return q;
 }
 
 int
@@ -465,6 +498,7 @@ getBitConstant(MalBlkPtr mb, bit val)
 	_t= fndConstant(mb, &cst, mb->vtop);
 	if( _t < 0)
 		_t = defConstant(mb, TYPE_bit, &cst);
+	assert(_t >= 0);
 	return _t;
 }
 
@@ -479,8 +513,9 @@ pushBit(MalBlkPtr mb, InstrPtr q, bit val)
 	cst.val.btval= val;
 	cst.len = 0;
 	_t = defConstant(mb,TYPE_bit,&cst);
-
-	return pushArgument(mb, q, _t);
+	if( _t >= 0)
+		return pushArgument(mb, q, _t);
+	return q;
 }
 
 InstrPtr
@@ -513,8 +548,10 @@ pushNil(MalBlkPtr mb, InstrPtr q, int tpe)
 		_t = defConstant(mb,TYPE_bat,&cst);
 		getVarType(mb,_t) = tpe;
 	}
-	q= pushArgument(mb, q, _t);
-	setVarUDFtype(mb,getArg(q,q->argc-1)); /* needed */
+	if( _t >= 0){
+		q= pushArgument(mb, q, _t);
+		setVarUDFtype(mb,getArg(q,q->argc-1)); /* needed */
+	}
 	return q;
 }
 
@@ -538,8 +575,11 @@ pushNilType(MalBlkPtr mb, InstrPtr q, char *tpe)
 		freeException(msg);
 	}
 	_t = defConstant(mb,idx,&cst);
-	setVarUDFtype(mb,_t);
-	return pushArgument(mb, q, _t);
+	if( _t >= 0){
+		setVarUDFtype(mb,_t);
+		return pushArgument(mb, q, _t);
+	}
+	return q;
 }
 
 InstrPtr
@@ -559,8 +599,11 @@ pushType(MalBlkPtr mb, InstrPtr q, int tpe)
 		freeException(msg);
 	}
 	_t = defConstant(mb,tpe,&cst);
-	setVarUDFtype(mb,_t);
-	return pushArgument(mb, q, _t);
+	if( _t >= 0){
+		setVarUDFtype(mb,_t);
+		return pushArgument(mb, q, _t);
+	}
+	return q;
 }
 
 InstrPtr
@@ -580,8 +623,9 @@ pushZero(MalBlkPtr mb, InstrPtr q, int tpe)
 		freeException(msg);
 	}
 	_t = defConstant(mb,tpe,&cst);
-
-	return pushArgument(mb, q, _t);
+	if( _t >= 0)
+		return pushArgument(mb, q, _t);
+	return q;
 }
 
 InstrPtr
@@ -607,5 +651,7 @@ pushValue(MalBlkPtr mb, InstrPtr q, ValPtr vr)
 	if (VALcopy(&cst, vr) == NULL) 
 		addMalException(mb, createException(MAL, "pushValue", "Can not allocate variable"));
 	_t = defConstant(mb,cst.vtype,&cst);
-	return pushArgument(mb, q, _t);
+	if( _t >=0 )
+		return pushArgument(mb, q, _t);
+	return q;
 }
