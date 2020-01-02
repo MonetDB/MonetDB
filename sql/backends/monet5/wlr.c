@@ -322,12 +322,14 @@ WLRprocessBatch(Client cntxt)
 				pushEndInstruction(mb);
 				// execute this block if no errors are found
 				chkTypes(c->usermodule, mb, FALSE);
-				chkFlow(mb);
-				chkDeclarations(mb);
+				if( msg == MAL_SUCCEED)
+						msg = chkFlow(mb);
+				if( msg == MAL_SUCCEED) 
+					msg = chkDeclarations(mb);
 
 				wlr_tag =  tag; // remember which transaction we executed
 				snprintf(wlr_read, sizeof(wlr_read), "%s", tag_read);
-				if( mb->errors == 0){
+				if(msg == MAL_SUCCEED &&  mb->errors == 0){
 					sql->session->auto_commit = 0;
 					sql->session->ac_on_commit = 1;
 					sql->session->level = 0;
@@ -361,7 +363,8 @@ WLRprocessBatch(Client cntxt)
 						}
 					}
 				} else {
-					msg = createException(SQL, "wlr.replicate", "typechecking failed '%s':'%s':\n",path, mb->errors);
+					if( msg == MAL_SUCCEED)
+						msg = createException(SQL, "wlr.replicate", "typechecking failed '%s':'%s':\n",path, mb->errors);
 					cleanup();
 					break;
 				}

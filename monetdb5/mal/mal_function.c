@@ -82,10 +82,12 @@ int getPC(MalBlkPtr mb, InstrPtr p)
  */
 #define DEPTH 128
 
-void chkFlow(MalBlkPtr mb)
+str
+chkFlow(MalBlkPtr mb)
 {   int i,j,k, v,lastInstruction;
 	int  pc[DEPTH];
 	int  var[DEPTH];
+	char buf[IDLENGTH * 2 +2];
 	InstrPtr stmt[DEPTH];
 	int btop=0;
 	int endseen=0, retseen=0, yieldseen=0;
@@ -93,7 +95,9 @@ void chkFlow(MalBlkPtr mb)
 	str msg = MAL_SUCCEED;
 
 	if ( mb->errors != MAL_SUCCEED)
-		return ;
+		return mb->errors ;
+	p = getInstrPtr(mb, 0);
+	snprintf(buf, IDLENGTH * 2 +2, "%s.%s", getModuleId(p), getFunctionId(p));
 	lastInstruction = mb->stop-1;
 	for(i= 0; i<mb->stop; i++){
 		p= getInstrPtr(mb,i);
@@ -102,38 +106,24 @@ void chkFlow(MalBlkPtr mb)
 		switch( p->barrier){
 		case BARRIERsymbol:
 		case CATCHsymbol:
-			if(btop== DEPTH){
-			    mb->errors = createMalException(mb,0,TYPE,"Too many nested MAL blocks");
-			    return;
-			}
+			if(btop== DEPTH)
+			    throw(MAL,buf,"Too many nested MAL blocks");
 			pc[btop]= i;
 			v= var[btop]= getDestVar(p);
 			stmt[btop]=p;
 
 			for(j=btop-1;j>=0;j--)
-			if( v==var[j]){
-			    mb->errors = createMalException(mb,i,MAL,
-					"recursive %s[%d] shields %s[%d]",
-						getVarName(mb,v), pc[j],
-						getFcnName(mb),pc[i]);
-			    return;
-			}
+			if( v==var[j])
+			    throw(MAL,buf, "recursive %s[%d] shields %s[%d]", getVarName(mb,v), pc[j], getFcnName(mb),pc[i]);
 
 			btop++;
 			break;
 		case EXITsymbol:
 			v= getDestVar(p);
-			if( btop>0 && var[btop-1] != v){
-			    mb->errors = createMalException( mb,i,MAL,
-					"exit-label '%s' doesnot match '%s'",
-					getVarName(mb,v), getVarName(mb,var[btop-1]));
-			}
-			if(btop==0){
-			    mb->errors = createMalException(mb,i,MAL,
-					"exit-label '%s' without begin-label",
-					getVarName(mb,v));
-			    continue;
-			}
+			if( btop>0 && var[btop-1] != v)
+			    throw(MAL, buf, "exit-label '%s' doesnot match '%s'", getVarName(mb,v), getVarName(mb,var[btop-1]));
+			if(btop==0)
+			    throw(MAL,buf, "exit-label '%s' without begin-label", getVarName(mb,v));
 			/* search the matching block */
 			for(j=btop-1;j>=0;j--)
 			if( var[j]==v) break;
@@ -159,14 +149,13 @@ void chkFlow(MalBlkPtr mb)
 			if( var[j]==v) break;
 			if(j<0){
 				str nme=getVarName(mb,v);
-			    mb->errors = createMalException(mb,i,MAL,
-					"label '%s' not in guarded block", nme);
+			    throw(MAL,buf, "label '%s' not in guarded block", nme);
 			} 
 			break;
 		case YIELDsymbol:
 			{ InstrPtr ps= getInstrPtr(mb,0);
 			if( ps->token != FACTORYsymbol){
-			    mb->errors = createMalException(mb,i,MAL, "yield misplaced!");
+			    throw(MAL, buf, "yield misplaced!");
 			}
 			yieldseen= TRUE;
 			 }
@@ -178,17 +167,16 @@ void chkFlow(MalBlkPtr mb)
 				if (p->barrier == RETURNsymbol)
 					yieldseen = FALSE;    /* always end with a return */
 				if (ps->retc != p->retc) {
-					mb->errors = createMalException( mb, i, MAL,
-							"invalid return target!");
+					throw(MAL, buf, "invalid return target!");
 				} else 
 				if (ps->typechk == TYPE_RESOLVED)
 					for (e = 0; e < p->retc; e++) {
 						if (resolveType(getArgType(mb, ps, e), getArgType(mb, p, e)) < 0) {
 							str tpname = getTypeName(getArgType(mb, p, e));
-							mb->errors = createMalException(mb, i, TYPE,
-									"%s type mismatch at type '%s'\n",
+							msg = createException(MAL, buf, "%s type mismatch at type '%s'\n",
 									(p->barrier == RETURNsymbol ? "RETURN" : "YIELD"), tpname);
 							GDKfree(tpname);
+							return msg;
 						}
 					}
 			}
@@ -206,37 +194,32 @@ void chkFlow(MalBlkPtr mb)
 				if( p->token == REMsymbol){
 					/* do nothing */
 				} else if( i) {
-					str msg=instruction2str(mb,0,p,TRUE);
-					mb->errors = createMalException( mb,i,MAL, "signature misplaced\n!%s",msg);
-					GDKfree(msg);
+					str l = instruction2str(mb,0,p,TRUE);
+					msg = createException( MAL, buf, "signature misplaced\n!%s",l);
+					GDKfree(l);
+					return  msg;
 				}
 			}
 		}
 	}
 
-	if(msg == MAL_SUCCEED && lastInstruction < mb->stop-1 ){
-		mb->errors = createMalException( mb,lastInstruction,SYNTAX,
-			"instructions after END");
-	}
+	if(lastInstruction < mb->stop-1 )
+		throw(MAL, buf, "instructions after END");
+	
 	if( endseen)
-	for(btop--; btop>=0;btop--){
-		mb->errors = createMalException( mb,lastInstruction, SYNTAX,
-			"barrier '%s' without exit in %s[%d]",
-				getVarName(mb,var[btop]),getFcnName(mb),i);
-	}
+		for(btop--; btop>=0;btop--)
+			throw(MAL, buf, "barrier '%s' without exit in %s[%d]", getVarName(mb,var[btop]),getFcnName(mb),i);
 	p= getInstrPtr(mb,0);
-	if( !isaSignature(p)){
-		mb->errors = createMalException( mb,0,SYNTAX,"signature missing");
-	}
+	if( !isaSignature(p))
+		throw( MAL, buf, "signature missing");
 	if( retseen == 0){
 		if( getArgType(mb,p,0)!= TYPE_void &&
-			(p->token==FUNCTIONsymbol || p->token==FACTORYsymbol)){
-				mb->errors = createMalException( mb,0,SYNTAX,"RETURN missing");
-		}
+			(p->token==FUNCTIONsymbol || p->token==FACTORYsymbol))
+				throw(MAL, buf,  "RETURN missing");
 	}
-	if ( msg== MAL_SUCCEED && yieldseen && getArgType(mb,p,0)!= TYPE_void){
-			mb->errors = createMalException( mb,0,SYNTAX,"RETURN missing");
-	}
+	if ( yieldseen && getArgType(mb,p,0)!= TYPE_void)
+			throw( MAL, buf,"RETURN missing");
+	return MAL_SUCCEED;
 }
 
 /*

@@ -74,8 +74,8 @@ OPTpostfixImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	/* Defense line against incorrect plans */
 	if( actions ){
 		//chkTypes(cntxt->usermodule, mb, FALSE);
-		//chkFlow(mb);
-		// if( msg==MAL_SUCCEED) msg = chkDeclarations(mb);
+		//if( msg == MAL_SUCCEED) msg = chkFlow(mb);
+		//if( msg == MAL_SUCCEED) msg = chkDeclarations(mb);
 	}
 	usec= GDKusec() - usec;
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec", "postfix", actions, usec);

@@ -32,7 +32,7 @@ QUERY = function welcome3(lim:int)(w:str,i:int);
         
         y:= user.welcome3(1);
         io.print(y);
-ERROR = !MALException:user.welcome3[2]:invalid return target!
+ERROR = !MALException:user.welcome3:invalid return target!
 
 # 13:41:50 >  
 # 13:41:50 >  "Done."

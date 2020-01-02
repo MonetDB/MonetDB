@@ -5,9 +5,6 @@ barrier	L:= 1;
 	#do it
 	redo L;
 exit 	L;
-	redo L;		# outside block
-	leave X;	# outside block
-	redo A;		# outside block
 barrier X:=1;
 	leave L;	# outside block
 	leave X;

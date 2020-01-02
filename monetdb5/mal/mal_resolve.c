@@ -684,7 +684,7 @@ chkProgram(Module s, MalBlkPtr mb)
 	chkTypes(s, mb, FALSE);
 	if (mb->errors)
 		return msg;
-	chkFlow(mb);
+	msg = chkFlow(mb);
 	if (mb->errors)
 		return msg;
 	if(msg == MAL_SUCCEED)
