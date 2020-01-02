@@ -108,7 +108,7 @@ clearStack(MalStkPtr s)
 
 	if (!s) return;
 	
-	i = s->stktop - 1;
+	i = s->stktop;
 	for (v = s->stk; i > 0; i--, v++)
 		if (ATOMextern(v->vtype) && v->val.pval) {
 			GDKfree(v->val.pval);
