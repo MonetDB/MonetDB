@@ -2087,7 +2087,8 @@ clear_dbat(sql_trans *tr, sql_dbat *bat)
 	}
 	if (bat->dbid) {
 		BAT *b = temp_descriptor(bat->dbid);
-		if(b && !isEbat(b)) {
+
+		if (b && !isEbat(b)) {
 			sz += BATcount(b);
 			bat_clear(b);
 			BATcommit(b);
@@ -2927,7 +2928,7 @@ tr_log_delta( sql_trans *tr, sql_delta *cbat, int cleared, char tpe, oid id)
 		     cbat->ibase ||
 		     BATcount(ins) <= SNAPSHOT_MINSIZE))
 			ok = log_bat(bat_logger, ins, cbat->name, tpe, id);
-		if (ok == GDK_SUCCEED && ATOMIC_GET(&store_nr_active) == 1 &&
+		if (ok == GDK_SUCCEED &&
 		    !cbat->ibase && BATcount(ins) > SNAPSHOT_MINSIZE) {
 			/* log new snapshot */
 			if ((ok = logger_add_bat(bat_logger, ins, cbat->name, tpe, id)) == GDK_SUCCEED)
@@ -3060,7 +3061,7 @@ tr_snapshot_bat( sql_trans *tr, sql_delta *cbat)
 	assert(ATOMIC_GET(&store_nr_active)>0);
 
 	(void)tr;
-	if (ATOMIC_GET(&store_nr_active) == 1 && !cbat->ibase && cbat->cnt > SNAPSHOT_MINSIZE) {
+	if (!cbat->ibase && cbat->cnt > SNAPSHOT_MINSIZE) {
 		BAT *ins = temp_descriptor(cbat->ibid);
 		if(ins) {
 			/* any inserts */

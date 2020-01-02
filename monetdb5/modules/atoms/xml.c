@@ -820,5 +820,9 @@ str XMLprelude(void *ret) {
 	(void) ret;
 	return MAL_SUCCEED; /* to not break init */
 }
+str XMLepilogue(void *ret) {
+	(void)ret;
+	return MAL_SUCCEED;
+}
 
 #endif
