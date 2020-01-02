@@ -876,12 +876,16 @@ term(Client cntxt, MalBlkPtr curBlk, InstrPtr *curInstr, int ret)
 					setVarUDFtype(curBlk, cstidx);
 				} else {
 					cstidx = defConstant(curBlk, tpe, &cst);
+					if( cstidx < 0)
+						return 3;
 					setPolymorphic(*curInstr, tpe, FALSE);
 					setVarUDFtype(curBlk, cstidx);
 					free = 0;
 				}
 			} else if (cst.vtype != getVarType(curBlk, cstidx)) {
 				cstidx = defConstant(curBlk, cst.vtype, &cst);
+				if( cstidx < 0)
+					return 3;
 				setPolymorphic(*curInstr, cst.vtype, FALSE);
 				free = 0;
 			}
@@ -897,10 +901,12 @@ term(Client cntxt, MalBlkPtr curBlk, InstrPtr *curInstr, int ret)
 			if (tpe < 0)
 				return 3;
 			cstidx = defConstant(curBlk, tpe, &cst);
-			setPolymorphic(*curInstr, tpe, FALSE);
-			if (flag)
-				setVarUDFtype(curBlk, cstidx);
-			*curInstr = pushArgument(curBlk, *curInstr, cstidx);
+			if( cstidx >=0){
+				setPolymorphic(*curInstr, tpe, FALSE);
+				if (flag)
+					setVarUDFtype(curBlk, cstidx);
+				*curInstr = pushArgument(curBlk, *curInstr, cstidx);
+			}
 			return ret;
 		}
 	} else if ((i = idLength(cntxt))) {
@@ -1757,7 +1763,7 @@ part3:
 void
 parseMAL(Client cntxt, Symbol curPrg, int skipcomments, int lines)
 {
-	int cntrl = 0;
+	int cntrl = 0, k;
 	/*Symbol curPrg= cntxt->curprg;*/
 	char c;
 	int inlineProp =0, unsafeProp = 0, sealedProp = 0;
@@ -1812,9 +1818,12 @@ parseMAL(Client cntxt, Symbol curPrg, int skipcomments, int lines)
 					freeInstruction(curInstr);
 					continue;
 				}
-				getArg(curInstr, 0) = defConstant(curBlk, TYPE_str, &cst);
-				clrVarConstant(curBlk, getArg(curInstr, 0));
-				setVarDisabled(curBlk, getArg(curInstr, 0));
+				k = defConstant(curBlk, TYPE_str, &cst);
+				if( k >= 0){
+					getArg(curInstr, 0) = k;
+					clrVarConstant(curBlk, getArg(curInstr, 0));
+					setVarDisabled(curBlk, getArg(curInstr, 0));
+				}
 				pushInstruction(curBlk, curInstr);
 			}
 			echoInput(cntxt);

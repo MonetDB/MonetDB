@@ -107,7 +107,9 @@ pushPtr(MalBlkPtr mb, InstrPtr q, ptr val)
 	cst.val.pval = val;
 	cst.len = 0;
 	_t = defConstant(mb, TYPE_ptr, &cst);
-	return pushArgument(mb, q, _t);
+	if( _t >= 0)
+		return pushArgument(mb, q, _t);
+	return q;
 }
 
 static InstrPtr

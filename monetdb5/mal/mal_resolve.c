@@ -592,12 +592,16 @@ typeChecker(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 			 */
 			if (lhs != TYPE_void && lhs != TYPE_any) {
 				ValRecord cst;
+				int k;
+
 				cst.vtype = TYPE_void;
 				cst.val.oval = void_nil;
 				cst.len = 0;
 
 				rhs = isaBatType(lhs) ? TYPE_bat : lhs;
-				p->argv[i] = defConstant(mb, rhs, &cst);
+				k = defConstant(mb, rhs, &cst);
+				if( k >=0)
+					p->argv[i] = k;
 				rhs = lhs;
 			}
 		}
