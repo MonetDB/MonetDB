@@ -1933,7 +1933,7 @@ format_result(Mapi mid, MapiHdl hdl, bool singleinstr)
 			SQLqueryEcho(hdl);
 			if (formatter == TABLEformatter ||
 			    formatter == ROWCOUNTformatter)
-				mnstr_printf(toConsole, "operation successful\n");
+				mnstr_printf(toConsole, "auto commit mode: %s\n", mapi_get_autocommit(mid) ? "on" : "off");
 			timerHuman(sqloptimizer, maloptimizer, querytime, singleinstr, false);
 			continue;
 		case Q_PREPARE:
