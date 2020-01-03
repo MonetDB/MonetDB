@@ -206,9 +206,8 @@ chkFlow(MalBlkPtr mb)
 	if(lastInstruction < mb->stop-1 )
 		throw(MAL, buf, "instructions after END");
 	
-	if( endseen)
-		for(btop--; btop>=0;btop--)
-			throw(MAL, buf, "barrier '%s' without exit in %s[%d]", getVarName(mb,var[btop]),getFcnName(mb),i);
+	if( endseen && btop  > 0)
+			throw(MAL, buf, "barrier '%s' without exit in %s[%d]", getVarName(mb,var[btop - 1]),getFcnName(mb),i);
 	p= getInstrPtr(mb,0);
 	if( !isaSignature(p))
 		throw( MAL, buf, "signature missing");

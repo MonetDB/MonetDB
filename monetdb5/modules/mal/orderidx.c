@@ -167,24 +167,18 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 	msg = chkProgram(cntxt->usermodule, smb);
 	if( msg )
 		goto bailout;
-	//printFunction(THRdata[0], smb, 0 , 23);
-	if (smb->errors) {
-		msg = createException(MAL, "bat.orderidx",
-		                           "Type errors in generated code");
-	} else {
-		/* evaluate MAL block and keep the ordered OID bat */
-		newstk = prepareMALstack(smb, smb->vsize);
-		if (newstk == NULL) {
-			msg = createException(MAL, "bat.orderidx", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto bailout;
-		}
-		newstk->up = 0;
-		newstk->stk[arg].vtype= TYPE_bat;
-		newstk->stk[arg].val.bval= b->batCacheid;
-		BBPretain(newstk->stk[arg].val.bval);
-		msg = runMALsequence(cntxt, smb, 1, 0, newstk, 0, 0);
-		freeStack(newstk);
+	/* evaluate MAL block and keep the ordered OID bat */
+	newstk = prepareMALstack(smb, smb->vsize);
+	if (newstk == NULL) {
+		msg = createException(MAL, "bat.orderidx", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
 	}
+	newstk->up = 0;
+	newstk->stk[arg].vtype= TYPE_bat;
+	newstk->stk[arg].val.bval= b->batCacheid;
+	BBPretain(newstk->stk[arg].val.bval);
+	msg = runMALsequence(cntxt, smb, 1, 0, newstk, 0, 0);
+	freeStack(newstk);
 
 	/* get rid of temporary MAL block */
 bailout:
