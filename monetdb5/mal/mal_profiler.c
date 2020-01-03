@@ -164,11 +164,17 @@ renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int
 	logadd("\"clk\":"LLFMT",", usec);
 	logadd("\"mclk\":%"PRIu64",", microseconds);
 	logadd("\"thread\":%d,", THRgettid());
-	logadd("\"function\":\"%s.%s\",", getModuleId(getInstrPtr(mb, 0)), getFunctionId(getInstrPtr(mb, 0)));
+	logadd("\"program\":\"%s.%s\",", getModuleId(getInstrPtr(mb, 0)), getFunctionId(getInstrPtr(mb, 0)));
 	logadd("\"pc\":%d,", mb?getPC(mb,pci):0);
 	logadd("\"tag\":"OIDFMT",", stk?stk->tag:0);
-	logadd("\"module\":\"%s\",", pci->modname ? pci->modname : "");
-	logadd("\"instruction\":\"%s\",", pci->fcnname ? pci->fcnname : "");
+	if( pci->modname)
+		logadd("\"module\":\"%s\",", pci->modname ? pci->modname : "");
+	if( pci->fcnname)
+		logadd("\"function\":\"%s\",", pci->fcnname ? pci->fcnname : "");
+	if( pci->barrier)
+		logadd("\"barrier\":\"%s\",", operatorName(pci->barrier));
+	if( pci->token < FCNcall || pci->token > PATcall)
+		logadd("\"operator\":\"%s\",", operatorName(pci->token));
     if (!GDKinmemory()) {
         char *uuid;
 		str c;
@@ -215,10 +221,8 @@ renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int
 This information can be used to determine memory footprint and variable life times.
  */
 
-#define MALARGUMENTDETAILS
-#ifdef MALARGUMENTDETAILS
 		// Also show details of the arguments for modelling
-		if(mb){
+		if(mb && pci->modname && pci->fcnname){
 			int j;
 
 			logadd("\"args\":[");
@@ -234,6 +238,7 @@ This information can be used to determine memory footprint and variable life tim
 					logadd("\"ret\":%d,", j);
 				else
 					logadd("\"arg\":%d,", j);
+				logadd("\"var\":\"%s\",", getVarName(mb, getArg(pci,j)));
 				c =getVarName(mb, getArg(pci,j));
 				if(getVarSTC(mb,getArg(pci,j))){
 					InstrPtr stc = getInstrPtr(mb, getVarSTC(mb,getArg(pci,j)));
@@ -273,17 +278,17 @@ This information can be used to determine memory footprint and variable life tim
 						total += heapinfo(d->tvheap, d->batCacheid);
 						total += hashinfo(d->thash, d->batCacheid);
 						total += IMPSimprintsize(d);
-					/* logadd("\"debug\":\"%s\"", d->debugmessages); */
+					/* logadd("\"debug\":\"%s\",", d->debugmessages); */
 						BBPunfix(d->batCacheid);
 					}
 					logadd("\"bid\":%d,", bid);
 					logadd("\"count\":"BUNFMT",", cnt);
-					logadd("\"size\":" LLFMT, total);
+					logadd("\"size\":" LLFMT",", total);
 				} else{
 					char *truncated = NULL;
 					tname = getTypeName(tpe);
 					logadd("\"type\":\"%s\",", tname);
-					logadd("\"const\":%d", isVarConstant(mb, getArg(pci,j)));
+					logadd("\"const\":%d,", isVarConstant(mb, getArg(pci,j)));
 					cv = VALformat(&stk->stk[getArg(pci,j)]);
 					stmtq = cv ? mal_quote(cv, strlen(cv)) : NULL;
 					if (stmtq != NULL && strlen(stmtq) > LOGLEN/2) {
@@ -292,20 +297,19 @@ This information can be used to determine memory footprint and variable life tim
 						stmtq = truncated;
 					}
 					if (stmtq)
-						logadd(",\"value\":\"%s\"", stmtq);
+						logadd("\"value\":\"%s\",", stmtq);
 					GDKfree(cv);
 					GDKfree(stmtq);
 				}
-				logadd("\"eol\":%d", getVarEolife(mb,getArg(pci,j)));
-				logadd("\"used\":%d", isVarUsed(mb,getArg(pci,j)));
-				logadd("\"fixed\":%d", isVarFixed(mb,getArg(pci,j)));
+				logadd("\"eol\":%d,", getVarEolife(mb,getArg(pci,j)));
+				logadd("\"used\":%d,", isVarUsed(mb,getArg(pci,j)));
+				logadd("\"fixed\":%d,", isVarFixed(mb,getArg(pci,j)));
 				logadd("\"udf\":%d", isVarUDFtype(mb,getArg(pci,j)));
 				GDKfree(tname);
 				logadd("}%s", (j< pci->argc-1?",":""));
 			}
 			logadd("]"); // end marker for arguments
 		}
-#endif
 	logadd("}\n"); // end marker
 	logjsonInternal(logbuffer);
 }

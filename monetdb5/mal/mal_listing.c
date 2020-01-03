@@ -265,6 +265,13 @@ operatorName(int i)
 	case FACTORYsymbol: return "factory";
 	case COMMANDsymbol: return "command";
 	case PATTERNsymbol: return "pattern";
+
+	/* internal symbols */
+	case FCNcall:	return "FCNcall";
+	case FACcall:     return "FACcall";
+	case CMDcall:     return "CMDcall";
+	case THRDcall:    return "THRcall";
+	case PATcall:     return "PATcall";
 	}
 	return "";
 }
