@@ -229,6 +229,7 @@ typedef struct {\
 	TPE* dict = GET_FINAL_DICT(task, NAME, TPE);\
 	TPE* dest = (TPE*) (task)->src;\
 	decompress_dictionary_##TPE(dict, bits, base, cnt, &dest);\
+	(task)->src = (char*) dest;\
 }
 
 #define scan_loop_dictionary(NAME, TPE, CANDITER_NEXT, TEST) {\

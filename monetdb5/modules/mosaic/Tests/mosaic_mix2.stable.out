@@ -1,0 +1,84 @@
+stdout of test 'mosaic_mix2` in directory 'monetdb5/modules/mosaic` itself:
+
+
+# 14:20:22 >  
+# 14:20:22 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31724" "--set" "mapi_usock=/var/tmp/mtest-28537/.s.monetdb.31724" "--forcemito" "--dbpath=/home/aris/sources/monetdb/build/installation/var/MonetDB/mTests_monetdb5_modules_mosaic" "--set" "embedded_c=true"
+# 14:20:22 >  
+
+# MonetDB 5 server v11.36.0 (hg id: 7b8c6f490ac1+)
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_modules_mosaic', using 8 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
+# Found 15.347 GiB available main-memory of which we use 12.508 GiB
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2019 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://aris-XPS-13-9380:31724/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-28537/.s.monetdb.31724
+# MonetDB/SQL module loaded
+
+# 14:20:22 >  
+# 14:20:22 >  "mclient" "-lmal" "-ftest" "-tnone" "-Eutf-8" "--host=/var/tmp/mtest-28537" "--port=31724"
+# 14:20:22 >  
+
+#--------------------------#
+# t	t	t	t  # name
+# void	int	int	bit  # type
+#--------------------------#
+[ 0@0,	17,	17,	true	]
+[ 1@0,	5,	5,	true	]
+[ 2@0,	1,	1,	true	]
+[ 3@0,	15,	15,	true	]
+[ 4@0,	11,	11,	true	]
+[ 5@0,	14,	14,	true	]
+[ 6@0,	23,	23,	true	]
+[ 7@0,	17,	17,	true	]
+[ 8@0,	10,	10,	true	]
+[ 9@0,	24,	24,	true	]
+[ 10@0,	18,	18,	true	]
+[ 11@0,	8,	8,	true	]
+[ 12@0,	3,	3,	true	]
+[ 13@0,	15,	15,	true	]
+[ 14@0,	8,	8,	true	]
+[ 15@0,	22,	22,	true	]
+[ 16@0,	19,	19,	true	]
+[ 17@0,	16,	16,	true	]
+[ 18@0,	24,	24,	true	]
+[ 19@0,	3,	3,	true	]
+[ 20@0,	2,	2,	true	]
+[ 21@0,	4,	4,	true	]
+[ 22@0,	9,	9,	true	]
+[ 23@0,	0,	0,	true	]
+[ 24@0,	22,	22,	true	]
+[ 25@0,	21,	21,	true	]
+[ 26@0,	18,	18,	true	]
+[ 27@0,	0,	0,	true	]
+[ 28@0,	1,	1,	true	]
+[ 29@0,	16,	16,	true	]
+[ 30@0,	16,	16,	true	]
+[ 31@0,	23,	23,	true	]
+[ 32@0,	7,	7,	true	]
+[ 33@0,	10,	10,	true	]
+[ 34@0,	21,	21,	true	]
+[ 35@0,	13,	13,	true	]
+[ 36@0,	0,	0,	true	]
+[ 37@0,	4,	4,	true	]
+[ 38@0,	8,	8,	true	]
+[ 39@0,	22,	22,	true	]
+[ 40@0,	18,	18,	true	]
+[ 41@0,	22,	22,	true	]
+[ 42@0,	12,	12,	true	]
+[ 43@0,	7,	7,	true	]
+[ 44@0,	9,	9,	true	]
+[ 45@0,	24,	24,	true	]
+[ 46@0,	14,	14,	true	]
+[ 47@0,	14,	14,	true	]
+[ 48@0,	24,	24,	true	]
+[ 49@0,	9,	9,	true	]
+[ 50@0,	9,	9,	true	]
+[ 51@0,	19,	19,	true	]
+
+# 14:20:22 >  
+# 14:20:22 >  "Done."
+# 14:20:22 >  
+
