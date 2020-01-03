@@ -2378,6 +2378,15 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
 			" and name in ('suspend_log_flushing', 'resume_log_flushing', 'hot_snapshot') and type = %d;\n", (int) F_PROC);
 
+	/* 12_url */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"drop function isaURL(url);\n"
+			"CREATE function isaURL(theUrl string) RETURNS BOOL\n"
+			" EXTERNAL NAME url.\"isaURL\";\n"
+			"GRANT EXECUTE ON FUNCTION isaURL(string) TO PUBLIC;\n"
+			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
+			" and name = 'isaurl' and type = %d;\n", (int) F_FUNC);
+
 	/* 16_tracelog */
 	t = mvc_bind_table(sql, sys, "tracelog");
 	t->system = 0; /* make it non-system else the drop view will fail */
