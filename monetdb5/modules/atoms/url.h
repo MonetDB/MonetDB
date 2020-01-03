@@ -37,7 +37,7 @@ mal_export str URLgetProtocol(str *retval, url *tv);
 mal_export str URLgetQuery(str *retval, url *tv);
 mal_export str URLgetUser(str *retval, url *tv);
 mal_export str URLgetRobotURL(str *retval, url *tv);
-mal_export str URLisaURL(bit *retval, url *tv);
+mal_export str URLisaURL(bit *retval, str *tv);
 mal_export str URLnew4(url *u, str *protocol, str *server,
 		int *port, str *file);
 mal_export str URLnew3(url *u, str *protocol, str *server, str *file);

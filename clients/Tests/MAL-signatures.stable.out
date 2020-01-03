@@ -12034,7 +12034,7 @@ stdout of test 'MAL-signatures` in directory 'clients` itself:
 [ "url",	"getQuery",	"command url.getQuery(u:url):str ",	"URLgetQuery;",	"Extract the query string from the URL"	]
 [ "url",	"getRobotURL",	"command url.getRobotURL(u:url):str ",	"URLgetRobotURL;",	"Extract the location of the robot control file"	]
 [ "url",	"getUser",	"command url.getUser(u:url):str ",	"URLgetUser;",	"Extract the user identity from the URL"	]
-[ "url",	"isaURL",	"command url.isaURL(u:url):bit ",	"URLisaURL;",	"Check conformity of the URL syntax"	]
+[ "url",	"isaURL",	"command url.isaURL(u:str):bit ",	"URLisaURL;",	"Check conformity of the URL syntax"	]
 [ "url",	"new",	"command url.new(prot:str, host:str, fnme:str):url ",	"URLnew3;",	"Construct URL from protocol, host,and file"	]
 [ "url",	"new",	"command url.new(p:str, h:str, prt:int, f:str):url ",	"URLnew4;",	"Construct URL from protocol, host, port, and file"	]
 [ "url",	"url",	"command url.url(s:str):url ",	"URLnew;",	"Create an URL from a string literal"	]
