@@ -150,10 +150,7 @@ void merge_delta_Into_dictionary_##TPE(DICTIONARY_TYPE* info) {\
 \
 	for (BUN i = 0; i < delta_count; i++) {\
 		BUN key = find_value_##TPE(dict, *dict_count, delta[i]);\
-		if (key < *dict_count && ARE_EQUAL(dict[key], delta[i], nil, TPE)) {\
-			/*This delta value is already in the dictionary hence we can skip it.*/\
-			continue;\
-		}\
+		assert(key == *dict_count || !ARE_EQUAL(dict[key], delta[i], nil, TPE));\
 		insert_into_dict_##TPE(dict, dict_count, key, delta[i]);\
 	}\
 	GET_BITS(info) = GET_BITS_EXTENDED(info);\

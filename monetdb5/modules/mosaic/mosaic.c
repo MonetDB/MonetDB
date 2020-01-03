@@ -289,7 +289,7 @@ MOSprepareEstimate(MOStask* task) {
 	if (msg != MAL_SUCCEED) return msg;\
 }
 
-#define postEstimate(NAME, TPE, DUMMY_ARGUMENT) MOSpostEstimate_##NAME##_##TPE(task);
+#define postEstimate(NAME, TPE, DUMMY_ARGUMENT) if (current->is_applicable) { MOSpostEstimate_##NAME##_##TPE(task); }
 
 #define MOSestimate_AND_MOSoptimizerCost_DEF(TPE) \
 static str MOSestimate_inner_##TPE(MOStask* task, MosaicEstimation* current, const MosaicEstimation* previous) {\
@@ -353,14 +353,14 @@ static str MOSestimate_inner_##TPE(MOStask* task, MosaicEstimation* current, con
 		}\
 	}\
 \
-	if (current->compression_strategy.tag == MOSAIC_RAW)	DO_OPERATION_IF_ALLOWED(postEstimate, raw, TPE);\
-	if (current->compression_strategy.tag == MOSAIC_RLE)	DO_OPERATION_IF_ALLOWED(postEstimate, runlength, TPE);\
+	if (current->compression_strategy.tag == MOSAIC_RAW)		DO_OPERATION_IF_ALLOWED(postEstimate, raw, TPE);\
+	if (current->compression_strategy.tag == MOSAIC_RLE)		DO_OPERATION_IF_ALLOWED(postEstimate, runlength, TPE);\
 	if (current->compression_strategy.tag == MOSAIC_DICT256)	DO_OPERATION_IF_ALLOWED(postEstimate, dict256, TPE);\
-	if (current->compression_strategy.tag == MOSAIC_DICT)	DO_OPERATION_IF_ALLOWED(postEstimate, dict, TPE);\
-	if (current->compression_strategy.tag == MOSAIC_DELTA)	DO_OPERATION_IF_ALLOWED(postEstimate, delta, TPE);\
-	if (current->compression_strategy.tag == MOSAIC_LINEAR)	DO_OPERATION_IF_ALLOWED(postEstimate, linear, TPE);\
-	if (current->compression_strategy.tag == MOSAIC_FRAME)	DO_OPERATION_IF_ALLOWED(postEstimate, frame, TPE);\
-	if (current->compression_strategy.tag == MOSAIC_PREFIX)	DO_OPERATION_IF_ALLOWED(postEstimate, prefix, TPE);\
+	if (current->compression_strategy.tag == MOSAIC_DICT)		DO_OPERATION_IF_ALLOWED(postEstimate, dict, TPE);\
+	if (current->compression_strategy.tag == MOSAIC_DELTA)		DO_OPERATION_IF_ALLOWED(postEstimate, delta, TPE);\
+	if (current->compression_strategy.tag == MOSAIC_LINEAR)		DO_OPERATION_IF_ALLOWED(postEstimate, linear, TPE);\
+	if (current->compression_strategy.tag == MOSAIC_FRAME)		DO_OPERATION_IF_ALLOWED(postEstimate, frame, TPE);\
+	if (current->compression_strategy.tag == MOSAIC_PREFIX)		DO_OPERATION_IF_ALLOWED(postEstimate, prefix, TPE);\
 \
 	return MAL_SUCCEED;\
 }\
@@ -1481,7 +1481,8 @@ MOSAnalysis(BAT *b, BAT *btech, BAT *boutput, BAT *bratio, BAT *bcompress, BAT *
 
 		if(msg != MAL_SUCCEED || b->tmosaic == NULL){
 			if (msg != MAL_SUCCEED) {
-				GDKfree(msg);
+				freeException(msg);
+				msg = MAL_SUCCEED;
 			}
 			// aborted compression experiment
 			MOSdestroy(BBPdescriptor(bid));
