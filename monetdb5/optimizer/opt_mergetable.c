@@ -2263,16 +2263,19 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		pushInstruction(mb, cp);
 	}
 	(void) stk; 
-	chkTypes(cntxt->usermodule,mb, TRUE);
-	if( mb->errors != MAL_SUCCEED)
+	msg = chkTypes(cntxt->usermodule,mb, TRUE);
+	if( msg)
 		goto cleanup;
 
 	if( OPTdebug &  OPTmergetable)
 	{
 		fprintf(stderr,"#Result of multi table optimizer\n");
-        chkTypes(cntxt->usermodule, mb, FALSE);
-        chkFlow(mb);
-        chkDeclarations(mb);
+		if (!msg)
+        		msg = chkTypes(cntxt->usermodule, mb, FALSE);
+		if (!msg)
+        		msg = chkFlow(mb);
+		if (!msg)
+        		msg = chkDeclarations(mb);
 		fprintFunction(stderr, mb, 0, LIST_MAL_ALL);
 	}
 
@@ -2293,9 +2296,12 @@ cleanup:
 	if (ml.vars) GDKfree(ml.vars);
     /* Defense line against incorrect plans */
     if( actions > 0 && msg == MAL_SUCCEED){
-        chkTypes(cntxt->usermodule, mb, FALSE);
-        chkFlow(mb);
-        chkDeclarations(mb);
+	    if (!msg)
+        	msg = chkTypes(cntxt->usermodule, mb, FALSE);
+	    if (!msg)
+        	msg = chkFlow(mb);
+	    if (!msg)
+        	msg = chkDeclarations(mb);
     }
     /* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;

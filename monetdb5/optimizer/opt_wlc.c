@@ -21,6 +21,7 @@ OPTwlcImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	InstrPtr *old;
 	lng usec = GDKusec();
 	char buf[256];
+	str msg = MAL_SUCCEED;
 
 	(void) pci;
 	(void) cntxt;
@@ -142,9 +143,11 @@ OPTwlcImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	GDKfree(old);
 
     /* Defense line against incorrect plans */
-	chkTypes(cntxt->usermodule, mb, FALSE);
-	chkFlow(mb);
-	//chkDeclarations(mb);
+	msg = chkTypes(cntxt->usermodule, mb, FALSE);
+	if (!msg)
+		msg = chkFlow(mb);
+	//if (!msg) 
+	//	msg = chkDeclarations(mb);
     /* keep all actions taken as a post block comment */
 
 wrapup:
@@ -152,5 +155,5 @@ wrapup:
     newComment(mb,buf);
 	if( updates > 0)
 		addtoMalBlkHistory(mb);
-	return MAL_SUCCEED;
+	return msg;
 }

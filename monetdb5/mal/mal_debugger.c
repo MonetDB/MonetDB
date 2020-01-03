@@ -693,7 +693,9 @@ retryRead:
 					for(; fs; fs = fs->peer){ 
 						for(i=0; i< fs->def->stop; i++)
 							fs->def->stmt[i]->typechk = TYPE_UNKNOWN;
-						chkProgram(cntxt->usermodule, fs->def);
+						msg = chkProgram(cntxt->usermodule, fs->def);
+						if( msg != MAL_SUCCEED)
+							mnstr_printf(out, "#<modnme>.<fcnnme> contains errors\n");
 					}
 				} else
 					mnstr_printf(out, "#<modnme>.<fcnnme> expected\n");

@@ -1280,6 +1280,7 @@ parseCommandPattern(Client cntxt, int kind)
 	InstrPtr curInstr = 0;
 	str modnme = NULL;
 	size_t l = 0;
+	str msg = MAL_SUCCEED;
 
 	curBlk = fcnHeader(cntxt, kind);
 	if (curBlk == NULL) {
@@ -1306,7 +1307,10 @@ parseCommandPattern(Client cntxt, int kind)
 			insertSymbol(cntxt->usermodule, curPrg);
 		else
 			insertSymbol(getModule(modnme), curPrg);
-		chkProgram(cntxt->usermodule, curBlk);
+		if(!cntxt->curprg->def->errors)
+			msg = chkProgram(cntxt->usermodule, curBlk);
+		if( msg && ! cntxt->curprg->def->errors)
+			cntxt->curprg->def->errors = msg;
 		if(cntxt->curprg->def->errors)
 			GDKfree(cntxt->curprg->def->errors);
 		cntxt->curprg->def->errors = cntxt->backup->def->errors;
@@ -1418,7 +1422,7 @@ parseEnd(Client cntxt)
 	Symbol curPrg = 0;
 	size_t l;
 	InstrPtr sig;
-	str errors = MAL_SUCCEED;
+	str errors = MAL_SUCCEED, msg = MAL_SUCCEED;
 
 	if (MALkeyword(cntxt, "end", 3)) {
 		curPrg = cntxt->curprg;
@@ -1453,8 +1457,10 @@ parseEnd(Client cntxt)
 			errors = cntxt->curprg->def->errors;
 			cntxt->curprg->def->errors=0;
 		}
-		chkProgram(cntxt->usermodule, cntxt->curprg->def);
 		// check for newly identified errors
+		msg = chkProgram(cntxt->usermodule, cntxt->curprg->def);
+		if( errors == NULL)
+			errors = msg;
 		if (errors == NULL){
 			errors = cntxt->curprg->def->errors;
 			cntxt->curprg->def->errors=0;

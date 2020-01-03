@@ -767,8 +767,10 @@ newVariable(MalBlkPtr mb, const char *name, size_t len, malType type)
 {
 	int n;
 
-	if( len >= IDLENGTH)
+	if( len >= IDLENGTH){
+		mb->errors = createMalException(mb,0,TYPE, "newVariable: id too long");
 		return -1;
+	}
 	if (makeVarSpace(mb)) 
 		/* no space for a new variable */
 		return -1;

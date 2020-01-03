@@ -374,9 +374,12 @@ ORCAMprocessor(Client cntxt, MalBlkPtr mb, Symbol t)
 			} else
 				break;
 		}
-	chkTypes(cntxt->usermodule, mb, FALSE);
-	chkFlow(mb);
-	chkDeclarations(mb);
+	if (!msg)
+		msg = chkTypes(cntxt->usermodule, mb, FALSE);
+	if (!msg)
+		msg = chkFlow(mb);
+	if (!msg)
+		msg = chkDeclarations(mb);
 	return msg;
 }
 
@@ -507,7 +510,7 @@ str OPTmacro(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
     /* Defense line against incorrect plans */
 	chkTypes(cntxt->usermodule, mb, FALSE);
 	chkFlow(mb);
-	chkDeclarations(mb);
+	if( msg == MAL_SUCCEED) msg = chkDeclarations(mb);
 	usec += GDKusec() - clk;
 	/* keep all actions taken as a post block comment */
 	snprintf(buf,256,"%-20s actions= 1 time=" LLFMT " usec","macro",usec);
@@ -549,7 +552,7 @@ str OPTorcam(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		return msg;
 	chkTypes(cntxt->usermodule, mb, FALSE);
 	chkFlow(mb);
-	chkDeclarations(mb);
+	if( msg == MAL_SUCCEED) msg = chkDeclarations(mb);
 	usec += GDKusec() - clk;
 	/* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;
