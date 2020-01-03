@@ -262,7 +262,7 @@ MOSestimate_SIGNATURE(dict256, TPE)\
 	BUN delta_count;\
 	BUN nr_compressed;\
 \
-	BUN old_keys_size		= (current->nr_dict256_encoded_elements * GET_BITS_EXTENDED(info)) / CHAR_BIT;\
+	BUN old_keys_size		= (current->nr_dict256_encoded_elements * GET_BITS(info)) / CHAR_BIT;\
 	BUN old_dict_size		= GET_COUNT(info) * sizeof(TPE);\
 	BUN old_headers_size	= current->nr_dict256_encoded_blocks * 2 * sizeof(MOSBlockHeaderTpe(dict256, TPE));\
 	BUN old_bytes			= old_keys_size + old_dict_size + old_headers_size;\
@@ -291,53 +291,7 @@ MOSestimate_SIGNATURE(dict256, TPE)\
 
 MOSestimate_DEF(bte)
 MOSestimate_DEF(sht)
-MOSestimate_SIGNATURE(dict256, int)
-{
-	(void) previous;
-	GlobalCappedInfo* info = task->dict256_info;
-	if (task->start < *(current)->dict256_limit) {
-		/*Dictionary estimation is expensive. So only allow it on disjoint regions.*/
-		current->is_applicable = false;
-		return MAL_SUCCEED;
-	}
-	BUN limit = (BUN) (task->stop - task->start > MOSAICMAXCNT? MOSAICMAXCNT: task->stop - task->start);
-
-	if (*current->max_compression_length != 0 &&  *current->max_compression_length < limit) {
-		limit = *current->max_compression_length;
-	}
-
-	*(current)->dict256_limit = task->start + limit;
-
-	int* val = getSrc(int, task);
-	BUN delta_count;
-	BUN nr_compressed;
-
-	BUN old_keys_size		= (current->nr_dict256_encoded_elements * GET_BITS_EXTENDED(info)) / CHAR_BIT;
-	BUN old_dict_size		= GET_COUNT(info) * sizeof(int);
-	BUN old_headers_size	= current->nr_dict256_encoded_blocks * 2 * sizeof(MOSBlockHeaderTpe(dict256, int));
-	BUN old_bytes			= old_keys_size + old_dict_size + old_headers_size;
-
-	if (extend_delta_int(&nr_compressed, &delta_count, limit, info, val)) {
-		throw(MAL, "mosaic.dict256", MAL_MALLOC_FAIL);
-	}
-
-	current->is_applicable = nr_compressed > 0;
-	current->nr_dict256_encoded_elements += nr_compressed;
-	current->nr_dict256_encoded_blocks++;
-
-	BUN new_keys_size		= (current->nr_dict256_encoded_elements * GET_BITS_EXTENDED(info)) / CHAR_BIT;
-	BUN new_dict_size		= (delta_count + GET_COUNT(info)) * sizeof(int);
-	BUN new_headers_size	= current->nr_dict256_encoded_blocks * 2 * sizeof(MOSBlockHeaderTpe(dict256, int));
-	BUN new_bytes			= new_keys_size + new_dict_size + new_headers_size;
-
-	current->compression_strategy.tag = MOSAIC_DICT256;
-	current->compression_strategy.cnt = (unsigned int) nr_compressed;
-
-	current->uncompressed_size	+= (BUN) ( nr_compressed * sizeof(int));
-	current->compressed_size		+= (BUN) (wordaligned( MosaicBlkSize, BitVectorChunk) + new_bytes - old_bytes);
-
-	return MAL_SUCCEED;
-}
+MOSestimate_DEF(int)
 MOSestimate_DEF(lng)
 MOSestimate_DEF(flt)
 MOSestimate_DEF(dbl)

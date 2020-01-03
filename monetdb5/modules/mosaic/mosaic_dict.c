@@ -170,7 +170,7 @@ MOSestimate_SIGNATURE(dict, TPE)\
 	BUN delta_count;\
 	BUN nr_compressed;\
 \
-	BUN old_keys_size	= (current->nr_dict_encoded_elements * GET_BITS_EXTENDED(info)) / CHAR_BIT;\
+	BUN old_keys_size	= (current->nr_dict_encoded_elements * GET_BITS(info)) / CHAR_BIT;\
 	BUN old_dict_size	= GET_COUNT(info) * sizeof(TPE);\
 	BUN old_headers_size	= current->nr_dict_encoded_blocks * 2 * sizeof(MOSBlockHeaderTpe(dict, TPE));\
 	BUN old_bytes		= old_keys_size + old_dict_size + old_headers_size;\
