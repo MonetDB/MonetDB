@@ -223,7 +223,7 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
     if( actions > 0){
         msg = chkTypes(cntxt->usermodule, mb, FALSE);
 	if (!msg)
-        	chkFlow(mb);
+        	msg = chkFlow(mb);
 	if (!msg)
         	msg = chkDeclarations(mb);
     }

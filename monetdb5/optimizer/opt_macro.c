@@ -477,7 +477,7 @@ OPTorcamImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 str OPTmacro(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	Symbol t;
-	str msg,mod,fcn;
+	str msg = MAL_SUCCEED, mod, fcn;
 	lng clk= GDKusec();
 	char buf[256];
 	lng usec = GDKusec();
@@ -508,8 +508,8 @@ str OPTmacro(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	}
 
     /* Defense line against incorrect plans */
-	chkTypes(cntxt->usermodule, mb, FALSE);
-	chkFlow(mb);
+	msg = chkTypes(cntxt->usermodule, mb, FALSE);
+	if( msg == MAL_SUCCEED) msg = chkFlow(mb);
 	if( msg == MAL_SUCCEED) msg = chkDeclarations(mb);
 	usec += GDKusec() - clk;
 	/* keep all actions taken as a post block comment */
@@ -550,8 +550,8 @@ str OPTorcam(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		msg= OPTorcamImplementation(cntxt,mb,stk,p);
 	if( msg) 
 		return msg;
-	chkTypes(cntxt->usermodule, mb, FALSE);
-	chkFlow(mb);
+	msg = chkTypes(cntxt->usermodule, mb, FALSE);
+	if( msg == MAL_SUCCEED) msg = chkFlow(mb);
 	if( msg == MAL_SUCCEED) msg = chkDeclarations(mb);
 	usec += GDKusec() - clk;
 	/* keep all actions taken as a post block comment */
