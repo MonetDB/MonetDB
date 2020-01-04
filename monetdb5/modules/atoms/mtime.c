@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /* In this file we implement three new types with supporting code.
@@ -1106,7 +1106,7 @@ NAMEBULK(bat *ret, const bat *bid)										\
 	n = BATcount(b);													\
 	if ((bn = COLnew(b->hseqbase, TYPE_##OUTYPE, n, TRANSIENT)) == NULL) { \
 		BBPunfix(b->batCacheid);										\
-		throw(MAL, "batmtime." MALFUNC, SQLSTATE(HY001) MAL_MALLOC_FAIL); \
+		throw(MAL, "batmtime." MALFUNC, SQLSTATE(HY013) MAL_MALLOC_FAIL); \
 	}																	\
 	src = Tloc(b, 0);													\
 	dst = Tloc(bn, 0);													\
@@ -1168,7 +1168,7 @@ NAMEBULK(bat *ret, const bat *bid1, const bat *bid2)					\
 	if ((bn = COLnew(b1->hseqbase, TYPE_##OUTTYPE, n, TRANSIENT)) == NULL) { \
 		BBPunfix(b1->batCacheid);										\
 		BBPunfix(b2->batCacheid);										\
-		throw(MAL, "batmtime." MALFUNC, SQLSTATE(HY001) MAL_MALLOC_FAIL); \
+		throw(MAL, "batmtime." MALFUNC, SQLSTATE(HY013) MAL_MALLOC_FAIL); \
 	}																	\
 	src1 = Tloc(b1, 0);													\
 	src2 = Tloc(b2, 0);													\
@@ -1240,7 +1240,7 @@ NAMEBULK(bat *ret, const bat *bid1, const bat *bid2)					\
 	if ((bn = COLnew(b1->hseqbase, TYPE_##OUTTYPE, n, TRANSIENT)) == NULL) { \
 		BBPunfix(b1->batCacheid);										\
 		BBPunfix(b2->batCacheid);										\
-		throw(MAL, "batmtime." MALFUNC, SQLSTATE(HY001) MAL_MALLOC_FAIL); \
+		throw(MAL, "batmtime." MALFUNC, SQLSTATE(HY013) MAL_MALLOC_FAIL); \
 	}																	\
 	src1 = Tloc(b1, 0);													\
 	src2 = Tloc(b2, 0);													\
@@ -1641,7 +1641,7 @@ MTIMEdaytime_fromseconds_bulk(bat *ret, bat *bid)
 	n = BATcount(b);
 	if ((bn = COLnew(b->hseqbase, TYPE_daytime, n, TRANSIENT)) == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(MAL, "batcalc.daytime", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "batcalc.daytime", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	s = Tloc(b, 0);
 	d = Tloc(bn, 0);
@@ -1774,7 +1774,7 @@ MTIMEdate_to_str(str *ret, const date *d, const char *const *format)
 	if (is_date_nil(*d) || GDK_STRNIL(*format)) {
 		*ret = GDKstrdup(str_nil);
 		if (*ret == NULL)
-			throw(MAL, "mtime.date_to_str", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "mtime.date_to_str", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 	tm = (struct tm) {
@@ -1789,7 +1789,7 @@ MTIMEdate_to_str(str *ret, const date *d, const char *const *format)
 		throw(MAL, "mtime.date_to_str", "cannot convert date");
 	*ret = GDKstrdup(buf);
 	if (*ret == NULL)
-		throw(MAL, "mtime.date_to_str", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "mtime.date_to_str", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -1822,7 +1822,7 @@ MTIMEtime_to_str(str *ret, const daytime *d, const char *const *format)
 	if (is_daytime_nil(dt) || GDK_STRNIL(*format)) {
 		*ret = GDKstrdup(str_nil);
 		if (*ret == NULL)
-			throw(MAL, "mtime.time_to_str", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "mtime.time_to_str", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 	time_t now = time(NULL);
@@ -1848,7 +1848,7 @@ MTIMEtime_to_str(str *ret, const daytime *d, const char *const *format)
 		throw(MAL, "mtime.time_to_str", "cannot convert time");
 	*ret = GDKstrdup(buf);
 	if (*ret == NULL)
-		throw(MAL, "mtime.time_to_str", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "mtime.time_to_str", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -1888,7 +1888,7 @@ MTIMEtimestamp_to_str(str *ret, const timestamp *d, const char *const *format)
 	if (is_timestamp_nil(*d) || GDK_STRNIL(*format)) {
 		*ret = GDKstrdup(str_nil);
 		if (*ret == NULL)
-			throw(MAL, "mtime.timestamp_to_str", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "mtime.timestamp_to_str", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 	dt = ts_date(*d);
@@ -1911,6 +1911,6 @@ MTIMEtimestamp_to_str(str *ret, const timestamp *d, const char *const *format)
 		throw(MAL, "mtime.timestamp_to_str", "cannot convert timestamp");
 	*ret = GDKstrdup(buf);
 	if (*ret == NULL)
-		throw(MAL, "mtime.timestamp_to_str", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "mtime.timestamp_to_str", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }

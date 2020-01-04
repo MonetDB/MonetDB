@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /* (author) M.L. Kersten
@@ -60,8 +60,8 @@ malBootstrap(void)
 		return msg;
 	}
 	pushEndInstruction(c->curprg->def);
-	chkProgram(c->usermodule, c->curprg->def);
-	if ( (msg= c->curprg->def->errors) != MAL_SUCCEED ) {
+	msg = chkProgram(c->usermodule, c->curprg->def);
+	if ( msg != MAL_SUCCEED || (msg= c->curprg->def->errors) != MAL_SUCCEED ) {
 		MCfreeClient(c);
 		return msg;
 	}
@@ -136,7 +136,7 @@ MSinitClientPrg(Client cntxt, str mod, str nme)
 		return MSresetClientPrg(cntxt, putName(mod), putName(nme));
 	cntxt->curprg = newFunction(putName(mod), putName(nme), FUNCTIONsymbol);
 	if( cntxt->curprg == 0)
-		throw(MAL, "initClientPrg", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "initClientPrg", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	if( (idx= findVariable(cntxt->curprg->def,"main")) >=0)
 		setVarType(cntxt->curprg->def, idx, TYPE_void);
 	insertSymbol(cntxt->usermodule,cntxt->curprg);
@@ -144,7 +144,7 @@ MSinitClientPrg(Client cntxt, str mod, str nme)
 	if (cntxt->glb == NULL )
 		cntxt->glb = newGlobalStack(MAXGLOBALS + cntxt->curprg->def->vsize);
 	if( cntxt->glb == NULL)
-		throw(MAL,"initClientPrg", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL,"initClientPrg", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	assert(cntxt->curprg->def != NULL);
 	assert(cntxt->curprg->def->vtop >0);
 	return MAL_SUCCEED;
@@ -486,7 +486,7 @@ MSserveClient(Client c)
 		c->glb = newGlobalStack(MAXGLOBALS + mb->vsize);
 	if (c->glb == NULL) {
 		c->mode = RUNCLIENT;
-		throw(MAL, "serveClient", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "serveClient", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	} else {
 		c->glb->stktop = mb->vtop;
 		c->glb->blk = mb;
@@ -601,7 +601,8 @@ MALparser(Client c)
 	c->curprg->def->errors = 0;
 	oldstate = *c->curprg->def;
 
-	prepareMalBlk(c->curprg->def, CURRENT(c));
+	if( prepareMalBlk(c->curprg->def, CURRENT(c)) < 0)
+		throw(MAL, "mal.parser", "Failed to prepare");
 	parseMAL(c, c->curprg, 0, INT_MAX);
 
 	/* now the parsing is done we should advance the stream */
@@ -627,8 +628,8 @@ MALparser(Client c)
 		return msg;
 	}
 	pushEndInstruction(c->curprg->def);
-	chkProgram(c->usermodule, c->curprg->def);
-	if ( (msg =c->curprg->def->errors) ){
+	msg = chkProgram(c->usermodule, c->curprg->def);
+	if (msg !=MAL_SUCCEED || (msg =c->curprg->def->errors) ){
 		c->curprg->def->errors = 0;
 		MSresetVariables(c, c->curprg->def, c->glb, oldstate.vtop);
 		resetMalBlk(c->curprg->def, 1);
@@ -700,7 +701,7 @@ MALengine(Client c)
 		if (prg->def && c->glb->stksize < prg->def->vsize){
 			c->glb = reallocGlobalStack(c->glb, prg->def->vsize);
 			if( c->glb == NULL)
-				throw(MAL, "mal.engine", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				throw(MAL, "mal.engine", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		c->glb->stktop = prg->def->vtop;
 		c->glb->blk = prg->def;

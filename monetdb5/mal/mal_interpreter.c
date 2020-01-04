@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -257,11 +257,8 @@ prepareMALstack(MalBlkPtr mb, int size)
 	ValPtr lhs, rhs;
 
 	stk = newGlobalStack(size);
-	if (!stk) {
+	if (!stk)
 		return NULL;
-	}
-	//memset((char *)stk, 0, stackSize(size)); already set
-	//stk->stksize = size;
 	stk->stktop = mb->vtop;
 	stk->blk = mb;
 	stk->workers = 0;
@@ -405,7 +402,7 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug)
 		if (*env == NULL) {
 			stk = prepareMALstack(mb, mb->vsize);
 			if (stk == NULL)
-				throw(MAL, "mal.interpreter", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				throw(MAL, "mal.interpreter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			stk->up = 0;
 			*env = stk;
 		} else {
@@ -415,13 +412,13 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug)
 			stk = *env;
 			initStack(0, res);
 			if(!res)
-				throw(MAL, "mal.interpreter", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				throw(MAL, "mal.interpreter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		assert(stk);
 		for (i = pci->retc; i < pci->argc; i++) {
 			lhs = &stk->stk[pci->argv[i]];
 			if (VALcopy(lhs, argv[i]) == NULL)
-				throw(MAL, "mal.interpreter", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				throw(MAL, "mal.interpreter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			if (lhs->vtype == TYPE_bat)
 				BBPretain(lhs->val.bval);
 		}
@@ -481,7 +478,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			if( backup == NULL || garbage == NULL) {
 				GDKfree(backup);
 				GDKfree(garbage);
-				throw(MAL, "mal.interpreter", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				throw(MAL, "mal.interpreter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 		} else {
 			backup = backups;
@@ -494,7 +491,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 		if( backup == NULL || garbage == NULL) {
 			GDKfree(backup);
 			GDKfree(garbage);
-			throw(MAL, "mal.interpreter", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "mal.interpreter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 	} else {
 		backup = backups;

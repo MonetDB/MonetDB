@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -49,8 +49,8 @@ MNDBForeignKeys(ODBCStmt *stmt,
 	/* buffer for the constructed query to do meta data retrieval */
 	char *query = NULL;
 	char *query_end = NULL;	/* pointer to end of built-up query */
-	char *pcat = NULL, *psch = NULL, *ptab = NULL;
-	char *fcat = NULL, *fsch = NULL, *ftab = NULL;
+	char *psch = NULL, *ptab = NULL;
+	char *fsch = NULL, *ftab = NULL;
 
 	/* deal with SQL_NTS and SQL_NULL_DATA */
 	fixODBCstring(PKCatalogName, NameLength1, SQLSMALLINT,
@@ -68,24 +68,17 @@ MNDBForeignKeys(ODBCStmt *stmt,
 
 #ifdef ODCBDEBUG
 	ODBCLOG("\"%.*s\" \"%.*s\" \"%.*s\" \"%.*s\" \"%.*s\" \"%.*s\"\n",
-		(int) NameLength1, PKCatalogName,
-		(int) NameLength2, PKSchemaName,
-		(int) NameLength3, PKTableName,
-		(int) NameLength4, FKCatalogName,
-		(int) NameLength5, FKSchemaName,
-		(int) NameLength6, FKTableName);
+		(int) NameLength1, PKCatalogName ? (char *) PKCatalogName : "",
+		(int) NameLength2, PKSchemaName ? (char *) PKSchemaName : "",
+		(int) NameLength3, PKTableName ? (char *) PKTableName : "",
+		(int) NameLength4, FKCatalogName ? (char *) FKCatalogName : "",
+		(int) NameLength5, FKSchemaName ? (char *) FKSchemaName : "",
+		(int) NameLength6, FKTableName ? (char *) FKTableName : "");
 #endif
 	/* dependent on the input parameter values we must add a
 	   variable selection condition dynamically */
 
 	if (stmt->Dbc->sql_attr_metadata_id == SQL_FALSE) {
-		if (NameLength1 > 0) {
-			pcat = ODBCParseOA("e", "value",
-					   (const char *) PKCatalogName,
-					   (size_t) NameLength1);
-			if (pcat == NULL)
-				goto nomem;
-		}
 		if (NameLength2 > 0) {
 			psch = ODBCParseOA("pks", "name",
 					   (const char *) PKSchemaName,
@@ -98,13 +91,6 @@ MNDBForeignKeys(ODBCStmt *stmt,
 					   (const char *) PKTableName,
 					   (size_t) NameLength3);
 			if (ptab == NULL)
-				goto nomem;
-		}
-		if (NameLength4 > 0) {
-			fcat = ODBCParseOA("e", "value",
-					   (const char *) FKCatalogName,
-					   (size_t) NameLength4);
-			if (fcat == NULL)
 				goto nomem;
 		}
 		if (NameLength5 > 0) {
@@ -122,13 +108,6 @@ MNDBForeignKeys(ODBCStmt *stmt,
 				goto nomem;
 		}
 	} else {
-		if (NameLength1 > 0) {
-			pcat = ODBCParseID("e", "value",
-					   (const char *) PKCatalogName,
-					   (size_t) NameLength1);
-			if (pcat == NULL)
-				goto nomem;
-		}
 		if (NameLength2 > 0) {
 			psch = ODBCParseID("pks", "name",
 					   (const char *) PKSchemaName,
@@ -141,13 +120,6 @@ MNDBForeignKeys(ODBCStmt *stmt,
 					   (const char *) PKTableName,
 					   (size_t) NameLength3);
 			if (ptab == NULL)
-				goto nomem;
-		}
-		if (NameLength4 > 0) {
-			fcat = ODBCParseID("e", "value",
-					   (const char *) FKCatalogName,
-					   (size_t) NameLength4);
-			if (fcat == NULL)
 				goto nomem;
 		}
 		if (NameLength5 > 0) {
@@ -168,10 +140,9 @@ MNDBForeignKeys(ODBCStmt *stmt,
 
 	/* first create a string buffer (1200 extra bytes is plenty:
 	   we actually need just over 1000) */
-	query = malloc(1200 + (pcat ? strlen(pcat) : 0) +
+	query = malloc(1200 + (2 * strlen(stmt->Dbc->dbname)) +
 		       (psch ? strlen(psch) : 0) + (ptab ? strlen(ptab) : 0) +
-		       (fcat ? strlen(fcat) : 0) + (fsch ? strlen(fsch) : 0) +
-		       (ftab ? strlen(ftab) : 0));
+		       (fsch ? strlen(fsch) : 0) + (ftab ? strlen(ftab) : 0));
 	if (query == NULL)
 		goto nomem;
 	query_end = query;
@@ -194,11 +165,11 @@ MNDBForeignKeys(ODBCStmt *stmt,
 	 */
 
 	sprintf(query_end,
-		"select e.value as pktable_cat, "
+		"select '%s' as pktable_cat, "
 		       "pks.name as pktable_schem, "
 		       "pkt.name as pktable_name, "
 		       "pkkc.name as pkcolumn_name, "
-		       "e.value as fktable_cat, "
+		       "'%s' as fktable_cat, "
 		       "fks.name as fktable_schem, "
 		       "fkt.name as fktable_name, "
 		       "fkkc.name as fkcolumn_name, "
@@ -211,8 +182,7 @@ MNDBForeignKeys(ODBCStmt *stmt,
 		"from sys.schemas fks, sys.tables fkt, "
 		     "sys.objects fkkc, sys.keys as fkk, "
 		     "sys.schemas pks, sys.tables pkt, "
-		     "sys.objects pkkc, sys.keys as pkk, "
-		     "sys.env() e "
+		     "sys.objects pkkc, sys.keys as pkk "
 		"where fkt.id = fkk.table_id and "
 		      "pkt.id = pkk.table_id and "
 		      "fkk.id = fkkc.id and "
@@ -220,18 +190,21 @@ MNDBForeignKeys(ODBCStmt *stmt,
 		      "fks.id = fkt.schema_id and "
 		      "pks.id = pkt.schema_id and "
 		      "fkk.rkey = pkk.id and "
-		      "fkkc.nr = pkkc.nr and "
-		      "e.name = 'gdk_dbname'",
+		      "fkkc.nr = pkkc.nr",
+		stmt->Dbc->dbname,
+		stmt->Dbc->dbname,
 		SQL_NO_ACTION, SQL_NO_ACTION, SQL_NOT_DEFERRABLE);
 	assert(strlen(query) < 1100);
 	query_end += strlen(query_end);
 
 	/* Construct the selection condition query part */
-	if (pcat) {
+	if (NameLength1 > 0 && PKCatalogName != NULL) {
 		/* filtering requested on catalog name */
-		sprintf(query_end, " and %s", pcat);
-		query_end += strlen(query_end);
-		free(pcat);
+		if (strcmp((char *) PKCatalogName, stmt->Dbc->dbname) != 0) {
+			/* catalog name does not match the database name, so return no rows */
+			sprintf(query_end, " and 1=2");
+			query_end += strlen(query_end);
+		}
 	}
 	if (psch) {
 		/* filtering requested on schema name */
@@ -245,11 +218,13 @@ MNDBForeignKeys(ODBCStmt *stmt,
 		query_end += strlen(query_end);
 		free(ptab);
 	}
-	if (fcat) {
+	if (NameLength4 > 0 && FKCatalogName != NULL) {
 		/* filtering requested on catalog name */
-		sprintf(query_end, " and %s", fcat);
-		query_end += strlen(query_end);
-		free(fcat);
+		if (strcmp((char *) FKCatalogName, stmt->Dbc->dbname) != 0) {
+			/* catalog name does not match the database name, so return no rows */
+			sprintf(query_end, " and 1=2");
+			query_end += strlen(query_end);
+		}
 	}
 	if (fsch) {
 		/* filtering requested on schema name */
@@ -275,22 +250,17 @@ MNDBForeignKeys(ODBCStmt *stmt,
 	query_end += strlen(query_end);
 
 	/* query the MonetDB data dictionary tables */
-	rc = MNDBExecDirect(stmt, (SQLCHAR *) query,
-			    (SQLINTEGER) (query_end - query));
+	rc = MNDBExecDirect(stmt, (SQLCHAR *) query, (SQLINTEGER) (query_end - query));
 
 	free(query);
 
 	return rc;
 
   nomem:
-	if (pcat)
-		free(pcat);
 	if (psch)
 		free(psch);
 	if (ptab)
 		free(ptab);
-	if (fcat)
-		free(fcat);
 	if (fsch)
 		free(fsch);
 	if (ftab)

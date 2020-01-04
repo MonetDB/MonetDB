@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /* The SQL code generator can not always look ahead to avoid
@@ -21,16 +21,13 @@ OPTpostfixImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	int i, slimit, actions = 0;
 	lng usec = GDKusec();
 	char buf[256];
+	str msg = MAL_SUCCEED;
 
 	(void) cntxt;
 	(void) stk;
 	
 	slimit = mb->stop;
 	setVariableScope(mb);
-	if( OPTdebug & OPTpostfix){
-		fprintf(stderr,"POSTFIX start\n");
-		fprintFunction(stderr, mb, 0,  LIST_MAL_ALL);
-	}
 	/* Remove the result from any join/group instruction when it is not used later on */
 	for( i = 0; i< slimit; i++){
 /* POSTFIX ACTION FOR THE JOIN CASE  */
@@ -73,19 +70,19 @@ OPTpostfixImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			continue;
 		}
 	}
+
 	/* Defense line against incorrect plans */
 	if( actions ){
-		//chkTypes(cntxt->usermodule, mb, FALSE);
-		//chkFlow(mb);
-		//chkDeclarations(mb);
+		// msg = chkTypes(cntxt->usermodule, mb, FALSE);
+		// if (!msg)
+		// 	msg = chkFlow(mb);
+		// if (!msg)
+		// 	msg = chkDeclarations(mb);
 	}
 	usec= GDKusec() - usec;
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec", "postfix", actions, usec);
     newComment(mb,buf);
-	if( OPTdebug & OPTpostfix){
-		fprintf(stderr,"POSTFIX done\n");
-		fprintFunction(stderr, mb, 0,  LIST_MAL_ALL);
-	}
-	addtoMalBlkHistory(mb);
-	return MAL_SUCCEED;
+	if( actions > 0)
+		addtoMalBlkHistory(mb);
+	return msg;
 }

@@ -1383,8 +1383,6 @@ stdout of test 'analytics00` in directory 'sql/test/analytics` itself:
 % %3 # name
 % int # type
 % 1 # length
-[ 2	]
-[ 2	]
 [ 1	]
 [ 3	]
 [ 1	]
@@ -1392,6 +1390,8 @@ stdout of test 'analytics00` in directory 'sql/test/analytics` itself:
 [ 3	]
 [ 3	]
 [ 1	]
+[ 2	]
+[ 2	]
 #select min(bb) over (order by aa desc) from stressme;
 % sys.%3 # table_name
 % %3 # name
@@ -1439,8 +1439,6 @@ stdout of test 'analytics00` in directory 'sql/test/analytics` itself:
 % %3 # name
 % int # type
 % 1 # length
-[ 4	]
-[ 4	]
 [ 1	]
 [ 3	]
 [ 1	]
@@ -1448,6 +1446,8 @@ stdout of test 'analytics00` in directory 'sql/test/analytics` itself:
 [ 3	]
 [ 3	]
 [ 1	]
+[ 4	]
+[ 4	]
 #select max(bb) over (order by aa desc) from stressme;
 % sys.%3 # table_name
 % %3 # name
@@ -1495,8 +1495,6 @@ stdout of test 'analytics00` in directory 'sql/test/analytics` itself:
 % %1 # name
 % bigint # type
 % 1 # length
-[ 6	]
-[ 6	]
 [ 1	]
 [ 3	]
 [ 1	]
@@ -1504,6 +1502,8 @@ stdout of test 'analytics00` in directory 'sql/test/analytics` itself:
 [ 3	]
 [ 3	]
 [ 1	]
+[ 6	]
+[ 6	]
 #select cast(sum(bb) over (order by aa desc) as bigint) from stressme;
 % sys.%1 # table_name
 % %1 # name
@@ -1551,8 +1551,6 @@ stdout of test 'analytics00` in directory 'sql/test/analytics` itself:
 % %1 # name
 % bigint # type
 % 1 # length
-[ 8	]
-[ 8	]
 [ 1	]
 [ 3	]
 [ 1	]
@@ -1560,6 +1558,8 @@ stdout of test 'analytics00` in directory 'sql/test/analytics` itself:
 [ 3	]
 [ 3	]
 [ 1	]
+[ 8	]
+[ 8	]
 #select cast(prod(bb) over (order by aa desc) as bigint) from stressme;
 % sys.%1 # table_name
 % %1 # name
@@ -1607,8 +1607,6 @@ stdout of test 'analytics00` in directory 'sql/test/analytics` itself:
 % %3 # name
 % double # type
 % 24 # length
-[ 3	]
-[ 3	]
 [ 1	]
 [ 3	]
 [ 1	]
@@ -1616,6 +1614,8 @@ stdout of test 'analytics00` in directory 'sql/test/analytics` itself:
 [ 3	]
 [ 3	]
 [ 1	]
+[ 3	]
+[ 3	]
 #select avg(bb) over (order by aa desc) from stressme;
 % sys.%3 # table_name
 % %3 # name
@@ -1663,15 +1663,15 @@ stdout of test 'analytics00` in directory 'sql/test/analytics` itself:
 % %3 # name
 % bigint # type
 % 1 # length
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
 [ 2	]
 [ 2	]
-[ 1	]
-[ 1	]
-[ 1	]
-[ 1	]
-[ 1	]
-[ 1	]
-[ 1	]
 #select count(bb) over (order by aa desc) from stressme;
 % sys.%3 # table_name
 % %3 # name
@@ -1719,15 +1719,15 @@ stdout of test 'analytics00` in directory 'sql/test/analytics` itself:
 % %4 # name
 % bigint # type
 % 1 # length
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
 [ 2	]
 [ 2	]
-[ 1	]
-[ 1	]
-[ 1	]
-[ 1	]
-[ 1	]
-[ 1	]
-[ 1	]
 #select count(*) over (order by aa desc) from stressme;
 % sys.%4 # table_name
 % %4 # name

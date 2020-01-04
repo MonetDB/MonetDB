@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -105,12 +105,12 @@ IOprintBoth(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int indx, s
 			b[0] = BATdense(b[1]->hseqbase, b[1]->hseqbase, BATcount(b[1]));
 			if (b[0] == NULL) {
 				BBPunfix(b[1]->batCacheid);
-				throw(MAL, "io.print", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				throw(MAL, "io.print", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 			if (BATroles(b[0], "h") != GDK_SUCCEED) {
 				BBPunfix(b[0]->batCacheid);
 				BBPunfix(b[1]->batCacheid);
-				throw(MAL, "io.print", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				throw(MAL, "io.print", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 			BATprintcolumns(cntxt->fdout, 2, b);
 			BBPunfix(b[0]->batCacheid);
@@ -175,7 +175,7 @@ IOprint_val(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				va_end(ap);												\
 				GDKfree(buf);											\
 				GDKfree(add);											\
-				throw(MAL, "io.printf", SQLSTATE(HY001) MAL_MALLOC_FAIL); \
+				throw(MAL, "io.printf", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
 			}															\
 			buf = tmp;													\
 			dst = buf + offset;											\
@@ -240,18 +240,18 @@ IOprintf_(str *res, str format, ...)
 	} else if (strchr(format, '%') == NULL) {
 		*res = GDKstrdup(format);
 		if (*res == NULL)
-			throw(MAL,"io.printf", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL,"io.printf", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 	buf = dst = (str) GDKmalloc(size = 80);
 	if ( buf == NULL)
-		throw(MAL,"io.printf", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL,"io.printf", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	*res = NULL;
 
 	add = GDKmalloc(adds);
 	if (add == NULL) {
 		GDKfree(buf);
-		throw(MAL,"io.printf", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL,"io.printf", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	va_start(ap,format);
@@ -568,7 +568,7 @@ IOtable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (piv[0] == NULL) {
 		for (i = 1; i < pci->argc; i++)
 			BBPunfix(piv[i]->batCacheid);
-		throw(MAL, "io.table", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "io.table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	BATprintcolumns(cntxt->fdout, pci->argc, piv);
 	for (i = 0; i < pci->argc; i++)
@@ -657,7 +657,7 @@ IOimport(void *ret, bat *bid, str *fnme)
 		if ( buf == NULL) {
 			BBPunfix(b->batCacheid);
 			fclose(fp);
-			throw(MAL,"io.import", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL,"io.import", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 
 		if ((fn = fileno(fp)) <= 0) {
@@ -715,7 +715,7 @@ IOimport(void *ret, bat *bid, str *fnme)
 						BBPunfix(b->batCacheid);
 						GDKfree(buf);
 						GDKfree(t);
-						throw(MAL, "io.imports", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+						throw(MAL, "io.imports", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					}
 					buf = tmp;
 					dst = buf + len;
@@ -739,7 +739,7 @@ IOimport(void *ret, bat *bid, str *fnme)
 				BBPunfix(b->batCacheid);
 				GDKfree(buf);
 				GDKfree(t);
-				throw(MAL, "io.imports", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				throw(MAL, "io.imports", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 			buf = tmp;
 			dst = buf + len;

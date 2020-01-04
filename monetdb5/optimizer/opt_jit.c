@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /* author M.Kersten
@@ -25,7 +25,7 @@
 str
 OPTjitImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i,actions = 0;
+	int i, actions = 0;
 	int limit = mb->stop;
 	InstrPtr p, q, *old = mb->stmt;
 	char buf[256];
@@ -36,14 +36,9 @@ OPTjitImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) pci;
 
-    if( OPTdebug &  OPTjit){
-		fprintf(stderr, "#Optimize JIT\n");
-		fprintFunction(stderr, mb, 0, LIST_MAL_ALL);
-	}
-
 	setVariableScope(mb);
 	if ( newMalBlkStmt(mb, mb->ssize) < 0)
-		throw(MAL,"optimizer.jit", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL,"optimizer.jit", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	/* peephole optimization */
 	for (i = 0; i < limit; i++) {
@@ -65,11 +60,8 @@ OPTjitImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				q= getInstrPtr(mb, getVar(mb,getArg(p,2))->declared);
 			if( q && getArg(q,0) == getArg(p,2) && getModuleId(q) == algebraRef && getFunctionId(q) == projectionRef ){
 				getArg(p,2)=  getArg(q,2);
-				p= pushArgument(mb,p, getArg(q,1));
-				if( OPTdebug &  OPTjit){
-					fprintf(stderr, "#Optimize JIT case 1\n");
-					fprintInstruction(stderr, mb,0,p,LIST_MAL_ALL);
-				}
+				p= addArgument(mb, p, getArg(q,1));
+				actions++;
 			}
 		}
 		pushInstruction(mb,p);
@@ -77,19 +69,16 @@ OPTjitImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	GDKfree(old);
     /* Defense line against incorrect plans */
-	chkTypes(cntxt->usermodule, mb, FALSE);
-	chkFlow(mb);
-	chkDeclarations(mb);
+	msg = chkTypes(cntxt->usermodule, mb, FALSE);
+	if (!msg)
+		msg = chkFlow(mb);
+	if (!msg)
+		msg = chkDeclarations(mb);
     /* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","jit",actions, usec);
     newComment(mb,buf);
-	if( actions >= 0)
+	if( actions > 0)
 		addtoMalBlkHistory(mb);
-
-    if( OPTdebug &  OPTjit){
-        fprintf(stderr, "#JIT optimizer exit\n");
-        fprintFunction(stderr, mb, 0,  LIST_MAL_ALL);
-    }
 	return msg;
 }

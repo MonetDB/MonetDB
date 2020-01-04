@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -189,7 +189,7 @@ AUTHinitTables(const char *passwd) {
 	if (!bid) {
 		user = COLnew(0, TYPE_str, 256, PERSISTENT);
 		if (user == NULL)
-			throw(MAL, "initTables.user", SQLSTATE(HY001) MAL_MALLOC_FAIL " user table");
+			throw(MAL, "initTables.user", SQLSTATE(HY013) MAL_MALLOC_FAIL " user table");
 
 		if (BATkey(user, true) != GDK_SUCCEED ||
 			BBPrename(user->batCacheid, "M5system_auth_user") != 0 ||
@@ -213,7 +213,7 @@ AUTHinitTables(const char *passwd) {
 	if (!bid) {
 		pass = COLnew(0, TYPE_str, 256, PERSISTENT);
 		if (pass == NULL)
-			throw(MAL, "initTables.passwd", SQLSTATE(HY001) MAL_MALLOC_FAIL " password table");
+			throw(MAL, "initTables.passwd", SQLSTATE(HY013) MAL_MALLOC_FAIL " password table");
 
 		if (BBPrename(pass->batCacheid, "M5system_auth_passwd_v2") != 0 ||
 			BATmode(pass, false) != GDK_SUCCEED) {
@@ -236,7 +236,7 @@ AUTHinitTables(const char *passwd) {
 	if (!bid) {
 		duser = COLnew(0, TYPE_oid, 256, PERSISTENT);
 		if (duser == NULL)
-			throw(MAL, "initTables.duser", SQLSTATE(HY001) MAL_MALLOC_FAIL " deleted user table");
+			throw(MAL, "initTables.duser", SQLSTATE(HY013) MAL_MALLOC_FAIL " deleted user table");
 
 		if (BBPrename(duser->batCacheid, "M5system_auth_deleted") != 0 ||
 			BATmode(duser, false) != GDK_SUCCEED) {
@@ -260,7 +260,7 @@ AUTHinitTables(const char *passwd) {
 	if (!bid) {
 		rt_key = COLnew(0, TYPE_str, 256, PERSISTENT);
 		if (rt_key == NULL)
-			throw(MAL, "initTables.rt_key", SQLSTATE(HY001) MAL_MALLOC_FAIL " remote table key bat");
+			throw(MAL, "initTables.rt_key", SQLSTATE(HY013) MAL_MALLOC_FAIL " remote table key bat");
 
 		if (BBPrename(rt_key->batCacheid, "M5system_auth_rt_key") != 0 ||
 			BATmode(rt_key, false) != GDK_SUCCEED)
@@ -284,7 +284,7 @@ AUTHinitTables(const char *passwd) {
 	if (!bid) {
 		rt_uri = COLnew(0, TYPE_str, 256, PERSISTENT);
 		if (rt_uri == NULL)
-			throw(MAL, "initTables.rt_uri", SQLSTATE(HY001) MAL_MALLOC_FAIL " remote table uri bat");
+			throw(MAL, "initTables.rt_uri", SQLSTATE(HY013) MAL_MALLOC_FAIL " remote table uri bat");
 
 		if (BBPrename(rt_uri->batCacheid, "M5system_auth_rt_uri") != 0 ||
 			BATmode(rt_uri, false) != GDK_SUCCEED)
@@ -308,7 +308,7 @@ AUTHinitTables(const char *passwd) {
 	if (!bid) {
 		rt_remoteuser = COLnew(0, TYPE_str, 256, PERSISTENT);
 		if (rt_remoteuser == NULL)
-			throw(MAL, "initTables.rt_remoteuser", SQLSTATE(HY001) MAL_MALLOC_FAIL " remote table local user bat");
+			throw(MAL, "initTables.rt_remoteuser", SQLSTATE(HY013) MAL_MALLOC_FAIL " remote table local user bat");
 
 		if (BBPrename(rt_remoteuser->batCacheid, "M5system_auth_rt_remoteuser") != 0 ||
 			BATmode(rt_remoteuser, false) != GDK_SUCCEED)
@@ -332,7 +332,7 @@ AUTHinitTables(const char *passwd) {
 	if (!bid) {
 		rt_hashedpwd = COLnew(0, TYPE_str, 256, PERSISTENT);
 		if (rt_hashedpwd == NULL)
-			throw(MAL, "initTables.rt_hashedpwd", SQLSTATE(HY001) MAL_MALLOC_FAIL " remote table local user bat");
+			throw(MAL, "initTables.rt_hashedpwd", SQLSTATE(HY013) MAL_MALLOC_FAIL " remote table local user bat");
 
 		if (BBPrename(rt_hashedpwd->batCacheid, "M5system_auth_rt_hashedpwd") != 0 ||
 			BATmode(rt_hashedpwd, false) != GDK_SUCCEED)
@@ -356,7 +356,7 @@ AUTHinitTables(const char *passwd) {
 	if (!bid) {
 		rt_deleted = COLnew(0, TYPE_oid, 256, PERSISTENT);
 		if (rt_deleted == NULL)
-			throw(MAL, "initTables.rt_deleted", SQLSTATE(HY001) MAL_MALLOC_FAIL " remote table local user bat");
+			throw(MAL, "initTables.rt_deleted", SQLSTATE(HY013) MAL_MALLOC_FAIL " remote table local user bat");
 
 		if (BBPrename(rt_deleted->batCacheid, "M5system_auth_rt_deleted") != 0 ||
 			BATmode(rt_deleted, false) != GDK_SUCCEED)
@@ -498,7 +498,7 @@ AUTHaddUser(oid *uid, Client cntxt, const char *username, const char *passwd)
 	if (BUNappend(user, username, true) != GDK_SUCCEED ||
 		BUNappend(pass, hash, true) != GDK_SUCCEED) {
 		GDKfree(hash);
-		throw(MAL, "addUser", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "addUser", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	GDKfree(hash);
 	/* retrieve the oid of the just inserted user */
@@ -542,7 +542,7 @@ AUTHremoveUser(Client cntxt, const char *username)
 
 	/* now, we got the oid, start removing the related tuples */
 	if (BUNappend(duser, &id, true) != GDK_SUCCEED)
-		throw(MAL, "removeUser", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "removeUser", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	/* make the stuff persistent */
 	AUTHcommit();
@@ -712,7 +712,7 @@ AUTHresolveUser(str *username, oid uid)
 	assert(username != NULL);
 	useri = bat_iterator(user);
 	if ((*username = GDKstrdup((str)(BUNtvar(useri, p)))) == NULL)
-		throw(MAL, "resolveUser", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "resolveUser", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return(MAL_SUCCEED);
 }
 
@@ -736,7 +736,7 @@ AUTHgetUsername(str *username, Client cntxt)
 
 	useri = bat_iterator(user);
 	if ((*username = GDKstrdup( BUNtvar(useri, p))) == NULL)
-		throw(MAL, "getUsername", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "getUsername", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return(MAL_SUCCEED);
 }
 
@@ -753,7 +753,7 @@ AUTHgetUsers(BAT **ret1, BAT **ret2, Client cntxt)
 
 	*ret1 = BATdense(user->hseqbase, user->hseqbase, BATcount(user));
 	if (*ret1 == NULL)
-		throw(MAL, "getUsers", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "getUsers", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	if (BATcount(duser)) {
 		bn = BATdiff(*ret1, duser, NULL, NULL, false, false, BUN_NONE);
 		BBPunfix((*ret1)->batCacheid);
@@ -767,7 +767,7 @@ AUTHgetUsers(BAT **ret1, BAT **ret2, Client cntxt)
 			BBPunfix((*ret1)->batCacheid);
 		if (*ret2)
 			BBPunfix((*ret2)->batCacheid);
-		throw(MAL, "getUsers", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "getUsers", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	return(NULL);
 }
@@ -828,7 +828,7 @@ AUTHunlockVault(const char *password)
 		GDKfree(vaultKey);
 
 	if ((vaultKey = GDKstrdup(password)) == NULL)
-		throw(MAL, "unlockVault", SQLSTATE(HY001) MAL_MALLOC_FAIL " vault key");
+		throw(MAL, "unlockVault", SQLSTATE(HY013) MAL_MALLOC_FAIL " vault key");
 	return(MAL_SUCCEED);
 }
 
@@ -865,7 +865,7 @@ AUTHdecypherValue(str *ret, const char *value)
 		throw(MAL, "decypherValue", "The vault is still locked!");
 	w = r = GDKmalloc(sizeof(char) * (strlen(value) + 1));
 	if( r == NULL)
-		throw(MAL, "decypherValue", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "decypherValue", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	keylen = strlen(vaultKey);
 
@@ -907,7 +907,7 @@ AUTHcypherValue(str *ret, const char *value)
 		throw(MAL, "cypherValue", "The vault is still locked!");
 	w = r = GDKmalloc(sizeof(char) * (strlen(value) * 2 + 1));
 	if( r == NULL)
-		throw(MAL, "cypherValue", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "cypherValue", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	keylen = strlen(vaultKey);
 
@@ -1102,7 +1102,7 @@ AUTHaddRemoteTableCredentials(const char *local_table, const char *local_user, c
 		free_pw = true;
 		if (pw_encrypted) {
 			if((pwhash = strdup(pass)) == NULL)
-				throw(MAL, "addRemoteTableCredentials", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				throw(MAL, "addRemoteTableCredentials", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		else {
 			/* Note: the remote server might have used a different
@@ -1131,7 +1131,7 @@ AUTHaddRemoteTableCredentials(const char *local_table, const char *local_user, c
 			GDKfree(pwhash);
 		}
 		GDKfree(cypher);
-		throw(MAL, "addRemoteTableCredentials", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "addRemoteTableCredentials", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	AUTHcommit();
@@ -1169,7 +1169,7 @@ AUTHdeleteRemoteTableCredentials(const char *local_table)
 
 	/* now, we got the oid, start removing the related tuples */
 	if (BUNappend(rt_deleted, &id, true) != GDK_SUCCEED)
-		throw(MAL, "deleteRemoteTableCredentials", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "deleteRemoteTableCredentials", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	/* make the stuff persistent */
 	AUTHcommit();

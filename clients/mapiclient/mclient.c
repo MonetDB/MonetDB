@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /* The Mapi Client Interface
@@ -1933,7 +1933,7 @@ format_result(Mapi mid, MapiHdl hdl, bool singleinstr)
 			SQLqueryEcho(hdl);
 			if (formatter == TABLEformatter ||
 			    formatter == ROWCOUNTformatter)
-				mnstr_printf(toConsole, "operation successful\n");
+				mnstr_printf(toConsole, "auto commit mode: %s\n", mapi_get_autocommit(mid) ? "on" : "off");
 			timerHuman(sqloptimizer, maloptimizer, querytime, singleinstr, false);
 			continue;
 		case Q_PREPARE:
@@ -2451,22 +2451,36 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, int save_history
 			case '\0':
 				break;
 			case 'e':
-				/* a bit of a hack for prepare/exec
-				 * tests: replace "exec **" with the
-				 * ID of the last prepared
-				 * statement */
-				if (mode == SQL &&
-				    formatter == TESTformatter &&
-				    strncmp(line, "exec **", 7) == 0) {
-					line[5] = prepno < 10 ? ' ' : prepno / 10 + '0';
-					line[6] = prepno % 10 + '0';
+			case 'E':
+				/* a bit of a hack for prepare/exec/deallocate
+				 * tests: replace "exec[ute] **" with the
+				 * ID of the last prepared statement */
+				if (mode == SQL && formatter == TESTformatter) {
+					if (strncasecmp(line, "exec **", 7) == 0) {
+						line[5] = prepno < 10 ? ' ' : prepno / 10 + '0';
+						line[6] = prepno % 10 + '0';
+					} else if (strncasecmp(line, "execute **", 10) == 0) {
+						line[8] = prepno < 10 ? ' ' : prepno / 10 + '0';
+						line[9] = prepno % 10 + '0';
+					}
 				}
-				if (strcmp(line, "exit\n") == 0) {
+				if (strncasecmp(line, "exit\n", 5) == 0) {
 					goto bailout;
 				}
 				break;
+			case 'd':
+			case 'D':
+				/* a bit of a hack for prepare/exec/deallocate
+				 * tests: replace "deallocate **" with the
+				 * ID of the last prepared statement */
+				if (mode == SQL && formatter == TESTformatter && strncasecmp(line, "deallocate **", 13) == 0) {
+					line[11] = prepno < 10 ? ' ' : prepno / 10 + '0';
+					line[12] = prepno % 10 + '0';
+				}
+				break;
 			case 'q':
-				if (strcmp(line, "quit\n") == 0) {
+			case 'Q':
+				if (strncasecmp(line, "quit\n", 5) == 0) {
 					goto bailout;
 				}
 				break;

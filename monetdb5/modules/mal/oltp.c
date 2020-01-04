@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -240,7 +240,7 @@ OLTPtable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if( bu) BBPunfix(bu->batCacheid);
 		if( bc) BBPunfix(bc->batCacheid);
 		if( bq) BBPunfix(bq->batCacheid);
-		throw(MAL,"oltp.table", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL,"oltp.table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	for( i = 0; msg ==  MAL_SUCCEED && i < MAXOLTPLOCKS; i++)
 	if (oltp_locks[i].used ){
@@ -263,7 +263,7 @@ OLTPtable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPunfix(bu->batCacheid);
 	BBPunfix(bc->batCacheid);
 	BBPunfix(bq->batCacheid);
-	return msg ? msg : createException(MAL, "oltp.table", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	return msg ? msg : createException(MAL, "oltp.table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
 
 str

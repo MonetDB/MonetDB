@@ -29,61 +29,61 @@ stdout of test 'string-length.Bug-3999` in directory 'sql/test/BugTracker-2016` 
 # 11:44:27 >  
 
 #SELECT length('123 ') as "four";
-% .%1 # table_name
+% . # table_name
 % four # name
 % int # type
 % 1 # length
 [ 4	]
 #SELECT length('123       ') as "ten";
-% .%1 # table_name
+% . # table_name
 % ten # name
 % int # type
 % 2 # length
 [ 10	]
 #SELECT length('1234567890') as "ten";
-% .%1 # table_name
+% . # table_name
 % ten # name
 % int # type
 % 2 # length
 [ 10	]
 #SELECT length('     67890') as "ten";
-% .%1 # table_name
+% . # table_name
 % ten # name
 % int # type
 % 2 # length
 [ 10	]
 #SELECT length(reverse('     67890')) as "ten";
-% .%1 # table_name
+% . # table_name
 % ten # name
 % int # type
 % 2 # length
 [ 10	]
 #SELECT sys.length('123 ') as "four";
-% .%1 # table_name
+% . # table_name
 % four # name
 % int # type
 % 1 # length
 [ 4	]
 #SELECT sys.length('123       ') as "ten";
-% .%1 # table_name
+% . # table_name
 % ten # name
 % int # type
 % 2 # length
 [ 10	]
 #SELECT sys.length('1234567890') as "ten";
-% .%1 # table_name
+% . # table_name
 % ten # name
 % int # type
 % 2 # length
 [ 10	]
 #SELECT sys.length('     67890') as "ten";
-% .%1 # table_name
+% . # table_name
 % ten # name
 % int # type
 % 2 # length
 [ 10	]
 #SELECT sys.length(reverse('     67890')) as "ten";
-% .%1 # table_name
+% . # table_name
 % ten # name
 % int # type
 % 2 # length
@@ -92,7 +92,7 @@ stdout of test 'string-length.Bug-3999` in directory 'sql/test/BugTracker-2016` 
 #INSERT INTO tvarchar VALUES ('A'), (' BC ');
 [ 2	]
 #SELECT val, length(val) FROM tvarchar;
-% sys.tvarchar,	sys.%2 # table_name
+% sys.tvarchar,	sys. # table_name
 % val,	%2 # name
 % varchar,	int # type
 % 4,	1 # length
@@ -101,7 +101,7 @@ stdout of test 'string-length.Bug-3999` in directory 'sql/test/BugTracker-2016` 
 #UPDATE tvarchar SET val = val || '    ';
 [ 2	]
 #SELECT val, length(val) FROM tvarchar;
-% sys.tvarchar,	sys.%2 # table_name
+% sys.tvarchar,	sys. # table_name
 % val,	%2 # name
 % varchar,	int # type
 % 8,	1 # length
@@ -110,7 +110,7 @@ stdout of test 'string-length.Bug-3999` in directory 'sql/test/BugTracker-2016` 
 #UPDATE tvarchar SET val = (val || 'x');
 [ 2	]
 #SELECT val, length(val) FROM tvarchar;
-% sys.tvarchar,	sys.%2 # table_name
+% sys.tvarchar,	sys. # table_name
 % val,	%2 # name
 % varchar,	int # type
 % 9,	1 # length
@@ -121,7 +121,7 @@ stdout of test 'string-length.Bug-3999` in directory 'sql/test/BugTracker-2016` 
 #INSERT INTO tchar VALUES ('A'), (' BC ');
 [ 2	]
 #SELECT val, length(val) FROM tchar;
-% sys.tchar,	sys.%2 # table_name
+% sys.tchar,	sys. # table_name
 % val,	%2 # name
 % char,	int # type
 % 9,	1 # length
@@ -130,7 +130,7 @@ stdout of test 'string-length.Bug-3999` in directory 'sql/test/BugTracker-2016` 
 #UPDATE tchar SET val = val || '    ';
 [ 2	]
 #SELECT val, length(val) FROM tchar;
-% sys.tchar,	sys.%2 # table_name
+% sys.tchar,	sys. # table_name
 % val,	%2 # name
 % char,	int # type
 % 9,	1 # length
@@ -139,7 +139,7 @@ stdout of test 'string-length.Bug-3999` in directory 'sql/test/BugTracker-2016` 
 #UPDATE tchar SET val = (val || 'x');
 [ 2	]
 #SELECT val, length(val) FROM tchar;
-% sys.tchar,	sys.%2 # table_name
+% sys.tchar,	sys. # table_name
 % val,	%2 # name
 % char,	int # type
 % 9,	1 # length

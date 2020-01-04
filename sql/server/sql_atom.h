@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #ifndef _SQL_ATOM_H_
@@ -65,6 +65,7 @@ extern atom *atom_sub(atom *a1, atom *a2);
 extern atom *atom_mul(atom *a1, atom *a2);
 extern int atom_inc(atom *a);
 extern int atom_is_true(atom *a);
+extern int atom_is_false(atom *a);
 extern int atom_is_zero(atom *a);
 
 #ifdef HAVE_HGE

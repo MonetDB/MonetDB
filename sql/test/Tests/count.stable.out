@@ -11,7 +11,7 @@ stdout of test 'count` in directory 'sql/test` itself:
 # Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
 # Found 15.384 GiB available main-memory.
 # Copyright (c) 1993 - July 2008 CWI.
-# Copyright (c) August 2008 - 2019 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008 - 2020 MonetDB B.V., all rights reserved
 # Visit https://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://localhost.localdomain:33945/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-14741/.s.monetdb.33945
@@ -45,7 +45,7 @@ stdout of test 'count` in directory 'sql/test` itself:
 % 1 # length
 [ 5	]
 #select count(*) as count_x from counttest group by val order by count_x;
-% sys.%1 # table_name
+% sys. # table_name
 % count_x # name
 % bigint # type
 % 1 # length
@@ -54,7 +54,7 @@ stdout of test 'count` in directory 'sql/test` itself:
 [ 2	]
 [ 2	]
 #select count(val) as count_val from counttest group by val order by count_val;
-% sys.%1 # table_name
+% sys. # table_name
 % count_val # name
 % bigint # type
 % 1 # length

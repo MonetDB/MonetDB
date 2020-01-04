@@ -10,6 +10,8 @@ set id_result = -1;
 
 set id_result = insert_quser(NULL, NULL, NULL, NULL);
 
+declare id_result int;
+
 select id_result;
 
 select * from quser;
@@ -33,6 +35,8 @@ select * from quser;
 set id_result = -1;
 
 set id_result = insert_quser('user1', 'email3@example.com', 3, 'nosecret');
+
+declare id_result int;
 
 select id_result;
 

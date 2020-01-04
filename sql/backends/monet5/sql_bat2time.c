@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -39,7 +39,7 @@ batstr_2time_timestamptz(bat *res, const bat *bid, const int *digits, int *tz)
 	dst = COLnew(b->hseqbase, TYPE_timestamp, BATcount(b), TRANSIENT);
 	if (dst == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(SQL, "sql.timestamp", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(SQL, "sql.timestamp", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	BATloop(b, p, q) {
 		char *v = (char *) BUNtvar(bi, p);
@@ -53,7 +53,7 @@ batstr_2time_timestamptz(bat *res, const bat *bid, const int *digits, int *tz)
 		if (BUNappend(dst, &r, false) != GDK_SUCCEED) {
 			BBPunfix(b->batCacheid);
 			BBPreclaim(dst);
-			throw(SQL, "sql.timestamp", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(SQL, "sql.timestamp", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 	}
 	BBPkeepref(*res = dst->batCacheid);
@@ -81,7 +81,7 @@ battimestamp_2time_timestamp(bat *res, const bat *bid, const int *digits)
 	dst = COLnew(b->hseqbase, TYPE_timestamp, BATcount(b), TRANSIENT);
 	if (dst == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(SQL, "sql.timestamp", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(SQL, "sql.timestamp", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	const timestamp *v = (const timestamp *) Tloc(b, 0);
 	BATloop(b, p, q) {
@@ -95,7 +95,7 @@ battimestamp_2time_timestamp(bat *res, const bat *bid, const int *digits)
 		if (BUNappend(dst, &r, false) != GDK_SUCCEED) {
 			BBPunfix(b->batCacheid);
 			BBPreclaim(dst);
-			throw(SQL, "sql.timestamp", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(SQL, "sql.timestamp", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		v++;
 	}
@@ -117,7 +117,7 @@ batnil_2time_timestamp(bat *res, const bat *bid, const int *digits)
 	dst = COLnew(b->hseqbase, TYPE_timestamp, BATcount(b), TRANSIENT);
 	if (dst == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(SQL, "sql.timestamp", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(SQL, "sql.timestamp", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	BATloop(b, p, q) {
 		timestamp r;
@@ -130,7 +130,7 @@ batnil_2time_timestamp(bat *res, const bat *bid, const int *digits)
 		if (BUNappend(dst, &r, false) != GDK_SUCCEED) {
 			BBPunfix(b->batCacheid);
 			BBPreclaim(dst);
-			throw(SQL, "sql.timestamp", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(SQL, "sql.timestamp", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 	}
 	BBPkeepref(*res = dst->batCacheid);
@@ -153,7 +153,7 @@ batstr_2time_daytimetz(bat *res, const bat *bid, const int *digits, int *tz)
 	dst = COLnew(b->hseqbase, TYPE_daytime, BATcount(b), TRANSIENT);
 	if (dst == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(SQL, "sql.daytime", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(SQL, "sql.daytime", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	BATloop(b, p, q) {
 		char *v = (char *) BUNtvar(bi, p);
@@ -167,7 +167,7 @@ batstr_2time_daytimetz(bat *res, const bat *bid, const int *digits, int *tz)
 		if (BUNappend(dst, &r, false) != GDK_SUCCEED) {
 			BBPunfix(b->batCacheid);
 			BBPreclaim(dst);
-			throw(SQL, "sql.daytime", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(SQL, "sql.daytime", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 	}
 	BBPkeepref(*res = dst->batCacheid);
@@ -195,7 +195,7 @@ batdaytime_2time_daytime(bat *res, const bat *bid, const int *digits)
 	dst = COLnew(b->hseqbase, TYPE_daytime, BATcount(b), TRANSIENT);
 	if (dst == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(SQL, "sql.daytime", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(SQL, "sql.daytime", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	const daytime *v = (const daytime *) Tloc(b, 0);
 	BATloop(b, p, q) {
@@ -209,7 +209,7 @@ batdaytime_2time_daytime(bat *res, const bat *bid, const int *digits)
 		if (BUNappend(dst, &r, false) != GDK_SUCCEED) {
 			BBPunfix(b->batCacheid);
 			BBPreclaim(dst);
-			throw(SQL, "sql.daytime", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(SQL, "sql.daytime", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		v++;
 	}
@@ -231,7 +231,7 @@ batnil_2time_daytime(bat *res, const bat *bid, const int *digits)
 	dst = COLnew(b->hseqbase, TYPE_daytime, BATcount(b), TRANSIENT);
 	if (dst == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(SQL, "sql.daytime", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(SQL, "sql.daytime", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	BATloop(b, p, q) {
 		daytime r;
@@ -244,7 +244,7 @@ batnil_2time_daytime(bat *res, const bat *bid, const int *digits)
 		if (BUNappend(dst, &r, false) != GDK_SUCCEED) {
 			BBPunfix(b->batCacheid);
 			BBPreclaim(dst);
-			throw(SQL, "sql.daytime", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(SQL, "sql.daytime", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 	}
 	BBPkeepref(*res = dst->batCacheid);

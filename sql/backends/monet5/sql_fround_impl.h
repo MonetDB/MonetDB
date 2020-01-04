@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #define dec_round_body_nonil	FUN(TYPE, dec_round_body_nonil)
@@ -71,7 +71,7 @@ bat_dec_round_wrap(bat *_res, const bat *_v, const TYPE *r)
 	res = COLnew(v->hseqbase, TPE(TYPE), cnt, TRANSIENT);
 	if (res == NULL) {
 		BBPunfix(v->batCacheid);
-		throw(MAL, "round", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "round", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	/* access columns as arrays */
@@ -181,7 +181,7 @@ bat_round_wrap(bat *_res, const bat *_v, const bte *r)
 	res = COLnew(v->hseqbase, TPE(TYPE), cnt, TRANSIENT);
 	if (res == NULL) {
 		BBPunfix(v->batCacheid);
-		throw(MAL, "round", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "round", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	/* access columns as arrays */

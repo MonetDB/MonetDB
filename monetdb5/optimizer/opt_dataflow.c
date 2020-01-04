@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -97,10 +97,6 @@ dataflowBreakpoint(Client cntxt, MalBlkPtr mb, InstrPtr p, States states)
 
 	if (p->token == ENDsymbol || p->barrier || isUnsafeFunction(p) || 
 		(isMultiplex(p) && MANIFOLDtypecheck(cntxt,mb,p,0) == NULL) ){
-
-			if( OPTdebug &  OPTdataflow){
-				fprintf(stderr,"#breakpoint on instruction\n");
-			}
 			return TRUE;
 		}
 
@@ -167,7 +163,7 @@ dflowGarbagesink(Client cntxt, MalBlkPtr mb, int var, InstrPtr *sink, int top)
 	
 	r = newInstruction(NULL,languageRef, passRef);
 	getArg(r,0) = newTmpVariable(mb,TYPE_void);
-	r= pushArgument(mb,r, var);
+	r= addArgument(mb,r, var);
 	sink[top++] = r;
 	return top;
 }
@@ -198,16 +194,11 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	if ( mb->inlineProp)
 		return MAL_SUCCEED;
 
-	if( OPTdebug &  OPTdataflow){
-		fprintf(stderr,"#dataflow input\n");
-		fprintFunction(stderr, mb, 0, LIST_MAL_ALL);
-	}
-
 	vlimit = mb->vsize;
 	states = (States) GDKzalloc(vlimit * sizeof(char));
 	sink = (InstrPtr *) GDKzalloc(mb->stop * sizeof(InstrPtr));
 	if (states == NULL || sink == NULL){
-		msg= createException(MAL,"optimizer.dataflow", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		msg= createException(MAL,"optimizer.dataflow", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto wrapup;
 	}
 	
@@ -217,7 +208,7 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	slimit= mb->ssize;
 	old = mb->stmt;
 	if (newMalBlkStmt(mb, mb->ssize) < 0) {
-		msg= createException(MAL,"optimizer.dataflow", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		msg= createException(MAL,"optimizer.dataflow", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		actions = -1;
 		goto wrapup;
 	}
@@ -312,14 +303,6 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			if( getState(states, p, k) & VARWRITE)
 				setState(states, p ,k, VARREAD);
 		}
-
-		if( OPTdebug &  OPTdataflow){
-			fprintf(stderr,"# variable states\n");
-			fprintInstruction(stderr,mb, 0, p , LIST_MAL_ALL);
-			for(k = 0; k < p->argc; k++)
-				fprintf(stderr,"#%s %d\n", getVarName(mb,getArg(p,k)), states[getArg(p,k)] );
-		}
-
 	}
 	/* take the remainder as is */
 	for (; i<slimit; i++) 
@@ -327,25 +310,22 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			freeInstruction(old[i]);
     /* Defense line against incorrect plans */
     if( actions > 0){
-        chkTypes(cntxt->usermodule, mb, FALSE);
-        chkFlow(mb);
-        chkDeclarations(mb);
+        msg = chkTypes(cntxt->usermodule, mb, FALSE);
+	if (!msg)
+        	msg = chkFlow(mb);
+	if (!msg)
+        	msg = chkDeclarations(mb);
     }
     /* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","dataflow",actions,usec);
     newComment(mb,buf);
-	if( actions >= 0)
+	if( actions > 0)
 		addtoMalBlkHistory(mb);
 
 wrapup:
 	if(states) GDKfree(states);
 	if(sink)   GDKfree(sink);
 	if(old)    GDKfree(old);
-    if( OPTdebug &  OPTdataflow){
-        fprintf(stderr, "#DATAFLOW optimizer exit\n");
-        fprintFunction(stderr, mb, 0,  LIST_MAL_ALL);
-    }
-
 	return msg;
 }

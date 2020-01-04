@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -14,10 +14,6 @@
 #include <string.h>
 #include "mutils.h"
 #include "mstring.h"
-
-#if defined(HAVE_EXECINFO_H) && defined(HAVE_BACKTRACE)
-#include <execinfo.h>
-#endif
 
 #ifdef HAVE_MACH_O_DYLD_H
 # include <mach-o/dyld.h>  /* _NSGetExecutablePath on OSX >=10.5 */

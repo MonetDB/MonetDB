@@ -37,7 +37,7 @@ stdout of test 'string` in directory 'sql/test` itself:
 [ "",	""	]
 [ " Test ",	""	]
 #select length(str), str from stringtest;
-% sys.%1,	sys.stringtest # table_name
+% sys.,	sys.stringtest # table_name
 % %1,	str # name
 % int,	varchar # type
 % 1,	6 # length
@@ -46,7 +46,7 @@ stdout of test 'string` in directory 'sql/test` itself:
 [ 0,	""	]
 [ 6,	" Test "	]
 #select substring(str from 2 for 8), str2 from stringtest;
-% sys.%1,	sys.stringtest # table_name
+% sys.,	sys.stringtest # table_name
 % %1,	str2 # name
 % clob,	varchar # type
 % 5,	4 # length
@@ -55,7 +55,7 @@ stdout of test 'string` in directory 'sql/test` itself:
 [ "",	""	]
 [ "Test ",	""	]
 #select substring(str, 2, 8), str2 from stringtest;
-% sys.%1,	sys.stringtest # table_name
+% sys.,	sys.stringtest # table_name
 % %1,	str2 # name
 % clob,	varchar # type
 % 5,	4 # length
@@ -64,7 +64,7 @@ stdout of test 'string` in directory 'sql/test` itself:
 [ "",	""	]
 [ "Test ",	""	]
 #select substring(str from 2 for 1), str2 from stringtest;
-% sys.%1,	sys.stringtest # table_name
+% sys.,	sys.stringtest # table_name
 % %1,	str2 # name
 % clob,	varchar # type
 % 1,	4 # length
@@ -73,7 +73,7 @@ stdout of test 'string` in directory 'sql/test` itself:
 [ "",	""	]
 [ "T",	""	]
 #select substring(str, 2, 1), str2 from stringtest;
-% sys.%1,	sys.stringtest # table_name
+% sys.,	sys.stringtest # table_name
 % %1,	str2 # name
 % clob,	varchar # type
 % 1,	4 # length
@@ -82,7 +82,7 @@ stdout of test 'string` in directory 'sql/test` itself:
 [ "",	""	]
 [ "T",	""	]
 #select substring(str from 2), str2 from stringtest;
-% sys.%1,	sys.stringtest # table_name
+% sys.,	sys.stringtest # table_name
 % %1,	str2 # name
 % varchar,	varchar # type
 % 5,	4 # length
@@ -91,7 +91,7 @@ stdout of test 'string` in directory 'sql/test` itself:
 [ "",	""	]
 [ "Test ",	""	]
 #select substring(str, 2), str2 from stringtest;
-% sys.%1,	sys.stringtest # table_name
+% sys.,	sys.stringtest # table_name
 % %1,	str2 # name
 % varchar,	varchar # type
 % 5,	4 # length
@@ -100,7 +100,7 @@ stdout of test 'string` in directory 'sql/test` itself:
 [ "",	""	]
 [ "Test ",	""	]
 #select position(str in str2), str, str2 from stringtest;
-% sys.%1,	sys.stringtest,	sys.stringtest # table_name
+% sys.,	sys.stringtest,	sys.stringtest # table_name
 % %1,	str,	str2 # name
 % int,	varchar,	varchar # type
 % 1,	6,	4 # length
@@ -109,7 +109,7 @@ stdout of test 'string` in directory 'sql/test` itself:
 [ 1,	"",	""	]
 [ 0,	" Test ",	""	]
 #select locate(str,str2), str, str2 from stringtest;
-% sys.%1,	sys.stringtest,	sys.stringtest # table_name
+% sys.,	sys.stringtest,	sys.stringtest # table_name
 % %1,	str,	str2 # name
 % int,	varchar,	varchar # type
 % 1,	6,	4 # length
@@ -118,7 +118,7 @@ stdout of test 'string` in directory 'sql/test` itself:
 [ 1,	"",	""	]
 [ 0,	" Test ",	""	]
 #select ascii(str), str from stringtest;
-% sys.%1,	sys.stringtest # table_name
+% sys.,	sys.stringtest # table_name
 % %1,	str # name
 % int,	varchar # type
 % 3,	6 # length
@@ -127,7 +127,7 @@ stdout of test 'string` in directory 'sql/test` itself:
 [ NULL,	""	]
 [ 32,	" Test "	]
 #select code(ascii(str)), str from stringtest;
-% sys.%1,	sys.stringtest # table_name
+% sys.,	sys.stringtest # table_name
 % %1,	str # name
 % char,	varchar # type
 % 1,	6 # length
@@ -136,7 +136,7 @@ stdout of test 'string` in directory 'sql/test` itself:
 [ NULL,	""	]
 [ " ",	" Test "	]
 #select left(str,3), str from stringtest;
-% sys.%1,	sys.stringtest # table_name
+% sys.,	sys.stringtest # table_name
 % %1,	str # name
 % varchar,	varchar # type
 % 3,	6 # length
@@ -145,7 +145,7 @@ stdout of test 'string` in directory 'sql/test` itself:
 [ "",	""	]
 [ " Te",	" Test "	]
 #select right(str,3), str from stringtest;
-% sys.%1,	sys.stringtest # table_name
+% sys.,	sys.stringtest # table_name
 % %1,	str # name
 % varchar,	varchar # type
 % 3,	6 # length
@@ -154,7 +154,7 @@ stdout of test 'string` in directory 'sql/test` itself:
 [ "",	""	]
 [ "st ",	" Test "	]
 #select lower(str), str from stringtest;
-% sys.%1,	sys.stringtest # table_name
+% sys.,	sys.stringtest # table_name
 % %1,	str # name
 % varchar,	varchar # type
 % 6,	6 # length
@@ -163,7 +163,7 @@ stdout of test 'string` in directory 'sql/test` itself:
 [ "",	""	]
 [ " test ",	" Test "	]
 #select lcase(str), str from stringtest;
-% sys.%1,	sys.stringtest # table_name
+% sys.,	sys.stringtest # table_name
 % %1,	str # name
 % varchar,	varchar # type
 % 6,	6 # length
@@ -172,7 +172,7 @@ stdout of test 'string` in directory 'sql/test` itself:
 [ "",	""	]
 [ " test ",	" Test "	]
 #select upper(str), str from stringtest;
-% sys.%1,	sys.stringtest # table_name
+% sys.,	sys.stringtest # table_name
 % %1,	str # name
 % varchar,	varchar # type
 % 6,	6 # length
@@ -181,7 +181,7 @@ stdout of test 'string` in directory 'sql/test` itself:
 [ "",	""	]
 [ " TEST ",	" Test "	]
 #select ucase(str), str from stringtest;
-% sys.%1,	sys.stringtest # table_name
+% sys.,	sys.stringtest # table_name
 % %1,	str # name
 % varchar,	varchar # type
 % 6,	6 # length
@@ -190,7 +190,7 @@ stdout of test 'string` in directory 'sql/test` itself:
 [ "",	""	]
 [ " TEST ",	" Test "	]
 #select trim(str), str from stringtest;
-% sys.%1,	sys.stringtest # table_name
+% sys.,	sys.stringtest # table_name
 % %1,	str # name
 % varchar,	varchar # type
 % 4,	6 # length
@@ -199,7 +199,7 @@ stdout of test 'string` in directory 'sql/test` itself:
 [ "",	""	]
 [ "Test",	" Test "	]
 #select ltrim(str), str from stringtest;
-% sys.%1,	sys.stringtest # table_name
+% sys.,	sys.stringtest # table_name
 % %1,	str # name
 % varchar,	varchar # type
 % 5,	6 # length
@@ -208,7 +208,7 @@ stdout of test 'string` in directory 'sql/test` itself:
 [ "",	""	]
 [ "Test ",	" Test "	]
 #select rtrim(str), str from stringtest;
-% sys.%1,	sys.stringtest # table_name
+% sys.,	sys.stringtest # table_name
 % %1,	str # name
 % varchar,	varchar # type
 % 5,	6 # length
@@ -217,7 +217,7 @@ stdout of test 'string` in directory 'sql/test` itself:
 [ "",	""	]
 [ " Test",	" Test "	]
 #select insert(str,2,4,str2), str, str2 from stringtest;
-% sys.%1,	sys.stringtest,	sys.stringtest # table_name
+% sys.,	sys.stringtest,	sys.stringtest # table_name
 % %1,	str,	str2 # name
 % clob,	varchar,	varchar # type
 % 4,	6,	4 # length
@@ -226,7 +226,7 @@ stdout of test 'string` in directory 'sql/test` itself:
 [ "",	"",	""	]
 [ " T",	" Test ",	""	]
 #select replace(str,'t',str), str, str2 from stringtest;
-% sys.%1,	sys.stringtest,	sys.stringtest # table_name
+% sys.,	sys.stringtest,	sys.stringtest # table_name
 % %1,	str,	str2 # name
 % varchar,	varchar,	varchar # type
 % 11,	6,	4 # length
@@ -235,7 +235,7 @@ stdout of test 'string` in directory 'sql/test` itself:
 [ "",	"",	""	]
 [ " Tes Test  ",	" Test ",	""	]
 #select repeat(str,4), str from stringtest;
-% sys.%1,	sys.stringtest # table_name
+% sys.,	sys.stringtest # table_name
 % %1,	str # name
 % varchar,	varchar # type
 % 24,	6 # length
@@ -244,7 +244,7 @@ stdout of test 'string` in directory 'sql/test` itself:
 [ "",	""	]
 [ " Test  Test  Test  Test ",	" Test "	]
 #select ascii(4), str from stringtest;
-% .%1,	sys.stringtest # table_name
+% .,	sys.stringtest # table_name
 % %1,	str # name
 % int,	varchar # type
 % 2,	6 # length
@@ -253,7 +253,7 @@ stdout of test 'string` in directory 'sql/test` itself:
 [ 52,	""	]
 [ 52,	" Test "	]
 #select str,str2,soundex(str),soundex(str2), editdistance2(soundex(str),soundex(str2)), editdistance(soundex(str),soundex(str2)), difference(str,str2) from stringtest;
-% sys.stringtest,	sys.stringtest,	sys.%3,	sys.%4,	sys.%5,	sys.%6,	sys.%7 # table_name
+% sys.stringtest,	sys.stringtest,	sys.,	sys.,	sys.,	sys.,	sys. # table_name
 % str,	str2,	%3,	%4,	%5,	%6,	%7 # name
 % varchar,	varchar,	varchar,	varchar,	int,	int,	int # type
 % 6,	4,	4,	4,	1,	1,	1 # length
@@ -263,7 +263,7 @@ stdout of test 'string` in directory 'sql/test` itself:
 [ " Test ",	"",	" 323",	"",	4,	4,	4	]
 [ 1	]
 #select levenshtein(str,str2, 1, 2, 3), str, str2 from stringtest;
-% sys.%1,	sys.stringtest,	sys.stringtest # table_name
+% sys.,	sys.stringtest,	sys.stringtest # table_name
 % %1,	str,	str2 # name
 % int,	varchar,	varchar # type
 % 2,	13,	13 # length
@@ -274,7 +274,7 @@ stdout of test 'string` in directory 'sql/test` itself:
 [ 12,	"monetdbiscool",	"coolismonetdb"	]
 [ 1	]
 #select qgramnormalize(str) , qgramnormalize(str2), str, str2 from stringtest;
-% sys.%1,	sys.%2,	sys.stringtest,	sys.stringtest # table_name
+% sys.,	sys.,	sys.stringtest,	sys.stringtest # table_name
 % %1,	%2,	str,	str2 # name
 % varchar,	varchar,	varchar,	varchar # type
 % 16,	13,	17,	18 # length

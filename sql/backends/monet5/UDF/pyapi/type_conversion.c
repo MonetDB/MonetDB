@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -110,7 +110,7 @@ str pyobject_to_blob(PyObject **ptr, size_t maxsize, blob **value) {
 
 	*value = GDKmalloc(sizeof(blob) + size + 1);
 	if (!*value) {
-		msg = createException(MAL, "pyapi.eval", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		msg = createException(MAL, "pyapi.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto wrapup;
 	}
 	(*value)->nitems = size;
@@ -137,7 +137,7 @@ str pyobject_to_str(PyObject **ptr, size_t maxsize, str *value)
 		utf8_string = (str)malloc(len = (pyobject_get_size(obj) + 1));
 		if (!utf8_string) {
 			msg = createException(MAL, "pyapi.eval",
-								  SQLSTATE(HY001) MAL_MALLOC_FAIL "python string");
+								  SQLSTATE(HY013) MAL_MALLOC_FAIL "python string");
 			goto wrapup;
 		}
 		*value = utf8_string;

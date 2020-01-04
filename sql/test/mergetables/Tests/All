@@ -19,6 +19,7 @@ KNOWNFAIL?singlekeyconstraint
 part-elim
 mergedropcascade
 addtable
+HAVE_PYMONETDB?transaction-conflict
 
 mergedb_create
 HAVE_NETCDF&HAVE_SAMTOOLS?mergedb.Bug-6820
@@ -32,4 +33,5 @@ HAVE_NETCDF?sqlsmith-apply-outer-join-or
 HAVE_NETCDF?sqlsmith.Bug-6472
 sqlsmith.Bug-6480
 sqlsmith-exists
+sqlsmith-exists2
 mergedb_drop

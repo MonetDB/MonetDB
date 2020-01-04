@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -891,7 +891,7 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 		};
 		fmt = GDKzalloc(sizeof(Column) * (as.nr_attrs + 1));
 		if (fmt == NULL) {
-			sql_error(m, 500, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			sql_error(m, 500, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			return NULL;
 		}
 		as.format = fmt;
@@ -920,7 +920,7 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 				}
 				GDKfree(fmt[i].type);
 				GDKfree(fmt[i].data);
-				sql_error(m, 500, SQLSTATE(HY001) "failed to allocate space for column");
+				sql_error(m, 500, SQLSTATE(HY013) "failed to allocate space for column");
 				return NULL;
 			}
 			fmt[i].c = NULL;
@@ -964,7 +964,7 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 							GDKfree(fmt[j].data);
 							BBPunfix(fmt[j].c->batCacheid);
 						}
-						sql_error(m, 500, SQLSTATE(HY001) "failed to allocate space for column");
+						sql_error(m, 500, SQLSTATE(HY013) "failed to allocate space for column");
 						return NULL;
 					}
 				}
@@ -977,7 +977,7 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 				(best || !as.error))) {
 				*bats = (BAT**) GDKzalloc(sizeof(BAT *) * as.nr_attrs);
 				if ( *bats == NULL){
-					sql_error(m, 500, SQLSTATE(HY001) "failed to allocate space for column");
+					sql_error(m, 500, SQLSTATE(HY013) "failed to allocate space for column");
 					TABLETdestroy_format(&as);
 					return NULL;
 				}
@@ -1063,7 +1063,7 @@ mvc_export_prepare(mvc *c, stream *out, cq *q, str w)
 	if (!out)
 		return 0;
 
-	if (is_topn(r->op))
+	if (r && is_topn(r->op))
 		r = r->l;
 	if (r && is_project(r->op) && r->exps) {
 		unsigned int max2 = 10, max3 = 10;	/* to help calculate widths */
@@ -1173,7 +1173,6 @@ mvc_export_prepare(mvc *c, stream *out, cq *q, str w)
 		return -1;
 	return 0;
 }
-
 
 /*
  * improved formatting of positive integers
@@ -1786,7 +1785,7 @@ mvc_export_table(backend *b, stream *s, res_table *t, BAT *order, BUN offset, BU
 	if(fmt == NULL || tres == NULL) {
 		GDKfree(fmt);
 		GDKfree(tres);
-		sql_error(m, 500, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		sql_error(m, 500, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return -1;
 	}
 
@@ -2563,7 +2562,7 @@ mvc_export_chunk(backend *b, stream *s, int res_id, BUN offset, BUN nr)
 		cnt = BATcount(order);
 	if (offset >= BATcount(order))
 		cnt = 0;
-	if (offset + cnt > BATcount(order))
+	if (cnt == BUN_NONE || offset + cnt > BATcount(order))
 		cnt = BATcount(order) - offset;
 
 	if (b->client->protocol != PROTOCOL_10) {

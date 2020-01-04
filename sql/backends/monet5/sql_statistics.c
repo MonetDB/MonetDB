@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /* (c) M.L. Kersten
@@ -201,7 +201,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							maxval = GDKmalloc(4);
 							if (maxval == NULL) {
 								GDKfree(minval);
-								throw(SQL, "analyze", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+								throw(SQL, "analyze", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 							}
 							maxlen = 4;
 						}
@@ -210,7 +210,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							minval = GDKmalloc(4);
 							if (minval == NULL){
 								GDKfree(maxval);
-								throw(SQL, "analyze", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+								throw(SQL, "analyze", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 							}
 							minlen = 4;
 						}

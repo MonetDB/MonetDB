@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -209,15 +209,15 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 			exp_print(sql, fout, e->l, depth, refs, 0, alias);
 			if (is_anti(e))
 				mnstr_printf(fout, " !");
-			cmp_print(sql, fout, get_cmp(e));
+			cmp_print(sql, fout, e->flag);
 			exps_print(sql, fout, e->r, depth, refs, alias, 1);
-		} else if (get_cmp(e) == cmp_or) {
+		} else if (e->flag == cmp_or) {
 			exps_print(sql, fout, e->l, depth, refs, alias, 1);
 			if (is_anti(e))
 				mnstr_printf(fout, " !");
-			cmp_print(sql, fout, get_cmp(e));
+			cmp_print(sql, fout, e->flag);
 			exps_print(sql, fout, e->r, depth, refs, alias, 1);
-		} else if (get_cmp(e) == cmp_filter) {
+		} else if (e->flag == cmp_filter) {
 			sql_subfunc *f = e->f;
 
 			exps_print(sql, fout, e->l, depth, refs, alias, 1);
@@ -243,7 +243,7 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 			exp_print(sql, fout, e->l, depth+1, refs, 0, 0);
 			if (is_anti(e))
 				mnstr_printf(fout, " !");
-			cmp_print(sql, fout, get_cmp(e));
+			cmp_print(sql, fout, e->flag);
 
 			exp_print(sql, fout, e->r, depth+1, refs, 0, 0);
 		}
@@ -253,6 +253,8 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 	}
 	if (e->type != e_atom && e->type != e_cmp && is_ascending(e))
 		mnstr_printf(fout, " ASC");
+	if (e->type != e_atom && e->type != e_cmp && nulls_last(e))
+		mnstr_printf(fout, " NULLS LAST");
 	if (e->type != e_atom && e->type != e_cmp && !has_nil(e))
 		mnstr_printf(fout, " NOT NULL");
 	/*
@@ -556,8 +558,6 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int dec
 	default:
 		assert(0);
 	}
-	if (rel->single)
-		mnstr_printf(fout, " single ");
 	if (rel->p) {
 		prop *p = rel->p;
 		char *pv;
@@ -1053,16 +1053,16 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 			*e = 0;
 			cname = sa_strdup(sql->sa, b);
 			if (pexps) {
-				exp = exps_bind_column(pexps, cname, &amb);
+				exp = exps_bind_column(pexps, cname, &amb, 1);
 				if (exp)
 					exp = exp_alias_or_copy(sql, exp_relname(exp), cname, lrel, exp);
 			}
 			(void)amb;
 			assert(amb == 0);
 			if (!exp && lrel)
-				exp = rel_bind_column(sql, lrel, cname, 0);
+				exp = rel_bind_column(sql, lrel, cname, 0, 1);
 			if (!exp && rrel)
-				exp = rel_bind_column(sql, rrel, cname, 0);
+				exp = rel_bind_column(sql, rrel, cname, 0, 1);
 			*e = old;
 			skipWS(r,pos);
 		}
@@ -1084,7 +1084,13 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 	if (strncmp(r+*pos, "ASC",  strlen("ASC")) == 0) {
 		(*pos)+= (int) strlen("ASC");
 		skipWS(r, pos);
-		set_direction(exp, 1);
+		set_ascending(exp);
+	}
+	/* [ NULLS LAST ] */
+	if (strncmp(r+*pos, "NULLS LAST",  strlen("NULLS LAST")) == 0) {
+		(*pos)+= (int) strlen("NULLS LAST");
+		skipWS(r, pos);
+		set_nulls_last(exp);
 	}
 	/* [ ANY|ALL ] */
 	if (strncmp(r+*pos, "ANY",  strlen("ANY")) == 0) {

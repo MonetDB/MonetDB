@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -58,7 +58,7 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	fcn = VALget(&getVar(mb, getArg(pci, pci->retc+1))->value);
 	fcn = putName(fcn);
 	if(mod == NULL || fcn == NULL)
-		throw(MAL, "optimizer.multiplex", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "optimizer.multiplex", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	fprintf(stderr,"#WARNING To speedup %s.%s a bulk operator implementation is needed\n#", mod,fcn);
 	fprintInstruction(stderr, mb, stk, pci, LIST_MAL_ALL);
 
@@ -71,16 +71,6 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( i == pci->argc)
 		throw(MAL, "optimizer.multiplex", SQLSTATE(HY002) "Iterator BAT type is missing");
 
-    if( OPTdebug &  OPTmultiplex)
-	{	char *tpenme;
-		fprintf(stderr,"#calling the optimize multiplex script routine\n");
-		fprintFunction(stderr,mb, 0, LIST_MAL_ALL );
-		tpenme = getTypeName(getVarType(mb,iter));
-		fprintf(stderr,"#multiplex against operator %d %s\n",iter, tpenme);
-		GDKfree(tpenme);
-		fprintInstruction(stderr,mb, 0, pci,LIST_MAL_ALL);
-	}
-
 	/*
 	 * Beware, the operator constant (arg=1) is passed along as well,
 	 * because in the end we issue a recursive function call that should
@@ -92,7 +82,7 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (alias == NULL || resB == NULL)  {
 		GDKfree(alias);
 		GDKfree(resB);
-		throw(MAL, "optimizer.multiplex", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "optimizer.multiplex", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	/* resB := new(refBat) */
@@ -204,9 +194,12 @@ OPTmultiplexSimple(Client cntxt, MalBlkPtr mb)
 		}
 	if( doit) {
 		msg = OPTmultiplexImplementation(cntxt, mb, 0, 0);
-		chkTypes(cntxt->usermodule, mb,TRUE);
-		chkFlow(mb);
-		chkDeclarations(mb);
+		if (!msg)
+			msg = chkTypes(cntxt->usermodule, mb,TRUE);
+		if (!msg)
+			msg = chkFlow(mb);
+		if (!msg)
+			msg = chkDeclarations(mb);
 	}
 	return msg;
 }
@@ -227,7 +220,7 @@ OPTmultiplexImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	limit = mb->stop;
 	slimit = mb->ssize;
 	if ( newMalBlkStmt(mb, mb->ssize) < 0 )
-		throw(MAL,"optimizer.mergetable", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL,"optimizer.mergetable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	for (i = 0; i < limit; i++) {
 		p = old[i];
@@ -258,21 +251,18 @@ OPTmultiplexImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	GDKfree(old);
 
     /* Defense line against incorrect plans */
-    if( msg == MAL_SUCCEED &&  actions > 0){
-        chkTypes(cntxt->usermodule, mb, FALSE);
-        chkFlow(mb);
-        chkDeclarations(mb);
+    if( msg == MAL_SUCCEED && actions > 0){
+        msg = chkTypes(cntxt->usermodule, mb, FALSE);
+	if (!msg)
+        	msg = chkFlow(mb);
+	if (!msg)
+        	msg = chkDeclarations(mb);
     }
     /* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","multiplex",actions, usec);
     newComment(mb,buf);
-	if( actions >= 0)
+	if( actions > 0)
 		addtoMalBlkHistory(mb);
-
-    if( OPTdebug &  OPTmultiplex){
-        fprintf(stderr, "#MULTIPLEX optimizer exit\n");
-        fprintFunction(stderr, mb, 0,  LIST_MAL_ALL);
-    }
 	return msg;
 }

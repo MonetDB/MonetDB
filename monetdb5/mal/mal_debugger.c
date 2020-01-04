@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -693,7 +693,9 @@ retryRead:
 					for(; fs; fs = fs->peer){ 
 						for(i=0; i< fs->def->stop; i++)
 							fs->def->stmt[i]->typechk = TYPE_UNKNOWN;
-						chkProgram(cntxt->usermodule, fs->def);
+						msg = chkProgram(cntxt->usermodule, fs->def);
+						if( msg != MAL_SUCCEED)
+							mnstr_printf(out, "#<modnme>.<fcnnme> contains errors\n");
 					}
 				} else
 					mnstr_printf(out, "#<modnme>.<fcnnme> expected\n");

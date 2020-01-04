@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -74,7 +74,7 @@ MNDBStatistics(ODBCStmt *stmt,
 	/* buffer for the constructed query to do meta data retrieval */
 	char *query = NULL;
 	char *query_end = NULL;
-	char *cat = NULL, *sch = NULL, *tab = NULL;
+	char *sch = NULL, *tab = NULL;
 
 	fixODBCstring(TableName, NameLength3, SQLSMALLINT,
 		      addStmtError, stmt, return SQL_ERROR);
@@ -85,9 +85,9 @@ MNDBStatistics(ODBCStmt *stmt,
 
 #ifdef ODBCDEBUG
 	ODBCLOG("\"%.*s\" \"%.*s\" \"%.*s\" %s %s\n",
-		(int) NameLength1, (char *) CatalogName,
-		(int) NameLength2, (char *) SchemaName,
-		(int) NameLength3, (char *) TableName,
+		(int) NameLength1, CatalogName ? (char *) CatalogName : "",
+		(int) NameLength2, SchemaName ? (char *) SchemaName : "",
+		(int) NameLength3, TableName ? (char *) TableName : "",
 		translateUnique(Unique), translateReserved(Reserved));
 #endif
 
@@ -127,13 +127,6 @@ MNDBStatistics(ODBCStmt *stmt,
 	}
 
 	if (stmt->Dbc->sql_attr_metadata_id == SQL_FALSE) {
-		if (NameLength1 > 0) {
-			cat = ODBCParseOA("e", "value",
-					  (const char *) CatalogName,
-					  (size_t) NameLength1);
-			if (cat == NULL)
-				goto nomem;
-		}
 		if (NameLength2 > 0) {
 			sch = ODBCParseOA("s", "name",
 					  (const char *) SchemaName,
@@ -149,13 +142,6 @@ MNDBStatistics(ODBCStmt *stmt,
 				goto nomem;
 		}
 	} else {
-		if (NameLength1 > 0) {
-			cat = ODBCParseID("e", "value",
-					  (const char *) CatalogName,
-					  (size_t) NameLength1);
-			if (cat == NULL)
-				goto nomem;
-		}
 		if (NameLength2 > 0) {
 			sch = ODBCParseID("s", "name",
 					  (const char *) SchemaName,
@@ -173,8 +159,8 @@ MNDBStatistics(ODBCStmt *stmt,
 	}
 
 	/* construct the query now */
-	query = malloc(1200 + (cat ? strlen(cat) : 0) +
-		       (sch ? strlen(sch) : 0) + (tab ? strlen(tab) : 0));
+	query = malloc(1200 + strlen(stmt->Dbc->dbname) +
+			(sch ? strlen(sch) : 0) + (tab ? strlen(tab) : 0));
 	if (query == NULL)
 		goto nomem;
 	query_end = query;
@@ -196,7 +182,7 @@ MNDBStatistics(ODBCStmt *stmt,
 	 */
 	/* TODO: finish the SQL query */
 	sprintf(query_end,
-		"select e.value as table_cat, "
+		"select '%s' as table_cat, "
 		       "s.name as table_schem, "
 		       "t.name as table_name, "
 		       "case when k.name is null then cast(1 as smallint) "
@@ -216,25 +202,26 @@ MNDBStatistics(ODBCStmt *stmt,
 		     "sys.tables t, "
 		     "sys.columns c, "
 		     "sys.objects kc, "
-		     "sys.keys k, "
-		     "sys.env() e "
+		     "sys.keys k "
 		"where i.table_id = t.id and "
 		      "t.schema_id = s.id and "
 		      "i.id = kc.id and "
 		      "t.id = c.table_id and "
 		      "kc.name = c.name and "
-		      "(k.type is null or k.type = 1) and "
-		      "e.name = 'gdk_dbname'",
+		      "(k.type is null or k.type = 1)",
+		stmt->Dbc->dbname,
 		SQL_INDEX_HASHED, SQL_INDEX_OTHER);
 	assert(strlen(query) < 1000);
 	query_end += strlen(query_end);
 
 	/* Construct the selection condition query part */
-	if (cat) {
+	if (NameLength1 > 0 && CatalogName != NULL) {
 		/* filtering requested on catalog name */
-		sprintf(query_end, " and %s", cat);
-		query_end += strlen(query_end);
-		free(cat);
+		if (strcmp((char *) CatalogName, stmt->Dbc->dbname) != 0) {
+			/* catalog name does not match the database name, so return no rows */
+			sprintf(query_end, " and 1=2");
+			query_end += strlen(query_end);
+		}
 	}
 	if (sch) {
 		/* filtering requested on schema name */
@@ -250,15 +237,11 @@ MNDBStatistics(ODBCStmt *stmt,
 	}
 
 	/* add the ordering */
-	strcpy(query_end,
-	       " order by non_unique, type, index_qualifier, index_name, "
-	       "ordinal_position");
+	strcpy(query_end, " order by non_unique, type, index_qualifier, index_name, ordinal_position");
 	query_end += strlen(query_end);
 
 	/* query the MonetDB data dictionary tables */
-	rc = MNDBExecDirect(stmt,
-			    (SQLCHAR *) query,
-			    (SQLINTEGER) (query_end - query));
+	rc = MNDBExecDirect(stmt, (SQLCHAR *) query, (SQLINTEGER) (query_end - query));
 
 	free(query);
 
@@ -266,8 +249,6 @@ MNDBStatistics(ODBCStmt *stmt,
 
   nomem:
 	/* note that query must be NULL when we get here */
-	if (cat)
-		free(cat);
 	if (sch)
 		free(sch);
 	if (tab)

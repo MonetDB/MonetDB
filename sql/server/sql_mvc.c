@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /* multi version catalog */
@@ -60,13 +60,13 @@ mvc_init_create_view(mvc *m, sql_schema *s, const char *name, const char *query)
 
 		if (!(m->sa = sa_create())) {
 			t = NULL;
-			(void) sql_error(m, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			(void) sql_error(m, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto bailout;
 		}
 
 		if (!(buf = sa_strdup(m->sa, t->query))) {
 			t = NULL;
-			(void) sql_error(m, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			(void) sql_error(m, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto bailout;
 		}
 
@@ -365,7 +365,8 @@ mvc_trans(mvc *m)
 				return -1;
 			}
 		} else { /* clean all but the prepared statements */
-			qc_clean(m->qc);
+			qc_clean(m->qc, false);
+			stack_pop_until(m, NR_GLOBAL_VARS);
 		}
 	}
 	store_unlock();
@@ -476,7 +477,7 @@ mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 		m->session->tr = sql_trans_create(m->session->stk, tr, name, true);
 		if(!m->session->tr) {
 			store_unlock();
-			msg = createException(SQL, "sql.commit", SQLSTATE(HY001) "%s allocation failure while committing the transaction, will ROLLBACK instead", operation);
+			msg = createException(SQL, "sql.commit", SQLSTATE(HY013) "%s allocation failure while committing the transaction, will ROLLBACK instead", operation);
 			if((other = mvc_rollback(m, chain, name, false)) != MAL_SUCCEED)
 				freeException(other);
 			return msg;
@@ -491,7 +492,8 @@ mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 		m->type = Q_TRANS;
 		if (m->qc) /* clean query cache, protect against concurrent access on the hash tables (when functions already exists, concurrent mal will
 build up the hash (not copied in the trans dup)) */
-			qc_clean(m->qc);
+			qc_clean(m->qc, false);
+		stack_pop_until(m, NR_GLOBAL_VARS);
 		m->session->schema = find_sql_schema(m->session->tr, m->session->schema_name);
 		if (mvc_debug)
 			fprintf(stderr, "#mvc_commit %s done\n", name);
@@ -542,23 +544,8 @@ build up the hash (not copied in the trans dup)) */
 		return msg;
 	}
 
-	/*
-	while (tr->schema_updates && ATOMIC_GET(&store_nr_active) > 1) {
-		store_unlock();
-		MT_sleep_ms(100);
-		wait += 100;
-		if (wait > 1000) {
-			(void)sql_error(m, 010, SQLSTATE(40000) "COMMIT: transaction is aborted because of DDL concurrency conflicts, will ROLLBACK instead");
-			mvc_rollback(m, chain, name, false);
-			return -1;
-		}
-		store_lock();
-	}
-	 * */
 	/* validation phase */
 	int valide = sql_trans_validate(tr);
-
-
 	if (valide) {
 		store_unlock();
 		if (sql_save_snapshots(tr) != SQL_OK) {
@@ -619,7 +606,8 @@ mvc_rollback(mvc *m, int chain, const char *name, bool disabling_auto_commit)
 
 	store_lock();
 	if (m->qc) 
-		qc_clean(m->qc);
+		qc_clean(m->qc, false);
+	stack_pop_until(m, NR_GLOBAL_VARS);
 	if (name && name[0] != '\0') {
 		while (tr && (!tr->name || strcmp(tr->name, name) != 0))
 			tr = tr->parent;
@@ -800,7 +788,7 @@ mvc_create(int clientid, backend_stack stk, int debug, bstream *rs, stream *ws)
 }
 
 int
-mvc_reset(mvc *m, bstream *rs, stream *ws, int debug, int globalvars)
+mvc_reset(mvc *m, bstream *rs, stream *ws, int debug)
 {
 	int i, res = 1;
 	sql_trans *tr;
@@ -829,7 +817,7 @@ mvc_reset(mvc *m, bstream *rs, stream *ws, int debug, int globalvars)
 
 	m->params = NULL;
 	/* reset topvars to the set of global variables */
-	stack_pop_until(m, globalvars);
+	stack_pop_until(m, NR_GLOBAL_VARS);
 	m->frame = 1;
 	m->argc = 0;
 	m->sym = NULL;
@@ -1412,12 +1400,12 @@ mvc_drop_table(mvc *m, sql_schema *s, sql_table *t, int drop_action)
 
 		m->sa = sa_create();
 		if (!m->sa)
-			throw(SQL, "sql.mvc_drop_table", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(SQL, "sql.mvc_drop_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		char *qualified_name = sa_strconcat(m->sa, sa_strconcat(m->sa, t->s->base.name, "."), t->base.name);
 		if (!qualified_name) {
 			sa_destroy(m->sa);
 			m->sa = sa;
-			throw(SQL, "sql.mvc_drop_table", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(SQL, "sql.mvc_drop_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 
 		AUTHres = AUTHdeleteRemoteTableCredentials(qualified_name);
@@ -1429,7 +1417,7 @@ mvc_drop_table(mvc *m, sql_schema *s, sql_table *t, int drop_action)
 	}
 
 	if(sql_trans_drop_table(m->session->tr, s, t->base.id, drop_action ? DROP_CASCADE_START : DROP_RESTRICT))
-		throw(SQL, "sql.mvc_drop_table", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(SQL, "sql.mvc_drop_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 

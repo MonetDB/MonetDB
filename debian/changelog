@@ -1,3 +1,40 @@
+monetdb (11.35.9) unstable; urgency=low
+
+  * Rebuilt.
+  * BZ#6804: DNS resolution of 0.0.0.0 fails on recent Ubuntus
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 18 Dec 2019 11:02:41 +0100
+
+monetdb (11.35.7) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 17 Dec 2019 10:03:07 +0100
+
+monetdb (11.35.5) unstable; urgency=low
+
+  * Rebuilt.
+  * BZ#6723: columns aliases duplicates should not be allowed. automatic
+    aliasing required.
+  * BZ#6724: Prepare confuses types when more than one argument is used
+  * BZ#6726: Python aggregation does not create aggr_group when aggregating
+    over all rows
+  * BZ#6765: GRANT SELECT privilege on a subset of table columns results
+    in access denied error when selecting the same columns from the table
+  * BZ#6790: Count distinct giving wrong results
+  * BZ#6791: str_to_time('11:40', '%H:%M') creates wrong time value
+  * BZ#6792: JSON path compiler accepts invalid input
+  * BZ#6793: cast(interval second value to int or decimal) is wrong (by
+    a factor of 1000), cast(interval month value to decimal or floating
+    point) fails
+  * BZ#6794: external name fits.listdir not bound (sys.listdir) Fatal
+    error during initialization:
+  * BZ#6796: Incorrect crash time reported by monetdb tool after crash
+    of mserver5
+  * BZ#6798: json.text off by one error
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 12 Dec 2019 09:24:08 +0100
+
 monetdb (11.35.3) unstable; urgency=low
 
   * Rebuilt.

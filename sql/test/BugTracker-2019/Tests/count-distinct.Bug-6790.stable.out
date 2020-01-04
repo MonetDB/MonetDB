@@ -11,7 +11,7 @@ stdout of test 'count-distinct.Bug-6790` in directory 'sql/test/BugTracker-2019`
 # Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
 # Found 15.504 GiB available main-memory of which we use 12.635 GiB
 # Copyright (c) 1993 - July 2008 CWI.
-# Copyright (c) August 2008 - 2019 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008 - 2020 MonetDB B.V., all rights reserved
 # Visit https://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://localhost.localdomain:30367/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-125811/.s.monetdb.30367
@@ -72,37 +72,37 @@ stdout of test 'count-distinct.Bug-6790` in directory 'sql/test/BugTracker-2019`
 #INSERT INTO tab2 VALUES (64,77,40), (75,67,58),(46,51,23);
 [ 3	]
 #SELECT COUNT ( DISTINCT + 45 ) AS col2 FROM tab0;
-% .%1 # table_name
+% . # table_name
 % col2 # name
 % bigint # type
 % 1 # length
 [ 1	]
 #SELECT DISTINCT CAST( - SUM ( DISTINCT 10 ) AS BIGINT) AS col1 FROM tab2;
-% .%3 # table_name
+% . # table_name
 % col1 # name
 % bigint # type
 % 3 # length
 [ -10	]
 #SELECT DISTINCT CAST(49 * + 78 + + COUNT ( DISTINCT + 5 ) AS BIGINT) AS col0 FROM tab1 AS cor0;
-% .%3 # table_name
+% . # table_name
 % col0 # name
 % bigint # type
 % 4 # length
 [ 3823	]
 #SELECT CAST(72 + - + COUNT ( * ) - - - COUNT ( DISTINCT + ( - 2 ) ) * + + 57 AS BIGINT) FROM tab2;
-% .%3 # table_name
+% . # table_name
 % %3 # name
 % bigint # type
 % 2 # length
 [ 12	]
 #SELECT DISTINCT - 37, - COUNT ( DISTINCT - + 96 ) col1 FROM tab2;
-% .%2,	.%3 # table_name
+% .,	. # table_name
 % %2,	col1 # name
 % tinyint,	bigint # type
 % 3,	2 # length
 [ -37,	-1	]
 #SELECT DISTINCT + ( CAST ( NULL AS INTEGER ) ) AS col0, col0 FROM tab0;
-% .%2,	sys.tab0 # table_name
+% .,	sys.tab0 # table_name
 % col0,	col0 # name
 % int,	int # type
 % 1,	2 # length
@@ -110,7 +110,7 @@ stdout of test 'count-distinct.Bug-6790` in directory 'sql/test/BugTracker-2019`
 [ NULL,	15	]
 [ NULL,	87	]
 #SELECT DISTINCT CAST ( NULL AS INTEGER ) - - 95 AS col1, CAST(col2 * + + col1 AS BIGINT) AS col1 FROM tab2 AS cor0;
-% .%3,	sys.%4 # table_name
+% .,	sys. # table_name
 % col1,	col1 # name
 % bigint,	bigint # type
 % 1,	4 # length
@@ -118,13 +118,13 @@ stdout of test 'count-distinct.Bug-6790` in directory 'sql/test/BugTracker-2019`
 [ NULL,	3886	]
 [ NULL,	1173	]
 #SELECT DISTINCT + 14 AS col2, + col0 - - CAST ( NULL AS INTEGER ) AS col2 FROM tab2 AS cor0;
-% .%2,	sys.%3 # table_name
+% .,	sys. # table_name
 % col2,	col2 # name
 % tinyint,	bigint # type
 % 2,	1 # length
 [ 14,	NULL	]
 #SELECT DISTINCT col1, + col0 col1 FROM tab1;
-% sys.tab1,	sys.%2 # table_name
+% sys.tab1,	sys. # table_name
 % col1,	col1 # name
 % int,	int # type
 % 2,	2 # length

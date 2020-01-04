@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -1365,6 +1365,36 @@ atom_is_true( atom *a )
 		return a->data.val.fval != 0;
 	case TYPE_dbl:
 		return a->data.val.dval != 0;
+	default:
+		break;
+	}
+	return 0;
+}
+
+int
+atom_is_false( atom *a )
+{
+	if (a->isnull)
+		return 0;
+	switch(a->tpe.type->localtype) {
+	case TYPE_bit:
+		return a->data.val.btval == 0;
+	case TYPE_bte:
+		return a->data.val.btval == 0;
+	case TYPE_sht:
+		return a->data.val.shval == 0;
+	case TYPE_int:
+		return a->data.val.ival == 0;
+	case TYPE_lng:
+		return a->data.val.lval == 0;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		return a->data.val.hval == 0;
+#endif
+	case TYPE_flt:
+		return a->data.val.fval == 0;
+	case TYPE_dbl:
+		return a->data.val.dval == 0;
 	default:
 		break;
 	}

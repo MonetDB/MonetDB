@@ -47,19 +47,19 @@ stdout of test 'now_results_in_illegal_argument.Bug-2978` in directory 'sql/test
 # 12:53:46 >  
 
 #select now() + 1 - now();
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % sec_interval # type
 % 5 # length
 [ 1.000	]
 #select now() + interval '1' second - now();
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % sec_interval # type
 % 5 # length
 [ 1.000	]
 #select now() - now();
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % sec_interval # type
 % 5 # length

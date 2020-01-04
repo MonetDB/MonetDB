@@ -2,6 +2,8 @@ CREATE TABLE tbl_ProductSales (ColID int, Product_Category  varchar(64), Product
 INSERT INTO tbl_ProductSales VALUES (1,'Game','Mobo Game',200),(2,'Game','PKO Game',400),(3,'Fashion','Shirt',500),(4,'Fashion','Shorts',100);
 CREATE TABLE another_T (col1 INT, col2 INT, col3 INT, col4 INT, col5 INT, col6 INT, col7 INT, col8 INT);
 INSERT INTO another_T VALUES (1,2,3,4,5,6,7,8), (11,22,33,44,55,66,77,88), (111,222,333,444,555,666,777,888), (1111,2222,3333,4444,5555,6666,7777,8888);
+CREATE TABLE integers(i INTEGER);
+INSERT INTO integers VALUES (1), (2), (3), (NULL);
 
 SELECT
     NOT MAX(t1.col6) IN (SELECT SUM(t1.col6) FROM tbl_ProductSales tp HAVING MAX(t1.col1) > MIN(tp.colID))
@@ -256,6 +258,88 @@ FROM another_T t1;
 	-- 2
 	-- 2
 
+SELECT 
+	MIN(i1.i)
+FROM integers i1
+GROUP BY (SELECT MAX(i2.i) FROM integers i2 LEFT JOIN integers i3 on i1.i = i2.i);
+	-- 1
+
+SELECT
+	MAX(t1.col1)
+FROM another_T t1
+GROUP BY (NOT t1.col6 NOT IN (SELECT MAX(t2.col6) FROM another_T t2 GROUP BY t1.col6 HAVING t1.col7 < MAX(t2.col7 - t1.col6)))
+HAVING (MIN(t1.col7) <> ANY(SELECT MAX(t2.col5) FROM another_T t2 GROUP BY t2.col6 HAVING t2.col6 + MIN(t2.col2) = MAX(t1.col7)));
+	-- empty
+
+SELECT
+	1
+FROM integers i1
+GROUP BY (VALUES(1));
+	-- 1
+
+SELECT
+	MIN(i1.i)
+FROM integers i1
+GROUP BY (SELECT SUM(i1.i + i2.i) FROM integers i2);
+
+SELECT
+	MIN(i1.i)
+FROM integers i1
+GROUP BY (SELECT i2.i FROM integers i2); --error, more than one row returned by a subquery used as an expression
+
+SELECT
+    (SELECT SUM(t1.col1) OVER (PARTITION BY (VALUES(1)) ROWS UNBOUNDED PRECEDING) FROM tbl_ProductSales)
+FROM another_T t1; --error, subqueries not allowed inside PARTITION BY
+
+SELECT
+    (SELECT SUM(t1.col1) OVER (ORDER BY (VALUES(1)) ROWS UNBOUNDED PRECEDING) FROM tbl_ProductSales)
+FROM another_T t1;
+
+SELECT
+    (SELECT SUM(t1.col1) OVER (ORDER BY (SELECT SUM(t1.col1 + t2.col1) FROM another_T t2) ROWS UNBOUNDED PRECEDING) FROM tbl_ProductSales)
+FROM another_T t1;
+
+SELECT
+    CAST(SUM(CAST(SUM(CAST (NOT t1.col1 IN (SELECT 1) AS INTEGER)) < ANY (SELECT 1) AS INT)) OVER () AS BIGINT)
+FROM another_T t1
+GROUP BY t1.col6;
+	-- 1
+	-- 1
+	-- 1
+	-- 1
+
+SELECT
+    SUM(SUM(t1.col7) * CAST (NOT t1.col1 IN (SELECT 1) AS INTEGER)) OVER ()
+FROM another_T t1
+GROUP BY t1.col7; --error, column "t1.col1" must appear in the GROUP BY clause or be used in an aggregate function
+
+SELECT
+    SUM(CAST(SUM(t1.col6 * CAST (NOT t1.col1 IN (SELECT t2.col2 FROM another_T t2 GROUP BY t2.col2) AS INTEGER)) < ANY (SELECT MAX(ColID + t1.col7 - t1.col2) FROM tbl_ProductSales) AS INT)) OVER (PARTITION BY SUM(t1.col5) ORDER BY (SELECT MIN(t1.col6 + t1.col5 - t2.col2) FROM another_T t2))
+FROM another_T t1
+GROUP BY t1.col7, t1.col6; --error, subquery uses ungrouped column "t1.col2" from outer query
+
+SELECT
+    (SELECT 1 FROM integers i2 GROUP BY SUM(i1.i))
+FROM integers i1; --The sum at group by is a correlation from the outer query, so it's allowed inside the GROUP BY at this case
+	-- 1
+
+SELECT
+    (SELECT 1 FROM integers i2 GROUP BY SUM(i2.i))
+FROM integers i1; --error, aggregates not allowed in group by clause
+
+SELECT 
+    (SELECT SUM(SUM(i1.i) + i2.i) FROM integers i2 GROUP BY i2.i)
+FROM integers i1; --SUM(i1.i) is a correlation from the outer query, so the sum aggregates can be nested at this case
+	--error, more than one row returned by a subquery used as an expression
+
+SELECT 
+    (SELECT SUM(SUM(i1.i)) FROM integers i2 GROUP BY i2.i)
+FROM integers i1; --error, more than one row returned by a subquery used as an expression
+
+SELECT 
+    (SELECT SUM(SUM(i2.i)) FROM integers i2 GROUP BY i2.i)
+FROM integers i1; --error, aggregation functions cannot be nested
+
 /* We shouldn't allow the following internal functions/procedures to be called from regular queries */
 --SELECT "identity"(col1) FROM another_T;
 --SELECT "rowid"(col1) FROM another_T;
@@ -266,3 +350,4 @@ FROM another_T t1;
 
 DROP TABLE tbl_ProductSales;
 DROP TABLE another_T;
+DROP TABLE integers;

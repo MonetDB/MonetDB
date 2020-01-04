@@ -118,6 +118,8 @@ stdout of test 'check` in directory 'sql/test/emptydb` itself:
 \dSv sys.geometry_columns
 \dSv sys.ids
 \dSv sys.optimizers
+\dSv sys.prepared_statements
+\dSv sys.prepared_statements_args
 \dSv sys.querylog_calls
 \dSv sys.querylog_catalog
 \dSv sys.querylog_history
@@ -217,6 +219,8 @@ stdout of test 'check` in directory 'sql/test/emptydb` itself:
 \dSf sys."optimizers"
 \dSf sys."password_hash"
 \dSf sys."pause"
+\dSf sys."prepared_statements"
+\dSf sys."prepared_statements_args"
 \dSf sys."quantile"
 \dSf sys."quantile_avg"
 \dSf sys."querycache"
@@ -438,6 +442,8 @@ SYSTEM VIEW  sys.environment
 SYSTEM VIEW  sys.geometry_columns
 SYSTEM VIEW  sys.ids
 SYSTEM VIEW  sys.optimizers
+SYSTEM VIEW  sys.prepared_statements
+SYSTEM VIEW  sys.prepared_statements_args
 SYSTEM VIEW  sys.querylog_calls
 SYSTEM VIEW  sys.querylog_catalog
 SYSTEM VIEW  sys.querylog_history
@@ -662,6 +668,8 @@ SYSTEM PROCEDURE        sys.pause
 SYSTEM FUNCTION         sys.percent_rank
 SYSTEM FUNCTION         sys.pi
 SYSTEM FUNCTION         sys.power
+SYSTEM FUNCTION         sys.prepared_statements
+SYSTEM FUNCTION         sys.prepared_statements_args
 SYSTEM AGGREGATE        sys.prod
 SYSTEM FUNCTION         sys.prod
 SYSTEM FUNCTION         sys.qgramnormalize
@@ -954,6 +962,8 @@ create view sys.environment as select * from sys.env();
 create view sys.geometry_columns as select cast(null as varchar(1)) as f_table_catalog, s.name as f_table_schema, t.name as f_table_name, c.name as f_geometry_column, cast(has_z(c.type_digits) + has_m(c.type_digits) +2 as integer) as coord_dimension, c.type_scale as srid, get_type(c.type_digits, 0) as type from sys.columns c, sys.tables t, sys.schemas s where c.table_id = t.id and t.schema_id = s.id and c.type in (select sqlname from sys.types where systemname in ('wkb', 'wkba'));
 create view sys.ids (id, name, schema_id, table_id, table_name, obj_type, sys_table) as select id, name, cast(null as int) as schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, 'author' as obj_type, 'sys.auths' as sys_table from sys.auths union all select id, name, cast(null as int) as schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, 'schema', 'sys.schemas' from sys.schemas union all select id, name, schema_id, id as table_id, name as table_name, case when type = 1 then 'view' else 'table' end, 'sys._tables' from sys._tables union all select id, name, schema_id, id as table_id, name as table_name, case when type = 1 then 'view' else 'table' end, 'tmp._tables' from tmp._tables union all select c.id, c.name, t.schema_id, c.table_id, t.name as table_name, 'column', 'sys._columns' from sys._columns c join sys._tables t on c.table_id = t.id union all select c.id, c.name, t.schema_id, c.table_id, t.name as table_name, 'column', 'tmp._columns' from tmp._columns c join tmp._tables t on c.table_id = t.id union all select k.id, k.name, t.schema_id, k.table_id, t.name as table_name, 'key', 'sys.keys' from sys.keys k join sys._tables t on k.table_id = t.id union all select k.id, k.name, t.schema_id, k.table_id, t.name as table_name, 'key', 'tmp.keys' from tmp.keys k join tmp._tables t on k.table_id = t.id union all select i.id, i.name, t.schema_id, i.table_id, t.name as table_name, 'index', 'sys.idxs' from sys.idxs i join sys._tables t on i.table_id = t.id union all select i.id, i.name, t.schema_id, i.table_id, t.name as table_name, 'index', 'tmp.idxs' from tmp.idxs i join tmp._tables t on i.table_id = t.id union all select g.id, g.name, t.schema_id, g.table_id, t.name as table_name, 'trigger', 'sys.triggers' from sys.triggers g join sys._tables t on g.table_id = t.id union all select g.id, g.name, t.schema_id, g.table_id, t.name as table_name, 'trigger', 'tmp.triggers' from tmp.triggers g join tmp._tables t on g.table_id = t.id union all select id, name, schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, case when type = 2 then 'procedure' else 'function' end, 'sys.functions' from sys.functions union all select a.id, a.name, f.schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, case when f.type = 2 then 'procedure arg' else 'function arg' end, 'sys.args' from sys.args a join sys.functions f on a.func_id = f.id union all select id, name, schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, 'sequence', 'sys.sequences' from sys.sequences union all select id, sqlname, schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, 'type', 'sys.types' from sys.types where id > 2000 order by id;
 create view sys.optimizers as select * from sys.optimizers();
+create view sys.prepared_statements as select * from sys.prepared_statements();
+create view sys.prepared_statements_args as select * from sys.prepared_statements_args();
 create view sys.querylog_calls as select * from sys.querylog_calls();
 create view sys.querylog_catalog as select * from sys.querylog_catalog();
 create view sys.querylog_history as select qd.*, ql."start",ql."stop", ql.arguments, ql.tuples, ql.run, ql.ship, ql.cpu, ql.io from sys.querylog_catalog() qd, sys.querylog_calls() ql where qd.id = ql.id and qd.owner = user;
@@ -1053,7 +1063,7 @@ create filter function "ilike"(val string, pat string) external name algebra."il
 create filter function "ilike"(val string, pat string, esc string) external name algebra."ilike";
 create function sys.imprintsize(tpe varchar(1024), count bigint) returns bigint begin if tpe in ('tinyint', 'boolean') then return cast(0.2 * count as bigint); end if; if tpe = 'smallint' then return cast(0.4 * count as bigint); end if; if tpe in ('int', 'real', 'date', 'time', 'timetz', 'sec_interval', 'month_interval') then return cast(0.8 * count as bigint); end if; if tpe in ('bigint', 'double', 'timestamp', 'timestamptz', 'inet', 'oid') then return cast(1.6 * count as bigint); end if; if tpe in ('hugeint', 'decimal', 'uuid', 'mbr') then return cast(3.2 * count as bigint); end if; return 0; end;
 create function internaltransform(geom geometry, srid_src integer, srid_dest integer, proj4_src string, proj4_dest string) returns geometry external name geom."Transform";
-create function isaurl(theurl url) returns bool external name url."isaURL";
+create function isaurl(theurl string) returns bool external name url."isaURL";
 create function sys.isauuid(s string) returns boolean external name uuid."isaUUID";
 create function "left_shift"(i1 inet, i2 inet) returns boolean external name inet."<<";
 create function "left_shift_assign"(i1 inet, i2 inet) returns boolean external name inet."<<=";
@@ -1104,6 +1114,8 @@ create procedure sys.pause(tag bigint) external name sql.sysmon_pause;
 create procedure sys.pause(tag int) external name sql.sysmon_pause;
 create procedure sys.pause(tag smallint) external name sql.sysmon_pause;
 create procedure sys.pause(tag tinyint) external name sql.sysmon_pause;
+create function sys.prepared_statements() returns table("sessionid" int, "username" string, "statementid" int, "statement" string, "created" timestamp) external name sql.prepared_statements;
+create function sys.prepared_statements_args() returns table("statementid" int, "type" string, "type_digits" int, "type_scale" int, "inout" tinyint, "number" int, "schema" string, "table" string, "column" string) external name sql.prepared_statements_args;
 create aggregate quantile(val bigint, q double) returns bigint external name "aggr"."quantile";
 create aggregate quantile(val date, q double) returns date external name "aggr"."quantile";
 create aggregate quantile(val decimal, q double) returns decimal external name "aggr"."quantile";
@@ -1344,7 +1356,7 @@ create function pcre_replace(origin string, pat string, repl string, flags strin
 -- schemas
 select name, authorization, owner, system from sys.schemas order by name;
 -- _tables
-select s.name, t.name, replace(replace(pcre_replace(pcre_replace(t.query, '--.*\n*', '', ''), '[ \t\n]+', ' ', ''), '( ', '('), ' )', ')') as query, tt.table_type_name as type, t.system, ca.action_name as commit_action, at.value as access from sys._tables t left outer join sys.schemas s on t.schema_id = s.id left outer join sys.table_types tt on t.type = tt.table_type_id left outer join (values (0, 'COMMIT'), (1, 'DELETE'), (2, 'PRESERVE'), (3, 'DROP'), (4, 'ABORT')) as ca (action_id, action_name) on t.commit_action = ca.action_id left outer join (values (0, 'WRITABLE'), (1, 'READONLY'), (2, 'APPENDONLY')) as at (id, value) on t.access = at.id order by s.name, t.name;
+select s.name, t.name, replace(replace(pcre_replace(pcre_replace(t.query, E'--.*\n*', '', ''), E'[ \t\n]+', ' ', ''), '( ', '('), ' )', ')') as query, tt.table_type_name as type, t.system, ca.action_name as commit_action, at.value as access from sys._tables t left outer join sys.schemas s on t.schema_id = s.id left outer join sys.table_types tt on t.type = tt.table_type_id left outer join (values (0, 'COMMIT'), (1, 'DELETE'), (2, 'PRESERVE'), (3, 'DROP'), (4, 'ABORT')) as ca (action_id, action_name) on t.commit_action = ca.action_id left outer join (values (0, 'WRITABLE'), (1, 'READONLY'), (2, 'APPENDONLY')) as at (id, value) on t.access = at.id order by s.name, t.name;
 -- _columns
 select t.name, c.name, c.type, c.type_digits, c.type_scale, c."default", c."null", c.number, c.storage from sys._tables t, sys._columns c where t.id = c.table_id order by t.name, c.number;
 -- partitioned tables (these three should be empty)
@@ -1352,9 +1364,9 @@ select t.name, c.name, p.expression from sys.table_partitions p left outer join 
 select t.name, p.expression, r.minimum, r.maximum, r.with_nulls from sys.range_partitions r left outer join sys._tables t on t.id = r.table_id left outer join sys.table_partitions p on r.partition_id = p.id;
 select t.name, p.expression, v.value from sys.value_partitions v left outer join sys._tables t on t.id = v.table_id left outer join sys.table_partitions p on v.partition_id = p.id;
 -- external functions that don't reference existing MAL function (should be empty)
-with funcs as (select name, pcre_replace(func, '--.*\n*', '', '') as func, schema_id from sys.functions), x (sname, name, modfunc) as (select s.name, f.name, replace(pcre_replace(f.func, '.*external name (.*);.*', '$1', 'ims'), '"', '') from funcs f left outer join sys.schemas s on f.schema_id = s.id where f.func ilike '% external name %') select * from x where x.modfunc not in (select m.module || '.' || m."function" from sys.malfunctions() m);
+with funcs as (select name, pcre_replace(func, E'--.*\n*', '', '') as func, schema_id from sys.functions), x (sname, name, modfunc) as (select s.name, f.name, replace(pcre_replace(f.func, '.*external name (.*);.*', '$1', 'ims'), '"', '') from funcs f left outer join sys.schemas s on f.schema_id = s.id where f.func ilike '% external name %') select * from x where x.modfunc not in (select m.module || '.' || m."function" from sys.malfunctions() m);
 -- args
-select s.name, f.name, case f.system when true then 'SYSTEM' else '' end as system, replace(replace(replace(pcre_replace(pcre_replace(pcre_replace(f.func, '--.*\n', '', ''), '[ \t\n]+', ' ', 'm'), '^ ', '', ''), '( ', '('), ' )', ')'), 'create system ', 'create ') as query, f.mod, fl.language_name, ft.function_type_name, f.side_effect, f.varres, f.vararg, a0.name as name0, a0.type as type0, a0.type_digits as type_digits0, a0.type_scale as type_scale0, case a0.inout when 0 then 'out' when 1 then 'in' end as inout0, a1.name as name1, a1.type as type1, a1.type_digits as type_digits1, a1.type_scale as type_scale1, case a1.inout when 0 then 'out' when 1 then 'in' end as inout1, a2.name as name2, a2.type as type2, a2.type_digits as type_digits2, a2.type_scale as type_scale2, case a2.inout when 0 then 'out' when 1 then 'in' end as inout2, a3.name as name3, a3.type as type3, a3.type_digits as type_digits3, a3.type_scale as type_scale3, case a3.inout when 0 then 'out' when 1 then 'in' end as inout3, a4.name as name4, a4.type as type4, a4.type_digits as type_digits4, a4.type_scale as type_scale4, case a4.inout when 0 then 'out' when 1 then 'in' end as inout4, a5.name as name5, a5.type as type5, a5.type_digits as type_digits5, a5.type_scale as type_scale5, case a5.inout when 0 then 'out' when 1 then 'in' end as inout5, a6.name as name6, a6.type as type6, a6.type_digits as type_digits6, a6.type_scale as type_scale6, case a6.inout when 0 then 'out' when 1 then 'in' end as inout6, a7.name as name7, a7.type as type7, a7.type_digits as type_digits7, a7.type_scale as type_scale7, case a7.inout when 0 then 'out' when 1 then 'in' end as inout7, a8.name as name8, a8.type as type8, a8.type_digits as type_digits8, a8.type_scale as type_scale8, case a8.inout when 0 then 'out' when 1 then 'in' end as inout8, a9.name as name9, a9.type as type9, a9.type_digits as type_digits9, a9.type_scale as type_scale9, case a9.inout when 0 then 'out' when 1 then 'in' end as inout9, a10.name as name10, a10.type as type10, a10.type_digits as type_digits10, a10.type_scale as type_scale10, case a10.inout when 0 then 'out' when 1 then 'in' end as inout10, a11.name as name11, a11.type as type11, a11.type_digits as type_digits11, a11.type_scale as type_scale11, case a11.inout when 0 then 'out' when 1 then 'in' end as inout11, a12.name as name12, a12.type as type12, a12.type_digits as type_digits12, a12.type_scale as type_scale12, case a12.inout when 0 then 'out' when 1 then 'in' end as inout12, a13.name as name13, a13.type as type13, a13.type_digits as type_digits13, a13.type_scale as type_scale13, case a13.inout when 0 then 'out' when 1 then 'in' end as inout13, a14.name as name14, a14.type as type14, a14.type_digits as type_digits14, a14.type_scale as type_scale14, case a14.inout when 0 then 'out' when 1 then 'in' end as inout14, a15.name as name15, a15.type as type15, a15.type_digits as type_digits15, a15.type_scale as type_scale15, case a15.inout when 0 then 'out' when 1 then 'in' end as inout15 from sys.functions f left outer join sys.schemas s on f.schema_id = s.id left outer join sys.function_types as ft on f.type = ft.function_type_id left outer join sys.function_languages fl on f.language = fl.language_id left outer join sys.args a0 on a0.func_id = f.id and a0.number = 0 left outer join sys.args a1 on a1.func_id = f.id and a1.number = 1 left outer join sys.args a2 on a2.func_id = f.id and a2.number = 2 left outer join sys.args a3 on a3.func_id = f.id and a3.number = 3 left outer join sys.args a4 on a4.func_id = f.id and a4.number = 4 left outer join sys.args a5 on a5.func_id = f.id and a5.number = 5 left outer join sys.args a6 on a6.func_id = f.id and a6.number = 6 left outer join sys.args a7 on a7.func_id = f.id and a7.number = 7 left outer join sys.args a8 on a8.func_id = f.id and a8.number = 8 left outer join sys.args a9 on a9.func_id = f.id and a9.number = 9 left outer join sys.args a10 on a10.func_id = f.id and a10.number = 10 left outer join sys.args a11 on a11.func_id = f.id and a11.number = 11 left outer join sys.args a12 on a12.func_id = f.id and a12.number = 12 left outer join sys.args a13 on a13.func_id = f.id and a13.number = 13 left outer join sys.args a14 on a14.func_id = f.id and a14.number = 14 left outer join sys.args a15 on a15.func_id = f.id and a15.number = 15 order by s.name, f.name, query, name0, type0, type_digits0, type_scale0, inout0, name1, type1, type_digits1, type_scale1, inout1, name2, type2, type_digits2, type_scale2, inout2, name3, type3, type_digits3, type_scale3, inout3, name4, type4, type_digits4, type_scale4, inout4, name5, type5, type_digits5, type_scale5, inout5, name6, type6, type_digits6, type_scale6, inout6, name7, type7, type_digits7, type_scale7, inout7, name8, type8, type_digits8, type_scale8, inout8, name9, type9, type_digits9, type_scale9, inout9, name10, type10, type_digits10, type_scale10, inout10, name11, type11, type_digits11, type_scale11, inout11, name12, type12, type_digits12, type_scale12, inout12, name13, type13, type_digits13, type_scale13, inout13, name14, type14, type_digits14, type_scale14, inout14, name15, type15, type_digits15, type_scale15, inout15;
+select s.name, f.name, case f.system when true then 'SYSTEM' else '' end as system, replace(replace(replace(pcre_replace(pcre_replace(pcre_replace(f.func, E'--.*\n', '', ''), E'[ \t\n]+', ' ', 'm'), '^ ', '', ''), '( ', '('), ' )', ')'), 'create system ', 'create ') as query, f.mod, fl.language_name, ft.function_type_name, f.side_effect, f.varres, f.vararg, a0.name as name0, a0.type as type0, a0.type_digits as type_digits0, a0.type_scale as type_scale0, case a0.inout when 0 then 'out' when 1 then 'in' end as inout0, a1.name as name1, a1.type as type1, a1.type_digits as type_digits1, a1.type_scale as type_scale1, case a1.inout when 0 then 'out' when 1 then 'in' end as inout1, a2.name as name2, a2.type as type2, a2.type_digits as type_digits2, a2.type_scale as type_scale2, case a2.inout when 0 then 'out' when 1 then 'in' end as inout2, a3.name as name3, a3.type as type3, a3.type_digits as type_digits3, a3.type_scale as type_scale3, case a3.inout when 0 then 'out' when 1 then 'in' end as inout3, a4.name as name4, a4.type as type4, a4.type_digits as type_digits4, a4.type_scale as type_scale4, case a4.inout when 0 then 'out' when 1 then 'in' end as inout4, a5.name as name5, a5.type as type5, a5.type_digits as type_digits5, a5.type_scale as type_scale5, case a5.inout when 0 then 'out' when 1 then 'in' end as inout5, a6.name as name6, a6.type as type6, a6.type_digits as type_digits6, a6.type_scale as type_scale6, case a6.inout when 0 then 'out' when 1 then 'in' end as inout6, a7.name as name7, a7.type as type7, a7.type_digits as type_digits7, a7.type_scale as type_scale7, case a7.inout when 0 then 'out' when 1 then 'in' end as inout7, a8.name as name8, a8.type as type8, a8.type_digits as type_digits8, a8.type_scale as type_scale8, case a8.inout when 0 then 'out' when 1 then 'in' end as inout8, a9.name as name9, a9.type as type9, a9.type_digits as type_digits9, a9.type_scale as type_scale9, case a9.inout when 0 then 'out' when 1 then 'in' end as inout9, a10.name as name10, a10.type as type10, a10.type_digits as type_digits10, a10.type_scale as type_scale10, case a10.inout when 0 then 'out' when 1 then 'in' end as inout10, a11.name as name11, a11.type as type11, a11.type_digits as type_digits11, a11.type_scale as type_scale11, case a11.inout when 0 then 'out' when 1 then 'in' end as inout11, a12.name as name12, a12.type as type12, a12.type_digits as type_digits12, a12.type_scale as type_scale12, case a12.inout when 0 then 'out' when 1 then 'in' end as inout12, a13.name as name13, a13.type as type13, a13.type_digits as type_digits13, a13.type_scale as type_scale13, case a13.inout when 0 then 'out' when 1 then 'in' end as inout13, a14.name as name14, a14.type as type14, a14.type_digits as type_digits14, a14.type_scale as type_scale14, case a14.inout when 0 then 'out' when 1 then 'in' end as inout14, a15.name as name15, a15.type as type15, a15.type_digits as type_digits15, a15.type_scale as type_scale15, case a15.inout when 0 then 'out' when 1 then 'in' end as inout15 from sys.functions f left outer join sys.schemas s on f.schema_id = s.id left outer join sys.function_types as ft on f.type = ft.function_type_id left outer join sys.function_languages fl on f.language = fl.language_id left outer join sys.args a0 on a0.func_id = f.id and a0.number = 0 left outer join sys.args a1 on a1.func_id = f.id and a1.number = 1 left outer join sys.args a2 on a2.func_id = f.id and a2.number = 2 left outer join sys.args a3 on a3.func_id = f.id and a3.number = 3 left outer join sys.args a4 on a4.func_id = f.id and a4.number = 4 left outer join sys.args a5 on a5.func_id = f.id and a5.number = 5 left outer join sys.args a6 on a6.func_id = f.id and a6.number = 6 left outer join sys.args a7 on a7.func_id = f.id and a7.number = 7 left outer join sys.args a8 on a8.func_id = f.id and a8.number = 8 left outer join sys.args a9 on a9.func_id = f.id and a9.number = 9 left outer join sys.args a10 on a10.func_id = f.id and a10.number = 10 left outer join sys.args a11 on a11.func_id = f.id and a11.number = 11 left outer join sys.args a12 on a12.func_id = f.id and a12.number = 12 left outer join sys.args a13 on a13.func_id = f.id and a13.number = 13 left outer join sys.args a14 on a14.func_id = f.id and a14.number = 14 left outer join sys.args a15 on a15.func_id = f.id and a15.number = 15 order by s.name, f.name, query, name0, type0, type_digits0, type_scale0, inout0, name1, type1, type_digits1, type_scale1, inout1, name2, type2, type_digits2, type_scale2, inout2, name3, type3, type_digits3, type_scale3, inout3, name4, type4, type_digits4, type_scale4, inout4, name5, type5, type_digits5, type_scale5, inout5, name6, type6, type_digits6, type_scale6, inout6, name7, type7, type_digits7, type_scale7, inout7, name8, type8, type_digits8, type_scale8, inout8, name9, type9, type_digits9, type_scale9, inout9, name10, type10, type_digits10, type_scale10, inout10, name11, type11, type_digits11, type_scale11, inout11, name12, type12, type_digits12, type_scale12, inout12, name13, type13, type_digits13, type_scale13, inout13, name14, type14, type_digits14, type_scale14, inout14, name15, type15, type_digits15, type_scale15, inout15;
 -- auths
 select name, grantor from sys.auths;
 -- comments
@@ -1424,8 +1436,8 @@ drop function pcre_replace(string, string, string, string);
 [ "tmp",	2,	3,	true	]
 [ "wlc",	3,	3,	true	]
 [ "wlr",	3,	3,	true	]
-#select s.name, t.name, replace(replace(pcre_replace(pcre_replace(t.query, '--.*\n*', '', ''), '[ \t\n]+', ' ', ''), '( ', '('), ' )', ')') as query, tt.table_type_name as type, t.system, ca.action_name as commit_action, at.value as access from sys._tables t left outer join sys.schemas s on t.schema_id = s.id left outer join sys.table_types tt on t.type = tt.table_type_id left outer join (values (0, 'COMMIT'), (1, 'DELETE'), (2, 'PRESERVE'), (3, 'DROP'), (4, 'ABORT')) as ca (action_id, action_name) on t.commit_action = ca.action_id left outer join (values (0, 'WRITABLE'), (1, 'READONLY'), (2, 'APPENDONLY')) as at (id, value) on t.access = at.id order by s.name, t.name;
-% .s,	.t,	.,	.tt,	.t,	.ca,	.at # table_name
+#select s.name, t.name, replace(replace(pcre_replace(pcre_replace(t.query, E'--.*\n*', '', ''), E'[ \t\n]+', ' ', ''), '( ', '('), ' )', ')') as query, tt.table_type_name as type, t.system, ca.action_name as commit_action, at.value as access from sys._tables t left outer join sys.schemas s on t.schema_id = s.id left outer join sys.table_types tt on t.type = tt.table_type_id left outer join (values (0, 'COMMIT'), (1, 'DELETE'), (2, 'PRESERVE'), (3, 'DROP'), (4, 'ABORT')) as ca (action_id, action_name) on t.commit_action = ca.action_id left outer join (values (0, 'WRITABLE'), (1, 'READONLY'), (2, 'APPENDONLY')) as at (id, value) on t.access = at.id order by s.name, t.name;
+% .s,	.t,	.,	.,	.t,	.,	. # table_name
 % name,	name,	query,	type,	system,	commit_action,	access # name
 % varchar,	varchar,	varchar,	varchar,	boolean,	char,	char # type
 % 3,	34,	2809,	5,	5,	8,	10 # length
@@ -1487,6 +1499,8 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"netcdf_vars",	NULL,	"TABLE",	true,	"COMMIT",	"WRITABLE"	]
 [ "sys",	"objects",	NULL,	"TABLE",	true,	"COMMIT",	"WRITABLE"	]
 [ "sys",	"optimizers",	"create view sys.optimizers as select * from sys.optimizers();",	"VIEW",	true,	"COMMIT",	"WRITABLE"	]
+[ "sys",	"prepared_statements",	"create view sys.prepared_statements as select * from sys.prepared_statements();",	"VIEW",	true,	"COMMIT",	"WRITABLE"	]
+[ "sys",	"prepared_statements_args",	"create view sys.prepared_statements_args as select * from sys.prepared_statements_args();",	"VIEW",	true,	"COMMIT",	"WRITABLE"	]
 [ "sys",	"privilege_codes",	NULL,	"TABLE",	true,	"COMMIT",	"READONLY"	]
 [ "sys",	"privileges",	NULL,	"TABLE",	true,	"COMMIT",	"WRITABLE"	]
 [ "sys",	"querylog_calls",	"create view sys.querylog_calls as select * from sys.querylog_calls();",	"VIEW",	true,	"COMMIT",	"WRITABLE"	]
@@ -1897,6 +1911,20 @@ drop function pcre_replace(string, string, string, string);
 [ "pg",	"cl",	"clob",	0,	0,	NULL,	true,	3,	NULL	]
 [ "pg",	"pp",	"clob",	0,	0,	NULL,	true,	4,	NULL	]
 [ "pg",	"vn",	"clob",	0,	0,	NULL,	true,	5,	NULL	]
+[ "prepared_statements",	"sessionid",	"int",	32,	0,	NULL,	true,	0,	NULL	]
+[ "prepared_statements",	"username",	"clob",	0,	0,	NULL,	true,	1,	NULL	]
+[ "prepared_statements",	"statementid",	"int",	32,	0,	NULL,	true,	2,	NULL	]
+[ "prepared_statements",	"statement",	"clob",	0,	0,	NULL,	true,	3,	NULL	]
+[ "prepared_statements",	"created",	"timestamp",	7,	0,	NULL,	true,	4,	NULL	]
+[ "prepared_statements_args",	"statementid",	"int",	32,	0,	NULL,	true,	0,	NULL	]
+[ "prepared_statements_args",	"type",	"clob",	0,	0,	NULL,	true,	1,	NULL	]
+[ "prepared_statements_args",	"type_digits",	"int",	32,	0,	NULL,	true,	2,	NULL	]
+[ "prepared_statements_args",	"type_scale",	"int",	32,	0,	NULL,	true,	3,	NULL	]
+[ "prepared_statements_args",	"inout",	"tinyint",	8,	0,	NULL,	true,	4,	NULL	]
+[ "prepared_statements_args",	"number",	"int",	32,	0,	NULL,	true,	5,	NULL	]
+[ "prepared_statements_args",	"schema",	"clob",	0,	0,	NULL,	true,	6,	NULL	]
+[ "prepared_statements_args",	"table",	"clob",	0,	0,	NULL,	true,	7,	NULL	]
+[ "prepared_statements_args",	"column",	"clob",	0,	0,	NULL,	true,	8,	NULL	]
 [ "privilege_codes",	"privilege_code_id",	"int",	32,	0,	NULL,	false,	0,	NULL	]
 [ "privilege_codes",	"privilege_code_name",	"varchar",	40,	0,	NULL,	false,	1,	NULL	]
 [ "privileges",	"obj_id",	"int",	32,	0,	NULL,	true,	0,	NULL	]
@@ -1939,7 +1967,7 @@ drop function pcre_replace(string, string, string, string);
 [ "querylog_history",	"io",	"int",	32,	0,	NULL,	true,	15,	NULL	]
 [ "queue",	"qtag",	"bigint",	64,	0,	NULL,	true,	0,	NULL	]
 [ "queue",	"sessionid",	"int",	32,	0,	NULL,	true,	1,	NULL	]
-[ "queue",	"user",	"clob",	0,	0,	NULL,	true,	2,	NULL	]
+[ "queue",	"username",	"clob",	0,	0,	NULL,	true,	2,	NULL	]
 [ "queue",	"started",	"timestamp",	7,	0,	NULL,	true,	3,	NULL	]
 [ "queue",	"estimate",	"timestamp",	7,	0,	NULL,	true,	4,	NULL	]
 [ "queue",	"progress",	"int",	32,	0,	NULL,	true,	5,	NULL	]
@@ -1993,7 +2021,7 @@ drop function pcre_replace(string, string, string, string);
 [ "sequences",	"cacheinc",	"bigint",	64,	0,	NULL,	true,	7,	NULL	]
 [ "sequences",	"cycle",	"boolean",	1,	0,	NULL,	true,	8,	NULL	]
 [ "sessions",	"sessionid",	"int",	32,	0,	NULL,	true,	0,	NULL	]
-[ "sessions",	"user",	"clob",	0,	0,	NULL,	true,	1,	NULL	]
+[ "sessions",	"username",	"clob",	0,	0,	NULL,	true,	1,	NULL	]
 [ "sessions",	"login",	"timestamp",	7,	0,	NULL,	true,	2,	NULL	]
 [ "sessions",	"sessiontimeout",	"bigint",	64,	0,	NULL,	true,	3,	NULL	]
 [ "sessions",	"lastcommand",	"timestamp",	7,	0,	NULL,	true,	4,	NULL	]
@@ -2160,8 +2188,8 @@ drop function pcre_replace(string, string, string, string);
 % sname,	name,	modfunc # name
 % varchar,	varchar,	varchar # type
 % 0,	0,	0 # length
-#select s.name, f.name, case f.system when true then 'SYSTEM' else '' end as system, replace(replace(replace(pcre_replace(pcre_replace(pcre_replace(f.func, '--.*\n', '', ''), '[ \t\n]+', ' ', 'm'), '^ ', '', ''), '( ', '('), ' )', ')'), 'create system ', 'create ') as query, f.mod, fl.language_name, ft.function_type_name, f.side_effect, f.varres, f.vararg, a0.name as name0, a0.type as type0, a0.type_digits as type_digits0, a0.type_scale as type_scale0, case a0.inout when 0 then 'out' when 1 then 'in' end as inout0, a1.name as name1, a1.type as type1, a1.type_digits as type_digits1, a1.type_scale as type_scale1, case a1.inout when 0 then 'out' when 1 then 'in' end as inout1, a2.name as name2, a2.type as type2, a2.type_digits as type_digits2, a2.type_scale as type_scale2, case a2.inout when 0 then 'out' when 1 then 'in' end as inout2, a3.name as name3, a3.type as type3, a3.type_digits as type_digits3, a3.type_scale as type_scale3, case a3.inout when 0 then 'out' when 1 then 'in' end as inout3, a4.name as name4, a4.type as type4, a4.type_digits as type_digits4, a4.type_scale as type_scale4, case a4.inout when 0 then 'out' when 1 then 'in' end as inout4, a5.name as name5, a5.type as type5, a5.type_digits as type_digits5, a5.type_scale as type_scale5, case a5.inout when 0 then 'out' when 1 then 'in' end as inout5, a6.name as name6, a6.type as type6, a6.type_digits as type_digits6, a6.type_scale as type_scale6, case a6.inout when 0 then 'out' when 1 then 'in' end as inout6, a7.name as name7, a7.type as type7, a7.type_digits as type_digits7, a7.type_scale as type_scale7, case a7.inout when 0 then 'out' when 1 then 'in' end as inout7, a8.name as name8, a8.type as type8, a8.type_digits as type_digits8, a8.type_scale as type_scale8, case a8.inout when 0 then 'out' when 1 then 'in' end as inout8, a9.name as name9, a9.type as type9, a9.type_digits as type_digits9, a9.type_scale as type_scale9, case a9.inout when 0 then 'out' when 1 then 'in' end as inout9, a10.name as name10, a10.type as type10, a10.type_digits as type_digits10, a10.type_scale as type_scale10, case a10.inout when 0 then 'out' when 1 then 'in' end as inout10, a11.name as name11, a11.type as type11, a11.type_digits as type_digits11, a11.type_scale as type_scale11, case a11.inout when 0 then 'out' when 1 then 'in' end as inout11, a12.name as name12, a12.type as type12, a12.type_digits as type_digits12, a12.type_scale as type_scale12, case a12.inout when 0 then 'out' when 1 then 'in' end as inout12, a13.name as name13, a13.type as type13, a13.type_digits as type_digits13, a13.type_scale as type_scale13, case a13.inout when 0 then 'out' when 1 then 'in' end as inout13, a14.name as name14, a14.type as type14, a14.type_digits as type_digits14, a14.type_scale as type_scale14, case a14.inout when 0 then 'out' when 1 then 'in' end as inout14, a15.name as name15, a15.type as type15, a15.type_digits as type_digits15, a15.type_scale as type_scale15, case a15.inout when 0 then 'out' when 1 then 'in' end as inout15 from sys.functions f left outer join sys.schemas s on f.schema_id = s.id left outer join sys.function_types as ft on f.type = ft.function_type_id left outer join sys.function_languages fl on f.language = fl.language_id left outer join sys.args a0 on a0.func_id = f.id and a0.number = 0 left outer join sys.args a1 on a1.func_id = f.id and a1.number = 1 left outer join sys.args a2 on a2.func_id = f.id and a2.number = 2 left outer join sys.args a3 on a3.func_id = f.id and a3.number = 3 left outer join sys.args a4 on a4.func_id = f.id and a4.number = 4 left outer join sys.args a5 on a5.func_id = f.id and a5.number = 5 left outer join sys.args a6 on a6.func_id = f.id and a6.number = 6 left outer join sys.args a7 on a7.func_id = f.id and a7.number = 7 left outer join sys.args a8 on a8.func_id = f.id and a8.number = 8 left outer join sys.args a9 on a9.func_id = f.id and a9.number = 9 left outer join sys.args a10 on a10.func_id = f.id and a10.number = 10 left outer join sys.args a11 on a11.func_id = f.id and a11.number = 11 left outer join sys.args a12 on a12.func_id = f.id and a12.number = 12 left outer join sys.args a13 on a13.func_id = f.id and a13.number = 13 left outer join sys.args a14 on a14.func_id = f.id and a14.number = 14 left outer join sys.args a15 on a15.func_id = f.id and a15.number = 15 order by s.name, f.name, query, name0, type0, type_digits0, type_scale0, inout0, name1, type1, type_digits1, type_scale1, inout1, name2, type2, type_digits2, type_scale2, inout2, name3, type3, type_digits3, type_scale3, inout3, name4, type4, type_digits4, type_scale4, inout4, name5, type5, type_digits5, type_scale5, inout5, name6, type6, type_digits6, type_scale6, inout6, name7, type7, type_digits7, type_scale7, inout7, name8, type8, type_digits8, type_scale8, inout8, name9, type9, type_digits9, type_scale9, inout9, name10, type10, type_digits10, type_scale10, inout10, name11, type11, type_digits11, type_scale11, inout11, name12, type12, type_digits12, type_scale12, inout12, name13, type13, type_digits13, type_scale13, inout13, name14, type14, type_digits14, type_scale14, inout14, name15, type15, type_digits15, type_scale15, inout15;
-% .s,	.f,	.,	.,	.f,	.fl,	.ft,	.f,	.f,	.f,	.a0,	.a0,	.a0,	.a0,	.,	.a1,	.a1,	.a1,	.a1,	.,	.a2,	.a2,	.a2,	.a2,	.,	.a3,	.a3,	.a3,	.a3,	.,	.a4,	.a4,	.a4,	.a4,	.,	.a5,	.a5,	.a5,	.a5,	.,	.a6,	.a6,	.a6,	.a6,	.,	.a7,	.a7,	.a7,	.a7,	.,	.a8,	.a8,	.a8,	.a8,	.,	.a9,	.a9,	.a9,	.a9,	.,	.a10,	.a10,	.a10,	.a10,	.,	.a11,	.a11,	.a11,	.a11,	.,	.a12,	.a12,	.a12,	.a12,	.,	.a13,	.a13,	.a13,	.a13,	.,	.a14,	.a14,	.a14,	.a14,	.,	.a15,	.a15,	.a15,	.a15,	. # table_name
+#select s.name, f.name, case f.system when true then 'SYSTEM' else '' end as system, replace(replace(replace(pcre_replace(pcre_replace(pcre_replace(f.func, E'--.*\n', '', ''), E'[ \t\n]+', ' ', 'm'), '^ ', '', ''), '( ', '('), ' )', ')'), 'create system ', 'create ') as query, f.mod, fl.language_name, ft.function_type_name, f.side_effect, f.varres, f.vararg, a0.name as name0, a0.type as type0, a0.type_digits as type_digits0, a0.type_scale as type_scale0, case a0.inout when 0 then 'out' when 1 then 'in' end as inout0, a1.name as name1, a1.type as type1, a1.type_digits as type_digits1, a1.type_scale as type_scale1, case a1.inout when 0 then 'out' when 1 then 'in' end as inout1, a2.name as name2, a2.type as type2, a2.type_digits as type_digits2, a2.type_scale as type_scale2, case a2.inout when 0 then 'out' when 1 then 'in' end as inout2, a3.name as name3, a3.type as type3, a3.type_digits as type_digits3, a3.type_scale as type_scale3, case a3.inout when 0 then 'out' when 1 then 'in' end as inout3, a4.name as name4, a4.type as type4, a4.type_digits as type_digits4, a4.type_scale as type_scale4, case a4.inout when 0 then 'out' when 1 then 'in' end as inout4, a5.name as name5, a5.type as type5, a5.type_digits as type_digits5, a5.type_scale as type_scale5, case a5.inout when 0 then 'out' when 1 then 'in' end as inout5, a6.name as name6, a6.type as type6, a6.type_digits as type_digits6, a6.type_scale as type_scale6, case a6.inout when 0 then 'out' when 1 then 'in' end as inout6, a7.name as name7, a7.type as type7, a7.type_digits as type_digits7, a7.type_scale as type_scale7, case a7.inout when 0 then 'out' when 1 then 'in' end as inout7, a8.name as name8, a8.type as type8, a8.type_digits as type_digits8, a8.type_scale as type_scale8, case a8.inout when 0 then 'out' when 1 then 'in' end as inout8, a9.name as name9, a9.type as type9, a9.type_digits as type_digits9, a9.type_scale as type_scale9, case a9.inout when 0 then 'out' when 1 then 'in' end as inout9, a10.name as name10, a10.type as type10, a10.type_digits as type_digits10, a10.type_scale as type_scale10, case a10.inout when 0 then 'out' when 1 then 'in' end as inout10, a11.name as name11, a11.type as type11, a11.type_digits as type_digits11, a11.type_scale as type_scale11, case a11.inout when 0 then 'out' when 1 then 'in' end as inout11, a12.name as name12, a12.type as type12, a12.type_digits as type_digits12, a12.type_scale as type_scale12, case a12.inout when 0 then 'out' when 1 then 'in' end as inout12, a13.name as name13, a13.type as type13, a13.type_digits as type_digits13, a13.type_scale as type_scale13, case a13.inout when 0 then 'out' when 1 then 'in' end as inout13, a14.name as name14, a14.type as type14, a14.type_digits as type_digits14, a14.type_scale as type_scale14, case a14.inout when 0 then 'out' when 1 then 'in' end as inout14, a15.name as name15, a15.type as type15, a15.type_digits as type_digits15, a15.type_scale as type_scale15, case a15.inout when 0 then 'out' when 1 then 'in' end as inout15 from sys.functions f left outer join sys.schemas s on f.schema_id = s.id left outer join sys.function_types as ft on f.type = ft.function_type_id left outer join sys.function_languages fl on f.language = fl.language_id left outer join sys.args a0 on a0.func_id = f.id and a0.number = 0 left outer join sys.args a1 on a1.func_id = f.id and a1.number = 1 left outer join sys.args a2 on a2.func_id = f.id and a2.number = 2 left outer join sys.args a3 on a3.func_id = f.id and a3.number = 3 left outer join sys.args a4 on a4.func_id = f.id and a4.number = 4 left outer join sys.args a5 on a5.func_id = f.id and a5.number = 5 left outer join sys.args a6 on a6.func_id = f.id and a6.number = 6 left outer join sys.args a7 on a7.func_id = f.id and a7.number = 7 left outer join sys.args a8 on a8.func_id = f.id and a8.number = 8 left outer join sys.args a9 on a9.func_id = f.id and a9.number = 9 left outer join sys.args a10 on a10.func_id = f.id and a10.number = 10 left outer join sys.args a11 on a11.func_id = f.id and a11.number = 11 left outer join sys.args a12 on a12.func_id = f.id and a12.number = 12 left outer join sys.args a13 on a13.func_id = f.id and a13.number = 13 left outer join sys.args a14 on a14.func_id = f.id and a14.number = 14 left outer join sys.args a15 on a15.func_id = f.id and a15.number = 15 order by s.name, f.name, query, name0, type0, type_digits0, type_scale0, inout0, name1, type1, type_digits1, type_scale1, inout1, name2, type2, type_digits2, type_scale2, inout2, name3, type3, type_digits3, type_scale3, inout3, name4, type4, type_digits4, type_scale4, inout4, name5, type5, type_digits5, type_scale5, inout5, name6, type6, type_digits6, type_scale6, inout6, name7, type7, type_digits7, type_scale7, inout7, name8, type8, type_digits8, type_scale8, inout8, name9, type9, type_digits9, type_scale9, inout9, name10, type10, type_digits10, type_scale10, inout10, name11, type11, type_digits11, type_scale11, inout11, name12, type12, type_digits12, type_scale12, inout12, name13, type13, type_digits13, type_scale13, inout13, name14, type14, type_digits14, type_scale14, inout14, name15, type15, type_digits15, type_scale15, inout15;
+% .s,	.f,	.,	.,	.f,	.fl,	.ft,	.f,	.f,	.f,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	. # table_name
 % name,	name,	system,	query,	mod,	language_name,	function_type_name,	side_effect,	varres,	vararg,	name0,	type0,	type_digits0,	type_scale0,	inout0,	name1,	type1,	type_digits1,	type_scale1,	inout1,	name2,	type2,	type_digits2,	type_scale2,	inout2,	name3,	type3,	type_digits3,	type_scale3,	inout3,	name4,	type4,	type_digits4,	type_scale4,	inout4,	name5,	type5,	type_digits5,	type_scale5,	inout5,	name6,	type6,	type_digits6,	type_scale6,	inout6,	name7,	type7,	type_digits7,	type_scale7,	inout7,	name8,	type8,	type_digits8,	type_scale8,	inout8,	name9,	type9,	type_digits9,	type_scale9,	inout9,	name10,	type10,	type_digits10,	type_scale10,	inout10,	name11,	type11,	type_digits11,	type_scale11,	inout11,	name12,	type12,	type_digits12,	type_scale12,	inout12,	name13,	type13,	type_digits13,	type_scale13,	inout13,	name14,	type14,	type_digits14,	type_scale14,	inout14,	name15,	type15,	type_digits15,	type_scale15,	inout15 # name
 % varchar,	varchar,	char,	varchar,	varchar,	varchar,	varchar,	boolean,	boolean,	boolean,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char # type
 % 8,	24,	6,	1362,	9,	10,	26,	5,	5,	5,	11,	14,	4,	1,	3,	16,	14,	4,	1,	3,	16,	14,	4,	1,	3,	27,	12,	4,	1,	3,	11,	9,	2,	1,	3,	12,	14,	4,	1,	3,	8,	14,	2,	1,	3,	9,	7,	2,	1,	3,	10,	7,	2,	1,	3,	8,	6,	2,	1,	3,	6,	6,	2,	1,	3,	6,	7,	1,	1,	3,	8,	6,	2,	1,	3,	6,	7,	1,	1,	3,	9,	7,	1,	1,	3,	6,	7,	1,	1,	3 # length
@@ -2467,7 +2495,7 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"insert",	"SYSTEM",	"insert",	"str",	"Internal C",	"Scalar function",	false,	false,	false,	"res_0",	"clob",	0,	0,	"out",	"arg_1",	"clob",	0,	0,	"in",	"arg_2",	"int",	32,	0,	"in",	"arg_3",	"int",	32,	0,	"in",	"arg_4",	"clob",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"insert",	"SYSTEM",	"insert",	"str",	"Internal C",	"Scalar function",	false,	false,	false,	"res_0",	"varchar",	0,	0,	"out",	"arg_1",	"varchar",	0,	0,	"in",	"arg_2",	"int",	32,	0,	"in",	"arg_3",	"int",	32,	0,	"in",	"arg_4",	"varchar",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"internaltransform",	"SYSTEM",	"create function internaltransform(geom geometry, srid_src integer, srid_dest integer, proj4_src string, proj4_dest string) returns geometry external name geom.\"Transform\";",	"geom",	"MAL",	"Scalar function",	false,	false,	false,	"result",	"geometry",	0,	0,	"out",	"geom",	"geometry",	0,	0,	"in",	"srid_src",	"int",	32,	0,	"in",	"srid_dest",	"int",	32,	0,	"in",	"proj4_src",	"clob",	0,	0,	"in",	"proj4_dest",	"clob",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ "sys",	"isaurl",	"SYSTEM",	"create function isaurl(theurl url) returns bool external name url.\"isaURL\";",	"url",	"MAL",	"Scalar function",	false,	false,	false,	"result",	"boolean",	1,	0,	"out",	"theurl",	"url",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys",	"isaurl",	"SYSTEM",	"create function isaurl(theurl string) returns bool external name url.\"isaURL\";",	"url",	"MAL",	"Scalar function",	false,	false,	false,	"result",	"boolean",	1,	0,	"out",	"theurl",	"clob",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"isauuid",	"SYSTEM",	"create function sys.isauuid(s string) returns boolean external name uuid.\"isaUUID\";",	"uuid",	"MAL",	"Scalar function",	false,	false,	false,	"result",	"boolean",	1,	0,	"out",	"s",	"clob",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"isnull",	"SYSTEM",	"isnil",	"calc",	"Internal C",	"Scalar function",	false,	false,	false,	"res_0",	"boolean",	1,	0,	"out",	"arg_1",	"any",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"lag",	"SYSTEM",	"lag",	"sql",	"Internal C",	"Analytic function",	false,	false,	false,	"res_0",	"any",	0,	0,	"out",	"arg_1",	"any",	0,	0,	"in",	"arg_2",	"bigint",	64,	0,	"in",	"arg_3",	"any",	0,	0,	"in",	"arg_4",	"boolean",	1,	0,	"in",	"arg_5",	"boolean",	1,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
@@ -2690,6 +2718,8 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"pi",	"SYSTEM",	"pi",	"mmath",	"Internal C",	"Scalar function",	false,	false,	false,	"res_0",	"double",	53,	0,	"out",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"power",	"SYSTEM",	"pow",	"mmath",	"Internal C",	"Scalar function",	false,	false,	false,	"res_0",	"double",	53,	0,	"out",	"arg_1",	"double",	53,	0,	"in",	"arg_2",	"double",	53,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"power",	"SYSTEM",	"pow",	"mmath",	"Internal C",	"Scalar function",	false,	false,	false,	"res_0",	"real",	24,	0,	"out",	"arg_1",	"real",	24,	0,	"in",	"arg_2",	"real",	24,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys",	"prepared_statements",	"SYSTEM",	"create function sys.prepared_statements() returns table(\"sessionid\" int, \"username\" string, \"statementid\" int, \"statement\" string, \"created\" timestamp) external name sql.prepared_statements;",	"sql",	"MAL",	"Function returning a table",	true,	false,	false,	"sessionid",	"int",	32,	0,	"out",	"username",	"clob",	0,	0,	"out",	"statementid",	"int",	32,	0,	"out",	"statement",	"clob",	0,	0,	"out",	"created",	"timestamp",	7,	0,	"out",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys",	"prepared_statements_args",	"SYSTEM",	"create function sys.prepared_statements_args() returns table(\"statementid\" int, \"type\" string, \"type_digits\" int, \"type_scale\" int, \"inout\" tinyint, \"number\" int, \"schema\" string, \"table\" string, \"column\" string) external name sql.prepared_statements_args;",	"sql",	"MAL",	"Function returning a table",	true,	false,	false,	"statementid",	"int",	32,	0,	"out",	"type",	"clob",	0,	0,	"out",	"type_digits",	"int",	32,	0,	"out",	"type_scale",	"int",	32,	0,	"out",	"inout",	"tinyint",	8,	0,	"out",	"number",	"int",	32,	0,	"out",	"schema",	"clob",	0,	0,	"out",	"table",	"clob",	0,	0,	"out",	"column",	"clob",	0,	0,	"out",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"prod",	"SYSTEM",	"prod",	"aggr",	"Internal C",	"Aggregate function",	false,	false,	false,	"res",	"bigint",	64,	0,	"out",	"arg",	"bigint",	64,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"prod",	"SYSTEM",	"prod",	"aggr",	"Internal C",	"Aggregate function",	false,	false,	false,	"res",	"bigint",	64,	0,	"out",	"arg",	"int",	32,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"prod",	"SYSTEM",	"prod",	"aggr",	"Internal C",	"Aggregate function",	false,	false,	false,	"res",	"bigint",	64,	0,	"out",	"arg",	"smallint",	16,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
@@ -4017,12 +4047,14 @@ drop function pcre_replace(string, string, string, string);
 % sys.s1,	sys.f1,	sys.s2,	sys.t2,	.dt # table_name
 % name,	name,	name,	name,	dependency_type_name # name
 % varchar,	varchar,	varchar,	varchar,	varchar # type
-% 3,	16,	3,	17,	4 # length
+% 3,	24,	3,	24,	4 # length
 [ "sys",	"env",	"sys",	"environment",	"VIEW"	]
 [ "sys",	"get_type",	"sys",	"geometry_columns",	"VIEW"	]
 [ "sys",	"has_m",	"sys",	"geometry_columns",	"VIEW"	]
 [ "sys",	"has_z",	"sys",	"geometry_columns",	"VIEW"	]
 [ "sys",	"optimizers",	"sys",	"optimizers",	"VIEW"	]
+[ "sys",	"prepared_statements",	"sys",	"prepared_statements",	"VIEW"	]
+[ "sys",	"prepared_statements_args",	"sys",	"prepared_statements_args",	"VIEW"	]
 [ "sys",	"querylog_calls",	"sys",	"querylog_calls",	"VIEW"	]
 [ "sys",	"querylog_catalog",	"sys",	"querylog_catalog",	"VIEW"	]
 [ "sys",	"querylog_calls",	"sys",	"querylog_history",	"VIEW"	]
@@ -4638,7 +4670,6 @@ drop function pcre_replace(string, string, string, string);
 [ "url",	"url",	"sys",	"getuser",	"TYPE"	]
 [ "inet",	"inet",	"sys",	"host",	"TYPE"	]
 [ "inet",	"inet",	"sys",	"hostmask",	"TYPE"	]
-[ "url",	"url",	"sys",	"isaurl",	"TYPE"	]
 [ "inet",	"inet",	"sys",	"left_shift",	"TYPE"	]
 [ "inet",	"inet",	"sys",	"left_shift_assign",	"TYPE"	]
 [ "inet",	"inet",	"sys",	"masklen",	"TYPE"	]
@@ -4833,6 +4864,8 @@ drop function pcre_replace(string, string, string, string);
 [ "netcdf_vars",	"public",	"SELECT",	"monetdb",	0	]
 [ "objects",	"public",	"SELECT",	NULL,	0	]
 [ "pg",	"public",	"SELECT",	"monetdb",	0	]
+[ "prepared_statements",	"public",	"SELECT",	"monetdb",	0	]
+[ "prepared_statements_args",	"public",	"SELECT",	"monetdb",	0	]
 [ "privilege_codes",	"public",	"SELECT",	"monetdb",	0	]
 [ "privileges",	"public",	"SELECT",	NULL,	0	]
 [ "queue",	"public",	"SELECT",	"monetdb",	0	]
@@ -4861,7 +4894,7 @@ drop function pcre_replace(string, string, string, string);
 % sys.f,	sys.a,	.pc,	.g,	.p # table_name
 % name,	name,	privilege_code_name,	name,	grantable # name
 % varchar,	varchar,	varchar,	varchar,	int # type
-% 20,	6,	7,	7,	1 # length
+% 24,	6,	7,	7,	1 # length
 [ "abbrev",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "alpha",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "bam_drop_file",	"public",	"EXECUTE",	"monetdb",	0	]
@@ -4964,6 +4997,8 @@ drop function pcre_replace(string, string, string, string);
 [ "newurl",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "number",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "output",	"public",	"EXECUTE",	"monetdb",	0	]
+[ "prepared_statements",	"public",	"EXECUTE",	"monetdb",	0	]
+[ "prepared_statements_args",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "quantile",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "quantile",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "quantile",	"public",	"EXECUTE",	"monetdb",	0	]
@@ -5189,7 +5224,7 @@ drop function pcre_replace(string, string, string, string);
 [ "_tables",	"system_update_tables",	"AFTER",	"STATEMENT",	"UPDATE",	NULL,	NULL,	NULL,	"create trigger system_update_tables after update on sys._tables for each statement call sys_update_tables();"	]
 [ "schemas",	"system_update_schemas",	"AFTER",	"STATEMENT",	"UPDATE",	NULL,	NULL,	NULL,	"create trigger system_update_schemas after update on sys.schemas for each statement call sys_update_schemas();"	]
 #select s.name, t.systemname, t.sqlname, t.digits, t.scale, t.radix, et.value as eclass from sys.types t left outer join sys.schemas s on s.id = t.schema_id left outer join (values (0, 'ANY'), (1, 'TABLE'), (2, 'BIT'), (3, 'CHAR'), (4, 'STRING'), (5, 'BLOB'), (6, 'POS'), (7, 'NUM'), (8, 'MONTH'), (9, 'SEC'), (10, 'DEC'), (11, 'FLT'), (12, 'TIME'), (13, 'DATE'), (14, 'TIMESTAMP'), (15, 'GEOM'), (16, 'EXTERNAL')) as et (id, value) on t.eclass = et.id order by s.name, t.systemname, t.sqlname, t.digits, t.scale, t.radix, eclass;
-% .s,	.t,	.t,	.t,	.t,	.t,	.et # table_name
+% .s,	.t,	.t,	.t,	.t,	.t,	. # table_name
 % name,	systemname,	sqlname,	digits,	scale,	radix,	eclass # name
 % varchar,	varchar,	varchar,	int,	int,	int,	char # type
 % 3,	9,	14,	2,	1,	2,	9 # length
@@ -5243,11 +5278,14 @@ drop function pcre_replace(string, string, string, string);
 [ "ALL"	]
 [ "ALTER"	]
 [ "ALWAYS"	]
+[ "ANALYZE"	]
 [ "AND"	]
 [ "ANY"	]
 [ "ASC"	]
 [ "ASYMMETRIC"	]
+[ "AT"	]
 [ "ATOMIC"	]
+[ "AUTHORIZATION"	]
 [ "AUTO_INCREMENT"	]
 [ "BEFORE"	]
 [ "BEGIN"	]
@@ -5258,16 +5296,20 @@ drop function pcre_replace(string, string, string, string);
 [ "BINARY"	]
 [ "BLOB"	]
 [ "BY"	]
+[ "CACHE"	]
 [ "CALL"	]
 [ "CASCADE"	]
 [ "CASE"	]
 [ "CAST"	]
+[ "CENTURY"	]
 [ "CHAIN"	]
 [ "CHAR"	]
 [ "CHARACTER"	]
 [ "CHECK"	]
+[ "CLIENT"	]
 [ "CLOB"	]
 [ "COALESCE"	]
+[ "COLUMN"	]
 [ "COMMENT"	]
 [ "COMMIT"	]
 [ "COMMITTED"	]
@@ -5285,16 +5327,26 @@ drop function pcre_replace(string, string, string, string);
 [ "CURRENT_TIME"	]
 [ "CURRENT_TIMESTAMP"	]
 [ "CURRENT_USER"	]
+[ "CYCLE"	]
+[ "DATA"	]
+[ "DATE"	]
 [ "DAY"	]
+[ "DEALLOCATE"	]
+[ "DEBUG"	]
 [ "DEC"	]
+[ "DECADE"	]
 [ "DECIMAL"	]
 [ "DECLARE"	]
 [ "DEFAULT"	]
 [ "DELETE"	]
 [ "DELIMITERS"	]
 [ "DESC"	]
+[ "DIAGNOSTICS"	]
+[ "DISTINCT"	]
 [ "DO"	]
 [ "DOUBLE"	]
+[ "DOW"	]
+[ "DOY"	]
 [ "DROP"	]
 [ "EACH"	]
 [ "EFFORT"	]
@@ -5306,10 +5358,14 @@ drop function pcre_replace(string, string, string, string);
 [ "EVERY"	]
 [ "EXCEPT"	]
 [ "EXCLUDE"	]
+[ "EXEC"	]
+[ "EXECUTE"	]
 [ "EXISTS"	]
+[ "EXPLAIN"	]
 [ "EXTERNAL"	]
 [ "EXTRACT"	]
 [ "FALSE"	]
+[ "FIRST"	]
 [ "FLOAT"	]
 [ "FOLLOWING"	]
 [ "FOR"	]
@@ -5317,11 +5373,13 @@ drop function pcre_replace(string, string, string, string);
 [ "FROM"	]
 [ "FULL"	]
 [ "FUNCTION"	]
+[ "FWF"	]
 [ "GENERATED"	]
 [ "GLOBAL"	]
 [ "GRANT"	]
 [ "GROUP"	]
 [ "GROUPING"	]
+[ "GROUPS"	]
 [ "HAVING"	]
 [ "HOUR"	]
 [ "HUGEINT"	]
@@ -5329,44 +5387,59 @@ drop function pcre_replace(string, string, string, string);
 [ "IF"	]
 [ "ILIKE"	]
 [ "IN"	]
+[ "INCREMENT"	]
 [ "INDEX"	]
 [ "INNER"	]
 [ "INSERT"	]
 [ "INT"	]
 [ "INTEGER"	]
 [ "INTERSECT"	]
+[ "INTERVAL"	]
 [ "INTO"	]
 [ "IS"	]
 [ "ISOLATION"	]
 [ "JOIN"	]
+[ "KEY"	]
+[ "LANGUAGE"	]
+[ "LARGE"	]
+[ "LAST"	]
+[ "LATERAL"	]
 [ "LEFT"	]
+[ "LEVEL"	]
 [ "LIKE"	]
 [ "LIMIT"	]
+[ "LOADER"	]
 [ "LOCAL"	]
 [ "LOCALTIME"	]
 [ "LOCALTIMESTAMP"	]
 [ "LOCKED"	]
+[ "MATCH"	]
+[ "MATCHED"	]
+[ "MAXVALUE"	]
 [ "MEDIUMINT"	]
 [ "MERGE"	]
 [ "MINUTE"	]
+[ "MINVALUE"	]
 [ "MONTH"	]
+[ "NAME"	]
 [ "NATURAL"	]
 [ "NEW"	]
 [ "NEXT"	]
-[ "NOCYCLE"	]
-[ "NOMAXVALUE"	]
-[ "NOMINVALUE"	]
+[ "NO"	]
 [ "NOT"	]
 [ "NOW"	]
 [ "NULL"	]
 [ "NULLIF"	]
+[ "NULLS"	]
 [ "NUMERIC"	]
+[ "OBJECT"	]
 [ "OF"	]
 [ "OFFSET"	]
 [ "OLD"	]
 [ "ON"	]
 [ "ONLY"	]
 [ "OPTION"	]
+[ "OPTIONS"	]
 [ "OR"	]
 [ "ORDER"	]
 [ "OTHERS"	]
@@ -5374,22 +5447,30 @@ drop function pcre_replace(string, string, string, string);
 [ "OVER"	]
 [ "PARTIAL"	]
 [ "PARTITION"	]
+[ "PASSWORD"	]
+[ "PLAN"	]
 [ "POSITION"	]
 [ "PRECEDING"	]
+[ "PRECISION"	]
+[ "PREP"	]
+[ "PREPARE"	]
 [ "PRESERVE"	]
 [ "PRIMARY"	]
 [ "PRIVILEGES"	]
 [ "PROCEDURE"	]
 [ "PUBLIC"	]
+[ "QUARTER"	]
 [ "RANGE"	]
 [ "READ"	]
 [ "REAL"	]
 [ "RECORDS"	]
 [ "REFERENCES"	]
 [ "REFERENCING"	]
+[ "RELEASE"	]
 [ "REMOTE"	]
 [ "RENAME"	]
 [ "REPEATABLE"	]
+[ "REPLACE"	]
 [ "REPLICA"	]
 [ "RESTART"	]
 [ "RESTRICT"	]
@@ -5402,19 +5483,25 @@ drop function pcre_replace(string, string, string, string);
 [ "ROWS"	]
 [ "SAMPLE"	]
 [ "SAVEPOINT"	]
+[ "SCHEMA"	]
 [ "SECOND"	]
+[ "SEED"	]
 [ "SELECT"	]
 [ "SEQUENCE"	]
 [ "SERIAL"	]
 [ "SERIALIZABLE"	]
+[ "SERVER"	]
+[ "SESSION"	]
 [ "SESSION_USER"	]
 [ "SET"	]
 [ "SETS"	]
 [ "SIMPLE"	]
+[ "SIZE"	]
 [ "SMALLINT"	]
 [ "SOME"	]
 [ "SPLIT_PART"	]
 [ "START"	]
+[ "STATEMENT"	]
 [ "STDIN"	]
 [ "STDOUT"	]
 [ "STORAGE"	]
@@ -5422,18 +5509,27 @@ drop function pcre_replace(string, string, string, string);
 [ "STRING"	]
 [ "SUBSTRING"	]
 [ "SYMMETRIC"	]
+[ "TABLE"	]
+[ "TEMP"	]
+[ "TEMPORARY"	]
+[ "TEXT"	]
 [ "THEN"	]
 [ "TIES"	]
+[ "TIME"	]
+[ "TIMESTAMP"	]
 [ "TINYINT"	]
 [ "TO"	]
+[ "TRACE"	]
 [ "TRANSACTION"	]
 [ "TRIGGER"	]
 [ "TRUE"	]
 [ "TRUNCATE"	]
+[ "TYPE"	]
 [ "UNBOUNDED"	]
 [ "UNCOMMITTED"	]
 [ "UNENCRYPTED"	]
 [ "UNION"	]
+[ "UNIONJOIN"	]
 [ "UNIQUE"	]
 [ "UPDATE"	]
 [ "USER"	]
@@ -5442,6 +5538,7 @@ drop function pcre_replace(string, string, string, string);
 [ "VARCHAR"	]
 [ "VARYING"	]
 [ "VIEW"	]
+[ "WEEK"	]
 [ "WHEN"	]
 [ "WHERE"	]
 [ "WHILE"	]
@@ -5463,6 +5560,8 @@ drop function pcre_replace(string, string, string, string);
 [ "XMLSCHEMA"	]
 [ "XMLTEXT"	]
 [ "XMLVALIDATE"	]
+[ "YEAR"	]
+[ "ZONE"	]
 #select table_type_id, table_type_name from sys.table_types order by table_type_id, table_type_name;
 % sys.table_types,	sys.table_types # table_name
 % table_type_id,	table_type_name # name

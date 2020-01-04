@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -78,7 +78,7 @@ PYFUNCNAME(PyAPIevalLoader)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
 	args = (str *)GDKzalloc(pci->argc * sizeof(str));
 	if (!args) {
-		throw(MAL, "pyapi.eval", SQLSTATE(HY001) MAL_MALLOC_FAIL " arguments.");
+		throw(MAL, "pyapi.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL " arguments.");
 	}
 
 	// Analyse the SQL_Func structure to get the parameter names
@@ -105,7 +105,7 @@ PYFUNCNAME(PyAPIevalLoader)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	pArgs = PyTuple_New(argcount - pci->retc - 2 + additional_columns);
 	if (!pArgs) {
 		msg = createException(MAL, "pyapi.eval_loader",
-							  SQLSTATE(HY001) MAL_MALLOC_FAIL "python object");
+							  SQLSTATE(HY013) MAL_MALLOC_FAIL "python object");
 		goto wrapup;
 	}
 
@@ -138,7 +138,7 @@ PYFUNCNAME(PyAPIevalLoader)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			}
 			inp.scalar = false;
 			inp.count = BATcount(b);
-			inp.bat_type = ATOMstorage(getBatType(getArgType(mb, pci, i)));
+			inp.bat_type = getBatType(getArgType(mb, pci, i));
 			inp.bat = b;
 
 			val = PyMaskedArray_FromBAT(
@@ -171,7 +171,7 @@ PYFUNCNAME(PyAPIevalLoader)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		cols = GDKzalloc(sizeof(sql_emit_col) * ncols);
 		if (!cols) {
 			msg = createException(MAL, "pyapi.eval_loader",
-								  SQLSTATE(HY001) MAL_MALLOC_FAIL "column list");
+								  SQLSTATE(HY013) MAL_MALLOC_FAIL "column list");
 			goto wrapup;
 		}
 		assert(pyapi_list_length(sqlmorefun->colnames) == pyapi_list_length(sqlmorefun->coltypes) * 2);
@@ -202,7 +202,7 @@ PYFUNCNAME(PyAPIevalLoader)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	pEmit = PyEmit_Create(cols, ncols);
 	if (!pConnection || !pEmit) {
 		msg = createException(MAL, "pyapi.eval_loader",
-							  SQLSTATE(HY001) MAL_MALLOC_FAIL "python object");
+							  SQLSTATE(HY013) MAL_MALLOC_FAIL "python object");
 		goto wrapup;
 	}
 

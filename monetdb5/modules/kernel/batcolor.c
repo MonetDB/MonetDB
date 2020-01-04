@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -35,7 +35,7 @@ str CLRbat##NAME(bat *ret, const bat *l)								\
 	bn= COLnew(b->hseqbase,TPE,BATcount(b), TRANSIENT);					\
 	if( bn == NULL){													\
 		BBPunfix(b->batCacheid);										\
-		throw(MAL, "batcolor." #NAME, SQLSTATE(HY001) MAL_MALLOC_FAIL);	\
+		throw(MAL, "batcolor." #NAME, SQLSTATE(HY013) MAL_MALLOC_FAIL);	\
 	}																	\
 	bn->tsorted=false;													\
 	bn->trevsorted=false;												\
@@ -52,7 +52,8 @@ str CLRbat##NAME(bat *ret, const bat *l)								\
 			bn->tnil = true;											\
 		} else if ((msg = FUNC(&y,x)) != MAL_SUCCEED)					\
 			goto bunins_failed;											\
-		APP;															\
+		if ((APP) != GDK_SUCCEED)										\
+			goto bunins_failed;											\
 	}																	\
 	bn->theap.dirty |= BATcount(bn) > 0;								\
 	*ret = bn->batCacheid;												\
@@ -113,7 +114,7 @@ str CLRbat##NAME(bat *ret, const bat *l, const bat *bid2, const bat *bid3) \
 		BBPunfix(b->batCacheid);										\
 		BBPunfix(b2->batCacheid);										\
 		BBPunfix(b3->batCacheid);										\
-		throw(MAL, "batcolor." #NAME, SQLSTATE(HY001) MAL_MALLOC_FAIL);	\
+		throw(MAL, "batcolor." #NAME, SQLSTATE(HY013) MAL_MALLOC_FAIL);	\
 	}																	\
 	bn->tsorted=false;													\
 	bn->trevsorted=false;												\
@@ -136,7 +137,8 @@ str CLRbat##NAME(bat *ret, const bat *l, const bat *bid2, const bat *bid3) \
 			bn->tnil = true;											\
 		} else if ((msg = FUNC(&y,x,x2,x3)) != MAL_SUCCEED)				\
 			goto bunins_failed;											\
-		bunfastappTYPE(color, bn, &y);									\
+		if (bunfastappTYPE(color, bn, &y) != GDK_SUCCEED)				\
+			goto bunins_failed;											\
 	}																	\
 	bn->theap.dirty |= BATcount(bn) > 0;								\
 	*ret = bn->batCacheid;												\

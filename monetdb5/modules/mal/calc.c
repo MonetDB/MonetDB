@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -97,12 +97,12 @@ CMDvarADDstr(str *ret, str *s1, str *s2)
 	if (strNil(*s1) || strNil(*s2)) {
 		*ret= GDKstrdup(str_nil);
 		if (*ret == NULL)
-			return mythrow(MAL, "calc.+", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			return mythrow(MAL, "calc.+", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 	s = GDKzalloc((l1 = strlen(*s1)) + strlen(*s2) + 1);
 	if (s == NULL)
-		return mythrow(MAL, "calc.+", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		return mythrow(MAL, "calc.+", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	strcpy(s, *s1);
 	strcpy(s + l1, *s2);
 	*ret = s;
@@ -120,13 +120,13 @@ CMDvarADDstrint(str *ret, str *s1, int *i)
 	if (strNil(*s1) || is_int_nil(*i)) {
 		*ret= GDKstrdup(str_nil);
 		if (*ret == NULL)
-			return mythrow(MAL, "calc.+", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			return mythrow(MAL, "calc.+", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 	len = strlen(*s1) + 16;		/* maxint = 2147483647 which fits easily */
 	s = GDKmalloc(len);
 	if (s == NULL)
-		return mythrow(MAL, "calc.+", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		return mythrow(MAL, "calc.+", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	snprintf(s, len, "%s%d", *s1, *i);
 	*ret = s;
 	return MAL_SUCCEED;
@@ -628,7 +628,7 @@ CALCswitchbit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (is_bit_nil(b)) {
 		if (VALinit(&stk->stk[pci->argv[0]], t1, ATOMnilptr(t1)) == NULL)
-			return mythrow(MAL, "ifthenelse", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			return mythrow(MAL, "ifthenelse", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 	if (b) {
@@ -639,7 +639,7 @@ CALCswitchbit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (ATOMextern(t1)) {
 		*(ptr **) retval = ATOMdup(t1, *(ptr**)p);
 		if (*(ptr **) retval == NULL)
-			throw(MAL, "ifthenelse", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "ifthenelse", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	} else if (t1 == TYPE_void) {
 		memcpy(retval, p, sizeof(oid));
 	} else {
@@ -671,7 +671,7 @@ CALCmin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	else if (ATOMcmp(t, p1, p2) > 0)
 		p1 = p2;
 	if (VALinit(&stk->stk[getArg(pci, 0)], t, p1) == NULL)
-		return mythrow(MAL, "calc.min", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		return mythrow(MAL, "calc.min", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -697,7 +697,7 @@ CALCmin_no_nil(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		(ATOMcmp(t, p2, nil) != 0 && ATOMcmp(t, p1, p2) > 0))
 		p1 = p2;
 	if (VALinit(&stk->stk[getArg(pci, 0)], t, p1) == NULL)
-		return mythrow(MAL, "calc.min", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		return mythrow(MAL, "calc.min", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -724,7 +724,7 @@ CALCmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	else if (ATOMcmp(t, p1, p2) < 0)
 		p1 = p2;
 	if (VALinit(&stk->stk[getArg(pci, 0)], t, p1) == NULL)
-		return mythrow(MAL, "calc.max", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		return mythrow(MAL, "calc.max", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -750,7 +750,7 @@ CALCmax_no_nil(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		(ATOMcmp(t, p2, nil) != 0 && ATOMcmp(t, p1, p2) < 0))
 		p1 = p2;
 	if (VALinit(&stk->stk[getArg(pci, 0)], t, p1) == NULL)
-		return mythrow(MAL, "calc.max", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		return mythrow(MAL, "calc.max", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 

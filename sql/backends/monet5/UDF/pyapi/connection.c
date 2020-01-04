@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -45,7 +45,7 @@ static PyObject *_connection_execute(Py_ConnectionObject *self, PyObject *args)
 		return NULL;
 	}
 	if (!query) {
-		PyErr_Format(PyExc_Exception, "%s", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		PyErr_Format(PyExc_Exception, "%s", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return NULL;
 	}
 	if (!self->mapped || option_disable_fork) {

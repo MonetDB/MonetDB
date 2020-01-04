@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -141,7 +141,7 @@ generate_partition_limits(sql_query *query, sql_rel **r, symbol *s, sql_subtype 
 		if(!amin) {
 			char *err = sql_subtype_string(&tpe);
 			if(!err)
-				return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: absolute minimum value not available for %s type", err);
 			GDKfree(err);
 			return NULL;
@@ -152,7 +152,7 @@ generate_partition_limits(sql_query *query, sql_rel **r, symbol *s, sql_subtype 
 		if(!amax) {
 			char *err = sql_subtype_string(&tpe);
 			if(!err)
-				return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: absolute maximum value not available for %s type", err);
 			GDKfree(err);
 			return NULL;
@@ -464,7 +464,7 @@ exp_change_column_table(mvc *sql, sql_exp *e, sql_table* oldt, sql_table* newt)
 				e->l = exp_change_column_table(sql, e->l, oldt, newt);
 				for(node *n = ((list*)e->r)->h ; n ; n = n->next)
 					n->data = exp_change_column_table(sql, (sql_exp*) n->data, oldt, newt);
-			} else if (get_cmp(e) == cmp_or || get_cmp(e) == cmp_filter) {
+			} else if (e->flag == cmp_or || e->flag == cmp_filter) {
 				for(node *n = ((list*)e->l)->h ; n ; n = n->next)
 					n->data = exp_change_column_table(sql, (sql_exp*) n->data, oldt, newt);
 				for(node *n = ((list*)e->r)->h ; n ; n = n->next)

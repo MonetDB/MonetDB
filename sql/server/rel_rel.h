@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #ifndef _REL_REL_H_
@@ -55,7 +55,7 @@ extern sql_rel *rel_create(sql_allocator *sa);
 extern sql_rel *rel_copy(mvc *sql, sql_rel *r, int deep);
 extern sql_rel *rel_select_copy(sql_allocator *sa, sql_rel *l, list *exps);
 
-extern sql_exp *rel_bind_column( mvc *sql, sql_rel *rel, const char *cname, int f );
+extern sql_exp *rel_bind_column( mvc *sql, sql_rel *rel, const char *cname, int f, int no_tname);
 extern sql_exp *rel_bind_column2( mvc *sql, sql_rel *rel, const char *tname, const char *cname, int f );
 extern sql_exp *rel_first_column(mvc *sql, sql_rel *rel);
 

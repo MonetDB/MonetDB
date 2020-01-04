@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -90,7 +90,7 @@ runFactory(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr stk, InstrP
 		/* initialize a new plant using the owner policy */
 		pl = newPlant(mb);
 		if (pl == NULL)
-			throw(MAL, "factory.new", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "factory.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	/*
 	 * We have found a factory to process the request.
@@ -118,7 +118,7 @@ runFactory(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr stk, InstrP
 
 		rhs = &pl->env->stk[getArg(pci, i)];
 		if (VALcopy(lhs, rhs) == NULL)
-			throw(MAL, "factory.call", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "factory.call", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		if( lhs->vtype == TYPE_bat )
 			BBPretain(lhs->val.bval);
 	}
@@ -132,7 +132,7 @@ runFactory(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr stk, InstrP
 				if( !isVarDisabled(mb,i)){
 					rhs = &getVarConstant(mb,i);
 					if (VALcopy(lhs,rhs) == NULL)
-						throw(MAL, "factory.call", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+						throw(MAL, "factory.call", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				}
 			} else{
 				lhs->vtype = getVarGDKType(mb,i);
@@ -169,7 +169,7 @@ callFactory(Client cntxt, MalBlkPtr mb, ValPtr argv[], char flag){
 		/* first call? prepare the factory */
 		pl = newPlant(mb);
 		if (pl == NULL)
-			throw(MAL, "factory.call", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "factory.call", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		/* remember context, which does not exist. */
 		pl->client = cntxt;
 		pl->caller = 0;
@@ -189,7 +189,7 @@ callFactory(Client cntxt, MalBlkPtr mb, ValPtr argv[], char flag){
 			lhs = &stk->stk[i];
 			rhs = &getVarConstant(mb,i);
 			if (VALcopy(lhs,rhs) == NULL)
-				throw(MAL, "factory.call", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				throw(MAL, "factory.call", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		} else {
 			lhs = &stk->stk[i];
 			lhs->vtype = getVarGDKType(mb,i);
@@ -212,7 +212,7 @@ callFactory(Client cntxt, MalBlkPtr mb, ValPtr argv[], char flag){
 	for (i = psig->retc; i < psig->argc; i++) {
 		lhs = &pl->stk->stk[psig->argv[i]];
 		if (VALcopy(lhs, argv[i]) == NULL)
-			throw(MAL, "factory.call", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "factory.call", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		if( lhs->vtype == TYPE_bat )
 			BBPretain(lhs->val.bval);
 	}

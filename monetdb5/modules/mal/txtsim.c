@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -28,7 +28,7 @@
 	   if (ATOMextern(t)) {\
 	      *(ptr*) res = (ptr) ATOMnil(t);\
 		  if ( *(ptr *) res == NULL)\
-			throw(MAL,"txtsim", SQLSTATE(HY001) MAL_MALLOC_FAIL);\
+			throw(MAL,"txtsim", SQLSTATE(HY013) MAL_MALLOC_FAIL);\
 	   } else {\
 	      memcpy(res, ATOMnilptr(t), ATOMsize(t));\
  	   }\
@@ -121,7 +121,7 @@ levenshtein_impl(int *result, str *S, str *T, int *insdel_cost, int *replace_cos
 	sz = (n + 1) * (m + 1) * sizeof(int);
 	d = (int *) GDKmalloc(sz);
 	if ( d == NULL)
-		throw(MAL,"levenshtein", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL,"levenshtein", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	/* Step 2 */
 	for (i = 0; i <= n; i++) {
@@ -263,7 +263,7 @@ soundex_impl(str *res, str *Name)
 
 	*res = (str) GDKmalloc(sizeof(char) * (SoundexLen + 1));
 	if( *res == NULL)
-		throw(MAL,"soundex", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL,"soundex", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	/* calculate Key for Name */
 	soundex_code(*Name, *res);
@@ -312,7 +312,7 @@ CMDqgramnormalize(str *res, str *Input)
 	RETURN_NIL_IF(strNil(input), TYPE_str);
 	*res = (str) GDKmalloc(sizeof(char) * (strlen(input) + 1));	/* normalized strings are never longer than original */
 	if (*res == NULL)
-		throw(MAL, "txtsim.qgramnormalize", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "txtsim.qgramnormalize", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	for (i = 0; input[i]; i++) {
 		c = toupper(input[i]);
@@ -974,7 +974,7 @@ CMDqgramselfjoin(bat *res1, bat *res2, bat *qid, bat *bid, bat *pid, bat *lid, f
 		BBPunfix(id->batCacheid);
 		BBPunfix(pos->batCacheid);
 		BBPunfix(len->batCacheid);
-		throw(MAL, "txtsim.qgramselfjoin", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "txtsim.qgramselfjoin", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	for (i = 0; i < n - 1; i++) {
@@ -988,7 +988,7 @@ CMDqgramselfjoin(bat *res1, bat *res2, bat *qid, bat *bid, bat *pid, bat *lid, f
 					BBPunfix(len->batCacheid);
 					BBPreclaim(bn);
 					BBPreclaim(bn2);
-					throw(MAL, "txtsim.qgramselfjoin", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+					throw(MAL, "txtsim.qgramselfjoin", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				}
 			}
 		}
@@ -1039,14 +1039,14 @@ CMDstr2qgrams(bat *ret, str *val)
 	char qgram[4 * 6 + 1];		/* 4 UTF-8 code points plus NULL byte */
 
 	if (s == NULL)
-		throw(MAL, "txtsim.str2qgram", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "txtsim.str2qgram", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	strcpy(s, "##");
 	strcpy(s + 2, *val);
 	strcpy(s + len - 3, "$$");
 	bn = COLnew(0, TYPE_str, (BUN) strlen(*val), TRANSIENT);
 	if (bn == NULL) {
 		GDKfree(s);
-		throw(MAL, "txtsim.str2qgram", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "txtsim.str2qgram", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	i = 0;
@@ -1056,7 +1056,7 @@ CMDstr2qgrams(bat *ret, str *val)
 		if (BUNappend(bn, qgram, false) != GDK_SUCCEED) {
 			BBPreclaim(bn);
 			GDKfree(s);
-			throw(MAL, "txtsim.str2qgram", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "txtsim.str2qgram", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		if ((s[i++] & 0xC0) == 0xC0) {
 			while ((s[i] & 0xC0) == 0x80)

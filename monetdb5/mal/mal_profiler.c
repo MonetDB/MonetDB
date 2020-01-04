@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /* (c) M.L. Kersten
@@ -268,7 +268,6 @@ This information can be used to determine memory footprint and variable life tim
 						logadd("\"nonil\":%d,", d->tnonil);
 						logadd("\"nil\":%d,", d->tnil);
 						logadd("\"key\":%d,", d->tkey);
-						logadd("\"unique\":%d,", d->tunique);
 						cv = VALformat(&stk->stk[getArg(pci,j)]);
 						c = strchr(cv, '>');
 						*c = 0;

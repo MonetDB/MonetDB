@@ -159,8 +159,8 @@ stdout of test 'forex` in directory 'sql/test/mergetables` itself:
 % 24,	20 # length
 [ 42.33074767,	1269.922430	]
 #SELECT currency, cast(avg(bid) AS DECIMAL(12,6)), sum(bid) FROM forex GROUP BY currency;
-% .forex,	.%2,	.%3 # table_name
-% currency,	%2,	%3 # name
+% .forex,	.%1,	.%2 # table_name
+% currency,	%1,	%2 # name
 % clob,	decimal,	decimal # type
 % 7,	14,	20 # length
 [ "EUR/USD",	1.271833,	3.815500	]

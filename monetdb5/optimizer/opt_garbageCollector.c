@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -31,23 +31,19 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	char buf[256];
 	lng usec = GDKusec();
 	str msg = MAL_SUCCEED;
-	char *used;
 
 	(void) pci;
 	(void) stk;
 	if ( mb->inlineProp)
 		return 0;
-	
-	used = (char*) GDKzalloc(sizeof(char) * mb->vtop);
-	if ( used == NULL)
-		throw(MAL, "optimizer.garbagecollector", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 	limit = mb->stop;
+	
 
 	/* variables get their name from the position */
-	/* rename all temporaries used for ease of variable table interpretation */
+	/* rename all temporaries for ease of variable table interpretation */
 	/* this code should not be necessary is variables always keep their position */
- 	for( i = 0; i < mb->vtop; i++){
+	for( i = 0; i < mb->vtop; i++) {
 		//strcpy(buf, getVarName(mb,i));
 		if (getVarName(mb,i)[0] == 'X' && getVarName(mb,i)[1] == '_')
 			snprintf(getVarName(mb,i),IDLENGTH,"X_%d",i);
@@ -70,7 +66,7 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 		for(  ; i > 1; i--)
 			mb->stmt[i] = mb->stmt[i-1];
 		mb->stmt[1] = p;
-		actions =1;
+		actions = 1;
 	}
 
 	// Actual garbage collection stuff, just mark them for re-assessment
@@ -89,15 +85,14 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 		throw(MAL, "optimizer.garbagecollector", SQLSTATE(42000) "Incorrect MAL plan encountered");
 	}
 	getInstrPtr(mb,0)->gc |= GARBAGECONTROL;
-	GDKfree(used);
-    if( OPTdebug &  OPTgarbagecollector)
+    	if( OPTdebug &  OPTgarbagecollector)
 	{ 	int k;
 		fprintf(stderr, "#Garbage collected BAT variables \n");
 		for ( k =0; k < mb->vtop; k++)
 		fprintf(stderr,"%10s eolife %3d  begin %3d lastupd %3d end %3d\n",
 			getVarName(mb,k), getVarEolife(mb,k),
 			getBeginScope(mb,k), getLastUpdate(mb,k), getEndScope(mb,k));
-		chkFlow(mb);
+		msg = chkFlow(mb);
 		if ( mb->errors != MAL_SUCCEED ){
 			fprintf(stderr,"%s\n",mb->errors);
 			freeException(mb->errors);
@@ -111,22 +106,19 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	setVariableScope(mb);
 	/* Defense line against incorrect plans */
 	if( actions > 0){
-		chkTypes(cntxt->usermodule, mb, FALSE);
-		chkFlow(mb);
-		chkDeclarations(mb);
+		if (!msg)
+			msg = chkTypes(cntxt->usermodule, mb, FALSE);
+		if (!msg)
+			msg = chkFlow(mb);
+		if (!msg)
+			msg = chkDeclarations(mb);
 	}
-
 	/* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;
 	snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","garbagecollector",actions, usec);
 	newComment(mb,buf);
-	if( actions >= 0)
+	if( actions > 0)
 		addtoMalBlkHistory(mb);
-
-    if( OPTdebug &  OPTgarbagecollector){
-        fprintf(stderr, "#GARBAGECOLLECTOR optimizer exit\n");
-        fprintFunction(stderr, mb, 0,  LIST_MAL_ALL);
-    }
 	return msg;
 }
 

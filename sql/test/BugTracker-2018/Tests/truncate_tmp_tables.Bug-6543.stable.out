@@ -25,73 +25,73 @@ stdout of test 'truncate_tmp_tables.Bug-6543` in directory 'sql/test/BugTracker-
 
 #CREATE TEMP TABLE tmptable6543 (id int NOT NULL PRIMARY KEY, name VARCHAR(99) NOT NULL);
 #SELECT (COUNT(*) > 0) AS has_rows FROM tmp.triggers;
-% .%2 # table_name
+% . # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM tmp.triggers;
-% .%2 # table_name
+% . # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM tmp.objects;
-% .%2 # table_name
+% . # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM tmp.objects;
-% .%2 # table_name
+% . # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM tmp.keys;
-% .%2 # table_name
+% . # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM tmp.keys;
-% .%2 # table_name
+% . # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM tmp.idxs;
-% .%2 # table_name
+% . # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM tmp.idxs;
-% .%2 # table_name
+% . # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM tmp._tables;
-% .%2 # table_name
+% . # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM tmp._tables;
-% .%2 # table_name
+% . # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM tmp._columns;
-% .%2 # table_name
+% . # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM tmp._columns;
-% .%2 # table_name
+% . # table_name
 % has_rows # name
 % boolean # type
 % 5 # length

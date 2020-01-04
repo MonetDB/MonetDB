@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -22,8 +22,6 @@
  * Activation of a thread requires construction of the argument list
  * to be passed by a handle.
  */
-
-/* #define DEBUG_FLOW */
 
 mal_export MalStkPtr prepareMALstack(MalBlkPtr mb, int size);
 mal_export str runMAL(Client c, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr env);

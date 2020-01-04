@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #ifndef _MAL_INSTR_H
@@ -38,6 +38,7 @@
 #define garbageControl(P)	((P)->gc & GARBAGECONTROL)
 
 #define getInstrPtr(M,I)	(M)->stmt[I]
+#define putInstrPtr(M,I,P)	(M)->stmt[I] = P
 #define getSignature(S)		getInstrPtr((S)->def,0)
 #define isMain(M)			((getInstrPtr(M,0))->fcnname== putName("main",4))
 #define getFcnName(M)		getFunctionId(getInstrPtr(M,0))
@@ -110,9 +111,6 @@
 #define setRowCnt(M,I,C)	(M)->var[I].rowcnt = C
 #define getRowCnt(M,I)		((M)->var[I].rowcnt)
 
-#define setMitosisPartition(P,C)	(P)->mitosis = C
-#define getMitosisPartition(P)		((P)->mitosis)
-
 #define getVarSTC(M,I)			((M)->var[I].stc)
 
 #define getDestVar(P)		(P)->argv[0]
@@ -178,6 +176,7 @@ mal_export str convertConstant(malType type, ValPtr vr);
 
 mal_export void pushInstruction(MalBlkPtr mb, InstrPtr p);
 mal_export InstrPtr pushArgument(MalBlkPtr mb, InstrPtr p, int varid);
+mal_export InstrPtr addArgument(MalBlkPtr mb, InstrPtr p, int varid);
 mal_export InstrPtr setArgument(MalBlkPtr mb, InstrPtr p, int idx, int varid);
 mal_export InstrPtr pushReturn(MalBlkPtr mb, InstrPtr p, int varid);
 mal_export InstrPtr pushArgumentId(MalBlkPtr mb, InstrPtr p, const char *name);

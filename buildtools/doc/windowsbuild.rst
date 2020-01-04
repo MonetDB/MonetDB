@@ -2,7 +2,7 @@
 .. License, v. 2.0.  If a copy of the MPL was not distributed with this
 .. file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ..
-.. Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+.. Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
 
 .. This document is written in reStructuredText (see
    http://docutils.sourceforge.net/ for more information).
@@ -243,6 +243,8 @@ PCRE (Perl Compatible Regular Expressions)
 The PCRE__ library is used to extend the string matching capabilities
 of MonetDB.  The PCRE library is required for the monetdb5 component.
 
+.. _pcre_cmake:
+
 Download the source from http://www.pcre.org/.  In order to build the
 library, you will need a program called ``cmake`` which you can
 download from http://www.cmake.org/ or by using Chocolatey_.  Follow
@@ -255,14 +257,14 @@ Configure button.  This pops up a dialog to choose the compiler.  I
 chose Visual Studio 14 2015.
 
 You need to configure some PCRE build options.  I chose to do build
-shared libs, to match newlines with the ``ANYCRLF`` option, and to do
-have UTF-8 support and support for Unicode properties.  When you're
-satisfied with the options, click on Generate.  Then in the build
-folder you've chosen, open the PCRE.sln file with Visual Studio, and
-build and install.  Make sure you set the Solution Configuration to
-Release if you want to build a releasable version of the MonetDB
-suite.  By default the library will be installed in ``C:\Program
-Files\PCRE``.
+shared libs, to match newlines with the ``ANYCRLF`` and
+``PCRE_SUPPORT_JIT`` options, and to do have UTF-8 support and support
+for Unicode properties.  When you're satisfied with the options, click
+on Generate.  Then in the build folder you've chosen, open the
+PCRE.sln file with Visual Studio, and build and install.  Make sure
+you set the Solution Configuration to Release if you want to build a
+releasable version of the MonetDB suite.  By default the library will
+be installed in ``C:\Program Files\PCRE``.
 
 For Windows64, select the correct compiler (``Visual Studio 14 2015
 Win64``) and proceed normally.  When building the 32 bit version on
@@ -304,15 +306,15 @@ required for the clients component when it needs to talk to a MonetDB5
 server.
 
 Download the source from http://www.openssl.org/.  We used the latest
-stable version (1.1.0g).  Follow the instructions in the file
+stable version (1.1.1d).  Follow the instructions in the file
 ``NOTES.WIN``.
 
 .. The actual commands used were::
-   perl Configure VC-WIN32 no-asm --prefix=C:\Libraries\openssl-1.1.0g.win32
+   perl Configure VC-WIN32 no-asm --prefix=C:\Libraries\openssl-1.1.1d.win32 --openssldir=SSL
    nmake
    nmake install
    and::
-   perl Configure VC-WIN64A no-asm --prefix=C:\Libraries\openssl-1.1.0g.win64
+   perl Configure VC-WIN64A no-asm --prefix=C:\Libraries\openssl-1.1.1d.win64 --openssldir=SSL
    nmake
    nmake install
 
@@ -338,7 +340,7 @@ optional prerequisites iconv_ and zlib_, for which see below).
 Run the following commands in the ``win32`` subfolder, substituting
 the correct locations for the iconv and zlib libraries::
 
- cscript configure.js compiler=msvc prefix=C:\Libraries\libxml2-2.9.8.win64 ^
+ cscript configure.js compiler=msvc prefix=C:\Libraries\libxml2-2.9.9.win64 ^
   include=C:\Libraries\iconv-1.15.win64\include;C:\Libraries\zlib-1.2.11.win64\include ^
   lib=C:\Libraries\iconv-1.15.win64\lib;C:\Libraries\zlib-1.2.11.win64\lib ^
   iconv=yes zlib=yes vcmanifest=yes
@@ -346,7 +348,7 @@ the correct locations for the iconv and zlib libraries::
  nmake /f Makefile.msvc install
 
 We needed to edit the file ``win32\Makefile.msvc`` and change
-``iconv.lib`` to ``iconv.dll.lib``.
+``iconv.lib`` to ``iconv.dll.lib`` and ``zlib.lib`` to ``zdll.lib``.
 
 __ http://xmlsoft.org/
 
@@ -361,39 +363,22 @@ so to get the software, you will have to get the source and build it
 yourself.
 
 Get the source tar ball from http://trac.osgeo.org/geos/#Download and
-extract somewhere.  You can follow the instructions in e.g. `Building
-on Windows with NMake`__.
+extract somewhere.
 
-We needed to make a few changes to the file ``nmake.opt``.  We needed
-to add a blurb for the version of ``nmake`` that we were using.  Look
-at the version number of ``nmake /P`` and adapt the closest match.
-
-For newer versions of Visual Studio, we also needed to add a line::
-
-   #include <algorithm>
-
-to the files::
-
-   src\algorithm\LineIntersector.cpp
-   src\geom\LineSegment.cpp
-   src\io\WKTWriter.cpp
-   src\operation\buffer\OffsetCurveSetBuilder.cpp
-
-.. The actual commands were::
-   autogen.bat
-   nmake /f makefile.vc
-
-.. On Windows64, add ``WIN64=YES`` to the nmake command line.
+We are now using the 3.8.0 version which uses CMake (see PCRE
+above__).  For older releases, look in a previous versions of this
+file.
 
 In order to get a version number in the DLL that is produced, we added
-a file ``version.rc`` in the ``src`` folder.  The contents of the
-file are::
+a file ``version.rc`` in the ``src`` folder and added a reference to
+the sources for the ``geos`` subproject.  The contents of the file
+are::
 
  #include <Windows.h>
  LANGUAGE		LANG_ENGLISH, SUBLANG_ENGLISH_US
  VS_VERSION_INFO	VERSIONINFO
- FILEVERSION		3,6,2,0		// change as appropriate
- PRODUCTVERSION		3,6,2,0		// change as appropriate
+ FILEVERSION		3,8,0,0		// change as appropriate
+ PRODUCTVERSION		3,8,0,0		// change as appropriate
  FILEFLAGSMASK		0x3fL
  FILEFLAGS		0
  FILEOS			VOS_NT_WINDOWS32
@@ -405,26 +390,8 @@ file are::
    END
  END
 
-To use it, we also added ``version.res`` at the end of the definition
-of the ``OBJ`` macro and to the list of dependencies of and the
-command for ``$(CDLLNAME)`` in ``src\Makefile.vc``.
-
-After this, install the library somewhere, e.g. in
-``C:\Libraries\geos-3.6.2.win32``::
-
- mkdir C:\Libraries\geos-3.6.2.win32
- mkdir C:\Libraries\geos-3.6.2.win32\lib
- mkdir C:\Libraries\geos-3.6.2.win32\bin
- mkdir C:\Libraries\geos-3.6.2.win32\include
- mkdir C:\Libraries\geos-3.6.2.win32\include\geos
- copy src\geos_c_i.lib C:\Libraries\geos-3.6.2.win32\lib
- copy src\geos_c.dll C:\Libraries\geos-3.6.2.win32\bin
- copy include C:\Libraries\geos-3.6.2.win32\include
- copy include\geos C:\Libraries\geos-3.6.2.win32\include\geos
- copy capi\geos_c.h C:\Libraries\geos-3.6.2.win32\include
-
 __ http://geos.refractions.net/
-__ http://trac.osgeo.org/geos/wiki/BuildingOnWindowsWithNMake
+__ pcre_cmake_
 
 Optional Packages
 =================
@@ -493,27 +460,26 @@ the following extra Cygwin packages in order to build successfully:
    Command Prompt and PATH contains the directory where cl.exe can be
    found; for 64 bit use --host=x86_64-w64-mingw32 and adapt LIB, PATH
    and prefix)::
-   INCLUDE='C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\INCLUDE;'\
-   'C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\ATLMFC\INCLUDE;'\
-   'C:\Program Files (x86)\Windows Kits\10\include\10.0.14393.0\ucrt;'\
-   'C:\Program Files (x86)\Windows Kits\NETFXSDK\4.6.1\include\um;'\
-   'C:\Program Files (x86)\Windows Kits\10\include\10.0.14393.0\shared;'\
-   'C:\Program Files (x86)\Windows Kits\10\include\10.0.14393.0\um;'\
-   'C:\Program Files (x86)\Windows Kits\10\include\10.0.14393.0\winrt;'
-   LIB='C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\LIB;'\
-   'C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\ATLMFC\LIB;'\
-   'C:\Program Files (x86)\Windows Kits\10\lib\10.0.14393.0\ucrt\x86;'\
-   'C:\Program Files (x86)\Windows Kits\NETFXSDK\4.6.1\lib\um\x86;'\
-   'C:\Program Files (x86)\Windows Kits\10\lib\10.0.14393.0\um\x86;'
-   PATH="/cygdrive/c/Program Files (x86)/Microsoft Visual Studio 14.0/VC/bin:$PATH"
+   vs='C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.23.28105'
+   INCLUDE="${vs}"'\ATLMFC\include;'"${vs}"'\include;' \
+   'C:\Program Files (x86)\Windows Kits\NETFXSDK\4.6.1\include\um;' \
+   'C:\Program Files (x86)\Windows Kits\10\include\10.0.17763.0\ucrt;' \
+   'C:\Program Files (x86)\Windows Kits\10\include\10.0.17763.0\shared;' \
+   'C:\Program Files (x86)\Windows Kits\10\include\10.0.17763.0\um;' \
+   'C:\Program Files (x86)\Windows Kits\10\include\10.0.17763.0\winrt;' \
+   'C:\Program Files (x86)\Windows Kits\10\include\10.0.17763.0\cppwinrt'
+   LIB="${vs}"'\ATLMFC\lib\x64;'"${vs}"'\lib\x64;' \
+   'C:\Program Files (x86)\Windows Kits\NETFXSDK\4.6.1\lib\um\x64;' \
+   'C:\Program Files (x86)\Windows Kits\10\lib\10.0.17763.0\ucrt\x64;' \
+   'C:\Program Files (x86)\Windows Kits\10\lib\10.0.17763.0\um\x64;'
+   PATH=$(cygpath "${vs}")/bin/Hostx64/x64:$PATH
+   prefix=/cygdrive/c/Libraries/iconv-1.16.win64-vs2019
    export INCLUDE LIB PATH
    win32_target=_WIN32_WINNT_WIN7
-   prefix=/cygdrive/c/Libraries/iconv-1.15.win32-vs2015
-   PATH="$prefix/bin:$PATH"
-   ./configure --host=i686-w64-mingw32 --prefix=$prefix \
+   ./configure --host=i686-w64-mingw32 --prefix="$prefix" \
 	       CC="$PWD/build-aux/compile cl -nologo" \
-	       CFLAGS="-MD" \
 	       CXX="$PWD/build-aux/compile cl -nologo" \
+	       CFLAGS="-MD" \
 	       CXXFLAGS="-MD" \
 	       CPPFLAGS="-D_WIN32_WINNT=$win32_target -I$prefix/include" \
 	       LDFLAGS="-L$prefix/lib" \

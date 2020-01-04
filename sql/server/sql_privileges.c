@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -754,11 +754,11 @@ mvc_set_schema(mvc *m, char *schema)
 		if (m->session->schema_name)
 			_DELETE(m->session->schema_name);
 		m->session->schema_name = new_schema_name;
-		m->type = Q_TRANS;
+		m->type = Q_SCHEMA;
 		if (m->session->tr->active)
 			m->session->schema = s;
 		ret = 1;
-	} else if(new_schema_name) {
+	} else if (new_schema_name) {
 		_DELETE(new_schema_name);
 	}
 	return ret;

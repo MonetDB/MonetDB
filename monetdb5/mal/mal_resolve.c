@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -695,12 +695,16 @@ typeChecker(Module scope, MalBlkPtr mb, InstrPtr p, int silent)
 			 */
 			if (lhs != TYPE_void && lhs != TYPE_any) {
 				ValRecord cst;
+				int k;
+
 				cst.vtype = TYPE_void;
 				cst.val.oval = void_nil;
 				cst.len = 0;
 
 				rhs = isaBatType(lhs) ? TYPE_bat : lhs;
-				p->argv[i] = defConstant(mb, rhs, &cst);
+				k = defConstant(mb, rhs, &cst);
+				if( k >=0)
+					p->argv[i] = k;
 				rhs = lhs;
 			}
 		}
@@ -739,20 +743,25 @@ typeChecker(Module scope, MalBlkPtr mb, InstrPtr p, int silent)
  * as well, because a dynamically typed instruction should later on not
  * lead to a re-check when it was already fully analyzed.
  */
-void
+str
 chkTypes(Module s, MalBlkPtr mb, int silent)
 {
 	InstrPtr p = 0;
 	int i;
+	str msg= MAL_SUCCEED;
 
 	for (i = 0; i < mb->stop; i++) {
 		p = getInstrPtr(mb, i);
 		assert (p != NULL);
 		if (p->typechk != TYPE_RESOLVED)
 			typeChecker(s, mb, p, silent);
-		if (mb->errors)
-			return;
+		if (mb->errors){
+			msg = mb->errors;
+			mb->errors = NULL;
+			return msg;
+		}
 	}
+	return msg;
 }
 
 /*
@@ -772,20 +781,20 @@ chkInstruction(Module s, MalBlkPtr mb, InstrPtr p)
 /*
  * Perform silent check on the program, merely setting the error flag.
  */
-void
+str
 chkProgram(Module s, MalBlkPtr mb)
 {
+	str msg = MAL_SUCCEED;
 /* it is not ready yet, too fragile
 		mb->typefixed = mb->stop == chk; ignored END */
 /*	if( mb->flowfixed == 0)*/
 
-	chkTypes(s, mb, FALSE);
-	if (mb->errors)
-		return;
-	chkFlow(mb);
-	if (mb->errors)
-		return;
-	chkDeclarations(mb);
+	msg = chkTypes(s, mb, FALSE);
+	if( msg == MAL_SUCCEED)
+		msg = chkFlow(mb);
+	if(msg == MAL_SUCCEED)
+		msg = chkDeclarations(mb);
+	return msg;
 }
 
 /*

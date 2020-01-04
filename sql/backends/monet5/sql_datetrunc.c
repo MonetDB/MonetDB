@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -64,7 +64,7 @@ bat_date_trunc(bat *res, const str *scale, const bat *bid)
 	bn = COLnew(b->hseqbase, TYPE_timestamp, BATcount(b), TRANSIENT);
 	if (bn == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(SQL, "sql.truncate", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(SQL, "sql.truncate", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	bt = (const timestamp *) Tloc(b, 0);
@@ -77,7 +77,7 @@ bat_date_trunc(bat *res, const str *scale, const bat *bid)
 	date_trunc_time_loop("milliseconds", 1000);
 	date_trunc_time_loop("second", 1000000);
 	date_trunc_time_loop("minute", 1000000 * 60);
-	date_trunc_time_loop("hour", 1000000 * 60 * 24);
+	date_trunc_time_loop("hour", LL_CONSTANT(1000000) * 60 * 60);
 
 	if  ( strcasecmp(*scale, "day") == 0){
 		for( ; lo < hi; lo++)
@@ -120,7 +120,7 @@ bat_date_trunc(bat *res, const str *scale, const bat *bid)
 				days = timestamp_date(bt[lo]);
 				dt[lo] = timestamp_fromdate(
 					date_create(date_year(days),
-						    (date_month(days) - 1) / 3 + 1,
+						    ((date_month(days) - 1) / 3) * 3 + 1,
 						    1));
 			}
 	}
@@ -191,7 +191,7 @@ date_trunc(timestamp *dt, const str *scale, const timestamp *bt)
 	date days;
 
 	if (truncate_check(*scale) == 0)
-		throw(SQL, "sql.truncate", SQLSTATE(HY001) "Improper directive ");
+		throw(SQL, "sql.truncate", SQLSTATE(HY013) "Improper directive ");
 
 	if (is_timestamp_nil(*bt)) {
 		*dt = timestamp_nil;
@@ -202,7 +202,7 @@ date_trunc(timestamp *dt, const str *scale, const timestamp *bt)
 	date_trunc_single_time("milliseconds", 1000);
 	date_trunc_single_time("second", 1000000);
 	date_trunc_single_time("minute", 1000000 * 60);
-	date_trunc_single_time("hour", 1000000 * 60 * 24);
+	date_trunc_single_time("hour", LL_CONSTANT(1000000) * 60 * 60);
 
 	if  ( strcasecmp(*scale, "day") == 0){
 		days = timestamp_date(*bt);
@@ -221,7 +221,7 @@ date_trunc(timestamp *dt, const str *scale, const timestamp *bt)
 
 	if  ( strcasecmp(*scale, "quarter") == 0){
 		days = timestamp_date(*bt);
-		*dt = timestamp_fromdate(date_create(date_year(days), (date_month(days) - 1) / 3 + 1, 1));
+		*dt = timestamp_fromdate(date_create(date_year(days), ((date_month(days) - 1) / 3) * 3 + 1, 1));
 	}
 
 	if  ( strcasecmp(*scale, "year") == 0){

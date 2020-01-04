@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -129,7 +129,7 @@ psm_set_exp(sql_query *query, dnode *n)
 			if (v->card > CARD_AGGR) {
 				sql_subaggr *zero_or_one = sql_bind_aggr(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(v));
 				assert(zero_or_one);
-				v = exp_aggr1(sql->sa, v, zero_or_one, 0, 0, CARD_ATOM, 0);
+				v = exp_aggr1(sql->sa, v, zero_or_one, 0, 0, CARD_ATOM, has_nil(v));
 			}
 			append(b, exp_set(sql->sa, vname, v, level));
 		}
@@ -174,7 +174,7 @@ rel_psm_declare(mvc *sql, dnode *n)
  			 * TODO make sure on plan/explain etc they only 
  			 * exist during plan phase */
 			if(!stack_push_var(sql, name, ctype)) {
-				return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 			r = exp_var(sql->sa, sa_strdup(sql->sa, name), ctype, sql->frame);
 			append(l, r);
@@ -217,7 +217,7 @@ rel_psm_declare_table(sql_query *query, dnode *n)
 		return NULL;
 	t = (sql_table*)((atom*)((sql_exp*)baset->exps->t->data)->l)->data.val.pval;
 	if(!stack_push_table(sql, name, baset, t))
-		return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return exp_table(sql->sa, sa_strdup(sql->sa, name), t, sql->frame);
 }
 
@@ -552,7 +552,7 @@ rel_select_into( sql_query *query, symbol *sq, exp_kind ek)
 		if (v->card > CARD_AGGR) {
 			sql_subaggr *zero_or_one = sql_bind_aggr(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(v));
 			assert(zero_or_one);
-			v = exp_aggr1(sql->sa, v, zero_or_one, 0, 0, CARD_ATOM, 0);
+			v = exp_aggr1(sql->sa, v, zero_or_one, 0, 0, CARD_ATOM, has_nil(v));
 		}
 		tpe = stack_find_type(sql, nme);
 		level = stack_find_frame(sql, nme);
@@ -615,7 +615,7 @@ sequential_block (sql_query *query, sql_subtype *restype, list *restypelist, dli
 	if (blk->h)
  		l = sa_list(sql->sa);
 	if(!stack_push_frame(sql, opt_label))
-		return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	for (n = blk->h; n; n = n->next ) {
 		sql_exp *res = NULL;
 		list *reslist = NULL;
@@ -824,7 +824,7 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 			if (!func->s)
 				return sql_error(sql, 02, SQLSTATE(42000) "CREATE OR REPLACE %s%s: not allowed to replace system %s%s %s;", KF, F, kf, fn, func->base.name);
 			if (mvc_drop_func(sql, s, func, 0))
-				return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			sf = NULL;
 		} else {
 			if (params) {
@@ -967,7 +967,7 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 				if (!f->mod || !f->imp) {
 					_DELETE(f->mod);
 					_DELETE(f->imp);
-					return sql_error(sql, 02, SQLSTATE(HY001) "CREATE %s%s: could not allocate space", KF, F);
+					return sql_error(sql, 02, SQLSTATE(HY013) "CREATE %s%s: could not allocate space", KF, F);
 				}
 				f->sql = 0; /* native */
 				f->lang = FUNC_LANG_INT;
@@ -1237,7 +1237,7 @@ create_trigger(sql_query *query, dlist *qname, int time, symbol *trigger_event, 
 	if (create && (st = mvc_bind_trigger(sql, ss, triggername)) != NULL) {
 		if (replace) {
 			if(mvc_drop_trigger(sql, ss, st))
-				return sql_error(sql, 02, SQLSTATE(HY001) "%s TRIGGER: %s", base, MAL_MALLOC_FAIL);
+				return sql_error(sql, 02, SQLSTATE(HY013) "%s TRIGGER: %s", base, MAL_MALLOC_FAIL);
 		} else {
 			return sql_error(sql, 02, SQLSTATE(42000) "%s TRIGGER: name '%s' already in use", base, triggername);
 		}
@@ -1270,15 +1270,15 @@ create_trigger(sql_query *query, dlist *qname, int time, symbol *trigger_event, 
 	if (!instantiate) {
 		t = mvc_bind_table(sql, ss, tname);
 		if (!stack_push_frame(sql, "OLD-NEW"))
-			return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		/* we need to add the old and new tables */
 		if (new_name && !_stack_push_table(sql, new_name, t)) {
 			stack_pop_frame(sql);
-			return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		if (old_name && !_stack_push_table(sql, old_name, t)) {
 			stack_pop_frame(sql);
-			return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 	}
 	if (condition) {

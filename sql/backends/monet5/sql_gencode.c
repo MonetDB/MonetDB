@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -161,7 +161,7 @@ _create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *
 		node *n;
 		list *ops = call->op4.lval;
 
-		for (n = ops->h; n; n = n->next) {
+		for (n = ops->h; n && !curBlk->errors; n = n->next) {
 			stmt *op = n->data;
 			sql_subtype *t = tail_type(op);
 			int type = t->type->localtype;
@@ -181,7 +181,7 @@ _create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *
 	} else if (rel_ops) {
 		node *n;
 
-		for (n = rel_ops->h; n; n = n->next) {
+		for (n = rel_ops->h; n && !curBlk->errors; n = n->next) {
 			sql_exp *e = n->data;
 			sql_subtype *t = &e->tpe;
 			int type = t->type->localtype;
@@ -197,6 +197,10 @@ _create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *
 			setVarType(curBlk, varid, type);
 			setVarUDFtype(curBlk, varid);
 		}
+	}
+	if (curBlk->errors) {
+		freeSymbol(curPrg);
+		return -1;
 	}
 
 	/* add return statement */
@@ -219,8 +223,9 @@ _create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *
 	if (curBlk->inlineProp == 0 && !c->curprg->def->errors) {
 		msg = SQLoptimizeQuery(c, c->curprg->def);
 	} else if (curBlk->inlineProp != 0) {
-		chkProgram(c->usermodule, c->curprg->def);
-		if (!c->curprg->def->errors)
+		if( msg == MAL_SUCCEED) 
+			msg = chkProgram(c->usermodule, c->curprg->def);
+		if (msg == MAL_SUCCEED && !c->curprg->def->errors)
 			msg = SQLoptimizeFunction(c,c->curprg->def);
 	}
 	if (msg) {
@@ -574,7 +579,7 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 	//curBlk->inlineProp = 1;
 
 	SQLaddQueryToCache(c);
-	//chkProgram(c->usermodule, c->curprg->def);
+	// (str) chkProgram(c->usermodule, c->curprg->def);
 	if (!c->curprg->def->errors)
 		c->curprg->def->errors = SQLoptimizeFunction(c, c->curprg->def);
 	if (c->curprg->def->errors)
@@ -707,7 +712,7 @@ backend_callinline(backend *be, Client c)
 	if (m->argc) {	
 		int argc = 0;
 
-		for (; argc < m->argc; argc++) {
+		for (; argc < m->argc && !curBlk->errors; argc++) {
 			atom *a = m->args[argc];
 			int type = atom_type(a)->type->localtype;
 			int varid = 0;
@@ -731,6 +736,8 @@ backend_callinline(backend *be, Client c)
 		}
 	}
 	c->curprg->def = curBlk;
+	if (curBlk->errors)
+		return -1;
 	return 0;
 }
 
@@ -742,8 +749,8 @@ backend_dumpproc(backend *be, Client c, cq *cq, sql_rel *r)
 	MalBlkPtr mb = 0;
 	Symbol curPrg = 0, backup = NULL;
 	InstrPtr curInstr = 0;
-	int argc = 0;
-	char arg[IDLENGTH];
+	int argc = 0, res;
+	char arg[IDLENGTH], *escaped_q = NULL;
 	node *n;
 
 	backup = c->curprg;
@@ -778,7 +785,7 @@ backend_dumpproc(backend *be, Client c, cq *cq, sql_rel *r)
 			a->varid = varid = newVariable(mb, arg,strlen(arg), type);
 			curInstr = pushArgument(mb, curInstr, varid);
 			assert(curInstr);
-			if (curInstr == NULL) 
+			if (curInstr == NULL || mb->errors) 
 				goto cleanup;
 			setVarType(mb, varid, type);
 			setVarUDFtype(mb, 0);
@@ -799,14 +806,22 @@ backend_dumpproc(backend *be, Client c, cq *cq, sql_rel *r)
 			varid = newVariable(mb, arg,strlen(arg), type);
 			curInstr = pushArgument(mb, curInstr, varid);
 			assert(curInstr);
-			if (curInstr == NULL) 
+			if (curInstr == NULL || mb->errors) 
 				goto cleanup;
 			setVarType(mb, varid, type);
 			setVarUDFtype(mb, varid);
 		}
 	}
 
-	if (backend_dumpstmt(be, mb, r, 1, 1, be->q?be->q->codestring:NULL) < 0) 
+	if (be->q) {
+		if (!(escaped_q = sql_escape_str(be->q->codestring))) {
+			sql_error(m, 001, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto cleanup;
+		}
+	}
+	res = backend_dumpstmt(be, mb, r, 1, 1, escaped_q);
+	GDKfree(escaped_q);
+	if (res < 0)
 		goto cleanup;
 
 	if (cq) {
@@ -831,7 +846,7 @@ cleanup:
 	return NULL;
 }
 
-void
+int
 backend_call(backend *be, Client c, cq *cq)
 {
 	mvc *m = be->mvc;
@@ -841,11 +856,11 @@ backend_call(backend *be, Client c, cq *cq)
 	q = newStmt(mb, userRef, cq->name);
 	if (!q) {
 		m->session->status = -3;
-		return;
+		return -1;
 	}
 	if (m->emode == m_execute && be->q->paramlen != m->argc) {
 		sql_error(m, 003, SQLSTATE(42000) "EXEC called with wrong number of arguments: expected %d, got %d", be->q->paramlen, m->argc);
-		return;
+		return -1;
 	}
 	/* cached (factorized queries return bit??) */
 	if (cq->code && getInstrPtr(((Symbol)cq->code)->def, 0)->token == FACTORYsymbol) {
@@ -858,12 +873,13 @@ backend_call(backend *be, Client c, cq *cq)
 	if (m->argc) {
 		int i;
 
-		for (i = 0; i < m->argc; i++) {
+		for (i = 0; i < m->argc && q && !mb->errors; i++) {
 			atom *a = m->args[i];
 			sql_subtype *pt = cq->params + i;
 
 			if (!atom_cast(m->sa, a, pt)) {
 				sql_error(m, 003, SQLSTATE(42000) "wrong type for argument %d of function call: %s, expected %s\n", i + 1, atom_type(a)->type->sqlname, pt->type->sqlname);
+				q = NULL;
 				break;
 			}
 			if (atom_null(a)) {
@@ -873,13 +889,16 @@ backend_call(backend *be, Client c, cq *cq)
 			} else {
 				int _t;
 				if((_t = constantAtom(be, mb, a)) == -1) {
-					(void) sql_error(m, 02, SQLSTATE(HY001) "Allocation failure during function call: %s\n", atom_type(a)->type->sqlname);
+					(void) sql_error(m, 02, SQLSTATE(HY013) "Allocation failure during function call: %s\n", atom_type(a)->type->sqlname);
 					break;
 				}
 				q = pushArgument(mb, q, _t);
 			}
 		}
 	}
+	if (!q || mb->errors)
+		return -1;
+	return 0;
 }
 
 int
@@ -1098,40 +1117,40 @@ mal_function_find_implementation_address(mvc *m, sql_func *f)
 	dlist *l, *ext_name;
 
 	if (!(m = ZNEW(mvc))) {
-		(void) sql_error(o, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		(void) sql_error(o, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 	m->type = Q_PARSE;
 	m->user_id = m->role_id = USER_MONETDB;
 
 	if (!(m->session = sql_session_create(0, 0))) {
-		(void) sql_error(o, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		(void) sql_error(o, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 	if (s)
 		m->session->schema = s;
 
 	if (!(m->sa = sa_create())) {
-		(void) sql_error(o, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		(void) sql_error(o, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 	if (!(b = (buffer*)GDKmalloc(sizeof(buffer)))) {
-		(void) sql_error(o, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		(void) sql_error(o, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 	if (!(n = GDKmalloc(len + 2))) {
-		(void) sql_error(o, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		(void) sql_error(o, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 	snprintf(n, len + 2, "%s\n", f->query);
 	len++;
 	buffer_init(b, n, len);
 	if (!(buf = buffer_rastream(b, "sqlstatement"))) {
-		(void) sql_error(o, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		(void) sql_error(o, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 	if (!(bs = bstream_create(buf, b->len))) {
-		(void) sql_error(o, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		(void) sql_error(o, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 	scanner_init(&m->scanner, bs, NULL);
@@ -1290,8 +1309,9 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 	if (curBlk->inlineProp == 0 && !c->curprg->def->errors) {
 		msg = SQLoptimizeFunction(c, c->curprg->def);
 	} else if (curBlk->inlineProp != 0) {
-		chkProgram(c->usermodule, c->curprg->def);
-		if (!c->curprg->def->errors)
+		if( msg == MAL_SUCCEED)
+			msg = chkProgram(c->usermodule, c->curprg->def);
+		if (msg == MAL_SUCCEED && !c->curprg->def->errors)
 			msg = SQLoptimizeFunction(c,c->curprg->def);
 	}
 	if (msg) {

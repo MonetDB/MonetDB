@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -44,7 +44,7 @@ MNDBProcedures(ODBCStmt *stmt,
 	/* buffer for the constructed query to do meta data retrieval */
 	char *query = NULL;
 	char *query_end;
-	char *cat = NULL, *sch = NULL, *pro = NULL;
+	char *sch = NULL, *pro = NULL;
 
 	/* convert input string parameters to normal null terminated C strings */
 	fixODBCstring(CatalogName, NameLength1, SQLSMALLINT,
@@ -56,9 +56,9 @@ MNDBProcedures(ODBCStmt *stmt,
 
 #ifdef ODBCDEBUG
 	ODBCLOG("\"%.*s\" \"%.*s\" \"%.*s\"\n",
-		(int) NameLength1, (char *) CatalogName,
-		(int) NameLength2, (char *) SchemaName,
-		(int) NameLength3, (char *) ProcName);
+		(int) NameLength1, CatalogName ? (char *) CatalogName : "",
+		(int) NameLength2, SchemaName ? (char *) SchemaName : "",
+		(int) NameLength3, ProcName ? (char *) ProcName : "");
 #endif
 
 	/* SQLProcedures returns a table with the following columns:
@@ -73,13 +73,6 @@ MNDBProcedures(ODBCStmt *stmt,
 	 */
 
 	if (stmt->Dbc->sql_attr_metadata_id == SQL_FALSE) {
-		if (NameLength1 > 0) {
-			cat = ODBCParseOA("e", "value",
-					  (const char *) CatalogName,
-					  (size_t) NameLength1);
-			if (cat == NULL)
-				goto nomem;
-		}
 		if (NameLength2 > 0) {
 			sch = ODBCParsePV("s", "name",
 					  (const char *) SchemaName,
@@ -95,13 +88,6 @@ MNDBProcedures(ODBCStmt *stmt,
 				goto nomem;
 		}
 	} else {
-		if (NameLength1 > 0) {
-			cat = ODBCParseID("e", "value",
-					  (const char *) CatalogName,
-					  (size_t) NameLength1);
-			if (cat == NULL)
-				goto nomem;
-		}
 		if (NameLength2 > 0) {
 			sch = ODBCParseID("s", "name",
 					  (const char *) SchemaName,
@@ -118,8 +104,8 @@ MNDBProcedures(ODBCStmt *stmt,
 		}
 	}
 
-	query = malloc(1000 + (cat ? strlen(cat) : 0) +
-		       (sch ? strlen(sch) : 0) + (pro ? strlen(pro) : 0));
+	query = malloc(1000 + strlen(stmt->Dbc->dbname) +
+			(sch ? strlen(sch) : 0) + (pro ? strlen(pro) : 0));
 	if (query == NULL)
 		goto nomem;
 	query_end = query;
@@ -130,7 +116,7 @@ MNDBProcedures(ODBCStmt *stmt,
 #define F_UNION 5
 #define FUNC_LANG_SQL 2
 	snprintf(query_end, 1000,
-		 "select e.value as procedure_cat, "
+		 "select '%s' as procedure_cat, "
 			"s.name as procedure_schem, "
 			"p.name as procedure_name, "
 			"0 as num_input_params, "
@@ -139,12 +125,11 @@ MNDBProcedures(ODBCStmt *stmt,
 			"%s as remarks, "
 			"cast(case when p.type = %d then %d else %d end as smallint) as procedure_type "
 		 "from sys.schemas as s, "
-		      "sys.env() as e, "
 		      "sys.functions as p%s "
 		 "where p.schema_id = s.id and "
 		       "p.language >= %d and "
-		       "p.type in (%d, %d, %d) and "
-		       "e.name = 'gdk_dbname'",
+		       "p.type in (%d, %d, %d)",
+		 stmt->Dbc->dbname,
 		 stmt->Dbc->has_comment ? "c.remark" : "cast(null as varchar(1))",
 		 F_PROC, SQL_PT_PROCEDURE, SQL_PT_FUNCTION,
 		 stmt->Dbc->has_comment ? " left outer join sys.comments c on p.id = c.id" : "",
@@ -153,11 +138,13 @@ MNDBProcedures(ODBCStmt *stmt,
 	query_end += strlen(query_end);
 
 	/* Construct the selection condition query part */
-	if (cat) {
+	if (NameLength1 > 0 && CatalogName != NULL) {
 		/* filtering requested on catalog name */
-		sprintf(query_end, " and %s", cat);
-		query_end += strlen(query_end);
-		free(cat);
+		if (strcmp((char *) CatalogName, stmt->Dbc->dbname) != 0) {
+			/* catalog name does not match the database name, so return no rows */
+			sprintf(query_end, " and 1=2");
+			query_end += strlen(query_end);
+		}
 	}
 	if (sch) {
 		/* filtering requested on schema name */
@@ -172,14 +159,12 @@ MNDBProcedures(ODBCStmt *stmt,
 		free(pro);
 	}
 
-	/* add the ordering */
-	strcpy(query_end,
-	       " order by procedure_cat, procedure_schem, procedure_name");
+	/* add the ordering (exclude procedure_cat as it is the same for all rows) */
+	strcpy(query_end, " order by procedure_schem, procedure_name");
 	query_end += strlen(query_end);
 
 	/* query the MonetDB data dictionary tables */
-
-	rc = MNDBExecDirect(stmt, (SQLCHAR *) query, SQL_NTS);
+	rc = MNDBExecDirect(stmt, (SQLCHAR *) query, (SQLINTEGER) (query_end - query));
 
 	free(query);
 
@@ -187,8 +172,6 @@ MNDBProcedures(ODBCStmt *stmt,
 
   nomem:
 	/* note that query must be NULL when we get here */
-	if (cat)
-		free(cat);
 	if (sch)
 		free(sch);
 	if (pro)

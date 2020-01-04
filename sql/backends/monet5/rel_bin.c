@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -150,9 +150,10 @@ list_find_column(backend *be, list *l, const char *rname, const char *name )
 		} else {
 			for (; e; e = e->chain) {
 				stmt *s = e->value;
+				const char *rnme = table_name(be->mvc->sa, s);
 				const char *nme = column_name(be->mvc->sa, s);
 
-				if (nme && strcmp(nme, name) == 0) {
+				if (!rnme && nme && strcmp(nme, name) == 0) {
 					res = s;
 					break;
 				}
@@ -177,9 +178,10 @@ list_find_column(backend *be, list *l, const char *rname, const char *name )
 		}
 	} else {
 		for (n = l->h; n; n = n->next) {
+			const char *rnme = table_name(be->mvc->sa, n->data);
 			const char *nme = column_name(be->mvc->sa, n->data);
 
-			if (nme && strcmp(nme, name) == 0) {
+			if (!rnme && nme && strcmp(nme, name) == 0) {
 				res = n->data;
 				break;
 			}
@@ -279,9 +281,8 @@ distinct_value_list(backend *be, list *vals, stmt ** last_null_value)
 		s = stmt_append(be, s, i);
 	}
 
-	// Probably faster to filter out the values directly in the underlying list of atoms.
-	// But for now use groupby to filter out duplicate values.
-
+	/* Probably faster to filter out the values directly in the underlying list of atoms.
+	   But for now use groupby to filter out duplicate values. */
 	stmt* groupby = stmt_group(be, s, NULL, NULL, NULL, 1);
 	stmt* ext = stmt_result(be, groupby, 1);
 
@@ -354,17 +355,17 @@ handle_in_exps(backend *be, sql_exp *ce, list *nl, stmt *left, stmt *right, stmt
 			}
 		}
 	} else {
-		// TODO: handle_in_exps should contain all necessary logic for in-expressions to be SQL compliant.
-		// For non-SQL-standard compliant behavior, e.g. PostgreSQL backwards compatibility, we should
-		// make sure that this behavior is replicated by the sql optimizer and not handle_in_exps.
+		/* TODO: handle_in_exps should contain all necessary logic for in-expressions to be SQL compliant.
+		   For non-SQL-standard compliant behavior, e.g. PostgreSQL backwards compatibility, we should
+		   make sure that this behavior is replicated by the sql optimizer and not handle_in_exps. */
 
-		stmt* last_null_value = NULL; // CORNER CASE ALERT: See description below.
+		stmt* last_null_value = NULL;  /* CORNER CASE ALERT: See description below. */
 
-		// The actual in-value-list should not contain duplicates to ensure that final join results are unique.
+		/* The actual in-value-list should not contain duplicates to ensure that final join results are unique. */
 		s = distinct_value_list(be, nl, &last_null_value);
 
 		if (last_null_value) {
-			// The actual in-value-list should not contain null values.
+			/* The actual in-value-list should not contain null values. */
 			s = stmt_project(be, stmt_selectnonil(be, s, NULL), s);
 		}
 
@@ -373,21 +374,21 @@ handle_in_exps(backend *be, sql_exp *ce, list *nl, stmt *left, stmt *right, stmt
 
 		if (!in) {
 			if (last_null_value) {
-				// CORNER CASE ALERT:
-				// In case of a not-in-expression with the associated in-value-list containing a null value,
-				// the entire in-predicate is forced to always return false, i.e. an empty candidate list.
-				// This is similar to postgres behavior.
-				// TODO: However I do not think this behavior is in accordance with SQL standard 2003.
+				/* CORNER CASE ALERT:
+				   In case of a not-in-expression with the associated in-value-list containing a null value,
+				   the entire in-predicate is forced to always return false, i.e. an empty candidate list.
+				   This is similar to postgres behavior.
+				   TODO: However I do not think this behavior is in accordance with SQL standard 2003.
 
-				// Ugly trick to return empty candidate list, because for all x it holds that: (x == null) == false.
-				//list* singleton_bat = sa_list(sql->sa);
-				// list_append(singleton_bat, null_value);
+				   Ugly trick to return empty candidate list, because for all x it holds that: (x == null) == false.
+				   list* singleton_bat = sa_list(sql->sa);
+				   list_append(singleton_bat, null_value); */
 				s = stmt_uselect(be, c, last_null_value, cmp_equal, NULL, 0);
 				return s;
 			}
 			else {
-				// BACK TO HAPPY FLOW:
-				// Make sure that null values are never returned.
+				/* BACK TO HAPPY FLOW:
+				   Make sure that null values are never returned. */
 				stmt* non_nulls;
 				non_nulls = stmt_selectnonil(be, c, NULL);
 				s = stmt_tdiff(be, non_nulls, s);
@@ -505,7 +506,6 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			/* handle table returning functions */
 			if (l->type == e_psm && l->flag & PSM_REL) {
 				stmt *lst = r->op1;
-				//if (r->type == st_table && lst->nrcols == 0 && lst->key) {
 				if (r->type == st_table && lst->nrcols == 0 && lst->key && e->card > CARD_ATOM) {
 					node *n;
 					list *l = sa_list(sql->sa);
@@ -756,7 +756,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		sql_exp *re = e->r, *re2 = e->f;
 
 		/* general predicate, select and join */
-		if (get_cmp(e) == cmp_filter) {
+		if (e->flag == cmp_filter) {
 			list *args;
 			list *ops;
 			node *n;
@@ -801,7 +801,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		if (e->flag == cmp_in || e->flag == cmp_notin) {
 			return handle_in_exps(be, e->l, e->r, left, right, grp, ext, cnt, sel, (e->flag == cmp_in), 0);
 		}
-		if (get_cmp(e) == cmp_or && (!right || right->nrcols == 1)) {
+		if (e->flag == cmp_or && (!right || right->nrcols == 1)) {
 			sql_subtype *bt = sql_bind_localtype("bit");
 			list *l = e->l;
 			node *n;
@@ -884,7 +884,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				return stmt_project(be, stmt_tinter(be, sel1, sel2), sel1);
 			return stmt_tunion(be, sel1, sel2);
 		}
-		if (get_cmp(e) == cmp_or && right) {  /* join */
+		if (e->flag == cmp_or && right) {  /* join */
 			assert(0);
 		}
 
@@ -916,7 +916,6 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
  			r2 = exp_bin(be, re2, left, right, grp, ext, cnt, sel);
 
 		if (!l || !r || (re2 && !r2)) {
-			//assert(0);
 			fprintf(stderr, "query: '%s'\n", sql->query);
 			return NULL;
 		}
@@ -982,13 +981,13 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 					s = stmt_binop(be, l, r, f);
 				} else if (l->nrcols == 0 && r->nrcols == 0) {
 					sql_subfunc *f = sql_bind_func(sql->sa, sql->session->schema,
-							compare_func((comp_type)get_cmp(e), is_anti(e)),
+							compare_func((comp_type)e->flag, is_anti(e)),
 							tail_type(l), tail_type(l), F_FUNC);
 					assert(f);
 					s = stmt_binop(be, l, r, f);
 				} else {
 					/* this can still be a join (as relational algebra and single value subquery results still means joins */
-					s = stmt_uselect(be, l, r, (comp_type)get_cmp(e), sel, is_anti(e));
+					s = stmt_uselect(be, l, r, (comp_type)e->flag, sel, is_anti(e));
 				}
 			}
 		}
@@ -1263,7 +1262,7 @@ rel_parse_value(backend *be, char *query, char emode)
 	if (b == NULL || n == NULL) {
 		GDKfree(b);
 		GDKfree(n);
-		return sql_error(m, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		return sql_error(m, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	snprintf(n, len + 2, "%s\n", query);
 	query = n;
@@ -1272,12 +1271,12 @@ rel_parse_value(backend *be, char *query, char emode)
 	sr = buffer_rastream(b, "sqlstatement");
 	if (sr == NULL) {
 		buffer_destroy(b);
-		return sql_error(m, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		return sql_error(m, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	bs = bstream_create(sr, b->len);
 	if(bs == NULL) {
 		buffer_destroy(b);
-		return sql_error(m, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		return sql_error(m, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	scanner_init(&m->scanner, bs, NULL);
 	m->scanner.mode = LINE_1; 
@@ -1324,23 +1323,16 @@ rel_parse_value(backend *be, char *query, char emode)
 	return s;
 }
 
-
 static stmt *
-stmt_rename(backend *be, sql_rel *rel, sql_exp *exp, stmt *s )
+stmt_rename(backend *be, sql_exp *exp, stmt *s )
 {
 	const char *name = exp_name(exp);
 	const char *rname = exp_relname(exp);
 	stmt *o = s;
 
-	(void)rel;
-	if (!name && exp->type == e_column && exp->r)
-		name = exp->r;
-	if (!name)
-		name = column_name(be->mvc->sa, s);
-	if (!rname && exp->type == e_column && exp->l)
-		rname = exp->l;
-	if (!rname)
-		rname = table_name(be->mvc->sa, s);
+	if (!name && exp_is_atom(exp))
+		name = sa_strdup(be->mvc->sa, "single_value");
+	assert(name);
 	s = stmt_alias(be, s, rname, name);
 	if (o->flag & OUTER_ZERO)
 		s->flag |= OUTER_ZERO;
@@ -1473,7 +1465,7 @@ exp2bin_args(backend *be, sql_exp *e, list *args)
 	case e_psm:
 		return args;
 	case e_cmp:
-		if (get_cmp(e) == cmp_or || get_cmp(e) == cmp_filter) {
+		if (e->flag == cmp_or || e->flag == cmp_filter) {
 			args = exps2bin_args(be, e->l, args);
 			args = exps2bin_args(be, e->r, args);
 		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
@@ -1656,37 +1648,40 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 		}
 		l = sa_list(sql->sa);
 		if (f->func->res) {
-				if (f->func->varres) {
-					for(i=0, en = rel->exps->h, n = f->res->h; en; en = en->next, n = n->next, i++ ) {
-						sql_exp *exp = en->data;
-						sql_subtype *st = n->data;
-						const char *rnme = exp_relname(exp)?exp_relname(exp):exp->l;
-						stmt *s = stmt_rs_column(be, psub, i, st); 
-				
-						s = stmt_alias(be, s, rnme, exp_name(exp));
-						list_append(l, s);
-					}
-				} else {
-					for(i = 0, n = f->func->res->h; n; n = n->next, i++ ) {
-						sql_arg *a = n->data;
-						stmt *s = stmt_rs_column(be, psub, i, &a->type); 
-						const char *rnme = exp_find_rel_name(op);
+			if (f->func->varres) {
+				for(i=0, en = rel->exps->h, n = f->res->h; en; en = en->next, n = n->next, i++ ) {
+					sql_exp *exp = en->data;
+					sql_subtype *st = n->data;
+					const char *rnme = exp_relname(exp)?exp_relname(exp):exp->l;
+					stmt *s = stmt_rs_column(be, psub, i, st); 
 			
-						s = stmt_alias(be, s, rnme, a->name);
-						list_append(l, s);
-					}
-					if (list_length(f->res) == list_length(f->func->res) + 1) {
-						/* add missing %TID% column */
-						sql_subtype *t = f->res->t->data;
-						stmt *s = stmt_rs_column(be, psub, i, t); 
-						const char *rnme = exp_find_rel_name(op);
-			
-						s = stmt_alias(be, s, rnme, TID);
-						list_append(l, s);
-					}
+					s = stmt_alias(be, s, rnme, exp_name(exp));
+					list_append(l, s);
 				}
+			} else {
+				assert(list_length(f->func->res) == list_length(rel->exps));
+				node *m;
+				for(i = 0, n = f->func->res->h, m = rel->exps->h; n && m; n = n->next, m = m->next, i++ ) {
+					sql_arg *a = n->data;
+					sql_exp *exp = m->data;
+					stmt *s = stmt_rs_column(be, psub, i, &a->type); 
+					const char *rnme = exp_relname(exp)?exp_relname(exp):exp_find_rel_name(op);
+		
+					s = stmt_alias(be, s, rnme, a->name);
+					list_append(l, s);
+				}
+				if (list_length(f->res) == list_length(f->func->res) + 1) {
+					/* add missing %TID% column */
+					sql_subtype *t = f->res->t->data;
+					stmt *s = stmt_rs_column(be, psub, i, t); 
+					const char *rnme = exp_find_rel_name(op);
+		
+					s = stmt_alias(be, s, rnme, TID);
+					list_append(l, s);
+				}
+			}
 		}
-		if (!rel->flag && sub && sub->nrcols) { 
+		if (rel->flag == TABLE_PROD_FUNC && sub && sub->nrcols) { 
 			assert(0);
 			list_merge(l, sub->op4.lval, NULL);
 			osub = sub;
@@ -1710,7 +1705,7 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 			sql_exp *c = n->data;
 			stmt *s = stmt_rs_column(be, sub, i, exp_subtype(c)); 
 			const char *nme = exp_name(c);
-			const char *rnme = NULL;
+			const char *rnme = exp_relname(c);
 
 			s = stmt_alias(be, s, rnme, nme);
 			if (fr->card <= CARD_ATOM) /* single value, get result from bat */
@@ -1727,12 +1722,7 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 	for( en = rel->exps->h; en; en = en->next ) {
 		sql_exp *exp = en->data;
 		const char *rnme = exp_relname(exp)?exp_relname(exp):exp->l;
-		stmt *s;
-
-		/* no relation names */
-		if (exp->l)
-			exp->l = NULL;
-		s = exp_bin(be, exp, sub, NULL, NULL, NULL, NULL, NULL);
+		stmt *s = bin_find_column(be, sub, exp->l, exp->r);
 
 		if (!s) {
 			assert(0);
@@ -1971,8 +1961,8 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 			prop *p;
 
 			/* only handle simple joins here */
-			if ((exp_has_func(e) && get_cmp(e) != cmp_filter) ||
-			    get_cmp(e) == cmp_or || (e->f && e->anti) ||
+			if ((exp_has_func(e) && e->flag != cmp_filter) ||
+			    e->flag == cmp_or || (e->f && e->anti) ||
 			      (e->type == e_cmp && e->flag == cmp_equal &&
 			      ((rel_find_exp(rel->l, e->l) && rel_find_exp(rel->l, e->r))  ||
 			       (rel_find_exp(rel->r, e->l) && rel_find_exp(rel->r, e->r)))) ) {
@@ -2195,7 +2185,6 @@ rel2bin_antijoin(backend *be, sql_rel *rel, list *refs)
 	}
 	/* handle join-ing conditions first */
 	if (!list_empty(jexps)) {
-	//	assert(0);
 		if (list_empty(mexps))
 			mexps = jexps;
 	}
@@ -2282,8 +2271,8 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 			stmt *s = NULL;
 
 			/* only handle simple joins here */
-			if ((exp_has_func(e) && get_cmp(e) != cmp_filter) ||
-			    get_cmp(e) == cmp_or || (e->f && e->anti)) {
+			if ((exp_has_func(e) && e->flag != cmp_filter) ||
+			    e->flag == cmp_or || (e->f && e->anti)) {
 				if (!join && !list_length(lje)) {
 					stmt *l = bin_first_column(be, left);
 					stmt *r = bin_first_column(be, right);
@@ -2469,7 +2458,7 @@ rel_rename(backend *be, sql_rel *rel, stmt *sub)
 				assert(0);
 				return NULL;
 			}
-			s = stmt_rename(be, rel, exp, s);
+			s = stmt_rename(be, exp, s);
 			list_append(l, s);
 		}
 		sub = stmt_list(be, l);
@@ -2825,7 +2814,7 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 		else if (sub && sub->nrcols >= 1 && s->nrcols == 0)
 			s = stmt_const(be, bin_first_column(be, sub), s);
 
-		s = stmt_rename(be, rel, exp, s);
+		s = stmt_rename(be, exp, s);
 		column_name(sql->sa, s); /* save column name */
 		list_append(pl, s);
 	}
@@ -3102,7 +3091,7 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 			return NULL;
 		}
 
-		aggrstmt = stmt_rename(be, rel, aggrexp, aggrstmt);
+		aggrstmt = stmt_rename(be, aggrexp, aggrstmt);
 		list_append(l, aggrstmt);
 	}
 	stmt_set_nrcols(cursub);
@@ -3246,14 +3235,14 @@ sql_parse(backend *be, sql_allocator *sa, const char *query, char mode)
 	if (b == 0) {
 		*m = *o;
 		GDKfree(o);
-		return sql_error(m, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		return sql_error(m, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	nquery = GDKmalloc(len + 1 + 1);
 	if (nquery == 0) {
 		*m = *o;
 		GDKfree(o);
 		GDKfree(b);
-		return sql_error(m, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		return sql_error(m, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	snprintf(nquery, len + 2, "%s\n", query);
 	len++;
@@ -3265,7 +3254,7 @@ sql_parse(backend *be, sql_allocator *sa, const char *query, char mode)
 		GDKfree(b);
 		GDKfree(nquery);
 		be->depth--;
-		return sql_error(m, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		return sql_error(m, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	if((bst = bstream_create(buf, b->len)) == NULL) {
 		close_stream(buf);
@@ -3274,7 +3263,7 @@ sql_parse(backend *be, sql_allocator *sa, const char *query, char mode)
 		GDKfree(b);
 		GDKfree(nquery);
 		be->depth--;
-		return sql_error(m, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		return sql_error(m, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	scanner_init( &m->scanner, bst, NULL);
 	m->scanner.mode = LINE_1; 
@@ -3295,7 +3284,7 @@ sql_parse(backend *be, sql_allocator *sa, const char *query, char mode)
 		GDKfree(b);
 		GDKfree(nquery);
 		be->depth--;
-		return sql_error(m, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		return sql_error(m, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	if (sqlparse(m) || !m->sym) {
@@ -3748,7 +3737,7 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 		ret = s;
 	}
 
-	if (be->cur_append) //building the total number of rows affected across all tables
+	if (be->cur_append) /* building the total number of rows affected across all tables */
 		ret->nr = add_to_merge_partitions_accumulator(be, ret->nr);
 
 	if (ddl)
@@ -3875,7 +3864,6 @@ update_check_ukey(backend *be, stmt **updates, sql_key *k, stmt *tids, stmt *idx
 					upd = updates[c->c->colnr];
 					/*
 				} else if (updates) {
-					//assert(0);
 					//upd = updates[updcol]->op1;
 					//upd = stmt_project(be, upd, stmt_col(be, c->c, dels));
 					upd = stmt_project(be, tids, stmt_col(be, c->c, dels));
@@ -4168,7 +4156,7 @@ sql_delete_set_Fkeys(backend *be, sql_key *k, stmt *ftids /* to be updated rows 
 				stmt *sq;
 				char *msg, *typestr = subtype2string2(&fc->c->type);
 				if(!typestr)
-					return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+					return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				msg = sa_message(sql->sa, "select cast(%s as %s);", fc->c->def, typestr);
 				_DELETE(typestr);
 				sq = rel_parse_value(be, msg, sql->emode);
@@ -4231,7 +4219,7 @@ sql_update_cascade_Fkeys(backend *be, sql_key *k, stmt *utids, stmt **updates, i
 				stmt *sq;
 				char *msg, *typestr = subtype2string2(&fc->c->type);
 				if(!typestr)
-					return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+					return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				msg = sa_message(sql->sa, "select cast(%s as %s);", fc->c->def, typestr);
 				_DELETE(typestr);
 				sq = rel_parse_value(be, msg, sql->emode);
@@ -4754,7 +4742,7 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 		cnt = s;
 	}
 
-	if (be->cur_append) //building the total number of rows affected across all tables
+	if (be->cur_append) /* building the total number of rows affected across all tables */
 		cnt->nr = add_to_merge_partitions_accumulator(be, cnt->nr);
 
 	if (sql->cascade_action) 
@@ -4855,7 +4843,7 @@ sql_delete_ukey(backend *be, stmt *utids /* deleted tids from ukey table */, sql
 			s = stmt_join(be, s, utids, 0, cmp_equal); /* join over the join index */
 			s = stmt_result(be, s, 0);
 			tids = stmt_project(be, s, tids);
-			if(cascade) { //for truncate statements with the cascade option
+			if(cascade) { /* for truncate statements with the cascade option */
 				s = sql_delete_cascade_Fkeys(be, fk, tids);
 				list_prepend(l, s);
 			} else {
@@ -4959,7 +4947,7 @@ sql_delete(backend *be, sql_table *t, stmt *rows)
 		return sql_error(sql, 02, SQLSTATE(27000) "DELETE: triggers failed for table '%s'", t->base.name);
 	if (rows)
 		s = stmt_aggr(be, rows, NULL, NULL, sql_bind_aggr(sql->sa, sql->session->schema, "count", NULL), 1, 0, 1);
-	if (be->cur_append) //building the total number of rows affected across all tables
+	if (be->cur_append) /* building the total number of rows affected across all tables */
 		s->nr = add_to_merge_partitions_accumulator(be, s->nr);
 	return s;
 }
@@ -4997,7 +4985,7 @@ struct tablelist {
 	struct tablelist* next;
 };
 
-static void //inspect the other tables recursively for foreign key dependencies
+static void /* inspect the other tables recursively for foreign key dependencies */
 check_for_foreign_key_references(mvc *sql, struct tablelist* list, struct tablelist* next_append, sql_table *t, int cascade, int *error) {
 	node *n;
 	int found;
@@ -5038,7 +5026,7 @@ check_for_foreign_key_references(mvc *sql, struct tablelist* list, struct tablel
 							}
 							if (!found) {
 								if ((new_node = MNEW(struct tablelist)) == NULL) {
-									sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+									sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 									*error = 1;
 									return;
 								}
@@ -5074,7 +5062,7 @@ sql_truncate(backend *be, sql_table *t, int restart_sequences, int cascade)
 	struct tablelist* new_list = MNEW(struct tablelist), *list_node, *aux;
 
 	if (!new_list) {
-		sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		error = 1;
 		goto finalize;
 	}
@@ -5095,7 +5083,7 @@ sql_truncate(backend *be, sql_table *t, int restart_sequences, int cascade)
 				if (col->def && (seq_pos = strstr(col->def, next_value_for))) {
 					seq_name = _STRDUP(seq_pos + (strlen(next_value_for) - strlen("seq_")));
 					if (!seq_name) {
-						sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+						sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 						error = 1;
 						goto finalize;
 					}
@@ -5160,7 +5148,7 @@ sql_truncate(backend *be, sql_table *t, int restart_sequences, int cascade)
 			goto finalize;
 		}
 
-		if (be->cur_append) //building the total number of rows affected across all tables
+		if (be->cur_append) /* building the total number of rows affected across all tables */
 			other->nr = add_to_merge_partitions_accumulator(be, other->nr);
 	}
 
@@ -5333,7 +5321,7 @@ rel2bin_exception(backend *be, sql_rel *rel, list *refs)
 			stmt *s = exp_bin(be, e, l, r, NULL, NULL, NULL, NULL);
 			append(slist, s);
 		}
-	} else { //if there is no exception condition, just generate a statement list
+	} else { /* if there is no exception condition, just generate a statement list */
 		list_append(slist, l);
 		list_append(slist, r);
 	}

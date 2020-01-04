@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #ifndef _GDK_DELTA_H_
@@ -15,20 +15,21 @@
  * e.g. a BAT[void,bit] is (at least) integer aligned.  This optimizes
  * processing on such BATs (DDBENCH).
  */
-#define DELTAinit(P1)						\
-	do {							\
-		BATsetcount((P1), 0);				\
-		(P1)->theap.free = 0;				\
-		(P1)->batInserted = 0;				\
-		(P1)->tshift = ATOMelmshift(Tsize(P1));		\
-		DELTADEBUG fprintf(stderr,			\
-			"#DELTAinit %s free %zu ins " BUNFMT	\
-			" base %p\n",				\
-			BATgetId(P1),				\
-			(P1)->theap.free,			\
-			(P1)->batInserted,			\
-			(P1)->theap.base);			\
-	} while (0)
+static inline void
+DELTAinit(BAT *b)
+{
+	BATsetcount(b, 0);
+	b->theap.free = 0;
+	b->batInserted = 0;
+	b->tshift = ATOMelmshift(Tsize(b));
+	DELTADEBUG fprintf(stderr,
+			   "#DELTAinit %s free %zu ins " BUNFMT " base %p\n",
+			   BBP_logical(b->batCacheid),
+			   b->theap.free,
+			   b->batInserted,
+			   b->theap.base);
+}
+
 /*
  * Upon saving a BAT, we should convert the delta marker BUN pointers
  * into indexes and convert them back into pointers upon reload.

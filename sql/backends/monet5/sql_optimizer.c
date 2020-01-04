@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -243,14 +243,14 @@ SQLoptimizeQuery(Client c, MalBlkPtr mb)
 	assert(be && be->mvc);	/* SQL clients should always have their state set */
 
 	c->blkmode = 0;
-	chkProgram(c->usermodule, mb);
+	msg = chkProgram(c->usermodule, mb);
 
 	/*
 	 * An error in the compilation should be reported to the user.
 	 * And if the debugging option is set, the debugger is called
 	 * to allow inspection.
 	 */
-	if (mb->errors) {
+	if (msg != MAL_SUCCEED || mb->errors) {
 		if (c->listing)
 			printFunction(c->fdout, mb, 0, c->listing);
 		if (be->mvc->debug) {
@@ -264,7 +264,7 @@ SQLoptimizeQuery(Client c, MalBlkPtr mb)
 	pipe = getSQLoptimizer(be->mvc);
 	if( strcmp(pipe, "default_pipe") == 0 && strcmp(c->optimizer, "default_pipe") != 0) {
 		if (!(pipe = GDKstrdup(c->optimizer)))
-			throw(MAL, "sql.optimizeQuery", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "sql.optimizeQuery", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		free_pipe = true;
 	}
 

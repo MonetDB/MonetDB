@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -117,10 +117,7 @@ strHeap(Heap *d, size_t cap)
 BUN
 strHash(const char *s)
 {
-	BUN res;
-
-	GDK_STRHASH(s, res);
-	return res;
+	return GDK_STRHASH(s);
 }
 
 void
@@ -156,7 +153,7 @@ strCleanHash(Heap *h, bool rebuild)
 		if (h->hashash)
 			strhash = ((const BUN *) s)[-1];
 		else
-			GDK_STRHASH(s, strhash);
+			strhash = GDK_STRHASH(s);
 		off = strhash & GDK_STRHASHMASK;
 		newhash[off] = (stridx_t) (pos - extralen - sizeof(stridx_t));
 		pos += GDK_STRLEN(s);
@@ -200,7 +197,7 @@ strLocate(Heap *h, const char *v)
 
 	/* search hash-table, if double-elimination is still in place */
 	BUN off;
-	GDK_STRHASH(v, off);
+	off = GDK_STRHASH(v);
 	off &= GDK_STRHASHMASK;
 
 	/* should only use strLocate iff fully double eliminated */
@@ -225,7 +222,7 @@ strPut(Heap *h, var_t *dst, const char *v)
 	stridx_t *bucket;
 	BUN off, strhash;
 
-	GDK_STRHASH(v, off);
+	off = GDK_STRHASH(v);
 	strhash = off;
 	off &= GDK_STRHASHMASK;
 	bucket = ((stridx_t *) h->base) + off;

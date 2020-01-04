@@ -26,7 +26,7 @@ stdout of test 'crash_on_groupby_distinct_serial.Bug-3463` in directory 'sql/tes
 
 #CREATE TABLE test (a int, b int, c serial);
 #SELECT a as t, count(distinct c) FROM test GROUP BY t;
-% sys.test,	sys.%1 # table_name
+% sys.,	sys.%1 # table_name
 % t,	%1 # name
 % int,	bigint # type
 % 1,	1 # length

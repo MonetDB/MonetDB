@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -973,7 +973,7 @@ str LIDARloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (header != NULL) LASHeader_Destroy(header);
 		if (reader != NULL) LASReader_Destroy(reader);
 		MT_lock_unset(&mt_lidar_lock);
-		msg = createException(MAL, "lidar.lidarload", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		msg = createException(MAL, "lidar.lidarload", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return msg;
 	}
 

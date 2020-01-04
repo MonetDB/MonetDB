@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -162,6 +162,10 @@
 #include <time.h>
 #include "mal_builder.h"
 #include "wlc.h"
+
+#ifdef _MSC_VER
+#define access(f, m)    _access(f, m)
+#endif
 
 #undef _WLC_DEBUG_
 
@@ -333,10 +337,13 @@ WLCflush(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return WLCsetConfig();
 }
 
-void
-WLCreset(void)
+str 
+WLCepilogue(void *ret)
 {
 	str msg = MAL_SUCCEED;
+
+	(void)ret;
+
 	MT_lock_set(&wlc_lock);
 	msg = WLCcloselogger();
 	wlc_snapshot[0]=0;
@@ -344,8 +351,8 @@ WLCreset(void)
 	wlc_name[0]= 0;
 	wlc_write[0] =0;
 	MT_lock_unset(&wlc_lock);
-	if(msg) //TODO we have to return a possible error message somehow
-		freeException(msg);
+       	//TODO we have to return a possible error message somehow
+	return(msg);
 }
 
 /*
@@ -726,7 +733,8 @@ WLCgeneric(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			break;
 		default:
 			varid = defConstant(cntxt->wlc, tpe, getArgReference(stk, pci, i));
-			p = pushArgument(cntxt->wlc, p, varid);
+			if( varid >= 0)
+				p = pushArgument(cntxt->wlc, p, varid);
 		}
 	}
 	p->ticks = GDKms();
@@ -782,7 +790,7 @@ WLCdatashipping(Client cntxt, MalBlkPtr mb, InstrPtr pci, int bid)
 	tbl = GDKstrdup(getVarConstant(cntxt->wlc, getArg(pci,2)).val.sval);
 	col = GDKstrdup(getVarConstant(cntxt->wlc, getArg(pci,3)).val.sval);
 	if(!sch || !tbl || !col) {
-		msg = createException(MAL, "wlc.datashipping", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		msg = createException(MAL, "wlc.datashipping", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto finish;
 	}
 	if (cntxt->wlc_kind < WLC_UPDATE)
@@ -857,7 +865,8 @@ WLCappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		ValRecord cst;
 		if (VALcopy(&cst, getArgReference(stk,pci,4)) != NULL){
 			varid = defConstant(cntxt->wlc, tpe, &cst);
-			p = pushArgument(cntxt->wlc, p, varid);
+			if( varid >=0)
+				p = pushArgument(cntxt->wlc, p, varid);
 		}
 	}
 	if( cntxt->wlc_kind < WLC_UPDATE)
@@ -909,7 +918,7 @@ WLCdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		} else {
 			ol = (oid*) Tloc(b,0);
-			for( ; o < last; o++, k++){
+			for( ; o < last; o++, k++, ol++){
 				if( k%32 == 31){
 					p = newStmt(cntxt->wlc, "wlr","delete");
 					p = pushStr(cntxt->wlc, p, getVarConstant(mb, getArg(pci,1)).val.sval);
@@ -997,7 +1006,8 @@ WLCupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		p = pushOid(cntxt->wlc,p, o);
 		if (VALcopy(&cst, getArgReference(stk,pci,5)) != NULL){
 			varid = defConstant(cntxt->wlc, tpe, &cst);
-			p = pushArgument(cntxt->wlc, p, varid);
+			if( varid >= 0)
+				p = pushArgument(cntxt->wlc, p, varid);
 		}
 	}
 

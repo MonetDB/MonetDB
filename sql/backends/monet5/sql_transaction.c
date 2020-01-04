@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -115,7 +115,7 @@ SQLtransaction_begin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if(msg)
 		return msg;
 	else if(ret < 0)
-		throw(SQL, "sql.trans", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(SQL, "sql.trans", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -144,6 +144,6 @@ SQLtransaction2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if(msg)
 		return msg;
 	else if(ret < 0)
-		throw(SQL, "sql.trans", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(SQL, "sql.trans", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }

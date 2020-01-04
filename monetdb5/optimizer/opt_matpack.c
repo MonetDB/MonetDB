@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -22,6 +22,7 @@ OPTmatpackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	InstrPtr *old;
 	char buf[256];
 	lng usec = GDKusec();
+	str msg = MAL_SUCCEED;
 
 	//if ( !optimizerIsApplied(mb,"multiplex") )
 		//return 0;
@@ -38,13 +39,13 @@ OPTmatpackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	limit= mb->stop;
 	slimit = mb->ssize;
 	if ( newMalBlkStmt(mb,mb->stop) < 0)
-		throw(MAL,"optimizer.matpack", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL,"optimizer.matpack", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	for (i = 0; i < limit; i++) {
 		p = old[i];
 		if( getModuleId(p) == matRef  && getFunctionId(p) == packRef && isaBatType(getArgType(mb,p,1))) {
 			q = newInstruction(0, matRef, packIncrementRef);
 			setDestVar(q, newTmpVariable(mb, getArgType(mb,p,1)));\
-			q = pushArgument(mb, q, getArg(p,1));
+			q = addArgument(mb, q, getArg(p,1));
 			v = getArg(q,0);
 			q = pushInt(mb,q, p->argc - p->retc);
 			pushInstruction(mb,q);
@@ -52,8 +53,8 @@ OPTmatpackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 
 			for ( j = 2; j < p->argc; j++) {
 				q = newInstruction(0, matRef, packIncrementRef);
-				q = pushArgument(mb, q, v);
-				q = pushArgument(mb, q, getArg(p,j));
+				q = addArgument(mb, q, v);
+				q = addArgument(mb, q, getArg(p,j));
 				setDestVar(q, newTmpVariable(mb, getVarType(mb,v)));
 				v = getArg(q,0);
 				pushInstruction(mb,q);
@@ -73,9 +74,11 @@ OPTmatpackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 
     /* Defense line against incorrect plans */
     if( actions > 0){
-        //chkTypes(cntxt->usermodule, mb, FALSE);
-        //chkFlow(mb);
-        //chkDeclarations(mb);
+        msg = chkTypes(cntxt->usermodule, mb, FALSE);
+	if (!msg)
+        	msg = chkFlow(mb);
+	if (!msg)
+        	msg = chkDeclarations(mb);
     }
     /* keep all actions taken as a post block comment */
 wrapup:
@@ -84,10 +87,5 @@ wrapup:
     newComment(mb,buf);
 	if( actions >= 0)
 		addtoMalBlkHistory(mb);
-
-    if( OPTdebug &  OPTmatpack){
-        fprintf(stderr, "#MATPACK optimizer exit\n");
-        fprintFunction(stderr, mb, 0,  LIST_MAL_ALL);
-    }
-	return MAL_SUCCEED;
+	return msg;
 }

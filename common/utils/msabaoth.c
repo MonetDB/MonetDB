@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /**
@@ -848,8 +848,7 @@ msab_getUplogInfo(sabuplog *ret, const sabdb *db)
 		start = stop = up = 0;
 		p = data;
 		while ((c = getc(f)) != EOF) {
-			*p = (char)c;
-			switch (*p) {
+			switch (c) {
 				case '\t':
 					/* start attempt */
 					ret->startcntr++;
@@ -879,7 +878,7 @@ msab_getUplogInfo(sabuplog *ret, const sabdb *db)
 				break;
 				default:
 					/* timestamp */
-					p++;
+					*p++ = c;
 				break;
 			}
 		}

@@ -11,7 +11,7 @@ stdout of test 'prod-decimals.Bug-6774` in directory 'sql/test/BugTracker-2019` 
 # Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
 # Found 15.504 GiB available main-memory.
 # Copyright (c) 1993 - July 2008 CWI.
-# Copyright (c) August 2008 - 2019 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008 - 2020 MonetDB B.V., all rights reserved
 # Visit https://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://localhost.localdomain:37885/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-31977/.s.monetdb.37885
@@ -89,7 +89,7 @@ stdout of test 'prod-decimals.Bug-6774` in directory 'sql/test/BugTracker-2019` 
 #     UNION ALL
 #     SELECT a1, prob FROM (SELECT t2.a1 AS a1, t3.a1 AS a2, t2.prob * t3.prob AS prob FROM t2,t3 WHERE t2.a1 = t3.a1) AS t__x32) as tmp
 #    GROUP BY tmp.a1;
-% .tmp,	.%7 # table_name
+% .tmp,	. # table_name
 % a1,	prob # name
 % int,	double # type
 % 1,	24 # length

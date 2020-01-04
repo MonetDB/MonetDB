@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -168,7 +168,7 @@ db_password_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BAT *bn = COLnew(b->hseqbase, TYPE_str, BATcount(b), TRANSIENT);
 		if (bn == NULL) {
 			BBPunfix(b->batCacheid);
-			throw(SQL, "sql.password", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(SQL, "sql.password", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		BATiter bi = bat_iterator(b);
 		BUN p, q;
@@ -183,7 +183,7 @@ db_password_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (BUNappend(bn, hash, false) != GDK_SUCCEED) {
 				BBPunfix(b->batCacheid);
 				BBPreclaim(bn);
-				throw(SQL, "sql.password", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				throw(SQL, "sql.password", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 			GDKfree(hash);
 		}

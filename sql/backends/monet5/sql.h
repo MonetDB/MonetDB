@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -260,7 +260,6 @@ sql5_export str str_2_blob(blob * *res, const str *val);
 sql5_export str batstr_2_blob(bat *res, const bat *val);
 sql5_export str SQLblob_2_str(str *res, const blob * val);
 
-
 sql5_export str SQLstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
@@ -311,5 +310,8 @@ sql5_export str SQLflush_log(void *ret);
 sql5_export str SQLsuspend_log_flushing(void *ret);
 sql5_export str SQLresume_log_flushing(void *ret);
 sql5_export str SQLhot_snapshot(void *ret, const str *tarfile);
+
+sql5_export str SQLsession_prepared_statements(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str SQLsession_prepared_statements_args(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif /* _SQL_H */

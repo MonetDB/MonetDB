@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /**
@@ -25,23 +25,24 @@
 
 /* these are the properties used for starting an mserver */
 static const confkeyval _internal_prop_keys[PROPLENGTH] = {
-	{"type",       NULL, 0, STR},
-	{"shared",     NULL, 0, STR},
-	{"nthreads",   NULL, 0, INT},
-	{"optpipe",    NULL, 0, STR},
-	{"readonly",   NULL, 0, BOOLEAN},
-	{"embedr",     NULL, 0, BOOLEAN},
-	{"embedpy",    NULL, 0, BOOLEAN},
-	{"embedpy3",   NULL, 0, BOOLEAN},
-	{"embedc",     NULL, 0, BOOLEAN},
-	{"ipv6",       NULL, 0, BOOLEAN},
-	{"listenaddr", NULL, 0, STR},
-	{"nclients",   NULL, 0, INT},
-	{"mfunnel",    NULL, 0, STR},
-	{"dbextra",    NULL, 0, STR},
-	{"memmaxsize", NULL, 0, INT},
-	{"vmmaxsize",  NULL, 0, INT},
-	{ NULL,        NULL, 0, INVALID}
+	{"type",        NULL, 0, STR},
+	{"shared",      NULL, 0, STR},
+	{"nthreads",    NULL, 0, INT},
+	{"optpipe",     NULL, 0, STR},
+	{"readonly",    NULL, 0, BOOLEAN},
+	{"embedr",      NULL, 0, BOOLEAN},
+	{"embedpy",     NULL, 0, BOOLEAN},
+	{"embedpy3",    NULL, 0, BOOLEAN},
+	{"embedc",      NULL, 0, BOOLEAN},
+	{"ipv6",        NULL, 0, BOOLEAN},
+	{"listenaddr",  NULL, 0, STR},
+	{"nclients",    NULL, 0, INT},
+	{"mfunnel",     NULL, 0, STR},
+	{"dbextra",     NULL, 0, STR},
+	{"memmaxsize",  NULL, 0, INT},
+	{"vmmaxsize",   NULL, 0, INT},
+	{"raw_strings", NULL, 0, BOOLEAN},
+	{ NULL,         NULL, 0, INVALID}
 };
 
 static pthread_mutex_t readprops_lock = PTHREAD_MUTEX_INITIALIZER;

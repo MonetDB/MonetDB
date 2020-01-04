@@ -68,61 +68,61 @@ stdout of test 'truncate_bam_tables.Bug-6543` in directory 'sql/test/BugTracker-
 # 17:33:23 >  
 
 #SELECT (COUNT(*) > 0) AS has_rows FROM bam.sq;
-% .%2 # table_name
+% . # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM bam.sq;
-% .%2 # table_name
+% . # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM bam.rg;
-% .%2 # table_name
+% . # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM bam.rg;
-% .%2 # table_name
+% . # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM bam.pg;
-% .%2 # table_name
+% . # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM bam.pg;
-% .%2 # table_name
+% . # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM bam.export;
-% .%2 # table_name
+% . # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM bam.export;
-% .%2 # table_name
+% . # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM bam.files;
-% .%2 # table_name
+% . # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM bam.files;
-% .%2 # table_name
+% . # table_name
 % has_rows # name
 % boolean # type
 % 5 # length

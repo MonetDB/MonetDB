@@ -81,6 +81,26 @@ SELECT SUM(SUM(i)) FROM integers; -- aggregates cannot be nested
 
 SELECT i1.i FROM integers i1 WHERE i1.i >= (SELECT i1.i, i2.i FROM integers i2 WHERE i2.i > 1); --error, subquery must return a single column
 
+SELECT i1.i FROM integers i1 GROUP BY (SELECT SUM(i1.i) + i2.i FROM integers i2); --error, cannot use non GROUP BY column 'i2.i' in query results without an aggregate function
+
+SELECT i1.i FROM integers i1 GROUP BY (SELECT i2.i FROM integers i2); --error, column "i1.i" must appear in the GROUP BY clause or be used in an aggregate function
+
+SELECT 1 FROM integers i1 GROUP BY (VALUES(1), (2)); --error, more than one row returned by a subquery used as an expression
+
+SELECT 1 FROM integers i1 GROUP BY (VALUES(1,2,3)); --error, subquery must return only one column
+
+SELECT (VALUES(1));
+
+SELECT (VALUES(1),(2)); --error, cardinality violation, scalar value expected
+
+SELECT (VALUES(1,2,3)); --error, subquery must return only one column
+
+SELECT i FROM integers ORDER BY (SELECT 1);
+
+SELECT i FROM integers ORDER BY (SELECT 2); --error, the query outputs 1 column, so not possible to order by the second projection
+
+SELECT i FROM integers ORDER BY (SELECT -1); --error, no in the order by range
+
 drop TABLE integers;
 
 -- varchar tests
@@ -90,4 +110,9 @@ SELECT NULL IN (SELECT * FROM strings); -- NULL
 SELECT 'hello' IN (SELECT * FROM strings); -- true
 SELECT 'bla' IN (SELECT * FROM strings); -- NULL
 SELECT 'bla' IN (SELECT * FROM strings WHERE v IS NOT NULL); -- false
+SELECT * FROM strings WHERE EXISTS(SELECT NULL);
+SELECT * FROM strings WHERE EXISTS(SELECT v FROM strings WHERE v='bla');
+SELECT (SELECT v FROM strings WHERE v='hello') FROM strings;
+SELECT (SELECT v FROM strings WHERE v='bla') FROM strings;
+
 drop table strings;

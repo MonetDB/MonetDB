@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -105,7 +105,7 @@ delta_full_bat_( sql_column *c, sql_delta *bat, int temp)
 					return NULL;
 				}
 			}
-			if (void_replace_bat(b, ui, uv, true) != GDK_SUCCEED) {
+			if (BATreplace(b, ui, uv, true) != GDK_SUCCEED) {
 				bat_destroy(ui);
 				bat_destroy(uv);
 				bat_destroy(b);

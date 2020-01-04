@@ -69,7 +69,7 @@ stdout of test 'case-sqrt.Bug-3627` in directory 'sql/test/BugTracker-2014` itse
 #          FROM t1
 #       ) t0
 #;
-% sys.t0,	sys.t0,	sys.%3 # table_name
+% sys.t0,	sys.t0,	sys. # table_name
 % id,	colint,	%3 # name
 % int,	int,	double # type
 % 1,	2,	24 # length

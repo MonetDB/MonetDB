@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -98,7 +98,7 @@ MKEYbathash(bat *res, const bat *bid)
 	dst = COLnew(b->hseqbase, TYPE_lng, n, TRANSIENT);
 	if (dst == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(SQL, "mkey.bathash", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(SQL, "mkey.bathash", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	BATsetcount(dst, n);
 
@@ -255,7 +255,7 @@ MKEYbulk_rotate_xor_hash(bat *res, const bat *hid, const int *nbits, const bat *
 	if (bn == NULL) {
 		BBPunfix(hb->batCacheid);
 		BBPunfix(b->batCacheid);
-		throw(MAL, "mkey.rotate_xor_hash", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "mkey.rotate_xor_hash", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	BATsetcount(bn, n);
 
@@ -357,7 +357,7 @@ MKEYbulkconst_rotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 	bn = COLnew(hb->hseqbase, TYPE_lng, n, TRANSIENT);
 	if (bn == NULL) {
 		BBPunfix(hb->batCacheid);
-		throw(MAL, "mkey.rotate_xor_hash", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "mkey.rotate_xor_hash", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	BATsetcount(bn, n);
 
@@ -429,7 +429,7 @@ MKEYconstbulk_rotate_xor_hash(bat *res, const lng *h, const int *nbits, const ba
 	bn = COLnew(b->hseqbase, TYPE_lng, n, TRANSIENT);
 	if (bn == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(MAL, "mkey.rotate_xor_hash", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "mkey.rotate_xor_hash", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	BATsetcount(bn, n);
 

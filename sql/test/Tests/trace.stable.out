@@ -11,7 +11,7 @@ stdout of test 'trace` in directory 'sql/test` itself:
 # Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
 # Found 31.305 GiB available main-memory.
 # Copyright (c) 1993 - July 2008 CWI.
-# Copyright (c) August 2008 - 2019 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008 - 2020 MonetDB B.V., all rights reserved
 # Visit https://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://catskill.da.cwi.nl:33160/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-9889/.s.monetdb.33160
@@ -47,11 +47,11 @@ stdout of test 'trace` in directory 'sql/test` itself:
 % usec,	statement # name
 % bigint,	clob # type
 % 2,	106 # length
-[ 2,	"X_1=0@0:void := querylog.define(\"trace select count(*) from mytypes;\":str, \"sequential_pipe\":str, 12:int);"	]
+[ 1,	"X_1=0@0:void := querylog.define(\"trace select count(*) from mytypes;\":str, \"sequential_pipe\":str, 12:int);"	]
 [ 0,	"X_4=0:int := sql.mvc();"	]
-[ 4,	"C_5=<tmp_2405>[26]:bat[:oid] := sql.tid(X_4=0:int, \"sys\":str, \"mytypes\":str);"	]
-[ 1,	"X_18=26:lng := aggr.count(C_5=<tmp_2405>[26]:bat[:oid]);"	]
-[ 19,	"sql.resultSet(\".%1\":str, \"%1\":str, \"bigint\":str, 64:int, 0:int, 7:int, X_18=26:lng);"	]
+[ 1,	"C_5=<tmp_2513>[26]:bat[:oid] := sql.tid(X_4=0:int, \"sys\":str, \"mytypes\":str);"	]
+[ 0,	"X_18=26:lng := aggr.count(C_5=<tmp_2513>[26]:bat[:oid]);"	]
+[ 18,	"sql.resultSet(\".%1\":str, \"%1\":str, \"bigint\":str, 64:int, 0:int, 7:int, X_18=26:lng);"	]
 #select '~EndVariableOutput~';
 % . # table_name
 % single_value # name

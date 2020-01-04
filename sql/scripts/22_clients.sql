@@ -2,7 +2,7 @@
 -- License, v. 2.0.  If a copy of the MPL was not distributed with this
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/.
 --
--- Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+-- Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
 
 create function sys.password_hash (username string)
 	returns string
@@ -15,7 +15,7 @@ external name sql.rt_credentials;
 create function sys.sessions()
 returns table(
 	"sessionid" int,
-	"user" string,
+	"username" string,
 	"login" timestamp,
 	"idle" timestamp,
 	"optimizer" string,
@@ -23,7 +23,7 @@ returns table(
 	"querytimeout" int,
 	"workerlimit" int,
 	"memorylimit" int
-	)
+)
 external name sql.sessions;
 create view sys.sessions as select * from sys.sessions();
 
@@ -81,3 +81,37 @@ create procedure sys.stopsession("sessionid" int)
 
 create procedure sys.setprinttimeout("timeout" integer)
 	external name clients.setprinttimeout;
+
+-- session's prepared statements
+create function sys.prepared_statements()
+returns table(
+	"sessionid" int,
+	"username" string,
+	"statementid" int,
+	"statement" string,
+	"created" timestamp
+)
+external name sql.prepared_statements;
+grant execute on function sys.prepared_statements to public;
+
+create view sys.prepared_statements as select * from sys.prepared_statements();
+grant select on sys.prepared_statements to public;
+
+-- session's prepared statements arguments
+create function sys.prepared_statements_args()
+returns table(
+	"statementid" int,
+	"type" string,
+	"type_digits" int,
+	"type_scale" int,
+	"inout" tinyint,
+	"number" int,
+	"schema" string,
+	"table" string,
+	"column" string
+)
+external name sql.prepared_statements_args;
+grant execute on function sys.prepared_statements_args to public;
+
+create view sys.prepared_statements_args as select * from sys.prepared_statements_args();
+grant select on sys.prepared_statements_args to public;

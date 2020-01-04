@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -207,7 +207,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 	args = (str *)GDKzalloc(pci->argc * sizeof(str));
 	pyreturn_values = GDKzalloc(pci->retc * sizeof(PyReturn));
 	if (args == NULL || pyreturn_values == NULL) {
-		throw(MAL, "pyapi.eval", SQLSTATE(HY001) MAL_MALLOC_FAIL " arguments.");
+		throw(MAL, "pyapi.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL " arguments.");
 	}
 
 	if ((pci->argc - (pci->retc + 2)) * sizeof(PyInput) > 0) {
@@ -217,7 +217,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 		if (pyinput_values == NULL) {
 			GDKfree(args);
 			GDKfree(pyreturn_values);
-			throw(MAL, "pyapi.eval", SQLSTATE(HY001) MAL_MALLOC_FAIL " input values.");
+			throw(MAL, "pyapi.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL " input values.");
 		}
 	}
 
@@ -281,7 +281,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 			}
 			seqbase = b->hseqbase;
 			inp->count = BATcount(b);
-			inp->bat_type = ATOMstorage(getBatType(getArgType(mb, pci, i)));
+			inp->bat_type = b->ttype;
 			inp->bat = b;
 			if (inp->count == 0) {
 				// one of the input BATs is empty, don't execute the function at
@@ -335,7 +335,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 		mmap_sizes = GDKzalloc(mmap_count * sizeof(size_t));
 		if (mmap_ptrs == NULL || mmap_sizes == NULL) {
 			msg = createException(MAL, "pyapi.eval",
-								  SQLSTATE(HY001) MAL_MALLOC_FAIL " mmap values.");
+								  SQLSTATE(HY013) MAL_MALLOC_FAIL " mmap values.");
 			goto wrapup;
 		}
 
@@ -581,7 +581,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 			exprStr = GDKzalloc(length + 1);
 			if (exprStr == NULL) {
 				msg = createException(MAL, "pyapi.eval",
-									  SQLSTATE(HY001) MAL_MALLOC_FAIL " function body string.");
+									  SQLSTATE(HY013) MAL_MALLOC_FAIL " function body string.");
 				goto wrapup;
 			}
 			if (fread(exprStr, 1, (size_t) length, fp) != (size_t) length) {
@@ -635,9 +635,10 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 			result_array = PyArrayObject_FromScalar(
 				&pyinput_values[i - (pci->retc + 2)], &msg);
 		} else {
+			int type = pyinput_values[i - (pci->retc + 2)].bat_type;
 			result_array = PyMaskedArray_FromBAT(
 				&pyinput_values[i - (pci->retc + 2)], t_start, t_end, &msg,
-				!enable_zerocopy_input);
+				!enable_zerocopy_input && type != TYPE_void);
 		}
 		if (result_array == NULL) {
 			if (msg == MAL_SUCCEED) {
@@ -730,7 +731,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 			group_counts = GDKzalloc(group_count * sizeof(size_t));
 			if (group_counts == NULL) {
 				msg = createException(MAL, "pyapi.eval",
-									  SQLSTATE(HY001) MAL_MALLOC_FAIL " group count array.");
+									  SQLSTATE(HY013) MAL_MALLOC_FAIL " group count array.");
 				goto aggrwrapup;
 			}
 
@@ -756,6 +757,9 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 
 				if (!input.scalar) {
 					switch (input.bat_type) {
+						case TYPE_void:
+							NP_SPLIT_BAT(oid);
+							break;
 						case TYPE_bit:
 							NP_SPLIT_BAT(bit);
 							break;
@@ -1072,7 +1076,8 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 				//   if someone has some problem with memory size exploding when
 				//   using PYTHON_MAP but it being fine in regular PYTHON this
 				//   is probably the issue
-				int bat_type = getBatType(getArgType(mb, pci, i));
+				PyInput *inp = &pyinput_values[i - (pci->retc + 2)];
+				int bat_type = inp->bat_type;
 				PyObject *new_array = PyArray_FromAny(
 					ret->numpy_array,
 					PyArray_DescrFromType(BatType_ToPyType(bat_type)), 1, 1,
@@ -1187,12 +1192,12 @@ returnvalues:
 			if (bat_type != TYPE_str) {
 				if (VALinit(&stk->stk[pci->argv[i]], bat_type, Tloc(b, 0)) ==
 					NULL)
-					msg = createException(MAL, "pyapi.eval", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+					msg = createException(MAL, "pyapi.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			} else {
 				BATiter li = bat_iterator(b);
 				if (VALinit(&stk->stk[pci->argv[i]], bat_type,
 							BUNtail(li, 0)) == NULL)
-					msg = createException(MAL, "pyapi.eval", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+					msg = createException(MAL, "pyapi.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 		}
 		if (argnode) {
@@ -1502,6 +1507,38 @@ static void ComputeParallelAggregation(AggrParams *p)
 			} else {
 				npy_intp elements[1] = {group_elements};
 				switch (input.bat_type) {
+					case TYPE_void:
+						vararray = PyArray_New(
+							&PyArray_Type, 1, elements, 
+#if SIZEOF_OID == SIZEOF_INT
+							NPY_UINT
+#else
+							NPY_ULONGLONG
+#endif
+							,
+							NULL,
+							((oid ***)(*p->split_bats))[group_it][i], 0,
+							NPY_ARRAY_CARRAY || !NPY_ARRAY_WRITEABLE, NULL);
+						break;
+					case TYPE_oid:
+						vararray = PyArray_New(
+							&PyArray_Type, 1, elements, 
+#if SIZEOF_OID == SIZEOF_INT
+							NPY_UINT32
+#else
+							NPY_UINT64
+#endif
+							,
+							NULL,
+							((oid ***)(*p->split_bats))[group_it][i], 0,
+							NPY_ARRAY_CARRAY || !NPY_ARRAY_WRITEABLE, NULL);
+						break;
+					case TYPE_bit:
+						vararray = PyArray_New(
+							&PyArray_Type, 1, elements, NPY_BOOL, NULL,
+							((bit ***)(*p->split_bats))[group_it][i], 0,
+							NPY_ARRAY_CARRAY || !NPY_ARRAY_WRITEABLE, NULL);
+						break;
 					case TYPE_bte:
 						vararray = PyArray_New(
 							&PyArray_Type, 1, elements, NPY_INT8, NULL,
@@ -1550,7 +1587,7 @@ static void ComputeParallelAggregation(AggrParams *p)
 				}
 
 				if (vararray == NULL) {
-					p->msg = createException(MAL, "pyapi.eval", SQLSTATE(HY001) MAL_MALLOC_FAIL
+					p->msg = createException(MAL, "pyapi.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL
 											 " to create NumPy array.");
 					goto wrapup;
 				}

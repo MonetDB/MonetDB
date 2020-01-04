@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -43,7 +43,7 @@ MNDBPrimaryKeys(ODBCStmt *stmt,
 	/* buffer for the constructed query to do meta data retrieval */
 	char *query = NULL;
 	char *query_end = NULL;	/* pointer to end of built-up query */
-	char *cat = NULL, *sch = NULL, *tab = NULL;
+	char *sch = NULL, *tab = NULL;
 
 	/* deal with SQL_NTS and SQL_NULL_DATA */
 	fixODBCstring(CatalogName, NameLength1, SQLSMALLINT,
@@ -61,19 +61,12 @@ MNDBPrimaryKeys(ODBCStmt *stmt,
 	}
 #ifdef ODBCDEBUG
 	ODBCLOG("\"%.*s\" \"%.*s\" \"%.*s\"\n",
-		(int) NameLength1, (char *) CatalogName,
-		(int) NameLength2, (char *) SchemaName,
-		(int) NameLength3, (char *) TableName);
+		(int) NameLength1, CatalogName ? (char *) CatalogName : "",
+		(int) NameLength2, SchemaName ? (char *) SchemaName : "",
+		(int) NameLength3, TableName ? (char *) TableName : "");
 #endif
 
 	if (stmt->Dbc->sql_attr_metadata_id == SQL_FALSE) {
-		if (NameLength1 > 0) {
-			cat = ODBCParseOA("e", "value",
-					  (const char *) CatalogName,
-					  (size_t) NameLength1);
-			if (cat == NULL)
-				goto nomem;
-		}
 		if (NameLength2 > 0) {
 			sch = ODBCParseOA("s", "name",
 					  (const char *) SchemaName,
@@ -89,13 +82,6 @@ MNDBPrimaryKeys(ODBCStmt *stmt,
 				goto nomem;
 		}
 	} else {
-		if (NameLength1 > 0) {
-			cat = ODBCParseID("e", "value",
-					  (const char *) CatalogName,
-					  (size_t) NameLength1);
-			if (cat == NULL)
-				goto nomem;
-		}
 		if (NameLength2 > 0) {
 			sch = ODBCParseID("s", "name",
 					  (const char *) SchemaName,
@@ -113,8 +99,8 @@ MNDBPrimaryKeys(ODBCStmt *stmt,
 	}
 
 	/* construct the query */
-	query = malloc(1000 + (cat ? strlen(cat) : 0) +
-		       (sch ? strlen(sch) : 0) + (tab ? strlen(tab) : 0));
+	query = malloc(1000 + strlen(stmt->Dbc->dbname) + (sch ? strlen(sch) : 0) +
+			(tab ? strlen(tab) : 0));
 	if (query == NULL)
 		goto nomem;
 	query_end = query;
@@ -127,30 +113,31 @@ MNDBPrimaryKeys(ODBCStmt *stmt,
 	   SMALLINT     key_seq NOT NULL
 	   VARCHAR      pk_name
 	 */
-	strcpy(query_end,
-	       "select e.value as table_cat, "
+	sprintf(query_end,
+	       "select '%s' as table_cat, "
 		      "s.name as table_schem, "
 		      "t.name as table_name, "
 		      "kc.name as column_name, "
 		      "cast(kc.nr + 1 as smallint) as key_seq, "
 		      "k.name as pk_name "
 	       "from sys.schemas s, sys.tables t, "
-		    "sys.keys k, sys.objects kc, "
-		    "sys.env() e "
+		    "sys.keys k, sys.objects kc "
 	       "where k.id = kc.id and "
 		     "k.table_id = t.id and "
 		     "t.schema_id = s.id and "
-		     "k.type = 0 and "
-		     "e.name = 'gdk_dbname'");
+		     "k.type = 0",
+		stmt->Dbc->dbname);
 	assert(strlen(query) < 800);
 	query_end += strlen(query_end);
 
 	/* Construct the selection condition query part */
-	if (cat) {
+	if (NameLength1 > 0 && CatalogName != NULL) {
 		/* filtering requested on catalog name */
-		sprintf(query_end, " and %s", cat);
-		query_end += strlen(query_end);
-		free(cat);
+		if (strcmp((char *) CatalogName, stmt->Dbc->dbname) != 0) {
+			/* catalog name does not match the database name, so return no rows */
+			sprintf(query_end, " and 1=2");
+			query_end += strlen(query_end);
+		}
 	}
 	if (sch) {
 		/* filtering requested on schema name */
@@ -170,9 +157,7 @@ MNDBPrimaryKeys(ODBCStmt *stmt,
 	query_end += strlen(query_end);
 
 	/* query the MonetDB data dictionary tables */
-	rc = MNDBExecDirect(stmt,
-			    (SQLCHAR *) query,
-			    (SQLINTEGER) (query_end - query));
+	rc = MNDBExecDirect(stmt, (SQLCHAR *) query, (SQLINTEGER) (query_end - query));
 
 	free(query);
 
@@ -180,8 +165,6 @@ MNDBPrimaryKeys(ODBCStmt *stmt,
 
   nomem:
 	/* note that query must be NULL when we get here */
-	if (cat)
-		free(cat);
 	if (sch)
 		free(sch);
 	if (tab)

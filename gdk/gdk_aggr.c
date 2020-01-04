@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -2896,11 +2896,13 @@ doBATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 				if (!skip_nils && !b->tnonil)
 					nils += (*atomcmp)(v, dnil) == 0;
 			}
-			bunfastapp_nocheck(bn, BUNlast(bn), v, Tsize(bn));
+			if (bunfastapp_nocheck(bn, BUNlast(bn), v, Tsize(bn)) != GDK_SUCCEED)
+				goto bunins_failed;
 		}
 		nils += ngrp - BATcount(bn);
 		while (BATcount(bn) < ngrp) {
-			bunfastapp_nocheck(bn, BUNlast(bn), dnil, Tsize(bn));
+			if (bunfastapp_nocheck(bn, BUNlast(bn), dnil, Tsize(bn)) != GDK_SUCCEED)
+				goto bunins_failed;
 		}
 		bn->theap.dirty = true;
 		BBPunfix(g->batCacheid);

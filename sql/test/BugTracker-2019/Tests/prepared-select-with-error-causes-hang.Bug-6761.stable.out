@@ -1,4 +1,4 @@
-stdout of test 'prepared-select-with-error-causes-hang.Jira-292` in directory 'sql/test/BugTracker-2019` itself:
+stdout of test 'prepared-select-with-error-causes-hang.Bug-6761` in directory 'sql/test/BugTracker-2019` itself:
 
 
 # 18:47:57 >  
@@ -10,7 +10,7 @@ stdout of test 'prepared-select-with-error-causes-hang.Jira-292` in directory 's
 # Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
 # Found 31.243 GiB available main-memory.
 # Copyright (c) 1993 - July 2008 CWI.
-# Copyright (c) August 2008 - 2019 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008 - 2020 MonetDB B.V., all rights reserved
 # Visit https://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://localhost.localdomain:33005/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-32072/.s.monetdb.33005

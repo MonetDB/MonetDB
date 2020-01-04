@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -41,6 +41,7 @@
 #include "sql_qc.h"
 #include "sql_mvc.h"
 #include "sql_atom.h"
+#include "mtime.h"
 
 qc *
 qc_create(int clientid, int seqnr)
@@ -92,12 +93,12 @@ qc_delete(qc *cache, cq *q)
 }
 
 void
-qc_clean(qc *cache)
+qc_clean(qc *cache, bool prepared)
 {
 	cq *n, *q, *p = NULL;
 
 	for (q = cache->q; q; ) {
-		if (!q->prepared) {
+		if (q->prepared == prepared) {
 			n = q->next;
 			if (p) 
 				p->next = n;
@@ -238,11 +239,11 @@ qc_match(qc *cache, mvc *sql, symbol *s, atom **params, int plen, int key)
 }
 
 cq *
-qc_insert(qc *cache, sql_allocator *sa, sql_rel *r, char *qname, symbol *s, atom **params, int paramlen, int key, sql_query_t type, char *cmd, int no_mitosis, int prepared)
+qc_insert(qc *cache, sql_allocator *sa, sql_rel *r, char *qname, symbol *s, atom **params, int paramlen, int key, sql_query_t type, char *cmd, int no_mitosis, bool prepared)
 {
 	int i, namelen;
 	cq *n = MNEW(cq);
-	if(!n)
+	if (!n)
 		return NULL;
 
 	n->id = cache->id++;
@@ -256,7 +257,7 @@ qc_insert(qc *cache, sql_allocator *sa, sql_rel *r, char *qname, symbol *s, atom
 	n->paramlen = paramlen;
 	if (paramlen) {
 		n->params = SA_NEW_ARRAY(sa, sql_subtype,paramlen);
-		if(!n->params) {
+		if (!n->params) {
 			_DELETE(n);
 			return NULL;
 		}
@@ -277,7 +278,8 @@ qc_insert(qc *cache, sql_allocator *sa, sql_rel *r, char *qname, symbol *s, atom
 	namelen = 5 + ((n->id+7)>>3) + ((cache->clientid+7)>>3);
 	n->name = sa_alloc(sa, namelen);
 	n->no_mitosis = no_mitosis;
-	if(!n->name) {
+	n->created = timestamp_current();
+	if (!n->name) {
 		_DELETE(n->params);
 		_DELETE(n);
 		return NULL;
@@ -288,13 +290,15 @@ qc_insert(qc *cache, sql_allocator *sa, sql_rel *r, char *qname, symbol *s, atom
 }
 
 int
-qc_isaquerytemplate(str name){
+qc_isaquerytemplate(str name)
+{
 	int i,j;
 	return sscanf(name, "s%d_%d", &i,&j) == 2;
 }
 
 int
-qc_isapreparedquerytemplate(str name){
+qc_isapreparedquerytemplate(str name)
+{
 	int i,j;
 	return sscanf(name, "p%d_%d", &i,&j) == 2;
 }

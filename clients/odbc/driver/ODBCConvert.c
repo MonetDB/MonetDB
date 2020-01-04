@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "ODBCGlobal.h"
@@ -38,27 +38,6 @@ typedef struct {
 	uint64_t val;		/* the value (64 bits) */
 #endif
 } bignum_t;
-
-#ifndef HAVE_STRNCASECMP
-static int
-strncasecmp(const char *s1, const char *s2, size_t n)
-{
-	int c1, c2;
-
-	while (n > 0) {
-		c1 = (unsigned char) *s1++;
-		c2 = (unsigned char) *s2++;
-		if (c1 == 0)
-			return -c2;
-		if (c2 == 0)
-			return c1;
-		if (c1 != c2 && tolower(c1) != tolower(c2))
-			return tolower(c1) - tolower(c2);
-		n--;
-	}
-	return 0;
-}
-#endif
 
 /* Parse a number and store in a bignum_t.
  * 1 is returned if all is well;

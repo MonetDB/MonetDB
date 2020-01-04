@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -12,17 +12,24 @@
  * these are in a separate header because they are used in multiple places
  */
 
+#define BAT_TO_NP_CREATE_ALWAYS(bat, nptpe)                                    \
+	do {                                                                       \
+		vararray = PyArray_Arange(0, (double)bat->batCount, 1, nptpe);         \
+	} while(0)                                                                 \
+
 #define BAT_TO_NP(bat, mtpe, nptpe)                                            \
-	if (copy) {                                                                \
-		vararray = PyArray_EMPTY(1, elements, nptpe, 0);                       \
-		memcpy(PyArray_DATA((PyArrayObject *)vararray), Tloc(bat, 0),          \
-			   sizeof(mtpe) * (t_end - t_start));                              \
-	} else {                                                                   \
-		vararray =                                                             \
-			PyArray_New(&PyArray_Type, 1, elements, nptpe, NULL,               \
-						&((mtpe *)Tloc(bat, 0))[t_start], 0,                   \
-						NPY_ARRAY_CARRAY || !NPY_ARRAY_WRITEABLE, NULL);       \
-	}
+	do {                                                                       \
+		if (copy) {                                                            \
+			vararray = PyArray_EMPTY(1, elements, nptpe, 0);                   \
+			memcpy(PyArray_DATA((PyArrayObject *)vararray), Tloc(bat, 0),      \
+				sizeof(mtpe) * (t_end - t_start));                             \
+		} else {                                                               \
+			vararray =                                                         \
+				PyArray_New(&PyArray_Type, 1, elements, nptpe, NULL,           \
+							&((mtpe *)Tloc(bat, 0))[t_start], 0,               \
+							NPY_ARRAY_CARRAY || !NPY_ARRAY_WRITEABLE, NULL);   \
+		}                                                                      \
+	} while(0)                                                                 \
 
 // This #define creates a new BAT with the internal data and mask from a Numpy
 // array, without copying the data
@@ -520,7 +527,7 @@ convert_and_append(BAT* b, const char* text, bool force) {
 			}                                                                  \
 			utf8_string = GDKzalloc(utf8_size);                                \
 			if (utf8_string == NULL) {			\
-				msg = createException(MAL, "pyapi.eval", SQLSTATE(HY001) MAL_MALLOC_FAIL); \
+				msg = createException(MAL, "pyapi.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
 				goto wrapup;				\
 			}						\
 			for (iu = 0; iu < ret->count; iu++) {                              \
@@ -560,6 +567,22 @@ convert_and_append(BAT* b, const char* text, bool force) {
 #else
 #define NOT_HGE(mtpe) true
 #endif
+
+#define NP_CREATE_EMPTY_BAT(bat, mtpe)                                     \
+	{                                                                      \
+		bat = COLnew(seqbase, TYPE_##mtpe, (BUN)ret->count, TRANSIENT);    \
+		if (bat == NULL) {                                                 \
+			msg = createException(MAL, "pyapi.eval", SQLSTATE(PY000) "Cannot create column"); \
+			goto wrapup;                                                   \
+		}                                                                  \
+		bat->tkey = false;                                                 \
+		bat->tsorted = false;                                              \
+		bat->trevsorted = false;                                           \
+		bat->tnil = false;                                                 \
+		bat->tnonil = true;                                                \
+		BATsetcount(bat, (BUN)ret->count);                                 \
+		BATsettrivprop(bat);                                               \
+	}
 
 // This very big #define combines all the previous #defines for one big #define
 // that is responsible for converting a Numpy array (described in the PyReturn

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -3047,7 +3047,7 @@ convertCase(BAT *from, BAT *to, str *res, const char *src, const char *malfunc)
 	if (*res != NULL)
 		return MAL_SUCCEED;
   hashfnd_failed:
-	throw(MAL, malfunc, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	throw(MAL, malfunc, SQLSTATE(HY013) MAL_MALLOC_FAIL);
   illegal:
 	throw(MAL, malfunc, SQLSTATE(42000) "Illegal Unicode code point");
 }
@@ -3120,7 +3120,7 @@ STRtostr(str *res, const str *src)
 	else
 		*res = GDKstrdup(*src);
 	if (*res == NULL)
-		throw(MAL, "str.str", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "str.str", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -3143,7 +3143,7 @@ STRConcat(str *res, const str *val1, const str *val2)
 		}
 	}
 	if (*res == NULL)
-		throw(MAL, "str.concat", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "str.concat", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -3196,7 +3196,7 @@ STRTail(str *res, const str *arg1, const int *offset)
 		*res = GDKstrdup(UTF8_strtail(s, off));
 	}
 	if (*res == NULL)
-		throw(MAL, "str.tail", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "str.tail", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -3210,7 +3210,7 @@ STRSubString(str *res, const str *arg1, const int *offset, const int *length)
 	if (strNil(s) || is_int_nil(off) || is_int_nil(l)) {
 		*res = GDKstrdup(str_nil);
 		if (*res == NULL)
-			throw(MAL, "str.substring", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "str.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 	if (off < 0) {
@@ -3228,14 +3228,14 @@ STRSubString(str *res, const str *arg1, const int *offset, const int *length)
 	if (l < 0) {
 		*res = GDKstrdup("");
 		if (*res == NULL)
-			throw(MAL, "str.substring", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "str.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 	s = UTF8_strtail(s, off);
 	len = (size_t) (UTF8_strtail(s, l) - s);
 	*res = GDKmalloc(len + 1);
 	if (*res == NULL)
-		throw(MAL, "str.substring", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "str.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	strcpy_len(*res, s, len + 1);
 	return MAL_SUCCEED;
 }
@@ -3248,13 +3248,13 @@ STRFromWChr(str *res, const int *c)
 	if (is_int_nil(*c)) {
 		*res = GDKstrdup(str_nil);
 		if (*res == NULL)
-			throw(MAL, "str.unicode", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "str.unicode", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 
 	s = *res = GDKmalloc(5);
 	if (*res == NULL)
-		throw(MAL, "str.unicode", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "str.unicode", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	UTF8_PUTCHAR(*c, s);
 	*s = 0;
 	return MAL_SUCCEED;
@@ -3395,7 +3395,7 @@ STRsplitpart(str *res, str *haystack, str *needle, int *field)
 	if (strNil(s) || is_int_nil(*field)) {
 		*res = GDKstrdup(str_nil);
 		if (*res == NULL)
-			throw(MAL, "str.splitpart", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "str.splitpart", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 
@@ -3413,7 +3413,7 @@ STRsplitpart(str *res, str *haystack, str *needle, int *field)
 	if (f != 1) {
 		*res = GDKstrdup("");
 		if (*res == NULL)
-			throw(MAL, "str.splitpart", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "str.splitpart", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 
@@ -3425,7 +3425,7 @@ STRsplitpart(str *res, str *haystack, str *needle, int *field)
 
 	*res = GDKstrndup(s, len);
 	if (*res == NULL)
-		throw(MAL, "str.splitpart", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "str.splitpart", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -3522,7 +3522,7 @@ STRStrip(str *res, const str *arg1)
 		*res = GDKstrndup(s, n);
 	}
 	if (*res == NULL)
-		throw(MAL, "str.trim", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "str.trim", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -3542,7 +3542,7 @@ STRLtrim(str *res, const str *arg1)
 		*res = GDKstrndup(s + n, len - n);
 	}
 	if (*res == NULL)
-		throw(MAL, "str.ltrim", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "str.ltrim", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -3562,7 +3562,7 @@ STRRtrim(str *res, const str *arg1)
 		*res = GDKstrndup(s, n);
 	}
 	if (*res == NULL)
-		throw(MAL, "str.rtrim", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "str.rtrim", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -3605,7 +3605,7 @@ STRStrip2(str *res, const str *arg1, const str *arg2)
 	} else {
 		chars = trimchars(*arg2, &nchars);
 		if (chars == NULL)
-			throw(MAL, "str.trim", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "str.trim", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		len = strlen(s);
 		n = lstrip(s, len, chars, nchars);
 		s += n;
@@ -3615,7 +3615,7 @@ STRStrip2(str *res, const str *arg1, const str *arg2)
 		*res = GDKstrndup(s, n);
 	}
 	if (*res == NULL)
-		throw(MAL, "str.trim", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "str.trim", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -3635,14 +3635,14 @@ STRLtrim2(str *res, const str *arg1, const str *arg2)
 	} else {
 		chars = trimchars(*arg2, &nchars);
 		if (chars == NULL)
-			throw(MAL, "str.trim", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "str.trim", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		len = strlen(s);
 		n = lstrip(s, len, chars, nchars);
 		GDKfree(chars);
 		*res = GDKstrndup(s + n, len - n);
 	}
 	if (*res == NULL)
-		throw(MAL, "str.ltrim", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "str.ltrim", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -3662,14 +3662,14 @@ STRRtrim2(str *res, const str *arg1, const str *arg2)
 	} else {
 		chars = trimchars(*arg2, &nchars);
 		if (chars == NULL)
-			throw(MAL, "str.trim", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "str.trim", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		len = strlen(s);
 		n = rstrip(s, len, chars, nchars);
 		GDKfree(chars);
 		*res = GDKstrndup(s, n);
 	}
 	if (*res == NULL)
-		throw(MAL, "str.rtrim", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "str.rtrim", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -3739,7 +3739,7 @@ STRLpad(str *res, const str *arg1, const int *len)
 {
 	*res = pad(*arg1, " ", *len, 1);
 	if (*res == NULL)
-		throw(MAL, "str.lpad", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "str.lpad", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -3755,7 +3755,7 @@ STRRpad(str *res, const str *arg1, const int *len)
 {
 	*res = pad(*arg1, " ", *len, 0);
 	if (*res == NULL)
-		throw(MAL, "str.rpad", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "str.rpad", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -3774,7 +3774,7 @@ STRLpad2(str *res, const str *arg1, const int *len, const str *arg2)
 
 	*res = pad(*arg1, *arg2, *len, 1);
 	if (*res == NULL)
-		throw(MAL, "str.lpad", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "str.lpad", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -3793,7 +3793,7 @@ STRRpad2(str *res, const str *arg1, const int *len, const str *arg2)
 
 	*res = pad(*arg1, *arg2, *len, 0);
 	if (*res == NULL)
-		throw(MAL, "str.rpad", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "str.rpad", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -3814,7 +3814,7 @@ STRSubstitute(str *res, const str *arg1, const str *arg2, const str *arg3, const
 
 	if (s == NULL || strcmp(s, str_nil) == 0) {
 		if ((*res = GDKstrdup(str_nil)) == NULL)
-			throw(MAL, "str.substitute", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "str.substitute", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 
@@ -3824,7 +3824,7 @@ STRSubstitute(str *res, const str *arg1, const str *arg2, const str *arg3, const
 	}
 	buf = *res = GDKmalloc(n);
 	if (*res == NULL)
-		throw(MAL, "str.substitute", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "str.substitute", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	pfnd = s;
 	if (lsrc == 0)
@@ -3910,13 +3910,13 @@ STRinsert(str *ret, const str *s, const int *start, const int *l, const str *s2)
 	int strt = *start;
 	if (strcmp(*s2, str_nil) == 0 || strcmp(*s, str_nil) == 0) {
 		if ((*ret = GDKstrdup(str_nil)) == NULL)
-			throw(MAL, "str.insert", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "str.insert", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	} else {
 		size_t l1 = strlen(*s);
 		size_t l2 = strlen(*s2);
 
 		if (l1 + l2 + 1 >= INT_MAX) {
-			throw(MAL, "str.insert", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "str.insert", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		if (*l < 0)
 			throw(MAL, "str.insert", SQLSTATE(42000) ILLEGAL_ARGUMENT);
@@ -3930,7 +3930,7 @@ STRinsert(str *ret, const str *s, const int *start, const int *l, const str *s2)
 			strt = (int) l1;
 		v = *ret = GDKmalloc(strlen(*s) + strlen(*s2) + 1);
 		if (v == NULL)
-			throw(MAL, "str.insert", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "str.insert", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		if (strt > 0)
 			strncpy(v, *s, strt);
 		v[strt] = 0;
@@ -3956,15 +3956,15 @@ STRrepeat(str *ret, const str *s, const int *c)
 
 	if (*c < 0 || strcmp(*s, str_nil) == 0) {
 		if ((*ret = GDKstrdup(str_nil)) == NULL)
-			throw(MAL, "str.repeat", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "str.repeat", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	} else {
 		l = strlen(*s);
 		if (l >= INT_MAX)
-			throw(MAL, "str.repeat", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "str.repeat", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		t = *ret = GDKmalloc( *c * l + 1);
 
 		if (!t)
-			throw(MAL, "str.repeat", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "str.repeat", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		*t = 0;
 		for(i = *c; i>0; i--, t += l)
 			strcpy(t, *s);
