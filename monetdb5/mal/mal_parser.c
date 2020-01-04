@@ -1461,6 +1461,8 @@ parseEnd(Client cntxt)
 		msg = chkProgram(cntxt->usermodule, cntxt->curprg->def);
 		if( errors == NULL)
 			errors = msg;
+		else
+			freeException(msg);
 		if (errors == NULL){
 			errors = cntxt->curprg->def->errors;
 			cntxt->curprg->def->errors=0;

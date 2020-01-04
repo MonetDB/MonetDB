@@ -146,7 +146,6 @@ freeException(str msg)
 		GDKfree(msg);
 }
 
-
 /**
  * Internal helper function for createMalException and
  * showScriptException such that they share the same code, because reuse
