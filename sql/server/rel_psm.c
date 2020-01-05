@@ -789,27 +789,65 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 	int deps = (sql->emode == m_deps);
 	int create = (!instantiate && !deps);
 	bit vararg = FALSE;
+	char *F, *fn, is_func;
 
-	char is_table = (res && res->token == SQL_TABLE);
-	char is_aggr = (type == F_AGGR);
-	char is_func = (type != F_PROC);
-	char is_loader = (type == F_LOADER);
-
-	char *F = is_loader?"LOADER":(is_aggr?"AGGREGATE":(is_func?"FUNCTION":"PROCEDURE"));
-	char *fn = is_loader?"loader":(is_aggr ? "aggregate" : (is_func ? "function" : "procedure"));
-	char *KF = type==F_FILT?"FILTER ": type==F_UNION?"UNION ": "";
-	char *kf = type == F_FILT ? "filter " : type == F_UNION ? "union " : "";
-
-	assert(res || type == F_PROC || type == F_FILT || type == F_LOADER);
-
-	if (is_table)
+	if (res && res->token == SQL_TABLE)
 		type = F_UNION;
 
-	if (STORE_READONLY && create) 
+	switch (type) {
+		case F_FUNC:
+			F = "FUNCTION";
+			fn = "function";
+			break;
+		case F_PROC:
+			F = "PROCEDURE";
+			fn = "procedure";
+			break;
+		case F_AGGR:
+			F = "AGGREGATE";
+			fn = "aggregate";
+			break;
+		case F_FILT:
+			F = "FILTER FUNCTION";
+			fn = "filter function";
+			break;
+		case F_UNION:
+			F = "UNION FUNCTION";
+			fn = "union function";
+			break;
+		case F_ANALYTIC:
+			F = "WINDOW FUNCTION";
+			fn = "window function";
+			break;
+		case F_LOADER:
+			F = "LOADER FUNCTION";
+			fn = "loader function";
+			break;
+		default:
+			assert(0);
+	}
+
+	is_func = (type != F_PROC);
+	assert(lang != FUNC_LANG_INT);
+
+	if (STORE_READONLY && create)
 		return sql_error(sql, 06, SQLSTATE(42000) "Schema statements cannot be executed on a readonly database.");
-			
+
+	if (res && type == F_PROC)
+		return sql_error(sql, 02, SQLSTATE(42000) "CREATE %s: procedures cannot have return parameters", F);
+	else if (res && (type == F_FILT || type == F_LOADER))
+		return sql_error(sql, 02, SQLSTATE(42000) "CREATE %s: %s functions don't have to specify a return type", F, fn);
+	else if (!res && !(type == F_PROC || type == F_FILT || type == F_LOADER))
+		return sql_error(sql, 02, SQLSTATE(42000) "CREATE %s: %ss require a return type", F, fn);
+	else if (lang == FUNC_LANG_MAL && type == F_LOADER)
+		return sql_error(sql, 02, SQLSTATE(42000) "CREATE %s: %s functions creation via MAL not supported", F, fn);
+	else if (lang == FUNC_LANG_SQL && !(type == F_FUNC || type == F_PROC || type == F_UNION))
+		return sql_error(sql, 02, SQLSTATE(42000) "CREATE %s: %s functions creation via SQL not supported", F, fn);
+	else if (LANG_EXT(lang) && !(type == F_FUNC || type == F_AGGR || type == F_UNION || type == F_LOADER))
+		return sql_error(sql, 02, SQLSTATE(42000) "CREATE %s: %ss creation via external programming languages not supported", F, fn);
+
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
-		return sql_error(sql, 02, SQLSTATE(3F000) "CREATE %s%s: no such schema '%s'", KF, F, sname);
+		return sql_error(sql, 02, SQLSTATE(3F000) "CREATE %s: no such schema '%s'", F, sname);
 	if (s == NULL)
 		s = cur_schema(sql);
 
@@ -818,11 +856,11 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 		if (replace) {
 			sql_func *func = sf->func;
 			if (!mvc_schema_privs(sql, s))
-				return sql_error(sql, 02, SQLSTATE(42000) "CREATE OR REPLACE %s%s: access denied for %s to schema '%s'", KF, F, stack_get_string(sql, "current_user"), s->base.name);
+				return sql_error(sql, 02, SQLSTATE(42000) "CREATE OR REPLACE %s: access denied for %s to schema '%s'", F, stack_get_string(sql, "current_user"), s->base.name);
 			if (mvc_check_dependency(sql, func->base.id, !IS_PROC(func) ? FUNC_DEPENDENCY : PROC_DEPENDENCY, NULL))
-				return sql_error(sql, 02, SQLSTATE(42000) "CREATE OR REPLACE %s%s: there are database objects dependent on %s%s %s;", KF, F, kf, fn, func->base.name);
+				return sql_error(sql, 02, SQLSTATE(42000) "CREATE OR REPLACE %s: there are database objects dependent on %s %s;", F, fn, func->base.name);
 			if (!func->s)
-				return sql_error(sql, 02, SQLSTATE(42000) "CREATE OR REPLACE %s%s: not allowed to replace system %s%s %s;", KF, F, kf, fn, func->base.name);
+				return sql_error(sql, 02, SQLSTATE(42000) "CREATE OR REPLACE %s: not allowed to replace system %s %s;", F, fn, func->base.name);
 			if (mvc_drop_func(sql, s, func, 0))
 				return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			sf = NULL;
@@ -843,19 +881,19 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 						arg_list = tpe;
 					}
 				}
-				(void)sql_error(sql, 02, SQLSTATE(42000) "CREATE %s%s: name '%s' (%s) already in use", KF, F, fname, arg_list ? arg_list : "");
+				(void)sql_error(sql, 02, SQLSTATE(42000) "CREATE %s: name '%s' (%s) already in use", F, fname, arg_list ? arg_list : "");
 				_DELETE(arg_list);
 				list_destroy(type_list);
 				return NULL;
 			} else {
 				list_destroy(type_list);
-				return sql_error(sql, 02, SQLSTATE(42000) "CREATE %s%s: name '%s' already in use", KF, F, fname);
+				return sql_error(sql, 02, SQLSTATE(42000) "CREATE %s: name '%s' already in use", F, fname);
 			}
 		}
 	}
 	list_destroy(type_list);
 	if (create && !mvc_schema_privs(sql, s)) {
-		return sql_error(sql, 02, SQLSTATE(42000) "CREATE %s%s: insufficient privileges for user '%s' in schema '%s'", KF, F,
+		return sql_error(sql, 02, SQLSTATE(42000) "CREATE %s: insufficient privileges for user '%s' in schema '%s'", F,
 						 stack_get_string(sql, "current_user"), s->base.name);
 	} else {
 		char *q = QUERY(sql->scanner);
@@ -881,7 +919,7 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 		if (res) {
 			restype = result_type(sql, res);
 			if (!restype)
-				return sql_error(sql, 01, SQLSTATE(42000) "CREATE %s%s: failed to get restype", KF, F);
+				return sql_error(sql, 01, SQLSTATE(42000) "CREATE %s: failed to get restype", F);
 		}
 		if (body && LANG_EXT(lang)) {
 			char *lang_body = body->h->data.sval, *mod = NULL, *slang = NULL;
@@ -903,24 +941,32 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 					slang = "Javascript";
 					break;
 				case FUNC_LANG_PY:
+				case FUNC_LANG_PY2:
+				case FUNC_LANG_PY3:
 					mod = "pyapi";
 					slang = "Python";
 					break;
 				case FUNC_LANG_MAP_PY:
+				case FUNC_LANG_MAP_PY2:
+				case FUNC_LANG_MAP_PY3:
 					mod = "pyapimap";
 					slang = "Python";
 					break;
 				default:
 					assert(0);
 			}
+
+			if (type == F_LOADER && !(lang == FUNC_LANG_PY || lang == FUNC_LANG_PY2 || lang == FUNC_LANG_PY3))
+				return sql_error(sql, 01, SQLSTATE(42000) "CREATE %s: Language name \"Python[{2|3}]\" expected", F);
+
 			sql->params = NULL;
 			if (create) {
 				f = mvc_create_func(sql, sql->sa, s, fname, l, restype, type, lang, mod, fname, lang_body, (type == F_LOADER)?TRUE:FALSE, vararg, FALSE);
 			} else if (!sf) {
-				return sql_error(sql, 01, SQLSTATE(42000) "CREATE %s%s: %s function %s.%s not bound", KF, F, slang, s->base.name, fname);
+				return sql_error(sql, 01, SQLSTATE(42000) "CREATE %s: %s function %s.%s not bound", F, slang, s->base.name, fname);
 			}
 		} else if (body) { /* SQL implementation */
-			sql_arg *ra = (restype && !is_table)?restype->h->data:NULL;
+			sql_arg *ra = (restype && type != F_UNION)?restype->h->data:NULL;
 			list *b = NULL;
 			sql_schema *old_schema = cur_schema(sql);
 
@@ -939,9 +985,9 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 		
 			/* check if we have a return statement */
 			if (is_func && restype && !has_return(b))
-				return sql_error(sql, 01, SQLSTATE(42000) "CREATE %s%s: missing return statement", KF, F);
+				return sql_error(sql, 01, SQLSTATE(42000) "CREATE %s: missing return statement", F);
 			if (!is_func && !restype && has_return(b))
-				return sql_error(sql, 01, SQLSTATE(42000) "CREATE %s%s: procedures cannot have return statements", KF, F);
+				return sql_error(sql, 01, SQLSTATE(42000) "CREATE %s: procedures cannot have return statements", F);
 			/* in execute mode we instantiate the function */
 			if (instantiate || deps)
 				return rel_psm_block(sql->sa, b);
@@ -957,7 +1003,7 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 				f = mvc_create_func(sql, sql->sa, s, fname, l, restype, type, lang, fmod, fnme, q, FALSE, vararg, FALSE);
 				GDKfree(q);
 			} else if (!sf) {
-				return sql_error(sql, 01, SQLSTATE(42000) "CREATE %s%s: external name %s.%s not bound (%s.%s)", KF, F, fmod, fnme, s->base.name, fname );
+				return sql_error(sql, 01, SQLSTATE(42000) "CREATE %s: external name %s.%s not bound (%s.%s)", F, fmod, fnme, s->base.name, fname );
 			} else {
 				sql_func *f = sf->func;
 				if (!f->mod || strcmp(f->mod, fmod))
@@ -967,7 +1013,7 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 				if (!f->mod || !f->imp) {
 					_DELETE(f->mod);
 					_DELETE(f->imp);
-					return sql_error(sql, 02, SQLSTATE(HY013) "CREATE %s%s: could not allocate space", KF, F);
+					return sql_error(sql, 02, SQLSTATE(HY013) "CREATE %s: could not allocate space", F);
 				}
 				f->sql = 0; /* native */
 				f->lang = FUNC_LANG_INT;
@@ -976,7 +1022,7 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 				f = sf->func;
 			assert(f);
 			if (!backend_resolve_function(sql, f))
-				return sql_error(sql, 01, SQLSTATE(3F000) "CREATE %s%s: external name %s.%s not bound (%s.%s)", KF, F, fmod, fnme, s->base.name, fname );
+				return sql_error(sql, 01, SQLSTATE(3F000) "CREATE %s: external name %s.%s not bound (%s.%s)", F, fmod, fnme, s->base.name, fname );
 		}
 	}
 	return rel_create_function(sql->sa, s->base.name, f);
