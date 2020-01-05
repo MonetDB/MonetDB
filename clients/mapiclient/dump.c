@@ -433,8 +433,15 @@ dump_foreign_keys(Mapi mid, const char *schema, const char *tname, const char *t
 		char *t = sescape(tname);
 		maxquerylen = 1024 + strlen(t) + strlen(s);
 		query = malloc(maxquerylen);
-		if (query == NULL)
+		if (s == NULL || t == NULL || query == NULL) {
+			if (s)
+				free(s);
+			if (t)
+				free(t);
+			if (query)
+				free(query);
 			goto bailout;
+		}
 		snprintf(query, maxquerylen,
 			 "SELECT ps.name, "		/* 0 */
 			        "pkt.name, "		/* 1 */
@@ -889,8 +896,13 @@ dump_column_definition(Mapi mid, stream *toConsole, const char *schema,
 	t = tname ? sescape(tname) : NULL;
 	s = schema ? sescape(schema) : NULL;
 	if (tid == NULL) {
-		if (tname == NULL || schema == NULL)
+		if (tname == NULL || schema == NULL) {
+			if (t != NULL)
+				free(t);
+			if (s != NULL)
+				free(s);
 			return 1;
+		}
 		maxquerylen += 2 * strlen(tname) + 2 * strlen(schema);
 	}
 	else
@@ -1923,12 +1935,17 @@ dump_function(Mapi mid, stream *toConsole, const char *fid, bool hashge)
 		fname = strdup(fname);
 		ftkey = strdup(ftkey);
 
-		if (!remark || !sname || !fname || !ftkey) {
-			free(remark);
-			free(sname);
-			free(fname);
-			free(ftkey);
-			free(query);
+		if (remark == NULL || sname == NULL || fname == NULL || ftkey == NULL) {
+			if (remark)
+				free(remark);
+			if (sname)
+				free(sname);
+			if (fname)
+				free(fname);
+			if (ftkey)
+				free(ftkey);
+			if (query)
+				free(query);
 			goto bailout;
 		}
 	}
@@ -1955,8 +1972,7 @@ dump_function(Mapi mid, stream *toConsole, const char *fid, bool hashge)
 	}
 	/* strdup these two because they are needed after another query */
 	if (flkey) {
-		char* nflkey = flkey ? strdup(flkey) : NULL;
-		if (!nflkey) {
+		if ((flkey = strdup(flkey)) == NULL) {
 			if (remark) {
 				free(remark);
 				free(sname);
@@ -1964,8 +1980,7 @@ dump_function(Mapi mid, stream *toConsole, const char *fid, bool hashge)
 				free(ftkey);
 			}
 			goto bailout;
-		} else
-			flkey = nflkey;
+		}
 	}
 	ffunc = strdup(ffunc);
 	query_len = snprintf(query, query_size,
@@ -2705,8 +2720,8 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts)
 	} else {
 		mnstr_printf(toConsole, "SET SCHEMA ");
 		dquoted_print(toConsole, sname, ";\n");
-		curschema = sname ? strdup(sname) : NULL;
-		if (sname && !curschema)
+		curschema = strdup(sname);
+		if (curschema == NULL)
 			goto bailout;
 	}
 
