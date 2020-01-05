@@ -30,7 +30,7 @@ stderr of test 'analytics09` in directory 'sql/test/analytics` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-155309/.s.monetdb.35365
 QUERY = select avg(sum(aa) over ()) from analytics; --error, window functions not allowed inside aggregates
-ERROR = !SUM: window functions not allowed inside aggregates
+ERROR = !SUM: window functions not allowed inside aggregation functions
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-155309/.s.monetdb.35365
 QUERY = select cast(sum(aa) * 100 / sum(sum(aa)) over (partition by bb) as bigint) from analytics; --error, nesting aggregation functions
@@ -74,7 +74,7 @@ ERROR = !SUM: window function 'sum' not allowed in HAVING clause
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-155309/.s.monetdb.35365
 QUERY = select sum(avg(aa) over ()) from analytics; --error, window functions not allowed inside aggregates
-ERROR = !AVG: window functions not allowed inside aggregates
+ERROR = !AVG: window functions not allowed inside aggregation functions
 CODE  = 42000
 
 # 13:13:17 >  
