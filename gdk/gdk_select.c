@@ -1834,7 +1834,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		 * to do a binary search on the candidate list (or 1
 		 * if no need for search)) */
 		tmp = BBPquickdesc(parent, false);
-		hash = phash = BATcheckhash(tmp) &&
+		hash = phash = tmp && BATcheckhash(tmp) &&
 			(BATcount(tmp) == BATcount(b) ||
 			 BATcount(tmp) / ((size_t *) tmp->thash->heap.base)[5] * (s && !BATtdense(s) ? ilog2(BATcount(s)) : 1) < (s ? BATcount(s) : BATcount(b)) ||
 			 HASHget(tmp->thash, HASHprobe(tmp->thash, tl)) == HASHnil(tmp->thash));

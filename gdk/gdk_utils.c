@@ -1020,11 +1020,13 @@ GDKlockHome(int farmid)
 	    GDKcreatedir(gdklockpath) != GDK_SUCCEED) {
 		GDKerror("GDKlockHome: could not create %s\n",
 			 BBPfarms[farmid].dirname);
+		GDKfree(gdklockpath);
 		return GDK_FAIL;
 	}
 	if ((fd = MT_lockf(gdklockpath, F_TLOCK, 4, 1)) < 0) {
 		GDKerror("GDKlockHome: Database lock '%s' denied\n",
 			 gdklockpath);
+		GDKfree(gdklockpath);
 		return GDK_FAIL;
 	}
 
@@ -1034,6 +1036,7 @@ GDKlockHome(int farmid)
 	if ((GDKlockFile = fdopen(fd, "r+")) == NULL) {
 		close(fd);
 		GDKerror("GDKlockHome: Could not fdopen %s\n", gdklockpath);
+		GDKfree(gdklockpath);
 		return GDK_FAIL;
 	}
 
@@ -1043,16 +1046,19 @@ GDKlockHome(int farmid)
 	if (fseek(GDKlockFile, 0, SEEK_SET) == -1) {
 		fclose(GDKlockFile);
 		GDKerror("GDKlockHome: Error while setting the file pointer on %s\n", gdklockpath);
+		GDKfree(gdklockpath);
 		return GDK_FAIL;
 	}
 	if (ftruncate(fileno(GDKlockFile), 0) < 0) {
 		fclose(GDKlockFile);
 		GDKerror("GDKlockHome: Could not truncate %s\n", gdklockpath);
+		GDKfree(gdklockpath);
 		return GDK_FAIL;
 	}
 	if (fflush(GDKlockFile) == EOF) {
 		fclose(GDKlockFile);
 		GDKerror("GDKlockHome: Could not flush %s\n", gdklockpath);
+		GDKfree(gdklockpath);
 		return GDK_FAIL;
 	}
 	GDKlog(GDKlockFile, GDKLOGON);
@@ -1067,7 +1073,8 @@ GDKunlockHome(int farmid)
 {
 	if (BBPfarms[farmid].lock_file) {
 		char *gdklockpath = GDKfilepath(farmid, NULL, GDKLOCK, NULL);
-		MT_lockf(gdklockpath, F_ULOCK, 4, 1);
+		if (gdklockpath)
+			MT_lockf(gdklockpath, F_ULOCK, 4, 1);
 		fclose(BBPfarms[farmid].lock_file);
 		BBPfarms[farmid].lock_file = NULL;
 		GDKfree(gdklockpath);

@@ -663,7 +663,7 @@ mergejoin_void(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		/* l is dense, but the candidate list exists and is
 		 * not dense; we can, by manipulating the range
 		 * [lo..hi), just look at the candidate list values */
-		assert(!BATtdense(sl));
+		assert(sl && !BATtdense(sl));
 
 		/* translate lo and hi to l's OID values that now need
 		 * to match */

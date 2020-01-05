@@ -2688,6 +2688,7 @@ logger_cleanup(logger *lg)
 		len = snprintf(log_id, sizeof(log_id), LLFMT, lid);
 		if (len == -1 || len >= FILENAME_MAX) {
 			fprintf(stderr, "#logger_cleanup: log_id filename is too large\n");
+			fclose(fp);
 			return GDK_FAIL;
 		}
 		if (GDKunlink(farmid, lg->dir, LOGFILE, log_id) != GDK_SUCCEED) {

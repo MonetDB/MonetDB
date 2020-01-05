@@ -170,10 +170,15 @@ GDKremovedir(int farmid, const char *dirname)
 			continue;
 		}
 		path = GDKfilepath(farmid, dirname, dent->d_name, NULL);
+		if (path == NULL) {
+			ret = -1;
+			goto bailout;
+		}
 		ret = remove(path);
 		IODEBUG fprintf(stderr, "#remove %s = %d\n", path, ret);
 		GDKfree(path);
 	}
+  bailout:
 	closedir(dirp);
 	ret = rmdir(dirnamestr);
 	if (ret != 0)

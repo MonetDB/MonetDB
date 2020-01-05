@@ -392,7 +392,7 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, bool asc, bool nilslast, oid *lastp)
 					/* prefer nil and largest */
 					if (pos < n) {
 						if (lastp)
-							*lastp = cand[cnt - (n - pos)];
+							*lastp = b->hseqbase + end - (n - pos);
 						return doublerange(b->hseqbase + start, b->hseqbase + pos, b->hseqbase + end - (n - pos), b->hseqbase + end);
 					}
 					if (lastp)

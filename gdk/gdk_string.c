@@ -1045,7 +1045,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, bool nonil, oid seqb, BUN start,
 			}
 			for (i = 0; i < ngrp; i++) {
 				if (astrings[i] == NULL) {
-					if ((astrings[i] = GDKmalloc((lengths[i] + 1 - separator_length) * sizeof(str))) == NULL) {
+					if ((astrings[i] = GDKmalloc(lengths[i] + 1 - separator_length)) == NULL) {
 						rres = GDK_FAIL;
 						goto finish;
 					}
@@ -1105,7 +1105,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, bool nonil, oid seqb, BUN start,
 			}
 			for (i = 0; i < ngrp; i++) {
 				if (astrings[i] == NULL) {
-					if ((astrings[i] = GDKmalloc((lengths[i] + 1 - separator_length) * sizeof(str))) == NULL) {
+					if ((astrings[i] = GDKmalloc(lengths[i] + 1 - separator_length)) == NULL) {
 						rres = GDK_FAIL;
 						goto finish;
 					}
