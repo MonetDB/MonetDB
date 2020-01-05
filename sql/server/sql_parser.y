@@ -519,7 +519,6 @@ int yydebug=1;
 	window_frame_extent
 	window_frame_between
 	routine_designator
-	drop_routine_designator
 	partition_list
 	merge_when_list
 	group_by_list
@@ -2588,73 +2587,11 @@ triggered_statement:
  ;
 
 routine_designator:
-	FUNCTION qname opt_typelist
+	func_def_type qname opt_typelist
 	{ dlist *l = L();
 	  append_list(l, $2 );	
 	  append_list(l, $3 );
-	  append_int(l, F_FUNC );
-	  $$ = l; }
- |	FILTER FUNCTION qname opt_typelist
-	{ dlist *l = L();
-	  append_list(l, $3 );	
-	  append_list(l, $4 );
-	  append_int(l, F_FILT );
-	  $$ = l; }
- |	AGGREGATE qname opt_typelist
-	{ dlist *l = L();
-	  append_list(l, $2 );	
-	  append_list(l, $3 );
-	  append_int(l, F_AGGR );
-	  $$ = l; }
- |	PROCEDURE qname opt_typelist
-	{ dlist *l = L();
-	  append_list(l, $2 );	
-	  append_list(l, $3 );
-	  append_int(l, F_PROC );
-	  $$ = l; }
- |	sqlLOADER qname opt_typelist
-	{ dlist *l = L();
-	  append_list(l, $2 );	
-	  append_list(l, $3 );
-	  append_int(l, F_LOADER );
-	  $$ = l; }
- ;
-
-drop_routine_designator:
-	FUNCTION if_exists qname opt_typelist
-	{ dlist *l = L();
-	  append_list(l, $3 );
-	  append_list(l, $4 );
-	  append_int(l, F_FUNC );
-	  append_int(l, $2 );
-	  $$ = l; }
- |	FILTER FUNCTION if_exists qname opt_typelist
-	{ dlist *l = L();
-	  append_list(l, $4 );
-	  append_list(l, $5 );
-	  append_int(l, F_FILT );
-	  append_int(l, $3 );
-	  $$ = l; }
- |	AGGREGATE if_exists qname opt_typelist
-	{ dlist *l = L();
-	  append_list(l, $3 );
-	  append_list(l, $4 );
-	  append_int(l, F_AGGR );
-	  append_int(l, $2 );
-	  $$ = l; }
- |	PROCEDURE if_exists qname opt_typelist
-	{ dlist *l = L();
-	  append_list(l, $3 );
-	  append_list(l, $4 );
-	  append_int(l, F_PROC );
-	  append_int(l, $2 );
-	  $$ = l; }
- |	sqlLOADER if_exists qname opt_typelist
-	{ dlist *l = L();
-	  append_list(l, $3 );
-	  append_list(l, $4 );
-	  append_int(l, F_LOADER );
-	  append_int(l, $2 );
+	  append_int(l, $1 );
 	  $$ = l; }
  ;
 
@@ -2665,54 +2602,22 @@ drop_statement:
 	  append_int(l, $5 );
 	  append_int(l, $3 );
 	  $$ = _symbol_create_list( SQL_DROP_TABLE, l ); }
- | drop drop_routine_designator drop_action
-	{ dlist *l = $2;
-	  append_int(l, 0 ); /* not all */
-	  append_int(l, $3 );
-	  $$ = _symbol_create_list( SQL_DROP_FUNC, l ); }
- | drop ALL FUNCTION qname drop_action
+ | drop func_def_type if_exists qname opt_typelist drop_action
 	{ dlist *l = L();
 	  append_list(l, $4 );
-	  append_list(l, NULL );
-	  append_int(l, F_FUNC );
-	  append_int(l, FALSE );
-	  append_int(l, 1 );
-	  append_int(l, $5 );
-	  $$ = _symbol_create_list( SQL_DROP_FUNC, l ); }
- | drop ALL FILTER FUNCTION qname drop_action
-	{ dlist *l = L();
 	  append_list(l, $5 );
-	  append_list(l, NULL );
-	  append_int(l, F_FILT );
-	  append_int(l, FALSE );
-	  append_int(l, 1 );
+	  append_int(l, $2 );
+	  append_int(l, $3 );
+	  append_int(l, 0 ); /* not all */
 	  append_int(l, $6 );
 	  $$ = _symbol_create_list( SQL_DROP_FUNC, l ); }
- | drop ALL AGGREGATE qname drop_action
+ | drop ALL func_def_type qname drop_action
 	{ dlist *l = L();
 	  append_list(l, $4 );
 	  append_list(l, NULL );
-	  append_int(l, F_AGGR );
+	  append_int(l, $3 );
 	  append_int(l, FALSE );
-	  append_int(l, 1 );
-	  append_int(l, $5 );
-	  $$ = _symbol_create_list( SQL_DROP_FUNC, l ); }
- | drop ALL PROCEDURE qname drop_action
-	{ dlist *l = L();
-	  append_list(l, $4 );
-	  append_list(l, NULL );
-	  append_int(l, F_PROC );
-	  append_int(l, FALSE );
-	  append_int(l, 1 );
-	  append_int(l, $5 );
-	  $$ = _symbol_create_list( SQL_DROP_FUNC, l ); }
- | drop ALL sqlLOADER qname drop_action
-	{ dlist *l = L();
-	  append_list(l, $4 );
-	  append_list(l, NULL );
-	  append_int(l, F_LOADER );
-	  append_int(l, FALSE );
-	  append_int(l, 1 );
+	  append_int(l, 1 ); /* all */
 	  append_int(l, $5 );
 	  $$ = _symbol_create_list( SQL_DROP_FUNC, l ); }
  |  drop VIEW if_exists qname drop_action

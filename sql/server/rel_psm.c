@@ -16,6 +16,40 @@
 #include "rel_updates.h"
 #include "sql_privileges.h"
 
+#define FUNC_TYPE_STR \
+	switch (type) { \
+		case F_FUNC: \
+			F = "FUNCTION"; \
+			fn = "function"; \
+			break; \
+		case F_PROC: \
+			F = "PROCEDURE"; \
+			fn = "procedure"; \
+			break; \
+		case F_AGGR: \
+			F = "AGGREGATE"; \
+			fn = "aggregate"; \
+			break; \
+		case F_FILT: \
+			F = "FILTER FUNCTION"; \
+			fn = "filter function"; \
+			break; \
+		case F_UNION: \
+			F = "UNION FUNCTION"; \
+			fn = "union function"; \
+			break; \
+		case F_ANALYTIC: \
+			F = "WINDOW FUNCTION"; \
+			fn = "window function"; \
+			break; \
+		case F_LOADER: \
+			F = "LOADER FUNCTION"; \
+			fn = "loader function"; \
+			break; \
+		default: \
+			assert(0); \
+	}
+
 static list *sequential_block(sql_query *query, sql_subtype *restype, list *restypelist, dlist *blk, char *opt_name, int is_func);
 
 sql_rel *
@@ -789,45 +823,14 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 	int deps = (sql->emode == m_deps);
 	int create = (!instantiate && !deps);
 	bit vararg = FALSE;
-	char *F, *fn, is_func;
+	char *F = NULL, *fn = NULL, is_func;
 
 	if (res && res->token == SQL_TABLE)
 		type = F_UNION;
 
-	switch (type) {
-		case F_FUNC:
-			F = "FUNCTION";
-			fn = "function";
-			break;
-		case F_PROC:
-			F = "PROCEDURE";
-			fn = "procedure";
-			break;
-		case F_AGGR:
-			F = "AGGREGATE";
-			fn = "aggregate";
-			break;
-		case F_FILT:
-			F = "FILTER FUNCTION";
-			fn = "filter function";
-			break;
-		case F_UNION:
-			F = "UNION FUNCTION";
-			fn = "union function";
-			break;
-		case F_ANALYTIC:
-			F = "WINDOW FUNCTION";
-			fn = "window function";
-			break;
-		case F_LOADER:
-			F = "LOADER FUNCTION";
-			fn = "loader function";
-			break;
-		default:
-			assert(0);
-	}
+	FUNC_TYPE_STR
 
-	is_func = (type != F_PROC);
+	is_func = (type != F_PROC && type != F_LOADER);
 	assert(lang != FUNC_LANG_INT);
 
 	if (STORE_READONLY && create)
@@ -987,7 +990,7 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 			if (is_func && restype && !has_return(b))
 				return sql_error(sql, 01, SQLSTATE(42000) "CREATE %s: missing return statement", F);
 			if (!is_func && !restype && has_return(b))
-				return sql_error(sql, 01, SQLSTATE(42000) "CREATE %s: procedures cannot have return statements", F);
+				return sql_error(sql, 01, SQLSTATE(42000) "CREATE %s: %ss cannot have return statements", F, fn);
 			/* in execute mode we instantiate the function */
 			if (instantiate || deps)
 				return rel_psm_block(sql->sa, b);
@@ -1056,14 +1059,11 @@ resolve_func( mvc *sql, sql_schema *s, const char *name, dlist *typelist, sql_ft
 {
 	sql_func *func = NULL;
 	list *list_func = NULL, *type_list = NULL;
-	char is_aggr = (type == F_AGGR);
-	char is_func = (type != F_PROC && type != F_LOADER);
-	char *F = is_aggr?"AGGREGATE":(is_func?"FUNCTION":"PROCEDURE");
-	char *f = is_aggr?"aggregate":(is_func?"function":"procedure");
-	char *KF = type==F_FILT?"FILTER ": type==F_UNION?"UNION ": "";
-	char *kf = type==F_FILT?"filter ": type==F_UNION?"union ": "";
+	char is_func = (type != F_PROC && type != F_LOADER), *F = NULL, *fn = NULL;
 
-	if (typelist) {	
+	FUNC_TYPE_STR
+
+	if (typelist) {
 		sql_subfunc *sub_func;
 
 		type_list = create_type_list(sql, typelist, 0);
@@ -1080,7 +1080,7 @@ resolve_func( mvc *sql, sql_schema *s, const char *name, dlist *typelist, sql_ft
 			list_func = schema_bind_func(sql,s,name, F_UNION);
 		if (list_func && list_func->cnt > 1) {
 			list_destroy(list_func);
-			return sql_error(sql, 02, SQLSTATE(42000) "%s %s%s: there are more than one %s%s called '%s', please use the full signature", op, KF, F, kf, f,name);
+			return sql_error(sql, 02, SQLSTATE(42000) "%s %s: there are more than one %s called '%s', please use the full signature", op, F, fn, name);
 		}
 		if (list_func && list_func->cnt == 1)
 			func = (sql_func*) list_func->h->data;
@@ -1108,26 +1108,24 @@ resolve_func( mvc *sql, sql_schema *s, const char *name, dlist *typelist, sql_ft
 				list_destroy(list_func);
 				list_destroy(type_list);
 				if(!if_exists)
-					e = sql_error(sql, 02, SQLSTATE(42000) "%s %s%s: no such %s%s '%s' (%s)", op, KF, F, kf, f, name, arg_list);
+					e = sql_error(sql, 02, SQLSTATE(42000) "%s %s: no such %s '%s' (%s)", op, F, fn, name, arg_list);
 				_DELETE(arg_list);
 				return e;
 			}
 			list_destroy(list_func);
 			list_destroy(type_list);
 			if(!if_exists)
-				e = sql_error(sql, 02, SQLSTATE(42000) "%s %s%s: no such %s%s '%s' ()", op, KF, F, kf, f, name);
+				e = sql_error(sql, 02, SQLSTATE(42000) "%s %s: no such %s '%s' ()", op, F, fn, name);
 			return e;
-
 		} else {
 			if(!if_exists)
-				e = sql_error(sql, 02, SQLSTATE(42000) "%s %s%s: no such %s%s '%s'", op, KF, F, kf, f, name);
+				e = sql_error(sql, 02, SQLSTATE(42000) "%s %s: no such %s '%s'", op, F, fn, name);
 			return e;
 		}
-	} else if (((is_func && type != F_FILT) && !func->res) || 
-		   (!is_func && func->res)) {
+	} else if (((is_func && type != F_FILT) && !func->res) || (!is_func && func->res)) {
 		list_destroy(list_func);
 		list_destroy(type_list);
-		return sql_error(sql, 02, SQLSTATE(42000) "%s %s%s: cannot drop %s '%s'", KF, F, is_func?"procedure":"function", op, name);
+		return sql_error(sql, 02, SQLSTATE(42000) "%s %s: cannot drop %s '%s'", op, F, fn, name);
 	}
 
 	list_destroy(list_func);
@@ -1142,14 +1140,13 @@ rel_drop_func(mvc *sql, dlist *qname, dlist *typelist, int drop_action, sql_ftyp
 	const char *sname = qname_schema(qname);
 	sql_schema *s = NULL;
 	sql_func *func = NULL;
+	char *F = NULL, *fn = NULL;
 
-	char is_aggr = (type == F_AGGR);
-	char is_func = (type != F_PROC);
-	char *F = is_aggr?"AGGREGATE":(is_func?"FUNCTION":"PROCEDURE");
-	char *KF = type==F_FILT?"FILTER ": type==F_UNION?"UNION ": "";
+	FUNC_TYPE_STR
+	(void) fn;
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
-		return sql_error(sql, 02, SQLSTATE(3F000) "DROP %s%s: no such schema '%s'", KF, F, sname);
+		return sql_error(sql, 02, SQLSTATE(3F000) "DROP %s: no such schema '%s'", F, sname);
 
 	if (s == NULL) 
 		s =  cur_schema(sql);
@@ -1161,7 +1158,7 @@ rel_drop_func(mvc *sql, dlist *qname, dlist *typelist, int drop_action, sql_ftyp
 	}
 	if (func)
 		return rel_drop_function(sql->sa, s->base.name, name, func->base.id, type, drop_action);
-	else if(if_exists && !sql->session->status)
+	else if (if_exists && !sql->session->status)
 		return rel_drop_function(sql->sa, s->base.name, name, -2, type, drop_action);
 	return NULL;
 }
@@ -1172,24 +1169,20 @@ rel_drop_all_func(mvc *sql, dlist *qname, int drop_action, sql_ftype type)
 	const char *name = qname_table(qname);
 	const char *sname = qname_schema(qname);
 	sql_schema *s = NULL;
-	list * list_func = NULL; 
+	list * list_func = NULL;
+	char *F = NULL, *fn = NULL;
 
-	char is_aggr = (type == F_AGGR);
-	char is_func = (type != F_PROC);
-	char *F = is_aggr?"AGGREGATE":(is_func?"FUNCTION":"PROCEDURE");
-	char *f = is_aggr?"aggregate":(is_func?"function":"procedure");
-	char *KF = type==F_FILT?"FILTER ": type==F_UNION?"UNION ": "";
-	char *kf = type==F_FILT?"filter ": type==F_UNION?"union ": "";
+	FUNC_TYPE_STR
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
-		return sql_error(sql, 02, SQLSTATE(3F000) "DROP %s%s: no such schema '%s'", KF, F, sname);
+		return sql_error(sql, 02, SQLSTATE(3F000) "DROP %s: no such schema '%s'", F, sname);
 
 	if (s == NULL) 
 		s =  cur_schema(sql);
 	
 	list_func = schema_bind_func(sql, s, name, type);
 	if (!list_func) 
-		return sql_error(sql, 02, SQLSTATE(3F000) "DROP ALL %s%s: no such %s%s '%s'", KF, F, kf, f, name);
+		return sql_error(sql, 02, SQLSTATE(3F000) "DROP ALL %s: no such %s '%s'", F, fn, name);
 	list_destroy(list_func);
 	return rel_drop_function(sql->sa, s->base.name, name, -1, type, drop_action);
 }
