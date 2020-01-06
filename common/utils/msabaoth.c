@@ -41,9 +41,9 @@
 #endif
 
 /** the directory where the databases are (aka dbfarm) */
-char *_sabaoth_internal_dbfarm = NULL;
+static char *_sabaoth_internal_dbfarm = NULL;
 /** the database which is "active" */
-char *_sabaoth_internal_dbname = NULL;
+static char *_sabaoth_internal_dbname = NULL;
 /** identifier of the current process */
 static char *_sabaoth_internal_uuid = NULL;
 
@@ -119,6 +119,16 @@ msab_isuuid(const char *restrict s)
 	return hyphens == 4;
 }
 
+void
+msab_dbnameinit(const char *dbname)
+{
+	if (dbname == NULL) {
+		_sabaoth_internal_dbname = NULL;
+	} else {
+		_sabaoth_internal_dbname = strdup(dbname);
+	}
+}
+
 /**
  * Initialises this Sabaoth instance to use the given dbfarm and dbname.
  * dbname may be NULL to indicate that there is no active database.  The
@@ -157,11 +167,7 @@ msab_init(const char *dbfarm, const char *dbname)
 		len--;
 	}
 
-	if (dbname == NULL) {
-		_sabaoth_internal_dbname = NULL;
-	} else {
-		_sabaoth_internal_dbname = strdup(dbname);
-	}
+	msab_dbnameinit(dbname);
 
 	/* clean out old UUID files in case the database crashed in a
 	 * previous incarnation */
