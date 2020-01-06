@@ -31,32 +31,57 @@ SQLdiff(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		bat *res = getArgReference_bat(stk, pci, 0);
 		bat *bid = getArgReference_bat(stk, pci, 1);
 		BAT *b = BATdescriptor(*bid), *c, *r;
-		gdk_return gdk_code;
+		gdk_return gdk_code = GDK_SUCCEED;
+
+		if (!b)
+			throw(SQL, "sql.diff", SQLSTATE(HY005) "Cannot access column descriptor");
+		if (pci->argc > 2) {
+			if (isaBatType(getArgType(mb, pci, 2))) {
+				voidresultBAT(r, TYPE_bit, BATcount(b), b, "sql.diff");
+				c = b;
+				bid = getArgReference_bat(stk, pci, 2);
+				b = BATdescriptor(*bid);
+				if (!b) {
+					BBPunfix(c->batCacheid);
+					throw(SQL, "sql.diff", SQLSTATE(HY005) "Cannot access column descriptor");
+				}
+				gdk_code = GDKanalyticaldiff(r, b, c, b->ttype);
+				BBPunfix(c->batCacheid);
+			} else { /* the input is a constant, so the output is the previous sql.diff output */
+				assert(b->ttype == TYPE_bit);
+				r = COLcopy(b, TYPE_bit, false, TRANSIENT);
+				if (!r) {
+					BBPunfix(b->batCacheid);
+					throw(SQL, "sql.diff", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				}
+			}
+		} else {
+			voidresultBAT(r, TYPE_bit, BATcount(b), b, "sql.diff");
+			gdk_code = GDKanalyticaldiff(r, b, NULL, b->ttype);
+		}
+		BBPunfix(b->batCacheid);
+		if (gdk_code == GDK_SUCCEED)
+			BBPkeepref(*res = r->batCacheid);
+		else
+			throw(SQL, "sql.diff", GDK_EXCEPTION);
+	} else if (pci->argc > 2 && isaBatType(getArgType(mb, pci, 2))) {
+		bat *res = getArgReference_bat(stk, pci, 0);
+		bat *bid = getArgReference_bat(stk, pci, 2);
+		BAT *b = BATdescriptor(*bid), *r;
+		gdk_return gdk_code = GDK_SUCCEED;
 
 		if (!b)
 			throw(SQL, "sql.diff", SQLSTATE(HY005) "Cannot access column descriptor");
 		voidresultBAT(r, TYPE_bit, BATcount(b), b, "sql.diff");
-		if (pci->argc > 2) {
-			c = b;
-			bid = getArgReference_bat(stk, pci, 2);
-			b = BATdescriptor(*bid);
-			if (!b) {
-				BBPunfix(c->batCacheid);
-				throw(SQL, "sql.diff", SQLSTATE(HY005) "Cannot access column descriptor");
-			}
-			gdk_code = GDKanalyticaldiff(r, b, c, b->ttype);
-			BBPunfix(c->batCacheid);
-		} else {
-			gdk_code = GDKanalyticaldiff(r, b, NULL, b->ttype);
-		}
+
+		gdk_code = GDKanalyticaldiff(r, b, NULL, b->ttype);
 		BBPunfix(b->batCacheid);
-		if(gdk_code == GDK_SUCCEED)
+		if (gdk_code == GDK_SUCCEED)
 			BBPkeepref(*res = r->batCacheid);
 		else
 			throw(SQL, "sql.diff", GDK_EXCEPTION);
 	} else {
 		bit *res = getArgReference_bit(stk, pci, 0);
-
 		*res = FALSE;
 	}
 	return MAL_SUCCEED;
