@@ -142,10 +142,8 @@ gdk_return
 GDKsetenv(const char *name, const char *value)
 {
 	if (BUNappend(GDKkey, name, false) != GDK_SUCCEED ||
-	    BUNappend(GDKval, value, false) != GDK_SUCCEED){
-			GDKerror("GDKsetenv: failed to keep enviroment property.\n");
-			return GDK_FAIL;
-	}
+	    BUNappend(GDKval, value, false) != GDK_SUCCEED)
+		return GDK_FAIL;
 	return GDK_SUCCEED;
 }
 
@@ -234,8 +232,6 @@ GDKlog(FILE *lockFile, const char *format, ...)
 	ctm = ctime(&tm);
 #endif
 #endif
-	/* CHECK */
-	// This should also go to the tracer?
 	fprintf(lockFile, "USR=%d PID=%d TIME=%.24s @ %s\n", (int) getuid(), (int) getpid(), ctm, buf);
 	fflush(lockFile);
 }
@@ -862,10 +858,8 @@ GDKprepareExit(void)
 	if (ATOMIC_ADD(&GDKstopped, 1) > 0)
 		return;
 
-	/* CHECK */
-	// THRDDEBUG was outside dump_threads - not it is transferred
-	// inside as TRC_DEBUG(THRD, ...)
-	dump_threads();
+	TRC_DEBUG_IF(GDK_UTILS)
+		dump_threads();
 	join_detached_threads();
 }
 
