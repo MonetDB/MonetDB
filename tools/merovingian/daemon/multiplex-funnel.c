@@ -277,10 +277,6 @@ multiplexNotifyRemovedDB(const char *database)
 	/* coverity[leaked_storage] */
 }
 
-/* ultra ugly, we peek inside Sabaoth's internals to update the uplog
- * file */
-extern char *_sabaoth_internal_dbname;
-
 err
 multiplexInit(char *name, char *pattern, FILE *sout, FILE *serr)
 {
@@ -457,15 +453,14 @@ multiplexInit(char *name, char *pattern, FILE *sout, FILE *serr)
 	 * internals -- we know dbname should be NULL, and hack it for the
 	 * purpose of this moment, see also extern declaration before this
 	 * function */
-	_sabaoth_internal_dbname = name;
+	msab_dbnameinit(name);
 	if ((p = msab_registerStarting()) != NULL ||
 			(p = msab_registerStarted()) != NULL ||
 			(p = msab_marchScenario("mfunnel")) != NULL)
 	{
 		err em;
 
-		_sabaoth_internal_dbname = NULL;
-
+	    msab_dbnameinit(NULL);
 		Mfprintf(serr, "mfunnel: unable to startup %s: %s\n",
 				name, p);
 		em = newErr("cannot create funnel %s due to sabaoth: %s", name, p);
@@ -473,8 +468,7 @@ multiplexInit(char *name, char *pattern, FILE *sout, FILE *serr)
 
 		return(em);
 	}
-	_sabaoth_internal_dbname = NULL;
-
+	msab_dbnameinit(NULL);
 	return(NO_ERR);
 }
 
@@ -509,13 +503,13 @@ multiplexDestroy(char *mp)
 	}
 
 	/* deregister from sabaoth, same hack alert as at Init */
-	_sabaoth_internal_dbname = m->name;
+	msab_dbnameinit(m->name);
 	if ((msg = msab_registerStop()) != NULL ||
 		(msg = msab_wildRetreat()) != NULL) {
 		Mfprintf(stderr, "mfunnel: %s\n", msg);
 		free(msg);
 	}
-	_sabaoth_internal_dbname = NULL;
+	msab_dbnameinit(NULL);
 
 	/* signal the thread to stop and cleanup */
 	m->shutdown = 1;
