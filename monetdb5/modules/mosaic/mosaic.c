@@ -1498,7 +1498,7 @@ MOSAnalysis(BAT *b, BAT *btech, BAT *boutput, BAT *bratio, BAT *bcompress, BAT *
 			continue;
 		}
 
-		pat[i].xsize = (BUN) b->tmosaic->free;
+		pat[i].xsize = (BUN) b->tmosaic->free + (BUN) b->tvmosaic->free;
 		pat[i].xf= ((MosaicHdr)  b->tmosaic->base)->ratio;
 
 		/* analyse result block distribution to exclude complicated compression combination that
