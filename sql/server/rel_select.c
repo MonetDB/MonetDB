@@ -4833,7 +4833,7 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek, 
 				exp_label(sql->sa, exp, ++sql->label);
 			res  = exp_ref(sql->sa, exp);
 			res->card = (*rel)->card;
-			if(se->token == SQL_AGGR) {
+			if (se->token == SQL_AGGR) {
 				dlist *l = se->data.lval;
 				int distinct = l->h->next->data.i_val;
 				if (distinct)

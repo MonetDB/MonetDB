@@ -39,6 +39,42 @@ create aggregate stddev_samp(val INTERVAL MONTH) returns DOUBLE
 	external name "aggr"."stdev";
 GRANT EXECUTE ON AGGREGATE stddev_samp(INTERVAL MONTH) TO PUBLIC;
 
+create window stddev_samp(val TINYINT) returns DOUBLE
+	external name "sql"."stdev";
+GRANT EXECUTE ON WINDOW stddev_samp(TINYINT) TO PUBLIC;
+create window stddev_samp(val SMALLINT) returns DOUBLE
+	external name "sql"."stdev";
+GRANT EXECUTE ON WINDOW stddev_samp(SMALLINT) TO PUBLIC;
+create window stddev_samp(val INTEGER) returns DOUBLE
+	external name "sql"."stdev";
+GRANT EXECUTE ON WINDOW stddev_samp(INTEGER) TO PUBLIC;
+create window stddev_samp(val BIGINT) returns DOUBLE
+	external name "sql"."stdev";
+GRANT EXECUTE ON WINDOW stddev_samp(BIGINT) TO PUBLIC;
+create window stddev_samp(val REAL) returns DOUBLE
+	external name "sql"."stdev";
+GRANT EXECUTE ON WINDOW stddev_samp(REAL) TO PUBLIC;
+create window stddev_samp(val DOUBLE) returns DOUBLE
+	external name "sql"."stdev";
+GRANT EXECUTE ON WINDOW stddev_samp(DOUBLE) TO PUBLIC;
+
+create window stddev_samp(val DATE) returns DOUBLE
+	external name "sql"."stdev";
+GRANT EXECUTE ON WINDOW stddev_samp(DATE) TO PUBLIC;
+create window stddev_samp(val TIME) returns DOUBLE
+	external name "sql"."stdev";
+GRANT EXECUTE ON WINDOW stddev_samp(TIME) TO PUBLIC;
+create window stddev_samp(val TIMESTAMP) returns DOUBLE
+	external name "sql"."stdev";
+GRANT EXECUTE ON WINDOW stddev_samp(TIMESTAMP) TO PUBLIC;
+create window stddev_samp(val INTERVAL SECOND) returns DOUBLE
+	external name "sql"."stdev";
+GRANT EXECUTE ON WINDOW stddev_samp(INTERVAL SECOND) TO PUBLIC;
+create window stddev_samp(val INTERVAL MONTH) returns DOUBLE
+	external name "sql"."stdev";
+GRANT EXECUTE ON WINDOW stddev_samp(INTERVAL MONTH) TO PUBLIC;
+
+
 create aggregate stddev_pop(val TINYINT) returns DOUBLE
 	external name "aggr"."stdevp";
 GRANT EXECUTE ON AGGREGATE stddev_pop(TINYINT) TO PUBLIC;

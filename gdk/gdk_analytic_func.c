@@ -1720,3 +1720,76 @@ GDKanalyticalavg(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
 	r->tnil = has_nils;
 	return GDK_SUCCEED;
 }
+
+#define ANALYTICAL_STDEV_CALC(TPE)			\
+	do {								\
+		TPE *bp = (TPE*)Tloc(b, 0), *bs, *be, v;		\
+		for (; i < cnt; i++, rb++) {				\
+			bs = bp + start[i];				\
+			be = bp + end[i];				\
+			for (; bs < be; bs++) {				\
+				v = *bs;				\
+				if (is_##TPE##_nil(v))		\
+					continue;		\
+				n++;				\
+				delta = (dbl) v - mean;		\
+				mean += delta / n;		\
+				m2 += delta * ((dbl) v - mean);	\
+			}						\
+			if (n > 1) { \
+				*rb = sqrt(m2 / (n - 1)); \
+			} else { \
+				*rb = dbl_nil; \
+				has_nils = true; \
+			} \
+			n = 0;	\
+			mean = 0;	\
+			m2 = 0; \
+		}	\
+	} while (0)
+
+gdk_return
+GDKanalyticalstddev_samp(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
+{
+	bool has_nils = false;
+	BUN i = 0, cnt = BATcount(b), n = 0;
+	lng *restrict start, *restrict end;
+	dbl *restrict rb = (dbl *) Tloc(r, 0), mean = 0, m2 = 0, delta;
+
+	assert(s && e);
+	start = (lng *) Tloc(s, 0);
+	end = (lng *) Tloc(e, 0);
+
+	switch (tpe) {
+	case TYPE_bte:
+		ANALYTICAL_STDEV_CALC(bte);
+		break;
+	case TYPE_sht:
+		ANALYTICAL_STDEV_CALC(sht);
+		break;
+	case TYPE_int:
+		ANALYTICAL_STDEV_CALC(int);
+		break;
+	case TYPE_lng:
+		ANALYTICAL_STDEV_CALC(lng);
+		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		ANALYTICAL_STDEV_CALC(hge);
+		break;
+#endif
+	case TYPE_flt:
+		ANALYTICAL_STDEV_CALC(flt);
+		break;
+	case TYPE_dbl:
+		ANALYTICAL_STDEV_CALC(dbl);
+		break;
+	default:
+		GDKerror("%s: average of type %s unsupported.\n", __func__, ATOMname(tpe));
+		return GDK_FAIL;
+	}
+	BATsetcount(r, cnt);
+	r->tnonil = !has_nils;
+	r->tnil = has_nils;
+	return GDK_SUCCEED;
+}

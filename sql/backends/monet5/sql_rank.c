@@ -1486,7 +1486,7 @@ SQLavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			case TYPE_flt: {
 				flt fp = *((flt*)in);
 				dbl *db = (dbl*)res;
-				if(is_flt_nil(fp))
+				if (is_flt_nil(fp))
 					*db = dbl_nil;
 				else
 					*db = (dbl) fp;
@@ -1495,7 +1495,58 @@ SQLavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				*res = *in;
 				break;
 			default:
-				throw(SQL, "sql.avg", SQLSTATE(42000) "average not available for %s", ATOMname(tpe));
+				throw(SQL, "sql.avg", SQLSTATE(42000) "sql.avg not available for %s", ATOMname(tpe));
+		}
+	}
+	return msg;
+}
+
+str
+SQLstddev_samp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	BAT *r, *b, *s, *e;
+	str msg = SQLanalytics_args(&r, &b, &s, &e, cntxt, mb, stk, pci, TYPE_dbl, "sql.stddev",
+								SQLSTATE(42000) "stddev(:any_1,:lng,:lng)");
+	int tpe = getArgType(mb, pci, 1);
+	gdk_return gdk_res;
+
+	if (msg)
+		return msg;
+	if (isaBatType(tpe))
+		tpe = getBatType(tpe);
+
+	if (b) {
+		bat *res = getArgReference_bat(stk, pci, 0);
+
+		gdk_res = GDKanalyticalstddev_samp(r, b, s, e, tpe);
+		BBPunfix(b->batCacheid);
+		if (s) BBPunfix(s->batCacheid);
+		if (e) BBPunfix(e->batCacheid);
+		if (gdk_res == GDK_SUCCEED)
+			BBPkeepref(*res = r->batCacheid);
+		else
+			throw(SQL, "sql.stddev", GDK_EXCEPTION);
+	} else {
+		dbl *res = getArgReference(stk, pci, 0);
+
+		switch (tpe) {
+			case TYPE_bte:
+			case TYPE_sht:
+			case TYPE_int:
+			case TYPE_lng:
+#ifdef HAVE_HGE
+			case TYPE_hge:
+#endif
+			case TYPE_flt:
+			case TYPE_dbl:
+				*res = dbl_nil;
+				break;
+			default: {
+				if (tpe == TYPE_daytime || tpe == TYPE_date || tpe == TYPE_timestamp)
+					*res = dbl_nil;
+				else
+					throw(SQL, "sql.stddev", SQLSTATE(42000) "sql.stddev not available for %s", ATOMname(tpe));
+			}
 		}
 	}
 	return msg;

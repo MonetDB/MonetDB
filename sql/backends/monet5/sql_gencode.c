@@ -912,13 +912,12 @@ monet5_resolve_function(ptr M, sql_func *f)
 	if (!mname || !fname)
 		return 0;
 
-	/* Some SQL functions MAL mapping such as count(*) aggregate, the number or arguments don't match */
+	/* Some SQL functions MAL mapping such as count(*) aggregate, the number of arguments don't match */
 	if (mname == calcRef && fname == getName("="))
 		return 1;
 	if (mname == aggrRef && fname == countRef)
 		return 1;
-	if (mname == sqlRef && (fname == first_valueRef || fname == lagRef || fname == leadRef || fname == nth_valueRef || fname == ntileRef ||
-		fname ==  minRef || fname == maxRef || fname == countRef || fname == prodRef || fname == sumRef || fname == avgRef))
+	if (f->type == F_ANALYTIC)
 		return 1;
 
 	c = MCgetClient(sql->clientid);
