@@ -5950,6 +5950,11 @@ create procedure resume_log_flushing()
 create procedure hot_snapshot(tarfile string)
  external name sql.hot_snapshot;
 update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name in ('suspend_log_flushing', 'resume_log_flushing', 'hot_snapshot') and type = 2;
+drop function isaURL(url);
+CREATE function isaURL(theUrl string) RETURNS BOOL
+ EXTERNAL NAME url."isaURL";
+GRANT EXECUTE ON FUNCTION isaURL(string) TO PUBLIC;
+update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name = 'isaurl' and type = 1;
 drop view sys.tracelog;
 drop function sys.tracelog();
 create function sys.tracelog()

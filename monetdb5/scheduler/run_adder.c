@@ -122,10 +122,8 @@ RUNadder(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	/* check new statments for sanity */
 	msg = chkTypes(cntxt->usermodule, mb, FALSE);
-	if(msg == MAL_SUCCEED)
-		msg = chkFlow(mb);
-	if( msg == MAL_SUCCEED) 
-		msg = chkDeclarations(mb);
+	if( msg == MAL_SUCCEED) msg = chkFlow(mb);
+	if( msg == MAL_SUCCEED) msg = chkDeclarations(mb);
 
 	GDKfree(old);
 	return msg;

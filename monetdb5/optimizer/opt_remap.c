@@ -33,6 +33,7 @@ OPTremapDirect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int idx,
 	if(strncmp(mod,"bat",3)==0)
 		mod+=3;
 
+
 	snprintf(buf,1024,"bat%s",mod);
 	bufName = putName(buf);
 	fcnName = putName(fcn);
@@ -337,7 +338,6 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg = MAL_SUCCEED;
 
 	(void) pci;
-
 	old = mb->stmt;
 	limit = mb->stop;
 	slimit = mb->ssize;
@@ -437,10 +437,10 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
     /* Defense line against incorrect plans */
     if( msg == MAL_SUCCEED && doit > 0){
         msg = chkTypes(cntxt->usermodule, mb, FALSE);
-        if( msg == MAL_SUCCEED) 
-			msg = chkFlow(mb);
-        if( msg == MAL_SUCCEED) 
-			msg = chkDeclarations(mb);
+	if (!msg)
+        	msg = chkFlow(mb);
+	if (!msg)
+        	msg = chkDeclarations(mb);
     }
     /* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;

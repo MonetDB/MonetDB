@@ -120,10 +120,12 @@ dataflowBreakpoint(Client cntxt, MalBlkPtr mb, InstrPtr p, States states)
 			return 1;
 		return getState(states,p,p->retc) & (VARREAD | VARBLOCK);
 	}
-	for(j=p->retc; j < p->argc; j++)
+
+	for(j=p->retc; j < p->argc; j++){
 		if ( getState(states,p,j) & VARBLOCK){
 			return 1;
 		}
+	}
 	return hasSideEffects(mb,p,FALSE);
 }
 
@@ -201,7 +203,7 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		if ( breakpoint ){
 			/* close previous flow block */
 			simple = simpleFlow(old,start,i);
-			
+
 			if ( !simple){
 				flowblock = newTmpVariable(mb,TYPE_bit);
 				q= newFcnCall(mb,languageRef,dataflowRef);
@@ -287,10 +289,10 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
     /* Defense line against incorrect plans */
     if( actions > 0){
         msg = chkTypes(cntxt->usermodule, mb, FALSE);
-        if( msg == MAL_SUCCEED)
-			msg = chkFlow(mb);
-        if( msg == MAL_SUCCEED) 
-			msg = chkDeclarations(mb);
+	if (!msg)
+        	msg = chkFlow(mb);
+	if (!msg)
+        	msg = chkDeclarations(mb);
     }
     /* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;

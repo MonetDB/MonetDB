@@ -2167,7 +2167,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		if (match == 1 && fm == 2 && isSelect(p) && p->retc == 1 &&
 		   (m=is_a_mat(getArg(p,fm), &ml)) >= 0 && 
 		   !ml.v[m].packed && /* not packed yet */ 
-			was_a_mat(getArg(p,fm-1), &ml) < 0){ /* not previously packed */
+		   was_a_mat(getArg(p,fm-1), &ml) < 0){ /* not previously packed */
 			if((r = copyInstruction(p)) == NULL) {
 				msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto cleanup;
@@ -2277,12 +2277,12 @@ cleanup:
 	if (ml.vars) GDKfree(ml.vars);
     /* Defense line against incorrect plans */
     if( actions > 0 && msg == MAL_SUCCEED){
-        if( msg == MAL_SUCCEED)
-			msg = chkTypes(cntxt->usermodule, mb, FALSE);
-        if( msg == MAL_SUCCEED) 
-			msg = chkFlow(mb);
-        if(msg == MAL_SUCCEED) 
-			msg = chkDeclarations(mb);
+	    if (!msg)
+        	msg = chkTypes(cntxt->usermodule, mb, FALSE);
+	    if (!msg)
+        	msg = chkFlow(mb);
+	    if (!msg)
+        	msg = chkDeclarations(mb);
     }
     /* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;

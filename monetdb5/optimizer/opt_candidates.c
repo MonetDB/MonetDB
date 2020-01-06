@@ -26,7 +26,6 @@ OPTcandidatesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	(void) pci;
 	(void) cntxt;
 	(void) stk;		/* to fool compilers */
-
 	for (i = 0; i < mb->stop; i++) {
 		p = getInstrPtr(mb,i);
 		if( p->token == ASSIGNsymbol) {
@@ -82,10 +81,11 @@ OPTcandidatesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
     /* Defense line against incorrect plans */
 	/* plan remains unaffected */
-	// if( msg == MAL_SUCCEED) msg = chkTypes(cntxt->usermodule, mb, FALSE);
-	// if( msg == MAL_SUCCEED) msg = chkFlow(mb);
-	// if( msg == MAL_SUCCEED) msg = chkDeclarations(mb);
-
+	// msg = chkTypes(cntxt->usermodule, mb, FALSE);
+	// if( ms== MAL_SUCCEED)
+	//	msg = chkFlow(mb);
+	// if( ms== MAL_SUCCEED)
+	// 	msg = chkDeclarations(mb);
 	/* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;
 	snprintf(buf,256,"%-20s actions= 1 time=" LLFMT " usec","candidates",usec);

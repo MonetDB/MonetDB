@@ -9,7 +9,6 @@
 #include "monetdb_config.h"
 #include "opt_commonTerms.h"
 #include "mal_exception.h"
-
  /*
  * Caveat. A lot of time was lost due to constants that are indistinguisable
  * at the surface level.  It requires the constant optimizer to be ran first.
@@ -51,7 +50,6 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	(void) cntxt;
 	(void) stk;
 	(void) pci;
-
 	alias = (int*) GDKzalloc(sizeof(int) * mb->vtop);
 	list = (int*) GDKzalloc(sizeof(int) * mb->stop);
 	hash = (int*) GDKzalloc(sizeof(int) * mb->vtop);
@@ -203,10 +201,10 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
     /* Defense line against incorrect plans */
     if( actions > 0){
         msg = chkTypes(cntxt->usermodule, mb, FALSE);
-        if( msg == MAL_SUCCEED) 
-			msg = chkFlow(mb);
-        if( msg == MAL_SUCCEED) 
-			msg = chkDeclarations(mb);
+	if (!msg)
+        	msg = chkFlow(mb);
+	if (!msg)
+        	msg = chkDeclarations(mb);
     }
     /* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;

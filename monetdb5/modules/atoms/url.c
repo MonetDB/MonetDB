@@ -685,7 +685,7 @@ URLgetUser(str *retval, url *val)
 /* COMMAND "isaURL": Check conformity of the URL syntax
  * SIGNATURE: isaURL(str) : bit; */
 str
-URLisaURL(bit *retval, url *val)
+URLisaURL(bit *retval, str *val)
 {
 	if (val == NULL || *val == NULL)
 		throw(ILLARG, "url.isaURL", "url missing");

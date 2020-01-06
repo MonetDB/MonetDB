@@ -194,11 +194,11 @@ OPTmultiplexSimple(Client cntxt, MalBlkPtr mb)
 		}
 	if( doit) {
 		msg = OPTmultiplexImplementation(cntxt, mb, 0, 0);
-		if( msg == MAL_SUCCEED)
+		if (!msg)
 			msg = chkTypes(cntxt->usermodule, mb,TRUE);
-		if( msg == MAL_SUCCEED)
+		if (!msg)
 			msg = chkFlow(mb);
-		if( msg == MAL_SUCCEED) 
+		if (!msg)
 			msg = chkDeclarations(mb);
 	}
 	return msg;
@@ -215,12 +215,12 @@ OPTmultiplexImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 
 	(void) stk;
 	(void) pci;
-	
+
 	old = mb->stmt;
 	limit = mb->stop;
 	slimit = mb->ssize;
 	if ( newMalBlkStmt(mb, mb->ssize) < 0 )
-		throw(MAL,"optimizer.multiplex", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		throw(MAL,"optimizer.mergetable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	for (i = 0; i < limit; i++) {
 		p = old[i];
@@ -251,12 +251,12 @@ OPTmultiplexImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	GDKfree(old);
 
     /* Defense line against incorrect plans */
-    if( msg == MAL_SUCCEED &&  actions > 0){
+    if( msg == MAL_SUCCEED && actions > 0){
         msg = chkTypes(cntxt->usermodule, mb, FALSE);
-        if( msg == MAL_SUCCEED)
-			msg = chkFlow(mb);
-        if( msg == MAL_SUCCEED) 
-			msg = chkDeclarations(mb);
+	if (!msg)
+        	msg = chkFlow(mb);
+	if (!msg)
+        	msg = chkDeclarations(mb);
     }
     /* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;

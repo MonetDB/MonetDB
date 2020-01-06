@@ -35,6 +35,7 @@ OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	char buf[256];
 	lng usec = GDKusec();
 	str msg = MAL_SUCCEED;
+
 	alias= (int*) GDKzalloc(sizeof(int) * mb->vtop);
 	cst= (VarPtr*) GDKzalloc(sizeof(VarPtr) * mb->vtop);
 	index= (int*) GDKzalloc(sizeof(int) * mb->vtop);
@@ -86,9 +87,10 @@ OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
     /* Defense line against incorrect plans */
 	/* Plan remains unaffected */
 	// msg = chkTypes(cntxt->usermodule, mb, FALSE);
-	// if( msg == MAL_SUCCEED) msg = chkFlow(mb);
-	// if( msg == MAL_SUCCEED) msg = chkDeclarations(mb);
-    
+	// if (!msg) 
+	// 	msg = chkFlow(mb);
+	// if(!msg) 
+	// 	msg = chkDeclarations(mb);
     /* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;
 	snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","constants",actions,usec);

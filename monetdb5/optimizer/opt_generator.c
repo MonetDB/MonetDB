@@ -76,7 +76,6 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	(void) stk;
 	(void) pci;
 
-
 	series = (InstrPtr*) GDKzalloc(sizeof(InstrPtr) * mb->vtop);
 	if(series == NULL)
 		throw(MAL,"optimizer.generator", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -145,7 +144,6 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 				if(p->typechk == TYPE_UNKNOWN){
 					setModuleId(p,m);
 					typeChecker(cntxt->usermodule, mb, p, i, TRUE);
-
 					InstrPtr r = series[getArg(p,k)];
 					setModuleId(r, generatorRef);
 					setFunctionId(r, seriesRef);
@@ -165,9 +163,11 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 
     /* Defense line against incorrect plans */
 	/* all new/modified statements are already checked */
-	// if(msg == MAL_SUCCEED) msg = chkTypes(cntxt->usermodule, mb, FALSE);
-	//if( msg == MAL_SUCCEED) msg = chkFlow(mb);
-	//if( msg == MAL_SUCCEED) msg = chkDeclarations(mb);
+	// msg = chkTypes(cntxt->usermodule, mb, FALSE);
+	// if (!msg)
+	// 	msg = chkFlow(mb);
+	// if (!msg)
+	// 	msg = chkDeclarations(mb);
     /* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","generator",actions, usec);

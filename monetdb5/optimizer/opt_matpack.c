@@ -29,7 +29,6 @@ OPTmatpackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	(void) pci;
 	(void) cntxt;
 	(void) stk;		/* to fool compilers */
-
 	for( i = 1; i < mb->stop; i++)
 		if( getModuleId(getInstrPtr(mb,i)) == matRef  && getFunctionId(getInstrPtr(mb,i)) == packRef && isaBatType(getArgType(mb,getInstrPtr(mb,i),1))) 
 			break;
@@ -75,9 +74,11 @@ OPTmatpackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 
     /* Defense line against incorrect plans */
     if( actions > 0){
-        //if( msg == MAL_SUCCEED) msg = chkTypes(cntxt->usermodule, mb, FALSE);
-        //if( msg == MAL_SUCCEED) msg = chkFlow(mb);
-        // if(msg == MAL_SUCCEED) msg = chkDeclarations(mb);
+        msg = chkTypes(cntxt->usermodule, mb, FALSE);
+	if (!msg)
+        	msg = chkFlow(mb);
+	if (!msg)
+        	msg = chkDeclarations(mb);
     }
     /* keep all actions taken as a post block comment */
 wrapup:

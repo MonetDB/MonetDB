@@ -277,11 +277,9 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	(void) cntxt;
 	(void) stk;
-
 	dep = OPTdependencies(cntxt,mb,&uselist);
 	if ( dep == NULL)
 		return MAL_SUCCEED;
-
 	limit= mb->stop;
 	slimit= mb->ssize;
 	old = mb->stmt;
@@ -336,18 +334,16 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	GDKfree(old);
 	(void) OPTpostponeAppends(cntxt, mb, 0, 0);
 
-    /* Defense line against incorrect plans */
-    if( 1){
+    	/* Defense line against incorrect plans */
         msg = chkTypes(cntxt->usermodule, mb, FALSE);
-        if( msg == MAL_SUCCEED)
-			msg = chkFlow(mb);
-        if( msg == MAL_SUCCEED) 
-			msg = chkDeclarations(mb);
-    }
-    /* keep all actions taken as a post block comment */
+	if (!msg)
+        	msg = chkFlow(mb);
+	if (!msg)
+        	msg = chkDeclarations(mb);
+    	/* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;
-    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","reorder",1,usec);
-    newComment(mb,buf);
+    	snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","reorder",1,usec);
+    	newComment(mb,buf);
 	addtoMalBlkHistory(mb);
 	return msg;
 }

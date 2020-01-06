@@ -130,10 +130,10 @@ OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	/* we don't create or change existing structures */
     //if( actions > 0){
         msg = chkTypes(cntxt->usermodule, mb, FALSE);
-        if( msg == MAL_SUCCEED)
-			msg = chkFlow(mb);
-        if( msg == MAL_SUCCEED)
-			chkDeclarations(mb);
+        if (!msg)
+		msg = chkFlow(mb);
+        if (!msg)
+        	msg = chkDeclarations(mb);
     //}
     /* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;

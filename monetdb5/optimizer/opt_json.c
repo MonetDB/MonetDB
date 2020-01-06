@@ -31,7 +31,6 @@ OPTjsonImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) pci;
 	(void) cntxt;
 	(void) stk;		/* to fool compilers */
-
 	old= mb->stmt;
 	limit= mb->stop;
 	slimit = mb->ssize;
@@ -78,10 +77,10 @@ OPTjsonImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
     /* Defense line against incorrect plans */
     if( actions > 0){
         msg = chkTypes(cntxt->usermodule, mb, FALSE);
-        if( msg == MAL_SUCCEED) 
-			msg = chkFlow(mb);
-        if( msg == MAL_SUCCEED)  if( msg == MAL_SUCCEED) 
-			msg = chkDeclarations(mb);
+	if (!msg)
+        	msg = chkFlow(mb);
+	if (!msg)
+        	msg = chkDeclarations(mb);
     }
     /* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;

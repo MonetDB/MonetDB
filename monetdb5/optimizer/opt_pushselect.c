@@ -138,7 +138,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	char buf[256];
 	lng usec = GDKusec();
 	str msg = MAL_SUCCEED;
-	
+
 	subselects = (subselect_t) {0};
 	if( mb->errors)
 		return MAL_SUCCEED;
@@ -693,10 +693,10 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
     /* Defense line against incorrect plans */
     if( actions > 0){
         msg = chkTypes(cntxt->usermodule, mb, FALSE);
-        if( msg == MAL_SUCCEED)
-			msg = chkFlow(mb);
+        if (msg == MAL_SUCCEED) 
+        	msg = chkFlow(mb);
         if( msg == MAL_SUCCEED) 
-			msg = chkDeclarations(mb);
+		msg = chkDeclarations(mb);
     }
 wrapup:
     /* keep all actions taken as a post block comment */

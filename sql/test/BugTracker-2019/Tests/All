@@ -32,6 +32,7 @@ sequences-defaults.Bug-6744
 sequences-types.Bug-6745
 alter_table_drop_column.Bug-6749
 KNOWNFAIL&HAVE_PYMONETDB?remote-table-non-existent-column.Bug-6750
+set-schema-mclient-msg.Bug-6754
 cte-union.Bug-6755
 merge-table-limit.Bug-6756
 double-free.Bug-6757

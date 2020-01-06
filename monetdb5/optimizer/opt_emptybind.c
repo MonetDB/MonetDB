@@ -20,15 +20,6 @@
 #include "opt_deadcode.h"
 #include "mal_builder.h"
 
-#define addresult(I)									\
-	do {												\
-		int tpe = getVarType(mb,getArg(p,I));			\
-		q= newStmt(mb, batRef, newRef);					\
-		getArg(q,0)= getArg(p,I);						\
-		q = pushType(mb, q, getBatType(tpe));			\
-		empty[getArg(q,0)]= i;							\
-	} while (0)
-
 #define emptyresult(I)									\
 	do {												\
 		int tpe = getVarType(mb,getArg(p,I));			\
@@ -37,10 +28,11 @@
 		setFunctionId(p,newRef);						\
 		p->argc = p->retc;								\
 		p = pushType(mb,p, getBatType(tpe));			\
-		setVarType(mb, getArg(p,0), tpe);				\
-		setVarFixed(mb, getArg(p,0));					\
-		empty[getArg(p,0)]= i;							\
-	} while (0)
+		if( p) {										\
+			setVarType(mb, getArg(p,0), tpe);			\
+			setVarFixed(mb, getArg(p,0));				\
+			empty[getArg(p,0)]= i;						\
+	}  } while (0)
 
 
 str
@@ -255,9 +247,9 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	GDKfree(updated);
     /* Defense line against incorrect plans */
 	msg = chkTypes(cntxt->usermodule, mb, FALSE);
-	if( msg == MAL_SUCCEED)
+	if (!msg)
 		msg = chkFlow(mb);
-	if( msg == MAL_SUCCEED) 
+	if (!msg)
 		msg = chkDeclarations(mb);
     /* keep all actions taken as a post block comment */
 wrapup:

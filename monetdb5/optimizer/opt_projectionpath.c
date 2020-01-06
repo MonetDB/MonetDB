@@ -143,11 +143,11 @@ OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 
 	(void) cntxt;
 	(void) stk;
-
 	if ( mb->inlineProp)
 		return MAL_SUCCEED;
 	//if ( optimizerIsApplied(mb,"projectionpath") )
 		//return 0;
+
 
 
 	old= mb->stmt;
@@ -271,10 +271,10 @@ OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
     /* Defense line against incorrect plans */
     if( actions > 0){
         msg = chkTypes(cntxt->usermodule, mb, FALSE);
-        if( msg == MAL_SUCCEED) 
-			msg = chkFlow(mb);
-        if(msg == MAL_SUCCEED) 
-			msg = chkDeclarations(mb);
+	if (!msg)
+        	msg = chkFlow(mb);
+	if (!msg)
+        	msg = chkDeclarations(mb);
     }
     /* keep all actions taken as a post block comment */
 wrapupall:

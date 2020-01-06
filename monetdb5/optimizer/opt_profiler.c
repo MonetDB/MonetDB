@@ -74,12 +74,13 @@ OPTprofilerImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			getVarSTC(mb,getArg(p,0)) = getVarSTC(mb,getArg(p,1));
 		} 
 	}
-    /* Defense line against incorrect plans */
+    	/* Defense line against incorrect plans */
 	/* Plan remains unaffected */
 	// msg = chkTypes(cntxt->usermodule, mb, FALSE);
-	//if( msg == MAL_SUCCEED) msg = chkFlow(mb);
-	//if( msg == MAL_SUCCEED) msg = chkDeclarations(mb);
-
+	// if (!msg)
+	//	msg = chkFlow(mb);
+	// if (!msg)
+	// 	msg = chkDeclarations(mb);
 	/* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;
 	snprintf(buf,256,"%-20s actions= 1 time=" LLFMT " usec","profiler", usec);

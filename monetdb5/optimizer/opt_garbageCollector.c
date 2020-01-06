@@ -38,6 +38,7 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 		return 0;
 
 	limit = mb->stop;
+	
 
 	/* variables get their name from the position */
 	/* rename all temporaries for ease of variable table interpretation */
@@ -49,6 +50,8 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 		else
 		if (getVarName(mb,i)[0] == 'C' && getVarName(mb,i)[1] == '_')
 			snprintf(getVarName(mb,i),IDLENGTH,"C_%d",i);
+		//if(strcmp(buf, getVarName(mb,i)) )
+			//fprintf(stderr, "non-matching name/entry %s %s\n", buf, getVarName(mb,i));
 	}
 
 	// move SQL query definition to the front for event profiling tools
@@ -87,13 +90,13 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	setVariableScope(mb);
 	/* Defense line against incorrect plans */
 	if( actions > 0){
-		msg = chkTypes(cntxt->usermodule, mb, FALSE);
-		if( msg == MAL_SUCCEED)
+		if (!msg)
+			msg = chkTypes(cntxt->usermodule, mb, FALSE);
+		if (!msg)
 			msg = chkFlow(mb);
-		if( msg == MAL_SUCCEED) 
+		if (!msg)
 			msg = chkDeclarations(mb);
 	}
-
 	/* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;
 	snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","garbagecollector",actions, usec);

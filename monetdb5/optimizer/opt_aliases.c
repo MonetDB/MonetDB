@@ -73,10 +73,11 @@ OPTaliasesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	/* Defense line against incorrect plans */
 	/* Plan is unaffected */
-	// if( msg == MAL_SUCCEED) msg = chkTypes(cntxt->usermodule, mb, FALSE);
-	// if ( msg == MAL_SUCCEED) msg = chkFlow(mb);
-	// if ( msg == MAL_SUCCEED) msg = chkDeclarations(mb);
-	//
+	// msg = chkTypes(cntxt->usermodule, mb, FALSE);
+	// if ( msg == MAL_SUCCEED) 
+	//	msg = chkFlow(mb);
+	// if ( msg == MAL_SUCCEED) 
+	// 	msg = chkDeclarations(mb);
     /* keep all actions taken as a post block comment
 	 * and update statics */
 	usec= GDKusec() - usec;

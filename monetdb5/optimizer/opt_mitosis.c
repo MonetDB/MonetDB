@@ -268,13 +268,11 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	GDKfree(old);
 
     /* Defense line against incorrect plans */
-    if( 1){
-        msg = chkTypes(cntxt->usermodule, mb, FALSE);
-        if( msg == MAL_SUCCEED)
-			msg = chkFlow(mb);
-        if( msg == MAL_SUCCEED)
-			msg = chkDeclarations(mb);
-    }
+    	msg = chkTypes(cntxt->usermodule, mb, FALSE);
+	if (!msg)
+        	msg = chkFlow(mb);
+	if (!msg)
+        	msg = chkDeclarations(mb);
     /* keep all actions taken as a post block comment */
 bailout:
 	usec = GDKusec()- usec;

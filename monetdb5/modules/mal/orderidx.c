@@ -179,7 +179,6 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 	BBPretain(newstk->stk[arg].val.bval);
 	msg = runMALsequence(cntxt, smb, 1, 0, newstk, 0, 0);
 	freeStack(newstk);
-
 	/* get rid of temporary MAL block */
 bailout:
 	freeSymbol(snew);
