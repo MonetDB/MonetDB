@@ -66,16 +66,27 @@ SQLdiff(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			throw(SQL, "sql.diff", GDK_EXCEPTION);
 	} else if (pci->argc > 2 && isaBatType(getArgType(mb, pci, 2))) {
 		bat *res = getArgReference_bat(stk, pci, 0);
+		bit prev = *getArgReference_bit(stk, pci, 1);
 		bat *bid = getArgReference_bat(stk, pci, 2);
-		BAT *b = BATdescriptor(*bid), *r;
+		BAT *b = BATdescriptor(*bid), *r, *c;
+		bit *restrict cb;
 		gdk_return gdk_code = GDK_SUCCEED;
 
 		if (!b)
 			throw(SQL, "sql.diff", SQLSTATE(HY005) "Cannot access column descriptor");
 		voidresultBAT(r, TYPE_bit, BATcount(b), b, "sql.diff");
 
-		gdk_code = GDKanalyticaldiff(r, b, NULL, b->ttype);
+		c = COLnew(0, TYPE_bit, BATcount(b), TRANSIENT);
+		if (!c) {
+			BBPunfix(b->batCacheid);
+			throw(SQL, "sql.diff", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		}
+		cb = (bit *) Tloc(c, 0);
+		memset(cb, prev, BATcount(b));
+
+		gdk_code = GDKanalyticaldiff(r, b, c, b->ttype);
 		BBPunfix(b->batCacheid);
+		BBPreclaim(c);
 		if (gdk_code == GDK_SUCCEED)
 			BBPkeepref(*res = r->batCacheid);
 		else
