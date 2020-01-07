@@ -1909,7 +1909,6 @@ str URLnew4(url *u, str *protocol, str *server, int *port, str *file);
 str URLnoop(url *u, url *val);
 ssize_t URLtoString(str *s, size_t *len, const char *src, bool external);
 int UUIDcompare(const uuid *l, const uuid *r);
-str UUIDequal(bit *retval, uuid **l, uuid **r);
 ssize_t UUIDfromString(const char *svalue, size_t *len, uuid **retval, bool external);
 str UUIDgenerateUuid(uuid **retval);
 str UUIDgenerateUuidInt(uuid **retval, int *d);

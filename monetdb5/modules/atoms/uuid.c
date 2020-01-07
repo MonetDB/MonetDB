@@ -64,7 +64,6 @@ mal_export str UUIDgenerateUuidInt(uuid **retval, int *d);
 mal_export str UUIDstr2uuid(uuid **retval, str *s);
 mal_export str UUIDuuid2str(str *retval, uuid **u);
 mal_export str UUIDisaUUID(bit *retval, str *u);
-mal_export str UUIDequal(bit *retval, uuid **l, uuid **r);
 
 static uuid uuid_nil;			/* automatically initialized as zeros */
 
@@ -239,16 +238,6 @@ UUIDuuid2str(str *retval, uuid **u)
 	*retval = NULL;
 	if (UUIDtoString(retval, &l, *u, false) < 0)
 		throw(MAL, "uuid.str", GDK_EXCEPTION);
-	return MAL_SUCCEED;
-}
-
-str
-UUIDequal(bit *retval, uuid **l, uuid **r)
-{
-	if (is_uuid_nil(*l) || is_uuid_nil(*r))
-		*retval = bit_nil;
-	else
-		*retval = memcmp((*l)->u, (*r)->u, UUID_SIZE) == 0;
 	return MAL_SUCCEED;
 }
 
