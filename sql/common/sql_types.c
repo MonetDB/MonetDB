@@ -32,7 +32,6 @@
 
 list *aliases = NULL;
 list *types = NULL;
-list *aggrs = NULL;
 list *funcs = NULL;
 
 static sql_type *BIT = NULL;
@@ -443,9 +442,9 @@ subtype2string2(sql_subtype *tpe) //distinguish char(n), decimal(n,m) from other
 }
 
 int 
-subaggr_cmp( sql_subaggr *a1, sql_subaggr *a2)
+subaggr_cmp( sql_subfunc *a1, sql_subfunc *a2)
 {
-	if (a1->aggr == a2->aggr) 
+	if (a1->func == a2->func) 
 		return list_cmp(a1->res, a2->res, (fcmp) &subtype_cmp);
 	return -1;
 }
@@ -476,16 +475,16 @@ arg_subtype_cmp_null(sql_arg *a, sql_subtype *t)
 	return (is_subtypeof(t, &a->type )?0:-1);
 }
 
-static sql_subaggr *
+static sql_subfunc *
 _dup_subaggr(sql_allocator *sa, sql_func *a, sql_subtype *member)
 {
 	node *tn;
 	unsigned int scale = 0, digits = 0;
-	sql_subaggr *ares = SA_ZNEW(sa, sql_subaggr);
+	sql_subfunc *ares = SA_ZNEW(sa, sql_subfunc);
 
 	assert (a->res);
 
-	ares->aggr = a;
+	ares->func = a;
 	ares->res = sa_list(sa);
 	for(tn = a->res->h; tn; tn = tn->next) {
 		sql_arg *rarg = tn->data;
@@ -509,10 +508,10 @@ _dup_subaggr(sql_allocator *sa, sql_func *a, sql_subtype *member)
 	return ares;
 }
 
-sql_subaggr *
+sql_subfunc *
 sql_bind_aggr(sql_allocator *sa, sql_schema *s, const char *sqlaname, sql_subtype *type)
 {
-	node *n = aggrs->h;
+	node *n = funcs->h;
 
 	while (n) {
 		sql_func *a = n->data;
@@ -521,7 +520,7 @@ sql_bind_aggr(sql_allocator *sa, sql_schema *s, const char *sqlaname, sql_subtyp
 		if (a->ops->h)
 			arg = a->ops->h->data;
 
-		if (strcmp(a->base.name, sqlaname) == 0 && (!arg ||
+		if (IS_AGGR(a) && strcmp(a->base.name, sqlaname) == 0 && (!arg ||
 			arg->type.type->eclass == EC_ANY || 
 			(type && is_subtype(type, &arg->type )))) 
 			return _dup_subaggr(sa, a, type);
@@ -549,10 +548,10 @@ sql_bind_aggr(sql_allocator *sa, sql_schema *s, const char *sqlaname, sql_subtyp
 	return NULL;
 }
 
-sql_subaggr *
+sql_subfunc *
 sql_bind_aggr_(sql_allocator *sa, sql_schema *s, const char *sqlaname, list *inputs, bool args)
 {
-	node *n = aggrs->h;
+	node *n = funcs->h;
 	sql_subtype *type = NULL;
 
 	if (inputs->h)
@@ -561,7 +560,7 @@ sql_bind_aggr_(sql_allocator *sa, sql_schema *s, const char *sqlaname, list *inp
 	while (n) {
 		sql_func *a = n->data;
 
-		if (strcmp(a->base.name, sqlaname) == 0 &&  
+		if (IS_AGGR(a) && strcmp(a->base.name, sqlaname) == 0 &&  
 			list_cmp(args ? a->ops : a->res, inputs, (fcmp) &arg_subtype_cmp) == 0)
 			return _dup_subaggr(sa, a, type);
 		n = n->next;
@@ -583,15 +582,15 @@ sql_bind_aggr_(sql_allocator *sa, sql_schema *s, const char *sqlaname, list *inp
 	return NULL;
 }
 
-sql_subaggr *
+sql_subfunc *
 sql_bind_member_aggr(sql_allocator *sa, sql_schema *s, const char *sqlaname, sql_subtype *type, int nrargs)
 {
-	node *n = aggrs->h;
+	node *n = funcs->h;
 
 	while (n) {
 		sql_func *a = n->data;
 
-		if (strcmp(a->base.name, sqlaname) == 0 && list_length(a->ops) == nrargs &&
+		if (IS_AGGR(a) && strcmp(a->base.name, sqlaname) == 0 && list_length(a->ops) == nrargs &&
 			arg_subtype_cmp(a->ops->h->data, type) == 0)
 			return _dup_subaggr(sa, a, NULL);
 		n = n->next;
@@ -613,15 +612,15 @@ sql_bind_member_aggr(sql_allocator *sa, sql_schema *s, const char *sqlaname, sql
 	return NULL;
 }
 
-sql_subaggr *
+sql_subfunc *
 sql_find_aggr(sql_allocator *sa, sql_schema *s, const char *sqlaname)
 {
-	node *n = aggrs->h;
+	node *n = funcs->h;
 
 	while (n) {
 		sql_func *a = n->data;
 
-		if (strcmp(a->base.name, sqlaname) == 0)
+		if (IS_AGGR(a) && strcmp(a->base.name, sqlaname) == 0)
 			return _dup_subaggr(sa, a, NULL);
 		n = n->next;
 	}
@@ -1255,11 +1254,7 @@ sql_create_func_(sql_allocator *sa, const char *name, const char *mod, const cha
 	t->fix_scale = fix_scale;
 	t->s = NULL;
 	t->system = TRUE;
-	if (type == F_AGGR) {
-		list_append(aggrs, t);
-	} else {
-		list_append(funcs, t);
-	}
+	list_append(funcs, t);
 	return t;
 }
 
@@ -1730,7 +1725,7 @@ sqltypeinit( sql_allocator *sa)
 	//sql_create_aggr(sa, "avg", "aggr", "avg", SECINT, DBL);
 
 	sql_create_aggr(sa, "count_no_nil", "aggr", "count_no_nil", NULL, LNG);
-	sql_create_aggr(sa, "count", "aggr", "count", NULL, LNG);
+	sql_create_aggr(sa, "count", "aggr", "count", ANY, LNG);
 
 	/* order based operators */
 	sql_create_analytic(sa, "diff", "sql", "diff", ANY, BIT, SCALE_NONE);
@@ -2254,7 +2249,6 @@ types_init(sql_allocator *sa, int debug)
 	aliases = sa_list(sa);
 	types = sa_list(sa);
 	localtypes = sa_list(sa);
-	aggrs = sa_list(sa);
 	funcs = sa_list(sa);
 	MT_lock_set(&funcs->ht_lock);
 	funcs->ht = hash_new(sa, 1024, (fkeyvalue)&base_key);

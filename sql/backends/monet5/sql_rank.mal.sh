@@ -374,11 +374,11 @@ done
 
 for tp1 in 1:bte 2:sht 4:int 8:lng 4:flt 8:dbl 8:daytime 4:date 8:timestamp; do
 	cat <<EOF
-pattern sql.stddev(b:${tp1#*:}, s:lng, e:lng) :dbl
+pattern sql.stdev(b:${tp1#*:}, s:lng, e:lng) :dbl
 address SQLstddev_samp
 comment "standard deviation of groups";
 
-pattern batsql.stddev(b:bat[:${tp1#*:}], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
+pattern batsql.stdev(b:bat[:${tp1#*:}], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
 address SQLstddev_samp
 comment "standard deviation of groups";
 

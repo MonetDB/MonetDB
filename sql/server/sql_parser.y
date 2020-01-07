@@ -182,6 +182,7 @@ int yydebug=1;
 
 	/* symbolic tokens */
 %type <sym>
+	opt_over
 	alter_statement
 	assignment
 	create_statement
@@ -281,7 +282,7 @@ int yydebug=1;
 	default_value
 	assign_default
 	cast_value
-	aggr_ref
+	aggr_or_window_ref
 	var_ref
 	func_ref
 	datetime_funcs
@@ -327,8 +328,6 @@ int yydebug=1;
 	func_def_opt_return
 	with_list_element
 	window_definition
-	window_function
-	window_function_type
 	window_partition_clause
 	window_order_clause
 	window_frame_clause
@@ -451,8 +450,6 @@ int yydebug=1;
 	qname
 	qfunc
 	qrank
-	qaggr
-	qaggr2
 	routine_name
 	sort_specification_list
 	opt_schema_element_list
@@ -617,7 +614,7 @@ int yydebug=1;
 
 /* sql prefixes to avoid name clashes on various architectures */
 %token <sval>
-	IDENT UIDENT aTYPE ALIAS AGGR AGGR2 RANK sqlINT OIDNUM HEXADECIMAL INTNUM APPROXNUM
+	IDENT UIDENT aTYPE ALIAS RANK sqlINT OIDNUM HEXADECIMAL INTNUM APPROXNUM
 	USING 
 	GLOBAL CAST CONVERT
 	CHARACTER VARYING LARGE OBJECT VARCHAR CLOB sqlTEXT BINARY sqlBLOB
@@ -4053,22 +4050,34 @@ scalar_exp:
  |  subquery	%prec UMINUS
  ;
 
+opt_over:
+	OVER '(' window_specification ')' { $$ = _symbol_create_list(SQL_WINDOW, append_list(L(), $3)); }
+ |  OVER ident                        { $$ = _symbol_create_list(SQL_NAME, append_string(L(), $2)); }
+ |                                    { $$ = NULL; }
+ ;
+
 value_exp:
     atom
- |  aggr_ref
+ |  aggr_or_window_ref opt_over {
+	 								if ($2 && $2->token == SQL_NAME)
+										$$ = _symbol_create_list(SQL_RANK, append_string(append_symbol(L(), $1), $2->data.lval->h->data.sval));
+									else if ($2)
+										$$ = _symbol_create_list(SQL_RANK, append_list(append_symbol(L(), $1), $2->data.lval->h->data.lval));
+									else
+										$$ = $1;
+ 								}
  |  case_exp
  |  cast_exp
  |  column_ref                            { $$ = _symbol_create_list(SQL_COLUMN, $1); }
  |  CURRENT_ROLE   { $$ = _symbol_create_list(SQL_COLUMN, append_string(L(), sa_strdup(SA, "current_role"))); }
  |  datetime_funcs
- |  func_ref
  |  GROUPING '(' column_ref_commalist ')' { dlist *l = L();
 										    append_list(l, append_string(L(), "grouping"));
-										    append_int(l, FALSE);
 											for (dnode *dn = $3->h ; dn ; dn = dn->next) {
 												symbol *sym = dn->data.sym; /* do like a aggrN */
 												append_symbol(l, _symbol_create_list(SQL_COLUMN, sym->data.lval));
 											}
+											 append_int(l, FALSE);
 										    $$ = _symbol_create_list(SQL_AGGR, l); }
  |  NEXT VALUE FOR qname                  { $$ = _symbol_create_list(SQL_NEXT, $4); }
  |  null
@@ -4076,7 +4085,6 @@ value_exp:
  |  string_funcs
  |  user            { $$ = _symbol_create_list(SQL_COLUMN, append_string(L(), sa_strdup(SA, "current_user"))); }
  |  var_ref
- |  window_function
  |  XML_value_function
  ;
 
@@ -4088,27 +4096,6 @@ param:
 	  sql_add_param(m, NULL, NULL);
 	  $$ = _symbol_create_int( SQL_PARAMETER, nr ); 
 	}
-
-window_function:
-	window_function_type OVER '(' window_specification ')'
-	{ $$ = _symbol_create_list( SQL_RANK, append_list(append_symbol(L(), $1), $4)); }
-  | window_function_type OVER ident
-	{ $$ = _symbol_create_list( SQL_RANK, append_string(append_symbol(L(), $1), $3)); }
-  ;
-
-window_function_type:
-	qrank '(' ')'
-	{ dlist *l = L();
-	  append_list(l, $1);
-	  append_list(l, NULL);
-	  $$ = _symbol_create_list( SQL_RANK, l ); }
-  | qrank '(' scalar_exp_list ')'
-	{ dlist *l = L();
-	  append_list(l, $1);
-	  append_list(l, $3);
-	  $$ = _symbol_create_list( SQL_RANK, l ); }
-  |	aggr_ref
-  ;
 
 window_specification:
 	window_ident_clause window_partition_clause window_order_clause window_frame_clause
@@ -4219,16 +4206,6 @@ func_ref:
 	  	$$ = _symbol_create_list( SQL_NOP, l ); 
 	  }
 	}
-/*
-|   '(' '(' scalar_exp_list ')' qfunc '(' scalar_exp_list ')' ')'
-	{ dlist *l = L();
-  	  append_list(l, $5);
-  	  append_list(l, $3);
-  	  append_list(l, $7);
-  	  append_int(l, 0);	
-	  $$ = _symbol_create_list( SQL_JOIN, l ); 
-	}
-*/
  ;
 
 qfunc:
@@ -4411,57 +4388,65 @@ qrank:
 			  append_string(L(), $1), $3);}
  ;
 
-qaggr:
-	AGGR		{ $$ = append_string(L(), $1); }
- |      ident '.' AGGR	{ $$ = append_string(
-			  append_string(L(), $1), $3);}
- ;
-
-qaggr2:
-	AGGR2		{ $$ = append_string(L(), $1); }
- |      ident '.' AGGR2	{ $$ = append_string(
-			  append_string(L(), $1), $3);}
- ;
-
-/* change to set function */
-aggr_ref:
-    qaggr '(' '*' ')'
+aggr_or_window_ref:
+    qrank '(' ')'
 		{ dlist *l = L();
   		  append_list(l, $1);
-  		  append_int(l, FALSE);
+  		  append_list(l, NULL);
+  		  $$ = _symbol_create_list( SQL_RANK, l ); }
+ |  qrank '(' scalar_exp_list ')'
+		{ dlist *l = L();
+  		  append_list(l, $1);
+  		  append_list(l, $3);
+  		  $$ = _symbol_create_list( SQL_RANK, l ); }
+ |  qfunc '(' '*' ')'
+		{ dlist *l = L();
+  		  append_list(l, $1);
   		  append_symbol(l, NULL);
+		  append_int(l, FALSE);
 		  $$ = _symbol_create_list( SQL_AGGR, l ); }
- |  qaggr '(' ident '.' '*' ')'
+ |  qfunc '(' ident '.' '*' ')'
 		{ dlist *l = L();
   		  append_list(l, $1);
-  		  append_int(l, FALSE);
   		  append_symbol(l, NULL);
+		  append_int(l, FALSE);
 		  $$ = _symbol_create_list( SQL_AGGR, l ); }
- |  qaggr '(' DISTINCT case_scalar_exp ')'
+ |  qfunc '(' DISTINCT case_scalar_exp ')'
 		{ dlist *l = L();
   		  append_list(l, $1);
-  		  append_int(l, TRUE);
   		  append_symbol(l, $4);
+		  append_int(l, TRUE);
 		  $$ = _symbol_create_list( SQL_AGGR, l ); }
- |  qaggr '(' ALL case_scalar_exp ')'
+ |  qfunc '(' ALL case_scalar_exp ')'
 		{ dlist *l = L();
   		  append_list(l, $1);
-  		  append_int(l, FALSE);
   		  append_symbol(l, $4);
+		  append_int(l, FALSE);
 		  $$ = _symbol_create_list( SQL_AGGR, l ); }
- |  qaggr '(' case_scalar_exp ')'
+ |  qfunc '(' ')'
 		{ dlist *l = L();
   		  append_list(l, $1);
-  		  append_int(l, FALSE);
-  		  append_symbol(l, $3);
-		  $$ = _symbol_create_list( SQL_AGGR, l ); }
- |  qaggr2 '(' case_scalar_exp ',' case_scalar_exp ')'
+		  append_list(l, NULL);
+		  append_int(l, FALSE);
+		  $$ = _symbol_create_list( SQL_OP, l ); }
+ |  qfunc '(' scalar_exp_list ')'
 		{ dlist *l = L();
-  		  append_list(l, $1);
-  		  append_int(l, FALSE);
-  		  append_symbol(l, $3);
-  		  append_symbol(l, $5);
-		  $$ = _symbol_create_list( SQL_AGGR, l ); }
+		  append_list(l, $1);
+ 		  if (dlist_length($3) == 1) {
+		  	append_symbol(l, $3->h->data.sym);
+		 	append_int(l, FALSE);
+			$$ = _symbol_create_list( SQL_UNOP, l ); 
+		  } else if (dlist_length($3) == 2) {
+		  	append_symbol(l, $3->h->data.sym);
+		  	append_symbol(l, $3->h->next->data.sym);
+		  	append_int(l, FALSE);
+			$$ = _symbol_create_list( SQL_BINOP, l ); 
+		  } else {
+		  	append_list(l, $3);
+			append_int(l, FALSE);
+		  	$$ = _symbol_create_list( SQL_NOP, l ); 
+		  }
+	}
  |  XML_aggregate
  ;
 
@@ -5477,8 +5462,6 @@ calc_restricted_ident:
 		{ $$ = uescape_xform($1, $2); }
  |  aTYPE	{ $$ = $1; }
  |  ALIAS	{ $$ = $1; }
- |  AGGR	{ $$ = $1; } 	/* without '(' */
- |  AGGR2	{ $$ = $1; } 	/* without '(' */
  |  RANK	{ $$ = $1; }	/* without '(' */
  ;
 
@@ -5502,8 +5485,6 @@ calc_ident:
  |  aTYPE	{ $$ = $1; }
  |  FILTER_FUNC	{ $$ = $1; }
  |  ALIAS	{ $$ = $1; }
- |  AGGR	{ $$ = $1; } 	/* without '(' */
- |  AGGR2	{ $$ = $1; } 	/* without '(' */
  |  RANK	{ $$ = $1; }	/* without '(' */
  |  non_reserved_word
  ;
@@ -6331,8 +6312,7 @@ XML_valid_element_name:
 XML_aggregate:
   XMLAGG '(' XML_value_expression
       opt_order_by_clause
-      opt_XML_returning_clause
-      ')'
+      opt_XML_returning_clause ')'
 	{ 
           dlist *aggr = L();
 
@@ -6347,8 +6327,8 @@ XML_aggregate:
 		}
 	  }
           append_list(aggr, append_string(append_string(L(), "sys"), "xmlagg"));
-  	  append_int(aggr, FALSE);
 	  append_symbol(aggr, $3);
+	  append_int(aggr, FALSE);
 	  /* int returning not used */
 	  $$ = _symbol_create_list( SQL_AGGR, aggr);
 	}

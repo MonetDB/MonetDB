@@ -2068,7 +2068,7 @@ rewrite_anyequal(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 				if (exps)
 					lsq->exps = exps; 
 
-				sql_subaggr *ea = sql_bind_aggr(sql->sa, sql->session->schema, is_anyequal(sf)?"anyequal":"allnotequal", exp_subtype(re));
+				sql_subfunc *ea = sql_bind_aggr(sql->sa, sql->session->schema, is_anyequal(sf)?"anyequal":"allnotequal", exp_subtype(re));
 				sql_exp *a = exp_aggr1(sql->sa, le, ea, 0, 0, CARD_AGGR, has_nil(le));
 				append(a->l, re);
 				append(a->l, rid);
@@ -2214,7 +2214,7 @@ rewrite_compare(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 					(void)rewrite_inner(sql, rel, sq, op_join);
 	
 				if (quantifier) { 
-					sql_subaggr *a;
+					sql_subfunc *a;
 
 					rsq = rel_groupby(sql, rsq, NULL); 
 					a = sql_bind_aggr(sql->sa, NULL, "null", exp_subtype(re));
@@ -2234,7 +2234,7 @@ rewrite_compare(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 					re = exp_aggr1(sql->sa, re, a, 0, 1, CARD_AGGR, has_nil(re));
 					re = rel_groupby_add_aggr(sql, rsq, re);
 				} else if (rsq && exp_card(re) > CARD_ATOM) { 
-					sql_subaggr *zero_or_one = sql_bind_aggr(sql->sa, NULL, compare_aggr_op(op, quantifier), exp_subtype(re));
+					sql_subfunc *zero_or_one = sql_bind_aggr(sql->sa, NULL, compare_aggr_op(op, quantifier), exp_subtype(re));
 	
 					rsq = rel_groupby(sql, rsq, NULL);
 	
@@ -2439,7 +2439,7 @@ rewrite_exists(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 			}
 
 			if (is_project(rel->op) || depth > 0) {
-				sql_subaggr *ea = NULL;
+				sql_subfunc *ea = NULL;
 				sq = rel_groupby(sql, sq, NULL);
 
 				if (exp_is_rel(ie))
@@ -2640,11 +2640,11 @@ rewrite_groupings(mvc *sql, sql_rel *rel)
 
 				for (node *m = rel->exps->h ; m ; m = m->next) {
 					sql_exp *e = (sql_exp*) m->data, *ne = NULL;
-					sql_subaggr *agr = (sql_subaggr*) e->f;
+					sql_subfunc *agr = (sql_subfunc*) e->f;
 
-					if (e->type == e_aggr && !agr->aggr->s && !strcmp(agr->aggr->base.name, "grouping")) {
+					if (e->type == e_aggr && !agr->func->s && !strcmp(agr->func->base.name, "grouping")) {
 						/* replace grouping aggregate calls with constants */
-						sql_subtype tpe = ((sql_arg*) agr->aggr->res->h->data)->type;
+						sql_subtype tpe = ((sql_arg*) agr->func->res->h->data)->type;
 						list *groups = (list*) e->l;
 						atom *a = atom_int(sql->sa, &tpe, 0);
 #ifdef HAVE_HGE
@@ -2712,9 +2712,9 @@ rewrite_groupings(mvc *sql, sql_rel *rel)
 			bool found_grouping = false;
 			for (node *n = rel->exps->h ; n ; n = n->next) {
 				sql_exp *e = (sql_exp*) n->data;
-				sql_subaggr *agr = (sql_subaggr*) e->f;
+				sql_subfunc *agr = (sql_subfunc*) e->f;
 
-				if (e->type == e_aggr && !agr->aggr->s && !strcmp(agr->aggr->base.name, "grouping")) {
+				if (e->type == e_aggr && !agr->func->s && !strcmp(agr->func->base.name, "grouping")) {
 					found_grouping = true;
 					break;
 				}
@@ -2727,9 +2727,9 @@ rewrite_groupings(mvc *sql, sql_rel *rel)
 
 				for (node *n = rel->exps->h ; n ; n = n->next) {
 					sql_exp *e = (sql_exp*) n->data, *ne;
-					sql_subaggr *agr = (sql_subaggr*) e->f;
+					sql_subfunc *agr = (sql_subfunc*) e->f;
 
-					if (e->type == e_aggr && !agr->aggr->s && !strcmp(agr->aggr->base.name, "grouping")) {
+					if (e->type == e_aggr && !agr->func->s && !strcmp(agr->func->base.name, "grouping")) {
 						ne = exp_atom(sql->sa, atom_int(sql->sa, bt, 0));
 						exp_setname(sql->sa, ne, e->alias.rname, e->alias.name);
 					} else {

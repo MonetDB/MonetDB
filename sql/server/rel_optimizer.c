@@ -1776,7 +1776,7 @@ rel_push_count_down(int *changes, mvc *sql, sql_rel *rel)
 		args = new_exp_list(sql->sa);
 		srel = r->l;
 		{
-			sql_subaggr *cf = sql_bind_aggr(sql->sa, sql->session->schema, "count", NULL);
+			sql_subfunc *cf = sql_bind_aggr(sql->sa, sql->session->schema, "count", NULL);
 			sql_exp *cnt, *e = exp_aggr(sql->sa, NULL, cf, need_distinct(oce), need_no_nil(oce), oce->card, 0);
 
 			exp_label(sql->sa, e, ++sql->label);
@@ -1788,7 +1788,7 @@ rel_push_count_down(int *changes, mvc *sql, sql_rel *rel)
 
 		srel = r->r;
 		{
-			sql_subaggr *cf = sql_bind_aggr(sql->sa, sql->session->schema, "count", NULL);
+			sql_subfunc *cf = sql_bind_aggr(sql->sa, sql->session->schema, "count", NULL);
 			sql_exp *cnt, *e = exp_aggr(sql->sa, NULL, cf, need_distinct(oce), need_no_nil(oce), oce->card, 0);
 
 			exp_label(sql->sa, e, ++sql->label);
@@ -2951,7 +2951,7 @@ exp_case_fixup( mvc *sql, sql_rel *rel, sql_exp *e, sql_exp *cc )
 		list *l = NULL, *args = e->l;
 		node *n;
 		sql_exp *ne;
-		sql_subaggr *f = e->f;
+		sql_subfunc *f = e->f;
 
 		/* first fixup arguments */
 		if (args) {
@@ -4056,15 +4056,15 @@ rel_push_aggr_down(int *changes, mvc *sql, sql_rel *rel)
 		/* distinct should be done over the full result */
 		for (n = g->exps->h; n; n = n->next) {
 			sql_exp *e = n->data;
-			sql_subaggr *af = e->f;
+			sql_subfunc *af = e->f;
 
 			if (e->type == e_atom || 
 			    e->type == e_func || 
 			   (e->type == e_aggr && 
-			   ((strcmp(af->aggr->base.name, "sum") && 
-			     strcmp(af->aggr->base.name, "count") &&
-			     strcmp(af->aggr->base.name, "min") &&
-			     strcmp(af->aggr->base.name, "max")) ||
+			   ((strcmp(af->func->base.name, "sum") && 
+			     strcmp(af->func->base.name, "count") &&
+			     strcmp(af->func->base.name, "min") &&
+			     strcmp(af->func->base.name, "max")) ||
 			   need_distinct(e))))
 				return rel; 
 		}
@@ -4155,9 +4155,9 @@ rel_push_aggr_down(int *changes, mvc *sql, sql_rel *rel)
 			sql_exp *ne, *e = n->data, *oa = m->data;
 
 			if (oa->type == e_aggr) {
-				sql_subaggr *f = oa->f;
+				sql_subfunc *f = oa->f;
 				int cnt = exp_aggr_is_count(oa);
-				sql_subaggr *a = sql_bind_aggr(sql->sa, sql->session->schema, (cnt)?"sum":f->aggr->base.name, exp_subtype(e));
+				sql_subfunc *a = sql_bind_aggr(sql->sa, sql->session->schema, (cnt)?"sum":f->func->base.name, exp_subtype(e));
 
 				assert(a);
 				/* union of aggr result may have nils 
@@ -5769,13 +5769,13 @@ rel_groupby_distinct2(int *changes, mvc *sql, sql_rel *rel)
 	 *  			  and only has one argument */
 	for (n = rel->exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
-		sql_subaggr *af = e->f;
+		sql_subfunc *af = e->f;
 
 		if (e->type == e_aggr && 
-		   (strcmp(af->aggr->base.name, "sum") && 
-		     strcmp(af->aggr->base.name, "count") &&
-		     strcmp(af->aggr->base.name, "min") &&
-		     strcmp(af->aggr->base.name, "max"))) 
+		   (strcmp(af->func->base.name, "sum") && 
+		     strcmp(af->func->base.name, "count") &&
+		     strcmp(af->func->base.name, "min") &&
+		     strcmp(af->func->base.name, "max"))) 
 			return rel; 
 	}
 
@@ -5807,9 +5807,9 @@ rel_groupby_distinct2(int *changes, mvc *sql, sql_rel *rel)
 			append(naggrs, v);
 		} else if (e->type == e_aggr && !need_distinct(e)) {
 			sql_exp *v;
-			sql_subaggr *f = e->f;
+			sql_subfunc *f = e->f;
 			int cnt = exp_aggr_is_count(e);
-			sql_subaggr *a = sql_bind_aggr(sql->sa, sql->session->schema, (cnt)?"sum":f->aggr->base.name, exp_subtype(e));
+			sql_subfunc *a = sql_bind_aggr(sql->sa, sql->session->schema, (cnt)?"sum":f->func->base.name, exp_subtype(e));
 
 			append(aggrs, e);
 			if (!exp_name(e))

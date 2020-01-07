@@ -1322,7 +1322,7 @@ validate_merge_update_delete(mvc *sql, sql_table *t, str alias, sql_rel *joined_
 {
 	char buf[BUFSIZ];
 	sql_exp *aggr, *bigger, *ex;
-	sql_subaggr *cf = sql_bind_aggr(sql->sa, sql->session->schema, "count", NULL);
+	sql_subfunc *cf = sql_bind_aggr(sql->sa, sql->session->schema, "count", NULL);
 	sql_subfunc *bf;
 	list *exps = new_exp_list(sql->sa);
 	sql_rel *groupby, *res;

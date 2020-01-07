@@ -534,7 +534,7 @@ find_table_function_type(mvc *sql, sql_schema *s, char *fname, list *exps, list 
 					break;
 				}
 				if (e->card > CARD_ATOM) {
-					sql_subaggr *zero_or_one = sql_bind_aggr(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(e));
+					sql_subfunc *zero_or_one = sql_bind_aggr(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(e));
 
 					e = exp_aggr1(sql->sa, e, zero_or_one, 0, 0, CARD_ATOM, has_nil(e));
 				}
@@ -1879,7 +1879,7 @@ _rel_nop(mvc *sql, sql_schema *s, char *fname, list *tl, sql_rel *rel, list *exp
 					break;
 				}
 				if (table_func && e->card > CARD_ATOM) {
-					sql_subaggr *zero_or_one = sql_bind_aggr(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(e));
+					sql_subfunc *zero_or_one = sql_bind_aggr(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(e));
 
 					e = exp_aggr1(sql->sa, e, zero_or_one, 0, 0, CARD_ATOM, has_nil(e));
 				}
@@ -2681,7 +2681,7 @@ rel_unop_(mvc *sql, sql_rel *rel, sql_exp *e, sql_schema *s, char *fname, int ca
 			res->scale = t->scale;
 		}
 		if (card == card_relation && e->card > CARD_ATOM) {
-			sql_subaggr *zero_or_one = sql_bind_aggr(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(e));
+			sql_subfunc *zero_or_one = sql_bind_aggr(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(e));
 
 			e = exp_aggr1(sql->sa, e, zero_or_one, 0, 0, CARD_ATOM, has_nil(e));
 		}
@@ -2861,12 +2861,12 @@ rel_binop_(mvc *sql, sql_rel *rel, sql_exp *l, sql_exp *r, sql_schema *s, char *
 			res->digits = (t1->digits && t2->digits)?t1->digits + t2->digits:0;
 		}
 		if (card == card_relation && l->card > CARD_ATOM) {
-			sql_subaggr *zero_or_one = sql_bind_aggr(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(l));
+			sql_subfunc *zero_or_one = sql_bind_aggr(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(l));
 
 			l = exp_aggr1(sql->sa, l, zero_or_one, 0, 0, CARD_ATOM, has_nil(l));
 		}
 		if (card == card_relation && r->card > CARD_ATOM) {
-			sql_subaggr *zero_or_one = sql_bind_aggr(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(r));
+			sql_subfunc *zero_or_one = sql_bind_aggr(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(r));
 
 			r = exp_aggr1(sql->sa, r, zero_or_one, 0, 0, CARD_ATOM, has_nil(r));
 		}
@@ -3152,13 +3152,13 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 {
 	mvc *sql = query->sql;
 	exp_kind ek = {type_value, card_column, FALSE};
-	sql_subaggr *a = NULL;
+	sql_subfunc *a = NULL;
 	int no_nil = 0, group = 0, has_freevar = 0;
 	unsigned int all_freevar = 0;
 	sql_rel *groupby = *rel, *sel = NULL, *gr, *og = NULL, *res = groupby;
 	sql_rel *subquery = NULL;
 	list *exps = NULL;
-	bool is_grouping = !strcmp(aname, "grouping");
+	bool is_grouping = !strcmp(aname, "grouping"), has_args = false;
 
 	if (!query_has_outer(query)) {
 		if (!groupby) {
@@ -3203,11 +3203,12 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 	if (args && args->data.sym) {
 		int all_aggr = query_has_outer(query);
 		all_freevar = 1;
-		for (	; args; args = args->next ) {
+		for (	; args && args->next; args = args->next ) {
 			int base = (!groupby || !is_project(groupby->op) || is_base(groupby->op) || is_processed(groupby));
 			sql_rel *gl = base?groupby:groupby->l, *ogl = gl; /* handle case of subqueries without correlation */
 			sql_exp *e = rel_value_exp(query, &gl, args->data.sym, (f | sql_aggr)& ~sql_farg, ek);
 
+			has_args = true;
 			if (gl && gl != ogl) {
 				if (!base)
 					groupby->l = subquery = gl;
@@ -3319,7 +3320,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 		*rel = res;
 	}
 
-	if (args && !args->data.sym) {	/* count(*) case */
+	if (!has_args) {	/* count(*) case */
 		sql_exp *e;
 
 		if (strcmp(aname, "count") != 0) {
@@ -3393,8 +3394,8 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 		bool is_group_concat = (!a && strcmp(s->base.name, "sys") == 0 && strcmp(aname, "group_concat") == 0);
 
 		if (list_length(exps) != 2 || (!EC_NUMBER(t1->type->eclass) || !a || is_group_concat || subtype_cmp(
-						&((sql_arg*)a->aggr->ops->h->data)->type,
-						&((sql_arg*)a->aggr->ops->h->next->data)->type) != 0) )  {
+						&((sql_arg*)a->func->ops->h->data)->type,
+						&((sql_arg*)a->func->ops->h->next->data)->type) != 0) )  {
 			if (!a && is_group_concat) {
 				sql_subtype *tstr = sql_bind_localtype("str");
 				list *sargs = sa_list(sql->sa);
@@ -3405,7 +3406,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 				a = sql_bind_aggr_(sql->sa, s, aname, sargs, true);
 			}
 			if (a) {
-				node *n, *op = a->aggr->ops->h;
+				node *n, *op = a->func->ops->h;
 				list *nexps = sa_list(sql->sa);
 
 				for (n = exps->h ; a && op && n; op = op->next, n = n->next ) {
@@ -3469,7 +3470,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 		if (!a) {
 			a = sql_find_aggr(sql->sa, s, aname);
 			if (a) {
-				node *n, *op = a->aggr->ops->h;
+				node *n, *op = a->func->ops->h;
 				list *nexps = sa_list(sql->sa);
 
 				for (n = exps->h ; a && op && n; op = op->next, n = n->next ) {
@@ -3486,7 +3487,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 			}
 		}
 	}
-	if (a && execute_priv(sql,a->aggr)) {
+	if (a && execute_priv(sql,a->func)) {
 		sql_exp *e = exp_aggr(sql->sa, exps, a, distinct, no_nil, groupby?groupby->card:CARD_ATOM, have_nil(exps));
 
 		if (!groupby)
@@ -3535,10 +3536,8 @@ rel_aggr(sql_query *query, sql_rel **rel, symbol *se, int f)
 	char *sname = qname_schema(l->h->data.lval);
 	sql_schema *s = query->sql->session->schema;
 
-	if (l->h->next->type == type_int) {
-		distinct = l->h->next->data.i_val;
-		d = l->h->next->next;
-	}
+	if (l->h->next && l->h->next->next && l->h->next->next->type == type_int)
+		distinct = l->h->next->next->data.i_val;
 
 	if (sname)
 		s = mvc_bind_schema(query->sql, sname);
@@ -4605,7 +4604,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 		dnode *n = dn->next;
 
 		if (n) {
-			if (!n->next->data.sym) { /* count(*) */
+			if (!n->data.sym) { /* count(*) */
 				in = rel_first_column(sql, p);
 				if (!exp_name(in))
 					exp_label(sql->sa, in, ++sql->label);
@@ -4617,12 +4616,12 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 				is_last = 0;
 				exp_kind ek = {type_value, card_column, FALSE};
 
-				distinct = n->data.i_val;
+				distinct = n->next->data.i_val;
 				/*
 				 * all aggregations implemented in a window have 1 and only 1 argument only, so for now no further
 				 * symbol compilation is required
 				 */
-				in = rel_value_exp2(query, &p, n->next->data.sym, f | sql_window, ek, &is_last);
+				in = rel_value_exp2(query, &p, n->data.sym, f | sql_window, ek, &is_last);
 				if(!in)
 					return NULL;
 
@@ -4835,7 +4834,7 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek, 
 			res->card = (*rel)->card;
 			if (se->token == SQL_AGGR) {
 				dlist *l = se->data.lval;
-				int distinct = l->h->next->data.i_val;
+				int distinct = l->h->next->next->data.i_val;
 				if (distinct)
 					set_distinct(res);
 			}
@@ -4889,7 +4888,7 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek, 
 			if (!has_label(e))
 				exp_label(sql->sa, e, ++sql->label);
 			if (ek.card < card_set && r->card > CARD_ATOM) {
-				sql_subaggr *zero_or_one = sql_bind_aggr(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(e));
+				sql_subfunc *zero_or_one = sql_bind_aggr(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(e));
 
 				e = exp_ref(sql->sa, e);
 				e = exp_aggr1(sql->sa, e, zero_or_one, 0, 0, CARD_ATOM, has_nil(e));
@@ -5129,7 +5128,7 @@ rel_having_limits_nodes(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind
 				return NULL;
 			if ((ek.card != card_relation && sn->limit) &&
 				(ek.card == card_value && sn->limit)) {
-				sql_subaggr *zero_or_one = sql_bind_aggr(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(l));
+				sql_subfunc *zero_or_one = sql_bind_aggr(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(l));
 				l = exp_aggr1(sql->sa, l, zero_or_one, 0, 0, CARD_ATOM, has_nil(l));
 			}
 			append(exps, l);

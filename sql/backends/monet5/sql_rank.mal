@@ -573,75 +573,75 @@ pattern batsql.avg(b:bat[:dbl], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
 address SQLavg
 comment "return the average of groups";
 
-pattern sql.stddev(b:bte, s:lng, e:lng) :dbl
+pattern sql.stdev(b:bte, s:lng, e:lng) :dbl
 address SQLstddev_samp
 comment "standard deviation of groups";
 
-pattern batsql.stddev(b:bat[:bte], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
+pattern batsql.stdev(b:bat[:bte], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
 address SQLstddev_samp
 comment "standard deviation of groups";
 
-pattern sql.stddev(b:sht, s:lng, e:lng) :dbl
+pattern sql.stdev(b:sht, s:lng, e:lng) :dbl
 address SQLstddev_samp
 comment "standard deviation of groups";
 
-pattern batsql.stddev(b:bat[:sht], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
+pattern batsql.stdev(b:bat[:sht], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
 address SQLstddev_samp
 comment "standard deviation of groups";
 
-pattern sql.stddev(b:int, s:lng, e:lng) :dbl
+pattern sql.stdev(b:int, s:lng, e:lng) :dbl
 address SQLstddev_samp
 comment "standard deviation of groups";
 
-pattern batsql.stddev(b:bat[:int], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
+pattern batsql.stdev(b:bat[:int], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
 address SQLstddev_samp
 comment "standard deviation of groups";
 
-pattern sql.stddev(b:lng, s:lng, e:lng) :dbl
+pattern sql.stdev(b:lng, s:lng, e:lng) :dbl
 address SQLstddev_samp
 comment "standard deviation of groups";
 
-pattern batsql.stddev(b:bat[:lng], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
+pattern batsql.stdev(b:bat[:lng], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
 address SQLstddev_samp
 comment "standard deviation of groups";
 
-pattern sql.stddev(b:flt, s:lng, e:lng) :dbl
+pattern sql.stdev(b:flt, s:lng, e:lng) :dbl
 address SQLstddev_samp
 comment "standard deviation of groups";
 
-pattern batsql.stddev(b:bat[:flt], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
+pattern batsql.stdev(b:bat[:flt], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
 address SQLstddev_samp
 comment "standard deviation of groups";
 
-pattern sql.stddev(b:dbl, s:lng, e:lng) :dbl
+pattern sql.stdev(b:dbl, s:lng, e:lng) :dbl
 address SQLstddev_samp
 comment "standard deviation of groups";
 
-pattern batsql.stddev(b:bat[:dbl], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
+pattern batsql.stdev(b:bat[:dbl], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
 address SQLstddev_samp
 comment "standard deviation of groups";
 
-pattern sql.stddev(b:daytime, s:lng, e:lng) :dbl
+pattern sql.stdev(b:daytime, s:lng, e:lng) :dbl
 address SQLstddev_samp
 comment "standard deviation of groups";
 
-pattern batsql.stddev(b:bat[:daytime], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
+pattern batsql.stdev(b:bat[:daytime], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
 address SQLstddev_samp
 comment "standard deviation of groups";
 
-pattern sql.stddev(b:date, s:lng, e:lng) :dbl
+pattern sql.stdev(b:date, s:lng, e:lng) :dbl
 address SQLstddev_samp
 comment "standard deviation of groups";
 
-pattern batsql.stddev(b:bat[:date], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
+pattern batsql.stdev(b:bat[:date], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
 address SQLstddev_samp
 comment "standard deviation of groups";
 
-pattern sql.stddev(b:timestamp, s:lng, e:lng) :dbl
+pattern sql.stdev(b:timestamp, s:lng, e:lng) :dbl
 address SQLstddev_samp
 comment "standard deviation of groups";
 
-pattern batsql.stddev(b:bat[:timestamp], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
+pattern batsql.stdev(b:bat[:timestamp], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
 address SQLstddev_samp
 comment "standard deviation of groups";
 

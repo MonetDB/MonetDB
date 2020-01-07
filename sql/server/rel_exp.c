@@ -327,7 +327,7 @@ exp_rank_op( sql_allocator *sa, list *l, list *gbe, list *obe, sql_subfunc *f )
 }
 
 sql_exp * 
-exp_aggr( sql_allocator *sa, list *l, sql_subaggr *a, int distinct, int no_nils, unsigned int card, int has_nils )
+exp_aggr( sql_allocator *sa, list *l, sql_subfunc *a, int distinct, int no_nils, unsigned int card, int has_nils )
 {
 	sql_exp *e = exp_create(sa, e_aggr);
 	if (e == NULL)
@@ -927,7 +927,7 @@ exp_subtype( sql_exp *e )
 			return &e->tpe;
 		break;
 	case e_aggr: {
-		sql_subaggr *a = e->f;
+		sql_subfunc *a = e->f;
 		if (a->res && list_length(a->res) == 1) 
 			return a->res->h->data;
 		return NULL;
@@ -2572,7 +2572,7 @@ create_table_part_atom_exp(mvc *sql, sql_subtype tpe, ptr value)
 int 
 exp_aggr_is_count(sql_exp *e)
 {
-	if (e->type == e_aggr && strcmp(((sql_subaggr *)e->f)->aggr->base.name, "count") == 0)
+	if (e->type == e_aggr && strcmp(((sql_subfunc *)e->f)->func->base.name, "count") == 0)
 		return 1;
 	return 0;
 }
