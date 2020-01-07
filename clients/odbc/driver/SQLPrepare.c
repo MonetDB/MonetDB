@@ -135,7 +135,11 @@ MNDBPrepare(ODBCStmt *stmt,
 		int concise_type;
 		int length, scale;
 
-		mapi_fetch_row(hdl);
+		if (mapi_fetch_row(hdl) == 0) {
+			/* Memory allocation error (or maybe something else) */
+			addStmtError(stmt, "HY001", 0, 0);
+			return SQL_ERROR;
+		}
 		if (ncols == 3 ||
 		    (s = mapi_fetch_field(hdl, 5)) == NULL) {
 			/* either old prepare (i.e. old server) or no

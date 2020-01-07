@@ -229,8 +229,6 @@ __hidden void strCleanHash(Heap *hp, bool rebuild)
 	__attribute__((__visibility__("hidden")));
 __hidden int strCmp(const char *l, const char *r)
 	__attribute__((__visibility__("hidden")));
-__hidden int strCmpNoNil(const unsigned char *l, const unsigned char *r)
-	__attribute__((__visibility__("hidden")));
 __hidden void strHeap(Heap *d, size_t cap)
 	__attribute__((__visibility__("hidden")));
 __hidden var_t strLocate(Heap *h, const char *v)

@@ -94,11 +94,12 @@ MFconnectionManager(void *d)
 			break;
 		}
 		/* coverity[string_null_argument] */
-		if (read(mfpipe[0], &msg, sizeof(msg)) < 0) {
+		if ((i = (int) read(mfpipe[0], &msg, sizeof(msg))) < 0) {
 			Mfprintf(stderr, "failed reading from notification pipe: %s\n",
 					strerror(errno));
 			break;
 		}
+		assert(i == (int) sizeof(msg));
 		/* we just received a POINTER to a string! */
 
 		/* intended behaviour:

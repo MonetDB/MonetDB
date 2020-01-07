@@ -327,9 +327,7 @@ ATOMreplaceVAR(int type, Heap *heap, var_t *dst, const void *src)
 #define GDK_STRNIL(s)	((s) == NULL || *(const char*) (s) == '\200')
 #define GDK_STRLEN(s)	((GDK_STRNIL(s)?1:strlen(s))+1)
 #define GDK_STRCMP(l,r)	(GDK_STRNIL(l)?(GDK_STRNIL(r)?0:-1):GDK_STRNIL(r)?1: \
-			 (*(const unsigned char*)(l) < *(const unsigned char*)(r))?-1: \
-			 (*(const unsigned char*)(l) > *(const unsigned char*)(r))?1: \
-			 strCmpNoNil((const unsigned char*)(l),(const unsigned char*)(r)))
+			 strcmp((const char*)(l), (const char*)(r)))
 
 static inline var_t
 VarHeapValRaw(const void *b, BUN p, int w)

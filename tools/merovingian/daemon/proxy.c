@@ -108,9 +108,11 @@ startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 					if ((t = strchr(port, '/')) != NULL)
 						*t = '\0';
 				} else {
+					free(conn);
 					return(newErr("can't find a port in redirect: %s", url));
 				}
 			} else {
+				free(conn);
 				return(newErr("invalid IPv6 address in redirect: %s", url));
 			}
 		} else if ((port = strchr(conn, ':')) != NULL) { /* drop anything off after the hostname */

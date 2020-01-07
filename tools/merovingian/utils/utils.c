@@ -446,7 +446,12 @@ generatePassphraseFile(const char *path)
 
 	/* delete such that we are sure we recreate the file with restricted
 	 * permissions */
-	remove(path);
+	if (remove(path) == -1 && errno != ENOENT) {
+		char err[512];
+		snprintf(err, sizeof(err), "unable to remove '%s': %s",
+				path, strerror(errno));
+		return(strdup(err));
+	}
 	if ((fd = open(path, O_CREAT | O_WRONLY | O_CLOEXEC, S_IRUSR | S_IWUSR)) == -1) {
 		char err[512];
 		snprintf(err, sizeof(err), "unable to open '%s': %s",

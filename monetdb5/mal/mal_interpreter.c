@@ -1364,11 +1364,9 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 void garbageElement(Client cntxt, ValPtr v)
 {
 	(void) cntxt;
-	if (v->vtype == TYPE_str) {
-		if (v->val.sval) {
-			GDKfree(v->val.sval);
-			v->val.sval = NULL;
-		}
+	if (ATOMstorage(v->vtype) == TYPE_str) {
+		GDKfree(v->val.sval);
+		v->val.sval = NULL;
 		v->len = 0;
 	} else if (v->vtype == TYPE_bat) {
 		/*
@@ -1389,8 +1387,7 @@ void garbageElement(Client cntxt, ValPtr v)
 			return;
 		BBPrelease(bid);
 	} else if (0 < v->vtype && v->vtype < MAXATOMS && ATOMextern(v->vtype)) {
-		if (v->val.pval)
-			GDKfree(v->val.pval);
+		GDKfree(v->val.pval);
 		v->val.pval = 0;
 		v->len = 0;
 	}

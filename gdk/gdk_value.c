@@ -102,6 +102,7 @@ VALget(ValPtr v)
 #ifdef HAVE_HGE
 	case TYPE_hge: return (void *) &v->val.hval;
 #endif
+	case TYPE_ptr: return (void *) &v->val.pval;
 	case TYPE_str: return (void *) v->val.sval;
 	default:       return (void *) v->val.pval;
 	}
@@ -317,6 +318,8 @@ VALisnil(const ValRecord *v)
 		return is_dbl_nil(v->val.dval);
 	case TYPE_oid:
 		return is_oid_nil(v->val.oval);
+	case TYPE_ptr:
+		return v->val.pval == NULL;
 	case TYPE_bat:
 		return is_bat_nil(v->val.bval);
 	default:
