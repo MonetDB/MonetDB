@@ -8978,9 +8978,7 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, int value_based_
 	gp = (global_props) {.cnt = {0},};
 	rel_properties(sql, &gp, rel);
 
-	/* CHECK */
-	TRC_DEBUG_IF(SQL_OPTIMIZER)
-	{
+	TRC_DEBUG_IF(SQL_OPTIMIZER) {
 		int i;
 		for (i = 0; i < ddl_maxops; i++) {
 			if (gp.cnt[i]> 0)

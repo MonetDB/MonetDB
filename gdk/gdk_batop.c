@@ -1444,9 +1444,6 @@ BATordered(BAT *b)
 {
 	lng t0 = GDKusec();
 
-	/* CHECK */
-	// This is in DEBUGALGO
-
 	if (b->ttype == TYPE_void)
 		return true;
 	/* In order that multiple threads don't scan the same BAT at
@@ -2083,9 +2080,6 @@ BATconstant(oid hseq, int tailtype, const void *v, BUN n, role_t role)
 	void *restrict p;
 	BUN i;
 	lng t0 = GDKusec();
-
-	/* CHECK */
-	// This is in DEBUGALGO
 
 	if (v == NULL)
 		return NULL;
