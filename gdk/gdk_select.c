@@ -1376,7 +1376,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	/* if equi set, then so are both lval and hval */
 	assert(!equi || (lval && hval));
 
-	if (hval && ((equi && !(li && hi)) || ATOMcmp(t, tl, th) > 0)) {
+	if (hval && (equi ? !li || !hi : ATOMcmp(t, tl, th) > 0)) {
 		/* empty range */
 		bn = BATdense(0, 0, 0);
 		ALGODEBUG fprintf(stderr, "#BATselect(b=" ALGOBATFMT
@@ -1516,12 +1516,40 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		}
 	}
 
-	/* If there is an order index or it is a view and the parent has an ordered
-	 * index, and the bat is not tsorted or trevstorted then use the order
-	 * index.
-	 * And there is no cand list or if there is one, it is dense.
+	parent = VIEWtparent(b);
+	assert(parent >= 0);
+	/* use hash only for equi-join, and then only if b or its
+	 * parent already has a hash, or if b or its parent is
+	 * persistent and the total size wouldn't be too large; check
+	 * for existence of hash last since that may involve I/O */
+	hash = equi &&
+		(BATcheckhash(b) ||
+		 (!b->batTransient &&
+		  ATOMsize(b->ttype) >= sizeof(BUN) / 4 &&
+		  BATcount(b) * (ATOMsize(b->ttype) + 2 * sizeof(BUN)) < GDK_mem_maxsize / 2));
+	if (equi && !hash && parent != 0) {
+		/* use parent hash if it already exists and if either
+		 * a quick check shows the value we're looking for
+		 * does not occur, or if it is cheaper to check the
+		 * candidate list for each value in the hash chain
+		 * than to scan (cost for probe is average length of
+		 * hash chain (count divided by #slots) times the cost
+		 * to do a binary search on the candidate list (or 1
+		 * if no need for search)) */
+		tmp = BBPquickdesc(parent, false);
+		hash = phash = tmp && BATcheckhash(tmp) &&
+			(BATcount(tmp) == BATcount(b) ||
+			 BATcount(tmp) / ((size_t *) tmp->thash->heap.base)[5] * (s && !BATtdense(s) ? ilog2(BATcount(s)) : 1) < (s ? BATcount(s) : BATcount(b)) ||
+			 HASHget(tmp->thash, HASHprobe(tmp->thash, tl)) == HASHnil(tmp->thash));
+	}
+
+	/* If there is an order index or it is a view and the parent
+	 * has an ordered index, and the bat is not tsorted or
+	 * trevstorted then use the order index.  And there is no cand
+	 * list or if there is one, it is dense.
 	 * TODO: we do not support anti-select with order index */
 	if (!anti &&
+	    !(hash && (phash || b->thash)) &&
 	    !(b->tsorted || b->trevsorted) &&
 	    (!s || (s && BATtdense(s)))    &&
 	    (BATcheckorderidx(b) ||
@@ -1554,7 +1582,8 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		ALGODEBUG if (view && b != view) fprintf(stderr, "#BATselect: switch from " ALGOBATFMT " to " ALGOBATFMT " " OIDFMT "-" OIDFMT " off " LLFMT "\n", ALGOBATPAR(view), ALGOBATPAR(b), vwl, vwh, vwo);
 	}
 
-	if (BATordered(b) || BATordered_rev(b) || use_orderidx) {
+	if (!(hash && (phash || b->thash)) &&
+	    (BATordered(b) || BATordered_rev(b) || use_orderidx)) {
 		BUN low = 0;
 		BUN high = b->batCount;
 
@@ -1813,36 +1842,10 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	}
 	/* refine upper limit by exact size (if known) */
 	maximum = MIN(maximum, estimate);
-	parent = VIEWtparent(b);
-	assert(parent >= 0);
-	/* use hash only for equi-join, and then only if b or its
-	 * parent already has a hash, or if b or its parent is
-	 * persistent and the total size wouldn't be too large; check
-	 * for existence of hash last since that may involve I/O */
-	hash = equi &&
-		((!b->batTransient &&
-		  ATOMsize(b->ttype) >= sizeof(BUN) / 4 &&
-		  BATcount(b) * (ATOMsize(b->ttype) + 2 * sizeof(BUN)) < GDK_mem_maxsize / 2) ||
-		 BATcheckhash(b));
-	if (equi && !hash && parent != 0) {
-		/* use parent hash if it already exists and if either
-		 * a quick check shows the value we're looking for
-		 * does not occur, or if it is cheaper to check the
-		 * candidate list for each value in the hash chain
-		 * than to scan (cost for probe is average length of
-		 * hash chain (count divided by #slots) times the cost
-		 * to do a binary search on the candidate list (or 1
-		 * if no need for search)) */
-		tmp = BBPquickdesc(parent, false);
-		hash = phash = tmp && BATcheckhash(tmp) &&
-			(BATcount(tmp) == BATcount(b) ||
-			 BATcount(tmp) / ((size_t *) tmp->thash->heap.base)[5] * (s && !BATtdense(s) ? ilog2(BATcount(s)) : 1) < (s ? BATcount(s) : BATcount(b)) ||
-			 HASHget(tmp->thash, HASHprobe(tmp->thash, tl)) == HASHnil(tmp->thash));
-	}
 	if (hash &&
 	    !phash && /* phash implies there is a hash table already */
 	    estimate == BUN_NONE &&
-	    !BATcheckhash(b)) {
+	    !b->thash) {
 		/* no exact result size, but we need estimate to
 		 * choose between hash- & scan-select (if we already
 		 * have a hash, it's a no-brainer: we use it) */
@@ -1880,7 +1883,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 						  * (dbl) BATcount(b) * 1.1);
 			} else if (smpl_cnt > 0 && slct_cnt == 0) {
 				/* estimate low enough to trigger hash select */
-				estimate = (BATcount(b) / 100) - 1;
+				estimate = (cnt / 100) - 1;
 			}
 		}
 		hash = estimate < cnt / 100;
