@@ -1001,7 +1001,7 @@ convertConstant(int type, ValPtr vr)
 		if (vr->vtype == TYPE_void) {
 			VALclear(vr);
 			vr->vtype = type;
-			vr->val.pval = 0;
+			vr->val.pval = NULL;
 			return MAL_SUCCEED;
 		}
 		if (vr->vtype != type)
