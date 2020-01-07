@@ -60,18 +60,15 @@ MOSadvance_DEF(hge)
 
 #define MOSgetDictFreq(DICTIONARY, KEY) ((BUN*)(((char*) DICTIONARY) + wordaligned(sizeof(DICTIONARY), BUN))[KEY])
 
-typedef struct _GlobalVarInfo {
-	BAT* dict;
-	EstimationParameters parameters;
-} GlobalVarInfo;
-
 #define CONDITIONAL_INSERT_dict(INFO, VAL, TPE)	(true)
+
+prepare_estimate_DEF(dict, 0)
 
 #define DictionaryClass(TPE) \
 find_value_DEF(TPE)\
 insert_into_dict_DEF(TPE)\
-extend_delta_DEF(dict, TPE, GlobalVarInfo)\
-merge_delta_Into_dictionary_DEF(TPE, GlobalVarInfo)\
+extend_delta_DEF(dict, TPE)\
+merge_delta_Into_dictionary_DEF(TPE)\
 compress_dictionary_DEF(TPE)\
 decompress_dictionary_DEF(TPE)
 
@@ -125,34 +122,11 @@ MOSlayout_dict(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput
 		return;
 }
 
-str
-MOSprepareEstimate_dict(MOStask* task)
-{
-	str error;
-
-	GlobalVarInfo** info = &task->dict_info;
-	BAT* source = task->bsrc;
-
-	if ( (*info = GDKmalloc(sizeof(GlobalVarInfo))) == NULL ) {
-		throw(MAL,"mosaic.dict",MAL_MALLOC_FAIL);	
-	}
-
-	BAT* dict;
-	if ((dict = COLnew(0, source->ttype, 0, TRANSIENT)) == NULL) {
-		error = createException(MAL, "mosaic.dict.COLnew", GDK_EXCEPTION);
-		return error;
-	}
-
-	(*info)->dict = dict;
-
-	return MAL_SUCCEED;
-}
-
 #define MOSestimate_DEF(TPE) \
 MOSestimate_SIGNATURE(dict, TPE)\
 {\
 	(void) previous;\
-	GlobalVarInfo* info = task->dict_info;\
+	GlobalDictionaryInfo* info = task->dict_info;\
 	if (task->start < *(current)->dict_limit) {\
 		/*Dictionary estimation is expensive. So only allow it on disjoint regions.*/\
 		current->is_applicable = false;\
@@ -224,7 +198,7 @@ MOSpostEstimate_DEF(hge)
 #endif
 
 static str
-_finalizeDictionary(BAT* b, GlobalVarInfo* info, BUN* pos_dict, BUN* length_dict, bte* bits_dict) {
+_finalizeDictionary(BAT* b, GlobalDictionaryInfo* info, BUN* pos_dict, BUN* length_dict, bte* bits_dict) {
 	Heap* vmh = b->tvmosaic;
 	BUN size_in_bytes = vmh->free + GetSizeInBytes(info);
 	if (HEAPextend(vmh, size_in_bytes, true) != GDK_SUCCEED) {

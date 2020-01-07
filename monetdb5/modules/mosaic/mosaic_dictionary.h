@@ -35,6 +35,14 @@ typedef struct _EstimationParameters {
 	unsigned char bits_extended; // number of bits required to index the info after the delta would have been merged.
 } EstimationParameters;
 
+typedef struct _GlobalDictionaryInfo {
+	BAT* dict;
+	BAT* temp_bitvector;
+	BAT* temp_dict;
+	EstimationParameters parameters;
+} GlobalDictionaryInfo;
+
+
 #define GET_BASE(INFO, TPE)			((TPE*) Tloc((INFO)->dict, 0))
 #define GET_COUNT(INFO)				(BATcount((INFO)->dict))
 #define GET_CAP(INFO)				(BATcapacity((INFO)->dict))
@@ -47,6 +55,111 @@ typedef struct _EstimationParameters {
 #define GET_FINAL_DICT(task, NAME, TPE) (((TPE*) (task)->bsrc->tvmosaic->base) + (task)->hdr->pos_##NAME)
 #define GET_FINAL_BITS(task, NAME) ((task)->hdr->bits_##NAME)
 #define GET_FINAL_DICT_COUNT(task, NAME) ((task)->hdr->length_##NAME);\
+
+#define prepare_estimate_DEF(NAME, CUT_OFF_SIZE) \
+str \
+MOSprepareEstimate_##NAME(MOStask* task)\
+{\
+	str error;\
+\
+	GlobalDictionaryInfo** info = &task->NAME##_info;\
+	BAT* source = task->bsrc;\
+\
+	if ( (*info = GDKmalloc(sizeof(GlobalDictionaryInfo))) == NULL ) {\
+		throw(MAL,"mosaic." #NAME ,MAL_MALLOC_FAIL);	\
+	}\
+\
+	BAT *ngid, *next, *freq;\
+\
+	BAT* source_copy;\
+	/* Work around to prevent re-entering batIdxLock in BATsort when it decides to create an ordered/hash indices.\
+	 * This is some what expensive since it requires a full copy of the original bat.\
+	 * TODO: build vmosaic heap in a occ way.
+	 * TODO: there can be a single function that builds both the capped and the global dictionary
+	 */\
+	if ( (source_copy = COLcopy(source, source->ttype, true /*writable = true*/, TRANSIENT)) == NULL) {\
+		error = createException(MAL, "mosaic." #NAME ".COLcopy", GDK_EXCEPTION);\
+		return error;\
+	}\
+\
+	if (BATgroup(&ngid, &next, &freq, source_copy, NULL, NULL, NULL, NULL) != GDK_SUCCEED) {\
+		BBPunfix(source_copy->batCacheid);\
+		throw(MAL, "mosaic.createGlobalDictInfo.BATgroup", GDK_EXCEPTION);\
+	}\
+	BBPunfix(ngid->batCacheid);\
+\
+	BAT* unsorted_dict;\
+	if (CUT_OFF_SIZE) {\
+		BAT *cand_capped_dict;\
+		if (BATfirstn(&cand_capped_dict, NULL, freq, NULL, NULL, CUT_OFF_SIZE, false, true, false) != GDK_SUCCEED) {\
+			BBPunfix(next->batCacheid);\
+			BBPunfix(freq->batCacheid);\
+			BBPunfix(source_copy->batCacheid);\
+			error = createException(MAL, "mosaic." #NAME ".BATfirstn_unique", GDK_EXCEPTION);\
+			return error;\
+		}\
+\
+		BAT* projection_chain[4] = {NULL};\
+		projection_chain[0] = cand_capped_dict;\
+		projection_chain[1] = next;\
+		projection_chain[2] = source_copy;\
+		if ((unsorted_dict = BATprojectchain(projection_chain)) == NULL) {\
+			BBPunfix(cand_capped_dict->batCacheid);\
+			BBPunfix(next->batCacheid);\
+			BBPunfix(source_copy->batCacheid);\
+			error = createException(MAL, "mosaic." #NAME ".BATprojectchain", GDK_EXCEPTION);\
+			return error;\
+		}\
+	}\
+	else {\
+		if ((unsorted_dict = BATproject(next, source_copy)) == NULL) {\
+			BBPunfix(next->batCacheid);\
+			BBPunfix(source_copy->batCacheid);\
+			error = createException(MAL, "mosaic." #NAME ".BATproject", GDK_EXCEPTION);\
+			return error;\
+		}\
+	}\
+	BBPunfix(freq->batCacheid);\
+	BBPunfix(next->batCacheid);\
+	BBPunfix(source_copy->batCacheid);\
+\
+	BAT* sorted_dict;\
+	if (BATsort(&sorted_dict, NULL, NULL, unsorted_dict, NULL, NULL, false, false, false) != GDK_SUCCEED) {\
+		BBPunfix(unsorted_dict->batCacheid);\
+		error = createException(MAL, "mosaic." #NAME ".BATfirstn_unique", GDK_EXCEPTION);\
+		return error;\
+	}\
+	BBPunfix(unsorted_dict->batCacheid);\
+\
+	BAT* final_dict;\
+	if ((final_dict = COLnew(0, sorted_dict->ttype, 0, TRANSIENT)) == NULL) {\
+		BBPunfix(sorted_dict->batCacheid);\
+		error = createException(MAL, "mosaic." #NAME ".COLnew", GDK_EXCEPTION);\
+		return error;\
+	}\
+\
+	BAT* bit_vector;\
+	if ((bit_vector = COLnew(0, TYPE_int, BATcount(sorted_dict) / (sizeof(int) * CHAR_BIT), TRANSIENT)) == NULL) {\
+		BBPunfix(final_dict->batCacheid);\
+		BBPunfix(sorted_dict->batCacheid);\
+		error = createException(MAL, "mosaic." #NAME ".COLnew", GDK_EXCEPTION);\
+		return error;\
+	}\
+\
+	if (BAThash(sorted_dict) != GDK_SUCCEED) {\
+		BBPunfix(sorted_dict->batCacheid);\
+		BBPunfix(bit_vector->batCacheid);\
+		BBPunfix(final_dict->batCacheid);\
+		throw(MAL, "mosaic.createGlobalDictInfo.BAThash", GDK_EXCEPTION);\
+\
+	}\
+\
+	(*info)->temp_bitvector = bit_vector;\
+	(*info)->temp_dict = sorted_dict;\
+	(*info)->dict = final_dict;\
+\
+	return MAL_SUCCEED;\
+}\
 
 #define find_value_DEF(TPE) \
 static inline \
@@ -99,9 +212,9 @@ void insert_into_dict_##TPE(TPE* dict, BUN* dict_count, BUN key, TPE val)\
 	(*dict_count)++;\
 	dict[key] = w;\
 }
-#define extend_delta_DEF(NAME, TPE, DICTIONARY_TYPE) \
+#define extend_delta_DEF(NAME, TPE) \
 static str \
-extend_delta_##TPE(BUN* nr_compressed, BUN* delta_count, BUN limit, DICTIONARY_TYPE* info, TPE* val) {\
+extend_delta_##TPE(BUN* nr_compressed, BUN* delta_count, BUN limit, GlobalDictionaryInfo* info, TPE* val) {\
 	BUN buffer_size = 256;\
 	TPE* dict		= (TPE*) GET_BASE(info, TPE);\
 	BUN dict_count	= GET_COUNT(info);\
@@ -132,9 +245,9 @@ extend_delta_##TPE(BUN* nr_compressed, BUN* delta_count, BUN limit, DICTIONARY_T
 	calculateBits(GET_BITS_EXTENDED(info), new_count);\
 	return MAL_SUCCEED;\
 }
-#define merge_delta_Into_dictionary_DEF(TPE, DICTIONARY_TYPE) \
+#define merge_delta_Into_dictionary_DEF(TPE) \
 static \
-void merge_delta_Into_dictionary_##TPE(DICTIONARY_TYPE* info) {\
+void merge_delta_Into_dictionary_##TPE(GlobalDictionaryInfo* info) {\
 	TPE* delta			= (TPE*) GET_BASE(info, TPE) + GET_COUNT(info);\
 	if (GET_COUNT(info) == 0) {\
 		/* The rest of the algorithm expects a non-empty dictionary.

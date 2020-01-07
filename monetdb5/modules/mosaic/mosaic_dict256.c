@@ -70,15 +70,9 @@ typedef struct _CappedParameters_t {
 	MosaicBlkRec base;
 } MosaicBlkHeader_dict256_t;
 
-typedef struct _GlobalCappedInfo {
-	BAT* dict;
-	BAT* temp_dict;
-	EstimationParameters parameters;
-} GlobalCappedInfo;
-
 #define PresentInTempDictFuncDef(TPE) \
 static inline \
-bool presentInTempDict##TPE(GlobalCappedInfo* info, TPE val) {\
+bool presentInTempDict##TPE(GlobalDictionaryInfo* info, TPE val) {\
 	TPE* dict = (TPE*) Tloc(info->temp_dict, 0);\
 	BUN dict_count = BATcount(info->temp_dict);\
 	BUN key = find_value_##TPE(dict, dict_count, val);\
@@ -87,12 +81,14 @@ bool presentInTempDict##TPE(GlobalCappedInfo* info, TPE val) {\
 
 #define CONDITIONAL_INSERT_dict256(INFO, VAL, TPE) presentInTempDict##TPE((INFO), (VAL))
 
+prepare_estimate_DEF(dict256, CAPPEDDICT)
+
 #define DictionaryClass(TPE) \
 find_value_DEF(TPE)\
 PresentInTempDictFuncDef(TPE)\
 insert_into_dict_DEF(TPE)\
-extend_delta_DEF(dict256, TPE, GlobalCappedInfo)\
-merge_delta_Into_dictionary_DEF(TPE, GlobalCappedInfo)\
+extend_delta_DEF(dict256, TPE)\
+merge_delta_Into_dictionary_DEF(TPE)\
 compress_dictionary_DEF(TPE)\
 decompress_dictionary_DEF(TPE)
 
@@ -160,91 +156,11 @@ MOSlayout_dict256(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *bout
 		return;
 }
 
-str
-MOSprepareEstimate_dict256(MOStask* task)
-{
-	str error;
-
-	GlobalCappedInfo** info = &task->dict256_info;
-	BAT* source = task->bsrc;
-
-	if ( (*info = GDKmalloc(sizeof(GlobalCappedInfo))) == NULL ) {
-		throw(MAL,"mosaic.dict256",MAL_MALLOC_FAIL);	
-	}
-
-	BAT *ngid, *next, *freq;
-
-	BAT* source_copy;
-	/* Work around to prevent re-entering batIdxLock in BATsort when it decides to create an ordered/hash indices.
-	 * This is some what expensive since it requires a full copy of the original bat.
-	 */
-	if ( (source_copy = COLcopy(source, source->ttype, true /*writable = true*/, TRANSIENT)) == NULL) {
-		error = createException(MAL, "mosaic.dict256.COLcopy", GDK_EXCEPTION);
-		return error;
-	}
-
-	if (BATgroup(&ngid, &next, &freq, source_copy, NULL, NULL, NULL, NULL) != GDK_SUCCEED) {
-		BBPunfix(source_copy->batCacheid);
-		throw(MAL, "mosaic.createGlobalDictInfo.BATgroup", GDK_EXCEPTION);
-	}
-	BBPunfix(ngid->batCacheid);
-
-	BAT *cand_dict256_dict;
-	if (BATfirstn(&cand_dict256_dict, NULL, freq, NULL, NULL, CAPPEDDICT, false, true, false) != GDK_SUCCEED) {
-		BBPunfix(next->batCacheid);
-		BBPunfix(freq->batCacheid);
-		BBPunfix(source_copy->batCacheid);
-		error = createException(MAL, "mosaic.dict256.BATfirstn_unique", GDK_EXCEPTION);
-		return error;
-	}
-	BBPunfix(freq->batCacheid);
-
-	BAT* dict;
-	if ( (dict = BATproject(next, source_copy)) == NULL) {
-		BBPunfix(next->batCacheid);
-		BBPunfix(cand_dict256_dict->batCacheid);
-		BBPunfix(source_copy->batCacheid);
-		throw(MAL, "mosaic.createGlobalDictInfo.BATproject", GDK_EXCEPTION);
-	}
-	BBPunfix(next->batCacheid);
-	BBPunfix(source_copy->batCacheid);
-
-	BAT *dict256_dict;
-	if ((dict256_dict = BATproject(cand_dict256_dict, dict)) == NULL) {
-		BBPunfix(cand_dict256_dict->batCacheid);
-		BBPunfix(dict->batCacheid);
-		error = createException(MAL, "mosaic.dict256.BATproject", GDK_EXCEPTION);
-		return error;
-	}
-	BBPunfix(cand_dict256_dict->batCacheid);
-	BBPunfix(dict->batCacheid);
-
-	BAT* sorted_dict256_dict;
-	if (BATsort(&sorted_dict256_dict, NULL, NULL, dict256_dict, NULL, NULL, false, false, false) != GDK_SUCCEED) {
-		BBPunfix(dict256_dict->batCacheid);
-		error = createException(MAL, "mosaic.dict256.BATfirstn_unique", GDK_EXCEPTION);
-		return error;
-	}
-	BBPunfix(dict256_dict->batCacheid);
-
-	BAT* final_dict256_dict;
-	if ((final_dict256_dict = COLnew(0, sorted_dict256_dict->ttype, 0, TRANSIENT)) == NULL) {
-		BBPunfix(sorted_dict256_dict->batCacheid);
-		error = createException(MAL, "mosaic.dict256.COLnew", GDK_EXCEPTION);
-		return error;
-	}
-
-	(*info)->temp_dict = sorted_dict256_dict;
-	(*info)->dict = final_dict256_dict;
-
-	return MAL_SUCCEED;
-}
-
 #define MOSestimate_DEF(TPE) \
 MOSestimate_SIGNATURE(dict256, TPE)\
 {\
 	(void) previous;\
-	GlobalCappedInfo* info = task->dict256_info;\
+	GlobalDictionaryInfo* info = task->dict256_info;\
 	if (task->start < *(current)->dict256_limit) {\
 		/*Dictionary estimation is expensive. So only allow it on disjoint regions.*/\
 		current->is_applicable = false;\
@@ -316,10 +232,13 @@ MOSpostEstimate_DEF(hge)
 #endif
 
 static str
-_finalizeDictionary(BAT* b, GlobalCappedInfo* info, BUN* pos_dict, BUN* length_dict, bte* bits_dict) {
+_finalizeDictionary(BAT* b, GlobalDictionaryInfo* info, BUN* pos_dict, BUN* length_dict, bte* bits_dict) {
 	Heap* vmh = b->tvmosaic;
 	BUN size_in_bytes = vmh->free + GetSizeInBytes(info);
 	if (HEAPextend(vmh, size_in_bytes, true) != GDK_SUCCEED) {
+		BBPreclaim(info->dict);
+		BBPreclaim(info->temp_dict);
+		BBPreclaim(info->temp_bitvector);
 		throw(MAL, "mosaic.mergeDictionary_dict256.HEAPextend", GDK_EXCEPTION);
 	}
 	char* dst = vmh->base + vmh->free;
@@ -338,6 +257,7 @@ _finalizeDictionary(BAT* b, GlobalCappedInfo* info, BUN* pos_dict, BUN* length_d
 
 	BBPreclaim(info->dict);
 	BBPreclaim(info->temp_dict);
+	BBPreclaim(info->temp_bitvector);
 
 	GDKfree(info);
 

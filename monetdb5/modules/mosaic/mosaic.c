@@ -282,7 +282,7 @@ MOSprepareEstimate(MOStask* task) {
 	return MAL_SUCCEED;
 }
 
-
+// TODO: NAME and NAME_TAG can be combined.
 #define estimate(NAME, TPE, NAME_TAG)\
 {\
 	str msg = MOSestimate_##NAME##_##TPE(task, &estimations[NAME_TAG], previous);\

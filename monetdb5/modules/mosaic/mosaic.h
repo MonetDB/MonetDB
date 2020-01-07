@@ -151,8 +151,7 @@ typedef struct MOSAICBLK {
 
 #define getSrc(TPE, TASK) (((TPE*)TASK->src) + TASK->start)
 
-typedef struct _GlobalCappedInfo GlobalCappedInfo;
-typedef struct _GlobalVarInfo GlobalVarInfo;
+typedef struct _GlobalDictionaryInfo GlobalDictionaryInfo;
 
 /* The (de) compression task descriptor */
 typedef struct MOSTASK{
@@ -161,8 +160,8 @@ typedef struct MOSTASK{
 
 	MosaicHdr hdr;	// header block with index/synopsis information
 	MosaicBlk blk;	// current block header in scan
-	GlobalVarInfo* dict_info;
-	GlobalCappedInfo* dict256_info;
+	GlobalDictionaryInfo* dict_info;
+	GlobalDictionaryInfo* dict256_info;
 	char 	 *dst;		// write pointer into current compressed blocks
 	oid 	start;		// oid of first element in current blk
 	oid		stop;		// last oid of range to be scanned
