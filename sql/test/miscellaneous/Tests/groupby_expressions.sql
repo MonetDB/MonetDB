@@ -62,8 +62,12 @@ select count(*) from "groupings" group by 'hello';
 select count(*) from "groupings" group by NULL;
 select 'world' from "groupings" group by -90;
 
+create table "foo" ("bar" int);
+select * from "foo" group by "bar";
+
 rollback;
 
+select * from "groupings" group by "aa"; --error
 select "aa" from "groupings" group by NULL; --error
 select "aa"+3452 from "groupings" group by "aa"+"bb"; --error
 select count(*) from "groupings" group by count("aa"); --error

@@ -13,6 +13,11 @@ SELECT
 FROM tbl_ProductSales
 GROUP BY (), (); --does the same global aggregate
 
+SELECT
+    *
+FROM tbl_ProductSales
+GROUP BY (); --error, cardinality mismatch on the projection
+
 SELECT 
     CAST(SUM(TotalSales) as BIGINT) AS TotalSales
 FROM tbl_ProductSales
