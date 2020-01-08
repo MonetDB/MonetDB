@@ -69,13 +69,11 @@ openConnectionTCP(int *ret, bool bind_ipv6, const char *bindaddr, unsigned short
 
 			if (bind(sock, rp->ai_addr, rp->ai_addrlen) != -1)
 				break; /* working */
+			closesocket(sock);
 		}
 		if (rp == NULL) {
 			int e = errno;
-			if (result)
-				freeaddrinfo(result);
-			if (sock != -1)
-				closesocket(sock);
+			freeaddrinfo(result);
 			if (result) { /* results found, tried socket, setsockopt and bind calls */
 				errno = e;
 				return newErr("binding to stream socket port %hu failed: %s", port, strerror(errno));
@@ -85,6 +83,7 @@ openConnectionTCP(int *ret, bool bind_ipv6, const char *bindaddr, unsigned short
 		}
 		server = rp->ai_addr;
 		length = rp->ai_addrlen;
+		freeaddrinfo(result);
 	} else {
 		sock = socket(bind_ipv6 ? AF_INET6 : AF_INET, SOCK_STREAM
 #ifdef SOCK_CLOEXEC

@@ -62,6 +62,7 @@ typedef struct Ssabuplog {
 #endif
 
 msab_export void msab_dbpathinit(const char *dbpath);
+msab_export void msab_dbnameinit(const char *dbname); /* switch dbname, used by multiplex-funnel */
 msab_export void msab_dbfarminit(const char *dbfarm);
 msab_export char *msab_getDBfarm(char **ret);
 msab_export char *msab_getDBname(char **ret);

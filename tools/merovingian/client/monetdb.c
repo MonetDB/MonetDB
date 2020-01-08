@@ -583,10 +583,10 @@ simple_argv_cmd(char *cmd, sabdb *dbs, char *merocmd,
 			if (premsg != NULL && !monetdb_quiet)
 				printf("FAILED\n");
 			fprintf(stderr, "%s: %s\n", cmd, out);
-			free(out);
 
 			state |= 1;
 		}
+		free(out);
 
 		hadwork = 1;
 	}

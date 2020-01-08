@@ -430,7 +430,6 @@ WLRprocessBatch(void *arg)
 			break;
 	}
 	(void) fflush(stderr);
-	close_stream(c->fdout);
 	SQLexitClient(c);
 	MCcloseClient(c);
 	if(prev)

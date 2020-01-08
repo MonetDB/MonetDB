@@ -65,8 +65,8 @@ createExceptionInternal(enum malexception type, const char *fcn, const char *for
 	message = GDKmalloc(GDKMAXERRLEN);
 	if (message == NULL){
 		/* Leave a message behind in the logging system */
-		len = snprintf(local, GDKMAXERRLEN, "%s:%s:", exceptionNames[type], fcn);
-		len = vsnprintf(local + len, GDKMAXERRLEN, format, ap);
+		len = snprintf(local, GDKMAXERRLEN - 1, "%s:%s:", exceptionNames[type], fcn);
+		len = vsnprintf(local + len, GDKMAXERRLEN -1, format, ap);
 		fprintf(stderr, "%s", local);
 		return M5OutOfMemory;	/* last resort */
 	}

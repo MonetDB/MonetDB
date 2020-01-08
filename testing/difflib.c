@@ -49,7 +49,11 @@
 #define UNLINK(x)
 #define ERRHNDL(r,s,t,u) ErrXit(s,t,u)
 #else
+#ifdef STATIC_CODE_ANALYSIS
+#define UNLINK(x)
+#else
 #define UNLINK(x) remove(x)
+#endif
 #define ERRHNDL(r,s,t,u) return r
 #endif
 
@@ -183,6 +187,9 @@ lw_diff2wc_diff(int mindiff, int doChar, char *lw_diff_fn, char *wc_diff_fn)
 	TRACE(fprintf(STDERR, "lw_diff2wc_diff(%i,%i,%s,%s)\n", mindiff, doChar, lw_diff_fn, wc_diff_fn));
 
 	lw_diff_fp = Rfopen(lw_diff_fn);
+	if (lw_diff_fp == NULL) {
+		ERRHNDL(0, "cannot open file in lw_diff2wc_diff:", lw_diff_fn, 1);
+	}
 	if (!(ok = fgets(line, BUFLEN, lw_diff_fp))) {
 		fclose(lw_diff_fp);
 		ERRHNDL(0, "empty file in lw_diff2wc_diff:", lw_diff_fn, 1);
@@ -497,6 +504,7 @@ lwc_diff2html(char *old_fn, char *new_fn, char *lwc_diff_fn, char *html_fn, char
 		fprintf(html_fp, "<!--NoDiffs-->\n");
 		fflush(html_fp);
 		fclose(html_fp);
+		fclose(lwc_diff_fp);
 		return 0;
 	}
 
@@ -519,14 +527,26 @@ lwc_diff2html(char *old_fn, char *new_fn, char *lwc_diff_fn, char *html_fn, char
 
 	line[strlen(line) - 1] = '\0';
 	while (ok && strncmp(line, "@@ -", 4)) {
-		if (!strncmp(line, "--- ", 4))
+		if (!strncmp(line, "--- ", 4)) {
+			if (old) {
+				fprintf(stderr, "syntax error\n");
+				exit(1);
+			}
 			old = strdup(line + 4);
-		else if (!strncmp(line, "+++ ", 4))
+		} else if (!strncmp(line, "+++ ", 4)) {
+			if (new) {
+				fprintf(stderr, "syntax error\n");
+				exit(1);
+			}
 			new = strdup(line + 4);
-		else
+		} else
 			fprintf(html_fp, "<tbody><tr><td colspan='7'>%s</td></tr></tbody>\n", HTMLsave(line));
 		ok = fgets(line, BUFLEN, lwc_diff_fp);
 		line[strlen(line) - 1] = '\0';
+	}
+	if (old == NULL || new == NULL) {
+		fprintf(stderr, "syntax or malloc error\n");
+		exit(1);
 	}
 	old_time = strchr(old, '\t');
 	*old_time++ = '\0';

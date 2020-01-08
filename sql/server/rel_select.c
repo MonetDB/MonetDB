@@ -5001,14 +5001,39 @@ rel_table_exp(sql_query *query, sql_rel **rel, symbol *column_e )
 	} else if (column_e->token == SQL_TABLE) {
 		char *tname = column_e->data.lval->h->data.sval;
 		list *exps;
-	
-		if ((exps = rel_table_projections(sql, *rel, tname, 0)) != NULL && !list_empty(exps))
+		sql_rel *project = *rel, *groupby = NULL;
+
+		/* if there's a group by relation in the tree, skip it for the '*' case and use the underlying projection */
+		if (project) {
+			while (is_groupby(project->op) || is_select(project->op)) {
+				if (is_groupby(project->op))
+					groupby = project;
+				if (project->l)
+					project = project->l;
+			}
+			assert(project);
+		}
+
+		if ((exps = rel_table_projections(sql, project, tname, 0)) != NULL && !list_empty(exps)) {
+			if (groupby) {
+				groupby->exps = list_distinct(list_merge(groupby->exps, exps, (fdup) NULL), (fcmp) exp_equal, (fdup) NULL);
+				for (node *n = groupby->exps->h ; n ; n = n->next) {
+					sql_exp *e = n->data;
+
+					if (e->card > groupby->card) {
+						if (exp_name(e))
+							return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s' in query results without an aggregate function", exp_name(e));
+						else
+							return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column in query results without an aggregate function");
+					}
+				}
+			}
+
 			return exps;
+		}
 		if (!tname)
-			return sql_error(sql, 02,
-				SQLSTATE(42000) "Table expression without table name");
-		return sql_error(sql, 02,
-				SQLSTATE(42000) "Column expression Table '%s' unknown", tname);
+			return sql_error(sql, 02, SQLSTATE(42000) "Table expression without table name");
+		return sql_error(sql, 02, SQLSTATE(42000) "Column expression Table '%s' unknown", tname);
 	}
 	return NULL;
 }

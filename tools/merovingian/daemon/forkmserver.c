@@ -881,6 +881,7 @@ fork_profiler(char *dbname, sabdb **stats, char **log_path)
 	struct stat path_info;
 	int error_code;
 
+	*log_path = NULL;
 	error = msab_getStatus(stats, dbname);
 	if (error != NULL) {
 		return error;
@@ -1236,6 +1237,7 @@ shutdown_profiler(char *dbname, sabdb **stats)
 
   cleanup:
 	freeConfFile(ckv);
+	free(ckv);
 	free(pidfilename);
 	return error;
 }
