@@ -629,30 +629,6 @@ pattern batsql.stdev(b:bat[:dbl], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
 address SQLstddev_samp
 comment "standard deviation of groups";
 
-pattern sql.stdev(b:daytime, s:lng, e:lng) :dbl
-address SQLstddev_samp
-comment "standard deviation of groups";
-
-pattern batsql.stdev(b:bat[:daytime], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
-address SQLstddev_samp
-comment "standard deviation of groups";
-
-pattern sql.stdev(b:date, s:lng, e:lng) :dbl
-address SQLstddev_samp
-comment "standard deviation of groups";
-
-pattern batsql.stdev(b:bat[:date], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
-address SQLstddev_samp
-comment "standard deviation of groups";
-
-pattern sql.stdev(b:timestamp, s:lng, e:lng) :dbl
-address SQLstddev_samp
-comment "standard deviation of groups";
-
-pattern batsql.stdev(b:bat[:timestamp], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
-address SQLstddev_samp
-comment "standard deviation of groups";
-
 command aggr.exist(b:bat[:any_2], h:any_1):bit
 address ALGexist;
 

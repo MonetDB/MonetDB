@@ -1577,12 +1577,8 @@ SQLstddev_samp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			case TYPE_dbl:
 				*res = dbl_nil;
 				break;
-			default: {
-				if (tpe == TYPE_daytime || tpe == TYPE_date || tpe == TYPE_timestamp)
-					*res = dbl_nil;
-				else
-					throw(SQL, "sql.stddev", SQLSTATE(42000) "sql.stddev not available for %s", ATOMname(tpe));
-			}
+			default:
+				throw(SQL, "sql.stddev", SQLSTATE(42000) "sql.stddev not available for %s", ATOMname(tpe));
 		}
 	}
 	return msg;

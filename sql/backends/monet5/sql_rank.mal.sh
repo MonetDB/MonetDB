@@ -26,6 +26,14 @@ pattern sql.diff(p:bit, b:any_1) :bit
 address SQLdiff
 comment "return true if cur != prev row";
 
+pattern batsql.diff(p:bit, b:bat[:any_1]) :bat[:bit]
+address SQLdiff
+comment "return true if cur != prev row";
+
+pattern batsql.diff(p:bat[:bit], b:any_1) :bat[:bit]
+address SQLdiff
+comment "return true if cur != prev row";
+
 pattern batsql.diff(p:bat[:bit], b:bat[:any_1]) :bat[:bit]
 address SQLdiff
 comment "return true if cur != prev row";
@@ -372,7 +380,7 @@ comment "return the average of groups";
 EOF
 done
 
-for tp1 in 1:bte 2:sht 4:int 8:lng 4:flt 8:dbl 8:daytime 4:date 8:timestamp; do
+for tp1 in 1:bte 2:sht 4:int 8:lng 4:flt 8:dbl; do
 	cat <<EOF
 pattern sql.stdev(b:${tp1#*:}, s:lng, e:lng) :dbl
 address SQLstddev_samp
