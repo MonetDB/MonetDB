@@ -77,7 +77,7 @@ select median_avg(aa) over () from analytics;
 
 rollback;
 
-select bb, median_avg(bb) over () from (values(1),(2)) as analytics(bb); --odd number of values for the median
+select median_avg(aa) over (), median_avg(bb) over () from (values(NULL, 1),(1, 2)) as analytics(aa, bb); --even number of values for median_avg
 
 create table stressme (aa varchar(64), bb int);
 insert into stressme values ('one', 1), ('another', 1), ('stress', 1), (NULL, 2), ('ok', 2), ('check', 3), ('me', 3), ('please', 3), (NULL, 4);

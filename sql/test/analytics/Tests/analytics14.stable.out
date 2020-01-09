@@ -878,13 +878,13 @@ stdout of test 'analytics14` in directory 'sql/test/analytics` itself:
 [ NULL	]
 [ NULL	]
 #rollback;
-#select bb, median_avg(bb) over () from (values(1),(2)) as analytics(bb); --odd number of values for the median
-% .analytics,	. # table_name
-% bb,	%3 # name
-% tinyint,	double # type
-% 1,	24 # length
-[ 1,	1.5	]
-[ 2,	1.5	]
+#select median_avg(aa) over (), median_avg(bb) over () from (values(NULL, 1),(1, 2)) as analytics(aa, bb); --even number of values for the median
+% .,	. # table_name
+% %3,	%4 # name
+% double,	double # type
+% 24,	24 # length
+[ NULL,	1.5	]
+[ NULL,	1.5	]
 #create table stressme (aa varchar(64), bb int);
 #insert into stressme values ('one', 1), ('another', 1), ('stress', 1), (NULL, 2), ('ok', 2), ('check', 3), ('me', 3), ('please', 3), (NULL, 4);
 [ 9	]
