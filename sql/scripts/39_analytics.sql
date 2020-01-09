@@ -23,15 +23,6 @@ create aggregate stddev_samp(val DOUBLE) returns DOUBLE
 	external name "aggr"."stdev";
 GRANT EXECUTE ON AGGREGATE stddev_samp(DOUBLE) TO PUBLIC;
 
-create aggregate stddev_samp(val DATE) returns DOUBLE
-	external name "aggr"."stdev";
-GRANT EXECUTE ON AGGREGATE stddev_samp(DATE) TO PUBLIC;
-create aggregate stddev_samp(val TIME) returns DOUBLE
-	external name "aggr"."stdev";
-GRANT EXECUTE ON AGGREGATE stddev_samp(TIME) TO PUBLIC;
-create aggregate stddev_samp(val TIMESTAMP) returns DOUBLE
-	external name "aggr"."stdev";
-GRANT EXECUTE ON AGGREGATE stddev_samp(TIMESTAMP) TO PUBLIC;
 create aggregate stddev_samp(val INTERVAL SECOND) returns DOUBLE
 	external name "aggr"."stdev";
 GRANT EXECUTE ON AGGREGATE stddev_samp(INTERVAL SECOND) TO PUBLIC;
@@ -85,15 +76,6 @@ create aggregate stddev_pop(val DOUBLE) returns DOUBLE
 	external name "aggr"."stdevp";
 GRANT EXECUTE ON AGGREGATE stddev_pop(DOUBLE) TO PUBLIC;
 
-create aggregate stddev_pop(val DATE) returns DOUBLE
-	external name "aggr"."stdevp";
-GRANT EXECUTE ON AGGREGATE stddev_pop(DATE) TO PUBLIC;
-create aggregate stddev_pop(val TIME) returns DOUBLE
-	external name "aggr"."stdevp";
-GRANT EXECUTE ON AGGREGATE stddev_pop(TIME) TO PUBLIC;
-create aggregate stddev_pop(val TIMESTAMP) returns DOUBLE
-	external name "aggr"."stdevp";
-GRANT EXECUTE ON AGGREGATE stddev_pop(TIMESTAMP) TO PUBLIC;
 create aggregate stddev_pop(val INTERVAL SECOND) returns DOUBLE
 	external name "aggr"."stdevp";
 GRANT EXECUTE ON AGGREGATE stddev_pop(INTERVAL SECOND) TO PUBLIC;
@@ -147,15 +129,6 @@ create aggregate var_samp(val DOUBLE) returns DOUBLE
 	external name "aggr"."variance";
 GRANT EXECUTE ON AGGREGATE var_samp(DOUBLE) TO PUBLIC;
 
-create aggregate var_samp(val DATE) returns DOUBLE
-	external name "aggr"."variance";
-GRANT EXECUTE ON AGGREGATE var_samp(DATE) TO PUBLIC;
-create aggregate var_samp(val TIME) returns DOUBLE
-	external name "aggr"."variance";
-GRANT EXECUTE ON AGGREGATE var_samp(TIME) TO PUBLIC;
-create aggregate var_samp(val TIMESTAMP) returns DOUBLE
-	external name "aggr"."variance";
-GRANT EXECUTE ON AGGREGATE var_samp(TIMESTAMP) TO PUBLIC;
 create aggregate var_samp(val INTERVAL SECOND) returns DOUBLE
 	external name "aggr"."variance";
 GRANT EXECUTE ON AGGREGATE var_samp(INTERVAL SECOND) TO PUBLIC;
@@ -208,16 +181,6 @@ GRANT EXECUTE ON AGGREGATE var_pop(REAL) TO PUBLIC;
 create aggregate var_pop(val DOUBLE) returns DOUBLE
 	external name "aggr"."variancep";
 GRANT EXECUTE ON AGGREGATE var_pop(DOUBLE) TO PUBLIC;
-
-create aggregate var_pop(val DATE) returns DOUBLE
-	external name "aggr"."variancep";
-GRANT EXECUTE ON AGGREGATE var_pop(DATE) TO PUBLIC;
-create aggregate var_pop(val TIME) returns DOUBLE
-	external name "aggr"."variancep";
-GRANT EXECUTE ON AGGREGATE var_pop(TIME) TO PUBLIC;
-create aggregate var_pop(val TIMESTAMP) returns DOUBLE
-	external name "aggr"."variancep";
-GRANT EXECUTE ON AGGREGATE var_pop(TIMESTAMP) TO PUBLIC;
 create aggregate var_pop(val INTERVAL SECOND) returns DOUBLE
 	external name "aggr"."variancep";
 GRANT EXECUTE ON AGGREGATE var_pop(INTERVAL SECOND) TO PUBLIC;

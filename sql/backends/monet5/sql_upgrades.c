@@ -2557,7 +2557,6 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 			"('STATEMENT'),('TABLE'),('TEMP'),('TEMPORARY'),('TEXT'),('TIME'),('TIMESTAMP'),('TRACE'),('TYPE'),('UNIONJOIN'),"
 			"('WEEK'),('YEAR'),('ZONE');\n");
 
-	pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
 	assert(pos < bufsize);
 
@@ -2571,6 +2570,166 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 		printf("Running database upgrade commands:\n%s\n", buf);
 		err = SQLstatementIntern(c, &buf, "update", true, false, NULL);
 	}
+	GDKfree(buf);
+	return err;		/* usually MAL_SUCCEED */
+}
+
+static str
+sql_update_analytics(Client c, mvc *sql, const char *prev_schema, bool *systabfixed)
+{
+	size_t bufsize = 8192, pos = 0;
+	char *err = NULL, *buf = GDKmalloc(bufsize);
+
+	if (!*systabfixed &&
+	    (err = sql_fix_system_tables(c, sql, prev_schema)) != NULL)
+		return err;
+	*systabfixed = true;
+
+	if (buf == NULL)
+		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+
+	/* 39_analytics.sql */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"create window stddev_samp(val TINYINT) returns DOUBLE\n"
+			" external name \"sql\".\"stdev\";\n"
+			"GRANT EXECUTE ON WINDOW stddev_samp(TINYINT) TO PUBLIC;\n"
+			"create window stddev_samp(val SMALLINT) returns DOUBLE"
+			" external name \"sql\".\"stdev\";\n"
+			"GRANT EXECUTE ON WINDOW stddev_samp(SMALLINT) TO PUBLIC;\n"
+			"create window stddev_samp(val INTEGER) returns DOUBLE\n"
+			" external name \"sql\".\"stdev\";\n"
+			"GRANT EXECUTE ON WINDOW stddev_samp(INTEGER) TO PUBLIC;\n"
+			"create window stddev_samp(val BIGINT) returns DOUBLE\n"
+			" external name \"sql\".\"stdev\";\n"
+			"GRANT EXECUTE ON WINDOW stddev_samp(BIGINT) TO PUBLIC;\n"
+			"create window stddev_samp(val REAL) returns DOUBLE\n"
+			" external name \"sql\".\"stdev\";\n"
+			"GRANT EXECUTE ON WINDOW stddev_samp(REAL) TO PUBLIC;\n"
+			"create window stddev_samp(val DOUBLE) returns DOUBLE\n"
+			" external name \"sql\".\"stdev\";\n"
+			"GRANT EXECUTE ON WINDOW stddev_samp(DOUBLE) TO PUBLIC;\n"
+			"create window stddev_samp(val INTERVAL SECOND) returns DOUBLE\n"
+			" external name \"sql\".\"stdev\";\n"
+			"GRANT EXECUTE ON WINDOW stddev_samp(INTERVAL SECOND) TO PUBLIC;\n"
+			"create window stddev_samp(val INTERVAL MONTH) returns DOUBLE\n"
+			" external name \"sql\".\"stdev\";\n"
+			"GRANT EXECUTE ON WINDOW stddev_samp(INTERVAL MONTH) TO PUBLIC;\n"
+			"create window stddev_pop(val TINYINT) returns DOUBLE\n"
+			" external name \"sql\".\"stdevp\";\n"
+			"GRANT EXECUTE ON WINDOW stddev_pop(TINYINT) TO PUBLIC;\n"
+			"create window stddev_pop(val SMALLINT) returns DOUBLE\n"
+			" external name \"sql\".\"stdevp\";\n"
+			"GRANT EXECUTE ON WINDOW stddev_pop(SMALLINT) TO PUBLIC;\n"
+			"create window stddev_pop(val INTEGER) returns DOUBLE\n"
+			" external name \"sql\".\"stdevp\";\n"
+			"GRANT EXECUTE ON WINDOW stddev_pop(INTEGER) TO PUBLIC;\n"
+			"create window stddev_pop(val BIGINT) returns DOUBLE\n"
+			" external name \"sql\".\"stdevp\";\n"
+			"GRANT EXECUTE ON WINDOW stddev_pop(BIGINT) TO PUBLIC;\n"
+			"create window stddev_pop(val REAL) returns DOUBLE\n"
+			" external name \"sql\".\"stdevp\";\n"
+			"GRANT EXECUTE ON WINDOW stddev_pop(REAL) TO PUBLIC;\n"
+			"create window stddev_pop(val DOUBLE) returns DOUBLE\n"
+			" external name \"sql\".\"stdevp\";\n"
+			"GRANT EXECUTE ON WINDOW stddev_pop(DOUBLE) TO PUBLIC;\n"
+			"create window stddev_pop(val INTERVAL SECOND) returns DOUBLE\n"
+			" external name \"sql\".\"stdevp\";\n"
+			"GRANT EXECUTE ON WINDOW stddev_pop(INTERVAL SECOND) TO PUBLIC;\n"
+			"create window stddev_pop(val INTERVAL MONTH) returns DOUBLE\n"
+			" external name \"sql\".\"stdevp\";\n"
+			"GRANT EXECUTE ON WINDOW stddev_pop(INTERVAL MONTH) TO PUBLIC;\n"
+			"create window var_samp(val TINYINT) returns DOUBLE\n"
+			" external name \"sql\".\"variance\";\n"
+			"GRANT EXECUTE ON WINDOW var_samp(TINYINT) TO PUBLIC;\n"
+			"create window var_samp(val SMALLINT) returns DOUBLE\n"
+			" external name \"sql\".\"variance\";\n"
+			"GRANT EXECUTE ON WINDOW var_samp(SMALLINT) TO PUBLIC;\n"
+			"create window var_samp(val INTEGER) returns DOUBLE\n"
+			" external name \"sql\".\"variance\";\n"
+			"GRANT EXECUTE ON WINDOW var_samp(INTEGER) TO PUBLIC;\n"
+			"create window var_samp(val BIGINT) returns DOUBLE\n"
+			" external name \"sql\".\"variance\";\n"
+			"GRANT EXECUTE ON WINDOW var_samp(BIGINT) TO PUBLIC;\n"
+			"create window var_samp(val REAL) returns DOUBLE\n"
+			" external name \"sql\".\"variance\";\n"
+			"GRANT EXECUTE ON WINDOW var_samp(REAL) TO PUBLIC;\n"
+			"create window var_samp(val DOUBLE) returns DOUBLE\n"
+			" external name \"sql\".\"variance\";\n"
+			"GRANT EXECUTE ON WINDOW var_samp(DOUBLE) TO PUBLIC;\n"
+			"create window var_samp(val INTERVAL SECOND) returns DOUBLE\n"
+			" external name \"sql\".\"variance\";\n"
+			"GRANT EXECUTE ON WINDOW var_samp(INTERVAL SECOND) TO PUBLIC;\n"
+			"create window var_samp(val INTERVAL MONTH) returns DOUBLE\n"
+			" external name \"sql\".\"variance\";\n"
+			"GRANT EXECUTE ON WINDOW var_samp(INTERVAL MONTH) TO PUBLIC;\n"
+			"create window var_pop(val TINYINT) returns DOUBLE\n"
+			" external name \"sql\".\"variancep\";\n"
+			"GRANT EXECUTE ON WINDOW var_pop(TINYINT) TO PUBLIC;\n"
+			"create window var_pop(val SMALLINT) returns DOUBLE\n"
+			" external name \"sql\".\"variancep\";\n"
+			"GRANT EXECUTE ON WINDOW var_pop(SMALLINT) TO PUBLIC;\n"
+			"create window var_pop(val INTEGER) returns DOUBLE\n"
+			" external name \"sql\".\"variancep\";\n"
+			"GRANT EXECUTE ON WINDOW var_pop(INTEGER) TO PUBLIC;\n"
+			"create window var_pop(val BIGINT) returns DOUBLE\n"
+			" external name \"sql\".\"variancep\";\n"
+			"GRANT EXECUTE ON WINDOW var_pop(BIGINT) TO PUBLIC;\n"
+			"create window var_pop(val REAL) returns DOUBLE\n"
+			" external name \"sql\".\"variancep\";\n"
+			"GRANT EXECUTE ON WINDOW var_pop(REAL) TO PUBLIC;\n"
+			"create window var_pop(val DOUBLE) returns DOUBLE\n"
+			" external name \"sql\".\"variancep\";\n"
+			"GRANT EXECUTE ON WINDOW var_pop(DOUBLE) TO PUBLIC;\n"
+			"create window var_pop(val INTERVAL SECOND) returns DOUBLE\n"
+			" external name \"sql\".\"variancep\";\n"
+			"GRANT EXECUTE ON WINDOW var_pop(INTERVAL SECOND) TO PUBLIC;\n"
+			"create window var_pop(val INTERVAL MONTH) returns DOUBLE\n"
+			" external name \"sql\".\"variancep\";\n"
+			"GRANT EXECUTE ON WINDOW var_pop(INTERVAL MONTH) TO PUBLIC;\n");
+
+#ifdef HAVE_HGE
+	if (have_hge) {
+		/* 39_analytics_hge.sql */
+		pos += snprintf(buf + pos, bufsize - pos,
+			"create window stddev_samp(val HUGEINT) returns DOUBLE\n"
+			" external name \"sql\".\"stdev\";\n"
+			"GRANT EXECUTE ON WINDOW stddev_samp(HUGEINT) TO PUBLIC;\n"
+			"create window stddev_pop(val HUGEINT) returns DOUBLE\n"
+			" external name \"sql\".\"stdevp\";\n"
+			"GRANT EXECUTE ON WINDOW stddev_pop(HUGEINT) TO PUBLIC;\n"
+			"create window var_samp(val HUGEINT) returns DOUBLE\n"
+			" external name \"sql\".\"variance\";\n"
+			"GRANT EXECUTE ON WINDOW var_samp(HUGEINT) TO PUBLIC;\n"
+			"create window var_pop(val HUGEINT) returns DOUBLE\n"
+			" external name \"sql\".\"variancep\";\n"
+			"GRANT EXECUTE ON WINDOW var_pop(HUGEINT) TO PUBLIC;\n");
+	}
+#endif
+
+	pos += snprintf(buf + pos, bufsize - pos,
+			"update sys.functions set system = true where name in ('stddev_samp', 'stddev_pop', 'var_samp', 'var_pop')"
+			" and schema_id = (select id from sys.schemas where name = 'sys');\n");
+
+	pos += snprintf(buf + pos, bufsize - pos,
+			"DROP AGGREGATE stddev_samp(date);\n"
+			"DROP AGGREGATE stddev_samp(time);\n"
+			"DROP AGGREGATE stddev_samp(timestamp);\n"
+			"DROP AGGREGATE stddev_pop(date);\n"
+			"DROP AGGREGATE stddev_pop(time);\n"
+			"DROP AGGREGATE stddev_pop(timestamp);\n"
+			"DROP AGGREGATE var_samp(date);\n"
+			"DROP AGGREGATE var_samp(time);\n"
+			"DROP AGGREGATE var_samp(timestamp);\n"
+			"DROP AGGREGATE var_pop(date);\n"
+			"DROP AGGREGATE var_pop(time);\n"
+			"DROP AGGREGATE var_pop(timestamp);\n");
+
+	pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
+	assert(pos < bufsize);
+
+	printf("Running database upgrade commands:\n%s\n", buf);
+	err = SQLstatementIntern(c, &buf, "update", true, false, NULL);
 	GDKfree(buf);
 	return err;		/* usually MAL_SUCCEED */
 }
@@ -2862,6 +3021,14 @@ SQLupgrades(Client c, mvc *m)
 
 	if (!res && !sql_bind_func(m->sa, s, "suspend_log_flushing", NULL, NULL, F_PROC)) {
 		if ((err = sql_update_default(c, m, prev_schema, &systabfixed)) != NULL) {
+			fprintf(stderr, "!%s\n", err);
+			freeException(err);
+			res = -1;
+		}
+	}
+
+	if (!res && !sql_find_func_by_name(m->sa, s, "stddev_samp", 1, F_ANALYTIC)) {
+		if ((err = sql_update_analytics(c, m, prev_schema, &systabfixed)) != NULL) {
 			fprintf(stderr, "!%s\n", err);
 			freeException(err);
 			res = -1;
