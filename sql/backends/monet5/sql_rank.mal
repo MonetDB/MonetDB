@@ -575,6 +575,15 @@ pattern batsql.variancep(b:bat[:bte], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
 address SQLvar_pop
 comment "return the variance of groups";
 
+
+pattern sql.median_avg(b:bte, s:lng, e:lng) :dbl
+address SQLmedian_avg
+comment "return the median value of groups with average in case of 2 values in the median";
+
+pattern batsql.median_avg(b:bat[:bte], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
+address SQLmedian_avg
+comment "return the median value of groups with average in case of 2 values in the median";
+
 pattern sql.avg(b:sht, s:lng, e:lng) :dbl
 address SQLavg
 comment "return the average of groups";
@@ -616,6 +625,15 @@ comment "return the variance of groups";
 pattern batsql.variancep(b:bat[:sht], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
 address SQLvar_pop
 comment "return the variance of groups";
+
+
+pattern sql.median_avg(b:sht, s:lng, e:lng) :dbl
+address SQLmedian_avg
+comment "return the median value of groups with average in case of 2 values in the median";
+
+pattern batsql.median_avg(b:bat[:sht], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
+address SQLmedian_avg
+comment "return the median value of groups with average in case of 2 values in the median";
 
 pattern sql.avg(b:int, s:lng, e:lng) :dbl
 address SQLavg
@@ -659,6 +677,15 @@ pattern batsql.variancep(b:bat[:int], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
 address SQLvar_pop
 comment "return the variance of groups";
 
+
+pattern sql.median_avg(b:int, s:lng, e:lng) :dbl
+address SQLmedian_avg
+comment "return the median value of groups with average in case of 2 values in the median";
+
+pattern batsql.median_avg(b:bat[:int], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
+address SQLmedian_avg
+comment "return the median value of groups with average in case of 2 values in the median";
+
 pattern sql.avg(b:lng, s:lng, e:lng) :dbl
 address SQLavg
 comment "return the average of groups";
@@ -700,6 +727,15 @@ comment "return the variance of groups";
 pattern batsql.variancep(b:bat[:lng], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
 address SQLvar_pop
 comment "return the variance of groups";
+
+
+pattern sql.median_avg(b:lng, s:lng, e:lng) :dbl
+address SQLmedian_avg
+comment "return the median value of groups with average in case of 2 values in the median";
+
+pattern batsql.median_avg(b:bat[:lng], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
+address SQLmedian_avg
+comment "return the median value of groups with average in case of 2 values in the median";
 
 pattern sql.avg(b:flt, s:lng, e:lng) :dbl
 address SQLavg
@@ -743,6 +779,15 @@ pattern batsql.variancep(b:bat[:flt], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
 address SQLvar_pop
 comment "return the variance of groups";
 
+
+pattern sql.median_avg(b:flt, s:lng, e:lng) :dbl
+address SQLmedian_avg
+comment "return the median value of groups with average in case of 2 values in the median";
+
+pattern batsql.median_avg(b:bat[:flt], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
+address SQLmedian_avg
+comment "return the median value of groups with average in case of 2 values in the median";
+
 pattern sql.avg(b:dbl, s:lng, e:lng) :dbl
 address SQLavg
 comment "return the average of groups";
@@ -784,6 +829,15 @@ comment "return the variance of groups";
 pattern batsql.variancep(b:bat[:dbl], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
 address SQLvar_pop
 comment "return the variance of groups";
+
+
+pattern sql.median_avg(b:dbl, s:lng, e:lng) :dbl
+address SQLmedian_avg
+comment "return the median value of groups with average in case of 2 values in the median";
+
+pattern batsql.median_avg(b:bat[:dbl], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
+address SQLmedian_avg
+comment "return the median value of groups with average in case of 2 values in the median";
 
 pattern sql.median(b:any_1, s:lng, e:lng) :any_1
 address SQLmedian

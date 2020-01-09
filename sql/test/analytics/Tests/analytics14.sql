@@ -57,13 +57,27 @@ select median(cc) over (partition by bb order by bb desc) from analytics;
 select median(cc) over (order by bb desc) from analytics;
 
 
+select median_avg(aa) over (partition by bb) from analytics;
+select median_avg(aa) over (partition by bb order by bb asc) from analytics;
+select median_avg(aa) over (partition by bb order by bb desc) from analytics;
+select median_avg(aa) over (order by bb desc) from analytics;
+
+select median_avg(cc) over (partition by bb) from analytics;
+select median_avg(cc) over (partition by bb order by bb asc) from analytics;
+select median_avg(cc) over (partition by bb order by bb desc) from analytics;
+select median_avg(cc) over (order by bb desc) from analytics;
+
+
 select stddev_samp(aa) over () from analytics;
 select stddev_pop(aa) over () from analytics;
 select var_samp(aa) over () from analytics;
 select var_pop(aa) over () from analytics;
 select median(aa) over () from analytics;
+select median_avg(aa) over () from analytics;
 
 rollback;
+
+select bb, median_avg(bb) over () from (values(1),(2)) as analytics(bb); --odd number of values for the median
 
 create table stressme (aa varchar(64), bb int);
 insert into stressme values ('one', 1), ('another', 1), ('stress', 1), (NULL, 2), ('ok', 2), ('check', 3), ('me', 3), ('please', 3), (NULL, 4);

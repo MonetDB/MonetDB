@@ -1896,3 +1896,78 @@ allocation_error:
 	GDKerror("GDKanalytical_median: malloc failure\n");
 	return GDK_FAIL;
 }
+
+#define ANALYTICAL_MEDIAN_AVG(TPE)	\
+	do { \
+		TPE *restrict bp = (TPE*) Tloc(b, 0), ns, ne; \
+		for (; i < cnt; i++, rb++) { \
+			ss = (BUN) start[i]; \
+			ee = (BUN) end[i]; \
+			f = (ee - ss - 1) * 0.5f; \
+			lo = floor(f); \
+			hi = ceil(f); \
+			ns = bp[ss + (BUN) hi]; \
+			ne = bp[ss + (BUN) lo]; \
+			if (is_##TPE##_nil(ns) || is_##TPE##_nil(ne)) { \
+				v = dbl_nil; \
+				has_nils = true; \
+			} else \
+				v = (f - lo) * ns + (lo + 1 - f) * ne; \
+			*rb = v; \
+		}	\
+	} while (0)
+
+gdk_return
+GDKanalytical_median_avg(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
+{
+	bool has_nils = false;
+	BUN i = 0, cnt = BATcount(b), ss, ee;
+	lng *restrict start, *restrict end;
+	dbl f, lo, hi, v, *restrict rb = (dbl*) Tloc(r, 0);
+
+	assert(s && e);
+	start = (lng *) Tloc(s, 0);
+	end = (lng *) Tloc(e, 0);
+
+	if (!ATOMlinear(tpe)) {
+		GDKerror("GDKanalytical_median_avg: cannot determine quantile on "
+			 "non-linear type %s\n", ATOMname(tpe));
+		return GDK_FAIL;
+	}
+
+	switch (tpe) {
+	case TYPE_bte:
+		ANALYTICAL_MEDIAN_AVG(bte);
+		break;
+	case TYPE_sht:
+		ANALYTICAL_MEDIAN_AVG(sht);
+		break;
+	case TYPE_int:
+		ANALYTICAL_MEDIAN_AVG(int);
+		break;
+	case TYPE_lng:
+		ANALYTICAL_MEDIAN_AVG(lng);
+		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		ANALYTICAL_MEDIAN_AVG(hge);
+		break;
+#endif
+	case TYPE_flt:
+		ANALYTICAL_MEDIAN_AVG(flt);
+		break;
+	case TYPE_dbl:
+		ANALYTICAL_MEDIAN_AVG(dbl);
+		break;
+	default:
+		GDKerror("GDKanalytical_median_avg: average of type %s unsupported.\n", ATOMname(tpe));
+		return GDK_FAIL;
+	}
+	BATsetcount(r, cnt);
+	r->tkey = BATcount(r) <= 1;
+	r->tsorted = BATcount(r) <= 1;
+	r->trevsorted = BATcount(r) <= 1;
+	r->tnonil = !has_nils;
+	r->tnil = has_nils;
+	return GDK_SUCCEED;
+}

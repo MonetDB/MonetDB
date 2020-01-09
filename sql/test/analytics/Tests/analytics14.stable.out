@@ -667,6 +667,126 @@ stdout of test 'analytics14` in directory 'sql/test/analytics` itself:
 [ NULL	]
 [ NULL	]
 [ NULL	]
+#select median_avg(aa) over (partition by bb) from analytics;
+% sys.%3 # table_name
+% %3 # name
+% double # type
+% 24 # length
+[ 2	]
+[ 2	]
+[ 2	]
+[ 3	]
+[ 3	]
+[ 3	]
+[ 5	]
+[ 5	]
+[ 5	]
+[ NULL	]
+#select median_avg(aa) over (partition by bb order by bb asc) from analytics;
+% sys.%3 # table_name
+% %3 # name
+% double # type
+% 24 # length
+[ 2	]
+[ 2	]
+[ 2	]
+[ 3	]
+[ 3	]
+[ 3	]
+[ 5	]
+[ 5	]
+[ 5	]
+[ NULL	]
+#select median_avg(aa) over (partition by bb order by bb desc) from analytics;
+% sys.%3 # table_name
+% %3 # name
+% double # type
+% 24 # length
+[ NULL	]
+[ 5	]
+[ 5	]
+[ 5	]
+[ 3	]
+[ 3	]
+[ 3	]
+[ 2	]
+[ 2	]
+[ 2	]
+#select median_avg(aa) over (order by bb desc) from analytics;
+% sys.%3 # table_name
+% %3 # name
+% double # type
+% 24 # length
+[ NULL	]
+[ 10	]
+[ 10	]
+[ 10	]
+[ 6	]
+[ 6	]
+[ 6	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+#select median_avg(cc) over (partition by bb) from analytics;
+% sys.%3 # table_name
+% %3 # name
+% double # type
+% 24 # length
+[ 2	]
+[ 2	]
+[ 2	]
+[ 3	]
+[ 3	]
+[ 3	]
+[ 5	]
+[ 5	]
+[ 5	]
+[ NULL	]
+#select median_avg(cc) over (partition by bb order by bb asc) from analytics;
+% sys.%3 # table_name
+% %3 # name
+% double # type
+% 24 # length
+[ 2	]
+[ 2	]
+[ 2	]
+[ 3	]
+[ 3	]
+[ 3	]
+[ 5	]
+[ 5	]
+[ 5	]
+[ NULL	]
+#select median_avg(cc) over (partition by bb order by bb desc) from analytics;
+% sys.%3 # table_name
+% %3 # name
+% double # type
+% 24 # length
+[ NULL	]
+[ 5	]
+[ 5	]
+[ 5	]
+[ 3	]
+[ 3	]
+[ 3	]
+[ 2	]
+[ 2	]
+[ 2	]
+#select median_avg(cc) over (order by bb desc) from analytics;
+% sys.%3 # table_name
+% %3 # name
+% double # type
+% 24 # length
+[ NULL	]
+[ 10	]
+[ 10	]
+[ 10	]
+[ 6	]
+[ 6	]
+[ 6	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
 #select stddev_samp(aa) over () from analytics;
 % sys. # table_name
 % %1 # name
@@ -742,7 +862,29 @@ stdout of test 'analytics14` in directory 'sql/test/analytics` itself:
 [ NULL	]
 [ NULL	]
 [ NULL	]
+#select median_avg(aa) over () from analytics;
+% sys. # table_name
+% %1 # name
+% double # type
+% 24 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
 #rollback;
+#select bb, median_avg(bb) over () from (values(1),(2)) as analytics(bb); --odd number of values for the median
+% .analytics,	. # table_name
+% bb,	%3 # name
+% tinyint,	double # type
+% 1,	24 # length
+[ 1,	1.5	]
+[ 2,	1.5	]
 #create table stressme (aa varchar(64), bb int);
 #insert into stressme values ('one', 1), ('another', 1), ('stress', 1), (NULL, 2), ('ok', 2), ('check', 3), ('me', 3), ('please', 3), (NULL, 4);
 [ 9	]

@@ -1471,12 +1471,12 @@ SQLprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								 GDKanalyticalprod);
 }
 
-str
-SQLavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+static str
+do_fp_window(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char *op, const char* err,
+			 gdk_return (*func)(BAT *, BAT *, BAT *, BAT *, int))
 {
 	BAT *r, *b, *s, *e;
-	str msg = SQLanalytics_args(&r, &b, &s, &e, cntxt, mb, stk, pci, TYPE_dbl, "sql.avg",
-								SQLSTATE(42000) "avg(:any_1,:lng,:lng)");
+	str msg = SQLanalytics_args(&r, &b, &s, &e, cntxt, mb, stk, pci, TYPE_dbl, op, err);
 	int tpe = getArgType(mb, pci, 1);
 	gdk_return gdk_res;
 
@@ -1488,14 +1488,14 @@ SQLavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (b) {
 		bat *res = getArgReference_bat(stk, pci, 0);
 
-		gdk_res = GDKanalyticalavg(r, b, s, e, tpe);
+		gdk_res = func(r, b, s, e, tpe);
 		BBPunfix(b->batCacheid);
 		if (s) BBPunfix(s->batCacheid);
 		if (e) BBPunfix(e->batCacheid);
 		if (gdk_res == GDK_SUCCEED)
 			BBPkeepref(*res = r->batCacheid);
 		else
-			throw(SQL, "sql.avg", GDK_EXCEPTION);
+			throw(SQL, op, GDK_EXCEPTION);
 	} else {
 		ptr *res = getArgReference(stk, pci, 0);
 		ptr *in = getArgReference(stk, pci, 1);
@@ -1531,10 +1531,23 @@ SQLavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				*res = *in;
 				break;
 			default:
-				throw(SQL, "sql.avg", SQLSTATE(42000) "sql.avg not available for %s", ATOMname(tpe));
+				throw(SQL, op, SQLSTATE(42000) "%s not available for %s", op, ATOMname(tpe));
 		}
 	}
 	return msg;
+}
+
+str
+SQLavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	return do_fp_window(cntxt, mb, stk, pci, "sql.avg", SQLSTATE(42000) "avg(:any_1,:lng,:lng)", GDKanalyticalavg);
+}
+
+str
+SQLmedian_avg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	return do_fp_window(cntxt, mb, stk, pci, "sql.median_avg", SQLSTATE(42000) "median_avg(:any_1,:lng,:lng)",
+						GDKanalytical_median_avg);
 }
 
 static str
@@ -1615,5 +1628,6 @@ SQLvar_pop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 SQLmedian(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return SQLanalytical_func(cntxt, mb, stk, pci, "sql.median", SQLSTATE(42000) "median(:any_1,:lng,:lng)", GDKanalytical_median);
+	return SQLanalytical_func(cntxt, mb, stk, pci, "sql.median", SQLSTATE(42000) "median(:any_1,:lng,:lng)", 
+							  GDKanalytical_median);
 }

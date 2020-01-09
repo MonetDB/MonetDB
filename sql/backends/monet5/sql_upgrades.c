@@ -2722,7 +2722,28 @@ sql_update_analytics(Client c, mvc *sql, const char *prev_schema, bool *systabfi
 			"GRANT EXECUTE ON WINDOW median(INTERVAL SECOND) TO PUBLIC;\n"
 			"create window median(val INTERVAL MONTH) returns INTERVAL MONTH\n"
 			" external name \"sql\".\"median\";\n"
-			"GRANT EXECUTE ON WINDOW median(INTERVAL MONTH) TO PUBLIC;\n");
+			"GRANT EXECUTE ON WINDOW median(INTERVAL MONTH) TO PUBLIC;\n"
+			"create window median_avg(val TINYINT) returns DOUBLE\n"
+			" external name \"sql\".\"median_avg\";\n"
+			"GRANT EXECUTE ON WINDOW median_avg(TINYINT) TO PUBLIC;\n"
+			"create window median_avg(val SMALLINT) returns DOUBLE\n"
+			" external name \"sql\".\"median_avg\";\n"
+			"GRANT EXECUTE ON WINDOW median_avg(SMALLINT) TO PUBLIC;\n"
+			"create window median_avg(val INTEGER) returns DOUBLE\n"
+			" external name \"sql\".\"median_avg\";\n"
+			"GRANT EXECUTE ON WINDOW median_avg(INTEGER) TO PUBLIC;\n"
+			"create window median_avg(val BIGINT) returns DOUBLE\n"
+			" external name \"sql\".\"median_avg\";\n"
+			"GRANT EXECUTE ON WINDOW median_avg(BIGINT) TO PUBLIC;\n"
+			"create window median_avg(val DECIMAL) returns DOUBLE\n"
+			" external name \"sql\".\"median_avg\";\n"
+			"GRANT EXECUTE ON WINDOW median_avg(DECIMAL) TO PUBLIC;\n"
+			"create window median_avg(val REAL) returns DOUBLE\n"
+			" external name \"sql\".\"median_avg\";\n"
+			"GRANT EXECUTE ON WINDOW median_avg(REAL) TO PUBLIC;\n"
+			"create window median_avg(val DOUBLE) returns DOUBLE\n"
+			" external name \"sql\".\"median_avg\";\n"
+			"GRANT EXECUTE ON WINDOW median_avg(DOUBLE) TO PUBLIC;\n");
 
 #ifdef HAVE_HGE
 	if (have_hge) {
@@ -2742,12 +2763,15 @@ sql_update_analytics(Client c, mvc *sql, const char *prev_schema, bool *systabfi
 			"GRANT EXECUTE ON WINDOW var_pop(HUGEINT) TO PUBLIC;\n"
 			"create window median(val HUGEINT) returns HUGEINT;\n"
 			" external name \"sql\".\"median\";\n"
-			"GRANT EXECUTE ON WINDOW median(HUGEINT) TO PUBLIC;\n");
+			"GRANT EXECUTE ON WINDOW median(HUGEINT) TO PUBLIC;\n"
+			"create window median_avg(val HUGEINT) returns DOUBLE\n"
+			" external name \"sql\".\"median_avg\";\n"
+			"GRANT EXECUTE ON WINDOW median_avg(HUGEINT) TO PUBLIC;\n");
 	}
 #endif
 
 	pos += snprintf(buf + pos, bufsize - pos,
-			"update sys.functions set system = true where name in ('stddev_samp', 'stddev_pop', 'var_samp', 'var_pop', 'median')"
+			"update sys.functions set system = true where name in ('stddev_samp', 'stddev_pop', 'var_samp', 'var_pop', 'median', 'median_avg')"
 			" and schema_id = (select id from sys.schemas where name = 'sys');\n");
 
 	pos += snprintf(buf + pos, bufsize - pos,

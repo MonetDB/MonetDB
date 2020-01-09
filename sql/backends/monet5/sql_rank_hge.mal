@@ -153,3 +153,11 @@ pattern batsql.variancep(b:bat[:hge], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
 address SQLvar_pop
 comment "return the variance of groups";
 
+pattern sql.median_avg(b:hge, s:lng, e:lng) :dbl
+address SQLmedian_avg
+comment "return the median value of groups with average in case of 2 values in the median";
+
+pattern batsql.median_avg(b:bat[:hge], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
+address SQLmedian_avg
+comment "return the median value of groups with average in case of 2 values in the median";
+

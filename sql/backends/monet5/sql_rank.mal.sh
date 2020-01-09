@@ -367,49 +367,58 @@ EOF
     done
 done
 
-for tp1 in 1:bte 2:sht 4:int 8:lng 4:flt 8:dbl; do
+for tp in bte sht int lng flt dbl; do
 	cat <<EOF
-pattern sql.avg(b:${tp1#*:}, s:lng, e:lng) :dbl
+pattern sql.avg(b:${tp}, s:lng, e:lng) :dbl
 address SQLavg
 comment "return the average of groups";
 
-pattern batsql.avg(b:bat[:${tp1#*:}], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
+pattern batsql.avg(b:bat[:${tp}], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
 address SQLavg
 comment "return the average of groups";
 
 
-pattern sql.stdev(b:${tp1#*:}, s:lng, e:lng) :dbl
+pattern sql.stdev(b:${tp}, s:lng, e:lng) :dbl
 address SQLstddev_samp
 comment "return the standard deviation of groups";
 
-pattern batsql.stdev(b:bat[:${tp1#*:}], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
+pattern batsql.stdev(b:bat[:${tp}], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
 address SQLstddev_samp
 comment "return the standard deviation of groups";
 
-pattern sql.stdevp(b:${tp1#*:}, s:lng, e:lng) :dbl
+pattern sql.stdevp(b:${tp}, s:lng, e:lng) :dbl
 address SQLstddev_pop
 comment "return the standard deviation of groups";
 
-pattern batsql.stdevp(b:bat[:${tp1#*:}], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
+pattern batsql.stdevp(b:bat[:${tp}], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
 address SQLstddev_pop
 comment "return the standard deviation of groups";
 
 
-pattern sql.variance(b:${tp1#*:}, s:lng, e:lng) :dbl
+pattern sql.variance(b:${tp}, s:lng, e:lng) :dbl
 address SQLvar_samp
 comment "return the variance of groups";
 
-pattern batsql.variance(b:bat[:${tp1#*:}], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
+pattern batsql.variance(b:bat[:${tp}], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
 address SQLvar_samp
 comment "return the variance of groups";
 
-pattern sql.variancep(b:${tp1#*:}, s:lng, e:lng) :dbl
+pattern sql.variancep(b:${tp}, s:lng, e:lng) :dbl
 address SQLvar_pop
 comment "return the variance of groups";
 
-pattern batsql.variancep(b:bat[:${tp1#*:}], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
+pattern batsql.variancep(b:bat[:${tp}], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
 address SQLvar_pop
 comment "return the variance of groups";
+
+
+pattern sql.median_avg(b:${tp}, s:lng, e:lng) :dbl
+address SQLmedian_avg
+comment "return the median value of groups with average in case of 2 values in the median";
+
+pattern batsql.median_avg(b:bat[:${tp}], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
+address SQLmedian_avg
+comment "return the median value of groups with average in case of 2 values in the median";
 
 EOF
 done

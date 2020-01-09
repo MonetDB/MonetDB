@@ -291,6 +291,7 @@ create window median(val INTERVAL MONTH) returns INTERVAL MONTH
 	external name "sql"."median";
 GRANT EXECUTE ON WINDOW median(INTERVAL MONTH) TO PUBLIC;
 
+
 create aggregate quantile(val TINYINT, q DOUBLE) returns TINYINT
 	external name "aggr"."quantile";
 GRANT EXECUTE ON AGGREGATE quantile(TINYINT, DOUBLE) TO PUBLIC;
@@ -329,6 +330,7 @@ create aggregate quantile(val INTERVAL MONTH, q DOUBLE) returns INTERVAL MONTH
 	external name "aggr"."quantile";
 GRANT EXECUTE ON AGGREGATE quantile(INTERVAL MONTH, DOUBLE) TO PUBLIC;
 
+
 create aggregate median_avg(val TINYINT) returns DOUBLE
 	external name "aggr"."median_avg";
 GRANT EXECUTE ON AGGREGATE median_avg(TINYINT) TO PUBLIC;
@@ -351,6 +353,29 @@ create aggregate median_avg(val DOUBLE) returns DOUBLE
 	external name "aggr"."median_avg";
 GRANT EXECUTE ON AGGREGATE median_avg(DOUBLE) TO PUBLIC;
 
+create window median_avg(val TINYINT) returns DOUBLE
+	external name "sql"."median_avg";
+GRANT EXECUTE ON WINDOW median_avg(TINYINT) TO PUBLIC;
+create window median_avg(val SMALLINT) returns DOUBLE
+	external name "sql"."median_avg";
+GRANT EXECUTE ON WINDOW median_avg(SMALLINT) TO PUBLIC;
+create window median_avg(val INTEGER) returns DOUBLE
+	external name "sql"."median_avg";
+GRANT EXECUTE ON WINDOW median_avg(INTEGER) TO PUBLIC;
+create window median_avg(val BIGINT) returns DOUBLE
+	external name "sql"."median_avg";
+GRANT EXECUTE ON WINDOW median_avg(BIGINT) TO PUBLIC;
+create window median_avg(val DECIMAL) returns DOUBLE
+	external name "sql"."median_avg";
+GRANT EXECUTE ON WINDOW median_avg(DECIMAL) TO PUBLIC;
+create window median_avg(val REAL) returns DOUBLE
+	external name "sql"."median_avg";
+GRANT EXECUTE ON WINDOW median_avg(REAL) TO PUBLIC;
+create window median_avg(val DOUBLE) returns DOUBLE
+	external name "sql"."median_avg";
+GRANT EXECUTE ON WINDOW median_avg(DOUBLE) TO PUBLIC;
+
+
 create aggregate quantile_avg(val TINYINT, q DOUBLE) returns DOUBLE
 	external name "aggr"."quantile_avg";
 GRANT EXECUTE ON AGGREGATE quantile_avg(TINYINT, DOUBLE) TO PUBLIC;
@@ -372,6 +397,7 @@ GRANT EXECUTE ON AGGREGATE quantile_avg(REAL, DOUBLE) TO PUBLIC;
 create aggregate quantile_avg(val DOUBLE, q DOUBLE) returns DOUBLE
 	external name "aggr"."quantile_avg";
 GRANT EXECUTE ON AGGREGATE quantile_avg(DOUBLE, DOUBLE) TO PUBLIC;
+
 
 create aggregate corr(e1 TINYINT, e2 TINYINT) returns DOUBLE
 	external name "aggr"."corr";
