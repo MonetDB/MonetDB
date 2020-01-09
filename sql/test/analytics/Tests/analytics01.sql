@@ -268,6 +268,9 @@ WHERE (t0.start_time >= '2017/12/01 00:00:00' AND t0.start_time <= '2017/12/02 0
 
 rollback;
 
+select ntile(distinct aa) over () from analytics; --error
+select nth_value(distinct aa, bb) over () from analytics; --error
+
 select lag(null, aa) over () from analytics; --error
 select lag(null, null, aa) over () from analytics; --error
 select lead(null, aa) over () from analytics; --error

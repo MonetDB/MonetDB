@@ -196,7 +196,6 @@ int yydebug=1;
 	call_statement
 	case_exp
 	case_opt_else
-	case_scalar_exp
 	case_statement
 	cast_exp
 	cast_value
@@ -4390,11 +4389,25 @@ aggr_or_window_ref:
 		{ dlist *l = L();
   		  append_list(l, $1);
   		  append_list(l, NULL);
+  		  append_int(l, FALSE);
   		  $$ = _symbol_create_list( SQL_RANK, l ); }
  |  qrank '(' scalar_exp_list ')'
 		{ dlist *l = L();
   		  append_list(l, $1);
   		  append_list(l, $3);
+  		  append_int(l, FALSE);
+  		  $$ = _symbol_create_list( SQL_RANK, l ); }
+ |  qrank '(' DISTINCT scalar_exp_list ')'
+		{ dlist *l = L();
+  		  append_list(l, $1);
+  		  append_list(l, $4);
+  		  append_int(l, TRUE);
+  		  $$ = _symbol_create_list( SQL_RANK, l ); }
+ |  qrank '(' ALL scalar_exp_list ')'
+		{ dlist *l = L();
+  		  append_list(l, $1);
+  		  append_list(l, $4);
+  		  append_int(l, FALSE);
   		  $$ = _symbol_create_list( SQL_RANK, l ); }
  |  qfunc '(' '*' ')'
 		{ dlist *l = L();
@@ -4406,18 +4419,6 @@ aggr_or_window_ref:
 		{ dlist *l = L();
   		  append_list(l, $1);
   		  append_symbol(l, NULL);
-		  append_int(l, FALSE);
-		  $$ = _symbol_create_list( SQL_AGGR, l ); }
- |  qfunc '(' DISTINCT case_scalar_exp ')'
-		{ dlist *l = L();
-  		  append_list(l, $1);
-  		  append_symbol(l, $4);
-		  append_int(l, TRUE);
-		  $$ = _symbol_create_list( SQL_AGGR, l ); }
- |  qfunc '(' ALL case_scalar_exp ')'
-		{ dlist *l = L();
-  		  append_list(l, $1);
-  		  append_symbol(l, $4);
 		  append_int(l, FALSE);
 		  $$ = _symbol_create_list( SQL_AGGR, l ); }
  |  qfunc '(' ')'
@@ -4443,7 +4444,43 @@ aggr_or_window_ref:
 			append_int(l, FALSE);
 		  	$$ = _symbol_create_list( SQL_NOP, l ); 
 		  }
-	}
+		}
+ |  qfunc '(' DISTINCT scalar_exp_list ')'
+		{ dlist *l = L();
+		  append_list(l, $1);
+ 		  if (dlist_length($4) == 1) {
+		  	append_symbol(l, $4->h->data.sym);
+		 	append_int(l, TRUE);
+			$$ = _symbol_create_list( SQL_UNOP, l ); 
+		  } else if (dlist_length($4) == 2) {
+		  	append_symbol(l, $4->h->data.sym);
+		  	append_symbol(l, $4->h->next->data.sym);
+		  	append_int(l, TRUE);
+			$$ = _symbol_create_list( SQL_BINOP, l ); 
+		  } else {
+		  	append_list(l, $4);
+			append_int(l, TRUE);
+		  	$$ = _symbol_create_list( SQL_NOP, l ); 
+		  }
+		}
+ |  qfunc '(' ALL scalar_exp_list ')'
+		{ dlist *l = L();
+		  append_list(l, $1);
+ 		  if (dlist_length($4) == 1) {
+		  	append_symbol(l, $4->h->data.sym);
+		 	append_int(l, FALSE);
+			$$ = _symbol_create_list( SQL_UNOP, l ); 
+		  } else if (dlist_length($4) == 2) {
+		  	append_symbol(l, $4->h->data.sym);
+		  	append_symbol(l, $4->h->next->data.sym);
+		  	append_int(l, FALSE);
+			$$ = _symbol_create_list( SQL_BINOP, l ); 
+		  } else {
+		  	append_list(l, $4);
+			append_int(l, FALSE);
+		  	$$ = _symbol_create_list( SQL_NOP, l ); 
+		  }
+		}
  |  XML_aggregate
  ;
 
@@ -5110,9 +5147,6 @@ case_opt_else:
  |  ELSE scalar_exp	{ $$ = $2; }
  ;
 
-case_scalar_exp:
-    scalar_exp	
- ;
 		/* data types, more types to come */
 
 nonzero:

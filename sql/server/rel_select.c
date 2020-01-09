@@ -4459,7 +4459,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 	sql_rel *p;
 	list *gbe = NULL, *obe = NULL, *args = NULL, *types = NULL, *fargs = NULL;
 	sql_schema *s = sql->session->schema;
-	dnode *dn = window_function->data.lval->h;
+	dnode *dn = window_function->data.lval->h, *dargs = NULL;
 	int distinct = 0, frame_type, pos, nf = f;
 	bool is_nth_value, supports_frames;
 
@@ -4546,13 +4546,13 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 
 	fargs = sa_list(sql->sa);
 	if (window_function->token == SQL_RANK) { /* rank function call */
-		dlist* dnn = window_function->data.lval->h->next->data.lval;
+		dlist *dl = dn->next->data.lval;
 		bool is_ntile = (strcmp(s->base.name, "sys") == 0 && strcmp(aname, "ntile") == 0),
 			 is_lag = (strcmp(s->base.name, "sys") == 0 && strcmp(aname, "lag") == 0),
 			 is_lead = (strcmp(s->base.name, "sys") == 0 && strcmp(aname, "lead") == 0);
 		int nfargs = 0;
 
-		if (!dnn || is_ntile) { /* pass an input column for analytic functions that don't require it */
+		if (!dl || is_ntile) { /* pass an input column for analytic functions that don't require it */
 			in = rel_first_column(sql, p);
 			if (is_atom(in->type)) {
 				in = exp_copy(sql, in);
@@ -4566,11 +4566,11 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 			append(fargs, in);
 			nfargs++;
 		}
-		if (dnn) {
-			for (dnode *nn = dnn->h ; nn ; nn = nn->next) {
+		if (dl)
+			for (dargs = dl->h ; dargs ; dargs = dargs->next) { /* the last dnode is the distinct flag */
 				exp_kind ek = {type_value, card_column, FALSE};
 
-				in = rel_value_exp2(query, &p, nn->data.sym, f | sql_window, ek);
+				in = rel_value_exp2(query, &p, dargs->data.sym, f | sql_window, ek);
 				if (!in)
 					return NULL;
 				if(is_ntile && nfargs == 1) { /* ntile first argument null handling case */
@@ -4595,16 +4595,15 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 				append(fargs, in);
 				nfargs++;
 			}
-		}
+		dargs = dn->next->next;
 	} else { /* aggregation function call */
-		dnode *n = dn->next;
 		bool has_args = false;
 
-		for ( ; n->next && n->data.sym ; n = n->next) { /* the last dnode is the distinct flag */
+		for (dargs = dn->next ; dargs->next && dargs->data.sym ; dargs = dargs->next) { /* the last dnode is the distinct flag */
 			exp_kind ek = {type_value, card_column, FALSE};
 
 			has_args = true;
-			in = rel_value_exp2(query, &p, n->data.sym, f | sql_window, ek);
+			in = rel_value_exp2(query, &p, dargs->data.sym, f | sql_window, ek);
 			if (!in)
 				return NULL;
 
@@ -4620,8 +4619,6 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 			in = exp_ref_save(sql, in);
 		}
 
-		distinct = n->data.i_val;
-
 		if (!has_args) { /* count(*) */
 			in = rel_first_column(sql, p);
 			if (!exp_name(in))
@@ -4633,6 +4630,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 		}
 	}
 
+	distinct = dargs && dargs->data.i_val;
 	if (distinct)
 		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: DISTINCT clause is not implemented for window functions");
 
