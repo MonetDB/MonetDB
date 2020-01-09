@@ -2557,6 +2557,7 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 			"('STATEMENT'),('TABLE'),('TEMP'),('TEMPORARY'),('TEXT'),('TIME'),('TIMESTAMP'),('TRACE'),('TYPE'),('UNIONJOIN'),"
 			"('WEEK'),('YEAR'),('ZONE');\n");
 
+	pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
 	assert(pos < bufsize);
 
@@ -2724,7 +2725,6 @@ sql_update_analytics(Client c, mvc *sql, const char *prev_schema, bool *systabfi
 			"DROP AGGREGATE var_pop(time);\n"
 			"DROP AGGREGATE var_pop(timestamp);\n");
 
-	pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
 	assert(pos < bufsize);
 
