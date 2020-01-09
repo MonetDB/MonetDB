@@ -253,6 +253,44 @@ create aggregate median(val INTERVAL MONTH) returns INTERVAL MONTH
 	external name "aggr"."median";
 GRANT EXECUTE ON AGGREGATE median(INTERVAL MONTH) TO PUBLIC;
 
+create window median(val TINYINT) returns TINYINT
+	external name "sql"."median";
+GRANT EXECUTE ON WINDOW median(TINYINT) TO PUBLIC;
+create window median(val SMALLINT) returns SMALLINT
+	external name "sql"."median";
+GRANT EXECUTE ON WINDOW median(SMALLINT) TO PUBLIC;
+create window median(val INTEGER) returns INTEGER
+	external name "sql"."median";
+GRANT EXECUTE ON WINDOW median(INTEGER) TO PUBLIC;
+create window median(val BIGINT) returns BIGINT
+	external name "sql"."median";
+GRANT EXECUTE ON WINDOW median(BIGINT) TO PUBLIC;
+create window median(val DECIMAL) returns DECIMAL
+	external name "sql"."median";
+GRANT EXECUTE ON WINDOW median(DECIMAL) TO PUBLIC;
+create window median(val REAL) returns REAL
+	external name "sql"."median";
+GRANT EXECUTE ON WINDOW median(REAL) TO PUBLIC;
+create window median(val DOUBLE) returns DOUBLE
+	external name "sql"."median";
+GRANT EXECUTE ON WINDOW median(DOUBLE) TO PUBLIC;
+
+create window median(val DATE) returns DATE
+	external name "sql"."median";
+GRANT EXECUTE ON WINDOW median(DATE) TO PUBLIC;
+create window median(val TIME) returns TIME
+	external name "sql"."median";
+GRANT EXECUTE ON WINDOW median(TIME) TO PUBLIC;
+create window median(val TIMESTAMP) returns TIMESTAMP
+	external name "sql"."median";
+GRANT EXECUTE ON WINDOW median(TIMESTAMP) TO PUBLIC;
+create window median(val INTERVAL SECOND) returns INTERVAL SECOND
+	external name "sql"."median";
+GRANT EXECUTE ON WINDOW median(INTERVAL SECOND) TO PUBLIC;
+create window median(val INTERVAL MONTH) returns INTERVAL MONTH
+	external name "sql"."median";
+GRANT EXECUTE ON WINDOW median(INTERVAL MONTH) TO PUBLIC;
+
 create aggregate quantile(val TINYINT, q DOUBLE) returns TINYINT
 	external name "aggr"."quantile";
 GRANT EXECUTE ON AGGREGATE quantile(TINYINT, DOUBLE) TO PUBLIC;

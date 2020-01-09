@@ -1611,3 +1611,9 @@ SQLvar_pop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return do_stddev_and_variance(cntxt, mb, stk, pci, "sql.variancep", SQLSTATE(42000) "variancep(:any_1,:lng,:lng)",
 								  GDKanalytical_variance_pop);
 }
+
+str
+SQLmedian(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	return SQLanalytical_func(cntxt, mb, stk, pci, "sql.median", SQLSTATE(42000) "median(:any_1,:lng,:lng)", GDKanalytical_median);
+}

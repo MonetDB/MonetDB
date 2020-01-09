@@ -42,5 +42,6 @@ gdk_export gdk_return GDKanalytical_stddev_samp(BAT *r, BAT *b, BAT *s, BAT *e, 
 gdk_export gdk_return GDKanalytical_stddev_pop(BAT *r, BAT *b, BAT *s, BAT *e, int tpe);
 gdk_export gdk_return GDKanalytical_variance_samp(BAT *r, BAT *b, BAT *s, BAT *e, int tpe);
 gdk_export gdk_return GDKanalytical_variance_pop(BAT *r, BAT *b, BAT *s, BAT *e, int tpe);
+gdk_export gdk_return GDKanalytical_median(BAT *r, BAT *b, BAT *s, BAT *e, int tpe);
 
 #endif //_GDK_ANALYTIC_H_

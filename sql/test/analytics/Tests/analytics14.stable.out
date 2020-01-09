@@ -547,6 +547,126 @@ stdout of test 'analytics14` in directory 'sql/test/analytics` itself:
 [ 15.4375	]
 [ 15.4375	]
 [ 15.4375	]
+#select median(aa) over (partition by bb) from analytics;
+% sys.%3 # table_name
+% %3 # name
+% int # type
+% 1 # length
+[ 2	]
+[ 2	]
+[ 2	]
+[ 3	]
+[ 3	]
+[ 3	]
+[ 5	]
+[ 5	]
+[ 5	]
+[ NULL	]
+#select median(aa) over (partition by bb order by bb asc) from analytics;
+% sys.%3 # table_name
+% %3 # name
+% int # type
+% 1 # length
+[ 2	]
+[ 2	]
+[ 2	]
+[ 3	]
+[ 3	]
+[ 3	]
+[ 5	]
+[ 5	]
+[ 5	]
+[ NULL	]
+#select median(aa) over (partition by bb order by bb desc) from analytics;
+% sys.%3 # table_name
+% %3 # name
+% int # type
+% 1 # length
+[ NULL	]
+[ 5	]
+[ 5	]
+[ 5	]
+[ 3	]
+[ 3	]
+[ 3	]
+[ 2	]
+[ 2	]
+[ 2	]
+#select median(aa) over (order by bb desc) from analytics;
+% sys.%3 # table_name
+% %3 # name
+% int # type
+% 2 # length
+[ NULL	]
+[ 15	]
+[ 15	]
+[ 15	]
+[ 6	]
+[ 6	]
+[ 6	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+#select median(cc) over (partition by bb) from analytics;
+% sys.%3 # table_name
+% %3 # name
+% bigint # type
+% 1 # length
+[ 2	]
+[ 2	]
+[ 2	]
+[ 3	]
+[ 3	]
+[ 3	]
+[ 5	]
+[ 5	]
+[ 5	]
+[ NULL	]
+#select median(cc) over (partition by bb order by bb asc) from analytics;
+% sys.%3 # table_name
+% %3 # name
+% bigint # type
+% 1 # length
+[ 2	]
+[ 2	]
+[ 2	]
+[ 3	]
+[ 3	]
+[ 3	]
+[ 5	]
+[ 5	]
+[ 5	]
+[ NULL	]
+#select median(cc) over (partition by bb order by bb desc) from analytics;
+% sys.%3 # table_name
+% %3 # name
+% bigint # type
+% 1 # length
+[ NULL	]
+[ 5	]
+[ 5	]
+[ 5	]
+[ 3	]
+[ 3	]
+[ 3	]
+[ 2	]
+[ 2	]
+[ 2	]
+#select median(cc) over (order by bb desc) from analytics;
+% sys.%3 # table_name
+% %3 # name
+% bigint # type
+% 2 # length
+[ NULL	]
+[ 15	]
+[ 15	]
+[ 15	]
+[ 6	]
+[ 6	]
+[ 6	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
 #select stddev_samp(aa) over () from analytics;
 % sys. # table_name
 % %1 # name
@@ -607,6 +727,22 @@ stdout of test 'analytics14` in directory 'sql/test/analytics` itself:
 [ 15.4375	]
 [ 15.4375	]
 [ 15.4375	]
+#select median(aa) over () from analytics;
+% sys. # table_name
+% %1 # name
+% int # type
+% 1 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+#rollback;
 #create table stressme (aa varchar(64), bb int);
 #insert into stressme values ('one', 1), ('another', 1), ('stress', 1), (NULL, 2), ('ok', 2), ('check', 3), ('me', 3), ('please', 3), (NULL, 4);
 [ 9	]

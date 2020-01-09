@@ -414,6 +414,17 @@ comment "return the variance of groups";
 EOF
 done
 
+	cat <<EOF
+pattern sql.median(b:any_1, s:lng, e:lng) :any_1
+address SQLmedian
+comment "return the median value of groups";
+
+pattern batsql.median(b:bat[:any_1], s:bat[:lng], e:bat[:lng]) :bat[:any_1]
+address SQLmedian
+comment "return the median value of groups";
+
+EOF
+
 cat <<EOF
 command aggr.exist(b:bat[:any_2], h:any_1):bit
 address ALGexist;

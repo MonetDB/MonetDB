@@ -1804,3 +1804,95 @@ GDK_ANALYTICAL_STDEV_VARIANCE(stddev_samp, 1, sqrt(m2 / (n - 1)))
 GDK_ANALYTICAL_STDEV_VARIANCE(stddev_pop, 0, sqrt(m2 / (n - 0)))
 GDK_ANALYTICAL_STDEV_VARIANCE(variance_samp, 1, m2 / (n - 1))
 GDK_ANALYTICAL_STDEV_VARIANCE(variance_pop, 0, m2 / (n - 0))
+
+/* There will be always at least one value for the median, because we don't implement the exclude clause yet */
+#define ANALYTICAL_MEDIAN(TPE)	\
+	do { \
+		TPE *restrict bp = (TPE*) Tloc(b, 0), *restrict rb = (TPE*) Tloc(r, 0), v; \
+		for (; i < cnt; i++, rb++) { \
+			ss = (BUN) start[i]; \
+			ee = (BUN) end[i]; \
+			f = (ee - ss - 1) * 0.5f; \
+			qindex = ss + ee - (BUN) (ee + 0.5f - f); \
+			assert(qindex >= ss && qindex < ee); \
+			v = bp[qindex]; \
+			*rb = v; \
+			has_nils |= (v == TPE##_nil); \
+		}	\
+	} while (0)
+
+gdk_return
+GDKanalytical_median(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
+{
+	bool has_nils = false;
+	BUN i = 0, cnt = BATcount(b), qindex, ss, ee;
+	lng *restrict start, *restrict end;
+	dbl f;
+
+	assert(s && e);
+	start = (lng *) Tloc(s, 0);
+	end = (lng *) Tloc(e, 0);
+
+	if (!ATOMlinear(tpe)) {
+		GDKerror("GDKanalytical_median: cannot determine quantile on "
+			 "non-linear type %s\n", ATOMname(tpe));
+		return GDK_FAIL;
+	}
+
+	switch (tpe) {
+	case TYPE_bit:
+		ANALYTICAL_MEDIAN(bit);
+		break;
+	case TYPE_bte:
+		ANALYTICAL_MEDIAN(bte);
+		break;
+	case TYPE_sht:
+		ANALYTICAL_MEDIAN(sht);
+		break;
+	case TYPE_int:
+		ANALYTICAL_MEDIAN(int);
+		break;
+	case TYPE_lng:
+		ANALYTICAL_MEDIAN(lng);
+		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		ANALYTICAL_MEDIAN(hge);
+		break;
+#endif
+	case TYPE_flt:
+		ANALYTICAL_MEDIAN(flt);
+		break;
+	case TYPE_dbl:
+		ANALYTICAL_MEDIAN(dbl);
+		break;
+	default: {
+		BATiter bpi = bat_iterator(b);
+		const void *nil = ATOMnilptr(tpe);
+		int (*atomcmp)(const void *, const void *) = ATOMcompare(tpe);
+		void *curval;
+		for (; i < cnt; i++) {
+			ss = (BUN) start[i];
+			ee = (BUN) end[i];
+			f = (ee - ss - 1) * 0.5f;
+			qindex = ss + ee - (BUN) (ee + 0.5f - f);
+			assert(qindex >= ss && qindex < ee);
+			curval = BUNtail(bpi, qindex);
+			if (BUNappend(r, curval, false) != GDK_SUCCEED)
+				goto allocation_error;
+			if (atomcmp(curval, nil) == 0)
+				has_nils = true;
+		}
+	}
+	}
+	BATsetcount(r, cnt);
+	r->tkey = BATcount(r) <= 1;
+	r->tsorted = BATcount(r) <= 1;
+	r->trevsorted = BATcount(r) <= 1;
+	r->tnonil = !has_nils;
+	r->tnil = has_nils;
+	return GDK_SUCCEED;
+allocation_error:
+	GDKerror("GDKanalytical_median: malloc failure\n");
+	return GDK_FAIL;
+}

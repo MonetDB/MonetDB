@@ -2578,7 +2578,7 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 static str
 sql_update_analytics(Client c, mvc *sql, const char *prev_schema, bool *systabfixed)
 {
-	size_t bufsize = 8192, pos = 0;
+	size_t bufsize = 16384, pos = 0;
 	char *err = NULL, *buf = GDKmalloc(bufsize);
 
 	if (!*systabfixed &&
@@ -2686,7 +2686,43 @@ sql_update_analytics(Client c, mvc *sql, const char *prev_schema, bool *systabfi
 			"GRANT EXECUTE ON WINDOW var_pop(INTERVAL SECOND) TO PUBLIC;\n"
 			"create window var_pop(val INTERVAL MONTH) returns DOUBLE\n"
 			" external name \"sql\".\"variancep\";\n"
-			"GRANT EXECUTE ON WINDOW var_pop(INTERVAL MONTH) TO PUBLIC;\n");
+			"GRANT EXECUTE ON WINDOW var_pop(INTERVAL MONTH) TO PUBLIC;\n"
+			"create window median(val TINYINT) returns TINYINT\n"
+			" external name \"sql\".\"median\";\n"
+			"GRANT EXECUTE ON WINDOW median(TINYINT) TO PUBLIC;\n"
+			"create window median(val SMALLINT) returns SMALLINT\n"
+			" external name \"sql\".\"median\";\n"
+			"GRANT EXECUTE ON WINDOW median(SMALLINT) TO PUBLIC;\n"
+			"create window median(val INTEGER) returns INTEGER\n"
+			" external name \"sql\".\"median\";\n"
+			"GRANT EXECUTE ON WINDOW median(INTEGER) TO PUBLIC;\n"
+			"create window median(val BIGINT) returns BIGINT\n"
+			" external name \"sql\".\"median\";\n"
+			"GRANT EXECUTE ON WINDOW median(BIGINT) TO PUBLIC;\n"
+			"create window median(val DECIMAL) returns DECIMAL\n"
+			" external name \"sql\".\"median\";\n"
+			"GRANT EXECUTE ON WINDOW median(DECIMAL) TO PUBLIC;\n"
+			"create window median(val REAL) returns REAL\n"
+			" external name \"sql\".\"median\";\n"
+			"GRANT EXECUTE ON WINDOW median(REAL) TO PUBLIC;\n"
+			"create window median(val DOUBLE) returns DOUBLE\n"
+			" external name \"sql\".\"median\";\n"
+			"GRANT EXECUTE ON WINDOW median(DOUBLE) TO PUBLIC;\n"
+			"create window median(val DATE) returns DATE\n"
+			" external name \"sql\".\"median\";\n"
+			"GRANT EXECUTE ON WINDOW median(DATE) TO PUBLIC;\n"
+			"create window median(val TIME) returns TIME\n"
+			" external name \"sql\".\"median\";\n"
+			"GRANT EXECUTE ON WINDOW median(TIME) TO PUBLIC;\n"
+			"create window median(val TIMESTAMP) returns TIMESTAMP\n"
+			" external name \"sql\".\"median\";\n"
+			"GRANT EXECUTE ON WINDOW median(TIMESTAMP) TO PUBLIC;\n"
+			"create window median(val INTERVAL SECOND) returns INTERVAL SECOND\n"
+			" external name \"sql\".\"median\";\n"
+			"GRANT EXECUTE ON WINDOW median(INTERVAL SECOND) TO PUBLIC;\n"
+			"create window median(val INTERVAL MONTH) returns INTERVAL MONTH\n"
+			" external name \"sql\".\"median\";\n"
+			"GRANT EXECUTE ON WINDOW median(INTERVAL MONTH) TO PUBLIC;\n");
 
 #ifdef HAVE_HGE
 	if (have_hge) {
@@ -2703,12 +2739,15 @@ sql_update_analytics(Client c, mvc *sql, const char *prev_schema, bool *systabfi
 			"GRANT EXECUTE ON WINDOW var_samp(HUGEINT) TO PUBLIC;\n"
 			"create window var_pop(val HUGEINT) returns DOUBLE\n"
 			" external name \"sql\".\"variancep\";\n"
-			"GRANT EXECUTE ON WINDOW var_pop(HUGEINT) TO PUBLIC;\n");
+			"GRANT EXECUTE ON WINDOW var_pop(HUGEINT) TO PUBLIC;\n"
+			"create window median(val HUGEINT) returns HUGEINT;\n"
+			" external name \"sql\".\"median\";\n"
+			"GRANT EXECUTE ON WINDOW median(HUGEINT) TO PUBLIC;\n");
 	}
 #endif
 
 	pos += snprintf(buf + pos, bufsize - pos,
-			"update sys.functions set system = true where name in ('stddev_samp', 'stddev_pop', 'var_samp', 'var_pop')"
+			"update sys.functions set system = true where name in ('stddev_samp', 'stddev_pop', 'var_samp', 'var_pop', 'median')"
 			" and schema_id = (select id from sys.schemas where name = 'sys');\n");
 
 	pos += snprintf(buf + pos, bufsize - pos,

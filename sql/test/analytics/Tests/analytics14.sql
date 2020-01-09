@@ -12,6 +12,7 @@ select stddev_samp(cc) over (partition by bb order by bb asc) from analytics;
 select stddev_samp(cc) over (partition by bb order by bb desc) from analytics;
 select stddev_samp(cc) over (order by bb desc) from analytics;
 
+
 select stddev_pop(aa) over (partition by bb) from analytics;
 select stddev_pop(aa) over (partition by bb order by bb asc) from analytics;
 select stddev_pop(aa) over (partition by bb order by bb desc) from analytics;
@@ -45,10 +46,22 @@ select var_pop(cc) over (partition by bb order by bb desc) from analytics;
 select var_pop(cc) over (order by bb desc) from analytics;
 
 
+select median(aa) over (partition by bb) from analytics;
+select median(aa) over (partition by bb order by bb asc) from analytics;
+select median(aa) over (partition by bb order by bb desc) from analytics;
+select median(aa) over (order by bb desc) from analytics;
+
+select median(cc) over (partition by bb) from analytics;
+select median(cc) over (partition by bb order by bb asc) from analytics;
+select median(cc) over (partition by bb order by bb desc) from analytics;
+select median(cc) over (order by bb desc) from analytics;
+
+
 select stddev_samp(aa) over () from analytics;
 select stddev_pop(aa) over () from analytics;
 select var_samp(aa) over () from analytics;
 select var_pop(aa) over () from analytics;
+select median(aa) over () from analytics;
 
 rollback;
 
