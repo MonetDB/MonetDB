@@ -250,6 +250,7 @@ WLRprocessBatch(void *arg)
 	/* Cook a log file into a concreate MAL function for multiple transactions */
 	prev = newFunction(putName("user"), putName("wlr"), FUNCTIONsymbol);
 	if(prev == NULL) {
+		close_stream(c->fdout);
 		MCcloseClient(c);
 		fprintf(stderr, "#Could not create user for WLR process\n");
 		return;
@@ -359,11 +360,12 @@ WLRprocessBatch(void *arg)
 			if ( getModuleId(q) == wlrRef && getFunctionId(q) ==commitRef ){
 				pushEndInstruction(mb);
 				// execute this block if no errors are found
-				chkTypes(c->usermodule, mb, FALSE);
-				chkFlow(mb);
-				chkDeclarations(mb);
-
-				if( mb->errors == 0){
+				msg = chkTypes(c->usermodule, mb, FALSE);
+				if (!msg)
+					msg = chkFlow(mb);
+				if (!msg)
+					msg = chkDeclarations(mb);
+				if(!msg && mb->errors == 0){
 					sql->session->auto_commit = 0;
 					sql->session->ac_on_commit = 1;
 					sql->session->level = 0;
@@ -429,8 +431,8 @@ WLRprocessBatch(void *arg)
 			break;
 	}
 	(void) fflush(stderr);
-	close_stream(c->fdout);
 	SQLexitClient(c);
+	close_stream(c->fdout);
 	MCcloseClient(c);
 	if(prev)
 		freeSymbol(prev);

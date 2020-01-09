@@ -754,11 +754,11 @@ mvc_set_schema(mvc *m, char *schema)
 		if (m->session->schema_name)
 			_DELETE(m->session->schema_name);
 		m->session->schema_name = new_schema_name;
-		m->type = Q_TRANS;
+		m->type = Q_SCHEMA;
 		if (m->session->tr->active)
 			m->session->schema = s;
 		ret = 1;
-	} else if(new_schema_name) {
+	} else if (new_schema_name) {
 		_DELETE(new_schema_name);
 	}
 	return ret;

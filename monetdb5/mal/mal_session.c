@@ -60,8 +60,8 @@ malBootstrap(void)
 		return msg;
 	}
 	pushEndInstruction(c->curprg->def);
-	chkProgram(c->usermodule, c->curprg->def);
-	if ( (msg= c->curprg->def->errors) != MAL_SUCCEED ) {
+	msg = chkProgram(c->usermodule, c->curprg->def);
+	if ( msg != MAL_SUCCEED || (msg= c->curprg->def->errors) != MAL_SUCCEED ) {
 		MCfreeClient(c);
 		return msg;
 	}
@@ -628,8 +628,8 @@ MALparser(Client c)
 		return msg;
 	}
 	pushEndInstruction(c->curprg->def);
-	chkProgram(c->usermodule, c->curprg->def);
-	if ( (msg =c->curprg->def->errors) ){
+	msg = chkProgram(c->usermodule, c->curprg->def);
+	if (msg !=MAL_SUCCEED || (msg =c->curprg->def->errors) ){
 		c->curprg->def->errors = 0;
 		MSresetVariables(c, c->curprg->def, c->glb, oldstate.vtop);
 		resetMalBlk(c->curprg->def, 1);

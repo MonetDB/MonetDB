@@ -24,9 +24,14 @@ InstrPtr
 newAssignment(MalBlkPtr mb)
 {
 	InstrPtr q = newInstruction(mb,NULL,NULL);
+	int k;
+
 	assert(q);
-	if ((getArg(q,0)= newTmpVariable(mb,TYPE_any)) < 0) 
+	k = newTmpVariable(mb,TYPE_any);
+	if (k < 0) {
 		addMalException(mb, createException(MAL, "newAssignment", "Can not allocate variable"));
+	} else
+		getArg(q,0) =  k;
 	pushInstruction(mb, q);
 	return q;
 }
@@ -66,9 +71,14 @@ InstrPtr
 newReturnStmt(MalBlkPtr mb)
 {
 	InstrPtr q = newInstruction(mb, NULL, NULL);
+	int k;
+
 	assert(q);
-	if ((getArg(q,0)= newTmpVariable(mb,TYPE_any)) < 0 )
+	k = newTmpVariable(mb,TYPE_any);
+	if (k < 0 )
 		addMalException(mb, createException(MAL, "newReturnStmt", "Can not allocate return variable"));
+	else
+		getArg(q,0) = k;
 	q->barrier= RETURNsymbol;
 	pushInstruction(mb, q);
 	return q;
@@ -117,13 +127,18 @@ newCatchStmt(MalBlkPtr mb, str nme)
 {
 	InstrPtr q = newAssignment(mb);
 	int i= findVariable(mb,nme);
+	int k;
 
 	assert(q);
 	q->barrier = CATCHsymbol;
 	if ( i< 0) {
-		if ((getArg(q,0)= newVariable(mb, nme, strlen(nme),TYPE_str)) < 0 )
+		k = newVariable(mb, nme, strlen(nme),TYPE_str);
+		if (k<0)
 			addMalException(mb, createException(MAL, "newCatchStmt", "Can not allocate variable"));
-		setVarUDFtype(mb,getArg(q,0));
+		else{
+			getArg(q,0) = k;
+			setVarUDFtype(mb,getArg(q,0));
+		}
 	} else getArg(q,0) = i;
 	return q;
 }
@@ -133,12 +148,16 @@ newRaiseStmt(MalBlkPtr mb, str nme)
 {
 	InstrPtr q = newAssignment(mb);
 	int i= findVariable(mb,nme);
+	int k;
 
 	assert(q);
 	q->barrier = RAISEsymbol;
 	if ( i< 0) {
-		if ((getArg(q,0)= newVariable(mb, nme, strlen(nme),TYPE_str)) < 0 || mb->errors != MAL_SUCCEED) 
+		k = newVariable(mb, nme, strlen(nme),TYPE_str);
+		if (k< 0 || mb->errors != MAL_SUCCEED) 
 			addMalException(mb, createException(MAL, "newRaiseStmt", "Can not allocate variable"));
+		else
+			getArg(q,0) = k;
 	} else
 		getArg(q,0) = i;
 	return q;
@@ -149,12 +168,16 @@ newExitStmt(MalBlkPtr mb, str nme)
 {
 	InstrPtr q = newAssignment(mb);
 	int i= findVariable(mb,nme);
+	int k;
 
 	assert(q);
 	q->barrier = EXITsymbol;
 	if ( i< 0) {
-		if ((getArg(q,0)= newVariable(mb, nme,strlen(nme),TYPE_str)) < 0 )
+		k= newVariable(mb, nme,strlen(nme),TYPE_str);
+		if (k < 0 )
 			addMalException(mb, createException(MAL, "newExitStmt", "Can not allocate variable"));
+		else
+			getArg(q,0) = k;
 	} else
 		getArg(q,0) = i;
 	return q;

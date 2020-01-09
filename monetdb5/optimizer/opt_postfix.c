@@ -21,6 +21,7 @@ OPTpostfixImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	int i, slimit, actions = 0;
 	lng usec = GDKusec();
 	char buf[256];
+	str msg = MAL_SUCCEED;
 
 	(void) cntxt;
 	(void) stk;
@@ -72,14 +73,16 @@ OPTpostfixImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	/* Defense line against incorrect plans */
 	if( actions ){
-		//chkTypes(cntxt->usermodule, mb, FALSE);
-		//chkFlow(mb);
-		//chkDeclarations(mb);
+		// msg = chkTypes(cntxt->usermodule, mb, FALSE);
+		// if (!msg)
+		// 	msg = chkFlow(mb);
+		// if (!msg)
+		// 	msg = chkDeclarations(mb);
 	}
 	usec= GDKusec() - usec;
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec", "postfix", actions, usec);
     newComment(mb,buf);
 	if( actions > 0)
 		addtoMalBlkHistory(mb);
-	return MAL_SUCCEED;
+	return msg;
 }

@@ -19,9 +19,9 @@
 */
 #define MAXTYPEVAR  10
 
-mal_export void chkProgram(Module s, MalBlkPtr mb);
+mal_export str chkProgram(Module s, MalBlkPtr mb);
 mal_export int chkInstruction(Module s, MalBlkPtr mb, InstrPtr p);
-mal_export void chkTypes(Module s, MalBlkPtr mb, int silent);
+mal_export str chkTypes(Module s, MalBlkPtr mb, int silent);
 mal_export void typeChecker(Module scope, MalBlkPtr mb, InstrPtr p, int silent);
 
 /*

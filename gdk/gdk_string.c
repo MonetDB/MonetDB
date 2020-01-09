@@ -82,18 +82,6 @@ strCmp(const char *l, const char *r)
 	return GDK_STRCMP(l, r);
 }
 
-int
-strCmpNoNil(const unsigned char *l, const unsigned char *r)
-{
-	while (*l == *r) {
-		if (*l == 0)
-			return 0;
-		l++;
-		r++;
-	}
-	return (*l < *r) ? -1 : 1;
-}
-
 void
 strHeap(Heap *d, size_t cap)
 {

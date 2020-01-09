@@ -33,8 +33,8 @@ stdout of test 'tst275` in directory 'monetdb5/mal` itself:
 # t	t	t  # name
 # void	str	str  # type
 #--------------------------#
-[ 0@0,	"batId",	"tmp_264"	]
-[ 1@0,	"batCacheid",	"180"	]
+[ 0@0,	"batId",	"tmp_267"	]
+[ 1@0,	"batCacheid",	"183"	]
 [ 2@0,	"tparentid",	"0"	]
 [ 3@0,	"batSharecnt",	"0"	]
 [ 4@0,	"batCount",	"0"	]
@@ -69,7 +69,7 @@ stdout of test 'tst275` in directory 'monetdb5/mal` itself:
 [ 33@0,	"tail.size",	"1024"	]
 [ 34@0,	"tail.storage",	"malloced"	]
 [ 35@0,	"tail.newstorage",	"malloced"	]
-[ 36@0,	"tail.filename",	"02/264.tail"	]
+[ 36@0,	"tail.filename",	"02/267.tail"	]
 [ 37@0,	"tvheap->dirty",	"clean"	]
 #~EndVariableOutput~#
 #--------------------------#

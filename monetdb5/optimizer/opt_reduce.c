@@ -16,6 +16,8 @@ OPTreduceImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	int actions = 0;
 	char buf[256];
 	lng usec = GDKusec();
+	str msg = MAL_SUCCEED;
+
 	(void)cntxt;
 	(void)stk;
 	(void) p;
@@ -28,9 +30,11 @@ OPTreduceImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	/* plan is not changed */
 	/* plan is not changed */
     //if( actions > 0){
-        //chkTypes(cntxt->usermodule, mb, FALSE);
-        //chkFlow(mb);
-        //chkDeclarations(mb);
+        //msg = chkTypes(cntxt->usermodule, mb, FALSE);
+        //if (!msg) 
+	//	msg = chkFlow(mb);
+        //if (!msg) 
+        // 	msg = chkDeclarations(mb);
     //}
     /* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;
@@ -39,5 +43,5 @@ OPTreduceImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	if( actions > 0)
 		addtoMalBlkHistory(mb);
 
-	return MAL_SUCCEED;
+	return msg;
 }

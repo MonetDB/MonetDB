@@ -674,7 +674,7 @@ MT_path_absolute(const char *pathname)
 void *
 mdlopen(const char *library, int mode)
 {
-	(void) library;
+	(void)library; /* Not used because of MacOs not handling dlopen on linked library */
 	return dlopen(NULL, mode);
 }
 

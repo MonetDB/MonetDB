@@ -243,14 +243,14 @@ SQLoptimizeQuery(Client c, MalBlkPtr mb)
 	assert(be && be->mvc);	/* SQL clients should always have their state set */
 
 	c->blkmode = 0;
-	chkProgram(c->usermodule, mb);
+	msg = chkProgram(c->usermodule, mb);
 
 	/*
 	 * An error in the compilation should be reported to the user.
 	 * And if the debugging option is set, the debugger is called
 	 * to allow inspection.
 	 */
-	if (mb->errors) {
+	if (msg != MAL_SUCCEED || mb->errors) {
 		if (c->listing)
 			printFunction(c->fdout, mb, 0, c->listing);
 		if (be->mvc->debug) {

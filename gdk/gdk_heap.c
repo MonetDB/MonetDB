@@ -351,6 +351,8 @@ file_exists(int farmid, const char *dir, const char *name, const char *ext)
 	int ret;
 
 	path = GDKfilepath(farmid, dir, name, ext);
+	if (path == NULL)
+		return -1;
 	ret = stat(path, &st);
 	IODEBUG fprintf(stderr, "#stat(%s) = %d\n", path, ret);
 	GDKfree(path);
@@ -406,8 +408,9 @@ GDKupgradevarheap(BAT *b, var_t v, bool copyall, bool mayshare)
 		filename = b->theap.filename;
 	else
 		filename++;
+	int exists = 0;
 	if ((BBP_status(bid) & (BBPEXISTING|BBPDELETED)) &&
-	    !file_exists(b->theap.farmid, BAKDIR, filename, NULL) &&
+	    !(exists = file_exists(b->theap.farmid, BAKDIR, filename, NULL)) &&
 	    (b->theap.storage != STORE_MEM ||
 	     GDKmove(b->theap.farmid, BATDIR, b->theap.filename, NULL,
 		     BAKDIR, filename, NULL) != GDK_SUCCEED)) {
@@ -451,6 +454,8 @@ GDKupgradevarheap(BAT *b, var_t v, bool copyall, bool mayshare)
 			return GDK_FAIL;
 		}
 	}
+	if (exists == -1)
+		return GDK_FAIL;
 
 	savefree = b->theap.free;
 	if (copyall)

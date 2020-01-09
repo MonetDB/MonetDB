@@ -1819,6 +1819,10 @@ backup_new(Heap *hp, int lockbat)
 	/* check for an existing X.new in BATDIR, BAKDIR and SUBDIR */
 	batpath = GDKfilepath(hp->farmid, BATDIR, hp->filename, ".new");
 	bakpath = GDKfilepath(hp->farmid, BAKDIR, hp->filename, ".new");
+	if (batpath == NULL || bakpath == NULL) {
+		ret = -1;
+		goto bailout;
+	}
 	batret = stat(batpath, &st);
 	bakret = stat(bakpath, &st);
 
@@ -1835,6 +1839,7 @@ backup_new(Heap *hp, int lockbat)
 			GDKsyserror("backup_new: remove %s failed\n", batpath);
 		IODEBUG fprintf(stderr, "#%s: remove(%s) = %d\n", MT_thread_getname(), batpath, ret);
 	}
+  bailout:
 	GDKfree(batpath);
 	GDKfree(bakpath);
 	for (xx = lockbat; xx >= 0; xx--)

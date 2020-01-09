@@ -767,8 +767,10 @@ newVariable(MalBlkPtr mb, const char *name, size_t len, malType type)
 {
 	int n;
 
-	if( len >= IDLENGTH)
+	if( len >= IDLENGTH){
+		mb->errors = createMalException(mb,0,TYPE, "newVariable: id too long");
 		return -1;
+	}
 	if (makeVarSpace(mb)) 
 		/* no space for a new variable */
 		return -1;
@@ -1012,7 +1014,7 @@ convertConstant(int type, ValPtr vr)
 		if (vr->vtype == TYPE_void) {
 			VALclear(vr);
 			vr->vtype = type;
-			vr->val.pval = 0;
+			vr->val.pval = NULL;
 			return MAL_SUCCEED;
 		}
 		if (vr->vtype != type)
@@ -1083,7 +1085,7 @@ defConstant(MalBlkPtr mb, int type, ValPtr cst)
 	} else if (cst->vtype != type && !isaBatType(type) && !isPolyType(type)) {
 		int otype = cst->vtype;
 		assert(type != TYPE_any);	/* help Coverity */
-		msg = convertConstant(type, cst);
+		msg = convertConstant(getBatType(type), cst);
 		if (msg) {
 			str ft, tt;
 

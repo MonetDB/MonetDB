@@ -187,8 +187,8 @@ SQLsetTrace(Client cntxt, MalBlkPtr mb)
 
 	pushInstruction(mb,resultset);
 	pushEndInstruction(mb);
-	chkTypes(cntxt->usermodule, mb, TRUE);
-
+	if( msg == MAL_SUCCEED)
+		msg = chkTypes(cntxt->usermodule, mb, TRUE);
 	return msg;
 }
 

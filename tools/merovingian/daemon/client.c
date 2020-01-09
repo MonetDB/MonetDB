@@ -577,12 +577,14 @@ acceptConnections(int sock, int usock)
 			iov.iov_base = buf;
 			iov.iov_len = 1;
 
-			msgh.msg_name = 0;
-			msgh.msg_namelen = 0;
-			msgh.msg_iov = &iov;
-			msgh.msg_iovlen = 1;
-			msgh.msg_control = ccmsg;
-			msgh.msg_controllen = sizeof(ccmsg);
+			msgh = (struct msghdr) {
+				.msg_name = 0,
+				.msg_namelen = 0,
+				.msg_iov = &iov,
+				.msg_iovlen = 1,
+				.msg_control = ccmsg,
+				.msg_controllen = sizeof(ccmsg),
+			};
 
 			rv = recvmsg(msgsock, &msgh, 0);
 			if (rv == -1) {
