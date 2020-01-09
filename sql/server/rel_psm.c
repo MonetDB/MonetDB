@@ -89,7 +89,7 @@ psm_set_exp(sql_query *query, dnode *n)
 	mvc *sql = query->sql;
 	symbol *val = n->next->data.sym;
 	sql_exp *e = NULL;
-	int level = 0, is_last = 0;
+	int level = 0;
 	sql_subtype *tpe = NULL;
 	sql_rel *rel = NULL;
 	sql_exp *res = NULL;
@@ -114,7 +114,7 @@ psm_set_exp(sql_query *query, dnode *n)
 			tpe = stack_find_type(sql, name);
 		}
 
-		e = rel_value_exp2(query, &rel, val, sql_sel, ek, &is_last);
+		e = rel_value_exp2(query, &rel, val, sql_sel, ek);
 		if (!e || (rel && e->card > CARD_AGGR))
 			return NULL;
 
@@ -482,12 +482,11 @@ rel_psm_return( sql_query *query, sql_subtype *restype, list *restypelist, symbo
 	exp_kind ek = {type_value, card_value, FALSE};
 	sql_exp *res;
 	sql_rel *rel = NULL;
-	int is_last = 0;
 	list *l = sa_list(sql->sa);
 
 	if (restypelist)
 		ek.card = card_relation;
-	res = rel_value_exp2(query, &rel, return_sym, sql_sel, ek, &is_last);
+	res = rel_value_exp2(query, &rel, return_sym, sql_sel, ek);
 	if (!res)
 		return NULL;
 	if (!rel && exp_is_rel(res))

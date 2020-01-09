@@ -159,9 +159,8 @@ generate_partition_limits(sql_query *query, sql_rel **r, symbol *s, sql_subtype 
 		}
 		return exp_atom(sql->sa, amax);
 	} else {
-		int is_last = 0;
 		exp_kind ek = {type_value, card_value, FALSE};
-		sql_exp *e = rel_value_exp2(query, r, s, sql_sel, ek, &is_last);
+		sql_exp *e = rel_value_exp2(query, r, s, sql_sel, ek);
 
 		if (!e)
 			return NULL;

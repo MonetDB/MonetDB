@@ -58,15 +58,6 @@ create window stddev_samp(val DOUBLE) returns DOUBLE
 	external name "sql"."stdev";
 GRANT EXECUTE ON WINDOW stddev_samp(DOUBLE) TO PUBLIC;
 
-create window stddev_samp(val DATE) returns DOUBLE
-	external name "sql"."stdev";
-GRANT EXECUTE ON WINDOW stddev_samp(DATE) TO PUBLIC;
-create window stddev_samp(val TIME) returns DOUBLE
-	external name "sql"."stdev";
-GRANT EXECUTE ON WINDOW stddev_samp(TIME) TO PUBLIC;
-create window stddev_samp(val TIMESTAMP) returns DOUBLE
-	external name "sql"."stdev";
-GRANT EXECUTE ON WINDOW stddev_samp(TIMESTAMP) TO PUBLIC;
 create window stddev_samp(val INTERVAL SECOND) returns DOUBLE
 	external name "sql"."stdev";
 GRANT EXECUTE ON WINDOW stddev_samp(INTERVAL SECOND) TO PUBLIC;

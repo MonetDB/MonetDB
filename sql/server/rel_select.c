@@ -3203,7 +3203,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 	if (args && args->data.sym) {
 		int all_aggr = query_has_outer(query);
 		all_freevar = 1;
-		for (	; args && args->next; args = args->next ) {
+		for (	; args && args->next; args = args->next ) { /* the last dnode is the distinct flag */
 			int base = (!groupby || !is_project(groupby->op) || is_base(groupby->op) || is_processed(groupby));
 			sql_rel *gl = base?groupby:groupby->l, *ogl = gl; /* handle case of subqueries without correlation */
 			sql_exp *e = rel_value_exp(query, &gl, args->data.sym, (f | sql_aggr)& ~sql_farg, ek);
@@ -3836,9 +3836,8 @@ static sql_exp*
 rel_group_column(sql_query *query, sql_rel **rel, symbol *grp, dlist *selection, int f)
 {
 	mvc *sql = query->sql;
-	int is_last = 1;
 	exp_kind ek = {type_value, card_value, TRUE};
-	sql_exp *e = rel_value_exp2(query, rel, grp, f, ek, &is_last);
+	sql_exp *e = rel_value_exp2(query, rel, grp, f, ek);
 
 	if (!e) {
 		char buf[ERRSIZE];
@@ -4014,9 +4013,8 @@ rel_partition_groupings(sql_query *query, sql_rel **rel, symbol *partitionby, dl
 
 	for (; o; o = o->next) {
 		symbol *grp = o->data.sym;
-		int is_last = 1;
 		exp_kind ek = {type_value, card_value, TRUE};
-		sql_exp *e = rel_value_exp2(query, rel, grp, f, ek, &is_last);
+		sql_exp *e = rel_value_exp2(query, rel, grp, f, ek);
 
 		if (!e) {
 			int status = sql->session->status;
@@ -4167,10 +4165,9 @@ rel_order_by(sql_query *query, sql_rel **R, symbol *orderby, int f)
 				order->data.lval->h->next = NULL;
 			}
 			if (col->token == SQL_COLUMN || col->token == SQL_IDENT || col->token == SQL_ATOM) {
-				int is_last = 0;
 				exp_kind ek = {type_value, card_column, FALSE};
 
-				e = rel_value_exp2(query, &rel, col, f, ek, &is_last);
+				e = rel_value_exp2(query, &rel, col, f, ek);
 
 				if (e && e->card <= CARD_ATOM) {
 					sql_subtype *tpe = &e->tpe;
@@ -4335,7 +4332,6 @@ calculate_window_bound(sql_query *query, sql_rel *p, tokens token, symbol *bound
 		}
 		res = exp_atom(sql->sa, a);
 	} else { /* arbitrary expression case */
-		int is_last = 0;
 		exp_kind ek = {type_value, card_column, FALSE};
 		const char* bound_desc = (token == SQL_PRECEDING) ? "PRECEDING" : "FOLLOWING";
 		iet = exp_subtype(ie);
@@ -4347,7 +4343,7 @@ calculate_window_bound(sql_query *query, sql_rel *p, tokens token, symbol *bound
 		     sql->args[bound->data.lval->h->data.i_val]->isnull)) {
 			return sql_error(sql, 02, SQLSTATE(42000) "%s offset must not be NULL", bound_desc);
 		}
-		res = rel_value_exp2(query, &p, bound, f, ek, &is_last);
+		res = rel_value_exp2(query, &p, bound, f, ek);
 		if (!res)
 			return NULL;
 		bt = exp_subtype(res);
@@ -4464,7 +4460,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 	list *gbe = NULL, *obe = NULL, *args = NULL, *types = NULL, *fargs = NULL;
 	sql_schema *s = sql->session->schema;
 	dnode *dn = window_function->data.lval->h;
-	int distinct = 0, is_last, frame_type, pos, nf = f;
+	int distinct = 0, frame_type, pos, nf = f;
 	bool is_nth_value, supports_frames;
 
 	stack_clear_frame_visited_flag(sql); /* clear visited flags before iterating */
@@ -4571,11 +4567,11 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 			nfargs++;
 		}
 		if (dnn) {
-			for(dnode *nn = dnn->h ; nn ; nn = nn->next) {
-				is_last = 0;
+			for (dnode *nn = dnn->h ; nn ; nn = nn->next) {
 				exp_kind ek = {type_value, card_column, FALSE};
-				in = rel_value_exp2(query, &p, nn->data.sym, f | sql_window, ek, &is_last);
-				if(!in)
+
+				in = rel_value_exp2(query, &p, nn->data.sym, f | sql_window, ek);
+				if (!in)
 					return NULL;
 				if(is_ntile && nfargs == 1) { /* ntile first argument null handling case */
 					sql_subtype *empty = sql_bind_localtype("void");
@@ -4602,40 +4598,38 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 		}
 	} else { /* aggregation function call */
 		dnode *n = dn->next;
+		bool has_args = false;
 
-		if (n) {
-			if (!n->data.sym) { /* count(*) */
-				in = rel_first_column(sql, p);
-				if (!exp_name(in))
-					exp_label(sql->sa, in, ++sql->label);
-				in = exp_ref(sql->sa, in);
-				append(fargs, in);
-				append(fargs, exp_atom_bool(sql->sa, 0)); /* don't ignore nills */
-				in = exp_ref_save(sql, in);
-			} else {
-				is_last = 0;
-				exp_kind ek = {type_value, card_column, FALSE};
+		for ( ; n->next && n->data.sym ; n = n->next) { /* the last dnode is the distinct flag */
+			exp_kind ek = {type_value, card_column, FALSE};
 
-				distinct = n->next->data.i_val;
-				/*
-				 * all aggregations implemented in a window have 1 and only 1 argument only, so for now no further
-				 * symbol compilation is required
-				 */
-				in = rel_value_exp2(query, &p, n->data.sym, f | sql_window, ek, &is_last);
-				if(!in)
-					return NULL;
+			has_args = true;
+			in = rel_value_exp2(query, &p, n->data.sym, f | sql_window, ek);
+			if (!in)
+				return NULL;
 
-				append(fargs, in);
-				if(strcmp(s->base.name, "sys") == 0 && strcmp(aname, "count") == 0) {
-					sql_subtype *empty = sql_bind_localtype("void"), *bte = sql_bind_localtype("bte");
-					sql_exp* eo = fargs->h->data;
-					/* corner case, if the argument is null convert it into something countable such as bte */
-					if(subtype_cmp(&(eo->tpe), empty) == 0)
-						fargs->h->data = exp_convert(sql->sa, eo, empty, bte);
-					append(fargs, exp_atom_bool(sql->sa, 1)); /* ignore nills */
-				}
-				in = exp_ref_save(sql, in);
+			append(fargs, in);
+			if (strcmp(s->base.name, "sys") == 0 && strcmp(aname, "count") == 0) {
+				sql_subtype *empty = sql_bind_localtype("void"), *bte = sql_bind_localtype("bte");
+				sql_exp *eo = fargs->h->data;
+				/* corner case, if the argument is null convert it into something countable such as bte */
+				if (subtype_cmp(&(eo->tpe), empty) == 0)
+					fargs->h->data = exp_convert(sql->sa, eo, empty, bte);
+				append(fargs, exp_atom_bool(sql->sa, 1)); /* ignore nills */
 			}
+			in = exp_ref_save(sql, in);
+		}
+
+		distinct = n->data.i_val;
+
+		if (!has_args) { /* count(*) */
+			in = rel_first_column(sql, p);
+			if (!exp_name(in))
+				exp_label(sql->sa, in, ++sql->label);
+			in = exp_ref(sql->sa, in);
+			append(fargs, in);
+			append(fargs, exp_atom_bool(sql->sa, 0)); /* don't ignore nills */
+			in = exp_ref_save(sql, in);
 		}
 	}
 
@@ -4811,10 +4805,9 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 }
 
 sql_exp *
-rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek, int *is_last)
+rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 {
 	mvc *sql = query->sql;
-	(void)is_last;
 	if (!se)
 		return NULL;
 
@@ -4949,7 +4942,6 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek, 
 sql_exp *
 rel_value_exp(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 {
-	int is_last = 0;
 	sql_exp *e;
 	if (!se)
 		return NULL;
@@ -4957,8 +4949,8 @@ rel_value_exp(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 	if (THRhighwater())
 		return sql_error(query->sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
-	e = rel_value_exp2(query, rel, se, f, ek, &is_last);
-	if (e && (se->token == SQL_SELECT || se->token == SQL_TABLE) && !is_last && !exp_is_rel(e)) {
+	e = rel_value_exp2(query, rel, se, f, ek);
+	if (e && (se->token == SQL_SELECT || se->token == SQL_TABLE) && !exp_is_rel(e)) {
 		assert(*rel);
 		return rel_lastexp(query->sql, *rel);
 	}

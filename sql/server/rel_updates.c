@@ -41,9 +41,8 @@ insert_value(sql_query *query, sql_column *c, sql_rel **r, symbol *s, const char
 			return sql_error(sql, 02, SQLSTATE(42000) "%s: column '%s' has no valid default value", action, c->base.name);
 		}
 	} else {
-		int is_last = 0;
 		exp_kind ek = {type_value, card_value, FALSE};
-		sql_exp *e = rel_value_exp2(query, r, s, sql_sel, ek, &is_last);
+		sql_exp *e = rel_value_exp2(query, r, s, sql_sel, ek);
 
 		if (!e)
 			return(NULL);
@@ -2113,11 +2112,10 @@ rel_parse_val(mvc *m, char *query, char emode, sql_rel *from)
 	if (m->sym && m->sym->token == SQL_SELECT) {
 		SelectNode *sn = (SelectNode *)m->sym;
 		if (sn->selection->h->data.sym->token == SQL_COLUMN || sn->selection->h->data.sym->token == SQL_IDENT) {
-			int is_last = 0;
 			sql_rel *r = from;
 			symbol* sq = sn->selection->h->data.sym->data.lval->h->data.sym;
 			sql_query *query = query_create(m);
-			e = rel_value_exp2(query, &r, sq, sql_sel, ek, &is_last);
+			e = rel_value_exp2(query, &r, sq, sql_sel, ek);
 		}
 	}
 	GDKfree(query);

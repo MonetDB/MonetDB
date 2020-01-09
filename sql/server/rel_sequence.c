@@ -279,10 +279,9 @@ rel_alter_seq(
 		val = exp_atom_lng(sql->sa, seq->start);
 	} else if (start_type == 1) { /* value (exp) */
 		exp_kind ek = {type_value, card_value, FALSE};
-		int is_last = 0;
 		sql_subtype *lng_t = sql_bind_localtype("lng");
 
-		val = rel_value_exp2(query, &r, start_list->h->next->data.sym, sql_sel, ek, &is_last);
+		val = rel_value_exp2(query, &r, start_list->h->next->data.sym, sql_sel, ek);
 		if (!val || !(val = rel_check_type(sql, lng_t, r, val, type_equal)))
 			return NULL;
 		if (r && r->op == op_project) {
