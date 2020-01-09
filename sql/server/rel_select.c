@@ -4804,14 +4804,14 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 			if (wf && list_length(nexps))
 				fargs = nexps;
 			else {
-				char *arg_list = window_function_arg_types_2str(types, nfargs);
-				sql_error(sql, 02, SQLSTATE(42000) "SELECT: window function '%s(%s)' not found", aname, arg_list);
+				char *arg_list = nfargs ? window_function_arg_types_2str(types, nfargs) : NULL;
+				sql_error(sql, 02, SQLSTATE(42000) "SELECT: window function '%s(%s)' not found", aname, arg_list ? arg_list : "");
 				_DELETE(arg_list);
 				return NULL;
 			}
 		} else {
-			char *arg_list = window_function_arg_types_2str(types, nfargs);
-			sql_error(sql, 02, SQLSTATE(42000) "SELECT: window function '%s(%s)' not found", aname, arg_list);
+			char *arg_list = nfargs ? window_function_arg_types_2str(types, nfargs) : NULL;
+			sql_error(sql, 02, SQLSTATE(42000) "SELECT: window function '%s(%s)' not found", aname, arg_list ? arg_list : "");
 			_DELETE(arg_list);
 			return NULL;
 		}

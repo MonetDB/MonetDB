@@ -50,9 +50,12 @@ select stddev_pop(aa) over () from analytics;
 select var_samp(aa) over () from analytics;
 select var_pop(aa) over () from analytics;
 
+rollback;
+
 create table stressme (aa varchar(64), bb int);
 insert into stressme values ('one', 1), ('another', 1), ('stress', 1), (NULL, 2), ('ok', 2), ('check', 3), ('me', 3), ('please', 3), (NULL, 4);
 
 select stddev_samp(aa) over (partition by bb) from stressme; --error, stddev_samp not available for string type
+select stddev_samp() over (partition by bb) from stressme; --error, stddev_samp without parameters not available
 
-rollback;
+drop table stressme;
