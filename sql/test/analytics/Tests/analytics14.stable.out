@@ -187,6 +187,126 @@ stdout of test 'analytics14` in directory 'sql/test/analytics` itself:
 [ 4.200340122	]
 [ 4.200340122	]
 [ 4.200340122	]
+#select stddev_pop(aa) over (partition by bb) from analytics;
+% sys.%3 # table_name
+% %3 # name
+% double # type
+% 24 # length
+[ 0.8164965809	]
+[ 0.8164965809	]
+[ 0.8164965809	]
+[ 2.5	]
+[ 2.5	]
+[ 2.5	]
+[ 4.496912521	]
+[ 4.496912521	]
+[ 4.496912521	]
+[ NULL	]
+#select stddev_pop(aa) over (partition by bb order by bb asc) from analytics;
+% sys.%3 # table_name
+% %3 # name
+% double # type
+% 24 # length
+[ 0.8164965809	]
+[ 0.8164965809	]
+[ 0.8164965809	]
+[ 2.5	]
+[ 2.5	]
+[ 2.5	]
+[ 4.496912521	]
+[ 4.496912521	]
+[ 4.496912521	]
+[ NULL	]
+#select stddev_pop(aa) over (partition by bb order by bb desc) from analytics;
+% sys.%3 # table_name
+% %3 # name
+% double # type
+% 24 # length
+[ NULL	]
+[ 4.496912521	]
+[ 4.496912521	]
+[ 4.496912521	]
+[ 2.5	]
+[ 2.5	]
+[ 2.5	]
+[ 0.8164965809	]
+[ 0.8164965809	]
+[ 0.8164965809	]
+#select stddev_pop(aa) over (order by bb desc) from analytics;
+% sys.%3 # table_name
+% %3 # name
+% double # type
+% 24 # length
+[ NULL	]
+[ 4.496912521	]
+[ 4.496912521	]
+[ 4.496912521	]
+[ 4.127953488	]
+[ 4.127953488	]
+[ 4.127953488	]
+[ 3.929058411	]
+[ 3.929058411	]
+[ 3.929058411	]
+#select stddev_pop(cc) over (partition by bb) from analytics;
+% sys.%3 # table_name
+% %3 # name
+% double # type
+% 24 # length
+[ 0.8164965809	]
+[ 0.8164965809	]
+[ 0.8164965809	]
+[ 2.5	]
+[ 2.5	]
+[ 2.5	]
+[ 4.496912521	]
+[ 4.496912521	]
+[ 4.496912521	]
+[ NULL	]
+#select stddev_pop(cc) over (partition by bb order by bb asc) from analytics;
+% sys.%3 # table_name
+% %3 # name
+% double # type
+% 24 # length
+[ 0.8164965809	]
+[ 0.8164965809	]
+[ 0.8164965809	]
+[ 2.5	]
+[ 2.5	]
+[ 2.5	]
+[ 4.496912521	]
+[ 4.496912521	]
+[ 4.496912521	]
+[ NULL	]
+#select stddev_pop(cc) over (partition by bb order by bb desc) from analytics;
+% sys.%3 # table_name
+% %3 # name
+% double # type
+% 24 # length
+[ NULL	]
+[ 4.496912521	]
+[ 4.496912521	]
+[ 4.496912521	]
+[ 2.5	]
+[ 2.5	]
+[ 2.5	]
+[ 0.8164965809	]
+[ 0.8164965809	]
+[ 0.8164965809	]
+#select stddev_pop(cc) over (order by bb desc) from analytics;
+% sys.%3 # table_name
+% %3 # name
+% double # type
+% 24 # length
+[ NULL	]
+[ 4.496912521	]
+[ 4.496912521	]
+[ 4.496912521	]
+[ 4.127953488	]
+[ 4.127953488	]
+[ 4.127953488	]
+[ 3.929058411	]
+[ 3.929058411	]
+[ 3.929058411	]
 #create table stressme (aa varchar(64), bb int);
 #insert into stressme values ('one', 1), ('another', 1), ('stress', 1), (NULL, 2), ('ok', 2), ('check', 3), ('me', 3), ('please', 3), (NULL, 4);
 [ 9	]

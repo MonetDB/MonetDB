@@ -1736,8 +1736,8 @@ GDKanalyticalavg(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
 				mean += delta / n;		\
 				m2 += delta * ((dbl) v - mean);	\
 			}						\
-			if (n > 1) { \
-				*rb = sqrt(m2 / (n - 1)); \
+			if (n > sample) { \
+				*rb = sqrt(m2 / (n - sample)); \
 			} else { \
 				*rb = dbl_nil; \
 				has_nils = true; \
@@ -1749,10 +1749,10 @@ GDKanalyticalavg(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
 	} while (0)
 
 gdk_return
-GDKanalyticalstddev_samp(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
+GDKanalytical_variance(BAT *r, BAT *b, BAT *s, BAT *e, int tpe, bool issample)
 {
 	bool has_nils = false;
-	BUN i = 0, cnt = BATcount(b), n = 0;
+	BUN i = 0, cnt = BATcount(b), n = 0, sample = (BUN) issample;
 	lng *restrict start, *restrict end;
 	dbl *restrict rb = (dbl *) Tloc(r, 0), mean = 0, m2 = 0, delta;
 

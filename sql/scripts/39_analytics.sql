@@ -101,6 +101,33 @@ create aggregate stddev_pop(val INTERVAL MONTH) returns DOUBLE
 	external name "aggr"."stdevp";
 GRANT EXECUTE ON AGGREGATE stddev_pop(INTERVAL MONTH) TO PUBLIC;
 
+create window stddev_pop(val TINYINT) returns DOUBLE
+	external name "sql"."stdevp";
+GRANT EXECUTE ON WINDOW stddev_pop(TINYINT) TO PUBLIC;
+create window stddev_pop(val SMALLINT) returns DOUBLE
+	external name "sql"."stdevp";
+GRANT EXECUTE ON WINDOW stddev_pop(SMALLINT) TO PUBLIC;
+create window stddev_pop(val INTEGER) returns DOUBLE
+	external name "sql"."stdevp";
+GRANT EXECUTE ON WINDOW stddev_pop(INTEGER) TO PUBLIC;
+create window stddev_pop(val BIGINT) returns DOUBLE
+	external name "sql"."stdevp";
+GRANT EXECUTE ON WINDOW stddev_pop(BIGINT) TO PUBLIC;
+create window stddev_pop(val REAL) returns DOUBLE
+	external name "sql"."stdevp";
+GRANT EXECUTE ON WINDOW stddev_pop(REAL) TO PUBLIC;
+create window stddev_pop(val DOUBLE) returns DOUBLE
+	external name "sql"."stdevp";
+GRANT EXECUTE ON WINDOW stddev_pop(DOUBLE) TO PUBLIC;
+
+create window stddev_pop(val INTERVAL SECOND) returns DOUBLE
+	external name "sql"."stdevp";
+GRANT EXECUTE ON WINDOW stddev_pop(INTERVAL SECOND) TO PUBLIC;
+create window stddev_pop(val INTERVAL MONTH) returns DOUBLE
+	external name "sql"."stdevp";
+GRANT EXECUTE ON WINDOW stddev_pop(INTERVAL MONTH) TO PUBLIC;
+
+
 create aggregate var_samp(val TINYINT) returns DOUBLE
 	external name "aggr"."variance";
 GRANT EXECUTE ON AGGREGATE var_samp(TINYINT) TO PUBLIC;

@@ -1537,12 +1537,11 @@ SQLavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return msg;
 }
 
-str
-SQLstddev_samp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+static str
+do_stddev(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char* op, const char* err, bool issample)
 {
 	BAT *r, *b, *s, *e;
-	str msg = SQLanalytics_args(&r, &b, &s, &e, cntxt, mb, stk, pci, TYPE_dbl, "sql.stddev",
-								SQLSTATE(42000) "stddev(:any_1,:lng,:lng)");
+	str msg = SQLanalytics_args(&r, &b, &s, &e, cntxt, mb, stk, pci, TYPE_dbl, op, err);
 	int tpe = getArgType(mb, pci, 1);
 	gdk_return gdk_res;
 
@@ -1554,14 +1553,14 @@ SQLstddev_samp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (b) {
 		bat *res = getArgReference_bat(stk, pci, 0);
 
-		gdk_res = GDKanalyticalstddev_samp(r, b, s, e, tpe);
+		gdk_res = GDKanalytical_variance(r, b, s, e, tpe, issample);
 		BBPunfix(b->batCacheid);
 		if (s) BBPunfix(s->batCacheid);
 		if (e) BBPunfix(e->batCacheid);
 		if (gdk_res == GDK_SUCCEED)
 			BBPkeepref(*res = r->batCacheid);
 		else
-			throw(SQL, "sql.stddev", GDK_EXCEPTION);
+			throw(SQL, op, GDK_EXCEPTION);
 	} else {
 		dbl *res = getArgReference(stk, pci, 0);
 
@@ -1578,8 +1577,20 @@ SQLstddev_samp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				*res = dbl_nil;
 				break;
 			default:
-				throw(SQL, "sql.stddev", SQLSTATE(42000) "sql.stddev not available for %s", ATOMname(tpe));
+				throw(SQL, op, SQLSTATE(42000) "%s not available for %s", op, ATOMname(tpe));
 		}
 	}
 	return msg;
+}
+
+str
+SQLstddev_samp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	return do_stddev(cntxt, mb, stk, pci, "sql.stdev", SQLSTATE(42000) "stddev(:any_1,:lng,:lng)", true);
+}
+
+str
+SQLstddev_pop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	return do_stddev(cntxt, mb, stk, pci, "sql.stdevp", SQLSTATE(42000) "stdevp(:any_1,:lng,:lng)", false);
 }

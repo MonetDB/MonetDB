@@ -377,17 +377,22 @@ pattern batsql.avg(b:bat[:${tp1#*:}], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
 address SQLavg
 comment "return the average of groups";
 
-EOF
-done
 
-for tp1 in 1:bte 2:sht 4:int 8:lng 4:flt 8:dbl; do
-	cat <<EOF
 pattern sql.stdev(b:${tp1#*:}, s:lng, e:lng) :dbl
 address SQLstddev_samp
 comment "standard deviation of groups";
 
 pattern batsql.stdev(b:bat[:${tp1#*:}], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
 address SQLstddev_samp
+comment "standard deviation of groups";
+
+
+pattern sql.stdevp(b:${tp1#*:}, s:lng, e:lng) :dbl
+address SQLstddev_pop
+comment "standard deviation of groups";
+
+pattern batsql.stdevp(b:bat[:${tp1#*:}], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
+address SQLstddev_pop
 comment "standard deviation of groups";
 
 EOF

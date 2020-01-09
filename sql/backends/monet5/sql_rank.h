@@ -37,5 +37,6 @@ sql5_export str SQLavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 /* statistical functions */
 sql5_export str SQLstddev_samp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str SQLstddev_pop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif /* _SQL_RANK_H */

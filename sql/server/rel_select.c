@@ -4630,7 +4630,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 		}
 	}
 
-	distinct = dargs && dargs->data.i_val;
+	distinct = dargs->data.i_val;
 	if (distinct)
 		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: DISTINCT clause is not implemented for window functions");
 
