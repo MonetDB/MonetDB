@@ -46,6 +46,9 @@
 #endif
 
 // Numpy Library
+#ifdef STATIC_CODE_ANALYSIS
+#define _NPY_NO_DEPRECATIONS
+#endif
 #define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
 #define NPY_INTERNAL_BUILD 0
 #ifdef __INTEL_COMPILER

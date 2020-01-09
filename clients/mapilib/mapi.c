@@ -2696,6 +2696,7 @@ mapi_reconnect(Mapi mid)
 				hash = malloc(len);
 				if (hash == NULL) {
 					close_connection(mid);
+					free(pwh);
 					return mapi_setError(mid, "malloc failure", "mapi_reconnect", MERROR);
 				}
 				snprintf(hash, len, "{%s}%s", *algs, pwh);

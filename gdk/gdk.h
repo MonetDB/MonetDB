@@ -2234,6 +2234,7 @@ VALptr(const ValRecord *v)
 #ifdef HAVE_HGE
 	case TYPE_hge: return (const void *) &v->val.hval;
 #endif
+	case TYPE_ptr: return (const void *) &v->val.pval;
 	case TYPE_str: return (const void *) v->val.sval;
 	default:       return (const void *) v->val.pval;
 	}

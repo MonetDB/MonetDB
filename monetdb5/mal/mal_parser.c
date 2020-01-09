@@ -869,8 +869,9 @@ term(Client cntxt, MalBlkPtr curBlk, InstrPtr *curInstr, int ret)
 	if ((i = cstToken(cntxt, &cst))) {
 		advance(cntxt, i);
 		if (currChar(cntxt) != ':' && cst.vtype == TYPE_dbl && cst.val.dval > FLT_MIN && cst.val.dval <= FLT_MAX) {
+			float dummy = (flt) cst.val.dval;
 			cst.vtype = TYPE_flt;
-			cst.val.fval = (flt) cst.val.dval;
+			cst.val.fval = dummy;
 		}
 		cstidx = fndConstant(curBlk, &cst, MAL_VAR_WINDOW);
 		if (cstidx >= 0) {
@@ -902,10 +903,10 @@ term(Client cntxt, MalBlkPtr curBlk, InstrPtr *curInstr, int ret)
 			*curInstr = pushArgument(curBlk, *curInstr, cstidx);
 			return ret;
 		} else {
-			/* add a new constant */
+			/* add a new constant literal, the :type could be erroneously be a coltype */
 			flag = currChar(cntxt) == ':';
 			tpe = typeElm(cntxt, cst.vtype);
-			if (tpe < 0)
+			if (tpe < 0 )
 				return 3;
 			cstidx = defConstant(curBlk, tpe, &cst);
 			if (cstidx < 0)

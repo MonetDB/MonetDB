@@ -23,7 +23,14 @@ stderr of test 'analytics10` in directory 'sql/test/analytics` itself:
 # 11:30:14 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-10427" "--port=34219"
 # 11:30:14 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-25423/.s.monetdb.37936
+MAPI  = (monetdb) /var/tmp/mtest-136728/.s.monetdb.39881
+QUERY = SELECT
+            *
+        FROM tbl_ProductSales
+        GROUP BY (); --error, cardinality mismatch on the projection
+ERROR = !SELECT: cannot use non GROUP BY column 'colid' in query results without an aggregate function
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-136728/.s.monetdb.39881
 QUERY = SELECT 
             CAST(SUM(TotalSales) as BIGINT) AS TotalSales
         FROM tbl_ProductSales

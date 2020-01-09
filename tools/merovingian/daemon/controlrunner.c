@@ -367,6 +367,8 @@ static void ctl_handle_client(
 							 * may have encountered.
 							 */
 							shutdown_profiler(dbname, &stats);
+							if (stats != NULL)
+								msab_freeStatus(&stats);
 							terminateProcess(pid, dbname, type, 1);
 							Mfprintf(_mero_ctlout, "%s: stopped "
 									"database '%s'\n", origin, q);
@@ -670,6 +672,8 @@ static void ctl_handle_client(
 							 origin, log_path);
 				}
 				msab_freeStatus(&stats);
+				if (log_path)
+					free(log_path);
 			}  else if (strncmp(p, "profilerstop", strlen("profilerstop")) == 0) {
 				char *e = shutdown_profiler(q, &stats);
 				if (e != NULL) {
@@ -1057,9 +1061,11 @@ controlRunner(void *d)
 #endif
 		if (retval == 0) {
 			/* nothing interesting has happened */
+			free(p);
 			continue;
 		}
 		if (retval == -1) {
+			free(p);
 			continue;
 		}
 
@@ -1068,11 +1074,13 @@ controlRunner(void *d)
 			continue;
 #else
 		if (!FD_ISSET(usock, &fds)) {
+			free(p);
 			continue;
 		}
 #endif
 
 		if ((msgsock = accept4(usock, (SOCKPTR) 0, (socklen_t *) 0, SOCK_CLOEXEC)) == -1) {
+			free(p);
 			if (_mero_keep_listening == 0)
 				break;
 			if (errno != EINTR) {
@@ -1086,9 +1094,10 @@ controlRunner(void *d)
 #endif
 
 		*p = msgsock;
-		if (pthread_create(&tid, NULL, handle_client, p) != 0)
+		if (pthread_create(&tid, NULL, handle_client, p) != 0) {
 			closesocket(msgsock);
-		else
+			free(p);
+		} else
 			pthread_detach(tid);
 	} while (_mero_keep_listening);
 	shutdown(usock, SHUT_RDWR);

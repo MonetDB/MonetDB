@@ -1124,7 +1124,7 @@ logger_open(logger *lg)
 	return GDK_SUCCEED;
 }
 
-static void
+static inline void
 logger_close(logger *lg)
 {
 	if (!lg->inmemory)
@@ -1154,8 +1154,7 @@ logger_readlog(logger *lg, char *filename, bool *filemissing)
 
 	/* if the file doesn't exist, there is nothing to be read back */
 	if (lg->log == NULL || mnstr_errnr(lg->log)) {
-		close_stream(lg->log);
-		lg->log = NULL;
+		logger_close(lg);
 		GDKdebug = dbg;
 		*filemissing = true;
 		return GDK_SUCCEED;
@@ -1163,13 +1162,14 @@ logger_readlog(logger *lg, char *filename, bool *filemissing)
 	short byteorder;
 	switch (mnstr_read(lg->log, &byteorder, sizeof(byteorder), 1)) {
 	case -1:
-		close_stream(lg->log);
-		lg->log = NULL;
+		logger_close(lg);
 		GDKdebug = dbg;
 		return GDK_FAIL;
 	case 0:
 		/* empty file is ok */
-		break;
+		logger_close(lg);
+		GDKdebug = dbg;
+		return GDK_SUCCEED;
 	case 1:
 		/* if not empty, must start with correct byte order mark */
 		assert(byteorder == 1234);
@@ -1177,8 +1177,7 @@ logger_readlog(logger *lg, char *filename, bool *filemissing)
 	}
 	if ((fd = getFileNo(lg->log)) < 0 || fstat(fd, &sb) < 0) {
 		fprintf(stderr, "!ERROR: logger_readlog: fstat on opened file %s failed\n", filename);
-		close_stream(lg->log);
-		lg->log = NULL;
+		logger_close(lg);
 		GDKdebug = dbg;
 		/* If the file could be opened, but fstat fails,
 		 * something weird is going on */
@@ -2743,6 +2742,7 @@ logger_cleanup(logger *lg)
 		len = snprintf(log_id, sizeof(log_id), LLFMT, lid);
 		if (len == -1 || len >= FILENAME_MAX) {
 			fprintf(stderr, "#logger_cleanup: log_id filename is too large\n");
+			fclose(fp);
 			return GDK_FAIL;
 		}
 		if (GDKunlink(farmid, lg->dir, LOGFILE, log_id) != GDK_SUCCEED) {

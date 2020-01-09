@@ -999,7 +999,7 @@ convertConstant(int type, ValPtr vr)
 		if (vr->vtype == TYPE_void) {
 			VALclear(vr);
 			vr->vtype = type;
-			vr->val.pval = 0;
+			vr->val.pval = NULL;
 			return MAL_SUCCEED;
 		}
 		if (vr->vtype != type)
@@ -1070,7 +1070,7 @@ defConstant(MalBlkPtr mb, int type, ValPtr cst)
 	} else if (cst->vtype != type && !isaBatType(type) && !isPolyType(type)) {
 		int otype = cst->vtype;
 		assert(type != TYPE_any);	/* help Coverity */
-		msg = convertConstant(type, cst);
+		msg = convertConstant(getBatType(type), cst);
 		if (msg) {
 			str ft, tt;
 
