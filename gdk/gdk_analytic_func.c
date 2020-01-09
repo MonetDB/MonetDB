@@ -1721,7 +1721,7 @@ GDKanalyticalavg(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
 	return GDK_SUCCEED;
 }
 
-#define ANALYTICAL_STDEV_CALC(TPE)			\
+#define ANALYTICAL_STDEV_VARIANCE_CALC(TPE, OP)			\
 	do {								\
 		TPE *bp = (TPE*)Tloc(b, 0), *bs, *be, v;		\
 		for (; i < cnt; i++, rb++) {				\
@@ -1737,7 +1737,7 @@ GDKanalyticalavg(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
 				m2 += delta * ((dbl) v - mean);	\
 			}						\
 			if (n > sample) { \
-				*rb = sqrt(m2 / (n - sample)); \
+				*rb = OP; \
 			} else { \
 				*rb = dbl_nil; \
 				has_nils = true; \
@@ -1748,48 +1748,57 @@ GDKanalyticalavg(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
 		}	\
 	} while (0)
 
-gdk_return
-GDKanalytical_variance(BAT *r, BAT *b, BAT *s, BAT *e, int tpe, bool issample)
-{
-	bool has_nils = false;
-	BUN i = 0, cnt = BATcount(b), n = 0, sample = (BUN) issample;
-	lng *restrict start, *restrict end;
-	dbl *restrict rb = (dbl *) Tloc(r, 0), mean = 0, m2 = 0, delta;
-
-	assert(s && e);
-	start = (lng *) Tloc(s, 0);
-	end = (lng *) Tloc(e, 0);
-
-	switch (tpe) {
-	case TYPE_bte:
-		ANALYTICAL_STDEV_CALC(bte);
-		break;
-	case TYPE_sht:
-		ANALYTICAL_STDEV_CALC(sht);
-		break;
-	case TYPE_int:
-		ANALYTICAL_STDEV_CALC(int);
-		break;
-	case TYPE_lng:
-		ANALYTICAL_STDEV_CALC(lng);
-		break;
 #ifdef HAVE_HGE
-	case TYPE_hge:
-		ANALYTICAL_STDEV_CALC(hge);
-		break;
+#define ANALYTICAL_STDEV_VARIANCE_LIMIT(OP) \
+	case TYPE_hge: \
+		ANALYTICAL_STDEV_VARIANCE_CALC(hge, OP); \
+	break;
+#else
+#define ANALYTICAL_STDEV_VARIANCE_LIMIT(OP)
 #endif
-	case TYPE_flt:
-		ANALYTICAL_STDEV_CALC(flt);
-		break;
-	case TYPE_dbl:
-		ANALYTICAL_STDEV_CALC(dbl);
-		break;
-	default:
-		GDKerror("%s: average of type %s unsupported.\n", __func__, ATOMname(tpe));
-		return GDK_FAIL;
-	}
-	BATsetcount(r, cnt);
-	r->tnonil = !has_nils;
-	r->tnil = has_nils;
-	return GDK_SUCCEED;
+
+#define GDK_ANALYTICAL_STDEV_VARIANCE(NAME, OP) \
+gdk_return \
+GDKanalytical_##NAME(BAT *r, BAT *b, BAT *s, BAT *e, int tpe, bool issample) \
+{ \
+	bool has_nils = false; \
+	BUN i = 0, cnt = BATcount(b), n = 0, sample = (BUN) issample; \
+	lng *restrict start, *restrict end; \
+	dbl *restrict rb = (dbl *) Tloc(r, 0), mean = 0, m2 = 0, delta; \
+ \
+	assert(s && e); \
+	start = (lng *) Tloc(s, 0); \
+	end = (lng *) Tloc(e, 0); \
+ \
+	switch (tpe) { \
+	case TYPE_bte: \
+		ANALYTICAL_STDEV_VARIANCE_CALC(bte, OP); \
+		break; \
+	case TYPE_sht: \
+		ANALYTICAL_STDEV_VARIANCE_CALC(sht, OP); \
+		break; \
+	case TYPE_int: \
+		ANALYTICAL_STDEV_VARIANCE_CALC(int, OP); \
+		break; \
+	case TYPE_lng: \
+		ANALYTICAL_STDEV_VARIANCE_CALC(lng, OP); \
+		break; \
+	ANALYTICAL_STDEV_VARIANCE_LIMIT(OP) \
+	case TYPE_flt:\
+		ANALYTICAL_STDEV_VARIANCE_CALC(flt, OP); \
+		break; \
+	case TYPE_dbl: \
+		ANALYTICAL_STDEV_VARIANCE_CALC(dbl, OP); \
+		break; \
+	default: \
+		GDKerror("%s: average of type %s unsupported.\n", __func__, ATOMname(tpe)); \
+		return GDK_FAIL; \
+	} \
+	BATsetcount(r, cnt); \
+	r->tnonil = !has_nils; \
+	r->tnil = has_nils; \
+	return GDK_SUCCEED; \
 }
+
+GDK_ANALYTICAL_STDEV_VARIANCE(stddev, sqrt(m2 / (n - sample)))
+GDK_ANALYTICAL_STDEV_VARIANCE(variance, m2 / (n - sample))

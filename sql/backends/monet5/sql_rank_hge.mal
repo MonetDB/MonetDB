@@ -121,3 +121,35 @@ pattern batsql.avg(b:bat[:hge], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
 address SQLavg
 comment "return the average of groups";
 
+pattern sql.stdev(b:hge, s:lng, e:lng) :dbl
+address SQLstddev_samp
+comment "return the standard deviation of groups";
+
+pattern batsql.stdev(b:bat[:hge], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
+address SQLstddev_samp
+comment "return the standard deviation of groups";
+
+pattern sql.stdevp(b:hge, s:lng, e:lng) :dbl
+address SQLstddev_pop
+comment "return the standard deviation of groups";
+
+pattern batsql.stdevp(b:bat[:hge], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
+address SQLstddev_pop
+comment "return the standard deviation of groups";
+
+pattern sql.variance(b:hge, s:lng, e:lng) :dbl
+address SQLvar_samp
+comment "return the variance of groups";
+
+pattern batsql.variance(b:bat[:hge], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
+address SQLvar_samp
+comment "return the variance of groups";
+
+pattern sql.variancep(b:hge, s:lng, e:lng) :dbl
+address SQLvar_pop
+comment "return the variance of groups";
+
+pattern batsql.variancep(b:bat[:hge], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
+address SQLvar_pop
+comment "return the variance of groups";
+

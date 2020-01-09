@@ -307,6 +307,246 @@ stdout of test 'analytics14` in directory 'sql/test/analytics` itself:
 [ 3.929058411	]
 [ 3.929058411	]
 [ 3.929058411	]
+#select var_samp(aa) over (partition by bb) from analytics;
+% sys.%3 # table_name
+% %3 # name
+% double # type
+% 24 # length
+[ 1	]
+[ 1	]
+[ 1	]
+[ 12.5	]
+[ 12.5	]
+[ 12.5	]
+[ 30.33333333	]
+[ 30.33333333	]
+[ 30.33333333	]
+[ NULL	]
+#select var_samp(aa) over (partition by bb order by bb asc) from analytics;
+% sys.%3 # table_name
+% %3 # name
+% double # type
+% 24 # length
+[ 1	]
+[ 1	]
+[ 1	]
+[ 12.5	]
+[ 12.5	]
+[ 12.5	]
+[ 30.33333333	]
+[ 30.33333333	]
+[ 30.33333333	]
+[ NULL	]
+#select var_samp(aa) over (partition by bb order by bb desc) from analytics;
+% sys.%3 # table_name
+% %3 # name
+% double # type
+% 24 # length
+[ NULL	]
+[ 30.33333333	]
+[ 30.33333333	]
+[ 30.33333333	]
+[ 12.5	]
+[ 12.5	]
+[ 12.5	]
+[ 1	]
+[ 1	]
+[ 1	]
+#select var_samp(aa) over (order by bb desc) from analytics;
+% sys.%3 # table_name
+% %3 # name
+% double # type
+% 24 # length
+[ NULL	]
+[ 30.33333333	]
+[ 30.33333333	]
+[ 30.33333333	]
+[ 21.3	]
+[ 21.3	]
+[ 21.3	]
+[ 17.64285714	]
+[ 17.64285714	]
+[ 17.64285714	]
+#select var_samp(cc) over (partition by bb) from analytics;
+% sys.%3 # table_name
+% %3 # name
+% double # type
+% 24 # length
+[ 1	]
+[ 1	]
+[ 1	]
+[ 12.5	]
+[ 12.5	]
+[ 12.5	]
+[ 30.33333333	]
+[ 30.33333333	]
+[ 30.33333333	]
+[ NULL	]
+#select var_samp(cc) over (partition by bb order by bb asc) from analytics;
+% sys.%3 # table_name
+% %3 # name
+% double # type
+% 24 # length
+[ 1	]
+[ 1	]
+[ 1	]
+[ 12.5	]
+[ 12.5	]
+[ 12.5	]
+[ 30.33333333	]
+[ 30.33333333	]
+[ 30.33333333	]
+[ NULL	]
+#select var_samp(cc) over (partition by bb order by bb desc) from analytics;
+% sys.%3 # table_name
+% %3 # name
+% double # type
+% 24 # length
+[ NULL	]
+[ 30.33333333	]
+[ 30.33333333	]
+[ 30.33333333	]
+[ 12.5	]
+[ 12.5	]
+[ 12.5	]
+[ 1	]
+[ 1	]
+[ 1	]
+#select var_samp(cc) over (order by bb desc) from analytics;
+% sys.%3 # table_name
+% %3 # name
+% double # type
+% 24 # length
+[ NULL	]
+[ 30.33333333	]
+[ 30.33333333	]
+[ 30.33333333	]
+[ 21.3	]
+[ 21.3	]
+[ 21.3	]
+[ 17.64285714	]
+[ 17.64285714	]
+[ 17.64285714	]
+#select var_pop(aa) over (partition by bb) from analytics;
+% sys.%3 # table_name
+% %3 # name
+% double # type
+% 24 # length
+[ 0.6666666667	]
+[ 0.6666666667	]
+[ 0.6666666667	]
+[ 6.25	]
+[ 6.25	]
+[ 6.25	]
+[ 20.22222222	]
+[ 20.22222222	]
+[ 20.22222222	]
+[ NULL	]
+#select var_pop(aa) over (partition by bb order by bb asc) from analytics;
+% sys.%3 # table_name
+% %3 # name
+% double # type
+% 24 # length
+[ 0.6666666667	]
+[ 0.6666666667	]
+[ 0.6666666667	]
+[ 6.25	]
+[ 6.25	]
+[ 6.25	]
+[ 20.22222222	]
+[ 20.22222222	]
+[ 20.22222222	]
+[ NULL	]
+#select var_pop(aa) over (partition by bb order by bb desc) from analytics;
+% sys.%3 # table_name
+% %3 # name
+% double # type
+% 24 # length
+[ NULL	]
+[ 20.22222222	]
+[ 20.22222222	]
+[ 20.22222222	]
+[ 6.25	]
+[ 6.25	]
+[ 6.25	]
+[ 0.6666666667	]
+[ 0.6666666667	]
+[ 0.6666666667	]
+#select var_pop(aa) over (order by bb desc) from analytics;
+% sys.%3 # table_name
+% %3 # name
+% double # type
+% 24 # length
+[ NULL	]
+[ 20.22222222	]
+[ 20.22222222	]
+[ 20.22222222	]
+[ 17.04	]
+[ 17.04	]
+[ 17.04	]
+[ 15.4375	]
+[ 15.4375	]
+[ 15.4375	]
+#select var_pop(cc) over (partition by bb) from analytics;
+% sys.%3 # table_name
+% %3 # name
+% double # type
+% 24 # length
+[ 0.6666666667	]
+[ 0.6666666667	]
+[ 0.6666666667	]
+[ 6.25	]
+[ 6.25	]
+[ 6.25	]
+[ 20.22222222	]
+[ 20.22222222	]
+[ 20.22222222	]
+[ NULL	]
+#select var_pop(cc) over (partition by bb order by bb asc) from analytics;
+% sys.%3 # table_name
+% %3 # name
+% double # type
+% 24 # length
+[ 0.6666666667	]
+[ 0.6666666667	]
+[ 0.6666666667	]
+[ 6.25	]
+[ 6.25	]
+[ 6.25	]
+[ 20.22222222	]
+[ 20.22222222	]
+[ 20.22222222	]
+[ NULL	]
+#select var_pop(cc) over (partition by bb order by bb desc) from analytics;
+% sys.%3 # table_name
+% %3 # name
+% double # type
+% 24 # length
+[ NULL	]
+[ 20.22222222	]
+[ 20.22222222	]
+[ 20.22222222	]
+[ 6.25	]
+[ 6.25	]
+[ 6.25	]
+[ 0.6666666667	]
+[ 0.6666666667	]
+[ 0.6666666667	]
+#select var_pop(cc) over (order by bb desc) from analytics;
+% sys.%3 # table_name
+% %3 # name
+% double # type
+% 24 # length
+[ NULL	]
+[ 20.22222222	]
+[ 20.22222222	]
+[ 20.22222222	]
+[ 17.04	]
+[ 17.04	]
+[ 17.04	]
+[ 15.4375	]
+[ 15.4375	]
+[ 15.4375	]
 #create table stressme (aa varchar(64), bb int);
 #insert into stressme values ('one', 1), ('another', 1), ('stress', 1), (NULL, 2), ('ok', 2), ('check', 3), ('me', 3), ('please', 3), (NULL, 4);
 [ 9	]

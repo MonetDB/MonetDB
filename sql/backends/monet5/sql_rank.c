@@ -1538,7 +1538,8 @@ SQLavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static str
-do_stddev(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char* op, const char* err, bool issample)
+do_stddev_and_variance(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char* op, const char* err, 
+					   bool issample, gdk_return (*func)(BAT *, BAT *, BAT *, BAT *, int, bool))
 {
 	BAT *r, *b, *s, *e;
 	str msg = SQLanalytics_args(&r, &b, &s, &e, cntxt, mb, stk, pci, TYPE_dbl, op, err);
@@ -1553,7 +1554,7 @@ do_stddev(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char* o
 	if (b) {
 		bat *res = getArgReference_bat(stk, pci, 0);
 
-		gdk_res = GDKanalytical_variance(r, b, s, e, tpe, issample);
+		gdk_res = func(r, b, s, e, tpe, issample);
 		BBPunfix(b->batCacheid);
 		if (s) BBPunfix(s->batCacheid);
 		if (e) BBPunfix(e->batCacheid);
@@ -1586,11 +1587,27 @@ do_stddev(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char* o
 str
 SQLstddev_samp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return do_stddev(cntxt, mb, stk, pci, "sql.stdev", SQLSTATE(42000) "stddev(:any_1,:lng,:lng)", true);
+	return do_stddev_and_variance(cntxt, mb, stk, pci, "sql.stdev", SQLSTATE(42000) "stddev(:any_1,:lng,:lng)",
+								  true, GDKanalytical_stddev);
 }
 
 str
 SQLstddev_pop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return do_stddev(cntxt, mb, stk, pci, "sql.stdevp", SQLSTATE(42000) "stdevp(:any_1,:lng,:lng)", false);
+	return do_stddev_and_variance(cntxt, mb, stk, pci, "sql.stdevp", SQLSTATE(42000) "stdevp(:any_1,:lng,:lng)",
+								  false, GDKanalytical_stddev);
+}
+
+str
+SQLvar_samp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	return do_stddev_and_variance(cntxt, mb, stk, pci, "sql.variance", SQLSTATE(42000) "variance(:any_1,:lng,:lng)",
+								  true, GDKanalytical_variance);
+}
+
+str
+SQLvar_pop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	return do_stddev_and_variance(cntxt, mb, stk, pci, "sql.variancep", SQLSTATE(42000) "variancep(:any_1,:lng,:lng)",
+								  false, GDKanalytical_variance);
 }

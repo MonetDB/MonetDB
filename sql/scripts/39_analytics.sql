@@ -163,6 +163,33 @@ create aggregate var_samp(val INTERVAL MONTH) returns DOUBLE
 	external name "aggr"."variance";
 GRANT EXECUTE ON AGGREGATE var_samp(INTERVAL MONTH) TO PUBLIC;
 
+create window var_samp(val TINYINT) returns DOUBLE
+	external name "sql"."variance";
+GRANT EXECUTE ON WINDOW var_samp(TINYINT) TO PUBLIC;
+create window var_samp(val SMALLINT) returns DOUBLE
+	external name "sql"."variance";
+GRANT EXECUTE ON WINDOW var_samp(SMALLINT) TO PUBLIC;
+create window var_samp(val INTEGER) returns DOUBLE
+	external name "sql"."variance";
+GRANT EXECUTE ON WINDOW var_samp(INTEGER) TO PUBLIC;
+create window var_samp(val BIGINT) returns DOUBLE
+	external name "sql"."variance";
+GRANT EXECUTE ON WINDOW var_samp(BIGINT) TO PUBLIC;
+create window var_samp(val REAL) returns DOUBLE
+	external name "sql"."variance";
+GRANT EXECUTE ON WINDOW var_samp(REAL) TO PUBLIC;
+create window var_samp(val DOUBLE) returns DOUBLE
+	external name "sql"."variance";
+GRANT EXECUTE ON WINDOW var_samp(DOUBLE) TO PUBLIC;
+
+create window var_samp(val INTERVAL SECOND) returns DOUBLE
+	external name "sql"."variance";
+GRANT EXECUTE ON WINDOW var_samp(INTERVAL SECOND) TO PUBLIC;
+create window var_samp(val INTERVAL MONTH) returns DOUBLE
+	external name "sql"."variance";
+GRANT EXECUTE ON WINDOW var_samp(INTERVAL MONTH) TO PUBLIC;
+
+
 create aggregate var_pop(val TINYINT) returns DOUBLE
 	external name "aggr"."variancep";
 GRANT EXECUTE ON AGGREGATE var_pop(TINYINT) TO PUBLIC;
@@ -197,6 +224,33 @@ GRANT EXECUTE ON AGGREGATE var_pop(INTERVAL SECOND) TO PUBLIC;
 create aggregate var_pop(val INTERVAL MONTH) returns DOUBLE
 	external name "aggr"."variancep";
 GRANT EXECUTE ON AGGREGATE var_pop(INTERVAL MONTH) TO PUBLIC;
+
+create window var_pop(val TINYINT) returns DOUBLE
+	external name "sql"."variancep";
+GRANT EXECUTE ON WINDOW var_pop(TINYINT) TO PUBLIC;
+create window var_pop(val SMALLINT) returns DOUBLE
+	external name "sql"."variancep";
+GRANT EXECUTE ON WINDOW var_pop(SMALLINT) TO PUBLIC;
+create window var_pop(val INTEGER) returns DOUBLE
+	external name "sql"."variancep";
+GRANT EXECUTE ON WINDOW var_pop(INTEGER) TO PUBLIC;
+create window var_pop(val BIGINT) returns DOUBLE
+	external name "sql"."variancep";
+GRANT EXECUTE ON WINDOW var_pop(BIGINT) TO PUBLIC;
+create window var_pop(val REAL) returns DOUBLE
+	external name "sql"."variancep";
+GRANT EXECUTE ON WINDOW var_pop(REAL) TO PUBLIC;
+create window var_pop(val DOUBLE) returns DOUBLE
+	external name "sql"."variancep";
+GRANT EXECUTE ON WINDOW var_pop(DOUBLE) TO PUBLIC;
+
+create window var_pop(val INTERVAL SECOND) returns DOUBLE
+	external name "sql"."variancep";
+GRANT EXECUTE ON WINDOW var_pop(INTERVAL SECOND) TO PUBLIC;
+create window var_pop(val INTERVAL MONTH) returns DOUBLE
+	external name "sql"."variancep";
+GRANT EXECUTE ON WINDOW var_pop(INTERVAL MONTH) TO PUBLIC;
+
 
 create aggregate median(val TINYINT) returns TINYINT
 	external name "aggr"."median";

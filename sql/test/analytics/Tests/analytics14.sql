@@ -22,6 +22,28 @@ select stddev_pop(cc) over (partition by bb order by bb asc) from analytics;
 select stddev_pop(cc) over (partition by bb order by bb desc) from analytics;
 select stddev_pop(cc) over (order by bb desc) from analytics;
 
+
+select var_samp(aa) over (partition by bb) from analytics;
+select var_samp(aa) over (partition by bb order by bb asc) from analytics;
+select var_samp(aa) over (partition by bb order by bb desc) from analytics;
+select var_samp(aa) over (order by bb desc) from analytics;
+
+select var_samp(cc) over (partition by bb) from analytics;
+select var_samp(cc) over (partition by bb order by bb asc) from analytics;
+select var_samp(cc) over (partition by bb order by bb desc) from analytics;
+select var_samp(cc) over (order by bb desc) from analytics;
+
+
+select var_pop(aa) over (partition by bb) from analytics;
+select var_pop(aa) over (partition by bb order by bb asc) from analytics;
+select var_pop(aa) over (partition by bb order by bb desc) from analytics;
+select var_pop(aa) over (order by bb desc) from analytics;
+
+select var_pop(cc) over (partition by bb) from analytics;
+select var_pop(cc) over (partition by bb order by bb asc) from analytics;
+select var_pop(cc) over (partition by bb order by bb desc) from analytics;
+select var_pop(cc) over (order by bb desc) from analytics;
+
 create table stressme (aa varchar(64), bb int);
 insert into stressme values ('one', 1), ('another', 1), ('stress', 1), (NULL, 2), ('ok', 2), ('check', 3), ('me', 3), ('please', 3), (NULL, 4);
 
