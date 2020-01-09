@@ -547,6 +547,66 @@ stdout of test 'analytics14` in directory 'sql/test/analytics` itself:
 [ 15.4375	]
 [ 15.4375	]
 [ 15.4375	]
+#select stddev_samp(aa) over () from analytics;
+% sys. # table_name
+% %1 # name
+% double # type
+% 24 # length
+[ 4.200340122	]
+[ 4.200340122	]
+[ 4.200340122	]
+[ 4.200340122	]
+[ 4.200340122	]
+[ 4.200340122	]
+[ 4.200340122	]
+[ 4.200340122	]
+[ 4.200340122	]
+[ 4.200340122	]
+#select stddev_pop(aa) over () from analytics;
+% sys. # table_name
+% %1 # name
+% double # type
+% 24 # length
+[ 3.929058411	]
+[ 3.929058411	]
+[ 3.929058411	]
+[ 3.929058411	]
+[ 3.929058411	]
+[ 3.929058411	]
+[ 3.929058411	]
+[ 3.929058411	]
+[ 3.929058411	]
+[ 3.929058411	]
+#select var_samp(aa) over () from analytics;
+% sys. # table_name
+% %1 # name
+% double # type
+% 24 # length
+[ 17.64285714	]
+[ 17.64285714	]
+[ 17.64285714	]
+[ 17.64285714	]
+[ 17.64285714	]
+[ 17.64285714	]
+[ 17.64285714	]
+[ 17.64285714	]
+[ 17.64285714	]
+[ 17.64285714	]
+#select var_pop(aa) over () from analytics;
+% sys. # table_name
+% %1 # name
+% double # type
+% 24 # length
+[ 15.4375	]
+[ 15.4375	]
+[ 15.4375	]
+[ 15.4375	]
+[ 15.4375	]
+[ 15.4375	]
+[ 15.4375	]
+[ 15.4375	]
+[ 15.4375	]
+[ 15.4375	]
 #create table stressme (aa varchar(64), bb int);
 #insert into stressme values ('one', 1), ('another', 1), ('stress', 1), (NULL, 2), ('ok', 2), ('check', 3), ('me', 3), ('please', 3), (NULL, 4);
 [ 9	]

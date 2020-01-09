@@ -27,7 +27,7 @@ stderr of test 'analytics14` in directory 'sql/test/analytics` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-97238/.s.monetdb.32728
 QUERY = select stddev_samp(aa) over (partition by bb) from stressme; --error, stddev_samp not available for string type
-ERROR = !SELECT: function 'stddev_samp' not found
+ERROR = !SELECT: window function 'stddev_samp(varchar(64))' not found
 CODE  = 42000
 
 # 11:24:49 >  

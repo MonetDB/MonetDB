@@ -4431,6 +4431,28 @@ get_window_clauses(mvc *sql, char* ident, symbol **partition_by_clause, symbol *
 	return window_specification; /* return something to say there were no errors */
 }
 
+static char*
+window_function_arg_types_2str(list* types, int N)
+{
+	char *arg_list = NULL;
+	int i = 0;
+
+	for (node *n = types->h; n && i < N; n = n->next) {
+		char *tpe = subtype2string((sql_subtype *) n->data);
+		
+		if (arg_list) {
+			char *t = arg_list;
+			arg_list = sql_message("%s, %s", arg_list, tpe);
+			_DELETE(t);
+			_DELETE(tpe);
+		} else {
+			arg_list = tpe;
+		}
+		i++;
+	}
+	return arg_list;
+}
+
 /*
  * select x, y, rank_op() over (partition by x order by y) as, ...
                 aggr_op(z) over (partition by y order by x) as, ...
@@ -4460,7 +4482,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 	list *gbe = NULL, *obe = NULL, *args = NULL, *types = NULL, *fargs = NULL;
 	sql_schema *s = sql->session->schema;
 	dnode *dn = window_function->data.lval->h, *dargs = NULL;
-	int distinct = 0, frame_type, pos, nf = f;
+	int distinct = 0, frame_type, pos, nf = f, nfargs = 0;
 	bool is_nth_value, supports_frames;
 
 	stack_clear_frame_visited_flag(sql); /* clear visited flags before iterating */
@@ -4550,7 +4572,6 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 		bool is_ntile = (strcmp(s->base.name, "sys") == 0 && strcmp(aname, "ntile") == 0),
 			 is_lag = (strcmp(s->base.name, "sys") == 0 && strcmp(aname, "lag") == 0),
 			 is_lead = (strcmp(s->base.name, "sys") == 0 && strcmp(aname, "lead") == 0);
-		int nfargs = 0;
 
 		if (!dl || is_ntile) { /* pass an input column for analytic functions that don't require it */
 			in = rel_first_column(sql, p);
@@ -4597,17 +4618,15 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 			}
 		dargs = dn->next->next;
 	} else { /* aggregation function call */
-		bool has_args = false;
-
 		for (dargs = dn->next ; dargs->next && dargs->data.sym ; dargs = dargs->next) { /* the last dnode is the distinct flag */
 			exp_kind ek = {type_value, card_column, FALSE};
 
-			has_args = true;
 			in = rel_value_exp2(query, &p, dargs->data.sym, f | sql_window, ek);
 			if (!in)
 				return NULL;
 
 			append(fargs, in);
+			nfargs++;
 			if (strcmp(s->base.name, "sys") == 0 && strcmp(aname, "count") == 0) {
 				sql_subtype *empty = sql_bind_localtype("void"), *bte = sql_bind_localtype("bte");
 				sql_exp *eo = fargs->h->data;
@@ -4619,7 +4638,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 			in = exp_ref_save(sql, in);
 		}
 
-		if (!has_args) { /* count(*) */
+		if (!nfargs) { /* count(*) */
 			in = rel_first_column(sql, p);
 			if (!exp_name(in))
 				exp_label(sql->sa, in, ++sql->label);
@@ -4651,7 +4670,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 				df = bind_func(sql, s, "diff", exp_subtype(e), NULL, F_ANALYTIC);
 			}
 			if (!df)
-				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: function '%s' not found", "diff" );
+				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: function 'diff' not found");
 			append(args, e);
 			pe = exp_op(sql->sa, args, df);
 		}
@@ -4675,7 +4694,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 				df = bind_func(sql, s, "diff", exp_subtype(e), NULL, F_ANALYTIC);
 			}
 			if (!df)
-				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: function '%s' not found", "diff" );
+				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: function 'diff' not found");
 			append(args, e);
 			oe = exp_op(sql->sa, args, df);
 		}
@@ -4784,10 +4803,17 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 			}
 			if (wf && list_length(nexps))
 				fargs = nexps;
-			else
-				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: function '%s' not found", aname );
+			else {
+				char *arg_list = window_function_arg_types_2str(types, nfargs);
+				sql_error(sql, 02, SQLSTATE(42000) "SELECT: window function '%s(%s)' not found", aname, arg_list);
+				_DELETE(arg_list);
+				return NULL;
+			}
 		} else {
-			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: function '%s' not found", aname );
+			char *arg_list = window_function_arg_types_2str(types, nfargs);
+			sql_error(sql, 02, SQLSTATE(42000) "SELECT: window function '%s(%s)' not found", aname, arg_list);
+			_DELETE(arg_list);
+			return NULL;
 		}
 	}
 	args = sa_list(sql->sa);
