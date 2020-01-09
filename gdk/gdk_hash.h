@@ -9,28 +9,17 @@
 #ifndef _GDK_SEARCH_H_
 #define _GDK_SEARCH_H_
 
-/*
- * @+ Hash indexing
- *
- * This is a highly efficient implementation of simple bucket-chained
- * hashing.
- *
- * In the past, we used integer modulo for hashing, with bucket chains
- * of mean size 4.  This was shown to be inferior to direct hashing
- * with integer anding. The new implementation reflects this.
- */
-
 typedef struct Hash {
 	int type;		/* type of index entity */
 	uint8_t width;		/* width of hash entries */
 	BUN mask1;		/* .mask1 < .nbucket <= .mask2 */
-	BUN mask2;
-	BUN nbucket;		/* ... depending on hash value and .nbucket */
+	BUN mask2;		/* ... both are power-of-two minus one */
+	BUN nbucket;		/* number of valid hash buckets */
 	BUN nil;		/* nil representation */
 	BUN nunique;		/* number of unique values */
 	BUN nheads;		/* number of chain heads */
-	void *Bckt;		/* hash buckets */
-	void *Link;		/* collision list */
+	void *Bckt;		/* hash buckets, points into .heapbckt */
+	void *Link;		/* collision list, points into .heaplink */
 	Heap heaplink;		/* heap where the hash links are stored */
 	Heap heapbckt;		/* heap where the hash buckets are stored */
 } Hash;
