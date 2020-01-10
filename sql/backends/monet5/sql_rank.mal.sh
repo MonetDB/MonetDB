@@ -434,6 +434,27 @@ comment "return the median value of groups";
 
 EOF
 
+for tp in flt dbl; do
+	cat <<EOF
+pattern sql.quantile(b:any_1, q:${tp}, s:lng, e:lng) :any_1
+address SQLquantile
+comment "return a quantile value of groups";
+
+pattern batsql.quantile(b:bat[:any_1], q:${tp}, s:bat[:lng], e:bat[:lng]) :bat[:any_1]
+address SQLquantile
+comment "return a quantile value of groups";
+
+pattern sql.quantile(b:any_1, q:bat[:${tp}], s:lng, e:lng) :any_1
+address SQLquantile
+comment "return a quantile value of groups";
+
+pattern batsql.quantile(b:bat[:any_1], q:bat[:${tp}], s:bat[:lng], e:bat[:lng]) :bat[:any_1]
+address SQLquantile
+comment "return a quantile value of groups";
+
+EOF
+done
+
 cat <<EOF
 command aggr.exist(b:bat[:any_2], h:any_1):bit
 address ALGexist;

@@ -272,8 +272,7 @@ nosupport:
 			be = bp + end[i];			\
 			curval = (be > bs) ? *bs : TPE##_nil;	\
 			*rb = curval;				\
-			if (is_##TPE##_nil(curval))		\
-				has_nils = true;		\
+			has_nils |= is_##TPE##_nil(curval);		\
 		}						\
 	} while (0)
 
@@ -325,8 +324,7 @@ GDKanalyticalfirst(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
 			curval = (end[i] > start[i]) ? BUNtail(bpi, (BUN) start[i]) : (void *) nil;
 			if (BUNappend(r, curval, false) != GDK_SUCCEED)
 				goto allocation_error;
-			if (atomcmp(curval, nil) == 0)
-				has_nils = true;
+			has_nils |= atomcmp(curval, nil) == 0;
 		}
 	}
 	}
@@ -349,8 +347,7 @@ GDKanalyticalfirst(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
 			be = bp + end[i];				\
 			curval = (be > bs) ? *(be - 1) : TPE##_nil;	\
 			*rb = curval;					\
-			if (is_##TPE##_nil(curval))			\
-				has_nils = true;			\
+			has_nils |= is_##TPE##_nil(curval);			\
 		}							\
 	} while (0)
 
@@ -402,8 +399,7 @@ GDKanalyticallast(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
 			curval = (end[i] > start[i]) ? BUNtail(bpi, (BUN) (end[i] - 1)) : (void *) nil;
 			if (BUNappend(r, curval, false) != GDK_SUCCEED)
 				goto allocation_error;
-			if (atomcmp(curval, nil) == 0)
-				has_nils = true;
+			has_nils |= atomcmp(curval, nil) == 0;
 		}
 	}
 	}
@@ -430,8 +426,7 @@ GDKanalyticallast(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
 				be = bp + end[i];			\
 				curval = (be > bs && nth < (end[i] - start[i])) ? *(bs + nth) : TPE1##_nil; \
 				*rb = curval;				\
-				if (is_##TPE1##_nil(curval))		\
-					has_nils = true;		\
+				has_nils |= is_##TPE1##_nil(curval);	\
 			}						\
 		}							\
 	} while (0)
@@ -443,13 +438,14 @@ GDKanalyticallast(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
 			TPE2 lnth = lp[i];				\
 			bs = bp + start[i];				\
 			be = bp + end[i];				\
-			if (is_##TPE2##_nil(lnth) || be <= bs || (TPE3)(lnth - 1) > (TPE3)(end[i] - start[i])) \
-				curval = TPE1##_nil;			\
-			else						\
+			if (is_##TPE2##_nil(lnth) || be <= bs || (TPE3)(lnth - 1) > (TPE3)(end[i] - start[i])) { \
+				curval = TPE1##_nil;	\
+				has_nils = true;	\
+			} else {						\
 				curval = *(bs + lnth - 1);		\
-			*rb = curval;					\
-			if (is_##TPE1##_nil(curval))			\
-				has_nils = true;			\
+				has_nils |= is_##TPE1##_nil(curval);	\
+			}	\
+			*rb = curval;	\
 		}							\
 	} while (0)
 
@@ -464,9 +460,7 @@ GDKanalyticallast(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
 
 #define ANALYTICAL_NTHVALUE_CALC_FIXED(TPE1)				\
 	do {								\
-		TPE1 *bp, *bs, *be, curval, *restrict rb;		\
-		bp = (TPE1*)Tloc(b, 0);					\
-		rb = (TPE1*)Tloc(r, 0);					\
+		TPE1 *bp = (TPE1*)Tloc(b, 0), *bs, *be, curval, *restrict rb = (TPE1*)Tloc(r, 0);	\
 		switch (tp2) {						\
 		case TYPE_bte:						\
 			ANALYTICAL_NTHVALUE_IMP_MULTI_FIXED(TPE1, bte, lng); \
@@ -491,14 +485,15 @@ GDKanalyticallast(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
 		TPE1 *restrict lp = (TPE1*)Tloc(l, 0);			\
 		for (; i < cnt; i++) {					\
 			TPE1 lnth = lp[i];				\
-			if (is_##TPE1##_nil(lnth) || end[i] <= start[i] || (TPE2)(lnth - 1) > (TPE2)(end[i] - start[i])) \
+			if (is_##TPE1##_nil(lnth) || end[i] <= start[i] || (TPE2)(lnth - 1) > (TPE2)(end[i] - start[i])) {	\
 				curval = (void *) nil;			\
-			else						\
+				has_nils = true; \
+			} else {	\
 				curval = BUNtail(bpi, (BUN) (start[i] + lnth - 1)); \
+				has_nils |= atomcmp(curval, nil) == 0;	\
+			}	\
 			if (BUNappend(r, curval, false) != GDK_SUCCEED) \
 				goto allocation_error;			\
-			if (atomcmp(curval, nil) == 0)			\
-				has_nils = true;			\
 		}							\
 	} while (0)
 
@@ -582,8 +577,7 @@ GDKanalyticalnthvalue(BAT *r, BAT *b, BAT *s, BAT *e, BAT *l, const void *restri
 					curval = (end[i] > start[i] && nth < (end[i] - start[i])) ? BUNtail(bpi, (BUN) (start[i] + nth)) : (void *) nil;
 					if (BUNappend(r, curval, false) != GDK_SUCCEED)
 						goto allocation_error;
-					if (atomcmp(curval, nil) == 0)
-						has_nils = true;
+					has_nils |= atomcmp(curval, nil) == 0;
 				}
 			}
 		}
@@ -658,13 +652,11 @@ GDKanalyticalnthvalue(BAT *r, BAT *b, BAT *s, BAT *e, BAT *l, const void *restri
 	do {							\
 		for (i = 0; i < lag && rb < rp; i++, rb++)	\
 			*rb = def;				\
-		if (lag > 0 && is_##TPE##_nil(def))		\
-			has_nils = true;			\
+		has_nils |= (lag > 0 && is_##TPE##_nil(def));	\
 		for (; rb < rp; rb++, bp++) {			\
 			next = *bp;				\
 			*rb = next;				\
-			if (is_##TPE##_nil(next))		\
-				has_nils = true;		\
+			has_nils |= is_##TPE##_nil(next);		\
 		}						\
 	} while (0)
 
@@ -706,15 +698,13 @@ GDKanalyticalnthvalue(BAT *r, BAT *b, BAT *s, BAT *e, BAT *l, const void *restri
 			if (BUNappend(r, default_value, false) != GDK_SUCCEED) \
 				goto allocation_error;			\
 		}							\
-		if (lag > 0 && atomcmp(default_value, nil) == 0)	\
-			has_nils = true;				\
+		has_nils |= (lag > 0 && atomcmp(default_value, nil) == 0);	\
 		for (l = k - lag; k < j; k++, l++) {			\
 			curval = BUNtail(bpi, l);			\
 			if (BUNappend(r, curval, false) != GDK_SUCCEED)	\
 				goto allocation_error;			\
-			if (atomcmp(curval, nil) == 0)			\
-				has_nils = true;			\
-		}							\
+			has_nils |= atomcmp(curval, nil) == 0;			\
+		}	\
 	} while (0)
 
 gdk_return
@@ -801,16 +791,14 @@ GDKanalyticallag(BAT *r, BAT *b, BAT *p, BUN lag, const void *restrict default_v
 			for (i = 0; i < l; i++, rb++, bp++) {	\
 				next = *bp;			\
 				*rb = next;			\
-				if (is_##TPE##_nil(next))	\
-					has_nils = true;	\
+				has_nils |= is_##TPE##_nil(next);	\
 			}					\
 		} else {					\
 			bp += ncnt;				\
 		}						\
 		for (;rb < rp; rb++)				\
 			*rb = def;				\
-		if (lead > 0 && is_##TPE##_nil(def))		\
-			has_nils = true;			\
+		has_nils |= (lead > 0 && is_##TPE##_nil(def));	\
 	} while (0)
 
 #define ANALYTICAL_LEAD_IMP(TPE)				\
@@ -854,8 +842,7 @@ GDKanalyticallag(BAT *r, BAT *b, BAT *p, BUN lag, const void *restrict default_v
 				curval = BUNtail(bpi, n);		\
 				if (BUNappend(r, curval, false) != GDK_SUCCEED)	\
 					goto allocation_error;		\
-				if (atomcmp(curval, nil) == 0)		\
-					has_nils = true;		\
+				has_nils |= atomcmp(curval, nil) == 0;		\
 			}						\
 			k += i;						\
 		}							\
@@ -863,8 +850,7 @@ GDKanalyticallag(BAT *r, BAT *b, BAT *p, BUN lag, const void *restrict default_v
 			if (BUNappend(r, default_value, false) != GDK_SUCCEED) \
 				goto allocation_error;			\
 		}							\
-		if (lead > 0 && atomcmp(default_value, nil) == 0)	\
-			has_nils = true;				\
+		has_nils |= (lead > 0 && atomcmp(default_value, nil) == 0);	\
 	} while (0)
 
 gdk_return
@@ -964,7 +950,7 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 			if (is_##TPE##_nil(curval))			\
 				has_nils = true;			\
 			else						\
-				curval = TPE##_nil;			\
+				curval = TPE##_nil;	/* For the next iteration */	\
 		}							\
 	} while (0)
 
@@ -1054,12 +1040,12 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 		TPE *bp, *bs, *be;				\
 		bp = (TPE*)Tloc(b, 0);				\
 		for (; i < cnt; i++, rb++) {			\
-			bs = bp + start[i];                     \
-			be = bp + end[i];                       \
+			bs = bp + start[i];		\
+			be = bp + end[i];		\
 			for (; bs < be; bs++)			\
 				curval += !is_##TPE##_nil(*bs);	\
-			*rb = curval;                           \
-			curval = 0;                             \
+			*rb = curval;		\
+			curval = 0;		\
 		}						\
 	} while (0)
 
@@ -1189,7 +1175,7 @@ GDKanalyticalcount(BAT *r, BAT *b, BAT *s, BAT *e, const bit *restrict ignore_ni
 			if (is_##TPE2##_nil(curval))			\
 				has_nils = true;			\
 			else						\
-				curval = TPE2##_nil;			\
+				curval = TPE2##_nil;	/* For the next iteration */ \
 		}							\
 	} while (0)
 
@@ -1213,7 +1199,7 @@ GDKanalyticalcount(BAT *r, BAT *b, BAT *s, BAT *e, const bit *restrict ignore_ni
 			if (is_##TPE2##_nil(curval))			\
 				has_nils = true;			\
 			else						\
-				curval = TPE2##_nil;			\
+				curval = TPE2##_nil;	/* For the next iteration */ \
 		}							\
 	} while (0)
 
@@ -1383,7 +1369,7 @@ GDKanalyticalsum(BAT *r, BAT *b, BAT *s, BAT *e, int tp1, int tp2)
 			if (is_##TPE2##_nil(curval))			\
 				has_nils = true;			\
 			else						\
-				curval = TPE2##_nil;			\
+				curval = TPE2##_nil;	/* For the next iteration */	\
 		}							\
 	} while (0)
 
@@ -1408,7 +1394,7 @@ GDKanalyticalsum(BAT *r, BAT *b, BAT *s, BAT *e, int tp1, int tp2)
 			if (is_##TPE2##_nil(curval))			\
 				has_nils = true;			\
 			else						\
-				curval = TPE2##_nil;			\
+				curval = TPE2##_nil;	/* For the next iteration */	\
 		}							\
 	} while (0)
 
@@ -1439,7 +1425,7 @@ GDKanalyticalsum(BAT *r, BAT *b, BAT *s, BAT *e, int tp1, int tp2)
 			if (is_##TPE2##_nil(curval))			\
 				has_nils = true;			\
 			else						\
-				curval = TPE2##_nil;			\
+				curval = TPE2##_nil;	/* For the next iteration */	\
 		}							\
 	} while (0)
 
@@ -1805,95 +1791,215 @@ GDK_ANALYTICAL_STDEV_VARIANCE(stddev_pop, 0, sqrt(m2 / (n - 0)))
 GDK_ANALYTICAL_STDEV_VARIANCE(variance_samp, 1, m2 / (n - 1))
 GDK_ANALYTICAL_STDEV_VARIANCE(variance_pop, 0, m2 / (n - 0))
 
-/* There will be always at least one value for the median, because we don't implement the exclude clause yet */
-#define ANALYTICAL_MEDIAN(TPE)	\
-	do { \
-		TPE *restrict bp = (TPE*) Tloc(b, 0), *restrict rb = (TPE*) Tloc(r, 0), v; \
-		for (; i < cnt; i++, rb++) { \
-			ss = (BUN) start[i]; \
-			ee = (BUN) end[i]; \
-			f = (ee - ss - 1) * 0.5f; \
-			qindex = ss + ee - (BUN) (ee + 0.5f - f); \
-			assert(qindex >= ss && qindex < ee); \
-			v = bp[qindex]; \
-			*rb = v; \
-			has_nils |= (v == TPE##_nil); \
+/* There will be always at least one value for the quantile, because we don't implement the exclude clause yet */
+
+#define ANALYTICAL_QUANTILE_IMP_SINGLE_FIXED(TPE)			\
+	do {								\
+		TPE *bp = (TPE*)Tloc(b, 0), *restrict rb = (TPE*)Tloc(r, 0), v; \
+		if (is_dbl_nil(qua)) {					\
+			has_nils = true;				\
+			for (; i < cnt; i++, rb++)			\
+				*rb = TPE##_nil;			\
+		} else {						\
+			for (; i < cnt; i++, rb++) { \
+				ss = (BUN) start[i]; \
+				ee = (BUN) end[i]; \
+				f = (ee - ss - 1) * qua; \
+				qindex = ss + ee - (BUN) (ee + qua - f); \
+				assert(qindex >= ss && qindex < ee); \
+				v = bp[qindex]; \
+				*rb = v; \
+				has_nils |= (is_##TPE##_nil(v)); \
+			}	\
+		}	\
+	} while (0)
+
+#define ANALYTICAL_QUANTILE_IMP_MULTI_FIXED(TPE1, TPE2)			\
+	do {								\
+		TPE2 *restrict qp = (TPE2*)Tloc(q, 0);			\
+		for (; i < cnt; i++, rb++) {				\
+			TPE2 qua = qp[i];				\
+			if (is_##TPE2##_nil(qua)) { \
+				*rb = TPE1##_nil; \
+				has_nils = true; \
+			} else { \
+				ss = (BUN) start[i]; \
+				ee = (BUN) end[i]; \
+				f = (ee - ss - 1) * qua; \
+				qindex = ss + ee - (BUN) (ee + qua - f); \
+				assert(qindex >= ss && qindex < ee); \
+				v = bp[qindex]; \
+				*rb = v; \
+				has_nils |= (is_##TPE1##_nil(v)); \
+			} \
+		}	\
+	} while (0)
+
+#define ANALYTICAL_QUANTILE_CALC_FIXED(TPE1)				\
+	do {								\
+		TPE1 *restrict bp = (TPE1*)Tloc(b, 0), *restrict rb = (TPE1*)Tloc(r, 0), v;		\
+		switch (tp2) {						\
+		case TYPE_flt:						\
+			ANALYTICAL_QUANTILE_IMP_MULTI_FIXED(TPE1, flt); \
+			break;						\
+		case TYPE_dbl:						\
+			ANALYTICAL_QUANTILE_IMP_MULTI_FIXED(TPE1, dbl); \
+			break;						\
+		default:						\
+			goto nosupport;					\
+		}							\
+	} while (0)
+
+#define ANALYTICAL_QUANTILE_IMP_MULTI_VARSIZED(TPE1)			\
+	do {								\
+		TPE1 *restrict qp = (TPE1*)Tloc(q, 0);			\
+		for (; i < cnt; i++) {					\
+			TPE1 qua = qp[i];				\
+			if (is_##TPE1##_nil(qua)) { \
+				curval = (void *) nil;	\
+				has_nils = true; \
+			} else { \
+				ss = (BUN) start[i]; \
+				ee = (BUN) end[i]; \
+				f = (ee - ss - 1) * qua; \
+				qindex = ss + ee - (BUN) (ee + qua - f); \
+				assert(qindex >= ss && qindex < ee); \
+				curval = BUNtail(bpi, qindex); \
+				has_nils |= atomcmp(curval, nil) == 0;	\
+			} \
+			if (BUNappend(r, curval, false) != GDK_SUCCEED) \
+				goto allocation_error;	\
 		}	\
 	} while (0)
 
 gdk_return
-GDKanalytical_median(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
+GDKanalytical_quantile(BAT *r, BAT *b, BAT *s, BAT *e, BAT *q, const void *restrict quantile, int tp1, int tp2)
 {
-	bool has_nils = false;
 	BUN i = 0, cnt = BATcount(b), qindex, ss, ee;
 	lng *restrict start, *restrict end;
-	dbl f;
+	dbl qua = 0, f;
+	bool has_nils = false;
+	const void *restrict nil = ATOMnilptr(tp1);
+	int (*atomcmp) (const void *, const void *) = ATOMcompare(tp1);
+	void *curval;
 
-	assert(s && e);
+	assert(s && e && ((q && !quantile) || (!q && quantile)));
 	start = (lng *) Tloc(s, 0);
 	end = (lng *) Tloc(e, 0);
 
-	if (!ATOMlinear(tpe)) {
-		GDKerror("GDKanalytical_median: cannot determine quantile on "
-			 "non-linear type %s\n", ATOMname(tpe));
-		return GDK_FAIL;
-	}
-
-	switch (tpe) {
-	case TYPE_bit:
-		ANALYTICAL_MEDIAN(bit);
-		break;
-	case TYPE_bte:
-		ANALYTICAL_MEDIAN(bte);
-		break;
-	case TYPE_sht:
-		ANALYTICAL_MEDIAN(sht);
-		break;
-	case TYPE_int:
-		ANALYTICAL_MEDIAN(int);
-		break;
-	case TYPE_lng:
-		ANALYTICAL_MEDIAN(lng);
-		break;
+	if (quantile) {
+		switch (tp2) {
+		case TYPE_flt:{
+			flt val = *(flt *) quantile;
+			qua = !is_flt_nil(val) ? (dbl) val : dbl_nil;
+		} break;
+		case TYPE_dbl:{
+			qua = *(dbl *) quantile;
+		} break;
+		default:
+			goto nosupport;
+		}
+		switch (tp1) {
+		case TYPE_bit:
+			ANALYTICAL_QUANTILE_IMP_SINGLE_FIXED(bit);
+			break;
+		case TYPE_bte:
+			ANALYTICAL_QUANTILE_IMP_SINGLE_FIXED(bte);
+			break;
+		case TYPE_sht:
+			ANALYTICAL_QUANTILE_IMP_SINGLE_FIXED(sht);
+			break;
+		case TYPE_int:
+			ANALYTICAL_QUANTILE_IMP_SINGLE_FIXED(int);
+			break;
+		case TYPE_lng:
+			ANALYTICAL_QUANTILE_IMP_SINGLE_FIXED(lng);
+			break;
 #ifdef HAVE_HGE
-	case TYPE_hge:
-		ANALYTICAL_MEDIAN(hge);
-		break;
+		case TYPE_hge:
+			ANALYTICAL_QUANTILE_IMP_SINGLE_FIXED(hge);
+			break;
 #endif
-	case TYPE_flt:
-		ANALYTICAL_MEDIAN(flt);
-		break;
-	case TYPE_dbl:
-		ANALYTICAL_MEDIAN(dbl);
-		break;
-	default: {
-		BATiter bpi = bat_iterator(b);
-		const void *nil = ATOMnilptr(tpe);
-		int (*atomcmp)(const void *, const void *) = ATOMcompare(tpe);
-		void *curval;
-		for (; i < cnt; i++) {
-			ss = (BUN) start[i];
-			ee = (BUN) end[i];
-			f = (ee - ss - 1) * 0.5f;
-			qindex = ss + ee - (BUN) (ee + 0.5f - f);
-			assert(qindex >= ss && qindex < ee);
-			curval = BUNtail(bpi, qindex);
-			if (BUNappend(r, curval, false) != GDK_SUCCEED)
-				goto allocation_error;
-			if (atomcmp(curval, nil) == 0)
+		case TYPE_flt:
+			ANALYTICAL_QUANTILE_IMP_SINGLE_FIXED(flt);
+			break;
+		case TYPE_dbl:
+			ANALYTICAL_QUANTILE_IMP_SINGLE_FIXED(dbl);
+			break;
+		default:{
+			BATiter bpi = bat_iterator(b);
+			if (is_dbl_nil(qua)) {
 				has_nils = true;
+				for (; i < cnt; i++)
+					if (BUNappend(r, nil, false) != GDK_SUCCEED)
+						goto allocation_error;
+			} else {
+				for (; i < cnt; i++) {
+					ss = (BUN) start[i];
+					ee = (BUN) end[i];
+					f = (ee - ss - 1) * qua;
+					qindex = ss + ee - (BUN) (ee + qua - f);
+					assert(qindex >= ss && qindex < ee);
+					curval = BUNtail(bpi, qindex);
+					if (BUNappend(r, curval, false) != GDK_SUCCEED)
+						goto allocation_error;
+					has_nils |= atomcmp(curval, nil) == 0;
+				}
+			}
+		}
+		}
+	} else {
+		switch (tp1) {
+		case TYPE_bit:
+			ANALYTICAL_QUANTILE_CALC_FIXED(bit);
+			break;
+		case TYPE_bte:
+			ANALYTICAL_QUANTILE_CALC_FIXED(bte);
+			break;
+		case TYPE_sht:
+			ANALYTICAL_QUANTILE_CALC_FIXED(sht);
+			break;
+		case TYPE_int:
+			ANALYTICAL_QUANTILE_CALC_FIXED(int);
+			break;
+		case TYPE_lng:
+			ANALYTICAL_QUANTILE_CALC_FIXED(lng);
+			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			ANALYTICAL_QUANTILE_CALC_FIXED(hge);
+			break;
+#endif
+		case TYPE_flt:
+			ANALYTICAL_QUANTILE_CALC_FIXED(flt);
+			break;
+		case TYPE_dbl:
+			ANALYTICAL_QUANTILE_CALC_FIXED(dbl);
+			break;
+		default:{
+			BATiter bpi = bat_iterator(b);
+			switch (tp2) {
+			case TYPE_flt:
+				ANALYTICAL_QUANTILE_IMP_MULTI_VARSIZED(flt);
+				break;
+			case TYPE_dbl:
+				ANALYTICAL_QUANTILE_IMP_MULTI_VARSIZED(dbl);
+				break;
+			default:
+				goto nosupport;
+			}
+		}
 		}
 	}
-	}
 	BATsetcount(r, cnt);
-	r->tkey = BATcount(r) <= 1;
-	r->tsorted = BATcount(r) <= 1;
-	r->trevsorted = BATcount(r) <= 1;
 	r->tnonil = !has_nils;
 	r->tnil = has_nils;
 	return GDK_SUCCEED;
 allocation_error:
-	GDKerror("GDKanalytical_median: malloc failure\n");
+	GDKerror("%s: malloc failure\n", __func__);
+	return GDK_FAIL;
+nosupport:
+	GDKerror("%s: type %s not supported for the quantile.\n", __func__, ATOMname(tp2));
 	return GDK_FAIL;
 }
 

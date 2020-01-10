@@ -42,6 +42,12 @@ GRANT EXECUTE ON WINDOW median(HUGEINT) TO PUBLIC;
 create aggregate quantile(val HUGEINT, q DOUBLE) returns HUGEINT
 	external name "aggr"."quantile";
 GRANT EXECUTE ON AGGREGATE quantile(HUGEINT, DOUBLE) TO PUBLIC;
+create window quantile(val HUGEINT, q REAL) returns HUGEINT
+	external name "sql"."quantile";
+GRANT EXECUTE ON WINDOW quantile(HUGEINT, REAL) TO PUBLIC;
+create window quantile(val HUGEINT, q DOUBLE) returns HUGEINT
+	external name "sql"."quantile";
+GRANT EXECUTE ON WINDOW quantile(HUGEINT, DOUBLE) TO PUBLIC;
 
 create aggregate median_avg(val HUGEINT) returns DOUBLE
 	external name "aggr"."median_avg";

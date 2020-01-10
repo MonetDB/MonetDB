@@ -847,6 +847,38 @@ pattern batsql.median(b:bat[:any_1], s:bat[:lng], e:bat[:lng]) :bat[:any_1]
 address SQLmedian
 comment "return the median value of groups";
 
+pattern sql.quantile(b:any_1, q:flt, s:lng, e:lng) :any_1
+address SQLquantile
+comment "return a quantile value of groups";
+
+pattern batsql.quantile(b:bat[:any_1], q:flt, s:bat[:lng], e:bat[:lng]) :bat[:any_1]
+address SQLquantile
+comment "return a quantile value of groups";
+
+pattern sql.quantile(b:any_1, q:bat[:flt], s:lng, e:lng) :any_1
+address SQLquantile
+comment "return a quantile value of groups";
+
+pattern batsql.quantile(b:bat[:any_1], q:bat[:flt], s:bat[:lng], e:bat[:lng]) :bat[:any_1]
+address SQLquantile
+comment "return a quantile value of groups";
+
+pattern sql.quantile(b:any_1, q:dbl, s:lng, e:lng) :any_1
+address SQLquantile
+comment "return a quantile value of groups";
+
+pattern batsql.quantile(b:bat[:any_1], q:dbl, s:bat[:lng], e:bat[:lng]) :bat[:any_1]
+address SQLquantile
+comment "return a quantile value of groups";
+
+pattern sql.quantile(b:any_1, q:bat[:dbl], s:lng, e:lng) :any_1
+address SQLquantile
+comment "return a quantile value of groups";
+
+pattern batsql.quantile(b:bat[:any_1], q:bat[:dbl], s:bat[:lng], e:bat[:lng]) :bat[:any_1]
+address SQLquantile
+comment "return a quantile value of groups";
+
 command aggr.exist(b:bat[:any_2], h:any_1):bit
 address ALGexist;
 

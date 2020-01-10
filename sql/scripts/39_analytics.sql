@@ -330,6 +330,82 @@ create aggregate quantile(val INTERVAL MONTH, q DOUBLE) returns INTERVAL MONTH
 	external name "aggr"."quantile";
 GRANT EXECUTE ON AGGREGATE quantile(INTERVAL MONTH, DOUBLE) TO PUBLIC;
 
+create window quantile(val TINYINT, q REAL) returns TINYINT
+	external name "sql"."quantile";
+GRANT EXECUTE ON WINDOW quantile(TINYINT, REAL) TO PUBLIC;
+create window quantile(val SMALLINT, q REAL) returns SMALLINT
+	external name "sql"."quantile";
+GRANT EXECUTE ON WINDOW quantile(SMALLINT, REAL) TO PUBLIC;
+create window quantile(val INTEGER, q REAL) returns INTEGER
+	external name "sql"."quantile";
+GRANT EXECUTE ON WINDOW quantile(INTEGER, REAL) TO PUBLIC;
+create window quantile(val BIGINT, q REAL) returns BIGINT
+	external name "sql"."quantile";
+GRANT EXECUTE ON WINDOW quantile(BIGINT, REAL) TO PUBLIC;
+create window quantile(val DECIMAL, q REAL) returns DECIMAL
+	external name "sql"."quantile";
+GRANT EXECUTE ON WINDOW quantile(DECIMAL, REAL) TO PUBLIC;
+create window quantile(val REAL, q REAL) returns REAL
+	external name "sql"."quantile";
+GRANT EXECUTE ON WINDOW quantile(REAL, REAL) TO PUBLIC;
+create window quantile(val DOUBLE, q REAL) returns DOUBLE
+	external name "sql"."quantile";
+GRANT EXECUTE ON WINDOW quantile(DOUBLE, REAL) TO PUBLIC;
+
+create window quantile(val DATE, q REAL) returns DATE
+	external name "sql"."quantile";
+GRANT EXECUTE ON WINDOW quantile(DATE, REAL) TO PUBLIC;
+create window quantile(val TIME, q REAL) returns TIME
+	external name "sql"."quantile";
+GRANT EXECUTE ON WINDOW quantile(TIME, REAL) TO PUBLIC;
+create window quantile(val TIMESTAMP, q REAL) returns TIMESTAMP
+	external name "sql"."quantile";
+GRANT EXECUTE ON WINDOW quantile(TIMESTAMP, REAL) TO PUBLIC;
+create window quantile(val INTERVAL SECOND, q REAL) returns INTERVAL SECOND
+	external name "sql"."quantile";
+GRANT EXECUTE ON WINDOW quantile(INTERVAL SECOND, REAL) TO PUBLIC;
+create window quantile(val INTERVAL MONTH, q REAL) returns INTERVAL MONTH
+	external name "sql"."quantile";
+GRANT EXECUTE ON WINDOW quantile(INTERVAL MONTH, REAL) TO PUBLIC;
+
+create window quantile(val TINYINT, q DOUBLE) returns TINYINT
+	external name "sql"."quantile";
+GRANT EXECUTE ON WINDOW quantile(TINYINT, DOUBLE) TO PUBLIC;
+create window quantile(val SMALLINT, q DOUBLE) returns SMALLINT
+	external name "sql"."quantile";
+GRANT EXECUTE ON WINDOW quantile(SMALLINT, DOUBLE) TO PUBLIC;
+create window quantile(val INTEGER, q DOUBLE) returns INTEGER
+	external name "sql"."quantile";
+GRANT EXECUTE ON WINDOW quantile(INTEGER, DOUBLE) TO PUBLIC;
+create window quantile(val BIGINT, q DOUBLE) returns BIGINT
+	external name "sql"."quantile";
+GRANT EXECUTE ON WINDOW quantile(BIGINT, DOUBLE) TO PUBLIC;
+create window quantile(val DECIMAL, q DOUBLE) returns DECIMAL
+	external name "sql"."quantile";
+GRANT EXECUTE ON WINDOW quantile(DECIMAL, DOUBLE) TO PUBLIC;
+create window quantile(val REAL, q DOUBLE) returns REAL
+	external name "sql"."quantile";
+GRANT EXECUTE ON WINDOW quantile(REAL, DOUBLE) TO PUBLIC;
+create window quantile(val DOUBLE, q DOUBLE) returns DOUBLE
+	external name "sql"."quantile";
+GRANT EXECUTE ON WINDOW quantile(DOUBLE, DOUBLE) TO PUBLIC;
+
+create window quantile(val DATE, q DOUBLE) returns DATE
+	external name "sql"."quantile";
+GRANT EXECUTE ON WINDOW quantile(DATE, DOUBLE) TO PUBLIC;
+create window quantile(val TIME, q DOUBLE) returns TIME
+	external name "sql"."quantile";
+GRANT EXECUTE ON WINDOW quantile(TIME, DOUBLE) TO PUBLIC;
+create window quantile(val TIMESTAMP, q DOUBLE) returns TIMESTAMP
+	external name "sql"."quantile";
+GRANT EXECUTE ON WINDOW quantile(TIMESTAMP, DOUBLE) TO PUBLIC;
+create window quantile(val INTERVAL SECOND, q DOUBLE) returns INTERVAL SECOND
+	external name "sql"."quantile";
+GRANT EXECUTE ON WINDOW quantile(INTERVAL SECOND, DOUBLE) TO PUBLIC;
+create window quantile(val INTERVAL MONTH, q DOUBLE) returns INTERVAL MONTH
+	external name "sql"."quantile";
+GRANT EXECUTE ON WINDOW quantile(INTERVAL MONTH, DOUBLE) TO PUBLIC;
+
 
 create aggregate median_avg(val TINYINT) returns DOUBLE
 	external name "aggr"."median_avg";

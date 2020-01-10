@@ -747,6 +747,7 @@ SQLntile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BUN cnt;
 		bat *res = getArgReference_bat(stk, pci, 0);
 		BAT *b = BATdescriptor(*getArgReference_bat(stk, pci, 1)), *p = NULL, *r, *n = NULL;
+
 		if (!b)
 			throw(SQL, "sql.ntile", SQLSTATE(HY005) "Cannot access column descriptor");
 		cnt = BATcount(b);
@@ -943,9 +944,9 @@ SQLlast_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		TPE *nth = NULL; \
 		if (is_a_bat) { \
 			bool is_non_positive = false; \
-			for(TPE *lp = (TPE*)Tloc(l, 0), *lend = lp + BATcount(l); lp < lend && !is_non_positive; lp++) \
+			for (TPE *lp = (TPE*)Tloc(l, 0), *lend = lp + BATcount(l); lp < lend && !is_non_positive; lp++) \
 				is_non_positive |= (!is_##TPE##_nil(*lp) && *lp < 1); \
-			if(is_non_positive) { \
+			if (is_non_positive) { \
 				BBPunfix(b->batCacheid); \
 				BBPunfix(s->batCacheid); \
 				BBPunfix(e->batCacheid); \
@@ -954,7 +955,7 @@ SQLlast_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			} \
 		} else { \
 			nth = getArgReference_##TPE(stk, pci, 2); \
-			if(!is_##TPE##_nil(*nth) && *nth < 1) { \
+			if (!is_##TPE##_nil(*nth) && *nth < 1) { \
 				BBPunfix(b->batCacheid); \
 				BBPunfix(s->batCacheid); \
 				BBPunfix(e->batCacheid); \
@@ -967,7 +968,7 @@ SQLlast_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #define NTH_VALUE_SINGLE_IMP(TPE) \
 	do { \
 		TPE val = *(TPE*) VALget(nth), *toset; \
-		if(!VALisnil(nth) && val < 1) \
+		if (!VALisnil(nth) && val < 1) \
 			throw(SQL, "sql.nth_value", SQLSTATE(42000) "nth_value must be greater than zero"); \
 		toset = (VALisnil(nth) || val > 1) ? (TPE*) ATOMnilptr(tp1) : (TPE*) in; \
 		VALset(res, tp1, toset); \
@@ -993,6 +994,7 @@ SQLnth_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (isaBatType(tp1)) {
 		BUN cnt;
 		bat *res = getArgReference_bat(stk, pci, 0);
+
 		b = BATdescriptor(*getArgReference_bat(stk, pci, 1));
 		if (!b)
 			throw(SQL, "sql.nth_value", SQLSTATE(HY005) "Cannot access column descriptor");
@@ -1017,7 +1019,7 @@ SQLnth_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				throw(SQL, "sql.nth_value", SQLSTATE(HY005) "Cannot access column descriptor");
 			}
 		}
-		if (isaBatType(getArgType(mb, pci, 2))) {
+		if (is_a_bat) {
 			l = BATdescriptor(*getArgReference_bat(stk, pci, 2));
 			if (!l) {
 				BBPunfix(b->batCacheid);
@@ -1028,7 +1030,7 @@ SQLnth_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		}
 
-		if(is_a_bat)
+		if (is_a_bat)
 			tp2 = getBatType(tp2);
 		switch (tp2) {
 			case TYPE_bte:
@@ -1050,6 +1052,10 @@ SQLnth_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #endif
 			default: {
 				BBPunfix(b->batCacheid);
+				BBPunfix(r->batCacheid);
+				if (s) BBPunfix(s->batCacheid);
+				if (e) BBPunfix(e->batCacheid);
+				if (l) BBPunfix(l->batCacheid);
 				throw(SQL, "sql.nth_value", SQLSTATE(42000) "nth_value offset not available for type %s", ATOMname(tp2));
 			}
 		}
@@ -1628,6 +1634,170 @@ SQLvar_pop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 SQLmedian(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return SQLanalytical_func(cntxt, mb, stk, pci, "sql.median", SQLSTATE(42000) "median(:any_1,:lng,:lng)", 
-							  GDKanalytical_median);
+	BAT *r, *b, *s, *e;
+	str msg = SQLanalytics_args(&r, &b, &s, &e, cntxt, mb, stk, pci, 0, "sql.median", SQLSTATE(42000) "median(:any_1,:lng,:lng)");
+	int tpe = getArgType(mb, pci, 1);
+	gdk_return gdk_res;
+	dbl quantile = 0.5f;
+
+	if (msg)
+		return msg;
+	if (isaBatType(tpe))
+		tpe = getBatType(tpe);
+
+	if (b) {
+		bat *res = getArgReference_bat(stk, pci, 0);
+
+		gdk_res = GDKanalytical_quantile(r, b, s, e, NULL, &quantile, tpe, TYPE_dbl);
+		BBPunfix(b->batCacheid);
+		if (s) BBPunfix(s->batCacheid);
+		if (e) BBPunfix(e->batCacheid);
+		if (gdk_res == GDK_SUCCEED)
+			BBPkeepref(*res = r->batCacheid);
+		else
+			throw(SQL, "sql.median", GDK_EXCEPTION);
+	} else {
+		ptr *res = getArgReference(stk, pci, 0);
+		ptr *in = getArgReference(stk, pci, 1);
+		*res = *in;
+	}
+	return msg;
+}
+
+#define QUANTILE_IMP(TPE) \
+	do { \
+		TPE *qua = NULL; \
+		if (is_a_bat) { \
+			bool is_not_in_range = false; \
+			for (TPE *lp = (TPE*)Tloc(q, 0), *lend = lp + BATcount(q); lp < lend && !is_not_in_range; lp++) \
+				is_not_in_range |= (!is_##TPE##_nil(*lp) && (*lp > 1.0f || *lp < 0.0f)); \
+			if (is_not_in_range) { \
+				BBPunfix(b->batCacheid); \
+				BBPunfix(s->batCacheid); \
+				BBPunfix(e->batCacheid); \
+				BBPunfix(q->batCacheid); \
+				throw(SQL, "sql.quantile", SQLSTATE(42000) "All quantile values must be in range [0,1]"); \
+			} \
+		} else { \
+			qua = getArgReference_##TPE(stk, pci, 2); \
+			if(!is_##TPE##_nil(*qua) && (*qua > 1.0f || *qua < 0.0f)) { \
+				BBPunfix(b->batCacheid); \
+				BBPunfix(s->batCacheid); \
+				BBPunfix(e->batCacheid); \
+				throw(SQL, "sql.quantile", SQLSTATE(42000) "quantile value must be in range [0,1]"); \
+			} \
+		} \
+		gdk_res = GDKanalytical_quantile(r, b, s, e, q, qua, tp1, tp2); \
+	} while(0);
+
+#define QUANTILE_SINGLE_IMP(TPE) \
+	do { \
+		TPE val = *(TPE*) VALget(qua), *toset; \
+		if (!VALisnil(qua) && (val > 1.0f || val < 0.0f)) \
+			throw(SQL, "sql.quantile", SQLSTATE(42000) "quantile must be greater than zero"); \
+		toset = VALisnil(qua) ? (TPE*) ATOMnilptr(tp1) : (TPE*) in; \
+		VALset(res, tp1, toset); \
+	} while(0);
+
+str
+SQLquantile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	BAT *r = NULL, *b = NULL, *s = NULL, *e = NULL, *q = NULL;
+	int tp1, tp2;
+	gdk_return gdk_res;
+	bool is_a_bat;
+
+	(void)cntxt;
+	if (pci->argc != 5 || ((isaBatType(getArgType(mb, pci, 2)) && getBatType(getArgType(mb, pci, 3)) != TYPE_lng) ||
+		 (isaBatType(getArgType(mb, pci, 4)) && getBatType(getArgType(mb, pci, 4)) != TYPE_lng))) {
+		throw(SQL, "sql.quantile", SQLSTATE(42000) "quantile(:any_1,:dbl,:lng,:lng)");
+	}
+
+	tp1 = getArgType(mb, pci, 1);
+	tp2 = getArgType(mb, pci, 2);
+	is_a_bat = isaBatType(tp2);
+	if (isaBatType(tp1)) {
+		BUN cnt;
+		bat *res = getArgReference_bat(stk, pci, 0);
+
+		b = BATdescriptor(*getArgReference_bat(stk, pci, 1));
+		if (!b)
+			throw(SQL, "sql.quantile", SQLSTATE(HY005) "Cannot access column descriptor");
+		cnt = BATcount(b);
+		tp1 = getBatType(tp1);
+
+		voidresultBAT(r, tp1, cnt, b, "sql.quantile");
+		if (isaBatType(getArgType(mb, pci, 3))) {
+			s = BATdescriptor(*getArgReference_bat(stk, pci, 3));
+			if (!s) {
+				BBPunfix(b->batCacheid);
+				BBPunfix(r->batCacheid);
+				throw(SQL, "sql.quantile", SQLSTATE(HY005) "Cannot access column descriptor");
+			}
+		}
+		if (isaBatType(getArgType(mb, pci, 4))) {
+			e = BATdescriptor(*getArgReference_bat(stk, pci, 4));
+			if (!e) {
+				BBPunfix(b->batCacheid);
+				BBPunfix(r->batCacheid);
+				if (s) BBPunfix(s->batCacheid);
+				throw(SQL, "sql.quantile", SQLSTATE(HY005) "Cannot access column descriptor");
+			}
+		}
+		if (is_a_bat) {
+			q = BATdescriptor(*getArgReference_bat(stk, pci, 2));
+			if (!e) {
+				BBPunfix(b->batCacheid);
+				BBPunfix(r->batCacheid);
+				if (s) BBPunfix(s->batCacheid);
+				if (e) BBPunfix(e->batCacheid);
+				throw(SQL, "sql.quantile", SQLSTATE(HY005) "Cannot access column descriptor");
+			}
+		}
+
+		if (is_a_bat)
+			tp2 = getBatType(tp2);
+		switch (tp2) {
+			case TYPE_flt:
+				QUANTILE_IMP(flt)
+				break;
+			case TYPE_dbl:
+				QUANTILE_IMP(dbl)
+				break;
+			default: {
+				BBPunfix(b->batCacheid);
+				BBPunfix(r->batCacheid);
+				if (s) BBPunfix(s->batCacheid);
+				if (e) BBPunfix(e->batCacheid);
+				if (q) BBPunfix(q->batCacheid);
+				throw(SQL, "sql.quantile", SQLSTATE(42000) "quantile value not available for type %s", ATOMname(tp2));
+			}
+		}
+
+		BATsetcount(r, cnt);
+		BBPunfix(b->batCacheid);
+		if (s) BBPunfix(s->batCacheid);
+		if (e) BBPunfix(e->batCacheid);
+		if (q) BBPunfix(q->batCacheid);
+		if (gdk_res == GDK_SUCCEED)
+			BBPkeepref(*res = r->batCacheid);
+		else
+			throw(SQL, "sql.quantile", GDK_EXCEPTION);
+	} else {
+		ValRecord *res = &(stk)->stk[(pci)->argv[0]];
+		ValRecord *in = &(stk)->stk[(pci)->argv[1]];
+		ValRecord *qua = &(stk)->stk[(pci)->argv[2]];
+
+		switch (tp2) {
+			case TYPE_flt:
+				QUANTILE_SINGLE_IMP(flt)
+				break;
+			case TYPE_dbl:
+				QUANTILE_SINGLE_IMP(dbl)
+				break;
+			default:
+				throw(SQL, "sql.quantile", SQLSTATE(42000) "quantile value not available for type %s", ATOMname(tp2));
+		}
+	}
+	return MAL_SUCCEED;
 }
