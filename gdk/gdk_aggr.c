@@ -2711,17 +2711,16 @@ BATmax_skipnil(BAT *b, void *aggr, bit skipnil)
 #define binsearch_oid(indir, offset, vals, lo, hi, v, ordering, last) binsearch_lng(indir, offset, (const lng *) vals, lo, hi, (lng) (v), ordering, last)
 #endif
 
-#define DO_QUANTILE_AVG(TPE) \
-	do { \
-		TPE low = *(TPE*) BUNtail(bi, r + (BUN) hi); \
-		TPE high = *(TPE*) BUNtail(bi, r + (BUN) lo); \
-		if (is_##TPE##_nil(low) || is_##TPE##_nil(high)) { \
-			v = dnil; \
-			nils++; \
-		} else { \
-			val = (f - lo) * low + (lo + 1 - f) * high; \
-			v = &val; \
-		} \
+#define DO_QUANTILE_AVG(TPE)						\
+	do {								\
+		TPE low = *(TPE*) BUNtail(bi, r + (BUN) hi);		\
+		TPE high = *(TPE*) BUNtail(bi, r + (BUN) lo);		\
+		if (is_##TPE##_nil(low) || is_##TPE##_nil(high)) {	\
+			val = dbl_nil;					\
+			nils++;						\
+		} else {						\
+			val = (f - lo) * low + (lo + 1 - f) * high;	\
+		}							\
 	} while (0)
 
 static BAT *
@@ -2898,6 +2897,7 @@ doBATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 					DO_QUANTILE_AVG(dbl);
 					break;
 				}
+				v = &val;
 			} else {
 				/* round *down* to nearest integer */
 				double f = (p - r - 1) * quantile;
@@ -2988,6 +2988,7 @@ doBATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 				DO_QUANTILE_AVG(dbl);
 				break;
 			}
+			v = &val;
 		} else {
 			double f;
 			/* round (p-r-1)*quantile *down* to nearest
