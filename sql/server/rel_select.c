@@ -4491,7 +4491,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 		window_specification = l->h->next->data.lval;
 	} else if (l->h->next->type == type_string) {
 		const char* window_alias = l->h->next->data.sval;
-		if((window_specification = stack_get_window_def(sql, window_alias, &pos)) == NULL)
+		if ((window_specification = stack_get_window_def(sql, window_alias, &pos)) == NULL)
 			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: window '%s' not found", window_alias);
 		stack_set_var_visited(sql, pos);
 	} else {
@@ -4872,7 +4872,7 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 		return rel_nop(query, rel, se, f, ek);
 	case SQL_AGGR:
 		return rel_aggr(query, rel, se, f);
-	case SQL_RANK:
+	case SQL_WINDOW:
 		return rel_rankop(query, rel, se, f);
 	case SQL_IDENT:
 	case SQL_COLUMN:
@@ -4947,6 +4947,8 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 	case SQL_COALESCE:
 	case SQL_NULLIF:
 		return rel_case_exp(query, rel, se, f);
+	case SQL_RANK:
+		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: window function %s requires an OVER clause", qname_fname(se->data.lval->h->data.lval));
 	case SQL_DEFAULT:
 		return sql_error(sql, 02, SQLSTATE(42000) "DEFAULT keyword not allowed outside insert and update statements");
 	case SQL_XMLELEMENT:

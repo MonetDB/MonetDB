@@ -268,6 +268,7 @@ WHERE (t0.start_time >= '2017/12/01 00:00:00' AND t0.start_time <= '2017/12/02 0
 
 rollback;
 
+select ntile(1) from analytics; --error, ntile requires an OVER clause
 select ntile(distinct aa) over () from analytics; --error
 select nth_value(distinct aa, bb) over () from analytics; --error
 

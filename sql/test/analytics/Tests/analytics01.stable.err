@@ -28,7 +28,11 @@ stderr of test 'analytics01` in directory 'sql/test/analytics` itself:
 # 16:22:53 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23680" "--port=30581"
 # 16:22:53 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-163525/.s.monetdb.30467
+MAPI  = (monetdb) /var/tmp/mtest-74264/.s.monetdb.32300
+QUERY = select ntile(1) from analytics; --error, ntile requires an OVER clause
+ERROR = !SELECT: window function ntile requires an OVER clause
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-74264/.s.monetdb.32300
 QUERY = select ntile(distinct aa) over () from analytics; --error
 ERROR = !SELECT: DISTINCT clause is not implemented for window functions
 CODE  = 42000

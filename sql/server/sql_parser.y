@@ -4056,9 +4056,9 @@ value_exp:
     atom
  |  aggr_or_window_ref opt_over {
 	 								if ($2 && $2->token == SQL_NAME)
-										$$ = _symbol_create_list(SQL_RANK, append_string(append_symbol(L(), $1), $2->data.lval->h->data.sval));
+										$$ = _symbol_create_list(SQL_WINDOW, append_string(append_symbol(L(), $1), $2->data.lval->h->data.sval));
 									else if ($2)
-										$$ = _symbol_create_list(SQL_RANK, append_list(append_symbol(L(), $1), $2->data.lval->h->data.lval));
+										$$ = _symbol_create_list(SQL_WINDOW, append_list(append_symbol(L(), $1), $2->data.lval->h->data.lval));
 									else
 										$$ = $1;
  								}
