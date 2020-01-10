@@ -438,7 +438,7 @@ multiplexInit(char *name, char *pattern, FILE *sout, FILE *serr)
 	/* fake lock such that sabaoth believes we are (still) running, we
 	 * rely on merovingian moving to dbfarm here */
 	snprintf(buf, sizeof(buf), "%s/.gdk_lock", name);
-	if ((m->gdklock = MT_lockf(buf, F_TLOCK, 4, 1)) == -1) {
+	if ((m->gdklock = MT_lockf(buf, F_TLOCK)) == -1) {
 		/* locking failed, FIXME: cleanup here */
 		Mfprintf(serr, "mfunnel: another instance is already running?\n");
 		return(newErr("cannot lock for %s, already locked", name));

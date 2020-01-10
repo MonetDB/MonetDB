@@ -187,7 +187,7 @@ command_get(confkeyval *ckv, int argc, char *argv[])
 	{
 		/* check if there is a merovingian serving this dbfarm */
 		int ret;
-		if ((ret = MT_lockf(".merovingian_lock", F_TLOCK, 4, 1)) == -1) {
+		if ((ret = MT_lockf(".merovingian_lock", F_TLOCK)) == -1) {
 			/* locking failed, merovingian is running */
 			FILE *pf;
 			char *pfile = getConfVal(ckv, "pidfile");
@@ -201,7 +201,7 @@ command_get(confkeyval *ckv, int argc, char *argv[])
 		} else {
 			if (ret >= 0) {
 				/* release a possible lock */
-				MT_lockf(".merovingian_lock", F_ULOCK, 4, 1);
+				MT_lockf(".merovingian_lock", F_ULOCK);
 				close(ret);
 			}
 			meropid = 0;
