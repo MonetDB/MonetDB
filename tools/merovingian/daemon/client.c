@@ -68,7 +68,7 @@ handleClient(void *data)
 	sabdb *top = NULL;
 	sabdb *stat = NULL;
 	struct sockaddr saddr;
-	socklen_t saddrlen = 0;
+	socklen_t saddrlen = (socklen_t) sizeof(saddr);
 	err e;
 	confkeyval *ckv, *kv;
 	char mydoproxy;
