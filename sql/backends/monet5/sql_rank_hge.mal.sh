@@ -61,6 +61,7 @@ pattern batsql.prod(b:bat[:${tp1#*:}], s:bat[:lng], e:bat[:lng]) :bat[:${tp2#*:}
 address SQLprod
 comment "return the product of groups";
 
+
 EOF
 	fi
     done
@@ -115,4 +116,26 @@ pattern batsql.median_avg(b:bat[:hge], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
 address SQLmedian_avg
 comment "return the median value of groups with average in case of 2 values in the median";
 
+
 EOF
+
+for tp in flt dbl; do
+	cat <<EOF
+pattern sql.quantile_avg(b:hge, q:${tp}, s:lng, e:lng) :dbl
+address SQLquantile_avg
+comment "return a quantile average value of groups";
+
+pattern batsql.quantile_avg(b:bat[:hge], q:${tp}, s:bat[:lng], e:bat[:lng]) :bat[:dbl]
+address SQLquantile_avg
+comment "return a quantile average value of groups";
+
+pattern sql.quantile_avg(b:hge, q:bat[:${tp}], s:lng, e:lng) :dbl
+address SQLquantile_avg
+comment "return a quantile average value of groups";
+
+pattern batsql.quantile_avg(b:bat[:hge], q:bat[:${tp}], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
+address SQLquantile_avg
+comment "return a quantile average value of groups";
+
+EOF
+done

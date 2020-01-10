@@ -79,6 +79,17 @@ select quantile(cc, 0.7) over (partition by bb order by bb desc) from analytics;
 select quantile(cc, 0.7) over (order by bb desc) from analytics;
 
 
+select quantile_avg(aa, 0.2) over (partition by bb) from analytics;
+select quantile_avg(aa, 0.2) over (partition by bb order by bb asc) from analytics;
+select quantile_avg(aa, 0.2) over (partition by bb order by bb desc) from analytics;
+select quantile_avg(aa, 0.2) over (order by bb desc) from analytics;
+
+select quantile_avg(cc, 0.7) over (partition by bb) from analytics;
+select quantile_avg(cc, 0.7) over (partition by bb order by bb asc) from analytics;
+select quantile_avg(cc, 0.7) over (partition by bb order by bb desc) from analytics;
+select quantile_avg(cc, 0.7) over (order by bb desc) from analytics;
+
+
 select stddev_samp(aa) over () from analytics;
 select stddev_pop(aa) over () from analytics;
 select var_samp(aa) over () from analytics;
@@ -86,6 +97,7 @@ select var_pop(aa) over () from analytics;
 select median(aa) over () from analytics;
 select median_avg(aa) over () from analytics;
 select quantile(aa, 0.8) over () from analytics;
+select quantile_avg(aa, 0.8) over () from analytics;
 
 
 select stddev_samp(NULL) over () from analytics;
@@ -97,6 +109,9 @@ select median_avg(NULL) over () from analytics;
 select quantile(NULL, 0.8) over () from analytics;
 select quantile(aa, NULL) over () from analytics;
 select quantile(NULL, NULL) over () from analytics;
+select quantile_avg(NULL, 0.8) over () from analytics;
+select quantile_avg(aa, NULL) over () from analytics;
+select quantile_avg(NULL, NULL) over () from analytics;
 
 rollback;
 

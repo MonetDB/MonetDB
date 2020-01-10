@@ -43,6 +43,6 @@ gdk_export gdk_return GDKanalytical_stddev_pop(BAT *r, BAT *b, BAT *s, BAT *e, i
 gdk_export gdk_return GDKanalytical_variance_samp(BAT *r, BAT *b, BAT *s, BAT *e, int tpe);
 gdk_export gdk_return GDKanalytical_variance_pop(BAT *r, BAT *b, BAT *s, BAT *e, int tpe);
 gdk_export gdk_return GDKanalytical_quantile(BAT *r, BAT *b, BAT *s, BAT *e, BAT *q, const void *restrict quantile, int tp1, int tp2);
-gdk_export gdk_return GDKanalytical_median_avg(BAT *r, BAT *b, BAT *s, BAT *e, int tpe);
+gdk_export gdk_return GDKanalytical_quantile_avg(BAT *r, BAT *b, BAT *s, BAT *e, BAT *q, const void *restrict quantile, int tp1, int tp2);
 
 #endif //_GDK_ANALYTIC_H_

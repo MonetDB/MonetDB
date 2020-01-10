@@ -2003,77 +2003,158 @@ nosupport:
 	return GDK_FAIL;
 }
 
-#define ANALYTICAL_MEDIAN_AVG(TPE)	\
-	do { \
-		TPE *restrict bp = (TPE*) Tloc(b, 0), ns, ne; \
-		for (; i < cnt; i++, rb++) { \
-			ss = (BUN) start[i]; \
-			ee = (BUN) end[i]; \
-			f = (ee - ss - 1) * 0.5f; \
-			lo = floor(f); \
-			hi = ceil(f); \
-			ns = bp[ss + (BUN) hi]; \
-			ne = bp[ss + (BUN) lo]; \
-			if (is_##TPE##_nil(ns) || is_##TPE##_nil(ne)) { \
-				v = dbl_nil; \
-				has_nils = true; \
-			} else \
-				v = (f - lo) * ns + (lo + 1 - f) * ne; \
-			*rb = v; \
+#define ANALYTICAL_QUANTILE_AVG_IMP_SINGLE_FIXED(TPE)			\
+	do {								\
+		TPE *bp = (TPE*)Tloc(b, 0), ns, ne; \
+		if (is_dbl_nil(qua)) {					\
+			has_nils = true;				\
+			for (; i < cnt; i++, rb++)			\
+				*rb = dbl_nil;			\
+		} else {						\
+			for (; i < cnt; i++, rb++) { \
+				ss = (BUN) start[i]; \
+				ee = (BUN) end[i]; \
+				f = (ee - ss - 1) * qua; \
+				lo = floor(f); \
+				hi = ceil(f); \
+				ns = bp[ss + (BUN) hi]; \
+				ne = bp[ss + (BUN) lo]; \
+				if (is_##TPE##_nil(ns) || is_##TPE##_nil(ne)) { \
+					v = dbl_nil; \
+					has_nils = true; \
+				} else \
+					v = (f - lo) * ns + (lo + 1 - f) * ne; \
+				*rb = v; \
+			}	\
 		}	\
 	} while (0)
 
+#define ANALYTICAL_QUANTILE_AVG_IMP_MULTI_FIXED(TPE1, TPE2)		\
+	do {								\
+		TPE2 *restrict qp = (TPE2*)Tloc(q, 0);			\
+		for (; i < cnt; i++, rb++) {				\
+			TPE2 qua = qp[i];				\
+			if (is_##TPE2##_nil(qua)) { \
+				*rb = dbl_nil; \
+				has_nils = true; \
+			} else { \
+				ss = (BUN) start[i]; \
+				ee = (BUN) end[i]; \
+				f = (ee - ss - 1) * qua; \
+				lo = floor(f); \
+				hi = ceil(f); \
+				ns = bp[ss + (BUN) hi]; \
+				ne = bp[ss + (BUN) lo]; \
+				if (is_##TPE1##_nil(ns) || is_##TPE1##_nil(ne)) { \
+					v = dbl_nil; \
+					has_nils = true; \
+				} else \
+					v = (f - lo) * ns + (lo + 1 - f) * ne; \
+				*rb = v; \
+			} \
+		}	\
+	} while (0)
+
+#define ANALYTICAL_QUANTILE_AVG_CALC_FIXED(TPE1)	\
+	do {								\
+		TPE1 *restrict bp = (TPE1*)Tloc(b, 0), ns, ne;		\
+		switch (tp2) {						\
+		case TYPE_flt:						\
+			ANALYTICAL_QUANTILE_AVG_IMP_MULTI_FIXED(TPE1, flt); \
+			break;						\
+		case TYPE_dbl:						\
+			ANALYTICAL_QUANTILE_AVG_IMP_MULTI_FIXED(TPE1, dbl); \
+			break;						\
+		default:						\
+			goto nosupport;					\
+		}							\
+	} while (0)
+
 gdk_return
-GDKanalytical_median_avg(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
+GDKanalytical_quantile_avg(BAT *r, BAT *b, BAT *s, BAT *e, BAT *q, const void *restrict quantile, int tp1, int tp2)
 {
-	bool has_nils = false;
 	BUN i = 0, cnt = BATcount(b), ss, ee;
 	lng *restrict start, *restrict end;
-	dbl f, lo, hi, v, *restrict rb = (dbl*) Tloc(r, 0);
+	dbl qua = 0, f, *restrict rb = (dbl*) Tloc(r, 0), v, lo, hi;
+	bool has_nils = false;
 
-	assert(s && e);
+	assert(s && e && ((q && !quantile) || (!q && quantile)));
 	start = (lng *) Tloc(s, 0);
 	end = (lng *) Tloc(e, 0);
 
-	if (!ATOMlinear(tpe)) {
-		GDKerror("GDKanalytical_median_avg: cannot determine quantile on "
-			 "non-linear type %s\n", ATOMname(tpe));
-		return GDK_FAIL;
-	}
-
-	switch (tpe) {
-	case TYPE_bte:
-		ANALYTICAL_MEDIAN_AVG(bte);
-		break;
-	case TYPE_sht:
-		ANALYTICAL_MEDIAN_AVG(sht);
-		break;
-	case TYPE_int:
-		ANALYTICAL_MEDIAN_AVG(int);
-		break;
-	case TYPE_lng:
-		ANALYTICAL_MEDIAN_AVG(lng);
-		break;
+	if (quantile) {
+		switch (tp2) {
+		case TYPE_flt:{
+			flt val = *(flt *) quantile;
+			qua = !is_flt_nil(val) ? (dbl) val : dbl_nil;
+		} break;
+		case TYPE_dbl:{
+			qua = *(dbl *) quantile;
+		} break;
+		default:
+			goto nosupport;
+		}
+		switch (tp1) {
+		case TYPE_bte:
+			ANALYTICAL_QUANTILE_AVG_IMP_SINGLE_FIXED(bte);
+			break;
+		case TYPE_sht:
+			ANALYTICAL_QUANTILE_AVG_IMP_SINGLE_FIXED(sht);
+			break;
+		case TYPE_int:
+			ANALYTICAL_QUANTILE_AVG_IMP_SINGLE_FIXED(int);
+			break;
+		case TYPE_lng:
+			ANALYTICAL_QUANTILE_AVG_IMP_SINGLE_FIXED(lng);
+			break;
 #ifdef HAVE_HGE
-	case TYPE_hge:
-		ANALYTICAL_MEDIAN_AVG(hge);
-		break;
+		case TYPE_hge:
+			ANALYTICAL_QUANTILE_AVG_IMP_SINGLE_FIXED(hge);
+			break;
 #endif
-	case TYPE_flt:
-		ANALYTICAL_MEDIAN_AVG(flt);
-		break;
-	case TYPE_dbl:
-		ANALYTICAL_MEDIAN_AVG(dbl);
-		break;
-	default:
-		GDKerror("GDKanalytical_median_avg: average of type %s unsupported.\n", ATOMname(tpe));
-		return GDK_FAIL;
+		case TYPE_flt:
+			ANALYTICAL_QUANTILE_AVG_IMP_SINGLE_FIXED(flt);
+			break;
+		case TYPE_dbl:
+			ANALYTICAL_QUANTILE_AVG_IMP_SINGLE_FIXED(dbl);
+			break;
+		default:
+			goto nosupport;
+		}
+	} else {
+		switch (tp1) {
+		case TYPE_bte:
+			ANALYTICAL_QUANTILE_AVG_CALC_FIXED(bte);
+			break;
+		case TYPE_sht:
+			ANALYTICAL_QUANTILE_AVG_CALC_FIXED(sht);
+			break;
+		case TYPE_int:
+			ANALYTICAL_QUANTILE_AVG_CALC_FIXED(int);
+			break;
+		case TYPE_lng:
+			ANALYTICAL_QUANTILE_AVG_CALC_FIXED(lng);
+			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			ANALYTICAL_QUANTILE_AVG_CALC_FIXED(hge);
+			break;
+#endif
+		case TYPE_flt:
+			ANALYTICAL_QUANTILE_AVG_CALC_FIXED(flt);
+			break;
+		case TYPE_dbl:
+			ANALYTICAL_QUANTILE_AVG_CALC_FIXED(dbl);
+			break;
+		default:
+			goto nosupport;
+		}
 	}
 	BATsetcount(r, cnt);
-	r->tkey = BATcount(r) <= 1;
-	r->tsorted = BATcount(r) <= 1;
-	r->trevsorted = BATcount(r) <= 1;
 	r->tnonil = !has_nils;
 	r->tnil = has_nils;
 	return GDK_SUCCEED;
+nosupport:
+	GDKerror("%s: type %s not supported for the quantile.\n", __func__, ATOMname(tp2));
+	return GDK_FAIL;
 }

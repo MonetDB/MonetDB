@@ -2393,7 +2393,7 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 			"		ticks bigint, -- time in microseconds\n"
 			"		stmt string  -- actual statement executed\n"
 			"	)\n"
-			"	external name sql.dump_trace;\n"
+			" external name sql.dump_trace;\n"
 			"create view sys.tracelog as select * from sys.tracelog();\n");
 
 	pos += snprintf(buf + pos, bufsize - pos,
@@ -2815,7 +2815,49 @@ sql_update_analytics(Client c, mvc *sql, const char *prev_schema, bool *systabfi
 			"GRANT EXECUTE ON WINDOW quantile(INTERVAL SECOND, DOUBLE) TO PUBLIC;\n"
 			"create window quantile(val INTERVAL MONTH, q DOUBLE) returns INTERVAL MONTH\n"
 			" external name \"sql\".\"quantile\";\n"
-			"GRANT EXECUTE ON WINDOW quantile(INTERVAL MONTH, DOUBLE) TO PUBLIC;\n");
+			"GRANT EXECUTE ON WINDOW quantile(INTERVAL MONTH, DOUBLE) TO PUBLIC;\n"
+			"create window quantile_avg(val TINYINT, q REAL) returns DOUBLE\n"
+			" external name \"sql\".\"quantile_avg\";\n"
+			"GRANT EXECUTE ON WINDOW quantile_avg(TINYINT, REAL) TO PUBLIC;\n"
+			"create window quantile_avg(val SMALLINT, q REAL) returns DOUBLE\n"
+			" external name \"sql\".\"quantile_avg\";\n"
+			"GRANT EXECUTE ON WINDOW quantile_avg(SMALLINT, REAL) TO PUBLIC;\n"
+			"create window quantile_avg(val INTEGER, q REAL) returns DOUBLE\n"
+			" external name \"sql\".\"quantile_avg\";\n"
+			"GRANT EXECUTE ON WINDOW quantile_avg(INTEGER, REAL) TO PUBLIC;\n"
+			"create window quantile_avg(val BIGINT, q REAL) returns DOUBLE\n"
+			" external name \"sql\".\"quantile_avg\";\n"
+			"GRANT EXECUTE ON WINDOW quantile_avg(BIGINT, REAL) TO PUBLIC;\n"
+			"create window quantile_avg(val DECIMAL, q REAL) returns DOUBLE\n"
+			" external name \"sql\".\"quantile_avg\";\n"
+			"GRANT EXECUTE ON WINDOW quantile_avg(DECIMAL, REAL) TO PUBLIC;\n"
+			"create window quantile_avg(val REAL, q REAL) returns DOUBLE\n"
+			" external name \"sql\".\"quantile_avg\";\n"
+			"GRANT EXECUTE ON WINDOW quantile_avg(REAL, REAL) TO PUBLIC;\n"
+			"create window quantile_avg(val DOUBLE, q REAL) returns DOUBLE\n"
+			" external name \"sql\".\"quantile_avg\";\n"
+			"GRANT EXECUTE ON WINDOW quantile_avg(DOUBLE, REAL) TO PUBLIC;\n"
+			"create window quantile_avg(val TINYINT, q DOUBLE) returns DOUBLE\n"
+			" external name \"sql\".\"quantile_avg\";\n"
+			"GRANT EXECUTE ON WINDOW quantile_avg(TINYINT, DOUBLE) TO PUBLIC;\n"
+			"create window quantile_avg(val SMALLINT, q DOUBLE) returns DOUBLE\n"
+			" external name \"sql\".\"quantile_avg\";\n"
+			"GRANT EXECUTE ON WINDOW quantile_avg(SMALLINT, DOUBLE) TO PUBLIC;\n"
+			"create window quantile_avg(val INTEGER, q DOUBLE) returns DOUBLE\n"
+			" external name \"sql\".\"quantile_avg\";\n"
+			"GRANT EXECUTE ON WINDOW quantile_avg(INTEGER, DOUBLE) TO PUBLIC;\n"
+			"create window quantile_avg(val BIGINT, q DOUBLE) returns DOUBLE\n"
+			" external name \"sql\".\"quantile_avg\";\n"
+			"GRANT EXECUTE ON WINDOW quantile_avg(BIGINT, DOUBLE) TO PUBLIC;\n"
+			"create window quantile_avg(val DECIMAL, q DOUBLE) returns DOUBLE\n"
+			" external name \"sql\".\"quantile_avg\";\n"
+			"GRANT EXECUTE ON WINDOW quantile_avg(DECIMAL, DOUBLE) TO PUBLIC;\n"
+			"create window quantile_avg(val REAL, q DOUBLE) returns DOUBLE\n"
+			" external name \"sql\".\"quantile_avg\";\n"
+			"GRANT EXECUTE ON WINDOW quantile_avg(REAL, DOUBLE) TO PUBLIC;\n"
+			"create window quantile_avg(val DOUBLE, q DOUBLE) returns DOUBLE\n"
+			" external name \"sql\".\"quantile_avg\";\n"
+			"GRANT EXECUTE ON WINDOW quantile_avg(DOUBLE, DOUBLE) TO PUBLIC;\n");
 
 #ifdef HAVE_HGE
 	if (have_hge) {
@@ -2844,12 +2886,19 @@ sql_update_analytics(Client c, mvc *sql, const char *prev_schema, bool *systabfi
 			"GRANT EXECUTE ON WINDOW quantile(HUGEINT, REAL) TO PUBLIC;\n"
 			"create window quantile(val HUGEINT, q DOUBLE) returns HUGEINT\n"
 			" external name \"sql\".\"quantile\";\n"
-			"GRANT EXECUTE ON WINDOW quantile(HUGEINT, DOUBLE) TO PUBLIC;\n");
+			"GRANT EXECUTE ON WINDOW quantile(HUGEINT, DOUBLE) TO PUBLIC;\n"
+			"create window quantile_avg(val HUGEINT, q REAL) returns DOUBLE\n"
+			" external name \"sql\".\"quantile_avg\";\n"
+			"GRANT EXECUTE ON WINDOW quantile_avg(HUGEINT, REAL) TO PUBLIC;\n"
+			"create window quantile_avg(val HUGEINT, q DOUBLE) returns DOUBLE\n"
+			" external name \"sql\".\"quantile_avg\";\n"
+			"GRANT EXECUTE ON WINDOW quantile_avg(HUGEINT, DOUBLE) TO PUBLIC;\n");
 	}
 #endif
 
 	pos += snprintf(buf + pos, bufsize - pos,
-			"update sys.functions set system = true where name in ('stddev_samp', 'stddev_pop', 'var_samp', 'var_pop', 'median', 'median_avg')"
+			"update sys.functions set system = true where name in"
+			" ('stddev_samp', 'stddev_pop', 'var_samp', 'var_pop', 'median', 'median_avg', 'quantile', 'quantile_avg')"
 			" and schema_id = (select id from sys.schemas where name = 'sys');\n");
 
 	pos += snprintf(buf + pos, bufsize - pos,

@@ -59,6 +59,12 @@ GRANT EXECUTE ON WINDOW median_avg(HUGEINT) TO PUBLIC;
 create aggregate quantile_avg(val HUGEINT, q DOUBLE) returns DOUBLE
 	external name "aggr"."quantile_avg";
 GRANT EXECUTE ON AGGREGATE quantile_avg(HUGEINT, DOUBLE) TO PUBLIC;
+create window quantile_avg(val HUGEINT, q REAL) returns DOUBLE
+	external name "sql"."quantile_avg";
+GRANT EXECUTE ON WINDOW quantile_avg(HUGEINT, REAL) TO PUBLIC;
+create window quantile_avg(val HUGEINT, q DOUBLE) returns DOUBLE
+	external name "sql"."quantile_avg";
+GRANT EXECUTE ON WINDOW quantile_avg(HUGEINT, DOUBLE) TO PUBLIC;
 
 create aggregate corr(e1 HUGEINT, e2 HUGEINT) returns DOUBLE
 	external name "aggr"."corr";

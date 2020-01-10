@@ -1514,12 +1514,11 @@ SQLprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								 GDKanalyticalprod);
 }
 
-static str
-do_fp_window(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char *op, const char* err,
-			 gdk_return (*func)(BAT *, BAT *, BAT *, BAT *, int))
+str
+SQLavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *r, *b, *s, *e;
-	str msg = SQLanalytics_args(&r, &b, &s, &e, cntxt, mb, stk, pci, TYPE_dbl, op, err);
+	str msg = SQLanalytics_args(&r, &b, &s, &e, cntxt, mb, stk, pci, TYPE_dbl, "sql.avg", SQLSTATE(42000) "avg(:any_1,:lng,:lng)");
 	int tpe = getArgType(mb, pci, 1);
 	gdk_return gdk_res;
 
@@ -1531,14 +1530,14 @@ do_fp_window(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char
 	if (b) {
 		bat *res = getArgReference_bat(stk, pci, 0);
 
-		gdk_res = func(r, b, s, e, tpe);
+		gdk_res = GDKanalyticalavg(r, b, s, e, tpe);
 		BBPunfix(b->batCacheid);
 		if (s) BBPunfix(s->batCacheid);
 		if (e) BBPunfix(e->batCacheid);
 		if (gdk_res == GDK_SUCCEED)
 			BBPkeepref(*res = r->batCacheid);
 		else
-			throw(SQL, op, GDK_EXCEPTION);
+			throw(SQL, "sql.avg", GDK_EXCEPTION);
 	} else {
 		ptr *res = getArgReference(stk, pci, 0);
 		ptr *in = getArgReference(stk, pci, 1);
@@ -1574,23 +1573,10 @@ do_fp_window(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char
 				*res = *in;
 				break;
 			default:
-				throw(SQL, op, SQLSTATE(42000) "%s not available for %s", op, ATOMname(tpe));
+				throw(SQL, "sql.avg", SQLSTATE(42000) "sql.avg not available for %s", ATOMname(tpe));
 		}
 	}
 	return msg;
-}
-
-str
-SQLavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	return do_fp_window(cntxt, mb, stk, pci, "sql.avg", SQLSTATE(42000) "avg(:any_1,:lng,:lng)", GDKanalyticalavg);
-}
-
-str
-SQLmedian_avg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	return do_fp_window(cntxt, mb, stk, pci, "sql.median_avg", SQLSTATE(42000) "median_avg(:any_1,:lng,:lng)",
-						GDKanalytical_median_avg);
 }
 
 static str
@@ -1668,6 +1654,106 @@ SQLvar_pop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								  GDKanalytical_variance_pop);
 }
 
+#define QUANTILE_SINGLE_IMP(TPE) \
+	do { \
+		TPE val = *(TPE*) VALget(qua), *toset; \
+		if (!VALisnil(qua) && (val > 1.0f || val < 0.0f)) \
+			throw(SQL, op, SQLSTATE(42000) "quantile value must be in range [0,1]"); \
+		toset = VALisnil(qua) ? (TPE*) ATOMnilptr(tp1) : (TPE*) in; \
+		VALset(res, tp1, toset); \
+	} while(0);
+
+static str
+do_quantile_solo(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char *op)
+{
+	ValRecord *res = &(stk)->stk[(pci)->argv[0]];
+	ValRecord *in = &(stk)->stk[(pci)->argv[1]];
+	ValRecord *qua = &(stk)->stk[(pci)->argv[2]];
+	int tp1 = getArgType(mb, pci, 1), tp2 = getArgType(mb, pci, 2);
+
+	switch (tp2) {
+		case TYPE_flt:
+			QUANTILE_SINGLE_IMP(flt)
+			break;
+		case TYPE_dbl:
+			QUANTILE_SINGLE_IMP(dbl)
+			break;
+		default:
+			throw(SQL, op, SQLSTATE(42000) "%s value not available for type %s", op, ATOMname(tp2));
+	}
+	return MAL_SUCCEED;
+}
+
+#ifdef HAVE_HGE
+#define QUANTILE_AVG_SINGLE_IMP_LIMIT \
+	case TYPE_hge: \
+		msg = hge_dec2_dbl(res, &scale, (hge*)in); \
+		break; \
+	break;
+#else
+#define QUANTILE_AVG_SINGLE_IMP_LIMIT
+#endif
+
+#define QUANTILE_AVG_SINGLE_IMP(TPE) \
+	do { \
+		TPE val = *(TPE*) qua; \
+		if (!is_##TPE##_nil(val) && (val > 1.0f || val < 0.0f)) \
+			throw(SQL, op, SQLSTATE(42000) "quantile value must be in range [0,1]"); \
+		if (is_##TPE##_nil(val)) \
+			*res = dbl_nil; \
+		else { \
+			switch (tp1) { \
+				case TYPE_bte: \
+					msg = bte_dec2_dbl(res, &scale, (bte*)in); \
+					break; \
+				case TYPE_sht: \
+					msg = sht_dec2_dbl(res, &scale, (sht*)in); \
+					break; \
+				case TYPE_int: \
+					msg = int_dec2_dbl(res, &scale, (int*)in); \
+					break; \
+				case TYPE_lng: \
+					msg = lng_dec2_dbl(res, &scale, (lng*)in); \
+					break; \
+				QUANTILE_AVG_SINGLE_IMP_LIMIT \
+				case TYPE_flt: { \
+					flt fp = *((flt*) in); \
+					if (is_flt_nil(fp)) \
+						*res = dbl_nil; \
+					else \
+						*res = (dbl) fp; \
+				} break; \
+				case TYPE_dbl: \
+					*res = *((dbl*) in); \
+					break; \
+				default: \
+					throw(SQL, op, SQLSTATE(42000) "%s not available for %s", op, ATOMname(tp1)); \
+			} \
+		} \
+	} while(0);
+
+static str
+do_quantile_avg_solo(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char *op)
+{
+	dbl *res = (dbl*) getArgReference(stk, pci, 0);
+	ptr *in = getArgReference(stk, pci, 1);
+	ptr *qua = getArgReference(stk, pci, 2);
+	int tp1 = getArgType(mb, pci, 1), tp2 = getArgType(mb, pci, 2), scale;
+	str msg = MAL_SUCCEED;
+
+	switch (tp2) {
+		case TYPE_flt:
+			QUANTILE_AVG_SINGLE_IMP(flt)
+			break;
+		case TYPE_dbl:
+			QUANTILE_AVG_SINGLE_IMP(dbl)
+			break;
+		default:
+			throw(SQL, op, SQLSTATE(42000) "%s value not available for type %s", op, ATOMname(tp2));
+	}
+	return msg;
+}
+
 str
 SQLmedian(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -1694,9 +1780,38 @@ SQLmedian(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		else
 			throw(SQL, "sql.median", GDK_EXCEPTION);
 	} else {
-		ptr *res = getArgReference(stk, pci, 0);
-		ptr *in = getArgReference(stk, pci, 1);
-		*res = *in;
+		msg = do_quantile_solo(mb, stk, pci, "sql.median");
+	}
+	return msg;
+}
+
+str
+SQLmedian_avg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	BAT *r, *b, *s, *e;
+	str msg = SQLanalytics_args(&r, &b, &s, &e, cntxt, mb, stk, pci, TYPE_dbl, "sql.median_avg", SQLSTATE(42000) "median_avg(:any_1,:lng,:lng)");
+	int tpe = getArgType(mb, pci, 1);
+	gdk_return gdk_res;
+	dbl quantile = 0.5f;
+
+	if (msg)
+		return msg;
+	if (isaBatType(tpe))
+		tpe = getBatType(tpe);
+
+	if (b) {
+		bat *res = getArgReference_bat(stk, pci, 0);
+
+		gdk_res = GDKanalytical_quantile_avg(r, b, s, e, NULL, &quantile, tpe, TYPE_dbl);
+		BBPunfix(b->batCacheid);
+		if (s) BBPunfix(s->batCacheid);
+		if (e) BBPunfix(e->batCacheid);
+		if (gdk_res == GDK_SUCCEED)
+			BBPkeepref(*res = r->batCacheid);
+		else
+			throw(SQL, "sql.median_avg", GDK_EXCEPTION);
+	} else {
+		msg = do_quantile_avg_solo(mb, stk, pci, "sql.median_avg");
 	}
 	return msg;
 }
@@ -1713,7 +1828,7 @@ SQLmedian(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				BBPunfix(s->batCacheid); \
 				BBPunfix(e->batCacheid); \
 				BBPunfix(q->batCacheid); \
-				throw(SQL, "sql.quantile", SQLSTATE(42000) "All quantile values must be in range [0,1]"); \
+				throw(SQL, op, SQLSTATE(42000) "All quantile values must be in range [0,1]"); \
 			} \
 		} else { \
 			qua = getArgReference_##TPE(stk, pci, 2); \
@@ -1721,33 +1836,27 @@ SQLmedian(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				BBPunfix(b->batCacheid); \
 				BBPunfix(s->batCacheid); \
 				BBPunfix(e->batCacheid); \
-				throw(SQL, "sql.quantile", SQLSTATE(42000) "quantile value must be in range [0,1]"); \
+				throw(SQL, op, SQLSTATE(42000) "quantile value must be in range [0,1]"); \
 			} \
 		} \
-		gdk_res = GDKanalytical_quantile(r, b, s, e, q, qua, tp1, tp2); \
+		gdk_res = func(r, b, s, e, q, qua, tp1, tp2); \
 	} while(0);
 
-#define QUANTILE_SINGLE_IMP(TPE) \
-	do { \
-		TPE val = *(TPE*) VALget(qua), *toset; \
-		if (!VALisnil(qua) && (val > 1.0f || val < 0.0f)) \
-			throw(SQL, "sql.quantile", SQLSTATE(42000) "quantile must be greater than zero"); \
-		toset = VALisnil(qua) ? (TPE*) ATOMnilptr(tp1) : (TPE*) in; \
-		VALset(res, tp1, toset); \
-	} while(0);
-
-str
-SQLquantile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+static str
+do_quantile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char *op, const char* err,
+			 gdk_return (*func)(BAT *, BAT *, BAT *, BAT *, BAT *, const void *restrict, int, int), 
+			 str (*do_quantile_solo)(MalBlkPtr, MalStkPtr, InstrPtr, const char *), int tpout)
 {
 	BAT *r = NULL, *b = NULL, *s = NULL, *e = NULL, *q = NULL;
 	int tp1, tp2;
 	gdk_return gdk_res;
 	bool is_a_bat;
+	str msg = MAL_SUCCEED;
 
 	(void)cntxt;
 	if (pci->argc != 5 || ((isaBatType(getArgType(mb, pci, 2)) && getBatType(getArgType(mb, pci, 3)) != TYPE_lng) ||
 		 (isaBatType(getArgType(mb, pci, 4)) && getBatType(getArgType(mb, pci, 4)) != TYPE_lng))) {
-		throw(SQL, "sql.quantile", SQLSTATE(42000) "quantile(:any_1,:dbl,:lng,:lng)");
+		throw(SQL, op, "%s", err);
 	}
 
 	tp1 = getArgType(mb, pci, 1);
@@ -1759,17 +1868,17 @@ SQLquantile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		b = BATdescriptor(*getArgReference_bat(stk, pci, 1));
 		if (!b)
-			throw(SQL, "sql.quantile", SQLSTATE(HY005) "Cannot access column descriptor");
+			throw(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
 		cnt = BATcount(b);
 		tp1 = getBatType(tp1);
 
-		voidresultBAT(r, tp1, cnt, b, "sql.quantile");
+		voidresultBAT(r, tpout, cnt, b, op);
 		if (isaBatType(getArgType(mb, pci, 3))) {
 			s = BATdescriptor(*getArgReference_bat(stk, pci, 3));
 			if (!s) {
 				BBPunfix(b->batCacheid);
 				BBPunfix(r->batCacheid);
-				throw(SQL, "sql.quantile", SQLSTATE(HY005) "Cannot access column descriptor");
+				throw(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
 			}
 		}
 		if (isaBatType(getArgType(mb, pci, 4))) {
@@ -1778,7 +1887,7 @@ SQLquantile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				BBPunfix(b->batCacheid);
 				BBPunfix(r->batCacheid);
 				if (s) BBPunfix(s->batCacheid);
-				throw(SQL, "sql.quantile", SQLSTATE(HY005) "Cannot access column descriptor");
+				throw(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
 			}
 		}
 		if (is_a_bat) {
@@ -1788,7 +1897,7 @@ SQLquantile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				BBPunfix(r->batCacheid);
 				if (s) BBPunfix(s->batCacheid);
 				if (e) BBPunfix(e->batCacheid);
-				throw(SQL, "sql.quantile", SQLSTATE(HY005) "Cannot access column descriptor");
+				throw(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
 			}
 		}
 
@@ -1807,7 +1916,7 @@ SQLquantile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				if (s) BBPunfix(s->batCacheid);
 				if (e) BBPunfix(e->batCacheid);
 				if (q) BBPunfix(q->batCacheid);
-				throw(SQL, "sql.quantile", SQLSTATE(42000) "quantile value not available for type %s", ATOMname(tp2));
+				throw(SQL, op, SQLSTATE(42000) "quantile value not available for type %s", ATOMname(tp2));
 			}
 		}
 
@@ -1819,22 +1928,27 @@ SQLquantile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (gdk_res == GDK_SUCCEED)
 			BBPkeepref(*res = r->batCacheid);
 		else
-			throw(SQL, "sql.quantile", GDK_EXCEPTION);
+			throw(SQL, op, GDK_EXCEPTION);
 	} else {
-		ValRecord *res = &(stk)->stk[(pci)->argv[0]];
-		ValRecord *in = &(stk)->stk[(pci)->argv[1]];
-		ValRecord *qua = &(stk)->stk[(pci)->argv[2]];
-
-		switch (tp2) {
-			case TYPE_flt:
-				QUANTILE_SINGLE_IMP(flt)
-				break;
-			case TYPE_dbl:
-				QUANTILE_SINGLE_IMP(dbl)
-				break;
-			default:
-				throw(SQL, "sql.quantile", SQLSTATE(42000) "quantile value not available for type %s", ATOMname(tp2));
-		}
+		msg = do_quantile_solo(mb, stk, pci, op);
 	}
-	return MAL_SUCCEED;
+	return msg;
+}
+
+str
+SQLquantile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int tp1 = getArgType(mb, pci, 1);
+
+	if (isaBatType(tp1))
+		tp1 = getBatType(tp1);
+	return do_quantile(cntxt, mb, stk, pci, "sql.quantile", SQLSTATE(42000) "quantile(:any_1,:dbl,:lng,:lng)", 
+					   GDKanalytical_quantile, do_quantile_solo, tp1); 
+}
+
+str
+SQLquantile_avg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	return do_quantile(cntxt, mb, stk, pci, "sql.quantile_avg", SQLSTATE(42000) "quantile_avg(:any_1,:dbl,:lng,:lng)", 
+					   GDKanalytical_quantile_avg, do_quantile_avg_solo, TYPE_dbl); 
 }

@@ -474,6 +474,50 @@ create aggregate quantile_avg(val DOUBLE, q DOUBLE) returns DOUBLE
 	external name "aggr"."quantile_avg";
 GRANT EXECUTE ON AGGREGATE quantile_avg(DOUBLE, DOUBLE) TO PUBLIC;
 
+create window quantile_avg(val TINYINT, q REAL) returns DOUBLE
+	external name "sql"."quantile_avg";
+GRANT EXECUTE ON WINDOW quantile_avg(TINYINT, REAL) TO PUBLIC;
+create window quantile_avg(val SMALLINT, q REAL) returns DOUBLE
+	external name "sql"."quantile_avg";
+GRANT EXECUTE ON WINDOW quantile_avg(SMALLINT, REAL) TO PUBLIC;
+create window quantile_avg(val INTEGER, q REAL) returns DOUBLE
+	external name "sql"."quantile_avg";
+GRANT EXECUTE ON WINDOW quantile_avg(INTEGER, REAL) TO PUBLIC;
+create window quantile_avg(val BIGINT, q REAL) returns DOUBLE
+	external name "sql"."quantile_avg";
+GRANT EXECUTE ON WINDOW quantile_avg(BIGINT, REAL) TO PUBLIC;
+create window quantile_avg(val DECIMAL, q REAL) returns DOUBLE
+	external name "sql"."quantile_avg";
+GRANT EXECUTE ON WINDOW quantile_avg(DECIMAL, REAL) TO PUBLIC;
+create window quantile_avg(val REAL, q REAL) returns DOUBLE
+	external name "sql"."quantile_avg";
+GRANT EXECUTE ON WINDOW quantile_avg(REAL, REAL) TO PUBLIC;
+create window quantile_avg(val DOUBLE, q REAL) returns DOUBLE
+	external name "sql"."quantile_avg";
+GRANT EXECUTE ON WINDOW quantile_avg(DOUBLE, REAL) TO PUBLIC;
+
+create window quantile_avg(val TINYINT, q DOUBLE) returns DOUBLE
+	external name "sql"."quantile_avg";
+GRANT EXECUTE ON WINDOW quantile_avg(TINYINT, DOUBLE) TO PUBLIC;
+create window quantile_avg(val SMALLINT, q DOUBLE) returns DOUBLE
+	external name "sql"."quantile_avg";
+GRANT EXECUTE ON WINDOW quantile_avg(SMALLINT, DOUBLE) TO PUBLIC;
+create window quantile_avg(val INTEGER, q DOUBLE) returns DOUBLE
+	external name "sql"."quantile_avg";
+GRANT EXECUTE ON WINDOW quantile_avg(INTEGER, DOUBLE) TO PUBLIC;
+create window quantile_avg(val BIGINT, q DOUBLE) returns DOUBLE
+	external name "sql"."quantile_avg";
+GRANT EXECUTE ON WINDOW quantile_avg(BIGINT, DOUBLE) TO PUBLIC;
+create window quantile_avg(val DECIMAL, q DOUBLE) returns DOUBLE
+	external name "sql"."quantile_avg";
+GRANT EXECUTE ON WINDOW quantile_avg(DECIMAL, DOUBLE) TO PUBLIC;
+create window quantile_avg(val REAL, q DOUBLE) returns DOUBLE
+	external name "sql"."quantile_avg";
+GRANT EXECUTE ON WINDOW quantile_avg(REAL, DOUBLE) TO PUBLIC;
+create window quantile_avg(val DOUBLE, q DOUBLE) returns DOUBLE
+	external name "sql"."quantile_avg";
+GRANT EXECUTE ON WINDOW quantile_avg(DOUBLE, DOUBLE) TO PUBLIC;
+
 
 create aggregate corr(e1 TINYINT, e2 TINYINT) returns DOUBLE
 	external name "aggr"."corr";
