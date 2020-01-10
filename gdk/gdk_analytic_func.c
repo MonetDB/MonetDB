@@ -1805,7 +1805,7 @@ GDK_ANALYTICAL_STDEV_VARIANCE(variance_pop, 0, m2 / (n - 0))
 				ss = (BUN) start[i]; \
 				ee = (BUN) end[i]; \
 				f = (ee - ss - 1) * qua; \
-				qindex = ss + ee - (BUN) (ee + qua - f); \
+				qindex = ss + ee - (BUN) (ee + 0.5f - f); \
 				assert(qindex >= ss && qindex < ee); \
 				v = bp[qindex]; \
 				*rb = v; \
@@ -1826,7 +1826,7 @@ GDK_ANALYTICAL_STDEV_VARIANCE(variance_pop, 0, m2 / (n - 0))
 				ss = (BUN) start[i]; \
 				ee = (BUN) end[i]; \
 				f = (ee - ss - 1) * qua; \
-				qindex = ss + ee - (BUN) (ee + qua - f); \
+				qindex = ss + ee - (BUN) (ee + 0.5f - f); \
 				assert(qindex >= ss && qindex < ee); \
 				v = bp[qindex]; \
 				*rb = v; \
@@ -1862,7 +1862,7 @@ GDK_ANALYTICAL_STDEV_VARIANCE(variance_pop, 0, m2 / (n - 0))
 				ss = (BUN) start[i]; \
 				ee = (BUN) end[i]; \
 				f = (ee - ss - 1) * qua; \
-				qindex = ss + ee - (BUN) (ee + qua - f); \
+				qindex = ss + ee - (BUN) (ee + 0.5f - f); \
 				assert(qindex >= ss && qindex < ee); \
 				curval = BUNtail(bpi, qindex); \
 				has_nils |= atomcmp(curval, nil) == 0;	\
@@ -1938,7 +1938,7 @@ GDKanalytical_quantile(BAT *r, BAT *b, BAT *s, BAT *e, BAT *q, const void *restr
 					ss = (BUN) start[i];
 					ee = (BUN) end[i];
 					f = (ee - ss - 1) * qua;
-					qindex = ss + ee - (BUN) (ee + qua - f);
+					qindex = ss + ee - (BUN) (ee + 0.5f - f);
 					assert(qindex >= ss && qindex < ee);
 					curval = BUNtail(bpi, qindex);
 					if (BUNappend(r, curval, false) != GDK_SUCCEED)

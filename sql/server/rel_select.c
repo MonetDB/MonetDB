@@ -4582,7 +4582,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 					exp_label(sql->sa, in, ++sql->label);
 				in = exp_ref(sql->sa, in);
 			}
-			if(!in)
+			if (!in)
 				return NULL;
 			append(fargs, in);
 			nfargs++;
@@ -4590,52 +4590,49 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 		if (dl)
 			for (dargs = dl->h ; dargs ; dargs = dargs->next) { /* the last dnode is the distinct flag */
 				exp_kind ek = {type_value, card_column, FALSE};
+				sql_subtype *empty = sql_bind_localtype("void"), *bte = sql_bind_localtype("bte");
 
 				in = rel_value_exp2(query, &p, dargs->data.sym, f | sql_window, ek);
 				if (!in)
 					return NULL;
-				if(is_ntile && nfargs == 1) { /* ntile first argument null handling case */
-					sql_subtype *empty = sql_bind_localtype("void");
-					if(subtype_cmp(&(in->tpe), empty) == 0) {
-						sql_subtype *to = sql_bind_localtype("bte");
-						in = exp_convert(sql->sa, in, empty, to);
-					}
-				} else if(is_nth_value && nfargs == 1) { /* nth_value second argument null handling case */
-					sql_subtype *empty = sql_bind_localtype("void");
-					if(subtype_cmp(&(in->tpe), empty) == 0) {
-						sql_exp *ep = rel_first_column(sql, p);
-						in = exp_convert(sql->sa, in, empty, &(ep->tpe));
-					}
-				} else if((is_lag || is_lead) && nfargs == 2) { /* lag and lead 3rd arg must have same type as 1st arg */
+
+				/* corner case, if the argument is null convert it into something countable such as bte */
+				if (subtype_cmp(&(in->tpe), empty) == 0)
+					in = exp_convert(sql->sa, in, empty, bte);
+				if ((is_lag || is_lead) && nfargs == 2) { /* lag and lead 3rd arg must have same type as 1st arg */
 					sql_exp *first = (sql_exp*) fargs->h->data;
-					if(!(in = rel_check_type(sql, &first->tpe, p, in, type_equal)))
+					if (!(in = rel_check_type(sql, &first->tpe, p, in, type_equal)))
 						return NULL;
 				}
 				if (!in)
 					return NULL;
+
 				append(fargs, in);
+				in = exp_ref_save(sql, in);
 				nfargs++;
 			}
 		dargs = dn->next->next;
 	} else { /* aggregation function call */
 		for (dargs = dn->next ; dargs->next && dargs->data.sym ; dargs = dargs->next) { /* the last dnode is the distinct flag */
 			exp_kind ek = {type_value, card_column, FALSE};
+			sql_subtype *empty = sql_bind_localtype("void"), *bte = sql_bind_localtype("bte");
 
 			in = rel_value_exp2(query, &p, dargs->data.sym, f | sql_window, ek);
 			if (!in)
 				return NULL;
 
+			/* corner case, if the argument is null convert it into something countable such as bte */
+			if (subtype_cmp(&(in->tpe), empty) == 0)
+				in = exp_convert(sql->sa, in, empty, bte);
+			if (!in)
+				return NULL;
+
 			append(fargs, in);
-			nfargs++;
-			if (strcmp(s->base.name, "sys") == 0 && strcmp(aname, "count") == 0) {
-				sql_subtype *empty = sql_bind_localtype("void"), *bte = sql_bind_localtype("bte");
-				sql_exp *eo = fargs->h->data;
-				/* corner case, if the argument is null convert it into something countable such as bte */
-				if (subtype_cmp(&(eo->tpe), empty) == 0)
-					fargs->h->data = exp_convert(sql->sa, eo, empty, bte);
-				append(fargs, exp_atom_bool(sql->sa, 1)); /* ignore nills */
-			}
 			in = exp_ref_save(sql, in);
+			nfargs++;
+
+			if (strcmp(s->base.name, "sys") == 0 && strcmp(aname, "count") == 0)
+				append(fargs, exp_atom_bool(sql->sa, 1)); /* ignore nills */
 		}
 
 		if (!nfargs) { /* count(*) */
@@ -4785,7 +4782,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 	types = exp_types(sql->sa, fargs);
 	wf = bind_func_(sql, s, aname, types, F_ANALYTIC);
 	if (!wf) {
-		wf = sql_find_func_by_name(sql->sa, NULL, aname, list_length(types), F_ANALYTIC);
+		wf = find_func(sql, s, aname, list_length(types), F_ANALYTIC, NULL);
 		if (wf) {
 			node *op = wf->func->ops->h;
 			list *nexps = sa_list(sql->sa);

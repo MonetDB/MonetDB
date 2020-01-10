@@ -3168,7 +3168,8 @@ SQLupgrades(Client c, mvc *m)
 		}
 	}
 
-	if (!res && !sql_find_func_by_name(m->sa, s, "stddev_samp", 1, F_ANALYTIC)) {
+	sql_find_subtype(&tp, "tinyint", 0, 0);
+	if (!res && !sql_bind_func(m->sa, s, "stddev_samp", &tp, NULL, F_ANALYTIC)) {
 		if ((err = sql_update_analytics(c, m, prev_schema, &systabfixed)) != NULL) {
 			fprintf(stderr, "!%s\n", err);
 			freeException(err);

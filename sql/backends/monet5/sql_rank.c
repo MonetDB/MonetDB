@@ -1101,7 +1101,16 @@ SQLnth_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 #define CHECK_L_VALUE(TPE) \
 	do { \
-		TPE rval = *getArgReference_##TPE(stk, pci, 2); \
+		TPE rval; \
+		if (tp2_is_a_bat) { \
+			if (!(l = BATdescriptor(*getArgReference_bat(stk, pci, 2)))) { \
+				msg = createException(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor"); \
+				goto bailout; \
+			} \
+			rval = ((TPE*)Tloc(l, 0))[0]; \
+		} else { \
+			rval = *getArgReference_##TPE(stk, pci, 2); \
+		} \
 		if (!is_##TPE##_nil(rval) && rval < 0) { \
 			gdk_call = dual; \
 			rval *= -1; \
@@ -1115,9 +1124,12 @@ do_lead_lag(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char*
 			gdk_return (*dual)(BAT *, BAT *, BAT *, BUN, const void* restrict, int))
 {
 	int tp1, tp2, tp3, base = 2;
-	BUN l_value = 1;
+	BUN l_value = 1, cnt;
 	const void *restrict default_value;
 	gdk_return (*gdk_call)(BAT *, BAT *, BAT *, BUN, const void* restrict, int) = func;
+	BAT *b = NULL, *l = NULL, *d = NULL, *p = NULL, *r = NULL;
+	bool tp2_is_a_bat;
+	str msg = MAL_SUCCEED;
 
 	(void)cntxt;
 	if (pci->argc < 4 || pci->argc > 6)
@@ -1127,8 +1139,10 @@ do_lead_lag(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char*
 
 	if (pci->argc > 4) { //contains (lag or lead) value;
 		tp2 = getArgType(mb, pci, 2);
-		if (isaBatType(tp2))
-			throw(SQL, op, SQLSTATE(42000) "%s second argument must be a single atom", desc);
+		tp2_is_a_bat = isaBatType(tp2);
+		if (tp2_is_a_bat)
+			tp2 = getBatType(tp2);
+
 		switch (tp2) {
 			case TYPE_bte:
 				CHECK_L_VALUE(bte)
@@ -1154,11 +1168,21 @@ do_lead_lag(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char*
 	}
 
 	if (pci->argc > 5) { //contains default value;
-		ValRecord *vin = &(stk)->stk[(pci)->argv[3]];
 		tp3 = getArgType(mb, pci, 3);
-		if (isaBatType(tp3))
-			throw(SQL, op, SQLSTATE(42000) "%s third argument must be a single atom", desc);
-		default_value = VALget(vin);
+		if (isaBatType(tp3)) {
+			BATiter bpi;
+
+			tp3 = getBatType(tp3);
+			if (!(d = BATdescriptor(*getArgReference_bat(stk, pci, 3)))) {
+				msg = createException(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
+				goto bailout;
+			}
+			bpi = bat_iterator(d);
+			default_value = BUNtail(bpi, 0);
+		} else {
+			ValRecord *vin = &(stk)->stk[(pci)->argv[3]];
+			default_value = VALget(vin);
+		}
 		base = 4;
 	} else {
 		int tpe = tp1;
@@ -1170,43 +1194,56 @@ do_lead_lag(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char*
 	assert(default_value); //default value must be set
 
 	if (isaBatType(tp1)) {
-		BUN cnt;
 		bat *res = getArgReference_bat(stk, pci, 0);
-		BAT *b = BATdescriptor(*getArgReference_bat(stk, pci, 1)), *p = NULL, *r;
-		if (!b)
-			throw(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
-		cnt = BATcount(b);
+		b = BATdescriptor(*getArgReference_bat(stk, pci, 1));
+		if (!b) {
+			msg = createException(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
+			goto bailout;
+		}
 		gdk_return gdk_code;
 
+		cnt = BATcount(b);
 		tp1 = getBatType(tp1);
 		voidresultBAT(r, tp1, cnt, b, op);
 		if (isaBatType(getArgType(mb, pci, base))) {
 			p = BATdescriptor(*getArgReference_bat(stk, pci, base));
 			if (!p) {
-				BBPunfix(b->batCacheid);
-				throw(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
+				msg = createException(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
+				goto bailout;
 			}
 		}
 
 		gdk_code = gdk_call(r, b, p, l_value, default_value, tp1);
 
 		BATsetcount(r, cnt);
-		BBPunfix(b->batCacheid);
 		if (gdk_code == GDK_SUCCEED)
 			BBPkeepref(*res = r->batCacheid);
-		else
-			throw(SQL, op, GDK_EXCEPTION);
+		else {
+			msg = createException(SQL, op, GDK_EXCEPTION);
+			goto bailout;
+		}
 	} else {
 		ValRecord *res = &(stk)->stk[(pci)->argv[0]];
 		ValRecord *vin = &(stk)->stk[(pci)->argv[1]];
-		if(l_value == 0) {
-			if(!VALcopy(res, vin))
-				throw(SQL, op, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+
+		if (l_value == 0) {
+			if (!VALcopy(res, vin)) {
+				msg = createException(SQL, op, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
 		} else {
 			VALset(res, tp1, (ptr) default_value);
 		}
 	}
-	return MAL_SUCCEED;
+
+bailout:
+	if (b) BBPunfix(b->batCacheid);
+	if (p) BBPunfix(p->batCacheid);
+	if (l) BBPunfix(l->batCacheid);
+	if (d) BBPunfix(d->batCacheid);
+	if (msg && r)
+		BBPreclaim(r);
+	return msg;
 }
 
 str
