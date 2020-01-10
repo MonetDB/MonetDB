@@ -1026,7 +1026,7 @@ GDKlockHome(int farmid)
 		GDKfree(gdklockpath);
 		return GDK_FAIL;
 	}
-	if ((fd = MT_lockf(gdklockpath, F_TLOCK, 4, 1)) < 0) {
+	if ((fd = MT_lockf(gdklockpath, F_TLOCK)) < 0) {
 		GDKerror("GDKlockHome: Database lock '%s' denied\n",
 			 gdklockpath);
 		GDKfree(gdklockpath);
@@ -1077,7 +1077,7 @@ GDKunlockHome(int farmid)
 	if (BBPfarms[farmid].lock_file) {
 		char *gdklockpath = GDKfilepath(farmid, NULL, GDKLOCK, NULL);
 		if (gdklockpath)
-			MT_lockf(gdklockpath, F_ULOCK, 4, 1);
+			MT_lockf(gdklockpath, F_ULOCK);
 		fclose(BBPfarms[farmid].lock_file);
 		BBPfarms[farmid].lock_file = NULL;
 		GDKfree(gdklockpath);

@@ -196,8 +196,7 @@ logListener(void *x)
 		/* wait max 1 second, tradeoff between performance and being
 		 * able to catch up new logger streams */
 #ifndef HAVE_POLL
-		tv.tv_sec = 1;
-		tv.tv_usec = 0;
+		tv = (struct timeval) {.tv_sec = 1};
 		FD_ZERO(&readfds);
 #endif
 		nfds = 0;
@@ -687,7 +686,7 @@ main(int argc, char *argv[])
 	}
 
 	/* lock such that we are alone on this world */
-	if ((lockfd = MT_lockf(".merovingian_lock", F_TLOCK, 4, 1)) == -1) {
+	if ((lockfd = MT_lockf(".merovingian_lock", F_TLOCK)) == -1) {
 		/* locking failed */
 		Mfprintf(stderr, "another monetdbd is already running\n");
 		MERO_EXIT_CLEAN(1);
@@ -1114,7 +1113,7 @@ shutdown:
 	}
 
 	if (lockfd >= 0) {
-		MT_lockf(".merovingian_lock", F_ULOCK, 4, 1);
+		MT_lockf(".merovingian_lock", F_ULOCK);
 		close(lockfd);
 	}
 
