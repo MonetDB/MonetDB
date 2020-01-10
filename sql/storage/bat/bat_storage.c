@@ -13,7 +13,8 @@
 #include "algebra.h"
 #include "gdk_atoms.h"
 
-#define SNAPSHOT_MINSIZE ((BUN) 1024*128)
+//#define SNAPSHOT_MINSIZE ((BUN) 1024*128)
+#define SNAPSHOT_MINSIZE ((BUN) 1024*2)
 
 static MT_Lock destroy_lock = MT_LOCK_INITIALIZER("destroy_lock");
 sql_dbat *tobe_destroyed_dbat = NULL;
@@ -2461,7 +2462,7 @@ tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat, int unique)
 	}
 	/* any inserts */
 	if (BUNlast(ins) > 0 || cbat->cleared) {
-		if ((!obat->ibase && BATcount(ins) > SNAPSHOT_MINSIZE)){
+		if ((!cbat->ibase && BATcount(ins) > SNAPSHOT_MINSIZE)){
 			/* swap cur and ins */
 			BAT *newcur = ins;
 
@@ -2815,6 +2816,7 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 					ok = LOG_ERR;
 				cc->data = NULL;
 			} else if (cc->data) {
+				tr_handle_snapshot(tr, cc->data);
 				oc->data = cc->data; 
 				oc->base.allocated = 1;
 				cc->data = NULL;
@@ -2901,6 +2903,7 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 						ok = LOG_ERR;
 					ci->data = NULL;
 				} else if (ci->data) {
+					tr_handle_snapshot(tr, ci->data);
 					oi->data = ci->data;
 					oi->base.allocated = 1;
 					ci->data = NULL;
