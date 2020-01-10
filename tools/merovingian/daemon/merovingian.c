@@ -344,7 +344,7 @@ main(int argc, char *argv[])
 	int socku = -1;
 	char* host = NULL;
 	unsigned short port = 0;
-	char discovery = 0;
+	bool discovery = false;
 	struct stat sb;
 	FILE *oerr = NULL;
 	int thret;
@@ -950,12 +950,12 @@ main(int argc, char *argv[])
 	/* open up connections */
 	if ((e = openConnectionTCP(&sock, use_ipv6, host, port, stdout)) == NO_ERR &&
 		(e = openConnectionUNIX(&socku, mapi_usock, 0, stdout)) == NO_ERR &&
-		(discovery == 0 || (e = openConnectionUDP(&discsock, false, host, port)) == NO_ERR) &&
+		(!discovery || (e = openConnectionUDP(&discsock, false, host, port)) == NO_ERR) &&
 		(e = openConnectionUNIX(&unsock, control_usock, S_IRWXO, _mero_ctlout)) == NO_ERR) {
 		pthread_t ctid = 0;
 		pthread_t dtid = 0;
 
-		if (discovery == 1) {
+		if (discovery) {
 			_mero_broadcastsock = socket(AF_INET, SOCK_DGRAM
 #ifdef SOCK_CLOEXEC
 										 | SOCK_CLOEXEC
