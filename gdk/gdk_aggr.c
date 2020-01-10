@@ -2711,6 +2711,19 @@ BATmax_skipnil(BAT *b, void *aggr, bit skipnil)
 #define binsearch_oid(indir, offset, vals, lo, hi, v, ordering, last) binsearch_lng(indir, offset, (const lng *) vals, lo, hi, (lng) (v), ordering, last)
 #endif
 
+#define DO_QUANTILE_AVG(TPE) \
+	do { \
+		TPE low = *(TPE*) BUNtail(bi, r + (BUN) hi); \
+		TPE high = *(TPE*) BUNtail(bi, r + (BUN) lo); \
+		if (is_##TPE##_nil(low) || is_##TPE##_nil(high)) { \
+			v = dnil; \
+			nils++; \
+		} else { \
+			val = (f - lo) * low + (lo + 1 - f) * high; \
+			v = &val; \
+		} \
+	} while (0)
+
 static BAT *
 doBATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 		   bool skip_nils, bool abort_on_error, bool average)
@@ -2862,30 +2875,29 @@ doBATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 				double hi = ceil(f);
 				switch (ATOMbasetype(tp)) {
 				case TYPE_bte:
-					val = (f - lo) * *(bte*)BUNtail(bi, r + (BUN) hi) + (lo + 1 - f) * *(bte*)BUNtail(bi, r + (BUN) lo);
+					DO_QUANTILE_AVG(bte);
 					break;
 				case TYPE_sht:
-					val = (f - lo) * *(sht*)BUNtail(bi, r + (BUN) hi) + (lo + 1 - f) * *(sht*)BUNtail(bi, r + (BUN) lo);
+					DO_QUANTILE_AVG(sht);
 					break;
 				case TYPE_int:
-					val = (f - lo) * *(int*)BUNtail(bi, r + (BUN) hi) + (lo + 1 - f) * *(int*)BUNtail(bi, r + (BUN) lo);
+					DO_QUANTILE_AVG(int);
 					break;
 				case TYPE_lng:
-					val = (f - lo) * *(lng*)BUNtail(bi, r + (BUN) hi) + (lo + 1 - f) * *(lng*)BUNtail(bi, r + (BUN) lo);
+					DO_QUANTILE_AVG(lng);
 					break;
 #ifdef HAVE_HGE
 				case TYPE_hge:
-					val = (f - lo) * *(hge*)BUNtail(bi, r + (BUN) hi) + (lo + 1 - f) * *(hge*)BUNtail(bi, r + (BUN) lo);
+					DO_QUANTILE_AVG(hge);
 					break;
 #endif
 				case TYPE_flt:
-					val = (f - lo) * *(flt*)BUNtail(bi, r + (BUN) hi) + (lo + 1 - f) * *(flt*)BUNtail(bi, r + (BUN) lo);
+					DO_QUANTILE_AVG(flt);
 					break;
 				case TYPE_dbl:
-					val = (f - lo) * *(dbl*)BUNtail(bi, r + (BUN) hi) + (lo + 1 - f) * *(dbl*)BUNtail(bi, r + (BUN) lo);
+					DO_QUANTILE_AVG(dbl);
 					break;
 				}
-				v = &val;
 			} else {
 				/* round *down* to nearest integer */
 				double f = (p - r - 1) * quantile;
@@ -2953,30 +2965,29 @@ doBATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 			double hi = ceil(f);
 			switch (ATOMbasetype(tp)) {
 			case TYPE_bte:
-				val = (f - lo) * *(bte*)BUNtail(bi, r + (BUN) hi) + (lo + 1 - f) * *(bte*)BUNtail(bi, r + (BUN) lo);
+				DO_QUANTILE_AVG(bte);
 				break;
 			case TYPE_sht:
-				val = (f - lo) * *(sht*)BUNtail(bi, r + (BUN) hi) + (lo + 1 - f) * *(sht*)BUNtail(bi, r + (BUN) lo);
+				DO_QUANTILE_AVG(sht);
 				break;
 			case TYPE_int:
-				val = (f - lo) * *(int*)BUNtail(bi, r + (BUN) hi) + (lo + 1 - f) * *(int*)BUNtail(bi, r + (BUN) lo);
+				DO_QUANTILE_AVG(int);
 				break;
 			case TYPE_lng:
-				val = (f - lo) * *(lng*)BUNtail(bi, r + (BUN) hi) + (lo + 1 - f) * *(lng*)BUNtail(bi, r + (BUN) lo);
+				DO_QUANTILE_AVG(lng);
 				break;
 #ifdef HAVE_HGE
 			case TYPE_hge:
-				val = (f - lo) * *(hge*)BUNtail(bi, r + (BUN) hi) + (lo + 1 - f) * *(hge*)BUNtail(bi, r + (BUN) lo);
+				DO_QUANTILE_AVG(hge);
 				break;
 #endif
 			case TYPE_flt:
-				val = (f - lo) * *(flt*)BUNtail(bi, r + (BUN) hi) + (lo + 1 - f) * *(flt*)BUNtail(bi, r + (BUN) lo);
+				DO_QUANTILE_AVG(flt);
 				break;
 			case TYPE_dbl:
-				val = (f - lo) * *(dbl*)BUNtail(bi, r + (BUN) hi) + (lo + 1 - f) * *(dbl*)BUNtail(bi, r + (BUN) lo);
+				DO_QUANTILE_AVG(dbl);
 				break;
 			}
-			v = &val;
 		} else {
 			double f;
 			/* round (p-r-1)*quantile *down* to nearest

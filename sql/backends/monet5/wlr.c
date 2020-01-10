@@ -250,6 +250,7 @@ WLRprocessBatch(void *arg)
 	/* Cook a log file into a concreate MAL function for multiple transactions */
 	prev = newFunction(putName("user"), putName("wlr"), FUNCTIONsymbol);
 	if(prev == NULL) {
+		close_stream(c->fdout);
 		MCcloseClient(c);
 		fprintf(stderr, "#Could not create user for WLR process\n");
 		return;
@@ -431,6 +432,7 @@ WLRprocessBatch(void *arg)
 	}
 	(void) fflush(stderr);
 	SQLexitClient(c);
+	close_stream(c->fdout);
 	MCcloseClient(c);
 	if(prev)
 		freeSymbol(prev);

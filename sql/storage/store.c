@@ -4677,15 +4677,6 @@ sql_trans_validate(sql_trans *tr)
 
 	/* depends on the iso level */
 
-	if (tr->schema_number != store_schema_number())
-		return false;
-
-	/* since we protect usage through private copies both the iso levels
-	   read uncommited and read commited always succeed.
-	if (tr->level == ISO_READ_UNCOMMITED || tr->level == ISO_READ_COMMITED)
-		return true;
-	 */
-
 	/* If only 'inserts' occurred on the read columns the repeatable reads
 	   iso level can continue */
 
