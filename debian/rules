@@ -25,6 +25,7 @@ override_dh_auto_configure:
 	--enable-netcdf=no \
 	--enable-odbc=yes \
 	--enable-optimize=yes \
+	--enable-profiler=no \
 	--enable-py2integration=yes \
 	--enable-py3integration=yes \
 	--enable-rintegration=yes \

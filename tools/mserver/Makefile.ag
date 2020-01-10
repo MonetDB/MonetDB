@@ -68,7 +68,8 @@ bin_mserver5 = {
 		$(lz4_LIBS) \
 		$(liblzma_LIBS) \
 		$(curl_LIBS) \
-		$(LTLIBICONV)
+		$(LTLIBICONV) \
+		$(PROFILER_LIBS)
 }
 
 bin_shutdowntest = {

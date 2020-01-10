@@ -82,8 +82,7 @@ MFconnectionManager(void *d)
 		FD_SET(mfpipe[0], &fds);
 
 		/* wait up to 5 seconds */
-		tv.tv_sec = 5;
-		tv.tv_usec = 0;
+		tv = (struct timeval) {.tv_sec = 5};
 		i = select(mfpipe[0] + 1, &fds, NULL, NULL, &tv);
 #endif
 		if (i == 0)
@@ -439,7 +438,7 @@ multiplexInit(char *name, char *pattern, FILE *sout, FILE *serr)
 	/* fake lock such that sabaoth believes we are (still) running, we
 	 * rely on merovingian moving to dbfarm here */
 	snprintf(buf, sizeof(buf), "%s/.gdk_lock", name);
-	if ((m->gdklock = MT_lockf(buf, F_TLOCK, 4, 1)) == -1) {
+	if ((m->gdklock = MT_lockf(buf, F_TLOCK)) == -1) {
 		/* locking failed, FIXME: cleanup here */
 		Mfprintf(serr, "mfunnel: another instance is already running?\n");
 		return(newErr("cannot lock for %s, already locked", name));
@@ -616,7 +615,7 @@ multiplexQuery(multiplex *m, char *buf, stream *fout)
 				rlen += mapi_rows_affected(h);
 				break;
 			case Q_SCHEMA:
-				/* accept, just write ok lateron */
+				/* accept, just write ok later on */
 				break;
 			case Q_TRANS:
 				/* just check all servers end up in the same state */
@@ -730,8 +729,7 @@ multiplexThread(void *d)
 		}
 
 		/* wait up to 1 second. */
-		tv.tv_sec = 1;
-		tv.tv_usec = 0;
+		tv = (struct timeval) {.tv_sec = 1};
 		r = select(msock + 1, &fds, NULL, NULL, &tv);
 #endif
 

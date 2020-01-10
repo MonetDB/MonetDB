@@ -1,0 +1,3 @@
+# errors in the constant types
+x:= 1:bat[:int];
+io.print(x);

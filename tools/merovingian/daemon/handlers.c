@@ -114,7 +114,7 @@ void reinitialize(void)
 	readProps(_mero_props, ".");
 
 	/* check and trim the hash-algo from the passphrase for easy use
-	 * lateron */
+	 * later on */
 	kv = findConfKey(_mero_props, "passphrase");
 	if (kv->val != NULL) {
 		char *h = kv->val + 1;

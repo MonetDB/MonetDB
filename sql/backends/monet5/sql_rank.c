@@ -1738,7 +1738,7 @@ do_quantile_avg_solo(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char *op)
 	dbl *res = (dbl*) getArgReference(stk, pci, 0);
 	ptr *in = getArgReference(stk, pci, 1);
 	ptr *qua = getArgReference(stk, pci, 2);
-	int tp1 = getArgType(mb, pci, 1), tp2 = getArgType(mb, pci, 2), scale;
+	int tp1 = getArgType(mb, pci, 1), tp2 = getArgType(mb, pci, 2), scale = 0;
 	str msg = MAL_SUCCEED;
 
 	switch (tp2) {

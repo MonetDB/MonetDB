@@ -406,8 +406,7 @@ discoveryRunner(void *d)
 #else
 			FD_ZERO(&fds);
 			FD_SET(sock, &fds);
-			tv.tv_sec = 1;
-			tv.tv_usec = 0;
+			tv = (struct timeval) {.tv_sec = 1};
 			nread = select(sock + 1, &fds, NULL, NULL, &tv);
 #endif
 			if (nread != 0)
