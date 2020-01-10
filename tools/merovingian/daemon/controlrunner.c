@@ -120,6 +120,7 @@ recvWithTimeout(int msgsock, stream *fdin, char *buf, size_t buflen)
 #ifdef HAVE_POLL
 	struct pollfd pfd = (struct pollfd) {.fd = msgsock, .events = POLLIN};
 
+	/* Wait up to 1 second.  If a client doesn't make this, it's too slow */
 	retval = poll(&pfd, 1, 1000);
 #else
 	fd_set fds;
@@ -129,8 +130,7 @@ recvWithTimeout(int msgsock, stream *fdin, char *buf, size_t buflen)
 	FD_SET(msgsock, &fds);
 
 	/* Wait up to 1 second.  If a client doesn't make this, it's too slow */
-	tv.tv_sec = 1;
-	tv.tv_usec = 0;
+	tv = struct timeval) {.tv_sec = 1};
 	retval = select(msgsock + 1, &fds, NULL, NULL, &tv);
 #endif
 	if (retval <= 0) {
@@ -1047,6 +1047,7 @@ controlRunner(void *d)
 			Mfprintf(_mero_ctlerr, "malloc failed");
 			break;
 		}
+		/* limit waiting time in order to check whether we need to exit */
 #ifdef HAVE_POLL
 		pfd = (struct pollfd) {.fd = usock, .events = POLLIN};
 		retval = poll(&pfd, 1, 1000);
@@ -1054,9 +1055,7 @@ controlRunner(void *d)
 		FD_ZERO(&fds);
 		FD_SET(usock, &fds);
 
-		/* limit waiting time in order to check whether we need to exit */
-		tv.tv_sec = 1;
-		tv.tv_usec = 0;
+		tv = (struct timeval) {.tv_sec = 1};
 		retval = select(usock + 1, &fds, NULL, NULL, &tv);
 #endif
 		if (retval == 0) {

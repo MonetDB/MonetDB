@@ -196,8 +196,7 @@ logListener(void *x)
 		/* wait max 1 second, tradeoff between performance and being
 		 * able to catch up new logger streams */
 #ifndef HAVE_POLL
-		tv.tv_sec = 1;
-		tv.tv_usec = 0;
+		tv = (struct timeval) {.tv_sec = 1};
 		FD_ZERO(&readfds);
 #endif
 		nfds = 0;

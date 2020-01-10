@@ -967,6 +967,7 @@ export CFLAGS
 	--enable-mapi=yes \
 	--enable-netcdf=no \
 	--enable-odbc=yes \
+	--enable-profiler=no \
 	--enable-py2integration=%{?with_py2integration:yes}%{!?with_py2integration:no} \
 	--enable-py3integration=%{?with_py3integration:yes}%{!?with_py3integration:no} \
 	--enable-rintegration=%{?with_rintegration:yes}%{!?with_rintegration:no} \

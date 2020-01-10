@@ -82,8 +82,7 @@ MFconnectionManager(void *d)
 		FD_SET(mfpipe[0], &fds);
 
 		/* wait up to 5 seconds */
-		tv.tv_sec = 5;
-		tv.tv_usec = 0;
+		tv = (struct timeval) {.tv_sec = 5};
 		i = select(mfpipe[0] + 1, &fds, NULL, NULL, &tv);
 #endif
 		if (i == 0)
@@ -730,8 +729,7 @@ multiplexThread(void *d)
 		}
 
 		/* wait up to 1 second. */
-		tv.tv_sec = 1;
-		tv.tv_usec = 0;
+		tv = (struct timeval) {.tv_sec = 1};
 		r = select(msock + 1, &fds, NULL, NULL, &tv);
 #endif
 
