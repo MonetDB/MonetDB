@@ -63,6 +63,34 @@ stdout of test 'tst180` in directory 'monetdb5/mal` itself:
 # 23:13:31 >  "mclient" "-lmal" "-ftest" "-tnone" "-Eutf-8" "--host=/var/tmp/mtest-9044" "--port=31028"
 # 23:13:31 >  
 
+#--------------------------#
+# h	t  # name
+# void	str  # type
+#--------------------------#
+[ 0@0,	"gdk_dbpath"	]
+[ 1@0,	"mapi_port"	]
+[ 2@0,	"mapi_open"	]
+[ 3@0,	"mapi_ipv6"	]
+[ 4@0,	"mapi_autosense"	]
+[ 5@0,	"sql_optimizer"	]
+[ 6@0,	"sql_debug"	]
+[ 7@0,	"raw_strings"	]
+[ 8@0,	"gdk_nr_threads"	]
+[ 9@0,	"mapi_usock"	]
+[ 10@0,	"embedded_c"	]
+[ 11@0,	"gdk_dbname"	]
+[ 12@0,	"gdk_vm_maxsize"	]
+[ 13@0,	"gdk_mem_maxsize"	]
+[ 14@0,	"gdk_mmap_minsize_persistent"	]
+[ 15@0,	"gdk_mmap_minsize_transient"	]
+[ 16@0,	"gdk_mmap_pagesize"	]
+[ 17@0,	"monet_pid"	]
+[ 18@0,	"revision"	]
+[ 19@0,	"monet_version"	]
+[ 20@0,	"monet_release"	]
+[ 21@0,	"monet_mod_path"	]
+[ 22@0,	"max_clients"	]
+[ 23@0,	"recovery"	]
 
 # 23:13:31 >  
 # 23:13:31 >  "Done."
