@@ -101,7 +101,7 @@ typedef struct _threadlist {
 char *_mero_mserver = NULL;
 /* list of databases that we have started */
 dpair _mero_topdp = NULL;
-/* lock to _mero_topdp, initialised as recursive lateron */
+/* lock to _mero_topdp, initialised as recursive later on */
 pthread_mutex_t _mero_topdp_lock = PTHREAD_MUTEX_INITIALIZER;
 /* for the logger, when set to 0, the logger terminates */
 volatile int _mero_keep_logging = 1;
@@ -343,7 +343,7 @@ main(int argc, char *argv[])
 	int socku = -1;
 	char* host = NULL;
 	unsigned short port = 0;
-	char discovery = 0;
+	bool discovery = false;
 	struct stat sb;
 	FILE *oerr = NULL;
 	int thret;
@@ -661,7 +661,7 @@ main(int argc, char *argv[])
 	discovery = getConfNum(_mero_props, "discovery");
 
 	/* check and trim the hash-algo from the passphrase for easy use
-	 * lateron */
+	 * later on */
 	kv = findConfKey(_mero_props, "passphrase");
 	if (kv->val != NULL) {
 		char *h = kv->val + 1;
@@ -949,12 +949,12 @@ main(int argc, char *argv[])
 	/* open up connections */
 	if ((e = openConnectionTCP(&sock, use_ipv6, host, port, stdout)) == NO_ERR &&
 		(e = openConnectionUNIX(&socku, mapi_usock, 0, stdout)) == NO_ERR &&
-		(discovery == 0 || (e = openConnectionUDP(&discsock, false, host, port)) == NO_ERR) &&
+		(!discovery || (e = openConnectionUDP(&discsock, false, host, port)) == NO_ERR) &&
 		(e = openConnectionUNIX(&unsock, control_usock, S_IRWXO, _mero_ctlout)) == NO_ERR) {
 		pthread_t ctid = 0;
 		pthread_t dtid = 0;
 
-		if (discovery == 1) {
+		if (discovery) {
 			_mero_broadcastsock = socket(AF_INET, SOCK_DGRAM
 #ifdef SOCK_CLOEXEC
 										 | SOCK_CLOEXEC

@@ -41,7 +41,7 @@ db_glob(const char *expr, const char *haystack)
 		switch (*expr) {
 			case '*':
 				if (!escape) {
-					/* store expression position for retry lateron */
+					/* store expression position for retry later on */
 					exprmem = expr;
 					/* skip over haystack till the next char from expr */
 					do {
@@ -61,7 +61,7 @@ db_glob(const char *expr, const char *haystack)
 					} while(1);
 					while (*haystack != '\0' && *haystack != *expr)
 						haystack++;
-					/* store match position, for retry lateron */
+					/* store match position, for retry later on */
 					haymem = haystack + 1;
 					if (*haystack == '\0')
 						/* couldn't find it, so no match  */
