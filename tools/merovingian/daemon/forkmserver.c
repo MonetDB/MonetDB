@@ -430,7 +430,7 @@ forkMserver(char *database, sabdb** stats, bool force)
 	}
 
 	/* check if the vaultkey is there, otherwise abort early (value
-	 * lateron reused when server is started) */
+	 * later on reused when server is started) */
 	snprintf(vaultkey, sizeof(vaultkey), "%s/.vaultkey", (*stats)->path);
 	if (stat(vaultkey, &statbuf) == -1) {
 		msab_freeStatus(stats);

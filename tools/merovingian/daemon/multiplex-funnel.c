@@ -622,7 +622,7 @@ multiplexQuery(multiplex *m, char *buf, stream *fout)
 				rlen += mapi_rows_affected(h);
 				break;
 			case Q_SCHEMA:
-				/* accept, just write ok lateron */
+				/* accept, just write ok later on */
 				break;
 			case Q_TRANS:
 				/* just check all servers end up in the same state */

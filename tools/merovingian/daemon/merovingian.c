@@ -101,7 +101,7 @@ typedef struct _threadlist {
 char *_mero_mserver = NULL;
 /* list of databases that we have started */
 dpair _mero_topdp = NULL;
-/* lock to _mero_topdp, initialised as recursive lateron */
+/* lock to _mero_topdp, initialised as recursive later on */
 pthread_mutex_t _mero_topdp_lock = PTHREAD_MUTEX_INITIALIZER;
 /* for the logger, when set to 0, the logger terminates */
 volatile int _mero_keep_logging = 1;
@@ -662,7 +662,7 @@ main(int argc, char *argv[])
 	discovery = getConfNum(_mero_props, "discovery");
 
 	/* check and trim the hash-algo from the passphrase for easy use
-	 * lateron */
+	 * later on */
 	kv = findConfKey(_mero_props, "passphrase");
 	if (kv->val != NULL) {
 		char *h = kv->val + 1;

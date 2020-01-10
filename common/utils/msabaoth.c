@@ -138,7 +138,7 @@ msab_init(const char *dbfarm, const char *dbname)
 	if (_sabaoth_internal_dbname != NULL)
 		free(_sabaoth_internal_dbname);
 
-	/* this UUID is supposed to be unique per-process, we use it lateron
+	/* this UUID is supposed to be unique per-process, we use it later on
 	 * to determine if a database is (started by) the current process,
 	 * since locking always succeeds for the same process */
 	if (_sabaoth_internal_uuid == NULL)
