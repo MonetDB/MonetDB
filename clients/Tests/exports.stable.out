@@ -2054,7 +2054,6 @@ int chkInstruction(Module s, MalBlkPtr mb, InstrPtr p);
 str chkProgram(Module s, MalBlkPtr mb);
 str chkTypes(Module s, MalBlkPtr mb, int silent);
 str cleanupTraces(Client cntxt);
-void clearStack(MalStkPtr s);
 void clearTrace(Client cntxt);
 void clearVariable(MalBlkPtr mb, int varid);
 str clear_tableRef;

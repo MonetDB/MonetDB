@@ -24,6 +24,11 @@ stderr of test 'tst180` in directory 'monetdb5/mal` itself:
 # 23:13:31 >  "mclient" "-lmal" "-ftest" "-tnone" "-Eutf-8" "--host=/var/tmp/mtest-9044" "--port=31028"
 # 23:13:31 >  
 
+MAPI  = (monetdb) /var/tmp/mtest-29134/.s.monetdb.36370
+QUERY = # errors in the constant types
+        x:= 1:bat[:int];
+        io.print(x);
+ERROR = !MALException:io.print:HY002!Object not found
 
 # 23:13:31 >  
 # 23:13:31 >  "Done."
