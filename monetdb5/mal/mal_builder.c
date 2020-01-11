@@ -626,11 +626,12 @@ pushNilType(MalBlkPtr mb, InstrPtr q, char *tpe)
 		if (msg != MAL_SUCCEED) {
 			addMalException(mb, msg);
 			freeException(msg);
-		}
-		_t = defConstant(mb,idx,&cst);
-		if( _t >= 0){
-			setVarUDFtype(mb,_t);
-			return pushArgument(mb, q, _t);
+		} else {
+			_t = defConstant(mb,idx,&cst);
+			if( _t >= 0){
+				setVarUDFtype(mb,_t);
+				return pushArgument(mb, q, _t);
+			}
 		}
 	}
 	return q;
@@ -651,11 +652,12 @@ pushType(MalBlkPtr mb, InstrPtr q, int tpe)
 	if (msg != MAL_SUCCEED){
 		addMalException(mb, msg);
 		freeException(msg);
-	}
-	_t = defConstant(mb,tpe,&cst);
-	if( _t >= 0){
-		setVarUDFtype(mb,_t);
-		return pushArgument(mb, q, _t);
+	} else {
+		_t = defConstant(mb,tpe,&cst);
+		if( _t >= 0){
+			setVarUDFtype(mb,_t);
+			return pushArgument(mb, q, _t);
+		}
 	}
 	return q;
 }
@@ -675,10 +677,11 @@ pushZero(MalBlkPtr mb, InstrPtr q, int tpe)
 	if (msg != MAL_SUCCEED) {
 		addMalException(mb, msg);
 		freeException(msg);
+	} else {
+		_t = defConstant(mb,tpe,&cst);
+		if( _t >= 0)
+			return pushArgument(mb, q, _t);
 	}
-	_t = defConstant(mb,tpe,&cst);
-	if( _t >= 0)
-		return pushArgument(mb, q, _t);
 	return q;
 }
 
