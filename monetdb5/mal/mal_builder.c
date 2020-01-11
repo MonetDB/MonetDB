@@ -29,7 +29,10 @@ newAssignment(MalBlkPtr mb)
 	assert(q);
 	k = newTmpVariable(mb,TYPE_any);
 	if (k < 0) {
-		addMalException(mb, createException(MAL, "newAssignment", "Can not allocate variable"));
+		// construct an exception message to be passed to upper layers using ->errors
+		str msg = createException(MAL, "newAssignment", "Can not allocate variable");
+		addMalException(mb, msg);
+		freeException(msg);
 	} else
 		getArg(q,0) =  k;
 	pushInstruction(mb, q);
@@ -45,8 +48,11 @@ newStmt(MalBlkPtr mb, const char *module, const char *name)
 	q = newInstruction(mb, mName, nName);
 	assert(q);
 	setDestVar(q, newTmpVariable(mb, TYPE_any));
-	if (getDestVar(q) < 0 )
-		addMalException(mb, createException(MAL, "newStmt", "Can not allocate variable"));
+	if (getDestVar(q) < 0 ){
+		str msg = createException(MAL, "newStmt", "Can not allocate variable");
+		addMalException(mb, msg);
+		freeException(msg);
+	}
 	pushInstruction(mb, q);
 	return q;
 }
@@ -61,8 +67,11 @@ newStmtArgs(MalBlkPtr mb, const char *module, const char *name, int args)
 	assert(q);
 
 	setDestVar(q, newTmpVariable(mb, TYPE_any));
-	if (getDestVar(q) < 0 || mb->errors != MAL_SUCCEED) 
-		addMalException(mb, createException(MAL, "newStmtArgs", "Can not allocate variable"));
+	if (getDestVar(q) < 0 || mb->errors != MAL_SUCCEED) {
+		str msg = createException(MAL, "newStmtArgs", "Can not allocate variable");
+		addMalException(mb, msg);
+		freeException(msg);
+	}
 	pushInstruction(mb, q);
 	return q;
 }
@@ -75,9 +84,11 @@ newReturnStmt(MalBlkPtr mb)
 
 	assert(q);
 	k = newTmpVariable(mb,TYPE_any);
-	if (k < 0 )
-		addMalException(mb, createException(MAL, "newReturnStmt", "Can not allocate return variable"));
-	else
+	if (k < 0 ){
+		str msg = createException(MAL, "newReturnStmt", "Can not allocate return variable");
+		addMalException(mb, msg);
+		freeException(msg);
+	} else
 		getArg(q,0) = k;
 	q->barrier= RETURNsymbol;
 	pushInstruction(mb, q);
@@ -108,9 +119,11 @@ newComment(MalBlkPtr mb, const char *val)
 	q->token = REMsymbol;
 	q->barrier = 0;
 	cst.vtype= TYPE_str;
-	if ((cst.val.sval= GDKstrdup(val)) == NULL) 
-		addMalException(mb, createException(MAL, "newComment", "Can not allocate comment"));
-	else {
+	if ((cst.val.sval= GDKstrdup(val)) == NULL) {
+		str msg = createException(MAL, "newComment", "Can not allocate comment");
+		addMalException(mb, msg);
+		freeException(msg);
+	} else {
 		cst.len = strlen(cst.val.sval);
 		k = defConstant(mb, TYPE_str, &cst);
 		if( k >= 0){
@@ -134,9 +147,11 @@ newCatchStmt(MalBlkPtr mb, str nme)
 	q->barrier = CATCHsymbol;
 	if ( i< 0) {
 		k = newVariable(mb, nme, strlen(nme),TYPE_str);
-		if (k<0)
-			addMalException(mb, createException(MAL, "newCatchStmt", "Can not allocate variable"));
-		else{
+		if (k<0){
+			str msg = createException(MAL, "newCatchStmt", "Can not allocate variable");
+			addMalException(mb, msg);
+			freeException(msg);
+		}else{
 			getArg(q,0) = k;
 			setVarUDFtype(mb,getArg(q,0));
 		}
@@ -155,9 +170,11 @@ newRaiseStmt(MalBlkPtr mb, str nme)
 	q->barrier = RAISEsymbol;
 	if ( i< 0) {
 		k = newVariable(mb, nme, strlen(nme),TYPE_str);
-		if (k< 0 || mb->errors != MAL_SUCCEED) 
-			addMalException(mb, createException(MAL, "newRaiseStmt", "Can not allocate variable"));
-		else
+		if (k< 0 || mb->errors != MAL_SUCCEED) {
+			str msg = createException(MAL, "newRaiseStmt", "Can not allocate variable");
+			addMalException(mb, msg);
+			freeException(msg);
+		} else
 			getArg(q,0) = k;
 	} else
 		getArg(q,0) = i;
@@ -175,9 +192,11 @@ newExitStmt(MalBlkPtr mb, str nme)
 	q->barrier = EXITsymbol;
 	if ( i< 0) {
 		k= newVariable(mb, nme,strlen(nme),TYPE_str);
-		if (k < 0 )
-			addMalException(mb, createException(MAL, "newExitStmt", "Can not allocate variable"));
-		else
+		if (k < 0 ){
+			str msg = createException(MAL, "newExitStmt", "Can not allocate variable");
+			addMalException(mb, msg);
+			freeException(msg);
+		}else
 			getArg(q,0) = k;
 	} else
 		getArg(q,0) = i;
@@ -559,13 +578,18 @@ pushNil(MalBlkPtr mb, InstrPtr q, int tpe)
 			cst.val.oval= oid_nil;
 		} else if (ATOMextern(tpe)) {
 			ptr p = ATOMnil(tpe);
-			if( p == NULL)
-				addMalException(mb, createException(MAL, "pushNil", "Can not allocate nil variable"));
-			else
+			if( p == NULL){
+				str msg = createException(MAL, "pushNil", "Can not allocate nil variable");
+				addMalException(mb, msg);
+				freeException(msg);
+			} else
 				VALset(&cst, tpe, p);
 		} else {
-			if (VALinit(&cst, tpe, ATOMnilptr(tpe)) == NULL) 
-				addMalException(mb, createException(MAL, "pushNil", "Can not allocate nil variable"));
+			if (VALinit(&cst, tpe, ATOMnilptr(tpe)) == NULL) {
+				str msg =  createException(MAL, "pushNil", "Can not allocate nil variable");
+				addMalException(mb, msg);
+				freeException(msg);
+			}
 		}
 		_t = defConstant(mb,tpe,&cst);
 	} else {
@@ -590,9 +614,11 @@ pushNilType(MalBlkPtr mb, InstrPtr q, char *tpe)
 
 	assert(q);
 	idx= getAtomIndex(tpe, strlen(tpe), TYPE_any);
-	if( idx < 0 || idx >= GDKatomcnt || idx >= MAXATOMS)
-		addMalException(mb, createException(MAL, "pushNilType", "Can not allocate type variable"));
-	else {
+	if( idx < 0 || idx >= GDKatomcnt || idx >= MAXATOMS){
+		str msg = createException(MAL, "pushNilType", "Can not allocate type variable");
+		addMalException(mb, msg);
+		freeException(msg);
+	} else {
 		cst.vtype=TYPE_void;
 		cst.val.oval= oid_nil;
 		cst.len = 0;
@@ -676,9 +702,11 @@ pushValue(MalBlkPtr mb, InstrPtr q, ValPtr vr)
 	ValRecord cst;
 
 	assert(q);
-	if (VALcopy(&cst, vr) == NULL) 
-		addMalException(mb, createException(MAL, "pushValue", "Can not allocate variable"));
-	else {
+	if (VALcopy(&cst, vr) == NULL) {
+		str msg = createException(MAL, "pushValue", "Can not allocate variable");
+		addMalException(mb, msg);
+		freeException(msg);
+	} else {
 		_t = defConstant(mb,cst.vtype,&cst);
 		if( _t >=0 )
 			return pushArgument(mb, q, _t);
