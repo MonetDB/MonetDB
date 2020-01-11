@@ -961,7 +961,7 @@ BATreplace(BAT *b, BAT *p, BAT *n, bool force)
 
 			var_t d;
 			switch (b->twidth) {
-			case 1:
+			default: /* only three of four cases possible */
 				d = (var_t) ((uint8_t *) b->theap.base)[updid] + GDK_VAROFFSET;
 				break;
 			case 2:

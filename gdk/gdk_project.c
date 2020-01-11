@@ -389,6 +389,7 @@ BATproject(BAT *l, BAT *r)
 
 	/* handle string trick */
 	if (stringtrick) {
+		assert(r->tvheap);
 		if (r->batRestricted == BAT_READ) {
 			/* really share string heap */
 			assert(r->tvheap->parentid > 0);
