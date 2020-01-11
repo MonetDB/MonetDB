@@ -3661,7 +3661,7 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	}
 	phash = sr == NULL &&
 		VIEWtparent(r) != 0 &&
-		BATcount(BBPquickdesc(VIEWtparent(r), false)) == BATcount(r);
+		BATcount(BBP_cache(VIEWtparent(r))) == BATcount(r);
 	return hashjoin(r1p, r2p, l, r, sl, sr,
 			lstart, lend, lcnt, lcand, lcandend,
 			rstart, rend, rcnt, rcand, rcandend,

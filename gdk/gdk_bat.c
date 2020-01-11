@@ -1273,7 +1273,7 @@ BUNinplace(BAT *b, BUN p, const void *t, bool force)
 		ptr _ptr;
 		_ptr = BUNtloc(bi, p);
 		switch (b->twidth) {
-		case 1:
+		default:	/* only three or four cases possible */
 			_d = (var_t) * (uint8_t *) _ptr + GDK_VAROFFSET;
 			break;
 		case 2:
@@ -1297,7 +1297,7 @@ BUNinplace(BAT *b, BUN p, const void *t, bool force)
 		}
 		_ptr = BUNtloc(bi, p);
 		switch (b->twidth) {
-		case 1:
+		default:	/* only three or four cases possible */
 			* (uint8_t *) _ptr = (uint8_t) (_d - GDK_VAROFFSET);
 			break;
 		case 2:
