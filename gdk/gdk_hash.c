@@ -314,8 +314,9 @@ HASHgrowbucket(BAT *b)
 		/* persistent hash: remove persistency */
 		((size_t *) h->heapbckt.base)[0] &= ~((size_t) 1 << 24);
 		if (h->heapbckt.storage != STORE_MEM) {
-			if (!(GDKdebug & NOSYNCMASK))
-				MT_msync(h->heapbckt.base, SIZEOF_SIZE_T);
+			if (!(GDKdebug & NOSYNCMASK) &&
+			    MT_msync(h->heapbckt.base, SIZEOF_SIZE_T) < 0)
+				return GDK_FAIL;
 		}
 	}
 	while (h->nunique >= (nbucket = NHASHBUCKETS(h)) * 7 / 8) {
