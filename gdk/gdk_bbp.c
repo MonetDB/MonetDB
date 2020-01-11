@@ -1456,8 +1456,11 @@ BBPinit(void)
 		/* try to obtain a BBP.dir from bakdir */
 		if (stat(backupbbpdirstr, &st) == 0) {
 			/* backup exists; *must* use it */
-			if (recover_dir(0, stat(bbpdirstr, &st) == 0) != GDK_SUCCEED)
+			if (recover_dir(0, stat(bbpdirstr, &st) == 0) != GDK_SUCCEED) {
+				GDKfree(bbpdirstr);
+				GDKfree(backupbbpdirstr);
 				goto bailout;
+			}
 			if ((fp = GDKfilelocate(0, "BBP", "r", "dir")) == NULL) {
 				GDKfree(bbpdirstr);
 				GDKfree(backupbbpdirstr);
@@ -1471,8 +1474,11 @@ BBPinit(void)
 				/* no BBP.bak (nor BBP.dir or BACKUP/BBP.dir):
 				 * create a new one */
 				IODEBUG fprintf(stderr, "#BBPdir: initializing BBP.\n");	/* BBPdir instead of BBPinit for backward compatibility of error messages */
-				if (BBPdir(0, NULL) != GDK_SUCCEED)
+				if (BBPdir(0, NULL) != GDK_SUCCEED) {
+					GDKfree(bbpdirstr);
+					GDKfree(backupbbpdirstr);
 					goto bailout;
+				}
 			} else if (GDKmove(0, BATDIR, "BBP", "bak", BATDIR, "BBP", "dir") == GDK_SUCCEED)
 				IODEBUG fprintf(stderr, "#BBPinit: reverting to dir saved in BBP.bak.\n");
 
@@ -1753,14 +1759,14 @@ BBPdir_subcommit(int cnt, bat *subcommit)
 	if ((obbpf = GDKfileopen(0, SUBDIR, "BBP", "dir", "r")) == NULL &&
 	    (obbpf = GDKfileopen(0, BAKDIR, "BBP", "dir", "r")) == NULL) {
 		GDKerror("BBPdir: subcommit attempted without backup BBP.dir.");
-		return GDK_FAIL;
+		goto bailout;
 	}
 	/* read first three lines */
 	if (fgets(buf, sizeof(buf), obbpf) == NULL || /* BBP.dir, GDKversion %d */
 	    fgets(buf, sizeof(buf), obbpf) == NULL || /* SIZEOF_SIZE_T SIZEOF_OID SIZEOF_MAX_INT */
 	    fgets(buf, sizeof(buf), obbpf) == NULL) { /* BBPsize=%d */
 		GDKerror("BBPdir: subcommit attempted with invalid backup BBP.dir.");
-		return GDK_FAIL;
+		goto bailout;
 	}
 	/* third line contains BBPsize */
 	sscanf(buf, "BBPsize=%d", &n);

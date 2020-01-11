@@ -41,13 +41,6 @@
  * Once it exceeds a threshold, we call upon the kernel to
  * ensure we are still within safe bounds.
  */
-/*
- * The clearStack operation throws away any space occupied by variables
- * Freeing the stack itself is automatic upon return from the interpreter
- * context. Since the stack is allocated and zeroed on the calling stack,
- * it may happen that entries are never set to a real value.
- * This can be recognized by the vtype component
- */
 #include "monetdb_config.h"
 #include "mal_stack.h"
 #include "mal_exception.h"
@@ -84,23 +77,14 @@ reallocGlobalStack(MalStkPtr old, int cnt)
 	GDKfree(old);
 	return s;
 }
-
 /*
- * When you add a value to the stack, you should ensure that
- * there is space left. It should only be used for global
- * stack frames, because the others are allocated in the
- * runtime stack.
+ * The clearStack operation throws away any space occupied by variables
+ * Freeing the stack itself is automatic upon return from the interpreter
+ * context. Since the stack is allocated and zeroed on the calling stack,
+ * it may happen that entries are never set to a real value.
+ * This can be recognized by the vtype component
  */
-void
-freeStack(MalStkPtr stk)
-{
-	if (stk != NULL) {
-		clearStack(stk);
-		GDKfree(stk);
-	}
-}
-
-void
+static void
 clearStack(MalStkPtr s)
 {
 	ValPtr v;
@@ -120,5 +104,20 @@ clearStack(MalStkPtr s)
 			v->val.pval = NULL;
 		}
 	s->stkbot = 0;
+}
+
+/*
+ * When you add a value to the stack, you should ensure that
+ * there is space left. It should only be used for global
+ * stack frames, because the others are allocated in the
+ * runtime stack.
+ */
+void
+freeStack(MalStkPtr stk)
+{
+	if (stk != NULL) {
+		clearStack(stk);
+		GDKfree(stk);
+	}
 }
 

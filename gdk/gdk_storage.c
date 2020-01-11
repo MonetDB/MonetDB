@@ -165,7 +165,8 @@ GDKremovedir(int farmid, const char *dirname)
 		}
 		path = GDKfilepath(farmid, dirname, dent->d_name, NULL);
 		if (path == NULL) {
-			ret = -1;
+			/* most likely the rmdir will now fail causing
+			 * an error return */
 			goto bailout;
 		}
 		ret = remove(path);
