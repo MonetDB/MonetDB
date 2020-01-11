@@ -110,13 +110,14 @@ newComment(MalBlkPtr mb, const char *val)
 	cst.vtype= TYPE_str;
 	if ((cst.val.sval= GDKstrdup(val)) == NULL) 
 		addMalException(mb, createException(MAL, "newComment", "Can not allocate comment"));
-	
-	cst.len = strlen(cst.val.sval);
-	k = defConstant(mb, TYPE_str, &cst);
-	if( k >= 0){
-		getArg(q,0) = k;
-		clrVarConstant(mb,getArg(q,0));
-		setVarDisabled(mb,getArg(q,0));
+	else {
+		cst.len = strlen(cst.val.sval);
+		k = defConstant(mb, TYPE_str, &cst);
+		if( k >= 0){
+			getArg(q,0) = k;
+			clrVarConstant(mb,getArg(q,0));
+			setVarDisabled(mb,getArg(q,0));
+		}
 	}
 	pushInstruction(mb, q);
 	return q;
@@ -502,10 +503,12 @@ pushStr(MalBlkPtr mb, InstrPtr q, const char *Val)
 	cst.vtype= TYPE_str;
 	if ((cst.val.sval= GDKstrdup(Val)) == NULL) 
 		addMalException(mb, createException(MAL, "pushStr", "Can not allocate string variable"));
-	cst.len = strlen(cst.val.sval);
-	_t = defConstant(mb,TYPE_str,&cst);
-	if( _t >= 0)
-		return pushArgument(mb, q, _t);
+	else{
+		cst.len = strlen(cst.val.sval);
+		_t = defConstant(mb,TYPE_str,&cst);
+		if( _t >= 0)
+			return pushArgument(mb, q, _t);
+	}
 	return q;
 }
 
@@ -589,18 +592,20 @@ pushNilType(MalBlkPtr mb, InstrPtr q, char *tpe)
 	idx= getAtomIndex(tpe, strlen(tpe), TYPE_any);
 	if( idx < 0 || idx >= GDKatomcnt || idx >= MAXATOMS)
 		addMalException(mb, createException(MAL, "pushNilType", "Can not allocate type variable"));
-	cst.vtype=TYPE_void;
-	cst.val.oval= oid_nil;
-	cst.len = 0;
-	msg = convertConstant(idx, &cst);
-	if (msg != MAL_SUCCEED) {
-		addMalException(mb, msg);
-		freeException(msg);
-	}
-	_t = defConstant(mb,idx,&cst);
-	if( _t >= 0){
-		setVarUDFtype(mb,_t);
-		return pushArgument(mb, q, _t);
+	else {
+		cst.vtype=TYPE_void;
+		cst.val.oval= oid_nil;
+		cst.len = 0;
+		msg = convertConstant(idx, &cst);
+		if (msg != MAL_SUCCEED) {
+			addMalException(mb, msg);
+			freeException(msg);
+		}
+		_t = defConstant(mb,idx,&cst);
+		if( _t >= 0){
+			setVarUDFtype(mb,_t);
+			return pushArgument(mb, q, _t);
+		}
 	}
 	return q;
 }
@@ -673,8 +678,10 @@ pushValue(MalBlkPtr mb, InstrPtr q, ValPtr vr)
 	assert(q);
 	if (VALcopy(&cst, vr) == NULL) 
 		addMalException(mb, createException(MAL, "pushValue", "Can not allocate variable"));
-	_t = defConstant(mb,cst.vtype,&cst);
-	if( _t >=0 )
-		return pushArgument(mb, q, _t);
+	else {
+		_t = defConstant(mb,cst.vtype,&cst);
+		if( _t >=0 )
+			return pushArgument(mb, q, _t);
+	}
 	return q;
 }
