@@ -3852,20 +3852,23 @@ simple_scalar_exp:
 			{ dlist *l = L();
 			  append_list(l, 
 			  	append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "sql_add")));
-	  		  append_symbol(l, $1);
+	  		  append_int(l, FALSE); /* ignore distinct */
+			  append_symbol(l, $1);
 	  		  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
  |  scalar_exp '-' scalar_exp
 			{ dlist *l = L();
 			  append_list(l, 
 			  	append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "sql_sub")));
-	  		  append_symbol(l, $1);
+	  		  append_int(l, FALSE); /* ignore distinct */
+			  append_symbol(l, $1);
 	  		  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
  |  scalar_exp '*' scalar_exp
 			{ dlist *l = L();
 			  append_list(l, 
 			  	append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "sql_mul")));
+				  append_int(l, FALSE); /* ignore distinct */
 	  		  append_symbol(l, $1);
 	  		  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
@@ -3873,6 +3876,7 @@ simple_scalar_exp:
 			{ dlist *l = L();
 			  append_list(l, 
 			  	append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "sql_div")));
+				  append_int(l, FALSE); /* ignore distinct */
 	  		  append_symbol(l, $1);
 	  		  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
@@ -3880,6 +3884,7 @@ simple_scalar_exp:
 			{ dlist *l = L();
 			  append_list(l, 
 			  	append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "mod")));
+				  append_int(l, FALSE); /* ignore distinct */
 	  		  append_symbol(l, $1);
 	  		  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
@@ -3887,6 +3892,7 @@ simple_scalar_exp:
 			{ dlist *l = L();
 			  append_list(l, 
 			  	append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "bit_xor")));
+				  append_int(l, FALSE); /* ignore distinct */
 	  		  append_symbol(l, $1);
 	  		  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
@@ -3894,6 +3900,7 @@ simple_scalar_exp:
 			{ dlist *l = L();
 			  append_list(l, 
 			  	append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "bit_and")));
+				  append_int(l, FALSE); /* ignore distinct */
 	  		  append_symbol(l, $1);
 			  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
@@ -3901,6 +3908,7 @@ simple_scalar_exp:
 			{ dlist *l = L();
 			  append_list(l, 
 			  	append_string(L(), sa_strdup(SA, "mbr_overlap")));
+				  append_int(l, FALSE); /* ignore distinct */
 	  		  append_symbol(l, $1);
 	  		  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
@@ -3908,6 +3916,7 @@ simple_scalar_exp:
 			{ dlist *l = L();
 			  append_list(l, 
 			  	append_string(L(), sa_strdup(SA, "mbr_overlap_or_left")));
+				  append_int(l, FALSE); /* ignore distinct */
 	  		  append_symbol(l, $1);
 	  		  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
@@ -3915,6 +3924,7 @@ simple_scalar_exp:
 			{ dlist *l = L();
 			  append_list(l, 
 			  	append_string(L(), sa_strdup(SA, "mbr_overlap_or_right")));
+				  append_int(l, FALSE); /* ignore distinct */
 	  		  append_symbol(l, $1);
 	  		  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
@@ -3922,12 +3932,14 @@ simple_scalar_exp:
 			{ dlist *l = L();
 			  append_list(l, 
 			  	append_string(L(), sa_strdup(SA, "mbr_overlap_or_below")));
+				  append_int(l, FALSE); /* ignore distinct */
 	  		  append_symbol(l, $1);
 	  		  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
  | scalar_exp GEOM_BELOW scalar_exp
 			{ dlist *l = L();
 			  append_list(l, append_string(L(), sa_strdup(SA, "mbr_below")));
+			  append_int(l, FALSE); /* ignore distinct */
 	  		  append_symbol(l, $1);
 	  		  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
@@ -3935,6 +3947,7 @@ simple_scalar_exp:
 			{ dlist *l = L();
 			  append_list(l, 
 			  	append_string(L(), sa_strdup(SA, "mbr_overlap_or_above")));
+				  append_int(l, FALSE); /* ignore distinct */
 	  		  append_symbol(l, $1);
 	  		  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
@@ -3942,6 +3955,7 @@ simple_scalar_exp:
 			{ dlist *l = L();
 			  append_list(l, 
 			  	append_string(L(), sa_strdup(SA, "mbr_above")));
+				  append_int(l, FALSE); /* ignore distinct */
 	  		  append_symbol(l, $1);
 	  		  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
@@ -3949,6 +3963,7 @@ simple_scalar_exp:
 			{ dlist *l = L();
 			  append_list(l, 
 			  	append_string(L(), sa_strdup(SA, "mbr_distance")));
+				  append_int(l, FALSE); /* ignore distinct */
 	  		  append_symbol(l, $1);
 	  		  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
@@ -3956,6 +3971,7 @@ simple_scalar_exp:
 			{ dlist *l = L();
 			  append_list(l, 
 			  	append_string(L(), sa_strdup(SA, "mbr_contained")));
+				  append_int(l, FALSE); /* ignore distinct */
 	  		  append_symbol(l, $1);
 	  		  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
@@ -3963,6 +3979,7 @@ simple_scalar_exp:
 			{ dlist *l = L();
 			  append_list(l, 
 			  	append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "bit_or")));
+				  append_int(l, FALSE); /* ignore distinct */
 	  		  append_symbol(l, $1);
 	  		  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
@@ -3970,6 +3987,7 @@ simple_scalar_exp:
 			{ dlist *l = L();
 			  append_list(l, 
 			  	append_string(L(), sa_strdup(SA, "mbr_contains")));
+				  append_int(l, FALSE); /* ignore distinct */
 	  		  append_symbol(l, $1);
 	  		  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
@@ -3977,6 +3995,7 @@ simple_scalar_exp:
 			{ dlist *l = L();
 			  append_list(l, 
 			  	append_string(L(), sa_strdup(SA, "mbr_equal")));
+				  append_int(l, FALSE); /* ignore distinct */
 	  		  append_symbol(l, $1);
 	  		  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
@@ -3984,26 +4003,30 @@ simple_scalar_exp:
 			{ dlist *l = L();
 			  append_list(l, 
 			  	append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "bit_not")));
-	  		  append_symbol(l, $2);
+	  		  append_int(l, FALSE); /* ignore distinct */
+			  append_symbol(l, $2);
 	  		  $$ = _symbol_create_list( SQL_UNOP, l ); }
  |  scalar_exp LEFT_SHIFT scalar_exp
 			{ dlist *l = L();
 			  append_list(l, 
 			  	append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "left_shift")));
-	  		  append_symbol(l, $1);
+			  	append_int(l, FALSE); /* ignore distinct */
+				append_symbol(l, $1);
 	  		  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
  |  scalar_exp RIGHT_SHIFT scalar_exp
 			{ dlist *l = L();
 			  append_list(l, 
 			  	append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "right_shift")));
-	  		  append_symbol(l, $1);
+	  		   append_int(l, FALSE); /* ignore distinct */
+			   append_symbol(l, $1);
 	  		  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
  |  scalar_exp LEFT_SHIFT_ASSIGN scalar_exp
 			{ dlist *l = L();
 			  append_list(l, 
 			  	append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "left_shift_assign")));
+				  append_int(l, FALSE); /* ignore distinct */
 	  		  append_symbol(l, $1);
 	  		  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
@@ -4011,6 +4034,7 @@ simple_scalar_exp:
 			{ dlist *l = L();
 			  append_list(l, 
 			  	append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "right_shift_assign")));
+				  append_int(l, FALSE); /* ignore distinct */
 	  		  append_symbol(l, $1);
 	  		  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
@@ -4034,7 +4058,8 @@ simple_scalar_exp:
 				dlist *l = L();
 			  	append_list(l, 
 			  		append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "sql_neg")));
-	  		  	append_symbol(l, $2);
+	  		  	append_int(l, FALSE); /* ignore distinct */
+				append_symbol(l, $2);
 	  		  	$$ = _symbol_create_list( SQL_UNOP, l ); 
 			  }
 			}
@@ -4069,11 +4094,11 @@ value_exp:
  |  datetime_funcs
  |  GROUPING '(' column_ref_commalist ')' { dlist *l = L();
 										    append_list(l, append_string(L(), "grouping"));
+											append_int(l, FALSE); /* ignore distinct */
 											for (dnode *dn = $3->h ; dn ; dn = dn->next) {
 												symbol *sym = dn->data.sym; /* do like a aggrN */
 												append_symbol(l, _symbol_create_list(SQL_COLUMN, sym->data.lval));
 											}
-											 append_int(l, FALSE);
 										    $$ = _symbol_create_list(SQL_AGGR, l); }
  |  NEXT VALUE FOR qname                  { $$ = _symbol_create_list(SQL_NEXT, $4); }
  |  null
@@ -4186,10 +4211,12 @@ func_ref:
     qfunc '(' ')'
 	{ dlist *l = L();
   	  append_list(l, $1);
+      append_int(l, FALSE); /* ignore distinct */
 	  $$ = _symbol_create_list( SQL_OP, l ); }
 |   qfunc '(' scalar_exp_list ')'
 	{ dlist *l = L();
   	  append_list(l, $1);
+	  append_int(l, FALSE); /* ignore distinct */
 	  if (dlist_length($3) == 1) {
   	  	append_symbol(l, $3->h->data.sym);
 	  	$$ = _symbol_create_list( SQL_UNOP, l ); 
@@ -4223,32 +4250,38 @@ datetime_funcs:
 			  const char *ident = datetime_field((itype)$3);
 			  append_list(l,
   		  	  	append_string(L(), sa_strdup(SA, ident)));
-  		  	  append_symbol(l, $5);
+  		  	  append_int(l, FALSE); /* ignore distinct */
+			  append_symbol(l, $5);
 		  	  $$ = _symbol_create_list( SQL_UNOP, l ); }
  |  CURRENT_DATE opt_brackets
  			{ dlist *l = L();
 			  append_list(l,
 			  	append_string(L(), sa_strdup(SA, "current_date")));
+			 append_int(l, FALSE); /* ignore distinct */
 	  		  $$ = _symbol_create_list( SQL_OP, l ); }
  |  CURRENT_TIME opt_brackets
  			{ dlist *l = L();
 			  append_list(l,
 			  	append_string(L(), sa_strdup(SA, "current_time")));
+			  append_int(l, FALSE); /* ignore distinct */
 	  		  $$ = _symbol_create_list( SQL_OP, l ); }
  |  CURRENT_TIMESTAMP opt_brackets
  			{ dlist *l = L();
 			  append_list(l,
 			  	append_string(L(), sa_strdup(SA, "current_timestamp")));
+			  append_int(l, FALSE); /* ignore distinct */
 	  		  $$ = _symbol_create_list( SQL_OP, l ); }
  |  LOCALTIME opt_brackets
  			{ dlist *l = L();
 			  append_list(l,
 			  	append_string(L(), sa_strdup(SA, "localtime")));
+			  append_int(l, FALSE); /* ignore distinct */
 	  		  $$ = _symbol_create_list( SQL_OP, l ); }
  |  LOCALTIMESTAMP opt_brackets
  			{ dlist *l = L();
 			  append_list(l,
 			  	append_string(L(), sa_strdup(SA, "localtimestamp")));
+			  append_int(l, FALSE); /* ignore distinct */
 	  		  $$ = _symbol_create_list( SQL_OP, l ); }
  ;
 
@@ -4263,6 +4296,7 @@ string_funcs:
 			  dlist *ops = L();
   		  	  append_list(l,
 				append_string(L(), sa_strdup(SA, "substring")));
+			  append_int(l, FALSE); /* ignore distinct */
   		  	  append_symbol(ops, $3);
   		  	  append_symbol(ops, $5);
   		  	  append_symbol(ops, $7);
@@ -4273,6 +4307,7 @@ string_funcs:
 			  dlist *ops = L();
   		  	  append_list(l,
   		  	  	append_string(L(), sa_strdup(SA, "substring")));
+			append_int(l, FALSE); /* ignore distinct */
   		  	  append_symbol(ops, $3);
   		  	  append_symbol(ops, $5);
   		  	  append_symbol(ops, $7);
@@ -4282,6 +4317,7 @@ string_funcs:
 			{ dlist *l = L();
   		  	  append_list(l,
   		  	  	append_string(L(), sa_strdup(SA, "substring")));
+					  append_int(l, FALSE); /* ignore distinct */
   		  	  append_symbol(l, $3);
   		  	  append_symbol(l, $5);
 		  	  $$ = _symbol_create_list( SQL_BINOP, l ); }
@@ -4289,6 +4325,7 @@ string_funcs:
 			{ dlist *l = L();
   		  	  append_list(l,
   		  	  	append_string(L(), sa_strdup(SA, "substring")));
+					  append_int(l, FALSE); /* ignore distinct */
   		  	  append_symbol(l, $3);
   		  	  append_symbol(l, $5);
 		  	  $$ = _symbol_create_list( SQL_BINOP, l ); }
@@ -4296,6 +4333,7 @@ string_funcs:
 			{ dlist *l = L();
   		  	  append_list(l,
   		  	  	append_string(L(), sa_strdup(SA, "locate")));
+					  append_int(l, FALSE); /* ignore distinct */
   		  	  append_symbol(l, $3);
   		  	  append_symbol(l, $5);
 		  	  $$ = _symbol_create_list( SQL_BINOP, l ); }
@@ -4303,6 +4341,7 @@ string_funcs:
 			{ dlist *l = L();
   		  	  append_list(l,
   		  	  	append_string(L(), sa_strdup(SA, "concat")));
+					  append_int(l, FALSE); /* ignore distinct */
   		  	  append_symbol(l, $1);
   		  	  append_symbol(l, $3);
 		  	  $$ = _symbol_create_list( SQL_BINOP, l ); }
@@ -4311,6 +4350,7 @@ string_funcs:
 			  dlist *ops = L();
   		  	  append_list(l,
 				append_string(L(), sa_strdup(SA, "splitpart")));
+				append_int(l, FALSE); /* ignore distinct */
   		  	  append_symbol(ops, $3);
   		  	  append_symbol(ops, $5);
   		  	  append_symbol(ops, $7);
@@ -4388,96 +4428,90 @@ aggr_or_window_ref:
     qrank '(' ')'
 		{ dlist *l = L();
   		  append_list(l, $1);
+  		  append_int(l, FALSE); /* ignore distinct */
   		  append_list(l, NULL);
-  		  append_int(l, FALSE);
   		  $$ = _symbol_create_list( SQL_RANK, l ); }
  |  qrank '(' scalar_exp_list ')'
 		{ dlist *l = L();
   		  append_list(l, $1);
+  		  append_int(l, FALSE); /* ignore distinct */
   		  append_list(l, $3);
-  		  append_int(l, FALSE);
   		  $$ = _symbol_create_list( SQL_RANK, l ); }
  |  qrank '(' DISTINCT scalar_exp_list ')'
 		{ dlist *l = L();
   		  append_list(l, $1);
-  		  append_list(l, $4);
   		  append_int(l, TRUE);
+  		  append_list(l, $4);
   		  $$ = _symbol_create_list( SQL_RANK, l ); }
  |  qrank '(' ALL scalar_exp_list ')'
 		{ dlist *l = L();
   		  append_list(l, $1);
-  		  append_list(l, $4);
   		  append_int(l, FALSE);
+  		  append_list(l, $4);
   		  $$ = _symbol_create_list( SQL_RANK, l ); }
  |  qfunc '(' '*' ')'
 		{ dlist *l = L();
   		  append_list(l, $1);
+		  append_int(l, FALSE); /* ignore distinct */
   		  append_symbol(l, NULL);
-		  append_int(l, FALSE);
 		  $$ = _symbol_create_list( SQL_AGGR, l ); }
  |  qfunc '(' ident '.' '*' ')'
 		{ dlist *l = L();
   		  append_list(l, $1);
+		  append_int(l, FALSE); /* ignore distinct */
   		  append_symbol(l, NULL);
-		  append_int(l, FALSE);
 		  $$ = _symbol_create_list( SQL_AGGR, l ); }
  |  qfunc '(' ')'
 		{ dlist *l = L();
   		  append_list(l, $1);
+		  append_int(l, FALSE); /* ignore distinct */
 		  append_list(l, NULL);
-		  append_int(l, FALSE);
 		  $$ = _symbol_create_list( SQL_OP, l ); }
  |  qfunc '(' scalar_exp_list ')'
 		{ dlist *l = L();
 		  append_list(l, $1);
+		  append_int(l, FALSE); /* ignore distinct */
  		  if (dlist_length($3) == 1) {
 		  	append_symbol(l, $3->h->data.sym);
-		 	append_int(l, FALSE);
 			$$ = _symbol_create_list( SQL_UNOP, l ); 
 		  } else if (dlist_length($3) == 2) {
 		  	append_symbol(l, $3->h->data.sym);
 		  	append_symbol(l, $3->h->next->data.sym);
-		  	append_int(l, FALSE);
 			$$ = _symbol_create_list( SQL_BINOP, l ); 
 		  } else {
 		  	append_list(l, $3);
-			append_int(l, FALSE);
 		  	$$ = _symbol_create_list( SQL_NOP, l ); 
 		  }
 		}
  |  qfunc '(' DISTINCT scalar_exp_list ')'
 		{ dlist *l = L();
 		  append_list(l, $1);
+		  append_int(l, TRUE);
  		  if (dlist_length($4) == 1) {
 		  	append_symbol(l, $4->h->data.sym);
-		 	append_int(l, TRUE);
 			$$ = _symbol_create_list( SQL_UNOP, l ); 
 		  } else if (dlist_length($4) == 2) {
 		  	append_symbol(l, $4->h->data.sym);
 		  	append_symbol(l, $4->h->next->data.sym);
-		  	append_int(l, TRUE);
 			$$ = _symbol_create_list( SQL_BINOP, l ); 
 		  } else {
 		  	append_list(l, $4);
-			append_int(l, TRUE);
 		  	$$ = _symbol_create_list( SQL_NOP, l ); 
 		  }
 		}
  |  qfunc '(' ALL scalar_exp_list ')'
 		{ dlist *l = L();
 		  append_list(l, $1);
+		  append_int(l, FALSE);
  		  if (dlist_length($4) == 1) {
 		  	append_symbol(l, $4->h->data.sym);
-		 	append_int(l, FALSE);
 			$$ = _symbol_create_list( SQL_UNOP, l ); 
 		  } else if (dlist_length($4) == 2) {
 		  	append_symbol(l, $4->h->data.sym);
 		  	append_symbol(l, $4->h->next->data.sym);
-		  	append_int(l, FALSE);
 			$$ = _symbol_create_list( SQL_BINOP, l ); 
 		  } else {
 		  	append_list(l, $4);
-			append_int(l, FALSE);
 		  	$$ = _symbol_create_list( SQL_NOP, l ); 
 		  }
 		}
@@ -5798,11 +5832,13 @@ exec_ref:
     posint '(' ')'
 	{ dlist *l = L();
   	  append_int(l, $1);
+	  append_int(l, FALSE); /* ignore distinct */
   	  append_list(l, NULL);
 	  $$ = _symbol_create_list( SQL_NOP, l ); }
 |   posint '(' value_commalist ')'
 	{ dlist *l = L();
   	  append_int(l, $1);
+  	  append_int(l, FALSE); /* ignore distinct */
   	  append_list(l, $3);
 	  $$ = _symbol_create_list( SQL_NOP, l ); }
  ;
@@ -6357,9 +6393,9 @@ XML_aggregate:
 			YYABORT;
 		}
 	  }
-          append_list(aggr, append_string(append_string(L(), "sys"), "xmlagg"));
+	  append_list(aggr, append_string(append_string(L(), "sys"), "xmlagg"));
+	  append_int(aggr, FALSE); /* ignore distinct */
 	  append_symbol(aggr, $3);
-	  append_int(aggr, FALSE);
 	  /* int returning not used */
 	  $$ = _symbol_create_list( SQL_AGGR, aggr);
 	}

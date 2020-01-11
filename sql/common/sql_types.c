@@ -783,7 +783,7 @@ sql_find_func(sql_allocator *sa, sql_schema *s, const char *sqlfname, int nrargs
 	int found = 0;
 	sql_ftype filt = (type == F_FUNC)?F_FILT:type;
 
-	assert(nrargs);
+	assert(nrargs >= -1);
 	MT_lock_set(&funcs->ht_lock);
 	he = funcs->ht->buckets[key&(funcs->ht->size-1)]; 
 	if (prev) {
