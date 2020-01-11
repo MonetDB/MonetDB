@@ -69,6 +69,8 @@ __hidden gdk_return BATgroup_internal(BAT **groups, BAT **extents, BAT **histo, 
 	__attribute__((__visibility__("hidden")));
 __hidden Hash *BAThash_impl(BAT *b, BAT *s, const char *ext)
 	__attribute__((__visibility__("hidden")));
+__hidden gdk_return BAThashsave(BAT *b, bool dosync)
+	__attribute__((__visibility__("hidden")));
 __hidden void BATinit_idents(BAT *bn)
 	__attribute__((__visibility__("hidden")));
 __hidden BAT *BATload_intern(bat bid, bool lock)
@@ -177,7 +179,7 @@ __hidden bool HASHgonebad(BAT *b, const void *v)
 	__attribute__((__visibility__("hidden")));
 __hidden BUN HASHmask(BUN cnt)
 	__attribute__((__visibility__("hidden")));
-__hidden gdk_return HASHnew(Hash *h, int tpe, BUN size, BUN mask, BUN count)
+__hidden gdk_return HASHnew(Hash *h, int tpe, BUN size, BUN mask, BUN count, bool bcktonly)
 	__attribute__((__visibility__("hidden")));
 __hidden gdk_return HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 	__attribute__((__warn_unused_result__))
@@ -194,7 +196,7 @@ __hidden gdk_return HEAPload(Heap *h, const char *nme, const char *ext, bool tru
 	__attribute__((__visibility__("hidden")));
 __hidden void HEAP_recover(Heap *, const var_t *, BUN)
 	__attribute__((__visibility__("hidden")));
-__hidden gdk_return HEAPsave(Heap *h, const char *nme, const char *ext)
+__hidden gdk_return HEAPsave(Heap *h, const char *nme, const char *ext, bool dosync)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
 __hidden gdk_return HEAPshrink(Heap *h, size_t size)

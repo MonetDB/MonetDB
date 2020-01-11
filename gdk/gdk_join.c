@@ -2543,7 +2543,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	if (sr) {
 		if (BATtdense(sr) &&
 		    BATcheckhash(r) &&
-		    BATcount(r) / ((size_t *) r->thash->heap.base)[5] * lci->ncand < lci->ncand + rci->ncand) {
+		    BATcount(r) / r->thash->nheads * lci->ncand < lci->ncand + rci->ncand) {
 			ALGODEBUG fprintf(stderr, "#%s: %s(%s): using "
 					  "existing hash with candidate list\n",
 					  MT_thread_getname(), __func__,
@@ -2551,15 +2551,13 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			hsh = r->thash;
 			sr = NULL;
 		} else {
-			int len;
 			char ext[32];
 			assert(!phash);
 			ALGODEBUG fprintf(stderr, "#%s: %s(%s): creating "
 					  "hash for candidate list\n",
 					  MT_thread_getname(), __func__,
 					  BATgetId(r));
-			len = snprintf(ext, sizeof(ext), "thash%x", sr->batCacheid);
-			if (len == -1 || len >= (int) sizeof(ext))
+			if (snprintf(ext, sizeof(ext), "thshjn%x", sr->batCacheid) >= (int) sizeof(ext))
 				goto bailout;
 			if ((hsh = BAThash_impl(r, sr, ext)) == NULL) {
 				goto bailout;
@@ -2583,7 +2581,8 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			     rb = HASHgetlink(hsh, rb)) {
 				ro = BUNtoid(sr, rb);
 				if ((*cmp)(v, BUNtail(ri, ro - r->hseqbase)) != 0) {
-					HEAPfree(&hsh->heap, true);
+					HEAPfree(&hsh->heaplink, true);
+					HEAPfree(&hsh->heapbckt, true);
 					GDKfree(hsh);
 					return nomatch(r1p, r2p, l, r, lci,
 						       false, false, "hashjoin", t0);
@@ -2699,7 +2698,8 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		break;
 	}
 	if (sr) {
-		HEAPfree(&hsh->heap, true);
+		HEAPfree(&hsh->heaplink, true);
+		HEAPfree(&hsh->heapbckt, true);
 		GDKfree(hsh);
 	}
 	/* also set other bits of heap to correct value to indicate size */
@@ -2749,7 +2749,8 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 
   bailout:
 	if (sr && hsh) {
-		HEAPfree(&hsh->heap, true);
+		HEAPfree(&hsh->heaplink, true);
+		HEAPfree(&hsh->heapbckt, true);
 		GDKfree(hsh);
 	}
 	BBPreclaim(r1);
@@ -3651,7 +3652,7 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 	if (sl == NULL) {
 		lhash = BATcheckhash(l);
 		if (lhash) {
-			lslots = ((size_t *) l->thash->heap.base)[5];
+			lslots = l->thash->nheads;
 		} else if ((parent = VIEWtparent(l)) != 0) {
 			BAT *b = BBPdescriptor(parent);
 			/* use hash on parent if the average chain
@@ -3659,20 +3660,20 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 			 * is less than the cost for creating and
 			 * probing a new hash on the view */
 			if (BATcheckhash(b)) {
-				lslots = ((size_t *) b->thash->heap.base)[5];
+				lslots = b->thash->nheads;
 				lhash = (BATcount(b) == BATcount(l) ||
 					 BATcount(b) / lslots * rcnt < lcnt + rcnt);
 			}
 			plhash = lhash;
 		}
 	} else if (BATtdense(sl) && BATcheckhash(l)) {
-		lslots = ((size_t *) l->thash->heap.base)[5];
+		lslots = l->thash->nheads;
 		lhash = BATcount(l) / lslots * rcnt < lcnt + rcnt;
 	}
 	if (sr == NULL) {
 		rhash = BATcheckhash(r);
 		if (rhash) {
-			rslots = ((size_t *) r->thash->heap.base)[5];
+			rslots = r->thash->nheads;
 		} else if ((parent = VIEWtparent(r)) != 0) {
 			BAT *b = BBPdescriptor(parent);
 			/* use hash on parent if the average chain
@@ -3680,14 +3681,14 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 			 * is less than the cost for creating and
 			 * probing a new hash on the view */
 			if (BATcheckhash(b)) {
-				rslots = ((size_t *) b->thash->heap.base)[5];
+				rslots = b->thash->nheads;
 				rhash = (BATcount(b) == BATcount(r) ||
 					 BATcount(b) / rslots * lcnt < lcnt + rcnt);
 			}
 			prhash = rhash;
 		}
 	} else if (BATtdense(sr) && BATcheckhash(r)) {
-		rslots = ((size_t *) r->thash->heap.base)[5];
+		rslots = r->thash->nheads;
 		rhash = BATcount(r) / rslots * rcnt < lcnt + rcnt;
 	}
 	if (lhash && rhash) {

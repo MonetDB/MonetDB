@@ -1311,7 +1311,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		tmp = BBPquickdesc(parent, false);
 		hash = phash = tmp && BATcheckhash(tmp) &&
 			(BATcount(tmp) == BATcount(b) ||
-			 BATcount(tmp) / ((size_t *) tmp->thash->heap.base)[5] * (ci.tpe != cand_dense ? ilog2(BATcount(s)) : 1) < (s ? BATcount(s) : BATcount(b)) ||
+			 BATcount(tmp) / tmp->thash->nheads * (ci.tpe != cand_dense ? ilog2(BATcount(s)) : 1) < (s ? BATcount(s) : BATcount(b)) ||
 			 HASHget(tmp->thash, HASHprobe(tmp->thash, tl)) == HASHnil(tmp->thash));
 	}
 
