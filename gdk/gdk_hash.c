@@ -207,17 +207,16 @@ HASHcollisions(BAT *b, Hash *h, const char *func)
 		entries == 0 ? 0 : total / entries);
 }
 
-gdk_return
-HASHupgradehashheap(BAT *b, BUN cap)
+static gdk_return
+HASHupgradehashheap(BAT *b)
 {
 	Hash *h = b->thash;
-	int nwidth;
+	int nwidth = h->width << 1;
 	BUN i;
 
-	if (h == NULL)
-		return GDK_SUCCEED;
-	if ((nwidth = HASHwidth(cap)) <= h->width)
-		return GDK_SUCCEED;
+	assert(nwidth <= SIZEOF_BUN);
+	assert((nwidth & (nwidth - 1)) == 0);
+
 	if (HEAPextend(&h->heaplink, h->heaplink.size * nwidth / h->width, true) != GDK_SUCCEED ||
 	    HEAPextend(&h->heapbckt, (h->heapbckt.size - HASH_HEADER_SIZE * SIZEOF_SIZE_T) * nwidth / h->width + HASH_HEADER_SIZE * SIZEOF_SIZE_T, true) != GDK_SUCCEED) {
 		b->thash = NULL;
@@ -246,6 +245,7 @@ HASHupgradehashheap(BAT *b, BUN cap)
 			}
 			break;
 		}
+		h->nil = BUN4_NONE;
 		break;
 #ifdef BUN8
 	case BUN8:
@@ -283,6 +283,7 @@ HASHupgradehashheap(BAT *b, BUN cap)
 			}
 			break;
 		}
+		h->nil = BUN8_NONE;
 		break;
 #endif
 	}
@@ -308,6 +309,12 @@ HASHgrowbucket(BAT *b)
 	lng t0 = 0;
 
 	ACCELDEBUG t0 = GDKusec();
+
+	/* only needed to fix hash tables built before this fix was
+	 * introduced */
+	if (h->nil == h->mask2 && HASHupgradehashheap(b) != GDK_SUCCEED)
+		return GDK_FAIL;
+
 	h->heapbckt.dirty = true;
 	h->heaplink.dirty = true;
 	if (((size_t *) h->heapbckt.base)[0] & (size_t) 1 << 24) {
@@ -338,6 +345,11 @@ HASHgrowbucket(BAT *b)
 		if (h->nbucket == h->mask2) {
 			h->mask1 = h->mask2;
 			h->mask2 = h->mask2 << 1 | 1;
+			if (h->nil == h->mask2) {
+				/* time to widen the hash table */
+				if (HASHupgradehashheap(b) != GDK_SUCCEED)
+					return GDK_FAIL;
+			}
 		}
 		h->nbucket++;
 		h->heapbckt.free += h->width;
