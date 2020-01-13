@@ -23,10 +23,6 @@ stderr of test 'aggregates-intervals.Bug-3533` in directory 'sql/test/BugTracker
 # 16:49:00 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-284678" "--port=34676"
 # 16:49:00 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-281202/.s.monetdb.31954
-QUERY = SELECT median_avg(f1) from INTERVAL_TBL; --error, median_avg is not available yet for sec_interval
-ERROR = !types sec_interval(13,0) and tinyint(8,0) are not equal for column 'f1'
-CODE  = 42000
 
 # 16:49:01 >  
 # 16:49:01 >  "Done."

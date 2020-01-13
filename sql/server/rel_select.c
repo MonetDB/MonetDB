@@ -376,7 +376,7 @@ query_exp_optname(sql_query *query, sql_rel *r, symbol *q)
 }
 
 static sql_subfunc *
-bind_func_(mvc *sql, sql_schema *s, char *fname, list *ops, sql_ftype type )
+bind_func_(mvc *sql, sql_schema *s, char *fname, list *ops, sql_ftype type)
 {
 	sql_subfunc *sf = NULL;
 
@@ -391,7 +391,7 @@ bind_func_(mvc *sql, sql_schema *s, char *fname, list *ops, sql_ftype type )
 }
 
 static sql_subfunc *
-bind_func(mvc *sql, sql_schema *s, char *fname, sql_subtype *t1, sql_subtype *t2, sql_ftype type )
+bind_func(mvc *sql, sql_schema *s, char *fname, sql_subtype *t1, sql_subtype *t2, sql_ftype type)
 {
 	sql_subfunc *sf = NULL;
 
@@ -415,14 +415,14 @@ bind_func(mvc *sql, sql_schema *s, char *fname, sql_subtype *t1, sql_subtype *t2
 }
 
 static sql_subfunc *
-bind_member_func(mvc *sql, sql_schema *s, char *fname, sql_subtype *t, int nrargs, sql_subfunc *prev)
+bind_member_func(mvc *sql, sql_schema *s, char *fname, sql_subtype *t, int nrargs, sql_ftype type, sql_subfunc *prev)
 {
 	sql_subfunc *sf = NULL;
 
-	if (sql->forward && strcmp(fname, sql->forward->base.name) == 0 && 
-		list_length(sql->forward->ops) == nrargs && is_subtype(t, &((sql_arg *) sql->forward->ops->h->data)->type) && execute_priv(sql, sql->forward)) 
+	if (sql->forward && strcmp(fname, sql->forward->base.name) == 0 && list_length(sql->forward->ops) == nrargs &&
+		is_subtype(t, &((sql_arg *) sql->forward->ops->h->data)->type) && execute_priv(sql, sql->forward) && type == sql->forward->type) 
 		return sql_dup_subfunc(sql->sa, sql->forward, NULL, t);
-	sf = sql_bind_member(sql->sa, s, fname, t, nrargs, prev);
+	sf = sql_bind_member(sql->sa, s, fname, t, type, nrargs, prev);
 	if (sf && execute_priv(sql, sf->func))
 		return sf;
 	return NULL;
@@ -2816,7 +2816,7 @@ rel_binop_(mvc *sql, sql_rel *rel, sql_exp *l, sql_exp *r, sql_schema *s, char *
 
 	/* handle param's early */
 	if (!t1 || !t2) {
-		f = resolve_function2(sql->sa, s, fname, t1, t2, type);
+		f = sql_resolve_function_with_undefined_parameters(sql->sa, s, fname, list_append(list_append(sa_list(sql->sa), t1), t2), type);
 		if (f) { /* add types using f */
 			if (!t1) 
 				rel_set_type_param(sql, arg_type(f->func->ops->h->data), rel, l, 1);
@@ -2927,7 +2927,7 @@ rel_binop_(mvc *sql, sql_rel *rel, sql_exp *l, sql_exp *r, sql_schema *s, char *
 		if (!EC_NUMBER(t1->type->eclass)) {
 			sql_subfunc *prev = NULL;
 
-			while((f = bind_member_func(sql, s, fname, t1, 2, prev)) != NULL) {
+			while((f = bind_member_func(sql, s, fname, t1, 2, type, prev)) != NULL) {
 				/* try finding function based on first argument */
 				node *m = f->func->ops->h;
 				sql_arg *a = m->data;
@@ -2987,7 +2987,7 @@ rel_binop_(mvc *sql, sql_rel *rel, sql_exp *l, sql_exp *r, sql_schema *s, char *
 		t1 = exp_subtype(l);
 		(void) exp_subtype(r);
 
-		if ((f = bind_member_func(sql, s, fname, t1, 2, NULL)) != NULL && check_card(card,f)) {
+		if ((f = bind_member_func(sql, s, fname, t1, 2, type, NULL)) != NULL && check_card(card,f)) {
 			/* try finding function based on first argument */
 			node *m = f->func->ops->h;
 			sql_arg *a = m->data;
@@ -3403,13 +3403,13 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 							 63
 #endif
 							);
-		a = sql_bind_aggr_(sql->sa, s, aname, list_append(sa_list(sql->sa), tpe), false);
+		a = sql_bind_func_result(sql->sa, s, aname, F_AGGR, tpe, 1, exp_subtype(exps->h->data));
 	} else
-		a = sql_bind_aggr_(sql->sa, s, aname, exp_types(sql->sa, exps), true);
+		a = sql_bind_func_(sql->sa, s, aname, exp_types(sql->sa, exps), F_AGGR);
 
-	if (!a && list_length(exps) > 1) { 
+	if (!a && list_length(exps) > 1) {
 		sql_subtype *t1 = exp_subtype(exps->h->data);
-		a = sql_bind_member_aggr(sql->sa, s, aname, exp_subtype(exps->h->data), list_length(exps));
+		a = sql_bind_member(sql->sa, s, aname, exp_subtype(exps->h->data), F_AGGR, list_length(exps), NULL);
 		bool is_group_concat = (!a && strcmp(s->base.name, "sys") == 0 && strcmp(aname, "group_concat") == 0);
 
 		if (list_length(exps) != 2 || (!EC_NUMBER(t1->type->eclass) || !a || is_group_concat || subtype_cmp(
@@ -3422,7 +3422,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 					append(sargs, tstr);
 				if (list_length(exps) == 2)
 					append(sargs, tstr);
-				a = sql_bind_aggr_(sql->sa, s, aname, sargs, true);
+				a = sql_bind_func_(sql->sa, s, aname, sargs, F_AGGR);
 			}
 			if (a) {
 				node *n, *op = a->func->ops->h;
@@ -3452,7 +3452,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 				list_append(tps, t1);
 				t2 = exp_subtype(r);
 				list_append(tps, t2);
-				a = sql_bind_aggr_(sql->sa, s, aname, tps, true);
+				a = sql_bind_func_(sql->sa, s, aname, tps, F_AGGR);
 			}
 			if (!a) {
 				sql->session->status = 0;
@@ -3483,14 +3483,16 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 				break;
 			list_append(nexps, e);
 		}
-		a = sql_bind_aggr_(sql->sa, s, aname, exp_types(sql->sa, nexps), true);
+		a = sql_bind_func_(sql->sa, s, aname, exp_types(sql->sa, nexps), F_AGGR);
 		if (a && list_length(nexps))  /* count(col) has |exps| != |nexps| */
 			exps = nexps;
 		if (!a) {
-			a = sql_find_aggr(sql->sa, s, aname);
-			if (a) {
-				node *n, *op = a->func->ops->h;
+			list *aggrs = sql_find_funcs(sql->sa, s, aname, list_length(exps), F_AGGR);
+			for (node *m = aggrs->h ; m; m = m->next) {
 				list *nexps = sa_list(sql->sa);
+				node *n, *op;
+				a = (sql_subfunc *) m->data;
+				op = a->func->ops->h;
 
 				for (n = exps->h ; a && op && n; op = op->next, n = n->next ) {
 					sql_arg *arg = op->data;
@@ -3501,8 +3503,14 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 						a = NULL;
 					list_append(nexps, e);
 				}
-				if (a && list_length(nexps))  /* count(col) has |exps| != |nexps| */
-					exps = nexps;
+				if (a) {
+					if (list_length(nexps)) /* count(col) has |exps| != |nexps| */
+						exps = nexps;
+					/* reset error */
+					sql->session->status = 0;
+					sql->errstr[0] = '\0';
+					break;
+				}
 			}
 		}
 	}

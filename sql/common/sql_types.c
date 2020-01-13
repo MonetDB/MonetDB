@@ -98,7 +98,7 @@ static int convert_matrix[EC_MAX][EC_MAX] = {
 
 /* EC_ANY */	{ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 }, /* NULL */
 /* EC_TABLE */	{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-/* EC_BIT */	{ 0, 0, 1, 1, 1, 0, 2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0 },
+/* EC_BIT */	{ 0, 0, 1, 1, 1, 0, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
 /* EC_CHAR */	{ 2, 2, 2, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2 },
 /* EC_STRING */	{ 2, 2, 2, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2 },
 /* EC_BLOB */	{ 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
@@ -437,14 +437,6 @@ subtype2string2(sql_subtype *tpe) //distinguish char(n), decimal(n,m) from other
 }
 
 int 
-subaggr_cmp( sql_subfunc *a1, sql_subfunc *a2)
-{
-	if (a1->func == a2->func) 
-		return list_cmp(a1->res, a2->res, (fcmp) &subtype_cmp);
-	return -1;
-}
-
-int 
 subfunc_cmp( sql_subfunc *f1, sql_subfunc *f2)
 {
 	if (f1->func == f2->func) 
@@ -538,98 +530,6 @@ sql_bind_aggr(sql_allocator *sa, sql_schema *s, const char *sqlaname, sql_subtyp
 				arg->type.type->eclass == EC_ANY || 
 				(type && is_subtype(type, &arg->type )))) 
 				return _dup_subaggr(sa, a, type);
-		}
-	}
-	return NULL;
-}
-
-sql_subfunc *
-sql_bind_aggr_(sql_allocator *sa, sql_schema *s, const char *sqlaname, list *inputs, bool args)
-{
-	node *n = funcs->h;
-	sql_subtype *type = NULL;
-
-	if (inputs->h)
-		type = inputs->h->data;
-
-	while (n) {
-		sql_func *a = n->data;
-
-		if (IS_AGGR(a) && strcmp(a->base.name, sqlaname) == 0 &&  
-			list_cmp(args ? a->ops : a->res, inputs, (fcmp) &arg_subtype_cmp) == 0)
-			return _dup_subaggr(sa, a, type);
-		n = n->next;
-	}
-	if (s) {
-		node *n;
-
-		if (s->funcs.set) for (n=s->funcs.set->h; n; n = n->next) {
-			sql_func *a = n->data;
-
-			if ((!IS_AGGR(a) || !a->res))
-				continue;
-
-			if (strcmp(a->base.name, sqlaname) == 0 &&  
-				list_cmp(args ? a->ops : a->res, inputs, (fcmp) &arg_subtype_cmp) == 0)
-				return _dup_subaggr(sa, a, type);
-		}
-	}
-	return NULL;
-}
-
-sql_subfunc *
-sql_bind_member_aggr(sql_allocator *sa, sql_schema *s, const char *sqlaname, sql_subtype *type, int nrargs)
-{
-	node *n = funcs->h;
-
-	while (n) {
-		sql_func *a = n->data;
-
-		if (IS_AGGR(a) && strcmp(a->base.name, sqlaname) == 0 && list_length(a->ops) == nrargs &&
-			arg_subtype_cmp(a->ops->h->data, type) == 0)
-			return _dup_subaggr(sa, a, NULL);
-		n = n->next;
-	}
-	if (s) {
-		node *n;
-
-		if (s->funcs.set) for (n=s->funcs.set->h; n; n = n->next) {
-			sql_func *a = n->data;
-
-			if ((!IS_AGGR(a) || !a->res))
-				continue;
-
-			if (strcmp(a->base.name, sqlaname) == 0 && list_length(a->ops) == nrargs &&
-				arg_subtype_cmp(a->ops->h->data, type) == 0)
-				return _dup_subaggr(sa, a, NULL);
-		}
-	}
-	return NULL;
-}
-
-sql_subfunc *
-sql_find_aggr(sql_allocator *sa, sql_schema *s, const char *sqlaname)
-{
-	node *n = funcs->h;
-
-	while (n) {
-		sql_func *a = n->data;
-
-		if (IS_AGGR(a) && strcmp(a->base.name, sqlaname) == 0)
-			return _dup_subaggr(sa, a, NULL);
-		n = n->next;
-	}
-	if (s) {
-		node *n;
-
-		if (s->funcs.set) for (n=s->funcs.set->h; n; n = n->next) {
-			sql_func *a = n->data;
-
-			if ((!IS_AGGR(a) || !a->res))
-				continue;
-
-			if (strcmp(a->base.name, sqlaname) == 0) 
-				return _dup_subaggr(sa, a, NULL);
 		}
 	}
 	return NULL;
@@ -902,7 +802,7 @@ sql_find_funcs(sql_allocator *sa, sql_schema *s, const char *sqlfname, int nrarg
 
 /* find function based on first argument */
 sql_subfunc *
-sql_bind_member(sql_allocator *sa, sql_schema *s, const char *sqlfname, sql_subtype *tp, int nrargs, sql_subfunc *prev)
+sql_bind_member(sql_allocator *sa, sql_schema *s, const char *sqlfname, sql_subtype *tp, sql_ftype type, int nrargs, sql_subfunc *prev)
 {
 	node *n = funcs->h;
 	int found = 1;
@@ -919,7 +819,7 @@ sql_bind_member(sql_allocator *sa, sql_schema *s, const char *sqlfname, sql_subt
 
 		if (!f->res && !IS_FILT(f))
 			continue;
-		if (strcmp(f->base.name, sqlfname) == 0) {
+		if (strcmp(f->base.name, sqlfname) == 0 && f->type == type) {
 			if (list_length(f->ops) == nrargs && is_subtypeof(tp, &((sql_arg *) f->ops->h->data)->type)) 
 				return sql_dup_subfunc(sa, f, NULL, tp);
 		}
@@ -940,7 +840,7 @@ sql_bind_member(sql_allocator *sa, sql_schema *s, const char *sqlfname, sql_subt
 
 			if (!f->res && !IS_FILT(f))
 				continue;
-			if (strcmp(f->base.name, sqlfname) == 0) {
+			if (strcmp(f->base.name, sqlfname) == 0 && f->type == type) {
 				if (list_length(f->ops) == nrargs && is_subtypeof(tp, &((sql_arg *) f->ops->h->data)->type)) 
 					return sql_dup_subfunc(sa, f, NULL, tp);
 			}
@@ -986,6 +886,10 @@ sql_bind_func_(sql_allocator *sa, sql_schema *s, const char *sqlfname, list *ops
 {
 	node *n = funcs->h;
 	sql_ftype filt = (type == F_FUNC)?F_FILT:type;
+	sql_subtype *input_type = NULL;
+
+	if (ops && ops->h)
+		input_type = ops->h->data;
 
 	for (; n; n = n->next) {
 		sql_func *f = n->data;
@@ -994,7 +898,7 @@ sql_bind_func_(sql_allocator *sa, sql_schema *s, const char *sqlfname, list *ops
 			continue;
 		if (strcmp(f->base.name, sqlfname) == 0) {
 			if (list_cmp(f->ops, ops, (fcmp) &arg_subtype_cmp) == 0) 
-				return sql_dup_subfunc(sa, f, ops, NULL);
+				return (type == F_AGGR)? _dup_subaggr(sa, f, input_type) : sql_dup_subfunc(sa, f, ops, NULL);
 		}
 	}
 	if (s) {
@@ -1007,17 +911,26 @@ sql_bind_func_(sql_allocator *sa, sql_schema *s, const char *sqlfname, list *ops
 				continue;
 			if (strcmp(f->base.name, sqlfname) == 0) {
 				if (list_cmp(f->ops, ops, (fcmp) &arg_subtype_cmp) == 0) 
-					return sql_dup_subfunc(sa, f, ops, NULL);
+					return (type == F_AGGR)? _dup_subaggr(sa, f, input_type) : sql_dup_subfunc(sa, f, ops, NULL);
 			}
 		}
 	}
 	return NULL;
 }
 
-static sql_subfunc *
-sql_bind_func_result_(sql_allocator *sa, sql_schema *s, const char *sqlfname, list *ops, sql_subtype *res)
+sql_subfunc *
+sql_bind_func_result(sql_allocator *sa, sql_schema *s, const char *sqlfname, sql_ftype type, sql_subtype *res, int nargs, ...)
 {
 	node *n = funcs->h;
+	list *ops = sa_list(sa);
+	va_list valist;
+
+	va_start(valist, nargs);
+	for (int i = 0; i < nargs; i++) {
+		sql_type *tpe = va_arg(valist, sql_type*);
+		list_append(ops, tpe);
+	}
+	va_end(valist);
 
 	for (; n; n = n->next) {
 		sql_func *f = n->data;
@@ -1026,7 +939,7 @@ sql_bind_func_result_(sql_allocator *sa, sql_schema *s, const char *sqlfname, li
 		if (!f->res && !IS_FILT(f))
 			continue;
 		firstres = IS_FILT(f)?BIT:f->res->h->data;
-		if (strcmp(f->base.name, sqlfname) == 0 && (is_subtype(&firstres->type, res) || firstres->type.type->eclass == EC_ANY) && list_cmp(f->ops, ops, (fcmp) &arg_subtype_cmp) == 0) 
+		if (strcmp(f->base.name, sqlfname) == 0 && f->type == type && (is_subtype(&firstres->type, res) || firstres->type.type->eclass == EC_ANY) && list_cmp(f->ops, ops, (fcmp) &arg_subtype_cmp) == 0) 
 			return sql_dup_subfunc(sa, f, ops, NULL);
 	}
 	if (s && s->funcs.set)
@@ -1038,46 +951,14 @@ sql_bind_func_result_(sql_allocator *sa, sql_schema *s, const char *sqlfname, li
 		if (!f->res && !IS_FILT(f))
 			continue;
 		firstres = IS_FILT(f)?BIT:f->res->h->data;
-		if (strcmp(f->base.name, sqlfname) == 0 && (is_subtype(&firstres->type, res) || firstres->type.type->eclass == EC_ANY) && list_cmp(f->ops, ops, (fcmp) &arg_subtype_cmp) == 0) 
+		if (strcmp(f->base.name, sqlfname) == 0 && f->type == type && (is_subtype(&firstres->type, res) || firstres->type.type->eclass == EC_ANY) && list_cmp(f->ops, ops, (fcmp) &arg_subtype_cmp) == 0) 
 			return sql_dup_subfunc(sa, f, ops, NULL);
 	}
 	return NULL;
 }
 
 sql_subfunc *
-sql_bind_func_result(sql_allocator *sa, sql_schema *s, const char *sqlfname, sql_subtype *tp1, sql_subtype *tp2, sql_subtype *res)
-{
-	list *l = sa_list(sa);
-	sql_subfunc *fres;
-
-	if (tp1)
-		list_append(l, tp1);
-	if (tp2)
-		list_append(l, tp2);
-
-	fres = sql_bind_func_result_(sa, s, sqlfname, l, res);
-	return fres;
-}
-
-sql_subfunc *
-sql_bind_func_result3(sql_allocator *sa, sql_schema *s, const char *sqlfname, sql_subtype *tp1, sql_subtype *tp2, sql_subtype *tp3, sql_subtype *res)
-{
-	list *l = sa_list(sa);
-	sql_subfunc *fres;
-
-	if (tp1)
-		list_append(l, tp1);
-	if (tp2)
-		list_append(l, tp2);
-	if (tp3)
-		list_append(l, tp3);
-
-	fres = sql_bind_func_result_(sa, s, sqlfname, l, res);
-	return fres;
-}
-
-static sql_subfunc *
-resolve_function(sql_allocator *sa, sql_schema *s, const char *name, list *ops, sql_ftype type)
+sql_resolve_function_with_undefined_parameters(sql_allocator *sa, sql_schema *s, const char *name, list *ops, sql_ftype type)
 {
 	node *n = funcs->h;
 	sql_ftype filt = (type == F_FUNC)?F_FILT:type;
@@ -1107,15 +988,6 @@ resolve_function(sql_allocator *sa, sql_schema *s, const char *name, list *ops, 
 		}
 	}
 	return NULL;
-}
-
-sql_subfunc *
-resolve_function2(sql_allocator *sa, sql_schema *s, const char *name, sql_subtype *tp1, sql_subtype *tp2, sql_ftype type)
-{
-	list *l = sa_list(sa);
-	list_append(l, tp1);
-	list_append(l, tp2);
-	return resolve_function(sa, s, name, l, type);
 }
 
 static void

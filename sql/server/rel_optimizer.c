@@ -1995,7 +1995,7 @@ sum_limit_offset(mvc *sql, list *exps )
 	 * we copy it */
 	if (list_length(exps) == 1 && exps->h->data)
 		return append(nexps, exps->h->data);
-	add = sql_bind_func_result(sql->sa, sql->session->schema, "sql_add", lng, lng, lng);
+	add = sql_bind_func_result(sql->sa, sql->session->schema, "sql_add", F_FUNC, lng, 2, lng, lng);
 	return append(nexps, exp_op(sql->sa, exps, add));
 }
 
@@ -8299,7 +8299,7 @@ exp_indexcol(mvc *sql, sql_exp *e, const char *tname, const char *cname, int de,
 {
 	sql_subtype *rt = sql_bind_localtype(de==1?"bte":de==2?"sht":"int");
 	sql_exp *u = exp_atom_bool(sql->sa, unique);
-	sql_subfunc *f = sql_bind_func_result(sql->sa, mvc_bind_schema(sql,"sys"), "index", exp_subtype(e), exp_subtype(u), rt);
+	sql_subfunc *f = sql_bind_func_result(sql->sa, mvc_bind_schema(sql,"sys"), "index", F_FUNC, rt, 2, exp_subtype(e), exp_subtype(u));
 
 	e = exp_binop(sql->sa, e, u, f);
 	exp_setname(sql->sa, e, tname, cname);

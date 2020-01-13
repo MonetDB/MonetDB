@@ -1244,7 +1244,7 @@ exp_match_exp( sql_exp *e1, sql_exp *e2)
 				return 1;
 			break;
 		case e_aggr:
-			if (!subaggr_cmp(e1->f, e2->f) && /* equal aggregation*/
+			if (!subfunc_cmp(e1->f, e2->f) && /* equal aggregation*/
 			    exps_equal(e1->l, e2->l) && 
 			    need_distinct(e1) == need_distinct(e2) &&
 			    need_no_nil(e1) == need_no_nil(e2)) 
