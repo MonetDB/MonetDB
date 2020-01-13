@@ -926,12 +926,7 @@ exp_subtype( sql_exp *e )
 		if (e->tpe.type)
 			return &e->tpe;
 		break;
-	case e_aggr: {
-		sql_subfunc *a = e->f;
-		if (a->res && list_length(a->res) == 1) 
-			return a->res->h->data;
-		return NULL;
-	}
+	case e_aggr:
 	case e_func: {
 		if (e->f) {
 			sql_subfunc *f = e->f;

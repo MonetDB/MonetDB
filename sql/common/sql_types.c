@@ -672,7 +672,7 @@ sql_dup_subfunc(sql_allocator *sa, sql_func *f, list *ops, sql_subtype *member)
 	if (IS_FILT(f)) {
 		fres->res = sa_list(sa);
 		list_append(fres->res, sql_bind_localtype("bit"));
-	} else if (IS_FUNC(f) || IS_UNION(f) || IS_ANALYTIC(f)) { /* not needed for PROC */
+	} else if (IS_FUNC(f) || IS_UNION(f) || IS_ANALYTIC(f) || IS_AGGR(f)) { /* not needed for PROC */
 		unsigned int mscale = 0, mdigits = 0;
 
 		if (ops) {

@@ -3042,7 +3042,6 @@ rel_binop(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 	sql_schema *s = sql->session->schema;
 	exp_kind iek = {type_value, card_column, FALSE};
 	sql_ftype type = (ek.card == card_loader)?F_LOADER:((ek.card == card_none)?F_PROC:F_FUNC);
-
 	sql_subfunc *sf = NULL;
 
 	if (sname)
