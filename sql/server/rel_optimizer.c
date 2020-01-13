@@ -1776,7 +1776,7 @@ rel_push_count_down(int *changes, mvc *sql, sql_rel *rel)
 		args = new_exp_list(sql->sa);
 		srel = r->l;
 		{
-			sql_subfunc *cf = sql_bind_aggr(sql->sa, sql->session->schema, "count", NULL);
+			sql_subfunc *cf = sql_bind_func(sql->sa, sql->session->schema, "count", sql_bind_localtype("void"), NULL, F_AGGR);
 			sql_exp *cnt, *e = exp_aggr(sql->sa, NULL, cf, need_distinct(oce), need_no_nil(oce), oce->card, 0);
 
 			exp_label(sql->sa, e, ++sql->label);
@@ -1788,7 +1788,7 @@ rel_push_count_down(int *changes, mvc *sql, sql_rel *rel)
 
 		srel = r->r;
 		{
-			sql_subfunc *cf = sql_bind_aggr(sql->sa, sql->session->schema, "count", NULL);
+			sql_subfunc *cf = sql_bind_func(sql->sa, sql->session->schema, "count", sql_bind_localtype("void"), NULL, F_AGGR);
 			sql_exp *cnt, *e = exp_aggr(sql->sa, NULL, cf, need_distinct(oce), need_no_nil(oce), oce->card, 0);
 
 			exp_label(sql->sa, e, ++sql->label);
@@ -4157,7 +4157,7 @@ rel_push_aggr_down(int *changes, mvc *sql, sql_rel *rel)
 			if (oa->type == e_aggr) {
 				sql_subfunc *f = oa->f;
 				int cnt = exp_aggr_is_count(oa);
-				sql_subfunc *a = sql_bind_aggr(sql->sa, sql->session->schema, (cnt)?"sum":f->func->base.name, exp_subtype(e));
+				sql_subfunc *a = sql_bind_func(sql->sa, sql->session->schema, (cnt)?"sum":f->func->base.name, exp_subtype(e), NULL, F_AGGR);
 
 				assert(a);
 				/* union of aggr result may have nils 
@@ -5809,7 +5809,7 @@ rel_groupby_distinct2(int *changes, mvc *sql, sql_rel *rel)
 			sql_exp *v;
 			sql_subfunc *f = e->f;
 			int cnt = exp_aggr_is_count(e);
-			sql_subfunc *a = sql_bind_aggr(sql->sa, sql->session->schema, (cnt)?"sum":f->func->base.name, exp_subtype(e));
+			sql_subfunc *a = sql_bind_func(sql->sa, sql->session->schema, (cnt)?"sum":f->func->base.name, exp_subtype(e), NULL, F_AGGR);
 
 			append(aggrs, e);
 			if (!exp_name(e))

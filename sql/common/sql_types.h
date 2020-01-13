@@ -49,8 +49,6 @@ extern char *subtype2string2(sql_subtype *tpe);
 extern sql_arg *sql_create_arg(sql_allocator *sa, const char *name, sql_subtype *t, char inout);
 extern sql_arg *arg_dup(sql_allocator *sa, sql_arg *a);
 
-extern sql_subfunc *sql_bind_aggr(sql_allocator *sa, sql_schema *s, const char *name, sql_subtype *type);
-
 extern int subfunc_cmp(sql_subfunc *f1, sql_subfunc *f2);
 extern sql_subfunc *sql_find_func_by_name(sql_allocator *sa, sql_schema *s, const char *name, int nrargs, sql_ftype type);
 extern sql_subfunc *sql_find_func(sql_allocator *sa, sql_schema *s, const char *name, int nrargs, sql_ftype type, sql_subfunc *prev);

@@ -2068,7 +2068,7 @@ rewrite_anyequal(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 				if (exps)
 					lsq->exps = exps; 
 
-				sql_subfunc *ea = sql_bind_aggr(sql->sa, sql->session->schema, is_anyequal(sf)?"anyequal":"allnotequal", exp_subtype(re));
+				sql_subfunc *ea = sql_bind_func(sql->sa, sql->session->schema, is_anyequal(sf)?"anyequal":"allnotequal", exp_subtype(re), NULL, F_AGGR);
 				sql_exp *a = exp_aggr1(sql->sa, le, ea, 0, 0, CARD_AGGR, has_nil(le));
 				append(a->l, re);
 				append(a->l, rid);
@@ -2217,24 +2217,24 @@ rewrite_compare(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 					sql_subfunc *a;
 
 					rsq = rel_groupby(sql, rsq, NULL); 
-					a = sql_bind_aggr(sql->sa, NULL, "null", exp_subtype(re));
+					a = sql_bind_func(sql->sa, NULL, "null", exp_subtype(re), NULL, F_AGGR);
 					rnull = exp_aggr1(sql->sa, re, a, 0, 1, CARD_AGGR, has_nil(re));
 					rnull = rel_groupby_add_aggr(sql, rsq, rnull);
 
 					if (is_notequal_func(sf))
 						op = "=";
 					if (op[0] == '<') {
-						a = sql_bind_aggr(sql->sa, sql->session->schema, (quantifier==1)?"max":"min", exp_subtype(re));
+						a = sql_bind_func(sql->sa, sql->session->schema, (quantifier==1)?"max":"min", exp_subtype(re), NULL, F_AGGR);
 					} else if (op[0] == '>') {
-						a = sql_bind_aggr(sql->sa, sql->session->schema, (quantifier==1)?"min":"max", exp_subtype(re));
+						a = sql_bind_func(sql->sa, sql->session->schema, (quantifier==1)?"min":"max", exp_subtype(re), NULL, F_AGGR);
 					} else /* (op[0] == '=')*/ /* only = ALL */ {
-						a = sql_bind_aggr(sql->sa, sql->session->schema, "all", exp_subtype(re));
+						a = sql_bind_func(sql->sa, sql->session->schema, "all", exp_subtype(re), NULL, F_AGGR);
 						is_cnt = 1;
 					}
 					re = exp_aggr1(sql->sa, re, a, 0, 1, CARD_AGGR, has_nil(re));
 					re = rel_groupby_add_aggr(sql, rsq, re);
 				} else if (rsq && exp_card(re) > CARD_ATOM) { 
-					sql_subfunc *zero_or_one = sql_bind_aggr(sql->sa, NULL, compare_aggr_op(op, quantifier), exp_subtype(re));
+					sql_subfunc *zero_or_one = sql_bind_func(sql->sa, NULL, compare_aggr_op(op, quantifier), exp_subtype(re), NULL, F_AGGR);
 	
 					rsq = rel_groupby(sql, rsq, NULL);
 	
@@ -2444,7 +2444,7 @@ rewrite_exists(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 
 				if (exp_is_rel(ie))
 					ie->l = sq;
-				ea = sql_bind_aggr(sql->sa, sql->session->schema, is_exists(sf)?"exist":"not_exist", exp_subtype(le));
+				ea = sql_bind_func(sql->sa, sql->session->schema, is_exists(sf)?"exist":"not_exist", exp_subtype(le), NULL, F_AGGR);
 				le = exp_aggr1(sql->sa, le, ea, 0, 0, CARD_AGGR, has_nil(le));
 				le = rel_groupby_add_aggr(sql, sq, le);
 				if (rel_has_freevar(sql, sq))

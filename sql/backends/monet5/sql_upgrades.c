@@ -2944,7 +2944,7 @@ SQLupgrades(Client c, mvc *m)
 #ifdef HAVE_HGE
 	if (!res && have_hge) {
 		sql_find_subtype(&tp, "hugeint", 0, 0);
-		if (!sql_bind_aggr(m->sa, s, "var_pop", &tp)) {
+		if (!sql_bind_func(m->sa, s, "var_pop", &tp, NULL, F_AGGR)) {
 			if ((err = sql_update_hugeint(c, m, prev_schema, &systabfixed)) != NULL) {
 				fprintf(stderr, "!%s\n", err);
 				freeException(err);
@@ -3094,7 +3094,7 @@ SQLupgrades(Client c, mvc *m)
 	}
 
 	sql_find_subtype(&tp, "clob", 0, 0);
-	if (!res && sql_bind_aggr(m->sa, s, "group_concat", &tp) == NULL) {
+	if (!res && sql_bind_func(m->sa, s, "group_concat", &tp, NULL, F_AGGR) == NULL) {
 		if ((err = sql_update_aug2018(c, m, prev_schema)) != NULL) {
 			fprintf(stderr, "!%s\n", err);
 			freeException(err);
@@ -3199,7 +3199,7 @@ SQLupgrades(Client c, mvc *m)
 #ifdef HAVE_HGE
 	if (!res && have_hge) {
 		sql_find_subtype(&tp, "hugeint", 0, 0);
-		if (!sql_bind_aggr(m->sa, s, "median_avg", &tp)) {
+		if (!sql_bind_func(m->sa, s, "median_avg", &tp, NULL, F_AGGR)) {
 			if ((err = sql_update_nov2019_sp1_hugeint(c, m, prev_schema, &systabfixed)) != NULL) {
 				fprintf(stderr, "!%s\n", err);
 				freeException(err);

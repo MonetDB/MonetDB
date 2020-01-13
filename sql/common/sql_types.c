@@ -495,46 +495,6 @@ _dup_subaggr(sql_allocator *sa, sql_func *a, sql_subtype *member)
 	return ares;
 }
 
-sql_subfunc *
-sql_bind_aggr(sql_allocator *sa, sql_schema *s, const char *sqlaname, sql_subtype *type)
-{
-	node *n = funcs->h;
-
-	while (n) {
-		sql_func *a = n->data;
-		sql_arg *arg = NULL;
-
-		if (a->ops->h)
-			arg = a->ops->h->data;
-
-		if (IS_AGGR(a) && strcmp(a->base.name, sqlaname) == 0 && (!arg ||
-			arg->type.type->eclass == EC_ANY || 
-			(type && is_subtype(type, &arg->type )))) 
-			return _dup_subaggr(sa, a, type);
-		n = n->next;
-	}
-	if (s) {
-		node *n;
-
-		if (s->funcs.set) for (n=s->funcs.set->h; n; n = n->next) {
-			sql_func *a = n->data;
-			sql_arg *arg = NULL;
-
-			if ((!IS_AGGR(a) || !a->res))
-				continue;
-
-			if (a->ops->h)
-				arg = a->ops->h->data;
-
-			if (strcmp(a->base.name, sqlaname) == 0 && (!arg ||
-				arg->type.type->eclass == EC_ANY || 
-				(type && is_subtype(type, &arg->type )))) 
-				return _dup_subaggr(sa, a, type);
-		}
-	}
-	return NULL;
-}
-
 char *
 sql_func_imp(sql_func *f)
 {

@@ -992,9 +992,9 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 		s = mvc_bind_schema(sql, tname);
 		if (grp) {
 			if (exps && exps->h)
-				a = sql_bind_aggr(sql->sa, s, cname, exp_subtype(exps->h->data));
+				a = sql_bind_func(sql->sa, s, cname, exp_subtype(exps->h->data), NULL, F_AGGR);
 			else
-				a = sql_bind_aggr(sql->sa, s, cname, NULL);
+				a = sql_bind_func(sql->sa, s, cname, NULL, NULL, F_AGGR);
 			exp = exp_aggr( sql->sa, exps, a, unique, no_nils, CARD_ATOM, 1);
 		} else {
 			list *ops = sa_list(sql->sa);

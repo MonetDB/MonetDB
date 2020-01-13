@@ -161,7 +161,7 @@ psm_set_exp(sql_query *query, dnode *n)
 			if (!v)
 				return NULL;
 			if (v->card > CARD_AGGR) {
-				sql_subfunc *zero_or_one = sql_bind_aggr(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(v));
+				sql_subfunc *zero_or_one = sql_bind_func(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(v), NULL, F_AGGR);
 				assert(zero_or_one);
 				v = exp_aggr1(sql->sa, v, zero_or_one, 0, 0, CARD_ATOM, has_nil(v));
 			}
@@ -583,7 +583,7 @@ rel_select_into( sql_query *query, symbol *sq, exp_kind ek)
 			return sql_error(sql, 02, SQLSTATE(42000) "SELECT INTO: variable '%s' unknown", nme);
 		/* dynamic check for single values */
 		if (v->card > CARD_AGGR) {
-			sql_subfunc *zero_or_one = sql_bind_aggr(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(v));
+			sql_subfunc *zero_or_one = sql_bind_func(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(v), NULL, F_AGGR);
 			assert(zero_or_one);
 			v = exp_aggr1(sql->sa, v, zero_or_one, 0, 0, CARD_ATOM, has_nil(v));
 		}
