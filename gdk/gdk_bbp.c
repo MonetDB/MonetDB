@@ -514,7 +514,7 @@ fixfltheap(BAT *b)
 	} else {
 		/* heap was fixed */
 		b->batDirtydesc = true;
-		if (HEAPsave(&h2, nme, "tail") != GDK_SUCCEED) {
+		if (HEAPsave(&h2, nme, "tail", true) != GDK_SUCCEED) {
 			HEAPfree(&h2, false);
 			GDKfree(srcdir);
 			GDKerror("fixfltheap: saving heap failed\n");
@@ -801,7 +801,7 @@ fixdateheap(BAT *b, const char *anme)
 	} else {
 		/* heap was fixed */
 		b->batDirtydesc = true;
-		if (HEAPsave(&h2, nme, "tail") != GDK_SUCCEED) {
+		if (HEAPsave(&h2, nme, "tail", true) != GDK_SUCCEED) {
 			HEAPfree(&h2, false);
 			GDKfree(srcdir);
 			GDKerror("fixdateheap: saving heap failed\n");
@@ -1456,8 +1456,11 @@ BBPinit(void)
 		/* try to obtain a BBP.dir from bakdir */
 		if (stat(backupbbpdirstr, &st) == 0) {
 			/* backup exists; *must* use it */
-			if (recover_dir(0, stat(bbpdirstr, &st) == 0) != GDK_SUCCEED)
+			if (recover_dir(0, stat(bbpdirstr, &st) == 0) != GDK_SUCCEED) {
+				GDKfree(bbpdirstr);
+				GDKfree(backupbbpdirstr);
 				goto bailout;
+			}
 			if ((fp = GDKfilelocate(0, "BBP", "r", "dir")) == NULL) {
 				GDKfree(bbpdirstr);
 				GDKfree(backupbbpdirstr);
@@ -1471,8 +1474,11 @@ BBPinit(void)
 				/* no BBP.bak (nor BBP.dir or BACKUP/BBP.dir):
 				 * create a new one */
 				IODEBUG fprintf(stderr, "#BBPdir: initializing BBP.\n");	/* BBPdir instead of BBPinit for backward compatibility of error messages */
-				if (BBPdir(0, NULL) != GDK_SUCCEED)
+				if (BBPdir(0, NULL) != GDK_SUCCEED) {
+					GDKfree(bbpdirstr);
+					GDKfree(backupbbpdirstr);
 					goto bailout;
+				}
 			} else if (GDKmove(0, BATDIR, "BBP", "bak", BATDIR, "BBP", "dir") == GDK_SUCCEED)
 				IODEBUG fprintf(stderr, "#BBPinit: reverting to dir saved in BBP.bak.\n");
 
@@ -1753,14 +1759,14 @@ BBPdir_subcommit(int cnt, bat *subcommit)
 	if ((obbpf = GDKfileopen(0, SUBDIR, "BBP", "dir", "r")) == NULL &&
 	    (obbpf = GDKfileopen(0, BAKDIR, "BBP", "dir", "r")) == NULL) {
 		GDKerror("BBPdir: subcommit attempted without backup BBP.dir.");
-		return GDK_FAIL;
+		goto bailout;
 	}
 	/* read first three lines */
 	if (fgets(buf, sizeof(buf), obbpf) == NULL || /* BBP.dir, GDKversion %d */
 	    fgets(buf, sizeof(buf), obbpf) == NULL || /* SIZEOF_SIZE_T SIZEOF_OID SIZEOF_MAX_INT */
 	    fgets(buf, sizeof(buf), obbpf) == NULL) { /* BBPsize=%d */
 		GDKerror("BBPdir: subcommit attempted with invalid backup BBP.dir.");
-		return GDK_FAIL;
+		goto bailout;
 	}
 	/* third line contains BBPsize */
 	sscanf(buf, "BBPsize=%d", &n);
@@ -1971,16 +1977,15 @@ BBPdump(void)
 			}
 		}
 		if (b->thash && b->thash != (Hash *) 1) {
-			fprintf(stderr,
-				" Thash=[%zu,%zu]",
-				HEAPmemsize(&b->thash->heap),
-				HEAPvmsize(&b->thash->heap));
+			size_t m = HEAPmemsize(&b->thash->heaplink) + HEAPmemsize(&b->thash->heapbckt);
+			size_t v = HEAPvmsize(&b->thash->heaplink) + HEAPvmsize(&b->thash->heapbckt);
+			fprintf(stderr, " Thash=[%zu,%zu]", m, v);
 			if (BBP_logical(i) && BBP_logical(i)[0] == '.') {
-				cmem += HEAPmemsize(&b->thash->heap);
-				cvm += HEAPvmsize(&b->thash->heap);
+				cmem += m;
+				cvm += v;
 			} else {
-				mem += HEAPmemsize(&b->thash->heap);
-				vm += HEAPvmsize(&b->thash->heap);
+				mem += m;
+				vm += v;
 			}
 		}
 		fprintf(stderr, " role: %s, persistence: %s\n",
@@ -2850,10 +2855,13 @@ BBPsave(BAT *b)
 	bat bid = b->batCacheid;
 	gdk_return ret = GDK_SUCCEED;
 
-	if (BBP_lrefs(bid) == 0 || isVIEW(b) || !BATdirty(b))
+	if (BBP_lrefs(bid) == 0 || isVIEW(b) || !BATdirty(b)) {
 		/* do nothing */
+		if (b->thash && b->thash != (Hash *) 1 &&
+		    (b->thash->heaplink.dirty || b->thash->heapbckt.dirty))
+			BAThashsave(b, (BBP_status(bid) & BBPPERSISTENT) != 0);
 		return GDK_SUCCEED;
-
+	}
 	if (lock)
 		MT_lock_set(&GDKswapLock(bid));
 
@@ -3808,7 +3816,8 @@ BBPdiskscan(const char *parent, size_t baseoff)
 			} else if (strncmp(p + 1, "theap", 5) == 0) {
 				BAT *b = getdesc(bid);
 				delete = (b == NULL || !b->tvheap || !b->batCopiedtodisk);
-			} else if (strncmp(p + 1, "thash", 5) == 0) {
+			} else if (strncmp(p + 1, "thashl", 6) == 0 ||
+				   strncmp(p + 1, "thashb", 6) == 0) {
 #ifdef PERSISTENTHASH
 				BAT *b = getdesc(bid);
 				delete = b == NULL;
@@ -3817,6 +3826,10 @@ BBPdiskscan(const char *parent, size_t baseoff)
 #else
 				delete = true;
 #endif
+			} else if (strncmp(p + 1, "thash", 5) == 0) {
+				/* older versions used .thash which we
+				 * can simply ignore */
+				delete = true;
 			} else if (strncmp(p + 1, "timprints", 9) == 0) {
 				BAT *b = getdesc(bid);
 				delete = b == NULL;

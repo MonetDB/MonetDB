@@ -1421,8 +1421,10 @@ void garbageCollector(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int flag)
 	}
 #endif
 	assert(mb->vtop <= mb->vsize);
+	assert(stk->stktop <= stk->stksize);
 	(void) flag;
-	for (k = 0; k < mb->vtop; k++) {
+	(void)mb;
+	for (k = 0; k < stk->stktop; k++) {
 	//	if (isVarCleanup(mb, k) ){
 			garbageElement(cntxt, v = &stk->stk[k]);
 			v->vtype = TYPE_int;
