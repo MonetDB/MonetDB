@@ -312,7 +312,7 @@ HASHgrowbucket(BAT *b)
 
 	/* only needed to fix hash tables built before this fix was
 	 * introduced */
-	if (h->nil == h->mask2 && HASHupgradehashheap(b) != GDK_SUCCEED)
+	if (h->nil <= h->mask2 && HASHupgradehashheap(b) != GDK_SUCCEED)
 		return GDK_FAIL;
 
 	h->heapbckt.dirty = true;
@@ -460,54 +460,75 @@ BATcheckhash(BAT *b)
 					    fstat(fd, &st) == 0 &&
 					    st.st_size > 0 &&
 					    st.st_size >= (off_t) (h->heaplink.size = h->heaplink.free = hdata[1] * h->width) &&
-					    HEAPload(&h->heaplink, nme, "thashl", false) == GDK_SUCCEED &&
-					    HEAPload(&h->heapbckt, nme, "thashb", false) == GDK_SUCCEED) {
-						if (h->nbucket & (h->nbucket - 1)) {
-							h->mask2 = hashmask(h->nbucket);
-							h->mask1 = h->mask2 >> 1;
-						} else {
-							h->mask1 = h->nbucket - 1;
-							h->mask2 = h->mask1 << 1 | 1;
-						}
-						h->nunique = hdata[5];
-						h->nheads = hdata[6];
-						h->type = ATOMtype(b->ttype);
-						switch (h->width) {
-						case BUN2:
-							h->nil = (BUN) BUN2_NONE;
-							break;
-						case BUN4:
-							h->nil = (BUN) BUN4_NONE;
-							break;
+					    HEAPload(&h->heaplink, nme, "thashl", false) == GDK_SUCCEED) {
+						if (HEAPload(&h->heapbckt, nme, "thashb", false) == GDK_SUCCEED) {
+							if (h->nbucket & (h->nbucket - 1)) {
+								h->mask2 = hashmask(h->nbucket);
+								h->mask1 = h->mask2 >> 1;
+							} else {
+								h->mask1 = h->nbucket - 1;
+								h->mask2 = h->mask1 << 1 | 1;
+							}
+							h->nunique = hdata[5];
+							h->nheads = hdata[6];
+							h->type = ATOMtype(b->ttype);
+							switch (h->width) {
+							case BUN2:
+								h->nil = (BUN) BUN2_NONE;
+								break;
+							case BUN4:
+								h->nil = (BUN) BUN4_NONE;
+								break;
 #ifdef BUN8
-						case BUN8:
-							h->nil = (BUN) BUN8_NONE;
-							break;
+							case BUN8:
+								h->nil = (BUN) BUN8_NONE;
+								break;
 #endif
-						default:
-							assert(0);
+							default:
+								assert(0);
+							}
+							if (h->nil > h->nbucket) {
+								close(fd);
+								h->Link = h->heaplink.base;
+								h->Bckt = h->heapbckt.base + HASH_HEADER_SIZE * SIZEOF_SIZE_T;
+								h->heaplink.parentid = b->batCacheid;
+								h->heapbckt.parentid = b->batCacheid;
+								h->heaplink.dirty = false;
+								h->heapbckt.dirty = false;
+								BATsetprop_nolock(
+									b,
+									GDK_HASH_BUCKETS,
+									TYPE_oid,
+									&(oid){NHASHBUCKETS(h)});
+								BATsetprop_nolock(
+									b,
+									GDK_NUNIQUE,
+									TYPE_oid,
+									&(oid){h->nunique});
+								b->thash = h;
+								ACCELDEBUG fprintf(stderr, "#%s: BATcheckhash(" ALGOBATFMT "): reusing persisted hash\n", MT_thread_getname(), ALGOBATPAR(b));
+								MT_lock_unset(&b->batIdxLock);
+								return true;
+							}
+							/* if h->nil==h->nbucket
+							 * (was
+							 * possible in
+							 * previous
+							 * iterations
+							 * of the
+							 * code), then
+							 * we can't
+							 * use the
+							 * hash since
+							 * we can't
+							 * distinguish
+							 * between
+							 * end-of-list
+							 * and a valid
+							 * link */
+							HEAPfree(&h->heapbckt, false);
 						}
-						close(fd);
-						h->Link = h->heaplink.base;
-						h->Bckt = h->heapbckt.base + HASH_HEADER_SIZE * SIZEOF_SIZE_T;
-						h->heaplink.parentid = b->batCacheid;
-						h->heapbckt.parentid = b->batCacheid;
-						h->heaplink.dirty = false;
-						h->heapbckt.dirty = false;
-						BATsetprop_nolock(
-							b,
-							GDK_HASH_BUCKETS,
-							TYPE_oid,
-							&(oid){NHASHBUCKETS(h)});
-						BATsetprop_nolock(
-							b,
-							GDK_NUNIQUE,
-							TYPE_oid,
-							&(oid){h->nunique});
-						b->thash = h;
-						ACCELDEBUG fprintf(stderr, "#%s: BATcheckhash(" ALGOBATFMT "): reusing persisted hash\n", MT_thread_getname(), ALGOBATPAR(b));
-						MT_lock_unset(&b->batIdxLock);
-						return true;
+						HEAPfree(&h->heaplink, false);
 					}
 					close(fd);
 					/* unlink unusable file */
