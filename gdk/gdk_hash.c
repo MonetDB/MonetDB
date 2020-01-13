@@ -294,15 +294,6 @@ HASHupgradehashheap(BAT *b)
 gdk_return
 HASHgrowbucket(BAT *b)
 {
-	switch (ATOMsize(b->ttype)) {
-	case 1:
-	case 2:
-		/* no need to grow bucket list */
-		return GDK_SUCCEED;
-	default:
-		break;
-	}
-
 	Hash *h = b->thash;
 	BUN nbucket;
 	BUN onbucket = NHASHBUCKETS(h);

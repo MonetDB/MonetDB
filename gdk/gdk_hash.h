@@ -290,7 +290,8 @@ HASHgetlink(Hash *h, BUN i)
 			Hash *_h = (b)->thash;				\
 			if (_h == (Hash *) 1 ||				\
 			    _h == NULL ||				\
-			    HASHgrowbucket(b) != GDK_SUCCEED ||		\
+			    (ATOMsize(b->ttype) > 2 &&			\
+			     HASHgrowbucket(b) != GDK_SUCCEED) ||	\
 			    (((i) + 1) * _h->width > _h->heaplink.size && \
 			     HEAPextend(&_h->heaplink,			\
 					(i) * _h->width + GDK_mmap_pagesize, \
