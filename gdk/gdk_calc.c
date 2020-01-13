@@ -3481,6 +3481,7 @@ addstr_loop(BAT *b1, const char *l, BAT *b2, const char *r, BAT *bn,
 		x -= candoff;
 	} while (i < cnt);
 	GDKfree(s);
+	s = NULL;
 	while (i < cnt) {
 		if (tfastins_nocheckVAR(bn, i, str_nil, Tsize(bn)) != GDK_SUCCEED)
 			goto bunins_failed;

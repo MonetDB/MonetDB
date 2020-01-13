@@ -102,6 +102,7 @@ char* control_send(
 				continue;
 			if (connect(sock, rp->ai_addr, (socklen_t) rp->ai_addrlen) != SOCKET_ERROR)
 				break;  /* success */
+			closesocket(sock);
 		}
 		freeaddrinfo(res);
 		if (rp == NULL) {
@@ -112,7 +113,6 @@ char* control_send(
 					 strerror(errno)
 #endif
 			);
-			closesocket(sock);
 			return(strdup(sbuf));
 		}
 #if !defined(SOCK_CLOEXEC) && defined(HAVE_FCNTL)

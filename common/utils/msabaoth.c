@@ -148,7 +148,7 @@ msab_init(const char *dbfarm, const char *dbname)
 	if (_sabaoth_internal_dbname != NULL)
 		free(_sabaoth_internal_dbname);
 
-	/* this UUID is supposed to be unique per-process, we use it lateron
+	/* this UUID is supposed to be unique per-process, we use it later on
 	 * to determine if a database is (started by) the current process,
 	 * since locking always succeeds for the same process */
 	if (_sabaoth_internal_uuid == NULL)
@@ -641,7 +641,7 @@ msab_getSingleStatus(const char *pathbuf, const char *dbname, sabdb *next)
 			(void)fclose(f);
 		}
 	} else if ((snprintf(buf, sizeof(buf), "%s/%s/%s", pathbuf, dbname, ".gdk_lock") > 0) & /* no typo */
-			   ((fd = MT_lockf(buf, F_TEST, 4, 1)) == -2)) {
+			   ((fd = MT_lockf(buf, F_TEST)) == -2)) {
 		/* Locking failed; this can be because the lockfile couldn't
 		 * be created.  Probably there is no Mserver running for
 		 * that case also.

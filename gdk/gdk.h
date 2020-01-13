@@ -537,22 +537,6 @@ typedef size_t BUN;
 #endif
 #define BUN_MAX (BUN_NONE - 1)	/* maximum allowed size of a BAT */
 
-#define BUN2 2
-#define BUN4 4
-#if SIZEOF_BUN > 4
-#define BUN8 8
-#endif
-typedef uint16_t BUN2type;
-typedef uint32_t BUN4type;
-#if SIZEOF_BUN > 4
-typedef uint64_t BUN8type;
-#endif
-#define BUN2_NONE ((BUN2type) UINT16_C(0xFFFF))
-#define BUN4_NONE ((BUN4type) UINT32_C(0xFFFFFFFF))
-#if SIZEOF_BUN > 4
-#define BUN8_NONE ((BUN8type) UINT64_C(0xFFFFFFFFFFFFFFFF))
-#endif
-
 /*
  * @- Checking and Error definitions:
  */
@@ -593,17 +577,7 @@ typedef struct {
 	bat parentid;		/* cache id of VIEW parent bat */
 } Heap;
 
-typedef struct {
-	int type;		/* type of index entity */
-	int width;		/* width of hash entries */
-	BUN nil;		/* nil representation */
-	BUN lim;		/* collision list size */
-	BUN mask;		/* number of hash buckets-1 (power of 2) */
-	void *Hash;		/* hash table */
-	void *Link;		/* collision list */
-	Heap heap;		/* heap where the hash is stored */
-} Hash;
-
+typedef struct Hash Hash;
 typedef struct Imprints Imprints;
 
 /*
@@ -859,7 +833,7 @@ typedef struct BATiter {
  *  HEAPload (Heap *h, str nme,ext, bool trunc);
  * @item int
  * @tab
- *  HEAPsave (Heap *h, str nme,ext);
+ *  HEAPsave (Heap *h, str nme,ext, bool dosync);
  * @item int
  * @tab
  *  HEAPcopy (Heap *dst,*src);
@@ -1895,24 +1869,6 @@ bunfastappVAR(BAT *b, const void *v)
 }
 
 /*
- * @- Built-in Accelerator Functions
- *
- * @multitable @columnfractions 0.08 0.7
- * @item BAT*
- * @tab
- *  BAThash (BAT *b)
- * @end multitable
- *
- * The current BAT implementation supports three search accelerators:
- * hashing, imprints, and ordered index.
- *
- * The routine BAThash makes sure that a hash accelerator on the tail of the
- * BAT exists. GDK_FAIL is returned upon failure to create the supportive
- * structures.
- */
-gdk_export gdk_return BAThash(BAT *b);
-
-/*
  * @- Column Imprints Functions
  *
  * @multitable @columnfractions 0.08 0.7
@@ -2560,62 +2516,6 @@ gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
 	for (q = BUNlast(r), p = 0; p < q; p++)
 
 /*
- * @- hash-table supported loop over BUNs
- * The first parameter `b' is a BAT, the second (`h') should point to
- * `b->thash', and `v' a pointer to an atomic value (corresponding
- * to the head column of `b'). The 'hb' is an integer index, pointing
- * out the `hb'-th BUN.
- */
-#define HASHloop(bi, h, hb, v)					\
-	for (hb = HASHget(h, HASHprobe((h), v));		\
-	     hb != HASHnil(h);					\
-	     hb = HASHgetlink(h,hb))				\
-		if (ATOMcmp(h->type, v, BUNtail(bi, hb)) == 0)
-#define HASHloop_str_hv(bi, h, hb, v)				\
-	for (hb = HASHget((h),((BUN *) (v))[-1]&(h)->mask);	\
-	     hb != HASHnil(h);					\
-	     hb = HASHgetlink(h,hb))				\
-		if (GDK_STREQ(v, BUNtvar(bi, hb)))
-#define HASHloop_str(bi, h, hb, v)			\
-	for (hb = HASHget((h),GDK_STRHASH(v)&(h)->mask);	\
-	     hb != HASHnil(h);				\
-	     hb = HASHgetlink(h,hb))			\
-		if (GDK_STREQ(v, BUNtvar(bi, hb)))
-
-/*
- * HASHloops come in various flavors, from the general HASHloop, as
- * above, to specialized versions (for speed) where the type is known
- * (e.g. HASHloop_int), or the fact that the atom is fixed-sized
- * (HASHlooploc) or variable-sized (HASHloopvar).
- */
-#define HASHlooploc(bi, h, hb, v)				\
-	for (hb = HASHget(h, HASHprobe(h, v));			\
-	     hb != HASHnil(h);					\
-	     hb = HASHgetlink(h,hb))				\
-		if (ATOMcmp(h->type, v, BUNtloc(bi, hb)) == 0)
-#define HASHloopvar(bi, h, hb, v)				\
-	for (hb = HASHget(h,HASHprobe(h, v));			\
-	     hb != HASHnil(h);					\
-	     hb = HASHgetlink(h,hb))				\
-		if (ATOMcmp(h->type, v, BUNtvar(bi, hb)) == 0)
-
-#define HASHloop_TYPE(bi, h, hb, v, TYPE)			\
-	for (hb = HASHget(h, hash_##TYPE(h, v));		\
-	     hb != HASHnil(h);					\
-	     hb = HASHgetlink(h,hb))				\
-		if (* (const TYPE *) (v) == * (const TYPE *) BUNtloc(bi, hb))
-
-#define HASHloop_bte(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, bte)
-#define HASHloop_sht(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, sht)
-#define HASHloop_int(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, int)
-#define HASHloop_lng(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, lng)
-#ifdef HAVE_HGE
-#define HASHloop_hge(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, hge)
-#endif
-#define HASHloop_flt(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, flt)
-#define HASHloop_dbl(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, dbl)
-
-/*
  * @+ Common BAT Operations
  * Much used, but not necessarily kernel-operations on BATs.
  *
@@ -2626,7 +2526,8 @@ gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
 enum prop_t {
 	GDK_MIN_VALUE = 3,	/* smallest non-nil value in BAT */
 	GDK_MAX_VALUE,		/* largest non-nil value in BAT */
-	GDK_HASH_MASK,		/* last used hash mask */
+	GDK_HASH_BUCKETS,	/* last used hash bucket size */
+	GDK_NUNIQUE,		/* number of unique values */
 };
 
 /*

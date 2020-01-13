@@ -452,9 +452,6 @@ BATextend(BAT *b, BUN newcap)
 	if (b->theap.base &&
 	    HEAPextend(&b->theap, theap_size, b->batRestricted == BAT_READ) != GDK_SUCCEED)
 		return GDK_FAIL;
-	HASHdestroy(b);
-	IMPSdestroy(b);
-	OIDXdestroy(b);
 	return GDK_SUCCEED;
 }
 
@@ -1078,13 +1075,14 @@ BUNappend(BAT *b, const void *t, bool force)
 
 	IMPSdestroy(b); /* no support for inserts in imprints yet */
 	OIDXdestroy(b);
+	BATrmprop(b, GDK_NUNIQUE);
 #if 0		/* enable if we have more properties than just min/max */
 	PROPrec *prop;
 	do {
 		for (prop = b->tprops; prop; prop = prop->next)
 			if (prop->id != GDK_MAX_VALUE &&
 			    prop->id != GDK_MIN_VALUE &&
-			    prop->id != GDK_HASH_MASK) {
+			    prop->id != GDK_HASH_BUCKETS) {
 				BATrmprop(b, prop->id);
 				break;
 			}
@@ -1092,6 +1090,9 @@ BUNappend(BAT *b, const void *t, bool force)
 #endif
 	if (b->thash) {
 		HASHins(b, p, t);
+		if (b->thash)
+			BATsetprop(b, GDK_NUNIQUE,
+				   TYPE_oid, &(oid){b->thash->nunique});
 		if (tsize && tsize != b->tvheap->size)
 			HEAPwarm(b->tvheap);
 	}
@@ -1159,12 +1160,13 @@ BUNdelete(BAT *b, oid o)
 	IMPSdestroy(b);
 	OIDXdestroy(b);
 	HASHdestroy(b);
+	BATrmprop(b, GDK_NUNIQUE);
 #if 0		/* enable if we have more properties than just min/max */
 	do {
 		for (prop = b->tprops; prop; prop = prop->next)
 			if (prop->id != GDK_MAX_VALUE &&
 			    prop->id != GDK_MIN_VALUE &&
-			    prop->id != GDK_HASH_MASK) {
+			    prop->id != GDK_HASH_BUCKETS) {
 				BATrmprop(b, prop->id);
 				break;
 			}
@@ -1247,12 +1249,13 @@ BUNinplace(BAT *b, BUN p, const void *t, bool force)
 				BATrmprop(b, GDK_MIN_VALUE);
 			}
 		}
+		BATrmprop(b, GDK_NUNIQUE);
 #if 0		/* enable if we have more properties than just min/max */
 		do {
 			for (prop = b->tprops; prop; prop = prop->next)
 				if (prop->id != GDK_MAX_VALUE &&
 				    prop->id != GDK_MIN_VALUE &&
-				    prop->id != GDK_HASH_MASK) {
+				    prop->id != GDK_HASH_BUCKETS) {
 					BATrmprop(b, prop->id);
 					break;
 				}
@@ -1268,7 +1271,7 @@ BUNinplace(BAT *b, BUN p, const void *t, bool force)
 		ptr _ptr;
 		_ptr = BUNtloc(bi, p);
 		switch (b->twidth) {
-		case 1:
+		default:	/* only three or four cases possible */
 			_d = (var_t) * (uint8_t *) _ptr + GDK_VAROFFSET;
 			break;
 		case 2:
@@ -1293,7 +1296,7 @@ BUNinplace(BAT *b, BUN p, const void *t, bool force)
 		}
 		_ptr = BUNtloc(bi, p);
 		switch (b->twidth) {
-		case 1:
+		default:	/* only three or four cases possible */
 			* (uint8_t *) _ptr = (uint8_t) (_d - GDK_VAROFFSET);
 			break;
 		case 2:
@@ -2359,14 +2362,13 @@ BATassertProps(BAT *b)
 			const char *nme = BBP_physical(b->batCacheid);
 			Hash *hs = NULL;
 			BUN mask;
-			int len;
 
 			if ((hs = GDKzalloc(sizeof(Hash))) == NULL) {
 				TRC_ERROR(BAT_, "Cannot allocate hash table\n");
 				goto abort_check;
 			}
-			len = snprintf(hs->heap.filename, sizeof(hs->heap.filename), "%s.hash%d", nme, THRgettid());
-			if (len == -1 || len > (int) sizeof(hs->heap.filename)) {
+			if (snprintf(hs->heaplink.filename, sizeof(hs->heaplink.filename), "%s.thshprpl%x", nme, THRgettid()) >= (int) sizeof(hs->heaplink.filename) ||
+			    snprintf(hs->heapbckt.filename, sizeof(hs->heapbckt.filename), "%s.thshprpb%x", nme, THRgettid()) >= (int) sizeof(hs->heapbckt.filename)) {
 				GDKfree(hs);
 				TRC_ERROR(BAT_, "Heap filename is too large\n");
 				goto abort_check;
@@ -2377,10 +2379,12 @@ BATassertProps(BAT *b)
 				mask = (BUN) 1 << 16;
 			else
 				mask = HASHmask(b->batCount);
-			if ((hs->heap.farmid = BBPselectfarm(TRANSIENT, b->ttype,
-							hashheap)) < 0 ||
+			if ((hs->heaplink.farmid = BBPselectfarm(
+				     TRANSIENT, b->ttype, hashheap)) < 0 ||
+			    (hs->heapbckt.farmid = BBPselectfarm(
+				    TRANSIENT, b->ttype, hashheap)) < 0 ||
 			    HASHnew(hs, b->ttype, BUNlast(b),
-				    mask, BUN_NONE) != GDK_SUCCEED) {
+				    mask, BUN_NONE, false) != GDK_SUCCEED) {
 				GDKfree(hs);
 				TRC_ERROR(BAT_, "Cannot allocate hash table\n");
 				goto abort_check;
@@ -2401,17 +2405,18 @@ BATassertProps(BAT *b)
 					seenmin |= cmp == 0;
 				}
 				prb = HASHprobe(hs, valp);
-				for (hb = HASHget(hs,prb);
+				for (hb = HASHget(hs, prb);
 				     hb != HASHnil(hs);
-				     hb = HASHgetlink(hs,hb))
+				     hb = HASHgetlink(hs, hb))
 					if (cmpf(valp, BUNtail(bi, hb)) == 0)
 						assert(!b->tkey);
-				HASHputlink(hs,p, HASHget(hs,prb));
-				HASHput(hs,prb,p);
+				HASHputlink(hs, p, HASHget(hs, prb));
+				HASHput(hs, prb, p);
 				assert(!b->tnonil || !isnil);
 				seennil |= isnil;
 			}
-			HEAPfree(&hs->heap, true);
+			HEAPfree(&hs->heaplink, true);
+			HEAPfree(&hs->heapbckt, true);
 			GDKfree(hs);
 		}
 	  abort_check:

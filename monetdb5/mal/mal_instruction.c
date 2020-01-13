@@ -888,7 +888,7 @@ trimMalVariables_(MalBlkPtr mb, MalStkPtr glb)
 	/* build the alias table */
 	for (i = 0; i < mb->vtop; i++) {
 		if ( isVarUsed(mb,i) == 0) {
-			if (glb && isVarConstant(mb, i))
+			if (glb && i < glb->stktop && isVarConstant(mb, i))
 				VALclear(&glb->stk[i]);
 			freeVariable(mb, i);
 			continue;
@@ -903,7 +903,7 @@ trimMalVariables_(MalBlkPtr mb, MalStkPtr glb)
 		/* valgrind finds a leak when we move these variable record
 		 * pointers around. */
 		alias[i] = cnt;
-		if (glb && i != cnt) {
+		if (glb && i < glb->stktop && i != cnt) {
 			glb->stk[cnt] = glb->stk[i];
 			VALempty(&glb->stk[i]);
 		}

@@ -445,19 +445,14 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 
 	char *mal_session_uuid, *err = NULL;
 	if (!GDKinmemory() && (err = msab_getUUID(&mal_session_uuid)) == NULL) {
-		str rsupervisor_session = GDKstrdup(mal_session_uuid);
-		if (rsupervisor_session == NULL) {
-			free(mal_session_uuid);
-			return -1;
-		}
-
 		str lsupervisor_session = GDKstrdup(mal_session_uuid);
-		if (lsupervisor_session == NULL) {
-			free(mal_session_uuid);
+		str rsupervisor_session = GDKstrdup(mal_session_uuid);
+		free(mal_session_uuid);
+		if (lsupervisor_session == NULL || rsupervisor_session == NULL) {
+			GDKfree(lsupervisor_session);
 			GDKfree(rsupervisor_session);
 			return -1;
 		}
-		free(mal_session_uuid);
 
 		str rworker_plan_uuid = generateUUID();
 		if (rworker_plan_uuid == NULL) {

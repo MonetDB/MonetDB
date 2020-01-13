@@ -277,13 +277,6 @@ SERVERlistenThread(SOCKET *Sock)
 {
 	char *msg = 0;
 	int retval;
-#ifdef HAVE_POLL
-	struct pollfd pfd[2];
-	nfds_t npfd;
-#else
-	struct timeval tv;
-	fd_set fds;
-#endif
 	SOCKET sock = INVALID_SOCKET;
 	SOCKET usock = INVALID_SOCKET;
 	SOCKET msgsock = INVALID_SOCKET;
@@ -299,6 +292,8 @@ SERVERlistenThread(SOCKET *Sock)
 
 	do {
 #ifdef HAVE_POLL
+		struct pollfd pfd[2];
+		nfds_t npfd;
 		npfd = 0;
 		if (sock != INVALID_SOCKET)
 			pfd[npfd++] = (struct pollfd) {.fd = sock, .events = POLLIN};
@@ -306,9 +301,13 @@ SERVERlistenThread(SOCKET *Sock)
 		if (usock != INVALID_SOCKET)
 			pfd[npfd++] = (struct pollfd) {.fd = usock, .events = POLLIN};
 #endif
-		/* Wait up to 0.025 seconds (0.001 if testing) */
-		retval = poll(pfd, npfd, GDKdebug & FORCEMITOMASK ? 10 : 25);
+		/* Wait up to 0.1 seconds (0.01 if testing) */
+		retval = poll(pfd, npfd, GDKdebug & FORCEMITOMASK ? 10 : 100);
+		if (retval == -1 && errno == EINTR)
+			continue;
 #else
+		struct timeval tv;
+		fd_set fds;
 		FD_ZERO(&fds);
 		if (sock != INVALID_SOCKET)
 			FD_SET(sock, &fds);
@@ -316,9 +315,10 @@ SERVERlistenThread(SOCKET *Sock)
 		if (usock != INVALID_SOCKET)
 			FD_SET(usock, &fds);
 #endif
-		/* Wait up to 0.025 seconds (0.001 if testing) */
-		tv.tv_sec = 0;
-		tv.tv_usec = GDKdebug & FORCEMITOMASK ? 10000 : 25000;
+		/* Wait up to 0.1 seconds (0.01 if testing) */
+		tv = (struct timeval) {
+			.tv_usec = GDKdebug & FORCEMITOMASK ? 10000 : 100000,
+		};
 
 		/* temporarily use msgsock to record the larger of sock and usock */
 		msgsock = sock;

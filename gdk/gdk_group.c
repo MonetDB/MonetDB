@@ -737,7 +737,10 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	if (gn == NULL)
 		goto error;
 	ngrps = (oid *) Tloc(gn, 0);
-	maxgrps = cnt / 10;
+	if ((prop = BATgetprop(b, GDK_NUNIQUE)) != NULL)
+		maxgrps = prop->v.val.oval;
+	else
+		maxgrps = cnt / 10;
 	if (!is_oid_nil(maxgrp) && maxgrps < maxgrp)
 		maxgrps += maxgrp;
 	if (e && maxgrps < BATcount(e))
@@ -747,7 +750,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	if (maxgrps < GROUPBATINCR)
 		maxgrps = GROUPBATINCR;
 	if (b->twidth <= 2)
-		maxgrps = (BUN) 1 << (8 << (b->twidth == 2));
+		maxgrps = (BUN) 1 << (8 * b->twidth);
 	if (extents) {
 		en = COLnew(0, TYPE_oid, maxgrps, TRANSIENT);
 		if (en == NULL)
@@ -1047,8 +1050,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		bool gc = g != NULL && (BATordered(g) || BATordered_rev(g));
 		const char *nme;
 		BUN prb;
-		int bits, len;
-		BUN mask;
+		int bits = 0;
+		BUN nbucket;
 		oid grp;
 
 		GDKclrerr();	/* not interested in BAThash errors */
@@ -1070,20 +1073,38 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				  h ? BATgetId(h) : "NULL", h ? BATcount(h) : 0,
 				  subsorted, gc ? " (g clustered)" : "");
 		nme = GDKinmemory() ? ":inmemory" : BBP_physical(b->batCacheid);
-		mask = MAX(HASHmask(cnt), 1 << 16);
-		/* mask is a power of two, so pop(mask - 1) tells us
-		 * which power of two */
-		bits = 8 * SIZEOF_OID - pop(mask - 1);
+		if (grps && !gc) {
+			/* we manipulate the hash value after having
+			 * calculated it, and when doing that, we
+			 * assume the mask (i.e. nbucket-1) is a
+			 * power-of-two minus one, so make sure it
+			 * is */
+			nbucket = cnt | cnt >> 1;
+			nbucket |= nbucket >> 2;
+			nbucket |= nbucket >> 4;
+			nbucket |= nbucket >> 8;
+			nbucket |= nbucket >> 16;
+#if SIZEOF_BUN == 8
+			nbucket |= nbucket >> 32;
+#endif
+			nbucket++;
+			/* nbucket is a power of two, so pop(nbucket - 1)
+			 * tells us which power of two */
+			bits = 8 * SIZEOF_OID - pop(nbucket - 1);
+		} else {
+			nbucket = MAX(HASHmask(cnt), 1 << 16);
+		}
 		if ((hs = GDKzalloc(sizeof(Hash))) == NULL ||
-		    (hs->heap.farmid = BBPselectfarm(TRANSIENT, b->ttype, hashheap)) < 0) {
+		    (hs->heaplink.farmid = BBPselectfarm(TRANSIENT, b->ttype, hashheap)) < 0 ||
+		    (hs->heapbckt.farmid = BBPselectfarm(TRANSIENT, b->ttype, hashheap)) < 0) {
 			GDKfree(hs);
 			hs = NULL;
 			GDKerror("BATgroup: cannot allocate hash table\n");
 			goto error;
 		}
-		len = snprintf(hs->heap.filename, sizeof(hs->heap.filename), "%s.hash%d", nme, THRgettid());
-		if (len < 0 || len >= (int) sizeof(hs->heap.filename) ||
-		    HASHnew(hs, b->ttype, BUNlast(b), mask, BUN_NONE) != GDK_SUCCEED) {
+		if (snprintf(hs->heaplink.filename, sizeof(hs->heaplink.filename), "%s.thshgrpl%x", nme, THRgettid()) >= (int) sizeof(hs->heaplink.filename) ||
+		    snprintf(hs->heapbckt.filename, sizeof(hs->heapbckt.filename), "%s.thshgrpb%x", nme, THRgettid()) >= (int) sizeof(hs->heapbckt.filename) ||
+		    HASHnew(hs, b->ttype, BUNlast(b), nbucket, BUN_NONE, false) != GDK_SUCCEED) {
 			GDKfree(hs);
 			hs = NULL;
 			GDKerror("BATgroup: cannot allocate hash table\n");
@@ -1173,7 +1194,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			GRP_create_partial_hash_table_any();
 		}
 
-		HEAPfree(&hs->heap, true);
+		HEAPfree(&hs->heapbckt, true);
+		HEAPfree(&hs->heaplink, true);
 		GDKfree(hs);
 	}
 	if (extents) {
@@ -1210,7 +1232,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	return GDK_SUCCEED;
   error:
 	if (hs != NULL && hs != b->thash) {
-		HEAPfree(&hs->heap, true);
+		HEAPfree(&hs->heaplink, true);
+		HEAPfree(&hs->heapbckt, true);
 		GDKfree(hs);
 	}
 	if (gn)

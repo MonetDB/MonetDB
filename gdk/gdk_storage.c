@@ -165,7 +165,8 @@ GDKremovedir(int farmid, const char *dirname)
 		}
 		path = GDKfilepath(farmid, dirname, dent->d_name, NULL);
 		if (path == NULL) {
-			ret = -1;
+			/* most likely the rmdir will now fail causing
+			 * an error return */
 			goto bailout;
 		}
 		ret = remove(path);
@@ -754,6 +755,7 @@ BATsave(BAT *bd)
 	BAT bs;
 	Heap vhs;
 	BAT *b = bd;
+	bool dosync = (BBP_status(b->batCacheid) & BBPPERSISTENT) != 0;
 
 	assert(!GDKinmemory());
 	BATcheck(b, "BATsave", GDK_FAIL);
@@ -785,13 +787,15 @@ BATsave(BAT *bd)
 	nme = BBP_physical(b->batCacheid);
 	if (!b->batCopiedtodisk || b->batDirtydesc || b->theap.dirty)
 		if (err == GDK_SUCCEED && b->ttype)
-			err = HEAPsave(&b->theap, nme, "tail");
+			err = HEAPsave(&b->theap, nme, "tail", dosync);
 	if (b->tvheap
 	    && (!b->batCopiedtodisk || b->batDirtydesc || b->tvheap->dirty)
 	    && b->ttype
 	    && b->tvarsized
 	    && err == GDK_SUCCEED)
-		err = HEAPsave(b->tvheap, nme, "theap");
+		err = HEAPsave(b->tvheap, nme, "theap", dosync);
+	if (b->thash && b->thash != (Hash *) 1)
+		BAThashsave(b, dosync);
 
 	if (err == GDK_SUCCEED) {
 		bd->batCopiedtodisk = true;
