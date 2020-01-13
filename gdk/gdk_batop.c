@@ -302,7 +302,6 @@ insert_string_bat(BAT *b, BAT *n, BAT *s, bool force)
 				b->theap.free += sizeof(var_t);
 				break;
 			}
-			b->theap.dirty = true;
 		}
 		b->tvarsized = true;
 		b->ttype = TYPE_str;

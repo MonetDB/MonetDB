@@ -13,8 +13,7 @@
 #include "algebra.h"
 #include "gdk_atoms.h"
 
-//#define SNAPSHOT_MINSIZE ((BUN) 1024*128)
-#define SNAPSHOT_MINSIZE ((BUN) 1024*2)
+#define SNAPSHOT_MINSIZE ((BUN) 1024*128)
 
 static MT_Lock destroy_lock = MT_LOCK_INITIALIZER("destroy_lock");
 sql_dbat *tobe_destroyed_dbat = NULL;
