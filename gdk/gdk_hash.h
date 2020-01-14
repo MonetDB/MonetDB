@@ -23,7 +23,7 @@ typedef struct Hash {
 	Heap heaplink;		/* heap where the hash links are stored */
 	Heap heapbckt;		/* heap where the hash buckets are stored */
 } Hash;
-#define NHASHBUCKETS(h)		((h)->nbucket)
+
 static inline BUN
 HASHbucket(const Hash *h, BUN v)
 {
