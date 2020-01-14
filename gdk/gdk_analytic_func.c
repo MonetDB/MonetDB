@@ -1787,9 +1787,9 @@ GDKanalytical_##NAME(BAT *r, BAT *b, BAT *s, BAT *e, int tpe) \
 }
 
 GDK_ANALYTICAL_STDEV_VARIANCE(stddev_samp, 1, sqrt(m2 / (n - 1)))
-GDK_ANALYTICAL_STDEV_VARIANCE(stddev_pop, 0, sqrt(m2 / (n - 0)))
+GDK_ANALYTICAL_STDEV_VARIANCE(stddev_pop, 0, sqrt(m2 / n))
 GDK_ANALYTICAL_STDEV_VARIANCE(variance_samp, 1, m2 / (n - 1))
-GDK_ANALYTICAL_STDEV_VARIANCE(variance_pop, 0, m2 / (n - 0))
+GDK_ANALYTICAL_STDEV_VARIANCE(variance_pop, 0, m2 / n)
 
 /* There will be always at least one value for the quantile, because we don't implement the exclude clause yet */
 
