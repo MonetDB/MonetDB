@@ -763,7 +763,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					} else if (lhs->vtype == TYPE_bat)
 						BBPretain(lhs->val.bval);
 				}
-				if(ret == MAL_SUCCEED) {
+				if(ret == MAL_SUCCEED && ii == pci->argc) {
 					ret = runMALsequence(cntxt, pci->blk, 1, pci->blk->stop, nstk, stk, pci);
 					for (ii = 0; ii < nstk->stktop; ii++)
 						if (ATOMextern(nstk->stk[ii].vtype))
@@ -1231,7 +1231,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					freeException(n);
 					freeException(ret);
 					ret = new;
-				}
+				} else ret = n;
 			}
 		} else {
 			ret = createException(MAL, nme, "Exception not caught");
