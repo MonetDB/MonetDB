@@ -102,6 +102,7 @@ char* control_send(
 				continue;
 			if (connect(sock, rp->ai_addr, (socklen_t) rp->ai_addrlen) != SOCKET_ERROR)
 				break;  /* success */
+			closesocket(sock);
 		}
 		freeaddrinfo(res);
 		if (rp == NULL) {
@@ -144,9 +145,8 @@ char* control_send(
 			fdin = block_stream(socket_rstream(sock, "client in"));
 			fdout = block_stream(socket_wstream(sock, "client out"));
 		} else {
-			if (len > 2 &&
-					(strstr(rbuf + 2, ":BIG:") != NULL ||
-					 strstr(rbuf + 2, ":LIT:") != NULL))
+			if (strstr(rbuf + 2, ":BIG:") != NULL ||
+				strstr(rbuf + 2, ":LIT:") != NULL)
 			{
 				snprintf(sbuf, sizeof(sbuf), "cannot connect: "
 						"server looks like a mapi server, "

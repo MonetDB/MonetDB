@@ -371,18 +371,3 @@ comment "return the average of groups";
 
 EOF
 done
-
-cat <<EOF
-command aggr.exist(b:bat[:any_2], h:any_1):bit
-address ALGexist;
-
-command aggr.exist(b:bat[:any_2]):bit
-address SQLexist;
-
-pattern aggr.exist(v:any_2):bit
-address SQLexist_val;
-
-command aggr.subexist(b:bat[:any_2], g:bat[:oid], e:bat[:oid], no_nil:bit):bat[:bit]
-address SQLsubexist;
-
-EOF

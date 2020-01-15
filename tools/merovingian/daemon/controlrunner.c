@@ -120,6 +120,7 @@ recvWithTimeout(int msgsock, stream *fdin, char *buf, size_t buflen)
 #ifdef HAVE_POLL
 	struct pollfd pfd = (struct pollfd) {.fd = msgsock, .events = POLLIN};
 
+	/* Wait up to 1 second.  If a client doesn't make this, it's too slow */
 	retval = poll(&pfd, 1, 1000);
 #else
 	fd_set fds;
@@ -129,8 +130,7 @@ recvWithTimeout(int msgsock, stream *fdin, char *buf, size_t buflen)
 	FD_SET(msgsock, &fds);
 
 	/* Wait up to 1 second.  If a client doesn't make this, it's too slow */
-	tv.tv_sec = 1;
-	tv.tv_usec = 0;
+	tv = struct timeval) {.tv_sec = 1};
 	retval = select(msgsock + 1, &fds, NULL, NULL, &tv);
 #endif
 	if (retval <= 0) {
@@ -367,6 +367,8 @@ static void ctl_handle_client(
 							 * may have encountered.
 							 */
 							shutdown_profiler(dbname, &stats);
+							if (stats != NULL)
+								msab_freeStatus(&stats);
 							terminateProcess(pid, dbname, type, 1);
 							Mfprintf(_mero_ctlout, "%s: stopped "
 									"database '%s'\n", origin, q);
@@ -670,6 +672,8 @@ static void ctl_handle_client(
 							 origin, log_path);
 				}
 				msab_freeStatus(&stats);
+				if (log_path)
+					free(log_path);
 			}  else if (strncmp(p, "profilerstop", strlen("profilerstop")) == 0) {
 				char *e = shutdown_profiler(q, &stats);
 				if (e != NULL) {
@@ -1043,6 +1047,7 @@ controlRunner(void *d)
 			Mfprintf(_mero_ctlerr, "malloc failed");
 			break;
 		}
+		/* limit waiting time in order to check whether we need to exit */
 #ifdef HAVE_POLL
 		pfd = (struct pollfd) {.fd = usock, .events = POLLIN};
 		retval = poll(&pfd, 1, 1000);
@@ -1050,16 +1055,16 @@ controlRunner(void *d)
 		FD_ZERO(&fds);
 		FD_SET(usock, &fds);
 
-		/* limit waiting time in order to check whether we need to exit */
-		tv.tv_sec = 1;
-		tv.tv_usec = 0;
+		tv = (struct timeval) {.tv_sec = 1};
 		retval = select(usock + 1, &fds, NULL, NULL, &tv);
 #endif
 		if (retval == 0) {
 			/* nothing interesting has happened */
+			free(p);
 			continue;
 		}
 		if (retval == -1) {
+			free(p);
 			continue;
 		}
 
@@ -1068,11 +1073,13 @@ controlRunner(void *d)
 			continue;
 #else
 		if (!FD_ISSET(usock, &fds)) {
+			free(p);
 			continue;
 		}
 #endif
 
 		if ((msgsock = accept4(usock, (SOCKPTR) 0, (socklen_t *) 0, SOCK_CLOEXEC)) == -1) {
+			free(p);
 			if (_mero_keep_listening == 0)
 				break;
 			if (errno != EINTR) {
@@ -1086,9 +1093,10 @@ controlRunner(void *d)
 #endif
 
 		*p = msgsock;
-		if (pthread_create(&tid, NULL, handle_client, p) != 0)
+		if (pthread_create(&tid, NULL, handle_client, p) != 0) {
 			closesocket(msgsock);
-		else
+			free(p);
+		} else
 			pthread_detach(tid);
 	} while (_mero_keep_listening);
 	shutdown(usock, SHUT_RDWR);

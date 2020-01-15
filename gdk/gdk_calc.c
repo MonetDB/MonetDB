@@ -3481,6 +3481,7 @@ addstr_loop(BAT *b1, const char *l, BAT *b2, const char *r, BAT *bn,
 		x -= candoff;
 	} while (i < cnt);
 	GDKfree(s);
+	s = NULL;
 	while (i < cnt) {
 		if (tfastins_nocheckVAR(bn, i, str_nil, Tsize(bn)) != GDK_SUCCEED)
 			goto bunins_failed;
@@ -14264,6 +14265,12 @@ BATconvert(BAT *b, BAT *s, int tp, bool abort_on_error)
 	     BATatoms[b->ttype].atomToStr == BATatoms[TYPE_str].atomToStr)) {
 		return COLcopy(b, tp, false, TRANSIENT);
 	}
+	if (ATOMstorage(tp) == TYPE_ptr) {
+		GDKerror("BATconvert: type combination (convert(%s)->%s) "
+			 "not supported.\n",
+			 ATOMname(b->ttype), ATOMname(tp));
+		return NULL;
+	}
 
 	bn = COLnew(b->hseqbase, tp, cnt, TRANSIENT);
 	if (bn == NULL)
@@ -14361,6 +14368,8 @@ VARconvert(ValPtr ret, const ValRecord *v, bool abort_on_error)
 		if (v->val.sval == NULL || strcmp(v->val.sval, str_nil) == 0) {
 			if (VALinit(ret, ret->vtype, ATOMnilptr(ret->vtype)) == NULL)
 				nils = BUN_NONE;
+		} else if (ATOMstorage(ret->vtype) == TYPE_ptr) {
+			nils = BUN_NONE + 1;
 		} else {
 			ssize_t l;
 			size_t len;

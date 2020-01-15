@@ -71,7 +71,7 @@ HEAPcreatefile(int farmid, size_t *maxsz, const char *fn)
 }
 
 static gdk_return HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, bool trunc);
-static gdk_return HEAPsave_intern(Heap *h, const char *nme, const char *ext, const char *suffix);
+static gdk_return HEAPsave_intern(Heap *h, const char *nme, const char *ext, const char *suffix, bool dosync);
 
 static char *
 decompose_filename(str nme)
@@ -266,7 +266,7 @@ HEAPextend(Heap *h, size_t size, bool mayshare)
 				failure = "h->storage == STORE_MEM && can_map && fd >= 0 && HEAPload() != GDK_SUCCEED";
 				/* couldn't allocate, now first save data to
 				 * file */
-				if (HEAPsave_intern(&bak, nme, ext, ".tmp") != GDK_SUCCEED) {
+				if (HEAPsave_intern(&bak, nme, ext, ".tmp", false) != GDK_SUCCEED) {
 					failure = "h->storage == STORE_MEM && can_map && fd >= 0 && HEAPsave_intern() != GDK_SUCCEED";
 					goto failed;
 				}
@@ -351,6 +351,8 @@ file_exists(int farmid, const char *dir, const char *name, const char *ext)
 	int ret;
 
 	path = GDKfilepath(farmid, dir, name, ext);
+	if (path == NULL)
+		return -1;
 	ret = stat(path, &st);
 	IODEBUG fprintf(stderr, "#stat(%s) = %d\n", path, ret);
 	GDKfree(path);
@@ -406,8 +408,9 @@ GDKupgradevarheap(BAT *b, var_t v, bool copyall, bool mayshare)
 		filename = b->theap.filename;
 	else
 		filename++;
+	int exists = 0;
 	if ((BBP_status(bid) & (BBPEXISTING|BBPDELETED)) &&
-	    !file_exists(b->theap.farmid, BAKDIR, filename, NULL) &&
+	    !(exists = file_exists(b->theap.farmid, BAKDIR, filename, NULL)) &&
 	    (b->theap.storage != STORE_MEM ||
 	     GDKmove(b->theap.farmid, BATDIR, b->theap.filename, NULL,
 		     BAKDIR, filename, NULL) != GDK_SUCCEED)) {
@@ -451,6 +454,8 @@ GDKupgradevarheap(BAT *b, var_t v, bool copyall, bool mayshare)
 			return GDK_FAIL;
 		}
 	}
+	if (exists == -1)
+		return GDK_FAIL;
 
 	savefree = b->theap.free;
 	if (copyall)
@@ -691,7 +696,7 @@ HEAPload(Heap *h, const char *nme, const char *ext, bool trunc)
  * safe on stable storage.
  */
 static gdk_return
-HEAPsave_intern(Heap *h, const char *nme, const char *ext, const char *suffix)
+HEAPsave_intern(Heap *h, const char *nme, const char *ext, const char *suffix, bool dosync)
 {
 	storage_t store = h->newstorage;
 	long_str extension;
@@ -709,16 +714,18 @@ HEAPsave_intern(Heap *h, const char *nme, const char *ext, const char *suffix)
 	} else if (store != STORE_MEM) {
 		store = h->storage;
 	}
-	HEAPDEBUG {
-		fprintf(stderr, "#HEAPsave(%s.%s,storage=%d,free=%zu,size=%zu)\n", nme, ext, (int) h->newstorage, h->free, h->size);
-	}
-	return GDKsave(h->farmid, nme, ext, h->base, h->free, store, true);
+	HEAPDEBUG fprintf(stderr,
+			  "#%s: HEAPsave(%s.%s,storage=%d,free=%zu,size=%zu,dosync=%s)\n",
+			  MT_thread_getname(),
+			  nme, ext, (int) h->newstorage, h->free, h->size,
+			  dosync?"true":"false");
+	return GDKsave(h->farmid, nme, ext, h->base, h->free, store, dosync);
 }
 
 gdk_return
-HEAPsave(Heap *h, const char *nme, const char *ext)
+HEAPsave(Heap *h, const char *nme, const char *ext, bool dosync)
 {
-	return HEAPsave_intern(h, nme, ext, ".new");
+	return HEAPsave_intern(h, nme, ext, ".new", dosync);
 }
 
 /*

@@ -294,8 +294,8 @@ str OPTsql_append(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	actions= OPTsql_appendImplementation(cntxt, mb,stk,p);
 
     /* Defense line against incorrect plans */
-	chkTypes(cntxt->usermodule, mb, FALSE);
-	chkFlow(mb);
+	msg = chkTypes(cntxt->usermodule, mb, FALSE);
+	if( msg == MAL_SUCCEED) msg = chkFlow(mb);
 	if( msg == MAL_SUCCEED) msg = chkDeclarations(mb);
 #ifdef DEBUG_OPT_OPTIMIZERS
 		mnstr_printf(cntxt->fdout,"=FINISHED sql_append %d\n",actions);

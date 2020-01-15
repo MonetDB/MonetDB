@@ -2387,6 +2387,29 @@ gtr_minmax( sql_trans *tr )
 	return _gtr_update(tr, &gtr_minmax_table);
 }
 
+/* when existing delta's get cleared and again filled with large amouts of data, the ibid has
+ * become the persistent bat. So we need to move this too the persistent (bid).
+ */
+static int 
+tr_handle_snapshot( sql_trans *tr, sql_delta *bat)
+{
+	if (bat->ibase || tr->parent != gtrans)
+		return LOG_OK;
+
+	BAT *ins = temp_descriptor(bat->ibid);
+	if (!ins)
+		return LOG_ERR;
+	if (BATcount(ins) > SNAPSHOT_MINSIZE){
+		temp_destroy(bat->bid);
+		bat->bid = bat->ibid;
+		bat->cnt = bat->ibase = BATcount(ins);
+		bat->ibid = e_bat(ins->ttype);
+		BATmsync(ins);
+	}
+	bat_destroy(ins);
+	return LOG_OK;
+}
+
 static int 
 tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat, int unique)
 {
@@ -2438,7 +2461,7 @@ tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat, int unique)
 	}
 	/* any inserts */
 	if (BUNlast(ins) > 0 || cbat->cleared) {
-		if ((!obat->ibase && BATcount(ins) > SNAPSHOT_MINSIZE)){
+		if ((!cbat->ibase && BATcount(ins) > SNAPSHOT_MINSIZE)){
 			/* swap cur and ins */
 			BAT *newcur = ins;
 
@@ -2762,6 +2785,7 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 				cc->data = NULL;
 				b->next = oc->data;
 				oc->data = b;
+				tr_handle_snapshot(tr, b);
 
 				if (b->cached) {
 					bat_destroy(b->cached);
@@ -2791,6 +2815,7 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 					ok = LOG_ERR;
 				cc->data = NULL;
 			} else if (cc->data) {
+				tr_handle_snapshot(tr, cc->data);
 				oc->data = cc->data; 
 				oc->base.allocated = 1;
 				cc->data = NULL;
@@ -2848,6 +2873,8 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 					ci->data = NULL;
 					b->next = oi->data;
 					oi->data = b;
+					tr_handle_snapshot(tr, b);
+
 					if (b->cached) {
 						bat_destroy(b->cached);
 						b->cached = NULL;
@@ -2875,6 +2902,7 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 						ok = LOG_ERR;
 					ci->data = NULL;
 				} else if (ci->data) {
+					tr_handle_snapshot(tr, ci->data);
 					oi->data = ci->data;
 					oi->base.allocated = 1;
 					ci->data = NULL;
@@ -2924,9 +2952,7 @@ tr_log_delta( sql_trans *tr, sql_delta *cbat, int cleared, char tpe, oid id)
 	if (BUNlast(ins) > 0) {
 		assert(ATOMIC_GET(&store_nr_active)>0);
 		if (BUNlast(ins) > ins->batInserted &&
-		    (ATOMIC_GET(&store_nr_active) != 1 ||
-		     cbat->ibase ||
-		     BATcount(ins) <= SNAPSHOT_MINSIZE))
+		    (cbat->ibase || BATcount(ins) <= SNAPSHOT_MINSIZE))
 			ok = log_bat(bat_logger, ins, cbat->name, tpe, id);
 		if (ok == GDK_SUCCEED &&
 		    !cbat->ibase && BATcount(ins) > SNAPSHOT_MINSIZE) {

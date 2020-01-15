@@ -342,12 +342,6 @@ TKNZRappend(oid *pos, str *s)
 			throw(MAL, "tokenizer.append",
 					OPERATION_FAILED " could not append");
 		}
-		if (tokenBAT[i].val->thash == NULL ||
-			tokenBAT[i].val->thash == (Hash *) 1 ||
-			BATcount(tokenBAT[i].val) > 4 * tokenBAT[i].val->thash->mask) {
-			HASHdestroy(tokenBAT[i].val);
-			BAThash(tokenBAT[i].val);
-		}
 
 		if (BUNappend(tokenBAT[i].idx, (ptr) & prv, false) != GDK_SUCCEED) {
 			GDKfree(url);
@@ -363,12 +357,6 @@ TKNZRappend(oid *pos, str *s)
 	if (BUNappend(tokenBAT[INDEX].val, &comp, false) != GDK_SUCCEED) {
 		GDKfree(url);
 		throw(MAL, "tokenizer.append", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
-	if (tokenBAT[INDEX].val->thash == NULL ||
-		tokenBAT[INDEX].val->thash == (Hash *) 1 ||
-		BATcount(tokenBAT[INDEX].val) > 4 * tokenBAT[INDEX].val->thash->mask) {
-		HASHdestroy(tokenBAT[INDEX].val);
-		BAThash(tokenBAT[INDEX].val);
 	}
 
 	GDKfree(url);

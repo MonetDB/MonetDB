@@ -34,7 +34,6 @@ openConnectionTCP(int *ret, bool bind_ipv6, const char *bindaddr, unsigned short
 	int sock = -1, check = 0;
 	socklen_t length = 0;
 	int on = 1;
-	int i = 0;
 	char sport[16];
 
 	snprintf(sport, 16, "%hu", port);
@@ -69,13 +68,11 @@ openConnectionTCP(int *ret, bool bind_ipv6, const char *bindaddr, unsigned short
 
 			if (bind(sock, rp->ai_addr, rp->ai_addrlen) != -1)
 				break; /* working */
+			closesocket(sock);
 		}
 		if (rp == NULL) {
 			int e = errno;
-			if (result)
-				freeaddrinfo(result);
-			if (sock != -1)
-				closesocket(sock);
+			freeaddrinfo(result);
 			if (result) { /* results found, tried socket, setsockopt and bind calls */
 				errno = e;
 				return newErr("binding to stream socket port %hu failed: %s", port, strerror(errno));
@@ -85,6 +82,7 @@ openConnectionTCP(int *ret, bool bind_ipv6, const char *bindaddr, unsigned short
 		}
 		server = rp->ai_addr;
 		length = rp->ai_addrlen;
+		freeaddrinfo(result);
 	} else {
 		sock = socket(bind_ipv6 ? AF_INET6 : AF_INET, SOCK_STREAM
 #ifdef SOCK_CLOEXEC
@@ -95,20 +93,22 @@ openConnectionTCP(int *ret, bool bind_ipv6, const char *bindaddr, unsigned short
 			return(newErr("creation of stream socket failed: %s", strerror(errno)));
 
 		if (bind_ipv6) {
-			memset(&server_ipv6, 0, sizeof(server_ipv6));
-			server_ipv6.sin6_family = AF_INET6;
+			server_ipv6 = (struct sockaddr_in6) {
+				.sin6_family = AF_INET6,
+				.sin6_port = htons((unsigned short) (port & 0xFFFF)),
+				.sin6_addr = ipv6_any_addr,
+			};
 			length = (socklen_t) sizeof(server_ipv6);
-			server_ipv6.sin6_port = htons((unsigned short) ((port) & 0xFFFF));
-			server_ipv6.sin6_addr = ipv6_any_addr;
+			server = (struct sockaddr*) &server_ipv6;
 		} else {
-			server_ipv4.sin_family = AF_INET;
-			for (i = 0; i < 8; i++)
-				server_ipv4.sin_zero[i] = 0;
+			server_ipv4 = (struct sockaddr_in) {
+				.sin_family = AF_INET,
+				.sin_port = htons((unsigned short) (port & 0xFFFF)),
+				.sin_addr.s_addr = htonl(INADDR_ANY),
+			};
 			length = (socklen_t) sizeof(server_ipv4);
-			server_ipv4.sin_port = htons((unsigned short) ((port) & 0xFFFF));
-			server_ipv4.sin_addr.s_addr = htonl(INADDR_ANY);
+			server = (struct sockaddr*) &server_ipv4;
 		}
-		server = bind_ipv6 ? (struct sockaddr*) &server_ipv6 : (struct sockaddr*) &server_ipv4;
 
 #if !defined(SOCK_CLOEXEC) && defined(HAVE_FCNTL)
 		(void) fcntl(sock, F_SETFD, FD_CLOEXEC);

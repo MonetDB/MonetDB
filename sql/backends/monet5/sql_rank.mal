@@ -20,6 +20,14 @@ pattern sql.diff(p:bit, b:any_1) :bit
 address SQLdiff
 comment "return true if cur != prev row";
 
+pattern batsql.diff(p:bit, b:bat[:any_1]) :bat[:bit]
+address SQLdiff
+comment "return true if cur != prev row";
+
+pattern batsql.diff(p:bat[:bit], b:any_1) :bat[:bit]
+address SQLdiff
+comment "return true if cur != prev row";
+
 pattern batsql.diff(p:bat[:bit], b:bat[:any_1]) :bat[:bit]
 address SQLdiff
 comment "return true if cur != prev row";

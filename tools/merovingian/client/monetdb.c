@@ -506,7 +506,7 @@ globMatchDBS(int argc, char *argv[], sabdb **orig, char *cmd)
 					/* move out of orig into w, such that we can't
 					 * get double matches in the same output list
 					 * (as side effect also avoids a double free
-					 * lateron) */
+					 * later on) */
 					if (w == NULL) {
 						top = w = stats;
 					} else {
@@ -583,10 +583,10 @@ simple_argv_cmd(char *cmd, sabdb *dbs, char *merocmd,
 			if (premsg != NULL && !monetdb_quiet)
 				printf("FAILED\n");
 			fprintf(stderr, "%s: %s\n", cmd, out);
-			free(out);
 
 			state |= 1;
 		}
+		free(out);
 
 		hadwork = 1;
 	}
@@ -737,7 +737,7 @@ command_status(int argc, char *argv[])
 				}
 			}
 			/* make this option no longer available, for easy use
-			 * lateron */
+			 * later on */
 			argv[i] = NULL;
 		} else {
 			doall = 0;
@@ -1043,7 +1043,7 @@ command_startstop(int argc, char *argv[], startstop mode)
 				}
 			}
 			/* make this option no longer available, for easy use
-			 * lateron */
+			 * later on */
 			argv[i] = NULL;
 		}
 	}
@@ -1148,7 +1148,7 @@ command_set(int argc, char *argv[], meroset type)
 				}
 			}
 			/* make this option no longer available, for easy use
-			 * lateron */
+			 * later on */
 			argv[i] = NULL;
 		} else if (property[0] == '\0') {
 			/* first non-option is property, rest is database */
@@ -1282,7 +1282,7 @@ command_get(int argc, char *argv[])
 				}
 			}
 			/* make this option no longer available, for easy use
-			 * lateron */
+			 * later on */
 			argv[i] = NULL;
 		} else if (property == NULL) {
 			/* first non-option is property, rest is database */
@@ -1815,7 +1815,7 @@ main(int argc, char *argv[])
 			fprintf(stderr, "monetdb: cannot find a control socket, use -h and/or -p\n");
 			exit(1);
 		}
-		/* don't confuse control_send lateron */
+		/* don't confuse control_send later on */
 		mero_port = -1;
 	}
 	/* for TCP connections */

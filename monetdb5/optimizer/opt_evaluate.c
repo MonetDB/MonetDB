@@ -235,8 +235,13 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		addtoMalBlkHistory(mb);
 
 wrapup:
-	if (env) freeStack(env);
-	if (assigned) GDKfree(assigned);
-	if (alias)	GDKfree(alias);
+	if (env) {
+		assert(env->stktop < env->stksize);
+		freeStack(env);
+	}
+	if (assigned) 
+		GDKfree(assigned);
+	if (alias)	
+		GDKfree(alias);
 	return msg;
 }

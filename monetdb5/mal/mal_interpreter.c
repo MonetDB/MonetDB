@@ -763,7 +763,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					} else if (lhs->vtype == TYPE_bat)
 						BBPretain(lhs->val.bval);
 				}
-				if(ret == MAL_SUCCEED) {
+				if(ret == MAL_SUCCEED && ii == pci->argc) {
 					ret = runMALsequence(cntxt, pci->blk, 1, pci->blk->stop, nstk, stk, pci);
 					for (ii = 0; ii < nstk->stktop; ii++)
 						if (ATOMextern(nstk->stk[ii].vtype))
@@ -1231,7 +1231,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					freeException(n);
 					freeException(ret);
 					ret = new;
-				}
+				} else ret = n;
 			}
 		} else {
 			ret = createException(MAL, nme, "Exception not caught");
@@ -1364,11 +1364,9 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 void garbageElement(Client cntxt, ValPtr v)
 {
 	(void) cntxt;
-	if (v->vtype == TYPE_str) {
-		if (v->val.sval) {
-			GDKfree(v->val.sval);
-			v->val.sval = NULL;
-		}
+	if (ATOMstorage(v->vtype) == TYPE_str) {
+		GDKfree(v->val.sval);
+		v->val.sval = NULL;
 		v->len = 0;
 	} else if (v->vtype == TYPE_bat) {
 		/*
@@ -1389,8 +1387,7 @@ void garbageElement(Client cntxt, ValPtr v)
 			return;
 		BBPrelease(bid);
 	} else if (0 < v->vtype && v->vtype < MAXATOMS && ATOMextern(v->vtype)) {
-		if (v->val.pval)
-			GDKfree(v->val.pval);
+		GDKfree(v->val.pval);
 		v->val.pval = 0;
 		v->len = 0;
 	}
@@ -1424,8 +1421,10 @@ void garbageCollector(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int flag)
 	}
 #endif
 	assert(mb->vtop <= mb->vsize);
+	assert(stk->stktop <= stk->stksize);
 	(void) flag;
-	for (k = 0; k < mb->vtop; k++) {
+	(void)mb;
+	for (k = 0; k < stk->stktop; k++) {
 	//	if (isVarCleanup(mb, k) ){
 			garbageElement(cntxt, v = &stk->stk[k]);
 			v->vtype = TYPE_int;
