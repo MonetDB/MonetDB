@@ -1793,39 +1793,18 @@ GDK_ANALYTICAL_STDEV_VARIANCE(variance_pop, 0, m2 / n)
 
 /* There will be always at least one value for the quantile, because we don't implement the exclude clause yet */
 
-#define ANALYTICAL_QUANTILE_IMP_SINGLE_FIXED(TPE)			\
+#define ANALYTICAL_QUANTILE_IMP_FIXED(TPE1, TPE2, NEXT_QUA)			\
 	do {								\
-		TPE *bp = (TPE*)Tloc(b, 0), *restrict rb = (TPE*)Tloc(r, 0), v; \
-		if (is_dbl_nil(qua)) {					\
-			has_nils = true;				\
-			for (; i < cnt; i++, rb++)			\
-				*rb = TPE##_nil;			\
-		} else {						\
-			for (; i < cnt; i++, rb++) { \
-				ss = (BUN) start[i]; \
-				ee = (BUN) end[i]; \
-				f = (ee - ss - 1) * qua; \
-				qindex = ss + ee - (BUN) (ee + 0.5f - f); \
-				assert(qindex >= ss && qindex < ee); \
-				v = bp[qindex]; \
-				*rb = v; \
-				has_nils |= (is_##TPE##_nil(v)); \
-			}	\
-		}	\
-	} while (0)
-
-#define ANALYTICAL_QUANTILE_IMP_MULTI_FIXED(TPE1, TPE2)			\
-	do {								\
-		TPE2 *restrict qp = (TPE2*)Tloc(q, 0);			\
+		TPE1 *restrict bp = (TPE1*)Tloc(b, 0), *restrict rb = (TPE1*)Tloc(r, 0), v;		\
 		for (; i < cnt; i++, rb++) {				\
-			TPE2 qua = qp[i];				\
-			if (is_##TPE2##_nil(qua)) { \
+			TPE2 nqua = NEXT_QUA;				\
+			if (is_##TPE2##_nil(nqua)) { \
 				*rb = TPE1##_nil; \
 				has_nils = true; \
 			} else { \
 				ss = (BUN) start[i]; \
 				ee = (BUN) end[i]; \
-				f = (ee - ss - 1) * qua; \
+				f = (ee - ss - 1) * nqua; \
 				qindex = ss + ee - (BUN) (ee + 0.5f - f); \
 				assert(qindex >= ss && qindex < ee); \
 				v = bp[qindex]; \
@@ -1835,33 +1814,18 @@ GDK_ANALYTICAL_STDEV_VARIANCE(variance_pop, 0, m2 / n)
 		}	\
 	} while (0)
 
-#define ANALYTICAL_QUANTILE_CALC_FIXED(TPE1)				\
+#define ANALYTICAL_QUANTILE_IMP_VARSIZED(TPE2, NEXT_QUA)	\
 	do {								\
-		TPE1 *restrict bp = (TPE1*)Tloc(b, 0), *restrict rb = (TPE1*)Tloc(r, 0), v;		\
-		switch (tp2) {						\
-		case TYPE_flt:						\
-			ANALYTICAL_QUANTILE_IMP_MULTI_FIXED(TPE1, flt); \
-			break;						\
-		case TYPE_dbl:						\
-			ANALYTICAL_QUANTILE_IMP_MULTI_FIXED(TPE1, dbl); \
-			break;						\
-		default:						\
-			goto nosupport;					\
-		}							\
-	} while (0)
-
-#define ANALYTICAL_QUANTILE_IMP_MULTI_VARSIZED(TPE1)			\
-	do {								\
-		TPE1 *restrict qp = (TPE1*)Tloc(q, 0);			\
+		BATiter bpi = bat_iterator(b); \
 		for (; i < cnt; i++) {					\
-			TPE1 qua = qp[i];				\
-			if (is_##TPE1##_nil(qua)) { \
+			TPE2 nqua = NEXT_QUA;				\
+			if (is_##TPE2##_nil(nqua)) { \
 				curval = (void *) nil;	\
 				has_nils = true; \
 			} else { \
 				ss = (BUN) start[i]; \
 				ee = (BUN) end[i]; \
-				f = (ee - ss - 1) * qua; \
+				f = (ee - ss - 1) * nqua; \
 				qindex = ss + ee - (BUN) (ee + 0.5f - f); \
 				assert(qindex >= ss && qindex < ee); \
 				curval = BUNtail(bpi, qindex); \
@@ -1870,6 +1834,22 @@ GDK_ANALYTICAL_STDEV_VARIANCE(variance_pop, 0, m2 / n)
 			if (BUNappend(r, curval, false) != GDK_SUCCEED) \
 				goto allocation_error;	\
 		}	\
+	} while (0)
+
+#define ANALYTICAL_QUANTILE_CALC_MULTI(TPE1)				\
+	do {								\
+		switch (tp2) {						\
+		case TYPE_flt: {						\
+			flt *restrict qp = (flt*)Tloc(q, 0); \
+			ANALYTICAL_QUANTILE_IMP_FIXED(TPE1, flt, qp[i]); \
+		} break;						\
+		case TYPE_dbl: {						\
+			dbl *restrict qp = (dbl*)Tloc(q, 0);	\
+			ANALYTICAL_QUANTILE_IMP_FIXED(TPE1, dbl, qp[i]); \
+		} break;						\
+		default:						\
+			goto nosupport;					\
+		}							\
 	} while (0)
 
 gdk_return
@@ -1901,90 +1881,72 @@ GDKanalytical_quantile(BAT *r, BAT *b, BAT *s, BAT *e, BAT *q, const void *restr
 		}
 		switch (tp1) {
 		case TYPE_bit:
-			ANALYTICAL_QUANTILE_IMP_SINGLE_FIXED(bit);
+			ANALYTICAL_QUANTILE_IMP_FIXED(bit, dbl, qua);
 			break;
 		case TYPE_bte:
-			ANALYTICAL_QUANTILE_IMP_SINGLE_FIXED(bte);
+			ANALYTICAL_QUANTILE_IMP_FIXED(bte, dbl, qua);
 			break;
 		case TYPE_sht:
-			ANALYTICAL_QUANTILE_IMP_SINGLE_FIXED(sht);
+			ANALYTICAL_QUANTILE_IMP_FIXED(sht, dbl, qua);
 			break;
 		case TYPE_int:
-			ANALYTICAL_QUANTILE_IMP_SINGLE_FIXED(int);
+			ANALYTICAL_QUANTILE_IMP_FIXED(int, dbl, qua);
 			break;
 		case TYPE_lng:
-			ANALYTICAL_QUANTILE_IMP_SINGLE_FIXED(lng);
+			ANALYTICAL_QUANTILE_IMP_FIXED(lng, dbl, qua);
 			break;
 #ifdef HAVE_HGE
 		case TYPE_hge:
-			ANALYTICAL_QUANTILE_IMP_SINGLE_FIXED(hge);
+			ANALYTICAL_QUANTILE_IMP_FIXED(hge, dbl, qua);
 			break;
 #endif
 		case TYPE_flt:
-			ANALYTICAL_QUANTILE_IMP_SINGLE_FIXED(flt);
+			ANALYTICAL_QUANTILE_IMP_FIXED(flt, dbl, qua);
 			break;
 		case TYPE_dbl:
-			ANALYTICAL_QUANTILE_IMP_SINGLE_FIXED(dbl);
+			ANALYTICAL_QUANTILE_IMP_FIXED(dbl, dbl, qua);
 			break;
-		default:{
-			BATiter bpi = bat_iterator(b);
-			if (is_dbl_nil(qua)) {
-				has_nils = true;
-				for (; i < cnt; i++)
-					if (BUNappend(r, nil, false) != GDK_SUCCEED)
-						goto allocation_error;
-			} else {
-				for (; i < cnt; i++) {
-					ss = (BUN) start[i];
-					ee = (BUN) end[i];
-					f = (ee - ss - 1) * qua;
-					qindex = ss + ee - (BUN) (ee + 0.5f - f);
-					assert(qindex >= ss && qindex < ee);
-					curval = BUNtail(bpi, qindex);
-					if (BUNappend(r, curval, false) != GDK_SUCCEED)
-						goto allocation_error;
-					has_nils |= atomcmp(curval, nil) == 0;
-				}
-			}
-		}
+		default:
+			ANALYTICAL_QUANTILE_IMP_VARSIZED(dbl, qua);
 		}
 	} else {
 		switch (tp1) {
 		case TYPE_bit:
-			ANALYTICAL_QUANTILE_CALC_FIXED(bit);
+			ANALYTICAL_QUANTILE_CALC_MULTI(bit);
 			break;
 		case TYPE_bte:
-			ANALYTICAL_QUANTILE_CALC_FIXED(bte);
+			ANALYTICAL_QUANTILE_CALC_MULTI(bte);
 			break;
 		case TYPE_sht:
-			ANALYTICAL_QUANTILE_CALC_FIXED(sht);
+			ANALYTICAL_QUANTILE_CALC_MULTI(sht);
 			break;
 		case TYPE_int:
-			ANALYTICAL_QUANTILE_CALC_FIXED(int);
+			ANALYTICAL_QUANTILE_CALC_MULTI(int);
 			break;
 		case TYPE_lng:
-			ANALYTICAL_QUANTILE_CALC_FIXED(lng);
+			ANALYTICAL_QUANTILE_CALC_MULTI(lng);
 			break;
 #ifdef HAVE_HGE
 		case TYPE_hge:
-			ANALYTICAL_QUANTILE_CALC_FIXED(hge);
+			ANALYTICAL_QUANTILE_CALC_MULTI(hge);
 			break;
 #endif
 		case TYPE_flt:
-			ANALYTICAL_QUANTILE_CALC_FIXED(flt);
+			ANALYTICAL_QUANTILE_CALC_MULTI(flt);
 			break;
 		case TYPE_dbl:
-			ANALYTICAL_QUANTILE_CALC_FIXED(dbl);
+			ANALYTICAL_QUANTILE_CALC_MULTI(dbl);
 			break;
-		default:{
-			BATiter bpi = bat_iterator(b);
+		default: {
 			switch (tp2) {
-			case TYPE_flt:
-				ANALYTICAL_QUANTILE_IMP_MULTI_VARSIZED(flt);
-				break;
-			case TYPE_dbl:
-				ANALYTICAL_QUANTILE_IMP_MULTI_VARSIZED(dbl);
-				break;
+			case TYPE_flt: {
+				flt *restrict qp = (flt*)Tloc(q, 0);
+				ANALYTICAL_QUANTILE_IMP_VARSIZED(flt, qp[i]);
+			} break;
+			case TYPE_dbl: {
+				dbl *restrict qp = (dbl*)Tloc(q, 0);
+				ANALYTICAL_QUANTILE_IMP_VARSIZED(dbl, qp[i]);
+			} break;
 			default:
 				goto nosupport;
 			}
@@ -2003,44 +1965,18 @@ nosupport:
 	return GDK_FAIL;
 }
 
-#define ANALYTICAL_QUANTILE_AVG_IMP_SINGLE_FIXED(TPE)			\
+#define ANALYTICAL_QUANTILE_AVG_IMP(TPE1, TPE2, NEXT_QUA)		\
 	do {								\
-		TPE *bp = (TPE*)Tloc(b, 0), ns, ne; \
-		if (is_dbl_nil(qua)) {					\
-			has_nils = true;				\
-			for (; i < cnt; i++, rb++)			\
-				*rb = dbl_nil;			\
-		} else {						\
-			for (; i < cnt; i++, rb++) { \
-				ss = (BUN) start[i]; \
-				ee = (BUN) end[i]; \
-				f = (ee - ss - 1) * qua; \
-				lo = floor(f); \
-				hi = ceil(f); \
-				ns = bp[ss + (BUN) hi]; \
-				ne = bp[ss + (BUN) lo]; \
-				if (is_##TPE##_nil(ns) || is_##TPE##_nil(ne)) { \
-					v = dbl_nil; \
-					has_nils = true; \
-				} else \
-					v = (f - lo) * ns + (lo + 1 - f) * ne; \
-				*rb = v; \
-			}	\
-		}	\
-	} while (0)
-
-#define ANALYTICAL_QUANTILE_AVG_IMP_MULTI_FIXED(TPE1, TPE2)		\
-	do {								\
-		TPE2 *restrict qp = (TPE2*)Tloc(q, 0);			\
+		TPE1 *restrict bp = (TPE1*)Tloc(b, 0), ns, ne; \
 		for (; i < cnt; i++, rb++) {				\
-			TPE2 qua = qp[i];				\
-			if (is_##TPE2##_nil(qua)) { \
+			TPE2 nqua = NEXT_QUA;				\
+			if (is_##TPE2##_nil(nqua)) { \
 				*rb = dbl_nil; \
 				has_nils = true; \
 			} else { \
 				ss = (BUN) start[i]; \
 				ee = (BUN) end[i]; \
-				f = (ee - ss - 1) * qua; \
+				f = (ee - ss - 1) * nqua; \
 				lo = floor(f); \
 				hi = ceil(f); \
 				ns = bp[ss + (BUN) hi]; \
@@ -2055,16 +1991,17 @@ nosupport:
 		}	\
 	} while (0)
 
-#define ANALYTICAL_QUANTILE_AVG_CALC_FIXED(TPE1)	\
+#define ANALYTICAL_QUANTILE_AVG_CALC_MULTI(TPE1)	\
 	do {								\
-		TPE1 *restrict bp = (TPE1*)Tloc(b, 0), ns, ne;		\
 		switch (tp2) {						\
-		case TYPE_flt:						\
-			ANALYTICAL_QUANTILE_AVG_IMP_MULTI_FIXED(TPE1, flt); \
-			break;						\
-		case TYPE_dbl:						\
-			ANALYTICAL_QUANTILE_AVG_IMP_MULTI_FIXED(TPE1, dbl); \
-			break;						\
+		case TYPE_flt: {						\
+			flt *restrict qp = (flt*)Tloc(q, 0); \
+			ANALYTICAL_QUANTILE_AVG_IMP(TPE1, flt, qp[i]); \
+		} break;						\
+		case TYPE_dbl: {						\
+			dbl *restrict qp = (dbl*)Tloc(q, 0);	\
+			ANALYTICAL_QUANTILE_AVG_IMP(TPE1, dbl, qp[i]); \
+		} break;						\
 		default:						\
 			goto nosupport;					\
 		}							\
@@ -2096,27 +2033,27 @@ GDKanalytical_quantile_avg(BAT *r, BAT *b, BAT *s, BAT *e, BAT *q, const void *r
 		}
 		switch (tp1) {
 		case TYPE_bte:
-			ANALYTICAL_QUANTILE_AVG_IMP_SINGLE_FIXED(bte);
+			ANALYTICAL_QUANTILE_AVG_IMP(bte, dbl, qua);
 			break;
 		case TYPE_sht:
-			ANALYTICAL_QUANTILE_AVG_IMP_SINGLE_FIXED(sht);
+			ANALYTICAL_QUANTILE_AVG_IMP(sht, dbl, qua);
 			break;
 		case TYPE_int:
-			ANALYTICAL_QUANTILE_AVG_IMP_SINGLE_FIXED(int);
+			ANALYTICAL_QUANTILE_AVG_IMP(int, dbl, qua);
 			break;
 		case TYPE_lng:
-			ANALYTICAL_QUANTILE_AVG_IMP_SINGLE_FIXED(lng);
+			ANALYTICAL_QUANTILE_AVG_IMP(lng, dbl, qua);
 			break;
 #ifdef HAVE_HGE
 		case TYPE_hge:
-			ANALYTICAL_QUANTILE_AVG_IMP_SINGLE_FIXED(hge);
+			ANALYTICAL_QUANTILE_AVG_IMP(hge, dbl, qua);
 			break;
 #endif
 		case TYPE_flt:
-			ANALYTICAL_QUANTILE_AVG_IMP_SINGLE_FIXED(flt);
+			ANALYTICAL_QUANTILE_AVG_IMP(flt, dbl, qua);
 			break;
 		case TYPE_dbl:
-			ANALYTICAL_QUANTILE_AVG_IMP_SINGLE_FIXED(dbl);
+			ANALYTICAL_QUANTILE_AVG_IMP(dbl, dbl, qua);
 			break;
 		default:
 			goto nosupport;
@@ -2124,27 +2061,27 @@ GDKanalytical_quantile_avg(BAT *r, BAT *b, BAT *s, BAT *e, BAT *q, const void *r
 	} else {
 		switch (tp1) {
 		case TYPE_bte:
-			ANALYTICAL_QUANTILE_AVG_CALC_FIXED(bte);
+			ANALYTICAL_QUANTILE_AVG_CALC_MULTI(bte);
 			break;
 		case TYPE_sht:
-			ANALYTICAL_QUANTILE_AVG_CALC_FIXED(sht);
+			ANALYTICAL_QUANTILE_AVG_CALC_MULTI(sht);
 			break;
 		case TYPE_int:
-			ANALYTICAL_QUANTILE_AVG_CALC_FIXED(int);
+			ANALYTICAL_QUANTILE_AVG_CALC_MULTI(int);
 			break;
 		case TYPE_lng:
-			ANALYTICAL_QUANTILE_AVG_CALC_FIXED(lng);
+			ANALYTICAL_QUANTILE_AVG_CALC_MULTI(lng);
 			break;
 #ifdef HAVE_HGE
 		case TYPE_hge:
-			ANALYTICAL_QUANTILE_AVG_CALC_FIXED(hge);
+			ANALYTICAL_QUANTILE_AVG_CALC_MULTI(hge);
 			break;
 #endif
 		case TYPE_flt:
-			ANALYTICAL_QUANTILE_AVG_CALC_FIXED(flt);
+			ANALYTICAL_QUANTILE_AVG_CALC_MULTI(flt);
 			break;
 		case TYPE_dbl:
-			ANALYTICAL_QUANTILE_AVG_CALC_FIXED(dbl);
+			ANALYTICAL_QUANTILE_AVG_CALC_MULTI(dbl);
 			break;
 		default:
 			goto nosupport;
