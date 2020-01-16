@@ -260,10 +260,10 @@ HASHgetlink(Hash *h, BUN i)
 	     hb = HASHgetlink(h, hb))				\
 		if (ATOMcmp(h->type, v, BUNtvar(bi, hb)) == 0)
 
-#define HASHloop_TYPE(bi, h, hb, v, TYPE)			\
-	for (hb = HASHget(h, hash_##TYPE(h, v));		\
-	     hb != HASHnil(h);					\
-	     hb = HASHgetlink(h,hb))				\
+#define HASHloop_TYPE(bi, h, hb, v, TYPE)				\
+	for (hb = HASHget(h, hash_##TYPE(h, v));			\
+	     hb != HASHnil(h);						\
+	     hb = HASHgetlink(h,hb))					\
 		if (* (const TYPE *) (v) == * (const TYPE *) BUNtloc(bi, hb))
 
 #define HASHloop_bte(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, bte)

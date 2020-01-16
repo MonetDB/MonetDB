@@ -187,10 +187,10 @@ gdk_export int MT_join_thread(MT_Id t);
 		(l)->thread = MT_thread_getname();	\
 	} while (0)
 
-#define _DBG_LOCK_UNLOCKER(l)					\
-	do {							\
-		(l)->locker = __func__;				\
-		(l)->thread = NULL;				\
+#define _DBG_LOCK_UNLOCKER(l)						\
+	do {								\
+		(l)->locker = __func__;					\
+		(l)->thread = NULL;					\
 		TEMDEBUG fprintf(stderr, "#%s: %s: unlocking %s\n",	\
 				 MT_thread_getname(), __func__, (l)->name); \
 	} while (0)
@@ -402,10 +402,10 @@ typedef struct MT_Lock {
 #define MT_lock_set(l)		pthread_mutex_lock(&(l)->lock)
 #endif
 
-#define MT_lock_unset(l)						\
-	do {								\
-		_DBG_LOCK_UNLOCKER(l);					\
-		pthread_mutex_unlock(&(l)->lock);			\
+#define MT_lock_unset(l)				\
+	do {						\
+		_DBG_LOCK_UNLOCKER(l);			\
+		pthread_mutex_unlock(&(l)->lock);	\
 	} while (0)
 
 #define MT_lock_destroy(l)				\
@@ -441,24 +441,24 @@ typedef struct MT_Lock {
 
 #define MT_lock_try(l)	(ATOMIC_TAS(&(l)->lock) == 0)
 
-#define MT_lock_set(l)							\
-	do {								\
-		_DBG_LOCK_COUNT_0(l);					\
-		if (!MT_lock_try(l)) {					\
-			/* we didn't get the lock */			\
-			unsigned _spincnt = 0;				\
-			_DBG_LOCK_CONTENTION(l);			\
-			MT_thread_setlockwait(l);			\
-			do {						\
-				if ((++_spincnt & 2047) == 0) {		\
-					_DBG_LOCK_SLEEP(l);		\
-					MT_sleep_ms(1);			\
-				}					\
-			} while (!MT_lock_try(l));			\
-			MT_thread_setlockwait(NULL);			\
-		}							\
-		_DBG_LOCK_LOCKER(l);					\
-		_DBG_LOCK_COUNT_2(l);					\
+#define MT_lock_set(l)						\
+	do {							\
+		_DBG_LOCK_COUNT_0(l);				\
+		if (!MT_lock_try(l)) {				\
+			/* we didn't get the lock */		\
+			unsigned _spincnt = 0;			\
+			_DBG_LOCK_CONTENTION(l);		\
+			MT_thread_setlockwait(l);		\
+			do {					\
+				if ((++_spincnt & 2047) == 0) {	\
+					_DBG_LOCK_SLEEP(l);	\
+					MT_sleep_ms(1);		\
+				}				\
+			} while (!MT_lock_try(l));		\
+			MT_thread_setlockwait(NULL);		\
+		}						\
+		_DBG_LOCK_LOCKER(l);				\
+		_DBG_LOCK_COUNT_2(l);				\
 	} while (0)
 
 #define MT_lock_init(l, n)				\
@@ -619,11 +619,11 @@ typedef struct {
 
 #define MT_sema_destroy(s)	sem_destroy(&(s)->sema)
 
-#define MT_sema_up(s)						\
-	do {							\
+#define MT_sema_up(s)							\
+	do {								\
 		TEMDEBUG fprintf(stderr, "#%s: %s: sema %s up\n",	\
 				 MT_thread_getname(), __func__, (s)->name); \
-		sem_post(&(s)->sema);				\
+		sem_post(&(s)->sema);					\
 	} while (0)
 
 #define MT_sema_down(s)							\

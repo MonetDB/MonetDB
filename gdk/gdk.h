@@ -2041,21 +2041,21 @@ gdk_export str GDKstrndup(const char *s, size_t n)
 				__func__, __FILE__, __LINE__);	\
 		_res;						\
 	})
-#define GDKmmap(p, m, l)						\
-	({								\
-		const char *_path = (p);				\
-		int _mode = (m);					\
-		size_t _len = (l);					\
-		void *_res = GDKmmap(_path, _mode, _len);		\
-		ALLOCDEBUG						\
-			fprintf(stderr,					\
-				"#GDKmmap(%s,0x%x,%zu) -> %p"		\
-				" %s[%s:%d]\n",				\
-				_path ? _path : "NULL",			\
-				(unsigned) _mode, _len,			\
-				_res,					\
-				__func__, __FILE__, __LINE__);		\
-		_res;							\
+#define GDKmmap(p, m, l)					\
+	({							\
+		const char *_path = (p);			\
+		int _mode = (m);				\
+		size_t _len = (l);				\
+		void *_res = GDKmmap(_path, _mode, _len);	\
+		ALLOCDEBUG					\
+			fprintf(stderr,				\
+				"#GDKmmap(%s,0x%x,%zu) -> %p"	\
+				" %s[%s:%d]\n",			\
+				_path ? _path : "NULL",		\
+				(unsigned) _mode, _len,		\
+				_res,				\
+				__func__, __FILE__, __LINE__);	\
+		_res;						\
 	 })
 #define malloc(s)						\
 	({							\
