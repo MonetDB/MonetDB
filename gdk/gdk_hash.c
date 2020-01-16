@@ -536,7 +536,7 @@ BATcheckhash(BAT *b)
 	}
 	ret = b->thash != NULL;
 	if (ret)
-		TRC_DEBUG(ACCELERATOR, 
+		TRC_DEBUG(ACCELERATOR,
 				"(" ALGOBATFMT "): already has hash, waited " LLFMT " usec\n", ALGOBATPAR(b), t);
 	return ret;
 }
@@ -604,7 +604,7 @@ BAThashsave(BAT *b, bool dosync)
 					rc = GDK_SUCCEED;
 				}
 			}
-			TRC_DEBUG(ACCELERATOR, 
+			TRC_DEBUG(ACCELERATOR,
 					"(" ALGOBATFMT ") persisting hash %s%s (" LLFMT " usec)%s\n", ALGOBATPAR(b), hp->filename, dosync ? "" : " no sync", GDKusec() - t0, rc == GDK_SUCCEED ? "" : " failed");
 		}
 	}
@@ -695,11 +695,11 @@ BAThash_impl(BAT *b, BAT *s, const char *ext)
 	PROPrec *prop;
 
 	TRC_DEBUG_IF(ACCELERATOR) t0 = GDKusec();
-	TRC_DEBUG(ACCELERATOR, 
+	TRC_DEBUG(ACCELERATOR,
 			"BAThash(" ALGOBATFMT "): create hash;\n", ALGOBATPAR(b));
 	if (b->ttype == TYPE_void) {
 		if (is_oid_nil(b->tseqbase)) {
-			TRC_DEBUG(ACCELERATOR, 
+			TRC_DEBUG(ACCELERATOR,
 					"cannot create hash-table on void-NIL column.\n");
 			GDKerror("BAThash: no hash on void/nil column\n");
 			return NULL;
@@ -847,7 +847,7 @@ BAThash_impl(BAT *b, BAT *s, const char *ext)
 			break;
 		}
 		TRC_DEBUG_IF(ACCELERATOR) if (p < cnt1)
-			TRC_DEBUG_ENDIF(ACCELERATOR, 
+			TRC_DEBUG_ENDIF(ACCELERATOR,
 					"(%s): abort starthash with "
 				"mask " BUNFMT " at " BUNFMT " after " LLFMT " usec\n", BATgetId(b), mask, p, GDKusec() - t1);
 		if (p == cnt1 || mask == maxmask)
@@ -922,7 +922,7 @@ BAThash_impl(BAT *b, BAT *s, const char *ext)
 		b->batDirtydesc = true;
 	}
 	TRC_DEBUG_IF(ACCELERATOR) {
-		TRC_DEBUG_ENDIF(ACCELERATOR, 
+		TRC_DEBUG_ENDIF(ACCELERATOR,
 				"hash construction " LLFMT " usec\n", GDKusec() - t0);
 		HASHcollisions(b, h, __func__);
 	}
@@ -957,7 +957,7 @@ BAThash(BAT *b)
 			}
 			return GDK_SUCCEED;
 		} else
-			TRC_DEBUG(ACCELERATOR, 
+			TRC_DEBUG(ACCELERATOR,
 					"NOT persisting hash %d\n", b->batCacheid);
 #endif
 	}

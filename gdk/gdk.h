@@ -1380,7 +1380,7 @@ gdk_export void OIDXdestroy(BAT *b);
  * The functions to convert BATs into ASCII. They are primarily meant for ease of
  * debugging and to a lesser extent for output processing.  Printing a
  * BAT is done essentially by looping through its components, printing
- * each association.  
+ * each association.
  *
  */
 gdk_export gdk_return BATprintcolumns(stream *s, int argc, BAT *argv[]);
@@ -1800,7 +1800,7 @@ bunfastapp(BAT *b, const void *v)
 	 GDK_FAIL :							\
 	 ((b)->theap.free += sizeof(TYPE),				\
 	  ((TYPE *) (b)->theap.base)[(b)->batCount++] = * (const TYPE *) (v), \
-	  GDK_SUCCEED)) 
+	  GDK_SUCCEED))
 
 static inline gdk_return tfastins_nocheckVAR(BAT *b, BUN p, const void *v, int s)
 	__attribute__((__warn_unused_result__));
