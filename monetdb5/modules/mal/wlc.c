@@ -701,7 +701,7 @@ str
 WLCgeneric(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	InstrPtr p;
-	int i, tpe, varid;
+	int i, k,  tpe, varid;
 	str msg = MAL_SUCCEED;
 
 	(void) stk;
@@ -709,20 +709,26 @@ WLCgeneric(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if(msg)
 		return msg;
 	cntxt->wlc_kind = WLC_IGNORE;
-	p = newStmt(cntxt->wlc, "wlr",getFunctionId(pci));
+	p = newInstruction(cntxt->wlc, "wlr",getFunctionId(pci));
+	k = newTmpVariable(mb,TYPE_any);
+	if( k >= 0)
+		getArg(p,0) =  k;
 	for( i = pci->retc; i< pci->argc; i++){
 		tpe =getArgType(mb, pci, i);
 		switch(tpe){
 		case TYPE_str:
-			p = pushStr(cntxt->wlc, p, getVarConstant(mb, getArg(pci, i)).val.sval);
+			k = defConstant(mb,TYPE_str,&getVarConstant(mb, getArg(pci, i)));
+			if( k >= 0)
+				p = addArgument(cntxt->wlc, p, k);
 			break;
 		default:
 			varid = defConstant(cntxt->wlc, tpe, getArgReference(stk, pci, i));
 			if( varid >= 0)
-				p = pushArgument(cntxt->wlc, p, varid);
+				p = addArgument(cntxt->wlc, p, varid);
 		}
 	}
 	p->ticks = GDKms();
+	pushInstruction(mb,p);
 	cntxt->wlc_kind = WLC_CATALOG;
 	return 	msg;
 }

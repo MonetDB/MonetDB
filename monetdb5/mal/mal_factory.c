@@ -138,6 +138,7 @@ runFactory(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr stk, InstrP
 				lhs->len = 0;
 			}
 		}
+		pl->stk->stktop = mb->vtop;
 		pl->stk->stkbot= mb->vtop;	/* stack already initialized */
 		msg = runMAL(cntxt, mb, 0, pl->stk);
 	 } else {
