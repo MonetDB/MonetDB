@@ -1718,15 +1718,18 @@ GDKanalyticalavg(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
 				if (is_##TPE##_nil(v))		\
 					continue;		\
 				n++;				\
-				delta = (dbl) v - mean;		\
-				mean += delta / n;		\
-				m2 += delta * ((dbl) v - mean);	\
+				SUBF_WITH_CHECK((dbl) v, mean, dbl, delta, GDK_dbl_max, goto calc_overflow); \
+				dn = delta / n; \
+				ADDF_WITH_CHECK(dn, mean, dbl, mean, GDK_dbl_max, goto calc_overflow); \
+				SUBF_WITH_CHECK((dbl) v, mean, dbl, dn, GDK_dbl_max, goto calc_overflow); \
+				MULF4_WITH_CHECK(delta, dn, dbl, dn2, GDK_dbl_max, dbl, goto calc_overflow); \
+				ADDF_WITH_CHECK(m2, dn2, dbl, m2, GDK_dbl_max, goto calc_overflow); \
 			}						\
 			if (n > SAMPLE) { \
 				*rb = OP; \
 			} else { \
 				*rb = dbl_nil; \
-				has_nils = true; \
+				nils++; \
 			} \
 			n = 0;	\
 			mean = 0;	\
@@ -1743,14 +1746,14 @@ GDKanalyticalavg(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
 #define ANALYTICAL_STDEV_VARIANCE_LIMIT(SAMPLE, OP)
 #endif
 
-#define GDK_ANALYTICAL_STDEV_VARIANCE(NAME, SAMPLE, OP) \
+#define GDK_ANALYTICAL_STDEV_VARIANCE(NAME, SAMPLE, OP, DESC) \
 gdk_return \
 GDKanalytical_##NAME(BAT *r, BAT *b, BAT *s, BAT *e, int tpe) \
 { \
-	bool has_nils = false; \
-	BUN i = 0, cnt = BATcount(b), n = 0; \
+	bool abort_on_error = true; \
+	BUN i = 0, cnt = BATcount(b), n = 0, nils = 0; \
 	lng *restrict start, *restrict end; \
-	dbl *restrict rb = (dbl *) Tloc(r, 0), mean = 0, m2 = 0, delta; \
+	dbl *restrict rb = (dbl *) Tloc(r, 0), mean = 0, m2 = 0, delta, dn, dn2; \
  \
 	assert(s && e); \
 	start = (lng *) Tloc(s, 0); \
@@ -1777,19 +1780,22 @@ GDKanalytical_##NAME(BAT *r, BAT *b, BAT *s, BAT *e, int tpe) \
 		ANALYTICAL_STDEV_VARIANCE_CALC(dbl, SAMPLE, OP); \
 		break; \
 	default: \
-		GDKerror("%s: average of type %s unsupported.\n", __func__, ATOMname(tpe)); \
+		GDKerror("%s: %s of type %s unsupported.\n", __func__, DESC, ATOMname(tpe)); \
 		return GDK_FAIL; \
 	} \
 	BATsetcount(r, cnt); \
-	r->tnonil = !has_nils; \
-	r->tnil = has_nils; \
+	r->tnonil = nils == 0; \
+	r->tnil = nils > 0; \
 	return GDK_SUCCEED; \
+calc_overflow: \
+	GDKerror("22003!overflow in calculation.\n"); \
+	return GDK_FAIL; \
 }
 
-GDK_ANALYTICAL_STDEV_VARIANCE(stddev_samp, 1, sqrt(m2 / (n - 1)))
-GDK_ANALYTICAL_STDEV_VARIANCE(stddev_pop, 0, sqrt(m2 / n))
-GDK_ANALYTICAL_STDEV_VARIANCE(variance_samp, 1, m2 / (n - 1))
-GDK_ANALYTICAL_STDEV_VARIANCE(variance_pop, 0, m2 / n)
+GDK_ANALYTICAL_STDEV_VARIANCE(stddev_samp, 1, sqrt(m2 / (n - 1)), "standard deviation")
+GDK_ANALYTICAL_STDEV_VARIANCE(stddev_pop, 0, sqrt(m2 / n), "standard deviation")
+GDK_ANALYTICAL_STDEV_VARIANCE(variance_samp, 1, m2 / (n - 1), "variance")
+GDK_ANALYTICAL_STDEV_VARIANCE(variance_pop, 0, m2 / n, "variance")
 
 /* There will be always at least one value for the quantile, because we don't implement the exclude clause yet */
 
@@ -1842,14 +1848,14 @@ GDK_ANALYTICAL_STDEV_VARIANCE(variance_pop, 0, m2 / n)
 		case TYPE_flt: {						\
 			flt *restrict qp = (flt*)Tloc(q, 0); \
 			ANALYTICAL_QUANTILE_IMP_FIXED(TPE1, flt, qp[i]); \
-		} break;						\
-		case TYPE_dbl: {						\
+		} break;			\
+		case TYPE_dbl: {		\
 			dbl *restrict qp = (dbl*)Tloc(q, 0);	\
 			ANALYTICAL_QUANTILE_IMP_FIXED(TPE1, dbl, qp[i]); \
-		} break;						\
-		default:						\
-			goto nosupport;					\
-		}							\
+		} break;		\
+		default:		\
+			goto quantile_nosupport;		\
+		}			\
 	} while (0)
 
 gdk_return
@@ -1877,7 +1883,7 @@ GDKanalytical_quantile(BAT *r, BAT *b, BAT *s, BAT *e, BAT *q, const void *restr
 			qua = *(dbl *) quantile;
 		} break;
 		default:
-			goto nosupport;
+			goto quantile_nosupport;
 		}
 		switch (tp1) {
 		case TYPE_bit:
@@ -1948,7 +1954,7 @@ GDKanalytical_quantile(BAT *r, BAT *b, BAT *s, BAT *e, BAT *q, const void *restr
 				ANALYTICAL_QUANTILE_IMP_VARSIZED(dbl, qp[i]);
 			} break;
 			default:
-				goto nosupport;
+				goto quantile_nosupport;
 			}
 		}
 		}
@@ -1960,7 +1966,7 @@ GDKanalytical_quantile(BAT *r, BAT *b, BAT *s, BAT *e, BAT *q, const void *restr
 allocation_error:
 	GDKerror("%s: malloc failure\n", __func__);
 	return GDK_FAIL;
-nosupport:
+quantile_nosupport:
 	GDKerror("%s: type %s not supported for the quantile.\n", __func__, ATOMname(tp2));
 	return GDK_FAIL;
 }
@@ -2003,7 +2009,7 @@ nosupport:
 			ANALYTICAL_QUANTILE_AVG_IMP(TPE1, dbl, qp[i]); \
 		} break;						\
 		default:						\
-			goto nosupport;					\
+			goto quantile_nosupport;					\
 		}							\
 	} while (0)
 
@@ -2029,7 +2035,7 @@ GDKanalytical_quantile_avg(BAT *r, BAT *b, BAT *s, BAT *e, BAT *q, const void *r
 			qua = *(dbl *) quantile;
 		} break;
 		default:
-			goto nosupport;
+			goto quantile_nosupport;
 		}
 		switch (tp1) {
 		case TYPE_bte:
@@ -2056,7 +2062,7 @@ GDKanalytical_quantile_avg(BAT *r, BAT *b, BAT *s, BAT *e, BAT *q, const void *r
 			ANALYTICAL_QUANTILE_AVG_IMP(dbl, dbl, qua);
 			break;
 		default:
-			goto nosupport;
+			goto input_nosupport;
 		}
 	} else {
 		switch (tp1) {
@@ -2084,14 +2090,17 @@ GDKanalytical_quantile_avg(BAT *r, BAT *b, BAT *s, BAT *e, BAT *q, const void *r
 			ANALYTICAL_QUANTILE_AVG_CALC_MULTI(dbl);
 			break;
 		default:
-			goto nosupport;
+			goto input_nosupport;
 		}
 	}
 	BATsetcount(r, cnt);
 	r->tnonil = !has_nils;
 	r->tnil = has_nils;
 	return GDK_SUCCEED;
-nosupport:
+input_nosupport:
+	GDKerror("%s: type %s not supported as input.\n", __func__, ATOMname(tp1));
+	return GDK_FAIL;
+quantile_nosupport:
 	GDKerror("%s: type %s not supported for the quantile.\n", __func__, ATOMname(tp2));
 	return GDK_FAIL;
 }
