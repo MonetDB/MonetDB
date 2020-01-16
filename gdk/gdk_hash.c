@@ -173,7 +173,8 @@ HASHnew(Hash *h, int tpe, BUN size, BUN mask, BUN count, bool bcktonly)
 	((size_t *) h->heapbckt.base)[4] = (size_t) count;
 	((size_t *) h->heapbckt.base)[5] = (size_t) h->nunique;
 	((size_t *) h->heapbckt.base)[6] = (size_t) h->nheads;
-	ACCELDEBUG fprintf(stderr, "#%s: HASHnew: create hash(size " BUNFMT ", mask " BUNFMT ", width %d, total " BUNFMT " bytes);\n", MT_thread_getname(), size, mask, h->width, (size + mask) * h->width);
+	TRC_DEBUG(ACCELERATOR, 
+			"create hash(size " BUNFMT ", mask " BUNFMT ", width %d, total " BUNFMT " bytes);\n", size, mask, h->width, (size + mask) * h->width);
 	return GDK_SUCCEED;
 }
 
@@ -198,11 +199,11 @@ HASHcollisions(BAT *b, Hash *h, const char *func)
 				max = cnt;
 			total += cnt;
 		}
-	fprintf(stderr,
-		"#%s: %s(" ALGOBATFMT "): statistics " BUNFMT ", "
+	TRC_DEBUG(GDK_HASH, 
+		"%s(" ALGOBATFMT "): statistics " BUNFMT ", "
 		"entries " LLFMT ", nunique " BUNFMT ", nbuckets " BUNFMT ", "
 		"max " LLFMT ", avg %2.6f;\n",
-		MT_thread_getname(), func, ALGOBATPAR(b), BATcount(b), entries,
+		func, ALGOBATPAR(b), BATcount(b), entries,
 		h->nunique, NHASHBUCKETS(h), max,
 		entries == 0 ? 0 : total / entries);
 }
@@ -419,9 +420,9 @@ BATcheckhash(BAT *b)
 	/* we don't need the lock just to read the value b->thash */
 	if (b->thash == (Hash *) 1) {
 		/* but when we want to change it, we need the lock */
-		ACCELDEBUG t = GDKusec();
+		TRC_DEBUG_IF(ACCELERATOR) t = GDKusec();
 		MT_lock_set(&b->batIdxLock);
-		ACCELDEBUG t = GDKusec() - t;
+		TRC_DEBUG_IF(ACCELERATOR) t = GDKusec() - t;
 		/* if still 1 now that we have the lock, we can update */
 		if (b->thash == (Hash *) 1) {
 			Hash *h;
@@ -506,7 +507,8 @@ BATcheckhash(BAT *b)
 									TYPE_oid,
 									&(oid){h->nunique});
 								b->thash = h;
-								ACCELDEBUG fprintf(stderr, "#%s: BATcheckhash(" ALGOBATFMT "): reusing persisted hash\n", MT_thread_getname(), ALGOBATPAR(b));
+								TRC_DEBUG(ACCELERATOR, 
+										"(" ALGOBATFMT "): reusing persisted hash\n", ALGOBATPAR(b));
 								MT_lock_unset(&b->batIdxLock);
 								return true;
 							}
@@ -542,7 +544,9 @@ BATcheckhash(BAT *b)
 		MT_lock_unset(&b->batIdxLock);
 	}
 	ret = b->thash != NULL;
-	ACCELDEBUG if (ret) fprintf(stderr, "#%s: BATcheckhash(" ALGOBATFMT "): already has hash, waited " LLFMT " usec\n", MT_thread_getname(), ALGOBATPAR(b), t);
+	if (ret)
+		TRC_DEBUG(ACCELERATOR, 
+				"(" ALGOBATFMT "): already has hash, waited " LLFMT " usec\n", ALGOBATPAR(b), t);
 	return ret;
 }
 
@@ -554,7 +558,7 @@ BAThashsave(BAT *b, bool dosync)
 	Hash *h;
 	lng t0 = 0;
 
-	ACCELDEBUG t0 = GDKusec();
+	TRC_DEBUG_IF(ACCELERATOR) t0 = GDKusec();
 
 	if ((h = b->thash) != NULL) {
 		Heap *hp = &h->heapbckt;
@@ -609,7 +613,8 @@ BAThashsave(BAT *b, bool dosync)
 					rc = GDK_SUCCEED;
 				}
 			}
-			ACCELDEBUG fprintf(stderr, "#%s: %s(" ALGOBATFMT ") persisting hash %s%s (" LLFMT " usec)%s\n", MT_thread_getname(), __func__, ALGOBATPAR(b), hp->filename, dosync ? "" : " no sync", GDKusec() - t0, rc == GDK_SUCCEED ? "" : " failed");
+			TRC_DEBUG(ACCELERATOR, 
+					"(" ALGOBATFMT ") persisting hash %s%s (" LLFMT " usec)%s\n", ALGOBATPAR(b), hp->filename, dosync ? "" : " no sync", GDKusec() - t0, rc == GDK_SUCCEED ? "" : " failed");
 		}
 	}
 	return rc;
@@ -698,16 +703,18 @@ BAThash_impl(BAT *b, BAT *s, const char *ext)
 	BATiter bi = bat_iterator(b);
 	PROPrec *prop;
 
-	ACCELDEBUG t0 = GDKusec();
-	ACCELDEBUG fprintf(stderr, "#%s: BAThash(" ALGOBATFMT "): create hash;\n", MT_thread_getname(),
-			  ALGOBATPAR(b));
+	TRC_DEBUG_IF(ACCELERATOR) t0 = GDKusec();
+	TRC_DEBUG(ACCELERATOR, 
+			"BAThash(" ALGOBATFMT "): create hash;\n", ALGOBATPAR(b));
 	if (b->ttype == TYPE_void) {
 		if (is_oid_nil(b->tseqbase)) {
-			ACCELDEBUG fprintf(stderr, "#%s: BAThash: cannot create hash-table on void-NIL column.\n", MT_thread_getname());
+			TRC_DEBUG(ACCELERATOR, 
+					"cannot create hash-table on void-NIL column.\n");
 			GDKerror("BAThash: no hash on void/nil column\n");
 			return NULL;
 		}
-		ACCELDEBUG fprintf(stderr, "#%s: BAThash: creating hash-table on void column..\n", MT_thread_getname());
+		TRC_DEBUG(ACCELERATOR,
+				"creating hash-table on void column..\n");
 		assert(0);
 		tpe = TYPE_void;
 	}
@@ -780,7 +787,7 @@ BAThash_impl(BAT *b, BAT *s, const char *ext)
 	o = canditer_next(&ci);	/* always one ahead */
 	for (;;) {
 		lng t1 = 0;
-		ACCELDEBUG t1 = GDKusec();
+		TRC_DEBUG_IF(ACCELERATOR) t1 = GDKusec();
 		BUN maxslots = (mask >> 3) - 1;	/* 1/8 full is too full */
 
 		h->nheads = 0;
@@ -848,10 +855,10 @@ BAThash_impl(BAT *b, BAT *s, const char *ext)
 			}
 			break;
 		}
-		ACCELDEBUG if (p < cnt1)
-			fprintf(stderr, "#%s: BAThash(%s): abort starthash with "
-				"mask " BUNFMT " at " BUNFMT " after " LLFMT " usec\n", MT_thread_getname(), BATgetId(b),
-				mask, p, GDKusec() - t1);
+		TRC_DEBUG_IF(ACCELERATOR) if (p < cnt1)
+			TRC_DEBUG_ENDIF(ACCELERATOR, 
+					"(%s): abort starthash with "
+				"mask " BUNFMT " at " BUNFMT " after " LLFMT " usec\n", BATgetId(b), mask, p, GDKusec() - t1);
 		if (p == cnt1 || mask == maxmask)
 			break;
 		mask <<= 2;
@@ -923,8 +930,9 @@ BAThash_impl(BAT *b, BAT *s, const char *ext)
 		b->tkey = true;
 		b->batDirtydesc = true;
 	}
-	ACCELDEBUG {
-		fprintf(stderr, "#%s: BAThash: hash construction " LLFMT " usec\n", MT_thread_getname(), GDKusec() - t0);
+	TRC_DEBUG_IF(ACCELERATOR) {
+		TRC_DEBUG_ENDIF(ACCELERATOR, 
+				"hash construction " LLFMT " usec\n", GDKusec() - t0);
 		HASHcollisions(b, h, __func__);
 	}
 	return h;
@@ -958,7 +966,8 @@ BAThash(BAT *b)
 			}
 			return GDK_SUCCEED;
 		} else
-			ACCELDEBUG fprintf(stderr, "#%s: BAThash: NOT persisting hash %d\n", MT_thread_getname(), b->batCacheid);
+			TRC_DEBUG(ACCELERATOR, 
+					"NOT persisting hash %d\n", b->batCacheid);
 #endif
 	}
 	MT_lock_unset(&b->batIdxLock);

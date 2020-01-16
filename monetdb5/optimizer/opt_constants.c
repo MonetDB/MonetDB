@@ -62,9 +62,7 @@ OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 					 x->rowcnt == y->rowcnt &&
 					 x->value.vtype == y->value.vtype &&
 					ATOMcmp(x->value.vtype, VALptr(&x->value), VALptr(&y->value)) == 0){
-					if( OPTdebug &  OPTconstants){
-						fprintf(stderr,"#opt_constants: matching elements %s %d %d\n", getVarName(mb,i), i,k);
-					}
+
 					/* re-use a constant */
 					alias[i]= index[k];
 					fnd=1;
@@ -73,9 +71,6 @@ OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 				}
 			}
 			if ( fnd == 0){
-				if( OPTdebug &  OPTconstants){
-					fprintf(stderr,"swith elements %d %d\n", i,n);
-				}
 				cst[n]= x;
 				index[n]= i;
 				n++;

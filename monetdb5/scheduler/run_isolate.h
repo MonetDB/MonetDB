@@ -15,5 +15,5 @@
 #define DEBUG_RUN_ISOLATION
 
 mal_export str RUNisolation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-#endif /* MAL_RUN_ISOLATION */
+#endif /* _RUN_ISOLATION */
 

@@ -34,6 +34,7 @@
 #include <sys/types.h>
 #include "stream_socket.h"
 #include "mapi.h"
+
 #ifdef HAVE_OPENSSL
 # include <openssl/rand.h>		/* RAND_bytes() */
 #else
@@ -149,7 +150,7 @@ doChallenge(void *data)
 	memcpy(challenge, ((struct challengedata *) data)->challenge, sizeof(challenge));
 	GDKfree(data);
 	if (buf == NULL) {
-		fprintf(stderr, "#doChallenge" MAL_MALLOC_FAIL);
+		TRC_CRITICAL(MAL_SERVER, MAL_MALLOC_FAIL "\n");
 		close_stream(fdin);
 		close_stream(fdout);
 		return;
@@ -250,10 +251,8 @@ doChallenge(void *data)
 		}
 	}
 
-#ifdef DEBUG_SERVER
-	fprintf(stderr,"mal_mapi:Client accepted %s\n", buf);
-	fflush(stderr);
-#endif
+	TRC_DEBUG(MAL_SERVER, "Client accepted: %s\n", buf);
+
 	bs = bstream_create(fdin, 128 * BLOCK);
 
 	if (bs == NULL){
@@ -444,9 +443,7 @@ SERVERlistenThread(SOCKET *Sock)
 					(void) shutdown(msgsock, SHUT_WR);
 					closesocket(msgsock);
 					if (!cmsg || cmsg->cmsg_type != SCM_RIGHTS) {
-						fprintf(stderr, "!mal_mapi.listen: "
-								"expected filedescriptor, but "
-								"received something else\n");
+						TRC_ERROR(MAL_SERVER, "Expected file descriptor, but received something else\n");
 						continue;
 					}
 					/* HACK to avoid
@@ -460,21 +457,20 @@ SERVERlistenThread(SOCKET *Sock)
 				default:
 					/* some unknown state */
 					closesocket(msgsock);
-					fprintf(stderr, "!mal_mapi.listen: unknown command type in first byte\n");
+					TRC_ERROR(MAL_SERVER, "Unknown command type in first byte\n");
 					continue;
 			}
 #endif
 		} else {
 			continue;
 		}
-#ifdef DEBUG_SERVER
-		fprintf(stderr,"server:accepted\n");
-		fflush(stderr);
-#endif
+
+		TRC_DEBUG(MAL_SERVER, "Server accepted\n");
+
 		data = GDKmalloc(sizeof(*data));
 		if( data == NULL){
 			closesocket(msgsock);
-			fprintf(stderr, "#initClient " SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			TRC_CRITICAL(MAL_SERVER, SQLSTATE(HY013) MAL_MALLOC_FAIL "\n");
 			continue;
 		}
 		data->in = socket_rstream(msgsock, "Server read");
@@ -485,7 +481,7 @@ SERVERlistenThread(SOCKET *Sock)
 			mnstr_destroy(data->out);
 			GDKfree(data);
 			closesocket(msgsock);
-			fprintf(stderr, "!initClient cannot allocate stream");
+			TRC_CRITICAL(MAL_SERVER, "Cannot allocate stream\n");
 			continue;
 		}
 		s = block_stream(data->in);
@@ -510,7 +506,7 @@ SERVERlistenThread(SOCKET *Sock)
 			mnstr_destroy(data->out);
 			GDKfree(data);
 			closesocket(msgsock);
-			fprintf(stderr, "!initClient:cannot fork new client thread");
+			TRC_CRITICAL(MAL_SERVER, "Cannot fork new client thread\n");
 			continue;
 		}
 	} while (!ATOMIC_GET(&serverexiting) && !GDKexiting());
@@ -521,7 +517,7 @@ SERVERlistenThread(SOCKET *Sock)
 		closesocket(usock);
 	return;
 error:
-	fprintf(stderr, "!mal_mapi.listen: %s, terminating listener\n", msg);
+	TRC_ERROR(MAL_SERVER, "Terminating listener: %s\n", msg);
 	if (sock != INVALID_SOCKET)
 		closesocket(sock);
 	if (usock != INVALID_SOCKET)
@@ -554,9 +550,6 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 	str buf;
 	char host[128];
 	const char *listenaddr;
-#ifdef DEBUG_SERVER
-	char msg[512], host[512];
-#endif
 
 	accept_any = GDKgetenv_istrue("mapi_open");
 	bind_ipv6 = GDKgetenv_istrue("mapi_ipv6");
@@ -908,11 +901,9 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 	}
 #endif
 
-#ifdef DEBUG_SERVER
-	fprintf(stderr, "#SERVERlisten:Network started at %d\n", port);
-#endif
-
+	TRC_DEBUG(MAL_SERVER, "Network started at: %d\n", port);
 	psock[0] = sock;
+
 #ifdef HAVE_SYS_UN_H
 	psock[1] = usock;
 #else
@@ -929,12 +920,10 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 		GDKfree(psock);
 		throw(MAL, "mal_mapi.listen", OPERATION_FAILED ": starting thread failed");
 	}
-#ifdef DEBUG_SERVER
-	gethostname(host, (int) 512);
-	snprintf(msg, (int) 512, "#Ready to accept connections on %s:%d\n", host, port);
-	fprintf(stderr, "%s", msg);
-#endif
 
+	gethostname(host, (int) 512);
+	TRC_DEBUG_ENDIF(MAL_SERVER, "Ready to accept connections on: %s:%d\n", host, port);
+	
 	/* seed the randomiser such that our challenges aren't
 	 * predictable... */
 	srand((unsigned int) GDKusec());
@@ -1039,7 +1028,7 @@ SERVERlisten_port(int *ret, int *pid)
 str
 SERVERstop(void *ret)
 {
-fprintf(stderr, "SERVERstop\n");
+	TRC_INFO(MAL_SERVER, "Server stop\n");
 	ATOMIC_SET(&serverexiting, 1);
 	/* wait until they all exited, but skip the wait if the whole
 	 * system is going down */

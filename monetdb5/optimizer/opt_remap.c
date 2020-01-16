@@ -18,7 +18,7 @@
 #include "opt_multiplex.h"
 
 static int
-OPTremapDirect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Module scope){
+OPTremapDirect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int idx, Module scope){
 	str mod,fcn;
 	char buf[1024];
 	int i, retc = pci->retc;
@@ -52,7 +52,7 @@ OPTremapDirect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Module s
 		p= addArgument(mb,p,getArg(pci,i));
 
 	/* now see if we can resolve the instruction */
-	typeChecker(scope,mb,p,TRUE);
+	typeChecker(scope,mb,p,idx,TRUE);
 	if( p->typechk== TYPE_UNKNOWN) {
 		freeInstruction(p);
 		return 0;
@@ -221,7 +221,7 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 					q->typechk = TYPE_UNKNOWN;
 
 					/* now see if we can resolve the instruction */
-					typeChecker(cntxt->usermodule,mq,q,TRUE);
+					typeChecker(cntxt->usermodule,mq,q,i,TRUE);
 					if( q->typechk== TYPE_UNKNOWN)
 						goto terminateMX;
 					actions++;
@@ -238,7 +238,7 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 					getArg(q,1)= refbat;
 				
 					q->typechk = TYPE_UNKNOWN;
-					typeChecker(cntxt->usermodule,mq,q,TRUE);
+					typeChecker(cntxt->usermodule,mq,q,i,TRUE);
 					if( q->typechk== TYPE_UNKNOWN)
 						goto terminateMX;
 					actions++;
@@ -292,7 +292,7 @@ static struct{
 {0,0,0}};
 
 static int
-OPTremapSwitched(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Module scope){
+OPTremapSwitched(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int idx, Module scope){
 	char *fcn;
 	int r,i;
 	(void) stk;
@@ -311,7 +311,7 @@ OPTremapSwitched(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Module
 		getVarConstant(mb, getArg(pci, 2)).val.sval = putNameLen(OperatorMap[i].dst,OperatorMap[i].len);
 		getVarConstant(mb, getArg(pci, 2)).len = OperatorMap[i].len;
 		r= getArg(pci,3); getArg(pci,3)=getArg(pci,4);getArg(pci,4)=r;
-		r= OPTremapDirect(cntxt,mb, stk, pci, scope);
+		r= OPTremapDirect(cntxt,mb, stk, pci, idx, scope);
 
 		/* always restore the allocated function name */
 		getVarConstant(mb, getArg(pci, 2)).val.sval= fcn;
@@ -362,8 +362,8 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				if( OPTmultiplexInline(cntxt,mb,p,mb->stop-1) ){
 					doit++;
 				}
-			} else if (OPTremapDirect(cntxt, mb, stk, p, scope) ||
-				OPTremapSwitched(cntxt, mb, stk, p, scope)) {
+			} else if (OPTremapDirect(cntxt, mb, stk, p, i, scope) ||
+				OPTremapSwitched(cntxt, mb, stk, p, i, scope)) {
 				freeInstruction(p); 
 				doit++;
 			} else {
@@ -433,9 +433,9 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	GDKfree(old);
 
 	if (doit) 
-		chkTypes(cntxt->usermodule,mb,TRUE);
+		msg = chkTypes(cntxt->usermodule,mb,TRUE);
     /* Defense line against incorrect plans */
-    if( mb->errors == MAL_SUCCEED && doit > 0){
+    if( msg == MAL_SUCCEED && doit > 0){
         msg = chkTypes(cntxt->usermodule, mb, FALSE);
 	if (!msg)
         	msg = chkFlow(mb);

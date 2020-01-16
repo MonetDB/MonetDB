@@ -109,4 +109,5 @@ function tst903();
 end tst903;
 
 optimizer.reorder("user","tst903");
+optimizer.garbageCollector("user","tst903");
 mdb.list("user","tst903");

@@ -91,10 +91,6 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 	} else if (BATcount(b) < (BUN) pieces || BATcount(b) < MIN_PIECE) {
 		pieces = 1;
 	}
-#ifdef _DEBUG_OIDX_
-	fprintf(stderr,"#bat.orderidx pieces %d\n",pieces);
-	fprintf(stderr,"#oidx ttype %s bat %s\n", ATOMname(b->ttype),ATOMname(tpe));
-#endif
 
 	/* create a temporary MAL function to sort the BAT in parallel */
 	snprintf(name, IDLENGTH, "sort%d", rand()%1000);
@@ -183,9 +179,6 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 	BBPretain(newstk->stk[arg].val.bval);
 	msg = runMALsequence(cntxt, smb, 1, 0, newstk, 0, 0);
 	freeStack(newstk);
-#ifdef _DEBUG_OIDX_
-	fprintFunction(stderr, smb, 0, LIST_MAL_ALL);
-#endif
 	/* get rid of temporary MAL block */
 bailout:
 	freeSymbol(snew);

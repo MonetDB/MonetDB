@@ -8,4 +8,5 @@ function test(s:str):lng;
 end test;
 mdb.List("user","test");
 optimizer.factorize("user","test");
+optimizer.garbageCollector("user","test");
 mdb.List("user","test");

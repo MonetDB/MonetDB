@@ -182,7 +182,7 @@ resizeMalBlk(MalBlkPtr mb, int elements)
 			mb->ssize = elements;
 		} else {
 			mb->stmt = ostmt;	/* reinstate old pointer */
-			mb->errors = createMalException(mb,0, TYPE, "out of memory (requested: %"PRIu64" bytes)", (uint64_t) elements * sizeof(InstrPtr));
+			mb->errors = createMalException(mb,0, TYPE,  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			return -1;
 		}
 	}
@@ -196,7 +196,7 @@ resizeMalBlk(MalBlkPtr mb, int elements)
 			mb->vsize = elements;
 		} else{
 			mb->var = ovar;
-			mb->errors = createMalException(mb,0, TYPE, "out of memory (requested: %"PRIu64" bytes)", (uint64_t) elements * sizeof(InstrPtr));
+			mb->errors = createMalException(mb,0, TYPE,  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			return -1;
 		}
 	}
@@ -887,9 +887,6 @@ trimMalVariables_(MalBlkPtr mb, MalStkPtr glb)
 
 	/* build the alias table */
 	for (i = 0; i < mb->vtop; i++) {
-#ifdef DEBUG_REDUCE
-		fprintf(stderr,"used %s %d\n", getVarName(mb,i), isVarUsed(mb,i));
-#endif
 		if ( isVarUsed(mb,i) == 0) {
 			if (glb && i < glb->stktop && isVarConstant(mb, i))
 				VALclear(&glb->stk[i]);
@@ -912,20 +909,12 @@ trimMalVariables_(MalBlkPtr mb, MalStkPtr glb)
 		}
 		cnt++;
 	}
-#ifdef DEBUG_REDUCE
-	fprintf(stderr, "Variable reduction %d -> %d\n", mb->vtop, cnt);
-	for (i = 0; i < mb->vtop; i++)
-		fprintf(stderr, "map %d->%d\n", i, alias[i]);
-#endif
 
 	/* remap all variable references to their new position. */
 	if (cnt < mb->vtop) {
 		for (i = 0; i < mb->stop; i++) {
 			q = getInstrPtr(mb, i);
 			for (j = 0; j < q->argc; j++){
-#ifdef DEBUG_REDUCE
-				fprintf(stderr, "map %d->%d\n", getArg(q,j), alias[getArg(q,j)]);
-#endif
 				getArg(q, j) = alias[getArg(q, j)];
 			}
 		}
@@ -936,10 +925,6 @@ trimMalVariables_(MalBlkPtr mb, MalStkPtr glb)
 	if( isTmpVar(mb,i))
         (void) snprintf(mb->var[i].id, IDLENGTH,"%c%c%d", REFMARKER, TMPMARKER,mb->vid++);
 	
-#ifdef DEBUG_REDUCE
-	fprintf(stderr, "After reduction \n");
-	fprintFunction(stderr, mb, 0, 0);
-#endif
 	GDKfree(alias);
 	mb->vtop = cnt;
 }
@@ -1274,7 +1259,7 @@ pushArgumentId(MalBlkPtr mb, InstrPtr p, const char *name)
 		size_t namelen = strlen(name);
 		if ((v = newVariable(mb, name, namelen, getAtomIndex(name, namelen, TYPE_any))) < 0) {
 			/* set the MAL block to erroneous and simply return without doing anything */
-			mb->errors = createMalException(mb,0, TYPE, "out of memory ");
+			mb->errors = createMalException(mb,0, TYPE,  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			return NULL;
 		}
 	}
@@ -1382,5 +1367,6 @@ pushInstruction(MalBlkPtr mb, InstrPtr p)
 	}
 	if (mb->stmt[mb->stop])
 		freeInstruction(mb->stmt[mb->stop]);
+	p->pc = mb->stop;
 	mb->stmt[mb->stop++] = p;
 }

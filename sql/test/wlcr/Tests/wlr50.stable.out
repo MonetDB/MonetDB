@@ -24,19 +24,10 @@ stdout of test 'wlr50` in directory 'sql/test/wlcr` itself:
 % sys.tmp,	sys.tmp # table_name
 % i,	s # name
 % int,	clob # type
-% 1,	4 # length
-[ 3,	"blah"	]
-[ 2,	"blah"	]
-[ 3,	"blah"	]
-[ 4,	"blah"	]
-[ 5,	"blah"	]
-[ 6,	"blah"	]
-#LISTING OF THE LOG FILES
-#/ufs/sjoerd/@Monet-testing/var/MonetDB/mTests_sql_test_wlcr/wlc.config
-#logs=/ufs/sjoerd/@Monet-testing/var/MonetDB/mTests_sql_test_wlcr/wlc_logs/
-#tag=11
-#write=2019-10-07T10:19:39.000
-#state=1
+% 1,	0 # length
+#LISTING OF THE WLR LOG FILE
+#/export/scratch1/mk/branches/tracer//Linux/var/MonetDB/mTests_sql_test_wlcrclone/wlr.config
+#master=mTests_sql_test_wlcr
 #batches=11
 #beat=0
 #

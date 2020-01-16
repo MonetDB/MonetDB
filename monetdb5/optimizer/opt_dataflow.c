@@ -106,11 +106,6 @@ dataflowBreakpoint(Client cntxt, MalBlkPtr mb, InstrPtr p, States states)
 	*/
 	for(j=0; j<p->retc; j++)
 		if ( getState(states,p,j) & (VARWRITE | VARREAD | VARBLOCK)){
-
-			if( OPTdebug &  OPTdataflow){
-				fprintf(stderr,"#breakpoint on argument %s state %d\n", getVarName(mb,getArg(p,j)), getState(states,p,j));
-			}
-
 			return 1;
 		}
 
@@ -123,26 +118,12 @@ dataflowBreakpoint(Client cntxt, MalBlkPtr mb, InstrPtr p, States states)
 		 * program (see bugs.monetdb.org/6641) */
 		if (getModuleId(p) == sqlRef)
 			return 1;
-
-		if( OPTdebug &  OPTdataflow){
-			if( getState(states,p,1) & (VARREAD | VARBLOCK))
-				fprintf(stderr,"#breakpoint on update %s state %d\n", getVarName(mb,getArg(p,j)), getState(states,p,j));
-		}
 		return getState(states,p,p->retc) & (VARREAD | VARBLOCK);
 	}
 
 	for(j=p->retc; j < p->argc; j++){
 		if ( getState(states,p,j) & VARBLOCK){
-			if( OPTdebug &  OPTdataflow){
-				if( getState(states,p,j) & VARREAD)
-					fprintf(stderr,"#breakpoint on blocked var %s state %d\n", getVarName(mb,getArg(p,j)), getState(states,p,j));
-			}
 			return 1;
-		}
-
-		if( OPTdebug &  OPTdataflow){
-			if( hasSideEffects(mb,p,FALSE))
-				fprintf(stderr,"#breakpoint on sideeffect var %s %s.%s\n", getVarName(mb,getArg(p,j)), getModuleId(p), getFunctionId(p));
 		}
 	}
 	return hasSideEffects(mb,p,FALSE);
@@ -223,9 +204,6 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			/* close previous flow block */
 			simple = simpleFlow(old,start,i);
 
-			if( OPTdebug &  OPTdataflow){
-				fprintf(stderr,"#breakpoint pc %d  %s\n",i, (simple?"simple":"") );
-			}
 			if ( !simple){
 				flowblock = newTmpVariable(mb,TYPE_bit);
 				q= newFcnCall(mb,languageRef,dataflowRef);

@@ -85,22 +85,6 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 		throw(MAL, "optimizer.garbagecollector", SQLSTATE(42000) "Incorrect MAL plan encountered");
 	}
 	getInstrPtr(mb,0)->gc |= GARBAGECONTROL;
-    	if( OPTdebug &  OPTgarbagecollector)
-	{ 	int k;
-		fprintf(stderr, "#Garbage collected BAT variables \n");
-		for ( k =0; k < mb->vtop; k++)
-		fprintf(stderr,"%10s eolife %3d  begin %3d lastupd %3d end %3d\n",
-			getVarName(mb,k), getVarEolife(mb,k),
-			getBeginScope(mb,k), getLastUpdate(mb,k), getEndScope(mb,k));
-		msg = chkFlow(mb);
-		if ( mb->errors != MAL_SUCCEED ){
-			fprintf(stderr,"%s\n",mb->errors);
-			freeException(mb->errors);
-			mb->errors = MAL_SUCCEED;
-		}
-		fprintFunction(stderr,mb, 0, LIST_MAL_ALL);
-		fprintf(stderr, "End of GCoptimizer\n");
-	}
 
 	/* leave a consistent scope admin behind */
 	setVariableScope(mb);

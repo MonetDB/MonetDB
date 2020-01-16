@@ -29,7 +29,7 @@ static char *exceptionNames[] = {
 /*11 */	"ArithmeticException",
 /*12 */	"PermissionDeniedException",
 /*13 */	"SQLException",
-/*15 */	"Deprecated operation",
+/*14 */	"Deprecated operation",
 /*EOE*/	NULL
 };
 
@@ -67,7 +67,7 @@ createExceptionInternal(enum malexception type, const char *fcn, const char *for
 		/* Leave a message behind in the logging system */
 		len = snprintf(local, GDKMAXERRLEN - 1, "%s:%s:", exceptionNames[type], fcn);
 		len = vsnprintf(local + len, GDKMAXERRLEN -1, format, ap);
-		fprintf(stderr, "%s", local);
+		TRC_ERROR(MAL_EXCEPTION, "%s\n", local);
 		return M5OutOfMemory;	/* last resort */
 	}
 	len = snprintf(message, GDKMAXERRLEN, "%s:%s:", exceptionNames[type], fcn);
@@ -86,9 +86,9 @@ createExceptionInternal(enum malexception type, const char *fcn, const char *for
 	}
 	char *q = message;
 	for (char *p = strchr(q, '\n'); p; q = p + 1, p = strchr(q, '\n'))
-		fprintf(stderr, "#%s:!ERROR:%.*s\n", MT_thread_getname(), (int) (p - q), q);
+		TRC_ERROR(MAL_EXCEPTION, "%.*s\n", (int) (p - q), q);
 	if (*q)
-		fprintf(stderr, "#%s:!ERROR:%s\n", MT_thread_getname(), q);
+		TRC_ERROR(MAL_EXCEPTION, "%s\n", q);
 	return message;
 }
 

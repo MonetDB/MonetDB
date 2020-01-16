@@ -155,9 +155,9 @@ do_batsample(BAT *b, BUN n, random_state_engine rse, MT_Lock *lock)
 		bn->tkey = true;
 		bn->tseqbase = bn->batCount == 0 ? 0 : bn->batCount == 1 ? *(oid *) Tloc(bn, 0) : oid_nil;
 	}
-	ALGODEBUG fprintf(stderr, "#%s: BATsample(" ALGOBATFMT "," BUNFMT ")="
-			  ALGOOPTBATFMT "\n", MT_thread_getname(),
-			  ALGOBATPAR(b), n, ALGOOPTBATPAR(bn));
+	TRC_DEBUG(ALGO, "BATsample(" ALGOBATFMT "," BUNFMT ")="
+			  	ALGOOPTBATFMT "\n",
+			 	ALGOBATPAR(b), n, ALGOOPTBATPAR(bn));
 	return bn;
 }
 

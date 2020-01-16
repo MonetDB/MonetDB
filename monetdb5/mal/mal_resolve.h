@@ -14,15 +14,12 @@
 #include "mal_listing.h"
 #include "mal_exception.h"
 
-/*
-#define DEBUG_MAL_RESOLVE 1
-*/
 #define MAXTYPEVAR  10
 
 mal_export str chkProgram(Module s, MalBlkPtr mb);
 mal_export int chkInstruction(Module s, MalBlkPtr mb, InstrPtr p);
 mal_export str chkTypes(Module s, MalBlkPtr mb, int silent);
-mal_export void typeChecker(Module scope, MalBlkPtr mb, InstrPtr p, int silent);
+mal_export void typeChecker(Module scope, MalBlkPtr mb, InstrPtr p, int p_idx, int silent);
 
 /*
  * @- Type resolution algorithm.

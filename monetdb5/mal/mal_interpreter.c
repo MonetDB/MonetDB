@@ -387,10 +387,7 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug)
 	InstrPtr pci = getInstrPtr(mb, 0);
 
 	cntxt->lastcmd= time(0);
-#ifdef DEBUG_CALLMAL
-	fprintf(stderr, "callMAL\n");
-	fprintInstruction(stderr, mb, 0, pci, LIST_MAL_ALL);
-#endif
+
 	switch (pci->token) {
 	case FUNCTIONsymbol:
 	case FCNcall:
@@ -566,7 +563,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				 * time and print the query */
 				if (ATOMIC_CAS(&cntxt->lastprint, &lp, t)) {
 					const char *q = cntxt->getquery ? cntxt->getquery(cntxt) : NULL;
-					fprintf(stderr, "#%s: query already running "LLFMT"s: %.200s\n",
+					TRC_INFO(MAL_INTERPRETER, "%s: query already running "LLFMT"s: %.200s\n",
 							cntxt->mythread->name,
 							(lng) (time(0) - cntxt->lastcmd),
 							q ? q : "");
@@ -865,7 +862,6 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 						bat bid = stk->stk[a].val.bval;
 
 						if (garbage[i] >= 0) {
-							PARDEBUG fprintf(stderr, "#GC pc=%d bid=%d %s done\n", stkpc, bid, getVarName(mb, garbage[i]));
 							bid = stk->stk[garbage[i]].val.bval;
 							stk->stk[garbage[i]].val.bval = bat_nil;
 							BBPrelease(bid);

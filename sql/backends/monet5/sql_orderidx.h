@@ -10,8 +10,6 @@
 #ifndef _SQL_ORDERIDX_DEF
 #define _SQL_ORDERIDX_DEF
 
-/* #define DEBUG_SQL_ORDERIDX */
-
 #include "sql.h"
 
 #ifdef WIN32

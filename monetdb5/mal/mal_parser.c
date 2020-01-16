@@ -1005,9 +1005,6 @@ parseModule(Client cntxt)
 		// ignore this module definition
 	} else 
 	if( getModule(modnme) == NULL){
-#ifdef _DEBUG_PARSER_
-		fprintf(stderr,"Module create %s\n",modnme);
-#endif
 		if( globalModule(modnme) == NULL)
 			parseError(cntxt,"<module> could not be created");
 	}

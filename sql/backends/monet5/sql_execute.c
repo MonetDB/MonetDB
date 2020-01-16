@@ -728,10 +728,6 @@ SQLengineIntern(Client c, backend *be)
 		return MAL_SUCCEED;
 	}
 
-#ifdef SQL_SCENARIO_DEBUG
-	fprintf(stderr, "#Ready to execute SQL statement\n");
-#endif
-
 	if (c->curprg->def->stop == 1) {
 		if (mvc_status(m)) {
 			if (*m->errstr){

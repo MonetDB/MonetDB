@@ -18,4 +18,5 @@ sql.delete("sch","tab",b);
 end tst;
 
 optimizer.replication("sql","tst");
+optimizer.garbageCollector("sql","tst");
 mdb.list("sql","tst");

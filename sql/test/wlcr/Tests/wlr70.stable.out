@@ -17,23 +17,16 @@ stdout of test 'wlr70` in directory 'sql/test/wlcr` itself:
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-22068/.s.monetdb.52305
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
-#select * from tmp;
-% sys.tmp,	sys.tmp # table_name
+#select * from tmp70;
+% sys.tmp70,	sys.tmp70 # table_name
 % i,	s # name
 % int,	clob # type
-% 1,	4 # length
-[ 3,	"blah"	]
-[ 2,	"blah"	]
-[ 3,	"blah"	]
-[ 4,	"blah"	]
-[ 5,	"blah"	]
-[ 6,	"blah"	]
-#LISTING OF THE LOG FILES
-#/ufs/sjoerd/@Monet-testing/var/MonetDB/mTests_sql_test_wlcr/wlc.config
-#logs=/ufs/sjoerd/@Monet-testing/var/MonetDB/mTests_sql_test_wlcr/wlc_logs/
-#tag=13
-#write=2019-10-07T10:19:41.000
-#state=1
+% 1,	5 # length
+[ 1,	"hello"	]
+[ 2,	"world"	]
+#LISTING OF THE WLR LOG FILE
+#/export/scratch1/mk/branches/tracer//Linux/var/MonetDB/mTests_sql_test_wlcrclone/wlr.config
+#master=mTests_sql_test_wlcr
 #batches=13
 #beat=0
 #
