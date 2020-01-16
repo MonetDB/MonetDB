@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /**
@@ -41,7 +41,7 @@ db_glob(const char *expr, const char *haystack)
 		switch (*expr) {
 			case '*':
 				if (!escape) {
-					/* store expression position for retry lateron */
+					/* store expression position for retry later on */
 					exprmem = expr;
 					/* skip over haystack till the next char from expr */
 					do {
@@ -61,7 +61,7 @@ db_glob(const char *expr, const char *haystack)
 					} while(1);
 					while (*haystack != '\0' && *haystack != *expr)
 						haystack++;
-					/* store match position, for retry lateron */
+					/* store match position, for retry later on */
 					haymem = haystack + 1;
 					if (*haystack == '\0')
 						/* couldn't find it, so no match  */

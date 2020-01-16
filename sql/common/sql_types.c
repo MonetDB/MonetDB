@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -2248,9 +2248,8 @@ sqltypeinit( sql_allocator *sa)
 }
 
 void
-types_init(sql_allocator *sa, int debug)
+types_init(sql_allocator *sa)
 {
-	(void)debug;
 	aliases = sa_list(sa);
 	types = sa_list(sa);
 	localtypes = sa_list(sa);

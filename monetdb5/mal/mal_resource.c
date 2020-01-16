@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /* (author) M.L. Kersten 
@@ -113,16 +113,12 @@ MALadmission_claim(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, lng 
 	 * of parallism for a single dataflow graph.
 	 */
 	if(cntxt->workerlimit && cntxt->workerlimit < stk->workers){
-		PARDEBUG
-			fprintf(stderr, "#DFLOWadmit worker limit reached, %d <= %d\n", cntxt->workerlimit, stk->workers);
 		MT_lock_unset(&admissionLock);
 		return -1;
 	}
 	/* Determine if the total memory resource is exhausted, because it is overall limitation.  */
 	if ( memorypool <= 0){
 		// we accidently released too much memory or need to initialize
-		PARDEBUG
-			fprintf(stderr, "#DFLOWadmit memorypool reset ");
 		memorypool = (lng) MEMORY_THRESHOLD;
 	}
 
@@ -130,29 +126,18 @@ MALadmission_claim(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, lng 
 	if ( memorypool > argclaim || stk->workers == 0 ) {
 		/* If we are low on memory resources, limit the user if he exceeds his memory budget 
 		 * but make sure there is at least one worker thread active */
-		/* on hold until after experiments
-		if ( 0 &&  cntxt->memorylimit) {
+		if ( cntxt->memorylimit) {
 			if (argclaim + stk->memory > (lng) cntxt->memorylimit * LL_CONSTANT(1048576)){
 				MT_lock_unset(&admissionLock);
-				PARDEBUG
-					fprintf(stderr, "#Delayed due to lack of session memory " LLFMT " requested "LLFMT"\n", 
-							stk->memory, argclaim);
 				return -1;
 			}
 			stk->memory += argclaim;
 		}
-		*/
 		memorypool -= argclaim;
-		PARDEBUG
-			fprintf(stderr, "#DFLOWadmit thread %d pool " LLFMT "claims " LLFMT "\n",
-					 THRgettid(), memorypool, argclaim);
 		stk->workers++;
 		MT_lock_unset(&admissionLock);
 		return 0;
 	}
-	PARDEBUG
-		fprintf(stderr, "#Delayed due to lack of memory " LLFMT " requested " LLFMT "\n", 
-			memorypool, argclaim);
 	MT_lock_unset(&admissionLock);
 	return -1;
 }
@@ -168,23 +153,14 @@ MALadmission_release(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, ln
 		return;
 
 	MT_lock_set(&admissionLock);
-	/* on hold until after experiments
-	if ( 0 && cntxt->memorylimit) {
-		PARDEBUG
-			fprintf(stderr, "#Return memory to session budget " LLFMT "\n", stk->memory);
+	if ( cntxt->memorylimit) {
 		stk->memory -= argclaim;
 	}
-	*/
 	memorypool += argclaim;
 	if ( memorypool > (lng) MEMORY_THRESHOLD ){
-		PARDEBUG
-			fprintf(stderr, "#DFLOWadmit memorypool reset ");
 		memorypool = (lng) MEMORY_THRESHOLD;
 	}
 	stk->workers--;
-	PARDEBUG
-		fprintf(stderr, "#DFLOWadmit thread %d pool " LLFMT " claims " LLFMT "\n",
-				 THRgettid(), memorypool, argclaim);
 	MT_lock_unset(&admissionLock);
 	return;
 }

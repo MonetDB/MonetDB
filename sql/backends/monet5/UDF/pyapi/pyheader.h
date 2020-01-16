@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -46,6 +46,9 @@
 #endif
 
 // Numpy Library
+#ifdef STATIC_CODE_ANALYSIS
+#define _NPY_NO_DEPRECATIONS
+#endif
 #define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
 #define NPY_INTERNAL_BUILD 0
 #ifdef __INTEL_COMPILER

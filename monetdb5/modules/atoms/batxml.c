@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -93,11 +93,13 @@ BATXMLxml2str(bat *ret, const bat *bid)
 		const char *t = (const char *) BUNtvar(bi, p);
 
 		if (strNil(t)) {
-			bunfastappVAR(bn, t);
+			if (bunfastappVAR(bn, t) != GDK_SUCCEED)
+				goto bunins_failed;
 			bn->tnonil = false;
 		} else {
 			assert(*t == 'A' || *t == 'C' || *t == 'D');
-			bunfastappVAR(bn, t + 1);
+			if (bunfastappVAR(bn, t + 1) != GDK_SUCCEED)
+				goto bunins_failed;
 		}
 	}
 	finalizeResult(ret, bn, b);
@@ -130,7 +132,8 @@ BATXMLxmltext(bat *ret, const bat *bid)
 		size_t len;
 
 		if (strNil(t)) {
-			bunfastappVAR(bn, t);
+			if (bunfastappVAR(bn, t) != GDK_SUCCEED)
+				goto bunins_failed;
 			bn->tnonil = false;
 			continue;
 		}
@@ -186,12 +189,14 @@ BATXMLxmltext(bat *ret, const bat *bid)
 		}
 		default:
 			assert(*t == 'A' || *t == 'C' || *t == 'D');
-			bunfastappVAR(bn, str_nil);
+			if (bunfastappVAR(bn, str_nil) != GDK_SUCCEED)
+				goto bunins_failed;
 			bn->tnonil = false;
 			continue;
 		}
 		assert(content != NULL || buf != NULL);
-		bunfastappVAR(bn, content != NULL ? content : buf);
+		if (bunfastappVAR(bn, content != NULL ? content : buf) != GDK_SUCCEED)
+			goto bunins_failed;
 		if (content != NULL)
 			GDKfree(content);
 		content = NULL;
@@ -249,7 +254,8 @@ BATXMLstr2xml(bat *ret, const bat *bid)
 		size_t len;
 
 		if (strNil(t)) {
-			bunfastappVAR(bn, str_nil);
+			if (bunfastappVAR(bn, str_nil) != GDK_SUCCEED)
+				goto bunins_failed;
 			bn->tnonil = false;
 			continue;
 		}
@@ -266,7 +272,8 @@ BATXMLstr2xml(bat *ret, const bat *bid)
 		}
 		buf[0] = 'C';
 		XMLquotestring(t, buf + 1, size - 1);
-		bunfastappVAR(bn, buf);
+		if (bunfastappVAR(bn, buf) != GDK_SUCCEED)
+			goto bunins_failed;
 	}
 	GDKfree(buf);
 	finalizeResult(ret, bn, b);
@@ -304,7 +311,8 @@ BATXMLdocument(bat *ret, const bat *bid)
 		xmlChar *s;
 
 		if (strNil(t)) {
-			bunfastappVAR(bn, str_nil);
+			if (bunfastappVAR(bn, str_nil) != GDK_SUCCEED)
+				goto bunins_failed;
 			bn->tnonil = false;
 			continue;
 		}
@@ -327,7 +335,8 @@ BATXMLdocument(bat *ret, const bat *bid)
 		}
 		buf[0] = 'D';
 		strcpy(buf + 1, (char *) s);
-		bunfastappVAR(bn, buf);
+		if (bunfastappVAR(bn, buf) != GDK_SUCCEED)
+			goto bunins_failed;
 	}
 	GDKfree(buf);
 	finalizeResult(ret, bn, b);
@@ -371,7 +380,8 @@ BATXMLcontent(bat *ret, const bat *bid)
 		const xmlChar *s;
 
 		if (strNil(t)) {
-			bunfastappVAR(bn, str_nil);
+			if (bunfastappVAR(bn, str_nil) != GDK_SUCCEED)
+				goto bunins_failed;
 			bn->tnonil = false;
 			continue;
 		}
@@ -395,7 +405,8 @@ BATXMLcontent(bat *ret, const bat *bid)
 		}
 		buf[0] = 'C';
 		strcpy(buf + 1, (const char *) s);
-		bunfastappVAR(bn, buf);
+		if (bunfastappVAR(bn, buf) != GDK_SUCCEED)
+			goto bunins_failed;
 		xmlBufferEmpty(xbuf);
 		xmlFreeNodeList(elem);
 	}
@@ -442,14 +453,15 @@ BATXMLisdocument(bat *ret, const bat *bid)
 				val = 1;
 			}
 		}
-		bunfastappTYPE(bit, bn, &val);
+		if (bunfastappTYPE(bit, bn, &val) != GDK_SUCCEED) {
+			BBPunfix(b->batCacheid);
+			BBPunfix(bn->batCacheid);
+			throw(MAL, "xml.isdocument",
+				  OPERATION_FAILED " During bulk processing");
+		}
 	}
 	finalizeResult(ret, bn, b);
 	return MAL_SUCCEED;
-  bunins_failed:
-	BBPunfix(b->batCacheid);
-	BBPunfix(bn->batCacheid);
-	throw(MAL, "xml.isdocument", OPERATION_FAILED " During bulk processing");
 }
 
 /*
@@ -509,7 +521,8 @@ BATXMLoptions(bat *ret, const char * const *name, const char * const *options, c
 		const char *t = (const char *) BUNtvar(bi, p);
 
 		if (strNil(t)) {
-			bunfastappVAR(bn, buf);
+			if (bunfastappVAR(bn, buf) != GDK_SUCCEED)
+				goto bunins_failed;
 		} else {
 			if (strlen(t) > size - 2 * len - 6) {
 				char *tmp;
@@ -522,7 +535,8 @@ BATXMLoptions(bat *ret, const char * const *name, const char * const *options, c
 				val = tmp;
 			}
 			snprintf(val + len + 2, size - len, "%s</%s>", t, *name);
-			bunfastappVAR(bn, val);
+			if (bunfastappVAR(bn, val) != GDK_SUCCEED)
+				goto bunins_failed;
 		}
 	}
 	GDKfree(val);
@@ -562,7 +576,8 @@ BATXMLcomment(bat *ret, const bat *bid)
 		size_t len;
 
 		if (strNil(t)) {
-			bunfastappVAR(bn, str_nil);
+			if (bunfastappVAR(bn, str_nil) != GDK_SUCCEED)
+				goto bunins_failed;
 			bn->tnonil = false;
 			continue;
 		}
@@ -583,7 +598,8 @@ BATXMLcomment(bat *ret, const bat *bid)
 			}
 		}
 		snprintf(buf, size, "C<!--%s-->", t);
-		bunfastappVAR(bn, buf);
+		if (bunfastappVAR(bn, buf) != GDK_SUCCEED)
+			goto bunins_failed;
 	}
 	GDKfree(buf);
 	finalizeResult(ret, bn, b);
@@ -656,7 +672,8 @@ BATXMLpi(bat *ret, const char * const *target, const bat *bid)
 			size_t m = XMLquotestring(t, buf + n, size - n);
 			strcpy(buf + n + m, "?>");
 		}
-		bunfastappVAR(bn, buf);
+		if (bunfastappVAR(bn, buf) != GDK_SUCCEED)
+			goto bunins_failed;
 	}
 	GDKfree(buf);
 	finalizeResult(ret, bn, b);
@@ -738,7 +755,8 @@ BATXMLroot(bat *ret, const bat *bid, const char * const *version, const char * c
 				goto bunins_failed;
 			}
 		}
-		bunfastappVAR(bn, buf);
+		if (bunfastappVAR(bn, buf) != GDK_SUCCEED)
+			goto bunins_failed;
 	}
 	GDKfree(buf);
 	finalizeResult(ret, bn, b);
@@ -802,7 +820,8 @@ BATXMLattribute(bat *ret, const char * const *name, const bat *bid)
 			size_t m = XMLquotestring(t, buf + n, size - n);
 			strcpy(buf + n + m, "\"");
 		}
-		bunfastappVAR(bn, buf);
+		if (bunfastappVAR(bn, buf) != GDK_SUCCEED)
+			goto bunins_failed;
 	}
 	GDKfree(buf);
 	finalizeResult(ret, bn, b);
@@ -890,7 +909,8 @@ BATXMLelement(bat *ret, const char * const *name, xml *nspace, xml *attr, const 
 			else
 				i += snprintf(buf + i, size - i, "/>");
 		}
-		bunfastappVAR(bn, buf);
+		if (bunfastappVAR(bn, buf) != GDK_SUCCEED)
+			goto bunins_failed;
 	}
 	GDKfree(buf);
 	finalizeResult(ret, bn, b);
@@ -1000,7 +1020,8 @@ BATXMLforest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 			offset += n;
 		}
-		bunfastappVAR(bn, buf);
+		if (bunfastappVAR(bn, buf) != GDK_SUCCEED)
+			goto bunins_failed;
 		if (offset == 0)
 			bn->tnonil = false;
 
@@ -1094,7 +1115,8 @@ BATXMLconcat(bat *ret, const bat *bid, const bat *rid)
 				goto bunins_failed;
 			}
 		}
-		bunfastappVAR(bn, buf);
+		if (bunfastappVAR(bn, buf) != GDK_SUCCEED)
+			goto bunins_failed;
 		rp++;
 		p++;
 	}
@@ -1266,10 +1288,12 @@ BATxmlaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 		for (p = 0, q = BATcount(g); p <= q; p++) {
 			if (p == q || grps[p] != prev) {
 				while (BATcount(bn) < prev - min) {
-					bunfastapp_nocheckVAR(bn, BUNlast(bn), str_nil, Tsize(bn));
+					if (bunfastapp_nocheckVAR(bn, BUNlast(bn), str_nil, Tsize(bn)) != GDK_SUCCEED)
+						goto bunins_failed;
 					nils++;
 				}
-				bunfastapp_nocheckVAR(bn, BUNlast(bn), buf, Tsize(bn));
+				if (bunfastapp_nocheckVAR(bn, BUNlast(bn), buf, Tsize(bn)) != GDK_SUCCEED)
+					goto bunins_failed;
 				nils += strNil(buf);
 				strncpy(buf, str_nil, maxlen);
 				buflen = 0;
@@ -1354,7 +1378,8 @@ BATxmlaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 				goto bunins_failed;
 			}
 		}
-		bunfastapp_nocheckVAR(bn, BUNlast(bn), buf, Tsize(bn));
+		if (bunfastapp_nocheckVAR(bn, BUNlast(bn), buf, Tsize(bn)) != GDK_SUCCEED)
+			goto bunins_failed;
 	}
 	bn->theap.dirty = true;
 	bn->tnil = nils != 0;

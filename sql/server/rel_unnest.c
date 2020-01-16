@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*#define DEBUG*/
@@ -1460,10 +1460,12 @@ rewrite_inner(mvc *sql, sql_rel *rel, sql_rel *inner, operator_type op)
 		d = rel->l = rel_crossproduct(sql->sa, rel->l, inner, op);
 	}
 	if (d && rel_has_freevar(sql, inner)) {
+		list *dv = rel_dependent_var(sql, d, inner);
+		list *fv = rel_freevar(sql, inner);
 		/* check if the inner depends on the new join (d) or one leve up */
-		if (!list_empty(rel_dependent_var(sql, d, inner)))
+		if (list_length(dv))
 			set_dependent(d);
-		else
+		if (list_length(fv) != list_length(dv))
 			set_dependent(rel);
 	}
 	return inner->exps->t->data;
@@ -1499,6 +1501,71 @@ rewrite_exp_rel(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 
 /* simplify expressions, such as not(not(x)) */
 /* exp visitor */
+
+static list *
+exps_simplify_exp(mvc *sql, list *exps)
+{
+	if (list_empty(exps))
+		return exps;
+
+	int needed = 0;
+	for (node *n=exps->h; n && !needed; n = n->next) {
+		sql_exp *e = n->data;
+
+		needed = (exp_is_true(sql, e) || exp_is_false(sql, e) || (is_compare(e->type) && e->flag == cmp_or)); 
+	}
+	if (needed) {
+		list *nexps = sa_list(sql->sa);
+		sql->caching = 0;
+		for (node *n=exps->h; n; n = n->next) {
+			sql_exp *e = n->data;
+	
+			/* TRUE or X -> TRUE
+		 	* FALSE or X -> X */
+			if (is_compare(e->type) && e->flag == cmp_or) {
+				list *l = e->l = exps_simplify_exp(sql, e->l);
+				list *r = e->r = exps_simplify_exp(sql, e->r); 
+
+				if (list_length(l) == 1) {
+					sql_exp *ie = l->h->data; 
+	
+					if (exp_is_true(sql, ie)) {
+						continue;
+					} else if (exp_is_false(sql, ie)) {
+						nexps = list_merge(nexps, r, (fdup)NULL);
+						continue;
+					}
+				} else if (list_length(l) == 0) { /* left is true */
+					continue;
+				}
+				if (list_length(r) == 1) {
+					sql_exp *ie = r->h->data; 
+	
+					if (exp_is_true(sql, ie))
+						continue;
+					else if (exp_is_false(sql, ie)) {
+						nexps = list_merge(nexps, l, (fdup)NULL);
+						continue;
+					}
+				} else if (list_length(r) == 0) { /* right is true */
+					continue;
+				}
+			}
+			/* TRUE and X -> X */
+			if (exp_is_true(sql, e)) {
+				continue;
+			/* FALSE and X -> FALSE */
+			} else if (exp_is_false(sql, e)) {
+				return append(sa_list(sql->sa), e);
+			} else {
+				append(nexps, e);
+			}
+		}
+		return nexps;
+	}
+	return exps;
+}
+
 static sql_exp *
 rewrite_simplify_exp(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 {
@@ -1538,7 +1605,8 @@ rewrite_simplify_exp(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 		/* TRUE or X -> TRUE
 		 * FALSE or X -> X */
 		if (is_compare(e->type) && e->flag == cmp_or) {
-			list *l = e->l, *r = e->r;
+			list *l = e->l = exps_simplify_exp(sql, e->l);
+			list *r = e->r = exps_simplify_exp(sql, e->r); 
 
 			sql->caching = 0;
 			if (list_length(l) == 1) {
@@ -1548,6 +1616,18 @@ rewrite_simplify_exp(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 					return ie;
 				else if (exp_is_false(sql, ie) && list_length(r) == 1)
 					return r->h->data;
+			} else if (list_length(l) == 0) { /* left is true */
+				return exp_atom_bool(sql->sa, 1);
+			}
+			if (list_length(r) == 1) {
+				sql_exp *ie = r->h->data; 
+
+				if (exp_is_true(sql, ie))
+					return ie;
+				else if (exp_is_false(sql, ie) && list_length(l) == 1)
+					return l->h->data;
+			} else if (list_length(r) == 0) { /* right is true */
+				return exp_atom_bool(sql->sa, 1);
 			}
 		}
 	}
@@ -1560,33 +1640,8 @@ rewrite_simplify(mvc *sql, sql_rel *rel)
 	if (!rel)
 		return rel;
 
-	if (is_select(rel->op) && !list_empty(rel->exps)) {
-		int needed = 0;
-		for (node *n=rel->exps->h; n && !needed; n = n->next) {
-			sql_exp *e = n->data;
-
-			needed = (exp_is_true(sql, e) || exp_is_false(sql, e)); 
-		}
-		if (needed) {
-			list *nexps = sa_list(sql->sa);
-			sql->caching = 0;
-			for (node *n=rel->exps->h; n; n = n->next) {
-				sql_exp *e = n->data;
-	
-				/* TRUE and X -> X */
-				if (exp_is_true(sql, e)) {
-					continue;
-				/* FALSE and X -> FALSE */
-				} else if (exp_is_false(sql, e)) {
-					rel->exps = append(sa_list(sql->sa), e);
-					return rel;
-				} else {
-					append(nexps, e);
-				}
-			}
-			rel->exps = nexps;
-		}
-	}
+	if ((is_select(rel->op) || is_join(rel->op)) && !list_empty(rel->exps))
+		rel->exps = exps_simplify_exp(sql, rel->exps);
 	return rel;
 }
 

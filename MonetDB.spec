@@ -680,7 +680,6 @@ exit 0
 %endif
 %{_libdir}/monetdb5/lib_capi.so
 %{_libdir}/monetdb5/lib_generator.so
-%{_libdir}/monetdb5/lib_opt_sql_append.so
 %{_libdir}/monetdb5/lib_udf.so
 %doc %{_mandir}/man1/mserver5.1.gz
 %dir %{_datadir}/doc/MonetDB
@@ -967,6 +966,7 @@ export CFLAGS
 	--enable-mapi=yes \
 	--enable-netcdf=no \
 	--enable-odbc=yes \
+	--enable-profiler=no \
 	--enable-py2integration=%{?with_py2integration:yes}%{!?with_py2integration:no} \
 	--enable-py3integration=%{?with_py3integration:yes}%{!?with_py3integration:no} \
 	--enable-rintegration=%{?with_rintegration:yes}%{!?with_rintegration:no} \
@@ -1040,6 +1040,9 @@ install -d -m 0775 %{buildroot}%{_localstatedir}/run/monetdb
 # .la files
 rm -f %{buildroot}%{_libdir}/*.la
 rm -f %{buildroot}%{_libdir}/monetdb5/*.la
+rm -f %{buildroot}%{_libdir}/monetdb5/opt_sql_append.mal
+rm -f %{buildroot}%{_libdir}/monetdb5/lib_opt_sql_append.so
+rm -f %{buildroot}%{_libdir}/monetdb5/autoload/??_opt_sql_append.mal
 
 %if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
 for selinuxvariant in %{selinux_variants}
@@ -1061,6 +1064,13 @@ fi
 %postun -p /sbin/ldconfig
 
 %changelog
+* Wed Dec 18 2019 Sjoerd Mullender <sjoerd@acm.org> - 11.35.9-20191218
+- Rebuilt.
+- BZ#6804: DNS resolution of 0.0.0.0 fails on recent Ubuntus
+
+* Tue Dec 17 2019 Sjoerd Mullender <sjoerd@acm.org> - 11.35.7-20191217
+- Rebuilt.
+
 * Thu Dec 12 2019 Sjoerd Mullender <sjoerd@acm.org> - 11.35.5-20191212
 - Rebuilt.
 - BZ#6723: columns aliases duplicates should not be allowed. automatic

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /* (c) M.L. Kersten
@@ -149,7 +149,7 @@ renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int
 	*/
 	if( !start && pci->calls > HIGHWATERMARK){
 		if( pci->calls == 10000 || pci->calls == 100000 || pci->calls == 1000000 || pci->calls == 10000000)
-			fprintf(stderr, "#Profiler too many calls %d\n", pci->calls);
+			TRC_WARNING(MAL_MAL, "Too many calls: %d\n", pci->calls);
 		return;
 	}
 
@@ -940,6 +940,9 @@ void initProfiler(void)
 
 void initHeartbeat(void)
 {
+#ifdef HAVE_EMBEDDED
+	return;
+#endif
 	ATOMIC_SET(&hbrunning, 1);
 	if (MT_create_thread(&hbthread, profilerHeartbeat, NULL, MT_THR_JOINABLE,
 						 "heartbeat") < 0) {
@@ -948,3 +951,5 @@ void initHeartbeat(void)
 		ATOMIC_SET(&hbrunning, 0);
 	}
 }
+
+

@@ -119,6 +119,7 @@ stdout of test 'check` in directory 'sql/test/emptydb` itself:
 \dSv sys.ids
 \dSv sys.optimizers
 \dSv sys.prepared_statements
+\dSv sys.prepared_statements_args
 \dSv sys.querylog_calls
 \dSv sys.querylog_catalog
 \dSv sys.querylog_history
@@ -219,6 +220,7 @@ stdout of test 'check` in directory 'sql/test/emptydb` itself:
 \dSf sys."password_hash"
 \dSf sys."pause"
 \dSf sys."prepared_statements"
+\dSf sys."prepared_statements_args"
 \dSf sys."quantile"
 \dSf sys."quantile_avg"
 \dSf sys."querycache"
@@ -439,6 +441,7 @@ SYSTEM VIEW  sys.geometry_columns
 SYSTEM VIEW  sys.ids
 SYSTEM VIEW  sys.optimizers
 SYSTEM VIEW  sys.prepared_statements
+SYSTEM VIEW  sys.prepared_statements_args
 SYSTEM VIEW  sys.querylog_calls
 SYSTEM VIEW  sys.querylog_catalog
 SYSTEM VIEW  sys.querylog_history
@@ -664,6 +667,7 @@ SYSTEM FUNCTION         sys.percent_rank
 SYSTEM FUNCTION         sys.pi
 SYSTEM FUNCTION         sys.power
 SYSTEM FUNCTION         sys.prepared_statements
+SYSTEM FUNCTION         sys.prepared_statements_args
 SYSTEM AGGREGATE        sys.prod
 SYSTEM FUNCTION         sys.prod
 SYSTEM FUNCTION         sys.qgramnormalize
@@ -955,6 +959,7 @@ create view sys.geometry_columns as select cast(null as varchar(1)) as f_table_c
 create view sys.ids (id, name, schema_id, table_id, table_name, obj_type, sys_table) as select id, name, cast(null as int) as schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, 'author' as obj_type, 'sys.auths' as sys_table from sys.auths union all select id, name, cast(null as int) as schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, 'schema', 'sys.schemas' from sys.schemas union all select id, name, schema_id, id as table_id, name as table_name, case when type = 1 then 'view' else 'table' end, 'sys._tables' from sys._tables union all select id, name, schema_id, id as table_id, name as table_name, case when type = 1 then 'view' else 'table' end, 'tmp._tables' from tmp._tables union all select c.id, c.name, t.schema_id, c.table_id, t.name as table_name, 'column', 'sys._columns' from sys._columns c join sys._tables t on c.table_id = t.id union all select c.id, c.name, t.schema_id, c.table_id, t.name as table_name, 'column', 'tmp._columns' from tmp._columns c join tmp._tables t on c.table_id = t.id union all select k.id, k.name, t.schema_id, k.table_id, t.name as table_name, 'key', 'sys.keys' from sys.keys k join sys._tables t on k.table_id = t.id union all select k.id, k.name, t.schema_id, k.table_id, t.name as table_name, 'key', 'tmp.keys' from tmp.keys k join tmp._tables t on k.table_id = t.id union all select i.id, i.name, t.schema_id, i.table_id, t.name as table_name, 'index', 'sys.idxs' from sys.idxs i join sys._tables t on i.table_id = t.id union all select i.id, i.name, t.schema_id, i.table_id, t.name as table_name, 'index', 'tmp.idxs' from tmp.idxs i join tmp._tables t on i.table_id = t.id union all select g.id, g.name, t.schema_id, g.table_id, t.name as table_name, 'trigger', 'sys.triggers' from sys.triggers g join sys._tables t on g.table_id = t.id union all select g.id, g.name, t.schema_id, g.table_id, t.name as table_name, 'trigger', 'tmp.triggers' from tmp.triggers g join tmp._tables t on g.table_id = t.id union all select id, name, schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, case when type = 2 then 'procedure' else 'function' end, 'sys.functions' from sys.functions union all select a.id, a.name, f.schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, case when f.type = 2 then 'procedure arg' else 'function arg' end, 'sys.args' from sys.args a join sys.functions f on a.func_id = f.id union all select id, name, schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, 'sequence', 'sys.sequences' from sys.sequences union all select id, sqlname, schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, 'type', 'sys.types' from sys.types where id > 2000 order by id;
 create view sys.optimizers as select * from sys.optimizers();
 create view sys.prepared_statements as select * from sys.prepared_statements();
+create view sys.prepared_statements_args as select * from sys.prepared_statements_args();
 create view sys.querylog_calls as select * from sys.querylog_calls();
 create view sys.querylog_catalog as select * from sys.querylog_catalog();
 create view sys.querylog_history as select qd.*, ql."start",ql."stop", ql.arguments, ql.tuples, ql.run, ql.ship, ql.cpu, ql.io from sys.querylog_catalog() qd, sys.querylog_calls() ql where qd.id = ql.id and qd.owner = user;
@@ -1054,7 +1059,7 @@ create filter function "ilike"(val string, pat string) external name algebra."il
 create filter function "ilike"(val string, pat string, esc string) external name algebra."ilike";
 create function sys.imprintsize(tpe varchar(1024), count bigint) returns bigint begin if tpe in ('tinyint', 'boolean') then return cast(0.2 * count as bigint); end if; if tpe = 'smallint' then return cast(0.4 * count as bigint); end if; if tpe in ('int', 'real', 'date', 'time', 'timetz', 'sec_interval', 'month_interval') then return cast(0.8 * count as bigint); end if; if tpe in ('bigint', 'double', 'timestamp', 'timestamptz', 'inet', 'oid') then return cast(1.6 * count as bigint); end if; if tpe in ('hugeint', 'decimal', 'uuid', 'mbr') then return cast(3.2 * count as bigint); end if; return 0; end;
 create function internaltransform(geom geometry, srid_src integer, srid_dest integer, proj4_src string, proj4_dest string) returns geometry external name geom."Transform";
-create function isaurl(theurl url) returns bool external name url."isaURL";
+create function isaurl(theurl string) returns bool external name url."isaURL";
 create function sys.isauuid(s string) returns boolean external name uuid."isaUUID";
 create function "left_shift"(i1 inet, i2 inet) returns boolean external name inet."<<";
 create function "left_shift_assign"(i1 inet, i2 inet) returns boolean external name inet."<<=";
@@ -1105,7 +1110,8 @@ create procedure sys.pause(tag bigint) external name sql.sysmon_pause;
 create procedure sys.pause(tag int) external name sql.sysmon_pause;
 create procedure sys.pause(tag smallint) external name sql.sysmon_pause;
 create procedure sys.pause(tag tinyint) external name sql.sysmon_pause;
-create function sys.prepared_statements() returns table("sessionid" int, "user" string, "statementid" int, "statement" string, "created" timestamp) external name sql.prepared_statements;
+create function sys.prepared_statements() returns table("sessionid" int, "username" string, "statementid" int, "statement" string, "created" timestamp) external name sql.prepared_statements;
+create function sys.prepared_statements_args() returns table("statementid" int, "type" string, "type_digits" int, "type_scale" int, "inout" tinyint, "number" int, "schema" string, "table" string, "column" string) external name sql.prepared_statements_args;
 create aggregate quantile(val bigint, q double) returns bigint external name "aggr"."quantile";
 create aggregate quantile(val date, q double) returns date external name "aggr"."quantile";
 create aggregate quantile(val decimal, q double) returns decimal external name "aggr"."quantile";
@@ -1133,7 +1139,7 @@ create procedure sys.querylog_disable() external name sql.querylog_disable;
 create procedure sys.querylog_empty() external name sql.querylog_empty;
 create procedure sys.querylog_enable() external name sql.querylog_enable;
 create procedure sys.querylog_enable(threshold integer) external name sql.querylog_enable;
-create function sys.queue() returns table(tag bigint, sessionid int, "user" string, started timestamp, status string, query string, progress int, workers int, memory int) external name sql.sysmon_queue;
+create function sys.queue() returns table("tag" bigint, "sessionid" int, "username" string, "started" timestamp, "status" string, "query" string, "progress" int, "workers" int, "memory" int) external name sql.sysmon_queue;
 create function radians(d double) returns double return d*pi()/180;
 create function sys.rejects() returns table(rowid bigint, fldid int, "message" string, "input" string) external name sql.copy_rejects;
 create function sys.remote_table_credentials (tablename string) returns table ("uri" string, "username" string, "hash" string) external name sql.rt_credentials;
@@ -1146,7 +1152,7 @@ create procedure reuse(sys string, tab string) external name sql.reuse;
 create function reverse(src string) returns string external name udf.reverse;
 create function "right_shift"(i1 inet, i2 inet) returns boolean external name inet.">>";
 create function "right_shift_assign"(i1 inet, i2 inet) returns boolean external name inet.">>=";
-create function sys.sessions() returns table("sessionid" int, "user" string, "login" timestamp, "idle" timestamp, "optimizer" string, "sessiontimeout" int, "querytimeout" int, "workerlimit" int, "memorylimit" int) external name sql.sessions;
+create function sys.sessions() returns table("sessionid" int, "username" string, "login" timestamp, "idle" timestamp, "optimizer" string, "sessiontimeout" int, "querytimeout" int, "workerlimit" int, "memorylimit" int) external name sql.sessions;
 create function "setmasklen" (p inet, mask int) returns inet external name inet."setmasklen";
 create procedure sys.setmemorylimit("limit" int) external name clients.setmemorylimit;
 create procedure sys.setmemorylimit("sessionid" int, "limit" int) external name clients.setmemorylimit;
@@ -1500,6 +1506,7 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"objects",	NULL,	"TABLE",	true,	"COMMIT",	"WRITABLE"	]
 [ "sys",	"optimizers",	"create view sys.optimizers as select * from sys.optimizers();",	"VIEW",	true,	"COMMIT",	"WRITABLE"	]
 [ "sys",	"prepared_statements",	"create view sys.prepared_statements as select * from sys.prepared_statements();",	"VIEW",	true,	"COMMIT",	"WRITABLE"	]
+[ "sys",	"prepared_statements_args",	"create view sys.prepared_statements_args as select * from sys.prepared_statements_args();",	"VIEW",	true,	"COMMIT",	"WRITABLE"	]
 [ "sys",	"privilege_codes",	NULL,	"TABLE",	true,	"COMMIT",	"READONLY"	]
 [ "sys",	"privileges",	NULL,	"TABLE",	true,	"COMMIT",	"WRITABLE"	]
 [ "sys",	"querylog_calls",	"create view sys.querylog_calls as select * from sys.querylog_calls();",	"VIEW",	true,	"COMMIT",	"WRITABLE"	]
@@ -1911,10 +1918,19 @@ drop function pcre_replace(string, string, string, string);
 [ "pg",	"pp",	"clob",	0,	0,	NULL,	true,	4,	NULL	]
 [ "pg",	"vn",	"clob",	0,	0,	NULL,	true,	5,	NULL	]
 [ "prepared_statements",	"sessionid",	"int",	32,	0,	NULL,	true,	0,	NULL	]
-[ "prepared_statements",	"user",	"clob",	0,	0,	NULL,	true,	1,	NULL	]
+[ "prepared_statements",	"username",	"clob",	0,	0,	NULL,	true,	1,	NULL	]
 [ "prepared_statements",	"statementid",	"int",	32,	0,	NULL,	true,	2,	NULL	]
 [ "prepared_statements",	"statement",	"clob",	0,	0,	NULL,	true,	3,	NULL	]
 [ "prepared_statements",	"created",	"timestamp",	7,	0,	NULL,	true,	4,	NULL	]
+[ "prepared_statements_args",	"statementid",	"int",	32,	0,	NULL,	true,	0,	NULL	]
+[ "prepared_statements_args",	"type",	"clob",	0,	0,	NULL,	true,	1,	NULL	]
+[ "prepared_statements_args",	"type_digits",	"int",	32,	0,	NULL,	true,	2,	NULL	]
+[ "prepared_statements_args",	"type_scale",	"int",	32,	0,	NULL,	true,	3,	NULL	]
+[ "prepared_statements_args",	"inout",	"tinyint",	8,	0,	NULL,	true,	4,	NULL	]
+[ "prepared_statements_args",	"number",	"int",	32,	0,	NULL,	true,	5,	NULL	]
+[ "prepared_statements_args",	"schema",	"clob",	0,	0,	NULL,	true,	6,	NULL	]
+[ "prepared_statements_args",	"table",	"clob",	0,	0,	NULL,	true,	7,	NULL	]
+[ "prepared_statements_args",	"column",	"clob",	0,	0,	NULL,	true,	8,	NULL	]
 [ "privilege_codes",	"privilege_code_id",	"int",	32,	0,	NULL,	false,	0,	NULL	]
 [ "privilege_codes",	"privilege_code_name",	"varchar",	40,	0,	NULL,	false,	1,	NULL	]
 [ "privileges",	"obj_id",	"int",	32,	0,	NULL,	true,	0,	NULL	]
@@ -1957,7 +1973,7 @@ drop function pcre_replace(string, string, string, string);
 [ "querylog_history",	"io",	"int",	32,	0,	NULL,	true,	15,	NULL	]
 [ "queue",	"tag",	"bigint",	64,	0,	NULL,	true,	0,	NULL	]
 [ "queue",	"sessionid",	"int",	32,	0,	NULL,	true,	1,	NULL	]
-[ "queue",	"user",	"clob",	0,	0,	NULL,	true,	2,	NULL	]
+[ "queue",	"username",	"clob",	0,	0,	NULL,	true,	2,	NULL	]
 [ "queue",	"started",	"timestamp",	7,	0,	NULL,	true,	3,	NULL	]
 [ "queue",	"status",	"clob",	0,	0,	NULL,	true,	4,	NULL	]
 [ "queue",	"query",	"clob",	0,	0,	NULL,	true,	5,	NULL	]
@@ -2011,7 +2027,7 @@ drop function pcre_replace(string, string, string, string);
 [ "sequences",	"cacheinc",	"bigint",	64,	0,	NULL,	true,	7,	NULL	]
 [ "sequences",	"cycle",	"boolean",	1,	0,	NULL,	true,	8,	NULL	]
 [ "sessions",	"sessionid",	"int",	32,	0,	NULL,	true,	0,	NULL	]
-[ "sessions",	"user",	"clob",	0,	0,	NULL,	true,	1,	NULL	]
+[ "sessions",	"username",	"clob",	0,	0,	NULL,	true,	1,	NULL	]
 [ "sessions",	"login",	"timestamp",	7,	0,	NULL,	true,	2,	NULL	]
 [ "sessions",	"idle",	"timestamp",	7,	0,	NULL,	true,	3,	NULL	]
 [ "sessions",	"optimizer",	"clob",	0,	0,	NULL,	true,	4,	NULL	]
@@ -2184,7 +2200,7 @@ drop function pcre_replace(string, string, string, string);
 % .s,	.f,	.,	.,	.f,	.fl,	.ft,	.f,	.f,	.f,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	. # table_name
 % name,	name,	system,	query,	mod,	language_name,	function_type_name,	side_effect,	varres,	vararg,	name0,	type0,	type_digits0,	type_scale0,	inout0,	name1,	type1,	type_digits1,	type_scale1,	inout1,	name2,	type2,	type_digits2,	type_scale2,	inout2,	name3,	type3,	type_digits3,	type_scale3,	inout3,	name4,	type4,	type_digits4,	type_scale4,	inout4,	name5,	type5,	type_digits5,	type_scale5,	inout5,	name6,	type6,	type_digits6,	type_scale6,	inout6,	name7,	type7,	type_digits7,	type_scale7,	inout7,	name8,	type8,	type_digits8,	type_scale8,	inout8,	name9,	type9,	type_digits9,	type_scale9,	inout9,	name10,	type10,	type_digits10,	type_scale10,	inout10,	name11,	type11,	type_digits11,	type_scale11,	inout11,	name12,	type12,	type_digits12,	type_scale12,	inout12,	name13,	type13,	type_digits13,	type_scale13,	inout13,	name14,	type14,	type_digits14,	type_scale14,	inout14,	name15,	type15,	type_digits15,	type_scale15,	inout15 # name
 % varchar,	varchar,	char,	varchar,	varchar,	varchar,	varchar,	boolean,	boolean,	boolean,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char # type
-% 8,	24,	6,	1362,	9,	10,	26,	5,	5,	5,	11,	14,	4,	1,	3,	16,	14,	4,	1,	3,	16,	14,	4,	1,	3,	27,	12,	4,	1,	3,	9,	7,	2,	1,	3,	14,	14,	4,	1,	3,	12,	14,	2,	1,	3,	11,	7,	2,	1,	3,	11,	7,	2,	1,	3,	8,	6,	2,	1,	3,	6,	6,	2,	1,	3,	6,	7,	1,	1,	3,	8,	6,	2,	1,	3,	6,	7,	1,	1,	3,	9,	7,	1,	1,	3,	6,	7,	1,	1,	3 # length
+% 8,	24,	6,	1362,	9,	10,	26,	5,	5,	5,	11,	14,	4,	1,	3,	16,	14,	4,	1,	3,	16,	14,	4,	1,	3,	27,	12,	4,	1,	3,	9,	9,	2,	1,	3,	14,	14,	4,	1,	3,	12,	14,	2,	1,	3,	11,	7,	2,	1,	3,	11,	7,	2,	1,	3,	8,	6,	2,	1,	3,	6,	6,	2,	1,	3,	6,	7,	1,	1,	3,	8,	6,	2,	1,	3,	6,	7,	1,	1,	3,	9,	7,	1,	1,	3,	6,	7,	1,	1,	3 # length
 [ "bam",	"bam_drop_file",	"SYSTEM",	"create procedure bam.bam_drop_file(file_id bigint, dbschema smallint) external name bam.bam_drop_file;",	"bam",	"MAL",	"Procedure",	true,	false,	false,	"file_id",	"bigint",	64,	0,	"in",	"dbschema",	"smallint",	16,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "bam",	"bam_export",	"SYSTEM",	"create procedure bam.bam_export(output_path string) external name bam.bam_export;",	"bam",	"MAL",	"Procedure",	true,	false,	false,	"output_path",	"clob",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "bam",	"bam_flag",	"SYSTEM",	"create function bam.bam_flag(flag smallint, name string) returns boolean external name bam.bam_flag;",	"bam",	"MAL",	"Scalar function",	false,	false,	false,	"result",	"boolean",	1,	0,	"out",	"flag",	"smallint",	16,	0,	"in",	"name",	"clob",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
@@ -2487,7 +2503,7 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"insert",	"SYSTEM",	"insert",	"str",	"Internal C",	"Scalar function",	false,	false,	false,	"res_0",	"clob",	0,	0,	"out",	"arg_1",	"clob",	0,	0,	"in",	"arg_2",	"int",	32,	0,	"in",	"arg_3",	"int",	32,	0,	"in",	"arg_4",	"clob",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"insert",	"SYSTEM",	"insert",	"str",	"Internal C",	"Scalar function",	false,	false,	false,	"res_0",	"varchar",	0,	0,	"out",	"arg_1",	"varchar",	0,	0,	"in",	"arg_2",	"int",	32,	0,	"in",	"arg_3",	"int",	32,	0,	"in",	"arg_4",	"varchar",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"internaltransform",	"SYSTEM",	"create function internaltransform(geom geometry, srid_src integer, srid_dest integer, proj4_src string, proj4_dest string) returns geometry external name geom.\"Transform\";",	"geom",	"MAL",	"Scalar function",	false,	false,	false,	"result",	"geometry",	0,	0,	"out",	"geom",	"geometry",	0,	0,	"in",	"srid_src",	"int",	32,	0,	"in",	"srid_dest",	"int",	32,	0,	"in",	"proj4_src",	"clob",	0,	0,	"in",	"proj4_dest",	"clob",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ "sys",	"isaurl",	"SYSTEM",	"create function isaurl(theurl url) returns bool external name url.\"isaURL\";",	"url",	"MAL",	"Scalar function",	false,	false,	false,	"result",	"boolean",	1,	0,	"out",	"theurl",	"url",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys",	"isaurl",	"SYSTEM",	"create function isaurl(theurl string) returns bool external name url.\"isaURL\";",	"url",	"MAL",	"Scalar function",	false,	false,	false,	"result",	"boolean",	1,	0,	"out",	"theurl",	"clob",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"isauuid",	"SYSTEM",	"create function sys.isauuid(s string) returns boolean external name uuid.\"isaUUID\";",	"uuid",	"MAL",	"Scalar function",	false,	false,	false,	"result",	"boolean",	1,	0,	"out",	"s",	"clob",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"isnull",	"SYSTEM",	"isnil",	"calc",	"Internal C",	"Scalar function",	false,	false,	false,	"res_0",	"boolean",	1,	0,	"out",	"arg_1",	"any",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"lag",	"SYSTEM",	"lag",	"sql",	"Internal C",	"Analytic function",	false,	false,	false,	"res_0",	"any",	0,	0,	"out",	"arg_1",	"any",	0,	0,	"in",	"arg_2",	"bigint",	64,	0,	"in",	"arg_3",	"any",	0,	0,	"in",	"arg_4",	"boolean",	1,	0,	"in",	"arg_5",	"boolean",	1,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
@@ -2710,6 +2726,8 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"pi",	"SYSTEM",	"pi",	"mmath",	"Internal C",	"Scalar function",	false,	false,	false,	"res_0",	"double",	53,	0,	"out",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"power",	"SYSTEM",	"pow",	"mmath",	"Internal C",	"Scalar function",	false,	false,	false,	"res_0",	"double",	53,	0,	"out",	"arg_1",	"double",	53,	0,	"in",	"arg_2",	"double",	53,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"power",	"SYSTEM",	"pow",	"mmath",	"Internal C",	"Scalar function",	false,	false,	false,	"res_0",	"real",	24,	0,	"out",	"arg_1",	"real",	24,	0,	"in",	"arg_2",	"real",	24,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys",	"prepared_statements",	"SYSTEM",	"create function sys.prepared_statements() returns table(\"sessionid\" int, \"username\" string, \"statementid\" int, \"statement\" string, \"created\" timestamp) external name sql.prepared_statements;",	"sql",	"MAL",	"Function returning a table",	true,	false,	false,	"sessionid",	"int",	32,	0,	"out",	"username",	"clob",	0,	0,	"out",	"statementid",	"int",	32,	0,	"out",	"statement",	"clob",	0,	0,	"out",	"created",	"timestamp",	7,	0,	"out",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys",	"prepared_statements_args",	"SYSTEM",	"create function sys.prepared_statements_args() returns table(\"statementid\" int, \"type\" string, \"type_digits\" int, \"type_scale\" int, \"inout\" tinyint, \"number\" int, \"schema\" string, \"table\" string, \"column\" string) external name sql.prepared_statements_args;",	"sql",	"MAL",	"Function returning a table",	true,	false,	false,	"statementid",	"int",	32,	0,	"out",	"type",	"clob",	0,	0,	"out",	"type_digits",	"int",	32,	0,	"out",	"type_scale",	"int",	32,	0,	"out",	"inout",	"tinyint",	8,	0,	"out",	"number",	"int",	32,	0,	"out",	"schema",	"clob",	0,	0,	"out",	"table",	"clob",	0,	0,	"out",	"column",	"clob",	0,	0,	"out",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"prod",	"SYSTEM",	"prod",	"aggr",	"Internal C",	"Aggregate function",	false,	false,	false,	"res",	"bigint",	64,	0,	"out",	"arg",	"bigint",	64,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"prod",	"SYSTEM",	"prod",	"aggr",	"Internal C",	"Aggregate function",	false,	false,	false,	"res",	"bigint",	64,	0,	"out",	"arg",	"int",	32,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"prod",	"SYSTEM",	"prod",	"aggr",	"Internal C",	"Aggregate function",	false,	false,	false,	"res",	"bigint",	64,	0,	"out",	"arg",	"smallint",	16,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
@@ -2755,7 +2773,7 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"querylog_empty",	"SYSTEM",	"create procedure sys.querylog_empty() external name sql.querylog_empty;",	"sql",	"MAL",	"Procedure",	true,	false,	false,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"querylog_enable",	"SYSTEM",	"create procedure sys.querylog_enable() external name sql.querylog_enable;",	"sql",	"MAL",	"Procedure",	true,	false,	false,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"querylog_enable",	"SYSTEM",	"create procedure sys.querylog_enable(threshold integer) external name sql.querylog_enable;",	"sql",	"MAL",	"Procedure",	true,	false,	false,	"threshold",	"int",	32,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ "sys",	"queue",	"SYSTEM",	"create function sys.queue() returns table(tag bigint, sessionid int, \"user\" string, started timestamp, status string, query string, progress int, workers int, memory int) external name sql.sysmon_queue;",	"sql",	"MAL",	"Function returning a table",	true,	false,	false,	"tag",	"bigint",	64,	0,	"out",	"sessionid",	"int",	32,	0,	"out",	"user",	"clob",	0,	0,	"out",	"started",	"timestamp",	7,	0,	"out",	"status",	"clob",	0,	0,	"out",	"query",	"clob",	0,	0,	"out",	"progress",	"int",	32,	0,	"out",	"workers",	"int",	32,	0,	"out",	"memory",	"int",	32,	0,	"out",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys",	"queue",	"SYSTEM",	"create function sys.queue() returns table(\"tag\" bigint, \"sessionid\" int, \"username\" string, \"started\" timestamp, \"status\" string, \"query\" string, \"progress\" int, \"workers\" int, \"memory\" int) external name sql.sysmon_queue;",	"sql",	"MAL",	"Function returning a table",	true,	false,	false,	"tag",	"bigint",	64,	0,	"out",	"sessionid",	"int",	32,	0,	"out",	"username",	"clob",	0,	0,	"out",	"started",	"timestamp",	7,	0,	"out",	"status",	"clob",	0,	0,	"out",	"query",	"clob",	0,	0,	"out",	"progress",	"int",	32,	0,	"out",	"workers",	"int",	32,	0,	"out",	"memory",	"int",	32,	0,	"out",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"radians",	"SYSTEM",	"create function radians(d double) returns double return d*pi()/180;",	"user",	"SQL",	"Scalar function",	false,	false,	false,	"result",	"double",	53,	0,	"out",	"d",	"double",	53,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"rand",	"SYSTEM",	"rand",	"mmath",	"Internal C",	"Scalar function",	true,	false,	false,	"res_0",	"int",	32,	0,	"out",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"rand",	"SYSTEM",	"sqlrand",	"mmath",	"Internal C",	"Scalar function",	true,	false,	false,	"res_0",	"int",	32,	0,	"out",	"arg_1",	"int",	32,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
@@ -3329,7 +3347,7 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"second",	"SYSTEM",	"sql_seconds",	"mtime",	"Internal C",	"Scalar function",	false,	false,	false,	"res_0",	"decimal",	9,	6,	"out",	"arg_1",	"timestamp",	7,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"second",	"SYSTEM",	"sql_seconds",	"mtime",	"Internal C",	"Scalar function",	false,	false,	false,	"res_0",	"decimal",	9,	6,	"out",	"arg_1",	"timestamptz",	7,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"second",	"SYSTEM",	"sql_seconds",	"mtime",	"Internal C",	"Scalar function",	false,	false,	false,	"res_0",	"decimal",	9,	6,	"out",	"arg_1",	"timetz",	7,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ "sys",	"sessions",	"SYSTEM",	"create function sys.sessions() returns table(\"sessionid\" int, \"user\" string, \"login\" timestamp, \"idle\" timestamp, \"optimizer\" string, \"sessiontimeout\" int, \"querytimeout\" int, \"workerlimit\" int, \"memorylimit\" int) external name sql.sessions;",	"sql",	"MAL",	"Function returning a table",	true,	false,	false,	"sessionid",	"int",	32,	0,	"out",	"user",	"clob",	0,	0,	"out",	"login",	"timestamp",	7,	0,	"out",	"idle",	"timestamp",	7,	0,	"out",	"optimizer",	"clob",	0,	0,	"out",	"sessiontimeout",	"int",	32,	0,	"out",	"querytimeout",	"int",	32,	0,	"out",	"workerlimit",	"int",	32,	0,	"out",	"memorylimit",	"int",	32,	0,	"out",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys",	"sessions",	"SYSTEM",	"create function sys.sessions() returns table(\"sessionid\" int, \"username\" string, \"login\" timestamp, \"idle\" timestamp, \"optimizer\" string, \"sessiontimeout\" int, \"querytimeout\" int, \"workerlimit\" int, \"memorylimit\" int) external name sql.sessions;",	"sql",	"MAL",	"Function returning a table",	true,	false,	false,	"sessionid",	"int",	32,	0,	"out",	"username",	"clob",	0,	0,	"out",	"login",	"timestamp",	7,	0,	"out",	"idle",	"timestamp",	7,	0,	"out",	"optimizer",	"clob",	0,	0,	"out",	"sessiontimeout",	"int",	32,	0,	"out",	"querytimeout",	"int",	32,	0,	"out",	"workerlimit",	"int",	32,	0,	"out",	"memorylimit",	"int",	32,	0,	"out",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"setmasklen",	"SYSTEM",	"create function \"setmasklen\" (p inet, mask int) returns inet external name inet.\"setmasklen\";",	"inet",	"MAL",	"Scalar function",	false,	false,	false,	"result",	"inet",	0,	0,	"out",	"p",	"inet",	0,	0,	"in",	"mask",	"int",	32,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"setmemorylimit",	"SYSTEM",	"create procedure sys.setmemorylimit(\"limit\" int) external name clients.setmemorylimit;",	"clients",	"MAL",	"Procedure",	true,	false,	false,	"limit",	"int",	32,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"setmemorylimit",	"SYSTEM",	"create procedure sys.setmemorylimit(\"sessionid\" int, \"limit\" int) external name clients.setmemorylimit;",	"clients",	"MAL",	"Procedure",	true,	false,	false,	"sessionid",	"int",	32,	0,	"in",	"limit",	"int",	32,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
@@ -4046,13 +4064,14 @@ drop function pcre_replace(string, string, string, string);
 % sys.s1,	sys.f1,	sys.s2,	sys.t2,	.dt # table_name
 % name,	name,	name,	name,	dependency_type_name # name
 % varchar,	varchar,	varchar,	varchar,	varchar # type
-% 3,	19,	3,	19,	4 # length
+% 3,	24,	3,	24,	4 # length
 [ "sys",	"env",	"sys",	"environment",	"VIEW"	]
 [ "sys",	"get_type",	"sys",	"geometry_columns",	"VIEW"	]
 [ "sys",	"has_m",	"sys",	"geometry_columns",	"VIEW"	]
 [ "sys",	"has_z",	"sys",	"geometry_columns",	"VIEW"	]
 [ "sys",	"optimizers",	"sys",	"optimizers",	"VIEW"	]
 [ "sys",	"prepared_statements",	"sys",	"prepared_statements",	"VIEW"	]
+[ "sys",	"prepared_statements_args",	"sys",	"prepared_statements_args",	"VIEW"	]
 [ "sys",	"querylog_calls",	"sys",	"querylog_calls",	"VIEW"	]
 [ "sys",	"querylog_catalog",	"sys",	"querylog_catalog",	"VIEW"	]
 [ "sys",	"querylog_calls",	"sys",	"querylog_history",	"VIEW"	]
@@ -4668,7 +4687,6 @@ drop function pcre_replace(string, string, string, string);
 [ "url",	"url",	"sys",	"getuser",	"TYPE"	]
 [ "inet",	"inet",	"sys",	"host",	"TYPE"	]
 [ "inet",	"inet",	"sys",	"hostmask",	"TYPE"	]
-[ "url",	"url",	"sys",	"isaurl",	"TYPE"	]
 [ "inet",	"inet",	"sys",	"left_shift",	"TYPE"	]
 [ "inet",	"inet",	"sys",	"left_shift_assign",	"TYPE"	]
 [ "inet",	"inet",	"sys",	"masklen",	"TYPE"	]
@@ -4864,6 +4882,7 @@ drop function pcre_replace(string, string, string, string);
 [ "objects",	"public",	"SELECT",	NULL,	0	]
 [ "pg",	"public",	"SELECT",	"monetdb",	0	]
 [ "prepared_statements",	"public",	"SELECT",	"monetdb",	0	]
+[ "prepared_statements_args",	"public",	"SELECT",	"monetdb",	0	]
 [ "privilege_codes",	"public",	"SELECT",	"monetdb",	0	]
 [ "privileges",	"public",	"SELECT",	NULL,	0	]
 [ "queue",	"public",	"SELECT",	"monetdb",	0	]
@@ -4892,7 +4911,7 @@ drop function pcre_replace(string, string, string, string);
 % sys.f,	sys.a,	.pc,	.g,	.p # table_name
 % name,	name,	privilege_code_name,	name,	grantable # name
 % varchar,	varchar,	varchar,	varchar,	int # type
-% 20,	6,	7,	7,	1 # length
+% 24,	6,	7,	7,	1 # length
 [ "abbrev",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "alpha",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "bam_drop_file",	"public",	"EXECUTE",	"monetdb",	0	]
@@ -4996,6 +5015,7 @@ drop function pcre_replace(string, string, string, string);
 [ "number",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "output",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "prepared_statements",	"public",	"EXECUTE",	"monetdb",	0	]
+[ "prepared_statements_args",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "quantile",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "quantile",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "quantile",	"public",	"EXECUTE",	"monetdb",	0	]
@@ -5275,11 +5295,14 @@ drop function pcre_replace(string, string, string, string);
 [ "ALL"	]
 [ "ALTER"	]
 [ "ALWAYS"	]
+[ "ANALYZE"	]
 [ "AND"	]
 [ "ANY"	]
 [ "ASC"	]
 [ "ASYMMETRIC"	]
+[ "AT"	]
 [ "ATOMIC"	]
+[ "AUTHORIZATION"	]
 [ "AUTO_INCREMENT"	]
 [ "BEFORE"	]
 [ "BEGIN"	]
@@ -5290,16 +5313,20 @@ drop function pcre_replace(string, string, string, string);
 [ "BINARY"	]
 [ "BLOB"	]
 [ "BY"	]
+[ "CACHE"	]
 [ "CALL"	]
 [ "CASCADE"	]
 [ "CASE"	]
 [ "CAST"	]
+[ "CENTURY"	]
 [ "CHAIN"	]
 [ "CHAR"	]
 [ "CHARACTER"	]
 [ "CHECK"	]
+[ "CLIENT"	]
 [ "CLOB"	]
 [ "COALESCE"	]
+[ "COLUMN"	]
 [ "COMMENT"	]
 [ "COMMIT"	]
 [ "COMMITTED"	]
@@ -5317,17 +5344,26 @@ drop function pcre_replace(string, string, string, string);
 [ "CURRENT_TIME"	]
 [ "CURRENT_TIMESTAMP"	]
 [ "CURRENT_USER"	]
+[ "CYCLE"	]
+[ "DATA"	]
+[ "DATE"	]
 [ "DAY"	]
 [ "DEALLOCATE"	]
+[ "DEBUG"	]
 [ "DEC"	]
+[ "DECADE"	]
 [ "DECIMAL"	]
 [ "DECLARE"	]
 [ "DEFAULT"	]
 [ "DELETE"	]
 [ "DELIMITERS"	]
 [ "DESC"	]
+[ "DIAGNOSTICS"	]
+[ "DISTINCT"	]
 [ "DO"	]
 [ "DOUBLE"	]
+[ "DOW"	]
+[ "DOY"	]
 [ "DROP"	]
 [ "EACH"	]
 [ "EFFORT"	]
@@ -5339,10 +5375,14 @@ drop function pcre_replace(string, string, string, string);
 [ "EVERY"	]
 [ "EXCEPT"	]
 [ "EXCLUDE"	]
+[ "EXEC"	]
+[ "EXECUTE"	]
 [ "EXISTS"	]
+[ "EXPLAIN"	]
 [ "EXTERNAL"	]
 [ "EXTRACT"	]
 [ "FALSE"	]
+[ "FIRST"	]
 [ "FLOAT"	]
 [ "FOLLOWING"	]
 [ "FOR"	]
@@ -5350,11 +5390,13 @@ drop function pcre_replace(string, string, string, string);
 [ "FROM"	]
 [ "FULL"	]
 [ "FUNCTION"	]
+[ "FWF"	]
 [ "GENERATED"	]
 [ "GLOBAL"	]
 [ "GRANT"	]
 [ "GROUP"	]
 [ "GROUPING"	]
+[ "GROUPS"	]
 [ "HAVING"	]
 [ "HOUR"	]
 [ "HUGEINT"	]
@@ -5362,44 +5404,59 @@ drop function pcre_replace(string, string, string, string);
 [ "IF"	]
 [ "ILIKE"	]
 [ "IN"	]
+[ "INCREMENT"	]
 [ "INDEX"	]
 [ "INNER"	]
 [ "INSERT"	]
 [ "INT"	]
 [ "INTEGER"	]
 [ "INTERSECT"	]
+[ "INTERVAL"	]
 [ "INTO"	]
 [ "IS"	]
 [ "ISOLATION"	]
 [ "JOIN"	]
+[ "KEY"	]
+[ "LANGUAGE"	]
+[ "LARGE"	]
+[ "LAST"	]
+[ "LATERAL"	]
 [ "LEFT"	]
+[ "LEVEL"	]
 [ "LIKE"	]
 [ "LIMIT"	]
+[ "LOADER"	]
 [ "LOCAL"	]
 [ "LOCALTIME"	]
 [ "LOCALTIMESTAMP"	]
 [ "LOCKED"	]
+[ "MATCH"	]
+[ "MATCHED"	]
+[ "MAXVALUE"	]
 [ "MEDIUMINT"	]
 [ "MERGE"	]
 [ "MINUTE"	]
+[ "MINVALUE"	]
 [ "MONTH"	]
+[ "NAME"	]
 [ "NATURAL"	]
 [ "NEW"	]
 [ "NEXT"	]
-[ "NOCYCLE"	]
-[ "NOMAXVALUE"	]
-[ "NOMINVALUE"	]
+[ "NO"	]
 [ "NOT"	]
 [ "NOW"	]
 [ "NULL"	]
 [ "NULLIF"	]
+[ "NULLS"	]
 [ "NUMERIC"	]
+[ "OBJECT"	]
 [ "OF"	]
 [ "OFFSET"	]
 [ "OLD"	]
 [ "ON"	]
 [ "ONLY"	]
 [ "OPTION"	]
+[ "OPTIONS"	]
 [ "OR"	]
 [ "ORDER"	]
 [ "OTHERS"	]
@@ -5407,22 +5464,30 @@ drop function pcre_replace(string, string, string, string);
 [ "OVER"	]
 [ "PARTIAL"	]
 [ "PARTITION"	]
+[ "PASSWORD"	]
+[ "PLAN"	]
 [ "POSITION"	]
 [ "PRECEDING"	]
+[ "PRECISION"	]
+[ "PREP"	]
+[ "PREPARE"	]
 [ "PRESERVE"	]
 [ "PRIMARY"	]
 [ "PRIVILEGES"	]
 [ "PROCEDURE"	]
 [ "PUBLIC"	]
+[ "QUARTER"	]
 [ "RANGE"	]
 [ "READ"	]
 [ "REAL"	]
 [ "RECORDS"	]
 [ "REFERENCES"	]
 [ "REFERENCING"	]
+[ "RELEASE"	]
 [ "REMOTE"	]
 [ "RENAME"	]
 [ "REPEATABLE"	]
+[ "REPLACE"	]
 [ "REPLICA"	]
 [ "RESTART"	]
 [ "RESTRICT"	]
@@ -5435,19 +5500,25 @@ drop function pcre_replace(string, string, string, string);
 [ "ROWS"	]
 [ "SAMPLE"	]
 [ "SAVEPOINT"	]
+[ "SCHEMA"	]
 [ "SECOND"	]
+[ "SEED"	]
 [ "SELECT"	]
 [ "SEQUENCE"	]
 [ "SERIAL"	]
 [ "SERIALIZABLE"	]
+[ "SERVER"	]
+[ "SESSION"	]
 [ "SESSION_USER"	]
 [ "SET"	]
 [ "SETS"	]
 [ "SIMPLE"	]
+[ "SIZE"	]
 [ "SMALLINT"	]
 [ "SOME"	]
 [ "SPLIT_PART"	]
 [ "START"	]
+[ "STATEMENT"	]
 [ "STDIN"	]
 [ "STDOUT"	]
 [ "STORAGE"	]
@@ -5455,18 +5526,27 @@ drop function pcre_replace(string, string, string, string);
 [ "STRING"	]
 [ "SUBSTRING"	]
 [ "SYMMETRIC"	]
+[ "TABLE"	]
+[ "TEMP"	]
+[ "TEMPORARY"	]
+[ "TEXT"	]
 [ "THEN"	]
 [ "TIES"	]
+[ "TIME"	]
+[ "TIMESTAMP"	]
 [ "TINYINT"	]
 [ "TO"	]
+[ "TRACE"	]
 [ "TRANSACTION"	]
 [ "TRIGGER"	]
 [ "TRUE"	]
 [ "TRUNCATE"	]
+[ "TYPE"	]
 [ "UNBOUNDED"	]
 [ "UNCOMMITTED"	]
 [ "UNENCRYPTED"	]
 [ "UNION"	]
+[ "UNIONJOIN"	]
 [ "UNIQUE"	]
 [ "UPDATE"	]
 [ "USER"	]
@@ -5475,6 +5555,7 @@ drop function pcre_replace(string, string, string, string);
 [ "VARCHAR"	]
 [ "VARYING"	]
 [ "VIEW"	]
+[ "WEEK"	]
 [ "WHEN"	]
 [ "WHERE"	]
 [ "WHILE"	]
@@ -5496,6 +5577,8 @@ drop function pcre_replace(string, string, string, string);
 [ "XMLSCHEMA"	]
 [ "XMLTEXT"	]
 [ "XMLVALIDATE"	]
+[ "YEAR"	]
+[ "ZONE"	]
 #select table_type_id, table_type_name from sys.table_types order by table_type_id, table_type_name;
 % sys.table_types,	sys.table_types # table_name
 % table_type_id,	table_type_name # name

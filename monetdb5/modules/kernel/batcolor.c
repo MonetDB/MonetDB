@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -52,7 +52,8 @@ str CLRbat##NAME(bat *ret, const bat *l)								\
 			bn->tnil = true;											\
 		} else if ((msg = FUNC(&y,x)) != MAL_SUCCEED)					\
 			goto bunins_failed;											\
-		APP;															\
+		if ((APP) != GDK_SUCCEED)										\
+			goto bunins_failed;											\
 	}																	\
 	bn->theap.dirty |= BATcount(bn) > 0;								\
 	*ret = bn->batCacheid;												\
@@ -136,7 +137,8 @@ str CLRbat##NAME(bat *ret, const bat *l, const bat *bid2, const bat *bid3) \
 			bn->tnil = true;											\
 		} else if ((msg = FUNC(&y,x,x2,x3)) != MAL_SUCCEED)				\
 			goto bunins_failed;											\
-		bunfastappTYPE(color, bn, &y);									\
+		if (bunfastappTYPE(color, bn, &y) != GDK_SUCCEED)				\
+			goto bunins_failed;											\
 	}																	\
 	bn->theap.dirty |= BATcount(bn) > 0;								\
 	*ret = bn->batCacheid;												\

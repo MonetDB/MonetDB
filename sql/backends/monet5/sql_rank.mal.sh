@@ -2,7 +2,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
 
 sed '/^$/q' $0			# copy copyright from this file
 
@@ -371,18 +371,3 @@ comment "return the average of groups";
 
 EOF
 done
-
-cat <<EOF
-command aggr.exist(b:bat[:any_2], h:any_1):bit
-address ALGexist;
-
-command aggr.exist(b:bat[:any_2]):bit
-address SQLexist;
-
-pattern aggr.exist(v:any_2):bit
-address SQLexist_val;
-
-command aggr.subexist(b:bat[:any_2], g:bat[:oid], e:bat[:oid], no_nil:bit):bat[:bit]
-address SQLsubexist;
-
-EOF

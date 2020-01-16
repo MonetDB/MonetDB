@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -16,8 +16,6 @@
  */
 #ifndef _TABLET_IO2_H_
 #define _TABLET_IO2_H_
-
-/* #define _DEBUG_TABLET_ */
 
 #include "gdk.h"
 #include "mal_exception.h"

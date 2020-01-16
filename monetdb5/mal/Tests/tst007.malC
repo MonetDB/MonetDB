@@ -18,7 +18,7 @@ exit	(h,t);
 	
 #een do-while loop
 	entry:= true;
-barrier M:= entry_or_exittest;
+barrier M:= entry_or_exit;
 	entry:= false;
 	# rest
 redo	M;

@@ -33,12 +33,12 @@ stdout of test 'sqlitelogictest-having-not-null-not-in.Bug-6557` in directory 's
 % 1 # length
 #SELECT DISTINCT * FROM tab0 AS cor0 GROUP BY cor0.col1, cor0.col2, cor0.col0;
 % sys.cor0,	sys.cor0,	sys.cor0 # table_name
-% col1,	col2,	col0 # name
+% col0,	col1,	col2 # name
 % int,	int,	int # type
 % 2,	2,	2 # length
-[ 0,	38,	83	]
-[ 0,	79,	26	]
-[ 81,	24,	43	]
+[ 83,	0,	38	]
+[ 26,	0,	79	]
+[ 43,	81,	24	]
 #SELECT CAST(SUM(col0) AS BIGINT) FROM tab0 WHERE + + col0 BETWEEN NULL AND + col2;
 % sys.%1 # table_name
 % %1 # name

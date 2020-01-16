@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -39,6 +39,7 @@ BATunique(BAT *b, BAT *s)
 	int (*cmp)(const void *, const void *);
 	bat parent;
 	struct canditer ci;
+	PROPrec *prop;
 
 	BATcheck(b, "BATunique", NULL);
 	cnt = canditer_init(&ci, b, s);
@@ -46,7 +47,7 @@ BATunique(BAT *b, BAT *s)
 	if (b->tkey || cnt <= 1 || BATtdense(b)) {
 		/* trivial: already unique */
 		bn = canditer_slice(&ci, 0, ci.ncand);
-		ALGODEBUG fprintf(stderr, "#BATunique(b=" ALGOBATFMT
+		TRC_DEBUG(ALGO, "BATunique(b=" ALGOBATFMT
 				  ",s=" ALGOOPTBATFMT ")=" ALGOOPTBATFMT
 				  ": trivial case: "
 				  "already unique, slice candidates\n",
@@ -59,7 +60,7 @@ BATunique(BAT *b, BAT *s)
 	    (b->ttype == TYPE_void && is_oid_nil(b->tseqbase))) {
 		/* trivial: all values are the same */
 		bn = BATdense(0, ci.seq, 1);
-		ALGODEBUG fprintf(stderr, "#BATunique(b=" ALGOBATFMT ",s="
+		TRC_DEBUG(ALGO, "BATunique(b=" ALGOBATFMT ",s="
 				  ALGOOPTBATFMT ")=" ALGOOPTBATFMT
 				  ": trivial case: all equal\n",
 				  ALGOBATPAR(b), ALGOOPTBATPAR(s),
@@ -69,7 +70,10 @@ BATunique(BAT *b, BAT *s)
 
 	assert(b->ttype != TYPE_void);
 
-	bn = COLnew(0, TYPE_oid, 1024, TRANSIENT);
+	if (s == NULL && (prop = BATgetprop(b, GDK_NUNIQUE)) != NULL)
+		bn = COLnew(0, TYPE_oid, prop->v.val.oval, TRANSIENT);
+	else
+		bn = COLnew(0, TYPE_oid, 1024, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 	vals = Tloc(b, 0);
@@ -83,22 +87,22 @@ BATunique(BAT *b, BAT *s)
 
 	if (BATordered(b) || BATordered_rev(b)) {
 		const void *prev = NULL;
-
-		ALGODEBUG fprintf(stderr, "#BATunique(b=" ALGOBATFMT ",s="
+		TRC_DEBUG(ALGO, "BATunique(b=" ALGOBATFMT ",s="
 				  ALGOOPTBATFMT "): (reverse) sorted\n",
 				  ALGOBATPAR(b), ALGOOPTBATPAR(s));
 		for (i = 0; i < ci.ncand; i++) {
 			o = canditer_next(&ci);
 			v = VALUE(o - b->hseqbase);
 			if (prev == NULL || (*cmp)(v, prev) != 0) {
-				bunfastappTYPE(oid, bn, &o);
+				if (bunfastappTYPE(oid, bn, &o) != GDK_SUCCEED)
+					goto bunins_failed;
 			}
 			prev = v;
 		}
 	} else if (ATOMbasetype(b->ttype) == TYPE_bte) {
 		unsigned char val;
 
-		ALGODEBUG fprintf(stderr, "#BATunique(b=" ALGOBATFMT ",s="
+		TRC_DEBUG(ALGO, "BATunique(b=" ALGOBATFMT ",s="
 				  ALGOOPTBATFMT "): byte sized atoms\n",
 				  ALGOBATPAR(b), ALGOOPTBATPAR(s));
 		assert(vars == NULL);
@@ -110,7 +114,8 @@ BATunique(BAT *b, BAT *s)
 			val = ((const unsigned char *) vals)[o - b->hseqbase];
 			if (!(seen[val >> 4] & (1U << (val & 0xF)))) {
 				seen[val >> 4] |= 1U << (val & 0xF);
-				bunfastappTYPE(oid, bn, &o);
+				if (bunfastappTYPE(oid, bn, &o) != GDK_SUCCEED)
+					goto bunins_failed;
 				if (bn->batCount == 256) {
 					/* there cannot be more than
 					 * 256 distinct values */
@@ -123,7 +128,7 @@ BATunique(BAT *b, BAT *s)
 	} else if (ATOMbasetype(b->ttype) == TYPE_sht) {
 		unsigned short val;
 
-		ALGODEBUG fprintf(stderr, "#BATunique(b=" ALGOBATFMT ",s="
+		TRC_DEBUG(ALGO, "BATunique(b=" ALGOBATFMT ",s="
 				  ALGOOPTBATFMT "): short sized atoms\n",
 				  ALGOBATPAR(b), ALGOOPTBATPAR(s));
 		assert(vars == NULL);
@@ -135,7 +140,8 @@ BATunique(BAT *b, BAT *s)
 			val = ((const unsigned short *) vals)[o - b->hseqbase];
 			if (!(seen[val >> 4] & (1U << (val & 0xF)))) {
 				seen[val >> 4] |= 1U << (val & 0xF);
-				bunfastappTYPE(oid, bn, &o);
+				if (bunfastappTYPE(oid, bn, &o) != GDK_SUCCEED)
+					goto bunins_failed;
 				if (bn->batCount == 65536) {
 					/* there cannot be more than
 					 * 65536 distinct values */
@@ -156,7 +162,7 @@ BATunique(BAT *b, BAT *s)
 		/* we already have a hash table on b, or b is
 		 * persistent and we could create a hash table, or b
 		 * is a view on a bat that already has a hash table */
-		ALGODEBUG fprintf(stderr, "#BATunique(b=" ALGOBATFMT ",s="
+		TRC_DEBUG(ALGO, "BATunique(b=" ALGOBATFMT ",s="
 				  ALGOOPTBATFMT "): use existing hash\n",
 				  ALGOBATPAR(b), ALGOOPTBATPAR(s));
 		seq = b->hseqbase;
@@ -189,17 +195,17 @@ BATunique(BAT *b, BAT *s)
 				}
 			}
 			if (hb == HASHnil(hs) || hb < lo) {
-				bunfastappTYPE(oid, bn, &o);
+				if (bunfastappTYPE(oid, bn, &o) != GDK_SUCCEED)
+					goto bunins_failed;
 			}
 		}
 	} else {
 		BUN prb;
 		BUN p;
 		BUN mask;
-		int len;
 
 		GDKclrerr();	/* not interested in BAThash errors */
-		ALGODEBUG fprintf(stderr, "#BATunique(b=" ALGOBATFMT ",s="
+		TRC_DEBUG(ALGO, "BATunique(b=" ALGOBATFMT ",s="
 				  ALGOOPTBATFMT "): create partial hash\n",
 				  ALGOBATPAR(b), ALGOOPTBATPAR(s));
 		nme = BBP_physical(b->batCacheid);
@@ -221,9 +227,9 @@ BATunique(BAT *b, BAT *s)
 			GDKerror("BATunique: cannot allocate hash table\n");
 			goto bunins_failed;
 		}
-		len = snprintf(hs->heap.filename, sizeof(hs->heap.filename), "%s.hash%d", nme, THRgettid());
-		if (len == -1 || len >= (int) sizeof(hs->heap.filename) ||
-		    HASHnew(hs, b->ttype, BUNlast(b), mask, BUN_NONE) != GDK_SUCCEED) {
+		if (snprintf(hs->heaplink.filename, sizeof(hs->heaplink.filename), "%s.thshunil%x", nme, THRgettid()) >= (int) sizeof(hs->heaplink.filename) ||
+		    snprintf(hs->heapbckt.filename, sizeof(hs->heapbckt.filename), "%s.thshunib%x", nme, THRgettid()) >= (int) sizeof(hs->heapbckt.filename) ||
+		    HASHnew(hs, b->ttype, BUNlast(b), mask, BUN_NONE, false) != GDK_SUCCEED) {
 			GDKfree(hs);
 			hs = NULL;
 			GDKerror("BATunique: cannot allocate hash table\n");
@@ -241,13 +247,15 @@ BATunique(BAT *b, BAT *s)
 			}
 			if (hb == HASHnil(hs)) {
 				p = o - b->hseqbase;
-				bunfastappTYPE(oid, bn, &o);
+				if (bunfastappTYPE(oid, bn, &o) != GDK_SUCCEED)
+					goto bunins_failed;
 				/* enter into hash table */
 				HASHputlink(hs, p, HASHget(hs, prb));
 				HASHput(hs, prb, p);
 			}
 		}
-		HEAPfree(&hs->heap, true);
+		HEAPfree(&hs->heaplink, true);
+		HEAPfree(&hs->heapbckt, true);
 		GDKfree(hs);
 	}
 
@@ -265,7 +273,7 @@ BATunique(BAT *b, BAT *s)
 		b->batDirtydesc = true;
 	}
 	bn = virtualize(bn);
-	ALGODEBUG fprintf(stderr, "#BATunique(b=" ALGOBATFMT ","
+	TRC_DEBUG(ALGO, "BATunique(b=" ALGOBATFMT ","
 			  "s=" ALGOOPTBATFMT ")="
 			  ALGOBATFMT "\n",
 			  ALGOBATPAR(b), ALGOOPTBATPAR(s),
@@ -276,7 +284,8 @@ BATunique(BAT *b, BAT *s)
 	if (seen)
 		GDKfree(seen);
 	if (hs != NULL && hs != b->thash) {
-		HEAPfree(&hs->heap, true);
+		HEAPfree(&hs->heaplink, true);
+		HEAPfree(&hs->heapbckt, true);
 		GDKfree(hs);
 	}
 	BBPreclaim(bn);

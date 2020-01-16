@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -137,7 +137,7 @@ VIEWcreate(oid seq, BAT *b)
 		GDKfree(bn);
 		return NULL;
 	}
-	ALGODEBUG fprintf(stderr, "#VIEWcreate(" ALGOBATFMT ")=" ALGOBATFMT "\n", ALGOBATPAR(b), ALGOBATPAR(bn));
+	TRC_DEBUG(ALGO, "VIEWcreate(" ALGOBATFMT ")=" ALGOBATFMT "\n", ALGOBATPAR(b), ALGOBATPAR(bn));
 	return bn;
 }
 
@@ -164,8 +164,7 @@ BATmaterialize(BAT *b)
 	p = 0;
 	q = BUNlast(b);
 	assert(cnt >= q - p);
-	ALGODEBUG fprintf(stderr, "#BATmaterialize(" ALGOBATFMT ")\n",
-			  ALGOBATPAR(b));
+	TRC_DEBUG(ALGO, "BATmaterialize(" ALGOBATFMT ")\n", ALGOBATPAR(b)); 
 
 	if (tt != TYPE_void) {
 		/* no voids */

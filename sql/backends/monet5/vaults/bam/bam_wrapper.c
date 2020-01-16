@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -1325,14 +1325,15 @@ check_alignment_buffers(bam_wrapper *bw, alignment * alig, int qname_size,
 		alig->qual = tmp;
 	}
 
-#ifdef BAM_DEBUG
-	if (resized[0])
-		TO_LOG("<bam_loader> Increased size of qname buffer to %d characters\n", alig->qname_size);
-	if (resized[1])
-		TO_LOG("<bam_loader> Increased size of cigar buffer to %d characters\n", alig->cigar_size);
-	if (resized[2])
-		TO_LOG("<bam_loader> Increased size of seq and qual buffers to %d characters\n", alig->seq_size);
-#endif
+	TRC_DEBUG_IF(BAM_)
+	{
+		if (resized[0])
+			TRC_DEBUG_ENDIF(BAM_, "Increased size of qname buffer to: %d characters\n", alig->qname_size);
+		if (resized[1])
+			TRC_DEBUG_ENDIF(BAM_, "Increased size of cigar buffer to: %d characters\n", alig->cigar_size);
+		if (resized[2])
+			TRC_DEBUG_ENDIF(BAM_, "Increased size of seq and qual buffers to: %d characters\n", alig->seq_size);
+	}
 
 	return (alig->cigar != NULL && alig->seq != NULL
 		&& alig->qual != NULL);
@@ -1357,7 +1358,7 @@ check_qname_buffer(alignment * alig, int cur_size) {
 		if (tmp == NULL)
 			return 0;
 		alig->qname = tmp;
-		TO_LOG("<bam_loader> Increased size of qname buffer to %d characters\n", alig->qname_size);
+		TRC_DEBUG(BAM_, "Increased size of qname buffer to: %d characters\n", alig->qname_size);
 	}
 	return alig->qname != NULL;
 }
@@ -1379,7 +1380,7 @@ check_rname_rnext_buffers(alignment * alig, int cur_size) {
 		if (tmp == NULL)
 			return 0;
 		alig->rnext = tmp;
-		TO_LOG("<bam_loader> Increased size of cigar buffer to %d characters\n", alig->rname_size);
+		TRC_DEBUG(BAM_, "Increased size of cigar buffer to: %d characters\n", alig->rname_size);
 	}
 	return alig->rname != NULL && alig->rnext != NULL;
 }
@@ -1397,7 +1398,7 @@ check_cigar_buffer(alignment * alig, int cur_size) {
 		if (tmp == NULL)
 			return 0;
 		alig->cigar = tmp;
-		TO_LOG("<bam_loader> Increased size of cigar buffer to %d characters\n", alig->cigar_size);
+		TRC_DEBUG(BAM_, "Increased size of cigar buffer to: %d characters\n", alig->cigar_size);
 	}
 	return alig->cigar != NULL;
 }
@@ -1418,7 +1419,7 @@ check_seq_qual_buffers(alignment * alig, int cur_size) {
 		if (tmp == NULL)
 			return 0;
 		alig->qual = tmp;
-		TO_LOG("<bam_loader> Increased size of seq and qual buffers to %d characters\n", alig->seq_size);
+		TRC_DEBUG(BAM_, "Increased size of seq and qual buffers to: %d characters\n", alig->seq_size);
 	}
 	return alig->seq != NULL && alig->qual != NULL;
 }
@@ -1435,7 +1436,7 @@ check_aux_buffer(alignment * alig, int cur_size) {
 		if (tmp == NULL)
 			return 0;
 		alig->aux = tmp;
-		TO_LOG("<bam_loader> Increased size of aux buffer to %d characters\n", alig->aux_size);
+		TRC_DEBUG(BAM_, "Increased size of aux buffer to: %d characters\n", alig->aux_size);
 	}
 	return alig->aux != NULL;
 }
@@ -2318,7 +2319,7 @@ process_alignments(bam_wrapper * bw, bit * some_thread_failed)
 						}
 					}
 					nr_aligs = new_nr_aligs;
-					TO_LOG("<bam_loader> Increased size of alignment buffer to %d alignments\n", nr_aligs);
+					TRC_DEBUG(BAM_, "<bam_loader> Increased size of alignment buffer to: %d alignments\n", nr_aligs);
 				}
 			}
 		}

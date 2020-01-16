@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -933,7 +933,12 @@ ptrFromStr(const char *src, size_t *len, ptr **dst, bool external)
 	return (ssize_t) (p - src);
 }
 
+#ifdef _MSC_VER
+/* Windows doesn't put 0x in front whereas Linux does, so we do it ourselves */
+atomtostr(ptr, "0x%p", )
+#else
 atomtostr(ptr, "%p", )
+#endif
 
 #if SIZEOF_VOID_P == SIZEOF_INT
 atom_io(ptr, Int, int)

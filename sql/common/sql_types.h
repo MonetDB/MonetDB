@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #ifndef SQL_TYPES_H
@@ -76,6 +76,6 @@ extern char *sql_func_imp(sql_func *f);
 extern char *sql_func_mod(sql_func *f);
 extern int is_sqlfunc(sql_func *f);
 
-extern void types_init(sql_allocator *sa, int debug);
+extern void types_init(sql_allocator *sa);
 
 #endif /* SQL_TYPES_H */

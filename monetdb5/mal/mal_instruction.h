@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #ifndef _MAL_INSTR_H
@@ -20,7 +20,6 @@
 #endif
 
 #define DEBUG_MAL_INSTR
-/* #define DEBUG_REDUCE */
 #define MAXARG 8				/* was 4 BEWARE the code depends on this knowledge, where? */
 #define STMT_INCREMENT 4
 #define MAL_VAR_WINDOW  32

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 %{
@@ -93,7 +93,6 @@ UTF8_strlen(const char *val)
 	return pos;
 }
 
-
 static char *
 uescape_xform(char *restrict s, const char *restrict esc)
 {
@@ -181,202 +180,202 @@ int yydebug=1;
 */
 %}
 
-	/* symbolic tokens */
+/* symbolic tokens */
 %type <sym>
-	alter_statement
-	assignment
-	create_statement
-	drop_statement
-	declare_statement
-	comment_on_statement
-	catalog_object
-	set_statement
-	sql
-	sqlstmt
-	with_query
-	schema
-	opt_schema_default_char_set
-	opt_path_specification
-	path_specification
-	schema_element
-	delete_stmt
-	truncate_stmt
-	merge_stmt
-	copyfrom_stmt
-	table_def
-	view_def
-	query_expression_def
-	query_expression
-	with_query_expression
-	role_def
-	type_def
-	func_def
-	index_def
-	seq_def
-	opt_seq_param
-	opt_alt_seq_param
-	opt_seq_common_param
-	all_or_any_predicate
-	like_exp
-	between_predicate
-	comparison_predicate
-	opt_from_clause
-	opt_window_clause
-	existence_test
-	in_predicate
-	insert_stmt
-	transaction_statement
-	_transaction_stmt
-	like_predicate
-	opt_where_clause
-	opt_having_clause
-	opt_group_by_clause
-	predicate
-	filter_exp
-	joined_table
-	join_spec
-	search_condition
-	opt_search_condition
-	and_exp
-	update_statement
-	update_stmt
-	control_statement
-	select_statement_single_row
-	call_statement
-	call_procedure_statement
-	routine_invocation
-	return_statement
-	return_value
-	case_statement
-	when_statement
-	when_search_statement
-	if_statement
-	while_statement
-	simple_select
-	select_no_parens
-	select_no_parens_orderby
-	subquery
-	subquery_with_orderby
-	test_for_null
-	values_or_query_spec
-	grant
-	revoke
-	operation
-	table_content_source
-	table_element
 	add_table_element
+	aggr_ref
+	all_or_any_predicate
+	alter_statement
 	alter_table_element
-	drop_table_element
-	table_constraint
-	table_constraint_type
-	column_def
-	column_options
-	column_option
+	and_exp
+	assign_default
+	assignment
+	atom
+	between_predicate
+	call_procedure_statement
+	call_statement
+	case_exp
+	case_opt_else
+	case_scalar_exp
+	case_statement
+	cast_exp
+	cast_value
+	catalog_object
 	column_constraint
 	column_constraint_type
-	generated_column
-	like_table
-	domain_constraint_type 
-	opt_order_by_clause
+	column_def
+	column_exp
+	column_option
+	column_options
+	comment_on_statement
+	comparison_predicate
+	control_statement
+	copyfrom_stmt
+	create_statement
+	datetime_funcs
+	dealloc
+	declare_statement
 	default
 	default_value
-	assign_default
-	cast_value
-	aggr_ref
-	var_ref
-	func_ref
-	datetime_funcs
-	string_funcs
-	scalar_exp
-	pred_exp
-	simple_scalar_exp
-	value_exp
-	column_exp
-	atom
-	insert_atom
-	simple_atom
-	value
-	literal
-	null
-	interval_expression
-	ordering_spec
-	table_ref
-	opt_limit
-	opt_offset
-	opt_sample
-	opt_seed
-	param
-	case_exp
-	case_scalar_exp
-	cast_exp
-	when_value
-	when_search
-	case_opt_else
-	table_name
-	opt_table_name
-	object_name
+	delete_stmt
+	domain_constraint_type 
+	drop_statement
+	drop_table_element
 	exec
 	exec_ref
-	dealloc
-	trigger_def
-	trigger_event
-	opt_when
-	procedure_statement
-	trigger_procedure_statement
-	if_opt_else
-	func_data_type
-	with_list_element
-	window_definition
-	window_function
-	window_function_type
-	window_partition_clause
-	window_order_clause
-	window_frame_clause
-	window_bound
-	window_frame_start
-	window_following_bound
-	XML_value_function
-	XML_comment
-  	XML_concatenation
-  	XML_document
-  	XML_element
-  	XML_forest
-  	XML_parse
-  	XML_PI
-  	XML_query
-  	XML_text
-  	XML_validate
-	XML_namespace_declaration
-	opt_XML_namespace_declaration_and_comma
-	XML_namespace_declaration_item_list
-	XML_namespace_declaration_item
-	XML_regular_namespace_declaration_item
-	XML_default_namespace_declaration_item
-	XML_namespace_URI
-	XML_attributes
-	XML_attribute_list
-	XML_attribute
-	XML_attribute_value
-	XML_element_content
+	existence_test
+	filter_exp
 	forest_element_value
-	XML_aggregate
-	XML_value_expression
-	XML_primary
-	opt_comma_string_value_expression
-	opt_partition_by
+	func_data_type
+	func_def
+	func_ref
+	generated_column
+	grant
+	group_by_element
+	grouping_set_element
+	if_opt_else
+	if_statement
+	in_predicate
+	index_def
+	insert_atom
+	insert_stmt
+	interval_expression
+	join_spec
+	joined_table
+	like_exp
+	like_predicate
+	like_table
+	literal
+	merge_insert
+	merge_match_clause
+	merge_stmt
+	merge_update_or_delete
+	null
+	object_name
+	operation
+	opt_alt_seq_param
 	opt_as_partition
+	opt_comma_string_value_expression
+	opt_from_clause
+	opt_group_by_clause
+	opt_having_clause
+	opt_limit
+	opt_offset
+	opt_order_by_clause
+	opt_partition_by
 	opt_partition_spec
+	opt_path_specification
+	opt_sample
+	opt_schema_default_char_set
+	opt_search_condition
+	opt_seed
+	opt_seq_common_param
+	opt_seq_param
+	opt_table_name
+	opt_when
+	opt_where_clause
+	opt_window_clause
+	opt_XML_namespace_declaration_and_comma
+	ordering_spec
+	ordinary_grouping_element
+	param
+	partition_expression
 	partition_list_value
+	partition_on
 	partition_range_from
 	partition_range_to
-	partition_on
-	partition_expression
-	merge_match_clause
-	merge_update_or_delete
-	merge_insert
-	group_by_element
-	ordinary_grouping_element
-	grouping_set_element
+	path_specification
+	pred_exp
+	predicate
+	procedure_statement
+	query_expression
+	query_expression_def
+	return_statement
+	return_value
+	revoke
+	role_def
+	routine_invocation
+	scalar_exp
+	schema
+	schema_element
+	search_condition
+	select_no_parens
+	select_no_parens_orderby
+	select_statement_single_row
+	seq_def
+	set_statement
+	simple_atom
+	simple_scalar_exp
+	simple_select
+	sql
+	sqlstmt
+	string_funcs
+	subquery
+	subquery_with_orderby
+	table_constraint
+	table_constraint_type
+	table_content_source
+	table_def
+	table_element
+	table_name
+	table_ref
+	test_for_null
+	transaction_statement
+	transaction_stmt
+	trigger_def
+	trigger_event
+	trigger_procedure_statement
+	truncate_stmt
+	type_def
+	update_statement
+	update_stmt
+	value
+	value_exp
+	values_or_query_spec
+	var_ref
+	view_def
+	when_search
+	when_search_statement
+	when_statement
+	when_value
+	while_statement
+	window_bound
+	window_definition
+	window_following_bound
+	window_frame_clause
+	window_frame_start
+	window_function
+	window_function_type
+	window_order_clause
+	window_partition_clause
+	with_list_element
+	with_query
+	with_query_expression
+	XML_aggregate
+	XML_attribute
+	XML_attribute_list
+	XML_attribute_value
+	XML_attributes
+	XML_comment
+	XML_default_namespace_declaration_item
+	XML_element_content
+	XML_namespace_declaration
+	XML_namespace_declaration_item
+	XML_namespace_declaration_item_list
+	XML_namespace_URI
+	XML_primary
+	XML_regular_namespace_declaration_item
+	XML_value_expression
+	XML_value_function
+	XML_concatenation
+	XML_document
+	XML_element
+	XML_forest
+	XML_parse
+	XML_PI
+	XML_query
+	XML_text
+	XML_validate
 
 %type <type>
 	data_type
@@ -384,163 +383,164 @@ int yydebug=1;
 	interval_type
 
 %type <sval>
-	opt_constraint_name
-	non_reserved_word
+	authid
+	authorization_identifier
+	blob
+	blobstring
+	calc_ident
+	calc_restricted_ident
+	clob
+	column
+	forest_element_name
+	func_ident
+	function_body
+	grantee
 	ident
 	ident_or_uident
-	calc_ident
-	authorization_identifier
-	func_ident
-	restricted_ident
-	calc_restricted_ident
-	column
-	authid
-	grantee
+	non_reserved_word
 	opt_alias_name
-	opt_to_savepoint
-	opt_using
-	opt_null_string
-	string
-	sstring
-	ustring
-	blobstring
-	type_alias
-	varchar
-	clob
-	blob
 	opt_begin_label
+	opt_constraint_name
 	opt_end_label
-	target_specification
-	XML_element_name
-	opt_XML_attribute_name
-	XML_attribute_name
 	opt_forest_element_name
-	forest_element_name
+	opt_null_string
+	opt_to_savepoint
+	opt_uescape
+	opt_using
+	opt_XML_attribute_name
+	restricted_ident
+	sstring
+	string
+	target_specification
+	type_alias
+	ustring
+	varchar
+	window_ident_clause
+	XML_attribute_name
+	XML_element_name
 	XML_namespace_prefix
 	XML_PI_target
-	function_body
-	opt_uescape
-	window_ident_clause
 
 %type <l>
-	passwd_schema
-	object_privileges
-	global_privileges
-	privileges
-	schema_name_clause
-	assignment_commalist
-	opt_column_list
-	column_commalist_parens
-	opt_fwf_widths
-	fwf_widthlist
-	opt_header_list
-	header_list
-	header
-	ident_commalist
-	opt_corresponding
-	column_ref_commalist
-	name_commalist
-	schema_name_list
-	column_ref
-	atom_commalist
-	value_commalist
-	pred_exp_list
-	row_commalist
-	filter_arg_list
-	filter_args
-	qname
-	qfunc
-	qrank
-	qaggr
-	qaggr2
-	routine_name
-	sort_specification_list
-	opt_schema_element_list
-	schema_element_list
-	operation_commalist
-	authid_list
-	grantee_commalist
-	column_def_opt_list
-	opt_column_def_opt_list
-	table_exp
-	with_opt_credentials
-	table_ref_commalist
-	table_element_list
-	table_opt_storage
+	argument_list
 	as_subquery_clause
+	assignment_commalist
+	atom_commalist
+	authid_list
+	case_opt_else_statement
+	case_scalar_exp_list
+	column_commalist_parens
+	column_def_opt_list
 	column_exp_commalist
 	column_option_list
-	selection
-	start_field
+	column_ref
+	column_ref_commalist
+	drop_routine_designator
 	end_field
-	single_datetime_field
+	external_function_name
+	filter_arg_list
+	filter_args
+	forest_element
+	forest_element_list
+	fwf_widthlist
+	global_privileges
+	grantee_commalist
+	group_by_list
+	grouping_set_list
+	header
+	header_list
+	ident_commalist
 	interval_qualifier
-	scalar_exp_list
-	case_scalar_exp_list
-	when_value_list
-	when_search_list
-	opt_seps
+	merge_when_list
+	name_commalist
+	object_privileges
+	old_or_new_values_alias
+	old_or_new_values_alias_list
+	operation_commalist
+	opt_alt_seq_params
+	opt_column_def_opt_list
+	opt_column_list
+	opt_comma_XML_namespace_declaration_attributes_element_content
+	opt_corresponding
+	opt_fwf_widths
+	opt_header_list
 	opt_nr
+	opt_paramlist
+	opt_referencing_list
+	opt_schema_element_list
+	opt_seps
+	opt_seq_params
+	opt_typelist
+	ordinary_grouping_set
+	paramlist
+	params_list
+	partition_list
+	passwd_schema
+	pred_exp_list
+	privileges
+	procedure_statement_list
+	qaggr
+	qaggr2
+	qfunc
+	qname
+	qrank
+	routine_body
+	routine_designator
+	routine_name
+	row_commalist
+	scalar_exp_list
+	schema_element_list
+	schema_name_clause
+	schema_name_list
+	search_condition_commalist
+	select_target_list
+	selection
+	serial_opt_params
+	single_datetime_field
+	sort_specification_list
+	start_field
 	string_commalist
 	string_commalist_contents
-	paramlist
-	opt_paramlist
-	opt_typelist
-	typelist
-	params_list
-	opt_seq_params
-	opt_alt_seq_params
-	serial_opt_params
-	triggered_action
-	opt_referencing_list
-	old_or_new_values_alias_list
-	old_or_new_values_alias
-	triggered_statement
-	procedure_statement_list
-	trigger_procedure_statement_list
-	argument_list
-	when_statements
-	when_search_statements
-	case_opt_else_statement
-	variable_list
-	routine_body
+	table_element_list
+	table_exp
 	table_function_column_list
-	select_target_list
-	external_function_name
-	with_list
+	table_opt_storage
+	table_ref_commalist
+	trigger_procedure_statement_list
+	triggered_action
+	triggered_statement
+	typelist
+	value_commalist
+	variable_list
+	when_search_list
+	when_search_statements
+	when_statements
+	when_value_list
+	window_definition_list
+	window_frame_between
+	window_frame_extent
 	window_specification
-	opt_comma_XML_namespace_declaration_attributes_element_content
+	with_list
+	with_opt_credentials
 	XML_element_content_and_option
 	XML_element_content_list
-	forest_element_list
-	forest_element
 	XML_value_expression_list
-	window_definition_list
-	window_frame_extent
-	window_frame_between
-	routine_designator
-	drop_routine_designator
-	partition_list
-	merge_when_list
-	group_by_list
-	search_condition_commalist
-	ordinary_grouping_set
-	grouping_set_list
 
 %type <i_val>
+	_transaction_mode_list
 	any_all_some
+	check_identity
 	datetime_field
+	dealloc_ref
 	document_or_content
 	document_or_content_or_sequence
 	drop_action
-	check_identity
 	extract_datetime_field
+	global_privilege
 	grantor
 	intval
 	join_type
-	opt_outer
 	non_second_datetime_field
-	dealloc_ref
 	nonzero
 	opt_bounds
 	opt_column
@@ -548,37 +548,36 @@ int yydebug=1;
 	opt_for_each
 	opt_from_grantor
 	opt_grantor	
-	global_privilege
 	opt_index_type
 	opt_match
 	opt_match_type
+	opt_minmax
 	opt_on_commit
+	opt_outer
 	opt_ref_action
 	opt_sign
 	opt_temp
-	opt_minmax
 	opt_XML_content_option
 	opt_XML_returning_clause
 	outer_join_type
+	partition_type
 	posint
 	ref_action
 	ref_on_delete
 	ref_on_update
 	row_or_statement
 	serial_or_bigserial
+	subgeometry_type
 	time_precision
 	timestamp_precision
 	transaction_mode
 	transaction_mode_list
-	_transaction_mode_list
 	trigger_action_time
+	window_frame_exclusion
+	window_frame_units
 	with_or_without_data
 	XML_content_option
 	XML_whitespace_option
-	window_frame_units
-	window_frame_exclusion
-	subgeometry_type
-	partition_type
 
 %type <l_val>
 	lngval
@@ -586,30 +585,27 @@ int yydebug=1;
 	nonzerolng
 
 %type <bval>
-	opt_brackets
-
-	opt_work
-	opt_chain
-	opt_distinct
-	opt_locked
-	opt_best_effort
-	opt_constraint
-	set_distinct
-	opt_with_check_option
-	opt_with_nulls
-	opt_on_location
 	create
 	create_or_replace
 	if_exists
 	if_not_exists
-
-	opt_with_grant
-	opt_with_admin
 	opt_admin_for
-	opt_grant_for
-
 	opt_asc_desc
+	opt_best_effort
+	opt_brackets
+	opt_chain
+	opt_constraint
+	opt_distinct
+	opt_grant_for
+	opt_locked
 	opt_nulls_first_last
+	opt_on_location
+	opt_with_admin
+	opt_with_check_option
+	opt_with_grant
+	opt_with_nulls
+	opt_work
+	set_distinct
 	tz
 
 %right <sval> STRING USTRING XSTRING
@@ -2881,13 +2877,13 @@ update_statement:
  ;
 
 transaction_statement:
-   _transaction_stmt
+   transaction_stmt
 	{
 	  $$ = $1;
 	  m->type = Q_TRANS;					}
  ;
 
-_transaction_stmt:
+transaction_stmt:
     COMMIT opt_work opt_chain
 		{ $$ = _symbol_create_int( TR_COMMIT, $3);  }
  |  SAVEPOINT ident

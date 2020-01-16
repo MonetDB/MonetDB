@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -39,8 +39,6 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 
 	limit = mb->stop;
 	
-
-	limit = mb->stop;
 
 	/* variables get their name from the position */
 	/* rename all temporaries for ease of variable table interpretation */
@@ -87,32 +85,18 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 		throw(MAL, "optimizer.garbagecollector", SQLSTATE(42000) "Incorrect MAL plan encountered");
 	}
 	getInstrPtr(mb,0)->gc |= GARBAGECONTROL;
-    if( OPTdebug &  OPTgarbagecollector)
-	{ 	int k;
-		fprintf(stderr, "#Garbage collected BAT variables \n");
-		for ( k =0; k < mb->vtop; k++)
-		fprintf(stderr,"%10s eolife %3d  begin %3d lastupd %3d end %3d\n",
-			getVarName(mb,k), getVarEolife(mb,k),
-			getBeginScope(mb,k), getLastUpdate(mb,k), getEndScope(mb,k));
-		chkFlow(mb);
-		if ( mb->errors != MAL_SUCCEED ){
-			fprintf(stderr,"%s\n",mb->errors);
-			freeException(mb->errors);
-			mb->errors = MAL_SUCCEED;
-		}
-		fprintFunction(stderr,mb, 0, LIST_MAL_ALL);
-		fprintf(stderr, "End of GCoptimizer\n");
-	}
 
 	/* leave a consistent scope admin behind */
 	setVariableScope(mb);
 	/* Defense line against incorrect plans */
 	if( actions > 0){
-		chkTypes(cntxt->usermodule, mb, FALSE);
-		chkFlow(mb);
-		chkDeclarations(mb);
+		if (!msg)
+			msg = chkTypes(cntxt->usermodule, mb, FALSE);
+		if (!msg)
+			msg = chkFlow(mb);
+		if (!msg)
+			msg = chkDeclarations(mb);
 	}
-
 	/* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;
 	snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","garbagecollector",actions, usec);

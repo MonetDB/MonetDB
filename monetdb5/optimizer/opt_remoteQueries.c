@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -142,11 +142,11 @@ str
 OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	InstrPtr p, q, r, *old;
-	int i, j, cnt, limit, slimit, doit=0;
+	int i, j, k, cnt, limit, slimit, doit=0;
 	int remoteSite,collectFirst;
 	int *location;
 	DBalias *dbalias;
-	int dbtop,k;
+	int dbtop;
 	char buf[BUFSIZ],*s, *db;
 	ValRecord cst;
 	lng usec = GDKusec();
@@ -244,11 +244,13 @@ OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 				lookupServer(4)
 
 				/* turn the instruction into a local one */
-				getArg(p,4)= defConstant(mb, TYPE_int, &cst);
-
-				prepareRemote(tpe)
-				putRemoteVariables()
-				remoteAction()
+				k = defConstant(mb, TYPE_int, &cst);
+				if( k>=0){
+					getArg(p,4)= k;
+					prepareRemote(tpe)
+					putRemoteVariables()
+					remoteAction()
+				}
 			} else
 				pushInstruction(mb,p);
 		} else
@@ -258,11 +260,13 @@ OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 				lookupServer(3)
 
 				/* turn the instruction into a local one */
-				getArg(p,3)= defConstant(mb, TYPE_int, &cst);
-
-				prepareRemote(TYPE_void)
-				putRemoteVariables()
-				remoteAction()
+				k= defConstant(mb, TYPE_int, &cst);
+				if( k >= 0){
+					getArg(p,3)= defConstant(mb, TYPE_int, &cst);
+					prepareRemote(TYPE_void)
+					putRemoteVariables()
+					remoteAction()
+				}
 			} else {
 				pushInstruction(mb,p);
 			}
@@ -355,9 +359,11 @@ OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 
     /* Defense line against incorrect plans */
     if( doit){
-        chkTypes(cntxt->usermodule, mb, FALSE);
-        chkFlow(mb);
-        chkDeclarations(mb);
+        msg = chkTypes(cntxt->usermodule, mb, FALSE);
+	if (!msg)
+        	msg = chkFlow(mb);
+	if (!msg)
+        	msg = chkDeclarations(mb);
     }
     /* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;

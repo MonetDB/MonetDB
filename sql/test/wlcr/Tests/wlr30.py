@@ -36,8 +36,7 @@ call wlr.master('%s');
 call wlr.replicate(-1);
 call wlr.replicate(8);
 select * from tmp;
-call wlr.stop();
-'''  %dbname)
+'''  % dbname)
 
 sout, serr = slave.communicate()
 #mout, merr = master.communicate()
@@ -50,9 +49,9 @@ sys.stderr.write(serr)
 sys.stderr.write(cerr)
 
 def listfiles(path):
-    sys.stdout.write("#LISTING OF THE LOG FILES\n")
+    sys.stdout.write("#LISTING OF THE WLR LOG FILE\n")
     for f in sorted(os.listdir(path)):
-        if f.find('wlc') >= 0 and f != 'wlc_logs':
+        if f.find('wlr') >= 0:
             file = path + os.path.sep + f
             sys.stdout.write('#' + file + "\n")
             try:
@@ -67,3 +66,4 @@ def listfiles(path):
 
 # listfiles(os.path.join(dbfarm, tstdb))
 # listfiles(os.path.join(dbfarm, tstdb, 'wlc_logs'))
+listfiles(os.path.join(dbfarm, tstdb + 'clone'))

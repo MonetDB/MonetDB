@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -59,8 +59,8 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	fcn = putName(fcn);
 	if(mod == NULL || fcn == NULL)
 		throw(MAL, "optimizer.multiplex", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	fprintf(stderr,"#WARNING To speedup %s.%s a bulk operator implementation is needed\n#", mod,fcn);
-	fprintInstruction(stderr, mb, stk, pci, LIST_MAL_ALL);
+
+	TRC_WARNING(MAL_OPTIMIZER, "To speedup %s.%s a bulk operator implementation is needed\n", mod, fcn);
 
 	/* search the iterator bat */
 	for (i = pci->retc+2; i < pci->argc; i++)
@@ -194,9 +194,12 @@ OPTmultiplexSimple(Client cntxt, MalBlkPtr mb)
 		}
 	if( doit) {
 		msg = OPTmultiplexImplementation(cntxt, mb, 0, 0);
-		chkTypes(cntxt->usermodule, mb,TRUE);
-		chkFlow(mb);
-		chkDeclarations(mb);
+		if (!msg)
+			msg = chkTypes(cntxt->usermodule, mb,TRUE);
+		if (!msg)
+			msg = chkFlow(mb);
+		if (!msg)
+			msg = chkDeclarations(mb);
 	}
 	return msg;
 }
@@ -248,10 +251,12 @@ OPTmultiplexImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	GDKfree(old);
 
     /* Defense line against incorrect plans */
-    if( msg == MAL_SUCCEED &&  actions > 0){
-        chkTypes(cntxt->usermodule, mb, FALSE);
-        chkFlow(mb);
-        chkDeclarations(mb);
+    if( msg == MAL_SUCCEED && actions > 0){
+        msg = chkTypes(cntxt->usermodule, mb, FALSE);
+	if (!msg)
+        	msg = chkFlow(mb);
+	if (!msg)
+        	msg = chkDeclarations(mb);
     }
     /* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -48,5 +48,6 @@ mal_export size_t XMLquotestring(const char *s, char *buf, size_t len);
 mal_export size_t XMLunquotestring(const char **p, char q, char *buf);
 
 mal_export str XMLprelude(void *ret);
+mal_export str XMLepilogue(void *ret);
 
 #endif /* XML_H */

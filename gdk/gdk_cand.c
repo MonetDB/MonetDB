@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -920,9 +920,9 @@ BATnegcands(BAT *dense_cands, BAT *odels)
 	dense_cands->batDirtydesc = true;
 	dense_cands->tvheap = dels;
 	BATsetcount(dense_cands, dense_cands->batCount - (hi - lo));
-	ALGODEBUG fprintf(stderr, "#BATnegcands(cands=" ALGOBATFMT ","
-			  "dels=" ALGOBATFMT ")\n",
-			  ALGOBATPAR(dense_cands),
-			  ALGOBATPAR(odels));
+	TRC_DEBUG(ALGO, "BATnegcands(cands=" ALGOBATFMT ","
+			  	"dels=" ALGOBATFMT ")\n",
+			  	ALGOBATPAR(dense_cands),
+			  	ALGOBATPAR(odels));
     	return GDK_SUCCEED;
 }

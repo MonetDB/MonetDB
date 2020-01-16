@@ -30,7 +30,11 @@ stderr of test 'groupby_expressions` in directory 'sql/test/miscellaneous` itsel
 # 14:21:56 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-21747" "--port=32012"
 # 14:21:56 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-6189/.s.monetdb.30805
+MAPI  = (monetdb) /var/tmp/mtest-134998/.s.monetdb.35444
+QUERY = select * from "groupings" group by "aa"; --error
+ERROR = !SELECT: cannot use non GROUP BY column 'bb' in query results without an aggregate function
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-134998/.s.monetdb.35444
 QUERY = select "aa" from "groupings" group by NULL; --error
 ERROR = !SELECT: cannot use non GROUP BY column 'aa' in query results without an aggregate function
 CODE  = 42000

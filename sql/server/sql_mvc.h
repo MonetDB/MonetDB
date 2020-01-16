@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /* multi version catalog */
@@ -142,6 +142,9 @@ typedef struct mvc {
 	char *query;		/* string, identify whatever we're working on */
 } mvc;
 
+/* NR_GLOBAL_VAR should match exactly the number of variables created in global_variables */
+#define NR_GLOBAL_VARS 9
+
 extern sql_table *mvc_init_create_view(mvc *sql, sql_schema *s, const char *name, const char *query);
 extern int mvc_init(int debug, store_type store, int ro, int su, backend_stack stk);
 extern void mvc_exit(void);
@@ -149,7 +152,7 @@ extern void mvc_logmanager(void);
 extern void mvc_idlemanager(void);
 
 extern mvc *mvc_create(int clientid, backend_stack stk, int debug, bstream *rs, stream *ws);
-extern int mvc_reset(mvc *m, bstream *rs, stream *ws, int debug, int globalvars);
+extern int mvc_reset(mvc *m, bstream *rs, stream *ws, int debug);
 extern void mvc_destroy(mvc *c);
 
 extern int mvc_status(mvc *c);

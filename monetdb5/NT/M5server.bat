@@ -2,7 +2,7 @@
 @REM License, v. 2.0.  If a copy of the MPL was not distributed with this
 @REM file, You can obtain one at http://mozilla.org/MPL/2.0/.
 @REM
-@REM Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+@REM Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
 
 @echo off
 
@@ -23,12 +23,14 @@ if "%APPDATA%" == "" goto usevar
 rem if the APPDATA variable does exist, put the database there
 set MONETDBDIR=%APPDATA%\MonetDB5
 set MONETDBFARM="--dbpath=%MONETDBDIR%\dbfarm\demo"
+if not exist "%MONETDBDIR%\dbfarm\demo" mkdir "%MONETDBDIR%\dbfarm\demo"
 goto skipusevar
 :usevar
 rem if the APPDATA variable does not exist, put the database in the
 rem installation folder (i.e. default location, so no command line argument)
-set MONETDBDIR=%MONETDB%\var\MonetDB5
+set MONETDBDIR=%MONETDB%\var\monetdb5
 set MONETDBFARM=
+if not exist "%MONETDB%\var\monetdb5\dbfarm" mkdir "%MONETDB%\var\monetdb5\dbfarm"
 :skipusevar
 
 rem the SQL log directory used to be in %MONETDBDIR%, but we now

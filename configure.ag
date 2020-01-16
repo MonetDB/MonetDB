@@ -5,7 +5,7 @@ dnl This Source Code Form is subject to the terms of the Mozilla Public
 dnl License, v. 2.0.  If a copy of the MPL was not distributed with this
 dnl file, You can obtain one at http://mozilla.org/MPL/2.0/.
 dnl
-dnl Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+dnl Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
 
 dnl Process this file with autoconf to produce a configure script.
 
@@ -53,7 +53,7 @@ dnl  (including their trailing newline).
 
 AC_PREREQ([2.63b])
 AC_INIT([MonetDB], [11.36.0], [https://bugs.monetdb.org/], [MonetDB], [https://www.monetdb.org/])
-AC_COPYRIGHT([Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.])
+AC_COPYRIGHT([Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.])
 AC_CONFIG_AUX_DIR([buildtools/conf])
 AC_CONFIG_MACRO_DIR([buildtools/conf])
 AC_CANONICAL_HOST
@@ -134,20 +134,22 @@ AS_CASE([$CC],
 AS_IF([test -f "$srcdir"/vertoo.data],
 	[
 	# Developers compiling from Mercurial:
-	# default is --enable-strict --enable-assert --enable-debug --disable-optimize --enable-developer
+	# default is --enable-strict --enable-assert --enable-debug --disable-optimize --enable-developer --enable-profiler=auto
 	dft_strict=yes
 	dft_assert=yes
 	dft_debug=yes
 	dft_optimize=no
-	dft_developer=yes],
+	dft_developer=yes
+	dft_profiler=auto],
 	[
 	# Users compiling from source tarball(s):
-	# default is --disable-strict --disable-assert --disable-debug --disable-optimize --disable-developer
+	# default is --disable-strict --disable-assert --disable-debug --disable-optimize --disable-developer --disable-profiler
 	dft_strict=no
 	dft_assert=no
 	dft_debug=no
 	dft_optimize=auto
-	dft_developer=no])
+	dft_developer=no
+	dft_profiler=no])
 
 AC_ARG_ENABLE([developer],
 	[AS_HELP_STRING([--enable-developer],
@@ -292,6 +294,14 @@ AC_ARG_ENABLE([strict],
 		[enable strict compiler flags (default=yes for development sources)])],
 	[enable_strict=$enableval],
 	[enable_strict=$dft_strict])
+
+# when optimizing, don't enable the profiler (unless it's explicitly enabled)
+AS_VAR_IF([enable_optimize], [yes], [dft_profiler=no])
+AC_ARG_ENABLE([profiler],
+	[AS_HELP_STRING([--enable-profiler],
+		[add support for the Google profiler library (default=auto for development sources)])],
+	[enable_profiler=$enableval],
+	[enable_profiler=$dft_profiler])
 
 dft_sanitizer=no
 AC_ARG_ENABLE([sanitizer],
@@ -1785,7 +1795,7 @@ AS_VAR_IF([enable_py3integration], [no], [],
 				 enable_py3integration=no
 				 why_not_py3integration="(numpy/arrayobject.h not found)"])],
 			[libpy3_CFLAGS=`$PYTHON3 -c "from distutils.sysconfig import get_python_inc; import numpy; print(' -I' + get_python_inc() + ' -I' + numpy.get_include());" 2> /dev/null`
-			 libpy3_LIBS=`$PY3CONFIG --ldflags`
+			 libpy3_LIBS=`$PY3CONFIG --embed --ldflags` || libpy3_LIBS=`$PY3CONFIG --ldflags`
 			 HAVEPYTHONHEADER=`$PYTHON3 -c "import distutils.sysconfig, os; print(os.path.isfile(os.path.join(distutils.sysconfig.get_python_inc(), 'Python.h')))" 2> /dev/null`
 			 AS_VAR_IF([HAVEPYTHONHEADER], [True],
 				[have_libpy3=yes
@@ -2168,6 +2178,19 @@ AC_SUBST([LIBLAS_LIBS])
 
 AM_CONDITIONAL([HAVE_LIDAR], [test "x$have_lidar" = xyes -o "x$have_lidar" = xauto])
 
+dnl  check for profiler library
+AS_CASE([$enable_profiler],
+	[no], [have_profiler=no],
+	[
+		PKG_CHECK_MODULES([PROFILER], [libprofiler],
+			[have_profiler=yes],
+			[have_profiler=no; why_not_profiler="(profiler library not found)"])
+		AS_VAR_IF([have_profiler], [yes], [
+			AC_DEFINE([HAVE_LIBPROFILER], 1, [Define if you have the profiler library])
+			AC_SUBST([PKG_PROFILER], [libprofiler])])])
+AM_CONDITIONAL([HAVE_LIBPROFILER], [test x$have_profiler != xno])
+
+
 #    checks for header files
 AC_HEADER_STDBOOL
 # NOTE: these header files are in alphabetical order to ease maintenance
@@ -2175,7 +2198,6 @@ AC_CHECK_HEADERS([ \
 	dirent.h \
 	dispatch/dispatch.h \
 	dlfcn.h \
-	execinfo.h \
 	fcntl.h \
 	getopt.h \
 	iconv.h \
@@ -2396,7 +2418,6 @@ LIBS="$LIBS $MATH_LIBS"
 AC_CHECK_FUNCS([\
 	accept4 \
 	asctime_r \
-	backtrace \
 	cbrt \
 	clock_gettime \
 	ctime_r \

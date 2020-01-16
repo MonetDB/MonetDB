@@ -3,12 +3,13 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
 #include "sysmon.h"
 #include "mal_authorize.h"
+#include "mal_client.h"
 #include "mal_runtime.h"
 #include "mtime.h"
 
@@ -30,22 +31,23 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat *w = getArgReference_bat(stk,pci,7);
 	bat *m = getArgReference_bat(stk,pci,8);
 	lng i, qtag;
-	int wrk, mem;
-	str usr;
+	int wrk, mem, sz;
+	str usr = 0;
 	timestamp tsn;
 	str msg = MAL_SUCCEED;
 
 	(void) cntxt;
 	(void) mb;
-	tag = COLnew(0, TYPE_lng, 256, TRANSIENT);
-	sessionid = COLnew(0, TYPE_int, 256, TRANSIENT);
-	user = COLnew(0, TYPE_str, 256, TRANSIENT);
-	started = COLnew(0, TYPE_timestamp, 256, TRANSIENT);
-	status = COLnew(0, TYPE_str, 256, TRANSIENT);
-	query = COLnew(0, TYPE_str, 256, TRANSIENT);
-	progress = COLnew(0, TYPE_int, 256, TRANSIENT);
-	workers = COLnew(0, TYPE_int, 256, TRANSIENT);
-	memory = COLnew(0, TYPE_int, 256, TRANSIENT);
+	sz = MAL_MAXCLIENTS;	// reserve space for all possible clients.
+	tag = COLnew(0, TYPE_lng, sz, TRANSIENT);
+	sessionid = COLnew(0, TYPE_int, sz, TRANSIENT);
+	user = COLnew(0, TYPE_str, sz, TRANSIENT);
+	started = COLnew(0, TYPE_timestamp, sz, TRANSIENT);
+	status = COLnew(0, TYPE_str, sz, TRANSIENT);
+	query = COLnew(0, TYPE_str, sz, TRANSIENT);
+	progress = COLnew(0, TYPE_int, sz, TRANSIENT);
+	workers = COLnew(0, TYPE_int, sz, TRANSIENT);
+	memory = COLnew(0, TYPE_int, sz, TRANSIENT);
 	if ( tag == NULL || sessionid == NULL || user == NULL || query == NULL || started == NULL || progress == NULL || workers == NULL || memory == NULL){
 		BBPreclaim(tag);
 		BBPreclaim(sessionid);
@@ -69,16 +71,16 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (msg != MAL_SUCCEED)
 			goto bailout;
 
-		if (BUNappend(sessionid, &(QRYqueue[i].cntxt->idx), false) != GDK_SUCCEED) {
-			GDKfree(usr);
-			goto bailout;
-		}
-
 		if (BUNappend(user, usr, false) != GDK_SUCCEED) {
 			GDKfree(usr);
 			goto bailout;
 		}
 		GDKfree(usr);
+
+		if (BUNappend(sessionid, &(QRYqueue[i].cntxt->idx), false) != GDK_SUCCEED) {
+			goto bailout;
+		}
+
 		if (BUNappend(query, QRYqueue[i].query, false) != GDK_SUCCEED ||
 			BUNappend(status, QRYqueue[i].status, false) != GDK_SUCCEED)
 			goto bailout;

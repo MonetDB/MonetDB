@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -2242,7 +2242,8 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 						break;
 					}
 				}
-				bunfastapp_nocheckVAR(bn, BUNlast(bn), buf, Tsize(bn));
+				if (bunfastapp_nocheckVAR(bn, BUNlast(bn), buf, Tsize(bn)) != GDK_SUCCEED)
+					goto bunins_failed;
 			}
 			bn->tnil = nils != 0;
 			bn->tnonil = nils == 0;
@@ -2263,10 +2264,12 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 				strncpy(buf + buflen, " ]", maxlen - buflen);
 				buflen += 2;
 				while (BATcount(bn) < prev - min) {
-					bunfastapp_nocheckVAR(bn, BUNlast(bn), str_nil, Tsize(bn));
+					if (bunfastapp_nocheckVAR(bn, BUNlast(bn), str_nil, Tsize(bn)) != GDK_SUCCEED)
+						goto bunins_failed;
 					nils++;
 				}
-				bunfastapp_nocheckVAR(bn, BUNlast(bn), buf, Tsize(bn));
+				if (bunfastapp_nocheckVAR(bn, BUNlast(bn), buf, Tsize(bn)) != GDK_SUCCEED)
+					goto bunins_failed;
 				nils += strNil(buf);
 				strncpy(buf + buflen, str_nil, maxlen - buflen);
 				buflen = 0;
@@ -2388,7 +2391,8 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 				break;
 			}
 		}
-		bunfastapp_nocheckVAR(bn, BUNlast(bn), buf, Tsize(bn));
+		if (bunfastapp_nocheckVAR(bn, BUNlast(bn), buf, Tsize(bn)) != GDK_SUCCEED)
+			goto bunins_failed;
 	}
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;

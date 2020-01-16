@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -904,7 +904,8 @@ segmentizeLineString(GEOSGeometry **outGeometry, const GEOSGeometry *geosGeometr
 
 		//compute the distance of the current point to the last added one
 		while ((dist = sqrt(pow(xl - xCoords_org[i], 2) + pow(yl - yCoords_org[i], 2) + pow(zl - zCoords_org[i], 2))) > sz) {
-//fprintf(stderr, "OLD : (%f, %f, %f) vs (%f, %f, %f) = %f\n", xl, yl, zl, xCoords_org[i], yCoords_org[i], zCoords_org[i], dist);
+			TRC_DEBUG(GEOM, "Old : (%f, %f, %f) vs (%f, %f, %f) = %f\n", xl, yl, zl, xCoords_org[i], yCoords_org[i], zCoords_org[i], dist);
+
 			additionalPoints++;
 			//compute the point
 			xl = xl + (xCoords_org[i] - xl) * sz / dist;
@@ -917,7 +918,9 @@ segmentizeLineString(GEOSGeometry **outGeometry, const GEOSGeometry *geosGeometr
 		zl = zCoords_org[i];
 
 	}
-//fprintf(stderr, "Adding %u\n", additionalPoints);
+
+	TRC_DEBUG(GEOM, "Adding %u\n", additionalPoints);
+
 	//create the coordinates sequence for the translated geometry
 	if ((gcs_new = GEOSCoordSeq_create(pointsNum + additionalPoints, coordinatesNum)) == NULL) {
 		*outGeometry = NULL;
@@ -950,7 +953,8 @@ segmentizeLineString(GEOSGeometry **outGeometry, const GEOSGeometry *geosGeometr
 		//compute the distance of the current point to the last added one
 		double dist;
 		while ((dist = sqrt(pow(xl - xCoords_org[i], 2) + pow(yl - yCoords_org[i], 2) + pow(zl - zCoords_org[i], 2))) > sz) {
-//fprintf(stderr, "OLD : (%f, %f, %f) vs (%f, %f, %f) = %f\n", xl, yl, zl, xCoords_org[i], yCoords_org[i], zCoords_org[i], dist);
+			TRC_DEBUG(GEOM, "Old: (%f, %f, %f) vs (%f, %f, %f) = %f\n", xl, yl, zl, xCoords_org[i], yCoords_org[i], zCoords_org[i], dist);
+			
 			assert(j < additionalPoints);
 
 			//compute intermediate point
@@ -2367,7 +2371,7 @@ wkbAsBinary(char **toStr, wkb **geomWKB)
 		*s++ = hexit[val];
 		val = (*geomWKB)->data[i] & 0xf;
 		*s++ = hexit[val];
-//fprintf(stderr, "%d First: %c - Second: %c ==> Original %c (%d)\n", i, *(s-2), *(s-1), (*geomWKB)->data[i], (int)((*geomWKB)->data[i]));
+		TRC_DEBUG(GEOM, "%d: First: %c - Second: %c ==> Original %c (%d)\n", i, *(s-2), *(s-1), (*geomWKB)->data[i], (int)((*geomWKB)->data[i]));
 	}
 	*s = '\0';
 	return MAL_SUCCEED;
@@ -5252,13 +5256,13 @@ mbrTOSTR(char **dst, size_t *len, const mbr *atom, bool external)
 		dstStrLen = strlen(tempWkt);
 	}
 
-	if (*len < dstStrLen + 3 || *dst == NULL) {
+	if (*len < dstStrLen + 4 || *dst == NULL) {
 		GDKfree(*dst);
-		if ((*dst = GDKmalloc(*len = dstStrLen + 3)) == NULL)
+		if ((*dst = GDKmalloc(*len = dstStrLen + 4)) == NULL)
 			return -1;
 	}
 
-	if (dstStrLen > 3) {
+	if (dstStrLen > 4) {
 		if (external) {
 			snprintf(*dst, *len, "\"%s\"", tempWkt);
 			dstStrLen += 2;

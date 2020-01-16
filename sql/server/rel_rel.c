@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -2047,6 +2047,11 @@ rel_visitor(mvc *sql, sql_rel *rel, rel_rewrite_fptr rel_rewriter)
 {
 	if (!rel)
 		return rel;
+
+	if (rel->exps && (rel->exps = exps_rel_visitor(sql, rel->exps, rel_rewriter)) == NULL)
+		return NULL;
+	if ((is_groupby(rel->op) || is_simple_project(rel->op)) && rel->r && (rel->r = exps_rel_visitor(sql, rel->r, rel_rewriter)) == NULL)
+		return NULL;
 
 	switch(rel->op){
 	case op_basetable:

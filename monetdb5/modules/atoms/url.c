@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -685,7 +685,7 @@ URLgetUser(str *retval, url *val)
 /* COMMAND "isaURL": Check conformity of the URL syntax
  * SIGNATURE: isaURL(str) : bit; */
 str
-URLisaURL(bit *retval, url *val)
+URLisaURL(bit *retval, str *val)
 {
 	if (val == NULL || *val == NULL)
 		throw(ILLARG, "url.isaURL", "url missing");

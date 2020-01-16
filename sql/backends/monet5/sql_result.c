@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -1063,7 +1063,7 @@ mvc_export_prepare(mvc *c, stream *out, cq *q, str w)
 	if (!out)
 		return 0;
 
-	if (is_topn(r->op))
+	if (r && is_topn(r->op))
 		r = r->l;
 	if (r && is_project(r->op) && r->exps) {
 		unsigned int max2 = 10, max3 = 10;	/* to help calculate widths */
@@ -1173,7 +1173,6 @@ mvc_export_prepare(mvc *c, stream *out, cq *q, str w)
 		return -1;
 	return 0;
 }
-
 
 /*
  * improved formatting of positive integers
@@ -1730,7 +1729,7 @@ mvc_export_table_prot10(backend *b, stream *s, res_table *t, BAT *order, BUN off
 
 		assert(buf >= bs2_buffer(s).buf);
 		if (buf - bs2_buffer(s).buf > (lng) bsize) {
-			fprintf(stderr, "Too many bytes in the buffer.\n");
+			TRC_ERROR(SQL_RESULT, "Too many bytes in the buffer\b");
 			fres = -1;
 			goto cleanup;
 		}

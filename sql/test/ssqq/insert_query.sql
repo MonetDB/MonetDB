@@ -26,6 +26,8 @@ set id_result = -1;
 
 set id_result = insert_query(2, NULL, 0, NULL);
 
+declare id_result int;
+
 select id_result;
 
 select * from query;

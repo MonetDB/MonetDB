@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -15,15 +15,15 @@
  * Series generating module for integer, decimal, real, double and timestamps.
  */
 
-#define errorCheck(P,MOD,I) \
+#define errorCheck(P,IDX,MOD,I) \
 setModuleId(P, generatorRef);\
-typeChecker(cntxt->usermodule, mb, P, TRUE);\
+typeChecker(cntxt->usermodule, mb, P, IDX, TRUE);\
 if(P->typechk == TYPE_UNKNOWN){\
 	setModuleId(P,MOD);\
-	typeChecker(cntxt->usermodule, mb, P, TRUE);\
+	typeChecker(cntxt->usermodule, mb, P, IDX, TRUE);\
 	setModuleId(series[I], generatorRef);\
 	setFunctionId(series[I], seriesRef);\
-	typeChecker(cntxt->usermodule, mb, series[I], TRUE);\
+	typeChecker(cntxt->usermodule, mb, series[I], I, TRUE);\
 }\
 pushInstruction(mb,P); 
 
@@ -33,20 +33,20 @@ pushInstruction(mb,P);
 			q= newInstruction(0,calcRef, TPE##Ref);\
 			setDestVar(q, newTmpVariable(mb, TYPE_##TPE));\
 			addArgument(mb,q,getArg(series[k],1));\
-			typeChecker(cntxt->usermodule, mb, q, TRUE);\
+			typeChecker(cntxt->usermodule, mb, q, 0, TRUE);\
 			p = addArgument(mb,p, getArg(q,0));\
 			pushInstruction(mb,q);\
 			q= newInstruction(0,calcRef,TPE##Ref);\
 			setDestVar(q, newTmpVariable(mb, TYPE_##TPE));\
 			addArgument(mb,q,getArg(series[k],2));\
 			pushInstruction(mb,q);\
-			typeChecker(cntxt->usermodule, mb, q, TRUE);\
+			typeChecker(cntxt->usermodule, mb, q, 0, TRUE);\
 			p = addArgument(mb,p, getArg(q,0));\
 			if( p->argc == 4){\
 				q= newInstruction(0,calcRef,TPE##Ref);\
 				setDestVar(q, newTmpVariable(mb, TYPE_##TPE));\
 				addArgument(mb,q,getArg(series[k],3));\
-				typeChecker(cntxt->usermodule, mb, q, TRUE);\
+				typeChecker(cntxt->usermodule, mb, q, 0, TRUE);\
 				p = addArgument(mb,p, getArg(q,0));\
 				pushInstruction(mb,q);\
 			}\
@@ -70,6 +70,7 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	str dblRef = getName("dbl");
 	char buf[256];
 	lng usec= GDKusec();
+	str msg = MAL_SUCCEED;
 
 	(void) cntxt;
 	(void) stk;
@@ -108,14 +109,14 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 			series[getArg(p,0)] = p;
 			setModuleId(p, generatorRef);
 			setFunctionId(p, parametersRef);
-			typeChecker(cntxt->usermodule, mb, p, TRUE);
+			typeChecker(cntxt->usermodule, mb, p, i, TRUE);
 			pushInstruction(mb,p); 
 		} else if ( getModuleId(p) == algebraRef && getFunctionId(p) == selectRef && series[getArg(p,1)]){
-			errorCheck(p,algebraRef,getArg(p,1));
+			errorCheck(p,i, algebraRef,getArg(p,1));
 		} else if ( getModuleId(p) == algebraRef && getFunctionId(p) == thetaselectRef && series[getArg(p,1)]){
-			errorCheck(p,algebraRef,getArg(p,1));
+			errorCheck(p,i,algebraRef,getArg(p,1));
 		} else if ( getModuleId(p) == algebraRef && getFunctionId(p) == projectionRef && series[getArg(p,2)]){
-			errorCheck(p,algebraRef,getArg(p,2));
+			errorCheck(p,i,algebraRef,getArg(p,2));
 		} else if ( getModuleId(p) == sqlRef && getFunctionId(p) ==  putName("exportValue") && isaBatType(getArgType(mb,p,0)) ){
 			// interface expects scalar type only, not expressable in MAL signature
 			mb->errors=createException(MAL, "generate_series", SQLSTATE(42000) "internal error, generate_series is a table producing function");
@@ -139,13 +140,14 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 			if( series[getArg(p,k)]){
 				m = getModuleId(p);
 				setModuleId(p, generatorRef);
-				typeChecker(cntxt->usermodule, mb, p, TRUE);
+				typeChecker(cntxt->usermodule, mb, p, i, TRUE);
 				if(p->typechk == TYPE_UNKNOWN){
 					setModuleId(p,m);
-					typeChecker(cntxt->usermodule, mb, p, TRUE);
-					setModuleId(series[getArg(p,k)], generatorRef);
-					setFunctionId(series[getArg(p,k)], seriesRef);
-					typeChecker(cntxt->usermodule, mb, series[getArg(p,k)], TRUE);
+					typeChecker(cntxt->usermodule, mb, p, i, TRUE);
+					InstrPtr r = series[getArg(p,k)];
+					setModuleId(r, generatorRef);
+					setFunctionId(r, seriesRef);
+					typeChecker(cntxt->usermodule, mb, r, getPC(mb,r),  TRUE);
 				}
 			}
 			pushInstruction(mb,p);
@@ -161,14 +163,16 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 
     /* Defense line against incorrect plans */
 	/* all new/modified statements are already checked */
-	//chkTypes(cntxt->usermodule, mb, FALSE);
-	//chkFlow(mb);
-	//chkDeclarations(mb);
+	// msg = chkTypes(cntxt->usermodule, mb, FALSE);
+	// if (!msg)
+	// 	msg = chkFlow(mb);
+	// if (!msg)
+	// 	msg = chkDeclarations(mb);
     /* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","generator",actions, usec);
     newComment(mb,buf);
 	if( actions > 0)
 		addtoMalBlkHistory(mb);
-	return MAL_SUCCEED;
+	return msg;
 }

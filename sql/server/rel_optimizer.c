@@ -3,10 +3,8 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
-
-/*#define DEBUG*/
 
 #include "monetdb_config.h"
 #include "rel_optimizer.h"
@@ -5271,7 +5269,7 @@ typedef struct {
 static void
 rel_find_joins(mvc *sql, sql_rel *parent, sql_rel *rel, list *l, int depth)
 {
-	if (!rel || depth == 5) /* limit to 5 relations bellow in the tree */
+	if (!rel || depth == 5) /* limit to 5 relations below in the tree */
 		return;
 
 	switch (rel->op) {
@@ -8980,15 +8978,14 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, int value_based_
 	gp = (global_props) {.cnt = {0},};
 	rel_properties(sql, &gp, rel);
 
-#ifdef DEBUG
-{
-	int i;
-	for (i = 0; i < ddl_maxops; i++) {
-		if (gp.cnt[i]> 0)
-			printf("%s %d\n", op2string((operator_type)i), gp.cnt[i]);
+	TRC_DEBUG_IF(SQL_OPTIMIZER) {
+		int i;
+		for (i = 0; i < ddl_maxops; i++) {
+			if (gp.cnt[i]> 0)
+				TRC_DEBUG_ENDIF(SQL_OPTIMIZER, "%s %d\n", op2string((operator_type)i), gp.cnt[i]);
+		}
 	}
-}
-#endif
+
 	if (level <= 0 && gp.cnt[op_select]) 
 		rel = rel_split_select(&changes, sql, rel, 1);
 

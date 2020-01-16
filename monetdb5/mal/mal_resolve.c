@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -25,15 +25,13 @@ static malType getPolyType(malType t, int *polytype);
 static int updateTypeMap(int formal, int actual, int polytype[MAXTYPEVAR]);
 static int typeKind(MalBlkPtr mb, InstrPtr p, int i);
 
-/* #define DEBUG_MAL_RESOLVE*/
-
 /*
  * We found the proper function. Copy some properties. In particular,
  * determine the calling strategy, i.e. FCNcall, CMDcall, FACcall, PATcall
  * Beware that polymorphic functions may produce type-incorrect clones.
  * This piece of code may be shared by the separate binder
  */
-#define bindFunction(s, p, mb)									\
+#define bindFunction(s, p, idx, mb)									\
 	do {															\
 		if (p->token == ASSIGNsymbol) {								\
 			switch (getSignature(s)->token) {						\
@@ -41,7 +39,7 @@ static int typeKind(MalBlkPtr mb, InstrPtr p, int i);
 				p->token = CMDcall;									\
 				p->fcn = getSignature(s)->fcn;      /* C implementation mandatory */ \
 				if (p->fcn == NULL) {								\
-					if(!silent)  mb->errors = createMalException(mb, getPC(mb, p), TYPE, \
+					if(!silent)  mb->errors = createMalException(mb, idx, TYPE, \
 										"object code for command %s.%s missing", \
 										p->modname, p->fcnname);	\
 					p->typechk = TYPE_UNKNOWN;						\
@@ -62,7 +60,7 @@ static int typeKind(MalBlkPtr mb, InstrPtr p, int i);
 					p->fcn = getSignature(s)->fcn;     /* C implementation optional */ \
 				break;												\
 			default: {												\
-					if(!silent) mb->errors = createMalException(mb, getPC(mb, p), MAL, \
+					if(!silent) mb->errors = createMalException(mb, idx, MAL, \
 										"MALresolve: unexpected token type"); \
 				goto wrapup;										\
 			}														\
@@ -88,7 +86,7 @@ static int typeKind(MalBlkPtr mb, InstrPtr p, int i);
 	} while (0)
 
 static malType
-findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int silent)
+findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 {
 	Module m;
 	Symbol s;
@@ -113,9 +111,7 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int silent)
 	 * it will be looked up multiple types to resolve the instruction.[todo]
 	 * Simplify polytype using a map into the concrete argument table.
 	 */
-#ifdef DEBUG_MAL_RESOLVE
-		fprintf(stderr,"#findFunction %s.%s\n", getModuleId(p), getFunctionId(p));
-#endif
+
 	m = scope;
 	s = m->space[(int) (getSymbolIndex(getFunctionId(p)))];
 	if (s == 0)
@@ -181,14 +177,7 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int silent)
 				s = s->peer;
 				continue;
 			}
-#ifdef DEBUG_MAL_RESOLVE
-		if (sig->polymorphic || sig->retc == p->retc) {
-			fprintf(stderr, "#resolving: ");
-			fprintInstruction(stderr, mb, 0, p, LIST_MAL_ALL);
-			fprintf(stderr, "#against:");
-			fprintInstruction(stderr, s->def, 0, getSignature(s), LIST_MAL_ALL);
-		}
-#endif
+
 			for (k = 0; k < limit; k++)
 				polytype[k] = TYPE_any;
 			/*
@@ -271,26 +260,12 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int silent)
 				s = s->peer;
 				continue;
 			}
-#ifdef DEBUG_MAL_RESOLVE
-		if (sig->polymorphic || sig->retc == p->retc) {
-			fprintf(stderr, "#resolving: ");
-			fprintInstruction(stderr, mb, 0, p, LIST_MAL_ALL);
-			fprintf(stderr, "#against:");
-			fprintInstruction(stderr, s->def, 0, getSignature(s), LIST_MAL_ALL);
-		}
-#endif
+
+
 			for (i = p->retc; i < p->argc; i++) {
 				int actual = getArgType(mb, p, i);
 				int formal = getArgType(s->def, sig, i);
 				if (resolveType(formal, actual) == -1) {
-#ifdef DEBUG_MAL_RESOLVE
-					char *ftpe = getTypeName(formal);
-					char *atpe = getTypeName(actual);
-					fprintf(stderr, "#unmatched %d formal %s actual %s\n",
-								 i, ftpe, atpe);
-					GDKfree(ftpe);
-					GDKfree(atpe);
-#endif
 					unmatched = i;
 					break;
 				}
@@ -304,36 +279,7 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int silent)
 		 * An optimizer may at a later stage automatically insert such
 		 * coercion requests.
 		 */
-#ifdef DEBUG_MAL_RESOLVE
-		{
-			char *tpe, *tpe2;
-			fprintf(stderr, "#finished %s.%s unmatched=%d polymorphic=%d %d",
-						 getModuleId(sig), getFunctionId(sig), unmatched,
-						 sig->polymorphic, p == sig);
-			if (sig->polymorphic) {
-				int l;
-				fprintf(stderr,"poly ");
-				for (l = 0; l < 2 * p->argc; l++)
-					if (polytype[l] != TYPE_any) {
-						tpe = getTypeName(polytype[l]);
-						fprintf(stderr, " %d %s", l, tpe);
-						GDKfree(tpe);
-					}
-				fprintf(stderr,"\n");
-			}
-			fprintf(stderr, "#resolving:");
-			fprintInstruction(stderr, mb, 0, p, LIST_MAL_ALL);
-			fprintf(stderr, "#against :");
-			fprintInstruction(stderr, s->def, 0, getSignature(s), LIST_MAL_ALL);
-			tpe = getTypeName(getArgType(mb, p, unmatched));
-			tpe2 = getTypeName(getArgType(s->def, sig, unmatched));
-			if( unmatched)
-				fprintf(stderr, "#unmatched %d test %s poly %s\n",
-							 unmatched, tpe, tpe2);
-			GDKfree(tpe);
-			GDKfree(tpe2);
-		}
-#endif
+
 		if (unmatched) {
 			s = s->peer;
 			continue;
@@ -398,15 +344,13 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int silent)
 		 * Also mark all variables that are subject to garbage control.
 		 * Beware, this is not yet effectuated in the interpreter.
 		 */
-#ifdef DEBUG_MAL_RESOLVE
-		fprintf(stderr,"#TYPE RESOLVED:");
-		fprintInstruction(stderr, mb, 0, p, LIST_MAL_DEBUG);
-#endif
+		traceInstruction(MAL_MAL, mb, 0, p, LIST_MAL_DEBUG);
+
 		p->typechk = TYPE_RESOLVED;
 		for (i = 0; i < p->retc; i++) {
 			int ts = returntype[i];
 			if (isVarConstant(mb, getArg(p, i))) {
-					if(!silent) { mb->errors = createMalException(mb, getPC(mb, p), TYPE, "Assignment to constant"); }
+					if(!silent) { mb->errors = createMalException(mb, idx, TYPE, "Assignment to constant"); }
 				p->typechk = TYPE_UNKNOWN;
 				goto wrapup;
 			}
@@ -465,7 +409,7 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int silent)
 			goto wrapup;
 		}															\
 		 */
-		bindFunction(s, p, mb);
+		bindFunction(s, p, idx, mb);
 
 		if (returntype != returns)
 			GDKfree(returntype);
@@ -477,12 +421,6 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int silent)
 	 * arguments, but that clashes with one of the target variables.
 	 */
   wrapup:
-#ifdef DEBUG_MAL_RESOLVE
-		{
-			fprintf(stderr, "#Wrapup matching returntype %d returns %d:",*returntype,*returns);
-			fprintInstruction(stderr, mb, 0, p, LIST_MAL_ALL);
-		}
-#endif
 	if (returntype != returns)
 		GDKfree(returntype);
 	return -3;
@@ -491,16 +429,6 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int silent)
 int
 resolveType(int dsttype, int srctype)
 {
-#ifdef DEBUG_MAL_RESOLVE
-	{
-		char *dtpe = getTypeName(dsttype);
-		char *stpe = getTypeName(srctype);
-		fprintf(stderr, "#resolveType dst %s (%d) %s(%d)\n",
-					 dtpe, dsttype, stpe, srctype);
-		GDKfree(dtpe);
-		GDKfree(stpe);
-	}
-#endif
 	if (dsttype == srctype)
 		return dsttype;
 	if (dsttype == TYPE_any)
@@ -525,30 +453,10 @@ resolveType(int dsttype, int srctype)
 		else if (t2 == TYPE_any)
 			t3 = t1;
 		else {
-#ifdef DEBUG_MAL_RESOLVE
-			fprintf(stderr, "#Tail can not be resolved \n");
-#endif
 			return -1;
 		}
-#ifdef DEBUG_MAL_RESOLVE
-		{
-			int i2 = getTypeIndex(dsttype);
-			char *tpe1, *tpe2, *tpe3; 
-			tpe1 = getTypeName(t1);
-			tpe2 = getTypeName(t2);
-			tpe3 = getTypeName(t3);
-			fprintf(stderr, "#resolved to bat[:oid,:%s] bat[:oid,:%s]->bat[:oid,%s:%d]\n",
-						 tpe1, tpe2, tpe3, i2);
-			GDKfree(tpe1);
-			GDKfree(tpe2);
-			GDKfree(tpe3);
-		}
-#endif
 		return newBatType(t3);
 	}
-#ifdef DEBUG_MAL_RESOLVE
-	fprintf(stderr, "#Can not be resolved \n");
-#endif
 	return -1;
 }
 
@@ -558,7 +466,7 @@ resolveType(int dsttype, int srctype)
  * because they may be resolved as part of the calling sequence.
  */
 static void
-typeMismatch(MalBlkPtr mb, InstrPtr p, int lhs, int rhs, int silent)
+typeMismatch(MalBlkPtr mb, InstrPtr p, int idx, int lhs, int rhs, int silent)
 {
 	str n1;
 	str n2;
@@ -566,7 +474,7 @@ typeMismatch(MalBlkPtr mb, InstrPtr p, int lhs, int rhs, int silent)
 	if (!silent) {
 		n1 = getTypeName(lhs);
 		n2 = getTypeName(rhs);
-		mb->errors = createMalException(mb, getPC(mb, p), TYPE, "type mismatch %s := %s", n1, n2);
+		mb->errors = createMalException(mb, idx, TYPE, "type mismatch %s := %s", n1, n2);
 		GDKfree(n1);
 		GDKfree(n2);
 	}
@@ -586,7 +494,7 @@ typeMismatch(MalBlkPtr mb, InstrPtr p, int lhs, int rhs, int silent)
  * to assignment.
  */
 void
-typeChecker(Module scope, MalBlkPtr mb, InstrPtr p, int silent)
+typeChecker(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 {
 	int s1 = -1, i, k;
 	Module m = 0;
@@ -611,10 +519,8 @@ typeChecker(Module scope, MalBlkPtr mb, InstrPtr p, int silent)
 	}
 	if (getFunctionId(p) && getModuleId(p)) {
 		m = findModule(scope, getModuleId(p));
-		s1 = findFunctionType(m, mb, p, silent);
-#ifdef DEBUG_MAL_RESOLVE
-		fprintf(stderr,"#typeChecker matched %d\n",s1);
-#endif
+		s1 = findFunctionType(m, mb, p, idx, silent);
+
 		if (s1 >= 0)
 			return;
 		/*
@@ -633,14 +539,14 @@ typeChecker(Module scope, MalBlkPtr mb, InstrPtr p, int silent)
 			if (!silent) {
 				char *errsig;
 				if (!malLibraryEnabled(p->modname)) {
-					mb->errors = createMalException(mb, getPC(mb, p), TYPE,
+					mb->errors = createMalException(mb, idx, TYPE,
 										"'%s%s%s' library error in: %s",
 										(getModuleId(p) ? getModuleId(p) : ""),
 										(getModuleId(p) ? "." : ""),
 										getFunctionId(p), malLibraryHowToEnable(p->modname));
 				} else {
-					errsig = instruction2str(mb,0,p,(LIST_MAL_NAME | LIST_MAL_TYPE | LIST_MAL_VALUE));
-					mb->errors = createMalException(mb, getPC(mb, p), TYPE,
+					errsig = instruction2str(mb,0,p, (LIST_MAL_NAME | LIST_MAL_TYPE | LIST_MAL_VALUE));
+					mb->errors = createMalException(mb, idx, TYPE,
 										"'%s%s%s' undefined in: %s",
 										(getModuleId(p) ? getModuleId(p) : ""),
 										(getModuleId(p) ? "." : ""),
@@ -651,9 +557,6 @@ typeChecker(Module scope, MalBlkPtr mb, InstrPtr p, int silent)
 			p->typechk = TYPE_UNKNOWN;
 		} else
 			p->typechk = TYPE_RESOLVED;
-#ifdef DEBUG_MAL_RESOLVE
-		fprintf(stderr,"#typeChecker  no-sig and no-oly could not find it %d\n",p->typechk);
-#endif
 		return;
 	}
 	/*
@@ -663,14 +566,11 @@ typeChecker(Module scope, MalBlkPtr mb, InstrPtr p, int silent)
 	 * variables.
 	 */
 	if (getFunctionId(p)){
-#ifdef DEBUG_MAL_RESOLVE
-		fprintf(stderr,"#typeChecker function call break %s\n", getFunctionId(p));
-#endif
 		return;
 	}
 	if (p->retc >= 1 && p->argc > p->retc && p->argc != 2 * p->retc) {
 		if (!silent){
-			mb->errors  = createMalException(mb, getPC(mb, p), TYPE, "Multiple assignment mismatch");
+			mb->errors  = createMalException(mb, idx, TYPE, "Multiple assignment mismatch");
 		}
 		p->typechk = TYPE_RESOLVED;
 	} else
@@ -682,10 +582,7 @@ typeChecker(Module scope, MalBlkPtr mb, InstrPtr p, int silent)
 		if (rhs != TYPE_void) {
 			s1 = resolveType(lhs, rhs);
 			if (s1 == -1) {
-				typeMismatch(mb, p, lhs, rhs, silent);
-#ifdef DEBUG_MAL_RESOLVE
-				fprintf(stderr,"#typeChecker function mismatch %s\n", getFunctionId(p));
-#endif
+				typeMismatch(mb, p, idx, lhs, rhs, silent);
 				return;
 			}
 		} else {
@@ -695,12 +592,16 @@ typeChecker(Module scope, MalBlkPtr mb, InstrPtr p, int silent)
 			 */
 			if (lhs != TYPE_void && lhs != TYPE_any) {
 				ValRecord cst;
+				int k;
+
 				cst.vtype = TYPE_void;
 				cst.val.oval = void_nil;
 				cst.len = 0;
 
 				rhs = isaBatType(lhs) ? TYPE_bat : lhs;
-				p->argv[i] = defConstant(mb, rhs, &cst);
+				k = defConstant(mb, rhs, &cst);
+				if( k >=0)
+					p->argv[i] = k;
 				rhs = lhs;
 			}
 		}
@@ -739,20 +640,25 @@ typeChecker(Module scope, MalBlkPtr mb, InstrPtr p, int silent)
  * as well, because a dynamically typed instruction should later on not
  * lead to a re-check when it was already fully analyzed.
  */
-void
+str
 chkTypes(Module s, MalBlkPtr mb, int silent)
 {
 	InstrPtr p = 0;
 	int i;
+	str msg= MAL_SUCCEED;
 
 	for (i = 0; i < mb->stop; i++) {
 		p = getInstrPtr(mb, i);
 		assert (p != NULL);
 		if (p->typechk != TYPE_RESOLVED)
-			typeChecker(s, mb, p, silent);
-		if (mb->errors)
-			return;
+			typeChecker(s, mb, p, i, silent);
+		if (mb->errors){
+			msg = mb->errors;
+			mb->errors = NULL;
+			return msg;
+		}
 	}
+	return msg;
 }
 
 /*
@@ -764,7 +670,7 @@ chkInstruction(Module s, MalBlkPtr mb, InstrPtr p)
 {
 	if( mb->errors == MAL_SUCCEED){
 		p->typechk = TYPE_UNKNOWN;
-		typeChecker(s, mb, p, TRUE);
+		typeChecker(s, mb, p, getPC(mb, p), TRUE);
 	}
 	return mb->errors != MAL_SUCCEED;
 }
@@ -772,20 +678,20 @@ chkInstruction(Module s, MalBlkPtr mb, InstrPtr p)
 /*
  * Perform silent check on the program, merely setting the error flag.
  */
-void
+str
 chkProgram(Module s, MalBlkPtr mb)
 {
+	str msg = MAL_SUCCEED;
 /* it is not ready yet, too fragile
 		mb->typefixed = mb->stop == chk; ignored END */
 /*	if( mb->flowfixed == 0)*/
 
-	chkTypes(s, mb, FALSE);
-	if (mb->errors)
-		return;
-	chkFlow(mb);
-	if (mb->errors)
-		return;
-	chkDeclarations(mb);
+	msg = chkTypes(s, mb, FALSE);
+	if( msg == MAL_SUCCEED)
+		msg = chkFlow(mb);
+	if(msg == MAL_SUCCEED)
+		msg = chkDeclarations(mb);
+	return msg;
 }
 
 /*
@@ -843,14 +749,6 @@ updateTypeMap(int formal, int actual, int polytype[MAXTYPEVAR])
 
 	if (formal == TYPE_bat && isaBatType(actual))
 		return 0;
-#ifdef DEBUG_MAL_RESOLVE
-	{
-		char *tpe1 = getTypeName(formal), *tpe2 = getTypeName(actual);
-		fprintf(stderr, "#updateTypeMap:formal %s actual %s\n", tpe1, tpe2);
-		GDKfree(tpe1);
-		GDKfree(tpe2);
-	}
-#endif
 
 	if ((h = getTypeIndex(formal))) {
 		if (isaBatType(actual) && !isaBatType(formal) &&
@@ -876,8 +774,5 @@ updateTypeMap(int formal, int actual, int polytype[MAXTYPEVAR])
 			return -1;
 	}
   updLabel:
-#ifdef DEBUG_MAL_RESOLVE
-	fprintf(stderr, "#updateTypeMap returns: %d\n", ret);
-#endif
 	return ret;
 }

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #define RSTR(somestr) mkCharCE(somestr, CE_UTF8)
@@ -284,12 +284,12 @@ static BAT* sexp_to_bat(SEXP s, int type) {
 				b->tnonil = false;
 				if (BUNappend(b, str_nil, false) != GDK_SUCCEED) {
 					BBPreclaim(b);
-					b = NULL;
+					return NULL;
 				}
 			} else {
 				if (BUNappend(b, CHAR(rse), false) != GDK_SUCCEED) {
 					BBPreclaim(b);
-					b = NULL;
+					return NULL;
 				}
 			}
 		}

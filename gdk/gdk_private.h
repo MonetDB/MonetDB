@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /* This file should not be included in any file outside of this directory */
@@ -19,6 +19,7 @@
 #define PERSISTENTIDX 1
 
 #include "gdk_system_private.h"
+#include "gdk_tracer.h"
 
 enum heaptype {
 	offheap,
@@ -68,6 +69,8 @@ __hidden gdk_return BATgroup_internal(BAT **groups, BAT **extents, BAT **histo, 
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
 __hidden Hash *BAThash_impl(BAT *b, BAT *s, const char *ext)
+	__attribute__((__visibility__("hidden")));
+__hidden gdk_return BAThashsave(BAT *b, bool dosync)
 	__attribute__((__visibility__("hidden")));
 __hidden void BATinit_idents(BAT *bn)
 	__attribute__((__visibility__("hidden")));
@@ -177,7 +180,7 @@ __hidden bool HASHgonebad(BAT *b, const void *v)
 	__attribute__((__visibility__("hidden")));
 __hidden BUN HASHmask(BUN cnt)
 	__attribute__((__visibility__("hidden")));
-__hidden gdk_return HASHnew(Hash *h, int tpe, BUN size, BUN mask, BUN count)
+__hidden gdk_return HASHnew(Hash *h, int tpe, BUN size, BUN mask, BUN count, bool bcktonly)
 	__attribute__((__visibility__("hidden")));
 __hidden gdk_return HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 	__attribute__((__warn_unused_result__))
@@ -194,7 +197,7 @@ __hidden gdk_return HEAPload(Heap *h, const char *nme, const char *ext, bool tru
 	__attribute__((__visibility__("hidden")));
 __hidden void HEAP_recover(Heap *, const var_t *, BUN)
 	__attribute__((__visibility__("hidden")));
-__hidden gdk_return HEAPsave(Heap *h, const char *nme, const char *ext)
+__hidden gdk_return HEAPsave(Heap *h, const char *nme, const char *ext, bool dosync)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
 __hidden gdk_return HEAPshrink(Heap *h, size_t size)
@@ -228,8 +231,6 @@ __hidden gdk_return rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, struct
 __hidden void strCleanHash(Heap *hp, bool rebuild)
 	__attribute__((__visibility__("hidden")));
 __hidden int strCmp(const char *l, const char *r)
-	__attribute__((__visibility__("hidden")));
-__hidden int strCmpNoNil(const unsigned char *l, const unsigned char *r)
 	__attribute__((__visibility__("hidden")));
 __hidden void strHeap(Heap *d, size_t cap)
 	__attribute__((__visibility__("hidden")));
@@ -359,7 +360,7 @@ extern MT_Lock GDKtmLock;
 
 #define GDKswapLock(x)  GDKbatLock[(x)&BBP_BATMASK].swap
 #if SIZEOF_SIZE_T == 8
-#define threadmask(y)	((int) ((mix_int((unsigned int) y) ^ mix_int((unsigned int) (y >> 32))) & BBP_THREADMASK))
+#define threadmask(y)	((int) (mix_lng(y) & BBP_THREADMASK))
 #else
 #define threadmask(y)	((int) (mix_int(y) & BBP_THREADMASK))
 #endif
@@ -379,12 +380,9 @@ extern MT_Lock GDKtmLock;
 	({	void *_ptr = (p);				\
 		size_t _len = (l);				\
 		gdk_return _res = GDKmunmap(_ptr, _len);	\
-		ALLOCDEBUG					\
-			fprintf(stderr,				\
-				"#GDKmunmap(%p,%zu) -> %u"	\
-				" %s[%s:%d]\n",			\
-				_ptr, _len, _res,		\
-				__func__, __FILE__, __LINE__);	\
+		TRC_DEBUG(ALLOC,						 \
+				"GDKmunmap(%p,%zu) -> %u\n", \
+				_ptr, _len, _res);	\
 		_res;						\
 	})
 #define GDKmremap(p, m, oa, os, ns)					\
@@ -396,43 +394,33 @@ extern MT_Lock GDKtmLock;
 		size_t *_ns = (ns);					\
 		size_t _ons = *_ns;					\
 		void *_res = GDKmremap(_path, _mode, _oa, _os, _ns);	\
-		ALLOCDEBUG						\
-			fprintf(stderr,					\
-				"#GDKmremap(%s,0x%x,%p,%zu,%zu > %zu) -> %p" \
-				" %s[%s:%d]\n",				\
+			TRC_DEBUG(ALLOC,									\
+				"GDKmremap(%s,0x%x,%p,%zu,%zu > %zu) -> %p\n", \
 				_path ? _path : "NULL", (unsigned) _mode, \
-				_oa, _os, _ons, *_ns,			\
-				_res,					\
-				__func__, __FILE__, __LINE__);		\
-		_res;							\
+				_oa, _os, _ons, *_ns, _res);		\
+		_res;										\
 	 })
 #else
 static inline gdk_return
-GDKmunmap_debug(void *ptr, size_t len, const char *filename, int lineno)
+GDKmunmap_debug(void *ptr, size_t len)
 {
 	gdk_return res = GDKmunmap(ptr, len);
-	ALLOCDEBUG fprintf(stderr,
-			   "#GDKmunmap(%p,%zu) -> %d [%s:%d]\n",
-			   ptr, len, (int) res, filename, lineno);
+	TRC_DEBUG(ALLOC, "GDKmunmap(%p,%zu) -> %d\n",
+			   	  ptr, len, (int) res);
 	return res;
 }
-#define GDKmunmap(p, l)		GDKmunmap_debug((p), (l), __FILE__, __LINE__)
+#define GDKmunmap(p, l)		GDKmunmap_debug((p), (l))
 static inline void *
-GDKmremap_debug(const char *path, int mode, void *old_address, size_t old_size, size_t *new_size, const char *filename, int lineno)
+GDKmremap_debug(const char *path, int mode, void *old_address, size_t old_size, size_t *new_size)
 {
 	size_t orig_new_size = *new_size;
 	void *res = GDKmremap(path, mode, old_address, old_size, new_size);
-	ALLOCDEBUG
-		fprintf(stderr,
-			"#GDKmremap(%s,0x%x,%p,%zu,%zu > %zu) -> %p"
-			" [%s:%d]\n",
-			path ? path : "NULL", mode,
-			old_address, old_size, orig_new_size, *new_size,
-			res,
-			filename, lineno);
+		TRC_DEBUG(ALLOC, "GDKmremap(%s,0x%x,%p,%zu,%zu > %zu) -> %p\n",
+					  path ? path : "NULL", mode,
+					  old_address, old_size, orig_new_size, *new_size, res);
 	return res;
 }
-#define GDKmremap(p, m, oa, os, ns)	GDKmremap_debug(p, m, oa, os, ns, __FILE__, __LINE__)
+#define GDKmremap(p, m, oa, os, ns)	GDKmremap_debug(p, m, oa, os, ns)
 
 #endif
 #endif

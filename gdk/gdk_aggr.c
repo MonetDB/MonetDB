@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -893,9 +893,7 @@ BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_o
 	BUN ncand;
 	const char *err;
 	const char *algo = NULL;
-	lng t0 = 0;
-
-	ALGODEBUG t0 = GDKusec();
+	lng t0 = GDKusec();
 
 	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &ci, &ncand)) != NULL) {
 		GDKerror("BATgroupsum: %s\n", err);
@@ -946,15 +944,13 @@ BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_o
 		bn = NULL;
 	}
 
-	ALGODEBUG fprintf(stderr,
-			  "#%s: %s(b="ALGOBATFMT",g="ALGOOPTBATFMT",e="ALGOOPTBATFMT",s="ALGOOPTBATFMT")="ALGOOPTBATFMT": %s; "
-			  "start " OIDFMT ", count " BUNFMT " (" LLFMT " usec)"
-			  "\n",
-			  MT_thread_getname(), __func__,
-			  ALGOBATPAR(b), ALGOOPTBATPAR(g), ALGOOPTBATPAR(e),
-			  ALGOOPTBATPAR(s), ALGOOPTBATPAR(bn),
-			  algo ? algo : "",
-			  ci.seq, ncand, GDKusec() - t0);
+	TRC_DEBUG(ALGO, "%s(b="ALGOBATFMT",g="ALGOOPTBATFMT",e="ALGOOPTBATFMT",s="ALGOOPTBATFMT")="ALGOOPTBATFMT": %s; "
+			  	"start " OIDFMT ", count " BUNFMT " (" LLFMT " usec)\n",
+				__func__,
+				ALGOBATPAR(b), ALGOOPTBATPAR(g), ALGOOPTBATPAR(e),
+				ALGOOPTBATPAR(s), ALGOOPTBATPAR(bn),
+				algo ? algo : "",
+				ci.seq, ncand, GDKusec() - t0);
 	return bn;
 }
 
@@ -968,9 +964,7 @@ BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, b
 	BUN ncand;
 	const char *err;
 	const char *algo = NULL;
-	lng t0 = 0;
-
-	ALGODEBUG t0 = GDKusec();
+	lng t0 = GDKusec();
 
 	if ((err = BATgroupaggrinit(b, NULL, NULL, s, &min, &max, &ngrp, &ci, &ncand)) != NULL) {
 		GDKerror("BATsum: %s\n", err);
@@ -1072,14 +1066,12 @@ BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, b
 	nils = dosum(Tloc(b, 0), b->tnonil, b->hseqbase, &ci, ncand,
 		     res, true, b->ttype, tp, &min, min, max,
 		     skip_nils, abort_on_error, nil_if_empty, "BATsum", &algo);
-	ALGODEBUG fprintf(stderr,
-			  "#%s: %s(b="ALGOBATFMT",s="ALGOOPTBATFMT"): %s; "
-			  "start " OIDFMT ", count " BUNFMT " (" LLFMT " usec)"
-			  "\n",
-			  MT_thread_getname(), __func__,
-			  ALGOBATPAR(b), ALGOOPTBATPAR(s),
-			  algo ? algo : "",
-			  ci.seq, ncand, GDKusec() - t0);
+	TRC_DEBUG(ALGO, "%s(b="ALGOBATFMT",s="ALGOOPTBATFMT"): %s; "
+				"start " OIDFMT ", count " BUNFMT " (" LLFMT " usec)\n",
+				__func__,
+				ALGOBATPAR(b), ALGOOPTBATPAR(s),
+				algo ? algo : "",
+				ci.seq, ncand, GDKusec() - t0);
 	return nils < BUN_NONE ? GDK_SUCCEED : GDK_FAIL;
 }
 
@@ -2711,6 +2703,18 @@ BATmax_skipnil(BAT *b, void *aggr, bit skipnil)
 #define binsearch_oid(indir, offset, vals, lo, hi, v, ordering, last) binsearch_lng(indir, offset, (const lng *) vals, lo, hi, (lng) (v), ordering, last)
 #endif
 
+#define DO_QUANTILE_AVG(TPE)						\
+	do {								\
+		TPE low = *(TPE*) BUNtail(bi, r + (BUN) hi);		\
+		TPE high = *(TPE*) BUNtail(bi, r + (BUN) lo);		\
+		if (is_##TPE##_nil(low) || is_##TPE##_nil(high)) {	\
+			val = dbl_nil;					\
+			nils++;						\
+		} else {						\
+			val = (f - lo) * low + (lo + 1 - f) * high;	\
+		}							\
+	} while (0)
+
 static BAT *
 doBATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 		   bool skip_nils, bool abort_on_error, bool average)
@@ -2862,27 +2866,27 @@ doBATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 				double hi = ceil(f);
 				switch (ATOMbasetype(tp)) {
 				case TYPE_bte:
-					val = (f - lo) * *(bte*)BUNtail(bi, r + (BUN) hi) + (lo + 1 - f) * *(bte*)BUNtail(bi, r + (BUN) lo);
+					DO_QUANTILE_AVG(bte);
 					break;
 				case TYPE_sht:
-					val = (f - lo) * *(sht*)BUNtail(bi, r + (BUN) hi) + (lo + 1 - f) * *(sht*)BUNtail(bi, r + (BUN) lo);
+					DO_QUANTILE_AVG(sht);
 					break;
 				case TYPE_int:
-					val = (f - lo) * *(int*)BUNtail(bi, r + (BUN) hi) + (lo + 1 - f) * *(int*)BUNtail(bi, r + (BUN) lo);
+					DO_QUANTILE_AVG(int);
 					break;
 				case TYPE_lng:
-					val = (f - lo) * *(lng*)BUNtail(bi, r + (BUN) hi) + (lo + 1 - f) * *(lng*)BUNtail(bi, r + (BUN) lo);
+					DO_QUANTILE_AVG(lng);
 					break;
 #ifdef HAVE_HGE
 				case TYPE_hge:
-					val = (f - lo) * *(hge*)BUNtail(bi, r + (BUN) hi) + (lo + 1 - f) * *(hge*)BUNtail(bi, r + (BUN) lo);
+					DO_QUANTILE_AVG(hge);
 					break;
 #endif
 				case TYPE_flt:
-					val = (f - lo) * *(flt*)BUNtail(bi, r + (BUN) hi) + (lo + 1 - f) * *(flt*)BUNtail(bi, r + (BUN) lo);
+					DO_QUANTILE_AVG(flt);
 					break;
 				case TYPE_dbl:
-					val = (f - lo) * *(dbl*)BUNtail(bi, r + (BUN) hi) + (lo + 1 - f) * *(dbl*)BUNtail(bi, r + (BUN) lo);
+					DO_QUANTILE_AVG(dbl);
 					break;
 				}
 				v = &val;
@@ -2896,11 +2900,13 @@ doBATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 				if (!skip_nils && !b->tnonil)
 					nils += (*atomcmp)(v, dnil) == 0;
 			}
-			bunfastapp_nocheck(bn, BUNlast(bn), v, Tsize(bn));
+			if (bunfastapp_nocheck(bn, BUNlast(bn), v, Tsize(bn)) != GDK_SUCCEED)
+				goto bunins_failed;
 		}
 		nils += ngrp - BATcount(bn);
 		while (BATcount(bn) < ngrp) {
-			bunfastapp_nocheck(bn, BUNlast(bn), dnil, Tsize(bn));
+			if (bunfastapp_nocheck(bn, BUNlast(bn), dnil, Tsize(bn)) != GDK_SUCCEED)
+				goto bunins_failed;
 		}
 		bn->theap.dirty = true;
 		BBPunfix(g->batCacheid);
@@ -2951,27 +2957,27 @@ doBATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 			double hi = ceil(f);
 			switch (ATOMbasetype(tp)) {
 			case TYPE_bte:
-				val = (f - lo) * *(bte*)BUNtail(bi, r + (BUN) hi) + (lo + 1 - f) * *(bte*)BUNtail(bi, r + (BUN) lo);
+				DO_QUANTILE_AVG(bte);
 				break;
 			case TYPE_sht:
-				val = (f - lo) * *(sht*)BUNtail(bi, r + (BUN) hi) + (lo + 1 - f) * *(sht*)BUNtail(bi, r + (BUN) lo);
+				DO_QUANTILE_AVG(sht);
 				break;
 			case TYPE_int:
-				val = (f - lo) * *(int*)BUNtail(bi, r + (BUN) hi) + (lo + 1 - f) * *(int*)BUNtail(bi, r + (BUN) lo);
+				DO_QUANTILE_AVG(int);
 				break;
 			case TYPE_lng:
-				val = (f - lo) * *(lng*)BUNtail(bi, r + (BUN) hi) + (lo + 1 - f) * *(lng*)BUNtail(bi, r + (BUN) lo);
+				DO_QUANTILE_AVG(lng);
 				break;
 #ifdef HAVE_HGE
 			case TYPE_hge:
-				val = (f - lo) * *(hge*)BUNtail(bi, r + (BUN) hi) + (lo + 1 - f) * *(hge*)BUNtail(bi, r + (BUN) lo);
+				DO_QUANTILE_AVG(hge);
 				break;
 #endif
 			case TYPE_flt:
-				val = (f - lo) * *(flt*)BUNtail(bi, r + (BUN) hi) + (lo + 1 - f) * *(flt*)BUNtail(bi, r + (BUN) lo);
+				DO_QUANTILE_AVG(flt);
 				break;
 			case TYPE_dbl:
-				val = (f - lo) * *(dbl*)BUNtail(bi, r + (BUN) hi) + (lo + 1 - f) * *(dbl*)BUNtail(bi, r + (BUN) lo);
+				DO_QUANTILE_AVG(dbl);
 				break;
 			}
 			v = &val;

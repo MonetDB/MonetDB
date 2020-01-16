@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -603,7 +603,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	}
 	if (b->tkey || cnt <= 1 || (g && (g->tkey || BATtdense(g)))) {
 		/* grouping is trivial: 1 element per group */
-		ALGODEBUG fprintf(stderr, "#BATgroup(b=%s#" BUNFMT "[%s],"
+		TRC_DEBUG(ALGO, "BATgroup(b=%s#" BUNFMT "[%s],"
 				  "s=%s#" BUNFMT ","
 				  "g=%s#" BUNFMT ","
 				  "e=%s#" BUNFMT ","
@@ -655,7 +655,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		/* all values are equal */
 		if (g == NULL || (BATordered(g) && BATordered_rev(g))) {
 			/* there's only a single group: 0 */
-			ALGODEBUG fprintf(stderr, "#BATgroup(b=%s#" BUNFMT "[%s],"
+			TRC_DEBUG(ALGO, "BATgroup(b=%s#" BUNFMT "[%s],"
 				  "s=%s#" BUNFMT ","
 				  "g=%s#" BUNFMT ","
 				  "e=%s#" BUNFMT ","
@@ -693,7 +693,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			 * e/h available in order to copy them,
 			 * otherwise we will need to calculate them
 			 * which we will do using the "normal" case */
-			ALGODEBUG fprintf(stderr, "#BATgroup(b=%s#" BUNFMT "[%s],"
+			TRC_DEBUG(ALGO, "BATgroup(b=%s#" BUNFMT "[%s],"
 				  "s=%s#" BUNFMT ","
 				  "g=%s#" BUNFMT ","
 				  "e=%s#" BUNFMT ","
@@ -737,7 +737,10 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	if (gn == NULL)
 		goto error;
 	ngrps = (oid *) Tloc(gn, 0);
-	maxgrps = cnt / 10;
+	if ((prop = BATgetprop(b, GDK_NUNIQUE)) != NULL)
+		maxgrps = prop->v.val.oval;
+	else
+		maxgrps = cnt / 10;
 	if (!is_oid_nil(maxgrp) && maxgrps < maxgrp)
 		maxgrps += maxgrp;
 	if (e && maxgrps < BATcount(e))
@@ -747,7 +750,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	if (maxgrps < GROUPBATINCR)
 		maxgrps = GROUPBATINCR;
 	if (b->twidth <= 2)
-		maxgrps = (BUN) 1 << (8 << (b->twidth == 2));
+		maxgrps = (BUN) 1 << (8 * b->twidth);
 	if (extents) {
 		en = COLnew(0, TYPE_oid, maxgrps, TRANSIENT);
 		if (en == NULL)
@@ -796,7 +799,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	    ((BATordered(b) || BATordered_rev(b)) &&
 	     (g == NULL || BATordered(g) || BATordered_rev(g)))) {
 		/* we only need to compare each entry with the previous */
-		ALGODEBUG fprintf(stderr, "#BATgroup(b=%s#" BUNFMT "[%s],"
+		TRC_DEBUG(ALGO, "BATgroup(b=%s#" BUNFMT "[%s],"
 				  "s=%s#" BUNFMT ","
 				  "g=%s#" BUNFMT ","
 				  "e=%s#" BUNFMT ","
@@ -854,7 +857,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		 * last time we saw that group, so if the last time we
 		 * saw the old group of the current value is within
 		 * this range, we can reuse the new group */
-		ALGODEBUG fprintf(stderr, "#BATgroup(b=%s#" BUNFMT "[%s],"
+		TRC_DEBUG(ALGO, "BATgroup(b=%s#" BUNFMT "[%s],"
 				  "s=%s#" BUNFMT ","
 				  "g=%s#" BUNFMT ","
 				  "e=%s#" BUNFMT ","
@@ -991,7 +994,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		 * since we may have to go through long lists of
 		 * duplicates in the hash table to find an old
 		 * group */
-		ALGODEBUG fprintf(stderr, "#BATgroup(b=%s#" BUNFMT "[%s],"
+		TRC_DEBUG(ALGO, "BATgroup(b=%s#" BUNFMT "[%s],"
 				  "s=%s#" BUNFMT ","
 				  "g=%s#" BUNFMT ","
 				  "e=%s#" BUNFMT ","
@@ -1047,8 +1050,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		bool gc = g != NULL && (BATordered(g) || BATordered_rev(g));
 		const char *nme;
 		BUN prb;
-		int bits, len;
-		BUN mask;
+		int bits = 0;
+		BUN nbucket;
 		oid grp;
 
 		GDKclrerr();	/* not interested in BAThash errors */
@@ -1057,7 +1060,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		 * build an incomplete hash table on the fly--also see
 		 * BATassertProps for similar code; we also exploit if
 		 * g is clustered */
-		ALGODEBUG fprintf(stderr, "#BATgroup(b=%s#" BUNFMT "[%s],"
+		TRC_DEBUG(ALGO, "BATgroup(b=%s#" BUNFMT "[%s],"
 				  "s=%s#" BUNFMT ","
 				  "g=%s#" BUNFMT ","
 				  "e=%s#" BUNFMT ","
@@ -1070,20 +1073,38 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				  h ? BATgetId(h) : "NULL", h ? BATcount(h) : 0,
 				  subsorted, gc ? " (g clustered)" : "");
 		nme = GDKinmemory() ? ":inmemory" : BBP_physical(b->batCacheid);
-		mask = MAX(HASHmask(cnt), 1 << 16);
-		/* mask is a power of two, so pop(mask - 1) tells us
-		 * which power of two */
-		bits = 8 * SIZEOF_OID - pop(mask - 1);
+		if (grps && !gc) {
+			/* we manipulate the hash value after having
+			 * calculated it, and when doing that, we
+			 * assume the mask (i.e. nbucket-1) is a
+			 * power-of-two minus one, so make sure it
+			 * is */
+			nbucket = cnt | cnt >> 1;
+			nbucket |= nbucket >> 2;
+			nbucket |= nbucket >> 4;
+			nbucket |= nbucket >> 8;
+			nbucket |= nbucket >> 16;
+#if SIZEOF_BUN == 8
+			nbucket |= nbucket >> 32;
+#endif
+			nbucket++;
+			/* nbucket is a power of two, so pop(nbucket - 1)
+			 * tells us which power of two */
+			bits = 8 * SIZEOF_OID - pop(nbucket - 1);
+		} else {
+			nbucket = MAX(HASHmask(cnt), 1 << 16);
+		}
 		if ((hs = GDKzalloc(sizeof(Hash))) == NULL ||
-		    (hs->heap.farmid = BBPselectfarm(TRANSIENT, b->ttype, hashheap)) < 0) {
+		    (hs->heaplink.farmid = BBPselectfarm(TRANSIENT, b->ttype, hashheap)) < 0 ||
+		    (hs->heapbckt.farmid = BBPselectfarm(TRANSIENT, b->ttype, hashheap)) < 0) {
 			GDKfree(hs);
 			hs = NULL;
 			GDKerror("BATgroup: cannot allocate hash table\n");
 			goto error;
 		}
-		len = snprintf(hs->heap.filename, sizeof(hs->heap.filename), "%s.hash%d", nme, THRgettid());
-		if (len < 0 || len >= (int) sizeof(hs->heap.filename) ||
-		    HASHnew(hs, b->ttype, BUNlast(b), mask, BUN_NONE) != GDK_SUCCEED) {
+		if (snprintf(hs->heaplink.filename, sizeof(hs->heaplink.filename), "%s.thshgrpl%x", nme, THRgettid()) >= (int) sizeof(hs->heaplink.filename) ||
+		    snprintf(hs->heapbckt.filename, sizeof(hs->heapbckt.filename), "%s.thshgrpb%x", nme, THRgettid()) >= (int) sizeof(hs->heapbckt.filename) ||
+		    HASHnew(hs, b->ttype, BUNlast(b), nbucket, BUN_NONE, false) != GDK_SUCCEED) {
 			GDKfree(hs);
 			hs = NULL;
 			GDKerror("BATgroup: cannot allocate hash table\n");
@@ -1173,7 +1194,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			GRP_create_partial_hash_table_any();
 		}
 
-		HEAPfree(&hs->heap, true);
+		HEAPfree(&hs->heapbckt, true);
+		HEAPfree(&hs->heaplink, true);
 		GDKfree(hs);
 	}
 	if (extents) {
@@ -1210,7 +1232,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	return GDK_SUCCEED;
   error:
 	if (hs != NULL && hs != b->thash) {
-		HEAPfree(&hs->heap, true);
+		HEAPfree(&hs->heaplink, true);
+		HEAPfree(&hs->heapbckt, true);
 		GDKfree(hs);
 	}
 	if (gn)

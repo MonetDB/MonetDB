@@ -3,14 +3,12 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #ifndef _MAL_EXCEPTION_H
 #define _MAL_EXCEPTION_H
 #include "mal_instruction.h"
-
-/* #define _DEBUG_EXCEPTION_		trace the exception handling */
 
 /* These are the exceptions known, adding new ones here requires to also
  * add the "full" name to the exceptionNames array in mal_exception.c */

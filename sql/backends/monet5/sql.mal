@@ -2,7 +2,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
 
 module batsql;
 module sql;
@@ -603,9 +603,14 @@ address SYSMONstop;
 pattern sysmon_stop(tag:lng)
 address SYSMONstop;
 
-pattern prepared_statements()(sessionid:bat[:int], user:bat[:str], statementid:bat[:int], statementt:bat[:str], createdd:bat[:timestamp])
+pattern prepared_statements()(sessionid:bat[:int], user:bat[:str], statementid:bat[:int], statement:bat[:str], created:bat[:timestamp])
 address SQLsession_prepared_statements
 comment "Available prepared statements in the current session";
+
+pattern prepared_statements_args()(statementid:bat[:int], type:bat[:str], digits:bat[:int], scale:bat[:int], inout:bat[:bte], 
+number:bat[:int], schema:bat[:str], table:bat[:str], column:bat[:str])
+address SQLsession_prepared_statements_args
+comment "Available prepared statements' arguments in the current session";
 
 pattern copy_rejects() (rowid:bat[:lng], fldid:bat[:int], msg:bat[:str], inp:bat[:str])
 address COPYrejects;

@@ -5950,6 +5950,11 @@ create procedure resume_log_flushing()
 create procedure hot_snapshot(tarfile string)
  external name sql.hot_snapshot;
 update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name in ('suspend_log_flushing', 'resume_log_flushing', 'hot_snapshot') and type = 2;
+drop function isaURL(url);
+CREATE function isaURL(theUrl string) RETURNS BOOL
+ EXTERNAL NAME url."isaURL";
+GRANT EXECUTE ON FUNCTION isaURL(string) TO PUBLIC;
+update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name = 'isaurl' and type = 1;
 drop view sys.tracelog;
 drop function sys.tracelog();
 create function sys.tracelog()
@@ -5966,7 +5971,7 @@ drop function sys.sessions;
 create function sys.sessions()
 returns table(
 "sessionid" int,
-"user" string,
+"username" string,
 "login" timestamp,
 "idle" timestamp,
 "optimizer" string,
@@ -5998,8 +6003,34 @@ create procedure sys.setmemorylimit("sessionid" int, "limit" int)
  external name clients.setmemorylimit;
 create procedure sys.stopsession("sessionid" int)
  external name clients.stopsession;
-update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name = 'sessions' and type = 5;
-update sys._tables set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name = 'sessions';
+create function sys.prepared_statements()
+returns table(
+"sessionid" int,
+"username" string,
+"statementid" int,
+"statement" string,
+"created" timestamp)
+ external name sql.prepared_statements;
+grant execute on function sys.prepared_statements to public;
+create view sys.prepared_statements as select * from sys.prepared_statements();
+grant select on sys.prepared_statements to public;
+create function sys.prepared_statements_args()
+returns table(
+"statementid" int,
+"type" string,
+"type_digits" int,
+"type_scale" int,
+"inout" tinyint,
+"number" int,
+"schema" string,
+"table" string,
+"column" string)
+ external name sql.prepared_statements_args;
+grant execute on function sys.prepared_statements_args to public;
+create view sys.prepared_statements_args as select * from sys.prepared_statements_args();
+grant select on sys.prepared_statements_args to public;
+update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name in ('sessions', 'prepared_statements', 'prepared_statements_args') and type = 5;
+update sys._tables set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name in ('sessions', 'prepared_statements', 'prepared_statements_args');
 update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name in ('setoptimizer', 'setquerytimeout', 'setsessiontimeout', 'setworkerlimit', 'setmemorylimit', 'setoptimizer', 'stopsession') and type = 2;
 create function sys.debug(flag string) returns integer
  external name mdb."setDebug";
@@ -6011,17 +6042,16 @@ drop view sys.queue;
 drop function sys.queue;
 create function sys.queue()
 returns table(
- tag bigint,
- sessionid int,
-	"user" string,
- started timestamp,
- status string,
- query string,
- progress int,
- workers int,
- memory int
-)
-external name sql.sysmon_queue;
+"tag" bigint,
+"sessionid" int,
+"username" string,
+"started" timestamp,
+"status" string,
+"query" string,
+"progress" int,
+"workers" int,
+"memory" int)
+ external name sql.sysmon_queue;
 grant execute on function sys.queue to public;
 create view sys.queue as select * from sys.queue();
 grant select on sys.queue to public;
@@ -6041,7 +6071,8 @@ update sys.functions set system = true where schema_id = (select id from sys.sch
 update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name in ('pause', 'resume', 'stop') and type = 2;
 update sys._tables set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name = 'queue';
 ALTER TABLE sys.keywords SET READ WRITE;
-insert into sys.keywords values ('CUBE'), ('GROUPING'), ('ROLLUP'), ('SETS');
+DELETE FROM sys.keywords where "keyword" IN ('NOCYCLE','NOMAXVALUE','NOMINVALUE');
+insert into sys.keywords values ('ANALYZE'),('AT'),('AUTHORIZATION'),('CACHE'),('CENTURY'),('COLUMN'),('CLIENT'),('CUBE'),('CYCLE'),('DATA'),('DATE'),('DEBUG'),('DECADE'),('DEALLOCATE'),('DIAGNOSTICS'),('DISTINCT'),('DOW'),('DOY'),('EXEC'),('EXECUTE'),('EXPLAIN'),('FIRST'),('FWF'),('GROUPING'),('GROUPS'),('INCREMENT'),('INTERVAL'),('KEY'),('LANGUAGE'),('LARGE'),('LAST'),('LATERAL'),('LEVEL'),('LOADER'),('MATCH'),('MATCHED'),('MAXVALUE'),('MINVALUE'),('NAME'),('NO'),('NULLS'),('OBJECT'),('OPTIONS'),('PASSWORD'),('PLAN'),('PRECISION'),('PREP'),('PREPARE'),('QUARTER'),('RELEASE'),('REPLACE'),('ROLLUP'),('SCHEMA'),('SEED'),('SERVER'),('SESSION'),('SETS'),('SIZE'),('STATEMENT'),('TABLE'),('TEMP'),('TEMPORARY'),('TEXT'),('TIME'),('TIMESTAMP'),('TRACE'),('TYPE'),('UNIONJOIN'),('WEEK'),('YEAR'),('ZONE');
 commit;
 set schema "sys";
 

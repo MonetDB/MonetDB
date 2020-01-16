@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -11,8 +11,6 @@
 #include "sql_string.h"
 #include "sql_decimal.h"
 #include "mtime.h"
-
-static int atom_debug = 0;
 
 void
 atom_init( atom *a )
@@ -125,13 +123,13 @@ atom_int( sql_allocator *sa, sql_subtype *tpe,
 			break;
 #endif
 		default:
-			fprintf(stderr, "atom_int %d\n", a->data.vtype);
+			TRC_INFO(SQL_ATOM_TR, "%d\n", a->data.vtype);
 			assert(0);
 		}
 		a->d = (dbl) val;
 		a->data.len = 0;
-		if (atom_debug)
-			fprintf(stderr, "atom_int(%s,%.40g)\n", tpe->type->sqlname, (dbl)val);
+
+		TRC_DEBUG(SQL_ATOM_TR, "(%s, %.40g)\n", tpe->type->sqlname, (dbl)val);
 		return a;
 	}
 }
@@ -210,8 +208,7 @@ atom_string(sql_allocator *sa, sql_subtype *tpe, const char *val)
 		a->data.len = strlen(a->data.val.sval);
 	}
 
-	if (atom_debug)
-		fprintf(stderr, "atom_string(%s,%s)\n", tpe->type->sqlname, val);
+	TRC_DEBUG(SQL_ATOM_TR, "(%s, %s)\n", tpe->type->sqlname, val);
 	return a;
 }
 
@@ -232,8 +229,7 @@ atom_float(sql_allocator *sa, sql_subtype *tpe, double val)
 	}
 	a->data.vtype = tpe->type->localtype;
 	a->data.len = 0;
-	if (atom_debug)
-		fprintf(stderr, "atom_float(%s,%f)\n", tpe->type->sqlname, val);
+	TRC_DEBUG(SQL_ATOM_TR, "(%s, %f)\n", tpe->type->sqlname, val);
 	return a;
 }
 
@@ -309,8 +305,7 @@ atom_general(sql_allocator *sa, sql_subtype *tpe, const char *val)
 	atom *a;
 	ptr p = NULL;
 
-	if (atom_debug)
-		fprintf(stderr, "atom_general(%s,%s)\n", tpe->type->sqlname, val);
+	TRC_DEBUG(SQL_ATOM_TR, "(%s, %s)\n", tpe->type->sqlname, val);
 
 	if (tpe->type->localtype == TYPE_str)
 		return atom_string(sa, tpe, val);

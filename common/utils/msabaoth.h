@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #ifndef _SEEN_SABAOTH_H
@@ -62,6 +62,7 @@ typedef struct Ssabuplog {
 #endif
 
 msab_export void msab_dbpathinit(const char *dbpath);
+msab_export void msab_dbnameinit(const char *dbname); /* switch dbname, used by multiplex-funnel */
 msab_export void msab_dbfarminit(const char *dbfarm);
 msab_export char *msab_getDBfarm(char **ret);
 msab_export char *msab_getDBname(char **ret);
