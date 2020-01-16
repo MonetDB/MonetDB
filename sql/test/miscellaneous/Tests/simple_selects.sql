@@ -14,3 +14,6 @@ select cast(sum(42) as bigint) having 42>80;
 
 select 1 having false;
 select 1 having true;
+
+ select cast(true as interval second); --error, not possible
+ select cast(true as interval month); --error, not possible

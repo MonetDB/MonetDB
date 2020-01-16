@@ -240,7 +240,7 @@ BATproject(BAT *l, BAT *r)
 	struct canditer ci, *lci = NULL;
 	lng t0 = GDKusec();
 
-	TRC_DEBUG(ALGO, "%s(l=" ALGOBATFMT "," 
+	TRC_DEBUG(ALGO, "%s(l=" ALGOBATFMT ","
 				"r=" ALGOBATFMT ")\n",
 			  	__func__,
 			  	ALGOBATPAR(l), ALGOBATPAR(r));

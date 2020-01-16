@@ -45,7 +45,7 @@ virtualize(BAT *bn)
 	     * (const oid *) Tloc(bn, BUNlast(bn) - 1))) {
 		/* column is dense, replace by virtual oid */
 		TRC_DEBUG(ALGO, "%s(bn=" ALGOBATFMT ",seq="OIDFMT")\n",
-					__func__, 
+					__func__,
 					ALGOBATPAR(bn),
 				  	BATcount(bn) > 0 ? * (const oid *) Tloc(bn, 0) : 0);
 		if (BATcount(bn) == 0)

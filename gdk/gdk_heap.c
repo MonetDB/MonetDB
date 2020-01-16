@@ -629,7 +629,7 @@ HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, b
 		if (truncsize < h->size &&
 		    (fd = GDKfdlocate(h->farmid, nme, "mrb+", ext)) >= 0) {
 			ret = ftruncate(fd, truncsize);
-			TRC_DEBUG(HEAP, 
+			TRC_DEBUG(HEAP,
 					"ftruncate(file=%s.%s, size=%zu"
 					  ") = %d\n", nme, ext, truncsize, ret);
 			close(fd);
@@ -714,7 +714,7 @@ HEAPsave_intern(Heap *h, const char *nme, const char *ext, const char *suffix, b
 	} else if (store != STORE_MEM) {
 		store = h->storage;
 	}
-	TRC_DEBUG(HEAP, 
+	TRC_DEBUG(HEAP,
 			"(%s.%s,storage=%d,free=%zu,size=%zu,dosync=%s)\n",
 			  nme, ext, (int) h->newstorage, h->free, h->size,
 			  dosync?"true":"false");
@@ -865,7 +865,7 @@ HEAP_printstatus(Heap *heap)
 	size_t block, cur_free = hheader->head;
 	CHUNK *blockp;
 
-	TRC_DEBUG(TRACE, 
+	TRC_DEBUG(TRACE,
 		"HEAP has head %zu and alignment %d and size %zu\n",
 		hheader->head, hheader->alignment, heap->free);
 
@@ -876,7 +876,7 @@ HEAP_printstatus(Heap *heap)
 		blockp = HEAP_index(heap, block, CHUNK);
 
 		if (block == cur_free) {
-			TRC_DEBUG(TRACE, 
+			TRC_DEBUG(TRACE,
 				"Free block at %p has size %zu and next %zu\n",
 				(void *)block,
 				blockp->size, blockp->next);
@@ -886,7 +886,7 @@ HEAP_printstatus(Heap *heap)
 		} else {
 			size_t size = blocksize(hheader, blockp);
 
-			TRC_DEBUG(TRACE, 
+			TRC_DEBUG(TRACE,
 				"Block at %zu with size %zu\n",
 				block, size);
 			block += size;

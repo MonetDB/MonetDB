@@ -61,9 +61,9 @@
 
 /* replace BATconstant with a version that produces a void bat for
  * TYPE_oid/nil */
-#define BATconstantV(HSEQ, TAILTYPE, VALUE, CNT, ROLE)		\
+#define BATconstantV(HSEQ, TAILTYPE, VALUE, CNT, ROLE)			\
 	((TAILTYPE) == TYPE_oid && ((CNT) == 0 || *(oid*)(VALUE) == oid_nil) \
-	 ? BATconstant(HSEQ, TYPE_void, VALUE, CNT, ROLE)	\
+	 ? BATconstant(HSEQ, TYPE_void, VALUE, CNT, ROLE)		\
 	 : BATconstant(HSEQ, TAILTYPE, VALUE, CNT, ROLE))
 
 static gdk_return
@@ -11888,7 +11888,7 @@ VARcalcrsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
 #define grtr3(a,b,i,t)	(is_##t##_nil(a) || is_##t##_nil(b) ? bit_nil : LT##t(b, a) || (i && EQ##t(a, b)))
 #define not3(a)		(is_bit_nil(a) ? bit_nil : !(a))
 
-#define between3(v, lo, linc, hi, hinc, TYPE)	\
+#define between3(v, lo, linc, hi, hinc, TYPE)				\
 	and3(grtr3(v, lo, linc, TYPE), less3(v, hi, hinc, TYPE))
 
 #define BETWEEN(v, lo, hi, TYPE)					\

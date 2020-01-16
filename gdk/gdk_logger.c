@@ -647,7 +647,7 @@ log_read_updates(logger *lg, trans *tr, logformat *l, char *name, int tpe, oid i
 
 						if (h == NULL)
 							res = LOG_EOF;
-						else if (BUNappend(uid, h, true) != GDK_SUCCEED) 
+						else if (BUNappend(uid, h, true) != GDK_SUCCEED)
 							res = LOG_ERR;
 					}
 				}
@@ -2976,7 +2976,7 @@ log_delta(logger *lg, BAT *uid, BAT *uval, const char *name, char tpe, oid id)
 			BATiter ui = bat_iterator(uid);
 			const oid *id = BUNtail(ui, 0);
 
-			if (mnstr_write(lg->log, &compress, 1, 1) != 1) 
+			if (mnstr_write(lg->log, &compress, 1, 1) != 1)
 				return GDK_FAIL;
 			if (compress) {
 				oid seq = uid->tseqbase;
