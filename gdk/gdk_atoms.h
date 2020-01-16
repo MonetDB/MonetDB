@@ -224,9 +224,9 @@ gdk_export const ptr ptr_nil;
  * this would make the commit tremendously complicated.
  */
 #ifdef HAVE_HGE
-#define ATOM_CASE_16_hge						\
-		case 16:						\
-			* (hge *) d_ = * (hge *) s_;			\
+#define ATOM_CASE_16_hge				\
+		case 16:				\
+			* (hge *) d_ = * (hge *) s_;	\
 			break
 #else
 #define ATOM_CASE_16_hge

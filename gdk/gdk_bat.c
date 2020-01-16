@@ -857,29 +857,29 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 }
 
 #ifdef HAVE_HGE
-#define un_move_sz16(src, dst, sz)					\
-		if (sz == 16) {						\
-			* (hge *) dst = * (hge *) src;			\
+#define un_move_sz16(src, dst, sz)			\
+		if (sz == 16) {				\
+			* (hge *) dst = * (hge *) src;	\
 		} else
 #else
 #define un_move_sz16(src, dst, sz)
 #endif
 
-#define un_move(src, dst, sz)						\
-	do {								\
-		un_move_sz16(src,dst,sz)				\
-		if (sz == 8) {						\
-			* (lng *) dst = * (lng *) src;			\
-		} else if (sz == 4) {					\
-			* (int *) dst = * (int *) src;			\
-		} else if (sz > 0) {					\
-			char *_dst = (char *) dst;			\
-			char *_src = (char *) src;			\
-			char *_end = _src + sz;				\
-									\
-			while (_src < _end)				\
-				*_dst++ = *_src++;			\
-		}							\
+#define un_move(src, dst, sz)				\
+	do {						\
+		un_move_sz16(src,dst,sz)		\
+		if (sz == 8) {				\
+			* (lng *) dst = * (lng *) src;	\
+		} else if (sz == 4) {			\
+			* (int *) dst = * (int *) src;	\
+		} else if (sz > 0) {			\
+			char *_dst = (char *) dst;	\
+			char *_src = (char *) src;	\
+			char *_end = _src + sz;		\
+							\
+			while (_src < _end)		\
+				*_dst++ = *_src++;	\
+		}					\
 	} while (0)
 #define acc_move(l, p)							\
 	do {								\

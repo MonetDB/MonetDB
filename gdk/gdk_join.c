@@ -2391,13 +2391,13 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	return GDK_FAIL;
 }
 
-#define HASHLOOPBODY()							\
-	do {								\
-		MAYBEEXTEND(1);						\
-		APPEND(r1, lo);						\
-		if (r2)							\
-			APPEND(r2, ro);					\
-		nr++;							\
+#define HASHLOOPBODY()				\
+	do {					\
+		MAYBEEXTEND(1);			\
+		APPEND(r1, lo);			\
+		if (r2)				\
+			APPEND(r2, ro);		\
+		nr++;				\
 	} while (false)
 
 #define HASHloop_bound(bi, h, hb, v, lo, hi)		\

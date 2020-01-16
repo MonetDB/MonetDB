@@ -1083,7 +1083,7 @@ gdk_export uint8_t ATOMelmshift(int sz);
 
 #define bunfastapp(b, v)						\
 	do {								\
-		if (BATcount(b) >= BATcapacity(b)) {				\
+		if (BATcount(b) >= BATcapacity(b)) {			\
 			if (BATcount(b) == BUN_MAX) {			\
 				GDKerror("bunfastapp: too many elements to accomodate (" BUNFMT ")\n", BUN_MAX); \
 				goto bunins_failed;			\
@@ -1097,7 +1097,7 @@ gdk_export uint8_t ATOMelmshift(int sz);
 #define bunfastappTYPE(TYPE, b, v)					\
 	do {								\
 		if (BATcount(b) >= BATcapacity(b)) {			\
-			if (BATcount(b) == BUN_MAX) {	\
+			if (BATcount(b) == BUN_MAX) {			\
 				GDKerror("bunfastapp: too many elements to accomodate (" BUNFMT ")\n", BUN_MAX); \
 				goto bunins_failed;			\
 			}						\
@@ -2000,21 +2000,21 @@ gdk_export str GDKstrndup(const char *s, size_t n)
 				__func__, __FILE__, __LINE__);	\
 		_res;						\
 	})
-#define GDKmmap(p, m, l)						\
-	({								\
-		const char *_path = (p);				\
-		int _mode = (m);					\
-		size_t _len = (l);					\
-		void *_res = GDKmmap(_path, _mode, _len);		\
-		ALLOCDEBUG						\
-			fprintf(stderr,					\
-				"#GDKmmap(%s,0x%x,%zu) -> %p"		\
-				" %s[%s:%d]\n",				\
-				_path ? _path : "NULL",			\
-				(unsigned) _mode, _len,			\
-				_res,					\
-				__func__, __FILE__, __LINE__);		\
-		_res;							\
+#define GDKmmap(p, m, l)					\
+	({							\
+		const char *_path = (p);			\
+		int _mode = (m);				\
+		size_t _len = (l);				\
+		void *_res = GDKmmap(_path, _mode, _len);	\
+		ALLOCDEBUG					\
+			fprintf(stderr,				\
+				"#GDKmmap(%s,0x%x,%zu) -> %p"	\
+				" %s[%s:%d]\n",			\
+				_path ? _path : "NULL",		\
+				(unsigned) _mode, _len,		\
+				_res,				\
+				__func__, __FILE__, __LINE__);	\
+		_res;						\
 	 })
 #define malloc(s)						\
 	({							\
@@ -2656,10 +2656,10 @@ gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
 	     hb = HASHgetlink(h,hb))				\
 		if (ATOMcmp(h->type, v, BUNtvar(bi, hb)) == 0)
 
-#define HASHloop_TYPE(bi, h, hb, v, TYPE)			\
-	for (hb = HASHget(h, hash_##TYPE(h, v));		\
-	     hb != HASHnil(h);					\
-	     hb = HASHgetlink(h,hb))				\
+#define HASHloop_TYPE(bi, h, hb, v, TYPE)				\
+	for (hb = HASHget(h, hash_##TYPE(h, v));			\
+	     hb != HASHnil(h);						\
+	     hb = HASHgetlink(h,hb))					\
 		if (* (const TYPE *) (v) == * (const TYPE *) BUNtloc(bi, hb))
 
 #define HASHloop_bte(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, bte)

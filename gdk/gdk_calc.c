@@ -5732,7 +5732,7 @@ mul_##TYPE1##_##TYPE2##_hge(const TYPE1 *lft, int incr1,		\
 			    BUN cnt, BUN start,				\
 			    BUN end, const oid *restrict cand,		\
 			    const oid *candend, oid candoff,		\
-			    bool abort_on_error)				\
+			    bool abort_on_error)			\
 {									\
 	BUN i, j, k;							\
 	BUN nils = 0;							\
@@ -5765,7 +5765,7 @@ mul_##TYPE1##_##TYPE2##_lng(const TYPE1 *lft, int incr1,		\
 			    BUN cnt, BUN start,				\
 			    BUN end, const oid *restrict cand,		\
 			    const oid *candend, oid candoff,		\
-			    bool abort_on_error)				\
+			    bool abort_on_error)			\
 {									\
 	BUN i, j, k;							\
 	BUN nils = 0;							\
@@ -12765,7 +12765,7 @@ VARcalcrsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
 #define grtr3(a,b,i,t)	(is_##t##_nil(a) || is_##t##_nil(b) ? bit_nil : LT##t(b, a) || (i && EQ##t(a, b)))
 #define not3(a)		(is_bit_nil(a) ? bit_nil : !(a))
 
-#define between3(v, lo, linc, hi, hinc, TYPE)	\
+#define between3(v, lo, linc, hi, hinc, TYPE)				\
 	and3(grtr3(v, lo, linc, TYPE), less3(v, hi, hinc, TYPE))
 
 #define BETWEEN(v, lo, hi, TYPE)					\
@@ -13420,7 +13420,7 @@ static BUN								\
 convert_##TYPE1##_oid(const TYPE1 *src, oid *restrict dst, BUN cnt,	\
 		      BUN start, BUN end, const oid *restrict cand,	\
 		      const oid *candend, oid candoff,			\
-		      bool abort_on_error, bool *reduce)			\
+		      bool abort_on_error, bool *reduce)		\
 {									\
 	BUN i, nils = 0;						\
 									\
@@ -13450,7 +13450,7 @@ static BUN								\
 convert_##TYPE1##_oid(const TYPE1 *src, oid *restrict dst, BUN cnt,	\
 		      BUN start, BUN end, const oid *restrict cand,	\
 		      const oid *candend, oid candoff,			\
-		      bool abort_on_error, bool *reduce)			\
+		      bool abort_on_error, bool *reduce)		\
 {									\
 	BUN i, nils = 0;						\
 									\

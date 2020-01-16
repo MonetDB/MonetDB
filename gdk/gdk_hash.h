@@ -42,7 +42,7 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 #endif
 
 #if SIZEOF_BUN <= 4
-#define HASHget(h,i)				\
+#define HASHget(h,i)						\
 	((h)->width == BUN4 ? HASHget4(h,i) : HASHget2(h,i))
 #define HASHput(h,i,v)				\
 	do {					\
@@ -52,7 +52,7 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 			HASHput4(h,i,v);	\
 		}				\
 	} while (0)
-#define HASHgetlink(h,i)				\
+#define HASHgetlink(h,i)						\
 	((h)->width == BUN4 ? HASHgetlink4(h,i) : HASHgetlink2(h,i))
 #define HASHputlink(h,i,v)			\
 	do {					\
@@ -73,9 +73,9 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 		}						\
 	} while (0)
 #else
-#define HASHget(h,i)					\
-	((h)->width == BUN8 ? HASHget8(h,i) :		\
-	 (h)->width == BUN4 ? HASHget4(h,i) :		\
+#define HASHget(h,i)				\
+	((h)->width == BUN8 ? HASHget8(h,i) :	\
+	 (h)->width == BUN4 ? HASHget4(h,i) :	\
 	 HASHget2(h,i))
 #define HASHput(h,i,v)				\
 	do {					\
