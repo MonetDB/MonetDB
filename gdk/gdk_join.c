@@ -216,7 +216,7 @@ joininitresults(BAT **r1p, BAT **r2p, BUN lcnt, BUN rcnt, bool lkey, bool rkey,
 
 #define APPEND(b, o)		(((oid *) b->theap.base)[b->batCount++] = (o))
 
-#define MAYBEEXTEND_PROGRESS(CNT, LCUR, LCNT)			\
+#define MAYBEEXTEND_PROGRESS(CNT, LCUR, LCNT)				\
 	do {								\
 		BUN N = (CNT);						\
 		if (BATcount(r1) + N > BATcapacity(r1)) {		\
@@ -2363,20 +2363,20 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	return GDK_FAIL;
 }
 
-#define HASHLOOPBODY()							\
-	do {								\
-		MAYBEEXTEND(1, lci);					\
-		APPEND(r1, lo);						\
-		if (r2)							\
-			APPEND(r2, ro);					\
-		nr++;							\
+#define HASHLOOPBODY()				\
+	do {					\
+		MAYBEEXTEND(1, lci);		\
+		APPEND(r1, lo);			\
+		if (r2)				\
+			APPEND(r2, ro);		\
+		nr++;				\
 	} while (false)
 
-#define HASHloop_bound_TYPE(vals, h, hb, v, lo, hi, TYPE)		\
-	for (hb = HASHget(h, hash_##TYPE(h, &v));			\
-	     hb != HASHnil(h);						\
-	     hb = HASHgetlink(h,hb))					\
-		if (hb >= (lo) && hb < (hi) &&				\
+#define HASHloop_bound_TYPE(vals, h, hb, v, lo, hi, TYPE)	\
+	for (hb = HASHget(h, hash_##TYPE(h, &v));		\
+	     hb != HASHnil(h);					\
+	     hb = HASHgetlink(h,hb))				\
+		if (hb >= (lo) && hb < (hi) &&			\
 		    v == vals[hb])
 
 #define HASHloop_bound(bi, h, hb, v, lo, hi)		\

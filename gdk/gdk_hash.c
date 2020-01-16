@@ -94,7 +94,7 @@ HASHclear(Hash *h)
 	 * rather than iteratively assigning individual
 	 * BUNi_NONE values in a for-loop
 	 */
-	memset(h->Bckt, 0xFF, NHASHBUCKETS(h) * h->width);
+	memset(h->Bckt, 0xFF, h->nbucket * h->width);
 }
 
 #define HASH_VERSION		3
@@ -173,8 +173,8 @@ HASHnew(Hash *h, int tpe, BUN size, BUN mask, BUN count, bool bcktonly)
 	((size_t *) h->heapbckt.base)[4] = (size_t) count;
 	((size_t *) h->heapbckt.base)[5] = (size_t) h->nunique;
 	((size_t *) h->heapbckt.base)[6] = (size_t) h->nheads;
-	TRC_DEBUG(ACCELERATOR, 
-			"create hash(size " BUNFMT ", mask " BUNFMT ", width %d, total " BUNFMT " bytes);\n", size, mask, h->width, (size + mask) * h->width);
+	TRC_DEBUG(ACCELERATOR,
+		  "create hash(size " BUNFMT ", mask " BUNFMT ", width %d, total " BUNFMT " bytes);\n", size, mask, h->width, (size + mask) * h->width);
 	return GDK_SUCCEED;
 }
 
@@ -189,7 +189,7 @@ HASHcollisions(BAT *b, Hash *h, const char *func)
 	if (b == 0 || h == 0)
 		return;
 	nil = HASHnil(h);
-	for (i = 0, j = NHASHBUCKETS(h); i < j; i++)
+	for (i = 0, j = h->nbucket; i < j; i++)
 		if ((p = HASHget(h, i)) != nil) {
 			entries++;
 			cnt = 0;
@@ -199,12 +199,12 @@ HASHcollisions(BAT *b, Hash *h, const char *func)
 				max = cnt;
 			total += cnt;
 		}
-	TRC_DEBUG(GDK_HASH, 
+	TRC_DEBUG(GDK_HASH,
 		"%s(" ALGOBATFMT "): statistics " BUNFMT ", "
-		"entries " LLFMT ", nunique " BUNFMT ", nbuckets " BUNFMT ", "
+		"entries " LLFMT ", nunique " BUNFMT ", nbucket " BUNFMT ", "
 		"max " LLFMT ", avg %2.6f;\n",
 		func, ALGOBATPAR(b), BATcount(b), entries,
-		h->nunique, NHASHBUCKETS(h), max,
+		h->nunique, h->nbucket, max,
 		entries == 0 ? 0 : total / entries);
 }
 
@@ -295,18 +295,9 @@ HASHupgradehashheap(BAT *b)
 gdk_return
 HASHgrowbucket(BAT *b)
 {
-	switch (ATOMsize(b->ttype)) {
-	case 1:
-	case 2:
-		/* no need to grow bucket list */
-		return GDK_SUCCEED;
-	default:
-		break;
-	}
-
 	Hash *h = b->thash;
 	BUN nbucket;
-	BUN onbucket = NHASHBUCKETS(h);
+	BUN onbucket = h->nbucket;
 	lng t0 = 0;
 
 	ACCELDEBUG t0 = GDKusec();
@@ -327,7 +318,7 @@ HASHgrowbucket(BAT *b)
 				return GDK_FAIL;
 		}
 	}
-	while (h->nunique >= (nbucket = NHASHBUCKETS(h)) * 7 / 8) {
+	while (h->nunique >= (nbucket = h->nbucket) * 7 / 8) {
 		BUN new = h->nbucket;
 		BUN old = new & h->mask1;
 		BATiter bi = bat_iterator(b);
@@ -391,13 +382,13 @@ HASHgrowbucket(BAT *b)
 		else
 			HASHputlink(h, lold, HASHnil(h));
 		BATsetprop_nolock(b, GDK_HASH_BUCKETS, TYPE_oid,
-				  &(oid){NHASHBUCKETS(h)});
+				  &(oid){h->nbucket});
 	}
-	ACCELDEBUG if (NHASHBUCKETS(h) > onbucket) {
+	ACCELDEBUG if (h->nbucket > onbucket) {
 		fprintf(stderr, "#%s: %s(" ALGOBATFMT ") " BUNFMT
 			" -> " BUNFMT " buckets (" LLFMT " usec)\n",
 			MT_thread_getname(), __func__, ALGOBATPAR(b),
-			onbucket, NHASHBUCKETS(h), GDKusec() - t0);
+			onbucket, h->nbucket, GDKusec() - t0);
 		HASHcollisions(b, h, __func__);
 	}
 	return GDK_SUCCEED;
@@ -500,15 +491,15 @@ BATcheckhash(BAT *b)
 									b,
 									GDK_HASH_BUCKETS,
 									TYPE_oid,
-									&(oid){NHASHBUCKETS(h)});
+									&(oid){h->nbucket});
 								BATsetprop_nolock(
 									b,
 									GDK_NUNIQUE,
 									TYPE_oid,
 									&(oid){h->nunique});
 								b->thash = h;
-								TRC_DEBUG(ACCELERATOR, 
-										"(" ALGOBATFMT "): reusing persisted hash\n", ALGOBATPAR(b));
+								TRC_DEBUG(ACCELERATOR,
+									  "BATcheckhash(" ALGOBATFMT "): reusing persisted hash\n", ALGOBATPAR(b));
 								MT_lock_unset(&b->batIdxLock);
 								return true;
 							}
@@ -919,7 +910,7 @@ BAThash_impl(BAT *b, BAT *s, const char *ext)
 		break;
 	}
 	if (s == NULL) {
-		BATsetprop_nolock(b, GDK_HASH_BUCKETS, TYPE_oid, &(oid){NHASHBUCKETS(h)});
+		BATsetprop_nolock(b, GDK_HASH_BUCKETS, TYPE_oid, &(oid){h->nbucket});
 		BATsetprop_nolock(b, GDK_NUNIQUE, TYPE_oid, &(oid){h->nunique});
 	}
 	h->heapbckt.parentid = b->batCacheid;
@@ -1061,7 +1052,7 @@ HASHgonebad(BAT *b, const void *v)
 	if (h == NULL)
 		return true;	/* no hash is bad hash? */
 
-	if (NHASHBUCKETS(h) * 2 < BATcount(b)) {
+	if (h->nbucket * 2 < BATcount(b)) {
 		int (*cmp) (const void *, const void *) = ATOMcompare(b->ttype);
 		BUN i = HASHget(h, (BUN) HASHprobe(h, v)), nil = HASHnil(h);
 		for (cnt = hit = 1; i != nil; i = HASHgetlink(h, i), cnt++)
