@@ -24,6 +24,7 @@ end foo;
 
 mdb.list("user","foo");
 optimizer.deadcode("user","foo");
+optimizer.garbageCollector("user","foo");
 mdb.list("user","foo");
 user.foo();
 

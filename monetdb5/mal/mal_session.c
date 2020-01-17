@@ -101,14 +101,6 @@ MSresetClientPrg(Client cntxt, str mod, str fcn)
 	p->argc = 1;
 	p->argv[0] = 0;
 
-#ifdef _DEBUG_SESSION_
-	fprintf(stderr,"reset sym %s %s to %s, id %d\n", 
-		cntxt->curprg->name, getFunctionId(p), nme, findVariable(mb,nme) );
-	fprintf(stderr,"vtop %d\n", mb->vtop);
-	if( mb->vtop)
-	fprintf(stderr,"first var %s\n", mb->var[0].id);
-#endif
-
 	setModuleId(p, mod);
 	setFunctionId(p, fcn);
 	if( findVariable(mb,fcn) < 0)
@@ -287,7 +279,6 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 			if (err != NULL) {
 				/* this is kind of awful, but we need to get rid of this
 				 * message */
-				fprintf(stderr, "!msab_getMyStatus: %s\n", err);
 				free(err);
 				mnstr_printf(fout, "!internal server error, "
 							 "please try again later\n");
@@ -431,9 +422,6 @@ MSresetVariables(Client cntxt, MalBlkPtr mb, MalStkPtr glb, int start)
 {
 	int i;
 
-#ifdef _DEBUG_SESSION_
-	fprintf(stderr,"resetVarables %d  vtop %d errors %s\n", start, mb->vtop,mb->errors);
-#endif
 	for (i = 0; i < start && i < mb->vtop ; i++)
 		setVarUsed(mb,i);
 	if (mb->errors == MAL_SUCCEED)
@@ -452,14 +440,8 @@ MSresetVariables(Client cntxt, MalBlkPtr mb, MalStkPtr glb, int start)
 			}
 		}
 
-#ifdef _DEBUG_SESSION_
-	fprintf(stderr,"resetVar %s %d\n", getFunctionId(mb->stmt[0]), mb->var[mb->stmt[0]->argv[0]].used);
-#endif
 	if (mb->errors == MAL_SUCCEED)
 		trimMalVariables_(mb, glb);
-#ifdef _DEBUG_SESSION_
-	fprintf(stderr,"after trim %s %d\n", getFunctionId(mb->stmt[0]), mb->vtop);
-#endif
 }
 
 /*
@@ -740,4 +722,3 @@ MALengine(Client c)
 		mnstr_printf(c->fdout, "mdb>#EOD\n");
 	return msg;
 }
-

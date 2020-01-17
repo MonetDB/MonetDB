@@ -19,8 +19,6 @@
 #include "mapi.h"
 #include "mutils.h"
 
-/* #define _DEBUG_REMOTE */
-
 #define RMTT_L_ENDIAN   (0<<1)
 #define RMTT_B_ENDIAN   (1<<1)
 #define RMTT_32_BITS    (0<<2)
@@ -43,7 +41,6 @@ typedef struct _connection {
 #endif
 #include <unistd.h> /* gethostname */
 
-/* #define _DEBUG_REMOTE_	    trace the interaction */
 /* #define _DEBUG_MAPI_		    trace mapi interaction */
 
 mal_export str RMTprelude(void *ret);

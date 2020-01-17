@@ -91,13 +91,13 @@ HASHinfo(BAT *bk, BAT *bv, Hash *h, str s)
 	if (BUNappend(bk, pre(s, "type"), false) != GDK_SUCCEED ||
 	    BUNappend(bv, ATOMname(h->type),false) != GDK_SUCCEED ||
 	    BUNappend(bk, pre(s, "mask"), false) != GDK_SUCCEED ||
-	    BUNappend(bv, local_utoa(NHASHBUCKETS(h), buf),false) != GDK_SUCCEED)
+	    BUNappend(bv, local_utoa(h->nbucket, buf),false) != GDK_SUCCEED)
 		return GDK_FAIL;
 
 	for (i = 0; i < COLLISION + 1; i++) {
 		cnt[i] = 0;
 	}
-	for (i = 0; i < NHASHBUCKETS(h); i++) {
+	for (i = 0; i < h->nbucket; i++) {
 		j = HASHlist(h, i);
 		for (k = 0; j; k++)
 			j >>= 1;

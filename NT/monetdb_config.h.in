@@ -282,6 +282,7 @@
 #define HAVE_LOCALTIME_R 1
 /* there is something very similar to localtime_r on Windows: */
 #define localtime_r(tp,tm)	localtime_s(tm,tp)
+#define gmtime_r(tp,tm)		gmtime_s(tm,tp)
 
 /* Define to 1 if you have the `lockf' function. */
 /* #undef HAVE_LOCKF */

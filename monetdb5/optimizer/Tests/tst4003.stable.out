@@ -32,9 +32,9 @@ function user.foo():void;               	#[0] (0)  0
 # identical until insert takes place 
     d:bat[:oid] := algebra.select(b:bat[:str], nil:bat[:oid], "hello":str, "world":str, true:bit, true:bit, false:bit);	#[4] (0) ALGselect2 5 <- 1 6 7 8 9 10 11 
 # mapped onto one instruction 
-end user.foo;                           	#[6] (0)  
-#commonTerms          actions= 1 time=17 usec 
-#aliases              actions= 1 time=8 usec 
+end user.foo;	#[7] (0)  
+#commonTerms          actions= 1 time=4 usec 
+#aliases              actions= 1 time=2 usec 
 
 # 23:52:51 >  
 # 23:52:51 >  Done.

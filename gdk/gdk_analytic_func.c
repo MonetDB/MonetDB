@@ -25,39 +25,39 @@
 			}					\
 		} else {					\
 			for (; bp < end; bp++, rb++) {		\
-				if (*bp == prev) { \
+				if (*bp == prev) {		\
 					*rb = FALSE;		\
-				} else {		\
-					*rb = TRUE;	\
-					prev = *bp;	\
-				} \
+				} else {			\
+					*rb = TRUE;		\
+					prev = *bp;		\
+				}				\
 			}					\
 		}						\
 	} while (0)
 
 /* We use NaN for floating point null values, which always output false on equality tests */
-#define ANALYTICAL_DIFF_FLOAT_IMP(TPE)				\
-	do {							\
-		TPE *bp = (TPE*)Tloc(b, 0);			\
-		TPE prev = *bp, *end = bp + cnt;		\
-		if (np) {					\
-			for (; bp < end; bp++, rb++, np++) {	\
-				*rb = *np;			\
+#define ANALYTICAL_DIFF_FLOAT_IMP(TPE)					\
+	do {								\
+		TPE *bp = (TPE*)Tloc(b, 0);				\
+		TPE prev = *bp, *end = bp + cnt;			\
+		if (np) {						\
+			for (; bp < end; bp++, rb++, np++) {		\
+				*rb = *np;				\
 				if (*bp != prev && (!is_##TPE##_nil(*bp) || !is_##TPE##_nil(prev))) { \
-					*rb = TRUE;		\
-					prev = *bp;		\
-				}				\
-			}					\
-		} else {					\
-			for (; bp < end; bp++, rb++) {		\
+					*rb = TRUE;			\
+					prev = *bp;			\
+				}					\
+			}						\
+		} else {						\
+			for (; bp < end; bp++, rb++) {			\
 				if (*bp == prev || (is_##TPE##_nil(*bp) && is_##TPE##_nil(prev))) { \
-					*rb = FALSE; \
-				} else {		\
-					*rb = TRUE;	\
-					prev = *bp;	\
-				} \
-			}					\
-		}						\
+					*rb = FALSE;			\
+				} else {				\
+					*rb = TRUE;			\
+					prev = *bp;			\
+				}					\
+			}						\
+		}							\
 	} while (0)
 
 gdk_return
@@ -431,7 +431,7 @@ GDKanalyticallast(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
 		}							\
 	} while (0)
 
-#define ANALYTICAL_NTHVALUE_IMP_MULTI_FIXED(TPE1, TPE2, TPE3)			\
+#define ANALYTICAL_NTHVALUE_IMP_MULTI_FIXED(TPE1, TPE2, TPE3)		\
 	do {								\
 		TPE2 *restrict lp = (TPE2*)Tloc(l, 0);			\
 		for (; i < cnt; i++, rb++) {				\
@@ -452,7 +452,7 @@ GDKanalyticallast(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
 #ifdef HAVE_HGE
 #define ANALYTICAL_NTHVALUE_CALC_FIXED_HGE(TPE1)			\
 	case TYPE_hge:							\
-		ANALYTICAL_NTHVALUE_IMP_MULTI_FIXED(TPE1, hge, hge); \
+		ANALYTICAL_NTHVALUE_IMP_MULTI_FIXED(TPE1, hge, hge);	\
 		break;
 #else
 #define ANALYTICAL_NTHVALUE_CALC_FIXED_HGE(TPE1)
@@ -474,13 +474,13 @@ GDKanalyticallast(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
 		case TYPE_lng:						\
 			ANALYTICAL_NTHVALUE_IMP_MULTI_FIXED(TPE1, lng, lng); \
 			break;						\
-		ANALYTICAL_NTHVALUE_CALC_FIXED_HGE(TPE1) \
+		ANALYTICAL_NTHVALUE_CALC_FIXED_HGE(TPE1)		\
 		default:						\
 			goto nosupport;					\
 		}							\
 	} while (0)
 
-#define ANALYTICAL_NTHVALUE_IMP_MULTI_VARSIZED(TPE1, TPE2)			\
+#define ANALYTICAL_NTHVALUE_IMP_MULTI_VARSIZED(TPE1, TPE2)		\
 	do {								\
 		TPE1 *restrict lp = (TPE1*)Tloc(l, 0);			\
 		for (; i < cnt; i++) {					\
@@ -678,9 +678,9 @@ GDKanalyticalnthvalue(BAT *r, BAT *b, BAT *s, BAT *e, BAT *l, const void *restri
 				if (*np) {				\
 					ncnt = (np - pnp);		\
 					rp += ncnt;			\
-					nbp = bp + ncnt; \
+					nbp = bp + ncnt;		\
 					ANALYTICAL_LAG_CALC(TPE);	\
-					bp = nbp; \
+					bp = nbp;			\
 					pnp = np;			\
 				}					\
 			}						\

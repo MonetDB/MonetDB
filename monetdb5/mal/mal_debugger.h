@@ -13,8 +13,6 @@
 #include "mal_scenario.h"
 #include "mal_client.h"
 
-#define MAL_DEBUGGER		/* debugger is active */
-
 #define MAXBREAKS 32
 
 mal_export void mdbDump(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

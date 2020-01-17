@@ -68,20 +68,18 @@ MCinit(void)
 		maxclients = atoi(max_clients);
 	if (maxclients <= 0) {
 		maxclients = 64;
-		if (GDKsetenv("max_clients", "64") != GDK_SUCCEED) {
-			fprintf(stderr, "!MCinit: GDKsetenv failed");
-			return false;
-		}
+		GDKsetenv("max_clients", "64") ;
 	}
 
 	MAL_MAXCLIENTS = /* client connections */ maxclients;
 	mal_clients = GDKzalloc(sizeof(ClientRec) * MAL_MAXCLIENTS);
 	if( mal_clients == NULL){
-		fprintf(stderr,"!MCinit:" MAL_MALLOC_FAIL);
+		TRC_CRITICAL(MAL_MAL, "Initialization failed: " MAL_MALLOC_FAIL "\n");
 		return false;
 	}
-	for (int i = 0; i < MAL_MAXCLIENTS; i++)
+	for (int i = 0; i < MAL_MAXCLIENTS; i++){
 		ATOMIC_INIT(&mal_clients[i].lastprint, 0);
+	}
 	return true;
 }
 
@@ -144,9 +142,6 @@ MCnewClient(void)
 	if (c == mal_clients + MAL_MAXCLIENTS)
 		return NULL;
 	c->idx = (int) (c - mal_clients);
-#ifdef MAL_CLIENT_DEBUG
-	fprintf(stderr,"New client created %d\n", (int) (c - mal_clients));
-#endif
 	return c;
 }
 
@@ -187,9 +182,6 @@ MCresetProfiler(stream *fdout)
 void
 MCexitClient(Client c)
 {
-#ifdef MAL_CLIENT_DEBUG
-	fprintf(stderr,"# Exit client %d\n", c->idx);
-#endif
 	finishSessionProfiler(c);
 	MCresetProfiler(c->fdout);
 	if (c->father == NULL) { /* normal client */
@@ -222,10 +214,8 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 
 	c->fdin = fin ? fin : bstream_create(GDKstdin, 0);
 	if ( c->fdin == NULL){
-		MT_lock_set(&mal_contextLock);
 		c->mode = FREECLIENT;
-		MT_lock_unset(&mal_contextLock);
-		fprintf(stderr,"!initClientRecord:" MAL_MALLOC_FAIL);
+		TRC_ERROR(MAL_MAL, "No stdin channel available\n");
 		return NULL;
 	}
 	c->yycur = 0;
@@ -258,11 +248,8 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 		if (fin == NULL) {
 			c->fdin->s = NULL;
 			bstream_destroy(c->fdin);
-			MT_lock_set(&mal_contextLock);
 			c->mode = FREECLIENT;
-			MT_lock_unset(&mal_contextLock);
 		}
-		fprintf(stderr, "!initClientRecord:" MAL_MALLOC_FAIL);
 		return NULL;
 	}
 	c->promptlength = strlen(prompt);
@@ -409,9 +396,6 @@ MCfreeClient(Client c)
 		return;
 	c->mode = FINISHCLIENT;
 
-#ifdef MAL_CLIENT_DEBUG
-	fprintf(stderr,"# Free client %d\n", c->idx);
-#endif
 	MCexitClient(c);
 
 	/* scope list and curprg can not be removed, because the client may
@@ -526,9 +510,6 @@ MCactiveClients(void)
 void
 MCcloseClient(Client c)
 {
-#ifdef MAL_DEBUG_CLIENT
-	fprintf(stderr,"closeClient %d " OIDFMT "\n", (int) (c - mal_clients), c->user);
-#endif
 	/* free resources of a single thread */
 	MCfreeClient(c);
 }
@@ -578,10 +559,6 @@ MCreadClient(Client c)
 {
 	bstream *in = c->fdin;
 
-#ifdef MAL_CLIENT_DEBUG
-	fprintf(stderr,"# streamClient %d %d\n", c->idx, isa_block_stream(in->s));
-#endif
-
 	while (in->pos < in->len &&
 		   (isspace((unsigned char) (in->buf[in->pos])) ||
 			in->buf[in->pos] == ';' || !in->buf[in->pos]))
@@ -613,15 +590,9 @@ MCreadClient(Client c)
 			if (p != in->buf + in->len - 1)
 				in->len++;
 		}
-#ifdef MAL_CLIENT_DEBUG
-		fprintf(stderr, "# simple stream received %d sum %zu\n", c->idx, sum);
-#endif
 	}
 	if (in->pos >= in->len) {
 		/* end of stream reached */
-#ifdef MAL_CLIENT_DEBUG
-		fprintf(stderr,"# end of stream received %d %d\n", c->idx, c->bak == 0);
-#endif
 		if (c->bak) {
 			MCpopClientInput(c);
 			if (c->fdin == NULL)
@@ -630,10 +601,6 @@ MCreadClient(Client c)
 		}
 		return 0;
 	}
-#ifdef MAL_CLIENT_DEBUG
-	fprintf(stderr,"# finished stream read %d %d\n", (int) in->pos, (int) in->len);
-	printf("#%s\n", in->buf);
-#endif
 	return 1;
 }
 

@@ -19,6 +19,7 @@
 #define PERSISTENTIDX 1
 
 #include "gdk_system_private.h"
+#include "gdk_tracer.h"
 
 enum heaptype {
 	offheap,
@@ -256,38 +257,38 @@ __hidden BAT *virtualize(BAT *bn)
 
 /* some macros to help print info about BATs when using ALGODEBUG */
 #define ALGOBATFMT	"%s#" BUNFMT "@" OIDFMT "[%s]%s%s%s%s%s%s%s%s%s"
-#define ALGOBATPAR(b)	BATgetId(b),			\
-			BATcount(b),			\
-			b->hseqbase,			\
-			ATOMname(b->ttype),		\
+#define ALGOBATPAR(b)	BATgetId(b),					\
+			BATcount(b),					\
+			b->hseqbase,					\
+			ATOMname(b->ttype),				\
 			!b->batTransient ? "P" : isVIEW(b) ? "V" : "T", \
 			BATtdense(b) ? "D" : b->ttype == TYPE_void && b->tvheap ? "X" :"", \
-			b->tsorted ? "S" : "",		\
-			b->trevsorted ? "R" : "",	\
-			b->tkey ? "K" : "",		\
-			b->tnonil ? "N" : "",		\
-			b->thash ? "H" : "",		\
-			b->torderidx ? "O" : "",	\
+			b->tsorted ? "S" : "",				\
+			b->trevsorted ? "R" : "",			\
+			b->tkey ? "K" : "",				\
+			b->tnonil ? "N" : "",				\
+			b->thash ? "H" : "",				\
+			b->torderidx ? "O" : "",			\
 			b->timprints ? "I" : b->theap.parentid && BBP_cache(b->theap.parentid)->timprints ? "(I)" : ""
 /* use ALGOOPTBAT* when BAT is optional (can be NULL) */
 #define ALGOOPTBATFMT	"%s%s" BUNFMT "%s" OIDFMT "%s%s%s%s%s%s%s%s%s%s%s%s"
-#define ALGOOPTBATPAR(b)				\
-			b ? BATgetId(b) : "",		\
-			b ? "#" : "",			\
-			b ? BATcount(b) : 0,		\
-			b ? "@" : "",			\
-			b ? b->hseqbase : 0,		\
-			b ? "[" : "",			\
-			b ? ATOMname(b->ttype) : "",	\
-			b ? "]" : "",			\
+#define ALGOOPTBATPAR(b)						\
+			b ? BATgetId(b) : "",				\
+			b ? "#" : "",					\
+			b ? BATcount(b) : 0,				\
+			b ? "@" : "",					\
+			b ? b->hseqbase : 0,				\
+			b ? "[" : "",					\
+			b ? ATOMname(b->ttype) : "",			\
+			b ? "]" : "",					\
 			b ? !b->batTransient ? "P" : isVIEW(b) ? "V" : "T" : "", \
 			b && BATtdense(b) ? "D" : b && b->ttype == TYPE_void && b->tvheap ? "X" :"", \
-			b && b->tsorted ? "S" : "",	\
-			b && b->trevsorted ? "R" : "",	\
-			b && b->tkey ? "K" : "",	\
-			b && b->tnonil ? "N" : "",	\
-			b && b->thash ? "H" : "",	\
-			b && b->torderidx ? "O" : "",	\
+			b && b->tsorted ? "S" : "",			\
+			b && b->trevsorted ? "R" : "",			\
+			b && b->tkey ? "K" : "",			\
+			b && b->tnonil ? "N" : "",			\
+			b && b->thash ? "H" : "",			\
+			b && b->torderidx ? "O" : "",			\
 			b ? b->timprints ? "I" : b->theap.parentid && BBP_cache(b->theap.parentid)->timprints ? "(I)" : "" : ""
 
 #define BBP_BATMASK	(128 * SIZEOF_SIZE_T - 1)
@@ -379,12 +380,9 @@ extern MT_Lock GDKtmLock;
 	({	void *_ptr = (p);				\
 		size_t _len = (l);				\
 		gdk_return _res = GDKmunmap(_ptr, _len);	\
-		ALLOCDEBUG					\
-			fprintf(stderr,				\
-				"#GDKmunmap(%p,%zu) -> %u"	\
-				" %s[%s:%d]\n",			\
-				_ptr, _len, _res,		\
-				__func__, __FILE__, __LINE__);	\
+		TRC_DEBUG(ALLOC,				\
+				"GDKmunmap(%p,%zu) -> %u\n",	\
+				_ptr, _len, _res);		\
 		_res;						\
 	})
 #define GDKmremap(p, m, oa, os, ns)					\
@@ -396,43 +394,33 @@ extern MT_Lock GDKtmLock;
 		size_t *_ns = (ns);					\
 		size_t _ons = *_ns;					\
 		void *_res = GDKmremap(_path, _mode, _oa, _os, _ns);	\
-		ALLOCDEBUG						\
-			fprintf(stderr,					\
-				"#GDKmremap(%s,0x%x,%p,%zu,%zu > %zu) -> %p" \
-				" %s[%s:%d]\n",				\
+			TRC_DEBUG(ALLOC,				\
+				"GDKmremap(%s,0x%x,%p,%zu,%zu > %zu) -> %p\n", \
 				_path ? _path : "NULL", (unsigned) _mode, \
-				_oa, _os, _ons, *_ns,			\
-				_res,					\
-				__func__, __FILE__, __LINE__);		\
+				_oa, _os, _ons, *_ns, _res);		\
 		_res;							\
 	 })
 #else
 static inline gdk_return
-GDKmunmap_debug(void *ptr, size_t len, const char *filename, int lineno)
+GDKmunmap_debug(void *ptr, size_t len)
 {
 	gdk_return res = GDKmunmap(ptr, len);
-	ALLOCDEBUG fprintf(stderr,
-			   "#GDKmunmap(%p,%zu) -> %d [%s:%d]\n",
-			   ptr, len, (int) res, filename, lineno);
+	TRC_DEBUG(ALLOC, "GDKmunmap(%p,%zu) -> %d\n",
+			   	  ptr, len, (int) res);
 	return res;
 }
-#define GDKmunmap(p, l)		GDKmunmap_debug((p), (l), __FILE__, __LINE__)
+#define GDKmunmap(p, l)		GDKmunmap_debug((p), (l))
 static inline void *
-GDKmremap_debug(const char *path, int mode, void *old_address, size_t old_size, size_t *new_size, const char *filename, int lineno)
+GDKmremap_debug(const char *path, int mode, void *old_address, size_t old_size, size_t *new_size)
 {
 	size_t orig_new_size = *new_size;
 	void *res = GDKmremap(path, mode, old_address, old_size, new_size);
-	ALLOCDEBUG
-		fprintf(stderr,
-			"#GDKmremap(%s,0x%x,%p,%zu,%zu > %zu) -> %p"
-			" [%s:%d]\n",
-			path ? path : "NULL", mode,
-			old_address, old_size, orig_new_size, *new_size,
-			res,
-			filename, lineno);
+		TRC_DEBUG(ALLOC, "GDKmremap(%s,0x%x,%p,%zu,%zu > %zu) -> %p\n",
+					  path ? path : "NULL", mode,
+					  old_address, old_size, orig_new_size, *new_size, res);
 	return res;
 }
-#define GDKmremap(p, m, oa, os, ns)	GDKmremap_debug(p, m, oa, os, ns, __FILE__, __LINE__)
+#define GDKmremap(p, m, oa, os, ns)	GDKmremap_debug(p, m, oa, os, ns)
 
 #endif
 #endif

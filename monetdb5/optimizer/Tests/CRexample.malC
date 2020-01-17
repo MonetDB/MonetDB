@@ -8,4 +8,5 @@ s4:= algebra.select(b,s3,nil:int,75,true,true,false);
 io.print(s4);
 optimizer.pushranges();
 optimizer.deadcode();
+optimizer.garbageCollector();
 mdb.List();

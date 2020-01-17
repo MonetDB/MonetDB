@@ -8,5 +8,6 @@ function tst();
 end tst;
 mdb.list("user","tst");
 optimizer.dataflow("user","tst");
+optimizer.garbageCollector("user","tst");
 mdb.list("user","tst");
 

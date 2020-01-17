@@ -97,11 +97,7 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 		 */
 		barrier |= getFunctionId(p) == assertRef;
 		if (barrier || p->token == NOOPsymbol || p->token == ASSIGNsymbol) {
-
-			if( OPTdebug & OPTcommonterms){
-				fprintf(stderr, "#COMMON SKIPPED[%d] %d %d\n",i, barrier, p->retc == p->argc);
-			}
-
+			TRC_DEBUG(MAL_OPTIMIZER, "Skipped[%d]: %d %d\n", i, barrier, p->retc == p->argc);
 			pushInstruction(mb,p);
 			continue;
 		}
@@ -114,11 +110,7 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 		/* side-effect producing operators can never be replaced */
 		/* the same holds for function calls without an argument, it is unclear where the results comes from (e.g. clock()) */
 		if ( mayhaveSideEffects(cntxt, mb, p,TRUE) || p->argc == p->retc){
-
-			if( OPTdebug & OPTcommonterms){
-				fprintf(stderr, "#COMMON SKIPPED[%d] side-effect %d\n", i, p->retc == p->argc);
-			}
-
+			TRC_DEBUG(MAL_OPTIMIZER, "Skipped[%d] side-effect: %d\n", i, p->retc == p->argc);
 			pushInstruction(mb,p);
 			continue;
 		}
@@ -126,10 +118,10 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 		/* from here we have a candidate to look for a match */
 
 		h = hashInstruction(mb, p);
-		if( OPTdebug & OPTcommonterms){
-			fprintf(stderr,"#CANDIDATE[%d] look at list[%d]=>%d\n", i, h, hash[h]);
-			fprintInstruction(stderr, mb, 0, p, LIST_MAL_ALL);
-		}
+
+		TRC_DEBUG(MAL_OPTIMIZER, "Candidate[%d] look at list[%d] => %d\n", i, h, hash[h]);
+		traceInstruction(MAL_OPTIMIZER, mb, 0, p, LIST_MAL_ALL);
+
 		if( h < 0){
 			pushInstruction(mb,p);
 			continue;
@@ -139,20 +131,17 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 		/* Look into the hash structure for matching instructions */
 		for (j = hash[h];  j > 0 && bailout-- > 0  ; j = list[j]) 
 			if ( (q= getInstrPtr(mb,j)) && getFunctionId(q) == getFunctionId(p) && getModuleId(q) == getModuleId(p)  ){
-
-				if( OPTdebug & OPTcommonterms){
-					fprintf(stderr,"#CANDIDATE[%d->%d] %d %d :%d %d %d=%d %d %d %d ",
-						j, list[j], 
-						hasSameSignature(mb, p, q), 
-						hasSameArguments(mb, p, q),
-						q->token != ASSIGNsymbol ,
-						list[getArg(q,q->argc-1)],i,
-						!hasCommonResults(p, q), 
-						!isUnsafeFunction(q),
-						!isUpdateInstruction(q),
-						isLinearFlow(q));
-					fprintInstruction(stderr, mb, 0, q, LIST_MAL_ALL);
-				}
+				TRC_DEBUG(MAL_OPTIMIZER, "Candidate[%d->%d] %d %d :%d %d %d=%d %d %d %d\n",
+					j, list[j], 
+					hasSameSignature(mb, p, q), 
+					hasSameArguments(mb, p, q),
+					q->token != ASSIGNsymbol ,
+					list[getArg(q,q->argc-1)],i,
+					!hasCommonResults(p, q), 
+					!isUnsafeFunction(q),
+					!isUpdateInstruction(q),
+					isLinearFlow(q));
+				traceInstruction(MAL_OPTIMIZER, mb, 0, q, LIST_MAL_ALL);
 
 				/*
 				 * Simple assignments are not replaced either. They should be
@@ -167,11 +156,7 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 					 isLinearFlow(q) 
 					) {
 					if (safetyBarrier(p, q) ){
-
-						if( OPTdebug & OPTcommonterms){
-							fprintf(stderr,"#safetybarrier reached\n");
-						}
-
+						TRC_DEBUG(MAL_OPTIMIZER, "Safety barrier reached\n");
 						break;
 					}
 					duplicate = 1;
@@ -183,19 +168,17 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 						p= addArgument(mb,p, getArg(q,k));
 					}
 
-					if( OPTdebug & OPTcommonterms){
-						fprintf(stderr, "#MODIFIED EXPRESSION %d -> %d ",getArg(p,0),getArg(p,1));
-						fprintInstruction(stderr, mb, 0, p, LIST_MAL_ALL);
-					}
+					TRC_DEBUG(MAL_OPTIMIZER, "Modified expression %d -> %d ", getArg(p,0), getArg(p,1));
+					traceInstruction(MAL_OPTIMIZER, mb, 0, p, LIST_MAL_ALL);
 
 					actions++;
 					break; /* end of search */
 				}
 			}
 
-			else if( OPTdebug & OPTcommonterms && isUpdateInstruction(p)){
-				fprintf(stderr, "#COMMON SKIPPED %d %d ", mayhaveSideEffects(cntxt, mb, q, TRUE) , isUpdateInstruction(p));
-				fprintInstruction(stderr, mb, 0, q, LIST_MAL_ALL);
+			else if(isUpdateInstruction(p)){
+				TRC_DEBUG_ENDIF(MAL_OPTIMIZER, "Skipped: %d %d\n", mayhaveSideEffects(cntxt, mb, q, TRUE) , isUpdateInstruction(p));
+				traceInstruction(MAL_OPTIMIZER, mb, 0, q, LIST_MAL_ALL);
 			}
 
 		if (duplicate){
@@ -203,12 +186,8 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 			continue;
 		} 
 		/* update the hash structure with another candidate for re-use */
-
-		if( OPTdebug & OPTcommonterms){
-			fprintf(stderr,"#UPDATE HASH[%d] look at  arg %d hash %d list %d\n",
-				i, getArg(p,p->argc-1), h, hash[h]);
-			fprintInstruction(stderr, mb, 0, p, LIST_MAL_ALL);
-		}
+		TRC_DEBUG(MAL_OPTIMIZER, "Update hash[%d] - look at arg '%d' hash '%d' list '%d'\n", i, getArg(p,p->argc-1), h, hash[h]);
+		traceInstruction(MAL_OPTIMIZER, mb, 0, p, LIST_MAL_ALL);
 
 		if ( !mayhaveSideEffects(cntxt, mb, p, TRUE) && p->argc != p->retc &&  isLinearFlow(p) && !isUnsafeFunction(p) && !isUpdateInstruction(p)){
 			list[i] = hash[h];

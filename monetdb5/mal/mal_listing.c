@@ -167,7 +167,7 @@ beginning of each line.
 str
 fcnDefinition(MalBlkPtr mb, InstrPtr p, str t, int flg, str base, size_t len)
 {
-	int i;
+	int i, j;
 	str arg, tpe;
 
 	len -= t - base;
@@ -238,6 +238,34 @@ fcnDefinition(MalBlkPtr mb, InstrPtr p, str t, int flg, str base, size_t len)
 			return base;
 	}
 	(void) copystring(&t, ";", &len);
+	/* add the extra properties for debugging */
+	if( flg & LIST_MAL_PROPS){
+		char extra[256];
+		if (p->token == REMsymbol){
+		} else{
+			snprintf(extra, 256, "\t#[%d] ("BUNFMT") %s ", getPC(mb,p), getRowCnt(mb,getArg(p,0)), (p->blk? p->blk->binding:""));
+			if (!copystring(&t, extra, &len))
+				return base;
+			for(j =0; j < p->retc; j++){
+				snprintf(extra, 256, "%d ", getArg(p,j));
+				if (!copystring(&t, extra, &len))
+					return base;
+			}
+			if( p->argc - p->retc > 0){
+				if (!copystring(&t, "<- ", &len))
+					return base;
+			}
+			for(; j < p->argc; j++){
+				snprintf(extra, 256, "%d ", getArg(p,j));
+				if (!copystring(&t, extra, &len))
+					return base;
+			}
+			if( p->typechk == TYPE_UNKNOWN){
+				if (!copystring(&t, " type check needed" , &len))
+					return base;
+			}
+		}
+	}
 	return base;
 }
 
@@ -266,7 +294,7 @@ operatorName(int i)
 str
 instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 {
-	int i;
+	int i,j;
 	str base, t;
 	size_t len = 512 + (p->argc * 128);		 /* max realistic line length estimate */
 	str arg;
@@ -412,6 +440,34 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 	if (p->token != REMsymbol){
 		if (!copystring(&t, ";", &len))
 			return base;
+	}
+	/* add the extra properties for debugging */
+	if( flg & LIST_MAL_PROPS){
+		char extra[256];
+		if (p->token == REMsymbol){
+		} else{
+			snprintf(extra, 256, "\t#[%d] ("BUNFMT") %s ", p->pc, getRowCnt(mb,getArg(p,0)), (p->blk? p->blk->binding:""));
+			if (!copystring(&t, extra, &len))
+				return base;
+			for(j =0; j < p->retc; j++){
+				snprintf(extra, 256, "%d ", getArg(p,j));
+				if (!copystring(&t, extra, &len))
+					return base;
+			}
+			if( p->argc - p->retc > 0){
+				if (!copystring(&t, "<- ", &len))
+					return base;
+			}
+			for(; j < p->argc; j++){
+				snprintf(extra, 256, "%d ", getArg(p,j));
+				if (!copystring(&t, extra, &len))
+					return base;
+			}
+			if( p->typechk == TYPE_UNKNOWN){
+				if (!copystring(&t, " type check needed" , &len))
+					return base;
+			}
+		}
 	}
 	return base;
 }
@@ -638,21 +694,19 @@ printInstruction(stream *fd, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int flg)
 }
 
 void
-fprintInstruction(FILE *fd, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int flg)
+traceInstruction(COMPONENT comp, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int flg)
 {
 	str ps;
-
-	if (fd == 0)
-		return;
-	ps = instruction2str(mb, stk, p, flg);
-	/* ps[strlen(ps)-1] = 0; remove '\n' */
-	if ( ps ){
-		fprintf(fd, "%s%s", (flg & LIST_MAL_MAPI ? "=" : ""), ps);
-		GDKfree(ps);
-	} else {
-		fprintf(fd,"#failed instruction2str()");
+	TRC_DEBUG_IF(comp){
+		ps = instruction2str(mb, stk, p, flg);
+		/* ps[strlen(ps)-1] = 0; remove '\n' */
+		if ( ps ){
+			TRC_DEBUG_ENDIF(comp, "%s%s\n", (flg & LIST_MAL_MAPI ? "=" : ""), ps);
+			GDKfree(ps);
+		} else {
+			TRC_DEBUG_ENDIF(comp, "Failed instruction2str()\n");
+		}
 	}
-	fprintf(fd, "\n");
 }
 
 void

@@ -23,7 +23,7 @@ typedef struct Hash {
 	Heap heaplink;		/* heap where the hash links are stored */
 	Heap heapbckt;		/* heap where the hash buckets are stored */
 } Hash;
-#define NHASHBUCKETS(h)		((h)->nbucket)
+
 static inline BUN
 HASHbucket(const Hash *h, BUN v)
 {
@@ -260,10 +260,10 @@ HASHgetlink(Hash *h, BUN i)
 	     hb = HASHgetlink(h, hb))				\
 		if (ATOMcmp(h->type, v, BUNtvar(bi, hb)) == 0)
 
-#define HASHloop_TYPE(bi, h, hb, v, TYPE)			\
-	for (hb = HASHget(h, hash_##TYPE(h, v));		\
-	     hb != HASHnil(h);					\
-	     hb = HASHgetlink(h,hb))				\
+#define HASHloop_TYPE(bi, h, hb, v, TYPE)				\
+	for (hb = HASHget(h, hash_##TYPE(h, v));			\
+	     hb != HASHnil(h);						\
+	     hb = HASHgetlink(h,hb))					\
 		if (* (const TYPE *) (v) == * (const TYPE *) BUNtloc(bi, hb))
 
 #define HASHloop_bte(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, bte)
@@ -290,7 +290,8 @@ HASHgetlink(Hash *h, BUN i)
 			Hash *_h = (b)->thash;				\
 			if (_h == (Hash *) 1 ||				\
 			    _h == NULL ||				\
-			    HASHgrowbucket(b) != GDK_SUCCEED ||		\
+			    (ATOMsize(b->ttype) > 2 &&			\
+			     HASHgrowbucket(b) != GDK_SUCCEED) ||	\
 			    (((i) + 1) * _h->width > _h->heaplink.size && \
 			     HEAPextend(&_h->heaplink,			\
 					(i) * _h->width + GDK_mmap_pagesize, \

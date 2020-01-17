@@ -16,7 +16,6 @@ stream *maleventstream = 0;
 
 /* The compile time debugging flags are turned into bit masks, akin to GDK */
 lng MALdebug;
-lng OPTdebug;
 
 #ifdef HAVE_HGE
 int have_hge;
@@ -64,16 +63,14 @@ int mal_init(void){
 #endif
 	initNamespace();
 	initParser();
-#ifndef HAVE_EMBEDDED
 	initHeartbeat();
-#endif
 	str err = malBootstrap();
 	if (err != MAL_SUCCEED) {
 		mal_client_reset();
 #ifndef NDEBUG
 		mdbExit();
 #endif
-		fprintf(stderr, "%s", err);
+		TRC_ERROR(MAL_MAL, "%s\n", err);
 		freeException(err);
 		return -1;
 	}
@@ -102,11 +99,11 @@ void mserver_reset(void)
 	AUTHreset();
 	if (!GDKinmemory()) {
 		if ((err = msab_wildRetreat()) != NULL) {
-			fprintf(stderr, "!%s", err);
+			TRC_ERROR(MAL_MAL, "%s\n", err);
 			free(err);
 		}
 		if ((err = msab_registerStop()) != NULL) {
-			fprintf(stderr, "!%s", err);
+			TRC_ERROR(MAL_MAL, "%s\n", err);
 			free(err);
 		}
 	}
