@@ -216,36 +216,34 @@ joininitresults(BAT **r1p, BAT **r2p, BUN lcnt, BUN rcnt, bool lkey, bool rkey,
 
 #define APPEND(b, o)		(((oid *) b->theap.base)[b->batCount++] = (o))
 
-#define MAYBEEXTEND_PROGRESS(CNT, LCUR, LCNT)				\
-	do {								\
-		BUN N = (CNT);						\
-		if (BATcount(r1) + N > BATcapacity(r1)) {		\
-			/* make some extra space by extrapolating how */ \
-			/* much more we need (fraction of l we've seen */ \
-			/* so far is used as the fraction of the */	\
-			/* expected result size we've produced so */	\
-			/* far) */					\
-			BUN newcap = (BUN) ((double) (LCNT) / (LCUR) * (BATcount(r1) + N) * 1.5); \
-			if (newcap < N + BATcount(r1))			\
-				newcap = N + BATcount(r1) + 1024;	\
-			if (newcap > maxsize)				\
-				newcap = maxsize;			\
-			/* make sure heap.free is set properly before	\
-			 * extending */					\
-			BATsetcount(r1, BATcount(r1));			\
-			if (BATextend(r1, newcap) != GDK_SUCCEED)	\
-				goto bailout;				\
-			if (r2) {					\
-				BATsetcount(r2, BATcount(r2));		\
-				if (BATextend(r2, newcap) != GDK_SUCCEED) \
-					goto bailout;			\
-				assert(BATcapacity(r1) == BATcapacity(r2)); \
-			}						\
-		}							\
-	} while (0)
-
-#define MAYBEEXTEND(CNT, CI)	MAYBEEXTEND_PROGRESS(CNT, (CI)->next, (CI)->ncand)
-#define MAYBEEXTEND_NO_CAND(CNT)	MAYBEEXTEND_PROGRESS(CNT, lstart, lend)
+static inline gdk_return
+maybeextend(BAT *restrict r1, BAT *restrict r2,
+	    BUN cnt, BUN lcur, BUN lcnt, BUN maxsize)
+{
+	if (BATcount(r1) + cnt > BATcapacity(r1)) {
+		/* make some extra space by extrapolating how much
+		 * more we need (fraction of l we've seen so far is
+		 * used as the fraction of the expected result size
+		 * we've produced so far) */
+		BUN newcap = (BUN) ((double) lcnt / lcur * (BATcount(r1) + cnt) * 1.5);
+		if (newcap < cnt + BATcount(r1))
+			newcap = cnt + BATcount(r1) + 1024;
+		if (newcap > maxsize)
+			newcap = maxsize;
+		/* make sure heap.free is set properly before
+		 * extending */
+		BATsetcount(r1, BATcount(r1));
+		if (BATextend(r1, newcap) != GDK_SUCCEED)
+			return GDK_FAIL;
+		if (r2) {
+			BATsetcount(r2, BATcount(r2));
+			if (BATextend(r2, newcap) != GDK_SUCCEED)
+				return GDK_FAIL;
+			assert(BATcapacity(r1) == BATcapacity(r2));
+		}
+	}
+	return GDK_SUCCEED;
+}
 
 /* Return BATs through r1p and r2p for the case that there is no
  * match between l and r, taking all flags into consideration.
@@ -947,7 +945,8 @@ mergejoin_int(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		}
 		/* make space: nl values in l match nr values in r, so
 		 * we need to add nl * nr values in the results */
-		MAYBEEXTEND_NO_CAND(nl * nr);
+		if (maybeextend(r1, r2, nl * nr, lstart, lend, maxsize) != GDK_SUCCEED)
+			goto bailout;
 
 		/* maintain properties */
 		if (nl > 1) {
@@ -1246,7 +1245,8 @@ mergejoin_lng(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		}
 		/* make space: nl values in l match nr values in r, so
 		 * we need to add nl * nr values in the results */
-		MAYBEEXTEND_NO_CAND(nl * nr);
+		if (maybeextend(r1, r2, nl * nr, lstart, lend, maxsize) != GDK_SUCCEED)
+			goto bailout;
 
 		/* maintain properties */
 		if (nl > 1) {
@@ -1524,7 +1524,8 @@ mergejoin_cand(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		}
 		/* make space: nl values in l match nr values in r, so
 		 * we need to add nl * nr values in the results */
-		MAYBEEXTEND_NO_CAND(nl * nr);
+		if (maybeextend(r1, r2, nl * nr, lstart, lend, maxsize) != GDK_SUCCEED)
+			goto bailout;
 
 		/* maintain properties */
 		if (nl > 1) {
@@ -1896,7 +1897,8 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			}
 			if (nlx > 0) {
 				if (only_misses) {
-					MAYBEEXTEND(nlx, lci);
+					if (maybeextend(r1, r2, nlx, lci->next, lci->ncand, maxsize) != GDK_SUCCEED)
+						goto bailout;
 					lskipped |= nlx > 1 && lci->tpe != cand_dense;
 					while (nlx > 0) {
 						APPEND(r1, canditer_next(lci));
@@ -1915,7 +1917,8 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 						r2->trevsorted = false;
 						r2->tkey = false;
 					}
-					MAYBEEXTEND(nlx, lci);
+					if (maybeextend(r1, r2, nlx, lci->next, lci->ncand, maxsize) != GDK_SUCCEED)
+						goto bailout;
 					lskipped |= nlx > 1 && lci->tpe != cand_dense;
 					while (nlx > 0) {
 						APPEND(r1, canditer_next(lci));
@@ -2187,7 +2190,8 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		}
 		/* make space: nl values in l match nr values in r, so
 		 * we need to add nl * nr values in the results */
-		MAYBEEXTEND(nl * nr, lci);
+		if (maybeextend(r1, r2, nl * nr, lci->next, lci->ncand, maxsize) != GDK_SUCCEED)
+			goto bailout;
 
 		/* maintain properties */
 		if (nl > 1) {
@@ -2365,13 +2369,14 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	return GDK_FAIL;
 }
 
-#define HASHLOOPBODY()				\
-	do {					\
-		MAYBEEXTEND(1, lci);		\
-		APPEND(r1, lo);			\
-		if (r2)				\
-			APPEND(r2, ro);		\
-		nr++;				\
+#define HASHLOOPBODY()							\
+	do {								\
+		if (maybeextend(r1, r2, 1, lci->next, lci->ncand, maxsize) != GDK_SUCCEED) \
+			goto bailout;					\
+		APPEND(r1, lo);						\
+		if (r2)							\
+			APPEND(r2, ro);					\
+		nr++;							\
 	} while (false)
 
 #define HASHloop_bound_TYPE(vals, h, hb, v, lo, hi, TYPE)	\
@@ -2432,7 +2437,8 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			if (nr == 0) {					\
 				if (only_misses) {			\
 					nr = 1;				\
-					MAYBEEXTEND(1, lci);		\
+					if (maybeextend(r1, r2, 1, lci->next, lci->ncand, maxsize) != GDK_SUCCEED) \
+						goto bailout;			\
 					APPEND(r1, lo);			\
 					if (lskipped)			\
 						r1->tseqbase = oid_nil;	\
@@ -2441,7 +2447,8 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 					r2->tnil = true;		\
 					r2->tnonil = false;		\
 					r2->tkey = false;		\
-					MAYBEEXTEND(1, lci);		\
+					if (maybeextend(r1, r2, 1, lci->next, lci->ncand, maxsize) != GDK_SUCCEED) \
+						goto bailout;			\
 					APPEND(r1, lo);			\
 					APPEND(r2, oid_nil);		\
 				} else {				\
@@ -2662,7 +2669,8 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			if (nr == 0) {
 				if (only_misses) {
 					nr = 1;
-					MAYBEEXTEND(1, lci);
+					if (maybeextend(r1, r2, 1, lci->next, lci->ncand, maxsize) != GDK_SUCCEED)
+						goto bailout;
 					APPEND(r1, lo);
 					if (lskipped)
 						r1->tseqbase = oid_nil;
@@ -2671,7 +2679,8 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 					r2->tnil = true;
 					r2->tnonil = false;
 					r2->tkey = false;
-					MAYBEEXTEND(1, lci);
+					if (maybeextend(r1, r2, 1, lci->next, lci->ncand, maxsize) != GDK_SUCCEED)
+						goto bailout;
 					APPEND(r1, lo);
 					APPEND(r2, oid_nil);
 				} else {
@@ -2871,7 +2880,8 @@ thetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int opcode, BU
 				      (opcode & MASK_GT && c > 0) ||
 				      (opcode & MASK_EQ && c == 0)))
 					continue;
-				MAYBEEXTEND(1, &lci);
+				if (maybeextend(r1, r2, 1, lci.next, lci.ncand, maxsize) != GDK_SUCCEED)
+					goto bailout;
 				if (BATcount(r1) > 0) {
 					if (r2 && lastr + 1 != ro)
 						r2->tseqbase = oid_nil;
@@ -3252,7 +3262,8 @@ bandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				continue;
 			}
 			}
-			MAYBEEXTEND(1, &lci);
+			if (maybeextend(r1, r2, 1, lci.next, lci.ncand, maxsize) != GDK_SUCCEED)
+				goto bailout;
 			if (BATcount(r1) > 0) {
 				if (r2 && lastr + 1 != ro)
 					r2->tseqbase = oid_nil;
