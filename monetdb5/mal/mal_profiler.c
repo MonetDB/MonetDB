@@ -130,7 +130,6 @@ renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int
 	char logbuffer[LOGLEN], *logbase;
 	size_t loglen;
 	str c;
-	str stmt;
 	str stmtq;
 	lng usec;
 	uint64_t microseconds;
@@ -187,29 +186,6 @@ renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int
     }
 	logadd(",\"state\":\"%s\"", start?"start":"done");
 	logadd(",\"usec\":"LLFMT, pci->ticks);
-
-	/* generate actual call statement */
-	stmt = instruction2str(mb, stk, pci, LIST_MAL_ALL);
-	if (stmt) {
-		char *truncated;
-		c = stmt;
-
-		while (*c && isspace((unsigned char)*c))
-			c++;
-		if(*c){
-			stmtq = mal_quote(c, strlen(c));
-			if (stmtq && strlen(stmtq) > LOGLEN/2) {
-				truncated = truncate_string(stmtq);
-				GDKfree(stmtq);
-				stmtq = truncated;
-			}
-			if (stmtq != NULL) {
-				logadd(",\"stmt\":\"%s\"", stmtq);
-				GDKfree(stmtq);
-			}
-		}
-		GDKfree(stmt);
-	}
 
 /* EXAMPLE MAL statement argument decomposition
  * The eventparser may assume this layout for ease of parsing
