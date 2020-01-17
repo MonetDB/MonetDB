@@ -201,6 +201,18 @@ command subcovariancep(b1:bat[:${tp}],b2:bat[:${tp}],g:bat[:oid],e:bat[:any_1],s
 address AGGRsubcovariancepcand
 comment "Grouped covariance population aggregate with candidate list";
 
+command corr(b1:bat[:${tp}],b2:bat[:${tp}],g:bat[:oid],e:bat[:any_1]) :bat[:dbl]
+address AGGRcorr
+comment "Correlation aggregate";
+
+command subcorr(b1:bat[:${tp}],b2:bat[:${tp}],g:bat[:oid],e:bat[:any_1],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
+address AGGRsubcorr
+comment "Grouped correlation aggregate";
+
+command subcorr(b1:bat[:${tp}],b2:bat[:${tp}],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
+address AGGRsubcorrcand
+comment "Grouped correlation aggregate with candidate list";
+
 EOF
 done
 

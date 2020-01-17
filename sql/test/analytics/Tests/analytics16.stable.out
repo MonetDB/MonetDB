@@ -116,6 +116,30 @@ stdout of test 'analytics16` in directory 'sql/test/analytics` itself:
 % double # type
 % 24 # length
 [ 2.125	]
+#select corr(aa, aa) from analytics;
+% sys.%1 # table_name
+% %1 # name
+% double # type
+% 24 # length
+[ 1	]
+#select corr(bb, bb) from analytics;
+% sys.%1 # table_name
+% %1 # name
+% double # type
+% 24 # length
+[ 1	]
+#select corr(aa, bb) from analytics;
+% sys.%1 # table_name
+% %1 # name
+% double # type
+% 24 # length
+[ 0.6245106046	]
+#select corr(bb, aa) from analytics;
+% sys.%1 # table_name
+% %1 # name
+% double # type
+% 24 # length
+[ 0.6245106046	]
 #select covar_samp(aa, aa) from analytics group by aa;
 % sys.%1 # table_name
 % %1 # name
@@ -220,6 +244,58 @@ stdout of test 'analytics16` in directory 'sql/test/analytics` itself:
 [ 0	]
 [ 0	]
 [ 0	]
+#select corr(aa, aa) from analytics group by aa;
+% sys.%1 # table_name
+% %1 # name
+% double # type
+% 24 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+#select corr(bb, bb) from analytics group by aa;
+% sys.%1 # table_name
+% %1 # name
+% double # type
+% 24 # length
+[ NULL	]
+[ 1	]
+[ NULL	]
+[ NULL	]
+[ 1	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+#select corr(aa, bb) from analytics group by aa;
+% sys.%1 # table_name
+% %1 # name
+% double # type
+% 24 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+#select corr(bb, aa) from analytics group by aa;
+% sys.%1 # table_name
+% %1 # name
+% double # type
+% 24 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
 #select covar_samp(aa, aa) from analytics group by bb;
 % sys.%1 # table_name
 % %1 # name
@@ -291,6 +367,42 @@ stdout of test 'analytics16` in directory 'sql/test/analytics` itself:
 [ 0	]
 [ 0	]
 [ 0	]
+[ NULL	]
+#select corr(aa, aa) from analytics group by bb;
+% sys.%1 # table_name
+% %1 # name
+% double # type
+% 24 # length
+[ 1	]
+[ 1	]
+[ 1	]
+[ NULL	]
+#select corr(bb, bb) from analytics group by bb;
+% sys.%1 # table_name
+% %1 # name
+% double # type
+% 24 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+#select corr(aa, bb) from analytics group by bb;
+% sys.%1 # table_name
+% %1 # name
+% double # type
+% 24 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+#select corr(bb, aa) from analytics group by bb;
+% sys.%1 # table_name
+% %1 # name
+% double # type
+% 24 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
 [ NULL	]
 #select covar_samp(aa, aa) from analytics group by aa, bb;
 % sys.%1 # table_name
@@ -412,6 +524,66 @@ stdout of test 'analytics16` in directory 'sql/test/analytics` itself:
 [ 0	]
 [ 0	]
 [ NULL	]
+#select corr(aa, aa) from analytics group by aa, bb;
+% sys.%1 # table_name
+% %1 # name
+% double # type
+% 24 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+#select corr(bb, bb) from analytics group by aa, bb;
+% sys.%1 # table_name
+% %1 # name
+% double # type
+% 24 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+#select corr(aa, bb) from analytics group by aa, bb;
+% sys.%1 # table_name
+% %1 # name
+% double # type
+% 24 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+#select corr(bb, aa) from analytics group by aa, bb;
+% sys.%1 # table_name
+% %1 # name
+% double # type
+% 24 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
 #select covar_samp(aa, 1) from analytics group by aa;
 % sys.%1 # table_name
 % %1 # name
@@ -438,6 +610,19 @@ stdout of test 'analytics16` in directory 'sql/test/analytics` itself:
 [ 0	]
 [ 0	]
 [ 0	]
+#select corr(aa, 1) from analytics group by aa;
+% sys.%1 # table_name
+% %1 # name
+% double # type
+% 24 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
 #select covar_samp(aa, 1) from analytics group by bb;
 % sys.%1 # table_name
 % %1 # name
@@ -455,6 +640,15 @@ stdout of test 'analytics16` in directory 'sql/test/analytics` itself:
 [ 0	]
 [ 0	]
 [ 0	]
+[ NULL	]
+#select corr(aa, 1) from analytics group by bb;
+% sys.%1 # table_name
+% %1 # name
+% double # type
+% 24 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
 [ NULL	]
 #select covar_samp(aa, 1) from analytics group by aa, bb;
 % sys.%1 # table_name
@@ -486,6 +680,21 @@ stdout of test 'analytics16` in directory 'sql/test/analytics` itself:
 [ 0	]
 [ 0	]
 [ 0	]
+#select corr(bb, 1) from analytics group by aa, bb;
+% sys.%1 # table_name
+% %1 # name
+% double # type
+% 24 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
 #select covar_samp(1, aa) from analytics group by aa;
 % .%1 # table_name
 % %1 # name
@@ -512,6 +721,19 @@ stdout of test 'analytics16` in directory 'sql/test/analytics` itself:
 [ 0	]
 [ 0	]
 [ 0	]
+#select corr(1, aa) from analytics group by aa;
+% .%1 # table_name
+% %1 # name
+% double # type
+% 24 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
 #select covar_samp(1, aa) from analytics group by bb;
 % .%1 # table_name
 % %1 # name
@@ -529,6 +751,15 @@ stdout of test 'analytics16` in directory 'sql/test/analytics` itself:
 [ 0	]
 [ 0	]
 [ 0	]
+[ NULL	]
+#select corr(1, aa) from analytics group by bb;
+% .%1 # table_name
+% %1 # name
+% double # type
+% 24 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
 [ NULL	]
 #select covar_samp(1, aa) from analytics group by aa, bb;
 % .%1 # table_name
@@ -560,6 +791,21 @@ stdout of test 'analytics16` in directory 'sql/test/analytics` itself:
 [ 0	]
 [ 0	]
 [ NULL	]
+#select corr(1, aa) from analytics group by aa, bb;
+% .%1 # table_name
+% %1 # name
+% double # type
+% 24 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
 #select covar_samp(1, 1) from analytics group by aa;
 % .%1 # table_name
 % %1 # name
@@ -586,6 +832,19 @@ stdout of test 'analytics16` in directory 'sql/test/analytics` itself:
 [ 0	]
 [ 0	]
 [ 0	]
+#select corr(1, 1) from analytics group by aa;
+% .%1 # table_name
+% %1 # name
+% double # type
+% 24 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
 #select covar_samp(1, 1) from analytics group by bb;
 % .%1 # table_name
 % %1 # name
@@ -604,6 +863,15 @@ stdout of test 'analytics16` in directory 'sql/test/analytics` itself:
 [ 0	]
 [ 0	]
 [ 0	]
+#select corr(1, 1) from analytics group by bb;
+% .%1 # table_name
+% %1 # name
+% double # type
+% 24 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
 #select covar_samp(1, 1) from analytics group by aa, bb;
 % .%1 # table_name
 % %1 # name
@@ -634,6 +902,21 @@ stdout of test 'analytics16` in directory 'sql/test/analytics` itself:
 [ 0	]
 [ 0	]
 [ 0	]
+#select corr(1, 1) from analytics group by aa, bb;
+% .%1 # table_name
+% %1 # name
+% double # type
+% 24 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
 #select covar_samp(NULL, aa) from analytics group by aa;
 % .%1 # table_name
 % %1 # name
@@ -648,6 +931,19 @@ stdout of test 'analytics16` in directory 'sql/test/analytics` itself:
 [ NULL	]
 [ NULL	]
 #select covar_pop(NULL, aa) from analytics group by aa;
+% .%1 # table_name
+% %1 # name
+% double # type
+% 24 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+#select corr(NULL, aa) from analytics group by aa;
 % .%1 # table_name
 % %1 # name
 % double # type
@@ -678,6 +974,15 @@ stdout of test 'analytics16` in directory 'sql/test/analytics` itself:
 [ NULL	]
 [ NULL	]
 [ NULL	]
+#select corr(NULL, aa) from analytics group by bb;
+% .%1 # table_name
+% %1 # name
+% double # type
+% 24 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
 #select covar_samp(NULL, aa) from analytics group by aa, bb;
 % .%1 # table_name
 % %1 # name
@@ -694,6 +999,21 @@ stdout of test 'analytics16` in directory 'sql/test/analytics` itself:
 [ NULL	]
 [ NULL	]
 #select covar_pop(NULL, aa) from analytics group by aa, bb;
+% .%1 # table_name
+% %1 # name
+% double # type
+% 24 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+#select corr(NULL, aa) from analytics group by aa, bb;
 % .%1 # table_name
 % %1 # name
 % double # type
@@ -734,6 +1054,19 @@ stdout of test 'analytics16` in directory 'sql/test/analytics` itself:
 [ NULL	]
 [ NULL	]
 [ NULL	]
+#select corr(aa, NULL) from analytics group by aa;
+% sys.%1 # table_name
+% %1 # name
+% double # type
+% 24 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
 #select covar_samp(aa, NULL) from analytics group by bb;
 % sys.%1 # table_name
 % %1 # name
@@ -744,6 +1077,15 @@ stdout of test 'analytics16` in directory 'sql/test/analytics` itself:
 [ NULL	]
 [ NULL	]
 #select covar_pop(aa, NULL) from analytics group by bb;
+% sys.%1 # table_name
+% %1 # name
+% double # type
+% 24 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+#select corr(aa, NULL) from analytics group by bb;
 % sys.%1 # table_name
 % %1 # name
 % double # type
@@ -768,6 +1110,21 @@ stdout of test 'analytics16` in directory 'sql/test/analytics` itself:
 [ NULL	]
 [ NULL	]
 #select covar_pop(aa, NULL) from analytics group by aa, bb;
+% sys.%1 # table_name
+% %1 # name
+% double # type
+% 24 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+#select corr(aa, NULL) from analytics group by aa, bb;
 % sys.%1 # table_name
 % %1 # name
 % double # type
@@ -808,6 +1165,19 @@ stdout of test 'analytics16` in directory 'sql/test/analytics` itself:
 [ NULL	]
 [ NULL	]
 [ NULL	]
+#select corr(NULL, NULL) from analytics group by aa;
+% .%1 # table_name
+% %1 # name
+% double # type
+% 24 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
 #select covar_samp(NULL, NULL) from analytics group by bb;
 % .%1 # table_name
 % %1 # name
@@ -818,6 +1188,15 @@ stdout of test 'analytics16` in directory 'sql/test/analytics` itself:
 [ NULL	]
 [ NULL	]
 #select covar_pop(NULL, NULL) from analytics group by bb;
+% .%1 # table_name
+% %1 # name
+% double # type
+% 24 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+#select corr(NULL, NULL) from analytics group by bb;
 % .%1 # table_name
 % %1 # name
 % double # type
@@ -842,6 +1221,21 @@ stdout of test 'analytics16` in directory 'sql/test/analytics` itself:
 [ NULL	]
 [ NULL	]
 #select covar_pop(NULL, NULL) from analytics group by aa, bb;
+% .%1 # table_name
+% %1 # name
+% double # type
+% 24 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+#select corr(NULL, NULL) from analytics group by aa, bb;
 % .%1 # table_name
 % %1 # name
 % double # type

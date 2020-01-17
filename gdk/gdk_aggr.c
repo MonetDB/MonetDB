@@ -3221,6 +3221,68 @@ BATcalccovariance_sample(BAT *b1, BAT *b2)
 						  BATcount(b1), b1->ttype, true, "BATcalccovariance_sample");
 }
 
+#define AGGR_CORRELATION_SINGLE(TYPE)	\
+	do {	\
+		TYPE x, y;	\
+		for (i = 0; i < cnt; i++) {		\
+			x = ((const TYPE *) v1)[i];	\
+			y = ((const TYPE *) v2)[i];	\
+			if (is_##TYPE##_nil(x) || is_##TYPE##_nil(y))	\
+				continue;		\
+			n++;				\
+			delta1 = (dbl) x - mean1;	\
+			mean1 += delta1 / n;	\
+			delta2 = (dbl) y - mean2;	\
+			mean2 += delta2 / n;	\
+			aux = (dbl) y - mean2; \
+			up += delta1 * aux;	\
+			down1 += delta1 * ((dbl) x - mean1);	\
+			down2 += delta2 * aux;	\
+		}	\
+	} while (0)
+
+dbl
+BATcalccorrelation(BAT *b1, BAT *b2)
+{
+	BUN n = 0, i, cnt = BATcount(b1);
+	dbl mean1 = 0, mean2 = 0, up = 0, down1 = 0, down2 = 0, delta1, delta2, aux;
+	const void *restrict v1 = (const void *) Tloc(b1, 0), *restrict v2 = (const void *) Tloc(b2, 0);
+	int tp = b1->ttype;
+
+	switch (tp) {
+	case TYPE_bte:
+		AGGR_CORRELATION_SINGLE(bte);
+		break;
+	case TYPE_sht:
+		AGGR_CORRELATION_SINGLE(sht);
+		break;
+	case TYPE_int:
+		AGGR_CORRELATION_SINGLE(int);
+		break;
+	case TYPE_lng:
+		AGGR_CORRELATION_SINGLE(lng);
+		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		AGGR_CORRELATION_SINGLE(hge);
+		break;
+#endif
+	case TYPE_flt:
+		AGGR_CORRELATION_SINGLE(flt);
+		break;
+	case TYPE_dbl:
+		AGGR_CORRELATION_SINGLE(dbl);
+		break;
+	default:
+		GDKerror("%s: type (%s) not supported.\n", __func__, ATOMname(tp));
+		return dbl_nil;
+	}
+	if (n > 0 && up > 0 && down1 > 0 && down2 > 0)
+		return (up / n) / (sqrt(down1 / n) * sqrt(down2 / n));
+	else 
+		return dbl_nil;
+}
+
 #define AGGR_STDEV(TYPE)						\
 	do {								\
 		const TYPE *restrict vals = (const TYPE *) Tloc(b, 0);	\
@@ -3482,8 +3544,6 @@ BATgroupvariance_population(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 		for (i = 0; i < ngrp; i++) {				\
 			if (cnts[i] == 0 || cnts[i] == BUN_NONE) {	\
 				dbls[i] = dbl_nil;			\
-				mean1[i] = dbl_nil;			\
-				mean2[i] = dbl_nil;	\
 				nils++;					\
 			} else if (cnts[i] == 1) {			\
 				dbls[i] = issample ? dbl_nil : 0;	\
@@ -3627,4 +3687,167 @@ BATgroupcovariance_population(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp, 
 {
 	(void) abort_on_error;
 	return dogroupcovariance(b1, b2, g, e, s, tp, skip_nils, false, "BATgroupcovariance_population");
+}
+
+#define AGGR_CORRELATION(TYPE)						\
+	do {								\
+		const TYPE *restrict vals1 = (const TYPE *) Tloc(b1, 0);	\
+		const TYPE *restrict vals2 = (const TYPE *) Tloc(b2, 0);	\
+		while (ncand > 0) {					\
+			ncand--;					\
+			i = canditer_next(&ci) - b1->hseqbase;		\
+			if (gids == NULL ||				\
+			    (gids[i] >= min && gids[i] <= max)) {	\
+				if (gids)				\
+					gid = gids[i] - min;		\
+				else					\
+					gid = (oid) i;			\
+				if (is_##TYPE##_nil(vals1[i]) || is_##TYPE##_nil(vals2[i])) {		\
+					if (!skip_nils)			\
+						cnts[gid] = BUN_NONE;	\
+				} else if (cnts[gid] != BUN_NONE) {	\
+					cnts[gid]++;			\
+					delta1[gid] = (dbl) vals1[i] - mean1[gid]; \
+					mean1[gid] += delta1[gid] / cnts[gid]; \
+					delta2[gid] = (dbl) vals2[i] - mean2[gid]; \
+					mean2[gid] += delta2[gid] / cnts[gid]; \
+					aux = (dbl) vals2[i] - mean2[gid]; \
+					up[gid] += delta1[gid] * aux; \
+					down1[gid] += delta1[gid] * ((dbl) vals1[i] - mean1[gid]); \
+					down2[gid] += delta2[gid] * aux; \
+				}					\
+			}						\
+		}							\
+		for (i = 0; i < ngrp; i++) {				\
+			if (cnts[i] <= 1 || cnts[i] == BUN_NONE || up[i] <= 0 || down1[i] <= 0 || down2[i] <= 0) {	\
+				dbls[i] = dbl_nil;			\
+				nils++;					\
+			} else {					\
+				dbls[i] = (up[i] / cnts[i]) / (sqrt(down1[i] / cnts[i]) * sqrt(down2[i] / cnts[i]));	\
+				assert(!is_dbl_nil(dbls[i])); \
+			}						\
+		}							\
+	} while (0)
+
+BAT *
+BATgroupcorrelation(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_on_error)
+{
+	const oid *restrict gids;
+	oid gid, min, max;
+	BUN i, ngrp, nils = 0, ncand;
+	BUN *restrict cnts = NULL;
+	dbl *restrict dbls, *restrict mean1, *restrict mean2, *restrict delta1, *restrict delta2, *restrict up, *restrict down1, *restrict down2, aux;
+	BAT *bn = NULL;
+	struct canditer ci;
+	const char *err;
+
+	assert(tp == TYPE_dbl && BATcount(b1) == BATcount(b2) && b1->ttype == b2->ttype && BATtdense(b1) == BATtdense(b2));
+	(void) tp;
+	(void) abort_on_error;
+
+	if ((err = BATgroupaggrinit(b1, g, e, s, &min, &max, &ngrp, &ci, &ncand)) != NULL) {
+		GDKerror("%s: %s\n", __func__, err);
+		return NULL;
+	}
+	if (g == NULL) {
+		GDKerror("%s: b1, b2 and g must be aligned\n", __func__);
+		return NULL;
+	}
+
+	if (BATcount(b1) == 0 || ngrp == 0)
+		return BATconstant(ngrp == 0 ? 0 : min, TYPE_dbl, &dbl_nil, ngrp, TRANSIENT);
+
+	if ((e == NULL ||
+	     (BATcount(e) == BATcount(b1) && (e->hseqbase == b1->hseqbase || e->hseqbase == b2->hseqbase))) &&
+	    (BATtdense(g) || (g->tkey && g->tnonil))) {
+		dbl v = dbl_nil;
+		return BATconstant(ngrp == 0 ? 0 : min, TYPE_dbl, &v, ngrp, TRANSIENT);
+	}
+
+	delta1 = GDKmalloc(ngrp * sizeof(dbl));
+	delta2 = GDKmalloc(ngrp * sizeof(dbl));
+	up = GDKzalloc(ngrp * sizeof(dbl));
+	down1 = GDKzalloc(ngrp * sizeof(dbl));
+	down2 = GDKzalloc(ngrp * sizeof(dbl));
+	cnts = GDKzalloc(ngrp * sizeof(BUN));
+	mean1 = GDKzalloc(ngrp * sizeof(dbl));
+	mean2 = GDKzalloc(ngrp * sizeof(dbl));
+
+	if (mean1 == NULL || mean2 == NULL || delta1 == NULL || delta2 == NULL || up == NULL || down1 == NULL || down2 == NULL || cnts == NULL)
+		goto alloc_fail;
+
+	bn = COLnew(min, TYPE_dbl, ngrp, TRANSIENT);
+	if (bn == NULL)
+		goto alloc_fail;
+	dbls = (dbl *) Tloc(bn, 0);
+
+	if (!g || BATtdense(g))
+		gids = NULL;
+	else
+		gids = (const oid *) Tloc(g, 0);
+
+	switch (b1->ttype) {
+	case TYPE_bte:
+		AGGR_CORRELATION(bte);
+		break;
+	case TYPE_sht:
+		AGGR_CORRELATION(sht);
+		break;
+	case TYPE_int:
+		AGGR_CORRELATION(int);
+		break;
+	case TYPE_lng:
+		AGGR_CORRELATION(lng);
+		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		AGGR_CORRELATION(hge);
+		break;
+#endif
+	case TYPE_flt:
+		AGGR_CORRELATION(flt);
+		break;
+	case TYPE_dbl:
+		AGGR_CORRELATION(dbl);
+		break;
+	default:
+		BBPreclaim(bn);
+		GDKfree(mean1);
+		GDKfree(mean2);
+		GDKfree(delta1);
+		GDKfree(delta2);
+		GDKfree(up);
+		GDKfree(down1);
+		GDKfree(down2);
+		GDKfree(cnts);
+		GDKerror("%s: type (%s) not supported.\n", __func__, ATOMname(b1->ttype));
+		return NULL;
+	}
+	GDKfree(mean1);
+	GDKfree(mean2);
+	GDKfree(delta1);
+	GDKfree(delta2);
+	GDKfree(up);
+	GDKfree(down1);
+	GDKfree(down2);
+	GDKfree(cnts);
+	BATsetcount(bn, ngrp);
+	bn->tkey = ngrp <= 1;
+	bn->tsorted = ngrp <= 1;
+	bn->trevsorted = ngrp <= 1;
+	bn->tnil = nils != 0;
+	bn->tnonil = nils == 0;
+	return bn;
+alloc_fail:
+	BBPreclaim(bn);
+	GDKfree(mean1);
+	GDKfree(mean2);
+	GDKfree(delta1);
+	GDKfree(delta2);
+	GDKfree(up);
+	GDKfree(down1);
+	GDKfree(down2);
+	GDKfree(cnts);
+	GDKerror("%s: cannot allocate enough memory.\n", __func__);
+	return NULL;
 }

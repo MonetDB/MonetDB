@@ -486,6 +486,18 @@ command subcovariancep(b1:bat[:bte],b2:bat[:bte],g:bat[:oid],e:bat[:any_1],s:bat
 address AGGRsubcovariancepcand
 comment "Grouped covariance population aggregate with candidate list";
 
+command corr(b1:bat[:bte],b2:bat[:bte],g:bat[:oid],e:bat[:any_1]) :bat[:dbl]
+address AGGRcorr
+comment "Correlation aggregate";
+
+command subcorr(b1:bat[:bte],b2:bat[:bte],g:bat[:oid],e:bat[:any_1],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
+address AGGRsubcorr
+comment "Grouped correlation aggregate";
+
+command subcorr(b1:bat[:bte],b2:bat[:bte],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
+address AGGRsubcorrcand
+comment "Grouped correlation aggregate with candidate list";
+
 command avg(b:bat[:sht], g:bat[:oid], e:bat[:any_1]):bat[:dbl]
 address AGGRavg13_dbl
 comment "Grouped tail average on sht";
@@ -605,6 +617,18 @@ comment "Grouped covariance population aggregate";
 command subcovariancep(b1:bat[:sht],b2:bat[:sht],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
 address AGGRsubcovariancepcand
 comment "Grouped covariance population aggregate with candidate list";
+
+command corr(b1:bat[:sht],b2:bat[:sht],g:bat[:oid],e:bat[:any_1]) :bat[:dbl]
+address AGGRcorr
+comment "Correlation aggregate";
+
+command subcorr(b1:bat[:sht],b2:bat[:sht],g:bat[:oid],e:bat[:any_1],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
+address AGGRsubcorr
+comment "Grouped correlation aggregate";
+
+command subcorr(b1:bat[:sht],b2:bat[:sht],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
+address AGGRsubcorrcand
+comment "Grouped correlation aggregate with candidate list";
 
 command avg(b:bat[:int], g:bat[:oid], e:bat[:any_1]):bat[:dbl]
 address AGGRavg13_dbl
@@ -726,6 +750,18 @@ command subcovariancep(b1:bat[:int],b2:bat[:int],g:bat[:oid],e:bat[:any_1],s:bat
 address AGGRsubcovariancepcand
 comment "Grouped covariance population aggregate with candidate list";
 
+command corr(b1:bat[:int],b2:bat[:int],g:bat[:oid],e:bat[:any_1]) :bat[:dbl]
+address AGGRcorr
+comment "Correlation aggregate";
+
+command subcorr(b1:bat[:int],b2:bat[:int],g:bat[:oid],e:bat[:any_1],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
+address AGGRsubcorr
+comment "Grouped correlation aggregate";
+
+command subcorr(b1:bat[:int],b2:bat[:int],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
+address AGGRsubcorrcand
+comment "Grouped correlation aggregate with candidate list";
+
 command avg(b:bat[:lng], g:bat[:oid], e:bat[:any_1]):bat[:dbl]
 address AGGRavg13_dbl
 comment "Grouped tail average on lng";
@@ -845,6 +881,18 @@ comment "Grouped covariance population aggregate";
 command subcovariancep(b1:bat[:lng],b2:bat[:lng],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
 address AGGRsubcovariancepcand
 comment "Grouped covariance population aggregate with candidate list";
+
+command corr(b1:bat[:lng],b2:bat[:lng],g:bat[:oid],e:bat[:any_1]) :bat[:dbl]
+address AGGRcorr
+comment "Correlation aggregate";
+
+command subcorr(b1:bat[:lng],b2:bat[:lng],g:bat[:oid],e:bat[:any_1],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
+address AGGRsubcorr
+comment "Grouped correlation aggregate";
+
+command subcorr(b1:bat[:lng],b2:bat[:lng],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
+address AGGRsubcorrcand
+comment "Grouped correlation aggregate with candidate list";
 
 command avg(b:bat[:flt], g:bat[:oid], e:bat[:any_1]):bat[:dbl]
 address AGGRavg13_dbl
@@ -966,6 +1014,18 @@ command subcovariancep(b1:bat[:flt],b2:bat[:flt],g:bat[:oid],e:bat[:any_1],s:bat
 address AGGRsubcovariancepcand
 comment "Grouped covariance population aggregate with candidate list";
 
+command corr(b1:bat[:flt],b2:bat[:flt],g:bat[:oid],e:bat[:any_1]) :bat[:dbl]
+address AGGRcorr
+comment "Correlation aggregate";
+
+command subcorr(b1:bat[:flt],b2:bat[:flt],g:bat[:oid],e:bat[:any_1],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
+address AGGRsubcorr
+comment "Grouped correlation aggregate";
+
+command subcorr(b1:bat[:flt],b2:bat[:flt],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
+address AGGRsubcorrcand
+comment "Grouped correlation aggregate with candidate list";
+
 command avg(b:bat[:dbl], g:bat[:oid], e:bat[:any_1]):bat[:dbl]
 address AGGRavg13_dbl
 comment "Grouped tail average on dbl";
@@ -1085,6 +1145,18 @@ comment "Grouped covariance population aggregate";
 command subcovariancep(b1:bat[:dbl],b2:bat[:dbl],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
 address AGGRsubcovariancepcand
 comment "Grouped covariance population aggregate with candidate list";
+
+command corr(b1:bat[:dbl],b2:bat[:dbl],g:bat[:oid],e:bat[:any_1]) :bat[:dbl]
+address AGGRcorr
+comment "Correlation aggregate";
+
+command subcorr(b1:bat[:dbl],b2:bat[:dbl],g:bat[:oid],e:bat[:any_1],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
+address AGGRsubcorr
+comment "Grouped correlation aggregate";
+
+command subcorr(b1:bat[:dbl],b2:bat[:dbl],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
+address AGGRsubcorrcand
+comment "Grouped correlation aggregate with candidate list";
 
 command min(b:bat[:any_1],g:bat[:oid],e:bat[:any_2]):bat[:any_1]
 address AGGRmin3;
