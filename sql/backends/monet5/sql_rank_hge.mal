@@ -190,3 +190,19 @@ pattern batsql.covariancep(b:bat[:hge], c:bat[:hge], s:bat[:lng], e:bat[:lng]) :
 address SQLcovar_pop
 comment "return the covariance population value of groups";
 
+pattern sql.corr(b:hge, c:hge, s:lng, e:lng) :dbl
+address SQLcorr
+comment "return the correlation value of groups";
+
+pattern batsql.corr(b:bat[:hge], c:hge, s:bat[:lng], e:bat[:lng]) :bat[:dbl]
+address SQLcorr
+comment "return the correlation value of groups";
+
+pattern batsql.corr(b:hge, c:bat[:hge], s:lng, e:lng) :bat[:dbl]
+address SQLcorr
+comment "return the correlation value of groups";
+
+pattern batsql.corr(b:bat[:hge], c:bat[:hge], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
+address SQLcorr
+comment "return the correlation value of groups";
+

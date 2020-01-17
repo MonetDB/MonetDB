@@ -1647,7 +1647,7 @@ SQLvar_pop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 static str
 do_covariance_and_correlation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char* op, const char* err, 
-							  gdk_return (*func)(BAT *, BAT *, BAT *, BAT *, BAT *, int), BUN minimum)
+							  gdk_return (*func)(BAT *, BAT *, BAT *, BAT *, BAT *, int), BUN minimum, dbl single_case)
 {
 	BAT *r = NULL, *b = NULL, *c = NULL, *s = NULL, *e = NULL;
 	int tp1, tp2;
@@ -1711,9 +1711,9 @@ do_covariance_and_correlation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 			const void *restrict nil = ATOMnilptr(tp1);
 			int (*cmp) (const void *, const void *) = ATOMcompare(tp1);
 			ValRecord *input2 = &(stk)->stk[(pci)->argv[2]];
-			dbl *restrict rb = (dbl*) Tloc(r, 0), res = VALisnil(input2) ? dbl_nil : 0;
+			dbl *restrict rb = (dbl*) Tloc(r, 0), res = VALisnil(input2) ? dbl_nil : single_case;
 			lng *restrict start = (lng*) Tloc(s, 0), *restrict end = (lng*) Tloc(e, 0);
-			bool has_nils = VALisnil(input2);
+			bool has_nils = is_dbl_nil(res);
 
 			for (BUN i = 0; i < cnt; i++) {
 				for (lng j = start[i] ; j < end[i] ; j++) {
@@ -1771,12 +1771,19 @@ str
 SQLcovar_samp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	return do_covariance_and_correlation(cntxt, mb, stk, pci, "sql.covariance", SQLSTATE(42000) "covariance(:any_1,:any_1,:lng,:lng)",
-										 GDKanalytical_covariance_samp, 1);
+										 GDKanalytical_covariance_samp, 1, 0.0f);
 }
 
 str
 SQLcovar_pop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	return do_covariance_and_correlation(cntxt, mb, stk, pci, "sql.covariancep", SQLSTATE(42000) "covariancep(:any_1,:any_1,:lng,:lng)",
-										 GDKanalytical_covariance_pop, 0);
+										 GDKanalytical_covariance_pop, 0, 0.0f);
+}
+
+str
+SQLcorr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	return do_covariance_and_correlation(cntxt, mb, stk, pci, "sql.corr", SQLSTATE(42000) "corr(:any_1,:any_1,:lng,:lng)",
+										 GDKanalytical_correlation, 0, dbl_nil);
 }

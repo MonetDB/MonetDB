@@ -1882,3 +1882,86 @@ GDKanalytical_##NAME(BAT *r, BAT *b1, BAT *b2, BAT *s, BAT *e, int tpe) \
 
 GDK_ANALYTICAL_COVARIANCE(covariance_samp, 1, m2 / (n - 1))
 GDK_ANALYTICAL_COVARIANCE(covariance_pop, 0, m2 / n)
+
+#define ANALYTICAL_CORRELATION_CALC(TPE)	\
+	do {								\
+		TPE *bp1 = (TPE*)Tloc(b1, 0), *bp2 = (TPE*)Tloc(b2, 0), *bs1, *be1, *bs2, v1, v2;	\
+		for (; i < cnt; i++, rb++) {		\
+			bs1 = bp1 + start[i];				\
+			be1 = bp1 + end[i];				\
+			bs2 = bp2 + start[i];		\
+			for (; bs1 < be1; bs1++, bs2++) {	\
+				v1 = *bs1;				\
+				v2 = *bs2;				\
+				if (is_##TPE##_nil(v1) || is_##TPE##_nil(v2))	\
+					continue;		\
+				n++;	\
+				delta1 = (dbl) v1 - mean1;	\
+				mean1 += delta1 / n;	\
+				delta2 = (dbl) v2 - mean2;	\
+				mean2 += delta2 / n;	\
+				aux = (dbl) v2 - mean2; \
+				up += delta1 * aux;	\
+				down1 += delta1 * ((dbl) v1 - mean1);	\
+				down2 += delta2 * aux;	\
+			}	\
+			if (n > 0 && up > 0 && down1 > 0 && down2 > 0) { \
+				*rb = (up / n) / (sqrt(down1 / n) * sqrt(down2 / n)); \
+				assert(!is_dbl_nil(*rb)); \
+			} else { \
+				*rb = dbl_nil; \
+				nils++; \
+			} \
+			n = 0;	\
+			mean1 = 0;	\
+			mean2 = 0;	\
+			up = 0; \
+			down1 = 0;	\
+			down2 = 0;	\
+		}	\
+	} while (0)
+
+gdk_return
+GDKanalytical_correlation(BAT *r, BAT *b1, BAT *b2, BAT *s, BAT *e, int tpe)
+{
+	BUN i = 0, cnt = BATcount(b1), n = 0, nils = 0;
+	lng *restrict start, *restrict end;
+	dbl *restrict rb = (dbl *) Tloc(r, 0), mean1 = 0, mean2 = 0, up = 0, down1 = 0, down2 = 0, delta1, delta2, aux;
+
+	assert(s && e && BATcount(b1) == BATcount(b2));
+	start = (lng *) Tloc(s, 0);
+	end = (lng *) Tloc(e, 0);
+
+	switch (tpe) {
+	case TYPE_bte:
+		ANALYTICAL_CORRELATION_CALC(bte);
+		break;
+	case TYPE_sht:
+		ANALYTICAL_CORRELATION_CALC(sht);
+		break;
+	case TYPE_int:
+		ANALYTICAL_CORRELATION_CALC(int);
+		break;
+	case TYPE_lng:
+		ANALYTICAL_CORRELATION_CALC(lng);
+		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		ANALYTICAL_CORRELATION_CALC(hge);
+		break;
+#endif
+	case TYPE_flt:
+		ANALYTICAL_CORRELATION_CALC(flt);
+		break;
+	case TYPE_dbl:
+		ANALYTICAL_CORRELATION_CALC(dbl);
+		break;
+	default:
+		GDKerror("%s: correlation of type %s unsupported.\n", __func__, ATOMname(tpe));
+		return GDK_FAIL;
+	}
+	BATsetcount(r, cnt);
+	r->tnonil = nils == 0;
+	r->tnil = nils > 0;
+	return GDK_SUCCEED;
+}

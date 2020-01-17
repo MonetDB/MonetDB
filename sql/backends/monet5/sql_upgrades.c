@@ -2734,7 +2734,37 @@ sql_update_analytics(Client c, mvc *sql, const char *prev_schema, bool *systabfi
 			"GRANT EXECUTE ON WINDOW covar_pop(INTERVAL SECOND, INTERVAL SECOND) TO PUBLIC;\n"
 			"create window covar_pop(e1 INTERVAL MONTH, e2 INTERVAL MONTH) returns DOUBLE\n"
 			" external name \"sql\".\"covariancep\";\n"
-			"GRANT EXECUTE ON WINDOW covar_pop(INTERVAL MONTH, INTERVAL MONTH) TO PUBLIC;\n");
+			"GRANT EXECUTE ON WINDOW covar_pop(INTERVAL MONTH, INTERVAL MONTH) TO PUBLIC;\n"
+			"create aggregate corr(e1 INTERVAL SECOND, e2 INTERVAL SECOND) returns DOUBLE\n"
+			" external name \"aggr\".\"corr\";\n"
+			"GRANT EXECUTE ON AGGREGATE covar_pop(INTERVAL SECOND, INTERVAL SECOND) TO PUBLIC;\n"
+			"create aggregate corr(e1 INTERVAL MONTH, e2 INTERVAL MONTH) returns DOUBLE\n"
+			" external name \"aggr\".\"corr\";\n"
+			"GRANT EXECUTE ON AGGREGATE corr(INTERVAL MONTH, INTERVAL MONTH) TO PUBLIC;\n"
+			"create window corr(e1 TINYINT, e2 TINYINT) returns DOUBLE\n"
+			" external name \"sql\".\"corr\";\n"
+			"GRANT EXECUTE ON WINDOW corr(TINYINT, TINYINT) TO PUBLIC;\n"
+			"create window corr(e1 SMALLINT, e2 SMALLINT) returns DOUBLE\n"
+			" external name \"sql\".\"corr\";\n"
+			"GRANT EXECUTE ON WINDOW corr(SMALLINT, SMALLINT) TO PUBLIC;\n"
+			"create window corr(e1 INTEGER, e2 INTEGER) returns DOUBLE\n"
+			" external name \"sql\".\"corr\";\n"
+			"GRANT EXECUTE ON WINDOW corr(INTEGER, INTEGER) TO PUBLIC;\n"
+			"create window corr(e1 BIGINT, e2 BIGINT) returns DOUBLE\n"
+			" external name \"sql\".\"corr\";\n"
+			"GRANT EXECUTE ON WINDOW corr(BIGINT, BIGINT) TO PUBLIC;\n"
+			"create window corr(e1 REAL, e2 REAL) returns DOUBLE\n"
+			" external name \"sql\".\"corr\";\n"
+			"GRANT EXECUTE ON WINDOW corr(REAL, REAL) TO PUBLIC;\n"
+			"create window corr(e1 DOUBLE, e2 DOUBLE) returns DOUBLE\n"
+			" external name \"sql\".\"corr\";\n"
+			"GRANT EXECUTE ON WINDOW corr(DOUBLE, DOUBLE) TO PUBLIC;\n"
+			"create window corr(e1 INTERVAL SECOND, e2 INTERVAL SECOND) returns DOUBLE\n"
+			" external name \"sql\".\"corr\";\n"
+			"GRANT EXECUTE ON WINDOW corr(INTERVAL SECOND, INTERVAL SECOND) TO PUBLIC;\n"
+			"create window corr(e1 INTERVAL MONTH, e2 INTERVAL MONTH) returns DOUBLE\n"
+			" external name \"sql\".\"corr\";\n"
+			"GRANT EXECUTE ON WINDOW corr(INTERVAL MONTH, INTERVAL MONTH) TO PUBLIC;\n");
 
 #ifdef HAVE_HGE
 	if (have_hge) {
@@ -2757,13 +2787,16 @@ sql_update_analytics(Client c, mvc *sql, const char *prev_schema, bool *systabfi
 			"GRANT EXECUTE ON WINDOW covar_samp(HUGEINT, HUGEINT) TO PUBLIC;\n"
 			"create window covar_pop(e1 HUGEINT, e2 HUGEINT) returns DOUBLE\n"
 			" external name \"sql\".\"covariancep\";\n"
-			"GRANT EXECUTE ON WINDOW covar_pop(HUGEINT, HUGEINT) TO PUBLIC;\n");
+			"GRANT EXECUTE ON WINDOW covar_pop(HUGEINT, HUGEINT) TO PUBLIC;\n"
+			"create window corr(e1 HUGEINT, e2 HUGEINT) returns DOUBLE\n"
+			" external name \"sql\".\"corr\";\n"
+			"GRANT EXECUTE ON WINDOW corr(HUGEINT, HUGEINT) TO PUBLIC;\n");
 	}
 #endif
 
 	pos += snprintf(buf + pos, bufsize - pos,
 			"update sys.functions set system = true where name in"
-			" ('stddev_samp', 'stddev_pop', 'var_samp', 'var_pop', 'covar_samp', 'covar_pop')"
+			" ('stddev_samp', 'stddev_pop', 'var_samp', 'var_pop', 'covar_samp', 'covar_pop', 'corr')"
 			" and schema_id = (select id from sys.schemas where name = 'sys');\n");
 
 	pos += snprintf(buf + pos, bufsize - pos,

@@ -411,3 +411,36 @@ GRANT EXECUTE ON AGGREGATE corr(REAL, REAL) TO PUBLIC;
 create aggregate corr(e1 DOUBLE, e2 DOUBLE) returns DOUBLE
 	external name "aggr"."corr";
 GRANT EXECUTE ON AGGREGATE corr(DOUBLE, DOUBLE) TO PUBLIC;
+
+create aggregate corr(e1 INTERVAL SECOND, e2 INTERVAL SECOND) returns DOUBLE
+	external name "aggr"."corr";
+GRANT EXECUTE ON AGGREGATE corr(INTERVAL SECOND, INTERVAL SECOND) TO PUBLIC;
+create aggregate corr(e1 INTERVAL MONTH, e2 INTERVAL MONTH) returns DOUBLE
+	external name "aggr"."corr";
+GRANT EXECUTE ON AGGREGATE corr(INTERVAL MONTH, INTERVAL MONTH) TO PUBLIC;
+
+create window corr(e1 TINYINT, e2 TINYINT) returns DOUBLE
+	external name "sql"."corr";
+GRANT EXECUTE ON WINDOW corr(TINYINT, TINYINT) TO PUBLIC;
+create window corr(e1 SMALLINT, e2 SMALLINT) returns DOUBLE
+	external name "sql"."corr";
+GRANT EXECUTE ON WINDOW corr(SMALLINT, SMALLINT) TO PUBLIC;
+create window corr(e1 INTEGER, e2 INTEGER) returns DOUBLE
+	external name "sql"."corr";
+GRANT EXECUTE ON WINDOW corr(INTEGER, INTEGER) TO PUBLIC;
+create window corr(e1 BIGINT, e2 BIGINT) returns DOUBLE
+	external name "sql"."corr";
+GRANT EXECUTE ON WINDOW corr(BIGINT, BIGINT) TO PUBLIC;
+create window corr(e1 REAL, e2 REAL) returns DOUBLE
+	external name "sql"."corr";
+GRANT EXECUTE ON WINDOW corr(REAL, REAL) TO PUBLIC;
+create window corr(e1 DOUBLE, e2 DOUBLE) returns DOUBLE
+	external name "sql"."corr";
+GRANT EXECUTE ON WINDOW corr(DOUBLE, DOUBLE) TO PUBLIC;
+
+create window corr(e1 INTERVAL SECOND, e2 INTERVAL SECOND) returns DOUBLE
+	external name "sql"."corr";
+GRANT EXECUTE ON WINDOW corr(INTERVAL SECOND, INTERVAL SECOND) TO PUBLIC;
+create window corr(e1 INTERVAL MONTH, e2 INTERVAL MONTH) returns DOUBLE
+	external name "sql"."corr";
+GRANT EXECUTE ON WINDOW corr(INTERVAL MONTH, INTERVAL MONTH) TO PUBLIC;

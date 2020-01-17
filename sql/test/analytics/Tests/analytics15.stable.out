@@ -187,6 +187,66 @@ stdout of test 'analytics15` in directory 'sql/test/analytics` itself:
 [ 1.066666667	]
 [ 1.066666667	]
 [ 1.066666667	]
+#select corr(bb, bb) over (partition by bb) from analytics;
+% sys.%3 # table_name
+% %3 # name
+% double # type
+% 24 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+#select corr(bb, bb) over (partition by bb order by bb asc) from analytics;
+% sys.%3 # table_name
+% %3 # name
+% double # type
+% 24 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+#select corr(bb, bb) over (partition by bb order by bb desc) from analytics;
+% sys.%3 # table_name
+% %3 # name
+% double # type
+% 24 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+#select corr(bb, bb) over (order by bb desc) from analytics;
+% sys.%3 # table_name
+% %3 # name
+% double # type
+% 24 # length
+[ NULL	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
 #select covar_pop(aa, aa) over (partition by bb) from analytics;
 % sys.%3 # table_name
 % %3 # name
@@ -307,6 +367,66 @@ stdout of test 'analytics15` in directory 'sql/test/analytics` itself:
 [ 0.96	]
 [ 0.96	]
 [ 0.96	]
+#select corr(bb, bb) over (partition by bb) from analytics;
+% sys.%3 # table_name
+% %3 # name
+% double # type
+% 24 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+#select corr(bb, bb) over (partition by bb order by bb asc) from analytics;
+% sys.%3 # table_name
+% %3 # name
+% double # type
+% 24 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+#select corr(bb, bb) over (partition by bb order by bb desc) from analytics;
+% sys.%3 # table_name
+% %3 # name
+% double # type
+% 24 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+#select corr(bb, bb) over (order by bb desc) from analytics;
+% sys.%3 # table_name
+% %3 # name
+% double # type
+% 24 # length
+[ NULL	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
 #select covar_samp(aa, bb) over (partition by bb) from analytics;
 % sys.%3 # table_name
 % %3 # name
@@ -427,6 +547,66 @@ stdout of test 'analytics15` in directory 'sql/test/analytics` itself:
 [ 2.428571429	]
 [ 2.428571429	]
 [ 2.428571429	]
+#select corr(bb, aa) over (partition by bb) from analytics;
+% sys.%3 # table_name
+% %3 # name
+% double # type
+% 24 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+#select corr(bb, aa) over (partition by bb order by bb asc) from analytics;
+% sys.%3 # table_name
+% %3 # name
+% double # type
+% 24 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+#select corr(bb, aa) over (partition by bb order by bb desc) from analytics;
+% sys.%3 # table_name
+% %3 # name
+% double # type
+% 24 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+#select corr(bb, aa) over (order by bb desc) from analytics;
+% sys.%3 # table_name
+% %3 # name
+% double # type
+% 24 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ 0.3758141918	]
+[ 0.3758141918	]
+[ 0.3758141918	]
+[ 0.6245106046	]
+[ 0.6245106046	]
+[ 0.6245106046	]
 #select covar_pop(aa, bb) over (partition by bb) from analytics;
 % sys.%3 # table_name
 % %3 # name
@@ -547,6 +727,66 @@ stdout of test 'analytics15` in directory 'sql/test/analytics` itself:
 [ 2.125	]
 [ 2.125	]
 [ 2.125	]
+#select corr(bb, aa) over (partition by bb) from analytics;
+% sys.%3 # table_name
+% %3 # name
+% double # type
+% 24 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+#select corr(bb, aa) over (partition by bb order by bb asc) from analytics;
+% sys.%3 # table_name
+% %3 # name
+% double # type
+% 24 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+#select corr(bb, aa) over (partition by bb order by bb desc) from analytics;
+% sys.%3 # table_name
+% %3 # name
+% double # type
+% 24 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+#select corr(bb, aa) over (order by bb desc) from analytics;
+% sys.%3 # table_name
+% %3 # name
+% double # type
+% 24 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ 0.3758141918	]
+[ 0.3758141918	]
+[ 0.3758141918	]
+[ 0.6245106046	]
+[ 0.6245106046	]
+[ 0.6245106046	]
 #select covar_pop(aa, 1) over (partition by bb) from analytics;
 % sys.%3 # table_name
 % %3 # name
@@ -667,6 +907,66 @@ stdout of test 'analytics15` in directory 'sql/test/analytics` itself:
 [ 0	]
 [ 0	]
 [ 0	]
+#select corr(bb, -100) over (partition by bb) from analytics;
+% sys.%3 # table_name
+% %3 # name
+% double # type
+% 24 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+#select corr(bb, -100) over (partition by bb order by bb asc) from analytics;
+% sys.%3 # table_name
+% %3 # name
+% double # type
+% 24 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+#select corr(bb, -100) over (partition by bb order by bb desc) from analytics;
+% sys.%3 # table_name
+% %3 # name
+% double # type
+% 24 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+#select corr(bb, -100) over (order by bb desc) from analytics;
+% sys.%3 # table_name
+% %3 # name
+% double # type
+% 24 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
 #select covar_samp(aa, 1) over (partition by bb) from analytics;
 % sys.%3 # table_name
 % %3 # name
@@ -787,6 +1087,66 @@ stdout of test 'analytics15` in directory 'sql/test/analytics` itself:
 [ 0	]
 [ 0	]
 [ 0	]
+#select corr(bb, -100) over (partition by bb) from analytics;
+% sys.%3 # table_name
+% %3 # name
+% double # type
+% 24 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+#select corr(bb, -100) over (partition by bb order by bb asc) from analytics;
+% sys.%3 # table_name
+% %3 # name
+% double # type
+% 24 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+#select corr(bb, -100) over (partition by bb order by bb desc) from analytics;
+% sys.%3 # table_name
+% %3 # name
+% double # type
+% 24 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+#select corr(bb, -100) over (order by bb desc) from analytics;
+% sys.%3 # table_name
+% %3 # name
+% double # type
+% 24 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
 #select covar_pop(aa, aa) over () from analytics;
 % sys. # table_name
 % %1 # name
@@ -967,6 +1327,96 @@ stdout of test 'analytics15` in directory 'sql/test/analytics` itself:
 [ 0	]
 [ 0	]
 [ 0	]
+#select corr(aa, aa) over () from analytics;
+% sys. # table_name
+% %1 # name
+% double # type
+% 24 # length
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+#select corr(bb, bb) over () from analytics;
+% sys. # table_name
+% %1 # name
+% double # type
+% 24 # length
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+#select corr(aa, bb) over () from analytics;
+% sys. # table_name
+% %1 # name
+% double # type
+% 24 # length
+[ 0.6245106046	]
+[ 0.6245106046	]
+[ 0.6245106046	]
+[ 0.6245106046	]
+[ 0.6245106046	]
+[ 0.6245106046	]
+[ 0.6245106046	]
+[ 0.6245106046	]
+[ 0.6245106046	]
+[ 0.6245106046	]
+#select corr(bb, aa) over () from analytics;
+% sys. # table_name
+% %1 # name
+% double # type
+% 24 # length
+[ 0.6245106046	]
+[ 0.6245106046	]
+[ 0.6245106046	]
+[ 0.6245106046	]
+[ 0.6245106046	]
+[ 0.6245106046	]
+[ 0.6245106046	]
+[ 0.6245106046	]
+[ 0.6245106046	]
+[ 0.6245106046	]
+#select corr(aa, 1) over () from analytics;
+% sys. # table_name
+% %1 # name
+% double # type
+% 24 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+#select corr(bb, -100) over () from analytics;
+% sys. # table_name
+% %1 # name
+% double # type
+% 24 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
 #select covar_samp(NULL, 2) over () from analytics;
 % . # table_name
 % %3 # name
@@ -1103,6 +1553,81 @@ stdout of test 'analytics15` in directory 'sql/test/analytics` itself:
 [ NULL	]
 [ NULL	]
 #select covar_pop(NULL, NULL) over () from analytics;
+% . # table_name
+% %4 # name
+% double # type
+% 24 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+#select corr(NULL, 2) over () from analytics;
+% . # table_name
+% %3 # name
+% double # type
+% 24 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+#select corr(2, NULL) over () from analytics;
+% . # table_name
+% %3 # name
+% double # type
+% 24 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+#select corr(aa, NULL) over () from analytics;
+% sys. # table_name
+% %3 # name
+% double # type
+% 24 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+#select corr(NULL, aa) over () from analytics;
+% . # table_name
+% %3 # name
+% double # type
+% 24 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+#select corr(NULL, NULL) over () from analytics;
 % . # table_name
 % %4 # name
 % double # type

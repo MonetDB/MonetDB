@@ -44,5 +44,6 @@ gdk_export gdk_return GDKanalytical_variance_samp(BAT *r, BAT *b, BAT *s, BAT *e
 gdk_export gdk_return GDKanalytical_variance_pop(BAT *r, BAT *b, BAT *s, BAT *e, int tpe);
 gdk_export gdk_return GDKanalytical_covariance_pop(BAT *r, BAT *b1, BAT *b2, BAT *s, BAT *e, int tpe);
 gdk_export gdk_return GDKanalytical_covariance_samp(BAT *r, BAT *b1, BAT *b2, BAT *s, BAT *e, int tpe);
+gdk_export gdk_return GDKanalytical_correlation(BAT *r, BAT *b1, BAT *b2, BAT *s, BAT *e, int tpe);
 
 #endif //_GDK_ANALYTIC_H_

@@ -59,3 +59,6 @@ GRANT EXECUTE ON AGGREGATE quantile_avg(HUGEINT, DOUBLE) TO PUBLIC;
 create aggregate corr(e1 HUGEINT, e2 HUGEINT) returns DOUBLE
 	external name "aggr"."corr";
 GRANT EXECUTE ON AGGREGATE corr(HUGEINT, HUGEINT) TO PUBLIC;
+create window corr(e1 HUGEINT, e2 HUGEINT) returns DOUBLE
+	external name "sql"."corr";
+GRANT EXECUTE ON WINDOW corr(HUGEINT, HUGEINT) TO PUBLIC;

@@ -12,6 +12,11 @@ select covar_samp(bb, bb) over (partition by bb order by bb asc) from analytics;
 select covar_samp(bb, bb) over (partition by bb order by bb desc) from analytics;
 select covar_samp(bb, bb) over (order by bb desc) from analytics;
 
+select corr(bb, bb) over (partition by bb) from analytics;
+select corr(bb, bb) over (partition by bb order by bb asc) from analytics;
+select corr(bb, bb) over (partition by bb order by bb desc) from analytics;
+select corr(bb, bb) over (order by bb desc) from analytics;
+
 
 select covar_pop(aa, aa) over (partition by bb) from analytics;
 select covar_pop(aa, aa) over (partition by bb order by bb asc) from analytics;
@@ -22,6 +27,11 @@ select covar_pop(bb, bb) over (partition by bb) from analytics;
 select covar_pop(bb, bb) over (partition by bb order by bb asc) from analytics;
 select covar_pop(bb, bb) over (partition by bb order by bb desc) from analytics;
 select covar_pop(bb, bb) over (order by bb desc) from analytics;
+
+select corr(bb, bb) over (partition by bb) from analytics;
+select corr(bb, bb) over (partition by bb order by bb asc) from analytics;
+select corr(bb, bb) over (partition by bb order by bb desc) from analytics;
+select corr(bb, bb) over (order by bb desc) from analytics;
 
 
 select covar_samp(aa, bb) over (partition by bb) from analytics;
@@ -34,6 +44,11 @@ select covar_samp(bb, aa) over (partition by bb order by bb asc) from analytics;
 select covar_samp(bb, aa) over (partition by bb order by bb desc) from analytics;
 select covar_samp(bb, aa) over (order by bb desc) from analytics;
 
+select corr(bb, aa) over (partition by bb) from analytics;
+select corr(bb, aa) over (partition by bb order by bb asc) from analytics;
+select corr(bb, aa) over (partition by bb order by bb desc) from analytics;
+select corr(bb, aa) over (order by bb desc) from analytics;
+
 
 select covar_pop(aa, bb) over (partition by bb) from analytics;
 select covar_pop(aa, bb) over (partition by bb order by bb asc) from analytics;
@@ -44,6 +59,11 @@ select covar_pop(bb, aa) over (partition by bb) from analytics;
 select covar_pop(bb, aa) over (partition by bb order by bb asc) from analytics;
 select covar_pop(bb, aa) over (partition by bb order by bb desc) from analytics;
 select covar_pop(bb, aa) over (order by bb desc) from analytics;
+
+select corr(bb, aa) over (partition by bb) from analytics;
+select corr(bb, aa) over (partition by bb order by bb asc) from analytics;
+select corr(bb, aa) over (partition by bb order by bb desc) from analytics;
+select corr(bb, aa) over (order by bb desc) from analytics;
 
 
 select covar_pop(aa, 1) over (partition by bb) from analytics;
@@ -56,6 +76,11 @@ select covar_pop(bb, -100) over (partition by bb order by bb asc) from analytics
 select covar_pop(bb, -100) over (partition by bb order by bb desc) from analytics;
 select covar_pop(bb, -100) over (order by bb desc) from analytics;
 
+select corr(bb, -100) over (partition by bb) from analytics;
+select corr(bb, -100) over (partition by bb order by bb asc) from analytics;
+select corr(bb, -100) over (partition by bb order by bb desc) from analytics;
+select corr(bb, -100) over (order by bb desc) from analytics;
+
 
 select covar_samp(aa, 1) over (partition by bb) from analytics;
 select covar_samp(aa, 1) over (partition by bb order by bb asc) from analytics;
@@ -66,6 +91,11 @@ select covar_samp(bb, -100) over (partition by bb) from analytics;
 select covar_samp(bb, -100) over (partition by bb order by bb asc) from analytics;
 select covar_samp(bb, -100) over (partition by bb order by bb desc) from analytics;
 select covar_samp(bb, -100) over (order by bb desc) from analytics;
+
+select corr(bb, -100) over (partition by bb) from analytics;
+select corr(bb, -100) over (partition by bb order by bb asc) from analytics;
+select corr(bb, -100) over (partition by bb order by bb desc) from analytics;
+select corr(bb, -100) over (order by bb desc) from analytics;
 
 
 select covar_pop(aa, aa) over () from analytics;
@@ -82,6 +112,13 @@ select covar_samp(bb, aa) over () from analytics;
 select covar_samp(aa, 1) over () from analytics;
 select covar_samp(bb, -100) over () from analytics;
 
+select corr(aa, aa) over () from analytics;
+select corr(bb, bb) over () from analytics;
+select corr(aa, bb) over () from analytics;
+select corr(bb, aa) over () from analytics;
+select corr(aa, 1) over () from analytics;
+select corr(bb, -100) over () from analytics;
+
 
 select covar_samp(NULL, 2) over () from analytics;
 select covar_samp(2, NULL) over () from analytics;
@@ -94,5 +131,11 @@ select covar_pop(2, NULL) over () from analytics;
 select covar_pop(aa, NULL) over () from analytics;
 select covar_pop(NULL, aa) over () from analytics;
 select covar_pop(NULL, NULL) over () from analytics;
+
+select corr(NULL, 2) over () from analytics;
+select corr(2, NULL) over () from analytics;
+select corr(aa, NULL) over () from analytics;
+select corr(NULL, aa) over () from analytics;
+select corr(NULL, NULL) over () from analytics;
 
 rollback;

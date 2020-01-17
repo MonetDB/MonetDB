@@ -446,6 +446,22 @@ address SQLcovar_pop
 comment "return the covariance population value of groups";
 
 
+pattern sql.corr(b:${tp}, c:${tp}, s:lng, e:lng) :dbl
+address SQLcorr
+comment "return the correlation value of groups";
+
+pattern batsql.corr(b:bat[:${tp}], c:${tp}, s:bat[:lng], e:bat[:lng]) :bat[:dbl]
+address SQLcorr
+comment "return the correlation value of groups";
+
+pattern batsql.corr(b:${tp}, c:bat[:${tp}], s:lng, e:lng) :bat[:dbl]
+address SQLcorr
+comment "return the correlation value of groups";
+
+pattern batsql.corr(b:bat[:${tp}], c:bat[:${tp}], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
+address SQLcorr
+comment "return the correlation value of groups";
+
 EOF
 done
 
