@@ -1549,6 +1549,11 @@ command_create(int argc, char *argv[])
 		simple_argv_cmd(argv[0], orig, "create",
 				"created database in maintenance mode", NULL);
 	}
+	/* msab_freeStatus does not free dbname */
+	for (stats = orig; stats; stats = stats->next) {
+		free(stats->dbname);
+		stats->dbname = NULL;
+	}
 	msab_freeStatus(&orig);
 }
 
