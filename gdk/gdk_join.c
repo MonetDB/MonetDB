@@ -3479,7 +3479,7 @@ gdk_return
 BATleftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches, BUN estimate)
 {
 	return leftjoin(r1p, r2p, l, r, sl, sr, nil_matches,
-			false, false, false, false, estimate, "BATleftjoin",
+			false, false, false, false, estimate, __func__,
 			GDKdebug & ALGOMASK ? GDKusec() : 0);
 }
 
@@ -3492,7 +3492,7 @@ gdk_return
 BATouterjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches, BUN estimate)
 {
 	return leftjoin(r1p, r2p, l, r, sl, sr, nil_matches,
-			true, false, false, false, estimate, "BATouterjoin",
+			true, false, false, false, estimate, __func__,
 			GDKdebug & ALGOMASK ? GDKusec() : 0);
 }
 
@@ -3504,7 +3504,7 @@ gdk_return
 BATsemijoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches, BUN estimate)
 {
 	return leftjoin(r1p, r2p, l, r, sl, sr, nil_matches,
-			false, true, false, false, estimate, "BATsemijoin",
+			false, true, false, false, estimate, __func__,
 			GDKdebug & ALGOMASK ? GDKusec() : 0);
 }
 
@@ -3516,7 +3516,7 @@ BATintersect(BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches, BUN estimate)
 	BAT *bn;
 
 	if (leftjoin(&bn, NULL, l, r, sl, sr, nil_matches,
-		     false, true, false, false, estimate, "BATintersect",
+		     false, true, false, false, estimate, __func__,
 		     GDKdebug & ALGOMASK ? GDKusec() : 0) == GDK_SUCCEED)
 		return virtualize(bn);
 	return NULL;
@@ -3532,7 +3532,7 @@ BATdiff(BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches, bool not_in,
 	BAT *bn;
 
 	if (leftjoin(&bn, NULL, l, r, sl, sr, nil_matches,
-		     false, false, true, not_in, estimate, "BATdiff",
+		     false, false, true, not_in, estimate, __func__,
 		     GDKdebug & ALGOMASK ? GDKusec() : 0) == GDK_SUCCEED)
 		return virtualize(bn);
 	return NULL;
@@ -3573,7 +3573,7 @@ BATthetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int op, boo
 	if (r2p) {
 		*r2p = NULL;
 	}
-	if (joinparamcheck(l, r, NULL, sl, sr, "BATthetajoin") != GDK_SUCCEED)
+	if (joinparamcheck(l, r, NULL, sl, sr, __func__) != GDK_SUCCEED)
 		return GDK_FAIL;
 
 	return thetajoin(r1p, r2p, l, r, sl, sr, opcode, estimate, t0);
@@ -3616,7 +3616,7 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 	if (r2p) {
 		*r2p = NULL;
 	}
-	if (joinparamcheck(l, r, NULL, sl, sr, "BATjoin") != GDK_SUCCEED)
+	if (joinparamcheck(l, r, NULL, sl, sr, __func__) != GDK_SUCCEED)
 		return GDK_FAIL;
 
 	if (lcnt == 0 || rcnt == 0) {
@@ -3627,7 +3627,7 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 				  ALGOOPTBATPAR(sl), ALGOOPTBATPAR(sr),
 				  nil_matches);
 		return nomatch(r1p, r2p, l, r, &lci,
-			       false, false, "BATjoin", t0);
+			       false, false, __func__, t0);
 	}
 
 	swap = false;
@@ -3786,7 +3786,7 @@ BATbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	if (r2p) {
 		*r2p = NULL;
 	}
-	if (joinparamcheck(l, r, NULL, sl, sr, "BATbandjoin") != GDK_SUCCEED)
+	if (joinparamcheck(l, r, NULL, sl, sr, __func__) != GDK_SUCCEED)
 		return GDK_FAIL;
 	return bandjoin(r1p, r2p, l, r, sl, sr, c1, c2, li, hi, estimate, t0);
 }
@@ -3806,7 +3806,7 @@ BATrangejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *rl, BAT *rh,
 	if (r2p) {
 		*r2p = NULL;
 	}
-	if (joinparamcheck(l, rl, rh, sl, sr, "BATrangejoin") != GDK_SUCCEED)
+	if (joinparamcheck(l, rl, rh, sl, sr, __func__) != GDK_SUCCEED)
 		return GDK_FAIL;
 	if (canditer_init(&lci, l, sl) == 0 ||
 	    canditer_init(&rci, rl, sr) == 0 ||
