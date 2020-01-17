@@ -2407,7 +2407,7 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				/* no match */				\
 				if (not_in)				\
 					continue;			\
-			} else if (sr) {				\
+			} else if (hash_cand) {				\
 				for (rb = HASHget(hsh, hash_##TYPE(hsh, &v)); \
 				     rb != HASHnil(hsh);		\
 				     rb = HASHgetlink(hsh, rb)) {	\
@@ -2498,6 +2498,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	const char *v = (const char *) &lval;
 	bool lskipped = false;	/* whether we skipped values in l */
 	Hash *restrict hsh;
+	bool hash_cand = false;
 
 	assert(!BATtvoid(r));
 	assert(ATOMtype(l->ttype) == ATOMtype(r->ttype));
@@ -2547,42 +2548,53 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		r = b;
 	}
 
-	if (sr) {
-		if (BATtdense(sr) &&
-		    BATcheckhash(r) &&
+	hsh = NULL;
+	if (rci->tpe == cand_dense) {
+		if (BATcheckhash(r) &&
 		    BATcount(r) / r->thash->nheads * lci->ncand < lci->ncand + rci->ncand) {
+			/* there is a hash already and the collision
+			 * chains aren't too long, use it */
 			ALGODEBUG fprintf(stderr, "#%s: %s(%s): using "
 					  "existing hash with candidate list\n",
 					  MT_thread_getname(), __func__,
 					  BATgetId(r));
 			hsh = r->thash;
-			sr = NULL;
-		} else {
-			char ext[32];
-			assert(!phash);
-			ALGODEBUG fprintf(stderr, "#%s: %s(%s): creating "
-					  "hash for candidate list\n",
-					  MT_thread_getname(), __func__,
-					  BATgetId(r));
-			if (snprintf(ext, sizeof(ext), "thshjn%x", sr->batCacheid) >= (int) sizeof(ext))
-				goto bailout;
-			if ((hsh = BAThash_impl(r, sr, ext)) == NULL) {
+		} else if (rci->ncand == BATcount(r) ||
+			   (!r->batTransient &&
+			    rci->ncand > BATcount(r) * 4 / 5)) {
+			/* if there is (effectively) no candidate
+			 * list, or if b is persistent and we're
+			 * joining with the majority of b, create a
+			 * hash on b */
+			if (BAThash(r) != GDK_SUCCEED) {
+				hsh = NULL;
 				goto bailout;
 			}
+			hsh = r->thash;
 		}
-	} else {
-		if (BAThash(r) != GDK_SUCCEED) {
-			hsh = NULL;
+	}
+	if (hsh == NULL) {
+		/* create a hash for the part of b that is candidate */
+		char ext[32];
+		assert(!phash);
+		assert(sr != NULL);
+		ALGODEBUG fprintf(stderr, "#%s: %s(%s): creating "
+				  "hash for candidate list\n",
+				  MT_thread_getname(), __func__,
+				  BATgetId(r));
+		if (snprintf(ext, sizeof(ext), "thshjn%x", sr->batCacheid) >= (int) sizeof(ext))
+			goto bailout;
+		if ((hsh = BAThash_impl(r, sr, ext)) == NULL) {
 			goto bailout;
 		}
-		hsh = r->thash;
+		hash_cand = true;
 	}
 	ri = bat_iterator(r);
 
 	if (not_in && !r->tnonil) {
 		/* check whether there is a nil on the right, since if
 		 * so, we should return an empty result */
-		if (sr) {
+		if (hash_cand) {
 			for (rb = HASHget(hsh, HASHprobe(hsh, nil));
 			     rb != HASHnil(hsh);
 			     rb = HASHgetlink(hsh, rb)) {
@@ -2639,7 +2651,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				/* no match */
 				if (not_in)
 					continue;
-			} else if (sr) {
+			} else if (hash_cand) {
 				for (rb = HASHget(hsh, HASHprobe(hsh, v));
 				     rb != HASHnil(hsh);
 				     rb = HASHgetlink(hsh, rb)) {
@@ -2706,7 +2718,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		}
 		break;
 	}
-	if (sr) {
+	if (hash_cand) {
 		HEAPfree(&hsh->heaplink, true);
 		HEAPfree(&hsh->heapbckt, true);
 		GDKfree(hsh);
@@ -2757,7 +2769,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	return GDK_SUCCEED;
 
   bailout:
-	if (sr && hsh) {
+	if (hash_cand && hsh) {
 		HEAPfree(&hsh->heaplink, true);
 		HEAPfree(&hsh->heapbckt, true);
 		GDKfree(hsh);
@@ -3478,7 +3490,8 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				 nil_matches, nil_on_miss, semi, only_misses,
 				 not_in, estimate, t0, false, func);
 	}
-	phash = sr == NULL &&
+	phash = rci.tpe == cand_dense &&
+		rci.ncand == BATcount(r) &&
 		VIEWtparent(r) != 0 &&
 		BATcount(BBP_cache(VIEWtparent(r))) == BATcount(r);
 	return hashjoin(r1p, r2p, l, r, sl, sr, &lci, &rci,
