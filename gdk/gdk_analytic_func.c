@@ -1797,6 +1797,92 @@ GDK_ANALYTICAL_STDEV_VARIANCE(stddev_pop, 0, sqrt(m2 / n), "standard deviation")
 GDK_ANALYTICAL_STDEV_VARIANCE(variance_samp, 1, m2 / (n - 1), "variance")
 GDK_ANALYTICAL_STDEV_VARIANCE(variance_pop, 0, m2 / n, "variance")
 
+#define ANALYTICAL_COVARIANCE_CALC(TPE, SAMPLE, OP)	\
+	do {								\
+		TPE *bp1 = (TPE*)Tloc(b1, 0), *bp2 = (TPE*)Tloc(b2, 0), *bs1, *be1, *bs2, v1, v2;	\
+		for (; i < cnt; i++, rb++) {		\
+			bs1 = bp1 + start[i];				\
+			be1 = bp1 + end[i];				\
+			bs2 = bp2 + start[i];		\
+			for (; bs1 < be1; bs1++, bs2++) {	\
+				v1 = *bs1;				\
+				v2 = *bs2;				\
+				if (is_##TPE##_nil(v1) || is_##TPE##_nil(v2))	\
+					continue;		\
+				n++;				\
+				delta1 = (dbl) v1 - mean1;		\
+				mean1 += delta1 / n;		\
+				delta2 = (dbl) v2 - mean2;		\
+				mean2 += delta2 / n;		\
+				m2 += delta1 * ((dbl) v2 - mean2);	\
+			}	\
+			if (n > SAMPLE) { \
+				*rb = OP; \
+			} else { \
+				*rb = dbl_nil; \
+				nils++; \
+			} \
+			n = 0;	\
+			mean1 = 0;	\
+			mean2 = 0;	\
+			m2 = 0; \
+		}	\
+	} while (0)
+
+#ifdef HAVE_HGE
+#define ANALYTICAL_COVARIANCE_LIMIT(SAMPLE, OP) \
+	case TYPE_hge: \
+		ANALYTICAL_COVARIANCE_CALC(hge, SAMPLE, OP); \
+	break;
+#else
+#define ANALYTICAL_COVARIANCE_LIMIT(SAMPLE, OP)
+#endif
+
+#define GDK_ANALYTICAL_COVARIANCE(NAME, SAMPLE, OP) \
+gdk_return \
+GDKanalytical_##NAME(BAT *r, BAT *b1, BAT *b2, BAT *s, BAT *e, int tpe) \
+{ \
+	BUN i = 0, cnt = BATcount(b1), n = 0, nils = 0; \
+	lng *restrict start, *restrict end; \
+	dbl *restrict rb = (dbl *) Tloc(r, 0), mean1 = 0, mean2 = 0, m2 = 0, delta1, delta2; \
+ \
+	assert(s && e && BATcount(b1) == BATcount(b2)); \
+	start = (lng *) Tloc(s, 0); \
+	end = (lng *) Tloc(e, 0); \
+ \
+	switch (tpe) { \
+	case TYPE_bte: \
+		ANALYTICAL_COVARIANCE_CALC(bte, SAMPLE, OP); \
+		break; \
+	case TYPE_sht: \
+		ANALYTICAL_COVARIANCE_CALC(sht, SAMPLE, OP); \
+		break; \
+	case TYPE_int: \
+		ANALYTICAL_COVARIANCE_CALC(int, SAMPLE, OP); \
+		break; \
+	case TYPE_lng: \
+		ANALYTICAL_COVARIANCE_CALC(lng, SAMPLE, OP); \
+		break; \
+	ANALYTICAL_COVARIANCE_LIMIT(SAMPLE, OP) \
+	case TYPE_flt:\
+		ANALYTICAL_COVARIANCE_CALC(flt, SAMPLE, OP); \
+		break; \
+	case TYPE_dbl: \
+		ANALYTICAL_COVARIANCE_CALC(dbl, SAMPLE, OP); \
+		break; \
+	default: \
+		GDKerror("%s: covariance of type %s unsupported.\n", __func__, ATOMname(tpe)); \
+		return GDK_FAIL; \
+	} \
+	BATsetcount(r, cnt); \
+	r->tnonil = nils == 0; \
+	r->tnil = nils > 0; \
+	return GDK_SUCCEED; \
+}
+
+GDK_ANALYTICAL_COVARIANCE(covariance_samp, 1, m2 / (n - 1))
+GDK_ANALYTICAL_COVARIANCE(covariance_pop, 0, m2 / n)
+
 /* There will be always at least one value for the quantile, because we don't implement the exclude clause yet */
 
 #define ANALYTICAL_QUANTILE_IMP_FIXED(TPE1, TPE2, NEXT_QUA)			\
@@ -2103,28 +2189,4 @@ input_nosupport:
 quantile_nosupport:
 	GDKerror("%s: type %s not supported for the quantile.\n", __func__, ATOMname(tp2));
 	return GDK_FAIL;
-}
-
-gdk_return
-GDKanalytical_covariance_pop(BAT *r, BAT *b1, BAT *b2, BAT *s, BAT *e, int tpe)
-{
-	(void) r;
-	(void) b1;
-	(void) b2;
-	(void) s;
-	(void) e;
-	(void) tpe;
-	return GDK_SUCCEED;
-}
-
-gdk_return
-GDKanalytical_covariance_sample(BAT *r, BAT *b1, BAT *b2, BAT *s, BAT *e, int tpe)
-{
-	(void) r;
-	(void) b1;
-	(void) b2;
-	(void) s;
-	(void) e;
-	(void) tpe;
-	return GDK_SUCCEED;
 }

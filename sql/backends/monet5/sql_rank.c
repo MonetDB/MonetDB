@@ -1647,7 +1647,7 @@ SQLvar_pop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 static str
 do_covariance_and_correlation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char* op, const char* err, 
-							  gdk_return (*func)(BAT *, BAT *, BAT *, BAT *, BAT *, int))
+							  gdk_return (*func)(BAT *, BAT *, BAT *, BAT *, BAT *, int), BUN minimum)
 {
 	BAT *r = NULL, *b = NULL, *c = NULL, *s = NULL, *e = NULL;
 	int tp1, tp2;
@@ -1681,46 +1681,63 @@ do_covariance_and_correlation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 			throw(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
 
 		voidresultBAT(r, TYPE_dbl, BATcount(b), b, op);
-		if (isaBatType(getArgType(mb, pci, 3))) {
-			s = BATdescriptor(*getArgReference_bat(stk, pci, 3));
-			if (!s) {
-				BBPunfix(b->batCacheid);
-				BBPunfix(r->batCacheid);
-				throw(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
-			}
+		s = BATdescriptor(*getArgReference_bat(stk, pci, 3));
+		if (!s) {
+			BBPunfix(b->batCacheid);
+			BBPunfix(r->batCacheid);
+			throw(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
 		}
-		if (isaBatType(getArgType(mb, pci, 4))) {
-			e = BATdescriptor(*getArgReference_bat(stk, pci, 4));
-			if (!e) {
-				BBPunfix(b->batCacheid);
-				BBPunfix(r->batCacheid);
-				if (s) BBPunfix(s->batCacheid);
-				throw(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
-			}
+		e = BATdescriptor(*getArgReference_bat(stk, pci, 4));
+		if (!e) {
+			BBPunfix(b->batCacheid);
+			BBPunfix(r->batCacheid);
+			BBPunfix(s->batCacheid);
+			throw(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
 		}
 		if (is_a_bat2) {
 			c = BATdescriptor(*getArgReference_bat(stk, pci, 2));
 			if (!e) {
 				BBPunfix(b->batCacheid);
 				BBPunfix(r->batCacheid);
-				if (s) BBPunfix(s->batCacheid);
-				if (e) BBPunfix(e->batCacheid);
+				BBPunfix(s->batCacheid);
+				BBPunfix(e->batCacheid);
 				throw(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
 			}
 			gdk_res = func(r, b, c, s, e, tp1);
 		} else {
-			BUN cnt = BATcount(b);
+			BUN cnt = BATcount(b), n = 0;
+			BATiter bi = bat_iterator(b); /* corner case, second column is a constant, calculate it this way... */
+			void *curval;
+			const void *restrict nil = ATOMnilptr(tp1);
+			int (*cmp) (const void *, const void *) = ATOMcompare(tp1);
 			ValRecord *input2 = &(stk)->stk[(pci)->argv[2]];
 			dbl *restrict rb = (dbl*) Tloc(r, 0), res = VALisnil(input2) ? dbl_nil : 0;
+			lng *restrict start = (lng*) Tloc(s, 0), *restrict end = (lng*) Tloc(e, 0);
+			bool has_nils = VALisnil(input2);
 
-			for (BUN i = 0 ; i < cnt; i++)
-				rb[i] = res;
+			for (BUN i = 0; i < cnt; i++) {
+				for (lng j = start[i] ; j < end[i] ; j++) {
+					curval = BUNtail(bi, j);
+					if (!cmp(curval, nil))
+						continue;
+					n++;
+				}
+				if (n > minimum) { /* covariance_samp requires at least one value */
+					rb[i] = res;
+				} else {
+					rb[i] = dbl_nil;
+					has_nils = true;
+				}
+				n = 0;
+			}
 			BATsetcount(r, cnt);
+			r->tnonil = !has_nils;
+			r->tnil = has_nils;
 		}
 
 		BBPunfix(b->batCacheid);
-		if (s) BBPunfix(s->batCacheid);
-		if (e) BBPunfix(e->batCacheid);
+		BBPunfix(s->batCacheid);
+		BBPunfix(e->batCacheid);
 		if (c) BBPunfix(c->batCacheid);
 		if (gdk_res == GDK_SUCCEED)
 			BBPkeepref(*res = r->batCacheid);
@@ -1754,14 +1771,14 @@ str
 SQLcovar_samp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	return do_covariance_and_correlation(cntxt, mb, stk, pci, "sql.covariance", SQLSTATE(42000) "covariance(:any_1,:any_1,:lng,:lng)",
-										 GDKanalytical_covariance_pop);
+										 GDKanalytical_covariance_samp, 1);
 }
 
 str
 SQLcovar_pop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	return do_covariance_and_correlation(cntxt, mb, stk, pci, "sql.covariancep", SQLSTATE(42000) "covariancep(:any_1,:any_1,:lng,:lng)",
-										 GDKanalytical_covariance_sample);
+										 GDKanalytical_covariance_pop, 0);
 }
 
 #define QUANTILE_SINGLE_IMP(TPE) \
