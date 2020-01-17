@@ -3096,7 +3096,9 @@ stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int red
 		|| strcmp(aggrfunc, "str_group_concat") == 0)
 		complex_aggr = true;
 	/* some "sub" aggregates have an extra argument "abort_on_error" */
-	abort_on_error = complex_aggr || strncmp(aggrfunc, "stdev", 5) == 0 || strncmp(aggrfunc, "variance", 8) == 0;
+	abort_on_error = complex_aggr || strncmp(aggrfunc, "stdev", 5) == 0 || strncmp(aggrfunc, "variance", 8) == 0 || 
+					strncmp(aggrfunc, "covariance", 11) == 0 || strncmp(aggrfunc, "covariancep", 12) == 0 || 
+					strncmp(aggrfunc, "corr", 5) == 0;
 
 	if (ext) {
 		snprintf(aggrF, 64, "sub%s", aggrfunc);
