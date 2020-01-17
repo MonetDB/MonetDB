@@ -3610,6 +3610,11 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 
 	ALGODEBUG t0 = GDKusec();
 
+	if (r2p == NULL)
+		return leftjoin(r1p, NULL, l, r, sl, sr, nil_matches,
+				false, false, false, false, estimate,
+				__func__, t0);
+
 	if ((parent = VIEWtparent(l)) != 0) {
 		BAT *b = BBPdescriptor(parent);
 		if (l->hseqbase == b->hseqbase &&
@@ -3627,9 +3632,8 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 	rcnt = canditer_init(&rci, r, sr);
 
 	*r1p = NULL;
-	if (r2p) {
-		*r2p = NULL;
-	}
+	*r2p = NULL;
+
 	if (joinparamcheck(l, r, NULL, sl, sr, __func__) != GDK_SUCCEED)
 		return GDK_FAIL;
 
@@ -3655,7 +3659,7 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 		/* single value to join, use select */
 		return selectjoin(r1p, r2p, l, r, sl, sr,
 				  &lci, nil_matches, t0, false, __func__);
-	} else if (r2p != NULL && (rcnt == 1 || (BATordered(r) && BATordered_rev(r)) || (r->ttype == TYPE_void && is_oid_nil(r->tseqbase)))) {
+	} else if (rcnt == 1 || (BATordered(r) && BATordered_rev(r)) || (r->ttype == TYPE_void && is_oid_nil(r->tseqbase))) {
 		/* single value to join, use select */
 		return selectjoin(r2p, r1p, r, l, sr, sl,
 				  &rci, nil_matches, t0, true, __func__);
@@ -3663,7 +3667,7 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 		/* use special implementation for dense right-hand side */
 		return mergejoin_void(r1p, r2p, l, r, sl, sr, &lci, &rci,
 				      false, false, t0, false, __func__);
-	} else if (r2p && BATtdense(l) && lci.tpe == cand_dense) {
+	} else if (BATtdense(l) && lci.tpe == cand_dense) {
 		/* use special implementation for dense right-hand side */
 		return mergejoin_void(r2p, r1p, r, l, sr, sl, &rci, &lci,
 				      false, false, t0, true, __func__);
@@ -3719,16 +3723,16 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 	if (lhash && rhash) {
 		if (lcnt == lslots && rcnt == rslots) {
 			/* both perfect hashes, smallest on right */
-			swap = r2p && lcnt < rcnt;
-		} else if (r2p && lcnt == lslots) {
+			swap = lcnt < rcnt;
+		} else if (lcnt == lslots) {
 			/* left is perfect (right isn't): swap */
 			swap = true;
 		} else if (rcnt != rslots) {
 			/* neither is perfect, shortest chains on right */
-			swap = r2p && lcnt / lslots < rcnt / rslots;
+			swap = lcnt / lslots < rcnt / rslots;
 		} /* else: right is perfect */
 		reason = "both have hash";
-	} else if (r2p && lhash) {
+	} else if (lhash) {
 		/* only left has hash, swap */
 		swap = true;
 		reason = "left has hash";
@@ -3736,8 +3740,7 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 		/* only right has hash, don't swap */
 		swap = false;
 		reason = "right has hash";
-	} else if (r2p &&
-		   (BATordered(l) || BATordered_rev(l)) &&
+	} else if ((BATordered(l) || BATordered_rev(l)) &&
 		   (BATtvoid(l) || rcnt < 1024 || MIN(lsize, rsize) > mem_size)) {
 		/* only left is sorted, swap; but only if right is
 		 * "large" and the smaller of the two isn't too large
@@ -3755,7 +3758,7 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 		return mergejoin(r1p, r2p, l, r, sl, sr, &lci, &rci,
 				 nil_matches, false, false, false, false,
 				 estimate, t0, false, __func__);
-	} else if (r2p && !l->batTransient && r->batTransient) {
+	} else if (!l->batTransient && r->batTransient) {
 		/* l is persistent and r is not, create hash on l
 		 * since it may be reused */
 		swap = true;
@@ -3765,7 +3768,7 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 		 * since it may be reused */
 		/* nothing */;
 		reason = "right is persistent";
-	} else if (r2p && lcnt < rcnt) {
+	} else if (lcnt < rcnt) {
 		/* no hashes, not sorted, create hash on smallest BAT */
 		swap = true;
 		reason = "left is smaller";
