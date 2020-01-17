@@ -668,11 +668,11 @@ BAThashsync(void *arg)
 		}							\
 	} while (0)
 
-/*
- * The prime routine for the BAT layer is to create a new hash index.
- * Its argument is the element type and the maximum number of BUNs be
- * stored under the hash function.
- */
+/* Internal function to create a hash table for the given BAT b.
+ * If a candidate list s is also given, the hash table is specific for
+ * the combination of the two: only values from b that are referred to
+ * by s are included in the hash table, so if a result is found when
+ * searching the hash table, the result is a candidate. */
 Hash *
 BAThash_impl(BAT *b, BAT *s, const char *ext)
 {
