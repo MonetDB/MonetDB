@@ -108,14 +108,6 @@ pattern batsql.variancep(b:bat[:hge], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
 address SQLvar_pop
 comment "return the variance of groups";
 
-pattern sql.median_avg(b:hge, s:lng, e:lng) :dbl
-address SQLmedian_avg
-comment "return the median value of groups with average in case of 2 values in the median";
-
-pattern batsql.median_avg(b:bat[:hge], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
-address SQLmedian_avg
-comment "return the median value of groups with average in case of 2 values in the median";
-
 pattern sql.covariance(b:hge, c:hge, s:lng, e:lng) :dbl
 address SQLcovar_samp
 comment "return the covariance sample value of groups";
@@ -149,24 +141,3 @@ address SQLcovar_pop
 comment "return the covariance population value of groups";
 
 EOF
-
-for tp in flt dbl; do
-	cat <<EOF
-pattern sql.quantile_avg(b:hge, q:${tp}, s:lng, e:lng) :dbl
-address SQLquantile_avg
-comment "return a quantile average value of groups";
-
-pattern batsql.quantile_avg(b:bat[:hge], q:${tp}, s:bat[:lng], e:bat[:lng]) :bat[:dbl]
-address SQLquantile_avg
-comment "return a quantile average value of groups";
-
-pattern batsql.quantile_avg(b:hge, q:bat[:${tp}], s:lng, e:lng) :bat[:dbl]
-address SQLquantile_avg
-comment "return a quantile average value of groups";
-
-pattern batsql.quantile_avg(b:bat[:hge], q:bat[:${tp}], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
-address SQLquantile_avg
-comment "return a quantile average value of groups";
-
-EOF
-done

@@ -46,76 +46,18 @@ select var_pop(cc) over (partition by bb order by bb desc) from analytics;
 select var_pop(cc) over (order by bb desc) from analytics;
 
 
-select median(aa) over (partition by bb) from analytics;
-select median(aa) over (partition by bb order by bb asc) from analytics;
-select median(aa) over (partition by bb order by bb desc) from analytics;
-select median(aa) over (order by bb desc) from analytics;
-
-select median(cc) over (partition by bb) from analytics;
-select median(cc) over (partition by bb order by bb asc) from analytics;
-select median(cc) over (partition by bb order by bb desc) from analytics;
-select median(cc) over (order by bb desc) from analytics;
-
-
-select median_avg(aa) over (partition by bb) from analytics;
-select median_avg(aa) over (partition by bb order by bb asc) from analytics;
-select median_avg(aa) over (partition by bb order by bb desc) from analytics;
-select median_avg(aa) over (order by bb desc) from analytics;
-
-select median_avg(cc) over (partition by bb) from analytics;
-select median_avg(cc) over (partition by bb order by bb asc) from analytics;
-select median_avg(cc) over (partition by bb order by bb desc) from analytics;
-select median_avg(cc) over (order by bb desc) from analytics;
-
-
-select quantile(aa, 0.2) over (partition by bb) from analytics;
-select quantile(aa, 0.2) over (partition by bb order by bb asc) from analytics;
-select quantile(aa, 0.2) over (partition by bb order by bb desc) from analytics;
-select quantile(aa, 0.2) over (order by bb desc) from analytics;
-
-select quantile(cc, 0.7) over (partition by bb) from analytics;
-select quantile(cc, 0.7) over (partition by bb order by bb asc) from analytics;
-select quantile(cc, 0.7) over (partition by bb order by bb desc) from analytics;
-select quantile(cc, 0.7) over (order by bb desc) from analytics;
-
-
-select quantile_avg(aa, 0.2) over (partition by bb) from analytics;
-select quantile_avg(aa, 0.2) over (partition by bb order by bb asc) from analytics;
-select quantile_avg(aa, 0.2) over (partition by bb order by bb desc) from analytics;
-select quantile_avg(aa, 0.2) over (order by bb desc) from analytics;
-
-select quantile_avg(cc, 0.7) over (partition by bb) from analytics;
-select quantile_avg(cc, 0.7) over (partition by bb order by bb asc) from analytics;
-select quantile_avg(cc, 0.7) over (partition by bb order by bb desc) from analytics;
-select quantile_avg(cc, 0.7) over (order by bb desc) from analytics;
-
-
 select stddev_samp(aa) over () from analytics;
 select stddev_pop(aa) over () from analytics;
 select var_samp(aa) over () from analytics;
 select var_pop(aa) over () from analytics;
-select median(aa) over () from analytics;
-select median_avg(aa) over () from analytics;
-select quantile(aa, 0.8) over () from analytics;
-select quantile_avg(aa, 0.8) over () from analytics;
 
 
 select stddev_samp(NULL) over () from analytics;
 select stddev_pop(NULL) over () from analytics;
 select var_samp(NULL) over () from analytics;
 select var_pop(NULL) over () from analytics;
-select median(NULL) over () from analytics;
-select median_avg(NULL) over () from analytics;
-select quantile(NULL, 0.8) over () from analytics;
-select quantile(aa, NULL) over () from analytics;
-select quantile(NULL, NULL) over () from analytics;
-select quantile_avg(NULL, 0.8) over () from analytics;
-select quantile_avg(aa, NULL) over () from analytics;
-select quantile_avg(NULL, NULL) over () from analytics;
 
 rollback;
-
-select median_avg(aa) over (), median_avg(bb) over () from (values(NULL, 1),(1, 2)) as analytics(aa, bb); --even number of values for median_avg
 
 create table stressme (aa varchar(64), bb int);
 insert into stressme values ('one', 1), ('another', 1), ('stress', 1), (NULL, 2), ('ok', 2), ('check', 3), ('me', 3), ('please', 3), (NULL, 4);
