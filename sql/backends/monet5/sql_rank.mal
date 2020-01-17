@@ -244,7 +244,7 @@ pattern batsql.lag(b:bat[:any_1], l:any_2, p:any_3, o:any_4) :bat[:any_1]
 address SQLlag
 comment "return the value in the previous 'l' row in the partition or NULL if non existent";
 
-pattern sql.lag(b:any_1, l:bat[:any_2], p:any_3, o:any_4) :any_1
+pattern batsql.lag(b:any_1, l:bat[:any_2], p:any_3, o:any_4) :bat[:any_1]
 address SQLlag
 comment "return the value in the previous 'l' row in the partition or NULL if non existent";
 
@@ -261,7 +261,7 @@ pattern batsql.lag(b:bat[:any_1], l:any_2, d:any_1, p:any_3, o:any_4) :bat[:any_
 address SQLlag
 comment "return the value in the previous 'l' row in the partition or 'd' if non existent";
 
-pattern sql.lag(b:any_1, l:bat[:any_2], d:any_1, p:any_3, o:any_4) :any_1
+pattern batsql.lag(b:any_1, l:bat[:any_2], d:any_1, p:any_3, o:any_4) :bat[:any_1]
 address SQLlag
 comment "return the value in the previous 'l' row in the partition or 'd' if non existent";
 
@@ -269,7 +269,7 @@ pattern batsql.lag(b:bat[:any_1], l:bat[:any_2], d:any_1, p:any_3, o:any_4) :bat
 address SQLlag
 comment "return the value in the previous 'l' row in the partition or 'd' if non existent";
 
-pattern sql.lag(b:any_1, l:any_2, d:bat[:any_1], p:any_3, o:any_4) :any_1
+pattern batsql.lag(b:any_1, l:any_2, d:bat[:any_1], p:any_3, o:any_4) :bat[:any_1]
 address SQLlag
 comment "return the value in the previous 'l' row in the partition or 'd' if non existent";
 
@@ -277,7 +277,7 @@ pattern batsql.lag(b:bat[:any_1], l:any_2, d:bat[:any_1], p:any_3, o:any_4) :bat
 address SQLlag
 comment "return the value in the previous 'l' row in the partition or 'd' if non existent";
 
-pattern sql.lag(b:any_1, l:bat[:any_2], d:bat[:any_1], p:any_3, o:any_4) :any_1
+pattern batsql.lag(b:any_1, l:bat[:any_2], d:bat[:any_1], p:any_3, o:any_4) :bat[:any_1]
 address SQLlag
 comment "return the value in the previous 'l' row in the partition or 'd' if non existent";
 
@@ -303,7 +303,7 @@ pattern batsql.lead(b:bat[:any_1], l:any_2, p:any_3, o:any_4) :bat[:any_1]
 address SQLlead
 comment "return the value in the next 'l' row in the partition or NULL if non existent";
 
-pattern sql.lead(b:any_1, l:bat[:any_2], p:any_3, o:any_4) :any_1
+pattern batsql.lead(b:any_1, l:bat[:any_2], p:any_3, o:any_4) :bat[:any_1]
 address SQLlead
 comment "return the value in the next 'l' row in the partition or NULL if non existent";
 
@@ -320,7 +320,7 @@ pattern batsql.lead(b:bat[:any_1], l:any_2, d:any_1, p:any_3, o:any_4) :bat[:any
 address SQLlead
 comment "return the value in the next 'l' row in the partition or 'd' if non existent";
 
-pattern sql.lead(b:any_1, l:bat[:any_2], d:any_1, p:any_3, o:any_4) :any_1
+pattern batsql.lead(b:any_1, l:bat[:any_2], d:any_1, p:any_3, o:any_4) :bat[:any_1]
 address SQLlead
 comment "return the value in the next 'l' row in the partition or 'd' if non existent";
 
@@ -328,7 +328,7 @@ pattern batsql.lead(b:bat[:any_1], l:bat[:any_2], d:any_1, p:any_3, o:any_4) :ba
 address SQLlead
 comment "return the value in the next 'l' row in the partition or 'd' if non existent";
 
-pattern sql.lead(b:any_1, l:any_2, d:bat[:any_1], p:any_3, o:any_4) :any_1
+pattern batsql.lead(b:any_1, l:any_2, d:bat[:any_1], p:any_3, o:any_4) :bat[:any_1]
 address SQLlead
 comment "return the value in the next 'l' row in the partition or 'd' if non existent";
 
@@ -336,7 +336,7 @@ pattern batsql.lead(b:bat[:any_1], l:any_2, d:bat[:any_1], p:any_3, o:any_4) :ba
 address SQLlead
 comment "return the value in the next 'l' row in the partition or 'd' if non existent";
 
-pattern sql.lead(b:any_1, l:bat[:any_2], d:bat[:any_1], p:any_3, o:any_4) :any_1
+pattern batsql.lead(b:any_1, l:bat[:any_2], d:bat[:any_1], p:any_3, o:any_4) :bat[:any_1]
 address SQLlead
 comment "return the value in the next 'l' row in the partition or 'd' if non existent";
 
@@ -353,7 +353,7 @@ pattern batsql.ntile(b:bat[:any_1], n:any_2, p:any_3, o:any_4) :bat[:any_2]
 address SQLntile
 comment "return the groups divided as equally as possible";
 
-pattern sql.ntile(b:any_1, n:bat[:any_2], p:any_3, o:any_4) :any_2
+pattern batsql.ntile(b:any_1, n:bat[:any_2], p:any_3, o:any_4) :bat[:any_2]
 address SQLntile
 comment "return the groups divided as equally as possible";
 
@@ -388,7 +388,7 @@ pattern batsql.nth_value(b:bat[:any_1], n:any_2, s:bat[:lng], e:bat[:lng]) :bat[
 address SQLnth_value
 comment "return the nth value of each group";
 
-pattern sql.nth_value(b:any_1, n:bat[:any_2], s:lng, e:lng) :any_1
+pattern batsql.nth_value(b:any_1, n:bat[:any_2], s:lng, e:lng) :bat[:any_1]
 address SQLnth_value
 comment "return the nth value of each group";
 
@@ -544,36 +544,36 @@ comment "return the average of groups";
 
 pattern sql.stdev(b:bte, s:lng, e:lng) :dbl
 address SQLstddev_samp
-comment "return the standard deviation of groups";
+comment "return the standard deviation sample of groups";
 
 pattern batsql.stdev(b:bat[:bte], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
 address SQLstddev_samp
-comment "return the standard deviation of groups";
+comment "return the standard deviation sample of groups";
 
 pattern sql.stdevp(b:bte, s:lng, e:lng) :dbl
 address SQLstddev_pop
-comment "return the standard deviation of groups";
+comment "return the standard deviation population of groups";
 
 pattern batsql.stdevp(b:bat[:bte], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
 address SQLstddev_pop
-comment "return the standard deviation of groups";
+comment "return the standard deviation population of groups";
 
 
 pattern sql.variance(b:bte, s:lng, e:lng) :dbl
 address SQLvar_samp
-comment "return the variance of groups";
+comment "return the variance sample of groups";
 
 pattern batsql.variance(b:bat[:bte], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
 address SQLvar_samp
-comment "return the variance of groups";
+comment "return the variance sample of groups";
 
 pattern sql.variancep(b:bte, s:lng, e:lng) :dbl
 address SQLvar_pop
-comment "return the variance of groups";
+comment "return the variance population of groups";
 
 pattern batsql.variancep(b:bat[:bte], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
 address SQLvar_pop
-comment "return the variance of groups";
+comment "return the variance population of groups";
 
 
 pattern sql.median_avg(b:bte, s:lng, e:lng) :dbl
@@ -583,6 +583,40 @@ comment "return the median value of groups with average in case of 2 values in t
 pattern batsql.median_avg(b:bat[:bte], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
 address SQLmedian_avg
 comment "return the median value of groups with average in case of 2 values in the median";
+
+
+pattern sql.covariance(b:bte, c:bte, s:lng, e:lng) :dbl
+address SQLcovar_samp
+comment "return the covariance sample value of groups";
+
+pattern batsql.covariance(b:bat[:bte], c:bte, s:bat[:lng], e:bat[:lng]) :bat[:dbl]
+address SQLcovar_samp
+comment "return the covariance sample value of groups";
+
+pattern batsql.covariance(b:bte, c:bat[:bte], s:lng, e:lng) :bat[:dbl]
+address SQLcovar_samp
+comment "return the covariance sample value of groups";
+
+pattern batsql.covariance(b:bat[:bte], c:bat[:bte], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
+address SQLcovar_samp
+comment "return the covariance sample value of groups";
+
+
+pattern sql.covariancep(b:bte, c:bte, s:lng, e:lng) :dbl
+address SQLcovar_pop
+comment "return the covariance population value of groups";
+
+pattern batsql.covariancep(b:bat[:bte], c:bte, s:bat[:lng], e:bat[:lng]) :bat[:dbl]
+address SQLcovar_pop
+comment "return the covariance population value of groups";
+
+pattern batsql.covariancep(b:bte, c:bat[:bte], s:lng, e:lng) :bat[:dbl]
+address SQLcovar_pop
+comment "return the covariance population value of groups";
+
+pattern batsql.covariancep(b:bat[:bte], c:bat[:bte], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
+address SQLcovar_pop
+comment "return the covariance population value of groups";
 
 
 pattern sql.avg(b:sht, s:lng, e:lng) :dbl
@@ -596,36 +630,36 @@ comment "return the average of groups";
 
 pattern sql.stdev(b:sht, s:lng, e:lng) :dbl
 address SQLstddev_samp
-comment "return the standard deviation of groups";
+comment "return the standard deviation sample of groups";
 
 pattern batsql.stdev(b:bat[:sht], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
 address SQLstddev_samp
-comment "return the standard deviation of groups";
+comment "return the standard deviation sample of groups";
 
 pattern sql.stdevp(b:sht, s:lng, e:lng) :dbl
 address SQLstddev_pop
-comment "return the standard deviation of groups";
+comment "return the standard deviation population of groups";
 
 pattern batsql.stdevp(b:bat[:sht], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
 address SQLstddev_pop
-comment "return the standard deviation of groups";
+comment "return the standard deviation population of groups";
 
 
 pattern sql.variance(b:sht, s:lng, e:lng) :dbl
 address SQLvar_samp
-comment "return the variance of groups";
+comment "return the variance sample of groups";
 
 pattern batsql.variance(b:bat[:sht], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
 address SQLvar_samp
-comment "return the variance of groups";
+comment "return the variance sample of groups";
 
 pattern sql.variancep(b:sht, s:lng, e:lng) :dbl
 address SQLvar_pop
-comment "return the variance of groups";
+comment "return the variance population of groups";
 
 pattern batsql.variancep(b:bat[:sht], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
 address SQLvar_pop
-comment "return the variance of groups";
+comment "return the variance population of groups";
 
 
 pattern sql.median_avg(b:sht, s:lng, e:lng) :dbl
@@ -635,6 +669,40 @@ comment "return the median value of groups with average in case of 2 values in t
 pattern batsql.median_avg(b:bat[:sht], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
 address SQLmedian_avg
 comment "return the median value of groups with average in case of 2 values in the median";
+
+
+pattern sql.covariance(b:sht, c:sht, s:lng, e:lng) :dbl
+address SQLcovar_samp
+comment "return the covariance sample value of groups";
+
+pattern batsql.covariance(b:bat[:sht], c:sht, s:bat[:lng], e:bat[:lng]) :bat[:dbl]
+address SQLcovar_samp
+comment "return the covariance sample value of groups";
+
+pattern batsql.covariance(b:sht, c:bat[:sht], s:lng, e:lng) :bat[:dbl]
+address SQLcovar_samp
+comment "return the covariance sample value of groups";
+
+pattern batsql.covariance(b:bat[:sht], c:bat[:sht], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
+address SQLcovar_samp
+comment "return the covariance sample value of groups";
+
+
+pattern sql.covariancep(b:sht, c:sht, s:lng, e:lng) :dbl
+address SQLcovar_pop
+comment "return the covariance population value of groups";
+
+pattern batsql.covariancep(b:bat[:sht], c:sht, s:bat[:lng], e:bat[:lng]) :bat[:dbl]
+address SQLcovar_pop
+comment "return the covariance population value of groups";
+
+pattern batsql.covariancep(b:sht, c:bat[:sht], s:lng, e:lng) :bat[:dbl]
+address SQLcovar_pop
+comment "return the covariance population value of groups";
+
+pattern batsql.covariancep(b:bat[:sht], c:bat[:sht], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
+address SQLcovar_pop
+comment "return the covariance population value of groups";
 
 
 pattern sql.avg(b:int, s:lng, e:lng) :dbl
@@ -648,36 +716,36 @@ comment "return the average of groups";
 
 pattern sql.stdev(b:int, s:lng, e:lng) :dbl
 address SQLstddev_samp
-comment "return the standard deviation of groups";
+comment "return the standard deviation sample of groups";
 
 pattern batsql.stdev(b:bat[:int], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
 address SQLstddev_samp
-comment "return the standard deviation of groups";
+comment "return the standard deviation sample of groups";
 
 pattern sql.stdevp(b:int, s:lng, e:lng) :dbl
 address SQLstddev_pop
-comment "return the standard deviation of groups";
+comment "return the standard deviation population of groups";
 
 pattern batsql.stdevp(b:bat[:int], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
 address SQLstddev_pop
-comment "return the standard deviation of groups";
+comment "return the standard deviation population of groups";
 
 
 pattern sql.variance(b:int, s:lng, e:lng) :dbl
 address SQLvar_samp
-comment "return the variance of groups";
+comment "return the variance sample of groups";
 
 pattern batsql.variance(b:bat[:int], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
 address SQLvar_samp
-comment "return the variance of groups";
+comment "return the variance sample of groups";
 
 pattern sql.variancep(b:int, s:lng, e:lng) :dbl
 address SQLvar_pop
-comment "return the variance of groups";
+comment "return the variance population of groups";
 
 pattern batsql.variancep(b:bat[:int], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
 address SQLvar_pop
-comment "return the variance of groups";
+comment "return the variance population of groups";
 
 
 pattern sql.median_avg(b:int, s:lng, e:lng) :dbl
@@ -687,6 +755,40 @@ comment "return the median value of groups with average in case of 2 values in t
 pattern batsql.median_avg(b:bat[:int], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
 address SQLmedian_avg
 comment "return the median value of groups with average in case of 2 values in the median";
+
+
+pattern sql.covariance(b:int, c:int, s:lng, e:lng) :dbl
+address SQLcovar_samp
+comment "return the covariance sample value of groups";
+
+pattern batsql.covariance(b:bat[:int], c:int, s:bat[:lng], e:bat[:lng]) :bat[:dbl]
+address SQLcovar_samp
+comment "return the covariance sample value of groups";
+
+pattern batsql.covariance(b:int, c:bat[:int], s:lng, e:lng) :bat[:dbl]
+address SQLcovar_samp
+comment "return the covariance sample value of groups";
+
+pattern batsql.covariance(b:bat[:int], c:bat[:int], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
+address SQLcovar_samp
+comment "return the covariance sample value of groups";
+
+
+pattern sql.covariancep(b:int, c:int, s:lng, e:lng) :dbl
+address SQLcovar_pop
+comment "return the covariance population value of groups";
+
+pattern batsql.covariancep(b:bat[:int], c:int, s:bat[:lng], e:bat[:lng]) :bat[:dbl]
+address SQLcovar_pop
+comment "return the covariance population value of groups";
+
+pattern batsql.covariancep(b:int, c:bat[:int], s:lng, e:lng) :bat[:dbl]
+address SQLcovar_pop
+comment "return the covariance population value of groups";
+
+pattern batsql.covariancep(b:bat[:int], c:bat[:int], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
+address SQLcovar_pop
+comment "return the covariance population value of groups";
 
 
 pattern sql.avg(b:lng, s:lng, e:lng) :dbl
@@ -700,36 +802,36 @@ comment "return the average of groups";
 
 pattern sql.stdev(b:lng, s:lng, e:lng) :dbl
 address SQLstddev_samp
-comment "return the standard deviation of groups";
+comment "return the standard deviation sample of groups";
 
 pattern batsql.stdev(b:bat[:lng], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
 address SQLstddev_samp
-comment "return the standard deviation of groups";
+comment "return the standard deviation sample of groups";
 
 pattern sql.stdevp(b:lng, s:lng, e:lng) :dbl
 address SQLstddev_pop
-comment "return the standard deviation of groups";
+comment "return the standard deviation population of groups";
 
 pattern batsql.stdevp(b:bat[:lng], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
 address SQLstddev_pop
-comment "return the standard deviation of groups";
+comment "return the standard deviation population of groups";
 
 
 pattern sql.variance(b:lng, s:lng, e:lng) :dbl
 address SQLvar_samp
-comment "return the variance of groups";
+comment "return the variance sample of groups";
 
 pattern batsql.variance(b:bat[:lng], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
 address SQLvar_samp
-comment "return the variance of groups";
+comment "return the variance sample of groups";
 
 pattern sql.variancep(b:lng, s:lng, e:lng) :dbl
 address SQLvar_pop
-comment "return the variance of groups";
+comment "return the variance population of groups";
 
 pattern batsql.variancep(b:bat[:lng], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
 address SQLvar_pop
-comment "return the variance of groups";
+comment "return the variance population of groups";
 
 
 pattern sql.median_avg(b:lng, s:lng, e:lng) :dbl
@@ -739,6 +841,40 @@ comment "return the median value of groups with average in case of 2 values in t
 pattern batsql.median_avg(b:bat[:lng], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
 address SQLmedian_avg
 comment "return the median value of groups with average in case of 2 values in the median";
+
+
+pattern sql.covariance(b:lng, c:lng, s:lng, e:lng) :dbl
+address SQLcovar_samp
+comment "return the covariance sample value of groups";
+
+pattern batsql.covariance(b:bat[:lng], c:lng, s:bat[:lng], e:bat[:lng]) :bat[:dbl]
+address SQLcovar_samp
+comment "return the covariance sample value of groups";
+
+pattern batsql.covariance(b:lng, c:bat[:lng], s:lng, e:lng) :bat[:dbl]
+address SQLcovar_samp
+comment "return the covariance sample value of groups";
+
+pattern batsql.covariance(b:bat[:lng], c:bat[:lng], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
+address SQLcovar_samp
+comment "return the covariance sample value of groups";
+
+
+pattern sql.covariancep(b:lng, c:lng, s:lng, e:lng) :dbl
+address SQLcovar_pop
+comment "return the covariance population value of groups";
+
+pattern batsql.covariancep(b:bat[:lng], c:lng, s:bat[:lng], e:bat[:lng]) :bat[:dbl]
+address SQLcovar_pop
+comment "return the covariance population value of groups";
+
+pattern batsql.covariancep(b:lng, c:bat[:lng], s:lng, e:lng) :bat[:dbl]
+address SQLcovar_pop
+comment "return the covariance population value of groups";
+
+pattern batsql.covariancep(b:bat[:lng], c:bat[:lng], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
+address SQLcovar_pop
+comment "return the covariance population value of groups";
 
 
 pattern sql.avg(b:flt, s:lng, e:lng) :dbl
@@ -752,36 +888,36 @@ comment "return the average of groups";
 
 pattern sql.stdev(b:flt, s:lng, e:lng) :dbl
 address SQLstddev_samp
-comment "return the standard deviation of groups";
+comment "return the standard deviation sample of groups";
 
 pattern batsql.stdev(b:bat[:flt], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
 address SQLstddev_samp
-comment "return the standard deviation of groups";
+comment "return the standard deviation sample of groups";
 
 pattern sql.stdevp(b:flt, s:lng, e:lng) :dbl
 address SQLstddev_pop
-comment "return the standard deviation of groups";
+comment "return the standard deviation population of groups";
 
 pattern batsql.stdevp(b:bat[:flt], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
 address SQLstddev_pop
-comment "return the standard deviation of groups";
+comment "return the standard deviation population of groups";
 
 
 pattern sql.variance(b:flt, s:lng, e:lng) :dbl
 address SQLvar_samp
-comment "return the variance of groups";
+comment "return the variance sample of groups";
 
 pattern batsql.variance(b:bat[:flt], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
 address SQLvar_samp
-comment "return the variance of groups";
+comment "return the variance sample of groups";
 
 pattern sql.variancep(b:flt, s:lng, e:lng) :dbl
 address SQLvar_pop
-comment "return the variance of groups";
+comment "return the variance population of groups";
 
 pattern batsql.variancep(b:bat[:flt], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
 address SQLvar_pop
-comment "return the variance of groups";
+comment "return the variance population of groups";
 
 
 pattern sql.median_avg(b:flt, s:lng, e:lng) :dbl
@@ -791,6 +927,40 @@ comment "return the median value of groups with average in case of 2 values in t
 pattern batsql.median_avg(b:bat[:flt], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
 address SQLmedian_avg
 comment "return the median value of groups with average in case of 2 values in the median";
+
+
+pattern sql.covariance(b:flt, c:flt, s:lng, e:lng) :dbl
+address SQLcovar_samp
+comment "return the covariance sample value of groups";
+
+pattern batsql.covariance(b:bat[:flt], c:flt, s:bat[:lng], e:bat[:lng]) :bat[:dbl]
+address SQLcovar_samp
+comment "return the covariance sample value of groups";
+
+pattern batsql.covariance(b:flt, c:bat[:flt], s:lng, e:lng) :bat[:dbl]
+address SQLcovar_samp
+comment "return the covariance sample value of groups";
+
+pattern batsql.covariance(b:bat[:flt], c:bat[:flt], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
+address SQLcovar_samp
+comment "return the covariance sample value of groups";
+
+
+pattern sql.covariancep(b:flt, c:flt, s:lng, e:lng) :dbl
+address SQLcovar_pop
+comment "return the covariance population value of groups";
+
+pattern batsql.covariancep(b:bat[:flt], c:flt, s:bat[:lng], e:bat[:lng]) :bat[:dbl]
+address SQLcovar_pop
+comment "return the covariance population value of groups";
+
+pattern batsql.covariancep(b:flt, c:bat[:flt], s:lng, e:lng) :bat[:dbl]
+address SQLcovar_pop
+comment "return the covariance population value of groups";
+
+pattern batsql.covariancep(b:bat[:flt], c:bat[:flt], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
+address SQLcovar_pop
+comment "return the covariance population value of groups";
 
 
 pattern sql.avg(b:dbl, s:lng, e:lng) :dbl
@@ -804,36 +974,36 @@ comment "return the average of groups";
 
 pattern sql.stdev(b:dbl, s:lng, e:lng) :dbl
 address SQLstddev_samp
-comment "return the standard deviation of groups";
+comment "return the standard deviation sample of groups";
 
 pattern batsql.stdev(b:bat[:dbl], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
 address SQLstddev_samp
-comment "return the standard deviation of groups";
+comment "return the standard deviation sample of groups";
 
 pattern sql.stdevp(b:dbl, s:lng, e:lng) :dbl
 address SQLstddev_pop
-comment "return the standard deviation of groups";
+comment "return the standard deviation population of groups";
 
 pattern batsql.stdevp(b:bat[:dbl], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
 address SQLstddev_pop
-comment "return the standard deviation of groups";
+comment "return the standard deviation population of groups";
 
 
 pattern sql.variance(b:dbl, s:lng, e:lng) :dbl
 address SQLvar_samp
-comment "return the variance of groups";
+comment "return the variance sample of groups";
 
 pattern batsql.variance(b:bat[:dbl], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
 address SQLvar_samp
-comment "return the variance of groups";
+comment "return the variance sample of groups";
 
 pattern sql.variancep(b:dbl, s:lng, e:lng) :dbl
 address SQLvar_pop
-comment "return the variance of groups";
+comment "return the variance population of groups";
 
 pattern batsql.variancep(b:bat[:dbl], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
 address SQLvar_pop
-comment "return the variance of groups";
+comment "return the variance population of groups";
 
 
 pattern sql.median_avg(b:dbl, s:lng, e:lng) :dbl
@@ -843,6 +1013,40 @@ comment "return the median value of groups with average in case of 2 values in t
 pattern batsql.median_avg(b:bat[:dbl], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
 address SQLmedian_avg
 comment "return the median value of groups with average in case of 2 values in the median";
+
+
+pattern sql.covariance(b:dbl, c:dbl, s:lng, e:lng) :dbl
+address SQLcovar_samp
+comment "return the covariance sample value of groups";
+
+pattern batsql.covariance(b:bat[:dbl], c:dbl, s:bat[:lng], e:bat[:lng]) :bat[:dbl]
+address SQLcovar_samp
+comment "return the covariance sample value of groups";
+
+pattern batsql.covariance(b:dbl, c:bat[:dbl], s:lng, e:lng) :bat[:dbl]
+address SQLcovar_samp
+comment "return the covariance sample value of groups";
+
+pattern batsql.covariance(b:bat[:dbl], c:bat[:dbl], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
+address SQLcovar_samp
+comment "return the covariance sample value of groups";
+
+
+pattern sql.covariancep(b:dbl, c:dbl, s:lng, e:lng) :dbl
+address SQLcovar_pop
+comment "return the covariance population value of groups";
+
+pattern batsql.covariancep(b:bat[:dbl], c:dbl, s:bat[:lng], e:bat[:lng]) :bat[:dbl]
+address SQLcovar_pop
+comment "return the covariance population value of groups";
+
+pattern batsql.covariancep(b:dbl, c:bat[:dbl], s:lng, e:lng) :bat[:dbl]
+address SQLcovar_pop
+comment "return the covariance population value of groups";
+
+pattern batsql.covariancep(b:bat[:dbl], c:bat[:dbl], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
+address SQLcovar_pop
+comment "return the covariance population value of groups";
 
 
 pattern sql.median(b:any_1, s:lng, e:lng) :any_1
@@ -862,7 +1066,7 @@ pattern batsql.quantile(b:bat[:any_1], q:flt, s:bat[:lng], e:bat[:lng]) :bat[:an
 address SQLquantile
 comment "return a quantile value of groups";
 
-pattern sql.quantile(b:any_1, q:bat[:flt], s:lng, e:lng) :any_1
+pattern batsql.quantile(b:any_1, q:bat[:flt], s:lng, e:lng) :bat[:any_1]
 address SQLquantile
 comment "return a quantile value of groups";
 
@@ -879,7 +1083,7 @@ pattern batsql.quantile(b:bat[:any_1], q:dbl, s:bat[:lng], e:bat[:lng]) :bat[:an
 address SQLquantile
 comment "return a quantile value of groups";
 
-pattern sql.quantile(b:any_1, q:bat[:dbl], s:lng, e:lng) :any_1
+pattern batsql.quantile(b:any_1, q:bat[:dbl], s:lng, e:lng) :bat[:any_1]
 address SQLquantile
 comment "return a quantile value of groups";
 
@@ -896,7 +1100,7 @@ pattern batsql.quantile_avg(b:bat[:bte], q:flt, s:bat[:lng], e:bat[:lng]) :bat[:
 address SQLquantile_avg
 comment "return a quantile average value of groups";
 
-pattern sql.quantile_avg(b:bte, q:bat[:flt], s:lng, e:lng) :dbl
+pattern sql.quantile_avg(b:bte, q:bat[:flt], s:lng, e:lng) :bat[:dbl]
 address SQLquantile_avg
 comment "return a quantile average value of groups";
 
@@ -913,7 +1117,7 @@ pattern batsql.quantile_avg(b:bat[:bte], q:dbl, s:bat[:lng], e:bat[:lng]) :bat[:
 address SQLquantile_avg
 comment "return a quantile average value of groups";
 
-pattern sql.quantile_avg(b:bte, q:bat[:dbl], s:lng, e:lng) :dbl
+pattern sql.quantile_avg(b:bte, q:bat[:dbl], s:lng, e:lng) :bat[:dbl]
 address SQLquantile_avg
 comment "return a quantile average value of groups";
 
@@ -930,7 +1134,7 @@ pattern batsql.quantile_avg(b:bat[:sht], q:flt, s:bat[:lng], e:bat[:lng]) :bat[:
 address SQLquantile_avg
 comment "return a quantile average value of groups";
 
-pattern sql.quantile_avg(b:sht, q:bat[:flt], s:lng, e:lng) :dbl
+pattern sql.quantile_avg(b:sht, q:bat[:flt], s:lng, e:lng) :bat[:dbl]
 address SQLquantile_avg
 comment "return a quantile average value of groups";
 
@@ -947,7 +1151,7 @@ pattern batsql.quantile_avg(b:bat[:sht], q:dbl, s:bat[:lng], e:bat[:lng]) :bat[:
 address SQLquantile_avg
 comment "return a quantile average value of groups";
 
-pattern sql.quantile_avg(b:sht, q:bat[:dbl], s:lng, e:lng) :dbl
+pattern sql.quantile_avg(b:sht, q:bat[:dbl], s:lng, e:lng) :bat[:dbl]
 address SQLquantile_avg
 comment "return a quantile average value of groups";
 
@@ -964,7 +1168,7 @@ pattern batsql.quantile_avg(b:bat[:int], q:flt, s:bat[:lng], e:bat[:lng]) :bat[:
 address SQLquantile_avg
 comment "return a quantile average value of groups";
 
-pattern sql.quantile_avg(b:int, q:bat[:flt], s:lng, e:lng) :dbl
+pattern sql.quantile_avg(b:int, q:bat[:flt], s:lng, e:lng) :bat[:dbl]
 address SQLquantile_avg
 comment "return a quantile average value of groups";
 
@@ -981,7 +1185,7 @@ pattern batsql.quantile_avg(b:bat[:int], q:dbl, s:bat[:lng], e:bat[:lng]) :bat[:
 address SQLquantile_avg
 comment "return a quantile average value of groups";
 
-pattern sql.quantile_avg(b:int, q:bat[:dbl], s:lng, e:lng) :dbl
+pattern sql.quantile_avg(b:int, q:bat[:dbl], s:lng, e:lng) :bat[:dbl]
 address SQLquantile_avg
 comment "return a quantile average value of groups";
 
@@ -998,7 +1202,7 @@ pattern batsql.quantile_avg(b:bat[:lng], q:flt, s:bat[:lng], e:bat[:lng]) :bat[:
 address SQLquantile_avg
 comment "return a quantile average value of groups";
 
-pattern sql.quantile_avg(b:lng, q:bat[:flt], s:lng, e:lng) :dbl
+pattern sql.quantile_avg(b:lng, q:bat[:flt], s:lng, e:lng) :bat[:dbl]
 address SQLquantile_avg
 comment "return a quantile average value of groups";
 
@@ -1015,7 +1219,7 @@ pattern batsql.quantile_avg(b:bat[:lng], q:dbl, s:bat[:lng], e:bat[:lng]) :bat[:
 address SQLquantile_avg
 comment "return a quantile average value of groups";
 
-pattern sql.quantile_avg(b:lng, q:bat[:dbl], s:lng, e:lng) :dbl
+pattern sql.quantile_avg(b:lng, q:bat[:dbl], s:lng, e:lng) :bat[:dbl]
 address SQLquantile_avg
 comment "return a quantile average value of groups";
 
@@ -1032,7 +1236,7 @@ pattern batsql.quantile_avg(b:bat[:flt], q:flt, s:bat[:lng], e:bat[:lng]) :bat[:
 address SQLquantile_avg
 comment "return a quantile average value of groups";
 
-pattern sql.quantile_avg(b:flt, q:bat[:flt], s:lng, e:lng) :dbl
+pattern sql.quantile_avg(b:flt, q:bat[:flt], s:lng, e:lng) :bat[:dbl]
 address SQLquantile_avg
 comment "return a quantile average value of groups";
 
@@ -1049,7 +1253,7 @@ pattern batsql.quantile_avg(b:bat[:flt], q:dbl, s:bat[:lng], e:bat[:lng]) :bat[:
 address SQLquantile_avg
 comment "return a quantile average value of groups";
 
-pattern sql.quantile_avg(b:flt, q:bat[:dbl], s:lng, e:lng) :dbl
+pattern sql.quantile_avg(b:flt, q:bat[:dbl], s:lng, e:lng) :bat[:dbl]
 address SQLquantile_avg
 comment "return a quantile average value of groups";
 
@@ -1066,7 +1270,7 @@ pattern batsql.quantile_avg(b:bat[:dbl], q:flt, s:bat[:lng], e:bat[:lng]) :bat[:
 address SQLquantile_avg
 comment "return a quantile average value of groups";
 
-pattern sql.quantile_avg(b:dbl, q:bat[:flt], s:lng, e:lng) :dbl
+pattern sql.quantile_avg(b:dbl, q:bat[:flt], s:lng, e:lng) :bat[:dbl]
 address SQLquantile_avg
 comment "return a quantile average value of groups";
 
@@ -1083,7 +1287,7 @@ pattern batsql.quantile_avg(b:bat[:dbl], q:dbl, s:bat[:lng], e:bat[:lng]) :bat[:
 address SQLquantile_avg
 comment "return a quantile average value of groups";
 
-pattern sql.quantile_avg(b:dbl, q:bat[:dbl], s:lng, e:lng) :dbl
+pattern sql.quantile_avg(b:dbl, q:bat[:dbl], s:lng, e:lng) :bat[:dbl]
 address SQLquantile_avg
 comment "return a quantile average value of groups";
 

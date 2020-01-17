@@ -2104,3 +2104,27 @@ quantile_nosupport:
 	GDKerror("%s: type %s not supported for the quantile.\n", __func__, ATOMname(tp2));
 	return GDK_FAIL;
 }
+
+gdk_return
+GDKanalytical_covariance_pop(BAT *r, BAT *b1, BAT *b2, BAT *s, BAT *e, int tpe)
+{
+	(void) r;
+	(void) b1;
+	(void) b2;
+	(void) s;
+	(void) e;
+	(void) tpe;
+	return GDK_SUCCEED;
+}
+
+gdk_return
+GDKanalytical_covariance_sample(BAT *r, BAT *b1, BAT *b2, BAT *s, BAT *e, int tpe)
+{
+	(void) r;
+	(void) b1;
+	(void) b2;
+	(void) s;
+	(void) e;
+	(void) tpe;
+	return GDK_SUCCEED;
+}
