@@ -25,6 +25,9 @@ create window var_samp(val HUGEINT) returns DOUBLE
 	external name "sql"."variance";
 GRANT EXECUTE ON WINDOW var_samp(HUGEINT) TO PUBLIC;
 
+create aggregate covar_samp(e1 HUGEINT, e2 HUGEINT) returns DOUBLE
+	external name "aggr"."covariance";
+GRANT EXECUTE ON AGGREGATE covar_samp(HUGEINT, HUGEINT) TO PUBLIC;
 create window covar_samp(e1 HUGEINT, e2 HUGEINT) returns DOUBLE
 	external name "sql"."covariance";
 GRANT EXECUTE ON WINDOW covar_samp(HUGEINT, HUGEINT) TO PUBLIC;
@@ -36,6 +39,9 @@ create window var_pop(val HUGEINT) returns DOUBLE
 	external name "sql"."variancep";
 GRANT EXECUTE ON WINDOW var_pop(HUGEINT) TO PUBLIC;
 
+create aggregate covar_pop(e1 HUGEINT, e2 HUGEINT) returns DOUBLE
+	external name "aggr"."covariancep";
+GRANT EXECUTE ON AGGREGATE covar_pop(HUGEINT, HUGEINT) TO PUBLIC;
 create window covar_pop(e1 HUGEINT, e2 HUGEINT) returns DOUBLE
 	external name "sql"."covariancep";
 GRANT EXECUTE ON WINDOW covar_pop(HUGEINT, HUGEINT) TO PUBLIC;

@@ -361,3 +361,9 @@ command variancep(b:bat[:any_2]) :dbl
 address ALGvariancep
 comment "Gives the variance of all tail values";
 
+command covariance(b1:bat[:any_2],b2:bat[:any_2]) :dbl
+address ALGcovariance
+comment "Gives the covariance of all tail values";
+command covariancep(b1:bat[:any_2],b2:bat[:any_2]) :dbl
+address ALGcovariancep
+comment "Gives the covariance of all tail values";

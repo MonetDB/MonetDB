@@ -17,6 +17,8 @@ mal_export str ALGstdev(dbl *res, const bat *bid);
 mal_export str ALGstdevp(dbl *res, const bat *bid);
 mal_export str ALGvariance(dbl *res, const bat *bid);
 mal_export str ALGvariancep(dbl *res, const bat *bid);
+mal_export str ALGcovariance(dbl *res, const bat *bid1, const bat *bid2);
+mal_export str ALGcovariancep(dbl *res, const bat *bid1, const bat *bid2);
 
 mal_export str ALGminany(ptr result, const bat *bid);
 mal_export str ALGmaxany(ptr result, const bat *bid);

@@ -215,6 +215,32 @@ create window var_pop(val INTERVAL MONTH) returns DOUBLE
 GRANT EXECUTE ON WINDOW var_pop(INTERVAL MONTH) TO PUBLIC;
 
 
+create aggregate covar_samp(e1 TINYINT, e2 TINYINT) returns DOUBLE
+	external name "aggr"."covariance";
+GRANT EXECUTE ON AGGREGATE covar_samp(TINYINT, TINYINT) TO PUBLIC;
+create aggregate covar_samp(e1 SMALLINT, e2 SMALLINT) returns DOUBLE
+	external name "aggr"."covariance";
+GRANT EXECUTE ON AGGREGATE covar_samp(SMALLINT, SMALLINT) TO PUBLIC;
+create aggregate covar_samp(e1 INTEGER, e2 INTEGER) returns DOUBLE
+	external name "aggr"."covariance";
+GRANT EXECUTE ON AGGREGATE covar_samp(INTEGER, INTEGER) TO PUBLIC;
+create aggregate covar_samp(e1 BIGINT, e2 BIGINT) returns DOUBLE
+	external name "aggr"."covariance";
+GRANT EXECUTE ON AGGREGATE covar_samp(BIGINT, BIGINT) TO PUBLIC;
+create aggregate covar_samp(e1 REAL, e2 REAL) returns DOUBLE
+	external name "aggr"."covariance";
+GRANT EXECUTE ON AGGREGATE covar_samp(REAL, REAL) TO PUBLIC;
+create aggregate covar_samp(e1 DOUBLE, e2 DOUBLE) returns DOUBLE
+	external name "aggr"."covariance";
+GRANT EXECUTE ON AGGREGATE covar_samp(DOUBLE, DOUBLE) TO PUBLIC;
+
+create aggregate covar_samp(e1 INTERVAL SECOND, e2 INTERVAL SECOND) returns DOUBLE
+	external name "aggr"."covariance";
+GRANT EXECUTE ON AGGREGATE covar_samp(INTERVAL SECOND, INTERVAL SECOND) TO PUBLIC;
+create aggregate covar_samp(e1 INTERVAL MONTH, e2 INTERVAL MONTH) returns DOUBLE
+	external name "aggr"."covariance";
+GRANT EXECUTE ON AGGREGATE covar_samp(INTERVAL MONTH, INTERVAL MONTH) TO PUBLIC;
+
 create window covar_samp(e1 TINYINT, e2 TINYINT) returns DOUBLE
 	external name "sql"."covariance";
 GRANT EXECUTE ON WINDOW covar_samp(TINYINT, TINYINT) TO PUBLIC;
@@ -241,6 +267,32 @@ create window covar_samp(e1 INTERVAL MONTH, e2 INTERVAL MONTH) returns DOUBLE
 	external name "sql"."covariance";
 GRANT EXECUTE ON WINDOW covar_samp(INTERVAL MONTH, INTERVAL MONTH) TO PUBLIC;
 
+
+create aggregate covar_pop(e1 TINYINT, e2 TINYINT) returns DOUBLE
+	external name "aggr"."covariancep";
+GRANT EXECUTE ON AGGREGATE covar_pop(TINYINT, TINYINT) TO PUBLIC;
+create aggregate covar_pop(e1 SMALLINT, e2 SMALLINT) returns DOUBLE
+	external name "aggr"."covariancep";
+GRANT EXECUTE ON AGGREGATE covar_pop(SMALLINT, SMALLINT) TO PUBLIC;
+create aggregate covar_pop(e1 INTEGER, e2 INTEGER) returns DOUBLE
+	external name "aggr"."covariancep";
+GRANT EXECUTE ON AGGREGATE covar_pop(INTEGER, INTEGER) TO PUBLIC;
+create aggregate covar_pop(e1 BIGINT, e2 BIGINT) returns DOUBLE
+	external name "aggr"."covariancep";
+GRANT EXECUTE ON AGGREGATE covar_pop(BIGINT, BIGINT) TO PUBLIC;
+create aggregate covar_pop(e1 REAL, e2 REAL) returns DOUBLE
+	external name "aggr"."covariancep";
+GRANT EXECUTE ON AGGREGATE covar_pop(REAL, REAL) TO PUBLIC;
+create aggregate covar_pop(e1 DOUBLE, e2 DOUBLE) returns DOUBLE
+	external name "aggr"."covariancep";
+GRANT EXECUTE ON AGGREGATE covar_pop(DOUBLE, DOUBLE) TO PUBLIC;
+
+create aggregate covar_pop(e1 INTERVAL SECOND, e2 INTERVAL SECOND) returns DOUBLE
+	external name "aggr"."covariancep";
+GRANT EXECUTE ON AGGREGATE covar_pop(INTERVAL SECOND, INTERVAL SECOND) TO PUBLIC;
+create aggregate covar_pop(e1 INTERVAL MONTH, e2 INTERVAL MONTH) returns DOUBLE
+	external name "aggr"."covariancep";
+GRANT EXECUTE ON AGGREGATE covar_pop(INTERVAL MONTH, INTERVAL MONTH) TO PUBLIC;
 
 create window covar_pop(e1 TINYINT, e2 TINYINT) returns DOUBLE
 	external name "sql"."covariancep";
