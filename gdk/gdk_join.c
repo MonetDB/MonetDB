@@ -3400,6 +3400,7 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	BUN lcnt, rcnt;
 	struct canditer lci, rci;
 	bool phash = false;
+	bat parent;
 
 	/* only_misses implies left output only */
 	assert(!only_misses || r2p == NULL);
@@ -3412,6 +3413,19 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		*r2p = NULL;
 	if (joinparamcheck(l, r, NULL, sl, sr, func) != GDK_SUCCEED)
 		return GDK_FAIL;
+
+	if ((parent = VIEWtparent(l)) != 0) {
+		BAT *b = BBPdescriptor(parent);
+		if (l->hseqbase == b->hseqbase &&
+		    BATcount(l) == BATcount(b))
+			l = b;
+	}
+	if ((parent = VIEWtparent(r)) != 0) {
+		BAT *b = BBPdescriptor(parent);
+		if (r->hseqbase == b->hseqbase &&
+		    BATcount(r) == BATcount(b))
+			r = b;
+	}
 
 	lcnt = canditer_init(&lci, l, sl);
 	rcnt = canditer_init(&rci, r, sr);
