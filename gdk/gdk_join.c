@@ -317,7 +317,7 @@ selectjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	    (*ATOMcompare(l->ttype))(v, ATOMnilptr(l->ttype)) == 0) {
 		/* NIL doesn't match anything */
 		return nomatch(r1p, r2p, l, r, lci, false, false,
-			       "selectjoin", t0);
+			       __func__, t0);
 	}
 
 	bn = BATselect(r, sr, v, NULL, true, true, false);
@@ -327,7 +327,7 @@ selectjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	if (BATcount(bn) == 0) {
 		BBPunfix(bn->batCacheid);
 		return nomatch(r1p, r2p, l, r, lci, false, false,
-			       "selectjoin", t0);
+			       __func__, t0);
 	}
 	BAT *r1 = COLnew(0, TYPE_oid, lci->ncand * BATcount(bn), TRANSIENT);
 	if (r1 == NULL) {
@@ -1748,7 +1748,7 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	     (BATtvoid(r) && r->tseqbase == oid_nil) ||
 	     (rvals && cmp(nil, VALUE(r, (r->tsorted ? rci->seq : canditer_last(rci)) - r->hseqbase)) == 0)))
 		return nomatch(r1p, r2p, l, r, lci, false, false,
-			       "mergejoin", t0);
+			       __func__, t0);
 
 	if (lci->ncand == 0 ||
 	    rci->ncand == 0 ||
@@ -1763,7 +1763,7 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	      (l->ttype == TYPE_void && !is_oid_nil(l->tseqbase))))) {
 		/* there are no matches */
 		return nomatch(r1p, r2p, l, r, lci, nil_on_miss, only_misses,
-			       "mergejoin", t0);
+			       __func__, t0);
 	}
 
 	BUN maxsize = joininitresults(r1p, r2p, lci->ncand, rci->ncand,
@@ -2523,7 +2523,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 
 	if (lci->ncand == 0 || rci->ncand== 0)
 		return nomatch(r1p, r2p, l, r, lci,
-			       nil_on_miss, only_misses, "hashjoin", t0);
+			       nil_on_miss, only_misses, __func__, t0);
 
 	BUN maxsize = joininitresults(r1p, r2p, lci->ncand, rci->ncand,
 				      l->tkey, r->tkey, semi, nil_on_miss,
@@ -2604,13 +2604,13 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 					HEAPfree(&hsh->heapbckt, true);
 					GDKfree(hsh);
 					return nomatch(r1p, r2p, l, r, lci,
-						       false, false, "hashjoin", t0);
+						       false, false, __func__, t0);
 				}
 			}
 		} else {
 			HASHloop_bound(ri, hsh, rb, nil, rl, rh) {
 				return nomatch(r1p, r2p, l, r, lci,
-					       false, false, "hashjoin", t0);
+					       false, false, __func__, t0);
 			}
 		}
 	}
@@ -2838,7 +2838,7 @@ thetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int opcode, BU
 		if (!BATtdense(l)) {
 			/* trivial: nils don't match anything */
 			return nomatch(r1p, r2p, l, r, &lci,
-				       false, false, "thetajoin", t0);
+				       false, false, __func__, t0);
 		}
 		loff = (lng) l->tseqbase - (lng) l->hseqbase;
 	}
@@ -2846,7 +2846,7 @@ thetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int opcode, BU
 		if (!BATtdense(r)) {
 			/* trivial: nils don't match anything */
 			return nomatch(r1p, r2p, l, r, &lci,
-				       false, false, "thetajoin", t0);
+				       false, false, __func__, t0);
 		}
 		roff = (lng) r->tseqbase - (lng) r->hseqbase;
 	}
@@ -2991,7 +2991,7 @@ bandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 
 	if (lcnt == 0 || rcnt == 0)
 		return nomatch(r1p, r2p, l, r, &lci,
-			       false, false, "bandjoin", t0);
+			       false, false, __func__, t0);
 
 	switch (t) {
 	case TYPE_bte:
@@ -3000,7 +3000,7 @@ bandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		    -*(const bte *)c1 > *(const bte *)c2 ||
 		    ((!hi || !li) && -*(const bte *)c1 == *(const bte *)c2))
 			return nomatch(r1p, r2p, l, r, &lci,
-				       false, false, "bandjoin", t0);
+				       false, false, __func__, t0);
 		break;
 	case TYPE_sht:
 		if (is_sht_nil(*(const sht *)c1) ||
@@ -3008,7 +3008,7 @@ bandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		    -*(const sht *)c1 > *(const sht *)c2 ||
 		    ((!hi || !li) && -*(const sht *)c1 == *(const sht *)c2))
 			return nomatch(r1p, r2p, l, r, &lci,
-				       false, false, "bandjoin", t0);
+				       false, false, __func__, t0);
 		break;
 	case TYPE_int:
 		if (is_int_nil(*(const int *)c1) ||
@@ -3016,7 +3016,7 @@ bandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		    -*(const int *)c1 > *(const int *)c2 ||
 		    ((!hi || !li) && -*(const int *)c1 == *(const int *)c2))
 			return nomatch(r1p, r2p, l, r, &lci,
-				       false, false, "bandjoin", t0);
+				       false, false, __func__, t0);
 		break;
 	case TYPE_lng:
 		if (is_lng_nil(*(const lng *)c1) ||
@@ -3024,7 +3024,7 @@ bandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		    -*(const lng *)c1 > *(const lng *)c2 ||
 		    ((!hi || !li) && -*(const lng *)c1 == *(const lng *)c2))
 			return nomatch(r1p, r2p, l, r, &lci,
-				       false, false, "bandjoin", t0);
+				       false, false, __func__, t0);
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
@@ -3033,7 +3033,7 @@ bandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		    -*(const hge *)c1 > *(const hge *)c2 ||
 		    ((!hi || !li) && -*(const hge *)c1 == *(const hge *)c2))
 			return nomatch(r1p, r2p, l, r, &lci,
-				       false, false, "bandjoin", t0);
+				       false, false, __func__, t0);
 		break;
 #endif
 	case TYPE_flt:
@@ -3042,7 +3042,7 @@ bandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		    -*(const flt *)c1 > *(const flt *)c2 ||
 		    ((!hi || !li) && -*(const flt *)c1 == *(const flt *)c2))
 			return nomatch(r1p, r2p, l, r, &lci,
-				       false, false, "bandjoin", t0);
+				       false, false, __func__, t0);
 		break;
 	case TYPE_dbl:
 		if (is_dbl_nil(*(const dbl *)c1) ||
@@ -3050,7 +3050,7 @@ bandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		    -*(const dbl *)c1 > *(const dbl *)c2 ||
 		    ((!hi || !li) && -*(const dbl *)c1 == *(const dbl *)c2))
 			return nomatch(r1p, r2p, l, r, &lci,
-				       false, false, "bandjoin", t0);
+				       false, false, __func__, t0);
 		break;
 	default:
 		GDKerror("BATbandjoin: unsupported type\n");
@@ -3365,7 +3365,7 @@ fetchjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		e = rci->seq + rci->ncand - r->hseqbase;
 	if (e == b) {
 		return nomatch(r1p, r2p, l, r, lci,
-			       false, false, "fetchjoin", t0);
+			       false, false, __func__, t0);
 	}
 	r1 = COLnew(0, TYPE_oid, e - b, TRANSIENT);
 	if (r1 == NULL)
