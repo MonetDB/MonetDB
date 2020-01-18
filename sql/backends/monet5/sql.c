@@ -494,7 +494,10 @@ create_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *col
 			tpe = *t;
 		}
 
-		if (!(col = mvc_create_column(sql, t, columns[i].name, &tpe))) {
+		if (columns[i].name && columns[i].name[0] == '%') {
+			msg = sql_error(sql, 02, SQLSTATE(42000) "CREATE TABLE: generated labels not allowed in column names, use an alias instead");
+			goto cleanup;
+		} else if (!(col = mvc_create_column(sql, t, columns[i].name, &tpe))) {
 			msg = sql_error(sql, 02, SQLSTATE(3F000) "CREATE TABLE: could not create column %s", columns[i].name);
 			goto cleanup;
 		}

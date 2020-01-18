@@ -133,15 +133,15 @@ view_rename_columns( mvc *sql, char *name, sql_rel *sq, dlist *column_spec)
 }
 
 static int
-as_subquery( mvc *sql, sql_table *t, sql_rel *sq, dlist *column_spec, const char *msg )
+as_subquery(mvc *sql, sql_table *t, sql_rel *sq, dlist *column_spec, const char *msg)
 {
-        sql_rel *r = sq;
+	sql_rel *r = sq;
 
 	if (!r)
 		return 0;
 
-        if (is_topn(r->op) || is_sample(r->op))
-                r = sq->l;
+	if (is_topn(r->op) || is_sample(r->op))
+		r = sq->l;
 
 	if (column_spec) {
 		dnode *n = column_spec->h;
@@ -152,7 +152,10 @@ as_subquery( mvc *sql, sql_table *t, sql_rel *sq, dlist *column_spec, const char
 			sql_exp *e = m->data;
 			sql_subtype *tp = exp_subtype(e);
 
-			if (mvc_bind_column(sql, t, cname)) {
+			if (!isView(t) && cname && cname[0] == '%') {
+				sql_error(sql, 01, SQLSTATE(42000) "%s: generated labels not allowed in column names, use an alias instead", msg);
+				return -1;
+			} else if (mvc_bind_column(sql, t, cname)) {
 				sql_error(sql, 01, SQLSTATE(42S21) "%s: duplicate column name %s", msg, cname);
 				return -1;
 			}
@@ -170,9 +173,12 @@ as_subquery( mvc *sql, sql_table *t, sql_rel *sq, dlist *column_spec, const char
 			const char *cname = exp_name(e);
 			sql_subtype *tp = exp_subtype(e);
 
-			if (!cname)
+			if (!cname) {
 				cname = "v";
-			if (mvc_bind_column(sql, t, cname)) {
+			} else if (!isView(t) && cname[0] == '%') {
+				sql_error(sql, 01, SQLSTATE(42000) "%s: generated labels not allowed in column names, use an alias instead", msg);
+				return -1;
+			} else if (mvc_bind_column(sql, t, cname)) {
 				sql_error(sql, 01, SQLSTATE(42S21) "%s: duplicate column name %s", msg, cname);
 				return -1;
 			}
@@ -192,7 +198,6 @@ mvc_create_table_as_subquery( mvc *sql, sql_rel *sq, sql_schema *s, const char *
 
 	sql_table *t = mvc_create_table(sql, s, tname, tt, 0, SQL_DECLARED_TABLE, commit_action, -1, 0);
 	if (as_subquery( sql, t, sq, column_spec, "CREATE TABLE") != 0)
-
 		return NULL;
 	return t;
 }
@@ -695,8 +700,10 @@ create_column(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 	if (cname && ctype) {
 		sql_column *cs = NULL;
 
-		cs = find_sql_column(t, cname);
-		if (cs) {
+		if (!isView(t) && cname && cname[0] == '%') {
+			sql_error(sql, 01, SQLSTATE(42000) "%s TABLE: generated labels not allowed in column names, use an alias instead", (alter)?"ALTER":"CREATE");
+			return SQL_ERR;
+		} else if ((cs = find_sql_column(t, cname))) {
 			sql_error(sql, 02, SQLSTATE(42S21) "%s TABLE: a column named '%s' already exists\n", (alter)?"ALTER":"CREATE", cname);
 			return SQL_ERR;
 		}
@@ -872,7 +879,10 @@ table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 		for (n = ot->columns.set->h; n; n = n->next) {
 			sql_column *oc = n->data;
 
-			if (mvc_bind_column(sql, t, oc->base.name)) {
+			if (!isView(t) && oc->base.name && oc->base.name[0] == '%') {
+				sql_error(sql, 02, SQLSTATE(42000) "CREATE TABLE: generated labels not allowed in column names, use an alias instead");
+				return SQL_ERR;
+			} else if (mvc_bind_column(sql, t, oc->base.name)) {
 				sql_error(sql, 02, SQLSTATE(42S21) "CREATE TABLE: a column named '%s' already exists\n", oc->base.name);
 				return SQL_ERR;
 			}
@@ -1213,7 +1223,7 @@ rel_create_view(sql_query *query, sql_schema *ss, dlist *qname, dlist *column_sp
 			q = query_cleaned(q);
 			t = mvc_create_view(sql, s, name, SQL_DECLARED_TABLE, q, 0);
 			GDKfree(q);
-			if (as_subquery( sql, t, sq, column_spec, "CREATE VIEW") != 0) {
+			if (as_subquery(sql, t, sq, column_spec, "CREATE VIEW") != 0) {
 				rel_destroy(sq);
 				return NULL;
 			}
