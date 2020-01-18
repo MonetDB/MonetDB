@@ -216,8 +216,13 @@ WLRprocessBatch(Client cntxt)
 	str action= NULL;
 	str msg= MAL_SUCCEED, msg2= MAL_SUCCEED;
 
-	WLRgetConfig();
+	msg = WLRgetConfig();
 	tag = wlr_tag;
+	if( msg != MAL_SUCCEED){
+		snprintf(wlr_error, BUFSIZ, "%s", msg);
+		freeException(msg);
+		return msg;
+	}
 	if( wlr_error[0])
 		return GDKstrdup(wlr_error);
 
@@ -421,6 +426,7 @@ WLRprocessScheduler(void *arg)
 	msg = WLRgetConfig();
 	if ( msg ){
 		snprintf(wlr_error, BUFSIZ, "%s", msg);
+		freeException(msg);
 		return;
 	}
 	
@@ -485,6 +491,7 @@ str
 WLRmaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	
 	int len;
+	str msg = MAL_SUCCEED;
 
 	(void) cntxt;
 	(void) mb;
@@ -493,7 +500,9 @@ WLRmaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (len == -1 || len >= IDLENGTH)
 		throw(MAL, "wlr.master", SQLSTATE(42000) "Input value is too large for wlr_master buffer");
 	WLRgetMaster();
-	WLRgetConfig();
+	msg = WLRgetConfig();
+	if( msg )
+		return msg;
 	WLRputConfig();
 	return MAL_SUCCEED;
 }
@@ -630,6 +639,8 @@ WLRgetmaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 
 	msg = WLRgetConfig();
+	if( msg)
+		return msg;
 	if( wlr_master[0])
 		*ret= GDKstrdup(wlr_master);
 	else
