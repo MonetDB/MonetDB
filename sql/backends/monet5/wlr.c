@@ -501,9 +501,10 @@ WLRmaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "wlr.master", SQLSTATE(42000) "Input value is too large for wlr_master buffer");
 	WLRgetMaster();
 	msg = WLRgetConfig();
-	if( msg )
-		return msg;
-	WLRputConfig();
+	if( msg ){
+		WLRputConfig();
+		freeException(msg);
+	}
 	return MAL_SUCCEED;
 }
 
