@@ -10,6 +10,7 @@ Welcome to MonetDB's documentation!
    :maxdepth: 2
    :caption: Contents:
 
+   input
 
 
 Indices and tables
