@@ -3409,20 +3409,10 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 	if (!a && list_length(exps) > 1) {
 		sql_subtype *t1 = exp_subtype(exps->h->data);
 		a = sql_bind_member(sql->sa, s, aname, exp_subtype(exps->h->data), F_AGGR, list_length(exps), NULL);
-		bool is_group_concat = (!a && ((s && !strcmp(s->base.name, "sys") && !strcmp(aname, "group_concat")) || !strcmp(aname, "listagg")));
 
-		if (list_length(exps) != 2 || (!EC_NUMBER(t1->type->eclass) || !a || is_group_concat || subtype_cmp(
+		if (list_length(exps) != 2 || (!EC_NUMBER(t1->type->eclass) || !a || subtype_cmp(
 						&((sql_arg*)a->func->ops->h->data)->type,
 						&((sql_arg*)a->func->ops->h->next->data)->type) != 0) )  {
-			if (!a && is_group_concat) {
-				sql_subtype *tstr = sql_bind_localtype("str");
-				list *sargs = sa_list(sql->sa);
-				if (list_length(exps) >= 1)
-					append(sargs, tstr);
-				if (list_length(exps) == 2)
-					append(sargs, tstr);
-				a = sql_bind_func_(sql->sa, s, aname, sargs, F_AGGR);
-			}
 			if (a) {
 				node *n, *op = a->func->ops->h;
 				list *nexps = sa_list(sql->sa);
