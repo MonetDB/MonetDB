@@ -127,4 +127,13 @@ select covar_samp(NULL, NULL) from analytics group by aa, bb;
 select covar_pop(NULL, NULL) from analytics group by aa, bb;
 select corr(NULL, NULL) from analytics group by aa, bb;
 
+
+select (select corr(a1.aa, a2.aa) + corr(a2.aa, a1.aa) from analytics a2) from analytics a1;
+select (select corr(a1.aa + a2.aa, a1.aa + a2.aa) from analytics a2) from analytics a1;
+select corr(a1.aa, a1.bb) from analytics a1 where a1.bb > (select corr(a1.aa, a2.aa) + corr(a2.aa, a1.aa) from analytics a2);
+select corr(a1.aa, a1.bb) from analytics a1 where a1.bb > (select corr(a1.aa + a2.aa, a1.aa + a2.aa) from analytics a2);
+select corr(a1.aa, a1.bb) from analytics a1 where a1.bb > (select corr(a1.aa, a2.aa) + corr(a2.aa, a1.aa) from analytics a2) group by bb;
+select corr(a1.aa, a1.bb) from analytics a1 where a1.bb > (select corr(a1.aa + a2.aa, a1.aa + a2.aa) from analytics a2) group by bb;
+select corr(a1.aa, a1.bb) from analytics a1 group by bb having a1.bb > (select corr(MAX(a1.aa) + a2.aa, MIN(a1.aa) + a2.aa) from analytics a2);
+
 rollback;

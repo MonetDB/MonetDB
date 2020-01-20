@@ -1250,6 +1250,67 @@ stdout of test 'analytics16` in directory 'sql/test/analytics` itself:
 [ NULL	]
 [ NULL	]
 [ NULL	]
+#select (select corr(a1.aa, a2.aa) + corr(a2.aa, a1.aa) from analytics a2) from analytics a1;
+% .%3 # table_name
+% %3 # name
+% double # type
+% 24 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+#select (select corr(a1.aa + a2.aa, a1.aa + a2.aa) from analytics a2) from analytics a1;
+% .%1 # table_name
+% %1 # name
+% double # type
+% 24 # length
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ NULL	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ NULL	]
+#select corr(a1.aa, a1.bb) from analytics a1 where a1.bb > (select corr(a1.aa, a2.aa) + corr(a2.aa, a1.aa) from analytics a2);
+% sys.%4 # table_name
+% %4 # name
+% double # type
+% 24 # length
+[ NULL	]
+#select corr(a1.aa, a1.bb) from analytics a1 where a1.bb > (select corr(a1.aa + a2.aa, a1.aa + a2.aa) from analytics a2);
+% sys.%2 # table_name
+% %2 # name
+% double # type
+% 24 # length
+[ 0.3758141918	]
+#select corr(a1.aa, a1.bb) from analytics a1 where a1.bb > (select corr(a1.aa, a2.aa) + corr(a2.aa, a1.aa) from analytics a2) group by bb;
+% sys.%4 # table_name
+% %4 # name
+% double # type
+% 24 # length
+#select corr(a1.aa, a1.bb) from analytics a1 where a1.bb > (select corr(a1.aa + a2.aa, a1.aa + a2.aa) from analytics a2) group by bb;
+% sys.%2 # table_name
+% %2 # name
+% double # type
+% 24 # length
+[ NULL	]
+[ NULL	]
+#select corr(a1.aa, a1.bb) from analytics a1 group by bb having a1.bb > (select corr(MAX(a1.aa) + a2.aa, MIN(a1.aa) + a2.aa) from analytics a2);
+% sys.%1 # table_name
+% %1 # name
+% double # type
+% 24 # length
+[ NULL	]
+[ NULL	]
 #rollback;
 
 # 18:06:22 >  
