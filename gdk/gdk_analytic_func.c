@@ -1018,8 +1018,7 @@ GDKanalytical##OP(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)		\
 			}						\
 			if (BUNappend(r, curval, false) != GDK_SUCCEED) \
 				goto allocation_error;			\
-			if (atomcmp(curval, nil) == 0)			\
-				has_nils = true;			\
+			has_nils |= atomcmp(curval, nil) == 0;	\
 		}							\
 	}								\
 	}								\

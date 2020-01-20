@@ -1623,6 +1623,9 @@ sqltypeinit( sql_allocator *sa)
 #endif
 	sql_create_analytic(sa, "avg", "sql", "avg", SCALE_NONE, DBL, 1, FLT);
 
+	sql_create_analytic(sa, "listagg", "sql", "str_group_concat", SCALE_NONE, STR, 1, STR);
+	sql_create_analytic(sa, "listagg", "sql", "str_group_concat", SCALE_NONE, STR, 2, STR, STR);
+
 	sql_create_func(sa, "and", "calc", "and", FALSE, SCALE_FIX, 0, BIT, 2, BIT, BIT);
 	sql_create_func(sa, "or",  "calc",  "or", FALSE, SCALE_FIX, 0, BIT, 2, BIT, BIT);
 	sql_create_func(sa, "xor", "calc", "xor", FALSE, SCALE_FIX, 0, BIT, 2, BIT, BIT);

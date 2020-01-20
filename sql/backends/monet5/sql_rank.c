@@ -1656,7 +1656,7 @@ do_covariance_and_correlation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 	str msg = MAL_SUCCEED;
 
 	(void)cntxt;
-	if (pci->argc != 5 || ((isaBatType(getArgType(mb, pci, 2)) && getBatType(getArgType(mb, pci, 3)) != TYPE_lng) ||
+	if (pci->argc != 5 || ((isaBatType(getArgType(mb, pci, 3)) && getBatType(getArgType(mb, pci, 3)) != TYPE_lng) ||
 		 (isaBatType(getArgType(mb, pci, 4)) && getBatType(getArgType(mb, pci, 4)) != TYPE_lng))) {
 		throw(SQL, op, "%s", err);
 	}
@@ -1786,4 +1786,79 @@ SQLcorr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	return do_covariance_and_correlation(cntxt, mb, stk, pci, "sql.corr", SQLSTATE(42000) "corr(:any_1,:any_1,:lng,:lng)",
 										 GDKanalytical_correlation, 0, dbl_nil);
+}
+
+str
+SQLstrgroup_concat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	BAT *r = NULL, *b = NULL, *sep = NULL, *s = NULL, *e = NULL;
+	int parameters = 2;
+	gdk_return gdk_res = GDK_SUCCEED;
+	str msg = MAL_SUCCEED, separator = NULL;
+
+	(void)cntxt;
+	if (pci->argc != 4 && pci->argc != 5)
+		throw(SQL, "sql.strgroup_concat", SQLSTATE(42000) "Requires 4 or 5 parameters");
+
+	if (isaBatType(getArgType(mb, pci, 1))) {
+		bat *res = getArgReference_bat(stk, pci, 0);
+
+		b = BATdescriptor(*getArgReference_bat(stk, pci, 1));
+		if (!b)
+			throw(SQL, "sql.strgroup_concat", SQLSTATE(HY005) "Cannot access column descriptor");
+		voidresultBAT(r, TYPE_str, BATcount(b), b, "sql.strgroup_concat");
+
+		if (pci->argc == 5) {
+			if (isaBatType(getArgType(mb, pci, 2))) {
+				sep = BATdescriptor(*getArgReference_bat(stk, pci, 2));
+				if (!sep) {
+					BBPunfix(b->batCacheid);
+					BBPunfix(r->batCacheid);
+					throw(SQL, "sql.strgroup_concat", SQLSTATE(HY005) "Cannot access column descriptor");
+				}
+			} else
+				separator = *getArgReference_str(stk, pci, 2);
+			parameters++;
+		} else
+			separator = ",";
+	
+		s = BATdescriptor(*getArgReference_bat(stk, pci, parameters));
+		if (!s) {
+			BBPunfix(b->batCacheid);
+			BBPunfix(r->batCacheid);
+			if (sep) BBPunfix(sep->batCacheid);
+			throw(SQL, "sql.strgroup_concat", SQLSTATE(HY005) "Cannot access column descriptor");
+		}
+		e = BATdescriptor(*getArgReference_bat(stk, pci, parameters + 1));
+		if (!e) {
+			BBPunfix(b->batCacheid);
+			BBPunfix(r->batCacheid);
+			if (sep) BBPunfix(sep->batCacheid);
+			BBPunfix(s->batCacheid);
+			throw(SQL, "sql.strgroup_concat", SQLSTATE(HY005) "Cannot access column descriptor");
+		}
+
+		assert((separator && !sep) || (!separator && sep)); /* only one of them must be set */
+		gdk_res = GDKanalytical_str_group_concat(r, b, sep, s, e, separator);
+
+		BBPunfix(b->batCacheid);
+		BBPunfix(s->batCacheid);
+		BBPunfix(e->batCacheid);
+		if (sep) BBPunfix(sep->batCacheid);
+		if (gdk_res == GDK_SUCCEED)
+			BBPkeepref(*res = r->batCacheid);
+		else
+			throw(SQL, "sql.strgroup_concat", GDK_EXCEPTION);
+	} else {
+		str *res = (str*) getArgReference(stk, pci, 0);
+		str in = *getArgReference_str(stk, pci, 1), sep = NULL;
+
+		if (pci->argc == 4)
+			sep = *getArgReference_str(stk, pci, 2);
+
+		*res = (GDK_STRNIL(in) || (sep && GDK_STRNIL(sep))) ? GDKstrdup(str_nil) : GDKstrdup(in);
+		if (!*res)
+			throw(SQL, "sql.strgroup_concat", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+	return msg;
 }

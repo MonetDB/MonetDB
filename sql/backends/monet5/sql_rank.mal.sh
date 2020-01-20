@@ -462,6 +462,34 @@ pattern batsql.corr(b:bat[:${tp}], c:bat[:${tp}], s:bat[:lng], e:bat[:lng]) :bat
 address SQLcorr
 comment "return the correlation value of groups";
 
+
 EOF
 done
 
+cat <<EOF
+pattern sql.str_group_concat(b:str, s:lng, e:lng) :str
+address SQLstrgroup_concat
+comment "return the string concatenation of groups";
+
+pattern batsql.str_group_concat(b:bat[:str], s:bat[:lng], e:bat[:lng]) :bat[:str]
+address SQLstrgroup_concat
+comment "return the string concatenation of groups";
+
+
+pattern sql.str_group_concat(b:str, sep:str, s:lng, e:lng) :str
+address SQLstrgroup_concat
+comment "return the string concatenation of groups with a custom separator";
+
+pattern batsql.str_group_concat(b:bat[:str], sep:str, s:bat[:lng], e:bat[:lng]) :bat[:str]
+address SQLstrgroup_concat
+comment "return the string concatenation of groups with a custom separator";
+
+pattern batsql.str_group_concat(b:str, sep:bat[:str], s:lng, e:lng) :bat[:str]
+address SQLstrgroup_concat
+comment "return the string concatenation of groups with a custom separator";
+
+pattern batsql.str_group_concat(b:bat[:str], sep:bat[:str], s:bat[:lng], e:bat[:lng]) :bat[:str]
+address SQLstrgroup_concat
+comment "return the string concatenation of groups with a custom separator";
+
+EOF

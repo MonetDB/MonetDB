@@ -2849,8 +2849,16 @@ sql_update_analytics(Client c, mvc *sql, const char *prev_schema, bool *systabfi
 #endif
 
 	pos += snprintf(buf + pos, bufsize - pos,
+		"create window group_concat(str STRING) returns STRING\n"
+		" external name \"sql\".\"str_group_concat\";\n"
+		"GRANT EXECUTE ON WINDOW group_concat(STRING) TO PUBLIC;\n"
+		"create window group_concat(str STRING, sep STRING) returns STRING\n"
+		" external name \"sql\".\"str_group_concat\";\n"
+		"GRANT EXECUTE ON WINDOW group_concat(STRING, STRING) TO PUBLIC;\n");
+
+	pos += snprintf(buf + pos, bufsize - pos,
 			"update sys.functions set system = true where name in"
-			" ('stddev_samp', 'stddev_pop', 'var_samp', 'var_pop', 'covar_samp', 'covar_pop', 'corr')"
+			" ('stddev_samp', 'stddev_pop', 'var_samp', 'var_pop', 'covar_samp', 'covar_pop', 'corr', 'group_concat')"
 			" and schema_id = (select id from sys.schemas where name = 'sys');\n");
 
 	pos += snprintf(buf + pos, bufsize - pos,
