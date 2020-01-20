@@ -1412,6 +1412,9 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_aggr(sa, "count_no_nil", "aggr", "count_no_nil", LNG, 0);
 	sql_create_aggr(sa, "count", "aggr", "count", LNG, 1, ANY);
 
+	sql_create_aggr(sa, "listagg", "aggr", "str_group_concat", STR, 1, STR);
+	sql_create_aggr(sa, "listagg", "aggr", "str_group_concat", STR, 2, STR, STR);
+
 	/* order based operators */
 	sql_create_analytic(sa, "diff", "sql", "diff", SCALE_NONE, BIT, 1, ANY);
 	sql_create_analytic(sa, "diff", "sql", "diff", SCALE_NONE, BIT, 2, BIT, ANY);

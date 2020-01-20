@@ -3409,7 +3409,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 	if (!a && list_length(exps) > 1) {
 		sql_subtype *t1 = exp_subtype(exps->h->data);
 		a = sql_bind_member(sql->sa, s, aname, exp_subtype(exps->h->data), F_AGGR, list_length(exps), NULL);
-		bool is_group_concat = (!a && strcmp(s->base.name, "sys") == 0 && strcmp(aname, "group_concat") == 0);
+		bool is_group_concat = (!a && ((s && !strcmp(s->base.name, "sys") && !strcmp(aname, "group_concat")) || !strcmp(aname, "listagg")));
 
 		if (list_length(exps) != 2 || (!EC_NUMBER(t1->type->eclass) || !a || is_group_concat || subtype_cmp(
 						&((sql_arg*)a->func->ops->h->data)->type,
