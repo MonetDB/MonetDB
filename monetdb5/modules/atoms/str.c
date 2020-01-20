@@ -3161,65 +3161,67 @@ UTF8_strtail(const char *s, int pos)
 static str
 convertCase(BAT *from, BAT *to, str *res, const char *src, const char *malfunc)
 {
-	BATiter toi = bat_iterator(to);
-	BATiter fromi = bat_iterator(from);
 	size_t len = strlen(src);
 	char *dst;
 	const char *end = src + len;
-	BUN UTF8_CONV_r;
 	bool lower_to_upper = from == UTF8_toUpperFrom;
 
 	if (strNil(src)) {
 		*res = GDKstrdup(str_nil);
 	} else {
-		*res = GDKmalloc(len + 1);
-		if (*res != NULL) {
-			dst = *res;
-			while (src < end) {
-				int c;
-
-				UTF8_GETCHAR(c, src);
-				if ((c & 0x80) == 0) {
-					/* for ASCII characters we don't need to do a hash
-					 * lookup */
-					if (lower_to_upper) {
-						if ('a' <= c && c <= 'z')
-							c += 'A' - 'a';
-					} else {
-						if ('A' <= c && c <= 'Z')
-							c += 'a' - 'A';
-					}
-				} else {
-					/* use hash, even though BAT is sorted */
-					HASHfnd_int(UTF8_CONV_r, fromi, &c);
-					if (UTF8_CONV_r != BUN_NONE)
-						c = *(int*) BUNtloc(toi, UTF8_CONV_r);
-				}
-				if (dst + UTF8_CHARLEN(c) > *res + len) {
-					/* doesn't fit, so allocate more space;
-					 * also allocate enough for the rest of the
-					 * source */
-					size_t off = dst - *res;
-
-					dst = GDKrealloc(*res, (len += 4 + (end - src)) + 1);
-					if (dst == NULL) {
-						/* if realloc fails, original buffer is still
-						 * allocated, so free it */
-						GDKfree(*res);
-						goto hashfnd_failed;
-					}
-					*res = dst;
-					dst = *res + off;
-				}
-				UTF8_PUTCHAR(c, dst);
-			}
-			*dst = 0;
+		if (BAThash(from) != GDK_SUCCEED ||
+			(*res = GDKmalloc(len + 1)) == NULL) {
+			throw(MAL, malfunc, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
+		Hash *h = from->thash;
+		dst = *res;
+		while (src < end) {
+			int c;
+
+			UTF8_GETCHAR(c, src);
+			if ((c & 0x80) == 0) {
+				/* for ASCII characters we don't need to do a hash
+				 * lookup */
+				if (lower_to_upper) {
+					if ('a' <= c && c <= 'z')
+						c += 'A' - 'a';
+				} else {
+					if ('A' <= c && c <= 'Z')
+						c += 'a' - 'A';
+				}
+			} else {
+				/* use hash, even though BAT is sorted */
+				for (BUN hb = HASHget(h, hash_int(h, &c));
+					 hb != HASHnil(h);
+					 hb = HASHgetlink(h, hb)) {
+					if (c == ((int *) from->theap.base)[hb]) {
+						c = ((int *) to->theap.base)[hb];
+						break;
+					}
+				}
+			}
+			if (dst + UTF8_CHARLEN(c) > *res + len) {
+				/* doesn't fit, so allocate more space;
+				 * also allocate enough for the rest of the
+				 * source */
+				size_t off = dst - *res;
+
+				dst = GDKrealloc(*res, (len += 4 + (end - src)) + 1);
+				if (dst == NULL) {
+					/* if realloc fails, original buffer is still
+					 * allocated, so free it */
+					GDKfree(*res);
+					throw(MAL, malfunc, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				}
+				*res = dst;
+				dst = *res + off;
+			}
+			UTF8_PUTCHAR(c, dst);
+		}
+		*dst = 0;
 	}
 	if (*res != NULL)
 		return MAL_SUCCEED;
-  hashfnd_failed:
-	throw(MAL, malfunc, SQLSTATE(HY013) MAL_MALLOC_FAIL);
   illegal:
 	throw(MAL, malfunc, SQLSTATE(42000) "Illegal Unicode code point");
 }
