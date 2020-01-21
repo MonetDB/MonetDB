@@ -622,9 +622,9 @@ func_cmp(sql_allocator *sa, sql_func *f, const char *name, int nrargs)
 {
 	if (strcmp(f->base.name, name) == 0) {
 		if (f->vararg) 
-			return sql_dup_subfunc(sa, f, NULL, NULL);
+			return (f->type == F_AGGR) ? _dup_subaggr(sa, f, NULL) : sql_dup_subfunc(sa, f, NULL, NULL);
 		if (nrargs < 0 || list_length(f->ops) == nrargs) 
-			return sql_dup_subfunc(sa, f, NULL, NULL);
+			return (f->type == F_AGGR) ? _dup_subaggr(sa, f, NULL) : sql_dup_subfunc(sa, f, NULL, NULL);
 	}
 	return NULL;
 }
@@ -781,7 +781,7 @@ sql_bind_member(sql_allocator *sa, sql_schema *s, const char *sqlfname, sql_subt
 			continue;
 		if (strcmp(f->base.name, sqlfname) == 0 && f->type == type) {
 			if (list_length(f->ops) == nrargs && is_subtypeof(tp, &((sql_arg *) f->ops->h->data)->type)) 
-				return sql_dup_subfunc(sa, f, NULL, tp);
+				return (type == F_AGGR) ? _dup_subaggr(sa, f, NULL) : sql_dup_subfunc(sa, f, NULL, tp);
 		}
 	}
 	if (s) {
@@ -802,7 +802,7 @@ sql_bind_member(sql_allocator *sa, sql_schema *s, const char *sqlfname, sql_subt
 				continue;
 			if (strcmp(f->base.name, sqlfname) == 0 && f->type == type) {
 				if (list_length(f->ops) == nrargs && is_subtypeof(tp, &((sql_arg *) f->ops->h->data)->type)) 
-					return sql_dup_subfunc(sa, f, NULL, tp);
+					return (type == F_AGGR) ? _dup_subaggr(sa, f, NULL) : sql_dup_subfunc(sa, f, NULL, tp);
 			}
 		}
 	}
@@ -858,7 +858,7 @@ sql_bind_func_(sql_allocator *sa, sql_schema *s, const char *sqlfname, list *ops
 			continue;
 		if (strcmp(f->base.name, sqlfname) == 0) {
 			if (list_cmp(f->ops, ops, (fcmp) &arg_subtype_cmp) == 0) 
-				return (type == F_AGGR)? _dup_subaggr(sa, f, input_type) : sql_dup_subfunc(sa, f, ops, NULL);
+				return (type == F_AGGR) ? _dup_subaggr(sa, f, input_type) : sql_dup_subfunc(sa, f, ops, NULL);
 		}
 	}
 	if (s) {
@@ -871,7 +871,7 @@ sql_bind_func_(sql_allocator *sa, sql_schema *s, const char *sqlfname, list *ops
 				continue;
 			if (strcmp(f->base.name, sqlfname) == 0) {
 				if (list_cmp(f->ops, ops, (fcmp) &arg_subtype_cmp) == 0) 
-					return (type == F_AGGR)? _dup_subaggr(sa, f, input_type) : sql_dup_subfunc(sa, f, ops, NULL);
+					return (type == F_AGGR) ? _dup_subaggr(sa, f, input_type) : sql_dup_subfunc(sa, f, ops, NULL);
 			}
 		}
 	}
@@ -900,7 +900,7 @@ sql_bind_func_result(sql_allocator *sa, sql_schema *s, const char *sqlfname, sql
 			continue;
 		firstres = IS_FILT(f)?BIT:f->res->h->data;
 		if (strcmp(f->base.name, sqlfname) == 0 && f->type == type && (is_subtype(&firstres->type, res) || firstres->type.type->eclass == EC_ANY) && list_cmp(f->ops, ops, (fcmp) &arg_subtype_cmp) == 0) 
-			return sql_dup_subfunc(sa, f, ops, NULL);
+			return (type == F_AGGR) ? _dup_subaggr(sa, f, NULL) : sql_dup_subfunc(sa, f, ops, NULL);
 	}
 	if (s && s->funcs.set)
 		n = s->funcs.set->h;
@@ -912,7 +912,7 @@ sql_bind_func_result(sql_allocator *sa, sql_schema *s, const char *sqlfname, sql
 			continue;
 		firstres = IS_FILT(f)?BIT:f->res->h->data;
 		if (strcmp(f->base.name, sqlfname) == 0 && f->type == type && (is_subtype(&firstres->type, res) || firstres->type.type->eclass == EC_ANY) && list_cmp(f->ops, ops, (fcmp) &arg_subtype_cmp) == 0) 
-			return sql_dup_subfunc(sa, f, ops, NULL);
+			return (type == F_AGGR) ? _dup_subaggr(sa, f, NULL) : sql_dup_subfunc(sa, f, ops, NULL);
 	}
 	return NULL;
 }
@@ -930,7 +930,7 @@ sql_resolve_function_with_undefined_parameters(sql_allocator *sa, sql_schema *s,
 			continue;
 		if (strcmp(f->base.name, name) == 0) {
 			if (list_cmp(f->ops, ops, (fcmp) &arg_subtype_cmp_null) == 0) 
-				return sql_dup_subfunc(sa, f, ops, NULL);
+				return (type == F_AGGR) ? _dup_subaggr(sa, f, NULL) : sql_dup_subfunc(sa, f, ops, NULL);
 		}
 	}
 	if (s) {
@@ -943,7 +943,7 @@ sql_resolve_function_with_undefined_parameters(sql_allocator *sa, sql_schema *s,
 				continue;
 			if (strcmp(f->base.name, name) == 0) {
 				if (list_cmp(f->ops, ops, (fcmp) &arg_subtype_cmp_null) == 0) 
-					return sql_dup_subfunc(sa, f, ops, NULL);
+					return (type == F_AGGR) ? _dup_subaggr(sa, f, NULL) : sql_dup_subfunc(sa, f, ops, NULL);
 			}
 		}
 	}
