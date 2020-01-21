@@ -384,7 +384,6 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 			} else {
 				/* why the vheap? */
 				ci->tpe = cand_dense;
-				ci->oids = NULL;
 			}
 		} else {
 			ci->tpe = cand_dense;
@@ -471,9 +470,6 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 		while (ci->noids > 0 &&
 		       ci->oids[ci->noids - 1] == ci->seq + cnt + ci->noids - 1)
 			ci->noids--;
-		/* WARNING: don't reset ci->oids to NULL when setting
-		 * ci->tpe to cand_dense below: BATprojectchain will
-		 * fail */
 		if (ci->noids > 0) {
 			if (b == NULL)
 				break;
@@ -486,6 +482,7 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 				ci->seq = b->hseqbase;
 				ci->noids = 0;
 				ci->tpe = cand_dense;
+				ci->oids = NULL;
 				break;
 			}
 			assert(b->hseqbase > ci->seq || p == 0);
@@ -517,6 +514,7 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 				break;
 		}
 		ci->tpe = cand_dense;
+		ci->oids = NULL;
 		/* fall through */
 	case cand_dense:
 		if (b != NULL) {
