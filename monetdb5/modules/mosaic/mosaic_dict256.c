@@ -73,23 +73,18 @@ typedef struct _CappedParameters_t {
 #define PresentInTempDictFuncDef(TPE) \
 static inline \
 bool presentInTempDict##TPE(GlobalDictionaryInfo* info, TPE val) {\
-	TPE* dict = (TPE*) Tloc(info->temp_dict, 0);\
-	BUN dict_count = BATcount(info->temp_dict);\
+	TPE* dict = (TPE*) Tloc(info->dict, 0);\
+	BUN dict_count = BATcount(info->dict);\
 	BUN key = find_value_##TPE(dict, dict_count, val);\
 	return key < dict_count && ((dict[key] == val) || (IS_NIL(TPE, dict[key]) && IS_NIL(TPE, dict[key])) )  ;\
 }
 
 #define CONDITIONAL_INSERT_dict256(INFO, VAL, TPE) presentInTempDict##TPE((INFO), (VAL))
 
-prepare_estimate_DEF(dict256, CAPPEDDICT)
-
 #define DictionaryClass(TPE) \
 find_value_DEF(TPE)\
 PresentInTempDictFuncDef(TPE)\
-insert_into_dict_DEF(TPE)\
-extend_delta_DEF(dict256, TPE)\
 merge_delta_Into_dictionary_DEF(TPE)\
-compress_dictionary_DEF(TPE)\
 decompress_dictionary_DEF(TPE)
 
 DictionaryClass(bte)
@@ -101,9 +96,6 @@ DictionaryClass(dbl)
 #ifdef HAVE_HGE
 DictionaryClass(hge)
 #endif
-
-#define GetTypeWidth(INFO)			((INFO)->dict->twidth)
-#define GetSizeInBytes(INFO)		(BATcount((INFO)->dict) * GetTypeWidth(INFO))
 
 #define MOSadvance_DEF(TPE)\
 MOSadvance_SIGNATURE(dict256, TPE) advance_dictionary(dict256, TPE)
@@ -156,64 +148,34 @@ MOSlayout_dict256(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *bout
 		return;
 }
 
-#define MOSestimate_DEF(TPE) \
-MOSestimate_SIGNATURE(dict256, TPE)\
-{\
-	(void) previous;\
-	GlobalDictionaryInfo* info = task->dict256_info;\
-	if (task->start < *(current)->dict256_limit) {\
-		/*Dictionary estimation is expensive. So only allow it on disjoint regions.*/\
-		current->is_applicable = false;\
-		return MAL_SUCCEED;\
-	}\
-	BUN limit = (BUN) (task->stop - task->start > MOSAICMAXCNT? MOSAICMAXCNT: task->stop - task->start);\
-\
-	if (*current->max_compression_length != 0 &&  *current->max_compression_length < limit) {\
-		limit = *current->max_compression_length;\
-	}\
-\
-	*(current)->dict256_limit = task->start + limit;\
-\
-	TPE* val = getSrc(TPE, task);\
-	BUN delta_count;\
-	BUN nr_compressed;\
-\
-	BUN old_keys_size		= (current->nr_dict256_encoded_elements * GET_BITS(info)) / CHAR_BIT;\
-	BUN old_dict_size		= GET_COUNT(info) * sizeof(TPE);\
-	BUN old_headers_size	= current->nr_dict256_encoded_blocks * 2 * sizeof(MOSBlockHeaderTpe(dict256, TPE));\
-	BUN old_bytes			= old_keys_size + old_dict_size + old_headers_size;\
-\
-	if (extend_delta_##TPE(&nr_compressed, &delta_count, limit, info, val)) {\
-		throw(MAL, "mosaic.dict256", MAL_MALLOC_FAIL);\
-	}\
-\
-	current->is_applicable = nr_compressed > 0;\
-	current->nr_dict256_encoded_elements += nr_compressed;\
-	current->nr_dict256_encoded_blocks++;\
-\
-	BUN new_keys_size		= (current->nr_dict256_encoded_elements * GET_BITS_EXTENDED(info)) / CHAR_BIT;\
-	BUN new_dict_size		= (delta_count + GET_COUNT(info)) * sizeof(TPE);\
-	BUN new_headers_size	= current->nr_dict256_encoded_blocks * 2 * sizeof(MOSBlockHeaderTpe(dict256, TPE));\
-	BUN new_bytes			= new_keys_size + new_dict_size + new_headers_size;\
-\
-	current->compression_strategy.tag = MOSAIC_DICT256;\
-	current->compression_strategy.cnt = (unsigned int) nr_compressed;\
-\
-	current->uncompressed_size	+= (BUN) ( nr_compressed * sizeof(TPE));\
-	current->compressed_size		+= (BUN) (wordaligned( MosaicBlkSize, BitVectorChunk) + new_bytes - old_bytes);\
-\
-	return MAL_SUCCEED;\
-}
-
-MOSestimate_DEF(bte)
-MOSestimate_DEF(sht)
-MOSestimate_DEF(int)
-MOSestimate_DEF(lng)
-MOSestimate_DEF(flt)
-MOSestimate_DEF(dbl)
+// TODO: factor this out and create compile time safety guards for NAME and TPE macro.
+#define NAME dict256
+#define MOS_CUT_OFF_SIZE CAPPEDDICT
+#include "mosaic_dictionary_prepare_context_impl.h"
+#define TPE bte
+#include "mosaic_dictionary_impl.h"
+#undef TPE
+#define TPE sht
+#include "mosaic_dictionary_impl.h"
+#undef TPE
+#define TPE int
+#include "mosaic_dictionary_impl.h"
+#undef TPE
+#define TPE lng
+#include "mosaic_dictionary_impl.h"
+#undef TPE
+#define TPE flt
+#include "mosaic_dictionary_impl.h"
+#undef TPE
+#define TPE dbl
+#include "mosaic_dictionary_impl.h"
+#undef TPE
 #ifdef HAVE_HGE
-MOSestimate_DEF(hge)
+#define TPE hge
+#include "mosaic_dictionary_impl.h"
+#undef TPE
 #endif
+#undef NAME
 
 #define MOSpostEstimate_DEF(TPE)\
 MOSpostEstimate_SIGNATURE(dict256, TPE)\
@@ -229,67 +191,6 @@ MOSpostEstimate_DEF(flt)
 MOSpostEstimate_DEF(dbl)
 #ifdef HAVE_HGE
 MOSpostEstimate_DEF(hge)
-#endif
-
-static str
-_finalizeDictionary(BAT* b, GlobalDictionaryInfo* info, BUN* pos_dict, BUN* length_dict, bte* bits_dict) {
-	Heap* vmh = b->tvmosaic;
-	BUN size_in_bytes = vmh->free + GetSizeInBytes(info);
-	if (HEAPextend(vmh, size_in_bytes, true) != GDK_SUCCEED) {
-		BBPreclaim(info->dict);
-		BBPreclaim(info->temp_dict);
-		BBPreclaim(info->temp_bitvector);
-		throw(MAL, "mosaic.mergeDictionary_dict256.HEAPextend", GDK_EXCEPTION);
-	}
-	char* dst = vmh->base + vmh->free;
-	char* src = info->dict->theap.base;
-	/* TODO: consider optimizing this by swapping heaps instead of copying them.*/
-	memcpy(dst, src, GetSizeInBytes(info));
-
-	assert(vmh->free % GetTypeWidth(info) == 0);
-	*pos_dict = (vmh->free / GetTypeWidth(info));
-
-	vmh->free += (size_t) GetSizeInBytes(info);
-	vmh->dirty = true;
-
-	*length_dict = GET_COUNT(info);
-	calculateBits(*bits_dict, *length_dict);
-
-	BBPreclaim(info->dict);
-	BBPreclaim(info->temp_dict);
-	BBPreclaim(info->temp_bitvector);
-
-	GDKfree(info);
-
-	return MAL_SUCCEED;
-}
-
-str
-finalizeDictionary_dict256(MOStask* task) {
-	return _finalizeDictionary(
-		task->bsrc,
-		task->dict256_info,
-		&task->hdr->pos_dict256,
-		&task->hdr->length_dict256,
-		&GET_FINAL_BITS(task, dict256));
-}
-
-// rather expensive simple value non-compressed store
-#define MOScompress_DEF(TPE)\
-MOScompress_SIGNATURE(dict256, TPE)\
-{\
-	MOSsetTag(task->blk, MOSAIC_DICT256);\
-	DICTcompress(dict256, TPE);\
-}
-
-MOScompress_DEF(bte)
-MOScompress_DEF(sht)
-MOScompress_DEF(int)
-MOScompress_DEF(lng)
-MOScompress_DEF(flt)
-MOScompress_DEF(dbl)
-#ifdef HAVE_HGE
-MOScompress_DEF(hge)
 #endif
 
 #define MOSdecompress_DEF(TPE) \

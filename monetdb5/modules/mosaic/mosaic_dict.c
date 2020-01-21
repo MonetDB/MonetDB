@@ -62,14 +62,9 @@ MOSadvance_DEF(hge)
 
 #define CONDITIONAL_INSERT_dict(INFO, VAL, TPE)	(true)
 
-prepare_estimate_DEF(dict, 0)
-
 #define DictionaryClass(TPE) \
 find_value_DEF(TPE)\
-insert_into_dict_DEF(TPE)\
-extend_delta_DEF(dict, TPE)\
 merge_delta_Into_dictionary_DEF(TPE)\
-compress_dictionary_DEF(TPE)\
 decompress_dictionary_DEF(TPE)
 
 DictionaryClass(bte)
@@ -81,8 +76,6 @@ DictionaryClass(dbl)
 #ifdef HAVE_HGE
 DictionaryClass(hge)
 #endif
-
-#define GetSizeInBytes(INFO) (BATcount((INFO)->dict) * (INFO)->dict->twidth)
 
 void
 MOSlayout_dict_hdr(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
@@ -122,64 +115,32 @@ MOSlayout_dict(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput
 		return;
 }
 
-#define MOSestimate_DEF(TPE) \
-MOSestimate_SIGNATURE(dict, TPE)\
-{\
-	(void) previous;\
-	GlobalDictionaryInfo* info = task->dict_info;\
-	if (task->start < *(current)->dict_limit) {\
-		/*Dictionary estimation is expensive. So only allow it on disjoint regions.*/\
-		current->is_applicable = false;\
-		return MAL_SUCCEED;\
-	}\
-	BUN limit = (BUN) (task->stop - task->start > MOSAICMAXCNT? MOSAICMAXCNT: task->stop - task->start);\
-\
-	if (*current->max_compression_length != 0 &&  *current->max_compression_length < limit) {\
-		limit = *current->max_compression_length;\
-	}\
-\
-	*(current)->dict_limit = task->start + limit;\
-\
-	TPE* val = getSrc(TPE, task);\
-	BUN delta_count;\
-	BUN nr_compressed;\
-\
-	BUN old_keys_size	= (current->nr_dict_encoded_elements * GET_BITS(info)) / CHAR_BIT;\
-	BUN old_dict_size	= GET_COUNT(info) * sizeof(TPE);\
-	BUN old_headers_size	= current->nr_dict_encoded_blocks * 2 * sizeof(MOSBlockHeaderTpe(dict, TPE));\
-	BUN old_bytes		= old_keys_size + old_dict_size + old_headers_size;\
-\
-	if (extend_delta_##TPE(&nr_compressed, &delta_count, limit, info, val)) {\
-		throw(MAL, "mosaic.dict", MAL_MALLOC_FAIL);\
-	}\
-\
-	current->is_applicable = true;\
-	current->nr_dict_encoded_elements += nr_compressed;\
-	current->nr_dict_encoded_blocks++;\
-\
-	BUN new_keys_size	= (current -> nr_dict_encoded_elements * GET_BITS_EXTENDED(info)) / CHAR_BIT;\
-	BUN new_dict_size	= (delta_count + GET_COUNT(info)) * sizeof(TPE);\
-	BUN new_headers_size	= current->nr_dict_encoded_blocks * 2 * sizeof(MOSBlockHeaderTpe(dict, TPE));\
-	BUN new_bytes		= new_keys_size + new_dict_size + new_headers_size;\
-\
-	current->compression_strategy.tag = MOSAIC_DICT;\
-	current->compression_strategy.cnt = (unsigned int) nr_compressed;\
-\
-	current->uncompressed_size	+= (BUN) ( nr_compressed * sizeof(TPE));\
-	current->compressed_size	+= (BUN) (wordaligned( MosaicBlkSize, BitVector) + new_bytes - old_bytes);\
-\
-	return MAL_SUCCEED;\
-}
-
-MOSestimate_DEF(bte)
-MOSestimate_DEF(sht)
-MOSestimate_DEF(int)
-MOSestimate_DEF(lng)
-MOSestimate_DEF(flt)
-MOSestimate_DEF(dbl)
+#define NAME dict
+#include "mosaic_dictionary_prepare_context_impl.h"
+#define TPE bte
+#include "mosaic_dictionary_impl.h"
+#undef TPE
+#define TPE sht
+#include "mosaic_dictionary_impl.h"
+#undef TPE
+#define TPE int
+#include "mosaic_dictionary_impl.h"
+#undef TPE
+#define TPE lng
+#include "mosaic_dictionary_impl.h"
+#undef TPE
+#define TPE flt
+#include "mosaic_dictionary_impl.h"
+#undef TPE
+#define TPE dbl
+#include "mosaic_dictionary_impl.h"
+#undef TPE
 #ifdef HAVE_HGE
-MOSestimate_DEF(hge)
+#define TPE hge
+#include "mosaic_dictionary_impl.h"
+#undef TPE
 #endif
+#undef NAME
 
 #define MOSpostEstimate_DEF(TPE)\
 MOSpostEstimate_SIGNATURE(dict, TPE)\
@@ -195,60 +156,6 @@ MOSpostEstimate_DEF(flt)
 MOSpostEstimate_DEF(dbl)
 #ifdef HAVE_HGE
 MOSpostEstimate_DEF(hge)
-#endif
-
-static str
-_finalizeDictionary(BAT* b, GlobalDictionaryInfo* info, BUN* pos_dict, BUN* length_dict, bte* bits_dict) {
-	Heap* vmh = b->tvmosaic;
-	BUN size_in_bytes = vmh->free + GetSizeInBytes(info);
-	if (HEAPextend(vmh, size_in_bytes, true) != GDK_SUCCEED) {
-		throw(MAL, "mosaic.mergeDictionary_dict.HEAPextend", GDK_EXCEPTION);
-	}
-	char* dst = vmh->base + vmh->free;
-	char* src = info->dict->theap.base;
-	/* TODO: consider optimizing this by swapping heaps instead of copying them.*/
-	memcpy(dst, src, size_in_bytes);
-
-	vmh->free += (size_t) GetSizeInBytes(info);
-	vmh->dirty = true;
-
-	*pos_dict = 0;
-	*length_dict = GET_COUNT(info);
-	calculateBits(*bits_dict, *length_dict);
-
-	BBPreclaim(info->dict);
-
-	GDKfree(info);
-
-	return MAL_SUCCEED;
-}
-
-str
-finalizeDictionary_dict(MOStask* task) {
-	return _finalizeDictionary(
-		task->bsrc,
-		task->dict_info,
-		&task->hdr->pos_dict,
-		&task->hdr->length_dict,
-		&task->hdr->bits_dict);
-}
-
-// rather expensive simple value non-compressed store
-#define MOScompress_DEF(TPE)\
-MOScompress_SIGNATURE(dict, TPE)\
-{\
-	MOSsetTag(task->blk, MOSAIC_DICT);\
-	DICTcompress(dict, TPE);\
-}
-
-MOScompress_DEF(bte)
-MOScompress_DEF(sht)
-MOScompress_DEF(int)
-MOScompress_DEF(lng)
-MOScompress_DEF(flt)
-MOScompress_DEF(dbl)
-#ifdef HAVE_HGE
-MOScompress_DEF(hge)
 #endif
 
 #define MOSdecompress_DEF(TPE) \

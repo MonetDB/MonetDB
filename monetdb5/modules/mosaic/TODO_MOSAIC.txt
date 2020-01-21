@@ -1,13 +1,10 @@
 ####technical depth####
-Improve the dictionary creation algorithms get rid of bubble sort
-MERGE consecutive dictionary estimates.
-Analysis: bug not all compression pairs are constructed
 Create a custom preprocessor to expand selected macro's and respecting new lines.
 benchmark using TPC-H
 Fix/check/test MOSlayout.
 Add negative values to tests
 Add test for huge
-create mix compression test cases.
+create mix compression test cases particularly for dict/dict256 combo.
 Introduce a custom pre-processor to expand macro's efficiently for debugging purposes.
 Introduce mosaic into gdk: create hooks in scanselect functions/macro's, joins and projections.
 make mitosis work with mosaic and see how this relates to the previous landmark stuff.
@@ -16,6 +13,7 @@ Apply compressed operations more directly: on constant value in runlength compre
 Apply compressed operations more directly: on keys in dictionary compression
 Apply compressed operations more directly: on prefix|suffix in prefix compression
 Apply compressed operations more directly: on delta's and frame in frame compression
+MERGE consecutive estimates where possible for instance for dictionary.
 consider packing mosaic_block_header's more efficiently.
 Add asserts on type degeneration for bit => bte daytime => lng timestmap => lng date => int.
 DO nil checking more efficient similar to gdk_select

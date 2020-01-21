@@ -16,7 +16,17 @@
 #include "mosaic_projection.h"
 #include "mosaic_join.h"
 
-#define MOSBlockHeaderTpe(NAME, TPE) MOSBlockHeader_##NAME##_##TPE
+#define ID(a)				a
+#define glue2(a, b)			a ## b
+#define glue(a, b, c)		a ## b ## c
+#define glue4(a, b, c, d)	a ## b ## c ## d
+#define CONCAT2(a, b)		glue2(a, b)
+#define CONCAT3(a, b, c)	glue(a, b, c)
+#define CONCAT4(a, b, c, d)	glue4(a, b, c, d)
+#define _STRINGIFY(ARG)		#ARG
+#define STRINGIFY(ARG)		_STRINGIFY(ARG)
+
+#define MOSBlockHeaderTpe(NAME, TPE) CONCAT4(MOSBlockHeader_, NAME, _, TPE)
 #define ALIGNMENT_HELPER_TPE(NAME, TPE) struct ALIGNMENT_HELPER_MOSBlockHeader_##NAME##_##TPE
 
 #define ALIGNMENT_HELPER__DEF(NAME, TPE) \
@@ -27,9 +37,13 @@ ALIGNMENT_HELPER_TPE(NAME, TPE)\
 };
 
 #define MOSadvance_SIGNATURE(NAME, TPE) void MOSadvance_##NAME##_##TPE(MOStask* task)
-#define MOSestimate_SIGNATURE(NAME, TPE) str MOSestimate_##NAME##_##TPE(MOStask* task, MosaicEstimation* current, const MosaicEstimation* previous)
+#define MOSprepareDictionaryContext_NAME(NAME) MOSprepareDictionaryContext_##NAME
+#define MOSprepareDictionaryContext_SIGNATURE(NAME) str MOSprepareDictionaryContext_NAME(NAME)(MOStask* task)
+#define MOSestimate_SIGNATURE(NAME, TPE) str CONCAT4(MOSestimate_, NAME, _, TPE)(MOStask* task, MosaicEstimation* current, const MosaicEstimation* previous)
 #define MOSpostEstimate_SIGNATURE(NAME, TPE) void MOSpostEstimate_##NAME##_##TPE(MOStask* task)
-#define MOScompress_SIGNATURE(NAME, TPE) void MOScompress_##NAME##_##TPE(MOStask* task, MosaicBlkRec* estimate)
+#define MOSfinalizeDictionary_NAME(NAME, TPE) MOSfinalizeDictionary_##NAME##_##TPE
+#define MOSfinalizeDictionary_SIGNATURE(NAME, TPE) str MOSfinalizeDictionary_NAME(NAME, TPE)(MOStask* task)
+#define MOScompress_SIGNATURE(NAME, TPE) void CONCAT4(MOScompress_, NAME, _, TPE)(MOStask* task, MosaicBlkRec* estimate)
 #define MOSdecompress_SIGNATURE(NAME, TPE) void MOSdecompress_##NAME##_##TPE(MOStask* task)
 #define MOSBlockHeader_DEF(NAME, TPE) MosaicBlkHeader_DEF_##NAME(TPE)
 
@@ -64,6 +78,29 @@ ALGEBRA_INTERFACE(NAME, lng);
 ALGEBRA_INTERFACES_INTEGERS_ONLY(NAME)\
 ALGEBRA_INTERFACE(NAME, flt);\
 ALGEBRA_INTERFACE(NAME, dbl);
+
+#ifdef HAVE_HGE
+#define ALGEBRA_INTERFACES_ALL_TYPES_WITH_DICTIONARY(NAME) \
+ALGEBRA_INTERFACES_ALL_TYPES(NAME);\
+MOSprepareDictionaryContext_SIGNATURE(NAME);\
+MOSfinalizeDictionary_SIGNATURE(NAME, bte);\
+MOSfinalizeDictionary_SIGNATURE(NAME, sht);\
+MOSfinalizeDictionary_SIGNATURE(NAME, int);\
+MOSfinalizeDictionary_SIGNATURE(NAME, lng);\
+MOSfinalizeDictionary_SIGNATURE(NAME, hge);\
+MOSfinalizeDictionary_SIGNATURE(NAME, flt);\
+MOSfinalizeDictionary_SIGNATURE(NAME, dbl);
+#else
+#define ALGEBRA_INTERFACES_ALL_TYPES_WITH_DICTIONARY(NAME) \
+ALGEBRA_INTERFACES_ALL_TYPES(NAME);\
+MOSprepareDictionaryContext_SIGNATURE(NAME);\
+MOSfinalizeDictionary_SIGNATURE(NAME, bte);\
+MOSfinalizeDictionary_SIGNATURE(NAME, sht);\
+MOSfinalizeDictionary_SIGNATURE(NAME, int);\
+MOSfinalizeDictionary_SIGNATURE(NAME, lng);\
+MOSfinalizeDictionary_SIGNATURE(NAME, flt);\
+MOSfinalizeDictionary_SIGNATURE(NAME, dbl);
+#endif
 
 // This is just an ugly work around for Microsoft Visual Studio to get the expansion of __VA_ARGS__ right.
 #define EXPAND(X) X

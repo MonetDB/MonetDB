@@ -31,36 +31,46 @@ stdout of test 'analysis` in directory 'sql/test/mosaic` itself:
 % .%4,	.%4 # table_name
 % technique,	factor # name
 % clob,	double # type
-% 10,	24 # length
+% 18,	24 # length
 [ "linear ",	188679.25	]
 [ "delta ",	15.998	]
 [ "frame ",	2.132	]
 [ "prefix ",	2.132	]
+[ "raw dict256 ",	0.999	]
+[ "dict frame ",	0.572	]
+[ "dict prefix ",	0.572	]
 [ "dict ",	0.571	]
+[ "dict256 dict ",	0.571	]
+[ "raw dict ",	0.571	]
 [ "runlength ",	0.333	]
+[ "runlength dict256 ",	0.333	]
 #insert into tmp4 select 10000000 from tmp4;
 [ 10000000	]
 #select technique, factor from mosaic.analysis('sys', 'tmp4', 'i') order by factor desc, technique;
 % .%4,	.%4 # table_name
 % technique,	factor # name
 % clob,	double # type
-% 17,	24 # length
+% 18,	24 # length
 [ "runlength linear ",	357142.843	]
 [ "linear ",	350877.187	]
 [ "runlength delta ",	19.072	]
 [ "delta frame ",	17.401	]
 [ "delta prefix ",	17.401	]
-[ "dict delta ",	17.401	]
 [ "dict256 delta ",	17.401	]
 [ "delta ",	15.999	]
 [ "frame ",	2.285	]
 [ "prefix ",	2.285	]
 [ "raw runlength ",	1.999	]
-[ "raw dict ",	1.184	]
-[ "raw dict256 ",	1.184	]
+[ "raw dict256 ",	1.56	]
+[ "dict delta ",	1.485	]
+[ "runlength dict ",	0.885	]
+[ "dict frame ",	0.882	]
+[ "dict prefix ",	0.882	]
 [ "dict256 dict ",	0.881	]
 [ "dict ",	0.799	]
+[ "raw dict ",	0.775	]
 [ "runlength ",	0.666	]
+[ "runlength dict256 ",	0.609	]
 #select technique, factor from mosaic.analysis('sys', 'tmp4', 'i', 'linear, runlength') order by factor desc, technique;
 % .%5,	.%5 # table_name
 % technique,	factor # name
@@ -75,23 +85,27 @@ stdout of test 'analysis` in directory 'sql/test/mosaic` itself:
 % .%4,	.%4 # table_name
 % technique,	factor # name
 % clob,	double # type
-% 17,	24 # length
+% 18,	24 # length
 [ "runlength linear ",	357142.843	]
 [ "linear ",	350877.187	]
 [ "runlength delta ",	19.072	]
 [ "delta frame ",	17.401	]
 [ "delta prefix ",	17.401	]
-[ "dict delta ",	17.401	]
 [ "dict256 delta ",	17.401	]
 [ "delta ",	15.999	]
 [ "frame ",	2.285	]
 [ "prefix ",	2.285	]
 [ "raw runlength ",	1.999	]
-[ "raw dict ",	1.184	]
-[ "raw dict256 ",	1.184	]
+[ "raw dict256 ",	1.56	]
+[ "dict delta ",	1.485	]
+[ "runlength dict ",	0.885	]
+[ "dict frame ",	0.882	]
+[ "dict prefix ",	0.882	]
 [ "dict256 dict ",	0.881	]
 [ "dict ",	0.799	]
+[ "raw dict ",	0.775	]
 [ "runlength ",	0.666	]
+[ "runlength dict256 ",	0.609	]
 #select technique, factor from mosaic.analysis('sys', 'tmp4', 'i', 'linear, runlength') order by factor desc, technique;
 % .%5,	.%5 # table_name
 % technique,	factor # name

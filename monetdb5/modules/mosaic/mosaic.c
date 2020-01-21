@@ -264,17 +264,17 @@ static inline BUN get_normalized_compression(MosaicEstimation* current, const Mo
 
 
 static str
-MOSprepareEstimate(MOStask* task) {
+MOSprepareDictionaryContext(MOStask* task) {
 
 	str error;
 	if (METHOD_IS_SET(task->mask, MOSAIC_DICT256)){
-		if ( (error = MOSprepareEstimate_dict256(task))) {
+		if ( (error = MOSprepareDictionaryContext_dict256(task))) {
 			return error;
 		}
 	}
 
 	if (METHOD_IS_SET(task->mask, MOSAIC_DICT)){
-		if ( (error = MOSprepareEstimate_dict(task))) {
+		if ( (error = MOSprepareDictionaryContext_dict(task))) {
 			return error;
 		}
 	}
@@ -450,23 +450,44 @@ str MOSestimate(MOStask* task, BAT* estimates, size_t* compressed_size) {
 	throw(MAL, "mosaic.estimate", TYPE_NOT_SUPPORTED);
 }
 
+#define finalize_dictionary(TPE)\
+{\
+	str error;\
+	if (METHOD_IS_SET(task->mask, MOSAIC_DICT)) {\
+		if ((error = MOSfinalizeDictionary_NAME(dict, TPE)(task))) {\
+			return error;\
+		}\
+	}\
+	if (METHOD_IS_SET(task->mask, MOSAIC_DICT256)) {\
+		if ((error = MOSfinalizeDictionary_NAME(dict256, TPE)(task))) {\
+			return error;\
+		}\
+	}\
+\
+	return MAL_SUCCEED;\
+}
+
 static str
 MOSfinalizeDictionary(MOStask* task) {
 
-	str error;
+	task->bsrc->tvmosaic->free = 0;
 
-	if (METHOD_IS_SET(task->mask, MOSAIC_DICT)) {
-		if ((error = finalizeDictionary_dict(task))) {
-			return error;
-		}
-	}
-	if (METHOD_IS_SET(task->mask, MOSAIC_DICT256)) {
-		if ((error = finalizeDictionary_dict256(task))) {
-			return error;
-		}
+	switch(ATOMbasetype(task->type)) {
+	case TYPE_bte: finalize_dictionary(bte);
+	case TYPE_sht: finalize_dictionary(sht);
+	case TYPE_int: finalize_dictionary(int);
+	case TYPE_lng: finalize_dictionary(lng);
+	case TYPE_flt: finalize_dictionary(flt);
+	case TYPE_dbl: finalize_dictionary(dbl);
+#ifdef HAVE_HGE
+	case TYPE_hge: finalize_dictionary(hge);
+#endif
+	default:
+		// Unknown block type. Should not happen.
+		assert(0);
 	}
 
-	return MAL_SUCCEED;
+	throw(MAL, "mosaic.estimate", TYPE_NOT_SUPPORTED);
 }
 
 
@@ -579,7 +600,7 @@ MOScompressInternal(BAT* bsrc, const char* compressions)
 	}
 
 	// Zero pass: estimation preparation phase
-	if ((msg = MOSprepareEstimate(&task))) {
+	if ((msg = MOSprepareDictionaryContext(&task))) {
 		MOSdestroy(bsrc);
 		goto finalize;
 	}
@@ -1531,7 +1552,7 @@ MOSAnalysis(BAT *b, BAT *btech, BAT *boutput, BAT *bratio, BAT *bcompress, BAT *
 		msg = MOSdecompressInternal( &decompressed, b);
 		pat[i].clk2 = GDKms()- pat[i].clk2;
 		MOSdestroy(decompressed);
-		BBPunfix(decompressed->batCacheid);
+		BBPreclaim(decompressed);
 
 		// get rid of mosaic heap
 		MOSdestroy(b);

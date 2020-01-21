@@ -176,8 +176,8 @@ end user.s10_0;
 [ 9,	false,	0.317,	2014-08-23 11:34:54.000000	]
 [ 10,	false,	0.317,	2014-08-23 11:34:54.000000	]
 #select cast(sum(i) as bigint) from tmp3;
-% sys.%2 # table_name
-% %2 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 3 # length
 [ 270	]
@@ -329,8 +329,8 @@ end user.s22_0;
 [ 9,	false,	0.317,	2014-08-23 11:34:54.000000	]
 [ 10,	false,	0.317,	2014-08-23 11:34:54.000000	]
 #select cast(sum(i) as bigint) from tmp3;
-% sys.%2 # table_name
-% %2 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 3 # length
 [ 270	]
@@ -486,8 +486,8 @@ end user.s36_0;
 [ 9,	false,	0.317,	2014-08-23 11:34:54.000000	]
 [ 10,	false,	0.317,	2014-08-23 11:34:54.000000	]
 #select cast(sum(i) as bigint) from tmp3;
-% sys.%2 # table_name
-% %2 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 3 # length
 [ 270	]

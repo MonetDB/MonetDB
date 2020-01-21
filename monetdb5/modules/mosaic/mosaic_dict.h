@@ -26,12 +26,10 @@ bool MOStypes_dict(BAT* b);
 mal_export void MOScreatevar(MOStask* task);
 mal_export void MOSlayout_dict(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
 mal_export void MOSlayout_dict_hdr(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
-mal_export str MOSprepareEstimate_dict(MOStask* task);
-mal_export str finalizeDictionary_dict(MOStask* task);
 
 #define MosaicBlkHeader_DEF_dict(TPE) MosaicBlkHeader_DEF_dictionary(dict, TPE)
 
-ALGEBRA_INTERFACES_ALL_TYPES(dict);
+ALGEBRA_INTERFACES_ALL_TYPES_WITH_DICTIONARY(dict);
 
 #define DO_OPERATION_ON_dict(OPERATION, TPE, ...) DO_OPERATION_ON_ALL_TYPES(OPERATION, dict, TPE, __VA_ARGS__)
 

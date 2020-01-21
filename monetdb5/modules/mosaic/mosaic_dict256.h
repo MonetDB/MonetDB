@@ -26,12 +26,10 @@ bool MOStypes_dict256(BAT* b);
 mal_export str MOScreateCappedInfo(MOStask* task);
 mal_export void MOSlayout_dict256(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
 mal_export void MOSlayout_dict256_hdr(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
-mal_export str MOSprepareEstimate_dict256(MOStask* task);
-mal_export str finalizeDictionary_dict256(MOStask* task);
 
 #define MosaicBlkHeader_DEF_dict256(TPE) MosaicBlkHeader_DEF_dictionary(dict256, TPE)
 
-ALGEBRA_INTERFACES_ALL_TYPES(dict256);
+ALGEBRA_INTERFACES_ALL_TYPES_WITH_DICTIONARY(dict256);
 
 #define DO_OPERATION_ON_dict256(OPERATION, TPE, ...) DO_OPERATION_ON_ALL_TYPES(OPERATION, dict256, TPE, __VA_ARGS__)
 

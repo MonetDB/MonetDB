@@ -41,8 +41,8 @@ stdout of test 'xqueries` in directory 'sql/test/mosaic` itself:
 [ 86	]
 #alter table tmp3 set read only;
 #select cast(sum(i) as bigint) from tmp3;
-% sys.%2 # table_name
-% %2 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 3 # length
 [ 270	]
@@ -151,8 +151,8 @@ end user.s16_0;
 #alter table tmp3 alter column b set storage 'raw';
 #alter table tmp3 alter column f set storage 'raw';
 #select cast(sum(i) as bigint) from tmp3;
-% sys.%2 # table_name
-% %2 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 3 # length
 [ 270	]

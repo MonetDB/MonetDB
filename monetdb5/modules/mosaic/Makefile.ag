@@ -29,7 +29,7 @@ lib_mosaic = {
 		mosaic_runlength.c mosaic_runlength.h \
 		mosaic_dict.c mosaic_dict.h \
 		mosaic_dict256.c mosaic_dict256.h \
-		mosaic_dictionary.h \
+		mosaic_dictionary.h mosaic_dictionary_impl.h mosaic_dictionary_prepare_context_impl.h \
 		mosaic_delta.c mosaic_delta.h \
 		mosaic_linear.c mosaic_linear.h \
 		mosaic_frame.c mosaic_frame.h \
