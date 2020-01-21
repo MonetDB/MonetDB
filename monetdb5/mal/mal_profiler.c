@@ -288,7 +288,7 @@ renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int
 		for(i= pci->retc; i < pci->argc; i++){
 			for( j = pci->pc-1; j > 0; j--){
 				q= getInstrPtr(mb,j);
-				for( k=0; k < q->retc; k++)
+				for( k=0; q && k < q->retc; k++)
 					if( getArg(q,k) == getArg(pci,i))
 						break;
 				if( k < q->retc){
