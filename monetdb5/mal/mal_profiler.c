@@ -236,10 +236,7 @@ renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int
 #endif
 
 	if( mb){
-		char prereq[BUFSIZ];
-		size_t len;
-		int i,j,k,comma;
-		InstrPtr q;
+		int j;
 		char *truncated;
 
 		/* generate actual call statement */
@@ -281,30 +278,7 @@ renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int
 
 
 		// collect the prerequisite pre-requisite statements
-		prereq[0]='[';
-		prereq[1]=0;
-		len = 1;
-		comma=0;
-		for(i= pci->retc; i < pci->argc; i++){
-			for( j = pci->pc-1; j > 0; j--){
-				q= getInstrPtr(mb,j);
-				for( k=0; k < q->retc; k++)
-					if( getArg(q,k) == getArg(pci,i))
-						break;
-				if( k < q->retc){
-					snprintf(prereq + len, BUFSIZ-len,"%s%d", (comma?",":""), j);
-					len = strlen(prereq);
-					comma++;
-					break;
-				}
-			}
-		}
 #define MALARGUMENTDETAILS
-#ifdef MALARGUMENTDETAILS
-		logadd("\"prereq\":%s],"PRETTIFY, prereq);
-#else
-		logadd("\"prereq\":%s]"PRETTIFY, prereq);
-#endif
 
 /* EXAMPLE MAL statement argument decomposition
  * The eventparser may assume this layout for ease of parsing
