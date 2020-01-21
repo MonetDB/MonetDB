@@ -18,7 +18,6 @@ stdout of test 'regression_drop` in directory 'geom/sql/pg_regression` itself:
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 15:38:44 >  
 # 15:38:44 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-5054" "--port=33183"

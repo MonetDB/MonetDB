@@ -15,7 +15,6 @@ stdout of test 'not_invalidtable_crash.SF-2927174` in directory 'sql/test/BugTra
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:38367/
 # MonetDB/SQL module v2.34.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

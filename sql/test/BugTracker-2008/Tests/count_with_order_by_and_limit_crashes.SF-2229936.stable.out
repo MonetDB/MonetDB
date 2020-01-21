@@ -14,7 +14,6 @@ stdout of test 'count_with_order_by_and_limit_crashes.SF-2229936` in directory '
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:38181/
 # MonetDB/SQL module v2.26.0 loaded
 
-Ready.
 # falling back to direct mode 
 # falling back to direct mode 
 #function user.main():void;

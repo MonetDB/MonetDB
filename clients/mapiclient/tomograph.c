@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /* (c) M Kersten, S Manegold
@@ -17,7 +17,6 @@
 */
 
 #include "monetdb_config.h"
-#include "monet_options.h"
 #include "stream.h"
 #include "stream_socket.h"
 #include "mapi.h"
@@ -1440,7 +1439,7 @@ update(char *line, EventRecord *ev)
 	if (starttime == 0) {
 		if (ev->fcn == 0 ) {
 			if (debug)
-				fprintf(stderr, "Skip %s input %s\n",(ev->state>=0?statenames[ev->state]:"unknown"),ev->fcn);
+				fprintf(stderr, "Skip %s input\n",(ev->state>=0?statenames[ev->state]:"unknown"));
 			return;
 		}
 		if (debug)
@@ -1689,7 +1688,7 @@ main(int argc, char **argv)
 				break;
 			if( *optarg == '=')
 				optarg++;
-			cnt = sscanf(optarg,"%"PRId64"-%"PRId64, &startrange,&endrange);
+			cnt = sscanf(optarg,"%"SCNd64"-%"SCNd64, &startrange,&endrange);
 			if( cnt != 2)
 				usageTomograph();
 				

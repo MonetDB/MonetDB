@@ -14,7 +14,6 @@ stdout of test 'drop_constraint_bug` in directory 'sql/test/osm` itself:
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:35987/
 # MonetDB/SQL module v2.27.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;
@@ -42,8 +41,8 @@ Ready.
 #WHERE
 #        k = 'highway' AND
 #        v = 'secondary';
-% .L4 # table_name
-% L3 # name
+% .%3 # table_name
+% %3 # name
 % bigint # type
 % 1 # length
 [ 0	]

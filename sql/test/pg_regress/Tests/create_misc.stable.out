@@ -18,7 +18,6 @@ stdout of test 'create_misc` in directory 'sql/test/pg_regress` itself:
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 17:37:56 >  
 # 17:37:56 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-5040" "--port=37299"

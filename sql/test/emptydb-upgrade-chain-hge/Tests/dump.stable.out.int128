@@ -23,7 +23,6 @@ stdout of test 'dump` in directory 'sql/test/emptydb-upgrade-chain-hge` itself:
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 16:42:40 >  
 # 16:42:40 >  "/usr/bin/python2" "dump.SQL.py" "dump"

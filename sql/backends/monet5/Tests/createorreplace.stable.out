@@ -19,7 +19,6 @@ stdout of test 'createorreplace` in directory 'sql/backends/monet5` itself:
 # MonetDB/Python module loaded
 # MonetDB/R   module loaded
 
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql
@@ -68,8 +67,8 @@ Ready.
 #	return i * 2;
 #};
 #SELECT createorreplacefunc(i) FROM createorreplacetable;
-% sys.L2 # table_name
-% L2 # name
+% sys.%1 # table_name
+% %1 # name
 % int # type
 % 2 # length
 [ 4	]
@@ -83,8 +82,8 @@ Ready.
 #	return i * 3;
 #};
 #SELECT createorreplacefunc(i) FROM createorreplacetable;
-% sys.L2 # table_name
-% L2 # name
+% sys.%1 # table_name
+% %1 # name
 % int # type
 % 2 # length
 [ 6	]
@@ -99,8 +98,8 @@ Ready.
 #	return numpy.min(i);
 #};
 #SELECT createorreplaceaggregate(i) FROM createorreplacetable;
-% sys.L4 # table_name
-% L3 # name
+% sys.%1 # table_name
+% %1 # name
 % int # type
 % 1 # length
 [ 2	]
@@ -108,8 +107,8 @@ Ready.
 #	return numpy.max(i);
 #};
 #SELECT createorreplaceaggregate(i) FROM createorreplacetable;
-% sys.L4 # table_name
-% L3 # name
+% sys.%1 # table_name
+% %1 # name
 % int # type
 % 1 # length
 [ 6	]

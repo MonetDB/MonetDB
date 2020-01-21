@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /* (c) M Kersten */
@@ -205,13 +205,14 @@ keyvalueparser(char *txt, EventRecord *ev)
 		*c = 0;
 	} else val =c;
 
-	if( strstr(key,"clk")){
+	if( strstr(key,"ctime")){
 		ev->usec = atol(val);
 		return 0;
 	}
-	if( strstr(key,"ctime")){
+	if( strstr(key,"clk")){
 		time_t sec;
-		struct tm curr_time;
+		uint64_t microsec;
+		struct tm curr_time = (struct tm) {0};
 
 		c = strchr(val,'.');
 		if (c != NULL) {
@@ -220,16 +221,17 @@ keyvalueparser(char *txt, EventRecord *ev)
 		}
 
 		sec = atol(val);
+		microsec = sec % 1000000;
+		sec /= 1000000;
 #ifdef HAVE_LOCALTIME_R
 		(void)localtime_r(&sec, &curr_time);
 #else
 		curr_time = *localtime(&sec);
 #endif
 		ev->time = malloc(DATETIME_CHAR_LENGTH*sizeof(char));
-		snprintf(ev->time, DATETIME_CHAR_LENGTH, "%d/%02d/%02d %02d:%02d:%02d.%s",
+		snprintf(ev->time, DATETIME_CHAR_LENGTH, "%d/%02d/%02d %02d:%02d:%02d.%"PRIu64,
 				 curr_time.tm_year + 1900, curr_time.tm_mon, curr_time.tm_mday,
-				 curr_time.tm_hour, curr_time.tm_min, curr_time.tm_sec,
-				 c);
+			 curr_time.tm_hour, curr_time.tm_min, curr_time.tm_sec, microsec);
 		ev->clkticks = sec * 1000000;
 		if (c != NULL) {
 			int64_t usec;

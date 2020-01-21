@@ -1,5 +1,6 @@
 -- Check all standard sys (and tmp) tables on Referential Integrity
 -- All queries should return NO rows (so no invalid references found).
+
 SELECT * FROM sys.schemas WHERE authorization NOT IN (SELECT id FROM sys.auths);
 SELECT * FROM sys.schemas WHERE owner NOT IN (SELECT id FROM sys.auths);
 
@@ -32,7 +33,6 @@ SELECT * FROM sys.args WHERE type NOT IN (SELECT sqlname FROM sys.types);
 SELECT * FROM sys.types WHERE schema_id NOT IN (SELECT id FROM sys.schemas);
 SELECT * FROM sys.types WHERE schema_id NOT IN (SELECT id FROM sys.schemas) AND schema_id <> 0;
 
-SELECT * FROM sys.objects WHERE id NOT IN (SELECT id FROM sys.ids);
 SELECT * FROM sys.objects WHERE id NOT IN (SELECT id FROM sys.ids);
 SELECT * FROM sys.ids WHERE obj_type IN ('key', 'index') AND id NOT IN (SELECT id FROM sys.objects);
 
@@ -96,10 +96,12 @@ SELECT * FROM sys.querylog_history WHERE id NOT IN (SELECT id FROM sys.querylog_
 SELECT * FROM sys.querylog_history WHERE owner NOT IN (SELECT name FROM sys.users);
 SELECT * FROM sys.querylog_history WHERE pipe NOT IN (SELECT name FROM sys.optimizers);
 
-SELECT * FROM sys.queue WHERE tag > cast(0 as oid) AND tag NOT IN (SELECT cast(qtag as oid) FROM sys.queue);
-SELECT * FROM sys.queue WHERE "user" NOT IN (SELECT name FROM sys.users);
+SELECT * FROM sys.queue WHERE tag > cast(0 as oid) AND tag NOT IN (SELECT tag FROM sys.queue);
+SELECT * FROM sys.queue WHERE tag > cast(0 as oid) AND tag NOT IN (SELECT cast(tag as oid) FROM sys.queue);
+SELECT * FROM sys.queue WHERE tag NOT IN (SELECT cast(tag as oid) FROM sys.queue);
+SELECT * FROM sys.queue WHERE "username" NOT IN (SELECT name FROM sys.users);
 
-SELECT * FROM sys.sessions WHERE "user" NOT IN (SELECT name FROM sys.users);
+SELECT * FROM sys.sessions WHERE "username" NOT IN (SELECT name FROM sys.users);
 
 SELECT * FROM sys.statistics WHERE column_id NOT IN (SELECT id FROM sys._columns UNION ALL SELECT id FROM tmp._columns);
 SELECT * FROM sys.statistics WHERE type NOT IN (SELECT sqlname FROM sys.types);
@@ -137,4 +139,15 @@ SELECT * FROM sys.storagemodelinput WHERE type NOT IN (SELECT sqlname FROM sys.t
 SELECT schema, table, rowcount, columnsize, heapsize, hashsize, imprintsize, orderidxsize FROM sys.tablestoragemodel WHERE schema NOT IN (SELECT name FROM sys.schemas);
 SELECT schema, table, rowcount, columnsize, heapsize, hashsize, imprintsize, orderidxsize FROM sys.tablestoragemodel WHERE table NOT IN (SELECT name FROM sys._tables UNION ALL SELECT name FROM tmp._tables);
 SELECT schema, table, rowcount, columnsize, heapsize, hashsize, imprintsize, orderidxsize FROM sys.tablestoragemodel WHERE (schema, table) NOT IN (SELECT sch.name, tbl.name FROM sys.schemas AS sch JOIN sys.tables AS tbl ON sch.id = tbl.schema_id);
+
+-- new tables introduced in 2019
+SELECT * FROM sys.table_partitions WHERE "table_id" NOT IN (SELECT id FROM sys._tables);
+SELECT * FROM sys.table_partitions WHERE "column_id" IS NOT NULL AND "column_id" NOT IN (SELECT id FROM sys._columns);
+SELECT * FROM sys.table_partitions WHERE "type" NOT IN (5,6,9,10);	-- 5=By Column Range (1+4), 6=By Expression Range (2+4), 9=By Column Value (1+8), 10=By Expression Value (2+8), see sql_catalog.h #define PARTITION_*
+
+SELECT * FROM sys.range_partitions WHERE "table_id" NOT IN (SELECT id FROM sys._tables);
+SELECT * FROM sys.range_partitions WHERE "partition_id" NOT IN (SELECT id FROM sys.table_partitions);
+
+SELECT * FROM sys.value_partitions WHERE "table_id" NOT IN (SELECT id FROM sys._tables);
+SELECT * FROM sys.value_partitions WHERE "partition_id" NOT IN (SELECT id FROM sys.table_partitions);
 

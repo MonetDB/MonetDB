@@ -3,13 +3,13 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
-#include "monet_options.h"
 #include "mapi.h"
 #include "stream.h"
+#include "mstring.h"
 #include <unistd.h>
 #include <string.h>
 #include <ctype.h>
@@ -128,7 +128,17 @@ squoted_print(stream *f, const char *s, char quote)
 	if (mnstr_printf(f, "%c", quote) < 0)
 		return -1;
 	while (*s) {
+		size_t n = strcspn(s, "\\'\"\177"
+				   "\001\002\003\004\005\006\007"
+				   "\010\011\012\013\014\015\016\017"
+				   "\020\021\022\023\024\025\026\027"
+				   "\030\031\032\033\034\035\036\037");
+		if (n > 0 && mnstr_write(f, s, 1, n) < 0)
+			return -1;
+		s += n;
 		switch (*s) {
+		case '\0':
+			continue;
 		case '\\':
 			if (mnstr_write(f, "\\\\", 1, 2) < 0)
 				return -1;
@@ -148,13 +158,8 @@ squoted_print(stream *f, const char *s, char quote)
 				return -1;
 			break;
 		default:
-			if ((0 < *s && *s < 32) || *s == '\177') {
-				if (mnstr_printf(f, "\\%03o", (uint8_t) *s) < 0)
-					return -1;
-			} else {
-				if (mnstr_write(f, s, 1, 1) < 0)
-					return -1;
-			}
+			if (mnstr_printf(f, "\\%03o", (uint8_t) *s) < 0)
+				return -1;
 			break;
 		}
 		s++;
@@ -249,14 +254,14 @@ static char *actions[] = {
 static char *
 get_schema(Mapi mid)
 {
-	char *sname = NULL;
+	char *nsname = NULL, *sname = NULL;
 	MapiHdl hdl;
 
 	if ((hdl = mapi_query(mid, "SELECT current_schema")) == NULL ||
 	    mapi_error(mid))
 		goto bailout;
 	while ((mapi_fetch_row(hdl)) != 0) {
-		sname = mapi_fetch_field(hdl, 0);
+		nsname = mapi_fetch_field(hdl, 0);
 
 		if (mapi_error(mid))
 			goto bailout;
@@ -264,20 +269,26 @@ get_schema(Mapi mid)
 	if (mapi_error(mid))
 		goto bailout;
 	/* copy before closing the handle */
-	if (sname)
-		sname = strdup(sname);
+	if (nsname)
+		sname = strdup(nsname);
+	if (nsname && !sname)
+		goto bailout;
 	mapi_close_handle(hdl);
 	return sname;
 
-  bailout:
+bailout:
 	if (hdl) {
 		if (mapi_result_error(hdl))
 			mapi_explain_result(hdl, stderr);
-		else
+		else if (mapi_error(mid))
 			mapi_explain_query(hdl, stderr);
+		else
+			fprintf(stderr, "malloc failure1\n");
 		mapi_close_handle(hdl);
-	} else
+	} else if (mapi_error(mid))
 		mapi_explain(mid, stderr);
+	else
+		fprintf(stderr, "malloc failure\n");
 	return NULL;
 }
 
@@ -309,7 +320,7 @@ has_hugeint(Mapi mid)
 	answer = (int) ret;
 	return answer;
 
-  bailout:
+bailout:
 	if (hdl) {
 		if (mapi_result_error(hdl))
 			mapi_explain_result(hdl, stderr);
@@ -357,7 +368,7 @@ has_funcsys(Mapi mid)
 	answer = ret;
 	return ret;
 
-  bailout:
+bailout:
 	if (hdl) {
 		if (mapi_result_error(hdl))
 			mapi_explain_result(hdl, stderr);
@@ -398,7 +409,7 @@ has_table_partitions(Mapi mid)
 	answer = ret;
 	return ret;
 
-  bailout:
+bailout:
 	if (hdl) {
 		if (mapi_result_error(hdl))
 			mapi_explain_result(hdl, stderr);
@@ -423,8 +434,15 @@ dump_foreign_keys(Mapi mid, const char *schema, const char *tname, const char *t
 		char *t = sescape(tname);
 		maxquerylen = 1024 + strlen(t) + strlen(s);
 		query = malloc(maxquerylen);
-		if (query == NULL)
+		if (s == NULL || t == NULL || query == NULL) {
+			if (s)
+				free(s);
+			if (t)
+				free(t);
+			if (query)
+				free(query);
 			goto bailout;
+		}
 		snprintf(query, maxquerylen,
 			 "SELECT ps.name, "		/* 0 */
 			        "pkt.name, "		/* 1 */
@@ -526,53 +544,86 @@ dump_foreign_keys(Mapi mid, const char *schema, const char *tname, const char *t
 
 	cnt = mapi_fetch_row(hdl);
 	while (cnt != 0) {
-		const char *c_psname = mapi_fetch_field(hdl, 0);
-		const char *c_ptname = mapi_fetch_field(hdl, 1);
-		const char *c_pcolumn = mapi_fetch_field(hdl, 2);
-		const char *c_fcolumn = mapi_fetch_field(hdl, 3);
-		const char *c_nr = mapi_fetch_field(hdl, 4);
-		const char *c_fkname = mapi_fetch_field(hdl, 5);
-		const char *c_faction = mapi_fetch_field(hdl, 6);
-		const char *c_fsname = mapi_fetch_field(hdl, 7);
-		const char *c_ftname = mapi_fetch_field(hdl, 8);
-		const char **fkeys, **pkeys;
+		char *nc_psname = mapi_fetch_field(hdl, 0), *c_psname = nc_psname ? strdup(nc_psname) : NULL;
+		char *nc_ptname = mapi_fetch_field(hdl, 1), *c_ptname = nc_ptname ? strdup(nc_ptname) : NULL;
+		char *nc_pcolumn = mapi_fetch_field(hdl, 2), *c_pcolumn = nc_pcolumn ? strdup(nc_pcolumn) : NULL;
+		char *nc_fcolumn = mapi_fetch_field(hdl, 3), *c_fcolumn = nc_fcolumn ? strdup(nc_fcolumn) : NULL;
+		char *c_nr = mapi_fetch_field(hdl, 4); /* no need to strdup, because it's not used */
+		char *nc_fkname = mapi_fetch_field(hdl, 5), *c_fkname = nc_fkname ? strdup(nc_fkname) : NULL;
+		char *nc_faction = mapi_fetch_field(hdl, 6), *c_faction = nc_faction ? strdup(nc_faction) : NULL;
+		char *nc_fsname = mapi_fetch_field(hdl, 7), *c_fsname = nc_fsname ? strdup(nc_fsname) : NULL;
+		char *nc_ftname = mapi_fetch_field(hdl, 8), *c_ftname = nc_ftname ? strdup(nc_ftname) : NULL;
+		char **fkeys, **pkeys, *npkey, *nfkey;
 		int nkeys = 0;
 
-		if (mapi_error(mid))
+		if (mapi_error(mid) || (nc_psname && !c_psname) || (nc_ptname && !c_ptname) || (nc_pcolumn && !c_pcolumn) || (nc_fcolumn && !c_fcolumn) ||
+			(nc_fkname && !c_fkname) || (nc_faction && !c_faction) || (nc_fsname && !c_fsname) || (nc_ftname && !c_ftname)) {
+			free(c_psname);
+			free(c_ptname);
+			free(c_pcolumn);
+			free(c_fcolumn);
+			free(c_fkname);
+			free(c_faction);
+			free(c_fsname);
+			free(c_ftname);
 			goto bailout;
+		}
 		assert(strcmp(c_nr, "0") == 0);
 		(void) c_nr;	/* pacify compilers in case assertions are disabled */
 		nkeys = 1;
 		fkeys = malloc(nkeys * sizeof(*fkeys));
 		pkeys = malloc(nkeys * sizeof(*pkeys));
-		if (fkeys == NULL || pkeys == NULL) {
-			if (fkeys)
-				free((void *) fkeys);
-			if (pkeys)
-				free((void *) pkeys);
+		npkey = c_pcolumn ? strdup(c_pcolumn) : NULL;
+		nfkey = c_fcolumn ? strdup(c_fcolumn) : NULL;
+		if (!fkeys || !pkeys || (c_pcolumn && !npkey) || (c_fcolumn && !nfkey)) {
+			free(nfkey);
+			free(npkey);
+			free(fkeys);
+			free(pkeys);
+			free(c_psname);
+			free(c_ptname);
+			free(c_pcolumn);
+			free(c_fcolumn);
+			free(c_fkname);
+			free(c_faction);
+			free(c_fsname);
+			free(c_ftname);
 			goto bailout;
 		}
-		pkeys[nkeys - 1] = c_pcolumn;
-		fkeys[nkeys - 1] = c_fcolumn;
+		pkeys[nkeys - 1] = npkey;
+		fkeys[nkeys - 1] = nfkey;
 		while ((cnt = mapi_fetch_row(hdl)) != 0 && strcmp(mapi_fetch_field(hdl, 4), "0") != 0) {
-			const char **tkeys;
+			char *npkey = mapi_fetch_field(hdl, 2), *pkey = npkey ? strdup(npkey) : NULL;
+			char *nfkey = mapi_fetch_field(hdl, 3), *fkey = nfkey ? strdup(nfkey) : NULL;
+			char **tkeys;
+
 			nkeys++;
-			tkeys = realloc((void *) pkeys, nkeys * sizeof(*pkeys));
-			if (tkeys == NULL) {
-				free((void *) pkeys);
-				free((void *) fkeys);
-				goto bailout;
-			}
+			tkeys = realloc(pkeys, nkeys * sizeof(*pkeys));
 			pkeys = tkeys;
-			tkeys = realloc((void *) fkeys, nkeys * sizeof(*fkeys));
-			if (tkeys == NULL) {
-				free((void *) pkeys);
-				free((void *) fkeys);
+			tkeys = realloc(fkeys, nkeys * sizeof(*fkeys));
+			fkeys = tkeys;
+			if (!tkeys || !fkeys || (npkey && !pkey) || (nfkey && !fkey)) {
+				nkeys--;
+				for (int i = 0 ; i < nkeys; i++) {
+					free(pkeys[i]);
+					free(fkeys[i]);
+				}
+				free(pkey);
+				free(fkey);
+				free(pkeys);
+				free(fkeys);
+				free(c_psname);
+				free(c_ptname);
+				free(c_pcolumn);
+				free(c_fcolumn);
+				free(c_fkname);
+				free(c_faction);
+				free(c_fsname);
+				free(c_ftname);
 				goto bailout;
 			}
-			fkeys = tkeys;
-			pkeys[nkeys - 1] = mapi_fetch_field(hdl, 2);
-			fkeys[nkeys - 1] = mapi_fetch_field(hdl, 3);
+			pkeys[nkeys - 1] = pkey;
+			fkeys[nkeys - 1] = fkey;
 		}
 		if (tname == NULL && tid == NULL) {
 			mnstr_printf(toConsole, "ALTER TABLE ");
@@ -600,8 +651,6 @@ dump_foreign_keys(Mapi mid, const char *schema, const char *tname, const char *t
 			dquoted_print(toConsole, pkeys[i], NULL);
 		}
 		mnstr_printf(toConsole, ")");
-		free((void *) fkeys);
-		free((void *) pkeys);
 		if (c_faction) {
 			int action = atoi(c_faction);
 			int on_update;
@@ -618,6 +667,21 @@ dump_foreign_keys(Mapi mid, const char *schema, const char *tname, const char *t
 				mnstr_printf(toConsole, " ON UPDATE %s",
 					     actions[on_update]);
 		}
+		free(c_psname);
+		free(c_ptname);
+		free(c_pcolumn);
+		free(c_fcolumn);
+		free(c_fkname);
+		free(c_faction);
+		free(c_fsname);
+		free(c_ftname);
+		for (int i = 0 ; i < nkeys; i++) {
+			free(pkeys[i]);
+			free(fkeys[i]);
+		}
+		free(fkeys);
+		free(pkeys);
+
 		if (tname == NULL && tid == NULL)
 			mnstr_printf(toConsole, ";\n");
 
@@ -630,15 +694,19 @@ dump_foreign_keys(Mapi mid, const char *schema, const char *tname, const char *t
 		mapi_close_handle(hdl);
 	return 0;
 
-  bailout:
+bailout:
 	if (hdl) {
 		if (mapi_result_error(hdl))
 			mapi_explain_result(hdl, stderr);
 		else if (mapi_error(mid))
 			mapi_explain_query(hdl, stderr);
+		else if (!mnstr_errnr(toConsole))
+			fprintf(stderr, "malloc failure\n");
 		mapi_close_handle(hdl);
 	} else if (mapi_error(mid))
 		mapi_explain(mid, stderr);
+	else if (!mnstr_errnr(toConsole))
+		fprintf(stderr, "malloc failure\n");
 
 	return 1;
 }
@@ -829,8 +897,13 @@ dump_column_definition(Mapi mid, stream *toConsole, const char *schema,
 	t = tname ? sescape(tname) : NULL;
 	s = schema ? sescape(schema) : NULL;
 	if (tid == NULL) {
-		if (tname == NULL || schema == NULL)
+		if (tname == NULL || schema == NULL) {
+			if (t != NULL)
+				free(t);
+			if (s != NULL)
+				free(s);
 			return 1;
+		}
 		maxquerylen += 2 * strlen(tname) + 2 * strlen(schema);
 	}
 	else
@@ -876,15 +949,19 @@ dump_column_definition(Mapi mid, stream *toConsole, const char *schema,
 	cnt = 0;
 	while ((mapi_fetch_row(hdl)) != 0) {
 		const char *c_name = mapi_fetch_field(hdl, 0);
-		const char *c_type = mapi_fetch_field(hdl, 1);
-		const char *c_type_digits = mapi_fetch_field(hdl, 2);
-		const char *c_type_scale = mapi_fetch_field(hdl, 3);
+		char *c_type = strdup(mapi_fetch_field(hdl, 1)); /* copy variables used outside this scope (look for possible mapi cache incoherency) */
+		char *c_type_digits = strdup(mapi_fetch_field(hdl, 2));
+		char *c_type_scale = strdup(mapi_fetch_field(hdl, 3));
 		const char *c_null = mapi_fetch_field(hdl, 4);
 		const char *c_default = mapi_fetch_field(hdl, 5);
 		int space;
 
-		if (mapi_error(mid))
+		if (mapi_error(mid) || !c_type || !c_type_digits || !c_type_scale) {
+			free(c_type);
+			free(c_type_digits);
+			free(c_type_scale);
 			goto bailout;
+		}
 		if (cnt)
 			mnstr_printf(toConsole, ",\n");
 
@@ -902,6 +979,9 @@ dump_column_definition(Mapi mid, stream *toConsole, const char *schema,
 					CAP(13 - space), "", c_default);
 
 		cnt++;
+		free(c_type);
+		free(c_type_digits);
+		free(c_type_scale);
 		if (mnstr_errnr(toConsole))
 			goto bailout;
 	}
@@ -1049,15 +1129,19 @@ dump_column_definition(Mapi mid, stream *toConsole, const char *schema,
 	free(query);
 	return 0;
 
-  bailout:
+bailout:
 	if (hdl) {
 		if (mapi_result_error(hdl))
 			mapi_explain_result(hdl, stderr);
 		else if (mapi_error(mid))
 			mapi_explain_query(hdl, stderr);
+		else if (!mnstr_errnr(toConsole))
+			fprintf(stderr, "malloc failure\n");
 		mapi_close_handle(hdl);
 	} else if (mapi_error(mid))
 		mapi_explain(mid, stderr);
+	else if (!mnstr_errnr(toConsole))
+		fprintf(stderr, "malloc failure\n");
 	if (query != NULL)
 		free(query);
 	if (t != NULL)
@@ -1069,29 +1153,25 @@ dump_column_definition(Mapi mid, stream *toConsole, const char *schema,
 
 int
 describe_table(Mapi mid, const char *schema, const char *tname,
-	       stream *toConsole, int foreign, bool databaseDump)
+	       stream *toConsole, bool foreign, bool databaseDump)
 {
 	int cnt, table_id = 0;
 	MapiHdl hdl = NULL;
-	char *query = NULL;
-	char *view = NULL;
-	char *remark = NULL;
+	char *query = NULL, *view = NULL, *remark = NULL, *sname = NULL, *s = NULL, *t = NULL;
 	int type = 0;
 	size_t maxquerylen;
-	char *sname = NULL;
 	bool hashge;
 	const char *comments_clause = get_comments_clause(mid);
 
 	if (schema == NULL) {
 		if ((sname = strchr(tname, '.')) != NULL) {
-			size_t len = sname - tname;
+			size_t len = sname - tname + 1;
 
-			sname = malloc(len + 1);
+			sname = malloc(len);
 			if (sname == NULL)
-				return 1;
-			strncpy(sname, tname, len);
-			sname[len] = 0;
-			tname += len + 1;
+				goto bailout;
+			strcpy_len(sname, tname, len);
+			tname += len;
 		} else if ((sname = get_schema(mid)) == NULL) {
 			return 1;
 		}
@@ -1100,15 +1180,12 @@ describe_table(Mapi mid, const char *schema, const char *tname,
 
 	hashge = has_hugeint(mid);
 
-	char *s = sescape(schema);
-	char *t = sescape(tname);
+	s = sescape(schema);
+	t = sescape(tname);
 	maxquerylen = 5120 + strlen(t) + strlen(s);
 	query = malloc(maxquerylen);
-	if (query == NULL) {
-		if (sname != NULL)
-			free(sname);
-		return 1;
-	}
+	if (query == NULL)
+		goto bailout;
 
 	snprintf(query, maxquerylen,
 		 "%s "
@@ -1147,10 +1224,13 @@ describe_table(Mapi mid, const char *schema, const char *tname,
 			else
 				view++;
 		}
-		view = strdup(view);
+		if (!(view = strdup(view)))
+			goto bailout;
 	}
-	if (remark)
-		remark = strdup(remark);
+	if (remark) {
+		if (!(remark = strdup(remark)))
+			goto bailout;
+	}
 	mapi_close_handle(hdl);
 	hdl = NULL;
 
@@ -1160,7 +1240,7 @@ describe_table(Mapi mid, const char *schema, const char *tname,
 		else
 			fprintf(stderr, "table %s.%s is not unique, corrupt catalog?\n",
 					schema, tname);
-		goto bailout;
+		goto bailout2;
 	}
 
 	if (type == 1) {
@@ -1168,7 +1248,7 @@ describe_table(Mapi mid, const char *schema, const char *tname,
 		mnstr_printf(toConsole, "%s\n", view);
 		comment_on(toConsole, "VIEW", schema, tname, NULL, remark);
 	} else {
-		if(!databaseDump) { //if it is not a database dump the table might depend on UDFs that must be dumped first
+		if (!databaseDump) { //if it is not a database dump the table might depend on UDFs that must be dumped first
 			assert(table_id);
 			snprintf(query, maxquerylen,
 					 "SELECT f.id, s.name, f.name "
@@ -1179,11 +1259,23 @@ describe_table(Mapi mid, const char *schema, const char *tname,
 					 table_id);
 			if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
 				goto bailout;
-			while(mapi_fetch_row(hdl) != 0) {
-				const char* function_id = mapi_fetch_field(hdl, 0);
-				const char* schema_name = mapi_fetch_field(hdl, 1);
-				const char* function_name = mapi_fetch_field(hdl, 2);
-				dump_functions(mid, toConsole, 0, schema_name, function_name, function_id);
+			while (mapi_fetch_row(hdl) != 0) {
+				bool failure = false;
+				char *function_id = strdup(mapi_fetch_field(hdl, 0));
+				char *schema_name = strdup(mapi_fetch_field(hdl, 1));
+				char *function_name = strdup(mapi_fetch_field(hdl, 2));
+
+				if (function_id && schema_name && function_name)
+					dump_functions(mid, toConsole, 0, schema_name, function_name, function_id);
+				else
+					failure = true;
+
+				free(function_id);
+				free(schema_name);
+				free(function_name);
+
+				if (failure)
+					goto bailout;
 			}
 			mapi_close_handle(hdl);
 			hdl = NULL;
@@ -1374,15 +1466,20 @@ describe_table(Mapi mid, const char *schema, const char *tname,
 		free(sname);
 	return 0;
 
-  bailout:
+bailout:
 	if (hdl) {
 		if (mapi_result_error(hdl))
 			mapi_explain_result(hdl, stderr);
 		else if (mapi_error(mid))
 			mapi_explain_query(hdl, stderr);
+		else if (!mnstr_errnr(toConsole))
+			fprintf(stderr, "malloc failure\n");
 		mapi_close_handle(hdl);
 	} else if (mapi_error(mid))
 		mapi_explain(mid, stderr);
+	else if (!mnstr_errnr(toConsole))
+		fprintf(stderr, "malloc failure\n");
+bailout2:
 	if (view)
 		free(view);
 	if (remark)
@@ -1402,21 +1499,20 @@ int
 describe_sequence(Mapi mid, const char *schema, const char *tname, stream *toConsole)
 {
 	MapiHdl hdl = NULL;
-	char *query;
+	char *query = NULL;
 	size_t maxquerylen;
 	char *sname = NULL;
 	const char *comments_clause = get_comments_clause(mid);
 
 	if (schema == NULL) {
 		if ((sname = strchr(tname, '.')) != NULL) {
-			size_t len = sname - tname;
+			size_t len = sname - tname + 1;
 
-			sname = malloc(len + 1);
+			sname = malloc(len);
 			if (sname == NULL)
-				return 1;
-			strncpy(sname, tname, len);
-			sname[len] = 0;
-			tname += len + 1;
+				goto bailout;
+			strcpy_len(sname, tname, len);
+			tname += len;
 		} else if ((sname = get_schema(mid)) == NULL) {
 			return 1;
 		}
@@ -1426,22 +1522,20 @@ describe_sequence(Mapi mid, const char *schema, const char *tname, stream *toCon
 	maxquerylen = 5120 + strlen(tname) + strlen(schema);
 
 	query = malloc(maxquerylen);
-	if (query == NULL) {
-		if (sname != NULL)
-			free(sname);
-		return 1;
-	}
+	if (query == NULL)
+		goto bailout;
 
 	snprintf(query, maxquerylen,
 		"%s "
-		"SELECT s.name, "
-		       "seq.name, "
-		       "get_value_for(s.name, seq.name), "
-		       "seq.\"minvalue\", "
-		       "seq.\"maxvalue\", "
-		       "seq.\"increment\", "
-		       "seq.\"cycle\", "
-		       "rem.\"remark\" "
+		"SELECT s.name, "				/* 0 */
+		       "seq.name, "				/* 1 */
+		       "get_value_for(s.name, seq.name), "	/* 2 */
+		       "seq.\"minvalue\", "			/* 3 */
+		       "seq.\"maxvalue\", "			/* 4 */
+		       "seq.\"increment\", "			/* 5 */
+		       "seq.\"cycle\", "			/* 6 */
+		       "seq.\"cacheinc\", "			/* 7 */
+		       "rem.\"remark\" "			/* 8 */
 		"FROM sys.sequences seq LEFT OUTER JOIN sys.comments rem ON seq.id = rem.id, "
 		     "sys.schemas s "
 		"WHERE s.id = seq.schema_id "
@@ -1462,7 +1556,8 @@ describe_sequence(Mapi mid, const char *schema, const char *tname, stream *toCon
 		const char *maxvalue = mapi_fetch_field(hdl, 4);
 		const char *increment = mapi_fetch_field(hdl, 5);
 		const char *cycle = mapi_fetch_field(hdl, 6);
-		const char *remark = mapi_fetch_field(hdl, 7);
+		const char *cacheinc = mapi_fetch_field(hdl, 7);
+		const char *remark = mapi_fetch_field(hdl, 8);
 
 		mnstr_printf(toConsole, "CREATE SEQUENCE ");
 		dquoted_print(toConsole, schema, ".");
@@ -1474,6 +1569,8 @@ describe_sequence(Mapi mid, const char *schema, const char *tname, stream *toCon
 			mnstr_printf(toConsole, " MINVALUE %s", minvalue);
 		if (strcmp(maxvalue, "0") != 0)
 			mnstr_printf(toConsole, " MAXVALUE %s", maxvalue);
+		if (strcmp(cacheinc, "1") != 0)
+			mnstr_printf(toConsole, " CACHE %s", cacheinc);
 		mnstr_printf(toConsole, " %sCYCLE;\n", strcmp(cycle, "true") == 0 ? "" : "NO ");
 		comment_on(toConsole, "SEQUENCE", schema, name, NULL, remark);
 		if (mnstr_errnr(toConsole)) {
@@ -1498,9 +1595,13 @@ bailout:
 			mapi_explain_result(hdl, stderr);
 		else if (mapi_error(mid))
 			mapi_explain_query(hdl, stderr);
+		else if (!mnstr_errnr(toConsole))
+			fprintf(stderr, "malloc failure\n");
 		mapi_close_handle(hdl);
 	} else if (mapi_error(mid))
 		mapi_explain(mid, stderr);
+	else if (!mnstr_errnr(toConsole))
+		fprintf(stderr, "malloc failure\n");
 	if (sname != NULL)
 		free(sname);
 	if (query != NULL)
@@ -1572,14 +1673,13 @@ dump_table_data(Mapi mid, const char *schema, const char *tname, stream *toConso
 
 	if (schema == NULL) {
 		if ((sname = strchr(tname, '.')) != NULL) {
-			size_t len = sname - tname;
+			size_t len = sname - tname + 1;
 
-			sname = malloc(len + 1);
+			sname = malloc(len);
 			if (sname == NULL)
 				goto bailout;
-			strncpy(sname, tname, len);
-			sname[len] = 0;
-			tname += len + 1;
+			strcpy_len(sname, tname, len);
+			tname += len;
 		} else if ((sname = get_schema(mid)) == NULL) {
 			goto bailout;
 		}
@@ -1700,14 +1800,13 @@ dump_table_data(Mapi mid, const char *schema, const char *tname, stream *toConso
 					 strcmp(tp, "url") == 0 ||
 					 strcmp(tp, "uuid") == 0 ||
 					 string[i])
-					squoted_print(toConsole, s, useInserts ? '\'' : '"');
+					squoted_print(toConsole, s, '\'');
 				else
 					mnstr_printf(toConsole, "%s", s);
 			} else if (string[i]) {
-				/* write double or single-quoted
-				   string with certain characters
-				   escaped */
-				squoted_print(toConsole, s, useInserts ? '\'' : '"');
+				/* write double-quoted string with
+				   certain characters escaped */
+				squoted_print(toConsole, s, '"');
 			} else
 				mnstr_printf(toConsole, "%s", s);
 
@@ -1739,18 +1838,18 @@ dump_table_data(Mapi mid, const char *schema, const char *tname, stream *toConso
 		free(sname);
 	return 0;
 
-  bailout:
+bailout:
 	if (hdl) {
 		if (mapi_result_error(hdl))
 			mapi_explain_result(hdl, stderr);
 		else if (mapi_error(mid))
 			mapi_explain_query(hdl, stderr);
-		else
+		else if (!mnstr_errnr(toConsole))
 			fprintf(stderr, "malloc failure\n");
 		mapi_close_handle(hdl);
 	} else if (mapi_error(mid))
 		mapi_explain(mid, stderr);
-	else
+	else if (!mnstr_errnr(toConsole))
 		fprintf(stderr, "malloc failure\n");
 	if (sname != NULL)
 		free(sname);
@@ -1763,7 +1862,7 @@ dump_table_data(Mapi mid, const char *schema, const char *tname, stream *toConso
 
 int
 dump_table(Mapi mid, const char *schema, const char *tname, stream *toConsole,
-	   int describe, int foreign, bool useInserts, bool databaseDump)
+	   bool describe, bool foreign, bool useInserts, bool databaseDump)
 {
 	int rc;
 
@@ -1776,7 +1875,7 @@ dump_table(Mapi mid, const char *schema, const char *tname, stream *toConsole,
 static int
 dump_function(Mapi mid, stream *toConsole, const char *fid, bool hashge)
 {
-	MapiHdl hdl;
+	MapiHdl hdl = NULL;
 	size_t query_size = 5120 + strlen(fid);
 	int query_len;
 	char *query;
@@ -1788,7 +1887,7 @@ dump_function(Mapi mid, stream *toConsole, const char *fid, bool hashge)
 
 	query = malloc(query_size);
 	if (query == NULL)
-		return 1;
+		goto bailout;
 
 	query_len = snprintf(query, query_size,
 		      "%s "
@@ -1812,7 +1911,7 @@ dump_function(Mapi mid, stream *toConsole, const char *fid, bool hashge)
 	if (query_len < 0 || query_len >= (int) query_size ||
 	    (hdl = mapi_query(mid, query)) == NULL || mapi_error(mid)) {
 		free(query);
-		return 1;
+		goto bailout;
 	}
 
 	if (mapi_fetch_row(hdl) == 0) {
@@ -1833,6 +1932,20 @@ dump_function(Mapi mid, stream *toConsole, const char *fid, bool hashge)
 		sname = strdup(sname);
 		fname = strdup(fname);
 		ftkey = strdup(ftkey);
+
+		if (remark == NULL || sname == NULL || fname == NULL || ftkey == NULL) {
+			if (remark)
+				free(remark);
+			if (sname)
+				free(sname);
+			if (fname)
+				free(fname);
+			if (ftkey)
+				free(ftkey);
+			if (query)
+				free(query);
+			goto bailout;
+		}
 	}
 	if (flang == 1 || flang == 2) {
 		/* all information is stored in the func column
@@ -1856,9 +1969,18 @@ dump_function(Mapi mid, stream *toConsole, const char *fid, bool hashge)
 		dquoted_print(toConsole, fname, "(");
 	}
 	/* strdup these two because they are needed after another query */
+	if (flkey) {
+		if ((flkey = strdup(flkey)) == NULL) {
+			if (remark) {
+				free(remark);
+				free(sname);
+				free(fname);
+				free(ftkey);
+			}
+			goto bailout;
+		}
+	}
 	ffunc = strdup(ffunc);
-	if (flkey)
-		flkey = strdup(flkey);
 	query_len = snprintf(query, query_size,
 			     "SELECT a.name, a.type, a.type_digits, "
 				    "a.type_scale, a.inout "
@@ -1866,13 +1988,17 @@ dump_function(Mapi mid, stream *toConsole, const char *fid, bool hashge)
 			     "WHERE a.func_id = f.id AND f.id = %s "
 			     "ORDER BY a.inout DESC, a.number", fid);
 	assert(query_len < (int) query_size);
-	if (query_len < 0 || query_len >= (int) query_size) {
+	if (!ffunc || query_len < 0 || query_len >= (int) query_size) {
 		free(ffunc);
 		free(flkey);
-		if (remark)
+		if (remark) {
 			free(remark);
+			free(sname);
+			free(fname);
+			free(ftkey);
+		}
 		free(query);
-		return 1;
+		goto bailout;
 	}
 	mapi_close_handle(hdl);
 	hdl = mapi_query(mid, query);
@@ -1880,21 +2006,42 @@ dump_function(Mapi mid, stream *toConsole, const char *fid, bool hashge)
 	if (hdl == NULL || mapi_error(mid)) {
 		free(ffunc);
 		free(flkey);
-		if (remark)
+		if (remark) {
 			free(remark);
-		return 1;
+			free(sname);
+			free(fname);
+			free(ftkey);
+		}
+		goto bailout;
 	}
 	if (flang != 1 && flang != 2) {
 		sep = "";
 		while (mapi_fetch_row(hdl) != 0) {
 			const char *aname = mapi_fetch_field(hdl, 0);
-			const char *atype = mapi_fetch_field(hdl, 1);
-			const char *adigs = mapi_fetch_field(hdl, 2);
-			const char *ascal = mapi_fetch_field(hdl, 3);
+			char *atype = strdup(mapi_fetch_field(hdl, 1));
+			char *adigs = strdup(mapi_fetch_field(hdl, 2));
+			char *ascal = strdup(mapi_fetch_field(hdl, 3));
 			const char *ainou = mapi_fetch_field(hdl, 4);
 
+			if (!atype || !adigs || !ascal) {
+				free(atype);
+				free(adigs);
+				free(ascal);
+				free(ffunc);
+				free(flkey);
+				if (remark) {
+					free(remark);
+					free(sname);
+					free(fname);
+					free(ftkey);
+				}
+				goto bailout;
+			}
 			if (strcmp(ainou, "0") == 0) {
 				/* end of arguments */
+				free(atype);
+				free(adigs);
+				free(ascal);
 				break;
 			}
 
@@ -1902,6 +2049,10 @@ dump_function(Mapi mid, stream *toConsole, const char *fid, bool hashge)
 			dquoted_print(toConsole, aname, " ");
 			dump_type(mid, toConsole, atype, adigs, ascal, hashge);
 			sep = ", ";
+
+			free(atype);
+			free(adigs);
+			free(ascal);
 		}
 		mnstr_printf(toConsole, ")");
 		if (ftype == 1 || ftype == 3 || ftype == 5) {
@@ -1909,9 +2060,24 @@ dump_function(Mapi mid, stream *toConsole, const char *fid, bool hashge)
 			mnstr_printf(toConsole, " RETURNS ");
 			do {
 				const char *aname = mapi_fetch_field(hdl, 0);
-				const char *atype = mapi_fetch_field(hdl, 1);
-				const char *adigs = mapi_fetch_field(hdl, 2);
-				const char *ascal = mapi_fetch_field(hdl, 3);
+				char *atype = strdup(mapi_fetch_field(hdl, 1));
+				char *adigs = strdup(mapi_fetch_field(hdl, 2));
+				char *ascal = strdup(mapi_fetch_field(hdl, 3));
+
+				if (!atype || !adigs || !ascal) {
+					free(atype);
+					free(adigs);
+					free(ascal);
+					free(ffunc);
+					free(flkey);
+					if (remark) {
+						free(remark);
+						free(sname);
+						free(fname);
+						free(ftkey);
+					}
+					goto bailout;
+				}
 
 				assert(strcmp(mapi_fetch_field(hdl, 4), "0") == 0);
 				if (ftype == 5) {
@@ -1920,6 +2086,10 @@ dump_function(Mapi mid, stream *toConsole, const char *fid, bool hashge)
 					sep = ", ";
 				}
 				dump_type(mid, toConsole, atype, adigs, ascal, hashge);
+
+				free(atype);
+				free(adigs);
+				free(ascal);
 			} while (mapi_fetch_row(hdl) != 0);
 		}
 		if (flkey) {
@@ -1937,26 +2107,41 @@ dump_function(Mapi mid, stream *toConsole, const char *fid, bool hashge)
 			free(sname);
 			free(fname);
 			free(ftkey);
-			mapi_close_handle(hdl);
-			return 1;
+			free(remark);
+			goto bailout;
 		}
 		free(sname);
 		free(fname);
 		free(ftkey);
 		sep = "";
 		while (mapi_fetch_row(hdl) != 0) {
-			const char *atype = mapi_fetch_field(hdl, 1);
-			const char *adigs = mapi_fetch_field(hdl, 2);
-			const char *ascal = mapi_fetch_field(hdl, 3);
+			char *atype = strdup(mapi_fetch_field(hdl, 1));
+			char *adigs = strdup(mapi_fetch_field(hdl, 2));
+			char *ascal = strdup(mapi_fetch_field(hdl, 3));
 			const char *ainou = mapi_fetch_field(hdl, 4);
+
+			if (!atype || !adigs || !ascal) {
+				free(atype);
+				free(adigs);
+				free(ascal);
+				free(remark);
+				goto bailout;
+			}
 
 			if (strcmp(ainou, "0") == 0) {
 				/* end of arguments */
+				free(atype);
+				free(adigs);
+				free(ascal);
 				break;
 			}
 			mnstr_printf(toConsole, "%s", sep);
 			dump_type(mid, toConsole, atype, adigs, ascal, hashge);
 			sep = ", ";
+
+			free(atype);
+			free(adigs);
+			free(ascal);
 		}
 		mnstr_printf(toConsole, ") IS ");
 		squoted_print(toConsole, remark, '\'');
@@ -1965,13 +2150,27 @@ dump_function(Mapi mid, stream *toConsole, const char *fid, bool hashge)
 	}
 	mapi_close_handle(hdl);
 	return 0;
+bailout:
+	if (hdl) {
+		if (mapi_result_error(hdl))
+			mapi_explain_result(hdl, stderr);
+		else if (mapi_error(mid))
+			mapi_explain_query(hdl, stderr);
+		else if (!mnstr_errnr(toConsole))
+			fprintf(stderr, "malloc failure\n");
+		mapi_close_handle(hdl);
+	} else if (mapi_error(mid))
+		mapi_explain(mid, stderr);
+	else if (!mnstr_errnr(toConsole))
+		fprintf(stderr, "malloc failure\n");
+	return 1;
 }
 
 int
 dump_functions(Mapi mid, stream *toConsole, char set_schema, const char *sname, const char *fname, const char *id)
 {
 	MapiHdl hdl = NULL;
-	char *query;
+	char *query = NULL;
 	size_t query_size;
 	int query_len;
 	bool hashge;
@@ -1987,14 +2186,13 @@ dump_functions(Mapi mid, stream *toConsole, char set_schema, const char *sname, 
 			/* no schema given, so figure it out */
 			const char *dot = strchr(fname, '.');
 			if (dot != NULL) {
-				size_t len = dot - fname;
+				size_t len = dot - fname + 1;
 
-				to_free = malloc(len + 1);
+				to_free = malloc(len);
 				if (to_free == NULL)
-					return 1;
-				strncpy(to_free, fname, len);
-				to_free[len] = 0;
-				fname += len + 1;
+					goto bailout;
+				strcpy_len(to_free, fname, len);
+				fname += len;
 			} else if ((to_free = get_schema(mid)) == NULL) {
 				return 1;
 			}
@@ -2008,11 +2206,8 @@ dump_functions(Mapi mid, stream *toConsole, char set_schema, const char *sname, 
 
 	query_size = 5120 + (sname ? strlen(sname) : 0) + (fname ? strlen(fname) : 0);
 	query = malloc(query_size);
-	if (query == NULL) {
-		if (to_free != NULL)
-			free(to_free);
-		return 1;
-	}
+	if (query == NULL)
+		goto bailout;
 
 	query_len = snprintf(query, query_size,
 		      "SELECT s.id, s.name, f.id "
@@ -2039,8 +2234,10 @@ dump_functions(Mapi mid, stream *toConsole, char set_schema, const char *sname, 
 	}
 	query_len += snprintf(query + query_len, query_size - query_len, "ORDER BY f.func, f.id");
 	assert(query_len < (int) query_size);
-	if (query_len >= (int) query_size)
+	if (query_len >= (int) query_size) {
+		free(query);
 		goto bailout;
+	}
 
 	hdl = mapi_query(mid, query);
 	free(query);
@@ -2050,13 +2247,19 @@ dump_functions(Mapi mid, stream *toConsole, char set_schema, const char *sname, 
 	while (!mnstr_errnr(toConsole) && mapi_fetch_row(hdl) != 0) {
 		long sid = strtol(mapi_fetch_field(hdl, 0), NULL, 10);
 		const char *schema = mapi_fetch_field(hdl, 1);
-		const char *fid = mapi_fetch_field(hdl, 2);
-		if (set_schema && sid != prev_sid) {
-			mnstr_printf(toConsole, "SET SCHEMA ");
-			dquoted_print(toConsole, schema, ";\n");
-			prev_sid = sid;
+		char *fid = strdup(mapi_fetch_field(hdl, 2));
+
+		if (fid) {
+			if (set_schema && sid != prev_sid) {
+				mnstr_printf(toConsole, "SET SCHEMA ");
+				dquoted_print(toConsole, schema, ";\n");
+				prev_sid = sid;
+			}
+			dump_function(mid, toConsole, fid, hashge);
+			free(fid);
+		} else {
+			goto bailout;
 		}
-		dump_function(mid, toConsole, fid, hashge);
 	}
 	if (mapi_error(mid))
 		goto bailout;
@@ -2066,22 +2269,26 @@ dump_functions(Mapi mid, stream *toConsole, char set_schema, const char *sname, 
 		free(to_free);
 	return mnstr_errnr(toConsole) != 0;
 
-  bailout:
+bailout:
 	if (hdl) {
 		if (mapi_result_error(hdl))
 			mapi_explain_result(hdl, stderr);
-		else
+		else if (mapi_error(mid))
 			mapi_explain_query(hdl, stderr);
+		else if (!mnstr_errnr(toConsole))
+			fprintf(stderr, "malloc failure\n");
 		mapi_close_handle(hdl);
-	} else
+	} else if (mapi_error(mid))
 		mapi_explain(mid, stderr);
+	else if (!mnstr_errnr(toConsole))
+		fprintf(stderr, "malloc failure\n");
 	if (to_free)
 		free(to_free);
 	return 1;
 }
 
 int
-dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
+dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts)
 {
 	const char *start_trx = "START TRANSACTION";
 	const char *end = "ROLLBACK";
@@ -2384,8 +2591,7 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 		goto bailout;
 
 	/* start a transaction for the dump */
-	if (!describe)
-		mnstr_printf(toConsole, "%s;\n", start_trx);
+	mnstr_printf(toConsole, "%s;\n", start_trx);
 
 	if ((hdl = mapi_query(mid, start_trx)) == NULL || mapi_error(mid))
 		goto bailout;
@@ -2512,6 +2718,8 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 		mnstr_printf(toConsole, "SET SCHEMA ");
 		dquoted_print(toConsole, sname, ";\n");
 		curschema = strdup(sname);
+		if (curschema == NULL)
+			goto bailout;
 	}
 
 	/* dump sequences, part 1 */
@@ -2556,35 +2764,41 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 	while (rc == 0 &&
 	       !mnstr_errnr(toConsole) &&
 	       mapi_fetch_row(hdl) != 0) {
-		const char *id = mapi_fetch_field(hdl, 0);
-		char *schema = mapi_fetch_field(hdl, 1);
-		char *name = mapi_fetch_field(hdl, 2);
+		char *id = strdup(mapi_fetch_field(hdl, 0));
+		char *nschema = mapi_fetch_field(hdl, 1), *schema = nschema ? strdup(nschema) : NULL; /* the fetched value might be null, so do this */
+		char *name = strdup(mapi_fetch_field(hdl, 2));
 		const char *query = mapi_fetch_field(hdl, 3);
 		const char *remark = mapi_fetch_field(hdl, 4);
 		const char *type = mapi_fetch_field(hdl, 5);
 
-		if (mapi_error(mid))
+		if (mapi_error(mid) || !id || (nschema && !schema) || !name) {
+			free(id);
+			free(schema);
+			free(name);
 			goto bailout;
-		if (schema == NULL) {
-			/* cannot happen, but make analysis tools happy */
+		}
+		if (sname != NULL && strcmp(schema, sname) != 0) {
+			free(id);
+			free(schema);
+			free(name);
 			continue;
 		}
-		if (sname != NULL && strcmp(schema, sname) != 0)
-			continue;
 		if (curschema == NULL || strcmp(schema, curschema) != 0) {
 			if (curschema)
 				free(curschema);
-			curschema = strdup(schema);
+			curschema = schema ? strdup(schema) : NULL;
+			if (schema && !curschema) {
+				free(id);
+				free(schema);
+				free(name);
+				goto bailout;
+			}
 			mnstr_printf(toConsole, "SET SCHEMA ");
 			dquoted_print(toConsole, curschema, ";\n");
 		}
 		if (type) { /* table */
 			int ptype = atoi(type), dont_describe = (ptype == 3 || ptype == 5);
-			schema = strdup(schema);
-			name = strdup(name);
-			rc = dump_table(mid, schema, name, toConsole, dont_describe ? 1 : describe, describe, useInserts, true);
-			free(schema);
-			free(name);
+			rc = dump_table(mid, schema, name, toConsole, dont_describe || describe, describe, useInserts, true);
 		} else if (query) {
 			/* view or trigger */
 			mnstr_printf(toConsole, "%s\n", query);
@@ -2594,6 +2808,9 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 			/* procedure */
 			dump_functions(mid, toConsole, 0, schema, name, id);
 		}
+		free(id);
+		free(schema);
+		free(name);
 	}
 	mapi_close_handle(hdl);
 	hdl = NULL;
@@ -2673,7 +2890,7 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 					mnstr_printf(toConsole, ")");
 				}
 				if (found_nil) {
-					mnstr_printf(toConsole, " WITH NULL");
+					mnstr_printf(toConsole, " %s NULL VALUES", (i == 0) ? "FOR" : "WITH");
 				}
 			} else { /* by range */
 				char *minv = NULL, *maxv = NULL, *wnulls = NULL;
@@ -2699,14 +2916,20 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 					maxv = mapi_fetch_field(shdl, 1);
 					wnulls = mapi_fetch_field(shdl, 2);
 				}
-				if (minv && maxv) {
-					mnstr_printf(toConsole, " BETWEEN ");
-					squoted_print(toConsole, minv, '\'');
-					mnstr_printf(toConsole, " AND ");
-					squoted_print(toConsole, maxv, '\'');
+				if (minv || maxv) {
+					mnstr_printf(toConsole, " FROM ");
+					if (minv)
+						squoted_print(toConsole, minv, '\'');
+					else
+						mnstr_printf(toConsole, "RANGE MINVALUE");
+					mnstr_printf(toConsole, " TO ");
+					if (maxv)
+						squoted_print(toConsole, maxv, '\'');
+					else
+						mnstr_printf(toConsole, "RANGE MAXVALUE");
 				}
 				if (strcmp(wnulls, "true") == 0) {
-					mnstr_printf(toConsole, " WITH NULL");
+					mnstr_printf(toConsole, " %s NULL VALUES", (minv || maxv) ? "WITH" : "FOR");
 				}
 				mapi_close_handle(shdl);
 			}
@@ -2887,25 +3110,28 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 	mapi_close_handle(hdl);
 
 	/* finally commit the whole transaction */
-	if (!describe)
-		mnstr_printf(toConsole, "COMMIT;\n");
+	mnstr_printf(toConsole, "COMMIT;\n");
 	if (sname)
 		free(sname);
 	if (query)
 		free(query);
 	return rc;
 
-  bailout:
+bailout:
 	if (hdl) {
 		if (mapi_result_error(hdl))
 			mapi_explain_result(hdl, stderr);
-		else
+		else if (mapi_error(mid))
 			mapi_explain_query(hdl, stderr);
+		else if (!mnstr_errnr(toConsole))
+			fprintf(stderr, "malloc failure\n");
 		mapi_close_handle(hdl);
-	} else
+	} else if (mapi_error(mid))
 		mapi_explain(mid, stderr);
+	else if (!mnstr_errnr(toConsole))
+		fprintf(stderr, "malloc failure\n");
 
-  bailout2:
+bailout2:
 	if (sname)
 		free(sname);
 	if (curschema)

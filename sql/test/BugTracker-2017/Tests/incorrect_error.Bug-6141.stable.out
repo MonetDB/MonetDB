@@ -18,7 +18,6 @@ stdout of test 'incorrect_error.Bug-6141` in directory 'sql/test/BugTracker-2017
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 14:15:19 >  
 # 14:15:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-7159" "--port=31566"
@@ -26,7 +25,7 @@ Ready.
 
 #create table t1 ( c1 int, c2 int );
 #select count(c1) as c2 from (select count(*) as c1, c2 from t1 group by c2) as t2 group by c2;
-% sys.L7 # table_name
+% sys. # table_name
 % c2 # name
 % bigint # type
 % 1 # length

@@ -18,7 +18,6 @@ stdout of test 'q2_28_v` in directory 'sql/test/rdf` itself:
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 10:46:19 >  
 # 10:46:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-3472" "--port=36263"
@@ -45,7 +44,7 @@ Ready.
 #			FROM A, prop14657202_pso as B
 #			WHERE A.subj = B.subj 
 % .trip,	.trip # table_name
-% L6,	L11 # name
+% %7,	%3 # name
 % char,	bigint # type
 % 16,	1 # length
 [ "prop14657017_pso",	0	]

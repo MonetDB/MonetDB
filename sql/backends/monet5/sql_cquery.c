@@ -165,7 +165,7 @@ CQcreatelog(void){
 		if( CQ_id_time) BBPunfix(CQ_id_time->batCacheid);
 		if( CQ_id_error) BBPunfix(CQ_id_error->batCacheid);
 		if( CQ_id_alias) BBPunfix(CQ_id_alias->batCacheid);
-		throw(MAL,"cquery.log",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL,"cquery.log",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	return MAL_SUCCEED;
 }
@@ -178,7 +178,7 @@ CQentry(int idx)
 		BUNappend(CQ_id_time, &pnet[idx].time,FALSE) != GDK_SUCCEED ||
 		BUNappend(CQ_id_error, (pnet[idx].error ? pnet[idx].error:""),FALSE) != GDK_SUCCEED ||
 		BUNappend(CQ_id_alias, (pnet[idx].alias ? pnet[idx].alias:""),FALSE) != GDK_SUCCEED )
-		pnet[idx].error = createException(SQL,"cquery.logentry",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		pnet[idx].error = createException(SQL,"cquery.logentry",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
 
 str
@@ -222,7 +222,7 @@ wrapup:
 	if( aliasbat) BBPunfix(aliasbat->batCacheid);
 	if( timebat) BBPunfix(timebat->batCacheid);
 	if( errbat) BBPunfix(errbat->batCacheid);
-	throw(SQL,"cquery.log",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	throw(SQL,"cquery.log",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
 
 str
@@ -259,7 +259,7 @@ CQstatus( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 			BUNappend(aliasbat, (pnet[idx].alias ? pnet[idx].alias:""),FALSE) != GDK_SUCCEED ||
 			BUNappend(statusbat, statusname[pnet[idx].status],FALSE) != GDK_SUCCEED ||
 			BUNappend(errbat, (pnet[idx].error ? pnet[idx].error:""),FALSE) != GDK_SUCCEED )
-				msg = createException(SQL,"cquery.status",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				msg = createException(SQL,"cquery.status",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	MT_lock_unset(&ttrLock);
 
 	BBPkeepref(*tickret = tickbat->batCacheid);
@@ -272,7 +272,7 @@ wrapup:
 	if( aliasbat) BBPunfix(aliasbat->batCacheid);
 	if( statusbat) BBPunfix(statusbat->batCacheid);
 	if( errbat) BBPunfix(errbat->batCacheid);
-	throw(SQL,"cquery.status",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	throw(SQL,"cquery.status",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
 
 int
@@ -400,7 +400,7 @@ CQanalysis(Client cntxt, MalBlkPtr mb, int idx)
 	goto X;
 
 #define CQ_MALLOC_FAIL(X)                                                         \
-	msg = createException(SQL,"cquery.register",SQLSTATE(HY001) MAL_MALLOC_FAIL); \
+	msg = createException(SQL,"cquery.register",SQLSTATE(HY013) MAL_MALLOC_FAIL); \
 	FREE_CQ_MB(X)
 
 /* Every SQL statement is wrapped with a caller function that
@@ -698,7 +698,7 @@ CQregister(Client cntxt, str sname, str fname, int argc, atom **args, str alias,
 	pnet[pnettop].beats = SET_HEARTBEATS(heartbeats);
 	//subtract the beats value so the CQ will start at the precise moment
 	pnet[pnettop].run = startat - (pnet[pnettop].beats > 0 ? pnet[pnettop].beats : 0);
-	pnet[pnettop].seen = *timestamp_nil;
+	pnet[pnettop].seen = timestamp_nil;
 	pnet[pnettop].prev_status = CQINIT;
 	pnet[pnettop].status = CQINIT;
 	pnet[pnettop].error = MAL_SUCCEED;
@@ -1345,7 +1345,7 @@ CQscheduler(void *dummy)
 	int i, j, k = -1, pntasks, delay = cycleDelay, start_trans = 0;
 	Client c = (Client) dummy;
 	mvc* m;
-	str msg = MAL_SUCCEED, omsg;
+	str msg = MAL_SUCCEED;
 	lng t, now;
 	timestamp aux;
 	int claimed[MAXSTREAMS];
@@ -1374,16 +1374,8 @@ CQscheduler(void *dummy)
 		   non empty. You can only trigger on empty baskets using a heartbeat */
 		memset((void*) claimed, 0, sizeof(claimed));
 
-		if((msg = MTIMEcurrent_timestamp(&aux)) != MAL_SUCCEED) {
-			fprintf(stderr, "CQscheduler internal error: %s\n", msg);
-			GDKfree(msg);
-			goto terminate;
-		}
-		if((msg = MTIMEepoch2lng(&now, &aux)) != MAL_SUCCEED) {
-			fprintf(stderr, "CQscheduler internal error: %s\n", msg);
-			GDKfree(msg);
-			goto terminate;
-		}
+		aux = timestamp_current();
+		now = timestamp_diff(aux, (timestamp) {0});
 
 		pntasks=0;
 		for (k = i = 0; i < pnettop; i++) {
@@ -1472,13 +1464,7 @@ CQscheduler(void *dummy)
 				if(pnet[i].status != CQDELETE) {
 					pnet[i].run = now;				/* last executed */
 					pnet[i].time = GDKusec() - t;   /* keep around in microseconds */
-					if((omsg = MTIMEcurrent_timestamp(&pnet[i].seen)) != MAL_SUCCEED && !pnet[i].error) {
-						pnet[i].error = omsg;
-						pnet[i].status = CQERROR;
-					} else if(omsg) {
-						fprintf(stderr, "CQscheduler internal error: %s\n", omsg);
-						GDKfree(omsg);
-					}
+					pnet[i].seen = timestamp_current();
 					pnet[i].enabled = 0;
 					CQentry(i);
 				}
@@ -1533,7 +1519,8 @@ CQstartScheduler(void)
 	Client cntxt;
 	stream *fin, *fout;
 	bstream *bin;
-	char* dbpath = GDKgetenv("gdk_dbpath"), *location;
+	char *location;
+	const char* dbpath = GDKgetenv("gdk_dbpath");
 	const char* fpsin = "fin_petri_sched";
 	const char* fpsout = "fout_petri_sched";
 
@@ -1546,42 +1533,42 @@ CQstartScheduler(void)
 
 	location = GDKmalloc(strlen(dbpath) + strlen(DIR_SEP_STR) + strlen(fpsin) + 1);
 	if( location == NULL)
-		throw(MAL, "cquery.startScheduler",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "cquery.startScheduler",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	sprintf(location, "%s%s%s", dbpath, DIR_SEP_STR, fpsin);
 	fin = open_rastream_and_create(location);
 	GDKfree(location);
 	if( fin == NULL)
-		throw(MAL, "cquery.startScheduler",SQLSTATE(HY001) "Could not initialize CQscheduler\n");
+		throw(MAL, "cquery.startScheduler",SQLSTATE(HY013) "Could not initialize CQscheduler\n");
 
 	location = GDKmalloc(strlen(dbpath) + strlen(DIR_SEP_STR) + strlen(fpsout) + 1);
 	if( location == NULL)
-		throw(MAL, "cquery.startScheduler",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "cquery.startScheduler",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	sprintf(location, "%s%s%s", dbpath, DIR_SEP_STR, fpsout);
 	fout = open_wastream(location);
 	GDKfree(location);
 	if( fout == NULL) {
 		mnstr_destroy(fin);
-		throw(MAL, "cquery.startScheduler",SQLSTATE(HY001) "Could not initialize CQscheduler\n");
+		throw(MAL, "cquery.startScheduler",SQLSTATE(HY013) "Could not initialize CQscheduler\n");
 	}
 
 	bin = bstream_create(fin,0);
 	if( bin == NULL) {
 		mnstr_destroy(fin);
 		mnstr_destroy(fout);
-		throw(MAL, "cquery.startScheduler",SQLSTATE(HY001) "Could not initialize CQscheduler\n");
+		throw(MAL, "cquery.startScheduler",SQLSTATE(HY013) "Could not initialize CQscheduler\n");
 	}
 
 	cntxt = MCinitClient(CQ_SCHEDULER_CLIENTID,bin,fout);
 	if( cntxt == NULL) {
 		bstream_destroy(cntxt->fdin);
 		mnstr_destroy(cntxt->fdout);
-		throw(MAL, "cquery.startScheduler",SQLSTATE(HY001) "Could not initialize CQscheduler\n");
+		throw(MAL, "cquery.startScheduler",SQLSTATE(HY013) "Could not initialize CQscheduler\n");
 	}
 	cntxt->iscqscheduleruser = 1;
 
 	if( (cntxt->scenario = GDKstrdup("sql")) == NULL) {
 		MCcloseClient(cntxt);
-		throw(MAL, "cquery.startScheduler",SQLSTATE(HY001) "Could not initialize CQscheduler\n");
+		throw(MAL, "cquery.startScheduler",SQLSTATE(HY013) "Could not initialize CQscheduler\n");
 	}
 
 	cntxt->curmodule = cntxt->usermodule = userModule();
@@ -1589,17 +1576,17 @@ CQstartScheduler(void)
 		GDKfree(cntxt->scenario);
 		cntxt->scenario = NULL;
 		MCcloseClient(cntxt);
-		throw(MAL, "cquery.startScheduler",SQLSTATE(HY001) "Could not initialize CQscheduler\n");
+		throw(MAL, "cquery.startScheduler",SQLSTATE(HY013) "Could not initialize CQscheduler\n");
 	}
 
 	if( SQLinitClient(cntxt) != MAL_SUCCEED) {
 		GDKfree(cntxt->scenario);
 		cntxt->scenario = NULL;
 		MCcloseClient(cntxt);
-		throw(MAL, "cquery.startScheduler",SQLSTATE(HY001) "Could not initialize SQL context in CQscheduler\n");
+		throw(MAL, "cquery.startScheduler",SQLSTATE(HY013) "Could not initialize SQL context in CQscheduler\n");
 	}
 
-	if (pnstatus== CQINIT && MT_create_thread(&cq_pid, CQscheduler, (void*) cntxt, MT_THR_JOINABLE) != 0){
+	if (pnstatus== CQINIT && MT_create_thread(&cq_pid, CQscheduler, (void*) cntxt, MT_THR_JOINABLE, "CQscheduler") != 0){
 #ifdef DEBUG_CQUERY
 		fprintf(stderr, "#Start CQscheduler failed\n");
 #endif
@@ -1607,7 +1594,7 @@ CQstartScheduler(void)
 		cntxt->scenario = NULL;
 		SQLexitClient(cntxt);
 		MCcloseClient(cntxt);
-		throw(MAL, "cquery.startScheduler",SQLSTATE(HY001) "Could not initialize client thread in CQscheduler\n");
+		throw(MAL, "cquery.startScheduler",SQLSTATE(HY013) "Could not initialize client thread in CQscheduler\n");
 	}
 	return MAL_SUCCEED;
 }
@@ -1634,7 +1621,7 @@ CQprelude(void *ret)
 	pnettop = 0;
 	if(pnet == NULL) {
 		MT_lock_destroy(&ttrLock);
-		throw(MAL, "cquery.prelude",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "cquery.prelude",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	cqfix_set(CQreset);
 	printf("# MonetDB/Timetrails module loaded\n");

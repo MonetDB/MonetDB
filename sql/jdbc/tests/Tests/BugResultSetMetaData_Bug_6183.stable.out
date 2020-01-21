@@ -57,7 +57,6 @@ stdout of test 'BugResultSetMetaData_Bug_6183` in directory 'sql/jdbc/tests` its
 # loading sql script: 90_generator_hge.sql
 # loading sql script: 99_system.sql
 
-Ready.
 
 # 15:30:24 >  
 # 15:30:24 >  "./BugResultSetMetaData_Bug_6183.SQL.sh" "BugResultSetMetaData_Bug_6183"

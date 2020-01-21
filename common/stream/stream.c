@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /* stream
@@ -52,6 +52,7 @@
 #include "monetdb_config.h"
 #include "stream.h"
 #include "stream_socket.h"
+#include "matomic.h"
 
 #include <string.h>
 #include <stddef.h>
@@ -71,6 +72,9 @@
 # include <netinet/ip.h>
 # include <netinet/tcp.h>
 # include <netdb.h>
+#endif
+#ifdef HAVE_POLL_H
+#include <poll.h>
 #endif
 
 #ifdef NATIVE_WIN32
@@ -211,9 +215,9 @@ struct stream {
 int
 mnstr_init(void)
 {
-	static bool inited = false;
+	static ATOMIC_FLAG inited = ATOMIC_FLAG_INIT;
 
-	if (inited)
+	if (ATOMIC_TAS(&inited))
 		return 0;
 
 #ifdef NATIVE_WIN32
@@ -224,7 +228,6 @@ mnstr_init(void)
 			return -1;
 	}
 #endif
-	inited = true;
 	return 0;
 }
 
@@ -641,9 +644,8 @@ close_stream(stream *s)
 	}
 }
 
-#define EXT_LEN 4
 static const char *
-get_extention(const char *file)
+get_extension(const char *file)
 {
 	char *ext_start;
 
@@ -969,9 +971,7 @@ stream_gzread(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt
 		return 0;
 
 	size = gzfread(buf, elmsize, cnt, fp);
-#ifdef WIN32
-	/* on Windows when in text mode, convert \r\n line
-	 * endings to \n */
+	/* when in text mode, convert \r\n line endings to \n */
 	if (!s->binary) {
 		char *p1, *p2, *pe;
 
@@ -988,7 +988,6 @@ stream_gzread(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt
 			p1++;
 		}
 	}
-#endif
 
 	return size == 0 ? -1 : (ssize_t) size;
 }
@@ -1011,14 +1010,6 @@ stream_gzwrite(stream *restrict s, const void *restrict buf, size_t elmsize, siz
 	return size == 0 ? -1 : (ssize_t) size;
 }
 
-static void
-stream_gzclose(stream *s)
-{
-	if (s->stream_data.p)
-		gzclose((gzFile) s->stream_data.p);
-	s->stream_data.p = NULL;
-}
-
 static int
 stream_gzflush(stream *s)
 {
@@ -1028,6 +1019,15 @@ stream_gzflush(stream *s)
 	    gzflush((gzFile) s->stream_data.p, Z_SYNC_FLUSH) != Z_OK)
 		return -1;
 	return 0;
+}
+
+static void
+stream_gzclose(stream *s)
+{
+	stream_gzflush(s);
+	if (s->stream_data.p)
+		gzclose((gzFile) s->stream_data.p);
+	s->stream_data.p = NULL;
 }
 
 static stream *
@@ -1190,9 +1190,7 @@ stream_bzread(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt
 		s->errnr = MNSTR_READ_ERROR;
 		return -1;
 	}
-#ifdef WIN32
-	/* on Windows when in text mode, convert \r\n line endings to
-	 * \n */
+	/* when in text mode, convert \r\n line endings to \n */
 	if (!s->binary) {
 		char *p1, *p2, *pe;
 
@@ -1209,7 +1207,6 @@ stream_bzread(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt
 			p1++;
 		}
 	}
-#endif
 	return (ssize_t) (size / elmsize);
 }
 
@@ -1432,9 +1429,8 @@ stream_xzread(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt
 		}
 	}
 	if (ressize) {
-#ifdef WIN32
-		/* on Windows when in text mode, convert \r\n line
-		 * endings to \n */
+		/* when in text mode, convert \r\n line endings to
+		 * \n */
 		if (!s->binary) {
 			char *p1, *p2, *pe;
 
@@ -1451,7 +1447,6 @@ stream_xzread(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt
 				p1++;
 			}
 		}
-#endif
 		return (ssize_t) (ressize / elmsize);
 	}
 	return 0;
@@ -1596,18 +1591,15 @@ open_xzstream(const char *restrict filename, const char *restrict flags)
 		    strncmp(buf, UTF8BOM, UTF8BOMLENGTH) == 0) {
 			s->isutf8 = true;
 		} else {
-			FILE *fp = xz->fp;
-			lzma_ret ret;
 			lzma_end(&xz->strm);
-			ret = lzma_stream_decoder(&xz->strm, UINT64_MAX, LZMA_CONCATENATED);
-			if (ret != LZMA_OK) {
-				destroy(s);
+			if (lzma_stream_decoder(&xz->strm, UINT64_MAX, LZMA_CONCATENATED) != LZMA_OK
+				|| fseek (xz->fp, 0L, SEEK_SET) < 0) {
+				fclose(xz->fp);
 				free(xz);
-				fclose(fp);
+				destroy(s);
 				return NULL;
 			}
-			rewind(fp);
-			xz->fp = fp;
+			xz->todo = 0;
 		}
 	}
 	return s;
@@ -1719,8 +1711,7 @@ stream_lz4read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cn
 		total_read += remaining_to_decompress;
 	}
 
-#ifdef WIN32
-	/* on Windows when in text mode, convert \r\n line endings to \n */
+	/* when in text mode, convert \r\n line endings to \n */
 	if (!s->binary) {
 		char *p1, *p2, *pe;
 
@@ -1737,7 +1728,6 @@ stream_lz4read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cn
 			p1++;
 		}
 	}
-#endif
 	return (ssize_t) (total_read / elmsize);
 }
 
@@ -2050,7 +2040,7 @@ open_rstream(const char *filename)
 #ifdef STREAM_DEBUG
 	fprintf(stderr, "open_rstream %s\n", filename);
 #endif
-	ext = get_extention(filename);
+	ext = get_extension(filename);
 
 	if (strcmp(ext, "gz") == 0)
 		return open_gzrstream(filename);
@@ -2078,7 +2068,7 @@ open_wstream(const char *filename)
 #ifdef STREAM_DEBUG
 	fprintf(stderr, "open_wstream %s\n", filename);
 #endif
-	ext = get_extention(filename);
+	ext = get_extension(filename);
 
 	if (strcmp(ext, "gz") == 0)
 		return open_gzwstream(filename, "wb");
@@ -2107,7 +2097,7 @@ open_rastream(const char *filename)
 #ifdef STREAM_DEBUG
 	fprintf(stderr, "open_rastream %s\n", filename);
 #endif
-	ext = get_extention(filename);
+	ext = get_extension(filename);
 
 	if (strcmp(ext, "gz") == 0)
 		return open_gzrastream(filename);
@@ -2148,7 +2138,7 @@ open_wastream(const char *filename)
 #ifdef STREAM_DEBUG
 	fprintf(stderr, "open_wastream %s\n", filename);
 #endif
-	ext = get_extention(filename);
+	ext = get_extension(filename);
 
 	if (strcmp(ext, "gz") == 0)
 		return open_gzwastream(filename, "w");
@@ -2172,10 +2162,6 @@ open_wastream(const char *filename)
 #ifdef HAVE_CURL
 #include <curl/curl.h>
 
-#ifdef USE_CURL_MULTI
-static CURLM *multi_handle;
-#endif
-
 struct curl_data {
 	CURL *handle;
 	char *buffer;		/* buffer to store incoming data */
@@ -2189,6 +2175,7 @@ struct curl_data {
 #endif
 };
 #ifdef USE_CURL_MULTI
+static CURLM *multi_handle;
 static struct curl_data *curl_handles;
 #endif
 
@@ -2518,9 +2505,23 @@ socket_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 #endif
 	for (;;) {
 		if (s->timeout) {
+			int ret;
+#ifdef HAVE_POLL
+			struct pollfd pfd;
+
+			pfd = (struct pollfd) {.fd = s->stream_data.s,
+					       .events = POLLIN};
+
+			ret = poll(&pfd, 1, (int) s->timeout);
+			if (ret == -1 && errno == EINTR)
+				continue;
+			if (ret == -1 || (pfd.revents & POLLERR)) {
+				s->errnr = MNSTR_READ_ERROR;
+				return -1;
+			}
+#else
 			struct timeval tv;
 			fd_set fds;
-			int ret;
 
 			errno = 0;
 #ifdef _MSC_VER
@@ -2537,18 +2538,24 @@ socket_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 				s->stream_data.s + 1,
 #endif
 				&fds, NULL, NULL, &tv);
-			if (s->timeout_func && s->timeout_func()) {
-				s->errnr = MNSTR_TIMEOUT;
-				return -1;
-			}
 			if (ret == SOCKET_ERROR) {
 				s->errnr = MNSTR_READ_ERROR;
 				return -1;
 			}
-			if (ret == 0)
+#endif
+			if (ret == 0) {
+				if (s->timeout_func == NULL || s->timeout_func()) {
+					s->errnr = MNSTR_TIMEOUT;
+					return -1;
+				}
 				continue;
+			}
 			assert(ret == 1);
+#ifdef HAVE_POLL
+			assert(pfd.revents & (POLLIN|POLLHUP));
+#else
 			assert(FD_ISSET(s->stream_data.s, &fds));
+#endif
 		}
 #ifdef _MSC_VER
 		nr = recv(s->stream_data.s, buf, (int) size, 0);
@@ -2558,6 +2565,8 @@ socket_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 		}
 #else
 		nr = read(s->stream_data.s, buf, size);
+		if (nr == -1 && errno == EINTR)
+			continue;
 		if (nr == -1) {
 			s->errnr = MNSTR_READ_ERROR;
 			return -1;
@@ -2645,9 +2654,22 @@ static int
 socket_isalive(stream *s)
 {
 	SOCKET fd = s->stream_data.s;
-	char buffer[32];
+#ifdef HAVE_POLL
+	struct pollfd pfd;
+	int ret;
+	pfd = (struct pollfd){.fd = fd};
+	if ((ret = poll(&pfd, 1, 0)) == 0)
+		return 1;
+	if (ret == -1 && errno == EINTR)
+		return socket_isalive(s);
+	if (ret < 0 || pfd.revents & (POLLERR | POLLHUP))
+		return 0;
+	assert(0);		/* unexpected revents value */
+	return 0;
+#else
 	fd_set fds;
 	struct timeval t;
+	char buffer[32];
 
 	t.tv_sec = 0;
 	t.tv_usec = 0;
@@ -2661,6 +2683,7 @@ socket_isalive(stream *s)
 #endif
 		&fds, NULL, NULL, &t) <= 0 ||
 		recv(fd, buffer, sizeof(buffer), MSG_PEEK | MSG_DONTWAIT) != 0;
+#endif
 }
 
 static stream *
@@ -2758,13 +2781,28 @@ socket_wstream(SOCKET sock, const char *name)
 /* streams working on an open file pointer */
 
 #ifdef _MSC_VER
-/* special case code for reading from/writing to a Windows cmd window */
+/* special case code for reading from/writing to a Windows console and
+ * for reading from a Windows pipe
+ *
+ * For reading from and writing to the console we can use a wide
+ * character interface which means that we are independent of the code
+ * page being used.  We can translate the wide characters (which are
+ * Unicode code points) easily to UTF-8.
+ *
+ * Both for reading from the console and from a pipe, we avoid hanging
+ * (waiting for input) in the read function.  Instead, we only call
+ * the read function when we know there is input available.  This is
+ * to prevent a deadlock situation, especially for reading from pipes,
+ * when another thread were to also interact with pipes (as happend in
+ * the scipy Python module as used in the sql/backends/monet5/pyapi05
+ * test). */
 
 struct console {
 	HANDLE h;
 	DWORD len;
 	DWORD rd;
 	unsigned char i;
+	uint32_t ch;
 	WCHAR wbuf[8192];
 };
 
@@ -2782,6 +2820,8 @@ console_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 	if (n == 0)
 		return 0;
 	if (c->rd == c->len) {
+		while (WaitForSingleObject(c->h, INFINITE) == WAIT_TIMEOUT)
+			;
 		if (!ReadConsoleW(c->h, c->wbuf, 8192, &c->len, NULL)) {
 			s->errnr = MNSTR_READ_ERROR;
 			return -1;
@@ -2877,6 +2917,8 @@ console_write(stream *restrict s, const void *restrict buf, size_t elmsize, size
 	struct console *c = s->stream_data.p;
 	size_t n = elmsize * cnt;
 	const unsigned char *p = buf;
+	uint32_t ch;
+	int x;
 
 	if (c == NULL) {
 		s->errnr = MNSTR_WRITE_ERROR;
@@ -2886,6 +2928,30 @@ console_write(stream *restrict s, const void *restrict buf, size_t elmsize, size
 		return 0;
 
 	c->len = 0;
+	if (c->i > 0) {
+		while (c->i > 0 && n > 0) {
+			if ((*p & 0xC0) != 0x80) {
+				s->errnr = MNSTR_WRITE_ERROR;
+				return -1;
+			}
+			c->ch <<= 6;
+			c->ch |= *p & 0x3F;
+			p++;
+			n--;
+			c->i--;
+		}
+		if (c->i > 0) {
+			;
+		} else if (c->ch > 0x10FFFF || (c->ch & 0xFFFFF800) == 0xD800) {
+			s->errnr = MNSTR_WRITE_ERROR;
+			return -1;
+		} else if (c->ch > 0xFFFF) {
+			c->wbuf[c->len++] = 0xD800 | ((c->ch >> 10) - (1 << 6));
+			c->wbuf[c->len++] = 0xDC00 | (c->ch & 0x03FF);
+		} else {
+			c->wbuf[c->len++] = c->ch;
+		}
+	}
 	while (n > 0) {
 		if (c->len >= 8191) {
 			if (!WriteConsoleW(c->h, c->wbuf, c->len, &c->rd, NULL)) {
@@ -2899,31 +2965,45 @@ console_write(stream *restrict s, const void *restrict buf, size_t elmsize, size
 				c->wbuf[c->len++] = L'\r';
 			c->wbuf[c->len++] = *p++;
 			n--;
-		} else if ((*p & 0xE0) == 0xC0 &&
-			   n >= 2 &&
-			   (p[1] & 0xC0) == 0x80) {
-			c->wbuf[c->len++] = ((p[0] & 0x1F) << 6) | (p[1] & 0x3F);
-			p += 2;
-			n -= 2;
-		} else if ((*p & 0xF0) == 0xE0 &&
-			   n >= 3 &&
-			   (p[1] & 0xC0) == 0x80 &&
-			   (p[2] & 0xC0) == 0x80) {
-			c->wbuf[c->len++] = ((p[0] & 0x0F) << 12) | ((p[1] & 0x3F) << 6) | (p[2] & 0x3F);
-			p += 3;
-			n -= 3;
-		} else if ((*p & 0xF8) == 0xF0 &&
-			   n >= 4 &&
-			   (p[1] & 0xC0) == 0x80 &&
-			   (p[2] & 0xC0) == 0x80 &&
-			   (p[3] & 0xC0) == 0x80) {
-			c->wbuf[c->len++] = 0xD800 | ((((p[0] & 0x07) << 8) | ((p[1] & 0x3F) << 2)) - 0x0040) | ((p[2] & 0x30) >> 4);
-			c->wbuf[c->len++] = 0xDC00 | ((p[2] & 0x0F) << 6) | (p[3] & 0x3F);
-			p += 4;
-			n -= 4;
+			x = 0;
+			continue;
+		} else if ((*p & 0xE0) == 0xC0) {
+			x = 1;
+			ch = *p & 0x1F;
+		} else if ((*p & 0xF0) == 0xE0) {
+			x = 2;
+			ch = *p & 0x0F;
+		} else if ((*p & 0xF8) == 0xF0) {
+			x = 3;
+			ch = *p & 0x07;
 		} else {
 			s->errnr = MNSTR_WRITE_ERROR;
 			return -1;
+		}
+		p++;
+		n--;
+		while (x > 0 && n > 0) {
+			if ((*p & 0xC0) != 0x80) {
+				s->errnr = MNSTR_WRITE_ERROR;
+				return -1;
+			}
+			ch <<= 6;
+			ch |= *p & 0x3F;
+			p++;
+			n--;
+			x--;
+		}
+		if (x > 0) {
+			c->ch = ch;
+			c->i = x;
+		} else if (ch > 0x10FFFF || (ch & 0xFFFFF800) == 0xD800) {
+			s->errnr = MNSTR_WRITE_ERROR;
+			return -1;
+		} else if (ch > 0xFFFF) {
+			c->wbuf[c->len++] = 0xD800 | ((ch >> 10) - (1 << 6));
+			c->wbuf[c->len++] = 0xDC00 | (ch & 0x03FF);
+		} else {
+			c->wbuf[c->len++] = ch;
 		}
 	}
 	if (c->len > 0) {
@@ -2934,6 +3014,67 @@ console_write(stream *restrict s, const void *restrict buf, size_t elmsize, size
 		c->len = 0;
 	}
 	return (ssize_t) ((p - (const unsigned char *) buf) / elmsize);
+}
+
+static ssize_t
+pipe_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
+{
+	HANDLE h = s->stream_data.p;
+	size_t n;
+	unsigned char *p;
+	DWORD nread;
+
+	if (h == NULL) {
+		s->errnr = MNSTR_READ_ERROR;
+		return -1;
+	}
+	if (elmsize == 0 || cnt == 0)
+		return 0;
+  tailrecurse:
+	n = elmsize * cnt;
+	p = buf;
+
+	for (;;) {
+		DWORD ret = PeekNamedPipe(h, NULL, 0, NULL, &nread, NULL);
+		if (ret == 0) {
+			if (GetLastError() == ERROR_BROKEN_PIPE)
+				return 0;
+			s->errnr = MNSTR_READ_ERROR;
+			return -1;
+		}
+		if (nread > 0)
+			break;
+		Sleep(100);
+	}
+	if ((size_t) nread < n)
+		n = (size_t) nread;
+	if (!ReadFile(h, buf, (DWORD) n, &nread, NULL)) {
+		s->errnr = MNSTR_READ_ERROR;
+		return -1;
+	}
+	/* when in text mode, convert \r\n line endings to \n */
+	if (!s->binary && nread > 0) {
+		char *p1, *p2, *pe;
+
+		p1 = buf;
+		pe = p1 + nread;
+		while (p1 < pe && *p1 != '\r')
+			p1++;
+		p2 = p1;
+		while (p1 < pe) {
+			if (*p1 == '\r' /*&& p1[1] == '\n'*/)
+				nread--;
+			else
+				*p2++ = *p1;
+			p1++;
+		}
+		if (nread == 0) {
+			/* try again after removing \r and ending up
+			 * with nothing */
+			goto tailrecurse;
+		}
+	}
+	return nread / elmsize;
 }
 
 static void
@@ -3030,26 +3171,43 @@ file_rastream(FILE *restrict fp, const char *restrict name)
 		}
 	}
 #ifdef _MSC_VER
-	if (fileno(fp) == 0 && isatty(0)) {
-		struct console *c = malloc(sizeof(struct console));
-		if (c == NULL) {
-			destroy(s);
-			return NULL;
+	if (fp == stdin) {
+		HANDLE h = GetStdHandle(STD_INPUT_HANDLE);
+
+		switch (GetFileType(h)) {
+		case FILE_TYPE_PIPE:
+			s->stream_data.p = h;
+			s->read = pipe_read;
+			s->write = NULL;
+			s->destroy = destroy;
+			s->close = NULL;
+			s->flush = NULL;
+			s->fsync = NULL;
+			s->fgetpos = NULL;
+			s->fsetpos = NULL;
+			break;
+		case FILE_TYPE_CHAR: {
+			struct console *c = malloc(sizeof(struct console));
+			if (c == NULL) {
+				destroy(s);
+				return NULL;
+			}
+			s->stream_data.p = c;
+			*c = (struct console) {
+				.h = h,
+			};
+			s->read = console_read;
+			s->write = NULL;
+			s->destroy = console_destroy;
+			s->close = NULL;
+			s->flush = NULL;
+			s->fsync = NULL;
+			s->fgetpos = NULL;
+			s->fsetpos = NULL;
+			s->isutf8 = true;
+			break;
 		}
-		s->stream_data.p = c;
-		*c = (struct console) {
-			.h = GetStdHandle(STD_INPUT_HANDLE),
-		};
-		s->read = console_read;
-		s->write = NULL;
-		s->destroy = console_destroy;
-		s->close = NULL;
-		s->flush = NULL;
-		s->fsync = NULL;
-		s->fgetpos = NULL;
-		s->fsetpos = NULL;
-		s->isutf8 = true;
-		return s;
+		}
 	}
 #endif
 	return s;
@@ -3150,7 +3308,7 @@ static ssize_t
 ic_write(stream *restrict s, const void *restrict buf, size_t elmsize, size_t cnt)
 {
 	struct icstream *ic = (struct icstream *) s->stream_data.p;
-	ICONV_CONST char *inbuf = (ICONV_CONST char *) buf;
+	ICONV_CONST char *inbuf;
 	size_t inbytesleft = elmsize * cnt;
 	char *bf = NULL;
 
@@ -3171,6 +3329,7 @@ ic_write(stream *restrict s, const void *restrict buf, size_t elmsize, size_t cn
 		inbytesleft += ic->buflen;
 		ic->buflen = 0;
 	}
+	inbuf = (ICONV_CONST char *) buf;
 	while (inbytesleft > 0) {
 		char *outbuf = ic->buffer;
 		size_t outbytesleft = sizeof(ic->buffer);
@@ -3555,6 +3714,7 @@ buffer_get_buf(buffer *b)
 	b->buf = malloc(b->len);
 	if (b->buf == NULL) {
 		free(b);
+		free(r);
 		return NULL;
 	}
 	b->len = b->buf ? b->len : 0;
@@ -3775,6 +3935,7 @@ bs_write(stream *restrict ss, const void *restrict buf, size_t elmsize, size_t c
 			if (!mnstr_writeSht(s->s, (int16_t) blksize) ||
 			    s->s->write(s->s, s->buf, 1, s->nr) != (ssize_t) s->nr) {
 				ss->errnr = MNSTR_WRITE_ERROR;
+				s->nr = 0; /* data is lost due to error */
 				return -1;
 			}
 			s->blks++;
@@ -3827,6 +3988,7 @@ bs_flush(stream *ss)
 		     (s->nr > 0 &&
 		      s->s->write(s->s, s->buf, 1, s->nr) != (ssize_t) s->nr))) {
 			ss->errnr = MNSTR_WRITE_ERROR;
+			s->nr = 0; /* data is lost due to error */
 			return -1;
 		}
 		s->blks++;
@@ -4009,6 +4171,8 @@ bs_close(stream *ss)
 	assert(s);
 	if (s == NULL)
 		return;
+	if (!ss->readonly && s->nr > 0)
+		bs_flush(ss);
 	if (s->s)
 		s->s->close(s->s);
 }
@@ -4626,6 +4790,8 @@ bs2_close(stream *ss)
 	assert(s);
 	if (s == NULL)
 		return;
+	if (!ss->readonly && s->nr > 0)
+		bs2_flush(ss);
 	assert(s->s);
 	if (s->s)
 		s->s->close(s->s);

@@ -20,7 +20,6 @@ stdout of test 'pyapi3_02` in directory 'sql/backends/monet5/UDF/pyapi3` itself:
 # MonetDB/Python module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 16:11:24 >  
 # 16:11:24 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-9490" "--port=33314"
@@ -40,8 +39,8 @@ Ready.
 #	return(x);
 #};
 #SELECT pyapi02(i,j,2) FROM rval;
-% sys.L2 # table_name
-% L2 # name
+% sys.%1 # table_name
+% %1 # name
 % int # type
 % 2 # length
 [ 20	]
@@ -55,8 +54,8 @@ Ready.
 #	return numpy.min(i)
 #};
 #SELECT pyapi02(i) FROM rval;
-% sys.L2 # table_name
-% L2 # name
+% sys.%1 # table_name
+% %1 # name
 % int # type
 % 1 # length
 [ 1	]

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -186,13 +186,13 @@ XMLstr2xml(xml *x, const char **val)
 	if (strNil(t)) {
 		*x = (xml) GDKstrdup(str_nil);
 		if (*x == NULL)
-			throw(MAL, "xml.xml", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "xml.xml", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 	len = 6 * strlen(t) + 1;
 	buf = GDKmalloc(len + 1);
 	if (buf == NULL)
-		throw(MAL, "xml.xml", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "xml.xml", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	buf[0] = 'C';
 	XMLquotestring(t, buf + 1, len);
 	*x = buf;
@@ -209,7 +209,7 @@ XMLxmltext(str *s, xml *x)
 	if (strNil(*x)) {
 		*s = GDKstrdup(str_nil);
 		if (*s == NULL)
-			throw(MAL, "xml.text", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "xml.text", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 	if (**x == 'D') {
@@ -229,7 +229,7 @@ XMLxmltext(str *s, xml *x)
 
 		p = content = GDKmalloc(strlen(*x) + 1);
 		if (p == NULL)
-			throw(MAL, "xml.text", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "xml.text", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		while (*t) {
 			if (*t == '"' || *t == '\'') {
 				char q = *t++;
@@ -243,7 +243,7 @@ XMLxmltext(str *s, xml *x)
 	if (content == NULL) {
 		*s = GDKstrdup("");
 		if (*s == NULL)
-			throw(MAL, "xml.text", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "xml.text", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	} else
 		*s = (str) content;
 	return MAL_SUCCEED;
@@ -254,7 +254,7 @@ XMLxml2xml(xml *s, xml *x)
 {
 	*s = GDKstrdup(*x);
 	if (*s == NULL)
-		throw(MAL, "xml.xml", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "xml.xml", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -266,7 +266,7 @@ XMLdocument(xml *x, str *val)
 	if (strNil(*val)) {
 		*x = (xml) GDKstrdup(str_nil);
 		if (*x == NULL)
-			throw(MAL, "xml.document", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "xml.document", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 	/* call the libxml2 library to perform the test */
@@ -279,7 +279,7 @@ XMLdocument(xml *x, str *val)
 		xmlFreeDoc(doc);
 		*x = GDKmalloc(len + 2);
 		if (*x == NULL)
-			throw(MAL, "xml.document", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "xml.document", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		snprintf(*x, len + 2, "D%s", (char *) buf);
 		GDKfree(buf);
 		return MAL_SUCCEED;
@@ -300,7 +300,7 @@ XMLcontent(xml *x, str *val)
 	if (strNil(*val)) {
 		*x = (xml) GDKstrdup(str_nil);
 		if (*x == NULL)
-			throw(MAL, "xml.content", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "xml.content", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 	/* call the libxml2 library to perform the test */
@@ -316,7 +316,7 @@ XMLcontent(xml *x, str *val)
 	len = strlen((const char *) s) + 2;
 	*x = GDKmalloc(len);
 	if (*x == NULL)
-		throw(MAL, "xml.content", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "xml.content", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	snprintf(*x, len, "C%s", (const char *) s);
 	xmlBufferFree(buf);
 	xmlFreeNodeList(elem);
@@ -350,7 +350,7 @@ XMLcomment(xml *x, str *s)
 	if (strNil(*s)) {
 		*x = (xml) GDKstrdup(str_nil);
 		if (*x == NULL)
-			throw(MAL, "xml.comment", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "xml.comment", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 	if (strstr(*s, "--") != NULL)
@@ -358,7 +358,7 @@ XMLcomment(xml *x, str *s)
 	len = strlen(*s) + 9;
 	buf = (str) GDKmalloc(len);
 	if (buf == NULL)
-		throw(MAL, "xml.comment", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "xml.comment", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	snprintf(buf, len, "C<!--%s-->", *s);
 	*x = buf;
 	return MAL_SUCCEED;
@@ -385,7 +385,7 @@ XMLpi(str *ret, str *target, str *value)
 	if (strNil(*target)) {
 		*ret = GDKstrdup(str_nil);
 		if (*ret == NULL)
-			throw(MAL, "xml.attribute", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "xml.attribute", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 	if (xmlValidateName((xmlChar *) *target, 0) != 0 || strcasecmp(*target, "xml") == 0)
@@ -396,14 +396,14 @@ XMLpi(str *ret, str *target, str *value)
 
 		val = GDKmalloc(n);
 		if (val == NULL)
-			throw(MAL, "xml.attribute", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "xml.attribute", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		len += XMLquotestring(*value, val, n) + 1;
 	}
 	buf = GDKmalloc(len);
 	if (buf == NULL) {
 		if (val)
 			GDKfree(val);
-		throw(MAL, "xml.attribute", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "xml.attribute", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	if (val == NULL) {
 		snprintf(buf, len, "C<?%s?>", *target);
@@ -425,7 +425,7 @@ XMLroot(xml *ret, xml *val, str *version, str *standalone)
 	if (strNil(*val)) {
 		*ret = GDKstrdup(str_nil);
 		if (*ret == NULL)
-			throw(MAL, "xml.root", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "xml.root", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 	if (**val != 'C')
@@ -444,7 +444,7 @@ XMLroot(xml *ret, xml *val, str *version, str *standalone)
 	}
 	buf = GDKmalloc(len);
 	if (buf == NULL)
-		throw(MAL, "xml.root", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "xml.root", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	strcpy(buf, "D<?xml");
 	i = strlen(buf);
 	if (!strNil(*version) && **version)
@@ -473,7 +473,7 @@ XMLattribute(xml *x, str *name, str *val)
 	if (strNil(t) || strNil(*name)) {
 		*x = (xml) GDKstrdup(str_nil);
 		if (*x == NULL)
-			throw(MAL, "xml.attribute", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "xml.attribute", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 	if (xmlValidateName((xmlChar *) *name, 0) != 0)
@@ -481,13 +481,13 @@ XMLattribute(xml *x, str *name, str *val)
 	len = 6 * strlen(t) + 1;
 	buf = GDKmalloc(len);
 	if (buf == NULL)
-		throw(MAL, "xml.attribute", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "xml.attribute", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	len = XMLquotestring(t, buf, len);
 	len += strlen(*name) + 5;
 	*x = GDKmalloc(len);
 	if (*x == NULL) {
 		GDKfree(buf);
-		throw(MAL, "xml.attribute", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "xml.attribute", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	snprintf(*x, len, "A%s=\"%s\"", *name, buf);
 	GDKfree(buf);
@@ -526,7 +526,7 @@ XMLelement(xml *ret, str *name, xml *nspace, xml *attr, xml *val)
 	}
 	buf = GDKmalloc(len);
 	if (buf == NULL)
-		throw(MAL, "xml.element", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "xml.element", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	if (strNil(*val) && (!attr || strNil(*attr))) {
 		strcpy(buf, str_nil);
 	} else {
@@ -567,18 +567,18 @@ XMLconcat(xml *ret, xml *left, xml *right)
 		len = strlen(*left) + strlen(*right) + 1;
 		buf = GDKmalloc(len);
 		if (buf == NULL)
-			throw(MAL, "xml.concat", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "xml.concat", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		snprintf(buf, len, "A%s %s", *left + 1, *right + 1);
 	} else if (**left == 'C') {
 		len = strlen(*left) + strlen(*right) +2;
 		buf = GDKmalloc(len);
 		if (buf == NULL)
-			throw(MAL, "xml.concat", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "xml.concat", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		snprintf(buf, len, "C%s%s", *left + 1, *right + 1);
 	} else
 		throw(MAL, "xml.concat", "can only concatenate attributes and element content");
 	if (buf == NULL)
-		throw(MAL, "xml.concat", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "xml.concat", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	*ret = buf;
 	return MAL_SUCCEED;
 }
@@ -605,7 +605,7 @@ XMLforest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	}
 	buf = (str) GDKmalloc(len);
 	if (buf == NULL)
-		throw(MAL, "xml.forest", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "xml.forest", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	*ret = buf;
 	*buf++ = 'C';
 	*buf = 0;
@@ -630,6 +630,14 @@ XMLprelude(void *ret)
 	TYPE_xml = ATOMindex("xml");
 	xmlMemSetup(GDKfree, GDKmalloc, GDKrealloc, GDKstrdup);
 	xmlInitParser();
+	return MAL_SUCCEED;
+}
+
+str
+XMLepilogue(void *ret)
+{
+	(void)ret;
+	xmlCleanupParser();
 	return MAL_SUCCEED;
 }
 
@@ -691,7 +699,8 @@ ssize_t XMLfromString(const char *src, size_t *len, xml *x, bool external) {
 	(void) src;
 	(void) len;
 	(void) x;
-	GDKerror("not implemented\n");
+	(void) external;
+	GDKerror("XMLfromString is not implemented\n");
 	return -1;
 }
 ssize_t XMLtoString(str *s, size_t *len, const char *src, bool external) {
@@ -699,74 +708,74 @@ ssize_t XMLtoString(str *s, size_t *len, const char *src, bool external) {
 	(void) len;
 	(void) src;
 	(void) external;
-	GDKerror("not implemented\n");
+	GDKerror("XMLtoString is not implemented\n");
 	return -1;
 }
 str XMLxml2str(str *s, xml *x) {
 	(void) s;
 	(void) x;
-	return GDKstrdup(NO_LIBXML_FATAL);
+	return createException(MAL, "xml.xml2str", SQLSTATE(HY005) NO_LIBXML_FATAL);
 }
 str XMLstr2xml(xml *x, const char **s) {
 	(void) s;
 	(void) x;
-	return GDKstrdup(NO_LIBXML_FATAL);
+	return createException(MAL, "xml.xml2str", SQLSTATE(HY005) NO_LIBXML_FATAL);
 }
 str XMLxmltext(str *s, xml *x) {
 	(void) s;
 	(void) x;
-	return GDKstrdup(NO_LIBXML_FATAL);
+	return createException(MAL, "xml.xmltext", SQLSTATE(HY005) NO_LIBXML_FATAL);
 }
 str XMLxml2xml(xml *x, xml *s) {
 	(void) s;
 	(void) x;
-	return GDKstrdup(NO_LIBXML_FATAL);
+	return createException(MAL, "xml.xml2xml", SQLSTATE(HY005) NO_LIBXML_FATAL);
 }
 str XMLdocument(xml *x, str *s) {
 	(void) s;
 	(void) x;
-	return GDKstrdup(NO_LIBXML_FATAL);
+	return createException(MAL, "xml.document", SQLSTATE(HY005) NO_LIBXML_FATAL);
 }
 str XMLcontent(xml *x, str *s) {
 	(void) s;
 	(void) x;
-	return GDKstrdup(NO_LIBXML_FATAL);
+	return createException(MAL, "xml.content", SQLSTATE(HY005) NO_LIBXML_FATAL);
 }
 str XMLisdocument(bit *x, str *s) {
 	(void) s;
 	(void) x;
-	return GDKstrdup(NO_LIBXML_FATAL);
+	return createException(MAL, "xml.isdocument", SQLSTATE(HY005) NO_LIBXML_FATAL);
 }
 str XMLcomment(xml *x, str *s) {
 	(void) s;
 	(void) x;
-	return GDKstrdup(NO_LIBXML_FATAL);
+	return createException(MAL, "xml.comment", SQLSTATE(HY005) NO_LIBXML_FATAL);
 }
 str XMLpi(xml *x, str *target, str *s) {
 	(void) s;
 	(void) target;
 	(void) x;
-	return GDKstrdup(NO_LIBXML_FATAL);
+	return createException(MAL, "xml.pi", SQLSTATE(HY005) NO_LIBXML_FATAL);
 }
 str XMLroot(xml *x, xml *v, str *version, str *standalone) {
 	(void) x;
 	(void) v;
 	(void) version;
 	(void) standalone;
-	return GDKstrdup(NO_LIBXML_FATAL);
+	return createException(MAL, "xml.root", SQLSTATE(HY005) NO_LIBXML_FATAL);
 }
 str XMLparse(xml *x, str *doccont, str *s, str *option) {
 	(void) x;
 	(void) doccont;
 	(void) s;
 	(void) option;
-	return GDKstrdup(NO_LIBXML_FATAL);
+	return createException(MAL, "xml.parse", SQLSTATE(HY005) NO_LIBXML_FATAL);
 }
 str XMLattribute(xml *ret, str *name, str *val) {
 	(void) ret;
 	(void) name;
 	(void) val;
-	return GDKstrdup(NO_LIBXML_FATAL);
+	return createException(MAL, "xml.attribute", SQLSTATE(HY005) NO_LIBXML_FATAL);
 }
 str XMLelement(xml *ret, str *name, xml *nspace, xml *attr, xml *val) {
 	(void) ret;
@@ -774,26 +783,26 @@ str XMLelement(xml *ret, str *name, xml *nspace, xml *attr, xml *val) {
 	(void) nspace;
 	(void) attr;
 	(void) val;
-	return GDKstrdup(NO_LIBXML_FATAL);
+	return createException(MAL, "xml.element", SQLSTATE(HY005) NO_LIBXML_FATAL);
 }
 str XMLelementSmall(xml *ret, str *name, xml *val) {
 	(void) ret;
 	(void) name;
 	(void) val;
-	return GDKstrdup(NO_LIBXML_FATAL);
+	return createException(MAL, "xml.elementSmall", SQLSTATE(HY005) NO_LIBXML_FATAL);
 }
 str XMLconcat(xml *ret, xml *left, xml *right) {
 	(void) ret;
 	(void) left;
 	(void) right;
-	return GDKstrdup(NO_LIBXML_FATAL);
+	return createException(MAL, "xml.concat", SQLSTATE(HY005) NO_LIBXML_FATAL);
 }
 str XMLforest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p) {
 	(void) cntxt;
 	(void) mb;
 	(void) stk;
 	(void) p;
-	return GDKstrdup(NO_LIBXML_FATAL);
+	return createException(MAL, "xml.forest", SQLSTATE(HY005) NO_LIBXML_FATAL);
 }
 size_t XMLquotestring(const char *s, char *buf, size_t len) {
 	(void) s;
@@ -810,6 +819,10 @@ size_t XMLunquotestring(const char **p, char q, char *buf) {
 str XMLprelude(void *ret) {
 	(void) ret;
 	return MAL_SUCCEED; /* to not break init */
+}
+str XMLepilogue(void *ret) {
+	(void)ret;
+	return MAL_SUCCEED;
 }
 
 #endif

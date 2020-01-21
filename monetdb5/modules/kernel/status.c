@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -121,12 +121,12 @@ static struct tms state;
 str
 SYScpuStatistics(bat *ret, bat *ret2)
 {
-	int i;
+	lng i;
 	BAT *b, *bn;
 #ifdef HAVE_TIMES
 	struct tms newst;
 # ifndef HZ
-	static int HZ;
+	static int HZ = 0;
 
 	if (HZ == 0) {
 #  if defined(HAVE_SYSCONF) && defined(_SC_CLK_TCK)
@@ -139,11 +139,11 @@ SYScpuStatistics(bat *ret, bat *ret2)
 #endif
 
 	bn = COLnew(0, TYPE_str, 32, TRANSIENT);
-	b = COLnew(0, TYPE_int, 32, TRANSIENT);
+	b = COLnew(0, TYPE_lng, 32, TRANSIENT);
 	if (b == 0 || bn == 0){
 		if ( b) BBPunfix(b->batCacheid);
 		if ( bn) BBPunfix(bn->batCacheid);
-		throw(MAL, "status.cpuStatistics", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "status.cpuStatistics", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 #ifdef HAVE_TIMES
 	if (clk == 0) {
@@ -152,7 +152,7 @@ SYScpuStatistics(bat *ret, bat *ret2)
 	}
 	times(&newst);
 	/* store counters, ignore errors */
-	i = (int) (time(0) - clk);
+	i = (lng) (time(0) - clk);
 	if (BUNappend(bn, "elapsed", false) != GDK_SUCCEED ||
 		BUNappend(b, &i, false) != GDK_SUCCEED)
 		goto bailout;
@@ -175,7 +175,7 @@ SYScpuStatistics(bat *ret, bat *ret2)
 
 	state = newst;
 #else
-	i = int_nil;
+	i = lng_nil;
 	if (BUNappend(bn, "elapsed", false) != GDK_SUCCEED ||
 		BUNappend(b, &i, false) != GDK_SUCCEED ||
 		BUNappend(bn, "user", false) != GDK_SUCCEED ||
@@ -194,7 +194,7 @@ SYScpuStatistics(bat *ret, bat *ret2)
   bailout:
 	BBPunfix(b->batCacheid);
 	BBPunfix(bn->batCacheid);
-	throw(MAL, "status.cpuStatistics", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	throw(MAL, "status.cpuStatistics", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
 
 static size_t memincr;
@@ -209,7 +209,7 @@ SYSmemStatistics(bat *ret, bat *ret2)
 	if (b == 0 || bn == 0) {
 		if ( b) BBPunfix(b->batCacheid);
 		if ( bn) BBPunfix(bn->batCacheid);
-		throw(MAL, "status.memStatistics", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "status.memStatistics", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	/* store counters, ignore errors */
@@ -224,7 +224,7 @@ SYSmemStatistics(bat *ret, bat *ret2)
   bailout:
 	BBPunfix(b->batCacheid);
 	BBPunfix(bn->batCacheid);
-	throw(MAL, "status.memStatistics", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	throw(MAL, "status.memStatistics", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
 
 #define heap(X1,X2,X3,X4)									\
@@ -262,7 +262,7 @@ SYSmem_usage(bat *ret, bat *ret2, const lng *minsize)
 	if (b == 0 || bn == 0) {
 		if ( b) BBPunfix(b->batCacheid);
 		if ( bn) BBPunfix(bn->batCacheid);
-		throw(MAL, "status.memUsage", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "status.memUsage", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	BBPlock();
 	for (i = 1; i < getBBPsize(); i++) {
@@ -293,7 +293,8 @@ SYSmem_usage(bat *ret, bat *ret2, const lng *minsize)
 			continue;
 		}
 		heap(1,&c->theap,tbuns,"tbuns");
-		heap(c->thash && c->thash != (Hash *) 1,&c->thash->heap,thsh,"thsh");
+		heap(c->thash && c->thash != (Hash *) 1,&c->thash->heaplink,thsh,"thshl");
+		heap(c->thash && c->thash != (Hash *) 1,&c->thash->heapbckt,thsh,"thshb");
 		heap(c->tvheap,c->tvheap,tail,"tail");
 	}
 	/* totals per category */
@@ -361,7 +362,7 @@ SYSmem_usage(bat *ret, bat *ret2, const lng *minsize)
 	BBPunlock();
 	BBPunfix(b->batCacheid);
 	BBPunfix(bn->batCacheid);
-	throw(MAL, "status.memUsage", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	throw(MAL, "status.memUsage", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
 
 str
@@ -376,7 +377,7 @@ SYSvm_usage(bat *ret, bat *ret2, const lng *minsize)
 	if (b == 0 || bn == 0) {
 		if ( b) BBPunfix(b->batCacheid);
 		if ( bn) BBPunfix(bn->batCacheid);
-		throw(MAL, "status.vmStatistics", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "status.vmStatistics", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	BBPlock();
 	for (i = 1; i < getBBPsize(); i++) {
@@ -392,7 +393,8 @@ SYSvm_usage(bat *ret, bat *ret2, const lng *minsize)
 			continue;
 		}
 		heapvm(1,&c->theap,tbuns,"tcuns");
-		heapvm(c->thash && c->thash != (Hash *) 1,&c->thash->heap,thsh,"thsh");
+		heapvm(c->thash && c->thash != (Hash *) 1,&c->thash->heaplink,thsh,"thshl");
+		heapvm(c->thash && c->thash != (Hash *) 1,&c->thash->heapbckt,thsh,"thshb");
 		heapvm(c->tvheap,c->tvheap,tail,"tail");
 	}
 	/* totals per category */
@@ -445,7 +447,7 @@ SYSvm_usage(bat *ret, bat *ret2, const lng *minsize)
 	BBPunlock();
 	BBPunfix(b->batCacheid);
 	BBPunfix(bn->batCacheid);
-	throw(MAL, "status.vmStatistics", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	throw(MAL, "status.vmStatistics", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
 
 /*
@@ -484,24 +486,24 @@ SYSvm_usage(bat *ret, bat *ret2, const lng *minsize)
 str
 SYSioStatistics(bat *ret, bat *ret2)
 {
-#ifndef NATIVE_WIN32
+#ifdef HAVE_SYS_RESOURCE_H
 	struct rusage ru;
 #endif
-	int i;
+	lng i;
 	BAT *b, *bn;
 
-#ifndef NATIVE_WIN32
+#ifdef HAVE_SYS_RESOURCE_H
 	getrusage(RUSAGE_SELF, &ru);
 #endif
 	bn = COLnew(0, TYPE_str, 32, TRANSIENT);
-	b = COLnew(0, TYPE_int, 32, TRANSIENT);
+	b = COLnew(0, TYPE_lng, 32, TRANSIENT);
 	if (b == 0 || bn == 0) {
 		if ( b) BBPunfix(b->batCacheid);
 		if ( bn) BBPunfix(bn->batCacheid);
-		throw(MAL, "status.ioStatistics", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "status.ioStatistics", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
-#ifndef NATIVE_WIN32
+#ifdef HAVE_SYS_RESOURCE_H
 	/* store counters, ignore errors */
 	i = ru.ru_maxrss;
 	if (BUNappend(bn, "maxrss", false) != GDK_SUCCEED ||
@@ -536,7 +538,7 @@ SYSioStatistics(bat *ret, bat *ret2)
 		BUNappend(b, &i, false) != GDK_SUCCEED)
 		goto bailout;
 #else
-	i = int_nil;
+	i = lng_nil;
 	if (BUNappend(bn, "maxrss", false) != GDK_SUCCEED ||
 		BUNappend(b, &i, false) != GDK_SUCCEED ||
 		BUNappend(bn, "minflt", false) != GDK_SUCCEED ||
@@ -563,7 +565,7 @@ SYSioStatistics(bat *ret, bat *ret2)
   bailout:
 	BBPunfix(b->batCacheid);
 	BBPunfix(bn->batCacheid);
-	throw(MAL, "status.ioStatistics", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	throw(MAL, "status.ioStatistics", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
 
 str
@@ -580,17 +582,17 @@ SYSgdkEnv(bat *ret, bat *ret2)
 	if (b == 0 || bn == 0) {
 		if ( b) BBPunfix(b->batCacheid);
 		if ( bn) BBPunfix(bn->batCacheid);
-		throw(MAL, "status.batStatistics", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "status.batStatistics", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	for (i = 1; i < getBBPsize(); i++) {
 		if (BBPvalid(i)) {
 			pbat++;
 			if (BBP_cache(i)) {
-				if (BBP_cache(i)->batPersistence == PERSISTENT)
-					per++;
-				else
+				if (BBP_cache(i)->batTransient)
 					tmp++;
+				else
+					per++;
 			} else {
 				pdisk++;
 			}
@@ -604,14 +606,10 @@ SYSgdkEnv(bat *ret, bat *ret2)
 		BUNappend(b, &per, false) != GDK_SUCCEED ||
 		BUNappend(bn, "ondisk", false) != GDK_SUCCEED ||
 		BUNappend(b, &pdisk, false) != GDK_SUCCEED ||
-		BUNappend(bn, "todisk", false) != GDK_SUCCEED ||
-		BUNappend(b, &BBPout, false) != GDK_SUCCEED ||
-		BUNappend(bn, "fromdisk", false) != GDK_SUCCEED ||
-		BUNappend(b, &BBPin, false) != GDK_SUCCEED ||
 		pseudo(ret,ret2, bn,b)) {
 		BBPunfix(b->batCacheid);
 		BBPunfix(bn->batCacheid);
-		throw(MAL, "status.batStatistics", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "status.batStatistics", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	return MAL_SUCCEED;
 }
@@ -628,12 +626,12 @@ SYSgdkThread(bat *ret, bat *ret2)
 	if (b == 0 || bn == 0) {
 		if ( b) BBPunfix(b->batCacheid);
 		if ( bn) BBPunfix(bn->batCacheid);
-		throw(MAL, "status.getThreads", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "status.getThreads", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	for (i = 1; i <= THREADS; i++) {
 		thr = THRget(i);
-		if (thr->pid){
+		if (ATOMIC_GET(&thr->pid)){
 			if (BUNappend(bn, &thr->tid, false) != GDK_SUCCEED ||
 				BUNappend(b, thr->name? thr->name:"", false) != GDK_SUCCEED)
 				goto bailout;
@@ -646,5 +644,5 @@ SYSgdkThread(bat *ret, bat *ret2)
   bailout:
 	BBPunfix(b->batCacheid);
 	BBPunfix(bn->batCacheid);
-	throw(MAL, "status.getThreads", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	throw(MAL, "status.getThreads", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }

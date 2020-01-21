@@ -11,7 +11,6 @@ stdout of test '08` in directory 'sql/benchmarks/tpch/LOCKED` itself:
 # Visit http://monetdb.cwi.nl/ for further information.
 
 
-Ready.
 
 # 15:21:32 >  
 # 15:21:32 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-17397" "--port=38268"
@@ -45,7 +44,7 @@ Ready.
 #			and o_custkey = c_custkey
 #			and c_nationkey = n1.n_nationkey
 #			and n1.n_regionkey = r_regionkey
-% sys.all_nations,	sys.L14 # table_name
+% sys.all_nations,	sys. # table_name
 % o_year,	mkt_share # name
 % int,	decimal # type
 % 4,	20 # length

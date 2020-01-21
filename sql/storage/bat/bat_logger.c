@@ -3,15 +3,15 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
 #include "bat_logger.h"
 #include "bat_utils.h"
 #include "sql_types.h" /* EC_POS */
+#include "wlc.h"
 
-#define CATALOG_JUL2015 52200
 #define CATALOG_MAR2018 52201
 #define CATALOG_AUG2018 52202
 
@@ -23,14 +23,6 @@ static gdk_return
 bl_preversion(int oldversion, int newversion)
 {
 	(void)newversion;
-#ifdef CATALOG_JUL2015
-	if (oldversion == CATALOG_JUL2015) {
-		/* upgrade to Jun2016 releases */
-		catalog_version = oldversion;
-		geomversion_set();
-		return GDK_SUCCEED;
-	}
-#endif
 
 #ifdef CATALOG_MAR2018
 	if (oldversion == CATALOG_MAR2018) {
@@ -135,11 +127,14 @@ tabins(void *lg, bool first, int tt, const char *nname, const char *sname, const
 	const void *cval;
 	gdk_return rc;
 	BAT *b;
+	int len;
 
 	va_start(va, tname);
 	while ((cname = va_arg(va, char *)) != NULL) {
 		cval = va_arg(va, void *);
-		snprintf(lname, sizeof(lname), "%s_%s_%s", sname, tname, cname);
+		len = snprintf(lname, sizeof(lname), "%s_%s_%s", sname, tname, cname);
+		if (len == -1 || (size_t)len >= sizeof(lname))
+			return GDK_FAIL;
 		if ((b = temp_descriptor(logger_find_bat(lg, lname, 0, 0))) == NULL)
 			return GDK_FAIL;
 		if (first) {
@@ -178,150 +173,6 @@ static gdk_return
 bl_postversion(void *lg)
 {
 	(void)lg;
-
-#ifdef CATALOG_JUL2015
-	if (catalog_version <= CATALOG_JUL2015) {
-		BAT *b;
-		BATiter bi;
-		BAT *te, *tne;
-		BUN p, q;
-		int geomUpgrade = 0;
-		geomcatalogfix_fptr func;
-
-		te = temp_descriptor(logger_find_bat(lg, N("sys", "types", "eclass"), 0, 0));
-		if (te == NULL)
-			return GDK_FAIL;
-		bi = bat_iterator(te);
-		tne = COLnew(te->hseqbase, TYPE_int, BATcount(te), PERSISTENT);
-		if (tne == NULL) {
-			bat_destroy(te);
-			return GDK_FAIL;
-		}
-		for (p = 0, q = BUNlast(te); p < q; p++) {
-			int eclass = *(int*)BUNtloc(bi, p);
-
-			if (eclass == EC_GEOM)		/* old EC_EXTERNAL */
-				eclass++;		/* shift up */
-			if (BUNappend(tne, &eclass, true) != GDK_SUCCEED) {
-				bat_destroy(tne);
-				bat_destroy(te);
-				return GDK_FAIL;
-			}
-		}
-		bat_destroy(te);
-		if (BATsetaccess(tne, BAT_READ) != GDK_SUCCEED ||
-		    logger_add_bat(lg, tne, N("sys", "types", "eclass"), 0, 0) != GDK_SUCCEED) {
-			bat_destroy(tne);
-			return GDK_FAIL;
-		}
-		bat_destroy(tne);
-
-		/* in the past, the args.inout column may have been
-		 * incorrectly upgraded to a bit instead of a bte
-		 * column */
-		te = temp_descriptor(logger_find_bat(lg, N("sys", "args", "inout"), 0, 0));
-		if (te == NULL)
-			return GDK_FAIL;
-		if (te->ttype == TYPE_bit) {
-			bi = bat_iterator(te);
-			tne = COLnew(te->hseqbase, TYPE_bte, BATcount(te), PERSISTENT);
-			if (tne == NULL) {
-				bat_destroy(te);
-				return GDK_FAIL;
-			}
-			for (p = 0, q = BUNlast(te); p < q; p++) {
-				bte inout = (bte) *(bit*)BUNtloc(bi, p);
-
-				if (BUNappend(tne, &inout, true) != GDK_SUCCEED) {
-					bat_destroy(tne);
-					bat_destroy(te);
-					return GDK_FAIL;
-				}
-			}
-			if (BATsetaccess(tne, BAT_READ) != GDK_SUCCEED ||
-			    logger_add_bat(lg, tne, N("sys", "args", "inout"), 0, 0) != GDK_SUCCEED) {
-				bat_destroy(tne);
-				bat_destroy(te);
-				return GDK_FAIL;
-			}
-			bat_destroy(tne);
-		}
-		bat_destroy(te);
-
-		/* test whether the catalog contains information
-		 * regarding geometry types */
-		b = BATdescriptor((bat) logger_find_bat(lg, N("sys", "types", "systemname"), 0, 0));
-		if (b == NULL)
-			return GDK_FAIL;
-		bi = bat_iterator(b);
-		for (p = 0, q = BUNlast(b); p < q; p++) {
-			char *t = toLower(BUNtvar(bi, p));
-			if (t == NULL) {
-				bat_destroy(b);
-				return GDK_FAIL;
-			}
-			geomUpgrade = strcmp(t, "wkb") == 0;
-			GDKfree(t);
-			if (geomUpgrade)
-				break;
-		}
-		bat_destroy(b);
-
-		if (!geomUpgrade) {
-			/* test whether the catalog contains
-			 * information about geometry columns */
-			b = BATdescriptor((bat) logger_find_bat(lg, N("sys", "_columns", "type"), 0, 0));
-			if (b == NULL)
-				return GDK_FAIL;
-			bi = bat_iterator(b);
-			for (p = 0, q = BUNlast(b); p < q; p++) {
-				char *t = toLower(BUNtvar(bi, p));
-				if (t == NULL) {
-					bat_destroy(b);
-					return GDK_FAIL;
-				}
-				geomUpgrade = strcmp(t, "point") == 0 ||
-					strcmp(t, "curve") == 0 ||
-					strcmp(t, "linestring") == 0 ||
-					strcmp(t, "surface") == 0 ||
-					strcmp(t, "polygon") == 0 ||
-					strcmp(t, "multipoint") == 0 ||
-					strcmp(t, "multicurve") == 0 ||
-					strcmp(t, "multilinestring") == 0 ||
-					strcmp(t, "multisurface") == 0 ||
-					strcmp(t, "multipolygon") == 0 ||
-					strcmp(t, "geometry") == 0 ||
-					strcmp(t, "geometrycollection") == 0;
-				GDKfree(t);
-				if (geomUpgrade)
-					break;
-			}
-			bat_destroy(b);
-		}
-
-		func = geomcatalogfix_get();
-		if (func) {
-			/* Either the catalog needs to be updated and
-			 * the geom module has been loaded
-			 * (geomUpgrade == 1), or the catalog knew
-			 * nothing about geometries but the geom
-			 * module is loaded (geomUpgrade == 0) */
-			(*func)(lg, geomUpgrade);
-		} else {
-			if (geomUpgrade) {
-				/* The catalog needs to be updated but
-				 * the geom module has not been
-				 * loaded.  The case is prohibited by
-				 * the sanity check performed during
-				 * initialization */
-				GDKfatal("the catalogue needs to be updated but the geom module is not loaded.\n");
-			}
-			/* The catalog knew nothing about geometries
-			 * and the geom module is not loaded: Do
-			 * nothing */
-		}
-	}
-#endif
 
 #ifdef CATALOG_MAR2018
 	if (catalog_version <= CATALOG_MAR2018) {
@@ -1033,6 +884,357 @@ bl_find_table_value(const char *tabnam, const char *tab, const void *val, ...)
 	return res;
 }
 
+/* Write a plan entry to copy part of the given file.
+ * That part of the file must remain unchanged until the plan is executed.
+ */
+static void
+snapshot_lazy_copy_file(stream *plan, const char *name, uint64_t extent)
+{
+	mnstr_printf(plan, "c %" PRIu64 " %s\n", extent, name);
+}
+
+/* Write a plan entry to write the current contents of the given file.
+ * The contents are included in the plan so the source file is allowed to
+ * change in the mean time.
+ */
+static gdk_return
+snapshot_immediate_copy_file(stream *plan, const char *path, const char *name)
+{
+	gdk_return ret = GDK_FAIL;
+	const size_t bufsize = 64 * 1024;
+	struct stat statbuf;
+	char *buf = NULL;
+	stream *s = NULL;
+	size_t to_copy;
+
+	if (stat(path, &statbuf) < 0) {
+		GDKerror("stat failed on %s: %s", path, strerror(errno));
+		goto end;
+	}
+	to_copy = (size_t) statbuf.st_size;
+
+	s = open_rstream(path);
+	if (!s) {
+		GDKerror("could not open %s", path);
+		goto end;
+	}
+
+	buf = GDKmalloc(bufsize);
+	if (!buf) {
+		GDKerror("malloc failed");
+		goto end;
+	}
+
+	mnstr_printf(plan, "w %zu %s\n", to_copy, name);
+
+	while (to_copy > 0) {
+		size_t chunk = (to_copy <= bufsize) ? to_copy : bufsize;
+		ssize_t bytes_read = mnstr_read(s, buf, 1, chunk);
+		if (bytes_read < 0) {
+			GDKerror("Reading bytes of component %s failed: %s", path, mnstr_error(s));
+			goto end;
+		} else if (bytes_read < (ssize_t) chunk) {
+			GDKerror("Read only %zu/%zu bytes of component %s: %s", (size_t) bytes_read, chunk, path, mnstr_error(s));
+			goto end;
+		}
+
+		ssize_t bytes_written = mnstr_write(plan, buf, 1, chunk);
+		if (bytes_written < 0) {
+			GDKerror("Writing to plan failed");
+			goto end;
+		} else if (bytes_written < (ssize_t) chunk) {
+			GDKerror("write to plan truncated");
+			goto end;
+		}
+		to_copy -= chunk;
+	}
+
+	ret = GDK_SUCCEED;
+end:
+	GDKfree(buf);
+	if (s)
+		close_stream(s);
+	return ret;
+}
+
+/* Add plan entries for all relevant files in the Write Ahead Log */
+static gdk_return
+snapshot_wal(stream *plan, const char *db_dir)
+{
+	stream *log = bat_logger->log;
+	char log_file[FILENAME_MAX];
+	int len;
+
+	len = snprintf(log_file, sizeof(log_file), "%s/%s%s", db_dir, bat_logger->dir, LOGFILE);
+	if (len == -1 || (size_t)len >= sizeof(log_file)) {
+		GDKerror("Could not open %s, filename is too large", log_file);
+		return GDK_FAIL;
+	}
+	snapshot_immediate_copy_file(plan, log_file, log_file + strlen(db_dir) + 1);
+
+	len = snprintf(log_file, sizeof(log_file), "%s%s." LLFMT, bat_logger->dir, LOGFILE, bat_logger->id);
+	if (len == -1 || (size_t)len >= sizeof(log_file)) {
+		GDKerror("Could not open %s, filename is too large", log_file);
+		return GDK_FAIL;
+	}
+	uint64_t extent = getFileSize(log);
+
+	snapshot_lazy_copy_file(plan, log_file, extent);
+
+	return GDK_SUCCEED;
+}
+
+static gdk_return
+snapshot_heap(stream *plan, const char *db_dir, uint64_t batid, const char *filename, const char *suffix, uint64_t extent)
+{
+	char path1[FILENAME_MAX];
+	char path2[FILENAME_MAX];
+	const size_t offset = strlen(db_dir) + 1;
+	struct stat statbuf;
+	int len;
+
+	// first check the backup dir
+	len = snprintf(path1, FILENAME_MAX, "%s/%s/%" PRIo64 "%s", db_dir, BAKDIR, batid, suffix);
+	if (len == -1 || len >= FILENAME_MAX) {
+		path1[FILENAME_MAX - 1] = '\0';
+		GDKerror("Could not open %s, filename is too large", path1);
+		return GDK_FAIL;
+	}
+	if (stat(path1, &statbuf) == 0) {
+		snapshot_lazy_copy_file(plan, path1 + offset, extent);
+		return GDK_SUCCEED;
+	}
+	if (errno != ENOENT) {
+		GDKerror("Error stat'ing %s: %s", path1, strerror(errno));
+		return GDK_FAIL;
+	}
+
+	// then check the regular location
+	len = snprintf(path2, FILENAME_MAX, "%s/%s/%s%s", db_dir, BATDIR, filename, suffix);
+	if (len == -1 || len >= FILENAME_MAX) {
+		path2[FILENAME_MAX - 1] = '\0';
+		GDKerror("Could not open %s, filename is too large", path2);
+		return GDK_FAIL;
+	}
+	if (stat(path2, &statbuf) == 0) {
+		snapshot_lazy_copy_file(plan, path2 + offset, extent);
+		return GDK_SUCCEED;
+	}
+	if (errno != ENOENT) {
+		GDKerror("Error stat'ing %s: %s", path2, strerror(errno));
+		return GDK_FAIL;
+	}
+
+	GDKerror("One of %s and %s must exist", path1, path2);
+	return GDK_FAIL;
+}
+
+/* Add plan entries for all persistent BATs by looping over the BBP.dir.
+ * Also include the BBP.dir itself.
+ */
+static gdk_return
+snapshot_bats(stream *plan, const char *db_dir)
+{
+	char bbpdir[FILENAME_MAX];
+	stream *cat = NULL;
+	char line[1024];
+	int gdk_version, len;
+	gdk_return ret = GDK_FAIL;
+
+	len = snprintf(bbpdir, FILENAME_MAX, "%s/%s/%s", db_dir, BAKDIR, "BBP.dir");
+	if (len == -1 || len >= FILENAME_MAX) {
+		GDKerror("Could not open %s, filename is too large", bbpdir);
+		goto end;
+	}
+	ret = snapshot_immediate_copy_file(plan, bbpdir, bbpdir + strlen(db_dir) + 1);
+	if (ret == GDK_FAIL)
+		goto end;
+
+	// Open the catalog and parse the header
+	cat = open_rastream(bbpdir);
+	if (cat == NULL) {
+		GDKerror("Could not open %s for reading", bbpdir);
+		goto end;
+	}
+	if (mnstr_readline(cat, line, sizeof(line)) < 0) {
+		GDKerror("Could not read first line of %s", bbpdir);
+		goto end;
+	}
+	if (sscanf(line, "BBP.dir, GDKversion %d", &gdk_version) != 1) {
+		GDKerror("Invalid first line of %s", bbpdir);
+		goto end;
+	}
+	if (gdk_version != 061042U) {
+		// If this version number has changed, the structure of BBP.dir 
+		// may have changed. Update this whole function to take this
+		// into account. 
+		// Note: when startup has completed BBP.dir is guaranteed
+		// to the latest format so we don't have to support any older
+		// formats in this function.
+		GDKerror("GDK version mismatch in snapshot yet");
+		goto end;
+	}
+	if (mnstr_readline(cat, line, sizeof(line)) < 0) {
+		GDKerror("Couldn't skip the second line of %s", bbpdir);
+		goto end;
+	}
+	if (mnstr_readline(cat, line, sizeof(line)) < 0) {
+		GDKerror("Couldn't skip the third line of %s", bbpdir);
+		goto end;
+	}
+
+	while (mnstr_readline(cat, line, sizeof(line)) > 0) {
+		uint64_t batid;
+		uint64_t tail_free;
+		uint64_t theap_free;
+		char filename[20];
+		// The lines in BBP.dir come in various lengths.
+		// we try to parse the longest variant then check
+		// the return value of sscanf to see which fields
+		// were actually present.
+		int scanned = sscanf(line,
+				// Taken from the sscanf in BBPreadEntries() in gdk_bbp.c.
+				// 8 fields, we need field 1 (batid) and field 4 (filename)
+				"%" SCNu64 " %*s %*s %19s %*s %*s %*s %*s"
+
+				// Taken from the sscanf in heapinit() in gdk_bbp.c.
+				// 12 fields, we need field 10 (free)
+				" %*s %*s %*s %*s %*s %*s %*s %*s %*s %" SCNu64 " %*s %*s"
+
+				// Taken from the sscanf in vheapinit() in gdk_bbp.c.
+				// 3 fields, we need field 1 (free).
+				"%" SCNu64 " %*s ^*s"
+				,
+				&batid, filename,
+				&tail_free,
+				&theap_free);
+
+		// The following switch uses fallthroughs to make
+		// the larger cases include the work of the smaller cases.
+		switch (scanned) {
+			default:
+				GDKerror("Couldn't parse (%d) %s line: %s", scanned, bbpdir, line);
+				goto end;
+			case 4:
+				// tail and theap
+				ret = snapshot_heap(plan, db_dir, batid, filename, ".theap", theap_free);
+				if (ret != GDK_SUCCEED)
+					goto end;
+				/* fallthrough */
+			case 3:
+				// tail only
+				snapshot_heap(plan, db_dir, batid, filename, ".tail", tail_free);
+				if (ret != GDK_SUCCEED)
+					goto end;
+				/* fallthrough */
+			case 2:
+				// no tail? 
+				break;
+		}
+	}
+
+end:
+	if (cat) {
+		close_stream(cat);
+	}
+	return ret;
+}
+
+/* Add a file to the plan which records the current wlc status, if any.
+ * In particular, `wlc_batches`.
+ *
+ * With this information, a replica initialized from this snapshot can
+ * be configured to catch up with its master by replaying later transactions.
+ */
+static gdk_return
+snapshot_wlc(stream *plan, const char *db_dir)
+{
+	const char name[] = "wlr.config.in";
+	char buf[1024];
+	int len;
+
+	(void)db_dir;
+
+	if (wlc_state != WLC_RUN)
+		return GDK_SUCCEED;
+
+	len = snprintf(buf, sizeof(buf),
+		"beat=%d\n"
+		"batches=%d\n"
+		, wlc_beat, wlc_batches
+	);
+
+	mnstr_printf(plan, "w %d %s\n", len, name);
+	mnstr_write(plan, buf, 1, len);
+
+	return GDK_SUCCEED;
+}
+
+static gdk_return
+snapshot_vaultkey(stream *plan, const char *db_dir)
+{
+	char path[FILENAME_MAX];
+	struct stat statbuf;
+
+	int len = snprintf(path, FILENAME_MAX, "%s/.vaultkey", db_dir);
+	if (len == -1 || len >= FILENAME_MAX) {
+		path[FILENAME_MAX - 1] = '\0';
+		GDKerror("Could not open %s, filename is too large", path);
+		return GDK_FAIL;
+	}
+	if (stat(path, &statbuf) == 0) {
+		snapshot_lazy_copy_file(plan, ".vaultkey", statbuf.st_size);
+		return GDK_SUCCEED;
+	}
+	if (errno == ENOENT) {
+		// No .vaultkey? Fine.
+		return GDK_SUCCEED;
+	}
+
+	GDKerror("Error stat'ing %s: %s", path, strerror(errno));
+	return GDK_FAIL;
+}
+static gdk_return
+bl_snapshot(stream *plan)
+{
+	gdk_return ret;
+	char *db_dir = NULL;
+	size_t db_dir_len;
+
+	// Farm 0 is always the persistent farm.
+	db_dir = GDKfilepath(0, NULL, "", NULL);
+	db_dir_len = strlen(db_dir);
+	if (db_dir[db_dir_len - 1] == DIR_SEP)
+		db_dir[db_dir_len - 1] = '\0';
+
+	mnstr_printf(plan, "%s\n", db_dir);
+
+	// Please monetdbd
+	mnstr_printf(plan, "w 0 .uplog\n");
+
+	ret = snapshot_vaultkey(plan, db_dir);
+	if (ret != GDK_SUCCEED)
+		goto end;
+
+	ret = snapshot_bats(plan, db_dir);
+	if (ret != GDK_SUCCEED)
+		goto end;
+
+	ret = snapshot_wal(plan, db_dir);
+	if (ret != GDK_SUCCEED)
+		goto end;
+
+	ret = snapshot_wlc(plan, db_dir);
+	if (ret != GDK_SUCCEED)
+		goto end;
+
+	ret = GDK_SUCCEED;
+end:
+	if (db_dir)
+		GDKfree(db_dir);
+	return ret;
+}
+
 void
 bat_logger_init( logger_functions *lf )
 {
@@ -1049,4 +1251,5 @@ bat_logger_init( logger_functions *lf )
 	lf->log_tend = bl_tend;
 	lf->log_sequence = bl_sequence;
 	lf->log_find_table_value = bl_find_table_value;
+	lf->get_snapshot_files = bl_snapshot;
 }

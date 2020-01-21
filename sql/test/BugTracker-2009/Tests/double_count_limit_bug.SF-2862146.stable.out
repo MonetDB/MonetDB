@@ -14,7 +14,6 @@ stdout of test 'double_count_limit_bug.SF-2862146` in directory 'sql/test/BugTra
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:30328/
 # MonetDB/SQL module v2.32.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;
@@ -25,19 +24,19 @@ Ready.
 # 22:42:43 >  
 
 #SELECT COUNT (*) AS c1, COUNT (*) AS c2 FROM t2 limit 100;
-% .L4,	.L7 # table_name
+% .,	. # table_name
 % c1,	c2 # name
 % bigint,	bigint # type
 % 1,	1 # length
 [ 0,	0	]
 #SELECT COUNT (*) AS c1 FROM t2 limit 100;
-% .L4 # table_name
+% . # table_name
 % c1 # name
 % bigint # type
 % 1 # length
 [ 0	]
 #SELECT COUNT (*) AS c1, COUNT (*) AS c2 FROM t2;
-% sys.L4,	sys.L7 # table_name
+% .,	. # table_name
 % c1,	c2 # name
 % bigint,	bigint # type
 % 1,	1 # length

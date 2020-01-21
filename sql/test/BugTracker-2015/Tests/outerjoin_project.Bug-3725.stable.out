@@ -19,7 +19,6 @@ stdout of test 'outerjoin_project.Bug-3725` in directory 'sql/test/BugTracker-20
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 10:41:42 >  
 # 10:41:42 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-5429" "--port=30127"
@@ -31,8 +30,8 @@ Ready.
 #insert into a values (1);
 [ 1	]
 #select * from a left join (select a, 20 from b) as x using (a);
-% .L4,	.x # table_name
-% a,	L3 # name
+% .%1,	.%4 # table_name
+% a,	%4 # name
 % int,	tinyint # type
 % 1,	1 # length
 [ 1,	NULL	]

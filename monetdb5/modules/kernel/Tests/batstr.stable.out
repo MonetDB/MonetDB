@@ -17,7 +17,6 @@ stdout of test 'batstr` in directory 'monetdb5/modules/kernel` itself:
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 10:01:43 >  
 # 10:01:43 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-30877" "--port=36122"

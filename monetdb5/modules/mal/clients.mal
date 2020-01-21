@@ -2,7 +2,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
 
 module clients;
 
@@ -42,18 +42,6 @@ command getLogins( )(user:bat[:oid],start:bat[:str] )
 address CLTLogin
 comment "Pseudo bat of client id and login time.";
 
-command getLastCommand( ):bat[:str] 
-address CLTLastCommand
-comment "Pseudo bat of client's last command time.";
-
-command getActions( ):bat[:int] 
-address CLTActions
-comment "Pseudo bat of client's command counts.";
-
-command getUsers( ):bat[:str] 
-address CLTusers
-comment "Pseudo bat of users id and name.";
-
 pattern stop(id:int)
 address CLTstop
 comment "Stop the query execution at the next eligble statement.";
@@ -68,10 +56,16 @@ command wakeup(id:int):void
 address CLTwakeup
 comment "Wakeup a client process";
 
+pattern getprofile()(opt:str, q:int, s:int, w:int, m:int)
+address CLTgetProfile
+comment "Retrieve the profile settings for a client";
+
+# As of December 2019, the pattern setsession is deprecated, use setsessiontimeout
 pattern setsession(n:lng):void
 address CLTsetSessionTimeout
 comment "Abort a session after  n seconds.";
 
+# As of December 2019, the pattern settimeout is deprecated, use setquerytimeout
 pattern settimeout(n:lng):void
 address CLTsetTimeout
 comment "Abort a query after  n seconds.";
@@ -82,11 +76,56 @@ comment "Abort a query after q seconds (q=0 means run undisturbed).
 The session timeout aborts the connection after spending too
 many seconds on query processing.";
 
-pattern getTimeout()(q:lng,s:lng)
-address CLTgetTimeout
-comment "A query is aborted after q milliseconds (q=0 means run undisturbed).
-The session timeout aborts the connection after spending too
-many seconds on query processing.";
+# set properties of others
+pattern setquerytimeout(n:int):void
+address CLTqueryTimeout;
+pattern setquerytimeout(sid:bte, n:int):void
+address CLTqueryTimeout;
+pattern setquerytimeout(sid:sht, n:int):void
+address CLTqueryTimeout;
+pattern setquerytimeout(sid:int, n:int):void
+address CLTqueryTimeout
+comment "A query is aborted after q seconds (q=0 means run undisturbed).";
+
+pattern setsessiontimeout(n:int):void
+address CLTsessionTimeout;
+pattern setsessiontimeout(sid:bte, n:int):void
+address CLTsessionTimeout;
+pattern setsessiontimeout(sid:sht, n:int):void
+address CLTsessionTimeout;
+pattern setsessiontimeout(sid:int, n:int):void
+address CLTsessionTimeout
+comment "Set the session timeout for a particulat session id";
+
+pattern setoptimizer(opt:str):void
+address CLTsetoptimizer;
+pattern setoptimizer(sid:int, opt:str):void
+address CLTsetoptimizer
+comment "Set the session optimizer";
+
+pattern setworkerlimit(n:int):void
+address CLTsetworkerlimit;
+pattern setworkerlimit(sid:int, n:int):void
+address CLTsetworkerlimit
+comment "Limit the number of worker threads per query";
+
+pattern setmemorylimit(n:int):void
+address CLTsetmemorylimit;
+pattern setmemorylimit(sid:int, n:int):void
+address CLTsetmemorylimit
+comment "Limit the memory claim in MB per query";
+
+pattern stopsession(sid:bte):void
+address CLTstopSession;
+pattern stopsession(sid:sht):void
+address CLTstopSession;
+pattern stopsession(sid:int):void
+address CLTstopSession
+comment "Stop a particular session";
+
+command setprinttimeout(n:int):void
+address CLTsetPrintTimeout
+comment "Print running query every so many seconds.";
 
 pattern shutdown(delay:int):str
 address CLTshutdown;

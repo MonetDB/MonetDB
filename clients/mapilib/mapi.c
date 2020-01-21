@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -688,6 +688,8 @@
 #include "stream_socket.h"
 #include "mapi.h"
 #include "mcrypt.h"
+#include "matomic.h"
+#include "mstring.h"
 
 #ifdef HAVE_UNISTD_H
 # include <unistd.h>
@@ -732,6 +734,9 @@
 #endif
 
 #define MAPIBLKSIZE	256	/* minimum buffer shipped */
+
+/* number of elements in an array */
+#define NELEM(arr)	(sizeof(arr) / sizeof(arr[0]))
 
 /* information about the columns in a result set */
 struct MapiColumn {
@@ -885,10 +890,6 @@ struct MapiStatement {
 #define debugprint(fmt,arg)	((void) 0)
 #endif
 
-#ifdef HAVE_EMBEDDED
-#define printf(...)	((void)0)
-#endif
-
 /*
  * All external calls to the library should pass the mapi-check
  * routine. It assures a working connection and proper reset of
@@ -949,7 +950,7 @@ static int unquote(const char *msg, char **start, const char **next, int endchar
 static int mapi_slice_row(struct MapiResultSet *result, int cr);
 static void mapi_store_bind(struct MapiResultSet *result, int cr);
 
-static bool mapi_initialized = false;
+static ATOMIC_FLAG mapi_initialized = ATOMIC_FLAG_INIT;
 
 #define check_stream(mid,s,msg,f,e)					\
 	do {								\
@@ -1033,7 +1034,7 @@ mapi_error_str(Mapi mid)
 }
 
 #ifdef _MSC_VER
-static struct {
+static const struct {
 	int e;
 	const char *m;
 } wsaerrlist[] = {
@@ -1138,7 +1139,7 @@ wsaerror(int err)
 {
 	int i;
 
-	for (i = 0; i < sizeof(wsaerrlist) / sizeof(wsaerrlist[0]); i++)
+	for (i = 0; i < NELEM(wsaerrlist); i++)
 		if (wsaerrlist[i].e == err)
 			return wsaerrlist[i].m;
 	return "Unknown error";
@@ -1576,8 +1577,8 @@ add_error(struct MapiResultSet *result, char *error)
 	     (error[4] >= 'A' && error[4] <= 'Z'))) {
 		if (result->errorstr == NULL) {
 			/* remeber SQLSTATE for first error */
-			strncpy(result->sqlstate, error, 5);
-			result->sqlstate[5] = 0;
+			strcpy_len(result->sqlstate, error,
+				   sizeof(result->sqlstate));
 		}
 		/* skip SQLSTATE */
 		error += 6;
@@ -1793,7 +1794,7 @@ static Mapi
 mapi_new(void)
 {
 	Mapi mid;
-	static uint32_t index = 0;
+	static ATOMIC_TYPE index = ATOMIC_VAR_INIT(0);
 
 	mid = malloc(sizeof(*mid));
 	if (mid == NULL)
@@ -1801,7 +1802,7 @@ mapi_new(void)
 
 	/* then fill in some details */
 	*mid = (struct MapiStruct) {
-		.index = index++,	/* for distinctions in log records */
+		.index = (uint32_t) ATOMIC_ADD(&index, 1),	/* for distinctions in log records */
 		.auto_commit = true,
 		.error = MOK,
 		.languageId = LANG_SQL,
@@ -1909,8 +1910,7 @@ mapi_mapiuri(const char *url, const char *user, const char *pass, const char *la
 	char *dbname;
 	char *query;
 
-	if (!mapi_initialized) {
-		mapi_initialized = true;
+	if (!ATOMIC_TAS(&mapi_initialized)) {
 		if (mnstr_init() < 0)
 			return NULL;
 	}
@@ -1972,9 +1972,16 @@ mapi_mapiuri(const char *url, const char *user, const char *pass, const char *la
 		dbname = NULL;
 		query = uri;
 	} else {
-		char *p;
+		char *p = uri;
 
-		if ((p = strchr(uri, ':')) == NULL) {
+		if (*p == '[') {
+			if ((p = strchr(p, ']')) == NULL) {
+				free(uri);
+				mapi_setError(mid, "URI contains an invalid IPv6 address", "mapi_mapiuri", MERROR);
+				return mid;
+			}
+		}
+		if ((p = strchr(p, ':')) == NULL) {
 			free(uri);
 			mapi_setError(mid,
 				      "URI must contain a port number after "
@@ -2025,8 +2032,7 @@ mapi_mapi(const char *host, int port, const char *username,
 {
 	Mapi mid;
 
-	if (!mapi_initialized) {
-		mapi_initialized = true;
+	if (!ATOMIC_TAS(&mapi_initialized)) {
 		if (mnstr_init() < 0)
 			return NULL;
 	}
@@ -2237,7 +2243,7 @@ mapi_reconnect(Mapi mid)
 							socks[i].owner = st.st_uid;
 							socks[i++].port = atoi(e->d_name + 11);
 						}
-						if (i == sizeof(socks) / sizeof(socks[0]))
+						if (i == NELEM(socks))
 							break;
 					}
 					closedir(d);
@@ -2324,11 +2330,9 @@ mapi_reconnect(Mapi mid)
 		userver = (struct sockaddr_un) {
 			.sun_family = AF_UNIX,
 		};
-		strncpy(userver.sun_path, mid->hostname, sizeof(userver.sun_path) - 1);
-		userver.sun_path[sizeof(userver.sun_path) - 1] = 0;
+		strcpy_len(userver.sun_path, mid->hostname, sizeof(userver.sun_path));
 
 		if (connect(s, serv, sizeof(struct sockaddr_un)) == SOCKET_ERROR) {
-			closesocket(s);
 			snprintf(errbuf, sizeof(errbuf),
 				 "initiating connection on socket failed: %s",
 #ifdef _MSC_VER
@@ -2337,6 +2341,7 @@ mapi_reconnect(Mapi mid)
 				 strerror(errno)
 #endif
 				);
+			closesocket(s);
 			return mapi_setError(mid, errbuf, "mapi_reconnect", MERROR);
 		}
 
@@ -2353,7 +2358,6 @@ mapi_reconnect(Mapi mid)
 		msg.msg_flags = 0;
 
 		if (sendmsg(s, &msg, 0) < 0) {
-			closesocket(s);
 			snprintf(errbuf, sizeof(errbuf), "could not send initial byte: %s",
 #ifdef _MSC_VER
 				 wsaerror(WSAGetLastError())
@@ -2361,6 +2365,7 @@ mapi_reconnect(Mapi mid)
 				 strerror(errno)
 #endif
 				);
+			closesocket(s);
 			return mapi_setError(mid, errbuf, "mapi_reconnect", MERROR);
 		}
 	} else
@@ -2385,31 +2390,38 @@ mapi_reconnect(Mapi mid)
 			snprintf(errbuf, sizeof(errbuf), "getaddrinfo failed: %s", gai_strerror(ret));
 			return mapi_setError(mid, errbuf, "mapi_reconnect", MERROR);
 		}
+		errbuf[0] = 0;
 		for (rp = res; rp; rp = rp->ai_next) {
 			s = socket(rp->ai_family, rp->ai_socktype
 #ifdef SOCK_CLOEXEC
 				   | SOCK_CLOEXEC
 #endif
 				   , rp->ai_protocol);
-			if (s == INVALID_SOCKET)
-				continue;
+			if (s != INVALID_SOCKET) {
 #if !defined(SOCK_CLOEXEC) && defined(HAVE_FCNTL)
-			(void) fcntl(s, F_SETFD, FD_CLOEXEC);
+				(void) fcntl(s, F_SETFD, FD_CLOEXEC);
 #endif
-			if (connect(s, rp->ai_addr, (socklen_t) rp->ai_addrlen) != SOCKET_ERROR)
-				break;  /* success */
-			closesocket(s);
-		}
-		freeaddrinfo(res);
-		if (rp == NULL) {
-			snprintf(errbuf, sizeof(errbuf), "could not connect to %s:%s: %s",
+				if (connect(s, rp->ai_addr, (socklen_t) rp->ai_addrlen) != SOCKET_ERROR)
+					break;  /* success */
+				closesocket(s);
+			}
+			snprintf(errbuf, sizeof(errbuf),
+				 "could not connect to %s:%s: %s",
 				 mid->hostname, port,
 #ifdef _MSC_VER
-				 wsaerror(WSAGetLastError())
+					 wsaerror(WSAGetLastError())
 #else
 				 strerror(errno)
 #endif
 				);
+		}
+		freeaddrinfo(res);
+		if (rp == NULL) {
+			if (errbuf[0] == 0) {
+				/* should not happen */
+				snprintf(errbuf, sizeof(errbuf),
+					 "getaddrinfo succeeded but did not return a result");
+			}
 			return mapi_setError(mid, errbuf, "mapi_reconnect", MERROR);
 		}
 #else
@@ -2467,6 +2479,24 @@ mapi_reconnect(Mapi mid)
 			return mapi_setError(mid, errbuf, "mapi_reconnect", MERROR);
 		}
 #endif
+		/* compare our own address with that of our peer and
+		 * if they are the same, we were connected to our own
+		 * socket, so then we can't use this connection */
+		union {
+			struct sockaddr s;
+			struct sockaddr_in i;
+		} myaddr, praddr;
+		socklen_t myaddrlen, praddrlen;
+		myaddrlen = (socklen_t) sizeof(myaddr);
+		praddrlen = (socklen_t) sizeof(praddr);
+		if (getsockname(s, &myaddr.s, &myaddrlen) == 0 &&
+		    getpeername(s, &praddr.s, &praddrlen) == 0 &&
+		    myaddr.i.sin_addr.s_addr == praddr.i.sin_addr.s_addr &&
+		    myaddr.i.sin_port == praddr.i.sin_port) {
+			closesocket(s);
+			return mapi_setError(mid, "connected to self",
+					     "mapi_reconnect", MERROR);
+		}
 	}
 
 	mid->to = socket_wstream(s, "Mapi client write");
@@ -2639,6 +2669,13 @@ mapi_reconnect(Mapi mid)
 				return mapi_setError(mid, buf, "mapi_reconnect", MERROR);
 			}
 
+			if (pwdhash == NULL) {
+				snprintf(buf, sizeof(buf), "allocation failure or unknown hash '%.100s'",
+						serverhash);
+				close_connection(mid);
+				return mapi_setError(mid, buf, "mapi_reconnect", MERROR);
+			}
+
 			free(mid->password);
 			mid->password = malloc(1 + strlen(pwdhash) + 1);
 			sprintf(mid->password, "\1%s", pwdhash);
@@ -2659,6 +2696,7 @@ mapi_reconnect(Mapi mid)
 				hash = malloc(len);
 				if (hash == NULL) {
 					close_connection(mid);
+					free(pwh);
 					return mapi_setError(mid, "malloc failure", "mapi_reconnect", MERROR);
 				}
 				snprintf(hash, len, "{%s}%s", *algs, pwh);
@@ -2761,7 +2799,7 @@ mapi_reconnect(Mapi mid)
 					break;
 				case '^':
 					r = mid->redirects;
-					m = sizeof(mid->redirects) / sizeof(mid->redirects[0]) - 1;
+					m = NELEM(mid->redirects) - 1;
 					while (*r != NULL && m > 0) {
 						m--;
 						r++;
@@ -2813,6 +2851,14 @@ mapi_reconnect(Mapi mid)
 				red += 15; /* "mapi:monetdb://" */
 				p = red;
 				q = NULL;
+				if (*red == '[') {
+					if ((red = strchr(red, ']')) == NULL) {
+						mapi_close_handle(hdl);
+						mapi_setError(mid, "invalid IPv6 hostname", "mapi_reconnect", MERROR);
+						close_connection(mid);
+						return mid->error;
+					}
+				}
 				if ((red = strchr(red, ':')) != NULL) {
 					*red++ = '\0';
 					q = red;
@@ -2958,6 +3004,7 @@ close_connection(Mapi mid)
 		close_stream(mid->from);
 		mid->from = 0;
 	}
+	mid->redircnt = 0;
 	mapi_log_record(mid, "Connection closed\n");
 }
 
@@ -3322,7 +3369,7 @@ mapi_param_store(MapiHdl hdl)
 			if (hdl->query == NULL)
 				return;
 		}
-		strncpy(hdl->query + k, p, q - p);
+		memcpy(hdl->query + k, p, q - p);
 		k += q - p;
 		hdl->query[k] = 0;
 
@@ -3568,7 +3615,7 @@ mapi_setAutocommit(Mapi mid, bool autocommit)
 }
 
 MapiMsg
-mapi_set_size_header(Mapi mid, int value)
+mapi_set_size_header(Mapi mid, bool value)
 {
 	if (mid->languageId != LANG_SQL) {
 		mapi_setError(mid, "size header only supported in SQL", "mapi_set_size_header", MERROR);
@@ -3618,7 +3665,7 @@ slice_row(const char *reply, char *null, char ***anchorsp, size_t **lensp, int l
 	i = 0;
 	anchors = length == 0 ? NULL : malloc(length * sizeof(*anchors));
 	lens = length == 0 ? NULL : malloc(length * sizeof(*lens));
-	do {
+	for (;;) {
 		if (i >= length) {
 			length = i + 1;
 			REALLOC(anchors, length);
@@ -3632,9 +3679,17 @@ slice_row(const char *reply, char *null, char ***anchorsp, size_t **lensp, int l
 		}
 		lens[i] = len;
 		anchors[i++] = start;
-		while (reply && *reply && isspace((unsigned char) *reply))
+		if (reply == NULL)
+			break;
+		while (*reply && isspace((unsigned char) *reply))
 			reply++;
-	} while (reply && *reply && *reply != endchar);
+		if (*reply == ',') {
+			reply++;
+			while (*reply && isspace((unsigned char) *reply))
+				reply++;
+		} else if (*reply == 0 || *reply == endchar)
+			break;
+	}
 	*anchorsp = anchors;
 	*lensp = lens;
 	return i;
@@ -4171,13 +4226,20 @@ read_into_cache(MapiHdl hdl, int lookahead)
 					} else {
 						off = strtoul(line, &line, 10);
 					}
-					assert(*line == ' ');
-					line++; /* skip one space */
+					if (*line++ != ' ') {
+						mnstr_printf(mid->to, "!HY000!unrecognized command from server\n");
+						mnstr_flush(mid->to);
+						break;
+					}
 					read_file(hdl, off, strdup(line), binary);
 					break;
 				}
 				case 'w':
-					line++; /* skip one space */
+					if (*line++ != ' ') {
+						mnstr_printf(mid->to, "!HY000!unrecognized command from server\n");
+						mnstr_flush(mid->to);
+						break;
+					}
 					write_file(hdl, strdup(line));
 					break;
 				}
@@ -4389,8 +4451,7 @@ mapi_query_part(MapiHdl hdl, const char *query, size_t size)
 	if (hdl->query == NULL) {
 		hdl->query = malloc(size + 1);
 		if (hdl->query) {
-			strncpy(hdl->query, query, size);
-			hdl->query[size] = 0;
+			strcpy_len(hdl->query, query, size + 1);
 		}
 	} else {
 		size_t sz = strlen(hdl->query);
@@ -4398,8 +4459,7 @@ mapi_query_part(MapiHdl hdl, const char *query, size_t size)
 
 		if (sz < 512 &&
 		    (q = realloc(hdl->query, sz + size + 1)) != NULL) {
-			strncpy(q + sz, query, size);
-			q[sz + size] = 0;
+			strcpy_len(q + sz, query, size + 1);
 			hdl->query = q;
 		}
 	}
@@ -4736,8 +4796,6 @@ unquote(const char *msg, char **str, const char **next, int endchar, size_t *len
 		/* skip over trailing junk (presumably white space) */
 		while (*p && *p != ',' && *p != endchar)
 			p++;
-		if (*p == ',')
-			p++;
 		if (next)
 			*next = p;
 		*str = start;
@@ -4759,16 +4817,13 @@ unquote(const char *msg, char **str, const char **next, int endchar, size_t *len
 			;
 		if (s < msg || !isspace((unsigned char) *s))	/* gone one too far */
 			s++;
-		if (*p == ',' || *p == '\t') {
-			/* there is more to come; skip over separator */
+		if (*p == '\t') {
 			p++;
 		}
 		len = s - msg;
 		*str = malloc(len + 1);
-		strncpy(*str, msg, len);
+		strcpy_len(*str, msg, len + 1);
 
-		/* make sure value is NULL terminated */
-		(*str)[len] = 0;
 		if (next)
 			*next = p;
 		if (lenp)

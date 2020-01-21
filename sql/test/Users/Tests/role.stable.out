@@ -22,7 +22,6 @@ stdout of test 'role` in directory 'sql/test/Users` itself:
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 23:01:34 >  
 # 23:01:34 >  "/usr/bin/python2" "role.SQL.py" "role"

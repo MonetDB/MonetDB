@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -18,21 +18,22 @@
 #define MAXIDENTIFIERS 4096
 #define HASHMASK  4095
 
+MT_Lock mal_namespaceLock = MT_LOCK_INITIALIZER("mal_namespaceLk");
+
 /* taken from gdk_atoms */
 #define NME_HASH(_key,y,K)								\
-    do {												\
-        size_t _i;										\
-        for (_i = y = 0; _i < K && _key[_i]; _i++) {	\
-            y += _key[_i];								\
-            y += (y << 10);								\
-            y ^= (y >> 6);								\
-        }												\
-        y += (y << 3);									\
-        y ^= (y >> 11);									\
-        y += (y << 15);									\
+	do {												\
+		size_t _i;										\
+		for (_i = y = 0; _i < K && _key[_i]; _i++) {	\
+			y += _key[_i];								\
+			y += (y << 10);								\
+			y ^= (y >> 6);								\
+		}												\
+		y += (y << 3);									\
+		y ^= (y >> 11);									\
+		y += (y << 15);									\
 		y = y & HASHMASK;								\
-    } while (0)
-
+	} while (0)
 
 typedef struct NAME{
 	struct NAME *next;
@@ -119,8 +120,8 @@ static str findName(const char *nme, size_t len, int allocate)
 		struct namespace *ns = GDKmalloc(sizeof(struct namespace));
 		if (ns == NULL) {
 			/* error we cannot recover from */
-			showException(GDKout, MAL, "findName", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-			mal_exit();
+			TRC_CRITICAL(MAL_MAL, SQLSTATE(HY013) MAL_MALLOC_FAIL "\n");
+			mal_exit(1);
 		}
 		ns->next = namespace;
 		ns->count = 0;

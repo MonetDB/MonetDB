@@ -9,7 +9,7 @@
 -------------------------------
 
 -- correct
-SELECT SUM(a) AS suma
+SELECT cast( SUM(a) as bigint) AS suma
 FROM ( 
   SELECT *
   FROM ( 
@@ -20,7 +20,7 @@ FROM (
 ;
 
 -- correct
-SELECT SUM(a) AS suma
+SELECT cast( SUM(a) as bigint) AS suma
 FROM ( 
   SELECT *
   FROM ( 
@@ -32,7 +32,7 @@ HAVING SUM(a) IS NULL
 ;
 
 -- correct
-SELECT SUM(a) AS suma
+SELECT cast( SUM(a) as bigint) AS suma
 FROM ( 
   SELECT *
   FROM ( 
@@ -44,7 +44,7 @@ HAVING SUM(a) IS NOT NULL
 ;
 
 -- WRONG
-SELECT SUM(a) AS suma
+SELECT cast( SUM(a) as bigint) AS suma
 FROM ( 
   SELECT *
   FROM ( 
@@ -58,7 +58,7 @@ HAVING SUM(a) > 0
 -- STILL WRONG
 SELECT * 
 FROM (
-  SELECT SUM(a) AS suma, NULL AS mynull
+  SELECT cast( SUM(a) as bigint) AS suma, NULL AS mynull
   FROM ( 
     SELECT *
     FROM ( 
@@ -73,7 +73,7 @@ WHERE suma > 0
 -- although this works
 SELECT *
 FROM (
-  SELECT SUM(a) AS suma, NULL AS mynull
+  SELECT cast( SUM(a) as bigint) AS suma, NULL AS mynull
   FROM ( 
     SELECT *
     FROM ( 

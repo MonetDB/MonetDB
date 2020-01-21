@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #ifndef ALGEBRA_H
@@ -20,21 +20,27 @@ mal_export str ALGvariancep(dbl *res, const bat *bid);
 
 mal_export str ALGminany(ptr result, const bat *bid);
 mal_export str ALGmaxany(ptr result, const bat *bid);
+mal_export str ALGminany_skipnil(ptr result, const bat *bid, const bit *skipnil);
+mal_export str ALGmaxany_skipnil(ptr result, const bat *bid, const bit *skipnil);
 mal_export str ALGgroupby(bat *res, const bat *gids, const bat *cnts);
 mal_export str ALGcard(lng *result, const bat *bid);
 mal_export str ALGselect1(bat *result, const bat *bid, const void *low, const void *high, const bit *li, const bit *hi, const bit *anti);
 mal_export str ALGselect2(bat *result, const bat *bid, const bat *sid, const void *low, const void *high, const bit *li, const bit *hi, const bit *anti);
+mal_export str ALGselect1nil(bat *result, const bat *bid, const void *low, const void *high, const bit *li, const bit *hi, const bit *anti, const bit *unknown);
+mal_export str ALGselect2nil(bat *result, const bat *bid, const bat *sid, const void *low, const void *high, const bit *li, const bit *hi, const bit *anti, const bit *unknown);
 mal_export str ALGthetaselect1(bat *result, const bat *bid, const void *val, const char **op);
 mal_export str ALGthetaselect2(bat *result, const bat *bid, const bat *sid, const void *val, const char **op);
 
 mal_export str ALGjoin(bat *r1, bat *r2, const bat *l, const bat *r, const bat *sl, const bat *sr, const bit *nil_matches, const lng *estimate);
+mal_export str ALGjoin1(bat *r1, const bat *l, const bat *r, const bat *sl, const bat *sr, const bit *nil_matches, const lng *estimate);
 mal_export str ALGleftjoin(bat *r1, bat *r2, const bat *l, const bat *r, const bat *sl, const bat *sr, const bit *nil_matches, const lng *estimate);
+mal_export str ALGleftjoin1(bat *r1, const bat *l, const bat *r, const bat *sl, const bat *sr, const bit *nil_matches, const lng *estimate);
 mal_export str ALGouterjoin(bat *r1, bat *r2, const bat *l, const bat *r, const bat *sl, const bat *sr, const bit *nil_matches, const lng *estimate);
 mal_export str ALGsemijoin(bat *r1, bat *r2, const bat *l, const bat *r, const bat *sl, const bat *sr, const bit *nil_matches, const lng *estimate);
 mal_export str ALGthetajoin(bat *r1, bat *r2, const bat *l, const bat *r, const bat *sl, const bat *sr, const int *op, const bit *nil_matches, const lng *estimate);
 mal_export str ALGbandjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid, const bat *srid, const void *low, const void *high, const bit *li, const bit *hi, const lng *estimate);
-mal_export str ALGrangejoin(bat *r1, bat *r2, const bat *lid, const bat *rlid, const bat *rhid, const bat *slid, const bat *srid, const bit *li, const bit *hi, const lng *estimate);
-mal_export str ALGdifference(bat *r1, const bat *lid, const bat *rid, const bat *slid, const bat *srid, const bit *nil_matches, const lng *estimate);
+mal_export str ALGrangejoin(bat *r1, bat *r2, const bat *lid, const bat *rlid, const bat *rhid, const bat *slid, const bat *srid, const bit *li, const bit *hi, const bit *anti, const bit *symmetric, const lng *estimate);
+mal_export str ALGdifference(bat *r1, const bat *lid, const bat *rid, const bat *slid, const bat *srid, const bit *nil_matches, const bit *not_in, const lng *estimate);
 mal_export str ALGintersect(bat *r1, const bat *lid, const bat *rid, const bat *slid, const bat *srid, const bit *nil_matches, const lng *estimate);
 
 /* legacy join functions */

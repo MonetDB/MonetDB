@@ -18,7 +18,6 @@ stdout of test 'crash-on-limit-rename.Bug-6502` in directory 'sql/test/BugTracke
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 15:09:56 >  
 # 15:09:56 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-18064" "--port=34138"

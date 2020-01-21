@@ -14,7 +14,6 @@ stdout of test 'numeric_data_type_bug.SF-2818176` in directory 'sql/test/BugTrac
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:38681/
 # MonetDB/SQL module v2.32.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

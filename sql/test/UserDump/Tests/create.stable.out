@@ -14,7 +14,6 @@ stdout of test 'create` in directory 'sql/test/UserDump` itself:
 # Listening for connection requests on mapi:monetdb://ottar.ins.cwi.nl:31535/
 # MonetDB/SQL module v2.30.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -74,17 +74,15 @@ VALset(ValPtr v, int t, ptr p)
 #endif
 	case TYPE_str:
 		v->val.sval = (str) p;
-		v->len = strLen((str) p);
 		break;
 	case TYPE_ptr:
 		v->val.pval = *(ptr *) p;
-		v->len = ATOMlen(t, *(ptr *) p);
 		break;
 	default:
 		v->val.pval = p;
-		v->len = ATOMlen(t, p);
 		break;
 	}
+	v->len = ATOMlen(v->vtype, VALptr(v));
 	return v;
 }
 
@@ -104,6 +102,7 @@ VALget(ValPtr v)
 #ifdef HAVE_HGE
 	case TYPE_hge: return (void *) &v->val.hval;
 #endif
+	case TYPE_ptr: return (void *) &v->val.pval;
 	case TYPE_str: return (void *) v->val.sval;
 	default:       return (void *) v->val.pval;
 	}
@@ -163,6 +162,7 @@ VALcopy(ValPtr d, const ValRecord *s)
 			return NULL;
 		memcpy(d->val.pval, p, d->len);
 	}
+	d->len = ATOMlen(d->vtype, VALptr(d));
 	return d;
 }
 
@@ -219,8 +219,9 @@ VALinit(ValPtr d, int tpe, const void *s)
 		if (d->val.pval == NULL)
 			return NULL;
 		memcpy(d->val.pval, s, d->len);
-		break;
+		return d;
 	}
+	d->len = ATOMlen(d->vtype, VALptr(d));
 	return d;
 }
 
@@ -317,6 +318,8 @@ VALisnil(const ValRecord *v)
 		return is_dbl_nil(v->val.dval);
 	case TYPE_oid:
 		return is_oid_nil(v->val.oval);
+	case TYPE_ptr:
+		return v->val.pval == NULL;
 	case TYPE_bat:
 		return is_bat_nil(v->val.bval);
 	default:

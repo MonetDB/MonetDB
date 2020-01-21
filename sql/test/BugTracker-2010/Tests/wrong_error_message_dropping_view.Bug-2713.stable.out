@@ -16,7 +16,6 @@ stdout of test 'wrong_error_message_dropping_view.Bug-2713` in directory 'sql/te
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:32564/
 # MonetDB/SQL module v2.40.0 loaded
 
-Ready.
 
 
 # 22:26:26 >  

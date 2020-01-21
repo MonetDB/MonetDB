@@ -58,7 +58,6 @@ stdout of test 'analytics00` in directory 'sql/test/analytics` itself:
 # loading sql script: 99_system.sql
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 16:31:40 >  
 # 16:31:40 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-24193" "--port=35814"
@@ -69,8 +68,8 @@ Ready.
 #insert into analytics values (15, 3, 15), (3, 1, 3), (2, 1, 2), (5, 3, 5), (NULL, 2, NULL), (3, 2, 3), (4, 1, 4), (6, 3, 6), (8, 2, 8), (NULL, 4, NULL);
 [ 10	]
 #select min(aa) over (partition by bb) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % int # type
 % 1 # length
 [ 2	]
@@ -84,8 +83,8 @@ Ready.
 [ 5	]
 [ NULL	]
 #select min(aa) over (partition by bb order by bb asc) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % int # type
 % 1 # length
 [ 2	]
@@ -99,8 +98,8 @@ Ready.
 [ 5	]
 [ NULL	]
 #select min(aa) over (partition by bb order by bb desc) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % int # type
 % 1 # length
 [ NULL	]
@@ -114,8 +113,8 @@ Ready.
 [ 2	]
 [ 2	]
 #select min(aa) over (order by bb desc) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % int # type
 % 1 # length
 [ NULL	]
@@ -129,8 +128,8 @@ Ready.
 [ 2	]
 [ 2	]
 #select max(aa) over (partition by bb) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % int # type
 % 2 # length
 [ 4	]
@@ -144,8 +143,8 @@ Ready.
 [ 15	]
 [ NULL	]
 #select max(aa) over (partition by bb order by bb asc) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % int # type
 % 2 # length
 [ 4	]
@@ -159,8 +158,8 @@ Ready.
 [ 15	]
 [ NULL	]
 #select max(aa) over (partition by bb order by bb desc) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % int # type
 % 2 # length
 [ NULL	]
@@ -174,8 +173,8 @@ Ready.
 [ 4	]
 [ 4	]
 #select max(aa) over (order by bb desc) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % int # type
 % 2 # length
 [ NULL	]
@@ -189,8 +188,8 @@ Ready.
 [ 15	]
 [ 15	]
 #select cast(sum(aa) over (partition by bb) as bigint) from analytics;
-% sys.L6 # table_name
-% L6 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 2 # length
 [ 9	]
@@ -204,8 +203,8 @@ Ready.
 [ 26	]
 [ NULL	]
 #select cast(sum(aa) over (partition by bb order by bb asc) as bigint) from analytics;
-% sys.L6 # table_name
-% L6 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 2 # length
 [ 9	]
@@ -219,8 +218,8 @@ Ready.
 [ 26	]
 [ NULL	]
 #select cast(sum(aa) over (partition by bb order by bb desc) as bigint) from analytics;
-% sys.L6 # table_name
-% L6 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 2 # length
 [ NULL	]
@@ -234,8 +233,8 @@ Ready.
 [ 9	]
 [ 9	]
 #select cast(sum(aa) over (order by bb desc) as bigint) from analytics;
-% sys.L6 # table_name
-% L6 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 2 # length
 [ NULL	]
@@ -249,8 +248,8 @@ Ready.
 [ 46	]
 [ 46	]
 #select cast(prod(aa) over (partition by bb) as bigint) from analytics;
-% sys.L6 # table_name
-% L6 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 3 # length
 [ 24	]
@@ -264,8 +263,8 @@ Ready.
 [ 450	]
 [ NULL	]
 #select cast(prod(aa) over (partition by bb order by bb asc) as bigint) from analytics;
-% sys.L6 # table_name
-% L6 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 3 # length
 [ 24	]
@@ -279,8 +278,8 @@ Ready.
 [ 450	]
 [ NULL	]
 #select cast(prod(aa) over (partition by bb order by bb desc) as bigint) from analytics;
-% sys.L6 # table_name
-% L6 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 3 # length
 [ NULL	]
@@ -294,8 +293,8 @@ Ready.
 [ 24	]
 [ 24	]
 #select cast(prod(aa) over (order by bb desc) as bigint) from analytics;
-% sys.L6 # table_name
-% L6 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 6 # length
 [ NULL	]
@@ -309,8 +308,8 @@ Ready.
 [ 259200	]
 [ 259200	]
 #select avg(aa) over (partition by bb) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % double # type
 % 24 # length
 [ 3	]
@@ -324,8 +323,8 @@ Ready.
 [ 8.666666667	]
 [ NULL	]
 #select avg(aa) over (partition by bb order by bb asc) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % double # type
 % 24 # length
 [ 3	]
@@ -339,8 +338,8 @@ Ready.
 [ 8.666666667	]
 [ NULL	]
 #select avg(aa) over (partition by bb order by bb desc) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % double # type
 % 24 # length
 [ NULL	]
@@ -354,8 +353,8 @@ Ready.
 [ 3	]
 [ 3	]
 #select avg(aa) over (order by bb desc) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % double # type
 % 24 # length
 [ NULL	]
@@ -369,8 +368,8 @@ Ready.
 [ 5.75	]
 [ 5.75	]
 #select count(aa) over (partition by bb) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % bigint # type
 % 1 # length
 [ 3	]
@@ -384,8 +383,8 @@ Ready.
 [ 3	]
 [ 0	]
 #select count(aa) over (partition by bb order by bb asc) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % bigint # type
 % 1 # length
 [ 3	]
@@ -399,8 +398,8 @@ Ready.
 [ 3	]
 [ 0	]
 #select count(aa) over (partition by bb order by bb desc) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % bigint # type
 % 1 # length
 [ 0	]
@@ -414,8 +413,8 @@ Ready.
 [ 3	]
 [ 3	]
 #select count(aa) over (order by bb desc) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % bigint # type
 % 1 # length
 [ 0	]
@@ -429,8 +428,8 @@ Ready.
 [ 8	]
 [ 8	]
 #select min(cc) over (partition by bb) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % bigint # type
 % 1 # length
 [ 2	]
@@ -444,8 +443,8 @@ Ready.
 [ 5	]
 [ NULL	]
 #select min(cc) over (partition by bb order by bb asc) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % bigint # type
 % 1 # length
 [ 2	]
@@ -459,8 +458,8 @@ Ready.
 [ 5	]
 [ NULL	]
 #select min(cc) over (partition by bb order by bb desc) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % bigint # type
 % 1 # length
 [ NULL	]
@@ -474,8 +473,8 @@ Ready.
 [ 2	]
 [ 2	]
 #select min(cc) over (order by bb desc) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % bigint # type
 % 1 # length
 [ NULL	]
@@ -489,8 +488,8 @@ Ready.
 [ 2	]
 [ 2	]
 #select max(cc) over (partition by bb) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % bigint # type
 % 2 # length
 [ 4	]
@@ -504,8 +503,8 @@ Ready.
 [ 15	]
 [ NULL	]
 #select max(cc) over (partition by bb order by bb asc) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % bigint # type
 % 2 # length
 [ 4	]
@@ -519,8 +518,8 @@ Ready.
 [ 15	]
 [ NULL	]
 #select max(cc) over (partition by bb order by bb desc) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % bigint # type
 % 2 # length
 [ NULL	]
@@ -534,8 +533,8 @@ Ready.
 [ 4	]
 [ 4	]
 #select max(cc) over (order by bb desc) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % bigint # type
 % 2 # length
 [ NULL	]
@@ -549,8 +548,8 @@ Ready.
 [ 15	]
 [ 15	]
 #select cast(sum(cc) over (partition by bb) as bigint) from analytics;
-% sys.L6 # table_name
-% L6 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 2 # length
 [ 9	]
@@ -564,8 +563,8 @@ Ready.
 [ 26	]
 [ NULL	]
 #select cast(sum(cc) over (partition by bb order by bb asc) as bigint) from analytics;
-% sys.L6 # table_name
-% L6 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 2 # length
 [ 9	]
@@ -579,8 +578,8 @@ Ready.
 [ 26	]
 [ NULL	]
 #select cast(sum(cc) over (partition by bb order by bb desc) as bigint) from analytics;
-% sys.L6 # table_name
-% L6 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 2 # length
 [ NULL	]
@@ -594,8 +593,8 @@ Ready.
 [ 9	]
 [ 9	]
 #select cast(sum(cc) over (order by bb desc) as bigint) from analytics;
-% sys.L6 # table_name
-% L6 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 2 # length
 [ NULL	]
@@ -609,8 +608,8 @@ Ready.
 [ 46	]
 [ 46	]
 #select cast(prod(cc) over (partition by bb) as bigint) from analytics;
-% sys.L6 # table_name
-% L6 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 3 # length
 [ 24	]
@@ -624,8 +623,8 @@ Ready.
 [ 450	]
 [ NULL	]
 #select cast(prod(cc) over (partition by bb order by bb asc) as bigint) from analytics;
-% sys.L6 # table_name
-% L6 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 3 # length
 [ 24	]
@@ -639,8 +638,8 @@ Ready.
 [ 450	]
 [ NULL	]
 #select cast(prod(cc) over (partition by bb order by bb desc) as bigint) from analytics;
-% sys.L6 # table_name
-% L6 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 3 # length
 [ NULL	]
@@ -654,8 +653,8 @@ Ready.
 [ 24	]
 [ 24	]
 #select avg(cc) over (partition by bb) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % double # type
 % 24 # length
 [ 3	]
@@ -669,8 +668,8 @@ Ready.
 [ 8.666666667	]
 [ NULL	]
 #select avg(cc) over (partition by bb order by bb asc) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % double # type
 % 24 # length
 [ 3	]
@@ -684,8 +683,8 @@ Ready.
 [ 8.666666667	]
 [ NULL	]
 #select avg(cc) over (partition by bb order by bb desc) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % double # type
 % 24 # length
 [ NULL	]
@@ -699,8 +698,8 @@ Ready.
 [ 3	]
 [ 3	]
 #select avg(cc) over (order by bb desc) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % double # type
 % 24 # length
 [ NULL	]
@@ -714,8 +713,8 @@ Ready.
 [ 5.75	]
 [ 5.75	]
 #select count(cc) over (partition by bb) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % bigint # type
 % 1 # length
 [ 3	]
@@ -729,8 +728,8 @@ Ready.
 [ 3	]
 [ 0	]
 #select count(cc) over (partition by bb order by bb asc) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % bigint # type
 % 1 # length
 [ 3	]
@@ -744,8 +743,8 @@ Ready.
 [ 3	]
 [ 0	]
 #select count(cc) over (partition by bb order by bb desc) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % bigint # type
 % 1 # length
 [ 0	]
@@ -759,8 +758,8 @@ Ready.
 [ 3	]
 [ 3	]
 #select count(cc) over (order by bb desc) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % bigint # type
 % 1 # length
 [ 0	]
@@ -774,8 +773,8 @@ Ready.
 [ 8	]
 [ 8	]
 #select count(*) over (partition by bb) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%4 # table_name
+% %4 # name
 % bigint # type
 % 1 # length
 [ 3	]
@@ -789,8 +788,8 @@ Ready.
 [ 3	]
 [ 1	]
 #select count(*) over (partition by bb order by bb asc) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%4 # table_name
+% %4 # name
 % bigint # type
 % 1 # length
 [ 3	]
@@ -804,8 +803,8 @@ Ready.
 [ 3	]
 [ 1	]
 #select count(*) over (partition by bb order by bb desc) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%4 # table_name
+% %4 # name
 % bigint # type
 % 1 # length
 [ 1	]
@@ -819,8 +818,8 @@ Ready.
 [ 3	]
 [ 3	]
 #select count(*) over (order by bb desc) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%4 # table_name
+% %4 # name
 % bigint # type
 % 2 # length
 [ 1	]
@@ -834,8 +833,8 @@ Ready.
 [ 10	]
 [ 10	]
 #select min(aa) over () from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%1 # table_name
+% %1 # name
 % int # type
 % 1 # length
 [ 2	]
@@ -849,8 +848,8 @@ Ready.
 [ 2	]
 [ 2	]
 #select max(aa) over () from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%1 # table_name
+% %1 # name
 % int # type
 % 2 # length
 [ 15	]
@@ -864,8 +863,8 @@ Ready.
 [ 15	]
 [ 15	]
 #select cast(sum(aa) over () as bigint) from analytics;
-% sys.L6 # table_name
-% L6 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 2 # length
 [ 46	]
@@ -879,8 +878,8 @@ Ready.
 [ 46	]
 [ 46	]
 #select cast(prod(aa) over () as bigint) from analytics;
-% sys.L6 # table_name
-% L6 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 6 # length
 [ 259200	]
@@ -894,8 +893,8 @@ Ready.
 [ 259200	]
 [ 259200	]
 #select avg(aa) over () from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ 5.75	]
@@ -909,8 +908,8 @@ Ready.
 [ 5.75	]
 [ 5.75	]
 #select count(aa) over () from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 8	]
@@ -924,8 +923,8 @@ Ready.
 [ 8	]
 [ 8	]
 #select count(*) over () from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%2 # table_name
+% %2 # name
 % bigint # type
 % 2 # length
 [ 10	]
@@ -939,14 +938,14 @@ Ready.
 [ 10	]
 [ 10	]
 #select count(*) over ();
-% .L4 # table_name
-% L4 # name
+% .%2 # table_name
+% %2 # name
 % bigint # type
 % 1 # length
 [ 1	]
 #select min(null) over () from analytics;
-% .L4 # table_name
-% L4 # name
+% .%1 # table_name
+% %1 # name
 % char # type
 % 0 # length
 [ NULL	]
@@ -960,8 +959,8 @@ Ready.
 [ NULL	]
 [ NULL	]
 #select max(null) over () from analytics;
-% .L4 # table_name
-% L4 # name
+% .%1 # table_name
+% %1 # name
 % char # type
 % 0 # length
 [ NULL	]
@@ -975,8 +974,8 @@ Ready.
 [ NULL	]
 [ NULL	]
 #select cast(sum(null) over () as bigint) from analytics;
-% .L6 # table_name
-% L6 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ NULL	]
@@ -990,8 +989,8 @@ Ready.
 [ NULL	]
 [ NULL	]
 #select cast(prod(null) over () as bigint) from analytics;
-% .L6 # table_name
-% L6 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ NULL	]
@@ -1005,8 +1004,8 @@ Ready.
 [ NULL	]
 [ NULL	]
 #select avg(null) over () from analytics;
-% .L4 # table_name
-% L4 # name
+% .%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ NULL	]
@@ -1020,8 +1019,8 @@ Ready.
 [ NULL	]
 [ NULL	]
 #select count(null) over () from analytics;
-% .L4 # table_name
-% L4 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 0	]
@@ -1035,8 +1034,8 @@ Ready.
 [ 0	]
 [ 0	]
 #select min(2) over () from analytics;
-% .L4 # table_name
-% L4 # name
+% .%1 # table_name
+% %1 # name
 % tinyint # type
 % 1 # length
 [ 2	]
@@ -1050,8 +1049,8 @@ Ready.
 [ 2	]
 [ 2	]
 #select max(100) over () from analytics;
-% .L4 # table_name
-% L4 # name
+% .%1 # table_name
+% %1 # name
 % tinyint # type
 % 3 # length
 [ 100	]
@@ -1065,8 +1064,8 @@ Ready.
 [ 100	]
 [ 100	]
 #select cast(sum(2) over () as bigint) from analytics;
-% .L6 # table_name
-% L6 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 2 # length
 [ 20	]
@@ -1080,8 +1079,8 @@ Ready.
 [ 20	]
 [ 20	]
 #select cast(prod(4 + 0) over () as bigint) from analytics;
-% .L6 # table_name
-% L6 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 7 # length
 [ 1048576	]
@@ -1095,8 +1094,8 @@ Ready.
 [ 1048576	]
 [ 1048576	]
 #select avg(4) over () from analytics;
-% .L4 # table_name
-% L4 # name
+% .%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ 4	]
@@ -1110,8 +1109,8 @@ Ready.
 [ 4	]
 [ 4	]
 #select count(4) over () from analytics;
-% .L4 # table_name
-% L4 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 2 # length
 [ 10	]
@@ -1128,8 +1127,8 @@ Ready.
 #insert into stressme values ('one', 1), ('another', 1), ('stress', 1), (NULL, 2), ('ok', 2), ('check', 3), ('me', 3), ('please', 3), (NULL, 4);
 [ 9	]
 #select min(aa) over (partition by bb) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % varchar # type
 % 7 # length
 [ "another"	]
@@ -1142,8 +1141,8 @@ Ready.
 [ "check"	]
 [ NULL	]
 #select min(aa) over (partition by bb order by bb asc) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % varchar # type
 % 7 # length
 [ "another"	]
@@ -1156,8 +1155,8 @@ Ready.
 [ "check"	]
 [ NULL	]
 #select min(aa) over (partition by bb order by bb desc) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % varchar # type
 % 7 # length
 [ NULL	]
@@ -1170,8 +1169,8 @@ Ready.
 [ "another"	]
 [ "another"	]
 #select min(aa) over (order by bb desc) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % varchar # type
 % 7 # length
 [ NULL	]
@@ -1184,8 +1183,8 @@ Ready.
 [ "another"	]
 [ "another"	]
 #select max(aa) over (partition by bb) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % varchar # type
 % 6 # length
 [ "stress"	]
@@ -1198,8 +1197,8 @@ Ready.
 [ "please"	]
 [ NULL	]
 #select max(aa) over (partition by bb order by bb asc) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % varchar # type
 % 6 # length
 [ "stress"	]
@@ -1212,8 +1211,8 @@ Ready.
 [ "please"	]
 [ NULL	]
 #select max(aa) over (partition by bb order by bb desc) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % varchar # type
 % 6 # length
 [ NULL	]
@@ -1226,8 +1225,8 @@ Ready.
 [ "stress"	]
 [ "stress"	]
 #select max(aa) over (order by bb desc) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % varchar # type
 % 6 # length
 [ NULL	]
@@ -1240,8 +1239,8 @@ Ready.
 [ "stress"	]
 [ "stress"	]
 #select count(aa) over (partition by bb) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % bigint # type
 % 1 # length
 [ 3	]
@@ -1254,8 +1253,8 @@ Ready.
 [ 3	]
 [ 0	]
 #select count(aa) over (partition by bb order by bb asc) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % bigint # type
 % 1 # length
 [ 3	]
@@ -1268,8 +1267,8 @@ Ready.
 [ 3	]
 [ 0	]
 #select count(aa) over (partition by bb order by bb desc) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % bigint # type
 % 1 # length
 [ 0	]
@@ -1282,8 +1281,8 @@ Ready.
 [ 3	]
 [ 3	]
 #select count(aa) over (order by bb desc) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % bigint # type
 % 1 # length
 [ 0	]
@@ -1296,8 +1295,8 @@ Ready.
 [ 7	]
 [ 7	]
 #select count(*) over (partition by bb) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.%4 # table_name
+% %4 # name
 % bigint # type
 % 1 # length
 [ 3	]
@@ -1310,8 +1309,8 @@ Ready.
 [ 3	]
 [ 1	]
 #select count(*) over (partition by bb order by bb asc) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.%4 # table_name
+% %4 # name
 % bigint # type
 % 1 # length
 [ 3	]
@@ -1324,8 +1323,8 @@ Ready.
 [ 3	]
 [ 1	]
 #select count(*) over (partition by bb order by bb desc) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.%4 # table_name
+% %4 # name
 % bigint # type
 % 1 # length
 [ 1	]
@@ -1338,8 +1337,8 @@ Ready.
 [ 3	]
 [ 3	]
 #select count(*) over (order by bb desc) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.%4 # table_name
+% %4 # name
 % bigint # type
 % 1 # length
 [ 1	]
@@ -1352,8 +1351,8 @@ Ready.
 [ 9	]
 [ 9	]
 #select min(bb) over (partition by aa) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % int # type
 % 1 # length
 [ 2	]
@@ -1366,8 +1365,8 @@ Ready.
 [ 3	]
 [ 1	]
 #select min(bb) over (partition by aa order by aa asc) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % int # type
 % 1 # length
 [ 2	]
@@ -1380,12 +1379,10 @@ Ready.
 [ 3	]
 [ 1	]
 #select min(bb) over (partition by aa order by aa desc) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % int # type
 % 1 # length
-[ 2	]
-[ 2	]
 [ 1	]
 [ 3	]
 [ 1	]
@@ -1393,9 +1390,11 @@ Ready.
 [ 3	]
 [ 3	]
 [ 1	]
+[ 2	]
+[ 2	]
 #select min(bb) over (order by aa desc) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % int # type
 % 1 # length
 [ 1	]
@@ -1408,8 +1407,8 @@ Ready.
 [ 1	]
 [ 1	]
 #select max(bb) over (partition by aa) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % int # type
 % 1 # length
 [ 4	]
@@ -1422,8 +1421,8 @@ Ready.
 [ 3	]
 [ 1	]
 #select max(bb) over (partition by aa order by aa asc) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % int # type
 % 1 # length
 [ 4	]
@@ -1436,12 +1435,10 @@ Ready.
 [ 3	]
 [ 1	]
 #select max(bb) over (partition by aa order by aa desc) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % int # type
 % 1 # length
-[ 4	]
-[ 4	]
 [ 1	]
 [ 3	]
 [ 1	]
@@ -1449,9 +1446,11 @@ Ready.
 [ 3	]
 [ 3	]
 [ 1	]
+[ 4	]
+[ 4	]
 #select max(bb) over (order by aa desc) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % int # type
 % 1 # length
 [ 1	]
@@ -1464,8 +1463,8 @@ Ready.
 [ 4	]
 [ 4	]
 #select cast(sum(bb) over (partition by aa) as bigint) from stressme;
-% sys.L6 # table_name
-% L6 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 6	]
@@ -1478,8 +1477,8 @@ Ready.
 [ 3	]
 [ 1	]
 #select cast(sum(bb) over (partition by aa order by aa asc) as bigint) from stressme;
-% sys.L6 # table_name
-% L6 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 6	]
@@ -1492,12 +1491,10 @@ Ready.
 [ 3	]
 [ 1	]
 #select cast(sum(bb) over (partition by aa order by aa desc) as bigint) from stressme;
-% sys.L6 # table_name
-% L6 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
-[ 6	]
-[ 6	]
 [ 1	]
 [ 3	]
 [ 1	]
@@ -1505,9 +1502,11 @@ Ready.
 [ 3	]
 [ 3	]
 [ 1	]
+[ 6	]
+[ 6	]
 #select cast(sum(bb) over (order by aa desc) as bigint) from stressme;
-% sys.L6 # table_name
-% L6 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 2 # length
 [ 1	]
@@ -1520,8 +1519,8 @@ Ready.
 [ 20	]
 [ 20	]
 #select cast(prod(bb) over (partition by aa) as bigint) from stressme;
-% sys.L6 # table_name
-% L6 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 8	]
@@ -1534,8 +1533,8 @@ Ready.
 [ 3	]
 [ 1	]
 #select cast(prod(bb) over (partition by aa order by aa asc) as bigint) from stressme;
-% sys.L6 # table_name
-% L6 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 8	]
@@ -1548,12 +1547,10 @@ Ready.
 [ 3	]
 [ 1	]
 #select cast(prod(bb) over (partition by aa order by aa desc) as bigint) from stressme;
-% sys.L6 # table_name
-% L6 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
-[ 8	]
-[ 8	]
 [ 1	]
 [ 3	]
 [ 1	]
@@ -1561,9 +1558,11 @@ Ready.
 [ 3	]
 [ 3	]
 [ 1	]
+[ 8	]
+[ 8	]
 #select cast(prod(bb) over (order by aa desc) as bigint) from stressme;
-% sys.L6 # table_name
-% L6 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 3 # length
 [ 1	]
@@ -1576,8 +1575,8 @@ Ready.
 [ 432	]
 [ 432	]
 #select avg(bb) over (partition by aa) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % double # type
 % 24 # length
 [ 3	]
@@ -1590,8 +1589,8 @@ Ready.
 [ 3	]
 [ 1	]
 #select avg(bb) over (partition by aa order by aa asc) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % double # type
 % 24 # length
 [ 3	]
@@ -1604,12 +1603,10 @@ Ready.
 [ 3	]
 [ 1	]
 #select avg(bb) over (partition by aa order by aa desc) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % double # type
 % 24 # length
-[ 3	]
-[ 3	]
 [ 1	]
 [ 3	]
 [ 1	]
@@ -1617,9 +1614,11 @@ Ready.
 [ 3	]
 [ 3	]
 [ 1	]
+[ 3	]
+[ 3	]
 #select avg(bb) over (order by aa desc) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % double # type
 % 24 # length
 [ 1	]
@@ -1632,8 +1631,8 @@ Ready.
 [ 2.222222222	]
 [ 2.222222222	]
 #select count(bb) over (partition by aa) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % bigint # type
 % 1 # length
 [ 2	]
@@ -1646,8 +1645,8 @@ Ready.
 [ 1	]
 [ 1	]
 #select count(bb) over (partition by aa order by aa asc) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % bigint # type
 % 1 # length
 [ 2	]
@@ -1660,22 +1659,22 @@ Ready.
 [ 1	]
 [ 1	]
 #select count(bb) over (partition by aa order by aa desc) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % bigint # type
 % 1 # length
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
 [ 2	]
 [ 2	]
-[ 1	]
-[ 1	]
-[ 1	]
-[ 1	]
-[ 1	]
-[ 1	]
-[ 1	]
 #select count(bb) over (order by aa desc) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % bigint # type
 % 1 # length
 [ 1	]
@@ -1688,8 +1687,8 @@ Ready.
 [ 9	]
 [ 9	]
 #select count(*) over (partition by aa) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.%4 # table_name
+% %4 # name
 % bigint # type
 % 1 # length
 [ 2	]
@@ -1702,8 +1701,8 @@ Ready.
 [ 1	]
 [ 1	]
 #select count(*) over (partition by aa order by aa asc) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.%4 # table_name
+% %4 # name
 % bigint # type
 % 1 # length
 [ 2	]
@@ -1716,22 +1715,22 @@ Ready.
 [ 1	]
 [ 1	]
 #select count(*) over (partition by aa order by aa desc) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.%4 # table_name
+% %4 # name
 % bigint # type
 % 1 # length
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
 [ 2	]
 [ 2	]
-[ 1	]
-[ 1	]
-[ 1	]
-[ 1	]
-[ 1	]
-[ 1	]
-[ 1	]
 #select count(*) over (order by aa desc) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.%4 # table_name
+% %4 # name
 % bigint # type
 % 1 # length
 [ 1	]
@@ -1744,8 +1743,8 @@ Ready.
 [ 9	]
 [ 9	]
 #select min(2) over (partition by aa) from stressme;
-% .L4 # table_name
-% L4 # name
+% .%3 # table_name
+% %3 # name
 % tinyint # type
 % 1 # length
 [ 2	]
@@ -1758,8 +1757,8 @@ Ready.
 [ 2	]
 [ 2	]
 #select max(100) over (partition by bb) from stressme;
-% .L4 # table_name
-% L4 # name
+% .%3 # table_name
+% %3 # name
 % tinyint # type
 % 3 # length
 [ 100	]
@@ -1772,8 +1771,8 @@ Ready.
 [ 100	]
 [ 100	]
 #select cast(sum(8 / (- 2)) over (partition by aa order by aa asc) as bigint) from stressme;
-% .L6 # table_name
-% L6 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 2 # length
 [ -8	]
@@ -1786,8 +1785,8 @@ Ready.
 [ -4	]
 [ -4	]
 #select cast(prod(4 + 0) over (partition by bb order by bb asc) as bigint) from stressme;
-% .L6 # table_name
-% L6 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 2 # length
 [ 64	]
@@ -1800,8 +1799,8 @@ Ready.
 [ 64	]
 [ 4	]
 #select avg(4 + null) over (partition by bb order by bb asc) from stressme;
-% .L4 # table_name
-% L4 # name
+% .%3 # table_name
+% %3 # name
 % double # type
 % 24 # length
 [ NULL	]
@@ -1814,8 +1813,8 @@ Ready.
 [ NULL	]
 [ NULL	]
 #select count(case when 4 = 4 then 4 else 0 end) over (partition by aa order by aa asc) from stressme;
-% .L4 # table_name
-% L4 # name
+% .%3 # table_name
+% %3 # name
 % bigint # type
 % 1 # length
 [ 2	]
@@ -1831,8 +1830,8 @@ Ready.
 #insert into debugme values (15, 3), (3, 1), (2, 1), (5, 3), (NULL, 2), (3, 2), (4, 1), (6, 3), (8, 2), (NULL, 4);
 [ 10	]
 #select sum(aa) over (partition by bb) from debugme;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % real # type
 % 15 # length
 [ 9	]
@@ -1846,8 +1845,8 @@ Ready.
 [ 26	]
 [ NULL	]
 #select sum(aa) over (partition by bb order by bb asc) from debugme;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % real # type
 % 15 # length
 [ 9	]
@@ -1861,8 +1860,8 @@ Ready.
 [ 26	]
 [ NULL	]
 #select sum(aa) over (partition by bb order by bb desc) from debugme;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % real # type
 % 15 # length
 [ NULL	]
@@ -1876,8 +1875,8 @@ Ready.
 [ 9	]
 [ 9	]
 #select sum(aa) over (order by bb desc) from debugme;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % real # type
 % 15 # length
 [ NULL	]
@@ -1891,8 +1890,8 @@ Ready.
 [ 46	]
 [ 46	]
 #select prod(aa) over (partition by bb) from debugme;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % real # type
 % 15 # length
 [ 24	]
@@ -1906,8 +1905,8 @@ Ready.
 [ 450	]
 [ NULL	]
 #select prod(aa) over (partition by bb order by bb asc) from debugme;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % real # type
 % 15 # length
 [ 24	]
@@ -1921,8 +1920,8 @@ Ready.
 [ 450	]
 [ NULL	]
 #select prod(aa) over (partition by bb order by bb desc) from debugme;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % real # type
 % 15 # length
 [ NULL	]
@@ -1936,8 +1935,8 @@ Ready.
 [ 24	]
 [ 24	]
 #select prod(aa) over (order by bb desc) from debugme;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % real # type
 % 15 # length
 [ NULL	]
@@ -1951,8 +1950,8 @@ Ready.
 [ 2.592e+05	]
 [ 2.592e+05	]
 #select avg(aa) over (partition by bb) from debugme;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % double # type
 % 24 # length
 [ 3	]
@@ -1966,8 +1965,8 @@ Ready.
 [ 8.666666667	]
 [ NULL	]
 #select avg(aa) over (partition by bb order by bb asc) from debugme;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % double # type
 % 24 # length
 [ 3	]
@@ -1981,8 +1980,8 @@ Ready.
 [ 8.666666667	]
 [ NULL	]
 #select avg(aa) over (partition by bb order by bb desc) from debugme;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % double # type
 % 24 # length
 [ NULL	]
@@ -1996,8 +1995,8 @@ Ready.
 [ 3	]
 [ 3	]
 #select avg(aa) over (order by bb desc) from debugme;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % double # type
 % 24 # length
 [ NULL	]
@@ -2014,8 +2013,8 @@ Ready.
 #insert into overflowme values (2147483644), (2147483645), (2147483646);
 [ 3	]
 #select floor(avg(a) over ()) from overflowme;
-% sys.L6 # table_name
-% L6 # name
+% sys.%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ 2147483645	]

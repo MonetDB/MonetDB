@@ -19,7 +19,6 @@ stdout of test 'constant-not-in` in directory 'sql/test` itself:
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql
@@ -64,7 +63,7 @@ Ready.
 #INSERT INTO mytable VALUES (1);
 [ 1	]
 #SELECT 'b' AS c FROM mytable;
-% .L2 # table_name
+% . # table_name
 % c # name
 % char # type
 % 1 # length

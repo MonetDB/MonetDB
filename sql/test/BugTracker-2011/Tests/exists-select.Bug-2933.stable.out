@@ -17,7 +17,6 @@ stdout of test 'exists-select.Bug-2933` in directory 'sql/test/BugTracker-2011` 
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql
@@ -61,8 +60,8 @@ Ready.
 #  EXISTS (SELECT pre FROM _rank2933 AS ancestor WHERE
 #    ancestor.pre < _rank1.pre AND _rank1.pre < ancestor.post AND
 #    ancestor.pre < _rank2.pre AND _rank2.pre < ancestor.post);
-% sys.L7 # table_name
-% L6 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 2	]
@@ -77,8 +76,8 @@ Ready.
 #    ancestor.pre < _rank1.pre AND _rank1.pre < ancestor.post 
 #  INTERSECT SELECT pre FROM _rank2933 AS ancestor WHERE
 #    ancestor.pre < _rank2.pre AND _rank2.pre < ancestor.post);
-% sys.L23 # table_name
-% L22 # name
+% sys.%7 # table_name
+% %7 # name
 % bigint # type
 % 1 # length
 [ 2	]
@@ -103,7 +102,7 @@ Ready.
 [ 4	]
 #SELECT 123 AS dummy1 FROM tbls n WHERE EXISTS ( SELECT 456 AS dummy2 FROM
 #	(SELECT * FROM clmns) nnn WHERE n.id > 0 );
-% .L11 # table_name
+% . # table_name
 % dummy1 # name
 % tinyint # type
 % 3 # length

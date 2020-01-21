@@ -14,7 +14,7 @@ insert into score_table values('bar','history',75);
 -- this causes an assertion failure:
 select
 s_name,
-sum(score) as totalscore,
+cast(sum(score) as bigint) as totalscore,
 rank() over (order by sum(score) desc) -- cannot use alias 'totalscore' here
 from score_table
 group by s_name;

@@ -3,14 +3,13 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
  * Readline specific stuff
  */
 #include "monetdb_config.h"
-#include "monet_options.h"
 
 #ifdef HAVE_LIBREADLINE
 
@@ -41,7 +40,7 @@ static const char *sql_commands[] = {
 static Mapi _mid;
 static char _history_file[FILENAME_MAX];
 static int _save_history = 0;
-static char *language;
+static const char *language;
 
 static char *
 sql_tablename_generator(const char *text, int state)
@@ -87,7 +86,6 @@ sql_tablename_generator(const char *text, int state)
 static char *
 sql_command_generator(const char *text, int state)
 {
-
 	static int idx, len;
 	const char *name;
 
@@ -96,19 +94,13 @@ sql_command_generator(const char *text, int state)
 		len = strlen(text);
 	}
 
-
 	while ((name = sql_commands[idx++])) {
-#ifdef HAVE_STRNCASECMP
 		if (strncasecmp(name, text, len) == 0)
-#else
-		if (strncmp(name, text, len) == 0)
-#endif
 			return strdup(name);
 	}
 
 	return NULL;
 }
-
 
 static char **
 sql_completion(const char *text, int start, int end)
@@ -225,11 +217,7 @@ mal_command_generator(const char *text, int state)
 	printf("currentline:%s\n",rl_line_buffer); */
 
 	while (mal_commands[idx] && (name = mal_commands[idx++])) {
-#ifdef HAVE_STRNCASECMP
 		if (strncasecmp(name, text, len) == 0)
-#else
-		if (strncmp(name, text, len) == 0)
-#endif
 			return strdup(name);
 	}
 	/* try the server to answer */
@@ -302,7 +290,7 @@ continue_completion(rl_completion_func_t * func)
 }
 
 void
-init_readline(Mapi mid, char *lang, int save_history)
+init_readline(Mapi mid, const char *lang, int save_history)
 {
 	language = lang;
 	_mid = mid;
@@ -321,19 +309,16 @@ init_readline(Mapi mid, char *lang, int save_history)
 	}
 
 	if (save_history) {
-#ifndef NATIVE_WIN32
+		int len;
 		if (getenv("HOME") != NULL) {
-			snprintf(_history_file, FILENAME_MAX,
+			len = snprintf(_history_file, FILENAME_MAX,
 				 "%s/.mapiclient_history_%s",
 				 getenv("HOME"), language);
-			_save_history = 1;
+			if (len == -1 || len >= FILENAME_MAX)
+				fprintf(stderr, "Warning: history filename path is too large\n");
+			else
+				_save_history = 1;
 		}
-#else
-		snprintf(_history_file, FILENAME_MAX,
-			 "%s%c_mapiclient_history_%s",
-			 mo_find_option(NULL, 0, "prefix"), DIR_SEP, language);
-		_save_history = 1;
-#endif
 		if (_save_history) {
 			FILE *f;
 			switch (read_history(_history_file)) {

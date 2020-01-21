@@ -19,7 +19,6 @@ stdout of test 'inet01` in directory 'monetdb5/modules/atoms` itself:
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 10:05:28 >  
 # 10:05:28 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-31201" "--port=32149"

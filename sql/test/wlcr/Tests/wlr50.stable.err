@@ -17,11 +17,9 @@ stderr of test 'wlr50` in directory 'sql/test/wlcr` itself:
 # builtin opt 	sql_debug = 0
 # cmdline opt 	gdk_nr_threads = 0
 # cmdline opt 	mapi_open = true
-# cmdline opt 	monet_prompt = 
-# cmdline opt 	mapi_port = 44561
-# cmdline opt 	mapi_usock = /var/tmp/mtest-21852/.s.monetdb.44561
-# cmdline opt 	gdk_dbpath = /export/scratch1/mk/wlcr//Linux/var/MonetDB/mTests_sql_test_wlcr-clone
-# cmdline opt 	gdk_debug = 536870922
+# cmdline opt 	mapi_port = 57767
+# cmdline opt 	mapi_usock = /var/tmp/mtest-16185/.s.monetdb.57767
+# cmdline opt 	gdk_dbpath = /export/scratch1/mk/branches/tracer//Linux/var/MonetDB/mTests_sql_test_wlcrclone
 
 # 20:24:40 >  
 # 20:24:40 >  "Done."

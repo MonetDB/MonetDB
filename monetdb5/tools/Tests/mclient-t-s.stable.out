@@ -14,7 +14,6 @@ stdout of test 'mclient-t-s` in directory 'monetdb5/tools` itself:
 # Visit http://monetdb.cwi.nl/ for further information
 # Listening for connection requests on mapi:monetdb://rig.ins.cwi.nl:39201/
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

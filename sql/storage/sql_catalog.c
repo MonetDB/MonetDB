@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -75,7 +75,6 @@ _cs_find_name(changeset * cs, const char *name)
 	return _list_find_name(cs->set, name);
 }
 
-
 node *
 cs_find_name(changeset * cs, const char *name)
 {
@@ -136,7 +135,7 @@ list_find_id(list *l, sqlid id)
 		for (n = l->h; n; n = n->next) {
 
 			/* check if ids match */
-			if (id == *(int *) n->data) {
+			if (id == *(sqlid *) n->data) {
 				return n;
 			}
 		}
@@ -159,17 +158,60 @@ list_find_base_id(list *l, sqlid id)
 	return NULL;
 }
 
-
 sql_key *
 find_sql_key(sql_table *t, const char *kname)
 {
 	return _cs_find_name(&t->keys, kname);
 }
 
+node *
+find_sql_key_node(sql_schema *s, sqlid id)
+{
+	return list_find_base_id(s->keys, id);
+}
+
+sql_key *
+sql_trans_find_key(sql_trans *tr, sqlid id)
+{
+	node *n, *m;
+	sql_key *k = NULL;
+
+	if (tr->schemas.set) {
+		for (n = tr->schemas.set->h; n && !k; n = n->next) {
+			m = find_sql_key_node(n->data, id);
+			if (m)
+				k = m->data;
+		}
+	}
+	return k;
+}
+
 sql_idx *
 find_sql_idx(sql_table *t, const char *iname)
 {
 	return _cs_find_name(&t->idxs, iname);
+}
+
+node *
+find_sql_idx_node(sql_schema *s, sqlid id)
+{
+	return list_find_base_id(s->idxs, id);
+}
+
+sql_idx *
+sql_trans_find_idx(sql_trans *tr, sqlid id)
+{
+	node *n, *m;
+	sql_idx *i = NULL;
+
+	if (tr->schemas.set) {
+		for (n = tr->schemas.set->h; n && !i; n = n->next) {
+			m = find_sql_idx_node(n->data, id);
+			if (m)
+				i = m->data;
+		}
+	}
+	return i;
 }
 
 sql_column *
@@ -226,6 +268,22 @@ find_sql_table_node(sql_schema *s, sqlid id)
 	return cs_find_id(&s->tables, id);
 }
 
+sql_table *
+sql_trans_find_table(sql_trans *tr, sqlid id)
+{
+	node *n, *m;
+	sql_table *t = NULL;
+
+	if (tr->schemas.set) {
+		for (n = tr->schemas.set->h; n && !t; n = n->next) {
+			m = find_sql_table_node(n->data, id);
+			if (m)
+				t = m->data;
+		}
+	}
+	return t;
+}
+
 sql_sequence *
 find_sql_sequence(sql_schema *s, const char *sname)
 {
@@ -271,13 +329,13 @@ find_sqlname(list *l, const char *name)
 }
 
 node *
-find_sql_type_node(sql_schema * s, sqlid id)
+find_sql_type_node(sql_schema *s, sqlid id)
 {
 	return cs_find_id(&s->types, id);
 }
 
 sql_type *
-find_sql_type(sql_schema * s, const char *tname)
+find_sql_type(sql_schema *s, const char *tname)
 {
 	return find_sqlname(s->types.set, tname);
 }
@@ -300,20 +358,36 @@ sql_trans_bind_type(sql_trans *tr, sql_schema *c, const char *name)
 	return t;
 }
 
+sql_type *
+sql_trans_find_type(sql_trans *tr, sqlid id)
+{
+	node *n, *m;
+	sql_type *t = NULL;
+
+	if (tr->schemas.set) {
+		for (n = tr->schemas.set->h; n && !t; n = n->next) {
+			m = find_sql_type_node(n->data, id);
+			if (m)
+				t = m->data;
+		}
+	}
+	return t;
+}
+
 node *
-find_sql_func_node(sql_schema * s, sqlid id)
+find_sql_func_node(sql_schema *s, sqlid id)
 {
 	return cs_find_id(&s->funcs, id);
 }
 
 sql_func *
-find_sql_func(sql_schema * s, const char *tname)
+find_sql_func(sql_schema *s, const char *tname)
 {
 	return _cs_find_name(&s->funcs, tname);
 }
 
 list *
-find_all_sql_func(sql_schema * s, const char *name, int type)
+find_all_sql_func(sql_schema *s, const char *name, sql_ftype type)
 {
 	list *l = s->funcs.set, *res = NULL;
 	node *n = NULL;
@@ -370,6 +444,28 @@ sql_trans_find_func(sql_trans *tr, sqlid id)
 	return t;
 }
 
+node *
+find_sql_trigger_node(sql_schema *s, sqlid id)
+{
+	return list_find_base_id(s->triggers, id);
+}
+
+sql_trigger *
+sql_trans_find_trigger(sql_trans *tr, sqlid id)
+{
+	node *n, *m;
+	sql_trigger *t = NULL;
+
+	if (tr->schemas.set) {
+		for (n = tr->schemas.set->h; n && !t; n = n->next) {
+			m = find_sql_trigger_node(n->data, id);
+			if (m)
+				t = m->data;
+		}
+	}
+	return t;
+}
+
 void*
 sql_values_list_element_validate_and_insert(void *v1, void *v2, int* res)
 {
@@ -386,16 +482,16 @@ sql_range_part_validate_and_insert(void *v1, void *v2)
 	sql_part* pt = (sql_part*) v1, *newp = (sql_part*) v2;
 	int res1, res2;
 
-	if(pt == newp) /* same pointer, skip (used in updates) */
+	if (pt == newp) /* same pointer, skip (used in updates) */
 		return NULL;
 
 	assert(pt->tpe.type->localtype == newp->tpe.type->localtype);
-	if(newp->with_nills && pt->with_nills) //only one partition at most has null values
+	if (newp->with_nills && pt->with_nills) //only one partition at most has null values
 		return pt;
 
 	res1 = ATOMcmp(pt->tpe.type->localtype, pt->part.range.minvalue, newp->part.range.maxvalue);
 	res2 = ATOMcmp(pt->tpe.type->localtype, newp->part.range.minvalue, pt->part.range.maxvalue);
-	if (res1 <= 0 && res2 <= 0) //overlap: x1 <= y2 && y1 <= x2
+	if (res1 < 0 && res2 < 0) //overlap: x1 < y2 && y1 < x2
 		return pt;
 	return NULL;
 }
@@ -408,17 +504,17 @@ sql_values_part_validate_and_insert(void *v1, void *v2)
 	node *n1 = b1->h, *n2 = b2->h;
 	int res;
 
-	if(pt == newp) /* same pointer, skip (used in updates) */
+	if (pt == newp) /* same pointer, skip (used in updates) */
 		return NULL;
 
 	assert(pt->tpe.type->localtype == newp->tpe.type->localtype);
-	if(newp->with_nills && pt->with_nills)
+	if (newp->with_nills && pt->with_nills)
 		return pt; //check for nulls first
 
-	while(n1 && n2) {
+	while (n1 && n2) {
 		sql_part_value *p1 = (sql_part_value *) n1->data, *p2 = (sql_part_value *) n2->data;
 		res = ATOMcmp(pt->tpe.type->localtype, p1->value, p2->value);
-		if(!res) { //overlap -> same value in both partitions
+		if (!res) { //overlap -> same value in both partitions
 			return pt;
 		} else if(res < 0) {
 			n1 = n1->next;

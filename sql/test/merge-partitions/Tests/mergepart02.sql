@@ -8,7 +8,7 @@ SELECT COUNT(*) from range_partitions;
 SELECT COUNT(*) from value_partitions;
 
 CREATE TABLE subtable2 (a int, b varchar(32));
-ALTER TABLE listparts ADD TABLE subtable2 AS PARTITION BETWEEN 5 AND 10; --error
+ALTER TABLE listparts ADD TABLE subtable2 AS PARTITION FROM 5 TO 10; --error
 ALTER TABLE listparts ADD TABLE subtable2 AS PARTITION IN ('3', '4', '5'); --error
 ALTER TABLE listparts ADD TABLE subtable2 AS PARTITION IN ('5', '6', '7');
 

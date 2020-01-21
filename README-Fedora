@@ -18,7 +18,6 @@ bzip2-devel		# optional: read and write .bz2 compressed files
 bzip2			# optional, required to create a tar ball (make dist)
 checkpolicy		# optional, required to create RPMs (make rpm)
 geos-devel		# optional: required for geom module
-libatomic_ops-devel	# optional but recommended
 libcurl-devel		# optional: read remote files with sys.getcontent(url)
 libuuid-devel		# optional
 pcre-devel		# optional: use PCRE library, enable some functions

@@ -1,6 +1,6 @@
 SELECT w_substr ,
        sm_type ,
-       cc_name ,
+       LOWER(cc_name) cc_name_lower ,
        sum(CASE
                WHEN (cs_ship_date_sk - cs_sold_date_sk <= 30) THEN 1
                ELSE 0
@@ -25,9 +25,7 @@ SELECT w_substr ,
                ELSE 0
            END) AS ">120 days"
 FROM catalog_sales ,
-
-  (SELECT SUBSTRING(w_warehouse_name,1,20) w_substr,
-          *
+  (SELECT SUBSTRING(w_warehouse_name,1,20) w_substr, *
    FROM warehouse) AS sq1 ,
      ship_mode ,
      call_center ,
@@ -42,5 +40,6 @@ GROUP BY w_substr ,
          cc_name
 ORDER BY w_substr ,
          sm_type ,
-         cc_name
+        cc_name_lower
 LIMIT 100;
+

@@ -21,7 +21,6 @@ stdout of test 'pyapi3_13` in directory 'sql/backends/monet5/UDF/pyapi3` itself:
 # MonetDB/Python module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 18:20:17 >  
 # 18:20:17 >  "./pyapi3_13.SQL.sh" "pyapi3_13"
@@ -52,8 +51,8 @@ Ready.
 #    return(i*j)
 #};
 #SELECT COUNT(pyapi13_mult(i,j)) FROM pyapi13_random_table_nulls(5000);
-% .L6 # table_name
-% L5 # name
+% .%3 # table_name
+% %3 # name
 % bigint # type
 % 4 # length
 [ 1257	]
@@ -62,16 +61,16 @@ Ready.
 #language PYTHON_MAP { return(i*j)
 #};
 #SELECT COUNT(pyapi13_mult(i,j)) FROM pyapi13_random_table_nulls(5000);
-% .L6 # table_name
-% L5 # name
+% .%3 # table_name
+% %3 # name
 % bigint # type
 % 4 # length
 [ 1257	]
 #DROP FUNCTION pyapi13_mult;
 #CREATE FUNCTION pyapi13_mult(i integer,j integer) returns integer language PYTHON_MAP { return(i*j) };
 #SELECT COUNT(pyapi13_mult(i,j)) FROM pyapi13_random_table_nulls(5000);
-% .L6 # table_name
-% L5 # name
+% .%3 # table_name
+% %3 # name
 % bigint # type
 % 4 # length
 [ 1257	]
@@ -84,8 +83,8 @@ Ready.
 #return(i*j) 
 #};
 #SELECT COUNT(pyapi13_mult(i,j)) FROM pyapi13_random_table_nulls(5000);
-% .L6 # table_name
-% L5 # name
+% .%3 # table_name
+% %3 # name
 % bigint # type
 % 4 # length
 [ 1257	]
@@ -105,8 +104,8 @@ Ready.
 #	return(i+j)
 #};
 #SELECT COUNT(pyapi13_mult(i,j)) FROM pyapi13_random_table_nulls(5000);
-% .L6 # table_name
-% L5 # name
+% .%3 # table_name
+% %3 # name
 % bigint # type
 % 4 # length
 [ 1257	]
@@ -128,8 +127,8 @@ Ready.
 #    								return(i*j)
 #};
 #SELECT COUNT(pyapi13_mult(i,j)) FROM pyapi13_random_table_nulls(5000);
-% .L6 # table_name
-% L5 # name
+% .%3 # table_name
+% %3 # name
 % bigint # type
 % 4 # length
 [ 1257	]

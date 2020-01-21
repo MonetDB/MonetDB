@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -177,8 +177,11 @@ terminateProcess(pid_t pid, char *dbname, mtype type, int lock)
  * to see if forking makes sense, or whether it is necessary at all, or
  * forbidden by restart policy, e.g. when in maintenance.
  */
+
+#define MAX_NR_ARGS 511
+
 err
-forkMserver(char *database, sabdb** stats, int force)
+forkMserver(char *database, sabdb** stats, bool force)
 {
 	pid_t pid;
 	char *er;
@@ -198,22 +201,31 @@ forkMserver(char *database, sabdb** stats, int force)
 	char *sabdbfarm;
 	char dbpath[1024];
 	char dbextra_path[1024];
-	char port[24];
+	char port[32];
+	char listenaddr[512];
 	char muri[512]; /* possibly undersized */
 	char usock[512];
-	char mydoproxy;
-	char nthreads[24];
-	char nclients[24];
+	bool mydoproxy;
+	char nthreads[32];
+	char nclients[32];
 	char pipeline[512];
+	char memmaxsize[64];
+	char vmmaxsize[64];
 	char *readonly = NULL;
 	char *embeddedr = NULL;
 	char *embeddedpy = NULL;
 	char *embeddedc = NULL;
+	char *raw_strings = NULL;
+	char *ipv6 = NULL;
 	char *dbextra = NULL;
-	char *argv[512];	/* for the exec arguments */
+	char *mserver5_extra = NULL;
+	char *mserver5_extra_token = NULL;
+	char *argv[MAX_NR_ARGS+1];	/* for the exec arguments */
 	char property_other[1024];
 	int c = 0;
+	int freec = 0;				/* from where to free entries in argv */
 	unsigned int mport;
+	char *set = "--set";
 
 	er = msab_getStatus(stats, database);
 	if (er != NULL) {
@@ -267,8 +279,8 @@ forkMserver(char *database, sabdb** stats, int force)
 	if (kv->val == NULL)
 		kv = findConfKey(_mero_db_props, "type");
 
-	if ((*stats)->locked == 1) {
-		if (force == 0) {
+	if ((*stats)->locked) {
+		if (!force) {
 			Mfprintf(stdout, "%s '%s' is under maintenance\n",
 					 kv->val, database);
 			freeConfFile(ckv);
@@ -341,20 +353,22 @@ forkMserver(char *database, sabdb** stats, int force)
 	/* create the pipes (filedescriptors) now, such that we and the
 	 * child have the same descriptor set */
 	if (pipe(pfdo) == -1) {
+		int e = errno;
 		msab_freeStatus(stats);
 		freeConfFile(ckv);
 		free(ckv);
 		pthread_mutex_unlock(&fork_lock);
-		return(newErr("unable to create pipe: %s", strerror(errno)));
+		return(newErr("unable to create pipe: %s", strerror(e)));
 	}
 	if (pipe(pfde) == -1) {
+		int e = errno;
 		close(pfdo[0]);
 		close(pfdo[1]);
 		msab_freeStatus(stats);
 		freeConfFile(ckv);
 		free(ckv);
 		pthread_mutex_unlock(&fork_lock);
-		return(newErr("unable to create pipe: %s", strerror(errno)));
+		return(newErr("unable to create pipe: %s", strerror(e)));
 	}
 
 	/* a multiplex-funnel means starting a separate thread */
@@ -417,7 +431,7 @@ forkMserver(char *database, sabdb** stats, int force)
 	}
 
 	/* check if the vaultkey is there, otherwise abort early (value
-	 * lateron reused when server is started) */
+	 * later on reused when server is started) */
 	snprintf(vaultkey, sizeof(vaultkey), "%s/.vaultkey", (*stats)->path);
 	if (stat(vaultkey, &statbuf) == -1) {
 		msab_freeStatus(stats);
@@ -466,6 +480,20 @@ forkMserver(char *database, sabdb** stats, int force)
 		pipeline[0] = '\0';
 	}
 
+	kv = findConfKey(ckv, "memmaxsize");
+	if (kv->val != NULL) {
+		snprintf(memmaxsize, sizeof(memmaxsize), "gdk_mem_maxsize=%s", kv->val);
+	} else {
+		memmaxsize[0] = '\0';
+	}
+
+	kv = findConfKey(ckv, "vmmaxsize");
+	if (kv->val != NULL) {
+		snprintf(vmmaxsize, sizeof(vmmaxsize), "gdk_vm_maxsize=%s", kv->val);
+	} else {
+		vmmaxsize[0] = '\0';
+	}
+
 	kv = findConfKey(ckv, "readonly");
 	if (kv->val != NULL && strcmp(kv->val, "no") != 0)
 		readonly = "--readonly";
@@ -476,7 +504,7 @@ forkMserver(char *database, sabdb** stats, int force)
 
 	kv = findConfKey(ckv, "embedpy");
 	if (kv->val != NULL && strcmp(kv->val, "no") != 0)
-		embeddedpy = "embedded_py=true";
+		embeddedpy = "embedded_py=2";
 
 	kv = findConfKey(ckv, "embedpy3");
 	if (kv->val != NULL && strcmp(kv->val, "no") != 0) {
@@ -498,8 +526,27 @@ forkMserver(char *database, sabdb** stats, int force)
 		dbextra = kv->val;
 	}
 
+	kv = findConfKey(ckv, "listenaddr");
+	if (kv->val != NULL) {
+		if (mydoproxy) {
+			// listenaddr is only available on forwarding method
+			freeConfFile(ckv);
+			free(ckv);
+			pthread_mutex_unlock(&fork_lock);
+			free(sabdbfarm);
+			return newErr("attempting to start mserver with listening address while being proxied by monetdbd; this option is only possible on forward method\n");
+		}
+		snprintf(listenaddr, sizeof(listenaddr), "mapi_listenaddr=%s", kv->val);
+	} else {
+		listenaddr[0] = '\0';
+	}
 
+	kv = findConfKey(ckv, "raw_strings");
+	if (kv->val != NULL && strcmp(kv->val, "no") != 0) {
+		raw_strings="raw_strings=true";
+	}
 	mport = (unsigned int)getConfNum(_mero_props, "port");
+	ipv6 = getConfNum(_mero_props, "ipv6") == 1 ? "mapi_ipv6=true" : "mapi_ipv6=false";
 
 	/* ok, now exec that mserver we want */
 	snprintf(dbpath, sizeof(dbpath),
@@ -512,31 +559,34 @@ forkMserver(char *database, sabdb** stats, int force)
 			 _mero_hostname, mport, database);
 	argv[c++] = _mero_mserver;
 	argv[c++] = dbpath;
-	argv[c++] = "--set"; argv[c++] = muri;
+	argv[c++] = set; argv[c++] = muri;
 	if (dbextra != NULL) {
 		snprintf(dbextra_path, sizeof(dbextra_path),
 				 "--dbextra=%s", dbextra);
 		argv[c++] = dbextra_path;
 	}
-	if (mydoproxy == 1) {
-		struct sockaddr_un s; /* only for sizeof(s.sun_path) :( */
-		argv[c++] = "--set"; argv[c++] = "mapi_open=false";
+	if (mydoproxy) {
+		argv[c++] = set; argv[c++] = "mapi_open=false";
 		/* we "proxy", so we can just solely use UNIX domain sockets
 		 * internally.  Before we hit our head, check if we can
 		 * actually use a UNIX socket (due to pathlength) */
-		if (strlen((*stats)->path) + 11 < sizeof(s.sun_path)) {
+		if (strlen((*stats)->path) + 11 < sizeof(((struct sockaddr_un *) 0)->sun_path)) {
 			snprintf(port, sizeof(port), "mapi_port=0");
 			snprintf(usock, sizeof(usock), "mapi_usock=%s/.mapi.sock",
 					 (*stats)->path);
 		} else {
-			argv[c++] = "--set"; argv[c++] = "mapi_autosense=true";
+			argv[c++] = set; argv[c++] = "mapi_autosense=true";
 			/* for logic here, see comment below */
 			snprintf(port, sizeof(port), "mapi_port=%u", mport + 1);
 			snprintf(usock, sizeof(usock), "mapi_usock=");
 		}
 	} else {
-		argv[c++] = "--set"; argv[c++] = "mapi_open=true";
-		argv[c++] = "--set"; argv[c++] = "mapi_autosense=true";
+		if (listenaddr[0] != '\0') {
+			argv[c++] = set; argv[c++] = listenaddr;
+		} else {
+			argv[c++] = set; argv[c++] = "mapi_open=true";
+		}
+		argv[c++] = set; argv[c++] = "mapi_autosense=true";
 		/* avoid this mserver binding to the same port as merovingian
 		 * but on another interface, (INADDR_ANY ... sigh) causing
 		 * endless redirects since 0.0.0.0 is not a valid address to
@@ -544,43 +594,71 @@ forkMserver(char *database, sabdb** stats, int force)
 		snprintf(port, sizeof(port), "mapi_port=%u", mport + 1);
 		snprintf(usock, sizeof(usock), "mapi_usock=");
 	}
-	argv[c++] = "--set"; argv[c++] = port;
-	argv[c++] = "--set"; argv[c++] = usock;
-	argv[c++] = "--set"; argv[c++] = vaultkey;
+	argv[c++] = set; argv[c++] = ipv6;
+	argv[c++] = set; argv[c++] = port;
+	argv[c++] = set; argv[c++] = usock;
+	argv[c++] = set; argv[c++] = vaultkey;
 	if (nthreads[0] != '\0') {
-		argv[c++] = "--set"; argv[c++] = nthreads;
+		argv[c++] = set; argv[c++] = nthreads;
 	}
 	if (nclients[0] != '\0') {
-		argv[c++] = "--set"; argv[c++] = nclients;
+		argv[c++] = set; argv[c++] = nclients;
 	}
 	if (pipeline[0] != '\0') {
-		argv[c++] = "--set"; argv[c++] = pipeline;
+		argv[c++] = set; argv[c++] = pipeline;
+	}
+	if (memmaxsize[0] != '\0') {
+		argv[c++] = set; argv[c++] = memmaxsize;
+	}
+	if (vmmaxsize[0] != '\0') {
+		argv[c++] = set; argv[c++] = vmmaxsize;
 	}
 	if (embeddedr != NULL) {
-		argv[c++] = "--set"; argv[c++] = embeddedr;
+		argv[c++] = set; argv[c++] = embeddedr;
 	}
 	if (embeddedpy != NULL) {
-		argv[c++] = "--set"; argv[c++] = embeddedpy;
+		argv[c++] = set; argv[c++] = embeddedpy;
 	}
 	if (embeddedc != NULL) {
-		argv[c++] = "--set"; argv[c++] = embeddedc;
+		argv[c++] = set; argv[c++] = embeddedc;
 	}
 	if (readonly != NULL) {
 		argv[c++] = readonly;
 	}
+	if (raw_strings != NULL) {
+		argv[c++] = "--set"; argv[c++] = raw_strings;
+	}
 	/* get the rest (non-default) mserver props set in the conf file */
 	list = ckv;
+	freec = c;					/* following entries to be freed if != set */
 	while (list->key != NULL) {
 		if (list->val != NULL && !defaultProperty(list->key)) {
-			argv[c++] = "--set";
-			snprintf(property_other, sizeof(property_other), "%s=%s", list->key, list->val);
+			if (strcmp(list->key, "gdk_debug") == 0) {
+				snprintf(property_other, sizeof(property_other), "-d%s", list->val);
+			} else {
+				argv[c++] = set;
+				snprintf(property_other, sizeof(property_other), "%s=%s", list->key, list->val);
+			}
 			argv[c++] = strdup(property_other);
 		}
 		list++;
 	}
 
-	/* keep this one last for easy copy/paste with gdb */
-	argv[c++] = "--set"; argv[c++] = "monet_daemon=yes";
+	/* Let's get extra mserver5 args from the environment */
+	mserver5_extra = getenv("MSERVER5_EXTRA_ARGS");
+	if (mserver5_extra != NULL) {
+		/* work on copy of the environment value since strtok_r changes it */
+		mserver5_extra = strdup(mserver5_extra);
+		if (mserver5_extra != NULL) {
+			char *sp = NULL;
+			mserver5_extra_token = strtok_r(mserver5_extra, " ", &sp);
+			while (c < MAX_NR_ARGS && mserver5_extra_token != NULL) {
+				argv[c++] = strdup(mserver5_extra_token);
+				mserver5_extra_token = strtok_r(NULL, " ", &sp);
+			}
+			free(mserver5_extra);
+		}
+	}
 
 	argv[c++] = NULL;
 
@@ -642,6 +720,12 @@ forkMserver(char *database, sabdb** stats, int force)
 		dp->pid = pid;
 		dp->dbname = strdup(database);
 		dp->flag = 0;
+
+		while (argv[freec] != NULL) {
+			if (argv[freec] != set)
+				free(argv[freec]);
+			freec++;
+		}
 
 		pthread_mutex_unlock(&_mero_topdp_lock);
 
@@ -756,21 +840,23 @@ forkMserver(char *database, sabdb** stats, int force)
 			}
 		}
 
-		if ((*stats)->locked == 1) {
+		if ((*stats)->locked) {
 			Mfprintf(stdout, "database '%s' has been put into maintenance "
 					 "mode during startup\n", database);
 		}
 
 		return(NO_ERR);
-	} else
-		pthread_mutex_unlock(&_mero_topdp_lock);
+	}
+	int e = errno;
+	pthread_mutex_unlock(&_mero_topdp_lock);
+
 	/* forking failed somehow, cleanup the pipes */
 	close(pfdo[0]);
 	close(pfdo[1]);
 	close(pfde[0]);
 	close(pfde[1]);
 	pthread_mutex_unlock(&fork_lock);
-	return(newErr("%s", strerror(errno)));
+	return(newErr("%s", strerror(e)));
 }
 
 #define BUFLEN 1024
@@ -790,10 +876,12 @@ fork_profiler(char *dbname, sabdb **stats, char **log_path)
 	size_t pidfnlen;
 	FILE *pidfile;
 	char *profiler_executable;
+	char *beat_frequency = NULL;
 	char *tmp_exe;
 	struct stat path_info;
 	int error_code;
 
+	*log_path = NULL;
 	error = msab_getStatus(stats, dbname);
 	if (error != NULL) {
 		return error;
@@ -851,6 +939,10 @@ fork_profiler(char *dbname, sabdb **stats, char **log_path)
 	/* find the path that the profiler will be storing files */
 	ckv = getDefaultProps();
 	readAllProps(ckv, (*stats)->path);
+	kv = findConfKey(ckv, PROFILERBEATFREQ);
+	if (kv) {
+		beat_frequency = kv->val;
+	}
 	kv = findConfKey(ckv, PROFILERLOGPROPERTY);
 
 	if (kv == NULL) {
@@ -921,9 +1013,9 @@ fork_profiler(char *dbname, sabdb **stats, char **log_path)
 		}
 
 		if (fgets(buf, sizeof(buf), pidfile) == NULL) {
-			fclose(pidfile);
 			error = newErr("cannot read from pid file %s: %s\n",
 						   pidfilename, strerror(errno));
+			fclose(pidfile);
 			free(*log_path);
 			*log_path = NULL;
 			goto cleanup;
@@ -1031,6 +1123,10 @@ fork_profiler(char *dbname, sabdb **stats, char **log_path)
 		argv[arg_idx++] = "-j";  /* JSON output */
 		argv[arg_idx++] = "-d";
 		argv[arg_idx++] = dbname;
+		if (beat_frequency) {
+			argv[arg_idx++] = "-b";
+			argv[arg_idx++] = beat_frequency;
+		}
 		argv[arg_idx++] = "-o";
 		argv[arg_idx++] = log_filename;
 		/* execute */
@@ -1141,6 +1237,7 @@ shutdown_profiler(char *dbname, sabdb **stats)
 
   cleanup:
 	freeConfFile(ckv);
+	free(ckv);
 	free(pidfilename);
 	return error;
 }

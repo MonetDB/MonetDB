@@ -21,7 +21,6 @@ stdout of test 'pyapi16` in directory 'sql/backends/monet5` itself:
 # MonetDB/Python module loaded
 # MonetDB/R   module loaded
 
-Ready.
 ['foo' 't' 'f' 'i']
 ['bar' 'e' 'o' 'k']
 ['123' 's' 'u' 'r']
@@ -47,7 +46,7 @@ Ready.
 #	return True
 #};
 #SELECT * FROM pyapi16( (SELECT * FROM vals) );
-% .L3 # table_name
+% .%2 # table_name
 % d # name
 % boolean # type
 % 5 # length

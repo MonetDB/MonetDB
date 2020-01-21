@@ -17,7 +17,6 @@ stdout of test 'capi12` in directory 'sql/backends/monet5/UDF/capi` itself:
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-84742/.s.monetdb.34982
 # MonetDB/SQL module loaded
 
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql

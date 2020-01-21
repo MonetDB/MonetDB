@@ -19,7 +19,6 @@ stdout of test 'prepare_unop_crash.Bug-3653` in directory 'sql/test/BugTracker-2
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 08:58:49 >  
 # 08:58:49 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-32037" "--port=32270"

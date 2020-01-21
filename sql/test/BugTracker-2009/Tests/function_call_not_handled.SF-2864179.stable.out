@@ -15,7 +15,6 @@ stdout of test 'function_call_not_handled.SF-2864179` in directory 'sql/test/Bug
 # Listening for connection requests on mapi:monetdb://yngling.ins.cwi.nl:39569/
 # MonetDB/SQL module v2.33.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;
@@ -68,8 +67,8 @@ Ready.
 #  return id_table_a1;
 #end;
 #select insert_table_error();
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% %1 # name
 % int # type
 % 1 # length
 [ 0	]
@@ -79,8 +78,8 @@ Ready.
 % 1,	1 # length
 [ 1,	1	]
 #select insert_table_correct();
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% %1 # name
 % int # type
 % 1 # length
 [ 2	]

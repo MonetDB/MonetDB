@@ -57,7 +57,6 @@ stdout of test 'event_s01` in directory 'sql/test/Via-m` itself:
 # loading sql script: 99_system.sql
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 10:49:37 >  
 # 10:49:37 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-5263" "--port=36838"

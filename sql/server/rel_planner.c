@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -199,7 +199,7 @@ exp_getdcount( mvc *sql, sql_rel *r , sql_exp *e, lng count)
 }
 
 static int
-exp_getranges( mvc *sql, sql_rel *r , sql_exp *e, void **min, void **max)
+exp_getranges( mvc *sql, sql_rel *r , sql_exp *e, char **min, char **max)
 {
 	switch(e->type) {
 	case e_column: {
@@ -251,7 +251,7 @@ exp_getatom( mvc *sql, sql_exp *e, atom *m)
 }
 
 static dbl
-exp_getrange_sel( mvc *sql, sql_rel *r, sql_exp *e, void *min, void *max)
+exp_getrange_sel( mvc *sql, sql_rel *r, sql_exp *e, char *min, char *max)
 {
 	atom *amin, *amax, *emin, *emax;
 	dbl sel = 1.0;
@@ -296,7 +296,7 @@ rel_exp_selectivity(mvc *sql, sql_rel *r, sql_exp *e, lng count)
 	case e_cmp: {
 		lng dcount = exp_getdcount( sql, r, e->l, count);
 
-		switch (get_cmp(e)) {
+		switch (e->flag) {
 		case cmp_equal: {
 			sel = 1.0/dcount;
 			break;
@@ -308,7 +308,7 @@ rel_exp_selectivity(mvc *sql, sql_rel *r, sql_exp *e, lng count)
 		case cmp_gte:
 		case cmp_lt:
 		case cmp_lte: {
-			void *min, *max;
+			char *min, *max;
 			if (exp_getranges( sql, r, e->l, &min, &max )) {
 				sel = (dbl)exp_getrange_sel( sql, r, e, min, max);
 			} else {
@@ -354,7 +354,7 @@ rel_join_exp_selectivity(mvc *sql, sql_rel *l, sql_rel *r, sql_exp *e, lng lcoun
 	rdcount = exp_getdcount(sql, r, e->r, rcount);
 	switch(e->type) {
 	case e_cmp:
-		switch (get_cmp(e)) {
+		switch (e->flag) {
 		case cmp_equal: 
 			sel = (lcount/(dbl)ldcount)*(rcount/(dbl)rdcount);
 			break;

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -106,7 +106,7 @@ SQLtransaction_begin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (sql->session->auto_commit == 0)
 		throw(SQL, "sql.trans", SQLSTATE(25001) "START TRANSACTION: cannot start a transaction within a transaction");
-	if (sql->session->active)
+	if (sql->session->tr->active)
 		msg = mvc_rollback(sql, 0, NULL, false);
 	sql->session->auto_commit = 0;
 	sql->session->ac_on_commit = 1;
@@ -115,7 +115,7 @@ SQLtransaction_begin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if(msg)
 		return msg;
 	else if(ret < 0)
-		throw(SQL, "sql.trans", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(SQL, "sql.trans", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -135,7 +135,7 @@ SQLtransaction2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	if (sql->session->auto_commit == 0)
 		throw(SQL, "sql.trans", SQLSTATE(25001) "START TRANSACTION: cannot start a transaction within a transaction");
-	if (sql->session->active)
+	if (sql->session->tr->active)
 		msg = mvc_rollback(sql, 0, NULL, false);
 	sql->session->auto_commit = 0;
 	sql->session->ac_on_commit = 1;
@@ -144,6 +144,6 @@ SQLtransaction2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if(msg)
 		return msg;
 	else if(ret < 0)
-		throw(SQL, "sql.trans", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(SQL, "sql.trans", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }

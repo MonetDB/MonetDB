@@ -14,7 +14,6 @@ stdout of test 'set_history_and_drop_table.SF-2607045` in directory 'sql/test/Bu
 # Listening for connection requests on mapi:monetdb://alviss.ins.cwi.nl:31094/
 # MonetDB/SQL module v2.28.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

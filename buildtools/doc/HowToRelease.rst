@@ -2,7 +2,7 @@
 .. License, v. 2.0.  If a copy of the MPL was not distributed with this
 .. file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ..
-.. Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+.. Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
 
 How to Prepare a Release
 ========================
@@ -117,10 +117,10 @@ Releasing
   correct compiler, i.e., Microsoft Visual Studio 8, and options:
 
   Use these ``nmake`` options for a 32 bit compile: ``NDEBUG=1
-  HAVE_PYTHON=1 HAVE_PCRE=1 HAVE_MONETDB5=1``
+  HAVE_PYTHON=1 HAVE_PCRE=1``
 
   Use these ``nmake`` options for a 64 bit compile: ``bits=64 NDEBUG=1
-  HAVE_MONETDB5=1 HAVE_PYTHON=1 HAVE_PCRE=1``
+  HAVE_PYTHON=1 HAVE_PCRE=1``
 
 - Create PGP signatures and SHA1 checksums::
 

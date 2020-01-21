@@ -10,15 +10,15 @@ z:bat[:int]:= bat.new(:int);
 end f;
 
 # type resolver should complain on the rest
-function f();
+function g();
 j:sht := 1:lng;
-end f;
-function f();
+end g;
+function h();
 k:lng := 1:sht;
-end f;
-function f();
+end h;
+function k();
 y:bat[:str]:= bat.new(:int);
-end f;
-function f();
-f:flt := "wrong";
-end f;
+end k;
+function l();
+l:flt := "wrong";
+end l;

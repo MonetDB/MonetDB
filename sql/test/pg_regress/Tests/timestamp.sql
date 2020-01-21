@@ -5,6 +5,11 @@
 /* SET australian_timezones = 'off'; */
 
 CREATE TABLE TIMESTAMP_TBL ( d1 timestamp(2) );
+DECLARE test_now timestamp(2);
+DECLARE test_current_date date;
+
+SET test_now = now;
+SET test_current_date = current_date;
 
 -- Shorthand values
 -- Not directly usable for regression testing since these are not constants.
@@ -13,31 +18,34 @@ CREATE TABLE TIMESTAMP_TBL ( d1 timestamp(2) );
 -- statements.
 
 --INSERT INTO TIMESTAMP_TBL VALUES ('now');
-INSERT INTO TIMESTAMP_TBL VALUES (now);
+INSERT INTO TIMESTAMP_TBL VALUES (test_now);
 --INSERT INTO TIMESTAMP_TBL VALUES ('current');
-INSERT INTO TIMESTAMP_TBL VALUES (cast(current_timestamp as timestamp));
+INSERT INTO TIMESTAMP_TBL VALUES (cast(test_now as timestamp));
 --INSERT INTO TIMESTAMP_TBL VALUES ('today');
-INSERT INTO TIMESTAMP_TBL VALUES (cast(current_date as timestamp));
+INSERT INTO TIMESTAMP_TBL VALUES (cast(test_current_date as timestamp));
 --INSERT INTO TIMESTAMP_TBL VALUES ('yesterday');
-INSERT INTO TIMESTAMP_TBL VALUES (cast(sql_sub(current_date, 24*60*60.0) as timestamp));
+INSERT INTO TIMESTAMP_TBL VALUES (cast(sql_sub(test_current_date, 24*60*60.0) as timestamp));
 --INSERT INTO TIMESTAMP_TBL VALUES ('tomorrow');
-INSERT INTO TIMESTAMP_TBL VALUES (cast(sql_add(current_date, 24*60*60.0) as timestamp));
-INSERT INTO TIMESTAMP_TBL VALUES ('tomorrow EST');
-INSERT INTO TIMESTAMP_TBL VALUES ('tomorrow zulu');
+INSERT INTO TIMESTAMP_TBL VALUES (cast(sql_add(test_current_date, 24*60*60.0) as timestamp));
 
 --SELECT d1 FROM TIMESTAMP_TBL;
-SELECT count(*) AS One FROM TIMESTAMP_TBL WHERE d1 = cast(current_date as timestamp);
-SELECT count(*) AS One FROM TIMESTAMP_TBL WHERE d1 = cast(sql_add(current_date, 24*60*60.0) as timestamp);
-SELECT count(*) AS One FROM TIMESTAMP_TBL WHERE d1 = cast(sql_sub(current_date, 24*60*60.0) as timestamp);
-SELECT count(*) AS None FROM TIMESTAMP_TBL WHERE d1 = cast(now as timestamp);
+SELECT count(*) AS One FROM TIMESTAMP_TBL WHERE d1 = cast(test_current_date as timestamp);
+SELECT count(*) AS One FROM TIMESTAMP_TBL WHERE d1 = cast(sql_add(test_current_date, 24*60*60.0) as timestamp);
+SELECT count(*) AS One FROM TIMESTAMP_TBL WHERE d1 = cast(sql_sub(test_current_date, 24*60*60.0) as timestamp);
+SELECT count(*) AS None FROM TIMESTAMP_TBL WHERE d1 = cast(test_now as timestamp);
+
+INSERT INTO TIMESTAMP_TBL VALUES ('tomorrow EST');
+INSERT INTO TIMESTAMP_TBL VALUES ('tomorrow zulu');
 
 DELETE FROM TIMESTAMP_TBL;
 
 -- verify uniform transaction time within transaction block
 START TRANSACTION;
-INSERT INTO TIMESTAMP_TBL VALUES (now);
-INSERT INTO TIMESTAMP_TBL VALUES (now());
-SELECT count(*) AS two FROM TIMESTAMP_TBL WHERE d1 <= cast(now as timestamp);
+DECLARE test_now timestamp(2);
+SET test_now = now;
+INSERT INTO TIMESTAMP_TBL VALUES (test_now);
+INSERT INTO TIMESTAMP_TBL VALUES (test_now);
+SELECT count(*) AS two FROM TIMESTAMP_TBL WHERE d1 <= cast(test_now as timestamp);
 COMMIT;
 DELETE FROM TIMESTAMP_TBL;
 
@@ -260,7 +268,7 @@ SELECT d1, extract(quarter from d1) FROM TIMESTAMP_TBL;
 SELECT d1, extract(halfyear from d1) FROM TIMESTAMP_TBL;
 SELECT d1, extract(year from d1) FROM TIMESTAMP_TBL;
 SELECT d1, extract(century from d1) FROM TIMESTAMP_TBL;
-SELECT d1, extract(millenium from d1) FROM TIMESTAMP_TBL;
+SELECT d1, extract(millennium from d1) FROM TIMESTAMP_TBL;
 SELECT d1, extract(epoch from d1) FROM TIMESTAMP_TBL;
 
 SELECT d1, week(d1) FROM TIMESTAMP_TBL;

@@ -13,7 +13,6 @@ stdout of test 'assert_fails_on_algebra_version.SF-2019349` in directory 'sql/te
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:37472/
 # MonetDB/SQL module v2.24.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

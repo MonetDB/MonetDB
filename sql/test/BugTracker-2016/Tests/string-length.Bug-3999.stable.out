@@ -23,68 +23,67 @@ stdout of test 'string-length.Bug-3999` in directory 'sql/test/BugTracker-2016` 
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 11:44:27 >  
 # 11:44:27 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-9650" "--port=30837"
 # 11:44:27 >  
 
 #SELECT length('123 ') as "four";
-% .L2 # table_name
+% . # table_name
 % four # name
 % int # type
 % 1 # length
 [ 4	]
 #SELECT length('123       ') as "ten";
-% .L2 # table_name
+% . # table_name
 % ten # name
 % int # type
 % 2 # length
 [ 10	]
 #SELECT length('1234567890') as "ten";
-% .L2 # table_name
+% . # table_name
 % ten # name
 % int # type
 % 2 # length
 [ 10	]
 #SELECT length('     67890') as "ten";
-% .L2 # table_name
+% . # table_name
 % ten # name
 % int # type
 % 2 # length
 [ 10	]
 #SELECT length(reverse('     67890')) as "ten";
-% .L2 # table_name
+% . # table_name
 % ten # name
 % int # type
 % 2 # length
 [ 10	]
 #SELECT sys.length('123 ') as "four";
-% .L2 # table_name
+% . # table_name
 % four # name
 % int # type
 % 1 # length
 [ 4	]
 #SELECT sys.length('123       ') as "ten";
-% .L2 # table_name
+% . # table_name
 % ten # name
 % int # type
 % 2 # length
 [ 10	]
 #SELECT sys.length('1234567890') as "ten";
-% .L2 # table_name
+% . # table_name
 % ten # name
 % int # type
 % 2 # length
 [ 10	]
 #SELECT sys.length('     67890') as "ten";
-% .L2 # table_name
+% . # table_name
 % ten # name
 % int # type
 % 2 # length
 [ 10	]
 #SELECT sys.length(reverse('     67890')) as "ten";
-% .L2 # table_name
+% . # table_name
 % ten # name
 % int # type
 % 2 # length
@@ -93,8 +92,8 @@ Ready.
 #INSERT INTO tvarchar VALUES ('A'), (' BC ');
 [ 2	]
 #SELECT val, length(val) FROM tvarchar;
-% sys.tvarchar,	sys.L3 # table_name
-% val,	L3 # name
+% sys.tvarchar,	sys. # table_name
+% val,	%2 # name
 % varchar,	int # type
 % 4,	1 # length
 [ "A",	1	]
@@ -102,8 +101,8 @@ Ready.
 #UPDATE tvarchar SET val = val || '    ';
 [ 2	]
 #SELECT val, length(val) FROM tvarchar;
-% sys.tvarchar,	sys.L3 # table_name
-% val,	L3 # name
+% sys.tvarchar,	sys. # table_name
+% val,	%2 # name
 % varchar,	int # type
 % 8,	1 # length
 [ "A    ",	5	]
@@ -111,8 +110,8 @@ Ready.
 #UPDATE tvarchar SET val = (val || 'x');
 [ 2	]
 #SELECT val, length(val) FROM tvarchar;
-% sys.tvarchar,	sys.L3 # table_name
-% val,	L3 # name
+% sys.tvarchar,	sys. # table_name
+% val,	%2 # name
 % varchar,	int # type
 % 9,	1 # length
 [ "A    x",	6	]
@@ -122,8 +121,8 @@ Ready.
 #INSERT INTO tchar VALUES ('A'), (' BC ');
 [ 2	]
 #SELECT val, length(val) FROM tchar;
-% sys.tchar,	sys.L3 # table_name
-% val,	L3 # name
+% sys.tchar,	sys. # table_name
+% val,	%2 # name
 % char,	int # type
 % 9,	1 # length
 [ "A",	1	]
@@ -131,8 +130,8 @@ Ready.
 #UPDATE tchar SET val = val || '    ';
 [ 2	]
 #SELECT val, length(val) FROM tchar;
-% sys.tchar,	sys.L3 # table_name
-% val,	L3 # name
+% sys.tchar,	sys. # table_name
+% val,	%2 # name
 % char,	int # type
 % 9,	1 # length
 [ "A    ",	5	]
@@ -140,8 +139,8 @@ Ready.
 #UPDATE tchar SET val = (val || 'x');
 [ 2	]
 #SELECT val, length(val) FROM tchar;
-% sys.tchar,	sys.L3 # table_name
-% val,	L3 # name
+% sys.tchar,	sys. # table_name
+% val,	%2 # name
 % char,	int # type
 % 9,	1 # length
 [ "A    x",	6	]

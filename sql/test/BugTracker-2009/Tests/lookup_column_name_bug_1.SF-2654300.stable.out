@@ -14,7 +14,6 @@ stdout of test 'lookup_column_name_bug_1.SF-2654300` in directory 'sql/test/BugT
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:33854/
 # MonetDB/SQL module v2.28.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

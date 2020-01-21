@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -79,6 +79,14 @@ cs_del(changeset * cs, node *elm, int flags)
 			cs->dset = list_new(cs->sa, cs->destroy);
 		list_move_data(cs->set, cs->dset, elm->data);
 	}
+}
+
+void
+cs_move(changeset *from, changeset *to, void *data)
+{
+	if (!to->set)
+		to->set = list_new(to->sa, to->destroy);
+	list_move_data(from->set, to->set, data);
 }
 
 int

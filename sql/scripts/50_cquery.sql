@@ -43,10 +43,6 @@ create procedure cquery."heartbeat"(alias string, msec bigint)
 create procedure cquery."heartbeat"(msec bigint)
 	external name cquery."heartbeat";
 
--- Tumble the stream buffer
-create procedure cquery."tumble"("schema" string, "table" string, elem integer)
-	external name cquery."tumble";
-
 -- Window based consumption for stream queries
 create procedure cquery."window"("schema" string, "table" string, elem integer)
 	external name basket."window";
@@ -70,7 +66,7 @@ create function cquery.status()
  external name cquery.status;
 
 create function cquery.streams()
- returns table(tick timestamp, "schema" string, "table" string, winsize integer, "stride" integer, events integer, "cycles" integer, "errors" string)
+ returns table(tick timestamp, "schema" string, "table" string, winsize integer, "stride" integer, events integer, "errors" string)
  external name basket.status;
 
 create function cquery.show(alias string)

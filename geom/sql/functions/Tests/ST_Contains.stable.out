@@ -18,7 +18,6 @@ stdout of test 'ST_Contains` in directory 'geom/sql/functions` itself:
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 17:07:03 >  
 # 17:07:03 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-21284" "--port=31811"
@@ -26,34 +25,34 @@ Ready.
 
 #SELECT ST_Contains(smallc, bigc) As smallcontainsbig 
 #FROM (SELECT ST_Buffer(ST_GeomFromText('POINT(1 2)'), 10) As smallc, ST_Buffer(ST_GeomFromText('POINT(1 2)'), 20) As bigc) As foo;
-% .L6 # table_name
+% . # table_name
 % smallcontainsbig # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT ST_Contains(bigc,smallc) As bigcontainssmall 
 #FROM (SELECT ST_Buffer(ST_GeomFromText('POINT(1 2)'), 10) As smallc, ST_Buffer(ST_GeomFromText('POINT(1 2)'), 20) As bigc) As foo;
-% .L6 # table_name
+% . # table_name
 % bigcontainssmall # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT ST_Contains(bigc, ST_Union(smallc, bigc)) as bigcontainsunion 
 #FROM (SELECT ST_Buffer(ST_GeomFromText('POINT(1 2)'), 10) As smallc, ST_Buffer(ST_GeomFromText('POINT(1 2)'), 20) As bigc) As foo;
-% .L6 # table_name
+% . # table_name
 % bigcontainsunion # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT ST_Contains(bigc, ST_ExteriorRing(bigc)) As bigcontainsexterior 
 #FROM (SELECT ST_Buffer(ST_GeomFromText('POINT(1 2)'), 10) As smallc, ST_Buffer(ST_GeomFromText('POINT(1 2)'), 20) As bigc) As foo;
-% .L6 # table_name
+% . # table_name
 % bigcontainsexterior # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT geom AS "GEOMETRY", ST_Contains(geom, 'POINT (15 15)') AS "CONTAINS" FROM geometries WHERE id<14;
-% sys.L2,	sys.L4 # table_name
+% sys.,	sys. # table_name
 % GEOMETRY,	CONTAINS # name
 % geometry,	boolean # type
 % 0,	5 # length

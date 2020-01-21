@@ -17,7 +17,7 @@ mclient \- the MonetDB command-line tool
 MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
-accelerators, and a SQL frontend.
+accelerators, and an SQL front end.
 .PP
 .I Mclient
 is the command-line interface to the MonetDB server.
@@ -451,7 +451,7 @@ is the name of the table,
 .I $db
 is the name of the database.
 .PP
-mclient \-d $db \-s \(dqCOPY INTO $table FROM '$file' USING DELIMITERS ',','\e\en','\e\(dq'\(dq
+mclient \-d $db \-s \(dqCOPY INTO $table FROM '$file' USING DELIMITERS ',',E'\e\en','\e\(dq'\(dq
 .PP
 Efficiently import data from a CSV file into a table when the file is
 to be read by mclient (e.g. the server has no access to the file).
@@ -462,7 +462,7 @@ is the name of the table,
 .I $db
 is the name of the database.
 .PP
-mclient \-d $db \-s \(dqCOPY INTO $table FROM STDIN USING DELIMITERS ',','\e\en','\e\(dq'\(dq \- < $file
+mclient \-d $db \-s \(dqCOPY INTO $table FROM STDIN USING DELIMITERS ',',E'\e\en','\e\(dq'\(dq \- < $file
 .PP
 Note that in this latter case, if a count of records is supplied, it
 should be at least as large as the number of records actually present
@@ -471,10 +471,15 @@ This, because otherwise the remainder of the file will be interpreted
 as SQL queries.
 .PP
 Another, easier method to have the client read the file content is as
-follows.
+follows:
 .PP
-mclient \-d $db \-s \(dqCOPY INTO $table FROM '$file' ON CLIENT USING DELIMITERS ',','\e\en',\e\(dq'\(dq
+mclient \-d $db \-s \(dqCOPY INTO $table FROM '$file' ON CLIENT USING DELIMITERS ',',E'\e\en',\e\(dq'\(dq
 .PP
+In this case the value of
+.I $file
+can be a path name relative to the directory in which
+.I mclient
+was started.
 If, in addition, the option
 .B \-\-allow\-remote
 is passed to
@@ -482,7 +487,9 @@ is passed to
 the
 .I $file
 in the above query can also be a URL.  It then has to have the form
-.IB schema :// string .
+.IB schema :// string ,
+.IR e . g .,
+.IR https://www.example.org/dumpdata.csv .
 .PP
 See https://www.monetdb.org/Documentation/Manuals/SQLreference/CopyInto
 for more information about the COPY INTO query.

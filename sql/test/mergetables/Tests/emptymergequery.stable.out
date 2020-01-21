@@ -19,7 +19,6 @@ stdout of test 'emptymergequery` in directory 'sql/test/mergetables` itself:
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 18:40:24 >  
 # 18:40:24 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-11671" "--port=39369"

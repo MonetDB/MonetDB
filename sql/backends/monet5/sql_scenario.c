@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -49,8 +49,8 @@
 static int SQLinitialized = 0;
 static int SQLnewcatalog = 0;
 int SQLdebug = 0;
-static char *sqlinit = NULL;
-MT_Lock sql_contextLock MT_LOCK_INITIALIZER("sql_contextLock");
+static const char *sqlinit = NULL;
+static MT_Lock sql_contextLock = MT_LOCK_INITIALIZER("sql_contextLock");
 
 static void
 monet5_freestack(int clientid, backend_stack stk)
@@ -60,9 +60,6 @@ monet5_freestack(int clientid, backend_stack stk)
 	(void) clientid;
 	if (p != NULL)
 		freeStack(p);
-#ifdef _SQL_SCENARIO_DEBUG
-	fprintf(stderr, "#monet5_freestack\n");
-#endif
 }
 
 static void
@@ -77,56 +74,6 @@ monet5_freecode(int clientid, backend_code code, backend_stack stk, int nr, char
 	msg = SQLCacheRemove(MCgetClient(clientid), name);
 	if (msg)
 		freeException(msg);	/* do something with error? */
-
-#ifdef _SQL_SCENARIO_DEBUG
-	fprintf(stderr, "#monet5_free:%d\n", nr);
-#endif
-}
-
-str
-SQLsession(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	str msg = MAL_SUCCEED;
-	str logmsg;
-	int cnt=0;
-
-	(void) mb;
-	(void) stk;
-	(void) pci;
-	if (SQLinitialized == 0)// && (msg = SQLprelude(NULL)) != MAL_SUCCEED)
-		return msg;
-	msg = setScenario(cntxt, "sql");
-	// Wait for any recovery process to be finished
-	do {
-		MT_sleep_ms(1000);
-		logmsg = GDKgetenv("recovery");
-		if( logmsg== NULL && ++cnt  == 5)
-			throw(SQL,"SQLinit", "#WARNING server not ready, recovery in progress\n");
-    }while (logmsg == NULL);
-	return msg;
-}
-
-str
-SQLsession2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	str msg = MAL_SUCCEED;
-	str logmsg;
-	int cnt=0;
-
-	(void) mb;
-	(void) stk;
-	(void) pci;
-	if (SQLinitialized == 0)// && (msg = SQLprelude(NULL)) != MAL_SUCCEED)
-		return msg;
-	msg = setScenario(cntxt, "msql");
-	// Wait for any recovery process to be finished
-	do {
-		MT_sleep_ms(1000);
-		logmsg = GDKgetenv("recovery");
-		if( logmsg== NULL && ++cnt  == 5)
-			throw(SQL,"SQLinit","#WARNING server not ready, recovery in progress\n");
-    }while (logmsg == NULL);
-	return msg;
 }
 
 static str SQLinit(Client c);
@@ -138,46 +85,61 @@ SQLprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str tmp;
 	Scenario ms, s = getFreeScenario();
 
-//	(void) ret;
 	(void) mb;
 	(void) stk;
 	(void) pci;
 	if (!s)
 		throw(MAL, "sql.start", SQLSTATE(42000) "out of scenario slots");
 	sqlinit = GDKgetenv("sqlinit");
-	s->name = "S_Q_L";
-	s->language = "sql";
-	s->initSystem = NULL;
-	s->exitSystem = "SQLexit";
-	s->initClient = "SQLinitClient";
-	s->exitClient = "SQLexitClient";
-	s->reader = "SQLreader";
-	s->parser = "SQLparser";
-	s->engine = "SQLengine";
-	s->callback = "SQLcallback";
-
+	*s = (struct SCENARIO) {
+		.name = "S_Q_L",
+		.language = "sql",
+		.exitSystem = "SQLexit",
+		.exitSystemCmd = SQLexit,
+		.initClient = "SQLinitClient",
+		.initClientCmd = SQLinitClient,
+		.exitClient = "SQLexitClient",
+		.exitClientCmd = SQLexitClient,
+		.reader = "SQLreader",
+		.readerCmd = SQLreader,
+		.parser = "SQLparser",
+		.parserCmd = SQLparser,
+		.engine = "SQLengine",
+		.engineCmd = SQLengine,
+		.callback = "SQLcallback",
+		.callbackCmd = SQLcallback,
+	};
 	ms = getFreeScenario();
 	if (!ms)
 		throw(MAL, "sql.start", SQLSTATE(42000) "out of scenario slots");
 
-	ms->name = "M_S_Q_L";
-	ms->language = "msql";
-	ms->initSystem = NULL;
-	ms->exitSystem = "SQLexit";
-	ms->initClient = "SQLinitClient";
-	ms->exitClient = "SQLexitClient";
-	ms->reader = "MALreader";
-	ms->parser = "MALparser";
-	ms->optimizer = "MALoptimizer";
-	/* ms->tactics = .. */
-	ms->engine = "MALengine";
-	ms->callback = "MALcallback";
+	*ms = (struct SCENARIO) {
+		.name = "M_S_Q_L",
+		.language = "msql",
+		.exitSystem = "SQLexit",
+		.exitSystemCmd = SQLexit,
+		.initClient = "SQLinitClientFromMAL",
+		.initClientCmd = SQLinitClientFromMAL,
+		.exitClient = "SQLexitClient",
+		.exitClientCmd = SQLexitClient,
+		.reader = "MALreader",
+		.readerCmd = MALreader,
+		.parser = "MALparser",
+		.parserCmd = MALparser,
+		.optimizer = "MALoptimizer",
+		.optimizerCmd = MALoptimizer,
+		.engine = "MALengine",
+		.engineCmd = MALengine,
+		.callback = "MALcallback",
+		.callbackCmd = MALcallback,
+	};
+
 	tmp = SQLinit(cntxt);
 	if (tmp != MAL_SUCCEED) {
-		fprintf(stderr, "Fatal error during initialization:\n%s\n", tmp);
+		TRC_CRITICAL(SQL_SCENARIO, "Fatal error during initialization: %s\n", tmp);
 		freeException(tmp);
 		if ((tmp = GDKerrbuf) && *tmp)
-			fprintf(stderr, SQLSTATE(42000) "GDK reported: %s\n", tmp);
+			TRC_CRITICAL(SQL_SCENARIO, SQLSTATE(42000) "GDK reported: %s\n", tmp);
 		fflush(stderr);
 		exit(1);
 	}
@@ -185,22 +147,32 @@ SQLprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	fprintf(stdout, "# MonetDB/SQL module loaded\n");
 	fflush(stdout);		/* make merovingian see this *now* */
 #endif
+	if (GDKinmemory()) {
+		s->name = "sql";
+		ms->name = "msql";
+		return MAL_SUCCEED;
+	}
 	/* only register availability of scenarios AFTER we are inited! */
 	s->name = "sql";
 	tmp = msab_marchScenario(s->name);
-	if (tmp != MAL_SUCCEED)
-		return (tmp);
+	if (tmp != NULL) {
+		char *err = createException(MAL, "sql.start", "%s", tmp);
+		free(tmp);
+		return err;
+	}
 	ms->name = "msql";
 	tmp = msab_marchScenario(ms->name);
-	return tmp;
+	if (tmp != NULL) {
+		char *err = createException(MAL, "sql.start", "%s", tmp);
+		free(tmp);
+		return err;
+	}
+	return MAL_SUCCEED;
 }
 
 str
 SQLexit(Client c)
 {
-#ifdef _SQL_SCENARIO_DEBUG
-	fprintf(stderr, "#SQLexit\n");
-#endif
 	(void) c;		/* not used */
 	MT_lock_set(&sql_contextLock);
 	if (SQLinitialized) {
@@ -218,64 +190,73 @@ SQLepilogue(void *ret)
 	str res;
 
 	(void) ret;
-	SQLexit(NULL);
+	(void) SQLexit(NULL);
 	/* this function is never called, but for the style of it, we clean
 	 * up our own mess */
-	res = msab_retreatScenario(m);
-	if (!res)
-		return msab_retreatScenario(s);
-	return res;
+	if (!GDKinmemory()) {
+		res = msab_retreatScenario(m);
+		if (!res)
+			res = msab_retreatScenario(s);
+		if (res != NULL) {
+			char *err = createException(MAL, "sql.start", "%s", res);
+			free(res);
+			return err;
+		}
+	}
+	return MAL_SUCCEED;
 }
 
-#define SQLglobal(name, val, failure)                                                                             \
-	if(!stack_push_var(sql, name, &ctype) || !stack_set_var(sql, name, VALset(&src, ctype.type->localtype, val))) \
+#define SQLglobal(name, val) \
+	if (!stack_push_var(sql, name, &ctype) || !stack_set_var(sql, name, VALset(&src, ctype.type->localtype, (char*)(val)))) \
 		failure--;
 
-#define NR_GLOBAL_VARS 10
-/* NR_GLOBAL_VAR should match exactly the number of variables created
-   in global_variables */
+/* NR_GLOBAL_VAR should match exactly the number of variables created in global_variables */
 /* initialize the global variable, ie make mvc point to these */
 static int
-global_variables(mvc *sql, char *user, char *schema)
+global_variables(mvc *sql, const char *user, const char *schema)
 {
 	sql_subtype ctype;
-	char *typename;
 	lng sec = 0;
-	bit F = FALSE;
 	ValRecord src;
-	str opt;
+	const char *opt;
 	int failure = 0;
 
-	typename = "int";
-	sql_find_subtype(&ctype, typename, 0, 0);
-	SQLglobal("debug", &sql->debug, failure);
-	SQLglobal("cache", &sql->cache, failure);
+	sql_find_subtype(&ctype, "int", 0, 0);
+	SQLglobal("debug", &sql->debug);
+	SQLglobal("cache", &sql->cache);
 
-	typename = "varchar";
-	sql_find_subtype(&ctype, typename, 1024, 0);
-	SQLglobal("current_schema", schema, failure);
-	SQLglobal("current_user", user, failure);
-	SQLglobal("current_role", user, failure);
+	sql_find_subtype(&ctype,  "varchar", 1024, 0);
+	SQLglobal("current_schema", schema);
+	SQLglobal("current_user", user);
+	SQLglobal("current_role", user);
 
 	/* inherit the optimizer from the server */
 	opt = GDKgetenv("sql_optimizer");
 	if (!opt)
 		opt = "default_pipe";
-	SQLglobal("optimizer", opt, failure);
+	SQLglobal("optimizer", opt);
 
-	typename = "sec_interval";
-	sql_find_subtype(&ctype, typename, inttype2digits(ihour, isec), 0);
-	SQLglobal("current_timezone", &sec, failure);
+	sql_find_subtype(&ctype, "sec_interval", inttype2digits(ihour, isec), 0);
+	SQLglobal("current_timezone", &sec);
 
-	typename = "boolean";
-	sql_find_subtype(&ctype, typename, 0, 0);
-	SQLglobal("history", &F, failure);
-
-	typename = "bigint";
-	sql_find_subtype(&ctype, typename, 0, 0);
-	SQLglobal("last_id", &sql->last_id, failure);
-	SQLglobal("rowcnt", &sql->rowcnt, failure);
+	sql_find_subtype(&ctype, "bigint", 0, 0);
+	SQLglobal("last_id", &sql->last_id);
+	SQLglobal("rowcnt", &sql->rowcnt);
 	return failure;
+}
+
+static const char *
+SQLgetquery(Client c)
+{
+	if (c) {
+		backend *be = c->sqlcontext;
+		if (be) {
+			mvc *m = be->mvc;
+			if (m)
+				return m->query;
+		}
+	}
+	return NULL;
 }
 
 static char*
@@ -285,34 +266,37 @@ SQLprepareClient(Client c, int login)
 	str schema;
 	backend *be;
 
+	c->getquery = SQLgetquery;
 	if (c->sqlcontext == 0) {
 		m = mvc_create(c->idx, 0, SQLdebug, c->fdin, c->fdout);
-		if( m == NULL) {
-			throw(SQL,"sql.initClient",SQLSTATE(HY001) MAL_MALLOC_FAIL);
-		}
-		if(global_variables(m, "monetdb", "sys") < 0) {
+		if (m == NULL)
+			throw(SQL,"sql.initClient",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		if (global_variables(m, "monetdb", "sys") < 0) {
 			mvc_destroy(m);
-			throw(SQL,"sql.initClient",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(SQL,"sql.initClient",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
-		if (isAdministrator(c) || strcmp(c->scenario, "msql") == 0)	/* console should return everything */
+		if (c->scenario && strcmp(c->scenario, "msql") == 0)
 			m->reply_size = -1;
 		be = (void *) backend_create(m, c);
-		if( be == NULL) {
+		if ( be == NULL) {
 			mvc_destroy(m);
-			throw(SQL,"sql.initClient", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(SQL,"sql.initClient", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 	} else {
 		be = c->sqlcontext;
 		m = be->mvc;
-		if(mvc_reset(m, c->fdin, c->fdout, SQLdebug, NR_GLOBAL_VARS) < 0) {
-			throw(SQL,"sql.initClient", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-		}
+		/* Only reset if there is no active transaction which
+		 * can happen when we combine sql.init with msql.
+		*/
+		if (m->session->tr->active)
+			return NULL;
+		if (mvc_reset(m, c->fdin, c->fdout, SQLdebug) < 0)
+			throw(SQL,"sql.initClient", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		backend_reset(be);
 	}
 	if (m->session->tr)
 		reset_functions(m->session->tr);
 	if (login) {
-		/* pass through credentials of the user if not console */
 		schema = monet5_user_set_def_schema(m, c->user);
 		if (!schema) {
 			_DELETE(schema);
@@ -328,8 +312,6 @@ SQLprepareClient(Client c, int login)
 	c->state[MAL_SCENARIO_PARSER] = c;
 	c->state[MAL_SCENARIO_OPTIMIZE] = c;
 	c->sqlcontext = be;
-
-	initSQLreferences();
 	return NULL;
 }
 
@@ -345,11 +327,11 @@ SQLresetClient(Client c)
 		mvc *m = be->mvc;
 
 		assert(m->session);
-		if (m->session->auto_commit && m->session->active) {
+		if (m->session->auto_commit && m->session->tr->active) {
 			if (mvc_status(m) >= 0)
 				msg = mvc_commit(m, 0, NULL, false);
 		}
-		if (m->session->active)
+		if (m->session->tr->active)
 			other = mvc_rollback(m, 0, NULL, false);
 
 		res_tables_destroy(m->results);
@@ -362,10 +344,10 @@ SQLresetClient(Client c)
 		c->sqlcontext = NULL;
 	}
 	c->state[MAL_SCENARIO_READER] = NULL;
-	if(other && !msg)
+	if (other && !msg)
 		msg = other;
-	else if(other && msg)
-		GDKfree(other);
+	else if (other && msg)
+		freeException(other);
 	return msg;
 }
 
@@ -374,27 +356,21 @@ MT_Id sqllogthread, idlethread;
 static str
 SQLinit(Client c)
 {
-	char *debug_str = GDKgetenv("sql_debug"), *msg = MAL_SUCCEED;
+	const char *debug_str = GDKgetenv("sql_debug");
+	char *msg = MAL_SUCCEED, *other = MAL_SUCCEED;
 	bool readonly = GDKgetenv_isyes("gdk_readonly");
 	bool single_user = GDKgetenv_isyes("gdk_single_user");
-	const char *gmt = "GMT";
-	tzone tz;
 	static int maybeupgrade = 1;
 	backend *be = NULL;
 	mvc *m = NULL;
 
-
-#ifdef _SQL_SCENARIO_DEBUG
-	fprintf(stderr, "#SQLinit Monet 5\n");
-#endif
-	if (SQLinitialized)
-		return MAL_SUCCEED;
-
-#ifdef NEED_MT_LOCK_INIT
-	MT_lock_init(&sql_contextLock, "sql_contextLock");
-#endif
-
 	MT_lock_set(&sql_contextLock);
+
+	if (SQLinitialized) {
+		MT_lock_unset(&sql_contextLock);
+		return MAL_SUCCEED;
+	}
+
 	be_funcs = (backend_functions) {
 		.fstack = &monet5_freestack,
 		.fcode = &monet5_freecode,
@@ -402,19 +378,13 @@ SQLinit(Client c)
 	};
 	monet5_user_init(&be_funcs);
 
-	msg = MTIMEtimezone(&tz, &gmt);
-	if (msg) {
-		MT_lock_unset(&sql_contextLock);
-		return msg;
-	}
-	(void) tz;
 	if (debug_str)
 		SQLdebug = strtol(debug_str, NULL, 10);
 	if (single_user)
 		SQLdebug |= 64;
 	if (readonly)
 		SQLdebug |= 32;
-	if ((SQLnewcatalog = mvc_init(SQLdebug, store_bat, readonly, single_user, 0)) < 0) {
+	if ((SQLnewcatalog = mvc_init(SQLdebug, GDKinmemory() ? store_mem : store_bat, readonly, single_user, 0)) < 0) {
 		MT_lock_unset(&sql_contextLock);
 		throw(SQL, "SQLinit", SQLSTATE(42000) "Catalogue initialization failed");
 	}
@@ -427,35 +397,35 @@ SQLinit(Client c)
 		stream *buf;
 		bstream *fdin;
 
-		if( b == NULL || cbuf == NULL) {
+		if ( b == NULL || cbuf == NULL) {
 			MT_lock_unset(&sql_contextLock);
 			GDKfree(b);
 			GDKfree(cbuf);
-			throw(SQL,"sql.init",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(SQL,"sql.init",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 
 		buffer_init(b, cbuf, len);
 		buf = buffer_rastream(b, "si");
-		if( buf == NULL) {
+		if ( buf == NULL) {
 			MT_lock_unset(&sql_contextLock);
 			buffer_destroy(b);
-			throw(SQL,"sql.init",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(SQL,"sql.init",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 
 		fdin = bstream_create(buf, b->len);
-		if( fdin == NULL) {
+		if ( fdin == NULL) {
 			MT_lock_unset(&sql_contextLock);
 			buffer_destroy(b);
-			throw(SQL,"sql.init",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(SQL,"sql.init",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 
 		bstream_next(fdin);
-		if( MCpushClientInput(c, fdin, 0, "") < 0)
-			fprintf(stderr, "SQLinit:Could not switch client input stream");
+		if ( MCpushClientInput(c, fdin, 0, "") < 0)
+			TRC_ERROR(SQL_SCENARIO, "Could not switch client input stream\n");
 	}
 	if ((msg = SQLprepareClient(c, 0)) != NULL) {
 		MT_lock_unset(&sql_contextLock);
-		fprintf(stderr, "%s\n", msg);
+		TRC_INFO(SQL_SCENARIO, "%s\n", msg);
 		return msg;
 	}
 	be = c->sqlcontext;
@@ -481,19 +451,19 @@ SQLinit(Client c)
 		bstream* createdb_bstream;
 		if ((createdb_buf = GDKmalloc(sizeof(buffer))) == NULL) {
 			MT_lock_unset(&sql_contextLock);
-			throw(MAL, "createdb", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "createdb", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		buffer_init(createdb_buf, createdb_inline, createdb_len);
 		if ((createdb_stream = buffer_rastream(createdb_buf, "createdb.sql")) == NULL) {
 			MT_lock_unset(&sql_contextLock);
 			GDKfree(createdb_buf);
-			throw(MAL, "createdb", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "createdb", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		if ((createdb_bstream = bstream_create(createdb_stream, createdb_len)) == NULL) {
 			MT_lock_unset(&sql_contextLock);
 			close_stream(createdb_stream);
 			GDKfree(createdb_buf);
-			throw(MAL, "createdb", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "createdb", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		if (bstream_next(createdb_bstream) >= 0)
 			msg = SQLstatementIntern(c, &createdb_bstream->buf, "sql.init", TRUE, FALSE, NULL);
@@ -505,7 +475,6 @@ SQLinit(Client c)
 		if (m->sa)
 			sa_destroy(m->sa);
 		m->sa = NULL;
-		m->sqs = NULL;
 
 #else
 		char path[FILENAME_MAX];
@@ -515,8 +484,8 @@ SQLinit(Client c)
 		slash_2_dir_sep(path);
 		fullname = MSP_locate_sqlscript(path, 1);
 		if (fullname) {
-			str filename = fullname;
-			str p, n, newmsg= MAL_SUCCEED;
+			str filename = fullname, p, n;
+
 			fprintf(stdout, "# SQL catalog created, loading sql scripts once\n");
 			do {
 				stream *fd = NULL;
@@ -539,41 +508,56 @@ SQLinit(Client c)
 					sz = getFileSize(fd);
 					if (sz > (size_t) 1 << 29) {
 						close_stream(fd);
-						newmsg = createException(MAL, "createdb", SQLSTATE(42000) "File %s too large to process", filename);
+						msg = createException(MAL, "createdb", SQLSTATE(42000) "File %s too large to process", filename);
 					} else {
 						bstream *bfd = NULL;
 
-						if((bfd = bstream_create(fd, sz == 0 ? (size_t) (128 * BLOCK) : sz)) == NULL) {
+						if ((bfd = bstream_create(fd, sz == 0 ? (size_t) (128 * BLOCK) : sz)) == NULL) {
 							close_stream(fd);
-							newmsg = createException(MAL, "createdb", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+							msg = createException(MAL, "createdb", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 						} else {
 							if (bstream_next(bfd) >= 0)
-								newmsg = SQLstatementIntern(c, &bfd->buf, "sql.init", TRUE, FALSE, NULL);
+								msg = SQLstatementIntern(c, &bfd->buf, "sql.init", TRUE, FALSE, NULL);
 							bstream_destroy(bfd);
 						}
 					}
-					if (m->sa)
-						sa_destroy(m->sa);
-					m->sa = NULL;
-					m->sqs = NULL;
-					if (newmsg){
-						fprintf(stderr,"%s",newmsg);
-						GDKfree(newmsg);
-					}
-				}
-			} while (p);
+				} else
+					msg = createException(MAL, "createdb", SQLSTATE(HY013) "Couldn't open file %s", filename);
+			} while (p && msg == MAL_SUCCEED);
 			GDKfree(fullname);
 		} else
-			fprintf(stderr, "!could not read createdb.sql\n");
+			msg = createException(MAL, "createdb", SQLSTATE(HY013) "Could not read createdb.sql");
+
+		/* Commit after all the startup scripts have been processed */
+		assert(m->session->tr->active);
+		if (mvc_status(m) < 0 || msg)
+			other = mvc_rollback(m, 0, NULL, false);
+		else
+			other = mvc_commit(m, 0, NULL, false);
+
+		if (other && !msg) /* 'msg' variable might be set or not, as well as 'other'. Throw the earliest one */
+			msg = other;
+		else if (other)
+			freeException(other);
+
+		if (msg)
+			TRC_INFO(SQL_SCENARIO, "%s\n", msg);
 #endif
 	} else {		/* handle upgrades */
-		m->sqs = NULL;
 		if (!m->sa)
 			m->sa = sa_create();
 		if (!m->sa) {
-			msg = createException(MAL, "createdb", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			msg = createException(MAL, "createdb", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		} else if (maybeupgrade) {
-			SQLupgrades(c,m);
+			if ((msg = SQLtrans(m)) == MAL_SUCCEED) {
+				int res = SQLupgrades(c, m);
+				/* Commit at the end of the upgrade */
+				assert(m->session->tr->active);
+				if (mvc_status(m) < 0 || res)
+					msg = mvc_rollback(m, 0, NULL, false);
+				else
+					msg = mvc_commit(m, 0, NULL, false);
+			}
 		}
 		maybeupgrade = 0;
 	}
@@ -587,22 +571,29 @@ SQLinit(Client c)
 		sqlcleanup(m, mvc_status(m));
 	}
 
-	msg = SQLresetClient(c);
+	other = SQLresetClient(c);
 	MT_lock_unset(&sql_contextLock);
+	if (other && !msg) /* 'msg' variable might be set or not, as well as 'other'. Throw the earliest one */
+		msg = other;
+	else if (other)
+		freeException(other);
 	if (msg != MAL_SUCCEED)
 		return msg;
 
-	if (MT_create_thread(&sqllogthread, (void (*)(void *)) mvc_logmanager, NULL, MT_THR_JOINABLE) != 0) {
+	if (GDKinmemory())
+		return MAL_SUCCEED;
+
+	if ((sqllogthread = THRcreate((void (*)(void *)) mvc_logmanager, NULL, MT_THR_DETACHED, "logmanager")) == 0) {
 		throw(SQL, "SQLinit", SQLSTATE(42000) "Starting log manager failed");
 	}
-	GDKregister(sqllogthread);
 	if (!(SQLdebug&1024)) {
-		if (MT_create_thread(&idlethread, (void (*)(void *)) mvc_idlemanager, NULL, MT_THR_JOINABLE) != 0) {
+		if ((idlethread = THRcreate((void (*)(void *)) mvc_idlemanager, NULL, MT_THR_DETACHED, "idlemanager")) == 0) {
 			throw(SQL, "SQLinit", SQLSTATE(42000) "Starting idle manager failed");
 		}
-		GDKregister(idlethread);
 	}
-	return WLCinit();
+	if ( wlc_state == WLC_STARTUP)
+		return WLCinit();
+	return MAL_SUCCEED;
 }
 
 #define TRANS_ABORTED SQLSTATE(25005) "Current transaction is aborted (please ROLLBACK)\n"
@@ -615,17 +606,17 @@ handle_error(mvc *m, int pstatus, str msg)
 	/* transaction already broken */
 	if (m->type != Q_TRANS && pstatus < 0) {
 		new = createException(SQL,"sql.execute",TRANS_ABORTED);
-	} else if( GDKerrbuf && GDKerrbuf[0]){
+	} else if ( GDKerrbuf && GDKerrbuf[0]){
 		new = GDKstrdup(GDKerrbuf);
 		GDKerrbuf[0] = 0;
-	} else if( *m->errstr){
+	} else if ( *m->errstr){
 		new = GDKstrdup(m->errstr);
 		m->errstr[0] = 0;
 	}
-	if( new && msg){
+	if ( new && msg){
 		newmsg = GDKzalloc( strlen(msg) + strlen(new) + 64);
 		if (newmsg == NULL) {
-			newmsg = createException(SQL, "sql.execute", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			newmsg = createException(SQL, "sql.execute", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		} else {
 			strcpy(newmsg, msg);
 			/* strcat(newmsg,"!"); */
@@ -634,10 +625,10 @@ handle_error(mvc *m, int pstatus, str msg)
 		freeException(new);
 		freeException(msg);
 	} else
-	if( msg)
+	if ( msg)
 		newmsg = msg;
 	else
-	if( new)
+	if ( new)
 		newmsg = new;
 	return newmsg;
 }
@@ -647,7 +638,7 @@ SQLautocommit(mvc *m)
 {
 	str msg = MAL_SUCCEED;
 
-	if (m->session->auto_commit && m->session->active) {
+	if (m->session->auto_commit && m->session->tr->active) {
 		if (mvc_status(m) < 0) {
 			msg = mvc_rollback(m, 0, NULL, false);
 		} else {
@@ -657,32 +648,30 @@ SQLautocommit(mvc *m)
 	return msg;
 }
 
-void
+str
 SQLtrans(mvc *m)
 {
 	m->caching = m->cache;
-	if (!m->session->active) {
+	if (!m->session->tr->active) {
 		sql_session *s;
 
-		if(mvc_trans(m) < 0) {
-			(void) sql_error(m, 02, SQLSTATE(HY001) "Allocation failure while starting the transaction");
-			return;
-		}
+		if (mvc_trans(m) < 0)
+			throw(SQL, "sql.trans", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		s = m->session;
 		if (!s->schema) {
 			if (s->schema_name)
 				GDKfree(s->schema_name);
 			s->schema_name = monet5_user_get_def_schema(m, m->user_id);
-			if(!s->schema_name) {
+			if (!s->schema_name) {
 				mvc_cancel_session(m);
-				(void) sql_error(m, 02, SQLSTATE(HY001) "Allocation failure while starting the transaction");
-				return;
+				throw(SQL, "sql.trans", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 			assert(s->schema_name);
 			s->schema = find_sql_schema(s->tr, s->schema_name);
 			assert(s->schema);
 		}
 	}
+	return MAL_SUCCEED;
 }
 
 #ifdef HAVE_EMBEDDED
@@ -694,13 +683,8 @@ SQLinitClient(Client c)
 {
 	str msg = MAL_SUCCEED;
 
-#ifdef _SQL_SCENARIO_DEBUG
-	fprintf(stderr, "#SQLinitClient\n");
-#endif
-	if (SQLinitialized == 0)// && (msg = SQLprelude(NULL)) != MAL_SUCCEED)
-		return msg;
 	MT_lock_set(&sql_contextLock);
-	if ((msg = WLRinit()) != MAL_SUCCEED) {
+	if (SQLinitialized == 0) {// && (msg = SQLprelude(NULL)) != MAL_SUCCEED)
 		MT_lock_unset(&sql_contextLock);
 		return msg;
 	}
@@ -714,37 +698,45 @@ SQLinitClient(Client c)
 }
 
 str
+SQLinitClientFromMAL(Client c)
+{
+	str msg = MAL_SUCCEED;
+
+	if ((msg = SQLinitClient(c)) != MAL_SUCCEED) {
+		c->mode = FINISHCLIENT;
+		return msg;
+	}
+
+	mvc* m = ((backend*) c->sqlcontext)->mvc;
+
+	/* Crucial step:
+	 * MAL scripts that interact with the sql module
+	 * must have a properly initialized transaction.
+	 */
+	if ((msg = SQLtrans(m)) != MAL_SUCCEED) {
+		c->mode = FINISHCLIENT;
+		return msg;
+	}
+	return msg;
+}
+
+str
 SQLexitClient(Client c)
 {
 	str err;
-#ifdef _SQL_SCENARIO_DEBUG
-	fprintf(stderr, "#SQLexitClient\n");
-#endif
-	if (SQLinitialized == FALSE)
+
+	MT_lock_set(&sql_contextLock);
+	if (SQLinitialized == FALSE) {
+		MT_lock_unset(&sql_contextLock);
 		throw(SQL, "SQLexitClient", SQLSTATE(42000) "Catalogue not available");
-	if ((err = SQLresetClient(c)) != MAL_SUCCEED)
+	}
+	err = SQLresetClient(c);
+	MT_lock_unset(&sql_contextLock);
+	if (err != MAL_SUCCEED)
 		return err;
 	MALexitClient(c);
 	return MAL_SUCCEED;
 }
-
-/*
- * A statement received internally is simply appended for
- * execution
- */
-str
-SQLinitEnvironment(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	str err;
-
-	(void) mb;
-	(void) stk;
-	(void) pci;
-	if ((err = SQLinitClient(cntxt)) == MAL_SUCCEED)
-		cntxt->phase[MAL_SCENARIO_EXITCLIENT] = SQLexitClient;
-	return err;
-}
-
 
 str
 SQLstatement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -768,12 +760,11 @@ SQLcompile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) mb;
 	*ret = NULL;
-	msg = SQLstatementIntern(cntxt, expr, "SQLcompile", FALSE, FALSE, NULL);
-	if (msg == MAL_SUCCEED)
-		*ret = _STRDUP("SQLcompile");
-	if(*ret == NULL)
-		throw(SQL,"sql.compile",SQLSTATE(HY001) MAL_MALLOC_FAIL);
-	return msg;
+	if ((msg = SQLstatementIntern(cntxt, expr, "SQLcompile", FALSE, FALSE, NULL)) != MAL_SUCCEED)
+		return msg;
+	if ((*ret = _STRDUP("SQLcompile")) == NULL)
+		throw(SQL,"sql.compile",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	return MAL_SUCCEED;
 }
 
 /*
@@ -806,9 +797,9 @@ SQLinclude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		close_stream(fd);
 		throw(MAL, "sql.include", SQLSTATE(42000) "file %s too large to process", fullname);
 	}
-	if((bfd = bstream_create(fd, sz == 0 ? (size_t) (128 * BLOCK) : sz)) == NULL) {
+	if ((bfd = bstream_create(fd, sz == 0 ? (size_t) (128 * BLOCK) : sz)) == NULL) {
 		close_stream(fd);
-		throw(MAL, "sql.include", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "sql.include", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	if (bstream_next(bfd) < 0) {
 		bstream_destroy(bfd);
@@ -822,7 +813,6 @@ SQLinclude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (m->sa)
 		sa_destroy(m->sa);
 	m->sa = NULL;
-	m->sqs = NULL;
 	(void) mb;
 	return msg;
 }
@@ -841,7 +831,6 @@ SQLinclude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
  * the duration of these calls.
  */
 
-/* #define _SQL_READER_DEBUG */
 str
 SQLreader(Client c)
 {
@@ -854,21 +843,20 @@ SQLreader(Client c)
 	int language = -1;
 	mvc *m = NULL;
 	bool blocked = isa_block_stream(in->s);
+	int isSQLinitialized;
 
-	if (SQLinitialized == FALSE) {
+	MT_lock_set(&sql_contextLock);
+	isSQLinitialized = SQLinitialized;
+	MT_lock_unset(&sql_contextLock);
+
+	if (isSQLinitialized == FALSE) {
 		c->mode = FINISHCLIENT;
 		return MAL_SUCCEED;
 	}
 	if (!be || c->mode <= FINISHCLIENT) {
-#ifdef _SQL_READER_DEBUG
-		fprintf(stderr, "#SQL client finished\n");
-#endif
 		c->mode = FINISHCLIENT;
 		return MAL_SUCCEED;
 	}
-#ifdef _SQL_READER_DEBUG
-	fprintf(stderr, "#SQLparser: start reading SQL %s %s\n", (be->console ? " from console" : ""), (blocked ? "Blocked read" : ""));
-#endif
 	language = be->language;	/* 'S' for SQL, 'D' from debugger */
 	m = be->mvc;
 	m->errstr[0] = 0;
@@ -876,12 +864,6 @@ SQLreader(Client c)
 	 * Continue processing any left-over input from the previous round.
 	 */
 
-#ifdef _SQL_READER_DEBUG
-	fprintf(stderr, "#pos %d len %d eof %d \n", in->pos, in->len, in->eof);
-#endif
-	/*
-	 * Distinguish between console reading and mclient connections.
-	 */
 	while (more) {
 		more = false;
 
@@ -893,7 +875,7 @@ SQLreader(Client c)
 		   B \n C; -- statements in one block   S
 		 */
 		/* auto_commit on end of statement */
-		if (m->scanner.mode == LINE_N && !commit_done) {
+		if (language != 'D' && m->scanner.mode == LINE_N && !commit_done) {
 			msg = SQLautocommit(m);
 			go = msg == MAL_SUCCEED;
 			commit_done = true;
@@ -903,9 +885,6 @@ SQLreader(Client c)
 			ssize_t rd;
 
 			if (c->bak) {
-#ifdef _SQL_READER_DEBUG
-				fprintf(stderr, "#Switch to backup stream\n");
-#endif
 				in = c->fdin;
 				blocked = isa_block_stream(in->s);
 				m->scanner.rs = c->fdin;
@@ -913,11 +892,12 @@ SQLreader(Client c)
 				c->yycur = 0;
 			}
 			if (in->eof || !blocked) {
-				language = (be->console) ? 'S' : 0;
+				if (language != 'D')
+					language = 0;
 
 				/* The rules of auto_commit require us to finish
 				   and start a transaction on the start of a new statement (s A;B; case) */
-				if (!(m->emod & mod_debug) && !commit_done) {
+				if (language != 'D' && !(m->emod & mod_debug) && !commit_done) {
 					msg = SQLautocommit(m);
 					go = msg == MAL_SUCCEED;
 					commit_done = true;
@@ -933,13 +913,12 @@ SQLreader(Client c)
 				more = false;
 				go = false;
 			} else if (go && (rd = bstream_next(in)) <= 0) {
-#ifdef _SQL_READER_DEBUG
-				fprintf(stderr, "#rd %d  language %d eof %d\n", rd, language, in->eof);
-#endif
-				if (be->language == 'D' && !in->eof)
+				if (be->language == 'D' && !in->eof) {
+					in->pos++;// skip 's' or 'S'
 					return msg;
+				}
 
-				if (rd == 0 && language !=0 && in->eof && !be->console) {
+				if (rd == 0 && language !=0 && in->eof) {
 					/* we hadn't seen the EOF before, so just try again
 					   (this time with prompt) */
 					more = true;
@@ -947,7 +926,7 @@ SQLreader(Client c)
 				}
 				go = false;
 				break;
-			} else if (go && !be->console && language == 0) {
+			} else if (go && language == 0) {
 				if (in->buf[in->pos] == 's' && !in->eof) {
 					while ((rd = bstream_next(in)) > 0)
 						;
@@ -959,13 +938,12 @@ SQLreader(Client c)
 				} else if (be->language == 'S') {
 					m->scanner.mode = LINE_N;
 				}
+			} else if (go && language == 'D' && !in->eof) {
+				in->pos++;// skip 's' or 'S'
 			}
-#ifdef _SQL_READER_DEBUG
-			fprintf(stderr, "#SQL blk:%s\n", in->buf + in->pos);
-#endif
 		}
 	}
-	if ( (c->stimeout && (GDKusec() - c->session) > c->stimeout) || !go || (strncmp(CURRENT(c), "\\q", 2) == 0)) {
+	if ( (c->sessiontimeout && (GDKusec() - c->session) > c->sessiontimeout) || !go || (strncmp(CURRENT(c), "\\q", 2) == 0)) {
 		in->pos = in->len;	/* skip rest of the input */
 		c->mode = FINISHCLIENT;
 		return msg;
@@ -1003,7 +981,7 @@ cachable(mvc *m, sql_rel *r)
 	if (m->type == Q_TRANS )	/* m->type == Q_SCHEMA || cachable to make sure we have trace on alter statements  */
 		return 0;
 	/* we don't store queries with a large footprint */
-	if(r && sa_size(m->sa) > MAX_QUERY) 
+	if (r && sa_size(m->sa) > MAX_QUERY) 
 		return 0;
 	return 1;
 }
@@ -1024,12 +1002,13 @@ SQLparser(Client c)
 	mvc *m;
 	int oldvtop, oldstop;
 	int pstatus = 0;
-	int err = 0, opt = 0;
+	int err = 0, opt = 0, preparedid = -1;
+	char *q = NULL;
 
 	be = (backend *) c->sqlcontext;
 	if (be == 0) {
 		/* leave a message in the log */
-		fprintf(stderr, "SQL state descriptor missing, cannot handle client!\n");
+		TRC_ERROR(SQL_SCENARIO, "SQL state description is missing, cannot handle client!\n");
 		/* stop here, instead of printing the exception below to the
 		 * client in an endless loop */
 		c->mode = FINISHCLIENT;
@@ -1038,33 +1017,28 @@ SQLparser(Client c)
 	oldvtop = c->curprg->def->vtop;
 	oldstop = c->curprg->def->stop;
 	be->vtop = oldvtop;
-#ifdef _SQL_PARSER_DEBUG
-	fprintf(stderr, "#SQL compilation \n");
-	fprintf(stderr,"debugger? %d(%d)\n", (int) be->mvc->emode, (int) be->mvc->emod);
-#endif
 	m = be->mvc;
 	m->type = Q_PARSE;
-	if (be->language != 'X')
-		SQLtrans(m);
-	if(*m->errstr) {
-		if (strlen(m->errstr) > 6 && m->errstr[5] == '!')
-			msg = createException(PARSE, "SQLparser", "%s", m->errstr);
-		else
-			msg = createException(PARSE, "SQLparser", SQLSTATE(42000) "%s", m->errstr);
-		*m->errstr=0;
-		c->mode = FINISHCLIENT;
-		return msg;
+	/* clean up old stuff */
+	q = m->query;
+	m->query = NULL;
+	GDKfree(q);		/* may be NULL */
+
+	if (be->language != 'X') {
+		if ((msg = SQLtrans(m)) != MAL_SUCCEED) {
+			c->mode = FINISHCLIENT;
+			return msg;
+		}
 	}
 	pstatus = m->session->status;
 
 	/* sqlparse needs sql allocator to be available.  It can be NULL at
 	 * this point if this is a recursive call. */
-	m->sqs = NULL;
 	if (!m->sa) 
 		m->sa = sa_create();
 	if (!m->sa) {
 		c->mode = FINISHCLIENT;
-		throw(SQL, "SQLparser", SQLSTATE(HY001) MAL_MALLOC_FAIL " for SQL allocator");
+		throw(SQL, "SQLparser", SQLSTATE(HY013) MAL_MALLOC_FAIL " for SQL allocator");
 	}
 
 	m->emode = m_normal;
@@ -1076,7 +1050,12 @@ SQLparser(Client c)
 			n = sscanf(in->buf + in->pos + 7, "%d %d %d", &v, &off, &len);
 
 		if (n == 2 || n == 3) {
-			mvc_export_chunk(be, out, v, off, n == 3 ? len : m->reply_size);
+			if (n == 2)
+				len = m->reply_size;
+			if (mvc_export_chunk(be, out, v, off, len < 0 ? BUN_NONE : (BUN) len)) {
+				msg = createException(SQL, "SQLparser", SQLSTATE(45000) "Result set construction failed");
+				goto finalize;
+			}
 
 			in->pos = in->len;	/* HACK: should use parsed length */
 			return MAL_SUCCEED;
@@ -1106,7 +1085,7 @@ SQLparser(Client c)
 			commit = (!m->session->auto_commit && v);
 			m->session->auto_commit = (v) != 0;
 			m->session->ac_on_commit = m->session->auto_commit;
-			if (m->session->active) {
+			if (m->session->tr->active) {
 				if (commit) {
 					msg = mvc_commit(m, 0, NULL, true);
 				} else {
@@ -1171,33 +1150,55 @@ SQLparser(Client c)
 	 * produce code.
 	 */
 	be->q = NULL;
-	if (m->emode == m_execute) {
-		assert(m->sym->data.lval->h->type == type_int);
-		be->q = qc_find(m->qc, m->sym->data.lval->h->data.i_val);
-		if (!be->q) {
-			err = -1;
-			msg = createException(SQL, "EXEC", SQLSTATE(07003) "No prepared statement with id: %d\n", m->sym->data.lval->h->data.i_val);
-			*m->errstr = 0;
-			msg = handle_error(m, pstatus, msg);
-			sqlcleanup(m, err);
-			goto finalize;
-		} else if (be->q->type != Q_PREPARE) {
-			err = -1;
-			msg = createException(SQL, "EXEC", SQLSTATE(07005) "Given handle id is not for a " "prepared statement: %d\n", m->sym->data.lval->h->data.i_val);
-			*m->errstr = 0;
-			msg = handle_error(m, pstatus, msg);
-			sqlcleanup(m, err);
-			goto finalize;
+	q = query_cleaned(QUERY(m->scanner));
+	m->query = q;
+
+	if (q == NULL) {
+		err = 1;
+		msg = createException(PARSE, "SQLparser", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	} else if (m->emode == m_execute || m->emode == m_deallocate) {
+		if (m->emode == m_execute) {
+			assert(m->sym->data.lval->h->type == type_int);
+			preparedid = m->sym->data.lval->h->data.i_val;
+
+			assert(preparedid >= 0);
+			be->q = qc_find(m->qc, preparedid);
+		} else { /* m_deallocate case */
+			AtomNode *an = (AtomNode *) m->sym;
+			assert(m->sym->type == type_symbol && an->a->data.vtype == TYPE_int);
+			preparedid = an->a->data.val.ival;
+
+			if (preparedid > -1) /* The -1 case represents the deallocate the entire query cache */
+				be->q = qc_find(m->qc, preparedid);
 		}
+
+		if (preparedid > -1) {
+			const char *mode = (m->emode == m_execute) ? "EXEC" : "DEALLOC";
+			if (!be->q) {
+				err = -1;
+				msg = createException(SQL, mode, SQLSTATE(07003) "No prepared statement with id: %d\n", preparedid);
+				*m->errstr = 0;
+				msg = handle_error(m, pstatus, msg);
+				sqlcleanup(m, err);
+				goto finalize;
+			} else if (!be->q->prepared) {
+				err = -1;
+				msg = createException(SQL, mode, SQLSTATE(07005) "Given handle id is not for a prepared statement: %d\n", preparedid);
+				*m->errstr = 0;
+				msg = handle_error(m, pstatus, msg);
+				sqlcleanup(m, err);
+				goto finalize;
+			}
+		}
+
+		m->type = (m->emode == m_execute) ? be->q->type : Q_SCHEMA; /* TODO DEALLOCATE statements don't fit for Q_SCHEMA */
 		scanner_query_processed(&(m->scanner));
-	} else if (caching(m) && cachable(m, NULL) && m->emode != m_prepare && (be->q = qc_match(m->qc, m->sym, m->args, m->argc, m->scanner.key ^ m->session->schema->base.id)) != NULL) {
+	} else if (caching(m) && cachable(m, NULL) && m->emode != m_prepare && (be->q = qc_match(m->qc, m, m->sym, m->args, m->argc, m->scanner.key ^ m->session->schema->base.id)) != NULL) {
 		/* query template was found in the query cache */
 		scanner_query_processed(&(m->scanner));
 		m->no_mitosis = be->q->no_mitosis;
 	} else {
-		sql_rel *r;
-
-		r = sql_symbol2relation(m, m->sym);
+		sql_rel *r = sql_symbol2relation(m, m->sym);
 
 		if (!r || (err = mvc_status(m) && m->type != Q_TRANS && *m->errstr)) {
 			if (strlen(m->errstr) > 6 && m->errstr[5] == '!')
@@ -1211,54 +1212,40 @@ SQLparser(Client c)
 		}
 
 		if ((!caching(m) || !cachable(m, r)) && m->emode != m_prepare) {
-			char *q = query_cleaned(QUERY(m->scanner));
-			if(!q) {
-				err = 1;
-				msg = createException(PARSE, "SQLparser", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-			} else {
-				/* Query template should not be cached */
-				scanner_query_processed(&(m->scanner));
+			/* Query template should not be cached */
+			scanner_query_processed(&(m->scanner));
 
-				err = 0;
-				if (backend_callinline(be, c) < 0 ||
-					backend_dumpstmt(be, c->curprg->def, r, 1, 0, q) < 0)
-					err = 1;
-				else opt = 1;
-				GDKfree(q);
-			}
+			err = 0;
+			if (backend_callinline(be, c) < 0 ||
+			    backend_dumpstmt(be, c->curprg->def, r, 1, 0, q) < 0)
+				err = 1;
+			else opt = 1;
 		} else {
 			/* Add the query tree to the SQL query cache
-			 * and bake a MAL program for it.
-			 */
-			char *q = query_cleaned(QUERY(m->scanner)), *escaped_q;
-			char qname[IDLENGTH];
-			be->q = NULL;
-			if(!q) {
-				err = 1;
-				msg = createException(PARSE, "SQLparser", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-			}
-			(void) snprintf(qname, IDLENGTH, "%c%d_%d", (m->emode == m_prepare?'p':'s'), m->qc->id++, m->qc->clientid);
+			 * and bake a MAL program for it. */
+			char *q_copy = GDKstrdup(q), qname[IDLENGTH];
 
-			escaped_q = sql_escape_str(q);
-			if(!escaped_q) {
+			be->q = NULL;
+			(void) snprintf(qname, IDLENGTH, "%c%d_%d", (m->emode == m_prepare?'p':'s'), m->qc->id++, m->qc->clientid);
+			if (!q_copy) {
 				err = 1;
-				msg = createException(PARSE, "SQLparser", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				msg = createException(PARSE, "SQLparser", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			} else {
 				be->q = qc_insert(m->qc, m->sa,	/* the allocator */
 						  r,	/* keep relational query */
-						  qname, /* its MAL name) */
+						  qname, /* its MAL name */
 						  m->sym,	/* the sql symbol tree */
 						  m->args,	/* the argument list */
 						  m->argc, m->scanner.key ^ m->session->schema->base.id,	/* the statement hash key */
-						  m->emode == m_prepare ? Q_PREPARE : m->type,	/* the type of the statement */
-						  escaped_q,
-						  m->no_mitosis);
+						  m->type,	/* the type of the statement */
+						  q_copy,
+						  m->no_mitosis,
+						  m->emode == m_prepare);
 			}
-			if(!be->q) {
+			if (!be->q) {
 				err = 1;
-				msg = createException(PARSE, "SQLparser", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				msg = createException(PARSE, "SQLparser", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
-			GDKfree(q);
 			scanner_query_processed(&(m->scanner));
 			be->q->code = (backend_code) backend_dumpproc(be, c, be->q, r);
 			if (!be->q->code)
@@ -1269,9 +1256,10 @@ SQLparser(Client c)
 			m->sa = NULL;
 			m->sym = NULL;
 			/* register name in the namespace */
-			if(!be->q->name) {
+			be->q->name = putName(be->q->name);
+			if (!be->q->name) {
 				err = 1;
-				msg = createException(PARSE, "SQLparser", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				msg = createException(PARSE, "SQLparser", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 		}
 	}
@@ -1279,33 +1267,46 @@ SQLparser(Client c)
 		m->session->status = -10;
 	if (err == 0) {
 		/* no parsing error encountered, finalize the code of the query wrapper */
-		if (be->q) {
-			if (m->emode == m_prepare){
+		if (m->emode == m_deallocate) {
+			assert(be->q || preparedid == -1);
+			if (be->q) {
+				qc_delete(m->qc, be->q);
+			} else {
+				qc_clean(m->qc, true);
+			}
+			/* For deallocate statements just export a simple output */
+			err = mvc_export_operation(be, c->fdout, "", c->curprg->def->starttime, c->curprg->def->optimize);
+		} else if (be->q) {
+			if (m->emode == m_prepare) {
 				/* For prepared queries, return a table with result set structure*/
 				/* optimize the code block and rename it */
 				err = mvc_export_prepare(m, c->fdout, be->q, "");
-			} else if( m->emode == m_execute || m->emode == m_normal || m->emode == m_plan){
+			} else if (m->emode == m_execute || m->emode == m_normal || m->emode == m_plan) {
 				/* call procedure generation (only in cache mode) */
-				backend_call(be, c, be->q);
+				if (backend_call(be, c, be->q) < 0)
+					err = 3;
 			}
 		}
 
-		pushEndInstruction(c->curprg->def);
-		/* check the query wrapper for errors */
-		chkTypes(c->usermodule, c->curprg->def, TRUE);
+		if (!err) {
+			pushEndInstruction(c->curprg->def);
+			/* check the query wrapper for errors */
+			if( msg == MAL_SUCCEED)
+				msg = chkTypes(c->usermodule, c->curprg->def, TRUE);
 
-		/* in case we had produced a non-cachable plan, the optimizer should be called */
-		if (opt ) {
-			msg = SQLoptimizeQuery(c, c->curprg->def);
+			/* in case we had produced a non-cachable plan, the optimizer should be called */
+			if (msg == MAL_SUCCEED && opt ) {
+				msg = SQLoptimizeQuery(c, c->curprg->def);
 
-			if (msg != MAL_SUCCEED) {
-				sqlcleanup(m, err);
-				goto finalize;
+				if (msg != MAL_SUCCEED) {
+					sqlcleanup(m, err);
+					goto finalize;
+				}
 			}
 		}
 		//printFunction(c->fdout, c->curprg->def, 0, LIST_MAL_ALL);
 		/* we know more in this case than chkProgram(c->fdout, c->usermodule, c->curprg->def); */
-		if (c->curprg->def->errors) {
+		if (msg == MAL_SUCCEED && c->curprg->def->errors) {
 			msg = c->curprg->def->errors;
 			c->curprg->def->errors = 0;
 			/* restore the state */
@@ -1317,7 +1318,7 @@ SQLparser(Client c)
 				else
 					msg = createException(PARSE, "SQLparser", SQLSTATE(M0M27) "Semantic errors %s", m->errstr);
 				*m->errstr = 0;
-			} else if(msg) {
+			} else if (msg) {
 				str newmsg;
 				newmsg = createException(PARSE, "SQLparser", SQLSTATE(M0M27) "Semantic errors %s", msg);
 				freeException(msg);
@@ -1326,8 +1327,12 @@ SQLparser(Client c)
 		}
 	}
 finalize:
-	if (msg)
+	if (msg) {
 		sqlcleanup(m, 0);
+		q = m->query;
+		m->query = NULL;
+		GDKfree(q);
+	}
 	return msg;
 }
 
@@ -1343,9 +1348,7 @@ SQLCacheRemove(Client c, str nme)
 {
 	Symbol s;
 
-#ifdef _SQL_CACHE_DEBUG
-	fprintf(stderr, "#SQLCacheRemove %s\n", nme);
-#endif
+	TRC_DEBUG(SQL_CACHE_TR, "SQLCache remove %s\n", nme);
 
 	s = findSymbolInModule(c->usermodule, nme);
 	if (s == NULL)
@@ -1355,47 +1358,42 @@ SQLCacheRemove(Client c, str nme)
 }
 
 str
-SQLcallback(Client c, str msg){
-	if(msg &&  (strstr(msg, "MALexception") || strstr(msg,"GDKexception"))) {
-		// massage the error to comply with SQL
-		char *s;
-		s= strchr(msg,(int)':');
-		if (s ) 
-			s= strchr(msg,(int)':');
-		if( s){
-			char newerr[1024];
-			s++;
-			strncpy(newerr, msg, s - msg);
-			newerr[s-msg] = 0;
-			snprintf(newerr + (s-msg), 1024 -(s-msg), SQLSTATE(HY020) "%s",s);
-			freeException(msg);
-			msg = GDKstrdup(newerr);
-		}
-	}
-	if (msg) {
-		/* remove exception decoration */
-		char *m, *n, *p, *s;
-		size_t l;
+SQLcallback(Client c, str msg)
+{
+	char *newerr = NULL;
 
-		m = p = msg;
-		while (m && *m) {
-			n = strchr(m, '\n');
-			if (n)
-				*n = 0;
-			s = getExceptionMessageAndState(m);
-			if (n) {
-				*n++ = '\n';
-				l = n - s;
-			} else {
-				l = strlen(s);
+	if (msg) {
+		if (!(newerr = GDKmalloc(strlen(msg) + 1))) {
+			msg = createException(SQL, "SQLcallback", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		} else {
+			/* remove exception decoration */
+			char *m, *n, *p, *s;
+			size_t l;
+
+			m = msg;
+			p = newerr;
+			while (m && *m) {
+				n = strchr(m, '\n');
+				s = getExceptionMessageAndState(m);
+				if (n) {
+					n++; /* include newline */
+					l = n - s;
+				} else {
+					l = strlen(s);
+				}
+				memcpy(p, s, l);
+				p += l;
+				m = n;
 			}
-			memmove(p, s, l);
-			p += l;
-			m = n;
+			*p = 0;
+			freeException(msg);
+			if (!(msg = GDKrealloc(newerr, strlen(newerr) + 1))) {
+				GDKfree(newerr);
+				msg = createException(SQL, "SQLcallback", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			}
 		}
-		*p = 0;
 	}
-	return MALcallback(c,msg);
+	return MALcallback(c, msg);
 }
 
 str

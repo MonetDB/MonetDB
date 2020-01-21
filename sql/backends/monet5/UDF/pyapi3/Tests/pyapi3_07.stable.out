@@ -19,7 +19,6 @@ stdout of test 'pyapi3_07` in directory 'sql/backends/monet5/UDF/pyapi3` itself:
 # MonetDB/Python module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 22:40:28 >  
 # 22:40:28 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-8581" "--port=32251"
@@ -34,7 +33,7 @@ Ready.
 #	return numpy.percentile(v,q[0] * 100) 
 #};
 #SELECT rquantile(val,0.05) AS q5, rquantile(val,0.95) AS q95 FROM rval;
-% sys.L4,	sys.L7 # table_name
+% sys.%1,	sys.%2 # table_name
 % q5,	q95 # name
 % int,	int # type
 % 4,	5 # length

@@ -17,7 +17,6 @@ stdout of test 'mkey-bulk_rotate_xor_hash.Bug-2825` in directory 'sql/test/BugTr
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 # SQL catalog created, loading sql scripts once
 
 

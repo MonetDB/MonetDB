@@ -15,7 +15,6 @@ stdout of test 'spatial` in directory 'geom/sql` itself:
 # MonetDB/GIS module v0.5.0 loaded
 # MonetDB/SQL module v2.25.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

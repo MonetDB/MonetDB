@@ -18,7 +18,6 @@ stdout of test 'subqueries` in directory 'sql/test` itself:
 # MonetDB/SQL module loaded
 # MonetDB/Python module loaded
 
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql
@@ -94,8 +93,8 @@ Ready.
 [ 4	]
 [ 3	]
 #SELECT MIN(i) FROM (SELECT * FROM _subqueries SAMPLE 1000) AS result;
-% sys.L6 # table_name
-% L5 # name
+% sys.%2 # table_name
+% %2 # name
 % int # type
 % 1 # length
 [ 0	]

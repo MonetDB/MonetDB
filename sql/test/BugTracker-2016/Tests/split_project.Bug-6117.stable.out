@@ -19,7 +19,6 @@ stdout of test 'split_project.Bug-6117` in directory 'sql/test/BugTracker-2016` 
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 23:03:42 >  
 # 23:03:42 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-6765" "--port=35104"

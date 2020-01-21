@@ -17,7 +17,6 @@ stdout of test 'insert_query` in directory 'sql/test/ssqq` itself:
 # MonetDB/SQL module v2.39.0 loaded
 # MonetDB/GIS module v0.19.0 loaded
 
-Ready.
 
 
 # 11:37:20 >  
@@ -42,8 +41,8 @@ Ready.
 % int,	int,	timestamp,	int,	varchar,	varchar,	timestamp,	timestamp # type
 % 1,	1,	26,	1,	0,	0,	26,	26 # length
 #select id_result;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % int # type
 % 1 # length
 [ 1	]
@@ -54,8 +53,8 @@ Ready.
 % 1,	1,	21,	1,	5,	5,	0,	1,	0,	0 # length
 [ 1,	NULL,	"select * from example",	0,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 #select id_result;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % int # type
 % 1 # length
 [ 2	]
@@ -68,11 +67,11 @@ Ready.
 [ 2,	2,	"select * from example",	0,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 #set id_result = -1;
 #select id_result;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % int # type
-% 2 # length
-[ -1	]
+% 1 # length
+[ NULL	]
 #select * from query;
 % sys.query,	sys.query,	sys.query,	sys.query,	sys.query,	sys.query,	sys.query,	sys.query,	sys.query,	sys.query # table_name
 % query_id,	quser_id,	query_text,	is_example,	is_refused,	aborted,	returned_error,	num_results,	header,	result_set # name
@@ -83,8 +82,8 @@ Ready.
 #set id_result = -1;
 #set id_result = insert_query(NULL, 'select * from example', 0, NULL);
 #select id_result;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % int # type
 % 1 # length
 [ 4	]

@@ -14,7 +14,6 @@ stdout of test 'ORDER_BY_evaluation_error.SF-1023658` in directory 'sql/test/Bug
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:35742/
 # MonetDB/SQL module v2.27.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

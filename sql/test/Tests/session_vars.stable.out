@@ -14,7 +14,6 @@ stdout of test 'session_vars` in directory 'sql/test` itself:
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:39921/
 # MonetDB/SQL module v2.27.0 loaded
 
-Ready.
 # falling back to direct mode 
 # falling back to direct mode 
 # falling back to direct mode 
@@ -34,26 +33,26 @@ Ready.
 # 11:50:12 >  
 
 #select debug;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % int # type
 % 1 # length
 [ 0	]
 #select current_schema;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % varchar # type
 % 3 # length
 [ "sys"	]
 #select current_user;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % varchar # type
 % 7 # length
 [ "monetdb"	]
 #select current_role;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % varchar # type
 % 7 # length
 [ "monetdb"	]
@@ -64,66 +63,47 @@ Ready.
 #set test_str = 'help';
 #set test_boolean = true;
 #select test_nr;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % int # type
 % 1 # length
 [ 1	]
 #select test_str;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % varchar # type
 % 4 # length
 [ "help"	]
 #select test_boolean;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % boolean # type
 % 5 # length
 [ true	]
 #select @debug;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % int # type
 % 1 # length
 [ 0	]
 #select @current_schema;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % varchar # type
 % 3 # length
 [ "sys"	]
 #select @"current_user";
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % varchar # type
 % 7 # length
 [ "monetdb"	]
 #select @"current_role";
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % varchar # type
 % 7 # length
 [ "monetdb"	]
-#set test_str = 1;
-#select @test_nr;
-% .L2 # table_name
-% L2 # name
-% int # type
-% 1 # length
-[ 1	]
-#select @test_str;
-% .L2 # table_name
-% L2 # name
-% varchar # type
-% 1 # length
-[ "1"	]
-#select @test_boolean;
-% .L2 # table_name
-% L2 # name
-% boolean # type
-% 5 # length
-[ true	]
 
 # 12:30:00 >  
 # 12:30:00 >  Done.

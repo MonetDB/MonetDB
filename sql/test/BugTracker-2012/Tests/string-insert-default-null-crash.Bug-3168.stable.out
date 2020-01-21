@@ -16,7 +16,6 @@ stdout of test 'string-insert-default-null-crash.Bug-3168` in directory 'sql/tes
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql

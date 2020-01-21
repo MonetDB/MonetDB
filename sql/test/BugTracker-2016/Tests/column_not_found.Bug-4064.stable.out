@@ -19,7 +19,6 @@ stdout of test 'column_not_found.Bug-4064` in directory 'sql/test/BugTracker-201
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql
@@ -81,7 +80,7 @@ Ready.
 #SELECT xy.a1 as a1, xy.prob as prob FROM xy WHERE xy.a1 NOT IN (select a1 from z)
 #UNION ALL
 #SELECT z.a1 as a1, z.prob as prob FROM z WHERE z.a1 NOT IN (select a1 from xy);
-% .L124,	.L124 # table_name
+% .%35,	.%35 # table_name
 % a1,	prob # name
 % int,	double # type
 % 1,	24 # length
@@ -97,7 +96,7 @@ Ready.
 #SELECT xy.a1 as a1, xy.prob as prob FROM xy WHERE xy.a1 NOT IN (SELECT xy.a1 FROM xy, z WHERE xy.a1=z.a1)
 #UNION ALL
 #SELECT z.a1 as a1, z.prob as prob FROM z WHERE z.a1 NOT IN (SELECT xy.a1 FROM xy, z WHERE xy.a1=z.a1);
-% .L126,	.L126 # table_name
+% .%36,	.%36 # table_name
 % a1,	prob # name
 % int,	double # type
 % 1,	24 # length
@@ -113,7 +112,7 @@ Ready.
 #SELECT xy.a1 as a1, xy.prob as prob FROM xy WHERE xy.a1 NOT IN (select a1 from z)
 #UNION ALL
 #SELECT z.a1 as a1, z.prob as prob FROM z WHERE z.a1 NOT IN (select a1 from xy)
-% .L124,	.L124 # table_name
+% .%35,	.%35 # table_name
 % a1,	prob # name
 % int,	double # type
 % 1,	24 # length
@@ -129,7 +128,7 @@ Ready.
 #SELECT xy.a1 as a1, xy.prob as prob FROM xy WHERE xy.a1 NOT IN (SELECT xy.a1 FROM xy, z WHERE xy.a1=z.a1)
 #UNION ALL
 #SELECT z.a1 as a1, z.prob as prob FROM z WHERE z.a1 NOT IN (SELECT xy.a1 FROM xy, z WHERE xy.a1=z.a1)
-% .L126,	.L126 # table_name
+% .%36,	.%36 # table_name
 % a1,	prob # name
 % int,	double # type
 % 1,	24 # length

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -20,6 +20,7 @@
 #include <ctype.h>
 
 #include "rel_semantic.h"
+#include "rel_unnest.h"
 #include "rel_optimizer.h"
 
 /* 
@@ -37,7 +38,10 @@ sql_add_arg(mvc *sql, atom *v)
 {
 	atom** new_args;
 	int next_size = sql->argmax;
-	if (sql->argc == next_size) {
+
+	if (sql->argc == (1<<16)-1)
+		sql->caching = 0;
+	if (sql->caching && sql->argc == next_size) {
 		next_size *= 2;
 		new_args = RENEW_ARRAY(atom*,sql->args,next_size);
 		if(new_args) {
@@ -141,7 +145,6 @@ sql_destroy_args(mvc *sql)
 	sql->argc = 0;
 }
 
-
 sql_schema *
 cur_schema(mvc *sql)
 {
@@ -244,6 +247,9 @@ supertype(sql_subtype *super, sql_subtype *r, sql_subtype *i)
 				rdigits = digits2bits(rdigits);
 		}
 	}
+	/* handle OID horror */
+	if (i->type->radix == r->type->radix && i->type->base.id < r->type->base.id && strcmp(i->type->sqlname, "oid") == 0)
+		tpe = i->type->sqlname;
 	if (scale == 0 && (idigits == 0 || rdigits == 0)) {
 		sql_find_subtype(&lsuper, tpe, 0, 0);
 	} else {
@@ -256,7 +262,7 @@ supertype(sql_subtype *super, sql_subtype *r, sql_subtype *i)
 
 char * toUpperCopy(char *dest, const char *src) 
 {
-	int i, len;
+	size_t i, len;
 
 	if (src == NULL) {
 		*dest = '\0';
@@ -284,16 +290,19 @@ char *dlist2string(mvc *sql, dlist *l, int expression, char **err)
 		else if (n->type == type_symbol)
 			s = symbol2string(sql, n->data.sym, expression, err);
 
-		if (!s)
+		if (!s) {
+			_DELETE(b);
 			return NULL;
+		}
 		if (b) {
-			char *o = b;
-			b = strconcat(b,".");
-			_DELETE(o);
-			o = b;
-			b = strconcat(b,s);
-			_DELETE(o);
+			char *o = NEW_ARRAY(char, strlen(b) + strlen(s) + 2);
+			if (o)
+				stpcpy(stpcpy(stpcpy(o, b), "."), s);
+			_DELETE(b);
 			_DELETE(s);
+			b = o;
+			if (b == NULL)
+				return NULL;
 		} else {
 			b = s;
 		}
@@ -357,6 +366,9 @@ char *symbol2string(mvc *sql, symbol *se, int expression, char **err) /**/
 		_DELETE(l);
 		break;
 	}
+	case SQL_PARAMETER:
+		strcpy(buf,"?");
+		break;
 	case SQL_NULL:
 		strcpy(buf,"NULL");
 		break;
@@ -381,8 +393,9 @@ char *symbol2string(mvc *sql, symbol *se, int expression, char **err) /**/
 		len = snprintf( buf+len, BUFSIZ-len, "next value for \"%s\".\"%s\"", sname, s);
 		c_delete(s);
 	}	break;
+	case SQL_IDENT:
 	case SQL_COLUMN: {
-		/* can only be variables */ 
+		/* can only be variables */
 		dlist *l = se->data.lval;
 		assert(l->h->type != type_lng);
 		if (dlist_length(l) == 1 && l->h->type == type_int) {
@@ -392,23 +405,17 @@ char *symbol2string(mvc *sql, symbol *se, int expression, char **err) /**/
 			/* when compiling an expression, a column of a table might be present in the symbol, so we need this case */
 			return _STRDUP(l->h->data.sval);
 		} else if (expression && dlist_length(l) == 2 && l->h->type == type_string && l->h->next->type == type_string) {
-			char *first = _STRDUP(l->h->data.sval);
-			char *second = _STRDUP(l->h->next->data.sval);
+			char *first = l->h->data.sval;
+			char *second = l->h->next->data.sval;
 			char *res;
 
 			if(!first || !second) {
-				_DELETE(first);
-				_DELETE(second);
 				return NULL;
 			}
-			res = strconcat(first,".");
-			_DELETE(first);
-			if(!res) {
-				_DELETE(second);
-				return NULL;
+			res = NEW_ARRAY(char, strlen(first) + strlen(second) + 2);
+			if (res) {
+				stpcpy(stpcpy(stpcpy(res, first), "."), second);
 			}
-			res = strconcat(res,second);
-			_DELETE(second);
 			return res;
 		} else {
 			char *e = dlist2string(sql, l, expression, err);
@@ -416,7 +423,7 @@ char *symbol2string(mvc *sql, symbol *se, int expression, char **err) /**/
 				*err = e;
 		}
 		return NULL;
-	} 	
+	}
 	case SQL_CAST: {
 		dlist *dl = se->data.lval;
 		char *val;
@@ -438,7 +445,6 @@ char *symbol2string(mvc *sql, symbol *se, int expression, char **err) /**/
 	}
 	case SQL_AGGR:
 	case SQL_SELECT:
-	case SQL_PARAMETER:
 	case SQL_CASE:
 	case SQL_COALESCE:
 	case SQL_NULLIF:

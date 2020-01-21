@@ -14,7 +14,6 @@ stdout of test 'nullstr.SF-2704016` in directory 'sql/test/BugTracker-2009` itse
 # Listening for connection requests on mapi:monetdb://ottar.ins.cwi.nl:38477/
 # MonetDB/SQL module v2.28.2 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

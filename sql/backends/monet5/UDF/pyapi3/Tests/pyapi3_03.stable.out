@@ -20,7 +20,6 @@ stdout of test 'pyapi3_03` in directory 'sql/backends/monet5/UDF/pyapi3` itself:
 # MonetDB/Python module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 16:11:25 >  
 # 16:11:25 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-9490" "--port=33314"

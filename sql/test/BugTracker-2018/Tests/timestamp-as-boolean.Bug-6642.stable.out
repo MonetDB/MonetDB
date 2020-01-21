@@ -60,7 +60,6 @@ stdout of test 'timestamp-as-boolean.Bug-6642` in directory 'sql/test/BugTracker
 # MonetDB/Python2 module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 17:59:44 >  
 # 17:59:44 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-24582" "--port=32492"

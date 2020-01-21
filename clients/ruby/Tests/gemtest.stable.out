@@ -53,7 +53,6 @@ stdout of test 'gemtest` in directory 'clients/ruby` itself:
 # loading sql script: 99_system.sql
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 11:01:32 >  
 # 11:01:32 >  "ruby" "gemtest.rb" "31445" "mTests_."

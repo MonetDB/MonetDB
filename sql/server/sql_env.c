@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -79,13 +79,6 @@ sql_update_var(mvc *m, const char *name, char *sval, lng sgn)
 		assert((lng) GDK_int_min <= sgn && sgn <= (lng) GDK_int_max);
 #endif
 		m->cache = (int) sgn;
-	} else if (strcmp(name, "history") == 0) {
-#ifdef HAVE_HGE
-		assert((hge) GDK_int_min <= sgn && sgn <= (hge) GDK_int_max);
-#else
-		assert((lng) GDK_int_min <= sgn && sgn <= (lng) GDK_int_max);
-#endif
-		m->history = (sgn != 0);
 	} 
 	return NULL;
 }
@@ -101,7 +94,7 @@ sql_create_env(mvc *m, sql_schema *s)
 
 	/* add function */
 	ops = sa_list(m->sa);
-	mvc_create_func(m, NULL, s, "env", ops, res, F_UNION,  FUNC_LANG_SQL, "sql", "sql_environment", "CREATE FUNCTION env () RETURNS TABLE( name varchar(1024), value varchar(2048)) EXTERNAL NAME sql.sql_environment;", FALSE, FALSE, TRUE);
+	mvc_create_func(m, NULL, s, "env", ops, res, F_UNION, FUNC_LANG_SQL, "sql", "sql_environment", "CREATE FUNCTION env () RETURNS TABLE( name varchar(1024), value varchar(2048)) EXTERNAL NAME sql.sql_environment;", FALSE, FALSE, TRUE);
 
 	res = sa_list(m->sa);
 	list_append(res, sql_create_arg(m->sa, "name", sql_bind_subtype(m->sa, "varchar", 1024, 0), ARG_OUT));  

@@ -14,7 +14,6 @@ stdout of test 'insert_type_exception.SF-2789976` in directory 'sql/test/BugTrac
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:35519/
 # MonetDB/SQL module v2.30.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

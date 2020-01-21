@@ -18,7 +18,6 @@ stdout of test 'cast-tinyint-Bug-3137` in directory 'sql/test/BugTracker-2012` i
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql
@@ -47,7 +46,7 @@ Ready.
 # 16:45:44 >  
 
 #select cast('10' as tinyint) as not_ok_tinyint, cast('10' as int) as ok_int, cast('10' as smallint) as ok_smallint;
-% .L3,	.L6,	.L11 # table_name
+% .,	.,	. # table_name
 % not_ok_tinyint,	ok_int,	ok_smallint # name
 % tinyint,	int,	smallint # type
 % 2,	2,	2 # length

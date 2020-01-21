@@ -13,7 +13,6 @@ stdout of test '04` in directory 'sql/benchmarks/tpch` itself:
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:34442/
 # MonetDB/SQL module v2.25.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;
@@ -48,7 +47,7 @@ Ready.
 #	o_orderpriority
 #order by
 #	o_orderpriority;
-% sys.orders,	sys.L10 # table_name
+% sys.orders,	sys.%2 # table_name
 % o_orderpriority,	order_count # name
 % char,	bigint # type
 % 15,	3 # length

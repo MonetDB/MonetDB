@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -59,37 +59,35 @@ mal_export uuid *UUIDread(uuid *u, stream *s, size_t cnt);
 mal_export ssize_t UUIDtoString(str *retval, size_t *len, const uuid *value, bool external);
 mal_export gdk_return UUIDwrite(const uuid *u, stream *s, size_t cnt);
 
+#ifdef HAVE_HGE
+mal_export str UUIDgenerateUuid(uuid *retval);
+mal_export str UUIDgenerateUuidInt(uuid *retval, int *d);
+mal_export str UUIDstr2uuid(uuid *retval, str *s);
+mal_export str UUIDuuid2str(str *retval, const uuid *u);
+#else
 mal_export str UUIDgenerateUuid(uuid **retval);
+mal_export str UUIDgenerateUuidInt(uuid **retval, int *d);
 mal_export str UUIDstr2uuid(uuid **retval, str *s);
 mal_export str UUIDuuid2str(str *retval, uuid **u);
+#endif
 mal_export str UUIDisaUUID(bit *retval, str *u);
-mal_export str UUIDequal(bit *retval, uuid **l, uuid **r);
 
 static uuid uuid_nil;			/* automatically initialized as zeros */
-static uuid *uuid_session;		/* automatically set during system restart */
 
 str
 UUIDprelude(void *ret)
 {
-	size_t len = 0;
-	str msg;
-
 	(void) ret;
 	assert(UUID_SIZE == 16);
-	(void) malAtomSize(sizeof(uuid), "uuid");
-	msg = UUIDgenerateUuid(&uuid_session);
-	if (msg)
-		return msg;
-	if (UUIDtoString(&mal_session_uuid, &len, uuid_session, false) < 0) {
-		GDKfree(mal_session_uuid);
-		mal_session_uuid = NULL;
-		throw(MAL, "uuid.prelude", GDK_EXCEPTION);
-	}
-	//mnstr_printf(GDKerr,"Session uid:%s", uuid_session_name);
+	int u = malAtomSize(sizeof(uuid), "uuid");
+	(void) u;					/* not needed if HAVE_HGE not defined */
+#ifdef HAVE_HGE
+	BATatoms[u].storage = TYPE_hge;
+#endif
 	return MAL_SUCCEED;
 }
 
-#define UUIDisnil(x)	(memcmp((x)->u, uuid_nil.u, UUID_SIZE) == 0)
+#define is_uuid_nil(x)	(memcmp((x)->u, uuid_nil.u, UUID_SIZE) == 0)
 
 /**
  * Returns the string representation of the given uuid value.
@@ -106,7 +104,7 @@ UUIDtoString(str *retval, size_t *len, const uuid *value, bool external)
 			return -1;
 		*len = UUID_STRLEN + 1;
 	}
-	if (UUIDisnil(value)) {
+	if (is_uuid_nil(value)) {
 		if (external) {
 			snprintf(*retval, *len, "nil");
 			return 3;
@@ -145,10 +143,10 @@ UUIDfromString(const char *svalue, size_t *len, uuid **retval, bool external)
 		return 1;
 	}
 	for (i = 0, j = 0; i < UUID_SIZE; i++) {
+		/* on select locations we allow a '-' in the source string */
 		if (j == 8 || j == 12 || j == 16 || j == 20) {
-			if (*s != '-')
-				goto bailout;
-			s++;
+			if (*s == '-')
+				s++;
 		}
 		if (isdigit((unsigned char) *s))
 			(*retval)->u[i] = *s - '0';
@@ -175,7 +173,7 @@ UUIDfromString(const char *svalue, size_t *len, uuid **retval, bool external)
 	return (ssize_t) (s - svalue);
 
   bailout:
-	GDKerror("Syntax error in UUID.\n");
+	**retval = uuid_nil;
 	return -1;
 }
 
@@ -186,14 +184,22 @@ UUIDcompare(const uuid *l, const uuid *r)
 }
 
 str
+#ifdef HAVE_HGE
+UUIDgenerateUuid(uuid *retval)
+#else
 UUIDgenerateUuid(uuid **retval)
+#endif
 {
 	uuid *u;
 	int i = 0, r = 0;
 
+#ifdef HAVE_HGE
+	u = retval;
+#else
 	if (*retval == NULL && (*retval = GDKmalloc(UUID_SIZE)) == NULL)
-		throw(MAL, "uuid.new", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "uuid.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	u = *retval;
+#endif
 #ifdef HAVE_UUID
 	uuid_generate(u->u);
 	(void) i;
@@ -217,6 +223,17 @@ UUIDgenerateUuid(uuid **retval)
 }
 
 str
+#ifdef HAVE_HGE
+UUIDgenerateUuidInt(uuid *retval, int *d)
+#else
+UUIDgenerateUuidInt(uuid **retval, int *d)
+#endif
+{
+	(void)d;
+	return UUIDgenerateUuid(retval);
+}
+
+str
 UUIDisaUUID(bit *retval, str *s)
 {
 	uuid u;
@@ -226,6 +243,28 @@ UUIDisaUUID(bit *retval, str *s)
 	return MAL_SUCCEED;
 }
 
+#ifdef HAVE_HGE
+str
+UUIDstr2uuid(uuid *retval, str *s)
+{
+	size_t l = UUID_SIZE;
+
+	if (UUIDfromString(*s, &l, &retval, false) == UUID_STRLEN) {
+		return MAL_SUCCEED;
+	}
+	throw(MAL, "uuid.uuid", "Not a UUID");
+}
+
+str
+UUIDuuid2str(str *retval, const uuid *u)
+{
+	size_t l = 0;
+	*retval = NULL;
+	if (UUIDtoString(retval, &l, u, false) < 0)
+		throw(MAL, "uuid.str", GDK_EXCEPTION);
+	return MAL_SUCCEED;
+}
+#else
 str
 UUIDstr2uuid(uuid **retval, str *s)
 {
@@ -246,16 +285,7 @@ UUIDuuid2str(str *retval, uuid **u)
 		throw(MAL, "uuid.str", GDK_EXCEPTION);
 	return MAL_SUCCEED;
 }
-
-str
-UUIDequal(bit *retval, uuid **l, uuid **r)
-{
-	if (UUIDisnil(*l) || UUIDisnil(*r))
-		*retval = bit_nil;
-	else
-		*retval = memcmp((*l)->u, (*r)->u, UUID_SIZE) == 0;
-	return MAL_SUCCEED;
-}
+#endif
 
 BUN
 UUIDhash(const void *v)

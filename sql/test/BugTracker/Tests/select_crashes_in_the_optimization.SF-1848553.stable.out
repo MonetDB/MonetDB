@@ -15,7 +15,6 @@ stdout of test 'select_crashes_in_the_optimization.SF-1848553` in directory 'sql
 # Listening for connection requests on mapi:monetdb://alviss.ins.cwi.nl:32323/
 # MonetDB/SQL module v2.24.0 loaded
 
-Ready.
 # falling back to direct mode 
 # falling back to direct mode 
 # falling back to direct mode 
@@ -36,8 +35,8 @@ Ready.
 #create table s ( snr int, sname varchar(30) );
 #create table sp ( snr int, pnr varchar(30) );
 #select 24;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % tinyint # type
 % 2 # length
 [ 24	]

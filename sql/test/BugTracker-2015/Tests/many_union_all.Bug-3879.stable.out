@@ -21,7 +21,6 @@ stdout of test 'many_union_all.Bug-3879` in directory 'sql/test/BugTracker-2015`
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql
@@ -90,8 +89,8 @@ Ready.
 #      SELECT 0 FROM foo
 #      UNION ALL
 #      SELECT 0 FROM foo) AS t;
-% .L120 # table_name
-% L120 # name
+% .%117 # table_name
+% %117 # name
 % tinyint # type
 % 1 # length
 #INSERT INTO foo VALUES (3), (6), (7);

@@ -18,7 +18,6 @@ stdout of test 'ST_GeomFromText` in directory 'geom/sql/functions` itself:
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 15:46:20 >  
 # 15:46:20 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-9662" "--port=32350"
@@ -301,8 +300,8 @@ Ready.
 [ "MULTIPOLYGON Z (((20 20 20, 30 30 30, 40 40 40, 20 20 20), (200 200 200, 300 300 300, 400 400 400, 200 200 200)))"	]
 #drop table polygons_tbl;
 #select st_geomfromtext(geom) from geometriesTxt;
-% sys.L2 # table_name
-% L2 # name
+% sys. # table_name
+% %1 # name
 % geometry # type
 % 0 # length
 [ "POINT (10 20)"	]

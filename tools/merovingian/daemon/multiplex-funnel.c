@@ -3,13 +3,16 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
 #include <unistd.h>
 #include <string.h>
 #include <sys/types.h>
+#ifdef HAVE_POLL_H
+#include <poll.h>
+#endif
 
 #include "mapi.h"
 #include "mutils.h" /* MT_lockf */
@@ -60,19 +63,28 @@ MFconnectionManager(void *d)
 	char buf[1024];
 	size_t len;
 	char *msg;
+#ifdef HAVE_POLL
+	struct pollfd pfd;
+#else
 	struct timeval tv;
 	fd_set fds;
+#endif
 
 	(void)d;
 
 	while (_mero_keep_listening == 1) {
+#ifdef HAVE_POLL
+		pfd = (struct pollfd) {.fd = mfpipe[0], .events = POLLIN};
+		/* wait up to 5 seconds */
+		i = poll(&pfd, 1, 5000);
+#else
 		FD_ZERO(&fds);
 		FD_SET(mfpipe[0], &fds);
 
 		/* wait up to 5 seconds */
-		tv.tv_sec = 5;
-		tv.tv_usec = 0;
+		tv = (struct timeval) {.tv_sec = 5};
 		i = select(mfpipe[0] + 1, &fds, NULL, NULL, &tv);
+#endif
 		if (i == 0)
 			continue;
 		if (i == -1 && errno != EINTR) {
@@ -81,11 +93,12 @@ MFconnectionManager(void *d)
 			break;
 		}
 		/* coverity[string_null_argument] */
-		if (read(mfpipe[0], &msg, sizeof(msg)) < 0) {
+		if ((i = (int) read(mfpipe[0], &msg, sizeof(msg))) < 0) {
 			Mfprintf(stderr, "failed reading from notification pipe: %s\n",
 					strerror(errno));
 			break;
 		}
+		assert(i == (int) sizeof(msg));
 		/* we just received a POINTER to a string! */
 
 		/* intended behaviour:
@@ -264,10 +277,6 @@ multiplexNotifyRemovedDB(const char *database)
 	/* coverity[leaked_storage] */
 }
 
-/* ultra ugly, we peek inside Sabaoth's internals to update the uplog
- * file */
-extern char *_sabaoth_internal_dbname;
-
 err
 multiplexInit(char *name, char *pattern, FILE *sout, FILE *serr)
 {
@@ -429,7 +438,7 @@ multiplexInit(char *name, char *pattern, FILE *sout, FILE *serr)
 	/* fake lock such that sabaoth believes we are (still) running, we
 	 * rely on merovingian moving to dbfarm here */
 	snprintf(buf, sizeof(buf), "%s/.gdk_lock", name);
-	if ((m->gdklock = MT_lockf(buf, F_TLOCK, 4, 1)) == -1) {
+	if ((m->gdklock = MT_lockf(buf, F_TLOCK)) == -1) {
 		/* locking failed, FIXME: cleanup here */
 		Mfprintf(serr, "mfunnel: another instance is already running?\n");
 		return(newErr("cannot lock for %s, already locked", name));
@@ -444,15 +453,14 @@ multiplexInit(char *name, char *pattern, FILE *sout, FILE *serr)
 	 * internals -- we know dbname should be NULL, and hack it for the
 	 * purpose of this moment, see also extern declaration before this
 	 * function */
-	_sabaoth_internal_dbname = name;
+	msab_dbnameinit(name);
 	if ((p = msab_registerStarting()) != NULL ||
 			(p = msab_registerStarted()) != NULL ||
 			(p = msab_marchScenario("mfunnel")) != NULL)
 	{
 		err em;
 
-		_sabaoth_internal_dbname = NULL;
-
+	    msab_dbnameinit(NULL);
 		Mfprintf(serr, "mfunnel: unable to startup %s: %s\n",
 				name, p);
 		em = newErr("cannot create funnel %s due to sabaoth: %s", name, p);
@@ -460,8 +468,7 @@ multiplexInit(char *name, char *pattern, FILE *sout, FILE *serr)
 
 		return(em);
 	}
-	_sabaoth_internal_dbname = NULL;
-
+	msab_dbnameinit(NULL);
 	return(NO_ERR);
 }
 
@@ -496,13 +503,13 @@ multiplexDestroy(char *mp)
 	}
 
 	/* deregister from sabaoth, same hack alert as at Init */
-	_sabaoth_internal_dbname = m->name;
+	msab_dbnameinit(m->name);
 	if ((msg = msab_registerStop()) != NULL ||
 		(msg = msab_wildRetreat()) != NULL) {
 		Mfprintf(stderr, "mfunnel: %s\n", msg);
 		free(msg);
 	}
-	_sabaoth_internal_dbname = NULL;
+	msab_dbnameinit(NULL);
 
 	/* signal the thread to stop and cleanup */
 	m->shutdown = 1;
@@ -608,7 +615,7 @@ multiplexQuery(multiplex *m, char *buf, stream *fout)
 				rlen += mapi_rows_affected(h);
 				break;
 			case Q_SCHEMA:
-				/* accept, just write ok lateron */
+				/* accept, just write ok later on */
 				break;
 			case Q_TRANS:
 				/* just check all servers end up in the same state */
@@ -684,8 +691,12 @@ static void *
 multiplexThread(void *d)
 {
 	multiplex *m = (multiplex *)d;
+#ifdef HAVE_POLL
+	struct pollfd *pfd;
+#else
 	struct timeval tv;
 	fd_set fds;
+#endif
 	multiplex_client *c;
 	int msock = -1;
 	char buf[10 * BLOCK + 1];
@@ -697,6 +708,19 @@ multiplexThread(void *d)
 	 * union all results, send back, and restart cycle. */
 	
 	while (m->shutdown == 0) {
+#ifdef HAVE_POLL
+		msock = 0;
+		for (c = m->clients; c != NULL; c = c->next) {
+			msock++;
+		}
+		pfd = malloc(msock * sizeof(struct pollfd));
+		msock = 0;
+		for (c = m->clients; c != NULL; c = c->next) {
+			pfd[msock++] = (struct pollfd) {.fd = c->sock, .events = POLLIN};
+		}
+		/* wait up to 1 second. */
+		r = poll(pfd, msock, 1000);
+#else
 		FD_ZERO(&fds);
 		for (c = m->clients; c != NULL; c = c->next) {
 			FD_SET(c->sock, &fds);
@@ -705,9 +729,9 @@ multiplexThread(void *d)
 		}
 
 		/* wait up to 1 second. */
-		tv.tv_sec = 1;
-		tv.tv_usec = 0;
+		tv = (struct timeval) {.tv_sec = 1};
 		r = select(msock + 1, &fds, NULL, NULL, &tv);
+#endif
 
 		/* evaluate if connections have to be switched */
 		for (i = 0; i < m->dbcc; i++) {
@@ -743,11 +767,24 @@ multiplexThread(void *d)
 		}
 
 		/* nothing interesting has happened */
-		if (r <= 0)
+		if (r <= 0) {
+#ifdef HAVE_POLL
+			free(pfd);
+#endif
 			continue;
+		}
 		for (c = m->clients; c != NULL; c = c->next) {
+#ifdef HAVE_POLL
+			for (i = 0; i < msock; i++) {
+				if (pfd[i].fd == c->sock)
+					break;
+			}
+			if (i == msock || (pfd[i].revents & POLLIN) == 0)
+				continue;
+#else
 			if (!FD_ISSET(c->sock, &fds))
 				continue;
+#endif
 			if ((len = mnstr_read(c->fdin, buf, 1, 10 * BLOCK)) < 0) {
 				/* error, or some garbage */
 				multiplexRemoveClient(m, c);
@@ -782,6 +819,9 @@ multiplexThread(void *d)
 			 * any idea what it is */
 			multiplexQuery(m, buf + 1, c->fout);
 		}
+#ifdef HAVE_POLL
+		free(pfd);
+#endif
 	}
 
 	Mfprintf(stdout, "stopping mfunnel '%s'\n", m->name);

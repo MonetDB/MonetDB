@@ -19,7 +19,6 @@ stdout of test 'is_null_limit.Bug-3684` in directory 'sql/test/BugTracker-2015` 
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 13:22:52 >  
 # 13:22:52 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-30297" "--port=31986"

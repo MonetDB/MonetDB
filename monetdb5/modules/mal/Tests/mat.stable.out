@@ -21,7 +21,6 @@ stdout of test 'mat` in directory 'monetdb5/modules/mal` itself:
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 09:46:19 >  
 # 09:46:19 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-26774" "--port=35410"
@@ -34,6 +33,27 @@ Ready.
 [ 0@0,	1  ]
 [ 1@0,	2  ]
 [ 2@0,	3  ]
+#--------------------------#
+# h	t  # name
+# void	flt  # type
+#--------------------------#
+[ 0@0,	1	]
+[ 1@0,	2	]
+[ 2@0,	3	]
+#--------------------------#
+# h	t  # name
+# void	str  # type
+#--------------------------#
+[ 0@0,	"a"	]
+[ 1@0,	"b"	]
+[ 2@0,	"c"	]
+#--------------------------#
+# h	t  # name
+# void	bit  # type
+#--------------------------#
+[ 0@0,	true	]
+[ 1@0,	false	]
+[ 2@0,	true	]
 
 # 00:24:10 >  
 # 00:24:10 >  Done.

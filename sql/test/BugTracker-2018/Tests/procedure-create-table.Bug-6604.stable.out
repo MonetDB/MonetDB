@@ -18,7 +18,6 @@ stdout of test 'procedure-create-table.Bug-6604` in directory 'sql/test/BugTrack
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 14:21:11 >  
 # 14:21:11 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-21213" "--port=37121"

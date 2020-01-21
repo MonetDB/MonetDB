@@ -58,7 +58,6 @@ stdout of test 'negative-sequences.Bug-6665` in directory 'sql/test/BugTracker-2
 # loading sql script: 99_system.sql
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 16:24:28 >  
 # 16:24:28 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-14581" "--port=32699"
@@ -67,20 +66,20 @@ Ready.
 #start transaction;
 #create sequence "other_seq" as integer start with -300 increment by -20 minvalue -580 maxvalue -300;
 #select get_value_for('sys', 'other_seq');
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% %1 # name
 % bigint # type
 % 4 # length
 [ -300	]
 #select next_value_for('sys', 'other_seq');
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% %1 # name
 % bigint # type
 % 4 # length
 [ -300	]
 #select next value for "other_seq";
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% %1 # name
 % bigint # type
 % 4 # length
 [ -320	]
@@ -88,39 +87,39 @@ Ready.
 #insert into "testme" ("col2") values (1);
 [ 1	]
 #select get_value_for('sys', 'other_seq');
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% %1 # name
 % bigint # type
 % 4 # length
 [ -360	]
 #select next_value_for('sys', 'other_seq');
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% %1 # name
 % bigint # type
 % 4 # length
 [ -360	]
 #select next value for "other_seq";
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% %1 # name
 % bigint # type
 % 4 # length
 [ -380	]
 #alter sequence "other_seq" restart with (select -400);
 #select get_value_for('sys', 'other_seq');
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% %1 # name
 % bigint # type
 % 4 # length
 [ -400	]
 #select next_value_for('sys', 'other_seq');
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% %1 # name
 % bigint # type
 % 4 # length
 [ -400	]
 #select next value for "other_seq";
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% %1 # name
 % bigint # type
 % 4 # length
 [ -420	]
@@ -134,20 +133,20 @@ Ready.
 [ -340,	1	]
 [ -440,	2	]
 #select get_value_for('sys', 'other_seq');
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% %1 # name
 % bigint # type
 % 4 # length
 [ -460	]
 #select next_value_for('sys', 'other_seq');
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% %1 # name
 % bigint # type
 % 4 # length
 [ -460	]
 #select next value for "other_seq";
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% %1 # name
 % bigint # type
 % 4 # length
 [ -480	]
@@ -165,14 +164,14 @@ Ready.
 [ -540,	5	]
 [ -560,	6	]
 #select get_value_for('sys', 'other_seq');
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% %1 # name
 % bigint # type
 % 4 # length
 [ -580	]
 #select next_value_for('sys', 'other_seq');
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% %1 # name
 % bigint # type
 % 4 # length
 [ -580	]

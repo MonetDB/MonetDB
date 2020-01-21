@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -223,7 +223,7 @@ PyObject *PyEmit_Emit(PyEmitObject *self, PyObject *args)
 		PyObject *dictEntry = PyDict_GetItemString(args, self->cols[i].name);
 		if (dictEntry && dictEntry != Py_None) {
 			if (PyType_IsPyScalar(dictEntry)) {
-				if (self->cols[i].b->ttype == TYPE_blob || self->cols[i].b->ttype == TYPE_sqlblob) {
+				if (self->cols[i].b->ttype == TYPE_blob) {
 					blob s;
 					blob* val = &s;
 					val->nitems = ~(size_t) 0;
@@ -354,6 +354,12 @@ PyObject *PyEmit_Emit(PyEmitObject *self, PyObject *args)
 					}
 				}
 				self->cols[i].b->tnonil = !self->cols[i].b->tnil;
+				if (ret->numpy_array) {
+					Py_DECREF(ret->numpy_array);
+				}
+				if (ret->numpy_mask) {
+					Py_DECREF(ret->numpy_mask);
+				}
 			}
 		} else {
 			if (self->cols[i].def != NULL) {

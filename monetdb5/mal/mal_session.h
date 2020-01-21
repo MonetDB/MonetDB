@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #ifndef _MAL_SESSION_H
@@ -12,7 +12,7 @@
 #include "mal_scenario.h"
 
 mal_export str malBootstrap(void);
-mal_export str MSserveClient(void *dummy);
+mal_export str MSserveClient(Client cntxt);
 mal_export str MSinitClientPrg(Client cntxt, str mod, str nme);
 mal_export void MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protocol_version protocol, size_t blocksize);
 

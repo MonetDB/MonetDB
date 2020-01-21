@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -29,16 +29,14 @@
 
 mal_export str CMDstartProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str CMDstopProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str CMDstartTrace(void *res);
-mal_export str CMDstartTracePath(void *res, str *path);
-mal_export str CMDstopTrace(void *res);
-mal_export str CMDstopTracePath(void *res, str *path);
+mal_export str CMDstartTrace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str CMDstopTrace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str CMDnoopProfiler(void *res);
 mal_export str CMDsetHeartbeat(void *res, int *ev);
 mal_export str CMDopenProfilerStream(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str CMDcloseProfilerStream(void *res);
-mal_export str CMDcleanupTraces(void *res);
-mal_export str CMDgetTrace(bat *res, str *ev);
+mal_export str CMDcloseProfilerStream(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str CMDcleanupTraces(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str CMDgetTrace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str CMDgetprofilerlimit(int *res);
 mal_export str CMDsetprofilerlimit(void *res, int *lim);
 

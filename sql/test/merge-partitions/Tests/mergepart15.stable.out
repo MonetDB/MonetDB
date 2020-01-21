@@ -18,7 +18,6 @@ stdout of test 'mergepart15` in directory 'sql/test/merge-partitions` itself:
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 11:35:39 >  
 # 11:35:39 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-26053" "--port=37352"
@@ -31,7 +30,7 @@ Ready.
 [ 1	]
 #TRUNCATE sublimits1;
 [ 1	]
-#ALTER TABLE testme ADD TABLE sublimits1 AS PARTITION WITH NULL;
+#ALTER TABLE testme ADD TABLE sublimits1 AS PARTITION FOR NULL VALUES;
 #INSERT INTO testme VALUES (NULL, 'first'), (NULL, NULL);
 [ 2	]
 #INSERT INTO sublimits1 VALUES (NULL, 'second'), (NULL, NULL);
@@ -54,7 +53,7 @@ Ready.
 [ NULL,	NULL	]
 [ NULL,	"second"	]
 [ NULL,	NULL	]
-#ALTER TABLE testme ADD TABLE sublimits2 AS PARTITION BETWEEN '301' AND '500';
+#ALTER TABLE testme ADD TABLE sublimits2 AS PARTITION FROM '301' TO '500';
 #INSERT INTO testme VALUES (NULL, 'fourth'), (303, 'null'), (NULL, 'fifth');
 [ 3	]
 #SELECT a, b FROM testme;

@@ -3,12 +3,15 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /* Author(s) M.L. Kersten
- * The MAL Runtime Profiler
+ * The MAL Runtime Profiler and system queue
  * This little helper module is used to perform instruction based profiling.
+ * The QRYqueue is only update at the start/finish of a query. 
+ * It is also the place to keep track on the number of workers
+ * The current could relies on a scan rather than a hash.
  */
 
 #include "monetdb_config.h"
@@ -23,10 +26,10 @@
 #include "mal_private.h"
 
 
-// Keep a queue of running queries
 QueryQueue QRYqueue;
-int qtop;
-static int qsize, qtag= 1;
+lng qtop;
+static lng qsize;
+static oid qtag= 1;		// A unique query identifier
 
 void
 mal_runtime_reset(void)
@@ -38,45 +41,47 @@ mal_runtime_reset(void)
 	qtag= 1;
 }
 
-static str isaSQLquery(MalBlkPtr mb){
+static str 
+isaSQLquery(MalBlkPtr mb){
 	int i;
 	InstrPtr p;
 	if (mb)
-	for ( i = 0; i< mb->stop; i++){
+	for ( i = 1; i< mb->stop; i++){
 		p = getInstrPtr(mb,i);
 		if ( getModuleId(p) && idcmp(getModuleId(p), "querylog") == 0 && idcmp(getFunctionId(p),"define")==0)
 			return getVarConstant(mb,getArg(p,1)).val.sval;
 	}
-	return 0;
+	return NULL;
 }
 
 /*
  * Manage the runtime profiling information
  */
+
 void
 runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 {
-	int i;
+	lng i;
 	str q;
 	QueryQueue tmp;
 
 	MT_lock_set(&mal_delayLock);
 	tmp = QRYqueue;
 	if ( QRYqueue == 0)
-		QRYqueue = (QueryQueue) GDKzalloc( sizeof (struct QRYQUEUE) * (qsize= 256));
-	else if ( qtop +1 == qsize )
-		QRYqueue = (QueryQueue) GDKrealloc( QRYqueue, sizeof (struct QRYQUEUE) * (qsize +=256));
+		QRYqueue = (QueryQueue) GDKzalloc( sizeof (struct QRYQUEUE) * (size_t) (qsize= 1024));
+	else if ( qtop + 1 == qsize )
+		QRYqueue = (QueryQueue) GDKrealloc( QRYqueue, sizeof (struct QRYQUEUE) * (size_t) (qsize += 256));
 	if ( QRYqueue == NULL){
 		addMalException(mb,"runtimeProfileInit" MAL_MALLOC_FAIL);
-		GDKfree(tmp);			/* may be NULL, but doesn't harm */
+		GDKfree(tmp);			
 		MT_lock_unset(&mal_delayLock);
 		return;
 	}
-	// check for recursive call
+	// check for recursive call, which does not change the number of workers
 	for( i = 0; i < qtop; i++)
 		if ( QRYqueue[i].mb == mb &&  stk->up == QRYqueue[i].stk){
 			QRYqueue[i].stk = stk;
-			stk->tag = QRYqueue[i].tag;
+			mb->tag = stk->tag = qtag++;
 			MT_lock_unset(&mal_delayLock);
 			return;
 		}
@@ -85,24 +90,27 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 	if (i == qtop) {
 		QRYqueue[i].mb = mb;
 		QRYqueue[i].tag = qtag++;
-		mb->tag = QRYqueue[i].tag;
 		QRYqueue[i].stk = stk;				// for status pause 'p'/running '0'/ quiting 'q'
-		QRYqueue[i].start = (lng)time(0);
+		QRYqueue[i].start = time(0);
 		QRYqueue[i].runtime = mb->runtime; 	// the estimated execution time
 		q = isaSQLquery(mb);
 		QRYqueue[i].query = q? GDKstrdup(q):0;
 		QRYqueue[i].status = "running";
 		QRYqueue[i].cntxt = cntxt;
+		stk->tag = mb->tag = QRYqueue[i].tag;
 	}
-	stk->tag = QRYqueue[i].tag;
 	qtop += i == qtop;
 	MT_lock_unset(&mal_delayLock);
 }
 
+/* We should keep a short list of previously executed queries/client for inspection.
+ * Returning from a recursive call does not change the number of workers.
+ */
+
 void
 runtimeProfileFinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 {
-	int i,j;
+	lng i,j;
 
 	(void) cntxt;
 	(void) mb;
@@ -115,19 +123,17 @@ runtimeProfileFinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 		if( stk->up){
 			// recursive call
 			QRYqueue[i].stk = stk->up;
+			mb->tag = stk->tag;
 			MT_lock_unset(&mal_delayLock);
 			return;
 		}
-		QRYqueue[i].mb->calls++;
-		QRYqueue[i].mb->runtime += (lng) (((lng)time(0) - QRYqueue[i].start) * 1000.0/QRYqueue[i].mb->calls);
-
-		// reset entry
-		if (QRYqueue[i].query)
-			GDKfree(QRYqueue[i].query);
+		QRYqueue[i].status = "finished";
+		GDKfree(QRYqueue[i].query);
 		QRYqueue[i].cntxt = 0;
 		QRYqueue[i].tag = 0;
 		QRYqueue[i].query = 0;
 		QRYqueue[i].status =0;
+		QRYqueue[i].progress =0;
 		QRYqueue[i].stk =0;
 		QRYqueue[i].mb =0;
 	}
@@ -137,10 +143,11 @@ runtimeProfileFinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 	MT_lock_unset(&mal_delayLock);
 }
 
+/* When the client connection is closed, then also the queue should be updated */
 void
 finishSessionProfiler(Client cntxt)
 {
-	int i,j;
+	lng i,j;
 
 	(void) cntxt;
 
@@ -149,12 +156,11 @@ finishSessionProfiler(Client cntxt)
 	if ( QRYqueue[i].cntxt != cntxt)
 		QRYqueue[j++] = QRYqueue[i];
 	else  {
-		//reset entry
-		if (QRYqueue[i].query)
-			GDKfree(QRYqueue[i].query);
+		GDKfree(QRYqueue[i].query);
 		QRYqueue[i].cntxt = 0;
 		QRYqueue[i].tag = 0;
 		QRYqueue[i].query = 0;
+		QRYqueue[i].progress =0;
 		QRYqueue[i].status =0;
 		QRYqueue[i].stk =0;
 		QRYqueue[i].mb =0;
@@ -163,65 +169,66 @@ finishSessionProfiler(Client cntxt)
 	MT_lock_unset(&mal_delayLock);
 }
 
+/*
+ * Each MAL instruction is executed by a single thread, which means we can
+ * keep a simple working set around to make Stethscope attachement easy.
+ * It can also be used to later shutdown each thread safely.
+ */
+Workingset workingset[THREADS];
+
 void
 runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, RuntimeProfile prof)
 {
 	int tid = THRgettid();
 
 	assert(pci);
-	/* keep track on the instructions taken in progress */
-	cntxt->active = TRUE;
+	/* keep track on the instructions taken in progress for stethoscope*/
 	if( tid < THREADS){
-		cntxt->inprogress[tid].mb = mb;
-		cntxt->inprogress[tid].stk = stk;
-		cntxt->inprogress[tid].pci = pci;
+		MT_lock_set(&mal_delayLock);
+		workingset[tid].cntxt = cntxt;
+		workingset[tid].mb = mb;
+		workingset[tid].stk = stk;
+		workingset[tid].pci = pci;
+		MT_lock_unset(&mal_delayLock);
 	}
-
 	/* always collect the MAL instruction execution time */
 	pci->clock = prof->ticks = GDKusec();
 
-	/* keep track of actual running instructions over BATs */
-	if( isaBatType(getArgType(mb, pci, 0)) )
-		(void) ATOMIC_INC(mal_running, mal_runningLock);
-
 	/* emit the instruction upon start as well */
 	if(malProfileMode > 0 )
-		profilerEvent(mb, stk, pci, TRUE, cntxt->username);
+		profilerEvent(cntxt, mb, stk, pci, TRUE);
 }
 
 void
 runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, RuntimeProfile prof)
 {
 	int tid = THRgettid();
+	lng ticks = GDKusec();
 
 	/* keep track on the instructions in progress*/
 	if ( tid < THREADS) {
-		cntxt->inprogress[tid].mb = 0;
-		cntxt->inprogress[tid].stk =0;
-		cntxt->inprogress[tid].pci = 0;
+		MT_lock_set(&mal_delayLock);
+		workingset[tid].mb = 0;
+		workingset[tid].stk = 0;
+		workingset[tid].pci = 0;
+		MT_lock_unset(&mal_delayLock);
 	}
 
-	assert(pci);
-	if( isaBatType(getArgType(mb, pci, 0)) )
-		(void) ATOMIC_DEC(mal_running, mal_runningLock);
-
-	assert(prof);
 	/* always collect the MAL instruction execution time */
-	pci->ticks = GDKusec() - prof->ticks;
+	pci->clock = ticks;
+	pci->ticks = ticks - prof->ticks;
 	pci->totticks += pci->ticks;
 	pci->calls++;
 	
 	if(malProfileMode > 0 )
-		profilerEvent(mb, stk, pci, FALSE, cntxt->username);
+		profilerEvent(cntxt, mb, stk, pci, FALSE);
+	if( cntxt->sqlprofiler )
+		sqlProfilerEvent(cntxt, mb, stk, pci);
 	if( malProfileMode < 0){
 		/* delay profiling until you encounter start of MAL function */
 		if( getInstrPtr(mb,0) == pci)
 			malProfileMode = 1;
 	}
-	cntxt->active = FALSE;
-	/* reduce threads of non-admin long running transaction if needed */
-	if ( cntxt->idx > 1 )
-		MALresourceFairness(GDKusec()- mb->starttime);
 }
 
 /*

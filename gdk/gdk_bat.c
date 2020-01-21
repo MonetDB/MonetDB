@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -50,14 +50,9 @@
 
 #define ATOMneedheap(tpe) (BATatoms[tpe].atomHeap != NULL)
 
-static char *BATstring_h = "h";
 static char *BATstring_t = "t";
 
-static inline bool
-default_ident(char *s)
-{
-	return (s == BATstring_h || s == BATstring_t);
-}
+#define default_ident(s)	((s) == BATstring_t)
 
 void
 BATinit_idents(BAT *bn)
@@ -66,7 +61,7 @@ BATinit_idents(BAT *bn)
 }
 
 BAT *
-BATcreatedesc(oid hseq, int tt, bool heapnames, int role)
+BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role)
 {
 	BAT *bn;
 
@@ -74,7 +69,6 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, int role)
 	 * Alloc space for the BAT and its dependent records.
 	 */
 	assert(tt >= 0);
-	assert(role >= 0 && role < 32);
 
 	bn = GDKzalloc(sizeof(BAT));
 
@@ -88,7 +82,6 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, int role)
 
 	bn->ttype = tt;
 	bn->tkey = false;
-	bn->tunique = false;
 	bn->tnonil = true;
 	bn->tnil = false;
 	bn->tsorted = bn->trevsorted = ATOMlinear(tt);
@@ -97,7 +90,7 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, int role)
 	bn->tprops = NULL;
 
 	bn->batRole = role;
-	bn->batPersistence = TRANSIENT;
+	bn->batTransient = true;
 	/*
 	 * add to BBP
 	 */
@@ -116,17 +109,21 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, int role)
 	assert(bn->batCacheid > 0);
 
 	const char *nme = BBP_physical(bn->batCacheid);
-	snprintf(bn->theap.filename, sizeof(bn->theap.filename),
-		 "%s.tail", nme);
+	strconcat_len(bn->theap.filename, sizeof(bn->theap.filename),
+		      nme, ".tail", NULL);
 	bn->theap.farmid = BBPselectfarm(role, bn->ttype, offheap);
 	if (heapnames && ATOMneedheap(tt)) {
 		if ((bn->tvheap = (Heap *) GDKzalloc(sizeof(Heap))) == NULL)
 			goto bailout;
-		snprintf(bn->tvheap->filename, sizeof(bn->tvheap->filename),
-			 "%s.theap", nme);
+		strconcat_len(bn->tvheap->filename,
+			      sizeof(bn->tvheap->filename),
+			      nme, ".theap", NULL);
 		bn->tvheap->parentid = bn->batCacheid;
 		bn->tvheap->farmid = BBPselectfarm(role, bn->ttype, varheap);
 	}
+	char name[16];
+	snprintf(name, sizeof(name), "BATlock%d", bn->batCacheid); /* fits */
+	MT_lock_init(&bn->batIdxLock, name);
 	bn->batDirtydesc = true;
 	return bn;
       bailout:
@@ -175,7 +172,7 @@ BATsetdims(BAT *b)
  * filenames.
  */
 BAT *
-COLnew(oid hseq, int tt, BUN cap, int role)
+COLnew(oid hseq, int tt, BUN cap, role_t role)
 {
 	BAT *bn;
 
@@ -183,23 +180,16 @@ COLnew(oid hseq, int tt, BUN cap, int role)
 	assert(hseq <= oid_nil);
 	assert(tt != TYPE_bat);
 	ERRORcheck((tt < 0) || (tt > GDKatomcnt), "COLnew:tt error\n", NULL);
-	ERRORcheck(role < 0 || role >= 32, "COLnew:role error\n", NULL);
 
 	/* round up to multiple of BATTINY */
 	if (cap < BUN_MAX - BATTINY)
 		cap = (cap + BATTINY - 1) & ~(BATTINY - 1);
 	if (cap < BATTINY)
 		cap = BATTINY;
-	/* and in case we don't have assertions enabled: limit the size */
+	/* limit the size */
 	if (cap > BUN_MAX)
 		cap = BUN_MAX;
 
-	/* and in case we don't have assertions enabled: limit the size */
-	if (cap > BUN_MAX) {
-		/* shouldn't happen, but if it does... */
-		assert(0);
-		cap = BUN_MAX;
-	}
 	bn = BATcreatedesc(hseq, tt, tt != TYPE_void, role);
 	if (bn == NULL)
 		return NULL;
@@ -221,11 +211,12 @@ COLnew(oid hseq, int tt, BUN cap, int role)
 		GDKfree(bn->tvheap);
 		goto bailout;
 	}
-	ALGODEBUG fprintf(stderr, "#COLnew()=" ALGOBATFMT "\n", ALGOBATPAR(bn));
+	TRC_DEBUG(ALGO, "COLnew()=" ALGOBATFMT "\n", ALGOBATPAR(bn));
 	return bn;
   bailout:
 	BBPclear(bn->batCacheid);
 	HEAPfree(&bn->theap, true);
+	MT_lock_destroy(&bn->batIdxLock);
 	GDKfree(bn);
 	return NULL;
 }
@@ -239,13 +230,13 @@ BATdense(oid hseq, oid tseq, BUN cnt)
 	if (bn != NULL) {
 		BATtseqbase(bn, tseq);
 		BATsetcount(bn, cnt);
-		ALGODEBUG fprintf(stderr, "#BATdense()=" ALGOBATFMT "\n", ALGOBATPAR(bn));
+		TRC_DEBUG(ALGO, "BATdense()=" ALGOBATFMT "\n", ALGOBATPAR(bn));
 	}
 	return bn;
 }
 
 BAT *
-BATattach(int tt, const char *heapfile, int role)
+BATattach(int tt, const char *heapfile, role_t role)
 {
 	BAT *bn;
 	char *p;
@@ -255,7 +246,6 @@ BATattach(int tt, const char *heapfile, int role)
 	ERRORcheck(tt <= 0 , "BATattach: bad tail type (<=0)\n", NULL);
 	ERRORcheck(ATOMvarsized(tt) && ATOMstorage(tt) != TYPE_str, "BATattach: bad tail type (varsized and not str)\n", NULL);
 	ERRORcheck(heapfile == NULL, "BATattach: bad heapfile name\n", NULL);
-	ERRORcheck(role < 0 || role >= 32, "BATattach: role error\n", NULL);
 
 	if ((f = fopen(heapfile, "rb")) == NULL) {
 		GDKsyserror("BATattach: cannot open %s\n", heapfile);
@@ -458,13 +448,10 @@ BATextend(BAT *b, BUN newcap)
 
 	theap_size *= Tsize(b);
 	if (b->theap.base && GDKdebug & HEAPMASK)
-		fprintf(stderr, "#HEAPextend in BATextend %s %zu %zu\n", b->theap.filename, b->theap.size, theap_size);
+		TRC_INFO(BAT_, "HEAPextend in BATextend %s %zu %zu\n", b->theap.filename, b->theap.size, theap_size);
 	if (b->theap.base &&
 	    HEAPextend(&b->theap, theap_size, b->batRestricted == BAT_READ) != GDK_SUCCEED)
 		return GDK_FAIL;
-	HASHdestroy(b);
-	IMPSdestroy(b);
-	OIDXdestroy(b);
 	return GDK_SUCCEED;
 }
 
@@ -512,7 +499,7 @@ BATclear(BAT *b, bool force)
 			th = (Heap) {
 				.farmid = b->tvheap->farmid,
 			};
-			strncpy(th.filename, b->tvheap->filename, sizeof(th.filename));
+			strcpy_len(th.filename, b->tvheap->filename, sizeof(th.filename));
 			if (ATOMheap(b->ttype, &th, 0) != GDK_SUCCEED)
 				return GDK_FAIL;
 			th.parentid = b->tvheap->parentid;
@@ -584,6 +571,7 @@ BATdestroy(BAT *b)
 	if (b->tvheap)
 		GDKfree(b->tvheap);
 	PROPdestroy(b);
+	MT_lock_destroy(&b->batIdxLock);
 	GDKfree(b);
 }
 
@@ -658,7 +646,7 @@ wrongtype(int t1, int t2)
  */
 /* TODO make it simpler, ie copy per column */
 BAT *
-COLcopy(BAT *b, int tt, bool writable, int role)
+COLcopy(BAT *b, int tt, bool writable, role_t role)
 {
 	BUN bunstocopy = BUN_NONE;
 	BUN cnt;
@@ -690,7 +678,7 @@ COLcopy(BAT *b, int tt, bool writable, int role)
 		if (tt != bn->ttype) {
 			bn->ttype = tt;
 			bn->tvarsized = ATOMvarsized(tt);
-			bn->tseqbase = b->tseqbase;
+			bn->tseqbase = ATOMtype(tt) == TYPE_oid ? b->tseqbase : oid_nil;
 		}
 	} else {
 		/* check whether we need case (4); BUN-by-BUN copy (by
@@ -737,10 +725,12 @@ COLcopy(BAT *b, int tt, bool writable, int role)
 			thp = (Heap) {
 				.farmid = BBPselectfarm(role, b->ttype, varheap),
 			};
-			snprintf(bthp.filename, sizeof(bthp.filename),
-				 "%s.tail", BBP_physical(bn->batCacheid));
-			snprintf(thp.filename, sizeof(thp.filename), "%s.theap",
-				 BBP_physical(bn->batCacheid));
+			strconcat_len(bthp.filename, sizeof(bthp.filename),
+				      BBP_physical(bn->batCacheid),
+				      ".tail", NULL);
+			strconcat_len(thp.filename, sizeof(thp.filename),
+				      BBP_physical(bn->batCacheid),
+				      ".theap", NULL);
 			if ((b->ttype && HEAPcopy(&bthp, &b->theap) != GDK_SUCCEED) ||
 			    (bn->tvheap && HEAPcopy(&thp, b->tvheap) != GDK_SUCCEED)) {
 				HEAPfree(&thp, true);
@@ -770,7 +760,8 @@ COLcopy(BAT *b, int tt, bool writable, int role)
 			BATloop(b, p, q) {
 				const void *t = BUNtail(bi, p);
 
-				bunfastapp_nocheck(bn, r, t, Tsize(bn));
+				if (bunfastapp_nocheck(bn, r, t, Tsize(bn)) != GDK_SUCCEED)
+					goto bunins_failed;
 				r++;
 			}
 			bn->theap.dirty |= bunstocopy > 0;
@@ -854,8 +845,8 @@ COLcopy(BAT *b, int tt, bool writable, int role)
 	}
 	if (!writable)
 		bn->batRestricted = BAT_READ;
-	ALGODEBUG fprintf(stderr, "#COLcopy(" ALGOBATFMT ")=" ALGOBATFMT "\n",
-			  ALGOBATPAR(b), ALGOBATPAR(bn));
+	TRC_DEBUG(ALGO, "COLcopy(" ALGOBATFMT ")=" ALGOBATFMT "\n",
+			  	ALGOBATPAR(b), ALGOBATPAR(bn));
 	return bn;
       bunins_failed:
 	BBPreclaim(bn);
@@ -863,29 +854,29 @@ COLcopy(BAT *b, int tt, bool writable, int role)
 }
 
 #ifdef HAVE_HGE
-#define un_move_sz16(src, dst, sz)					\
-		if (sz == 16) {						\
-			* (hge *) dst = * (hge *) src;			\
+#define un_move_sz16(src, dst, sz)			\
+		if (sz == 16) {				\
+			* (hge *) dst = * (hge *) src;	\
 		} else
 #else
 #define un_move_sz16(src, dst, sz)
 #endif
 
-#define un_move(src, dst, sz)						\
-	do {								\
-		un_move_sz16(src,dst,sz)				\
-		if (sz == 8) {						\
-			* (lng *) dst = * (lng *) src;			\
-		} else if (sz == 4) {					\
-			* (int *) dst = * (int *) src;			\
-		} else if (sz > 0) {					\
-			char *_dst = (char *) dst;			\
-			char *_src = (char *) src;			\
-			char *_end = _src + sz;				\
-									\
-			while (_src < _end)				\
-				*_dst++ = *_src++;			\
-		}							\
+#define un_move(src, dst, sz)				\
+	do {						\
+		un_move_sz16(src,dst,sz)		\
+		if (sz == 8) {				\
+			* (lng *) dst = * (lng *) src;	\
+		} else if (sz == 4) {			\
+			* (int *) dst = * (int *) src;	\
+		} else if (sz > 0) {			\
+			char *_dst = (char *) dst;	\
+			char *_src = (char *) src;	\
+			char *_end = _src + sz;		\
+							\
+			while (_src < _end)		\
+				*_dst++ = *_src++;	\
+		}					\
 	} while (0)
 #define acc_move(l, p)							\
 	do {								\
@@ -934,7 +925,12 @@ setcolprops(BAT *b, const void *x)
 			if (b->ttype == TYPE_oid) {
 				b->tseqbase = * (const oid *) x;
 			}
+			if (!isnil && ATOMlinear(b->ttype)) {
+				BATsetprop(b, GDK_MAX_VALUE, b->ttype, x);
+				BATsetprop(b, GDK_MIN_VALUE, b->ttype, x);
+			}
 		}
+		return;
 	} else if (b->ttype == TYPE_void) {
 		/* not the first value in a VOID column: we keep the
 		 * seqbase, and x is not used, so only some properties
@@ -955,14 +951,16 @@ setcolprops(BAT *b, const void *x)
 			b->tnil = true;
 			b->tnonil = false;
 		}
-	} else {
+		return;
+	} else if (ATOMlinear(b->ttype)) {
+		PROPrec *prop;
+
 		bi = bat_iterator(b);
 		pos = BUNlast(b);
 		prv = BUNtail(bi, pos - 1);
 		cmp = ATOMcmp(b->ttype, prv, x);
 
-		if (!b->tunique && /* assume outside check if tunique */
-		    b->tkey &&
+		if (b->tkey &&
 		    (cmp == 0 || /* definitely not KEY */
 		     (b->batCount > 1 && /* can't guarantee KEY if unordered */
 		      ((b->tsorted && cmp > 0) ||
@@ -974,24 +972,52 @@ setcolprops(BAT *b, const void *x)
 				b->tnokey[1] = pos;
 			}
 		}
-		if (b->tsorted && cmp > 0) {
-			/* out of order */
-			b->tsorted = false;
-			b->tnosorted = pos;
+		if (b->tsorted) {
+			if (cmp > 0) {
+				/* out of order */
+				b->tsorted = false;
+				b->tnosorted = pos;
+			} else if (cmp < 0 && !isnil) {
+				/* new largest value */
+				BATsetprop(b, GDK_MAX_VALUE, b->ttype, x);
+			}
+		} else if (!isnil &&
+			   (prop = BATgetprop(b, GDK_MAX_VALUE)) != NULL &&
+			   ATOMcmp(b->ttype, VALptr(&prop->v), x) < 0) {
+			BATsetprop(b, GDK_MAX_VALUE, b->ttype, x);
 		}
-		if (b->trevsorted && cmp < 0) {
-			/* out of order */
-			b->trevsorted = false;
-			b->tnorevsorted = pos;
+		if (b->trevsorted) {
+			if (cmp < 0) {
+				/* out of order */
+				b->trevsorted = false;
+				b->tnorevsorted = pos;
+				/* if there is a nil in the BAT, it is
+				 * the smallest, but that doesn't
+				 * count for the property, so the new
+				 * value may still be smaller than the
+				 * smallest non-nil so far */
+				if (!b->tnonil && !isnil &&
+				    (prop = BATgetprop(b, GDK_MIN_VALUE)) != NULL &&
+				    ATOMcmp(b->ttype, VALptr(&prop->v), x) > 0) {
+					BATsetprop(b, GDK_MIN_VALUE, b->ttype, x);
+				}
+			} else if (cmp > 0 && !isnil) {
+				/* new smallest value */
+				BATsetprop(b, GDK_MIN_VALUE, b->ttype, x);
+			}
+		} else if (!isnil &&
+			   (prop = BATgetprop(b, GDK_MIN_VALUE)) != NULL &&
+			   ATOMcmp(b->ttype, VALptr(&prop->v), x) > 0) {
+			BATsetprop(b, GDK_MIN_VALUE, b->ttype, x);
 		}
 		if (BATtdense(b) && (cmp >= 0 || * (const oid *) prv + 1 != * (const oid *) x)) {
 			assert(b->ttype == TYPE_oid);
 			b->tseqbase = oid_nil;
 		}
-		if (isnil) {
-			b->tnonil = false;
-			b->tnil = true;
-		}
+	}
+	if (isnil) {
+		b->tnonil = false;
+		b->tnil = true;
 	}
 }
 
@@ -1009,10 +1035,7 @@ BUNappend(BAT *b, const void *t, bool force)
 
 	BATcheck(b, "BUNappend", GDK_FAIL);
 
-	assert(!isVIEW(b));
-	if (b->tunique && BUNfnd(b, t) != BUN_NONE) {
-		return GDK_SUCCEED;
-	}
+	assert(!VIEWtparent(b));
 
 	p = BUNlast(b);		/* insert at end */
 	if (p == BUN_MAX || b->batCount == BUN_MAX) {
@@ -1042,7 +1065,8 @@ BUNappend(BAT *b, const void *t, bool force)
 	setcolprops(b, t);
 
 	if (b->ttype != TYPE_void) {
-		bunfastapp(b, t);
+		if (bunfastapp(b, t) != GDK_SUCCEED)
+			return GDK_FAIL;
 		b->theap.dirty = true;
 	} else {
 		BATsetcount(b, b->batCount + 1);
@@ -1051,51 +1075,28 @@ BUNappend(BAT *b, const void *t, bool force)
 
 	IMPSdestroy(b); /* no support for inserts in imprints yet */
 	OIDXdestroy(b);
-	if (b->ttype != TYPE_void
-	    && ATOMlinear(b->ttype)
-	    && ATOMcmp(b->ttype, t, ATOMnilptr(b->ttype)) != 0) {
-		PROPrec *prop;
-
-		if (b->batCount == 1) {
-			BATsetprop(b, GDK_MAX_VALUE, b->ttype, t);
-			BATsetprop(b, GDK_MIN_VALUE, b->ttype, t);
-		} else {
-			if ((prop = BATgetprop(b, GDK_MAX_VALUE)) != NULL &&
-			    ATOMcmp(b->ttype, VALptr(&prop->v), t) < 0) {
-				BATsetprop(b, GDK_MAX_VALUE, b->ttype, t);
-			}
-			if ((prop = BATgetprop(b, GDK_MIN_VALUE)) != NULL &&
-			    ATOMcmp(b->ttype, VALptr(&prop->v), t) > 0) {
-				BATsetprop(b, GDK_MIN_VALUE, b->ttype, t);
-			}
-		}
+	BATrmprop(b, GDK_NUNIQUE);
 #if 0		/* enable if we have more properties than just min/max */
-		do {
-			for (prop = b->tprops; prop; prop = prop->next)
-				if (prop->id != GDK_MAX_VALUE &&
-				    prop->id != GDK_MIN_VALUE) {
-					BATrmprop(b, prop->id);
-					break;
-				}
-		} while (prop);
+	PROPrec *prop;
+	do {
+		for (prop = b->tprops; prop; prop = prop->next)
+			if (prop->id != GDK_MAX_VALUE &&
+			    prop->id != GDK_MIN_VALUE &&
+			    prop->id != GDK_HASH_BUCKETS) {
+				BATrmprop(b, prop->id);
+				break;
+			}
+	} while (prop);
 #endif
-	} else {
-		PROPdestroy(b);
-	}
-	if (b->thash == (Hash *) 1 ||
-	    (b->thash && ((size_t *) b->thash->heap.base)[0] & (1 << 24))) {
-		/* don't bother first loading the hash to then change
-		 * it, also, cannot maintain persistent hashes */
-		HASHdestroy(b);
-	}
 	if (b->thash) {
 		HASHins(b, p, t);
+		if (b->thash)
+			BATsetprop(b, GDK_NUNIQUE,
+				   TYPE_oid, &(oid){b->thash->nunique});
 		if (tsize && tsize != b->tvheap->size)
 			HEAPwarm(b->tvheap);
 	}
 	return GDK_SUCCEED;
-      bunins_failed:
-	return GDK_FAIL;
 }
 
 gdk_return
@@ -1159,11 +1160,13 @@ BUNdelete(BAT *b, oid o)
 	IMPSdestroy(b);
 	OIDXdestroy(b);
 	HASHdestroy(b);
+	BATrmprop(b, GDK_NUNIQUE);
 #if 0		/* enable if we have more properties than just min/max */
 	do {
 		for (prop = b->tprops; prop; prop = prop->next)
 			if (prop->id != GDK_MAX_VALUE &&
-			    prop->id != GDK_MIN_VALUE) {
+			    prop->id != GDK_MIN_VALUE &&
+			    prop->id != GDK_HASH_BUCKETS) {
 				BATrmprop(b, prop->id);
 				break;
 			}
@@ -1246,11 +1249,13 @@ BUNinplace(BAT *b, BUN p, const void *t, bool force)
 				BATrmprop(b, GDK_MIN_VALUE);
 			}
 		}
+		BATrmprop(b, GDK_NUNIQUE);
 #if 0		/* enable if we have more properties than just min/max */
 		do {
 			for (prop = b->tprops; prop; prop = prop->next)
 				if (prop->id != GDK_MAX_VALUE &&
-				    prop->id != GDK_MIN_VALUE) {
+				    prop->id != GDK_MIN_VALUE &&
+				    prop->id != GDK_HASH_BUCKETS) {
 					BATrmprop(b, prop->id);
 					break;
 				}
@@ -1266,7 +1271,7 @@ BUNinplace(BAT *b, BUN p, const void *t, bool force)
 		ptr _ptr;
 		_ptr = BUNtloc(bi, p);
 		switch (b->twidth) {
-		case 1:
+		default:	/* only three or four cases possible */
 			_d = (var_t) * (uint8_t *) _ptr + GDK_VAROFFSET;
 			break;
 		case 2:
@@ -1281,16 +1286,17 @@ BUNinplace(BAT *b, BUN p, const void *t, bool force)
 			break;
 #endif
 		}
-		ATOMreplaceVAR(b->ttype, b->tvheap, &_d, t);
+		if (ATOMreplaceVAR(b->ttype, b->tvheap, &_d, t) != GDK_SUCCEED)
+			return GDK_FAIL;
 		if (b->twidth < SIZEOF_VAR_T &&
 		    (b->twidth <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 * b->twidth))) {
 			/* doesn't fit in current heap, upgrade it */
 			if (GDKupgradevarheap(b, _d, false, b->batRestricted == BAT_READ) != GDK_SUCCEED)
-				goto bunins_failed;
+				return GDK_FAIL;
 		}
 		_ptr = BUNtloc(bi, p);
 		switch (b->twidth) {
-		case 1:
+		default:	/* only three or four cases possible */
 			* (uint8_t *) _ptr = (uint8_t) (_d - GDK_VAROFFSET);
 			break;
 		case 2:
@@ -1374,7 +1380,7 @@ BUNinplace(BAT *b, BUN p, const void *t, bool force)
 		}
 	} else if (b->tnorevsorted >= p)
 		b->tnorevsorted = 0;
-	if (((b->ttype != TYPE_void) & b->tkey & !b->tunique) && b->batCount > 1) {
+	if (((b->ttype != TYPE_void) & b->tkey) && b->batCount > 1) {
 		BATkey(b, false);
 	} else if (!b->tkey && (b->tnokey[0] == p || b->tnokey[1] == p))
 		b->tnokey[0] = b->tnokey[1] = 0;
@@ -1385,9 +1391,6 @@ BUNinplace(BAT *b, BUN p, const void *t, bool force)
 		b->tvheap->dirty = true;
 
 	return GDK_SUCCEED;
-
-  bunins_failed:
-	return GDK_FAIL;
 }
 
 /* very much like void_inplace, except this materializes a void tail
@@ -1401,9 +1404,6 @@ BUNreplace(BAT *b, oid id, const void *t, bool force)
 	if (id < b->hseqbase || id >= b->hseqbase + BATcount(b))
 		return GDK_SUCCEED;
 
-	if (b->tunique && BUNfnd(b, t) != BUN_NONE) {
-		return GDK_SUCCEED;
-	}
 	if (b->ttype == TYPE_void) {
 		/* no need to materialize if value doesn't change */
 		if (is_oid_nil(b->tseqbase) ||
@@ -1426,27 +1426,9 @@ void_inplace(BAT *b, oid id, const void *val, bool force)
 		GDKerror("void_inplace: id out of range\n");
 		return GDK_FAIL;
 	}
-	if (b->tunique && BUNfnd(b, val) != BUN_NONE)
-		return GDK_SUCCEED;
 	if (b->ttype == TYPE_void)
 		return GDK_SUCCEED;
 	return BUNinplace(b, id - b->hseqbase, val, force);
-}
-
-gdk_return
-void_replace_bat(BAT *b, BAT *p, BAT *u, bool force)
-{
-	BUN r, s;
-	BATiter uvi = bat_iterator(u);
-
-	BATloop(u, r, s) {
-		oid updid = BUNtoid(p, r);
-		const void *val = BUNtail(uvi, r);
-
-		if (void_inplace(b, updid, val, force) != GDK_SUCCEED)
-			return GDK_FAIL;
-	}
-	return GDK_SUCCEED;
 }
 
 /*
@@ -1480,9 +1462,14 @@ BUNfnd(BAT *b, const void *v)
 	BUN r = BUN_NONE;
 	BATiter bi;
 
-	BATcheck(b, "BUNfnd", 0);
+	BATcheck(b, "BUNfnd", BUN_NONE);
 	if (!v)
 		return r;
+	if (b->ttype == TYPE_void && b->tvheap != NULL) {
+		struct canditer ci;
+		canditer_init(&ci, NULL, b);
+		return canditer_search(&ci, * (const oid *) v, false);
+	}
 	if (BATtvoid(b))
 		return BUNfndVOID(b, v);
 	if (!BATcheckhash(b)) {
@@ -1595,7 +1582,6 @@ BATkey(BAT *b, bool flag)
 {
 	BATcheck(b, "BATkey", GDK_FAIL);
 	assert(b->batCacheid > 0);
-	assert(!b->tunique || flag);
 	if (b->ttype == TYPE_void) {
 		if (BATtdense(b) && !flag) {
 			GDKerror("BATkey: dense column must be unique.\n");
@@ -1833,6 +1819,10 @@ backup_new(Heap *hp, int lockbat)
 	/* check for an existing X.new in BATDIR, BAKDIR and SUBDIR */
 	batpath = GDKfilepath(hp->farmid, BATDIR, hp->filename, ".new");
 	bakpath = GDKfilepath(hp->farmid, BAKDIR, hp->filename, ".new");
+	if (batpath == NULL || bakpath == NULL) {
+		ret = -1;
+		goto bailout;
+	}
 	batret = stat(batpath, &st);
 	bakret = stat(bakpath, &st);
 
@@ -1842,13 +1832,14 @@ backup_new(Heap *hp, int lockbat)
 		if ((ret = rename(batpath, bakpath)) < 0)
 			GDKsyserror("backup_new: rename %s to %s failed\n",
 				    batpath, bakpath);
-		IODEBUG fprintf(stderr, "#rename(%s,%s) = %d\n", batpath, bakpath, ret);
+		TRC_DEBUG(IO_, "rename(%s,%s) = %d\n", batpath, bakpath, ret);
 	} else if (batret == 0) {
 		/* there is a backup already; just remove the X.new */
 		if ((ret = remove(batpath)) != 0)
 			GDKsyserror("backup_new: remove %s failed\n", batpath);
-		IODEBUG fprintf(stderr, "#remove(%s) = %d\n", batpath, ret);
+		TRC_DEBUG(IO_, "remove(%s) = %d\n", batpath, ret);
 	}
+  bailout:
 	GDKfree(batpath);
 	GDKfree(bakpath);
 	for (xx = lockbat; xx >= 0; xx--)
@@ -1955,7 +1946,7 @@ BATsetaccess(BAT *b, restrict_t newmode)
 		storage_t b1, b3 = STORE_MEM;
 
 		if (b->batSharecnt && newmode != BAT_READ) {
-			BATDEBUG THRprintf(GDKout, "#BATsetaccess: %s has %d views; try creating a copy\n", BATgetId(b), b->batSharecnt);
+			TRC_DEBUG(BAT_, "%s has %d views; try creating a copy\n", BATgetId(b), b->batSharecnt);
 			GDKerror("BATsetaccess: %s has %d views\n",
 				 BATgetId(b), b->batSharecnt);
 			return GDK_FAIL;
@@ -2035,47 +2026,45 @@ BATgetaccess(BAT *b)
 	} while (0)
 
 gdk_return
-BATmode(BAT *b, int mode)
+BATmode(BAT *b, bool transient)
 {
 	BATcheck(b, "BATmode", GDK_FAIL);
 
 	/* can only make a bat PERSISTENT if its role is already
 	 * PERSISTENT */
-	assert(mode == PERSISTENT || mode == TRANSIENT);
-	assert(mode == TRANSIENT || b->batRole == PERSISTENT);
+	assert(transient || b->batRole == PERSISTENT);
 
-	if (b->batRole == TRANSIENT && mode != TRANSIENT) {
+	if (b->batRole == TRANSIENT && !transient) {
 		GDKerror("cannot change mode of BAT in TRANSIENT farm.\n");
 		return GDK_FAIL;
 	}
 
-	if (mode != b->batPersistence) {
+	if (transient != b->batTransient) {
 		bat bid = b->batCacheid;
 
-		if (mode == PERSISTENT) {
+		if (!transient) {
 			check_type(b->ttype);
 		}
-		BBP_dirty = true;
 
-		if (mode == PERSISTENT && isVIEW(b)) {
+		if (!transient && isVIEW(b)) {
 			if (VIEWreset(b) != GDK_SUCCEED) {
 				return GDK_FAIL;
 			}
 		}
 		/* persistent BATs get a logical reference */
-		if (mode == PERSISTENT) {
+		if (!transient) {
 			BBPretain(bid);
-		} else if (b->batPersistence == PERSISTENT) {
+		} else if (!b->batTransient) {
 			BBPrelease(bid);
 		}
 		MT_lock_set(&GDKswapLock(bid));
-		if (mode == PERSISTENT) {
+		if (!transient) {
 			if (!(BBP_status(bid) & BBPDELETED))
 				BBP_status_on(bid, BBPNEW, "BATmode");
 			else
 				BBP_status_on(bid, BBPEXISTING, "BATmode");
 			BBP_status_off(bid, BBPDELETED, "BATmode");
-		} else if (b->batPersistence == PERSISTENT) {
+		} else if (!b->batTransient) {
 			if (!(BBP_status(bid) & BBPNEW))
 				BBP_status_on(bid, BBPDELETED, "BATmode");
 			BBP_status_off(bid, BBPPERSISTENT, "BATmode");
@@ -2083,7 +2072,7 @@ BATmode(BAT *b, int mode)
 		/* session bats or persistent bats that did not
 		 * witness a commit yet may have been saved */
 		if (b->batCopiedtodisk) {
-			if (mode == PERSISTENT) {
+			if (!transient) {
 				BBP_status_off(bid, BBPTMP, "BATmode");
 			} else {
 				/* TMcommit must remove it to
@@ -2091,7 +2080,7 @@ BATmode(BAT *b, int mode)
 				BBP_status_on(bid, BBPTMP, "BATmode");
 			}
 		}
-		b->batPersistence = mode;
+		b->batTransient = transient;
 		MT_lock_unset(&GDKswapLock(bid));
 	}
 	return GDK_SUCCEED;
@@ -2103,8 +2092,8 @@ BATmode(BAT *b, int mode)
 
 #ifdef NDEBUG
 /* assertions are disabled, turn failing tests into a message */
-#undef assert
-#define assert(test)	((void) ((test) || fprintf(stderr, "!WARNING: %s:%d: assertion `%s' failed\n", __FILE__, __LINE__, #test)))
+//#undef assert
+//#define assert(test)	((void) ((test) || TRC_ERROR(BAT_, "Assertion `%s' failed\n", #test)))
 #endif
 
 /* Assert that properties are set correctly.
@@ -2136,11 +2125,6 @@ BATmode(BAT *b, int mode)
  * nokey	Pair of BUN positions that proof not all values are
  *		distinct (i.e. values at given locations are equal).
  *
- * In addition there is a property "unique" that, when set, indicates
- * that values must be kept unique (and hence that the "key" property
- * must be set).  This property is only used when changing (adding,
- * replacing) values.
- *
  * Note that the functions BATtseqbase and BATkey also set more
  * properties than you might suspect.  When setting properties on a
  * newly created and filled BAT, you may want to first make sure the
@@ -2151,7 +2135,6 @@ BATmode(BAT *b, int mode)
 void
 BATassertProps(BAT *b)
 {
-	unsigned bbpstatus;
 	BATiter bi = bat_iterator(b);
 	BUN p, q;
 	int (*cmpf)(const void *, const void *);
@@ -2167,7 +2150,9 @@ BATassertProps(BAT *b)
 	assert(b->hseqbase <= GDK_oid_max); /* non-nil seqbase */
 	assert(b->hseqbase + BATcount(b) <= GDK_oid_max);
 
-	bbpstatus = BBP_status(b->batCacheid);
+#ifndef NDEBUG
+	unsigned bbpstatus = BBP_status(b->batCacheid);
+#endif
 	/* only at most one of BBPDELETED, BBPEXISTING, BBPNEW may be set */
 	assert(((bbpstatus & BBPDELETED) != 0) +
 	       ((bbpstatus & BBPEXISTING) != 0) +
@@ -2177,7 +2162,6 @@ BATassertProps(BAT *b)
 	assert(b->ttype >= TYPE_void);
 	assert(b->ttype < GDKatomcnt);
 	assert(b->ttype != TYPE_bat);
-	assert(!b->tunique || b->tkey); /* if unique, then key */
 	assert(isVIEW(b) ||
 	       b->ttype == TYPE_void ||
 	       BBPfarms[b->theap.farmid].roles & (1 << b->batRole));
@@ -2218,10 +2202,31 @@ BATassertProps(BAT *b)
 		assert(b->twidth == 0);
 		assert(b->tsorted);
 		if (is_oid_nil(b->tseqbase)) {
+			assert(b->tvheap == NULL);
 			assert(BATcount(b) == 0 || !b->tnonil);
 			assert(BATcount(b) <= 1 || !b->tkey);
 			assert(b->trevsorted);
 		} else {
+			if (b->tvheap != NULL) {
+				/* candidate list with exceptions */
+				assert(b->batRole == TRANSIENT);
+				assert(b->tvheap->free <= b->tvheap->size);
+				assert(b->tvheap->free % SIZEOF_OID == 0);
+				if (b->tvheap->free > 0) {
+#ifndef NDEBUG
+					const oid *oids = (const oid *) b->tvheap->base;
+#endif
+					q = b->tvheap->free / SIZEOF_OID;
+					assert(oids != NULL);
+					assert(b->tseqbase + BATcount(b) + q <= GDK_oid_max);
+					/* exceptions within range */
+					assert(oids[0] >= b->tseqbase);
+					assert(oids[q - 1] < b->tseqbase + BATcount(b) + q);
+					/* exceptions sorted */
+					for (p = 1; p < q; p++)
+						assert(oids[p - 1] < oids[p]);
+				}
+			}
 			assert(b->tseqbase + b->batCount <= GDK_oid_max);
 			assert(BATcount(b) == 0 || !b->tnil);
 			assert(BATcount(b) <= 1 || !b->trevsorted);
@@ -2237,7 +2242,9 @@ BATassertProps(BAT *b)
 		assert(b->tkey);
 		assert(b->tnonil);
 		if ((q = b->batCount) != 0) {
+#ifndef NDEBUG
 			const oid *o = (const oid *) Tloc(b, 0);
+#endif
 			assert(*o == b->tseqbase);
 			for (p = 1; p < q; p++)
 				assert(o[p - 1] + 1 == o[p]);
@@ -2357,27 +2364,29 @@ BATassertProps(BAT *b)
 			BUN mask;
 
 			if ((hs = GDKzalloc(sizeof(Hash))) == NULL) {
-				fprintf(stderr,
-					"#BATassertProps: cannot allocate "
-					"hash table\n");
+				TRC_ERROR(BAT_, "Cannot allocate hash table\n");
 				goto abort_check;
 			}
-			snprintf(hs->heap.filename, sizeof(hs->heap.filename),
-				 "%s.hash%d", nme, THRgettid());
+			if (snprintf(hs->heaplink.filename, sizeof(hs->heaplink.filename), "%s.thshprpl%x", nme, THRgettid()) >= (int) sizeof(hs->heaplink.filename) ||
+			    snprintf(hs->heapbckt.filename, sizeof(hs->heapbckt.filename), "%s.thshprpb%x", nme, THRgettid()) >= (int) sizeof(hs->heapbckt.filename)) {
+				GDKfree(hs);
+				TRC_ERROR(BAT_, "Heap filename is too large\n");
+				goto abort_check;
+			}
 			if (ATOMsize(b->ttype) == 1)
 				mask = (BUN) 1 << 8;
 			else if (ATOMsize(b->ttype) == 2)
 				mask = (BUN) 1 << 16;
 			else
 				mask = HASHmask(b->batCount);
-			if ((hs->heap.farmid = BBPselectfarm(TRANSIENT, b->ttype,
-							hashheap)) < 0 ||
+			if ((hs->heaplink.farmid = BBPselectfarm(
+				     TRANSIENT, b->ttype, hashheap)) < 0 ||
+			    (hs->heapbckt.farmid = BBPselectfarm(
+				    TRANSIENT, b->ttype, hashheap)) < 0 ||
 			    HASHnew(hs, b->ttype, BUNlast(b),
-				    mask, BUN_NONE) != GDK_SUCCEED) {
+				    mask, BUN_NONE, false) != GDK_SUCCEED) {
 				GDKfree(hs);
-				fprintf(stderr,
-					"#BATassertProps: cannot allocate "
-					"hash table\n");
+				TRC_ERROR(BAT_, "Cannot allocate hash table\n");
 				goto abort_check;
 			}
 			BATloop(b, p, q) {
@@ -2396,17 +2405,18 @@ BATassertProps(BAT *b)
 					seenmin |= cmp == 0;
 				}
 				prb = HASHprobe(hs, valp);
-				for (hb = HASHget(hs,prb);
+				for (hb = HASHget(hs, prb);
 				     hb != HASHnil(hs);
-				     hb = HASHgetlink(hs,hb))
+				     hb = HASHgetlink(hs, hb))
 					if (cmpf(valp, BUNtail(bi, hb)) == 0)
 						assert(!b->tkey);
-				HASHputlink(hs,p, HASHget(hs,prb));
-				HASHput(hs,prb,p);
+				HASHputlink(hs, p, HASHget(hs, prb));
+				HASHput(hs, prb, p);
 				assert(!b->tnonil || !isnil);
 				seennil |= isnil;
 			}
-			HEAPfree(&hs->heap, true);
+			HEAPfree(&hs->heaplink, true);
+			HEAPfree(&hs->heapbckt, true);
 			GDKfree(hs);
 		}
 	  abort_check:

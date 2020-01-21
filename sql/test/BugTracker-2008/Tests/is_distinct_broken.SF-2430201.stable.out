@@ -14,7 +14,6 @@ stdout of test 'is_distinct_broken.SF-2430201` in directory 'sql/test/BugTracker
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:35778/
 # MonetDB/SQL module v2.27.0 loaded
 
-Ready.
 # falling back to direct mode 
 # falling back to direct mode 
 # falling back to direct mode 
@@ -43,8 +42,8 @@ Ready.
 [ 24644162	]
 #drop table way_tags_2430201;
 #select distinct (select 10 union all select 10);
-% .L12 # table_name
-% L3 # name
+% .%7 # table_name
+% %2 # name
 % tinyint # type
 % 2 # length
 [ 10	]

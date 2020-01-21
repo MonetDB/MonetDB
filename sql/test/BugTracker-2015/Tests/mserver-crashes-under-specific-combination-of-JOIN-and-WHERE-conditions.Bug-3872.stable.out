@@ -21,7 +21,6 @@ stdout of test 'mserver-crashes-under-specific-combination-of-JOIN-and-WHERE-con
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql
@@ -80,8 +79,8 @@ Ready.
 #	WHERE A.startdate > '2010-10-01'
 #)
 #AND A.startdate >= B.startdate;
-% sys.L10 # table_name
-% L7 # name
+% sys.%3 # table_name
+% %3 # name
 % bigint # type
 % 1 # length
 [ 0	]

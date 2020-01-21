@@ -3,15 +3,16 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /* author M.Kersten
- * This optimizer prepares the code for workload-capture-replay processing.
+ * This optimizer prepares the code for workload-capture-replay processing
+ * by injection of the proper calls.
  */
 #include "monetdb_config.h"
 #include "opt_wlc.h"
-
+#include "wlc.h"
 
 str
 OPTwlcImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -20,6 +21,7 @@ OPTwlcImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	InstrPtr *old;
 	lng usec = GDKusec();
 	char buf[256];
+	str msg = MAL_SUCCEED;
 
 	(void) pci;
 	(void) cntxt;
@@ -59,7 +61,7 @@ OPTwlcImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	// Now optimize the code
 	if (newMalBlkStmt(mb,mb->ssize + updates) < 0)
-		return createException(MAL, "wlcr.optimizer", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		return createException(MAL, "wlcr.optimizer", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	for (i = 0; i < limit; i++) {
 		p = old[i];
 		pushInstruction(mb,p);
@@ -72,7 +74,7 @@ OPTwlcImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				mb->stmt = old;
 				mb->stop = limit;
 				mb->ssize = slimit;
-				return createException(MAL, "wlcr.optimizer", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				return createException(MAL, "wlcr.optimizer", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 			setModuleId(q, wlcRef);
 			setFunctionId(q,queryRef);
@@ -101,7 +103,7 @@ OPTwlcImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					mb->stmt = old;
 					mb->stop = limit;
 					mb->ssize = slimit;
-					return createException(MAL, "wlcr.optimizer", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+					return createException(MAL, "wlcr.optimizer", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				}
 				setModuleId(q, wlcRef);
 				for( j=0; j< p->retc; j++)
@@ -125,7 +127,7 @@ OPTwlcImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					mb->stmt = old;
 					mb->stop = limit;
 					mb->ssize = slimit;
-					return createException(MAL, "wlcr.optimizer", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+					return createException(MAL, "wlcr.optimizer", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				}
 				delArgument(q, q->retc);
 				setModuleId(q, wlcRef);
@@ -141,16 +143,17 @@ OPTwlcImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	GDKfree(old);
 
     /* Defense line against incorrect plans */
-	chkTypes(cntxt->usermodule, mb, FALSE);
-	chkFlow(mb);
-	//chkDeclarations(mb);
+	msg = chkTypes(cntxt->usermodule, mb, FALSE);
+	if (!msg)
+		msg = chkFlow(mb);
+	//if (!msg) 
+	//	msg = chkDeclarations(mb);
     /* keep all actions taken as a post block comment */
-#ifdef _WLCR_DEBUG_
-	printFunction(cntxt->fdout,mb, 0, LIST_MAL_ALL);
-#endif
 
 wrapup:
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","wlc",updates,GDKusec() - usec);
     newComment(mb,buf);
-	return MAL_SUCCEED;
+	if( updates > 0)
+		addtoMalBlkHistory(mb);
+	return msg;
 }

@@ -19,7 +19,6 @@ stdout of test 'pyapi_pandas` in directory 'sql/backends/monet5/UDF/pyapi` itsel
 # MonetDB/Python module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 19:41:50 >  
 # 19:41:50 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-7261" "--port=31934"

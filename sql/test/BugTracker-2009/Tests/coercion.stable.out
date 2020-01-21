@@ -14,7 +14,6 @@ stdout of test 'coercion` in directory 'sql/test/BugTracker-2009` itself:
 # Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:35493/
 # MonetDB/SQL module v2.28.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;
@@ -26,8 +25,8 @@ Ready.
 
 [ 2	]
 #select f(i) from t;
-% sys.L2 # table_name
-% L2 # name
+% sys. # table_name
+% %1 # name
 % boolean # type
 % 5 # length
 [ true	]

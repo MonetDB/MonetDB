@@ -13,7 +13,6 @@ stdout of test 'not` in directory 'sql/test/bugs` itself:
 # MonetDB/SQL module v2.19.0 loaded
 
 
-Ready.
 
 
 # 14:04:18 >  
@@ -27,8 +26,8 @@ Ready.
 % 5 # length
 [ false	]
 #select not n.alive from nntest n;
-% sys.L2 # table_name
-% L2 # name
+% sys. # table_name
+% %1 # name
 % boolean # type
 % 5 # length
 [ true	]
@@ -39,8 +38,8 @@ Ready.
 % 5 # length
 [ false	]
 #select not not not n.alive from nntest n;
-% sys.L2 # table_name
-% L2 # name
+% sys. # table_name
+% %1 # name
 % boolean # type
 % 5 # length
 [ true	]

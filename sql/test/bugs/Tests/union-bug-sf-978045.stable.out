@@ -13,7 +13,6 @@ stdout of test 'union-bug-sf-978045` in directory 'sql/test/bugs` itself:
 # Listening for connection requests on mapi:monetdb://alviss.ins.cwi.nl:30364/
 # MonetDB/SQL module v2.24.1 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;
@@ -25,7 +24,7 @@ Ready.
 
 [ 3	]
 #select name from t978045 union select name from t978045;
-% .L7 # table_name
+% .%5 # table_name
 % name # name
 % varchar # type
 % 6 # length
@@ -33,7 +32,7 @@ Ready.
 [ "fabian"	]
 [ "martin"	]
 #select name from t978045 union all select name from t978045;
-% .L7 # table_name
+% .%5 # table_name
 % name # name
 % varchar # type
 % 6 # length

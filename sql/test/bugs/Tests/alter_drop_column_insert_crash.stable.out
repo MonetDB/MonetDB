@@ -13,7 +13,6 @@ stdout of test 'alter_drop_column_insert_crash` in directory 'sql/test/bugs` its
 # Listening for connection requests on mapi:monetdb://koala.ins.cwi.nl:39781/
 # MonetDB/SQL module v2.21.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

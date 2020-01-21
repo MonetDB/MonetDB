@@ -18,7 +18,6 @@ stdout of test 'int2` in directory 'sql/test/pg_regress` itself:
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 17:11:19 >  
 # 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
@@ -43,7 +42,7 @@ Ready.
 #INSERT INTO INT2_TBL(f1) VALUES ('-32767');
 [ 1 ]
 #SELECT '' AS five, * FROM INT2_TBL;
-% .L2,	sys.int2_tbl # table_name
+% .,	sys.int2_tbl # table_name
 % five,	f1 # name
 % char,	smallint # type
 % 0,	6 # length
@@ -53,7 +52,7 @@ Ready.
 [ "",	32767 ]
 [ "",	-32767 ]
 #SELECT '' AS four, i.* FROM INT2_TBL i WHERE i.f1 <> cast('0' as smallint);
-% .L3,	sys.i # table_name
+% .,	sys.i # table_name
 % four,	f1 # name
 % char,	smallint # type
 % 0,	6 # length
@@ -62,7 +61,7 @@ Ready.
 [ "",	32767 ]
 [ "",	-32767 ]
 #SELECT '' AS four, i.* FROM INT2_TBL i WHERE i.f1 <> cast('0' as integer);
-% .L3,	sys.i # table_name
+% .,	sys.i # table_name
 % four,	f1 # name
 % char,	smallint # type
 % 0,	6 # length
@@ -71,33 +70,33 @@ Ready.
 [ "",	32767 ]
 [ "",	-32767 ]
 #SELECT '' AS one, i.* FROM INT2_TBL i WHERE i.f1 = cast('0' as smallint);
-% .L3,	sys.i # table_name
+% .,	sys.i # table_name
 % one,	f1 # name
 % char,	smallint # type
 % 0,	1 # length
 [ "",	0	]
 #SELECT '' AS one, i.* FROM INT2_TBL i WHERE i.f1 = cast('0' as integer);
-% .L3,	sys.i # table_name
+% .,	sys.i # table_name
 % one,	f1 # name
 % char,	smallint # type
 % 0,	1 # length
 [ "",	0	]
 #SELECT '' AS two, i.* FROM INT2_TBL i WHERE i.f1 < cast('0' as smallint);
-% .L3,	sys.i # table_name
+% .,	sys.i # table_name
 % two,	f1 # name
 % char,	smallint # type
 % 0,	6 # length
 [ "",	-1234 ]
 [ "",	-32767 ]
 #SELECT '' AS two, i.* FROM INT2_TBL i WHERE i.f1 < cast('0' as integer);
-% .L3,	sys.i # table_name
+% .,	sys.i # table_name
 % two,	f1 # name
 % char,	smallint # type
 % 0,	6 # length
 [ "",	-1234 ]
 [ "",	-32767 ]
 #SELECT '' AS three, i.* FROM INT2_TBL i WHERE i.f1 <= cast('0' as smallint);
-% .L3,	sys.i # table_name
+% .,	sys.i # table_name
 % three,	f1 # name
 % char,	smallint # type
 % 0,	6 # length
@@ -105,7 +104,7 @@ Ready.
 [ "",	-1234 ]
 [ "",	-32767 ]
 #SELECT '' AS three, i.* FROM INT2_TBL i WHERE i.f1 <= cast('0' as integer);
-% .L3,	sys.i # table_name
+% .,	sys.i # table_name
 % three,	f1 # name
 % char,	smallint # type
 % 0,	6 # length
@@ -113,21 +112,21 @@ Ready.
 [ "",	-1234 ]
 [ "",	-32767 ]
 #SELECT '' AS two, i.* FROM INT2_TBL i WHERE i.f1 > cast('0' as smallint);
-% .L3,	sys.i # table_name
+% .,	sys.i # table_name
 % two,	f1 # name
 % char,	smallint # type
 % 0,	5 # length
 [ "",	1234	]
 [ "",	32767 ]
 #SELECT '' AS two, i.* FROM INT2_TBL i WHERE i.f1 > cast('0' as integer);
-% .L3,	sys.i # table_name
+% .,	sys.i # table_name
 % two,	f1 # name
 % char,	smallint # type
 % 0,	5 # length
 [ "",	1234	]
 [ "",	32767 ]
 #SELECT '' AS three, i.* FROM INT2_TBL i WHERE i.f1 >= cast('0' as smallint);
-% .L3,	sys.i # table_name
+% .,	sys.i # table_name
 % three,	f1 # name
 % char,	smallint # type
 % 0,	5 # length
@@ -135,7 +134,7 @@ Ready.
 [ "",	1234	]
 [ "",	32767 ]
 #SELECT '' AS three, i.* FROM INT2_TBL i WHERE i.f1 >= cast('0' as integer);
-% .L3,	sys.i # table_name
+% .,	sys.i # table_name
 % three,	f1 # name
 % char,	smallint # type
 % 0,	5 # length
@@ -143,13 +142,13 @@ Ready.
 [ "",	1234	]
 [ "",	32767 ]
 #SELECT '' AS one, i.* FROM INT2_TBL i WHERE (i.f1 % cast('2' as smallint)) = cast('1' as smallint);
-% .L4,	sys.i # table_name
+% .,	sys.i # table_name
 % one,	f1 # name
 % char,	smallint # type
 % 0,	5 # length
 [ "",	32767 ]
 #SELECT '' AS three, i.* FROM INT2_TBL i WHERE (i.f1 % cast('2' as integer)) = cast('0' as smallint);
-% .L4,	sys.i # table_name
+% .,	sys.i # table_name
 % three,	f1 # name
 % char,	smallint # type
 % 0,	5 # length
@@ -157,7 +156,7 @@ Ready.
 [ "",	1234	]
 [ "",	-1234 ]
 #SELECT '' AS five, i.f1, i.f1 * cast('2' as smallint) AS x FROM INT2_TBL i;
-% .L2,	sys.i,	sys.L6 # table_name
+% .,	sys.i,	sys. # table_name
 % five,	f1,	x # name
 % char,	smallint,	bigint # type
 % 0,	6,	6 # length
@@ -168,7 +167,7 @@ Ready.
 [ "",	-32767,	-65534	]
 #SELECT '' AS five, i.f1, i.f1 * cast('2' as smallint) AS x FROM INT2_TBL i
 #WHERE abs(f1) < 16384;
-% .L2,	sys.i,	sys.L6 # table_name
+% .,	sys.i,	sys. # table_name
 % five,	f1,	x # name
 % char,	smallint,	bigint # type
 % 0,	5,	5 # length
@@ -176,7 +175,7 @@ Ready.
 [ "",	1234,	2468	]
 [ "",	-1234,	-2468 ]
 #SELECT '' AS five, i.f1, i.f1 * cast('2' as integer) AS x FROM INT2_TBL i;
-% .L2,	sys.i,	sys.L6 # table_name
+% .,	sys.i,	sys. # table_name
 % five,	f1,	x # name
 % char,	smallint,	bigint # type
 % 0,	6,	6 # length
@@ -186,7 +185,7 @@ Ready.
 [ "",	32767,	65534 ]
 [ "",	-32767,	-65534 ]
 #SELECT '' AS five, i.f1, i.f1 + cast('2' as smallint) AS x FROM INT2_TBL i;
-% .L2,	sys.i,	sys.L6 # table_name
+% .,	sys.i,	sys. # table_name
 % five,	f1,	x # name
 % char,	smallint,	int # type
 % 0,	6,	6 # length
@@ -197,7 +196,7 @@ Ready.
 [ "",	-32767,	-32765	]
 #SELECT '' AS five, i.f1, i.f1 + cast('2' as smallint) AS x FROM INT2_TBL i
 #WHERE f1 < 32766;
-% .L2,	sys.i,	sys.L6 # table_name
+% .,	sys.i,	sys. # table_name
 % five,	f1,	x # name
 % char,	smallint,	int # type
 % 0,	6,	6 # length
@@ -206,7 +205,7 @@ Ready.
 [ "",	-1234,	-1232 ]
 [ "",	-32767,	-32765 ]
 #SELECT '' AS five, i.f1, i.f1 + cast('2' as integer) AS x FROM INT2_TBL i;
-% .L2,	sys.i,	sys.L6 # table_name
+% .,	sys.i,	sys. # table_name
 % five,	f1,	x # name
 % char,	smallint,	bigint # type
 % 0,	6,	6 # length
@@ -216,7 +215,7 @@ Ready.
 [ "",	32767,	32769 ]
 [ "",	-32767,	-32765 ]
 #SELECT '' AS five, i.f1, i.f1 - cast('2' as smallint) AS x FROM INT2_TBL i;
-% .L2,	sys.i,	sys.L6 # table_name
+% .,	sys.i,	sys. # table_name
 % five,	f1,	x # name
 % char,	smallint,	int # type
 % 0,	6,	6 # length
@@ -227,7 +226,7 @@ Ready.
 [ "",	-32767,	-32769	]
 #SELECT '' AS five, i.f1, i.f1 - cast('2' as smallint) AS x FROM INT2_TBL i
 #WHERE f1 > -32767;
-% .L2,	sys.i,	sys.L6 # table_name
+% .,	sys.i,	sys. # table_name
 % five,	f1,	x # name
 % char,	smallint,	int # type
 % 0,	5,	5 # length
@@ -236,7 +235,7 @@ Ready.
 [ "",	-1234,	-1236 ]
 [ "",	32767,	32765 ]
 #SELECT '' AS five, i.f1, i.f1 - cast('2' as integer) AS x FROM INT2_TBL i;
-% .L2,	sys.i,	sys.L6 # table_name
+% .,	sys.i,	sys. # table_name
 % five,	f1,	x # name
 % char,	smallint,	bigint # type
 % 0,	6,	6 # length
@@ -246,7 +245,7 @@ Ready.
 [ "",	32767,	32765 ]
 [ "",	-32767,	-32769 ]
 #SELECT '' AS five, i.f1, i.f1 / cast('2' as smallint) AS x FROM INT2_TBL i;
-% .L2,	sys.i,	sys.L6 # table_name
+% .,	sys.i,	sys. # table_name
 % five,	f1,	x # name
 % char,	smallint,	smallint # type
 % 0,	6,	6 # length
@@ -256,7 +255,7 @@ Ready.
 [ "",	32767,	16383 ]
 [ "",	-32767,	-16383 ]
 #SELECT '' AS five, i.f1, i.f1 / cast('2' as integer) AS x FROM INT2_TBL i;
-% .L2,	sys.i,	sys.L6 # table_name
+% .,	sys.i,	sys. # table_name
 % five,	f1,	x # name
 % char,	smallint,	int # type
 % 0,	6,	6 # length

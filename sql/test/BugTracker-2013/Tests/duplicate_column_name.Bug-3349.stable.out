@@ -19,7 +19,6 @@ stdout of test 'duplicate_column_name.Bug-3349` in directory 'sql/test/BugTracke
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 10:39:09 >  
 # 10:39:09 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-28423" "--port=32749"
@@ -30,6 +29,21 @@ Ready.
 [ 1	]
 #insert into test (x, y) VALUES (1, 2);
 [ 1	]
+#SELECT *
+#FROM (
+#	    SELECT a1.x, a1.y, a2.x, a2.y
+#	    FROM ( SELECT * FROM test) AS a1 JOIN 
+#		 ( SELECT * FROM test) AS a2 
+#		ON a1.x = a2.x
+#	) AS t;
+% sys.t,	sys.t,	sys.t,	sys.t # table_name
+% x,	y,	x,	y # name
+% int,	int,	int,	int # type
+% 1,	1,	1,	1 # length
+[ 1,	1,	1,	1	]
+[ 1,	1,	1,	1	]
+[ 1,	2,	1,	2	]
+[ 1,	2,	1,	2	]
 #SELECT *
 #FROM (
 #	SELECT a1.x AS x1, a1.y AS y1, a2.x AS x2, a2.y AS y2

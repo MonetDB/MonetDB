@@ -22,7 +22,6 @@ stdout of test 'createSetUp` in directory 'sql/test/Users` itself:
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 23:01:31 >  
 # 23:01:31 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-7070" "--port=36242"

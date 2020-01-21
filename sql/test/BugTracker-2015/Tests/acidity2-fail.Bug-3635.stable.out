@@ -19,7 +19,6 @@ stdout of test 'acidity2-fail.Bug-3635` in directory 'sql/test/BugTracker-2015` 
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 14:09:16 >  
 # 14:09:16 >  "/usr/bin/python2" "acidity2-fail.Bug-3635.SQL.py" "acidity2-fail.Bug-3635"

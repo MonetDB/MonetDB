@@ -16,7 +16,6 @@ stdout of test 'Test_PSgeneratedkeys` in directory 'sql/jdbc/tests` itself:
 # Listening for connection requests on mapi:monetdb://volund.ins.cwi.nl:30090/
 # MonetDB/SQL module v2.40.0 loaded
 
-Ready.
 # SQL catalog created, loading sql scripts once
 
 

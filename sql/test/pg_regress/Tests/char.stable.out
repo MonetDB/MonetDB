@@ -14,7 +14,6 @@ stdout of test 'char` in directory 'sql/test/pg_regress` itself:
 # Listening for connection requests on mapi:monetdb://pegasus.ins.cwi.nl:38104/
 # MonetDB/SQL module v2.31.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;
@@ -35,7 +34,7 @@ Ready.
 #-- fixed-length by value
 #-- internally passed by value if <= 4 bytes in storage
 #SELECT cast('c' as char) = cast('c' as char) AS "true";
-% .L4 # table_name
+% . # table_name
 % true # name
 % boolean # type
 % 5 # length
@@ -56,7 +55,7 @@ Ready.
 #INSERT INTO CHAR_TBL (f1) VALUES ('cd');
 #INSERT INTO CHAR_TBL (f1) VALUES ('c     ');
 #SELECT '' AS seven, CHAR_TBL.* FROM CHAR_TBL;
-% .L2,	sys.char_tbl # table_name
+% .,	sys.char_tbl # table_name
 % seven,	f1 # name
 % char,	char # type
 % 0,	1 # length
@@ -69,7 +68,7 @@ Ready.
 #SELECT '' AS six, c.*
 #   FROM CHAR_TBL c
 #   WHERE c.f1 <> 'a';
-% .L2,	sys.c # table_name
+% .,	sys.c # table_name
 % six,	f1 # name
 % char,	char # type
 % 0,	1 # length
@@ -81,7 +80,7 @@ Ready.
 #SELECT '' AS one, c.*
 #   FROM CHAR_TBL c
 #   WHERE c.f1 = 'a';
-% .L2,	sys.c # table_name
+% .,	sys.c # table_name
 % one,	f1 # name
 % char,	char # type
 % 0,	1 # length
@@ -89,7 +88,7 @@ Ready.
 #SELECT '' AS five, c.*
 #   FROM CHAR_TBL c
 #   WHERE c.f1 < 'a';
-% .L2,	sys.c # table_name
+% .,	sys.c # table_name
 % five,	f1 # name
 % char,	char # type
 % 0,	1 # length
@@ -101,7 +100,7 @@ Ready.
 #SELECT '' AS six, c.*
 #   FROM CHAR_TBL c
 #   WHERE c.f1 <= 'a';
-% .L2,	sys.c # table_name
+% .,	sys.c # table_name
 % six,	f1 # name
 % char,	char # type
 % 0,	1 # length
@@ -114,14 +113,14 @@ Ready.
 #SELECT '' AS one, c.*
 #   FROM CHAR_TBL c
 #   WHERE c.f1 > 'a';
-% .L2,	sys.c # table_name
+% .,	sys.c # table_name
 % one,	f1 # name
 % char,	char # type
 % 0,	1 # length
 #SELECT '' AS two, c.*
 #   FROM CHAR_TBL c
 #   WHERE c.f1 >= 'a';
-% .L2,	sys.c # table_name
+% .,	sys.c # table_name
 % two,	f1 # name
 % char,	char # type
 % 0,	1 # length
@@ -137,7 +136,7 @@ Ready.
 #INSERT INTO CHAR_TBL (f1) VALUES ('abcde');
 #INSERT INTO CHAR_TBL (f1) VALUES ('abcd    ');
 #SELECT '' AS four, CHAR_TBL.* FROM CHAR_TBL;
-% .L2,	sys.char_tbl # table_name
+% .,	sys.char_tbl # table_name
 % four,	f1 # name
 % char,	char # type
 % 0,	4 # length

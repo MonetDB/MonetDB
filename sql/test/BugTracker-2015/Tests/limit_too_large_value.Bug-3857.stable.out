@@ -23,7 +23,6 @@ stdout of test 'limit_too_large_value.Bug-3857` in directory 'sql/test/BugTracke
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 15:49:13 >  
 # 15:49:13 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-521" "--port=31933"

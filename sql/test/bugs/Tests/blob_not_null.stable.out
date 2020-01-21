@@ -13,7 +13,6 @@ stdout of test 'blob_not_null` in directory 'sql/test/bugs` itself:
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:34706/
 # MonetDB/SQL module v2.23.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

@@ -23,7 +23,6 @@ stdout of test 'mergejoin_NULL.Bug-3747` in directory 'sql/test/BugTracker-2015`
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 20:38:15 >  
 # 20:38:15 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23020" "--port=35242"

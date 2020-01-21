@@ -18,7 +18,6 @@ stdout of test 'file_s05` in directory 'sql/test/Via-m` itself:
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 10:49:48 >  
 # 10:49:48 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-5263" "--port=36838"
@@ -27,12 +26,6 @@ Ready.
 #declare video_sets_id1 integer;
 #set video_sets_id1 = -1234567890;
 #set video_sets_id1 = get_video_sets_id('fabchannel2007');
-#select video_sets_id1;
-% .L2 # table_name
-% L2 # name
-% int # type
-% 1 # length
-[ 1	]
 
 # 10:49:48 >  
 # 10:49:48 >  "Done."

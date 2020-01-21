@@ -38,7 +38,8 @@ QUERY = function foo();
         end foo;
 ERROR = !SyntaxException:parseError:io.printi;
         !SyntaxException:parseError:         ^'(' expected
-        !TypeException:user.foo[2]:'io.printi' undefined in:     io.printi();
+        !SyntaxException:parseError:end foo;
+        !SyntaxException:parseError:    ^non matching end label
 
 
 # 10:46:01 >  

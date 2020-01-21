@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "capi.h"
@@ -63,27 +63,26 @@ typedef struct _cached_functions {
 #define FUNCTION_CACHE_SIZE 128
 
 static cached_functions *function_cache[FUNCTION_CACHE_SIZE];
-static MT_Lock cache_lock;
+static MT_Lock cache_lock = MT_LOCK_INITIALIZER("cache_lock");
 static int cudf_initialized = 0;
 
 static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
-					bit grouped);
+					bool grouped);
 
 str CUDFevalStd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return CUDFeval(cntxt, mb, stk, pci, 0);
+	return CUDFeval(cntxt, mb, stk, pci, false);
 }
 
 str CUDFevalAggr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return CUDFeval(cntxt, mb, stk, pci, 1);
+	return CUDFeval(cntxt, mb, stk, pci, true);
 }
 
 str CUDFprelude(void *ret)
 {
 	(void)ret;
 	if (!cudf_initialized) {
-		MT_lock_init(&cache_lock, "cache_lock");
 		cudf_initialized = true;
 		option_enable_mprotect = GDKgetenv_istrue(mprotect_enableflag) || GDKgetenv_isyes(mprotect_enableflag);
 		option_enable_longjmp = GDKgetenv_istrue(longjmp_enableflag) || GDKgetenv_isyes(longjmp_enableflag);
@@ -222,7 +221,7 @@ static void *wrapped_GDK_zalloc_nojump(size_t size)
 }
 
 #define GENERATE_NUMERIC_IS_NULL(type, tpename) \
-	static int tpename##_is_null(type value) { return value == tpename##_nil; }
+	static int tpename##_is_null(type value) { return is_##tpename##_nil(value); }
 
 #define GENERATE_NUMERIC_INITIALIZE(type, tpename) \
 	static void tpename##_initialize(struct cudf_data_struct_##tpename *self,  \
@@ -258,26 +257,14 @@ static void *wrapped_GDK_zalloc_nojump(size_t size)
 		self->data = jump_GDK_malloc(count * sizeof(self->null_value));        \
 	}
 
-#define GENERATE_BASE_FUNCTIONS(tpe, tpename)                                  \
-	GENERATE_BASE_HEADERS(tpe, tpename);                                       \
-	static int tpename##_is_null(tpe value) { return value == tpename##_nil; }
-
 GENERATE_NUMERIC_ALL(bit, bit);
 GENERATE_NUMERIC_ALL(bte, bte);
 GENERATE_NUMERIC_ALL(sht, sht);
 GENERATE_NUMERIC_ALL(int, int);
 GENERATE_NUMERIC_ALL(lng, lng);
-GENERATE_NUMERIC_INITIALIZE(flt, flt);
-GENERATE_NUMERIC_INITIALIZE(dbl, dbl);
+GENERATE_NUMERIC_ALL(flt, flt);
+GENERATE_NUMERIC_ALL(dbl, dbl);
 GENERATE_NUMERIC_ALL(oid, oid);
-
-static int flt_is_null(flt value) {
-	return is_flt_nil(value);
-}
-
-static int dbl_is_null(dbl value) {
-	return is_dbl_nil(value);
-}
 
 GENERATE_BASE_HEADERS(char *, str);
 GENERATE_BASE_HEADERS(cudf_data_date, date);
@@ -362,15 +349,8 @@ static void blob_initialize(struct cudf_data_struct_blob *self,
 #define GENERATE_BAT_OUTPUT(tpe)                                               \
 	{                                                                          \
 		GENERATE_BAT_OUTPUT_BASE(tpe);                                         \
-		bat_data->null_value = (tpe)tpe##_nil;                                 \
+		bat_data->null_value = tpe##_nil;                                      \
 	}
-
-#define GENERATE_SCALAR_INPUT(tpe)                                             \
-	inputs[index] = GDKmalloc(sizeof(tpe));                                    \
-	if (!inputs[index]) {                                                      \
-		goto wrapup;                                                           \
-	}                                                                          \
-	*((tpe *)inputs[index]) = *((tpe *)getArgReference(stk, pci, i));
 
 const char *debug_flag = "capi_use_debug";
 const char *cc_flag = "capi_cc";
@@ -397,10 +377,10 @@ static timestamp timestamp_from_data(cudf_data_timestamp *ptr);
 static char valid_path_characters[] = "abcdefghijklmnopqrstuvwxyz";
 
 static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
-					bit grouped)
+					bool grouped)
 {
 	sql_func *sqlfun = NULL;
-	bit use_cpp = *((bit *)getArgReference(stk, pci, pci->retc + 1));
+	bit use_cpp = *getArgReference_bit(stk, pci, pci->retc + 1);
 	str exprStr = *getArgReference_str(stk, pci, pci->retc + 2);
 
 	const int ARG_OFFSET = 3;
@@ -495,12 +475,12 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 
 	if (!grouped) {
 		sql_subfunc *sqlmorefun =
-			(*(sql_subfunc **)getArgReference(stk, pci, pci->retc));
+			(*(sql_subfunc **)getArgReference_ptr(stk, pci, pci->retc));
 		if (sqlmorefun)
 			sqlfun =
-				(*(sql_subfunc **)getArgReference(stk, pci, pci->retc))->func;
+				(*(sql_subfunc **)getArgReference_ptr(stk, pci, pci->retc))->func;
 	} else {
-		sqlfun = *(sql_func **)getArgReference(stk, pci, pci->retc);
+		sqlfun = *(sql_func **)getArgReference_ptr(stk, pci, pci->retc);
 	}
 
 	funcname = sqlfun ? sqlfun->base.name : "yet_another_c_function";
@@ -582,8 +562,8 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	// begin the compilation phase
 	// first look up if we have already compiled this function
 	expression_hash = 0;
-	GDK_STRHASH(exprStr, expression_hash);
-	GDK_STRHASH(funcname, funcname_hash);
+	expression_hash = GDK_STRHASH(exprStr);
+	funcname_hash = GDK_STRHASH(funcname);
 	funcname_hash = funcname_hash % FUNCTION_CACHE_SIZE;
 	j = 0;
 	for (i = 0; i < (size_t)pci->argc; i++) {
@@ -679,7 +659,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				i + 1 - prefix_size);
 		memcpy(buf + prefix_size, SO_PREFIX, sizeof(char) * strlen(SO_PREFIX));
 		path =
-			GDKfilepath(0, BATDIR, buf, SO_EXT[0] == '.' ? SO_EXT + 1 : SO_EXT);
+			GDKfilepath(0, BATDIR, buf, SO_EXT[0] == '.' ? &SO_EXT[1] : SO_EXT);
 		if (!path) {
 			msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
 			goto wrapup;
@@ -693,7 +673,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
 			goto wrapup;
 		}
-		if (mkdir(deldirpath, 0755) < 0 && errno != EEXIST) {
+		if (mkdir(deldirpath, 0777) < 0 && errno != EEXIST) {
 			msg = createException(MAL, "cudf.eval",
 								  "cannot create directory %s\n", deldirpath);
 			goto wrapup;
@@ -719,9 +699,9 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		// this file contains the structures used for input/output arguments
 		ATTEMPT_TO_WRITE_TO_FILE(f, cheader_header_text);
 		// some monetdb-style typedefs to make it easier
-		ATTEMPT_TO_WRITE_TO_FILE(f, "typedef signed char bte;\n");
-		ATTEMPT_TO_WRITE_TO_FILE(f, "typedef short sht;\n");
-		ATTEMPT_TO_WRITE_TO_FILE(f, "typedef long long lng;\n");
+		ATTEMPT_TO_WRITE_TO_FILE(f, "typedef int8_t bte;\n");
+		ATTEMPT_TO_WRITE_TO_FILE(f, "typedef int16_t sht;\n");
+		ATTEMPT_TO_WRITE_TO_FILE(f, "typedef int64_t lng;\n");
 		ATTEMPT_TO_WRITE_TO_FILE(f, "typedef float flt;\n");
 		ATTEMPT_TO_WRITE_TO_FILE(f, "typedef double dbl;\n");
 		ATTEMPT_TO_WRITE_TO_FILE(f, "typedef char* str;\n");
@@ -966,9 +946,9 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		if (!isaBatType(bat_type)) {
 			void* input = NULL;
 			if (bat_type == TYPE_str) {
-				input = *((char**)getArgReference_str(stk, pci, i));
-			} else if (bat_type == TYPE_blob || bat_type == TYPE_sqlblob) {
-				input = *((blob**)getArgReference(stk, pci, i));
+				input = *getArgReference_str(stk, pci, i);
+			} else if (bat_type == TYPE_blob) {
+				input = *(blob**)getArgReference(stk, pci, i);
 			} else {
 				input = getArgReference(stk, pci, i);
 			}
@@ -1106,8 +1086,8 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			for (j = 0; j < bat_data->count; j++) {
 				data_from_timestamp(baseptr[j], bat_data->data + j);
 			}
-			data_from_timestamp(*timestamp_nil, &bat_data->null_value);
-		} else if (bat_type == TYPE_blob || bat_type == TYPE_sqlblob) {
+			data_from_timestamp(timestamp_nil, &bat_data->null_value);
+		} else if (bat_type == TYPE_blob) {
 			BATiter li;
 			BUN p = 0, q = 0;
 			str mprotect_retval;
@@ -1252,8 +1232,8 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			data_from_time(daytime_nil, &bat_data->null_value);
 		} else if (bat_type == TYPE_timestamp) {
 			GENERATE_BAT_OUTPUT_BASE(timestamp);
-			data_from_timestamp(*timestamp_nil, &bat_data->null_value);
-		} else if (bat_type == TYPE_blob || bat_type == TYPE_sqlblob) {
+			data_from_timestamp(timestamp_nil, &bat_data->null_value);
+		} else if (bat_type == TYPE_blob) {
 			GENERATE_BAT_OUTPUT_BASE(blob);
 			bat_data->null_value.size = ~(size_t) 0;
 			bat_data->null_value.data = NULL;
@@ -1425,7 +1405,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 					}
 				}
 				GDKfree(data);
-			} else if (bat_type == TYPE_blob || bat_type == TYPE_sqlblob) {
+			} else if (bat_type == TYPE_blob) {
 				cudf_data_blob *source_base = (cudf_data_blob *)data;
 				blob *current_blob = NULL;
 				size_t current_blob_maxsize = 0;
@@ -1518,7 +1498,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			BATiter li = bat_iterator(b);
 			if (VALinit(&stk->stk[pci->argv[i]], bat_type,
 						BUNtail(li, 0)) == NULL) {
-				msg = createException(MAL, "cudf.eval", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				msg = createException(MAL, "cudf.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 			BBPunfix(b->batCacheid);
 		}
@@ -1586,8 +1566,7 @@ wrapup:
 				}
 				if (bat_type == TYPE_str || bat_type == TYPE_date ||
 				    bat_type == TYPE_daytime ||
-				    bat_type == TYPE_timestamp || bat_type == TYPE_blob ||
-				    bat_type == TYPE_sqlblob) {
+				    bat_type == TYPE_timestamp || bat_type == TYPE_blob) {
 					// have to free input data
 					void *data = GetTypeData(bat_type, inputs[i]);
 					if (data) {
@@ -1683,7 +1662,7 @@ static const char *GetTypeName(int type)
 		tpe = "time";
 	} else if (type == TYPE_timestamp) {
 		tpe = "timestamp";
-	} else if (type == TYPE_blob || type == TYPE_sqlblob) {
+	} else if (type == TYPE_blob) {
 		tpe = "blob";
 	} else {
 		// unsupported type: string
@@ -1718,7 +1697,7 @@ void *GetTypeData(int type, void *struct_ptr)
 		data = ((struct cudf_data_struct_time *)struct_ptr)->data;
 	} else if (type == TYPE_timestamp) {
 		data = ((struct cudf_data_struct_timestamp *)struct_ptr)->data;
-	} else if (type == TYPE_blob || type == TYPE_sqlblob) {
+	} else if (type == TYPE_blob) {
 		data = ((struct cudf_data_struct_blob *)struct_ptr)->data;
 	} else {
 		// unsupported type: string
@@ -1753,7 +1732,7 @@ void *GetTypeBat(int type, void *struct_ptr)
 		bat = ((struct cudf_data_struct_time *)struct_ptr)->bat;
 	} else if (type == TYPE_timestamp) {
 		bat = ((struct cudf_data_struct_timestamp *)struct_ptr)->bat;
-	} else if (type == TYPE_blob || type == TYPE_sqlblob) {
+	} else if (type == TYPE_blob) {
 		bat = ((struct cudf_data_struct_blob *)struct_ptr)->bat;
 	} else {
 		// unsupported type: string
@@ -1787,7 +1766,7 @@ size_t GetTypeCount(int type, void *struct_ptr)
 		count = ((struct cudf_data_struct_time *)struct_ptr)->count;
 	} else if (type == TYPE_timestamp) {
 		count = ((struct cudf_data_struct_timestamp *)struct_ptr)->count;
-	} else if (type == TYPE_blob || type == TYPE_sqlblob) {
+	} else if (type == TYPE_blob) {
 		count = ((struct cudf_data_struct_blob *)struct_ptr)->count;
 	} else {
 		// unsupported type: string
@@ -1798,45 +1777,53 @@ size_t GetTypeCount(int type, void *struct_ptr)
 
 void data_from_date(date d, cudf_data_date *ptr)
 {
-	int day, month, year;
-	MTIMEfromdate(d, &day, &month, &year);
-	ptr->day = day;
-	ptr->month = month;
-	ptr->year = year;
+	ptr->day = date_day(d);
+	ptr->month = date_month(d);
+	ptr->year = date_year(d);
 }
 
 date date_from_data(cudf_data_date *ptr)
 {
-	return MTIMEtodate(ptr->day, ptr->month, ptr->year);
+	return date_create(ptr->year, ptr->month, ptr->day);
 }
 
 void data_from_time(daytime d, cudf_data_time *ptr)
 {
-	int hour, min, sec, msec;
-	MTIMEfromtime(d, &hour, &min, &sec, &msec);
-	ptr->hours = hour;
-	ptr->minutes = min;
-	ptr->seconds = sec;
-	ptr->ms = msec;
+	ptr->hours = daytime_hour(d);
+	ptr->minutes = daytime_min(d);
+	ptr->seconds = daytime_sec(d);
+	ptr->ms = daytime_usec(d) / 1000;
 }
 
 daytime time_from_data(cudf_data_time *ptr)
 {
-	return MTIMEtotime(ptr->hours, ptr->minutes, ptr->seconds, ptr->ms);
+	return daytime_create(ptr->hours, ptr->minutes, ptr->seconds,
+						  ptr->ms * 1000);
 }
 
 void data_from_timestamp(timestamp d, cudf_data_timestamp *ptr)
 {
-	data_from_date(d.payload.p_days, &ptr->date);
-	data_from_time(d.payload.p_msecs, &ptr->time);
+	daytime tm = timestamp_daytime(d);
+	date dt = timestamp_date(d);
+
+	ptr->date.day = date_day(dt);
+	ptr->date.month = date_month(dt);
+	ptr->date.year = date_year(dt);
+	ptr->time.hours = daytime_hour(tm);
+	ptr->time.minutes = daytime_min(tm);
+	ptr->time.seconds = daytime_sec(tm);
+	ptr->time.ms = daytime_usec(tm) / 1000;
 }
 
 timestamp timestamp_from_data(cudf_data_timestamp *ptr)
 {
-	timestamp d;
-	d.payload.p_days = date_from_data(&ptr->date);
-	d.payload.p_msecs = time_from_data(&ptr->time);
-	return d;
+	return timestamp_create(date_create(ptr->date.year,
+										ptr->date.month,
+										ptr->date.day),
+							daytime_create(ptr->time.hours,
+										   ptr->time.minutes,
+										   ptr->time.seconds,
+										   ptr->time.ms * 1000));
 }
 
 int date_is_null(cudf_data_date value)
@@ -1858,7 +1845,7 @@ int time_is_null(cudf_data_time value)
 
 int timestamp_is_null(cudf_data_timestamp value)
 {
-	return ts_isnil(timestamp_from_data(&value));
+	return is_timestamp_nil(timestamp_from_data(&value));
 }
 
 int str_is_null(char *value) { return value == NULL; }

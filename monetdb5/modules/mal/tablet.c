@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -36,21 +36,19 @@
  */
 
 #include "monetdb_config.h"
+#include "streams.h"
 #include "tablet.h"
 #include "algebra.h"
 
 #include <string.h>
 #include <ctype.h>
 
-/*#define _DEBUG_TABLET_ */
-/*#define _DEBUG_TABLET_CNTRL */
-
 #define MAXWORKERS	64
 #define MAXBUFFERS 2
 /* We restrict the row length to be 32MB for the time being */
 #define MAXROWSIZE(X) (X > 32*1024*1024 ? X : 32*1024*1024)
 
-static MT_Lock errorlock MT_LOCK_INITIALIZER("errorlock");
+static MT_Lock errorlock = MT_LOCK_INITIALIZER("errorlock");
 
 static BAT *
 void_bat_create(int adt, BUN nr)
@@ -60,7 +58,10 @@ void_bat_create(int adt, BUN nr)
 	/* check for correct structures */
 	if (b == NULL)
 		return NULL;
-	BATsetaccess(b, BAT_APPEND);
+	if (BATsetaccess(b, BAT_APPEND) != GDK_SUCCEED) {
+		BBPunfix(b->batCacheid);
+		return NULL;
+	}
 	if (nr > BATTINY && adt && BATextend(b, nr) != GDK_SUCCEED) {
 		BBPunfix(b->batCacheid);
 		return NULL;
@@ -170,7 +171,8 @@ TABLETcollect(BAT **bats, Tablet *as)
 			continue;
 		bats[j] = fmt[i].c;
 		BBPfix(bats[j]->batCacheid);
-		BATsetaccess(fmt[i].c, BAT_READ);
+		if (BATsetaccess(fmt[i].c, BAT_READ) != GDK_SUCCEED)
+			throw(SQL, "copy", "Failed to set access at tablet part " BUNFMT "\n", cnt);
 		fmt[i].c->tsorted = fmt[i].c->trevsorted = false;
 		fmt[i].c->tkey = false;
 		BATsettrivprop(fmt[i].c);
@@ -200,7 +202,8 @@ TABLETcollect_parts(BAT **bats, Tablet *as, BUN offset)
 		b->tsorted = b->trevsorted = false;
 		b->tkey = false;
 		BATsettrivprop(b);
-		BATsetaccess(b, BAT_READ);
+		if (BATsetaccess(b, BAT_READ) != GDK_SUCCEED)
+			throw(SQL, "copy", "Failed to set access at tablet part " BUNFMT "\n", cnt);
 		bv = BATslice(b, (offset > 0) ? offset - 1 : 0, BATcount(b));
 		bats[j] = bv;
 
@@ -250,14 +253,11 @@ tablet_skip_string(char *s, char quote)
 static int
 TABLET_error(stream *s)
 {
-	if (!mnstr_errnr(GDKerr)) {
-		char *err = mnstr_error(s);
-
-		mnstr_printf(GDKout, "#Stream error %s\n", err);
-		/* use free as stream allocates out side GDK */
-		if (err)
-			free(err);
-	}
+	char *err = mnstr_error(s);
+	TRC_ERROR(MAL_TABLET, "Stream error: %s\n", err);
+	/* use free as stream allocates out side GDK */
+	if (err)
+		free(err);
 	return -1;
 }
 
@@ -483,10 +483,6 @@ output_file_default(Tablet *as, BAT *order, stream *fd)
 			return res;
 		}
 		i++;
-#ifdef _DEBUG_TABLET_
-		if ((i % 1000000) == 0)
-			mnstr_printf(GDKout, "#dumped " BUNFMT " lines\n", i);
-#endif
 	}
 	GDKfree(localbuf);
 	GDKfree(buf);
@@ -513,10 +509,6 @@ output_file_dense(Tablet *as, stream *fd)
 			GDKfree(localbuf);
 			return res;
 		}
-#ifdef _DEBUG_TABLET_
-		if ((i % 1000000) == 0)
-			mnstr_printf(GDKout, "#dumped " BUNFMT " lines\n", i);
-#endif
 	}
 	GDKfree(localbuf);
 	GDKfree(buf);
@@ -542,10 +534,6 @@ output_file_ordered(Tablet *as, BAT *order, stream *fd)
 			GDKfree(buf);
 			return res;
 		}
-#ifdef _DEBUG_TABLET_
-		if ((i % 1000000) == 0)
-			mnstr_printf(GDKout, "#dumped " BUNFMT " lines\n", i);
-#endif
 	}
 	GDKfree(buf);
 	return res;
@@ -627,6 +615,7 @@ typedef struct {
 	lng *time, wtime;			/* time per col + time per thread */
 	int rounds;					/* how often did we divide the work */
 	bool ateof;					/* io control */
+	bool from_stdin;
 	bstream *b;
 	stream *out;
 	MT_Id tid;
@@ -656,34 +645,30 @@ typedef struct {
 static void
 tablet_error(READERtask *task, lng row, int col, const char *msg, const char *fcn)
 {
+	MT_lock_set(&errorlock);
 	if (task->cntxt->error_row != NULL) {
-		MT_lock_set(&errorlock);
 		if (BUNappend(task->cntxt->error_row, &row, false) != GDK_SUCCEED ||
 			BUNappend(task->cntxt->error_fld, &col, false) != GDK_SUCCEED ||
 			BUNappend(task->cntxt->error_msg, msg, false) != GDK_SUCCEED ||
 			BUNappend(task->cntxt->error_input, fcn, false) != GDK_SUCCEED)
 			task->besteffort = 0;
-		if (task->as->error == NULL && (msg == NULL || (task->as->error = GDKstrdup(msg)) == NULL)) {
-			task->as->error = createException(MAL, "sql.copy_from", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-			task->besteffort = 0;
-		}
-		if (!is_lng_nil(row) && task->rowerror)
+		if (!is_lng_nil(row) && task->rowerror && row < task->limit)
 			task->rowerror[row]++;
-#ifdef _DEBUG_TABLET_
-		mnstr_printf(GDKout, "#tablet_error: " LLFMT ",%d:%s:%s\n",
-					 row, col, msg, fcn);
-#endif
-		task->errorcnt++;
-		MT_lock_unset(&errorlock);
-	} else {
-		MT_lock_set(&errorlock);
-		if (task->as->error == NULL && (msg == NULL || (task->as->error = GDKstrdup(msg)) == NULL)) {
-			task->as->error = createException(MAL, "sql.copy_from", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-			task->besteffort = 0;
-		}
-		task->errorcnt++;
-		MT_lock_unset(&errorlock);
 	}
+	if (task->as->error == NULL) {
+		if (msg == NULL)
+			task->besteffort = 0;
+		else if (!is_lng_nil(row)) {
+			if (!is_int_nil(col))
+				task->as->error = createException(MAL, "sql.copy_from", "line " LLFMT ": column %d: %s", row + 1, col + 1, msg);
+			else
+				task->as->error = createException(MAL, "sql.copy_from", "line " LLFMT ": %s", row + 1, msg);
+		} else
+			task->as->error = createException(MAL, "sql.copy_from", "%s", msg);
+	}
+	TRC_ERROR(MAL_TABLET, "Error: " LLFMT ", %d:%s:%s\n", row, col, msg, fcn);
+	task->errorcnt++;
+	MT_lock_unset(&errorlock);
 }
 
 /*
@@ -858,9 +843,10 @@ SQLinsert_val(READERtask *task, int col, int idx)
 					task->rowerror[idx]++;
 					task->errorcnt++;
 					task->besteffort = 0; /* no longer best effort */
-					if (BUNappend(task->cntxt->error_row, &row, false) != GDK_SUCCEED ||
+					if (task->cntxt->error_row == NULL ||
+						BUNappend(task->cntxt->error_row, &row, false) != GDK_SUCCEED ||
 						BUNappend(task->cntxt->error_fld, &col, false) != GDK_SUCCEED ||
-						BUNappend(task->cntxt->error_msg, SQLSTATE(HY001) MAL_MALLOC_FAIL, false) != GDK_SUCCEED ||
+						BUNappend(task->cntxt->error_msg, SQLSTATE(HY013) MAL_MALLOC_FAIL, false) != GDK_SUCCEED ||
 						BUNappend(task->cntxt->error_input, err, false) != GDK_SUCCEED) {
 						;		/* ignore error here: we're already not best effort */
 					}
@@ -876,12 +862,12 @@ SQLinsert_val(READERtask *task, int col, int idx)
 					 row, fmt->name ? fmt->name : "", fmt->type,
 					 s ? " in '" : "", s ? s : "", s ? "'" : "");
 			GDKfree(s);
-			buf[sizeof(buf)-1]=0;
 			if (task->as->error == NULL && (task->as->error = GDKstrdup(buf)) == NULL)
-				task->as->error = createException(MAL, "sql.copy_from", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				task->as->error = createException(MAL, "sql.copy_from", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			task->rowerror[idx]++;
 			task->errorcnt++;
-			if (BUNappend(task->cntxt->error_row, &row, false) != GDK_SUCCEED ||
+			if (task->cntxt->error_row == NULL ||
+				BUNappend(task->cntxt->error_row, &row, false) != GDK_SUCCEED ||
 				BUNappend(task->cntxt->error_fld, &col, false) != GDK_SUCCEED ||
 				BUNappend(task->cntxt->error_msg, buf, false) != GDK_SUCCEED ||
 				BUNappend(task->cntxt->error_input, err, false) != GDK_SUCCEED) {
@@ -898,13 +884,15 @@ SQLinsert_val(READERtask *task, int col, int idx)
 		adt = fmt->nildata;
 		fmt->c->tnonil = false;
 	}
-	bunfastapp(fmt->c, adt);
-	return ret;
-  bunins_failed:
+	if (bunfastapp(fmt->c, adt) == GDK_SUCCEED)
+		return ret;
+
+	/* failure */
 	if (task->rowerror) {
 		lng row = BATcount(fmt->c);
 		MT_lock_set(&errorlock);
-		if (BUNappend(task->cntxt->error_row, &row, false) != GDK_SUCCEED ||
+		if (task->cntxt->error_row == NULL ||
+			BUNappend(task->cntxt->error_row, &row, false) != GDK_SUCCEED ||
 			BUNappend(task->cntxt->error_fld, &col, false) != GDK_SUCCEED ||
 			BUNappend(task->cntxt->error_msg, "insert failed", false) != GDK_SUCCEED ||
 			(err = SQLload_error(task, idx,task->as->nr_attrs)) == NULL ||
@@ -970,10 +958,6 @@ SQLload_parse_line(READERtask *task, int idx)
 	bool error = false;
 	str errline = 0;
 
-#ifdef _DEBUG_TABLET_
-	char *s;
-	//mnstr_printf(GDKout, "#SQL break line id %d  state %d\n%s", task->id, idx, line);
-#endif
 	assert(idx < task->top[task->cur]);
 	assert(line);
 	errmsg[0] = 0;
@@ -985,14 +969,9 @@ SQLload_parse_line(READERtask *task, int idx)
 			/* recognize fields starting with a quote, keep them */
 			if (*line && *line == task->quote) {
 				quote = true;
-#ifdef _DEBUG_TABLET_
-				mnstr_printf(GDKout, "before #1 %s\n", s = line);
-#endif
 				task->fields[i][idx] = line + 1;
 				line = tablet_skip_string(line + 1, task->quote);
-#ifdef _DEBUG_TABLET_
-				mnstr_printf(GDKout, "after #1 %s\n", s);
-#endif
+
 				if (!line) {
 					errline = SQLload_error(task, idx, i+1);
 					snprintf(errmsg, BUFSIZ, "Quote (%c) missing", task->quote);
@@ -1018,8 +997,7 @@ SQLload_parse_line(READERtask *task, int idx)
 			/* not enough fields */
 			if (i < as->nr_attrs - 1) {
 				errline = SQLload_error(task, idx, i+1);
-				snprintf(errmsg, BUFSIZ, "Column value "BUNFMT" missing", i+1);
-				tablet_error(task, idx, (int) i, errmsg, errline);
+				tablet_error(task, idx, (int) i, "Column value missing", errline);
 				GDKfree(errline);
 				error = true;
 			  errors1:
@@ -1039,9 +1017,7 @@ SQLload_parse_line(READERtask *task, int idx)
 		assert(task->seplen == 1);
 		for (i = 0; i < as->nr_attrs; i++) {
 			task->fields[i][idx] = line;
-#ifdef _DEBUG_TABLET_
-			mnstr_printf(GDKout, "before #2 %s\n", line);
-#endif
+
 			/* eat away the column separator */
 			for (; *line; line++)
 				if (*line == '\\') {
@@ -1052,14 +1028,11 @@ SQLload_parse_line(READERtask *task, int idx)
 					line++;
 					goto endoffield2;
 				}
-#ifdef _DEBUG_TABLET_
-			mnstr_printf(GDKout, "#after #23 %s\n", line);
-#endif
+
 			/* not enough fields */
 			if (i < as->nr_attrs - 1) {
 				errline = SQLload_error(task, idx,i+1);
-				snprintf(errmsg, BUFSIZ, "Column value "BUNFMT" missing",i+1);
-				tablet_error(task, idx, (int) i, errmsg, errline);
+				tablet_error(task, idx, (int) i, "Column value missing", errline);
 				GDKfree(errline);
 				error = true;
 				/* we save all errors detected */
@@ -1083,10 +1056,8 @@ SQLload_parse_line(READERtask *task, int idx)
 		GDKfree(errline);
 		error = true;
 	}
-#ifdef _DEBUG_TABLET_
 	if (error)
-		mnstr_printf(GDKout, "#line break failed %d:%s\n", idx, line ? line : "EOF");
-#endif
+		TRC_ERROR(MAL_TABLET, "Line break failed: %d:%s\n", idx, line ? line : "EOF");
 	return error ? -1 : 0;
 }
 
@@ -1097,22 +1068,11 @@ SQLworker(void *arg)
 	unsigned int i;
 	int j, piece;
 	lng t0;
-	Thread thr;
-
-	thr = THRnew("SQLworker");
-	if (thr == NULL) {
-		task->id = -1;			/* signal failure */
-		MT_sema_up(&task->reply);
-		return;
-	}
-	MT_sema_up(&task->reply);
 
 	GDKsetbuf(GDKzalloc(GDKMAXERRLEN));	/* where to leave errors */
 	GDKclrerr();
 	task->errbuf = GDKerrbuf;
-#ifdef _DEBUG_TABLET_
-	mnstr_printf(GDKout, "#SQLworker %d started\n", task->id);
-#endif
+
 	while (task->top[task->cur] >= 0) {
 		MT_sema_down(&task->sema);
 
@@ -1122,11 +1082,7 @@ SQLworker(void *arg)
 		case BREAKLINE:
 			t0 = GDKusec();
 			piece = (task->top[task->cur] + task->workers) / task->workers;
-#ifdef _DEBUG_TABLET_
-			mnstr_printf(GDKout, "#SQLworker id %d %d  piece %d-%d\n",
-						 task->id, task->top[task->cur], piece * task->id,
-						 (task->id +1) *piece);
-#endif
+			
 			for (j = piece * task->id; j < task->top[task->cur] && j < piece * (task->id +1); j++)
 				if (task->lines[task->cur][j]) {
 					if (SQLload_parse_line(task, j) < 0) {
@@ -1157,7 +1113,7 @@ SQLworker(void *arg)
 					if (b == NULL)
 						continue;
 					t0 = GDKusec();
-					if (b->batPersistence != PERSISTENT)
+					if (b->batTransient)
 						continue;
 					BATmsync(b);
 					t0 = GDKusec() - t0;
@@ -1167,22 +1123,15 @@ SQLworker(void *arg)
 			break;
 		case ENDOFCOPY:
 			MT_sema_up(&task->reply);
-#ifdef _DEBUG_TABLET_
-			mnstr_printf(GDKout, "#SQLworker terminated\n");
-#endif
 			goto do_return;
 		}
 		MT_sema_up(&task->reply);
 	}
-#ifdef _DEBUG_TABLET_
-	mnstr_printf(GDKout, "#SQLworker exits\n");
-#endif
 	MT_sema_up(&task->reply);
 
   do_return:
 	GDKfree(GDKerrbuf);
 	GDKsetbuf(0);
-	THRdel(thr);
 }
 
 static void
@@ -1229,59 +1178,84 @@ SQLworkdivider(READERtask *task, READERtask *ptask, int nr_attrs, int threads)
  * If we end up with unfinished records, then the rowlimit will terminate the process.
  */
 
+typedef unsigned char (*dfa_t)[256];
+
+static dfa_t
+mkdfa(const unsigned char *sep, size_t seplen)
+{
+	dfa_t dfa;
+	size_t i, j, k;
+
+	dfa = GDKzalloc(seplen * sizeof(*dfa));
+	if (dfa == NULL)
+		return NULL;
+	/* Each character in the separator string advances the state by
+	 * one.  If state reaches seplen, the separator was recognized.
+	 *
+	 * The first loop and the nested loop make sure that if in any
+	 * state we encounter an invalid character, but part of what we've
+	 * matched so far is a prefix of the separator, we go to the
+	 * appropriate state. */
+	for (i = 0; i < seplen; i++)
+		dfa[i][sep[0]] = 1;
+	for (j = 0; j < seplen; j++) {
+		dfa[j][sep[j]] = (unsigned char) (j + 1);
+		for (k = 0; k < j; k++) {
+			for (i = 0; i < j - k; i++)
+				if (sep[k + i] != sep[i])
+					break;
+			if (i == j - k && dfa[j][sep[i]] <= i)
+				dfa[j][sep[i]] = (unsigned char) (i + 1);
+		}
+	}
+	return dfa;
+}
+
 static void
 SQLproducer(void *p)
 {
 	READERtask *task = (READERtask *) p;
-	int consoleinput = 0;
+	bool consoleinput = false;
 	int cur = 0;		// buffer being filled
-	bool blocked[MAXBUFFERS] = { 0 };
-	bool ateof[MAXBUFFERS] = { 0 };
+	bool blocked[MAXBUFFERS] = { false };
+	bool ateof[MAXBUFFERS] = { false };
 	BUN cnt = 0, bufcnt[MAXBUFFERS] = { 0 };
-	char *end, *e, *s, *base;
+	char *end, *e, *s = NULL, *base;
 	const char *rsep = task->rsep;
 	size_t rseplen = strlen(rsep), partial = 0;
 	char quote = task->quote;
-	Thread thr;
+	dfa_t rdfa;
+	lng rowno = 0;
 
-	thr = THRnew("SQLproducer");
-	if (thr == NULL) {
-		task->id = -1;
-		tablet_error(task, lng_nil, int_nil, "cannot create producer thread", "SQLproducer");
-		MT_sema_up(&task->consumer);
-		return;
-	}
-	MT_sema_up(&task->consumer);
 	MT_sema_down(&task->producer);
 	if (task->id < 0) {
-		THRdel(thr);
 		return;
 	}
 
-#ifdef _DEBUG_TABLET_CNTRL
-	mnstr_printf(GDKout, "#SQLproducer started size %zu len %zu\n",
-				 task->b->size, task->b->len);
-#endif
+	rdfa = mkdfa((const unsigned char *) rsep, rseplen);
+	if (rdfa == NULL) {
+		tablet_error(task, lng_nil, int_nil, "cannot allocate memory", "");
+		ateof[cur] = true;
+		goto reportlackofinput;
+	}
+
+	TRC_DEBUG(MAL_TABLET, "SQLproducer started size '%zu' and len '%zu'\n", task->b->size, task->b->len);
+	
 	base = end = s = task->input[cur];
 	*s = 0;
 	task->cur = cur;
 	if (task->as->filename == NULL) {
-		consoleinput = 1;
+		consoleinput = true;
 		goto parseSTDIN;
 	}
 	for (;;) {
 		ateof[cur] = !tablet_read_more(task->b, task->out, task->b->size);
-#ifdef _DEBUG_TABLET_CNTRL
-		if (!ateof[cur])
-			mnstr_printf(GDKout, "#read %zu bytes pos = %zu eof=%d offset=" LLFMT " \n",
-						 task->b->len, task->b->pos, task->b->eof,
-						 (lng) (s - task->input[cur]));
-#endif
+				
 		// we may be reading from standard input and may be out of input
 		// warn the consumers
 		if (ateof[cur] && partial) {
 			if (partial) {
-				tablet_error(task, lng_nil, int_nil, "incomplete record at end of file", s);
+				tablet_error(task, rowno, int_nil, "incomplete record at end of file", s);
 				task->b->pos += partial;
 			}
 			goto reportlackofinput;
@@ -1289,21 +1263,15 @@ SQLproducer(void *p)
 
 		if (task->errbuf && task->errbuf[0]) {
 			if (GDKerrbuf && GDKerrbuf[0]) {
-				tablet_error(task, lng_nil, int_nil, GDKerrbuf, "SQLload_file");
-#ifdef _DEBUG_TABLET_CNTRL
-				mnstr_printf(GDKout, "#bailout on SQLload %s\n", msg);
-#endif
+				tablet_error(task, rowno, int_nil, GDKerrbuf, "SQLload_file");
+				TRC_DEBUG(MAL_TABLET, "Bailout on SQLload\n");
 				ateof[cur] = true;
 				break;
 			}
 		}
 
 	  parseSTDIN:
-#ifdef _DEBUG_TABLET_
-		if (!ateof[cur])
-			mnstr_printf(GDKout, "#parse input:%.63s\n",
-						 task->b->buf + task->b->pos);
-#endif
+
 		/* copy the stream buffer into the input buffer, which is guaranteed larger, but still limited */
 		partial = 0;
 		task->top[cur] = 0;
@@ -1314,11 +1282,9 @@ SQLproducer(void *p)
 			/* the input buffer should be extended, but 'base' is not shared
 			   between the threads, which we can not now update.
 			   Mimick an ateof instead; */
-			tablet_error(task, lng_nil, int_nil, "record too long", "");
+			tablet_error(task, rowno, int_nil, "record too long", "");
 			ateof[cur] = true;
-#ifdef _DEBUG_TABLET_CNTRL
-			mnstr_printf(GDKout, "#bailout on SQLload confronted with too large record\n");
-#endif
+			TRC_DEBUG(MAL_TABLET, "Bailout on SQLload confronted with too large record\n");
 			goto reportlackofinput;
 		}
 		memcpy(end, task->b->buf + task->b->pos, task->b->len - task->b->pos);
@@ -1335,6 +1301,10 @@ SQLproducer(void *p)
 		 * scan ended (we need to back off some since we could be in
 		 * the middle of the record separator).  If this is too
 		 * costly, we have to rethink the matter. */
+		if (task->from_stdin && *s == '\n' && task->maxrow == BUN_MAX) {
+			ateof[cur] = true;
+			goto reportlackofinput;
+		}
 		for (e = s; *e && e < end && cnt < task->maxrow;) {
 			/* tokenize the record completely the format of the input
 			 * should comply to the following grammar rule [
@@ -1344,111 +1314,67 @@ SQLproducer(void *p)
 			 * user should supply the correct number of fields.
 			 * In the first phase we simply break the lines at the
 			 * record boundary. */
-			if (quote == 0) {
-				switch (rseplen) {
-				case 1:
-					for (; *e; e++) {
-						if (*e == '\\') {
-							if (*++e == 0)
-								break;
-							continue;
-						}
-						if (*e == *rsep)
-							break;
-					}
-					break;
-				case 2:
-					for (; *e; e++) {
-						if (*e == '\\') {
-							if (*++e == 0)
-								break;
-							continue;
-						}
-						if (*e == *rsep && e[1] == rsep[1])
-							break;
-					}
-					break;
-				default:
-					for (; *e; e++) {
-						if (*e == '\\') {
-							if (*++e == 0)
-								break;
-							continue;
-						}
-						if (*e == *rsep && strncmp(e, rsep, rseplen) == 0)
-							break;
-					}
+			int nutf = 0;
+			int m = 0;
+			bool bs = false;
+			char q = 0;
+			size_t i = 0;
+			while (*e) {
+				/* check for correctly encoded UTF-8 */
+				if (nutf > 0) {
+					if ((*e & 0xC0) != 0x80)
+						goto badutf8;
+					if (m != 0 && (*e & m) == 0)
+						goto badutf8;
+					m = 0;
+					nutf--;
+				} else if ((*e & 0xE0) == 0xC0) {
+					nutf = 1;
+					if ((e[0] & 0x1E) == 0)
+						goto badutf8;
+				} else if ((*e & 0xF0) == 0xE0) {
+					nutf = 2;
+					if ((e[0] & 0x0F) == 0)
+						m = 0x20;
+				} else if ((*e & 0xF8) == 0xF0) {
+					nutf = 3;
+					if ((e[0] & 0x07) == 0)
+						m = 0x30;
+				} else if ((*e & 0x80) != 0) {
+					goto badutf8;
 				}
-				if (*e == 0) {
-					partial = e - s;
-					e = 0;	/* nonterminated record, we need more */
+				/* check for quoting and the row separator */
+				if (bs) {
+					bs = false;
+				} else if (*e == '\\') {
+					bs = true;
+					i = 0;
+				} else if (*e == q) {
+					q = 0;
+				} else if (*e == quote) {
+					q = quote;
+					i = 0;
+				} else if (q == 0) {
+					i = rdfa[i][(unsigned char) *e];
+					if (i == rseplen)
+						break;
 				}
-			} else {
-				char q = 0;
-
-				switch (rseplen) {
-				case 1:
-					for (; *e; e++) {
-						if (*e == q)
-							q = 0;
-						else if (*e == quote)
-							q = *e;
-						else if (*e == '\\') {
-							if (*++e == 0)
-								break;
-						} else if (!q && *e == *rsep)
-							break;
-					}
-					if (*e == 0) {
-						partial = e - s;
-						e = 0;	/* nonterminated record, we need more */
-					}
-					break;
-				case 2:
-					for (; *e; e++) {
-						if (*e == q)
-							q = 0;
-						else if (*e == quote)
-							q = *e;
-						else if (*e == '\\') {
-							if (e[1])
-								e++;
-						} else if (!q && e[0] == rsep[0] && e[1] == rsep[1])
-							break;
-					}
-					if (*e == 0) {
-						partial = e - s;
-						e = 0;	/* nonterminated record, we need more */
-					}
-					break;
-				default:
-					for (; *e; e++) {
-						if (*e == q)
-							q = 0;
-						else if (*e == quote)
-							q = *e;
-						else if (*e == '\\') {
-							if (*++e == 0)
-								break;
-						} else if (!q && *e == *rsep && strncmp(e, rsep, rseplen) == 0)
-							break;
-					}
-					if (*e == 0) {
-						partial = e - s;
-						e = 0;	/* nonterminated record, we need more */
-					}
-				}
+				e++;
+			}
+			if (*e == 0) {
+				partial = e - s;
+				e = NULL;		/* nonterminated record, we need more */
 			}
 			/* check for incomplete line and end of buffer condition */
 			if (e) {
+				rowno++;
 				/* found a complete record, do we need to skip it? */
 				if (--task->skip < 0 && cnt < task->maxrow) {
 					task->lines[cur][task->top[cur]++] = s;
 					cnt++;
 				}
-				*e = '\0';
-				s = e + rseplen;
-				e = s;
+				*(e + 1 - rseplen) = 0;
+				s = ++e;
 				task->b->pos += (size_t) (e - base);
 				base = e;
 				if (task->top[cur] == task->limit)
@@ -1457,7 +1383,7 @@ SQLproducer(void *p)
 				/* found an incomplete record, saved for next round */
 				if (s+partial < end) {
 					/* found a EOS in the input */
-					tablet_error(task, lng_nil, int_nil, "record too long (EOS found)", "");
+					tablet_error(task, rowno, int_nil, "record too long (EOS found)", "");
 					ateof[cur] = true;
 					goto reportlackofinput;
 				}
@@ -1466,10 +1392,8 @@ SQLproducer(void *p)
 		}
 
 	  reportlackofinput:
-#ifdef _DEBUG_TABLET_CNTRL
-		mnstr_printf(GDKout, "#SQL producer got buffer %d filled with %d records \n",
-					 cur, task->top[cur]);
-#endif
+	  TRC_DEBUG(MAL_TABLET, "SQL producer got buffer '%d' filled with '%d' records\n", cur, task->top[cur]);
+
 		if (consoleinput) {
 			task->cur = cur;
 			task->ateof = ateof[cur];
@@ -1479,21 +1403,19 @@ SQLproducer(void *p)
 			/* then wait until it is done */
 			MT_sema_down(&task->producer);
 			if (cnt == task->maxrow) {
-				THRdel(thr);
+				GDKfree(rdfa);
 				return;
 			}
 		} else {
 			assert(!blocked[cur]);
 			if (blocked[(cur + 1) % MAXBUFFERS]) {
 				/* first wait until other buffer is done */
-#ifdef _DEBUG_TABLET_CNTRL
-				mnstr_printf(GDKout, "#wait for consumers to finish buffer %d\n",
-							 (cur + 1) % MAXBUFFERS);
-#endif
+				TRC_DEBUG(MAL_TABLET, "Wait for consumers to finish buffer: %d\n", (cur + 1) % MAXBUFFERS);
+
 				MT_sema_down(&task->producer);
 				blocked[(cur + 1) % MAXBUFFERS] = false;
 				if (task->state == ENDOFCOPY) {
-					THRdel(thr);
+					GDKfree(rdfa);
 					return;
 				}
 			}
@@ -1503,69 +1425,51 @@ SQLproducer(void *p)
 			task->cur = cur;
 			task->ateof = ateof[cur];
 			task->cnt = bufcnt[cur];
-#ifdef _DEBUG_TABLET_CNTRL
-			mnstr_printf(GDKout, "#SQL producer got buffer %d filled with %d records \n",
-						 cur, task->top[cur]);
-#endif
+			TRC_DEBUG(MAL_TABLET, "SQL producer got buffer '%d' filled with '%d' records\n", cur, task->top[cur]);
+
 			MT_sema_up(&task->consumer);
 
 			cur = (cur + 1) % MAXBUFFERS;
-#ifdef _DEBUG_TABLET_CNTRL
-			mnstr_printf(GDKout, "#May continue with buffer %d\n", cur);
-#endif
+			TRC_DEBUG(MAL_TABLET, "May continue with buffer: %d\n", cur);
+
 			if (cnt == task->maxrow) {
 				MT_sema_down(&task->producer);
-#ifdef _DEBUG_TABLET_CNTRL
-				mnstr_printf(GDKout, "#Producer delivered all\n");
-#endif
-				THRdel(thr);
+				TRC_DEBUG(MAL_TABLET, "Producer delivered all\n");
+				GDKfree(rdfa);
 				return;
 			}
 		}
-#ifdef _DEBUG_TABLET_CNTRL
-		mnstr_printf(GDKout, "#Continue producer buffer %d\n", cur);
-#endif
+		TRC_DEBUG(MAL_TABLET, "Continue producer buffer: %d\n", cur);
+
 		/* we ran out of input? */
 		if (task->ateof) {
-#ifdef _DEBUG_TABLET_CNTRL
-			mnstr_printf(GDKout, "#Producer encountered eof\n");
-#endif
-			THRdel(thr);
+			TRC_DEBUG(MAL_TABLET, "Producer encountered eof\n");
+			GDKfree(rdfa);
 			return;
 		}
 		/* consumers ask us to stop? */
 		if (task->state == ENDOFCOPY) {
-#ifdef _DEBUG_TABLET_CNTRL
-			if (!ateof[cur])
-				mnstr_printf(GDKout, "#SQL producer early exit %.63s\n",
-							 task->b->buf + task->b->pos);
-#endif
-			THRdel(thr);
+			GDKfree(rdfa);
 			return;
 		}
 		bufcnt[cur] = cnt;
-#ifdef _DEBUG_TABLET_CNTRL
-		if (!ateof[cur])
-			mnstr_printf(GDKout, "#shuffle %zu: %.63s\n", strlen(s), s);
-#endif
 		/* move the non-parsed correct row data to the head of the next buffer */
-		s = task->input[cur];
-		if (partial == 0 || cnt >= task->maxrow) {
-			memcpy(s, task->b->buf + task->b->pos, task->b->len - task->b->pos);
-			end = s + task->b->len - task->b->pos;
-		} else {
-			end = s;
-		}
-		*end = '\0';	/* this is safe, as the stream ensures an extra byte */
+		end = s = task->input[cur];
 	}
 	if (cnt < task->maxrow && task->maxrow != BUN_NONE) {
 		char msg[256];
 		snprintf(msg, sizeof(msg), "incomplete record at end of file:%s\n", s);
 		task->as->error = GDKstrdup(msg);
-		tablet_error(task, lng_nil, int_nil, "incomplete record at end of file", s);
+		tablet_error(task, rowno, int_nil, "incomplete record at end of file", s);
 		task->b->pos += partial;
 	}
-	THRdel(thr);
+	GDKfree(rdfa);
+	return;
+
+  badutf8:
+	tablet_error(task, rowno, int_nil, "input not properly encoded UTF-8", "");
+	ateof[cur] = true;
+	goto reportlackofinput;
 }
 
 static void
@@ -1586,18 +1490,14 @@ create_rejects_table(Client cntxt)
 				BBPunfix(cntxt->error_msg->batCacheid);
 			if (cntxt->error_input)
 				BBPunfix(cntxt->error_input->batCacheid);
-		} else {
-			BBPkeepref(cntxt->error_row->batCacheid);
-			BBPkeepref(cntxt->error_fld->batCacheid);
-			BBPkeepref(cntxt->error_msg->batCacheid);
-			BBPkeepref(cntxt->error_input->batCacheid);
+			cntxt->error_row = cntxt->error_fld = cntxt->error_msg = cntxt->error_input = NULL;
 		}
 	}
 	MT_lock_unset(&mal_contextLock);
 }
 
 BUN
-SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep, const char *rsep, char quote, lng skip, lng maxrow, int best)
+SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep, const char *rsep, char quote, lng skip, lng maxrow, int best, bool from_stdin, const char *tabnam)
 {
 	BUN cnt = 0, cntstart = 0, leftover = 0;
 	int res = 0;		/* < 0: error, > 0: success, == 0: continue processing */
@@ -1608,15 +1508,15 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 	READERtask ptask[MAXWORKERS];
 	int threads = (!maxrow || maxrow > (1 << 16)) ? (GDKnr_threads < MAXWORKERS && GDKnr_threads > 1 ? GDKnr_threads - 1 : MAXWORKERS - 1) : 1;
 	lng lio = 0, tio, t1 = 0, total = 0, iototal = 0;
-	int vmtrim = GDK_vm_trim;
+	char name[16];
 
-#ifdef _DEBUG_TABLET_
-	mnstr_printf(GDKout, "#Prepare copy work for %d threads col '%s' rec '%s' quot '%c'\n",
-				 threads, csep, rsep, quote);
-#endif
+	TRC_DEBUG(MAL_TABLET, "Prepare copy work for '%d' threads col '%s' rec '%s' quot '%c'\n", threads, csep, rsep, quote);
+
 	memset(ptask, 0, sizeof(ptask));
 	task = (READERtask) {
 		.cntxt = cntxt,
+		.from_stdin = from_stdin,
+		.as = as,
 	};
 
 	/* create the reject tables */
@@ -1625,11 +1525,6 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 		tablet_error(&task, lng_nil, int_nil, "SQLload initialization failed", "");
 		goto bailout;
 	}
-
-	/* trimming process should not be active during this process. */
-	/* on sf10 experiments it showed a slowdown of a factor 2 on */
-	/* large tables. Instead rely on madvise */
-	GDK_vm_trim = 0;
 
 	assert(rsep);
 	assert(csep);
@@ -1646,7 +1541,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 		task.base[i] = GDKzalloc(MAXROWSIZE(2 * b->size) + 2);
 		task.rowlimit[i] = MAXROWSIZE(2 * b->size);
 		if (task.base[i] == 0) {
-			tablet_error(&task, lng_nil, int_nil, SQLSTATE(HY001) MAL_MALLOC_FAIL, "SQLload_file");
+			tablet_error(&task, lng_nil, int_nil, SQLSTATE(HY013) MAL_MALLOC_FAIL, "SQLload_file");
 			goto bailout;
 		}
 		task.base[i][b->size + 1] = 0;
@@ -1660,11 +1555,10 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 		task.maxrow = (BUN) maxrow;
 
 	if (task.fields == 0 || task.cols == 0 || task.time == 0) {
-		tablet_error(&task, lng_nil, int_nil, SQLSTATE(HY001) MAL_MALLOC_FAIL, "SQLload_file");
+		tablet_error(&task, lng_nil, int_nil, SQLSTATE(HY013) MAL_MALLOC_FAIL, "SQLload_file");
 		goto bailout;
 	}
 
-	task.as = as;
 	task.skip = skip;
 	task.quote = quote;
 	task.csep = csep;
@@ -1699,7 +1593,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 		task.fields[i] = GDKzalloc(sizeof(char *) * task.limit);
 		if (task.fields[i] == 0) {
 			if (task.as->error == NULL)
-				as->error = createException(MAL, "sql.copy_from", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				as->error = createException(MAL, "sql.copy_from", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto bailout;
 		}
 #ifdef MLOCK_TST
@@ -1710,31 +1604,23 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 	for (i = 0; i < MAXBUFFERS; i++) {
 		task.lines[i] = GDKzalloc(sizeof(char *) * task.limit);
 		if (task.lines[i] == NULL) {
-			tablet_error(&task, lng_nil, int_nil, SQLSTATE(HY001) MAL_MALLOC_FAIL, "SQLload_file:failed to alloc buffers");
+			tablet_error(&task, lng_nil, int_nil, SQLSTATE(HY013) MAL_MALLOC_FAIL, "SQLload_file:failed to alloc buffers");
 			goto bailout;
 		}
 	}
 	task.rowerror = (bte *) GDKzalloc(sizeof(bte) * task.limit);
 	if( task.rowerror == NULL){
-		tablet_error(&task, lng_nil, int_nil, SQLSTATE(HY001) MAL_MALLOC_FAIL, "SQLload_file:failed to alloc rowerror buffer");
+		tablet_error(&task, lng_nil, int_nil, SQLSTATE(HY013) MAL_MALLOC_FAIL, "SQLload_file:failed to alloc rowerror buffer");
 		goto bailout;
 	}
 
 	task.id = 0;
-	if(MT_create_thread(&task.tid, SQLproducer, (void *) &task, MT_THR_JOINABLE) < 0) {
+	snprintf(name, sizeof(name), "prod-%s", tabnam);
+	if ((task.tid = THRcreate(SQLproducer, (void *) &task, MT_THR_JOINABLE, name)) == 0) {
 		tablet_error(&task, lng_nil, int_nil, SQLSTATE(42000) "failed to start producer thread", "SQLload_file");
 		goto bailout;
 	}
-	/* wait until producer started */
-	MT_sema_down(&task.consumer);
-	if (task.id < 0) {
-		/* producer failed to properly start */
-		goto bailout;
-	}
-#ifdef _DEBUG_TABLET_
-	mnstr_printf(GDKout, "#parallel bulk load " LLFMT " - " BUNFMT "\n",
-				 skip, task.maxrow);
-#endif
+	TRC_DEBUG(MAL_TABLET, "Parallel bulk load " LLFMT " - " BUNFMT "\n", skip, task.maxrow);
 
 	task.workers = threads;
 	for (j = 0; j < threads; j++) {
@@ -1742,7 +1628,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 		ptask[j].id = j;
 		ptask[j].cols = (int *) GDKzalloc(as->nr_attrs * sizeof(int));
 		if (ptask[j].cols == 0) {
-			tablet_error(&task, lng_nil, int_nil, SQLSTATE(HY001) MAL_MALLOC_FAIL, "SQLload_file");
+			tablet_error(&task, lng_nil, int_nil, SQLSTATE(HY013) MAL_MALLOC_FAIL, "SQLload_file");
 			task.id = -1;
 			MT_sema_up(&task.producer);
 			goto bailout;
@@ -1750,18 +1636,12 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 #ifdef MLOCK_TST
 		mlock(ptask[j].cols, sizeof(char *) * task.limit);
 #endif
-		MT_sema_init(&ptask[j].sema, 0, "ptask[j].sema");
-		MT_sema_init(&ptask[j].reply, 0, "ptask[j].reply");
-		if(MT_create_thread(&ptask[j].tid, SQLworker, (void *) &ptask[j], MT_THR_JOINABLE) < 0) {
-			tablet_error(&task, lng_nil, int_nil, SQLSTATE(42000) "failed to start worker thread", "SQLload_file");
-			threads = j;
-			for (j = 0; j < threads; j++)
-				ptask[j].workers = threads;
-		}
-		/* wait until thread started */
-		MT_sema_down(&ptask[j].reply);
-		if (ptask[j].id == -1) {
-			/* allocation failure inside thread */
+		snprintf(name, sizeof(name), "ptask%d.sema", j);
+		MT_sema_init(&ptask[j].sema, 0, name);
+		snprintf(name, sizeof(name), "ptask%d.repl", j);
+		MT_sema_init(&ptask[j].reply, 0, name);
+		snprintf(name, sizeof(name), "wrkr%d-%s", j, tabnam);
+		if ((ptask[j].tid = THRcreate(SQLworker, (void *) &ptask[j], MT_THR_JOINABLE, name)) == 0) {
 			tablet_error(&task, lng_nil, int_nil, SQLSTATE(42000) "failed to start worker thread", "SQLload_file");
 			threads = j;
 			for (j = 0; j < threads; j++)
@@ -1792,14 +1672,13 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 		/* block until the producer has data available */
 		MT_sema_down(&task.consumer);
 		cnt += task.top[task.cur];
-		if (task.ateof)
+		if (task.ateof && !task.top[task.cur])
 			break;
 		t1 = GDKusec() - t1;
 		total += t1;
 		iototal += tio;
-#ifdef _DEBUG_TABLET_
-		mnstr_printf(GDKout, "#Break %d lines\n", task.top[task.cur]);
-#endif
+		TRC_DEBUG(MAL_TABLET, "Break: %d lines\n", task.top[task.cur]);
+
 		t1 = GDKusec();
 		if (task.top[task.cur]) {
 			/* activate the workers to break lines */
@@ -1822,18 +1701,15 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 				MT_sema_down(&ptask[j].reply);
 				if (ptask[j].error) {
 					res = -1;
-#ifdef _DEBUG_TABLET_
-					mnstr_printf(GDKout, "#Error in task %d %d\n",
-								 j, ptask[j].error);
-#endif
+					TRC_ERROR(MAL_TABLET, "Error in task: %d %d\n", j, ptask[j].error);
 				}
 			}
 		}
-#ifdef _DEBUG_TABLET_
-		mnstr_printf(GDKout, "#fill the BATs %d  " BUNFMT " cap " BUNFMT "\n",
-					 task.top[task.cur], task.cnt,
-					 BATcapacity(as->format[task.cur].c));
-#endif
+
+		TRC_DEBUG(MAL_TABLET, 
+			"Fill the BATs '%d' " BUNFMT " cap " BUNFMT "\n", 
+			task.top[task.cur], task.cnt, BATcapacity(as->format[task.cur].c));
+
 		lio += GDKusec() - t1;	/* line break done */
 		if (task.top[task.cur]) {
 			if (res == 0) {
@@ -1878,10 +1754,9 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 			BATsetcount(task.as->format[attr].c, leftover );			\
 		} while (0)
 
-#ifdef _DEBUG_TABLET_
-		mnstr_printf(GDKout, "#Trim bbest %d table size " BUNFMT " rows found so far " BUNFMT "\n",
+		TRC_DEBUG(MAL_TABLET, "Trim bbest '%d' table size " BUNFMT " - rows found so far " BUNFMT "\n",
 					 best, BATcount(as->format[firstcol].c), task.cnt);
-#endif
+
 		if (best && BATcount(as->format[firstcol].c)) {
 			BUN limit;
 			int width;
@@ -1940,36 +1815,15 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 		}
 		MT_sema_up(&task.producer);
 	}
-#ifdef _DEBUG_TABLET_
-	mnstr_printf(GDKout, "#Enf of block stream eof=%d res=%d\n",
-				 task.ateof, res);
-#endif
+
+	TRC_DEBUG(MAL_TABLET, "End of block stream eof=%d - res=%d\n", task.ateof, res);
 
 	cnt = BATcount(task.as->format[firstcol].c);
-	if (GDKdebug & GRPalgorithms) {
-		mnstr_printf(GDKout, "#COPY reader time " LLFMT " line break " LLFMT " io " LLFMT "\n",
-					 total, lio, iototal);
-#ifdef _DEBUG_TABLET_
-		for (i = 0; i < as->nr_attrs; i++)
-			mnstr_printf(GDKout, LLFMT " ", task.time[i]);
-		mnstr_printf(GDKout, "\n");
-#endif
-		for (j = 0; j < threads; j++)
-			mnstr_printf(GDKout, "#COPY thread time " LLFMT "\n",
-						 ptask[j].wtime);
-	}
 
 	task.ateof = true;
 	task.state = ENDOFCOPY;
-#ifdef _DEBUG_TABLET_
-	for (i = 0; i < as->nr_attrs; i++) {
-		mnstr_printf(GDKout, "column " BUNFMT "\n", i);
-		BATprint(task.as->format[i].c);
-	}
-#endif
-#ifdef _DEBUG_TABLET_
-	mnstr_printf(GDKout, "#Activate sync on disk \n");
-#endif
+	TRC_DEBUG(MAL_TABLET, "Activate sync on disk\n");
+	
 	// activate the workers to sync the BATs to disk
 	if (res == 0) {
 		for (j = 0; j < threads; j++) {
@@ -1980,9 +1834,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 	}
 
 	if (!task.ateof || cnt < task.maxrow) {
-#ifdef _DEBUG_TABLET_
-		mnstr_printf(GDKout, "#Shut down reader\n");
-#endif
+		TRC_DEBUG(MAL_TABLET, "Shut down reader\n");
 		MT_sema_up(&task.producer);
 	}
 	MT_join_thread(task.tid);
@@ -1992,9 +1844,8 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 			MT_sema_down(&ptask[j].reply);
 	}
 
-#ifdef _DEBUG_TABLET_
-	mnstr_printf(GDKout, "#Activate endofcopy\n");
-#endif
+	TRC_DEBUG(MAL_TABLET, "Activate endofcopy\n");
+
 	for (j = 0; j < threads; j++) {
 		ptask[j].state = ENDOFCOPY;
 		MT_sema_up(&ptask[j].sema);
@@ -2003,9 +1854,8 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 	for (j = 0; j < threads; j++)
 		MT_sema_down(&ptask[j].reply);
 
-#ifdef _DEBUG_TABLET_
-	mnstr_printf(GDKout, "#Kill the workers\n");
-#endif
+	TRC_DEBUG(MAL_TABLET, "Kill the workers\n");
+
 	for (j = 0; j < threads; j++) {
 		MT_join_thread(ptask[j].tid);
 		GDKfree(ptask[j].cols);
@@ -2013,11 +1863,9 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 		MT_sema_destroy(&ptask[j].reply);
 	}
 
-#ifdef _DEBUG_TABLET_
-	mnstr_printf(GDKout, "#Found " BUNFMT " tuples\n", cnt);
-	mnstr_printf(GDKout, "#leftover input:%.63s\n",
-				 task.b->buf + task.b->pos);
-#endif
+	TRC_DEBUG(MAL_TABLET, "Found " BUNFMT " tuples\n", cnt);
+	TRC_DEBUG(MAL_TABLET, "Leftover input: %.63s\n", task.b->buf + task.b->pos);
+
 	for (i = 0; i < as->nr_attrs; i++) {
 		BAT *b = task.as->format[i].c;
 		if (b)
@@ -2041,8 +1889,6 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 	munlockall();
 #endif
 
-	/* restore system setting */
-	GDK_vm_trim = vmtrim;
 	return res < 0 ? BUN_NONE : cnt;
 
   bailout:
@@ -2062,8 +1908,6 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 #ifdef MLOCK_TST
 	munlockall();
 #endif
-	/* restore system setting */
-	GDK_vm_trim = vmtrim;
 	return BUN_NONE;
 }
 
@@ -2104,5 +1948,3 @@ COPYrejects_clear(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) pci;
 	return MAL_SUCCEED;
 }
-
-#undef _DEBUG_TABLET_

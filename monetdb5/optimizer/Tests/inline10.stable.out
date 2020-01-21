@@ -23,7 +23,6 @@ stdout of test 'inline10` in directory 'monetdb5/optimizer` itself:
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 06:41:01 >  
 # 06:41:01 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-8837" "--port=33343"
@@ -36,9 +35,9 @@ function user.qry():void;               	#[0] (0)  0
     X_10:int := X_14:int;               	#[4] (0)  14 <- 18 
     zz:int := X_10:int;                 	#[5] (0)  5 <- 14 
 # base line test for inlining           
-    X_23:bat[:int] := batcalc.+(b:bat[:int], b:bat[:int]);	#[7] (0) CMDbatADDsignal 27 <- 1 1 
-    X_19:bat[:int] := X_23:bat[:int];   	#[8] (0)  23 <- 27 
-    z:bat[:int] := X_19:bat[:int];      	#[9] (0)  8 <- 23 
+    X_23:bat[:int] := batcalc.+(b:bat[:int], b:bat[:int]);	#[1] (0) CMDbatADDsignal 27 <- 1 1 
+    X_19:bat[:int] := X_23:bat[:int];	#[2] (0)  23 <- 27 
+    z:bat[:int] := X_19:bat[:int];	#[2] (0)  8 <- 23 
 end user.qry;                           	#[10] (0)  
 
 # 11:53:01 >  

@@ -18,7 +18,6 @@ stdout of test 'dataflow3` in directory 'monetdb5/optimizer` itself:
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 09:20:27 >  
 # 09:20:27 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-26435" "--port=37267"

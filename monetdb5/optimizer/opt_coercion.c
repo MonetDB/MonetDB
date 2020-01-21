@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /* (c) M. Kersten
@@ -12,6 +12,7 @@
 
 #include "monetdb_config.h"
 #include "opt_coercion.h"
+#include "opt_aliases.h"
 
 typedef struct{
 	int pc;
@@ -19,29 +20,6 @@ typedef struct{
 	int totype;
 	int src;
 } Coercion;
-
-static int
-coercionOptimizerStep(MalBlkPtr mb, int i, InstrPtr p)
-{
-	int t, k, a, b;
-
-	a = getArg(p, 0);
-	b = getArg(p, 1);
-	t = getVarType(mb, b);
-	if (getVarType(mb, a) != t)
-		return 0;
-	if (strcmp(getFunctionId(p), ATOMname(t)) == 0) {
-		removeInstruction(mb, p); /* dead code */
-		for (; i < mb->stop; i++) {
-			p = getInstrPtr(mb, i);
-			for (k = p->retc; k < p->argc; k++)
-				if (p->argv[k] == a)
-					p->argv[k] = b;
-		}
-		return 1;
-	}
-	return 0;
-}
 
 /* Check coercions for numeric types towards :hge that can be handled with smaller ones.
  * For now, limit to +,-,/,*,% hge expressions
@@ -69,10 +47,7 @@ coercionOptimizerCalcStep(Client cntxt, MalBlkPtr mb, int i, Coercion *coerce)
 	varid = getArg(p,1);
 	if ( a == r && coerce[varid].src && coerce[varid].fromtype < r ) 
 	{
-#ifdef _DEBUG_COERCION_
-		fprintf(stderr,"#remove upcast on first argument %d\n", varid);
-		fprintInstruction(stderr, mb, 0, p, LIST_MAL_ALL);
-#endif
+		// Remove upcast on first argument 
 		getArg(p,1) = coerce[varid].src;
 		if ( chkInstruction(cntxt->usermodule, mb, p) || p->typechk == TYPE_UNKNOWN)
 			getArg(p,1) = varid;
@@ -80,18 +55,11 @@ coercionOptimizerCalcStep(Client cntxt, MalBlkPtr mb, int i, Coercion *coerce)
 	varid = getArg(p,2);
 	if ( b == r && coerce[varid].src &&  coerce[varid].fromtype < r ) 
 	{
-#ifdef _DEBUG_COERCION_
-		fprintf(stderr,"#remove upcast on second argument %d\n", varid);
-		fprintInstruction(stderr, mb, 0, p, LIST_MAL_ALL);
-#endif
+		// Remove upcast on second argument 
 		getArg(p,2) = coerce[varid].src;
 		if ( chkInstruction(cntxt->usermodule, mb, p) || p->typechk == TYPE_UNKNOWN)
 			getArg(p,2) = varid;
 	}
-#ifdef _DEBUG_COERCION_
-		fprintf(stderr,"#final instruction\n");
-		fprintInstruction(stderr, mb, 0, p, LIST_MAL_ALL);
-#endif
 	return;
 }
 
@@ -120,7 +88,7 @@ coercionOptimizerAggrStep(Client cntxt, MalBlkPtr mb, int i, Coercion *coerce)
 str
 OPTcoercionImplementation(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i, k;
+	int i, k, t;
 	InstrPtr p;
 	int actions = 0;
 	str calcRef= putName("calc");
@@ -130,7 +98,7 @@ OPTcoercionImplementation(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	str msg = MAL_SUCCEED;
 
 	if( coerce == NULL)
-		throw(MAL,"optimizer.coercion", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL,"optimizer.coercion", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	(void) cntxt;
 	(void) pci;
 	(void) stk;		/* to fool compilers */
@@ -179,9 +147,12 @@ OPTcoercionImplementation(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 		coercionOptimizerAggrStep(cntxt,mb, i, coerce);
 		coercionOptimizerCalcStep(cntxt,mb, i, coerce);
 		if (getModuleId(p)==calcRef && p->argc == 2) {
-			k= coercionOptimizerStep(mb, i, p);
-			actions += k;
-			if( k) i--;
+			t = getVarType(mb, getArg(p,1));
+			if (getVarType(mb, getArg(p,0)) == t && strcmp(getFunctionId(p), ATOMname(t)) == 0) {
+				/* turn it into an assignment */
+				clrFunction(p);
+				actions ++;
+			}
 		}
 	}
 	/*
@@ -192,16 +163,17 @@ OPTcoercionImplementation(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 
     /* Defense line against incorrect plans */
     if( actions > 0){
-        chkTypes(cntxt->usermodule, mb, FALSE);
-        chkFlow(mb);
-        chkDeclarations(mb);
-    }
+        msg = chkTypes(cntxt->usermodule, mb, FALSE);
+	if (!msg)
+        	msg = chkFlow(mb);
+	if (!msg)
+        	msg = chkDeclarations(mb);
+    } 
     /* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","coercion",actions, usec);
     newComment(mb,buf);
-	if( actions >= 0)
+	if( actions > 0)
 		addtoMalBlkHistory(mb);
-
 	return msg;
 }

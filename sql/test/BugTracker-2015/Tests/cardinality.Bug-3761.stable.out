@@ -23,7 +23,6 @@ stdout of test 'cardinality.Bug-3761` in directory 'sql/test/BugTracker-2015` it
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 16:23:57 >  
 # 16:23:57 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-3180" "--port=33257"
@@ -70,7 +69,7 @@ Ready.
 #7176	"bam"	3	3	true
 [ 4	]
 #SELECT NULL AS table_catalog, (SELECT s.name FROM schms s WHERE t.schema_id = s.id) AS table_schema FROM tbls t ORDER BY table_schema;
-% .L2,	.L11 # table_name
+% .,	. # table_name
 % table_catalog,	table_schema # name
 % char,	varchar # type
 % 0,	3 # length
@@ -129,7 +128,7 @@ Ready.
 [ NULL,	"tmp"	]
 [ NULL,	"tmp"	]
 #SELECT (SELECT s.name FROM schms s WHERE t.schema_id = s.id) AS table_schema, NULL AS table_catalog FROM tbls t ORDER BY table_schema;
-% .L6,	.L10 # table_name
+% .,	. # table_name
 % table_schema,	table_catalog # name
 % varchar,	char # type
 % 3,	0 # length

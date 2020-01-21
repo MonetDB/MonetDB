@@ -14,7 +14,6 @@ stdout of test 'except-union-intersect-bug-sf-1146079` in directory 'sql/test/bu
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:30729/
 # MonetDB/SQL module v2.30.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

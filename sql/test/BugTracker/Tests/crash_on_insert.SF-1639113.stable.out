@@ -11,7 +11,6 @@ stdout of test 'crash_on_insert.SF-1639113` in directory 'sql/test/BugTracker` i
 # Visit http://monetdb.cwi.nl/ for further information.
 
 
-Ready.
 
 
 # 13:42:07 >  
@@ -21,8 +20,8 @@ Ready.
 [ 1	]
 [ 1	]
 #select 'the following query causes mserver5 to segfault';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % char # type
 % 47 # length
 [ "the following query causes mserver5 to segfault"	]

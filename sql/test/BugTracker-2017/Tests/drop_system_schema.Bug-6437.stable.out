@@ -18,7 +18,6 @@ stdout of test 'drop_system_schema.Bug-6437` in directory 'sql/test/BugTracker-2
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 13:50:35 >  
 # 13:50:35 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-25647" "--port=36212"
@@ -35,15 +34,15 @@ Ready.
 [ "tmp",	2,	3	]
 #set schema profiler;
 #select current_schema;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % varchar # type
 % 8 # length
 [ "profiler"	]
 #set schema json;
 #select current_schema;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % varchar # type
 % 4 # length
 [ "json"	]
@@ -59,8 +58,8 @@ Ready.
 #set schema profiler;
 #set schema tmp;
 #select current_schema;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % varchar # type
 % 3 # length
 [ "tmp"	]
@@ -76,8 +75,8 @@ Ready.
 #set schema json;
 #set schema sys;
 #select current_schema;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % varchar # type
 % 3 # length
 [ "sys"	]
@@ -93,22 +92,22 @@ Ready.
 [ "tmp",	2,	3	]
 #set schema profiler;
 #select current_schema;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % varchar # type
 % 8 # length
 [ "profiler"	]
 #set schema json;
 #select current_schema;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % varchar # type
 % 4 # length
 [ "json"	]
 #set schema sys;
 #select current_schema;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % varchar # type
 % 3 # length
 [ "sys"	]
@@ -132,8 +131,8 @@ Ready.
 [ "tmp",	2,	3,	true	]
 #set schema tmp;
 #select current_schema;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % varchar # type
 % 3 # length
 [ "tmp"	]

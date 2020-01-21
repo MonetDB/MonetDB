@@ -21,7 +21,6 @@ stdout of test 'pyapi17` in directory 'sql/backends/monet5` itself:
 # MonetDB/Python module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 18:29:27 >  
 # 18:29:27 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-4853" "--port=37688"
@@ -39,7 +38,7 @@ Ready.
 #	return retval
 #};
 #SELECT * FROM pyapi17();
-% .L1,	.L1,	.L1,	.L1 # table_name
+% .%1,	.%1,	.%1,	.%1 # table_name
 % a,	b,	c,	d # name
 % clob,	clob,	int,	boolean # type
 % 3,	3,	1,	5 # length
@@ -57,7 +56,7 @@ Ready.
 #	return retval
 #};
 #SELECT * FROM pyapi17();
-% .L1,	.L1,	.L1,	.L1 # table_name
+% .%1,	.%1,	.%1,	.%1 # table_name
 % a,	b,	c,	d # name
 % clob,	clob,	int,	boolean # type
 % 3,	3,	1,	5 # length
@@ -97,8 +96,8 @@ Ready.
 #	return retval
 #};
 #SELECT pyapi17(i) FROM integers;
-% sys.L2 # table_name
-% L2 # name
+% sys.%1 # table_name
+% %1 # name
 % int # type
 % 2 # length
 [ 33	]

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -17,106 +17,83 @@
 #include "mal_function.h"
 #include "mal_exception.h"
 #include "mal_session.h"
-#include "mal_debugger.h"
 #include "mal_namespace.h"
 #include "mal_private.h"
 
+typedef struct {
+	int id;			/* unique plant number */
+	MalBlkPtr factory;
+	MalStkPtr stk;		/* private state */
+	int pc;			/* where we are */
+	int inuse;		/* able to handle it */
+	int next;		/* next plant of same factory */
+	int policy;		/* flags to control behavior */
+
+	Client client;		/* who called it */
+	MalBlkPtr caller;	/* from routine */
+	MalStkPtr env;		/* with the stack  */
+	InstrPtr pci;		/* with the instruction */
+} PlantRecord, *Plant;
+
+#define MAXPLANTS 256
+static PlantRecord plants[MAXPLANTS];
+static int lastPlant= 0;
+static int plantId = 1;
+
+mal_export Plant newPlant(MalBlkPtr mb);
+
 static int
-findPlant(Client cntxt, MalBlkPtr mb){
-	int i, lastplant= cntxt->lastPlant;
-	Plant cpl = cntxt->plants;
-
-	for(i=0; i< lastplant; i++)
-		if( cpl[i].factory == mb)
-			return i;
+findPlant(MalBlkPtr mb){
+	int i;
+	for(i=0; i<lastPlant; i++)
+	if( plants[i].factory == mb)
+		return i;
 	return -1;
-}
-
-mal_export Plant newPlant(Client cntxt, MalBlkPtr mb);
-
-/*
- * A new plant is constructed. The properties of the factory
- * should be known upon compile time. They are retrieved from
- * the signature of the factory definition.
- */
-Plant
-newPlant(Client cntxt, MalBlkPtr mb)
-{
-	Plant p, plim;
-	MalStkPtr stk;
-
-	plim = cntxt->plants + cntxt->lastPlant;
-	for (p = cntxt->plants; p < plim && p->factory; p++)
-		;
-	stk = newGlobalStack(mb->vsize);
-	if (cntxt->lastPlant == MAXPLANTS || stk == NULL){
-		if( stk) GDKfree(stk);
-		return 0;
-	}
-	if (p == plim)
-		cntxt->lastPlant++;
-	p->factory = mb;
-	p->id = cntxt->plantId++;
-
-	p->pc = 1;		/* where we start */
-	p->stk = stk;
-	p->stk->blk = mb;
-	p->stk->keepAlive = TRUE;
-	return p;
 }
 
 str
 runFactory(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr stk, InstrPtr pci)
 {
-	Plant pl=0, cpl;
+	Plant pl=0;
 	int firstcall= TRUE, i, k;
 	InstrPtr psig = getInstrPtr(mb, 0);
 	ValPtr lhs, rhs;
 	char cmd;
 	str msg;
 
-#ifdef DEBUG_MAL_FACTORY
-	fprintf(stderr, "#factoryMgr called\n");
-#endif
-	if(!cntxt->plants){
-		cntxt->plants = GDKzalloc(MAXPLANTS * sizeof(PlantRecord));
-		if(!cntxt->plants)
-			throw(MAL, "factory.call", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-	}
-	cpl = cntxt->plants;
-
 	/* the lookup can be largely avoided by handing out the index
 	   upon factory definition. todo
 		Alternative is to move them to the front
 	 */
-	for(i=0; i< cntxt->lastPlant; i++)
-	if( cpl[i].factory == mb){
-		if(i > 0 && i< cntxt->lastPlant ){
-			PlantRecord prec= cpl[i-1];
-			cpl[i-1] = cpl[i];
-			cpl[i]= prec;
+	for(i=0; i< lastPlant; i++)
+	if( plants[i].factory == mb){
+		if(i > 0 && i< lastPlant ){
+			PlantRecord prec= plants[i-1];
+			plants[i-1] = plants[i];
+			plants[i]= prec;
 			i--;
 		}
-		pl= cpl+i;
+		pl= plants+i;
 		firstcall= FALSE;
 		break;
 	}
 	if (pl == 0) {
 		/* compress the plant table*/
-		for(k=i=0;i<=cntxt->lastPlant; i++)
-		if( cpl[i].inuse)
-			cpl[k++]= cpl[i];
-		cntxt->lastPlant = k;
+		for(k=i=0;i<=lastPlant; i++)
+		if( plants[i].inuse)
+			plants[k++]= plants[i];
+		lastPlant = k;
 		/* initialize a new plant using the owner policy */
-		pl = newPlant(cntxt, mb);
+		pl = newPlant(mb);
 		if (pl == NULL)
-			throw(MAL, "factory.call", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "factory.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	/*
 	 * We have found a factory to process the request.
 	 * Let's call it as a synchronous action, without concern on parallelism.
 	 */
 	/* remember context */
+	pl->client = cntxt;
 	pl->caller = mbcaller;
 	pl->env = stk;
 	pl->pci = pci;
@@ -124,7 +101,7 @@ runFactory(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr stk, InstrP
 	/* inherit debugging */
 	cmd = stk->cmd;
 	if ( pl->stk == NULL)
-		throw(MAL, "factory.call", "internal error, stack frame missing");
+		throw(MAL, "factory.new", "internal error, stack frame missing");
 
 	/* copy the calling arguments onto the stack
 	   of the factory */
@@ -137,7 +114,7 @@ runFactory(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr stk, InstrP
 
 		rhs = &pl->env->stk[getArg(pci, i)];
 		if (VALcopy(lhs, rhs) == NULL)
-			throw(MAL, "factory.call", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "factory.call", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		if( lhs->vtype == TYPE_bat )
 			BBPretain(lhs->val.bval);
 	}
@@ -151,7 +128,7 @@ runFactory(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr stk, InstrP
 				if( !isVarDisabled(mb,i)){
 					rhs = &getVarConstant(mb,i);
 					if (VALcopy(lhs,rhs) == NULL)
-						throw(MAL, "factory.call", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+						throw(MAL, "factory.call", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				}
 			} else{
 				lhs->vtype = getVarGDKType(mb,i);
@@ -159,24 +136,12 @@ runFactory(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr stk, InstrP
 				lhs->len = 0;
 			}
 		}
+		pl->stk->stktop = mb->vtop;
 		pl->stk->stkbot= mb->vtop;	/* stack already initialized */
 		msg = runMAL(cntxt, mb, 0, pl->stk);
-	} else {
+	 } else {
 		msg = reenterMAL(cntxt, mb, pl->pc, -1, pl->stk);
 	}
-	/*if(pl->stk) { TODO check the memory leaks in factories
-		i = psig->retc;
-		for (k = pci->retc; i < pci->argc; i++, k++) { //for subsequent calls, the previous arguments must be freed
-			lhs = &pl->stk->stk[psig->argv[k]];
-			 variable arguments ?
-			if (k == psig->argc - 1)
-				k--;
-			if (lhs->vtype == TYPE_str) {
-				GDKfree(lhs->val.sval);
-				lhs->val.sval = NULL;
-			}
-		}
-	}*/
 	/* propagate change in debugging status */
 	if (cmd && pl->stk && pl->stk->cmd != cmd && cmd != 'x')
 		for (; stk; stk = stk->up)
@@ -196,20 +161,14 @@ callFactory(Client cntxt, MalBlkPtr mb, ValPtr argv[], char flag){
 	MalStkPtr stk;
 	str ret;
 
-	if(!cntxt->plants){
-		cntxt->plants = GDKzalloc(MAXPLANTS * sizeof(PlantRecord));
-		if(!cntxt->plants)
-			throw(MAL, "factory.call", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-		memset((void*) (cntxt->plants), 0, MAXPLANTS * sizeof(PlantRecord));
-	}
-
-	i= findPlant(cntxt, mb);
+	i= findPlant(mb);
 	if( i< 0) {
 		/* first call? prepare the factory */
-		pl = newPlant(cntxt, mb);
+		pl = newPlant(mb);
 		if (pl == NULL)
-			throw(MAL, "factory.call", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "factory.call", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		/* remember context, which does not exist. */
+		pl->client = cntxt;
 		pl->caller = 0;
 		pl->env = 0;
 		pl->pci = 0;
@@ -227,14 +186,14 @@ callFactory(Client cntxt, MalBlkPtr mb, ValPtr argv[], char flag){
 			lhs = &stk->stk[i];
 			rhs = &getVarConstant(mb,i);
 			if (VALcopy(lhs,rhs) == NULL)
-				throw(MAL, "factory.call", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				throw(MAL, "factory.call", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		} else {
 			lhs = &stk->stk[i];
 			lhs->vtype = getVarGDKType(mb,i);
 		}
 		pl->stk= stk;
 	} else  {
-		pl= cntxt->plants + i;
+		pl= plants+i;
 		/*
 		 * When you re-enter the factory the old arguments should be
 		 * released to make room for the new ones.
@@ -250,7 +209,7 @@ callFactory(Client cntxt, MalBlkPtr mb, ValPtr argv[], char flag){
 	for (i = psig->retc; i < psig->argc; i++) {
 		lhs = &pl->stk->stk[psig->argv[i]];
 		if (VALcopy(lhs, argv[i]) == NULL)
-			throw(MAL, "factory.call", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "factory.call", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		if( lhs->vtype == TYPE_bat )
 			BBPretain(lhs->val.bval);
 	}
@@ -262,6 +221,36 @@ callFactory(Client cntxt, MalBlkPtr mb, ValPtr argv[], char flag){
 	*/
 	return ret;
 }
+/*
+ * A new plant is constructed. The properties of the factory
+ * should be known upon compile time. They are retrieved from
+ * the signature of the factory definition.
+ */
+Plant
+newPlant(MalBlkPtr mb)
+{
+	Plant p, plim;
+	MalStkPtr stk;
+
+	plim = plants + lastPlant;
+	for (p = plants; p < plim && p->factory; p++)
+		;
+	stk = newGlobalStack(mb->vsize);
+	if (lastPlant == MAXPLANTS || stk == NULL){
+		if( stk) GDKfree(stk);
+		return 0;
+	}
+	if (p == plim)
+		lastPlant++;
+	p->factory = mb;
+	p->id = plantId++;
+
+	p->pc = 1;		/* where we start */
+	p->stk = stk;
+	p->stk->blk = mb;
+	p->stk->keepAlive = TRUE;
+	return p;
+}
 
 /*
  * Upon reaching the yield operator, the factory is
@@ -270,43 +259,41 @@ callFactory(Client cntxt, MalBlkPtr mb, ValPtr argv[], char flag){
  * to the caller stack frame.
  */
 int
-yieldResult(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc)
+yieldResult(MalBlkPtr mb, InstrPtr p, int pc)
 {
-	Plant pl, cpl = cntxt->plants, plim = cntxt->plants + cntxt->lastPlant;
+	Plant pl, plim = plants + lastPlant;
 	ValPtr lhs, rhs;
 	int i;
 
 	(void) p;
 	(void) pc;
-	for (pl = cpl; pl < plim; pl++)
+	for (pl = plants; pl < plim; pl++)
 		if (pl->factory == mb ) {
 			if( pl->env == NULL)
-				return(int) (pl - cpl);
+				return(int) (pl-plants);
 			for (i = 0; i < p->retc; i++) {
-#ifdef DEBUG_MAL_FACTORY
-				fprintf(stderr,"#lhs %d rhs %d\n", getArg(pl->pci, i), getArg(p, i));
-#endif
 				rhs = &pl->stk->stk[getArg(p, i)];
 				lhs = &pl->env->stk[getArg(pl->pci, i)];
 				if (VALcopy(lhs, rhs) == NULL)
 					return -1;
 			}
-			return (int) (pl - cpl);
+			return (int) (pl-plants);
 		}
 	return -1;
 }
 
 str
-yieldFactory(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc)
+yieldFactory(MalBlkPtr mb, InstrPtr p, int pc)
 {
 	Plant pl;
 	int i;
 
-	i = yieldResult(cntxt, mb, p, pc);
+	i = yieldResult(mb, p, pc);
 
 	if (i>=0) {
-		pl = cntxt->plants+i;
+		pl = plants+i;
 		pl->pc = pc + 1;
+		pl->client = NULL;
 		pl->caller = NULL;
 		pl->pci = NULL;
 		pl->env = NULL;
@@ -327,27 +314,30 @@ shutdownFactory(Client cntxt, MalBlkPtr mb)
 {
 	Plant pl, plim;
 
-	if(!cntxt->plants)
-		return MAL_SUCCEED;
-
-	plim = cntxt->plants + cntxt->lastPlant;
-	for (pl = cntxt->plants; pl < plim; pl++)
+	plim = plants + lastPlant;
+	for (pl = plants; pl < plim; pl++)
 		if (pl->factory == mb) {
 			/* MSresetVariables(mb, pl->stk, 0);*/
 			/* freeStack(pl->stk); there may be a reference?*/
 			/* we are inside the body of the factory and about to return */
 			pl->factory = 0;
-			if (pl->stk) {
+			if (pl->stk)
 				pl->stk->keepAlive = FALSE;
+			if ( pl->stk) {
 				garbageCollector(cntxt, mb, pl->stk,TRUE);
 				GDKfree(pl->stk);
 			}
 			pl->stk=0;
 			pl->pc = 0;
 			pl->inuse = 0;
+			pl->client = NULL;
 			pl->caller = NULL;
 			pl->pci = NULL;
 			pl->env = NULL;
+			pl->client = NULL;
+			pl->caller = NULL;
+			pl->env= NULL;
+			pl->pci = NULL;
 		}
 	return MAL_SUCCEED;
 }
@@ -358,11 +348,8 @@ shutdownFactoryByName(Client cntxt, Module m, str nme){
 	InstrPtr p;
 	Symbol s;
 
-	if(!cntxt->plants)
-		return MAL_SUCCEED;
-
-	plim = cntxt->plants + cntxt->lastPlant;
-	for (pl = cntxt->plants; pl < plim; pl++)
+	plim = plants + lastPlant;
+	for (pl = plants; pl < plim; pl++)
 		if (pl->factory ) {
 			MalStkPtr stk;
 
@@ -384,31 +371,33 @@ shutdownFactoryByName(Client cntxt, Module m, str nme){
 	return MAL_SUCCEED;
 }
 
-void mal_factory_reset(Client cntxt) {
+void mal_factory_reset(void)
+{
 	Plant pl, plim;
 
-	if (cntxt->plants) {
-		plim = cntxt->plants + cntxt->lastPlant;
-		for (pl = cntxt->plants; pl < plim; pl++){
+	plim = plants + lastPlant;
+	for (pl = plants; pl < plim; pl++){
 			/* MSresetVariables(mb, pl->stk, 0);*/
 			/* freeStack(pl->stk); there may be a reference?*/
 			/* we are inside the body of the factory and about to return */
 			if (pl->stk) {
 				pl->stk->keepAlive = FALSE;
-				//garbageCollector(NULL, pl->factory, pl->stk, TRUE); /* this will be freed by the freeModule call */
+				garbageCollector(NULL, pl->factory, pl->stk, TRUE);
 				GDKfree(pl->stk);
 			}
 			pl->factory = 0;
 			pl->stk=0;
 			pl->pc = 0;
 			pl->inuse = 0;
+			pl->client = NULL;
 			pl->caller = NULL;
 			pl->pci = NULL;
 			pl->env = NULL;
-		}
-		GDKfree(cntxt->plants);
-		cntxt->plants = 0;
+			pl->client = NULL;
+			pl->caller = NULL;
+			pl->env= NULL;
+			pl->pci = NULL;
 	}
-	cntxt->plantId = 1;
-	cntxt->lastPlant = 0;
+	plantId = 1;
+	lastPlant = 0;
 }

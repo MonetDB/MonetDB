@@ -20,7 +20,6 @@ stdout of test 'SQLcopyinto` in directory 'sql/jdbc/tests` itself:
 # MonetDB/Python2 module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 12:52:00 >  
 # 12:52:00 >  "./SQLcopyinto.SQL.sh" "SQLcopyinto"

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -20,6 +20,7 @@
 #include "batmmath.h"
 #include "gdk_cand.h"
 #include <fenv.h>
+#include "mmath_private.h"
 #ifndef FE_INVALID
 #define FE_INVALID			0
 #endif
@@ -35,7 +36,7 @@
 		bn = COLnew(b->hseqbase, X1, BATcount(b), TRANSIENT);	\
 		if (bn == NULL) {										\
 			BBPunfix(b->batCacheid);							\
-			throw(MAL, X2, SQLSTATE(HY001) MAL_MALLOC_FAIL);	\
+			throw(MAL, X2, SQLSTATE(HY013) MAL_MALLOC_FAIL);	\
 		}														\
 		bn->tsorted = b->tsorted;								\
 		bn->trevsorted = b->trevsorted;							\
@@ -43,20 +44,13 @@
 	} while (0)
 
 
-/* from gdk_calc.c */
-#define CANDLOOP(dst, i, NIL, low, high)		\
-	do {										\
-		for ((i) = (low); (i) < (high); (i)++)	\
-			(dst)[i] = NIL;						\
-		nils += (high) - (low);					\
-	} while (0)
-
 #define scienceFcnImpl(FUNC,TYPE,SUFF)									\
 str CMDscience_bat_##TYPE##_##FUNC##_cand(bat *ret, const bat *bid, const bat *sid)	\
 {																		\
 	BAT *b, *s = NULL, *bn;												\
-	BUN i, cnt, start, end;												\
-	const oid *restrict cand = NULL, *candend = NULL;					\
+	BUN i, cnt;															\
+	struct canditer ci;													\
+	oid x;																\
 	BUN nils = 0;														\
 	int e = 0, ex = 0;													\
 																		\
@@ -68,50 +62,38 @@ str CMDscience_bat_##TYPE##_##FUNC##_cand(bat *ret, const bat *bid, const bat *s
 		BBPunfix(b->batCacheid);										\
 		throw(MAL, #TYPE, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);		\
 	}																	\
-	CANDINIT(b, s, start, end, cnt, cand, candend);						\
+	canditer_init(&ci, b, s);											\
+	cnt = BATcount(b);													\
 	bn = COLnew(b->hseqbase, TYPE_##TYPE, cnt, TRANSIENT);				\
 	if (bn == NULL) {													\
 		BBPunfix(b->batCacheid);										\
 		BBPunfix(s->batCacheid);										\
-		throw(MAL, "batcalc." #FUNC, SQLSTATE(HY001) MAL_MALLOC_FAIL);	\
+		throw(MAL, "batcalc." #FUNC, SQLSTATE(HY013) MAL_MALLOC_FAIL);	\
 	}																	\
 																		\
 	const TYPE *restrict src = (const TYPE *) Tloc(b, 0);				\
 	TYPE *restrict dst = (TYPE *) Tloc(bn, 0);							\
-	CANDLOOP(dst, i, TYPE##_nil, 0, start);								\
 	errno = 0;															\
 	feclearexcept(FE_ALL_EXCEPT);										\
-	if (b->tnonil && cand == NULL) {									\
-		for (i = start; i < end; i++)									\
-			dst[i] = FUNC##SUFF(src[i]);								\
-	} else {															\
-		if (cand) {														\
-			for (i = start; i < end; i++) {								\
-				if (i < *cand - b->hseqbase) {							\
-					nils++;												\
-					dst[i] = TYPE##_nil;								\
-					continue;											\
-				}														\
-				assert(i == *cand - b->hseqbase);						\
-				if (++cand == candend)									\
-					end = i + 1;										\
-				if (is_##TYPE##_nil(src[i])) {							\
-					nils++;												\
-					dst[i] = TYPE##_nil;								\
-				} else {												\
-					dst[i] = FUNC##SUFF(src[i]);						\
-				}														\
-			}															\
-		} else {														\
-			for (i = start; i < end; i++) {								\
-				if (is_##TYPE##_nil(src[i])) {							\
-					nils++;												\
-					dst[i] = TYPE##_nil;								\
-				} else {												\
-					dst[i] = FUNC##SUFF(src[i]);						\
-				}														\
-			}															\
+	for (i = 0; i < cnt; i++) {											\
+		x = canditer_next(&ci);											\
+		if (is_oid_nil(x))												\
+			break;														\
+		x -= b->hseqbase;												\
+		while (i < x) {													\
+			dst[i++] = TYPE##_nil;										\
+			nils++;														\
 		}																\
+		if (is_##TYPE##_nil(src[i])) {									\
+			nils++;														\
+			dst[i] = TYPE##_nil;										\
+		} else {														\
+			dst[i] = FUNC##SUFF(src[i]);								\
+		}																\
+	}																	\
+	while (i < cnt) {													\
+		dst[i++] = TYPE##_nil;											\
+		nils++;															\
 	}																	\
 	e = errno;															\
 	ex = fetestexcept(FE_INVALID | FE_DIVBYZERO | FE_OVERFLOW);			\
@@ -131,7 +113,6 @@ str CMDscience_bat_##TYPE##_##FUNC##_cand(bat *ret, const bat *bid, const bat *s
 			err = "Invalid result";										\
 		throw(MAL, "batmmath." #FUNC, "Math exception: %s", err);		\
 	}																	\
-	CANDLOOP(dst, i, TYPE##_nil, end, cnt);								\
 	BATsetcount(bn, cnt);												\
 	bn->theap.dirty = true;												\
 																		\
@@ -154,8 +135,9 @@ str CMDscience_bat_cst_##FUNC##_##TYPE##_cand(bat *ret, const bat *bid, \
 											  const TYPE *d, const bat *sid) \
 {																		\
 	BAT *b, *s = NULL, *bn;												\
-	BUN i, cnt, start, end;												\
-	const oid *restrict cand = NULL, *candend = NULL;					\
+	BUN i, cnt;															\
+	struct canditer ci;													\
+	oid x;																\
 	BUN nils = 0;														\
 	int e = 0, ex = 0;													\
 																		\
@@ -167,50 +149,38 @@ str CMDscience_bat_cst_##FUNC##_##TYPE##_cand(bat *ret, const bat *bid, \
 		BBPunfix(b->batCacheid);										\
 		throw(MAL, #TYPE, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);		\
 	}																	\
-	CANDINIT(b, s, start, end, cnt, cand, candend);						\
+	canditer_init(&ci, b, s);											\
+	cnt = BATcount(b);													\
 	bn = COLnew(b->hseqbase, TYPE_##TYPE, cnt, TRANSIENT);				\
 	if (bn == NULL) {													\
 		BBPunfix(b->batCacheid);										\
 		BBPunfix(s->batCacheid);										\
-		throw(MAL, "batcalc." #FUNC, SQLSTATE(HY001) MAL_MALLOC_FAIL);	\
+		throw(MAL, "batcalc." #FUNC, SQLSTATE(HY013) MAL_MALLOC_FAIL);	\
 	}																	\
 																		\
 	const TYPE *restrict src = (const TYPE *) Tloc(b, 0);				\
 	TYPE *restrict dst = (TYPE *) Tloc(bn, 0);							\
-	CANDLOOP(dst, i, TYPE##_nil, 0, start);								\
 	errno = 0;															\
 	feclearexcept(FE_ALL_EXCEPT);										\
-	if (b->tnonil && cand == NULL) {									\
-		for (i = start; i < end; i++)									\
-			dst[i] = FUNC##SUFF(src[i], *d);							\
-	} else {															\
-		if (cand) {														\
-			for (i = start; i < end; i++) {								\
-				if (i < *cand - b->hseqbase) {							\
-					nils++;												\
-					dst[i] = TYPE##_nil;								\
-					continue;											\
-				}														\
-				assert(i == *cand - b->hseqbase);						\
-				if (++cand == candend)									\
-					end = i + 1;										\
-				if (is_##TYPE##_nil(src[i])) {							\
-					nils++;												\
-					dst[i] = TYPE##_nil;								\
-				} else {												\
-					dst[i] = FUNC##SUFF(src[i], *d);					\
-				}														\
-			}															\
-		} else {														\
-			for (i = start; i < end; i++) {								\
-				if (is_##TYPE##_nil(src[i])) {							\
-					nils++;												\
-					dst[i] = TYPE##_nil;								\
-				} else {												\
-					dst[i] = FUNC##SUFF(src[i], *d);					\
-				}														\
-			}															\
+	for (i = 0; i < cnt; i++) {											\
+		x = canditer_next(&ci);											\
+		if (is_oid_nil(x))												\
+			break;														\
+		x -= b->hseqbase;												\
+		while (i < x) {													\
+			dst[i++] = TYPE##_nil;										\
+			nils++;														\
 		}																\
+		if (is_##TYPE##_nil(src[i])) {									\
+			nils++;														\
+			dst[i] = TYPE##_nil;										\
+		} else {														\
+			dst[i] = FUNC##SUFF(src[i], *d);							\
+		}																\
+	}																	\
+	while (i < cnt) {													\
+		dst[i++] = TYPE##_nil;											\
+		nils++;															\
 	}																	\
 	e = errno;															\
 	ex = fetestexcept(FE_INVALID | FE_DIVBYZERO | FE_OVERFLOW);			\
@@ -230,7 +200,6 @@ str CMDscience_bat_cst_##FUNC##_##TYPE##_cand(bat *ret, const bat *bid, \
 			err = "Invalid result";										\
 		throw(MAL, "batmmath." #FUNC, "Math exception: %s", err);		\
 	}																	\
-	CANDLOOP(dst, i, TYPE##_nil, end, cnt);								\
 	BATsetcount(bn, cnt);												\
 	bn->theap.dirty = true;												\
 																		\
@@ -253,8 +222,9 @@ str CMDscience_cst_bat_##FUNC##_##TYPE##_cand(bat *ret, const TYPE *d,	\
 											  const bat *bid, const bat *sid) \
 {																		\
 	BAT *b, *s = NULL, *bn;												\
-	BUN i, cnt, start, end;												\
-	const oid *restrict cand = NULL, *candend = NULL;					\
+	BUN i, cnt;															\
+	struct canditer ci;													\
+	oid x;																\
 	BUN nils = 0;														\
 	int e = 0, ex = 0;													\
 																		\
@@ -266,50 +236,38 @@ str CMDscience_cst_bat_##FUNC##_##TYPE##_cand(bat *ret, const TYPE *d,	\
 		BBPunfix(b->batCacheid);										\
 		throw(MAL, #TYPE, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);		\
 	}																	\
-	CANDINIT(b, s, start, end, cnt, cand, candend);						\
+	canditer_init(&ci, b, s);											\
+	cnt = BATcount(b);													\
 	bn = COLnew(b->hseqbase, TYPE_##TYPE, cnt, TRANSIENT);				\
 	if (bn == NULL) {													\
 		BBPunfix(b->batCacheid);										\
 		BBPunfix(s->batCacheid);										\
-		throw(MAL, "batcalc." #FUNC, SQLSTATE(HY001) MAL_MALLOC_FAIL);	\
+		throw(MAL, "batcalc." #FUNC, SQLSTATE(HY013) MAL_MALLOC_FAIL);	\
 	}																	\
 																		\
 	const TYPE *restrict src = (const TYPE *) Tloc(b, 0);				\
 	TYPE *restrict dst = (TYPE *) Tloc(bn, 0);							\
-	CANDLOOP(dst, i, TYPE##_nil, 0, start);								\
 	errno = 0;															\
 	feclearexcept(FE_ALL_EXCEPT);										\
-	if (b->tnonil && cand == NULL) {									\
-		for (i = start; i < end; i++)									\
-			dst[i] = FUNC##SUFF(*d, src[i]);							\
-	} else {															\
-		if (cand) {														\
-			for (i = start; i < end; i++) {								\
-				if (i < *cand - b->hseqbase) {							\
-					nils++;												\
-					dst[i] = TYPE##_nil;								\
-					continue;											\
-				}														\
-				assert(i == *cand - b->hseqbase);						\
-				if (++cand == candend)									\
-					end = i + 1;										\
-				if (is_##TYPE##_nil(src[i])) {							\
-					nils++;												\
-					dst[i] = TYPE##_nil;								\
-				} else {												\
-					dst[i] = FUNC##SUFF(*d, src[i]);					\
-				}														\
-			}															\
-		} else {														\
-			for (i = start; i < end; i++) {								\
-				if (is_##TYPE##_nil(src[i])) {							\
-					nils++;												\
-					dst[i] = TYPE##_nil;								\
-				} else {												\
-					dst[i] = FUNC##SUFF(*d, src[i]);					\
-				}														\
-			}															\
+	for (i = 0; i < cnt; i++) {											\
+		x = canditer_next(&ci);											\
+		if (is_oid_nil(x))												\
+			break;														\
+		x -= b->hseqbase;												\
+		while (i < x) {													\
+			dst[i++] = TYPE##_nil;										\
+			nils++;														\
 		}																\
+		if (is_##TYPE##_nil(src[i])) {									\
+			nils++;														\
+			dst[i] = TYPE##_nil;										\
+		} else {														\
+			dst[i] = FUNC##SUFF(*d, src[i]);							\
+		}																\
+	}																	\
+	while (i < cnt) {													\
+		dst[i++] = TYPE##_nil;											\
+		nils++;															\
 	}																	\
 	e = errno;															\
 	ex = fetestexcept(FE_INVALID | FE_DIVBYZERO | FE_OVERFLOW);			\
@@ -329,7 +287,6 @@ str CMDscience_cst_bat_##FUNC##_##TYPE##_cand(bat *ret, const TYPE *d,	\
 			err = "Invalid result";										\
 		throw(MAL, "batmmath." #FUNC, "Math exception: %s", err);		\
 	}																	\
-	CANDLOOP(dst, i, TYPE##_nil, end, cnt);								\
 	BATsetcount(bn, cnt);												\
 	bn->theap.dirty = true;												\
 																		\
@@ -355,10 +312,14 @@ str CMDscience_cst_bat_##FUNC##_##TYPE(bat *ret, const TYPE *d,			\
 #define scienceNotImpl(FUNC)									\
 str CMDscience_bat_flt_##FUNC(bat *ret, const bat *bid)			\
 {																\
+	(void)ret;	\
+	(void)bid;	\
 	throw(MAL, "batmmath." #FUNC, SQLSTATE(0A000) PROGRAM_NYI);	\
 }																\
 str CMDscience_bat_dbl_##FUNC(bat *ret, const bat *bid)			\
 {																\
+	(void)ret;	\
+	(void)bid;	\
 	throw(MAL, "batmmath." #FUNC, SQLSTATE(0A000) PROGRAM_NYI);	\
 }
 
@@ -376,6 +337,7 @@ scienceImpl(degrees)
 scienceImpl(exp)
 scienceImpl(log)
 scienceImpl(log10)
+scienceImpl(log2)
 scienceImpl(sqrt)
 #ifdef HAVE_CBRT
 scienceImpl(cbrt)
@@ -393,3 +355,5 @@ scienceBinaryImpl(atan2,dbl,)
 scienceBinaryImpl(atan2,flt,f)
 scienceBinaryImpl(pow,dbl,)
 scienceBinaryImpl(pow,flt,f)
+scienceBinaryImpl(log,dbl,bs)
+scienceBinaryImpl(log,flt,bsf)

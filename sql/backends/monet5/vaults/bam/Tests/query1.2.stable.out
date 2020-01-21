@@ -17,7 +17,6 @@ stdout of test 'query1.2` in directory 'sql/backends/monet5/vaults/bam` itself:
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-16074/.s.monetdb.32986
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 10:22:40 >  
 # 10:22:40 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16074" "--port=32986"
@@ -80,7 +79,7 @@ Ready.
 #FROM bam.unpaired_alignments_3
 #WHERE bam.bam_flag(flag, 'seco_alig') = False
 #ORDER BY rname, pos;
-% .L117,	.L117,	.L117,	.L117,	.L117,	.L117,	.L117,	.L117,	.L117,	.L117,	.L117 # table_name
+% .%12,	.%12,	.%12,	.%12,	.%12,	.%12,	.%12,	.%12,	.%12,	.%12,	.%12 # table_name
 % qname,	flag,	rname,	pos,	mapq,	cigar,	rnext,	pnext,	tlen,	seq,	qual # name
 % clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
 % 11,	3,	5,	8,	3,	26,	1,	8,	1,	100,	100 # length

@@ -19,7 +19,6 @@ stdout of test 'rapi08` in directory 'monetdb5/extras/rapi` itself:
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 13:27:36 >  
 # 13:27:36 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-9249" "--port=37225"

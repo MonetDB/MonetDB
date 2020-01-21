@@ -1,6 +1,5 @@
 #execute simple SQL queries from MAL 
 function foo();
-sql.init();
 sql.eval("select 1;",true);
 
 sql.eval("create table simpleT(i integer);");

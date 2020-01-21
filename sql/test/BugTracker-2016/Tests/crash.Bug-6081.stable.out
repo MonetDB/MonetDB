@@ -19,7 +19,6 @@ stdout of test 'crash.Bug-6081` in directory 'sql/test/BugTracker-2016` itself:
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 10:17:32 >  
 # 10:17:32 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-6720" "--port=36589"
@@ -35,7 +34,7 @@ Ready.
 #  sys.dependency_types as ref_1
 #where ref_1.dependency_type_name is NULL
 #limit 96;
-% sys.L2,	sys.L4,	sys.L6,	sys.L10,	sys.L12 # table_name
+% sys.,	sys.,	sys.,	sys.,	sys. # table_name
 % c0,	c1,	c2,	c3,	c4 # name
 % varchar,	smallint,	varchar,	varchar,	smallint # type
 % 0,	1,	0,	0,	1 # length

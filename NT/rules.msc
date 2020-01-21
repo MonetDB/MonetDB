@@ -4,9 +4,9 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
 
-VERSION=11.32.0
+VERSION=11.36.0
 #       ^^^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
@@ -42,6 +42,7 @@ BITSMCHN=X64
 # force W_CFLAGS off in debug builds: using icc, you get way more
 # warnings about casts which results in the code being uncompilable
 W_CFLAGS =
+HAVE_MAL_DEBUGGER = 1
 !ENDIF
 !IFDEF ENABLE_STRICT
 # strict mode: treat warnings as errors
@@ -63,29 +64,27 @@ PTHREAD_LIBS =
 ODBCINST_LIBS = odbccp32.lib user32.lib $(LEGACY_STDIO_DEFINITIONS)
 ODBC_LIBS = odbc32.lib
 
+!IFNDEF PY3VER
+PY2VER=7
+!ENDIF
 !IFNDEF PYTHON2BASE
-PYTHON2BASE=C:\Python27
+PYTHON2BASE=C:\Python2$(PY2VER)
 !ENDIF
 !IFNDEF PYTHON2LIB
-PYTHON2LIB=python27.lib
+PYTHON2LIB=python2$(PY2VER).lib
 !ENDIF
-PYTHON2_LIBDIR=share\MonetDB\python
 
+!IFNDEF PY3VER
+PY3VER=7
+!ENDIF
 !IFNDEF PYTHON3BASE
-PYTHON3BASE=C:\Python32
+PYTHON3BASE=C:\Python3$(PY3VER)
 !ENDIF
 !IFNDEF PYTHON3LIB
-PYTHON3LIB=python32.lib
+PYTHON3LIB=python3$(PY3VER).lib
 !ENDIF
-PYTHON3_LIBDIR=share\MonetDB\python3
 
-!IFDEF PYTHON2BASE
-PYTHON_LIBDIR=$(PYTHON2_LIBDIR)
-!ELSE
-!IFDEF PYTHON3BASE
-PYTHON_LIBDIR=$(PYTHON3_LIBDIR)
-!ENDIF
-!ENDIF
+PYTHON_LIBDIR=share\MonetDB\python
 
 !IFDEF HAVE_PCRE
 # This is the location of the PCRE library
@@ -113,13 +112,6 @@ LIBICONV = C:\iconv-1.9.2.win$(bits)
 LTLIBICONV = "$(LIBICONV)\lib\iconv.dll.lib"
 ICONV_CFLAGS = -DHAVE_ICONV "-I$(LIBICONV)\include"
 !ENDIF
-
-!IFDEF HAVE_ATOMIC_OPS
-!IFNDEF LIBATOMIC_OPS
-LIBATOMIC_OPS = C:\atomic_ops-7.2
-!ENDIF
-ATOMIC_OPS_CFLAGS = -DHAVE_LIBATOMIC_OPS "-I$(LIBATOMIC_OPS)"
-!endif
 
 !IFDEF HAVE_LIBZ
 # This is the location of the ZLIB library
@@ -153,14 +145,19 @@ bzip2_CFLAGS = -DHAVE_LIBBZ2 "-I$(LIBBZIP2)\include"
 !IFNDEF LIBXML2
 LIBXML2 = C:\libxml2-2.6.30.win$(bits)
 !ENDIF
-libxml2_CFLAGS = -DHAVE_LIBXML "-I$(LIBXML2)\include" $(zlib_CFLAGS) $(ICONV_CFLAGS)
+# by default libxml2 include files get installed in ...\include\libxml2\libxml
+# but this has sometimes been moved to ...\include\libxml
+libxml2_CFLAGS = -DHAVE_LIBXML "-I$(LIBXML2)\include\libxml2" "-I$(LIBXML2)\include" $(zlib_CFLAGS) $(ICONV_CFLAGS)
 libxml2_LIBS = "$(LIBXML2)\lib\libxml2.lib" $(zlib_LIBS) $(ICONV_LIBS)
 !ENDIF
 
 !IFNDEF LIBGEOS
 LIBGEOS = C:\geos-3.0.win$(bits)
 !ENDIF
-GEOS_LIBS = $(LIBGEOS)\lib\geos_c_i.lib
+!IFNDEF GEOSFILE
+GEOSFILE = geos_c
+!ENDIF
+GEOS_LIBS = $(LIBGEOS)\lib\$(GEOSFILE).lib
 GEOS_INCS = -I$(LIBGEOS)\include
 
 !IFDEF HAVE_LIBR
@@ -180,22 +177,27 @@ libr_CFLAGS = -DHAVE_LIBR "-I$(LIBR)\include"
 
 # generate R.lib from R.dll, needed for linking
 R.lib: "$(libr_DLL)"
-	dumpbin /exports "$(libr_DLL)" | python "$(TOPDIR)\..\NT\makelibdef.py" > R.def
+	dumpbin /exports "$(libr_DLL)" | "$(PYTHON)" "$(TOPDIR)\..\NT\makelibdef.py" > R.def
 	lib /machine:$(BITSMCHN) /def:R.def /out:R.lib
 !ENDIF
 
-!IFDEF HAVE_LIBPY
-libpy_LIBS = $(PYTHON2DIR)\libs\python27.lib
-libpy_CFLAGS = -DHAVE_LIBPY -I$(PYTHON2DIR)\include -I$(PYTHON2DIR)\Lib\site-packages\numpy\core\include
+!IFDEF HAVE_LIBPY2
+libpy2_LIBS = "$(PYTHON2DIR)\libs\$(PYTHON2LIB)"
+libpy2_CFLAGS = -DHAVE_LIBPY2 "-I$(PYTHON2DIR)\include" "-I$(PYTHON2DIR)\Lib\site-packages\numpy\core\include"
+!ENDIF
+
+!IFDEF HAVE_LIBPY3
+libpy3_LIBS = "$(PYTHON3DIR)\libs\$(PYTHON3LIB)"
+libpy3_CFLAGS = -DHAVE_LIBPY3 "-I$(PYTHON3DIR)\include" "-I$(PYTHON3DIR)\Lib\site-packages\numpy\core\include"
 !ENDIF
 
 # some programs we use, probably no need to edit
 
 # install python, flex and bison on your systems
 # PYTHON may be either a version 2 or a version 3
+# here we let %Path% determine which version we get
 PYTHON = python
-YACC = bison
-LEX = flex
+BISON = bison
 
 ARCHIVER = lib /nologo
 GENDLL =
@@ -214,7 +216,7 @@ COMPILERFLAGS = -GF -W3 $(W_CFLAGS) -MDd -nologo -Od -D_DEBUG -RTC1 -Zi -Oi
 # add -Zi flag (implies -debug, not -D_DEBUG) to get symbol info in .pdb files
 COMPILERFLAGS = -GF -W3 $(W_CFLAGS) -MD -nologo -Ox -Zi -Oi
 !ENDIF
-CFLAGS = $(COMPILERFLAGS)  -I. -I$(TOPDIR) $(LIBC_INCS) $(INCLUDES) $(WINCONFIG_INCS) $(ICONV_CFLAGS) $(ATOMIC_OPS_CFLAGS)
+CFLAGS = $(COMPILERFLAGS)  -I. -I$(TOPDIR) $(LIBC_INCS) $(INCLUDES) $(WINCONFIG_INCS) $(ICONV_CFLAGS)
 
 # No general LDFLAGS needed
 INSTALL = copy
@@ -305,11 +307,6 @@ create_winconfig_conds_new_py:
 !ELSE
 	$(ECHO) HAVE_FITS_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
-!IFDEF HAVE_GDK
-	$(ECHO) HAVE_GDK_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ELSE
-	$(ECHO) HAVE_GDK_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ENDIF
 !IFDEF HAVE_GEOM
 	$(ECHO) HAVE_GEOM_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
@@ -330,10 +327,10 @@ create_winconfig_conds_new_py:
 !ELSE
 	$(ECHO) HAVE_LIBLZMA_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
-!IFDEF HAVE_LIBPY
-	$(ECHO) HAVE_LIBPY_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
+!IFDEF HAVE_LIBPY2
+	$(ECHO) HAVE_LIBPY2_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
-	$(ECHO) HAVE_LIBPY_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
+	$(ECHO) HAVE_LIBPY2_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !IFDEF HAVE_LIBPY3
 	$(ECHO) HAVE_LIBPY3_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
@@ -360,11 +357,6 @@ create_winconfig_conds_new_py:
 !ELSE
 	$(ECHO) HAVE_LIDAR_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
-!IFDEF HAVE_MONETDB5
-	$(ECHO) HAVE_MONETDB5_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ELSE
-	$(ECHO) HAVE_MONETDB5_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ENDIF
 !IFDEF HAVE_NETCDF
 	$(ECHO) HAVE_NETCDF_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
@@ -385,21 +377,6 @@ create_winconfig_conds_new_py:
 !ELSE
 	$(ECHO) HAVE_PROJ_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
-!IFDEF HAVE_PYTHON
-	$(ECHO) HAVE_PYTHON_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ELSE
-	$(ECHO) HAVE_PYTHON_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ENDIF
-!IFDEF HAVE_PYTHON2
-	$(ECHO) HAVE_PYTHON2_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ELSE
-	$(ECHO) HAVE_PYTHON2_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ENDIF
-!IFDEF HAVE_PYTHON3
-	$(ECHO) HAVE_PYTHON3_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ELSE
-	$(ECHO) HAVE_PYTHON3_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ENDIF
 !IFDEF HAVE_SAMTOOLS
 	$(ECHO) HAVE_SAMTOOLS_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
@@ -410,10 +387,10 @@ create_winconfig_conds_new_py:
 !ELSE
 	$(ECHO) HAVE_SHP_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
-!IFDEF HAVE_SQL
-	$(ECHO) HAVE_SQL_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
+!IFDEF HAVE_MAL_DEBUGGER
+	$(ECHO) HAVE_MAL_DEBUGGER_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
-	$(ECHO) HAVE_SQL_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
+	$(ECHO) HAVE_MAL_DEBUGGER_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !IFDEF HAVE_TESTING
 	$(ECHO) HAVE_TESTING_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
@@ -430,18 +407,13 @@ create_winconfig_conds_new_py:
 !ELSE
 	$(ECHO) NOT_WIN32_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
-!IFDEF PROFILING
-	$(ECHO) PROFILING_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ELSE
-	$(ECHO) PROFILING_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ENDIF
 
 update_winconfig_conds_py: create_winconfig_conds_new_py
 	if not exist "$(TOPDIR)\winconfig_conds.py" $(CP) "$(TOPDIR)\winconfig_conds_new.py" "$(TOPDIR)\winconfig_conds.py"
 	cmp -s "$(TOPDIR)\winconfig_conds_new.py" "$(TOPDIR)\winconfig_conds.py" || \
 	$(CP) "$(TOPDIR)\winconfig_conds_new.py" "$(TOPDIR)\winconfig_conds.py"
 
-CONFIGURE=$(PYTHON) $(CONFIGURE_PY) \
+CONFIGURE="$(PYTHON)" $(CONFIGURE_PY) \
 	"$(TOPDIR)\winconfig_conds.py" \
 	"prefix=$(prefix)" \
 	"LIBICONV=$(LIBICONV)" \
@@ -450,10 +422,10 @@ CONFIGURE=$(PYTHON) $(CONFIGURE_PY) \
 	"PACKAGE=$(pkg)" \
 	"PYTHON=$(PYTHON)" \
 	"PYTHON_LIBDIR=$(PYTHON_LIBDIR)" \
+	"PY2VER=$(PY2VER)" \
+	"PY3VER=$(PY3VER)" \
 	"PYTHON2=$(PYTHON2)" \
-	"PYTHON2_LIBDIR=$(PYTHON2_LIBDIR)" \
 	"PYTHON3=$(PYTHON3)" \
-	"PYTHON3_LIBDIR=$(PYTHON3_LIBDIR)" \
 	"TOPDIR=$(TOPDIR)" \
 	"VERSION=$(VERSION)" \
 	"builtby=%USER%@%COMPUTERNAME%" \

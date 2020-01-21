@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -79,7 +79,7 @@ handler(int sig)
 
 /* we're not using a lock for setting, reading and clearing this flag
  * (deadlock!), but we should use atomic instructions */
-static volatile int hupflag = 0;
+static volatile sig_atomic_t hupflag = 0;
 
 /**
  * Handler for SIGHUP, causes a re-read of the .merovingian_properties
@@ -114,7 +114,7 @@ void reinitialize(void)
 	readProps(_mero_props, ".");
 
 	/* check and trim the hash-algo from the passphrase for easy use
-	 * lateron */
+	 * later on */
 	kv = findConfKey(_mero_props, "passphrase");
 	if (kv->val != NULL) {
 		char *h = kv->val + 1;

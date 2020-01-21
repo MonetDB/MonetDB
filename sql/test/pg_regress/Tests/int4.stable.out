@@ -18,7 +18,6 @@ stdout of test 'int4` in directory 'sql/test/pg_regress` itself:
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 17:11:19 >  
 # 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
@@ -43,7 +42,7 @@ Ready.
 #INSERT INTO INT4_TBL(f1) VALUES ('-2147483647');
 [ 1 ]
 #SELECT '' AS four, i.* FROM INT4_TBL i WHERE i.f1 <> cast('0' as smallint);
-% .L3,	sys.i # table_name
+% .,	sys.i # table_name
 % four,	f1 # name
 % char,	int # type
 % 0,	11 # length
@@ -52,7 +51,7 @@ Ready.
 [ "",	2147483647 ]
 [ "",	-2147483647 ]
 #SELECT '' AS four, i.* FROM INT4_TBL i WHERE i.f1 <> cast('0' as integer);
-% .L3,	sys.i # table_name
+% .,	sys.i # table_name
 % four,	f1 # name
 % char,	int # type
 % 0,	11 # length
@@ -61,33 +60,33 @@ Ready.
 [ "",	2147483647 ]
 [ "",	-2147483647 ]
 #SELECT '' AS one, i.* FROM INT4_TBL i WHERE i.f1 = cast('0' as smallint);
-% .L3,	sys.i # table_name
+% .,	sys.i # table_name
 % one,	f1 # name
 % char,	int # type
 % 0,	1 # length
 [ "",	0	]
 #SELECT '' AS one, i.* FROM INT4_TBL i WHERE i.f1 = cast('0' as integer);
-% .L3,	sys.i # table_name
+% .,	sys.i # table_name
 % one,	f1 # name
 % char,	int # type
 % 0,	1 # length
 [ "",	0	]
 #SELECT '' AS two, i.* FROM INT4_TBL i WHERE i.f1 < cast('0' as smallint);
-% .L3,	sys.i # table_name
+% .,	sys.i # table_name
 % two,	f1 # name
 % char,	int # type
 % 0,	11 # length
 [ "",	-123456 ]
 [ "",	-2147483647 ]
 #SELECT '' AS two, i.* FROM INT4_TBL i WHERE i.f1 < cast('0' as integer);
-% .L3,	sys.i # table_name
+% .,	sys.i # table_name
 % two,	f1 # name
 % char,	int # type
 % 0,	11 # length
 [ "",	-123456 ]
 [ "",	-2147483647 ]
 #SELECT '' AS three, i.* FROM INT4_TBL i WHERE i.f1 <= cast('0' as smallint);
-% .L3,	sys.i # table_name
+% .,	sys.i # table_name
 % three,	f1 # name
 % char,	int # type
 % 0,	11 # length
@@ -95,7 +94,7 @@ Ready.
 [ "",	-123456 ]
 [ "",	-2147483647 ]
 #SELECT '' AS three, i.* FROM INT4_TBL i WHERE i.f1 <= cast('0' as integer);
-% .L3,	sys.i # table_name
+% .,	sys.i # table_name
 % three,	f1 # name
 % char,	int # type
 % 0,	11 # length
@@ -103,21 +102,21 @@ Ready.
 [ "",	-123456 ]
 [ "",	-2147483647 ]
 #SELECT '' AS two, i.* FROM INT4_TBL i WHERE i.f1 > cast('0' as smallint);
-% .L3,	sys.i # table_name
+% .,	sys.i # table_name
 % two,	f1 # name
 % char,	int # type
 % 0,	10 # length
 [ "",	123456	]
 [ "",	2147483647 ]
 #SELECT '' AS two, i.* FROM INT4_TBL i WHERE i.f1 > cast('0' as integer);
-% .L3,	sys.i # table_name
+% .,	sys.i # table_name
 % two,	f1 # name
 % char,	int # type
 % 0,	10 # length
 [ "",	123456	]
 [ "",	2147483647 ]
 #SELECT '' AS three, i.* FROM INT4_TBL i WHERE i.f1 >= cast('0' as smallint);
-% .L3,	sys.i # table_name
+% .,	sys.i # table_name
 % three,	f1 # name
 % char,	int # type
 % 0,	10 # length
@@ -125,7 +124,7 @@ Ready.
 [ "",	123456	]
 [ "",	2147483647 ]
 #SELECT '' AS three, i.* FROM INT4_TBL i WHERE i.f1 >= cast('0' as integer);
-% .L3,	sys.i # table_name
+% .,	sys.i # table_name
 % three,	f1 # name
 % char,	int # type
 % 0,	10 # length
@@ -133,13 +132,13 @@ Ready.
 [ "",	123456	]
 [ "",	2147483647 ]
 #SELECT '' AS one, i.* FROM INT4_TBL i WHERE (i.f1 % cast('2' as smallint)) = cast('1' as smallint);
-% .L4,	sys.i # table_name
+% .,	sys.i # table_name
 % one,	f1 # name
 % char,	int # type
 % 0,	10 # length
 [ "",	2147483647 ]
 #SELECT '' AS three, i.* FROM INT4_TBL i WHERE (i.f1 % cast('2' as integer)) = cast('0' as smallint);
-% .L4,	sys.i # table_name
+% .,	sys.i # table_name
 % three,	f1 # name
 % char,	int # type
 % 0,	7 # length
@@ -147,7 +146,7 @@ Ready.
 [ "",	123456	]
 [ "",	-123456 ]
 #SELECT '' AS five, i.f1, i.f1 * cast('2' as smallint) AS x FROM INT4_TBL i;
-% .L2,	sys.i,	sys.L6 # table_name
+% .,	sys.i,	sys. # table_name
 % five,	f1,	x # name
 % char,	int,	bigint # type
 % 0,	11,	11 # length
@@ -158,7 +157,7 @@ Ready.
 [ "",	-2147483647,	-4294967294	]
 #SELECT '' AS five, i.f1, i.f1 * cast('2' as smallint) AS x FROM INT4_TBL i
 #WHERE abs(f1) < 1073741824;
-% .L2,	sys.i,	sys.L6 # table_name
+% .,	sys.i,	sys. # table_name
 % five,	f1,	x # name
 % char,	int,	bigint # type
 % 0,	7,	7 # length
@@ -166,7 +165,7 @@ Ready.
 [ "",	123456,	246912	]
 [ "",	-123456,	-246912 ]
 #SELECT '' AS five, i.f1, i.f1 * cast('2' as integer) AS x FROM INT4_TBL i;
-% .L2,	sys.i,	sys.L6 # table_name
+% .,	sys.i,	sys. # table_name
 % five,	f1,	x # name
 % char,	int,	bigint # type
 % 0,	11,	11 # length
@@ -177,7 +176,7 @@ Ready.
 [ "",	-2147483647,	-4294967294	]
 #SELECT '' AS five, i.f1, i.f1 * cast('2' as integer) AS x FROM INT4_TBL i
 #WHERE abs(f1) < 1073741824;
-% .L2,	sys.i,	sys.L6 # table_name
+% .,	sys.i,	sys. # table_name
 % five,	f1,	x # name
 % char,	int,	bigint # type
 % 0,	7,	7 # length
@@ -185,7 +184,7 @@ Ready.
 [ "",	123456,	246912	]
 [ "",	-123456,	-246912 ]
 #SELECT '' AS five, i.f1, i.f1 + cast('2' as smallint) AS x FROM INT4_TBL i;
-% .L2,	sys.i,	sys.L6 # table_name
+% .,	sys.i,	sys. # table_name
 % five,	f1,	x # name
 % char,	int,	bigint # type
 % 0,	11,	11 # length
@@ -196,7 +195,7 @@ Ready.
 [ "",	-2147483647,	-2147483645	]
 #SELECT '' AS five, i.f1, i.f1 + cast('2' as smallint) AS x FROM INT4_TBL i
 #WHERE f1 < 2147483646;
-% .L2,	sys.i,	sys.L6 # table_name
+% .,	sys.i,	sys. # table_name
 % five,	f1,	x # name
 % char,	int,	bigint # type
 % 0,	11,	11 # length
@@ -205,7 +204,7 @@ Ready.
 [ "",	-123456,	-123454 ]
 [ "",	-2147483647,	-2147483645 ]
 #SELECT '' AS five, i.f1, i.f1 + cast('2' as integer) AS x FROM INT4_TBL i;
-% .L2,	sys.i,	sys.L6 # table_name
+% .,	sys.i,	sys. # table_name
 % five,	f1,	x # name
 % char,	int,	bigint # type
 % 0,	11,	11 # length
@@ -216,7 +215,7 @@ Ready.
 [ "",	-2147483647,	-2147483645	]
 #SELECT '' AS five, i.f1, i.f1 + cast('2' as integer) AS x FROM INT4_TBL i
 #WHERE f1 < 2147483646;
-% .L2,	sys.i,	sys.L6 # table_name
+% .,	sys.i,	sys. # table_name
 % five,	f1,	x # name
 % char,	int,	bigint # type
 % 0,	11,	11 # length
@@ -225,7 +224,7 @@ Ready.
 [ "",	-123456,	-123454 ]
 [ "",	-2147483647,	-2147483645 ]
 #SELECT '' AS five, i.f1, i.f1 - cast('2' as smallint) AS x FROM INT4_TBL i;
-% .L2,	sys.i,	sys.L6 # table_name
+% .,	sys.i,	sys. # table_name
 % five,	f1,	x # name
 % char,	int,	bigint # type
 % 0,	11,	11 # length
@@ -236,7 +235,7 @@ Ready.
 [ "",	-2147483647,	-2147483649	]
 #SELECT '' AS five, i.f1, i.f1 - cast('2' as smallint) AS x FROM INT4_TBL i
 #WHERE f1 > -2147483647;
-% .L2,	sys.i,	sys.L6 # table_name
+% .,	sys.i,	sys. # table_name
 % five,	f1,	x # name
 % char,	int,	bigint # type
 % 0,	10,	10 # length
@@ -245,7 +244,7 @@ Ready.
 [ "",	-123456,	-123458 ]
 [ "",	2147483647,	2147483645 ]
 #SELECT '' AS five, i.f1, i.f1 - cast('2' as integer) AS x FROM INT4_TBL i;
-% .L2,	sys.i,	sys.L6 # table_name
+% .,	sys.i,	sys. # table_name
 % five,	f1,	x # name
 % char,	int,	bigint # type
 % 0,	11,	11 # length
@@ -256,7 +255,7 @@ Ready.
 [ "",	-2147483647,	-2147483649	]
 #SELECT '' AS five, i.f1, i.f1 - cast('2' as integer) AS x FROM INT4_TBL i
 #WHERE f1 > -2147483647;
-% .L2,	sys.i,	sys.L6 # table_name
+% .,	sys.i,	sys. # table_name
 % five,	f1,	x # name
 % char,	int,	bigint # type
 % 0,	10,	10 # length
@@ -265,7 +264,7 @@ Ready.
 [ "",	-123456,	-123458 ]
 [ "",	2147483647,	2147483645 ]
 #SELECT '' AS five, i.f1, i.f1 / cast('2' as smallint) AS x FROM INT4_TBL i;
-% .L2,	sys.i,	sys.L6 # table_name
+% .,	sys.i,	sys. # table_name
 % five,	f1,	x # name
 % char,	int,	int # type
 % 0,	11,	11 # length
@@ -275,7 +274,7 @@ Ready.
 [ "",	2147483647,	1073741823 ]
 [ "",	-2147483647,	-1073741823 ]
 #SELECT '' AS five, i.f1, i.f1 / cast('2' as integer) AS x FROM INT4_TBL i;
-% .L2,	sys.i,	sys.L6 # table_name
+% .,	sys.i,	sys. # table_name
 % five,	f1,	x # name
 % char,	int,	int # type
 % 0,	11,	11 # length
@@ -290,72 +289,72 @@ Ready.
 #--
 #-- variations on unary minus parsing
 #SELECT -2+3 AS one;
-% .L2 # table_name
+% . # table_name
 % one # name
 % tinyint # type
 % 1 # length
 [ 1 ]
 
 #SELECT 4-2 AS two;
-% .L2 # table_name
+% . # table_name
 % two # name
 % tinyint # type
 % 1 # length
 [ 2 ]
 
 #SELECT 2- -1 AS three;
-% .L2 # table_name
+% . # table_name
 % three # name
 % tinyint # type
 % 1 # length
 [ 3 ]
 
 #SELECT 2 - -2 AS four;
-% .L2 # table_name
+% . # table_name
 % four # name
 % tinyint # type
 % 1 # length
 [ 4 ]
 #SELECT cast('2' as smallint) * cast('2' as smallint) = cast('16' as smallint) / cast('4' as smallint) AS "true";
-% .L6 # table_name
+% .%5 # table_name
 % true # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT cast('2' as integer) * cast('2' as smallint) = cast('16' as smallint) / cast('4' as integer) AS "true";
-% .L6 # table_name
+% .%5 # table_name
 % true # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT cast('2' as smallint) * cast('2' as integer) = cast('16' as integer) / cast('4' as smallint) AS "true";
-% .L6 # table_name
+% .%5 # table_name
 % true # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT cast('1000' as integer)  < cast('999' as integer) AS "false";
-% .L4 # table_name
+% .%3 # table_name
 % false # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 AS ten;
-% .L2 # table_name
+% .%1 # table_name
 % ten # name
 % bigint # type
 % 2 # length
 [ 10 ]
 
 #SELECT 2 + 2 / 2 AS three;
-% .L2 # table_name
+% .%1 # table_name
 % three # name
 % smallint # type
 % 1 # length
 [ 3 ]
 
 #SELECT (2 + 2) / 2 AS two;
-% .L2 # table_name
+% .%1 # table_name
 % two # name
 % tinyint # type
 % 1 # length

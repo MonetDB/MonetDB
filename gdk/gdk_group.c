@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -95,66 +95,66 @@
 	} while (0)
 
 
-#define GRP_compare_consecutive_values(INIT_0,INIT_1,COMP,KEEP)		\
+#define GRP_compare_consecutive_values(INIT_0,INIT_1,DIFFER,KEEP)	\
 	do {								\
 		INIT_0;							\
-		if (cand && grps) {					\
-			for (r = 0; r < cnt; r++) {			\
-				p = *cand++ - b->hseqbase;		\
-				assert(p < end);			\
-				INIT_1;					\
-				if (ngrp == 0 || grps[r] != prev || COMP) { \
-					GRPnotfound();			\
-				} else {				\
-					ngrps[r] = ngrp - 1;		\
-					if (histo)			\
-						cnts[ngrp - 1]++;	\
+		if (ci.tpe == cand_dense) {				\
+			if (grps) {					\
+				for (r = 0; r < cnt; r++) {		\
+					p = canditer_next_dense(&ci) - hseqb; \
+					INIT_1;				\
+					if (ngrp == 0 || grps[r] != prev || DIFFER) { \
+						GRPnotfound();		\
+					} else {			\
+						ngrps[r] = ngrp - 1;	\
+						if (histo)		\
+							cnts[ngrp - 1]++; \
+					}				\
+					KEEP;				\
+					prev = grps[r];			\
 				}					\
-				KEEP;					\
-				prev = grps[r];				\
-			}						\
-		} else if (cand) {					\
-			for (r = 0; r < cnt; r++) {			\
-				p = *cand++ - b->hseqbase;		\
-				assert(p < end);			\
-				INIT_1;					\
-				if (ngrp == 0 || COMP) {		\
-					GRPnotfound();			\
-				} else {				\
-					ngrps[r] = ngrp - 1;		\
-					if (histo)			\
-						cnts[ngrp - 1]++;	\
+			} else {					\
+				for (r = 0; r < cnt; r++) {		\
+					p = canditer_next_dense(&ci) - hseqb; \
+					INIT_1;				\
+					if (ngrp == 0 || DIFFER) {	\
+						GRPnotfound();		\
+					} else {			\
+						ngrps[r] = ngrp - 1;	\
+						if (histo)		\
+							cnts[ngrp - 1]++; \
+					}				\
+					KEEP;				\
 				}					\
-				KEEP;					\
-			}						\
-		} else if (grps) {					\
-			for (r = 0; r < cnt; r++) {			\
-				p = start++;				\
-				assert(p < end);			\
-				INIT_1;					\
-				if (ngrp == 0 || grps[r] != prev || COMP) { \
-					GRPnotfound();			\
-				} else {				\
-					ngrps[r] = ngrp - 1;		\
-					if (histo)			\
-						cnts[ngrp - 1]++;	\
-				}					\
-				KEEP;					\
-				prev = grps[r];				\
 			}						\
 		} else {						\
-			for (r = 0; r < cnt; r++) {			\
-				p = start++;				\
-				assert(p < end);			\
-				INIT_1;					\
-				if (ngrp == 0 || COMP) {		\
-					GRPnotfound();			\
-				} else {				\
-					ngrps[r] = ngrp - 1;		\
-					if (histo)			\
-						cnts[ngrp - 1]++;	\
+			if (grps) {					\
+				for (r = 0; r < cnt; r++) {		\
+					p = canditer_next(&ci) - hseqb;	\
+					INIT_1;				\
+					if (ngrp == 0 || grps[r] != prev || DIFFER) { \
+						GRPnotfound();		\
+					} else {			\
+						ngrps[r] = ngrp - 1;	\
+						if (histo)		\
+							cnts[ngrp - 1]++; \
+					}				\
+					KEEP;				\
+					prev = grps[r];			\
 				}					\
-				KEEP;					\
+			} else {					\
+				for (r = 0; r < cnt; r++) {		\
+					p = canditer_next(&ci) - hseqb;	\
+					INIT_1;				\
+					if (ngrp == 0 || DIFFER) {	\
+						GRPnotfound();		\
+					} else {			\
+						ngrps[r] = ngrp - 1;	\
+						if (histo)		\
+							cnts[ngrp - 1]++; \
+					}				\
+					KEEP;				\
+				}					\
 			}						\
 		}							\
 	} while(0)
@@ -172,7 +172,7 @@
 	/* INIT_0 */	const TYPE *w = (TYPE *) Tloc(b, 0);	\
 			TYPE pw = 0			,	\
 	/* INIT_1 */					,	\
-	/* COMP   */	TYPE##_neq(w[p], pw)		,	\
+	/* DIFFER */	TYPE##_neq(w[p], pw)		,	\
 	/* KEEP   */	pw = w[p]				\
 	)
 
@@ -180,58 +180,94 @@
 	GRP_compare_consecutive_values(				\
 	/* INIT_0 */	pv = NULL			,	\
 	/* INIT_1 */	v = BUNtail(bi, p)		,	\
-	/* COMP   */	cmp(v, pv) != 0			,	\
+	/* DIFFER */	cmp(v, pv) != 0			,	\
 	/* KEEP   */	pv = v					\
 	)
 
 
-#define GRP_subscan_old_groups(INIT_0,INIT_1,COMP,KEEP)			\
+#define GRP_subscan_old_groups(INIT_0,INIT_1,EQUAL,KEEP)		\
 	do {								\
 		INIT_0;							\
 		pgrp[grps[0]] = 0;					\
 		j = 0;							\
-		for (r = 0; r < cnt; r++) {				\
-			if (cand) {					\
-				p = *cand++ - b->hseqbase;		\
-			} else {					\
-				p = start++;				\
-			}						\
-			assert(p < end);				\
-			INIT_1;						\
-			if (ngrp != 0 && COMP) {			\
-				/* range [j, r) is all same value */	\
-				/* i is position where we saw r's */	\
-				/* old group last */			\
-				i = pgrp[grps[r]];			\
-				/* p is new position where we saw this	\
-				 * group */				\
-				pgrp[grps[r]] = r;			\
-				if (j <= i && i < r)	{		\
-					/* i is position of equal */	\
-					/* value in same old group */	\
-					/* as r, so r gets same new */	\
-					/* group as i */		\
-					oid grp = ngrps[i];		\
-					ngrps[r] = grp;			\
-					if (histo)			\
-						cnts[grp]++;		\
-					if (gn->tsorted &&		\
-					    grp != ngrp - 1)		\
-						gn->tsorted = false;	\
-					/* we found the value/group */	\
-					/* combination, go to next */	\
-					/* value */			\
-					continue;			\
+		if (ci.tpe == cand_dense) {				\
+			for (r = 0; r < cnt; r++) {			\
+				p = canditer_next_dense(&ci) - hseqb;	\
+				INIT_1;					\
+				if (ngrp != 0 && EQUAL) {		\
+					/* range [j, r) is all same value */ \
+					/* i is position where we saw r's */ \
+					/* old group last */		\
+					i = pgrp[grps[r]];		\
+					/* p is new position where we saw this \
+					 * group */			\
+					pgrp[grps[r]] = r;		\
+					if (j <= i && i < r)	{	\
+						/* i is position of equal */ \
+						/* value in same old group */ \
+						/* as r, so r gets same new */ \
+						/* group as i */	\
+						oid grp = ngrps[i];	\
+						ngrps[r] = grp;		\
+						if (histo)		\
+							cnts[grp]++;	\
+						if (gn->tsorted &&	\
+						    grp != ngrp - 1)	\
+							gn->tsorted = false; \
+						/* we found the value/group */ \
+						/* combination, go to next */ \
+						/* value */		\
+						continue;		\
+					}				\
+				} else {				\
+					/* value differs from previous value */	\
+					/* (or is the first) */		\
+					j = r;				\
+					KEEP;				\
+					pgrp[grps[r]] = r;		\
 				}					\
-			} else {					\
-				/* value differs from previous value */	\
-				/* (or is the first) */			\
-				j = r;					\
-				KEEP;					\
-				pgrp[grps[r]] = r;			\
+				/* start a new group */			\
+				GRPnotfound();				\
 			}						\
-			/* start a new group */				\
-			GRPnotfound();					\
+		} else {						\
+			for (r = 0; r < cnt; r++) {			\
+				p = canditer_next(&ci) - hseqb;		\
+				INIT_1;					\
+				if (ngrp != 0 && EQUAL) {		\
+					/* range [j, r) is all same value */ \
+					/* i is position where we saw r's */ \
+					/* old group last */		\
+					i = pgrp[grps[r]];		\
+					/* p is new position where we saw this \
+					 * group */			\
+					pgrp[grps[r]] = r;		\
+					if (j <= i && i < r)	{	\
+						/* i is position of equal */ \
+						/* value in same old group */ \
+						/* as r, so r gets same new */ \
+						/* group as i */	\
+						oid grp = ngrps[i];	\
+						ngrps[r] = grp;		\
+						if (histo)		\
+							cnts[grp]++;	\
+						if (gn->tsorted &&	\
+						    grp != ngrp - 1)	\
+							gn->tsorted = false; \
+						/* we found the value/group */ \
+						/* combination, go to next */ \
+						/* value */		\
+						continue;		\
+					}				\
+				} else {				\
+					/* value differs from previous value */	\
+					/* (or is the first) */		\
+					j = r;				\
+					KEEP;				\
+					pgrp[grps[r]] = r;		\
+				}					\
+				/* start a new group */			\
+				GRPnotfound();				\
+			}						\
 		}							\
 	} while(0)
 
@@ -248,7 +284,7 @@
 	/* INIT_0 */	const TYPE *w = (TYPE *) Tloc(b, 0);	\
 		    	TYPE pw = 0			,	\
 	/* INIT_1 */					,	\
-	/* COMP   */	TYPE##_equ(w[p], pw)		,	\
+	/* EQUAL  */	TYPE##_equ(w[p], pw)		,	\
 	/* KEEP   */	pw = w[p]				\
 	)
 
@@ -256,7 +292,7 @@
 	GRP_subscan_old_groups(					\
 	/* INIT_0 */	pv = NULL			,	\
 	/* INIT_1 */	v = BUNtail(bi, p)		,	\
-	/* COMP   */	cmp(v, pv) == 0			,	\
+	/* EQUAL  */	cmp(v, pv) == 0			,	\
 	/* KEEP   */	pv = v					\
 	)
 
@@ -275,50 +311,75 @@
  * Note this algorithm depends critically on the fact that our hash
  * chains go from higher to lower BUNs.
  */
-#define GRP_use_existing_hash_table(INIT_0,INIT_1,COMP)			\
+#define GRP_use_existing_hash_table(INIT_0,INIT_1,EQUAL)		\
 	do {								\
 		INIT_0;							\
 		assert(grps == NULL);					\
-		for (r = 0; r < cnt; r++) {				\
-			if (cand) {					\
-				p = cand[r] - hseqb + lo;		\
-			} else {					\
-				p = start + r;				\
-			}						\
-			assert(p < end);				\
-			INIT_1;						\
-			/* this loop is similar, but not */		\
-			/* equal, to HASHloop: the difference */	\
-			/* is that we only consider BUNs */		\
-			/* smaller than the one we're looking */	\
-			/* up (p) */					\
-			for (hb = HASHgetlink(hs, p);			\
-			     hb != HASHnil(hs) && hb >= start;		\
-			     hb = HASHgetlink(hs, hb)) {		\
-				oid grp;				\
-				assert(hb < p);				\
-				if (cand) {				\
-					q = r;				\
-					while (q != 0 && cand[--q] > hb) \
-						;			\
-					if (cand[q] - hseqb != hb - lo)	\
+		if (ci.tpe == cand_dense) {				\
+			for (r = 0; r < cnt; r++) {			\
+				oid o = canditer_next_dense(&ci);	\
+				p = o - hseqb + lo;			\
+				INIT_1;					\
+				/* this loop is similar, but not */	\
+				/* equal, to HASHloop: the difference */ \
+				/* is that we only consider BUNs */	\
+				/* smaller than the one we're looking */ \
+				/* up (p) */				\
+				for (hb = HASHgetlink(hs, p);		\
+				     hb != HASHnil(hs) && hb >= lo;	\
+				     hb = HASHgetlink(hs, hb)) {	\
+					oid grp;			\
+					assert(hb < p);			\
+					q = canditer_search_dense(&ci, hb + hseqb - lo, false); \
+					if (q == BUN_NONE)		\
 						continue;		\
-					grp = ngrps[q];			\
-				} else {				\
-					grp = ngrps[hb - lo];		\
+					if (EQUAL) {			\
+						grp = ngrps[q];		\
+						ngrps[r] = grp;		\
+						if (histo)		\
+							cnts[grp]++;	\
+						if (gn->tsorted &&	\
+						    grp != ngrp - 1)	\
+							gn->tsorted = false; \
+						break;			\
+					}				\
 				}					\
-				if (COMP) {				\
-					ngrps[r] = grp;			\
-					if (histo)			\
-						cnts[grp]++;		\
-					if (gn->tsorted &&		\
-					    grp != ngrp - 1)		\
-						gn->tsorted = false;	\
-					break;				\
+				if (hb == HASHnil(hs) || hb < lo) {	\
+					GRPnotfound();			\
 				}					\
 			}						\
-			if (hb == HASHnil(hs) || hb < lo) {		\
-				GRPnotfound();				\
+		} else {						\
+			for (r = 0; r < cnt; r++) {			\
+				oid o = canditer_next(&ci);		\
+				p = o - hseqb + lo;			\
+				INIT_1;					\
+				/* this loop is similar, but not */	\
+				/* equal, to HASHloop: the difference */ \
+				/* is that we only consider BUNs */	\
+				/* smaller than the one we're looking */ \
+				/* up (p) */				\
+				for (hb = HASHgetlink(hs, p);		\
+				     hb != HASHnil(hs) && hb >= lo;	\
+				     hb = HASHgetlink(hs, hb)) {	\
+					oid grp;			\
+					assert(hb < p);			\
+					q = canditer_search(&ci, hb + hseqb - lo, false); \
+					if (q == BUN_NONE)		\
+						continue;		\
+					if (EQUAL) {			\
+						grp = ngrps[q];		\
+						ngrps[r] = grp;		\
+						if (histo)		\
+							cnts[grp]++;	\
+						if (gn->tsorted &&	\
+						    grp != ngrp - 1)	\
+							gn->tsorted = false; \
+						break;			\
+					}				\
+				}					\
+				if (hb == HASHnil(hs) || hb < lo) {	\
+					GRPnotfound();			\
+				}					\
 			}						\
 		}							\
 	} while(0)
@@ -327,14 +388,14 @@
 	GRP_use_existing_hash_table(				\
 	/* INIT_0 */	const TYPE *w = (TYPE *) Tloc(b, 0),	\
 	/* INIT_1 */					,	\
-	/* COMP   */	TYPE##_equ(w[p], w[hb])			\
+	/* EQUAL  */	TYPE##_equ(w[p], w[hb])			\
 	)
 
 #define GRP_use_existing_hash_table_any()			\
 	GRP_use_existing_hash_table(				\
 	/* INIT_0 */					,	\
 	/* INIT_1 */	v = BUNtail(bi, p)		,	\
-	/* COMP   */	cmp(v, BUNtail(bi, hb)) == 0		\
+	/* EQUAL  */	cmp(v, BUNtail(bi, hb)) == 0		\
 	)
 
 /* reverse the bits of an OID value */
@@ -388,26 +449,23 @@ pop(oid x)
 }
 #endif
 
-#define GRP_create_partial_hash_table_core(INIT_1,HASH,COMP,ASSERT,GRPTST) \
+#define GRP_create_partial_hash_table_core(INIT_1,HASH,EQUAL,ASSERT,GRPTST) \
 	do {								\
-		if (cand) {						\
+		if (ci.tpe == cand_dense) {				\
 			for (r = 0; r < cnt; r++) {			\
-				p = cand[r] - b->hseqbase;		\
-				assert(p < end);			\
+				p = canditer_next_dense(&ci) - hseqb;	\
 				INIT_1;					\
 				prb = HASH;				\
 				for (hb = HASHget(hs, prb);		\
-				     hb != HASHnil(hs) && hb >= start;	\
+				     hb != HASHnil(hs);			\
 				     hb = HASHgetlink(hs, hb)) {	\
 					ASSERT;				\
-					q = r;				\
-					while (q != 0 && cand[--q] - b->hseqbase > hb) \
-						;			\
-					if (cand[q] - b->hseqbase != hb) \
+					q = canditer_search_dense(&ci, hb + hseqb, false); \
+					if (q == BUN_NONE)		\
 						continue;		\
 					GRPTST(q, r);			\
-					grp = ngrps[q];			\
-					if (COMP) {			\
+					if (EQUAL) {			\
+						grp = ngrps[q];		\
 						ngrps[r] = grp;		\
 						if (histo)		\
 							cnts[grp]++;	\
@@ -417,7 +475,7 @@ pop(oid x)
 						break;			\
 					}				\
 				}					\
-				if (hb == HASHnil(hs) || hb < start) {	\
+				if (hb == HASHnil(hs)) {		\
 					GRPnotfound();			\
 					/* enter new group into hash table */ \
 					HASHputlink(hs, p, HASHget(hs, prb)); \
@@ -426,17 +484,19 @@ pop(oid x)
 			}						\
 		} else {						\
 			for (r = 0; r < cnt; r++) {			\
-				p = start + r;				\
-				assert(p < end);			\
+				p = canditer_next(&ci) - hseqb;		\
 				INIT_1;					\
 				prb = HASH;				\
 				for (hb = HASHget(hs, prb);		\
-				     hb != HASHnil(hs) && hb >= start;	\
+				     hb != HASHnil(hs);			\
 				     hb = HASHgetlink(hs, hb)) {	\
 					ASSERT;				\
-					GRPTST(hb - start, r);		\
-					grp = ngrps[hb - start];	\
-					if (COMP) {			\
+					q = canditer_search(&ci, hb + hseqb, false); \
+					if (q == BUN_NONE)		\
+						continue;		\
+					GRPTST(q, r);			\
+					if (EQUAL) {			\
+						grp = ngrps[q];		\
 						ngrps[r] = grp;		\
 						if (histo)		\
 							cnts[grp]++;	\
@@ -446,7 +506,7 @@ pop(oid x)
 						break;			\
 					}				\
 				}					\
-				if (hb == HASHnil(hs) || hb < start) {	\
+				if (hb == HASHnil(hs)) {		\
 					GRPnotfound();			\
 					/* enter new group into hash table */ \
 					HASHputlink(hs, p, HASHget(hs, prb)); \
@@ -458,17 +518,17 @@ pop(oid x)
 #define GCGRPTST(i, j)	if (grps[i] != grps[j]) { hb = HASHnil(hs); break; }
 #define GRPTST(i, j)	if (grps[i] != grps[j]) continue
 #define NOGRPTST(i, j)	(void) 0
-#define GRP_create_partial_hash_table(INIT_0,INIT_1,HASH,COMP)		\
+#define GRP_create_partial_hash_table(INIT_0,INIT_1,HASH,EQUAL)		\
 	do {								\
 		INIT_0;							\
 		if (grps) {						\
 			if (gc) {					\
-				GRP_create_partial_hash_table_core(INIT_1,HASH,COMP,assert(HASHgetlink(hs, hb) == HASHnil(hs) || HASHgetlink(hs, hb) < hb),GCGRPTST); \
+				GRP_create_partial_hash_table_core(INIT_1,HASH,EQUAL,assert(HASHgetlink(hs, hb) == HASHnil(hs) || HASHgetlink(hs, hb) < hb),GCGRPTST); \
 			} else {					\
-				GRP_create_partial_hash_table_core(INIT_1,HASH ^ (rev(grps[r]) >> bits),COMP,(void)0,GRPTST); \
+				GRP_create_partial_hash_table_core(INIT_1,HASH ^ (rev(grps[r]) >> bits),EQUAL,(void)0,GRPTST); \
 			}						\
 		} else {						\
-			GRP_create_partial_hash_table_core(INIT_1,HASH,COMP,(void)0,NOGRPTST); \
+			GRP_create_partial_hash_table_core(INIT_1,HASH,EQUAL,(void)0,NOGRPTST); \
 		}							\
 	} while (0)
 
@@ -477,7 +537,7 @@ pop(oid x)
 	/* INIT_0 */	const TYPE *w = (TYPE *) Tloc(b, 0),	\
 	/* INIT_1 */					,	\
 	/* HASH   */	hash_##TYPE(hs, &w[p])		,	\
-	/* COMP   */	TYPE##_equ(w[p], w[hb])			\
+	/* EQUAL  */	TYPE##_equ(w[p], w[hb])			\
 	)
 
 #define GRP_create_partial_hash_table_any()			\
@@ -485,7 +545,7 @@ pop(oid x)
 	/* INIT_0 */					,	\
 	/* INIT_1 */	v = BUNtail(bi, p)		,	\
 	/* HASH   */	hash_any(hs, v)			,	\
-	/* COMP   */	cmp(v, BUNtail(bi, hb)) == 0		\
+	/* EQUAL  */	cmp(v, BUNtail(bi, hb)) == 0		\
 	)
 
 
@@ -507,9 +567,9 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	BUN hb;
 	BUN maxgrps;
 	bat parent;
-	BUN start, end, cnt;
+	BUN cnt;
 	BUN lo = 0;
-	const oid *restrict cand, *candend;
+	struct canditer ci;
 	oid maxgrp = oid_nil;	/* maximum value of g BAT (if subgrouping) */
 	PROPrec *prop;
 
@@ -518,10 +578,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		return GDK_FAIL;
 	}
 	assert(s == NULL || BATttype(s) == TYPE_oid);
-	CANDINIT(b, s, start, end, cnt, cand, candend);
-	/* set cnt to number of output rows (and number of input rows
-	 * to be considered) */
-	cnt = cand ? (BUN) (candend - cand) : end - start;
+	cnt = canditer_init(&ci, b, s);
 
 	/* g is NULL or [oid(dense),oid] and same size as b or s */
 	assert(g == NULL || BATttype(g) == TYPE_oid || BATcount(g) == 0);
@@ -539,18 +596,14 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 
 	if (cnt == 0) {
 		hseqb = 0;
-	} else if (cand) {
-		assert(s != NULL);
-		hseqb = s->hseqbase + cand - (const oid *) Tloc(s, 0);
 	} else if (s) {
-		assert(BATtdense(s));
-		hseqb = s->hseqbase + start - s->tseqbase;
+		hseqb = s->hseqbase + ci.offset;
 	} else {
 		hseqb = b->hseqbase;
 	}
 	if (b->tkey || cnt <= 1 || (g && (g->tkey || BATtdense(g)))) {
 		/* grouping is trivial: 1 element per group */
-		ALGODEBUG fprintf(stderr, "#BATgroup(b=%s#" BUNFMT "[%s],"
+		TRC_DEBUG(ALGO, "BATgroup(b=%s#" BUNFMT "[%s],"
 				  "s=%s#" BUNFMT ","
 				  "g=%s#" BUNFMT ","
 				  "e=%s#" BUNFMT ","
@@ -562,35 +615,18 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				  e ? BATgetId(e) : "NULL", e ? BATcount(e) : 0,
 				  h ? BATgetId(h) : "NULL", h ? BATcount(h) : 0,
 				  subsorted);
-		ngrp = cnt == 0  ? 0 : cand ? s->hseqbase + (cand - (const oid *) Tloc(s, 0)) : s ? s->hseqbase + start - s->tseqbase : b->hseqbase;
 		gn = BATdense(hseqb, 0, BATcount(b));
 		if (gn == NULL)
 			goto error;
 		*groups = gn;
 		if (extents) {
-			if (cand) {
-				en = COLnew(0, TYPE_oid, cnt, TRANSIENT);
-				if (en == NULL)
-					goto error;
-				BATsetcount(en, cnt);
-				memcpy(Tloc(en, 0), cand, cnt * sizeof(oid));
-				en->tsorted = true;
-				en->trevsorted = cnt <= 1;
-				en->tkey = true;
-				en->tnil = false;
-				en->tnonil = true;
-				en->tseqbase = oid_nil;
-			} else {
-				en = BATdense(0, b->hseqbase + start, cnt);
-				if (en == NULL)
-					goto error;
-			}
+			en = canditer_slice(&ci, 0, cnt);
+			if (en == NULL)
+				goto error;
 			*extents = en;
 		}
 		if (histo) {
-			lng one = 1;
-
-			hn = BATconstant(0, TYPE_lng, &one, cnt, TRANSIENT);
+			hn = BATconstant(0, TYPE_lng, &(lng){1}, cnt, TRANSIENT);
 			if (hn == NULL)
 				goto error;
 			*histo = hn;
@@ -619,7 +655,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		/* all values are equal */
 		if (g == NULL || (BATordered(g) && BATordered_rev(g))) {
 			/* there's only a single group: 0 */
-			ALGODEBUG fprintf(stderr, "#BATgroup(b=%s#" BUNFMT "[%s],"
+			TRC_DEBUG(ALGO, "BATgroup(b=%s#" BUNFMT "[%s],"
 				  "s=%s#" BUNFMT ","
 				  "g=%s#" BUNFMT ","
 				  "e=%s#" BUNFMT ","
@@ -631,22 +667,18 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				  e ? BATgetId(e) : "NULL", e ? BATcount(e) : 0,
 				  h ? BATgetId(h) : "NULL", h ? BATcount(h) : 0,
 				  subsorted);
-			ngrp = 0;
-			gn = BATconstant(hseqb, TYPE_oid, &ngrp, cnt, TRANSIENT);
+			gn = BATconstant(hseqb, TYPE_oid, &(oid){0}, cnt, TRANSIENT);
 			if (gn == NULL)
 				goto error;
 			*groups = gn;
 			if (extents) {
-				ngrp = b->hseqbase + start;
-				en = BATdense(0, b->hseqbase + start, 1);
+				en = BATdense(0, canditer_next(&ci), 1);
 				if (en == NULL)
 					goto error;
 				*extents = en;
 			}
 			if (histo) {
-				lng lcnt = (lng) cnt;
-
-				hn = BATconstant(0, TYPE_lng, &lcnt, 1, TRANSIENT);
+				hn = BATconstant(0, TYPE_lng, &(lng){(lng)cnt}, 1, TRANSIENT);
 				if (hn == NULL)
 					goto error;
 				*histo = hn;
@@ -654,13 +686,14 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			return GDK_SUCCEED;
 		}
 		if ((extents == NULL || e != NULL) &&
-		    (histo == NULL || h != NULL)) {
+		    (histo == NULL || h != NULL) &&
+		    cnt == BATcount(b)) {
 			/* inherit given grouping; note that if
 			 * extents/histo is to be returned, we need
 			 * e/h available in order to copy them,
 			 * otherwise we will need to calculate them
 			 * which we will do using the "normal" case */
-			ALGODEBUG fprintf(stderr, "#BATgroup(b=%s#" BUNFMT "[%s],"
+			TRC_DEBUG(ALGO, "BATgroup(b=%s#" BUNFMT "[%s],"
 				  "s=%s#" BUNFMT ","
 				  "g=%s#" BUNFMT ","
 				  "e=%s#" BUNFMT ","
@@ -704,7 +737,10 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	if (gn == NULL)
 		goto error;
 	ngrps = (oid *) Tloc(gn, 0);
-	maxgrps = cnt / 10;
+	if ((prop = BATgetprop(b, GDK_NUNIQUE)) != NULL)
+		maxgrps = prop->v.val.oval;
+	else
+		maxgrps = cnt / 10;
 	if (!is_oid_nil(maxgrp) && maxgrps < maxgrp)
 		maxgrps += maxgrp;
 	if (e && maxgrps < BATcount(e))
@@ -713,9 +749,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		maxgrps += BATcount(h);
 	if (maxgrps < GROUPBATINCR)
 		maxgrps = GROUPBATINCR;
-	if (b->twidth <= 2 &&
-	    maxgrps > ((BUN) 1 << (8 << (b->twidth == 2))))
-		maxgrps = (BUN) 1 << (8 << (b->twidth == 2));
+	if (b->twidth <= 2)
+		maxgrps = (BUN) 1 << (8 * b->twidth);
 	if (extents) {
 		en = COLnew(0, TYPE_oid, maxgrps, TRANSIENT);
 		if (en == NULL)
@@ -764,7 +799,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	    ((BATordered(b) || BATordered_rev(b)) &&
 	     (g == NULL || BATordered(g) || BATordered_rev(g)))) {
 		/* we only need to compare each entry with the previous */
-		ALGODEBUG fprintf(stderr, "#BATgroup(b=%s#" BUNFMT "[%s],"
+		TRC_DEBUG(ALGO, "BATgroup(b=%s#" BUNFMT "[%s],"
 				  "s=%s#" BUNFMT ","
 				  "g=%s#" BUNFMT ","
 				  "e=%s#" BUNFMT ","
@@ -822,7 +857,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		 * last time we saw that group, so if the last time we
 		 * saw the old group of the current value is within
 		 * this range, we can reuse the new group */
-		ALGODEBUG fprintf(stderr, "#BATgroup(b=%s#" BUNFMT "[%s],"
+		TRC_DEBUG(ALGO, "BATgroup(b=%s#" BUNFMT "[%s],"
 				  "s=%s#" BUNFMT ","
 				  "g=%s#" BUNFMT ","
 				  "e=%s#" BUNFMT ","
@@ -900,28 +935,19 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			memset(cnts, 0, maxgrps * sizeof(lng));
 		ngrp = 0;
 		gn->tsorted = true;
-		r = 0;
-		for (;;) {
-			if (cand) {
-				if (cand == candend)
-					break;
-				p = *cand++ - b->hseqbase;
-			} else {
-				p = start++;
-			}
-			if (p >= end)
-				break;
+		for (r = 0; r < cnt; r++) {
+			oid o = canditer_next(&ci);
+			p = o - b->hseqbase;
 			if ((v = bgrps[w[p]]) == 0xFF && ngrp < 256) {
 				bgrps[w[p]] = v = (unsigned char) ngrp++;
 				if (extents)
-					exts[v] = b->hseqbase + (oid) p;
+					exts[v] = o;
 			}
 			ngrps[r] = v;
 			if (r > 0 && v < ngrps[r - 1])
 				gn->tsorted = false;
 			if (histo)
 				cnts[v]++;
-			r++;
 		}
 		GDKfree(bgrps);
 	} else if (g == NULL && t == TYPE_sht) {
@@ -940,33 +966,24 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			memset(cnts, 0, maxgrps * sizeof(lng));
 		ngrp = 0;
 		gn->tsorted = true;
-		r = 0;
-		for (;;) {
-			if (cand) {
-				if (cand == candend)
-					break;
-				p = *cand++ - b->hseqbase;
-			} else {
-				p = start++;
-			}
-			if (p >= end)
-				break;
+		for (r = 0; r < cnt; r++) {
+			oid o = canditer_next(&ci);
+			p = o - b->hseqbase;
 			if ((v = sgrps[w[p]]) == 0xFFFF && ngrp < 65536) {
 				sgrps[w[p]] = v = (unsigned short) ngrp++;
 				if (extents)
-					exts[v] = b->hseqbase + (oid) p;
+					exts[v] = o;
 			}
 			ngrps[r] = v;
 			if (r > 0 && v < ngrps[r - 1])
 				gn->tsorted = false;
 			if (histo)
 				cnts[v]++;
-			r++;
 		}
 		GDKfree(sgrps);
 	} else if (g == NULL &&
 		   (BATcheckhash(b) ||
-		    (b->batPersistence == PERSISTENT &&
+		    (!b->batTransient &&
 		     BAThash(b) == GDK_SUCCEED) ||
 		    ((parent = VIEWtparent(b)) != 0 &&
 		     BATcheckhash(BBPdescriptor(parent))))) {
@@ -977,7 +994,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		 * since we may have to go through long lists of
 		 * duplicates in the hash table to find an old
 		 * group */
-		ALGODEBUG fprintf(stderr, "#BATgroup(b=%s#" BUNFMT "[%s],"
+		TRC_DEBUG(ALGO, "BATgroup(b=%s#" BUNFMT "[%s],"
 				  "s=%s#" BUNFMT ","
 				  "g=%s#" BUNFMT ","
 				  "e=%s#" BUNFMT ","
@@ -997,8 +1014,6 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			lo = (BUN) ((b->theap.base - b2->theap.base) >> b->tshift);
 			b = b2;
 			bi = bat_iterator(b);
-			start += lo;
-			end += lo;
 		}
 		hs = b->thash;
 		gn->tsorted = true; /* be optimistic */
@@ -1035,8 +1050,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		bool gc = g != NULL && (BATordered(g) || BATordered_rev(g));
 		const char *nme;
 		BUN prb;
-		int bits;
-		BUN mask;
+		int bits = 0;
+		BUN nbucket;
 		oid grp;
 
 		GDKclrerr();	/* not interested in BAThash errors */
@@ -1045,7 +1060,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		 * build an incomplete hash table on the fly--also see
 		 * BATassertProps for similar code; we also exploit if
 		 * g is clustered */
-		ALGODEBUG fprintf(stderr, "#BATgroup(b=%s#" BUNFMT "[%s],"
+		TRC_DEBUG(ALGO, "BATgroup(b=%s#" BUNFMT "[%s],"
 				  "s=%s#" BUNFMT ","
 				  "g=%s#" BUNFMT ","
 				  "e=%s#" BUNFMT ","
@@ -1057,17 +1072,39 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				  e ? BATgetId(e) : "NULL", e ? BATcount(e) : 0,
 				  h ? BATgetId(h) : "NULL", h ? BATcount(h) : 0,
 				  subsorted, gc ? " (g clustered)" : "");
-		nme = BBP_physical(b->batCacheid);
-		mask = MAX(HASHmask(cnt), 1 << 16);
-		/* mask is a power of two, so pop(mask - 1) tells us
-		 * which power of two */
-		bits = 8 * SIZEOF_OID - pop(mask - 1);
+		nme = GDKinmemory() ? ":inmemory" : BBP_physical(b->batCacheid);
+		if (grps && !gc) {
+			/* we manipulate the hash value after having
+			 * calculated it, and when doing that, we
+			 * assume the mask (i.e. nbucket-1) is a
+			 * power-of-two minus one, so make sure it
+			 * is */
+			nbucket = cnt | cnt >> 1;
+			nbucket |= nbucket >> 2;
+			nbucket |= nbucket >> 4;
+			nbucket |= nbucket >> 8;
+			nbucket |= nbucket >> 16;
+#if SIZEOF_BUN == 8
+			nbucket |= nbucket >> 32;
+#endif
+			nbucket++;
+			/* nbucket is a power of two, so pop(nbucket - 1)
+			 * tells us which power of two */
+			bits = 8 * SIZEOF_OID - pop(nbucket - 1);
+		} else {
+			nbucket = MAX(HASHmask(cnt), 1 << 16);
+		}
 		if ((hs = GDKzalloc(sizeof(Hash))) == NULL ||
-		    (hs->heap.farmid = BBPselectfarm(TRANSIENT, b->ttype, hashheap)) < 0 ||
-		    snprintf(hs->heap.filename, sizeof(hs->heap.filename),
-			     "%s.hash%d", nme, THRgettid()) < 0 ||
-		    HASHnew(hs, b->ttype, BUNlast(b),
-			    mask, BUN_NONE) != GDK_SUCCEED) {
+		    (hs->heaplink.farmid = BBPselectfarm(TRANSIENT, b->ttype, hashheap)) < 0 ||
+		    (hs->heapbckt.farmid = BBPselectfarm(TRANSIENT, b->ttype, hashheap)) < 0) {
+			GDKfree(hs);
+			hs = NULL;
+			GDKerror("BATgroup: cannot allocate hash table\n");
+			goto error;
+		}
+		if (snprintf(hs->heaplink.filename, sizeof(hs->heaplink.filename), "%s.thshgrpl%x", nme, THRgettid()) >= (int) sizeof(hs->heaplink.filename) ||
+		    snprintf(hs->heapbckt.filename, sizeof(hs->heapbckt.filename), "%s.thshgrpb%x", nme, THRgettid()) >= (int) sizeof(hs->heapbckt.filename) ||
+		    HASHnew(hs, b->ttype, BUNlast(b), nbucket, BUN_NONE, false) != GDK_SUCCEED) {
 			GDKfree(hs);
 			hs = NULL;
 			GDKerror("BATgroup: cannot allocate hash table\n");
@@ -1087,7 +1124,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				GRP_create_partial_hash_table_core(
 					(void) 0,
 					(v = ((ulng)grps[r]<<8)|(unsigned char)w[p], hash_lng(hs, &v)),
-					w[p] == w[hb] && grps[r] == grps[hb - start],
+					w[p] == w[hb] && grps[r] == grps[q],
 					(void) 0,
 					NOGRPTST);
 			} else
@@ -1104,7 +1141,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				GRP_create_partial_hash_table_core(
 					(void) 0,
 					(v = ((ulng)grps[r]<<16)|(unsigned short)w[p], hash_lng(hs, &v)),
-					w[p] == w[hb] && grps[r] == grps[hb - start],
+					w[p] == w[hb] && grps[r] == grps[q],
 					(void) 0,
 					NOGRPTST);
 			} else
@@ -1121,7 +1158,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				GRP_create_partial_hash_table_core(
 					(void) 0,
 					(v = ((ulng)grps[r]<<32)|(unsigned int)w[p], hash_lng(hs, &v)),
-					w[p] == w[hb] && grps[r] == grps[hb - start],
+					w[p] == w[hb] && grps[r] == grps[q],
 					(void) 0,
 					NOGRPTST);
 			} else
@@ -1135,7 +1172,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				GRP_create_partial_hash_table_core(
 					(void) 0,
 					(v = ((uhge)grps[r]<<64)|(ulng)w[p], hash_hge(hs, &v)),
-					w[p] == w[hb] && grps[r] == grps[hb - start],
+					w[p] == w[hb] && grps[r] == grps[q],
 					(void) 0,
 					NOGRPTST);
 			} else
@@ -1157,7 +1194,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			GRP_create_partial_hash_table_any();
 		}
 
-		HEAPfree(&hs->heap, true);
+		HEAPfree(&hs->heapbckt, true);
+		HEAPfree(&hs->heaplink, true);
 		GDKfree(hs);
 	}
 	if (extents) {
@@ -1194,7 +1232,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	return GDK_SUCCEED;
   error:
 	if (hs != NULL && hs != b->thash) {
-		HEAPfree(&hs->heap, true);
+		HEAPfree(&hs->heaplink, true);
+		HEAPfree(&hs->heapbckt, true);
 		GDKfree(hs);
 	}
 	if (gn)

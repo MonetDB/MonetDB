@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -56,6 +56,9 @@ GDKfilepath(int farmid, const char *dir, const char *name, const char *ext)
 	size_t pathlen;
 	char *path;
 
+	if (GDKinmemory())
+		return GDKstrdup(":inmemory");
+
 	assert(dir == NULL || *dir != DIR_SEP);
 	assert(farmid == NOFARM ||
 	       (farmid >= 0 && farmid < MAXFARMS && BBPfarms[farmid].dirname));
@@ -76,16 +79,16 @@ GDKfilepath(int farmid, const char *dir, const char *name, const char *ext)
 	path = GDKmalloc(pathlen);
 	if (path == NULL)
 		return NULL;
-	if (farmid == NOFARM) {
-		snprintf(path, pathlen, "%s%s%s%s%s",
-			 dir ? dir : "", sep, name,
-			 ext ? "." : "", ext ? ext : "");
-	} else {
-		snprintf(path, pathlen, "%s%c%s%s%s%s%s",
-			 BBPfarms[farmid].dirname, DIR_SEP,
-			 dir ? dir : "", sep, name,
-			 ext ? "." : "", ext ? ext : "");
-	}
+ 	if (farmid == NOFARM) {
+		strconcat_len(path, pathlen,
+			      dir ? dir : "", sep, name,
+			      ext ? "." : NULL, ext, NULL);
+ 	} else {
+		strconcat_len(path, pathlen,
+			      BBPfarms[farmid].dirname, DIR_SEP_STR,
+			      dir ? dir : "", sep, name,
+			      ext ? "." : NULL, ext, NULL);
+ 	}
 	return path;
 }
 
@@ -98,7 +101,8 @@ GDKcreatedir(const char *dir)
 	char *r;
 	DIR *dirp;
 
-	IODEBUG fprintf(stderr, "#GDKcreatedir(%s)\n", dir);
+	TRC_DEBUG(IO_, "GDKcreatedir(%s)\n", dir);
+	assert(!GDKinmemory());
 	assert(MT_path_absolute(dir));
 	if (strlen(dir) >= FILENAME_MAX) {
 		GDKerror("GDKcreatedir: directory name too long\n");
@@ -112,15 +116,15 @@ GDKcreatedir(const char *dir)
 #ifdef WIN32
 			strlen(path) > 3 &&
 #endif
-			mkdir(path, 0755) < 0) {
+			mkdir(path, MONETDB_DIRMODE) < 0) {
 			if (errno != EEXIST) {
 				GDKsyserror("GDKcreatedir: cannot create directory %s\n", path);
-				IODEBUG fprintf(stderr, "#GDKcreatedir: mkdir(%s) failed\n", path);
+				TRC_DEBUG(IO_, "mkdir(%s) failed\n", path);
 				return GDK_FAIL;
 			}
 			if ((dirp = opendir(path)) == NULL) {
-				GDKerror("GDKcreatedir: %s not a directory\n", path);
-				IODEBUG fprintf(stderr, "#GDKcreatedir: opendir(%s) failed\n", path);
+				GDKsyserror("GDKcreatedir: %s not a directory\n", path);
+				TRC_DEBUG(IO_, "opendir(%s) failed\n", path);
 				return GDK_FAIL;
 			}
 			/* it's a directory, we can continue */
@@ -142,10 +146,11 @@ GDKremovedir(int farmid, const char *dirname)
 	struct dirent *dent;
 	int ret;
 
+	assert(!GDKinmemory());
 	if ((dirnamestr = GDKfilepath(farmid, NULL, dirname, NULL)) == NULL)
 		return GDK_FAIL;
 
-	IODEBUG fprintf(stderr, "#GDKremovedir(%s)\n", dirnamestr);
+	TRC_DEBUG(IO_, "GDKremovedir(%s)\n", dirnamestr);
 
 	if ((dirp = opendir(dirnamestr)) == NULL) {
 		GDKfree(dirnamestr);
@@ -159,15 +164,21 @@ GDKremovedir(int farmid, const char *dirname)
 			continue;
 		}
 		path = GDKfilepath(farmid, dirname, dent->d_name, NULL);
+		if (path == NULL) {
+			/* most likely the rmdir will now fail causing
+			 * an error return */
+			goto bailout;
+		}
 		ret = remove(path);
-		IODEBUG fprintf(stderr, "#remove %s = %d\n", path, ret);
+		TRC_DEBUG(IO_, "Remove %s = %d\n", path, ret);
 		GDKfree(path);
 	}
+  bailout:
 	closedir(dirp);
 	ret = rmdir(dirnamestr);
 	if (ret != 0)
 		GDKsyserror("GDKremovedir: rmdir(%s) failed.\n", dirnamestr);
-	IODEBUG fprintf(stderr, "#rmdir %s = %d\n", dirnamestr, ret);
+	TRC_DEBUG(IO_, "rmdir %s = %d\n", dirnamestr, ret);
 	GDKfree(dirnamestr);
 	return ret ? GDK_FAIL : GDK_SUCCEED;
 }
@@ -183,8 +194,9 @@ int
 GDKfdlocate(int farmid, const char *nme, const char *mode, const char *extension)
 {
 	char *path = NULL;
-	int fd, flags = 0;
+	int fd, flags = O_CLOEXEC;
 
+	assert(!GDKinmemory());
 	if (nme == NULL || *nme == 0)
 		return -1;
 
@@ -200,7 +212,7 @@ GDKfdlocate(int farmid, const char *nme, const char *mode, const char *extension
 		mode++;
 #ifdef _CYGNUS_H_
 	} else {
-		flags = _FRDSEQ;	/* WIN32 CreateFile(FILE_FLAG_SEQUENTIAL_SCAN) */
+		flags |= _FRDSEQ;	/* WIN32 CreateFile(FILE_FLAG_SEQUENTIAL_SCAN) */
 #endif
 	}
 
@@ -214,11 +226,11 @@ GDKfdlocate(int farmid, const char *nme, const char *mode, const char *extension
 #ifdef WIN32
 	flags |= strchr(mode, 'b') ? O_BINARY : O_TEXT;
 #endif
-	fd = open(nme, flags | O_CLOEXEC, MONETDB_MODE);
+	fd = open(nme, flags, MONETDB_MODE);
 	if (fd < 0 && *mode == 'w') {
 		/* try to create the directory, in case that was the problem */
 		if (GDKcreatedir(nme) == GDK_SUCCEED) {
-			fd = open(nme, flags | O_CLOEXEC, MONETDB_MODE);
+			fd = open(nme, flags, MONETDB_MODE);
 			if (fd < 0)
 				GDKsyserror("GDKfdlocate: cannot open file %s\n", nme);
 		}
@@ -257,7 +269,7 @@ GDKfileopen(int farmid, const char *dir, const char *name, const char *extension
 
 	if (path != NULL) {
 		FILE *f;
-		IODEBUG fprintf(stderr, "#GDKfileopen(%s)\n", path);
+		TRC_DEBUG(IO_, "GDKfileopen(%s)\n", path);
 		f = fopen(path, mode);
 		GDKfree(path);
 		return f;
@@ -273,10 +285,12 @@ GDKunlink(int farmid, const char *dir, const char *nme, const char *ext)
 		char *path;
 
 		path = GDKfilepath(farmid, dir, nme, ext);
+		if (path == NULL)
+			return GDK_FAIL;
 		/* if file already doesn't exist, we don't care */
 		if (remove(path) != 0 && errno != ENOENT) {
 			GDKsyserror("GDKunlink(%s)\n", path);
-			IODEBUG fprintf(stderr, "#remove %s = -1\n", path);
+			TRC_DEBUG(IO_, "Remove %s = -1\n", path);
 			GDKfree(path);
 			return GDK_FAIL;
 		}
@@ -294,12 +308,10 @@ GDKmove(int farmid, const char *dir1, const char *nme1, const char *ext1, const 
 {
 	char *path1;
 	char *path2;
-	int ret, t0 = 0;
-
-	IODEBUG t0 = GDKms();
+	int ret, t0 = GDKms();
 
 	if ((nme1 == NULL) || (*nme1 == 0)) {
-		errno = EFAULT;
+		GDKerror("GDKmove: no file specified\n");
 		return GDK_FAIL;
 	}
 	path1 = GDKfilepath(farmid, dir1, nme1, ext1);
@@ -309,7 +321,7 @@ GDKmove(int farmid, const char *dir1, const char *nme1, const char *ext1, const 
 		if (ret < 0)
 			GDKsyserror("GDKmove: cannot rename %s to %s\n", path1, path2);
 
-		IODEBUG fprintf(stderr, "#move %s %s = %d (%dms)\n", path1, path2, ret, GDKms() - t0);
+		TRC_DEBUG(IO_, "Move %s %s = %d (%dms)\n", path1, path2, ret, GDKms() - t0);
 	} else {
 		ret = -1;
 	}
@@ -323,8 +335,9 @@ GDKextendf(int fd, size_t size, const char *fn)
 {
 	struct stat stb;
 	int rt = 0;
-	int t0 = 0;
+	int t0 = GDKms();
 
+	assert(!GDKinmemory());
 #ifdef STATIC_CODE_ANALYSIS
 	if (fd < 0)		/* in real life, if fd < 0, fstat will fail */
 		return GDK_FAIL;
@@ -335,7 +348,6 @@ GDKextendf(int fd, size_t size, const char *fn)
 		return GDK_FAIL;
 	}
 	/* if necessary, extend the underlying file */
-	IODEBUG t0 = GDKms();
 	if (stb.st_size < (off_t) size) {
 #ifdef HAVE_FALLOCATE
 		if ((rt = fallocate(fd, 0, stb.st_size, (off_t) size - stb.st_size)) < 0 &&
@@ -369,7 +381,7 @@ GDKextendf(int fd, size_t size, const char *fn)
 			GDKsyserror("GDKextendf: could not extend file\n");
 		}
 	}
-	IODEBUG fprintf(stderr, "#GDKextend %s %zu -> %zu %dms%s\n",
+	TRC_DEBUG(IO_, "GDKextend %s %zu -> %zu %dms%s\n",
 			fn, (size_t) stb.st_size, size,
 			GDKms() - t0, rt != 0 ? " (failed)" : "");
 	/* posix_fallocate returns != 0 on failure, fallocate and
@@ -384,6 +396,7 @@ GDKextend(const char *fn, size_t size)
 	int fd, flags = O_RDWR;
 	gdk_return rt = GDK_FAIL;
 
+	assert(!GDKinmemory());
 #ifdef O_BINARY
 	/* On Windows, open() fails if the file is bigger than 2^32
 	 * bytes without O_BINARY. */
@@ -413,8 +426,9 @@ GDKsave(int farmid, const char *nme, const char *ext, void *buf, size_t size, st
 {
 	int err = 0;
 
-	IODEBUG fprintf(stderr, "#GDKsave: name=%s, ext=%s, mode %d, dosync=%d\n", nme, ext ? ext : "", (int) mode, dosync);
+	TRC_DEBUG(IO_, "GDKsave: name=%s, ext=%s, mode %d, dosync=%d\n", nme, ext ? ext : "", (int) mode, dosync);
 
+	assert(!GDKinmemory());
 	if (mode == STORE_MMAP) {
 		if (dosync && size && !(GDKdebug & NOSYNCMASK) && MT_msync(buf, size) < 0)
 			err = -1;
@@ -422,10 +436,9 @@ GDKsave(int farmid, const char *nme, const char *ext, void *buf, size_t size, st
 			GDKsyserror("GDKsave: error on: name=%s, ext=%s, "
 				    "mode=%d\n", nme, ext ? ext : "",
 				    (int) mode);
-		IODEBUG fprintf(stderr,
-				"#MT_msync(buf %p, size %zu"
-				") = %d\n",
-				buf, size, err);
+		TRC_DEBUG(IO_, "MT_msync(buf %p, size %zu"
+					") = %d\n",
+					buf, size, err);
 	} else {
 		int fd;
 
@@ -451,12 +464,11 @@ GDKsave(int farmid, const char *nme, const char *ext, void *buf, size_t size, st
 				}
 				size -= ret;
 				buf = (void *) ((char *) buf + ret);
-				IODEBUG fprintf(stderr,
-						"#write(fd %d, buf %p"
-						", size %u) = %zd\n",
-						fd, buf,
-						(unsigned) MIN(1 << 30, size),
-						ret);
+				TRC_DEBUG(IO_, "Write(fd %d, buf %p"
+							", size %u) = %zd\n",
+							fd, buf,
+							(unsigned) MIN(1 << 30, size),
+							ret);
 			}
 			if (dosync && !(GDKdebug & NOSYNCMASK)
 #if defined(NATIVE_WIN32)
@@ -477,9 +489,10 @@ GDKsave(int farmid, const char *nme, const char *ext, void *buf, size_t size, st
 				/* do not tolerate corrupt heap images
 				 * (BBPrecover on restart will kill
 				 * them) */
-				GDKfatal("GDKsave: could not open: name=%s, "
+				GDKerror("GDKsave: could not remove: name=%s, "
 					 "ext=%s, mode %d\n", nme,
 					 ext ? ext : "", (int) mode);
+				return GDK_FAIL;
 			}
 		} else {
 			err = -1;
@@ -503,11 +516,11 @@ GDKload(int farmid, const char *nme, const char *ext, size_t size, size_t *maxsi
 {
 	char *ret = NULL;
 
+	assert(!GDKinmemory());
 	assert(size <= *maxsize);
 	assert(farmid != NOFARM || ext == NULL);
-	IODEBUG {
-		fprintf(stderr, "#GDKload: name=%s, ext=%s, mode %d\n", nme, ext ? ext : "", (int) mode);
-	}
+	TRC_DEBUG(IO_, "GDKload: name=%s, ext=%s, mode %d\n", nme, ext ? ext : "", (int) mode);
+	
 	if (mode == STORE_MEM) {
 		int fd = GDKfdlocate(farmid, nme, "rb", ext);
 
@@ -528,7 +541,7 @@ GDKload(int farmid, const char *nme, const char *ext, size_t size, size_t *maxsi
 					 * recognize that we're just
 					 * printing the value of ptr,
 					 * not its contents */
-					IODEBUG fprintf(stderr, "#read(dst %p, n_expected %zd, fd %d) = %zd\n", (void *)dst, n_expected, fd, n);
+					TRC_DEBUG(IO_, "read(dst %p, n_expected %zd, fd %d) = %zd\n", (void *)dst, n_expected, fd, n);
 #endif
 
 					if (n <= 0)
@@ -565,16 +578,18 @@ GDKload(int farmid, const char *nme, const char *ext, size_t size, size_t *maxsi
 			nme = path;
 		}
 		if (nme != NULL && GDKextend(nme, size) == GDK_SUCCEED) {
-			int mod = MMAP_READ | MMAP_WRITE | MMAP_SEQUENTIAL | MMAP_SYNC;
+			int mod = MMAP_READ | MMAP_WRITE | MMAP_SEQUENTIAL;
 
 			if (mode == STORE_PRIV)
 				mod |= MMAP_COPY;
+			else
+				mod |= MMAP_SYNC;
 			ret = GDKmmap(nme, mod, size);
 			if (ret != NULL) {
 				/* success: update allocated size */
 				*maxsize = size;
 			}
-			IODEBUG fprintf(stderr, "#mmap(NULL, 0, maxsize %zu, mod %d, path %s, 0) = %p\n", size, mod, nme, (void *)ret);
+			TRC_DEBUG(IO_, "mmap(NULL, 0, maxsize %zu, mod %d, path %s, 0) = %p\n", size, mod, nme, (void *)ret);
 		}
 		GDKfree(path);
 	}
@@ -604,9 +619,8 @@ DESCload(int i)
 	BAT *b = NULL;
 	int tt;
 
-	IODEBUG {
-		fprintf(stderr, "#DESCload %s\n", nme ? nme : "<noname>");
-	}
+	TRC_DEBUG(IO_, "DESCload: %s\n", nme ? nme : "<noname>");
+	
 	b = BBP_desc(i);
 
 	if (b == NULL)
@@ -621,7 +635,7 @@ DESCload(int i)
 
 	/* reconstruct mode from BBP status (BATmode doesn't flush
 	 * descriptor, so loaded mode may be stale) */
-	b->batPersistence = (BBP_status(b->batCacheid) & BBPPERSISTENT) ? PERSISTENT : TRANSIENT;
+	b->batTransient = (BBP_status(b->batCacheid) & BBPPERSISTENT) == 0;
 	b->batCopiedtodisk = true;
 	DESCclean(b);
 	return b;
@@ -637,7 +651,7 @@ DESCclean(BAT *b)
 		b->tvheap->dirty = false;
 }
 
-/* spawning the background msync should be done carefully 
+/* spawning the background msync should be done carefully
  * because there is a (small) chance that the BAT has been
  * deleted by the time you issue the msync.
  * This leaves you with possibly deadbeef BAT descriptors.
@@ -669,7 +683,7 @@ void
 BATmsync(BAT *b)
 {
 	/* we don't sync views or if we're told not to */
-	if (isVIEW(b) || (GDKdebug & NOSYNCMASK))
+	if (GDKinmemory() || isVIEW(b) || (GDKdebug & NOSYNCMASK))
 		return;
 	/* we don't sync transients */
 	if (b->theap.farmid != 0 ||
@@ -688,14 +702,17 @@ BATmsync(BAT *b)
 #endif
 		struct msync *arg;
 
-		assert(b->batPersistence == PERSISTENT);
+		assert(!b->batTransient);
 		if (b->theap.storage == STORE_MMAP &&
 		    (arg = GDKmalloc(sizeof(*arg))) != NULL) {
 			arg->id = b->batCacheid;
 			arg->h = &b->theap;
 			BBPfix(b->batCacheid);
 #ifdef MSYNC_BACKGROUND
-			if (MT_create_thread(&tid, BATmsyncImplementation, arg, MT_THR_DETACHED) < 0) {
+			char name[16];
+			snprintf(name, sizeof(name), "msync%d", b->batCacheid);
+			if (MT_create_thread(&tid, BATmsyncImplementation, arg,
+					     MT_THR_DETACHED, name) < 0) {
 				/* don't bother if we can't create a thread */
 				BBPunfix(b->batCacheid);
 				GDKfree(arg);
@@ -711,7 +728,10 @@ BATmsync(BAT *b)
 			arg->h = b->tvheap;
 			BBPfix(b->batCacheid);
 #ifdef MSYNC_BACKGROUND
-			if (MT_create_thread(&tid, BATmsyncImplementation, arg, MT_THR_DETACHED) < 0) {
+			char name[16];
+			snprintf(name, sizeof(name), "msync%d", b->batCacheid);
+			if (MT_create_thread(&tid, BATmsyncImplementation, arg,
+					     MT_THR_DETACHED, name) < 0) {
 				/* don't bother if we can't create a thread */
 				BBPunfix(b->batCacheid);
 				GDKfree(arg);
@@ -733,8 +753,11 @@ BATsave(BAT *bd)
 	gdk_return err = GDK_SUCCEED;
 	const char *nme;
 	BAT bs;
+	Heap vhs;
 	BAT *b = bd;
+	bool dosync = (BBP_status(b->batCacheid) & BBPPERSISTENT) != 0;
 
+	assert(!GDKinmemory());
 	BATcheck(b, "BATsave", GDK_FAIL);
 
 	assert(b->batCacheid > 0);
@@ -752,31 +775,27 @@ BATsave(BAT *bd)
 	/* copy the descriptor to a local variable in order to let our
 	 * messing in the BAT descriptor not affect other threads that
 	 * only read it. */
-	bs = *BBP_desc(b->batCacheid);
-	/* fix up internal pointers */
+	bs = *b;
 	b = &bs;
 
 	if (b->tvheap) {
-		b->tvheap = GDKmalloc(sizeof(Heap));
-		if (b->tvheap == NULL) {
-			return GDK_FAIL;
-		}
-		*b->tvheap = *bd->tvheap;
+		vhs = *bd->tvheap;
+		b->tvheap = &vhs;
 	}
 
 	/* start saving data */
 	nme = BBP_physical(b->batCacheid);
 	if (!b->batCopiedtodisk || b->batDirtydesc || b->theap.dirty)
 		if (err == GDK_SUCCEED && b->ttype)
-			err = HEAPsave(&b->theap, nme, "tail");
-	if (b->tvheap && (!b->batCopiedtodisk || b->batDirtydesc || b->tvheap->dirty))
-		if (b->ttype && b->tvarsized) {
-			if (err == GDK_SUCCEED)
-				err = HEAPsave(b->tvheap, nme, "theap");
-		}
-
-	if (b->tvheap)
-		GDKfree(b->tvheap);
+			err = HEAPsave(&b->theap, nme, "tail", dosync);
+	if (b->tvheap
+	    && (!b->batCopiedtodisk || b->batDirtydesc || b->tvheap->dirty)
+	    && b->ttype
+	    && b->tvarsized
+	    && err == GDK_SUCCEED)
+		err = HEAPsave(b->tvheap, nme, "theap", dosync);
+	if (b->thash && b->thash != (Hash *) 1)
+		BAThashsave(b, dosync);
 
 	if (err == GDK_SUCCEED) {
 		bd->batCopiedtodisk = true;
@@ -796,6 +815,7 @@ BATload_intern(bat bid, bool lock)
 	const char *nme;
 	BAT *b;
 
+	assert(!GDKinmemory());
 	assert(bid > 0);
 
 	nme = BBP_physical(bid);
@@ -879,7 +899,7 @@ BATdelete(BAT *b)
 		if (b->ttype != TYPE_void &&
 		    HEAPdelete(&b->theap, o, "tail") != GDK_SUCCEED &&
 		    b->batCopiedtodisk)
-			IODEBUG fprintf(stderr, "#BATdelete(%s): bun heap\n", BATgetId(b));
+			TRC_DEBUG(IO_, "BATdelete(%s): bun heap\n", BATgetId(b));
 	} else if (b->theap.base) {
 		HEAPfree(&b->theap, true);
 	}
@@ -888,7 +908,7 @@ BATdelete(BAT *b)
 		if (b->batCopiedtodisk || (b->tvheap->storage != STORE_MEM)) {
 			if (HEAPdelete(b->tvheap, o, "theap") != GDK_SUCCEED &&
 			    b->batCopiedtodisk)
-				IODEBUG fprintf(stderr, "#BATdelete(%s): tail heap\n", BATgetId(b));
+				TRC_DEBUG(IO_, "BATdelete(%s): tail heap\n", BATgetId(b));
 		} else {
 			HEAPfree(b->tvheap, true);
 		}
@@ -978,7 +998,7 @@ BATprintcolumns(stream *s, int argc, BAT *argv[])
 }
 
 gdk_return
-BATprint(BAT *b)
+BATprint(stream *fdout, BAT *b)
 {
 	BAT *argv[2];
 	gdk_return ret = GDK_FAIL;
@@ -988,7 +1008,7 @@ BATprint(BAT *b)
 	if (argv[0] && argv[1]) {
 		ret = BATroles(argv[0], "h");
 		if (ret == GDK_SUCCEED)
-			ret = BATprintcolumns(GDKstdout, 2, argv);
+			ret = BATprintcolumns(fdout, 2, argv);
 	}
 	if (argv[0])
 		BBPunfix(argv[0]->batCacheid);

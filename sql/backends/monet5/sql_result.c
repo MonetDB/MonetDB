@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -22,20 +22,6 @@
 #ifndef HAVE_LLABS
 #define llabs(x)	((x) < 0 ? -(x) : (x))
 #endif
-
-// stpcpy definition, for systems that do not have stpcpy
-/* Copy YYSRC to YYDEST, returning the address of the terminating '\0' in
-   YYDEST.  */
-static char *
-mystpcpy (char *yydest, const char *yysrc) {
-	char *yyd = yydest;
-	const char *yys = yysrc;
-
-	while ((*yyd++ = *yys++) != '\0')
-	continue;
-
-	return yyd - 1;
-}
 
 #ifdef _MSC_VER
 /* use intrinsic functions on Windows */
@@ -150,46 +136,29 @@ static ssize_t
 sql_time_tostr(void *TS_RES, char **buf, size_t *len, int type, const void *A)
 {
 	struct time_res *ts_res = TS_RES;
-	int i;
 	ssize_t len1;
 	size_t big = 128;
 	char buf1[128], *s1 = buf1, *s;
-	lng val = 0, timezone = ts_res->timezone;
 	daytime tmp;
-	const daytime *a = A;
-	daytime mtime = 24 * 60 * 60 * 1000;
 
 	(void) type;
+	tmp = *(const daytime *) A;
 	if (ts_res->has_tz)
-		val = *a + timezone;
-	else
-		val = *a;
-	if (val < 0)
-		val = mtime + val;
-	if (val > mtime)
-		val = val - mtime;
-	tmp = (daytime) val;
+		tmp = daytime_add_usec_modulo(tmp, ts_res->timezone * 1000);
 
-	len1 = daytime_tostr(&s1, &big, &tmp, true);
+	len1 = daytime_precision_tostr(&s1, &big, tmp, ts_res->fraction, true);
 	if (len1 < 0)
 		return -1;
 	if (len1 == 3 && strcmp(s1, "nil") == 0) {
 		if (*len < 4 || *buf == NULL) {
-			if (*buf)
-				GDKfree(*buf);
-			*buf = (str) GDKzalloc(*len = 4);
-			if (*buf == NULL) {
+			GDKfree(*buf);
+			*buf = GDKzalloc(*len = 4);
+			if (*buf == NULL)
 				return -1;
-			}
 		}
-		strcpy(*buf, s1);
+		strcpy(*buf, "nil");
 		return len1;
 	}
-
-	/* fixup the fraction, default is 3 */
-	len1 += (ts_res->fraction - 3);
-	if (ts_res->fraction == 0)
-		len1--;
 
 	if (*len < (size_t) len1 + 8) {
 		if (*buf)
@@ -202,16 +171,12 @@ sql_time_tostr(void *TS_RES, char **buf, size_t *len, int type, const void *A)
 	s = *buf;
 	strcpy(s, buf1);
 	s += len1;
-	s[0] = 0;
-	/* extra zero's for usec's */
-	for (i = 3; i < ts_res->fraction; i++)
-		s[-i + 2] = '0';
 
 	if (ts_res->has_tz) {
-		timezone = ts_res->timezone / 60000;
-		*s++ = (ts_res->timezone >= 0) ? '+' : '-';
-		sprintf(s, "%02d:%02d", (int) (llabs(timezone) / 60), (int) (llabs(timezone) % 60));
-		s += 5;
+		lng timezone = llabs(ts_res->timezone / 60000);
+		s += sprintf(s, "%c%02d:%02d",
+			     (ts_res->timezone >= 0) ? '+' : '-',
+			     (int) (timezone / 60), (int) (timezone % 60));
 	}
 	return (ssize_t) (s - *buf);
 }
@@ -220,33 +185,40 @@ static ssize_t
 sql_timestamp_tostr(void *TS_RES, char **buf, size_t *len, int type, const void *A)
 {
 	struct time_res *ts_res = TS_RES;
-	int i;
 	ssize_t len1, len2;
 	size_t big = 128;
 	char buf1[128], buf2[128], *s, *s1 = buf1, *s2 = buf2;
 	timestamp tmp;
-	const timestamp *a = A;
 	lng timezone = ts_res->timezone;
+	date days;
+	daytime usecs;
 
 	(void) type;
+	tmp = *(const timestamp *)A;
 	if (ts_res->has_tz) {
-		MTIMEtimestamp_add(&tmp, a, &timezone);
-		len1 = date_tostr(&s1, &big, &tmp.days, true);
-		len2 = daytime_tostr(&s2, &big, &tmp.msecs, true);
-	} else {
-		len1 = date_tostr(&s1, &big, &a->days, true);
-		len2 = daytime_tostr(&s2, &big, &a->msecs, true);
+		tmp = timestamp_add_usec(tmp, timezone * 1000);
 	}
+	days = timestamp_date(tmp);
+	usecs = timestamp_daytime(tmp);
+	len1 = date_tostr(&s1, &big, &days, true);
+	len2 = daytime_precision_tostr(&s2, &big, usecs, ts_res->fraction, true);
 	if (len1 < 0 || len2 < 0) {
 		GDKfree(s1);
 		GDKfree(s2);
 		return -1;
 	}
 
-	/* fixup the fraction, default is 3 */
-	len2 += (ts_res->fraction - 3);
-	if (ts_res->fraction == 0)
-		len2--;
+	if ((len1 == 3 && strcmp(s1, "nil") == 0) ||
+	    (len2 == 3 && strcmp(s2, "nil") == 0)) {
+		if (*len < 4 || *buf == NULL) {
+			GDKfree(*buf);
+			*buf = GDKzalloc(*len = 4);
+			if (*buf == NULL)
+				return -1;
+		}
+		strcpy(*buf, "nil");
+		return len1;
+	}
 
 	if (*len < (size_t) len1 + (size_t) len2 + 8) {
 		if (*buf)
@@ -263,9 +235,6 @@ sql_timestamp_tostr(void *TS_RES, char **buf, size_t *len, int type, const void 
 	strcpy(s, buf2);
 	s += len2;
 	s[0] = 0;
-	/* extra zero's for usec's */
-	for (i = 3; i < ts_res->fraction; i++)
-		s[-i + 2] = '0';
 
 	if (ts_res->has_tz) {
 		timezone = ts_res->timezone / 60000;
@@ -875,7 +844,7 @@ has_whitespace(const char *s)
 }
 
 str
-mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, const char *sep, const char *rsep, const char *ssep, const char *ns, lng sz, lng offset, int locked, int best)
+mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, const char *sep, const char *rsep, const char *ssep, const char *ns, lng sz, lng offset, int locked, int best, bool from_stdin)
 {
 	int i = 0, j;
 	node *n;
@@ -888,24 +857,21 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 
 	if (!bs) {
 		sql_error(m, 500, "no stream (pointer) provided");
-		m->type = -1;
 		return NULL;
 	}
 	if (mnstr_errnr(bs->s)) {
 		sql_error(m, 500, "stream not open %d", mnstr_errnr(bs->s));
-		m->type = -1;
 		return NULL;
 	}
 	if (offset < 0 || offset > (lng) BUN_MAX) {
 		sql_error(m, 500, "offset out of range");
-		m->type = -1;
 		return NULL;
 	}
 
 	if (locked) {
 		/* flush old changes to disk */
 		sql_trans_end(m->session);
-		store_apply_deltas();
+		store_apply_deltas(true);
 		sql_trans_begin(m->session);
 	}
 
@@ -925,7 +891,7 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 		};
 		fmt = GDKzalloc(sizeof(Column) * (as.nr_attrs + 1));
 		if (fmt == NULL) {
-			sql_error(m, 500, "failed to allocate memory ");
+			sql_error(m, 500, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			return NULL;
 		}
 		as.format = fmt;
@@ -954,7 +920,7 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 				}
 				GDKfree(fmt[i].type);
 				GDKfree(fmt[i].data);
-				sql_error(m, 500, "failed to allocate space for column");
+				sql_error(m, 500, SQLSTATE(HY013) "failed to allocate space for column");
 				return NULL;
 			}
 			fmt[i].c = NULL;
@@ -998,7 +964,7 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 							GDKfree(fmt[j].data);
 							BBPunfix(fmt[j].c->batCacheid);
 						}
-						sql_error(m, 500, "failed to allocate space for column");
+						sql_error(m, 500, SQLSTATE(HY013) "failed to allocate space for column");
 						return NULL;
 					}
 				}
@@ -1007,11 +973,11 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 			}
 		}
 		if ( (locked || (msg = TABLETcreate_bats(&as, (BUN) (sz < 0 ? 1000 : sz))) == MAL_SUCCEED)  ){
-			if (!sz || (SQLload_file(cntxt, &as, bs, out, sep, rsep, ssep ? ssep[0] : 0, offset, sz, best) != BUN_NONE && 
+			if (!sz || (SQLload_file(cntxt, &as, bs, out, sep, rsep, ssep ? ssep[0] : 0, offset, sz, best, from_stdin, t->base.name) != BUN_NONE && 
 				(best || !as.error))) {
 				*bats = (BAT**) GDKzalloc(sizeof(BAT *) * as.nr_attrs);
 				if ( *bats == NULL){
-					sql_error(m, 500, "failed to allocate space for column");
+					sql_error(m, 500, SQLSTATE(HY013) "failed to allocate space for column");
 					TABLETdestroy_format(&as);
 					return NULL;
 				}
@@ -1048,7 +1014,7 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 			}
 		}
 		if (as.error) {
-			if( !best) sql_error(m, 500, "%s", as.error);
+			if( !best) sql_error(m, 500, "%s", getExceptionMessage(as.error));
 			freeException(as.error);
 			as.error = NULL;
 		}
@@ -1097,7 +1063,7 @@ mvc_export_prepare(mvc *c, stream *out, cq *q, str w)
 	if (!out)
 		return 0;
 
-	if (is_topn(r->op))
+	if (r && is_topn(r->op))
 		r = r->l;
 	if (r && is_project(r->op) && r->exps) {
 		unsigned int max2 = 10, max3 = 10;	/* to help calculate widths */
@@ -1120,13 +1086,13 @@ mvc_export_prepare(mvc *c, stream *out, cq *q, str w)
 				len3++;
 				max3 *= 10;
 			}
-			name = e->rname;
+			name = exp_relname(e);
 			if (!name && e->type == e_column && e->l)
 				name = e->l;
 			slen = name ? strlen(name) : 0;
 			if (slen > len5)
 				len5 = slen;
-			name = e->name;
+			name = exp_name(e);
 			if (!name && e->type == e_column && e->r)
 				name = e->r;
 			slen = name ? strlen(name) : 0;
@@ -1171,10 +1137,10 @@ mvc_export_prepare(mvc *c, stream *out, cq *q, str w)
 			sql_exp *e = n->data;
 
 			t = exp_subtype(e);
-			name = e->name;
+			name = exp_name(e);
 			if (!name && e->type == e_column && e->r)
 				name = e->r;
-			rname = e->rname;
+			rname = exp_relname(e);
 			if (!rname && e->type == e_column && e->l)
 				rname = e->l;
 
@@ -1207,7 +1173,6 @@ mvc_export_prepare(mvc *c, stream *out, cq *q, str w)
 		return -1;
 	return 0;
 }
-
 
 /*
  * improved formatting of positive integers
@@ -1308,7 +1273,7 @@ mvc_send_hge(stream *s, hge cnt){
 #endif
 
 int
-convert2str(mvc *m, int eclass, int d, int sc, int has_tz, ptr p, int mtype, char **buf, int len)
+convert2str(mvc *m, sql_class eclass, int d, int sc, int has_tz, ptr p, int mtype, char **buf, int len)
 {
 	size_t len2 = (size_t) len;
 	ssize_t l = 0;
@@ -1349,7 +1314,7 @@ convert2str(mvc *m, int eclass, int d, int sc, int has_tz, ptr p, int mtype, cha
 }
 
 static int
-export_value(mvc *m, stream *s, int eclass, const char *sqlname, int d, int sc, ptr p, int mtype, char **buf, size_t *len, const char *ns)
+export_value(mvc *m, stream *s, sql_class eclass, const char *sqlname, int d, int sc, ptr p, int mtype, char **buf, size_t *len, const char *ns)
 {
 	int ok = 0;
 	ssize_t l = 0;
@@ -1679,7 +1644,7 @@ mvc_export_table_prot10(backend *b, stream *s, res_table *t, BAT *order, BUN off
 						} else {
 							str = (char*) element;
 						}
-						buf = mystpcpy(buf, str) + 1;
+						buf = stpcpy(buf, str) + 1;
 						assert(buf - bs2_buffer(s).buf <= (lng) bsize);
 					}
 					*((lng*)startbuf) = mnstr_swap_lng(s, buf - (startbuf + sizeof(lng)));
@@ -1695,23 +1660,23 @@ mvc_export_table_prot10(backend *b, stream *s, res_table *t, BAT *order, BUN off
 					size_t j = 0;
 					bool swap = mnstr_get_swapbytes(s);
 					timestamp *times = (timestamp*) Tloc(iterators[i].b, srow);
+					timestamp epoch = timestamp_create(date_create(1970, 1, 1), daytime_create(0, 0, 0, 0));
 					lng *bufptr = (lng*) buf;
 					for(j = 0; j < (row - srow); j++) {
-						MTIMEepoch2lng(&time, times + j);
+						time = timestamp_diff(times[j], epoch) / 1000;
 						bufptr[j] = swap ? long_long_SWAP(time) : time;
 					}
 					atom_size = sizeof(lng);
 				} else if (c->type.type->eclass == EC_DATE) {
 					// convert dates into timestamps since epoch
 					lng time;
-					timestamp tstamp;
 					size_t j = 0;
 					bool swap = mnstr_get_swapbytes(s);
 					date *dates = (date*) Tloc(iterators[i].b, srow);
+					date epoch = date_create(1970, 1, 1);
 					lng *bufptr = (lng*) buf;
 					for(j = 0; j < (row - srow); j++) {
-						tstamp.payload.p_days = dates[j];
-						MTIMEepoch2lng(&time, &tstamp);
+						time = date_diff(dates[j], epoch) * 24*60*60*LL_CONSTANT(1000);
 						bufptr[j] = swap ? long_long_SWAP(time) : time;
 					}
 					atom_size = sizeof(lng);
@@ -1764,7 +1729,7 @@ mvc_export_table_prot10(backend *b, stream *s, res_table *t, BAT *order, BUN off
 
 		assert(buf >= bs2_buffer(s).buf);
 		if (buf - bs2_buffer(s).buf > (lng) bsize) {
-			fprintf(stderr, "Too many bytes in the buffer.\n");
+			TRC_ERROR(SQL_RESULT, "Too many bytes in the buffer\b");
 			fres = -1;
 			goto cleanup;
 		}
@@ -1820,7 +1785,7 @@ mvc_export_table(backend *b, stream *s, res_table *t, BAT *order, BUN offset, BU
 	if(fmt == NULL || tres == NULL) {
 		GDKfree(fmt);
 		GDKfree(tres);
-		sql_error(m, 500, "failed to allocate space");
+		sql_error(m, 500, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return -1;
 	}
 
@@ -1938,7 +1903,7 @@ mvc_export_table(backend *b, stream *s, res_table *t, BAT *order, BUN offset, BU
 
 
 static lng
-get_print_width(int mtype, int eclass, int digits, int scale, int tz, bat bid, ptr p)
+get_print_width(int mtype, sql_class eclass, int digits, int scale, int tz, bat bid, ptr p)
 {
 	size_t count = 0, incr = 0;;
 
@@ -2090,13 +2055,16 @@ get_print_width(int mtype, int eclass, int digits, int scale, int tz, bat bid, p
 		return count;
 	} else if (eclass == EC_BIT) {
 		return 5;	/* max(strlen("true"), strlen("false")) */
+	} else if (strcmp(ATOMname(mtype), "uuid") == 0) {
+		return 36;	/* xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx */
 	} else {
 		return 0;
 	}
 }
 
 static int
-export_length(stream *s, int mtype, int eclass, int digits, int scale, int tz, bat bid, ptr p) {
+export_length(stream *s, int mtype, sql_class eclass, int digits, int scale, int tz, bat bid, ptr p)
+{
 	int ok = 1;
 	lng length = get_print_width(mtype, eclass, digits, scale, tz, bid, p);
 	ok = mvc_send_lng(s, length);
@@ -2452,7 +2420,7 @@ mvc_export_head(backend *b, stream *s, int res_id, int only_header, int compute_
 		for (i = 0; i < t->nr_cols; i++) {
 			res_col *c = t->cols + i;
 			int mtype = c->type.type->localtype;
-			int eclass = c->type.type->eclass;
+			sql_class eclass = c->type.type->eclass;
 
 			if (!export_length(s, mtype, eclass, c->type.digits, c->type.scale, type_has_tz(&c->type), c->b, c->p))
 				return -1;
@@ -2594,7 +2562,7 @@ mvc_export_chunk(backend *b, stream *s, int res_id, BUN offset, BUN nr)
 		cnt = BATcount(order);
 	if (offset >= BATcount(order))
 		cnt = 0;
-	if (offset + cnt > BATcount(order))
+	if (cnt == BUN_NONE || offset + cnt > BATcount(order))
 		cnt = BATcount(order) - offset;
 
 	if (b->client->protocol != PROTOCOL_10) {
@@ -2629,7 +2597,7 @@ mvc_export_chunk(backend *b, stream *s, int res_id, BUN offset, BUN nr)
 
 
 int
-mvc_result_table(mvc *m, oid query_id, int nr_cols, int type, BAT *order)
+mvc_result_table(mvc *m, oid query_id, int nr_cols, sql_query_t type, BAT *order)
 {
 	res_table *t = res_table_create(m->session->tr, m->result_id++, query_id, nr_cols, type, m->results, order);
 	m->results = t;

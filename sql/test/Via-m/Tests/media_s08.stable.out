@@ -18,7 +18,6 @@ stdout of test 'media_s08` in directory 'sql/test/Via-m` itself:
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 10:49:43 >  
 # 10:49:43 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-5263" "--port=36838"
@@ -27,12 +26,6 @@ Ready.
 #declare id_media_description integer;
 #set id_media_description = -1234567890;
 #set id_media_description =  add_media_description('description 1');
-#select id_media_description;
-% .L2 # table_name
-% L2 # name
-% int # type
-% 1 # length
-[ 2	]
 
 # 10:49:43 >  
 # 10:49:43 >  "Done."

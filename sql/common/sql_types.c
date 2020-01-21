@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -104,14 +104,14 @@ static int convert_matrix[EC_MAX][EC_MAX] = {
 
 /* EC_ANY */	{ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 }, /* NULL */
 /* EC_TABLE */	{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-/* EC_BIT */	{ 0, 0, 1, 1, 1, 0, 2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0 },
+/* EC_BIT */	{ 0, 0, 1, 1, 1, 0, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
 /* EC_CHAR */	{ 2, 2, 2, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2 },
 /* EC_STRING */	{ 2, 2, 2, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2 },
 /* EC_BLOB */	{ 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
 /* EC_POS */	{ 0, 0, 2, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0 },
 /* EC_NUM */	{ 0, 0, 2, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0 },
-/* EC_MONTH*/   { 0, 0, 0, 1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0 },
-/* EC_SEC*/     { 0, 0, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 0, 1, 0, 0 },
+/* EC_MONTH*/   { 0, 0, 0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1, 0, 0, 0 },
+/* EC_SEC*/     { 0, 0, 0, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0, 0 },
 /* EC_DEC */	{ 0, 0, 0, 1, 1, 0, 1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0 },
 /* EC_FLT */	{ 0, 0, 0, 1, 1, 0, 1, 1, 0, 3, 1, 1, 0, 0, 0, 0, 0 },
 /* EC_TIME */	{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0 },
@@ -121,18 +121,15 @@ static int convert_matrix[EC_MAX][EC_MAX] = {
 /* EC_EXTERNAL*/{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
 };
 
-int sql_type_convert (int from, int to) 
+int sql_type_convert (int from, int to)
 {
-	int c = convert_matrix[from][to];
-	return c;
+	return convert_matrix[from][to];
 }
 
-int is_commutative(const char *fnm)
+bool is_commutative(const char *fnm)
 {
-	if (strcmp("sql_add", fnm) == 0 ||
-	    strcmp("sql_mul", fnm) == 0)
-	    	return 1;
-	return 0;
+	return strcmp("sql_add", fnm) == 0 ||
+		strcmp("sql_mul", fnm) == 0;
 }
 
 void
@@ -143,6 +140,7 @@ base_init(sql_allocator *sa, sql_base * b, sqlid id, int flags, const char *name
 	assert(sa);
 	b->wtime = 0;
 	b->rtime = 0;
+	b->stime = 0;
 	b->flags = flags;
 	b->name = NULL;
 	b->refcnt = 1;
@@ -169,7 +167,7 @@ sql_create_subtype(sql_allocator *sa, sql_type *t, unsigned int digits, unsigned
 	return res;
 }
 
-static int
+static bool
 localtypes_cmp(int nlt, int olt)
 {
 	if (nlt == TYPE_flt || nlt == TYPE_dbl) {
@@ -183,9 +181,7 @@ localtypes_cmp(int nlt, int olt)
 		nlt = TYPE_lng;
 #endif
 	}
-	if (nlt == olt)
-		return 1;
-	return 0;
+	return nlt == olt;
 }
 
 sql_subtype *
@@ -214,7 +210,7 @@ sql_find_numeric(sql_subtype *r, int localtype, unsigned int digits)
 		sql_type *t = n->data;
 
 		if (localtypes_cmp(t->localtype, localtype)) {
-			if ((digits && t->digits > digits) || (!digits && digits == t->digits)) {
+			if (digits == 0 ? t->digits == 0 : t->digits > digits) {
 				sql_init_subtype(r, t, digits, 0);
 				return r;
 			}
@@ -224,7 +220,7 @@ sql_find_numeric(sql_subtype *r, int localtype, unsigned int digits)
 					break;
 				}
 				n = m;
-				if ((digits && t->digits > digits) || (!digits && digits == t->digits)) {
+				if (digits == 0 ? t->digits == 0 : t->digits > digits) {
 					sql_init_subtype(r, t, digits, 0);
 					return r;
 				}
@@ -232,6 +228,12 @@ sql_find_numeric(sql_subtype *r, int localtype, unsigned int digits)
 		}
 	}
 	return NULL;
+}
+
+sql_subtype *
+arg_type( sql_arg *a)
+{
+	return &a->type;
 }
 
 int 
@@ -413,7 +415,7 @@ subtype2string(sql_subtype *t)
 			snprintf(buf, BUFSIZ, "%s(%u)", 
 				t->type->sqlname, t->digits);
 	} else {
-			snprintf(buf, BUFSIZ, "%s", t->type->sqlname);
+		snprintf(buf, BUFSIZ, "%s", t->type->sqlname);
 	}
 	return _STRDUP(buf);
 }
@@ -444,7 +446,7 @@ int
 subaggr_cmp( sql_subaggr *a1, sql_subaggr *a2)
 {
 	if (a1->aggr == a2->aggr) 
-	    return list_cmp(a1->res, a2->res, (fcmp) &subtype_cmp);
+		return list_cmp(a1->res, a2->res, (fcmp) &subtype_cmp);
 	return -1;
 }
 
@@ -452,7 +454,7 @@ int
 subfunc_cmp( sql_subfunc *f1, sql_subfunc *f2)
 {
 	if (f1->func == f2->func) 
-	    return list_cmp(f1->res, f2->res, (fcmp) &subtype_cmp);
+		return list_cmp(f1->res, f2->res, (fcmp) &subtype_cmp);
 	return -1;
 }
 
@@ -464,6 +466,15 @@ arg_subtype_cmp(sql_arg *a, sql_subtype *t)
 	return (is_subtype(t, &a->type )?0:-1);
 }
 
+static int
+arg_subtype_cmp_null(sql_arg *a, sql_subtype *t)
+{
+	if (a->type.type->eclass == EC_ANY)
+		return 0;
+	if (!t)
+		return 0;
+	return (is_subtypeof(t, &a->type )?0:-1);
+}
 
 static sql_subaggr *
 _dup_subaggr(sql_allocator *sa, sql_func *a, sql_subtype *member)
@@ -490,7 +501,7 @@ _dup_subaggr(sql_allocator *sa, sql_func *a, sql_subtype *member)
 			scale = member->scale;
 		}
 		/* same type as the input */
-		if (r->type->eclass == EC_ANY) 
+		if (r->type->eclass == EC_ANY && member) 
 			r = member;
 		res = sql_create_subtype(sa, r->type, digits, scale);
 		list_append(ares->res, res);
@@ -511,8 +522,8 @@ sql_bind_aggr(sql_allocator *sa, sql_schema *s, const char *sqlaname, sql_subtyp
 			arg = a->ops->h->data;
 
 		if (strcmp(a->base.name, sqlaname) == 0 && (!arg ||
-		    arg->type.type->eclass == EC_ANY || 
-		    (type && is_subtype(type, &arg->type )))) 
+			arg->type.type->eclass == EC_ANY || 
+			(type && is_subtype(type, &arg->type )))) 
 			return _dup_subaggr(sa, a, type);
 		n = n->next;
 	}
@@ -530,8 +541,8 @@ sql_bind_aggr(sql_allocator *sa, sql_schema *s, const char *sqlaname, sql_subtyp
 				arg = a->ops->h->data;
 
 			if (strcmp(a->base.name, sqlaname) == 0 && (!arg ||
-		    	 	arg->type.type->eclass == EC_ANY || 
-		    		(type && is_subtype(type, &arg->type )))) 
+				arg->type.type->eclass == EC_ANY || 
+				(type && is_subtype(type, &arg->type )))) 
 				return _dup_subaggr(sa, a, type);
 		}
 	}
@@ -539,19 +550,19 @@ sql_bind_aggr(sql_allocator *sa, sql_schema *s, const char *sqlaname, sql_subtyp
 }
 
 sql_subaggr *
-sql_bind_aggr_(sql_allocator *sa, sql_schema *s, const char *sqlaname, list *ops)
+sql_bind_aggr_(sql_allocator *sa, sql_schema *s, const char *sqlaname, list *inputs, bool args)
 {
 	node *n = aggrs->h;
 	sql_subtype *type = NULL;
 
-	if (ops->h)
-		type = ops->h->data;
+	if (inputs->h)
+		type = inputs->h->data;
 
 	while (n) {
 		sql_func *a = n->data;
 
 		if (strcmp(a->base.name, sqlaname) == 0 &&  
-		    list_cmp(a->ops, ops, (fcmp) &arg_subtype_cmp) == 0)
+			list_cmp(args ? a->ops : a->res, inputs, (fcmp) &arg_subtype_cmp) == 0)
 			return _dup_subaggr(sa, a, type);
 		n = n->next;
 	}
@@ -565,7 +576,7 @@ sql_bind_aggr_(sql_allocator *sa, sql_schema *s, const char *sqlaname, list *ops
 				continue;
 
 			if (strcmp(a->base.name, sqlaname) == 0 &&  
-		    	    list_cmp(a->ops, ops, (fcmp) &arg_subtype_cmp) == 0)
+				list_cmp(args ? a->ops : a->res, inputs, (fcmp) &arg_subtype_cmp) == 0)
 				return _dup_subaggr(sa, a, type);
 		}
 	}
@@ -581,7 +592,7 @@ sql_bind_member_aggr(sql_allocator *sa, sql_schema *s, const char *sqlaname, sql
 		sql_func *a = n->data;
 
 		if (strcmp(a->base.name, sqlaname) == 0 && list_length(a->ops) == nrargs &&
-		    arg_subtype_cmp(a->ops->h->data, type) == 0)
+			arg_subtype_cmp(a->ops->h->data, type) == 0)
 			return _dup_subaggr(sa, a, NULL);
 		n = n->next;
 	}
@@ -595,7 +606,7 @@ sql_bind_member_aggr(sql_allocator *sa, sql_schema *s, const char *sqlaname, sql
 				continue;
 
 			if (strcmp(a->base.name, sqlaname) == 0 && list_length(a->ops) == nrargs &&
-		    	    arg_subtype_cmp(a->ops->h->data, type) == 0)
+				arg_subtype_cmp(a->ops->h->data, type) == 0)
 				return _dup_subaggr(sa, a, NULL);
 		}
 	}
@@ -607,7 +618,6 @@ sql_find_aggr(sql_allocator *sa, sql_schema *s, const char *sqlaname)
 {
 	node *n = aggrs->h;
 
-	(void)s;
 	while (n) {
 		sql_func *a = n->data;
 
@@ -726,6 +736,8 @@ sql_dup_subfunc(sql_allocator *sa, sql_func *f, list *ops, sql_subtype *member)
 				}
 				if (member && f->fix_scale == INOUT)
 					digits = member->digits;
+				if (IS_ANALYTIC(f) && mscale) 
+					scale = mscale;
 				if (member && r->type->eclass == EC_ANY) 
 					r = member;
 				res = sql_create_subtype(sa, r->type, digits, scale);
@@ -764,7 +776,7 @@ func_cmp(sql_allocator *sa, sql_func *f, const char *name, int nrargs)
 }
 
 sql_subfunc *
-sql_find_func_by_name(sql_allocator *sa, sql_schema *s, const char *name, int nrargs, int type)
+sql_find_func_by_name(sql_allocator *sa, sql_schema *s, const char *name, int nrargs, sql_ftype type)
 {
 	if (s && s->funcs.set)
 		for (node *n=s->funcs.set->h; n; n = n->next) {
@@ -787,13 +799,13 @@ sql_find_func_by_name(sql_allocator *sa, sql_schema *s, const char *name, int nr
 }
 
 sql_subfunc *
-sql_find_func(sql_allocator *sa, sql_schema *s, const char *sqlfname, int nrargs, int type, sql_subfunc *prev)
+sql_find_func(sql_allocator *sa, sql_schema *s, const char *sqlfname, int nrargs, sql_ftype type, sql_subfunc *prev)
 {
 	sql_subfunc *fres;
 	int key = hash_key(sqlfname);
 	sql_hash_e *he;
 	int found = 0;
-	int filt = (type == F_FUNC)?F_FILT:type;
+	sql_ftype filt = (type == F_FUNC)?F_FILT:type;
 
 	assert(nrargs);
 	MT_lock_set(&funcs->ht_lock);
@@ -865,12 +877,12 @@ sql_find_func(sql_allocator *sa, sql_schema *s, const char *sqlfname, int nrargs
 }
 
 list *
-sql_find_funcs(sql_allocator *sa, sql_schema *s, const char *sqlfname, int nrargs, int type)
+sql_find_funcs(sql_allocator *sa, sql_schema *s, const char *sqlfname, int nrargs, sql_ftype type)
 {
 	sql_subfunc *fres;
 	int key = hash_key(sqlfname);
 	sql_hash_e *he;
-	int filt = (type == F_FUNC)?F_FILT:type;
+	sql_ftype filt = (type == F_FUNC)?F_FILT:type;
 	list *res = sa_list(sa);
 
 	assert(nrargs);
@@ -916,7 +928,6 @@ sql_find_funcs(sql_allocator *sa, sql_schema *s, const char *sqlfname, int nrarg
 	}
 	return res;
 }
-
 
 /* find function based on first argument */
 sql_subfunc *
@@ -968,7 +979,7 @@ sql_bind_member(sql_allocator *sa, sql_schema *s, const char *sqlfname, sql_subt
 }
 
 sql_subfunc *
-sql_bind_func(sql_allocator *sa, sql_schema *s, const char *sqlfname, sql_subtype *tp1, sql_subtype *tp2, int type)
+sql_bind_func(sql_allocator *sa, sql_schema *s, const char *sqlfname, sql_subtype *tp1, sql_subtype *tp2, sql_ftype type)
 {
 	list *l = sa_list(sa);
 	sql_subfunc *fres;
@@ -983,7 +994,7 @@ sql_bind_func(sql_allocator *sa, sql_schema *s, const char *sqlfname, sql_subtyp
 }
 
 sql_subfunc *
-sql_bind_func3(sql_allocator *sa, sql_schema *s, const char *sqlfname, sql_subtype *tp1, sql_subtype *tp2, sql_subtype *tp3, int type)
+sql_bind_func3(sql_allocator *sa, sql_schema *s, const char *sqlfname, sql_subtype *tp1, sql_subtype *tp2, sql_subtype *tp3, sql_ftype type)
 {
 	list *l = sa_list(sa);
 	sql_subfunc *fres;
@@ -1000,12 +1011,11 @@ sql_bind_func3(sql_allocator *sa, sql_schema *s, const char *sqlfname, sql_subty
 }
 
 sql_subfunc *
-sql_bind_func_(sql_allocator *sa, sql_schema *s, const char *sqlfname, list *ops, int type)
+sql_bind_func_(sql_allocator *sa, sql_schema *s, const char *sqlfname, list *ops, sql_ftype type)
 {
 	node *n = funcs->h;
-	int filt = (type == F_FUNC)?F_FILT:type;
+	sql_ftype filt = (type == F_FUNC)?F_FILT:type;
 
-	(void)s;
 	for (; n; n = n->next) {
 		sql_func *f = n->data;
 
@@ -1095,6 +1105,47 @@ sql_bind_func_result3(sql_allocator *sa, sql_schema *s, const char *sqlfname, sq
 	return fres;
 }
 
+static sql_subfunc *
+resolve_function(sql_allocator *sa, sql_schema *s, const char *name, list *ops, sql_ftype type)
+{
+	node *n = funcs->h;
+	sql_ftype filt = (type == F_FUNC)?F_FILT:type;
+
+	for (; n; n = n->next) {
+		sql_func *f = n->data;
+
+		if (f->type != type && f->type != filt) 
+			continue;
+		if (strcmp(f->base.name, name) == 0) {
+			if (list_cmp(f->ops, ops, (fcmp) &arg_subtype_cmp_null) == 0) 
+				return sql_dup_subfunc(sa, f, ops, NULL);
+		}
+	}
+	if (s) {
+		node *n;
+
+		if (s->funcs.set) for (n=s->funcs.set->h; n; n = n->next) {
+			sql_func *f = n->data;
+
+			if (f->type != type && f->type != filt) 
+				continue;
+			if (strcmp(f->base.name, name) == 0) {
+				if (list_cmp(f->ops, ops, (fcmp) &arg_subtype_cmp_null) == 0) 
+					return sql_dup_subfunc(sa, f, ops, NULL);
+			}
+		}
+	}
+	return NULL;
+}
+
+sql_subfunc *
+resolve_function2(sql_allocator *sa, sql_schema *s, const char *name, sql_subtype *tp1, sql_subtype *tp2, sql_ftype type)
+{
+	list *l = sa_list(sa);
+	list_append(l, tp1);
+	list_append(l, tp2);
+	return resolve_function(sa, s, name, l, type);
+}
 
 static void
 sql_create_alias(sql_allocator *sa, const char *name, const char *alias)
@@ -1125,9 +1176,8 @@ sql_bind_alias(const char *alias)
 	return NULL;
 }
 
-
 static sql_type *
-sql_create_type(sql_allocator *sa, const char *sqlname, unsigned int digits, unsigned int scale, unsigned char radix, unsigned char eclass, const char *name)
+sql_create_type(sql_allocator *sa, const char *sqlname, unsigned int digits, unsigned int scale, unsigned char radix, sql_class eclass, const char *name)
 {
 	sql_type *t = SA_ZNEW(sa, sql_type);
 
@@ -1181,7 +1231,7 @@ arg_dup(sql_allocator *sa, sql_arg *oa)
 }
 
 static sql_func *
-sql_create_func_(sql_allocator *sa, const char *name, const char *mod, const char *imp, list *ops, sql_arg *res, bit side_effect, int type, int fix_scale)
+sql_create_func_(sql_allocator *sa, const char *name, const char *mod, const char *imp, list *ops, sql_arg *res, bit side_effect, sql_ftype type, int fix_scale)
 {
 	sql_func *t = SA_ZNEW(sa, sql_func);
 
@@ -1271,7 +1321,6 @@ sql_create_funcSE(sql_allocator *sa, const char *name, const char *mod, const ch
 	sres = create_arg(sa, NULL, sql_create_subtype(sa, res, 0, 0), ARG_OUT);
 	return sql_create_func_(sa, name, mod, imp, l, sres, TRUE, F_FUNC, fix_scale);
 }
-
 
 static sql_func *
 sql_create_func3(sql_allocator *sa, const char *name, const char *mod, const char *imp, sql_type *tpe1, sql_type *tpe2, sql_type *tpe3, sql_type *res, int fix_scale)
@@ -1410,9 +1459,10 @@ sqltypeinit( sql_allocator *sa)
 #ifdef HAVE_HGE
 	sql_type *HGE = NULL;
 #endif
-	sql_type *SECINT, *MONINT, *DTE; 
+	sql_type *SECINT, *MONINT, *DTE;
 	sql_type *TME, *TMETZ, *TMESTAMP, *TMESTAMPTZ;
-	sql_type *ANY, *TABLE;
+	sql_type *BLOB;
+	sql_type *ANY, *TABLE, *PTR;
 	sql_type *GEOM, *MBR;
 	sql_func *f;
 	sql_arg *sres;
@@ -1422,7 +1472,7 @@ sqltypeinit( sql_allocator *sa)
 
 	t = ts;
 	TABLE = *t++ = sql_create_type(sa, "TABLE", 0, 0, 0, EC_TABLE, "bat");
-	*t++ = sql_create_type(sa, "PTR", 0, 0, 0, EC_TABLE, "ptr");
+	PTR = *t++ = sql_create_type(sa, "PTR", 0, 0, 0, EC_TABLE, "ptr");
 
 	BIT = *t++ = sql_create_type(sa, "BOOLEAN", 1, 0, 2, EC_BIT, "bit");
 	sql_create_alias(sa, BIT->sqlname, "BOOL");
@@ -1468,7 +1518,7 @@ sqltypeinit( sql_allocator *sa)
 	}
 #endif
 
-	/* float(n) (n indicates precision of atleast n digits) */
+	/* float(n) (n indicates precision of at least n digits) */
 	/* ie n <= 23 -> flt */
 	/*    n <= 51 -> dbl */
 	/*    n <= 62 -> long long dbl (with -ieee) (not supported) */
@@ -1487,7 +1537,10 @@ sqltypeinit( sql_allocator *sa)
 	TMESTAMP = *t++ = sql_create_type(sa, "TIMESTAMP", 7, 0, 0, EC_TIMESTAMP, "timestamp");
 	TMESTAMPTZ = *t++ = sql_create_type(sa, "TIMESTAMPTZ", 7, SCALE_FIX, 0, EC_TIMESTAMP, "timestamp");
 
-	*t++ = sql_create_type(sa, "BLOB", 0, 0, 0, EC_BLOB, "sqlblob");
+	BLOB = *t++ = sql_create_type(sa, "BLOB", 0, 0, 0, EC_BLOB, "blob");
+
+	sql_create_func(sa, "length", "blob", "nitems", BLOB, NULL, INT, SCALE_NONE);
+	sql_create_func(sa, "octet_length", "blob", "nitems", BLOB, NULL, INT, SCALE_NONE);
 
 	if (geomcatalogfix_get() != NULL) {
 		// the geom module is loaded 
@@ -1534,6 +1587,13 @@ sqltypeinit( sql_allocator *sa)
 	*t = NULL;
 
 //	sql_create_func(sa, "st_pointfromtext", "geom", "st_pointformtext", OID, NULL, OID, SCALE_FIX);
+	sql_create_aggr(sa, "grouping", "sql", "grouping", ANY, BTE);
+	sql_create_aggr(sa, "grouping", "sql", "grouping", ANY, SHT);
+	sql_create_aggr(sa, "grouping", "sql", "grouping", ANY, INT);
+	sql_create_aggr(sa, "grouping", "sql", "grouping", ANY, LNG);
+#ifdef HAVE_HGE
+	sql_create_aggr(sa, "grouping", "sql", "grouping", ANY, HGE);
+#endif
 
 	sql_create_aggr(sa, "not_unique", "sql", "not_unique", OID, BIT);
 	/* well to be precise it does reduce and map */
@@ -1550,8 +1610,27 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_func(sa, ">=", "calc", ">=", ANY, ANY, BIT, SCALE_FIX);
 	sql_create_func(sa, "<", "calc", "<", ANY, ANY, BIT, SCALE_FIX);
 	sql_create_func(sa, "<=", "calc", "<=", ANY, ANY, BIT, SCALE_FIX);
+	sres = create_arg(sa, NULL, sql_create_subtype(sa, BIT, 0, 0), ARG_OUT);
+	sql_create_func_(sa, "between", "calc", "between",
+			 list_append(list_append(list_append (list_append (list_append(list_append(list_append(list_append(sa_list(sa),
+				create_arg(sa, NULL, sql_create_subtype(sa, ANY, 0, 0), ARG_IN)),
+				create_arg(sa, NULL, sql_create_subtype(sa, ANY, 0, 0), ARG_IN)),
+				create_arg(sa, NULL, sql_create_subtype(sa, ANY, 0, 0), ARG_IN)),
+				create_arg(sa, NULL, sql_create_subtype(sa, BIT, 0, 0), ARG_IN)),
+				create_arg(sa, NULL, sql_create_subtype(sa, BIT, 0, 0), ARG_IN)),
+				create_arg(sa, NULL, sql_create_subtype(sa, BIT, 0, 0), ARG_IN)),
+				create_arg(sa, NULL, sql_create_subtype(sa, BIT, 0, 0), ARG_IN)),
+				create_arg(sa, NULL, sql_create_subtype(sa, BIT, 0, 0), ARG_IN)),
+				sres, FALSE, F_FUNC, SCALE_FIX);
 	sql_create_aggr(sa, "zero_or_one", "sql", "zero_or_one", ANY, ANY);
 	sql_create_aggr(sa, "all", "sql", "all", ANY, ANY);
+	sql_create_aggr(sa, "null", "sql", "null", ANY, BIT);
+	sql_create_func3(sa, "any", "sql", "any", BIT, BIT, BIT, BIT, SCALE_NONE);
+	sql_create_func3(sa, "all", "sql", "all", BIT, BIT, BIT, BIT, SCALE_NONE);
+	sql_create_aggr(sa, "anyequal", "aggr", "anyequal", ANY, BIT); /* needs 3 arguments (l,r,nil)(ugh) */
+	sql_create_aggr(sa, "allnotequal", "aggr", "allnotequal", ANY, BIT); /* needs 3 arguments (l,r,nil)(ugh) */
+	sql_create_func(sa, "sql_anyequal", "aggr", "anyequal", ANY, ANY, BIT, SCALE_NONE);
+	sql_create_func(sa, "sql_not_anyequal", "aggr", "not_anyequal", ANY, ANY, BIT, SCALE_NONE);
 	sql_create_aggr(sa, "exist", "aggr", "exist", ANY, BIT);
 	sql_create_aggr(sa, "not_exist", "aggr", "not_exist", ANY, BIT);
 	sql_create_func(sa, "sql_exists", "aggr", "exist", ANY, NULL, BIT, SCALE_NONE);
@@ -1566,6 +1645,8 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_aggr(sa, "max", "aggr", "max", ANY, ANY);
 	sql_create_func(sa, "sql_min", "calc", "min", ANY, ANY, ANY, SCALE_FIX);
 	sql_create_func(sa, "sql_max", "calc", "max", ANY, ANY, ANY, SCALE_FIX);
+	sql_create_func(sa, "least", "calc", "min_no_nil", ANY, ANY, ANY, SCALE_FIX);
+	sql_create_func(sa, "greatest", "calc", "max_no_nil", ANY, ANY, ANY, SCALE_FIX);
 	sql_create_func3(sa, "ifthenelse", "calc", "ifthenelse", BIT, ANY, ANY, ANY, SCALE_FIX);
 
 	/* sum for numerical and decimals */
@@ -1603,8 +1684,9 @@ sqltypeinit( sql_allocator *sa)
 	if (HAVE_HGE)
 		sql_create_aggr(sa, "prod", "aggr", "prod", HGE, LargestINT);
 #endif
-	/*sql_create_aggr(sa, "prod", "aggr", "prod", LNG, LNG);*/
 
+#if 0
+	/* prod for decimals introduce errors in the output scales */
 	t = decimals; /* BTE */
 	sql_create_aggr(sa, "prod", "aggr", "prod", *(t), LargestDEC);
 	t++; /* SHT */
@@ -1618,6 +1700,7 @@ sqltypeinit( sql_allocator *sa)
 		t++; /* HGE */
 		sql_create_aggr(sa, "prod", "aggr", "prod", *(t), LargestDEC);
 	}
+#endif
 #endif
 
 	for (t = numerical; t < dates; t++) {
@@ -1642,6 +1725,9 @@ sqltypeinit( sql_allocator *sa)
 		sql_create_aggr(sa, "avg", "aggr", "avg", HGE, DBL);
 #endif
 	sql_create_aggr(sa, "avg", "aggr", "avg", FLT, DBL);
+
+	sql_create_aggr(sa, "avg", "aggr", "avg", MONINT, DBL);
+	//sql_create_aggr(sa, "avg", "aggr", "avg", SECINT, DBL);
 
 	sql_create_aggr(sa, "count_no_nil", "aggr", "count_no_nil", NULL, LNG);
 	sql_create_aggr(sa, "count", "aggr", "count", NULL, LNG);
@@ -1797,6 +1883,8 @@ sqltypeinit( sql_allocator *sa)
 		sql_create_analytic(sa, "prod", "sql", "prod", HGE, LargestINT, SCALE_NONE);
 #endif
 
+#if 0
+	/* prod for decimals introduce errors in the output scales */
 	t = decimals; // BTE
 	sql_create_analytic(sa, "prod", "sql", "prod", *(t), LargestDEC, SCALE_NONE);
 	t++; // SHT
@@ -1811,6 +1899,7 @@ sqltypeinit( sql_allocator *sa)
 		sql_create_analytic(sa, "prod", "sql", "prod", *(t), LargestDEC, SCALE_NONE);
 	}
 #endif
+#endif
 
 	for (t = floats; t < dates; t++) {
 		sql_create_analytic(sa, "sum", "sql", "sum", *t, *t, SCALE_NONE);
@@ -1820,6 +1909,7 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_analytic(sa, "sum", "sql", "sum", SECINT, SECINT, SCALE_NONE);
 
 	//analytical average for numerical types
+	sql_create_analytic(sa, "avg", "sql", "avg", DBL, DBL, SCALE_NONE);
 	sql_create_analytic(sa, "avg", "sql", "avg", BTE, DBL, SCALE_NONE);
 	sql_create_analytic(sa, "avg", "sql", "avg", SHT, DBL, SCALE_NONE);
 	sql_create_analytic(sa, "avg", "sql", "avg", INT, DBL, SCALE_NONE);
@@ -1829,6 +1919,10 @@ sqltypeinit( sql_allocator *sa)
 		sql_create_analytic(sa, "avg", "sql", "avg", HGE, DBL, SCALE_NONE);
 #endif
 
+	sql_create_analytic(sa, "avg", "sql", "avg", MONINT, DBL, SCALE_NONE);
+	//sql_create_analytic(sa, "avg", "sql", "avg", SECINT, DBL, SCALE_NONE);
+
+#if 0
 	t = decimals; // BTE
 	sql_create_analytic(sa, "avg", "sql", "avg", *(t), DBL, SCALE_NONE);
 	t++; // SHT
@@ -1843,9 +1937,8 @@ sqltypeinit( sql_allocator *sa)
 		sql_create_analytic(sa, "avg", "sql", "avg", *(t), DBL, SCALE_NONE);
 	}
 #endif
-
+#endif
 	sql_create_analytic(sa, "avg", "sql", "avg", FLT, DBL, SCALE_NONE);
-	sql_create_analytic(sa, "avg", "sql", "avg", DBL, DBL, SCALE_NONE);
 
 	sql_create_func(sa, "and", "calc", "and", BIT, BIT, BIT, SCALE_FIX);
 	sql_create_func(sa, "or",  "calc",  "or", BIT, BIT, BIT, SCALE_FIX);
@@ -1952,7 +2045,10 @@ sqltypeinit( sql_allocator *sa)
 		sql_create_func(sa, "sqrt", "mmath", "sqrt", *t, NULL, *t, SCALE_FIX);
 		sql_create_func(sa, "exp", "mmath", "exp", *t, NULL, *t, SCALE_FIX);
 		sql_create_func(sa, "log", "mmath", "log", *t, NULL, *t, SCALE_FIX);
+		sql_create_func(sa, "ln", "mmath", "log", *t, NULL, *t, SCALE_FIX);
+		sql_create_func(sa, "log", "mmath", "log", *t, *t, *t, SCALE_FIX);
 		sql_create_func(sa, "log10", "mmath", "log10", *t, NULL, *t, SCALE_FIX);
+		sql_create_func(sa, "log2", "mmath", "log2", *t, NULL, *t, SCALE_FIX);
 	}
 	sql_create_func(sa, "pi", "mmath", "pi", NULL, NULL, DBL, SCALE_NONE);
 
@@ -1994,32 +2090,44 @@ sqltypeinit( sql_allocator *sa)
 
 	sql_create_func(sa, "local_timezone", "mtime", "local_timezone", NULL, NULL, SECINT, SCALE_FIX);
 
+	sql_create_func(sa, "century", "mtime", "century", DTE, NULL, INT, SCALE_FIX);
+	sql_create_func(sa, "decade", "mtime", "decade", DTE, NULL, INT, SCALE_FIX);
 	sql_create_func(sa, "year", "mtime", "year", DTE, NULL, INT, SCALE_FIX);
 	sql_create_func(sa, "quarter", "mtime", "quarter", DTE, NULL, INT, SCALE_FIX);
 	sql_create_func(sa, "month", "mtime", "month", DTE, NULL, INT, SCALE_FIX);
 	sql_create_func(sa, "day", "mtime", "day", DTE, NULL, INT, SCALE_FIX);
+	sql_create_func(sa, "dayofyear", "mtime", "dayofyear", DTE, NULL, INT, SCALE_FIX);
+	sql_create_func(sa, "weekofyear", "mtime", "weekofyear", DTE, NULL, INT, SCALE_FIX);
+	sql_create_func(sa, "dayofweek", "mtime", "dayofweek", DTE, NULL, INT, SCALE_FIX);
+	sql_create_func(sa, "dayofmonth", "mtime", "day", DTE, NULL, INT, SCALE_FIX);
+	sql_create_func(sa, "week", "mtime", "weekofyear", DTE, NULL, INT, SCALE_FIX);
+
 	sql_create_func(sa, "hour", "mtime", "hours", TME, NULL, INT, SCALE_FIX);
 	sql_create_func(sa, "minute", "mtime", "minutes", TME, NULL, INT, SCALE_FIX);
-	sql_create_func_res(sa, "second", "mtime", "sql_seconds", TME, NULL, DEC, SCALE_NONE, 3);
+	sql_create_func_res(sa, "second", "mtime", "sql_seconds", TME, NULL, DEC, SCALE_NONE, 6);
 	sql_create_func(sa, "hour", "mtime", "hours", TMETZ, NULL, INT, SCALE_FIX);
 	sql_create_func(sa, "minute", "mtime", "minutes", TMETZ, NULL, INT, SCALE_FIX);
-	sql_create_func_res(sa, "second", "mtime", "sql_seconds", TMETZ, NULL, DEC, SCALE_NONE, 3);
+	sql_create_func_res(sa, "second", "mtime", "sql_seconds", TMETZ, NULL, DEC, SCALE_NONE, 6);
 
+	sql_create_func(sa, "century", "mtime", "century", TMESTAMP, NULL, INT, SCALE_FIX);
+	sql_create_func(sa, "decade", "mtime", "decade", TMESTAMP, NULL, INT, SCALE_FIX);
 	sql_create_func(sa, "year", "mtime", "year", TMESTAMP, NULL, INT, SCALE_FIX);
 	sql_create_func(sa, "quarter", "mtime", "quarter", TMESTAMP, NULL, INT, SCALE_FIX);
 	sql_create_func(sa, "month", "mtime", "month", TMESTAMP, NULL, INT, SCALE_FIX);
 	sql_create_func(sa, "day", "mtime", "day", TMESTAMP, NULL, INT, SCALE_FIX);
 	sql_create_func(sa, "hour", "mtime", "hours", TMESTAMP, NULL, INT, SCALE_FIX);
 	sql_create_func(sa, "minute", "mtime", "minutes", TMESTAMP, NULL, INT, SCALE_FIX);
-	sql_create_func_res(sa, "second", "mtime", "sql_seconds", TMESTAMP, NULL, DEC, SCALE_NONE, 3);
+	sql_create_func_res(sa, "second", "mtime", "sql_seconds", TMESTAMP, NULL, DEC, SCALE_NONE, 6);
 
+	sql_create_func(sa, "century", "mtime", "century", TMESTAMPTZ, NULL, INT, SCALE_FIX);
+	sql_create_func(sa, "decade", "mtime", "decade", TMESTAMPTZ, NULL, INT, SCALE_FIX);
 	sql_create_func(sa, "year", "mtime", "year", TMESTAMPTZ, NULL, INT, SCALE_FIX);
 	sql_create_func(sa, "quarter", "mtime", "quarter", TMESTAMPTZ, NULL, INT, SCALE_FIX);
 	sql_create_func(sa, "month", "mtime", "month", TMESTAMPTZ, NULL, INT, SCALE_FIX);
 	sql_create_func(sa, "day", "mtime", "day", TMESTAMPTZ, NULL, INT, SCALE_FIX);
 	sql_create_func(sa, "hour", "mtime", "hours", TMESTAMPTZ, NULL, INT, SCALE_FIX);
 	sql_create_func(sa, "minute", "mtime", "minutes", TMESTAMPTZ, NULL, INT, SCALE_FIX);
-	sql_create_func_res(sa, "second", "mtime", "sql_seconds", TMESTAMPTZ, NULL, DEC, SCALE_NONE, 3);
+	sql_create_func_res(sa, "second", "mtime", "sql_seconds", TMESTAMPTZ, NULL, DEC, SCALE_NONE, 6);
 
 	sql_create_func(sa, "year", "mtime", "year", MONINT, NULL, INT, SCALE_NONE);
 	sql_create_func(sa, "month", "mtime", "month", MONINT, NULL, INT, SCALE_NONE);
@@ -2027,12 +2135,6 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_func(sa, "hour", "mtime", "hours", SECINT, NULL, INT, SCALE_NONE);
 	sql_create_func(sa, "minute", "mtime", "minutes", SECINT, NULL, INT, SCALE_NONE);
 	sql_create_func(sa, "second", "mtime", "seconds", SECINT, NULL, INT, SCALE_NONE);
-
-	sql_create_func(sa, "dayofyear", "mtime", "dayofyear", DTE, NULL, INT, SCALE_FIX);
-	sql_create_func(sa, "weekofyear", "mtime", "weekofyear", DTE, NULL, INT, SCALE_FIX);
-	sql_create_func(sa, "dayofweek", "mtime", "dayofweek", DTE, NULL, INT, SCALE_FIX);
-	sql_create_func(sa, "dayofmonth", "mtime", "day", DTE, NULL, INT, SCALE_FIX);
-	sql_create_func(sa, "week", "mtime", "weekofyear", DTE, NULL, INT, SCALE_FIX);
 
 	sql_create_funcSE(sa, "next_value_for", "sql", "next_value", STR, STR, LNG, SCALE_NONE);
 	sql_create_func(sa, "get_value_for", "sql", "get_value", STR, STR, LNG, SCALE_NONE);
@@ -2118,7 +2220,7 @@ sqltypeinit( sql_allocator *sa)
 	/* copyfrom fname (arg 12) */
 	f=sql_create_func_(sa, "copyfrom", "sql", "copy_from",
 	 	list_append( list_append( list_append( list_append( list_append( list_append(list_append (list_append (list_append(list_append(list_append(list_append(sa_list(sa),
-			create_arg(sa, NULL, sql_create_subtype(sa, STR, 0, 0), ARG_IN)), 
+			create_arg(sa, NULL, sql_create_subtype(sa, PTR, 0, 0), ARG_IN)), 
 			create_arg(sa, NULL, sql_create_subtype(sa, STR, 0, 0), ARG_IN)), 
 			create_arg(sa, NULL, sql_create_subtype(sa, STR, 0, 0), ARG_IN)), 
 			create_arg(sa, NULL, sql_create_subtype(sa, STR, 0, 0), ARG_IN)), 
@@ -2146,9 +2248,8 @@ sqltypeinit( sql_allocator *sa)
 }
 
 void
-types_init(sql_allocator *sa, int debug)
+types_init(sql_allocator *sa)
 {
-	(void)debug;
 	aliases = sa_list(sa);
 	types = sa_list(sa);
 	localtypes = sa_list(sa);
@@ -2159,4 +2260,3 @@ types_init(sql_allocator *sa, int debug)
 	MT_lock_unset(&funcs->ht_lock);
 	sqltypeinit( sa );
 }
-

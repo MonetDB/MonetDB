@@ -13,7 +13,6 @@ stdout of test 'schema_from_declared_table.SF-1983341` in directory 'sql/test/Bu
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:31624/
 # MonetDB/SQL module v2.24.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

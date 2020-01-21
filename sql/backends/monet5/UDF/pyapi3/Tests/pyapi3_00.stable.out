@@ -52,7 +52,6 @@ stdout of test 'pyapi3_00` in directory 'sql/backends/monet5/UDF/pyapi3` itself:
 # loading sql script: 90_generator_hge.sql
 # loading sql script: 99_system.sql
 
-Ready.
 
 # 18:14:00 >  
 # 18:14:00 >  Mtimeout -timeout 60 mclient -lsql -ftest -Eutf-8 -i -e --host=/var/tmp/mtest-42996 --port=39898 < /Users/myth/Programs/MonetDB/sql/backends/monet5/UDF/pyapi3/../../Tests/pyapi00.sql

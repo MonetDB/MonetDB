@@ -17,7 +17,6 @@ stdout of test 'like_or.Bug-2924` in directory 'sql/test/BugTracker-2011` itself
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 08:16:49 >  
 # 08:16:49 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=niels" "--port=37572"

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -64,8 +64,7 @@ dupODBCstring(const SQLCHAR *inStr, size_t length)
 
 	if (tmp == NULL)
 		return NULL;
-	strncpy(tmp, (const char *) inStr, length);
-	tmp[length] = '\0';	/* make it null terminated */
+	strcpy_len(tmp, (const char *) inStr, length + 1);
 	return tmp;
 }
 
@@ -178,14 +177,17 @@ ODBCwchar2utf8(const SQLWCHAR *src, SQLLEN length, const char **errmsg)
 
 /* Convert a UTF-8 encoded string to UTF-16 (SQLWCHAR).  On success
    returns NULL, on error returns a string with an error message.  The
-   first two arguments describe the input, the last three arguments
-   describe the output, both in the normal ODBC fashion. */
+   first two arguments describe the input, the next three arguments
+   describe the output, both in the normal ODBC fashion.
+   The last argument is the count of the number of input bytes
+   actually converted to the output. */
 const char *
 ODBCutf82wchar(const SQLCHAR *src,
 	       SQLINTEGER length,
 	       SQLWCHAR *buf,
 	       SQLLEN buflen,
-	       SQLSMALLINT *buflenout)
+	       SQLSMALLINT *buflenout,
+	       size_t *consumed)
 {
 	SQLLEN i = 0;
 	SQLINTEGER j = 0;
@@ -201,6 +203,8 @@ ODBCutf82wchar(const SQLCHAR *src,
 			buf[0] = 0;
 		if (buflenout)
 			*buflenout = 0;
+		if (consumed)
+			*consumed = 0;
 		return NULL;
 	}
 	if (length == SQL_NTS)
@@ -257,6 +261,8 @@ ODBCutf82wchar(const SQLCHAR *src,
 	}
 	if (buflen > 0)
 		buf[i] = 0;
+	if (consumed)
+		*consumed = (size_t) j;
 	while (j < length && src[j]) {
 		i++;
 		if ((src[j+0] & 0x80) == 0) {
@@ -352,10 +358,10 @@ static struct scalars {
 	{"dayofmonth", 1, "sys.\"dayofmonth\"(\1)", },
 	{"dayofweek", 1, "sys.\"dayofweek\"(\1)", },
 	{"dayofyear", 1, "sys.\"dayofyear\"(\1)", },
-	{"degrees", 1, "sys.\"sys\".\"degrees\"(\1)", },
+	{"degrees", 1, "sys.\"degrees\"(\1)", },
 	{"difference", 2, "sys.\"difference\"(\1,\2)", },
 	{"exp", 1, "sys.\"exp\"(\1)", },
-	{"extract", 1, "sys.\"extract\"(\1)", }, /* include "X FROM " in argument */
+	{"extract", 1, "EXTRACT(\1)", }, /* include "X FROM " in argument */
 	{"floor", 1, "sys.\"floor\"(\1)", },
 	{"hour", 1, "sys.\"hour\"(\1)", },
 	{"ifnull", 2, "sys.\"coalesce\"(\1,\2)", },
@@ -375,10 +381,10 @@ static struct scalars {
 	{"now", 0, "sys.\"now\"()", },
 	{"octet_length", 1, "sys.\"octet_length\"(\1)", },
 	{"pi", 0, "sys.\"pi\"()", },
-	{"position", 1, "sys.\"position\"(\1)", }, /* includes "IN" in argument */
+	{"position", 1, "POSITION(\1)", }, /* includes " IN str" in first argument. Note: POSITION is implemented in the parser. */
 	{"power", 2, "sys.\"power\"(\1,\2)", },
 	{"quarter", 1, "sys.\"quarter\"(\1)", },
-	{"radians", 1, "sys.\"sys\".\"radians\"(\1)", },
+	{"radians", 1, "sys.\"radians\"(\1)", },
 	{"rand", 0, "sys.\"rand\"()", },
 	{"rand", 1, "sys.\"rand\"(\1)", },
 	{"repeat", 2, "sys.\"repeat\"(\1,\2)", },
@@ -792,6 +798,7 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN nosc
 							}
 						}
 						strcpy(q + pr, p);
+						length = pr + strlen(p);
 						free(nquery);
 						nquery = q;
 						q += n;

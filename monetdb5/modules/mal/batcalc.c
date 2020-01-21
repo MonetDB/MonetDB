@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -374,15 +374,20 @@ CMDbatBINARY1(MalStkPtr stk, InstrPtr pci,
 {
 	bat *bid;
 	BAT *bn, *b, *s = NULL;
-	int tp1, tp2;
+	int tp1, tp2, tp3;
+
+	assert(3 <= pci->argc && pci->argc <= 5);
 
 	tp1 = stk->stk[getArg(pci, 1)].vtype;
 	tp2 = stk->stk[getArg(pci, 2)].vtype;
-	if (pci->argc == 4) {
+	if (pci->argc >= 4 && ((tp3 = stk->stk[getArg(pci, 3)].vtype) == TYPE_bat ||
+						   isaBatType(tp3))) {
 		bat *sid = getArgReference_bat(stk, pci, 3);
 		if (*sid && (s = BATdescriptor(*sid)) == NULL)
 			throw(MAL, malfunc, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
+	if (pci->argc >= 4 && stk->stk[getArg(pci, pci->argc - 1)].vtype == TYPE_bit)
+		abort_on_error = *getArgReference_bit(stk, pci, pci->argc - 1);
 
 	if (tp1 == TYPE_bat || isaBatType(tp1)) {
 		BAT *b2 = NULL;
@@ -737,8 +742,8 @@ CMDbatLSH(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	return CMDbatBINARY1(stk, pci, BATcalclsh, BATcalclshcst, BATcalccstlsh, 0,
-						 "batcalc.lsh_noerror");
+	return CMDbatBINARY1(stk, pci, BATcalclsh, BATcalclshcst, BATcalccstlsh,
+						 false, "batcalc.lsh_noerror");
 }
 
 mal_export str CMDbatLSHsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -749,8 +754,8 @@ CMDbatLSHsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	return CMDbatBINARY1(stk, pci, BATcalclsh, BATcalclshcst, BATcalccstlsh, 1,
-						 "batcalc.<<");
+	return CMDbatBINARY1(stk, pci, BATcalclsh, BATcalclshcst, BATcalccstlsh,
+						 true, "batcalc.<<");
 }
 
 mal_export str CMDbatRSH(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -761,8 +766,8 @@ CMDbatRSH(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	return CMDbatBINARY1(stk, pci, BATcalcrsh, BATcalcrshcst, BATcalccstrsh, 0,
-						 "batcalc.rsh_noerror");
+	return CMDbatBINARY1(stk, pci, BATcalcrsh, BATcalcrshcst, BATcalccstrsh,
+						 false, "batcalc.rsh_noerror");
 }
 
 mal_export str CMDbatRSHsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -773,8 +778,8 @@ CMDbatRSHsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	return CMDbatBINARY1(stk, pci, BATcalcrsh, BATcalcrshcst, BATcalccstrsh, 1,
-						 "batcalc.>>");
+	return CMDbatBINARY1(stk, pci, BATcalcrsh, BATcalcrshcst, BATcalccstrsh,
+						 true, "batcalc.>>");
 }
 
 mal_export str CMDbatLT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -833,8 +838,8 @@ CMDbatEQ(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	return CMDbatBINARY0(stk, pci, BATcalceq, BATcalceqcst, BATcalccsteq,
-						 "batcalc.==");
+	return CMDbatBINARY1(stk, pci, BATcalceq, BATcalceqcst, BATcalccsteq,
+						 false, "batcalc.==");
 }
 
 mal_export str CMDbatNE(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -845,8 +850,8 @@ CMDbatNE(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	return CMDbatBINARY0(stk, pci, BATcalcne, BATcalcnecst, BATcalccstne,
-						 "batcalc.!=");
+	return CMDbatBINARY1(stk, pci, BATcalcne, BATcalcnecst, BATcalccstne,
+						 false, "batcalc.!=");
 }
 
 mal_export str CMDbatCMP(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -861,12 +866,16 @@ CMDbatCMP(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						 "batcalc.cmp");
 }
 
-static str
-callbatBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int sym)
+mal_export str CMDbatBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+
+str
+CMDbatBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bat *bid;
 	BAT *bn, *b, *lo = NULL, *hi = NULL, *s = NULL;
 	int tp1, tp2, tp3;
+	int bc = 3;					/* number of BAT arguments */
+	bool symmetric, linc, hinc, nils_false, anti;
 
 	(void) cntxt;
 	(void) mb;
@@ -874,11 +883,17 @@ callbatBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int sym)
 	tp1 = stk->stk[getArg(pci, 1)].vtype;
 	tp2 = stk->stk[getArg(pci, 2)].vtype;
 	tp3 = stk->stk[getArg(pci, 3)].vtype;
-	if (pci->argc == 5) {
+	if (pci->argc > bc + 1 && isaBatType(getArgType(mb, pci, 4))) {
 		bat *sid = getArgReference_bat(stk, pci, 4);
 		if (*sid && (s = BATdescriptor(*sid)) == NULL)
 			throw(MAL, "batcalc.between", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		bc++;
 	}
+	symmetric = *getArgReference_bit(stk, pci, bc + 1);
+	linc = *getArgReference_bit(stk, pci, bc + 2);
+	hinc = *getArgReference_bit(stk, pci, bc + 3);
+	nils_false = *getArgReference_bit(stk, pci, bc + 4);
+	anti = *getArgReference_bit(stk, pci, bc + 5);
 
 	if (tp1 != TYPE_bat && !isaBatType(tp1)) {
 		if (s)
@@ -918,15 +933,19 @@ callbatBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int sym)
 	if (lo == NULL) {
 		if (hi == NULL) {
 			bn = BATcalcbetweencstcst(b, &stk->stk[getArg(pci, 2)],
-									  &stk->stk[getArg(pci, 3)], s, sym);
+									  &stk->stk[getArg(pci, 3)], s,
+									  symmetric, linc, hinc, nils_false, anti);
 		} else {
-			bn = BATcalcbetweencstbat(b, &stk->stk[getArg(pci, 2)], hi, s, sym);
+			bn = BATcalcbetweencstbat(b, &stk->stk[getArg(pci, 2)], hi, s,
+									  symmetric, linc, hinc, nils_false, anti);
 		}
 	} else {
 		if (hi == NULL) {
-			bn = BATcalcbetweenbatcst(b, lo, &stk->stk[getArg(pci, 3)], s, sym);
+			bn = BATcalcbetweenbatcst(b, lo, &stk->stk[getArg(pci, 3)], s,
+									  symmetric, linc, hinc, nils_false, anti);
 		} else {
-			bn = BATcalcbetween(b, lo, hi, s, sym);
+			bn = BATcalcbetween(b, lo, hi, s,
+								symmetric, linc, hinc, nils_false, anti);
 		}
 	}
 	BBPunfix(b->batCacheid);
@@ -942,22 +961,6 @@ callbatBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int sym)
 	bid = getArgReference_bat(stk, pci, 0);
 	BBPkeepref(*bid = bn->batCacheid);
 	return MAL_SUCCEED;
-}
-
-mal_export str CMDbatBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-
-str
-CMDbatBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	return callbatBETWEEN(cntxt, mb, stk, pci, 0);
-}
-
-mal_export str CMDbatBETWEENsymmetric(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-
-str
-CMDbatBETWEENsymmetric(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	return callbatBETWEEN(cntxt, mb, stk, pci, 1);
 }
 
 mal_export str CMDcalcavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

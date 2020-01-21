@@ -21,7 +21,6 @@ stdout of test 'inspect00` in directory 'monetdb5/modules/mal` itself:
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 09:46:12 >  
 # 09:46:12 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-26774" "--port=35410"
@@ -32,10 +31,10 @@ stack depth 2
 # view	stk	stk							  # name
 # void	int	str							  # type
 #--------------------------#
-[ 0@0,	0,	"    (h=nil:bat[:int], t=nil:bat[:str]) := mdb.getStackTrace(); at user.tst[3]"	]
-[ 1@0,	  1,	  "    user.tst(); at user.main[2]"			  ]
-#-------------------------------------------------#
-# view	stk	stk				  # name
+[ 0@0,	0,	"    (h=nil:bat[:int], t=nil:bat[:str]) := mdb.getStackTrace();\t#[3] (0) MDBStkTrace 4 5  at user.tst[3]"	]
+[ 1@0,	1,	"    user.tst();\t#[2] (0)  2  at user.main[2]"	]
+#--------------------------#
+# t	stk	stk  # name
 # void	str	str				  # type
 #-------------------------------------------------#
 [ 0@0,	  "tst",  "0@0"				  ]

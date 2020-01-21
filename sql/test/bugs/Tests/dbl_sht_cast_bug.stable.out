@@ -13,7 +13,6 @@ stdout of test 'dbl_sht_cast_bug` in directory 'sql/test/bugs` itself:
 # Listening for connection requests on mapi:monetdb://koala.ins.cwi.nl:30417/
 # MonetDB/SQL module v2.20.1 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;
@@ -27,8 +26,8 @@ Ready.
 #SELECT count(g)
 #FROM dbl_sht_cast_bug
 #WHERE ( r - i < (0.08 + 0.42 * (g - r - 0.96)) or g - r > 2.26 );
-% sys.L4 # table_name
-% L3 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 0	]

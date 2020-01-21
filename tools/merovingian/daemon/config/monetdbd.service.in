@@ -13,7 +13,7 @@ Restart=on-failure
 PIDFile=@Erundir@/merovingian.pid
 PrivateDevices=no
 ProtectSystem=full
-ProtectHome=true
+ProtectHome=read-only
 
 [Install]
 WantedBy=multi-user.target

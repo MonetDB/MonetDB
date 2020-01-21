@@ -15,7 +15,6 @@ stdout of test 'in_query_with_constants_fails.Bug-2582` in directory 'sql/test/B
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:38169/
 # MonetDB/SQL module v2.38.2 loaded
 
-Ready.
 
 
 # 09:27:06 >  

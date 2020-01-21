@@ -5,12 +5,12 @@ BASETABLE
 	-> l		(sql_table)
 
 TABLE 	(card MULTI)
-	-> flags	0, 1, 2 
+	-> flags	TABLE_PROD_FUNC, TABLE_FROM_RELATION
 			cases 
-			0) TABLE producing function 
-			1) RELATIONAL subquery which is dynamically wrapped
+			TABLE_PROD_FUNC) TABLE producing function 
+			TABLE_FROM_RELATION) RELATIONAL subquery which is dynamically wrapped
 			    into function call (needed of remote calls)
-			2) WRAPPER for inserts, deletes and updates (new/old values)
+			2) WRAPPER for triggers inserts, deletes and updates (new/old values)
 				flags 
 				r is list of stmts
 	-> exps		is list of column expressions (also used for aliases)
@@ -23,40 +23,34 @@ TABLE 	(card MULTI)
  */
 DDL 	(card 0!, top of the tree always)
 	-> flags	/* OUTPUT, TRANSACTION-types, CREATE/DROP/ALTER* */ 
-	-> exps		For 'OUTPUT' is list of output options, for DDL_EXCEPTION is a list of psm_exception
+	-> exps		For 'OUTPUT' is list of output options, for ddl_exception is a list of psm_exception
 			For 'transactions' simple flags
 			for CREATE etc full sql string.
-	-> l		used in DDL_OUTPUT as the relation to output and DDL_EXCEPTION as a DDL_LIST
-	-> r		used in DDL_LIST and DDL_EXCEPTION
+	-> l		used in ddl_output as the relation to output and ddl_exception as a ddl_list
+	-> r		used in ddl_list and ddl_exception
 
 SELECT 	(card MULTI or same ...?) 
-	-> exps		selection expressions (ie all e_cmp)
+	-> exps		selection expressions (ie all e_cmp or e_atom of type bit)
 	-> l		is relation
 
 LEFT|RIGHT|FULL
 JOIN 	(card MULTI)
-	-> exps		join expressions (ie all e_cmp)
+	-> exps		join expressions (ie all e_cmp or e_atom of type bit)
 	-> l		is left relation
-	-> r		is rigth relation
+	-> r		is right relation
 	-> flag		LEFT (keep left order, only used during code generation)
 
 SEMI/ANTI 
 	(card MULTI)
-	-> exps		join expressions (ie all e_cmp)
+	-> exps		join expressions (ie all e_cmp or e_atom of type bit)
 	-> l		is left relation
-	-> r		is rigth relation
-
-APPLY
-	(card MULTI)
-	-> exps		are the bind variables (from the outer, correlated in the subquery)
-	-> l		is outer relation
-	-> r		is subquery relation
+	-> r		is right relation
 
 UNION|EXCEPT|INTERSECT 
 	(card ATOM, AGGR or MULTI (same card as lower relation))
 	-> exps 	is list of projection expressions
 	-> l		is left relation
-	-> r		is rigth relation
+	-> r		is right relation
 
 PROJECT  (card ATOM, AGGR or MULTI (same card as lower relation))
 	-> exps 	is list of projection expressions
@@ -114,10 +108,13 @@ e_cmp
 	-> l	left sub expression
 	-> r	right sub expression (f second arg (->f) for range expressions)
 	-> flag compare type		
-		(       cmp_gt = 0,
-        		cmp_gte = 1,
-        		cmp_lte = 2,
-        		cmp_lt = 3,
+		(       cmp_gt = 0,		or [ v > l && v < h ] 
+        		cmp_gte = 1,		or [ v >= l && v < h ]
+        		cmp_lte = 2,		or [ v > l && v <= h ]
+        		cmp_lt = 3,		or [ v >= l && v <= h ]
+						 uses flag&CMP_BETWEEN bit for handling nil 
+							open ranges and isNull vs NULL
+						 uses flag&CMP_SYMMETRIC bit for symmetric 
         		cmp_equal = 4,
         		cmp_notequal = 5,
 
@@ -126,8 +123,14 @@ e_cmp
 			cmp_in = 8,		in list handling 	->r is a list of values
 			cmp_notin = 9		not in list handling	->r is a list of values
 
-        		cmp_all = 10,		cross product
-			cmp_project = 11, 	special case for projection joins
+		        mark_in = 10,
+        		mark_not_in = 11, 
+        		mark_exists = 12,
+        		mark_not_exists = 13,
+
+        		cmp_all = 14,		cross product
+			cmp_project = 15, 	special case for projection joins
+
 		)
 
 e_func

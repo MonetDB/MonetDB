@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -21,6 +21,7 @@
 #include "stream.h"
 #include "stream_socket.h"
 #include "mcrypt.h"
+#include "mstring.h"
 
 #define SOCKPTR struct sockaddr *
 
@@ -63,54 +64,60 @@ char* control_send(
 					strerror(errno));
 			return(strdup(sbuf));
 		}
-#ifndef SOCK_CLOEXEC
+#if !defined(SOCK_CLOEXEC) && defined(HAVE_FCNTL)
 		(void) fcntl(sock, F_SETFD, FD_CLOEXEC);
 #endif
 		server = (struct sockaddr_un) {
 			.sun_family = AF_UNIX,
 		};
-		strncpy(server.sun_path, host, sizeof(server.sun_path) - 1);
+		strcpy_len(server.sun_path, host, sizeof(server.sun_path));
 		if (connect(sock, (SOCKPTR) &server, sizeof(struct sockaddr_un)) == -1) {
 			snprintf(sbuf, sizeof(sbuf), "cannot connect: %s", strerror(errno));
 			closesocket(sock);
 			return(strdup(sbuf));
 		}
 	} else {
-		struct sockaddr_in server;
-		struct hostent *hp;
-		char ver = 0;
-		char *p;
+		int check;
+		char ver = 0, *p;
+		char sport[16];
+		struct addrinfo *res, *rp, hints = (struct addrinfo) {
+			.ai_family = AF_UNSPEC,
+			.ai_socktype = SOCK_STREAM,
+			.ai_protocol = IPPROTO_TCP,
+		};
 
-		/* TCP socket connect */
-		if ((sock = socket(PF_INET, SOCK_STREAM
-#ifdef SOCK_CLOEXEC
-						   | SOCK_CLOEXEC
-#endif
-						   , IPPROTO_TCP)) == -1) {
-			snprintf(sbuf, sizeof(sbuf), "cannot open connection: %s",
-					strerror(errno));
+		snprintf(sport, sizeof(sport), "%d", port & 0xFFFF);
+		check = getaddrinfo(host, sport, &hints, &res);
+		if (check) {
+			snprintf(sbuf, sizeof(sbuf), "cannot connect: %s", gai_strerror(check));
 			return(strdup(sbuf));
 		}
-#ifndef SOCK_CLOEXEC
+		for (rp = res; rp; rp = rp->ai_next) {
+			sock = socket(rp->ai_family, rp->ai_socktype
+#ifdef SOCK_CLOEXEC
+						 | SOCK_CLOEXEC
+#endif
+						 , rp->ai_protocol);
+			if (sock == INVALID_SOCKET)
+				continue;
+			if (connect(sock, rp->ai_addr, (socklen_t) rp->ai_addrlen) != SOCKET_ERROR)
+				break;  /* success */
+			closesocket(sock);
+		}
+		freeaddrinfo(res);
+		if (rp == NULL) {
+			snprintf(sbuf, sizeof(sbuf), "cannot connect to %s:%s: %s", host, sport,
+#ifdef _MSC_VER
+					 wsaerror(WSAGetLastError())
+#else
+					 strerror(errno)
+#endif
+			);
+			return(strdup(sbuf));
+		}
+#if !defined(SOCK_CLOEXEC) && defined(HAVE_FCNTL)
 		(void) fcntl(sock, F_SETFD, FD_CLOEXEC);
 #endif
-		hp = gethostbyname(host);
-		if (hp == NULL) {
-			snprintf(sbuf, sizeof(sbuf), "cannot lookup hostname: %s",
-					hstrerror(h_errno));
-			closesocket(sock);
-			return(strdup(sbuf));
-		}
-		server = (struct sockaddr_in) {
-			.sin_family = hp->h_addrtype,
-			.sin_port = htons((unsigned short) port),
-		};
-		memcpy(&server.sin_addr, hp->h_addr_list[0], hp->h_length);
-		if (connect(sock, (SOCKPTR) &server, sizeof(struct sockaddr_in)) == -1) {
-			snprintf(sbuf, sizeof(sbuf), "cannot connect: %s", strerror(errno));
-			closesocket(sock);
-			return(strdup(sbuf));
-		}
 
 		/* try reading length */
 		len = recv(sock, rbuf, 2, 0);
@@ -138,9 +145,8 @@ char* control_send(
 			fdin = block_stream(socket_rstream(sock, "client in"));
 			fdout = block_stream(socket_wstream(sock, "client out"));
 		} else {
-			if (len > 2 &&
-					(strstr(rbuf + 2, ":BIG:") != NULL ||
-					 strstr(rbuf + 2, ":LIT:") != NULL))
+			if (strstr(rbuf + 2, ":BIG:") != NULL ||
+				strstr(rbuf + 2, ":LIT:") != NULL)
 			{
 				snprintf(sbuf, sizeof(sbuf), "cannot connect: "
 						"server looks like a mapi server, "
@@ -293,6 +299,14 @@ char* control_send(
 				{
 					snprintf(sbuf, sizeof(sbuf), "cannot connect: "
 							"monetdbd server requires unknown hash: %s", shash);
+					close_stream(fdout);
+					close_stream(fdin);
+					return(strdup(sbuf));
+				}
+
+				if (!phash) {
+					snprintf(sbuf, sizeof(sbuf), "cannot connect: "
+							"allocation failure while establishing connection");
 					close_stream(fdout);
 					close_stream(fdin);
 					return(strdup(sbuf));

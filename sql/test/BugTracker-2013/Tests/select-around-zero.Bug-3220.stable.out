@@ -19,7 +19,6 @@ stdout of test 'select-around-zero.Bug-3220` in directory 'sql/test/BugTracker-2
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 10:08:23 >  
 # 10:08:23 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-13176" "--port=37142"

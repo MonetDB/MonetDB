@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -14,12 +14,16 @@
 #include <sys/wait.h>
 #include <netdb.h>
 #include <netinet/in.h>
+#ifdef HAVE_POLL_H
+#include <poll.h>
+#endif
 #include <time.h>
 #include <string.h>  /* strerror */
 #include <unistd.h>  /* select */
 #include <signal.h>
 #include <fcntl.h>
 
+#include "monet_options.h"
 #include "msabaoth.h"
 #include "mcrypt.h"
 #include "utils/utils.h"
@@ -58,7 +62,7 @@ leavedbS(sabdb *stats)
 	char *shared;
 	readProps(props, stats->path);
 	shared = getConfVal(props, "shared");
-	if (stats->locked != 1 && (shared == NULL || strcmp(shared, "no") != 0))
+	if (!stats->locked && (shared == NULL || strcmp(shared, "no") != 0))
 		leavedb(stats->dbname);
 	freeConfFile(props);
 	free(props);
@@ -72,7 +76,7 @@ setURI(sabdb *stats)
 	char *shared;
 	readProps(props, stats->path);
 	shared = getConfVal(props, "shared");
-	if (stats->locked != 1 && (shared == NULL || strcmp(shared, "no") != 0)) {
+	if (!stats->locked && (shared == NULL || strcmp(shared, "no") != 0)) {
 		snprintf(_internal_uri_buf, sizeof(_internal_uri_buf),
 				"mapi:monetdb://%s:%u/%s%s%s",
 				_mero_hostname,
@@ -94,7 +98,7 @@ anncdbS(sabdb *stats)
 	char *shared;
 	readProps(props, stats->path);
 	shared = getConfVal(props, "shared");
-	if (stats->locked != 1 && (shared == NULL || strcmp(shared, "no") != 0)) {
+	if (!stats->locked && (shared == NULL || strcmp(shared, "no") != 0)) {
 		snprintf(buf, sizeof(buf),
 				"ANNC %s%s%s mapi:monetdb://%s:%u/ %d",
 				stats->dbname,
@@ -112,17 +116,23 @@ anncdbS(sabdb *stats)
 inline static int
 recvWithTimeout(int msgsock, stream *fdin, char *buf, size_t buflen)
 {
+	int retval;
+#ifdef HAVE_POLL
+	struct pollfd pfd = (struct pollfd) {.fd = msgsock, .events = POLLIN};
+
+	/* Wait up to 1 second.  If a client doesn't make this, it's too slow */
+	retval = poll(&pfd, 1, 1000);
+#else
 	fd_set fds;
 	struct timeval tv;
-	int retval;
 
 	FD_ZERO(&fds);
 	FD_SET(msgsock, &fds);
 
 	/* Wait up to 1 second.  If a client doesn't make this, it's too slow */
-	tv.tv_sec = 1;
-	tv.tv_usec = 0;
+	tv = struct timeval) {.tv_sec = 1};
 	retval = select(msgsock + 1, &fds, NULL, NULL, &tv);
+#endif
 	if (retval <= 0) {
 		/* nothing interesting has happened */
 		return(-2);
@@ -160,6 +170,12 @@ control_authorise(
 
 	pwd = mcrypt_hashPassword(algo,
 			getConfVal(_mero_props, "passphrase"), chal);
+	if (!pwd) {
+		Mfprintf(_mero_ctlout, "%s: Allocation failure during authentication\n", host);
+		mnstr_printf(fout, "!allocation failure\n");
+		mnstr_flush(fout);
+		return 0;
+	}
 	if (strcmp(pwd, passwd) != 0) {
 		free(pwd);
 		Mfprintf(_mero_ctlout, "%s: permission denied "
@@ -311,7 +327,7 @@ static void ctl_handle_client(
 
 					msab_freeStatus(&stats);
 				}
-				if ((e = forkMserver(q, &stats, 1)) != NO_ERR) {
+				if ((e = forkMserver(q, &stats, true)) != NO_ERR) {
 					Mfprintf(_mero_ctlerr, "%s: failed to fork mserver: "
 							"%s\n", origin, getErrMsg(e));
 					len = snprintf(buf2, sizeof(buf2),
@@ -351,6 +367,8 @@ static void ctl_handle_client(
 							 * may have encountered.
 							 */
 							shutdown_profiler(dbname, &stats);
+							if (stats != NULL)
+								msab_freeStatus(&stats);
 							terminateProcess(pid, dbname, type, 1);
 							Mfprintf(_mero_ctlout, "%s: stopped "
 									"database '%s'\n", origin, q);
@@ -421,7 +439,11 @@ static void ctl_handle_client(
 							free(sadbfarm);
 							setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_dbpath", buf2);
 							setlen = mo_system_config(&set, setlen);
-							BBPaddfarm(buf2, (1 << PERSISTENT) | (1 << TRANSIENT));
+							if (BBPaddfarm(buf2, (1 << PERSISTENT) | (1 << TRANSIENT)) != GDK_SUCCEED) {
+								Mfprintf(_mero_ctlerr, "%s: could not add farm to "
+									"'%s': %d: %s\n", origin, q, errno, strerror(errno));
+								exit(0);
+							}
 							/* the child, pollute scope by loading BBP */
 							if (chdir(q) < 0) {
 								/* Fabian says "Ignore the output.
@@ -448,7 +470,12 @@ static void ctl_handle_client(
 								len = strlen(buf2); /* secret can contain null-bytes */
 								fclose(secretf);
 							}
-							GDKinit(set, setlen);
+							if (GDKinit(set, setlen) != GDK_SUCCEED) {
+								Mfprintf(_mero_ctlerr, "%s: could not "
+										 "initialize database '%s'\n",
+										 origin, q);
+								exit(0);
+							}
 							vaultkey = buf2;
 							if ((err = AUTHunlockVault(vaultkey)) != NULL ||
 								(err = AUTHinitTables(p)) != NULL) {
@@ -645,6 +672,8 @@ static void ctl_handle_client(
 							 origin, log_path);
 				}
 				msab_freeStatus(&stats);
+				if (log_path)
+					free(log_path);
 			}  else if (strncmp(p, "profilerstop", strlen("profilerstop")) == 0) {
 				char *e = shutdown_profiler(q, &stats);
 				if (e != NULL) {
@@ -780,7 +809,13 @@ static void ctl_handle_client(
 				len = snprintf(buf2, sizeof(buf2), "OK\n");
 				send_client("=");
 				len = snprintf(buf2, sizeof(buf2), "%s (%s)\n",
-						VERSION, MONETDB_RELEASE);
+							   VERSION,
+#ifdef MONETDB_RELEASE
+							   MONETDB_RELEASE
+#else
+							   "unreleased"
+#endif
+					);
 				send_client("=");
 				break;
 			} else if (strcmp(p, "mserver") == 0) {
@@ -985,6 +1020,7 @@ handle_client(void *p)
 {
 	int msgsock = * (int *) p;
 
+	free(p);
 	ctl_handle_client("(local)", msgsock, NULL, NULL);
 	shutdown(msgsock, SHUT_RDWR);
 	closesocket(msgsock);
@@ -996,32 +1032,54 @@ controlRunner(void *d)
 {
 	int usock = *(int *)d;
 	int retval;
+#ifdef HAVE_POLL
+	struct pollfd pfd;
+#else
 	fd_set fds;
 	struct timeval tv;
+#endif
 	int msgsock;
 	pthread_t tid;
+	int *p;
 
 	do {
+		if ((p = malloc(sizeof(int))) == NULL) {
+			Mfprintf(_mero_ctlerr, "malloc failed");
+			break;
+		}
+		/* limit waiting time in order to check whether we need to exit */
+#ifdef HAVE_POLL
+		pfd = (struct pollfd) {.fd = usock, .events = POLLIN};
+		retval = poll(&pfd, 1, 1000);
+#else
 		FD_ZERO(&fds);
 		FD_SET(usock, &fds);
 
-		/* limit waiting time in order to check whether we need to exit */
-		tv.tv_sec = 1;
-		tv.tv_usec = 0;
+		tv = (struct timeval) {.tv_sec = 1};
 		retval = select(usock + 1, &fds, NULL, NULL, &tv);
+#endif
 		if (retval == 0) {
 			/* nothing interesting has happened */
+			free(p);
 			continue;
 		}
 		if (retval == -1) {
+			free(p);
 			continue;
 		}
 
+#ifdef HAVE_POLL
+		if ((pfd.revents & POLLIN) == 0)
+			continue;
+#else
 		if (!FD_ISSET(usock, &fds)) {
+			free(p);
 			continue;
 		}
+#endif
 
 		if ((msgsock = accept4(usock, (SOCKPTR) 0, (socklen_t *) 0, SOCK_CLOEXEC)) == -1) {
+			free(p);
 			if (_mero_keep_listening == 0)
 				break;
 			if (errno != EINTR) {
@@ -1034,9 +1092,11 @@ controlRunner(void *d)
 		(void) fcntl(msgsock, F_SETFD, FD_CLOEXEC);
 #endif
 
-		if (pthread_create(&tid, NULL, handle_client, &msgsock) != 0)
+		*p = msgsock;
+		if (pthread_create(&tid, NULL, handle_client, p) != 0) {
 			closesocket(msgsock);
-		else
+			free(p);
+		} else
 			pthread_detach(tid);
 	} while (_mero_keep_listening);
 	shutdown(usock, SHUT_RDWR);

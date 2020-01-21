@@ -3,130 +3,124 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #ifndef _GDK_SEARCH_H_
 #define _GDK_SEARCH_H_
-/*
- * @+ Hash indexing
- *
- * This is a highly efficient implementation of simple bucket-chained
- * hashing.
- *
- * In the past, we used integer modulo for hashing, with bucket chains
- * of mean size 4.  This was shown to be inferior to direct hashing
- * with integer anding. The new implementation reflects this.
- */
+
+typedef struct Hash {
+	int type;		/* type of index entity */
+	uint8_t width;		/* width of hash entries */
+	BUN mask1;		/* .mask1 < .nbucket <= .mask2 */
+	BUN mask2;		/* ... both are power-of-two minus one */
+	BUN nbucket;		/* number of valid hash buckets */
+	BUN nil;		/* nil representation */
+	BUN nunique;		/* number of unique values */
+	BUN nheads;		/* number of chain heads */
+	void *Bckt;		/* hash buckets, points into .heapbckt */
+	void *Link;		/* collision list, points into .heaplink */
+	Heap heaplink;		/* heap where the hash links are stored */
+	Heap heapbckt;		/* heap where the hash buckets are stored */
+} Hash;
+
+static inline BUN
+HASHbucket(const Hash *h, BUN v)
+{
+	return (v &= h->mask2) < h->nbucket ? v : v & h->mask1;
+}
+
+gdk_export gdk_return BAThash(BAT *b);
 gdk_export void HASHdestroy(BAT *b);
 gdk_export BUN HASHprobe(const Hash *h, const void *v);
 gdk_export BUN HASHlist(Hash *h, BUN i);
-
+gdk_export gdk_return HASHgrowbucket(BAT *b);
 
 #define HASHnil(H)	(H)->nil
 
-/* play around with h->Hash[i] and h->Link[j] */
-#define HASHget2(h,i)		((BUN) ((BUN2type*) (h)->Hash)[i])
-#define HASHput2(h,i,v)		(((BUN2type*) (h)->Hash)[i] = (BUN2type) (v))
-#define HASHgetlink2(h,i)	((BUN) ((BUN2type*) (h)->Link)[i])
-#define HASHputlink2(h,i,v)	(((BUN2type*) (h)->Link)[i] = (BUN2type) (v))
-#define HASHget4(h,i)		((BUN) ((BUN4type*) (h)->Hash)[i])
-#define HASHput4(h,i,v)		(((BUN4type*) (h)->Hash)[i] = (BUN4type) (v))
-#define HASHgetlink4(h,i)	((BUN) ((BUN4type*) (h)->Link)[i])
-#define HASHputlink4(h,i,v)	(((BUN4type*) (h)->Link)[i] = (BUN4type) (v))
-#if SIZEOF_BUN == 8
-#define HASHget8(h,i)		((BUN) ((BUN8type*) (h)->Hash)[i])
-#define HASHput8(h,i,v)		(((BUN8type*) (h)->Hash)[i] = (BUN8type) (v))
-#define HASHgetlink8(h,i)	((BUN) ((BUN8type*) (h)->Link)[i])
-#define HASHputlink8(h,i,v)	(((BUN8type*) (h)->Link)[i] = (BUN8type) (v))
+#define BUN2 2
+#define BUN4 4
+#if SIZEOF_BUN > 4
+#define BUN8 8
+#endif
+typedef uint16_t BUN2type;
+typedef uint32_t BUN4type;
+#if SIZEOF_BUN > 4
+typedef uint64_t BUN8type;
+#endif
+#define BUN2_NONE ((BUN2type) UINT16_C(0xFFFF))
+#define BUN4_NONE ((BUN4type) UINT32_C(0xFFFFFFFF))
+#if SIZEOF_BUN > 4
+#define BUN8_NONE ((BUN8type) UINT64_C(0xFFFFFFFFFFFFFFFF))
 #endif
 
-#if SIZEOF_BUN <= 4
-#define HASHget(h,i)				\
-	((h)->width == BUN4 ? HASHget4(h,i) : HASHget2(h,i))
-#define HASHput(h,i,v)				\
-	do {					\
-		if ((h)->width == 2) {		\
-			HASHput2(h,i,v);	\
-		} else {			\
-			HASHput4(h,i,v);	\
-		}				\
-	} while (0)
-#define HASHgetlink(h,i)				\
-	((h)->width == BUN4 ? HASHgetlink4(h,i) : HASHgetlink2(h,i))
-#define HASHputlink(h,i,v)			\
-	do {					\
-		if ((h)->width == 2) {		\
-			HASHputlink2(h,i,v);	\
-		} else {			\
-			HASHputlink4(h,i,v);	\
-		}				\
-	} while (0)
-#define HASHputall(h, i, v)					\
-	do {							\
-		if ((h)->width == 2) {				\
-			HASHputlink2(h, i, HASHget2(h, v));	\
-			HASHput2(h, v, i);			\
-		} else {					\
-			HASHputlink4(h, i, HASHget4(h, v));	\
-			HASHput4(h, v, i);			\
-		}						\
-	} while (0)
-#else
-#define HASHget(h,i)					\
-	((h)->width == BUN8 ? HASHget8(h,i) :		\
-	 (h)->width == BUN4 ? HASHget4(h,i) :		\
-	 HASHget2(h,i))
-#define HASHput(h,i,v)				\
-	do {					\
-		switch ((h)->width) {		\
-		case 2:				\
-			HASHput2(h,i,v);	\
-			break;			\
-		case 4:				\
-			HASHput4(h,i,v);	\
-			break;			\
-		case 8:				\
-			HASHput8(h,i,v);	\
-			break;			\
-		}				\
-	} while (0)
-#define HASHgetlink(h,i)				\
-	((h)->width == BUN8 ? HASHgetlink8(h,i) :	\
-	 (h)->width == BUN4 ? HASHgetlink4(h,i) :	\
-	 HASHgetlink2(h,i))
-#define HASHputlink(h,i,v)			\
-	do {					\
-		switch ((h)->width) {		\
-		case 2:				\
-			HASHputlink2(h,i,v);	\
-			break;			\
-		case 4:				\
-			HASHputlink4(h,i,v);	\
-			break;			\
-		case 8:				\
-			HASHputlink8(h,i,v);	\
-			break;			\
-		}				\
-	} while (0)
-#define HASHputall(h, i, v)					\
-	do {							\
-		switch ((h)->width) {				\
-		case 2:						\
-			HASHputlink2(h, i, HASHget2(h, v));	\
-			HASHput2(h, v, i);			\
-			break;					\
-		case 4:						\
-			HASHputlink4(h, i, HASHget4(h, v));	\
-			HASHput4(h, v, i);			\
-			break;					\
-		case 8:						\
-			HASHputlink8(h, i, HASHget8(h, v));	\
-			HASHput8(h, v, i);			\
-			break;					\
-		}						\
-	} while (0)
+/* play around with h->Bckt[i] and h->Link[j] */
+
+static inline void
+HASHput(Hash *h, BUN i, BUN v)
+{
+	switch (h->width) {
+	default:		/* BUN2 */
+		((BUN2type *) h->Bckt)[i] = (BUN2type) v;
+		break;
+	case BUN4:
+		((BUN4type *) h->Bckt)[i] = (BUN4type) v;
+		break;
+#if SIZEOF_BUN == 8
+	case BUN8:
+		((BUN8type *) h->Bckt)[i] = (BUN8type) v;
+		break;
 #endif
+	}
+}
+
+static inline void
+HASHputlink(Hash *h, BUN i, BUN v)
+{
+	switch (h->width) {
+	default:		/* BUN2 */
+		((BUN2type *) h->Link)[i] = (BUN2type) v;
+		break;
+	case BUN4:
+		((BUN4type *) h->Link)[i] = (BUN4type) v;
+		break;
+#if SIZEOF_BUN == 8
+	case BUN8:
+		((BUN8type *) h->Link)[i] = (BUN8type) v;
+		break;
+#endif
+	}
+}
+
+static inline BUN
+HASHget(Hash *h, BUN i)
+{
+	switch (h->width) {
+	default:		/* BUN2 */
+		return (BUN) ((BUN2type *) h->Bckt)[i];
+	case BUN4:
+		return (BUN) ((BUN4type *) h->Bckt)[i];
+#if SIZEOF_BUN == 8
+	case BUN8:
+		return (BUN) ((BUN8type *) h->Bckt)[i];
+#endif
+	}
+}
+
+static inline BUN
+HASHgetlink(Hash *h, BUN i)
+{
+	switch (h->width) {
+	default:		/* BUN2 */
+		return (BUN) ((BUN2type *) h->Link)[i];
+	case BUN4:
+		return (BUN) ((BUN4type *) h->Link)[i];
+#if SIZEOF_BUN == 8
+	case BUN8:
+		return (BUN) ((BUN8type *) h->Link)[i];
+#endif
+	}
+}
 
 /* mix_bte(0x80) == 0x80 */
 #define mix_bte(X)	((unsigned int) (unsigned char) (X))
@@ -168,15 +162,14 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 #endif
 #define hash_loc(H,V)	hash_any(H,V)
 #define hash_var(H,V)	hash_any(H,V)
-#define hash_any(H,V)	(ATOMhash((H)->type, (V)) & (H)->mask)
-#define heap_hash_any(hp,H,V)	((hp) && (hp)->hashash ? ((BUN *) (V))[-1] & (H)->mask : hash_any(H,V))
-#define hash_bte(H,V)	(assert(((H)->mask & 0xFF) == 0xFF), (BUN) mix_bte(*(const unsigned char*) (V)))
-#define hash_sht(H,V)	(assert(((H)->mask & 0xFFFF) == 0xFFFF), (BUN) mix_sht(*(const unsigned short*) (V)))
-#define hash_int(H,V)	((BUN) mix_int(*(const unsigned int *) (V)) & (H)->mask)
+#define hash_any(H,V)	HASHbucket(H, ATOMhash((H)->type, (V)))
+#define hash_bte(H,V)	(assert((H)->nbucket >= 256), (BUN) mix_bte(*(const unsigned char*) (V)))
+#define hash_sht(H,V)	(assert((H)->nbucket >= 65536), (BUN) mix_sht(*(const unsigned short*) (V)))
+#define hash_int(H,V)	HASHbucket(H, (BUN) mix_int(*(const unsigned int *) (V)))
 /* XXX return size_t-sized value for 8-byte oid? */
-#define hash_lng(H,V)	((BUN) mix_lng(*(const ulng *) (V)) & (H)->mask)
+#define hash_lng(H,V)	HASHbucket(H, (BUN) mix_lng(*(const ulng *) (V)))
 #ifdef HAVE_HGE
-#define hash_hge(H,V)	((BUN) mix_hge(*(const uhge *) (V)) & (H)->mask)
+#define hash_hge(H,V)	HASHbucket(H, (BUN) mix_hge(*(const uhge *) (V)))
 #endif
 #if SIZEOF_OID == SIZEOF_INT
 #define hash_oid(H,V)	hash_int(H,V)
@@ -234,6 +227,56 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 #define HASHfnd_dbl(x,y,z)	HASHfnd_TYPE(x,y,z,dbl)
 
 /*
+ * @- hash-table supported loop over BUNs The first parameter `bi' is
+ * a BAT iterator, the second (`h') should point to the Hash
+ * structure, and `v' a pointer to an atomic value (corresponding to
+ * the head column of `b'). The 'hb' is an BUN index, pointing out the
+ * `hb'-th BUN.
+ */
+#define HASHloop(bi, h, hb, v)					\
+	for (hb = HASHget(h, HASHprobe(h, v));			\
+	     hb != HASHnil(h);					\
+	     hb = HASHgetlink(h, hb))				\
+		if (ATOMcmp(h->type, v, BUNtail(bi, hb)) == 0)
+#define HASHloop_str_hv(bi, h, hb, v)				\
+	for (hb = HASHget(h, HASHbucket(h, ((BUN *) (v))[-1]));	\
+	     hb != HASHnil(h);					\
+	     hb = HASHgetlink(h, hb))				\
+		if (GDK_STREQ(v, BUNtvar(bi, hb)))
+#define HASHloop_str(bi, h, hb, v)				\
+	for (hb = HASHget(h, HASHbucket(h, strHash(v)));	\
+	     hb != HASHnil(h);					\
+	     hb = HASHgetlink(h, hb))				\
+		if (GDK_STREQ(v, BUNtvar(bi, hb)))
+
+#define HASHlooploc(bi, h, hb, v)				\
+	for (hb = HASHget(h, HASHprobe(h, v));			\
+	     hb != HASHnil(h);					\
+	     hb = HASHgetlink(h, hb))				\
+		if (ATOMcmp(h->type, v, BUNtloc(bi, hb)) == 0)
+#define HASHloopvar(bi, h, hb, v)				\
+	for (hb = HASHget(h, HASHprobe(h, v));			\
+	     hb != HASHnil(h);					\
+	     hb = HASHgetlink(h, hb))				\
+		if (ATOMcmp(h->type, v, BUNtvar(bi, hb)) == 0)
+
+#define HASHloop_TYPE(bi, h, hb, v, TYPE)				\
+	for (hb = HASHget(h, hash_##TYPE(h, v));			\
+	     hb != HASHnil(h);						\
+	     hb = HASHgetlink(h,hb))					\
+		if (* (const TYPE *) (v) == * (const TYPE *) BUNtloc(bi, hb))
+
+#define HASHloop_bte(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, bte)
+#define HASHloop_sht(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, sht)
+#define HASHloop_int(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, int)
+#define HASHloop_lng(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, lng)
+#ifdef HAVE_HGE
+#define HASHloop_hge(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, hge)
+#endif
+#define HASHloop_flt(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, flt)
+#define HASHloop_dbl(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, dbl)
+
+/*
  * A new entry is added with HASHins using the BAT, the BUN index, and
  * a pointer to the value to be stored.
  *
@@ -243,14 +286,40 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 #define HASHins(b,i,v)							\
 	do {								\
 		if ((b)->thash) {					\
-			assert((b)->thash != (Hash *) 1);		\
-			assert((((size_t *) (b)->thash->heap.base)[0] & (1 << 24)) == 0); \
-			if (((i) & 1023) == 1023 && HASHgonebad((b), (v))) { \
+			MT_lock_set(&(b)->batIdxLock);			\
+			Hash *_h = (b)->thash;				\
+			if (_h == (Hash *) 1 ||				\
+			    _h == NULL ||				\
+			    (ATOMsize(b->ttype) > 2 &&			\
+			     HASHgrowbucket(b) != GDK_SUCCEED) ||	\
+			    (((i) + 1) * _h->width > _h->heaplink.size && \
+			     HEAPextend(&_h->heaplink,			\
+					(i) * _h->width + GDK_mmap_pagesize, \
+					true) != GDK_SUCCEED)) {	\
+				MT_lock_unset(&(b)->batIdxLock);	\
 				HASHdestroy(b);				\
 			} else {					\
-				BUN _c = HASHprobe((b)->thash, (v));	\
-				HASHputall((b)->thash, (i), _c);	\
-				(b)->thash->heap.dirty = true;		\
+				_h->Link = _h->heaplink.base;		\
+				BUN _c = HASHprobe(_h, (v));		\
+				_h->heaplink.free += _h->width;		\
+				BUN _hb = HASHget(_h, _c);		\
+				BUN _hb2;				\
+				BATiter _bi = bat_iterator(b);		\
+				for (_hb2 = _hb;			\
+				     _hb2 != HASHnil(_h);		\
+				     _hb2 = HASHgetlink(_h, _hb2)) {	\
+					if (ATOMcmp(_h->type,		\
+						    (v),		\
+						    BUNtail(_bi, _hb2)) == 0) \
+						break;			\
+				}					\
+				_h->nheads += _hb == HASHnil(_h);	\
+				_h->nunique += _hb2 == HASHnil(_h);	\
+				HASHputlink(_h, i, _hb);		\
+				HASHput(_h, _c, i);			\
+				_h->heapbckt.dirty = true;		\
+				_h->heaplink.dirty = true;		\
+				MT_lock_unset(&(b)->batIdxLock);	\
 			}						\
 		}							\
 	} while (0)

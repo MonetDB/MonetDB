@@ -30,7 +30,7 @@ stderr of test 'analytics03` in directory 'sql/test/analytics` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-29260/.s.monetdb.34302
 QUERY = select count(*) over (rows between NULL preceding and unbounded following) from rowsvsrangevsgroups; --error
-ERROR = !PRECEDING offset must be of a countable SQL type
+ERROR = !PRECEDING offset must not be NULL
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-29260/.s.monetdb.34302
 QUERY = select count(*) over (rows between unbounded preceding and -1 following) from rowsvsrangevsgroups; --error

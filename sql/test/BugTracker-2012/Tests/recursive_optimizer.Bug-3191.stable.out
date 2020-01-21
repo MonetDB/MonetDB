@@ -18,7 +18,6 @@ stdout of test 'recursive_optimizer.Bug-3191` in directory 'sql/test/BugTracker-
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 18:36:26 >  
 # 18:36:26 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=niels" "--port=36409"

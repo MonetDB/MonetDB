@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /**
@@ -61,6 +61,9 @@
 #include <sys/un.h>
 #include <netdb.h>
 #include <netinet/in.h>
+#ifdef HAVE_POLL_H
+#include <poll.h>
+#endif
 #include <fcntl.h>
 #include <unistd.h> /* unlink, isatty */
 #include <string.h> /* strerror */
@@ -98,12 +101,12 @@ typedef struct _threadlist {
 char *_mero_mserver = NULL;
 /* list of databases that we have started */
 dpair _mero_topdp = NULL;
-/* lock to _mero_topdp, initialised as recursive lateron */
+/* lock to _mero_topdp, initialised as recursive later on */
 pthread_mutex_t _mero_topdp_lock = PTHREAD_MUTEX_INITIALIZER;
 /* for the logger, when set to 0, the logger terminates */
 volatile int _mero_keep_logging = 1;
 /* for accepting connections, when set to 0, listening socket terminates */
-volatile char _mero_keep_listening = 1;
+volatile sig_atomic_t _mero_keep_listening = 1;
 /* stream to where to write the log */
 FILE *_mero_logfile = NULL;
 /* stream to the stdout for the neighbour discovery service */
@@ -116,6 +119,8 @@ FILE *_mero_ctlout = NULL;
 FILE *_mero_ctlerr = NULL;
 /* broadcast socket for announcements */
 int _mero_broadcastsock = -1;
+/* ipv6 global any bind address constant */
+const struct in6_addr ipv6_any_addr = IN6ADDR_ANY_INIT;
 /* broadcast address/port */
 struct sockaddr_in _mero_broadcastaddr;
 /* hostname of this machine */
@@ -172,8 +177,12 @@ logListener(void *x)
 {
 	dpair d = _mero_topdp;
 	dpair w;
+#ifdef HAVE_POLL
+	struct pollfd *pfd;
+#else
 	struct timeval tv;
 	fd_set readfds;
+#endif
 	int nfds;
 
 	(void)x;
@@ -186,16 +195,29 @@ logListener(void *x)
 	do {
 		/* wait max 1 second, tradeoff between performance and being
 		 * able to catch up new logger streams */
-		tv.tv_sec = 1;
-		tv.tv_usec = 0;
+#ifndef HAVE_POLL
+		tv = (struct timeval) {.tv_sec = 1};
 		FD_ZERO(&readfds);
+#endif
 		nfds = 0;
 
 		/* make sure noone is killing or adding entries here */
 		pthread_mutex_lock(&_mero_topdp_lock);
 
-		w = d;
-		while (w != NULL) {
+#ifdef HAVE_POLL
+		for (w = d; w != NULL; w = w->next) {
+			nfds += 2;
+		}
+		pfd = malloc(nfds * sizeof(struct pollfd));
+		nfds = 0;
+		for (w = d; w != NULL; w = w->next) {
+			pfd[nfds++] = (struct pollfd) {.fd = w->out, .events = POLLIN};
+			if (w->out != w->err)
+				pfd[nfds++] = (struct pollfd) {.fd = w->err, .events = POLLIN};
+			w->flag |= 1;
+		}
+#else
+		for (w = d; w != NULL; w = w->next) {
 			FD_SET(w->out, &readfds);
 			if (nfds < w->out)
 				nfds = w->out;
@@ -203,12 +225,21 @@ logListener(void *x)
 			if (nfds < w->err)
 				nfds = w->err;
 			w->flag |= 1;
-			w = w->next;
 		}
+#endif
 
 		pthread_mutex_unlock(&_mero_topdp_lock);
 
-		if (select(nfds + 1, &readfds, NULL, NULL, &tv) <= 0) {
+		if (
+#ifdef HAVE_POLL
+			poll(pfd, nfds, 1000)
+#else
+			select(nfds + 1, &readfds, NULL, NULL, &tv)
+#endif
+			<= 0) {
+#ifdef HAVE_POLL
+			free(pfd);
+#endif
 			if (_mero_keep_logging != 0) {
 				continue;
 			} else {
@@ -223,12 +254,23 @@ logListener(void *x)
 		while (w != NULL) {
 			/* only look at records we've added in the previous loop */
 			if (w->flag & 1) {
+#ifdef HAVE_POLL
+				for (int i = 0; i < nfds; i++) {
+					if (pfd[i].fd == w->out && pfd[i].revents & POLLIN)
+						logFD(w->out, "MSG", w->dbname,
+							  (long long int)w->pid, _mero_logfile, 0);
+					else if (pfd[i].fd == w->err && pfd[i].revents & POLLIN)
+						logFD(w->err, "ERR", w->dbname,
+							  (long long int)w->pid, _mero_logfile, 0);
+				}
+#else
 				if (FD_ISSET(w->out, &readfds) != 0)
 					logFD(w->out, "MSG", w->dbname,
 						  (long long int)w->pid, _mero_logfile, 0);
 				if (w->err != w->out && FD_ISSET(w->err, &readfds) != 0)
 					logFD(w->err, "ERR", w->dbname,
 						  (long long int)w->pid, _mero_logfile, 0);
+#endif
 				w->flag &= ~1;
 			}
 			w = w->next;
@@ -236,6 +278,9 @@ logListener(void *x)
 
 		pthread_mutex_unlock(&_mero_topdp_lock);
 
+#ifdef HAVE_POLL
+		free(pfd);
+#endif
 		fflush(_mero_logfile);
 	} while (_mero_keep_logging);
 	return NULL;
@@ -298,11 +343,12 @@ main(int argc, char *argv[])
 	int socku = -1;
 	char* host = NULL;
 	unsigned short port = 0;
-	char discovery = 0;
+	bool discovery = false;
 	struct stat sb;
 	FILE *oerr = NULL;
 	int thret;
 	char merodontfork = 0;
+	bool use_ipv6 = false;
 	confkeyval ckv[] = {
 		{"logfile",       strdup("merovingian.log"), 0,                STR},
 		{"pidfile",       strdup("merovingian.pid"), 0,                STR},
@@ -310,6 +356,7 @@ main(int argc, char *argv[])
 		{"sockdir",       strdup("/tmp"),          0,                  STR},
 		{"listenaddr",    strdup("localhost"),     0,                  STR},
 		{"port",          strdup(MERO_PORT),       atoi(MERO_PORT),    INT},
+		{"ipv6",          strdup("false"),         0,                  BOOLEAN},
 
 		{"exittimeout",   strdup("60"),            60,                 INT},
 		{"forward",       strdup("proxy"),         0,                  OTHER},
@@ -364,6 +411,8 @@ main(int argc, char *argv[])
 	kv->val = strdup("no");
 	kv = findConfKey(_mero_db_props, "embedc");
 	kv->val = strdup("no");
+	kv = findConfKey(_mero_db_props, "ipv6");
+	kv->val = strdup("no");
 	kv = findConfKey(_mero_db_props, "nclients");
 	kv->val = strdup("64");
 	kv = findConfKey(_mero_db_props, "type");
@@ -377,7 +426,7 @@ main(int argc, char *argv[])
 #if defined(HAVE_SYSCONF) && defined(_SC_NPROCESSORS_ONLN)
 		/* this works on Linux, Solaris and AIX */
 		ncpus = sysconf(_SC_NPROCESSORS_ONLN);
-#elif defined(HAVE_SYS_SYSCTL_H) && defined(HW_NCPU)   /* BSD */
+#elif defined(HW_NCPU)   /* BSD */
 		size_t len = sizeof(int);
 		int mib[3];
 
@@ -579,6 +628,7 @@ main(int argc, char *argv[])
 	}
 	_mero_props = ckv;
 
+	use_ipv6 = getConfNum(_mero_props, "ipv6") == 1;
 	pidfilename = getConfVal(_mero_props, "pidfile");
 
 	p = getConfVal(_mero_props, "forward");
@@ -611,7 +661,7 @@ main(int argc, char *argv[])
 	discovery = getConfNum(_mero_props, "discovery");
 
 	/* check and trim the hash-algo from the passphrase for easy use
-	 * lateron */
+	 * later on */
 	kv = findConfKey(_mero_props, "passphrase");
 	if (kv->val != NULL) {
 		char *h = kv->val + 1;
@@ -636,7 +686,7 @@ main(int argc, char *argv[])
 	}
 
 	/* lock such that we are alone on this world */
-	if ((lockfd = MT_lockf(".merovingian_lock", F_TLOCK, 4, 1)) == -1) {
+	if ((lockfd = MT_lockf(".merovingian_lock", F_TLOCK)) == -1) {
 		/* locking failed */
 		Mfprintf(stderr, "another monetdbd is already running\n");
 		MERO_EXIT_CLEAN(1);
@@ -884,26 +934,27 @@ main(int argc, char *argv[])
 	fclose(pidfile);
 
 	{
-		const char *rev = mercurial_revision();
 		Mfprintf(stdout, "Merovingian %s", VERSION);
-		/* coverity[pointless_string_compare] */
-		if (strcmp(MONETDB_RELEASE, "unreleased") != 0)
-			Mfprintf(stdout, " (%s)", MONETDB_RELEASE);
-		else if (strcmp(rev, "Unknown") != 0)
+#ifdef MONETDB_RELEASE
+		Mfprintf(stdout, " (%s)", MONETDB_RELEASE);
+#else
+		const char *rev = mercurial_revision();
+		if (strcmp(rev, "Unknown") != 0)
 			Mfprintf(stdout, " (hg id: %s)", rev);
+#endif
 		Mfprintf(stdout, " starting\n");
 	}
 	Mfprintf(stdout, "monitoring dbfarm %s\n", dbfarm);
 
 	/* open up connections */
-	if ((e = openConnectionTCP(&sock, host, port, stdout)) == NO_ERR &&
+	if ((e = openConnectionTCP(&sock, use_ipv6, host, port, stdout)) == NO_ERR &&
 		(e = openConnectionUNIX(&socku, mapi_usock, 0, stdout)) == NO_ERR &&
-		(discovery == 0 || (e = openConnectionUDP(&discsock, host, port)) == NO_ERR) &&
+		(!discovery || (e = openConnectionUDP(&discsock, false, host, port)) == NO_ERR) &&
 		(e = openConnectionUNIX(&unsock, control_usock, S_IRWXO, _mero_ctlout)) == NO_ERR) {
 		pthread_t ctid = 0;
 		pthread_t dtid = 0;
 
-		if (discovery == 1) {
+		if (discovery) {
 			_mero_broadcastsock = socket(AF_INET, SOCK_DGRAM
 #ifdef SOCK_CLOEXEC
 										 | SOCK_CLOEXEC
@@ -1062,7 +1113,7 @@ shutdown:
 	}
 
 	if (lockfd >= 0) {
-		MT_lockf(".merovingian_lock", F_ULOCK, 4, 1);
+		MT_lockf(".merovingian_lock", F_ULOCK);
 		close(lockfd);
 	}
 

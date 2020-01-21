@@ -14,7 +14,6 @@ stdout of test 'assert_in_update.SF-2807336` in directory 'sql/test/BugTracker-2
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:36216/
 # MonetDB/SQL module v2.32.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

@@ -18,7 +18,6 @@ stdout of test 'sqlitelogictest-complex-case-not-in.Bug-6594` in directory 'sql/
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 11:53:13 >  
 # 11:53:13 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-5809" "--port=36548"
@@ -26,8 +25,8 @@ Ready.
 
 #SELECT ALL + 62 * + - ( CASE WHEN NULL NOT IN ( CAST ( CAST ( - 77 AS INTEGER ) AS INTEGER ) )
 #THEN NULL WHEN ( NULL ) NOT IN ( 94 * COUNT ( * ) ) THEN + ( NULLIF ( 45, 80 + 90 ) ) - COUNT ( * )
-#ELSE NULL END ) AS BIGINT) AS col2;
-% .L14 # table_name
+#ELSE NULL END ) AS INT) AS col2;
+% . # table_name
 % col2 # name
 % bigint # type
 % 1 # length

@@ -19,7 +19,6 @@ stdout of test 'restore-uuid.Bug-3407` in directory 'sql/test/BugTracker-2013` i
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql
@@ -65,7 +64,7 @@ Ready.
 % sys.testuuid # table_name
 % column1 # name
 % uuid # type
-% 0 # length
+% 36 # length
 [ 38fded43-79ef-41b0-a2af-05d20d7c4d51	]
 #ROLLBACK;
 

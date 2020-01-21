@@ -13,7 +13,6 @@ stdout of test 'table_function_column_crash.SF-1913572` in directory 'sql/test/B
 # Listening for connection requests on mapi:monetdb://koala.ins.cwi.nl:34401/
 # MonetDB/SQL module v2.22.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

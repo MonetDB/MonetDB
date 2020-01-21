@@ -13,7 +13,6 @@ stdout of test 'bat_descriptor_problem.SF-1997643` in directory 'sql/test/BugTra
 # Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:33783/
 # MonetDB/SQL module v2.25.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

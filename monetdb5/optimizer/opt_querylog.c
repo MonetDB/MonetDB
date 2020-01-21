@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -27,6 +27,7 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	// query log needed?
 	if ( !QLOGisset() )
 		return MAL_SUCCEED;
+
 	(void) pci;
 	(void) stk;		/* to fool compilers */
 	(void) cntxt;
@@ -45,15 +46,15 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	limit= mb->stop;
 	slimit= mb->ssize;
 	if ( newMalBlkStmt(mb, mb->ssize) < 0)
-		throw(MAL,"optimizer.querylog", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL,"optimizer.querylog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	pushInstruction(mb, old[0]);
 	/* run the querylog.define operation */
 	defineQuery = copyInstruction(defineQuery);
 	if( defineQuery == NULL)
-		throw(MAL,"optimizer.querylog", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL,"optimizer.querylog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
-	defineQuery->argc--;  // remoge MAL instruction count
+	defineQuery->argc--;  // remove MAL instruction count
 	setFunctionId(defineQuery, appendRef);
 	getArg(defineQuery,0) = newTmpVariable(mb,TYPE_any);
 	defineQuery->token = ASSIGNsymbol;
@@ -62,10 +63,10 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	/* collect the initial statistics */
 	q = newStmt(mb, "clients", "getUsername");
 	name= getArg(q,0)= newVariable(mb,"name",4,TYPE_str);
-	defineQuery = pushArgument(mb,defineQuery,name);
+	defineQuery = addArgument(mb,defineQuery,name);
 	q = newStmt(mb, "mtime", "current_timestamp");
 	start= getArg(q,0)= newVariable(mb,"start",5,TYPE_timestamp);
-	defineQuery = pushArgument(mb,defineQuery,start);
+	defineQuery = addArgument(mb,defineQuery,start);
 	pushInstruction(mb, defineQuery);
 
 	q = newStmt(mb, sqlRef, "argRecord");
@@ -190,11 +191,11 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			freeInstruction(old[i]);
 	GDKfree(old);
 	    /* Defense line against incorrect plans */
-    if( 1){
-        chkTypes(cntxt->usermodule, mb, FALSE);
-        chkFlow(mb);
-        chkDeclarations(mb);
-    }
+        msg = chkTypes(cntxt->usermodule, mb, FALSE);
+	if (!msg)
+        	msg = chkFlow(mb);
+	if (!msg)
+        	msg = chkDeclarations(mb);
 	/* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;
 	snprintf(buf,256,"%-20s actions= 1 time=" LLFMT " usec","querylog", usec);

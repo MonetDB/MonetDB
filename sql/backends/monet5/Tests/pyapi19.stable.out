@@ -23,7 +23,6 @@ stdout of test 'pyapi19` in directory 'sql/backends/monet5` itself:
 # MonetDB/Python module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 11:59:04 >  
 # 11:59:04 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-5346" "--port=35428"

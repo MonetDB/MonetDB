@@ -98,7 +98,7 @@ BSKTclean(int idx)
 		baskets[idx].stride = STRIDE_ALL;
 		baskets[idx].count = 0;
 		baskets[idx].events = 0;
-		baskets[idx].seen =  *timestamp_nil;
+		baskets[idx].seen = timestamp_nil;
 		for(i=0; i < baskets[idx].ncols ; i++){
 			BBPunfix(baskets[idx].bats[i]->batCacheid);
 			baskets[idx].bats[i] =NULL;
@@ -131,8 +131,7 @@ BSKTregisterInternal(Client cntxt, MalBlkPtr mb, str sch, str tbl, int* res)
 		return MAL_SUCCEED;
 	}
 
-	if((msg = MTIMEcurrent_timestamp(&tseen)) != MAL_SUCCEED)
-		return msg;
+	tseen = timestamp_current();
 
 	if ((msg = checkSQLContext(cntxt)) != MAL_SUCCEED)
 		return msg;
@@ -147,7 +146,7 @@ BSKTregisterInternal(Client cntxt, MalBlkPtr mb, str sch, str tbl, int* res)
 		throw(SQL,"basket.register",SQLSTATE(42000) "Only allowed for stream tables\n");
 
 	if((idx = BSKTnewEntry()) < 1)
-		throw(MAL,"basket.register",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL,"basket.register",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	baskets[idx].table = t;
 	baskets[idx].window = t->stream->window;
@@ -170,13 +169,13 @@ BSKTregisterInternal(Client cntxt, MalBlkPtr mb, str sch, str tbl, int* res)
 	baskets[idx].bats = GDKmalloc(colcnt * sizeof(BAT **));
 	if(baskets[idx].bats == NULL) {
 		MT_lock_destroy(&baskets[idx].lock);
-		throw(MAL,"basket.register",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL,"basket.register",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	baskets[idx].cols = GDKmalloc(colcnt * sizeof(sql_column **));
 	if(baskets[idx].cols == NULL) {
 		MT_lock_destroy(&baskets[idx].lock);
 		GDKfree(baskets[idx].bats);
-		throw(MAL,"basket.register",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL,"basket.register",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	// collect the column names and the storage
@@ -310,7 +309,7 @@ BSKTtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	tids = COLnew(0, TYPE_void, 0, TRANSIENT);
 	if (tids == NULL)
-		throw(SQL, "basket.tid",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(SQL, "basket.tid",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	tids->tseqbase = 0;
 	BATsetcount(tids, BATcount(b));
 	BATsettrivprop(tids);
@@ -437,8 +436,6 @@ BSKTtumbleInternal(Client cntxt, str sch, str tbl, int bskt, int window, int str
 			b->tnosorted = 0;
 			b->tnorevsorted = 0;
 		}
-		BATrmprop(b, GDK_MAX_VALUE); /* TODO! */
-		BATrmprop(b, GDK_MIN_VALUE);
 		BATsettrivprop(b);
 	}
 	return MAL_SUCCEED;
@@ -538,7 +535,7 @@ BSKTdump(void *ret)
 	BAT *b;
 	str msg = MAL_SUCCEED;
 
-	mnstr_printf(GDKout, "#baskets table\n");
+	fprintf(stderr, "#baskets table\n");
 	for (bskt = 1; bskt < bsktLimit; bskt++)
 		if (baskets[bskt].table) {
 			cnt = 0;
@@ -633,9 +630,8 @@ BSKTupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bn = BSKTbindColumn(sname,tname,cname);
 
 	if( bn){
-		if( void_replace_bat(bn, rid, bval, TRUE) != GDK_SUCCEED)
+		if( BATreplace(bn, rid, bval, TRUE) != GDK_SUCCEED)
 			throw(SQL, "basket.update",SQLSTATE(HY005) "Cannot access basket descriptor %s.%s\n",sname,tname);
-		
 		BATsettrivprop(bn);
 	} else throw(SQL, "basket.update",SQLSTATE(3F000) "Cannot access target column %s.%s.%s\n",sname,tname,cname);
 	
@@ -670,7 +666,7 @@ BSKTdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if(b){
 			 if( BATdel(b, rid) != GDK_SUCCEED){
 				BBPunfix(rid->batCacheid);
-				throw(SQL, "basket.delete", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				throw(SQL, "basket.delete", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 			baskets[idx].count = BATcount(b);
 			b->tnil = 0;
@@ -708,8 +704,6 @@ BSKTreset(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if(b){
 			BATsetcount(b,0);
 			BATsettrivprop(b);
-			BATrmprop(b, GDK_MAX_VALUE);
-			BATrmprop(b, GDK_MIN_VALUE);
 		}
 	}
 	MT_lock_unset(&baskets[idx].lock);
@@ -734,7 +728,7 @@ BSKTerror(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if(error) {
 		baskets[idx].error = GDKstrdup(error);
 		if(baskets[idx].error == NULL)
-			throw(SQL,"basket.error",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(SQL,"basket.error",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	return MAL_SUCCEED;
 }
@@ -818,7 +812,7 @@ wrapup:
 		BBPunfix(errors->batCacheid);
 	if (events)
 		BBPunfix(events->batCacheid);
-	throw(SQL, "basket.status", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	throw(SQL, "basket.status", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
 
 void
@@ -844,6 +838,6 @@ BSKTprelude(void *ret)
 	bsktLimit = INTIAL_BSKT;
 	bsktTop = 1;
 	if( baskets == NULL)
-		throw(MAL, "basket.prelude", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "basket.prelude", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }

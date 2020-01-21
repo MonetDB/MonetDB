@@ -18,7 +18,6 @@ stdout of test 'sqlsmith-apply-outer-join-or` in directory 'sql/test/mergetables
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 13:26:58 >  
 # 13:26:58 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-12177" "--port=39204"
@@ -39,7 +38,7 @@ Ready.
 #             left join sys.optimizers as ref_8
 #               inner join sys.users as ref_9
 #                 right join sys.systemfunctions as ref_10
-% .L36,	.L40,	.L43 # table_name
+% .,	.,	. # table_name
 % c0,	c1,	c2 # name
 % clob,	int,	int # type
 % 0,	1,	1 # length

@@ -14,7 +14,6 @@ stdout of test 'TypeException_having_count_distinct.SF-2494227` in directory 'sq
 # Listening for connection requests on mapi:monetdb://rig.ins.cwi.nl:38121/
 # MonetDB/SQL module v2.28.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;
@@ -27,8 +26,8 @@ Ready.
 [ 1	]
 [ 1	]
 #select b, count(distinct c) from a group by b having count(distinct c) > 1;
-% sys.a,	sys.L4 # table_name
-% b,	L3 # name
+% sys.a,	sys.%1 # table_name
+% b,	%1 # name
 % int,	bigint # type
 % 2,	1 # length
 [ 10,	2	]

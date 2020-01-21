@@ -37,8 +37,7 @@ QUERY = # test illegal variable use
         a:=b;	#b not yet defined
         b:=c;	#c undefined
         end foo;
-ERROR = !TypeException:user.foo[1]:'b' may not be used before being initialized
-        !TypeException:user.foo[3]:'c' may not be used before being initialized
+ERROR = !MALException:user.foo:'b' may not be used before being initialized
 
 # 22:10:36 >  
 # 22:10:36 >  "Done."

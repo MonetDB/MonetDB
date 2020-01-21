@@ -1,3 +1,5 @@
+START TRANSACTION;
+
 create table names(
 	nameid integer not null primary key,
 	name varchar(100));
@@ -156787,3 +156789,5 @@ create view xmldoc(pre,size,level,kind,nameid,value,name) as
 	select d.pre,d.size,d.level,d.kind,d.nameid,d.value,n.name
 	from   doc as d left outer join names as n on
 	       (d.nameid = n.nameid);
+
+COMMIT;

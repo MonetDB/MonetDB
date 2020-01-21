@@ -16,9 +16,9 @@ insert into car values
 	(6, 'm', 123, 'a', 'b', 'c', 8, 1),
 	(8, 'm', 123, 'a', 'b', 'c', 9, 1);
 	
-select count(*), gender , sum (sage), avg(sage) from car group by gender;
-select count(*), gender , sum (age), avg(age) from car group by gender;
+select count(*), gender , cast( sum (sage) as int), avg(sage) from car group by gender;
+select count(*), gender , cast( sum (age) as bigint), avg(age) from car group by gender;
 
-select gender, count(*),sum(iprice), avg(price), avg(iprice) from car group by gender;
+select gender, count(*),cast( sum(iprice) as bigint), avg(price), avg(iprice) from car group by gender;
 
 drop table car;

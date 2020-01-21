@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /**
@@ -41,11 +41,11 @@
 #endif
 
 /** the directory where the databases are (aka dbfarm) */
-char *_sabaoth_internal_dbfarm = NULL;
+static char *_sabaoth_internal_dbfarm = NULL;
 /** the database which is "active" */
-char *_sabaoth_internal_dbname = NULL;
+static char *_sabaoth_internal_dbname = NULL;
 /** identifier of the current process */
-char *_sabaoth_internal_uuid = NULL;
+static char *_sabaoth_internal_uuid = NULL;
 
 /**
  * Retrieves the dbfarm path plus an optional extra component added
@@ -119,6 +119,16 @@ msab_isuuid(const char *restrict s)
 	return hyphens == 4;
 }
 
+void
+msab_dbnameinit(const char *dbname)
+{
+	if (dbname == NULL) {
+		_sabaoth_internal_dbname = NULL;
+	} else {
+		_sabaoth_internal_dbname = strdup(dbname);
+	}
+}
+
 /**
  * Initialises this Sabaoth instance to use the given dbfarm and dbname.
  * dbname may be NULL to indicate that there is no active database.  The
@@ -138,7 +148,7 @@ msab_init(const char *dbfarm, const char *dbname)
 	if (_sabaoth_internal_dbname != NULL)
 		free(_sabaoth_internal_dbname);
 
-	/* this UUID is supposed to be unique per-process, we use it lateron
+	/* this UUID is supposed to be unique per-process, we use it later on
 	 * to determine if a database is (started by) the current process,
 	 * since locking always succeeds for the same process */
 	if (_sabaoth_internal_uuid == NULL)
@@ -157,11 +167,7 @@ msab_init(const char *dbfarm, const char *dbname)
 		len--;
 	}
 
-	if (dbname == NULL) {
-		_sabaoth_internal_dbname = NULL;
-	} else {
-		_sabaoth_internal_dbname = strdup(dbname);
-	}
+	msab_dbnameinit(dbname);
 
 	/* clean out old UUID files in case the database crashed in a
 	 * previous incarnation */
@@ -240,6 +246,15 @@ msab_getDBname(char **ret)
 		return(strdup("sabaoth was not initialized as active database"));
 	*ret = strdup(_sabaoth_internal_dbname);
 	return(NULL);
+}
+
+char *
+msab_getUUID(char **ret)
+{
+	if (_sabaoth_internal_uuid == NULL)
+		return(strdup("sabaoth not initialized"));
+	*ret = strdup(_sabaoth_internal_uuid);
+	return NULL;
 }
 
 #define SCENARIOFILE ".scen"
@@ -327,9 +342,9 @@ msab_retreatScenario(const char *lang)
 				rewind(f);
 				len = strlen(buf) + 1;
 				if (fwrite(buf, 1, len, f) < len) {
-					(void)fclose(f);
 					snprintf(buf, sizeof(buf), "failed to write: %s (%s)",
 							strerror(errno), pathbuf);
+					(void)fclose(f);
 					return(strdup(buf));
 				}
 				fflush(f);
@@ -626,7 +641,7 @@ msab_getSingleStatus(const char *pathbuf, const char *dbname, sabdb *next)
 			(void)fclose(f);
 		}
 	} else if ((snprintf(buf, sizeof(buf), "%s/%s/%s", pathbuf, dbname, ".gdk_lock") > 0) & /* no typo */
-			   ((fd = MT_lockf(buf, F_TEST, 4, 1)) == -2)) {
+			   ((fd = MT_lockf(buf, F_TEST)) == -2)) {
 		/* Locking failed; this can be because the lockfile couldn't
 		 * be created.  Probably there is no Mserver running for
 		 * that case also.
@@ -662,11 +677,7 @@ msab_getSingleStatus(const char *pathbuf, const char *dbname, sabdb *next)
 		}
 	}
 	snprintf(buf, sizeof(buf), "%s/%s/%s", pathbuf, dbname, MAINTENANCEFILE);
-	if (stat(buf, &statbuf) == -1) {
-		sdb->locked = 0;
-	} else {
-		sdb->locked = 1;
-	}
+	sdb->locked = stat(buf, &statbuf) != -1;
 
 	/* add scenarios that are supported */
 	sdb->scens = NULL;
@@ -769,7 +780,7 @@ msab_getStatus(sabdb** ret, char *dbname)
 /**
  * Frees up the sabdb structure returned by getStatus.
  */
-char *
+void
 msab_freeStatus(sabdb** ret)
 {
 	sabdb *p, *q;
@@ -803,8 +814,6 @@ msab_freeStatus(sabdb** ret)
 		free(p);
 		p = q;
 	}
-
-	return(NULL);
 }
 
 /**
@@ -845,8 +854,7 @@ msab_getUplogInfo(sabuplog *ret, const sabdb *db)
 		start = stop = up = 0;
 		p = data;
 		while ((c = getc(f)) != EOF) {
-			*p = (char)c;
-			switch (*p) {
+			switch (c) {
 				case '\t':
 					/* start attempt */
 					ret->startcntr++;
@@ -876,7 +884,7 @@ msab_getUplogInfo(sabuplog *ret, const sabdb *db)
 				break;
 				default:
 					/* timestamp */
-					p++;
+					*p++ = c;
 				break;
 			}
 		}

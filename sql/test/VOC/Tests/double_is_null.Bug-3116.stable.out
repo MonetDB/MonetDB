@@ -18,7 +18,6 @@ stdout of test 'double_is_null.Bug-3116` in directory 'sql/test/VOC` itself:
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 08:09:22 >  
 # 08:09:22 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=niels" "--port=34961"
@@ -42,8 +41,8 @@ Ready.
 #	"departure_harbour" varchar(30),
 #SELECT hired, count(*)  FROM voyages WHERE   true  AND hired IS NOT NULL AND
 #hired is not null GROUP BY hired ORDER BY hired;
-% sys.voyages,	sys.L4 # table_name
-% hired,	L3 # name
+% sys.voyages,	sys.%1 # table_name
+% hired,	%1 # name
 % varchar,	bigint # type
 % 0,	1 # length
 #drop table voyages;

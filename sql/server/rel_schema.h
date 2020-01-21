@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #ifndef _REL_SCHEMA_H_
@@ -12,9 +12,9 @@
 #include "sql_list.h"
 #include "sql_symbol.h"
 
-extern sql_rel *rel_schemas(mvc *sql, symbol *sym);
+extern sql_rel *rel_schemas(sql_query *query, symbol *sym);
 
-extern sql_rel *rel_create_table(mvc *sql, sql_schema *ss, int temp,
+extern sql_rel *rel_create_table(sql_query *query, sql_schema *ss, int temp,
 				 const char *sname, const char *name,
 				 symbol *table_elements_or_subquery,
 				 int commit_action, const char *loc,

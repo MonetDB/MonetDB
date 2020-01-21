@@ -39,7 +39,6 @@ stdout of test 'coercions` in directory 'sql/test/json` itself:
 # loading sql script: 40_geom.sql
 # loading sql script: 40_json.sql
 
-Ready.
 
 # 10:31:00 >  
 # 10:31:00 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-627" "--port=34922"
@@ -78,7 +77,7 @@ Ready.
 [ "{\"f1\":{\"f12\":3},\"f2\":[2,3,4]}"	]
 [ "[1,\"f2\", 2]"	]
 #select cast (j as json) as j from nosql_string;
-% sys.L3 # table_name
+% sys.%2 # table_name
 % j # name
 % json # type
 % 29 # length
@@ -121,7 +120,7 @@ Ready.
 [ "{\"f1\":{\"f12\":3},\"f2\":[2,3,4]}"	]
 [ "[1,\"f2\", 2]"	]
 #select cast (j as string) as j from tmpsql_json;
-% sys.L3 # table_name
+% sys.%2 # table_name
 % j # name
 % clob # type
 % 29 # length

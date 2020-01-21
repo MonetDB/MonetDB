@@ -14,7 +14,6 @@ stdout of test 'multi-column_join_with_expression.SF-2783279` in directory 'sql/
 # Listening for connection requests on mapi:monetdb://rig.ins.cwi.nl:38676/
 # MonetDB/SQL module v2.29.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

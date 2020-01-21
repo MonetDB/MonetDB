@@ -60,7 +60,6 @@ stdout of test 'comment-on-table-is-null.Bug-6639` in directory 'sql/test/BugTra
 # MonetDB/Python2 module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 16:01:01 >  
 # 16:01:01 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-7661" "--port=39586"

@@ -25,7 +25,7 @@ bool-str-bug
 rollback_bug
 update-crash
 correlated-selection-bug
-segfault_when_quitting_debugger.SF-2538837
+HAVE_MAL_DEBUGGER&NOT_WIN32?segfault_when_quitting_debugger.SF-2538837
 row_number_bug.SF-2546109
 #set_history_and_drop_table.SF-2607045  not relevant anymore
 TypeException_having_count_distinct.SF-2494227
@@ -54,7 +54,6 @@ AVG_of_SQRT.SF-2757642
 missing_column_name.SF-2776100
 dumping_tables.SF-2776908
 dumping_tables.SF-2776908--performance
-dumping_tables.SF-2776908--optimizers
 name_clash_with_dump.SF-2780395
 temporary_table_leftover.SF-2779437
 temporary_table_leftover.SF-2734713

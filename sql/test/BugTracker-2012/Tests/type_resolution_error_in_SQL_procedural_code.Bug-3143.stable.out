@@ -17,7 +17,6 @@ stdout of test 'type_resolution_error_in_SQL_procedural_code.Bug-3143` in direct
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #ifndef _REMOTE_DEF
@@ -18,8 +18,6 @@
 #include "mal_instruction.h" /* for getmodule/func macros */
 #include "mapi.h"
 #include "mutils.h"
-
-/* #define _DEBUG_REMOTE */
 
 #define RMTT_L_ENDIAN   (0<<1)
 #define RMTT_B_ENDIAN   (1<<1)
@@ -43,7 +41,6 @@ typedef struct _connection {
 #endif
 #include <unistd.h> /* gethostname */
 
-/* #define _DEBUG_REMOTE_	    trace the interaction */
 /* #define _DEBUG_MAPI_		    trace mapi interaction */
 
 mal_export str RMTprelude(void *ret);
@@ -56,7 +53,6 @@ mal_export str RMTconnectTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 mal_export str RMTdisconnect(void *ret, str *conn);
 mal_export str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str RMTregisterInternal(Client cntxt, str conn, str mod, str fcn);
 mal_export str RMTregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str RMTbatload(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

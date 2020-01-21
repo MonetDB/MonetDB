@@ -18,15 +18,14 @@ stdout of test 'T42` in directory 'geom/sql/conformance` itself:
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 15:15:53 >  
 # 15:15:53 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-4470" "--port=32193"
 # 15:15:53 >  
 
 #SELECT ST_Crosses(road_segments.centerline, divided_routes.centerlines) FROM road_segments, divided_routes WHERE road_segments.fid = 102 AND divided_routes.name = 'Route 75';
-% sys.L1 # table_name
-% L1 # name
+% sys.%1 # table_name
+% %1 # name
 % boolean # type
 % 5 # length
 [ true	]

@@ -16,7 +16,6 @@ stdout of test 'crash_on_complex_join_exp.Bug-2353` in directory 'sql/test/BugTr
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:33178/
 # MonetDB/SQL module v2.38.4 loaded
 
-Ready.
 
 
 # 21:49:44 >  
@@ -30,8 +29,8 @@ Ready.
 #		(select  row_number() over (order by k1.kvks) as rn, k1.kvks as t1, k2.kvks as t2 from test as k1, test as k2 where (k1.id + 1) = k2.id AND (k1.kvks + 1000) < k2.kvks) as x2 
 #	where (x2.rn + 1) = x1.rn) as y, test 
 #where kvks between fr and t group by kvks;
-% sys.L33 # table_name
-% L32 # name
+% sys.%5 # table_name
+% %5 # name
 % bigint # type
 % 1 # length
 #drop table test;

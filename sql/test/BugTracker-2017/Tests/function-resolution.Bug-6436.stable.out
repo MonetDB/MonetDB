@@ -18,44 +18,43 @@ stdout of test 'function-resolution.Bug-6436` in directory 'sql/test/BugTracker-
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 11:59:35 >  
 # 11:59:35 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-17677" "--port=36247"
 # 11:59:35 >  
 
 #SELECT ifthenelse(true, 22347, 34456) as a;
-% .L2 # table_name
+% . # table_name
 % a # name
 % int # type
 % 5 # length
 [ 22347	]
 #SELECT ifthenelse(false, 22347, 34456) as a;
-% .L2 # table_name
+% . # table_name
 % a # name
 % int # type
 % 5 # length
 [ 34456	]
 #SELECT nullif(1, 2) as a;
-% .L2 # table_name
+% . # table_name
 % a # name
 % tinyint # type
 % 1 # length
 [ 1	]
 #SELECT nullif(11234, 2345) as a;
-% .L2 # table_name
+% . # table_name
 % a # name
 % smallint # type
 % 5 # length
 [ 11234	]
 #SELECT nullif(null, 2345) as a;
-% .L2 # table_name
+% . # table_name
 % a # name
 % smallint # type
 % 1 # length
 [ NULL	]
 #SELECT nullif(1234, null) as a;
-% .L2 # table_name
+% . # table_name
 % a # name
 % smallint # type
 % 4 # length

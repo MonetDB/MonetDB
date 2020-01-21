@@ -19,7 +19,6 @@ stdout of test 'readonly.Bug-3709` in directory 'sql/test/BugTracker-2015` itsel
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 21:17:25 >  
 # 21:17:25 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-5516" "--port=31025"

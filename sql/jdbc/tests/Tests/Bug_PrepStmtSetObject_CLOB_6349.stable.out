@@ -18,7 +18,6 @@ stdout of test 'Bug_PrepStmtSetObject_CLOB_6349` in directory 'sql/jdbc/tests` i
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 14:46:39 >  
 # 14:46:39 >  "./Bug_PrepStmtSetObject_CLOB_6349.SQL.sh" "Bug_PrepStmtSetObject_CLOB_6349"

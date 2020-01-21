@@ -14,7 +14,6 @@ stdout of test 'explain_gives_crash.SF-2741829_cleanup` in directory 'sql/test/B
 # Listening for connection requests on mapi:monetdb://rig.ins.cwi.nl:35314/
 # MonetDB/SQL module v2.32.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

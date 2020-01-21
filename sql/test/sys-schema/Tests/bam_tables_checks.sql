@@ -1,4 +1,4 @@
--- Data integrity checks on bam schema tables
+-- Data integrity checks on bam schema tables (see /sql/backends/monet5/vaults/bam/85_bam.sql)
 
 -- Primary Key checks
 SELECT COUNT(*) AS duplicates, "file_id" FROM "bam"."files" GROUP BY "file_id" HAVING COUNT(*) > 1;
@@ -44,4 +44,8 @@ SELECT "file_id", * FROM "bam"."rg" WHERE "file_id" IS NULL;
 
 SELECT "sn", * FROM "bam"."sq" WHERE "sn" IS NULL;
 SELECT "file_id", * FROM "bam"."sq" WHERE "file_id" IS NULL;
+
+-- Character string data max length violation checks (see check_MaxStrLength_violations.sql for query to generate the below queries)
+SELECT '"bam"."files"."format_version"' as full_col_nm, 7 as max_allowed_length, length("format_version") as data_length, t."format_version" as data_value FROM "bam"."files" t WHERE "format_version" IS NOT NULL AND length("format_version") > (select type_digits from sys._columns where name = 'format_version' and table_id in (select id from tables where name = 'files' and schema_id in (select id from sys.schemas where name = 'bam')));
+SELECT '"bam"."files"."sorting_order"' as full_col_nm, 10 as max_allowed_length, length("sorting_order") as data_length, t."sorting_order" as data_value FROM "bam"."files" t WHERE "sorting_order" IS NOT NULL AND length("sorting_order") > (select type_digits from sys._columns where name = 'sorting_order' and table_id in (select id from tables where name = 'files' and schema_id in (select id from sys.schemas where name = 'bam')));
 

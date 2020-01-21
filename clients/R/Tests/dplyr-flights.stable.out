@@ -23,7 +23,6 @@ stdout of test 'dplyr-flights` in directory 'clients/R` itself:
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 11:44:05 >  
 # 11:44:05 >  "R" "--vanilla" "--slave" "--args" "30588"

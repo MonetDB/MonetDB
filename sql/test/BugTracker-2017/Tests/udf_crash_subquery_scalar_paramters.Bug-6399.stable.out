@@ -20,7 +20,6 @@ stdout of test 'udf_crash_subquery_scalar_paramters.Bug-6399` in directory 'sql/
 # MonetDB/Python2 module loaded
 # MonetDB/R   module loaded
 
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql

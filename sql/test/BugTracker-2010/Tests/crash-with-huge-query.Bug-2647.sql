@@ -470,7 +470,7 @@ Savings(order_id, amount) AS
     FROM Suggestions s
    GROUP BY order_id)
 
-SELECT sugg.*, sav.amount
+SELECT sugg.*, cast(sav.amount as decimal(18,3)) as amount
   FROM suggestions sugg, savings sav
  WHERE sugg.order_id = sav.order_id;
 

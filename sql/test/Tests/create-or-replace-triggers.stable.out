@@ -19,7 +19,6 @@ stdout of test 'create-or-replace-triggers` in directory 'sql/test` itself:
 # MonetDB/SQL module loaded
 # MonetDB/Python2 module loaded
 
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql

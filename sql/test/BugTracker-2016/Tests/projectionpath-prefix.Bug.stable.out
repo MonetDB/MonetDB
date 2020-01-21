@@ -23,7 +23,6 @@ stdout of test 'projectionpath-prefix.Bug` in directory 'sql/test/BugTracker-201
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 10:56:46 >  
 # 10:56:46 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-21202" "--port=39911"

@@ -14,7 +14,6 @@ stdout of test 'strings_concat` in directory 'sql/test/pg_regress` itself:
 # Listening for connection requests on mapi:monetdb://pegasus.ins.cwi.nl:38905/
 # MonetDB/SQL module v2.31.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;
@@ -39,7 +38,7 @@ Ready.
 #' - next line'
 #	' - third line'
 #	AS "Three lines to one";
-% .L2 # table_name
+% . # table_name
 % "Three lines to one" # name
 % char # type
 % 35 # length

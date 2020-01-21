@@ -13,7 +13,6 @@ stdout of test 'union_order` in directory 'sql/test/BugTracker` itself:
 # Listening for connection requests on mapi:monetdb://alviss.ins.cwi.nl:30364/
 # MonetDB/SQL module v2.24.1 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;
@@ -33,7 +32,7 @@ Ready.
 #union
 #select data from tmp_two
 #;
-% .L7 # table_name
+% .%5 # table_name
 % data # name
 % decimal # type
 % 6 # length
@@ -42,7 +41,7 @@ Ready.
 #select data from tmp_two
 #order by data
 #;
-% .L7 # table_name
+% .%5 # table_name
 % data # name
 % decimal # type
 % 6 # length

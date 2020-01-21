@@ -21,7 +21,6 @@ stdout of test 'date_comparison_incorrect_results.Bug-3834` in directory 'sql/te
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql

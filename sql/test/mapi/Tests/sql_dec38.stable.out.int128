@@ -18,7 +18,6 @@ stdout of test 'sql_dec38` in directory 'sql/test/mapi` itself:
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 23:45:59 >  
 # 23:45:59 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-8999" "--port=39955"

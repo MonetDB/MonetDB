@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -119,46 +119,46 @@ run_process_bam_alignments(void *d)
 	bam_wrapper *bw;
 
 	for (;;) {
-		TO_LOG("<Thread %d> Starting on next file...\n", data->thread_id);
+		TRC_DEBUG(BAM_, "<Thread %d> Starting on next file\n", data->thread_id);
 		/* First, find out on which bam wrapper we have to work */
 		MT_lock_set(data->reader_lock);
 		if (*data->cur_file == data->nr_files - 1) {
 			/* The last file is already (being) processed, this
 			 * thread is done */
 			MT_lock_unset(data->reader_lock);
-			TO_LOG("<Thread %d> No files left to work on; thread done\n",
-				   data->thread_id);
+			TRC_DEBUG(BAM_, 
+				"<Thread %d> No files left to work on; thread done\n",
+				data->thread_id);
 			return;
 		}
 		(*data->cur_file) += 1;
 		bw = &data->bws[*data->cur_file];
 		MT_lock_unset(data->reader_lock);
-		TO_LOG("<Thread %d> Processing alignments of file '%s' (file id "
-			   LLFMT ")...\n", data->thread_id, bw->file_location,
-			   bw->file_id);
+		TRC_DEBUG(BAM_, 
+			"<Thread %d> Processing alignments of file '%s' (file id " LLFMT ")\n", 
+			data->thread_id, bw->file_location, bw->file_id);
 
 		if ((data->msg =
-			 process_alignments(bw, data->failure)) != MAL_SUCCEED) {
-			TO_LOG("<Thread %d> Error while processing alignments of file '%s' "
-				   "(file id " LLFMT ") (%s)\n",
-				   data->thread_id, bw->file_location, bw->file_id, data->msg);
+			process_alignments(bw, data->failure)) != MAL_SUCCEED) {
+			TRC_ERROR(BAM_, "<Thread %d> Error while processing alignments of file '%s' "
+				   		"(file id " LLFMT ") (%s)\n",
+				   		data->thread_id, bw->file_location, bw->file_id, data->msg);
 			REUSE_EXCEPTION(data->msg, MAL, "run_process_bam_alignments",
-							"Error while processing alignments of file '%s' "
-							"(file id " LLFMT "): %s",
+							"Error while processing alignments of file '%s' (file id " LLFMT "): %s",
 							bw->file_location, bw->file_id, data->msg);
 			return;
 		}
+
 		if (*data->failure) {
 			/* process_bam_alignments returned because another
 			 * thread failed and not because this thread failed */
-			TO_LOG("<Thread %d> Exit due to failure in other thread\n",
-				   data->thread_id);
+			TRC_ERROR(BAM_, "<Thread %d> Exit due to failure in other thread\n", data->thread_id);
 			return;
 		}
 
-		TO_LOG("<Thread %d> All alignments in file '%s' (file id " LLFMT
-			   ") processed!\n", data->thread_id, bw->file_location,
-			   bw->file_id);
+		TRC_DEBUG(BAM_, 
+			"<Thread %d> All alignments in file '%s' (file id " LLFMT ") processed!\n", 
+			data->thread_id, bw->file_location, bw->file_id);
 	}
 }
 
@@ -190,8 +190,7 @@ bam_loader(Client cntxt, MalBlkPtr mb, str * filenames, int nr_files,
 	int i, errnr;
 	str msg = MAL_SUCCEED;
 
-	TO_LOG("<bam_loader>: Loader started for %d BAM file%s...\n",
-		   nr_files, (nr_files != 1 ? "s" : ""));
+	TRC_DEBUG(BAM_, "Loader started for %d BAM file%s\n", nr_files, (nr_files != 1 ? "s" : ""));
 
 	/* Check sanity of input */
 	if (dbschema != 0 && dbschema != 1) {
@@ -226,7 +225,7 @@ bam_loader(Client cntxt, MalBlkPtr mb, str * filenames, int nr_files,
 		goto cleanup;
 
 	/* Get next file id from files table */
-	TO_LOG("<bam_loader> Retrieving next file id...\n");
+	TRC_DEBUG(BAM_, "Retrieving next file id\n");
 	if ((msg = next_file_id(m, files_table, &cur_file_id)) != MAL_SUCCEED) {
 		goto cleanup;
 	}
@@ -235,7 +234,7 @@ bam_loader(Client cntxt, MalBlkPtr mb, str * filenames, int nr_files,
 	if ((bws =
 		 (bam_wrapper *) GDKmalloc(nr_files * sizeof(bam_wrapper))) ==
 		NULL) {
-		msg = createException(MAL, "bam_loader", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		msg = createException(MAL, "bam_loader", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto cleanup;
 	}
 
@@ -244,7 +243,7 @@ bam_loader(Client cntxt, MalBlkPtr mb, str * filenames, int nr_files,
 
 	for (i = 0; i < nr_files; ++i) {
 		int fln = strlen(filenames[i]);
-		TO_LOG("<bam_loader> Initializing BAM wrapper for file '%s'...\n", filenames[i]);
+		TRC_DEBUG(BAM_, "Initializing BAM wrapper for file '%s'\n", filenames[i]);
 		if ((msg =
 			 init_bam_wrapper(bws + i, (IS_BAM(filenames[i], fln) ? BAM : SAM),
 					  filenames[i], cur_file_id++, dbschema)) != MAL_SUCCEED) {
@@ -254,7 +253,7 @@ bam_loader(Client cntxt, MalBlkPtr mb, str * filenames, int nr_files,
 
 	/* Parse all headers */
 	for (i = 0; i < nr_files; ++i) {
-		TO_LOG("<bam_loader> Parsing header for file '%s'...\n",
+		TRC_DEBUG(BAM_, "Parsing header for file '%s'\n",
 			   filenames[i]);
 		if ((msg = process_header(bws + i)) != MAL_SUCCEED) {
 			goto cleanup;
@@ -266,7 +265,7 @@ bam_loader(Client cntxt, MalBlkPtr mb, str * filenames, int nr_files,
 	 * QNAME */
 	if (dbschema == 1) {
 		for (i = 0; i < nr_files; ++i) {
-			TO_LOG("<bam_loader> Checking sortedness for BAM file '%s'...\n", filenames[i]);
+			TRC_DEBUG(BAM_, "Checking sortedness for BAM file '%s'\n", filenames[i]);
 			if (bws[i].ord != ORDERING_QUERYNAME) {
 				msg = createException(MAL, "bam_loader",
 							  SQLSTATE(BA000) "Only BAM files that are sorted on queryname can be inserted into the pairwise storage schema; "
@@ -281,7 +280,7 @@ bam_loader(Client cntxt, MalBlkPtr mb, str * filenames, int nr_files,
 
 	/* Create alignment storage */
 	for (i = 0; i < nr_files; ++i) {
-		TO_LOG("<bam_loader> Creating alignment tables for file '%s'...\n", filenames[i]);
+		TRC_DEBUG(BAM_, "Creating alignment tables for file '%s'\n", filenames[i]);
 		if ((dbschema == 0
 			 && (msg = create_alignment_storage_0(cntxt,
 								  "bam.create_storage_0",
@@ -296,25 +295,26 @@ bam_loader(Client cntxt, MalBlkPtr mb, str * filenames, int nr_files,
 
 
 	/* Now create threads to read alignment data of different files */
-	TO_LOG("<bam_loader> Creating reader threads...\n");
+	TRC_DEBUG(BAM_, "Creating reader threads\n");
 	if ((reader_threads =
 		 (MT_Id *) GDKmalloc(nr_threads * sizeof(MT_Id))) == NULL) {
-		msg = createException(MAL, "bam_loader", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		msg = createException(MAL, "bam_loader", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto cleanup;
 	}
 
 	if ((r_thread_data =
 		 create_reader_thread_data(bws, nr_files, nr_threads)) == NULL) {
-		msg = createException(MAL, "bam_loader", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		msg = createException(MAL, "bam_loader", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto cleanup;
 	}
 
 	for (i = 0; i < nr_threads; ++i) {
 		if ((errnr =
 			 MT_create_thread(&reader_threads[i],
-					  run_process_bam_alignments,
-					  &r_thread_data[i],
-					  MT_THR_JOINABLE)) != 0) {
+							  run_process_bam_alignments,
+							  &r_thread_data[i],
+							  MT_THR_JOINABLE,
+							  "bam_alignments")) != 0) {
 			msg = createException(MAL, "bam_loader",
 						  SQLSTATE(BA000) "Could not create thread to process alignments (errnr %d)",
 						  errnr);
@@ -322,7 +322,7 @@ bam_loader(Client cntxt, MalBlkPtr mb, str * filenames, int nr_files,
 		}
 	}
 
-	TO_LOG("<bam_loader> Waiting for reader threads to finish...\n");
+	TRC_DEBUG(BAM_, "Waiting for reader threads to finish\n");
 	/* Wait until all threads finish and collect their
 	 * messages. Though it is not very likely, it could be the
 	 * case that more than 1 thread generates an error message (not
@@ -368,7 +368,7 @@ bam_loader(Client cntxt, MalBlkPtr mb, str * filenames, int nr_files,
 		goto cleanup;
 	}
 
-	TO_LOG("<bam_loader> Copying data into DB...\n");
+	TRC_DEBUG(BAM_, "Copying data into DB\n");
 	/* All threads finished succesfully, copy all data into DB */
 	for (i = 0; i < nr_files; ++i) {
 		if ((msg = copy_into_db(cntxt, bws + i)) != MAL_SUCCEED) {
@@ -390,12 +390,10 @@ bam_loader(Client cntxt, MalBlkPtr mb, str * filenames, int nr_files,
 		destroy_reader_thread_data(r_thread_data);
 
 	if (msg != MAL_SUCCEED) {
-		TO_LOG("<bam_loader> Error on processing BAM files: %s\n",
-			   msg);
+		TRC_ERROR(BAM_, "Error on processing BAM files: %s\n", msg);
 	}
 
-	TO_LOG("<bam_loader>: Loader finished processing %d BAM file%s...\n",
-		   nr_files, (nr_files != 1 ? "s" : ""));
+	TRC_DEBUG(BAM_, "Loader finished processing %d BAM file%s\n", nr_files, (nr_files != 1 ? "s" : ""));
 	return msg;
 }
 
@@ -456,7 +454,7 @@ bam_loader_repos(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* Now malloc enough memory for filenames array */
 	if ((filenames = (str *) GDKmalloc(filecount * sizeof(str))) == NULL) {
 		msg = createException(MAL, "bam_loader_repos",
-					  SQLSTATE(HY001) MAL_MALLOC_FAIL);
+					  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto cleanup;
 	}
 
@@ -576,7 +574,7 @@ bam_loader_files(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* Now we can malloc the filenames array */
 	if ((filenames = (str *) GDKmalloc(nr_lines * sizeof(str))) == NULL) {
 		msg = createException(MAL, "bam_loader_files",
-					  SQLSTATE(HY001) MAL_MALLOC_FAIL);
+					  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto cleanup;
 	}
 	/* Enables cleanup to check individual files */

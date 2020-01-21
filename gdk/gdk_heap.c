@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -71,7 +71,7 @@ HEAPcreatefile(int farmid, size_t *maxsz, const char *fn)
 }
 
 static gdk_return HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, bool trunc);
-static gdk_return HEAPsave_intern(Heap *h, const char *nme, const char *ext, const char *suffix);
+static gdk_return HEAPsave_intern(Heap *h, const char *nme, const char *ext, const char *suffix, bool dosync);
 
 static char *
 decompose_filename(str nme)
@@ -109,45 +109,21 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 		GDKerror("HEAPalloc: allocating more than heap can accomodate\n");
 		return GDK_FAIL;
 	}
-	if (h->size < 4 * GDK_mmap_pagesize ||
+	if (GDKinmemory() ||
 	    (GDKmem_cursize() + h->size < GDK_mem_maxsize &&
 	     h->size < (h->farmid == 0 ? GDK_mmap_minsize_persistent : GDK_mmap_minsize_transient))) {
 		h->storage = STORE_MEM;
 		h->base = GDKmalloc(h->size);
-		HEAPDEBUG fprintf(stderr, "#HEAPalloc %zu %p\n", h->size, h->base);
+		TRC_DEBUG(HEAP, "HEAPalloc %zu %p\n", h->size, h->base);
 	}
-	if (h->base == NULL) {
+	if (!GDKinmemory() && h->base == NULL) {
 		char *nme;
-		struct stat st;
 
-		if(!(nme = GDKfilepath(h->farmid, BATDIR, h->filename, NULL))) {
-			GDKerror("HEAPalloc: malloc failure");
+		nme = GDKfilepath(h->farmid, BATDIR, h->filename, NULL);
+		if (nme == NULL)
 			return GDK_FAIL;
-		}
-		if (stat(nme, &st) < 0) {
-			h->storage = STORE_MMAP;
-			h->base = HEAPcreatefile(NOFARM, &h->size, nme);
-		} else {
-			int fd;
-
-			fd = GDKfdlocate(NOFARM, nme, "wb", NULL);
-			if (fd >= 0) {
-				char of[sizeof(h->filename)];
-				char *ext;
-				close(fd);
-				strncpy(of, h->filename, sizeof(of));
-#ifdef STATIC_CODE_ANALYSIS
-				/* help coverity */
-				of[sizeof(h->filename) - 1] = 0;
-#endif
-				ext = decompose_filename(of);
-				h->newstorage = STORE_MMAP;
-				if (HEAPload(h, of, ext, false) != GDK_SUCCEED)
-					h->base = NULL; /* superfluous */
-				/* success checked by looking at
-				 * h->base below */
-			}
-		}
+		h->storage = STORE_MMAP;
+		h->base = HEAPcreatefile(NOFARM, &h->size, nme);
 		GDKfree(nme);
 	}
 	if (h->base == NULL) {
@@ -182,12 +158,13 @@ HEAPextend(Heap *h, size_t size, bool mayshare)
 	char nme[sizeof(h->filename)], *ext;
 	const char *failure = "None";
 
-	strncpy(nme, h->filename, sizeof(nme));
-#ifdef STATIC_CODE_ANALYSIS
-	/* help coverity */
-	nme[sizeof(nme) - 1] = 0;
-#endif
-	ext = decompose_filename(nme);
+	if (GDKinmemory()) {
+		strcpy_len(nme, ":inmemory", sizeof(nme));
+		ext = "ext";
+	} else {
+		strcpy_len(nme, h->filename, sizeof(nme));
+		ext = decompose_filename(nme);
+	}
 	if (size <= h->size)
 		return GDK_SUCCEED;	/* nothing to do */
 
@@ -197,7 +174,7 @@ HEAPextend(Heap *h, size_t size, bool mayshare)
 		char *p;
 		char *path;
 
-		HEAPDEBUG fprintf(stderr, "#HEAPextend: extending %s mmapped heap (%s)\n", h->storage == STORE_MMAP ? "shared" : "privately", h->filename);
+		TRC_DEBUG(HEAP, "Extending %s mmapped heap (%s)\n", h->storage == STORE_MMAP ? "shared" : "privately", h->filename);
 		/* extend memory mapped file */
 		if ((path = GDKfilepath(h->farmid, BATDIR, nme, ext)) == NULL) {
 			return GDK_FAIL;
@@ -222,8 +199,8 @@ HEAPextend(Heap *h, size_t size, bool mayshare)
 		/* extend a malloced heap, possibly switching over to
 		 * file-mapped storage */
 		Heap bak = *h;
-		int exceeds_swap = size >= 4 * GDK_mmap_pagesize && size + GDKmem_cursize() >= GDK_mem_maxsize;
-		int must_mmap = exceeds_swap || h->newstorage != STORE_MEM || size >= (h->farmid == 0 ? GDK_mmap_minsize_persistent : GDK_mmap_minsize_transient);
+		bool exceeds_swap = size + GDKmem_cursize() >= GDK_mem_maxsize;
+		bool must_mmap = !GDKinmemory() && (exceeds_swap || h->newstorage != STORE_MEM || size >= (h->farmid == 0 ? GDK_mmap_minsize_persistent : GDK_mmap_minsize_transient));
 
 		h->size = size;
 
@@ -232,77 +209,81 @@ HEAPextend(Heap *h, size_t size, bool mayshare)
 		if (!must_mmap) {
 			h->newstorage = h->storage = STORE_MEM;
 			h->base = GDKrealloc(h->base, size);
-			HEAPDEBUG fprintf(stderr, "#HEAPextend: extending malloced heap %zu %zu %p %p\n", size, h->size, bak.base, h->base);
+			TRC_DEBUG(HEAP, "Extending malloced heap %zu %zu %p %p\n", size, h->size, bak.base, h->base);
 			h->size = size;
 			if (h->base)
 				return GDK_SUCCEED; /* success */
 			/* bak.base is still valid and may get restored */
 			failure = "h->storage == STORE_MEM && !must_map && !h->base";
 		}
-		/* too big: convert it to a disk-based temporary heap */
-		int existing = 0;
 
-		assert(h->storage == STORE_MEM);
-		assert(ext != NULL);
-		/* if the heap file already exists, we want to switch
-		 * to STORE_PRIV (copy-on-write memory mapped files),
-		 * but if the heap file doesn't exist yet, the BAT is
-		 * new and we can use STORE_MMAP */
-		int fd = GDKfdlocate(h->farmid, nme, "rb", ext);
-		if (fd >= 0) {
-			existing = 1;
-			close(fd);
-		} else {
-			/* no pre-existing heap file, so create a new
-			 * one */
-			h->base = HEAPcreatefile(h->farmid, &h->size, h->filename);
-			if (h->base) {
-				h->newstorage = h->storage = STORE_MMAP;
-				memcpy(h->base, bak.base, bak.free);
-				HEAPfree(&bak, false);
-				return GDK_SUCCEED;
-			}
-		}
-		fd = GDKfdlocate(h->farmid, nme, "wb", ext);
-		if (fd >= 0) {
-			close(fd);
-			h->storage = h->newstorage == STORE_MMAP && existing && !mayshare ? STORE_PRIV : h->newstorage;
-			/* make sure we really MMAP */
-			if (must_mmap && h->newstorage == STORE_MEM)
-				h->storage = STORE_MMAP;
-			h->newstorage = h->storage;
+		if (!GDKinmemory()) {
+			/* too big: convert it to a disk-based temporary heap */
+			bool existing = false;
 
-			h->base = NULL;
-			HEAPDEBUG fprintf(stderr, "#HEAPextend: converting malloced to %s mmapped heap\n", h->newstorage == STORE_MMAP ? "shared" : "privately");
-			/* try to allocate a memory-mapped based
-			 * heap */
-			if (HEAPload(h, nme, ext, false) == GDK_SUCCEED) {
-				/* copy data to heap and free old
-				 * memory */
-				memcpy(h->base, bak.base, bak.free);
+			assert(h->storage == STORE_MEM);
+			assert(ext != NULL);
+			/* if the heap file already exists, we want to switch
+			 * to STORE_PRIV (copy-on-write memory mapped files),
+			 * but if the heap file doesn't exist yet, the BAT is
+			 * new and we can use STORE_MMAP */
+			int fd = GDKfdlocate(h->farmid, nme, "rb", ext);
+			if (fd >= 0) {
+				existing = true;
+				close(fd);
+			} else {
+				/* no pre-existing heap file, so create a new
+				 * one */
+				h->base = HEAPcreatefile(h->farmid, &h->size, h->filename);
+				if (h->base) {
+					h->newstorage = h->storage = STORE_MMAP;
+					memcpy(h->base, bak.base, bak.free);
+					HEAPfree(&bak, false);
+					return GDK_SUCCEED;
+				}
+				GDKclrerr();
+			}
+			fd = GDKfdlocate(h->farmid, nme, "wb", ext);
+			if (fd >= 0) {
+				close(fd);
+				h->storage = h->newstorage == STORE_MMAP && existing && !mayshare ? STORE_PRIV : h->newstorage;
+				/* make sure we really MMAP */
+				if (must_mmap && h->newstorage == STORE_MEM)
+					h->storage = STORE_MMAP;
+				h->newstorage = h->storage;
+
+				h->base = NULL;
+				TRC_DEBUG(HEAP, "Converting malloced to %s mmapped heap\n", h->newstorage == STORE_MMAP ? "shared" : "privately");
+				/* try to allocate a memory-mapped based
+				 * heap */
+				if (HEAPload(h, nme, ext, false) == GDK_SUCCEED) {
+					/* copy data to heap and free old
+					 * memory */
+					memcpy(h->base, bak.base, bak.free);
+					HEAPfree(&bak, false);
+					return GDK_SUCCEED;
+				}
+				failure = "h->storage == STORE_MEM && can_map && fd >= 0 && HEAPload() != GDK_SUCCEED";
+				/* couldn't allocate, now first save data to
+				 * file */
+				if (HEAPsave_intern(&bak, nme, ext, ".tmp", false) != GDK_SUCCEED) {
+					failure = "h->storage == STORE_MEM && can_map && fd >= 0 && HEAPsave_intern() != GDK_SUCCEED";
+					goto failed;
+				}
+				/* then free memory */
 				HEAPfree(&bak, false);
-				return GDK_SUCCEED;
+				/* and load heap back in via memory-mapped
+				 * file */
+				if (HEAPload_intern(h, nme, ext, ".tmp", false) == GDK_SUCCEED) {
+					/* success! */
+					GDKclrerr();	/* don't leak errors from e.g. HEAPload */
+					return GDK_SUCCEED;
+				}
+				failure = "h->storage == STORE_MEM && can_map && fd >= 0 && HEAPload_intern() != GDK_SUCCEED";
+				/* we failed */
+			} else {
+				failure = "h->storage == STORE_MEM && can_map && fd < 0";
 			}
-			failure = "h->storage == STORE_MEM && can_map && fd >= 0 && HEAPload() != GDK_SUCCEED";
-			/* couldn't allocate, now first save data to
-			 * file */
-			if (HEAPsave_intern(&bak, nme, ext, ".tmp") != GDK_SUCCEED) {
-				failure = "h->storage == STORE_MEM && can_map && fd >= 0 && HEAPsave_intern() != GDK_SUCCEED";
-				goto failed;
-			}
-			/* then free memory */
-			HEAPfree(&bak, false);
-			/* and load heap back in via memory-mapped
-			 * file */
-			if (HEAPload_intern(h, nme, ext, ".tmp", false) == GDK_SUCCEED) {
-				/* success! */
-				GDKclrerr();	/* don't leak errors from e.g. HEAPload */
-				return GDK_SUCCEED;
-			}
-			failure = "h->storage == STORE_MEM && can_map && fd >= 0 && HEAPload_intern() != GDK_SUCCEED";
-			/* we failed */
-		} else {
-			failure = "h->storage == STORE_MEM && can_map && fd < 0";
 		}
 	  failed:
 		*h = bak;
@@ -321,10 +302,10 @@ HEAPshrink(Heap *h, size_t size)
 	assert(size <= h->size);
 	if (h->storage == STORE_MEM) {
 		p = GDKrealloc(h->base, size);
-		HEAPDEBUG fprintf(stderr, "#HEAPshrink: shrinking malloced "
-				  "heap %zu %zu %p "
-				  "%p\n", h->size, size,
-				  h->base, p);
+		TRC_DEBUG(HEAP, "Shrinking malloced "
+				"heap %zu %zu %p "
+				"%p\n", h->size, size,
+				h->base, p);
 	} else {
 		char *path;
 
@@ -346,12 +327,12 @@ HEAPshrink(Heap *h, size_t size)
 				MMAP_READ | MMAP_WRITE,
 			      h->base, h->size, &size);
 		GDKfree(path);
-		HEAPDEBUG fprintf(stderr, "#HEAPshrink: shrinking %s mmapped "
-				  "heap (%s) %zu %zu %p "
-				  "%p\n",
-				  h->storage == STORE_MMAP ? "shared" : "privately",
-				  h->filename, h->size, size,
-				  h->base, p);
+		TRC_DEBUG(HEAP, "Shrinking %s mmapped "
+				"heap (%s) %zu %zu %p "
+				"%p\n",
+				h->storage == STORE_MMAP ? "shared" : "privately",
+				h->filename, h->size, size,
+				h->base, p);
 	}
 	if (p) {
 		h->size = size;
@@ -370,8 +351,10 @@ file_exists(int farmid, const char *dir, const char *name, const char *ext)
 	int ret;
 
 	path = GDKfilepath(farmid, dir, name, ext);
+	if (path == NULL)
+		return -1;
 	ret = stat(path, &st);
-	IODEBUG fprintf(stderr, "#stat(%s) = %d\n", path, ret);
+	TRC_DEBUG(IO_, "stat(%s) = %d\n", path, ret);
 	GDKfree(path);
 	return (ret == 0);
 }
@@ -425,8 +408,9 @@ GDKupgradevarheap(BAT *b, var_t v, bool copyall, bool mayshare)
 		filename = b->theap.filename;
 	else
 		filename++;
+	int exists = 0;
 	if ((BBP_status(bid) & (BBPEXISTING|BBPDELETED)) &&
-	    !file_exists(b->theap.farmid, BAKDIR, filename, NULL) &&
+	    !(exists = file_exists(b->theap.farmid, BAKDIR, filename, NULL)) &&
 	    (b->theap.storage != STORE_MEM ||
 	     GDKmove(b->theap.farmid, BATDIR, b->theap.filename, NULL,
 		     BAKDIR, filename, NULL) != GDK_SUCCEED)) {
@@ -470,6 +454,8 @@ GDKupgradevarheap(BAT *b, var_t v, bool copyall, bool mayshare)
 			return GDK_FAIL;
 		}
 	}
+	if (exists == -1)
+		return GDK_FAIL;
 
 	savefree = b->theap.free;
 	if (copyall)
@@ -568,9 +554,9 @@ HEAPfree(Heap *h, bool rmheap)
 {
 	if (h->base) {
 		if (h->storage == STORE_MEM) {	/* plain memory */
-			HEAPDEBUG fprintf(stderr, "#HEAPfree %zu"
-					  " %p\n",
-					  h->size, h->base);
+			TRC_DEBUG(HEAP, "HEAPfree %zu"
+					" %p\n",
+					h->size, h->base);
 			GDKfree(h->base);
 		} else if (h->storage == STORE_CMEM) {
 			//heap is stored in regular C memory rather than GDK memory,so we call free()
@@ -583,10 +569,10 @@ HEAPfree(Heap *h, bool rmheap)
 					    h->filename);
 				assert(0);
 			}
-			HEAPDEBUG fprintf(stderr, "#munmap(base=%p, "
-					  "size=%zu) = %d\n",
-					  (void *)h->base,
-					  h->size, (int) ret);
+			TRC_DEBUG(HEAP, "munmap(base=%p, "
+					"size=%zu) = %d\n",
+					(void *)h->base,
+					h->size, (int) ret);
 		}
 	}
 	h->base = NULL;
@@ -615,9 +601,6 @@ HEAPfree(Heap *h, bool rmheap)
  * @- HEAPload
  *
  * If we find file X.new, we move it over X (if present) and open it.
- *
- * This routine initializes the h->filename without deallocating its
- * previous contents.
  */
 static gdk_return
 HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, bool trunc)
@@ -627,7 +610,7 @@ HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, b
 	char *srcpath, *dstpath, *tmp;
 	int t0;
 
-	h->storage = h->newstorage = h->size < 4 * GDK_mmap_pagesize ? STORE_MEM : STORE_MMAP;
+	h->storage = h->newstorage = h->size < GDK_mmap_minsize_persistent ? STORE_MEM : STORE_MMAP;
 
 	minsize = (h->size + GDK_mmap_pagesize - 1) & ~(GDK_mmap_pagesize - 1);
 	if (h->storage != STORE_MEM && minsize != h->size)
@@ -646,8 +629,8 @@ HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, b
 		if (truncsize < h->size &&
 		    (fd = GDKfdlocate(h->farmid, nme, "mrb+", ext)) >= 0) {
 			ret = ftruncate(fd, truncsize);
-			HEAPDEBUG fprintf(stderr,
-					  "#ftruncate(file=%s.%s, size=%zu"
+			TRC_DEBUG(HEAP,
+					"ftruncate(file=%s.%s, size=%zu"
 					  ") = %d\n", nme, ext, truncsize, ret);
 			close(fd);
 			if (ret == 0) {
@@ -656,9 +639,9 @@ HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, b
 		}
 	}
 
-	HEAPDEBUG fprintf(stderr, "#HEAPload(%s.%s,storage=%d,free=%zu"
-			  ",size=%zu)\n", nme, ext,
-			  (int) h->storage, h->free, h->size);
+	TRC_DEBUG(HEAP, "HEAPload(%s.%s,storage=%d,free=%zu"
+			",size=%zu)\n", nme, ext,
+			(int) h->storage, h->free, h->size);
 
 	/* On some OSs (WIN32,Solaris), it is prohibited to write to a
 	 * file that is open in MAP_PRIVATE (FILE_MAP_COPY) solution:
@@ -678,7 +661,7 @@ HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, b
 
 	t0 = GDKms();
 	ret = rename(srcpath, dstpath);
-	HEAPDEBUG fprintf(stderr, "#rename %s %s = %d %s (%dms)\n",
+	TRC_DEBUG(HEAP, "rename %s %s = %d %s (%dms)\n",
 			  srcpath, dstpath, ret, ret < 0 ? strerror(errno) : "",
 			  GDKms() - t0);
 	GDKfree(srcpath);
@@ -713,7 +696,7 @@ HEAPload(Heap *h, const char *nme, const char *ext, bool trunc)
  * safe on stable storage.
  */
 static gdk_return
-HEAPsave_intern(Heap *h, const char *nme, const char *ext, const char *suffix)
+HEAPsave_intern(Heap *h, const char *nme, const char *ext, const char *suffix, bool dosync)
 {
 	storage_t store = h->newstorage;
 	long_str extension;
@@ -726,21 +709,22 @@ HEAPsave_intern(Heap *h, const char *nme, const char *ext, const char *suffix)
 		/* anonymous or private VM is saved as if it were malloced */
 		store = STORE_MEM;
 		assert(strlen(ext) + strlen(suffix) < sizeof(extension));
-		snprintf(extension, sizeof(extension), "%s%s", ext, suffix);
+		strconcat_len(extension, sizeof(extension), ext, suffix, NULL);
 		ext = extension;
 	} else if (store != STORE_MEM) {
 		store = h->storage;
 	}
-	HEAPDEBUG {
-		fprintf(stderr, "#HEAPsave(%s.%s,storage=%d,free=%zu,size=%zu)\n", nme, ext, (int) h->newstorage, h->free, h->size);
-	}
-	return GDKsave(h->farmid, nme, ext, h->base, h->free, store, true);
+	TRC_DEBUG(HEAP,
+			"(%s.%s,storage=%d,free=%zu,size=%zu,dosync=%s)\n",
+			  nme, ext, (int) h->newstorage, h->free, h->size,
+			  dosync?"true":"false");
+	return GDKsave(h->farmid, nme, ext, h->base, h->free, store, dosync);
 }
 
 gdk_return
-HEAPsave(Heap *h, const char *nme, const char *ext)
+HEAPsave(Heap *h, const char *nme, const char *ext, bool dosync)
 {
-	return HEAPsave_intern(h, nme, ext, ".new");
+	return HEAPsave_intern(h, nme, ext, ".new", dosync);
 }
 
 /*
@@ -763,7 +747,7 @@ HEAPdelete(Heap *h, const char *o, const char *ext)
 		return GDK_SUCCEED;
 	}
 	assert(strlen(ext) + strlen(".new") < sizeof(ext2));
-	snprintf(ext2, sizeof(ext2), "%s%s", ext, ".new");
+	strconcat_len(ext2, sizeof(ext2), ext, ".new", NULL);
 	return (GDKunlink(h->farmid, BATDIR, o, ext) == GDK_SUCCEED) | (GDKunlink(h->farmid, BATDIR, o, ext2) == GDK_SUCCEED) ? GDK_SUCCEED : GDK_FAIL;
 }
 
@@ -826,8 +810,6 @@ HEAPmemsize(Heap *h)
  * TODO: user HEADER64 for both 32 and 64 bits (requires BAT format
  * change)
  */
-/* #define DEBUG */
-/* #define TRACE */
 
 #define HEAPVERSION	20030408
 
@@ -875,7 +857,7 @@ roundup_num(size_t number, int alignment)
 
 #define HEAP_index(HEAP,INDEX,TYPE)	((TYPE *)((char *) (HEAP)->base + (INDEX)))
 
-#ifdef TRACE
+
 static void
 HEAP_printstatus(Heap *heap)
 {
@@ -883,8 +865,8 @@ HEAP_printstatus(Heap *heap)
 	size_t block, cur_free = hheader->head;
 	CHUNK *blockp;
 
-	fprintf(stderr,
-		"#HEAP has head %zu and alignment %d and size %zu\n",
+	TRC_DEBUG(TRACE,
+		"HEAP has head %zu and alignment %d and size %zu\n",
 		hheader->head, hheader->alignment, heap->free);
 
 	/* Walk the blocklist */
@@ -894,8 +876,8 @@ HEAP_printstatus(Heap *heap)
 		blockp = HEAP_index(heap, block, CHUNK);
 
 		if (block == cur_free) {
-			fprintf(stderr,
-				"#   free block at %p has size %zu and next %zu\n",
+			TRC_DEBUG(TRACE,
+				"Free block at %p has size %zu and next %zu\n",
 				(void *)block,
 				blockp->size, blockp->next);
 
@@ -904,14 +886,13 @@ HEAP_printstatus(Heap *heap)
 		} else {
 			size_t size = blocksize(hheader, blockp);
 
-			fprintf(stderr,
-				"#   block at %zu with size %zu\n",
+			TRC_DEBUG(TRACE,
+				"Block at %zu with size %zu\n",
 				block, size);
 			block += size;
 		}
 	}
 }
-#endif /* TRACE */
 
 static void
 HEAP_empty(Heap *heap, size_t nprivate, int alignment)
@@ -936,10 +917,11 @@ HEAP_empty(Heap *heap, size_t nprivate, int alignment)
 	assert(heap->size - head <= VAR_MAX);
 	headp->size = (size_t) (heap->size - head);
 	headp->next = 0;
-#ifdef TRACE
-	fprintf(stderr, "#We created the following heap\n");
-	HEAP_printstatus(heap);
-#endif
+	TRC_DEBUG_IF(TRACE)
+	{
+		TRC_DEBUG(TRACE, "We created the following heap\n");
+		HEAP_printstatus(heap);
+	}
 }
 
 void
@@ -975,9 +957,7 @@ HEAP_malloc(Heap *heap, size_t nbytes)
 	CHUNK *trailp;
 	HEADER *hheader = HEAP_index(heap, 0, HEADER);
 
-#ifdef TRACE
-	fprintf(stderr, "#Enter malloc with %zu bytes\n", nbytes);
-#endif
+	TRC_DEBUG(TRACE, "Enter malloc with %zu bytes\n", nbytes);
 
 	/* add space for size field */
 	nbytes += hheader->alignment;
@@ -994,11 +974,13 @@ HEAP_malloc(Heap *heap, size_t nbytes)
 	for (block = hheader->head; block != 0; block = blockp->next) {
 		blockp = HEAP_index(heap, block, CHUNK);
 
-#ifdef TRACE
-		fprintf(stderr, "#block %zu is %zu bytes\n", block, blockp->size);
-#endif
-		if ((trail != 0) && (block <= trail))
-			GDKfatal("HEAP_malloc: Free list is not orderered\n");
+		TRC_DEBUG(TRACE, "Block %zu is %zu bytes\n", block, blockp->size);
+		
+		assert(trail == 0 || block > trail);
+		if (trail != 0 && block <= trail) {
+			GDKerror("HEAP_malloc: Free list is not orderered\n");
+			return 0;
+		}
 
 		if (blockp->size >= nbytes)
 			break;
@@ -1017,12 +999,10 @@ HEAP_malloc(Heap *heap, size_t nbytes)
 		assert(heap->free <= VAR_MAX);
 		block = (size_t) heap->free;	/* current end-of-heap */
 
-#ifdef TRACE
-		fprintf(stderr, "#No block found\n");
-#endif
+		TRC_DEBUG(TRACE, "No block found\n");
 
 		/* Increase the size of the heap. */
-		HEAPDEBUG fprintf(stderr, "#HEAPextend in HEAP_malloc %s %zu %zu\n", heap->filename, heap->size, newsize);
+		TRC_DEBUG(HEAP, "HEAPextend in HEAP_malloc %s %zu %zu\n", heap->filename, heap->size, newsize);
 		if (HEAPextend(heap, newsize, false) != GDK_SUCCEED)
 			return 0;
 		heap->free = newsize;
@@ -1031,9 +1011,7 @@ HEAP_malloc(Heap *heap, size_t nbytes)
 		blockp = HEAP_index(heap, block, CHUNK);
 		trailp = HEAP_index(heap, trail, CHUNK);
 
-#ifdef TRACE
-		fprintf(stderr, "#New block made at pos %zu with size %zu\n", block, heap->size - block);
-#endif
+		TRC_DEBUG(TRACE, "New block made at pos %zu with size %zu\n", block, heap->size - block);
 
 		blockp->next = 0;
 		assert(heap->free - block <= VAR_MAX);
@@ -1042,9 +1020,7 @@ HEAP_malloc(Heap *heap, size_t nbytes)
 		/* Try to join the last block in the freelist and the
 		 * newly allocated memory */
 		if ((trail != 0) && (trail + trailp->size == block)) {
-#ifdef TRACE
-			fprintf(stderr, "#Glue newly generated block to adjacent last\n");
-#endif
+			TRC_DEBUG(TRACE, "Glue newly generated block to adjacent last\n");
 
 			trailp->size += blockp->size;
 			trailp->next = blockp->next;
@@ -1094,8 +1070,10 @@ HEAP_free(Heap *heap, var_t mem)
 	CHUNK *afterp;
 	size_t after, before, block = mem;
 
+	assert(hheader->alignment == 8 || hheader->alignment == 4);
 	if (hheader->alignment != 8 && hheader->alignment != 4) {
-		GDKfatal("HEAP_free: Heap structure corrupt\n");
+		GDKerror("HEAP_free: Heap structure corrupt\n");
+		return;
 	}
 
 	block -= hheader->alignment;

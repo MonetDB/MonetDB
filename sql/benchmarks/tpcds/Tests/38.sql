@@ -26,3 +26,4 @@ FROM
      AND web_sales.ws_bill_customer_sk = customer.c_customer_sk
      AND d_month_seq BETWEEN 1200 AND 1200 + 11 ) hot_cust
 LIMIT 100;
+

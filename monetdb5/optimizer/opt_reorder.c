@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -286,9 +286,9 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	if ( newMalBlkStmt(mb, mb->ssize) < 0) {
 		GDKfree(uselist);
 		OPTremoveDep(dep, limit);
-		throw(MAL,"optimizer.reorder", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL,"optimizer.reorder", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	
+
 	pushInstruction(mb,old[0]);
 	old[0]=0;
 
@@ -299,7 +299,7 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			continue;
 		if( p->token == ENDsymbol)
 			break;
-		if( hasSideEffects(mb, p,FALSE) || isUnsafeFunction(p) || p->barrier ){
+		if( hasSideEffects(mb, p,FALSE) || p->barrier ){
 			if (OPTbreadthfirst(cntxt, mb, i, i, old, dep, uselist) < 0)
 				break;
 			/* remove last instruction and keep for later */
@@ -313,12 +313,6 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			/* collect all seen sofar by backward grouping */
 			/* since p has side-effects, we should secure all seen sofar */
 			for(j=i-1; j>=start;j--) {
-#ifdef DEBUG_OPT_REORDER
-				if( old[j]){
-					fprintf(stderr,"leftover: %d",start+1);
-					fprintInstruction(stderr,mb,0,old[j],LIST_MAL_DEBUG);
-				}
-#endif
 				if (OPTbreadthfirst(cntxt, mb, j, i, old, dep, uselist) < 0) {
 					i = limit;	/* cause break from outer loop */
 					break;
@@ -340,17 +334,16 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	GDKfree(old);
 	(void) OPTpostponeAppends(cntxt, mb, 0, 0);
 
-    /* Defense line against incorrect plans */
-    if( 1){
-        chkTypes(cntxt->usermodule, mb, FALSE);
-        chkFlow(mb);
-        chkDeclarations(mb);
-    }
-    /* keep all actions taken as a post block comment */
+    	/* Defense line against incorrect plans */
+        msg = chkTypes(cntxt->usermodule, mb, FALSE);
+	if (!msg)
+        	msg = chkFlow(mb);
+	if (!msg)
+        	msg = chkDeclarations(mb);
+    	/* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;
-    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","reorder",1,usec);
-    newComment(mb,buf);
+    	snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","reorder",1,usec);
+    	newComment(mb,buf);
 	addtoMalBlkHistory(mb);
-
 	return msg;
 }

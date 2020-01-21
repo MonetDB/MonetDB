@@ -14,7 +14,6 @@ stdout of test 'serial_with_order_by_not_working.SF-2585592` in directory 'sql/t
 # Listening for connection requests on mapi:monetdb://alviss.ins.cwi.nl:39193/
 # MonetDB/SQL module v2.28.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

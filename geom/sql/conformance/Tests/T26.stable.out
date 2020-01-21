@@ -18,15 +18,14 @@ stdout of test 'T26` in directory 'geom/sql/conformance` itself:
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 14:52:44 >  
 # 14:52:44 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-26317" "--port=37260"
 # 14:52:44 >  
 
 #SELECT ST_Area(boundary) FROM named_places WHERE name = 'Goose Island';
-% sys.L1 # table_name
-% L1 # name
+% sys.%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ 40	]

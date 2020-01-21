@@ -19,4 +19,14 @@ rollback;
 select max(aa) over (partition by bb rows 'something' preceding) from testing; --error
 select max(distinct aa) over (partition by bb) from testing; --error
 
+select count(cc * cc) over (partition by cc * cc rows between cc * cc preceding and cc * cc preceding) from testing; --error, null value in bound frame input
+
+delete from testing where cc is null;
+
+select count(cc * cc) over (partition by cc * cc rows between cc * cc preceding and cc * cc preceding) from testing;
+
+insert into testing values (-1,-1,-1);
+
+select count(aa) over (partition by bb rows between cc - 500 preceding and cc - 500 preceding) from testing; --error, negative value in bound frame input
+
 drop table testing;

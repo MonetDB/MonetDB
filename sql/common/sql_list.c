@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -26,12 +26,10 @@ static list *
 list_init(list *l, sql_allocator *sa, fdestroy destroy)
 {
 	if (l) {
-		l->sa = sa;
-		l->destroy = destroy;
-		l->h = l->t = NULL;
-		l->cnt = 0;
-		l->expected_cnt = 0;
-		l->ht = NULL;
+		*l = (list) {
+			.sa = sa,
+			.destroy = destroy,
+		};
 		MT_lock_init(&l->ht_lock, "sa_ht_lock");
 	}
 	return l;
@@ -314,12 +312,13 @@ list_remove_node(list *l, node *n)
 	}
 	if (n == l->t)
 		l->t = p;
-	node_destroy(l, n);
-	l->cnt--;
 	MT_lock_set(&l->ht_lock);
 	if (l->ht && data)
 		hash_delete(l->ht, data);
 	MT_lock_unset(&l->ht_lock);
+	node_destroy(l, n);
+	l->cnt--;
+	assert(l->cnt >= 0);
 	return p;
 }
 
@@ -597,7 +596,9 @@ list_position(list *l, void *val)
 
 	for (n = l->h, i=0; n && val != n->data; n = n->next, i++)
 		;
-	return i;
+	if (n && n->data == val)
+		return i;
+	return -1;
 }
 
 void *
@@ -706,6 +707,18 @@ list_dup(list *l, fdup dup)
 	return res ? list_merge(res, l, dup) : NULL;
 }
 
+list *
+list_flaten(list *l)
+{
+	list *res = list_new_(l);
+	for (node *n = l->h ; n ; n = n->next) {
+		list *ll = (list*) n->data;
+		for (node *m = ll->h ; m ; m = m->next)
+			list_append(res, m->data);
+	}
+	return res;
+}
+
 void
 list_hash_delete(list *l, void *data, fcmp cmp)
 {
@@ -740,43 +753,10 @@ list_hash_add(list *l, void *data, fcmp cmp)
 	return data;
 }
 
-#ifdef TEST
-#include <string.h>
-
 void
-print_data(void *dummy, void *data)
+list_hash_clear(list *l)
 {
-	printf("%s ", (char *) data);
+	MT_lock_set(&l->ht_lock);
+	l->ht = NULL;
+	MT_lock_unset(&l->ht_lock);
 }
-
-void
-destroy_data(void *dummy, void *data)
-{
-	_DELETE(data);
-}
-
-int
-main()
-{
-	list *l = list_create(NULL);
-
-	printf("0 list_length %d\n", list_length(l));
-	list_append_string(l, _STRDUP("niels"));
-	printf("1 list_length %d\n", list_length(l));
-	list_append_string(l, _STRDUP("nes"));
-	printf("1 list_length %d\n", list_length(l));
-	list_append_string(l, _STRDUP("lilian"));
-	printf("1 list_length %d\n", list_length(l));
-	list_append_string(l, _STRDUP("nes"));
-	printf("1 list_length %d\n", list_length(l));
-	list_append_string(l, _STRDUP("max"));
-	printf("1 list_length %d\n", list_length(l));
-	list_append_string(l, _STRDUP("nes"));
-	printf("1 list_length %d\n", list_length(l));
-	list_traverse(l, print_data, NULL);
-	printf("\n");
-
-	list_traverse(l, destroy_data, NULL);
-	list_destroy(l);
-}
-#endif

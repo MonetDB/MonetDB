@@ -67,10 +67,10 @@ WHERE t_s_secyear.customer_id = t_s_firstyear.customer_id
   AND t_s_firstyear.year_total > 0
   AND t_w_firstyear.year_total > 0
   AND CASE
-          WHEN t_w_firstyear.year_total > 0 THEN t_w_secyear.year_total / t_w_firstyear.year_total
+          WHEN t_w_firstyear.year_total > 0 THEN (t_w_secyear.year_total*1.0000) / t_w_firstyear.year_total
           ELSE 0.0
       END > CASE
-                WHEN t_s_firstyear.year_total > 0 THEN t_s_secyear.year_total / t_s_firstyear.year_total
+                WHEN t_s_firstyear.year_total > 0 THEN (t_s_secyear.year_total*1.0000) / t_s_firstyear.year_total
                 ELSE 0.0
             END
 ORDER BY t_s_secyear.customer_id,
@@ -78,3 +78,4 @@ ORDER BY t_s_secyear.customer_id,
          t_s_secyear.customer_last_name,
          t_s_secyear.customer_preferred_cust_flag
 LIMIT 100;
+

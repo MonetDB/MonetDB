@@ -2,7 +2,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
 
 module url;
 
@@ -77,7 +77,7 @@ command getRobotURL(u:url) :str
 address URLgetRobotURL
 comment "Extract the location of the robot control file";
 
-command isaURL(u:url) :bit
+command isaURL(u:str) :bit
 address URLisaURL
 comment "Check conformity of the URL syntax";
 

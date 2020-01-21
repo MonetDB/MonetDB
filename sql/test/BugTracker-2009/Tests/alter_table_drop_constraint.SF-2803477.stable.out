@@ -14,7 +14,6 @@ stdout of test 'alter_table_drop_constraint.SF-2803477` in directory 'sql/test/B
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:38418/
 # MonetDB/SQL module v2.30.1 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

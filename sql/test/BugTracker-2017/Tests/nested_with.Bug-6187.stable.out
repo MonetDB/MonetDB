@@ -18,7 +18,6 @@ stdout of test 'nested_with.Bug-6187` in directory 'sql/test/BugTracker-2017` it
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 17:13:52 >  
 # 17:13:52 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-17366" "--port=33167"

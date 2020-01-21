@@ -16,7 +16,6 @@ stdout of test 'extract_select` in directory 'sql/test/snodgrass` itself:
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql
@@ -45,14 +44,14 @@ Ready.
 # 15:25:32 >  
 
 #SELECT EXTRACT( YEAR FROM DATE '1970-01-01') = 1970;
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT EXTRACT( MINUTE FROM INTERVAL '12:34:56' HOUR TO SECOND ) = 34;
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % boolean # type
 % 5 # length
 [ true	]

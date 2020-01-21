@@ -4,17 +4,18 @@ CREATE TABLE twodecades (t timestamp, b int);
 CREATE TABLE threedecades (t timestamp, b int);
 CREATE TABLE fourdecades (t timestamp, b int);
 
-ALTER TABLE testtime ADD TABLE onedecade AS PARTITION BETWEEN timestamp '2000-01-01 00:00:00' AND timestamp '2009-12-12 23:59:59';
-ALTER TABLE testtime ADD TABLE twodecades AS PARTITION BETWEEN timestamp '2010-01-01 00:00:00' AND timestamp '2019-12-12 23:59:59';
+ALTER TABLE testtime ADD TABLE onedecade AS PARTITION FROM timestamp '2000-01-01 00:00:00' TO timestamp '2009-12-12 23:59:59';
+ALTER TABLE testtime ADD TABLE twodecades AS PARTITION FROM timestamp '2010-01-01 00:00:00' TO timestamp '2019-12-12 23:59:59';
 
-ALTER TABLE testtime ADD TABLE threedecades AS PARTITION BETWEEN timestamp '2005-02-13 01:08:10' AND timestamp '2006-12-12 23:59:59'; --error
-ALTER TABLE testtime ADD TABLE threedecades AS PARTITION BETWEEN timestamp '1999-01-01 14:06:01' AND timestamp '2021-07-31 13:09:56'; --error
-ALTER TABLE testtime ADD TABLE threedecades AS PARTITION BETWEEN timestamp '2008-03-12 19:24:50' AND timestamp '2018-07-31 05:01:47'; --error
+ALTER TABLE testtime ADD TABLE threedecades AS PARTITION FROM timestamp '2005-02-13 01:08:10' TO timestamp '2006-12-12 23:59:59'; --error
+ALTER TABLE testtime ADD TABLE threedecades AS PARTITION FROM timestamp '1999-01-01 14:06:01' TO timestamp '2021-07-31 13:09:56'; --error
+ALTER TABLE testtime ADD TABLE threedecades AS PARTITION FROM timestamp '2008-03-12 19:24:50' TO timestamp '2018-07-31 05:01:47'; --error
 
-ALTER TABLE testtime ADD TABLE threedecades AS PARTITION BETWEEN timestamp '2020-01-01 00:00:00' AND timestamp '2029-12-12 23:59:59' WITH NULL;
+ALTER TABLE testtime ADD TABLE threedecades AS PARTITION FROM timestamp '2020-01-01 00:00:00' TO timestamp '2029-12-12 23:59:59' WITH NULL VALUES;
 
 INSERT INTO testtime VALUES (timestamp '2000-01-01 00:00:00', 1), (timestamp '2002-12-03 20:00:00', 2),
-(timestamp '2012-05-12 21:01:00', 3), (timestamp '2019-12-12 23:59:59', 4), (NULL, 5);
+(timestamp '2012-05-12 21:01:00', 3), (timestamp '2019-12-12 23:59:58', 4), (NULL, 5);
+INSERT INTO testtime VALUES (timestamp '2019-12-12 23:59:59', 4); --error
 
 SELECT t, b FROM testtime;
 SELECT t, b FROM onedecade;
@@ -29,8 +30,8 @@ SELECT t, b FROM onedecade;
 SELECT t, b FROM twodecades;
 SELECT t, b FROM threedecades;
 
-ALTER TABLE testtime ADD TABLE fourdecades AS PARTITION BETWEEN timestamp '2030-01-01 00:00:00' AND RANGE MAXVALUE WITH NULL; --error
-ALTER TABLE testtime ADD TABLE fourdecades AS PARTITION BETWEEN timestamp '2030-01-01 00:00:00' AND RANGE MAXVALUE;
+ALTER TABLE testtime ADD TABLE fourdecades AS PARTITION FROM timestamp '2030-01-01 00:00:00' TO RANGE MAXVALUE WITH NULL VALUES; --error
+ALTER TABLE testtime ADD TABLE fourdecades AS PARTITION FROM timestamp '2030-01-01 00:00:00' TO RANGE MAXVALUE;
 
 INSERT INTO testtime VALUES (timestamp '1950-11-24 10:12:01', 1234); --error
 INSERT INTO testtime VALUES (timestamp '3300-10-10 22:12:00', 3300), (timestamp '2030-01-01 00:00:00', 2033),

@@ -19,7 +19,6 @@ stdout of test 'ifexists` in directory 'sql/test` itself:
 # MonetDB/Python module loaded
 # MonetDB/R   module loaded
 
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql
@@ -92,8 +91,8 @@ Ready.
 #DROP TABLE IF EXISTS hello;
 #DROP TABLE IF EXISTS hello;
 #SELECT 1;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % tinyint # type
 % 1 # length
 [ 1	]
@@ -139,8 +138,8 @@ Ready.
 #DROP SCHEMA IF EXISTS hello;
 #DROP SCHEMA IF EXISTS hello;
 #SELECT 1;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % tinyint # type
 % 1 # length
 [ 1	]

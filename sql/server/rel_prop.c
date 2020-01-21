@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -11,7 +11,7 @@
 #include "rel_prop.h"
 
 prop *
-prop_create( sql_allocator *sa, int kind, prop *pre )
+prop_create( sql_allocator *sa, rel_prop kind, prop *pre )
 {
 	prop *p = SA_NEW(sa, prop);
 	
@@ -50,7 +50,7 @@ prop_remove( prop *plist, prop *p )
 }
 
 prop *
-find_prop( prop *p, int kind)
+find_prop( prop *p, rel_prop kind)
 {
 	while(p) {
 		if (p->kind == kind)
@@ -74,6 +74,7 @@ propkind2string( prop *p)
 		PT(REMOTE);
 		PT(USED);
 		PT(DISTRIBUTE);
+		PT(GROUPINGS);
 	}
 	return "UNKNOWN";
 }

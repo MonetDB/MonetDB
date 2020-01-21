@@ -76,17 +76,17 @@ tst107
 tst108
 tst109
 tst110
+tst111
+tst112
+tst113
+tst114
+tst117
 tst115
 tst116
 tst1150
 #tst120	files are not located in module and paths are runtime dependent
-tst1200
-tst1201
-tst1202
-tst1203
-tst1204
-tst1205
-tst1225
+#tst1200
+#tst1204
 tst120a
 tst120b
 tst130
@@ -100,6 +100,14 @@ tst161
 tst163
 tst1604
 tst171
+tst180
+tst190
+tst191
+tst192
+tst193
+tst194
+tst195
+tst196
 tst200
 tst201
 tst202
@@ -127,8 +135,7 @@ tst2550
 tst256
 tst2570
 tst272
-# opens /tmp/MonetEvents, i.e. not on Windows:
-NOT_WIN32?tst275
+tst275
 tst280
 tst281
 tst292
@@ -184,6 +191,7 @@ tst908
 tst911
 tst912
 tst913
+tst914
 tst960
 
 #tests for garbage collection of strings
@@ -200,3 +208,6 @@ flowchk
 dynamicload
 pithole
 malids
+
+# Tracer
+# tracer00 Output is call dependent

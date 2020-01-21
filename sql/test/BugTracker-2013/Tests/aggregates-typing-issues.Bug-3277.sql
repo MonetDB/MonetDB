@@ -44,7 +44,7 @@ select * from mtcars2;
 
 --THESE WORK;
 select median( prob1 )  from mtcars2;
-select prod( prob1 ) from mtcars2;
+select cast (prod( prob1 ) as bigint) from mtcars2;
 
 --THESE BREAK;
 select stddev_pop( prob1 ) from mtcars2;
@@ -63,7 +63,7 @@ select * from mtcars2;
 
 --THESE WORK;
 select median( prob1 )  from mtcars2;
-select prod( prob1 ) from mtcars2;
+select cast (prod( prob1 ) as bigint) from mtcars2;
 select stddev_pop( prob1 ) from mtcars2;
 
 --THESE BREAK;
@@ -82,7 +82,7 @@ select * from mtcars2;
 
 --THESE WORK;
 select median( prob1 )  from mtcars2;
-select prod( prob1 ) from mtcars2;
+select cast (prod( prob1 ) as bigint) from mtcars2;
 select stddev_pop( prob1 ) from mtcars2;
 
 --THESE BREAK;
@@ -101,7 +101,7 @@ select * from mtcars2;
 
 --THESE WORK;
 select median( prob1 )  from mtcars2;
-select prod( prob1 ) from mtcars2;
+select cast (prod( prob1 ) as bigint) from mtcars2;
 select stddev_pop( prob1 ) from mtcars2;
 
 --THESE BREAK;
@@ -120,7 +120,7 @@ select * from mtcars2;
 
 --THESE WORK;
 select median( prob1 )  from mtcars2;
-select prod( prob1 ) from mtcars2;
+select cast (prod( prob1 ) as bigint) from mtcars2;
 select stddev_pop( prob1 ) from mtcars2;
 
 --THESE BREAK;

@@ -19,7 +19,6 @@ stdout of test 'inet_error_handling.Bug-3624` in directory 'sql/test/BugTracker-
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 10:46:21 >  
 # 10:46:21 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-29407" "--port=30088"

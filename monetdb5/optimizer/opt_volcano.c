@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -35,12 +35,12 @@ OPTvolcanoImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	(void) cntxt;
 	(void) stk;		/* to fool compilers */
 
-    if ( mb->inlineProp )
-        return MAL_SUCCEED;
+	if ( mb->inlineProp )
+		return MAL_SUCCEED;
 
-    limit= mb->stop;
-    if ( newMalBlkStmt(mb, mb->ssize + 20) < 0)
-		throw(MAL,"optimizer.volcano", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	limit= mb->stop;
+	if ( newMalBlkStmt(mb, mb->ssize + 20) < 0)
+		throw(MAL,"optimizer.volcano", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	for (i = 0; i < limit; i++) {
 		p = old[i];
@@ -59,8 +59,8 @@ OPTvolcanoImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 			){
 				q= newInstruction(0,languageRef,blockRef);
 				setDestVar(q, newTmpVariable(mb,TYPE_any));
-				q =  pushArgument(mb,q,mvcvar);
-				q =  pushArgument(mb,q,getArg(p,0));
+				q =  addArgument(mb,q,mvcvar);
+				q =  addArgument(mb,q,getArg(p,0));
 				mvcvar=  getArg(q,0);
 				pushInstruction(mb,q);
 				count++;
@@ -71,8 +71,8 @@ OPTvolcanoImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 			if( getFunctionId(p) == subgroupdoneRef || getFunctionId(p) == groupdoneRef ){
 				q= newInstruction(0,languageRef,blockRef);
 				setDestVar(q, newTmpVariable(mb,TYPE_any));
-				q =  pushArgument(mb,q,mvcvar);
-				q =  pushArgument(mb,q,getArg(p,0));
+				q =  addArgument(mb,q,mvcvar);
+				q =  addArgument(mb,q,getArg(p,0));
 				mvcvar=  getArg(q,0);
 				pushInstruction(mb,q);
 				count++;
@@ -94,16 +94,17 @@ OPTvolcanoImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 
     /* Defense line against incorrect plans */
     if( count){
-        chkTypes(cntxt->usermodule, mb, FALSE);
-        chkFlow(mb);
-        chkDeclarations(mb);
+        msg = chkTypes(cntxt->usermodule, mb, FALSE);
+	if (!msg)
+        	msg = chkFlow(mb);
+	if (!msg)
+        	msg = chkDeclarations(mb);
     }
     /* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","volcano",count,usec);
     newComment(mb,buf);
-	if( count >= 0)
+	if( count > 0)
 		addtoMalBlkHistory(mb);
-
 	return msg;
 }

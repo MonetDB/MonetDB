@@ -23,17 +23,18 @@ def freeport():
 cloneport = freeport()
 
 dbname = tstdb
-dbnameclone = tstdb + '-clone'
+dbnameclone = tstdb + 'clone'
 
 #master = process.server(dbname = dbname, stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
 slave = process.server(dbname = dbnameclone, mapiport = cloneport, stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
 
 c = process.client('sql', server = slave, stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
 
+# check some errors
 cout, cerr = c.communicate('''\
-call replicate();
+call wlr.replicate();
 select * from tmp;
-''' )
+'''  )
 
 sout, serr = slave.communicate()
 #mout, merr = master.communicate()
@@ -44,3 +45,23 @@ sys.stdout.write(cout)
 #sys.stderr.write(merr)
 sys.stderr.write(serr)
 sys.stderr.write(cerr)
+
+def listfiles(path):
+    sys.stdout.write("#LISTING OF THE LOG FILES\n")
+    for f in sorted(os.listdir(path)):
+        if f.find('wlc') >= 0 and f != 'wlc_logs':
+            file = path + os.path.sep + f
+            sys.stdout.write('#' + file + "\n")
+            try:
+                x = open(file)
+                s = x.read()
+                lines = s.split('\n')
+                for l in lines:
+                    sys.stdout.write('#' + l + '\n')
+                x.close()
+            except IOError:
+                sys.stderr.write('Failure to read file ' + file + '\n')
+
+#listfiles(os.path.join(dbfarm, tstdb))
+#listfiles(os.path.join(dbfarm, tstdb, 'wlc_logs'))
+#listfiles(os.path.join(dbfarm, tstdb + 'clone', 'wlr.config'))

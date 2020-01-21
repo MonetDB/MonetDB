@@ -18,7 +18,6 @@ stdout of test 'slow-query.Bug-2671` in directory 'sql/test/BugTracker-2010` its
 # MonetDB/GIS module loaded
 # SQL catalog created, loading sql scripts once
 
-Ready.
 
 # 12:30:58 >  
 # 12:30:58 >  mclient -lsql -ftest -i -e --host=ottar --port=30318 

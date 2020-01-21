@@ -59,7 +59,6 @@ stdout of test 'multi-column-hash-wrongly-NIL.Bug-6638` in directory 'sql/test/B
 # loading sql script: 99_system.sql
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 16:21:04 >  
 # 16:21:04 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-9105" "--port=34059"
@@ -107,7 +106,7 @@ Ready.
 [ 12,	22,	-2	]
 [ 11,	21,	-1	]
 #select * from r2 natural join s2 order by x,y;
-% sys.L1,	sys.L1,	sys.r2,	sys.s2 # table_name
+% sys.%1,	sys.%1,	sys.r2,	sys.s2 # table_name
 % a,	b,	x,	y # name
 % bigint,	bigint,	bigint,	bigint # type
 % 20,	20,	2,	3 # length
@@ -125,7 +124,7 @@ Ready.
 [ -1,	9223372036854775807,	12,	-12	]
 [ 9223372036854775807,	-1,	13,	-13	]
 #select * from s2 natural join r2 order by x,y;
-% sys.L1,	sys.L1,	sys.s2,	sys.r2 # table_name
+% sys.%1,	sys.%1,	sys.s2,	sys.r2 # table_name
 % a,	b,	y,	x # name
 % bigint,	bigint,	bigint,	bigint # type
 % 20,	20,	3,	2 # length
@@ -175,7 +174,7 @@ Ready.
 [ 12,	22,	32,	-2	]
 [ 11,	21,	31,	-1	]
 #select * from r3 natural join s3 order by x,y;
-% sys.L1,	sys.L1,	sys.L1,	sys.r3,	sys.s3 # table_name
+% sys.%1,	sys.%1,	sys.%1,	sys.r3,	sys.s3 # table_name
 % a,	b,	c,	x,	y # name
 % bigint,	bigint,	bigint,	bigint,	bigint # type
 % 15,	15,	15,	1,	2 # length
@@ -189,7 +188,7 @@ Ready.
 [ 0,	140737488355328,	0,	8,	-8	]
 [ 0,	0,	140737488355328,	9,	-9	]
 #select * from s3 natural join r3 order by x,y;
-% sys.L1,	sys.L1,	sys.L1,	sys.s3,	sys.r3 # table_name
+% sys.%1,	sys.%1,	sys.%1,	sys.s3,	sys.r3 # table_name
 % a,	b,	c,	y,	x # name
 % bigint,	bigint,	bigint,	bigint,	bigint # type
 % 15,	15,	15,	2,	1 # length
@@ -239,7 +238,7 @@ Ready.
 [ 12,	22,	32,	42,	-2	]
 [ 11,	21,	31,	41,	-1	]
 #select * from r4 natural join s4 order by x,y;
-% sys.L1,	sys.L1,	sys.L1,	sys.L1,	sys.r4,	sys.s4 # table_name
+% sys.%1,	sys.%1,	sys.%1,	sys.%1,	sys.r4,	sys.s4 # table_name
 % a,	b,	c,	d,	x,	y # name
 % bigint,	bigint,	bigint,	bigint,	bigint,	bigint # type
 % 16,	16,	16,	16,	2,	3 # length
@@ -255,7 +254,7 @@ Ready.
 [ 0,	0,	1125899906842624,	0,	10,	-10	]
 [ 0,	0,	0,	1125899906842624,	11,	-11	]
 #select * from s4 natural join r4 order by x,y;
-% sys.L1,	sys.L1,	sys.L1,	sys.L1,	sys.s4,	sys.r4 # table_name
+% sys.%1,	sys.%1,	sys.%1,	sys.%1,	sys.s4,	sys.r4 # table_name
 % a,	b,	c,	d,	y,	x # name
 % bigint,	bigint,	bigint,	bigint,	bigint,	bigint # type
 % 16,	16,	16,	16,	3,	2 # length
@@ -311,7 +310,7 @@ Ready.
 [ 12,	22,	32,	42,	52,	-2	]
 [ 11,	21,	31,	41,	51,	-1	]
 #select * from r5 natural join s5 order by x,y;
-% sys.L1,	sys.L1,	sys.L1,	sys.L1,	sys.L1,	sys.r5,	sys.s5 # table_name
+% sys.%1,	sys.%1,	sys.%1,	sys.%1,	sys.%1,	sys.r5,	sys.s5 # table_name
 % a,	b,	c,	d,	e,	x,	y # name
 % bigint,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint # type
 % 16,	16,	16,	16,	16,	2,	3 # length
@@ -329,7 +328,7 @@ Ready.
 [ 0,	0,	0,	4503599627370496,	0,	12,	-12	]
 [ 0,	0,	0,	0,	4503599627370496,	13,	-13	]
 #select * from s5 natural join r5 order by x,y;
-% sys.L1,	sys.L1,	sys.L1,	sys.L1,	sys.L1,	sys.s5,	sys.r5 # table_name
+% sys.%1,	sys.%1,	sys.%1,	sys.%1,	sys.%1,	sys.s5,	sys.r5 # table_name
 % a,	b,	c,	d,	e,	y,	x # name
 % bigint,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint # type
 % 16,	16,	16,	16,	16,	3,	2 # length
@@ -391,7 +390,7 @@ Ready.
 [ 12,	22,	32,	42,	52,	62,	-2	]
 [ 11,	21,	31,	41,	51,	61,	-1	]
 #select * from r6 natural join s6 order by x,y;
-% sys.L1,	sys.L1,	sys.L1,	sys.L1,	sys.L1,	sys.L1,	sys.r6,	sys.s6 # table_name
+% sys.%1,	sys.%1,	sys.%1,	sys.%1,	sys.%1,	sys.%1,	sys.r6,	sys.s6 # table_name
 % a,	b,	c,	d,	e,	f,	x,	y # name
 % bigint,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint # type
 % 16,	16,	16,	16,	16,	16,	2,	3 # length
@@ -411,7 +410,7 @@ Ready.
 [ 0,	0,	0,	0,	9007199254740992,	0,	14,	-14	]
 [ 0,	0,	0,	0,	0,	9007199254740992,	15,	-15	]
 #select * from s6 natural join r6 order by x,y;
-% sys.L1,	sys.L1,	sys.L1,	sys.L1,	sys.L1,	sys.L1,	sys.s6,	sys.r6 # table_name
+% sys.%1,	sys.%1,	sys.%1,	sys.%1,	sys.%1,	sys.%1,	sys.s6,	sys.r6 # table_name
 % a,	b,	c,	d,	e,	f,	y,	x # name
 % bigint,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint # type
 % 16,	16,	16,	16,	16,	16,	3,	2 # length
@@ -479,7 +478,7 @@ Ready.
 [ 12,	22,	32,	42,	52,	62,	72,	-2	]
 [ 11,	21,	31,	41,	51,	61,	71,	-1	]
 #select * from r7 natural join s7 order by x,y;
-% sys.L1,	sys.L1,	sys.L1,	sys.L1,	sys.L1,	sys.L1,	sys.L1,	sys.r7,	sys.s7 # table_name
+% sys.%1,	sys.%1,	sys.%1,	sys.%1,	sys.%1,	sys.%1,	sys.%1,	sys.r7,	sys.s7 # table_name
 % a,	b,	c,	d,	e,	f,	g,	x,	y # name
 % bigint,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint # type
 % 17,	17,	17,	17,	17,	17,	17,	2,	3 # length
@@ -501,7 +500,7 @@ Ready.
 [ 0,	0,	0,	0,	0,	36028797018963968,	0,	16,	-16	]
 [ 0,	0,	0,	0,	0,	0,	36028797018963968,	17,	-17	]
 #select * from s7 natural join r7 order by x,y;
-% sys.L1,	sys.L1,	sys.L1,	sys.L1,	sys.L1,	sys.L1,	sys.L1,	sys.s7,	sys.r7 # table_name
+% sys.%1,	sys.%1,	sys.%1,	sys.%1,	sys.%1,	sys.%1,	sys.%1,	sys.s7,	sys.r7 # table_name
 % a,	b,	c,	d,	e,	f,	g,	y,	x # name
 % bigint,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint # type
 % 17,	17,	17,	17,	17,	17,	17,	3,	2 # length
@@ -575,7 +574,7 @@ Ready.
 [ 12,	22,	32,	42,	52,	62,	72,	82,	-2	]
 [ 11,	21,	31,	41,	51,	61,	71,	81,	-1	]
 #select * from r8 natural join s8 order by x,y;
-% sys.L1,	sys.L1,	sys.L1,	sys.L1,	sys.L1,	sys.L1,	sys.L1,	sys.L1,	sys.r8,	sys.s8 # table_name
+% sys.%1,	sys.%1,	sys.%1,	sys.%1,	sys.%1,	sys.%1,	sys.%1,	sys.%1,	sys.r8,	sys.s8 # table_name
 % a,	b,	c,	d,	e,	f,	g,	h,	x,	y # name
 % bigint,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint # type
 % 17,	17,	17,	17,	17,	17,	17,	17,	2,	3 # length
@@ -599,7 +598,7 @@ Ready.
 [ 0,	0,	0,	0,	0,	0,	36028797018963968,	0,	18,	-18	]
 [ 0,	0,	0,	0,	0,	0,	0,	36028797018963968,	19,	-19	]
 #select * from s8 natural join r8 order by x,y;
-% sys.L1,	sys.L1,	sys.L1,	sys.L1,	sys.L1,	sys.L1,	sys.L1,	sys.L1,	sys.s8,	sys.r8 # table_name
+% sys.%1,	sys.%1,	sys.%1,	sys.%1,	sys.%1,	sys.%1,	sys.%1,	sys.%1,	sys.s8,	sys.r8 # table_name
 % a,	b,	c,	d,	e,	f,	g,	h,	y,	x # name
 % bigint,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint # type
 % 17,	17,	17,	17,	17,	17,	17,	17,	3,	2 # length
@@ -679,7 +678,7 @@ Ready.
 [ 12,	22,	32,	42,	52,	62,	72,	82,	92,	-2	]
 [ 11,	21,	31,	41,	51,	61,	71,	81,	91,	-1	]
 #select * from r9 natural join s9 order by x,y;
-% sys.L1,	sys.L1,	sys.L1,	sys.L1,	sys.L1,	sys.L1,	sys.L1,	sys.L1,	sys.L1,	sys.r9,	sys.s9 # table_name
+% sys.%1,	sys.%1,	sys.%1,	sys.%1,	sys.%1,	sys.%1,	sys.%1,	sys.%1,	sys.%1,	sys.r9,	sys.s9 # table_name
 % a,	b,	c,	d,	e,	f,	g,	h,	i,	x,	y # name
 % bigint,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint # type
 % 17,	17,	17,	17,	17,	17,	17,	17,	17,	2,	3 # length
@@ -705,7 +704,7 @@ Ready.
 [ 0,	0,	0,	0,	0,	0,	0,	72057594037927936,	0,	20,	-20	]
 [ 0,	0,	0,	0,	0,	0,	0,	0,	72057594037927936,	21,	-21	]
 #select * from s9 natural join r9 order by x,y;
-% sys.L1,	sys.L1,	sys.L1,	sys.L1,	sys.L1,	sys.L1,	sys.L1,	sys.L1,	sys.L1,	sys.s9,	sys.r9 # table_name
+% sys.%1,	sys.%1,	sys.%1,	sys.%1,	sys.%1,	sys.%1,	sys.%1,	sys.%1,	sys.%1,	sys.s9,	sys.r9 # table_name
 % a,	b,	c,	d,	e,	f,	g,	h,	i,	y,	x # name
 % bigint,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint # type
 % 17,	17,	17,	17,	17,	17,	17,	17,	17,	3,	2 # length

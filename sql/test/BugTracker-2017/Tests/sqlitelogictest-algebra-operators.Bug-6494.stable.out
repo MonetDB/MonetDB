@@ -18,15 +18,14 @@ stdout of test 'sqlitelogictest-algebra-operators.Bug-6494` in directory 'sql/te
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 16:01:45 >  
 # 16:01:45 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-6129" "--port=34700"
 # 16:01:45 >  
 
 #SELECT 85 * + 52 * 50 * ( + + 82 ) + - 78;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% %1 # name
 % int # type
 % 8 # length
 [ 18121922	]

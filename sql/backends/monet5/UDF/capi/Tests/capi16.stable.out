@@ -17,7 +17,6 @@ stdout of test 'capi16` in directory 'sql/backends/monet5/UDF/capi` itself:
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-6494/.s.monetdb.36686
 # MonetDB/SQL module loaded
 
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql
@@ -77,8 +76,8 @@ Ready.
 #    }
 #};
 #SELECT 'hello', string_reverse('hello');
-% .L2,	.L4 # table_name
-% L2,	L4 # name
+% .%1,	.%2 # table_name
+% %1,	%2 # name
 % char,	clob # type
 % 5,	5 # length
 [ "hello",	"olleh"	]
@@ -96,8 +95,8 @@ Ready.
 #    }
 #};
 #SELECT BLOB '00FFFF00', capi10(BLOB '00FFFF00');
-% .L2,	.L4 # table_name
-% L2,	L4 # name
+% .%1,	.%2 # table_name
+% %1,	%2 # name
 % blob,	blob # type
 % 0,	0 # length
 [ 00FFFF00,	00FFFF00	]
@@ -109,8 +108,8 @@ Ready.
 #    }
 #};
 #SELECT 1, capi00(1);
-% .L2,	.L4 # table_name
-% L2,	L4 # name
+% .%1,	.%2 # table_name
+% %1,	%2 # name
 % tinyint,	int # type
 % 1,	1 # length
 [ 1,	2	]
@@ -130,8 +129,8 @@ Ready.
 #    }
 #};
 #SELECT capi02_increment_year('1992-09-20');
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % date # type
 % 10 # length
 [ 1993-09-20	]
@@ -152,8 +151,8 @@ Ready.
 #    }
 #};
 #SELECT capi02_randomize_time('03:03:02.0101');
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % time # type
 % 8 # length
 [ 10:34:34	]
@@ -172,8 +171,8 @@ Ready.
 #
 #            result->data[i].time.hours = (i + 1234) % 24;
 #SELECT capi02_increment_timestamp('1992-09-20 03:03:02.0101');
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % timestamp # type
 % 26 # length
 [ 1993-09-20 10:34:34.234000	]

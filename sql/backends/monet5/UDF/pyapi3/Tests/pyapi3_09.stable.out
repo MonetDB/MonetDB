@@ -22,7 +22,6 @@ stdout of test 'pyapi3_09` in directory 'sql/backends/monet5/UDF/pyapi3` itself:
 # MonetDB/Python module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 14:42:12 >  
 # 14:42:12 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-30058" "--port=35977"
@@ -39,7 +38,7 @@ Ready.
 #    return res
 #};
 #SELECT * FROM pyapi09();
-% .L1 # table_name
+% .%1 # table_name
 % i # name
 % int # type
 % 1 # length
@@ -62,8 +61,8 @@ Ready.
 #    return res['i'] * i
 #};
 #SELECT pyapi09(i) FROM pyapi09table; #multiply by 3
-% sys.L2 # table_name
-% L2 # name
+% sys.%1 # table_name
+% %1 # name
 % int # type
 % 2 # length
 [ 3	]
@@ -73,8 +72,8 @@ Ready.
 #UPDATE pyapi09multiplication SET i=10;
 [ 1	]
 #SELECT pyapi09(i) FROM pyapi09table; #multiply by 10
-% sys.L2 # table_name
-% L2 # name
+% sys.%1 # table_name
+% %1 # name
 % int # type
 % 2 # length
 [ 10	]
@@ -102,7 +101,7 @@ Ready.
 #    return array[:10]
 #};
 #SELECT * FROM pyapi09load();
-% .L1 # table_name
+% .%1 # table_name
 % i # name
 % int # type
 % 1 # length
@@ -135,7 +134,7 @@ Ready.
 #    return numpy.arange(10)
 #};
 #SELECT * FROM pyapi09();
-% .L1 # table_name
+% .%1 # table_name
 % i # name
 % int # type
 % 1 # length

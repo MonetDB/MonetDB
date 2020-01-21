@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -96,7 +96,7 @@
  * high-performance hash-lookup (all code inlined).
  */
 
-/* These tables were generated from the Unicode 10.0.0 spec. */
+/* These tables were generated from the Unicode 12.1.0 spec. */
 struct UTF8_lower_upper {
 	unsigned int from, to;
 } UTF8_toUpper[] = { /* code points with non-null uppercase conversion */
@@ -333,6 +333,7 @@ struct UTF8_lower_upper {
 	{ 0x0275, 0x019F, },
 	{ 0x027D, 0x2C64, },
 	{ 0x0280, 0x01A6, },
+	{ 0x0282, 0xA7C5, },
 	{ 0x0283, 0x01A9, },
 	{ 0x0287, 0xA7B1, },
 	{ 0x0288, 0x01AE, },
@@ -594,6 +595,52 @@ struct UTF8_lower_upper {
 	{ 0x0584, 0x0554, },
 	{ 0x0585, 0x0555, },
 	{ 0x0586, 0x0556, },
+	{ 0x10D0, 0x1C90, },
+	{ 0x10D1, 0x1C91, },
+	{ 0x10D2, 0x1C92, },
+	{ 0x10D3, 0x1C93, },
+	{ 0x10D4, 0x1C94, },
+	{ 0x10D5, 0x1C95, },
+	{ 0x10D6, 0x1C96, },
+	{ 0x10D7, 0x1C97, },
+	{ 0x10D8, 0x1C98, },
+	{ 0x10D9, 0x1C99, },
+	{ 0x10DA, 0x1C9A, },
+	{ 0x10DB, 0x1C9B, },
+	{ 0x10DC, 0x1C9C, },
+	{ 0x10DD, 0x1C9D, },
+	{ 0x10DE, 0x1C9E, },
+	{ 0x10DF, 0x1C9F, },
+	{ 0x10E0, 0x1CA0, },
+	{ 0x10E1, 0x1CA1, },
+	{ 0x10E2, 0x1CA2, },
+	{ 0x10E3, 0x1CA3, },
+	{ 0x10E4, 0x1CA4, },
+	{ 0x10E5, 0x1CA5, },
+	{ 0x10E6, 0x1CA6, },
+	{ 0x10E7, 0x1CA7, },
+	{ 0x10E8, 0x1CA8, },
+	{ 0x10E9, 0x1CA9, },
+	{ 0x10EA, 0x1CAA, },
+	{ 0x10EB, 0x1CAB, },
+	{ 0x10EC, 0x1CAC, },
+	{ 0x10ED, 0x1CAD, },
+	{ 0x10EE, 0x1CAE, },
+	{ 0x10EF, 0x1CAF, },
+	{ 0x10F0, 0x1CB0, },
+	{ 0x10F1, 0x1CB1, },
+	{ 0x10F2, 0x1CB2, },
+	{ 0x10F3, 0x1CB3, },
+	{ 0x10F4, 0x1CB4, },
+	{ 0x10F5, 0x1CB5, },
+	{ 0x10F6, 0x1CB6, },
+	{ 0x10F7, 0x1CB7, },
+	{ 0x10F8, 0x1CB8, },
+	{ 0x10F9, 0x1CB9, },
+	{ 0x10FA, 0x1CBA, },
+	{ 0x10FD, 0x1CBD, },
+	{ 0x10FE, 0x1CBE, },
+	{ 0x10FF, 0x1CBF, },
 	{ 0x13F8, 0x13F0, },
 	{ 0x13F9, 0x13F1, },
 	{ 0x13FA, 0x13F2, },
@@ -611,6 +658,7 @@ struct UTF8_lower_upper {
 	{ 0x1C88, 0xA64A, },
 	{ 0x1D79, 0xA77D, },
 	{ 0x1D7D, 0x2C63, },
+	{ 0x1D8E, 0xA7C6, },
 	{ 0x1E01, 0x1E00, },
 	{ 0x1E03, 0x1E02, },
 	{ 0x1E05, 0x1E04, },
@@ -1109,6 +1157,7 @@ struct UTF8_lower_upper {
 	{ 0xA78C, 0xA78B, },
 	{ 0xA791, 0xA790, },
 	{ 0xA793, 0xA792, },
+	{ 0xA794, 0xA7C4, },
 	{ 0xA797, 0xA796, },
 	{ 0xA799, 0xA798, },
 	{ 0xA79B, 0xA79A, },
@@ -1121,6 +1170,11 @@ struct UTF8_lower_upper {
 	{ 0xA7A9, 0xA7A8, },
 	{ 0xA7B5, 0xA7B4, },
 	{ 0xA7B7, 0xA7B6, },
+	{ 0xA7B9, 0xA7B8, },
+	{ 0xA7BB, 0xA7BA, },
+	{ 0xA7BD, 0xA7BC, },
+	{ 0xA7BF, 0xA7BE, },
+	{ 0xA7C3, 0xA7C2, },
 	{ 0xAB53, 0xA7B3, },
 	{ 0xAB70, 0x13A0, },
 	{ 0xAB71, 0x13A1, },
@@ -1387,6 +1441,38 @@ struct UTF8_lower_upper {
 	{ 0x118DD, 0x118BD, },
 	{ 0x118DE, 0x118BE, },
 	{ 0x118DF, 0x118BF, },
+	{ 0x16E60, 0x16E40, },
+	{ 0x16E61, 0x16E41, },
+	{ 0x16E62, 0x16E42, },
+	{ 0x16E63, 0x16E43, },
+	{ 0x16E64, 0x16E44, },
+	{ 0x16E65, 0x16E45, },
+	{ 0x16E66, 0x16E46, },
+	{ 0x16E67, 0x16E47, },
+	{ 0x16E68, 0x16E48, },
+	{ 0x16E69, 0x16E49, },
+	{ 0x16E6A, 0x16E4A, },
+	{ 0x16E6B, 0x16E4B, },
+	{ 0x16E6C, 0x16E4C, },
+	{ 0x16E6D, 0x16E4D, },
+	{ 0x16E6E, 0x16E4E, },
+	{ 0x16E6F, 0x16E4F, },
+	{ 0x16E70, 0x16E50, },
+	{ 0x16E71, 0x16E51, },
+	{ 0x16E72, 0x16E52, },
+	{ 0x16E73, 0x16E53, },
+	{ 0x16E74, 0x16E54, },
+	{ 0x16E75, 0x16E55, },
+	{ 0x16E76, 0x16E56, },
+	{ 0x16E77, 0x16E57, },
+	{ 0x16E78, 0x16E58, },
+	{ 0x16E79, 0x16E59, },
+	{ 0x16E7A, 0x16E5A, },
+	{ 0x16E7B, 0x16E5B, },
+	{ 0x16E7C, 0x16E5C, },
+	{ 0x16E7D, 0x16E5D, },
+	{ 0x16E7E, 0x16E5E, },
+	{ 0x16E7F, 0x16E5F, },
 	{ 0x1E922, 0x1E900, },
 	{ 0x1E923, 0x1E901, },
 	{ 0x1E924, 0x1E902, },
@@ -2017,6 +2103,52 @@ struct UTF8_lower_upper {
 	{ 0x13F3, 0x13FB, },
 	{ 0x13F4, 0x13FC, },
 	{ 0x13F5, 0x13FD, },
+	{ 0x1C90, 0x10D0, },
+	{ 0x1C91, 0x10D1, },
+	{ 0x1C92, 0x10D2, },
+	{ 0x1C93, 0x10D3, },
+	{ 0x1C94, 0x10D4, },
+	{ 0x1C95, 0x10D5, },
+	{ 0x1C96, 0x10D6, },
+	{ 0x1C97, 0x10D7, },
+	{ 0x1C98, 0x10D8, },
+	{ 0x1C99, 0x10D9, },
+	{ 0x1C9A, 0x10DA, },
+	{ 0x1C9B, 0x10DB, },
+	{ 0x1C9C, 0x10DC, },
+	{ 0x1C9D, 0x10DD, },
+	{ 0x1C9E, 0x10DE, },
+	{ 0x1C9F, 0x10DF, },
+	{ 0x1CA0, 0x10E0, },
+	{ 0x1CA1, 0x10E1, },
+	{ 0x1CA2, 0x10E2, },
+	{ 0x1CA3, 0x10E3, },
+	{ 0x1CA4, 0x10E4, },
+	{ 0x1CA5, 0x10E5, },
+	{ 0x1CA6, 0x10E6, },
+	{ 0x1CA7, 0x10E7, },
+	{ 0x1CA8, 0x10E8, },
+	{ 0x1CA9, 0x10E9, },
+	{ 0x1CAA, 0x10EA, },
+	{ 0x1CAB, 0x10EB, },
+	{ 0x1CAC, 0x10EC, },
+	{ 0x1CAD, 0x10ED, },
+	{ 0x1CAE, 0x10EE, },
+	{ 0x1CAF, 0x10EF, },
+	{ 0x1CB0, 0x10F0, },
+	{ 0x1CB1, 0x10F1, },
+	{ 0x1CB2, 0x10F2, },
+	{ 0x1CB3, 0x10F3, },
+	{ 0x1CB4, 0x10F4, },
+	{ 0x1CB5, 0x10F5, },
+	{ 0x1CB6, 0x10F6, },
+	{ 0x1CB7, 0x10F7, },
+	{ 0x1CB8, 0x10F8, },
+	{ 0x1CB9, 0x10F9, },
+	{ 0x1CBA, 0x10FA, },
+	{ 0x1CBD, 0x10FD, },
+	{ 0x1CBE, 0x10FE, },
+	{ 0x1CBF, 0x10FF, },
 	{ 0x1E00, 0x1E01, },
 	{ 0x1E02, 0x1E03, },
 	{ 0x1E04, 0x1E05, },
@@ -2507,6 +2639,14 @@ struct UTF8_lower_upper {
 	{ 0xA7B3, 0xAB53, },
 	{ 0xA7B4, 0xA7B5, },
 	{ 0xA7B6, 0xA7B7, },
+	{ 0xA7B8, 0xA7B9, },
+	{ 0xA7BA, 0xA7BB, },
+	{ 0xA7BC, 0xA7BD, },
+	{ 0xA7BE, 0xA7BF, },
+	{ 0xA7C2, 0xA7C3, },
+	{ 0xA7C4, 0xA794, },
+	{ 0xA7C5, 0x0282, },
+	{ 0xA7C6, 0x1D8E, },
 	{ 0xFF21, 0xFF41, },
 	{ 0xFF22, 0xFF42, },
 	{ 0xFF23, 0xFF43, },
@@ -2692,6 +2832,38 @@ struct UTF8_lower_upper {
 	{ 0x118BD, 0x118DD, },
 	{ 0x118BE, 0x118DE, },
 	{ 0x118BF, 0x118DF, },
+	{ 0x16E40, 0x16E60, },
+	{ 0x16E41, 0x16E61, },
+	{ 0x16E42, 0x16E62, },
+	{ 0x16E43, 0x16E63, },
+	{ 0x16E44, 0x16E64, },
+	{ 0x16E45, 0x16E65, },
+	{ 0x16E46, 0x16E66, },
+	{ 0x16E47, 0x16E67, },
+	{ 0x16E48, 0x16E68, },
+	{ 0x16E49, 0x16E69, },
+	{ 0x16E4A, 0x16E6A, },
+	{ 0x16E4B, 0x16E6B, },
+	{ 0x16E4C, 0x16E6C, },
+	{ 0x16E4D, 0x16E6D, },
+	{ 0x16E4E, 0x16E6E, },
+	{ 0x16E4F, 0x16E6F, },
+	{ 0x16E50, 0x16E70, },
+	{ 0x16E51, 0x16E71, },
+	{ 0x16E52, 0x16E72, },
+	{ 0x16E53, 0x16E73, },
+	{ 0x16E54, 0x16E74, },
+	{ 0x16E55, 0x16E75, },
+	{ 0x16E56, 0x16E76, },
+	{ 0x16E57, 0x16E77, },
+	{ 0x16E58, 0x16E78, },
+	{ 0x16E59, 0x16E79, },
+	{ 0x16E5A, 0x16E7A, },
+	{ 0x16E5B, 0x16E7B, },
+	{ 0x16E5C, 0x16E7C, },
+	{ 0x16E5D, 0x16E7D, },
+	{ 0x16E5E, 0x16E7E, },
+	{ 0x16E5F, 0x16E7F, },
 	{ 0x1E900, 0x1E922, },
 	{ 0x1E901, 0x1E923, },
 	{ 0x1E902, 0x1E924, },
@@ -3047,7 +3219,7 @@ convertCase(BAT *from, BAT *to, str *res, const char *src, const char *malfunc)
 	if (*res != NULL)
 		return MAL_SUCCEED;
   hashfnd_failed:
-	throw(MAL, malfunc, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	throw(MAL, malfunc, SQLSTATE(HY013) MAL_MALLOC_FAIL);
   illegal:
 	throw(MAL, malfunc, SQLSTATE(42000) "Illegal Unicode code point");
 }
@@ -3120,7 +3292,7 @@ STRtostr(str *res, const str *src)
 	else
 		*res = GDKstrdup(*src);
 	if (*res == NULL)
-		throw(MAL, "str.str", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "str.str", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -3143,7 +3315,7 @@ STRConcat(str *res, const str *val1, const str *val2)
 		}
 	}
 	if (*res == NULL)
-		throw(MAL, "str.concat", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "str.concat", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -3196,7 +3368,7 @@ STRTail(str *res, const str *arg1, const int *offset)
 		*res = GDKstrdup(UTF8_strtail(s, off));
 	}
 	if (*res == NULL)
-		throw(MAL, "str.tail", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "str.tail", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -3210,7 +3382,7 @@ STRSubString(str *res, const str *arg1, const int *offset, const int *length)
 	if (strNil(s) || is_int_nil(off) || is_int_nil(l)) {
 		*res = GDKstrdup(str_nil);
 		if (*res == NULL)
-			throw(MAL, "str.substring", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "str.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 	if (off < 0) {
@@ -3228,16 +3400,15 @@ STRSubString(str *res, const str *arg1, const int *offset, const int *length)
 	if (l < 0) {
 		*res = GDKstrdup("");
 		if (*res == NULL)
-			throw(MAL, "str.substring", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "str.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 	s = UTF8_strtail(s, off);
 	len = (size_t) (UTF8_strtail(s, l) - s);
 	*res = GDKmalloc(len + 1);
 	if (*res == NULL)
-		throw(MAL, "str.substring", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-	strncpy(*res, s, len);
-	(*res)[len] = 0;
+		throw(MAL, "str.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	strcpy_len(*res, s, len + 1);
 	return MAL_SUCCEED;
 }
 
@@ -3249,13 +3420,13 @@ STRFromWChr(str *res, const int *c)
 	if (is_int_nil(*c)) {
 		*res = GDKstrdup(str_nil);
 		if (*res == NULL)
-			throw(MAL, "str.unicode", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "str.unicode", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 
 	s = *res = GDKmalloc(5);
 	if (*res == NULL)
-		throw(MAL, "str.unicode", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "str.unicode", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	UTF8_PUTCHAR(*c, s);
 	*s = 0;
 	return MAL_SUCCEED;
@@ -3396,7 +3567,7 @@ STRsplitpart(str *res, str *haystack, str *needle, int *field)
 	if (strNil(s) || is_int_nil(*field)) {
 		*res = GDKstrdup(str_nil);
 		if (*res == NULL)
-			throw(MAL, "str.splitpart", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "str.splitpart", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 
@@ -3414,7 +3585,7 @@ STRsplitpart(str *res, str *haystack, str *needle, int *field)
 	if (f != 1) {
 		*res = GDKstrdup("");
 		if (*res == NULL)
-			throw(MAL, "str.splitpart", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "str.splitpart", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 
@@ -3426,7 +3597,7 @@ STRsplitpart(str *res, str *haystack, str *needle, int *field)
 
 	*res = GDKstrndup(s, len);
 	if (*res == NULL)
-		throw(MAL, "str.splitpart", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "str.splitpart", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -3523,7 +3694,7 @@ STRStrip(str *res, const str *arg1)
 		*res = GDKstrndup(s, n);
 	}
 	if (*res == NULL)
-		throw(MAL, "str.trim", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "str.trim", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -3543,7 +3714,7 @@ STRLtrim(str *res, const str *arg1)
 		*res = GDKstrndup(s + n, len - n);
 	}
 	if (*res == NULL)
-		throw(MAL, "str.ltrim", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "str.ltrim", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -3563,7 +3734,7 @@ STRRtrim(str *res, const str *arg1)
 		*res = GDKstrndup(s, n);
 	}
 	if (*res == NULL)
-		throw(MAL, "str.rtrim", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "str.rtrim", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -3606,7 +3777,7 @@ STRStrip2(str *res, const str *arg1, const str *arg2)
 	} else {
 		chars = trimchars(*arg2, &nchars);
 		if (chars == NULL)
-			throw(MAL, "str.trim", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "str.trim", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		len = strlen(s);
 		n = lstrip(s, len, chars, nchars);
 		s += n;
@@ -3616,7 +3787,7 @@ STRStrip2(str *res, const str *arg1, const str *arg2)
 		*res = GDKstrndup(s, n);
 	}
 	if (*res == NULL)
-		throw(MAL, "str.trim", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "str.trim", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -3636,14 +3807,14 @@ STRLtrim2(str *res, const str *arg1, const str *arg2)
 	} else {
 		chars = trimchars(*arg2, &nchars);
 		if (chars == NULL)
-			throw(MAL, "str.trim", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "str.trim", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		len = strlen(s);
 		n = lstrip(s, len, chars, nchars);
 		GDKfree(chars);
 		*res = GDKstrndup(s + n, len - n);
 	}
 	if (*res == NULL)
-		throw(MAL, "str.ltrim", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "str.ltrim", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -3663,14 +3834,14 @@ STRRtrim2(str *res, const str *arg1, const str *arg2)
 	} else {
 		chars = trimchars(*arg2, &nchars);
 		if (chars == NULL)
-			throw(MAL, "str.trim", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "str.trim", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		len = strlen(s);
 		n = rstrip(s, len, chars, nchars);
 		GDKfree(chars);
 		*res = GDKstrndup(s, n);
 	}
 	if (*res == NULL)
-		throw(MAL, "str.rtrim", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "str.rtrim", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -3740,7 +3911,7 @@ STRLpad(str *res, const str *arg1, const int *len)
 {
 	*res = pad(*arg1, " ", *len, 1);
 	if (*res == NULL)
-		throw(MAL, "str.lpad", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "str.lpad", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -3756,7 +3927,7 @@ STRRpad(str *res, const str *arg1, const int *len)
 {
 	*res = pad(*arg1, " ", *len, 0);
 	if (*res == NULL)
-		throw(MAL, "str.rpad", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "str.rpad", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -3775,7 +3946,7 @@ STRLpad2(str *res, const str *arg1, const int *len, const str *arg2)
 
 	*res = pad(*arg1, *arg2, *len, 1);
 	if (*res == NULL)
-		throw(MAL, "str.lpad", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "str.lpad", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -3794,7 +3965,7 @@ STRRpad2(str *res, const str *arg1, const int *len, const str *arg2)
 
 	*res = pad(*arg1, *arg2, *len, 0);
 	if (*res == NULL)
-		throw(MAL, "str.rpad", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "str.rpad", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -3815,7 +3986,7 @@ STRSubstitute(str *res, const str *arg1, const str *arg2, const str *arg3, const
 
 	if (s == NULL || strcmp(s, str_nil) == 0) {
 		if ((*res = GDKstrdup(str_nil)) == NULL)
-			throw(MAL, "str.substitute", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "str.substitute", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 
@@ -3825,7 +3996,7 @@ STRSubstitute(str *res, const str *arg1, const str *arg2, const str *arg3, const
 	}
 	buf = *res = GDKmalloc(n);
 	if (*res == NULL)
-		throw(MAL, "str.substitute", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "str.substitute", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	pfnd = s;
 	if (lsrc == 0)
@@ -3911,13 +4082,13 @@ STRinsert(str *ret, const str *s, const int *start, const int *l, const str *s2)
 	int strt = *start;
 	if (strcmp(*s2, str_nil) == 0 || strcmp(*s, str_nil) == 0) {
 		if ((*ret = GDKstrdup(str_nil)) == NULL)
-			throw(MAL, "str.insert", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "str.insert", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	} else {
 		size_t l1 = strlen(*s);
 		size_t l2 = strlen(*s2);
 
 		if (l1 + l2 + 1 >= INT_MAX) {
-			throw(MAL, "str.insert", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "str.insert", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		if (*l < 0)
 			throw(MAL, "str.insert", SQLSTATE(42000) ILLEGAL_ARGUMENT);
@@ -3931,7 +4102,7 @@ STRinsert(str *ret, const str *s, const int *start, const int *l, const str *s2)
 			strt = (int) l1;
 		v = *ret = GDKmalloc(strlen(*s) + strlen(*s2) + 1);
 		if (v == NULL)
-			throw(MAL, "str.insert", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "str.insert", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		if (strt > 0)
 			strncpy(v, *s, strt);
 		v[strt] = 0;
@@ -3957,15 +4128,15 @@ STRrepeat(str *ret, const str *s, const int *c)
 
 	if (*c < 0 || strcmp(*s, str_nil) == 0) {
 		if ((*ret = GDKstrdup(str_nil)) == NULL)
-			throw(MAL, "str.repeat", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "str.repeat", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	} else {
 		l = strlen(*s);
 		if (l >= INT_MAX)
-			throw(MAL, "str.repeat", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "str.repeat", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		t = *ret = GDKmalloc( *c * l + 1);
 
 		if (!t)
-			throw(MAL, "str.repeat", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "str.repeat", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		*t = 0;
 		for(i = *c; i>0; i--, t += l)
 			strcpy(t, *s);

@@ -14,7 +14,6 @@ stdout of test 'exp_name_bug` in directory 'sql/test/osm` itself:
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:34888/
 # MonetDB/SQL module v2.27.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

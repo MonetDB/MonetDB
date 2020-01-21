@@ -10,6 +10,7 @@ SELECT (SELECT COUNT(id) AS cnt1
          WHERE a.id = b.id
        ) AS c2
   FROM test1 a
+  ORDER BY 1, 2
 ;
 
 SELECT (SELECT COUNT(id) AS cnt1 
@@ -20,6 +21,7 @@ SELECT (SELECT COUNT(id) AS cnt1
          WHERE a.id = b.id
        )
   FROM test1 a
+  ORDER BY 1, 2
 ;
 
 SELECT (SELECT COUNT(id) AS cnt1 
@@ -30,6 +32,7 @@ SELECT (SELECT COUNT(id) AS cnt1
          WHERE a.id = b.id
        ) AS c2
   FROM test1 a
+  ORDER BY 1, 2
 ;
 
 SELECT (SELECT COUNT(b.id) AS cnt2 
@@ -40,6 +43,7 @@ SELECT (SELECT COUNT(b.id) AS cnt2
           FROM test1 
        ) AS c1
   FROM test1 a
+  ORDER BY 1, 2
 ;
 
 SELECT (SELECT COUNT(id) AS cnt1 
@@ -50,6 +54,7 @@ SELECT (SELECT COUNT(id) AS cnt1
          WHERE a.id = b.id
        ) AS c2
   FROM test1 a
+  ORDER BY 1, 2
 ;
 
 DROP TABLE test1;
@@ -70,6 +75,7 @@ SELECT (SELECT COUNT(id) AS cnt1
          WHERE a.id = b.id
        ) AS c2
   FROM test1 a
+  ORDER BY 1, 2
 ;
 SELECT (SELECT COUNT(id) AS cnt1 
           FROM test1 
@@ -79,6 +85,7 @@ SELECT (SELECT COUNT(id) AS cnt1
          WHERE a.id = b.id
        )
   FROM test1 a
+  ORDER BY 1, 2
 ;
 
 SELECT (SELECT COUNT(id) AS cnt1 
@@ -89,6 +96,7 @@ SELECT (SELECT COUNT(id) AS cnt1
          WHERE a.id = b.id
        ) AS c2
   FROM test1 a
+  ORDER BY 1, 2
 ;
 
 SELECT (SELECT COUNT(b.id) AS cnt2 
@@ -99,6 +107,7 @@ SELECT (SELECT COUNT(b.id) AS cnt2
           FROM test1 
        ) AS c1
   FROM test1 a
+  ORDER BY 1, 2
 ;
 
 SELECT (SELECT COUNT(id) AS cnt1 
@@ -109,6 +118,7 @@ SELECT (SELECT COUNT(id) AS cnt1
          WHERE a.id = b.id
        ) AS c2
   FROM test1 a
+  ORDER BY 1, 2
 ;
 
 DROP TABLE test1;

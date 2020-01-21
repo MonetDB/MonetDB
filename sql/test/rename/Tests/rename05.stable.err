@@ -34,7 +34,7 @@ ERROR = !ALTER SCHEMA: cannot rename a system schema
 CODE  = 3F000
 MAPI  = (monetdb) /var/tmp/mtest-23272/.s.monetdb.36538
 QUERY = alter table "ntable" rename to "ttable"; --error because of dependencies
-ERROR = !ALTER TABLE: unable to rename table ntable (there are database objects which depend on it)
+ERROR = !ALTER TABLE: unable to rename table 'ntable' (there are database objects which depend on it)
 CODE  = 2BM37
 
 # 10:55:46 >  

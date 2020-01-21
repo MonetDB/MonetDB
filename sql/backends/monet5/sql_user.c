@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -168,7 +168,7 @@ db_password_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BAT *bn = COLnew(b->hseqbase, TYPE_str, BATcount(b), TRANSIENT);
 		if (bn == NULL) {
 			BBPunfix(b->batCacheid);
-			throw(SQL, "sql.password", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(SQL, "sql.password", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		BATiter bi = bat_iterator(b);
 		BUN p, q;
@@ -183,7 +183,7 @@ db_password_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (BUNappend(bn, hash, false) != GDK_SUCCEED) {
 				BBPunfix(b->batCacheid);
 				BBPreclaim(bn);
-				throw(SQL, "sql.password", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				throw(SQL, "sql.password", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 			GDKfree(hash);
 		}
@@ -225,13 +225,17 @@ monet5_create_privileges(ptr _mvc, sql_schema *s)
 	   with the approriate scenario (sql) */
 	mvc_create_func(m, NULL, s, "db_users", ops, res, F_UNION, FUNC_LANG_SQL, "sql", "db_users", "CREATE FUNCTION db_users () RETURNS TABLE( name varchar(2048)) EXTERNAL NAME sql.db_users;", FALSE, FALSE, TRUE);
 
-	t = mvc_create_view(m, s, "users", SQL_PERSIST,
+	t = mvc_init_create_view(m, s, "users",
 			    "SELECT u.\"name\" AS \"name\", "
 			    "ui.\"fullname\", ui.\"default_schema\" "
 			    "FROM db_users() AS u LEFT JOIN "
 			    "\"sys\".\"db_user_info\" AS ui "
-			    "ON u.\"name\" = ui.\"name\" "
-			    ";", 1);
+			    "ON u.\"name\" = ui.\"name\";");
+	if (!t) {
+		TRC_CRITICAL(SQL_USER, "Failed to create 'users' view\n");
+		return ;
+	}
+
 	mvc_create_column_(m, t, "name", "varchar", 1024);
 	mvc_create_column_(m, t, "fullname", "varchar", 2024);
 	mvc_create_column_(m, t, "default_schema", "int", 9);
@@ -501,8 +505,7 @@ monet5_user_set_def_schema(mvc *m, oid user)
 	str username = NULL;
 	str err = NULL;
 
-	if (m->debug &1)
-		fprintf(stderr, "monet5_user_set_def_schema " OIDFMT "\n", user);
+	TRC_DEBUG(SQL_USER, OIDFMT "\n", user);
 
 	if ((err = AUTHresolveUser(&username, user)) !=MAL_SUCCEED) {
 		freeException(err);
@@ -552,9 +555,9 @@ monet5_user_set_def_schema(mvc *m, oid user)
 	}
 
 	if (!schema || !mvc_set_schema(m, schema)) {
-		if (m->session->active) {
+		if (m->session->tr->active) {
 			if((other = mvc_rollback(m, 0, NULL, false)) != MAL_SUCCEED)
-				GDKfree(other);
+				freeException(other);
 		}
 		GDKfree(username);
 		return NULL;
@@ -567,7 +570,7 @@ monet5_user_set_def_schema(mvc *m, oid user)
 	}
 	GDKfree(username);
 	if((other = mvc_rollback(m, 0, NULL, false)) != MAL_SUCCEED) {
-		GDKfree(other);
+		freeException(other);
 		return NULL;
 	}
 	return schema;

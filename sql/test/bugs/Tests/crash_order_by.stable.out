@@ -14,7 +14,6 @@ stdout of test 'crash_order_by` in directory 'sql/test/bugs` itself:
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:38180/
 # MonetDB/SQL module v2.30.0 loaded
 
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql
@@ -72,8 +71,8 @@ Ready.
 #2086	"idxs"	2000	NULL	0	true	0	false	0
 [ 40	]
 #select row_number() over (order by name) as row, '1' from tbls limit 10;
-% sys.L5,	.L7 # table_name
-% row,	L7 # name
+% sys.,	. # table_name
+% row,	single_value # name
 % int,	char # type
 % 2,	1 # length
 [ 1,	"1"	]

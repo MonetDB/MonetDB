@@ -14,7 +14,6 @@ stdout of test 'number_between_col1_and_col2` in directory 'sql/test/BugTracker-
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:34392/
 # MonetDB/SQL module v2.28.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

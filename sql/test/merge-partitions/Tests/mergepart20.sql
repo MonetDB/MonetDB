@@ -3,8 +3,8 @@ CREATE TABLE subtable1 (a int, b varchar(32));
 CREATE TABLE subtable2 (a int, b varchar(32));
 SELECT column_id, expression FROM table_partitions;
 
-ALTER TABLE testme ADD TABLE subtable1 AS PARTITION BETWEEN '00000000000000000000000000000000' AND '7fffffffffffffffffffffffffffffff';
-ALTER TABLE testme ADD TABLE subtable2 AS PARTITION BETWEEN '80000000000000000000000000000000' AND 'ffffffffffffffffffffffffffffffff';
+ALTER TABLE testme ADD TABLE subtable1 AS PARTITION FROM '00000000000000000000000000000000' TO '7fffffffffffffffffffffffffffffff';
+ALTER TABLE testme ADD TABLE subtable2 AS PARTITION FROM '80000000000000000000000000000000' TO 'ffffffffffffffffffffffffffffffff';
 
 INSERT INTO testme VALUES (1, 'first'), (2000, 'second'), (3, 'third'), (4000, 'fourth');
 
@@ -30,9 +30,9 @@ CREATE TABLE subtable1 (a int, b varchar(32));
 CREATE TABLE subtable2 (a int, b varchar(32));
 CREATE TABLE subtable3 (a int, b varchar(32));
 
-ALTER TABLE testme ADD TABLE subtable1 AS PARTITION BETWEEN 11 AND 20;
-ALTER TABLE testme ADD TABLE subtable2 AS PARTITION BETWEEN 1 AND 10;
-ALTER TABLE testme ADD TABLE subtable3 AS PARTITION BETWEEN 'abc' AND 'cde'; --error
+ALTER TABLE testme ADD TABLE subtable1 AS PARTITION FROM 11 TO 20;
+ALTER TABLE testme ADD TABLE subtable2 AS PARTITION FROM 1 TO 10;
+ALTER TABLE testme ADD TABLE subtable3 AS PARTITION FROM 'abc' TO 'cde'; --error
 
 INSERT INTO testme VALUES (1, 'first'), (10, 'second'), (2, 'third'), (15, 'fourth');
 INSERT INTO testme VALUES (12, 'this'), (6, 'not'), (50, 'ok'); --error

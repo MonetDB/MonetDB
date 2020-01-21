@@ -4,23 +4,23 @@ select
   subq_0.c1 as c2
 from 
   (select  
-        ref_0.rrsmb as c0, 
-        ref_0.ticks as c1, 
-        ref_0.thread as c2, 
+        ref_0.stmt as c0, 
+        ref_0.stmt as c1, 
+        ref_0.stmt as c2, 
         92 as c3, 
-        ref_0.majflt as c4, 
+        ref_0.stmt as c4, 
         ref_0.stmt as c5, 
-        ref_0.minflt as c6, 
-        ref_0.majflt as c7, 
-        ref_0.majflt as c8, 
+        ref_0.stmt as c6, 
+        ref_0.stmt as c7, 
+        ref_0.stmt as c8, 
         36 as c9, 
-        ref_0.writes as c10, 
-        ref_0.writes as c11, 
-        ref_0.thread as c12, 
-        ref_0.thread as c13
+        ref_0.stmt as c10, 
+        ref_0.stmt as c11, 
+        ref_0.stmt as c12, 
+        ref_0.stmt as c13
       from 
         sys.tracelog as ref_0
-      where ref_0.rrsmb is NULL
+      where ref_0.stmt is NULL
       limit 90) as subq_0
 where EXISTS (
   select  

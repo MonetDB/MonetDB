@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*  author M.L. Kersten
@@ -95,13 +95,11 @@ struct{
 };
 mal_export str OPTwrapper(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
-#define OPTIMIZERDEBUG if (0) 
-
 str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	str modnme = "(NONE)";
 	str fcnnme = "(NONE)";
 	Symbol s= NULL;
-	int i, actions = 0;
+	int i;
 	char optimizer[256];
 	str msg = MAL_SUCCEED;
 	lng clk;
@@ -116,8 +114,6 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		throw(MAL, "opt_wrapper", SQLSTATE(42000) "MAL block contains errors");
 	snprintf(optimizer,256,"%s", fcnnme = getFunctionId(p));
 
-	OPTIMIZERDEBUG 
-		fprintf(stderr,"=APPLY OPTIMIZER %s\n",fcnnme);
 	if( p && p->argc > 1 ){
 		if( getArgType(mb,p,1) != TYPE_str ||
 			getArgType(mb,p,2) != TYPE_str ||
@@ -154,19 +150,16 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 			msg = (str)(*(codes[i].fcn))(cntxt, mb, stk, 0);
 			codes[i].timing += GDKusec() - clk;
 			codes[i].calls++;
-			if (msg) 
-				throw(MAL, optimizer, SQLSTATE(42000) "Error in optimizer %s", optimizer);
+			if (msg) {
+				throw(MAL, optimizer, SQLSTATE(42000) "Error in optimizer %s: %s", optimizer, msg);
+			}
 			break;	
 		}
 	if (codes[i].nme == 0)
 		throw(MAL, optimizer, SQLSTATE(HY002) "Optimizer implementation '%s' missing", fcnnme);
 
-	OPTIMIZERDEBUG {
-		fprintf(stderr,"=FINISHED %s  %d\n",optimizer, actions);
-		fprintFunction(stderr,mb,0,LIST_MAL_DEBUG );
-	}
 	if ( mb->errors)
-		throw(MAL, optimizer, SQLSTATE(42000) PROGRAM_GENERAL ":%s.%s", modnme, fcnnme);
+		throw(MAL, optimizer, SQLSTATE(42000) PROGRAM_GENERAL ":%s.%s %s", modnme, fcnnme, mb->errors);
 	return MAL_SUCCEED;
 }
 
@@ -190,7 +183,7 @@ OPTstatistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		BBPreclaim(n);
 		BBPreclaim(c);
 		BBPreclaim(t);
-		throw(MAL,"optimizer.statistics", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL,"optimizer.statistics", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	for( i= 0; codes[i].nme; i++){
 		if (BUNappend(n, codes[i].nme, false) != GDK_SUCCEED ||
@@ -199,7 +192,7 @@ OPTstatistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			BBPreclaim(n);
 			BBPreclaim(c);
 			BBPreclaim(t);
-			throw(MAL,"optimizer.statistics", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL,"optimizer.statistics", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 	}
 	BBPkeepref( *nme = n->batCacheid);

@@ -68,3 +68,4 @@ WHERE sr_items.item_id=cr_items.item_id
 ORDER BY sr_items.item_id ,
          sr_item_qty
 LIMIT 100;
+

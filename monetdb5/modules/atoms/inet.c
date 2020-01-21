@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -63,9 +63,9 @@ typedef struct _inet {
  * big endian hardware, the byte that is not zero is on the other end;
  * luckily, a mask of 0 is pretty useless, so we regard 128.0.0.0/0
  * also as nil */
-#define in_isnil(i) ((((i)->q1 == 0 && (i)->isnil != 0) || ((i)->q1 == 128 && (i)->isnil == 0 && (i)->filler1 == 0 && (i)->filler2 == 0)) && (i)->q2 == 0 && (i)->q3 == 0 && (i)->q4 == 0 && (i)->mask == 0)
+#define is_inet_nil(i) ((((i)->q1 == 0 && (i)->isnil != 0) || ((i)->q1 == 128 && (i)->isnil == 0 && (i)->filler1 == 0 && (i)->filler2 == 0)) && (i)->q2 == 0 && (i)->q3 == 0 && (i)->q4 == 0 && (i)->mask == 0)
 #else
-#define in_isnil(i) ((i)->q1 == 0 && (i)->q2 == 0 && (i)->q3 == 0 && (i)->q4 == 0 && (i)->mask == 0 && (i)->isnil != 0)
+#define is_inet_nil(i) ((i)->q1 == 0 && (i)->q2 == 0 && (i)->q3 == 0 && (i)->q4 == 0 && (i)->mask == 0 && (i)->isnil != 0)
 #endif
 #define in_setnil(i) (i)->q1 = (i)->q2 = (i)->q3 = (i)->q4 = (i)->mask = (i)->filler1 = (i)->filler2 = 0; (i)->isnil = 1
 
@@ -239,7 +239,7 @@ INETtoString(str *retval, size_t *len, const inet *handle, bool external)
 		if( *retval == NULL)
 			return -1;
 	}
-	if (in_isnil(value)) {
+	if (is_inet_nil(value)) {
 		if (external)
 			return snprintf(*retval, *len, "nil");
 		strcpy(*retval, str_nil);
@@ -274,9 +274,9 @@ int
 INETcompare(const inet *l, const inet *r)
 {
 	bit res = 0;
-	if (in_isnil(l))
-		return in_isnil(r) ? 0 : -1;
-	if (in_isnil(r))
+	if (is_inet_nil(l))
+		return is_inet_nil(r) ? 0 : -1;
+	if (is_inet_nil(r))
 		return 1;
 	INET_comp_EQ(&res, l, r);
 	if (res)
@@ -294,7 +294,7 @@ INETcompare(const inet *l, const inet *r)
 str
 INET_isnil(bit *retval, const inet *val)
 {
-	*retval = in_isnil(val);
+	*retval = is_inet_nil(val);
 
 	return (MAL_SUCCEED);
 }
@@ -304,7 +304,7 @@ INET_isnil(bit *retval, const inet *val)
 str
 INET_comp_EQ(bit *retval, const inet *val1, const inet *val2)
 {
-	if (in_isnil(val1) || in_isnil(val2)) {
+	if (is_inet_nil(val1) || is_inet_nil(val2)) {
 		*retval = bit_nil;
 	} else if (val1->q1 == val2->q1 && val1->q2 == val2->q2 &&
 			   val1->q3 == val2->q3 && val1->q4 == val2->q4 &&
@@ -322,7 +322,7 @@ INET_comp_EQ(bit *retval, const inet *val1, const inet *val2)
 str
 INET_comp_NEQ(bit *retval, const inet *val1, const inet *val2)
 {
-	if (in_isnil(val1) || in_isnil(val2)) {
+	if (is_inet_nil(val1) || is_inet_nil(val2)) {
 		*retval = bit_nil;
 	} else if (val1->q1 == val2->q1 && val1->q2 == val2->q2 &&
 			   val1->q3 == val2->q3 && val1->q4 == val2->q4 &&
@@ -340,7 +340,7 @@ INET_comp_NEQ(bit *retval, const inet *val1, const inet *val2)
 str
 INET_comp_LT(bit *retval, const inet *val1, const inet *val2)
 {
-	if (in_isnil(val1) || in_isnil(val2)) {
+	if (is_inet_nil(val1) || is_inet_nil(val2)) {
 		*retval = bit_nil;
 	} else if (val1->q1 < val2->q1) {
 		*retval = 1;
@@ -412,7 +412,7 @@ INET_comp_GE(bit *retval, const inet *val1, const inet *val2)
 str
 INET_comp_CW(bit *retval, const inet *val1, const inet *val2)
 {
-	if (in_isnil(val1) || in_isnil(val2)) {
+	if (is_inet_nil(val1) || is_inet_nil(val2)) {
 		*retval = bit_nil;
 	} else if (val1->mask <= val2->mask) {
 		/* if the mask is bigger (less specific) or equal it can never
@@ -434,13 +434,11 @@ INET_comp_CW(bit *retval, const inet *val1, const inet *val2)
 
 		/* all operations here are done byte based, to avoid byte sex
 		 * problems */
-
-		/* if you want to see some bytes, remove this comment
-		   fprintf(stderr, "%x %x %x %x => %x %x %x %x  %x %x %x %x\n",
-		   m[0], m[1], m[2], m[3], val1->q1, val1->q2,
-		   val1->q3, val1->q4, val2->q1, val2->q2, val2->q3,
-		   val2->q4);
-		 */
+		TRC_DEBUG(MAL_ATOMS, 
+			"%x %x %x %x => %x %x %x %x  %x %x %x %x\n",
+		   	m[0], m[1], m[2], m[3], val1->q1, val1->q2,
+		   	val1->q3, val1->q4, val2->q1, val2->q2, val2->q3,
+		   	val2->q4);
 
 		if ((val1->q1 & m[0]) == (val2->q1 & m[0]) &&
 			(val1->q2 & m[1]) == (val2->q2 & m[1]) &&
@@ -510,7 +508,7 @@ str
 INETbroadcast(inet *retval, const inet *val)
 {
 	*retval = *val;
-	if (!in_isnil(val) && val->mask != 32) {
+	if (!is_inet_nil(val) && val->mask != 32) {
 		unsigned int msk;
 		unsigned char m[4];
 
@@ -525,11 +523,10 @@ INETbroadcast(inet *retval, const inet *val)
 		m[2] = (msk >> 8) & 0xFF;
 		m[3] = msk & 0xFF;
 
-		/* if you want to see some bytes, remove this comment
-		   fprintf(stderr, "%x %x %x %x => %x %x %x %x\n",
-		   m[0], m[1], m[2], m[3], val->q1, val->q2,
-		   val->q3, val->q4);
-		 */
+		TRC_DEBUG(MAL_ATOMS, 
+			"%x %x %x %x => %x %x %x %x\n",
+			m[0], m[1], m[2], m[3], val->q1, val->q2,
+		   	val->q3, val->q4);
 
 		/* apply the inverted mask, so we get the broadcast */
 		retval->q1 |= m[0];
@@ -556,14 +553,14 @@ INEThost(str *retval, const inet *val)
 {
 	str ip;
 
-	if (in_isnil(val)) {
+	if (is_inet_nil(val)) {
 		*retval = GDKstrdup(str_nil);
 		if( *retval == NULL)
-			throw(MAL,"INEThost", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL,"INEThost", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	} else {
 		ip = GDKmalloc(sizeof(char) * 16);
 		if( ip == NULL)
-			throw(MAL,"INEThost", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL,"INEThost", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		sprintf(ip, "%d.%d.%d.%d", val->q1, val->q2, val->q3, val->q4);
 		*retval = ip;
 	}
@@ -575,7 +572,7 @@ INEThost(str *retval, const inet *val)
 str
 INETmasklen(int *retval, const inet *val)
 {
-	if (in_isnil(val)) {
+	if (is_inet_nil(val)) {
 		*retval = int_nil;
 	} else {
 		*retval = val->mask;
@@ -592,7 +589,7 @@ INETsetmasklen(inet *retval, const inet *val, const int *msk)
 		throw(ILLARG, "inet.setmask", "Illegal netmask length value: %d", *msk);
 
 	*retval = *val;
-	if (!in_isnil(val))
+	if (!is_inet_nil(val))
 		retval->mask = *msk;
 
 	return (MAL_SUCCEED);
@@ -604,7 +601,7 @@ str
 INETnetmask(inet *retval, const inet *val)
 {
 	*retval = *val;
-	if (!in_isnil(val)) {
+	if (!is_inet_nil(val)) {
 		unsigned int msk;
 		unsigned char m[4];
 
@@ -640,7 +637,7 @@ INEThostmask(inet *retval, const inet *val)
 {
 	INETnetmask(retval, val);
 	/* invert the netmask to obtain the host mask */
-	if (!in_isnil(retval)) {
+	if (!is_inet_nil(retval)) {
 		retval->q1 = ~retval->q1;
 		retval->q2 = ~retval->q2;
 		retval->q3 = ~retval->q3;
@@ -665,7 +662,7 @@ str
 INETnetwork(inet *retval, const inet *val)
 {
 	*retval = *val;
-	if (!in_isnil(val)) {
+	if (!is_inet_nil(val)) {
 		unsigned int msk;
 		unsigned char m[4];
 
@@ -703,14 +700,14 @@ INETtext(str *retval, const inet *val)
 {
 	str ip;
 
-	if (in_isnil(val)) {
+	if (is_inet_nil(val)) {
 		*retval = GDKstrdup(str_nil);
 		if( *retval == NULL)
-			throw(MAL,"INETtext", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL,"INETtext", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	} else {
 		ip = GDKmalloc(sizeof(char) * 20);
 		if( ip == NULL)
-			throw(MAL,"INETtext", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL,"INETtext", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 		snprintf(ip, sizeof(char) * 20, "%d.%d.%d.%d/%d",
 				val->q1, val->q2, val->q3, val->q4, val->mask);
@@ -728,10 +725,10 @@ INETabbrev(str *retval, const inet *val)
 {
 	str ip;
 
-	if (in_isnil(val)) {
+	if (is_inet_nil(val)) {
 		*retval = GDKstrdup(str_nil);
 		if (*retval == NULL)
-			throw(MAL, "inet.abbrev", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "inet.abbrev", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	} else {
 		unsigned int msk;
 		unsigned char m[4];
@@ -766,7 +763,7 @@ INETabbrev(str *retval, const inet *val)
 
 		ip = GDKmalloc(sizeof(char) * 20);
 		if (ip == NULL)
-			throw(MAL, "inet.abbrev", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "inet.abbrev", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 		if (msk > 24) {
 			snprintf(ip, sizeof(char) * 20, "%d.%d.%d.%d/%d",

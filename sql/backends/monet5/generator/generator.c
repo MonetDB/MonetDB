@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -24,12 +24,14 @@
 /*
  * The noop simply means that we keep the properties for the generator object.
  */
-#define VLTnoop(TPE)\
-		{	TPE s;\
-			s = pci->argc == 3 ? 1: *getArgReference_##TPE(stk,pci, 3);\
-			zeroerror = (s == 0);\
-			nullerr = is_##TPE##_nil(s);\
-		}
+#define VLTnoop(TPE)							\
+	do {								\
+		TPE s;							\
+		s = pci->argc == 3 ? 1: *getArgReference_##TPE(stk,pci, 3); \
+		zeroerror = (s == 0);					\
+		nullerr = is_##TPE##_nil(s);				\
+	} while (0)
+
 str
 VLTgenerator_noop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -79,7 +81,7 @@ VLTgenerator_noop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			n++;						\
 		bn = COLnew(0, TYPE_##TPE, n, TRANSIENT);		\
 		if (bn == NULL)						\
-			throw(MAL, "generator.table", SQLSTATE(HY001) MAL_MALLOC_FAIL);	\
+			throw(MAL, "generator.table", SQLSTATE(HY013) MAL_MALLOC_FAIL);	\
 		v = (TPE*) Tloc(bn, 0);					\
 		for (c = 0; c < n; c++)					\
 			*v++ = (TPE) (f + c * s);			\
@@ -92,7 +94,6 @@ VLTgenerator_table_(BAT **result, Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 {
 	BUN c, n;
 	BAT *bn;
-	str msg;
 	int tpe;
 	(void) cntxt;
 
@@ -139,26 +140,27 @@ VLTgenerator_table_(BAT **result, Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 			if (s == 0 ||
 			    (s > 0 && ret.val.btval > 0) ||
 			    (s < 0 && ret.val.btval < 0) ||
-				timestamp_isnil(f) || timestamp_isnil(l))
+				is_timestamp_nil(f) || is_timestamp_nil(l))
 				throw(MAL, "generator.table",
 				      SQLSTATE(42000) "Illegal generator range");
 			/* casting one value to lng causes the whole
 			 * computation to be done as lng, reducing the
 			 * risk of overflow */
-			n = (BUN) ((((lng) l.days - f.days) * 24*60*60*1000 + l.msecs - f.msecs) / s);
+			s *= 1000; /* msec -> usec */
+			n = (BUN) (timestamp_diff(l, f) / s);
 			bn = COLnew(0, TYPE_timestamp, n + 1, TRANSIENT);
 			if (bn == NULL)
-				throw(MAL, "generator.table", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				throw(MAL, "generator.table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			v = (timestamp *) Tloc(bn, 0);
 			for (c = 0; c < n; c++) {
 				*v++ = f;
-				msg = MTIMEtimestamp_add(&f, &f, &s);
-				if (msg != MAL_SUCCEED) {
+				f = timestamp_add_usec(f, s);
+				if (is_timestamp_nil(f)) {
 					BBPreclaim(bn);
-					return msg;
+					throw(MAL, "generator.table", SQLSTATE(22003) "overflow in calculation");
 				}
 			}
-			if (f.days != l.days || f.msecs != l.msecs) {
+			if (f != l) {
 				*v++ = f;
 				n++;
 			}
@@ -296,11 +298,9 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int i;
 	oid o1, o2;
 	BUN n = 0;
-	oid *cl = 0;
-	BUN c;
 	BAT *bn, *cand = NULL;
+	struct canditer ci = (struct canditer) {.tpe = cand_dense};
 	InstrPtr p;
-	str msg = MAL_SUCCEED;
 	int tpe;
 
 	(void) cntxt;
@@ -316,7 +316,7 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (cand == NULL)
 				throw(MAL, "generator.select",
 				      SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-			cl = (oid *) Tloc(cand, 0);
+			canditer_init(&ci, NULL, cand);
 		}
 		i = 3;
 	} else
@@ -343,66 +343,60 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			timestamp tsf,tsl;
 			timestamp tlow,thgh;
 			lng tss;
-			lng one = 1;
 			oid *ol;
 
 			tsf = *getArgReference_TYPE(stk, p, 1, timestamp);
 			tsl = *getArgReference_TYPE(stk, p, 2, timestamp);
 			if ( p->argc == 3) 
-					throw(MAL,"generator.table", SQLSTATE(42000) "Timestamp step missing");
+				throw(MAL,"generator.table", SQLSTATE(42000) "Timestamp step missing");
 			tss = *getArgReference_lng(stk, p, 3);
 			if ( tss == 0 || 
-				timestamp_isnil(tsf) || timestamp_isnil(tsl) ||
-				 (tss > 0 && (tsf.days > tsl.days || (tsf.days == tsl.days && tsf.msecs > tsl.msecs) )) ||
-				 (tss < 0 && (tsf.days < tsl.days || (tsf.days == tsl.days && tsf.msecs < tsl.msecs) )) 
+				is_timestamp_nil(tsf) || is_timestamp_nil(tsl) ||
+				 (tss > 0 && tsf > tsl ) ||
+				 (tss < 0 && tsf < tsl ) 
 				)
 				throw(MAL, "generator.select",  SQLSTATE(42000) "Illegal generator range");
 
 			tlow = *getArgReference_TYPE(stk,pci,i, timestamp);
 			thgh = *getArgReference_TYPE(stk,pci,i+1, timestamp);
 
-			if (tlow.msecs == thgh.msecs &&
-			    tlow.days == thgh.days &&
-			    !timestamp_isnil(tlow))
+			if (!is_timestamp_nil(tlow) && tlow == thgh)
 				hi = li;
-			if( hi && !timestamp_isnil(thgh) &&
-			    (msg = MTIMEtimestamp_add(&thgh, &thgh, &one)) != MAL_SUCCEED)
-				return msg;
-			if( !li && !timestamp_isnil(tlow) &&
-			    (msg = MTIMEtimestamp_add(&tlow, &tlow, &one)) != MAL_SUCCEED)
-				return msg;
+			if( hi && !is_timestamp_nil(thgh)) {
+				thgh = timestamp_add_usec(thgh, 1);
+				if (is_timestamp_nil(thgh))
+					throw(MAL, "generator.select", SQLSTATE(22003) "overflow in calculation");
+			}
+			if( !li && !is_timestamp_nil(tlow)) {
+				tlow = timestamp_add_usec(tlow, 1);
+				if (is_timestamp_nil(tlow))
+					throw(MAL, "generator.select", SQLSTATE(22003) "overflow in calculation");
+			}
 
 			/* casting one value to lng causes the whole
 			 * computation to be done as lng, reducing the
 			 * risk of overflow */
-			o2 = (BUN) ((((lng) tsl.days - tsf.days) * 24*60*60*1000 + tsl.msecs - tsf.msecs) / tss);
+			tss *= 1000; /* msec -> usec */
+			o2 = (BUN) (timestamp_diff(tsl, tsf) / tss);
 			bn = COLnew(0, TYPE_oid, o2 + 1, TRANSIENT);
 			if (bn == NULL)
-				throw(MAL, "generator.select", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				throw(MAL, "generator.select", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 			// simply enumerate the sequence and filter it by predicate and candidate list
 			ol = (oid *) Tloc(bn, 0);
-			for (c=0, o1=0; o1 <= o2; o1++) {
-				if( (((tsf.days>tlow.days || (tsf.days== tlow.days && tsf.msecs >= tlow.msecs) || timestamp_isnil(tlow))) &&
-				    ((tsf.days<thgh.days || (tsf.days== thgh.days && tsf.msecs < thgh.msecs))  || timestamp_isnil(thgh)) ) != anti ){
+			for (o1=0; o1 <= o2; o1++) {
+				if(((is_timestamp_nil(tlow) || tsf >= tlow) &&
+				    (is_timestamp_nil(thgh) || tsf < thgh)) != anti ){
 					/* could be improved when no candidate list is available into a void/void BAT */
-					if( cl){
-						while ( c < BATcount(cand) && *cl < o1 ) {cl++; c++;}
-						if( *cl == o1){
-							*ol++ = o1;
-							cl++;
-							n++;
-							c++;
-						}
-					} else{
+					if( cand == NULL || canditer_search(&ci, o1, false) != BUN_NONE) {
 						*ol++ = o1;
 						n++;
 					}
 				}
-				msg = MTIMEtimestamp_add(&tsf, &tsf, &tss);
-				if (msg != MAL_SUCCEED) {
+				tsf = timestamp_add_usec(tsf, tss);
+				if (is_timestamp_nil(tsf)) {
 					BBPreclaim(bn);
-					return msg;
+					throw(MAL, "generator.select", SQLSTATE(22003) "overflow in calculation");
 				}
 			}
 			BATsetcount(bn, (BUN) n);
@@ -429,39 +423,17 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		anti = 0;
 	}
 	if (cand) {
-		oid o;
-		o = o1;
-		o1 = SORTfndfirst(cand, &o);
-		o = o2;
-		o2 = SORTfndfirst(cand, &o);
-		n = BATcount(cand);
-		if (anti && o1 < o2) {
-			bn = COLnew(0, TYPE_oid, n - (o2 - o1), TRANSIENT);
-			if (bn) {
-				oid *op = (oid *) Tloc(bn, 0);
-				const oid *cp = (const oid *) Tloc(cand, 0);
-				BATsetcount(bn, n - (o2 - o1));
-				bn->tnil = false;
-				bn->tnonil = true;
-				bn->tsorted = true;
-				bn->trevsorted = BATcount(bn) <= 1;
-				bn->tkey = true;
-				for (o = 0; o < o1; o++)
-					*op++ = cp[o];
-				for (o = o2; o < (oid) n; o++)
-					*op++ = cp[o];
-			}
+		o1 = canditer_search(&ci, o1, true);
+		o2 = canditer_search(&ci, o2, true);
+		if (anti) {
+			bn = canditer_slice2(&ci, 0, o1, o2, ci.ncand);
 		} else {
-			if (anti) {
-				o1 = 0;
-				o2 = (oid) n;
-			}
-			bn = BATslice(cand, (BUN) o1, (BUN) o2);
+			bn = canditer_slice(&ci, o1, o2);
 		}
 		BBPunfix(cand->batCacheid);
 		if (bn == NULL)
 			throw(MAL, "generator.select",
-			      SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			      SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	} else {
 		if (anti) {
 			oid o;
@@ -470,7 +442,7 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			bn = COLnew(0, TYPE_oid, n - (o2 - o1), TRANSIENT);
 			if (bn == NULL)
 				throw(MAL, "generator.select",
-				      SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				      SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			BATsetcount(bn, n - (o2 - o1));
 			op = (oid *) Tloc(bn, 0);
 			for (o = 0; o < o1; o++)
@@ -486,7 +458,7 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			bn = BATdense(0, o1, (BUN) (o2 - o1));
 			if (bn == NULL)
 				throw(MAL, "generator.select",
-				      SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				      SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 	}
 	* getArgReference_bat(stk, pci, 0) = bn->batCacheid;
@@ -518,53 +490,48 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 #define HGE_ABS(a) (((a) < 0) ? -(a) : (a))
 
-#define VLTthetasubselect(TPE,ABS) {\
-	TPE f,l,s, low, hgh;\
-	BUN j; oid *v;\
-	f = *getArgReference_##TPE(stk,p, 1);\
-	l = *getArgReference_##TPE(stk,p, 2);\
-	if ( p->argc == 3) \
-		s = f<l? (TPE) 1: (TPE)-1;\
-	else s =  *getArgReference_##TPE(stk,p, 3);\
-	if( s == 0 || (f<l && s < 0) || (f>l && s> 0)) \
-		throw(MAL,"generator.thetaselect", SQLSTATE(42000) "Illegal range");\
-	cap = (BUN)(ABS(l-f)/ABS(s));\
-	bn = COLnew(0, TYPE_oid, cap, TRANSIENT);\
-	if( bn == NULL)\
-		throw(MAL,"generator.thetaselect", SQLSTATE(HY001) MAL_MALLOC_FAIL);\
-	low= hgh = TPE##_nil;\
-	v = (oid*) Tloc(bn,0);\
-	if ( strcmp(oper,"<") == 0){\
-		hgh= *getArgReference_##TPE(stk,pci,idx);\
-		hgh = PREVVALUE##TPE(hgh);\
-	} else\
-	if ( strcmp(oper,"<=") == 0){\
-		hgh= *getArgReference_##TPE(stk,pci,idx);\
-	} else\
-	if ( strcmp(oper,">") == 0){\
-		low= *getArgReference_##TPE(stk,pci,idx);\
-		low = NEXTVALUE##TPE(low);\
-	} else\
-	if ( strcmp(oper,">=") == 0){\
-		low= *getArgReference_##TPE(stk,pci,idx);\
-	} else\
-	if ( strcmp(oper,"!=") == 0 || strcmp(oper, "<>") == 0){\
-		hgh= low= *getArgReference_##TPE(stk,pci,idx);\
-		anti = 1;\
-	} else\
-	if ( strcmp(oper,"==") == 0 || strcmp(oper, "=") == 0){\
-		hgh= low= *getArgReference_##TPE(stk,pci,idx);\
-	} else\
-		throw(MAL,"generator.thetaselect", SQLSTATE(42000) "Unknown operator");\
-	if(cand){ cn = BATcount(cand); if( cl == 0) oc = cand->tseqbase; }\
-	for(j=0;j<cap;j++, f+=s, o++)\
-		if( ((is_##TPE##_nil(low) || f >= low) && (is_##TPE##_nil(hgh) || f <= hgh)) != anti){\
-			if(cand){ \
-				if( cl){ while(cn-- >= 0 && *cl < o) cl++; if ( *cl == o){ *v++= o; c++;}} \
-				else { while(cn-- >= 0 && oc < o) oc++; if ( oc == o){ *v++= o; c++;} }\
-			} else {*v++ = o; c++;}\
-		} \
-}
+#define VLTthetasubselect(TPE,ABS)					\
+	do {								\
+		TPE f,l,s, low, hgh;					\
+		BUN j; oid *v;						\
+		f = *getArgReference_##TPE(stk,p, 1);			\
+		l = *getArgReference_##TPE(stk,p, 2);			\
+		if ( p->argc == 3)					\
+			s = f<l? (TPE) 1: (TPE)-1;			\
+		else s =  *getArgReference_##TPE(stk,p, 3);		\
+		if( s == 0 || (f<l && s < 0) || (f>l && s> 0))		\
+			throw(MAL,"generator.thetaselect", SQLSTATE(42000) "Illegal range"); \
+		cap = (BUN)(ABS(l-f)/ABS(s));				\
+		bn = COLnew(0, TYPE_oid, cap, TRANSIENT);		\
+		if( bn == NULL)						\
+			throw(MAL,"generator.thetaselect", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
+		low= hgh = TPE##_nil;					\
+		v = (oid*) Tloc(bn,0);					\
+		if ( strcmp(oper,"<") == 0){				\
+			hgh= *getArgReference_##TPE(stk,pci,idx);	\
+			hgh = PREVVALUE##TPE(hgh);			\
+		} else if ( strcmp(oper,"<=") == 0){			\
+			hgh= *getArgReference_##TPE(stk,pci,idx);	\
+		} else if ( strcmp(oper,">") == 0){			\
+			low= *getArgReference_##TPE(stk,pci,idx);	\
+			low = NEXTVALUE##TPE(low);			\
+		} else if ( strcmp(oper,">=") == 0){			\
+			low= *getArgReference_##TPE(stk,pci,idx);	\
+		} else if ( strcmp(oper,"!=") == 0 || strcmp(oper, "<>") == 0){ \
+			hgh= low= *getArgReference_##TPE(stk,pci,idx);	\
+			anti = 1;					\
+		} else if ( strcmp(oper,"==") == 0 || strcmp(oper, "=") == 0){ \
+			hgh= low= *getArgReference_##TPE(stk,pci,idx);	\
+		} else							\
+			throw(MAL,"generator.thetaselect", SQLSTATE(42000) "Unknown operator");	\
+		for(j=0;j<cap;j++, f+=s, o++)				\
+			if( ((is_##TPE##_nil(low) || f >= low) && (is_##TPE##_nil(hgh) || f <= hgh)) != anti){ \
+				if(cand == NULL || canditer_search(&ci, o, false) != BUN_NONE) { \
+					*v++ = o;			\
+					c++;				\
+				}					\
+			}						\
+	} while (0)
 
 
 str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -572,9 +539,9 @@ str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 	int idx, c= 0, anti =0,tpe;
 	bat cndid =0;
 	BAT *cand = 0, *bn = NULL;
+	struct canditer ci = (struct canditer) {.tpe = cand_dense};
 	BUN cap,j;
-	lng cn= 0;
-	oid o = 0, oc = 0,  *cl = 0;
+	oid o = 0;
 	InstrPtr p;
 	str oper, msg= MAL_SUCCEED;
 
@@ -589,7 +556,7 @@ str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 			cand = BATdescriptor(cndid);
 			if( cand == NULL)
 				throw(MAL,"generator.select", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-			cl = (oid*) Tloc(cand,0);
+			canditer_init(&ci, NULL, cand);
 		} 
 		idx = 3;
 	} else idx = 2;
@@ -623,34 +590,34 @@ str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 			}
 			s = *getArgReference_lng(stk,p, 3);
 			if ( s == 0 || 
-				 (s > 0 && (f.days > l.days || (f.days == l.days && f.msecs > l.msecs) )) ||
-				 (s < 0 && (f.days < l.days || (f.days == l.days && f.msecs < l.msecs) )) 
+				 (s > 0 && f > l) ||
+				 (s < 0 && f < l) 
 				) {
 				if (cand)
 					BBPunfix(cand->batCacheid);
 				throw(MAL, "generator.select", SQLSTATE(42000) "Illegal generator range");
 			}
 
-			hgh = low = *timestamp_nil;
+			hgh = low = timestamp_nil;
 			if ( strcmp(oper,"<") == 0){
-				lng minone = -1;
 				hgh= *getArgReference_TYPE(stk,pci,idx, timestamp);
-				if ((msg = MTIMEtimestamp_add(&hgh, &hgh, &minone)) != MAL_SUCCEED) {
+				hgh = timestamp_add_usec(hgh, -1);
+				if (is_timestamp_nil(hgh)) {
 					if (cand)
 						BBPunfix(cand->batCacheid);
-					return msg;
+					throw(MAL, "generator.select", SQLSTATE(22003) "overflow in calculation");
 				}
 			} else
 			if ( strcmp(oper,"<=") == 0){
 				hgh= *getArgReference_TYPE(stk,pci,idx, timestamp) ;
 			} else
 			if ( strcmp(oper,">") == 0){
-				lng one = 1;
 				low= *getArgReference_TYPE(stk,pci,idx, timestamp);
-				if ((msg = MTIMEtimestamp_add(&hgh, &hgh, &one)) != MAL_SUCCEED) {
+				low = timestamp_add_usec(low, 1);
+				if (is_timestamp_nil(low)) {
 					if (cand)
 						BBPunfix(cand->batCacheid);
-					return msg;
+					throw(MAL, "generator.select", SQLSTATE(22003) "overflow in calculation");
 				}
 			} else
 			if ( strcmp(oper,">=") == 0){
@@ -668,27 +635,30 @@ str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 				throw(MAL,"generator.thetaselect", SQLSTATE(42000) "Unknown operator");
 			}
 
-			cap = (BUN) ((((lng) l.days - f.days) * 24*60*60*1000 + l.msecs - f.msecs) / s);
+			s *= 1000; /* msec -> usec */
+			cap = (BUN) (timestamp_diff(l, f) / s);
 			bn = COLnew(0, TYPE_oid, cap, TRANSIENT);
 			if( bn == NULL) {
 				if (cand)
 					BBPunfix(cand->batCacheid);
-				throw(MAL,"generator.thetaselect", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				throw(MAL,"generator.thetaselect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 			v = (oid*) Tloc(bn,0);
 
-			if(cand){ cn = BATcount(cand); if( cl == 0) oc = cand->tseqbase; }
 			val = f;
 			for(j = 0; j< cap; j++,  o++){
-				if( (( timestamp_isnil(low) || (val.days > low.days || (val.days == low.days && val.msecs >=low.msecs))) && 
-					 ( timestamp_isnil(hgh) || (val.days < hgh.days || (val.days == hgh.days && val.msecs <= hgh.msecs)))) != anti){
-					if(cand){
-						if( cl){ while(cn-- >= 0 && *cl < o) cl++; if ( *cl == o){ *v++= o; c++;}}
-						else { while(cn-- >= 0 && oc < o) oc++; if ( oc == o){ *v++= o; c++;} }
-					} else {*v++ = o; c++;}
+				if (((is_timestamp_nil(low) || val >= low) && 
+				     (is_timestamp_nil(hgh) || val <= hgh)) != anti){
+					if(cand == NULL || canditer_search(&ci, o, false) != BUN_NONE){
+						*v++ = o;
+						c++;
+					}
 				}
-				if( (msg = MTIMEtimestamp_add(&val, &val, &s)) != MAL_SUCCEED)
+				val = timestamp_add_usec(val, s);
+				if (is_timestamp_nil(val)) {
+					msg = createException(MAL, "generator.thetaselect", SQLSTATE(22003) "overflow in calculation");
 					goto wrapup;
+				}
 			}
 		} else {
 			if (cand)
@@ -725,7 +695,7 @@ wrapup:
 	bn = COLnew(0, TYPE_##TPE, cnt, TRANSIENT);\
 	if( bn == NULL){\
 		BBPunfix(bid);\
-		throw(MAL,"generator.projection", SQLSTATE(HY001) MAL_MALLOC_FAIL);\
+		throw(MAL,"generator.projection", SQLSTATE(HY013) MAL_MALLOC_FAIL);\
 	}\
 	v = (TPE*) Tloc(bn,0);\
 	for(; cnt-- > 0; ol ? *ol++ : o++){\
@@ -799,30 +769,32 @@ str VLTgenerator_projection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			}
 			s =  *getArgReference_lng(stk,p, 3);
 			if ( s == 0 ||
-				(s< 0 &&	(f.days< l.days || (f.days == l.days && f.msecs < l.msecs))) ||
-			     (s> 0 &&	(l.days< f.days || (l.days == f.days && l.msecs < f.msecs))) ) {
+			     (s< 0 && f < l) ||
+			     (s> 0 && l < f) ) {
 				BBPunfix(b->batCacheid);
 				throw(MAL,"generator.projection", SQLSTATE(42000) "Illegal range");
 			}
 
+			s *= 1000; /* msec -> usec */
 			bn = COLnew(0, TYPE_timestamp, cnt, TRANSIENT);
 			if( bn == NULL){
 				BBPunfix(bid);
-				throw(MAL,"generator.projection", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				throw(MAL,"generator.projection", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 
 			v = (timestamp*) Tloc(bn,0);
 
 			for(; cnt-- > 0; ol ? *ol++ : o++){
 				t = ((lng) ( b->ttype == TYPE_void?o:*ol)) * s;
-				if( (msg = MTIMEtimestamp_add(&val, &f, &t)) != MAL_SUCCEED)
-					return msg;
+				val = timestamp_add_usec(f, t);
+				if (is_timestamp_nil(val))
+					throw(MAL, "generator.projection", SQLSTATE(22003) "overflow in calculation");
 
-				if ( timestamp_isnil(val))
+				if ( is_timestamp_nil(val))
 					continue;
-				if (s > 0 && ((val.days < f.days || (val.days == f.days && val.msecs < f.msecs)) || ((val.days>l.days || (val.days== l.days && val.msecs >= l.msecs)))  ) )
+				if (s > 0 && (val < f || val >= l) )
 					continue;
-				if (s < 0 && ((val.days < l.days || (val.days == l.days && val.msecs <= l.msecs)) || ((val.days > f.days || (val.days == f.days && val.msecs > f.msecs)))  ) )
+				if (s < 0 && (val <= l || val > f) )
 					continue;
 				*v++ = val;
 				c++;
@@ -928,7 +900,7 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if(brn) BBPunfix(brn->batCacheid);
 		if(bl) BBPunfix(bl->batCacheid);
 		if(br) BBPunfix(br->batCacheid);
-		throw(MAL,"generator.join", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL,"generator.join", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	ol = (oid*) Tloc(bln,0);
 	or = (oid*) Tloc(brn,0);
@@ -990,14 +962,14 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPunfix(bhgh->batCacheid);\
 		BBPunfix(bln->batCacheid);\
 		BBPunfix(brn->batCacheid);\
-		throw(MAL,"generator.rangejoin", SQLSTATE(HY001) MAL_MALLOC_FAIL);\
+		throw(MAL,"generator.rangejoin", SQLSTATE(HY013) MAL_MALLOC_FAIL);\
 	}\
 	if (BATextend(brn, limit) != GDK_SUCCEED) {	\
 		BBPunfix(blow->batCacheid);\
 		BBPunfix(bhgh->batCacheid);\
 		BBPunfix(bln->batCacheid);\
 		BBPunfix(brn->batCacheid);\
-		throw(MAL,"generator.rangejoin", SQLSTATE(HY001) MAL_MALLOC_FAIL);\
+		throw(MAL,"generator.rangejoin", SQLSTATE(HY013) MAL_MALLOC_FAIL);\
 	}\
 	ol = (oid*) Tloc(bln,0) + c;\
 	or = (oid*) Tloc(brn,0) + c;\
@@ -1069,7 +1041,7 @@ str VLTgenerator_rangejoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 		if(brn) BBPunfix(brn->batCacheid);
 		if(blow) BBPunfix(blow->batCacheid);
 		if(bhgh) BBPunfix(bhgh->batCacheid);
-		throw(MAL,"generator.rangejoin", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL,"generator.rangejoin", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	ol = (oid*) Tloc(bln,0);
 	or = (oid*) Tloc(brn,0);

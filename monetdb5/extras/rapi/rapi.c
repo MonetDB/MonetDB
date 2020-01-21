@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -16,7 +16,6 @@
 #include "mal_linker.h"
 #include "gdk_utils.h"
 #include "gdk.h"
-#include "mmath.h"
 #include "sql_catalog.h"
 #include "sql_execute.h"
 #include "rapi.h"
@@ -57,8 +56,8 @@ static bool RAPIEnabled(void) {
 }
 
 // The R-environment should be single threaded, calling for some protective measures.
-static MT_Lock rapiLock MT_LOCK_INITIALIZER("rapiLock");
-static int rapiInitialized = FALSE;
+static MT_Lock rapiLock = MT_LOCK_INITIALIZER("rapiLock");
+static bool rapiInitialized = false;
 static char* rtypenames[] = { "NIL", "SYM", "LIST", "CLO", "ENV", "PROM",
 		"LANG", "SPECIAL", "BUILTIN", "CHAR", "LGL", "unknown", "unknown",
 		"INT", "REAL", "CPLX", "STR", "DOT", "ANY", "VEC", "EXPR", "BCODE",
@@ -80,7 +79,7 @@ void writeConsoleEx(const char * buf, int buflen, int foo) {
 	(void) foo;
 	(void) buf; // silence compiler
 #ifdef _RAPI_DEBUG_
-	THRprintf(GDKout, "# %s", buf);
+	printf("# %s", buf);
 #endif
 }
 
@@ -106,7 +105,7 @@ static char *RAPIinitialize(void) {
 	char *e;
 
 	// set R_HOME for packages etc. We know this from our configure script
-	setenv("R_HOME", RHOME, TRUE);
+	putenv("R_HOME=" RHOME);
 
 	// set some command line arguments
 	{
@@ -156,7 +155,7 @@ static char *RAPIinitialize(void) {
 	// install.packages() uses system2 to call gcc etc., so we cannot disable it (perhaps store the pointer somewhere just for that?)
 	//SET_INTERNAL(install("system"), R_NilValue);
 
-	rapiInitialized++;
+	rapiInitialized = true;
 	return NULL;
 }
 #else
@@ -173,13 +172,15 @@ static char *RAPIinitialize(void) {
 static char *RAPIinstalladdons(void) {
 	int evalErr;
 	ParseStatus status;
-	char rlibs[BUFSIZ];
+	char rlibs[FILENAME_MAX];
 	char rapiinclude[BUFSIZ];
 	SEXP librisexp;
+	int len;
 
 	// r library folder, create if not exists
-	snprintf(rlibs, sizeof(rlibs), "%s%c%s", GDKgetenv("gdk_dbpath"), DIR_SEP,
-			 "rapi_packages");
+	len = snprintf(rlibs, sizeof(rlibs), "%s%c%s", GDKgetenv("gdk_dbpath"), DIR_SEP, "rapi_packages");
+	if (len == -1 || len >= FILENAME_MAX)
+		return "cannot create rapi_packages directory because the path is too large";
 
 	if (mkdir(rlibs, S_IRWXU) != 0 && errno != EEXIST) {
 		return "cannot create rapi_packages directory";
@@ -258,6 +259,10 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 			  "Embedded R has not been enabled. Start server with --set %s=true",
 			  rapi_enableflag);
 	}
+	if (!rapiInitialized) {
+		throw(MAL, "rapi.eval",
+			  "Embedded R initialization has failed");
+	}
 
 	if (!grouped) {
 		sql_subfunc *sqlmorefun = (*(sql_subfunc**) getArgReference(stk, pci, pci->retc));
@@ -268,7 +273,7 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 
 	args = (str*) GDKzalloc(sizeof(str) * pci->argc);
 	if (args == NULL) {
-		throw(MAL, "rapi.eval", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "rapi.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	// get the lock even before initialization of the R interpreter, as this can take a second and must be done only once.
@@ -308,32 +313,33 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 	// install the MAL variables into the R environment
 	// we can basically map values to int ("INTEGER") or double ("REAL")
 	for (i = pci->retc + 2; i < pci->argc; i++) {
+		int bat_type = getBatType(getArgType(mb,pci,i));
 		// check for BAT or scalar first, keep code left
 		if (!isaBatType(getArgType(mb,pci,i))) {
 			b = COLnew(0, getArgType(mb, pci, i), 0, TRANSIENT);
 			if (b == NULL) {
-				msg = createException(MAL, "rapi.eval", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				msg = createException(MAL, "rapi.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto wrapup;
 			}
 			if ( getArgType(mb,pci,i) == TYPE_str) {
 				if (BUNappend(b, *getArgReference_str(stk, pci, i), false) != GDK_SUCCEED) {
 					BBPreclaim(b);
 					b = NULL;
-					msg = createException(MAL, "rapi.eval", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+					msg = createException(MAL, "rapi.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					goto wrapup;
 				}
 			} else {
 				if (BUNappend(b, getArgReference(stk, pci, i), false) != GDK_SUCCEED) {
 					BBPreclaim(b);
 					b = NULL;
-					msg = createException(MAL, "rapi.eval", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+					msg = createException(MAL, "rapi.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					goto wrapup;
 				}
 			}
 		} else {
 			b = BATdescriptor(*getArgReference_bat(stk, pci, i));
 			if (b == NULL) {
-				msg = createException(MAL, "rapi.eval", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				msg = createException(MAL, "rapi.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto wrapup;
 			}
 		}
@@ -347,7 +353,7 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 			goto wrapup;
 		}
 		varname = PROTECT(Rf_install(args[i]));
-		varvalue = bat_to_sexp(b);
+		varvalue = bat_to_sexp(b, bat_type);
 		if (varvalue == NULL) {
 			msg = createException(MAL, "rapi.eval", "unknown argument type ");
 			goto wrapup;
@@ -368,7 +374,7 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 	pos = 0;
 	argnames = malloc(argnameslen);
 	if (argnames == NULL) {
-		msg = createException(MAL, "rapi.eval", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		msg = createException(MAL, "rapi.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto wrapup;
 	}
 	argnames[0] = '\0';
@@ -379,7 +385,7 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 	rcalllen = 2 * pos + strlen(exprStr) + 100;
 	rcall = malloc(rcalllen);
 	if (rcall == NULL) {
-		msg = createException(MAL, "rapi.eval", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		msg = createException(MAL, "rapi.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto wrapup;
 	}
 	snprintf(rcall, rcalllen,
@@ -452,7 +458,7 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 			BATiter li = bat_iterator(b);
 			if (VALinit(&stk->stk[pci->argv[i]], bat_type,
 						BUNtail(li, 0)) == NULL) { // TODO BUNtail here
-				msg = createException(MAL, "rapi.eval", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				msg = createException(MAL, "rapi.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto wrapup;
 			}
 		}
@@ -490,7 +496,7 @@ void* RAPIloopback(void *query) {
 			names = PROTECT(NEW_STRING(ncols));
 			for (i = 0; i < ncols; i++) {
 				BAT *b = BATdescriptor(output->cols[i].b);
-				if (b == NULL || !(varvalue = bat_to_sexp(b))) {
+				if (b == NULL || !(varvalue = bat_to_sexp(b, TYPE_any))) {
 					UNPROTECT(i + 3);
 					if (b)
 						BBPunfix(b->batCacheid);
@@ -512,13 +518,6 @@ void* RAPIloopback(void *query) {
 
 
 str RAPIprelude(void *ret) {
-#ifdef NEED_MT_LOCK_INIT
-	static int initialized = 0;
-	/* since we don't destroy the lock, only initialize it once */
-	if (!initialized)
-		MT_lock_init(&rapiLock, "rapi_lock");
-	initialized = 1;
-#endif
 	(void) ret;
 
 	if (RAPIEnabled()) {
@@ -528,8 +527,9 @@ str RAPIprelude(void *ret) {
 			char *initstatus;
 			initstatus = RAPIinitialize();
 			if (initstatus != 0) {
+				MT_lock_unset(&rapiLock);
 				throw(MAL, "rapi.eval",
-					  "failed to initialise R environment (%s)", initstatus);
+					  "failed to initialize R environment (%s)", initstatus);
 			}
 			Rf_defineVar(Rf_install("MONETDB_LIBDIR"), ScalarString(RSTR(LIBDIR)), R_GlobalEnv);
 

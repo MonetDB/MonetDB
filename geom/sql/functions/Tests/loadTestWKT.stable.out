@@ -50,7 +50,6 @@ stdout of test 'loadTestWKT` in directory 'geom/sql/functions` itself:
 # loading sql script: 99_system.sql
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 16:29:35 >  
 # 16:29:35 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-15511" "--port=35467"

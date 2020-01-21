@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -14,6 +14,9 @@
 #include <sys/un.h>
 #include <netdb.h>
 #include <netinet/in.h>
+#ifdef HAVE_POLL_H
+#include <poll.h>
+#endif
 #ifdef HAVE_SYS_UIO_H
 # include <sys/uio.h>
 #endif
@@ -45,8 +48,9 @@ struct threads {
 };
 struct clientdata {
 	int sock;
-	int isusock;
+	bool isusock;
 	struct threads *self;
+	char challenge[32];
 };
 
 static void *
@@ -59,23 +63,25 @@ handleClient(void *data)
 	char *user = NULL, *algo = NULL, *passwd = NULL, *lang = NULL;
 	char *database = NULL, *s;
 	char dbmod[64];
-	char host[128];
+	char host[512];
+	char port[16];
 	sabdb *top = NULL;
 	sabdb *stat = NULL;
-	struct sockaddr_in saddr;
-	socklen_t saddrlen = sizeof(struct sockaddr_in);
+	struct sockaddr saddr;
+	socklen_t saddrlen = (socklen_t) sizeof(saddr);
 	err e;
 	confkeyval *ckv, *kv;
 	char mydoproxy;
 	sabdb redirs[24];  /* do we need more? */
 	int r = 0;
 	int sock;
-	char isusock;
+	bool isusock;
 	struct threads *self;
 
 	sock = ((struct clientdata *) data)->sock;
 	isusock = ((struct clientdata *) data)->isusock;
 	self = ((struct clientdata *) data)->self;
+	memcpy(chal, ((struct clientdata *) data)->challenge, sizeof(chal));
 	free(data);
 	fdin = socket_rstream(sock, "merovingian<-client (read)");
 	if (fdin == 0) {
@@ -94,29 +100,20 @@ handleClient(void *data)
 
 	if (isusock) {
 		snprintf(host, sizeof(host), "(local)");
-	} else if (getpeername(sock, (struct sockaddr *)&saddr, &saddrlen) == -1) {
-		Mfprintf(stderr, "couldn't get peername of client: %s\n",
-				strerror(errno));
+	} else if (getpeername(sock, &saddr, &saddrlen) == -1) {
+		Mfprintf(stderr, "couldn't get peername of client: %s\n", strerror(errno));
 		snprintf(host, sizeof(host), "(unknown)");
 	} else {
-		struct hostent *hoste = 
-			gethostbyaddr(&saddr.sin_addr.s_addr, 4, saddr.sin_family);
-		if (hoste == NULL) {
-			snprintf(host, sizeof(host), "%u.%u.%u.%u:%u",
-					(unsigned) ((ntohl(saddr.sin_addr.s_addr) >> 24) & 0xff),
-					(unsigned) ((ntohl(saddr.sin_addr.s_addr) >> 16) & 0xff),
-					(unsigned) ((ntohl(saddr.sin_addr.s_addr) >> 8) & 0xff),
-					(unsigned) (ntohl(saddr.sin_addr.s_addr) & 0xff),
-					(unsigned) (ntohs(saddr.sin_port)));
+		char ghost[512];
+		if (getnameinfo(&saddr, saddrlen, ghost, sizeof(ghost), port, sizeof(port),
+			NI_NUMERICSERV | NI_NUMERICHOST) == 0) {
+			snprintf(host, sizeof(host), "%s:%s", ghost, port);
 		} else {
-			snprintf(host, sizeof(host), "%s:%u",
-					hoste->h_name, (unsigned) (ntohs(saddr.sin_port)));
+			snprintf(host, sizeof(host), "(unknown):%s", port);
 		}
 	}
 
 	/* note: since Jan2012 we speak proto 9 for control connections */
-	chal[31] = '\0';
-	generateSalt(chal, 31);
 	mnstr_printf(fout, "%s:merovingian:9:%s:%s:%s:",
 			chal,
 			mcrypt_getHashAlgorithms(),
@@ -276,7 +273,7 @@ handleClient(void *data)
 		}
 	}
 
-	if ((e = forkMserver(database, &top, 0)) != NO_ERR) {
+	if ((e = forkMserver(database, &top, false)) != NO_ERR) {
 		if (top == NULL) {
 			mnstr_printf(fout, "!monetdbd: no such database '%s', please create it first\n", database);
 		} else {
@@ -413,25 +410,38 @@ acceptConnections(int sock, int usock)
 {
 	char *msg;
 	int retval;
+#ifdef HAVE_POLL
+	struct pollfd pfd[2];
+#else
 	fd_set fds;
+	struct timeval tv;
+#endif
 	int msgsock;
 	void *e;
-	struct timeval tv;
 	struct clientdata *data;
 	struct threads *threads = NULL, **threadp, *p;
 	int errnr;					/* saved errno */
 
 	do {
 		/* handle socket connections */
+		bool isusock = false;
+
+#ifdef HAVE_POLL
+		pfd[0] = (struct pollfd) {.fd = sock, .events = POLLIN};
+		pfd[1] = (struct pollfd) {.fd = usock, .events = POLLIN};
+
+		/* Wait up to 5 seconds */
+		retval = poll(pfd, 2, 5000);
+#else
 		FD_ZERO(&fds);
 		FD_SET(sock, &fds);
 		FD_SET(usock, &fds);
 
 		/* Wait up to 5 seconds */
-		tv.tv_sec = 5;
-		tv.tv_usec = 0;
+		tv = (struct timeval) {.tv_sec = 5};
 		retval = select((sock > usock ? sock : usock) + 1,
 				&fds, NULL, NULL, &tv);
+#endif
 		errnr = errno;
 		/* join any handleClient threads that we started and that may
 		 * have finished by now */
@@ -475,11 +485,18 @@ acceptConnections(int sock, int usock)
 			}
 			continue;
 		}
-		if (FD_ISSET(sock, &fds)) {
+		if (
+#ifdef HAVE_POLL
+			pfd[0].revents & POLLIN
+#else
+			FD_ISSET(sock, &fds)
+#endif
+			) {
+			isusock = false;
 			if ((msgsock = accept4(sock, (SOCKPTR)0, (socklen_t *) 0, SOCK_CLOEXEC)) == -1) {
 				if (_mero_keep_listening == 0)
 					break;
-				switch (errnr) {
+				switch (errno) {
 				case EINTR:
 					/* interrupted */
 					break;
@@ -493,7 +510,7 @@ acceptConnections(int sock, int usock)
 					/* connection aborted before we began */
 					break;
 				default:
-					msg = strerror(errnr);
+					msg = strerror(errno);
 					goto error;
 				}
 				continue;
@@ -501,17 +518,24 @@ acceptConnections(int sock, int usock)
 #if defined(HAVE_FCNTL) && (!defined(SOCK_CLOEXEC) || !defined(HAVE_ACCEPT4))
 			(void) fcntl(msgsock, F_SETFD, FD_CLOEXEC);
 #endif
-		} else if (FD_ISSET(usock, &fds)) {
+		} else if (
+#ifdef HAVE_POLL
+			pfd[1].revents & POLLIN
+#else
+			FD_ISSET(usock, &fds)
+#endif
+			) {
 			struct msghdr msgh;
 			struct iovec iov;
 			char buf[1];
 			int rv;
 			char ccmsg[CMSG_SPACE(sizeof(int))];
 
+			isusock = true;
 			if ((msgsock = accept4(usock, (SOCKPTR)0, (socklen_t *)0, SOCK_CLOEXEC)) == -1) {
 				if (_mero_keep_listening == 0)
 					break;
-				switch (errnr) {
+				switch (errno) {
 				case EINTR:
 					/* interrupted */
 					break;
@@ -525,7 +549,7 @@ acceptConnections(int sock, int usock)
 					/* connection aborted before we began */
 					break;
 				default:
-					msg = strerror(errnr);
+					msg = strerror(errno);
 					goto error;
 				}
 				continue;
@@ -552,12 +576,14 @@ acceptConnections(int sock, int usock)
 			iov.iov_base = buf;
 			iov.iov_len = 1;
 
-			msgh.msg_name = 0;
-			msgh.msg_namelen = 0;
-			msgh.msg_iov = &iov;
-			msgh.msg_iovlen = 1;
-			msgh.msg_control = ccmsg;
-			msgh.msg_controllen = sizeof(ccmsg);
+			msgh = (struct msghdr) {
+				.msg_name = 0,
+				.msg_namelen = 0,
+				.msg_iov = &iov,
+				.msg_iovlen = 1,
+				.msg_control = ccmsg,
+				.msg_controllen = sizeof(ccmsg),
+			};
 
 			rv = recvmsg(msgsock, &msgh, 0);
 			if (rv == -1) {
@@ -596,9 +622,11 @@ acceptConnections(int sock, int usock)
 			continue;
 		}
 		data->sock = msgsock;
-		data->isusock = FD_ISSET(usock, &fds);
+		data->isusock = isusock;
 		p->dead = 0;
 		data->self = p;
+		data->challenge[31] = '\0';
+		generateSalt(data->challenge, 31);
 		if (pthread_create(&p->tid, NULL, handleClient, data) == 0) {
 			p->next = threads;
 			threads = p;

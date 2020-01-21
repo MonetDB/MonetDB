@@ -54,7 +54,7 @@ c1.execute('insert into bar select * from generate_series(cast(0 as int),1500)')
 # the logger restart
 # An alternative would have been to generate at least SNAPSHOT_MINSIZE
 # rows in one statement, but this way is simpler
-time.sleep(31)
+time.sleep(1)
 print(query(c1, 'select * from foo'))
 
 s.communicate()

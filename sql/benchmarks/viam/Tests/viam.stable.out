@@ -14,7 +14,6 @@ stdout of test 'viam` in directory 'sql/benchmarks/viam` itself:
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:37723/
 # MonetDB/SQL module v2.27.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;
@@ -37,8 +36,8 @@ Ready.
 #  and s2.framenumber between s1.framenumber and (s1.framenumber + 124)
 # group by s1.framenumber
 # order by s1.framenumber;
-% sys.s1,	sys.L1 # table_name
-% framenumber,	L1 # name
+% sys.s1,	sys.%1 # table_name
+% framenumber,	%1 # name
 % int,	double # type
 % 2,	24 # length
 [ 0,	0.3069530136	]

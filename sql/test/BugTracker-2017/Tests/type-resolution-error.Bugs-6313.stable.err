@@ -30,31 +30,29 @@ stderr of test 'type-resolution-error.Bugs-6313` in directory 'sql/test/BugTrack
 #    X_353:bat[:lng] := mal.multiplex("user":str, "hashsize":str, X_319:bat[:bit], X_298:bat[:lng]);
 #WARNING To speedup user.imprintsize a bulk operator implementation is needed
 #    X_355:bat[:lng] := mal.multiplex("user":str, "imprintsize":str, X_298:bat[:lng], X_284:bat[:str]);
-#WARNING To speedup calc.ifthenelse a bulk operator implementation is needed
-#    X_572:bat[:bit] := mal.multiplex("calc":str, "ifthenelse":str, X_571:bit, X_130:bat[:int], X_560:bat[:bit]);
 
 # 12:52:03 >  
 # 12:52:03 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-19106" "--port=36358"
 # 12:52:03 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-19106/.s.monetdb.36358
-QUERY = select orderidxsize 
-        from sys.tablestoragemodel 
+MAPI  = (monetdb) /var/tmp/mtest-132227/.s.monetdb.30231
+QUERY = select col1 
+        from tab1
         where ((select r_regionkey from sys.region) is NULL)
-          or ((select index_type_name from sys.index_types) is not NULL);
+          or ((select col0 from tab0) is not NULL);
 ERROR = !SELECT: no such table 'region'
 CODE  = 42S02
 MAPI  = (monetdb) /var/tmp/mtest-32496/.s.monetdb.36380
 QUERY = select
-                  sample_69.f_table_catalog as c2
+                  sample_69.col0 as c2
         from    
-          sys.storagemodel as sample_65
-        	left join sys.geometry_columns as sample_69
-        	on (sample_65.type = sample_69.f_table_catalog )
+          tab1 as sample_65
+        	left join tab0 as sample_69
+        	on (sample_65.col0 = sample_69.col0 )
                 where 
-                ((select default_schema from sys.users) is NULL)
-                  or (cast(coalesce((select side_effect from sys.functions) ,
-                      sample_65.sorted) as boolean) is not NULL);
+                ((select i from integers) is NULL)
+                  or (cast(coalesce((select col7 from another_T) ,
+                      sample_65.col1) as boolean) is not NULL);
 ERROR = !Cardinality violation, scalar value expected
 CODE  = 21000
 

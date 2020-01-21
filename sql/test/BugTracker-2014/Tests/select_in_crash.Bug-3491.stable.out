@@ -19,30 +19,29 @@ stdout of test 'select_in_crash.Bug-3491` in directory 'sql/test/BugTracker-2014
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 15:36:13 >  
 # 15:36:13 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-5557" "--port=39849"
 # 15:36:13 >  
 
 #SELECT 1 AS one WHERE 1 IN (SELECT 1);
-% .L10 # table_name
+% . # table_name
 % one # name
 % tinyint # type
 % 1 # length
 [ 1	]
 #SELECT 1 AS zero WHERE 1 NOT IN (SELECT 1);
-% .L10 # table_name
+% . # table_name
 % zero # name
 % tinyint # type
 % 1 # length
 #SELECT 1 AS zero WHERE 1 IN (SELECT 2);
-% .L10 # table_name
+% . # table_name
 % zero # name
 % tinyint # type
 % 1 # length
 #SELECT 1 AS one WHERE 1 = 1 AND 1 IN (SELECT 1);
-% .L10 # table_name
+% . # table_name
 % one # name
 % tinyint # type
 % 1 # length

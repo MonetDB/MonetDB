@@ -19,7 +19,6 @@ stdout of test 'privs` in directory 'sql/test/Users` itself:
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 13:33:49 >  
 # 13:33:49 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-14454" "--port=36407"

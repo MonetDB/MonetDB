@@ -18,7 +18,6 @@ stdout of test 'ordered-index-error.Bug-6572` in directory 'sql/test/BugTracker-
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 11:24:04 >  
 # 11:24:04 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-13995" "--port=39857"

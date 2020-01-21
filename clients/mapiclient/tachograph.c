@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /* author: M Kersten
@@ -13,7 +13,6 @@
 */
 
 #include "monetdb_config.h"
-#include "monet_options.h"
 #include "stream.h"
 #include "stream_socket.h"
 #include "mapi.h"
@@ -262,7 +261,7 @@ update(EventRecord *ev)
 	if (starttime == 0) {
 		if (ev->fcn == 0 ) {
 			if (debug)
-				fprintf(stderr, "Skip %s input %s\n",(ev->state>=0?statenames[ev->state]:"unknown"),ev->fcn);
+				fprintf(stderr, "Skip %s input\n",(ev->state>=0?statenames[ev->state]:"unknown"));
 			return;
 		}
 		if (debug)

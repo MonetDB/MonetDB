@@ -17,7 +17,6 @@ stdout of test 'multiple-joins.Bug-2879` in directory 'sql/test/BugTracker-2011`
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 # SQL catalog created, loading sql scripts once
 # SQL loading sql scripts /net/ottar/export/scratch0/sjoerd/bin/candidate/.stowdir/MonetDB/lib64/monetdb5/createdb/10_math.sql
 # SQL loading sql scripts /net/ottar/export/scratch0/sjoerd/bin/candidate/.stowdir/MonetDB/lib64/monetdb5/createdb/11_times.sql
@@ -76,7 +75,7 @@ Ready.
 #        ON ( T_2.p = '<http://example/q1>'
 #         AND T_3.p = '<http://example/q2>'
 #         AND T_2.s = T_3.s )
-% .L14,	.L16,	.L20,	.L22 # table_name
+% .,	.,	.,	. # table_name
 % v_1,	v_2,	v_3,	v_4 # name
 % varchar,	varchar,	varchar,	varchar # type
 % 18,	18,	20,	20 # length

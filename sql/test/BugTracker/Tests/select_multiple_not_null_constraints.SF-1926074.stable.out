@@ -17,7 +17,6 @@ stdout of test 'select_multiple_not_null_constraints.SF-1926074` in directory 's
 # Listening for connection requests on mapi:monetdb://vr7:34875/
 # MonetDB/SQL module v2.23.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

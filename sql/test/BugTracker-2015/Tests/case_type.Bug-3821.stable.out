@@ -23,15 +23,14 @@ stdout of test 'case_type.Bug-3821` in directory 'sql/test/BugTracker-2015` itse
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 10:18:34 >  
 # 10:18:34 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-6004" "--port=33329"
 # 10:18:34 >  
 
 #select case when 1 then 2 else 3 end;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% %1 # name
 % tinyint # type
 % 1 # length
 [ 2	]

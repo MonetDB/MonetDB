@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /* included from gdk.h */
@@ -71,20 +71,20 @@ gdk_export BAT *BATcalccstgt(const ValRecord *v, BAT *b, BAT *s);
 gdk_export BAT *BATcalcge(BAT *b1, BAT *b2, BAT *s);
 gdk_export BAT *BATcalcgecst(BAT *b, const ValRecord *v, BAT *s);
 gdk_export BAT *BATcalccstge(const ValRecord *v, BAT *b, BAT *s);
-gdk_export BAT *BATcalceq(BAT *b1, BAT *b2, BAT *s);
-gdk_export BAT *BATcalceqcst(BAT *b, const ValRecord *v, BAT *s);
-gdk_export BAT *BATcalccsteq(const ValRecord *v, BAT *b, BAT *s);
-gdk_export BAT *BATcalcne(BAT *b1, BAT *b2, BAT *s);
-gdk_export BAT *BATcalcnecst(BAT *b, const ValRecord *v, BAT *s);
-gdk_export BAT *BATcalccstne(const ValRecord *v, BAT *b, BAT *s);
+gdk_export BAT *BATcalceq(BAT *b1, BAT *b2, BAT *s, bool nil_matches);
+gdk_export BAT *BATcalceqcst(BAT *b, const ValRecord *v, BAT *s, bool nil_matches);
+gdk_export BAT *BATcalccsteq(const ValRecord *v, BAT *b, BAT *s, bool nil_matches);
+gdk_export BAT *BATcalcne(BAT *b1, BAT *b2, BAT *s, bool nil_matches);
+gdk_export BAT *BATcalcnecst(BAT *b, const ValRecord *v, BAT *s, bool nil_matches);
+gdk_export BAT *BATcalccstne(const ValRecord *v, BAT *b, BAT *s, bool nil_matches);
 gdk_export BAT *BATcalccmp(BAT *b1, BAT *b2, BAT *s);
 gdk_export BAT *BATcalccmpcst(BAT *b, const ValRecord *v, BAT *s);
 gdk_export BAT *BATcalccstcmp(const ValRecord *v, BAT *b, BAT *s);
-gdk_export BAT *BATcalcbetween(BAT *b, BAT *lo, BAT *hi, BAT *s, bool sym);
-gdk_export BAT *BATcalcbetweencstcst(BAT *b, const ValRecord *lo, const ValRecord *hi, BAT *s, bool sym);
-gdk_export BAT *BATcalcbetweenbatcst(BAT *b, BAT *lo, const ValRecord *hi, BAT *s, bool sym);
-gdk_export BAT *BATcalcbetweencstbat(BAT *b, const ValRecord *lo, BAT *hi, BAT *s, bool sym);
-gdk_export gdk_return VARcalcbetween(ValPtr ret, const ValRecord *v, const ValRecord *lo, const ValRecord *hi, bool sym);
+gdk_export BAT *BATcalcbetween(BAT *b, BAT *lo, BAT *hi, BAT *s, bool symmetric, bool linc, bool hinc, bool nils_false, bool anti);
+gdk_export BAT *BATcalcbetweencstcst(BAT *b, const ValRecord *lo, const ValRecord *hi, BAT *s, bool symmetric, bool linc, bool hinc, bool nils_false, bool anti);
+gdk_export BAT *BATcalcbetweenbatcst(BAT *b, BAT *lo, const ValRecord *hi, BAT *s, bool symmetric, bool linc, bool hinc, bool nils_false, bool anti);
+gdk_export BAT *BATcalcbetweencstbat(BAT *b, const ValRecord *lo, BAT *hi, BAT *s, bool symmetric, bool linc, bool hinc, bool nils_false, bool anti);
+gdk_export gdk_return VARcalcbetween(ValPtr ret, const ValRecord *v, const ValRecord *lo, const ValRecord *hi, bool symmetric, bool linc, bool hinc, bool nils_false, bool anti);
 gdk_export BAT *BATcalcifthenelse(BAT *b, BAT *b1, BAT *b2);
 gdk_export BAT *BATcalcifthenelsecst(BAT *b, BAT *b1, const ValRecord *c2);
 gdk_export BAT *BATcalcifthencstelse(BAT *b, const ValRecord *c1, BAT *b2);
@@ -113,8 +113,8 @@ gdk_export gdk_return VARcalclt(ValPtr ret, const ValRecord *lft, const ValRecor
 gdk_export gdk_return VARcalcgt(ValPtr ret, const ValRecord *lft, const ValRecord *rgt);
 gdk_export gdk_return VARcalcle(ValPtr ret, const ValRecord *lft, const ValRecord *rgt);
 gdk_export gdk_return VARcalcge(ValPtr ret, const ValRecord *lft, const ValRecord *rgt);
-gdk_export gdk_return VARcalceq(ValPtr ret, const ValRecord *lft, const ValRecord *rgt);
-gdk_export gdk_return VARcalcne(ValPtr ret, const ValRecord *lft, const ValRecord *rgt);
+gdk_export gdk_return VARcalceq(ValPtr ret, const ValRecord *lft, const ValRecord *rgt, bool nil_matches);
+gdk_export gdk_return VARcalcne(ValPtr ret, const ValRecord *lft, const ValRecord *rgt, bool nil_matches);
 gdk_export gdk_return VARcalccmp(ValPtr ret, const ValRecord *lft, const ValRecord *rgt);
 gdk_export BAT *BATconvert(BAT *b, BAT *s, int tp, bool abort_on_error);
 gdk_export gdk_return VARconvert(ValPtr ret, const ValRecord *v, bool abort_on_error);
@@ -129,18 +129,22 @@ gdk_export BAT *BATgroupmin(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_ni
 gdk_export BAT *BATgroupmax(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_on_error);
 gdk_export BAT *BATgroupmedian(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_on_error);
 gdk_export BAT *BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile, bool skip_nils, bool abort_on_error);
+gdk_export BAT *BATgroupmedian_avg(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_on_error);
+gdk_export BAT *BATgroupquantile_avg(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile, bool skip_nils, bool abort_on_error);
 
 /* helper function for grouped aggregates */
 gdk_export const char *BATgroupaggrinit(
 	BAT *b, BAT *g, BAT *e, BAT *s,
 	/* outputs: */
-	oid *minp, oid *maxp, BUN *ngrpp, BUN *startp, BUN *endp,
-	const oid **candp, const oid **candendp);
+	oid *minp, oid *maxp, BUN *ngrpp,
+	struct canditer *ci, BUN *ncand);
 
 gdk_export gdk_return BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, bool nil_if_empty);
 gdk_export gdk_return BATprod(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, bool nil_if_empty);
 gdk_export void *BATmax(BAT *b, void *aggr);
 gdk_export void *BATmin(BAT *b, void *aggr);
+gdk_export void *BATmax_skipnil(BAT *b, void *aggr, bit skipnil);
+gdk_export void *BATmin_skipnil(BAT *b, void *aggr, bit skipnil);
 
 gdk_export dbl BATcalcstdev_population(dbl *avgp, BAT *b);
 gdk_export dbl BATcalcstdev_sample(dbl *avgp, BAT *b);

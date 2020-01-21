@@ -14,7 +14,6 @@ stdout of test 'utf8_bug.SF-2822855` in directory 'sql/test/BugTracker-2009` its
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:32187/
 # MonetDB/SQL module v2.30.1 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;
@@ -28,7 +27,7 @@ Ready.
 [ 1	]
 [ 1	]
 #select a, length(a) AS len from utf8len;
-% sys.utf8len,	sys.L3 # table_name
+% sys.utf8len,	sys. # table_name
 % a,	len # name
 % varchar,	int # type
 % 1,	1 # length
@@ -36,7 +35,7 @@ Ready.
 [ "€",	1	]
 [ "€",	1	]
 #select 'Liever €uro' as "Liever euro";
-% .L2 # table_name
+% . # table_name
 % "Liever euro" # name
 % char # type
 % 11 # length

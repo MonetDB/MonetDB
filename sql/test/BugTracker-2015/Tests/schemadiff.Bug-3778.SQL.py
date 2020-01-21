@@ -38,6 +38,7 @@ def freeport():
     return port
 
 tmpdir = tempfile.mkdtemp()
+os.mkdir(os.path.join(tmpdir, 'master'))
 
 try:
     masterport = freeport()
@@ -67,6 +68,7 @@ try:
             'mapi'     : 'mapi:monetdb://localhost:'+str(workerport)+'/' + workerdbname,
             'tpf'      : '_' + str(i)
         }
+        os.mkdir(workerrec['dbfarm'])
         workerrec['proc'] = process.server(mapiport=workerrec['port'], dbname=workerrec['dbname'], dbfarm=workerrec['dbfarm'], stdin = process.PIPE, stdout = process.PIPE)
         workerrec['conn'] = pymonetdb.connect(database=workerrec['dbname'], port=workerrec['port'], autocommit=True)
         t = threading.Thread(target=worker_load, args = [workerrec])

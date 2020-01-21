@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #ifndef _MAL_PROFILER_H
@@ -20,22 +20,20 @@
 typedef struct rusage Rusage;
 #endif
 
-typedef struct tms Tms;
-
 mal_export int malProfileMode;
 
 mal_export void initProfiler(void);
-mal_export str openProfilerStream(stream *fd, int mode);
-mal_export str closeProfilerStream(void);
+mal_export str openProfilerStream(Client cntxt);
+mal_export str closeProfilerStream(Client cntxt);
 
-mal_export void profilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str usrname);
+mal_export void profilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start);
+mal_export void sqlProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-mal_export str startProfiler(void);
-mal_export str stopProfiler(void);
-mal_export str startTrace(str path);
-mal_export str stopTrace(str path);
+mal_export str startProfiler(Client cntxt);
+mal_export str stopProfiler(Client cntxt);
+mal_export str startTrace(Client cntxt);
+mal_export str stopTrace(Client cntxt);
 mal_export void setHeartbeat(int delay);
-mal_export str setprofilerpoolsize(int size);
 mal_export void initHeartbeat(void);
 mal_export void profilerHeartbeatEvent(char *alter);
 mal_export int getprofilerlimit(void);
@@ -43,11 +41,10 @@ mal_export void setprofilerlimit(int limit);
 
 mal_export void MPresetProfiler(stream *fdout);
 
-mal_export void clearTrace(void);
-mal_export int TRACEtable(BAT **r);
-mal_export int initTrace(void);
-mal_export str cleanupTraces(void);
-mal_export BAT *getTrace(const char *ev);
+mal_export void clearTrace(Client cntxt);
+mal_export int TRACEtable(Client cntxt, BAT **r);
+mal_export str cleanupTraces(Client cntxt);
+mal_export BAT *getTrace(Client cntxt, const char *nme);
 
 
 mal_export lng getDiskSpace(void);

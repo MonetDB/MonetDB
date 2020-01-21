@@ -18,7 +18,6 @@ stdout of test 'ifexists-views` in directory 'sql/test` itself:
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 10:36:23 >  
 # 10:36:23 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-29186" "--port=32036"

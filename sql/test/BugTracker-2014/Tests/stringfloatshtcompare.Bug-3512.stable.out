@@ -19,7 +19,6 @@ stdout of test 'stringfloatshtcompare.Bug-3512` in directory 'sql/test/BugTracke
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 17:59:37 >  
 # 17:59:37 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-29460" "--port=39243"

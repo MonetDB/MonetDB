@@ -18,7 +18,6 @@ stdout of test 'event_s05` in directory 'sql/test/Via-m` itself:
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 10:49:38 >  
 # 10:49:38 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-5263" "--port=36838"
@@ -27,12 +26,6 @@ Ready.
 #declare id_event integer;
 #set id_event = -1;
 #set id_event = add_event('event 2', '2009-06-23', 'artist2', 'location2', 'description2');
-#select id_event; 
-% .L2 # table_name
-% L2 # name
-% int # type
-% 1 # length
-[ 2	]
 
 # 10:49:39 >  
 # 10:49:39 >  "Done."

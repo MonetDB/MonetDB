@@ -18,33 +18,32 @@ stdout of test 'concat-str-int.Bug-6583` in directory 'sql/test/BugTracker-2018`
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 17:02:06 >  
 # 17:02:06 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-25700" "--port=38716"
 # 17:02:06 >  
 
 #select '12345' || 678;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% %1 # name
 % char # type
 % 8 # length
 [ "12345678"	]
 #select 12345 || '678';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% %1 # name
 % clob # type
 % 8 # length
 [ "12345678"	]
 #select '12345' || '678';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% %1 # name
 % varchar # type
 % 8 # length
 [ "12345678"	]
 #select 12345 || 678;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% %1 # name
 % clob # type
 % 8 # length
 [ "12345678"	]

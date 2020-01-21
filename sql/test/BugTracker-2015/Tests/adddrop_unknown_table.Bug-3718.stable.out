@@ -19,7 +19,6 @@ stdout of test 'adddrop_unknown_table.Bug-3718` in directory 'sql/test/BugTracke
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 12:45:38 >  
 # 12:45:38 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-2012" "--port=36769"

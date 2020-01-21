@@ -17,7 +17,6 @@ stdout of test 'count-and-not.Bug-2663` in directory 'sql/test/BugTracker-2010` 
 # MonetDB/SQL module v2.38.5 loaded
 # MonetDB/GIS module v0.18.4 loaded
 
-Ready.
 
 
 # 17:35:13 >  
@@ -29,7 +28,7 @@ Ready.
 #          FROM tables
 #         GROUP BY id) as i
 # WHERE NOT (1 < i.cnt);
-% .L46 # table_name
+% .%13 # table_name
 % res # name
 % boolean # type
 % 5 # length
@@ -39,7 +38,7 @@ Ready.
 #          FROM tables
 #         GROUP BY id) as i
 # WHERE NOT (i.cnt > 1);
-% .L46 # table_name
+% .%13 # table_name
 % res # name
 % boolean # type
 % 5 # length
@@ -49,7 +48,7 @@ Ready.
 #          FROM tables
 #         GROUP BY id) as i
 # WHERE NOT (1 < i.cnt);
-% .L45 # table_name
+% .%12 # table_name
 % res # name
 % boolean # type
 % 5 # length
@@ -59,7 +58,7 @@ Ready.
 #          FROM tables
 #         GROUP BY id) as i
 # WHERE 1 >= i.cnt;
-% .L46 # table_name
+% .%12 # table_name
 % res # name
 % boolean # type
 % 5 # length
@@ -69,7 +68,7 @@ Ready.
 #          FROM tables
 #         GROUP BY id) as i
 # WHERE i.cnt <= 1;
-% .L46 # table_name
+% .%12 # table_name
 % res # name
 % boolean # type
 % 5 # length
@@ -79,7 +78,7 @@ Ready.
 #          FROM tables
 #         GROUP BY id) as i
 # WHERE 1 < i.cnt;
-% .L46 # table_name
+% .%12 # table_name
 % res # name
 % boolean # type
 % 5 # length

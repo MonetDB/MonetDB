@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -11,6 +11,9 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
+#ifdef HAVE_POLL_H
+#include <poll.h>
+#endif
 #include <fcntl.h>
 #include <time.h>
 
@@ -184,7 +187,7 @@ getRemoteDB(char *database)
 			}
 			walk->dbname = strdup(rdb->dbname);
 			walk->path = walk->dbname; /* only freed by sabaoth */
-			walk->locked = 0;
+			walk->locked = false;
 			walk->state = SABdbRunning;
 			walk->scens = malloc(sizeof(sablist));
 			walk->scens->val = strdup("sql");
@@ -281,8 +284,12 @@ discoveryRunner(void *d)
 	int s = -1;
 	struct sockaddr_storage peer_addr;
 	socklen_t peer_addr_len;
+#ifdef HAVE_POLL
+	struct pollfd pfd;
+#else
 	fd_set fds;
 	struct timeval tv;
+#endif
 	/* avoid first announce, the HELO will cause an announce when it's
 	 * received by ourself */
 	time_t deadline = 1;
@@ -336,7 +343,7 @@ discoveryRunner(void *d)
 				kv = findConfKey(ckv, "shared");
 				val = kv->val == NULL ? "" : kv->val;
 				/* skip databases under maintenance */
-				if (strcmp(val, "no") != 0 && stats->locked != 1) {
+				if (strcmp(val, "no") != 0 && !stats->locked) {
 					/* craft ANNC message for this db */
 					if (strcmp(val, "yes") == 0)
 						val = "";
@@ -393,11 +400,15 @@ discoveryRunner(void *d)
 		peer_addr_len = sizeof(struct sockaddr_storage);
 		/* Wait up to 5 seconds. */
 		for (s = 0; s < 5; s++) {
+#ifdef HAVE_POLL
+			pfd = (struct pollfd) {.fd = sock, .events = POLLIN};
+			nread = poll(&pfd, 1, 1000);
+#else
 			FD_ZERO(&fds);
 			FD_SET(sock, &fds);
-			tv.tv_sec = 1;
-			tv.tv_usec = 0;
+			tv = (struct timeval) {.tv_sec = 1};
 			nread = select(sock + 1, &fds, NULL, NULL, &tv);
+#endif
 			if (nread != 0)
 				break;
 			if (!_mero_keep_listening)

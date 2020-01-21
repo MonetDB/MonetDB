@@ -91,6 +91,7 @@ def freeport():
 ssbmpath = os.path.join(os.environ['TSTSRCBASE'], 'sql', 'benchmarks', 'ssbm', 'Tests')
 ssbmdatapath = os.path.join(ssbmpath, 'SF-0.01')
 tmpdir = tempfile.mkdtemp()
+os.mkdir(os.path.join(tmpdir, 'master'))
 
 masterport = freeport()
 masterproc = process.server(mapiport=masterport, dbname="master", dbfarm=os.path.join(tmpdir, 'master'), stdin = process.PIPE, stdout = process.PIPE)
@@ -105,7 +106,7 @@ if os.path.exists(lineorderdir):
 if not os.path.exists(lineorderdir):
     os.makedirs(lineorderdir)
 inputData = open(lineordertbl, 'r').read().split('\n')
-linesperslice = len(inputData) / nworkers + 1
+linesperslice = len(inputData) // nworkers + 1
 i = 0
 for lines in range(0, len(inputData), linesperslice):
     outputData = inputData[lines:lines+linesperslice]
@@ -150,6 +151,7 @@ for i in range(nworkers):
         'repldata' : os.path.join(ssbmdatapath, 'date.tbl'),
         'tpf'      : '_%d' % i
     }
+    os.mkdir(workerrec['dbfarm'])
     workerrec['proc'] = process.server(mapiport=workerrec['port'], dbname=workerrec['dbname'], dbfarm=workerrec['dbfarm'], stdin = process.PIPE, stdout = process.PIPE)
     workerrec['conn'] = pymonetdb.connect(database=workerrec['dbname'], port=workerrec['port'], autocommit=True)
     t = threading.Thread(target=worker_load, args = [workerrec])

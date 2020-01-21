@@ -14,7 +14,6 @@ stdout of test 'insert_into_unique_column.SF-2075180` in directory 'sql/test/Bug
 # Listening for connection requests on mapi:monetdb://alviss.ins.cwi.nl:36357/
 # MonetDB/SQL module v2.26.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

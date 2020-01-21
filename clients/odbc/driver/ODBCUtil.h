@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -70,32 +70,33 @@ extern char *dupODBCstring(const SQLCHAR *inStr, size_t length);
 /* Utility macro to copy a string to an output argument.  In the ODBC
    API there are generally three arguments involved: the pointer to a
    buffer, the length of that buffer, and a pointer to where the
-   actual string length is to be stored. */
-#define copyString(str, strlen, buf, len, lenp, lent, errfunc, hdl, ret) \
+   actual string length is to be stored.
+   The output buffer is always NULL-terminated, so if *lenp == buflen
+   the input string did not fit. */
+#define copyString(str, strlen, buf, buflen, lenp, lent, errfunc, hdl, ret) \
 	do {								\
-		lent _l;						\
-		if ((len) < 0) {					\
+		size_t _l;						\
+		if ((buflen) < 0) {					\
 			/* Invalid string or buffer length */		\
 			errfunc((hdl), "HY090", NULL, 0);		\
 			ret;						\
 		}							\
-		_l = (str) ? (lent) (strlen) : 0;			\
-		if (buf) {						\
-			strncpy((char *) (buf), (str) ? (const char *) (str) : "", (len)); \
-			if (_l < (len))					\
-				((char *)(buf))[_l] = 0;		\
+		if (buf && (buflen) > 0) {				\
+			_l = strcpy_len((char *) (buf), (str) ? (const char *) (str) : "", (buflen)); \
+		} else {						\
+			_l = (str) ? (lent) (strlen) : 0;		\
 		}							\
 		if (lenp)						\
-			*(lenp) = _l;					\
-		if ((buf) == NULL || _l >= (len))			\
+			*(lenp) = (lent) _l;				\
+		if ((buf) == NULL || (lent) _l >= (buflen))		\
 			/* String data, right-truncated */		\
 			errfunc((hdl), "01004", NULL, 0);		\
 	} while (0)
 
 extern SQLCHAR *ODBCwchar2utf8(const SQLWCHAR *s, SQLLEN length, const char **errmsg);
-extern const char *ODBCutf82wchar(const SQLCHAR *s, SQLINTEGER length, SQLWCHAR *buf, SQLLEN buflen, SQLSMALLINT *buflenout);
+extern const char *ODBCutf82wchar(const SQLCHAR *s, SQLINTEGER length, SQLWCHAR *buf, SQLLEN buflen, SQLSMALLINT *buflenout, size_t *consumed);
 
-#define fixWcharIn(ws, wsl, t, s, errfunc, hdl, exit)			\
+#define fixWcharIn(ws, wsl, t, s, errfunc, hdl, bailout)		\
 	do {								\
 		const char *e;						\
 		(s) = (t *) ODBCwchar2utf8((ws), (wsl), &e);		\
@@ -104,13 +105,14 @@ extern const char *ODBCutf82wchar(const SQLCHAR *s, SQLINTEGER length, SQLWCHAR 
 			errfunc((hdl),					\
 				strcmp(e, "Memory allocation error") == 0 ? \
 					"HY001" : "HY000", e, 0);	\
-			exit;						\
+			bailout;					\
 		}							\
 	} while (0)
 #define fixWcharOut(r, s, sl, ws, wsl, wslp, cw, errfunc, hdl)		\
 	do {								\
 		const char *e = ODBCutf82wchar((s), (sl), (ws),		\
-					       (wsl) / (cw), &(sl));	\
+					       (wsl) / (cw), &(sl),	\
+					       NULL);			\
 		if (e) {						\
 			/* General error */				\
 			errfunc((hdl), "HY000", e, 0);			\

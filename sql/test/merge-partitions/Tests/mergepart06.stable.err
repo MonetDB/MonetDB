@@ -32,15 +32,19 @@ stderr of test 'mergepart06` in directory 'sql/test/merge-partitions` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-655/.s.monetdb.35425
 QUERY = INSERT INTO testrangelimits VALUES (1000, 'ups'); --error
-ERROR = !INSERT: the insert violates the partition range of values
+ERROR = !INSERT: the insert violates the partition range (NB higher limit exclusive) of values
 CODE  = M0M29
-MAPI  = (monetdb) /var/tmp/mtest-655/.s.monetdb.35425
+MAPI  = (monetdb) /var/tmp/mtest-13251/.s.monetdb.37915
+QUERY = ALTER TABLE testrangelimits ADD TABLE sublimits5 AS PARTITION FROM -1 TO 1; --error
+ERROR = !ALTER TABLE: conflicting partitions: -1 to 1 and 0 to 100 from table sys.sublimits1
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-19391/.s.monetdb.34228
 QUERY = INSERT INTO testrangelimits VALUES (201, 'oh no'); --error
-ERROR = !INSERT: the insert violates the partition range of values
+ERROR = !INSERT: the insert violates the partition range (NB higher limit exclusive) of values
 CODE  = M0M29
 MAPI  = (monetdb) /var/tmp/mtest-655/.s.monetdb.35425
 QUERY = INSERT INTO testrangelimits VALUES (444, 'another'), (305, 'error'), (4, 'happening'); --error
-ERROR = !INSERT: the insert violates the partition range of values
+ERROR = !INSERT: the insert violates the partition range (NB higher limit exclusive) of values
 CODE  = M0M29
 MAPI  = (monetdb) /var/tmp/mtest-655/.s.monetdb.35425
 QUERY = INSERT INTO sublimits3 VALUES (2, 'will'); --error

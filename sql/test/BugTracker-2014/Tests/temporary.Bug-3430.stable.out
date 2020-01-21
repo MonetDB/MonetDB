@@ -19,7 +19,6 @@ stdout of test 'temporary.Bug-3430` in directory 'sql/test/BugTracker-2014` itse
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 12:14:57 >  
 # 12:14:57 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-30260" "--port=33005"

@@ -18,7 +18,6 @@ stdout of test 'dropTestWKT` in directory 'geom/sql/functions` itself:
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 16:29:43 >  
 # 16:29:43 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-15511" "--port=35467"

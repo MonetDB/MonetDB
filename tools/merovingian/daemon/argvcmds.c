@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -15,6 +15,7 @@
 
 #include "mutils.h" /* MT_lockf */
 #include "mcrypt.h" /* mcrypt_BackendSum */
+#include "mstring.h"
 #include "utils/utils.h"
 #include "utils/properties.h"
 #include "utils/control.h"
@@ -65,13 +66,15 @@ command_help(int argc, char *argv[])
 int
 command_version(void)
 {
-	const char *rev = mercurial_revision();
 	printf("MonetDB Database Server v%s", VERSION);
 	/* coverity[pointless_string_compare] */
-	if (strcmp(MONETDB_RELEASE, "unreleased") != 0)
-		printf(" (%s)", MONETDB_RELEASE);
-	else if (strcmp(rev, "Unknown") != 0)
+#ifdef MONETDB_RELEASE
+	printf(" (%s)", MONETDB_RELEASE);
+#else
+	const char *rev = mercurial_revision();
+	if (strcmp(rev, "Unknown") != 0)
 		printf(" (hg id: %s)", rev);
+#endif
 	printf("\n");
 	return 0;
 }
@@ -92,8 +95,7 @@ command_create(int argc, char *argv[])
 	dbfarm = argv[1];
 
 	/* check if dbfarm actually exists */
-	strncpy(path, dbfarm, sizeof(path) - 1);
-	path[sizeof(path) - 1] = '\0';
+	strcpy_len(path, dbfarm, sizeof(path));
 	p = path;
 	while ((p = strchr(p + 1, '/')) != NULL) {
 		*p = '\0';
@@ -185,7 +187,7 @@ command_get(confkeyval *ckv, int argc, char *argv[])
 	{
 		/* check if there is a merovingian serving this dbfarm */
 		int ret;
-		if ((ret = MT_lockf(".merovingian_lock", F_TLOCK, 4, 1)) == -1) {
+		if ((ret = MT_lockf(".merovingian_lock", F_TLOCK)) == -1) {
 			/* locking failed, merovingian is running */
 			FILE *pf;
 			char *pfile = getConfVal(ckv, "pidfile");
@@ -199,7 +201,7 @@ command_get(confkeyval *ckv, int argc, char *argv[])
 		} else {
 			if (ret >= 0) {
 				/* release a possible lock */
-				MT_lockf(".merovingian_lock", F_ULOCK, 4, 1);
+				MT_lockf(".merovingian_lock", F_ULOCK);
 				close(ret);
 			}
 			meropid = 0;
@@ -207,7 +209,8 @@ command_get(confkeyval *ckv, int argc, char *argv[])
 	}
 
 	printf("   property            value\n");
-	while ((p = strtok(property, ",")) != NULL) {
+	char *sp;
+	while ((p = strtok_r(property, ",", &sp)) != NULL) {
 		property = NULL;
 		if (strcmp(p, "dbfarm") == 0) {
 			value = dbfarm;

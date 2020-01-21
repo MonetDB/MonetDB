@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -156,7 +156,7 @@ init_bam_wrapper(bam_wrapper * bw, filetype type, str file_location,
 				  file_location);
 		}
 		if ((bw->sam.header = (str)GDKmalloc(bufsize * sizeof(char))) == NULL) {
-			throw(MAL, "init_bam_wrapper", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "init_bam_wrapper", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		while (TRUE) {
 			ssize_t read;
@@ -189,7 +189,7 @@ init_bam_wrapper(bam_wrapper * bw, filetype type, str file_location,
 				str tmp;
 				bufsize *= 2;
 				if ((tmp = GDKrealloc(bw->sam.header, bufsize * sizeof(char))) == NULL) {
-					throw(MAL, "init_bam_wrapper", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+					throw(MAL, "init_bam_wrapper", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				}
 				bw->sam.header = tmp;
 				if (mnstr_fsetpos(bw->sam.input, &header_pos) < 0) {
@@ -479,8 +479,7 @@ read_string_until_delim(str * src, str * ret, char *delims, sht nr_delims)
 	if (*ret == NULL)
 		return -1;
 
-	strncpy(*ret, *src, size);
-	*(*ret + size) = '\0';
+	strcpy_len(*ret, *src, size + 1);
 
 	/* and advance src */
 	*src += size;
@@ -577,7 +576,7 @@ process_header_line(str * header, bam_header_line * ret_hl, bit * eof,
 			 (bam_header_option *)
 			 GDKmalloc(sizeof(bam_header_option))) == NULL) {
 			throw(MAL, "process_header_line",
-				  SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 
 		/* indicate that no tag exists for this option */
@@ -586,7 +585,7 @@ process_header_line(str * header, bam_header_line * ret_hl, bit * eof,
 			-1) {
 			GDKfree(opt);
 			throw(MAL, "process_header_line",
-				  SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		/* option only has to point to a single
 		 * bam_header_option in this case */
@@ -598,7 +597,7 @@ process_header_line(str * header, bam_header_line * ret_hl, bit * eof,
 	/* reserve enough space for the options (max 12 for RG) */
 	if ((ret_hl->options =
 		 GDKmalloc(12 * sizeof(bam_header_option))) == NULL) {
-		throw(MAL, "process_header_line", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "process_header_line", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	/* Enables clear function to check individual options */
@@ -650,7 +649,7 @@ process_header_line(str * header, bam_header_line * ret_hl, bit * eof,
 		if (read_string_until_delim(header, &opt->value, "\t\n\0", 3)
 			== -1) {
 			throw(MAL, "process_header_line",
-				  SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 	}
 
@@ -659,7 +658,7 @@ process_header_line(str * header, bam_header_line * ret_hl, bit * eof,
 	opt = GDKrealloc(ret_hl->options,
 					 ret_hl->nr_options * sizeof(bam_header_option));
 	if (opt == NULL)
-		throw(MAL, "process_header_line", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "process_header_line", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	ret_hl->options = opt;
 
 	return MAL_SUCCEED;
@@ -1326,14 +1325,15 @@ check_alignment_buffers(bam_wrapper *bw, alignment * alig, int qname_size,
 		alig->qual = tmp;
 	}
 
-#ifdef BAM_DEBUG
-	if (resized[0])
-		TO_LOG("<bam_loader> Increased size of qname buffer to %d characters\n", alig->qname_size);
-	if (resized[1])
-		TO_LOG("<bam_loader> Increased size of cigar buffer to %d characters\n", alig->cigar_size);
-	if (resized[2])
-		TO_LOG("<bam_loader> Increased size of seq and qual buffers to %d characters\n", alig->seq_size);
-#endif
+	TRC_DEBUG_IF(BAM_)
+	{
+		if (resized[0])
+			TRC_DEBUG_ENDIF(BAM_, "Increased size of qname buffer to: %d characters\n", alig->qname_size);
+		if (resized[1])
+			TRC_DEBUG_ENDIF(BAM_, "Increased size of cigar buffer to: %d characters\n", alig->cigar_size);
+		if (resized[2])
+			TRC_DEBUG_ENDIF(BAM_, "Increased size of seq and qual buffers to: %d characters\n", alig->seq_size);
+	}
 
 	return (alig->cigar != NULL && alig->seq != NULL
 		&& alig->qual != NULL);
@@ -1358,7 +1358,7 @@ check_qname_buffer(alignment * alig, int cur_size) {
 		if (tmp == NULL)
 			return 0;
 		alig->qname = tmp;
-		TO_LOG("<bam_loader> Increased size of qname buffer to %d characters\n", alig->qname_size);
+		TRC_DEBUG(BAM_, "Increased size of qname buffer to: %d characters\n", alig->qname_size);
 	}
 	return alig->qname != NULL;
 }
@@ -1380,7 +1380,7 @@ check_rname_rnext_buffers(alignment * alig, int cur_size) {
 		if (tmp == NULL)
 			return 0;
 		alig->rnext = tmp;
-		TO_LOG("<bam_loader> Increased size of cigar buffer to %d characters\n", alig->rname_size);
+		TRC_DEBUG(BAM_, "Increased size of cigar buffer to: %d characters\n", alig->rname_size);
 	}
 	return alig->rname != NULL && alig->rnext != NULL;
 }
@@ -1398,7 +1398,7 @@ check_cigar_buffer(alignment * alig, int cur_size) {
 		if (tmp == NULL)
 			return 0;
 		alig->cigar = tmp;
-		TO_LOG("<bam_loader> Increased size of cigar buffer to %d characters\n", alig->cigar_size);
+		TRC_DEBUG(BAM_, "Increased size of cigar buffer to: %d characters\n", alig->cigar_size);
 	}
 	return alig->cigar != NULL;
 }
@@ -1419,7 +1419,7 @@ check_seq_qual_buffers(alignment * alig, int cur_size) {
 		if (tmp == NULL)
 			return 0;
 		alig->qual = tmp;
-		TO_LOG("<bam_loader> Increased size of seq and qual buffers to %d characters\n", alig->seq_size);
+		TRC_DEBUG(BAM_, "Increased size of seq and qual buffers to: %d characters\n", alig->seq_size);
 	}
 	return alig->seq != NULL && alig->qual != NULL;
 }
@@ -1436,7 +1436,7 @@ check_aux_buffer(alignment * alig, int cur_size) {
 		if (tmp == NULL)
 			return 0;
 		alig->aux = tmp;
-		TO_LOG("<bam_loader> Increased size of aux buffer to %d characters\n", alig->aux_size);
+		TRC_DEBUG(BAM_, "Increased size of aux buffer to: %d characters\n", alig->aux_size);
 	}
 	return alig->aux != NULL;
 }
@@ -1604,7 +1604,7 @@ bam1_t2alignment(bam_wrapper * bw, lng virtual_offset, bam1_t * a_in,
 	/* Start by making sure that the buffers in a_out are large enough */
 	if (!check_alignment_buffers
 		(bw, a_out, a_in->core.l_qname, a_in->core.n_cigar * 4, a_in->core.l_qseq)) {
-		throw(MAL, "process_alignment", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "process_alignment", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	/* virtual_offset */
@@ -1739,7 +1739,7 @@ write_aux_str(bam_wrapper * bw, str aux, int aux_len, lng virtual_offset) {
 		type[0] = *(s+3);
 		s += 5;
 		if(read_string_until_delim(&s, &val, "\t\n\0", 3) < 0) {
-			throw(MAL, "write_aux_str", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "write_aux_str", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		if((msg = write_aux(bw, tag, virtual_offset, type, val)) != MAL_SUCCEED) {
 			GDKfree(val);
@@ -2146,7 +2146,7 @@ process_alignments(bam_wrapper * bw, bit * some_thread_failed)
 	if ((aligs =
 		 (alignment **) GDKmalloc(nr_aligs * sizeof(alignment *))) == NULL) {
 		msg = createException(MAL, "process_alignments",
-			SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto cleanup;
 	}
 
@@ -2157,7 +2157,7 @@ process_alignments(bam_wrapper * bw, bit * some_thread_failed)
 		if ((aligs[i] = (alignment *)GDKmalloc(sizeof(alignment)))
 			== NULL) {
 			msg = createException(MAL, "process_alignments",
-				SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto cleanup;
 		}
 	}
@@ -2165,14 +2165,14 @@ process_alignments(bam_wrapper * bw, bit * some_thread_failed)
 	for (i = 0; i < nr_aligs; ++i) {
 		if (!init_alignment(bw, aligs[i])) {
 			msg = createException(MAL, "process_alignments",
-				SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto cleanup;
 		}
 	}
 
 	if((alig = bam_init1()) == NULL) {
 		msg = createException(MAL, "process_alignments",
-			SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto cleanup;
 	}
 
@@ -2294,7 +2294,7 @@ process_alignments(bam_wrapper * bw, bit * some_thread_failed)
 						GDKfree(aligs);
 						msg = createException(MAL,
 									  "process_alignments",
-									  SQLSTATE(HY001) MAL_MALLOC_FAIL);
+									  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 						goto cleanup;
 					}
 					aligs = tmp;
@@ -2314,12 +2314,12 @@ process_alignments(bam_wrapper * bw, bit * some_thread_failed)
 							msg = createException
 								(MAL,
 								 "process_alignments",
-								 SQLSTATE(HY001) MAL_MALLOC_FAIL);
+								 SQLSTATE(HY013) MAL_MALLOC_FAIL);
 							goto cleanup;
 						}
 					}
 					nr_aligs = new_nr_aligs;
-					TO_LOG("<bam_loader> Increased size of alignment buffer to %d alignments\n", nr_aligs);
+					TRC_DEBUG(BAM_, "<bam_loader> Increased size of alignment buffer to: %d alignments\n", nr_aligs);
 				}
 			}
 		}

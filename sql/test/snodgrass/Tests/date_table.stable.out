@@ -16,7 +16,6 @@ stdout of test 'date_table` in directory 'sql/test/snodgrass` itself:
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql

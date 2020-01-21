@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -57,7 +57,7 @@ INSPECTgetAllFunctions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) mb;
 	if (b == 0)
-		throw(MAL, "inspect.getgetFunctionId", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "inspect.getgetFunctionId", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	getModuleList(&moduleList, &length);
 	if (moduleList == NULL)
@@ -82,7 +82,7 @@ INSPECTgetAllFunctions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
   bailout:
 	BBPreclaim(b);
 	freeModuleList(moduleList);
-	throw(MAL, "inspect.getgetFunctionId", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	throw(MAL, "inspect.getgetFunctionId", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
 
 str
@@ -98,7 +98,7 @@ INSPECTgetAllModules(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) mb;
 	if (b == 0)
-		throw(MAL, "inspect.getmodule", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "inspect.getmodule", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	getModuleList(&moduleList, &length);
 	if (moduleList == NULL)
@@ -124,7 +124,7 @@ INSPECTgetAllModules(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
   bailout:
 	freeModuleList(moduleList);
 	BBPreclaim(b);
-	throw(MAL, "inspect.getmodule", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	throw(MAL, "inspect.getmodule", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
 
 str
@@ -140,7 +140,7 @@ INSPECTgetkind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void)mb;
 	if (b == 0)
-		throw(MAL, "inspect.get", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "inspect.get", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	getModuleList(&moduleList, &length);
 	if (moduleList == NULL)
@@ -166,7 +166,7 @@ INSPECTgetkind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
   bailout:
 	BBPreclaim(b);
 	freeModuleList(moduleList);
-	throw(MAL, "inspect.get", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	throw(MAL, "inspect.get", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
 
 
@@ -184,7 +184,7 @@ INSPECTgetAllSignatures(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void)mb;
 	if (b == 0)
-		throw(MAL, "inspect.get", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "inspect.get", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	getModuleList(&moduleList, &length);
 	if (moduleList == NULL)
@@ -210,7 +210,7 @@ INSPECTgetAllSignatures(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
   bailout:
 	BBPreclaim(b);
 	freeModuleList(moduleList);
-	throw(MAL, "inspect.get", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	throw(MAL, "inspect.get", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
 str
 INSPECTgetAllAddresses(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -227,7 +227,7 @@ INSPECTgetAllAddresses(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void)mb;
 
 	if (b == 0)
-		throw(MAL, "inspect.get", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "inspect.get", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	getModuleList(&moduleList, &length);
 	if (moduleList == NULL)
@@ -255,7 +255,7 @@ INSPECTgetAllAddresses(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
   bailout:
 	BBPreclaim(b);
 	freeModuleList(moduleList);
-	throw(MAL, "inspect.get", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	throw(MAL, "inspect.get", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
 
 str
@@ -274,7 +274,7 @@ INSPECTgetDefinition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	b = COLnew(0, TYPE_str, 256, TRANSIENT);
 	if (b == 0)
-		throw(MAL, "inspect.getDefinition", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "inspect.getDefinition", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	while (s) {
 		int i;
@@ -297,7 +297,7 @@ INSPECTgetDefinition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
   bailout:
 	BBPreclaim(b);
-	throw(MAL, "inspect.getDefinition", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	throw(MAL, "inspect.getDefinition", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
 
 str
@@ -316,13 +316,14 @@ INSPECTgetSignature(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "inspect.getSignature", RUNTIME_SIGNATURE_MISSING);
 	b = COLnew(0, TYPE_str, 12, TRANSIENT);
 	if (b == 0)
-		throw(MAL, "inspect.getSignature", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "inspect.getSignature", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	while (s != NULL) {
 		if (idcmp(s->name, *fcn) == 0) {
+			InstrPtr p = getSignature(s);
 			char *c, *w;
 
-			ps = instruction2str(s->def, 0, getSignature(s), 0);
+			ps = instruction2str(s->def, 0, p, 0);
 			if (ps == 0) {
 				continue;
 			}
@@ -350,7 +351,7 @@ INSPECTgetSignature(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
   bailout:
 	BBPreclaim(b);
-	throw(MAL, "inspect.getSignature", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	throw(MAL, "inspect.getSignature", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
 
 str
@@ -369,13 +370,14 @@ INSPECTgetAddress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "inspect.getAddress", RUNTIME_SIGNATURE_MISSING);
 	b = COLnew(0, TYPE_str, 12, TRANSIENT);
 	if (b == 0)
-		throw(MAL, "inspect.getAddress", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "inspect.getAddress", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	while (s != NULL) {
 		if (idcmp(s->name, *fcn) == 0) {
+			InstrPtr p = getSignature(s);
 			char *c,*w;
 
-			ps = instruction2str(s->def, 0, getSignature(s), 0);
+			ps = instruction2str(s->def, 0, p, 0);
 			if(ps == NULL)
 				continue;
 			c = strchr(ps, '(');
@@ -404,7 +406,7 @@ INSPECTgetAddress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
   bailout:
 	BBPreclaim(b);
-	throw(MAL, "inspect.getAddress", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	throw(MAL, "inspect.getAddress", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
 str
 INSPECTgetComment(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -421,7 +423,7 @@ INSPECTgetComment(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "inspect.getComment", RUNTIME_SIGNATURE_MISSING);
 	b = COLnew(0, TYPE_str, 12, TRANSIENT);
 	if (b == 0)
-		throw(MAL, "inspect.getComment", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "inspect.getComment", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	while (s != NULL) {
 		if (idcmp(s->name, *fcn) == 0 &&
@@ -435,7 +437,7 @@ INSPECTgetComment(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
   bailout:
 	BBPreclaim(b);
-	throw(MAL, "inspect.getComment", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	throw(MAL, "inspect.getComment", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
 
 str
@@ -455,7 +457,7 @@ INSPECTgetSource(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	buf= (char*) GDKmalloc(BUFSIZ);
 	if ( buf == NULL)
-		throw(MAL, "inspect.getSource", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "inspect.getSource", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	snprintf(buf,BUFSIZ,"%s.%s",*mod,*fcn);
 	buf[0]=0;
 	len= 0;
@@ -468,7 +470,7 @@ INSPECTgetSource(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		for (i = 0; i < s->def->stop; i++) {
 			if((ps = instruction2str(s->def, 0, getInstrPtr(s->def, i), LIST_MAL_NAME )) == NULL) {
 				GDKfree(buf);
-				throw(MAL, "inspect.getSource", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				throw(MAL, "inspect.getSource", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 			if( strlen(ps) >= lim-len){
 				/* expand the buffer */
@@ -477,7 +479,7 @@ INSPECTgetSource(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				if ( bn == NULL) {
 					GDKfree(ps);
 					GDKfree(buf);
-					throw(MAL, "inspect.getSource", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+					throw(MAL, "inspect.getSource", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				}
 				buf=bn;
 				lim+= BUFSIZ;
@@ -501,7 +503,7 @@ INSPECTatom_names(bat *ret)
 	BAT *b = COLnew(0, TYPE_str, 256, TRANSIENT);
 
 	if (b == 0)
-		throw(MAL, "inspect.getAtomNames", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "inspect.getAtomNames", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	for (i = 0; i < GDKatomcnt; i++)
 		if (BUNappend(b, ATOMname(i), false) != GDK_SUCCEED)
@@ -513,33 +515,25 @@ INSPECTatom_names(bat *ret)
 	return MAL_SUCCEED;
   bailout:
 	BBPreclaim(b);
-	throw(MAL, "inspect.getAtomNames", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	throw(MAL, "inspect.getAtomNames", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
 str
 INSPECTgetEnvironment(bat *ret, bat *ret2)
 {
-	BAT *b, *bn;
+	BAT *k, *v;
 
-	b = COLcopy(GDKkey, GDKkey->ttype, false, TRANSIENT);
-	if (b == 0)
-		throw(MAL, "inspect.getEnvironment", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-	bn = COLcopy(GDKval, GDKval->ttype, false, TRANSIENT);
-	if (bn == 0){
-		BBPunfix(b->batCacheid);
-		throw(MAL, "inspect.getEnvironment", SQLSTATE(HY001) MAL_MALLOC_FAIL);
- 	}
-	BAThseqbase(b,0);
-	BAThseqbase(bn,0);
+	if (GDKcopyenv(&k, &v, false) != GDK_SUCCEED)
+		throw(MAL, "inspect.getEnvironment", GDK_EXCEPTION);
 
-	BBPkeepref(*ret = b->batCacheid);
-	BBPkeepref(*ret2 = bn->batCacheid);
+	BBPkeepref(*ret = k->batCacheid);
+	BBPkeepref(*ret2 = v->batCacheid);
 	return MAL_SUCCEED;
 }
 
 str
 INSPECTgetEnvironmentKey(str *ret, str *key)
 {
-	str s;
+	const char *s;
 	*ret = 0;
 
 	s= GDKgetenv(*key);
@@ -549,7 +543,7 @@ INSPECTgetEnvironmentKey(str *ret, str *key)
 		throw(MAL, "inspect.getEnvironment", "environment variable '%s' not found", *key);
 	*ret = GDKstrdup(s);
 	if (*ret == NULL)
-		throw(MAL, "inspect.getEnvironment", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "inspect.getEnvironment", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -560,7 +554,7 @@ INSPECTatom_sup_names(bat *ret)
 	BAT *b = COLnew(0, TYPE_str, 256, TRANSIENT);
 
 	if (b == 0)
-		throw(MAL, "inspect.getAtomSuper", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "inspect.getAtomSuper", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	for (i = 0; i < GDKatomcnt; i++) {
 		for (k = ATOMstorage(i); k > TYPE_str; k = ATOMstorage(k))
@@ -575,7 +569,7 @@ INSPECTatom_sup_names(bat *ret)
 	return MAL_SUCCEED;
   bailout:
 	BBPreclaim(b);
-	throw(MAL, "inspect.getAtomSuper", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	throw(MAL, "inspect.getAtomSuper", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
 
 str
@@ -586,7 +580,7 @@ INSPECTatom_sizes(bat *ret)
 	BAT *b = COLnew(0, TYPE_int, 256, TRANSIENT);
 
 	if (b == 0)
-		throw(MAL, "inspect.getAtomSizes", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "inspect.getAtomSizes", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	for (i = 0; i < GDKatomcnt; i++) {
 		s = ATOMsize(i);
@@ -600,7 +594,7 @@ INSPECTatom_sizes(bat *ret)
 	return MAL_SUCCEED;
   bailout:
 	BBPreclaim(b);
-	throw(MAL, "inspect.getAtomSizes", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	throw(MAL, "inspect.getAtomSizes", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
 
 /* calculate to trimmed storage space */

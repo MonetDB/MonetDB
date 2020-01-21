@@ -18,7 +18,6 @@ stdout of test 'createorreplace-system-func.Bug-6499` in directory 'sql/test/Bug
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 12:24:14 >  
 # 12:24:14 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-10252" "--port=38213"

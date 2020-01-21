@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /* The Mapi Client Interface
@@ -27,6 +27,7 @@
 #ifdef HAVE_STRINGS_H
 #include <strings.h>		/* strcasecmp */
 #endif
+#include <sys/stat.h>
 
 #ifdef HAVE_LIBREADLINE
 #include <readline/readline.h>
@@ -123,6 +124,8 @@ static timertype t0, t1;	/* used for timing */
 
 #ifdef HAVE_POPEN
 static char *pager = 0;		/* use external pager */
+#endif
+#ifdef HAVE_SIGACTION
 #include <signal.h>		/* to block SIGPIPE */
 #endif
 static int rowsperpage = 0;	/* for SQL pagination */
@@ -392,6 +395,14 @@ utf8strlenmax(char *s, char *e, size_t max, char **t)
 			}
 			len++;
 			n = 0;
+		} else if (*s == '\t') {
+			assert(n == 0);
+			len++;	/* rendered as single space */
+			n = 0;
+		} else if ((unsigned char) *s <= 0x1F || *s == '\177') {
+			assert(n == 0);
+			len += 4;
+			n = 0;
 		} else if ((*s & 0x80) == 0) {
 			assert(n == 0);
 			len++;
@@ -517,6 +528,9 @@ utf8strlenmax(char *s, char *e, size_t max, char **t)
 				    (0x20000 <= c && c <= 0x2FFFD) ||
 				    (0x30000 <= c && c <= 0x3FFFD))
 					len++;
+				else if (0x0080 <= c && c <= 0x009F)
+					len += 5;
+
 			}
 		} else if ((*s & 0xE0) == 0xC0) {
 			assert(n == 0);
@@ -652,17 +666,6 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim, char wm)
 							     (int) (len[i] - (ulen - utf8strlen(t, NULL))),
 							     "");
 
-					if (!numeric[i]) {
-						/* replace tabs with a
-						 * single space to
-						 * avoid screwup the
-						 * width
-						 * calculations */
-						for (s = rest[i]; *s != *t; s++)
-							if (*s == '\t')
-								*s = ' ';
-					}
-
 					s = t;
 					if (trim == 1)
 						while (my_isspace(*s))
@@ -677,16 +680,38 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim, char wm)
 								s++;
 						if (trim == 2 && *s == '\n')
 							s++;
-						mnstr_printf(toConsole, " %.*s...%*s",
-							     (int) (t - rest[i]),
-							     rest[i],
+						mnstr_write(toConsole, " ", 1, 1);
+						for (char *p = rest[i]; p < t; p++) {
+							if (*p == '\t')
+								mnstr_write(toConsole, " ", 1, 1);
+							else if ((unsigned char) *p <= 0x1F || *p == '\177')
+								mnstr_printf(toConsole, "\\%03o", (unsigned char) *p);
+							else if (*p == '\302' &&
+								 (p[1] & 0xE0) == 0x80) {
+								mnstr_printf(toConsole, "\\u%04x", (p[1] & 0x3F) | 0x80);
+								p++;
+							} else
+								mnstr_write(toConsole, p, 1, 1);
+						}
+						mnstr_printf(toConsole, "...%*s",
 							     len[i] - 2 - (int) utf8strlen(rest[i], t),
 							     "");
 						croppedfields++;
 					} else {
-						mnstr_printf(toConsole, " %.*s ",
-							     (int) (t - rest[i]),
-							     rest[i]);
+						mnstr_write(toConsole, " ", 1, 1);
+						for (char *p = rest[i]; p < t; p++) {
+							if (*p == '\t')
+								mnstr_write(toConsole, " ", 1, 1);
+							else if ((unsigned char) *p <= 0x1F || *p == '\177')
+								mnstr_printf(toConsole, "\\%03o", (unsigned char) *p);
+							else if (*p == '\302' &&
+								 (p[1] & 0xE0) == 0x80) {
+								mnstr_printf(toConsole, "\\u%04x", (p[1] & 0x3F) | 0x80);
+								p++;
+							} else
+								mnstr_write(toConsole, p, 1, 1);
+						}
+						mnstr_write(toConsole, " ", 1, 1);
 						if (!numeric[i])
 							mnstr_printf(toConsole, "%*s",
 								     (int) (len[i] - (ulen - utf8strlen(t, NULL))),
@@ -721,12 +746,20 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim, char wm)
 						 * avoid screwup the
 						 * width
 						 * calculations */
-						for (p = rest[i]; *p != '\0'; p++)
+						mnstr_write(toConsole, " ", 1, 1);
+						for (p = rest[i]; *p; p++) {
 							if (*p == '\t')
-								*p = ' ';
-						mnstr_printf(toConsole, " %s ",
-							     rest[i]);
-						mnstr_printf(toConsole, "%*s",
+								mnstr_write(toConsole, " ", 1, 1);
+							else if ((unsigned char) *p <= 0x1F || *p == '\177')
+								mnstr_printf(toConsole, "\\%03o", (unsigned char) *p);
+							else if (*p == '\302' &&
+								 (p[1] & 0xE0) == 0x80) {
+								mnstr_printf(toConsole, "\\u%04x", (p[1] & 0x3F) | 0x80);
+								p++;
+							} else
+								mnstr_write(toConsole, p, 1, 1);
+						}
+						mnstr_printf(toConsole, " %*s",
 							     (int) (len[i] - ulen),
 							     "");
 					}
@@ -1461,10 +1494,14 @@ SQLrenderer(MapiHdl hdl)
 	rest = calloc(fields, sizeof(*rest));
 	numeric = calloc(fields, sizeof(*numeric));
 	if (len == NULL || hdr == NULL || rest == NULL || numeric == NULL) {
-		free(len);
-		free(hdr);
-		free(rest);
-		free(numeric);
+		if (len)
+			free(len);
+		if (hdr)
+			free(hdr);
+		if (rest)
+			free(rest);
+		if (numeric)
+			free(numeric);
 		fprintf(stderr,"Malloc for SQLrenderer failed");
 		exit(2);
 	}
@@ -1477,25 +1514,26 @@ SQLrenderer(MapiHdl hdl)
 		char *s;
 
 		len[i] = mapi_get_len(hdl, i);
-		if (len[i] == 0 &&
-		    ((s = mapi_get_type(hdl, i)) == NULL ||
-		     (strcmp(s, "varchar") != 0 &&
-		      strcmp(s, "clob") != 0 &&
-		      strcmp(s, "char") != 0 &&
-		      strcmp(s, "str") != 0 &&
-		      strcmp(s, "json") != 0))) {
-			/* no table width known, use maximum, rely on
-			 * squeezing later on to fix it to whatever is
-			 * available; note that for a column type of
-			 * varchar, 0 means the complete column is
-			 * NULL or empty string, so MINCOLSIZE (below)
-			 * will work great */
-			len[i] = pagewidth <= 0 ? DEFWIDTH : pagewidth;
-		} else if (len[i] == 0 &&
-			   strcmp(mapi_get_type(hdl, i), "uuid") == 0) {
-			/* we know how large the UUID representation
-			 * is, even if the server doesn't */
-			len[i] = 36;
+		if (len[i] == 0) {
+			if ((s = mapi_get_type(hdl, i)) == NULL ||
+			    (strcmp(s, "varchar") != 0 &&
+			     strcmp(s, "clob") != 0 &&
+			     strcmp(s, "char") != 0 &&
+			     strcmp(s, "str") != 0 &&
+			     strcmp(s, "json") != 0)) {
+				/* no table width known, use maximum,
+				 * rely on squeezing later on to fix
+				 * it to whatever is available; note
+				 * that for a column type of varchar,
+				 * 0 means the complete column is NULL
+				 * or empty string, so MINCOLSIZE
+				 * (below) will work great */
+				len[i] = pagewidth <= 0 ? DEFWIDTH : pagewidth;
+			} else if (strcmp(s, "uuid") == 0) {
+				/* we know how large the UUID representation
+				 * is, even if the server doesn't */
+				len[i] = 36;
+			}
 		}
 		if (len[i] < MINCOLSIZE)
 			len[i] = MINCOLSIZE;
@@ -1772,36 +1810,27 @@ start_pager(stream **saveFD)
 
 	if (pager) {
 		FILE *p;
-		struct sigaction act;
 
-		/* ignore SIGPIPE so that we get an error instead of signal */
-		act.sa_handler = SIG_IGN;
-		(void) sigemptyset(&act.sa_mask);
-		act.sa_flags = 0;
-		if(sigaction(SIGPIPE, &act, NULL) == -1) {
+		p = popen(pager, "w");
+		if (p == NULL)
 			fprintf(stderr, "Starting '%s' failed\n", pager);
-		} else {
-			p = popen(pager, "w");
-			if (p == NULL)
+		else {
+			*saveFD = toConsole;
+			/* put | in name to indicate that file should be closed with pclose */
+			if ((toConsole = file_wastream(p, "|pager")) == NULL) {
+				toConsole = *saveFD;
+				*saveFD = NULL;
 				fprintf(stderr, "Starting '%s' failed\n", pager);
-			else {
-				*saveFD = toConsole;
-				/* put | in name to indicate that file should be closed with pclose */
-				if ((toConsole = file_wastream(p, "|pager")) == NULL) {
+			}
+#ifdef HAVE_ICONV
+			if (encoding != NULL) {
+				if ((toConsole = iconv_wstream(toConsole, encoding, "pager")) == NULL) {
 					toConsole = *saveFD;
 					*saveFD = NULL;
 					fprintf(stderr, "Starting '%s' failed\n", pager);
 				}
-#ifdef HAVE_ICONV
-				if (encoding != NULL) {
-					if ((toConsole = iconv_wstream(toConsole, encoding, "pager")) == NULL) {
-						toConsole = *saveFD;
-						*saveFD = NULL;
-						fprintf(stderr, "Starting '%s' failed\n", pager);
-					}
-				}
-#endif
 			}
+#endif
 		}
 	}
 }
@@ -1837,6 +1866,11 @@ format_result(Mapi mid, MapiHdl hdl, bool singleinstr)
 	timerHumanCalled = false;
 
 	do {
+		// get the timings as reported by the backend
+		sqloptimizer = mapi_get_sqloptimizertime(hdl);
+		maloptimizer = mapi_get_maloptimizertime(hdl);
+		querytime = mapi_get_querytime(hdl);
+		timerHumanStop();
 		/* handle errors first */
 		if (mapi_result_error(hdl) != NULL) {
 			mnstr_flush(toConsole);
@@ -1849,14 +1883,10 @@ format_result(Mapi mid, MapiHdl hdl, bool singleinstr)
 			errseen = true;
 			/* don't need to print something like '0
 			 * tuples' if we got an error */
+			timerHuman(sqloptimizer, maloptimizer, querytime, singleinstr, false);
 			continue;
 		}
 
-		// get the timings as reported by the backend
-		sqloptimizer = mapi_get_sqloptimizertime(hdl);
-		maloptimizer = mapi_get_maloptimizertime(hdl);
-		querytime = mapi_get_querytime(hdl);
-		timerHumanStop();
 		switch (mapi_get_querytype(hdl)) {
 		case Q_BLOCK:
 		case Q_PARSE:
@@ -1896,9 +1926,7 @@ format_result(Mapi mid, MapiHdl hdl, bool singleinstr)
 			SQLqueryEcho(hdl);
 			if (formatter == TABLEformatter ||
 			    formatter == ROWCOUNTformatter)
-				mnstr_printf(toConsole,
-					     "auto commit mode: %s\n",
-					     mapi_get_autocommit(mid) ? "on" : "off");
+				mnstr_printf(toConsole, "auto commit mode: %s\n", mapi_get_autocommit(mid) ? "on" : "off");
 			timerHuman(sqloptimizer, maloptimizer, querytime, singleinstr, false);
 			continue;
 		case Q_PREPARE:
@@ -2416,22 +2444,36 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, int save_history
 			case '\0':
 				break;
 			case 'e':
-				/* a bit of a hack for prepare/exec
-				 * tests: replace "exec **" with the
-				 * ID of the last prepared
-				 * statement */
-				if (mode == SQL &&
-				    formatter == TESTformatter &&
-				    strncmp(line, "exec **", 7) == 0) {
-					line[5] = prepno < 10 ? ' ' : prepno / 10 + '0';
-					line[6] = prepno % 10 + '0';
+			case 'E':
+				/* a bit of a hack for prepare/exec/deallocate
+				 * tests: replace "exec[ute] **" with the
+				 * ID of the last prepared statement */
+				if (mode == SQL && formatter == TESTformatter) {
+					if (strncasecmp(line, "exec **", 7) == 0) {
+						line[5] = prepno < 10 ? ' ' : prepno / 10 + '0';
+						line[6] = prepno % 10 + '0';
+					} else if (strncasecmp(line, "execute **", 10) == 0) {
+						line[8] = prepno < 10 ? ' ' : prepno / 10 + '0';
+						line[9] = prepno % 10 + '0';
+					}
 				}
-				if (strcmp(line, "exit\n") == 0) {
+				if (strncasecmp(line, "exit\n", 5) == 0) {
 					goto bailout;
 				}
 				break;
+			case 'd':
+			case 'D':
+				/* a bit of a hack for prepare/exec/deallocate
+				 * tests: replace "deallocate **" with the
+				 * ID of the last prepared statement */
+				if (mode == SQL && formatter == TESTformatter && strncasecmp(line, "deallocate **", 13) == 0) {
+					line[11] = prepno < 10 ? ' ' : prepno / 10 + '0';
+					line[12] = prepno % 10 + '0';
+				}
+				break;
 			case 'q':
-				if (strcmp(line, "quit\n") == 0) {
+			case 'Q':
+				if (strncasecmp(line, "quit\n", 5) == 0) {
 					goto bailout;
 				}
 				break;
@@ -2704,7 +2746,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, int save_history
 #endif
 					if (*line) {
 						mnstr_printf(toConsole, "START TRANSACTION;\n");
-						dump_table(mid, NULL, line, toConsole, 0, 1, useinserts, false);
+						dump_table(mid, NULL, line, toConsole, false, true, useinserts, false);
 						mnstr_printf(toConsole, "COMMIT;\n");
 					} else
 						dump_database(mid, toConsole, 0, useinserts);
@@ -3049,7 +3091,8 @@ getfile(void *data, const char *filename, bool binary,
 	struct privdata *priv = data;
 	ssize_t s;
 
-	*size = 0;		/* most returns require this */
+	if (size)
+		*size = 0;	/* most returns require this */
 	if (priv->buf == NULL) {
 		priv->buf = malloc(READSIZE);
 		if (priv->buf == NULL)
@@ -3157,8 +3200,7 @@ putfile(void *data, const char *filename, const void *buf, size_t bufsize)
 	return NULL;		/* success */
 }
 
-__declspec(noreturn) static void usage(const char *prog, int xit)
-	__attribute__((__noreturn__));
+static _Noreturn void usage(const char *prog, int xit);
 
 static void
 usage(const char *prog, int xit)
@@ -3207,6 +3249,18 @@ usage(const char *prog, int xit)
 
 /* hardwired defaults, only used if monet environment cannot be found */
 #define defaultPort 50000
+
+static inline bool
+isfile(FILE *fp)
+{
+	struct stat stb;
+	if (fstat(fileno(fp), &stb) < 0 ||
+	    (stb.st_mode & S_IFMT) != S_IFREG) {
+		fclose(fp);
+		return false;
+	}
+	return true;
+}
 
 int
 main(int argc, char **argv)
@@ -3275,6 +3329,16 @@ main(int argc, char **argv)
 		exit(2);
 	}
 #endif
+#ifdef HAVE_SIGACTION
+	struct sigaction act;
+	/* ignore SIGPIPE so that we get an error instead of signal */
+	act.sa_handler = SIG_IGN;
+	(void) sigemptyset(&act.sa_mask);
+	act.sa_flags = 0;
+	if (sigaction(SIGPIPE, &act, NULL) == -1)
+		perror("sigaction");
+#endif
+
 	toConsole = stdout_stream = file_wastream(stdout, "stdout");
 	stderr_stream = file_wastream(stderr, "stderr");
 	if(!stdout_stream || !stderr_stream) {
@@ -3430,16 +3494,16 @@ main(int argc, char **argv)
 			user_set_as_flag = true;
 			break;
 		case 'v': {
-			const char *rev = mercurial_revision();
 			mnstr_printf(toConsole,
 				     "mclient, the MonetDB interactive "
 				     "terminal, version %s", VERSION);
-			/* coverity[pointless_string_compare] */
-			if (strcmp(MONETDB_RELEASE, "unreleased") != 0)
-				mnstr_printf(toConsole, " (%s)",
-					     MONETDB_RELEASE);
-			else if (strcmp(rev, "Unknown") != 0)
+#ifdef MONETDB_RELEASE
+			mnstr_printf(toConsole, " (%s)", MONETDB_RELEASE);
+#else
+			const char *rev = mercurial_revision();
+			if (strcmp(rev, "Unknown") != 0)
 				mnstr_printf(toConsole, " (hg id: %s)", rev);
+#endif
 			mnstr_printf(toConsole, "\n");
 #ifdef HAVE_LIBREADLINE
 			mnstr_printf(toConsole,
@@ -3526,7 +3590,8 @@ main(int argc, char **argv)
 	has_fileargs = optind != argc;
 
 	if (dbname == NULL && has_fileargs &&
-	    (fp = fopen(argv[optind], "r")) == NULL) {
+	    ((fp = fopen(argv[optind], "r")) == NULL || !isfile(fp))) {
+		fp = NULL;
 		dbname = strdup(argv[optind]);
 		optind++;
 		has_fileargs = optind != argc;
@@ -3605,10 +3670,19 @@ main(int argc, char **argv)
 		mnstr_printf(toConsole,
 			     "Welcome to mclient, the MonetDB%s "
 			     "interactive terminal (%s)\n",
-			     lang, MONETDB_RELEASE);
+			     lang,
+#ifdef MONETDB_RELEASE
+			     MONETDB_RELEASE
+#else
+			     "unreleased"
+#endif
+			);
 
 		if (mode == SQL)
 			dump_version(mid, toConsole, "Database:");
+
+		mnstr_printf(toConsole, "FOLLOW US on https://twitter.com/MonetDB ");
+		mnstr_printf(toConsole, "or https://github.com/MonetDB/MonetDB\n");
 
 		mnstr_printf(toConsole, "Type \\q to quit, \\? for a list of available commands\n");
 		if (mode == SQL)

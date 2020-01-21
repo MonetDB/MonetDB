@@ -23,7 +23,6 @@ stdout of test 'rapi17` in directory 'sql/backends/monet5` itself:
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 19:11:49 >  
 # 19:11:49 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-5415" "--port=34107"
@@ -32,11 +31,11 @@ Ready.
 #START TRANSACTION;
 #create function dt(d date) returns string language R { class(d) };
 #select dt( cast('2015-09-21' as date) );
-% .L3 # table_name
-% L3 # name
+% .%2 # table_name
+% %2 # name
 % clob # type
-% 7 # length
-[ "integer"	]
+% 4 # length
+[ "Date"	]
 #ROLLBACK;
 
 # 19:11:49 >  

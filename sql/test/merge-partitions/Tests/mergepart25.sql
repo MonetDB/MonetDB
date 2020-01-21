@@ -6,7 +6,7 @@ CREATE TABLE sub1 (a int, b varchar(32));
 UPDATE testmeplease SET a = a + 1 WHERE a = 1; --error
 UPDATE testmeplease SET b = 'I should fail'; --error
 
-ALTER TABLE testmeplease ADD TABLE sub1 AS PARTITION BETWEEN -100 AND 100;
+ALTER TABLE testmeplease ADD TABLE sub1 AS PARTITION FROM -100 TO 100;
 
 UPDATE testmeplease SET a = 99 WHERE a = 2;
 UPDATE testmeplease SET b = 'I should fail again'; --error

@@ -20,7 +20,6 @@ stdout of test 'Test_PSlargeresponse` in directory 'sql/jdbc/tests` itself:
 # MonetDB/Python module loaded
 # MonetDB/R   module loaded
 
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql

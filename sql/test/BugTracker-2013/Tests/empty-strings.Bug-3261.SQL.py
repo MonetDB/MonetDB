@@ -13,6 +13,10 @@ q = []
 q.append(("create table bug3261 (probeid int, markername varchar(64));\n"
           "copy %d records into bug3261 from stdin using delimiters "
           "'\\t','\\n','' null as 'null';\n") % (1455 * 3916))
+try:
+    xrange
+except NameError:
+    xrange = range              # Python 3
 for i in xrange(1,1456):
     v = 'rmm%d' % i
     for j in xrange(3916):

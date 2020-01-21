@@ -14,7 +14,6 @@ stdout of test 'select_X_where_bla_EQ_whatever.SF-282597` in directory 'sql/test
 # Listening for connection requests on mapi:monetdb://rig.ins.cwi.nl:30225/
 # MonetDB/SQL module v2.30.4 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

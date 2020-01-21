@@ -14,7 +14,6 @@ stdout of test 'BugConcurrent_sequences` in directory 'sql/jdbc/tests` itself:
 # Listening for connection requests on mapi:monetdb://pegasus.ins.cwi.nl:34432/
 # MonetDB/SQL module v2.28.4 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 %{
@@ -93,7 +93,6 @@ UTF8_strlen(const char *val)
 	return pos;
 }
 
-
 static char *
 uescape_xform(char *restrict s, const char *restrict esc)
 {
@@ -164,7 +163,7 @@ uescape_xform(char *restrict s, const char *restrict esc)
 %lex-param { void *m }
 
 /* reentrant parser */
-%pure-parser
+%define api.pure
 %union {
 	int		i_val,bval;
 	lng		l_val,operation;
@@ -181,196 +180,205 @@ int yydebug=1;
 */
 %}
 
-	/* symbolic tokens */
+/* symbolic tokens */
 %type <sym>
-	alter_statement
-	assignment
-	create_statement
-	drop_statement
-	declare_statement
-	comment_on_statement
-	catalog_object
-	set_statement
-	sql
-	sqlstmt
-	with_query
-	schema
-	opt_schema_default_char_set
-	opt_path_specification
-	path_specification
-	schema_element
-	delete_stmt
-	truncate_stmt
-	copyfrom_stmt
-	table_def
-	view_def
-	query_expression_def
-	query_expression
-	with_query_expression
-	role_def
-	type_def
-	func_def
-	index_def
-	seq_def
-	opt_seq_param
-	opt_alt_seq_param
-	opt_seq_common_param
-	all_or_any_predicate
-	like_exp
-	between_predicate
-	comparison_predicate
-	opt_from_clause
-	opt_window_clause
-	existence_test
-	in_predicate
-	insert_stmt
-	transaction_statement
-	_transaction_stmt
-	like_predicate
-	opt_where_clause
-	opt_having_clause
-	opt_group_by_clause
-	predicate
-	filter_exp
-	joined_table
-	join_spec
-	search_condition
-	and_exp
-	update_statement
-	update_stmt
-	control_statement
-	select_statement_single_row
-	call_statement
-	call_procedure_statement
-	continuous_query_statement
-	routine_invocation
-	yield_statement
-	return_statement
-	return_value
-	case_statement
-	when_statement
-	when_search_statement
-	if_statement
-	while_statement
-	simple_select
-	select_no_parens
-	select_no_parens_orderby
-	subquery
-	subquery_with_orderby
-	test_for_null
-	values_or_query_spec
-	grant
-	revoke
-	operation
-	table_content_source
-	table_element
 	add_table_element
+	aggr_ref
+	all_or_any_predicate
+	alter_statement
 	alter_table_element
-	drop_table_element
-	table_constraint
-	table_constraint_type
-	column_def
-	column_options
-	column_option
+	and_exp
+	assign_default
+	assignment
+	atom
+	between_predicate
+	call_procedure_statement
+	call_statement
+	case_exp
+	case_opt_else
+	case_scalar_exp
+	case_statement
+	cast_exp
+	cast_value
+	catalog_object
+	clock_at_set
 	column_constraint
 	column_constraint_type
-	generated_column
-	like_table
-	domain_constraint_type 
-	opt_order_by_clause
+	column_def
+	column_exp
+	column_option
+	column_options
+	comment_on_statement
+	comparison_predicate
+	continuous_query_statement
+	control_statement
+	copyfrom_stmt
+	create_statement
+	datetime_funcs
+	dealloc
+	declare_statement
 	default
 	default_value
-	assign_default
-	cast_value
-	aggr_ref
-	var_ref
-	func_ref
-	datetime_funcs
-	string_funcs
-	scalar_exp
-	pred_exp
-	simple_scalar_exp
-	value_exp
-	column_exp
-	atom
-	insert_atom
-	simple_atom
-	value
-	literal
-	clock_at_set
-	null
-	interval_expression
-	ordering_spec
-	table_ref
-	opt_limit
-	opt_offset
-	opt_sample
-	opt_seed
-	param
-	case_exp
-	case_scalar_exp
-	cast_exp
-	when_value
-	when_search
-	case_opt_else
-	table_name
-	opt_table_name
-	object_name
+	delete_stmt
+	domain_constraint_type 
+	drop_statement
+	drop_table_element
 	exec
 	exec_ref
-	trigger_def
-	trigger_event
-	opt_when
-	procedure_statement
-	trigger_procedure_statement
-	if_opt_else
-	func_data_type
-	with_list_element
-	window_definition
-	window_function
-	window_function_type
-	window_partition_clause
-	window_order_clause
-	window_frame_clause
-	window_bound
-	window_frame_start
-	window_following_bound
-	XML_value_function
-	XML_comment
-  	XML_concatenation
-  	XML_document
-  	XML_element
-  	XML_forest
-  	XML_parse
-  	XML_PI
-  	XML_query
-  	XML_text
-  	XML_validate
-	XML_namespace_declaration
-	opt_XML_namespace_declaration_and_comma
-	XML_namespace_declaration_item_list
-	XML_namespace_declaration_item
-	XML_regular_namespace_declaration_item
-	XML_default_namespace_declaration_item
-	XML_namespace_URI
-	XML_attributes
-	XML_attribute_list
-	XML_attribute
-	XML_attribute_value
-	XML_element_content
+	existence_test
+	filter_exp
 	forest_element_value
-	XML_aggregate
-	XML_value_expression
-	XML_primary
-	opt_comma_string_value_expression
-	opt_partition_by
+	func_data_type
+	func_def
+	func_ref
+	generated_column
+	grant
+	group_by_element
+	grouping_set_element
+	if_opt_else
+	if_statement
+	in_predicate
+	index_def
+	insert_atom
+	insert_stmt
+	interval_expression
+	join_spec
+	joined_table
+	like_exp
+	like_predicate
+	like_table
+	literal
+	merge_insert
+	merge_match_clause
+	merge_stmt
+	merge_update_or_delete
+	null
+	object_name
+	operation
+	opt_alt_seq_param
 	opt_as_partition
+	opt_comma_string_value_expression
+	opt_from_clause
+	opt_group_by_clause
+	opt_having_clause
+	opt_limit
+	opt_offset
+	opt_order_by_clause
+	opt_partition_by
 	opt_partition_spec
+	opt_path_specification
+	opt_sample
+	opt_schema_default_char_set
+	opt_search_condition
+	opt_seed
+	opt_seq_common_param
+	opt_seq_param
+	opt_table_name
+	opt_when
+	opt_where_clause
+	opt_window_clause
+	opt_XML_namespace_declaration_and_comma
+	ordering_spec
+	ordinary_grouping_element
+	param
+	partition_expression
 	partition_list_value
+	partition_on
 	partition_range_from
 	partition_range_to
-	partition_on
-	partition_expression
+	path_specification
+	pred_exp
+	predicate
+	procedure_statement
+	query_expression
+	query_expression_def
+	return_statement
+	return_value
+	revoke
+	role_def
+	routine_invocation
+	scalar_exp
+	schema
+	schema_element
+	search_condition
+	select_no_parens
+	select_no_parens_orderby
+	select_statement_single_row
+	seq_def
+	set_statement
+	simple_atom
+	simple_scalar_exp
+	simple_select
+	sql
+	sqlstmt
+	string_funcs
+	subquery
+	subquery_with_orderby
+	table_constraint
+	table_constraint_type
+	table_content_source
+	table_def
+	table_element
+	table_name
+	table_ref
+	test_for_null
+	transaction_statement
+	transaction_stmt
+	trigger_def
+	trigger_event
+	trigger_procedure_statement
+	truncate_stmt
+	type_def
+	update_statement
+	update_stmt
+	value
+	value_exp
+	values_or_query_spec
+	var_ref
+	view_def
+	when_search
+	when_search_statement
+	when_statement
+	when_value
+	while_statement
+	window_bound
+	window_definition
+	window_following_bound
+	window_frame_clause
+	window_frame_start
+	window_function
+	window_function_type
+	window_order_clause
+	window_partition_clause
+	with_list_element
+	with_query
+	with_query_expression
+	XML_aggregate
+	XML_attribute
+	XML_attribute_list
+	XML_attribute_value
+	XML_attributes
+	XML_comment
+	XML_concatenation
+	XML_default_namespace_declaration_item
+	XML_document
+	XML_element
+	XML_element_content
+	XML_forest
+	XML_namespace_declaration
+	XML_namespace_declaration_item
+	XML_namespace_declaration_item_list
+	XML_namespace_URI
+	XML_parse
+	XML_PI
+	XML_primary
+	XML_query
+	XML_regular_namespace_declaration_item
+	XML_text
+	XML_validate
+	XML_value_expression
+	XML_value_function
+	yield_statement
 
 %type <type>
 	data_type
@@ -378,157 +386,165 @@ int yydebug=1;
 	interval_type
 
 %type <sval>
-	opt_constraint_name
-	non_reserved_word
+	authid
+	authorization_identifier
+	blob
+	blobstring
+	calc_ident
+	calc_restricted_ident
+	clob
+	column
+	cq_alias
+	forest_element_name
+	func_ident
+	function_body
+	grantee
 	ident
 	ident_or_uident
-	calc_ident
-	authorization_identifier
-	func_ident
-	restricted_ident
-	calc_restricted_ident
-	column
-	authid
-	grantee
+	non_reserved_word
 	opt_alias_name
-	opt_to_savepoint
-	opt_using
-	opt_null_string
-	string
-	sstring
-	ustring
-	blobstring
-	type_alias
-	varchar
-	clob
-	blob
 	opt_begin_label
+	opt_constraint_name
 	opt_end_label
-	target_specification
-	XML_element_name
-	opt_XML_attribute_name
-	XML_attribute_name
 	opt_forest_element_name
-	forest_element_name
+	opt_null_string
+	opt_to_savepoint
+	opt_uescape
+	opt_using
+	opt_XML_attribute_name
+	restricted_ident
+	sstring
+	string
+	target_specification
+	type_alias
+	ustring
+	varchar
+	window_ident_clause
+	XML_attribute_name
+	XML_element_name
 	XML_namespace_prefix
 	XML_PI_target
-	function_body
-	opt_uescape
-	window_ident_clause
-	cq_alias
 
 %type <l>
-	passwd_schema
-	object_privileges
-	global_privileges
-	privileges
-	schema_name_clause
-	assignment_commalist
-	opt_column_list
-	column_commalist_parens
-	opt_fwf_widths
-	fwf_widthlist
-	opt_header_list
-	header_list
-	header
-	ident_commalist
-	opt_corresponding
-	column_ref_commalist
-	name_commalist
-	schema_name_list
-	column_ref
-	atom_commalist
-	value_commalist
-	pred_exp_list
-	row_commalist
-	filter_arg_list
-	filter_args
-	qname
-	stream_table_details
-	qfunc
-	qrank
-	qaggr
-	qaggr2
-	routine_name
-	sort_specification_list
-	opt_schema_element_list
-	schema_element_list
-	operation_commalist
-	authid_list
-	grantee_commalist
-	column_def_opt_list
-	opt_column_def_opt_list
-	table_exp
-	with_opt_credentials
-	table_ref_commalist
-	table_element_list
-	table_opt_storage
+	argument_list
 	as_subquery_clause
+	assignment_commalist
+	atom_commalist
+	authid_list
+	case_opt_else_statement
+	case_scalar_exp_list
+	column_commalist_parens
+	column_def_opt_list
 	column_exp_commalist
 	column_option_list
-	selection
-	start_field
+	column_ref
+	column_ref_commalist
+	drop_routine_designator
 	end_field
-	single_datetime_field
+	external_function_name
+	filter_arg_list
+	filter_args
+	forest_element
+	forest_element_list
+	fwf_widthlist
+	global_privileges
+	grantee_commalist
+	group_by_list
+	grouping_set_list
+	header
+	header_list
+	ident_commalist
 	interval_qualifier
-	scalar_exp_list
-	case_scalar_exp_list
-	when_value_list
-	when_search_list
-	opt_seps
+	merge_when_list
+	name_commalist
+	object_privileges
+	old_or_new_values_alias
+	old_or_new_values_alias_list
+	operation_commalist
+	opt_alt_seq_params
+	opt_column_def_opt_list
+	opt_column_list
+	opt_comma_XML_namespace_declaration_attributes_element_content
+	opt_corresponding
+	opt_fwf_widths
+	opt_header_list
 	opt_nr
+	opt_paramlist
+	opt_referencing_list
+	opt_schema_element_list
+	opt_seps
+	opt_seq_params
+	opt_typelist
+	ordinary_grouping_set
+	paramlist
+	params_list
+	partition_list
+	passwd_schema
+	pred_exp_list
+	privileges
+	procedure_statement_list
+	qaggr
+	qaggr2
+	qfunc
+	qname
+	qrank
+	routine_body
+	routine_designator
+	routine_name
+	row_commalist
+	scalar_exp_list
+	schema_element_list
+	schema_name_clause
+	schema_name_list
+	search_condition_commalist
+	select_target_list
+	selection
+	serial_opt_params
+	single_datetime_field
+	sort_specification_list
+	start_field
+	stream_table_details
 	string_commalist
 	string_commalist_contents
-	paramlist
-	opt_paramlist
-	opt_typelist
-	typelist
-	opt_seq_params
-	opt_alt_seq_params
-	serial_opt_params
-	triggered_action
-	opt_referencing_list
-	old_or_new_values_alias_list
-	old_or_new_values_alias
-	triggered_statement
-	procedure_statement_list
-	trigger_procedure_statement_list
-	argument_list
-	when_statements
-	when_search_statements
-	case_opt_else_statement
-	variable_list
-	routine_body
+	table_element_list
+	table_exp
 	table_function_column_list
-	select_target_list
-	external_function_name
-	with_list
+	table_opt_storage
+	table_ref_commalist
+	trigger_procedure_statement_list
+	triggered_action
+	triggered_statement
+	typelist
+	value_commalist
+	variable_list
+	when_search_list
+	when_search_statements
+	when_statements
+	when_value_list
+	window_definition_list
+	window_frame_between
+	window_frame_extent
 	window_specification
-	opt_comma_XML_namespace_declaration_attributes_element_content
+	with_list
+	with_opt_credentials
 	XML_element_content_and_option
 	XML_element_content_list
-	forest_element_list
-	forest_element
 	XML_value_expression_list
-	window_definition_list
-	window_frame_extent
-	window_frame_between
-	routine_designator
-	drop_routine_designator
-	partition_list
 
 %type <i_val>
+	_transaction_mode_list
 	any_all_some
+	check_identity
 	datetime_field
+	dealloc_ref
 	document_or_content
 	document_or_content_or_sequence
 	drop_action
-	check_identity
 	extract_datetime_field
+	global_privilege
 	grantor
 	intval
 	join_type
-	opt_outer
 	non_second_datetime_field
 	nonzero
 	stream_window_set
@@ -543,38 +559,37 @@ int yydebug=1;
 	opt_for_each
 	opt_from_grantor
 	opt_grantor	
-	global_privilege
 	opt_index_type
 	opt_match
 	opt_match_type
+	opt_minmax
 	opt_on_commit
+	opt_outer
 	opt_ref_action
 	opt_sign
 	opt_temp
 	opt_temp_stream
-	opt_minmax
 	opt_XML_content_option
 	opt_XML_returning_clause
 	outer_join_type
+	partition_type
 	posint
 	ref_action
 	ref_on_delete
 	ref_on_update
 	row_or_statement
 	serial_or_bigserial
+	subgeometry_type
 	time_precision
 	timestamp_precision
 	transaction_mode
 	transaction_mode_list
-	_transaction_mode_list
 	trigger_action_time
+	window_frame_exclusion
+	window_frame_units
 	with_or_without_data
 	XML_content_option
 	XML_whitespace_option
-	window_frame_units
-	window_frame_exclusion
-	subgeometry_type
-	partition_type
 
 %type <l_val>
 	lngval
@@ -583,30 +598,27 @@ int yydebug=1;
 	heartbeat_set
 
 %type <bval>
-	opt_brackets
-
-	opt_work
-	opt_chain
-	opt_distinct
-	opt_locked
-	opt_best_effort
-	opt_constraint
-	set_distinct
-	opt_with_check_option
-	opt_with_nulls
-	opt_on_location
 	create
 	create_or_replace
 	if_exists
 	if_not_exists
-
-	opt_with_grant
-	opt_with_admin
 	opt_admin_for
-	opt_grant_for
-
 	opt_asc_desc
+	opt_best_effort
+	opt_brackets
+	opt_chain
+	opt_constraint
+	opt_distinct
+	opt_grant_for
+	opt_locked
 	opt_nulls_first_last
+	opt_on_location
+	opt_with_admin
+	opt_with_check_option
+	opt_with_grant
+	opt_with_nulls
+	opt_work
+	set_distinct
 	tz
 
 %right <sval> STRING USTRING XSTRING
@@ -630,7 +642,7 @@ int yydebug=1;
 
 %token	USER CURRENT_USER SESSION_USER LOCAL LOCKED BEST EFFORT
 %token  CURRENT_ROLE sqlSESSION
-%token <sval> sqlDELETE UPDATE SELECT INSERT 
+%token <sval> sqlDELETE UPDATE SELECT INSERT MATCHED
 %token <sval> LATERAL LEFT RIGHT FULL OUTER NATURAL CROSS JOIN INNER
 %token <sval> COMMIT ROLLBACK SAVEPOINT RELEASE WORK CHAIN NO PRESERVE ROWS
 %token  CONTINUOUS START_CONTINUOUS STOP STOP_CONTINUOUS PAUSE PAUSE_CONTINUOUS RESUME RESUME_CONTINUOUS
@@ -639,15 +651,14 @@ int yydebug=1;
 %token  UNCOMMITTED COMMITTED sqlREPEATABLE SERIALIZABLE DIAGNOSTICS sqlSIZE STORAGE
 
 %token <sval> ASYMMETRIC SYMMETRIC ORDER ORDERED BY IMPRINTS
-%token <operation> EXISTS ESCAPE UESCAPE HAVING sqlGROUP sqlNULL
-%token <operation> FROM FOR MATCH
+%token <operation> EXISTS ESCAPE UESCAPE HAVING sqlGROUP ROLLUP CUBE sqlNULL
+%token <operation> GROUPING SETS FROM FOR MATCH
 
 %token <operation> EXTRACT
 
 /* sequence operations */
 %token SEQUENCE INCREMENT RESTART CONTINUE
 %token MAXVALUE MINVALUE CYCLE
-%token NOMAXVALUE NOMINVALUE NOCYCLE
 %token NEXT VALUE CACHE
 %token GENERATED ALWAYS IDENTITY
 %token SERIAL BIGSERIAL AUTO_INCREMENT /* PostgreSQL and MySQL immitators */
@@ -661,7 +672,6 @@ int yydebug=1;
 %token NIL REF ABSENT EMPTY DOCUMENT ELEMENT CONTENT XMLNAMESPACES NAMESPACE
 %token XMLVALIDATE RETURNING LOCATION ID ACCORDING XMLSCHEMA URI XMLAGG
 %token FILTER
-
 
 /* operators */
 %left UNION EXCEPT INTERSECT CORRESPONDING UNIONJOIN
@@ -694,7 +704,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token CHECK CONSTRAINT CREATE COMMENT NULLS FIRST LAST
 %token TYPE PROCEDURE FUNCTION sqlLOADER AGGREGATE RETURNS EXTERNAL sqlNAME DECLARE
 %token CALL LANGUAGE
-%token ANALYZE MINMAX SQL_EXPLAIN SQL_PLAN SQL_DEBUG SQL_TRACE PREP PREPARE EXEC EXECUTE
+%token ANALYZE MINMAX SQL_EXPLAIN SQL_PLAN SQL_DEBUG SQL_TRACE PREP PREPARE EXEC EXECUTE DEALLOCATE
 %token DEFAULT DISTINCT DROP TRUNCATE
 %token FOREIGN
 %token RENAME ENCRYPTED UNENCRYPTED PASSWORD GRANT REVOKE ROLE ADMIN INTO
@@ -705,7 +715,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 
 %token ALTER ADD TABLE COLUMN TO UNIQUE VALUES VIEW WHERE WITH
 %token<sval> sqlDATE TIME TIMESTAMP INTERVAL
-%token YEAR QUARTER MONTH WEEK DAY HOUR MINUTE SECOND ZONE
+%token CENTURY DECADE YEAR QUARTER DOW DOY MONTH WEEK DAY HOUR MINUTE SECOND ZONE
 %token LIMIT OFFSET SAMPLE SEED
 
 %token CASE WHEN THEN ELSE NULLIF COALESCE IF ELSEIF WHILE DO
@@ -792,23 +802,31 @@ sqlstmt:
 			}
    sqlstmt		{ $$ = $3; YYACCEPT; }
  | exec SCOLON		{ m->sym = $$ = $1; YYACCEPT; }
+ | dealloc SCOLON	{ m->sym = $$ = $1; YYACCEPT; }
  | /*empty*/		{ m->sym = $$ = NULL; YYACCEPT; }
  | SCOLON		{ m->sym = $$ = NULL; YYACCEPT; }
  | error SCOLON		{ m->sym = $$ = NULL; YYACCEPT; }
  | LEX_ERROR		{ m->sym = $$ = NULL; YYABORT; }
  ;
 
-
 prepare:
-       PREPARE
- |     PREP
+   PREPARE
+ | PREP
  ; 
 
 execute:
-       EXECUTE
- |     EXEC
+   EXECUTE
+ | EXEC
  ; 
 
+opt_prepare:
+   /* empty */
+ | prepare
+ ;
+
+deallocate:
+   DEALLOCATE
+ ;
 
 create:
     CREATE  { $$ = FALSE; }
@@ -829,13 +847,13 @@ if_not_exists:
 ;
 
 drop:
-    DROP 		
+    DROP 
 
 set:
-    SET 		
+    SET
 
 declare:
-    DECLARE 		
+    DECLARE 
 
 	/* schema definition language */
 sql:
@@ -928,9 +946,10 @@ set_statement:
 		$$ = _symbol_create_list( SQL_SET, l); }
   |	set TIME ZONE LOCAL
 		{ dlist *l = L();
+		sql_subtype t;
 		append_string(l, sa_strdup(SA, "current_timezone"));
-		append_symbol(l, _symbol_create_list( SQL_OP, append_list(L(),
-			append_string( L(), sa_strdup(SA, "local_timezone")))));
+		sql_find_subtype(&t, "sec_interval", inttype2digits(ihour, isec), 0);
+		append_symbol(l, _newAtomNode(atom_int(SA, &t, 0)));
 		$$ = _symbol_create_list( SQL_SET, l); }
   |	set TIME ZONE interval_expression
 		{ dlist *l = L();
@@ -1226,6 +1245,12 @@ alter_statement:
 	  append_string(l, $9);
 	  append_int(l, $3);
 	  $$ = _symbol_create_list( SQL_RENAME_COLUMN, l); }
+ | ALTER TABLE if_exists qname SET SCHEMA ident
+	{ dlist *l = L();
+	  append_list(l, $4);
+	  append_string(l, $7);
+	  append_int(l, $3);
+	  $$ = _symbol_create_list( SQL_SET_TABLE_SCHEMA, l ); }
  | ALTER USER ident passwd_schema
 	{ dlist *l = L();
 	  append_string(l, $3);
@@ -1395,7 +1420,7 @@ seq_def:
  * 	[ [ NO ] CYCLE ]
  * start may be a value or subquery
  */
-  | ALTER SEQUENCE qname opt_alt_seq_params 	
+  | ALTER SEQUENCE qname opt_alt_seq_params
 	{
 		dlist *l = L();
 		append_list(l, $3);
@@ -1405,8 +1430,12 @@ seq_def:
   ;
 
 opt_seq_params:
-	opt_seq_param				{ $$ = append_symbol(L(), $1); }
-  |	opt_seq_params opt_seq_param		{ $$ = append_symbol($1, $2); }
+	params_list  { $$ = $1; }
+  |              { $$ = NULL; }
+
+params_list:
+	opt_seq_param			  { $$ = append_symbol(L(), $1); }
+  |	params_list opt_seq_param { $$ = append_symbol($1, $2); }
   ;
 
 opt_alt_seq_params:
@@ -1415,28 +1444,28 @@ opt_alt_seq_params:
   ;
 
 opt_seq_param:
-    	AS data_type 			{ $$ = _symbol_create_list(SQL_TYPE, append_type(L(),&$2)); }
-  |	START WITH opt_sign lngval 	{ $$ = _symbol_create_lng(SQL_START, is_lng_nil($3) ? $3 : $3 * $4); }
+	AS data_type 			{ $$ = _symbol_create_list(SQL_TYPE, append_type(L(),&$2)); }
+  |	START WITH opt_sign lngval 	{ $$ = _symbol_create_lng(SQL_START, is_lng_nil($4) ? $4 : $3 * $4); }
   |	opt_seq_common_param		{ $$ = $1; }
   ;
 
 opt_alt_seq_param:
-    	AS data_type 				{ $$ = _symbol_create_list(SQL_TYPE, append_type(L(),&$2)); }
-  |	RESTART 						{ $$ = _symbol_create_list(SQL_START, append_int(L(),0)); /* plain restart now */ }
+	AS data_type 			{ $$ = _symbol_create_list(SQL_TYPE, append_type(L(),&$2)); }
+  |	RESTART 			{ $$ = _symbol_create_list(SQL_START, append_int(L(),0)); /* plain restart now */ }
   |	RESTART WITH opt_sign lngval 	{ $$ = _symbol_create_list(SQL_START, append_lng(append_int(L(),2), is_lng_nil($4) ? $4 : $3 * $4));  }
-  |	RESTART WITH subquery 			{ $$ = _symbol_create_list(SQL_START, append_symbol(append_int(L(),1), $3));  }
-  |	opt_seq_common_param			{ $$ = $1; }
+  |	RESTART WITH subquery 		{ $$ = _symbol_create_list(SQL_START, append_symbol(append_int(L(),1), $3));  }
+  |	opt_seq_common_param		{ $$ = $1; }
   ;
 
 opt_seq_common_param:
-  	INCREMENT BY opt_sign lngval	{ $$ = _symbol_create_lng(SQL_INC, is_lng_nil($4) ? $4 : $3 * $4); }
-  |	MINVALUE opt_sign lngval		{ $$ = _symbol_create_lng(SQL_MINVALUE, is_lng_nil($3) ? $3 : $2 * $3); }
-  |	NOMINVALUE						{ $$ = _symbol_create_lng(SQL_MINVALUE, 0); }
-  |	MAXVALUE opt_sign lngval		{ $$ = _symbol_create_lng(SQL_MAXVALUE, is_lng_nil($3) ? $3 : $2 * $3); }
-  |	NOMAXVALUE						{ $$ = _symbol_create_lng(SQL_MAXVALUE, 0); }
-  |	CACHE nonzerolng				{ $$ = _symbol_create_lng(SQL_CACHE, $2); }
-  |	CYCLE							{ $$ = _symbol_create_int(SQL_CYCLE, 1); }
-  |	NOCYCLE							{ $$ = _symbol_create_int(SQL_CYCLE, 0); }
+	INCREMENT BY opt_sign lngval	{ $$ = _symbol_create_lng(SQL_INC, is_lng_nil($4) ? $4 : $3 * $4); }
+  |	MINVALUE opt_sign lngval	{ $$ = _symbol_create_lng(SQL_MINVALUE, is_lng_nil($3) ? $3 : $2 * $3); }
+  |	NO MINVALUE			{ $$ = _symbol_create_lng(SQL_MINVALUE, 0); }
+  |	MAXVALUE opt_sign lngval	{ $$ = _symbol_create_lng(SQL_MAXVALUE, is_lng_nil($3) ? $3 : $2 * $3); }
+  |	NO MAXVALUE			{ $$ = _symbol_create_lng(SQL_MAXVALUE, 0); }
+  |	CACHE nonzerolng		{ $$ = _symbol_create_lng(SQL_CACHE, $2); }
+  |	CYCLE				{ $$ = _symbol_create_int(SQL_CYCLE, 1); }
+  |	NO CYCLE			{ $$ = _symbol_create_int(SQL_CYCLE, 0); }
   ;
 
 /*=== END SEQUENCES ===*/
@@ -1682,7 +1711,7 @@ partition_list:
 
 opt_with_nulls:
     /* empty */		{ $$ = FALSE; }
- |  WITH sqlNULL	{ $$ = TRUE; }
+ |  WITH sqlNULL VALUES	{ $$ = TRUE; }
  ;
 
 opt_partition_spec:
@@ -1691,13 +1720,13 @@ opt_partition_spec:
       append_list(l, $3);
       append_int(l, $5);
       $$ = _symbol_create_list( SQL_PARTITION_LIST, l ); }
- | BETWEEN partition_range_from AND partition_range_to opt_with_nulls
+ | FROM partition_range_from TO partition_range_to opt_with_nulls
     { dlist *l = L();
       append_symbol(l, $2);
       append_symbol(l, $4);
       append_int(l, $5);
       $$ = _symbol_create_list( SQL_PARTITION_RANGE, l ); }
- | WITH sqlNULL
+ | FOR sqlNULL VALUES
     { dlist *l = L();
       append_symbol(l, NULL);
       append_symbol(l, NULL);
@@ -1906,7 +1935,7 @@ generated_column:
 		if (!$5)
 			$5 = L();
 		sql_find_subtype(&it, "int", 32, 0);
-    		append_symbol($5, _symbol_create_list(SQL_TYPE, append_type(L(),&it)));
+		append_symbol($5, _symbol_create_list(SQL_TYPE, append_type(L(),&it)));
 
 		/* finally all the options */
 		append_list(l, $5);
@@ -1960,7 +1989,7 @@ generated_column:
 
 serial_opt_params:
 	/* empty: return the defaults */ 	{ $$ = NULL; }
-  |	'(' opt_seq_params ')'			{ $$ = $2; }
+  |	'(' params_list ')'					{ $$ = $2; }
  ;
 
 
@@ -2053,8 +2082,7 @@ table_constraint_type:
  ;
 
 domain_constraint_type:
-/*    CHECK '(' search_condition ')' { $$ = _symbol_create_symbol(SQL_CHECK, $3); }*/
-    CHECK '(' search_condition ')' { $$ = NULL; }
+    CHECK '(' search_condition ')' { $$ = _symbol_create_symbol(SQL_CHECK, $3); }
  ;
 
 ident_commalist:
@@ -2117,12 +2145,10 @@ external_function_name:
 	ident '.' ident { $$ = append_string(append_string(L(), $1), $3); }
  ;
 
-
 function_body:
 	X_BODY
 |	string
 ;
-
 
 func_def:
     create_or_replace FUNCTION qname
@@ -2991,23 +3017,23 @@ sql:
  | update_statement
  ;
 
-update_statement: 
-/* todo merge statement */
+update_statement:
    delete_stmt
  | truncate_stmt
  | insert_stmt
  | update_stmt
+ | merge_stmt
  | copyfrom_stmt
  ;
 
 transaction_statement:
-   _transaction_stmt
+   transaction_stmt
 	{
 	  $$ = $1;
 	  m->type = Q_TRANS;					}
  ;
 
-_transaction_stmt:
+transaction_stmt:
     COMMIT opt_work opt_chain
 		{ $$ = _symbol_create_int( TR_COMMIT, $3);  }
  |  SAVEPOINT ident
@@ -3037,7 +3063,6 @@ _transaction_mode_list:
  |	_transaction_mode_list ',' transaction_mode
 		{ $$ = ($1 | $3); }
  ;
-
 
 transaction_mode:
 	READ ONLY			{ $$ = tr_readonly; }
@@ -3136,8 +3161,6 @@ copyfrom_stmt:
 	  append_int(l, 0);
 	  $$ = _symbol_create_list( SQL_COPYTO, l ); }
   ;
-  
-
 
 opt_fwf_widths:
        /* empty */		{ $$ = NULL; }
@@ -3245,11 +3268,12 @@ string_commalist_contents:
  ;
 
 delete_stmt:
-    sqlDELETE FROM qname opt_where_clause
+    sqlDELETE FROM qname opt_alias_name opt_where_clause
 
 	{ dlist *l = L();
 	  append_list(l, $3);
-	  append_symbol(l, $4);
+	  append_string(l, $4);
+	  append_symbol(l, $5);
 	  $$ = _symbol_create_list( SQL_DELETE, l ); }
  ;
 
@@ -3275,46 +3299,67 @@ truncate_stmt:
  ;
 
 update_stmt:
-    UPDATE qname SET assignment_commalist opt_from_clause opt_where_clause
+    UPDATE qname opt_alias_name SET assignment_commalist opt_from_clause opt_where_clause
 
 	{ dlist *l = L();
 	  append_list(l, $2);
-	  append_list(l, $4);
-	  append_symbol(l, $5);
+	  append_string(l, $3);
+	  append_list(l, $5);
 	  append_symbol(l, $6);
+	  append_symbol(l, $7);
 	  $$ = _symbol_create_list( SQL_UPDATE, l ); }
  ;
 
-/* todo merge statment 
+opt_search_condition:
+ /* empty */            { $$ = NULL; }
+ | AND search_condition { $$ = $2; }
+ ;
 
-Conditionally update rows of a table, or insert new rows into a table, or both.
+merge_update_or_delete:
+   UPDATE SET assignment_commalist
+   { dlist *l = L();
+     append_list(l, $3);
+     $$ = _symbol_create_list( SQL_UPDATE, l ); }
+ | sqlDELETE
+   { $$ = _symbol_create_list( SQL_DELETE, NULL ); }
+ ;
 
+merge_insert:
+   INSERT opt_column_list values_or_query_spec
+   { dlist *l = L();
+     append_list(l, $2);
+     append_symbol(l, $3);
+     $$ = _symbol_create_list( SQL_INSERT, l ); }
+ ;
 
-<merge statement> ::=
-		MERGE INTO <target table> [ [ AS ] <merge correlation name> ]
-		USING <table reference> ON <search condition> <merge operation specification>
+merge_match_clause:
+   WHEN MATCHED opt_search_condition THEN merge_update_or_delete
+   { dlist *l = L();
+     append_symbol(l, $3);
+     append_symbol(l, $5);
+     $$ = _symbol_create_list( SQL_MERGE_MATCH, l ); }
+ | WHEN NOT MATCHED opt_search_condition THEN merge_insert
+   { dlist *l = L();
+     append_symbol(l, $4);
+     append_symbol(l, $6);
+     $$ = _symbol_create_list( SQL_MERGE_NO_MATCH, l ); }
+ ;
 
-<merge correlation name> ::= <correlation name>
+merge_when_list:
+   merge_match_clause                 { $$ = append_symbol(L(), $1); }
+ | merge_when_list merge_match_clause { $$ = append_symbol($1, $2); }
+ ;
 
-<merge operation specification> ::= <merge when clause>...
+merge_stmt:
+    MERGE INTO qname opt_alias_name USING table_ref ON search_condition merge_when_list
 
-<merge when clause> ::= <merge when matched clause> | <merge when not matched clause>
-
-<merge when matched clause> ::= WHEN MATCHED THEN <merge update specification>
-
-<merge when not matched clause> ::= WHEN NOT MATCHED THEN <merge insert specification>
-
-<merge update specification> ::= UPDATE SET <set clause list>
-
-<merge insert specification> ::=
-		INSERT [ <left paren> <insert column list> <right paren> ]
-		[ <override clause> ] VALUES <merge insert value list>
-
-<merge insert value list> ::=
-		<left paren> <merge insert value element> [ { <comma> <merge insert value element> }... ] <right paren>
-
-<merge insert value element> ::= <value expression> | <contextually typed value specification>
-*/
+	{ dlist *l = L();
+	  append_list(l, $3);
+	  append_string(l, $4);
+	  append_symbol(l, $6);
+	  append_symbol(l, $8);
+	  append_list(l, $9);
+	  $$ = _symbol_create_list( SQL_MERGE, l ); }
 
 insert_stmt:
     INSERT INTO qname values_or_query_spec
@@ -3339,8 +3384,6 @@ values_or_query_spec:
 		{ $$ = _symbol_create_list( SQL_VALUES, L()); }
  |   DEFAULT VALUES
 		{ $$ = _symbol_create_list( SQL_VALUES, L()); }
- |   VALUES row_commalist
-		{ $$ = _symbol_create_list( SQL_VALUES, $2); }
  |  query_expression
  ;
 
@@ -3371,12 +3414,12 @@ null:
 		atom *a = atom_general(SA, sql_bind_localtype("void"), NULL);
 
 		if(!sql_add_arg( m, a)) {
-			char *msg = sql_message(SQLSTATE(HY001) "allocation failure");
+			char *msg = sql_message(SQLSTATE(HY013) "allocation failure");
 			yyerror(m, msg);
 			_DELETE(msg);
 			YYABORT;
 		}
-		$$ = _symbol_create_list( SQL_COLUMN,
+		$$ = _symbol_create_list( SQL_IDENT,
 			append_int(L(), m->argc-1));
 	   } else {
 		$$ = _symbol_create(SQL_NULL, NULL );
@@ -3545,14 +3588,17 @@ with_list_element:
  ;
 
 with_query_expression:
-	select_no_parens_orderby
-  ;
-
+   select_no_parens_orderby
+ | select_statement_single_row
+ | delete_stmt
+ | insert_stmt
+ | update_stmt
+ | merge_stmt
+ ;
 
 sql:
-    select_statement_single_row
-|
-    select_no_parens_orderby
+   select_statement_single_row
+ | select_no_parens_orderby
  ;
 
 simple_select:
@@ -3647,6 +3693,7 @@ select_no_parens:
 	  append_list(l, $4);
 	  append_symbol(l, $5);
 	  $$ = _symbol_create_list( SQL_INTERSECT, l); }
+ |  VALUES row_commalist     { $$ = _symbol_create_list( SQL_VALUES, $2); }
  |  '(' select_no_parens ')' { $$ = $2; }
  |   simple_select
  ;
@@ -3724,7 +3771,7 @@ table_ref:
 		  	  	  append_symbol(l, $3);
 		  	  	  append_int(l, 1);
 		  		  $$ = _symbol_create_list(SQL_TABLE, l); }
- |  subquery_with_orderby table_name		
+ |  subquery_with_orderby table_name
 				{
 				  $$ = $1;
 				  if ($$->token == SQL_SELECT) {
@@ -3734,7 +3781,7 @@ table_ref:
 				  	append_symbol($1->data.lval, $2);
 				  }
 				}
- |  LATERAL subquery table_name		
+ |  LATERAL subquery table_name
 				{
 				  $$ = $2;
 				  if ($$->token == SQL_SELECT) {
@@ -3753,17 +3800,6 @@ table_ref:
 				}
  |  joined_table 		{ $$ = $1;
 				  append_symbol($1->data.lval, NULL); }
-/* Basket expression, TODO window */
- |  '[' 
-	{ m->caching = 0; }
-	select_no_parens ']' table_name 	
-	{
-		dlist *op = L();
-
- 	  	append_symbol(op, $3);
-		append_symbol(op, $5);
-		$$ = _symbol_create_list(SQL_TABLE_OPERATOR, op); 
-	}
  ;
 
 table_name:
@@ -3790,28 +3826,60 @@ table_name:
  ;
 
 opt_table_name:
-	      /* empty */ 	{ $$ = NULL; }
- | table_name			{ $$ = $1; }
+	/* empty */ { $$ = NULL; }
+ |  table_name  { $$ = $1; }
  ;
 
 opt_group_by_clause:
-    /* empty */ 		  { $$ = NULL; }
- |  sqlGROUP BY column_ref_commalist { $$ = _symbol_create_list( SQL_GROUPBY, $3 );}
+	/* empty */               { $$ = NULL; }
+ |  sqlGROUP BY group_by_list { $$ = _symbol_create_list(SQL_GROUPBY, $3); }
+ ;
+
+group_by_list:
+	group_by_element                   { $$ = append_symbol(L(), $1); }
+ |  group_by_list ',' group_by_element { $$ = append_symbol($1, $3); }
+ ;
+
+group_by_element:
+    search_condition                        { $$ = _symbol_create_list(SQL_GROUPBY, append_symbol(L(), $1)); }
+ |  ROLLUP '(' ordinary_grouping_set ')'    { $$ = _symbol_create_list(SQL_ROLLUP, $3); }
+ |  CUBE '(' ordinary_grouping_set ')'      { $$ = _symbol_create_list(SQL_CUBE, $3); }
+ |  GROUPING SETS '(' grouping_set_list ')' { $$ = _symbol_create_list(SQL_GROUPING_SETS, $4); }
+ |  '(' ')'                                 { $$ = _symbol_create_list(SQL_GROUPBY, NULL); }
+ ;
+
+ordinary_grouping_set:
+    ordinary_grouping_element                           { $$ = append_symbol(L(), $1); }
+ |  ordinary_grouping_set ',' ordinary_grouping_element { $$ = append_symbol($1, $3); }
+ ;
+
+ordinary_grouping_element:
+    '(' column_ref_commalist ')' { $$ = _symbol_create_list(SQL_COLUMN_GROUP, $2); }
+ |  column_ref                   { $$ = _symbol_create_list(SQL_COLUMN, $1); }
  ;
 
 column_ref_commalist:
-    column_ref		{ $$ = append_symbol(L(),
-			       _symbol_create_list(SQL_COLUMN,$1)); }
- |  column_ref_commalist ',' column_ref
-			{ $$ = append_symbol( $1,
-			       _symbol_create_list(SQL_COLUMN,$3)); }
+    column_ref		                    { $$ = append_symbol(L(), _symbol_create_list(SQL_COLUMN,$1)); }
+ |  column_ref_commalist ',' column_ref { $$ = append_symbol($1, _symbol_create_list(SQL_COLUMN,$3)); }
+ ;
+
+grouping_set_list:
+	grouping_set_element                       { $$ = append_symbol(L(), $1); }
+ |  grouping_set_list ',' grouping_set_element { $$ = append_symbol($1, $3); }
+ ;
+
+grouping_set_element:
+    ordinary_grouping_element               { $$ = _symbol_create_list(SQL_GROUPBY, append_symbol(L(), $1)); }
+ |  ROLLUP '(' ordinary_grouping_set ')'    { $$ = _symbol_create_list(SQL_ROLLUP, $3); }
+ |  CUBE '(' ordinary_grouping_set ')'      { $$ = _symbol_create_list(SQL_CUBE, $3); }
+ |  GROUPING SETS '(' grouping_set_list ')' { $$ = _symbol_create_list(SQL_GROUPING_SETS, $4); }
+ |  '(' ')'                                 { $$ = _symbol_create_list(SQL_GROUPBY, NULL); }
  ;
 
 opt_having_clause:
-    /* empty */ 		 { $$ = NULL; }
- |  HAVING search_condition	 { $$ = $2; }
+    /* empty */             { $$ = NULL; }
+ |  HAVING search_condition { $$ = $2; }
  ;
-
 
 search_condition:
     search_condition OR and_exp
@@ -3897,16 +3965,15 @@ sort_specification_list:
  ;
 
 ordering_spec:
-    scalar_exp opt_asc_desc opt_nulls_first_last
+    search_condition opt_asc_desc opt_nulls_first_last
 	{ dlist *l = L();
 	  append_symbol(l, $1);
 	  append_int(l, $2 | (($3 == -1 ? !$2 : $3) << 1));
 	  $$ = _symbol_create_list(SQL_COLUMN, l ); }
-
  ;
 
 opt_asc_desc:
-    /* empty */ 	{ $$ = TRUE; }
+    /* empty */ { $$ = TRUE; }
  |  ASC			{ $$ = TRUE; }
  |  DESC		{ $$ = FALSE; }
  ;
@@ -4124,21 +4191,14 @@ filter_exp:
 		  $$ = _symbol_create_list(SQL_FILTER, l ); }
  ;
 
-
 subquery_with_orderby:
     '(' select_no_parens_orderby ')'	{ $$ = $2; }
- |  '(' VALUES row_commalist ')'	
-				{ $$ = _symbol_create_list( SQL_VALUES, $3); }
- |  '(' with_query ')'	
-				{ $$ = $2; }
+ |  '(' with_query ')'			{ $$ = $2; }
  ;
 
 subquery:
     '(' select_no_parens ')'	{ $$ = $2; }
- |  '(' VALUES row_commalist ')'	
-				{ $$ = _symbol_create_list( SQL_VALUES, $3); }
- |  '(' with_query ')'	
-				{ $$ = $2; }
+ |  '(' with_query ')'		{ $$ = $2; }
  ;
 
 	/* simple_scalar expressions */
@@ -4315,8 +4375,8 @@ simple_scalar_exp:
  |  '-' scalar_exp %prec UMINUS 
 			{ 
  			  $$ = NULL;
-			  assert($2->token != SQL_COLUMN || $2->data.lval->h->type != type_lng);
-			  if ($2->token == SQL_COLUMN && $2->data.lval->h->type == type_int) {
+			  assert(($2->token != SQL_COLUMN && $2->token != SQL_IDENT) || $2->data.lval->h->type != type_lng);
+			  if (($2->token == SQL_COLUMN || $2->token == SQL_IDENT) && $2->data.lval->h->type == type_int) {
 				atom *a = sql_bind_arg(m, $2->data.lval->h->data.i_val);
 				if (!atom_neg(a)) {
 					$$ = $2;
@@ -4344,27 +4404,33 @@ scalar_exp:
 
 value_exp:
     atom
- |  user		{ $$ = _symbol_create_list( SQL_COLUMN, 
-			  append_string(L(), sa_strdup(SA, "current_user"))); }
- |  CURRENT_ROLE	{ $$ = _symbol_create_list( SQL_COLUMN, 
-			  append_string(L(), sa_strdup(SA, "current_role"))); }
- |  window_function
- |  column_ref 		{ $$ = _symbol_create_list( SQL_COLUMN, $1); }
- |  var_ref		
  |  aggr_ref
- |  func_ref
- |  NEXT VALUE FOR qname	{ $$ = _symbol_create_list( SQL_NEXT, $4); }
- |  datetime_funcs
- |  string_funcs
  |  case_exp
  |  cast_exp
- |  XML_value_function
- |  param
+ |  column_ref                            { $$ = _symbol_create_list(SQL_COLUMN, $1); }
+ |  CURRENT_ROLE   { $$ = _symbol_create_list(SQL_COLUMN, append_string(L(), sa_strdup(SA, "current_role"))); }
+ |  datetime_funcs
+ |  func_ref
+ |  GROUPING '(' column_ref_commalist ')' { dlist *l = L();
+										    append_list(l, append_string(L(), "grouping"));
+										    append_int(l, FALSE);
+											for (dnode *dn = $3->h ; dn ; dn = dn->next) {
+												symbol *sym = dn->data.sym; /* do like a aggrN */
+												append_symbol(l, _symbol_create_list(SQL_COLUMN, sym->data.lval));
+											}
+										    $$ = _symbol_create_list(SQL_AGGR, l); }
+ |  NEXT VALUE FOR qname                  { $$ = _symbol_create_list(SQL_NEXT, $4); }
  |  null
+ |  param
+ |  string_funcs
+ |  user            { $$ = _symbol_create_list(SQL_COLUMN, append_string(L(), sa_strdup(SA, "current_user"))); }
+ |  var_ref
+ |  window_function
+ |  XML_value_function
  ;
 
-param:  
-   '?'			
+param:
+   '?'
 	{ 
 	  int nr = (m->params)?list_length(m->params):0;
 
@@ -4403,9 +4469,14 @@ window_ident_clause:
   |	ident       { $$ = $1; }
   ;
 
+search_condition_commalist:
+    search_condition                                { $$ = append_symbol(L(), $1); }
+ |  search_condition_commalist ',' search_condition { $$ = append_symbol($1, $3); }
+ ;
+
 window_partition_clause:
 	/* empty */ 	{ $$ = NULL; }
-  |	PARTITION BY column_ref_commalist
+  |	PARTITION BY search_condition_commalist
 	{ $$ = _symbol_create_list( SQL_GROUPBY, $3 ); }
   ;
 
@@ -4666,15 +4737,13 @@ atom:
 		AtomNode *an = (AtomNode*)$1;
 
 		if(!sql_add_arg( m, an->a)) {
-			char *msg = sql_message(SQLSTATE(HY001) "allocation failure");
+			char *msg = sql_message(SQLSTATE(HY013) "allocation failure");
 			yyerror(m, msg);
 			_DELETE(msg);
 			YYABORT;
 		}
 		an->a = NULL;
-		/* we miss use SQL_COLUMN also for param's, maybe
-				change SQL_COLUMN to SQL_IDENT */
-		$$ = _symbol_create_list( SQL_COLUMN,
+		$$ = _symbol_create_list( SQL_IDENT,
 			append_int(L(), m->argc-1));
 	  } else {
 		AtomNode *an = (AtomNode*)$1;
@@ -4806,8 +4875,14 @@ datetime_field:
 
 extract_datetime_field:
     datetime_field
+ |  CENTURY		{ $$ = icentury; }
+ |  DECADE		{ $$ = idecade; }
  |  QUARTER		{ $$ = iquarter; }
  |  WEEK		{ $$ = iweek; }
+ |  DOW			{ $$ = idow; }
+ /* |  DAY OF WEEK		{ $$ = idow; } */
+ |  DOY			{ $$ = idoy; }
+ /* |  DAY OF YEAR		{ $$ = idoy; } */
  ;
 
 start_field:
@@ -5032,7 +5107,7 @@ literal:
 		  }
 		}
  |  INTNUM
-		{ char *s = strip_extra_zeros(sa_strdup(SA, $1));
+		{ char *s = sa_strdup(SA, $1);
 		  char *dot = strchr(s, '.');
 		  int digits = _strlen(s) - 1;
 		  int scale = digits - (int) (dot-s);
@@ -5659,7 +5734,7 @@ data_type:
 		_DELETE(msg);
 		YYABORT;
 	} else if (geoSubType == -1) {
-		char *msg = sql_message(SQLSTATE(HY001) "allocation failure");
+		char *msg = sql_message(SQLSTATE(HY013) "allocation failure");
 		$$.type = NULL;
 		yyerror(m, msg);
 		_DELETE(msg);
@@ -5685,7 +5760,7 @@ subgeometry_type:
 		_DELETE(msg);
 		YYABORT;
 	} else if(subtype == -1) {
-		char *msg = sql_message(SQLSTATE(HY001) "allocation failure");
+		char *msg = sql_message(SQLSTATE(HY013) "allocation failure");
 		yyerror(m, msg);
 		_DELETE(msg);
 		YYABORT;
@@ -5702,7 +5777,7 @@ subgeometry_type:
 		_DELETE(msg);
 		YYABORT;
 	} else if (subtype == -1) {
-		char *msg = sql_message(SQLSTATE(HY001) "allocation failure");
+		char *msg = sql_message(SQLSTATE(HY013) "allocation failure");
 		yyerror(m, msg);
 		_DELETE(msg);
 		YYABORT;
@@ -5801,6 +5876,7 @@ non_reserved_word:
 | COLUMN	{ $$ = sa_strdup(SA, "column"); }	/* sloppy: officially reserved */
 | CYCLE		{ $$ = sa_strdup(SA, "cycle"); }	/* sloppy: officially reserved */
 | sqlDATE	{ $$ = sa_strdup(SA, "date"); }		/* sloppy: officially reserved */
+| DEALLOCATE { $$ = sa_strdup(SA, "deallocate"); }	/* sloppy: officially reserved */
 | DISTINCT	{ $$ = sa_strdup(SA, "distinct"); }	/* sloppy: officially reserved */
 | EXEC		{ $$ = sa_strdup(SA, "exec"); }		/* sloppy: officially reserved */
 | EXECUTE	{ $$ = sa_strdup(SA, "execute"); }	/* sloppy: officially reserved */
@@ -5825,9 +5901,11 @@ non_reserved_word:
 | ANALYZE	{ $$ = sa_strdup(SA, "analyze"); }
 | AUTO_COMMIT	{ $$ = sa_strdup(SA, "auto_commit"); }
 | CACHE		{ $$ = sa_strdup(SA, "cache"); }
+| CENTURY	{ $$ = sa_strdup(SA, "century"); }
 | CLIENT	{ $$ = sa_strdup(SA, "client"); }
 | COMMENT	{ $$ = sa_strdup(SA, "comment"); }
 | DATA 		{ $$ = sa_strdup(SA, "data"); }
+| DECADE	{ $$ = sa_strdup(SA, "decade"); }
 | SQL_DEBUG	{ $$ = sa_strdup(SA, "debug"); }
 | DIAGNOSTICS 	{ $$ = sa_strdup(SA, "diagnostics"); }
 | SQL_EXPLAIN	{ $$ = sa_strdup(SA, "explain"); }
@@ -5868,6 +5946,8 @@ non_reserved_word:
 | SQL_TRACE	{ $$ = sa_strdup(SA, "trace"); }
 | TYPE		{ $$ = sa_strdup(SA, "type"); }
 | WEEK 		{ $$ = sa_strdup(SA, "week"); }
+| DOW 		{ $$ = sa_strdup(SA, "dow"); }
+| DOY 		{ $$ = sa_strdup(SA, "doy"); }
 | ZONE		{ $$ = sa_strdup(SA, "zone"); }
 
 /* SQL/XML non reserved words */
@@ -6042,13 +6122,25 @@ exec:
 		  $$ = $2; }
  ;
 
+dealloc_ref:
+   posint { $$ = $1; }
+ | ALL    { $$ = -1; } /* prepared statements numbers cannot be negative, so set -1 to deallocate all */
+ ;
+
+dealloc:
+     deallocate opt_prepare dealloc_ref
+		{
+		  m->emode = m_deallocate;
+		  $$ = _newAtomNode(atom_int(SA, sql_bind_localtype("int"), $3)); }
+ ;
+
 exec_ref:
-    intval '(' ')'
+    posint '(' ')'
 	{ dlist *l = L();
   	  append_int(l, $1);
   	  append_list(l, NULL);
 	  $$ = _symbol_create_list( SQL_NOP, l ); }
-|   intval '(' value_commalist ')'
+|   posint '(' value_commalist ')'
 	{ dlist *l = L();
   	  append_int(l, $1);
   	  append_list(l, $3);
@@ -6660,164 +6752,184 @@ int find_subgeometry_type(char* geoSubType) {
 	return subType;	
 }
 
-char *token2string(int token)
+char *token2string(tokens token)
 {
 	switch (token) {
+	// Please keep this list sorted for easy of maintenance
 #define SQL(TYPE) case SQL_##TYPE : return #TYPE
-	SQL(CREATE_SCHEMA);
-	SQL(CREATE_TABLE);
-	SQL(CREATE_VIEW);
+	SQL(AGGR);
+	SQL(ALL_CONTINUOUS_QUERIES);
+	SQL(ALTER_SEQ);
+	SQL(ALTER_TABLE);
+	SQL(ALTER_USER);
+	SQL(ANALYZE);
+	SQL(AND);
+	SQL(ASSIGN);
+	SQL(ATOM);
+	SQL(BETWEEN);
+	SQL(BINCOPYFROM);
+	SQL(BINOP);
+	SQL(CACHE);
+	SQL(CALL);
+	SQL(CASE);
+	SQL(CAST);
+	SQL(CHANGE_CONTINUOUS_QUERY);
+	SQL(CHARSET);
+	SQL(CHECK);
+	SQL(COALESCE);
+	SQL(COLUMN);
+	SQL(COLUMN_GROUP);
+	SQL(COLUMN_OPTIONS);
+	SQL(COMMENT);
+	SQL(COMPARE);
+	SQL(CONSTRAINT);
+	SQL(COPYFROM);
+	SQL(COPYLOADER);
+	SQL(COPYTO);
+	SQL(CREATE_FUNC);
 	SQL(CREATE_INDEX);
 	SQL(CREATE_ROLE);
-	SQL(CREATE_USER);
-	SQL(CREATE_TYPE);
-	SQL(CREATE_FUNC);
+	SQL(CREATE_SCHEMA);
 	SQL(CREATE_SEQ);
+	SQL(CREATE_TABLE);
+	SQL(CREATE_TABLE_LOADER);
 	SQL(CREATE_TRIGGER);
-	SQL(DROP_SCHEMA);
-	SQL(DROP_TABLE);
-	SQL(DROP_VIEW);
-	SQL(DROP_INDEX);
-	SQL(DROP_ROLE);
-	SQL(DROP_USER);
-	SQL(DROP_TYPE);
-	SQL(DROP_FUNC);
-	SQL(DROP_SEQ);
-	SQL(DROP_TRIGGER);
-	SQL(ALTER_TABLE);
-	SQL(ALTER_SEQ);
-	SQL(ALTER_USER);
+	SQL(CREATE_TYPE);
+	SQL(CREATE_USER);
+	SQL(CREATE_VIEW);
+	SQL(CROSS);
+	SQL(CUBE);
+	SQL(CURRENT_ROW);
+	SQL(CYCLE);
+	SQL(DECLARE);
+	SQL(DECLARE_TABLE);
+	SQL(DEFAULT);
+	SQL(DELETE);
 	SQL(DROP_COLUMN);
 	SQL(DROP_CONSTRAINT);
 	SQL(DROP_DEFAULT);
-	SQL(DECLARE);
-	SQL(DECLARE_TABLE);
-	SQL(COMMENT);
-	SQL(SET);
-	SQL(PREP);
-	SQL(PREPARE);
-	SQL(NAME);
-	SQL(USER);
-	SQL(PATH);
-	SQL(CHARSET);
-	SQL(SCHEMA);
-	SQL(TABLE);
-	SQL(VIEW);
-	SQL(INDEX);
-	SQL(TYPE);
-	SQL(SEQUENCE);
-	SQL(CASE);
-	SQL(CAST);
-	SQL(RETURN);
-	SQL(IF);
+	SQL(DROP_FUNC);
+	SQL(DROP_INDEX);
+	SQL(DROP_ROLE);
+	SQL(DROP_SCHEMA);
+	SQL(DROP_SEQ);
+	SQL(DROP_TABLE);
+	SQL(DROP_TRIGGER);
+	SQL(DROP_TYPE);
+	SQL(DROP_USER);
+	SQL(DROP_VIEW);
 	SQL(ELSE);
-	SQL(WHILE);
-	SQL(COLUMN);
-	SQL(COLUMN_OPTIONS);
-	SQL(COALESCE);
-	SQL(CONSTRAINT);
-	SQL(CHECK);
-	SQL(DEFAULT);
+	SQL(ESCAPE);
+	SQL(EXCEPT);
+	SQL(EXECUTE);
+	SQL(EXISTS);
+	SQL(FILTER);
+	SQL(FOLLOWING);
+	SQL(FOREIGN_KEY);
+	SQL(FRAME);
+	SQL(FROM);
+	SQL(FUNC);
+	SQL(GRANT);
+	SQL(GRANT_ROLES);
+	SQL(GROUPBY);
+	SQL(GROUPING_SETS);
+	SQL(IDENT);
+	SQL(IF);
+	SQL(IN);
+	SQL(INC);
+	SQL(INDEX);
+	SQL(INSERT);
+	SQL(INTERSECT);
+	SQL(IS_NOT_NULL);
+	SQL(IS_NULL);
+	SQL(JOIN);
+	SQL(LIKE);
+	SQL(MAXVALUE);
+	SQL(MERGE);
+	SQL(MERGE_MATCH);
+	SQL(MERGE_NO_MATCH);
+	SQL(MERGE_PARTITION);
+	SQL(MINVALUE);
+	SQL(MULSTMT);
+	SQL(NAME);
+	SQL(NEXT);
+	SQL(NOP);
+	SQL(NOT);
+	SQL(NOT_BETWEEN);
+	SQL(NOT_EXISTS);
+	SQL(NOT_IN);
+	SQL(NOT_LIKE);
 	SQL(NOT_NULL);
 	SQL(NULL);
 	SQL(NULLIF);
-	SQL(UNIQUE);
-	SQL(PRIMARY_KEY);
-	SQL(FOREIGN_KEY);
-	SQL(BEGIN);
-#define TR(TYPE) case TR_##TYPE : return #TYPE
-	TR(COMMIT);
-	TR(ROLLBACK);
-	TR(SAVEPOINT);
-	TR(RELEASE);
-	TR(START);
-	TR(MODE);
-	SQL(INSERT);
-	SQL(DELETE);
-	SQL(TRUNCATE);
-	SQL(UPDATE);
-	SQL(CROSS);
-	SQL(JOIN);
-	SQL(SELECT);
-	SQL(WHERE);
-	SQL(FROM);
-	SQL(UNIONJOIN);
-	SQL(UNION);
-	SQL(EXCEPT);
-	SQL(INTERSECT);
-	SQL(VALUES);
-	SQL(ASSIGN);
-	SQL(ORDERBY);
-	SQL(GROUPBY);
-	SQL(DESC);
-	SQL(AND);
-	SQL(OR);
-	SQL(NOT);
-	SQL(EXISTS);
-	SQL(NOT_EXISTS);
 	SQL(OP);
-	SQL(UNOP);
-	SQL(BINOP);
-	SQL(NOP);
-	SQL(BETWEEN);
-	SQL(NOT_BETWEEN);
-	SQL(LIKE);
-	SQL(IN);
-	SQL(NOT_IN);
-	SQL(GRANT);
-	SQL(GRANT_ROLES);
+	SQL(OR);
+	SQL(ORDERBY);
+	SQL(PARAMETER);
+	SQL(PARTITION_COLUMN);
+	SQL(PARTITION_EXPRESSION);
+	SQL(PARTITION_LIST);
+	SQL(PARTITION_RANGE);
+	SQL(PATH);
+	SQL(PRECEDING);
+	SQL(PREP);
+	SQL(PRIMARY_KEY);
+	SQL(PW_ENCRYPTED);
+	SQL(PW_UNENCRYPTED);
+	SQL(RANK);
+	SQL(RENAME_COLUMN);
+	SQL(RENAME_SCHEMA);
+	SQL(RENAME_TABLE);
+	SQL(RENAME_USER);
+	SQL(RETURN);
 	SQL(REVOKE);
 	SQL(REVOKE_ROLES);
-	SQL(EXEC);
-	SQL(EXECUTE);
-	SQL(PRIVILEGES);
-	SQL(ROLE);
-	SQL(PARAMETER);
-	SQL(FUNC);
-	SQL(AGGR);
-	SQL(RANK);
-	SQL(FRAME);
-	SQL(COMPARE);
-	SQL(FILTER);
+	SQL(ROLLUP);
 	SQL(ROUTINE);
-	SQL(TEMP_LOCAL);
-	SQL(TEMP_GLOBAL);
-	SQL(INT_VALUE);
-	SQL(ATOM);
+	SQL(SAMPLE);
+	SQL(SCHEMA);
+	SQL(SELECT);
+	SQL(SEQUENCE);
+	SQL(SET);
+	SQL(SET_TABLE_SCHEMA);
+	SQL(START);
+	SQL(START_CONTINUOUS_QUERY);
+	SQL(STORAGE);
+	SQL(STREAM_TABLE_STRIDE);
+	SQL(STREAM_TABLE_WINDOW);
+	SQL(TABLE);
+	SQL(TRUNCATE);
+	SQL(TYPE);
+	SQL(UNION);
+	SQL(UNIONJOIN);
+	SQL(UNIQUE);
+	SQL(UNOP);
+	SQL(UPDATE);
 	SQL(USING);
+	SQL(VALUES);
+	SQL(VIEW);
 	SQL(WHEN);
-	SQL(ESCAPE);
-	SQL(COPYFROM);
-	SQL(BINCOPYFROM);
-	SQL(COPYTO);
-	SQL(EXPORT);
-	SQL(NEXT);
-	SQL(MULSTMT);
+	SQL(WHILE);
+	SQL(WINDOW);
 	SQL(WITH);
+	SQL(XMLATTRIBUTE);
 	SQL(XMLCOMMENT);
 	SQL(XMLCONCAT);
 	SQL(XMLDOCUMENT);
 	SQL(XMLELEMENT);
-	SQL(XMLATTRIBUTE);
 	SQL(XMLFOREST);
 	SQL(XMLPARSE);
 	SQL(XMLPI);
-	SQL(XMLQUERY);
 	SQL(XMLTEXT);
-	SQL(XMLVALIDATE);
-	SQL(XMLNAMESPACES);
-	SQL(MERGE_PARTITION);
-	SQL(PARTITION_LIST);
-	SQL(PARTITION_RANGE);
-	SQL(PARTITION_COLUMN);
-	SQL(PARTITION_EXPRESSION);
-	SQL(RENAME_SCHEMA);
-	SQL(RENAME_TABLE);
-	SQL(RENAME_COLUMN);
-	SQL(PRECEDING);
-	SQL(FOLLOWING);
-	SQL(CURRENT_ROW);
-	SQL(WINDOW);
+	SQL(YIELD);
+#define TR(TYPE) case TR_##TYPE : return #TYPE
+	TR(COMMIT);
+	TR(MODE);
+	TR(RELEASE);
+	TR(ROLLBACK);
+	TR(SAVEPOINT);
+	TR(START);
+	// Please keep this list sorted for easy of maintenance
 	}
 	return "unknown";	/* just needed for broken compilers ! */
 }
@@ -6827,9 +6939,9 @@ void *sql_error( mvc * sql, int error_code, char *format, ... )
 	va_list	ap;
 
 	va_start (ap,format);
-	if (sql->errstr[0] == '\0')
+	if (sql->errstr[0] == '\0' || error_code == 5)
 		vsnprintf(sql->errstr, ERRSIZE-1, _(format), ap);
-	if (!sql->session->status)
+	if (!sql->session->status || error_code == 5)
 		sql->session->status = -error_code;
 	va_end (ap);
 	return NULL;

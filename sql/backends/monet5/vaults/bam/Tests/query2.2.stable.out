@@ -17,7 +17,6 @@ stdout of test 'query2.2` in directory 'sql/backends/monet5/vaults/bam` itself:
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-16074/.s.monetdb.32986
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 10:22:42 >  
 # 10:22:42 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16074" "--port=32986"
@@ -36,7 +35,7 @@ Ready.
 #        GROUP BY qname
 #        HAVING COUNT(*) = 2
 #           AND SUM(bam.bam_flag(flag, 'firs_segm')) = 1
-% bam.L33,	bam.L36 # table_name
+% bam.,	bam. # table_name
 % distance,	nr_alignments # name
 % bigint,	bigint # type
 % 3,	1 # length
@@ -63,8 +62,8 @@ Ready.
 #FROM bam.paired_primary_alignments_3
 #WHERE l_rname = r_rname
 #GROUP BY distance
-#ORDER BY nr_alignments DESC;
-% bam.L2,	bam.L5 # table_name
+#ORDER BY nr_alignments DESC, distance;
+% bam.,	bam. # table_name
 % distance,	nr_alignments # name
 % bigint,	bigint # type
 % 3,	1 # length

@@ -1,0 +1,244 @@
+stdout of test 'prepared-merge-statement.Bug-6706` in directory 'sql/test/BugTracker-2019` itself:
+
+
+# 10:09:56 >  
+# 10:09:56 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31509" "--set" "mapi_usock=/var/tmp/mtest-31613/.s.monetdb.31509" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/ferreira/repositories/MonetDB-Apr2019/BUILD/var/MonetDB/mTests_sql_test_BugTracker-2019" "--set" "embedded_c=true"
+# 10:09:56 >  
+
+# MonetDB 5 server v11.33.4 (hg id: a3a2f049a9ab+)
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2019', using 8 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
+# Found 15.528 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2020 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.localdomain:31509/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-31613/.s.monetdb.31509
+# MonetDB/GIS module loaded
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_temporal.sql
+# loading sql script: 18_index.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_views.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 27_rejects.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 39_analytics_hge.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 40_json_hge.sql
+# loading sql script: 41_md5sum.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_profiler.sql
+# loading sql script: 51_sys_schema_extension.sql
+# loading sql script: 60_wlcr.sql
+# loading sql script: 72_fits.sql
+# loading sql script: 74_netcdf.sql
+# loading sql script: 75_lidar.sql
+# loading sql script: 75_shp.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 85_bam.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 90_generator_hge.sql
+# loading sql script: 99_system.sql
+# MonetDB/SQL module loaded
+
+# 09:11:28 >  
+# 09:11:28 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-12052" "--port=37692"
+# 09:11:28 >  
+
+#create schema test;
+#create table test.share_daily_history (id string, timeid int, c1 int, c2 int, c3 int, c4 int, volume int);
+#prepare merge into test.share_daily_history as target
+#using (select * from (values('BHP',1,1 ,1 ,1 ,1 ,1)) as a(id,timeid,c1,c2,c3,c4,volume)) as source
+#on source.id=target.id and source.timeid=target.timeid
+#when not matched then insert (id,timeid,c1,c2,c3,c4,volume) values(source.id,source.timeid,source.c1,source.c2,source.c3,source.c4,source.volume);
+#prepare merge into test.share_daily_history as target
+#using (select * from (values('BHP',1,1 ,1 ,1 ,1 ,1)) as a(id,timeid,c1,c2,c3,c4,volume)) as source
+#on source.id=target.id and source.timeid=target.timeid
+#when not matched then insert (id,timeid,c1,c2,c3,c4,volume) values(source.id,source.timeid,source.c1,source.c2,source.c3,source.c4,source.volume);
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 0,	1,	1,	0,	0,	0 # length
+#exec  7();
+[ 1	]
+#exec  7();
+[ 0	]
+#prepare merge into test.share_daily_history as target
+#using (select * from (values('BHP',?,?,?,?,?,?)) as a(id,timeid,c1,c2,c3,c4,volume)) as source
+#on source.id=target.id and source.timeid=target.timeid
+#when not matched then insert (id,timeid,c1,c2,c3,c4,volume) values(source.id,source.timeid,source.c1,source.c2,source.c3,source.c4,source.volume);
+#prepare merge into test.share_daily_history as target
+#using (select * from (values('BHP',?,?,?,?,?,?)) as a(id,timeid,c1,c2,c3,c4,volume)) as source
+#on source.id=target.id and source.timeid=target.timeid
+#when not matched then insert (id,timeid,c1,c2,c3,c4,volume) values(source.id,source.timeid,source.c1,source.c2,source.c3,source.c4,source.volume);
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 3,	2,	1,	0,	0,	0 # length
+[ "int",	32,	0,	NULL,	NULL,	NULL	]
+[ "int",	32,	0,	NULL,	NULL,	NULL	]
+[ "int",	32,	0,	NULL,	NULL,	NULL	]
+[ "int",	32,	0,	NULL,	NULL,	NULL	]
+[ "int",	32,	0,	NULL,	NULL,	NULL	]
+[ "int",	32,	0,	NULL,	NULL,	NULL	]
+#exec  9(1,2,3,4,5,6);
+[ 0	]
+#prepare select * from test.share_daily_history inner join (values('BHP',?)) as source(id,timeid)
+#on source.id=share_daily_history.id and source.timeid=share_daily_history.timeid;
+#prepare select * from test.share_daily_history inner join (values('BHP',?)) as source(id,timeid)
+#on source.id=share_daily_history.id and source.timeid=share_daily_history.timeid;
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 4,	3,	1,	0,	19,	6 # length
+[ "clob",	0,	0,	"",	"share_daily_history",	"id"	]
+[ "int",	32,	0,	"",	"share_daily_history",	"timeid"	]
+[ "int",	32,	0,	"",	"share_daily_history",	"c1"	]
+[ "int",	32,	0,	"",	"share_daily_history",	"c2"	]
+[ "int",	32,	0,	"",	"share_daily_history",	"c3"	]
+[ "int",	32,	0,	"",	"share_daily_history",	"c4"	]
+[ "int",	32,	0,	"",	"share_daily_history",	"volume"	]
+[ "char",	3,	0,	"",	"source",	"id"	]
+[ "int",	32,	0,	"",	"source",	"timeid"	]
+[ "int",	32,	0,	NULL,	NULL,	NULL	]
+#prepare select * from test.share_daily_history
+#inner join (values('BHP')) as source(id)
+#on source.id=share_daily_history.id;
+#prepare select * from test.share_daily_history
+#inner join (values('BHP')) as source(id)
+#on source.id=share_daily_history.id;
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 4,	2,	1,	0,	19,	6 # length
+[ "clob",	0,	0,	"",	"share_daily_history",	"id"	]
+[ "int",	32,	0,	"",	"share_daily_history",	"timeid"	]
+[ "int",	32,	0,	"",	"share_daily_history",	"c1"	]
+[ "int",	32,	0,	"",	"share_daily_history",	"c2"	]
+[ "int",	32,	0,	"",	"share_daily_history",	"c3"	]
+[ "int",	32,	0,	"",	"share_daily_history",	"c4"	]
+[ "int",	32,	0,	"",	"share_daily_history",	"volume"	]
+[ "char",	3,	0,	"",	"source",	"id"	]
+#prepare select * from test.share_daily_history
+#inner join (values(?), ('BHP')) as source(id)
+#on source.id=share_daily_history.id;
+#prepare select * from test.share_daily_history
+#inner join (values(?), ('BHP')) as source(id)
+#on source.id=share_daily_history.id;
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 4,	2,	1,	0,	19,	6 # length
+[ "clob",	0,	0,	"",	"share_daily_history",	"id"	]
+[ "int",	32,	0,	"",	"share_daily_history",	"timeid"	]
+[ "int",	32,	0,	"",	"share_daily_history",	"c1"	]
+[ "int",	32,	0,	"",	"share_daily_history",	"c2"	]
+[ "int",	32,	0,	"",	"share_daily_history",	"c3"	]
+[ "int",	32,	0,	"",	"share_daily_history",	"c4"	]
+[ "int",	32,	0,	"",	"share_daily_history",	"volume"	]
+[ "char",	3,	0,	"",	"source",	"id"	]
+[ "char",	3,	0,	NULL,	NULL,	NULL	]
+#exec 17('a');
+% test.share_daily_history,	test.share_daily_history,	test.share_daily_history,	test.share_daily_history,	test.share_daily_history,	test.share_daily_history,	test.share_daily_history,	.source # table_name
+% id,	timeid,	c1,	c2,	c3,	c4,	volume,	id # name
+% clob,	int,	int,	int,	int,	int,	int,	char # type
+% 3,	1,	1,	1,	1,	1,	1,	3 # length
+[ "BHP",	1,	1,	1,	1,	1,	1,	"BHP"	]
+#prepare select * from test.share_daily_history
+#inner join (values('BHP'), (?)) as source(id)
+#on source.id=share_daily_history.id;
+#prepare select * from test.share_daily_history
+#inner join (values('BHP'), (?)) as source(id)
+#on source.id=share_daily_history.id;
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 4,	2,	1,	0,	19,	6 # length
+[ "clob",	0,	0,	"",	"share_daily_history",	"id"	]
+[ "int",	32,	0,	"",	"share_daily_history",	"timeid"	]
+[ "int",	32,	0,	"",	"share_daily_history",	"c1"	]
+[ "int",	32,	0,	"",	"share_daily_history",	"c2"	]
+[ "int",	32,	0,	"",	"share_daily_history",	"c3"	]
+[ "int",	32,	0,	"",	"share_daily_history",	"c4"	]
+[ "int",	32,	0,	"",	"share_daily_history",	"volume"	]
+[ "char",	3,	0,	"",	"source",	"id"	]
+[ "char",	3,	0,	NULL,	NULL,	NULL	]
+#exec 19('a');
+% test.share_daily_history,	test.share_daily_history,	test.share_daily_history,	test.share_daily_history,	test.share_daily_history,	test.share_daily_history,	test.share_daily_history,	.source # table_name
+% id,	timeid,	c1,	c2,	c3,	c4,	volume,	id # name
+% clob,	int,	int,	int,	int,	int,	int,	char # type
+% 3,	1,	1,	1,	1,	1,	1,	3 # length
+[ "BHP",	1,	1,	1,	1,	1,	1,	"BHP"	]
+#prepare select * from test.share_daily_history
+#inner join (values(?)) as source(id)
+#on source.id=share_daily_history.id;
+#prepare select * from test.share_daily_history
+#inner join (values(?)) as source(id)
+#on source.id=share_daily_history.id;
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 4,	2,	1,	0,	19,	6 # length
+[ "clob",	0,	0,	"",	"share_daily_history",	"id"	]
+[ "int",	32,	0,	"",	"share_daily_history",	"timeid"	]
+[ "int",	32,	0,	"",	"share_daily_history",	"c1"	]
+[ "int",	32,	0,	"",	"share_daily_history",	"c2"	]
+[ "int",	32,	0,	"",	"share_daily_history",	"c3"	]
+[ "int",	32,	0,	"",	"share_daily_history",	"c4"	]
+[ "int",	32,	0,	"",	"share_daily_history",	"volume"	]
+[ "clob",	0,	0,	"",	"source",	"id"	]
+[ "clob",	0,	0,	NULL,	NULL,	NULL	]
+#exec 21('a');
+% test.share_daily_history,	test.share_daily_history,	test.share_daily_history,	test.share_daily_history,	test.share_daily_history,	test.share_daily_history,	test.share_daily_history,	.source # table_name
+% id,	timeid,	c1,	c2,	c3,	c4,	volume,	id # name
+% clob,	int,	int,	int,	int,	int,	int,	clob # type
+% 0,	1,	1,	1,	1,	1,	1,	0 # length
+#prepare select * from test.share_daily_history
+#inner join (values(?),(?),(?)) as source(id)
+#on source.id=share_daily_history.id;
+#prepare select * from test.share_daily_history
+#inner join (values(?),(?),(?)) as source(id)
+#on source.id=share_daily_history.id;
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 4,	2,	1,	0,	19,	6 # length
+[ "clob",	0,	0,	"",	"share_daily_history",	"id"	]
+[ "int",	32,	0,	"",	"share_daily_history",	"timeid"	]
+[ "int",	32,	0,	"",	"share_daily_history",	"c1"	]
+[ "int",	32,	0,	"",	"share_daily_history",	"c2"	]
+[ "int",	32,	0,	"",	"share_daily_history",	"c3"	]
+[ "int",	32,	0,	"",	"share_daily_history",	"c4"	]
+[ "int",	32,	0,	"",	"share_daily_history",	"volume"	]
+[ "clob",	0,	0,	"",	"source",	"id"	]
+[ "clob",	0,	0,	NULL,	NULL,	NULL	]
+[ "clob",	0,	0,	NULL,	NULL,	NULL	]
+[ "clob",	0,	0,	NULL,	NULL,	NULL	]
+#exec 23('a','b','c');
+% test.share_daily_history,	test.share_daily_history,	test.share_daily_history,	test.share_daily_history,	test.share_daily_history,	test.share_daily_history,	test.share_daily_history,	.source # table_name
+% id,	timeid,	c1,	c2,	c3,	c4,	volume,	id # name
+% clob,	int,	int,	int,	int,	int,	int,	clob # type
+% 0,	1,	1,	1,	1,	1,	1,	0 # length
+#drop schema test cascade;
+
+# 10:09:57 >  
+# 10:09:57 >  "Done."
+# 10:09:57 >  
+

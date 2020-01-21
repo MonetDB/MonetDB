@@ -19,7 +19,6 @@ stdout of test 'crash.Bug-3609` in directory 'sql/backends/monet5/generator` its
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 22:37:46 >  
 # 22:37:46 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-5645" "--port=33733"

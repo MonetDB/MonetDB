@@ -23,7 +23,6 @@ stdout of test 'savepoint.Bug-3738-1` in directory 'sql/test/BugTracker-2015` it
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 15:47:07 >  
 # 15:47:07 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-19063" "--port=33483"

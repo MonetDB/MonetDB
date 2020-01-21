@@ -1,0 +1,79 @@
+stdout of test 'str_to_time.Bug-6791` in directory 'sql/test/BugTracker-2019` itself:
+
+
+# 17:30:27 >  
+# 17:30:27 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=35094" "--set" "mapi_usock=/var/tmp/mtest-17372/.s.monetdb.35094" "--forcemito" "--dbpath=/home/dinther/dev/dev/INSTALL/var/MonetDB/mTests_sql_test_BugTracker-2019" "--set" "embedded_c=true"
+# 17:30:27 >  
+
+# MonetDB 5 server v11.35.4 (hg id: 53f7286e297d)
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2019', using 8 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
+# Found 31.243 GiB available main-memory of which we use 25.463 GiB
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2020 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.localdomain:35094/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-17372/.s.monetdb.35094
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+# 17:30:27 >  
+# 17:30:27 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-17372" "--port=35094"
+# 17:30:27 >  
+
+#SELECT str_to_date('23-09-1987', '%d-%m-%Y') AS "date",
+#       str_to_time('11:40', '%H:%M') AS "time",
+#       str_to_timestamp('23-09-1987 11:40', '%d-%m-%Y %H:%M') AS "timestamp";
+% .,	.,	. # table_name
+% date,	time,	timestamp # name
+% date,	time,	timestamp # type
+% 10,	8,	26 # length
+[ 1987-09-23,	11:40:00,	1987-09-23 11:40:00.000000	]
+#EXPLAIN SELECT str_to_date('23-09-1987', '%d-%m-%Y') AS "date",
+#       str_to_time('11:40', '%H:%M') AS "time",
+#       str_to_timestamp('23-09-1987 11:40', '%d-%m-%Y %H:%M') AS "timestamp";
+% .explain # table_name
+% mal # name
+% clob # type
+% 269 # length
+function user.s2_0():void;
+    X_7:void := querylog.define("select str_to_date(\\'23-09-1987\\', \\'%d-%m-%Y\\') as \"date\",\n str_to_time(\\'11:40\\', \\'%H:%M\\') as \"time\",\n str_to_timestamp(\\'23-09-1987 11:40\\', \\'%d-%m-%Y %H:%M\\') as \"timestamp\";":str, "default_pipe":str, 20:int);
+    X_23:bat[:str] := bat.pack(".":str, ".":str, ".":str);
+    X_24:bat[:str] := bat.pack("date":str, "time":str, "timestamp":str);
+    X_26:bat[:int] := bat.pack(0:int, 1:int, 7:int);
+    X_27:bat[:int] := bat.pack(0:int, 0:int, 0:int);
+    sql.resultSet(X_23:bat[:str], X_24:bat[:str], X_24:bat[:str], X_26:bat[:int], X_27:bat[:int], "1987-09-23":date, "11:40:00.000000":daytime, "1987-09-23 11:40:00.000000":timestamp);
+end user.s2_0;
+# optimizer.mitosis()
+# optimizer.dataflow()
+#inline               actions= 0 time=1 usec 
+#remap                actions= 0 time=1 usec 
+#costmodel            actions= 1 time=2 usec 
+#coercion             actions= 0 time=2 usec 
+#aliases              actions= 6 time=5 usec 
+#evaluate             actions= 3 time=18 usec 
+#emptybind            actions= 0 time=0 usec 
+#pushselect           actions= 0 time=4 usec 
+#aliases              actions= 3 time=4 usec 
+#mergetable           actions= 0 time=24 usec 
+#deadcode             actions= 1 time=7 usec 
+#aliases              actions= 0 time=0 usec 
+#constants            actions= 0 time=6 usec 
+#commonTerms          actions= 0 time=2 usec 
+#projectionpath       actions= 0 time=2 usec 
+#deadcode             actions= 0 time=5 usec 
+#reorder              actions= 1 time=17 usec 
+#matpack              actions= 0 time=1 usec 
+#multiplex            actions= 0 time=2 usec 
+#profiler             actions= 1 time=1 usec 
+#candidates           actions= 1 time=1 usec 
+#deadcode             actions= 0 time=5 usec 
+#wlc                  actions= 0 time=0 usec 
+#garbagecollector     actions= 1 time=36 usec 
+#total                actions=27 time=221 usec 
+
+# 17:30:27 >  
+# 17:30:27 >  "Done."
+# 17:30:27 >  
+

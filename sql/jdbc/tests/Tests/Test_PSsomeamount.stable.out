@@ -16,7 +16,6 @@ stdout of test 'Test_PSsomeamount` in directory 'sql/jdbc/tests` itself:
 # Listening for connection requests on mapi:monetdb://volund.ins.cwi.nl:34682/
 # MonetDB/SQL module v2.40.2 loaded
 
-Ready.
 # SQL catalog created, loading sql scripts once
 
 

@@ -19,7 +19,6 @@ stdout of test 'pyapi32` in directory 'sql/backends/monet5` itself:
 # MonetDB/Python module loaded
 # MonetDB/R   module loaded
 
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql
@@ -72,8 +71,8 @@ Ready.
 #};
 #CREATE TABLE integers AS SELECT * FROM pyapi32_gentbl() WITH DATA;
 #SELECT pyapi32_function(i) FROM integers;
-% sys.L2 # table_name
-% L2 # name
+% sys.%1 # table_name
+% %1 # name
 % int # type
 % 3 # length
 [ 0	]
@@ -177,8 +176,8 @@ Ready.
 [ 196	]
 [ 198	]
 #SELECT pyapi32_function(i) FROM integers WHERE i > 50;
-% sys.L2 # table_name
-% L2 # name
+% sys.%1 # table_name
+% %1 # name
 % int # type
 % 3 # length
 [ 102	]
@@ -231,8 +230,8 @@ Ready.
 [ 196	]
 [ 198	]
 #SELECT pyapi32_function_mapped(i) FROM integers;
-% sys.L2 # table_name
-% L2 # name
+% sys.%1 # table_name
+% %1 # name
 % int # type
 % 3 # length
 [ 0	]
@@ -336,8 +335,8 @@ Ready.
 [ 196	]
 [ 198	]
 #SELECT pyapi32_function_mapped(i) FROM integers WHERE i > 50;
-% sys.L2 # table_name
-% L2 # name
+% sys.%1 # table_name
+% %1 # name
 % int # type
 % 3 # length
 [ 102	]

@@ -18,7 +18,6 @@ stdout of test 'dplyr` in directory 'clients/R` itself:
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 17:39:27 >  
 # 17:39:27 >  "R" "--vanilla" "--slave" "--args" "34068"

@@ -14,7 +14,6 @@ stdout of test 'simple_view` in directory 'sql/test/bugs` itself:
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:33640/
 # MonetDB/SQL module v2.27.0 loaded
 
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql

@@ -18,7 +18,6 @@ stdout of test 'addtable` in directory 'sql/test/mergetables` itself:
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 13:47:16 >  
 # 13:47:16 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-19670" "--port=38251"

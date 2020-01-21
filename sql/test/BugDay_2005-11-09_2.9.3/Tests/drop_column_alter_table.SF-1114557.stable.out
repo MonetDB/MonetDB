@@ -14,7 +14,6 @@ stdout of test 'drop_column_alter_table.SF-1114557` in directory 'sql/test/BugDa
 # Listening for connection requests on mapi:monetdb://pegasus.ins.cwi.nl:34876/
 # MonetDB/SQL module v2.29.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

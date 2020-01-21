@@ -14,7 +14,6 @@ stdout of test 'copy_overflow_null_bug.SF-1842550` in directory 'sql/test/BugTra
 # Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:37329/
 # MonetDB/SQL module v2.27.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

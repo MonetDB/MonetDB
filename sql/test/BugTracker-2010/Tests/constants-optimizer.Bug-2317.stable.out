@@ -17,7 +17,6 @@ stdout of test 'constants-optimizer.Bug-2317` in directory 'sql/test/BugTracker-
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 16:29:22 >  
 # 16:29:22 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=vienna" "--port=37979"
@@ -25,8 +24,8 @@ Ready.
 
 #set optimizer='dictionary_pipe';
 #select optimizer;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % varchar # type
 % 12 # length
 [ "default_pipe"	]

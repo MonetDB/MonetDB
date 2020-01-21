@@ -14,7 +14,6 @@ stdout of test 'jdbc_crashes_on_getTables.SF_944316` in directory 'sql/test/BugD
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:31946/
 # MonetDB/SQL module v2.27.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

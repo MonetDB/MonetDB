@@ -1,0 +1,42 @@
+stderr of test 'mergepart29` in directory 'sql/test/merge-partitions` itself:
+
+
+# 10:47:53 >  
+# 10:47:53 >  "/usr/bin/python2" "mergepart29.py" "mergepart29"
+# 10:47:53 >  
+
+ALTER TABLE: there are values in the column col1 outside the partition range
+42000!INSERT: cannot insert remote table 'tb2' from this server at the moment
+# builtin opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-Apr2019/BUILD/var/monetdb5/dbfarm/demo
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mapi_port = 53697
+# cmdline opt 	mapi_usock = /var/tmp/mtest-14851/.s.monetdb.53697
+# cmdline opt 	gdk_dbpath = /tmp/tmp4wiJ3t/db2/db2
+# builtin opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-Apr2019/BUILD/var/monetdb5/dbfarm/demo
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mapi_port = 46431
+# cmdline opt 	mapi_usock = /var/tmp/mtest-14851/.s.monetdb.46431
+# cmdline opt 	gdk_dbpath = /tmp/tmp4wiJ3t/db1/db1
+
+# 10:47:55 >  
+# 10:47:55 >  "Done."
+# 10:47:55 >  
+

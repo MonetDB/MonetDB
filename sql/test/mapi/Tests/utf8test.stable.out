@@ -17,7 +17,6 @@ stdout of test 'utf8test` in directory 'sql/test/mapi` itself:
 # Listening for connection requests on mapi:monetdb://ottar.ins.cwi.nl:32641/
 # MonetDB/SQL module v2.24.1 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;
@@ -87,7 +86,7 @@ select * from utf8test
 | s                                |
 +==================================+
 | value without special characters |
-|
+| funny characters: 
 #drop table utf8test
 
 # 10:26:28 >  

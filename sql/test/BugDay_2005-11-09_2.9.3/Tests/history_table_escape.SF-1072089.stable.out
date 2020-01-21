@@ -13,7 +13,6 @@ stdout of test 'history_table_escape.SF-1072089` in directory 'sql/test/BugDay_2
 # Listening for connection requests on mapi:monetdb://koala.ins.cwi.nl:31247/
 # MonetDB/SQL module v2.23.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

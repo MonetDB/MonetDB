@@ -19,7 +19,6 @@ stdout of test 'create_merge_table_withdata.Bug-4041` in directory 'sql/test/Bug
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 15:43:40 >  
 # 15:43:40 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-10452" "--port=33213"

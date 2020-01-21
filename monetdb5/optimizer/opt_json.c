@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -35,14 +35,15 @@ OPTjsonImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	limit= mb->stop;
 	slimit = mb->ssize;
 	if ( newMalBlkStmt(mb,mb->stop) < 0)
-		throw(MAL,"optimizer.json", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL,"optimizer.json", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+
 	for (i = 0; i < limit; i++) {
 		p = old[i];
 		if( getModuleId(p) == sqlRef  && getFunctionId(p) == affectedRowsRef) {
 			q = newInstruction(0, jsonRef, resultSetRef);
-			q = pushArgument(mb, q, bu);
-			q = pushArgument(mb, q, br);
-			q = pushArgument(mb, q, bj);
+			q = addArgument(mb, q, bu);
+			q = addArgument(mb, q, br);
+			q = addArgument(mb, q, bj);
 			j = getArg(q,0);
 			p= getInstrPtr(mb,0);
 			setDestVar(q, newTmpVariable(mb, TYPE_str));
@@ -50,7 +51,7 @@ OPTjsonImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			q = newInstruction(0, NULL, NULL);
 			q->barrier = RETURNsymbol;
 			getArg(q,0)= getArg(p,0);
-			pushArgument(mb,q,j);
+			addArgument(mb,q,j);
 			pushInstruction(mb,q);
 			actions++;
 			continue;
@@ -75,16 +76,17 @@ OPTjsonImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	GDKfree(old);
     /* Defense line against incorrect plans */
     if( actions > 0){
-        chkTypes(cntxt->usermodule, mb, FALSE);
-        chkFlow(mb);
-        chkDeclarations(mb);
+        msg = chkTypes(cntxt->usermodule, mb, FALSE);
+	if (!msg)
+        	msg = chkFlow(mb);
+	if (!msg)
+        	msg = chkDeclarations(mb);
     }
     /* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","json",actions, usec);
     newComment(mb,buf);
-	if( actions >= 0)
+	if( actions > 0)
 		addtoMalBlkHistory(mb);
-
 	return msg;
 }

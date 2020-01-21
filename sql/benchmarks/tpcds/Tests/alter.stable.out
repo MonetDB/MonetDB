@@ -18,7 +18,6 @@ stdout of test 'alter` in directory 'sql/benchmarks/tpcds` itself:
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 15:26:46 >  
 # 15:26:46 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-14558" "--port=34604"

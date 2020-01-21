@@ -14,7 +14,6 @@ stdout of test 'blob_insert_crash.SF-2388542` in directory 'sql/test/BugTracker-
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:35032/
 # MonetDB/SQL module v2.27.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

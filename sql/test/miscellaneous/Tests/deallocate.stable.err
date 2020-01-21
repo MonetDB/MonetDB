@@ -1,0 +1,49 @@
+stderr of test 'deallocate` in directory 'sql/test/miscellaneous` itself:
+
+
+# 13:56:29 >  
+# 13:56:29 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=35105" "--set" "mapi_usock=/var/tmp/mtest-170269/.s.monetdb.35105" "--forcemito" "--dbpath=/home/ferreira/repositories/MonetDB-default/BUILD/var/MonetDB/mTests_sql_test_miscellaneous" "--set" "embedded_c=true"
+# 13:56:29 >  
+
+# builtin opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-default/BUILD/var/monetdb5/dbfarm/demo
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_ipv6 = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# builtin opt 	raw_strings = false
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 35105
+# cmdline opt 	mapi_usock = /var/tmp/mtest-170269/.s.monetdb.35105
+# cmdline opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-default/BUILD/var/MonetDB/mTests_sql_test_miscellaneous
+# cmdline opt 	embedded_c = true
+#client2:!ERROR:SQLException:EXEC:07003!No prepared statement with id: 3
+#client2:!ERROR:SQLException:EXEC:07003!No prepared statement with id: 5
+
+# 13:56:29 >  
+# 13:56:29 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-170269" "--port=35105"
+# 13:56:29 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-170269/.s.monetdb.35105
+QUERY = exec  3(false); --error, the last prepared statement, no longer exists;
+ERROR = !No prepared statement with id: 3
+CODE  = 07003
+MAPI  = (monetdb) /var/tmp/mtest-174632/.s.monetdb.34143
+QUERY = DEALLOCATE  3; --error, last prepared statement already closed
+ERROR = !No prepared statement with id: 3
+CODE  = 07003
+MAPI  = (monetdb) /var/tmp/mtest-201090/.s.monetdb.34144
+QUERY = EXECUTE 15(false); --error, the last prepared statement, no longer exists;
+ERROR = !No prepared statement with id: 15
+CODE  = 07003
+MAPI  = (monetdb) /var/tmp/mtest-175193/.s.monetdb.31597
+QUERY = DEALLOCATE 100000; --error, it doesn't exist
+ERROR = !No prepared statement with id: 100000
+CODE  = 07003
+
+# 13:56:29 >  
+# 13:56:29 >  "Done."
+# 13:56:29 >  
+

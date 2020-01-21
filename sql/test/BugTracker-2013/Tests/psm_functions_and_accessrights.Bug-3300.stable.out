@@ -19,7 +19,6 @@ stdout of test 'psm_functions_and_accessrights.Bug-3300` in directory 'sql/test/
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 18:51:03 >  
 # 18:51:03 >  "/usr/bin/python2" "psm_functions_and_accessrights.Bug-3300.SQL.py" "psm_functions_and_accessrights.Bug-3300"

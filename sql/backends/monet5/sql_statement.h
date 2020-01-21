@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #ifndef _SQL_STATEMENT_H_
@@ -112,7 +112,7 @@ typedef struct stmt {
 	stmtdata op4;		/* only op4 will hold other types */
 
 	char nrcols;
-	char key;		/* key (aka all values are unique) */
+	char key;		/* key (aka all values are unique) */ // TODO make this thing a bool
 	char aggr;		/* aggregated */
 	char partition;		/* selected as mitosis candidate */
 
@@ -179,6 +179,7 @@ extern stmt *stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f,
 
 extern stmt *stmt_tunion(backend *be, stmt *op1, stmt *op2);
 extern stmt *stmt_tdiff(backend *be, stmt *op1, stmt *op2);
+extern stmt *stmt_tdiff2(backend *be, stmt *op1, stmt *op2);
 extern stmt *stmt_tinter(backend *be, stmt *op1, stmt *op2);
 
 extern stmt *stmt_join(backend *be, stmt *op1, stmt *op2, int anti, comp_type cmptype);
@@ -215,7 +216,7 @@ extern stmt *stmt_sample(backend *be, stmt *s, stmt *sample, stmt *seed);
 extern stmt *stmt_order(backend *be, stmt *s, int direction, int nullslast);
 extern stmt *stmt_reorder(backend *be, stmt *s, int direction, int nullslast, stmt *orderby_ids, stmt *orderby_grp);
 
-extern stmt *stmt_convert(backend *sa, stmt *v, sql_subtype *from, sql_subtype *to);
+extern stmt *stmt_convert(backend *sa, stmt *v, sql_subtype *from, sql_subtype *to, stmt *sel);
 extern stmt *stmt_unop(backend *be, stmt *op1, sql_subfunc *op);
 extern stmt *stmt_binop(backend *be, stmt *op1, stmt *op2, sql_subfunc *op);
 extern stmt *stmt_Nop(backend *be, stmt *ops, sql_subfunc *op);
@@ -241,5 +242,6 @@ extern const char *table_name(sql_allocator *sa, stmt *st);
 extern const char *schema_name(sql_allocator *sa, stmt *st);
 
 extern stmt *const_column(backend *ba, stmt *val);
+extern stmt *stmt_fetch(backend *ba, stmt *val);
 
 #endif /* _SQL_STATEMENT_H_ */

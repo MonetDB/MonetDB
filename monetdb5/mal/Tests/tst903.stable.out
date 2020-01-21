@@ -19,7 +19,6 @@ stdout of test 'tst903` in directory 'monetdb5/mal` itself:
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 
 #mdb.list("user","foo");
@@ -143,7 +142,7 @@ exit i;
 barrier (X_83, X_84) := iterator.new(b);
     X_86 := algebra.fetch(c, X_83);
     X_88 := calc.+(X_84, X_86);
-    bat.append(X_80, X_88);
+    X_80 := bat.append(X_80, X_88);
     redo (X_83, X_84) := iterator.next(b);
 exit (X_83, X_84);
     x:bat[:lng] := X_80;

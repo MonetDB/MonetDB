@@ -39,7 +39,6 @@ stdout of test 'load` in directory 'sql/test/testdb` itself:
 # loading sql script: 99_system.sql
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 11:25:25 >  
 # 11:25:25 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=rome" "--port=35566"
@@ -300,8 +299,8 @@ Ready.
 [ 3	]
 #INSERT INTO testschema.subtable2 VALUES (11, 'eleven'), (12, 'twelve'), (13, 'thirteen');
 [ 3	]
-#ALTER TABLE testschema.testme ADD TABLE testschema.subtable1 AS PARTITION BETWEEN 1 AND 10;
-#ALTER TABLE testschema.testme ADD TABLE testschema.subtable2 AS PARTITION BETWEEN 11 AND 20;
+#ALTER TABLE testschema.testme ADD TABLE testschema.subtable1 AS PARTITION FROM 1 TO 11;
+#ALTER TABLE testschema.testme ADD TABLE testschema.subtable2 AS PARTITION FROM 11 TO 20;
 #CREATE MERGE TABLE testschema.testvaluespartitions (a int, b varchar(32)) PARTITION BY VALUES ON (a);
 #CREATE TABLE testschema.sublimits1 (a int, b varchar(32));
 #CREATE TABLE testschema.sublimits2 (a int, b varchar(32));
@@ -309,7 +308,7 @@ Ready.
 #ALTER TABLE testschema.testvaluespartitions ADD TABLE testschema.sublimits1 AS PARTITION IN ('1', '2', '3');
 #INSERT INTO testschema.testvaluespartitions VALUES (1, 'first');
 [ 1	]
-#ALTER TABLE testschema.testvaluespartitions ADD TABLE testschema.sublimits2 AS PARTITION IN ('4', '5', '6') WITH NULL;
+#ALTER TABLE testschema.testvaluespartitions ADD TABLE testschema.sublimits2 AS PARTITION IN ('4', '5', '6') WITH NULL VALUES;
 #ALTER TABLE testschema.testvaluespartitions ADD TABLE testschema.sublimits3 AS PARTITION IN ('7', '8', '9');
 #INSERT INTO testschema.testvaluespartitions VALUES (1, 'a'), (5, 'b'), (7, 'c');
 [ 3	]

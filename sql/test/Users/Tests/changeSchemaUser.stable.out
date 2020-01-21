@@ -22,7 +22,6 @@ stdout of test 'changeSchemaUser` in directory 'sql/test/Users` itself:
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 23:01:33 >  
 # 23:01:33 >  "/usr/bin/python2" "changeSchemaUser.SQL.py" "changeSchemaUser"

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /* Author(s) M.L. Kersten
@@ -43,12 +43,15 @@ slash_2_dir_sep(str fname)
 }
 
 static str
-malResolveFile(str fname)
+malResolveFile(const char *fname)
 {
 	char path[FILENAME_MAX];
 	str script;
+	int written;
 
-	snprintf(path, FILENAME_MAX, "%s", fname);
+	written = snprintf(path, FILENAME_MAX, "%s", fname);
+	if (written == -1 || written >= FILENAME_MAX)
+		return NULL;
 	slash_2_dir_sep(path);
 	if ((script = MSP_locate_script(path)) == NULL) {
 		/* this function is also called for scripts that are not located
@@ -128,7 +131,7 @@ malLoadScript(str name, bstream **fdin)
 	c->srcFile = oldsrcFile; \
 	if(c->prompt) GDKfree(c->prompt); \
 	c->prompt = oldprompt; \
-	c->promptlength= (int)strlen(c->prompt);
+	c->promptlength = strlen(c->prompt);
 #define restoreClient2 \
 	assert(c->glb == 0 || c->glb == oldglb); /* detect leak */ \
 	c->glb = oldglb; \
@@ -154,7 +157,7 @@ malInclude(Client c, str name, int listing)
 	str p;
 
 	bstream *oldfdin = c->fdin;
-	int oldyycur = c->yycur;
+	size_t oldyycur = c->yycur;
 	int oldlisting = c->listing;
 	enum clientmode oldmode = c->mode;
 	int oldblkmode = c->blkmode;
@@ -266,8 +269,8 @@ evalFile(str fname, int listing)
 	if (fd == 0 || mnstr_errnr(fd) == MNSTR_OPEN_ERROR) {
 		if (fd)
 			close_stream(fd);
-		throw(MAL,"mal.eval", "WARNING: could not open file\n");
-	} 
+		throw(MAL,"mal.eval", "WARNING: could not open file '%s'\n", fname);
+	}
 
 	c= MCinitClient((oid)0, bstream_create(fd, 128 * BLOCK),0);
 	if( c == NULL){
@@ -276,7 +279,7 @@ evalFile(str fname, int listing)
 	c->curmodule = c->usermodule = userModule();
 	if(c->curmodule == NULL) {
 		MCcloseClient(c);
-		throw(MAL,"mal.eval",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL,"mal.eval",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	c->promptlength = 0;
 	c->listing = listing;
@@ -296,13 +299,14 @@ evalFile(str fname, int listing)
 }
 
 /* patch a newline character if needed */
-static str mal_cmdline(char *s, int *len)
+static str
+mal_cmdline(char *s, size_t *len)
 {
-	if (s[*len - 1] != '\n') {
-		char *n = GDKmalloc(*len + 1 + 1);
+	if (*len && s[*len - 1] != '\n') {
+		char *n = GDKmalloc(*len + 2);
 		if (n == NULL)
 			return s;
-		strncpy(n, s, *len);
+		memcpy(n, s, *len);
 		n[*len] = '\n';
 		n[*len + 1] = 0;
 		(*len)++;
@@ -313,9 +317,9 @@ static str mal_cmdline(char *s, int *len)
 
 str
 compileString(Symbol *fcn, Client cntxt, str s)
-{	
+{
 	Client c;
-	int len = (int) strlen(s);
+	size_t len = strlen(s);
 	buffer *b;
 	str msg = MAL_SUCCEED;
 	str qry;
@@ -328,14 +332,14 @@ compileString(Symbol *fcn, Client cntxt, str s)
 	if (old == s) {
 		qry = GDKstrdup(s);
 		if(!qry)
-			throw(MAL,"mal.eval",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL,"mal.eval",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	mal_unquote(qry);
 	b = (buffer *) GDKzalloc(sizeof(buffer));
 	if (b == NULL) {
 		GDKfree(qry);
-		throw(MAL,"mal.eval",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL,"mal.eval",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	buffer_init(b, qry, len);
@@ -343,13 +347,13 @@ compileString(Symbol *fcn, Client cntxt, str s)
 	if (bs == NULL) {
 		GDKfree(qry);
 		GDKfree(b);
-		throw(MAL,"mal.eval",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL,"mal.eval",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	fdin = bstream_create(bs, b->len);
 	if (fdin == NULL) {
 		GDKfree(qry);
 		GDKfree(b);
-		throw(MAL,"mal.eval",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL,"mal.eval",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	strncpy(fdin->buf, qry, len+1);
 
@@ -390,8 +394,10 @@ compileString(Symbol *fcn, Client cntxt, str s)
 
 str
 callString(Client cntxt, str s, int listing)
-{	Client c;
-	int i, len = (int) strlen(s);
+{
+	Client c;
+	int i;
+	size_t len = strlen(s);
 	buffer *b;
 	str old =s;
 	str msg = MAL_SUCCEED, qry;
@@ -402,14 +408,14 @@ callString(Client cntxt, str s, int listing)
 	if (old == s) {
 		qry = GDKstrdup(s);
 		if(!qry)
-			throw(MAL,"callstring", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL,"callstring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	mal_unquote(qry);
 	b = (buffer *) GDKzalloc(sizeof(buffer));
 	if (b == NULL){
 		GDKfree(qry);
-		throw(MAL,"callstring", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL,"callstring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	buffer_init(b, qry, len);
@@ -417,7 +423,7 @@ callString(Client cntxt, str s, int listing)
 	if (bs == NULL){
 		GDKfree(b);
 		GDKfree(qry);
-		throw(MAL,"callstring", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL,"callstring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	c= MCinitClient((oid)0, bs,0);
 	if( c == NULL){

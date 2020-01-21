@@ -16,7 +16,6 @@ stdout of test 'select_from_seq.Bug-2730` in directory 'sql/test/BugTracker-2010
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:33557/
 # MonetDB/SQL module v2.41.0 loaded
 
-Ready.
 
 
 # 20:52:08 >  

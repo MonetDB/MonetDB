@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /* This file contains shared definitions for gdk_calc.c and gdk_aggr.c */
@@ -47,27 +47,27 @@
 /* dst = lft + rgt with overflow check */
 
 /* generic version */
-#define ADD_WITH_CHECK(lft, rgt, TYPE3, dst, max, on_overflow)		\
-	do {								\
-		if ((rgt) < 1) {					\
-			if (-(max) - (rgt) > (lft)) {			\
-				if (abort_on_error)			\
-					on_overflow;			\
-				(dst) = TYPE3##_nil;			\
-				nils++;					\
-			} else {					\
-				(dst) = (TYPE3) (lft) + (rgt);		\
-			}						\
-		} else {						\
-			if ((max) - (rgt) < (lft)) {			\
-				if (abort_on_error)			\
-					on_overflow;			\
-				(dst) = TYPE3##_nil;			\
-				nils++;					\
-			} else {					\
-				(dst) = (TYPE3) (lft) + (rgt);		\
-			}						\
-		}							\
+#define ADD_WITH_CHECK(lft, rgt, TYPE3, dst, max, on_overflow)	\
+	do {							\
+		if ((rgt) < 1) {				\
+			if (-(max) - (rgt) > (lft)) {		\
+				if (abort_on_error)		\
+					on_overflow;		\
+				(dst) = TYPE3##_nil;		\
+				nils++;				\
+			} else {				\
+				(dst) = (TYPE3) (lft) + (rgt);	\
+			}					\
+		} else {					\
+			if ((max) - (rgt) < (lft)) {		\
+				if (abort_on_error)		\
+					on_overflow;		\
+				(dst) = TYPE3##_nil;		\
+				nils++;				\
+			} else {				\
+				(dst) = (TYPE3) (lft) + (rgt);	\
+			}					\
+		}						\
 	} while (0)
 
 #ifdef HAVE___BUILTIN_ADD_OVERFLOW
@@ -87,27 +87,27 @@
 /* dst = lft - rgt with overflow check */
 
 /* generic version */
-#define SUB_WITH_CHECK(lft, rgt, TYPE3, dst, max, on_overflow)		\
-	do {								\
-		if ((rgt) < 1) {					\
-			if ((max) + (rgt) < (lft)) {			\
-				if (abort_on_error)			\
-					on_overflow;			\
-				(dst) = TYPE3##_nil;			\
-				nils++;					\
-			} else {					\
-				(dst) = (TYPE3) (lft) - (rgt);		\
-			}						\
-		} else {						\
-			if (-(max) + (rgt) > (lft)) {			\
-				if (abort_on_error)			\
-					on_overflow;			\
-				(dst) = TYPE3##_nil;			\
-				nils++;					\
-			} else {					\
-				(dst) = (TYPE3) (lft) - (rgt);		\
-			}						\
-		}							\
+#define SUB_WITH_CHECK(lft, rgt, TYPE3, dst, max, on_overflow)	\
+	do {							\
+		if ((rgt) < 1) {				\
+			if ((max) + (rgt) < (lft)) {		\
+				if (abort_on_error)		\
+					on_overflow;		\
+				(dst) = TYPE3##_nil;		\
+				nils++;				\
+			} else {				\
+				(dst) = (TYPE3) (lft) - (rgt);	\
+			}					\
+		} else {					\
+			if (-(max) + (rgt) > (lft)) {		\
+				if (abort_on_error)		\
+					on_overflow;		\
+				(dst) = TYPE3##_nil;		\
+				nils++;				\
+			} else {				\
+				(dst) = (TYPE3) (lft) - (rgt);	\
+			}					\
+		}						\
 	} while (0)
 
 #ifdef HAVE___BUILTIN_ADD_OVERFLOW
@@ -158,19 +158,19 @@
 #if defined(HAVE__MUL128)
 #include <intrin.h>
 #pragma intrinsic(_mul128)
-#define LNGMUL_CHECK(lft, rgt, dst, max, on_overflow)			\
-	do {								\
-		lng clo, chi;						\
-		clo = _mul128((lng) (lft), (lng) (rgt), &chi);		\
-		if ((chi == 0 && clo >= 0 && clo <= (max)) ||		\
-		    (chi == -1 && clo < 0 && clo >= -(max))) {		\
-			(dst) = clo;					\
-		} else {						\
-			if (abort_on_error)				\
-				on_overflow;				\
-			(dst) = lng_nil;				\
-			nils++;						\
-		}							\
+#define LNGMUL_CHECK(lft, rgt, dst, max, on_overflow)		\
+	do {							\
+		lng clo, chi;					\
+		clo = _mul128((lng) (lft), (lng) (rgt), &chi);	\
+		if ((chi == 0 && clo >= 0 && clo <= (max)) ||	\
+		    (chi == -1 && clo < 0 && clo >= -(max))) {	\
+			(dst) = clo;				\
+		} else {					\
+			if (abort_on_error)			\
+				on_overflow;			\
+			(dst) = lng_nil;			\
+			nils++;					\
+		}						\
 	} while (0)
 #else
 #define LNGMUL_CHECK(lft, rgt, dst, max, on_overflow)			\
@@ -311,7 +311,10 @@
 		}							\
 	} while (0)
 
-BUN
-dofsum(const void *restrict values, oid seqb, BUN start, BUN end, void *restrict results, BUN ngrp, int tp1, int tp2,
-	   const oid *restrict cand, const oid *candend, const oid *restrict gids, oid min, oid max, bool skip_nils,
-	   bool abort_on_error, bool nil_if_empty, const char *func);
+__hidden BUN dofsum(const void *restrict values, oid seqb,
+		    struct canditer *restrict ci, BUN ncand,
+		    void *restrict results, BUN ngrp, int tp1, int tp2,
+		    const oid *restrict gids,
+		    oid min, oid max, bool skip_nils, bool abort_on_error,
+		    bool nil_if_empty)
+	__attribute__((__visibility__("hidden")));

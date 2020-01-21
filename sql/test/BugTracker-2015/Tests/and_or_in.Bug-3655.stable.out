@@ -19,7 +19,6 @@ stdout of test 'and_or_in.Bug-3655` in directory 'sql/test/BugTracker-2015` itse
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 20:56:17 >  
 # 20:56:17 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-4085" "--port=39960"

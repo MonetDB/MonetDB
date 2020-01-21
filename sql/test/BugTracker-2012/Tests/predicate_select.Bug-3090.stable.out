@@ -17,7 +17,6 @@ stdout of test 'predicate_select.Bug-3090` in directory 'sql/test/BugTracker-201
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 18:53:13 >  
 # 18:53:13 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=niels" "--port=32323"

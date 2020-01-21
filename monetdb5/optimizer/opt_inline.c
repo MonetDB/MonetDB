@@ -3,13 +3,13 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
 #include "opt_inline.h"
 
-static int
+static bool
 isCorrectInline(MalBlkPtr mb){
 	/* make sure we have a simple inline function with a singe return */
 	InstrPtr p;
@@ -25,14 +25,16 @@ isCorrectInline(MalBlkPtr mb){
 }
 
 
-static int OPTinlineMultiplex(Client cntxt, MalBlkPtr mb, InstrPtr p){
+static bool OPTinlineMultiplex(Client cntxt, MalBlkPtr mb, InstrPtr p){
 	Symbol s;
 	str mod,fcn;
 
 	mod = VALget(&getVar(mb, getArg(p, 1))->value);
 	fcn = VALget(&getVar(mb, getArg(p, 2))->value);
 	if( (s= findSymbol(cntxt->usermodule, mod,fcn)) ==0 )
-		return FALSE;
+		return false;
+	if (s->def == mb)			/* avoid infinite recursion */
+		return false;
 	/*
 	 * Before we decide to propagate the inline request
 	 * to the multiplex operation, we check some basic properties
@@ -68,12 +70,7 @@ OPTinlineImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			 * They are produced by SQL compiler.
 			 */
 			if (isMultiplex(q)) {
-				if (OPTinlineMultiplex(cntxt,mb,q)) {
-#ifdef DEBUG_OPT_INLINE
-					fprintf(stderr,"#multiplex inline function\n");
-					fprintInstruction(stderr,mb,0,q,LIST_MAL_ALL);
-#endif
-				}
+				 OPTinlineMultiplex(cntxt,mb,q);
 			} else
 			/*
 			 * Check if the function definition is tagged as being inlined.
@@ -83,27 +80,23 @@ OPTinlineImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				(void) inlineMALblock(mb,i,q->blk);
 				i--;
 				actions++;
-#ifdef DEBUG_OPT_INLINE
-				fprintf(stderr,"#inline function at %d\n",i);
-				fprintFunction(stderr, mb, 0, LIST_MAL_ALL);
-				fprintInstruction(stderr,q->blk,0,sig,LIST_MAL_ALL);
-#endif
 			}
 		}
 	}
 
     /* Defense line against incorrect plans */
     if( actions > 0){
-        chkTypes(cntxt->usermodule, mb, FALSE);
-        chkFlow(mb);
-        chkDeclarations(mb);
+        msg = chkTypes(cntxt->usermodule, mb, FALSE);
+	if (!msg)
+        	msg = chkFlow(mb);
+	if (!msg)
+        	msg = chkDeclarations(mb);
     }
     /* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","inline",actions, usec);
     newComment(mb,buf);
-	if( actions >= 0)
+	if( actions > 0)
 		addtoMalBlkHistory(mb);
-
 	return msg;
 }

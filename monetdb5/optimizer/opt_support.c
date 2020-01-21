@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
  /* (c) M. Kersten
@@ -96,7 +96,7 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 	/* assume the type and flow have been checked already */
 	/* SQL functions intended to be inlined should not be optimized */
 	if ( mb->inlineProp)
-        	return 0;
+		return 0;
 
 	mb->optimize = 0;
 	if (mb->errors)
@@ -105,12 +105,14 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 	// strong defense line, assure that MAL plan is initially correct
 	if( mb->errors == 0 && mb->stop > 1){
 		resetMalBlk(mb, mb->stop);
-        chkTypes(cntxt->usermodule, mb, FALSE);
-        chkFlow(mb);
-        chkDeclarations(mb);
-		if( msg) 
+		msg = chkTypes(cntxt->usermodule, mb, FALSE);
+		if (!msg)
+			msg = chkFlow(mb);
+		if (!msg)
+			msg = chkDeclarations(mb);
+		if (msg) 
 			return msg;
-		if( mb->errors != MAL_SUCCEED){
+		if (mb->errors != MAL_SUCCEED){
 			msg = mb->errors;
 			mb->errors = MAL_SUCCEED;
 			return msg;
@@ -132,7 +134,7 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 				if (msg) {
 					str place = getExceptionPlace(msg);
 					str nmsg = NULL;
-				       	if(place){
+					if (place){
 						nmsg = createException(getExceptionType(msg), place, "%s", getExceptionMessageAndState(msg));
 						GDKfree(place);
 					}
@@ -187,21 +189,15 @@ MALoptimizer(Client c)
 }
 
 /* Only used by opt_commonTerms! */
-int hasSameSignature(MalBlkPtr mb, InstrPtr p, InstrPtr q, int stop){
+int hasSameSignature(MalBlkPtr mb, InstrPtr p, InstrPtr q){
 	int i;
 
-	if ( getFunctionId(q) == getFunctionId(p) &&
-		 getModuleId(q) == getModuleId(p) &&
-		getFunctionId(q) != 0 &&
-		getModuleId(q) != 0) {
-		if( q->retc != p->retc || q->argc != p->argc) return FALSE;
-		assert(stop <= p->argc);
-		for( i=0; i<stop; i++)
-			if (getArgType(mb,p,i) != getArgType(mb,q,i))
-				return FALSE;
-		return TRUE;
-	}
-	return FALSE;
+	if( q->retc != p->retc || q->argc != p->argc) 
+		return FALSE;
+	for( i=0; i < p->argc; i++)
+		if (getArgType(mb,p,i) != getArgType(mb,q,i))
+			return FALSE;
+	return TRUE;
 }
 
 /* Only used by opt_commonTerms! */
@@ -476,6 +472,11 @@ mayhaveSideEffects(Client cntxt, MalBlkPtr mb, InstrPtr p, int strict)
 		return TRUE;
 	if (getModuleId(p) != malRef || getFunctionId(p) != multiplexRef) 
 		return hasSideEffects(mb, p, strict);
+	//  a manifold instruction can also have side effects.
+	//  for this to check we need the function signature, not its function address.
+	//  The easy way out now is to consider all manifold instructions as potentially having side effects.
+	if ( getModuleId(p) == malRef && getFunctionId(p) == manifoldRef)
+		return TRUE;
 	if (MANIFOLDtypecheck(cntxt,mb,p,1) == NULL)
 		return TRUE;
 	return FALSE;
@@ -626,8 +627,9 @@ int isFragmentGroup2(InstrPtr p){
 				getFunctionId(p)== projectionRef
 			)) ||
 			(getModuleId(p)== batRef && (
-				getFunctionId(p)== mergecandRef || 
-				getFunctionId(p)== intersectcandRef 
+				getFunctionId(p)== mergecandRef ||
+				getFunctionId(p)== intersectcandRef ||
+				getFunctionId(p)== diffcandRef
 			) 
 		);
 }

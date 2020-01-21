@@ -18,7 +18,6 @@ stdout of test 'removeTmpFiles` in directory 'geom/sql/pg_regression` itself:
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 16:37:58 >  
 # 16:37:58 >  "/usr/bin/python2" "removeTmpFiles.SQL.py" "removeTmpFiles"

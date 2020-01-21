@@ -1,0 +1,50 @@
+stdout of test 'prepared-select-with-error-causes-hang.Bug-6761` in directory 'sql/test/BugTracker-2019` itself:
+
+
+# 18:47:57 >  
+# 18:47:57 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=33005" "--set" "mapi_usock=/var/tmp/mtest-32072/.s.monetdb.33005" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/dinther/dev/dev/INSTALL/var/MonetDB/mTests_sql_test_BugTracker-2019" "--set" "embedded_c=true"
+# 18:47:57 >  
+
+# MonetDB 5 server v11.33.11 (Apr2019-SP1)
+# Serving database 'mTests_sql_test_BugTracker-2019', using 8 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
+# Found 31.243 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2020 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.localdomain:33005/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-32072/.s.monetdb.33005
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+# 20:24:37 >  
+# 20:24:37 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-9798" "--port=31528"
+# 20:24:37 >  
+
+#drop table if exists abacus;
+#create table abacus ( "'Zeitachse'" date,"'Abo_ID'" int,"'description'" varchar(256),"'Klassierungs-Typ'" clob,"'KlassierungApplikation'" clob,"'EP Netto'" decimal,"'Nettoumsatz'" decimal,"'validfrom'" date,"'validuntil'" date,"'Abo_aufgeschaltet'" int,"'Abo_deaktiviert'" int,"'Differenz'" decimal,"'User_ID'" int,"'UserName'" varchar(256),"'client'" varchar(256),"'Installations_ID'" int,"'InstallationsName'" varchar(256),"'Installationsprovider_ID'" int,"'InstallationsproviderName'" varchar(256),"'INR'" bigint,"'NAME'" varchar(256),"'PLZ'" varchar(256),"'ORT'" varchar(256),"'STAAT'" varchar(256),"'Reseller_ID'" int,"'ResellerName'" varchar(256),"'ET_ABO'" clob,"'UserName_1'" varchar(256),"'Anzahl_Abos'" decimal,"'Anzahl_User'" decimal,"'Jahr'" decimal,"'Monat'" decimal,"'Jahr_Monat'" clob,"'IFJ'" clob,"'RECNUM$'" int,"'InlineCalc_Year_Zeitachse'" int);
+#insert into abacus values ('2019-10-30',2239,'description','Klassierungs-Typ','Klassierung-Applikation',73.28,68.29,'2018-01-01','2018-12-01',563,63,56.3,852,'UserName','client',134,'InstallationsName',892,'InstallationsproviderName',9348,'NAME','PLZ','ORT','STAAT',934,'ResellerName','ET_ABO','UserName_1',849.2739,1742.718,395.824,39.824,'Jahr_Monat','IFJ',395824,3789);
+[ 1	]
+#SELECT "'ResellerName'" FROM abacus WHERE  ( ( ("'InstallationsproviderName'"='Bienz Pius Treuhand- und Revisions AG')) AND  ( ("'validuntil'"='2018-01-01' AND "'description'"='ABEA 2' AND (EXTRACT(YEAR FROM "'Zeitachse'")*100 + EXTRACT(MONTH FROM "'Zeitachse'"))/100.0='2019.010' AND "'UserName'"='AL - Astrid Lincke (Delphys)' AND "'validfrom'"='2016-12-01')) AND  ( ("'IFJ'"='ohne IFJ')) AND  ( ("'InlineCalc_Year_Zeitachse'"='2019'))) GROUP BY "'ResellerName'" LIMIT 1001 OFFSET 0;
+% sys.abacus # table_name
+% 'ResellerName' # name
+% varchar # type
+% 0 # length
+#PREPARE SELECT "'ResellerName'" FROM abacus WHERE  ( ( ("'InstallationsproviderName'"='Bienz Pius Treuhand- und Revisions AG')) AND  ( ("'validuntil'"='2018-01-01' AND "'description'"='ABEA 2' AND (EXTRACT(YEAR FROM "'Zeitachse'")*100 + EXTRACT(MONTH FROM "'Zeitachse'"))/100.0='2019.010' AND "'UserName'"='AL - Astrid Lincke (Delphys)' AND "'validfrom'"='2016-12-01')) AND  ( ("'IFJ'"='ohne IFJ')) AND  ( ("'InlineCalc_Year_Zeitachse'"='2019'))) GROUP BY "'ResellerName'" LIMIT 1001 OFFSET 0;
+#PREPARE SELECT "'ResellerName'" FROM abacus WHERE  ( ( ("'InstallationsproviderName'"='Bienz Pius Treuhand- und Revisions AG')) AND  ( ("'validuntil'"='2018-01-01' AND "'description'"='ABEA 2' AND (EXTRACT(YEAR FROM "'Zeitachse'")*100 + EXTRACT(MONTH FROM "'Zeitachse'"))/100.0='2019.010' AND "'UserName'"='AL - Astrid Lincke (Delphys)' AND "'validfrom'"='2016-12-01')) AND  ( ("'IFJ'"='ohne IFJ')) AND  ( ("'InlineCalc_Year_Zeitachse'"='2019'))) GROUP BY "'ResellerName'" LIMIT 1001 OFFSET 0;
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 7,	3,	1,	0,	6,	14 # length
+[ "varchar",	256,	0,	"",	"abacus",	"'ResellerName'"	]
+#exec 11(); -- hang in Apr2019-SP1, error in Nov2019
+% sys.abacus # table_name
+% 'ResellerName' # name
+% varchar # type
+% 0 # length
+#drop table if exists abacus;
+
+# 18:48:59 >  
+# 18:48:59 >  "Done."
+# 18:48:59 >  
+

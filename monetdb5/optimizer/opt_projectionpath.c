@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /* author: M Kersten
@@ -37,9 +37,7 @@ OPTprojectionPrefix(Client cntxt, MalBlkPtr mb, int prefixlength)
 	slimit= mb->ssize;
 	if (newMalBlkStmt(mb,mb->ssize) < 0)
 		return 0;
-#ifdef DEBUG_OPT_PROJECTIONPATH
-	fprintf(stderr,"#projectionpath find common prefix prefixlength %d\n", prefixlength);
-#endif
+
  
 	for( i = 0; i < limit; i++){
 		p = old[i];
@@ -48,10 +46,7 @@ OPTprojectionPrefix(Client cntxt, MalBlkPtr mb, int prefixlength)
 			pushInstruction(mb,p);
 			continue;
 		}
-#ifdef DEBUG_OPT_PROJECTIONPATH
-		fprintf(stderr,"#projectionpath candidate prefix pc %d \n", i);
-		fprintInstruction(stderr,mb, 0, p, LIST_MAL_ALL);
-#endif
+
 		/* we fixed a projection path of the target prefixlength
 		 * Search now the remainder for at least one case where it
 		 * has a common prefix of prefixlength 
@@ -70,10 +65,7 @@ OPTprojectionPrefix(Client cntxt, MalBlkPtr mb, int prefixlength)
 			/* at least one instruction has been found.
 			 * Inject the prefex projection path and replace all use cases
 			 */
-#ifdef DEBUG_OPT_PROJECTIONPATH
-			fprintf(stderr,"#projectionpath found common prefix pc %d \n", j);
-			fprintInstruction(stderr,mb, 0, p, LIST_MAL_ALL);
-#endif
+
 			/* create the factored out prefix projection */
 			r = copyInstruction(p);
 			if( r == NULL){
@@ -86,10 +78,7 @@ OPTprojectionPrefix(Client cntxt, MalBlkPtr mb, int prefixlength)
 				setFunctionId(r,projectionRef);
 			r->typechk = TYPE_UNKNOWN;
 			pushInstruction(mb,r);
-#ifdef DEBUG_OPT_PROJECTIONPATH
-			fprintf(stderr,"#projectionpath prefix instruction\n");
-			fprintInstruction(stderr,mb, 0, r, LIST_MAL_ALL);
-#endif
+
 
 			/* patch all instructions with same prefix. */
 			for( ; j < limit; j++) {
@@ -100,10 +89,6 @@ OPTprojectionPrefix(Client cntxt, MalBlkPtr mb, int prefixlength)
 					match += getArg(q,k) == getArg(r,k);
 				if (match &&  match == prefixlength - r->retc ){
 					actions++;
-#ifdef DEBUG_OPT_PROJECTIONPATH
-					fprintf(stderr,"#projectionpath before:");
-					fprintInstruction(stderr,mb, 0, q, LIST_MAL_ALL);
-#endif
 					if( q->argc == r->argc ){
 						clrFunction(q);
 						getArg(q,q->retc) = getArg(r,0);
@@ -115,10 +100,6 @@ OPTprojectionPrefix(Client cntxt, MalBlkPtr mb, int prefixlength)
 						if( q->argc == 3)
 							setFunctionId(q,projectionRef);
 					}
-#ifdef DEBUG_OPT_PROJECTIONPATH
-					fprintf(stderr,"#projectionpath after :");
-					fprintInstruction(stderr,mb, 0, q, LIST_MAL_ALL);
-#endif
 				}
 			}
 			/* patch instruction p by deletion of common prefix */
@@ -133,21 +114,10 @@ OPTprojectionPrefix(Client cntxt, MalBlkPtr mb, int prefixlength)
 				if( p->argc == 3)
 					setFunctionId(p,projectionRef);
 			}
-
-			OPTDEBUGprojectionpath 
-				fprintInstruction(stderr,mb, 0, p, LIST_MAL_ALL);
 		}
 		pushInstruction(mb,p);
 	}
-#ifdef DEBUG_OPT_PROJECTIONPATH
-    if( actions > 0){
-        chkTypes(cntxt->usermodule, mb, FALSE);
-        chkFlow(mb);
-        chkDeclarations(mb);
-    }
-	mnstr_printf(cntxt->fdout,"#projectionpath prefix actions %d\n",actions);
-	if(actions) printFunction(cntxt->fdout,mb, 0, LIST_MAL_ALL);
-#endif
+
 	for(; i<slimit; i++)
 		if(old[i])
 			freeInstruction(old[i]);
@@ -178,21 +148,19 @@ OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 	//if ( optimizerIsApplied(mb,"projectionpath") )
 		//return 0;
 
-#ifdef DEBUG_OPT_PROJECTIONPATH
-	fprintf(stderr,"#projectionpath optimizer start \n");
-	fprintFunction(stderr,mb, 0, LIST_MAL_ALL);
-#endif
+
+
 	old= mb->stmt;
 	limit= mb->stop;
 	slimit= mb->ssize;
 	if ( newMalBlkStmt(mb, 2 * mb->stop) < 0)
-		throw(MAL,"optimizer.projectionpath", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL,"optimizer.projectionpath", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	/* beware, new variables and instructions are introduced */
 	pc= (int*) GDKzalloc(sizeof(int)* mb->vtop * 2); /* to find last assignment */
 	varcnt= (int*) GDKzalloc(sizeof(int)* mb->vtop * 2); 
 	if (pc == NULL || varcnt == NULL ){
-		msg = createException(MAL,"optimizer.projectionpath", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		msg = createException(MAL,"optimizer.projectionpath", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto wrapupall;
 	}
 
@@ -218,13 +186,10 @@ OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 			 * Try to expand its argument list with what we have found so far.
 			 */
 			if((q = copyInstruction(p)) == NULL) {
-				msg = createException(MAL,"optimizer.projectionpath", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				msg = createException(MAL,"optimizer.projectionpath", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto wrapupall;
 			}
-#ifdef DEBUG_OPT_PROJECTIONPATH
-			fprintf(stderr,"#before ");
-			fprintInstruction(stderr,mb, 0, p, LIST_MAL_ALL);
-#endif
+
 			q->argc=p->retc;
 			for(j=p->retc; j<p->argc; j++){
 				if (pc[getArg(p,j)] )
@@ -235,18 +200,13 @@ OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 					r = 0;
 				
 				/* inject the complete sub-path */
-#ifdef DEBUG_OPT_PROJECTIONPATH
-				if (r) {
-					fprintf(stderr,"#inject ");
-					fprintInstruction(stderr,mb, 0, r, LIST_MAL_ALL);
-				}
-#endif
+
 				if ( getFunctionId(p) == projectionRef){
 					if( r &&  getModuleId(r)== algebraRef && ( getFunctionId(r)== projectionRef  || getFunctionId(r)== projectionpathRef) ){
 						for(k= r->retc; k<r->argc; k++) 
-							q = pushArgument(mb,q,getArg(r,k));
+							q = addArgument(mb,q,getArg(r,k));
 					} else 
-						q = pushArgument(mb,q,getArg(p,j));
+						q = addArgument(mb,q,getArg(p,j));
 				}
 			}
 			if(q->argc<= p->argc){
@@ -271,10 +231,7 @@ OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 			if ( getFunctionId(q) == projectionRef )
 				setFunctionId(q,projectionpathRef);
 			q->typechk = TYPE_UNKNOWN;
-#ifdef DEBUG_OPT_PROJECTIONPATH
-			fprintf(stderr,"#after ");
-			fprintInstruction(stderr,mb, 0, q, LIST_MAL_ALL);
-#endif
+
 			freeInstruction(p);
 			p = q;
 			/* keep track of the longest projection path */
@@ -287,15 +244,8 @@ OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 		for(j=0; j< p->retc; j++)
 		if( getModuleId(p)== algebraRef && ( getFunctionId(p)== projectionRef  || getFunctionId(p)== projectionpathRef) ){
 			pc[getArg(p,j)]= mb->stop-1;
-#ifdef DEBUG_OPT_PROJECTIONPATH
-			fprintf(stderr,"#keep ");
-			fprintInstruction(stderr,mb, 0, p, LIST_MAL_ALL);
-#endif
 		}
 	}
-#ifdef DEBUG_OPT_PROJECTIONPATH
-		fprintf(stderr,"#projection path prefixlength %d\n",maxprefixlength);
-#endif
 
 	for(; i<slimit; i++)
 		if(old[i])
@@ -310,25 +260,21 @@ OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 	 * 4500 projection operations were removed.
 	 * On medium scale databases it may save cpu cycles.
 	 * Turning this feature into a compile time option.
+		if( maxprefixlength > 3){
+			 //Before searching the prefix, we should remove all non-used instructions.  
+			actions += OPTdeadcodeImplementation(cntxt, mb, 0, 0);
+			for( ; maxprefixlength > 2; maxprefixlength--)
+				actions += OPTprojectionPrefix(cntxt, mb, maxprefixlength);
+		}
 	 */
-#ifdef ELIMCOMMONPREFIX
-	if( maxprefixlength > 3){
-		 /* Before searching the prefix, we should remove all non-used instructions.  */
-		actions += OPTdeadcodeImplementation(cntxt, mb, 0, 0);
-		for( ; maxprefixlength > 2; maxprefixlength--)
-			actions += OPTprojectionPrefix(cntxt, mb, maxprefixlength);
-	}
-#endif
-#ifdef DEBUG_OPT_PROJECTIONPATH
-	fprintf(stderr,"#projectionpath optimizer result \n");
-	fprintFunction(stderr,mb, 0, LIST_MAL_ALL);
-#endif
 
     /* Defense line against incorrect plans */
     if( actions > 0){
-        chkTypes(cntxt->usermodule, mb, FALSE);
-        chkFlow(mb);
-        chkDeclarations(mb);
+        msg = chkTypes(cntxt->usermodule, mb, FALSE);
+	if (!msg)
+        	msg = chkFlow(mb);
+	if (!msg)
+        	msg = chkDeclarations(mb);
     }
     /* keep all actions taken as a post block comment */
 wrapupall:

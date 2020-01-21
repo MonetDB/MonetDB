@@ -23,7 +23,6 @@ stdout of test 'rapi16` in directory 'sql/backends/monet5` itself:
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 15:09:46 >  
 # 15:09:46 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-20642" "--port=39522"
@@ -36,7 +35,7 @@ Ready.
 #CREATE FUNCTION rapi16(a INTEGER, b DOUBLE) RETURNS TABLE (c INTEGER, d DOUBLE) LANGUAGE R {
 #data.frame(c=a,d=b)};
 #SELECT * FROM rapi16((SELECT A, B FROM rapi16 AS X));
-% .L3,	.L3 # table_name
+% .%1,	.%1 # table_name
 % c,	d # name
 % int,	double # type
 % 1,	24 # length

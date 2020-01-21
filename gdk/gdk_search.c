@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -385,6 +385,11 @@ SORTfnd(BAT *b, const void *v)
 		return *(oid*)v - b->tseqbase;
 	}
 	if (b->ttype == TYPE_void) {
+		if (b->tvheap) {
+			struct canditer ci;
+			canditer_init(&ci, NULL, b);
+			return canditer_search(&ci, *(const oid*)v, false);
+		}
 		assert(is_oid_nil(b->tseqbase));
 		if (is_oid_nil(*(const oid *) v))
 			return 0;
@@ -423,6 +428,11 @@ SORTfndfirst(BAT *b, const void *v)
 		return *(oid*)v - b->tseqbase;
 	}
 	if (b->ttype == TYPE_void) {
+		if (b->tvheap) {
+			struct canditer ci;
+			canditer_init(&ci, NULL, b);
+			return canditer_search(&ci, *(const oid*)v, true);
+		}
 		assert(is_oid_nil(b->tseqbase));
 		return 0;
 	}
@@ -458,6 +468,11 @@ SORTfndlast(BAT *b, const void *v)
 		return *(oid*)v - b->tseqbase;
 	}
 	if (b->ttype == TYPE_void) {
+		if (b->tvheap) {
+			struct canditer ci;
+			canditer_init(&ci, NULL, b);
+			return canditer_search(&ci, *(const oid*)v + 1, true);
+		}
 		assert(is_oid_nil(b->tseqbase));
 		return BATcount(b);
 	}

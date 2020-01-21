@@ -19,7 +19,6 @@ stdout of test 'rapi02` in directory 'sql/backends/monet5` itself:
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 17:37:10 >  
 # 17:37:10 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-20729" "--port=35474"
@@ -33,7 +32,7 @@ Ready.
 #	return(arg1*sum(arg2)*arg3);
 #};
 #SELECT rapi02(i,j,2) as r02 FROM rval;
-% sys.L2 # table_name
+% sys.%1 # table_name
 % r02 # name
 % int # type
 % 2 # length

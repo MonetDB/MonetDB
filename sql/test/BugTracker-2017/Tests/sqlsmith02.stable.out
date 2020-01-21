@@ -18,7 +18,6 @@ stdout of test 'sqlsmith02` in directory 'sql/test/BugTracker-2017` itself:
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 23:03:00 >  
 # 23:03:00 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-6840" "--port=30090"
@@ -38,7 +37,7 @@ Ready.
 #                on (ref_77.proj4text = ref_78.name )
 #              on (ref_76.srid = ref_78.id )
 #            on (ref_72.id = ref_75.srid )
-% .L141,	.L143 # table_name
+% .,	. # table_name
 % c0,	c1 # name
 % varchar,	varchar # type
 % 0,	0 # length

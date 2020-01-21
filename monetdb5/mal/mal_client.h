@@ -3,22 +3,17 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #ifndef _MAL_CLIENT_H_
 #define _MAL_CLIENT_H_
 
 #include "mal.h"
-/*#define MAL_CLIENT_DEBUG */
 
 #include "mal_resolve.h"
-#include "mal_profiler.h"
 
 #define SCENARIO_PROPERTIES 8
-
-#define CONSOLE     0
-#define isAdministrator(X) (X==mal_clients)
 
 enum clientmode {
 	FREECLIENT,
@@ -27,14 +22,12 @@ enum clientmode {
 	BLOCKCLIENT
 };
 
-#define PROCESSTIMEOUT  2   /* seconds */
 #define MAXPLANTS 256
 
 /*
  * The prompt structure is designed to simplify recognition of the
- * language framework for interaction. For direct console access it is a
- * short printable ASCII string. For access through an API we assume the
- * prompt is an ASCII string surrounded by a \001 character. This
+ * language framework for interaction. For access through an API we 
+ * assume the prompt is an ASCII string surrounded by a \001 character. This
  * simplifies recognition.  The information between the prompt brackets
  * can be used to pass the mode to the front-end. Moreover, the prompt
  * can be dropped if a single stream of information is expected from the
@@ -45,34 +38,11 @@ enum clientmode {
  */
 typedef struct CLIENT_INPUT {
 	bstream             *fdin;
-	int                 yycur;		
+	size_t              yycur;
 	int                 listing;
 	char                *prompt;
 	struct CLIENT_INPUT *next;    
 } ClientInput;
-
-typedef struct CURRENT_INSTR{
-	MalBlkPtr	mb;
-	MalStkPtr	stk;
-	InstrPtr	pci;
-} Workset;
-
-/*
- * MAL factories definition.
- */
-typedef struct {
-	int id;			/* unique plant number */
-	MalBlkPtr factory;
-	MalStkPtr stk;		/* private state */
-	int pc;			/* where we are */
-	int inuse;		/* able to handle it */
-	int next;		/* next plant of same factory */
-	int policy;		/* flags to control behavior */
-
-	MalBlkPtr caller;	/* from routine */
-	MalStkPtr env;		/* with the stack  */
-	InstrPtr pci;		/* with the instruction */
-} PlantRecord, *Plant;
 
 typedef struct CLIENT {
 	int idx;        /* entry in mal_clients */
@@ -93,18 +63,30 @@ typedef struct CLIENT {
 	MALfcn  phase[SCENARIO_PROPERTIES], oldphase[SCENARIO_PROPERTIES];
 	char    itrace;    /* trace execution using interactive mdb */
 						/* if set to 'S' it will put the process to sleep */
+	bit		sqlprofiler;		/* control off-line sql performance monitoring */
 	/*
-	 * For program debugging we need information on the timer and memory
-	 * usage patterns.
+	 * Each session comes with resource limitations and predefined settings.
 	 */
-	sht	flags;	 /* resource tracing flags, should be done using profiler */
-	BUN	cnt;	/* bat count */
+	char	optimizer[IDLENGTH];/* The optimizer pipe preferred for this session */
+	int 	workerlimit;		/* maximum number of workthreads processing a query */
+	int		memorylimit;		/* Memory claim highwater mark, 0 = no limit */
+	lng 	querytimeout;		/* query abort after x usec, 0 = no limit*/
+	lng	    sessiontimeout;		/* session abort after x usec, 0 = no limit */
 
-	time_t      login;  
-	time_t      lastcmd;	/* set when input is received */
-	lng 		session;	/* usec since start of server */
-	lng 	    qtimeout;	/* query abort after x usec*/
-	lng	        stimeout;	/* session abort after x usec */
+	time_t  login;  	/* Time when this session started */
+	lng 	session;	/* usec since start of server */
+	time_t  idle;		/* Time when the session became idle */  
+
+	/*
+	 * For program debugging and performance trace we keep the actual resource claims.
+	 */
+	time_t  lastcmd;	/* set when query is received */
+
+	/* The user can request a TRACE SQL statement, calling for collecting the events locally */
+	BAT *profticks;				
+	BAT *profstmt;
+
+	ATOMIC_TYPE	lastprint;	/* when we last printed the query, to be depricated */
 	/*
 	 * Communication channels for the interconnect are stored here.
 	 * It is perfectly legal to have a client without input stream.
@@ -112,7 +94,7 @@ typedef struct CLIENT {
 	 */
 	str       srcFile;  /* NULL for stdin, or file name */
 	bstream  *fdin;
-	int       yycur;    /* the scanners current position */
+	size_t    yycur;    /* the scanners current position */
 	/*
 	 * Keeping track of instructions executed is a valuable tool for
 	 * script processing and debugging.  It can be changed at runtime
@@ -144,8 +126,6 @@ typedef struct CLIENT {
 	 * debugger features.
 	 */
 	int debug;
-	void  *mdb;            /* context upon suspend */
-	str    history;	       /* where to keep console history */
 	enum clientmode mode;  /* FREECLIENT..BLOCKED */
 	/*
 	 * Client records are organized into a two-level dependency tree,
@@ -153,7 +133,7 @@ typedef struct CLIENT {
 	 * activities. Each client runs in its own process thread. Its
 	 * identity is retained here for access by others (=father).
 	 */
-	MT_Sema 	s;	    /* sema to (de)activate thread */ 
+	MT_Sema 	s;	    /* sema to (de)activate thread */
 	Thread      	mythread;
 	str     	errbuf;     /* location of GDK exceptions */
 	struct CLIENT   *father;    
@@ -175,9 +155,6 @@ typedef struct CLIENT {
 	 */
 	int		actions;
 
-	jmp_buf	exception_buf;
-	int exception_buf_initialized;
-
 	/*
 	 * Here are pointers to scenario backends contexts.  For the time
 	 * being just SQL.  We need a pointer for each of them, since they
@@ -186,11 +163,6 @@ typedef struct CLIENT {
 	 */
 	void *sqlcontext;
 
-	/*
-	 * keep track of which instructions are currently being executed
-	 */
-	bit		active;		/* processing a query or not */
-	Workset inprogress[THREADS];
 	/*
 	 * The workload for replication/replay is saved initially as a MAL block.
 	 * It is split into the capturing part (wlc) and the replay part (wlr).
@@ -209,22 +181,18 @@ typedef struct CLIENT {
 
 	size_t blocksize;
 	protocol_version protocol;
-	bool filetrans;				/* whether the client can read files for us */
 
-	PlantRecord *plants;
-	int lastPlant;
-	int plantId;
+	bool filetrans;			/* whether the client can read files for us */
+	const char *(*getquery)(struct CLIENT *);
 } *Client, ClientRec;
 
-mal_export void    MCinit(void);
+mal_export bool    MCinit(void);
 
 mal_export int MAL_MAXCLIENTS;
 mal_export ClientRec *mal_clients;
-mal_export int MCdefault;
 
 mal_export Client  MCgetClient(int id);
 mal_export Client  MCinitClient(oid user, bstream *fin, stream *fout);
-mal_export Client  MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout);
 mal_export int     MCinitClientThread(Client c);
 mal_export Client  MCforkClient(Client father);
 mal_export void	   MCstopClients(Client c);

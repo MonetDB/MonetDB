@@ -14,7 +14,6 @@ stdout of test 'php_monetdb` in directory 'sql/test/mapi` itself:
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:38808/
 # MonetDB/SQL module v2.26.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

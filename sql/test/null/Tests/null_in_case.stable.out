@@ -15,7 +15,6 @@ stdout of test 'null_in_case` in directory 'sql/test/null` itself:
 # Listening for connection requests on mapi:monetdb://koala.ins.cwi.nl:30781/
 # MonetDB/SQL module v2.22.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;
@@ -26,8 +25,8 @@ Ready.
 # 10:16:15 >  
 
 #SELECT CASE WHEN 1 = 1 THEN NULL END;
-% .L1 # table_name
-% L1 # name
+% .%1 # table_name
+% %1 # name
 % char # type
 % 0 # length
 [ NULL	]

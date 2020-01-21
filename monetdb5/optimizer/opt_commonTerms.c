@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -11,35 +11,50 @@
 #include "mal_exception.h"
  /*
  * Caveat. A lot of time was lost due to constants that are indistinguisable
- * at the surface level. It may miss common expressions if their constants
- * are introduced too far apart in the MAL program.
- * It requires the constant optimizer to be ran first.
+ * at the surface level.  It requires the constant optimizer to be ran first.
  */
+
+/* The key for finding common terms is that they share variables.
+ * Therefore we skip all constants, except for a constant only situation.
+ */
+
+static int 
+hashInstruction(MalBlkPtr mb, InstrPtr p)
+{
+	int i;
+	for ( i = p->argc - 1 ; i >= p->retc; i--)
+		if (! isVarConstant(mb,getArg(p,i)) ) 
+			return getArg(p,i);
+	if (isVarConstant(mb,getArg(p, p->retc)) ) 
+		return p->retc;
+	return -1;
+}
+
 str
 OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i, j, k, prop, barrier= 0, cnt;
+	int i, j, k, barrier= 0, bailout = 0;
 	InstrPtr p, q;
 	int actions = 0;
 	int limit, slimit;
+	int duplicate;
 	int *alias;
-	InstrPtr *old = NULL;
+	int *hash, h;
 	int *list;	
-	/* link all final constant expressions in a list */
-	/* it will help to find duplicate sql.bind calls */
-	int *vars;
+	str msg = MAL_SUCCEED;
+
+	InstrPtr *old = NULL;
 	char buf[256];
 	lng usec = GDKusec();
-	str msg = MAL_SUCCEED;
 
 	(void) cntxt;
 	(void) stk;
 	(void) pci;
 	alias = (int*) GDKzalloc(sizeof(int) * mb->vtop);
 	list = (int*) GDKzalloc(sizeof(int) * mb->stop);
-	vars = (int*) GDKzalloc(sizeof(int) * mb->vtop);
-	if ( alias == NULL || list == NULL || vars == NULL){
-		msg = createException(MAL,"optimizer.commonTerms", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	hash = (int*) GDKzalloc(sizeof(int) * mb->vtop);
+	if ( alias == NULL || list == NULL || hash == NULL){
+		msg = createException(MAL,"optimizer.commonTerms", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto wrapup;
 	}
 
@@ -47,48 +62,25 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	limit = mb->stop;
 	slimit = mb->ssize;
 	if ( newMalBlkStmt(mb, mb->ssize) < 0) {
-		msg = createException(MAL,"optimizer.commonTerms", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		msg = createException(MAL,"optimizer.commonTerms", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		old = NULL;
 		goto wrapup;
 	}
 
 	for ( i = 0; i < limit; i++) {
 		p = old[i];
+		duplicate = 0;
 
 		for ( k = 0; k < p->argc; k++)
-		if ( alias[getArg(p,k)] )
-			getArg(p,k) = alias[getArg(p,k)];
+			if ( alias[getArg(p,k)] )
+				getArg(p,k) = alias[getArg(p,k)];
 			
-		/* Link the statement to the previous use, based on the last argument.*/
-		if ( p->retc < p->argc ){
-			list[i] = vars[getArg(p,p->argc-1)];
-			vars[getArg(p,p->argc-1)] = i;
-		} 
-
-		for ( k = 0; k < p->retc; k++)
-			if( vars[getArg(p,k)] && p->barrier != RETURNsymbol){
-#ifdef DEBUG_OPT_COMMONTERMS_MORE
-				fprintf(stderr, "#ERROR MULTIPLE ASSIGNMENTS[%d] ",i);
-				fprintInstruction(stderr, mb, 0, p, LIST_MAL_ALL);
-#endif
-				pushInstruction(mb,p);
-				barrier= TRUE; // no more optimization allowed
-				break;
-			}
-		if( k < p->retc)
-			continue;
-
-		pushInstruction(mb,p);
 		if (p->token == ENDsymbol){
+			pushInstruction(mb,p);
 			/* wrap up the remainder */
 			for(i++; i<limit; i++)
-				if( old[i]){
-#ifdef DEBUG_OPT_COMMONTERMS_MORE
-					fprintf(stderr, "#FINALIZE[%d] ",i);
-					fprintInstruction(stderr, mb, 0, old[i], LIST_MAL_ALL);
-#endif
+				if( old[i])
 					pushInstruction(mb,old[i]);
-			}
 			break;
 		}
 		/*
@@ -104,95 +96,127 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 		 * Like all optimizer decisions, it is safe to stop.
 		 */
 		barrier |= getFunctionId(p) == assertRef;
-		if (barrier || p->token == NOOPsymbol || p->token == ASSIGNsymbol /* || p->retc == p->argc */) {
-#ifdef DEBUG_OPT_COMMONTERMS_MORE
-				fprintf(stderr, "#COMMON SKIPPED[%d] %d %d\n",i, barrier, p->retc == p->argc);
-#endif
+		if (barrier || p->token == NOOPsymbol || p->token == ASSIGNsymbol) {
+			TRC_DEBUG(MAL_OPTIMIZER, "Skipped[%d]: %d %d\n", i, barrier, p->retc == p->argc);
+			pushInstruction(mb,p);
+			continue;
+		}
+
+		/* when we enter a barrier block, we should ditch all previous instructions from consideration */
+		if( p->barrier== BARRIERsymbol || p->barrier== CATCHsymbol || p->barrier == RETURNsymbol){
+			memset(list, 0, sizeof(int) * mb->stop);
+			memset(hash, 0, sizeof(int) * mb->vtop);
+		}
+		/* side-effect producing operators can never be replaced */
+		/* the same holds for function calls without an argument, it is unclear where the results comes from (e.g. clock()) */
+		if ( mayhaveSideEffects(cntxt, mb, p,TRUE) || p->argc == p->retc){
+			TRC_DEBUG(MAL_OPTIMIZER, "Skipped[%d] side-effect: %d\n", i, p->retc == p->argc);
+			pushInstruction(mb,p);
 			continue;
 		}
 
 		/* from here we have a candidate to look for a match */
-#ifdef DEBUG_OPT_COMMONTERMS_MORE
-		fprintf(stderr,"#TARGET CANDIDATE[%d] ",i);
-		fprintInstruction(stderr, mb, 0, p, LIST_MAL_ALL);
-#endif
-		prop = mayhaveSideEffects(cntxt, mb, p,TRUE);
-		cnt = i; /* / 128 < 32? 32 : mb->stop/128;	limit search depth */
-		if ( !prop)
-		for (j = list[i]; cnt > 0 && j ; cnt--, j = list[j]) 
-			if ( getFunctionId(q=getInstrPtr(mb,j)) == getFunctionId(p) && getModuleId(q) == getModuleId(p)  ){
-#ifdef DEBUG_OPT_COMMONTERMS_MORE
-			fprintf(stderr,"#CANDIDATE[%d->%d] %d %d", j, list[j], 
-				hasSameSignature(mb, p, q, p->retc), 
-				hasSameArguments(mb, p, q));
-				mnstr_printf(cntxt->fdout," :%d %d %d=%d %d %d %d ", 
+
+		h = hashInstruction(mb, p);
+
+		TRC_DEBUG(MAL_OPTIMIZER, "Candidate[%d] look at list[%d] => %d\n", i, h, hash[h]);
+		traceInstruction(MAL_OPTIMIZER, mb, 0, p, LIST_MAL_ALL);
+
+		if( h < 0){
+			pushInstruction(mb,p);
+			continue;
+		}
+
+		bailout = 1024 ;  // don't run over long collision list
+		/* Look into the hash structure for matching instructions */
+		for (j = hash[h];  j > 0 && bailout-- > 0  ; j = list[j]) 
+			if ( (q= getInstrPtr(mb,j)) && getFunctionId(q) == getFunctionId(p) && getModuleId(q) == getModuleId(p)  ){
+				TRC_DEBUG(MAL_OPTIMIZER, "Candidate[%d->%d] %d %d :%d %d %d=%d %d %d %d\n",
+					j, list[j], 
+					hasSameSignature(mb, p, q), 
+					hasSameArguments(mb, p, q),
 					q->token != ASSIGNsymbol ,
 					list[getArg(q,q->argc-1)],i,
 					!hasCommonResults(p, q), 
 					!isUnsafeFunction(q),
 					!isUpdateInstruction(q),
 					isLinearFlow(q));
-				printInstruction(cntxt->fdout, mb, 0, q, LIST_MAL_ALL);
-#endif
+				traceInstruction(MAL_OPTIMIZER, mb, 0, q, LIST_MAL_ALL);
+
 				/*
 				 * Simple assignments are not replaced either. They should be
 				 * handled by the alias removal part. All arguments should
 				 * be assigned their value before instruction p.
 				 */
 				if ( hasSameArguments(mb, p, q) && 
-					hasSameSignature(mb, p, q, p->retc) && 
-					!hasCommonResults(p, q) && 
-					!isUnsafeFunction(q) && 
-					!isUpdateInstruction(q) &&
-					isLinearFlow(q) 
-				   ) {
-						if (safetyBarrier(p, q) ){
-#ifdef DEBUG_OPT_COMMONTERMS_MORE
-						fprintf(stderr,"#safetybarrier reached\n");
-#endif
+					 hasSameSignature(mb, p, q) && 
+					 !hasCommonResults(p, q) && 
+					 !isUnsafeFunction(q) && 
+					 !isUpdateInstruction(q) &&
+					 isLinearFlow(q) 
+					) {
+					if (safetyBarrier(p, q) ){
+						TRC_DEBUG(MAL_OPTIMIZER, "Safety barrier reached\n");
 						break;
 					}
+					duplicate = 1;
 					clrFunction(p);
 					p->argc = p->retc;
 					for (k = 0; k < q->retc; k++){
 						alias[getArg(p,k)] = getArg(q,k);
-						p= pushArgument(mb,p, getArg(q,k));
+						/* we know the arguments fit so the instruction can safely be patched */
+						p= addArgument(mb,p, getArg(q,k));
 					}
-#ifdef DEBUG_OPT_COMMONTERMS_MORE
-					fprintf(stderr, "#MODIFIED EXPRESSION %d -> %d ",getArg(p,0),getArg(p,1));
-					fprintInstruction(stderr, mb, 0, p, LIST_MAL_ALL);
-#endif
+
+					TRC_DEBUG(MAL_OPTIMIZER, "Modified expression %d -> %d ", getArg(p,0), getArg(p,1));
+					traceInstruction(MAL_OPTIMIZER, mb, 0, p, LIST_MAL_ALL);
+
 					actions++;
 					break; /* end of search */
 				}
 			}
-#ifdef DEBUG_OPT_COMMONTERMS_MORE
-			else if ( mayhaveSideEffects(cntxt, mb, q, TRUE) || isUpdateInstruction(p)){
-				fprintf(stderr, "#COMMON SKIPPED %d %d ", mayhaveSideEffects(cntxt, mb, q, TRUE) , isUpdateInstruction(p));
-				fprintInstruction(stderr, mb, 0, q, LIST_MAL_ALL);
+
+			else if(isUpdateInstruction(p)){
+				TRC_DEBUG_ENDIF(MAL_OPTIMIZER, "Skipped: %d %d\n", mayhaveSideEffects(cntxt, mb, q, TRUE) , isUpdateInstruction(p));
+				traceInstruction(MAL_OPTIMIZER, mb, 0, q, LIST_MAL_ALL);
 			}
-#endif
+
+		if (duplicate){
+			pushInstruction(mb,p);
+			continue;
+		} 
+		/* update the hash structure with another candidate for re-use */
+		TRC_DEBUG(MAL_OPTIMIZER, "Update hash[%d] - look at arg '%d' hash '%d' list '%d'\n", i, getArg(p,p->argc-1), h, hash[h]);
+		traceInstruction(MAL_OPTIMIZER, mb, 0, p, LIST_MAL_ALL);
+
+		if ( !mayhaveSideEffects(cntxt, mb, p, TRUE) && p->argc != p->retc &&  isLinearFlow(p) && !isUnsafeFunction(p) && !isUpdateInstruction(p)){
+			list[i] = hash[h];
+			hash[h] = i;
+			pushInstruction(mb,p);
+		}
 	}
 	for(; i<slimit; i++)
 		if( old[i])
 			freeInstruction(old[i]);
     /* Defense line against incorrect plans */
     if( actions > 0){
-        chkTypes(cntxt->usermodule, mb, FALSE);
-        chkFlow(mb);
-        chkDeclarations(mb);
+        msg = chkTypes(cntxt->usermodule, mb, FALSE);
+	if (!msg)
+        	msg = chkFlow(mb);
+	if (!msg)
+        	msg = chkDeclarations(mb);
     }
     /* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","commonTerms",actions,usec);
     newComment(mb,buf);
-	if( actions >= 0)
+	if( actions > 0)
 		addtoMalBlkHistory(mb);
 
-wrapup:
+  wrapup:
 	if(alias) GDKfree(alias);
 	if(list) GDKfree(list);
-	if(vars) GDKfree(vars);
+	if(hash) GDKfree(hash);
 	if(old) GDKfree(old);
 	return msg;
 }

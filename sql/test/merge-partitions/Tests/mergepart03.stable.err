@@ -29,8 +29,8 @@ stderr of test 'mergepart03` in directory 'sql/test/merge-partitions` itself:
 # 14:10:55 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-5513" "--port=32409"
 # 14:10:55 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-5513/.s.monetdb.32409
-QUERY = ALTER TABLE listparts ADD TABLE subtable2 AS PARTITION BETWEEN '-1' AND 12000; --error
+MAPI  = (monetdb) /var/tmp/mtest-13251/.s.monetdb.37915
+QUERY = ALTER TABLE listparts ADD TABLE subtable2 AS PARTITION FROM '-1' TO 12000; --error
 ERROR = !ALTER TABLE: there are values in the column a outside the partition range
 CODE  = M0M29
 

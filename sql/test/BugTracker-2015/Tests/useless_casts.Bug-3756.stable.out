@@ -23,7 +23,6 @@ stdout of test 'useless_casts.Bug-3756` in directory 'sql/test/BugTracker-2015` 
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 21:57:14 >  
 # 21:57:14 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-22263" "--port=33119"

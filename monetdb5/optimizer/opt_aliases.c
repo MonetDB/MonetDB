@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -11,7 +11,7 @@
 #include "opt_aliases.h"
 
 /* an alias is recognized by a simple assignment */
-#define OPTisAlias(X) (X->token == ASSIGNsymbol && X->barrier == 0 && X->argc == 2)
+#define OPTisAlias(X) (X->argc == 2 && X->token == ASSIGNsymbol && X->barrier == 0 )
 
 void
 OPTaliasRemap(InstrPtr p, int *alias){
@@ -27,22 +27,22 @@ OPTaliasesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	int *alias = 0;
 	char buf[256];
 	lng usec = GDKusec();
+	str msg = MAL_SUCCEED;
 
 	(void) stk;
 	(void) cntxt;
-
 
 	limit = mb->stop;
 	for (i = 1; i < limit; i++){
 		p= getInstrPtr(mb,i);
 		if (OPTisAlias(p))
 			break;
-		mb->stmt[k++] = p;
 	}
+	k = i;
 	if( i < limit){
 		alias= (int*) GDKzalloc(sizeof(int)* mb->vtop);
 		if (alias == NULL)
-			throw(MAL,"optimizer.aliases", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL,"optimizer.aliases", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		setVariableScope(mb);
 		for(j=1; j<mb->vtop; j++) alias[j]=j;
 	}
@@ -73,17 +73,17 @@ OPTaliasesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	/* Defense line against incorrect plans */
 	/* Plan is unaffected */
-	//chkTypes(cntxt->usermodule, mb, FALSE);
-	//chkFlow(mb);
-	//chkDeclarations(mb);
-	//
+	// msg = chkTypes(cntxt->usermodule, mb, FALSE);
+	// if ( msg == MAL_SUCCEED) 
+	//	msg = chkFlow(mb);
+	// if ( msg == MAL_SUCCEED) 
+	// 	msg = chkDeclarations(mb);
     /* keep all actions taken as a post block comment
 	 * and update statics */
 	usec= GDKusec() - usec;
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","aliases",actions,usec);
     newComment(mb,buf);
-	if( actions >= 0)
+	if( actions > 0)
 		addtoMalBlkHistory(mb);
-
-	return MAL_SUCCEED;
+	return msg;
 }

@@ -18,7 +18,6 @@ stdout of test 'index_column_crash.Bug-3113` in directory 'sql/test/BugTracker-2
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 17:09:13 >  
 # 17:09:13 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=niels" "--port=34838"

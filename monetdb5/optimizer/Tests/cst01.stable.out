@@ -20,15 +20,16 @@ stdout of test 'cst01` in directory 'monetdb5/optimizer` itself:
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 15:36:07 >  
 # 15:36:07 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-27236" "--port=37175"
 # 15:36:07 >  
 
 function user.tst():void;               	#[0] (0)  0 
-    io.print(57.29577951308232:dbl);    	#[1] (0) IOprint_val 8 <- 13 
-end user.tst;                           	#[2] (0)  
+    io.print(57.29577951308232:dbl);	#[6] (0) IOprint_val 8 <- 13 
+end user.tst;	#[7] (0)  
+#evaluate             actions= 5 time=25 usec 
+#aliases              actions= 5 time=2 usec 
 
 # 21:32:15 >  
 # 21:32:15 >  Done.

@@ -13,7 +13,6 @@ stdout of test 'crash_on_concurrent_use.SF-1411926` in directory 'sql/test/concu
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:38349/
 # MonetDB/SQL module v2.25.0 loaded
 
-Ready.
 
 # 11:01:29 >  
 # 11:01:29 >  "/usr/bin/python" "crash_on_concurrent_use.SF-1411926.SQL.py" "crash_on_concurrent_use.SF-1411926"

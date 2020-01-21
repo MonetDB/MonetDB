@@ -19,7 +19,6 @@ stdout of test 'order_by_incorrect_error.Bug-3630` in directory 'sql/test/BugTra
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 15:51:46 >  
 # 15:51:46 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-25544" "--port=30753"

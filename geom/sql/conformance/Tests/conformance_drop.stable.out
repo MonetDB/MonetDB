@@ -18,7 +18,6 @@ stdout of test 'conformance_drop` in directory 'geom/sql/conformance` itself:
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 13:34:34 >  
 # 13:34:34 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-11646" "--port=36548"

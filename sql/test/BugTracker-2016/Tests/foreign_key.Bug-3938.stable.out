@@ -23,7 +23,6 @@ stdout of test 'foreign_key.Bug-3938` in directory 'sql/test/BugTracker-2016` it
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 15:32:36 >  
 # 15:32:36 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-29638" "--port=30099"

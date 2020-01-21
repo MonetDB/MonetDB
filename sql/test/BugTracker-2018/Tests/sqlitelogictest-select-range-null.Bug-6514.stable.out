@@ -18,7 +18,6 @@ stdout of test 'sqlitelogictest-select-range-null.Bug-6514` in directory 'sql/te
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 14:19:50 >  
 # 14:19:50 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-24419" "--port=37728"

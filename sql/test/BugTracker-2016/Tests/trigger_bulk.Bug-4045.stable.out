@@ -20,7 +20,6 @@ stdout of test 'trigger_bulk.Bug-4045` in directory 'sql/test/BugTracker-2016` i
 # MonetDB/Python module loaded
 # MonetDB/R   module loaded
 
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql
@@ -91,6 +90,7 @@ Ready.
 % 2,	7 # length
 [ 10,	"monetdb"	]
 [ 20,	"monet"	]
+#DROP TABLE t111 CASCADE;
 
 # 09:09:27 >  
 # 09:09:27 >  "Done."

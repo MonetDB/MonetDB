@@ -18,7 +18,6 @@ stdout of test 'truncate_remove_user` in directory 'sql/test/BugTracker-2018` it
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 10:38:43 >  
 # 10:38:43 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-21201" "--port=36704"

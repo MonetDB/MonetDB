@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -401,8 +401,10 @@ TYPE##ToStr(char **dst, size_t *len, const TYPE *src, bool external)	\
 {									\
 	atommem(TYPE##Strlen);						\
 	if (is_##TYPE##_nil(*src)) {					\
-		if (external)						\
-			return snprintf(*dst, *len, "nil");		\
+		if (external) {						\
+			strcpy(*dst, "nil");				\
+			return 3;					\
+		}							\
 		strcpy(*dst, str_nil);					\
 		return 1;						\
 	}								\
@@ -481,14 +483,19 @@ bitToStr(char **dst, size_t *len, const bit *src, bool external)
 	atommem(6);
 
 	if (is_bit_nil(*src)) {
-		if (external)
-			return snprintf(*dst, *len, "nil");
+		if (external) {
+			strcpy(*dst, "nil");
+			return 3;
+		}
 		strcpy(*dst, str_nil);
 		return 1;
 	}
-	if (*src)
-		return snprintf(*dst, *len, "true");
-	return snprintf(*dst, *len, "false");
+	if (*src) {
+		strcpy(*dst, "true");
+		return 4;
+	}
+	strcpy(*dst, "false");
+	return 5;
 }
 
 ssize_t
@@ -538,14 +545,16 @@ batToStr(char **dst, size_t *len, const bat *src, bool external)
 
 	if (is_bat_nil(b) || (s = BBPname(b)) == NULL || *s == 0) {
 		atommem(4);
-		if (external)
-			return snprintf(*dst, *len, "nil");
+		if (external) {
+			strcpy(*dst, "nil");
+			return 3;
+		}
 		strcpy(*dst, str_nil);
 		return 1;
 	}
 	i = strlen(s) + 3;
 	atommem(i);
-	return snprintf(*dst, *len, "<%s>", s);
+	return (ssize_t) strconcat_len(*dst, *len, "<", s, ">", NULL);
 }
 
 
@@ -864,8 +873,7 @@ hgeToStr(char **dst, size_t *len, const hge *src, bool external)
 	atommem(hgeStrlen);
 	if (is_hge_nil(*src)) {
 		if (external) {
-			strncpy(*dst, "nil", 4);
-			return 3;
+			return (ssize_t) strcpy_len(*dst, "nil", 4);
 		}
 		strcpy(*dst, str_nil);
 		return 1;
@@ -925,7 +933,12 @@ ptrFromStr(const char *src, size_t *len, ptr **dst, bool external)
 	return (ssize_t) (p - src);
 }
 
+#ifdef _MSC_VER
+/* Windows doesn't put 0x in front whereas Linux does, so we do it ourselves */
+atomtostr(ptr, "0x%p", )
+#else
 atomtostr(ptr, "%p", )
+#endif
 
 #if SIZEOF_VOID_P == SIZEOF_INT
 atom_io(ptr, Int, int)
@@ -989,8 +1002,10 @@ dblToStr(char **dst, size_t *len, const dbl *src, bool external)
 
 	atommem(dblStrlen);
 	if (is_dbl_nil(*src)) {
-		if (external)
-			return snprintf(*dst, *len, "nil");
+		if (external) {
+			strcpy(*dst, "nil");
+			return 3;
+		}
 		strcpy(*dst, str_nil);
 		return 1;
 	}
@@ -1059,8 +1074,10 @@ fltToStr(char **dst, size_t *len, const flt *src, bool external)
 
 	atommem(fltStrlen);
 	if (is_flt_nil(*src)) {
-		if (external)
-			return snprintf(*dst, *len, "nil");
+		if (external) {
+			strcpy(*dst, "nil");
+			return 3;
+		}
 		strcpy(*dst, str_nil);
 		return 1;
 	}
@@ -1134,8 +1151,10 @@ OIDtoStr(char **dst, size_t *len, const oid *src, bool external)
 	atommem(oidStrlen);
 
 	if (is_oid_nil(*src)) {
-		if (external)
-			return snprintf(*dst, *len, "nil");
+		if (external) {
+			strcpy(*dst, "nil");
+			return 3;
+		}
 		strcpy(*dst, str_nil);
 		return 1;
 	}
@@ -1348,7 +1367,7 @@ int GDKatomcnt = TYPE_str + 1;
  * unknown atoms is kept.  These can be accessed via the ATOMunknown
  * interface. Finding an (negative) atom index can be done via
  * ATOMunknown_find, which simply adds the atom if it's not in the
- * unknown set. The index van be used to find the name of an unknown
+ * unknown set. The index can be used to find the name of an unknown
  * ATOM via ATOMunknown_name.
  */
 static str unknown[MAXATOMS] = { NULL };
@@ -1385,6 +1404,7 @@ ATOMunknown_find(const char *nme)
 str
 ATOMunknown_name(int i)
 {
+	assert(i < 0);
 	assert(unknown[-i]);
 	return unknown[-i];
 }

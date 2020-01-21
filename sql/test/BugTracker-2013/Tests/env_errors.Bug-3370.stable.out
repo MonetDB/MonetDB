@@ -19,21 +19,20 @@ stdout of test 'env_errors.Bug-3370` in directory 'sql/test/BugTracker-2013` its
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 09:53:02 >  
 # 09:53:02 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-12309" "--port=33326"
 # 09:53:02 >  
 
 #select current_role;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % varchar # type
 % 7 # length
 [ "monetdb"	]
 #select current_schema;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % varchar # type
 % 3 # length
 [ "sys"	]

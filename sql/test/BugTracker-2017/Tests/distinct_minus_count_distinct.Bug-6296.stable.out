@@ -20,7 +20,6 @@ stdout of test 'distinct_minus_count_distinct.Bug-6296` in directory 'sql/test/B
 # MonetDB/Python module loaded
 # MonetDB/R   module loaded
 
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql
@@ -67,7 +66,7 @@ Ready.
 # 14:57:09 >  
 
 #SELECT DISTINCT - 0 AS col1;
-% .L2 # table_name
+% . # table_name
 % col1 # name
 % tinyint # type
 % 1 # length
@@ -75,7 +74,7 @@ Ready.
 #CREATE TABLE tab0(col0 INTEGER, col1 INTEGER, col2 INTEGER);
 #CREATE TABLE tab2(col0 INTEGER, col1 INTEGER, col2 INTEGER);
 #SELECT DISTINCT - COUNT ( DISTINCT 74 ) AS col1 FROM tab0 AS cor0 CROSS JOIN tab2 AS cor1;
-% .L4 # table_name
+% . # table_name
 % col1 # name
 % bigint # type
 % 1 # length

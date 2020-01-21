@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #ifndef _BAT_H_
@@ -12,7 +12,7 @@
 #include "mal.h"
 #include "gdk.h"
 
-mal_export str BKCnewBAT(bat *res, const int *tt, const BUN *cap, int role);
+mal_export str BKCnewBAT(bat *res, const int *tt, const BUN *cap, role_t role);
 mal_export str BKCattach(bat *ret, const int *tt, const char * const *heapfile);
 mal_export str BKCdensebat(bat *ret, const lng *size);
 mal_export str BKCmirror(bat *ret, const bat *bid);
@@ -32,7 +32,6 @@ mal_export str BKCbat_inplace_force(bat *r, const bat *bid, const bat *rid, cons
 mal_export str BKCgetCapacity(lng *res, const bat *bid);
 mal_export str BKCgetColumnType(str *res, const bat *bid);
 mal_export str BKCgetRole(str *res, const bat *bid);
-mal_export str BKCsetkey(bat *res, const bat *bid, const bit *param);
 mal_export str BKCisSorted(bit *res, const bat *bid);
 mal_export str BKCisSortedReverse(bit *res, const bat *bid);
 mal_export str BKCgetKey(bit *ret, const bat *bid);
@@ -58,4 +57,5 @@ mal_export str BKCreuseBAT(bat *ret, const bat *bid, const bat *did);
 mal_export str BKCreuseBATmap(bat *ret, const bat *bid, const bat *did);
 mal_export str BKCmergecand(bat *ret, const bat *aid, const bat *bid);
 mal_export str BKCintersectcand(bat *ret, const bat *aid, const bat *bid);
+mal_export str BKCdiffcand(bat *ret, const bat *aid, const bat *bid);
 #endif /*_BAT_H_*/

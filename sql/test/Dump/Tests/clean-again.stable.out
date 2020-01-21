@@ -18,7 +18,6 @@ stdout of test 'clean-again` in directory 'sql/test/Dump` itself:
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 22:19:54 >  
 # 22:19:54 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-25752" "--port=37984"

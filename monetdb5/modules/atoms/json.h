@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #ifndef JSON_H
@@ -85,7 +85,7 @@ mal_export str JSONvalueArray(json *ret, json *arg);
 
 mal_export str JSONtextString(str *ret, bat *bid);
 mal_export str JSONtextGrouped(bat *ret, bat *bid, bat *gid, bat *ext, bit *flg);
-mal_export str JSONdump(void *ret, json *val);
+mal_export str JSONdump(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str JSONprelude(void *ret);
 
 mal_export str JSONrenderobject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

@@ -22,7 +22,6 @@ stdout of test 'grantMonetdb` in directory 'sql/test/Users` itself:
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 10:44:51 >  
 # 10:44:51 >  "/usr/bin/python2" "grantMonetdb.SQL.py" "grantMonetdb"

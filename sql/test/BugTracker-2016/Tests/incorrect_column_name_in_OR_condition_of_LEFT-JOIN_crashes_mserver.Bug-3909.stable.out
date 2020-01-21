@@ -21,7 +21,6 @@ stdout of test 'incorrect_column_name_in_OR_condition_of_LEFT-JOIN_crashes_mserv
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql

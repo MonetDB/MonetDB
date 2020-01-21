@@ -2,22 +2,10 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
 
 module batsql;
 module sql;
-
-pattern start():void 
-address SQLsession
-comment "Switch to processing SQL statements";
-
-pattern start2():void
-address SQLsession2
-comment "Switch to processing precompiled sql statements";
-
-pattern init():void
-address SQLinitEnvironment
-comment "Initialize the environment for MAL";
 
 pattern shutdown(delay:bte, force:bit):str
 address SQLshutdown_wrap;
@@ -51,7 +39,6 @@ pattern abort()
 address SQLabort
 comment "Trigger the abort operation for a MAL block";
 
-
 pattern eval(cmd:str):void 
 address SQLstatement
 comment "Compile and execute a single sql statement";
@@ -73,7 +60,19 @@ comment "Compile the relational statement (rel_smt) and register it as mal funct
 
 command flush_log( ) :void
 address SQLflush_log
-comment "flush the log now";
+comment "start flushing the write ahead log";
+
+command hot_snapshot(tarfile:str) :void
+address SQLhot_snapshot
+comment "Write db snapshot to the given tar(.gz) file";
+
+command resume_log_flushing( ) :void
+address SQLresume_log_flushing
+comment "Resume WAL log flushing";
+
+command suspend_log_flushing( ) :void
+address SQLsuspend_log_flushing
+comment "Suspend WAL log flushing";
 
 pattern assert(b:bit,msg:str):void
 address SQLassert
@@ -105,13 +104,73 @@ pattern batsql.next_value( sname:bat[:str], sequence:str ) :bat[:lng]
 address mvc_bat_next_value
 comment "return the next value of the sequence";
 
+pattern batsql.next_value( sname:str, sequence:bat[:str] ) :bat[:lng]
+address mvc_bat_next_value
+comment "return the next value of sequences";
+
+pattern batsql.next_value( sname:bat[:str], sequence:bat[:str] ) :bat[:lng]
+address mvc_bat_next_value
+comment "return the next value of sequences";
+
 pattern get_value( sname:str, sequence:str ):lng
 address mvc_get_value
 comment "return the current value of the sequence";
 
+pattern batsql.get_value( sname:bat[:str], sequence:str ) :bat[:lng]
+address mvc_bat_get_value
+comment "return the current value of the sequence";
+
+pattern batsql.get_value( sname:str, sequence:bat[:str] ) :bat[:lng]
+address mvc_bat_get_value
+comment "return the current value of sequences";
+
+pattern batsql.get_value( sname:bat[:str], sequence:bat[:str] ) :bat[:lng]
+address mvc_bat_get_value
+comment "return the current value of sequences";
+
 unsafe pattern restart( sname:str, sequence:str, start:lng ):lng
 address mvc_restart_seq
 comment "restart the sequence with value start";
+
+unsafe pattern batsql.restart( sname:bat[:str], sequence:str, start:lng ) :bat[:lng]
+address mvc_bat_restart_seq
+comment "restart the sequence with value start";
+
+unsafe pattern batsql.restart( sname:str, sequence:bat[:str], start:lng ) :bat[:lng]
+address mvc_bat_restart_seq
+comment "restart the sequence with value start";
+
+unsafe pattern batsql.restart( sname:str, sequence:str, start:bat[:lng] ) :bat[:lng]
+address mvc_bat_restart_seq
+comment "restart the sequence with value start";
+
+unsafe pattern batsql.restart( sname:bat[:str], sequence:bat[:str], start:lng ) :bat[:lng]
+address mvc_bat_restart_seq
+comment "restart the sequence with value start";
+
+unsafe pattern batsql.restart( sname:bat[:str], sequence:str, start:bat[:lng] ) :bat[:lng]
+address mvc_bat_restart_seq
+comment "restart the sequence with value start";
+
+unsafe pattern batsql.restart( sname:str, sequence:bat[:str], start:bat[:lng] ) :bat[:lng]
+address mvc_bat_restart_seq
+comment "restart the sequence with value start";
+
+unsafe pattern batsql.restart( sname:bat[:str], sequence:bat[:str], start:bat[:lng] ) :bat[:lng]
+address mvc_bat_restart_seq
+comment "restart the sequence with value start";
+
+pattern deltas( schema:str )(ids:bat[:int],cleared:bat[:bit],readonly:bat[:lng],inserted:bat[:lng],updated:bat[:lng],deleted:bat[:lng],tr_level:bat[:int])
+address mvc_delta_values
+comment "Return the delta values sizes of all columns of the schema's tables, plus the current transaction level";
+
+pattern deltas( schema:str, table:str )(ids:bat[:int],cleared:bat[:bit],readonly:bat[:lng],inserted:bat[:lng],updated:bat[:lng],deleted:bat[:lng],tr_level:bat[:int])
+address mvc_delta_values
+comment "Return the delta values sizes from the table's columns, plus the current transaction level";
+
+pattern deltas( schema:str, table:str, column:str )(ids:bat[:int],cleared:bat[:bit],readonly:bat[:lng],inserted:bat[:lng],updated:bat[:lng],deleted:bat[:lng],tr_level:bat[:int])
+address mvc_delta_values
+comment "Return the delta values sizes of a column, plus the current transaction level";
 
 pattern emptybindidx(mvc:int, schema:str, table:str, index:str, access:int):bat[:any_1]
 address mvc_bind_idxbat_wrap;
@@ -305,37 +364,6 @@ unsafe pattern importTable( sname:str, tname:str, onclient:int, fname:str... )(:
 address mvc_bin_import_table_wrap
 comment "Import a table from the files (fname)";
 
-command zero_or_one( col:bat[:any_1]) :any_1
-address zero_or_one
-comment "if col contains exactly one value return this. Incase of more raise an exception else return nil";
-
-inline function sql.subzero_or_one( b:bat[:any_1], gp:bat[:oid], gpe:bat[:oid], no_nil:bit) :bat[:any_1];
-	(g,e,h) := group.group(gp);
-	m := aggr.max(h);
-	c0 := calc.isnil(m);
-	c01 := calc.not(c0);
-	c1 := calc.>(m,1:lng);
-	c11 := calc.and(c01,c1);
-	sql.assert(c11, "21000!zero_or_one: cardinality violation, scalar expression expected");
-	return zero_or_one := b;
-end sql.subzero_or_one;
-
-command all( col:bat[:any_1]) :any_1
-address SQLall
-comment "if col contains exactly one value return this. Incase of more raise an exception else return nil";
-
-# todo implement = all aggregator (ie keep last value and compare status)
-inline function sql.all( b:bat[:any_1], gp:bat[:oid], gpe:bat[:oid], no_nil:bit) :bat[:any_1];
-	(g,e,h) := group.group(gp);
-	m := aggr.max(h);
-	c0 := calc.isnil(m);
-	c01 := calc.not(c0);
-	c1 := calc.>(m,1:lng);
-	c11 := calc.and(c01,c1);
-	sql.assert(c11, "21000!zero_or_one: cardinality violation, scalar expression expected ");
-	return all := b;
-end sql.all;
-
 command not_unique( b:bat[:oid]) :bit 
 address not_unique 
 comment "check if the tail sorted bat b doesn't have unique tail values" ;
@@ -357,7 +385,8 @@ pattern sql_variables():bat[:str]
 address sql_variables
 comment "return the table with session variables";
 
-pattern sessions() ( user:bat[:str], start:bat[:timestamp],stimeout:bat[:lng], lastcmd:bat[:timestamp], qtimeout:bat[:lng], idle:bat[:bit])
+pattern sessions() (id:bat[:int], user:bat[:str], 
+start:bat[:timestamp], idle:bat[:timestamp], optmizer:bat[:str], stimeout:bat[:int], qtimeout:bat[:int], wlimit:bat[:int], mlimit:bat[:int])
 address sql_sessions_wrap
 comment "SQL export table of active sessions, their timeouts and idle status";
 
@@ -386,18 +415,7 @@ address dump_opt_stats
 comment "dump the optimizer rewrite statistics";
 
 pattern dump_trace()(
-	event:bat[:int],
-	clk:bat[:str],
-	pc:bat[:str],
-	thread:bat[:int],
 	ticks:bat[:lng],
-	rssMB:bat[:lng],
-	vmMB:bat[:lng],
-	reads:bat[:lng],
-	writes:bat[:lng],
-	minflt:bat[:lng],
-	majflt:bat[:lng],
-	nvcsw:bat[:lng],
 	stmt:bat[:str])
 address dump_trace
 comment "dump the trace statistics";
@@ -554,9 +572,12 @@ command querylog_disable()
 address QLOGdisable;
 
 
-pattern sysmon_queue()(qtag:bat[:lng], user:bat[:str],started:bat[:timestamp],estimate:bat[:timestamp],progress:bat[:int], status:bat[:str], tag:bat[:oid], query:bat[:str])
+pattern sysmon_queue()(tag:bat[:lng], sessionid:bat[:int], user:bat[:str], started:bat[:timestamp], 
+status:bat[:str], query:bat[:str], progress:bat[:int], workers:bat[:int], memory:bat[:int])
 address SYSMONqueue;
 
+pattern sysmon_pause(tag:bte)
+address SYSMONpause;
 pattern sysmon_pause(tag:sht)
 address SYSMONpause;
 pattern sysmon_pause(tag:int)
@@ -564,6 +585,8 @@ address SYSMONpause;
 pattern sysmon_pause(tag:lng)
 address SYSMONpause;
 
+pattern sysmon_resume(tag:bte)
+address SYSMONresume;
 pattern sysmon_resume(tag:sht)
 address SYSMONresume;
 pattern sysmon_resume(tag:int)
@@ -571,12 +594,23 @@ address SYSMONresume;
 pattern sysmon_resume(tag:lng)
 address SYSMONresume;
 
+pattern sysmon_stop(tag:bte)
+address SYSMONstop;
 pattern sysmon_stop(tag:sht)
 address SYSMONstop;
 pattern sysmon_stop(tag:int)
 address SYSMONstop;
 pattern sysmon_stop(tag:lng)
 address SYSMONstop;
+
+pattern prepared_statements()(sessionid:bat[:int], user:bat[:str], statementid:bat[:int], statement:bat[:str], created:bat[:timestamp])
+address SQLsession_prepared_statements
+comment "Available prepared statements in the current session";
+
+pattern prepared_statements_args()(statementid:bat[:int], type:bat[:str], digits:bat[:int], scale:bat[:int], inout:bat[:bte], 
+number:bat[:int], schema:bat[:str], table:bat[:str], column:bat[:str])
+address SQLsession_prepared_statements_args
+comment "Available prepared statements' arguments in the current session";
 
 pattern copy_rejects() (rowid:bat[:lng], fldid:bat[:int], msg:bat[:str], inp:bat[:str])
 address COPYrejects;
@@ -912,6 +946,14 @@ command batcalc.daytime( v:bat[:daytime], digits:int ) :bat[:daytime]
 address batdaytime_2time_daytime
 comment "cast daytime to daytime and check for overflow";
 
+command sql.date_trunc( scale:str, v:bat[:timestamp]):bat[:timestamp] 
+address bat_date_trunc
+comment "Truncate a timestamp to (millennium, century,decade,year,quarter,month,week,day,hour,minute,second, milliseconds,microseconds)";
+
+command sql.date_trunc( scale:str, v:timestamp):timestamp 
+address date_trunc
+comment "Truncate a timestamp to (millennium, century,decade,year,quarter,month,week,day,hour,minute,second, milliseconds,microseconds)";
+
 pattern current_time() :daytime
 address SQLcurrent_daytime
 comment "Get the clients current daytime";
@@ -937,15 +979,15 @@ command calc.str( v:date ) :str
 address SQLdate_2_str
 comment "cast date to str";
 
-command calc.sqlblob( v:str ) :sqlblob 
-address str_2_sqlblob
-comment "cast to sqlblob";
-command batcalc.sqlblob( v:bat[:str] ) :bat[:sqlblob] 
-address batstr_2_sqlblob
-comment "cast to sqlblob";
-command calc.str( v:sqlblob ) :str 
-address SQLsqlblob_2_str
-comment "cast sqlblob to str";
+command calc.blob( v:str ) :blob 
+address str_2_blob
+comment "cast to blob";
+command batcalc.blob( v:bat[:str] ) :bat[:blob] 
+address batstr_2_blob
+comment "cast to blob";
+command calc.str( v:blob ) :str 
+address SQLblob_2_str
+comment "cast blob to str";
 
 pattern calc.str( eclass:int, d1:int, s1:int, has_tz:int, v:any_1, digits:int ) :str 
 address SQLstr_cast
@@ -1092,5 +1134,6 @@ include sql_aggr_lng;
 include sql_aggr_flt;
 include sql_aggr_dbl;
 include sql_inspect;
+include sql_subquery;
 
 sql.prelude();

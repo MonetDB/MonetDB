@@ -18,7 +18,6 @@ stdout of test 'regression_load2D` in directory 'geom/sql/pg_regression` itself:
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql

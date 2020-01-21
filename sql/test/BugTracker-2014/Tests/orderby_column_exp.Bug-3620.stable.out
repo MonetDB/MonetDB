@@ -19,7 +19,6 @@ stdout of test 'orderby_column_exp.Bug-3620` in directory 'sql/test/BugTracker-2
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 18:10:22 >  
 # 18:10:22 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-668" "--port=38539"

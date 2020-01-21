@@ -11,7 +11,6 @@ stdout of test '20` in directory 'sql/benchmarks/tpch/LOCKED` itself:
 # Visit http://monetdb.cwi.nl/ for further information.
 
 
-Ready.
 
 # 17:25:21 >  
 # 17:25:21 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-22501" "--port=33414"

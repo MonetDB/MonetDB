@@ -18,7 +18,6 @@ stdout of test 'insert-null-second-interval-0.Bug-6515` in directory 'sql/test/B
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 18:16:15 >  
 # 18:16:15 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-31698" "--port=30482"

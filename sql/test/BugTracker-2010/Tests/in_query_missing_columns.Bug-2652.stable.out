@@ -16,7 +16,6 @@ stdout of test 'in_query_missing_columns.Bug-2652` in directory 'sql/test/BugTra
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:37638/
 # MonetDB/SQL module v2.38.4 loaded
 
-Ready.
 
 
 # 23:35:14 >  

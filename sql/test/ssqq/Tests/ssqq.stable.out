@@ -18,7 +18,6 @@ stdout of test 'ssqq` in directory 'sql/test/ssqq` itself:
 # MonetDB/GIS module loaded
 # SQL catalog created, loading sql scripts once
 
-Ready.
 
 # 16:05:54 >  
 # 16:05:54 >  mclient -lsql -ftest -i -e --host=yngling --port=30483 

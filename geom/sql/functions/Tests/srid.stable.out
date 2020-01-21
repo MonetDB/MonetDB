@@ -18,7 +18,6 @@ stdout of test 'srid` in directory 'geom/sql/functions` itself:
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 10:52:10 >  
 # 10:52:10 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-4010" "--port=39851"

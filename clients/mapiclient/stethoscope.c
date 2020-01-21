@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /* (c) M Kersten, S Manegold
@@ -17,7 +17,6 @@
 */
 
 #include "monetdb_config.h"
-#include "monet_options.h"
 #include "stream.h"
 #include "stream_socket.h"
 #include "mapi.h"
@@ -72,7 +71,6 @@ static char hostname[128];
 static char *filename = NULL;
 static int beat = 0;
 static int json = 0;
-static int stream_mode = 1;
 static Mapi dbh;
 static MapiHdl hdl = NULL;
 static FILE *trace = NULL;
@@ -111,7 +109,7 @@ renderEvent(EventRecord *ev){
 		return;
 	fprintf(s, "[ ");
 	fprintf(s, "%"PRId64",	", ev->eventnr);
-	printf("\"%s\",	", ev->time);
+	fprintf(s, "\"%s\",	", ev->time);
 	if( ev->function && *ev->function)
 		fprintf(s, "\"%s[%d]%d\",	", ev->function, ev->pc, ev->tag);
 	else
@@ -233,7 +231,6 @@ usageStethoscope(void)
     fprintf(stderr, "  -h | --host=<hostname>\n");
     fprintf(stderr, "  -c | --convert=<old formated file>\n");
     fprintf(stderr, "  -j | --json\n");
-    fprintf(stderr, "  -y | --pretty (implies --json)\n");
     fprintf(stderr, "  -o | --output=<file>\n");
     fprintf(stderr, "  -b | --beat=<delay> in milliseconds (default 50)\n");
     fprintf(stderr, "  -D | --debug\n");
@@ -247,16 +244,21 @@ usageStethoscope(void)
 static void
 stopListening(int i)
 {
-	fprintf(stderr,"signal %d received\n",i);
+	fprintf(stderr,"stethoscope: signal %d received\n",i);
 	if( dbh)
 		doQ("profiler.stop();");
 stop_disconnect:
 	// show follow up action only once
-	if(trace)
-		fclose(trace);
+	/*
+	if(trace) {
+		fflush(trace);
+		int res = fclose(trace);
+		assert(res==0);
+	}
+	*/
 	if(dbh)
 		mapi_disconnect(dbh);
-	exit(0);
+	/* exit(0); */
 }
 
 int
@@ -343,11 +345,6 @@ main(int argc, char **argv)
 			break;
 		case 'j':
 			json = 1;
-			stream_mode = 3;
-			break;
-		case 'y':
-			stream_mode = 1;
-			json = 1;
 			break;
 		case 'o':
 			filename = strdup(optarg);
@@ -394,7 +391,7 @@ main(int argc, char **argv)
 #endif
 	signal(SIGINT, stopListening);
 	signal(SIGTERM, stopListening);
-	close(0);
+	/* close(0); */
 
 	if (user == NULL)
 		user = simple_prompt("user", BUFSIZ, 1, prompt_getlogin());
@@ -423,7 +420,7 @@ main(int argc, char **argv)
 		fprintf(stderr,"-- %s\n",buf);
 	doQ(buf);
 
-	snprintf(buf, BUFSIZ, " profiler.openstream(%d);", stream_mode);
+	snprintf(buf, BUFSIZ, "profiler.openstream();");
 	if( debug)
 		fprintf(stderr,"--%s\n",buf);
 	doQ(buf);
@@ -456,6 +453,7 @@ main(int argc, char **argv)
 		if(json) {
 			if(trace != NULL) {
 				fprintf(trace, "%s", response + len);
+				fflush(trace);
 			} else {
 				printf("%s", response + len);
 				fflush(stdout);

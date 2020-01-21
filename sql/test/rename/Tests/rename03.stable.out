@@ -18,7 +18,6 @@ stdout of test 'rename03` in directory 'sql/test/rename` itself:
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 15:49:08 >  
 # 15:49:08 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-9876" "--port=31599"

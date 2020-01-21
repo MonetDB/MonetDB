@@ -15,7 +15,6 @@ stdout of test 'q8_v` in directory 'sql/test/rdf` itself:
 # Listening for connection requests on mapi:monetdb://alviss.ins.cwi.nl:37896/
 # MonetDB/SQL module v2.34.4 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -34,7 +34,12 @@ int GetSQLType(sql_subtype *sql_subtype);
 
 static bool IsBlobType(int type)
 {
-	return type == TYPE_blob || type == TYPE_sqlblob;
+	return type == TYPE_blob;
+}
+
+static bool IsVoidType(int type)
+{
+	return type == TYPE_void;
 }
 
 PyObject *PyArrayObject_FromScalar(PyInput *inp, char **return_message)
@@ -44,6 +49,16 @@ PyObject *PyArrayObject_FromScalar(PyInput *inp, char **return_message)
 	assert(inp->scalar); // input has to be a scalar
 
 	switch (inp->bat_type) {
+		case TYPE_void:
+#if SIZEOF_OID == SIZEOF_INT
+			vararray = PyArray_Arange(0, 1, 1, NPY_UINT);
+#else
+			vararray = PyArray_Arange(0, 1, 1, NPY_ULONGLONG);
+#endif
+			break;
+		case TYPE_oid:
+			vararray = PyInt_FromLong((long)(*(oid *)inp->dataptr));
+			break;
 		case TYPE_bit:
 			vararray = PyInt_FromLong((long)(*(bit *)inp->dataptr));
 			break;
@@ -161,11 +176,11 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 
 	if (!b) {
 		// No BAT was found, we can't do anything in this case
-		msg = createException(MAL, "pyapi.eval", SQLSTATE(HY001) MAL_MALLOC_FAIL " bat missing");
+		msg = createException(MAL, "pyapi.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL " bat missing");
 		goto wrapup;
 	}
 
-	if (!IsBlobType(inp->bat_type) &&
+	if (!IsVoidType(inp->bat_type) && !IsBlobType(inp->bat_type) &&
 		(!IsStandardBATType(inp->bat_type) ||
 		 ConvertableSQLType(inp->sql_subtype))) { // if the sql type is set, we
 												  // have to do some conversion
@@ -180,6 +195,7 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 			msg = ConvertFromSQLType(inp->bat, inp->sql_subtype, &ret_bat,
 									 &inp->bat_type);
 			if (msg != MAL_SUCCEED) {
+				freeException(msg);
 				msg = createException(MAL, "pyapi.eval",
 									  SQLSTATE(PY000) "Failed to convert BAT.");
 				goto wrapup;
@@ -205,6 +221,20 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 		}
 	} else {
 		switch (inp->bat_type) {
+			case TYPE_void:
+#if SIZEOF_OID == SIZEOF_INT
+				BAT_TO_NP_CREATE_ALWAYS(b, NPY_UINT);
+#else
+				BAT_TO_NP_CREATE_ALWAYS(b, NPY_ULONGLONG);
+#endif
+				break;
+			case TYPE_oid:
+#if SIZEOF_OID == SIZEOF_INT
+				BAT_TO_NP(b, oid, NPY_UINT32);
+#else
+				BAT_TO_NP(b, oid, NPY_UINT64);
+#endif
+				break;
 			case TYPE_bit:
 				BAT_TO_NP(b, bit, NPY_INT8);
 				break;
@@ -258,7 +288,7 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 								GDKzalloc(b->tvheap->free * sizeof(PyObject *));
 							if (!pyptrs) {
 								msg = createException(MAL, "pyapi.eval",
-													  SQLSTATE(HY001) MAL_MALLOC_FAIL
+													  SQLSTATE(HY013) MAL_MALLOC_FAIL
 													  " PyObject strings.");
 								goto wrapup;
 							}
@@ -323,7 +353,7 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 								GDKzalloc(b->tvheap->free * sizeof(PyObject *));
 							if (!pyptrs) {
 								msg = createException(MAL, "pyapi.eval",
-													  SQLSTATE(HY001) MAL_MALLOC_FAIL
+													  SQLSTATE(HY013) MAL_MALLOC_FAIL
 													  " PyObject strings.");
 								goto wrapup;
 							}
@@ -854,7 +884,7 @@ BAT *PyObject_ConvertToBAT(PyReturn *ret, sql_subtype *type, int bat_type,
 		}
 		data = (char *)ret->array_data;
 		data += (index_offset * ret->count) * ret->memory_size;
-		b = COLnew(seqbase, TYPE_sqlblob, (BUN)ret->count, TRANSIENT);
+		b = COLnew(seqbase, TYPE_blob, (BUN)ret->count, TRANSIENT);
 		b->tnil = false;
 		b->tnonil = true;
 		b->tkey = false;
@@ -910,7 +940,9 @@ BAT *PyObject_ConvertToBAT(PyReturn *ret, sql_subtype *type, int bat_type,
 					Py_XDECREF(pickle_module);
 					Python_ReleaseGIL(gstate);
 				}
-				goto bunins_failed;
+				BBPunfix(b->batCacheid);
+				msg = createException(MAL, "pyapi.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto wrapup;
 			}
 			GDKfree(ele_blob);
 			data += ret->memory_size;
@@ -927,6 +959,9 @@ BAT *PyObject_ConvertToBAT(PyReturn *ret, sql_subtype *type, int bat_type,
 		BATsettrivprop(b);
 	} else {
 		switch (bat_type) {
+			case TYPE_void:
+				NP_CREATE_EMPTY_BAT(b, oid);
+				break;
 			case TYPE_bit:
 				NP_CREATE_BAT(b, bit);
 				break;
@@ -1007,10 +1042,8 @@ BAT *PyObject_ConvertToBAT(PyReturn *ret, sql_subtype *type, int bat_type,
 	}
 
 	return b;
-bunins_failed:
-	BBPunfix(b->batCacheid);
-	msg = createException(MAL, "pyapi.eval", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-wrapup:
+
+  wrapup:
 	*return_message = msg;
 	return NULL;
 }
@@ -1033,7 +1066,7 @@ int GetSQLType(sql_subtype *sql_subtype)
 		return -1;
 	if (!sql_subtype->type)
 		return -1;
-	return sql_subtype->type->eclass;
+	return (int) sql_subtype->type->eclass;
 }
 
 str ConvertFromSQLType(BAT *b, sql_subtype *sql_subtype, BAT **ret_bat,
@@ -1069,18 +1102,19 @@ str ConvertFromSQLType(BAT *b, sql_subtype *sql_subtype, BAT **ret_bat,
 		*ret_type = conv_type;
 		if (!(*ret_bat)) {
 			return createException(MAL, "pyapi.eval",
-								   SQLSTATE(HY001) MAL_MALLOC_FAIL " string conversion BAT.");
+								   SQLSTATE(HY013) MAL_MALLOC_FAIL " string conversion BAT.");
 		}
 		BATloop(b, p, q)
 		{
 			void *element = (void *)BUNtail(li, p);
 			if (strConversion(&result, &length, element, false) < 0) {
+				BBPunfix((*ret_bat)->batCacheid);
 				return createException(MAL, "pyapi.eval",
 									   SQLSTATE(PY000) "Failed to convert element to string.");
 			}
 			if (BUNappend(*ret_bat, result, false) != GDK_SUCCEED) {
 				BBPunfix((*ret_bat)->batCacheid);
-				throw(MAL, "pyapi.eval", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				throw(MAL, "pyapi.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 		}
 		if (result) {

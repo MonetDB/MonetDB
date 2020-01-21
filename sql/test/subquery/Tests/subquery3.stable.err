@@ -1,0 +1,155 @@
+stderr of test 'subquery3` in directory 'sql/test/subquery` itself:
+
+
+# 17:40:41 >  
+# 17:40:41 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=33945" "--set" "mapi_usock=/var/tmp/mtest-14741/.s.monetdb.33945" "--forcemito" "--dbpath=/home/niels/scratch/monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_subquery" "--set" "embedded_c=true"
+# 17:40:41 >  
+
+# builtin opt 	gdk_dbpath = /home/niels/scratch/monetdb/Linux-x86_64/var/monetdb5/dbfarm/demo
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_ipv6 = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 33945
+# cmdline opt 	mapi_usock = /var/tmp/mtest-14741/.s.monetdb.33945
+# cmdline opt 	gdk_dbpath = /home/niels/scratch/monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_subquery
+# cmdline opt 	embedded_c = true
+#client2:!ERROR:SQLException:assert:M0M29!zero_or_one: cardinality violation, scalar expression expected
+#client2:!ERROR:ParseException:SQLparser:42000!SELECT: cannot use non GROUP BY column 'col2' in query results without an aggregate function
+#client2:!ERROR:SQLException:assert:M0M29!zero_or_one: cardinality violation, scalar expression expected
+#client2:!ERROR:SQLException:assert:M0M29!zero_or_one: cardinality violation, scalar expression expected
+#client2:!ERROR:SQLException:assert:M0M29!zero_or_one: cardinality violation, scalar expression expected
+#client2:!ERROR:ParseException:SQLparser:42000!SELECT: cannot use non GROUP BY column 'col8' in query results without an aggregate function
+#client2:!ERROR:SQLException:assert:M0M29!zero_or_one: cardinality violation, scalar expression expected
+#client2:!ERROR:ParseException:SQLparser:42000!SELECT: cannot use non GROUP BY column in query results without an aggregate function
+
+# 17:40:41 >  
+# 17:40:41 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-14741" "--port=33945"
+# 17:40:41 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-14741/.s.monetdb.33945
+QUERY = SELECT
+            (SELECT AVG(col1) OVER (PARTITION BY col5 ORDER BY col1 ROWS UNBOUNDED PRECEDING) FROM tbl_ProductSales)
+        FROM another_T t1; --error, more than one row returned by a subquery used as an expression
+ERROR = !zero_or_one: cardinality violation, scalar expression expected
+CODE  = M0M29
+MAPI  = (monetdb) /var/tmp/mtest-14741/.s.monetdb.33945
+QUERY = SELECT
+            (SELECT SUM(col2) OVER (PARTITION BY SUM(col2) ORDER BY MAX(col1 + ColID) ROWS UNBOUNDED PRECEDING) FROM tbl_ProductSales)
+        FROM another_T t1
+        GROUP BY col1; --error, subquery uses ungrouped column "t1.col2" from outer query
+ERROR = !SELECT: cannot use non GROUP BY column 'col2' in query results without an aggregate function
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-14741/.s.monetdb.33945
+QUERY = SELECT
+            (SELECT SUM(SUM(col2)) OVER (PARTITION BY SUM(col2) ORDER BY MAX(col2) ROWS UNBOUNDED PRECEDING) FROM tbl_ProductSales)
+        FROM another_T t1
+        GROUP BY col1; --error, more than one row returned by a subquery used as an expression
+ERROR = !zero_or_one: cardinality violation, scalar expression expected
+CODE  = M0M29
+MAPI  = (monetdb) /var/tmp/mtest-14741/.s.monetdb.33945
+QUERY = SELECT
+            (SELECT DENSE_RANK() OVER (PARTITION BY col5 ORDER BY col1) FROM tbl_ProductSales)
+        FROM another_T t1; --error, more than one row returned by a subquery used as an expression
+ERROR = !zero_or_one: cardinality violation, scalar expression expected
+CODE  = M0M29
+MAPI  = (monetdb) /var/tmp/mtest-14741/.s.monetdb.33945
+QUERY = SELECT
+            (SELECT DENSE_RANK() OVER (PARTITION BY MIN(col5) ORDER BY MAX(col8)) FROM tbl_ProductSales)
+        FROM another_T t1
+        GROUP BY col6; --error, more than one row returned by a subquery used as an expression
+ERROR = !zero_or_one: cardinality violation, scalar expression expected
+CODE  = M0M29
+MAPI  = (monetdb) /var/tmp/mtest-14741/.s.monetdb.33945
+QUERY = SELECT
+            (SELECT DENSE_RANK() OVER (PARTITION BY MIN(col5) ORDER BY col8 * ColID) FROM tbl_ProductSales)
+        FROM another_T t1
+        GROUP BY col6; --error, subquery uses ungrouped column "t1.col8" from outer query
+ERROR = !SELECT: cannot use non GROUP BY column 'col8' in query results without an aggregate function
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-14741/.s.monetdb.33945
+QUERY = SELECT
+            (SELECT t2.col1 * SUM(SUM(t1.col2)) OVER (PARTITION BY SUM(t1.col2) ORDER BY MAX(t1.col1) ROWS UNBOUNDED PRECEDING) FROM another_T t2)
+        FROM another_T t1
+        GROUP BY col1; --error, more than one row returned by a subquery used as an expression
+ERROR = !zero_or_one: cardinality violation, scalar expression expected
+CODE  = M0M29
+MAPI  = (monetdb) /var/tmp/mtest-14741/.s.monetdb.33945
+QUERY = SELECT
+            (SELECT t2.col1 * SUM(SUM(col2)) OVER (PARTITION BY SUM(col2) ORDER BY MAX(col1) ROWS UNBOUNDED PRECEDING) FROM another_T t2)
+        FROM another_T t1
+        GROUP BY col1; --error, column "t2.col1" must appear in the GROUP BY clause or be used in an aggregate function
+ERROR = !SELECT: cannot use non GROUP BY column in query results without an aggregate function
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-379847/.s.monetdb.32523
+QUERY = SELECT
+        	MIN(i1.i)
+        FROM integers i1
+        GROUP BY (SELECT i2.i FROM integers i2); --error, more than one row returned by a subquery used as an expression
+ERROR = !Cardinality violation, scalar value expected
+CODE  = 21000
+MAPI  = (monetdb) /var/tmp/mtest-538831/.s.monetdb.31459
+QUERY = SELECT
+            (SELECT SUM(t1.col1) OVER (PARTITION BY (VALUES(1)) ROWS UNBOUNDED PRECEDING) FROM tbl_ProductSales)
+        FROM another_T t1; --error, subqueries not allowed inside PARTITION BY
+ERROR = !PARTITION BY: subqueries not allowed in PARTITION BY clause
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-6419/.s.monetdb.37915
+QUERY = SELECT
+            (SELECT SUM(t1.col1) OVER (ORDER BY (VALUES(1)) ROWS UNBOUNDED PRECEDING) FROM tbl_ProductSales)
+        FROM another_T t1;
+ERROR = !zero_or_one: cardinality violation, scalar expression expected
+CODE  = M0M29
+MAPI  = (monetdb) /var/tmp/mtest-6419/.s.monetdb.37915
+QUERY = SELECT
+            (SELECT SUM(t1.col1) OVER (ORDER BY (SELECT SUM(t1.col1 + t2.col1) FROM another_T t2) ROWS UNBOUNDED PRECEDING) FROM tbl_ProductSales)
+        FROM another_T t1;
+ERROR = !zero_or_one: cardinality violation, scalar expression expected
+CODE  = M0M29
+MAPI  = (monetdb) /var/tmp/mtest-18306/.s.monetdb.35753
+QUERY = SELECT
+            SUM(SUM(t1.col7) * CAST (NOT t1.col1 IN (SELECT 1) AS INTEGER)) OVER ()
+        FROM another_T t1
+        GROUP BY t1.col7; --error, column "t1.col1" must appear in the GROUP BY clause or be used in an aggregate function
+ERROR = !SELECT: cannot use non GROUP BY column 't1.col1' in query results without an aggregate function
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-18306/.s.monetdb.35753
+QUERY = SELECT
+            SUM(CAST(SUM(t1.col6 * CAST (NOT t1.col1 IN (SELECT t2.col2 FROM another_T t2 GROUP BY t2.col2) AS INTEGER)) < ANY (SELECT MAX(ColID + t1.col7 - t1.col2) FROM tbl_ProductSales) AS INT)) OVER (PARTITION BY SUM(t1.col5) ORDER BY (SELECT MIN(t1.col6 + t1.col5 - t2.col2) FROM another_T t2))
+        FROM another_T t1
+        GROUP BY t1.col7, t1.col6; --error, subquery uses ungrouped column "t1.col2" from outer query
+ERROR = !SELECT: cannot use non GROUP BY column 't1.col5' in query results without an aggregate function
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-22911/.s.monetdb.35494
+QUERY = SELECT
+            (SELECT 1 FROM integers i2 GROUP BY SUM(i2.i))
+        FROM integers i1; --error, aggregates not allowed in group by clause
+ERROR = !SUM: aggregate function 'sum' not allowed in GROUP BY clause
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-22911/.s.monetdb.35494
+QUERY = SELECT 
+            (SELECT SUM(SUM(i1.i) + i2.i) FROM integers i2 GROUP BY i2.i)
+        FROM integers i1; --SUM(i1.i) is a correlation from the outer query, so the sum aggregates can be nested at this case
+ERROR = !zero_or_one: cardinality violation, scalar expression expected
+CODE  = M0M29
+MAPI  = (monetdb) /var/tmp/mtest-224250/.s.monetdb.30823
+QUERY = SELECT 
+            (SELECT SUM(SUM(i1.i)) FROM integers i2 GROUP BY i2.i)
+        FROM integers i1; --error, more than one row returned by a subquery used as an expression
+ERROR = !zero_or_one: cardinality violation, scalar expression expected
+CODE  = M0M29
+MAPI  = (monetdb) /var/tmp/mtest-22911/.s.monetdb.35494
+QUERY = SELECT 
+            (SELECT SUM(SUM(i2.i)) FROM integers i2 GROUP BY i2.i)
+        FROM integers i1; --error, aggregation functions cannot be nested
+ERROR = !SUM: aggregate functions cannot be nested
+CODE  = 42000
+
+# 17:40:41 >  
+# 17:40:41 >  "Done."
+# 17:40:41 >  
+

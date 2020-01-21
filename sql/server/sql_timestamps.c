@@ -13,8 +13,11 @@
  */
 
 #include "sql_timestamps.h"
-#include <sql_atom.h>
-#include <mtime.h>
+#include "sql_mvc.h"
+#include "sql_atom.h"
+#include "sql_parser.h"
+
+#include "mtime.h"
 
 static int GetSQLTypeFromAtom(sql_subtype *sql_subtype)
 {
@@ -25,85 +28,91 @@ static int GetSQLTypeFromAtom(sql_subtype *sql_subtype)
 	return sql_subtype->type->eclass;
 }
 
-str
-convert_atom_into_unix_timestamp(atom *a, lng* res)
+lng
+convert_atom_into_unix_timestamp(mvc *sql, atom *a)
 {
-	str msg = MAL_SUCCEED;
-	*res = 0;
+	lng res = 0;
 
-	if(a->isnull) {
-		msg = createException(SQL, "sql.timestamp", SQLSTATE(42000) "The begin value cannot be null\n");
-		goto finish;
+	if (a->isnull) {
+		(void) sql_error(sql, 02, SQLSTATE(42000) "The begin value cannot be null\n");
+		return 0;
 	}
 	switch (GetSQLTypeFromAtom(&a->tpe)) {
 		case EC_TIMESTAMP: {
-			timestamp *tempp = (timestamp*) &(a->data.val.lval);
-			if((msg = MTIMEepoch2lng(res, tempp)) != MAL_SUCCEED) {
-				msg = createException(SQL, "sql.timestamp", SQLSTATE(42000) "%s\n", msg);
-				goto finish;
+			size_t len = sizeof(timestamp);
+			timestamp *t = NULL;
+
+			timestamp_fromstr(a->data.val.sval, &len, &t, false);
+			if (!t) {
+				(void) sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				return 0;
 			}
+			res = timestamp_diff(*t, (timestamp) {0});
+			GDKfree(t);
 			break;
 		}
 		case EC_DATE: {
-			timestamp tempd;
-			tempd.days = a->data.val.ival;
-			tempd.msecs = 0;
-			if((msg = MTIMEepoch2lng(res, &tempd)) != MAL_SUCCEED) {
-				msg = createException(SQL, "sql.timestamp", SQLSTATE(42000) "%s\n", msg);
-				goto finish;
+			size_t len = sizeof(date);
+			date *d = NULL;
+			timestamp t;
+
+			date_fromstr(a->data.val.sval, &len, &d, false);
+			if (!d) {
+				sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				return 0;
 			}
+			t = timestamp_fromdate(*d);
+			res = timestamp_diff(t, (timestamp) {0});
+			GDKfree(d);
 			break;
 		}
 		case EC_TIME: {
-			timestamp tempt;
-			date dateother;
-			if((msg = MTIMEcurrent_date(&dateother)) != MAL_SUCCEED) {
-				msg = createException(SQL, "sql.timestamp", SQLSTATE(42000) "%s\n", msg);
-				goto finish;
+			size_t len = sizeof(daytime);
+			daytime *d = NULL;
+			timestamp t = timestamp_current();
+
+			daytime_fromstr(a->data.val.sval, &len, &d, false);
+			if (!d) {
+				sql_error(sql, 02,  SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				return 0;
 			}
-			tempt.days = dateother;
-			tempt.msecs = a->data.val.ival;
-			if((msg = MTIMEepoch2lng(res, &tempt)) != MAL_SUCCEED) {
-				msg = createException(SQL, "sql.timestamp", SQLSTATE(42000) "%s\n", msg);
-				goto finish;
-			}
+			t = timestamp_add_usec(t, daytime_usec(*d));
+			res = timestamp_diff(t, (timestamp) {0});
+			GDKfree(d);
 			break;
 		}
 		case EC_NUM: {
 			switch (a->data.vtype) {
 			#ifdef HAVE_HGE
 				case TYPE_hge:
-					*res = (lng) a->data.val.hval;
+					res = (lng) a->data.val.hval;
 					break;
 			#endif
 				case TYPE_lng:
-					*res = a->data.val.lval;
+					res = a->data.val.lval;
 					break;
 				case TYPE_int:
-					*res = (lng) a->data.val.ival;
+					res = (lng) a->data.val.ival;
 					break;
 				case TYPE_sht:
-					*res = (lng) a->data.val.shval;
+					res = (lng) a->data.val.shval;
 					break;
 				case TYPE_bte:
-					*res = (lng) a->data.val.btval;
+					res = (lng) a->data.val.btval;
 					break;
 				default:
-					msg = createException(SQL, "sql.timestamp", SQLSTATE(42000) "Unknown SQL type for conversion\n");
-					goto finish;
+					sql_error(sql, 02, SQLSTATE(42000) "Unknown SQL type for conversion\n");
+					return 0;
 			}
-			if(*res < 0) {
-				msg = createException(SQL, "sql.timestamp", SQLSTATE(42000) "Negative UNIX timestamps are not allowed\n");
-				goto finish;
+			if (res < 0) {
+				sql_error(sql, 02, SQLSTATE(42000) "Negative UNIX timestamps are not allowed\n");
+				return 0;
 			}
 			break;
 		}
-		/*case EC_CHAR:
-		case EC_STRING:*/
 		default:
-			msg = createException(SQL, "sql.timestamp", SQLSTATE(42000) "Only number, time, date and timestamp fields "
-																		"are allowed for begin value\n");
+			sql_error(sql, 02,  SQLSTATE(42000) "Only number, time, date and timestamp fields "
+												"are allowed for begin value\n");
 	}
-finish:
-	return msg;
+	return res;
 }

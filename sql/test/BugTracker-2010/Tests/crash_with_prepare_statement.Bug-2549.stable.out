@@ -15,7 +15,6 @@ stdout of test 'crash_with_prepare_statement.Bug-2549` in directory 'sql/test/Bu
 # Listening for connection requests on mapi:monetdb://rig.ins.cwi.nl:34918/
 # MonetDB/SQL module v2.36.6 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;
@@ -36,7 +35,7 @@ Ready.
 % varchar,	int,	int,	str,	str,	str # type
 % 7,	2,	1,	0,	0,	0 # length
 [ "int",	32,	0,	NULL,	NULL,	NULL	]
-[ "decimal",	8,	0,	NULL,	NULL,	NULL	]
+[ "decimal",	9,	0,	NULL,	NULL,	NULL	]
 [ "int",	32,	0,	NULL,	NULL,	NULL	]
 [ "int",	32,	0,	NULL,	NULL,	NULL	]
 #drop table TB.STOCK_ITEM;

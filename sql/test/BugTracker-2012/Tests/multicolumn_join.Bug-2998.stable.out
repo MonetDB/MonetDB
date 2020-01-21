@@ -17,7 +17,6 @@ stdout of test 'multicolumn_join.Bug-2998` in directory 'sql/test/BugTracker-201
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 20:58:24 >  
 # 20:58:24 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=niels" "--port=31839"

@@ -14,7 +14,6 @@ stdout of test 'prepare_decimal_bug.SF-2831994` in directory 'sql/test/BugTracke
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:32876/
 # MonetDB/SQL module v2.32.0 loaded
 
-Ready.
 
 # 12:41:43 >  
 # 12:41:43 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=madrid" "--port=32243"

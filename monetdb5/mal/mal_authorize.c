@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -98,7 +98,7 @@ AUTHrequireAdmin(Client cntxt) {
 		return(MAL_SUCCEED);
 	id = cntxt->user;
 
-	if (id != 0) {
+	if (id != MAL_ADMIN) {
 		str user = NULL;
 		str tmp;
 
@@ -122,8 +122,8 @@ AUTHrequireAdminOrUser(Client cntxt, const char *username) {
 	str user = NULL;
 	str tmp = MAL_SUCCEED;
 
-	/* root?  then all is well */
-	if (id == 0)
+	/* MAL_ADMIN then all is well */
+	if (id == MAL_ADMIN)
 		return(MAL_SUCCEED);
 
 	rethrow("requireAdminOrUser", tmp, AUTHresolveUser(&user, id));
@@ -189,11 +189,11 @@ AUTHinitTables(const char *passwd) {
 	if (!bid) {
 		user = COLnew(0, TYPE_str, 256, PERSISTENT);
 		if (user == NULL)
-			throw(MAL, "initTables.user", SQLSTATE(HY001) MAL_MALLOC_FAIL " user table");
+			throw(MAL, "initTables.user", SQLSTATE(HY013) MAL_MALLOC_FAIL " user table");
 
 		if (BATkey(user, true) != GDK_SUCCEED ||
 			BBPrename(user->batCacheid, "M5system_auth_user") != 0 ||
-			BATmode(user, PERSISTENT) != GDK_SUCCEED) {
+			BATmode(user, false) != GDK_SUCCEED) {
 			throw(MAL, "initTables.user", GDK_EXCEPTION);
 		}
 	} else {
@@ -213,10 +213,10 @@ AUTHinitTables(const char *passwd) {
 	if (!bid) {
 		pass = COLnew(0, TYPE_str, 256, PERSISTENT);
 		if (pass == NULL)
-			throw(MAL, "initTables.passwd", SQLSTATE(HY001) MAL_MALLOC_FAIL " password table");
+			throw(MAL, "initTables.passwd", SQLSTATE(HY013) MAL_MALLOC_FAIL " password table");
 
 		if (BBPrename(pass->batCacheid, "M5system_auth_passwd_v2") != 0 ||
-			BATmode(pass, PERSISTENT) != GDK_SUCCEED) {
+			BATmode(pass, false) != GDK_SUCCEED) {
 			throw(MAL, "initTables.user", GDK_EXCEPTION);
 		}
 	} else {
@@ -236,10 +236,10 @@ AUTHinitTables(const char *passwd) {
 	if (!bid) {
 		duser = COLnew(0, TYPE_oid, 256, PERSISTENT);
 		if (duser == NULL)
-			throw(MAL, "initTables.duser", SQLSTATE(HY001) MAL_MALLOC_FAIL " deleted user table");
+			throw(MAL, "initTables.duser", SQLSTATE(HY013) MAL_MALLOC_FAIL " deleted user table");
 
 		if (BBPrename(duser->batCacheid, "M5system_auth_deleted") != 0 ||
-			BATmode(duser, PERSISTENT) != GDK_SUCCEED) {
+			BATmode(duser, false) != GDK_SUCCEED) {
 			throw(MAL, "initTables.user", GDK_EXCEPTION);
 		}
 	} else {
@@ -260,10 +260,10 @@ AUTHinitTables(const char *passwd) {
 	if (!bid) {
 		rt_key = COLnew(0, TYPE_str, 256, PERSISTENT);
 		if (rt_key == NULL)
-			throw(MAL, "initTables.rt_key", SQLSTATE(HY001) MAL_MALLOC_FAIL " remote table key bat");
+			throw(MAL, "initTables.rt_key", SQLSTATE(HY013) MAL_MALLOC_FAIL " remote table key bat");
 
 		if (BBPrename(rt_key->batCacheid, "M5system_auth_rt_key") != 0 ||
-			BATmode(rt_key, PERSISTENT) != GDK_SUCCEED)
+			BATmode(rt_key, false) != GDK_SUCCEED)
 			throw(MAL, "initTables.rt_key", GDK_EXCEPTION);
 	}
 	else {
@@ -284,10 +284,10 @@ AUTHinitTables(const char *passwd) {
 	if (!bid) {
 		rt_uri = COLnew(0, TYPE_str, 256, PERSISTENT);
 		if (rt_uri == NULL)
-			throw(MAL, "initTables.rt_uri", SQLSTATE(HY001) MAL_MALLOC_FAIL " remote table uri bat");
+			throw(MAL, "initTables.rt_uri", SQLSTATE(HY013) MAL_MALLOC_FAIL " remote table uri bat");
 
 		if (BBPrename(rt_uri->batCacheid, "M5system_auth_rt_uri") != 0 ||
-			BATmode(rt_uri, PERSISTENT) != GDK_SUCCEED)
+			BATmode(rt_uri, false) != GDK_SUCCEED)
 			throw(MAL, "initTables.rt_uri", GDK_EXCEPTION);
 	}
 	else {
@@ -308,10 +308,10 @@ AUTHinitTables(const char *passwd) {
 	if (!bid) {
 		rt_remoteuser = COLnew(0, TYPE_str, 256, PERSISTENT);
 		if (rt_remoteuser == NULL)
-			throw(MAL, "initTables.rt_remoteuser", SQLSTATE(HY001) MAL_MALLOC_FAIL " remote table local user bat");
+			throw(MAL, "initTables.rt_remoteuser", SQLSTATE(HY013) MAL_MALLOC_FAIL " remote table local user bat");
 
 		if (BBPrename(rt_remoteuser->batCacheid, "M5system_auth_rt_remoteuser") != 0 ||
-			BATmode(rt_remoteuser, PERSISTENT) != GDK_SUCCEED)
+			BATmode(rt_remoteuser, false) != GDK_SUCCEED)
 			throw(MAL, "initTables.rt_remoteuser", GDK_EXCEPTION);
 	}
 	else {
@@ -332,10 +332,10 @@ AUTHinitTables(const char *passwd) {
 	if (!bid) {
 		rt_hashedpwd = COLnew(0, TYPE_str, 256, PERSISTENT);
 		if (rt_hashedpwd == NULL)
-			throw(MAL, "initTables.rt_hashedpwd", SQLSTATE(HY001) MAL_MALLOC_FAIL " remote table local user bat");
+			throw(MAL, "initTables.rt_hashedpwd", SQLSTATE(HY013) MAL_MALLOC_FAIL " remote table local user bat");
 
 		if (BBPrename(rt_hashedpwd->batCacheid, "M5system_auth_rt_hashedpwd") != 0 ||
-			BATmode(rt_hashedpwd, PERSISTENT) != GDK_SUCCEED)
+			BATmode(rt_hashedpwd, false) != GDK_SUCCEED)
 			throw(MAL, "initTables.rt_hashedpwd", GDK_EXCEPTION);
 	}
 	else {
@@ -356,10 +356,10 @@ AUTHinitTables(const char *passwd) {
 	if (!bid) {
 		rt_deleted = COLnew(0, TYPE_oid, 256, PERSISTENT);
 		if (rt_deleted == NULL)
-			throw(MAL, "initTables.rt_deleted", SQLSTATE(HY001) MAL_MALLOC_FAIL " remote table local user bat");
+			throw(MAL, "initTables.rt_deleted", SQLSTATE(HY013) MAL_MALLOC_FAIL " remote table local user bat");
 
 		if (BBPrename(rt_deleted->batCacheid, "M5system_auth_rt_deleted") != 0 ||
-			BATmode(rt_deleted, PERSISTENT) != GDK_SUCCEED)
+			BATmode(rt_deleted, false) != GDK_SUCCEED)
 			throw(MAL, "initTables.rt_deleted", GDK_EXCEPTION);
 		/* If the database is not new, but we just created this BAT,
 		 * write everything to disc. This needs to happen only after
@@ -382,18 +382,17 @@ AUTHinitTables(const char *passwd) {
 		 * complete fresh and new auth tables system */
 		char *pw;
 		oid uid;
-		Client c = &mal_clients[0];
 
 		if (passwd == NULL)
 			passwd = "monetdb";	/* default password */
 		pw = mcrypt_BackendSum(passwd, strlen(passwd));
 		if(!pw)
 			throw(MAL, "initTables", SQLSTATE(42000) "Crypt backend hash not found");
-		msg = AUTHaddUser(&uid, c, "monetdb", pw);
+		msg = AUTHaddUser(&uid, NULL, "monetdb", pw);
 		free(pw);
 		if (msg)
 			return msg;
-		if (uid != 0)
+		if (uid != MAL_ADMIN)
 			throw(MAL, "initTables", INTERNAL_AUTHORIZATION " while they were just created!");
 		/* normally, we'd commit here, but it's done already in AUTHaddUser */
 	}
@@ -420,7 +419,8 @@ AUTHcheckCredentials(
 	BUN p;
 	BATiter passi;
 
-	rethrow("checkCredentials", tmp, AUTHrequireAdminOrUser(cntxt, username));
+	if (cntxt)
+		rethrow("checkCredentials", tmp, AUTHrequireAdminOrUser(cntxt, username));
 	assert(user);
 	assert(pass);
 
@@ -475,9 +475,10 @@ AUTHaddUser(oid *uid, Client cntxt, const char *username, const char *passwd)
 	str tmp;
 	str hash = NULL;
 
-	rethrow("addUser", tmp, AUTHrequireAdmin(cntxt));
 	assert(user);
 	assert(pass);
+	if (BATcount(user))
+		rethrow("addUser", tmp, AUTHrequireAdmin(cntxt));
 
 	/* some pre-condition checks */
 	if (username == NULL || strNil(username))
@@ -497,14 +498,15 @@ AUTHaddUser(oid *uid, Client cntxt, const char *username, const char *passwd)
 	if (BUNappend(user, username, true) != GDK_SUCCEED ||
 		BUNappend(pass, hash, true) != GDK_SUCCEED) {
 		GDKfree(hash);
-		throw(MAL, "addUser", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "addUser", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	GDKfree(hash);
 	/* retrieve the oid of the just inserted user */
 	p = AUTHfindUser(username);
 
 	/* make the stuff persistent */
-	AUTHcommit();
+	if (!GDKinmemory())
+		AUTHcommit();
 
 	*uid = p;
 	return(MAL_SUCCEED);
@@ -540,7 +542,7 @@ AUTHremoveUser(Client cntxt, const char *username)
 
 	/* now, we got the oid, start removing the related tuples */
 	if (BUNappend(duser, &id, true) != GDK_SUCCEED)
-		throw(MAL, "removeUser", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "removeUser", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	/* make the stuff persistent */
 	AUTHcommit();
@@ -710,7 +712,7 @@ AUTHresolveUser(str *username, oid uid)
 	assert(username != NULL);
 	useri = bat_iterator(user);
 	if ((*username = GDKstrdup((str)(BUNtvar(useri, p)))) == NULL)
-		throw(MAL, "resolveUser", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "resolveUser", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return(MAL_SUCCEED);
 }
 
@@ -730,12 +732,11 @@ AUTHgetUsername(str *username, Client cntxt)
 	 * happens, it may be a security breach/attempt, and hence
 	 * terminating the entire system seems like the right thing to do to
 	 * me. */
-	if (p == BUN_NONE || p >= BATcount(user))
-		GDKfatal("Internal error: user id that doesn't exist: " OIDFMT, cntxt->user);
+	assert(p < BATcount(user));
 
 	useri = bat_iterator(user);
 	if ((*username = GDKstrdup( BUNtvar(useri, p))) == NULL)
-		throw(MAL, "getUsername", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "getUsername", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return(MAL_SUCCEED);
 }
 
@@ -752,9 +753,9 @@ AUTHgetUsers(BAT **ret1, BAT **ret2, Client cntxt)
 
 	*ret1 = BATdense(user->hseqbase, user->hseqbase, BATcount(user));
 	if (*ret1 == NULL)
-		throw(MAL, "getUsers", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "getUsers", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	if (BATcount(duser)) {
-		bn = BATdiff(*ret1, duser, NULL, NULL, false, BUN_NONE);
+		bn = BATdiff(*ret1, duser, NULL, NULL, false, false, BUN_NONE);
 		BBPunfix((*ret1)->batCacheid);
 		*ret2 = BATproject(bn, user);
 		*ret1 = bn;
@@ -766,7 +767,7 @@ AUTHgetUsers(BAT **ret1, BAT **ret2, Client cntxt)
 			BBPunfix((*ret1)->batCacheid);
 		if (*ret2)
 			BBPunfix((*ret2)->batCacheid);
-		throw(MAL, "getUsers", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "getUsers", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	return(NULL);
 }
@@ -827,7 +828,7 @@ AUTHunlockVault(const char *password)
 		GDKfree(vaultKey);
 
 	if ((vaultKey = GDKstrdup(password)) == NULL)
-		throw(MAL, "unlockVault", SQLSTATE(HY001) MAL_MALLOC_FAIL " vault key");
+		throw(MAL, "unlockVault", SQLSTATE(HY013) MAL_MALLOC_FAIL " vault key");
 	return(MAL_SUCCEED);
 }
 
@@ -858,15 +859,15 @@ AUTHdecypherValue(str *ret, const char *value)
 	int escaped = 0;
 	/* we default to some garbage key, just to make password unreadable
 	 * (a space would only uppercase the password) */
-	int keylen = 0;
+	size_t keylen = 0;
 
 	if (vaultKey == NULL)
 		throw(MAL, "decypherValue", "The vault is still locked!");
 	w = r = GDKmalloc(sizeof(char) * (strlen(value) + 1));
 	if( r == NULL)
-		throw(MAL, "decypherValue", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "decypherValue", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
-	keylen = (int) strlen(vaultKey);
+	keylen = strlen(vaultKey);
 
 	/* XOR all characters.  If we encounter a 'one' char after the XOR
 	 * operation, it is an escape, so replace it with the next char. */
@@ -900,15 +901,15 @@ AUTHcypherValue(str *ret, const char *value)
 	const char *s = value;
 	/* we default to some garbage key, just to make password unreadable
 	 * (a space would only uppercase the password) */
-	int keylen = 0;
+	size_t keylen = 0;
 
 	if (vaultKey == NULL)
 		throw(MAL, "cypherValue", "The vault is still locked!");
 	w = r = GDKmalloc(sizeof(char) * (strlen(value) * 2 + 1));
 	if( r == NULL)
-		throw(MAL, "cypherValue", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "cypherValue", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
-	keylen = (int) strlen(vaultKey);
+	keylen = strlen(vaultKey);
 
 	/* XOR all characters.  If we encounter a 'zero' char after the XOR
 	 * operation, escape it with an 'one' char. */
@@ -1032,6 +1033,7 @@ AUTHaddRemoteTableCredentials(const char *local_table, const char *local_user, c
 	bool free_pw = false;
 	str tmp, output = MAL_SUCCEED;
 	BUN p;
+	str msg = MAL_SUCCEED;
 
 	if (uri == NULL || strNil(uri))
 		throw(ILLARG, "addRemoteTableCredentials", "URI cannot be nil");
@@ -1101,7 +1103,7 @@ AUTHaddRemoteTableCredentials(const char *local_table, const char *local_user, c
 		free_pw = true;
 		if (pw_encrypted) {
 			if((pwhash = strdup(pass)) == NULL)
-				throw(MAL, "addRemoteTableCredentials", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				throw(MAL, "addRemoteTableCredentials", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		else {
 			/* Note: the remote server might have used a different
@@ -1111,10 +1113,18 @@ AUTHaddRemoteTableCredentials(const char *local_table, const char *local_user, c
 				throw(MAL, "addRemoteTableCredentials", SQLSTATE(42000) "Crypt backend hash not found");
 		}
 	}
-	rethrow("addRemoteTableCredentials", tmp, AUTHverifyPassword(pwhash));
+	msg = AUTHverifyPassword(pwhash);
+	if( msg != MAL_SUCCEED){
+		free(pwhash);
+		rethrow("addRemoteTableCredentials", tmp, msg);
+	}
 
 	str cypher;
-	rethrow("addRemoteTableCredentials", tmp, AUTHcypherValue(&cypher, pwhash));
+	msg = AUTHcypherValue(&cypher, pwhash);
+	if( msg != MAL_SUCCEED){
+		free(pwhash);
+		rethrow("addRemoteTableCredentials", tmp, msg);
+	}
 
 	/* Add entry */
 	bool table_entry = (BUNappend(rt_key, local_table, true) == GDK_SUCCEED &&
@@ -1130,7 +1140,7 @@ AUTHaddRemoteTableCredentials(const char *local_table, const char *local_user, c
 			GDKfree(pwhash);
 		}
 		GDKfree(cypher);
-		throw(MAL, "addRemoteTableCredentials", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "addRemoteTableCredentials", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	AUTHcommit();
@@ -1168,7 +1178,7 @@ AUTHdeleteRemoteTableCredentials(const char *local_table)
 
 	/* now, we got the oid, start removing the related tuples */
 	if (BUNappend(rt_deleted, &id, true) != GDK_SUCCEED)
-		throw(MAL, "deleteRemoteTableCredentials", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "deleteRemoteTableCredentials", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	/* make the stuff persistent */
 	AUTHcommit();

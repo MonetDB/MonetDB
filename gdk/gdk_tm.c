@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -102,7 +102,7 @@ epilogue(int cnt, bat *subcommit)
 			if (b) {
 				/* check mmap modes */
 				if (BATcheckmodes(b, true) != GDK_SUCCEED)
-					fprintf(stderr, "#epilogue: BATcheckmodes failed\n");
+					TRC_ERROR(GDK_TM, "BATcheckmodes failed\n");
 			}
 		}
 		if ((BBP_status(bid) & BBPDELETED) && BBP_refs(bid) <= 0 && BBP_lrefs(bid) <= 0) {
@@ -182,6 +182,9 @@ TMsubcommit_list(bat *subcommit, int cnt)
 	assert(cnt > 0);
 	assert(subcommit[0] == 0); /* BBP artifact: slot 0 in the array will be ignored */
 
+	if (GDKinmemory())
+		return GDK_SUCCEED;
+
 	/* sort the list on BAT id */
 	GDKqsort(subcommit + 1, NULL, NULL, cnt - 1, sizeof(bat), 0, TYPE_bat, false, false);
 
@@ -258,9 +261,9 @@ TMabort(void)
 			BAT *b = BBPquickdesc(i, false);
 
 			if (b) {
-				if (b->batPersistence == PERSISTENT)
+				if (!b->batTransient)
 					BBPrelease(i);
-				b->batPersistence = TRANSIENT;
+				b->batTransient = true;
 				b->batDirtydesc = true;
 			}
 		}
@@ -295,9 +298,9 @@ TMabort(void)
 			}
 			if (BBP_status(i) & BBPDELETED) {
 				BBP_status_on(i, BBPEXISTING, "TMabort");
-				if (b->batPersistence != PERSISTENT)
+				if (b->batTransient)
 					BBPretain(i);
-				b->batPersistence = PERSISTENT;
+				b->batTransient = false;
 				b->batDirtydesc = true;
 			}
 			BBPunfix(i);

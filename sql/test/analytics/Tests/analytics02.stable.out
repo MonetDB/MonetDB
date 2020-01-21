@@ -18,7 +18,6 @@ stdout of test 'analytics02` in directory 'sql/test/analytics` itself:
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 12:55:22 >  
 # 12:55:22 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-8804" "--port=38610"
@@ -29,8 +28,8 @@ Ready.
 #insert into analytics values (15, 3, 15), (3, 1, 3), (2, 1, 2), (5, 3, 5), (NULL, 2, NULL), (3, 2, 3), (4, 1, 4), (6, 3, 6), (8, 2, 8), (NULL, 4, NULL);
 [ 10	]
 #select cast(sum(aa) over (rows between 5 preceding and 0 following) as bigint) from analytics;
-% sys.L6 # table_name
-% L6 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 2 # length
 [ 15	]
@@ -44,8 +43,8 @@ Ready.
 [ 26	]
 [ 21	]
 #select cast(sum(aa) over (rows between 5 preceding and 2 following) as bigint) from analytics;
-% sys.L6 # table_name
-% L6 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 2 # length
 [ 20	]
@@ -59,8 +58,8 @@ Ready.
 [ 26	]
 [ 21	]
 #select cast(sum(aa) over (partition by bb order by bb rows between 5 preceding and 0 following) as bigint) from analytics;
-% sys.L6 # table_name
-% L6 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 2 # length
 [ 3	]
@@ -74,8 +73,8 @@ Ready.
 [ 26	]
 [ NULL	]
 #select cast(sum(aa) over (partition by bb order by bb rows between 5 preceding and 2 following) as bigint) from analytics;
-% sys.L6 # table_name
-% L6 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 2 # length
 [ 9	]
@@ -89,8 +88,8 @@ Ready.
 [ 26	]
 [ NULL	]
 #select cast(prod(aa) over (rows between 5 preceding and 0 following) as bigint) from analytics;
-% sys.L6 # table_name
-% L6 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 4 # length
 [ 15	]
@@ -104,8 +103,8 @@ Ready.
 [ 2880	]
 [ 576	]
 #select cast(prod(aa) over (rows between 5 preceding and 2 following) as bigint) from analytics;
-% sys.L6 # table_name
-% L6 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 5 # length
 [ 90	]
@@ -119,8 +118,8 @@ Ready.
 [ 2880	]
 [ 576	]
 #select cast(prod(aa) over (partition by bb order by bb rows between 5 preceding and 0 following) as bigint) from analytics;
-% sys.L6 # table_name
-% L6 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 3 # length
 [ 3	]
@@ -134,8 +133,8 @@ Ready.
 [ 450	]
 [ NULL	]
 #select cast(prod(aa) over (partition by bb order by bb rows between 5 preceding and 2 following) as bigint) from analytics;
-% sys.L6 # table_name
-% L6 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 3 # length
 [ 24	]
@@ -149,8 +148,8 @@ Ready.
 [ 450	]
 [ NULL	]
 #select avg(aa) over (rows between 5 preceding and 0 following) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ 15	]
@@ -164,8 +163,8 @@ Ready.
 [ 5.2	]
 [ 5.25	]
 #select avg(aa) over (rows between 5 preceding and 2 following) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ 6.666666667	]
@@ -179,8 +178,8 @@ Ready.
 [ 5.2	]
 [ 5.25	]
 #select avg(aa) over (partition by bb order by bb rows between 5 preceding and 0 following) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % double # type
 % 24 # length
 [ 3	]
@@ -194,8 +193,8 @@ Ready.
 [ 8.666666667	]
 [ NULL	]
 #select avg(aa) over (partition by bb order by bb rows between 5 preceding and 2 following) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % double # type
 % 24 # length
 [ 3	]
@@ -209,8 +208,8 @@ Ready.
 [ 8.666666667	]
 [ NULL	]
 #select min(aa) over (rows between 5 preceding and 0 following) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%1 # table_name
+% %1 # name
 % int # type
 % 2 # length
 [ 15	]
@@ -224,8 +223,8 @@ Ready.
 [ 3	]
 [ 3	]
 #select min(aa) over (rows between 5 preceding and 2 following) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%1 # table_name
+% %1 # name
 % int # type
 % 1 # length
 [ 2	]
@@ -239,8 +238,8 @@ Ready.
 [ 3	]
 [ 3	]
 #select min(aa) over (partition by bb order by bb rows between 5 preceding and 0 following) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % int # type
 % 2 # length
 [ 3	]
@@ -254,8 +253,8 @@ Ready.
 [ 5	]
 [ NULL	]
 #select min(aa) over (partition by bb order by bb rows between 5 preceding and 2 following) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % int # type
 % 1 # length
 [ 2	]
@@ -269,8 +268,8 @@ Ready.
 [ 5	]
 [ NULL	]
 #select max(aa) over (rows between 5 preceding and 0 following) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%1 # table_name
+% %1 # name
 % int # type
 % 2 # length
 [ 15	]
@@ -284,8 +283,8 @@ Ready.
 [ 8	]
 [ 8	]
 #select max(aa) over (rows between 5 preceding and 2 following) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%1 # table_name
+% %1 # name
 % int # type
 % 2 # length
 [ 15	]
@@ -299,8 +298,8 @@ Ready.
 [ 8	]
 [ 8	]
 #select max(aa) over (partition by bb order by bb rows between 5 preceding and 0 following) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % int # type
 % 2 # length
 [ 3	]
@@ -314,8 +313,8 @@ Ready.
 [ 15	]
 [ NULL	]
 #select max(aa) over (partition by bb order by bb rows between 5 preceding and 2 following) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % int # type
 % 2 # length
 [ 4	]
@@ -329,8 +328,8 @@ Ready.
 [ 15	]
 [ NULL	]
 #select min(bb) over (rows between 5 preceding and 0 following) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%1 # table_name
+% %1 # name
 % int # type
 % 1 # length
 [ 3	]
@@ -344,8 +343,8 @@ Ready.
 [ 1	]
 [ 1	]
 #select min(bb) over (rows between 5 preceding and 2 following) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%1 # table_name
+% %1 # name
 % int # type
 % 1 # length
 [ 1	]
@@ -359,8 +358,8 @@ Ready.
 [ 1	]
 [ 1	]
 #select min(bb) over (partition by aa order by aa rows between 5 preceding and 0 following) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % int # type
 % 1 # length
 [ 2	]
@@ -374,8 +373,8 @@ Ready.
 [ 2	]
 [ 3	]
 #select min(bb) over (partition by aa order by aa rows between 5 preceding and 2 following) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % int # type
 % 1 # length
 [ 2	]
@@ -389,8 +388,8 @@ Ready.
 [ 2	]
 [ 3	]
 #select max(bb) over (rows between 5 preceding and 0 following) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%1 # table_name
+% %1 # name
 % int # type
 % 1 # length
 [ 3	]
@@ -404,8 +403,8 @@ Ready.
 [ 3	]
 [ 4	]
 #select max(bb) over (rows between 5 preceding and 2 following) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%1 # table_name
+% %1 # name
 % int # type
 % 1 # length
 [ 3	]
@@ -419,8 +418,8 @@ Ready.
 [ 4	]
 [ 4	]
 #select max(bb) over (partition by aa order by aa rows between 5 preceding and 0 following) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % int # type
 % 1 # length
 [ 2	]
@@ -434,8 +433,8 @@ Ready.
 [ 2	]
 [ 3	]
 #select max(bb) over (partition by aa order by aa rows between 5 preceding and 2 following) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % int # type
 % 1 # length
 [ 4	]
@@ -449,8 +448,8 @@ Ready.
 [ 2	]
 [ 3	]
 #select count(*) over (rows between 5 preceding and 0 following) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%2 # table_name
+% %2 # name
 % bigint # type
 % 1 # length
 [ 1	]
@@ -464,8 +463,8 @@ Ready.
 [ 6	]
 [ 6	]
 #select count(*) over (rows between 5 preceding and 2 following) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%2 # table_name
+% %2 # name
 % bigint # type
 % 1 # length
 [ 3	]
@@ -479,8 +478,8 @@ Ready.
 [ 7	]
 [ 6	]
 #select count(*) over (partition by bb order by bb rows between 5 preceding and 0 following) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%4 # table_name
+% %4 # name
 % bigint # type
 % 1 # length
 [ 1	]
@@ -494,8 +493,8 @@ Ready.
 [ 3	]
 [ 1	]
 #select count(*) over (partition by bb order by bb rows between 5 preceding and 2 following) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%4 # table_name
+% %4 # name
 % bigint # type
 % 1 # length
 [ 3	]
@@ -509,8 +508,8 @@ Ready.
 [ 3	]
 [ 1	]
 #select count(aa) over (rows between 5 preceding and 0 following) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 1	]
@@ -524,8 +523,8 @@ Ready.
 [ 5	]
 [ 4	]
 #select count(aa) over (rows between 5 preceding and 2 following) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 3	]
@@ -539,8 +538,8 @@ Ready.
 [ 5	]
 [ 4	]
 #select count(aa) over (partition by bb order by bb rows between 5 preceding and 0 following) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % bigint # type
 % 1 # length
 [ 1	]
@@ -554,8 +553,8 @@ Ready.
 [ 3	]
 [ 0	]
 #select count(aa) over (partition by bb order by bb rows between 5 preceding and 2 following) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % bigint # type
 % 1 # length
 [ 3	]
@@ -569,8 +568,8 @@ Ready.
 [ 3	]
 [ 0	]
 #select count(bb) over (rows between 5 preceding and 0 following) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 1	]
@@ -584,8 +583,8 @@ Ready.
 [ 6	]
 [ 6	]
 #select count(bb) over (rows between 5 preceding and 2 following) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 3	]
@@ -599,8 +598,8 @@ Ready.
 [ 7	]
 [ 6	]
 #select count(bb) over (partition by aa order by aa rows between 5 preceding and 0 following) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % bigint # type
 % 1 # length
 [ 1	]
@@ -614,8 +613,8 @@ Ready.
 [ 1	]
 [ 1	]
 #select count(bb) over (partition by aa order by aa rows between 5 preceding and 2 following) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % bigint # type
 % 1 # length
 [ 2	]
@@ -629,8 +628,8 @@ Ready.
 [ 1	]
 [ 1	]
 #select count(*) over (rows between unbounded preceding and unbounded following) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%2 # table_name
+% %2 # name
 % bigint # type
 % 2 # length
 [ 10	]
@@ -644,8 +643,8 @@ Ready.
 [ 10	]
 [ 10	]
 #select count(*) over (partition by bb order by bb rows between unbounded preceding and unbounded following) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%4 # table_name
+% %4 # name
 % bigint # type
 % 1 # length
 [ 3	]
@@ -659,8 +658,8 @@ Ready.
 [ 3	]
 [ 1	]
 #select count(aa) over (rows between unbounded preceding and unbounded following) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 8	]
@@ -674,8 +673,8 @@ Ready.
 [ 8	]
 [ 8	]
 #select count(aa) over (partition by bb order by bb rows between unbounded preceding and unbounded following) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % bigint # type
 % 1 # length
 [ 3	]
@@ -689,8 +688,8 @@ Ready.
 [ 3	]
 [ 0	]
 #select count(bb) over (rows between unbounded preceding and unbounded following) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 2 # length
 [ 10	]
@@ -704,8 +703,8 @@ Ready.
 [ 10	]
 [ 10	]
 #select count(bb) over (partition by aa order by aa rows between unbounded preceding and unbounded following) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % bigint # type
 % 1 # length
 [ 2	]
@@ -719,26 +718,26 @@ Ready.
 [ 1	]
 [ 1	]
 #select count(*) over (rows unbounded preceding);
-% .L4 # table_name
-% L4 # name
+% .%2 # table_name
+% %2 # name
 % bigint # type
 % 1 # length
 [ 1	]
 #select count(*) over (rows 200 preceding);
-% .L4 # table_name
-% L4 # name
+% .%2 # table_name
+% %2 # name
 % bigint # type
 % 1 # length
 [ 1	]
 #select count(*) over (rows between 5 preceding and 0 following);
-% .L4 # table_name
-% L4 # name
+% .%2 # table_name
+% %2 # name
 % bigint # type
 % 1 # length
 [ 1	]
 #select min(aa) over (rows unbounded preceding) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%1 # table_name
+% %1 # name
 % int # type
 % 2 # length
 [ 15	]
@@ -752,8 +751,8 @@ Ready.
 [ 2	]
 [ 2	]
 #select min(aa) over (partition by bb order by bb rows unbounded preceding) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % int # type
 % 2 # length
 [ 3	]
@@ -767,8 +766,8 @@ Ready.
 [ 5	]
 [ NULL	]
 #select max(aa) over (rows unbounded preceding) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%1 # table_name
+% %1 # name
 % int # type
 % 2 # length
 [ 15	]
@@ -782,8 +781,8 @@ Ready.
 [ 15	]
 [ 15	]
 #select max(aa) over (partition by bb order by bb rows unbounded preceding) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % int # type
 % 2 # length
 [ 3	]
@@ -797,8 +796,8 @@ Ready.
 [ 15	]
 [ NULL	]
 #select cast(sum(aa) over (rows unbounded preceding) as bigint) from analytics;
-% sys.L6 # table_name
-% L6 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 2 # length
 [ 15	]
@@ -812,8 +811,8 @@ Ready.
 [ 46	]
 [ 46	]
 #select cast(sum(aa) over (partition by bb order by bb rows unbounded preceding) as bigint) from analytics;
-% sys.L6 # table_name
-% L6 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 2 # length
 [ 3	]
@@ -827,8 +826,8 @@ Ready.
 [ 26	]
 [ NULL	]
 #select cast(prod(aa) over (rows unbounded preceding) as bigint) from analytics;
-% sys.L6 # table_name
-% L6 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 6 # length
 [ 15	]
@@ -842,8 +841,8 @@ Ready.
 [ 259200	]
 [ 259200	]
 #select cast(prod(aa) over (partition by bb order by bb rows unbounded preceding) as bigint) from analytics;
-% sys.L6 # table_name
-% L6 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 3 # length
 [ 3	]
@@ -857,8 +856,8 @@ Ready.
 [ 450	]
 [ NULL	]
 #select avg(aa) over (rows unbounded preceding) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ 15	]
@@ -872,8 +871,8 @@ Ready.
 [ 5.75	]
 [ 5.75	]
 #select avg(aa) over (partition by bb order by bb rows unbounded preceding) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % double # type
 % 24 # length
 [ 3	]
@@ -887,8 +886,8 @@ Ready.
 [ 8.666666667	]
 [ NULL	]
 #select count(*) over (rows unbounded preceding) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%2 # table_name
+% %2 # name
 % bigint # type
 % 2 # length
 [ 1	]
@@ -902,8 +901,8 @@ Ready.
 [ 9	]
 [ 10	]
 #select count(*) over (partition by bb order by bb rows unbounded preceding) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%4 # table_name
+% %4 # name
 % bigint # type
 % 1 # length
 [ 1	]
@@ -917,8 +916,8 @@ Ready.
 [ 3	]
 [ 1	]
 #select count(aa) over (rows unbounded preceding) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 1	]
@@ -932,8 +931,8 @@ Ready.
 [ 8	]
 [ 8	]
 #select count(aa) over (partition by bb order by bb rows unbounded preceding) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % bigint # type
 % 1 # length
 [ 1	]
@@ -947,8 +946,8 @@ Ready.
 [ 3	]
 [ 0	]
 #select min(aa) over (rows 2 preceding) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%1 # table_name
+% %1 # name
 % int # type
 % 2 # length
 [ 15	]
@@ -962,8 +961,8 @@ Ready.
 [ 4	]
 [ 6	]
 #select min(aa) over (partition by bb order by bb rows 2 preceding) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % int # type
 % 2 # length
 [ 3	]
@@ -977,8 +976,8 @@ Ready.
 [ 5	]
 [ NULL	]
 #select max(aa) over (rows 2 preceding) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%1 # table_name
+% %1 # name
 % int # type
 % 2 # length
 [ 15	]
@@ -992,8 +991,8 @@ Ready.
 [ 8	]
 [ 8	]
 #select max(aa) over (partition by bb order by bb rows 2 preceding) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % int # type
 % 2 # length
 [ 3	]
@@ -1007,8 +1006,8 @@ Ready.
 [ 15	]
 [ NULL	]
 #select cast(sum(aa) over (rows 2 preceding) as bigint) from analytics;
-% sys.L6 # table_name
-% L6 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 2 # length
 [ 15	]
@@ -1022,8 +1021,8 @@ Ready.
 [ 18	]
 [ 14	]
 #select cast(sum(aa) over (partition by bb order by bb rows 2 preceding) as bigint) from analytics;
-% sys.L6 # table_name
-% L6 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 2 # length
 [ 3	]
@@ -1037,8 +1036,8 @@ Ready.
 [ 26	]
 [ NULL	]
 #select cast(prod(aa) over (rows 2 preceding) as bigint) from analytics;
-% sys.L6 # table_name
-% L6 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 3 # length
 [ 15	]
@@ -1052,8 +1051,8 @@ Ready.
 [ 192	]
 [ 48	]
 #select cast(prod(aa) over (partition by bb order by bb rows 2 preceding) as bigint) from analytics;
-% sys.L6 # table_name
-% L6 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 3 # length
 [ 3	]
@@ -1067,8 +1066,8 @@ Ready.
 [ 450	]
 [ NULL	]
 #select avg(aa) over (rows 2 preceding) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ 15	]
@@ -1082,8 +1081,8 @@ Ready.
 [ 6	]
 [ 7	]
 #select avg(aa) over (partition by bb order by bb rows 2 preceding) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % double # type
 % 24 # length
 [ 3	]
@@ -1097,8 +1096,8 @@ Ready.
 [ 8.666666667	]
 [ NULL	]
 #select count(*) over (rows 2 preceding) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%2 # table_name
+% %2 # name
 % bigint # type
 % 1 # length
 [ 1	]
@@ -1112,8 +1111,8 @@ Ready.
 [ 3	]
 [ 3	]
 #select count(*) over (partition by bb order by bb rows 2 preceding) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%4 # table_name
+% %4 # name
 % bigint # type
 % 1 # length
 [ 1	]
@@ -1127,8 +1126,8 @@ Ready.
 [ 3	]
 [ 1	]
 #select count(aa) over (rows 2 preceding) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 1	]
@@ -1142,8 +1141,8 @@ Ready.
 [ 3	]
 [ 2	]
 #select count(aa) over (partition by bb order by bb rows 2 preceding) from analytics;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % bigint # type
 % 1 # length
 [ 1	]
@@ -1160,8 +1159,8 @@ Ready.
 #insert into stressme values ('one', 1), ('another', 1), ('stress', 1), (NULL, 2), ('ok', 2), ('check', 3), ('me', 3), ('please', 3), (NULL, 4);
 [ 9	]
 #select avg(bb) over (rows between 5 preceding and 0 following) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ 1	]
@@ -1174,8 +1173,8 @@ Ready.
 [ 2.333333333	]
 [ 2.833333333	]
 #select avg(bb) over (rows between 5 preceding and 2 following) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ 1	]
@@ -1188,8 +1187,8 @@ Ready.
 [ 2.571428571	]
 [ 2.833333333	]
 #select avg(bb) over (partition by bb order by bb rows between 5 preceding and 0 following) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % double # type
 % 24 # length
 [ 1	]
@@ -1202,8 +1201,8 @@ Ready.
 [ 3	]
 [ 4	]
 #select avg(bb) over (partition by bb order by bb rows between 5 preceding and 2 following) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % double # type
 % 24 # length
 [ 1	]
@@ -1216,8 +1215,8 @@ Ready.
 [ 3	]
 [ 4	]
 #select min(aa) over (rows between 5 preceding and 0 following) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.%1 # table_name
+% %1 # name
 % varchar # type
 % 7 # length
 [ "one"	]
@@ -1230,8 +1229,8 @@ Ready.
 [ "check"	]
 [ "check"	]
 #select min(aa) over (rows between 5 preceding and 2 following) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.%1 # table_name
+% %1 # name
 % varchar # type
 % 7 # length
 [ "another"	]
@@ -1244,8 +1243,8 @@ Ready.
 [ "check"	]
 [ "check"	]
 #select min(aa) over (partition by bb order by bb rows between 5 preceding and 0 following) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % varchar # type
 % 7 # length
 [ "one"	]
@@ -1258,8 +1257,8 @@ Ready.
 [ "check"	]
 [ NULL	]
 #select min(aa) over (partition by bb order by bb rows between 5 preceding and 2 following) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % varchar # type
 % 7 # length
 [ "another"	]
@@ -1272,8 +1271,8 @@ Ready.
 [ "check"	]
 [ NULL	]
 #select max(aa) over (rows between 5 preceding and 0 following) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.%1 # table_name
+% %1 # name
 % varchar # type
 % 6 # length
 [ "one"	]
@@ -1286,8 +1285,8 @@ Ready.
 [ "stress"	]
 [ "please"	]
 #select max(aa) over (rows between 5 preceding and 2 following) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.%1 # table_name
+% %1 # name
 % varchar # type
 % 6 # length
 [ "stress"	]
@@ -1300,8 +1299,8 @@ Ready.
 [ "stress"	]
 [ "please"	]
 #select max(aa) over (partition by bb order by bb rows between 5 preceding and 0 following) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % varchar # type
 % 6 # length
 [ "one"	]
@@ -1314,8 +1313,8 @@ Ready.
 [ "please"	]
 [ NULL	]
 #select max(aa) over (partition by bb order by bb rows between 5 preceding and 2 following) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % varchar # type
 % 6 # length
 [ "stress"	]
@@ -1328,8 +1327,8 @@ Ready.
 [ "please"	]
 [ NULL	]
 #select count(aa) over (rows between 5 preceding and 0 following) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 1	]
@@ -1342,8 +1341,8 @@ Ready.
 [ 5	]
 [ 4	]
 #select count(aa) over (rows between 5 preceding and 2 following) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 3	]
@@ -1356,8 +1355,8 @@ Ready.
 [ 5	]
 [ 4	]
 #select count(aa) over (partition by bb order by bb rows between 5 preceding and 0 following) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % bigint # type
 % 1 # length
 [ 1	]
@@ -1370,8 +1369,8 @@ Ready.
 [ 3	]
 [ 0	]
 #select count(aa) over (partition by bb order by bb rows between 5 preceding and 2 following) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % bigint # type
 % 1 # length
 [ 3	]
@@ -1384,8 +1383,8 @@ Ready.
 [ 3	]
 [ 0	]
 #select count(aa) over (rows between unbounded preceding and unbounded following) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 7	]
@@ -1398,8 +1397,8 @@ Ready.
 [ 7	]
 [ 7	]
 #select count(aa) over (partition by bb order by bb rows between unbounded preceding and unbounded following) from stressme;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % bigint # type
 % 1 # length
 [ 3	]
@@ -1415,8 +1414,8 @@ Ready.
 #insert into debugme values (15, 3), (3, 1), (2, 1), (5, 3), (NULL, 2), (3, 2), (4, 1), (6, 3), (8, 2), (NULL, 4);
 [ 10	]
 #select sum(aa) over (rows between 2 preceding and 0 following) from debugme;
-% sys.L4 # table_name
-% L4 # name
+% sys.%1 # table_name
+% %1 # name
 % real # type
 % 15 # length
 [ 15	]
@@ -1430,8 +1429,8 @@ Ready.
 [ 18	]
 [ 14	]
 #select sum(aa) over (rows between 2 preceding and 2 following) from debugme;
-% sys.L4 # table_name
-% L4 # name
+% sys.%1 # table_name
+% %1 # name
 % real # type
 % 15 # length
 [ 20	]
@@ -1445,8 +1444,8 @@ Ready.
 [ 18	]
 [ 14	]
 #select sum(aa) over (partition by bb order by bb rows between 2 preceding and 0 following) from debugme;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % real # type
 % 15 # length
 [ 3	]
@@ -1460,8 +1459,8 @@ Ready.
 [ 26	]
 [ NULL	]
 #select sum(aa) over (partition by bb order by bb rows between 2 preceding and 2 following) from debugme;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % real # type
 % 15 # length
 [ 9	]
@@ -1475,8 +1474,8 @@ Ready.
 [ 26	]
 [ NULL	]
 #select prod(aa) over (rows between 2 preceding and 0 following) from debugme;
-% sys.L4 # table_name
-% L4 # name
+% sys.%1 # table_name
+% %1 # name
 % real # type
 % 15 # length
 [ 15	]
@@ -1490,8 +1489,8 @@ Ready.
 [ 192	]
 [ 48	]
 #select prod(aa) over (rows between 2 preceding and 2 following) from debugme;
-% sys.L4 # table_name
-% L4 # name
+% sys.%1 # table_name
+% %1 # name
 % real # type
 % 15 # length
 [ 90	]
@@ -1505,8 +1504,8 @@ Ready.
 [ 192	]
 [ 48	]
 #select prod(aa) over (partition by bb order by bb rows between 2 preceding and 0 following) from debugme;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % real # type
 % 15 # length
 [ 3	]
@@ -1520,8 +1519,8 @@ Ready.
 [ 450	]
 [ NULL	]
 #select prod(aa) over (partition by bb order by bb rows between 2 preceding and 2 following) from debugme;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % real # type
 % 15 # length
 [ 24	]
@@ -1535,8 +1534,8 @@ Ready.
 [ 450	]
 [ NULL	]
 #select avg(aa) over (rows between 2 preceding and 0 following) from debugme;
-% sys.L4 # table_name
-% L4 # name
+% sys.%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ 15	]
@@ -1550,8 +1549,8 @@ Ready.
 [ 6	]
 [ 7	]
 #select avg(aa) over (rows between 2 preceding and 2 following) from debugme;
-% sys.L4 # table_name
-% L4 # name
+% sys.%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ 6.666666667	]
@@ -1565,8 +1564,8 @@ Ready.
 [ 6	]
 [ 7	]
 #select avg(aa) over (partition by bb order by bb rows between 2 preceding and 0 following) from debugme;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % double # type
 % 24 # length
 [ 3	]
@@ -1580,8 +1579,8 @@ Ready.
 [ 8.666666667	]
 [ NULL	]
 #select avg(aa) over (partition by bb order by bb rows between 2 preceding and 2 following) from debugme;
-% sys.L4 # table_name
-% L4 # name
+% sys.%3 # table_name
+% %3 # name
 % double # type
 % 24 # length
 [ 3	]
@@ -1598,16 +1597,16 @@ Ready.
 #insert into overflowme values (2147483644), (2147483645), (2147483646);
 [ 3	]
 #select floor(avg(a) over (rows between 2 preceding and 0 following)) from overflowme;
-% sys.L6 # table_name
-% L6 # name
+% sys.%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ 2147483644	]
 [ 2147483644	]
 [ 2147483645	]
 #select floor(avg(a) over (rows between 2 preceding and 2 following)) from overflowme;
-% sys.L6 # table_name
-% L6 # name
+% sys.%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ 2147483645	]

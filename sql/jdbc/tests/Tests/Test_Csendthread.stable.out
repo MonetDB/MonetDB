@@ -17,7 +17,6 @@ stdout of test 'Test_Csendthread` in directory 'sql/jdbc/tests` itself:
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 13:14:25 >  
 # 13:14:25 >  "./Test_Csendthread.SQL.sh" "Test_Csendthread"

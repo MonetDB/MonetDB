@@ -19,7 +19,6 @@ stdout of test 'copy_into_mbr.3492` in directory 'geom/BugTracker` itself:
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 #Bulk operator required for geom.mbr
 #Bulk operator required for geom.mbr
 #Bulk operator required for geom.mbr

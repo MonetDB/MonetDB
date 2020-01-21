@@ -14,7 +14,6 @@ stdout of test 'sql_command_kills_db.SF-2233677` in directory 'sql/test/BugTrack
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:39774/
 # MonetDB/SQL module v2.26.0 loaded
 
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql

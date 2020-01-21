@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -29,7 +29,6 @@
  *
  * All modules are persistent during a server session
  */
-/* #define _DEBUG_MODULE_*/
 
 #define MODULE_HASH_SIZE 1024
 Module moduleIndex[MODULE_HASH_SIZE] = { NULL };
@@ -71,9 +70,6 @@ mal_module_reset(void)
 	int i;
 	Module m;
 
-#ifdef _DEBUG_MODULE_
-	fprintf(stderr,"#et the globale module structure \n");
-#endif
 	for(i = 0; i < MODULE_HASH_SIZE; i++) {
 		m= moduleIndex[i];
 		moduleIndex[i] = 0;
@@ -86,7 +82,7 @@ mal_module_reset(void)
 }
 
 static int getModuleIndex(str name) {
-	return (int) (strHash(name) % MODULE_HASH_SIZE);
+	return (int) (GDK_STRHASH(name) % MODULE_HASH_SIZE);
 }
 
 static void clrModuleIndex(Module cur){
@@ -113,15 +109,12 @@ static void addModuleToIndex(Module cur){
 	moduleIndex[index] = cur;
 }
 
-
 Module getModule(str name) {
 	int index = getModuleIndex(name);
 	Module m = moduleIndex[index];
 	while(m) {
-		//if (strcmp(name, m->name) == 0) {
-		if (name == m->name) {
+		if (name == m->name)
 			return m;
-		}
 		m = m->link;
 	}
 	return NULL;
@@ -166,9 +159,6 @@ Module globalModule(str nme)
 
 	// Global modules are not named 'user'
 	assert (strcmp(nme, "user"));
-#ifdef _DEBUG_MODULE_
-	fprintf(stderr,"#create new global module %s\n",nme);
-#endif
 	nme = putName(nme);
 	cur = (Module) GDKzalloc(sizeof(ModuleRecord));
 	if (cur == NULL)
@@ -226,9 +216,6 @@ static void freeSubScope(Module scope)
 
 	if (scope->space == NULL) 
 		return;
-#ifdef _DEBUG_MODULE_
-	fprintf(stderr,"#freeSubScope %s \n", scope->name);
-#endif
 	for(i = 0; i < MAXSCOPE; i++) {
 		if( scope->space[i]){
 			s= scope->space[i];
@@ -256,9 +243,7 @@ void freeModule(Module m)
 			(void)ret;
 		}
 	}
-#ifdef _DEBUG_MODULE_
-	fprintf(stderr,"#freeModule %s \n", m->name);
-#endif
+
 	freeSubScope(m);	
 	if (strcmp(m->name, "user")) {
 		clrModuleIndex(m);
@@ -281,18 +266,12 @@ void insertSymbol(Module scope, Symbol prg){
 
 	assert(scope);
 	sig = getSignature(prg);
-#ifdef _DEBUG_MODULE_
-	fprintf(stderr,"#insertSymbol: %s.%s in %s ", getModuleId(sig), getFunctionId(sig), scope->name);
-#endif
 	if(getModuleId(sig) && getModuleId(sig)!= scope->name){
 		/* move the definition to the proper place */
 		/* default scope is the last resort */
 		c= findModule(scope,getModuleId(sig));
 		if ( c )
 			scope = c;
-#ifdef _DEBUG_MODULE_
-	fprintf(stderr," found alternative module %s ", scope->name);
-#endif
 	}
 	t = getSymbolIndex(getFunctionId(sig));
 	if( scope->space == NULL) {
@@ -303,9 +282,6 @@ void insertSymbol(Module scope, Symbol prg){
 	assert(scope->space);
 	if (scope->space[t] == prg){
 		/* already known, last inserted */
-#ifdef _DEBUG_MODULE_
-	fprintf(stderr," unexpected double insert  ");
-#endif
 	} else {
 		prg->peer= scope->space[t];
 		scope->space[t] = prg;
@@ -316,9 +292,6 @@ void insertSymbol(Module scope, Symbol prg){
 			prg->skip = prg->peer;
 	}
 	assert(prg != prg->peer);
-#ifdef _DEBUG_MODULE_
-	fprintf(stderr,"\n");
-#endif
 }
 /*
  * Removal of elements from the symbol table should be
@@ -332,9 +305,6 @@ void deleteSymbol(Module scope, Symbol prg){
 	int t;
 
 	sig = getSignature(prg);
-#ifdef _DEBUG_MODULE_
-	fprintf(stderr,"#delete symbol %s.%s from %s\n", getModuleId(sig), getFunctionId(sig), prg->name);
-#endif
 	if (getModuleId(sig) && getModuleId(sig)!= scope->name ){
 		/* move the definition to the proper place */
 		/* default scope is the last resort */
@@ -372,10 +342,6 @@ Module findModule(Module scope, str name){
 	Module def = scope;
 	Module m;
 	if (name == NULL) return scope;
-
-#ifdef _DEBUG_MODULE_
-	fprintf(stderr,"Locate module %s in scope %s\n", name,scope->name);
-#endif
 	m = getModule(name);
 	if (m) return m;
 
@@ -398,9 +364,6 @@ Module findModule(Module scope, str name){
 Symbol findSymbolInModule(Module v, str fcn) {
 	Symbol s;
 	if (v == NULL || fcn == NULL) return NULL;
-#ifdef _DEBUG_MODULE_
-	fprintf(stderr,"#find symbol %s in %s\n", fcn, v->name);
-#endif
 	s = v->space[(int)(*fcn)];
 	while (s != NULL) {
 		if (idcmp(s->name,fcn)==0) return s;
@@ -413,4 +376,3 @@ Symbol findSymbol(Module usermodule, str mod, str fcn) {
 	Module m = findModule(usermodule, mod);
 	return findSymbolInModule(m, fcn);
 }
-

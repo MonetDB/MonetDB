@@ -15,7 +15,6 @@ stdout of test 'create_same_temp_tab_after_its_drop.SF-1850809` in directory 'sq
 # Listening for connection requests on mapi:monetdb://amelia.ins.cwi.nl:35980/
 # MonetDB/SQL module v2.20.3 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

@@ -10,8 +10,9 @@
 #define SQL_TIMESTAMPS_H
 
 #include "monetdb_config.h"
-#include <sql_atom.h>
+#include "sql_mvc.h"
+#include "sql_atom.h"
 
-extern str convert_atom_into_unix_timestamp(atom *a, lng* res);
+extern lng convert_atom_into_unix_timestamp(mvc *sql, atom *a);
 
 #endif //SQL_TIMESTAMPS_H

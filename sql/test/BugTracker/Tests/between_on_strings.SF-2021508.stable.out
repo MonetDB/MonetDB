@@ -13,7 +13,6 @@ stdout of test 'between_on_strings.SF-2021508` in directory 'sql/test/BugTracker
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:30417/
 # MonetDB/SQL module v2.24.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;
