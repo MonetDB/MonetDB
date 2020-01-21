@@ -1164,10 +1164,9 @@ rel_bind_path_(mvc *sql, sql_rel *rel, sql_exp *e, list *path )
 static list *
 rel_bind_path(mvc *sql, sql_rel *rel, sql_exp *e)
 {
-	list *path = new_rel_list(sql->sa);
-	if(!path) {
+	list *path = sa_list(sql->sa);
+	if (!path)
 		return NULL;
-	}
 
 	if (e->type == e_convert)
 		e = e->l;
