@@ -2,60 +2,60 @@ start transaction;
 create table analytics (aa int, bb int, cc bigint);
 insert into analytics values (15, 3, 15), (3, 1, 3), (2, 1, 2), (5, 3, 5), (NULL, 2, NULL), (3, 2, 3), (4, 1, 4), (6, 3, 6), (8, 2, 8), (NULL, 4, NULL);
 
-select stddev_samp(aa) over (partition by bb) from analytics;
-select stddev_samp(aa) over (partition by bb order by bb asc) from analytics;
-select stddev_samp(aa) over (partition by bb order by bb desc) from analytics;
-select stddev_samp(aa) over (order by bb desc) from analytics;
+select stddev_samp(aa) over (partition by bb),
+       stddev_samp(aa) over (partition by bb order by bb asc),
+       stddev_samp(aa) over (partition by bb order by bb desc),
+       stddev_samp(aa) over (order by bb desc) from analytics;
 
-select stddev_samp(cc) over (partition by bb) from analytics;
-select stddev_samp(cc) over (partition by bb order by bb asc) from analytics;
-select stddev_samp(cc) over (partition by bb order by bb desc) from analytics;
-select stddev_samp(cc) over (order by bb desc) from analytics;
-
-
-select stddev_pop(aa) over (partition by bb) from analytics;
-select stddev_pop(aa) over (partition by bb order by bb asc) from analytics;
-select stddev_pop(aa) over (partition by bb order by bb desc) from analytics;
-select stddev_pop(aa) over (order by bb desc) from analytics;
-
-select stddev_pop(cc) over (partition by bb) from analytics;
-select stddev_pop(cc) over (partition by bb order by bb asc) from analytics;
-select stddev_pop(cc) over (partition by bb order by bb desc) from analytics;
-select stddev_pop(cc) over (order by bb desc) from analytics;
+select stddev_samp(cc) over (partition by bb),
+       stddev_samp(cc) over (partition by bb order by bb asc),
+       stddev_samp(cc) over (partition by bb order by bb desc),
+       stddev_samp(cc) over (order by bb desc) from analytics;
 
 
-select var_samp(aa) over (partition by bb) from analytics;
-select var_samp(aa) over (partition by bb order by bb asc) from analytics;
-select var_samp(aa) over (partition by bb order by bb desc) from analytics;
-select var_samp(aa) over (order by bb desc) from analytics;
+select stddev_pop(aa) over (partition by bb),
+       stddev_pop(aa) over (partition by bb order by bb asc),
+       stddev_pop(aa) over (partition by bb order by bb desc),
+       stddev_pop(aa) over (order by bb desc) from analytics;
 
-select var_samp(cc) over (partition by bb) from analytics;
-select var_samp(cc) over (partition by bb order by bb asc) from analytics;
-select var_samp(cc) over (partition by bb order by bb desc) from analytics;
-select var_samp(cc) over (order by bb desc) from analytics;
-
-
-select var_pop(aa) over (partition by bb) from analytics;
-select var_pop(aa) over (partition by bb order by bb asc) from analytics;
-select var_pop(aa) over (partition by bb order by bb desc) from analytics;
-select var_pop(aa) over (order by bb desc) from analytics;
-
-select var_pop(cc) over (partition by bb) from analytics;
-select var_pop(cc) over (partition by bb order by bb asc) from analytics;
-select var_pop(cc) over (partition by bb order by bb desc) from analytics;
-select var_pop(cc) over (order by bb desc) from analytics;
+select stddev_pop(cc) over (partition by bb),
+       stddev_pop(cc) over (partition by bb order by bb asc),
+       stddev_pop(cc) over (partition by bb order by bb desc),
+       stddev_pop(cc) over (order by bb desc) from analytics;
 
 
-select stddev_samp(aa) over () from analytics;
-select stddev_pop(aa) over () from analytics;
-select var_samp(aa) over () from analytics;
-select var_pop(aa) over () from analytics;
+select var_samp(aa) over (partition by bb),
+       var_samp(aa) over (partition by bb order by bb asc),
+       var_samp(aa) over (partition by bb order by bb desc),
+       var_samp(aa) over (order by bb desc) from analytics;
+
+select var_samp(cc) over (partition by bb),
+       var_samp(cc) over (partition by bb order by bb asc),
+       var_samp(cc) over (partition by bb order by bb desc),
+       var_samp(cc) over (order by bb desc) from analytics;
 
 
-select stddev_samp(NULL) over () from analytics;
-select stddev_pop(NULL) over () from analytics;
-select var_samp(NULL) over () from analytics;
-select var_pop(NULL) over () from analytics;
+select var_pop(aa) over (partition by bb),
+       var_pop(aa) over (partition by bb order by bb asc),
+       var_pop(aa) over (partition by bb order by bb desc),
+       var_pop(aa) over (order by bb desc) from analytics;
+
+select var_pop(cc) over (partition by bb),
+       var_pop(cc) over (partition by bb order by bb asc),
+       var_pop(cc) over (partition by bb order by bb desc),
+       var_pop(cc) over (order by bb desc) from analytics;
+
+
+select stddev_samp(aa) over (),
+       stddev_pop(aa) over (),
+       var_samp(aa) over (),
+       var_pop(aa) over () from analytics;
+
+
+select stddev_samp(NULL) over (),
+       stddev_pop(NULL) over (),
+       var_samp(NULL) over (),
+       var_pop(NULL) over () from analytics;
 
 rollback;
 
