@@ -1254,7 +1254,7 @@ GDKanalytical_str_group_concat(BAT *r, BAT *b, BAT *sep, BAT *s, BAT *e, const c
 
 		empty = true;
 
-		if (!single_str) {
+		if (!single_str) { /* reuse the same buffer, resize it when needed */
 			max_group_length = next_group_length;
 			if ((single_str = GDKmalloc(max_group_length + 1)) == NULL)
 				goto allocation_error;

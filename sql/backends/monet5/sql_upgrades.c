@@ -2848,6 +2848,7 @@ sql_update_analytics(Client c, mvc *sql, const char *prev_schema, bool *systabfi
 	}
 #endif
 
+	/* 51_sys_schema_extension.sql */
 	pos += snprintf(buf + pos, bufsize - pos,
 		"create window group_concat(str STRING) returns STRING\n"
 		" external name \"sql\".\"str_group_concat\";\n"
