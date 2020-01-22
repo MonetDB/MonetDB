@@ -2454,9 +2454,9 @@ database_object:
 	;
 
 heartbeat_set:
-	  /* empty */      { $$ = DEFAULT_CP_HEARTBEAT; } /* CQ never triggered by time */
+	  /* empty */      { $$ = lng_nil; } /* CQ never triggered by time */
 	| HEARTBEAT intval { $$ = $2; }
-	| NO_HEARTBEAT     { $$ = DEFAULT_CP_HEARTBEAT; }
+	| NO_HEARTBEAT     { $$ = lng_nil; }
 	;
 
 clock_at_set:
@@ -2466,9 +2466,9 @@ clock_at_set:
 	;
 
 cycles_set:
-	  /* empty */   { $$ = DEFAULT_CP_CYCLES; } /* the CQ will run forever */
+	  /* empty */   { $$ = int_nil; } /* the CQ will run forever */
 	| CYCLES intval { $$ = $2; }
-	| NO_CYCLES     { $$ = DEFAULT_CP_CYCLES; }
+	| NO_CYCLES     { $$ = int_nil; }
 	;
 
 cq_alias:
@@ -2490,9 +2490,9 @@ continuous_query_statement:
 		{ dlist *l = L();
 		  append_int( l, mod_start_continuous | $2);
 		  append_symbol( l, $3);
-		  append_lng( l, DEFAULT_CP_HEARTBEAT);
+		  append_lng( l, lng_nil);
 		  append_symbol( l, NULL);
-		  append_int( l, DEFAULT_CP_CYCLES);
+		  append_int( l, int_nil);
 		  append_string( l, $4);
 		  $$ = _symbol_create_list( SQL_START_CONTINUOUS_QUERY, l ); }
 	| STOP_CONTINUOUS ident

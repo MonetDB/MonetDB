@@ -137,10 +137,6 @@ typedef enum sql_dependency {
 #define isDeclaredSchema(s) 	(strcmp(s->base.name, dt_schema) == 0)
 
 /* continuous queries default parameters */
-#define HEARTBEAT_NIL               lng_nil
-#define CYCLES_NIL                  int_nil
-#define DEFAULT_CP_HEARTBEAT  HEARTBEAT_NIL /* no heartbeat set */
-#define DEFAULT_CP_CYCLES        CYCLES_NIL /* run forever */
 #define STRIDE_ALL                       -1 /* discard all tuples from the table */
 #define DEFAULT_TABLE_WINDOW              0 /* run independently of the number of tuples in the table */
 #define DEFAULT_TABLE_STRIDE     STRIDE_ALL /* discard all tuples */

@@ -423,11 +423,11 @@ CQregister(Client cntxt, str sname, str fname, int argc, atom **args, str alias,
 
 	prev = be->mb;
 
-	if(cycles < 0 && cycles != CYCLES_NIL){
+	if(cycles < 0 && !is_int_nil(cycles)){
 		msg = createException(SQL,"cquery.register",SQLSTATE(42000) "The cycles value must be non negative\n");
 		goto finish;
 	}
-	if(heartbeats < 0 && heartbeats != HEARTBEAT_NIL){
+	if(heartbeats < 0 && !is_lng_nil(heartbeats)){
 		msg = createException(SQL,"cquery.register",SQLSTATE(42000) "The heartbeats value must be non negative\n");
 		goto finish;
 	}
@@ -671,7 +671,7 @@ CQregister(Client cntxt, str sname, str fname, int argc, atom **args, str alias,
 		cleanBaskets(pnettop);
 		FREE_CQ_MB(unlock)
 	}
-	if(heartbeats != HEARTBEAT_NIL) {
+	if(!is_lng_nil(heartbeats)) {
 		for(i=0; i < MAXSTREAMS && pnet[pnettop].baskets[i]; i++) {
 			if(pnet[idx].inout[i] == STREAM_IN && baskets[pnet[pnettop].baskets[i]].window != DEFAULT_TABLE_WINDOW) {
 				msg = createException(SQL, "cquery.register",
@@ -726,11 +726,11 @@ CQresume(str alias, int with_alter, lng heartbeats, lng startat, int cycles)
 	fprintf(stderr, "#resume scheduler\n");
 #endif
 
-	if(cycles < 0 && cycles != CYCLES_NIL){
+	if(cycles < 0 && !is_int_nil(cycles)){
 		msg = createException(SQL,"cquery.resume",SQLSTATE(42000) "The cycles value must be non negative\n");
 		goto finish;
 	}
-	if(heartbeats < 0 && heartbeats != HEARTBEAT_NIL){
+	if(heartbeats < 0 && !is_lng_nil(heartbeats)){
 		msg = createException(SQL,"cquery.resume",SQLSTATE(42000) "The heartbeats value must be non negative\n");
 		goto finish;
 	}
@@ -752,7 +752,7 @@ CQresume(str alias, int with_alter, lng heartbeats, lng startat, int cycles)
 							  SQLSTATE(42000) "The continuous query %s is already running\n", alias);
 		goto unlock;
 	}
-	if(with_alter && heartbeats != HEARTBEAT_NIL) {
+	if(with_alter && !is_lng_nil(heartbeats)) {
 		for(j=0; j < MAXSTREAMS && pnet[idx].baskets[j]; j++) {
 			if(pnet[idx].inout[j] == STREAM_IN && baskets[pnet[pnettop].baskets[j]].window != DEFAULT_TABLE_WINDOW) {
 				msg = createException(SQL, "cquery.resume",
@@ -938,7 +938,7 @@ CQcycles(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #ifdef DEBUG_CQUERY
 	fprintf(stderr, "#set cycles\n");
 #endif
-	if(cycles < 0 && cycles != CYCLES_NIL){
+	if(cycles < 0 && !is_int_nil(cycles)){
 		msg = createException(SQL,"cquery.cycles",SQLSTATE(42000) "The cycles value must be non negative\n");
 		goto finish;
 	}
@@ -992,7 +992,7 @@ CQheartbeat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				there_is_window_constraint = 1;
 			}
 		}
-		if(heartbeats != HEARTBEAT_NIL && there_is_window_constraint) {
+		if(!is_lng_nil(heartbeats) && there_is_window_constraint) {
 			msg = createException(SQL, "cquery.heartbeat",
 								  SQLSTATE(42000) "Heartbeat ignored, a window constraint exists\n");
 			goto finish;
@@ -1381,18 +1381,18 @@ CQscheduler(void *dummy)
 					if(pnet[i].status != CQWAIT) //in case of error just skip
 						continue;
 				}
-				pnet[i].enabled = pnet[i].error == 0 && (pnet[i].cycles > 0 || pnet[i].cycles == CYCLES_NIL);
+				pnet[i].enabled = pnet[i].error == 0 && (pnet[i].cycles > 0 || is_int_nil(pnet[i].cycles));
 				/* Queries are triggered by the heartbeat or  all window constraints */
 				/* A heartbeat in combination with a window constraint is ambiguous */
 				/* At least one constraint should be set */
-				if( pnet[i].beats == HEARTBEAT_NIL && pnet[i].baskets[0] == 0) {
+				if(is_lng_nil(pnet[i].beats) && pnet[i].baskets[0] == 0) {
 					pnet[i].enabled = 0;
 					pnet[i].status = CQERROR;
 					pnet[i].error = createException(SQL, "cquery.scheduler", SQLSTATE(3F000)
 					"Neither a heartbeat or a stream window condition exists, this CQ cannot be triggered\n");
 					CQentry(i);
 				}
-				if( pnet[i].enabled && ((pnet[i].beats != HEARTBEAT_NIL && pnet[i].beats > 0) || pnet[i].run > 0)) {
+				if( pnet[i].enabled && ((!is_lng_nil(pnet[i].beats) && pnet[i].beats > 0) || pnet[i].run > 0)) {
 					pnet[i].enabled = now >= pnet[i].run + (pnet[i].beats > 0 ? pnet[i].beats : 0);
 #ifdef DEBUG_CQUERY_SCHEDULER
 					fprintf(stderr,"#beat %s  "LLFMT"("LLFMT") %s\n", pnet[i].alias,
@@ -1452,7 +1452,7 @@ CQscheduler(void *dummy)
 				pnet[i].status = CQRUNNING;
 				if( !GDKexiting())
 					CQexecute(c, i);
-				if( pnet[i].cycles != CYCLES_NIL && pnet[i].cycles > 0) {
+				if(!is_int_nil(pnet[i].cycles) && pnet[i].cycles > 0) {
 					pnet[i].cycles--;
 					if(pnet[i].cycles == 0) //if it was the last cycle of the CQ, remove it
 						pnet[i].status = CQDELETE;
