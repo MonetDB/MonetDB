@@ -818,10 +818,9 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 {
 	oid gid;
 	BUN i, p, nils = 0;
-	size_t *lengths = NULL, *lastseplength = NULL, 
-			separator_length = separator ? strlen(separator) : 0, next_length, next_sep_len;
+	size_t *lengths = NULL, *lastseplength = NULL, separator_length = 0, next_length;
 	str *astrings = NULL, s, sl;
-	BATiter bi, bis;
+	BATiter bi, bis = (BATiter) {0};
 	BAT *bn = NULL;
 	gdk_return rres = GDK_SUCCEED;
 
@@ -840,6 +839,8 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 	bi = bat_iterator(b);
 	if (sep)
 		bis = bat_iterator(sep);
+	else
+		separator_length = strlen(separator);
 
 	if (ngrp == 1) {
 		size_t offset = 0, single_length = 0;
@@ -917,9 +918,9 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 					if (GDK_STRNIL(s))
 						continue;
 					if (!empty && !GDK_STRNIL(sl)) {
-						next_sep_len = strlen(sl);
-						memcpy(single_str + offset, sl, next_sep_len);
-						offset += next_sep_len;
+						next_length = strlen(sl);
+						memcpy(single_str + offset, sl, next_length);
+						offset += next_length;
 					}
 					next_length = strlen(s);
 					memcpy(single_str + offset, s, next_length);
@@ -995,9 +996,9 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 					if (!GDK_STRNIL(s)) {
 						lengths[gid] += strlen(s);
 						if (!GDK_STRNIL(sl)) {
-							next_sep_len = strlen(sl);
-							lengths[gid] += next_sep_len;
-							lastseplength[gid] = next_sep_len;
+							next_length = strlen(sl);
+							lengths[gid] += next_length;
+							lastseplength[gid] = next_length;
 						} else
 							lastseplength[gid] = 0;
 						astrings[gid] = NULL;
@@ -1069,9 +1070,9 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 						if (GDK_STRNIL(s))
 							continue;
 						if (astrings[gid][lengths[gid]] && !GDK_STRNIL(sl)) {
-							next_sep_len = strlen(sl);
-							memcpy(astrings[gid] + lengths[gid], sl, next_sep_len);
-							lengths[gid] += next_sep_len;
+							next_length = strlen(sl);
+							memcpy(astrings[gid] + lengths[gid], sl, next_length);
+							lengths[gid] += next_length;
 						}
 						next_length = strlen(s);
 						memcpy(astrings[gid] + lengths[gid], s, next_length);
@@ -1197,12 +1198,12 @@ BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, BAT *sep, bool skip_nil
 gdk_return
 GDKanalytical_str_group_concat(BAT *r, BAT *b, BAT *sep, BAT *s, BAT *e, const char *restrict separator)
 {
-	BUN i = 0, j, l, cnt = BATcount(b);
-	lng *restrict start, *restrict end;
-	BATiter bi, bis;
+	BUN i = 0, cnt = BATcount(b);
+	lng *restrict start, *restrict end, j, l;
+	BATiter bi, bis = (BATiter) {0};
 	str sb, sl, single_str = NULL, next_single_str;
 	bool empty;
-	size_t separator_length = 0, next_group_length, max_group_length = 0, next_length, offset, next_sep_len;
+	size_t separator_length = 0, next_group_length, max_group_length = 0, next_length, offset;
 
 	assert(s && e && ((sep && !separator && BATcount(b) == BATcount(sep)) || (!sep && separator)));
 	start = (lng *) Tloc(s, 0);
@@ -1219,12 +1220,12 @@ GDKanalytical_str_group_concat(BAT *r, BAT *b, BAT *sep, BAT *s, BAT *e, const c
 		sep = NULL;
 	}
 
+	bi = bat_iterator(b);
 	if (sep)
 		bis = bat_iterator(sep);
 	else
 		separator_length = strlen(separator);
 
-	bi = bat_iterator(b);
 	for (; i < cnt; i++) {
 		l = end[i];
 		empty = true;
@@ -1285,9 +1286,9 @@ GDKanalytical_str_group_concat(BAT *r, BAT *b, BAT *sep, BAT *s, BAT *e, const c
 				if (GDK_STRNIL(sb))
 					continue;
 				if (!empty && !GDK_STRNIL(sl)) {
-					next_sep_len = strlen(sl);
-					memcpy(single_str + offset, sl, next_sep_len);
-					offset += next_sep_len;
+					next_length = strlen(sl);
+					memcpy(single_str + offset, sl, next_length);
+					offset += next_length;
 				}
 				next_length = strlen(sb);
 				memcpy(single_str + offset, sb, next_length);
