@@ -19,75 +19,33 @@ stdout of test 'factory15` in directory 'sql/backends/monet5` itself:
 # MonetDB/SQL module loaded
 # MonetDB/Timetrails module loaded
 
-Ready.
-# SQL catalog created, loading sql scripts once
-# loading sql script: 09_like.sql
-# loading sql script: 10_math.sql
-# loading sql script: 11_times.sql
-# loading sql script: 12_url.sql
-# loading sql script: 13_date.sql
-# loading sql script: 14_inet.sql
-# loading sql script: 15_querylog.sql
-# loading sql script: 16_tracelog.sql
-# loading sql script: 17_temporal.sql
-# loading sql script: 18_index.sql
-# loading sql script: 20_vacuum.sql
-# loading sql script: 21_dependency_functions.sql
-# loading sql script: 22_clients.sql
-# loading sql script: 23_skyserver.sql
-# loading sql script: 25_debug.sql
-# loading sql script: 26_sysmon.sql
-# loading sql script: 27_rejects.sql
-# loading sql script: 39_analytics.sql
-# loading sql script: 39_analytics_hge.sql
-# loading sql script: 40_geom.sql
-# loading sql script: 40_json.sql
-# loading sql script: 40_json_hge.sql
-# loading sql script: 41_md5sum.sql
-# loading sql script: 45_uuid.sql
-# loading sql script: 46_profiler.sql
-# loading sql script: 50_cquery.sql
-# loading sql script: 51_sys_schema_extension.sql
-# loading sql script: 60_wlcr.sql
-# loading sql script: 72_fits.sql
-# loading sql script: 74_netcdf.sql
-# loading sql script: 75_shp.sql
-# loading sql script: 75_storagemodel.sql
-# loading sql script: 80_statistics.sql
-# loading sql script: 80_udf.sql
-# loading sql script: 80_udf_hge.sql
-# loading sql script: 85_bam.sql
-# loading sql script: 90_generator.sql
-# loading sql script: 90_generator_hge.sql
-# loading sql script: 99_system.sql
-
-# 16:32:25 >  
-# 16:32:25 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1877" "--port=35680"
-# 16:32:25 >  
+# 16:00:13 >  
+# 16:00:13 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-283462" "--port=33837"
+# 16:00:13 >  
 
 #CREATE FUNCTION regfunction15(aa INT) RETURNS TABLE (aa INT) BEGIN
 #    RETURN TABLE (SELECT aa);
 #END;
 #SELECT aa FROM regfunction15(NULL);
-% .L2 # table_name
+% .%2 # table_name
 % aa # name
 % int # type
 % 1 # length
 [ NULL	]
 #SELECT aa FROM regfunction15(1);
-% .L2 # table_name
+% .%2 # table_name
 % aa # name
 % int # type
 % 1 # length
 [ 1	]
 #SELECT aa FROM regfunction15(2);
-% .L2 # table_name
+% .%2 # table_name
 % aa # name
 % int # type
 % 1 # length
 [ 2	]
 #SELECT aa FROM regfunction15(3);
-% .L2 # table_name
+% .%2 # table_name
 % aa # name
 % int # type
 % 1 # length
@@ -101,25 +59,25 @@ Ready.
 #    END WHILE;
 #END;
 #SELECT aa FROM factory15(1);
-% .L2 # table_name
+% .%2 # table_name
 % aa # name
 % int # type
 % 1 # length
 [ NULL	]
 #SELECT aa FROM factory15(1);
-% .L2 # table_name
+% .%2 # table_name
 % aa # name
 % int # type
 % 1 # length
 [ 1	]
 #SELECT aa FROM factory15(1);
-% .L2 # table_name
+% .%2 # table_name
 % aa # name
 % int # type
 % 1 # length
 [ 2	]
 #SELECT aa FROM factory15(1);
-% .L2 # table_name
+% .%2 # table_name
 % aa # name
 % int # type
 % 1 # length

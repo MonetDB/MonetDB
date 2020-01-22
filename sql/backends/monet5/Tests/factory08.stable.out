@@ -19,11 +19,9 @@ stdout of test 'factory08` in directory 'sql/backends/monet5` itself:
 # MonetDB/SQL module loaded
 # MonetDB/Timetrails module loaded
 
-Ready.
-
-# 13:42:38 >  
-# 13:42:38 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16207" "--port=33894"
-# 13:42:38 >  
+# 15:57:05 >  
+# 15:57:05 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-281915" "--port=38142"
+# 15:57:05 >  
 
 #CREATE FUNCTION factory08() RETURNS INT BEGIN  --show only the even numbers
 #    DECLARE a INT;
@@ -36,44 +34,44 @@ Ready.
 #    END WHILE;
 #END;
 #SELECT factory08();
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% %1 # name
 % int # type
 % 1 # length
 [ 0	]
 #SELECT factory08();
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% %1 # name
 % int # type
 % 1 # length
 [ 2	]
 #SELECT factory08();
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% %1 # name
 % int # type
 % 1 # length
 [ 4	]
 #SELECT factory08();
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% %1 # name
 % int # type
 % 1 # length
 [ 6	]
 #SELECT factory08();
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% %1 # name
 % int # type
 % 1 # length
 [ 8	]
 #SELECT factory08();
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% %1 # name
 % int # type
 % 2 # length
 [ 10	]
 #SELECT factory08();
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% %1 # name
 % int # type
 % 2 # length
 [ 12	]

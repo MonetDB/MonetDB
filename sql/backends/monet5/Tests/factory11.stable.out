@@ -16,10 +16,6 @@ stdout of test 'factory11` in directory 'sql/backends/monet5` itself:
 # Listening for connection requests on mapi:monetdb://dhcp-120.eduroam.cwi.nl:33573/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-24534/.s.monetdb.33573
 # MonetDB/GIS module loaded
-# MonetDB/SQL module loaded
-# MonetDB/Timetrails module loaded
-
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql
@@ -77,50 +73,50 @@ Ready.
 #    YIELD aa;
 #END;
 #SELECT factory11();
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% %1 # name
 % varchar # type
 % 32 # length
 [ "This is a string! :) :) :) :) :)"	]
 #SELECT factory11();
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% %1 # name
 % varchar # type
 % 16 # length
 [ "This is a string"	]
 #SELECT factory11();
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% %1 # name
 % varchar # type
 % 32 # length
 [ "This is a stringThis is a string"	]
 #SELECT factory11();
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% %1 # name
 % varchar # type
 % 0 # length
 [ NULL	]
 #SELECT factory11();
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% %1 # name
 % varchar # type
 % 32 # length
 [ "This is a string! :) :) :) :) :)"	]
 #SELECT factory11();
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% %1 # name
 % varchar # type
 % 16 # length
 [ "This is a string"	]
 #SELECT factory11();
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% %1 # name
 % varchar # type
 % 32 # length
 [ "This is a stringThis is a string"	]
 #SELECT factory11();
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% %1 # name
 % varchar # type
 % 0 # length
 [ NULL	]
