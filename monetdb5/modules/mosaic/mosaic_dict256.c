@@ -70,20 +70,8 @@ typedef struct _CappedParameters_t {
 	MosaicBlkRec base;
 } MosaicBlkHeader_dict256_t;
 
-#define PresentInTempDictFuncDef(TPE) \
-static inline \
-bool presentInTempDict##TPE(GlobalDictionaryInfo* info, TPE val) {\
-	TPE* dict = (TPE*) Tloc(info->dict, 0);\
-	BUN dict_count = BATcount(info->dict);\
-	BUN key = find_value_##TPE(dict, dict_count, val);\
-	return key < dict_count && ((dict[key] == val) || (IS_NIL(TPE, dict[key]) && IS_NIL(TPE, dict[key])) )  ;\
-}
-
-#define CONDITIONAL_INSERT_dict256(INFO, VAL, TPE) presentInTempDict##TPE((INFO), (VAL))
-
 #define DictionaryClass(TPE) \
 find_value_DEF(TPE)\
-PresentInTempDictFuncDef(TPE)\
 merge_delta_Into_dictionary_DEF(TPE)\
 decompress_dictionary_DEF(TPE)
 
