@@ -19,11 +19,9 @@ stdout of test 'cfunction00` in directory 'sql/backends/monet5` itself:
 # MonetDB/SQL module loaded
 # MonetDB/Timetrails module loaded
 
-Ready.
-
-# 15:54:43 >  
-# 15:54:43 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-14298" "--port=37465"
-# 15:54:43 >  
+# 15:42:22 >  
+# 15:42:22 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-277165" "--port=32043"
+# 15:42:22 >  
 
 #create function aggr00()     
 #returns integer
@@ -39,14 +37,14 @@ Ready.
 #END;
 #start continuous function aggr00();
 #select aggr00(); #should return 1
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% %1 # name
 % int # type
 % 1 # length
 [ 1	]
 #select aggr00(); #should return 2
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% %1 # name
 % int # type
 % 1 # length
 [ 2	]

@@ -44,6 +44,20 @@ typedef struct CLIENT_INPUT {
 	struct CLIENT_INPUT *next;    
 } ClientInput;
 
+typedef struct {
+ 	int id;                 /* unique plant number */
+ 	MalBlkPtr factory;
+ 	MalStkPtr stk;          /* private state */
+ 	int pc;                 /* where we are */
+ 	int inuse;              /* able to handle it */
+ 	int next;               /* next plant of same factory */
+ 	int policy;             /* flags to control behavior */
+
+ 	MalBlkPtr caller;       /* from routine */
+ 	MalStkPtr env;          /* with the stack  */
+ 	InstrPtr pci;           /* with the instruction */
+} PlantRecord, *Plant;
+
 typedef struct CLIENT {
 	int idx;        /* entry in mal_clients */
 	oid user;       /* user id in the auth administration */
@@ -184,6 +198,10 @@ typedef struct CLIENT {
 
 	bool filetrans;			/* whether the client can read files for us */
 	const char *(*getquery)(struct CLIENT *);
+
+	PlantRecord *plants; /* client's factories */
+	int lastPlant;
+	int plantId;
 } *Client, ClientRec;
 
 mal_export bool    MCinit(void);

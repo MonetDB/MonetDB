@@ -6,26 +6,18 @@ create function cfunc2(input text) returns table (aa integer, bb text) begin
     set s = 0;
     while true do
         set s = s + 1;
+        insert into results2 values (s, input);
         yield table (select s, input);
     end while;
 end;
 
 start continuous function cfunc2('test') with heartbeat 1000 cycles 3;
 
-pause continuous cfunc2;
-
-create procedure cproc2() begin
-    insert into results2 (select aa, bb from cquery.cfunc2);
-end;
-
-start continuous procedure cproc2() with cycles 2;
-
 call cquery.wait(4000);
 
-stop continuous cfunc2;
+stop continuous cfunc2; --error, cfunc2 is no longer available
 
 select aa, bb from results2;
 
 drop function cfunc2;
-drop procedure cproc2;
 drop table results2;

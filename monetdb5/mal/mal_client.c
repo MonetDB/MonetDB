@@ -273,8 +273,11 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	c->protocol = PROTOCOL_9;
 	c->filetrans = false;
 
-	c->filetrans = false;
 	c->getquery = NULL;
+
+	c->lastPlant = 0;
+	c->plantId = 1;
+	c->plants = 0;
 
 	char name[16];
 	snprintf(name, sizeof(name), "Client%d->s", (int) (c - mal_clients));
@@ -455,7 +458,7 @@ MCfreeClient(Client c)
 	c->wlc_kind = 0;
 	c->wlc = NULL;
 	MT_sema_destroy(&c->s);
-	mal_factory_reset();
+	mal_factory_reset(c);
 	c->mode = MCshutdowninprogress()? BLOCKCLIENT: FREECLIENT;
 }
 
