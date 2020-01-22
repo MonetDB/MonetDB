@@ -235,6 +235,7 @@ Dependencies between database objects
 [ "getproj4",	"st_transform",	"DEP_FUNC"	]
 [ "internaltransform",	"st_transform",	"DEP_FUNC"	]
 [ "st_srid",	"st_transform",	"DEP_FUNC"	]
+[ "log",	"summary",	"DEP_FUNC"	]
 #SELECT f.name, tri.name, 'DEP_TRIGGER' from functions as f, triggers as tri, dependencies as dep where dep.id = f.id AND dep.depend_id =tri.id AND dep.depend_type = 8 order by f.name, tri.name;
 % sys.f,	sys.tri,	.%2 # table_name
 % name,	name,	%2 # name
@@ -306,6 +307,7 @@ Dependencies between functions with same name
 [ "getproj4",	"st_transform",	"DEP_FUNC"	]
 [ "internaltransform",	"st_transform",	"DEP_FUNC"	]
 [ "st_srid",	"st_transform",	"DEP_FUNC"	]
+[ "log",	"summary",	"DEP_FUNC"	]
 #DROP FUNCTION f2;
 #DROP FUNCTION f3;
 #DROP ALL FUNCTION f1;
@@ -319,6 +321,7 @@ Dependencies between functions with same name
 [ "getproj4",	"st_transform",	"DEP_FUNC"	]
 [ "internaltransform",	"st_transform",	"DEP_FUNC"	]
 [ "st_srid",	"st_transform",	"DEP_FUNC"	]
+[ "log",	"summary",	"DEP_FUNC"	]
 #create table t1(id int, name varchar(1024), age int);
 #create function f1()
 #returns int
@@ -362,6 +365,8 @@ Cleanup
 [ "_columns",	"columns",	"DEP_VIEW"	]
 [ "_columns",	"ids",	"DEP_VIEW"	]
 [ "_columns",	"ids",	"DEP_VIEW"	]
+[ "_streams",	"streams",	"DEP_VIEW"	]
+[ "_streams",	"streams",	"DEP_VIEW"	]
 [ "_tables",	"ids",	"DEP_VIEW"	]
 [ "_tables",	"ids",	"DEP_VIEW"	]
 [ "_tables",	"tables",	"DEP_VIEW"	]
@@ -656,6 +661,8 @@ Cleanup
 [ "id",	"ids",	"DEP_VIEW"	]
 [ "id",	"roles",	"DEP_VIEW"	]
 [ "id",	"storage",	"DEP_VIEW"	]
+[ "id",	"streams",	"DEP_VIEW"	]
+[ "id",	"streams",	"DEP_VIEW"	]
 [ "id",	"systemfunctions",	"DEP_VIEW"	]
 [ "id",	"tables",	"DEP_VIEW"	]
 [ "id",	"tables",	"DEP_VIEW"	]
@@ -799,6 +806,8 @@ Cleanup
 [ "sqlname",	"ids",	"DEP_VIEW"	]
 [ "storage",	"columns",	"DEP_VIEW"	]
 [ "storage",	"columns",	"DEP_VIEW"	]
+[ "stride",	"streams",	"DEP_VIEW"	]
+[ "stride",	"streams",	"DEP_VIEW"	]
 [ "system",	"storage",	"DEP_VIEW"	]
 [ "system",	"systemfunctions",	"DEP_VIEW"	]
 [ "system",	"tables",	"DEP_VIEW"	]
@@ -834,6 +843,8 @@ Cleanup
 [ "table_id",	"ids",	"DEP_VIEW"	]
 [ "table_id",	"ids",	"DEP_VIEW"	]
 [ "table_id",	"ids",	"DEP_VIEW"	]
+[ "table_id",	"streams",	"DEP_VIEW"	]
+[ "table_id",	"streams",	"DEP_VIEW"	]
 [ "type",	"columns",	"DEP_VIEW"	]
 [ "type",	"columns",	"DEP_VIEW"	]
 [ "type",	"dependency_columns_on_functions",	"DEP_VIEW"	]
@@ -874,6 +885,8 @@ Cleanup
 [ "type_scale",	"columns",	"DEP_VIEW"	]
 [ "type_scale",	"geometry_columns",	"DEP_VIEW"	]
 [ "unique",	"storagemodel",	"DEP_VIEW"	]
+[ "window",	"streams",	"DEP_VIEW"	]
+[ "window",	"streams",	"DEP_VIEW"	]
 #SELECT c.name, k.name, 'DEP_KEY' from columns as c, objects as kc, keys as k where kc."name" = c.name AND kc.id = k.id AND k.table_id = c.table_id AND k.rkey = -1 order by c.name, k.name;
 % .c,	.k,	.%11 # table_name
 % name,	name,	%11 # name
@@ -945,6 +958,7 @@ Cleanup
 % 17,	13,	8 # length
 [ "getproj4",	"st_transform",	"DEP_FUNC"	]
 [ "internaltransform",	"st_transform",	"DEP_FUNC"	]
+[ "log",	"summary",	"DEP_FUNC"	]
 [ "st_geometryn",	"st_patchn",	"DEP_FUNC"	]
 [ "st_numgeometries",	"st_numpatches",	"DEP_FUNC"	]
 [ "st_srid",	"st_transform",	"DEP_FUNC"	]

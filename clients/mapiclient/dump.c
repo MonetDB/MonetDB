@@ -1283,16 +1283,16 @@ describe_table(Mapi mid, const char *schema, const char *tname,
 		/* the table is a real table */
 		mnstr_printf(toConsole, "CREATE %sTABLE ",
 			    type == 3 ? "MERGE " :
-			    type == 4 ? "STREAM " :
-			    type == 5 ? "REMOTE " :
-			    type == 6 ? "REPLICA " :
+			    (type == 4 || type == 5) ? "STREAM " :
+			    type == 6 ? "REMOTE " :
+			    type == 7 ? "REPLICA " :
 			    "");
 		dquoted_print(toConsole, schema, ".");
 		dquoted_print(toConsole, tname, " ");
 
 		if (dump_column_definition(mid, toConsole, schema, tname, NULL, foreign, hashge))
 			goto bailout;
-		if (type == 5) { /* remote table */
+		if (type == 6) { /* remote table */
 			char *rt_user = NULL;
 			char *rt_hash = NULL;
 			snprintf(query, maxquerylen,

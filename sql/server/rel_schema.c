@@ -200,9 +200,6 @@ mvc_create_table_as_subquery( mvc *sql, sql_rel *sq, sql_schema *s, const char *
 		t = mvc_create_stream_table(sql, s, tname, tt, 0, SQL_DECLARED_TABLE, commit_action, -1, window_size, stride);
 	} else {
 		tt =(temp == SQL_REMOTE)?tt_remote:
-		(temp == SQL_MERGE_TABLE)?tt_merge_table:
-		(temp == SQL_REPLICA_TABLE)?tt_replica_table:tt_table;
-		tt =(temp == SQL_REMOTE)?tt_remote:
 			(temp == SQL_MERGE_TABLE)?tt_merge_table:
 			(temp == SQL_REPLICA_TABLE)?tt_replica_table:tt_table;
 		t = mvc_create_table(sql, s, tname, tt, 0, SQL_DECLARED_TABLE, commit_action, -1, 0);

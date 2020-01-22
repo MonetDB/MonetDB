@@ -1032,33 +1032,6 @@ sql_update_mar2018(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 	return err;		/* usually MAL_SUCCEED */
 }
 
-static str
-sql_update_timetrails(Client c, mvc *sql)
-{
-	int i;
-	size_t bufsize = 10000, pos = 0;
-	char *buf = GDKmalloc(bufsize), *err = NULL;
-	char *schema = stack_get_string(sql, "current_schema");
-	char *schemas_to_set[2] = {"sys", "tmp"};
-
-	if( buf== NULL)
-		throw(SQL, "sql_update_timetrails", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-
-	for(i = 0; i < 2; i++) {
-		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schemas_to_set[i]);
-		pos += snprintf(buf + pos, bufsize - pos,
-						"create table _streams (id int, table_id int, window int, stride int);\n");
-	}
-	if (schema)
-		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
-
-	assert(pos < bufsize);
-	printf("Running database upgrade commands:\n%s\n", buf);
-	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
-	GDKfree(buf);
-	return err;		/* usually MAL_SUCCEED */
-}
-
 #ifdef HAVE_NETCDF
 static str
 sql_update_mar2018_netcdf(Client c, const char *prev_schema)
@@ -2607,6 +2580,35 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 	return err;		/* usually MAL_SUCCEED */
 }
 
+static str
+sql_update_timetrails(Client c, mvc *sql, const char *prev_schema, bool *systabfixed)
+{
+	size_t bufsize = 1024, pos = 0;
+	char *buf = GDKmalloc(bufsize), *err = NULL, *schemas_to_set[2] = {"sys", "tmp"};
+
+	if( buf== NULL)
+		throw(SQL, "sql_update_timetrails", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+
+	if (!*systabfixed &&
+	    (err = sql_fix_system_tables(c, sql, prev_schema)) != NULL)
+		return err;
+	*systabfixed = true;
+
+	for(int i = 0; i < 2; i++) {
+		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schemas_to_set[i]);
+		pos += snprintf(buf + pos, bufsize - pos,
+						"create table _streams (id int, table_id int, window int, stride int);\n");
+	}
+
+	pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
+
+	assert(pos < bufsize);
+	printf("Running database upgrade commands:\n%s\n", buf);
+	err = SQLstatementIntern(c, &buf, "update", true, false, NULL);
+	GDKfree(buf);
+	return err;		/* usually MAL_SUCCEED */
+}
+
 int
 SQLupgrades(Client c, mvc *m)
 {
@@ -2902,7 +2904,7 @@ SQLupgrades(Client c, mvc *m)
 
 	/* streams tables for timetrails */
 	if (!res && mvc_bind_table(m, s, "_streams") == NULL) {
-		if ((err = sql_update_timetrails(c, m)) != NULL) {
+		if ((err = sql_update_timetrails(c, m, prev_schema, &systabfixed)) != NULL) {
 			TRC_ERROR(SQL_UPGRADES, "%s\n", err);
 			freeException(err);
 			res = -1;
