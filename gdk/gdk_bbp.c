@@ -2477,8 +2477,8 @@ static inline int
 incref(bat i, bool logical, bool lock)
 {
 	int refs;
-	bat tp, tvp;
-	BAT *b, *pb = NULL, *pvb = NULL;
+	bat tp, tvp, tmp;
+	BAT *b, *pb = NULL, *pvb = NULL, *pmb = NULL;
 	bool load = false;
 
 	if (!BBPcheck(i, logical ? "BBPretain" : "BBPfix"))
@@ -2501,6 +2501,16 @@ incref(bat i, bool logical, bool lock)
 			if (pvb == NULL) {
 				if (pb)
 					BBPunfix(pb->batCacheid);
+				return 0;
+			}
+		} // there could be a parent because of a shared mosaic
+		if (b->tmosaic && b->tmosaic->parentid != i) {
+			pmb = BATdescriptor(b->tmosaic->parentid);
+			if (pmb == NULL) {
+				if (pb)
+					BBPunfix(pb->batCacheid);
+				if (pvb)
+					BBPunfix(pvb->batCacheid);
 				return 0;
 			}
 		}
@@ -2536,8 +2546,9 @@ incref(bat i, bool logical, bool lock)
 		tp = b->theap.parentid;
 		assert(tp >= 0);
 		tvp = b->tvheap == 0 || b->tvheap->parentid == i ? 0 : b->tvheap->parentid;
+		tmp = b->tmosaic == 0 || b->tmosaic->parentid == i ? 0 : b->tmosaic->parentid;
 		refs = ++BBP_refs(i);
-		if (refs == 1 && (tp || tvp)) {
+		if (refs == 1 && (tp || tvp || tmp)) {
 			/* If this is a view, we must load the parent
 			 * BATs, but we must do that outside of the
 			 * lock.  Set the BBPLOADING flag so that
@@ -2567,6 +2578,8 @@ incref(bat i, bool logical, bool lock)
 			BBPunfix(pb->batCacheid);
 		if (pvb)
 			BBPunfix(pvb->batCacheid);
+		if (pmb)
+			BBPunfix(pmb->batCacheid);
 	}
 	return refs;
 }
@@ -2609,7 +2622,7 @@ decref(bat i, bool logical, bool releaseShare, bool lock, const char *func)
 {
 	int refs = 0;
 	bool swap = false;
-	bat tp = 0, tvp = 0;
+	bat tp = 0, tvp = 0, tmp = 0;
 	BAT *b;
 
 	assert(i > 0);
@@ -2647,11 +2660,13 @@ decref(bat i, bool logical, bool releaseShare, bool lock, const char *func)
 		} else {
 			assert(b == NULL || b->theap.parentid == 0 || BBP_refs(b->theap.parentid) > 0);
 			assert(b == NULL || b->tvheap == NULL || b->tvheap->parentid == 0 || BBP_refs(b->tvheap->parentid) > 0);
+			assert(b == NULL || b->tmosaic == NULL || b->tmosaic->parentid == 0 || BBP_refs(b->tmosaic->parentid) > 0);
 			refs = --BBP_refs(i);
 			if (b && refs == 0) {
 				if ((tp = b->theap.parentid) != 0)
 					b->theap.base = (char *) (b->theap.base - BBP_cache(tp)->theap.base);
 				tvp = VIEWvtparent(b);
+				tmp = VIEWmosaictparent(b);
 			}
 		}
 	}
@@ -2697,6 +2712,8 @@ decref(bat i, bool logical, bool releaseShare, bool lock, const char *func)
 		decref(tp, false, false, lock, func);
 	if (tvp)
 		decref(tvp, false, false, lock, func);
+	if (tmp)
+		decref(tmp, false, false, lock, func);
 	return refs;
 }
 

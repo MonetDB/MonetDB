@@ -660,8 +660,8 @@ MOScompressInternal(BAT* bsrc, const char* compressions)
 	task.hdr->ratio =
 		(flt)task.bsrc->theap.free /
 		(task.bsrc->tmosaic->free + (task.bsrc->tvmosaic? task.bsrc->tvmosaic->free : 0));
-finalize:
 	BBPreclaim(estimates);
+finalize:
 
 	t1 = GDKusec();
 	ALGODEBUG mnstr_printf(GDKstdout, "##BATmosaic: mosaic construction " LLFMT " usec\n", t1 - t0);
@@ -700,7 +700,7 @@ MOScompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	msg= MOScompressInternal(b, compressions);
 	MOSunsetLock(b);
 
-	BBPkeepref(*ret = b->batCacheid);
+	BBPunfix(*ret = b->batCacheid);
 	return msg;
 }
 
@@ -818,7 +818,7 @@ MOSdecompressInternal(BAT** res, BAT* bsrc)
 
 	task.timer = GDKusec() - task.timer;
 
-	BATsettrivprop(bsrc); // TODO: What's the purpose of this statement?
+	BATsettrivprop(task.bsrc); // TODO: What's the purpose of this statement?
 
 	return MAL_SUCCEED;
 }

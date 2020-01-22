@@ -1,5 +1,4 @@
 ####technical depth####
-Find mosaic memory-leak
 Refactor macro-ised functions to real functions in header files and apply the include trick
 benchmark using TPC-H
 Fix/check/test MOSlayout.
