@@ -384,7 +384,6 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 			} else {
 				/* why the vheap? */
 				ci->tpe = cand_dense;
-				ci->oids = NULL;
 			}
 		} else {
 			ci->tpe = cand_dense;
@@ -404,23 +403,6 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 		ci->tpe = cand_dense;
 	}
 	switch (ci->tpe) {
-	case cand_dense:
-	case_cand_dense:
-		if (b != NULL) {
-			if (ci->seq + cnt <= b->hseqbase ||
-			    ci->seq >= b->hseqbase + BATcount(b)) {
-				ci->ncand = 0;
-				return 0;
-			}
-			if (b->hseqbase > ci->seq) {
-				cnt -= b->hseqbase - ci->seq;
-				ci->offset += b->hseqbase - ci->seq;
-				ci->seq = b->hseqbase;
-			}
-			if (ci->seq + cnt > b->hseqbase + BATcount(b))
-				cnt = b->hseqbase + BATcount(b) - ci->seq;
-		}
-		break;
 	case cand_materialized:
 		if (b != NULL) {
 			if (ci->oids[ci->noids - 1] < b->hseqbase) {
@@ -488,14 +470,9 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 		while (ci->noids > 0 &&
 		       ci->oids[ci->noids - 1] == ci->seq + cnt + ci->noids - 1)
 			ci->noids--;
-		/* WARNING: don't reset ci->oids to NULL when setting
-		 * ci->tpe to cand_dense below: BATprojectchain will
-		 * fail */
-		if (ci->noids == 0) {
-			ci->tpe = cand_dense;
-			goto case_cand_dense;
-		}
-		if (b != NULL) {
+		if (ci->noids > 0) {
+			if (b == NULL)
+				break;
 			BUN p;
 			p = binsearchcand(ci->oids, ci->noids - 1, b->hseqbase);
 			if (p == ci->noids) {
@@ -505,6 +482,7 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 				ci->seq = b->hseqbase;
 				ci->noids = 0;
 				ci->tpe = cand_dense;
+				ci->oids = NULL;
 				break;
 			}
 			assert(b->hseqbase > ci->seq || p == 0);
@@ -532,10 +510,26 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 			while (ci->noids > 0 &&
 			       ci->oids[ci->noids - 1] == ci->seq + cnt + ci->noids - 1)
 				ci->noids--;
-			if (ci->noids == 0) {
-				ci->tpe = cand_dense;
-				goto case_cand_dense;
+			if (ci->noids > 0)
+				break;
+		}
+		ci->tpe = cand_dense;
+		ci->oids = NULL;
+		/* fall through */
+	case cand_dense:
+		if (b != NULL) {
+			if (ci->seq + cnt <= b->hseqbase ||
+			    ci->seq >= b->hseqbase + BATcount(b)) {
+				ci->ncand = 0;
+				return 0;
 			}
+			if (b->hseqbase > ci->seq) {
+				cnt -= b->hseqbase - ci->seq;
+				ci->offset += b->hseqbase - ci->seq;
+				ci->seq = b->hseqbase;
+			}
+			if (ci->seq + cnt > b->hseqbase + BATcount(b))
+				cnt = b->hseqbase + BATcount(b) - ci->seq;
 		}
 		break;
 	}
