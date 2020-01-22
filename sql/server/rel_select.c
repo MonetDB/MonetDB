@@ -818,7 +818,6 @@ rel_reduce_on_column_privileges(mvc *sql, sql_rel *rel, sql_table *t)
 	return NULL;
 }
 
-
 sql_rel *
 table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral)
 {
@@ -3271,7 +3270,12 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 		int sql_state = query_fetch_outer_state(query,all_freevar-1);
 		res = groupby = query_fetch_outer(query, all_freevar-1);
 		if (exp && is_sql_aggr(sql_state) && !is_groupby_col(res, exp)) {
-			return sql_error(sql, 05, SQLSTATE(42000) "SELECT: aggregate function calls cannot be nested");
+			char *uaname = GDKmalloc(strlen(aname) + 1);
+			sql_exp *e = sql_error(sql, 05, SQLSTATE(42000) "%s: aggregate function calls cannot be nested",
+							   uaname ? toUpperCopy(uaname, aname) : aname);
+			if (uaname)
+				GDKfree(uaname);
+			return e;
 		}
 	}
 
@@ -4526,9 +4530,8 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 	if (sname)
 		s = mvc_bind_schema(sql, sname);
 
-	is_nth_value = (strcmp(s->base.name, "sys") == 0 && strcmp(aname, "nth_value") == 0);
-	supports_frames = (window_function->token != SQL_RANK) || is_nth_value ||
-					  (strcmp(s->base.name, "sys") == 0 && ((strcmp(aname, "first_value") == 0) || strcmp(aname, "last_value") == 0));
+	is_nth_value = !strcmp(aname, "nth_value");
+	supports_frames = window_function->token != SQL_RANK || is_nth_value || !strcmp(aname, "first_value") || !strcmp(aname, "last_value");
 
 	if (is_sql_join(f) || is_sql_where(f) || is_sql_groupby(f) || is_sql_having(f)) {
 		char *uaname = GDKmalloc(strlen(aname) + 1);
@@ -4582,9 +4585,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 	fargs = sa_list(sql->sa);
 	if (window_function->token == SQL_RANK) { /* rank function call */
 		dlist *dl = dn->next->next->data.lval;
-		bool is_ntile = (strcmp(s->base.name, "sys") == 0 && strcmp(aname, "ntile") == 0),
-			 is_lag = (strcmp(s->base.name, "sys") == 0 && strcmp(aname, "lag") == 0),
-			 is_lead = (strcmp(s->base.name, "sys") == 0 && strcmp(aname, "lead") == 0);
+		bool is_ntile = !strcmp(aname, "ntile"), is_lag = !strcmp(aname, "lag"), is_lead = !strcmp(aname, "lead");
 
 		distinct = dn->next->data.i_val;
 		if (!dl || is_ntile) { /* pass an input column for analytic functions that don't require it */
@@ -4645,11 +4646,20 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 			in = exp_ref_save(sql, in);
 			nfargs++;
 
-			if (strcmp(s->base.name, "sys") == 0 && strcmp(aname, "count") == 0)
+			if (!strcmp(aname, "count"))
 				append(fargs, exp_atom_bool(sql->sa, 1)); /* ignore nills */
 		}
 
 		if (!nfargs) { /* count(*) */
+			if (window_function->token == SQL_AGGR && strcmp(aname, "count") != 0) {
+				char *uaname = GDKmalloc(strlen(aname) + 1);
+				(void) sql_error(sql, 02, SQLSTATE(42000) "%s: unable to perform '%s(*)'",
+								uaname ? toUpperCopy(uaname, aname) : aname, aname);
+				if (uaname)
+					GDKfree(uaname);
+				return NULL;
+			}
+
 			in = rel_first_column(sql, p);
 			if (!exp_name(in))
 				exp_label(sql->sa, in, ++sql->label);

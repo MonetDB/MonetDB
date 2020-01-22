@@ -64,5 +64,6 @@ insert into stressme values ('one', 1), ('another', 1), ('stress', 1), (NULL, 2)
 
 select stddev_samp(aa) over (partition by bb) from stressme; --error, stddev_samp not available for string type
 select stddev_samp() over (partition by bb) from stressme; --error, stddev_samp without parameters not available
+select stddev_samp(*) over (partition by bb) from stressme; --error, stddev_samp(*) not available
 
 drop table stressme;
