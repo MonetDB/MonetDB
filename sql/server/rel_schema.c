@@ -1521,6 +1521,8 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 		if (!te || (te->token != SQL_STREAM_TABLE_WINDOW && te->token != SQL_STREAM_TABLE_STRIDE)) {
 			if (t)
 				return sql_error(sql, 02, SQLSTATE(42S02) "ALTER TABLE: not supported on TEMPORARY table '%s'", tname);
+			if (if_exists)
+				return rel_psm_block(sql->sa, new_exp_list(sql->sa));
 			return sql_error(sql, 02, SQLSTATE(42S02) "ALTER TABLE: no such table '%s' in schema '%s'", tname, s->base.name);
 		} else {
 			s = ts;
