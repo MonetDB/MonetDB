@@ -1,5 +1,6 @@
 ####technical depth####
-Create a custom preprocessor to expand selected macro's and respecting new lines.
+Find mosaic memory-leak
+Refactor macro-ised functions to real functions in header files and apply the include trick
 benchmark using TPC-H
 Fix/check/test MOSlayout.
 Add negative values to tests
