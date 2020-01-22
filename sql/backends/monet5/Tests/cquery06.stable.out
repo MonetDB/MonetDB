@@ -19,11 +19,9 @@ stdout of test 'cquery06` in directory 'sql/backends/monet5` itself:
 # MonetDB/SQL module loaded
 # MonetDB/Timetrails module loaded
 
-Ready.
-
-# 10:26:37 >  
-# 10:26:37 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-24395" "--port=39287"
-# 10:26:37 >  
+# 14:05:29 >  
+# 14:05:29 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-243009" "--port=38929"
+# 14:05:29 >  
 
 #create table cqresult06(i integer);
 #create procedure cq_basic06()

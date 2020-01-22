@@ -18,7 +18,9 @@ stdout of test 'cqstream03` in directory 'sql/backends/monet5` itself:
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
+# 14:34:54 >  
+# 14:34:54 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-260199" "--port=31840"
+# 14:34:54 >  
 
 # 12:58:46 >  
 # 12:58:46 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-17764" "--port=38071"
@@ -36,7 +38,7 @@ Ready.
 #    end if;
 #end;
 #select * from cquery.status();
-% .L1,	.L1,	.L1,	.L1 # table_name
+% .%1,	.%1,	.%1,	.%1 # table_name
 % tick,	alias,	state,	errors # name
 % timestamp,	clob,	clob,	clob # type
 % 26,	0,	0,	0 # length

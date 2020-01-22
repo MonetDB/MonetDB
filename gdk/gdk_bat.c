@@ -1100,6 +1100,14 @@ BUNappend(BAT *b, const void *t, bool force)
 }
 
 gdk_return
+BUNremoveproperties(BAT *b)
+{
+	BATrmprop(b, GDK_MAX_VALUE);
+	BATrmprop(b, GDK_MIN_VALUE);
+	return GDK_SUCCEED;
+}
+
+gdk_return
 BUNdelete(BAT *b, oid o)
 {
 	BUN p;

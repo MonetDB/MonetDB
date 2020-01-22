@@ -423,6 +423,8 @@ BSKTtumbleInternal(Client cntxt, str sch, str tbl, int bskt, int window, int str
 
 		_DEBUG_BASKET_ fprintf(stderr,"#Tumbled %s.%s[%d] "BUNFMT" elements left\n",sch,tbl,i,cnt);
 		BATsetcount(b, cnt);
+		if (BUNremoveproperties(b) != GDK_SUCCEED)
+			throw(SQL,"basket.tumble",SQLSTATE(3F000) "Failed to remove GDK properties on stream table %s.%s\n",sch,tbl);
 		baskets[bskt].count = BATcount(b);
 		b->tnil = 0;
 		if((BUN) stride < BATcount(b)){
@@ -704,6 +706,10 @@ BSKTreset(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if(b){
 			BATsetcount(b,0);
 			BATsettrivprop(b);
+			if (BUNremoveproperties(b) != GDK_SUCCEED) {
+				MT_lock_unset(&baskets[idx].lock);
+				throw(SQL,"basket.reset",SQLSTATE(3F000) "Failed to remove GDK properties on stream table %s.%s\n",sname,tname);
+			}
 		}
 	}
 	MT_lock_unset(&baskets[idx].lock);

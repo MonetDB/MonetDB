@@ -932,6 +932,8 @@ gdk_export gdk_return BUNappend(BAT *b, const void *right, bool force)
 gdk_export gdk_return BATappend(BAT *b, BAT *n, BAT *s, bool force)
 	__attribute__((__warn_unused_result__));
 
+gdk_export gdk_return BUNremoveproperties(BAT *b)
+	__attribute__((__warn_unused_result__));
 gdk_export gdk_return BUNdelete(BAT *b, oid o)
 	__attribute__((__warn_unused_result__));
 gdk_export gdk_return BATdel(BAT *b, BAT *d)

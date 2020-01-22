@@ -16,10 +16,6 @@ stdout of test 'cquery21` in directory 'sql/backends/monet5` itself:
 # Listening for connection requests on mapi:monetdb://localhost.localdomain:35602/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-4457/.s.monetdb.35602
 # MonetDB/GIS module loaded
-# MonetDB/SQL module loaded
-# MonetDB/Timetrails module loaded
-
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql

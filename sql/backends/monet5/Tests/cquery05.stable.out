@@ -18,11 +18,9 @@ stdout of test 'cquery05` in directory 'sql/backends/monet5` itself:
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
-
-# 10:28:03 >  
-# 10:28:03 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-25654" "--port=33494"
-# 10:28:03 >  
+# 14:05:25 >  
+# 14:05:25 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-243009" "--port=38929"
+# 14:05:25 >  
 
 #create table cqresult05(i integer);
 #create procedure cq_basic()
@@ -30,8 +28,8 @@ Ready.
 #	insert into cqresult05 (select count(*) from cqresult05);
 #end;
 #select 'RESULT';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % char # type
 % 6 # length
 [ "RESULT"	]

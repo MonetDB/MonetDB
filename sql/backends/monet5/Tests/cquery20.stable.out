@@ -7,21 +7,21 @@ stdout of test 'cquery20` in directory 'sql/backends/monet5` itself:
 
 #create temporary stream table sta (a int);select count(*) from streams;create stream table stb (a int);select count(*) from streams;
 #create temporary stream table sta (a int);select count(*) from streams;create stream table stb (a int);select count(*) from streams;
-% .L22 # table_name
-% L21 # name
+% .%6 # table_name
+% %6 # name
 % bigint # type
 % 1 # length
 [ 1	]
 #create temporary stream table sta (a int);select count(*) from streams;create stream table stb (a int);select count(*) from streams;
 #create temporary stream table sta (a int);select count(*) from streams;create stream table stb (a int);select count(*) from streams;
-% .L22 # table_name
-% L21 # name
+% .%6 # table_name
+% %6 # name
 % bigint # type
 % 1 # length
 [ 2	]
 #select count(*) from streams;
-% .L22 # table_name
-% L21 # name
+% .%6 # table_name
+% %6 # name
 % bigint # type
 % 1 # length
 [ 1	]
@@ -80,15 +80,15 @@ stdout of test 'cquery20` in directory 'sql/backends/monet5` itself:
 # loading sql script: 90_generator_hge.sql
 # loading sql script: 99_system.sql
 #select count(*) from streams;drop table stb;select count(*) from streams;
-% .L22 # table_name
-% L21 # name
+% .%6 # table_name
+% %6 # name
 % bigint # type
 % 1 # length
 [ 1	]
 #select count(*) from streams;drop table stb;select count(*) from streams;
 #select count(*) from streams;drop table stb;select count(*) from streams;
-% .L22 # table_name
-% L21 # name
+% .%6 # table_name
+% %6 # name
 % bigint # type
 % 1 # length
 [ 0	]

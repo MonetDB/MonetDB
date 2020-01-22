@@ -21,53 +21,9 @@ stdout of test 'cquery22` in directory 'sql/backends/monet5` itself:
 # MonetDB/Python2 module loaded
 # MonetDB/R   module loaded
 
-Ready.
-# SQL catalog created, loading sql scripts once
-# loading sql script: 09_like.sql
-# loading sql script: 10_math.sql
-# loading sql script: 11_times.sql
-# loading sql script: 12_url.sql
-# loading sql script: 13_date.sql
-# loading sql script: 14_inet.sql
-# loading sql script: 15_querylog.sql
-# loading sql script: 16_tracelog.sql
-# loading sql script: 17_temporal.sql
-# loading sql script: 18_index.sql
-# loading sql script: 20_vacuum.sql
-# loading sql script: 21_dependency_functions.sql
-# loading sql script: 22_clients.sql
-# loading sql script: 23_skyserver.sql
-# loading sql script: 25_debug.sql
-# loading sql script: 26_sysmon.sql
-# loading sql script: 27_rejects.sql
-# loading sql script: 39_analytics.sql
-# loading sql script: 39_analytics_hge.sql
-# loading sql script: 40_geom.sql
-# loading sql script: 40_json.sql
-# loading sql script: 40_json_hge.sql
-# loading sql script: 41_md5sum.sql
-# loading sql script: 45_uuid.sql
-# loading sql script: 46_profiler.sql
-# loading sql script: 50_cquery.sql
-# loading sql script: 51_sys_schema_extension.sql
-# loading sql script: 60_wlcr.sql
-# loading sql script: 72_fits.sql
-# loading sql script: 74_netcdf.sql
-# loading sql script: 75_lidar.sql
-# loading sql script: 75_shp.sql
-# loading sql script: 75_storagemodel.sql
-# loading sql script: 80_statistics.sql
-# loading sql script: 80_udf.sql
-# loading sql script: 80_udf_hge.sql
-# loading sql script: 85_bam.sql
-# loading sql script: 90_generator.sql
-# loading sql script: 90_generator_hge.sql
-# loading sql script: 97_comments.sql
-# loading sql script: 99_system.sql
-
-# 15:42:42 >  
-# 15:42:42 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-14134" "--port=34536"
-# 15:42:42 >  
+# 14:34:38 >  
+# 14:34:38 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-260199" "--port=31840"
+# 14:34:38 >  
 
 #create stream table cqinput22(input integer) set window 2;
 #create function calculateaverage() returns real begin return select AVG(input) from cqinput22; end;

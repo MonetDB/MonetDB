@@ -19,11 +19,9 @@ stdout of test 'cquery14` in directory 'sql/backends/monet5` itself:
 # MonetDB/SQL module loaded
 # MonetDB/Timetrails module loaded
 
-Ready.
-
-# 16:24:43 >  
-# 16:24:43 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23936" "--port=34102"
-# 16:24:43 >  
+# 14:05:53 >  
+# 14:05:53 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-243009" "--port=38929"
+# 14:05:53 >  
 
 #create stream table testing14 (a int) set window 1 stride 1;
 #create table results14 (a int);
@@ -38,8 +36,8 @@ Ready.
 #end;
 #start continuous sys.cq_query14b() with cycles 1;
 #select count(*) from results14; --should be 2
-% sys.L4 # table_name
-% L3 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 2	]

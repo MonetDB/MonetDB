@@ -18,7 +18,9 @@ stdout of test 'cqstream01` in directory 'sql/backends/monet5` itself:
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
+# 14:34:46 >  
+# 14:34:46 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-260199" "--port=31840"
+# 14:34:46 >  
 
 # 13:05:17 >  
 # 13:05:17 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-22244" "--port=30307"
@@ -42,8 +44,8 @@ Ready.
 #    insert into result2 select * from stmp2 where val >12;
 #end;
 #select 'RESULT';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % char # type
 % 6 # length
 [ "RESULT"	]

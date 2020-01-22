@@ -18,11 +18,9 @@ stdout of test 'cqstream02` in directory 'sql/backends/monet5` itself:
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
-
-# 13:01:24 >  
-# 13:01:24 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-20007" "--port=32966"
-# 13:01:24 >  
+# 14:34:50 >  
+# 14:34:50 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-260199" "--port=31840"
+# 14:34:50 >  
 
 #create stream table stmp10 (t timestamp, sensor integer, val decimal(8,2)) ;
 #create table tmp_aggregate(tmp_total decimal(8,2), tmp_count decimal(8,2));
