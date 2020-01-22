@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2016 MonetDB B.V.
+ * Copyright August 2008-2020 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -69,10 +69,6 @@ static BAT *CQ_id_error = 0;
 
 static CQnode *pnet = 0;
 static int pnetLimit = 0, pnettop = 0;
-
-#define CQ_SCHEDULER_CLIENTID     0
-
-#define SET_HEARTBEATS(X) (X != HEARTBEAT_NIL) ? X : HEARTBEAT_NIL /* minimal 1 ms */
 
 #define ALL_ROOT_CHECK(cntxt, malcal, name)                                                                        \
 do {                                                                                                               \
@@ -695,7 +691,7 @@ CQregister(Client cntxt, str sname, str fname, int argc, atom **args, str alias,
 	pnet[pnettop].func = found;
 	pnet[pnettop].mb = mb;
 	pnet[pnettop].cycles = cycles;
-	pnet[pnettop].beats = SET_HEARTBEATS(heartbeats);
+	pnet[pnettop].beats = heartbeats;
 	//subtract the beats value so the CQ will start at the precise moment
 	pnet[pnettop].run = startat - (pnet[pnettop].beats > 0 ? pnet[pnettop].beats : 0);
 	pnet[pnettop].seen = timestamp_nil;
@@ -773,7 +769,7 @@ CQresume(str alias, int with_alter, lng heartbeats, lng startat, int cycles)
 	}
 	if(with_alter) {
 		pnet[idx].cycles = cycles;
-		pnet[idx].beats = SET_HEARTBEATS(heartbeats);
+		pnet[idx].beats = heartbeats;
 		pnet[idx].run = startat - (pnet[idx].beats > 0 ? pnet[idx].beats : 0);
 	}
 
@@ -1004,7 +1000,7 @@ CQheartbeat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	for( ; idx < last; idx++){
-		lng new_hearbeats = SET_HEARTBEATS(heartbeats);
+		lng new_hearbeats = heartbeats;
 		if(new_hearbeats > pnet[idx].beats) { //has to do the alignment of the starting point
 			pnet[idx].run -= (new_hearbeats - pnet[idx].beats);
 		} else {
@@ -1558,7 +1554,7 @@ CQstartScheduler(void)
 		throw(MAL, "cquery.startScheduler",SQLSTATE(HY013) "Could not initialize CQscheduler\n");
 	}
 
-	cntxt = MCinitClient(CQ_SCHEDULER_CLIENTID,bin,fout);
+	cntxt = MCinitClient(0,bin,fout);
 	if( cntxt == NULL) {
 		bstream_destroy(cntxt->fdin);
 		mnstr_destroy(cntxt->fdout);

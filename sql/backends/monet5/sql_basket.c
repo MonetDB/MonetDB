@@ -13,7 +13,7 @@
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2016 MonetDB B.V.
+ * Copyright August 2008-2020 MonetDB B.V.
  * All Rights Reserved.
  */
 
@@ -464,8 +464,8 @@ BSKTtumble(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( baskets[idx].window < 0 || !cntxt->iscqscheduleruser)
 		return MAL_SUCCEED;
 	/* also take care of time-based tumbling */
-	elw =(int) baskets[idx].window;
-	elm =(int) baskets[idx].stride;
+	elw = baskets[idx].window;
+	elm = baskets[idx].stride;
 	return BSKTtumbleInternal(cntxt, sch, tbl, idx, elw, elm);
 }
 
