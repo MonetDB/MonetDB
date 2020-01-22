@@ -661,6 +661,7 @@ MOScompressInternal(BAT* bsrc, const char* compressions)
 		(flt)task.bsrc->theap.free /
 		(task.bsrc->tmosaic->free + (task.bsrc->tvmosaic? task.bsrc->tvmosaic->free : 0));
 finalize:
+	BBPreclaim(estimates);
 
 	t1 = GDKusec();
 	ALGODEBUG mnstr_printf(GDKstdout, "##BATmosaic: mosaic construction " LLFMT " usec\n", t1 - t0);
