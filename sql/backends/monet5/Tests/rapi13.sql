@@ -1,6 +1,6 @@
 start transaction;
 
-CREATE TABLE "streams" (
+CREATE TABLE "tstreams" (
     "ts"      TIMESTAMP,
     "type"    TINYINT,
     "station" CHARACTER LARGE OBJECT,
@@ -9,7 +9,7 @@ CREATE TABLE "streams" (
     "alt"     DOUBLE
 );
 
-copy 5 records into streams from stdin;
+copy 5 records into tstreams from stdin;
 2015-06-03 15:11:17.000000|2|"4CA56B"|52.08069|5.86654|3.8e+04
 2015-06-03 15:11:17.000000|2|"4010EA"|51.19084|4.98646|38025
 2015-06-03 15:11:17.000000|2|"406C71"|52.36768|7.17085|3.5e+04
@@ -26,7 +26,7 @@ CREATE FUNCTION broken_test(stt string, tss bigint, lat double, lon double, alt 
 	return(data.frame(1:10, 1:10, 1:10, 1:10))
 };
 
-create temporary table planes as SELECT station, (ts-CAST('1970-01-01' AS timestamp)) tsdiff, lat, lon, alt*0.3048 altitude FROM streams WHERE type = 2 and alt > 0 with data;
+create temporary table planes as SELECT station, (ts-CAST('1970-01-01' AS timestamp)) tsdiff, lat, lon, alt*0.3048 altitude FROM tstreams WHERE type = 2 and alt > 0 with data;
 #this is the input
 select * from planes;
 select * from working_test( (SELECT * FROM planes AS p) );

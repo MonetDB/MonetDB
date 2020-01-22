@@ -52,7 +52,7 @@ pattern window(sch:str, tbl:str, elm:int, stride:int):int
 address BSKTwindow
 comment "Set window size and stride";
 
-unsafe pattern tumble(mvc:any, sch:str, tbl:str):int
+unsafe pattern tumble(sch:str, tbl:str):int
 address BSKTtumble
 comment "Eat away and slide forward";
 

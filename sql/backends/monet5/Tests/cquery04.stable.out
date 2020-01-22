@@ -16,10 +16,6 @@ stdout of test 'cquery04` in directory 'sql/backends/monet5` itself:
 # Listening for connection requests on mapi:monetdb://dhcp-120.eduroam.cwi.nl:31081/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-8493/.s.monetdb.31081
 # MonetDB/GIS module loaded
-# MonetDB/SQL module loaded
-# MonetDB/Timetrails module loaded
-
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql
@@ -82,7 +78,7 @@ Ready.
 % 1 # length
 [ 2	]
 [ 2	]
-#insert into cqinput06 values (5);
+#insert into cqinput04 values (5);
 [ 1	]
 #select aaa from cqresult04; --output 2 tuples with value 2
 % sys.cqresult04 # table_name
@@ -91,7 +87,7 @@ Ready.
 % 1 # length
 [ 2	]
 [ 2	]
-#insert into cqinput06 values (6);
+#insert into cqinput04 values (6);
 [ 1	]
 #select aaa from cqresult04; --output 3 tuples with value 2
 % sys.cqresult04 # table_name
@@ -101,9 +97,10 @@ Ready.
 [ 2	]
 [ 2	]
 [ 2	]
-#drop procedure cq_basic06;
-#drop table cqinput06;
-#drop table cqresult06;
+#stop continuous cq_basic04;
+#drop procedure cq_basic04;
+#drop table cqinput04;
+#drop table cqresult04;
 
 # 14:09:24 >  
 # 14:09:24 >  "Done."

@@ -43,6 +43,10 @@ create procedure cquery."heartbeat"(alias string, msec bigint)
 create procedure cquery."heartbeat"(msec bigint)
 	external name cquery."heartbeat";
 
+-- Tumble the stream buffer
+create procedure cquery."tumble"("schema" string, "table" string)
+	external name basket."tumble";
+
 -- Window based consumption for stream queries
 create procedure cquery."window"("schema" string, "table" string, elem integer)
 	external name basket."window";

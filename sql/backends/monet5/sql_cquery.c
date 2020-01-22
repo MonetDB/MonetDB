@@ -414,7 +414,7 @@ CQregister(Client cntxt, str sname, str fname, int argc, atom **args, str alias,
 	InstrPtr p = NULL, q = NULL;
 	Symbol sym;
 	CQnode *pnew;
-	MalBlkPtr mb = NULL, prev;
+	MalBlkPtr mb = NULL, prev = NULL;
 	const char* err_message = (which & mod_continuous_function) ? "function" : "procedure";
 	int i, idx, varid, freeMB = 0, mvc_var = 0;
 	backend* be = (backend*) cntxt->sqlcontext;

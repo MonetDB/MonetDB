@@ -19,11 +19,9 @@ stdout of test 'cqcreate` in directory 'sql/backends/monet5` itself:
 # MonetDB/SQL module loaded
 # MonetDB/Timetrails module loaded
 
-Ready.
-
-# 10:26:34 >  
-# 10:26:34 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-24395" "--port=39287"
-# 10:26:34 >  
+# 11:29:57 >  
+# 11:29:57 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-129719" "--port=34076"
+# 11:29:57 >  
 
 #CREATE stream TABLE testing (a int);
 #CREATE TABLE results (b int);

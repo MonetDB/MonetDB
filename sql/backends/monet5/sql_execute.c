@@ -24,7 +24,6 @@
 #include "sql_env.h"
 #include "sql_mvc.h"
 #include "sql_user.h"
-#include "sql_cquery.h"
 #include "sql_optimizer.h"
 #include "sql_datetime.h"
 #include "rel_unnest.h"
@@ -35,7 +34,6 @@
 #include "rel_rel.h"
 #include "rel_exp.h"
 #include "rel_dump.h"
-
 #include "mal_debugger.h"
 #include "mtime.h"
 #include "optimizer.h"
@@ -381,10 +379,6 @@ SQLrun(Client c, backend *be, mvc *m)
 		c->idle = 0;
 		c->lastcmd = time(0);
 		msg = runMALDebugger(c, mb);
-	} else if( m->emod & mod_trace){
-		SQLsetTrace(c,mb);
-		msg = runMAL(c, mb, 0, 0);
-		stopTrace(0);
 	} else {
 		if( m->emod & mod_trace){
 			if((msg = SQLsetTrace(c,mb)) == MAL_SUCCEED) {

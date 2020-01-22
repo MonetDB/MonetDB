@@ -311,7 +311,7 @@ BSKTtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (tids == NULL)
 		throw(SQL, "basket.tid",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	tids->tseqbase = 0;
-	BATsetcount(tids, BATcount(b));
+	BATsetcount(tids, (baskets[bskt].window > 0 && cntxt->iscqscheduleruser) ? (BUN) baskets[bskt].window : BATcount(b));
 	BATsettrivprop(tids);
 
 	BBPkeepref( *ret = tids->batCacheid);
@@ -452,8 +452,8 @@ BSKTtumble(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	sch = *getArgReference_str(stk,pci,2);
-	tbl = *getArgReference_str(stk,pci,3);
+	sch = *getArgReference_str(stk,pci,1);
+	tbl = *getArgReference_str(stk,pci,2);
 
 	msg = BSKTregisterInternal(cntxt, mb, sch, tbl, &idx);
 	if( msg != MAL_SUCCEED)

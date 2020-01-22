@@ -78,8 +78,6 @@ shutdown
 HAVE_HGE?int_notation_1e5
 basket00
 
-epoch
-
 # use the continuous primitives
 cqcreate
 

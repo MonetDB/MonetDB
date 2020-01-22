@@ -936,7 +936,9 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 				return sql_error(sql, 02, SQLSTATE(42000) "CREATE OR REPLACE %s%s: there are database objects dependent on %s%s %s;", KF, F, kf, fn, func->base.name);
 			if (!func->s)
 				return sql_error(sql, 02, SQLSTATE(42000) "CREATE OR REPLACE %s%s: not allowed to replace system %s%s %s;", KF, F, kf, fn, func->base.name);
-			//I moved the mvc_drop to the backend layer so there I can check if a procedure is on the Petri-net
+			if (mvc_drop_func(sql, s, func, 0))
+				return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			sf = NULL;
 		} else {
 			if (params) {
 				char *arg_list = NULL;

@@ -18,11 +18,9 @@ stdout of test 'basket00` in directory 'sql/backends/monet5` itself:
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
-
-# 13:08:27 >  
-# 13:08:27 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-16206" "--port=39158"
-# 13:08:27 >  
+# 11:29:56 >  
+# 11:29:56 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-129719" "--port=34076"
+# 11:29:56 >  
 
 #create stream table s_tmp(i integer);
 #insert into s_tmp values(1),(2);

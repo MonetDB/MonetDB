@@ -19,7 +19,9 @@ stdout of test 'cquery00` in directory 'sql/backends/monet5` itself:
 # MonetDB/SQL module loaded
 # MonetDB/Timetrails module loaded
 
-Ready.
+# 13:58:26 >  
+# 13:58:26 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-226907" "--port=30092"
+# 13:58:26 >  
 
 # 22:52:08 >  
 # 22:52:08 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-29156" "--port=34092"

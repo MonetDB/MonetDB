@@ -238,7 +238,6 @@ OPTcqueryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					for(j = 0; j < btop; j++)
 						if( input[j] && !output[j] ){
 							r =  newStmt(mb, basketRef, tumbleRef);
-							r =  pushArgument(mb,r, lastmvc);
 							r =  pushStr(mb,r, schemas[j]);
 							r =  pushStr(mb,r, tables[j]);
 							lastmvc = getArg(r,0);
