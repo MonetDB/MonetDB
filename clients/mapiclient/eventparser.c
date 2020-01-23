@@ -74,7 +74,7 @@ getstr(char *val){
 
 static int
 argparser(char *txt, EventRecord *ev){
-	char *c, *key,*val;
+	char *c = NULL, *key = NULL,*val=NULL;
 	int cnt = 0, arg = -1;
 	c = txt;
 
