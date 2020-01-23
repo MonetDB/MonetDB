@@ -2500,10 +2500,8 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 			" external name mdb.\"getDebugFlags\";\n"
 			"create procedure sys.\"sleep\"(msecs int)\n"
 			" external name \"alarm\".\"sleep\";\n"
-			"grant execute on procedure sys.\"sleep\"(int) to public;\n"
 			"create function sys.\"sleep\"(msecs int) returns integer\n"
-			" external name \"alarm\".\"sleep\";\n"
-			"grant execute on function sys.\"sleep\"(int) to public;\n");
+			" external name \"alarm\".\"sleep\";\n");
 	pos += snprintf(buf + pos, bufsize - pos,
 			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
 			" and name in ('debug', 'debugflags', 'sleep');\n");

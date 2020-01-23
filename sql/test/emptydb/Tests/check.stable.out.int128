@@ -5293,8 +5293,6 @@ drop function pcre_replace(string, string, string, string);
 [ "seq_char",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "seq_length",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "setmasklen",	"public",	"EXECUTE",	"monetdb",	0	]
-[ "sleep",	"public",	"EXECUTE",	"monetdb",	0	]
-[ "sleep",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "st_area",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "st_asbinary",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "st_asewkt",	"public",	"EXECUTE",	"monetdb",	0	]

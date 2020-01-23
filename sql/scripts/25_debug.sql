@@ -85,9 +85,7 @@ create function sys.deltas ("schema" string, "table" string, "column" string)
 -- Sleep procedure
 create procedure sys."sleep"(msecs int)
 	external name "alarm"."sleep";
-grant execute on procedure sys."sleep"(int) to public;
 
 -- Sleep function
 create function sys."sleep"(msecs int) returns integer
 	external name "alarm"."sleep";
-grant execute on function sys."sleep"(int) to public;
