@@ -63,58 +63,6 @@ typedef struct _GlobalDictionaryInfo {
 #define GET_FINAL_BITS(task, NAME) ((task)->hdr->CONCAT2(bits_, NAME))
 #define GET_FINAL_DICT_COUNT(task, NAME) ((task)->hdr->CONCAT2(length_, NAME))
 
-#define find_value_DEF(TPE) \
-static inline \
-BUN find_value_##TPE(TPE* dict, BUN dict_count, TPE val) {\
-	BUN m, f= 0, l = dict_count, offset = 0;\
-	/* This function assumes that the implementation of a dictionary*/\
-	/* is that of a sorted array with nils starting first.*/\
-	if (IS_NIL(TPE, val)) return 0;\
-	if (dict_count > 0 && IS_NIL(TPE, dict[0])) {\
-		/*If the dictionary starts with a nil,*/\
-		/*the actual sorted dictionary starts an array entry later.*/\
-		dict++;\
-		offset++;\
-		l--;\
-	}\
-	while( l-f > 0 ) {\
-		m = f + (l-f)/2;\
-		if ( val < dict[m]) l=m-1; else f= m;\
-		if ( val > dict[m]) f=m+1; else l= m;\
-	}\
-	return f + offset;\
-}
-
-#define merge_delta_Into_dictionary_DEF(TPE) \
-static \
-void merge_delta_Into_dictionary_##TPE(GlobalDictionaryInfo* info) {\
-\
-	MosaicBlkRec* bytevector	= Tloc(info->admin, 0);\
-\
-	BUN delta_count = 0;\
-\
-	BUN i;\
-	for (i = 0; i < BATcount(info->admin); i++) {\
-		if (!bytevector[i].tag && bytevector[i].cnt) {\
-			 bytevector[i].tag = 1;\
-			 delta_count++;\
-			 bytevector[i].cnt = 0;\
-		}\
-	}\
-	info->count += delta_count;\
-	GET_BITS(info) = GET_BITS_EXTENDED(info);\
-}
-
-#define decompress_dictionary_DEF(TPE) \
-static void \
-decompress_dictionary_##TPE(TPE* dict, bte bits, BitVector base, BUN limit, TPE** dest) {\
-	for(BUN i = 0; i < limit; i++){\
-		BUN key = getBitVector(base,i,(int) bits);\
-		(*dest)[i] = dict[key];\
-	}\
-	*dest += limit;\
-}
-
 #define MosaicBlkHeader_DEF_dictionary(NAME, TPE)\
 typedef struct {\
 	MosaicBlkRec rec;\
@@ -127,48 +75,6 @@ typedef struct {\
 // MOStask object dependent macro's
 
 #define MOScodevectorDict(task, NAME, TPE) ((BitVector) &((DICTBlockHeaderTpe(NAME, TPE)*) (task)->blk)->bitvector)
-
-#define advance_dictionary(NAME, TPE)\
-{\
-	BUN cnt = MOSgetCnt(task->blk);\
-\
-	assert(cnt > 0);\
-	task->start += (oid) cnt;\
-\
-	char* blk = (char*)task->blk;\
-	blk += sizeof(MOSBlockHeaderTpe(NAME, TPE));\
-	blk += BitVectorSize(cnt, GET_FINAL_BITS(task, NAME));\
-	blk += GET_PADDING(task->blk, NAME, TPE);\
-\
-	task->blk = (MosaicBlk) blk;\
-}
-
-// insert a series of values into the compressor block using dictionary
-#define DICTcompress(NAME, TPE)\
-{\
-	ALIGN_BLOCK_HEADER(task,  NAME, TPE);\
-\
-	TPE *val = getSrc(TPE, (task));\
-	BUN cnt = estimate->cnt;\
-	BitVector base = MOScodevectorDict(task, NAME, TPE);\
-	BUN i;\
-	TPE* dict = GET_FINAL_DICT(task, NAME, TPE);\
-	BUN dict_size = GET_FINAL_DICT_COUNT(task, NAME);\
-	bte bits = GET_FINAL_BITS(task, NAME);\
-	compress_dictionary_##TPE(dict, dict_size, &i, val, cnt, base, bits);\
-	MOSsetCnt(task->blk, i);\
-}
-
-// the inverse operator, extend the src
-#define DICTdecompress(NAME, TPE)\
-{	BUN cnt = MOSgetCnt((task)->blk);\
-	BitVector base = MOScodevectorDict(task, NAME, TPE);\
-	bte bits = GET_FINAL_BITS(task, NAME);\
-	TPE* dict = GET_FINAL_DICT(task, NAME, TPE);\
-	TPE* dest = (TPE*) (task)->src;\
-	decompress_dictionary_##TPE(dict, bits, base, cnt, &dest);\
-	(task)->src = (char*) dest;\
-}
 
 #define scan_loop_dictionary(NAME, TPE, CANDITER_NEXT, TEST) {\
     TPE* dict = GET_FINAL_DICT(task, NAME, TPE);\

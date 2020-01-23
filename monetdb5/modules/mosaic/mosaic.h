@@ -61,10 +61,6 @@ typedef struct {
  */
 typedef Heap *mosaic;	// compressed data is stored on a heap.
 
-
-#define IS_NIL(TPE, VAL) is_##TPE##_nil(VAL)
-#define ARE_EQUAL(v, w, HAS_NIL, TPE) ((v == w || (HAS_NIL && IS_NIL(TPE, v) && IS_NIL(TPE, w)) ) )
-
 /* For compression MOSmethods based on value differences, we need the storage type */
 #define Deltabte uint8_t
 #define Deltasht uint16_t

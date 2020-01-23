@@ -45,37 +45,9 @@ bool MOStypes_dict(BAT* b) {
 	return false;
 }
 
-#define MOSadvance_DEF(TPE)\
-MOSadvance_SIGNATURE(dict, TPE) advance_dictionary(dict, TPE)
-
-MOSadvance_DEF(bte)
-MOSadvance_DEF(sht)
-MOSadvance_DEF(int)
-MOSadvance_DEF(lng)
-MOSadvance_DEF(flt)
-MOSadvance_DEF(dbl)
-#ifdef HAVE_HGE
-MOSadvance_DEF(hge)
-#endif
-
 #define MOSgetDictFreq(DICTIONARY, KEY) ((BUN*)(((char*) DICTIONARY) + wordaligned(sizeof(DICTIONARY), BUN))[KEY])
 
 #define CONDITIONAL_INSERT_dict(INFO, VAL, TPE)	(true)
-
-#define DictionaryClass(TPE) \
-find_value_DEF(TPE)\
-merge_delta_Into_dictionary_DEF(TPE)\
-decompress_dictionary_DEF(TPE)
-
-DictionaryClass(bte)
-DictionaryClass(sht)
-DictionaryClass(int)
-DictionaryClass(lng)
-DictionaryClass(flt)
-DictionaryClass(dbl)
-#ifdef HAVE_HGE
-DictionaryClass(hge)
-#endif
 
 void
 MOSlayout_dict_hdr(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
@@ -141,38 +113,6 @@ MOSlayout_dict(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput
 #undef TPE
 #endif
 #undef NAME
-
-#define MOSpostEstimate_DEF(TPE)\
-MOSpostEstimate_SIGNATURE(dict, TPE)\
-{\
-	merge_delta_Into_dictionary_##TPE( task->dict_info);\
-}
-
-MOSpostEstimate_DEF(bte)
-MOSpostEstimate_DEF(sht)
-MOSpostEstimate_DEF(int)
-MOSpostEstimate_DEF(lng)
-MOSpostEstimate_DEF(flt)
-MOSpostEstimate_DEF(dbl)
-#ifdef HAVE_HGE
-MOSpostEstimate_DEF(hge)
-#endif
-
-#define MOSdecompress_DEF(TPE) \
-MOSdecompress_SIGNATURE(dict, TPE)\
-{\
-	DICTdecompress(dict, TPE);\
-}
-
-MOSdecompress_DEF(bte)
-MOSdecompress_DEF(sht)
-MOSdecompress_DEF(int)
-MOSdecompress_DEF(lng)
-MOSdecompress_DEF(flt)
-MOSdecompress_DEF(dbl)
-#ifdef HAVE_HGE
-MOSdecompress_DEF(hge)
-#endif
 
 #define scan_loop_dict(TPE, CI_NEXT, TEST) \
     scan_loop_dictionary(dict, TPE, CI_NEXT, TEST)

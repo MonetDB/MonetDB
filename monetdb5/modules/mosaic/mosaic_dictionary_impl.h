@@ -173,6 +173,24 @@ MOSestimate_SIGNATURE(NAME, TPE) {
 	return MAL_SUCCEED;
 }
 
+MOSpostEstimate_SIGNATURE(NAME, TPE) {
+	GlobalDictionaryInfo* info	= task->CONCAT2(NAME, _info);
+	MosaicBlkRec* bytevector	= Tloc(info->admin, 0);
+
+	BUN delta_count = 0;
+
+	BUN i;
+	for (i = 0; i < BATcount(info->admin); i++) {
+		if (!bytevector[i].tag && bytevector[i].cnt) {
+			 bytevector[i].tag = 1;
+			 delta_count++;
+			 bytevector[i].cnt = 0;
+		}
+	}
+	info->count += delta_count;
+	GET_BITS(info) = GET_BITS_EXTENDED(info);
+}
+
 MOSfinalizeDictionary_SIGNATURE(NAME, TPE) {
 	BAT* b = task->bsrc;
 	GlobalDictionaryInfo* info = task->CONCAT2(NAME, _info);
@@ -221,6 +239,27 @@ MOSfinalizeDictionary_SIGNATURE(NAME, TPE) {
 	return MAL_SUCCEED;
 }
 
+static inline 
+BUN CONCAT2(find_value_, TPE)(TPE* dict, BUN dict_count, TPE val) {
+	BUN m, f= 0, l = dict_count, offset = 0;
+	/* This function assumes that the implementation of a dictionary*/
+	/* is that of a sorted array with nils starting first.*/
+	if (IS_NIL(TPE, val)) return 0;
+	if (dict_count > 0 && IS_NIL(TPE, dict[0])) {
+		/*If the dictionary starts with a nil,*/
+		/*the actual sorted dictionary starts an array entry later.*/
+		dict++;
+		offset++;
+		l--;
+	}
+	while( l-f > 0 ) {
+		m = f + (l-f)/2;
+		if ( val < dict[m]) l=m-1; else f= m;
+		if ( val > dict[m]) f=m+1; else l= m;
+	}
+	return f + offset;
+}
+
 MOScompress_SIGNATURE(NAME, TPE) {
 	MOSsetTag(task->blk, NAME);
 	ALIGN_BLOCK_HEADER(task,  NAME, TPE);
@@ -238,4 +277,32 @@ MOScompress_SIGNATURE(NAME, TPE) {
 		setBitVector(base, i, bits, (BitVectorChunk) key);
 	}
 	MOSsetCnt(task->blk, i);
+}
+
+MOSadvance_SIGNATURE(NAME, TPE) {
+	BUN cnt = MOSgetCnt(task->blk);
+
+	assert(cnt > 0);
+	task->start += (oid) cnt;
+
+	char* blk = (char*)task->blk;
+	blk += sizeof(MOSBlockHeaderTpe(NAME, TPE));
+	blk += BitVectorSize(cnt, GET_FINAL_BITS(task, NAME));
+	blk += GET_PADDING(task->blk, NAME, TPE);
+
+	task->blk = (MosaicBlk) blk;
+}
+
+MOSdecompress_SIGNATURE(NAME, TPE) {
+	BUN cnt = MOSgetCnt((task)->blk);
+	BitVector base = MOScodevectorDict(task, NAME, TPE);
+	bte bits = GET_FINAL_BITS(task, NAME);
+	TPE* dict = GET_FINAL_DICT(task, NAME, TPE);
+	TPE* dest = (TPE*) (task)->src;
+	for(BUN i = 0; i < cnt; i++) {
+		BUN key = getBitVector(base,i,(int) bits);
+		(dest)[i] = dict[key];
+	}
+	dest += cnt;
+	(task)->src = (char*) dest;
 }

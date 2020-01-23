@@ -26,6 +26,9 @@
 #define _STRINGIFY(ARG)		#ARG
 #define STRINGIFY(ARG)		_STRINGIFY(ARG)
 
+#define IS_NIL(TPE, VAL) CONCAT3(is_, TPE, _nil)(VAL)
+#define ARE_EQUAL(v, w, HAS_NIL, TPE) ((v == w || (HAS_NIL && IS_NIL(TPE, v) && IS_NIL(TPE, w)) ) )
+
 #define MOSBlockHeaderTpe(NAME, TPE) CONCAT4(MOSBlockHeader_, NAME, _, TPE)
 #define ALIGNMENT_HELPER_TPE(NAME, TPE) struct ALIGNMENT_HELPER_MOSBlockHeader_##NAME##_##TPE
 
@@ -36,15 +39,15 @@ ALIGNMENT_HELPER_TPE(NAME, TPE)\
 	MOSBlockHeaderTpe(NAME, TPE) b;\
 };
 
-#define MOSadvance_SIGNATURE(NAME, TPE) void MOSadvance_##NAME##_##TPE(MOStask* task)
+#define MOSadvance_SIGNATURE(NAME, TPE) void CONCAT4(MOSadvance_, NAME, _, TPE)(MOStask* task)
 #define MOSprepareDictionaryContext_NAME(NAME) MOSprepareDictionaryContext_##NAME
 #define MOSprepareDictionaryContext_SIGNATURE(NAME) str MOSprepareDictionaryContext_NAME(NAME)(MOStask* task)
 #define MOSestimate_SIGNATURE(NAME, TPE) str CONCAT4(MOSestimate_, NAME, _, TPE)(MOStask* task, MosaicEstimation* current, const MosaicEstimation* previous)
-#define MOSpostEstimate_SIGNATURE(NAME, TPE) void MOSpostEstimate_##NAME##_##TPE(MOStask* task)
+#define MOSpostEstimate_SIGNATURE(NAME, TPE) void CONCAT4(MOSpostEstimate_, NAME, _, TPE)(MOStask* task)
 #define MOSfinalizeDictionary_NAME(NAME, TPE) MOSfinalizeDictionary_##NAME##_##TPE
 #define MOSfinalizeDictionary_SIGNATURE(NAME, TPE) str MOSfinalizeDictionary_NAME(NAME, TPE)(MOStask* task)
 #define MOScompress_SIGNATURE(NAME, TPE) void CONCAT4(MOScompress_, NAME, _, TPE)(MOStask* task, MosaicBlkRec* estimate)
-#define MOSdecompress_SIGNATURE(NAME, TPE) void MOSdecompress_##NAME##_##TPE(MOStask* task)
+#define MOSdecompress_SIGNATURE(NAME, TPE) void CONCAT4(MOSdecompress_, NAME, _, TPE)(MOStask* task)
 #define MOSBlockHeader_DEF(NAME, TPE) MosaicBlkHeader_DEF_##NAME(TPE)
 
 #define ALGEBRA_INTERFACE(NAME, TPE) \

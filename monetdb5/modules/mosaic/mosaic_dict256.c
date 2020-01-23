@@ -70,34 +70,6 @@ typedef struct _CappedParameters_t {
 	MosaicBlkRec base;
 } MosaicBlkHeader_dict256_t;
 
-#define DictionaryClass(TPE) \
-find_value_DEF(TPE)\
-merge_delta_Into_dictionary_DEF(TPE)\
-decompress_dictionary_DEF(TPE)
-
-DictionaryClass(bte)
-DictionaryClass(sht)
-DictionaryClass(int)
-DictionaryClass(lng)
-DictionaryClass(flt)
-DictionaryClass(dbl)
-#ifdef HAVE_HGE
-DictionaryClass(hge)
-#endif
-
-#define MOSadvance_DEF(TPE)\
-MOSadvance_SIGNATURE(dict256, TPE) advance_dictionary(dict256, TPE)
-
-MOSadvance_DEF(bte)
-MOSadvance_DEF(sht)
-MOSadvance_DEF(int)
-MOSadvance_DEF(lng)
-MOSadvance_DEF(flt)
-MOSadvance_DEF(dbl)
-#ifdef HAVE_HGE
-MOSadvance_DEF(hge)
-#endif
-
 void
 MOSlayout_dict256_hdr(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
 {
@@ -163,39 +135,8 @@ MOSlayout_dict256(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *bout
 #include "mosaic_dictionary_impl.h"
 #undef TPE
 #endif
+#undef MOS_CUT_OFF_SIZE
 #undef NAME
-
-#define MOSpostEstimate_DEF(TPE)\
-MOSpostEstimate_SIGNATURE(dict256, TPE)\
-{\
-	merge_delta_Into_dictionary_##TPE( task->dict256_info);\
-}
-
-MOSpostEstimate_DEF(bte)
-MOSpostEstimate_DEF(sht)
-MOSpostEstimate_DEF(int)
-MOSpostEstimate_DEF(lng)
-MOSpostEstimate_DEF(flt)
-MOSpostEstimate_DEF(dbl)
-#ifdef HAVE_HGE
-MOSpostEstimate_DEF(hge)
-#endif
-
-#define MOSdecompress_DEF(TPE) \
-MOSdecompress_SIGNATURE(dict256, TPE)\
-{\
-	DICTdecompress(dict256, TPE);\
-}
-
-MOSdecompress_DEF(bte)
-MOSdecompress_DEF(sht)
-MOSdecompress_DEF(int)
-MOSdecompress_DEF(lng)
-MOSdecompress_DEF(flt)
-MOSdecompress_DEF(dbl)
-#ifdef HAVE_HGE
-MOSdecompress_DEF(hge)
-#endif
 
 #define scan_loop_dict256(TPE, CI_NEXT, TEST) \
     scan_loop_dictionary(dict256, TPE, CI_NEXT, TEST)
