@@ -6,9 +6,17 @@
 
 module alarm;
 
-unsafe command alarm.sleep(secs:int):void
+unsafe command alarm.sleep(msecs:int) :void
 address ALARMsleep
-comment "Sleep a few seconds";
+comment "Sleep a few milliseconds";
+
+unsafe pattern alarm.sleep(msecs:int) :int
+address ALARMsleep
+comment "Sleep a few milliseconds and return the slept value";
+
+unsafe pattern alarm.sleep(msecs:bat[:int]) :bat[:int]
+address ALARMsleep
+comment "Sleep a few milliseconds and return the slept value";
 
 unsafe command alarm.usec() :lng
 address ALARMusec
