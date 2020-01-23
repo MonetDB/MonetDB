@@ -6,7 +6,7 @@
 
 module alarm;
 
-unsafe command alarm.sleep(msecs:int) :void
+unsafe pattern alarm.sleep(msecs:int) :void
 address ALARMsleep
 comment "Sleep a few milliseconds";
 
