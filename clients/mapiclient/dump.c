@@ -2797,7 +2797,7 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts)
 			dquoted_print(toConsole, curschema, ";\n");
 		}
 		if (type) { /* table */
-			int ptype = atoi(type), dont_describe = (ptype == 3 || ptype == 5);
+			int ptype = atoi(type), dont_describe = (ptype == 3 || ptype == 6);
 			rc = dump_table(mid, schema, name, toConsole, dont_describe || describe, describe, useInserts, true);
 		} else if (query) {
 			/* view or trigger */

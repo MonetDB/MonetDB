@@ -1,2 +1,2 @@
 -- Conformance Item T39
-SELECT ST_Touches(centerline, shore) FROM streams, lakes WHERE streams.name = 'Cam Stream' AND lakes.name = 'Blue Lake';
+SELECT ST_Touches(centerline, shore) FROM tstreams, lakes WHERE tstreams.name = 'Cam Stream' AND lakes.name = 'Blue Lake';

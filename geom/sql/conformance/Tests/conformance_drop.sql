@@ -2,7 +2,7 @@ DROP TABLE map_neatlines;
 DROP TABLE named_places;
 DROP TABLE ponds;
 DROP TABLE buildings;
-DROP TABLE streams;
+DROP TABLE tstreams;
 DROP TABLE bridges;
 DROP TABLE forests;
 DROP TABLE divided_routes;

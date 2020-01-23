@@ -629,7 +629,7 @@ stdout of test 'MAL-signatures` in directory 'clients` itself:
 [ "basket",	"reset",	"pattern basket.reset(mvc:int, sch:str, tbl:str):int ",	"BSKTreset;",	"Remove a basket content"	]
 [ "basket",	"status",	"pattern basket.status() (seen:bat[:timestamp], sch:bat[:str], tbl:bat[:str], window:bat[:int], stride:bat[:int], events:bat[:int], error:bat[:str]) ",	"BSKTstatus;",	"Show the status of the baskets"	]
 [ "basket",	"tid",	"pattern basket.tid(mvc:int, sch:str, tbl:str):bat[:oid] ",	"BSKTtid;",	"Collect the candidates for a basket"	]
-[ "basket",	"tumble",	"unsafe pattern basket.tumble(mvc:any, sch:str, tbl:str):int ",	"BSKTtumble;",	"Eat away and slide forward"	]
+[ "basket",	"tumble",	"unsafe pattern basket.tumble(sch:str, tbl:str):int ",	"BSKTtumble;",	"Eat away and slide forward"	]
 [ "basket",	"unlock",	"unsafe pattern basket.unlock(mvc:any, sch:str, tbl:str):int ",	"BSKTunlock;",	"Lock the basket for private use"	]
 [ "basket",	"update",	"pattern basket.update(mvc:int, sch:str, tbl:str, col:str, rid:bat[:oid], val:bat[:any]):int ",	"BSKTupdate;",	"Update tuples in a basket"	]
 [ "basket",	"window",	"pattern basket.window(sch:str, tbl:str, elm:int):int ",	"BSKTwindow;",	"Set window size"	]

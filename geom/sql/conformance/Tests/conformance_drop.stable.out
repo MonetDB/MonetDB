@@ -27,7 +27,7 @@ stdout of test 'conformance_drop` in directory 'geom/sql/conformance` itself:
 #DROP TABLE named_places;
 #DROP TABLE ponds;
 #DROP TABLE buildings;
-#DROP TABLE streams;
+#DROP TABLE tstreams;
 #DROP TABLE bridges;
 #DROP TABLE forests;
 #DROP TABLE divided_routes;

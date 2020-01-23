@@ -2600,6 +2600,16 @@ sql_update_timetrails(Client c, mvc *sql, const char *prev_schema, bool *systabf
 						"create table _streams (id int, table_id int, window int, stride int);\n");
 	}
 
+	/* 51_sys_schema_extensions */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"DROP TABLE sys.table_types;\n"
+			"CREATE TABLE sys.table_types (table_type_id SMALLINT NOT NULL PRIMARY KEY,table_type_name VARCHAR(25) NOT NULL);\n"
+			"INSERT INTO sys.table_types VALUES (0,'TABLE'),(1,'VIEW'),(3,'MERGE TABLE'),(4,'STREAM TABLE'),"
+			"(5,'STREAM TABLE'),(6,'REMOTE TABLE'),(7,'REPLICA TABLE'),(10,'SYSTEM TABLE'),(11,'SYSTEM VIEW'),"
+			"(20,'GLOBAL TEMPORARY TABLE'),(30,'LOCAL TEMPORARY TABLE');\n"
+			"ALTER TABLE sys.table_types SET READ ONLY;\n"
+			"GRANT SELECT ON sys.table_types TO PUBLIC;\n");
+
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
 
 	assert(pos < bufsize);

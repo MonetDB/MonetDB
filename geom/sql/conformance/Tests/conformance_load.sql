@@ -29,7 +29,7 @@ CREATE TABLE bridges (
 	name CHARACTER VARYING(64),
 	"position" GEOMETRY(POINT, 101));
 -- Streams
-CREATE TABLE streams (
+CREATE TABLE tstreams (
 	fid INTEGER NOT NULL PRIMARY KEY,
 	name CHARACTER VARYING(64),
 	centerline GEOMETRY(LINESTRING, 101));
@@ -135,11 +135,11 @@ INSERT INTO bridges VALUES(
 	ST_PointFromText('POINT( 44 31 )', 101)
 );
 -- Streams
-INSERT INTO streams VALUES(
+INSERT INTO tstreams VALUES(
 	111, 'Cam Stream',
 	ST_LineFromText('LINESTRING( 38 48, 44 41, 41 36, 44 31, 52 18 )', 101)
 );
-INSERT INTO streams VALUES(112, NULL,
+INSERT INTO tstreams VALUES(112, NULL,
 	ST_LineFromText('LINESTRING( 76 0, 78 4, 73 9 )', 101)
 );
 -- Buildings

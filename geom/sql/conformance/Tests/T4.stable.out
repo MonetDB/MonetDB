@@ -23,7 +23,7 @@ stdout of test 'T4` in directory 'geom/sql/conformance` itself:
 # 13:50:02 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-12717" "--port=37941"
 # 13:50:02 >  
 
-#SELECT srid FROM geometry_columns WHERE f_table_name = 'streams';
+#SELECT srid FROM geometry_columns WHERE f_table_name = 'tstreams';
 % .geometry_columns # table_name
 % srid # name
 % int # type

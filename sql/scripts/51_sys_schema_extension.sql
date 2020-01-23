@@ -310,10 +310,10 @@ GRANT SELECT ON sys.keywords TO PUBLIC;
 
 CREATE TABLE sys.table_types (
     table_type_id   SMALLINT NOT NULL PRIMARY KEY,
-    table_type_name VARCHAR(25) NOT NULL UNIQUE);
+    table_type_name VARCHAR(25) NOT NULL);
 
 -- Values taken from sql/include/sql_catalog.h see enum table_types:
--- table = 0, view = 1, merge_table = 3, stream = 4, remote = 5, replica_table = 6
+-- table = 0, view = 1, merge_table = 3, stream = 4 and 5, remote = 6, replica_table = 7
 -- Note: values 10, 11, 20 and 30 are synthetically constructed, see
 -- view sys.tables. Do not change them as they are used by ODBC
 -- SQLTables(SQL_ALL_TABLE_TYPES) and JDBC methods getTableTypes() and
@@ -323,8 +323,9 @@ INSERT INTO sys.table_types (table_type_id, table_type_name) VALUES
   (1, 'VIEW'),
   (3, 'MERGE TABLE'),
   (4, 'STREAM TABLE'),
-  (5, 'REMOTE TABLE'),
-  (6, 'REPLICA TABLE'),
+  (5, 'STREAM TABLE'),
+  (6, 'REMOTE TABLE'),
+  (7, 'REPLICA TABLE'),
 -- synthetically constructed system obj variants (added 10 to
 -- sys._tables.type value when sys._tables.system is true).
   (10, 'SYSTEM TABLE'),

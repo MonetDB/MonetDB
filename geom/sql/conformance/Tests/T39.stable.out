@@ -23,7 +23,7 @@ stdout of test 'T39` in directory 'geom/sql/conformance` itself:
 # 15:05:54 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-29161" "--port=33617"
 # 15:05:54 >  
 
-#SELECT ST_Touches(centerline, shore) FROM streams, lakes WHERE streams.name = 'Cam Stream' AND lakes.name = 'Blue Lake';
+#SELECT ST_Touches(centerline, shore) FROM tstreams, lakes WHERE tstreams.name = 'Cam Stream' AND lakes.name = 'Blue Lake';
 % sys.%1 # table_name
 % %1 # name
 % boolean # type
