@@ -230,3 +230,66 @@ static void CONCAT2(MOSdecompressInternal_, TPE)(MOStask* task)
 }
 
 #undef decompress
+
+#define select(NAME, TPE, DUMMY_ARGUMENT)\
+{\
+    MOSselect_##NAME##_##TPE(\
+        task,\
+        *(TPE*) low,\
+        *(TPE*) hgh,\
+        *li,\
+        *hi,\
+        *anti);\
+	MOSadvance_##NAME##_##TPE(task);\
+}
+
+static str CONCAT2(MOSselect_, TPE) (MOStask* task, void* low, void* hgh, bit* li, bit* hi, bit* anti)
+{
+	while(task->start < task->stop ){
+		switch(MOSgetTag(task->blk)){
+		case MOSAIC_RLE:
+			ALGODEBUG mnstr_printf(GDKstdout, "#MOSselect_runlength\n");
+			DO_OPERATION_IF_ALLOWED(select, runlength, TPE);
+			break;
+		case MOSAIC_DICT256:
+			ALGODEBUG mnstr_printf(GDKstdout, "#MOSselect_dict256\n");
+			DO_OPERATION_IF_ALLOWED(select, dict256, TPE);
+			break;
+		case MOSAIC_DICT:
+			ALGODEBUG mnstr_printf(GDKstdout, "#MOSselect_var\n");
+			DO_OPERATION_IF_ALLOWED(select, dict, TPE);
+			break;
+		case MOSAIC_FRAME:
+			ALGODEBUG mnstr_printf(GDKstdout, "#MOSselect_frame\n");
+			DO_OPERATION_IF_ALLOWED(select, frame, TPE);
+			break;
+		case MOSAIC_DELTA:
+			ALGODEBUG mnstr_printf(GDKstdout, "#MOSselect_delta\n");
+			DO_OPERATION_IF_ALLOWED(select, delta, TPE);
+			break;
+		case MOSAIC_PREFIX:
+			ALGODEBUG mnstr_printf(GDKstdout, "#MOSselect_prefix\n");
+			DO_OPERATION_IF_ALLOWED(select, prefix, TPE);
+			break;
+		case MOSAIC_LINEAR:
+			ALGODEBUG mnstr_printf(GDKstdout, "#MOSselect_linear\n");
+			DO_OPERATION_IF_ALLOWED(select, linear, TPE);
+			break;
+		case MOSAIC_RAW:
+			ALGODEBUG mnstr_printf(GDKstdout, "#MOSselect_raw\n");
+			DO_OPERATION_IF_ALLOWED(select, raw, TPE);
+			break;
+		}
+
+		if (task->ci->next == task->ci->ncand) {
+			/* We are at the end of the candidate list.
+			 * So we can stop now.
+			 */
+			return MAL_SUCCEED;
+		}
+	}
+
+	return MAL_SUCCEED;
+}
+
+#undef select

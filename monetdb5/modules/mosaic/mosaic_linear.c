@@ -194,13 +194,25 @@ MOSdecompress_DEF(hge)
     }\
 }
 
-MOSselect_DEF(linear, bte)
-MOSselect_DEF(linear, sht)
-MOSselect_DEF(linear, int)
-MOSselect_DEF(linear, lng)
+#define NAME linear
+#define TPE bte
+#include "mosaic_select_template.h"
+#undef TPE
+#define TPE sht
+#include "mosaic_select_template.h"
+#undef TPE
+#define TPE int
+#include "mosaic_select_template.h"
+#undef TPE
+#define TPE lng
+#include "mosaic_select_template.h"
+#undef TPE
 #ifdef HAVE_HGE
-MOSselect_DEF(linear, hge)
+#define TPE hge
+#include "mosaic_select_template.h"
+#undef TPE
 #endif
+#undef NAME
 
 #define projection_loop_linear(TPE, CI_NEXT)\
 {\

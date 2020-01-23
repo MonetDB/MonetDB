@@ -633,16 +633,6 @@ isCompressed(bat bid)
 	return r;
 }
 
-MOSselect_generic_DEF(bte)
-MOSselect_generic_DEF(sht)
-MOSselect_generic_DEF(int)
-MOSselect_generic_DEF(lng)
-MOSselect_generic_DEF(flt)
-MOSselect_generic_DEF(dbl)
-#ifdef HAVE_HGE
-MOSselect_generic_DEF(hge)
-#endif
-
 /* The algebra operators should fall back to their default
  * when we know that the heap is not compressed
  * The actual decompression should wait until we know that

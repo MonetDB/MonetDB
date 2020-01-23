@@ -197,15 +197,31 @@ MOSdecompress_DEF(hge)
     }\
 }
 
-MOSselect_DEF(runlength, bte)
-MOSselect_DEF(runlength, sht)
-MOSselect_DEF(runlength, int)
-MOSselect_DEF(runlength, lng)
-MOSselect_DEF(runlength, flt)
-MOSselect_DEF(runlength, dbl)
+#define NAME runlength
+#define TPE bte
+#include "mosaic_select_template.h"
+#undef TPE
+#define TPE sht
+#include "mosaic_select_template.h"
+#undef TPE
+#define TPE int
+#include "mosaic_select_template.h"
+#undef TPE
+#define TPE lng
+#include "mosaic_select_template.h"
+#undef TPE
+#define TPE flt
+#include "mosaic_select_template.h"
+#undef TPE
+#define TPE dbl
+#include "mosaic_select_template.h"
+#undef TPE
 #ifdef HAVE_HGE
-MOSselect_DEF(runlength, hge)
+#define TPE hge
+#include "mosaic_select_template.h"
+#undef TPE
 #endif
+#undef NAME
 
 #define projection_loop_runlength(TPE, CI_NEXT)\
 {\

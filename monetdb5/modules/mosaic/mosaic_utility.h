@@ -12,7 +12,6 @@
 #ifndef _MOSAIC_UTILITY_
 #define _MOSAIC_UTILITY_
 
-#include "mosaic_select.h"
 #include "mosaic_projection.h"
 #include "mosaic_join.h"
 
@@ -23,6 +22,7 @@
 #define CONCAT2(a, b)		glue2(a, b)
 #define CONCAT3(a, b, c)	glue(a, b, c)
 #define CONCAT4(a, b, c, d)	glue4(a, b, c, d)
+#define CONCAT6(a, b, c, d, e, f)	CONCAT2(glue(a, b, c), glue(d, e, f))
 #define _STRINGIFY(ARG)		#ARG
 #define STRINGIFY(ARG)		_STRINGIFY(ARG)
 
@@ -30,7 +30,7 @@
 #define ARE_EQUAL(v, w, HAS_NIL, TPE) ((v == w || (HAS_NIL && IS_NIL(TPE, v) && IS_NIL(TPE, w)) ) )
 
 #define MOSBlockHeaderTpe(NAME, TPE) CONCAT4(MOSBlockHeader_, NAME, _, TPE)
-#define ALIGNMENT_HELPER_TPE(NAME, TPE) struct ALIGNMENT_HELPER_MOSBlockHeader_##NAME##_##TPE
+#define ALIGNMENT_HELPER_TPE(NAME, TPE) struct CONCAT4(ALIGNMENT_HELPER_MOSBlockHeader_, NAME, _, TPE)
 
 #define ALIGNMENT_HELPER__DEF(NAME, TPE) \
 ALIGNMENT_HELPER_TPE(NAME, TPE)\
@@ -49,6 +49,8 @@ ALIGNMENT_HELPER_TPE(NAME, TPE)\
 #define MOScompress_SIGNATURE(NAME, TPE) void CONCAT4(MOScompress_, NAME, _, TPE)(MOStask* task, MosaicBlkRec* estimate)
 #define MOSdecompress_SIGNATURE(NAME, TPE) void CONCAT4(MOSdecompress_, NAME, _, TPE)(MOStask* task)
 #define MOSBlockHeader_DEF(NAME, TPE) MosaicBlkHeader_DEF_##NAME(TPE)
+#define MOSselect_FUNC(NAME, TPE) CONCAT4(MOSselect_, NAME, _, TPE)
+#define MOSselect_SIGNATURE(NAME, TPE) str MOSselect_FUNC(NAME, TPE)(MOStask* task, TPE tl, TPE th, bool li, bool hi, bool anti)
 
 #define ALGEBRA_INTERFACE(NAME, TPE) \
 MOSadvance_SIGNATURE(NAME, TPE);\

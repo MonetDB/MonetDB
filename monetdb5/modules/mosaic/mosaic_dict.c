@@ -117,15 +117,31 @@ MOSlayout_dict(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput
 #define scan_loop_dict(TPE, CI_NEXT, TEST) \
     scan_loop_dictionary(dict, TPE, CI_NEXT, TEST)
 
-MOSselect_DEF(dict, bte)
-MOSselect_DEF(dict, sht)
-MOSselect_DEF(dict, int)
-MOSselect_DEF(dict, lng)
-MOSselect_DEF(dict, flt)
-MOSselect_DEF(dict, dbl)
+#define NAME dict
+#define TPE bte
+#include "mosaic_select_template.h"
+#undef TPE
+#define TPE sht
+#include "mosaic_select_template.h"
+#undef TPE
+#define TPE int
+#include "mosaic_select_template.h"
+#undef TPE
+#define TPE lng
+#include "mosaic_select_template.h"
+#undef TPE
+#define TPE flt
+#include "mosaic_select_template.h"
+#undef TPE
+#define TPE dbl
+#include "mosaic_select_template.h"
+#undef TPE
 #ifdef HAVE_HGE
-MOSselect_DEF(dict, hge)
+#define TPE hge
+#include "mosaic_select_template.h"
+#undef TPE
 #endif
+#undef NAME
 
 #define projection_loop_dict(TPE, CI_NEXT) \
     projection_loop_dictionary(dict, TPE, CI_NEXT)

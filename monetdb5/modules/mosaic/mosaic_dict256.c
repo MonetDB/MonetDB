@@ -141,15 +141,31 @@ MOSlayout_dict256(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *bout
 #define scan_loop_dict256(TPE, CI_NEXT, TEST) \
     scan_loop_dictionary(dict256, TPE, CI_NEXT, TEST)
 
-MOSselect_DEF(dict256, bte)
-MOSselect_DEF(dict256, sht)
-MOSselect_DEF(dict256, int)
-MOSselect_DEF(dict256, lng)
-MOSselect_DEF(dict256, flt)
-MOSselect_DEF(dict256, dbl)
+#define NAME dict256
+#define TPE bte
+#include "mosaic_select_template.h"
+#undef TPE
+#define TPE sht
+#include "mosaic_select_template.h"
+#undef TPE
+#define TPE int
+#include "mosaic_select_template.h"
+#undef TPE
+#define TPE lng
+#include "mosaic_select_template.h"
+#undef TPE
+#define TPE flt
+#include "mosaic_select_template.h"
+#undef TPE
+#define TPE dbl
+#include "mosaic_select_template.h"
+#undef TPE
 #ifdef HAVE_HGE
-MOSselect_DEF(dict256, hge)
+#define TPE hge
+#include "mosaic_select_template.h"
+#undef TPE
 #endif
+#undef NAME
 
 #define projection_loop_dict256(TPE, CI_NEXT) \
     projection_loop_dictionary(dict256, TPE, CI_NEXT)

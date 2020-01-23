@@ -263,13 +263,25 @@ MOSdecompress_DEF(hge)
     }\
 }
 
-MOSselect_DEF(delta, bte)
-MOSselect_DEF(delta, sht)
-MOSselect_DEF(delta, int)
-MOSselect_DEF(delta, lng)
+#define NAME delta
+#define TPE bte
+#include "mosaic_select_template.h"
+#undef TPE
+#define TPE sht
+#include "mosaic_select_template.h"
+#undef TPE
+#define TPE int
+#include "mosaic_select_template.h"
+#undef TPE
+#define TPE lng
+#include "mosaic_select_template.h"
+#undef TPE
 #ifdef HAVE_HGE
-MOSselect_DEF(delta, hge)
+#define TPE hge
+#include "mosaic_select_template.h"
+#undef TPE
 #endif
+#undef NAME
 
 #define projection_loop_delta(TPE, CANDITER_NEXT)\
 {\

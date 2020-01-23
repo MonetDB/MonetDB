@@ -22,7 +22,7 @@ lib_mosaic = {
 		mosaic.c mosaic.h mosaic_template.h \
 		mosaic_utility.h \
 		mosaic_hdr.c mosaic_hdr.h \
-		mosaic_select.h \
+		mosaic_select.h mosaic_select_template.h mosaic_select_template2.h \
 		mosaic_projection.h \
 		mosaic_join.h \
 		mosaic_raw.c mosaic_raw.h \

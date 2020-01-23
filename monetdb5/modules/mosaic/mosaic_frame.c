@@ -247,13 +247,25 @@ MOSdecompress_DEF(hge)
     }\
 }
 
-MOSselect_DEF(frame, bte)
-MOSselect_DEF(frame, sht)
-MOSselect_DEF(frame, int)
-MOSselect_DEF(frame, lng)
+#define NAME frame
+#define TPE bte
+#include "mosaic_select_template.h"
+#undef TPE
+#define TPE sht
+#include "mosaic_select_template.h"
+#undef TPE
+#define TPE int
+#include "mosaic_select_template.h"
+#undef TPE
+#define TPE lng
+#include "mosaic_select_template.h"
+#undef TPE
 #ifdef HAVE_HGE
-MOSselect_DEF(frame, hge)
+#define TPE hge
+#include "mosaic_select_template.h"
+#undef TPE
 #endif
+#undef NAME
 
 #define projection_loop_frame(TPE, CANDITER_NEXT)\
 {\

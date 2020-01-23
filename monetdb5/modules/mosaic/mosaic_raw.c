@@ -203,15 +203,31 @@ MOSdecompress_DEF(hge)
     }\
 }
 
-MOSselect_DEF(raw, bte)
-MOSselect_DEF(raw, sht)
-MOSselect_DEF(raw, int)
-MOSselect_DEF(raw, lng)
-MOSselect_DEF(raw, flt)
-MOSselect_DEF(raw, dbl)
+#define NAME raw
+#define TPE bte
+#include "mosaic_select_template.h"
+#undef TPE
+#define TPE sht
+#include "mosaic_select_template.h"
+#undef TPE
+#define TPE int
+#include "mosaic_select_template.h"
+#undef TPE
+#define TPE lng
+#include "mosaic_select_template.h"
+#undef TPE
+#define TPE flt
+#include "mosaic_select_template.h"
+#undef TPE
+#define TPE dbl
+#include "mosaic_select_template.h"
+#undef TPE
 #ifdef HAVE_HGE
-MOSselect_DEF(raw, hge)
+#define TPE hge
+#include "mosaic_select_template.h"
+#undef TPE
 #endif
+#undef NAME
 
 #define projection_loop_raw(TPE, CI_NEXT)\
 {	TPE *rt;\
