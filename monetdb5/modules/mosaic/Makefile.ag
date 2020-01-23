@@ -19,7 +19,7 @@ MTSAFE
 lib_mosaic = {
 	NOINST
 	SOURCES = \
-		mosaic.c mosaic.h \
+		mosaic.c mosaic.h mosaic_template.h \
 		mosaic_utility.h \
 		mosaic_hdr.c mosaic_hdr.h \
 		mosaic_select.h \
