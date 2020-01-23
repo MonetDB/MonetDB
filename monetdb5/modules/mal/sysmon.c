@@ -59,7 +59,7 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	MT_lock_set(&mal_delayLock);
 	for ( i = 0; i< qtop; i++)
-	if( QRYqueue[i].query && (QRYqueue[i].cntxt->user == MAL_ADMIN || QRYqueue[i].cntxt->user == cntxt->user)) {
+	if( QRYqueue[i].query && (cntxt->user == MAL_ADMIN || QRYqueue[i].cntxt->user == cntxt->user)) {
 		now= time(0);
 		if ( (now-QRYqueue[i].start) > QRYqueue[i].runtime)
 			prog =QRYqueue[i].runtime > 0 ? 100: int_nil;
