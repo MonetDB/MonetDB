@@ -2677,6 +2677,11 @@ transaction_statement:
 	  m->type = Q_TRANS;					}
  ;
 
+start_transaction:
+   START
+ | BEGIN
+ ;
+
 transaction_stmt:
     COMMIT opt_work opt_chain
 		{ $$ = _symbol_create_int( TR_COMMIT, $3);  }
@@ -2688,7 +2693,7 @@ transaction_stmt:
 		{ $$ = _symbol_create_list( TR_ROLLBACK,
 		   append_string(
 			append_int(L(), $3), $4 )); }
- |  START TRANSACTION transaction_mode_list
+ |  start_transaction TRANSACTION transaction_mode_list
 		{ $$ = _symbol_create_int( TR_START, $3); }
  |  SET LOCAL TRANSACTION transaction_mode_list
 		{ $$ = _symbol_create_int( TR_MODE, $4); }

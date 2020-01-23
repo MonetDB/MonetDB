@@ -14,7 +14,7 @@
  * or of the codebase as a whole. It allows users to focus on logging messages
  * related to certain steps of execution, which can be proved handy when it comes
  * to debugging. The behavior of Tracer can be controlled at runtime using the
- * SQL API described later on. Certain calls require an “id” to operate which can
+ * SQL API described later on. Certain calls require an "id" to operate which can
  * be found on the list of each section below.
  *
  * Internally, the logger uses a buffer to capture log messages before they are

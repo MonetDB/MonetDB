@@ -54,11 +54,11 @@ create procedure sys.flush_log ()
 
 -- Helper function to disable the log merger
 create procedure suspend_log_flushing()
-        external name sql.suspend_log_flushing;
+	external name sql.suspend_log_flushing;
 
 -- Helper function to enable the log merger
 create procedure resume_log_flushing()
-        external name sql.resume_log_flushing;
+	external name sql.resume_log_flushing;
 
 create function sys.debug(debug int) returns integer
 	external name mdb."setDebug";
@@ -71,13 +71,21 @@ create function sys.debugflags()
 	external name mdb."getDebugFlags";
 
 create function sys.deltas ("schema" string)
-    returns table ("id" int, "cleared" boolean, "immutable" bigint, "inserted" bigint, "updates" bigint, "deletes" bigint, "level" int)
-    external name "sql"."deltas";
+	returns table ("id" int, "cleared" boolean, "immutable" bigint, "inserted" bigint, "updates" bigint, "deletes" bigint, "level" int)
+	external name "sql"."deltas";
 
 create function sys.deltas ("schema" string, "table" string)
-    returns table ("id" int, "cleared" boolean, "immutable" bigint, "inserted" bigint, "updates" bigint, "deletes" bigint, "level" int)
-    external name "sql"."deltas";
+	returns table ("id" int, "cleared" boolean, "immutable" bigint, "inserted" bigint, "updates" bigint, "deletes" bigint, "level" int)
+	external name "sql"."deltas";
 
 create function sys.deltas ("schema" string, "table" string, "column" string)
-    returns table ("id" int, "cleared" boolean, "immutable" bigint, "inserted" bigint, "updates" bigint, "deletes" bigint, "level" int)
-    external name "sql"."deltas";
+	returns table ("id" int, "cleared" boolean, "immutable" bigint, "inserted" bigint, "updates" bigint, "deletes" bigint, "level" int)
+	external name "sql"."deltas";
+
+-- Sleep procedure
+create procedure sys."sleep"(msecs int)
+	external name "alarm"."sleep";
+
+-- Sleep function
+create function sys."sleep"(msecs int) returns integer
+	external name "alarm"."sleep";
