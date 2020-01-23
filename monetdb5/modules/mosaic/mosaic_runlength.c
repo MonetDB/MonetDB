@@ -63,128 +63,28 @@ MOSlayout_runlength(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *bo
 		BUNappend(bproperties, "", false) != GDK_SUCCEED )
 		return;
 }
-
-#define MOSadvance_DEF(TPE)\
-MOSadvance_SIGNATURE(runlength, TPE)\
-{\
-	task->start += MOSgetCnt(task->blk);\
-\
-	char* blk = (char*)task->blk;\
-	blk += sizeof(MOSBlockHeaderTpe(runlength, TPE));\
-	blk += GET_PADDING(task->blk, runlength, TPE);\
-\
-	task->blk = (MosaicBlk) blk;\
-}
-
-MOSadvance_DEF(bte)
-MOSadvance_DEF(sht)
-MOSadvance_DEF(int)
-MOSadvance_DEF(lng)
-MOSadvance_DEF(flt)
-MOSadvance_DEF(dbl)
+#define TPE bte
+#include "mosaic_runlength_template.h"
+#undef TPE
+#define TPE sht
+#include "mosaic_runlength_template.h"
+#undef TPE
+#define TPE int
+#include "mosaic_runlength_template.h"
+#undef TPE
+#define TPE lng
+#include "mosaic_runlength_template.h"
+#undef TPE
+#define TPE flt
+#include "mosaic_runlength_template.h"
+#undef TPE
+#define TPE dbl
+#include "mosaic_runlength_template.h"
+#undef TPE
 #ifdef HAVE_HGE
-MOSadvance_DEF(hge)
-#endif
-
-#define MOSestimate_DEF(TPE) \
-MOSestimate_SIGNATURE(runlength, TPE)\
-{	unsigned int i = 0;\
-	(void) previous;\
-	current->compression_strategy.tag = MOSAIC_RLE;\
-	bool nil = !task->bsrc->tnonil;\
-	TPE *v = ((TPE*) task->src) + task->start, val = *v;\
-	BUN limit = task->stop - task->start > MOSAICMAXCNT? MOSAICMAXCNT: task->stop - task->start;\
-	for(v++,i = 1; i < limit; i++,v++) if ( !ARE_EQUAL(*v, val, nil, TPE) ) break;\
-	assert(i > 0);/*Should always compress.*/\
-	current->is_applicable = true;\
-	current->uncompressed_size += (BUN) (i * sizeof(TPE));\
-	current->compressed_size += 2 * sizeof(MOSBlockHeaderTpe(runlength, TPE));\
-	current->compression_strategy.cnt = i;\
-\
-	if (i > *current->max_compression_length ) *current->max_compression_length = i;\
-\
-	return MAL_SUCCEED;\
-}
-
-MOSestimate_DEF(bte)
-MOSestimate_DEF(sht)
-MOSestimate_DEF(int)
-MOSestimate_DEF(lng)
-MOSestimate_DEF(flt)
-MOSestimate_DEF(dbl)
-#ifdef HAVE_HGE
-MOSestimate_DEF(hge)
-#endif
-
-#define MOSpostEstimate_DEF(TPE)\
-MOSpostEstimate_SIGNATURE(runlength, TPE)\
-{\
-	(void) task;\
-}
-
-MOSpostEstimate_DEF(bte)
-MOSpostEstimate_DEF(sht)
-MOSpostEstimate_DEF(int)
-MOSpostEstimate_DEF(lng)
-MOSpostEstimate_DEF(flt)
-MOSpostEstimate_DEF(dbl)
-#ifdef HAVE_HGE
-MOSpostEstimate_DEF(hge)
-#endif
-
-// rather expensive simple value non-compressed store
-#define MOScompress_DEF(TPE)\
-MOScompress_SIGNATURE(runlength, TPE)\
-{\
-	ALIGN_BLOCK_HEADER(task,  runlength, TPE);\
-\
-	(void) estimate;\
-	BUN i ;\
-	bool nil = !task->bsrc->tnonil;\
-\
-	MosaicBlk blk = task->blk;\
-	MOSsetTag(blk, MOSAIC_RLE);\
-	TPE *v = ((TPE*) task->src)+task->start, val = *v;\
-	TPE *dst = &GET_VAL_runlength(task, TPE);\
-	BUN limit = task->stop - task->start > MOSAICMAXCNT ? MOSAICMAXCNT: task->stop - task->start;\
-	*dst = val;\
-	for(v++, i =1; i<limit; i++,v++)\
-	if ( !ARE_EQUAL(*v, val, nil, TPE))\
-		break;\
-	MOSsetCnt(blk, i);\
-	task->dst +=  sizeof(TPE);\
-}
-
-MOScompress_DEF(bte)
-MOScompress_DEF(sht)
-MOScompress_DEF(int)
-MOScompress_DEF(lng)
-MOScompress_DEF(flt)
-MOScompress_DEF(dbl)
-#ifdef HAVE_HGE
-MOScompress_DEF(hge)
-#endif
-
-#define MOSdecompress_DEF(TPE) \
-MOSdecompress_SIGNATURE(runlength, TPE)\
-{\
-	TPE val = GET_VAL_runlength(task, TPE);\
-	BUN lim = MOSgetCnt(task->blk);\
-\
-	BUN i;\
-	for(i = 0; i < lim; i++)\
-		((TPE*)task->src)[i] = val;\
-	task->src += i * sizeof(TPE);\
-}
-
-MOSdecompress_DEF(bte)
-MOSdecompress_DEF(sht)
-MOSdecompress_DEF(int)
-MOSdecompress_DEF(lng)
-MOSdecompress_DEF(flt)
-MOSdecompress_DEF(dbl)
-#ifdef HAVE_HGE
-MOSdecompress_DEF(hge)
+#define TPE hge
+#include "mosaic_runlength_template.h"
+#undef TPE
 #endif
 
 #define scan_loop_runlength(TPE, CI_NEXT, TEST) \

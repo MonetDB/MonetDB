@@ -64,131 +64,28 @@ MOSlayout_raw(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput,
 		return;
 }
 
-#define MOSadvance_DEF(TPE)\
-MOSadvance_SIGNATURE(raw, TPE)\
-{\
-	BUN cnt = MOSgetCnt(task->blk);\
-	task->start += MOSgetCnt(task->blk);\
-\
-	char* blk = (char*)task->blk;\
-	blk += sizeof(MOSBlockHeaderTpe(raw, TPE));\
-	blk += GET_PADDING(task->blk, raw, TPE);\
-	blk += cnt * sizeof(TPE);\
-\
-	task->blk = (MosaicBlk) blk;\
-}
-
-MOSadvance_DEF(bte)
-MOSadvance_DEF(sht)
-MOSadvance_DEF(int)
-MOSadvance_DEF(lng)
-MOSadvance_DEF(flt)
-MOSadvance_DEF(dbl)
+#define TPE bte
+#include "mosaic_raw_template.h"
+#undef TPE
+#define TPE sht
+#include "mosaic_raw_template.h"
+#undef TPE
+#define TPE int
+#include "mosaic_raw_template.h"
+#undef TPE
+#define TPE lng
+#include "mosaic_raw_template.h"
+#undef TPE
+#define TPE flt
+#include "mosaic_raw_template.h"
+#undef TPE
+#define TPE dbl
+#include "mosaic_raw_template.h"
+#undef TPE
 #ifdef HAVE_HGE
-MOSadvance_DEF(hge)
-#endif
-
-#define MOSestimate_DEF(TPE) \
-MOSestimate_SIGNATURE(raw, TPE)\
-{\
-	/*The raw compression technique is always applicable and only adds one item at a time.*/\
-	(void) task;\
-	current->compression_strategy.tag = MOSAIC_RAW;\
-	current->is_applicable = true;\
-	current->uncompressed_size += (BUN) sizeof(TPE);\
-	unsigned int cnt = previous->compression_strategy.cnt;\
-	if (previous->is_applicable && previous->compression_strategy.tag == MOSAIC_RAW && (cnt + 1 < MOSAICMAXCNT)) {\
-		current->must_be_merged_with_previous = true;\
-		cnt++;\
-		current->previous_compressed_size = previous->previous_compressed_size;\
-		current->compressed_size += sizeof(TPE);\
-	}\
-	else {\
-		current->must_be_merged_with_previous = false;\
-		cnt = 1;\
-		current->compressed_size += sizeof(TPE);\
-	}\
-	current->compression_strategy.cnt = cnt;\
-\
-	return MAL_SUCCEED;\
-}
-
-MOSestimate_DEF(bte)
-MOSestimate_DEF(sht)
-MOSestimate_DEF(int)
-MOSestimate_DEF(lng)
-MOSestimate_DEF(flt)
-MOSestimate_DEF(dbl)
-#ifdef HAVE_HGE
-MOSestimate_DEF(hge)
-#endif
-
-#define MOSpostEstimate_DEF(TPE)\
-MOSpostEstimate_SIGNATURE(raw, TPE)\
-{\
-	(void) task;\
-}
-
-MOSpostEstimate_DEF(bte)
-MOSpostEstimate_DEF(sht)
-MOSpostEstimate_DEF(int)
-MOSpostEstimate_DEF(lng)
-MOSpostEstimate_DEF(flt)
-MOSpostEstimate_DEF(dbl)
-#ifdef HAVE_HGE
-MOSpostEstimate_DEF(hge)
-#endif
-
-// rather expensive simple value non-compressed store
-#define MOScompress_DEF(TPE)\
-MOScompress_SIGNATURE(raw, TPE)\
-{\
-	ALIGN_BLOCK_HEADER(task, raw, TPE);\
-\
-	MosaicBlk blk = (MosaicBlk) task->blk;\
-	MOSsetTag(blk, MOSAIC_RAW);\
-	TPE *v = ((TPE*)task->src) + task->start;\
-	BUN cnt = estimate->cnt;\
-	TPE *d = &GET_INIT_raw(task, TPE);\
-	for(BUN i = 0; i < cnt; i++,v++){\
-		*d++ = (TPE) *v;\
-	}\
-	task->dst += sizeof(TPE);\
-	MOSsetCnt(blk,cnt);\
-}
-
-MOScompress_DEF(bte)
-MOScompress_DEF(sht)
-MOScompress_DEF(int)
-MOScompress_DEF(lng)
-MOScompress_DEF(flt)
-MOScompress_DEF(dbl)
-#ifdef HAVE_HGE
-MOScompress_DEF(hge)
-#endif
-
-#define MOSdecompress_DEF(TPE) \
-MOSdecompress_SIGNATURE(raw, TPE)\
-{\
-	MosaicBlk blk = (MosaicBlk) task->blk;\
-	BUN i;\
-	TPE* val = &GET_INIT_raw(task, TPE);\
-	TPE* dst = (TPE*) task->src;\
-	BUN lim = MOSgetCnt(blk);\
-	for(i = 0; i < lim; i++) {\
-	dst[i] = val[i]; \
-	}\
-	task->src += i * sizeof(TPE);\
-}
-
-MOSdecompress_DEF(bte)
-MOSdecompress_DEF(sht)
-MOSdecompress_DEF(int)
-MOSdecompress_DEF(lng)
-MOSdecompress_DEF(flt)
-MOSdecompress_DEF(dbl)
-#ifdef HAVE_HGE
-MOSdecompress_DEF(hge)
+#define TPE hge
+#include "mosaic_raw_template.h"
+#undef TPE
 #endif
 
 #define scan_loop_raw(TPE, CI_NEXT, TEST) \

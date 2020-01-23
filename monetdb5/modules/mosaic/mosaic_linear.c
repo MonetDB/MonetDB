@@ -61,125 +61,22 @@ MOSlayout_linear(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutp
 		return;
 }
 
-#define MOSadvance_DEF(TPE)\
-MOSadvance_SIGNATURE(linear, TPE)\
-{\
-	task->start += MOSgetCnt(task->blk);\
-	char* blk = (char*)task->blk;\
-	blk += sizeof(MOSBlockHeaderTpe(linear, TPE));\
-	blk += GET_PADDING(task->blk, linear, TPE);\
-\
-	task->blk = (MosaicBlk) blk;\
-}
-
-MOSadvance_DEF(bte)
-MOSadvance_DEF(sht)
-MOSadvance_DEF(int)
-MOSadvance_DEF(lng)
+#define TPE bte
+#include "mosaic_linear_template.h"
+#undef TPE
+#define TPE sht
+#include "mosaic_linear_template.h"
+#undef TPE
+#define TPE int
+#include "mosaic_linear_template.h"
+#undef TPE
+#define TPE lng
+#include "mosaic_linear_template.h"
+#undef TPE
 #ifdef HAVE_HGE
-MOSadvance_DEF(hge)
-#endif
-
-#define MOSestimate_DEF(TPE) \
-MOSestimate_SIGNATURE(linear, TPE)\
-{\
-	(void) previous;\
-	current->compression_strategy.tag = MOSAIC_LINEAR;\
-	TPE *c = ((TPE*) task->src)+task->start; /*(c)urrent value*/\
-	BUN limit = task->stop - task->start > MOSAICMAXCNT? MOSAICMAXCNT: task->stop - task->start;\
-	BUN i = 1;\
-	if (limit > 1 ){\
-		TPE *p = c++; /*(p)revious value*/\
-		DeltaTpe(TPE) step = GET_DELTA(TPE, *c, *p);\
-		for( ; i < limit; i++, p++, c++) {\
-			DeltaTpe(TPE) current_step = GET_DELTA(TPE, *c, *p);\
-			if (  current_step != step)\
-				break;\
-		}\
-	}\
-	assert(i > 0);/*Should always compress.*/\
-	current->is_applicable = true;\
-	current->uncompressed_size += (BUN) (i * sizeof(TPE));\
-	current->compressed_size += 2 * sizeof(MOSBlockHeaderTpe(linear, TPE));\
-	current->compression_strategy.cnt = (unsigned int) i;\
-\
-	if (i > *current->max_compression_length ) {\
-		*current->max_compression_length = i;\
-	}\
-\
-	return MAL_SUCCEED;\
-}
-
-MOSestimate_DEF(bte)
-MOSestimate_DEF(sht)
-MOSestimate_DEF(int)
-MOSestimate_DEF(lng)
-#ifdef HAVE_HGE
-MOSestimate_DEF(hge)
-#endif
-
-#define MOSpostEstimate_DEF(TPE)\
-MOSpostEstimate_SIGNATURE(linear, TPE)\
-{\
-	(void) task;\
-}
-
-MOSpostEstimate_DEF(bte)
-MOSpostEstimate_DEF(sht)
-MOSpostEstimate_DEF(int)
-MOSpostEstimate_DEF(lng)
-#ifdef HAVE_HGE
-MOSpostEstimate_DEF(hge)
-#endif
-
-// rather expensive simple value non-compressed store
-#define MOScompress_DEF(TPE)\
-MOScompress_SIGNATURE(linear, TPE)\
-{\
-	ALIGN_BLOCK_HEADER(task,  linear, TPE);\
-\
-	MOSsetTag(task->blk,MOSAIC_LINEAR);\
-	TPE *c = ((TPE*) task->src)+task->start; /*(c)urrent value*/\
-	TPE step = 0;\
-	BUN limit = estimate->cnt;\
-	linear_offset(TPE, task) = *(DeltaTpe(TPE)*) c;\
-	if (limit > 1 ){\
-		TPE *p = c++; /*(p)revious value*/\
-		step = (TPE) GET_DELTA(TPE, *c, *p);\
-	}\
-	MOSsetCnt(task->blk, limit);\
-	linear_step(TPE, task) = (DeltaTpe(TPE)) step;\
-	task->dst = ((char*) task->blk)+ wordaligned(MosaicBlkSize +  2 * sizeof(TPE),MosaicBlkRec);\
-}
-
-MOScompress_DEF(bte)
-MOScompress_DEF(sht)
-MOScompress_DEF(int)
-MOScompress_DEF(lng)
-#ifdef HAVE_HGE
-MOScompress_DEF(hge)
-#endif
-
-#define MOSdecompress_DEF(TPE) \
-MOSdecompress_SIGNATURE(linear, TPE)\
-{\
-	MosaicBlk blk =  task->blk;\
-	BUN i;\
-	DeltaTpe(TPE) val	= linear_offset(TPE, task);\
-	DeltaTpe(TPE) step	= linear_step(TPE, task);\
-	BUN lim = MOSgetCnt(blk);\
-	for(i = 0; i < lim; i++, val += step) {\
-		((TPE*)task->src)[i] = (TPE) val;\
-	}\
-	task->src += i * sizeof(TPE);\
-}
-
-MOSdecompress_DEF(bte)
-MOSdecompress_DEF(sht)
-MOSdecompress_DEF(int)
-MOSdecompress_DEF(lng)
-#ifdef HAVE_HGE
-MOSdecompress_DEF(hge)
+#define TPE hge
+#include "mosaic_linear_template.h"
+#undef TPE
 #endif
 
 #define scan_loop_linear(TPE, CI_NEXT, TEST) {\

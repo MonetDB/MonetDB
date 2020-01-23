@@ -71,7 +71,7 @@ typedef Heap *mosaic;	// compressed data is stored on a heap.
 #define Deltahge uhge
 #endif
 
-#define DeltaTpe(TPE) Delta##TPE
+#define DeltaTpe(TPE) CONCAT2(Delta, TPE)
 
 /* Use standard unsigned integer operations 
  * to avoid undefined behavior due to overflow's
@@ -91,7 +91,7 @@ typedef Heap *mosaic;	// compressed data is stored on a heap.
 #define IPhge uhge
 #endif
 
-#define IPTpe(TPE) IP##TPE
+#define IPTpe(TPE) CONCAT2(IP, TPE)
 
 #define METHOD_NOT_AVAILABLE -1
 typedef struct MOSAICHEADER{

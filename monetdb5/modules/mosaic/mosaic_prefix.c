@@ -98,193 +98,22 @@ MOSlayout_prefix(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutp
 		return;
 }
 
-#define MOSadvance_DEF(TPE)\
-MOSadvance_SIGNATURE(prefix, TPE)\
-{\
-	MOSBlockHeaderTpe(prefix, TPE)* parameters = (MOSBlockHeaderTpe(prefix, TPE)*) (task)->blk;\
-	BUN cnt = MOSgetCnt(task->blk);\
-\
-	assert(cnt > 0);\
-	assert(MOSgetTag(task->blk) == MOSAIC_PREFIX);\
-\
-	task->start += (oid) cnt;\
-\
-	char* blk = (char*)task->blk;\
-	blk += sizeof(MOSBlockHeaderTpe(prefix, TPE));\
-	blk += BitVectorSize(cnt, parameters->suffix_bits);\
-	blk += GET_PADDING(task->blk, prefix, TPE);\
-\
-	task->blk = (MosaicBlk) blk;\
-}
-
-MOSadvance_DEF(bte)
-MOSadvance_DEF(sht)
-MOSadvance_DEF(int)
-MOSadvance_DEF(lng)
+#define TPE bte
+#include "mosaic_prefix_template.h"
+#undef TPE
+#define TPE sht
+#include "mosaic_prefix_template.h"
+#undef TPE
+#define TPE int
+#include "mosaic_prefix_template.h"
+#undef TPE
+#define TPE lng
+#include "mosaic_prefix_template.h"
+#undef TPE
 #ifdef HAVE_HGE
-MOSadvance_DEF(hge)
-#endif
-
-#define OverShift(TPE) ((sizeof(IPTpe(TPE)) - sizeof(PrefixTpe(TPE))) * CHAR_BIT)
-#define getSuffixMask(SUFFIX_BITS, TPE) ((PrefixTpe(TPE)) (~(~((IPTpe(TPE)) (0)) << (SUFFIX_BITS))))
-#define getPrefixMask(PREFIX_BITS, TPE) ((PrefixTpe(TPE)) ( (~(~((IPTpe(TPE)) (0)) >> (PREFIX_BITS))) >> OverShift(TPE)))
-
-#define determinePrefixParameters(PARAMETERS, SRC, LIMIT, TPE) \
-do {\
-	PrefixTpe(TPE) *val = (PrefixTpe(TPE)*) (SRC);\
-	const int type_size_in_bits = sizeof(PrefixTpe(TPE))  * CHAR_BIT;\
-	bte suffix_bits = 1;\
-	bte prefix_bits = type_size_in_bits - suffix_bits;\
-	PrefixTpe(TPE) prefix_mask = getPrefixMask(prefix_bits, TPE);\
-	PrefixTpe(TPE) prefix = *val & prefix_mask;\
-	/*TODO: add additional loop to find best bit wise upper bound*/\
-	BUN i;\
-	for(i = 0; i < (LIMIT); i++, val++){\
-		bte current_prefix_bits = prefix_bits;\
-		bte current_suffix_bits = suffix_bits;\
-		PrefixTpe(TPE) current_prefix = prefix;\
-		PrefixTpe(TPE) current_prefix_mask =  prefix_mask;\
-\
-		while ((current_prefix) != (current_prefix_mask & (*val))) {\
-			current_prefix_bits--;\
-			current_prefix_mask = getPrefixMask(current_prefix_bits, TPE);\
-			current_prefix = prefix & current_prefix_mask;\
-			current_suffix_bits++;\
-		}\
-\
-		if (current_suffix_bits >= (int) ((sizeof(PrefixTpe(TPE)) * CHAR_BIT) / 2)) {\
-			/*If we can not compress better then the half of the original data type, we give up. */\
-			break;\
-		}\
-		if ((current_suffix_bits > (int) sizeof(BitVectorChunk) * CHAR_BIT)) {\
-			/*TODO: this extra condition should be removed once bitvector is extended to int64's*/\
-			break;\
-		}\
-\
-		prefix = current_prefix;\
-		prefix_mask = current_prefix_mask;\
-		prefix_bits = current_prefix_bits;\
-		suffix_bits = current_suffix_bits;\
-\
-		assert (suffix_bits + prefix_bits == type_size_in_bits);\
-		assert( (prefix | (getSuffixMask(suffix_bits, TPE) & (*val))) == *val);\
-	}\
-\
-	(PARAMETERS).rec.cnt = (unsigned int) i;\
-	(PARAMETERS).suffix_bits = suffix_bits;\
-	(PARAMETERS).prefix = prefix;\
-} while(0)
-
-#define MOSestimate_DEF(TPE) \
-MOSestimate_SIGNATURE(prefix, TPE)\
-{\
-	(void) previous;\
-	current->is_applicable = true;\
-	current->compression_strategy.tag = MOSAIC_PREFIX;\
-	PrefixTpe(TPE) *src = ((PrefixTpe(TPE)*) task->src) + task->start;\
-	BUN limit = task->stop - task->start > MOSAICMAXCNT? MOSAICMAXCNT: task->stop - task->start;\
-	MOSBlockHeaderTpe(prefix, TPE) parameters;\
-	determinePrefixParameters(parameters, src, limit, TPE);\
-	assert(parameters.rec.cnt > 0);/*Should always compress.*/\
-\
-	BUN store;\
-	int bits;\
-	int i = parameters.rec.cnt;\
-	bits = i * parameters.suffix_bits;\
-	store = 2 * sizeof(MOSBlockHeaderTpe(prefix, TPE));\
-	store += wordaligned(bits/CHAR_BIT + ((bits % CHAR_BIT) > 0), lng);\
-	assert(i > 0);/*Should always compress.*/\
-	current->is_applicable = true;\
-\
-	current->uncompressed_size += (BUN) (i * sizeof(TPE));\
-	current->compressed_size += store;\
-	current->compression_strategy.cnt = (unsigned int) parameters.rec.cnt;\
-\
-	if (parameters.rec.cnt > *current->max_compression_length ) {\
-		*current->max_compression_length = parameters.rec.cnt;\
-	}\
-\
-	return MAL_SUCCEED;\
-}
-
-MOSestimate_DEF(bte)
-MOSestimate_DEF(sht)
-MOSestimate_DEF(int)
-MOSestimate_DEF(lng)
-#ifdef HAVE_HGE
-MOSestimate_DEF(hge)
-#endif
-
-#define MOSpostEstimate_DEF(TPE)\
-MOSpostEstimate_SIGNATURE(prefix, TPE)\
-{\
-	(void) task;\
-}
-
-MOSpostEstimate_DEF(bte)
-MOSpostEstimate_DEF(sht)
-MOSpostEstimate_DEF(int)
-MOSpostEstimate_DEF(lng)
-#ifdef HAVE_HGE
-MOSpostEstimate_DEF(hge)
-#endif
-
-// rather expensive simple value non-compressed store
-#define MOScompress_DEF(TPE)\
-MOScompress_SIGNATURE(prefix, TPE)\
-{\
-	ALIGN_BLOCK_HEADER(task,  prefix, TPE);\
-\
-	MosaicBlk blk = task->blk;\
-	MOSsetTag(blk,MOSAIC_PREFIX);\
-	MOSsetCnt(blk, 0);\
-	PrefixTpe(TPE)* src = (PrefixTpe(TPE)*) getSrc(TPE, task);\
-	BUN i = 0;\
-	BUN limit = estimate->cnt;\
-	MOSBlockHeaderTpe(prefix, TPE)* parameters = (MOSBlockHeaderTpe(prefix, TPE)*) (task)->blk;\
-	determinePrefixParameters(*parameters, src, limit, TPE);\
-	BitVector base = MOScodevectorPrefix(task, TPE);\
-	task->dst = (char*) base;\
-	PrefixTpe(TPE) suffix_mask = getSuffixMask(parameters->suffix_bits, TPE);\
-	for(i = 0; i < MOSgetCnt(task->blk); i++, src++) {\
-		/*TODO: assert that prefix's actually does not cause an overflow. */\
-		PrefixTpe(TPE) suffix = *src & suffix_mask;\
-		setBitVector(base, i, parameters->suffix_bits, (BitVectorChunk) /*TODO: fix this once we have increased capacity of bitvector*/ suffix);\
-	}\
-	task->dst += BitVectorSize(i, parameters->suffix_bits);\
-}
-
-MOScompress_DEF(bte)
-MOScompress_DEF(sht)
-MOScompress_DEF(int)
-MOScompress_DEF(lng)
-#ifdef HAVE_HGE
-MOScompress_DEF(hge)
-#endif
-
-#define MOSdecompress_DEF(TPE) \
-MOSdecompress_SIGNATURE(prefix, TPE)\
-{\
-	MOSBlockHeaderTpe(prefix, TPE)* parameters = (MOSBlockHeaderTpe(prefix, TPE)*) (task)->blk;\
-	BUN lim = MOSgetCnt(task->blk);\
-    PrefixTpe(TPE) prefix = parameters->prefix;\
-	BitVector base = (BitVector) MOScodevectorPrefix(task, TPE);\
-	BUN i;\
-	for(i = 0; i < lim; i++){\
-		PrefixTpe(TPE) suffix = getBitVector(base, i, parameters->suffix_bits);\
-		/*TODO: assert that suffix's actually does not cause an overflow. */\
-		PrefixTpe(TPE) val = prefix | suffix;\
-		((PrefixTpe(TPE)*)task->src)[i] = val;\
-	}\
-	task->src += i * sizeof(TPE);\
-}
-
-MOSdecompress_DEF(bte)
-MOSdecompress_DEF(sht)
-MOSdecompress_DEF(int)
-MOSdecompress_DEF(lng)
-#ifdef HAVE_HGE
-MOSdecompress_DEF(hge)
+#define TPE hge
+#include "mosaic_prefix_template.h"
+#undef TPE
 #endif
 
 #define scan_loop_prefix(TPE, CI_NEXT, TEST) {\

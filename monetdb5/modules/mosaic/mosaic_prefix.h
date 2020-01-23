@@ -35,7 +35,7 @@ mal_export void MOSlayout_prefix(MOStask* task, BAT *btech, BAT *bcount, BAT *bi
 #define Prefixhge uhge
 #endif
 
-#define PrefixTpe(TPE) Prefix##TPE
+#define PrefixTpe(TPE) CONCAT2(Prefix, TPE)
 
 #define MosaicBlkHeader_DEF_prefix(TPE)\
 typedef struct {\
