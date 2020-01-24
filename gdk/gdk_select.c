@@ -130,7 +130,7 @@ hashselect(BAT *b, struct canditer *restrict ci, BAT *bn,
 	if (ci->tpe != cand_dense) {
 		HASHloop_bound(bi, b->thash, i, tl, l, h) {
 			o = (oid) (i + seq - d);
-			if (canditer_search(ci, o, false) != BUN_NONE) {
+			if (canditer_contains(ci, o)) {
 				buninsfix(bn, dst, cnt, o,
 					  maximum - BATcapacity(bn),
 					  maximum, NULL);
@@ -1912,7 +1912,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 				}
 
 				while (low < high) {
-					if (canditer_search(lci, ord[low], false) != BUN_NONE) {
+					if (canditer_contains(lci, ord[low])) {
 						dst1[r1->batCount++] = ord[low];
 						if (r2) {
 							dst2[r2->batCount++] = ro;
