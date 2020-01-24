@@ -87,16 +87,6 @@ MOSlayout_runlength(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *bo
 #undef TPE
 #endif
 
-#define scan_loop_runlength(TPE, CI_NEXT, TEST) \
-{\
-    v = GET_VAL_runlength(task, TPE);\
-    if (TEST) {\
-        for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = CI_NEXT(task->ci)) {\
-		    *o++ = c;\
-        }\
-    }\
-}
-
 #define NAME runlength
 #define TPE bte
 #include "mosaic_select_template.h"
