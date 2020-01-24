@@ -116,20 +116,6 @@ MOSlayout_prefix(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutp
 #undef TPE
 #endif
 
-#define scan_loop_prefix(TPE, CI_NEXT, TEST) {\
-	MOSBlockHeaderTpe(prefix, TPE)* parameters = (MOSBlockHeaderTpe(prefix, TPE)*) task->blk;\
-	BitVector base = (BitVector) MOScodevectorPrefix(task, TPE);\
-	PrefixTpe(TPE) prefix = parameters->prefix;\
-	bte suffix_bits = parameters->suffix_bits;\
-    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = CI_NEXT(task->ci)) {\
-        BUN i = (BUN) (c - first);\
-        v = (TPE) (prefix | getBitVector(base,i,suffix_bits));\
-        /*TODO: change from control to data dependency.*/\
-        if (TEST)\
-            *o++ = c;\
-    }\
-}
-
 #define NAME prefix
 #define TPE bte
 #include "mosaic_select_template.h"

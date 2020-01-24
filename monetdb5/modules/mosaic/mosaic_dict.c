@@ -114,9 +114,6 @@ MOSlayout_dict(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput
 #endif
 #undef NAME
 
-#define scan_loop_dict(TPE, CI_NEXT, TEST) \
-    scan_loop_dictionary(dict, TPE, CI_NEXT, TEST)
-
 #define NAME dict
 #define TPE bte
 #include "mosaic_select_template.h"

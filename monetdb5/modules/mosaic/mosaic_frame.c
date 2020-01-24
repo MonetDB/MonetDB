@@ -80,20 +80,6 @@ MOSlayout_frame(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutpu
 #undef TPE
 #endif
 
-#define scan_loop_frame(TPE, CANDITER_NEXT, TEST) {\
-	MOSBlockHeaderTpe(frame, TPE)* parameters = (MOSBlockHeaderTpe(frame, TPE)*) task->blk;\
-    TPE min = parameters->min;\
-	BitVector base = (BitVector) MOScodevectorFrame(task, TPE);\
-    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = CANDITER_NEXT(task->ci)) {\
-        BUN i = (BUN) (c - first);\
-        TPE delta = getBitVector(base, i, parameters->bits);\
-        v = ADD_DELTA(TPE, min, delta);\
-        /*TODO: change from control to data dependency.*/\
-        if (TEST)\
-            *o++ = c;\
-    }\
-}
-
 #define NAME frame
 #define TPE bte
 #include "mosaic_select_template.h"

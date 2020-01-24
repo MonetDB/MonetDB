@@ -88,18 +88,6 @@ MOSlayout_raw(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput,
 #undef TPE
 #endif
 
-#define scan_loop_raw(TPE, CI_NEXT, TEST) \
-{\
-    TPE *val= &GET_INIT_raw(task, TPE);\
-    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = CI_NEXT(task->ci)) {\
-        BUN i = (BUN) (c - first);\
-        v = val[i];\
-        /*TODO: change from control to data dependency.*/\
-        if (TEST)\
-            *o++ = c;\
-    }\
-}
-
 #define NAME raw
 #define TPE bte
 #include "mosaic_select_template.h"

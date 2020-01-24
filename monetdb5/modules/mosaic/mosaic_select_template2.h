@@ -1,3 +1,37 @@
+#define _TEST_ALWAYS_TRUE	true
+#define _TEST_IS_NIL		IS_NIL(TPE,v)
+#define _TEST_IS_NOT_NIL	!IS_NIL(TPE,v)
+#define _TEST_UPPER_BOUND	!(has_nil && IS_NIL(TPE, v)) && (((hi && v <= th ) || (!hi && v < th )) == !anti)
+#define _TEST_LOWER_BOUND	!(has_nil && IS_NIL(TPE, v)) && (((li && v >= tl ) || (!li && v > tl )) == !anti)
+#define _TEST_EQUAL			!(has_nil && IS_NIL(TPE, v)) && ((hi && v == th)  == !anti)
+#define _TEST_RANGE			!(has_nil && IS_NIL(TPE, v)) && ((((hi && v <= th ) || (!hi && v < th )) && ((li && v >= tl ) || (!li && v > tl )))  == !anti)
+
+#define METHOD_SPECIFIC_INCLUDE STRINGIFY(CONCAT3(mosaic_, NAME, _templates.h))
+
+#define TEST TEST_ALWAYS_TRUE
+#include METHOD_SPECIFIC_INCLUDE
+#undef TEST
+#define TEST TEST_IS_NIL
+#include METHOD_SPECIFIC_INCLUDE
+#undef TEST
+#define TEST TEST_IS_NOT_NIL
+#include METHOD_SPECIFIC_INCLUDE
+#undef TEST
+#define TEST TEST_UPPER_BOUND
+#include METHOD_SPECIFIC_INCLUDE
+#undef TEST
+#define TEST TEST_LOWER_BOUND
+#include METHOD_SPECIFIC_INCLUDE
+#undef TEST
+#define TEST TEST_EQUAL
+#include METHOD_SPECIFIC_INCLUDE
+#undef TEST
+#define TEST TEST_RANGE
+#include METHOD_SPECIFIC_INCLUDE
+#undef TEST
+
+
+#define SCAN_LOOP(TEST) CONCAT2(CONCAT4(scan_loop_, NAME, _, TPE), CONCAT4(_, CAND_ITER, _, TEST))(has_nil, anti, task, first, last, tl, th, li, hi)
 /* generic range select
  *
  * This macro is based on the combined behavior of ALGselect2 and BATselect.
@@ -37,40 +71,36 @@
 static inline void CONCAT6(select_general_, NAME, _, TPE, _, CAND_ITER)(
 	const bool has_nil, const bool anti,
 	MOStask* task, BUN first, BUN last,
-	oid **po,
 	TPE tl, TPE th, bool li, bool hi) {
 	(void) first;
 
-	oid* o = *po;
-
-	TPE v;
 	if		( IS_NIL(TPE, tl) &&  IS_NIL(TPE, th) && li && hi && !anti) {
 		if(has_nil) {
-			CONCAT2(scan_loop_, NAME)(TPE, CAND_ITER, IS_NIL(TPE,v)); 
+			SCAN_LOOP(TEST_IS_NIL); 
 		}
 		/*else*/
 			/*Empty result set.*/
 	}
 	else if	( IS_NIL(TPE, tl) &&  IS_NIL(TPE, th) && li && hi && anti) {
 		if(has_nil) {
-			CONCAT2(scan_loop_, NAME)(TPE, CAND_ITER, !IS_NIL(TPE,v)); 
+			SCAN_LOOP(TEST_IS_NOT_NIL);
 		}
-		else CONCAT2(scan_loop_, NAME)(TPE, CAND_ITER, true);
+		else SCAN_LOOP(TEST_ALWAYS_TRUE);
 	}
 	else if	( IS_NIL(TPE, tl) &&  IS_NIL(TPE, th) && !(li && hi) && !anti) {
 		if(has_nil) {
-			CONCAT2(scan_loop_, NAME)(TPE, CAND_ITER, !IS_NIL(TPE,v)); 
+			SCAN_LOOP(TEST_IS_NOT_NIL); 
 		}
-		else CONCAT2(scan_loop_, NAME)(TPE, CAND_ITER, true);
+		else SCAN_LOOP(TEST_ALWAYS_TRUE);
 	}
 	else if	( IS_NIL(TPE, tl) &&  IS_NIL(TPE, th) && !(li && hi) && anti) {
 			/*Empty result set.*/
 	}
 	else if	( !IS_NIL(TPE, tl) &&  !IS_NIL(TPE, th) && tl == th && !(li && hi) && anti) {
 		if(has_nil) {
-			CONCAT2(scan_loop_, NAME)(TPE, CAND_ITER, !IS_NIL(TPE,v)); 
+			SCAN_LOOP(TEST_IS_NOT_NIL); 
 		}
-		else CONCAT2(scan_loop_, NAME)(TPE, CAND_ITER, true);
+		else SCAN_LOOP(TEST_ALWAYS_TRUE);
 	}
 	else if	( !IS_NIL(TPE, tl) &&  !IS_NIL(TPE, th) && tl == th && !(li && hi) && !anti) {
 		/*Empty result set.*/
@@ -80,34 +110,23 @@ static inline void CONCAT6(select_general_, NAME, _, TPE, _, CAND_ITER)(
 	}
 	else if	( !IS_NIL(TPE, tl) &&  !IS_NIL(TPE, th) && tl > th && anti) {
 		if(has_nil) {
-			CONCAT2(scan_loop_, NAME)(TPE, CAND_ITER, !IS_NIL(TPE,v)); 
+			SCAN_LOOP(TEST_IS_NOT_NIL); 
 		}
-		else CONCAT2(scan_loop_, NAME)(TPE, CAND_ITER, true);
+		else SCAN_LOOP(TEST_ALWAYS_TRUE);
 	}
 	else {
 		/*normal cases.*/
 		if( IS_NIL(TPE, tl) ){
-			CONCAT2(scan_loop_, NAME)(TPE, CAND_ITER,
-				!(has_nil && IS_NIL(TPE, v)) &&
-				(((hi && v <= th ) || (!hi && v < th )) == !anti));
+			SCAN_LOOP(TEST_UPPER_BOUND);
 		} else
 		if( IS_NIL(TPE, th) ){
-			CONCAT2(scan_loop_, NAME)(TPE, CAND_ITER,
-				!(has_nil && IS_NIL(TPE, v)) &&
-				(((li && v >= tl ) || (!li && v > tl )) == !anti));
+			SCAN_LOOP(TEST_LOWER_BOUND);
 		} else
 		if (tl == th){
-			CONCAT2(scan_loop_, NAME)(TPE, CAND_ITER,
-				!(has_nil && IS_NIL(TPE, v)) && 
-				((hi && v == th)  == !anti));
+			SCAN_LOOP(TEST_EQUAL);
 		}
 		else{
-			CONCAT2(scan_loop_, NAME)(TPE, CAND_ITER,
-				!(has_nil && IS_NIL(TPE, v)) && 
-				((((hi && v <= th ) || (!hi && v < th )) &&
-				((li && v >= tl ) || (!li && v > tl )))  == !anti));
+			SCAN_LOOP(TEST_RANGE);
 		}
 	}
-
-	*po = o;
 }

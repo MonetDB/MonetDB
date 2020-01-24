@@ -79,18 +79,6 @@ MOSlayout_linear(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutp
 #undef TPE
 #endif
 
-#define scan_loop_linear(TPE, CI_NEXT, TEST) {\
-	DeltaTpe(TPE) offset	= linear_offset(TPE, task);\
-	DeltaTpe(TPE) step		= linear_step(TPE, task);\
-    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = CI_NEXT(task->ci)) {\
-        BUN i = (BUN) (c - first);\
-        v = (TPE) (offset + (i * step));\
-        /*TODO: change from control to data dependency.*/\
-        if (TEST)\
-            *o++ = c;\
-    }\
-}
-
 #define NAME linear
 #define TPE bte
 #include "mosaic_select_template.h"

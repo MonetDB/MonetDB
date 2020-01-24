@@ -18,11 +18,10 @@
 #include "mosaic_select_template2.h"
 #undef CAND_ITER
 
-#define select_general(HAS_NIL, ANTI, CAND_ITER) CONCAT6(select_general_, NAME, _, TPE, _, CAND_ITER)(HAS_NIL, ANTI, task, first, last, &o, tl, th, li, hi)
+#define select_general(HAS_NIL, ANTI, CAND_ITER) CONCAT6(select_general_, NAME, _, TPE, _, CAND_ITER)(HAS_NIL, ANTI, task, first, last, tl, th, li, hi)
 
 /* definition of type-specific core scan select function */
 MOSselect_SIGNATURE(NAME, TPE) {
-	oid *o;
 	BUN first,last;
 
 	ASSERT_ALIGNMENT_BLOCK_HEADER(task->blk, NAME, TPE);
@@ -31,7 +30,6 @@ MOSselect_SIGNATURE(NAME, TPE) {
 	first = task->start;
 	last = first + MOSgetCnt(task->blk);
 	bool nil = !task->bsrc->tnonil;
-	o = task->lb;\
 
 	/* Advance the candidate iterator to the first element within
 	 * the oid range of the current block.
@@ -77,7 +75,6 @@ MOSselect_SIGNATURE(NAME, TPE) {
 		(void) canditer_prev(task->ci);
 	}
 
-	task->lb = o;
 	return MAL_SUCCEED;
 }
 
