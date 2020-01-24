@@ -691,6 +691,8 @@ chkDeclarations(MalBlkPtr mb){
 		/* check correct use of the arguments*/
 		for(k=p->retc;k<p->argc; k++) {
 			l=getArg(p,k);
+			if ( l < 0)
+					throw(MAL, buf, "Non-declared variable: pc=%d, var= %d", pc, k);
 			setVarUsed(mb,l);
 			if( getVarScope(mb,l) == 0){
 				/*

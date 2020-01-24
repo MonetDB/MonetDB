@@ -2632,6 +2632,7 @@ void setReturnArgument(InstrPtr p, int varid);
 str setScenario(Client c, str nme);
 str setVariableRef;
 void setVariableScope(MalBlkPtr mb);
+void setVariableType(MalBlkPtr mb, const int idx, malType type);
 str setWriteModeRef;
 void setprofilerlimit(int limit);
 str shortStmtRendering(MalBlkPtr mb, MalStkPtr stl, InstrPtr p);
