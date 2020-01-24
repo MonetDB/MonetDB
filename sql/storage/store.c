@@ -3583,6 +3583,22 @@ trans_init(sql_trans *tr, backend_stack stk, sql_trans *otr)
 							assert(0);
 						}
 					}
+					if (pt->idxs.set)
+					for (i = pt->idxs.set->h, j = t->idxs.set->h; i && j; i = i->next, j = j->next ) { 
+						sql_idx *pc = i->data; /* parent transactions column */
+						sql_idx *c = j->data; 
+
+						if (pc->base.id == c->base.id) {
+							c->base.rtime = c->base.wtime = 0;
+							c->base.stime = pc->base.wtime;
+							if (!istmp && !c->base.allocated)
+								c->data = NULL;
+							assert (istmp || !c->base.allocated);
+						} else {
+							/* for now assert */
+							assert(0);
+						}
+					}
 				} else {
 					/* for now assert */
 					assert(0);
