@@ -3,10 +3,8 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
-
-/*#define DEBUG*/
 
 #include "monetdb_config.h"
 #include "rel_optimizer.h"
@@ -553,14 +551,14 @@ matching_joins(sql_allocator *sa, list *rels, list *exps, sql_exp *je)
 	r = find_rel(rels, je->r);
 	if (l && r) {
 		list *res;
-		list *n_rels = new_rel_list(sa);	
+		list *n_rels = sa_list(sa);	
 
 		append(n_rels, l);
 		append(n_rels, r);
 		res = list_select(exps, n_rels, (fcmp) &exp_joins_rels, (fdup)NULL);
 		return res; 
 	}
-	return new_rel_list(sa);
+	return sa_list(sa);
 }
 
 static int
@@ -842,7 +840,7 @@ order_joins(mvc *sql, list *rels, list *exps)
 	sql_rel *top = NULL, *l = NULL, *r = NULL;
 	sql_exp *cje;
 	node *djn;
-	list *sdje, *n_rels = new_rel_list(sql->sa);
+	list *sdje, *n_rels = sa_list(sql->sa);
 	int fnd = 0;
 
 	/* find foreign keys and reorder the expressions on reducing quality */
@@ -1114,7 +1112,7 @@ reorder_join(mvc *sql, sql_rel *rel)
 	if (!exps) /* crosstable, ie order not important */
 		return rel;
 	rel->exps = NULL; /* should be all crosstables by now */
- 	rels = new_rel_list(sql->sa);
+ 	rels = sa_list(sql->sa);
 	if (is_outerjoin(rel->op)) {
 		sql_rel *l, *r;
 		int cnt = 0;
@@ -8167,7 +8165,7 @@ rel_semijoin_use_fk(int *changes, mvc *sql, sql_rel *rel)
 	(void)changes;
 	if (is_semi(rel->op) && rel->exps) {
 		list *exps = rel->exps;
-		list *rels = new_rel_list(sql->sa);
+		list *rels = sa_list(sql->sa);
 
 		rel->exps = NULL;
 		append(rels, rel->l);
@@ -8980,15 +8978,14 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, int value_based_
 	gp = (global_props) {.cnt = {0},};
 	rel_properties(sql, &gp, rel);
 
-#ifdef DEBUG
-{
-	int i;
-	for (i = 0; i < ddl_maxops; i++) {
-		if (gp.cnt[i]> 0)
-			printf("%s %d\n", op2string((operator_type)i), gp.cnt[i]);
+	TRC_DEBUG_IF(SQL_OPTIMIZER) {
+		int i;
+		for (i = 0; i < ddl_maxops; i++) {
+			if (gp.cnt[i]> 0)
+				TRC_DEBUG_ENDIF(SQL_OPTIMIZER, "%s %d\n", op2string((operator_type)i), gp.cnt[i]);
+		}
 	}
-}
-#endif
+
 	if (level <= 0 && gp.cnt[op_select]) 
 		rel = rel_split_select(&changes, sql, rel, 1);
 

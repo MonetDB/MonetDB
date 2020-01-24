@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -68,7 +68,7 @@ handleClient(void *data)
 	sabdb *top = NULL;
 	sabdb *stat = NULL;
 	struct sockaddr saddr;
-	socklen_t saddrlen = 0;
+	socklen_t saddrlen = (socklen_t) sizeof(saddr);
 	err e;
 	confkeyval *ckv, *kv;
 	char mydoproxy;
@@ -438,8 +438,7 @@ acceptConnections(int sock, int usock)
 		FD_SET(usock, &fds);
 
 		/* Wait up to 5 seconds */
-		tv.tv_sec = 5;
-		tv.tv_usec = 0;
+		tv = (struct timeval) {.tv_sec = 5};
 		retval = select((sock > usock ? sock : usock) + 1,
 				&fds, NULL, NULL, &tv);
 #endif
@@ -577,12 +576,14 @@ acceptConnections(int sock, int usock)
 			iov.iov_base = buf;
 			iov.iov_len = 1;
 
-			msgh.msg_name = 0;
-			msgh.msg_namelen = 0;
-			msgh.msg_iov = &iov;
-			msgh.msg_iovlen = 1;
-			msgh.msg_control = ccmsg;
-			msgh.msg_controllen = sizeof(ccmsg);
+			msgh = (struct msghdr) {
+				.msg_name = 0,
+				.msg_namelen = 0,
+				.msg_iov = &iov,
+				.msg_iovlen = 1,
+				.msg_control = ccmsg,
+				.msg_controllen = sizeof(ccmsg),
+			};
 
 			rv = recvmsg(msgsock, &msgh, 0);
 			if (rv == -1) {

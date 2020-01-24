@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -61,9 +61,9 @@
 
 /* replace BATconstant with a version that produces a void bat for
  * TYPE_oid/nil */
-#define BATconstantV(HSEQ, TAILTYPE, VALUE, CNT, ROLE)		\
+#define BATconstantV(HSEQ, TAILTYPE, VALUE, CNT, ROLE)			\
 	((TAILTYPE) == TYPE_oid && ((CNT) == 0 || *(oid*)(VALUE) == oid_nil) \
-	 ? BATconstant(HSEQ, TYPE_void, VALUE, CNT, ROLE)	\
+	 ? BATconstant(HSEQ, TYPE_void, VALUE, CNT, ROLE)		\
 	 : BATconstant(HSEQ, TAILTYPE, VALUE, CNT, ROLE))
 
 static gdk_return
@@ -3481,6 +3481,7 @@ addstr_loop(BAT *b1, const char *l, BAT *b2, const char *r, BAT *bn,
 		x -= candoff;
 	} while (i < cnt);
 	GDKfree(s);
+	s = NULL;
 	while (i < cnt) {
 		if (tfastins_nocheckVAR(bn, i, str_nil, Tsize(bn)) != GDK_SUCCEED)
 			goto bunins_failed;
@@ -12310,7 +12311,7 @@ VARcalcrsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
 #define grtr3(a,b,i,t)	(is_##t##_nil(a) || is_##t##_nil(b) ? bit_nil : LT##t(b, a) || (i && EQ##t(a, b)))
 #define not3(a)		(is_bit_nil(a) ? bit_nil : !(a))
 
-#define between3(v, lo, linc, hi, hinc, TYPE)	\
+#define between3(v, lo, linc, hi, hinc, TYPE)				\
 	and3(grtr3(v, lo, linc, TYPE), less3(v, hi, hinc, TYPE))
 
 #define BETWEEN(v, lo, hi, TYPE)					\
@@ -14264,6 +14265,12 @@ BATconvert(BAT *b, BAT *s, int tp, bool abort_on_error)
 	     BATatoms[b->ttype].atomToStr == BATatoms[TYPE_str].atomToStr)) {
 		return COLcopy(b, tp, false, TRANSIENT);
 	}
+	if (ATOMstorage(tp) == TYPE_ptr) {
+		GDKerror("BATconvert: type combination (convert(%s)->%s) "
+			 "not supported.\n",
+			 ATOMname(b->ttype), ATOMname(tp));
+		return NULL;
+	}
 
 	bn = COLnew(b->hseqbase, tp, cnt, TRANSIENT);
 	if (bn == NULL)
@@ -14361,6 +14368,8 @@ VARconvert(ValPtr ret, const ValRecord *v, bool abort_on_error)
 		if (v->val.sval == NULL || strcmp(v->val.sval, str_nil) == 0) {
 			if (VALinit(ret, ret->vtype, ATOMnilptr(ret->vtype)) == NULL)
 				nils = BUN_NONE;
+		} else if (ATOMstorage(ret->vtype) == TYPE_ptr) {
+			nils = BUN_NONE + 1;
 		} else {
 			ssize_t l;
 			size_t len;

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -182,7 +182,7 @@ resizeMalBlk(MalBlkPtr mb, int elements)
 			mb->ssize = elements;
 		} else {
 			mb->stmt = ostmt;	/* reinstate old pointer */
-			mb->errors = createMalException(mb,0, TYPE, "out of memory (requested: %"PRIu64" bytes)", (uint64_t) elements * sizeof(InstrPtr));
+			mb->errors = createMalException(mb,0, TYPE,  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			return -1;
 		}
 	}
@@ -196,7 +196,7 @@ resizeMalBlk(MalBlkPtr mb, int elements)
 			mb->vsize = elements;
 		} else{
 			mb->var = ovar;
-			mb->errors = createMalException(mb,0, TYPE, "out of memory (requested: %"PRIu64" bytes)", (uint64_t) elements * sizeof(InstrPtr));
+			mb->errors = createMalException(mb,0, TYPE,  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			return -1;
 		}
 	}
@@ -762,13 +762,30 @@ makeVarSpace(MalBlkPtr mb)
 }
 
 /* create and initialize a variable record*/
+void
+setVariableType(MalBlkPtr mb, const int n, malType type)
+{
+	assert( n >= 0 && n <mb->vtop);
+	setVarType(mb, n, type);
+	setRowCnt(mb,n,0);
+	clrVarFixed(mb, n);
+	clrVarUsed(mb, n);
+	clrVarInit(mb, n);
+	clrVarDisabled(mb, n);
+	clrVarUDFtype(mb, n);
+	clrVarConstant(mb, n);
+	clrVarCleanup(mb, n);
+}
+
 int
 newVariable(MalBlkPtr mb, const char *name, size_t len, malType type)
 {
 	int n;
 
-	if( len >= IDLENGTH)
+	if( len >= IDLENGTH){
+		mb->errors = createMalException(mb,0,TYPE, "newVariable: id too long");
 		return -1;
+	}
 	if (makeVarSpace(mb)) 
 		/* no space for a new variable */
 		return -1;
@@ -779,16 +796,8 @@ newVariable(MalBlkPtr mb, const char *name, size_t len, malType type)
 		(void) strcpy_len( getVarName(mb,n), name, len + 1);
 	}
 
-	setRowCnt(mb,n,0);
-	setVarType(mb, n, type);
-	clrVarFixed(mb, n);
-	clrVarUsed(mb, n);
-	clrVarInit(mb, n);
-	clrVarDisabled(mb, n);
-	clrVarUDFtype(mb, n);
-	clrVarConstant(mb, n);
-	clrVarCleanup(mb, n);
 	mb->vtop++;
+	setVariableType(mb, n, type);
 	return n;
 }
 
@@ -885,11 +894,8 @@ trimMalVariables_(MalBlkPtr mb, MalStkPtr glb)
 
 	/* build the alias table */
 	for (i = 0; i < mb->vtop; i++) {
-#ifdef DEBUG_REDUCE
-		fprintf(stderr,"used %s %d\n", getVarName(mb,i), isVarUsed(mb,i));
-#endif
 		if ( isVarUsed(mb,i) == 0) {
-			if (glb && isVarConstant(mb, i))
+			if (glb && i < glb->stktop && isVarConstant(mb, i))
 				VALclear(&glb->stk[i]);
 			freeVariable(mb, i);
 			continue;
@@ -904,26 +910,18 @@ trimMalVariables_(MalBlkPtr mb, MalStkPtr glb)
 		/* valgrind finds a leak when we move these variable record
 		 * pointers around. */
 		alias[i] = cnt;
-		if (glb && i != cnt) {
+		if (glb && i < glb->stktop && i != cnt) {
 			glb->stk[cnt] = glb->stk[i];
 			VALempty(&glb->stk[i]);
 		}
 		cnt++;
 	}
-#ifdef DEBUG_REDUCE
-	fprintf(stderr, "Variable reduction %d -> %d\n", mb->vtop, cnt);
-	for (i = 0; i < mb->vtop; i++)
-		fprintf(stderr, "map %d->%d\n", i, alias[i]);
-#endif
 
 	/* remap all variable references to their new position. */
 	if (cnt < mb->vtop) {
 		for (i = 0; i < mb->stop; i++) {
 			q = getInstrPtr(mb, i);
 			for (j = 0; j < q->argc; j++){
-#ifdef DEBUG_REDUCE
-				fprintf(stderr, "map %d->%d\n", getArg(q,j), alias[getArg(q,j)]);
-#endif
 				getArg(q, j) = alias[getArg(q, j)];
 			}
 		}
@@ -934,10 +932,6 @@ trimMalVariables_(MalBlkPtr mb, MalStkPtr glb)
 	if( isTmpVar(mb,i))
         (void) snprintf(mb->var[i].id, IDLENGTH,"%c%c%d", REFMARKER, TMPMARKER,mb->vid++);
 	
-#ifdef DEBUG_REDUCE
-	fprintf(stderr, "After reduction \n");
-	fprintFunction(stderr, mb, 0, 0);
-#endif
 	GDKfree(alias);
 	mb->vtop = cnt;
 }
@@ -1002,6 +996,8 @@ convertConstant(int type, ValPtr vr)
 		return MAL_SUCCEED;
 	if (type == TYPE_bat || isaBatType(type)) {
 		/* BAT variables can only be set to nil */
+		if( vr->vtype != TYPE_void)
+			throw(SYNTAX, "convertConstant", "BAT conversion error");
 		VALclear(vr);
 		vr->vtype = type;
 		vr->val.bval = bat_nil;
@@ -1012,7 +1008,7 @@ convertConstant(int type, ValPtr vr)
 		if (vr->vtype == TYPE_void) {
 			VALclear(vr);
 			vr->vtype = type;
-			vr->val.pval = 0;
+			vr->val.pval = NULL;
 			return MAL_SUCCEED;
 		}
 		if (vr->vtype != type)
@@ -1066,6 +1062,8 @@ cpyConstant(MalBlkPtr mb, VarPtr vr)
 		return -1;
 
 	i = defConstant(mb, vr->type, &cst);
+	if( i<0)
+		return -1;
 	return i;
 }
 
@@ -1075,13 +1073,18 @@ defConstant(MalBlkPtr mb, int type, ValPtr cst)
 	int k;
 	str msg;
 
-	if (isaBatType(type) && cst->vtype == TYPE_void) {
-		cst->vtype = TYPE_bat;
-		cst->val.bval = bat_nil;
-	} else if (cst->vtype != type && !isaBatType(type) && !isPolyType(type)) {
+	if (isaBatType(type)){
+		 if( cst->vtype == TYPE_void) {
+			cst->vtype = TYPE_bat;
+			cst->val.bval = bat_nil;
+		} else {
+			mb->errors = createMalException(mb, 0, TYPE, "BAT coercion error");
+			return -1;
+		}
+	} else if (cst->vtype != type && !isPolyType(type)) {
 		int otype = cst->vtype;
 		assert(type != TYPE_any);	/* help Coverity */
-		msg = convertConstant(type, cst);
+		msg = convertConstant(getBatType(type), cst);
 		if (msg) {
 			str ft, tt;
 
@@ -1270,7 +1273,7 @@ pushArgumentId(MalBlkPtr mb, InstrPtr p, const char *name)
 		size_t namelen = strlen(name);
 		if ((v = newVariable(mb, name, namelen, getAtomIndex(name, namelen, TYPE_any))) < 0) {
 			/* set the MAL block to erroneous and simply return without doing anything */
-			mb->errors = createMalException(mb,0, TYPE, "out of memory ");
+			mb->errors = createMalException(mb,0, TYPE,  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			return NULL;
 		}
 	}
@@ -1378,5 +1381,6 @@ pushInstruction(MalBlkPtr mb, InstrPtr p)
 	}
 	if (mb->stmt[mb->stop])
 		freeInstruction(mb->stmt[mb->stop]);
+	p->pc = mb->stop;
 	mb->stmt[mb->stop++] = p;
 }

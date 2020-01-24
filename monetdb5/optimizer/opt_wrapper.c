@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*  author M.L. Kersten
@@ -146,8 +146,9 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 			msg = (str)(*(codes[i].fcn))(cntxt, mb, stk, p);
 			codes[i].timing += GDKusec() - clk;
 			codes[i].calls++;
-			if (msg) 
-				throw(MAL, optimizer, SQLSTATE(42000) "Error in optimizer %s", optimizer);
+			if (msg) {
+				throw(MAL, optimizer, SQLSTATE(42000) "Error in optimizer %s: %s", optimizer, msg);
+			}
 			break;	
 		}
 	if (codes[i].nme == 0)

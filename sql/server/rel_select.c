@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -3160,43 +3160,43 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 	list *exps = NULL;
 	bool is_grouping = !strcmp(aname, "grouping");
 
-	if (!groupby && !query_has_outer(query)) {
-		char *uaname = GDKmalloc(strlen(aname) + 1);
-		sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: missing group by",
-						 uaname ? toUpperCopy(uaname, aname) : aname);
-		if (uaname)
-			GDKfree(uaname);
-		return e;
-	}
-
-	if (!query_has_outer(query) && is_sql_groupby(f)) {
-		char *uaname = GDKmalloc(strlen(aname) + 1);
-		sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate function '%s' not allowed in GROUP BY clause",
-							   uaname ? toUpperCopy(uaname, aname) : aname, aname);
-		if (uaname)
-			GDKfree(uaname);
-		return e;
-	} else if (!query_has_outer(query) && is_sql_join(f)) { /* the is_sql_join test must come before is_sql_where, because the join conditions are handled with sql_where */
-		char *uaname = GDKmalloc(strlen(aname) + 1);
-		sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed in JOIN conditions",
-				       uaname ? toUpperCopy(uaname, aname) : aname);
-		if (uaname)
-			GDKfree(uaname);
-		return e;
-	} else if (!query_has_outer(query) && is_sql_where(f)) {
-		char *uaname = GDKmalloc(strlen(aname) + 1);
-		sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed in WHERE clause",
-				       uaname ? toUpperCopy(uaname, aname) : aname);
-		if (uaname)
-			GDKfree(uaname);
-		return e;
-	} else if (!query_has_outer(query) && is_sql_aggr(f)) {
-		char *uaname = GDKmalloc(strlen(aname) + 1);
-		sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions cannot be nested",
-				       uaname ? toUpperCopy(uaname, aname) : aname);
-		if (uaname)
-			GDKfree(uaname);
-		return e;
+	if (!query_has_outer(query)) {
+		if (!groupby) {
+			char *uaname = GDKmalloc(strlen(aname) + 1);
+			sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: missing group by",
+							uaname ? toUpperCopy(uaname, aname) : aname);
+			if (uaname)
+				GDKfree(uaname);
+			return e;
+		} else if (is_sql_groupby(f)) {
+			char *uaname = GDKmalloc(strlen(aname) + 1);
+			sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate function '%s' not allowed in GROUP BY clause",
+								uaname ? toUpperCopy(uaname, aname) : aname, aname);
+			if (uaname)
+				GDKfree(uaname);
+			return e;
+		} else if (is_sql_join(f)) { /* the is_sql_join test must come before is_sql_where, because the join conditions are handled with sql_where */
+			char *uaname = GDKmalloc(strlen(aname) + 1);
+			sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed in JOIN conditions",
+						uaname ? toUpperCopy(uaname, aname) : aname);
+			if (uaname)
+				GDKfree(uaname);
+			return e;
+		} else if (is_sql_where(f)) {
+			char *uaname = GDKmalloc(strlen(aname) + 1);
+			sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed in WHERE clause",
+						uaname ? toUpperCopy(uaname, aname) : aname);
+			if (uaname)
+				GDKfree(uaname);
+			return e;
+		} else if (is_sql_aggr(f)) {
+			char *uaname = GDKmalloc(strlen(aname) + 1);
+			sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions cannot be nested",
+						uaname ? toUpperCopy(uaname, aname) : aname);
+			if (uaname)
+				GDKfree(uaname);
+			return e;
+		}
 	}
 
 	exps = sa_list(sql->sa);
@@ -3216,7 +3216,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 			}
 			if (!e || !exp_subtype(e)) /* we also do not expect parameters here */
 				return NULL;
-			all_aggr &= (exp_card(e) <= CARD_AGGR && !exp_is_atom(e) && !is_func(e->type) && (!groupby->r || !exps_find_exp(groupby->r, e)));
+			all_aggr &= (exp_card(e) <= CARD_AGGR && !exp_is_atom(e) && !is_func(e->type) && (!is_groupby(groupby->op) || !groupby->r || !exps_find_exp(groupby->r, e)));
 			has_freevar |= exp_has_freevar(sql, e);
 			all_freevar &= (is_freevar(e)>0);
 			list_append(exps, e);
@@ -5002,14 +5002,39 @@ rel_table_exp(sql_query *query, sql_rel **rel, symbol *column_e )
 	} else if (column_e->token == SQL_TABLE) {
 		char *tname = column_e->data.lval->h->data.sval;
 		list *exps;
-	
-		if ((exps = rel_table_projections(sql, *rel, tname, 0)) != NULL && !list_empty(exps))
+		sql_rel *project = *rel, *groupby = NULL;
+
+		/* if there's a group by relation in the tree, skip it for the '*' case and use the underlying projection */
+		if (project) {
+			while (is_groupby(project->op) || is_select(project->op)) {
+				if (is_groupby(project->op))
+					groupby = project;
+				if (project->l)
+					project = project->l;
+			}
+			assert(project);
+		}
+
+		if ((exps = rel_table_projections(sql, project, tname, 0)) != NULL && !list_empty(exps)) {
+			if (groupby) {
+				groupby->exps = list_distinct(list_merge(groupby->exps, exps, (fdup) NULL), (fcmp) exp_equal, (fdup) NULL);
+				for (node *n = groupby->exps->h ; n ; n = n->next) {
+					sql_exp *e = n->data;
+
+					if (e->card > groupby->card) {
+						if (exp_name(e))
+							return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s' in query results without an aggregate function", exp_name(e));
+						else
+							return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column in query results without an aggregate function");
+					}
+				}
+			}
+
 			return exps;
+		}
 		if (!tname)
-			return sql_error(sql, 02,
-				SQLSTATE(42000) "Table expression without table name");
-		return sql_error(sql, 02,
-				SQLSTATE(42000) "Column expression Table '%s' unknown", tname);
+			return sql_error(sql, 02, SQLSTATE(42000) "Table expression without table name");
+		return sql_error(sql, 02, SQLSTATE(42000) "Column expression Table '%s' unknown", tname);
 	}
 	return NULL;
 }

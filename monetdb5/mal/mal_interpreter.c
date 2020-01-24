@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -387,10 +387,7 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug)
 	InstrPtr pci = getInstrPtr(mb, 0);
 
 	cntxt->lastcmd= time(0);
-#ifdef DEBUG_CALLMAL
-	fprintf(stderr, "callMAL\n");
-	fprintInstruction(stderr, mb, 0, pci, LIST_MAL_ALL);
-#endif
+
 	switch (pci->token) {
 	case FUNCTIONsymbol:
 	case FCNcall:
@@ -566,7 +563,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				 * time and print the query */
 				if (ATOMIC_CAS(&cntxt->lastprint, &lp, t)) {
 					const char *q = cntxt->getquery ? cntxt->getquery(cntxt) : NULL;
-					fprintf(stderr, "#%s: query already running "LLFMT"s: %.200s\n",
+					TRC_INFO(MAL_INTERPRETER, "%s: query already running "LLFMT"s: %.200s\n",
 							cntxt->mythread->name,
 							(lng) (time(0) - cntxt->lastcmd),
 							q ? q : "");
@@ -763,7 +760,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					} else if (lhs->vtype == TYPE_bat)
 						BBPretain(lhs->val.bval);
 				}
-				if(ret == MAL_SUCCEED) {
+				if(ret == MAL_SUCCEED && ii == pci->argc) {
 					ret = runMALsequence(cntxt, pci->blk, 1, pci->blk->stop, nstk, stk, pci);
 					for (ii = 0; ii < nstk->stktop; ii++)
 						if (ATOMextern(nstk->stk[ii].vtype))
@@ -865,7 +862,6 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 						bat bid = stk->stk[a].val.bval;
 
 						if (garbage[i] >= 0) {
-							PARDEBUG fprintf(stderr, "#GC pc=%d bid=%d %s done\n", stkpc, bid, getVarName(mb, garbage[i]));
 							bid = stk->stk[garbage[i]].val.bval;
 							stk->stk[garbage[i]].val.bval = bat_nil;
 							BBPrelease(bid);
@@ -1231,7 +1227,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					freeException(n);
 					freeException(ret);
 					ret = new;
-				}
+				} else ret = n;
 			}
 		} else {
 			ret = createException(MAL, nme, "Exception not caught");
@@ -1364,11 +1360,9 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 void garbageElement(Client cntxt, ValPtr v)
 {
 	(void) cntxt;
-	if (v->vtype == TYPE_str) {
-		if (v->val.sval) {
-			GDKfree(v->val.sval);
-			v->val.sval = NULL;
-		}
+	if (ATOMstorage(v->vtype) == TYPE_str) {
+		GDKfree(v->val.sval);
+		v->val.sval = NULL;
 		v->len = 0;
 	} else if (v->vtype == TYPE_bat) {
 		/*
@@ -1389,8 +1383,7 @@ void garbageElement(Client cntxt, ValPtr v)
 			return;
 		BBPrelease(bid);
 	} else if (0 < v->vtype && v->vtype < MAXATOMS && ATOMextern(v->vtype)) {
-		if (v->val.pval)
-			GDKfree(v->val.pval);
+		GDKfree(v->val.pval);
 		v->val.pval = 0;
 		v->len = 0;
 	}
@@ -1424,8 +1417,10 @@ void garbageCollector(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int flag)
 	}
 #endif
 	assert(mb->vtop <= mb->vsize);
+	assert(stk->stktop <= stk->stksize);
 	(void) flag;
-	for (k = 0; k < mb->vtop; k++) {
+	(void)mb;
+	for (k = 0; k < stk->stktop; k++) {
 	//	if (isVarCleanup(mb, k) ){
 			garbageElement(cntxt, v = &stk->stk[k]);
 			v->vtype = TYPE_int;

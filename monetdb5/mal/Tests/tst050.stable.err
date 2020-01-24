@@ -56,11 +56,8 @@ QUERY = # Variables names may be tagged with a type upfront.
         l:flt := "wrong";
         end l;
 ERROR = !TypeException:user.g[1]:type mismatch sht := lng
-        !TypeException:user.h[1]:type mismatch lng := sht
-        !TypeException:user.k[1]:'bat.new' undefined in:     y:bat[:str] := bat.new(:int);
-        !TypeException:user.l[1]:type mismatch flt := str
 
-# 22:14:56 >  
-# 22:14:56 >  "Done."
-# 22:14:56 >  
+# 14:22:43 >  
+# 14:22:43 >  "Done."
+# 14:22:43 >  
 

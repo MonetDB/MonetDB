@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -265,8 +265,8 @@ SQLshutdown_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg;
 
 	if ((msg = CLTshutdown(cntxt, mb, stk, pci)) == MAL_SUCCEED) {
-		/* administer the shutdown in the system log*/
-		fprintf(stderr, "#Shutdown:%s\n", *getArgReference_str(stk, pci, 0));
+		/* administer the shutdown in the system log */
+		TRC_INFO(SQL_MVC, "Shutdown: %s\n", *getArgReference_str(stk, pci, 0));
 	}
 	return msg;
 }
@@ -495,7 +495,10 @@ create_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *col
 			tpe = *t;
 		}
 
-		if (!(col = mvc_create_column(sql, t, columns[i].name, &tpe))) {
+		if (columns[i].name && columns[i].name[0] == '%') {
+			msg = sql_error(sql, 02, SQLSTATE(42000) "CREATE TABLE: generated labels not allowed in column names, use an alias instead");
+			goto cleanup;
+		} else if (!(col = mvc_create_column(sql, t, columns[i].name, &tpe))) {
 			msg = sql_error(sql, 02, SQLSTATE(3F000) "CREATE TABLE: could not create column %s", columns[i].name);
 			goto cleanup;
 		}
@@ -3025,20 +3028,24 @@ str
 mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	backend *be;
+	mvc *sql;
 	BAT **b = NULL;
 	ssize_t len = 0;
-	sql_table *t = *(sql_table **) getArgReference(stk, pci, pci->retc + 0);
-	const char *tsep = *getArgReference_str(stk, pci, pci->retc + 1);
-	const char *rsep = *getArgReference_str(stk, pci, pci->retc + 2);
-	const char *ssep = *getArgReference_str(stk, pci, pci->retc + 3);
-	const char *ns = *getArgReference_str(stk, pci, pci->retc + 4);
-	const char *fname = *getArgReference_str(stk, pci, pci->retc + 5);
-	lng sz = *getArgReference_lng(stk, pci, pci->retc + 6);
-	lng offset = *getArgReference_lng(stk, pci, pci->retc + 7);
-	int locked = *getArgReference_int(stk, pci, pci->retc + 8);
-	int besteffort = *getArgReference_int(stk, pci, pci->retc + 9);
-	char *fixed_widths = *getArgReference_str(stk, pci, pci->retc + 10);
-	int onclient = *getArgReference_int(stk, pci, pci->retc + 11);
+	sql_schema *sch = NULL;
+	sql_table *t = NULL;
+	const char *sname = *getArgReference_str(stk, pci, pci->retc + 0);
+	const char *tname = *getArgReference_str(stk, pci, pci->retc + 1);
+	const char *tsep = *getArgReference_str(stk, pci, pci->retc + 2);
+	const char *rsep = *getArgReference_str(stk, pci, pci->retc + 3);
+	const char *ssep = *getArgReference_str(stk, pci, pci->retc + 4);
+	const char *ns = *getArgReference_str(stk, pci, pci->retc + 5);
+	const char *fname = *getArgReference_str(stk, pci, pci->retc + 6);
+	lng sz = *getArgReference_lng(stk, pci, pci->retc + 7);
+	lng offset = *getArgReference_lng(stk, pci, pci->retc + 8);
+	int locked = *getArgReference_int(stk, pci, pci->retc + 9);
+	int besteffort = *getArgReference_int(stk, pci, pci->retc + 10);
+	char *fixed_widths = *getArgReference_str(stk, pci, pci->retc + 11);
+	int onclient = *getArgReference_int(stk, pci, pci->retc + 12);
 	str msg = MAL_SUCCEED;
 	bstream *s = NULL;
 	stream *ss;
@@ -3046,11 +3053,17 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;		/* NOT USED */
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
-	if (onclient && !cntxt->filetrans) {
-		throw(MAL, "sql.copy_from", "cannot transfer files from client");
-	}
+	if (onclient && !cntxt->filetrans)
+		throw(SQL, "sql.copy_from", SQLSTATE(42000) "Cannot transfer files from client");
 
 	be = cntxt->sqlcontext;
+	sql = be->mvc;
+
+	if (!(sch = mvc_bind_schema(sql, sname)))
+		throw(SQL, "sql.copy_from", SQLSTATE(3F000) "Schema missing %s", sname);
+	if (!(t = mvc_bind_table(sql, sch, tname)))
+		throw(SQL, "sql.copy_from", SQLSTATE(42S02) "Table missing %s", tname);
+
 	/* The CSV parser expects ssep to have the value 0 if the user does not
 	 * specify a quotation character
 	 */
@@ -3278,19 +3291,17 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
 
-	if ((s = mvc_bind_schema(m, sname)) == NULL)
-		throw(SQL, "sql.import_table", SQLSTATE(3F000) "Schema missing %s",sname);
-	t = mvc_bind_table(m, s, tname);
-	if (!t)
-		throw(SQL, "sql", SQLSTATE(42S02) "Table missing %s", tname);
+	if (!(s = mvc_bind_schema(m, sname)))
+		throw(SQL, "sql.import_table", SQLSTATE(3F000) "Schema missing %s", sname);
+	if (!(t = mvc_bind_table(m, s, tname)))
+		throw(SQL, "sql.import_table", SQLSTATE(42S02) "Table missing %s", tname);
 	if (list_length(t->columns.set) != (pci->argc - (3 + pci->retc)))
-		throw(SQL, "sql", SQLSTATE(42000) "Not enough columns found in input file");
+		throw(SQL, "sql.import_table", SQLSTATE(42000) "Not enough columns found in input file");
 	if (2 * pci->retc + 3 != pci->argc)
-		throw(SQL, "sql", SQLSTATE(42000) "Not enough output values");
+		throw(SQL, "sql.import_table", SQLSTATE(42000) "Not enough output values");
 
-	if (onclient && !cntxt->filetrans) {
-		throw(MAL, "sql.copy_from", "cannot transfer files from client");
-	}
+	if (onclient && !cntxt->filetrans)
+		throw(SQL, "sql.copy_from", SQLSTATE(42000) "Cannot transfer files from client");
 
 	backend *be = cntxt->sqlcontext;
 
@@ -4368,10 +4379,12 @@ SQLargRecord(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) cntxt;
 	ret = getArgReference_str(stk, pci, 0);
-	s = instruction2str(mb, stk, getInstrPtr(mb, 0), LIST_MAL_ALL);
+	s = instruction2str(mb, stk, getInstrPtr(mb, 0), LIST_MAL_CALL);
 	if(s == NULL)
 		throw(SQL, "sql.argRecord", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	t = strchr(s, ' ');
+	if( ! t)
+		t = strchr(s, '\t');
 	*ret = GDKstrdup(t ? t + 1 : s);
 	GDKfree(s);
 	if(*ret == NULL)
@@ -4907,7 +4920,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 									if (BUNappend(heap, &sz, false) != GDK_SUCCEED)
 										goto bailout;
 
-									sz = bn->thash && bn->thash != (Hash *) 1 ? bn->thash->heap.size : 0; /* HASHsize() */
+									sz = bn->thash && bn->thash != (Hash *) 1 ? bn->thash->heaplink.size + bn->thash->heapbckt.size : 0; /* HASHsize() */
 									if (BUNappend(indices, &sz, false) != GDK_SUCCEED)
 										goto bailout;
 									bitval = 0; /* HASHispersistent(bn); */
@@ -4917,7 +4930,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 									sz = IMPSimprintsize(bn);
 									if (BUNappend(imprints, &sz, false) != GDK_SUCCEED)
 										goto bailout;
-									/*printf(" indices "BUNFMT, bn->thash?bn->thash->heap.size:0); */
+									/*printf(" indices "BUNFMT, bn->thash?bn->thash->heaplink.size+bn->thash->heapbckt.size:0); */
 									/*printf("\n"); */
 									bitval = BATtordered(bn);
 									if (!bitval && bn->tnosorted == 0)

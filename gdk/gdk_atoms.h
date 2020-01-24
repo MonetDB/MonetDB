@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #ifndef _GDK_ATOMS_H_
@@ -165,8 +165,8 @@ gdk_export const ptr ptr_nil;
  * In all algorithms across GDK, you will find switches on the types
  * (bte, sht, int, flt, dbl, lng, hge, str). They respectively
  * represent an octet, a 16-bit int, a 32-bit int, a 32-bit float, a
- * 64-bit double, a 64-bit int, and a pointer-sized location of a
- * char-buffer (ended by a zero char).
+ * 64-bit double, a 64-bit int, a 128-bit int, and a pointer-sized location
+ * of a char-buffer (ended by a zero char).
  *
  * In contrast, the types (bit, ptr, bat, oid) are derived types. They
  * do not occur in the switches. The ATOMstorage macro maps them
@@ -327,9 +327,7 @@ ATOMreplaceVAR(int type, Heap *heap, var_t *dst, const void *src)
 #define GDK_STRNIL(s)	((s) == NULL || *(const char*) (s) == '\200')
 #define GDK_STRLEN(s)	((GDK_STRNIL(s)?1:strlen(s))+1)
 #define GDK_STRCMP(l,r)	(GDK_STRNIL(l)?(GDK_STRNIL(r)?0:-1):GDK_STRNIL(r)?1: \
-			 (*(const unsigned char*)(l) < *(const unsigned char*)(r))?-1: \
-			 (*(const unsigned char*)(l) > *(const unsigned char*)(r))?1: \
-			 strCmpNoNil((const unsigned char*)(l),(const unsigned char*)(r)))
+			 strcmp((const char*)(l), (const char*)(r)))
 
 static inline var_t
 VarHeapValRaw(const void *b, BUN p, int w)

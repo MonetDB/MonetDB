@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -2696,6 +2696,7 @@ mapi_reconnect(Mapi mid)
 				hash = malloc(len);
 				if (hash == NULL) {
 					close_connection(mid);
+					free(pwh);
 					return mapi_setError(mid, "malloc failure", "mapi_reconnect", MERROR);
 				}
 				snprintf(hash, len, "{%s}%s", *algs, pwh);

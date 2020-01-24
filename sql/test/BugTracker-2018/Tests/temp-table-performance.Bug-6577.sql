@@ -11,7 +11,7 @@ create table t2 as (select distinct v1 from t1) with data;
 
 select count(t1.v1) from t1, t2 where t1.v1=t2.v1;
 
-create temp table t3 as (select count(t1.v1) from t1, t2 where t1.v1=t2.v1) on commit preserve rows;
+create temp table t3 as (select count(t1.v1) as "mylabel" from t1, t2 where t1.v1=t2.v1) on commit preserve rows;
 drop table t3;
 
 create temp table t3 as (select t1.v1 from t1, t2 where t1.v1=t2.v1) on commit preserve rows;

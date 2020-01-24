@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -238,14 +238,12 @@ BATproject(BAT *l, BAT *r)
 	bool nilcheck = true, stringtrick = false;
 	BUN lcount = BATcount(l), rcount = BATcount(r);
 	struct canditer ci, *lci = NULL;
-	lng t0 = 0;
+	lng t0 = GDKusec();
 
-	ALGODEBUG t0 = GDKusec();
-
-	ALGODEBUG fprintf(stderr, "#%s: %s(l=" ALGOBATFMT ","
-			  "r=" ALGOBATFMT ")\n",
-			  MT_thread_getname(), __func__,
-			  ALGOBATPAR(l), ALGOBATPAR(r));
+	TRC_DEBUG(ALGO, "%s(l=" ALGOBATFMT ","
+				"r=" ALGOBATFMT ")\n",
+			  	__func__,
+			  	ALGOBATPAR(l), ALGOBATPAR(r));
 
 	assert(ATOMtype(l->ttype) == TYPE_oid);
 
@@ -258,9 +256,9 @@ BATproject(BAT *l, BAT *r)
 		}
 		bn = BATslice(r, lo - r->hseqbase, hi - r->hseqbase);
 		BAThseqbase(bn, l->hseqbase);
-		ALGODEBUG fprintf(stderr, "#%s: %s(l=%s,r=%s)=" ALGOOPTBATFMT " (slice)\n",
-				  MT_thread_getname(), __func__,
-				  BATgetId(l), BATgetId(r),  ALGOOPTBATPAR(bn));
+		TRC_DEBUG(ALGO, "%s(l=%s,r=%s)=" ALGOOPTBATFMT " (slice)\n",
+				  	__func__,
+				  	BATgetId(l), BATgetId(r),  ALGOOPTBATPAR(bn));
 		return bn;
 	}
 	if (l->ttype == TYPE_void && l->tvheap != NULL) {
@@ -281,9 +279,9 @@ BATproject(BAT *l, BAT *r)
 		    BATcount(bn) == 0) {
 			BATtseqbase(bn, 0);
 		}
-		ALGODEBUG fprintf(stderr, "#%s: %s(l=%s,r=%s)=" ALGOOPTBATFMT " (constant)\n",
-				  MT_thread_getname(), __func__,
-				  BATgetId(l), BATgetId(r), ALGOOPTBATPAR(bn));
+		TRC_DEBUG(ALGO, "%s(l=%s,r=%s)=" ALGOOPTBATFMT " (constant)\n",
+				  	__func__,
+				  	BATgetId(l), BATgetId(r), ALGOOPTBATPAR(bn));
 		return bn;
 	}
 
@@ -306,9 +304,9 @@ BATproject(BAT *l, BAT *r)
 	}
 	bn = COLnew(l->hseqbase, tpe, lcount, TRANSIENT);
 	if (bn == NULL) {
-		ALGODEBUG fprintf(stderr, "#%s: %s(l=%s,r=%s)=0\n",
-				  MT_thread_getname(), __func__,
-				  BATgetId(l), BATgetId(r));
+		TRC_DEBUG(ALGO, "%s(l=%s,r=%s)=0\n",
+				  	__func__,
+				  	BATgetId(l), BATgetId(r));
 		return NULL;
 	}
 	if (stringtrick) {
@@ -389,6 +387,7 @@ BATproject(BAT *l, BAT *r)
 
 	/* handle string trick */
 	if (stringtrick) {
+		assert(r->tvheap);
 		if (r->batRestricted == BAT_READ) {
 			/* really share string heap */
 			assert(r->tvheap->parentid > 0);
@@ -430,11 +429,11 @@ BATproject(BAT *l, BAT *r)
 
 	if (!BATtdense(r))
 		BATtseqbase(bn, oid_nil);
-	ALGODEBUG fprintf(stderr, "#%s: %s(l=%s,r=%s)=" ALGOBATFMT "%s " LLFMT "us\n",
-			  MT_thread_getname(), __func__,
-			  BATgetId(l), BATgetId(r), ALGOBATPAR(bn),
-			  bn->ttype == TYPE_str && bn->tvheap == r->tvheap ? " shared string heap" : "",
-			  GDKusec() - t0);
+		TRC_DEBUG(ALGO, "%s(l=%s,r=%s)=" ALGOBATFMT "%s " LLFMT "us\n",
+			  		__func__,
+					BATgetId(l), BATgetId(r), ALGOBATPAR(bn),
+					bn->ttype == TYPE_str && bn->tvheap == r->tvheap ? " shared string heap" : "",
+					GDKusec() - t0);
 	return bn;
 
   bailout:
@@ -472,17 +471,14 @@ BATprojectchain(BAT **bats)
 	bool stringtrick = false;
 	const void *nil;
 	int tpe;
-	lng t0 = 0;
-
-	ALGODEBUG t0 = GDKusec();
+	lng t0 = GDKusec();
 
 	/* count number of participating BATs and allocate some
 	 * temporary work space */
 	for (n = 0; bats[n]; n++) {
 		b = bats[n];
-		ALGODEBUG fprintf(stderr, "#%s: %s arg %d: " ALGOBATFMT "\n",
-				  MT_thread_getname(), __func__, n + 1,
-				  ALGOBATPAR(b));
+		TRC_DEBUG(ALGO, "%s arg %d: " ALGOBATFMT "\n",
+				  	__func__, n + 1, ALGOBATPAR(b));
 	}
 	if (n == 0) {
 		GDKerror("%s: must have BAT arguments\n", __func__);
@@ -490,10 +486,10 @@ BATprojectchain(BAT **bats)
 	}
 	if (n == 1) {
 		bn = COLcopy(b, b->ttype, true, TRANSIENT);
-		ALGODEBUG fprintf(stderr, "#%s: %s with 1 bat: copy: "
-				  ALGOOPTBATFMT " (" LLFMT " usec)\n",
-				  MT_thread_getname(), __func__,
-				  ALGOOPTBATPAR(bn), GDKusec() - t0);
+		TRC_DEBUG(ALGO, "%s with 1 bat: copy: "
+					ALGOOPTBATFMT " (" LLFMT " usec)\n",
+					__func__,
+					ALGOOPTBATPAR(bn), GDKusec() - t0);
 		return bn;
 	}
 
@@ -524,10 +520,10 @@ BATprojectchain(BAT **bats)
 		bn = BATconstant(ba[0].hlo, tpe == TYPE_oid ? TYPE_void : tpe,
 				 nil, ba[0].cnt, TRANSIENT);
 		GDKfree(ba);
-		ALGODEBUG fprintf(stderr, "#%s: %s with %d bats: nil/empty: "
-				  ALGOOPTBATFMT " (" LLFMT " usec)\n",
-				  MT_thread_getname(), __func__, n,
-				  ALGOOPTBATPAR(bn), GDKusec() - t0);
+		TRC_DEBUG(ALGO, "%s with %d bats: nil/empty: "
+					ALGOOPTBATFMT " (" LLFMT " usec)\n",
+					__func__, n,
+					ALGOOPTBATPAR(bn), GDKusec() - t0);
 		return bn;
 	}
 
@@ -659,16 +655,15 @@ BATprojectchain(BAT **bats)
 	bn->tnonil = nonil;
 	bn->tseqbase = oid_nil;
 	GDKfree(ba);
-	ALGODEBUG fprintf(stderr, "#%s: %s with %d bats: "
-			  ALGOOPTBATFMT " (" LLFMT " usec)\n",
-			  MT_thread_getname(), __func__, n,
-			  ALGOOPTBATPAR(bn), GDKusec() - t0);
+	TRC_DEBUG(ALGO, "%s with %d bats: "
+			  	ALGOOPTBATFMT " (" LLFMT " usec)\n",
+			  	__func__, n,
+			  	ALGOOPTBATPAR(bn), GDKusec() - t0);
 	return bn;
 
   bunins_failed:
 	GDKfree(ba);
 	BBPreclaim(bn);
-	ALGODEBUG fprintf(stderr, "#%s: %s failed\n",
-			  MT_thread_getname(), __func__);
+	TRC_DEBUG(ALGO, "%s failed\n", __func__);
 	return NULL;
 }

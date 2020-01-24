@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -2378,6 +2378,15 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
 			" and name in ('suspend_log_flushing', 'resume_log_flushing', 'hot_snapshot') and type = %d;\n", (int) F_PROC);
 
+	/* 12_url */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"drop function isaURL(url);\n"
+			"CREATE function isaURL(theUrl string) RETURNS BOOL\n"
+			" EXTERNAL NAME url.\"isaURL\";\n"
+			"GRANT EXECUTE ON FUNCTION isaURL(string) TO PUBLIC;\n"
+			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
+			" and name = 'isaurl' and type = %d;\n", (int) F_FUNC);
+
 	/* 16_tracelog */
 	t = mvc_bind_table(sql, sys, "tracelog");
 	t->system = 0; /* make it non-system else the drop view will fail */
@@ -2488,10 +2497,14 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 			" external name mdb.\"setDebug\";\n"
 			"create function sys.debugflags()\n"
 			" returns table(flag string, val bool)\n"
-			" external name mdb.\"getDebugFlags\";\n");
+			" external name mdb.\"getDebugFlags\";\n"
+			"create procedure sys.\"sleep\"(msecs int)\n"
+			" external name \"alarm\".\"sleep\";\n"
+			"create function sys.\"sleep\"(msecs int) returns integer\n"
+			" external name \"alarm\".\"sleep\";\n");
 	pos += snprintf(buf + pos, bufsize - pos,
 			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
-			" and name in ('debug', 'debugflags');\n");
+			" and name in ('debug', 'debugflags', 'sleep');\n");
 
 	/* 26_sysmon */
 	t = mvc_bind_table(sql, sys, "queue");
@@ -2584,7 +2597,7 @@ SQLupgrades(Client c, mvc *m)
 	int res = 0;
 
 	if (!prev_schema) {
-		fprintf(stderr, "!Allocation failure while running SQL upgrades\n");
+		TRC_CRITICAL(SQL_UPGRADES, "Allocation failure while running SQL upgrades\n");
 		res = -1;
 	}
 
@@ -2593,7 +2606,7 @@ SQLupgrades(Client c, mvc *m)
 		sql_find_subtype(&tp, "hugeint", 0, 0);
 		if (!sql_bind_aggr(m->sa, s, "var_pop", &tp)) {
 			if ((err = sql_update_hugeint(c, m, prev_schema, &systabfixed)) != NULL) {
-				fprintf(stderr, "!%s\n", err);
+				TRC_ERROR(SQL_UPGRADES, "%s\n", err);
 				freeException(err);
 				res = -1;
 			}
@@ -2617,7 +2630,7 @@ SQLupgrades(Client c, mvc *m)
 		/* type sys.point exists: this is an old geom-enabled
 		 * database */
 		if ((err = sql_update_geom(c, m, 1, prev_schema)) != NULL) {
-			fprintf(stderr, "!%s\n", err);
+			TRC_ERROR(SQL_UPGRADES, "%s\n", err);
 			freeException(err);
 			res = -1;
 		}
@@ -2628,7 +2641,7 @@ SQLupgrades(Client c, mvc *m)
 				   &tp, NULL, F_FUNC)) {
 			/* ... but the database is not geom-enabled */
 			if ((err = sql_update_geom(c, m, 0, prev_schema)) != NULL) {
-				fprintf(stderr, "!%s\n", err);
+				TRC_ERROR(SQL_UPGRADES, "%s\n", err);
 				freeException(err);
 				res = -1;
 			}
@@ -2637,20 +2650,20 @@ SQLupgrades(Client c, mvc *m)
 
 	if (!res && mvc_bind_table(m, s, "function_languages") == NULL) {
 		if ((err = sql_update_jul2017(c, prev_schema)) != NULL) {
-			fprintf(stderr, "!%s\n", err);
+			TRC_ERROR(SQL_UPGRADES, "%s\n", err);
 			freeException(err);
 			res = -1;
 		}
 	}
 
 	if (!res && (err = sql_update_jul2017_sp2(c)) != NULL) {
-		fprintf(stderr, "!%s\n", err);
+		TRC_ERROR(SQL_UPGRADES, "%s\n", err);
 		freeException(err);
 		res = -1;
 	}
 
 	if (!res && (err = sql_update_jul2017_sp3(c, m, prev_schema, &systabfixed)) != NULL) {
-		fprintf(stderr, "!%s\n", err);
+		TRC_ERROR(SQL_UPGRADES, "%s\n", err);
 		freeException(err);
 		res = -1;
 	}
@@ -2659,7 +2672,7 @@ SQLupgrades(Client c, mvc *m)
 	    (col = mvc_bind_column(m, t, "coord_dimension")) != NULL &&
 	    strcmp(col->type.type->sqlname, "int") != 0) {
 		if ((err = sql_update_mar2018_geom(c, t, prev_schema)) != NULL) {
-			fprintf(stderr, "!%s\n", err);
+			TRC_ERROR(SQL_UPGRADES, "%s\n", err);
 			freeException(err);
 			res = -1;
 		}
@@ -2668,21 +2681,21 @@ SQLupgrades(Client c, mvc *m)
 	if (!res && mvc_bind_schema(m, "wlc") == NULL &&
 	    !sql_bind_func(m->sa, s, "master", NULL, NULL, F_PROC)) {
 		if ((err = sql_update_mar2018(c, m, prev_schema, &systabfixed)) != NULL) {
-			fprintf(stderr, "!%s\n", err);
+			TRC_ERROR(SQL_UPGRADES, "%s\n", err);
 			freeException(err);
 			res = -1;
 		}
 #ifdef HAVE_NETCDF
 		if (mvc_bind_table(m, s, "netcdf_files") != NULL &&
 		    (err = sql_update_mar2018_netcdf(c, prev_schema)) != NULL) {
-			fprintf(stderr, "!%s\n", err);
+			TRC_ERROR(SQL_UPGRADES, "%s\n", err);
 			freeException(err);
 			res = -1;
 		}
 #endif
 #ifdef HAVE_SAMTOOLS
 		if ((err = sql_update_mar2018_samtools(c, m, prev_schema)) != NULL) {
-			fprintf(stderr, "!%s\n", err);
+			TRC_ERROR(SQL_UPGRADES, "%s\n", err);
 			freeException(err);
 			res = -1;
 		}
@@ -2691,7 +2704,7 @@ SQLupgrades(Client c, mvc *m)
 
 	if (!res && sql_bind_func(m->sa, s, "dependencies_functions_os_triggers", NULL, NULL, F_UNION)) {
 		if ((err = sql_update_mar2018_sp1(c, prev_schema)) != NULL) {
-			fprintf(stderr, "!%s\n", err);
+			TRC_ERROR(SQL_UPGRADES, "%s\n", err);
 			freeException(err);
 			res = -1;
 		}
@@ -2703,7 +2716,7 @@ SQLupgrades(Client c, mvc *m)
 		res_table *output = NULL;
 		err = SQLstatementIntern(c, &qry, "update", true, false, &output);
 		if (err) {
-			fprintf(stderr, "!%s\n", err);
+			TRC_ERROR(SQL_UPGRADES, "%s\n", err);
 			freeException(err);
 			res = -1;
 		} else {
@@ -2712,7 +2725,7 @@ SQLupgrades(Client c, mvc *m)
 				if (BATcount(b) > 0) {
 					/* yes old view definition exists, it needs to be replaced */
 					if ((err = sql_replace_Mar2018_ids_view(c, m, prev_schema)) != NULL) {
-						fprintf(stderr, "!%s\n", err);
+						TRC_ERROR(SQL_UPGRADES, "%s\n", err);
 						freeException(err);
 						res = -1;
 					}
@@ -2733,7 +2746,7 @@ SQLupgrades(Client c, mvc *m)
 			/* sys.chi2prob exists, but there is no
 			 * implementation */
 			if ((err = sql_update_gsl(c, prev_schema)) != NULL) {
-				fprintf(stderr, "!%s\n", err);
+				TRC_ERROR(SQL_UPGRADES, "%s\n", err);
 				freeException(err);
 				res = -1;
 			}
@@ -2743,7 +2756,7 @@ SQLupgrades(Client c, mvc *m)
 	sql_find_subtype(&tp, "clob", 0, 0);
 	if (!res && sql_bind_aggr(m->sa, s, "group_concat", &tp) == NULL) {
 		if ((err = sql_update_aug2018(c, m, prev_schema)) != NULL) {
-			fprintf(stderr, "!%s\n", err);
+			TRC_ERROR(SQL_UPGRADES, "%s\n", err);
 			freeException(err);
 			res = -1;
 		}
@@ -2767,14 +2780,14 @@ SQLupgrades(Client c, mvc *m)
 	 && sql_bind_func(m->sa, s, "dependencies_functions_on_triggers", NULL, NULL, F_UNION)
 	 && sql_bind_func(m->sa, s, "dependencies_keys_on_foreignkeys", NULL, NULL, F_UNION)	) {
 		if ((err = sql_drop_functions_dependencies_Xs_on_Ys(c, prev_schema)) != NULL) {
-			fprintf(stderr, "!%s\n", err);
+			TRC_ERROR(SQL_UPGRADES, "%s\n", err);
 			freeException(err);
 			res = -1;
 		}
 	}
 
 	if (!res && (err = sql_update_aug2018_sp2(c, prev_schema)) != NULL) {
-		fprintf(stderr, "!%s\n", err);
+		TRC_ERROR(SQL_UPGRADES, "%s\n", err);
 		freeException(err);
 		res = -1;
 	}
@@ -2783,13 +2796,13 @@ SQLupgrades(Client c, mvc *m)
 	    t->type == tt_table) {
 		if (!systabfixed &&
 		    (err = sql_fix_system_tables(c, m, prev_schema)) != NULL) {
-			fprintf(stderr, "!%s\n", err);
+			TRC_ERROR(SQL_UPGRADES, "%s\n", err);
 			freeException(err);
 			res = -1;
 		}
 		systabfixed = true;
 		if ((err = sql_update_apr2019(c, m, prev_schema)) != NULL) {
-			fprintf(stderr, "!%s\n", err);
+			TRC_ERROR(SQL_UPGRADES, "%s\n", err);
 			freeException(err);
 			res = -1;
 		}
@@ -2802,21 +2815,21 @@ SQLupgrades(Client c, mvc *m)
 	 && (t = mvc_bind_table(m, s, "tablestorage")) == NULL
 	 && (t = mvc_bind_table(m, s, "schemastorage")) == NULL ) {
 		if ((err = sql_update_storagemodel(c, m, prev_schema)) != NULL) {
-			fprintf(stderr, "!%s\n", err);
+			TRC_ERROR(SQL_UPGRADES, "%s\n", err);
 			freeException(err);
 			res = -1;
 		}
 	}
 
 	if (!res && (err = sql_update_apr2019_sp1(c)) != NULL) {
-		fprintf(stderr, "!%s\n", err);
+		TRC_ERROR(SQL_UPGRADES, "%s\n", err);
 		freeException(err);
 		res = -1;
 	}
 
 	if (!res && sql_bind_func(m->sa, s, "times", NULL, NULL, F_PROC)) {
 		if (!res && (err = sql_update_apr2019_sp2(c, m, prev_schema, &systabfixed)) != NULL) {
-			fprintf(stderr, "!%s\n", err);
+			TRC_ERROR(SQL_UPGRADES, "%s\n", err);
 			freeException(err);
 			res = -1;
 		}
@@ -2825,19 +2838,19 @@ SQLupgrades(Client c, mvc *m)
 	sql_find_subtype(&tp, "string", 0, 0);
 	if (!res && !sql_bind_func3(m->sa, s, "deltas", &tp, &tp, &tp, F_UNION)) {
 		if ((err = sql_update_nov2019_missing_dependencies(c, m)) != NULL) {
-			fprintf(stderr, "!%s\n", err);
+			TRC_ERROR(SQL_UPGRADES, "%s\n", err);
 			freeException(err);
 			res = -1;
 		}
 		if (!systabfixed &&
 		    (err = sql_fix_system_tables(c, m, prev_schema)) != NULL) {
-			fprintf(stderr, "!%s\n", err);
+			TRC_ERROR(SQL_UPGRADES, "%s\n", err);
 			freeException(err);
 			res = -1;
 		}
 		systabfixed = true;
 		if ((err = sql_update_nov2019(c, m, prev_schema, &systabfixed)) != NULL) {
-			fprintf(stderr, "!%s\n", err);
+			TRC_ERROR(SQL_UPGRADES, "%s\n", err);
 			freeException(err);
 			res = -1;
 		}
@@ -2858,7 +2871,7 @@ SQLupgrades(Client c, mvc *m)
 
 	if (!res && !sql_bind_func(m->sa, s, "suspend_log_flushing", NULL, NULL, F_PROC)) {
 		if ((err = sql_update_default(c, m, prev_schema, &systabfixed)) != NULL) {
-			fprintf(stderr, "!%s\n", err);
+			TRC_ERROR(SQL_UPGRADES, "%s\n", err);
 			freeException(err);
 			res = -1;
 		}

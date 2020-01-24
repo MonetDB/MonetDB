@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -1578,15 +1578,16 @@ rel_import(mvc *sql, sql_table *t, const char *tsep, const char *rsep, const cha
 	sql_subtype tpe;
 	sql_exp *import;
 	sql_schema *sys = mvc_bind_schema(sql, "sys");
-	sql_subfunc *f = sql_find_func(sql->sa, sys, "copyfrom", 12, F_UNION, NULL);
+	sql_subfunc *f = sql_find_func(sql->sa, sys, "copyfrom", 13, F_UNION, NULL);
 	char *fwf_string = NULL;
 	
 	if (!f) /* we do expect copyfrom to be there */
 		return NULL;
 	f->res = table_column_types(sql->sa, t);
  	sql_find_subtype(&tpe, "varchar", 0, 0);
-	args = append( append( append( append( append( new_exp_list(sql->sa), 
-		exp_atom_ptr(sql->sa, t)), 
+	args = append( append( append( append( append( append( new_exp_list(sql->sa), 
+		exp_atom_str(sql->sa, t->s->base.name, &tpe)), 
+		exp_atom_str(sql->sa, t->base.name, &tpe)), 
 		exp_atom_str(sql->sa, tsep, &tpe)), 
 		exp_atom_str(sql->sa, rsep, &tpe)), 
 		exp_atom_str(sql->sa, ssep, &tpe)), 

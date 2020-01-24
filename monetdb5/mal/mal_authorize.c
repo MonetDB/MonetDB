@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -1033,6 +1033,7 @@ AUTHaddRemoteTableCredentials(const char *local_table, const char *local_user, c
 	bool free_pw = false;
 	str tmp, output = MAL_SUCCEED;
 	BUN p;
+	str msg = MAL_SUCCEED;
 
 	if (uri == NULL || strNil(uri))
 		throw(ILLARG, "addRemoteTableCredentials", "URI cannot be nil");
@@ -1112,10 +1113,18 @@ AUTHaddRemoteTableCredentials(const char *local_table, const char *local_user, c
 				throw(MAL, "addRemoteTableCredentials", SQLSTATE(42000) "Crypt backend hash not found");
 		}
 	}
-	rethrow("addRemoteTableCredentials", tmp, AUTHverifyPassword(pwhash));
+	msg = AUTHverifyPassword(pwhash);
+	if( msg != MAL_SUCCEED){
+		free(pwhash);
+		rethrow("addRemoteTableCredentials", tmp, msg);
+	}
 
 	str cypher;
-	rethrow("addRemoteTableCredentials", tmp, AUTHcypherValue(&cypher, pwhash));
+	msg = AUTHcypherValue(&cypher, pwhash);
+	if( msg != MAL_SUCCEED){
+		free(pwhash);
+		rethrow("addRemoteTableCredentials", tmp, msg);
+	}
 
 	/* Add entry */
 	bool table_entry = (BUNappend(rt_key, local_table, true) == GDK_SUCCEED &&

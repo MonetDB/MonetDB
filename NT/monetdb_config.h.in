@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /* Manual config.h. needed for win32 .  */
@@ -282,6 +282,7 @@
 #define HAVE_LOCALTIME_R 1
 /* there is something very similar to localtime_r on Windows: */
 #define localtime_r(tp,tm)	localtime_s(tm,tp)
+#define gmtime_r(tp,tm)		gmtime_s(tm,tp)
 
 /* Define to 1 if you have the `lockf' function. */
 /* #undef HAVE_LOCKF */

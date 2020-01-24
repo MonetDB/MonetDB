@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -15,8 +15,7 @@
  * The replicator copies all of them unto and including wlc_limit.
  * This leads to the wlr_tag from -1 .. wlc_limit, wlr_tag,..., INT64_MAX
  *
- * Replication start after setting the master id and giving an (optional)
- * wlr_limit.
+ * Replication start after setting the master id and giving an (optional) wlr_limit.
  * Any error encountered in replaying the log stops the process, because then
  * no guarantee can be given on the consistency with the master database.
  * A manual fix for an exceptional case is allowed, whereafter a call
@@ -45,57 +44,49 @@
 
 MT_Lock     wlr_lock = MT_LOCK_INITIALIZER("wlr_lock");
 
-// #define _WLR_DEBUG_
-  
 /* The current status of the replica processing.
  * It is based on the assumption that at most one replica thread is running
  * importing data from a single master.
  */
 static char wlr_master[IDLENGTH];
 static int	wlr_batches; 				// the next file to be processed
-static lng 	wlr_tag = -1;					// the last transaction id being processed
+static lng 	wlr_tag = -1;				// the last transaction id being processed
+static char wlr_read[26];				// last record read
 static char wlr_timelimit[26];			// stop re-processing transactions when time limit is reached
-static char wlr_read[26];				// stop re-processing transactions when time limit is reached
 static int 	wlr_beat;					// period between successive synchronisations with master
-static char wlr_error[FILENAME_MAX];	// errors should stop the process
+static char wlr_error[BUFSIZ];	// error that stopped the replication process
 
-static MT_Id wlr_thread = 0;			// The single replicator thread
+static MT_Id wlr_thread = 0;			// The single replicator thread is active
 static int 	wlr_state = WLR_WAIT;		// which state WAIT/RUN
 static lng 	wlr_limit = -1;				// stop re-processing after transaction id 'wlr_limit' is processed
 
 #define MAXLINE 2048
 
 /* Simple read the replica configuration status file */
-static int
+static str
 WLRgetConfig(void){
 	char *path;
 	char line[MAXLINE];
 	FILE *fd;
 	int len;
+	str msg= MAL_SUCCEED;
 
-	if((path = GDKfilepath(0, 0, "wlr.config", 0)) == NULL){
-		fprintf(stderr, "wlr.getConfig:Could not create wlr.config file path\n");
-		return -1;
-	}
+	if((path = GDKfilepath(0, 0, "wlr.config", 0)) == NULL)
+		throw(MAL,"wlr.getConfig", "Could not create wlr.config file path\n");
 	fd = fopen(path,"r");
 	GDKfree(path);
-	if( fd == NULL){
-		// during start of the replicator it need not be there
-		return 1;
-	}
+	if( fd == NULL)
+		throw(MAL,"wlr.getConfig", "Could not access wlr.config file \n");
 	while( fgets(line, MAXLINE, fd) ){
 		line[strlen(line)-1]= 0;
-#ifdef _WLR_DEBUG_
-		fprintf(stderr,"#WLRgetConfig %s\n", line);
-#endif
 		if( strncmp("master=", line,7) == 0) {
 			len = snprintf(wlr_master, IDLENGTH, "%s", line + 7);
 			if (len == -1 || len >= IDLENGTH) {
-				fprintf(stderr, "wlr.getConfig:master config value is too large");
+				msg= createException(SQL,"wlr.getConfig", "Master config value is too large\n");
 				goto bailout;
 			} else
 			if (len  == 0) {
-				fprintf(stderr, "wlr.getConfig:master config path missing");
+				msg = createException(SQL,"wlr.getConfig", "Master config path is missing\n");
 				goto bailout;
 			}
 		} else
@@ -108,59 +99,49 @@ WLRgetConfig(void){
 		if( strncmp("beat=", line, 5) == 0)
 			wlr_beat = atoi(line+ 5);
 		else
-		if( strncmp("timelimit=", line, 10) == 0)
-			strcpy(wlr_timelimit, line + 10);
+		if( strncmp("read=", line, 5) == 0)
+			strcpy(wlr_read, line + 5);
 		else
 		if( strncmp("error=", line, 6) == 0) {
 			char *s;
-			len = snprintf(wlr_error, FILENAME_MAX, "%s", line + 6);
-			if (len == -1 || len >= FILENAME_MAX) {
-				fprintf(stderr, "wlr.getConfig:error config value is too large");
+			len = snprintf(wlr_error, BUFSIZ, "%s", line + 6);
+			if (len == -1 || len >= BUFSIZ) {
+				msg = createException(SQL, "wlr.getConfig", "Config value is too large\n");
 				goto bailout;
 			}
 			s = strchr(wlr_error, (int) '\n');
 			if ( s) *s = 0;
-		} else{
-				fprintf(stderr, "wlr.getConfig:unknown configuration item '%s'", line);
-				goto bailout;
-		}
+		} 
 	}
-	return 0;
 bailout:
 	fclose(fd);
-	return -1;
+	return msg;
 }
 
 /* Keep the current status in the configuration status file */
-static void
+static str
 WLRputConfig(void){
 	char *path;
 	stream *fd;
+	str msg = MAL_SUCCEED;
 
-	if((path = GDKfilepath(0,0,"wlr.config",0)) == NULL){
-		fprintf(stderr,"wlr.setMaster:Could not access wlr.config file\n");
-		return ;
-	}
+	if((path = GDKfilepath(0,0,"wlr.config",0)) == NULL)
+		throw(SQL, "wlr.putConfig", "Could not access wlr.config file\n");
 	fd = open_wastream(path);
 	GDKfree(path);
-	if( fd == NULL){
-		fprintf(stderr,"wlr.setMaster:Could not create wlr.config file\n");
-		return;
-	}
+	if( fd == NULL)
+		throw(SQL,"wlr.putConfig", "Could not create wlr.config file\n");
 
 	mnstr_printf(fd,"master=%s\n", wlr_master);
 	mnstr_printf(fd,"batches=%d\n", wlr_batches);
 	mnstr_printf(fd,"tag="LLFMT"\n", wlr_tag);
 	mnstr_printf(fd,"beat=%d\n", wlr_beat);
 	if( wlr_timelimit[0])
-		mnstr_printf(fd,"timelimit=%s\n", wlr_timelimit);
+		mnstr_printf(fd,"read=%s\n", wlr_read);
 	if( wlr_error[0])
-		mnstr_printf(fd,"error=%s\n", wlr_error);
+		mnstr_printf(fd,"error=%s", wlr_error);
 	close_stream(fd);
-#ifdef _WLR_DEBUG_
-	fprintf(stderr,"#WLRput: batches %d tag " LLFMT " limit "LLFMT " beat %d timelimit %s\n",
-		wlr_batches, wlr_tag, wlr_limit, wlr_beat, wlr_timelimit);
-#endif
+	return msg;
 }
 
 /*
@@ -182,7 +163,7 @@ WLRgetMaster(void)
 {
 	char path[FILENAME_MAX];
 	int len;
-	str dir;
+	str dir, msg;
 	FILE *fd;
 
 	if( wlr_master[0] == 0 )
@@ -192,18 +173,18 @@ WLRgetMaster(void)
 	len = snprintf(path, FILENAME_MAX, "..%c%s", DIR_SEP, wlr_master);
 	if (len == -1 || len >= FILENAME_MAX)
 		throw(MAL, "wlr.getMaster", "wlc.config filename path is too large");
-	if((dir = GDKfilepath(0,path,"wlc.config",0)) == NULL)
+	if((dir = GDKfilepath(0, path, "wlc.config", 0)) == NULL)
 		throw(MAL,"wlr.getMaster","Could not access wlc.config file %s/wlc.config\n", path);
 
 	fd = fopen(dir,"r");
 	GDKfree(dir);
-	if( fd ){
-		WLCreadConfig(fd);
-		if( ! wlr_master[0] )
-			throw(MAL,"wlr.getMaster","Master not identified\n");
-		wlc_state = WLC_CLONE; // not used as master
-	} else
+	if( fd == NULL )
 		throw(MAL,"wlr.getMaster","Could not get read access to '%s'config file\n", wlr_master);
+	if((msg = WLCreadConfig(fd)))
+		return msg;
+	if( !wlr_master[0] )
+		throw(MAL,"wlr.getMaster","Master not identified\n");
+	wlc_state = WLC_CLONE; // not used as master
 	return MAL_SUCCEED;
 }
 
@@ -216,10 +197,9 @@ WLRgetMaster(void)
 	trimMalVariables(mb, NULL);\
 	}
 
-static void
-WLRprocessBatch(void *arg)
+static str
+WLRprocessBatch(Client cntxt)
 {
-	Client cntxt = (Client) arg;
 	int i, len;
 	char path[FILENAME_MAX];
 	stream *fd = NULL;
@@ -227,83 +207,96 @@ WLRprocessBatch(void *arg)
 	size_t sz;
 	MalBlkPtr mb;
 	InstrPtr q;
-	str msg, other;
+	str other;
 	mvc *sql;
 	Symbol prev = NULL;
-	lng tag = wlr_tag;
+	lng tag;
 	char tag_read[26];			// stop re-processing transactions when time limit is reached
+	str action= NULL;
+	str msg= MAL_SUCCEED, msg2= MAL_SUCCEED;
 
-	c =MCforkClient(cntxt);
-	if( c == 0){
-		fprintf(stderr, "#Could not create user for WLR process\n");
-		return;
+	msg = WLRgetConfig();
+	tag = wlr_tag;
+	if( msg != MAL_SUCCEED){
+		snprintf(wlr_error, BUFSIZ, "%s", msg);
+		freeException(msg);
+		return MAL_SUCCEED;
 	}
+	if( wlr_error[0]) {
+		if (!(msg = GDKstrdup(wlr_error)))
+			throw(MAL, "wlr.batch", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return msg;
+	}
+
+	c = MCforkClient(cntxt);
+	if( c == 0)
+		throw(MAL, "wlr.batch", "Could not create user for WLR process\n"); 
 	c->promptlength = 0;
 	c->listing = 0;
 	c->fdout = open_wastream(".wlr");
 	if(c->fdout == NULL) {
 		MCcloseClient(c);
-		fprintf(stderr, "#Could not create user for WLR process\n");
-		return;
+		throw(MAL,"wlr.batch", "Could not create user for WLR process\n");
 	}
 
 	/* Cook a log file into a concreate MAL function for multiple transactions */
 	prev = newFunction(putName("user"), putName("wlr"), FUNCTIONsymbol);
 	if(prev == NULL) {
 		MCcloseClient(c);
-		fprintf(stderr, "#Could not create user for WLR process\n");
-		return;
+		throw(MAL, "wlr.batch", "Could not create user for WLR process\n");
 	}
 	c->curprg = prev;
 	mb = c->curprg->def;
 	setVarType(mb, 0, TYPE_void);
 
 	msg = SQLinitClient(c);
-	if( msg != MAL_SUCCEED)
-		fprintf(stderr,"#Failed to initialize the client\n");
-	msg = getSQLContext(c, mb, &sql, NULL);
-	if( msg)
-		fprintf(stderr,"#Failed to access the transaction context: %s\n",msg);
-	if ((msg = checkSQLContext(c)) != NULL)
-		fprintf(stderr,"#Inconsistent SQL context: %s\n",msg);
+	if( msg != MAL_SUCCEED) {
+		MCcloseClient(c);
+		freeSymbol(prev);
+		return msg;
+	}
+	if ((msg = getSQLContext(c, mb, &sql, NULL))) {
+		SQLexitClient(c);
+		MCcloseClient(c);
+		freeSymbol(prev);
+		return msg;
+	}
+	if ((msg = checkSQLContext(c)) != NULL) {
+		SQLexitClient(c);
+		MCcloseClient(c);
+		freeSymbol(prev);
+		return msg;
+	}
 
-#ifdef _WLR_DEBUG_
-	fprintf(stderr,"#Ready to start the replay against batches state %d wlr "LLFMT"  wlr_limit "LLFMT" wlr %d  wlc %d  taglimit "LLFMT" exit %d\n",
-			wlr_state, wlr_tag, wlr_limit, wlr_batches, wlc_batches, wlr_limit, GDKexiting() );
-#endif
 	path[0]=0;
-	for( i= wlr_batches; i < wlc_batches && !GDKexiting() && wlr_state != WLR_STOP && wlr_tag < wlr_limit; i++){
+	for( i= wlr_batches; i < wlc_batches && !GDKexiting() && wlr_state != WLR_STOP && wlr_tag <= wlr_limit && msg == MAL_SUCCEED; i++){
 		len = snprintf(path,FILENAME_MAX,"%s%c%s_%012d", wlc_dir, DIR_SEP, wlr_master, i);
 		if (len == -1 || len >= FILENAME_MAX) {
-			fprintf(stderr,"#wlr.process: filename path is too large\n");
-			continue;
+			msg = createException(MAL, "wlr.batch", "Filename path is too large\n");
+			break;
 		}
 		fd= open_rastream(path);
-		if( fd == NULL){
-			fprintf(stderr,"#wlr.process:'%s' can not be accessed \n",path);
-			// Be careful not to miss log files.
-			continue;
+		if( fd == NULL) {
+			msg = createException(MAL, "wlr.batch", "Cannot access path '%s'\n", path);
+			break;
 		}
 		sz = getFileSize(fd);
 		if (sz > (size_t) 1 << 29) {
 			close_stream(fd);
-			fprintf(stderr, "#wlr.process File %s too large to process", path);
-			continue;
+			msg = createException(MAL, "wlr.batch", "File %s is too large to process\n", path);
+			break;
 		}
-		if((c->fdin = bstream_create(fd, sz == 0 ? (size_t) (2 * 128 * BLOCK) : sz)) == NULL) {
+		if ((c->fdin = bstream_create(fd, sz == 0 ? (size_t) (2 * 128 * BLOCK) : sz)) == NULL) {
 			close_stream(fd);
-			fprintf(stderr, "#wlr.process Failed to open stream for file %s", path);
-			continue;
+			msg = createException(MAL, "wlr.batch", "Failed to open stream for file %s\n", path);
+			break;
 		}
 		if (bstream_next(c->fdin) < 0){
-			fprintf(stderr, "!WARNING: could not read %s\n", path);
-			continue;
+			msg = createException(MAL, "wlr.batch", "Could not read %s\n", path);
+			break;
 		}
 
 		c->yycur = 0;
-#ifdef _WLR_DEBUG_
-		fprintf(stderr,"#REPLAY LOG FILE:%s\n",path);
-#endif
 
 		// now parse the file line by line to reconstruct the WLR blocks
 		do{
@@ -311,32 +304,31 @@ WLRprocessBatch(void *arg)
 
 			mb = c->curprg->def; 
 			if( mb->errors){
-				char line[FILENAME_MAX];
-				snprintf(line, FILENAME_MAX,"#wlr.process:failed further parsing '%s':",path);
-				snprintf(wlr_error, FILENAME_MAX, "%.*s", FILENAME_MAX, line);
-				fprintf(stderr,"%s\n",line);
-				fprintFunction(stderr, mb, 0, LIST_MAL_DEBUG );
-				cleanup();
-#ifdef _WLR_DEBUG_
-				fprintf(stderr,"#redo transaction error \n");
-#endif
-				continue;
-			}
-			q= getInstrPtr(mb, mb->stop - 1);
-			if( getModuleId(q) != wlrRef){
-#ifdef _WLR_DEBUG_XTRA
-                fprintf(stderr,"#unexpected instruction ");
-				fprintInstruction(stderr, mb, 0, q, LIST_MAL_ALL);
-#endif
+				msg = mb->errors;
+				mb->errors = NULL;
 				cleanup();
 				break;
 			}
+			if( mb->stop == 1){
+				cleanup();
+				break;
+			}
+			q= getInstrPtr(mb, mb->stop - 1);
+			if( getModuleId(q) != wlrRef){
+				msg =createException(MAL,"wlr.process", "batch %d:improper wlr instruction: %s\n", i, instruction2str(mb,0, q, LIST_MAL_CALL));
+				cleanup();
+				break;
+			}
+			if ( getModuleId(q) == wlrRef && getFunctionId(q) == actionRef ){
+				action = getVarConstant(mb, getArg(q,1)).val.sval;
+			}
+			if ( getModuleId(q) == wlrRef && getFunctionId(q) == catalogRef ){
+				action = getVarConstant(mb, getArg(q,1)).val.sval;
+			}
 			if( getModuleId(q) == wlrRef && getFunctionId(q) == transactionRef){
 				tag = getVarConstant(mb, getArg(q,1)).val.lval;
-				snprintf(tag_read, sizeof(wlr_read), "%s", getVarConstant(mb, getArg(q,2)).val.sval);
-#ifdef _WLR_DEBUG_
-				fprintf(stderr,"#do transaction tag "LLFMT" wlr_limit "LLFMT" wlr_tag "LLFMT"\n", tag, wlr_limit, wlr_tag);
-#endif
+				snprintf(tag_read, sizeof(tag_read), "%s", getVarConstant(mb, getArg(q,2)).val.sval);
+
 				// break loop if we don't see a the next expected transaction
 				if ( tag <= wlr_tag){
 					/* skip already executed transaction log */
@@ -346,65 +338,58 @@ WLRprocessBatch(void *arg)
 					  ( wlr_timelimit[0] && strcmp(tag_read, wlr_timelimit) > 0)){
 					/* stop execution of the transactions if your reached the limit */
 					cleanup();
-#ifdef _WLR_DEBUG_
-					fprintf(stderr,"#Found final transaction "LLFMT"("LLFMT")\n", wlr_limit, wlr_tag);
-#endif
 					break;
 				} 
-#ifdef _WLR_DEBUG_
-				fprintf(stderr,"#run against tlimit %s  wlr_tag "LLFMT"  tag" LLFMT" \n", wlr_timelimit, wlr_tag, tag);
-#endif
 			}
 			// only re-execute successful transactions.
-			if ( getModuleId(q) == wlrRef && getFunctionId(q) ==commitRef ){
+			if ( getModuleId(q) == wlrRef && getFunctionId(q) ==commitRef  && (tag > wlr_tag || ( wlr_timelimit[0] && strcmp(tag_read, wlr_timelimit) > 0))){
 				pushEndInstruction(mb);
 				// execute this block if no errors are found
-				chkTypes(c->usermodule, mb, FALSE);
-				chkFlow(mb);
-				chkDeclarations(mb);
-
-				if( mb->errors == 0){
+				msg = chkTypes(c->usermodule, mb, FALSE);
+				if (!msg)
+					msg = chkFlow(mb);
+				if (!msg)
+					msg = chkDeclarations(mb);
+				wlr_tag =  tag; // remember which transaction we executed
+				snprintf(wlr_read, sizeof(wlr_read), "%s", tag_read);
+				if(!msg && mb->errors == 0){
 					sql->session->auto_commit = 0;
 					sql->session->ac_on_commit = 1;
 					sql->session->level = 0;
 					if(mvc_trans(sql) < 0) {
-						fprintf(stderr,"#Allocation failure while starting the transaction \n");
+						TRC_ERROR(SQL_WLR, "Allocation failure while starting the transaction\n");
 					} else {
-#ifdef _WLR_DEBUG_
-						fprintf(stderr,"#process a transaction\n");
-						fprintFunction(stderr, mb, 0, LIST_MAL_DEBUG | LIST_MAL_MAPI );
-#endif
-						wlr_tag =  tag; // remember which transaction we executed
-						snprintf(wlr_read, sizeof(wlr_read), "%s", tag_read);
 						msg= runMAL(c,mb,0,0);
 						if( msg == MAL_SUCCEED){
 							/* at this point we have updated the replica, but the configuration has not been changed.
 							 * If at this point an error occurs, we could redo the same transaction twice later on.
 							 * The solution is to make sure that we recognize that a transaction has started and is completed successfully
 							 */
-							WLRputConfig();
+							msg = WLRputConfig();
+							if( msg)
+								break;
 						}
 						// ignore warnings
 						if (msg && strstr(msg,"WARNING"))
 							msg = MAL_SUCCEED;
 						if( msg != MAL_SUCCEED){
 							// they should always succeed
-							msg =createException(MAL,"wlr.process", "batch %d:"LLFMT" :%s\n", i, tag, msg);
-							//fprintFunction(stderr, mb, 0, LIST_MAL_DEBUG );
+							msg =createException(MAL,"wlr.process", "Replication error in batch %d:"LLFMT" :%s:%s\n", i, wlr_tag, msg, action);
 							if((other = mvc_rollback(sql,0,NULL, false)) != MAL_SUCCEED) //an error was already established
 								GDKfree(other);
+							break;
 						} else
 						if((other = mvc_commit(sql, 0, 0, false)) != MAL_SUCCEED) {
 							msg = createException(MAL,"wlr.process", "transaction %d:"LLFMT" commit failed: %s\n", i, tag, other);
 							freeException(other);
+							break;
 						}
 					}
 				} else {
-					char line[FILENAME_MAX];
-					snprintf(line, FILENAME_MAX,"#wlr.process:typechecking failed '%s':\n",path);
-					snprintf(wlr_error, FILENAME_MAX, "%s", line);
-					fprintf(stderr,"%s",line);
-					fprintFunction(stderr, mb, 0, LIST_MAL_DEBUG );
+					if( msg == MAL_SUCCEED)
+						msg = createException(SQL, "wlr.replicate", "typechecking failed '%s':'%s':\n",path, mb->errors);
+					cleanup();
+					break;
 				}
 				cleanup();
 				if ( wlr_tag + 1 == wlc_tag || tag == wlr_limit)
@@ -412,34 +397,42 @@ WLRprocessBatch(void *arg)
 			} else
 			if ( getModuleId(q) == wlrRef && (getFunctionId(q) == rollbackRef || getFunctionId(q) == commitRef)){
 				cleanup();
-				if ( wlr_tag + 1 == wlc_tag || tag == wlr_limit)
+				if ( wlr_tag + 1 == wlc_tag || tag == wlr_limit || ( wlr_timelimit[0] && strcmp(tag_read, wlr_timelimit) > 0))
 						break;
 			}
 		} while(wlr_state != WLR_STOP &&  mb->errors == 0 && msg == MAL_SUCCEED);
-#ifdef _WLR_DEBUG_
-		fprintf(stderr,"#wlr.process:processed log file  wlr_tag "LLFMT" wlr_limit "LLFMT" time %s\n", wlr_tag, wlr_limit, wlr_timelimit);
-#endif
-		// skip to next file when all is read
-		wlr_batches++;
+
+		// skip to next file when all is read correctly
+		if (msg == MAL_SUCCEED && tag <= wlr_limit)
+			wlr_batches++;
 		if( msg != MAL_SUCCEED)
-			snprintf(wlr_error, FILENAME_MAX, "%s", msg);
-		WLRputConfig();
+			snprintf(wlr_error, BUFSIZ, "%s", msg);
+		msg2 = WLRputConfig();
 		bstream_destroy(c->fdin);
+		if(msg2)
+			break;
 		if ( wlr_tag == wlr_limit)
 			break;
 	}
-	(void) fflush(stderr);
+	
 	close_stream(c->fdout);
 	SQLexitClient(c);
 	MCcloseClient(c);
-	if(prev)
+	if (prev)
 		freeSymbol(prev);
+	if (msg2) { /* throw msg2, if msg is not set */
+		if (!msg)
+			msg = msg2;
+		else
+			freeException(msg2);
+	}
+	return msg;
 }
 
 /*
  *  A single WLR thread is allowed to run in the background.
  *  If it happens to crash then replication roll forward is suspended.
- *  Moreover, the background job can only leave error messages in the merovingian log.
+ *  The background job can only leave error messages in the merovingian log.
  *
  * A timing issue.
  * The WLRprocess can only start after an SQL environment has been initialized.
@@ -448,27 +441,31 @@ WLRprocessBatch(void *arg)
 static void
 WLRprocessScheduler(void *arg)
 {	Client cntxt = (Client) arg;
-	int i, duration = 0;
+	int duration = 0;
 	struct timeval clock;
 	time_t clk;
 	struct tm ctm;
 	char clktxt[26];
+	str msg = MAL_SUCCEED;
 
-	if( ( i = WLRgetConfig()) ){
-		if ( i> 0) 
-			WLRputConfig();
-		else return;
+	msg = WLRgetConfig();
+	if ( msg ){
+		snprintf(wlr_error, BUFSIZ, "%s", msg);
+		freeException(msg);
+		return;
 	}
+	
 	assert(wlr_master[0]);
-	cntxt = MCinitClient(MAL_ADMIN, NULL,NULL);
+	if (!(cntxt = MCinitClient(MAL_ADMIN, NULL,NULL))) {
+		snprintf(wlr_error, BUFSIZ, "Failed to init WLR scheduler client");
+		return;
+	}
 
-    MT_lock_set(&wlr_lock);
+	MT_lock_set(&wlr_lock);
 	if ( wlr_state != WLR_STOP)
 		wlr_state = WLR_RUN;
-    MT_lock_unset(&wlr_lock);
-#ifdef _WLR_DEBUG_
-		fprintf(stderr, "#Run the replicator %d %d\n", GDKexiting(),  wlr_state);
-#endif
+	MT_lock_unset(&wlr_lock);
+
 	while( wlr_state != WLR_STOP  && !wlr_error[0]){
 		// wait at most for the cycle period, also at start
 		duration = (wlc_beat > 0 ? wlc_beat:1) * 1000 ;
@@ -481,11 +478,8 @@ WLRprocessScheduler(void *arg)
 #else
 				ctm = *localtime(&clk);
 #endif
+			strftime(clktxt, sizeof(clktxt), "%Y-%m-%d %H:%M:%S.000",&ctm);
 
-			strftime(clktxt, sizeof(clktxt), "%Y-%m-%dT%H:%M:%S.000",&ctm);
-#ifdef _WLR_DEBUG_
-			fprintf(stderr,"#now %s tlimit %s\n",clktxt, wlr_timelimit);
-#endif
 			// actually never wait longer then the timelimit requires
 			// preference is given to the beat.
 			MT_thread_setworking("sleeping");
@@ -498,17 +492,14 @@ WLRprocessScheduler(void *arg)
 				MT_sleep_ms(200);
 			}
 		}
-		MT_thread_setworking("processing");
-		if( WLRgetMaster() == 0 &&  wlr_tag + 1 < wlc_tag && wlr_tag < wlr_limit &&  wlr_batches <= wlc_batches && wlr_state != WLR_STOP)
-			WLRprocessBatch(cntxt);
-		
+		MT_thread_setworking("processing wlr");
+		if ((msg = WLRprocessBatch(cntxt)))
+			freeException(msg);
+
 		/* Can not use GDKexiting(), because a test may already reach that point before it did anything.
 		 * Instead wait for the explicit WLR_STOP
 		 */
 		if( GDKexiting()){
-#ifdef _WLR_DEBUG_
-				fprintf(stderr, "#Replicator thread stopped due to GDKexiting()\n");
-#endif
 			MT_lock_set(&wlr_lock);
 			wlr_state = WLR_STOP;
 			MT_lock_unset(&wlr_lock);
@@ -516,15 +507,11 @@ WLRprocessScheduler(void *arg)
 		}
 	}
 	wlr_thread = 0;
-    MT_lock_set(&wlr_lock);
+	MT_lock_set(&wlr_lock);
 	if( wlr_state == WLR_RUN)
 		wlr_state = WLR_WAIT;
-    MT_lock_unset(&wlr_lock);
+	MT_lock_unset(&wlr_lock);
 	MCcloseClient(cntxt);
-
-#ifdef _WLR_DEBUG_
-	fprintf(stderr, "#Replicator thread is stopped \n");
-#endif
 }
 
 // The replicate() command can be issued at the SQL console
@@ -532,37 +519,52 @@ WLRprocessScheduler(void *arg)
 str
 WLRmaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	
-	if( getArgType(mb, pci, 1) == TYPE_str)
-		return WLRstart(cntxt, mb, stk, pci);
-	throw(MAL, "wlr.master", "No master configuration");
+	int len;
+	str msg = MAL_SUCCEED;
+
+	(void) cntxt;
+	(void) mb;
+
+	len = snprintf(wlr_master, IDLENGTH, "%s", *getArgReference_str(stk, pci, 1));
+	if (len == -1 || len >= IDLENGTH)
+		throw(MAL, "wlr.master", SQLSTATE(42000) "Input value is too large for wlr_master buffer");
+	if ((msg = WLRgetMaster()))
+		freeException(msg);
+	if ((msg = WLRgetConfig())) {
+		freeException(msg);
+		if ((msg = WLRputConfig()))
+			freeException(msg);
+	}
+	return MAL_SUCCEED;
 }
 
 str
 WLRreplicate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{	str timelimit  = wlr_timelimit;
-	size_t size = sizeof(wlr_timelimit);
-	struct timeval clock;
-	time_t clk;
-	struct tm ctm;
-	char clktxt[26];
-	int duration = 4000;
+{	str timelimit = wlr_timelimit, slimit= 0;
+	size_t size = 0;
 	lng limit = INT64_MAX;
-	str msg = MAL_SUCCEED;
-	(void) cntxt;
+	str msg;
 
-	if( WLRgetConfig())
-		throw(MAL, "sql.replicate", "No replication configuration");
+	if( wlr_thread)
+		throw(MAL, "sql.replicate", "WLR thread already running, stop it before continueing");
+		
+	msg = WLRgetConfig();
+	if( msg != MAL_SUCCEED)
+		return msg;
+	if( wlr_error[0]) {
+		if (!(msg = GDKstrdup(wlr_error)))
+			throw(MAL, "sql.replicate", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return msg;
+	}
 
-	if( !wlr_thread)
-		throw(MAL, "sql.replicate", "Replicator not started, call wlr.master() first ");
-	
 	if( pci->argc == 0)
 		wlr_limit = INT64_MAX;
 	else
 	if( getArgType(mb, pci, 1) == TYPE_timestamp){
-		if (timestamp_precision_tostr(&timelimit, &size, *getArgReference_TYPE(stk, pci, 1, timestamp), 3, true) < 0)
-			throw(SQL, "wlr.replicate", GDK_EXCEPTION);
-		fprintf(stderr,"#time limit %s\n",timelimit);
+		timestamp_tostr(&slimit, &size, (timestamp*) getArgReference(stk, pci, 1), TRUE);
+		strncpy(wlr_timelimit, slimit, sizeof(wlr_timelimit)-1);
+		wlr_timelimit[sizeof(wlr_timelimit)-1] = 0;
+		GDKfree(slimit);
 	} else
 	if( getArgType(mb, pci, 1) == TYPE_bte)
 		limit = getVarConstant(mb,getArg(pci,1)).val.btval;
@@ -578,65 +580,22 @@ WLRreplicate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	
 	if ( limit < 0 && timelimit[0] == 0)
 		throw(MAL, "sql.replicate", "Stop tag limit should be positive or timestamp should be set");
+	if( wlc_tag == 0) {
+		if ((msg = WLRgetMaster()))
+			freeException(msg);
+		if( wlc_tag == 0)
+			throw(MAL, "sql.replicate", "Perhaps a missing wlr.master() call. ");
+	}
 	if (limit < INT64_MAX && limit >= wlc_tag)
 		throw(MAL, "sql.replicate", "Stop tag limit "LLFMT" be less than wlc_tag "LLFMT, limit, wlc_tag);
-	if ( limit >= 0)
+	if (limit >= 0)
 		wlr_limit = limit;
 
-	if (  wlc_state != WLC_CLONE)
+	if (wlc_state != WLC_CLONE)
 		throw(MAL, "sql.replicate", "No replication master set");
-	WLRputConfig();
-
-	// the client thread should wait for the replicator to its job
-	gettimeofday(&clock, NULL);
-	clk = clock.tv_sec;
-	ctm = (struct tm) {0};
-#ifdef HAVE_LOCALTIME_R
-	(void) localtime_r(&clk, &ctm);
-#else
-	ctm = *localtime(&clk);
-#endif
-	strftime(clktxt, sizeof(clktxt), "%Y-%m-%dT%H:%M:%S.000",&ctm);
-#ifdef _WLR_DEBUG_
-	fprintf(stderr, "#replicate: wait until wlr_limit = "LLFMT" (tag "LLFMT") time %s (%s)\n", wlr_limit, wlr_tag, (wlr_timelimit[0]? wlr_timelimit:""), clktxt);
-#endif
-
-	while ( (wlr_tag < wlr_limit )  || (wlr_timelimit[0]  && strncmp(clktxt, wlr_timelimit, sizeof(wlr_timelimit)) > 0)  ) {
-		if( wlr_state == WLR_STOP)
-			break;
-		if( wlr_limit == INT64_MAX && wlr_tag >= wlc_tag -1 )
-			break;
-
-		if ( wlr_error[0])
-			throw(MAL, "sql.replicate", "tag "LLFMT": %s", wlr_tag, wlr_error);
-		if ( wlr_tag == wlc_tag)
-			break;
-
-#ifdef _WLR_DEBUG_
-	fprintf(stderr, "#replicate wait state %d wlr_limit "LLFMT" (wlr_tag "LLFMT") wlc_tag "LLFMT" wlr_batches %d\n",
-		wlr_state, wlr_limit, wlr_tag, wlc_tag, wlr_batches);
-	fflush(stderr);
-#endif
-		if ( !wlr_thread ){
-			if( wlr_error[0])
-				throw(SQL,"wlr.startreplicate",SQLSTATE(42000) "Replicator terminated prematurely %s", wlr_error);
-			throw(SQL,"wlr.startreplicate",SQLSTATE(42000) "Replicator terminated prematurelys");
-		}
-
-		duration -= 200;
-		if ( duration < 0){
-			if( wlr_limit == INT64_MAX && wlr_timelimit[0] == 0)
-				break;
-			throw(SQL,"wlr.startreplicate",SQLSTATE(42000) "Timeout to wait for replicator to catch up."
-			"Catched up until "LLFMT", " LLFMT " pending", wlr_tag, wlr_limit - wlr_tag);
-		}
-		// don't make the sleep too short.
-		MT_sleep_ms( 200);
-	}
-#ifdef _WLR_DEBUG_
-	fprintf(stderr, "#replicate finished "LLFMT" (tag "LLFMT")\n", wlr_limit, wlr_tag);
-#endif
-	return msg;
+	if ((msg = WLRputConfig()))
+		return msg;
+	return WLRprocessBatch(cntxt);
 }
 
 /* watch out, each log record can contain multiple transaction COMMIT/ROLLBACKs
@@ -666,40 +625,23 @@ WLRtransaction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 
-/* the Configuration is shared with the Logger thread, so protect its access */
+/* Start a separate thread to continue merging the log record */
 str
 WLRstart(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int len;
-	str msg;
-
 	(void) cntxt;
 	(void) mb;
-	if( wlr_thread)
-		throw(MAL, "wlr.replicate", SQLSTATE(42000) "replicator thread already running for %s ", wlr_master);
-
-	len = snprintf(wlr_master, IDLENGTH, "%s", *getArgReference_str(stk, pci, 1));
-	if (len == -1 || len >= IDLENGTH)
-		throw(MAL, "wlr.replicate", SQLSTATE(42000) "Input value is too large for wlr_master buffer");
-	if( (msg =WLRgetMaster()) != MAL_SUCCEED)
-		return msg;
-
+	(void) stk;
+	(void) pci;
 	
 	// time the consolidation process in the background
 	if (MT_create_thread(&wlr_thread, WLRprocessScheduler, (void*) NULL,
-			     MT_THR_DETACHED, "WLRprocessSched") < 0) {
-			throw(SQL,"wlr.init",SQLSTATE(42000) "Starting wlr manager failed");
+						 MT_THR_DETACHED, "WLRprocessSched") < 0) {
+		throw(SQL,"wlr.init",SQLSTATE(42000) "Starting wlr manager failed");
 	}
-#ifdef _WLR_DEBUG_
-	fprintf(stderr,"#WLR scheduler forked\n");
-#else
-	(void) cntxt;
-#endif
+
 	// Wait until the replicator is properly initialized
 	while( wlr_state != WLR_RUN && wlr_error[0] == 0){
-#ifdef _WLR_DEBUG_
-		fprintf(stderr,"#WLR replicator initializing\n");
-#endif
 		MT_sleep_ms( 50);
 	}
 	return MAL_SUCCEED;
@@ -713,15 +655,32 @@ WLRstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) stk;
 	(void) pci;
 	// kill the replicator thread and reset for a new one
-#ifdef _WLR_DEBUG_
-	fprintf(stderr,"#WLR stop replication\n");
-#endif
-    MT_lock_set(&wlr_lock);
+	MT_lock_set(&wlr_lock);
 	if( wlr_state == WLR_RUN)
-			wlr_state =  WLR_STOP;
-    MT_lock_unset(&wlr_lock);
+		wlr_state =  WLR_STOP;
+	MT_lock_unset(&wlr_lock);
 
 	return MAL_SUCCEED;
+}
+
+str
+WLRgetmaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	str *ret = getArgReference_str(stk,pci,0);
+	str msg = MAL_SUCCEED;
+
+	(void) cntxt;
+	(void) mb;
+
+	msg = WLRgetConfig();
+	if( msg)
+		return msg;
+	if( wlr_master[0]) {
+		if (!(*ret= GDKstrdup(wlr_master)))
+			throw(MAL, "wlr.getmaster", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	} else
+		throw(MAL, "wlr.getmaster", "Master not found");
+	return msg;
 }
 
 str
@@ -733,13 +692,15 @@ WLRgetclock(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	if( WLRgetConfig())
+	msg = WLRgetConfig();
+	if( msg)
 		return msg;
 	if( wlr_read[0])
-		*ret= GDKstrdup(wlr_read);
-	else *ret= GDKstrdup(str_nil);
+		*ret = GDKstrdup(wlr_read);
+	else
+		*ret = GDKstrdup(str_nil);
 	if (*ret == NULL)
-		throw(MAL, "wlr.getreplicaclock", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		throw(MAL, "wlr.getclock", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return msg;
 }
 
@@ -752,7 +713,8 @@ WLRgettick(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	if( WLRgetConfig())
+	msg = WLRgetConfig();
+	if( msg)
 		return msg;
 	*ret = wlr_tag;
 	return msg;
@@ -768,7 +730,7 @@ WLRsetbeat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	new = *getArgReference_int(stk,pci,1);
 	if ( new < wlc_beat || new < 1)
-		throw(SQL,"replicatebeat",SQLSTATE(42000) "Cycle time should be larger then master or >= 1 second");
+		throw(SQL,"setbeat",SQLSTATE(42000) "Cycle time should be larger then master or >= 1 second");
 	wlr_beat = new;
 	return MAL_SUCCEED;
 }
@@ -800,8 +762,7 @@ WLRquery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return msg;
 }
 
-/* A change event need not be executed, because it is already captured
- * in the update/append/delete
+/* An error was reported and manually dealt with.
  */
 str
 WLRaccept(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -810,7 +771,8 @@ WLRaccept(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) pci;
 	(void) stk;
 	(void) mb;
-	return MAL_SUCCEED;
+	wlr_error[0]= 0;
+	return WLRputConfig();
 }
 
 str
@@ -1001,11 +963,10 @@ cleanup:
  * (variable msg and tag cleanup will not be defined).
  */
 #define WLRvalue(TPE)                                                   \
-	{	TPE val = *getArgReference_##TPE(stk,pci,5);            \
-			if (BUNappend(upd, (void*) &val, false) != GDK_SUCCEED) { \
-				fprintf(stderr, "WLRupdate:BUNappend failed"); \
-				goto cleanup;                                   \
-			}                                                       \
+	{	TPE val = *getArgReference_##TPE(stk,pci,5);                    \
+			if (BUNappend(upd, (void*) &val, false) != GDK_SUCCEED) {   \
+				goto cleanup;                                           \
+		}                                                               \
 	}
 
 str
@@ -1077,7 +1038,7 @@ WLRupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		break;
 	default:
-		fprintf(stderr, "Missing type in WLRupdate");
+		TRC_ERROR(SQL_WLR, "Missing type in WLRupdate\n");
 	}
 
 	BATmsync(tids);

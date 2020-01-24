@@ -17,5 +17,6 @@ io.print("done");
 end;
 optimizer.commonTerms("user","foo");
 optimizer.aliases("user","foo");
+optimizer.garbageCollector("user","foo");
 mdb.list("user","foo");
 user.foo();

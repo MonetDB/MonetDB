@@ -32,6 +32,7 @@ sequences-defaults.Bug-6744
 sequences-types.Bug-6745
 alter_table_drop_column.Bug-6749
 KNOWNFAIL&HAVE_PYMONETDB?remote-table-non-existent-column.Bug-6750
+set-schema-mclient-msg.Bug-6754
 cte-union.Bug-6755
 merge-table-limit.Bug-6756
 double-free.Bug-6757
@@ -55,6 +56,6 @@ jsonpath-validity.Bug-6792
 cast-interval.Bug-6793
 could-not-allocate-space.Bug-6795
 HAVE_LIBPY3?python3-udf-modules.Bug-6797
-json-text-empty-separator.Bug-6798
+KNOWNFAIL?json-text-empty-separator.Bug-6798
 KNOWNFAIL&FEATURE?orderby-alias-expr.Bug-6799
 drop-table-cascade.Bug-6805

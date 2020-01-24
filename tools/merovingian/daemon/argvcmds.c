@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -187,7 +187,7 @@ command_get(confkeyval *ckv, int argc, char *argv[])
 	{
 		/* check if there is a merovingian serving this dbfarm */
 		int ret;
-		if ((ret = MT_lockf(".merovingian_lock", F_TLOCK, 4, 1)) == -1) {
+		if ((ret = MT_lockf(".merovingian_lock", F_TLOCK)) == -1) {
 			/* locking failed, merovingian is running */
 			FILE *pf;
 			char *pfile = getConfVal(ckv, "pidfile");
@@ -201,7 +201,7 @@ command_get(confkeyval *ckv, int argc, char *argv[])
 		} else {
 			if (ret >= 0) {
 				/* release a possible lock */
-				MT_lockf(".merovingian_lock", F_ULOCK, 4, 1);
+				MT_lockf(".merovingian_lock", F_ULOCK);
 				close(ret);
 			}
 			meropid = 0;

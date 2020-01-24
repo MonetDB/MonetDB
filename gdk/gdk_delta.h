@@ -3,11 +3,13 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #ifndef _GDK_DELTA_H_
 #define _GDK_DELTA_H_
+
+#include "gdk_tracer.h"
 
 /*
  * We make sure here that the BUNs section of a BAT at least starts 4
@@ -22,12 +24,12 @@ DELTAinit(BAT *b)
 	b->theap.free = 0;
 	b->batInserted = 0;
 	b->tshift = ATOMelmshift(Tsize(b));
-	DELTADEBUG fprintf(stderr,
-			   "#DELTAinit %s free %zu ins " BUNFMT " base %p\n",
-			   BBP_logical(b->batCacheid),
-			   b->theap.free,
-			   b->batInserted,
-			   b->theap.base);
+	TRC_DEBUG(DELTA,
+			"%s free %zu ins " BUNFMT " base %p\n",
+			BBP_logical(b->batCacheid),
+			b->theap.free,
+			b->batInserted,
+			b->theap.base);
 }
 
 /*

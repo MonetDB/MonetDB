@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /* The Mapi Client Interface
@@ -124,6 +124,8 @@ static timertype t0, t1;	/* used for timing */
 
 #ifdef HAVE_POPEN
 static char *pager = 0;		/* use external pager */
+#endif
+#ifdef HAVE_SIGACTION
 #include <signal.h>		/* to block SIGPIPE */
 #endif
 static int rowsperpage = 0;	/* for SQL pagination */
@@ -1808,36 +1810,27 @@ start_pager(stream **saveFD)
 
 	if (pager) {
 		FILE *p;
-		struct sigaction act;
 
-		/* ignore SIGPIPE so that we get an error instead of signal */
-		act.sa_handler = SIG_IGN;
-		(void) sigemptyset(&act.sa_mask);
-		act.sa_flags = 0;
-		if(sigaction(SIGPIPE, &act, NULL) == -1) {
+		p = popen(pager, "w");
+		if (p == NULL)
 			fprintf(stderr, "Starting '%s' failed\n", pager);
-		} else {
-			p = popen(pager, "w");
-			if (p == NULL)
+		else {
+			*saveFD = toConsole;
+			/* put | in name to indicate that file should be closed with pclose */
+			if ((toConsole = file_wastream(p, "|pager")) == NULL) {
+				toConsole = *saveFD;
+				*saveFD = NULL;
 				fprintf(stderr, "Starting '%s' failed\n", pager);
-			else {
-				*saveFD = toConsole;
-				/* put | in name to indicate that file should be closed with pclose */
-				if ((toConsole = file_wastream(p, "|pager")) == NULL) {
+			}
+#ifdef HAVE_ICONV
+			if (encoding != NULL) {
+				if ((toConsole = iconv_wstream(toConsole, encoding, "pager")) == NULL) {
 					toConsole = *saveFD;
 					*saveFD = NULL;
 					fprintf(stderr, "Starting '%s' failed\n", pager);
 				}
-#ifdef HAVE_ICONV
-				if (encoding != NULL) {
-					if ((toConsole = iconv_wstream(toConsole, encoding, "pager")) == NULL) {
-						toConsole = *saveFD;
-						*saveFD = NULL;
-						fprintf(stderr, "Starting '%s' failed\n", pager);
-					}
-				}
-#endif
 			}
+#endif
 		}
 	}
 }
@@ -1933,7 +1926,7 @@ format_result(Mapi mid, MapiHdl hdl, bool singleinstr)
 			SQLqueryEcho(hdl);
 			if (formatter == TABLEformatter ||
 			    formatter == ROWCOUNTformatter)
-				mnstr_printf(toConsole, "operation successful\n");
+				mnstr_printf(toConsole, "auto commit mode: %s\n", mapi_get_autocommit(mid) ? "on" : "off");
 			timerHuman(sqloptimizer, maloptimizer, querytime, singleinstr, false);
 			continue;
 		case Q_PREPARE:
@@ -3336,6 +3329,16 @@ main(int argc, char **argv)
 		exit(2);
 	}
 #endif
+#ifdef HAVE_SIGACTION
+	struct sigaction act;
+	/* ignore SIGPIPE so that we get an error instead of signal */
+	act.sa_handler = SIG_IGN;
+	(void) sigemptyset(&act.sa_mask);
+	act.sa_flags = 0;
+	if (sigaction(SIGPIPE, &act, NULL) == -1)
+		perror("sigaction");
+#endif
+
 	toConsole = stdout_stream = file_wastream(stdout, "stdout");
 	stderr_stream = file_wastream(stderr, "stderr");
 	if(!stdout_stream || !stderr_stream) {

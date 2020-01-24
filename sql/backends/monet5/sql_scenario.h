@@ -3,16 +3,12 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #ifndef _SQL_SCENARIO_H_
 #define _SQL_SCENARIO_H_
 #include "sql.h"
-
-/* #define _SQL_SCENARIO_DEBUG */
-/* #define _SQL_READER_DEBUG */
-/* #define _SQL_PARSER_DEBUG */
 
 sql5_export int SQLdebug;
 sql5_export str SQLprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

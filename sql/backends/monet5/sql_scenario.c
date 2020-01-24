@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -60,9 +60,6 @@ monet5_freestack(int clientid, backend_stack stk)
 	(void) clientid;
 	if (p != NULL)
 		freeStack(p);
-#ifdef _SQL_SCENARIO_DEBUG
-	fprintf(stderr, "#monet5_freestack\n");
-#endif
 }
 
 static void
@@ -77,10 +74,6 @@ monet5_freecode(int clientid, backend_code code, backend_stack stk, int nr, char
 	msg = SQLCacheRemove(MCgetClient(clientid), name);
 	if (msg)
 		freeException(msg);	/* do something with error? */
-
-#ifdef _SQL_SCENARIO_DEBUG
-	fprintf(stderr, "#monet5_free:%d\n", nr);
-#endif
 }
 
 static str SQLinit(Client c);
@@ -143,10 +136,10 @@ SQLprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	tmp = SQLinit(cntxt);
 	if (tmp != MAL_SUCCEED) {
-		fprintf(stderr, "Fatal error during initialization:\n%s\n", tmp);
+		TRC_CRITICAL(SQL_SCENARIO, "Fatal error during initialization: %s\n", tmp);
 		freeException(tmp);
 		if ((tmp = GDKerrbuf) && *tmp)
-			fprintf(stderr, SQLSTATE(42000) "GDK reported: %s\n", tmp);
+			TRC_CRITICAL(SQL_SCENARIO, SQLSTATE(42000) "GDK reported: %s\n", tmp);
 		fflush(stderr);
 		exit(1);
 	}
@@ -180,9 +173,6 @@ SQLprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 SQLexit(Client c)
 {
-#ifdef _SQL_SCENARIO_DEBUG
-	fprintf(stderr, "#SQLexit\n");
-#endif
 	(void) c;		/* not used */
 	MT_lock_set(&sql_contextLock);
 	if (SQLinitialized) {
@@ -374,9 +364,6 @@ SQLinit(Client c)
 	backend *be = NULL;
 	mvc *m = NULL;
 
-#ifdef _SQL_SCENARIO_DEBUG
-	fprintf(stderr, "#SQLinit Monet 5\n");
-#endif
 	MT_lock_set(&sql_contextLock);
 
 	if (SQLinitialized) {
@@ -434,11 +421,11 @@ SQLinit(Client c)
 
 		bstream_next(fdin);
 		if ( MCpushClientInput(c, fdin, 0, "") < 0)
-			fprintf(stderr, "SQLinit:Could not switch client input stream");
+			TRC_ERROR(SQL_SCENARIO, "Could not switch client input stream\n");
 	}
 	if ((msg = SQLprepareClient(c, 0)) != NULL) {
 		MT_lock_unset(&sql_contextLock);
-		fprintf(stderr, "%s\n", msg);
+		TRC_INFO(SQL_SCENARIO, "%s\n", msg);
 		return msg;
 	}
 	be = c->sqlcontext;
@@ -554,7 +541,7 @@ SQLinit(Client c)
 			freeException(other);
 
 		if (msg)
-			fprintf(stderr, "%s", msg);
+			TRC_INFO(SQL_SCENARIO, "%s\n", msg);
 #endif
 	} else {		/* handle upgrades */
 		if (!m->sa)
@@ -1021,7 +1008,7 @@ SQLparser(Client c)
 	be = (backend *) c->sqlcontext;
 	if (be == 0) {
 		/* leave a message in the log */
-		fprintf(stderr, "SQL state descriptor missing, cannot handle client!\n");
+		TRC_ERROR(SQL_SCENARIO, "SQL state description is missing, cannot handle client!\n");
 		/* stop here, instead of printing the exception below to the
 		 * client in an endless loop */
 		c->mode = FINISHCLIENT;
@@ -1304,10 +1291,11 @@ SQLparser(Client c)
 		if (!err) {
 			pushEndInstruction(c->curprg->def);
 			/* check the query wrapper for errors */
-			chkTypes(c->usermodule, c->curprg->def, TRUE);
+			if( msg == MAL_SUCCEED)
+				msg = chkTypes(c->usermodule, c->curprg->def, TRUE);
 
 			/* in case we had produced a non-cachable plan, the optimizer should be called */
-			if (opt ) {
+			if (msg == MAL_SUCCEED && opt ) {
 				msg = SQLoptimizeQuery(c, c->curprg->def);
 
 				if (msg != MAL_SUCCEED) {
@@ -1318,7 +1306,7 @@ SQLparser(Client c)
 		}
 		//printFunction(c->fdout, c->curprg->def, 0, LIST_MAL_ALL);
 		/* we know more in this case than chkProgram(c->fdout, c->usermodule, c->curprg->def); */
-		if (c->curprg->def->errors) {
+		if (msg == MAL_SUCCEED && c->curprg->def->errors) {
 			msg = c->curprg->def->errors;
 			c->curprg->def->errors = 0;
 			/* restore the state */
@@ -1360,9 +1348,7 @@ SQLCacheRemove(Client c, str nme)
 {
 	Symbol s;
 
-#ifdef _SQL_CACHE_DEBUG
-	fprintf(stderr, "#SQLCacheRemove %s\n", nme);
-#endif
+	TRC_DEBUG(SQL_CACHE_TR, "SQLCache remove %s\n", nme);
 
 	s = findSymbolInModule(c->usermodule, nme);
 	if (s == NULL)

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -98,7 +98,7 @@ print_stmtlist(sql_allocator *sa, stmt *l)
 			const char *rnme = table_name(sa, n->data);
 			const char *nme = column_name(sa, n->data);
 
-			fprintf(stderr, "%s.%s\n", rnme ? rnme : "(null!)", nme ? nme : "(null!)");
+			TRC_INFO(SQL_RELATION, "%s.%s\n", rnme ? rnme : "(null!)", nme ? nme : "(null!)");
 		}
 	}
 }
@@ -624,10 +624,10 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 
 				if (rows && en == exps->h && f->func->type != F_LOADER)
 					es = stmt_const(be, rows, es);
-				else if(f->func->type == F_ANALYTIC && es->nrcols == 0) {
-					if(en == exps->h)
+				else if (f->func->type == F_ANALYTIC && es->nrcols == 0) {
+					if (en == exps->h)
 						es = stmt_const(be, bin_first_column(be, left), es); /* ensure the first argument is a column */
-					if((!strcmp(f->func->base.name, "window_bound"))
+					if (!f->func->s && !strcmp(f->func->base.name, "window_bound")
 						&& exps->h->next && list_length(f->func->ops) == 6 && en == exps->h->next)
 						es = stmt_const(be, bin_first_column(be, left), es);
 				}
@@ -740,11 +740,11 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		if (s && grp)
 			s = stmt_project(be, ext, s);
 		if (!s && right) {
-			fprintf(stderr, "could not find %s.%s\n", (char*)e->l, (char*)e->r);
+			TRC_CRITICAL(SQL_RELATION, "Could not find %s.%s\n", (char*)e->l, (char*)e->r);
 			print_stmtlist(sql->sa, left);
 			print_stmtlist(sql->sa, right);
 			if (!s) {
-				fprintf(stderr, "query: '%s'\n", sql->query);
+				TRC_ERROR(SQL_RELATION, "Query: '%s'\n", sql->query);
 			}
 			assert(s);
 			return NULL;
@@ -916,7 +916,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
  			r2 = exp_bin(be, re2, left, right, grp, ext, cnt, sel);
 
 		if (!l || !r || (re2 && !r2)) {
-			fprintf(stderr, "query: '%s'\n", sql->query);
+			TRC_ERROR(SQL_RELATION, "Query: '%s'\n", sql->query);
 			return NULL;
 		}
 

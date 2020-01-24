@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -62,9 +62,7 @@ OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 					 x->rowcnt == y->rowcnt &&
 					 x->value.vtype == y->value.vtype &&
 					ATOMcmp(x->value.vtype, VALptr(&x->value), VALptr(&y->value)) == 0){
-					if( OPTdebug &  OPTconstants){
-						fprintf(stderr,"#opt_constants: matching elements %s %d %d\n", getVarName(mb,i), i,k);
-					}
+
 					/* re-use a constant */
 					alias[i]= index[k];
 					fnd=1;
@@ -73,9 +71,6 @@ OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 				}
 			}
 			if ( fnd == 0){
-				if( OPTdebug &  OPTconstants){
-					fprintf(stderr,"swith elements %d %d\n", i,n);
-				}
 				cst[n]= x;
 				index[n]= i;
 				n++;
@@ -91,10 +86,11 @@ OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 
     /* Defense line against incorrect plans */
 	/* Plan remains unaffected */
-	//chkTypes(cntxt->usermodule, mb, FALSE);
-	//chkFlow(mb);
-	//chkDeclarations(mb);
-    
+	// msg = chkTypes(cntxt->usermodule, mb, FALSE);
+	// if (!msg) 
+	// 	msg = chkFlow(mb);
+	// if(!msg) 
+	// 	msg = chkDeclarations(mb);
     /* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;
 	snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","constants",actions,usec);

@@ -38,7 +38,6 @@ MOSsync(int fd) {
 #else
 #define PERSIST_MOSAIC(HEAP, BN)
 #endif
-
 #define CREATE_(HEAP)\
 \
 static void \
@@ -57,7 +56,7 @@ MOS_##HEAP##_sync(void *arg) {\
     int fd;\
     lng t0 = GDKusec();\
 \
-    if (HEAPsave(hp, hp->filename, NULL) != GDK_SUCCEED ||\
+    if (HEAPsave(hp, hp->filename, NULL, true) != GDK_SUCCEED ||\
         (fd = GDKfdlocate(hp->farmid, hp->filename, "rb+", NULL)) < 0) {\
         BBPunfix(bn->batCacheid);\
         GDKfree(hp);\

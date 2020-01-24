@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /* (c) M.L. Kersten
@@ -149,7 +149,7 @@ renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int
 	*/
 	if( !start && pci->calls > HIGHWATERMARK){
 		if( pci->calls == 10000 || pci->calls == 100000 || pci->calls == 1000000 || pci->calls == 10000000)
-			fprintf(stderr, "#Profiler too many calls %d\n", pci->calls);
+			TRC_WARNING(MAL_MAL, "Too many calls: %d\n", pci->calls);
 		return;
 	}
 
@@ -236,10 +236,7 @@ renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int
 #endif
 
 	if( mb){
-		char prereq[BUFSIZ];
-		size_t len;
-		int i,j,k,comma;
-		InstrPtr q;
+		int j;
 		char *truncated;
 
 		/* generate actual call statement */
@@ -281,30 +278,7 @@ renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int
 
 
 		// collect the prerequisite pre-requisite statements
-		prereq[0]='[';
-		prereq[1]=0;
-		len = 1;
-		comma=0;
-		for(i= pci->retc; i < pci->argc; i++){
-			for( j = pci->pc-1; j > 0; j--){
-				q= getInstrPtr(mb,j);
-				for( k=0; k < q->retc; k++)
-					if( getArg(q,k) == getArg(pci,i))
-						break;
-				if( k < q->retc){
-					snprintf(prereq + len, BUFSIZ-len,"%s%d", (comma?",":""), j);
-					len = strlen(prereq);
-					comma++;
-					break;
-				}
-			}
-		}
 #define MALARGUMENTDETAILS
-#ifdef MALARGUMENTDETAILS
-		logadd("\"prereq\":%s],"PRETTIFY, prereq);
-#else
-		logadd("\"prereq\":%s]"PRETTIFY, prereq);
-#endif
 
 /* EXAMPLE MAL statement argument decomposition
  * The eventparser may assume this layout for ease of parsing
@@ -940,6 +914,9 @@ void initProfiler(void)
 
 void initHeartbeat(void)
 {
+#ifdef HAVE_EMBEDDED
+	return;
+#endif
 	ATOMIC_SET(&hbrunning, 1);
 	if (MT_create_thread(&hbthread, profilerHeartbeat, NULL, MT_THR_JOINABLE,
 						 "heartbeat") < 0) {
@@ -948,3 +925,5 @@ void initHeartbeat(void)
 		ATOMIC_SET(&hbrunning, 0);
 	}
 }
+
+

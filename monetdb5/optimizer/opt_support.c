@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
  /* (c) M. Kersten
@@ -106,12 +106,14 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 	// strong defense line, assure that MAL plan is initially correct
 	if( mb->errors == 0 && mb->stop > 1){
 		resetMalBlk(mb, mb->stop);
-		chkTypes(cntxt->usermodule, mb, FALSE);
-		chkFlow(mb);
-		chkDeclarations(mb);
-		if( msg) 
+		msg = chkTypes(cntxt->usermodule, mb, FALSE);
+		if (!msg)
+			msg = chkFlow(mb);
+		if (!msg)
+			msg = chkDeclarations(mb);
+		if (msg) 
 			return msg;
-		if( mb->errors != MAL_SUCCEED){
+		if (mb->errors != MAL_SUCCEED){
 			msg = mb->errors;
 			mb->errors = MAL_SUCCEED;
 			return msg;

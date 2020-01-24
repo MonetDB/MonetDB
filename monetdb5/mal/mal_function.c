@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -82,10 +82,12 @@ int getPC(MalBlkPtr mb, InstrPtr p)
  */
 #define DEPTH 128
 
-void chkFlow(MalBlkPtr mb)
+str
+chkFlow(MalBlkPtr mb)
 {   int i,j,k, v,lastInstruction;
 	int  pc[DEPTH];
 	int  var[DEPTH];
+	char buf[IDLENGTH * 2 +2];
 	InstrPtr stmt[DEPTH];
 	int btop=0;
 	int endseen=0, retseen=0, yieldseen=0;
@@ -93,7 +95,9 @@ void chkFlow(MalBlkPtr mb)
 	str msg = MAL_SUCCEED;
 
 	if ( mb->errors != MAL_SUCCEED)
-		return ;
+		return mb->errors ;
+	p = getInstrPtr(mb, 0);
+	snprintf(buf, IDLENGTH * 2 +2, "%s.%s", getModuleId(p), getFunctionId(p));
 	lastInstruction = mb->stop-1;
 	for(i= 0; i<mb->stop; i++){
 		p= getInstrPtr(mb,i);
@@ -102,38 +106,24 @@ void chkFlow(MalBlkPtr mb)
 		switch( p->barrier){
 		case BARRIERsymbol:
 		case CATCHsymbol:
-			if(btop== DEPTH){
-			    mb->errors = createMalException(mb,0,TYPE,"Too many nested MAL blocks");
-			    return;
-			}
+			if(btop== DEPTH)
+			    throw(MAL,buf,"Too many nested MAL blocks");
 			pc[btop]= i;
 			v= var[btop]= getDestVar(p);
 			stmt[btop]=p;
 
 			for(j=btop-1;j>=0;j--)
-			if( v==var[j]){
-			    mb->errors = createMalException(mb,i,MAL,
-					"recursive %s[%d] shields %s[%d]",
-						getVarName(mb,v), pc[j],
-						getFcnName(mb),pc[i]);
-			    return;
-			}
+			if( v==var[j])
+			    throw(MAL,buf, "recursive %s[%d] shields %s[%d]", getVarName(mb,v), pc[j], getFcnName(mb),pc[i]);
 
 			btop++;
 			break;
 		case EXITsymbol:
 			v= getDestVar(p);
-			if( btop>0 && var[btop-1] != v){
-			    mb->errors = createMalException( mb,i,MAL,
-					"exit-label '%s' doesnot match '%s'",
-					getVarName(mb,v), getVarName(mb,var[btop-1]));
-			}
-			if(btop==0){
-			    mb->errors = createMalException(mb,i,MAL,
-					"exit-label '%s' without begin-label",
-					getVarName(mb,v));
-			    continue;
-			}
+			if( btop>0 && var[btop-1] != v)
+			    throw(MAL, buf, "exit-label '%s' doesnot match '%s'", getVarName(mb,v), getVarName(mb,var[btop-1]));
+			if(btop==0)
+			    throw(MAL,buf, "exit-label '%s' without begin-label", getVarName(mb,v));
 			/* search the matching block */
 			for(j=btop-1;j>=0;j--)
 			if( var[j]==v) break;
@@ -159,14 +149,13 @@ void chkFlow(MalBlkPtr mb)
 			if( var[j]==v) break;
 			if(j<0){
 				str nme=getVarName(mb,v);
-			    mb->errors = createMalException(mb,i,MAL,
-					"label '%s' not in guarded block", nme);
+			    throw(MAL,buf, "label '%s' not in guarded block", nme);
 			} 
 			break;
 		case YIELDsymbol:
 			{ InstrPtr ps= getInstrPtr(mb,0);
 			if( ps->token != FACTORYsymbol){
-			    mb->errors = createMalException(mb,i,MAL, "yield misplaced!");
+			    throw(MAL, buf, "yield misplaced!");
 			}
 			yieldseen= TRUE;
 			 }
@@ -178,17 +167,16 @@ void chkFlow(MalBlkPtr mb)
 				if (p->barrier == RETURNsymbol)
 					yieldseen = FALSE;    /* always end with a return */
 				if (ps->retc != p->retc) {
-					mb->errors = createMalException( mb, i, MAL,
-							"invalid return target!");
+					throw(MAL, buf, "invalid return target!");
 				} else 
 				if (ps->typechk == TYPE_RESOLVED)
 					for (e = 0; e < p->retc; e++) {
 						if (resolveType(getArgType(mb, ps, e), getArgType(mb, p, e)) < 0) {
 							str tpname = getTypeName(getArgType(mb, p, e));
-							mb->errors = createMalException(mb, i, TYPE,
-									"%s type mismatch at type '%s'\n",
+							msg = createException(MAL, buf, "%s type mismatch at type '%s'\n",
 									(p->barrier == RETURNsymbol ? "RETURN" : "YIELD"), tpname);
 							GDKfree(tpname);
+							return msg;
 						}
 					}
 			}
@@ -206,40 +194,31 @@ void chkFlow(MalBlkPtr mb)
 				if( p->token == REMsymbol){
 					/* do nothing */
 				} else if( i) {
-					str msg=instruction2str(mb,0,p,TRUE);
-					mb->errors = createMalException( mb,i,MAL, "signature misplaced\n!%s",msg);
-					GDKfree(msg);
+					str l = instruction2str(mb,0,p,TRUE);
+					msg = createException( MAL, buf, "signature misplaced\n!%s",l);
+					GDKfree(l);
+					return  msg;
 				}
 			}
 		}
 	}
 
-	if(msg == MAL_SUCCEED && lastInstruction < mb->stop-1 ){
-		mb->errors = createMalException( mb,lastInstruction,SYNTAX,
-			"instructions after END");
-#ifdef DEBUG_MAL_FCN
-		fprintFunction(stderr, mb, 0, LIST_MAL_ALL);
-#endif
-	}
-	if( endseen)
-	for(btop--; btop>=0;btop--){
-		mb->errors = createMalException( mb,lastInstruction, SYNTAX,
-			"barrier '%s' without exit in %s[%d]",
-				getVarName(mb,var[btop]),getFcnName(mb),i);
-	}
+	if(lastInstruction < mb->stop-1 )
+		throw(MAL, buf, "instructions after END");
+	
+	if( endseen && btop  > 0)
+			throw(MAL, buf, "barrier '%s' without exit in %s[%d]", getVarName(mb,var[btop - 1]),getFcnName(mb),i);
 	p= getInstrPtr(mb,0);
-	if( !isaSignature(p)){
-		mb->errors = createMalException( mb,0,SYNTAX,"signature missing");
-	}
+	if( !isaSignature(p))
+		throw( MAL, buf, "signature missing");
 	if( retseen == 0){
 		if( getArgType(mb,p,0)!= TYPE_void &&
-			(p->token==FUNCTIONsymbol || p->token==FACTORYsymbol)){
-				mb->errors = createMalException( mb,0,SYNTAX,"RETURN missing");
-		}
+			(p->token==FUNCTIONsymbol || p->token==FACTORYsymbol))
+				throw(MAL, buf,  "RETURN missing");
 	}
-	if ( msg== MAL_SUCCEED && yieldseen && getArgType(mb,p,0)!= TYPE_void){
-			mb->errors = createMalException( mb,0,SYNTAX,"RETURN missing");
-	}
+	if ( yieldseen && getArgType(mb,p,0)!= TYPE_void)
+			throw( MAL, buf,"RETURN missing");
+	return MAL_SUCCEED;
 }
 
 /*
@@ -270,16 +249,9 @@ int getBarrierEnvelop(MalBlkPtr mb){
 
 static void replaceTypeVar(MalBlkPtr mb, InstrPtr p, int v, malType t){
 	int j,i,x,y;
-#ifdef DEBUG_MAL_FCN
-	char *tpenme = getTypeName(t);
-	fprintf(stderr,"#replace type _%d by type %s\n",v, tpenme);
-	GDKfree(tpenme);
-#endif
+
 	for(j=0; j<mb->stop; j++){
 	    p= getInstrPtr(mb,j);
-#ifdef DEBUG_MAL_FCN
-		fprintInstruction(stderr,mb,0,p,LIST_MAL_ALL);
-#endif
 	if( p->polymorphic)
 	for(i=0;i<p->argc; i++)
 	if( isPolymorphic(x= getArgType(mb,p,i))) {
@@ -295,34 +267,13 @@ static void replaceTypeVar(MalBlkPtr mb, InstrPtr p, int v, malType t){
 			y= newBatType(tail);
 			setTypeIndex(y,tx);
 			setArgType(mb,p,i,y);
-#ifdef DEBUG_MAL_FCN
-			{
-				char *xnme = getTypeName(x), *ynme = getTypeName(y);
-				fprintf(stderr," %d replaced %s->%s \n",i,xnme,ynme);
-				GDKfree(xnme);
-				GDKfree(ynme);
-			}
-#endif
 		} else
 		if(getTypeIndex(x) == v){
-#ifdef DEBUG_MAL_FCN
-			char *xnme = getTypeName(x);
-			fprintf(stderr," replace x= %s polymorphic\n",xnme);
-			GDKfree(xnme);
-#endif
 			setArgType(mb,p,i,t);
 		}
-#ifdef DEBUG_MAL_FCN
 		else {
-			char *xnme = getTypeName(x);
-			fprintf(stderr," non x= %s %d\n",xnme,getTypeIndex(x));
-			GDKfree(xnme);
 		}
-#endif
 	}
-#ifdef DEBUG_MAL_FCN
-		fprintInstruction(stderr,mb,0,p,LIST_MAL_ALL);
-#endif
 	}
 }
 
@@ -375,28 +326,18 @@ cloneFunction(Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p)
 	Symbol new;
 	int i,v;
 	InstrPtr pp;
+	str msg = MAL_SUCCEED;
 
-#ifdef DEBUG_CLONE
-	fprintf(stderr,"clone the function %s to scope %s\n",
-				 proc->name,scope->name);
-	fprintInstruction(stderr,mb,0,p,LIST_MAL_ALL);
-#endif
 	new = newFunction(scope->name, proc->name, getSignature(proc)->token);
 	if( new == NULL){
-		fprintf(stderr,"cloneFunction() failed");
 		return NULL;
 	}
 	freeMalBlk(new->def);
 	if((new->def = copyMalBlk(proc->def)) == NULL) {
 		freeSymbol(new);
-		fprintf(stderr,"cloneFunction() failed");
 		return NULL;
 	}
 	/* now change the definition of the original proc */
-#ifdef DEBUG_CLONE
-	fprintf(stderr, "CLONED VERSION\n");
-	fprintFunction(stderr, new->def, 0, LIST_MAL_ALL);
-#endif
 	/* check for errors after fixation , TODO*/
 	pp = getSignature(new);
 	for (i = 0; i < pp->argc; i++)
@@ -411,13 +352,6 @@ cloneFunction(Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p)
 			} else
 				replaceTypeVar(new->def, pp, getTypeIndex(v), t);
 		}
-#ifdef DEBUG_MAL_FCN
-		else {
-			char *tpenme = getTypeName(v);
-			fprintf(stderr,"%d remains %s\n", i, tpenme);
-			GDKfree(tpenme);
-		}
-#endif
 	/* include the function at the proper place in the scope */
 	insertSymbolBefore(scope, new, proc);
 	/* clear polymorphic and type to force analysis*/
@@ -430,30 +364,22 @@ cloneFunction(Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p)
 	for (i = 0; i < new->def->vtop; i++)
 		clrVarFixed(new->def, i);
 
-#ifdef DEBUG_MAL_FCN
-	fprintf(stderr, "FUNCTION TO BE CHECKED\n");
-	fprintFunction(stderr, new->def, 0, LIST_MAL_ALL);
-#endif
 
 	/* check for errors after fixation , TODO*/
 	/* beware, we should now ignore any cloning */
 	if (proc->def->errors == 0) {
-		chkProgram(scope,new->def);
+		msg = chkProgram(scope,new->def);
+		if( msg)
+			mb->errors = msg;
+		else
 		if(new->def->errors){
 			assert(mb->errors == NULL);
 			mb->errors = new->def->errors;
 			mb->errors = createMalException(mb,0,TYPE,"Error in cloned function");
 			new->def->errors = 0;
-#ifdef DEBUG_MAL_FCN
-			fprintFunction(stderr, new->def, 0, LIST_MAL_ALL);
-#endif
 		}
 	}
-#ifdef DEBUG_CLONE
-	fprintf(stderr, "newly cloned function added to %s %d \n",
-				 scope->name, i);
-	fprintFunction(stderr, new->def, 0, LIST_MAL_ALL);
-#endif
+
 	return new;
 }
 
@@ -483,12 +409,14 @@ debugFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg, int first, int s
 				mnstr_printf(fd,"%-40s\n",ps);
 			else {
 				mnstr_printf(fd,"%-40s\t#[%d] ("BUNFMT") %s ",ps, i, getRowCnt(mb,getArg(p,0)), (p->blk? p->blk->binding:""));
-				for(j =0; j < p->retc; j++)
-					mnstr_printf(fd,"%d ",getArg(p,j));
-				if( p->argc - p->retc > 0)
-					mnstr_printf(fd,"<- ");
-				for(; j < p->argc; j++)
-					mnstr_printf(fd,"%d ",getArg(p,j));
+				if( flg & LIST_MAL_FLOW){
+					for(j =0; j < p->retc; j++)
+						mnstr_printf(fd,"%d ",getArg(p,j));
+					if( p->argc - p->retc > 0)
+						mnstr_printf(fd,"<- ");
+					for(; j < p->argc; j++)
+						mnstr_printf(fd,"%d ",getArg(p,j));
+				}
 				// also show type check property
 				if( p->typechk == TYPE_UNKNOWN)
 					mnstr_printf(fd," type check needed ");
@@ -554,7 +482,7 @@ void printFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg)
 	listFunction(fd,mb,stk,flg,0,mb->stop);
 }
 
-void fprintFunction(FILE *fd, MalBlkPtr mb, MalStkPtr stk, int flg)
+void traceFunction(COMPONENT comp, MalBlkPtr mb, MalStkPtr stk, int flg)
 {
 	int i,j;
 	InstrPtr p;
@@ -570,7 +498,7 @@ void fprintFunction(FILE *fd, MalBlkPtr mb, MalStkPtr stk, int flg)
 				setVarUsed(mb, getArg(p,j));
 	}
 	for (i = 0; i < mb->stop; i++)
-		fprintInstruction(fd, mb, stk, getInstrPtr(mb, i), flg);
+		traceInstruction(comp, mb, stk, getInstrPtr(mb, i), flg);
 }
 
 /* initialize the static scope boundaries for all variables */
@@ -733,15 +661,17 @@ void clrDeclarations(MalBlkPtr mb){
 	}
 }
 
-void chkDeclarations(MalBlkPtr mb){
+str
+chkDeclarations(MalBlkPtr mb){
 	int pc,i, k,l;
 	InstrPtr p;
 	short blks[MAXDEPTH], top= 0, blkId=1;
 	int dflow = -1;
+	char buf[IDLENGTH * 2 +2];
 	str msg = MAL_SUCCEED;
 
 	if( mb->errors)
-		return;
+		return GDKstrdup(mb->errors);
 	blks[top] = blkId;
 
 	/* initialize the scope */
@@ -752,6 +682,7 @@ void chkDeclarations(MalBlkPtr mb){
 	p= getInstrPtr(mb,0);
 	for(k=0;k<p->argc; k++)
 		setVarScope(mb, getArg(p,k), blkId);
+	snprintf(buf, IDLENGTH * 2 +2, "%s.%s", getModuleId(p), getFunctionId(p));
 
 	for(pc=1;pc<mb->stop; pc++){
 		p= getInstrPtr(mb,pc);
@@ -760,6 +691,8 @@ void chkDeclarations(MalBlkPtr mb){
 		/* check correct use of the arguments*/
 		for(k=p->retc;k<p->argc; k++) {
 			l=getArg(p,k);
+			if ( l < 0)
+					throw(MAL, buf, "Non-declared variable: pc=%d, var= %d", pc, k);
 			setVarUsed(mb,l);
 			if( getVarScope(mb,l) == 0){
 				/*
@@ -775,20 +708,15 @@ void chkDeclarations(MalBlkPtr mb){
 					setVarScope(mb, l, blks[0]);
 				} else if( !( isVarConstant(mb, l) || isVarTypedef(mb,l)) &&
 					!isVarInit(mb,l) ) {
-					mb->errors = createMalException( mb,pc,TYPE,
-						"'%s' may not be used before being initialized",
-						getVarName(mb,l));
+					throw(MAL, buf, "'%s' may not be used before being initialized", getVarName(mb,l));
 				}
 			} else if( !isVarInit(mb,l) ){
 			    /* is the block still active ? */
 			    for( i=0; i<= top; i++)
 				if( blks[i] == getVarScope(mb,l) )
 					break;
-			    if( i> top || blks[i]!= getVarScope(mb,l) ){
-			        mb->errors = createMalException( mb,pc,TYPE,
-							"'%s' used outside scope",
-							getVarName(mb,l));
-			    }
+			    if( i> top || blks[i]!= getVarScope(mb,l) )
+			        throw( MAL, buf, "'%s' used outside scope", getVarName(mb,l));
 			}
 			if( blockCntrl(p) || blockStart(p) )
 				setVarInit(mb, l);
@@ -809,35 +737,23 @@ void chkDeclarations(MalBlkPtr mb){
 					setVarScope(mb, l, blks[0]);
 				else
 					setVarScope(mb, l, blks[top]);
-#ifdef DEBUG_MAL_FCN
-				fprintf(stderr,"#defined %s in block %d\n", getVarName(mb,l), getVarScope(mb,l));
-#endif
 			}
 			if( blockCntrl(p) || blockStart(p) )
 				setVarUsed(mb, l);
 		}
 		if( p->barrier && msg == MAL_SUCCEED){
 			if ( blockStart(p)){
-				if( top == MAXDEPTH-2){
-					mb->errors = createMalException(mb,pc,SYNTAX, "too deeply nested  MAL program");
-					return;
-				}
+				if( top == MAXDEPTH-2)
+					throw(MAL, buf, "too deeply nested  MAL program");
 				blkId++;
 				if (getModuleId(p) && getFunctionId(p) && strcmp(getModuleId(p),"language")==0 && strcmp(getFunctionId(p),"dataflow")== 0){
-					if( dflow != -1){
-						mb->errors = createMalException(mb,0, TYPE,"setLifeSpan nested dataflow blocks not allowed" );
-					}
+					if( dflow != -1)
+						throw(MAL, buf, "setLifeSpan nested dataflow blocks not allowed" );
 					dflow= blkId;
 				} 
 				blks[++top]= blkId;
-#ifdef DEBUG_MAL_FCN
-				fprintf(stderr,"#new block %d at top %d\n",blks[top], top);
-#endif
 			}
 			if( blockExit(p) && top > 0 ){
-#ifdef DEBUG_MAL_FCN
-				fprintf(stderr,"leave block %d at top %d\n",blks[top], top);
-#endif
 				if( dflow == blkId){
 					dflow = -1;
 				} else
@@ -855,4 +771,5 @@ void chkDeclarations(MalBlkPtr mb){
 			}
 		}
 	}
+	return msg;
 }

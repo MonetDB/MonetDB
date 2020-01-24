@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -568,10 +568,8 @@ compileOptimizer(Client cntxt, const char *name)
 					msg = compileString(&fcn,cntxt, buf);
 					if( msg == MAL_SUCCEED){
 						compiled = findSymbol(cntxt->usermodule,getName("optimizer"), getName(pipes[j].name));
-						if( compiled){
+						if( compiled)
 							pipes[j].mb = compiled->def;
-							//fprintFunction(stderr, pipes[j].mb, 0, LIST_MAL_ALL);
-						}
 					}
 				}
 			}
@@ -625,7 +623,7 @@ addOptimizerPipe(Client cntxt, MalBlkPtr mb, const char *name)
 				throw(MAL, "optimizer.addOptimizerPipe", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			for (k = 0; k < p->argc; k++)
 				getArg(p, k) = cloneVariable(mb, pipes[i].mb, getArg(p, k));
-			typeChecker(cntxt->usermodule, mb, p, FALSE);
+			typeChecker(cntxt->usermodule, mb, p, j, FALSE);
 			pushInstruction(mb, p);
 		}
 	}

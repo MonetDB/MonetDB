@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /* author M.Kersten
@@ -20,15 +20,6 @@
 #include "opt_deadcode.h"
 #include "mal_builder.h"
 
-#define addresult(I)									\
-	do {												\
-		int tpe = getVarType(mb,getArg(p,I));			\
-		q= newStmt(mb, batRef, newRef);					\
-		getArg(q,0)= getArg(p,I);						\
-		q = pushType(mb, q, getBatType(tpe));			\
-		empty[getArg(q,0)]= i;							\
-	} while (0)
-
 #define emptyresult(I)									\
 	do {												\
 		int tpe = getVarType(mb,getArg(p,I));			\
@@ -37,10 +28,11 @@
 		setFunctionId(p,newRef);						\
 		p->argc = p->retc;								\
 		p = pushType(mb,p, getBatType(tpe));			\
-		setVarType(mb, getArg(p,0), tpe);				\
-		setVarFixed(mb, getArg(p,0));					\
-		empty[getArg(p,0)]= i;							\
-	} while (0)
+		if( p) {										\
+			setVarType(mb, getArg(p,0), tpe);			\
+			setVarFixed(mb, getArg(p,0));				\
+			empty[getArg(p,0)]= i;						\
+	}  } while (0)
 
 
 str
@@ -254,9 +246,11 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	GDKfree(empty);
 	GDKfree(updated);
     /* Defense line against incorrect plans */
-	chkTypes(cntxt->usermodule, mb, FALSE);
-	chkFlow(mb);
-	chkDeclarations(mb);
+	msg = chkTypes(cntxt->usermodule, mb, FALSE);
+	if (!msg)
+		msg = chkFlow(mb);
+	if (!msg)
+		msg = chkDeclarations(mb);
     /* keep all actions taken as a post block comment */
 wrapup:
 	usec = GDKusec()- usec;

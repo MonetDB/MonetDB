@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -114,7 +114,7 @@ void reinitialize(void)
 	readProps(_mero_props, ".");
 
 	/* check and trim the hash-algo from the passphrase for easy use
-	 * lateron */
+	 * later on */
 	kv = findConfKey(_mero_props, "passphrase");
 	if (kv->val != NULL) {
 		char *h = kv->val + 1;

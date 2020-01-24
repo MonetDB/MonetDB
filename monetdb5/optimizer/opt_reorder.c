@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -334,16 +334,16 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	GDKfree(old);
 	(void) OPTpostponeAppends(cntxt, mb, 0, 0);
 
-    /* Defense line against incorrect plans */
-    if( 1){
-        chkTypes(cntxt->usermodule, mb, FALSE);
-        chkFlow(mb);
-        chkDeclarations(mb);
-    }
-    /* keep all actions taken as a post block comment */
+    	/* Defense line against incorrect plans */
+        msg = chkTypes(cntxt->usermodule, mb, FALSE);
+	if (!msg)
+        	msg = chkFlow(mb);
+	if (!msg)
+        	msg = chkDeclarations(mb);
+    	/* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;
-    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","reorder",1,usec);
-    newComment(mb,buf);
+    	snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","reorder",1,usec);
+    	newComment(mb,buf);
 	addtoMalBlkHistory(mb);
 	return msg;
 }

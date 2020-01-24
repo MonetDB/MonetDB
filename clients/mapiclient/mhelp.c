@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /**
@@ -495,7 +495,7 @@ SQLhelp sqlhelp1[] = {
 	 NULL},
 	{"START TRANSACTION",
 	 "Change transaction mode from auto-commit to user controlled commit/rollback",
-	 "START TRANSACTION transactionmode",
+	 "{ START | BEGIN } TRANSACTION transactionmode",
 	 "transactionmode,isolevel",
 	 "See also https://www.monetdb.org/Documentation/Manuals/SQLreference/Transactions"},
 	{"TABLE JOINS",

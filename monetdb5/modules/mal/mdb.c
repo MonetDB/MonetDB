@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -231,42 +231,6 @@ MDBgetDebugFlags(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	addFlag("performance", GRPperformance, GDKdebug);
 	addFlag("forcemito", GRPforcemito, GDKdebug);
 
-    addFlag("aliases", OPTaliases, OPTdebug);
-	addFlag("candidates", OPTcandidates, OPTdebug);
-	addFlag("coercion", OPTcoercion, OPTdebug);
-	addFlag("commonterms", OPTcommonterms, OPTdebug);
-	addFlag("constants", OPTconstants, OPTdebug);
-	addFlag("costmodel", OPTcostmodel, OPTdebug);
-	addFlag("dataflow", OPTdataflow, OPTdebug);
-	addFlag("deadcode", OPTdeadcode, OPTdebug);
-	addFlag("emptybind", OPTemptybind, OPTdebug);
-	addFlag("evaluate", OPTevaluate, OPTdebug);
-	addFlag("garbagecollector", OPTgarbagecollector, OPTdebug);
-	addFlag("generator", OPTgenerator, OPTdebug);
-	addFlag("inline", OPTinline, OPTdebug);
-	addFlag("jit", OPTjit, OPTdebug);
-	addFlag("json", OPTjson, OPTdebug);
-	addFlag("macros", OPTmacros, OPTdebug);
-	addFlag("matpack", OPTmatpack, OPTdebug);
-	addFlag("mergetable", OPTmergetable, OPTdebug);
-	addFlag("mitosis", OPTmitosis, OPTdebug);
-	addFlag("multiplex", OPTmultiplex, OPTdebug);
-	addFlag("oltp", OPToltp, OPTdebug);
-	addFlag("pipes", OPTpipes, OPTdebug);
-	addFlag("postfix", OPTpostfix, OPTdebug);
-	addFlag("prelude", OPTprelude, OPTdebug);
-	addFlag("profiler", OPTprofiler, OPTdebug);
-	addFlag("projectionpath", OPTprojectionpath, OPTdebug);
-	addFlag("pushselect", OPTpushselect, OPTdebug);
-	addFlag("querylog", OPTquerylog, OPTdebug);
-	addFlag("reduce", OPTreduce, OPTdebug);
-	addFlag("remap", OPTremap, OPTdebug);
-	addFlag("remotequeries", OPTremotequeries, OPTdebug);
-	addFlag("reorder", OPTreorder, OPTdebug);
-	addFlag("support", OPTsupport, OPTdebug);
-	addFlag("volcano", OPTvolcano, OPTdebug);
-	addFlag("wlc", OPTwlc, OPTdebug);
-
     BBPkeepref( *f = flg->batCacheid);
     BBPkeepref( *v = val->batCacheid);
 	return MAL_SUCCEED;
@@ -293,41 +257,6 @@ MDBsetDebugStr_(int *ret, str *flg)
 	if( strcmp("forcemito",*flg)==0) GDKdebug ^= GRPforcemito;
 	*ret = GDKdebug;
 
-    if( strcmp("aliases",*flg)==0) OPTdebug ^= OPTaliases;
-	if( strcmp("candidates", *flg) == 0) OPTdebug ^= OPTcandidates;
-	if( strcmp("coercion", *flg) == 0) OPTdebug ^= OPTcoercion;
-	if( strcmp("commonterms", *flg) == 0) OPTdebug ^= OPTcommonterms;
-	if( strcmp("constants", *flg) == 0) OPTdebug ^= OPTconstants;
-	if( strcmp("costmodel", *flg) == 0) OPTdebug ^= OPTcostmodel;
-	if( strcmp("dataflow", *flg) == 0) OPTdebug ^= OPTdataflow;
-	if( strcmp("deadcode", *flg) == 0) OPTdebug ^= OPTdeadcode;
-	if( strcmp("emptybind", *flg) == 0) OPTdebug ^= OPTemptybind;
-	if( strcmp("evaluate", *flg) == 0) OPTdebug ^= OPTevaluate;
-	if( strcmp("garbagecollector", *flg) == 0) OPTdebug ^= OPTgarbagecollector;
-	if( strcmp("generator", *flg) == 0) OPTdebug ^= OPTgenerator;
-	if( strcmp("inline", *flg) == 0) OPTdebug ^= OPTinline;
-	if( strcmp("jit", *flg) == 0) OPTdebug ^= OPTjit;
-	if( strcmp("json", *flg) == 0) OPTdebug ^= OPTjson;
-	if( strcmp("macros", *flg) == 0) OPTdebug ^= OPTmacros;
-	if( strcmp("matpack", *flg) == 0) OPTdebug ^= OPTmatpack;
-	if( strcmp("mergetable", *flg) == 0) OPTdebug ^= OPTmergetable;
-	if( strcmp("mitosis", *flg) == 0) OPTdebug ^= OPTmitosis;
-	if( strcmp("multiplex", *flg) == 0) OPTdebug ^= OPTmultiplex;
-	if( strcmp("oltp", *flg) == 0) OPTdebug ^= OPToltp;
-	if( strcmp("pipes", *flg) == 0) OPTdebug ^= OPTpipes;
-	if( strcmp("postfix", *flg) == 0) OPTdebug ^= OPTpostfix;
-	if( strcmp("prelude", *flg) == 0) OPTdebug ^= OPTprelude;
-	if( strcmp("profiler", *flg) == 0) OPTdebug ^= OPTprofiler;
-	if( strcmp("projectionpath", *flg) == 0) OPTdebug ^= OPTprojectionpath;
-	if( strcmp("pushselect", *flg) == 0) OPTdebug ^= OPTpushselect;
-	if( strcmp("querylog", *flg) == 0) OPTdebug ^= OPTquerylog;
-	if( strcmp("reduce", *flg) == 0) OPTdebug ^= OPTreduce;
-	if( strcmp("remap", *flg) == 0) OPTdebug ^= OPTremap;
-	if( strcmp("remotequeries", *flg) == 0) OPTdebug ^= OPTremotequeries;
-	if( strcmp("reorder", *flg) == 0) OPTdebug ^= OPTreorder;
-	if( strcmp("support", *flg) == 0) OPTdebug ^= OPTsupport;
-	if( strcmp("volcano", *flg) == 0) OPTdebug ^= OPTvolcano;
-	if( strcmp("wlc", *flg) == 0) OPTdebug ^= OPTwlc;
     return MAL_SUCCEED;
 }
 
@@ -553,7 +482,7 @@ MDBStkTrace(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	GDKfree(msg);
 
 	for (s = s->up, k++; s != NULL; s = s->up, k++) {
-		if ((msg = instruction2str(s->blk, s, getInstrPtr(s->blk,s->pcup),LIST_MAL_DEBUG)) == NULL){
+		if ((msg = instruction2str(s->blk, s, getInstrPtr(s->blk, s->pcup), LIST_MAL_DEBUG)) == NULL){
 			BBPunfix(b->batCacheid);
 			BBPunfix(bn->batCacheid);
 			throw(MAL,"mdb.setTrace", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -638,7 +567,7 @@ MDBlistDetail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	(void) p;
 	(void) stk;
-	debugFunction(cntxt->fdout, mb, 0, LIST_MAL_NAME | LIST_MAL_VALUE | LIST_MAL_TYPE | LIST_MAL_PROPS, 0, mb->stop );
+	printFunction(cntxt->fdout, mb, 0, LIST_MAL_DEBUG);
 	return MAL_SUCCEED;
 }
 
@@ -652,7 +581,7 @@ MDBlist3Detail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	s = findSymbol(cntxt->usermodule, putName(modnme), putName(fcnnme));
 	if (s == NULL)
 		throw(MAL,"mdb.list","Could not find %s.%s", modnme, fcnnme);
-	debugFunction(cntxt->fdout, s->def, 0,  LIST_MAL_NAME | LIST_MAL_VALUE | LIST_MAL_TYPE | LIST_MAL_PROPS , 0, s->def->stop);
+	printFunction(cntxt->fdout, s->def, 0,  LIST_MAL_DEBUG);
 	(void) mb;		/* fool compiler */
 	return NULL;
 }

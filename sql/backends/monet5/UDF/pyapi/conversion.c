@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -195,6 +195,7 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 			msg = ConvertFromSQLType(inp->bat, inp->sql_subtype, &ret_bat,
 									 &inp->bat_type);
 			if (msg != MAL_SUCCEED) {
+				freeException(msg);
 				msg = createException(MAL, "pyapi.eval",
 									  SQLSTATE(PY000) "Failed to convert BAT.");
 				goto wrapup;

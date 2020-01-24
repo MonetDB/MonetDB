@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -80,18 +80,6 @@ int
 strCmp(const char *l, const char *r)
 {
 	return GDK_STRCMP(l, r);
-}
-
-int
-strCmpNoNil(const unsigned char *l, const unsigned char *r)
-{
-	while (*l == *r) {
-		if (*l == 0)
-			return 0;
-		l++;
-		r++;
-	}
-	return (*l < *r) ? -1 : 1;
 }
 
 void
@@ -325,7 +313,7 @@ strPut(Heap *h, var_t *dst, const char *v)
 			GDKerror("strPut: string heaps gets larger than %zuGiB.\n", (size_t) VAR_MAX >> 30);
 			return 0;
 		}
-		HEAPDEBUG fprintf(stderr, "#HEAPextend in strPut %s %zu %zu\n", h->filename, h->size, newsize);
+		TRC_DEBUG(HEAP, "HEAPextend in strPut %s %zu %zu\n", h->filename, h->size, newsize);
 		if (HEAPextend(h, newsize, true) != GDK_SUCCEED) {
 			return 0;
 		}

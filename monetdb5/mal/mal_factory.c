@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -62,9 +62,7 @@ runFactory(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr stk, InstrP
 	char cmd;
 	str msg;
 
-#ifdef DEBUG_MAL_FACTORY
-	fprintf(stderr, "#factoryMgr called\n");
-#endif
+
 	/* the lookup can be largely avoided by handing out the index
 	   upon factory definition. todo
 		Alternative is to move them to the front
@@ -140,6 +138,7 @@ runFactory(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr stk, InstrP
 				lhs->len = 0;
 			}
 		}
+		pl->stk->stktop = mb->vtop;
 		pl->stk->stkbot= mb->vtop;	/* stack already initialized */
 		msg = runMAL(cntxt, mb, 0, pl->stk);
 	 } else {
@@ -275,9 +274,6 @@ yieldResult(MalBlkPtr mb, InstrPtr p, int pc)
 			if( pl->env == NULL)
 				return(int) (pl-plants);
 			for (i = 0; i < p->retc; i++) {
-#ifdef DEBUG_MAL_FACTORY
-				fprintf(stderr,"#lhs %d rhs %d\n", getArg(pl->pci, i), getArg(p, i));
-#endif
 				rhs = &pl->stk->stk[getArg(p, i)];
 				lhs = &pl->env->stk[getArg(pl->pci, i)];
 				if (VALcopy(lhs, rhs) == NULL)

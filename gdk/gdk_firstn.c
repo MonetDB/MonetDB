@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -622,21 +622,21 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, bool asc, bool nilslast, oid *lastp)
 #define GTvoidgrp(p1, p2)					\
 	(goids[p1] < goids[p2] ||				\
 	 (goids[p1] == goids[p2] && oids[p1] > oids[p2]))
-#define LTanygrp(p1, p2)					\
-	(goids[p1] < goids[p2] ||				\
-	 (goids[p1] == goids[p2] &&				\
+#define LTanygrp(p1, p2)			\
+	(goids[p1] < goids[p2] ||		\
+	 (goids[p1] == goids[p2] &&		\
 	  LTany(p1, p2)))
-#define GTanygrp(p1, p2)					\
-	(goids[p1] < goids[p2] ||				\
-	 (goids[p1] == goids[p2] &&				\
+#define GTanygrp(p1, p2)			\
+	(goids[p1] < goids[p2] ||		\
+	 (goids[p1] == goids[p2] &&		\
 	  GTany(p1, p2)))
-#define nLTanygrp(p1, p2)					\
-	(goids[p1] < goids[p2] ||				\
-	 (goids[p1] == goids[p2] &&				\
+#define nLTanygrp(p1, p2)			\
+	(goids[p1] < goids[p2] ||		\
+	 (goids[p1] == goids[p2] &&		\
 	  nLTany(p1, p2)))
-#define nGTanygrp(p1, p2)					\
-	(goids[p1] < goids[p2] ||				\
-	 (goids[p1] == goids[p2] &&				\
+#define nGTanygrp(p1, p2)			\
+	(goids[p1] < goids[p2] ||		\
+	 (goids[p1] == goids[p2] &&		\
 	  nGTany(p1, p2)))
 #define SWAP2(p1, p2)				\
 	do {					\
