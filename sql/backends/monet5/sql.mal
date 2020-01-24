@@ -347,7 +347,7 @@ unsafe pattern affectedRows(mvc:int, nr:lng) :int
 address mvc_affected_rows_wrap
 comment "export the number of affected rows by the current query";
 
-unsafe pattern copy_from( t:ptr, 
+unsafe pattern copy_from( sname:str, tname:str, 
 	sep:str, rsep:str, ssep:str, ns:str, fname:str, nr:lng, offset:lng, locked:int, best:int, fwf:str, onclient:int) (:bat[:any]...)
 address mvc_import_table_wrap
 comment "Import a table from bstream s with the 

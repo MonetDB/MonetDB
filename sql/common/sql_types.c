@@ -1462,7 +1462,7 @@ sqltypeinit( sql_allocator *sa)
 	sql_type *SECINT, *MONINT, *DTE;
 	sql_type *TME, *TMETZ, *TMESTAMP, *TMESTAMPTZ;
 	sql_type *BLOB;
-	sql_type *ANY, *TABLE, *PTR;
+	sql_type *ANY, *TABLE;
 	sql_type *GEOM, *MBR;
 	sql_func *f;
 	sql_arg *sres;
@@ -1472,7 +1472,7 @@ sqltypeinit( sql_allocator *sa)
 
 	t = ts;
 	TABLE = *t++ = sql_create_type(sa, "TABLE", 0, 0, 0, EC_TABLE, "bat");
-	PTR = *t++ = sql_create_type(sa, "PTR", 0, 0, 0, EC_TABLE, "ptr");
+	*t++ = sql_create_type(sa, "PTR", 0, 0, 0, EC_TABLE, "ptr");
 
 	BIT = *t++ = sql_create_type(sa, "BOOLEAN", 1, 0, 2, EC_BIT, "bit");
 	sql_create_alias(sa, BIT->sqlname, "BOOL");
@@ -2219,8 +2219,9 @@ sqltypeinit( sql_allocator *sa)
 	sres = create_arg(sa, NULL, sql_create_subtype(sa, TABLE, 0, 0), ARG_OUT); 
 	/* copyfrom fname (arg 12) */
 	f=sql_create_func_(sa, "copyfrom", "sql", "copy_from",
-	 	list_append( list_append( list_append( list_append( list_append( list_append(list_append (list_append (list_append(list_append(list_append(list_append(sa_list(sa),
-			create_arg(sa, NULL, sql_create_subtype(sa, PTR, 0, 0), ARG_IN)), 
+	 	list_append( list_append( list_append( list_append( list_append( list_append( list_append(list_append (list_append (list_append(list_append(list_append(list_append(sa_list(sa),
+			create_arg(sa, NULL, sql_create_subtype(sa, STR, 0, 0), ARG_IN)), 
+			create_arg(sa, NULL, sql_create_subtype(sa, STR, 0, 0), ARG_IN)), 
 			create_arg(sa, NULL, sql_create_subtype(sa, STR, 0, 0), ARG_IN)), 
 			create_arg(sa, NULL, sql_create_subtype(sa, STR, 0, 0), ARG_IN)), 
 			create_arg(sa, NULL, sql_create_subtype(sa, STR, 0, 0), ARG_IN)), 
