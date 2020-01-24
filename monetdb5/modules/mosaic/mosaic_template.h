@@ -293,3 +293,60 @@ static str CONCAT2(MOSselect_, TPE) (MOStask* task, void* low, void* hgh, bit* l
 }
 
 #undef select
+
+#define projection(NAME, TPE, DUMMY_ARGUMENT) \
+{\
+	MOSprojection_##NAME##_##TPE(task);\
+	MOSadvance_##NAME##_##TPE(task);\
+}
+
+static str CONCAT2(MOSprojection_, TPE)(MOStask* task)
+{
+	while(task->start < task->stop ){
+		switch(MOSgetTag(task->blk)){
+		case MOSAIC_RLE:
+			ALGODEBUG mnstr_printf(GDKstdout, "#MOSprojection_runlength\n");
+			DO_OPERATION_IF_ALLOWED(projection, runlength, TPE);
+			break;
+		case MOSAIC_DICT256:
+			ALGODEBUG mnstr_printf(GDKstdout, "#MOSprojection_dict256\n");
+			DO_OPERATION_IF_ALLOWED(projection, dict256, TPE);
+			break;
+		case MOSAIC_DICT:
+			ALGODEBUG mnstr_printf(GDKstdout, "#MOSprojection_var\n");
+			DO_OPERATION_IF_ALLOWED(projection, dict, TPE);
+			break;
+		case MOSAIC_FRAME:
+			ALGODEBUG mnstr_printf(GDKstdout, "#MOSprojection_frame\n");
+			DO_OPERATION_IF_ALLOWED(projection, frame, TPE);
+			break;
+		case MOSAIC_DELTA:
+			ALGODEBUG mnstr_printf(GDKstdout, "#MOSprojection_delta\n");
+			DO_OPERATION_IF_ALLOWED(projection, delta, TPE);
+			break;
+		case MOSAIC_PREFIX:
+			ALGODEBUG mnstr_printf(GDKstdout, "#MOSprojection_prefix\n");
+			DO_OPERATION_IF_ALLOWED(projection, prefix, TPE);
+			break;
+		case MOSAIC_LINEAR:
+			ALGODEBUG mnstr_printf(GDKstdout, "#MOSprojection_linear\n");
+			DO_OPERATION_IF_ALLOWED(projection, linear, TPE);
+			break;
+		case MOSAIC_RAW:
+			ALGODEBUG mnstr_printf(GDKstdout, "#MOSprojection_raw\n");
+			DO_OPERATION_IF_ALLOWED(projection, raw, TPE);
+			break;
+		}
+
+		if (task->ci->next == task->ci->ncand) {
+			/* We are at the end of the candidate list.
+			 * So we can stop now.
+			 */
+			return MAL_SUCCEED;
+		}
+	}
+
+	return MAL_SUCCEED;
+}
+
+#undef projection

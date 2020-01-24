@@ -132,15 +132,31 @@ MOSlayout_runlength(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *bo
 	}\
 }
 
-MOSprojection_DEF(runlength, bte)
-MOSprojection_DEF(runlength, sht)
-MOSprojection_DEF(runlength, int)
-MOSprojection_DEF(runlength, lng)
-MOSprojection_DEF(runlength, flt)
-MOSprojection_DEF(runlength, dbl)
+#define NAME runlength
+#define TPE bte
+#include "mosaic_projection_template.h"
+#undef TPE
+#define TPE sht
+#include "mosaic_projection_template.h"
+#undef TPE
+#define TPE int
+#include "mosaic_projection_template.h"
+#undef TPE
+#define TPE lng
+#include "mosaic_projection_template.h"
+#undef TPE
+#define TPE flt
+#include "mosaic_projection_template.h"
+#undef TPE
+#define TPE dbl
+#include "mosaic_projection_template.h"
+#undef TPE
 #ifdef HAVE_HGE
-MOSprojection_DEF(runlength, hge)
+#define TPE hge
+#include "mosaic_projection_template.h"
+#undef TPE
 #endif
+#undef NAME
 
 #define outer_loop_runlength(HAS_NIL, NIL_MATCHES, TPE, LEFT_CI_NEXT, RIGHT_CI_NEXT) \
 do {\

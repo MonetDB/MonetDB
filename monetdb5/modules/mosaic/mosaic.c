@@ -842,16 +842,6 @@ str MOSthetaselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	throw(MAL, "mosaic.MOSthetaselect", "unknown operator.");
 }
 
-MOSprojection_generic_DEF(bte)
-MOSprojection_generic_DEF(sht)
-MOSprojection_generic_DEF(int)
-MOSprojection_generic_DEF(lng)
-MOSprojection_generic_DEF(flt)
-MOSprojection_generic_DEF(dbl)
-#ifdef HAVE_HGE
-MOSprojection_generic_DEF(hge)
-#endif
-
 str MOSprojection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bat *ret, *lid =0, *rid=0;

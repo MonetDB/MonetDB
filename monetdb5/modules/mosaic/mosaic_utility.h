@@ -12,7 +12,6 @@
 #ifndef _MOSAIC_UTILITY_
 #define _MOSAIC_UTILITY_
 
-#include "mosaic_projection.h"
 #include "mosaic_join.h"
 
 #define ID(a)				a
@@ -51,6 +50,8 @@ ALIGNMENT_HELPER_TPE(NAME, TPE)\
 #define MOSBlockHeader_DEF(NAME, TPE) MosaicBlkHeader_DEF_##NAME(TPE)
 #define MOSselect_FUNC(NAME, TPE) CONCAT4(MOSselect_, NAME, _, TPE)
 #define MOSselect_SIGNATURE(NAME, TPE) str MOSselect_FUNC(NAME, TPE)(MOStask* task, TPE tl, TPE th, bool li, bool hi, bool anti)
+#define MOSprojection_FUNC(NAME, TPE) CONCAT4(MOSprojection_, NAME, _, TPE)
+#define MOSprojection_SIGNATURE(NAME, TPE)  str MOSprojection_FUNC(NAME, TPE) (MOStask* task)
 
 #define ALGEBRA_INTERFACE(NAME, TPE) \
 MOSadvance_SIGNATURE(NAME, TPE);\

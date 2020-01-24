@@ -123,13 +123,25 @@ MOSlayout_linear(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutp
 	}\
 }
 
-MOSprojection_DEF(linear, bte)
-MOSprojection_DEF(linear, sht)
-MOSprojection_DEF(linear, int)
-MOSprojection_DEF(linear, lng)
+#define NAME linear
+#define TPE bte
+#include "mosaic_projection_template.h"
+#undef TPE
+#define TPE sht
+#include "mosaic_projection_template.h"
+#undef TPE
+#define TPE int
+#include "mosaic_projection_template.h"
+#undef TPE
+#define TPE lng
+#include "mosaic_projection_template.h"
+#undef TPE
 #ifdef HAVE_HGE
-MOSprojection_DEF(linear, hge)
+#define TPE hge
+#include "mosaic_projection_template.h"
+#undef TPE
 #endif
+#undef NAME
 
 #define outer_loop_linear(HAS_NIL, NIL_MATCHES, TPE, LEFT_CI_NEXT, RIGHT_CI_NEXT) \
 {\

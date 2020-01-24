@@ -146,15 +146,31 @@ MOSlayout_dict(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput
 #define projection_loop_dict(TPE, CI_NEXT) \
     projection_loop_dictionary(dict, TPE, CI_NEXT)
 
-MOSprojection_DEF(dict, bte)
-MOSprojection_DEF(dict, sht)
-MOSprojection_DEF(dict, int)
-MOSprojection_DEF(dict, lng)
-MOSprojection_DEF(dict, flt)
-MOSprojection_DEF(dict, dbl)
+#define NAME dict
+#define TPE bte
+#include "mosaic_projection_template.h"
+#undef TPE
+#define TPE sht
+#include "mosaic_projection_template.h"
+#undef TPE
+#define TPE int
+#include "mosaic_projection_template.h"
+#undef TPE
+#define TPE lng
+#include "mosaic_projection_template.h"
+#undef TPE
+#define TPE flt
+#include "mosaic_projection_template.h"
+#undef TPE
+#define TPE dbl
+#include "mosaic_projection_template.h"
+#undef TPE
 #ifdef HAVE_HGE
-MOSprojection_DEF(dict, hge)
+#define TPE hge
+#include "mosaic_projection_template.h"
+#undef TPE
 #endif
+#undef NAME
 
 #define outer_loop_dict(HAS_NIL, NIL_MATCHES, TPE, LEFT_CI_NEXT, RIGHT_CI_NEXT) \
     outer_loop_dictionary(HAS_NIL, NIL_MATCHES, dict, TPE, LEFT_CI_NEXT, RIGHT_CI_NEXT)

@@ -164,13 +164,25 @@ MOSlayout_prefix(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutp
 	}\
 }
 
-MOSprojection_DEF(prefix, bte)
-MOSprojection_DEF(prefix, sht)
-MOSprojection_DEF(prefix, int)
-MOSprojection_DEF(prefix, lng)
+#define NAME prefix
+#define TPE bte
+#include "mosaic_projection_template.h"
+#undef TPE
+#define TPE sht
+#include "mosaic_projection_template.h"
+#undef TPE
+#define TPE int
+#include "mosaic_projection_template.h"
+#undef TPE
+#define TPE lng
+#include "mosaic_projection_template.h"
+#undef TPE
 #ifdef HAVE_HGE
-MOSprojection_DEF(prefix, hge)
+#define TPE hge
+#include "mosaic_projection_template.h"
+#undef TPE
 #endif
+#undef NAME
 
 #define outer_loop_prefix(HAS_NIL, NIL_MATCHES, TPE, LEFT_CI_NEXT, RIGHT_CI_NEXT) \
 {\

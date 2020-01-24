@@ -136,15 +136,31 @@ MOSlayout_raw(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput,
 	}\
 }
 
-MOSprojection_DEF(raw, bte)
-MOSprojection_DEF(raw, sht)
-MOSprojection_DEF(raw, int)
-MOSprojection_DEF(raw, lng)
-MOSprojection_DEF(raw, flt)
-MOSprojection_DEF(raw, dbl)
+#define NAME raw
+#define TPE bte
+#include "mosaic_projection_template.h"
+#undef TPE
+#define TPE sht
+#include "mosaic_projection_template.h"
+#undef TPE
+#define TPE int
+#include "mosaic_projection_template.h"
+#undef TPE
+#define TPE lng
+#include "mosaic_projection_template.h"
+#undef TPE
+#define TPE flt
+#include "mosaic_projection_template.h"
+#undef TPE
+#define TPE dbl
+#include "mosaic_projection_template.h"
+#undef TPE
 #ifdef HAVE_HGE
-MOSprojection_DEF(raw, hge)
+#define TPE hge
+#include "mosaic_projection_template.h"
+#undef TPE
 #endif
+#undef NAME
 
 #define outer_loop_raw(HAS_NIL, NIL_MATCHES, TPE, LEFT_CI_NEXT, RIGHT_CI_NEXT) \
 {\

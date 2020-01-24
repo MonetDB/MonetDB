@@ -142,13 +142,25 @@ MOSlayout_delta(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutpu
 	}\
 }
 
-MOSprojection_DEF(delta, bte)
-MOSprojection_DEF(delta, sht)
-MOSprojection_DEF(delta, int)
-MOSprojection_DEF(delta, lng)
+#define NAME delta
+#define TPE bte
+#include "mosaic_projection_template.h"
+#undef TPE
+#define TPE sht
+#include "mosaic_projection_template.h"
+#undef TPE
+#define TPE int
+#include "mosaic_projection_template.h"
+#undef TPE
+#define TPE lng
+#include "mosaic_projection_template.h"
+#undef TPE
 #ifdef HAVE_HGE
-MOSprojection_DEF(delta, hge)
+#define TPE hge
+#include "mosaic_projection_template.h"
+#undef TPE
 #endif
+#undef NAME
 
 #define outer_loop_delta(HAS_NIL, NIL_MATCHES, TPE, LEFT_CI_NEXT, RIGHT_CI_NEXT) \
 {\
