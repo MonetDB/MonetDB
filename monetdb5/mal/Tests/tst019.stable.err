@@ -77,7 +77,7 @@ QUERY = function welcome(lim:int):void;
         (x,y):= user.welcome2(1);
 ERROR = !TypeException:user.welcome[3]:type mismatch void := str
 
-# 20:29:52 >  
-# 20:29:52 >  "Done."
-# 20:29:52 >  
+# 15:16:11 >  
+# 15:16:11 >  "Done."
+# 15:16:11 >  
 

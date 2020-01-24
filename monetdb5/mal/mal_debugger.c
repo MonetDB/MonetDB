@@ -292,11 +292,7 @@ mdbInit(void)
 	 * space in each instruction.
 	 */
 	mdbTable = GDKzalloc(sizeof(mdbStateRecord) * MAL_MAXCLIENTS);
-	if (mdbTable == NULL) {
-		fprintf(stderr,"#mdbInit:" MAL_MALLOC_FAIL);
-		return false;
-	}
-	return true;
+	return mdbTable != NULL;
 }
 
 void
@@ -694,8 +690,10 @@ retryRead:
 						for(i=0; i< fs->def->stop; i++)
 							fs->def->stmt[i]->typechk = TYPE_UNKNOWN;
 						msg = chkProgram(cntxt->usermodule, fs->def);
-						if( msg != MAL_SUCCEED)
-							mnstr_printf(out, "#<modnme>.<fcnnme> contains errors\n");
+						if( msg != MAL_SUCCEED){
+							mnstr_printf(out, "#<modnme>.<fcnnme> contains errors: %s\n", msg);
+							freeException(msg);
+						}
 					}
 				} else
 					mnstr_printf(out, "#<modnme>.<fcnnme> expected\n");

@@ -31,10 +31,10 @@ stack depth 2
 # view	stk	stk							  # name
 # void	int	str							  # type
 #--------------------------#
-[ 0@0,	0,	"    (h=nil:bat[:int], t=nil:bat[:str]) := mdb.getStackTrace(); at user.tst[3]"	]
-[ 1@0,	  1,	  "    user.tst(); at user.main[2]"			  ]
-#-------------------------------------------------#
-# view	stk	stk				  # name
+[ 0@0,	0,	"    (h=nil:bat[:int], t=nil:bat[:str]) := mdb.getStackTrace();\t#[3] (0) MDBStkTrace 4 5  at user.tst[3]"	]
+[ 1@0,	1,	"    user.tst();\t#[2] (0)  2  at user.main[2]"	]
+#--------------------------#
+# t	stk	stk  # name
 # void	str	str				  # type
 #-------------------------------------------------#
 [ 0@0,	  "tst",  "0@0"				  ]

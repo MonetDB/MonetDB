@@ -10,10 +10,6 @@
 #define _SQL_SCENARIO_H_
 #include "sql.h"
 
-/* #define _SQL_SCENARIO_DEBUG */
-/* #define _SQL_READER_DEBUG */
-/* #define _SQL_PARSER_DEBUG */
-
 sql5_export int SQLdebug;
 sql5_export str SQLprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLepilogue(void *ret);

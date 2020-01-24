@@ -341,7 +341,6 @@ Module findModule(Module scope, str name){
 	Module def = scope;
 	Module m;
 	if (name == NULL) return scope;
-
 	m = getModule(name);
 	if (m) return m;
 
@@ -376,4 +375,3 @@ Symbol findSymbol(Module usermodule, str mod, str fcn) {
 	Module m = findModule(usermodule, mod);
 	return findSymbolInModule(m, fcn);
 }
-

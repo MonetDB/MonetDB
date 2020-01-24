@@ -59,8 +59,8 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	fcn = putName(fcn);
 	if(mod == NULL || fcn == NULL)
 		throw(MAL, "optimizer.multiplex", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	fprintf(stderr,"#WARNING To speedup %s.%s a bulk operator implementation is needed\n#", mod,fcn);
-	fprintInstruction(stderr, mb, stk, pci, LIST_MAL_ALL);
+
+	TRC_WARNING(MAL_OPTIMIZER, "To speedup %s.%s a bulk operator implementation is needed\n", mod, fcn);
 
 	/* search the iterator bat */
 	for (i = pci->retc+2; i < pci->argc; i++)

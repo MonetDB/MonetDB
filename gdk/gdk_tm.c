@@ -102,7 +102,7 @@ epilogue(int cnt, bat *subcommit)
 			if (b) {
 				/* check mmap modes */
 				if (BATcheckmodes(b, true) != GDK_SUCCEED)
-					fprintf(stderr, "#epilogue: BATcheckmodes failed\n");
+					TRC_ERROR(GDK_TM, "BATcheckmodes failed\n");
 			}
 		}
 		if ((BBP_status(bid) & BBPDELETED) && BBP_refs(bid) <= 0 && BBP_lrefs(bid) <= 0) {

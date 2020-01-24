@@ -18,8 +18,6 @@
 #include "mal_exception.h"
 #include "mal_interpreter.h"
 
-/* #define _DEBUG_MANIFOLD_*/
-
 mal_export MALfcn MANIFOLDtypecheck(Client cntxt, MalBlkPtr mb, InstrPtr pci, int checkprops);
 mal_export str MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str MANIFOLDremapMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);

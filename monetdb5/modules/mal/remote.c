@@ -576,19 +576,16 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		BAT *b;
 
 		snprintf(qbuf, BUFSIZ, "io.print(%s);", ident);
-#ifdef _DEBUG_REMOTE
-		fprintf(stderr, "#remote.get:%s\n", qbuf);
-#endif
+		
+		TRC_DEBUG(MAL_REMOTE, "Remote get: %s\n", qbuf);
+
 		/* this call should be a single transaction over the channel*/
 		MT_lock_set(&c->lock);
 
 		if ((tmp = RMTquery(&mhdl, "remote.get", c->mconn, qbuf))
 				!= MAL_SUCCEED)
 		{
-#ifdef _DEBUG_REMOTE
-			fprintf(stderr, "#REMOTE GET error: %s\n%s\n",
-					qbuf, tmp);
-#endif
+			TRC_ERROR(MAL_REMOTE, "Remote get: %s\n%s\n", qbuf, tmp);
 			MT_lock_unset(&c->lock);
 			var = createException(MAL, "remote.get", "%s", tmp);
 			freeException(tmp);
@@ -693,9 +690,7 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		size_t len = 0;
 
 		snprintf(qbuf, BUFSIZ, "io.print(%s);", ident);
-#ifdef _DEBUG_REMOTE
-		fprintf(stderr, "#remote:%s:%s\n", c->name, qbuf);
-#endif
+		TRC_DEBUG(MAL_REMOTE, "Remote get: %s - %s\n", c->name, qbuf);
 		if ((tmp=RMTquery(&mhdl, "remote.get", c->mconn, qbuf)) != MAL_SUCCEED)
 		{
 			return tmp;
@@ -880,9 +875,7 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 			snprintf(nbuf, l, "%s := \"%s\":%s;\n", ident, val, tpe);
 		GDKfree(tpe);
 		GDKfree(val);
-#ifdef _DEBUG_REMOTE
-		fprintf(stderr, "#remote.put:%s:%s\n", c->name, nbuf);
-#endif
+		TRC_DEBUG(MAL_REMOTE, "Remote put: %s - %s\n", c->name, nbuf);
 		tmp = RMTquery(&mhdl, "remote.put", c->mconn, nbuf);
 		if (nbuf != qbuf)
 			GDKfree(nbuf);
@@ -932,9 +925,7 @@ static str RMTregisterInternal(Client cntxt, const char *conn, const char *mod, 
 
 	/* check remote definition */
 	snprintf(buf, BUFSIZ, "inspect.getSignature(\"%s\",\"%s\");", mod, fcn);
-#ifdef _DEBUG_REMOTE
-	fprintf(stderr, "#remote.register:%s:%s\n", c->name, buf);
-#endif
+	TRC_DEBUG(MAL_REMOTE, "Remote register: %s - %s\n", c->name, buf);
 	msg = RMTquery(&mhdl, "remote.register", c->mconn, buf);
 	if (msg == MAL_SUCCEED) {
 		MT_lock_unset(&c->lock);
@@ -958,9 +949,7 @@ static str RMTregisterInternal(Client cntxt, const char *conn, const char *mod, 
 	}
 
 	qry = mal2str(sym->def, 0, sym->def->stop);
-#ifdef _DEBUG_REMOTE
-	fprintf(stderr, "#remote.register:%s:%s\n", c->name, qry);
-#endif
+	TRC_DEBUG(MAL_REMOTE, "Remote register: %s - %s\n", c->name, qry);
 	msg = RMTquery(&mhdl, "remote.register", c->mconn, qry);
 	GDKfree(qry);
 	if (mhdl)
@@ -1066,9 +1055,7 @@ str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 	/* finish end execute the invocation string */
 	len += snprintf(&qbuf[len], buflen - len, ");");
-#ifdef _DEBUG_REMOTE
-	fprintf(stderr,"#remote.exec:%s:%s\n",c->name,qbuf);
-#endif
+	TRC_DEBUG(MAL_REMOTE, "Remote exec: %s - %s\n", c->name, qbuf);
 	tmp = RMTquery(&mhdl, "remote.exec", c->mconn, qbuf);
 	GDKfree(qbuf);
 	if (mhdl)
@@ -1375,7 +1362,7 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in)
 
 	/* read blockmode flush */
 	while (mnstr_read(in, &tmp, 1, 1) > 0) {
-		fprintf(stderr, "!MALexception:remote.bincopyfrom: expected flush, got: %c\n", tmp);
+		TRC_ERROR(MAL_REMOTE, "Expected flush, got: %c\n", tmp);
 	}
 
 	BATsettrivprop(b);

@@ -484,10 +484,8 @@ compileOptimizer(Client cntxt, const char *name)
 					msg = compileString(&fcn,cntxt, buf);
 					if( msg == MAL_SUCCEED){
 						compiled = findSymbol(cntxt->usermodule,getName("optimizer"), getName(pipes[j].name));
-						if( compiled){
+						if( compiled)
 							pipes[j].mb = compiled->def;
-							//fprintFunction(stderr, pipes[j].mb, 0, LIST_MAL_ALL);
-						}
 					}
 				}
 			}
@@ -541,7 +539,7 @@ addOptimizerPipe(Client cntxt, MalBlkPtr mb, const char *name)
 				throw(MAL, "optimizer.addOptimizerPipe", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			for (k = 0; k < p->argc; k++)
 				getArg(p, k) = cloneVariable(mb, pipes[i].mb, getArg(p, k));
-			typeChecker(cntxt->usermodule, mb, p, FALSE);
+			typeChecker(cntxt->usermodule, mb, p, j, FALSE);
 			pushInstruction(mb, p);
 		}
 	}

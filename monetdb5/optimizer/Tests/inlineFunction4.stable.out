@@ -29,10 +29,10 @@ stdout of test 'inlineFunction4` in directory 'monetdb5/optimizer` itself:
 #result of inline
 function user.tst():void;
     false:bit;
-    X_5:int := 0:int;
+    X_7:int := 0:int;
     false:bit;
     -1:int;
-    X_5:int := -1:int;
+    X_7:int := -1:int;
 end user.tst;
 
 # 05:29:17 >  

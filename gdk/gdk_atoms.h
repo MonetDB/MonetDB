@@ -165,8 +165,8 @@ gdk_export const ptr ptr_nil;
  * In all algorithms across GDK, you will find switches on the types
  * (bte, sht, int, flt, dbl, lng, hge, str). They respectively
  * represent an octet, a 16-bit int, a 32-bit int, a 32-bit float, a
- * 64-bit double, a 64-bit int, and a pointer-sized location of a
- * char-buffer (ended by a zero char).
+ * 64-bit double, a 64-bit int, a 128-bit int, and a pointer-sized location
+ * of a char-buffer (ended by a zero char).
  *
  * In contrast, the types (bit, ptr, bat, oid) are derived types. They
  * do not occur in the switches. The ATOMstorage macro maps them

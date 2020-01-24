@@ -30,12 +30,11 @@ slave = process.server(dbname = dbnameclone, mapiport = cloneport, stdin = proce
 
 c = process.client('sql', server = slave, stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
 
+# check some errors
 cout, cerr = c.communicate('''\
-call wlr.master('%s');
 call wlr.replicate();
 select * from tmp;
-call wlr.stop();
-''' % dbname )
+'''  )
 
 sout, serr = slave.communicate()
 #mout, merr = master.communicate()
@@ -63,5 +62,6 @@ def listfiles(path):
             except IOError:
                 sys.stderr.write('Failure to read file ' + file + '\n')
 
-listfiles(os.path.join(dbfarm, tstdb))
-listfiles(os.path.join(dbfarm, tstdb, 'wlc_logs'))
+#listfiles(os.path.join(dbfarm, tstdb))
+#listfiles(os.path.join(dbfarm, tstdb, 'wlc_logs'))
+#listfiles(os.path.join(dbfarm, tstdb + 'clone', 'wlr.config'))

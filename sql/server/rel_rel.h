@@ -39,9 +39,6 @@
 #define is_sql_outer(X)   ((X & sql_outer) == sql_outer)
 #define is_sql_group_totals(X) ((X & sql_group_totals) == sql_group_totals)
 
-#define rel_groupby_gbe(m,r,e) rel_groupby(m, r, append(new_exp_list(m->sa), e))
-#define new_rel_list(sa) sa_list(sa)
-
 #define is_updateble(rel) \
 	(rel->op == op_basetable || \
 	(rel->op == op_ddl && (rel->flag == ddl_create_table || rel->flag == ddl_alter_table)))

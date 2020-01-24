@@ -20,7 +20,6 @@
 #endif
 
 #define DEBUG_MAL_INSTR
-/* #define DEBUG_REDUCE */
 #define MAXARG 8				/* was 4 BEWARE the code depends on this knowledge, where? */
 #define STMT_INCREMENT 4
 #define MAL_VAR_WINDOW  32
@@ -165,6 +164,7 @@ mal_export int cloneVariable(MalBlkPtr dst, MalBlkPtr src, int varid);
 /* generate a new variable name based on a pattern with 1 %d argument
  * -- not used, but this is how to do it */
 /* #define renameVariable(mb, id, pattern, newid) snprintf(getVarName(mb,id),IDLENGTH,pattern,newid) */
+mal_export void setVariableType(MalBlkPtr mb, const int idx, malType type);
 mal_export int newTmpVariable(MalBlkPtr mb, malType type);
 mal_export int newTypeVariable(MalBlkPtr mb, malType type);
 mal_export void freeVariable(MalBlkPtr mb, int varid);

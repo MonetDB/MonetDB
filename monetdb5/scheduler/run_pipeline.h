@@ -12,8 +12,6 @@
 #include "mal_instruction.h"
 #include "mal_client.h"
 
-#define DEBUG_MAL_SCHEDULER
-
 #ifdef HAVE_SYS_TIMES_H
 # include <sys/times.h>
 #endif

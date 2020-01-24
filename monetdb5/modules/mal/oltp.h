@@ -14,8 +14,6 @@
 #include "mal_exception.h"
 #include "mal_interpreter.h"
 
-#define _DEBUG_OLTP_
-
 mal_export str OLTPinit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str OLTPreset(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str OLTPenable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

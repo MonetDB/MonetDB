@@ -94,7 +94,7 @@ HASHclear(Hash *h)
 	 * rather than iteratively assigning individual
 	 * BUNi_NONE values in a for-loop
 	 */
-	memset(h->Bckt, 0xFF, NHASHBUCKETS(h) * h->width);
+	memset(h->Bckt, 0xFF, h->nbucket * h->width);
 }
 
 #define HASH_VERSION		3
@@ -173,7 +173,8 @@ HASHnew(Hash *h, int tpe, BUN size, BUN mask, BUN count, bool bcktonly)
 	((size_t *) h->heapbckt.base)[4] = (size_t) count;
 	((size_t *) h->heapbckt.base)[5] = (size_t) h->nunique;
 	((size_t *) h->heapbckt.base)[6] = (size_t) h->nheads;
-	ACCELDEBUG fprintf(stderr, "#%s: HASHnew: create hash(size " BUNFMT ", mask " BUNFMT ", width %d, total " BUNFMT " bytes);\n", MT_thread_getname(), size, mask, h->width, (size + mask) * h->width);
+	TRC_DEBUG(ACCELERATOR,
+		  "create hash(size " BUNFMT ", mask " BUNFMT ", width %d, total " BUNFMT " bytes);\n", size, mask, h->width, (size + mask) * h->width);
 	return GDK_SUCCEED;
 }
 
@@ -188,7 +189,7 @@ HASHcollisions(BAT *b, Hash *h, const char *func)
 	if (b == 0 || h == 0)
 		return;
 	nil = HASHnil(h);
-	for (i = 0, j = NHASHBUCKETS(h); i < j; i++)
+	for (i = 0, j = h->nbucket; i < j; i++)
 		if ((p = HASHget(h, i)) != nil) {
 			entries++;
 			cnt = 0;
@@ -198,12 +199,12 @@ HASHcollisions(BAT *b, Hash *h, const char *func)
 				max = cnt;
 			total += cnt;
 		}
-	fprintf(stderr,
-		"#%s: %s(" ALGOBATFMT "): statistics " BUNFMT ", "
-		"entries " LLFMT ", nunique " BUNFMT ", nbuckets " BUNFMT ", "
+	TRC_DEBUG(GDK_HASH,
+		"%s(" ALGOBATFMT "): statistics " BUNFMT ", "
+		"entries " LLFMT ", nunique " BUNFMT ", nbucket " BUNFMT ", "
 		"max " LLFMT ", avg %2.6f;\n",
-		MT_thread_getname(), func, ALGOBATPAR(b), BATcount(b), entries,
-		h->nunique, NHASHBUCKETS(h), max,
+		func, ALGOBATPAR(b), BATcount(b), entries,
+		h->nunique, h->nbucket, max,
 		entries == 0 ? 0 : total / entries);
 }
 
@@ -294,18 +295,9 @@ HASHupgradehashheap(BAT *b)
 gdk_return
 HASHgrowbucket(BAT *b)
 {
-	switch (ATOMsize(b->ttype)) {
-	case 1:
-	case 2:
-		/* no need to grow bucket list */
-		return GDK_SUCCEED;
-	default:
-		break;
-	}
-
 	Hash *h = b->thash;
 	BUN nbucket;
-	BUN onbucket = NHASHBUCKETS(h);
+	BUN onbucket = h->nbucket;
 	lng t0 = 0;
 
 	ACCELDEBUG t0 = GDKusec();
@@ -326,7 +318,7 @@ HASHgrowbucket(BAT *b)
 				return GDK_FAIL;
 		}
 	}
-	while (h->nunique >= (nbucket = NHASHBUCKETS(h)) * 7 / 8) {
+	while (h->nunique >= (nbucket = h->nbucket) * 7 / 8) {
 		BUN new = h->nbucket;
 		BUN old = new & h->mask1;
 		BATiter bi = bat_iterator(b);
@@ -390,13 +382,13 @@ HASHgrowbucket(BAT *b)
 		else
 			HASHputlink(h, lold, HASHnil(h));
 		BATsetprop_nolock(b, GDK_HASH_BUCKETS, TYPE_oid,
-				  &(oid){NHASHBUCKETS(h)});
+				  &(oid){h->nbucket});
 	}
-	ACCELDEBUG if (NHASHBUCKETS(h) > onbucket) {
+	ACCELDEBUG if (h->nbucket > onbucket) {
 		fprintf(stderr, "#%s: %s(" ALGOBATFMT ") " BUNFMT
 			" -> " BUNFMT " buckets (" LLFMT " usec)\n",
 			MT_thread_getname(), __func__, ALGOBATPAR(b),
-			onbucket, NHASHBUCKETS(h), GDKusec() - t0);
+			onbucket, h->nbucket, GDKusec() - t0);
 		HASHcollisions(b, h, __func__);
 	}
 	return GDK_SUCCEED;
@@ -419,9 +411,9 @@ BATcheckhash(BAT *b)
 	/* we don't need the lock just to read the value b->thash */
 	if (b->thash == (Hash *) 1) {
 		/* but when we want to change it, we need the lock */
-		ACCELDEBUG t = GDKusec();
+		TRC_DEBUG_IF(ACCELERATOR) t = GDKusec();
 		MT_lock_set(&b->batIdxLock);
-		ACCELDEBUG t = GDKusec() - t;
+		TRC_DEBUG_IF(ACCELERATOR) t = GDKusec() - t;
 		/* if still 1 now that we have the lock, we can update */
 		if (b->thash == (Hash *) 1) {
 			Hash *h;
@@ -499,14 +491,15 @@ BATcheckhash(BAT *b)
 									b,
 									GDK_HASH_BUCKETS,
 									TYPE_oid,
-									&(oid){NHASHBUCKETS(h)});
+									&(oid){h->nbucket});
 								BATsetprop_nolock(
 									b,
 									GDK_NUNIQUE,
 									TYPE_oid,
 									&(oid){h->nunique});
 								b->thash = h;
-								ACCELDEBUG fprintf(stderr, "#%s: BATcheckhash(" ALGOBATFMT "): reusing persisted hash\n", MT_thread_getname(), ALGOBATPAR(b));
+								TRC_DEBUG(ACCELERATOR,
+									  "BATcheckhash(" ALGOBATFMT "): reusing persisted hash\n", ALGOBATPAR(b));
 								MT_lock_unset(&b->batIdxLock);
 								return true;
 							}
@@ -542,7 +535,9 @@ BATcheckhash(BAT *b)
 		MT_lock_unset(&b->batIdxLock);
 	}
 	ret = b->thash != NULL;
-	ACCELDEBUG if (ret) fprintf(stderr, "#%s: BATcheckhash(" ALGOBATFMT "): already has hash, waited " LLFMT " usec\n", MT_thread_getname(), ALGOBATPAR(b), t);
+	if (ret)
+		TRC_DEBUG(ACCELERATOR,
+				"(" ALGOBATFMT "): already has hash, waited " LLFMT " usec\n", ALGOBATPAR(b), t);
 	return ret;
 }
 
@@ -554,7 +549,7 @@ BAThashsave(BAT *b, bool dosync)
 	Hash *h;
 	lng t0 = 0;
 
-	ACCELDEBUG t0 = GDKusec();
+	TRC_DEBUG_IF(ACCELERATOR) t0 = GDKusec();
 
 	if ((h = b->thash) != NULL) {
 		Heap *hp = &h->heapbckt;
@@ -609,7 +604,8 @@ BAThashsave(BAT *b, bool dosync)
 					rc = GDK_SUCCEED;
 				}
 			}
-			ACCELDEBUG fprintf(stderr, "#%s: %s(" ALGOBATFMT ") persisting hash %s%s (" LLFMT " usec)%s\n", MT_thread_getname(), __func__, ALGOBATPAR(b), hp->filename, dosync ? "" : " no sync", GDKusec() - t0, rc == GDK_SUCCEED ? "" : " failed");
+			TRC_DEBUG(ACCELERATOR,
+					"(" ALGOBATFMT ") persisting hash %s%s (" LLFMT " usec)%s\n", ALGOBATPAR(b), hp->filename, dosync ? "" : " no sync", GDKusec() - t0, rc == GDK_SUCCEED ? "" : " failed");
 		}
 	}
 	return rc;
@@ -653,13 +649,13 @@ BAThashsync(void *arg)
 			}						\
 			HASHputlink(h, p, hget);			\
 			HASHput(h, c, p);				\
-			o = canditer_next(&ci);				\
+			o = canditer_next(ci);				\
 		}							\
 	} while (0)
 #define finishhash(TYPE)						\
 	do {								\
 		const TYPE *restrict v = (const TYPE *) BUNtloc(bi, 0);	\
-		for (; p < cnt; p++) {					\
+		for (; p < ci->ncand; p++) {					\
 			c = hash_##TYPE(h, v + o - b->hseqbase);	\
 			c = hash_##TYPE(h, v + o - b->hseqbase);	\
 			hget = HASHget(h, c);				\
@@ -673,22 +669,21 @@ BAThashsync(void *arg)
 			h->nunique += hb == hnil;			\
 			HASHputlink(h, p, hget);			\
 			HASHput(h, c, p);				\
-			o = canditer_next(&ci);				\
+			o = canditer_next(ci);				\
 		}							\
 	} while (0)
 
-/*
- * The prime routine for the BAT layer is to create a new hash index.
- * Its argument is the element type and the maximum number of BUNs be
- * stored under the hash function.
- */
+/* Internal function to create a hash table for the given BAT b.
+ * If a candidate list s is also given, the hash table is specific for
+ * the combination of the two: only values from b that are referred to
+ * by s are included in the hash table, so if a result is found when
+ * searching the hash table, the result is a candidate. */
 Hash *
-BAThash_impl(BAT *b, BAT *s, const char *ext)
+BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict ext)
 {
 	lng t0 = 0;
 	unsigned int tpe = ATOMbasetype(b->ttype);
-	BUN cnt, cnt1;
-	struct canditer ci;
+	BUN cnt1;
 	BUN mask, maxmask = 0;
 	BUN p, c;
 	oid o;
@@ -697,22 +692,25 @@ BAThash_impl(BAT *b, BAT *s, const char *ext)
 	const char *nme = GDKinmemory() ? ":inmemory" : BBP_physical(b->batCacheid);
 	BATiter bi = bat_iterator(b);
 	PROPrec *prop;
+	bool hascand = ci->tpe != cand_dense || ci->ncand != BATcount(b);
 
-	ACCELDEBUG t0 = GDKusec();
-	ACCELDEBUG fprintf(stderr, "#%s: BAThash(" ALGOBATFMT "): create hash;\n", MT_thread_getname(),
-			  ALGOBATPAR(b));
+	assert(strcmp(ext, "thash") != 0 || !hascand);
+
+	TRC_DEBUG_IF(ACCELERATOR) t0 = GDKusec();
+	TRC_DEBUG(ACCELERATOR,
+			"BAThash(" ALGOBATFMT "): create hash;\n", ALGOBATPAR(b));
 	if (b->ttype == TYPE_void) {
 		if (is_oid_nil(b->tseqbase)) {
-			ACCELDEBUG fprintf(stderr, "#%s: BAThash: cannot create hash-table on void-NIL column.\n", MT_thread_getname());
+			TRC_DEBUG(ACCELERATOR,
+					"cannot create hash-table on void-NIL column.\n");
 			GDKerror("BAThash: no hash on void/nil column\n");
 			return NULL;
 		}
-		ACCELDEBUG fprintf(stderr, "#%s: BAThash: creating hash-table on void column..\n", MT_thread_getname());
+		TRC_DEBUG(ACCELERATOR,
+				"creating hash-table on void column..\n");
 		assert(0);
 		tpe = TYPE_void;
 	}
-
-	cnt = canditer_init(&ci, b, s);
 
 	if ((h = GDKzalloc(sizeof(*h))) == NULL ||
 	    (h->heaplink.farmid = BBPselectfarm(b->batRole, b->ttype, hashheap)) < 0 ||
@@ -727,12 +725,12 @@ BAThash_impl(BAT *b, BAT *s, const char *ext)
 		      nme, ".", ext, "l", NULL);
 	strconcat_len(h->heapbckt.filename, sizeof(h->heapbckt.filename),
 		      nme, ".", ext, "b", NULL);
-	if (HEAPalloc(&h->heaplink, s ? cnt : BATcapacity(b),
+	if (HEAPalloc(&h->heaplink, hascand ? ci->ncand : BATcapacity(b),
 		      h->width) != GDK_SUCCEED) {
 		GDKfree(h);
 		return NULL;
 	}
-	h->heaplink.free = cnt * h->width;
+	h->heaplink.free = ci->ncand * h->width;
 	h->Link = h->heaplink.base;
 #ifndef NDEBUG
 	/* clear unused part of Link array */
@@ -749,38 +747,38 @@ BAThash_impl(BAT *b, BAT *s, const char *ext)
 	} else if (ATOMsize(tpe) == 2) {
 		/* perfect hash for two-byte sized atoms */
 		mask = (1 << 16);
-	} else if (b->tkey || cnt <= 4096) {
+	} else if (b->tkey || ci->ncand <= 4096) {
 		/* if key, or if small, don't bother dynamically
 		 * adjusting the hash mask */
-		mask = HASHmask(cnt);
- 	} else if (s == NULL && (prop = BATgetprop_nolock(b, GDK_NUNIQUE)) != NULL) {
+		mask = HASHmask(ci->ncand);
+ 	} else if (!hascand && (prop = BATgetprop_nolock(b, GDK_NUNIQUE)) != NULL) {
 		assert(prop->v.vtype == TYPE_oid);
 		mask = prop->v.val.oval * 8 / 7;
- 	} else if (s == NULL && (prop = BATgetprop_nolock(b, GDK_HASH_BUCKETS)) != NULL) {
+ 	} else if (!hascand && (prop = BATgetprop_nolock(b, GDK_HASH_BUCKETS)) != NULL) {
 		assert(prop->v.vtype == TYPE_oid);
 		mask = prop->v.val.oval;
-		maxmask = HASHmask(cnt);
+		maxmask = HASHmask(ci->ncand);
 		if (mask > maxmask)
 			mask = maxmask;
 	} else {
-		/* dynamic hash: we start with HASHmask(cnt)/64, or,
-		 * if cnt large enough, HASHmask(cnt)/256; if there
-		 * are too many collisions we try HASHmask(cnt)/64,
-		 * HASHmask(cnt)/16, HASHmask(cnt)/4, and finally
-		 * HASHmask(cnt), but we might skip some of these if
+		/* dynamic hash: we start with HASHmask(ci->ncand)/64, or,
+		 * if ci->ncand large enough, HASHmask(ci->ncand)/256; if there
+		 * are too many collisions we try HASHmask(ci->ncand)/64,
+		 * HASHmask(ci->ncand)/16, HASHmask(ci->ncand)/4, and finally
+		 * HASHmask(ci->ncand), but we might skip some of these if
 		 * there are many distinct values.  */
-		maxmask = HASHmask(cnt);
+		maxmask = HASHmask(ci->ncand);
 		mask = maxmask >> 6;
 		while (mask > 4096)
 			mask >>= 2;
 		/* try out on first 25% of b */
-		cnt1 = cnt >> 2;
+		cnt1 = ci->ncand >> 2;
 	}
 
-	o = canditer_next(&ci);	/* always one ahead */
+	o = canditer_next(ci);	/* always one ahead */
 	for (;;) {
 		lng t1 = 0;
-		ACCELDEBUG t1 = GDKusec();
+		TRC_DEBUG_IF(ACCELERATOR) t1 = GDKusec();
 		BUN maxslots = (mask >> 3) - 1;	/* 1/8 full is too full */
 
 		h->nheads = 0;
@@ -789,7 +787,7 @@ BAThash_impl(BAT *b, BAT *s, const char *ext)
 		HEAPfree(&h->heapbckt, true);
 		/* create the hash structures */
 		if (HASHnew(h, ATOMtype(b->ttype), BATcapacity(b),
-			    mask, cnt, true) != GDK_SUCCEED) {
+			    mask, ci->ncand, true) != GDK_SUCCEED) {
 			HEAPfree(&h->heaplink, true);
 			GDKfree(h);
 			return NULL;
@@ -844,14 +842,14 @@ BAThash_impl(BAT *b, BAT *s, const char *ext)
 				}
 				HASHputlink(h, p, hget);
 				HASHput(h, c, p);
-				o = canditer_next(&ci);
+				o = canditer_next(ci);
 			}
 			break;
 		}
-		ACCELDEBUG if (p < cnt1)
-			fprintf(stderr, "#%s: BAThash(%s): abort starthash with "
-				"mask " BUNFMT " at " BUNFMT " after " LLFMT " usec\n", MT_thread_getname(), BATgetId(b),
-				mask, p, GDKusec() - t1);
+		TRC_DEBUG_IF(ACCELERATOR) if (p < cnt1)
+			TRC_DEBUG_ENDIF(ACCELERATOR,
+					"(%s): abort starthash with "
+				"mask " BUNFMT " at " BUNFMT " after " LLFMT " usec\n", BATgetId(b), mask, p, GDKusec() - t1);
 		if (p == cnt1 || mask == maxmask)
 			break;
 		mask <<= 2;
@@ -863,8 +861,8 @@ BAThash_impl(BAT *b, BAT *s, const char *ext)
 			cnt1 = 0;
 		} else if (mask < maxmask && p <= maxslots * 1.2)
 			mask <<= 2;
-		canditer_reset(&ci);
-		o = canditer_next(&ci);
+		canditer_reset(ci);
+		o = canditer_next(ci);
 	}
 
 	/* finish the hashtable with the current mask */
@@ -893,7 +891,7 @@ BAThash_impl(BAT *b, BAT *s, const char *ext)
 		break;
 #endif
 	default:
-		for (; p < cnt; p++) {
+		for (; p < ci->ncand; p++) {
 			const void *restrict v = BUNtail(bi, o - b->hseqbase);
 			c = hash_any(h, v);
 			hget = HASHget(h, c);
@@ -907,12 +905,12 @@ BAThash_impl(BAT *b, BAT *s, const char *ext)
 			h->nunique += hb == hnil;
 			HASHputlink(h, p, hget);
 			HASHput(h, c, p);
-			o = canditer_next(&ci);
+			o = canditer_next(ci);
 		}
 		break;
 	}
-	if (s == NULL) {
-		BATsetprop_nolock(b, GDK_HASH_BUCKETS, TYPE_oid, &(oid){NHASHBUCKETS(h)});
+	if (!hascand) {
+		BATsetprop_nolock(b, GDK_HASH_BUCKETS, TYPE_oid, &(oid){h->nbucket});
 		BATsetprop_nolock(b, GDK_NUNIQUE, TYPE_oid, &(oid){h->nunique});
 	}
 	h->heapbckt.parentid = b->batCacheid;
@@ -923,8 +921,9 @@ BAThash_impl(BAT *b, BAT *s, const char *ext)
 		b->tkey = true;
 		b->batDirtydesc = true;
 	}
-	ACCELDEBUG {
-		fprintf(stderr, "#%s: BAThash: hash construction " LLFMT " usec\n", MT_thread_getname(), GDKusec() - t0);
+	TRC_DEBUG_IF(ACCELERATOR) {
+		TRC_DEBUG_ENDIF(ACCELERATOR,
+				"hash construction " LLFMT " usec\n", GDKusec() - t0);
 		HASHcollisions(b, h, __func__);
 	}
 	return h;
@@ -939,7 +938,9 @@ BAThash(BAT *b)
 	}
 	MT_lock_set(&b->batIdxLock);
 	if (b->thash == NULL) {
-		if ((b->thash = BAThash_impl(b, NULL, "thash")) == NULL) {
+		struct canditer ci;
+		canditer_init(&ci, b, NULL);
+		if ((b->thash = BAThash_impl(b, &ci, "thash")) == NULL) {
 			MT_lock_unset(&b->batIdxLock);
 			return GDK_FAIL;
 		}
@@ -958,7 +959,8 @@ BAThash(BAT *b)
 			}
 			return GDK_SUCCEED;
 		} else
-			ACCELDEBUG fprintf(stderr, "#%s: BAThash: NOT persisting hash %d\n", MT_thread_getname(), b->batCacheid);
+			TRC_DEBUG(ACCELERATOR,
+					"NOT persisting hash %d\n", b->batCacheid);
 #endif
 	}
 	MT_lock_unset(&b->batIdxLock);
@@ -1052,7 +1054,7 @@ HASHgonebad(BAT *b, const void *v)
 	if (h == NULL)
 		return true;	/* no hash is bad hash? */
 
-	if (NHASHBUCKETS(h) * 2 < BATcount(b)) {
+	if (h->nbucket * 2 < BATcount(b)) {
 		int (*cmp) (const void *, const void *) = ATOMcompare(b->ttype);
 		BUN i = HASHget(h, (BUN) HASHprobe(h, v)), nil = HASHnil(h);
 		for (cnt = hit = 1; i != nil; i = HASHgetlink(h, i), cnt++)

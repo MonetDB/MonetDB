@@ -24,4 +24,5 @@ optimizer.deadcode("user","tst1");
 mdb.list("user","tst1");
 optimizer.projectionpath("user","tst2");
 optimizer.deadcode("user","tst2");
+optimizer.garbageCollector("user","tst2");
 mdb.list("user","tst2");

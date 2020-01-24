@@ -14,8 +14,6 @@
 #include "mal_resolve.h"
 #include "mal_builder.h"
 
-//#define _DEBUG_MANIFOLD_
-
 /* The default iterator over known scalar commands.
  * It can be less efficient then the vector based implementations,
  * but saves quite some hacking in non-essential cases or
@@ -173,9 +171,8 @@ MANIFOLDjob(MULTItask *mut)
 		}
 	}
 
-#ifdef _DEBUG_MANIFOLD_
-	fprintf(stderr,mut->cntxt->fdout,"#MANIFOLDjob fvar %d lvar %d type %d\n",mut->fvar,mut->lvar, ATOMstorage(mut->args[mut->fvar].b->ttype));
-#endif
+	TRC_DEBUG(MAL_MANIFOLD, "fvar %d lvar %d type %d\n", mut->fvar,mut->lvar, ATOMstorage(mut->args[mut->fvar].b->ttype));
+
 	// use limited argument list expansion.
 	switch(mut->pci->argc){
 	case 4: Manifoldbody(args[3]); break;
@@ -231,13 +228,12 @@ MANIFOLDtypecheck(Client cntxt, MalBlkPtr mb, InstrPtr pci, int checkprops){
 		setVarUDFtype(nmb,k);
 	}
 
-#ifdef _DEBUG_MANIFOLD_
-	fprintf(stderr,"#MANIFOLD operation\n");
-	fprintInstruction(stderr,mb,0,pci,LIST_MAL_ALL);
-	fprintInstruction(stderr,nmb,0,q,LIST_MAL_ALL);
-#endif
+	TRC_DEBUG(MAL_MANIFOLD, "Manifold operation\n");
+	traceInstruction(MAL_MANIFOLD, mb, 0, pci, LIST_MAL_ALL);
+	traceInstruction(MAL_MANIFOLD, nmb, 0, q, LIST_MAL_ALL);
+
 	// Localize the underlying scalar operator
-	typeChecker(cntxt->usermodule, nmb, q, TRUE);
+	typeChecker(cntxt->usermodule, nmb, q, getPC(nmb, q), TRUE);
 	if (nmb->errors || q->fcn == NULL || q->token != CMDcall ||
 		(checkprops && q->blk && q->blk->unsafeProp) )
 		fcn = NULL;
@@ -247,10 +243,10 @@ MANIFOLDtypecheck(Client cntxt, MalBlkPtr mb, InstrPtr pci, int checkprops){
 		if ( !isVarFixed(mb, getArg(pci,0)))
 			setVarType( mb, getArg(pci,0), newBatType(getArgType(nmb,q,0)) );
 	}
-#ifdef _DEBUG_MANIFOLD_
-	fprintf(stderr,"success? %s\n",(fcn == NULL? "no":"yes"));
-	fprintInstruction(stderr,nmb,0,q,LIST_MAL_ALL);
-#endif
+
+	TRC_DEBUG(MAL_MANIFOLD, "Success? %s\n", (fcn == NULL? "no":"yes"));
+	traceInstruction(MAL_MANIFOLD, nmb, 0, q, LIST_MAL_ALL);
+
 	freeMalBlk(nmb);
 	return fcn;
 }

@@ -108,10 +108,6 @@ GROUPcollect( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		a->size = BATcount(b);
 	}
 
-#ifdef _DEBUG_GROUPBY_
-	for(i=0; i<a->last; i++)
-		fprintf(stderr,"#group %d unique "BUNFMT "\n", i, a->unique[i]);
-#endif
 	return a;
 }
 

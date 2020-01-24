@@ -9,8 +9,6 @@
 #ifndef _MAL_FACTORY_H
 #define _MAL_FACTORY_H
 
-/* #define DEBUG_MAL_FACTORY  */
-
 #include "mal.h"
 #include "mal_client.h"
 

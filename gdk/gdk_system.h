@@ -174,11 +174,10 @@ gdk_export int MT_join_thread(MT_Id t);
 
 #ifdef LOCK_STATS
 
-#define _DBG_LOCK_COUNT_0(l)						\
-	do {								\
-		(void) ATOMIC_INC(&GDKlockcnt);				\
-		TEMDEBUG fprintf(stderr, "#%s: %s: locking %s...\n",	\
-				 MT_thread_getname(), __func__, (l)->name); \
+#define _DBG_LOCK_COUNT_0(l)					\
+	do {							\
+		(void) ATOMIC_INC(&GDKlockcnt);			\
+		TRC_DEBUG(TEM, "Locking %s...\n", (l)->name); 	\
 	} while (0)
 
 #define _DBG_LOCK_LOCKER(l)				\
@@ -191,14 +190,12 @@ gdk_export int MT_join_thread(MT_Id t);
 	do {							\
 		(l)->locker = __func__;				\
 		(l)->thread = NULL;				\
-		TEMDEBUG fprintf(stderr, "#%s: %s: unlocking %s\n",	\
-				 MT_thread_getname(), __func__, (l)->name); \
+		TRC_DEBUG(TEM, "Unlocking %s\n", (l)->name);	\
 	} while (0)
 
 #define _DBG_LOCK_CONTENTION(l)						\
 	do {								\
-		TEMDEBUG fprintf(stderr, "#%s: %s: lock %s contention\n", \
-				 MT_thread_getname(), __func__, (l)->name); \
+		TRC_DEBUG(TEM, "Lock %s contention\n", (l)->name); 	\
 		(void) ATOMIC_INC(&GDKlockcontentioncnt);		\
 		(void) ATOMIC_INC(&(l)->contention);			\
 	} while (0)
@@ -215,8 +212,7 @@ gdk_export int MT_join_thread(MT_Id t);
 			GDKlocklist = (l);				\
 			ATOMIC_CLEAR(&GDKlocklistlock);			\
 		}							\
-		TEMDEBUG fprintf(stderr, "#%s: %s: locking %s complete\n", \
-				 MT_thread_getname(), __func__, (l)->name); \
+		TRC_DEBUG(TEM, "Locking %s complete\n", (l)->name);	\
 	} while (0)
 
 #define _DBG_LOCK_INIT(l)						\
@@ -402,10 +398,10 @@ typedef struct MT_Lock {
 #define MT_lock_set(l)		pthread_mutex_lock(&(l)->lock)
 #endif
 
-#define MT_lock_unset(l)						\
-	do {								\
-		_DBG_LOCK_UNLOCKER(l);					\
-		pthread_mutex_unlock(&(l)->lock);			\
+#define MT_lock_unset(l)				\
+	do {						\
+		_DBG_LOCK_UNLOCKER(l);			\
+		pthread_mutex_unlock(&(l)->lock);	\
 	} while (0)
 
 #define MT_lock_destroy(l)				\
@@ -441,24 +437,24 @@ typedef struct MT_Lock {
 
 #define MT_lock_try(l)	(ATOMIC_TAS(&(l)->lock) == 0)
 
-#define MT_lock_set(l)							\
-	do {								\
-		_DBG_LOCK_COUNT_0(l);					\
-		if (!MT_lock_try(l)) {					\
-			/* we didn't get the lock */			\
-			unsigned _spincnt = 0;				\
-			_DBG_LOCK_CONTENTION(l);			\
-			MT_thread_setlockwait(l);			\
-			do {						\
-				if ((++_spincnt & 2047) == 0) {		\
-					_DBG_LOCK_SLEEP(l);		\
-					MT_sleep_ms(1);			\
-				}					\
-			} while (!MT_lock_try(l));			\
-			MT_thread_setlockwait(NULL);			\
-		}							\
-		_DBG_LOCK_LOCKER(l);					\
-		_DBG_LOCK_COUNT_2(l);					\
+#define MT_lock_set(l)						\
+	do {							\
+		_DBG_LOCK_COUNT_0(l);				\
+		if (!MT_lock_try(l)) {				\
+			/* we didn't get the lock */		\
+			unsigned _spincnt = 0;			\
+			_DBG_LOCK_CONTENTION(l);		\
+			MT_thread_setlockwait(l);		\
+			do {					\
+				if ((++_spincnt & 2047) == 0) {	\
+					_DBG_LOCK_SLEEP(l);	\
+					MT_sleep_ms(1);		\
+				}				\
+			} while (!MT_lock_try(l));		\
+			MT_thread_setlockwait(NULL);		\
+		}						\
+		_DBG_LOCK_LOCKER(l);				\
+		_DBG_LOCK_COUNT_2(l);				\
 	} while (0)
 
 #define MT_lock_init(l, n)				\
@@ -522,16 +518,14 @@ typedef struct {
 
 #define MT_sema_down(s)							\
 	do {								\
-		TEMDEBUG fprintf(stderr, "#%s: %s: sema %s down...\n",	\
-				 MT_thread_getname(), __func__, (s)->name); \
+		TRC_DEBUG(TEM, "Sema %s down...\n",	(s)->name);	\
 		if (WaitForSingleObject((s)->sema, 0) != WAIT_OBJECT_0) { \
 			MT_thread_setsemawait(s);			\
 			while (WaitForSingleObject((s)->sema, INFINITE) != WAIT_OBJECT_0) \
 				;					\
 			MT_thread_setsemawait(NULL);			\
 		}							\
-		TEMDEBUG fprintf(stderr, "#%s: %s: sema %s down complete\n", \
-				 MT_thread_getname(), __func__, (s)->name); \
+		TRC_DEBUG(TEM, "Sema %s down complete\n", (s)->name);	\
 	} while (0)
 
 #elif defined(HAVE_DISPATCH_SEMAPHORE_CREATE)
@@ -588,8 +582,7 @@ typedef struct {
 
 #define MT_sema_down(s)							\
 	do {								\
-		TEMDEBUG fprintf(stderr, "#%s: %s: sema %s down...\n",	\
-				 MT_thread_getname(), __func__, (s)->name); \
+		TRC_DEBUG(TEM, "Sema %s down...\n", (s)->name);		\
 		pthread_mutex_lock(&(s)->mutex);			\
 		if (--(s)->cnt < 0) {					\
 			MT_thread_setsemawait(s);			\
@@ -600,8 +593,7 @@ typedef struct {
 			MT_thread_setsemawait(NULL);			\
 			pthread_mutex_unlock(&(s)->mutex);		\
 		}							\
-		TEMDEBUG fprintf(stderr, "#%s: %s: sema %s down complete\n", \
-				 MT_thread_getname(), __func__, (s)->name); \
+		TRC_DEBUG(TEM, "Sema %s down complete\n", (s)->name);	\
 	} while (0)
 
 #else
@@ -621,23 +613,20 @@ typedef struct {
 
 #define MT_sema_up(s)						\
 	do {							\
-		TEMDEBUG fprintf(stderr, "#%s: %s: sema %s up\n",	\
-				 MT_thread_getname(), __func__, (s)->name); \
+		TRC_DEBUG(TEM, "Sema %s up\n", (s)->name);	\
 		sem_post(&(s)->sema);				\
 	} while (0)
 
 #define MT_sema_down(s)							\
 	do {								\
-		TEMDEBUG fprintf(stderr, "#%s: %s: sema %s down...\n",	\
-				 MT_thread_getname(), __func__, (s)->name); \
+		TRC_DEBUG(TEM, "Sema %s down...\n",	(s)->name);	\
 		if (sem_trywait(&(s)->sema) != 0) {			\
 			MT_thread_setsemawait(s);			\
 			while (sem_wait(&(s)->sema) != 0)		\
 				;					\
 			MT_thread_setsemawait(NULL);			\
 		}							\
-		TEMDEBUG fprintf(stderr, "#%s: %s: sema %s down complete\n", \
-				 MT_thread_getname(), __func__, (s)->name); \
+		TRC_DEBUG(TEM, "Sema %s down complete\n", (s)->name);	\
 	} while (0)
 
 #endif

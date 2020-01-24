@@ -21,4 +21,5 @@ optimizer.costModel("user","tst");
 optimizer.coercions("user","tst");
 optimizer.aliases("user","tst");
 optimizer.evaluate("user","tst");
+optimizer.garbageCollector("user","tst");
 mdb.list("user","tst");

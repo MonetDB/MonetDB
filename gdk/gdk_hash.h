@@ -23,7 +23,7 @@ typedef struct Hash {
 	Heap heaplink;		/* heap where the hash links are stored */
 	Heap heapbckt;		/* heap where the hash buckets are stored */
 } Hash;
-#define NHASHBUCKETS(h)		((h)->nbucket)
+
 static inline BUN
 HASHbucket(const Hash *h, BUN v)
 {
@@ -180,6 +180,56 @@ HASHgetlink(Hash *h, BUN i)
 #define hash_flt(H,V)	hash_int(H,V)
 #define hash_dbl(H,V)	hash_lng(H,V)
 
+/*
+ * @- hash-table supported loop over BUNs The first parameter `bi' is
+ * a BAT iterator, the second (`h') should point to the Hash
+ * structure, and `v' a pointer to an atomic value (corresponding to
+ * the head column of `b'). The 'hb' is an BUN index, pointing out the
+ * `hb'-th BUN.
+ */
+#define HASHloop(bi, h, hb, v)					\
+	for (hb = HASHget(h, HASHprobe(h, v));			\
+	     hb != HASHnil(h);					\
+	     hb = HASHgetlink(h, hb))				\
+		if (ATOMcmp(h->type, v, BUNtail(bi, hb)) == 0)
+#define HASHloop_str_hv(bi, h, hb, v)				\
+	for (hb = HASHget(h, HASHbucket(h, ((BUN *) (v))[-1]));	\
+	     hb != HASHnil(h);					\
+	     hb = HASHgetlink(h, hb))				\
+		if (GDK_STREQ(v, BUNtvar(bi, hb)))
+#define HASHloop_str(bi, h, hb, v)				\
+	for (hb = HASHget(h, HASHbucket(h, strHash(v)));	\
+	     hb != HASHnil(h);					\
+	     hb = HASHgetlink(h, hb))				\
+		if (GDK_STREQ(v, BUNtvar(bi, hb)))
+
+#define HASHlooploc(bi, h, hb, v)				\
+	for (hb = HASHget(h, HASHprobe(h, v));			\
+	     hb != HASHnil(h);					\
+	     hb = HASHgetlink(h, hb))				\
+		if (ATOMcmp(h->type, v, BUNtloc(bi, hb)) == 0)
+#define HASHloopvar(bi, h, hb, v)				\
+	for (hb = HASHget(h, HASHprobe(h, v));			\
+	     hb != HASHnil(h);					\
+	     hb = HASHgetlink(h, hb))				\
+		if (ATOMcmp(h->type, v, BUNtvar(bi, hb)) == 0)
+
+#define HASHloop_TYPE(bi, h, hb, v, TYPE)				\
+	for (hb = HASHget(h, hash_##TYPE(h, v));			\
+	     hb != HASHnil(h);						\
+	     hb = HASHgetlink(h,hb))					\
+		if (* (const TYPE *) (v) == * (const TYPE *) BUNtloc(bi, hb))
+
+#define HASHloop_bte(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, bte)
+#define HASHloop_sht(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, sht)
+#define HASHloop_int(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, int)
+#define HASHloop_lng(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, lng)
+#ifdef HAVE_HGE
+#define HASHloop_hge(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, hge)
+#endif
+#define HASHloop_flt(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, flt)
+#define HASHloop_dbl(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, dbl)
+
 #define HASHfnd_str(x,y,z)						\
 	do {								\
 		BUN _i;							\
@@ -227,56 +277,6 @@ HASHgetlink(Hash *h, BUN i)
 #define HASHfnd_dbl(x,y,z)	HASHfnd_TYPE(x,y,z,dbl)
 
 /*
- * @- hash-table supported loop over BUNs The first parameter `bi' is
- * a BAT iterator, the second (`h') should point to the Hash
- * structure, and `v' a pointer to an atomic value (corresponding to
- * the head column of `b'). The 'hb' is an BUN index, pointing out the
- * `hb'-th BUN.
- */
-#define HASHloop(bi, h, hb, v)					\
-	for (hb = HASHget(h, HASHprobe(h, v));			\
-	     hb != HASHnil(h);					\
-	     hb = HASHgetlink(h, hb))				\
-		if (ATOMcmp(h->type, v, BUNtail(bi, hb)) == 0)
-#define HASHloop_str_hv(bi, h, hb, v)				\
-	for (hb = HASHget(h, HASHbucket(h, ((BUN *) (v))[-1]));	\
-	     hb != HASHnil(h);					\
-	     hb = HASHgetlink(h, hb))				\
-		if (GDK_STREQ(v, BUNtvar(bi, hb)))
-#define HASHloop_str(bi, h, hb, v)				\
-	for (hb = HASHget(h, HASHbucket(h, strHash(v)));	\
-	     hb != HASHnil(h);					\
-	     hb = HASHgetlink(h, hb))				\
-		if (GDK_STREQ(v, BUNtvar(bi, hb)))
-
-#define HASHlooploc(bi, h, hb, v)				\
-	for (hb = HASHget(h, HASHprobe(h, v));			\
-	     hb != HASHnil(h);					\
-	     hb = HASHgetlink(h, hb))				\
-		if (ATOMcmp(h->type, v, BUNtloc(bi, hb)) == 0)
-#define HASHloopvar(bi, h, hb, v)				\
-	for (hb = HASHget(h, HASHprobe(h, v));			\
-	     hb != HASHnil(h);					\
-	     hb = HASHgetlink(h, hb))				\
-		if (ATOMcmp(h->type, v, BUNtvar(bi, hb)) == 0)
-
-#define HASHloop_TYPE(bi, h, hb, v, TYPE)			\
-	for (hb = HASHget(h, hash_##TYPE(h, v));		\
-	     hb != HASHnil(h);					\
-	     hb = HASHgetlink(h,hb))				\
-		if (* (const TYPE *) (v) == * (const TYPE *) BUNtloc(bi, hb))
-
-#define HASHloop_bte(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, bte)
-#define HASHloop_sht(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, sht)
-#define HASHloop_int(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, int)
-#define HASHloop_lng(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, lng)
-#ifdef HAVE_HGE
-#define HASHloop_hge(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, hge)
-#endif
-#define HASHloop_flt(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, flt)
-#define HASHloop_dbl(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, dbl)
-
-/*
  * A new entry is added with HASHins using the BAT, the BUN index, and
  * a pointer to the value to be stored.
  *
@@ -290,7 +290,8 @@ HASHgetlink(Hash *h, BUN i)
 			Hash *_h = (b)->thash;				\
 			if (_h == (Hash *) 1 ||				\
 			    _h == NULL ||				\
-			    HASHgrowbucket(b) != GDK_SUCCEED ||		\
+			    (ATOMsize(b->ttype) > 2 &&			\
+			     HASHgrowbucket(b) != GDK_SUCCEED) ||	\
 			    (((i) + 1) * _h->width > _h->heaplink.size && \
 			     HEAPextend(&_h->heaplink,			\
 					(i) * _h->width + GDK_mmap_pagesize, \

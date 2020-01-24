@@ -130,6 +130,7 @@ RUNchoice(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	char *nme;
 	InstrPtr q;
 
+	mincost = 0;
 	pc = getPC(mb, p);
 	for (i = pc + 1; i < mb->stop; i++) {
 		q = getInstrPtr(mb, i);
@@ -138,7 +139,7 @@ RUNchoice(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			p = q;
 			break;
 		}
-	}
+	} 
 	if (i == mb->stop)
 		return MAL_SUCCEED;
 	target = getArg(p, 2);
@@ -175,11 +176,9 @@ RUNchoice(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 		}
 	}
-#ifdef DEBUG_RUN_MEMORUN
-	fprintf(stderr, "#function target %s cost %d\n", getVarName(mb, target), mincost);
-#else
+
 	(void) cntxt;
-#endif
+
 	/* remove non-qualifying variables */
 	for (i = 2; i < p->argc; i += 2)
 		if (getArg(p, i) != target) {
@@ -188,11 +187,6 @@ RUNchoice(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		}
 
 	propagateNonTarget(mb, pc + 1);
-#ifdef DEBUG_RUN_MEMORUN
-	fprintf(stderr, "#cost choice selected %s %d\n",
-			getVarName(mb, target), mincost);
-	fprintFunction(stderr, mb, 1);
-#endif
 	return MAL_SUCCEED;
 }
 /*
