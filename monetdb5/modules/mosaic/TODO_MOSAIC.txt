@@ -1,5 +1,6 @@
 ####technical depth####
 Refactor macro-ised functions to real functions in header files and apply the include trick
+Find SF-5 bug.
 benchmark using TPC-H
 Fix/check/test MOSlayout.
 Add negative values to tests
