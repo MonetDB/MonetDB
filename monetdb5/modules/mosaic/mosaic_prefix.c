@@ -98,23 +98,25 @@ MOSlayout_prefix(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutp
 		return;
 }
 
+#define COMPRESSION_DEFINITION
 #define TPE bte
-#include "mosaic_prefix_template.h"
+#include "mosaic_prefix_templates.h"
 #undef TPE
 #define TPE sht
-#include "mosaic_prefix_template.h"
+#include "mosaic_prefix_templates.h"
 #undef TPE
 #define TPE int
-#include "mosaic_prefix_template.h"
+#include "mosaic_prefix_templates.h"
 #undef TPE
 #define TPE lng
-#include "mosaic_prefix_template.h"
+#include "mosaic_prefix_templates.h"
 #undef TPE
 #ifdef HAVE_HGE
 #define TPE hge
-#include "mosaic_prefix_template.h"
+#include "mosaic_prefix_templates.h"
 #undef TPE
 #endif
+#undef COMPRESSION_DEFINITION
 
 #define NAME prefix
 #define TPE bte

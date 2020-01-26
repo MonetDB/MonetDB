@@ -63,29 +63,32 @@ MOSlayout_runlength(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *bo
 		BUNappend(bproperties, "", false) != GDK_SUCCEED )
 		return;
 }
+
+#define COMPRESSION_DEFINITION
 #define TPE bte
-#include "mosaic_runlength_template.h"
+#include "mosaic_runlength_templates.h"
 #undef TPE
 #define TPE sht
-#include "mosaic_runlength_template.h"
+#include "mosaic_runlength_templates.h"
 #undef TPE
 #define TPE int
-#include "mosaic_runlength_template.h"
+#include "mosaic_runlength_templates.h"
 #undef TPE
 #define TPE lng
-#include "mosaic_runlength_template.h"
+#include "mosaic_runlength_templates.h"
 #undef TPE
 #define TPE flt
-#include "mosaic_runlength_template.h"
+#include "mosaic_runlength_templates.h"
 #undef TPE
 #define TPE dbl
-#include "mosaic_runlength_template.h"
+#include "mosaic_runlength_templates.h"
 #undef TPE
 #ifdef HAVE_HGE
 #define TPE hge
-#include "mosaic_runlength_template.h"
+#include "mosaic_runlength_templates.h"
 #undef TPE
 #endif
+#undef COMPRESSION_DEFINITION
 
 #define NAME runlength
 #define TPE bte

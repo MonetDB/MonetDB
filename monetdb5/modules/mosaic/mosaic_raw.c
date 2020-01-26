@@ -64,29 +64,31 @@ MOSlayout_raw(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput,
 		return;
 }
 
+#define COMPRESSION_DEFINITION
 #define TPE bte
-#include "mosaic_raw_template.h"
+#include "mosaic_raw_templates.h"
 #undef TPE
 #define TPE sht
-#include "mosaic_raw_template.h"
+#include "mosaic_raw_templates.h"
 #undef TPE
 #define TPE int
-#include "mosaic_raw_template.h"
+#include "mosaic_raw_templates.h"
 #undef TPE
 #define TPE lng
-#include "mosaic_raw_template.h"
+#include "mosaic_raw_templates.h"
 #undef TPE
 #define TPE flt
-#include "mosaic_raw_template.h"
+#include "mosaic_raw_templates.h"
 #undef TPE
 #define TPE dbl
-#include "mosaic_raw_template.h"
+#include "mosaic_raw_templates.h"
 #undef TPE
 #ifdef HAVE_HGE
 #define TPE hge
-#include "mosaic_raw_template.h"
+#include "mosaic_raw_templates.h"
 #undef TPE
 #endif
+#undef COMPRESSION_DEFINITION
 
 #define NAME raw
 #define TPE bte

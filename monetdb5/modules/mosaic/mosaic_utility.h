@@ -50,6 +50,12 @@ ALIGNMENT_HELPER_TPE(NAME, TPE)\
 #define MOSBlockHeader_DEF(NAME, TPE) MosaicBlkHeader_DEF_##NAME(TPE)
 #define MOSselect_FUNC(NAME, TPE) CONCAT4(MOSselect_, NAME, _, TPE)
 #define MOSselect_SIGNATURE(NAME, TPE) str MOSselect_FUNC(NAME, TPE)(MOStask* task, TPE tl, TPE th, bool li, bool hi, bool anti)
+
+#define MOSscanloop_ID(NAME, TPE, CAND_ITER, TEST) CONCAT2(CONCAT4(scan_loop_, NAME, _, TPE), CONCAT4(_, CAND_ITER, _, TEST))
+#define MOSscanloop_ARGS(TPE) (const bool has_nil, const bool anti, MOStask* task, BUN first, BUN last, TPE tl, TPE th, bool li, bool hi)
+#define MOSscanloop_SIGNATURE(NAME, TPE, CAND_ITER, TEST) static inline void MOSscanloop_ID(NAME, TPE, CAND_ITER, TEST) MOSscanloop_ARGS(TPE)
+
+
 #define MOSprojection_FUNC(NAME, TPE) CONCAT4(MOSprojection_, NAME, _, TPE)
 #define MOSprojection_SIGNATURE(NAME, TPE)  str MOSprojection_FUNC(NAME, TPE) (MOStask* task)
 

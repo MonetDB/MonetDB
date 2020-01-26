@@ -107,36 +107,41 @@ MOSlayout_dict256(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *bout
 		BUNappend(bproperties, "", false) != GDK_SUCCEED)
 		return;
 }
-
-// TODO: factor this out and create compile time safety guards for NAME and TPE macro.
 #define NAME dict256
+#define PREPARATION_DEFINITION
 #define MOS_CUT_OFF_SIZE CAPPEDDICT
-#include "mosaic_dictionary_prepare_context_impl.h"
+#include "mosaic_dictionary_templates.h"
+#undef MOS_CUT_OFF_SIZE
+#undef PREPARATION_DEFINITION
+#undef NAME
+
+#define NAME dict256
+#define COMPRESSION_DEFINITION
 #define TPE bte
-#include "mosaic_dictionary_impl.h"
+#include "mosaic_dictionary_templates.h"
 #undef TPE
 #define TPE sht
-#include "mosaic_dictionary_impl.h"
+#include "mosaic_dictionary_templates.h"
 #undef TPE
 #define TPE int
-#include "mosaic_dictionary_impl.h"
+#include "mosaic_dictionary_templates.h"
 #undef TPE
 #define TPE lng
-#include "mosaic_dictionary_impl.h"
+#include "mosaic_dictionary_templates.h"
 #undef TPE
 #define TPE flt
-#include "mosaic_dictionary_impl.h"
+#include "mosaic_dictionary_templates.h"
 #undef TPE
 #define TPE dbl
-#include "mosaic_dictionary_impl.h"
+#include "mosaic_dictionary_templates.h"
 #undef TPE
 #ifdef HAVE_HGE
 #define TPE hge
-#include "mosaic_dictionary_impl.h"
+#include "mosaic_dictionary_templates.h"
 #undef TPE
 #endif
-#undef MOS_CUT_OFF_SIZE
 #undef NAME
+#undef COMPRESSION_DEFINITION
 
 #define scan_loop_dict256(TPE, CI_NEXT, TEST) \
     scan_loop_dictionary(dict256, TPE, CI_NEXT, TEST)

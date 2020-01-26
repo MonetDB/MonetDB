@@ -97,6 +97,7 @@ MOSselect_SIGNATURE(NAME, TPE) {
 
 #define METHOD_SPECIFIC_INCLUDE STRINGIFY(CONCAT3(mosaic_, NAME, _templates.h))
 
+#define SCAN_LOOP_DEFINITION
 #define TEST TEST_ALWAYS_TRUE
 #include METHOD_SPECIFIC_INCLUDE
 #undef TEST
@@ -118,6 +119,7 @@ MOSselect_SIGNATURE(NAME, TPE) {
 #define TEST TEST_RANGE
 #include METHOD_SPECIFIC_INCLUDE
 #undef TEST
+#undef SCAN_LOOP_DEFINITION
 
 
 #define SCAN_LOOP(TEST) CONCAT2(CONCAT4(scan_loop_, NAME, _, TPE), CONCAT4(_, CAND_ITER, _, TEST))(has_nil, anti, task, first, last, tl, th, li, hi)

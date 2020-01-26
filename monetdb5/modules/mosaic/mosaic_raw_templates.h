@@ -1,5 +1,79 @@
-static inline void CONCAT6(scan_loop_raw_, TPE, _, CAND_ITER, _, TEST)
-(const bool has_nil, const bool anti, MOStask* task, BUN first, BUN last, TPE tl, TPE th, bool li, bool hi)
+#ifdef COMPRESSION_DEFINITION
+MOSadvance_SIGNATURE(raw, TPE)
+{
+	BUN cnt = MOSgetCnt(task->blk);
+	task->start += MOSgetCnt(task->blk);
+
+	char* blk = (char*)task->blk;
+	blk += sizeof(MOSBlockHeaderTpe(raw, TPE));
+	blk += GET_PADDING(task->blk, raw, TPE);
+	blk += cnt * sizeof(TPE);
+
+	task->blk = (MosaicBlk) blk;
+}
+
+MOSestimate_SIGNATURE(raw, TPE)
+{
+	/*The raw compression technique is always applicable and only adds one item at a time.*/
+	(void) task;
+	current->compression_strategy.tag = MOSAIC_RAW;
+	current->is_applicable = true;
+	current->uncompressed_size += (BUN) sizeof(TPE);
+	unsigned int cnt = previous->compression_strategy.cnt;
+	if (previous->is_applicable && previous->compression_strategy.tag == MOSAIC_RAW && (cnt + 1 < MOSAICMAXCNT)) {
+		current->must_be_merged_with_previous = true;
+		cnt++;
+		current->previous_compressed_size = previous->previous_compressed_size;
+		current->compressed_size += sizeof(TPE);
+	}
+	else {
+		current->must_be_merged_with_previous = false;
+		cnt = 1;
+		current->compressed_size += sizeof(TPE);
+	}
+	current->compression_strategy.cnt = cnt;
+
+	return MAL_SUCCEED;
+}
+
+MOSpostEstimate_SIGNATURE(raw, TPE)
+{
+	(void) task;
+}
+
+// rather expensive simple value non-compressed store
+MOScompress_SIGNATURE(raw, TPE)
+{
+	ALIGN_BLOCK_HEADER(task, raw, TPE);
+
+	MosaicBlk blk = (MosaicBlk) task->blk;
+	MOSsetTag(blk, MOSAIC_RAW);
+	TPE *v = ((TPE*)task->src) + task->start;
+	BUN cnt = estimate->cnt;
+	TPE *d = &GET_INIT_raw(task, TPE);
+	for(BUN i = 0; i < cnt; i++,v++){
+		*d++ = (TPE) *v;
+	}
+	task->dst += sizeof(TPE);
+	MOSsetCnt(blk,cnt);
+}
+
+MOSdecompress_SIGNATURE(raw, TPE)
+{
+	MosaicBlk blk = (MosaicBlk) task->blk;
+	BUN i;
+	TPE* val = &GET_INIT_raw(task, TPE);
+	TPE* dst = (TPE*) task->src;
+	BUN lim = MOSgetCnt(blk);
+	for(i = 0; i < lim; i++) {
+	dst[i] = val[i]; 
+	}
+	task->src += i * sizeof(TPE);
+}
+#endif
+
+#ifdef SCAN_LOOP_DEFINITION
+MOSscanloop_SIGNATURE(raw, TPE, CAND_ITER, TEST)
 {
     (void) has_nil;
     (void) anti;
@@ -21,3 +95,4 @@ static inline void CONCAT6(scan_loop_raw_, TPE, _, CAND_ITER, _, TEST)
     }
     task->lb = o;
 }
+#endif

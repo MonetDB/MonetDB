@@ -62,23 +62,25 @@ MOSlayout_frame(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutpu
 		return;
 }
 
+#define COMPRESSION_DEFINITION
 #define TPE bte
-#include "mosaic_frame_template.h"
+#include "mosaic_frame_templates.h"
 #undef TPE
 #define TPE sht
-#include "mosaic_frame_template.h"
+#include "mosaic_frame_templates.h"
 #undef TPE
 #define TPE int
-#include "mosaic_frame_template.h"
+#include "mosaic_frame_templates.h"
 #undef TPE
 #define TPE lng
-#include "mosaic_frame_template.h"
+#include "mosaic_frame_templates.h"
 #undef TPE
 #ifdef HAVE_HGE
 #define TPE hge
-#include "mosaic_frame_template.h"
+#include "mosaic_frame_templates.h"
 #undef TPE
 #endif
+#undef COMPRESSION_DEFINITION
 
 #define NAME frame
 #define TPE bte

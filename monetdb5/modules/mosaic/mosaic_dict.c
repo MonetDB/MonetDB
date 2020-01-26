@@ -88,31 +88,38 @@ MOSlayout_dict(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput
 }
 
 #define NAME dict
-#include "mosaic_dictionary_prepare_context_impl.h"
+#define PREPARATION_DEFINITION
+#include "mosaic_dictionary_templates.h"
+#undef PREPARATION_DEFINITION
+#undef NAME
+
+#define NAME dict
+#define COMPRESSION_DEFINITION
 #define TPE bte
-#include "mosaic_dictionary_impl.h"
+#include "mosaic_dictionary_templates.h"
 #undef TPE
 #define TPE sht
-#include "mosaic_dictionary_impl.h"
+#include "mosaic_dictionary_templates.h"
 #undef TPE
 #define TPE int
-#include "mosaic_dictionary_impl.h"
+#include "mosaic_dictionary_templates.h"
 #undef TPE
 #define TPE lng
-#include "mosaic_dictionary_impl.h"
+#include "mosaic_dictionary_templates.h"
 #undef TPE
 #define TPE flt
-#include "mosaic_dictionary_impl.h"
+#include "mosaic_dictionary_templates.h"
 #undef TPE
 #define TPE dbl
-#include "mosaic_dictionary_impl.h"
+#include "mosaic_dictionary_templates.h"
 #undef TPE
 #ifdef HAVE_HGE
 #define TPE hge
-#include "mosaic_dictionary_impl.h"
+#include "mosaic_dictionary_templates.h"
 #undef TPE
 #endif
 #undef NAME
+#undef COMPRESSION_DEFINITION
 
 #define NAME dict
 #define TPE bte

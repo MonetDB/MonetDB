@@ -61,23 +61,25 @@ MOSlayout_linear(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutp
 		return;
 }
 
+#define COMPRESSION_DEFINITION
 #define TPE bte
-#include "mosaic_linear_template.h"
+#include "mosaic_linear_templates.h"
 #undef TPE
 #define TPE sht
-#include "mosaic_linear_template.h"
+#include "mosaic_linear_templates.h"
 #undef TPE
 #define TPE int
-#include "mosaic_linear_template.h"
+#include "mosaic_linear_templates.h"
 #undef TPE
 #define TPE lng
-#include "mosaic_linear_template.h"
+#include "mosaic_linear_templates.h"
 #undef TPE
 #ifdef HAVE_HGE
 #define TPE hge
-#include "mosaic_linear_template.h"
+#include "mosaic_linear_templates.h"
 #undef TPE
 #endif
+#undef COMPRESSION_DEFINITION
 
 #define NAME linear
 #define TPE bte
