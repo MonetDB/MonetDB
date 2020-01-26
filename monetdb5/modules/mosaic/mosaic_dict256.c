@@ -143,30 +143,35 @@ MOSlayout_dict256(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *bout
 #undef NAME
 #undef COMPRESSION_DEFINITION
 
-#define scan_loop_dict256(TPE, CI_NEXT, TEST) \
-    scan_loop_dictionary(dict256, TPE, CI_NEXT, TEST)
-
+// TODO: instead of NAME make METHOD_SPECIFIC_SCANLOOP_INCLUDE leading. this will make the include mechanism a bit cleaner
 #define NAME dict256
 #define TPE bte
+#define METHOD_SPECIFIC_SCANLOOP_INCLUDE "mosaic_dictionary_templates.h"
 #include "mosaic_select_template.h"
 #undef TPE
 #define TPE sht
+#define METHOD_SPECIFIC_SCANLOOP_INCLUDE "mosaic_dictionary_templates.h"
 #include "mosaic_select_template.h"
 #undef TPE
 #define TPE int
+#define METHOD_SPECIFIC_SCANLOOP_INCLUDE "mosaic_dictionary_templates.h"
 #include "mosaic_select_template.h"
 #undef TPE
 #define TPE lng
+#define METHOD_SPECIFIC_SCANLOOP_INCLUDE "mosaic_dictionary_templates.h"
 #include "mosaic_select_template.h"
 #undef TPE
 #define TPE flt
+#define METHOD_SPECIFIC_SCANLOOP_INCLUDE "mosaic_dictionary_templates.h"
 #include "mosaic_select_template.h"
 #undef TPE
 #define TPE dbl
+#define METHOD_SPECIFIC_SCANLOOP_INCLUDE "mosaic_dictionary_templates.h"
 #include "mosaic_select_template.h"
 #undef TPE
 #ifdef HAVE_HGE
 #define TPE hge
+#define METHOD_SPECIFIC_SCANLOOP_INCLUDE "mosaic_dictionary_templates.h"
 #include "mosaic_select_template.h"
 #undef TPE
 #endif

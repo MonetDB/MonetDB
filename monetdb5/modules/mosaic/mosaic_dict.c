@@ -123,25 +123,32 @@ MOSlayout_dict(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput
 
 #define NAME dict
 #define TPE bte
+#define METHOD_SPECIFIC_SCANLOOP_INCLUDE "mosaic_dictionary_templates.h"
 #include "mosaic_select_template.h"
 #undef TPE
 #define TPE sht
+#define METHOD_SPECIFIC_SCANLOOP_INCLUDE "mosaic_dictionary_templates.h"
 #include "mosaic_select_template.h"
 #undef TPE
 #define TPE int
+#define METHOD_SPECIFIC_SCANLOOP_INCLUDE "mosaic_dictionary_templates.h"
 #include "mosaic_select_template.h"
 #undef TPE
 #define TPE lng
+#define METHOD_SPECIFIC_SCANLOOP_INCLUDE "mosaic_dictionary_templates.h"
 #include "mosaic_select_template.h"
 #undef TPE
 #define TPE flt
+#define METHOD_SPECIFIC_SCANLOOP_INCLUDE "mosaic_dictionary_templates.h"
 #include "mosaic_select_template.h"
 #undef TPE
 #define TPE dbl
+#define METHOD_SPECIFIC_SCANLOOP_INCLUDE "mosaic_dictionary_templates.h"
 #include "mosaic_select_template.h"
 #undef TPE
 #ifdef HAVE_HGE
 #define TPE hge
+#define METHOD_SPECIFIC_SCANLOOP_INCLUDE "mosaic_dictionary_templates.h"
 #include "mosaic_select_template.h"
 #undef TPE
 #endif

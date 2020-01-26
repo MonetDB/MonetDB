@@ -14,7 +14,15 @@
  * preprocessor restrictions have to behave as two different inclusion files.
  * We use let this header file #include it self as a work around.
  */
+
+#ifndef METHOD_SPECIFIC_SCANLOOP_INCLUDE
+
+#define METHOD_SPECIFIC_SCANLOOP_INCLUDE STRINGIFY(CONCAT3(mosaic_, NAME, _templates.h))
+
+#endif
+
 #ifndef CAND_ITER
+
 #define CAND_ITER canditer_next_dense
 #include "mosaic_select_template.h"
 #undef CAND_ITER
@@ -85,6 +93,8 @@ MOSselect_SIGNATURE(NAME, TPE) {
 
 #undef select_general
 
+#undef METHOD_SPECIFIC_SCANLOOP_INCLUDE
+
 #else
 
 #define _TEST_ALWAYS_TRUE	true
@@ -95,32 +105,29 @@ MOSselect_SIGNATURE(NAME, TPE) {
 #define _TEST_EQUAL			!(has_nil && IS_NIL(TPE, v)) && ((hi && v == th)  == !anti)
 #define _TEST_RANGE			!(has_nil && IS_NIL(TPE, v)) && ((((hi && v <= th ) || (!hi && v < th )) && ((li && v >= tl ) || (!li && v > tl )))  == !anti)
 
-#define METHOD_SPECIFIC_INCLUDE STRINGIFY(CONCAT3(mosaic_, NAME, _templates.h))
-
 #define SCAN_LOOP_DEFINITION
 #define TEST TEST_ALWAYS_TRUE
-#include METHOD_SPECIFIC_INCLUDE
+#include METHOD_SPECIFIC_SCANLOOP_INCLUDE
 #undef TEST
 #define TEST TEST_IS_NIL
-#include METHOD_SPECIFIC_INCLUDE
+#include METHOD_SPECIFIC_SCANLOOP_INCLUDE
 #undef TEST
 #define TEST TEST_IS_NOT_NIL
-#include METHOD_SPECIFIC_INCLUDE
+#include METHOD_SPECIFIC_SCANLOOP_INCLUDE
 #undef TEST
 #define TEST TEST_UPPER_BOUND
-#include METHOD_SPECIFIC_INCLUDE
+#include METHOD_SPECIFIC_SCANLOOP_INCLUDE
 #undef TEST
 #define TEST TEST_LOWER_BOUND
-#include METHOD_SPECIFIC_INCLUDE
+#include METHOD_SPECIFIC_SCANLOOP_INCLUDE
 #undef TEST
 #define TEST TEST_EQUAL
-#include METHOD_SPECIFIC_INCLUDE
+#include METHOD_SPECIFIC_SCANLOOP_INCLUDE
 #undef TEST
 #define TEST TEST_RANGE
-#include METHOD_SPECIFIC_INCLUDE
+#include METHOD_SPECIFIC_SCANLOOP_INCLUDE
 #undef TEST
 #undef SCAN_LOOP_DEFINITION
-
 
 #define SCAN_LOOP(TEST) CONCAT2(CONCAT4(scan_loop_, NAME, _, TPE), CONCAT4(_, CAND_ITER, _, TEST))(has_nil, anti, task, first, last, tl, th, li, hi)
 /* generic range select
