@@ -5020,6 +5020,7 @@ sys_drop_column(sql_trans *tr, sql_column *col, int drop_action)
 	table_funcs.table_delete(tr, syscolumn, rid);
 	sql_trans_drop_dependencies(tr, col->base.id);
 	sql_trans_drop_any_comment(tr, col->base.id);
+	sql_trans_drop_obj_priv(tr, col->base.id);
 
 	if (col->def && (seq_pos = strstr(col->def, next_value_for))) {
 		sql_sequence * seq = NULL;
@@ -5136,6 +5137,7 @@ sys_drop_table(sql_trans *tr, sql_table *t, int drop_action)
 
 	sql_trans_drop_any_comment(tr, t->base.id);
 	sql_trans_drop_dependencies(tr, t->base.id);
+	sql_trans_drop_obj_priv(tr, t->base.id);
 
 	if (isKindOfTable(t) || isView(t))
 		if (sys_drop_columns(tr, t, drop_action))
@@ -5193,6 +5195,7 @@ sys_drop_func(sql_trans *tr, sql_func *func, int drop_action)
 
 	sql_trans_drop_dependencies(tr, func->base.id);
 	sql_trans_drop_any_comment(tr, func->base.id);
+	sql_trans_drop_obj_priv(tr, func->base.id);
 
 	tr->schema_updates ++;
 
@@ -5562,6 +5565,7 @@ sql_trans_drop_schema(sql_trans *tr, sqlid id, int drop_action)
 	sys_drop_types(tr, s, drop_action);
 	sys_drop_sequences(tr, s, drop_action);
 	sql_trans_drop_any_comment(tr, s->base.id);
+	sql_trans_drop_obj_priv(tr, s->base.id);
 
 	s->base.wtime = tr->wtime = tr->wstime;
 	tr->schema_updates ++;
@@ -7248,4 +7252,19 @@ sql_trans_drop_any_comment(sql_trans *tr, sqlid id)
 	if (!is_oid_nil(row)) {
 		table_funcs.table_delete(tr, comments, row);
 	}
+}
+
+void
+sql_trans_drop_obj_priv(sql_trans *tr, sqlid obj_id)
+{
+	sql_schema *sys = find_sql_schema(tr, "sys");
+	sql_table *privs = find_sql_table(sys, "privileges");
+
+	assert(sys && privs);
+	/* select privileges of this obj_id */
+	rids *A = table_funcs.rids_select(tr, find_sql_column(privs, "obj_id"), &obj_id, &obj_id, NULL);
+	/* remove them */
+	for(oid rid = table_funcs.rids_next(A); !is_oid_nil(rid); rid = table_funcs.rids_next(A))
+		table_funcs.table_delete(tr, privs, rid);
+	table_funcs.rids_destroy(A);
 }
