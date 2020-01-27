@@ -1154,7 +1154,7 @@ sqltypeinit( sql_allocator *sa)
 	sql_type *SECINT, *MONINT, *DTE;
 	sql_type *TME, *TMETZ, *TMESTAMP, *TMESTAMPTZ;
 	sql_type *BLOB;
-	sql_type *ANY, *TABLE;
+	sql_type *ANY, *TABLE, *PTR;
 	sql_type *GEOM, *MBR;
 	sql_func *f;
 	sql_type *LargestINT, *LargestDEC;
@@ -1163,7 +1163,7 @@ sqltypeinit( sql_allocator *sa)
 
 	t = ts;
 	TABLE = *t++ = sql_create_type(sa, "TABLE", 0, 0, 0, EC_TABLE, "bat");
-	*t++ = sql_create_type(sa, "PTR", 0, 0, 0, EC_TABLE, "ptr");
+	PTR = *t++ = sql_create_type(sa, "PTR", 0, 0, 0, EC_TABLE, "ptr");
 
 	BIT = *t++ = sql_create_type(sa, "BOOLEAN", 1, 0, 2, EC_BIT, "bit");
 	sql_create_alias(sa, BIT->sqlname, "BOOL");
@@ -1894,8 +1894,8 @@ sqltypeinit( sql_allocator *sa)
 		sql_create_func(sa, "levenshtein", "txtsim", "levenshtein", FALSE, SCALE_FIX, 0, INT, 2, *t, *t);
 		sql_create_func(sa, "levenshtein", "txtsim", "levenshtein", FALSE, SCALE_FIX, 0, INT, 5, *t, *t, INT, INT, INT);
 	}
-	/* copyfrom fname (arg 13) */
-	f = sql_create_union(sa, "copyfrom", "sql", "copy_from", FALSE, SCALE_FIX, 0, TABLE, 13, STR, STR, STR, STR, STR, STR, STR, LNG, LNG, INT, INT, STR, INT);
+	/* copyfrom fname (arg 12) */
+	f = sql_create_union(sa, "copyfrom", "sql", "copy_from", FALSE, SCALE_FIX, 0, TABLE, 12, PTR, STR, STR, STR, STR, STR, STR, LNG, LNG, INT, INT, STR, INT);
 	f->varres = 1;
 
 	/* bincopyfrom */

@@ -16227,7 +16227,7 @@ stdout of test 'MAL-signatures` in directory 'clients` itself:
 [ "sql",	"bind_idxbat",	"pattern sql.bind_idxbat(mvc:int, schema:str, table:str, index:str, access:int, part_nr:int, nr_parts:int):bat[:any_1] ",	"mvc_bind_idxbat_wrap;",	"Bind the 'schema.table.index' BAT with access kind:\n\t0 - base table\n\t1 - inserts\n\t2 - updates"	]
 [ "sql",	"clear_table",	"unsafe pattern sql.clear_table(sname:str, tname:str):lng ",	"mvc_clear_table_wrap;",	"Clear the table sname.tname."	]
 [ "sql",	"commit",	"pattern sql.commit():void ",	"SQLcommit;",	"Trigger the commit operation for a MAL block"	]
-[ "sql",	"copy_from",	"unsafe pattern sql.copy_from(sname:str, tname:str, sep:str, rsep:str, ssep:str, ns:str, fname:str, nr:lng, offset:lng, locked:int, best:int, fwf:str, onclient:int):bat[:any]... ",	"mvc_import_table_wrap;",	"Import a table from bstream s with the \n\tgiven tuple and seperators (sep/rsep)"	]
+[ "sql",	"copy_from",	"unsafe pattern sql.copy_from(t:ptr, sep:str, rsep:str, ssep:str, ns:str, fname:str, nr:lng, offset:lng, locked:int, best:int, fwf:str, onclient:int):bat[:any]... ",	"mvc_import_table_wrap;",	"Import a table from bstream s with the \n\tgiven tuple and seperators (sep/rsep)"	]
 [ "sql",	"copy_rejects",	"pattern sql.copy_rejects() (rowid:bat[:lng], fldid:bat[:int], msg:bat[:str], inp:bat[:str]) ",	"COPYrejects;",	""	]
 [ "sql",	"copy_rejects_clear",	"pattern sql.copy_rejects_clear():void ",	"COPYrejects_clear;",	""	]
 [ "sql",	"corr",	"pattern sql.corr(b:bte, c:bte, s:lng, e:lng):dbl ",	"SQLcorr;",	"return the correlation value of groups"	]

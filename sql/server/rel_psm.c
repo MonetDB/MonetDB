@@ -1326,6 +1326,10 @@ create_trigger(sql_query *query, dlist *qname, int time, symbol *trigger_event, 
 			rel = stack_find_rel_view(sql, new_name);
 		if (!rel && old_name)
 			rel = stack_find_rel_view(sql, old_name);
+		if (!rel)
+			rel = stack_find_rel_view(sql, "old");
+		if (!rel)
+			rel = stack_find_rel_view(sql, "new");
 		if (rel)
 			rel = rel_logical_exp(query, rel, condition, sql_where);
 		if (!rel) {
