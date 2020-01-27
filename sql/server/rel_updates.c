@@ -921,7 +921,7 @@ update_check_column(mvc *sql, sql_table *t, sql_column *c, sql_exp *v, sql_rel *
 		rel_destroy(r);
 		return sql_error(sql, 02, SQLSTATE(42S22) "%s: no such column '%s.%s'", action, t->base.name, cname);
 	}
-	if (!table_privs(sql, t, PRIV_UPDATE) && !sql_privilege(sql, sql->user_id, c->base.id, PRIV_UPDATE, 0)) 
+	if (!table_privs(sql, t, PRIV_UPDATE) && !sql_privilege(sql, sql->user_id, c->base.id, PRIV_UPDATE)) 
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: insufficient privileges for user '%s' to update table '%s' on column '%s'", action, stack_get_string(sql, "current_user"), t->base.name, cname);
 	if (!v || (v = rel_check_type(sql, &c->type, r, v, type_equal)) == NULL) {
 		rel_destroy(r);
@@ -1578,16 +1578,15 @@ rel_import(mvc *sql, sql_table *t, const char *tsep, const char *rsep, const cha
 	sql_subtype tpe;
 	sql_exp *import;
 	sql_schema *sys = mvc_bind_schema(sql, "sys");
-	sql_subfunc *f = sql_find_func(sql->sa, sys, "copyfrom", 13, F_UNION, NULL);
+	sql_subfunc *f = sql_find_func(sql->sa, sys, "copyfrom", 12, F_UNION, NULL);
 	char *fwf_string = NULL;
 	
 	if (!f) /* we do expect copyfrom to be there */
 		return NULL;
 	f->res = table_column_types(sql->sa, t);
  	sql_find_subtype(&tpe, "varchar", 0, 0);
-	args = append( append( append( append( append( append( new_exp_list(sql->sa), 
-		exp_atom_str(sql->sa, t->s->base.name, &tpe)), 
-		exp_atom_str(sql->sa, t->base.name, &tpe)), 
+	args = append( append( append( append( append( new_exp_list(sql->sa), 
+		exp_atom_ptr(sql->sa, t)), 
 		exp_atom_str(sql->sa, tsep, &tpe)), 
 		exp_atom_str(sql->sa, rsep, &tpe)), 
 		exp_atom_str(sql->sa, ssep, &tpe)), 

@@ -29,8 +29,8 @@ extern int table_privs(mvc *m, sql_table *t, int privs);
 extern int column_privs(mvc *m, sql_column *c, int privs);
 extern int execute_priv(mvc *m, sql_func *f);
 
-extern int sql_privilege(mvc *m, sqlid auth_id, sqlid obj_id, int privs, int sub);
-extern int sql_grantable(mvc *m, sqlid grantorid, sqlid obj_id, int privs, int sub);
+extern int sql_privilege(mvc *m, sqlid auth_id, sqlid obj_id, int privs);
+extern int sql_grantable(mvc *m, sqlid grantorid, sqlid obj_id, int privs);
 extern sqlid sql_find_auth(mvc *m, str auth);
 extern sqlid sql_find_schema(mvc *m, str schema);
 

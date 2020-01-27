@@ -3028,24 +3028,20 @@ str
 mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	backend *be;
-	mvc *sql;
 	BAT **b = NULL;
 	ssize_t len = 0;
-	sql_schema *sch = NULL;
-	sql_table *t = NULL;
-	const char *sname = *getArgReference_str(stk, pci, pci->retc + 0);
-	const char *tname = *getArgReference_str(stk, pci, pci->retc + 1);
-	const char *tsep = *getArgReference_str(stk, pci, pci->retc + 2);
-	const char *rsep = *getArgReference_str(stk, pci, pci->retc + 3);
-	const char *ssep = *getArgReference_str(stk, pci, pci->retc + 4);
-	const char *ns = *getArgReference_str(stk, pci, pci->retc + 5);
-	const char *fname = *getArgReference_str(stk, pci, pci->retc + 6);
-	lng sz = *getArgReference_lng(stk, pci, pci->retc + 7);
-	lng offset = *getArgReference_lng(stk, pci, pci->retc + 8);
-	int locked = *getArgReference_int(stk, pci, pci->retc + 9);
-	int besteffort = *getArgReference_int(stk, pci, pci->retc + 10);
-	char *fixed_widths = *getArgReference_str(stk, pci, pci->retc + 11);
-	int onclient = *getArgReference_int(stk, pci, pci->retc + 12);
+	sql_table *t = *(sql_table **) getArgReference(stk, pci, pci->retc + 0);
+	const char *tsep = *getArgReference_str(stk, pci, pci->retc + 1);
+	const char *rsep = *getArgReference_str(stk, pci, pci->retc + 2);
+	const char *ssep = *getArgReference_str(stk, pci, pci->retc + 3);
+	const char *ns = *getArgReference_str(stk, pci, pci->retc + 4);
+	const char *fname = *getArgReference_str(stk, pci, pci->retc + 5);
+	lng sz = *getArgReference_lng(stk, pci, pci->retc + 6);
+	lng offset = *getArgReference_lng(stk, pci, pci->retc + 7);
+	int locked = *getArgReference_int(stk, pci, pci->retc + 8);
+	int besteffort = *getArgReference_int(stk, pci, pci->retc + 9);
+	char *fixed_widths = *getArgReference_str(stk, pci, pci->retc + 10);
+	int onclient = *getArgReference_int(stk, pci, pci->retc + 11);
 	str msg = MAL_SUCCEED;
 	bstream *s = NULL;
 	stream *ss;
@@ -3053,17 +3049,11 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;		/* NOT USED */
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
-	if (onclient && !cntxt->filetrans)
-		throw(SQL, "sql.copy_from", SQLSTATE(42000) "Cannot transfer files from client");
+	if (onclient && !cntxt->filetrans) {
+		throw(MAL, "sql.copy_from", "cannot transfer files from client");
+	}
 
 	be = cntxt->sqlcontext;
-	sql = be->mvc;
-
-	if (!(sch = mvc_bind_schema(sql, sname)))
-		throw(SQL, "sql.copy_from", SQLSTATE(3F000) "Schema missing %s", sname);
-	if (!(t = mvc_bind_table(sql, sch, tname)))
-		throw(SQL, "sql.copy_from", SQLSTATE(42S02) "Table missing %s", tname);
-
 	/* The CSV parser expects ssep to have the value 0 if the user does not
 	 * specify a quotation character
 	 */
@@ -3291,17 +3281,19 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
 
-	if (!(s = mvc_bind_schema(m, sname)))
-		throw(SQL, "sql.import_table", SQLSTATE(3F000) "Schema missing %s", sname);
-	if (!(t = mvc_bind_table(m, s, tname)))
-		throw(SQL, "sql.import_table", SQLSTATE(42S02) "Table missing %s", tname);
+	if ((s = mvc_bind_schema(m, sname)) == NULL)
+		throw(SQL, "sql.import_table", SQLSTATE(3F000) "Schema missing %s",sname);
+	t = mvc_bind_table(m, s, tname);
+	if (!t)
+		throw(SQL, "sql", SQLSTATE(42S02) "Table missing %s", tname);
 	if (list_length(t->columns.set) != (pci->argc - (3 + pci->retc)))
-		throw(SQL, "sql.import_table", SQLSTATE(42000) "Not enough columns found in input file");
+		throw(SQL, "sql", SQLSTATE(42000) "Not enough columns found in input file");
 	if (2 * pci->retc + 3 != pci->argc)
-		throw(SQL, "sql.import_table", SQLSTATE(42000) "Not enough output values");
+		throw(SQL, "sql", SQLSTATE(42000) "Not enough output values");
 
-	if (onclient && !cntxt->filetrans)
-		throw(SQL, "sql.copy_from", SQLSTATE(42000) "Cannot transfer files from client");
+	if (onclient && !cntxt->filetrans) {
+		throw(MAL, "sql.copy_from", "cannot transfer files from client");
+	}
 
 	backend *be = cntxt->sqlcontext;
 

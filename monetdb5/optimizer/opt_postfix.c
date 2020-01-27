@@ -69,8 +69,19 @@ OPTpostfixImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			actions++;
 			continue;
 		}
+/* POSTFIX ACTION FOR SORT, could be dropping the last two */
+		if ( getModuleId(p) == algebraRef && getFunctionId(p) == sortRef && getVarEolife(mb, getArg(p, p->retc -1)) == i){
+			delArgument(p, p->retc -1);
+			typeChecker(cntxt->usermodule, mb, p, i, TRUE);
+			actions++;
+			if ( getModuleId(p) == algebraRef && getFunctionId(p) == sortRef && getVarEolife(mb, getArg(p, p->retc -1)) == i){
+				delArgument(p, p->retc -1);
+				typeChecker(cntxt->usermodule, mb, p, i, TRUE);
+				actions++;
+			}
+			continue;
+		}
 	}
-
 	/* Defense line against incorrect plans */
 	if( actions ){
 		// msg = chkTypes(cntxt->usermodule, mb, FALSE);

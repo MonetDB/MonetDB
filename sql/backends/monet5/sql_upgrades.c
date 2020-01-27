@@ -2553,6 +2553,14 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 			"update sys._tables set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
 			" and name = 'queue';\n");
 
+	/* fix sql_privileges entries */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"delete from \"privileges\" where\n"
+			"\"obj_id\" not in (select \"id\" from \"functions\" union select \"id\" from \"tables\" union select \"id\" from \"columns\" union select \"id\" from \"schemas\")\n"
+			"or (\"auth_id\",\"grantor\") not in (select \"id\",\"id\" from \"auths\" union select 0,0);\n"
+			"delete from \"auths\" where \"grantor\" not in (select \"id\" from \"auths\" union select 0);\n"
+			"delete from \"user_role\" where (\"login_id\",\"role_id\") not in (select \"id\",\"id\" from \"auths\" union select 0,0);\n");
+
 	/* 51_sys_schema_extensions */
 	pos += snprintf(buf + pos, bufsize - pos,
 			"ALTER TABLE sys.keywords SET READ WRITE;\n"
@@ -2615,7 +2623,7 @@ SQLupgrades(Client c, mvc *m)
 #endif
 
 	f = sql_bind_func_(m->sa, s, "env", NULL, F_UNION);
-	if (!res && f && sql_privilege(m, ROLE_PUBLIC, f->func->base.id, PRIV_EXECUTE, 0) != PRIV_EXECUTE) {
+	if (!res && f && sql_privilege(m, ROLE_PUBLIC, f->func->base.id, PRIV_EXECUTE) != PRIV_EXECUTE) {
 		sql_table *privs = find_sql_table(s, "privileges");
 		int pub = ROLE_PUBLIC, p = PRIV_EXECUTE, zero = 0;
 
