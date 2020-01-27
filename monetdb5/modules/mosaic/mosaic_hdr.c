@@ -50,6 +50,8 @@ MOSinitHeader(MOStask* task)
 	hdr->bits_dict256 = 0;
 	hdr->pos_dict256 = 0;
 	hdr->length_dict256 = 0;
+
+	task->bsrc->tmosaic->free = MosaicHdrSize;
 }
 
 // position the task on the mosaic blk to be scanned
