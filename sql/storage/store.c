@@ -3583,7 +3583,7 @@ trans_init(sql_trans *tr, backend_stack stk, sql_trans *otr)
 							assert(0);
 						}
 					}
-					if (pt->idxs.set)
+					if (pt->idxs.set && t->idxs.set)
 					for (i = pt->idxs.set->h, j = t->idxs.set->h; i && j; i = i->next, j = j->next ) { 
 						sql_idx *pc = i->data; /* parent transactions column */
 						sql_idx *c = j->data; 
