@@ -362,6 +362,8 @@ MOSfinalizeDictionary_SIGNATURE(NAME, TPE) {
 
 	GET_FINAL_DICT_COUNT(task, NAME) = *length_dict;
 
+	clean_up_info_ID(NAME)(task);
+
 	return MAL_SUCCEED;
 }
 
