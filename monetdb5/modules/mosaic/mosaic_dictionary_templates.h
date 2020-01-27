@@ -1,4 +1,20 @@
 #ifdef PREPARATION_DEFINITION
+
+#define clean_up_info_ID(NAME) CONCAT2(clean_up_info_, NAME)
+
+static inline void clean_up_info_ID(NAME)(MOStask* task) {
+	GlobalDictionaryInfo* info = task->CONCAT2(NAME, _info);
+
+	BBPreclaim(info->dict);
+	BBPreclaim(info->admin);
+	BBPreclaim(info->selection_vector);
+	BBPreclaim(info->increments);
+
+	GDKfree(info);
+
+	task->CONCAT2(NAME, _info) = NULL;
+}
+
 MOSprepareDictionaryContext_SIGNATURE(NAME)
 {
 	const unsigned int zero = 0;
@@ -8,7 +24,7 @@ MOSprepareDictionaryContext_SIGNATURE(NAME)
 	BAT* source = task->bsrc;
 
 	if ( (*info = GDKmalloc(sizeof(GlobalDictionaryInfo))) == NULL ) {
-		throw(MAL,"mosaic." STRINGIFY(NAME) ,MAL_MALLOC_FAIL);	
+		throw(MAL,"mosaic." STRINGIFY(NAME) ,MAL_MALLOC_FAIL);
 	}
 	(*info)->previous_start = task->start;
 
@@ -98,19 +114,16 @@ finalize:
 		BBPreclaim(unsorted_dict);
 		BBPreclaim(cand_capped_dict);
 
-		if (msg != MAL_SUCCEED) {
-			BBPreclaim(dict);
-			BBPreclaim(admin);
-			BBPreclaim(selection_vector);
-			BBPreclaim(increments);
-		}
+		if (msg != MAL_SUCCEED) clean_up_info_ID(NAME)(task);
 
 		return msg;
 }
+
 #endif
 
 #ifdef COMPRESSION_DEFINITION
 MOSestimate_SIGNATURE(NAME, TPE) {
+	str msg = MAL_SUCCEED;
 	(void) previous;
 	GlobalDictionaryInfo* info = task->CONCAT2(NAME, _info);
 	BUN limit = (BUN) (task->stop - task->start > MOSAICMAXCNT? MOSAICMAXCNT: task->stop - task->start);
@@ -124,10 +137,10 @@ MOSestimate_SIGNATURE(NAME, TPE) {
 
 	bool full_build = true;
 
-	BUN neg_start;
-	BUN neg_limit;
-	BUN pos_start;
-	BUN pos_limit;
+	BUN neg_start = 0;
+	BUN neg_limit = 0;
+	BUN pos_start = 0;
+	BUN pos_limit = 0;
 	if (task->start < info->previous_start + info->previous_limit) {
 		neg_start = info->previous_start;
 		neg_limit = task->start - info->previous_start;
@@ -153,7 +166,11 @@ MOSestimate_SIGNATURE(NAME, TPE) {
 		/* TODO: I think there is a bug here when using dict256. What if dictionary estimates exits prematurely*/
 	}
 
-	BAT* pos_slice = BATslice(task->bsrc, pos_start, pos_start + pos_limit); /*TODO CHECK ERROR*/
+	BAT* pos_slice;
+	if ((pos_slice = BATslice(task->bsrc, pos_start, pos_start + pos_limit)) == NULL) {
+		clean_up_info_ID(NAME)(task);
+		throw(MAL, "BATslice.pos_slice", MAL_MALLOC_FAIL);
+	}
 
 	BAT* selection_vector = info->selection_vector;
 	BATcount(selection_vector) = 0;
@@ -199,7 +216,12 @@ MOSestimate_SIGNATURE(NAME, TPE) {
 			Tsize(selection_vector), 0, selection_vector->ttype, false, false);
 	}
 	else /*incremental build*/ {
-		BAT* neg_slice = BATslice(task->bsrc, neg_start, neg_start + neg_limit); /*TODO CHECK ERROR*/
+		BAT* neg_slice;
+		if ((neg_slice = BATslice(task->bsrc, neg_start, neg_start + neg_limit)) == NULL){
+			clean_up_info_ID(NAME)(task);
+			throw(MAL, "BATslice.neg_slice", MAL_MALLOC_FAIL);
+		}
+
 		TPE* slice_val = Tloc(neg_slice, 0);
 
 		BUN nr_neg_candidates = 0;
@@ -282,7 +304,7 @@ MOSestimate_SIGNATURE(NAME, TPE) {
 	current->uncompressed_size	+= (BUN) ( nr_compressed * sizeof(TPE));
 	current->compressed_size 	+= (BUN) (wordaligned( MosaicBlkSize, BitVectorChunk) + new_bytes - old_bytes);
 
-	return MAL_SUCCEED;
+	return msg;
 }
 
 MOSpostEstimate_SIGNATURE(NAME, TPE) {
@@ -318,9 +340,8 @@ MOSfinalizeDictionary_SIGNATURE(NAME, TPE) {
 	BUN size_in_bytes = vmh->free + GetSizeInBytes(info);
 
 	if (HEAPextend(vmh, size_in_bytes, true) != GDK_SUCCEED) {
-		BBPreclaim(info->dict);
-		BBPreclaim(info->admin);
-		throw(MAL, "mosaic.mergeDictionary_" STRINGIFY(NAME) ".HEAPextend", GDK_EXCEPTION);
+		clean_up_info_ID(NAME)(task);
+		throw(MAL, "HEAPextend", GDK_EXCEPTION);
 	}
 
 	TPE* dst = (TPE*) (vmh->base + vmh->free);
@@ -340,13 +361,6 @@ MOSfinalizeDictionary_SIGNATURE(NAME, TPE) {
 	calculateBits(*bits_dict, *length_dict);
 
 	GET_FINAL_DICT_COUNT(task, NAME) = *length_dict;
-
-	BBPreclaim(info->dict);
-	BBPreclaim(info->admin);
-	BBPreclaim(info->selection_vector);
-	BBPreclaim(info->increments);
-
-	GDKfree(info);
 
 	return MAL_SUCCEED;
 }
