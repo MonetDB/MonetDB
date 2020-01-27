@@ -2611,7 +2611,7 @@ SQLupgrades(Client c, mvc *m)
 #endif
 
 	f = sql_bind_func_(m->sa, s, "env", NULL, F_UNION);
-	if (!res && f && sql_privilege(m, ROLE_PUBLIC, f->func->base.id, PRIV_EXECUTE, 0) != PRIV_EXECUTE) {
+	if (!res && f && sql_privilege(m, ROLE_PUBLIC, f->func->base.id, PRIV_EXECUTE) != PRIV_EXECUTE) {
 		sql_table *privs = find_sql_table(s, "privileges");
 		int pub = ROLE_PUBLIC, p = PRIV_EXECUTE, zero = 0;
 
