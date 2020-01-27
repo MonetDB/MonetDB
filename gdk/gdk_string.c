@@ -1232,7 +1232,7 @@ GDKanalytical_str_group_concat(BAT *r, BAT *b, BAT *sep, BAT *s, BAT *e, const c
 		next_group_length = next_length = offset = 0;
 
 		for (j = start[i]; j < l; j++) {
-			sb = BUNtvar(bi, j);
+			sb = BUNtvar(bi, (BUN) j);
 
 			if (separator) {
 				if (!GDK_STRNIL(sb)) {
@@ -1242,7 +1242,7 @@ GDKanalytical_str_group_concat(BAT *r, BAT *b, BAT *sep, BAT *s, BAT *e, const c
 					empty = false;
 				}
 			} else { /* sep case */
-				sl = BUNtvar(bis, j);
+				sl = BUNtvar(bis, (BUN) j);
 
 				if (!GDK_STRNIL(sb)) {
 					next_group_length += strlen(sb);
@@ -1267,7 +1267,7 @@ GDKanalytical_str_group_concat(BAT *r, BAT *b, BAT *sep, BAT *s, BAT *e, const c
 		}
 
 		for (j = start[i]; j < l; j++) {
-			sb = BUNtvar(bi, j);
+			sb = BUNtvar(bi, (BUN) j);
 
 			if (separator) {
 				if (GDK_STRNIL(sb))
@@ -1281,7 +1281,7 @@ GDKanalytical_str_group_concat(BAT *r, BAT *b, BAT *sep, BAT *s, BAT *e, const c
 				offset += next_length;
 				empty = false;
 			} else { /* sep case */
-				sl = BUNtvar(bis, j);
+				sl = BUNtvar(bis, (BUN) j);
 
 				if (GDK_STRNIL(sb))
 					continue;
