@@ -265,20 +265,17 @@ static inline BUN get_normalized_compression(MosaicEstimation* current, const Mo
 
 static str
 MOSprepareDictionaryContext(MOStask* task) {
-
 	str error;
 	if (METHOD_IS_SET(task->mask, MOSAIC_DICT256)){
-		if ( (error = MOSprepareDictionaryContext_dict256(task))) {
+		if ( (error = MOSprepareDictionaryContext_ID(dict256)(task))) {
 			return error;
 		}
 	}
-
 	if (METHOD_IS_SET(task->mask, MOSAIC_DICT)){
-		if ( (error = MOSprepareDictionaryContext_dict(task))) {
+		if ( (error = MOSprepareDictionaryContext_ID(dict)(task))) {
 			return error;
 		}
 	}
-
 	return MAL_SUCCEED;
 }
 
@@ -331,12 +328,12 @@ str MOSestimate(MOStask* task, BAT* estimates, size_t* compressed_size) {
 {\
 	str error;\
 	if (METHOD_IS_SET(task->mask, MOSAIC_DICT)) {\
-		if ((error = MOSfinalizeDictionary_NAME(dict, TPE)(task))) {\
+		if ((error = MOSfinalizeDictionary_ID(dict, TPE)(task))) {\
 			return error;\
 		}\
 	}\
 	if (METHOD_IS_SET(task->mask, MOSAIC_DICT256)) {\
-		if ((error = MOSfinalizeDictionary_NAME(dict256, TPE)(task))) {\
+		if ((error = MOSfinalizeDictionary_ID(dict256, TPE)(task))) {\
 			return error;\
 		}\
 	}\

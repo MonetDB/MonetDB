@@ -39,22 +39,26 @@ ALIGNMENT_HELPER_TPE(NAME, TPE)\
 };
 
 #define MOSadvance_SIGNATURE(NAME, TPE) void CONCAT4(MOSadvance_, NAME, _, TPE)(MOStask* task)
-#define MOSprepareDictionaryContext_NAME(NAME) MOSprepareDictionaryContext_##NAME
-#define MOSprepareDictionaryContext_SIGNATURE(NAME) str MOSprepareDictionaryContext_NAME(NAME)(MOStask* task)
+#define MOSprepareDictionaryContext_ID(NAME) MOSprepareDictionaryContext_##NAME
+#define MOSprepareDictionaryContext_SIGNATURE(NAME) str MOSprepareDictionaryContext_ID(NAME)(MOStask* task)
 #define MOSestimate_SIGNATURE(NAME, TPE) str CONCAT4(MOSestimate_, NAME, _, TPE)(MOStask* task, MosaicEstimation* current, const MosaicEstimation* previous)
 #define MOSpostEstimate_SIGNATURE(NAME, TPE) void CONCAT4(MOSpostEstimate_, NAME, _, TPE)(MOStask* task)
-#define MOSfinalizeDictionary_NAME(NAME, TPE) MOSfinalizeDictionary_##NAME##_##TPE
-#define MOSfinalizeDictionary_SIGNATURE(NAME, TPE) str MOSfinalizeDictionary_NAME(NAME, TPE)(MOStask* task)
+#define MOSfinalizeDictionary_ID(NAME, TPE) MOSfinalizeDictionary_##NAME##_##TPE
+#define MOSfinalizeDictionary_SIGNATURE(NAME, TPE) str MOSfinalizeDictionary_ID(NAME, TPE)(MOStask* task)
 #define MOScompress_SIGNATURE(NAME, TPE) void CONCAT4(MOScompress_, NAME, _, TPE)(MOStask* task, MosaicBlkRec* estimate)
 #define MOSdecompress_SIGNATURE(NAME, TPE) void CONCAT4(MOSdecompress_, NAME, _, TPE)(MOStask* task)
 #define MOSBlockHeader_DEF(NAME, TPE) MosaicBlkHeader_DEF_##NAME(TPE)
-#define MOSselect_FUNC(NAME, TPE) CONCAT4(MOSselect_, NAME, _, TPE)
-#define MOSselect_SIGNATURE(NAME, TPE) str MOSselect_FUNC(NAME, TPE)(MOStask* task, TPE tl, TPE th, bool li, bool hi, bool anti)
 
 #define MOSscanloop_ID(NAME, TPE, CAND_ITER, TEST) CONCAT2(CONCAT4(scan_loop_, NAME, _, TPE), CONCAT4(_, CAND_ITER, _, TEST))
 #define MOSscanloop_ARGS(TPE) (const bool has_nil, const bool anti, MOStask* task, BUN first, BUN last, TPE tl, TPE th, bool li, bool hi)
 #define MOSscanloop_SIGNATURE(NAME, TPE, CAND_ITER, TEST) static inline void MOSscanloop_ID(NAME, TPE, CAND_ITER, TEST) MOSscanloop_ARGS(TPE)
 
+#define MOSselect_FUNC(NAME, TPE) CONCAT4(MOSselect_, NAME, _, TPE)
+#define MOSselect_SIGNATURE(NAME, TPE) str MOSselect_FUNC(NAME, TPE)(MOStask* task, TPE tl, TPE th, bool li, bool hi, bool anti)
+
+#define MOSprojectionloop_ID(NAME, TPE, CAND_ITER) CONCAT6(projection_loop_, NAME, _, TPE, _, CAND_ITER)
+#define MOSprojectionloop_ARGS (MOStask* task, BUN first, BUN last)
+#define MOSprojectionloop_SIGNATURE(NAME, TPE, CAND_ITER, TEST) static inline void MOSprojectionloop_ID(NAME, TPE, CAND_ITER) MOSprojectionloop_ARGS
 
 #define MOSprojection_FUNC(NAME, TPE) CONCAT4(MOSprojection_, NAME, _, TPE)
 #define MOSprojection_SIGNATURE(NAME, TPE)  str MOSprojection_FUNC(NAME, TPE) (MOStask* task)
