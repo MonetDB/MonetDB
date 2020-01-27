@@ -805,10 +805,15 @@ sql_create_user(mvc *sql, char *user, char *passwd, char enc, char *fullname, ch
 	return NULL;
 }
 
-char *
-sql_drop_user(mvc *sql, char *user)
+static int
+id_cmp(sqlid *id1, sqlid *id2)
 {
-	sqlid user_id = sql_find_auth(sql, user);
+	return *id1 == *id2;
+}
+
+static char *
+sql_drop_granted_users(mvc *sql, sqlid user_id, char *user, list *deleted_users)
+{
 	sql_schema *ss = mvc_bind_schema(sql, "sys");
 	sql_table *privs = mvc_bind_table(sql, ss, "privileges");
 	sql_table *user_roles = mvc_bind_table(sql, ss, "user_role");
@@ -817,33 +822,70 @@ sql_drop_user(mvc *sql, char *user)
 	rids *A;
 	oid rid;
 
-	if (mvc_check_dependency(sql, user_id, OWNER_DEPENDENCY, NULL))
-		throw(SQL,"sql.drop_user",SQLSTATE(M1M05) "DROP USER: '%s' owns a schema", user);
-	if (backend_drop_user(sql, user) == FALSE)
-		throw(SQL,"sql.drop_user",SQLSTATE(M0M27) "%s", sql->errstr);
+	if (!list_find(deleted_users, &user_id, (fcmp) &id_cmp)) {
+		if (mvc_check_dependency(sql, user_id, OWNER_DEPENDENCY, NULL))
+			throw(SQL,"sql.drop_user",SQLSTATE(M1M05) "DROP USER: '%s' owns a schema", user);
+		if (backend_drop_user(sql, user) == FALSE)
+			throw(SQL,"sql.drop_user",SQLSTATE(M0M27) "%s", sql->errstr);
 
-	/* select privileges of this user_id */
-	A = table_funcs.rids_select(tr, find_sql_column(privs, "auth_id"), &user_id, &user_id, NULL);
-	/* remove them */
-	for(rid = table_funcs.rids_next(A); !is_oid_nil(rid); rid = table_funcs.rids_next(A))
-		table_funcs.table_delete(tr, privs, rid);
-	table_funcs.rids_destroy(A);
+		/* select privileges of this user_id */
+		A = table_funcs.rids_select(tr, find_sql_column(privs, "auth_id"), &user_id, &user_id, NULL);
+		/* remove them */
+		for(rid = table_funcs.rids_next(A); !is_oid_nil(rid); rid = table_funcs.rids_next(A))
+			table_funcs.table_delete(tr, privs, rid);
+		table_funcs.rids_destroy(A);
 
-	/* delete entry from auths table */
-	rid = table_funcs.column_find_row(tr, find_sql_column(auths, "name"), user, NULL);
-	if (is_oid_nil(rid))
-		throw(SQL, "sql.drop_user", SQLSTATE(0P000) "DROP USER: no such user role '%s'", user);
-	table_funcs.table_delete(tr, auths, rid);
+		/* select privileges granted by this user_id */
+		A = table_funcs.rids_select(tr, find_sql_column(privs, "grantor"), &user_id, &user_id, NULL);
+		/* remove them */
+		for(rid = table_funcs.rids_next(A); !is_oid_nil(rid); rid = table_funcs.rids_next(A))
+			table_funcs.table_delete(tr, privs, rid);
+		table_funcs.rids_destroy(A);
 
-	/* select user roles of this user_id */
-	A = table_funcs.rids_select(tr, find_sql_column(user_roles, "login_id"), &user_id, &user_id, NULL);
-	/* remove them */
-	for(rid = table_funcs.rids_next(A); !is_oid_nil(rid); rid = table_funcs.rids_next(A))
-		table_funcs.table_delete(tr, user_roles, rid);
-	table_funcs.rids_destroy(A);
+		/* delete entry from auths table */
+		rid = table_funcs.column_find_row(tr, find_sql_column(auths, "name"), user, NULL);
+		if (is_oid_nil(rid))
+			throw(SQL, "sql.drop_user", SQLSTATE(0P000) "DROP USER: no such user role '%s'", user);
+		table_funcs.table_delete(tr, auths, rid);
 
-	tr->schema_updates++;
+		/* select user roles of this user_id */
+		A = table_funcs.rids_select(tr, find_sql_column(user_roles, "login_id"), &user_id, &user_id, NULL);
+		/* remove them */
+		for(rid = table_funcs.rids_next(A); !is_oid_nil(rid); rid = table_funcs.rids_next(A))
+			table_funcs.table_delete(tr, user_roles, rid);
+		table_funcs.rids_destroy(A);
+
+		list_append(deleted_users, &user_id);
+
+		/* select users created by this user_id */
+		A = table_funcs.rids_select(tr, find_sql_column(auths, "grantor"), &user_id, &user_id, NULL);
+		/* remove them and continue the deletion */
+		for(rid = table_funcs.rids_next(A); !is_oid_nil(rid); rid = table_funcs.rids_next(A)) {
+			sqlid nuid = *(sqlid*)table_funcs.column_find_value(tr, find_sql_column(auths, "id"), rid);
+			char* nname = table_funcs.column_find_value(tr, find_sql_column(auths, "name"), rid);
+
+			sql_drop_granted_users(sql, nuid, nname, deleted_users);
+			table_funcs.table_delete(tr, auths, rid);
+		}
+		table_funcs.rids_destroy(A);
+	}
 	return NULL;
+}
+
+char *
+sql_drop_user(mvc *sql, char *user)
+{
+	sqlid user_id = sql_find_auth(sql, user);
+	list *deleted = list_create(NULL);
+	str msg = NULL;
+
+	if (!deleted)
+		throw(SQL, "sql.drop_user", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	msg = sql_drop_granted_users(sql, user_id, user, deleted);
+	list_destroy(deleted);
+
+	sql->session->tr->schema_updates++;
+	return msg;
 }
 
 char *
