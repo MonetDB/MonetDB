@@ -76,9 +76,7 @@ QUERY = -- some typos
         i:= 1 + 1 + 1;
         j:= 1 + + 1;
 ERROR = !SyntaxException:parseError:-- some typos
-        !SyntaxException:parseError:^convertConstant: integer parse error
-        !SyntaxException:parseError:i:= 1 + 1 + 1;
-        !SyntaxException:parseError:^<identifier> expected
+        !SyntaxException:parseError:^<identifier> or <literal> expected
         !SyntaxException:parseError:i:= 1 + 1 + 1;
         !SyntaxException:parseError:          ^';' expected
         !SyntaxException:parseError:j:= 1 + + 1;

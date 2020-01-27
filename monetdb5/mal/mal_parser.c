@@ -588,8 +588,6 @@ handleInts:
 			} else {
 				cst->vtype = TYPE_hge;
 				cst->val.hval = l;
-				if (is_hge_nil(l))
-					parseError(cntxt, "convertConstant: integer parse error\n");
 			}
 #else
 			size_t len = sizeof(lng);
@@ -603,8 +601,6 @@ handleInts:
 			} else {
 				cst->vtype = TYPE_lng;
 				cst->val.lval = l;
-				if (is_lng_nil(l))
-					parseError(cntxt, "convertConstant: integer parse error\n");
 			}
 #endif
 		}
@@ -1563,7 +1559,7 @@ parseAssign(Client cntxt, int cntrl)
 			l = idLength(cntxt);
 			i = cstToken(cntxt, &cst);
 			if (l == 0 || i) {
-				parseError(cntxt, "<identifier> expected\n");
+				parseError(cntxt, "<identifier> or <literal> expected\n");
 				freeInstruction(curInstr);
 				return;
 			}
@@ -1604,7 +1600,7 @@ parseAssign(Client cntxt, int cntrl)
 				curInstr->argv[0] = getBarrierEnvelop(curBlk);
 				if (currChar(cntxt) != ';') {
 					freeInstruction(curInstr);
-					parseError(cntxt, "<identifier> expected in control statement\n");
+					parseError(cntxt, "<identifier> or <literal> expected in control statement\n");
 					return;
 				}
 				pushInstruction(curBlk, curInstr);
@@ -1612,7 +1608,7 @@ parseAssign(Client cntxt, int cntrl)
 			}
 			getArg(curInstr, 0) = newTmpVariable(curBlk, TYPE_any);
 			freeInstruction(curInstr);
-			parseError(cntxt, "<identifier> expected\n");
+			parseError(cntxt, "<identifier> or <literal> expected\n");
 			return;
 		}
 		/* Check if we are dealing with module.fcn call*/
