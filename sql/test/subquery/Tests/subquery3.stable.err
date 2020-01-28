@@ -148,6 +148,30 @@ QUERY = SELECT
         FROM integers i1; --error, aggregation functions cannot be nested
 ERROR = !SUM: aggregate functions cannot be nested
 CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-36813/.s.monetdb.31552
+QUERY = SELECT col1 FROM another_T WHERE (col2, col3) IN (SELECT 1); -- error, missing columns in the subquery
+ERROR = !subquery has too few columns
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-36813/.s.monetdb.31552
+QUERY = SELECT col1 FROM another_T WHERE (col2, 1) IN (SELECT 1); -- error, missing columns in the subquery
+ERROR = !subquery has too few columns
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-36813/.s.monetdb.31552
+QUERY = SELECT col1 FROM another_T WHERE (1, col2) IN (SELECT 1); -- error, missing columns in the subquery
+ERROR = !subquery has too few columns
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-36813/.s.monetdb.31552
+QUERY = SELECT col1 FROM another_T WHERE (1, 1) IN (SELECT 1); -- error, missing columns in the subquery
+ERROR = !subquery has too few columns
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-36813/.s.monetdb.31552
+QUERY = SELECT col1 FROM another_T WHERE (col2) IN (SELECT 1,2); -- error, too many columns in the subquery
+ERROR = !SELECT: subquery must return only one column
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-36813/.s.monetdb.31552
+QUERY = SELECT col1 FROM another_T WHERE (col2, col3) IN (SELECT 1,2,3); -- error, too many columns in the subquery
+ERROR = !subquery has too many columns
+CODE  = 42000
 
 # 17:40:41 >  
 # 17:40:41 >  "Done."

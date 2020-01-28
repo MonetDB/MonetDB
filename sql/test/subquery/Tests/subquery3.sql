@@ -371,6 +371,10 @@ SELECT col1 FROM another_T WHERE (1, col2) IN (SELECT 1); -- error, missing colu
 
 SELECT col1 FROM another_T WHERE (1, 1) IN (SELECT 1); -- error, missing columns in the subquery
 
+SELECT col1 FROM another_T WHERE (col2) IN (SELECT 1,2); -- error, too many columns in the subquery
+
+SELECT col1 FROM another_T WHERE (col2, col3) IN (SELECT 1,2,3); -- error, too many columns in the subquery
+
 /* We shouldn't allow the following internal functions/procedures to be called from regular queries */
 --SELECT "identity"(col1) FROM another_T;
 --SELECT "rowid"(col1) FROM another_T;

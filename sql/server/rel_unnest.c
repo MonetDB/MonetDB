@@ -2085,10 +2085,11 @@ rewrite_anyequal(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 					list *t = le->f;
 					list *l = sa_list(sql->sa);
 					list *r = sa_list(sql->sa);
+					int s1 = list_length(t), s2 = list_length(rsq->exps);
 
 					/* find out list of right expression */
-					if (list_length(t) != list_length(rsq->exps))
-						return NULL;
+					if (s1 != s2)
+						return sql_error(sql, 02, SQLSTATE(42000) "subquery has too %s columns", (s2 < s1) ? "few" : "many");
 					for (node *n = t->h, *m = rsq->exps->h; n && m; n = n->next, m = m->next ) {
 						sql_exp *le = n->data;
 						sql_exp *re = m->data;
