@@ -371,6 +371,9 @@ SELECT (1,2) IN (1,2); --error, trying to match a tuple with a number
 
 SELECT (1,2) IN (1); --error, trying to match a tuple with a number
 
+SELECT (col1, col2) IN (VALUES (1)); --error, subquery has too few columns
+
+SELECT (col1, col2) IN (1) from another_T; --error, trying to match a tuple with a number
 
 SELECT col1 FROM another_T WHERE (col2, col3) IN (1,2,3); --error, test tuple against individual numbers
 

@@ -417,6 +417,16 @@ stdout of test 'subquery3` in directory 'sql/test/subquery` itself:
 % col1 # name
 % int # type
 % 1 # length
+#SELECT col1 FROM another_T WHERE (col2, col3) IN (VALUES(1,2)); --empty
+% sys.another_t # table_name
+% col1 # name
+% int # type
+% 1 # length
+#SELECT col1 FROM another_T WHERE (col2, col3) IN (SELECT 1,2); --empty
+% sys.another_t # table_name
+% col1 # name
+% int # type
+% 1 # length
 #DROP TABLE tbl_ProductSales;
 #DROP TABLE another_T;
 

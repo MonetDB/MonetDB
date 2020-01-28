@@ -1913,19 +1913,28 @@ rel_union_exps(mvc *sql, sql_exp **l, list *vals, int is_tuple)
 	sql_rel *u = NULL;
 	list *exps = NULL;
 
-	for(node *n=vals->h; n; n = n->next) {
-		sql_exp *ve = n->data, *r;
+	for (node *n=vals->h; n; n = n->next) {
+		sql_exp *ve = n->data, *r, *s;
 		sql_rel *sq = NULL;
 
 		if (exp_has_rel(ve)) 
 			sq = exp_rel_get_rel(sql->sa, ve); /* get subquery */
 		else
 			sq = rel_project(sql->sa, NULL, append(sa_list(sql->sa), ve));
-		/* TODO merge expressions (could x+ cast(y) where y is result of a sub query) */
-		r = sq->exps->t->data;
-		if (!is_tuple && rel_convert_types(sql, NULL, NULL, l, &r, 1, type_equal) < 0)
-			return NULL;
-		sq->exps->t->data = r;
+		if (is_tuple) { /* cast each one */
+			for (node *m=sq->exps->h, *o = ((list *)(*l)->f)->h; m && o; m = m->next, o = o->next) {
+				r = m->data;
+				s = o->data;
+				if (rel_convert_types(sql, NULL, NULL, &s, &r, 1, type_equal) < 0)
+					return NULL;
+				m->data = r;
+			}
+		} else {
+			r = sq->exps->t->data;
+			if (rel_convert_types(sql, NULL, NULL, l, &r, 1, type_equal) < 0)
+				return NULL;
+			sq->exps->t->data = r;
+		}
 		if (!u) {
 			u = sq;
 			exps = rel_projections(sql, sq, NULL, 1/*keep names */, 1);
