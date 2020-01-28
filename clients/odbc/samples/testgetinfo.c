@@ -114,7 +114,8 @@ main(int argc, char **argv)
 	check(ret, SQL_HANDLE_ENV, env, "SQLAllocHandle 1");
 
 	ret = SQLConnect(dbc, (SQLCHAR *) dsn, SQL_NTS, (SQLCHAR *) user, SQL_NTS, (SQLCHAR *) pass, SQL_NTS);
-	check(ret, SQL_HANDLE_DBC, dbc, "SQLConnect");
+	if (!check(ret, SQL_HANDLE_DBC, dbc, "SQLConnect"))
+		exit(1);
 
 	ret = SQLGetInfo(dbc, SQL_ACCESSIBLE_PROCEDURES, str, sizeof(str), &resultlen);
 	if (check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo SQL_ACCESSIBLE_PROCEDURES")) {

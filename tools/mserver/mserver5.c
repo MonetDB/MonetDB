@@ -152,16 +152,24 @@ monet_hello(void)
 		sz_mem_h /= 1024.0;
 		qi++;
 	}
-	printf("# Found %.3f %ciB available main-memory",
-			sz_mem_h, qc[qi]);
+	printf("# Found %.3f %ciB available main-memory", sz_mem_h, qc[qi]);
 	sz_mem_h = (double) GDK_mem_maxsize;
 	qi = 0;
 	while (sz_mem_h >= 1000.0 && qi < 6) {
 		sz_mem_h /= 1024.0;
 		qi++;
 	}
-	printf(" of which we use %.3f %ciB\n",
-			sz_mem_h, qc[qi]);
+	printf(" of which we use %.3f %ciB\n", sz_mem_h, qc[qi]);
+	if (GDK_vm_maxsize < GDK_VM_MAXSIZE) {
+		sz_mem_h = (double) GDK_vm_maxsize;
+		qi = 0;
+		while (sz_mem_h >= 1000.0 && qi < 6) {
+			sz_mem_h /= 1024.0;
+			qi++;
+		}
+		printf("# Virtual memory usage limited to %.3f %ciB\n",
+		       sz_mem_h, qc[qi]);
+	}
 #ifdef MONET_GLOBAL_DEBUG
 	printf("# Database path:%s\n", GDKgetenv("gdk_dbpath"));
 	printf("# Module path:%s\n", GDKgetenv("monet_mod_path"));

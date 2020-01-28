@@ -23,7 +23,7 @@ project_##TYPE(BAT *bn, BAT *l, struct canditer *restrict ci, BAT *r, bool nilch
 	BUN lo, hi;							\
 	const TYPE *restrict rt;					\
 	TYPE *restrict bt;						\
-	TYPE v;								\
+	TYPE v, prev = TYPE##_nil;					\
 	oid rseq, rend;							\
 	bool hasnil = false;						\
 									\
@@ -32,8 +32,17 @@ project_##TYPE(BAT *bn, BAT *l, struct canditer *restrict ci, BAT *r, bool nilch
 	rseq = r->hseqbase;						\
 	rend = rseq + BATcount(r);					\
 	if (ci) {							\
-		for (lo = 0, hi = ci->ncand; lo < hi; lo++) {		\
-			oid o = canditer_next(ci);			\
+		oid o = canditer_next(ci);				\
+		if (o < rseq || o >= rend) {				\
+			GDKerror("BATproject: does not match always\n"); \
+			return GDK_FAIL;				\
+		}							\
+		v = rt[o - rseq];					\
+		bt[0] = v;						\
+		hasnil |= is_##TYPE##_nil(v);				\
+		prev = v;						\
+		for (lo = 1, hi = ci->ncand; lo < hi; lo++) {		\
+			o = canditer_next(ci);				\
 			if (o < rseq || o >= rend) {			\
 				GDKerror("BATproject: does not match always\n"); \
 				return GDK_FAIL;			\
@@ -41,13 +50,58 @@ project_##TYPE(BAT *bn, BAT *l, struct canditer *restrict ci, BAT *r, bool nilch
 			v = rt[o - rseq];				\
 			bt[lo] = v;					\
 			hasnil |= is_##TYPE##_nil(v);			\
+			if (is_##TYPE##_nil(prev)) {			\
+				if (is_##TYPE##_nil(v)) {		\
+					if (bn->tnokey[1] == 0) {	\
+						bn->tkey = false;	\
+						bn->tnokey[0] = lo - 1;	\
+						bn->tnokey[1] = lo;	\
+					}				\
+				} else {				\
+					if (bn->trevsorted) {		\
+						bn->trevsorted = false;	\
+						bn->tnorevsorted = lo;	\
+					}				\
+				}					\
+			} else if (is_##TYPE##_nil(v) || v < prev) {	\
+				if (bn->tsorted) {			\
+					bn->tsorted = false;		\
+					bn->tkey = false; /* not sure */ \
+					bn->tnosorted = lo;		\
+				}					\
+			} else if (v > prev) {				\
+				if (bn->trevsorted) {			\
+					bn->trevsorted = false;		\
+					bn->tnorevsorted = lo;		\
+				}					\
+			} else /* v == prev */ {			\
+				if (bn->tnokey[1] == 0) {		\
+					bn->tkey = false;		\
+					bn->tnokey[0] = lo - 1;		\
+					bn->tnokey[1] = lo;		\
+				}					\
+			}						\
+			prev = v;					\
 		}							\
 	} else {							\
 		const oid *restrict o = (const oid *) Tloc(l, 0);	\
-		for (lo = 0, hi = BATcount(l); lo < hi; lo++) {		\
+		if (is_oid_nil(o[0])) {					\
+			assert(nilcheck);				\
+			bt[0] = v = TYPE##_nil;				\
+			hasnil = true;					\
+		} else if (o[0] < rseq || o[0] >= rend) {		\
+			GDKerror("BATproject: does not match always\n"); \
+			return GDK_FAIL;				\
+		} else {						\
+			v = rt[o[0] - rseq];				\
+			bt[0] = v;					\
+			hasnil |= is_##TYPE##_nil(v);			\
+		}							\
+		prev = v;						\
+		for (lo = 1, hi = BATcount(l); lo < hi; lo++) {		\
 			if (is_oid_nil(o[lo])) {			\
 				assert(nilcheck);			\
-				bt[lo] = TYPE##_nil;			\
+				bt[lo] = v = TYPE##_nil;		\
 				hasnil = true;				\
 			} else if (o[lo] < rseq || o[lo] >= rend) {	\
 				GDKerror("BATproject: does not match always\n"); \
@@ -57,6 +111,38 @@ project_##TYPE(BAT *bn, BAT *l, struct canditer *restrict ci, BAT *r, bool nilch
 				bt[lo] = v;				\
 				hasnil |= is_##TYPE##_nil(v);		\
 			}						\
+			if (is_##TYPE##_nil(prev)) {			\
+				if (is_##TYPE##_nil(v)) {		\
+					if (bn->tnokey[1] == 0) {	\
+						bn->tkey = false;	\
+						bn->tnokey[0] = lo - 1;	\
+						bn->tnokey[1] = lo;	\
+					}				\
+				} else {				\
+					if (bn->trevsorted) {		\
+						bn->trevsorted = false;	\
+						bn->tnorevsorted = lo;	\
+					}				\
+				}					\
+			} else if (is_##TYPE##_nil(v) || v < prev) {	\
+				if (bn->tsorted) {			\
+					bn->tsorted = false;		\
+					bn->tkey = false; /* not sure */ \
+					bn->tnosorted = lo;		\
+				}					\
+			} else if (v > prev) {				\
+				if (bn->trevsorted) {			\
+					bn->trevsorted = false;		\
+					bn->tnorevsorted = lo;		\
+				}					\
+			} else /* v == prev */ {			\
+				if (bn->tnokey[1] == 0) {		\
+					bn->tkey = false;		\
+					bn->tnokey[0] = lo - 1;		\
+					bn->tnokey[1] = lo;		\
+				}					\
+			}						\
+			prev = v;					\
 		}							\
 	}								\
 	if (nilcheck && hasnil) {					\
@@ -379,6 +465,17 @@ BATproject(BAT *l, BAT *r)
 		break;
 	default:
 		res = project_any(bn, l, lci, r, nilcheck);
+		/* some properties follow from certain combinations of input
+		 * properties */
+		if (BATcount(bn) <= 1) {
+			bn->tkey = true;
+			bn->tsorted = true;
+			bn->trevsorted = true;
+		} else {
+			bn->tkey = l->tkey && r->tkey;
+			bn->tsorted = (l->tsorted & r->tsorted) | (l->trevsorted & r->trevsorted);
+			bn->trevsorted = (l->tsorted & r->trevsorted) | (l->trevsorted & r->tsorted);
+		}
 		break;
 	}
 
@@ -413,17 +510,9 @@ BATproject(BAT *l, BAT *r)
 		bn->tshift = r->tshift;
 
 		bn->tnil = false; /* we don't know */
-	}
-	/* some properties follow from certain combinations of input
-	 * properties */
-	if (BATcount(bn) <= 1) {
-		bn->tkey = true;
-		bn->tsorted = true;
-		bn->trevsorted = true;
-	} else {
-		bn->tkey = l->tkey && r->tkey;
-		bn->tsorted = (l->tsorted & r->tsorted) | (l->trevsorted & r->trevsorted);
-		bn->trevsorted = (l->tsorted & r->trevsorted) | (l->trevsorted & r->tsorted);
+		bn->tsorted = bn->trevsorted = bn->tkey = false;
+		bn->tnosorted = bn->tnorevsorted = 0;
+		bn->tnokey[0] = bn->tnokey[1] = 0;
 	}
 	bn->tnonil |= l->tnonil & r->tnonil;
 

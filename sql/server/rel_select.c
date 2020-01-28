@@ -1957,45 +1957,12 @@ rel_exists_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 static sql_exp *
 rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 {
-	exp_kind ek = {type_value, card_column, FALSE};
-	mvc *sql = query->sql;
-	sql_exp *le, *e = NULL;
-	dlist *dl = sc->data.lval;
-	symbol *lo = dl->h->data.sym;
-	dnode *n = dl->h->next;
-	list *vals = NULL;
-
-	le = rel_value_exp(query, rel, lo, f, ek);
-	if (!le)
-		return NULL;
-	ek.card = card_set;
-	if (n->type == type_list) {
-		vals = sa_list(sql->sa);
-		n = n->data.lval->h;
-		for (; n; n = n->next) {
-			sql_exp *r = NULL;
-
-			r = rel_value_exp(query, rel, n->data.sym, f, ek);
-			if (!r)
-				return NULL;
-			append( vals, r);
-		}
-		e =  exp_in_func(sql, le, exp_values(sql->sa, vals), (sc->token == SQL_IN), 0);
-	}
-	if (e)
-		e->card = le->card;
-	return e;
-}
-
-static sql_rel *
-rel_in_exp(sql_query *query, sql_rel *rel, symbol *sc, int f) 
-{
 	mvc *sql = query->sql;
 	exp_kind ek = {type_value, card_column, TRUE};
 	dlist *dl = sc->data.lval;
 	symbol *lo = NULL;
 	dnode *n = dl->h->next, *dn = NULL;
-	sql_exp *le, *re;
+	sql_exp *le = NULL, *re, *e = NULL;
 	list *vals = NULL, *ll = sa_list(sql->sa);
 	int is_tuple = 0;
 
@@ -2008,7 +1975,7 @@ rel_in_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 		lo = dl->h->data.sym;
 	}
 	for( ; lo; lo = dn?dn->data.sym:NULL, dn = dn?dn->next:NULL ) {
-		le = rel_value_exp(query, &rel, lo, f, ek);
+		le = rel_value_exp(query, rel, lo, f, ek);
 		if (!le)
 			return NULL;
 		ek.card = card_set;
@@ -2028,23 +1995,34 @@ rel_in_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 		n = n->data.lval->h;
 
 		for (; n; n = n->next) {
-			re = rel_value_exp(query, &rel, n->data.sym, f, ek);
+			re = rel_value_exp(query, rel, n->data.sym, f, ek);
 			if (!re)
 				return NULL;
 			if (is_tuple && !exp_is_rel(re)) 
-				return NULL;
+				return sql_error(sql, 02, SQLSTATE(42000) "Cannot match a tuple to a single value");
 			if (is_tuple)
 				re = exp_rel_label(sql, re);
 			append(vals, re);
 		}
+		e = exp_in_func(sql, le, exp_values(sql->sa, vals), (sc->token == SQL_IN), is_tuple);
 	}
+	if (e && le)
+		e->card = le->card;
+	return e;
+}
+
+static sql_rel *
+rel_in_exp(sql_query *query, sql_rel *rel, symbol *sc, int f) 
+{
+	mvc *sql = query->sql;
+	sql_exp *e = rel_in_value_exp(query, &rel, sc, f);
 
 	assert(!is_sql_sel(f));
-	sql_exp *e = exp_in_func(sql, le, exp_values(sql->sa, vals), (sc->token == SQL_IN), is_tuple);
+	if (!e || !rel)
+		return NULL;
 	rel = rel_select_add_exp(sql->sa, rel, e);
 	return rel;
 }
-
 
 sql_exp *
 rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
