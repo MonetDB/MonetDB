@@ -88,76 +88,64 @@ MOSlayout_dict(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput
 }
 
 #define NAME dict
+#define METHOD_SPECIFIC_INCLUDE "mosaic_dictionary_templates.h"
 #define PREPARATION_DEFINITION
-#include "mosaic_dictionary_templates.h"
+#include METHOD_SPECIFIC_INCLUDE
 #undef PREPARATION_DEFINITION
-#undef NAME
 
-#define NAME dict
 #define COMPRESSION_DEFINITION
 #define TPE bte
-#include "mosaic_dictionary_templates.h"
+#include METHOD_SPECIFIC_INCLUDE
 #undef TPE
 #define TPE sht
-#include "mosaic_dictionary_templates.h"
+#include METHOD_SPECIFIC_INCLUDE
 #undef TPE
 #define TPE int
-#include "mosaic_dictionary_templates.h"
+#include METHOD_SPECIFIC_INCLUDE
 #undef TPE
 #define TPE lng
-#include "mosaic_dictionary_templates.h"
+#include METHOD_SPECIFIC_INCLUDE
 #undef TPE
 #define TPE flt
-#include "mosaic_dictionary_templates.h"
+#include METHOD_SPECIFIC_INCLUDE
 #undef TPE
 #define TPE dbl
-#include "mosaic_dictionary_templates.h"
+#include METHOD_SPECIFIC_INCLUDE
 #undef TPE
 #ifdef HAVE_HGE
 #define TPE hge
-#include "mosaic_dictionary_templates.h"
+#include METHOD_SPECIFIC_INCLUDE
 #undef TPE
 #endif
-#undef NAME
 #undef COMPRESSION_DEFINITION
 
-#define NAME dict
 #define TPE bte
-#define METHOD_SPECIFIC_SCANLOOP_INCLUDE "mosaic_dictionary_templates.h"
 #include "mosaic_select_template.h"
 #undef TPE
 #define TPE sht
-#define METHOD_SPECIFIC_SCANLOOP_INCLUDE "mosaic_dictionary_templates.h"
 #include "mosaic_select_template.h"
 #undef TPE
 #define TPE int
-#define METHOD_SPECIFIC_SCANLOOP_INCLUDE "mosaic_dictionary_templates.h"
 #include "mosaic_select_template.h"
 #undef TPE
 #define TPE lng
-#define METHOD_SPECIFIC_SCANLOOP_INCLUDE "mosaic_dictionary_templates.h"
 #include "mosaic_select_template.h"
 #undef TPE
 #define TPE flt
-#define METHOD_SPECIFIC_SCANLOOP_INCLUDE "mosaic_dictionary_templates.h"
 #include "mosaic_select_template.h"
 #undef TPE
 #define TPE dbl
-#define METHOD_SPECIFIC_SCANLOOP_INCLUDE "mosaic_dictionary_templates.h"
 #include "mosaic_select_template.h"
 #undef TPE
 #ifdef HAVE_HGE
 #define TPE hge
-#define METHOD_SPECIFIC_SCANLOOP_INCLUDE "mosaic_dictionary_templates.h"
 #include "mosaic_select_template.h"
 #undef TPE
 #endif
-#undef NAME
 
 #define projection_loop_dict(TPE, CI_NEXT) \
     projection_loop_dictionary(dict, TPE, CI_NEXT)
 
-#define NAME dict
 #define TPE bte
 #include "mosaic_projection_template.h"
 #undef TPE
@@ -181,7 +169,6 @@ MOSlayout_dict(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput
 #include "mosaic_projection_template.h"
 #undef TPE
 #endif
-#undef NAME
 
 #define outer_loop_dict(HAS_NIL, NIL_MATCHES, TPE, LEFT_CI_NEXT, RIGHT_CI_NEXT) \
     outer_loop_dictionary(HAS_NIL, NIL_MATCHES, dict, TPE, LEFT_CI_NEXT, RIGHT_CI_NEXT)
@@ -195,3 +182,6 @@ MOSjoin_COUI_DEF(dict, dbl)
 #ifdef HAVE_HGE
 MOSjoin_COUI_DEF(dict, hge)
 #endif
+
+#undef METHOD_SPECIFIC_INCLUDE
+#undef NAME

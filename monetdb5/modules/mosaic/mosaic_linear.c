@@ -61,27 +61,29 @@ MOSlayout_linear(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutp
 		return;
 }
 
+#define NAME linear
+#define METHOD_SPECIFIC_INCLUDE MAKE_TEMPLATE_INCLUDE_FILE(NAME)
+
 #define COMPRESSION_DEFINITION
 #define TPE bte
-#include "mosaic_linear_templates.h"
+#include METHOD_SPECIFIC_INCLUDE
 #undef TPE
 #define TPE sht
-#include "mosaic_linear_templates.h"
+#include METHOD_SPECIFIC_INCLUDE
 #undef TPE
 #define TPE int
-#include "mosaic_linear_templates.h"
+#include METHOD_SPECIFIC_INCLUDE
 #undef TPE
 #define TPE lng
-#include "mosaic_linear_templates.h"
+#include METHOD_SPECIFIC_INCLUDE
 #undef TPE
 #ifdef HAVE_HGE
 #define TPE hge
-#include "mosaic_linear_templates.h"
+#include METHOD_SPECIFIC_INCLUDE
 #undef TPE
 #endif
 #undef COMPRESSION_DEFINITION
 
-#define NAME linear
 #define TPE bte
 #include "mosaic_select_template.h"
 #undef TPE
@@ -99,7 +101,6 @@ MOSlayout_linear(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutp
 #include "mosaic_select_template.h"
 #undef TPE
 #endif
-#undef NAME
 
 #define projection_loop_linear(TPE, CI_NEXT)\
 {\
@@ -113,7 +114,6 @@ MOSlayout_linear(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutp
 	}\
 }
 
-#define NAME linear
 #define TPE bte
 #include "mosaic_projection_template.h"
 #undef TPE
@@ -131,7 +131,6 @@ MOSlayout_linear(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutp
 #include "mosaic_projection_template.h"
 #undef TPE
 #endif
-#undef NAME
 
 #define outer_loop_linear(HAS_NIL, NIL_MATCHES, TPE, LEFT_CI_NEXT, RIGHT_CI_NEXT) \
 {\
@@ -154,3 +153,6 @@ MOSjoin_COUI_DEF(linear, lng)
 #ifdef HAVE_HGE
 MOSjoin_COUI_DEF(linear, hge)
 #endif
+
+#undef METHOD_SPECIFIC_INCLUDE
+#undef NAME

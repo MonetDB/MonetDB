@@ -63,27 +63,29 @@ MOSlayout_delta(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutpu
 		return;
 }
 
+#define NAME delta
+#define METHOD_SPECIFIC_INCLUDE MAKE_TEMPLATE_INCLUDE_FILE(NAME)
+
 #define COMPRESSION_DEFINITION
 #define TPE bte
-#include "mosaic_delta_templates.h"
+#include METHOD_SPECIFIC_INCLUDE
 #undef TPE
 #define TPE sht
-#include "mosaic_delta_templates.h"
+#include METHOD_SPECIFIC_INCLUDE
 #undef TPE
 #define TPE int
-#include "mosaic_delta_templates.h"
+#include METHOD_SPECIFIC_INCLUDE
 #undef TPE
 #define TPE lng
-#include "mosaic_delta_templates.h"
+#include METHOD_SPECIFIC_INCLUDE
 #undef TPE
 #ifdef HAVE_HGE
 #define TPE hge
-#include "mosaic_delta_templates.h"
+#include METHOD_SPECIFIC_INCLUDE
 #undef TPE
 #endif
 #undef COMPRESSION_DEFINITION
 
-#define NAME delta
 #define TPE bte
 #include "mosaic_select_template.h"
 #undef TPE
@@ -101,7 +103,6 @@ MOSlayout_delta(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutpu
 #include "mosaic_select_template.h"
 #undef TPE
 #endif
-#undef NAME
 
 #define projection_loop_delta(TPE, CANDITER_NEXT)\
 {\
@@ -123,7 +124,6 @@ MOSlayout_delta(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutpu
 	}\
 }
 
-#define NAME delta
 #define TPE bte
 #include "mosaic_projection_template.h"
 #undef TPE
@@ -141,7 +141,6 @@ MOSlayout_delta(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutpu
 #include "mosaic_projection_template.h"
 #undef TPE
 #endif
-#undef NAME
 
 #define outer_loop_delta(HAS_NIL, NIL_MATCHES, TPE, LEFT_CI_NEXT, RIGHT_CI_NEXT) \
 {\
@@ -172,3 +171,6 @@ MOSjoin_COUI_DEF(delta, lng)
 #ifdef HAVE_HGE
 MOSjoin_COUI_DEF(delta, hge)
 #endif
+
+#undef METHOD_SPECIFIC_INCLUDE
+#undef NAME

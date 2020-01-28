@@ -25,6 +25,8 @@
 #define _STRINGIFY(ARG)		#ARG
 #define STRINGIFY(ARG)		_STRINGIFY(ARG)
 
+#define MAKE_TEMPLATE_INCLUDE_FILE(NAME) STRINGIFY(CONCAT3(mosaic_, NAME, _templates.h))
+
 #define IS_NIL(TPE, VAL) CONCAT3(is_, TPE, _nil)(VAL)
 #define ARE_EQUAL(v, w, HAS_NIL, TPE) ((v == w || (HAS_NIL && IS_NIL(TPE, v) && IS_NIL(TPE, w)) ) )
 

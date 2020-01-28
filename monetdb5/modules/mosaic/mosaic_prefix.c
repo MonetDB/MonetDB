@@ -98,27 +98,29 @@ MOSlayout_prefix(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutp
 		return;
 }
 
+#define NAME prefix
+#define METHOD_SPECIFIC_INCLUDE MAKE_TEMPLATE_INCLUDE_FILE(NAME)
+
 #define COMPRESSION_DEFINITION
 #define TPE bte
-#include "mosaic_prefix_templates.h"
+#include METHOD_SPECIFIC_INCLUDE
 #undef TPE
 #define TPE sht
-#include "mosaic_prefix_templates.h"
+#include METHOD_SPECIFIC_INCLUDE
 #undef TPE
 #define TPE int
-#include "mosaic_prefix_templates.h"
+#include METHOD_SPECIFIC_INCLUDE
 #undef TPE
 #define TPE lng
-#include "mosaic_prefix_templates.h"
+#include METHOD_SPECIFIC_INCLUDE
 #undef TPE
 #ifdef HAVE_HGE
 #define TPE hge
-#include "mosaic_prefix_templates.h"
+#include METHOD_SPECIFIC_INCLUDE
 #undef TPE
 #endif
 #undef COMPRESSION_DEFINITION
 
-#define NAME prefix
 #define TPE bte
 #include "mosaic_select_template.h"
 #undef TPE
@@ -136,7 +138,6 @@ MOSlayout_prefix(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutp
 #include "mosaic_select_template.h"
 #undef TPE
 #endif
-#undef NAME
 
 #define projection_loop_prefix(TPE, CI_NEXT)\
 {\
@@ -152,7 +153,6 @@ MOSlayout_prefix(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutp
 	}\
 }
 
-#define NAME prefix
 #define TPE bte
 #include "mosaic_projection_template.h"
 #undef TPE
@@ -170,7 +170,6 @@ MOSlayout_prefix(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutp
 #include "mosaic_projection_template.h"
 #undef TPE
 #endif
-#undef NAME
 
 #define outer_loop_prefix(HAS_NIL, NIL_MATCHES, TPE, LEFT_CI_NEXT, RIGHT_CI_NEXT) \
 {\
@@ -195,3 +194,6 @@ MOSjoin_COUI_DEF(prefix, lng)
 #ifdef HAVE_HGE
 MOSjoin_COUI_DEF(prefix, hge)
 #endif
+
+#undef METHOD_SPECIFIC_INCLUDE
+#undef NAME

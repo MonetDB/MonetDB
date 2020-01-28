@@ -64,33 +64,35 @@ MOSlayout_runlength(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *bo
 		return;
 }
 
+#define NAME runlength
+#define METHOD_SPECIFIC_INCLUDE MAKE_TEMPLATE_INCLUDE_FILE(NAME)
+
 #define COMPRESSION_DEFINITION
 #define TPE bte
-#include "mosaic_runlength_templates.h"
+#include METHOD_SPECIFIC_INCLUDE
 #undef TPE
 #define TPE sht
-#include "mosaic_runlength_templates.h"
+#include METHOD_SPECIFIC_INCLUDE
 #undef TPE
 #define TPE int
-#include "mosaic_runlength_templates.h"
+#include METHOD_SPECIFIC_INCLUDE
 #undef TPE
 #define TPE lng
-#include "mosaic_runlength_templates.h"
+#include METHOD_SPECIFIC_INCLUDE
 #undef TPE
 #define TPE flt
-#include "mosaic_runlength_templates.h"
+#include METHOD_SPECIFIC_INCLUDE
 #undef TPE
 #define TPE dbl
-#include "mosaic_runlength_templates.h"
+#include METHOD_SPECIFIC_INCLUDE
 #undef TPE
 #ifdef HAVE_HGE
 #define TPE hge
-#include "mosaic_runlength_templates.h"
+#include METHOD_SPECIFIC_INCLUDE
 #undef TPE
 #endif
 #undef COMPRESSION_DEFINITION
 
-#define NAME runlength
 #define TPE bte
 #include "mosaic_select_template.h"
 #undef TPE
@@ -114,7 +116,6 @@ MOSlayout_runlength(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *bo
 #include "mosaic_select_template.h"
 #undef TPE
 #endif
-#undef NAME
 
 #define projection_loop_runlength(TPE, CI_NEXT)\
 {\
@@ -125,7 +126,6 @@ MOSlayout_runlength(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *bo
 	}\
 }
 
-#define NAME runlength
 #define TPE bte
 #include "mosaic_projection_template.h"
 #undef TPE
@@ -149,7 +149,6 @@ MOSlayout_runlength(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *bo
 #include "mosaic_projection_template.h"
 #undef TPE
 #endif
-#undef NAME
 
 #define outer_loop_runlength(HAS_NIL, NIL_MATCHES, TPE, LEFT_CI_NEXT, RIGHT_CI_NEXT) \
 do {\
@@ -171,3 +170,6 @@ MOSjoin_COUI_DEF(runlength, dbl)
 #ifdef HAVE_HGE
 MOSjoin_COUI_DEF(runlength, hge)
 #endif
+
+#undef METHOD_SPECIFIC_INCLUDE
+#undef NAME

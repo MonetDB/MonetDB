@@ -62,27 +62,29 @@ MOSlayout_frame(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutpu
 		return;
 }
 
+#define NAME frame
+#define METHOD_SPECIFIC_INCLUDE MAKE_TEMPLATE_INCLUDE_FILE(NAME)
+
 #define COMPRESSION_DEFINITION
 #define TPE bte
-#include "mosaic_frame_templates.h"
+#include METHOD_SPECIFIC_INCLUDE
 #undef TPE
 #define TPE sht
-#include "mosaic_frame_templates.h"
+#include METHOD_SPECIFIC_INCLUDE
 #undef TPE
 #define TPE int
-#include "mosaic_frame_templates.h"
+#include METHOD_SPECIFIC_INCLUDE
 #undef TPE
 #define TPE lng
-#include "mosaic_frame_templates.h"
+#include METHOD_SPECIFIC_INCLUDE
 #undef TPE
 #ifdef HAVE_HGE
 #define TPE hge
-#include "mosaic_frame_templates.h"
+#include METHOD_SPECIFIC_INCLUDE
 #undef TPE
 #endif
 #undef COMPRESSION_DEFINITION
 
-#define NAME frame
 #define TPE bte
 #include "mosaic_select_template.h"
 #undef TPE
@@ -100,7 +102,6 @@ MOSlayout_frame(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutpu
 #include "mosaic_select_template.h"
 #undef TPE
 #endif
-#undef NAME
 
 #define projection_loop_frame(TPE, CANDITER_NEXT)\
 {\
@@ -115,7 +116,6 @@ MOSlayout_frame(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutpu
 	}\
 }
 
-#define NAME frame
 #define TPE bte
 #include "mosaic_projection_template.h"
 #undef TPE
@@ -133,7 +133,6 @@ MOSlayout_frame(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutpu
 #include "mosaic_projection_template.h"
 #undef TPE
 #endif
-#undef NAME
 
 #define outer_loop_frame(HAS_NIL, NIL_MATCHES, TPE, LEFT_CI_NEXT, RIGHT_CI_NEXT) \
 {\
@@ -158,3 +157,6 @@ MOSjoin_COUI_DEF(frame, lng)
 #ifdef HAVE_HGE
 MOSjoin_COUI_DEF(frame, hge)
 #endif
+
+#undef METHOD_SPECIFIC_INCLUDE
+#undef NAME

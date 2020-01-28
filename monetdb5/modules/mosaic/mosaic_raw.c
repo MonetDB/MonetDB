@@ -64,33 +64,35 @@ MOSlayout_raw(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput,
 		return;
 }
 
+#define NAME raw
+#define METHOD_SPECIFIC_INCLUDE MAKE_TEMPLATE_INCLUDE_FILE(NAME)
+
 #define COMPRESSION_DEFINITION
 #define TPE bte
-#include "mosaic_raw_templates.h"
+#include METHOD_SPECIFIC_INCLUDE
 #undef TPE
 #define TPE sht
-#include "mosaic_raw_templates.h"
+#include METHOD_SPECIFIC_INCLUDE
 #undef TPE
 #define TPE int
-#include "mosaic_raw_templates.h"
+#include METHOD_SPECIFIC_INCLUDE
 #undef TPE
 #define TPE lng
-#include "mosaic_raw_templates.h"
+#include METHOD_SPECIFIC_INCLUDE
 #undef TPE
 #define TPE flt
-#include "mosaic_raw_templates.h"
+#include METHOD_SPECIFIC_INCLUDE
 #undef TPE
 #define TPE dbl
-#include "mosaic_raw_templates.h"
+#include METHOD_SPECIFIC_INCLUDE
 #undef TPE
 #ifdef HAVE_HGE
 #define TPE hge
-#include "mosaic_raw_templates.h"
+#include METHOD_SPECIFIC_INCLUDE
 #undef TPE
 #endif
 #undef COMPRESSION_DEFINITION
 
-#define NAME raw
 #define TPE bte
 #include "mosaic_select_template.h"
 #undef TPE
@@ -114,7 +116,6 @@ MOSlayout_raw(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput,
 #include "mosaic_select_template.h"
 #undef TPE
 #endif
-#undef NAME
 
 #define projection_loop_raw(TPE, CI_NEXT)\
 {	TPE *rt;\
@@ -126,7 +127,6 @@ MOSlayout_raw(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput,
 	}\
 }
 
-#define NAME raw
 #define TPE bte
 #include "mosaic_projection_template.h"
 #undef TPE
@@ -150,7 +150,6 @@ MOSlayout_raw(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput,
 #include "mosaic_projection_template.h"
 #undef TPE
 #endif
-#undef NAME
 
 #define outer_loop_raw(HAS_NIL, NIL_MATCHES, TPE, LEFT_CI_NEXT, RIGHT_CI_NEXT) \
 {\
@@ -174,3 +173,6 @@ MOSjoin_COUI_DEF(raw, dbl)
 #ifdef HAVE_HGE
 MOSjoin_COUI_DEF(raw, hge)
 #endif
+
+#undef METHOD_SPECIFIC_INCLUDE
+#undef NAME
