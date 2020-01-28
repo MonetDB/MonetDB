@@ -87,49 +87,23 @@ MOSlayout_frame(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutpu
 
 #define TPE bte
 #include "mosaic_select_template.h"
+#include "mosaic_projection_template.h"
 #undef TPE
 #define TPE sht
 #include "mosaic_select_template.h"
+#include "mosaic_projection_template.h"
 #undef TPE
 #define TPE int
 #include "mosaic_select_template.h"
+#include "mosaic_projection_template.h"
 #undef TPE
 #define TPE lng
 #include "mosaic_select_template.h"
+#include "mosaic_projection_template.h"
 #undef TPE
 #ifdef HAVE_HGE
 #define TPE hge
 #include "mosaic_select_template.h"
-#undef TPE
-#endif
-
-#define projection_loop_frame(TPE, CANDITER_NEXT)\
-{\
-    MOSBlockHeaderTpe(frame, TPE)* parameters = (MOSBlockHeaderTpe(frame, TPE)*) ((task))->blk;\
-	TPE frame =  parameters->min;\
-	BitVector base = (BitVector) MOScodevectorFrame(task, TPE);\
-	for (oid o = canditer_peekprev(task->ci); !is_oid_nil(o) && o < last; o = CANDITER_NEXT(task->ci)) {\
-		BUN i = (BUN) (o - first);\
-		TPE w = ADD_DELTA(TPE, frame, getBitVector(base, i, parameters->bits));\
-		*bt++ = w;\
-		task->cnt++;\
-	}\
-}
-
-#define TPE bte
-#include "mosaic_projection_template.h"
-#undef TPE
-#define TPE sht
-#include "mosaic_projection_template.h"
-#undef TPE
-#define TPE int
-#include "mosaic_projection_template.h"
-#undef TPE
-#define TPE lng
-#include "mosaic_projection_template.h"
-#undef TPE
-#ifdef HAVE_HGE
-#define TPE hge
 #include "mosaic_projection_template.h"
 #undef TPE
 #endif

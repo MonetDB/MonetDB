@@ -86,48 +86,23 @@ MOSlayout_linear(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutp
 
 #define TPE bte
 #include "mosaic_select_template.h"
+#include "mosaic_projection_template.h"
 #undef TPE
 #define TPE sht
 #include "mosaic_select_template.h"
+#include "mosaic_projection_template.h"
 #undef TPE
 #define TPE int
 #include "mosaic_select_template.h"
+#include "mosaic_projection_template.h"
 #undef TPE
 #define TPE lng
 #include "mosaic_select_template.h"
+#include "mosaic_projection_template.h"
 #undef TPE
 #ifdef HAVE_HGE
 #define TPE hge
 #include "mosaic_select_template.h"
-#undef TPE
-#endif
-
-#define projection_loop_linear(TPE, CI_NEXT)\
-{\
-	DeltaTpe(TPE) offset	= linear_offset(TPE, task) ;\
-	DeltaTpe(TPE) step		= linear_step(TPE, task);\
-	for (oid o = canditer_peekprev(task->ci); !is_oid_nil(o) && o < last; o = CI_NEXT(task->ci)) {\
-        BUN i = (BUN) (o - first);\
-		TPE value =  (TPE) (offset + (i * step));\
-		*bt++ = value;\
-		task->cnt++;\
-	}\
-}
-
-#define TPE bte
-#include "mosaic_projection_template.h"
-#undef TPE
-#define TPE sht
-#include "mosaic_projection_template.h"
-#undef TPE
-#define TPE int
-#include "mosaic_projection_template.h"
-#undef TPE
-#define TPE lng
-#include "mosaic_projection_template.h"
-#undef TPE
-#ifdef HAVE_HGE
-#define TPE hge
 #include "mosaic_projection_template.h"
 #undef TPE
 #endif

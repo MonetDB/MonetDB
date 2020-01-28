@@ -123,50 +123,23 @@ MOSlayout_prefix(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutp
 
 #define TPE bte
 #include "mosaic_select_template.h"
+#include "mosaic_projection_template.h"
 #undef TPE
 #define TPE sht
 #include "mosaic_select_template.h"
+#include "mosaic_projection_template.h"
 #undef TPE
 #define TPE int
 #include "mosaic_select_template.h"
+#include "mosaic_projection_template.h"
 #undef TPE
 #define TPE lng
 #include "mosaic_select_template.h"
+#include "mosaic_projection_template.h"
 #undef TPE
 #ifdef HAVE_HGE
 #define TPE hge
 #include "mosaic_select_template.h"
-#undef TPE
-#endif
-
-#define projection_loop_prefix(TPE, CI_NEXT)\
-{\
-    MOSBlockHeaderTpe(prefix, TPE)* parameters = (MOSBlockHeaderTpe(prefix, TPE)*) task->blk;\
-	BitVector base = (BitVector) MOScodevectorPrefix(task, TPE);\
-	PrefixTpe(TPE) prefix = parameters->prefix;\
-	bte suffix_bits = parameters->suffix_bits;\
-	for (oid o = canditer_peekprev(task->ci); !is_oid_nil(o) && o < last; o = CI_NEXT(task->ci)) {\
-		BUN i = (BUN) (o - first);\
-		TPE value =  (TPE) (prefix | getBitVector(base,i,suffix_bits));\
-		*bt++ = value;\
-		task->cnt++;\
-	}\
-}
-
-#define TPE bte
-#include "mosaic_projection_template.h"
-#undef TPE
-#define TPE sht
-#include "mosaic_projection_template.h"
-#undef TPE
-#define TPE int
-#include "mosaic_projection_template.h"
-#undef TPE
-#define TPE lng
-#include "mosaic_projection_template.h"
-#undef TPE
-#ifdef HAVE_HGE
-#define TPE hge
 #include "mosaic_projection_template.h"
 #undef TPE
 #endif

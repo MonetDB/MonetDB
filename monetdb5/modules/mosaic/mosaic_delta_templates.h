@@ -167,3 +167,32 @@ MOSscanloop_SIGNATURE(delta, TPE, CAND_ITER, TEST)
     task->lb = o;
 }
 #endif
+
+#ifdef PROJECTION_LOOP_DEFINITION
+MOSprojectionloop_SIGNATURE(delta, TPE, CAND_ITER)
+{
+    (void) first;
+    (void) last;
+
+	TPE* bt= (TPE*) task->src;
+
+	MOSBlockHeaderTpe(delta, TPE)* parameters = (MOSBlockHeaderTpe(delta, TPE)*) task->blk;
+	BitVector base = (BitVector) MOScodevectorDelta(task, TPE);
+	DeltaTpe(TPE) acc = (DeltaTpe(TPE)) parameters->init; /*previous value*/
+	const bte bits = parameters->bits;
+	DeltaTpe(TPE) sign_mask = (DeltaTpe(TPE)) ((IPTpe(TPE)) 1) << (bits - 1);
+    TPE v = (TPE) acc;
+    BUN j = 0;
+	for (oid o = canditer_peekprev(task->ci); !is_oid_nil(o) && o < last; o = CAND_ITER(task->ci)) {
+        BUN i = (BUN) (o - first);
+        for (;j <= i; j++) {
+            TPE delta = getBitVector(base, j, bits);
+			v = ACCUMULATE(acc, delta, sign_mask, TPE);
+        }
+		*bt++ = v;
+		task->cnt++;
+	}
+
+	task->src = (char*) bt;
+}
+#endif

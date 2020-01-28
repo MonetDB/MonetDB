@@ -463,3 +463,25 @@ MOSscanloop_SIGNATURE(NAME, TPE, CAND_ITER, TEST)
     task->lb = o;
 }
 #endif
+
+#ifdef PROJECTION_LOOP_DEFINITION
+MOSprojectionloop_SIGNATURE(NAME, TPE, CAND_ITER)
+{
+    (void) first;
+    (void) last;
+
+	TPE* bt= (TPE*) task->src;
+
+	TPE* dict = GET_FINAL_DICT(task, NAME, TPE);
+	BitVector base = MOScodevectorDict(task, NAME, TPE);
+    bte bits = GET_FINAL_BITS(task, NAME);
+	for (oid o = canditer_peekprev(task->ci); !is_oid_nil(o) && o < last; o = CAND_ITER(task->ci)) {
+        BUN i = (BUN) (o - first);
+        BitVectorChunk j = getBitVector(base,i,bits); 
+		*bt++ = dict[j];
+		task->cnt++;
+	}
+
+	task->src = (char*) bt;
+}
+#endif

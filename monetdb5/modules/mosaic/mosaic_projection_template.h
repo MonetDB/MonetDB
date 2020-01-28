@@ -9,6 +9,19 @@
 /*
  * authors Martin Kersten, Aris Koning
  */
+
+#define PROJECTION_LOOP_DEFINITION
+#define CAND_ITER canditer_next_dense
+#include METHOD_SPECIFIC_INCLUDE
+#undef CAND_ITER
+
+#define CAND_ITER canditer_next
+#include METHOD_SPECIFIC_INCLUDE
+#undef CAND_ITER
+#undef PROJECTION_LOOP_DEFINITION
+
+#define PROJECTION_LOOP(CAND_ITER) MOSprojectionloop_ID(NAME, TPE, CAND_ITER)(task, first, last)
+
 MOSprojection_SIGNATURE(NAME, TPE)
 {
 	BUN first = task->start;
@@ -34,10 +47,10 @@ MOSprojection_SIGNATURE(NAME, TPE)
 	}
 
 	if (task->ci->tpe == cand_dense) {
-		CONCAT2(projection_loop_, NAME)(TPE, canditer_next_dense);
+		PROJECTION_LOOP(canditer_next_dense);
 	}
 	else {
-		CONCAT2(projection_loop_, NAME)(TPE, canditer_next);
+		PROJECTION_LOOP(canditer_next);
 	}
 	task->src = (char*) bt;
 

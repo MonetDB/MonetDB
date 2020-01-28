@@ -76,19 +76,6 @@ typedef struct {\
 
 #define MOScodevectorDict(task, NAME, TPE) ((BitVector) &((DICTBlockHeaderTpe(NAME, TPE)*) (task)->blk)->bitvector)
 
-#define projection_loop_dictionary(NAME, TPE, CANDITER_NEXT)\
-{\
-	TPE* dict = GET_FINAL_DICT(task, NAME, TPE);\
-	BitVector base = MOScodevectorDict(task, NAME, TPE);\
-    bte bits = GET_FINAL_BITS(task, NAME);\
-	for (oid o = canditer_peekprev(task->ci); !is_oid_nil(o) && o < last; o = CANDITER_NEXT(task->ci)) {\
-        BUN i = (BUN) (o - first);\
-        BitVectorChunk j = getBitVector(base,i,bits); \
-		*bt++ = dict[j];\
-		task->cnt++;\
-	}\
-}
-
 #define outer_loop_dictionary(HAS_NIL, NIL_MATCHES, NAME, TPE, LEFT_CI_NEXT, RIGHT_CI_NEXT) \
 {\
 	bte bits		= GET_FINAL_BITS(task, NAME);\

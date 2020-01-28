@@ -95,57 +95,31 @@ MOSlayout_runlength(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *bo
 
 #define TPE bte
 #include "mosaic_select_template.h"
+#include "mosaic_projection_template.h"
 #undef TPE
 #define TPE sht
 #include "mosaic_select_template.h"
+#include "mosaic_projection_template.h"
 #undef TPE
 #define TPE int
 #include "mosaic_select_template.h"
+#include "mosaic_projection_template.h"
 #undef TPE
 #define TPE lng
 #include "mosaic_select_template.h"
+#include "mosaic_projection_template.h"
 #undef TPE
 #define TPE flt
 #include "mosaic_select_template.h"
+#include "mosaic_projection_template.h"
 #undef TPE
 #define TPE dbl
 #include "mosaic_select_template.h"
+#include "mosaic_projection_template.h"
 #undef TPE
 #ifdef HAVE_HGE
 #define TPE hge
 #include "mosaic_select_template.h"
-#undef TPE
-#endif
-
-#define projection_loop_runlength(TPE, CI_NEXT)\
-{\
-	TPE rt = GET_VAL_runlength(task, TPE);\
-	for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = CI_NEXT(task->ci)) {\
-		*bt++ = rt;\
-		task->cnt++;\
-	}\
-}
-
-#define TPE bte
-#include "mosaic_projection_template.h"
-#undef TPE
-#define TPE sht
-#include "mosaic_projection_template.h"
-#undef TPE
-#define TPE int
-#include "mosaic_projection_template.h"
-#undef TPE
-#define TPE lng
-#include "mosaic_projection_template.h"
-#undef TPE
-#define TPE flt
-#include "mosaic_projection_template.h"
-#undef TPE
-#define TPE dbl
-#include "mosaic_projection_template.h"
-#undef TPE
-#ifdef HAVE_HGE
-#define TPE hge
 #include "mosaic_projection_template.h"
 #undef TPE
 #endif

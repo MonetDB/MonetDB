@@ -96,3 +96,23 @@ MOSscanloop_SIGNATURE(raw, TPE, CAND_ITER, TEST)
     task->lb = o;
 }
 #endif
+
+#ifdef PROJECTION_LOOP_DEFINITION
+MOSprojectionloop_SIGNATURE(raw, TPE, CAND_ITER)
+{
+    (void) first;
+    (void) last;
+
+	TPE* bt= (TPE*) task->src;
+
+	TPE *rt;
+	rt = &GET_INIT_raw(task, TPE);
+	for (oid o = canditer_peekprev(task->ci); !is_oid_nil(o) && o < last; o = CAND_ITER(task->ci)) {
+		BUN i = (BUN) (o - first);
+		*bt++ = rt[i];
+		task->cnt++;
+	}
+
+	task->src = (char*) bt;
+}
+#endif

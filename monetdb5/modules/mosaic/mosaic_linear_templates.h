@@ -100,3 +100,24 @@ MOSscanloop_SIGNATURE(linear, TPE, CAND_ITER, TEST)
     task->lb = o;
 }
 #endif
+
+#ifdef PROJECTION_LOOP_DEFINITION
+MOSprojectionloop_SIGNATURE(linear, TPE, CAND_ITER)
+{
+    (void) first;
+    (void) last;
+
+	TPE* bt= (TPE*) task->src;
+
+	DeltaTpe(TPE) offset	= linear_offset(TPE, task) ;
+	DeltaTpe(TPE) step		= linear_step(TPE, task);
+	for (oid o = canditer_peekprev(task->ci); !is_oid_nil(o) && o < last; o = CAND_ITER(task->ci)) {
+        BUN i = (BUN) (o - first);
+		TPE value =  (TPE) (offset + (i * step));
+		*bt++ = value;
+		task->cnt++;
+	}
+
+	task->src = (char*) bt;
+}
+#endif

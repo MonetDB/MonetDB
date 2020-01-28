@@ -60,7 +60,7 @@ ALIGNMENT_HELPER_TPE(NAME, TPE)\
 
 #define MOSprojectionloop_ID(NAME, TPE, CAND_ITER) CONCAT6(projection_loop_, NAME, _, TPE, _, CAND_ITER)
 #define MOSprojectionloop_ARGS (MOStask* task, BUN first, BUN last)
-#define MOSprojectionloop_SIGNATURE(NAME, TPE, CAND_ITER, TEST) static inline void MOSprojectionloop_ID(NAME, TPE, CAND_ITER) MOSprojectionloop_ARGS
+#define MOSprojectionloop_SIGNATURE(NAME, TPE, CAND_ITER) static inline void MOSprojectionloop_ID(NAME, TPE, CAND_ITER) MOSprojectionloop_ARGS
 
 #define MOSprojection_FUNC(NAME, TPE) CONCAT4(MOSprojection_, NAME, _, TPE)
 #define MOSprojection_SIGNATURE(NAME, TPE)  str MOSprojection_FUNC(NAME, TPE) (MOStask* task)

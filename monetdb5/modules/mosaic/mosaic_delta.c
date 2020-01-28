@@ -88,56 +88,23 @@ MOSlayout_delta(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutpu
 
 #define TPE bte
 #include "mosaic_select_template.h"
+#include "mosaic_projection_template.h"
 #undef TPE
 #define TPE sht
 #include "mosaic_select_template.h"
+#include "mosaic_projection_template.h"
 #undef TPE
 #define TPE int
 #include "mosaic_select_template.h"
+#include "mosaic_projection_template.h"
 #undef TPE
 #define TPE lng
 #include "mosaic_select_template.h"
+#include "mosaic_projection_template.h"
 #undef TPE
 #ifdef HAVE_HGE
 #define TPE hge
 #include "mosaic_select_template.h"
-#undef TPE
-#endif
-
-#define projection_loop_delta(TPE, CANDITER_NEXT)\
-{\
-	MOSBlockHeaderTpe(delta, TPE)* parameters = (MOSBlockHeaderTpe(delta, TPE)*) task->blk;\
-	BitVector base = (BitVector) MOScodevectorDelta(task, TPE);\
-	DeltaTpe(TPE) acc = (DeltaTpe(TPE)) parameters->init; /*previous value*/\
-	const bte bits = parameters->bits;\
-	DeltaTpe(TPE) sign_mask = (DeltaTpe(TPE)) ((IPTpe(TPE)) 1) << (bits - 1);\
-    TPE v = (TPE) acc;\
-    BUN j = 0;\
-	for (oid o = canditer_peekprev(task->ci); !is_oid_nil(o) && o < last; o = CANDITER_NEXT(task->ci)) {\
-        BUN i = (BUN) (o - first);\
-        for (;j <= i; j++) {\
-            TPE delta = getBitVector(base, j, bits);\
-			v = ACCUMULATE(acc, delta, sign_mask, TPE);\
-        }\
-		*bt++ = v;\
-		task->cnt++;\
-	}\
-}
-
-#define TPE bte
-#include "mosaic_projection_template.h"
-#undef TPE
-#define TPE sht
-#include "mosaic_projection_template.h"
-#undef TPE
-#define TPE int
-#include "mosaic_projection_template.h"
-#undef TPE
-#define TPE lng
-#include "mosaic_projection_template.h"
-#undef TPE
-#ifdef HAVE_HGE
-#define TPE hge
 #include "mosaic_projection_template.h"
 #undef TPE
 #endif
