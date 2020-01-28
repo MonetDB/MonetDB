@@ -2543,9 +2543,10 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		/* there is a hash on the parent which we should use */
 		BAT *b = BBPdescriptor(VIEWtparent(r));
 		TRC_DEBUG(ALGO, "%s(%s): using "
-			  "parent(" ALGOBATFMT ") for hash\n",
+			  "parent(" ALGOBATFMT ") for hash%s\n",
 			  __func__,
-			  BATgetId(r), ALGOBATPAR(b));
+			  BATgetId(r), ALGOBATPAR(b),
+			  swapped ? " (swapped)" : "");
 		hsh = b->thash;
 		roff = (BUN) ((r->theap.base - b->theap.base) >> r->tshift);
 		rl += roff;
@@ -2554,15 +2555,20 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	} else if (hash) {
 		/* there is a hash on r which we should use */
 		hsh = r->thash;
+		TRC_DEBUG(ALGO, ALGOBATFMT ": using "
+			  "existing hash%s\n",
+			  ALGOBATPAR(r),
+			  swapped ? " (swapped)" : "");
 	} else if (rci->tpe != cand_dense || rci->ncand != BATcount(r)) {
 		/* we need to create a hash on r specific for the
 		 * candidate list */
 		char ext[32];
 		assert(rci->s);
-		TRC_DEBUG(ALGO, "%s(%s): creating "
-			  "hash for candidate list\n",
-			  __func__,
-			  BATgetId(r));
+		TRC_DEBUG(ALGO, ALGOBATFMT ": creating "
+			  "hash for candidate list " ALGOBATFMT "%s%s\n",
+			  ALGOBATPAR(r), ALGOBATPAR(rci->s),
+			  r->thash ? " ignoring existing hash" : "",
+			  swapped ? " (swapped)" : "");
 		if (snprintf(ext, sizeof(ext), "thshjn%x",
 			     rci->s->batCacheid) >= (int) sizeof(ext))
 			goto bailout;
@@ -2572,6 +2578,9 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		hash_cand = true;
 	} else {
 		/* we need to create a hash on r */
+		TRC_DEBUG(ALGO, ALGOBATFMT "): creating hash%s\n",
+			  ALGOBATPAR(r),
+			  swapped ? " (swapped)" : "");
 		if (BAThash(r) != GDK_SUCCEED)
 			goto bailout;
 		hsh = r->thash;
@@ -3763,15 +3772,11 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 	bool plhash = false, prhash = false;
 	bool swap;
 	bat parent;
+	gdk_return rc;
 	lng t0 = 0;
-	const char *reason = "";
+	BAT *r2 = NULL;
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
-
-	if (r2p == NULL)
-		return leftjoin(r1p, NULL, l, r, sl, sr, nil_matches,
-				false, false, false, false, estimate,
-				__func__, t0);
 
 	if ((parent = VIEWtparent(l)) != 0) {
 		BAT *b = BBPdescriptor(parent);
@@ -3790,7 +3795,8 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 	canditer_init(&rci, r, sr);
 
 	*r1p = NULL;
-	*r2p = NULL;
+	if (r2p)
+		*r2p = NULL;
 
 	if (joinparamcheck(l, r, NULL, sl, sr, __func__) != GDK_SUCCEED)
 		return GDK_FAIL;
@@ -3814,16 +3820,22 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 				  nil_matches, t0, false, __func__);
 	} else if (rci.ncand == 1 || (BATordered(r) && BATordered_rev(r)) || (r->ttype == TYPE_void && is_oid_nil(r->tseqbase))) {
 		/* single value to join, use select */
-		return selectjoin(r2p, r1p, r, l, &rci, &lci,
-				  nil_matches, t0, true, __func__);
+		rc = selectjoin(r2p ? r2p : &r2, r1p, r, l, &rci, &lci,
+				nil_matches, t0, true, __func__);
+		if (rc == GDK_SUCCEED && r2p == NULL)
+			BBPunfix(r2->batCacheid);
+		return rc;
 	} else if (BATtdense(r) && rci.tpe == cand_dense) {
 		/* use special implementation for dense right-hand side */
 		return mergejoin_void(r1p, r2p, l, r, &lci, &rci,
 				      false, false, t0, false, __func__);
 	} else if (BATtdense(l) && lci.tpe == cand_dense) {
 		/* use special implementation for dense right-hand side */
-		return mergejoin_void(r2p, r1p, r, l, &rci, &lci,
-				      false, false, t0, true, __func__);
+		rc = mergejoin_void(r2p ? r2p : &r2, r1p, r, l, &rci, &lci,
+				    false, false, t0, true, __func__);
+		if (rc == GDK_SUCCEED && r2p == NULL)
+			BBPunfix(r2->batCacheid);
+		return rc;
 	} else if ((BATordered(l) || BATordered_rev(l)) &&
 		   (BATordered(r) || BATordered_rev(r))) {
 		/* both sorted */
@@ -3913,8 +3925,9 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 	}
 
 	/* if the cost of doing searches on l is lower than the cost
-	 * to do searches on r, we swap (i.e., lookups on right) */
-	swap = (lcost < rcost);
+	 * to do searches on r, we swap (i.e., lookups on right), but
+	 * add a cost */
+	swap = (1.2 * lcost < rcost);
 
 	if ((BATordered(r) || BATordered_rev(r)) &&
 	    (lci.ncand * (log2(rci.ncand) + 1) < (swap ? lcost : rcost))) {
@@ -3928,19 +3941,25 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 	    (rci.ncand * (log2(lci.ncand) + 1) < (swap ? lcost : rcost))) {
 		/* l is sorted and it is cheaper to do multiple binary
 		 * searches than it is to use a hash */
-		return mergejoin(r2p, r1p, r, l, &rci, &lci,
-				 nil_matches, false, false, false, false,
-				 estimate, t0, true, __func__);
+		rc = mergejoin(r2p ? r2p : &r2, r1p, r, l, &rci, &lci,
+			       nil_matches, false, false, false, false,
+			       estimate, t0, true, __func__);
+		if (rc == GDK_SUCCEED && r2p == NULL)
+			BBPunfix(r2->batCacheid);
+		return rc;
 	}
 
 	if (swap) {
-		return hashjoin(r2p, r1p, r, l, &rci, &lci,
-				nil_matches, false, false, false, false,
-				estimate, t0, true, lhash, plhash, reason);
+		rc = hashjoin(r2p ? r2p : &r2, r1p, r, l, &rci, &lci,
+			      nil_matches, false, false, false, false,
+			      estimate, t0, true, lhash, plhash, __func__);
+		if (rc == GDK_SUCCEED && r2p == NULL)
+			BBPunfix(r2->batCacheid);
+		return rc;
 	} else {
 		return hashjoin(r1p, r2p, l, r, &lci, &rci,
 				nil_matches, false, false, false, false,
-				estimate, t0, false, rhash, prhash, reason);
+				estimate, t0, false, rhash, prhash, __func__);
 	}
 }
 
