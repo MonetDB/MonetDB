@@ -926,11 +926,15 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 								"sql.alter", MOSAIC_STRATEGY_NOT_ALLOWED);
 
 				int contains_explicit_raw = strstr(c->storage_type,"raw") != NULL ? 1 : 0;
+				/* TODO: ugly work around to handle the fact that dict256 will match dict and dict256.
+				 * Will be removed once we get rid of the restriction on non-trivial mixes of compression methods.
+				 */
+				int contains_explicit_dict256 = strstr(c->storage_type,"dict256") != NULL ? 1 : 0;
 
 				for(int i = 0, nr_strategies = 0; i< MOSAIC_METHODS; i++){
 					if ( (strstr(c->storage_type,MOSmethods[i].name) && MOSisTypeAllowed(i, b) ))
 					{
-						if ( (++nr_strategies - contains_explicit_raw) > 1) {
+						if ( (++nr_strategies - contains_explicit_raw - contains_explicit_dict256) > 1) {
 							BBPunfix(b->batCacheid);
 							throw(SQL, "sql.alter", NON_TRIVIAL_MIX_NOT_ALLOWED);
 						}
