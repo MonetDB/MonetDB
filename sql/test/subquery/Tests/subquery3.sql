@@ -356,12 +356,23 @@ SELECT col1 FROM another_T WHERE (col2, col3) IN (SELECT col4, col5); --empty
 
 SELECT col1 FROM another_T WHERE (1, 2) IN (SELECT col4, col5); --empty
 
+SELECT col1 FROM another_T WHERE (col2) IN (VALUES(1)); --empty
+
+SELECT col1 FROM another_T WHERE col2 IN (VALUES(1)); --empty
+
 SELECT (1,2) IN (SELECT 1,2);
 -- True
+
+SELECT col1 FROM another_T WHERE (col2, col3) IN (VALUES(1,2)); --empty
+
+SELECT col1 FROM another_T WHERE (col2, col3) IN (SELECT 1,2); --empty
 
 SELECT (1,2) IN (1,2); --error, trying to match a tuple with a number
 
 SELECT (1,2) IN (1); --error, trying to match a tuple with a number
+
+
+SELECT col1 FROM another_T WHERE (col2, col3) IN (1,2,3); --error, test tuple against individual numbers
 
 SELECT col1 FROM another_T WHERE (col2, col3) IN (SELECT 1); -- error, missing columns in the subquery
 
@@ -374,6 +385,8 @@ SELECT col1 FROM another_T WHERE (1, 1) IN (SELECT 1); -- error, missing columns
 SELECT col1 FROM another_T WHERE (col2) IN (SELECT 1,2); -- error, too many columns in the subquery
 
 SELECT col1 FROM another_T WHERE (col2, col3) IN (SELECT 1,2,3); -- error, too many columns in the subquery
+
+SELECT col1 FROM another_T WHERE (col2, col3) IN (VALUES(1,2,3)); -- error, too many columns in the subquery
 
 /* We shouldn't allow the following internal functions/procedures to be called from regular queries */
 --SELECT "identity"(col1) FROM another_T;

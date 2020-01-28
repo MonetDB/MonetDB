@@ -2089,7 +2089,7 @@ rewrite_anyequal(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 
 					/* find out list of right expression */
 					if (s1 != s2)
-						return sql_error(sql, 02, SQLSTATE(42000) "subquery has too %s columns", (s2 < s1) ? "few" : "many");
+						return sql_error(sql, 02, SQLSTATE(42000) "Subquery has too %s columns", (s2 < s1) ? "few" : "many");
 					for (node *n = t->h, *m = rsq->exps->h; n && m; n = n->next, m = m->next ) {
 						sql_exp *le = n->data;
 						sql_exp *re = m->data;
