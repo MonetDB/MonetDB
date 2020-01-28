@@ -83,27 +83,6 @@ MOSlayout_delta(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutpu
 #endif
 #undef COMPRESSION_DEFINITION
 
-#define scan_loop_delta(TPE, CANDITER_NEXT, TEST) \
-{\
-	MOSBlockHeaderTpe(delta, TPE)* parameters = (MOSBlockHeaderTpe(delta, TPE)*) task->blk;\
-	BitVector base = (BitVector) MOScodevectorDelta(task, TPE);\
-	DeltaTpe(TPE) acc = (DeltaTpe(TPE)) parameters->init; /*previous value*/\
-	const bte bits = parameters->bits;\
-	DeltaTpe(TPE) sign_mask = (DeltaTpe(TPE)) ((IPTpe(TPE)) 1) << (bits - 1);\
-    v = (TPE) acc;\
-    BUN j = 0;\
-    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = CANDITER_NEXT(task->ci)) {\
-        BUN i = (BUN) (c - first);\
-        for (;j <= i; j++) {\
-            TPE delta = getBitVector(base, j, bits);\
-			v = ACCUMULATE(acc, delta, sign_mask, TPE);\
-        }\
-        /*TODO: change from control to data dependency.*/\
-        if (TEST)\
-            *o++ = c;\
-    }\
-}
-
 #define NAME delta
 #define TPE bte
 #include "mosaic_select_template.h"
