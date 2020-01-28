@@ -293,16 +293,6 @@ MonetDB, you will very likely need this package.
 %doc %{_mandir}/man1/mclient.1.gz
 %doc %{_mandir}/man1/msqldump.1.gz
 
-%package client-tools
-Summary: MonetDB - Monet Database Management System Client Programs
-Group: Applications/Databases
-Requires: %{name}-client%{?_isa} = %{version}-%{release}
-%if (0%{?fedora} >= 22)
-# tomograph executes these two:
-Recommends: /usr/bin/gs
-Recommends: /usr/bin/gnuplot
-%endif
-
 %package client-devel
 Summary: MonetDB - Monet Database Management System Client Programs
 Group: Applications/Databases
