@@ -3846,6 +3846,9 @@ BBPdiskscan(const char *parent, size_t baseoff)
 			} else if (strncmp(p + 1, "mosaic", 6) == 0) {
 				BAT *b = getdesc(bid);
 				delete = (b == NULL || !b->tmosaic || !b->batCopiedtodisk);
+			} else if (strncmp(p + 1, "vmosaic", 7) == 0) {
+				BAT *b = getdesc(bid);
+				delete = (b == NULL || !b->tmosaic || !b->batCopiedtodisk);
 			} else if (strncmp(p + 1, "thashl", 6) == 0 ||
 				   strncmp(p + 1, "thashb", 6) == 0) {
 #ifdef PERSISTENTHASH
@@ -3857,6 +3860,11 @@ BBPdiskscan(const char *parent, size_t baseoff)
 				delete = true;
 #endif
 			} else if (strncmp(p + 1, "tmosaic", 9) == 0) {
+				BAT *b = getdesc(bid);
+				delete = b == NULL;
+				if (!delete)
+					b->tmosaic = (Heap *) 1;
+			} else if (strncmp(p + 1, "tvmosaic", 10) == 0) {
 				BAT *b = getdesc(bid);
 				delete = b == NULL;
 				if (!delete)
