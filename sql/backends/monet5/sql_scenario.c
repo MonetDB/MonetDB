@@ -1032,6 +1032,7 @@ SQLparser(Client c)
 	be->vtop = oldvtop;
 	m = be->mvc;
 	m->type = Q_PARSE;
+	m->Topt = 0;
 	/* clean up old stuff */
 	q = m->query;
 	m->query = NULL;
