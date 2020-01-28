@@ -40,7 +40,14 @@ lib_mosaic = {
 headers_mal = {
 	HEADERS = mal
 	DIR = libdir/monetdb5
-	SOURCES = mosaic.mal 
+	SOURCES = mosaic.mal
+}
+
+headers_hge = {
+	COND = HAVE_HGE
+	HEADERS = mal
+	DIR = libdir/monetdb5/autoload
+	SOURCES = mosaic_hge.mal
 }
 
 EXTRA_DIST_DIR = Tests
