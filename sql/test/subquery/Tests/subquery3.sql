@@ -340,26 +340,11 @@ SELECT
     (SELECT SUM(SUM(i2.i)) FROM integers i2 GROUP BY i2.i)
 FROM integers i1; --error, aggregation functions cannot be nested
 
-SELECT (1,2) IN (1,2); --error, trying to match a tuple with a number
-
-SELECT (1,2) IN (1); --error, trying to match a tuple with a number
-
 SELECT (1) IN (1);
 -- True
 
 SELECT (1) IN (SELECT 1);
 -- True
-
-SELECT (1,2) IN (SELECT 1,2);
--- True
-
-SELECT col1 FROM another_T WHERE (col2, col3) IN (SELECT 1); -- error, missing columns in the subquery
-
-SELECT col1 FROM another_T WHERE (col2, 1) IN (SELECT 1); -- error, missing columns in the subquery
-
-SELECT col1 FROM another_T WHERE (1, col2) IN (SELECT 1); -- error, missing columns in the subquery
-
-SELECT col1 FROM another_T WHERE (1, 1) IN (SELECT 1); -- error, missing columns in the subquery
 
 SELECT col1 FROM another_T WHERE 1 IN (SELECT 1);
 	-- 1
@@ -371,6 +356,20 @@ SELECT col1 FROM another_T WHERE (col2, col3) IN (SELECT col4, col5); --empty
 
 SELECT col1 FROM another_T WHERE (1, 2) IN (SELECT col4, col5); --empty
 
+SELECT (1,2) IN (SELECT 1,2);
+-- True
+
+SELECT (1,2) IN (1,2); --error, trying to match a tuple with a number
+
+SELECT (1,2) IN (1); --error, trying to match a tuple with a number
+
+SELECT col1 FROM another_T WHERE (col2, col3) IN (SELECT 1); -- error, missing columns in the subquery
+
+SELECT col1 FROM another_T WHERE (col2, 1) IN (SELECT 1); -- error, missing columns in the subquery
+
+SELECT col1 FROM another_T WHERE (1, col2) IN (SELECT 1); -- error, missing columns in the subquery
+
+SELECT col1 FROM another_T WHERE (1, 1) IN (SELECT 1); -- error, missing columns in the subquery
 
 /* We shouldn't allow the following internal functions/procedures to be called from regular queries */
 --SELECT "identity"(col1) FROM another_T;
