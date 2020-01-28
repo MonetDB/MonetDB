@@ -341,16 +341,34 @@ SELECT
 FROM integers i1; --error, aggregation functions cannot be nested
 
 SELECT (1) IN (1);
--- True
+	-- True
 
 SELECT (1) IN (SELECT 1);
--- True
+	-- True
 
 SELECT col1 FROM another_T WHERE 1 IN (SELECT 1);
 	-- 1
 	-- 11
 	-- 111
 	-- 1111
+
+SELECT (col1, col2) IN (VALUES (1,2)) FROM another_T; --TODO
+	-- True
+	-- False
+	-- False
+	-- False
+
+SELECT (col1, col2) IN (SELECT 1,2) FROM another_T; --TODO
+	-- True
+	-- False
+	-- False
+	-- False
+
+SELECT (col1, col2) IN (SELECT 1,3) FROM another_T; --TODO
+	-- False
+	-- False
+	-- False
+	-- False
 
 SELECT col1 FROM another_T WHERE (col2, col3) IN (SELECT col4, col5); --empty
 
@@ -360,7 +378,7 @@ SELECT col1 FROM another_T WHERE (col2) IN (VALUES(1)); --empty
 
 SELECT col1 FROM another_T WHERE col2 IN (VALUES(1)); --empty
 
-SELECT (1,2) IN (SELECT 1,2);
+SELECT (1,2) IN (SELECT 1,2); --TODO
 -- True
 
 SELECT col1 FROM another_T WHERE (col2, col3) IN (VALUES(1,2)); --empty
@@ -371,9 +389,9 @@ SELECT (1,2) IN (1,2); --error, trying to match a tuple with a number
 
 SELECT (1,2) IN (1); --error, trying to match a tuple with a number
 
-SELECT (col1, col2) IN (VALUES (1)); --error, subquery has too few columns
+SELECT (col1, col2) IN (VALUES (1)) FROM another_T; --error, subquery has too few columns
 
-SELECT (col1, col2) IN (1) from another_T; --error, trying to match a tuple with a number
+SELECT (col1, col2) IN (1) FROM another_T; --error, trying to match a tuple with a number
 
 SELECT col1 FROM another_T WHERE (col2, col3) IN (1,2,3); --error, test tuple against individual numbers
 

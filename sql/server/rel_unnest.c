@@ -2049,10 +2049,10 @@ rewrite_anyequal(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 
 			if (is_project(rel->op) || depth > 0) {
 				list *exps = NULL;
-				sql_exp *rid, *lid;
+				sql_exp *rid, *lid, *a = NULL;
 				sql_rel *sq = lsq;
+				sql_subaggr *ea = sql_bind_aggr(sql->sa, sql->session->schema, is_anyequal(sf)?"anyequal":"allnotequal", exp_subtype(re));
 
-				assert(!is_tuple);
 				rsq = rel_add_identity2(sql, rsq, &rid);
 				rid = exp_ref(sql->sa, rid);
 
@@ -2071,15 +2071,36 @@ rewrite_anyequal(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 				if (sq)
 					(void)rewrite_inner(sql, rel, lsq, op_join);
 				if (rsq) 
-					(void)rewrite_inner(sql, rel, rsq, op_join);
-	
+					(void)rewrite_inner(sql, rel, rsq, !is_tuple?op_join:is_anyequal(sf)?op_semi:op_anti);
+
 				lsq = rel->l = rel_groupby(sql, rel->l, exp2list(sql->sa, lid)); 
 				if (exps)
-					lsq->exps = exps; 
+					lsq->exps = exps;
 
-				sql_subaggr *ea = sql_bind_aggr(sql->sa, sql->session->schema, is_anyequal(sf)?"anyequal":"allnotequal", exp_subtype(re));
-				sql_exp *a = exp_aggr1(sql->sa, le, ea, 0, 0, CARD_AGGR, has_nil(le));
-				append(a->l, re);
+				if (is_tuple) {
+					list *t = le->f;
+					/*list *l = sa_list(sql->sa);
+					list *r = sa_list(sql->sa);*/
+					int s1 = list_length(t), s2 = list_length(rsq->exps) - 1; /* subtract identity column */
+
+					/* find out list of right expression */
+					if (s1 != s2)
+						return sql_error(sql, 02, SQLSTATE(42000) "Subquery has too %s columns", (s2 < s1) ? "few" : "many");
+					/*for (node *n = t->h, *m = rsq->exps->h; n && m; n = n->next, m = m->next ) {
+						sql_exp *le = n->data;
+						sql_exp *re = m->data;
+
+						append(l, le);
+						re = exp_ref(sql->sa, re);
+						append(r, re);
+					}
+					a = exp_aggr1(sql->sa, exp_values(sql->sa, l), ea, 0, 0, CARD_AGGR, has_nil(le));
+					append(a->l, exp_values(sql->sa, r));*/
+					return sql_error(sql, 02, SQLSTATE(42000) "Tuple matching at projections not implemented in the backend yet");
+				} else {
+					a = exp_aggr1(sql->sa, le, ea, 0, 0, CARD_AGGR, has_nil(le));
+					append(a->l, re);
+				}
 				append(a->l, rid);
 				le = rel_groupby_add_aggr(sql, lsq, a);
 				if (exp_name(e))
