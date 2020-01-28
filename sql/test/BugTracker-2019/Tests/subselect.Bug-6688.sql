@@ -60,7 +60,8 @@ select
   )
   as "co_f1"
 from
-    "cp_t";
+    "cp_t"
+order by "co_f1";
 
 with "cp_t" as
 (
@@ -126,6 +127,7 @@ select
   )
   as "co_f1"
 from
-    "cp_t";
+    "cp_t"
+order by "co_f1";
 
 ROLLBACK;
