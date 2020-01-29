@@ -14,19 +14,19 @@ insert into cqinput04 values (1), (2);
 
 insert into cqinput04 values (3), (4);
 
-call cquery.wait(1000);
+call sleep(1000);
 
 select aaa from cqresult04; --output 2 tuples with value 2
 
 insert into cqinput04 values (5);
 
-call cquery.wait(1000);
+call sleep(1000);
 
 select aaa from cqresult04; --output 2 tuples with value 2
 
 insert into cqinput04 values (6);
 
-call cquery.wait(1000);
+call sleep(1000);
 
 select aaa from cqresult04; --output 3 tuples with value 2
 

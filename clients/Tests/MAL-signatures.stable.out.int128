@@ -14946,7 +14946,6 @@ stdout of test 'MAL-signatures` in directory 'clients` itself:
 [ "cquery",	"prelude",	"command cquery.prelude():void ",	"CQprelude;",	""	]
 [ "cquery",	"show",	"pattern cquery.show(alias:str):void ",	"CQshow;",	"Debug a single continuous query"	]
 [ "cquery",	"status",	"pattern cquery.status() (tick:bat[:timestamp], alias:bat[:str], state:bat[:str], error:bat[:str]) ",	"CQstatus;",	"Status of all registered continuous queries"	]
-[ "cquery",	"wait",	"pattern cquery.wait(cnt:int):void ",	"CQwait;",	"Sleep for some time"	]
 [ "date",	"!=",	"pattern date.!=(v:date, w:date):bit ",	"CMDvarNE;",	"Equality of two dates"	]
 [ "date",	"!=",	"pattern date.!=(v:date, w:date, nil_matches:bit):bit ",	"CMDvarNE;",	"Equality of two dates"	]
 [ "date",	"#fromstr",	"command date.#fromstr():void ",	"date_fromstr;",	""	]

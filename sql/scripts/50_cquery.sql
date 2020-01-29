@@ -19,11 +19,6 @@
 
 create schema cquery;
 
--- The following commands can be part of the cquery itself
-create procedure cquery.wait(ms integer)
-	external name cquery.wait;
-create procedure cquery.wait(ms bigint)
-	external name cquery.wait;
 
 -- Limit the number of iterations of a CQ
 create procedure cquery."cycles"(cqcycles integer)

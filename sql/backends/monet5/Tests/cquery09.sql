@@ -8,7 +8,7 @@ end;
 
 start continuous sys.cq_c(1) as cq_ca;
 
-call cquery.wait(4000);
+call sleep(4000);
 
 drop table result9; --error
 

@@ -1014,19 +1014,6 @@ finish:
 	return msg;
 }
 
-str
-CQwait(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	unsigned int delay = (unsigned int) *getArgReference_int(stk,pci,1);
-
-	(void) cntxt;
-	(void) mb;
-#ifdef DEBUG_CQUERY
-	fprintf(stderr, "#scheduler wait %d ms\n",delay);
-#endif
-	MT_sleep_ms(delay);
-	return MAL_SUCCEED;
-}
-
 /* Remove a specific continuous query from the scheduler */
 
 str

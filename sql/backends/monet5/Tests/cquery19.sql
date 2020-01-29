@@ -16,7 +16,7 @@ start continuous procedure cq_query19a() with cycles 1;
 
 insert into testing19 values (1, '1');
 
-call cquery.wait(1000);
+call sleep(1000);
 
 select aaa from results19; --output 1
 
@@ -24,19 +24,19 @@ alter stream table testing19 set window 2;
 
 insert into testing19 values (2, '2'), (3, '3'), (4, '4');
 
-call cquery.wait(1000);
+call sleep(1000);
 
 select aaa from results19; --output 1
 
 start continuous procedure cq_query19b() with cycles 2;
 
-call cquery.wait(1000);
+call sleep(1000);
 
 select aaa from results19; --output 1, 5
 
 insert into testing19 values (5, '5');
 
-call cquery.wait(1000);
+call sleep(1000);
 
 select aaa from results19; --output 1, 5, 9
 

@@ -17,10 +17,6 @@
 
 module cquery;
 
-pattern wait(cnt:int)
-address CQwait
-comment "Sleep for some time";
-
 pattern cycles(alias:str,cnt:int)
 address CQcycles
 comment "Limit number of petrinet steps for a single continuous query";

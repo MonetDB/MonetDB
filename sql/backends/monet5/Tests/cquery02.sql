@@ -12,31 +12,31 @@ start continuous procedure sys.cq_basic02();
 
 insert into cqinput02 values (1), (2), (3);
 
-call cquery.wait(1000);
+call sleep(1000);
 
 select aaa from cqresult02; --output no tuples
 
 insert into cqinput02 values (4);
 
-call cquery.wait(1000);
+call sleep(1000);
 
 select aaa from cqresult02; --output 1 tuple with value 10
 
 insert into cqinput02 values (5), (6);
 
-call cquery.wait(1000);
+call sleep(1000);
 
 select aaa from cqresult02; --output 1 tuple with value 10
 
 insert into cqinput02 values (7);
 
-call cquery.wait(1000);
+call sleep(1000);
 
 select aaa from cqresult02; --output 2 tuples with value 10 and 22
 
 insert into cqinput02 values (1000);
 
-call cquery.wait(1000);
+call sleep(1000);
 
 select aaa from cqresult02; --output 2 tuples with value 10 and 22
 

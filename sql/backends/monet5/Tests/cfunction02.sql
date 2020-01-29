@@ -13,7 +13,7 @@ end;
 
 start continuous function cfunc2('test') with heartbeat 1000 cycles 3;
 
-call cquery.wait(4000);
+call sleep(4000);
 
 stop continuous cfunc2; --error, cfunc2 is no longer available
 

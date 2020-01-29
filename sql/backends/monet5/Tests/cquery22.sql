@@ -11,7 +11,7 @@ start continuous function calculateaverage(10) as calc; --error
 start continuous function calculateaverage(9) with cycles 1 as othercalc;
 start continuous function calculateaverage() as othercalc; --error
 
-call cquery.wait(1000);
+call sleep(1000);
 
 stop all continuous;
 

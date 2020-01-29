@@ -30,7 +30,7 @@ insert into testing11c values (1);
 insert into testing11c values (2);
 insert into testing11c values (3);
 
-call cquery.wait(1000);
+call sleep(1000);
 
 stop continuous cq_query11b;
 

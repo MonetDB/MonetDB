@@ -32,7 +32,8 @@ stdout of test 'check_AlternateKey_uniqueness` in directory 'sql/test/sys-schema
 % sys.,	sys.table_types # table_name
 % duplicates,	table_type_name # name
 % bigint,	varchar # type
-% 1,	0 # length
+% 1,	12 # length
+[ 2,	"STREAM TABLE"	]
 #SELECT COUNT(*) AS duplicates, schema_id, name FROM sys._tables GROUP BY schema_id, name HAVING COUNT(*) > 1;
 % sys.,	sys._tables,	sys._tables # table_name
 % duplicates,	schema_id,	name # name

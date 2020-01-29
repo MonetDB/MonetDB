@@ -16,7 +16,7 @@ end;
 start continuous sys.cq_window();
 
 -- wait for a few seconds for scheduler to do its swork
-call cquery.wait(3000);
+call sleep(3000);
 
 -- STOP cq_window;
 pause continuous cq_window;

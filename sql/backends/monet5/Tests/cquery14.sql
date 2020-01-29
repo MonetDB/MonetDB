@@ -15,7 +15,7 @@ end;
 
 start continuous sys.cq_query14b() with cycles 1;
 
-call cquery.wait(2500);
+call sleep(2500);
 
 select count(*) from results14; --should be 2
 

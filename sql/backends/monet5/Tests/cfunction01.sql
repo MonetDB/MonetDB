@@ -17,7 +17,7 @@ END;
 select result from cquery.aggr01; #error
 
 start continuous function aggr01();
-call cquery.wait(1000); #wait to be started
+call sleep(1000); #wait to be started
 
 select result from cquery.aggr01; #should be empty
 pause continuous aggr01;
@@ -25,7 +25,7 @@ pause continuous aggr01;
 insert into ftmp values(1),(1);
 resume continuous aggr01;
 
-call cquery.wait(1000); #wait for processing
+call sleep(1000); #wait for processing
 select result from cquery.aggr01; #should return 2
 
 pause continuous aggr01;
@@ -33,10 +33,10 @@ insert into ftmp values(2),(2);
 insert into ftmp values(3),(3);
 
 resume continuous aggr01;
-call cquery.wait(1000);
+call sleep(1000);
 select result from cquery.aggr01; #should return 2,4,6
 
-call cquery.wait(1000);
+call sleep(1000);
 select result from cquery.aggr01; #should return 2,4,6
 
 stop continuous aggr01;

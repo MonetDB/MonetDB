@@ -68,7 +68,6 @@ typedef struct {
 sql5_export int CQlocateUDF(sql_func *f);
 sql5_export int CQtryDeleteBasket(str schname, str tblname);
 
-sql5_export str CQwait(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str CQbeginAt(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str CQcycles(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str CQheartbeat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

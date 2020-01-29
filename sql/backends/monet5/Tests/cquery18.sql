@@ -9,13 +9,13 @@ end;
 
 start continuous procedure cq_query18(1) with heartbeat 1000 cycles 1;
 
-call cquery.wait(2000);
+call sleep(2000);
 
 select aaa from testing18;
 
 start continuous procedure cq_query18(0) with heartbeat 1000 cycles 2;
 
-call cquery.wait(3000);
+call sleep(3000);
 
 select aaa from testing18;
 
@@ -31,7 +31,7 @@ stop continuous cq_query18; --ok
 
 start continuous procedure cq_query18(2) with heartbeat 1000 cycles 2; --ok
 
-call cquery.wait(3000);
+call sleep(3000);
 
 select aaa from testing18;
 

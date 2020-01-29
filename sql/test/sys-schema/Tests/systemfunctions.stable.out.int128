@@ -84,8 +84,6 @@ stdout of test 'systemfunctions` in directory 'sql/test/sys-schema` itself:
 [ "cquery",	"summary",	2,	"bigint",	""	]
 [ "cquery",	"tumble",	0,	"clob",	"create procedure cquery.\"tumble\"(\"schema\" string, \"table\" string)\n external name basket.\"tumble\";"	]
 [ "cquery",	"tumble",	1,	"clob",	""	]
-[ "cquery",	"wait",	0,	"int",	"create procedure cquery.wait(ms integer)\n external name cquery.wait;"	]
-[ "cquery",	"wait",	0,	"bigint",	"create procedure cquery.wait(ms bigint)\n external name cquery.wait;"	]
 [ "cquery",	"window",	0,	"clob",	"create procedure cquery.\"window\"(\"schema\" string, \"table\" string, elem integer)\n external name basket.\"window\";"	]
 [ "cquery",	"window",	1,	"clob",	""	]
 [ "cquery",	"window",	2,	"int",	""	]

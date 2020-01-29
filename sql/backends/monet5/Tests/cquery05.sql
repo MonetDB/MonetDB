@@ -9,7 +9,7 @@ end;
 
 start continuous sys.cq_basic() with heartbeat 1000 cycles 3;
 
-call cquery.wait(3500);
+call sleep(3500);
 
 --select * from cquery.status();
 --select * from cquery.summary();

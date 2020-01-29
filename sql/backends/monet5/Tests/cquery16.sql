@@ -12,7 +12,7 @@ end;
 insert into testing16 values (1);
 start continuous sys.cq_query16a() with cycles 1;
 
-call cquery.wait(1000);
+call sleep(1000);
 
 drop procedure sys.cq_query16a;
 

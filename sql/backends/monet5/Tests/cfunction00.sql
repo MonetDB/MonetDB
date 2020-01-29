@@ -14,7 +14,7 @@ END;
 -- to call a continuous function in the scheduler, we must pass the keyword "function" explicitly
 start continuous function aggr00();
 
-call cquery.wait(1000); #give it time to start
+call sleep(1000); #give it time to start
 select aggr00(); #should return 1
 select aggr00(); #should return 2
 

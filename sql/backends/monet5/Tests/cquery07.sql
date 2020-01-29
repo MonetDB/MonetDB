@@ -10,7 +10,7 @@ stop continuous cq_basic07; --error
 
 start continuous cq_basic07() WITH HEARTBEAT 1000 CYCLES 300; --1 second
 
-call cquery.wait(2100);
+call sleep(2100);
 
 pause continuous cq_basic07; --ok
 

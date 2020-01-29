@@ -16,7 +16,7 @@ start continuous sys.cq_cycles() with cycles 3;
 
 -- reactivate all continuous queries
 
-call cquery.wait(4000);
+call sleep(4000);
 pause continuous cq_cycles;
 
 select 'RESULT';
