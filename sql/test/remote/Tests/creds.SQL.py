@@ -89,43 +89,45 @@ def create_workers(fn_template, nworkers, cmovies, ratings_table_def_fk):
 # Start supervisor database
 supervisorport = freeport()
 os.mkdir(os.path.join(TMPDIR, "supervisor"))
-supervisorproc = process.server(mapiport=supervisorport, dbname="supervisor", dbfarm=os.path.join(TMPDIR, "supervisor"), stdin=process.PIPE, stdout=process.PIPE)
-supervisorconn = pymonetdb.connect(database='supervisor', port=supervisorport, autocommit=True)
-supervisor_uri = "mapi:monetdb://localhost:{}/supervisor".format(supervisorport)
-c = supervisorconn.cursor()
+try:
+    supervisorproc = process.server(mapiport=supervisorport, dbname="supervisor", dbfarm=os.path.join(TMPDIR, "supervisor"), stdin=process.PIPE, stdout=process.PIPE)
+    supervisorconn = pymonetdb.connect(database='supervisor', port=supervisorport, autocommit=True)
+    supervisor_uri = "mapi:monetdb://localhost:{}/supervisor".format(supervisorport)
+    c = supervisorconn.cursor()
 
-# Create the movies table and load the data
-movies_filename=os.getenv("TSTDATAPATH")+"/netflix_data/movies.csv"
-movies_create = "CREATE TABLE movies {}".format(MOVIES_TABLE_DEF)
-c.execute(movies_create)
-load_movies = "COPY INTO movies FROM '{}' USING DELIMITERS ',','\n','\"'".format(movies_filename)
-c.execute(load_movies)
+    # Create the movies table and load the data
+    movies_filename=os.getenv("TSTDATAPATH")+"/netflix_data/movies.csv"
+    movies_create = "CREATE TABLE movies {}".format(MOVIES_TABLE_DEF)
+    c.execute(movies_create)
+    load_movies = "COPY INTO movies FROM '{}' USING DELIMITERS ',','\n','\"'".format(movies_filename)
+    c.execute(load_movies)
 
-# Declare the ratings merge table on supervisor
-mtable = "CREATE MERGE TABLE ratings {}".format(RATINGS_TABLE_DEF)
-c.execute(mtable)
+    # Declare the ratings merge table on supervisor
+    mtable = "CREATE MERGE TABLE ratings {}".format(RATINGS_TABLE_DEF)
+    c.execute(mtable)
 
-# Create the workers and load the ratings data
-fn_template=os.getenv("TSTDATAPATH")+"/netflix_data/ratings_sample_{}.csv"
-cmovies = "CREATE REMOTE TABLE movies {} ON '{}' WITH USER 'monetdb' PASSWORD 'monetdb'".format(MOVIES_TABLE_DEF, supervisor_uri)
-workers = create_workers(fn_template, NWORKERS, cmovies, RATINGS_TABLE_DEF_FK)
+    # Create the workers and load the ratings data
+    fn_template=os.getenv("TSTDATAPATH")+"/netflix_data/ratings_sample_{}.csv"
+    cmovies = "CREATE REMOTE TABLE movies {} ON '{}' WITH USER 'monetdb' PASSWORD 'monetdb'".format(MOVIES_TABLE_DEF, supervisor_uri)
+    try:
+        workers = create_workers(fn_template, NWORKERS, cmovies, RATINGS_TABLE_DEF_FK)
 
-# Create the remote tables on supervisor
-for wrec in workers:
-    rtable = "CREATE REMOTE TABLE ratings{} {} on '{}' WITH USER 'monetdb' PASSWORD 'monetdb'".format(wrec['num'], RATINGS_TABLE_DEF, wrec['mapi'])
-    c.execute(rtable)
+        # Create the remote tables on supervisor
+        for wrec in workers:
+            rtable = "CREATE REMOTE TABLE ratings{} {} on '{}' WITH USER 'monetdb' PASSWORD 'monetdb'".format(wrec['num'], RATINGS_TABLE_DEF, wrec['mapi'])
+            c.execute(rtable)
 
-    atable = "ALTER TABLE ratings add table ratings{}".format(wrec['num'])
-    c.execute(atable)
+            atable = "ALTER TABLE ratings add table ratings{}".format(wrec['num'])
+            c.execute(atable)
 
-# Run the queries
-c.execute("SELECT COUNT(*) FROM ratings0")
-print("{} rows in remote table".format(c.fetchall()[0][0]))
+        # Run the queries
+        c.execute("SELECT COUNT(*) FROM ratings0")
+        print("{} rows in remote table".format(c.fetchall()[0][0]))
 
-c.execute("SELECT COUNT(*) FROM ratings")
-print("{} rows in merge table".format(c.fetchall()[0][0]))
-
-for wrec in workers:
-    wrec['proc'].communicate()
-
-supervisorproc.communicate()
+        c.execute("SELECT COUNT(*) FROM ratings")
+        print("{} rows in merge table".format(c.fetchall()[0][0]))
+    finally:
+        for wrec in workers:
+            wrec['proc'].communicate()
+finally:
+    supervisorproc.communicate()

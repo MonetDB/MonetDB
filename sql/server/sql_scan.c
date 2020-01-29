@@ -97,15 +97,6 @@ scanner_init_keywords(void)
 	failed += keywords_insert("ALTER", ALTER);
 	failed += keywords_insert("ADD", ADD);
 	failed += keywords_insert("AND", AND);
-	failed += keywords_insert("MEDIAN", AGGR);
-	failed += keywords_insert("CORR", AGGR2);
-	failed += keywords_insert("QUANTILE", AGGR2);
-	failed += keywords_insert("AVG", AGGR);
-	failed += keywords_insert("MIN", AGGR);
-	failed += keywords_insert("MAX", AGGR);
-	failed += keywords_insert("SUM", AGGR);
-	failed += keywords_insert("PROD", AGGR);
-	failed += keywords_insert("COUNT", AGGR);
 
 	failed += keywords_insert("RANK", RANK);
 	failed += keywords_insert("DENSE_RANK", RANK);
@@ -1273,8 +1264,7 @@ sql_get_next_token(YYSTYPE *yylval, void *parm)
 		token = aTYPE;
 
 	if (token == IDENT || token == COMPARISON || token == FILTER_FUNC ||
-	    token == AGGR || token == AGGR2 || token == RANK ||
-	    token == aTYPE || token == ALIAS)
+	    token == RANK || token == aTYPE || token == ALIAS)
 		yylval->sval = sa_strndup(c->sa, yylval->sval, lc->yycur-lc->yysval);
 	else if (token == STRING) {
 		char quote = *yylval->sval;

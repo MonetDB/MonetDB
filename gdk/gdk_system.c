@@ -525,7 +525,7 @@ MT_thread_init(void)
 	}
 	mainthread.tid = pthread_self();
 	if ((ret = pthread_setspecific(threadkey, &mainthread)) != 0) {
-		TRC_ERROR(GDK_SYSTEM, "Σetting specific value failed: %s\n", strerror(ret));
+		TRC_ERROR(GDK_SYSTEM, "Setting specific value failed: %s\n", strerror(ret));
 	}
 	return true;
 }

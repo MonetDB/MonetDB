@@ -22,9 +22,6 @@
 #include "mal_debugger.h"
 #include "opt_prelude.h"
 
-
-#include <string.h>
-
 /*
  * Some utility routines to generate code
  * The equality operator in MAL is '==' instead of '='.
@@ -3077,7 +3074,7 @@ stmt_func(backend *be, stmt *ops, const char *name, sql_rel *rel, int f_union)
 }
 
 stmt *
-stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subaggr *op, int reduce, int no_nil, int nil_if_empty)
+stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int reduce, int no_nil, int nil_if_empty)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
@@ -3093,14 +3090,15 @@ stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subaggr *op, int red
 		return NULL;
 	if (backend_create_subaggr(be, op) < 0)
 		return NULL;
-	mod = op->aggr->mod;
-	aggrfunc = op->aggr->imp;
+	mod = op->func->mod;
+	aggrfunc = op->func->imp;
 
 	if (strcmp(aggrfunc, "avg") == 0 || strcmp(aggrfunc, "sum") == 0 || strcmp(aggrfunc, "prod") == 0
 		|| strcmp(aggrfunc, "str_group_concat") == 0)
 		complex_aggr = true;
 	/* some "sub" aggregates have an extra argument "abort_on_error" */
-	abort_on_error = complex_aggr || strncmp(aggrfunc, "stdev", 5) == 0 || strncmp(aggrfunc, "variance", 8) == 0;
+	abort_on_error = complex_aggr || strncmp(aggrfunc, "stdev", 5) == 0 || strncmp(aggrfunc, "variance", 8) == 0 || 
+					strncmp(aggrfunc, "covariance", 10) == 0 || strncmp(aggrfunc, "corr", 4) == 0;
 
 	if (ext) {
 		snprintf(aggrF, 64, "sub%s", aggrfunc);
@@ -3123,22 +3121,22 @@ stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subaggr *op, int red
 		}
 	}
 
-	if (LANG_EXT(op->aggr->lang))
-		q = pushPtr(mb, q, op->aggr);
-	if (op->aggr->lang == FUNC_LANG_R ||
-		op->aggr->lang >= FUNC_LANG_PY || 
-		op->aggr->lang == FUNC_LANG_C ||
-		op->aggr->lang == FUNC_LANG_CPP) {
+	if (LANG_EXT(op->func->lang))
+		q = pushPtr(mb, q, op->func);
+	if (op->func->lang == FUNC_LANG_R ||
+		op->func->lang >= FUNC_LANG_PY || 
+		op->func->lang == FUNC_LANG_C ||
+		op->func->lang == FUNC_LANG_CPP) {
 		if (!grp) {
 			setVarType(mb, getArg(q, 0), restype);
 			setVarUDFtype(mb, getArg(q, 0));
 		}
-		if (op->aggr->lang == FUNC_LANG_C) {
+		if (op->func->lang == FUNC_LANG_C) {
 			q = pushBit(mb, q, 0);
-		} else if (op->aggr->lang == FUNC_LANG_CPP) {
+		} else if (op->func->lang == FUNC_LANG_CPP) {
 			q = pushBit(mb, q, 1);
 		}
- 		q = pushStr(mb, q, op->aggr->query);
+ 		q = pushStr(mb, q, op->func->query);
 	}
 
 	if (op1->type != st_list) {
@@ -3187,7 +3185,7 @@ stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subaggr *op, int red
 		s->key = reduce;
 		s->aggr = reduce;
 		s->flag = no_nil;
-		s->op4.aggrval = op;
+		s->op4.funcval = op;
 		s->nr = getDestVar(q);
 		s->q = q;
 		return s;
@@ -3279,7 +3277,7 @@ tail_type(stmt *st)
 			return sql_bind_localtype("lng");
 
 		case st_aggr: {
-			list *res = st->op4.aggrval->res;
+			list *res = st->op4.funcval->res;
 
 			if (res && list_length(res) == 1)
 				return res->h->data;
@@ -3400,14 +3398,10 @@ _column_name(sql_allocator *sa, stmt *st)
 	case st_convert:
 		return column_name(sa, st->op1);
 	case st_Nop:
-	{
-		const char *cn = column_name(sa, st->op1);
-		return func_name(sa, st->op4.funcval->func->base.name, cn);
-	}
 	case st_aggr:
 	{
 		const char *cn = column_name(sa, st->op1);
-		return func_name(sa, st->op4.aggrval->aggr->base.name, cn);
+		return func_name(sa, st->op4.funcval->func->base.name, cn);
 	}
 	case st_alias:
 		if (st->op3)

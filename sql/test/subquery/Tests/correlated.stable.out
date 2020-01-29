@@ -302,8 +302,8 @@ stdout of test 'correlated` in directory 'sql/test/subquery` itself:
 [ 2,	3	]
 [ 3,	4	]
 #SELECT CAST(SUM((SELECT i+i1.i FROM integers WHERE i=1)) AS BIGINT) FROM integers i1;
-% .%3 # table_name
-% %3 # name
+% .%5 # table_name
+% %5 # name
 % bigint # type
 % 1 # length
 [ 9	]

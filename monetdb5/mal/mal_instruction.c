@@ -762,6 +762,21 @@ makeVarSpace(MalBlkPtr mb)
 }
 
 /* create and initialize a variable record*/
+void
+setVariableType(MalBlkPtr mb, const int n, malType type)
+{
+	assert( n >= 0 && n <mb->vtop);
+	setVarType(mb, n, type);
+	setRowCnt(mb,n,0);
+	clrVarFixed(mb, n);
+	clrVarUsed(mb, n);
+	clrVarInit(mb, n);
+	clrVarDisabled(mb, n);
+	clrVarUDFtype(mb, n);
+	clrVarConstant(mb, n);
+	clrVarCleanup(mb, n);
+}
+
 int
 newVariable(MalBlkPtr mb, const char *name, size_t len, malType type)
 {
@@ -781,16 +796,8 @@ newVariable(MalBlkPtr mb, const char *name, size_t len, malType type)
 		(void) strcpy_len( getVarName(mb,n), name, len + 1);
 	}
 
-	setRowCnt(mb,n,0);
-	setVarType(mb, n, type);
-	clrVarFixed(mb, n);
-	clrVarUsed(mb, n);
-	clrVarInit(mb, n);
-	clrVarDisabled(mb, n);
-	clrVarUDFtype(mb, n);
-	clrVarConstant(mb, n);
-	clrVarCleanup(mb, n);
 	mb->vtop++;
+	setVariableType(mb, n, type);
 	return n;
 }
 

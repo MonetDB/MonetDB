@@ -17,9 +17,10 @@
  * "extents" output of BATgroup.  The difference is that BATunique
  * does not return the grouping bat.
  *
- * The inputs must be dense-headed, the first input is the bat from
- * which unique rows are selected, the second input is a list of
- * candidates.
+ * The first input is the bat from which unique rows are selected, the
+ * second input is an optional candidate list.
+ *
+ * The return value is a candidate list.
  */
 BAT *
 BATunique(BAT *b, BAT *s)
@@ -186,9 +187,7 @@ BATunique(BAT *b, BAT *s)
 			     hb = HASHgetlink(hs, hb)) {
 				assert(hb < p + lo);
 				if (cmp(v, BUNtail(bi, hb)) == 0 &&
-				    canditer_search(&ci,
-						    hb - lo + seq,
-						    false) != BUN_NONE) {
+				    canditer_contains(&ci, hb - lo + seq)) {
 					/* we've seen this value
 					 * before */
 					break;

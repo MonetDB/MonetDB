@@ -180,52 +180,6 @@ HASHgetlink(Hash *h, BUN i)
 #define hash_flt(H,V)	hash_int(H,V)
 #define hash_dbl(H,V)	hash_lng(H,V)
 
-#define HASHfnd_str(x,y,z)						\
-	do {								\
-		BUN _i;							\
-		(x) = BUN_NONE;						\
-		if (BAThash((y).b) == GDK_SUCCEED) {			\
-			HASHloop_str((y), (y).b->thash, _i, (z)) {	\
-				(x) = _i;				\
-				break;					\
-			}						\
-		} else							\
-			goto hashfnd_failed;				\
-	} while (0)
-#define HASHfnd(x,y,z)						\
-	do {							\
-		BUN _i;						\
-		(x) = BUN_NONE;					\
-		if (BAThash((y).b) == GDK_SUCCEED) {		\
-			HASHloop((y), (y).b->thash, _i, (z)) {	\
-				(x) = _i;			\
-				break;				\
-			}					\
-		} else						\
-			goto hashfnd_failed;			\
-	} while (0)
-#define HASHfnd_TYPE(x,y,z,TYPE)					\
-	do {								\
-		BUN _i;							\
-		(x) = BUN_NONE;						\
-		if (BAThash((y).b) == GDK_SUCCEED) {			\
-			HASHloop_##TYPE((y), (y).b->thash, _i, (z)) {	\
-				(x) = _i;				\
-				break;					\
-			}						\
-		} else							\
-			goto hashfnd_failed;				\
-	} while (0)
-#define HASHfnd_bte(x,y,z)	HASHfnd_TYPE(x,y,z,bte)
-#define HASHfnd_sht(x,y,z)	HASHfnd_TYPE(x,y,z,sht)
-#define HASHfnd_int(x,y,z)	HASHfnd_TYPE(x,y,z,int)
-#define HASHfnd_lng(x,y,z)	HASHfnd_TYPE(x,y,z,lng)
-#ifdef HAVE_HGE
-#define HASHfnd_hge(x,y,z)	HASHfnd_TYPE(x,y,z,hge)
-#endif
-#define HASHfnd_flt(x,y,z)	HASHfnd_TYPE(x,y,z,flt)
-#define HASHfnd_dbl(x,y,z)	HASHfnd_TYPE(x,y,z,dbl)
-
 /*
  * @- hash-table supported loop over BUNs The first parameter `bi' is
  * a BAT iterator, the second (`h') should point to the Hash
@@ -275,6 +229,52 @@ HASHgetlink(Hash *h, BUN i)
 #endif
 #define HASHloop_flt(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, flt)
 #define HASHloop_dbl(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, dbl)
+
+#define HASHfnd_str(x,y,z)						\
+	do {								\
+		BUN _i;							\
+		(x) = BUN_NONE;						\
+		if (BAThash((y).b) == GDK_SUCCEED) {			\
+			HASHloop_str((y), (y).b->thash, _i, (z)) {	\
+				(x) = _i;				\
+				break;					\
+			}						\
+		} else							\
+			goto hashfnd_failed;				\
+	} while (0)
+#define HASHfnd(x,y,z)						\
+	do {							\
+		BUN _i;						\
+		(x) = BUN_NONE;					\
+		if (BAThash((y).b) == GDK_SUCCEED) {		\
+			HASHloop((y), (y).b->thash, _i, (z)) {	\
+				(x) = _i;			\
+				break;				\
+			}					\
+		} else						\
+			goto hashfnd_failed;			\
+	} while (0)
+#define HASHfnd_TYPE(x,y,z,TYPE)					\
+	do {								\
+		BUN _i;							\
+		(x) = BUN_NONE;						\
+		if (BAThash((y).b) == GDK_SUCCEED) {			\
+			HASHloop_##TYPE((y), (y).b->thash, _i, (z)) {	\
+				(x) = _i;				\
+				break;					\
+			}						\
+		} else							\
+			goto hashfnd_failed;				\
+	} while (0)
+#define HASHfnd_bte(x,y,z)	HASHfnd_TYPE(x,y,z,bte)
+#define HASHfnd_sht(x,y,z)	HASHfnd_TYPE(x,y,z,sht)
+#define HASHfnd_int(x,y,z)	HASHfnd_TYPE(x,y,z,int)
+#define HASHfnd_lng(x,y,z)	HASHfnd_TYPE(x,y,z,lng)
+#ifdef HAVE_HGE
+#define HASHfnd_hge(x,y,z)	HASHfnd_TYPE(x,y,z,hge)
+#endif
+#define HASHfnd_flt(x,y,z)	HASHfnd_TYPE(x,y,z,flt)
+#define HASHfnd_dbl(x,y,z)	HASHfnd_TYPE(x,y,z,dbl)
 
 /*
  * A new entry is added with HASHins using the BAT, the BUN index, and

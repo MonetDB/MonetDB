@@ -159,9 +159,8 @@ generate_partition_limits(sql_query *query, sql_rel **r, symbol *s, sql_subtype 
 		}
 		return exp_atom(sql->sa, amax);
 	} else {
-		int is_last = 0;
 		exp_kind ek = {type_value, card_value, FALSE};
-		sql_exp *e = rel_value_exp2(query, r, s, sql_sel, ek, &is_last);
+		sql_exp *e = rel_value_exp2(query, r, s, sql_sel, ek);
 
 		if (!e)
 			return NULL;
@@ -175,7 +174,7 @@ create_range_partition_anti_rel(sql_query* query, sql_table *mt, sql_table *pt, 
 	mvc *sql = query->sql;
 	sql_rel *anti_rel;
 	sql_exp *exception, *aggr, *anti_exp, *anti_le, *e1, *e2, *anti_nils;
-	sql_subaggr *cf = sql_bind_aggr(sql->sa, sql->session->schema, "count", NULL);
+	sql_subfunc *cf = sql_bind_func(sql->sa, sql->session->schema, "count", sql_bind_localtype("void"), NULL, F_AGGR);
 	char buf[BUFSIZ];
 	sql_subtype tpe;
 
@@ -227,7 +226,7 @@ create_list_partition_anti_rel(sql_query* query, sql_table *mt, sql_table *pt, i
 	mvc *sql = query->sql;
 	sql_rel *anti_rel;
 	sql_exp *exception, *aggr, *anti_exp, *anti_le, *anti_nils;
-	sql_subaggr *cf = sql_bind_aggr(sql->sa, sql->session->schema, "count", NULL);
+	sql_subfunc *cf = sql_bind_func(sql->sa, sql->session->schema, "count", sql_bind_localtype("void"), NULL, F_AGGR);
 	char buf[BUFSIZ];
 	sql_subtype tpe;
 
@@ -629,7 +628,7 @@ rel_generate_subinserts(sql_query *query, sql_rel *rel, sql_rel **anti_rel, sql_
 	sql_rel *new_table = NULL, *sel = NULL;
 	sql_exp *anti_exp = NULL, *anti_le = NULL, *anti_nils = NULL, *accum = NULL, *aggr = NULL;
 	list *anti_exps = new_exp_list(sql->sa);
-	sql_subaggr *cf = sql_bind_aggr(sql->sa, sql->session->schema, "count", NULL);
+	sql_subfunc *cf = sql_bind_func(sql->sa, sql->session->schema, "count", sql_bind_localtype("void"), NULL, F_AGGR);
 	char buf[BUFSIZ];
 
 	if(isPartitionedByColumnTable(t)) {
@@ -874,7 +873,7 @@ rel_subtable_insert(sql_query *query, sql_rel *rel, sql_table *t, int *changes)
 	sql_exp *anti_exp = NULL, *anti_le = rel_generate_anti_insert_expression(sql, &anti_dup, upper), *aggr = NULL,
 			*exception = NULL, *anti_nils = NULL;
 	list *anti_exps = new_exp_list(sql->sa);
-	sql_subaggr *cf = sql_bind_aggr(sql->sa, sql->session->schema, "count", NULL);
+	sql_subfunc *cf = sql_bind_func(sql->sa, sql->session->schema, "count", sql_bind_localtype("void"), NULL, F_AGGR);
 	char buf[BUFSIZ];
 
 	if (isRangePartitionTable(upper)) {

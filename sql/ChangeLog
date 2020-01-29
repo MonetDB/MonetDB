@@ -1,6 +1,22 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Wed Jan 29 2020 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
+- Implemented 'covar_pop' and 'covar_samp' aggregate functions, as well
+  as their window function counterparts. Implemented 'stddev_samp',
+  'stddev_pop', 'var_samp', 'var_pop', 'corr' and 'group_concat'
+  window function correspondents.
+- Extended SQL catalog with CREATE WINDOW syntax for user-defined 
+  SQL:2003 window functions. At the moment, window functions must be
+  defined on the backend engine, ie on this case MAL. At the current
+  implementation, the backend code generation, creates two additional
+  columns of lng type with the start and end offsets for each row.
+
+* Thu Jan 23 2020 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
+- Added sys.sleep(int n) procedure, which makes the client's thread to
+  sleep for n milliseconds. Also added the function version, where it
+  returns the input value as result.
+
 * Tue Dec 17 2019 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
 - Added prepared_statements_args view, which details the arguments for
   the prepared statements created in the current session.

@@ -203,7 +203,6 @@ monet5_create_privileges(ptr _mvc, sql_schema *s)
 {
 	sql_table *t, *uinfo;
 	mvc *m = (mvc *) _mvc;
-	char *err = NULL;
 	sqlid schema_id = 0;
 	str monetdbuser = "monetdb";
 	list *res, *ops;
@@ -215,7 +214,6 @@ monet5_create_privileges(ptr _mvc, sql_schema *s)
 	mvc_create_column_(m, t, "default_schema", "int", 9);
 	uinfo = t;
 
-	(void) err;
 	res = sa_list(m->sa);
 	list_append(res, sql_create_arg(m->sa, "name", sql_bind_subtype(m->sa, "varchar", 2048, 0), ARG_OUT));  
 

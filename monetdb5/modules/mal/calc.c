@@ -820,12 +820,11 @@ str
 CMDBATstr_group_concat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	ValPtr ret = &stk->stk[getArg(pci, 0)];
-	bat bid = * getArgReference_bat(stk, pci, 1), ssid = 0;
+	bat bid = *getArgReference_bat(stk, pci, 1), sid = 0;
 	BAT *b, *s = NULL, *sep = NULL;
-	BATiter bi;
 	bool nil_if_empty = true;
 	int next_argument = 2;
-	str separator = ",";
+	const char *separator = ",";
 	gdk_return r;
 
 	(void) cntxt;
@@ -834,25 +833,24 @@ CMDBATstr_group_concat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "aggr.str_group_concat", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 	if (isaBatType(getArgType(mb, pci, 2))) {
-		ssid = * getArgReference_bat(stk, pci, 2);
-		if ((sep = BATdescriptor(ssid)) == NULL) {
+		sid = *getArgReference_bat(stk, pci, 2);
+		if ((sep = BATdescriptor(sid)) == NULL) {
 			BBPunfix(b->batCacheid);
 			throw(MAL, "aggr.str_group_concat", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
-		if(sep->ttype == TYPE_str) { /* the separator bat */
+		if (sep->ttype == TYPE_str) { /* the separator bat */
 			next_argument = 3;
-			bi = bat_iterator(sep);
-			separator = BUNtvar(bi, 0);
+			separator = NULL;
 		}
 	}
 
 	if (pci->argc >= (next_argument + 1)) {
 		if (getArgType(mb, pci, next_argument) == TYPE_bit) {
 			assert(pci->argc == (next_argument + 1));
-			nil_if_empty = * getArgReference_bit(stk, pci, next_argument);
+			nil_if_empty = *getArgReference_bit(stk, pci, next_argument);
 		} else {
-			if(next_argument == 3) {
-				bat sid = * getArgReference_bat(stk, pci, next_argument);
+			if (next_argument == 3) {
+				bat sid = *getArgReference_bat(stk, pci, next_argument);
 				if ((s = BATdescriptor(sid)) == NULL) {
 					BBPunfix(b->batCacheid);
 					BBPunfix(sep->batCacheid);
@@ -870,7 +868,8 @@ CMDBATstr_group_concat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	}
 
-	r = BATstr_group_concat(ret, b, s, true, true, nil_if_empty, separator);
+	assert((separator && !sep) || (!separator && sep));
+	r = BATstr_group_concat(ret, b, s, sep, true, true, nil_if_empty, separator);
 	BBPunfix(b->batCacheid);
 	if (sep)
 		BBPunfix(sep->batCacheid);

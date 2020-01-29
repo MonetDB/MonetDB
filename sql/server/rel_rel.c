@@ -1633,11 +1633,11 @@ exp_deps(mvc *sql, sql_exp *e, list *refs, list *l)
 			}
 		} break;
 	case e_aggr: {
-			sql_subaggr *a = e->f;
+			sql_subfunc *a = e->f;
 
 			if (e->l &&exps_deps(sql, e->l, refs, l) != 0)
 				return -1;
-			cond_append(l, &a->aggr->base.id);
+			cond_append(l, &a->func->base.id);
 		} break;
 	case e_cmp: {
 			if (e->flag == cmp_or || e->flag == cmp_filter) {
