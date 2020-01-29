@@ -33,7 +33,6 @@ static int OPTmosaicType(MalBlkPtr mb, InstrPtr pci, int idx)
 	case TYPE_oid:
 	case TYPE_flt:
 	case TYPE_dbl:
-	case TYPE_str:
 		return 1;
 	default:
 		if( type == TYPE_date)
@@ -107,15 +106,15 @@ OPTmosaicImplementationInternal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 	// actual conversion
     for( i=0; i < limit; i++){
         p = old[i];
-        if ( getModuleId(p) == algebraRef && (getFunctionId(p) == selectRef || getFunctionId(p) == thetaselectRef)){
+        if ( getModuleId(p) == algebraRef && (getFunctionId(p) == selectRef || getFunctionId(p) == thetaselectRef) && OPTmosaicType(mb,p,1)){
 			setModuleId(p, mosaicRef);
 			actions++;
 		} else
-        if ( getModuleId(p) == algebraRef && getFunctionId(p) == projectionRef){
+        if ( getModuleId(p) == algebraRef && getFunctionId(p) == projectionRef && OPTmosaicType(mb,p,2)){
 			setModuleId(p, mosaicRef);
 			actions++;
 		} else
-        if ( getModuleId(p) == algebraRef && getFunctionId(p) == joinRef && p->argc ==8){
+        if ( getModuleId(p) == algebraRef && getFunctionId(p) == joinRef && p->argc ==8 && OPTmosaicType(mb,p,2)){
 			setModuleId(p, mosaicRef);
 			if (coui) {
 				/*This will push and set the COUI flag true.*/
