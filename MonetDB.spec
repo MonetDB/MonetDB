@@ -90,9 +90,9 @@
 %if 0%{?rhel} == 7 || %{!?fedora:1000}%{?fedora} <= 30
 %bcond_without py2integration
 %endif
-%if %{?rhel:0}%{!?rhel:1}
-# On RHEL 6, Python 3 is too old, and on RHEL 7, the default Python 3
-# is too old (in both cases 3.4).
+%if 0%{?rhel} >= 7 || 0%{?fedora} > 0
+# On RHEL 6, Python 3 is too old.  On RHEL 7, Python 3 was too old
+# when RHEL 7 was released, but now it is ok.
 %bcond_without py3integration
 %endif
 
