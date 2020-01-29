@@ -6339,12 +6339,12 @@ GRANT EXECUTE ON WINDOW covar_pop(HUGEINT, HUGEINT) TO PUBLIC;
 create window corr(e1 HUGEINT, e2 HUGEINT) returns DOUBLE
  external name "sql"."corr";
 GRANT EXECUTE ON WINDOW corr(HUGEINT, HUGEINT) TO PUBLIC;
-create window group_concat(str STRING) returns STRING
+create window sys.group_concat(str STRING) returns STRING
  external name "sql"."str_group_concat";
-GRANT EXECUTE ON WINDOW group_concat(STRING) TO PUBLIC;
-create window group_concat(str STRING, sep STRING) returns STRING
+GRANT EXECUTE ON WINDOW sys.group_concat(STRING) TO PUBLIC;
+create window sys.group_concat(str STRING, sep STRING) returns STRING
  external name "sql"."str_group_concat";
-GRANT EXECUTE ON WINDOW group_concat(STRING, STRING) TO PUBLIC;
+GRANT EXECUTE ON WINDOW sys.group_concat(STRING, STRING) TO PUBLIC;
 update sys.functions set system = true where name in ('stddev_samp', 'stddev_pop', 'var_samp', 'var_pop', 'covar_samp', 'covar_pop', 'corr', 'group_concat') and schema_id = (select id from sys.schemas where name = 'sys');
 DROP AGGREGATE stddev_samp(date);
 DROP AGGREGATE stddev_samp(time);
@@ -6358,6 +6358,29 @@ DROP AGGREGATE var_samp(timestamp);
 DROP AGGREGATE var_pop(date);
 DROP AGGREGATE var_pop(time);
 DROP AGGREGATE var_pop(timestamp);
+CREATE SCHEMA logging;
+CREATE PROCEDURE logging.flush()
+ EXTERNAL NAME logging.flush;
+CREATE PROCEDURE logging.setcomplevel(comp_id INT, lvl_id INT)
+ EXTERNAL NAME logging.setcomplevel;
+CREATE PROCEDURE logging.resetcomplevel(comp_id INT)
+ EXTERNAL NAME logging.resetcomplevel;
+CREATE PROCEDURE logging.setlayerlevel(layer_id INT, lvl_id INT)
+ EXTERNAL NAME logging.setlayerlevel;
+CREATE PROCEDURE logging.resetlayerlevel(layer_id INT)
+ EXTERNAL NAME logging.resetlayerlevel;
+CREATE PROCEDURE logging.setflushlevel(lvl_id INT)
+ EXTERNAL NAME logging.setflushlevel;
+CREATE PROCEDURE logging.resetflushlevel()
+ EXTERNAL NAME logging.resetflushlevel;
+CREATE PROCEDURE logging.setadapter(adapter_id INT)
+ EXTERNAL NAME logging.setadapter;
+CREATE PROCEDURE logging.resetadapter()
+ EXTERNAL NAME logging.resetadapter;
+CREATE PROCEDURE logging.showinfo()
+ EXTERNAL NAME logging.showinfo;
+update sys.schemas set system = true where name = 'logging';
+update sys.functions set system = true where name in ('flush', 'setcomplevel', 'resetcomplevel', 'setlayerlevel', 'resetlayerlevel', 'setflushlevel', 'resetflushlevel', 'setadapter', 'resetadapter', 'showinfo') and schema_id = (select id from sys.schemas where name = 'logging');
 commit;
 set schema "sys";
 

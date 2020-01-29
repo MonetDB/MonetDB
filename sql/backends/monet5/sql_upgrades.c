@@ -2820,14 +2820,13 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 	}
 #endif
 
-	/* 51_sys_schema_extension.sql */
 	pos += snprintf(buf + pos, bufsize - pos,
-		"create window group_concat(str STRING) returns STRING\n"
+		"create window sys.group_concat(str STRING) returns STRING\n"
 		" external name \"sql\".\"str_group_concat\";\n"
-		"GRANT EXECUTE ON WINDOW group_concat(STRING) TO PUBLIC;\n"
-		"create window group_concat(str STRING, sep STRING) returns STRING\n"
+		"GRANT EXECUTE ON WINDOW sys.group_concat(STRING) TO PUBLIC;\n"
+		"create window sys.group_concat(str STRING, sep STRING) returns STRING\n"
 		" external name \"sql\".\"str_group_concat\";\n"
-		"GRANT EXECUTE ON WINDOW group_concat(STRING, STRING) TO PUBLIC;\n");
+		"GRANT EXECUTE ON WINDOW sys.group_concat(STRING, STRING) TO PUBLIC;\n");
 
 	pos += snprintf(buf + pos, bufsize - pos,
 			"update sys.functions set system = true where name in"
@@ -2847,6 +2846,35 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 			"DROP AGGREGATE var_pop(date);\n"
 			"DROP AGGREGATE var_pop(time);\n"
 			"DROP AGGREGATE var_pop(timestamp);\n");
+
+	/* 81_tracer.sql */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"CREATE SCHEMA logging;\n"
+			"CREATE PROCEDURE logging.flush()\n"
+			" EXTERNAL NAME logging.flush;\n"
+			"CREATE PROCEDURE logging.setcomplevel(comp_id INT, lvl_id INT)\n"
+			" EXTERNAL NAME logging.setcomplevel;\n"
+			"CREATE PROCEDURE logging.resetcomplevel(comp_id INT)\n"
+			" EXTERNAL NAME logging.resetcomplevel;\n"
+			"CREATE PROCEDURE logging.setlayerlevel(layer_id INT, lvl_id INT)\n"
+			" EXTERNAL NAME logging.setlayerlevel;\n"
+			"CREATE PROCEDURE logging.resetlayerlevel(layer_id INT)\n"
+			" EXTERNAL NAME logging.resetlayerlevel;\n"
+			"CREATE PROCEDURE logging.setflushlevel(lvl_id INT)\n"
+			" EXTERNAL NAME logging.setflushlevel;\n"
+			"CREATE PROCEDURE logging.resetflushlevel()\n"
+			" EXTERNAL NAME logging.resetflushlevel;\n"
+			"CREATE PROCEDURE logging.setadapter(adapter_id INT)\n"
+			" EXTERNAL NAME logging.setadapter;\n"
+			"CREATE PROCEDURE logging.resetadapter()\n"
+			" EXTERNAL NAME logging.resetadapter;\n"
+			"CREATE PROCEDURE logging.showinfo()\n"
+			" EXTERNAL NAME logging.showinfo;\n");
+	pos += snprintf(buf + pos, bufsize - pos,
+			"update sys.schemas set system = true where name = 'logging';\n"
+			"update sys.functions set system = true where name in"
+			" ('flush', 'setcomplevel', 'resetcomplevel', 'setlayerlevel', 'resetlayerlevel', 'setflushlevel', 'resetflushlevel', 'setadapter', 'resetadapter', 'showinfo')"
+			" and schema_id = (select id from sys.schemas where name = 'logging');\n");
 
 	pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
