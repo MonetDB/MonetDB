@@ -1,11 +1,15 @@
 ####technical depth####
-Refactor macro-ised functions to real functions in header files and apply the include trick
-benchmark using TPC-H
+
+Expand the select interface to handle boolean unknown parameter.
+Add layout summary in analysis.
 Fix/check/test MOSlayout.
+Add the compression on OID heap for string valued columns too.
+Figure out why mix compression don't seem to work that well.
+benchmark using TPC-H
+Refactor macro-ised functions to real functions in header files and apply the include trick
 Add negative values to tests
 Add test for huge
 create mix compression test cases particularly for dict/dict256 combo.
-Introduce a custom pre-processor to expand macro's efficiently for debugging purposes.
 Introduce mosaic into gdk: create hooks in scanselect functions/macro's, joins and projections.
 make mitosis work with mosaic and see how this relates to the previous landmark stuff.
 Transform control dependency into data dependency select loops.
@@ -18,7 +22,7 @@ consider packing mosaic_block_header's more efficiently.
 Add asserts on type degeneration for bit => bte daytime => lng timestmap => lng date => int.
 DO nil checking more efficient similar to gdk_select
 Timing in the context of MOSanalysis
-Add the compression on OID heap for string valued columns too.
+
 Find a more 'generic' model to estimate and explore compression space perhaps Monte Carlo based.
 Create a plug-in estimation model framework.
 
