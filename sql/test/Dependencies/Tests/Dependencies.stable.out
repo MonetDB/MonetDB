@@ -175,7 +175,6 @@ Dependencies between database objects
 [ "sn",	"sq_pkey_sn_file_id",	"DEP_KEY"	]
 [ "srid",	"spatial_ref_sys_srid_pkey",	"DEP_KEY"	]
 [ "table_type_id",	"table_types_table_type_id_pkey",	"DEP_KEY"	]
-[ "table_type_name",	"table_types_table_type_name_unique",	"DEP_KEY"	]
 #SELECT c.name, i.name, 'DEP_INDEX' from columns as c, objects as kc, idxs as i where kc."name" = c.name AND kc.id = i.id AND c.table_id = i.table_id AND i.name not in (select name from keys) order by c.name, i.name;
 % .c,	.i,	.%12 # table_name
 % name,	name,	%12 # name
@@ -915,7 +914,6 @@ Cleanup
 [ "sn",	"sq_pkey_sn_file_id",	"DEP_KEY"	]
 [ "srid",	"spatial_ref_sys_srid_pkey",	"DEP_KEY"	]
 [ "table_type_id",	"table_types_table_type_id_pkey",	"DEP_KEY"	]
-[ "table_type_name",	"table_types_table_type_name_unique",	"DEP_KEY"	]
 #SELECT c.name, i.name, 'DEP_INDEX' from columns as c, objects as kc, idxs as i where kc."name" = c.name AND kc.id = i.id AND c.table_id = i.table_id AND i.name not in (select name from keys) order by c.name, i.name;
 % .c,	.i,	.%12 # table_name
 % name,	name,	%12 # name

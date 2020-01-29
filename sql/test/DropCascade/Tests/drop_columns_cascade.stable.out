@@ -62,7 +62,6 @@ stdout of test 'drop_columns_cascade` in directory 'sql/test/DropCascade` itself
 [ "dependency_types_dependency_type_name_unique"	]
 [ "keywords_keyword_pkey"	]
 [ "table_types_table_type_id_pkey"	]
-[ "table_types_table_type_name_unique"	]
 [ "function_types_function_type_id_pkey"	]
 [ "function_types_function_type_name_unique"	]
 [ "function_languages_language_id_pkey"	]
