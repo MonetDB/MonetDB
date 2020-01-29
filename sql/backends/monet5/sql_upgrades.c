@@ -75,101 +75,96 @@ sql_fix_system_tables(Client c, mvc *sql, const char *prev_schema)
 		if (func->base.id >= FUNC_OIDS)
 			continue;
 
-		pos += snprintf(buf + pos, bufsize - pos,
-				"insert into sys.functions values"
-				" (%d, '%s', '%s', '%s',"
-				" %d, %d, %s, %s, %s, %d, %s);\n",
-				func->base.id, func->base.name,
-				func->imp, func->mod, (int) FUNC_LANG_INT,
-				(int) func->type,
-				func->side_effect ? "true" : "false",
-				func->varres ? "true" : "false",
-				func->vararg ? "true" : "false",
-				func->s ? func->s->base.id : s->base.id,
-				func->system ? "true" : "false");
-		if (func->res) {
-			for (m = func->res->h; m; m = m->next, number++) {
-				arg = m->data;
-				pos += snprintf(buf + pos, bufsize - pos,
-						"insert into sys.args"
-						" values"
-						" (%d, %d, 'res_%d',"
-						" '%s', %u, %u, %d,"
-						" %d);\n",
-						store_next_oid(),
-						func->base.id,
-						number,
-						arg->type.type->sqlname,
-						arg->type.digits,
-						arg->type.scale,
-						arg->inout, number);
-			}
-		}
-		for (m = func->ops->h; m; m = m->next, number++) {
-			arg = m->data;
-			if (arg->name)
-				pos += snprintf(buf + pos, bufsize - pos,
-						"insert into sys.args"
-						" values"
-						" (%d, %d, '%s', '%s',"
-						" %u, %u, %d, %d);\n",
-						store_next_oid(),
-						func->base.id,
-						arg->name,
-						arg->type.type->sqlname,
-						arg->type.digits,
-						arg->type.scale,
-						arg->inout, number);
-			else
-				pos += snprintf(buf + pos, bufsize - pos,
-						"insert into sys.args"
-						" values"
-						" (%d, %d, 'arg_%d',"
-						" '%s', %u, %u, %d,"
-						" %d);\n",
-						store_next_oid(),
-						func->base.id,
-						number,
-						arg->type.type->sqlname,
-						arg->type.digits,
-						arg->type.scale,
-						arg->inout, number);
-		}
-	}
-	for (n = aggrs->h; n; n = n->next) {
-		sql_func *aggr = n->data;
-		sql_arg *arg;
-
-		if (aggr->base.id >= FUNC_OIDS)
-			continue;
-
-		pos += snprintf(buf + pos, bufsize - pos,
-				"insert into sys.functions values"
-				" (%d, '%s', '%s', '%s', %d, %d, false,"
-				" %s, %s, %d, %s);\n",
-				aggr->base.id, aggr->base.name, aggr->imp,
-				aggr->mod, (int) FUNC_LANG_INT, (int) aggr->type,
-				aggr->varres ? "true" : "false",
-				aggr->vararg ? "true" : "false",
-				aggr->s ? aggr->s->base.id : s->base.id,
-				aggr->system ? "true" : "false");
-		arg = aggr->res->h->data;
-		pos += snprintf(buf + pos, bufsize - pos,
-				"insert into sys.args values"
-				" (%d, %d, 'res', '%s', %u, %u, %d, 0);\n",
-				store_next_oid(), aggr->base.id,
-				arg->type.type->sqlname, arg->type.digits,
-				arg->type.scale, arg->inout);
-		if (aggr->ops->h) {
-			arg = aggr->ops->h->data;
+		if (func->type == F_AGGR) {
+			pos += snprintf(buf + pos, bufsize - pos,
+					"insert into sys.functions values"
+					" (%d, '%s', '%s', '%s', %d, %d, false,"
+					" %s, %s, %d, %s);\n",
+					func->base.id, func->base.name, func->imp,
+					func->mod, (int) FUNC_LANG_INT, (int) func->type,
+					func->varres ? "true" : "false",
+					func->vararg ? "true" : "false",
+					func->s ? func->s->base.id : s->base.id,
+					func->system ? "true" : "false");
+			arg = func->res->h->data;
 			pos += snprintf(buf + pos, bufsize - pos,
 					"insert into sys.args values"
-					" (%d, %d, 'arg', '%s', %u,"
-					" %u, %d, 1);\n",
-					store_next_oid(), aggr->base.id,
-					arg->type.type->sqlname,
-					arg->type.digits, arg->type.scale,
-					arg->inout);
+					" (%d, %d, 'res', '%s', %u, %u, %d, 0);\n",
+					store_next_oid(), func->base.id,
+					arg->type.type->sqlname, arg->type.digits,
+					arg->type.scale, arg->inout);
+			if (func->ops->h) {
+				arg = func->ops->h->data;
+				pos += snprintf(buf + pos, bufsize - pos,
+						"insert into sys.args values"
+						" (%d, %d, 'arg', '%s', %u,"
+						" %u, %d, 1);\n",
+						store_next_oid(), func->base.id,
+						arg->type.type->sqlname,
+						arg->type.digits, arg->type.scale,
+						arg->inout);
+			}
+		} else {
+			pos += snprintf(buf + pos, bufsize - pos,
+					"insert into sys.functions values"
+					" (%d, '%s', '%s', '%s',"
+					" %d, %d, %s, %s, %s, %d, %s);\n",
+					func->base.id, func->base.name,
+					func->imp, func->mod, (int) FUNC_LANG_INT,
+					(int) func->type,
+					func->side_effect ? "true" : "false",
+					func->varres ? "true" : "false",
+					func->vararg ? "true" : "false",
+					func->s ? func->s->base.id : s->base.id,
+					func->system ? "true" : "false");
+			if (func->res) {
+				for (m = func->res->h; m; m = m->next, number++) {
+					arg = m->data;
+					pos += snprintf(buf + pos, bufsize - pos,
+							"insert into sys.args"
+							" values"
+							" (%d, %d, 'res_%d',"
+							" '%s', %u, %u, %d,"
+							" %d);\n",
+							store_next_oid(),
+							func->base.id,
+							number,
+							arg->type.type->sqlname,
+							arg->type.digits,
+							arg->type.scale,
+							arg->inout, number);
+				}
+			}
+			for (m = func->ops->h; m; m = m->next, number++) {
+				arg = m->data;
+				if (arg->name)
+					pos += snprintf(buf + pos, bufsize - pos,
+							"insert into sys.args"
+							" values"
+							" (%d, %d, '%s', '%s',"
+							" %u, %u, %d, %d);\n",
+							store_next_oid(),
+							func->base.id,
+							arg->name,
+							arg->type.type->sqlname,
+							arg->type.digits,
+							arg->type.scale,
+							arg->inout, number);
+				else
+					pos += snprintf(buf + pos, bufsize - pos,
+							"insert into sys.args"
+							" values"
+							" (%d, %d, 'arg_%d',"
+							" '%s', %u, %u, %d,"
+							" %d);\n",
+							store_next_oid(),
+							func->base.id,
+							number,
+							arg->type.type->sqlname,
+							arg->type.digits,
+							arg->type.scale,
+							arg->inout, number);
+			}
 		}
 	}
 
@@ -2355,7 +2350,7 @@ static str
 sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixed)
 {
 	sql_table *t;
-	size_t bufsize = 8192, pos = 0;
+	size_t bufsize = 32768, pos = 0;
 	char *err = NULL, *buf = GDKmalloc(bufsize);
 	sql_schema *sys = mvc_bind_schema(sql, "sys");
 
@@ -2398,7 +2393,7 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 			"		ticks bigint, -- time in microseconds\n"
 			"		stmt string  -- actual statement executed\n"
 			"	)\n"
-			"	external name sql.dump_trace;\n"
+			" external name sql.dump_trace;\n"
 			"create view sys.tracelog as select * from sys.tracelog();\n");
 
 	pos += snprintf(buf + pos, bufsize - pos,
@@ -2574,6 +2569,293 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 			"('STATEMENT'),('TABLE'),('TEMP'),('TEMPORARY'),('TEXT'),('TIME'),('TIMESTAMP'),('TRACE'),('TYPE'),('UNIONJOIN'),"
 			"('WEEK'),('YEAR'),('ZONE');\n");
 
+	/* 39_analytics.sql */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"create window stddev_samp(val TINYINT) returns DOUBLE\n"
+			" external name \"sql\".\"stdev\";\n"
+			"GRANT EXECUTE ON WINDOW stddev_samp(TINYINT) TO PUBLIC;\n"
+			"create window stddev_samp(val SMALLINT) returns DOUBLE"
+			" external name \"sql\".\"stdev\";\n"
+			"GRANT EXECUTE ON WINDOW stddev_samp(SMALLINT) TO PUBLIC;\n"
+			"create window stddev_samp(val INTEGER) returns DOUBLE\n"
+			" external name \"sql\".\"stdev\";\n"
+			"GRANT EXECUTE ON WINDOW stddev_samp(INTEGER) TO PUBLIC;\n"
+			"create window stddev_samp(val BIGINT) returns DOUBLE\n"
+			" external name \"sql\".\"stdev\";\n"
+			"GRANT EXECUTE ON WINDOW stddev_samp(BIGINT) TO PUBLIC;\n"
+			"create window stddev_samp(val REAL) returns DOUBLE\n"
+			" external name \"sql\".\"stdev\";\n"
+			"GRANT EXECUTE ON WINDOW stddev_samp(REAL) TO PUBLIC;\n"
+			"create window stddev_samp(val DOUBLE) returns DOUBLE\n"
+			" external name \"sql\".\"stdev\";\n"
+			"GRANT EXECUTE ON WINDOW stddev_samp(DOUBLE) TO PUBLIC;\n"
+			"create window stddev_samp(val INTERVAL SECOND) returns DOUBLE\n"
+			" external name \"sql\".\"stdev\";\n"
+			"GRANT EXECUTE ON WINDOW stddev_samp(INTERVAL SECOND) TO PUBLIC;\n"
+			"create window stddev_samp(val INTERVAL MONTH) returns DOUBLE\n"
+			" external name \"sql\".\"stdev\";\n"
+			"GRANT EXECUTE ON WINDOW stddev_samp(INTERVAL MONTH) TO PUBLIC;\n"
+			"create window stddev_pop(val TINYINT) returns DOUBLE\n"
+			" external name \"sql\".\"stdevp\";\n"
+			"GRANT EXECUTE ON WINDOW stddev_pop(TINYINT) TO PUBLIC;\n"
+			"create window stddev_pop(val SMALLINT) returns DOUBLE\n"
+			" external name \"sql\".\"stdevp\";\n"
+			"GRANT EXECUTE ON WINDOW stddev_pop(SMALLINT) TO PUBLIC;\n"
+			"create window stddev_pop(val INTEGER) returns DOUBLE\n"
+			" external name \"sql\".\"stdevp\";\n"
+			"GRANT EXECUTE ON WINDOW stddev_pop(INTEGER) TO PUBLIC;\n"
+			"create window stddev_pop(val BIGINT) returns DOUBLE\n"
+			" external name \"sql\".\"stdevp\";\n"
+			"GRANT EXECUTE ON WINDOW stddev_pop(BIGINT) TO PUBLIC;\n"
+			"create window stddev_pop(val REAL) returns DOUBLE\n"
+			" external name \"sql\".\"stdevp\";\n"
+			"GRANT EXECUTE ON WINDOW stddev_pop(REAL) TO PUBLIC;\n"
+			"create window stddev_pop(val DOUBLE) returns DOUBLE\n"
+			" external name \"sql\".\"stdevp\";\n"
+			"GRANT EXECUTE ON WINDOW stddev_pop(DOUBLE) TO PUBLIC;\n"
+			"create window stddev_pop(val INTERVAL SECOND) returns DOUBLE\n"
+			" external name \"sql\".\"stdevp\";\n"
+			"GRANT EXECUTE ON WINDOW stddev_pop(INTERVAL SECOND) TO PUBLIC;\n"
+			"create window stddev_pop(val INTERVAL MONTH) returns DOUBLE\n"
+			" external name \"sql\".\"stdevp\";\n"
+			"GRANT EXECUTE ON WINDOW stddev_pop(INTERVAL MONTH) TO PUBLIC;\n"
+			"create window var_samp(val TINYINT) returns DOUBLE\n"
+			" external name \"sql\".\"variance\";\n"
+			"GRANT EXECUTE ON WINDOW var_samp(TINYINT) TO PUBLIC;\n"
+			"create window var_samp(val SMALLINT) returns DOUBLE\n"
+			" external name \"sql\".\"variance\";\n"
+			"GRANT EXECUTE ON WINDOW var_samp(SMALLINT) TO PUBLIC;\n"
+			"create window var_samp(val INTEGER) returns DOUBLE\n"
+			" external name \"sql\".\"variance\";\n"
+			"GRANT EXECUTE ON WINDOW var_samp(INTEGER) TO PUBLIC;\n"
+			"create window var_samp(val BIGINT) returns DOUBLE\n"
+			" external name \"sql\".\"variance\";\n"
+			"GRANT EXECUTE ON WINDOW var_samp(BIGINT) TO PUBLIC;\n"
+			"create window var_samp(val REAL) returns DOUBLE\n"
+			" external name \"sql\".\"variance\";\n"
+			"GRANT EXECUTE ON WINDOW var_samp(REAL) TO PUBLIC;\n"
+			"create window var_samp(val DOUBLE) returns DOUBLE\n"
+			" external name \"sql\".\"variance\";\n"
+			"GRANT EXECUTE ON WINDOW var_samp(DOUBLE) TO PUBLIC;\n"
+			"create window var_samp(val INTERVAL SECOND) returns DOUBLE\n"
+			" external name \"sql\".\"variance\";\n"
+			"GRANT EXECUTE ON WINDOW var_samp(INTERVAL SECOND) TO PUBLIC;\n"
+			"create window var_samp(val INTERVAL MONTH) returns DOUBLE\n"
+			" external name \"sql\".\"variance\";\n"
+			"GRANT EXECUTE ON WINDOW var_samp(INTERVAL MONTH) TO PUBLIC;\n"
+			"create window var_pop(val TINYINT) returns DOUBLE\n"
+			" external name \"sql\".\"variancep\";\n"
+			"GRANT EXECUTE ON WINDOW var_pop(TINYINT) TO PUBLIC;\n"
+			"create window var_pop(val SMALLINT) returns DOUBLE\n"
+			" external name \"sql\".\"variancep\";\n"
+			"GRANT EXECUTE ON WINDOW var_pop(SMALLINT) TO PUBLIC;\n"
+			"create window var_pop(val INTEGER) returns DOUBLE\n"
+			" external name \"sql\".\"variancep\";\n"
+			"GRANT EXECUTE ON WINDOW var_pop(INTEGER) TO PUBLIC;\n"
+			"create window var_pop(val BIGINT) returns DOUBLE\n"
+			" external name \"sql\".\"variancep\";\n"
+			"GRANT EXECUTE ON WINDOW var_pop(BIGINT) TO PUBLIC;\n"
+			"create window var_pop(val REAL) returns DOUBLE\n"
+			" external name \"sql\".\"variancep\";\n"
+			"GRANT EXECUTE ON WINDOW var_pop(REAL) TO PUBLIC;\n"
+			"create window var_pop(val DOUBLE) returns DOUBLE\n"
+			" external name \"sql\".\"variancep\";\n"
+			"GRANT EXECUTE ON WINDOW var_pop(DOUBLE) TO PUBLIC;\n"
+			"create window var_pop(val INTERVAL SECOND) returns DOUBLE\n"
+			" external name \"sql\".\"variancep\";\n"
+			"GRANT EXECUTE ON WINDOW var_pop(INTERVAL SECOND) TO PUBLIC;\n"
+			"create window var_pop(val INTERVAL MONTH) returns DOUBLE\n"
+			" external name \"sql\".\"variancep\";\n"
+			"GRANT EXECUTE ON WINDOW var_pop(INTERVAL MONTH) TO PUBLIC;\n"
+			"create aggregate covar_samp(e1 TINYINT, e2 TINYINT) returns DOUBLE\n"
+			" external name \"aggr\".\"covariance\";\n"
+			"GRANT EXECUTE ON AGGREGATE covar_samp(TINYINT, TINYINT) TO PUBLIC;\n"
+			"create aggregate covar_samp(e1 SMALLINT, e2 SMALLINT) returns DOUBLE\n"
+			" external name \"aggr\".\"covariance\";\n"
+			"GRANT EXECUTE ON AGGREGATE covar_samp(SMALLINT, SMALLINT) TO PUBLIC;\n"
+			"create aggregate covar_samp(e1 INTEGER, e2 INTEGER) returns DOUBLE\n"
+			" external name \"aggr\".\"covariance\";\n"
+			"GRANT EXECUTE ON AGGREGATE covar_samp(INTEGER, INTEGER) TO PUBLIC;\n"
+			"create aggregate covar_samp(e1 BIGINT, e2 BIGINT) returns DOUBLE\n"
+			" external name \"aggr\".\"covariance\";\n"
+			"GRANT EXECUTE ON AGGREGATE covar_samp(BIGINT, BIGINT) TO PUBLIC;\n"
+			"create aggregate covar_samp(e1 REAL, e2 REAL) returns DOUBLE\n"
+			" external name \"aggr\".\"covariance\";\n"
+			"GRANT EXECUTE ON AGGREGATE covar_samp(REAL, REAL) TO PUBLIC;\n"
+			"create aggregate covar_samp(e1 DOUBLE, e2 DOUBLE) returns DOUBLE\n"
+			" external name \"aggr\".\"covariance\";\n"
+			"GRANT EXECUTE ON AGGREGATE covar_samp(DOUBLE, DOUBLE) TO PUBLIC;\n"
+			"create aggregate covar_samp(e1 INTERVAL SECOND, e2 INTERVAL SECOND) returns DOUBLE\n"
+			" external name \"aggr\".\"covariance\";\n"
+			"GRANT EXECUTE ON AGGREGATE covar_samp(INTERVAL SECOND, INTERVAL SECOND) TO PUBLIC;\n"
+			"create aggregate covar_samp(e1 INTERVAL MONTH, e2 INTERVAL MONTH) returns DOUBLE\n"
+			" external name \"aggr\".\"covariance\";\n"
+			"GRANT EXECUTE ON AGGREGATE covar_samp(INTERVAL MONTH, INTERVAL MONTH) TO PUBLIC;\n"
+			"create window covar_samp(e1 TINYINT, e2 TINYINT) returns DOUBLE\n"
+			" external name \"sql\".\"covariance\";\n"
+			"GRANT EXECUTE ON WINDOW covar_samp(TINYINT, TINYINT) TO PUBLIC;\n"
+			"create window covar_samp(e1 SMALLINT, e2 SMALLINT) returns DOUBLE\n"
+			" external name \"sql\".\"covariance\";\n"
+			"GRANT EXECUTE ON WINDOW covar_samp(SMALLINT, SMALLINT) TO PUBLIC;\n"
+			"create window covar_samp(e1 INTEGER, e2 INTEGER) returns DOUBLE\n"
+			" external name \"sql\".\"covariance\";\n"
+			"GRANT EXECUTE ON WINDOW covar_samp(INTEGER, INTEGER) TO PUBLIC;\n"
+			"create window covar_samp(e1 BIGINT, e2 BIGINT) returns DOUBLE\n"
+			" external name \"sql\".\"covariance\";\n"
+			"GRANT EXECUTE ON WINDOW covar_samp(BIGINT, BIGINT) TO PUBLIC;\n"
+			"create window covar_samp(e1 REAL, e2 REAL) returns DOUBLE\n"
+			" external name \"sql\".\"covariance\";\n"
+			"GRANT EXECUTE ON WINDOW covar_samp(REAL, REAL) TO PUBLIC;\n"
+			"create window covar_samp(e1 DOUBLE, e2 DOUBLE) returns DOUBLE\n"
+			" external name \"sql\".\"covariance\";\n"
+			"GRANT EXECUTE ON WINDOW covar_samp(DOUBLE, DOUBLE) TO PUBLIC;\n"
+			"create window covar_samp(e1 INTERVAL SECOND, e2 INTERVAL SECOND) returns DOUBLE\n"
+			" external name \"sql\".\"covariance\";\n"
+			"GRANT EXECUTE ON WINDOW covar_samp(INTERVAL SECOND, INTERVAL SECOND) TO PUBLIC;\n"
+			"create window covar_samp(e1 INTERVAL MONTH, e2 INTERVAL MONTH) returns DOUBLE\n"
+			" external name \"sql\".\"covariance\";\n"
+			"GRANT EXECUTE ON WINDOW covar_samp(INTERVAL MONTH, INTERVAL MONTH) TO PUBLIC;\n"
+			"create aggregate covar_pop(e1 TINYINT, e2 TINYINT) returns DOUBLE\n"
+			" external name \"aggr\".\"covariancep\";\n"
+			"GRANT EXECUTE ON AGGREGATE covar_pop(TINYINT, TINYINT) TO PUBLIC;\n"
+			"create aggregate covar_pop(e1 SMALLINT, e2 SMALLINT) returns DOUBLE\n"
+			" external name \"aggr\".\"covariancep\";\n"
+			"GRANT EXECUTE ON AGGREGATE covar_pop(SMALLINT, SMALLINT) TO PUBLIC;\n"
+			"create aggregate covar_pop(e1 INTEGER, e2 INTEGER) returns DOUBLE\n"
+			" external name \"aggr\".\"covariancep\";\n"
+			"GRANT EXECUTE ON AGGREGATE covar_pop(INTEGER, INTEGER) TO PUBLIC;\n"
+			"create aggregate covar_pop(e1 BIGINT, e2 BIGINT) returns DOUBLE\n"
+			" external name \"aggr\".\"covariancep\";\n"
+			"GRANT EXECUTE ON AGGREGATE covar_pop(BIGINT, BIGINT) TO PUBLIC;\n"
+			"create aggregate covar_pop(e1 REAL, e2 REAL) returns DOUBLE\n"
+			" external name \"aggr\".\"covariancep\";\n"
+			"GRANT EXECUTE ON AGGREGATE covar_pop(REAL, REAL) TO PUBLIC;\n"
+			"create aggregate covar_pop(e1 DOUBLE, e2 DOUBLE) returns DOUBLE\n"
+			" external name \"aggr\".\"covariancep\";\n"
+			"GRANT EXECUTE ON AGGREGATE covar_pop(DOUBLE, DOUBLE) TO PUBLIC;\n"
+			"create aggregate covar_pop(e1 INTERVAL SECOND, e2 INTERVAL SECOND) returns DOUBLE\n"
+			" external name \"aggr\".\"covariancep\";\n"
+			"GRANT EXECUTE ON AGGREGATE covar_pop(INTERVAL SECOND, INTERVAL SECOND) TO PUBLIC;\n"
+			"create aggregate covar_pop(e1 INTERVAL MONTH, e2 INTERVAL MONTH) returns DOUBLE\n"
+			" external name \"aggr\".\"covariancep\";\n"
+			"GRANT EXECUTE ON AGGREGATE covar_pop(INTERVAL MONTH, INTERVAL MONTH) TO PUBLIC;\n"
+			"create window covar_pop(e1 TINYINT, e2 TINYINT) returns DOUBLE\n"
+			" external name \"sql\".\"covariancep\";\n"
+			"GRANT EXECUTE ON WINDOW covar_pop(TINYINT, TINYINT) TO PUBLIC;\n"
+			"create window covar_pop(e1 SMALLINT, e2 SMALLINT) returns DOUBLE\n"
+			" external name \"sql\".\"covariancep\";\n"
+			"GRANT EXECUTE ON WINDOW covar_pop(SMALLINT, SMALLINT) TO PUBLIC;\n"
+			"create window covar_pop(e1 INTEGER, e2 INTEGER) returns DOUBLE\n"
+			" external name \"sql\".\"covariancep\";\n"
+			"GRANT EXECUTE ON WINDOW covar_pop(INTEGER, INTEGER) TO PUBLIC;\n"
+			"create window covar_pop(e1 BIGINT, e2 BIGINT) returns DOUBLE\n"
+			" external name \"sql\".\"covariancep\";\n"
+			"GRANT EXECUTE ON WINDOW covar_pop(BIGINT, BIGINT) TO PUBLIC;\n"
+			"create window covar_pop(e1 REAL, e2 REAL) returns DOUBLE\n"
+			" external name \"sql\".\"covariancep\";\n"
+			"GRANT EXECUTE ON WINDOW covar_pop(REAL, REAL) TO PUBLIC;\n"
+			"create window covar_pop(e1 DOUBLE, e2 DOUBLE) returns DOUBLE\n"
+			" external name \"sql\".\"covariancep\";\n"
+			"GRANT EXECUTE ON WINDOW covar_pop(DOUBLE, DOUBLE) TO PUBLIC;\n"
+			"create window covar_pop(e1 INTERVAL SECOND, e2 INTERVAL SECOND) returns DOUBLE\n"
+			" external name \"sql\".\"covariancep\";\n"
+			"GRANT EXECUTE ON WINDOW covar_pop(INTERVAL SECOND, INTERVAL SECOND) TO PUBLIC;\n"
+			"create window covar_pop(e1 INTERVAL MONTH, e2 INTERVAL MONTH) returns DOUBLE\n"
+			" external name \"sql\".\"covariancep\";\n"
+			"GRANT EXECUTE ON WINDOW covar_pop(INTERVAL MONTH, INTERVAL MONTH) TO PUBLIC;\n"
+			"create aggregate corr(e1 INTERVAL SECOND, e2 INTERVAL SECOND) returns DOUBLE\n"
+			" external name \"aggr\".\"corr\";\n"
+			"GRANT EXECUTE ON AGGREGATE corr(INTERVAL SECOND, INTERVAL SECOND) TO PUBLIC;\n"
+			"create aggregate corr(e1 INTERVAL MONTH, e2 INTERVAL MONTH) returns DOUBLE\n"
+			" external name \"aggr\".\"corr\";\n"
+			"GRANT EXECUTE ON AGGREGATE corr(INTERVAL MONTH, INTERVAL MONTH) TO PUBLIC;\n"
+			"create window corr(e1 TINYINT, e2 TINYINT) returns DOUBLE\n"
+			" external name \"sql\".\"corr\";\n"
+			"GRANT EXECUTE ON WINDOW corr(TINYINT, TINYINT) TO PUBLIC;\n"
+			"create window corr(e1 SMALLINT, e2 SMALLINT) returns DOUBLE\n"
+			" external name \"sql\".\"corr\";\n"
+			"GRANT EXECUTE ON WINDOW corr(SMALLINT, SMALLINT) TO PUBLIC;\n"
+			"create window corr(e1 INTEGER, e2 INTEGER) returns DOUBLE\n"
+			" external name \"sql\".\"corr\";\n"
+			"GRANT EXECUTE ON WINDOW corr(INTEGER, INTEGER) TO PUBLIC;\n"
+			"create window corr(e1 BIGINT, e2 BIGINT) returns DOUBLE\n"
+			" external name \"sql\".\"corr\";\n"
+			"GRANT EXECUTE ON WINDOW corr(BIGINT, BIGINT) TO PUBLIC;\n"
+			"create window corr(e1 REAL, e2 REAL) returns DOUBLE\n"
+			" external name \"sql\".\"corr\";\n"
+			"GRANT EXECUTE ON WINDOW corr(REAL, REAL) TO PUBLIC;\n"
+			"create window corr(e1 DOUBLE, e2 DOUBLE) returns DOUBLE\n"
+			" external name \"sql\".\"corr\";\n"
+			"GRANT EXECUTE ON WINDOW corr(DOUBLE, DOUBLE) TO PUBLIC;\n"
+			"create window corr(e1 INTERVAL SECOND, e2 INTERVAL SECOND) returns DOUBLE\n"
+			" external name \"sql\".\"corr\";\n"
+			"GRANT EXECUTE ON WINDOW corr(INTERVAL SECOND, INTERVAL SECOND) TO PUBLIC;\n"
+			"create window corr(e1 INTERVAL MONTH, e2 INTERVAL MONTH) returns DOUBLE\n"
+			" external name \"sql\".\"corr\";\n"
+			"GRANT EXECUTE ON WINDOW corr(INTERVAL MONTH, INTERVAL MONTH) TO PUBLIC;\n");
+
+#ifdef HAVE_HGE
+	if (have_hge) {
+		/* 39_analytics_hge.sql */
+		pos += snprintf(buf + pos, bufsize - pos,
+			"create window stddev_samp(val HUGEINT) returns DOUBLE\n"
+			" external name \"sql\".\"stdev\";\n"
+			"GRANT EXECUTE ON WINDOW stddev_samp(HUGEINT) TO PUBLIC;\n"
+			"create window stddev_pop(val HUGEINT) returns DOUBLE\n"
+			" external name \"sql\".\"stdevp\";\n"
+			"GRANT EXECUTE ON WINDOW stddev_pop(HUGEINT) TO PUBLIC;\n"
+			"create window var_samp(val HUGEINT) returns DOUBLE\n"
+			" external name \"sql\".\"variance\";\n"
+			"GRANT EXECUTE ON WINDOW var_samp(HUGEINT) TO PUBLIC;\n"
+			"create window var_pop(val HUGEINT) returns DOUBLE\n"
+			" external name \"sql\".\"variancep\";\n"
+			"GRANT EXECUTE ON WINDOW var_pop(HUGEINT) TO PUBLIC;\n"
+			"create aggregate covar_samp(e1 HUGEINT, e2 HUGEINT) returns DOUBLE\n"
+			" external name \"aggr\".\"covariance\";\n"
+			"GRANT EXECUTE ON AGGREGATE covar_samp(HUGEINT, HUGEINT) TO PUBLIC;\n"
+			"create window covar_samp(e1 HUGEINT, e2 HUGEINT) returns DOUBLE\n"
+			" external name \"sql\".\"covariance\";\n"
+			"GRANT EXECUTE ON WINDOW covar_samp(HUGEINT, HUGEINT) TO PUBLIC;\n"
+			"create aggregate covar_pop(e1 HUGEINT, e2 HUGEINT) returns DOUBLE\n"
+			" external name \"aggr\".\"covariancep\";\n"
+			"GRANT EXECUTE ON AGGREGATE covar_pop(HUGEINT, HUGEINT) TO PUBLIC;\n"
+			"create window covar_pop(e1 HUGEINT, e2 HUGEINT) returns DOUBLE\n"
+			" external name \"sql\".\"covariancep\";\n"
+			"GRANT EXECUTE ON WINDOW covar_pop(HUGEINT, HUGEINT) TO PUBLIC;\n"
+			"create window corr(e1 HUGEINT, e2 HUGEINT) returns DOUBLE\n"
+			" external name \"sql\".\"corr\";\n"
+			"GRANT EXECUTE ON WINDOW corr(HUGEINT, HUGEINT) TO PUBLIC;\n");
+	}
+#endif
+
+	/* 51_sys_schema_extension.sql */
+	pos += snprintf(buf + pos, bufsize - pos,
+		"create window group_concat(str STRING) returns STRING\n"
+		" external name \"sql\".\"str_group_concat\";\n"
+		"GRANT EXECUTE ON WINDOW group_concat(STRING) TO PUBLIC;\n"
+		"create window group_concat(str STRING, sep STRING) returns STRING\n"
+		" external name \"sql\".\"str_group_concat\";\n"
+		"GRANT EXECUTE ON WINDOW group_concat(STRING, STRING) TO PUBLIC;\n");
+
+	pos += snprintf(buf + pos, bufsize - pos,
+			"update sys.functions set system = true where name in"
+			" ('stddev_samp', 'stddev_pop', 'var_samp', 'var_pop', 'covar_samp', 'covar_pop', 'corr', 'group_concat')"
+			" and schema_id = (select id from sys.schemas where name = 'sys');\n");
+
+	pos += snprintf(buf + pos, bufsize - pos,
+			"DROP AGGREGATE stddev_samp(date);\n"
+			"DROP AGGREGATE stddev_samp(time);\n"
+			"DROP AGGREGATE stddev_samp(timestamp);\n"
+			"DROP AGGREGATE stddev_pop(date);\n"
+			"DROP AGGREGATE stddev_pop(time);\n"
+			"DROP AGGREGATE stddev_pop(timestamp);\n"
+			"DROP AGGREGATE var_samp(date);\n"
+			"DROP AGGREGATE var_samp(time);\n"
+			"DROP AGGREGATE var_samp(timestamp);\n"
+			"DROP AGGREGATE var_pop(date);\n"
+			"DROP AGGREGATE var_pop(time);\n"
+			"DROP AGGREGATE var_pop(timestamp);\n");
+
 	pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
 	assert(pos < bufsize);
@@ -2612,7 +2894,7 @@ SQLupgrades(Client c, mvc *m)
 #ifdef HAVE_HGE
 	if (!res && have_hge) {
 		sql_find_subtype(&tp, "hugeint", 0, 0);
-		if (!sql_bind_aggr(m->sa, s, "var_pop", &tp)) {
+		if (!sql_bind_func(m->sa, s, "var_pop", &tp, NULL, F_AGGR)) {
 			if ((err = sql_update_hugeint(c, m, prev_schema, &systabfixed)) != NULL) {
 				TRC_ERROR(SQL_UPGRADES, "%s\n", err);
 				freeException(err);
@@ -2762,7 +3044,7 @@ SQLupgrades(Client c, mvc *m)
 	}
 
 	sql_find_subtype(&tp, "clob", 0, 0);
-	if (!res && sql_bind_aggr(m->sa, s, "group_concat", &tp) == NULL) {
+	if (!res && sql_bind_func(m->sa, s, "group_concat", &tp, NULL, F_AGGR) == NULL) {
 		if ((err = sql_update_aug2018(c, m, prev_schema)) != NULL) {
 			TRC_ERROR(SQL_UPGRADES, "%s\n", err);
 			freeException(err);
@@ -2867,7 +3149,7 @@ SQLupgrades(Client c, mvc *m)
 #ifdef HAVE_HGE
 	if (!res && have_hge) {
 		sql_find_subtype(&tp, "hugeint", 0, 0);
-		if (!sql_bind_aggr(m->sa, s, "median_avg", &tp)) {
+		if (!sql_bind_func(m->sa, s, "median_avg", &tp, NULL, F_AGGR)) {
 			if ((err = sql_update_nov2019_sp1_hugeint(c, m, prev_schema, &systabfixed)) != NULL) {
 				fprintf(stderr, "!%s\n", err);
 				freeException(err);

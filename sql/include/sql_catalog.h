@@ -430,11 +430,6 @@ typedef struct sql_subfunc {
 	char *sname, *tname; /* we need this for create table from loader */
 } sql_subfunc;
 
-typedef struct sql_subaggr {
-	sql_func *aggr;
-	list *res;
-} sql_subaggr;
-
 typedef enum key_type {
 	pkey,
 	ukey,

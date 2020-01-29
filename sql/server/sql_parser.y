@@ -183,7 +183,7 @@ int yydebug=1;
 /* symbolic tokens */
 %type <sym>
 	add_table_element
-	aggr_ref
+	aggr_or_window_ref
 	all_or_any_predicate
 	alter_statement
 	alter_table_element
@@ -196,7 +196,6 @@ int yydebug=1;
 	call_statement
 	case_exp
 	case_opt_else
-	case_scalar_exp
 	case_statement
 	cast_exp
 	cast_value
@@ -228,6 +227,7 @@ int yydebug=1;
 	forest_element_value
 	func_data_type
 	func_def
+	func_def_opt_return
 	func_ref
 	generated_column
 	grant
@@ -262,6 +262,7 @@ int yydebug=1;
 	opt_limit
 	opt_offset
 	opt_order_by_clause
+	opt_over
 	opt_partition_by
 	opt_partition_spec
 	opt_path_specification
@@ -344,8 +345,6 @@ int yydebug=1;
 	window_following_bound
 	window_frame_clause
 	window_frame_start
-	window_function
-	window_function_type
 	window_order_clause
 	window_partition_clause
 	with_list_element
@@ -435,7 +434,6 @@ int yydebug=1;
 	column_option_list
 	column_ref
 	column_ref_commalist
-	drop_routine_designator
 	end_field
 	external_function_name
 	filter_arg_list
@@ -479,8 +477,6 @@ int yydebug=1;
 	pred_exp_list
 	privileges
 	procedure_statement_list
-	qaggr
-	qaggr2
 	qfunc
 	qname
 	qrank
@@ -536,6 +532,7 @@ int yydebug=1;
 	document_or_content_or_sequence
 	drop_action
 	extract_datetime_field
+	func_def_type
 	global_privilege
 	grantor
 	intval
@@ -613,7 +610,7 @@ int yydebug=1;
 
 /* sql prefixes to avoid name clashes on various architectures */
 %token <sval>
-	IDENT UIDENT aTYPE ALIAS AGGR AGGR2 RANK sqlINT OIDNUM HEXADECIMAL INTNUM APPROXNUM
+	IDENT UIDENT aTYPE ALIAS RANK sqlINT OIDNUM HEXADECIMAL INTNUM APPROXNUM
 	USING 
 	GLOBAL CAST CONVERT
 	CHARACTER VARYING LARGE OBJECT VARCHAR CLOB sqlTEXT BINARY sqlBLOB
@@ -2082,63 +2079,79 @@ function_body:
 |	string
 ;
 
+func_def_type:
+	FUNCTION			{ $$ = F_FUNC; }
+|	PROCEDURE			{ $$ = F_PROC; }
+|	AGGREGATE			{ $$ = F_AGGR; }
+|	AGGREGATE FUNCTION	{ $$ = F_AGGR; }
+|	FILTER				{ $$ = F_FILT; }
+|	FILTER FUNCTION		{ $$ = F_FILT; }
+|	WINDOW				{ $$ = F_ANALYTIC; }
+|	WINDOW FUNCTION		{ $$ = F_ANALYTIC; }
+|	sqlLOADER			{ $$ = F_LOADER; }
+|	sqlLOADER FUNCTION	{ $$ = F_LOADER; }
+
+func_def_opt_return:
+	RETURNS func_data_type	{ $$ = $2; }
+|							{ $$ = NULL; }
+
 func_def:
-    create_or_replace FUNCTION qname
+    create_or_replace func_def_type qname
 	'(' opt_paramlist ')'
-    RETURNS func_data_type
-    EXTERNAL sqlNAME external_function_name 	
+    func_def_opt_return
+    EXTERNAL sqlNAME external_function_name
 			{ dlist *f = L();
 				append_list(f, $3);
 				append_list(f, $5);
-				append_symbol(f, $8);
-				append_list(f, $11);
+				append_symbol(f, $7);
+				append_list(f, $10);
 				append_list(f, NULL);
-				append_int(f, F_FUNC);
+				append_int(f, $2);
 				append_int(f, FUNC_LANG_MAL);
 				append_int(f, $1);
 			  $$ = _symbol_create_list( SQL_CREATE_FUNC, f ); }
- |  create_or_replace FUNCTION qname
+ |  create_or_replace func_def_type qname
 	'(' opt_paramlist ')'
-    RETURNS func_data_type
+    func_def_opt_return
     routine_body
 			{ dlist *f = L();
 				append_list(f, $3);
 				append_list(f, $5);
-				append_symbol(f, $8);
+				append_symbol(f, $7);
 				append_list(f, NULL);
-				append_list(f, $9);
-				append_int(f, F_FUNC);
+				append_list(f, $8);
+				append_int(f, $2);
 				append_int(f, FUNC_LANG_SQL);
 				append_int(f, $1);
 			  $$ = _symbol_create_list( SQL_CREATE_FUNC, f ); }
-  | create_or_replace FUNCTION qname
+  | create_or_replace func_def_type qname
 	'(' opt_paramlist ')'
-    RETURNS func_data_type
+    func_def_opt_return
     LANGUAGE IDENT function_body
 		{
 			int lang = 0;
 			dlist *f = L();
-			char l = *$10;
+			char l = *$9;
 
 			if (l == 'R' || l == 'r')
 				lang = FUNC_LANG_R;
 			else if (l == 'P' || l == 'p') {
 				// code does not get cleaner than this people
-				if (strcasecmp($10, "PYTHON_MAP") == 0) {
+				if (strcasecmp($9, "PYTHON_MAP") == 0) {
 					lang = FUNC_LANG_MAP_PY;
-				} else if (strcasecmp($10, "PYTHON3_MAP") == 0) {
+				} else if (strcasecmp($9, "PYTHON3_MAP") == 0) {
 					lang = FUNC_LANG_MAP_PY3;
-				} else if (strcasecmp($10, "PYTHON3") == 0) {
+				} else if (strcasecmp($9, "PYTHON3") == 0) {
 					lang = FUNC_LANG_PY3;
-				} else if (strcasecmp($10, "PYTHON2_MAP") == 0) {
+				} else if (strcasecmp($9, "PYTHON2_MAP") == 0) {
 					lang = FUNC_LANG_MAP_PY2;
-				} else if (strcasecmp($10, "PYTHON2") == 0) {
+				} else if (strcasecmp($9, "PYTHON2") == 0) {
 					lang = FUNC_LANG_PY2;
 				} else {
 					lang = FUNC_LANG_PY;
 				}
 			} else if (l == 'C' || l == 'c') {
-				if (strcasecmp($10, "CPP") == 0) {
+				if (strcasecmp($9, "CPP") == 0) {
 					lang = FUNC_LANG_CPP;
 				} else {
 					lang = FUNC_LANG_C;
@@ -2154,139 +2167,14 @@ func_def:
 
 			append_list(f, $3);
 			append_list(f, $5);
-			append_symbol(f, $8);
+			append_symbol(f, $7);
 			append_list(f, NULL);
-			append_list(f, append_string(L(), $11));
-			append_int(f, F_FUNC);
+			append_list(f, append_string(L(), $10));
+			append_int(f, $2);
 			append_int(f, lang);
 			append_int(f, $1);
 			$$ = _symbol_create_list( SQL_CREATE_FUNC, f );
 		}
-  | create_or_replace FILTER FUNCTION qname
-	'(' opt_paramlist ')'
-    EXTERNAL sqlNAME external_function_name 	
-			{ dlist *f = L();
-				append_list(f, $4);
-				append_list(f, $6); 
-				/* no returns - use OID */
-				append_symbol(f, NULL); 
-				append_list(f, $10);
-				append_list(f, NULL);
-				append_int(f, F_FILT);
-				append_int(f, FUNC_LANG_MAL);
-				append_int(f, $1);
-			  $$ = _symbol_create_list( SQL_CREATE_FUNC, f ); }
-  | create_or_replace AGGREGATE qname
-	'(' opt_paramlist ')'
-    RETURNS func_data_type
-    EXTERNAL sqlNAME external_function_name 	
-			{ dlist *f = L();
-				append_list(f, $3);
-				append_list(f, $5);
-				append_symbol(f, $8);
-				append_list(f, $11);
-				append_list(f, NULL);
-				append_int(f, F_AGGR);
-				append_int(f, FUNC_LANG_MAL);
-				append_int(f, $1);
-			  $$ = _symbol_create_list( SQL_CREATE_FUNC, f ); }
-  | create_or_replace AGGREGATE qname
-	'(' opt_paramlist ')'
-    RETURNS func_data_type
-    LANGUAGE IDENT function_body
-		{
-			int lang = 0;
-			dlist *f = L();
-			char l = *$10;
-
-			if (l == 'R' || l == 'r')
-				lang = FUNC_LANG_R;
-			else if (l == 'P' || l == 'p') {
-				if (strcasecmp($10, "PYTHON_MAP") == 0) {
-					lang = FUNC_LANG_MAP_PY;
-				} else if (strcasecmp($10, "PYTHON3_MAP") == 0) {
-					lang = FUNC_LANG_MAP_PY3;
-				} else if (strcasecmp($10, "PYTHON3") == 0) {
-					lang = FUNC_LANG_PY3;
-				} else if (strcasecmp($10, "PYTHON2_MAP") == 0) {
-					lang = FUNC_LANG_MAP_PY2;
-				} else if (strcasecmp($10, "PYTHON2") == 0) {
-					lang = FUNC_LANG_PY2;
-				} else {
-					lang = FUNC_LANG_PY;
-				}
-			} else if (l == 'C' || l == 'c') {
-				if (strcasecmp($10, "CPP") == 0) {
-					lang = FUNC_LANG_CPP;
-				} else {
-					lang = FUNC_LANG_C;
-				}
-			}
-			else if (l == 'J' || l == 'j')
-				lang = FUNC_LANG_J;
-			else {
-				char *msg = sql_message("Language name R, C, PYTHON[3], PYTHON[3]_MAP or J(avascript):expected, received '%c'", l);
-				yyerror(m, msg);
-				_DELETE(msg);
-			}
-
-			append_list(f, $3);
-			append_list(f, $5);
-			append_symbol(f, $8);
-			append_list(f, NULL);
-			append_list(f, append_string(L(), $11));
-			append_int(f, F_AGGR);
-			append_int(f, lang);
-			append_int(f, $1);
-			$$ = _symbol_create_list( SQL_CREATE_FUNC, f ); }
- | /* proc ie no result */
-    create_or_replace PROCEDURE qname
-	'(' opt_paramlist ')'
-    EXTERNAL sqlNAME external_function_name 	
-			{ dlist *f = L();
-				append_list(f, $3);
-				append_list(f, $5);
-				append_symbol(f, NULL); /* no result */
-				append_list(f, $9);
-				append_list(f, NULL);
-				append_int(f, F_PROC);
-				append_int(f, FUNC_LANG_MAL);
-				append_int(f, $1);
-			  $$ = _symbol_create_list( SQL_CREATE_FUNC, f ); }
-  | create_or_replace PROCEDURE qname
-	'(' opt_paramlist ')'
-    routine_body
-			{ dlist *f = L();
-				append_list(f, $3);
-				append_list(f, $5);
-				append_symbol(f, NULL); /* no result */
-				append_list(f, NULL); 
-				append_list(f, $7);
-				append_int(f, F_PROC);
-				append_int(f, FUNC_LANG_SQL);
-				append_int(f, $1);
-			  $$ = _symbol_create_list( SQL_CREATE_FUNC, f ); }
-  |	create_or_replace sqlLOADER qname
-	'(' opt_paramlist ')'
-    LANGUAGE IDENT function_body { 
-			int lang = 0;
-			dlist *f = L();
-			char l = *$8;
-			/* other languages here if we ever get to it */
-			if (l == 'P' || l == 'p') {
-				lang = FUNC_LANG_PY;
-			} else
-				yyerror(m, sql_message("Language name P(ython) expected, received '%c'", l));
-
-			append_list(f, $3);
-			append_list(f, $5);
-			append_symbol(f, NULL);
-			append_list(f, NULL); 
-			append_list(f, append_string(L(), $9));
-			append_int(f, F_LOADER);
-			append_int(f, lang);
-			append_int(f, $1);
-			$$ = _symbol_create_list( SQL_CREATE_FUNC, f ); }
 ;
 
 routine_body:
@@ -2692,73 +2580,11 @@ triggered_statement:
  ;
 
 routine_designator:
-	FUNCTION qname opt_typelist
+	func_def_type qname opt_typelist
 	{ dlist *l = L();
 	  append_list(l, $2 );	
 	  append_list(l, $3 );
-	  append_int(l, F_FUNC );
-	  $$ = l; }
- |	FILTER FUNCTION qname opt_typelist
-	{ dlist *l = L();
-	  append_list(l, $3 );	
-	  append_list(l, $4 );
-	  append_int(l, F_FILT );
-	  $$ = l; }
- |	AGGREGATE qname opt_typelist
-	{ dlist *l = L();
-	  append_list(l, $2 );	
-	  append_list(l, $3 );
-	  append_int(l, F_AGGR );
-	  $$ = l; }
- |	PROCEDURE qname opt_typelist
-	{ dlist *l = L();
-	  append_list(l, $2 );	
-	  append_list(l, $3 );
-	  append_int(l, F_PROC );
-	  $$ = l; }
- |	sqlLOADER qname opt_typelist
-	{ dlist *l = L();
-	  append_list(l, $2 );	
-	  append_list(l, $3 );
-	  append_int(l, F_LOADER );
-	  $$ = l; }
- ;
-
-drop_routine_designator:
-	FUNCTION if_exists qname opt_typelist
-	{ dlist *l = L();
-	  append_list(l, $3 );
-	  append_list(l, $4 );
-	  append_int(l, F_FUNC );
-	  append_int(l, $2 );
-	  $$ = l; }
- |	FILTER FUNCTION if_exists qname opt_typelist
-	{ dlist *l = L();
-	  append_list(l, $4 );
-	  append_list(l, $5 );
-	  append_int(l, F_FILT );
-	  append_int(l, $3 );
-	  $$ = l; }
- |	AGGREGATE if_exists qname opt_typelist
-	{ dlist *l = L();
-	  append_list(l, $3 );
-	  append_list(l, $4 );
-	  append_int(l, F_AGGR );
-	  append_int(l, $2 );
-	  $$ = l; }
- |	PROCEDURE if_exists qname opt_typelist
-	{ dlist *l = L();
-	  append_list(l, $3 );
-	  append_list(l, $4 );
-	  append_int(l, F_PROC );
-	  append_int(l, $2 );
-	  $$ = l; }
- |	sqlLOADER if_exists qname opt_typelist
-	{ dlist *l = L();
-	  append_list(l, $3 );
-	  append_list(l, $4 );
-	  append_int(l, F_LOADER );
-	  append_int(l, $2 );
+	  append_int(l, $1 );
 	  $$ = l; }
  ;
 
@@ -2769,54 +2595,22 @@ drop_statement:
 	  append_int(l, $5 );
 	  append_int(l, $3 );
 	  $$ = _symbol_create_list( SQL_DROP_TABLE, l ); }
- | drop drop_routine_designator drop_action
-	{ dlist *l = $2;
-	  append_int(l, 0 ); /* not all */
-	  append_int(l, $3 );
-	  $$ = _symbol_create_list( SQL_DROP_FUNC, l ); }
- | drop ALL FUNCTION qname drop_action
+ | drop func_def_type if_exists qname opt_typelist drop_action
 	{ dlist *l = L();
 	  append_list(l, $4 );
-	  append_list(l, NULL );
-	  append_int(l, F_FUNC );
-	  append_int(l, FALSE );
-	  append_int(l, 1 );
-	  append_int(l, $5 );
-	  $$ = _symbol_create_list( SQL_DROP_FUNC, l ); }
- | drop ALL FILTER FUNCTION qname drop_action
-	{ dlist *l = L();
 	  append_list(l, $5 );
-	  append_list(l, NULL );
-	  append_int(l, F_FILT );
-	  append_int(l, FALSE );
-	  append_int(l, 1 );
+	  append_int(l, $2 );
+	  append_int(l, $3 );
+	  append_int(l, 0 ); /* not all */
 	  append_int(l, $6 );
 	  $$ = _symbol_create_list( SQL_DROP_FUNC, l ); }
- | drop ALL AGGREGATE qname drop_action
+ | drop ALL func_def_type qname drop_action
 	{ dlist *l = L();
 	  append_list(l, $4 );
 	  append_list(l, NULL );
-	  append_int(l, F_AGGR );
+	  append_int(l, $3 );
 	  append_int(l, FALSE );
-	  append_int(l, 1 );
-	  append_int(l, $5 );
-	  $$ = _symbol_create_list( SQL_DROP_FUNC, l ); }
- | drop ALL PROCEDURE qname drop_action
-	{ dlist *l = L();
-	  append_list(l, $4 );
-	  append_list(l, NULL );
-	  append_int(l, F_PROC );
-	  append_int(l, FALSE );
-	  append_int(l, 1 );
-	  append_int(l, $5 );
-	  $$ = _symbol_create_list( SQL_DROP_FUNC, l ); }
- | drop ALL sqlLOADER qname drop_action
-	{ dlist *l = L();
-	  append_list(l, $4 );
-	  append_list(l, NULL );
-	  append_int(l, F_LOADER );
-	  append_int(l, FALSE );
-	  append_int(l, 1 );
+	  append_int(l, 1 ); /* all */
 	  append_int(l, $5 );
 	  $$ = _symbol_create_list( SQL_DROP_FUNC, l ); }
  |  drop VIEW if_exists qname drop_action
@@ -4063,20 +3857,23 @@ simple_scalar_exp:
 			{ dlist *l = L();
 			  append_list(l, 
 			  	append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "sql_add")));
-	  		  append_symbol(l, $1);
+	  		  append_int(l, FALSE); /* ignore distinct */
+			  append_symbol(l, $1);
 	  		  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
  |  scalar_exp '-' scalar_exp
 			{ dlist *l = L();
 			  append_list(l, 
 			  	append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "sql_sub")));
-	  		  append_symbol(l, $1);
+	  		  append_int(l, FALSE); /* ignore distinct */
+			  append_symbol(l, $1);
 	  		  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
  |  scalar_exp '*' scalar_exp
 			{ dlist *l = L();
 			  append_list(l, 
 			  	append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "sql_mul")));
+				  append_int(l, FALSE); /* ignore distinct */
 	  		  append_symbol(l, $1);
 	  		  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
@@ -4084,6 +3881,7 @@ simple_scalar_exp:
 			{ dlist *l = L();
 			  append_list(l, 
 			  	append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "sql_div")));
+				  append_int(l, FALSE); /* ignore distinct */
 	  		  append_symbol(l, $1);
 	  		  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
@@ -4091,6 +3889,7 @@ simple_scalar_exp:
 			{ dlist *l = L();
 			  append_list(l, 
 			  	append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "mod")));
+				  append_int(l, FALSE); /* ignore distinct */
 	  		  append_symbol(l, $1);
 	  		  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
@@ -4098,6 +3897,7 @@ simple_scalar_exp:
 			{ dlist *l = L();
 			  append_list(l, 
 			  	append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "bit_xor")));
+				  append_int(l, FALSE); /* ignore distinct */
 	  		  append_symbol(l, $1);
 	  		  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
@@ -4105,6 +3905,7 @@ simple_scalar_exp:
 			{ dlist *l = L();
 			  append_list(l, 
 			  	append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "bit_and")));
+				  append_int(l, FALSE); /* ignore distinct */
 	  		  append_symbol(l, $1);
 			  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
@@ -4112,6 +3913,7 @@ simple_scalar_exp:
 			{ dlist *l = L();
 			  append_list(l, 
 			  	append_string(L(), sa_strdup(SA, "mbr_overlap")));
+				  append_int(l, FALSE); /* ignore distinct */
 	  		  append_symbol(l, $1);
 	  		  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
@@ -4119,6 +3921,7 @@ simple_scalar_exp:
 			{ dlist *l = L();
 			  append_list(l, 
 			  	append_string(L(), sa_strdup(SA, "mbr_overlap_or_left")));
+				  append_int(l, FALSE); /* ignore distinct */
 	  		  append_symbol(l, $1);
 	  		  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
@@ -4126,6 +3929,7 @@ simple_scalar_exp:
 			{ dlist *l = L();
 			  append_list(l, 
 			  	append_string(L(), sa_strdup(SA, "mbr_overlap_or_right")));
+				  append_int(l, FALSE); /* ignore distinct */
 	  		  append_symbol(l, $1);
 	  		  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
@@ -4133,12 +3937,14 @@ simple_scalar_exp:
 			{ dlist *l = L();
 			  append_list(l, 
 			  	append_string(L(), sa_strdup(SA, "mbr_overlap_or_below")));
+				  append_int(l, FALSE); /* ignore distinct */
 	  		  append_symbol(l, $1);
 	  		  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
  | scalar_exp GEOM_BELOW scalar_exp
 			{ dlist *l = L();
 			  append_list(l, append_string(L(), sa_strdup(SA, "mbr_below")));
+			  append_int(l, FALSE); /* ignore distinct */
 	  		  append_symbol(l, $1);
 	  		  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
@@ -4146,6 +3952,7 @@ simple_scalar_exp:
 			{ dlist *l = L();
 			  append_list(l, 
 			  	append_string(L(), sa_strdup(SA, "mbr_overlap_or_above")));
+				  append_int(l, FALSE); /* ignore distinct */
 	  		  append_symbol(l, $1);
 	  		  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
@@ -4153,6 +3960,7 @@ simple_scalar_exp:
 			{ dlist *l = L();
 			  append_list(l, 
 			  	append_string(L(), sa_strdup(SA, "mbr_above")));
+				  append_int(l, FALSE); /* ignore distinct */
 	  		  append_symbol(l, $1);
 	  		  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
@@ -4160,6 +3968,7 @@ simple_scalar_exp:
 			{ dlist *l = L();
 			  append_list(l, 
 			  	append_string(L(), sa_strdup(SA, "mbr_distance")));
+				  append_int(l, FALSE); /* ignore distinct */
 	  		  append_symbol(l, $1);
 	  		  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
@@ -4167,6 +3976,7 @@ simple_scalar_exp:
 			{ dlist *l = L();
 			  append_list(l, 
 			  	append_string(L(), sa_strdup(SA, "mbr_contained")));
+				  append_int(l, FALSE); /* ignore distinct */
 	  		  append_symbol(l, $1);
 	  		  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
@@ -4174,6 +3984,7 @@ simple_scalar_exp:
 			{ dlist *l = L();
 			  append_list(l, 
 			  	append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "bit_or")));
+				  append_int(l, FALSE); /* ignore distinct */
 	  		  append_symbol(l, $1);
 	  		  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
@@ -4181,6 +3992,7 @@ simple_scalar_exp:
 			{ dlist *l = L();
 			  append_list(l, 
 			  	append_string(L(), sa_strdup(SA, "mbr_contains")));
+				  append_int(l, FALSE); /* ignore distinct */
 	  		  append_symbol(l, $1);
 	  		  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
@@ -4188,6 +4000,7 @@ simple_scalar_exp:
 			{ dlist *l = L();
 			  append_list(l, 
 			  	append_string(L(), sa_strdup(SA, "mbr_equal")));
+				  append_int(l, FALSE); /* ignore distinct */
 	  		  append_symbol(l, $1);
 	  		  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
@@ -4195,26 +4008,30 @@ simple_scalar_exp:
 			{ dlist *l = L();
 			  append_list(l, 
 			  	append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "bit_not")));
-	  		  append_symbol(l, $2);
+	  		  append_int(l, FALSE); /* ignore distinct */
+			  append_symbol(l, $2);
 	  		  $$ = _symbol_create_list( SQL_UNOP, l ); }
  |  scalar_exp LEFT_SHIFT scalar_exp
 			{ dlist *l = L();
 			  append_list(l, 
 			  	append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "left_shift")));
-	  		  append_symbol(l, $1);
+			  	append_int(l, FALSE); /* ignore distinct */
+				append_symbol(l, $1);
 	  		  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
  |  scalar_exp RIGHT_SHIFT scalar_exp
 			{ dlist *l = L();
 			  append_list(l, 
 			  	append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "right_shift")));
-	  		  append_symbol(l, $1);
+	  		   append_int(l, FALSE); /* ignore distinct */
+			   append_symbol(l, $1);
 	  		  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
  |  scalar_exp LEFT_SHIFT_ASSIGN scalar_exp
 			{ dlist *l = L();
 			  append_list(l, 
 			  	append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "left_shift_assign")));
+				  append_int(l, FALSE); /* ignore distinct */
 	  		  append_symbol(l, $1);
 	  		  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
@@ -4222,6 +4039,7 @@ simple_scalar_exp:
 			{ dlist *l = L();
 			  append_list(l, 
 			  	append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "right_shift_assign")));
+				  append_int(l, FALSE); /* ignore distinct */
 	  		  append_symbol(l, $1);
 	  		  append_symbol(l, $3);
 	  		  $$ = _symbol_create_list( SQL_BINOP, l ); }
@@ -4245,7 +4063,8 @@ simple_scalar_exp:
 				dlist *l = L();
 			  	append_list(l, 
 			  		append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "sql_neg")));
-	  		  	append_symbol(l, $2);
+	  		  	append_int(l, FALSE); /* ignore distinct */
+				append_symbol(l, $2);
 	  		  	$$ = _symbol_create_list( SQL_UNOP, l ); 
 			  }
 			}
@@ -4257,18 +4076,30 @@ scalar_exp:
  |  subquery	%prec UMINUS
  ;
 
+opt_over:
+	OVER '(' window_specification ')' { $$ = _symbol_create_list(SQL_WINDOW, append_list(L(), $3)); }
+ |  OVER ident                        { $$ = _symbol_create_list(SQL_NAME, append_string(L(), $2)); }
+ |                                    { $$ = NULL; }
+ ;
+
 value_exp:
     atom
- |  aggr_ref
+ |  aggr_or_window_ref opt_over {
+	 								if ($2 && $2->token == SQL_NAME)
+										$$ = _symbol_create_list(SQL_WINDOW, append_string(append_symbol(L(), $1), $2->data.lval->h->data.sval));
+									else if ($2)
+										$$ = _symbol_create_list(SQL_WINDOW, append_list(append_symbol(L(), $1), $2->data.lval->h->data.lval));
+									else
+										$$ = $1;
+ 								}
  |  case_exp
  |  cast_exp
  |  column_ref                            { $$ = _symbol_create_list(SQL_COLUMN, $1); }
  |  CURRENT_ROLE   { $$ = _symbol_create_list(SQL_COLUMN, append_string(L(), sa_strdup(SA, "current_role"))); }
  |  datetime_funcs
- |  func_ref
  |  GROUPING '(' column_ref_commalist ')' { dlist *l = L();
 										    append_list(l, append_string(L(), "grouping"));
-										    append_int(l, FALSE);
+											append_int(l, FALSE); /* ignore distinct */
 											for (dnode *dn = $3->h ; dn ; dn = dn->next) {
 												symbol *sym = dn->data.sym; /* do like a aggrN */
 												append_symbol(l, _symbol_create_list(SQL_COLUMN, sym->data.lval));
@@ -4280,7 +4111,6 @@ value_exp:
  |  string_funcs
  |  user            { $$ = _symbol_create_list(SQL_COLUMN, append_string(L(), sa_strdup(SA, "current_user"))); }
  |  var_ref
- |  window_function
  |  XML_value_function
  ;
 
@@ -4292,27 +4122,6 @@ param:
 	  sql_add_param(m, NULL, NULL);
 	  $$ = _symbol_create_int( SQL_PARAMETER, nr ); 
 	}
-
-window_function:
-	window_function_type OVER '(' window_specification ')'
-	{ $$ = _symbol_create_list( SQL_RANK, append_list(append_symbol(L(), $1), $4)); }
-  | window_function_type OVER ident
-	{ $$ = _symbol_create_list( SQL_RANK, append_string(append_symbol(L(), $1), $3)); }
-  ;
-
-window_function_type:
-	qrank '(' ')'
-	{ dlist *l = L();
-	  append_list(l, $1);
-	  append_list(l, NULL);
-	  $$ = _symbol_create_list( SQL_RANK, l ); }
-  | qrank '(' scalar_exp_list ')'
-	{ dlist *l = L();
-	  append_list(l, $1);
-	  append_list(l, $3);
-	  $$ = _symbol_create_list( SQL_RANK, l ); }
-  |	aggr_ref
-  ;
 
 window_specification:
 	window_ident_clause window_partition_clause window_order_clause window_frame_clause
@@ -4407,10 +4216,12 @@ func_ref:
     qfunc '(' ')'
 	{ dlist *l = L();
   	  append_list(l, $1);
+      append_int(l, FALSE); /* ignore distinct */
 	  $$ = _symbol_create_list( SQL_OP, l ); }
 |   qfunc '(' scalar_exp_list ')'
 	{ dlist *l = L();
   	  append_list(l, $1);
+	  append_int(l, FALSE); /* ignore distinct */
 	  if (dlist_length($3) == 1) {
   	  	append_symbol(l, $3->h->data.sym);
 	  	$$ = _symbol_create_list( SQL_UNOP, l ); 
@@ -4423,16 +4234,6 @@ func_ref:
 	  	$$ = _symbol_create_list( SQL_NOP, l ); 
 	  }
 	}
-/*
-|   '(' '(' scalar_exp_list ')' qfunc '(' scalar_exp_list ')' ')'
-	{ dlist *l = L();
-  	  append_list(l, $5);
-  	  append_list(l, $3);
-  	  append_list(l, $7);
-  	  append_int(l, 0);	
-	  $$ = _symbol_create_list( SQL_JOIN, l ); 
-	}
-*/
  ;
 
 qfunc:
@@ -4454,32 +4255,38 @@ datetime_funcs:
 			  const char *ident = datetime_field((itype)$3);
 			  append_list(l,
   		  	  	append_string(L(), sa_strdup(SA, ident)));
-  		  	  append_symbol(l, $5);
+  		  	  append_int(l, FALSE); /* ignore distinct */
+			  append_symbol(l, $5);
 		  	  $$ = _symbol_create_list( SQL_UNOP, l ); }
  |  CURRENT_DATE opt_brackets
  			{ dlist *l = L();
 			  append_list(l,
 			  	append_string(L(), sa_strdup(SA, "current_date")));
+			 append_int(l, FALSE); /* ignore distinct */
 	  		  $$ = _symbol_create_list( SQL_OP, l ); }
  |  CURRENT_TIME opt_brackets
  			{ dlist *l = L();
 			  append_list(l,
 			  	append_string(L(), sa_strdup(SA, "current_time")));
+			  append_int(l, FALSE); /* ignore distinct */
 	  		  $$ = _symbol_create_list( SQL_OP, l ); }
  |  CURRENT_TIMESTAMP opt_brackets
  			{ dlist *l = L();
 			  append_list(l,
 			  	append_string(L(), sa_strdup(SA, "current_timestamp")));
+			  append_int(l, FALSE); /* ignore distinct */
 	  		  $$ = _symbol_create_list( SQL_OP, l ); }
  |  LOCALTIME opt_brackets
  			{ dlist *l = L();
 			  append_list(l,
 			  	append_string(L(), sa_strdup(SA, "localtime")));
+			  append_int(l, FALSE); /* ignore distinct */
 	  		  $$ = _symbol_create_list( SQL_OP, l ); }
  |  LOCALTIMESTAMP opt_brackets
  			{ dlist *l = L();
 			  append_list(l,
 			  	append_string(L(), sa_strdup(SA, "localtimestamp")));
+			  append_int(l, FALSE); /* ignore distinct */
 	  		  $$ = _symbol_create_list( SQL_OP, l ); }
  ;
 
@@ -4494,6 +4301,7 @@ string_funcs:
 			  dlist *ops = L();
   		  	  append_list(l,
 				append_string(L(), sa_strdup(SA, "substring")));
+			  append_int(l, FALSE); /* ignore distinct */
   		  	  append_symbol(ops, $3);
   		  	  append_symbol(ops, $5);
   		  	  append_symbol(ops, $7);
@@ -4504,6 +4312,7 @@ string_funcs:
 			  dlist *ops = L();
   		  	  append_list(l,
   		  	  	append_string(L(), sa_strdup(SA, "substring")));
+			append_int(l, FALSE); /* ignore distinct */
   		  	  append_symbol(ops, $3);
   		  	  append_symbol(ops, $5);
   		  	  append_symbol(ops, $7);
@@ -4513,6 +4322,7 @@ string_funcs:
 			{ dlist *l = L();
   		  	  append_list(l,
   		  	  	append_string(L(), sa_strdup(SA, "substring")));
+					  append_int(l, FALSE); /* ignore distinct */
   		  	  append_symbol(l, $3);
   		  	  append_symbol(l, $5);
 		  	  $$ = _symbol_create_list( SQL_BINOP, l ); }
@@ -4520,6 +4330,7 @@ string_funcs:
 			{ dlist *l = L();
   		  	  append_list(l,
   		  	  	append_string(L(), sa_strdup(SA, "substring")));
+					  append_int(l, FALSE); /* ignore distinct */
   		  	  append_symbol(l, $3);
   		  	  append_symbol(l, $5);
 		  	  $$ = _symbol_create_list( SQL_BINOP, l ); }
@@ -4527,6 +4338,7 @@ string_funcs:
 			{ dlist *l = L();
   		  	  append_list(l,
   		  	  	append_string(L(), sa_strdup(SA, "locate")));
+					  append_int(l, FALSE); /* ignore distinct */
   		  	  append_symbol(l, $3);
   		  	  append_symbol(l, $5);
 		  	  $$ = _symbol_create_list( SQL_BINOP, l ); }
@@ -4534,6 +4346,7 @@ string_funcs:
 			{ dlist *l = L();
   		  	  append_list(l,
   		  	  	append_string(L(), sa_strdup(SA, "concat")));
+					  append_int(l, FALSE); /* ignore distinct */
   		  	  append_symbol(l, $1);
   		  	  append_symbol(l, $3);
 		  	  $$ = _symbol_create_list( SQL_BINOP, l ); }
@@ -4542,6 +4355,7 @@ string_funcs:
 			  dlist *ops = L();
   		  	  append_list(l,
 				append_string(L(), sa_strdup(SA, "splitpart")));
+				append_int(l, FALSE); /* ignore distinct */
   		  	  append_symbol(ops, $3);
   		  	  append_symbol(ops, $5);
   		  	  append_symbol(ops, $7);
@@ -4615,57 +4429,97 @@ qrank:
 			  append_string(L(), $1), $3);}
  ;
 
-qaggr:
-	AGGR		{ $$ = append_string(L(), $1); }
- |      ident '.' AGGR	{ $$ = append_string(
-			  append_string(L(), $1), $3);}
- ;
-
-qaggr2:
-	AGGR2		{ $$ = append_string(L(), $1); }
- |      ident '.' AGGR2	{ $$ = append_string(
-			  append_string(L(), $1), $3);}
- ;
-
-/* change to set function */
-aggr_ref:
-    qaggr '(' '*' ')'
+aggr_or_window_ref:
+    qrank '(' ')'
 		{ dlist *l = L();
   		  append_list(l, $1);
-  		  append_int(l, FALSE);
-  		  append_symbol(l, NULL);
-		  $$ = _symbol_create_list( SQL_AGGR, l ); }
- |  qaggr '(' ident '.' '*' ')'
+  		  append_int(l, FALSE); /* ignore distinct */
+  		  append_list(l, NULL);
+  		  $$ = _symbol_create_list( SQL_RANK, l ); }
+ |  qrank '(' scalar_exp_list ')'
 		{ dlist *l = L();
   		  append_list(l, $1);
-  		  append_int(l, FALSE);
-  		  append_symbol(l, NULL);
-		  $$ = _symbol_create_list( SQL_AGGR, l ); }
- |  qaggr '(' DISTINCT case_scalar_exp ')'
+  		  append_int(l, FALSE); /* ignore distinct */
+  		  append_list(l, $3);
+  		  $$ = _symbol_create_list( SQL_RANK, l ); }
+ |  qrank '(' DISTINCT scalar_exp_list ')'
 		{ dlist *l = L();
   		  append_list(l, $1);
   		  append_int(l, TRUE);
-  		  append_symbol(l, $4);
-		  $$ = _symbol_create_list( SQL_AGGR, l ); }
- |  qaggr '(' ALL case_scalar_exp ')'
+  		  append_list(l, $4);
+  		  $$ = _symbol_create_list( SQL_RANK, l ); }
+ |  qrank '(' ALL scalar_exp_list ')'
 		{ dlist *l = L();
   		  append_list(l, $1);
   		  append_int(l, FALSE);
-  		  append_symbol(l, $4);
-		  $$ = _symbol_create_list( SQL_AGGR, l ); }
- |  qaggr '(' case_scalar_exp ')'
+  		  append_list(l, $4);
+  		  $$ = _symbol_create_list( SQL_RANK, l ); }
+ |  qfunc '(' '*' ')'
 		{ dlist *l = L();
   		  append_list(l, $1);
-  		  append_int(l, FALSE);
-  		  append_symbol(l, $3);
+		  append_int(l, FALSE); /* ignore distinct */
+  		  append_symbol(l, NULL);
 		  $$ = _symbol_create_list( SQL_AGGR, l ); }
- |  qaggr2 '(' case_scalar_exp ',' case_scalar_exp ')'
+ |  qfunc '(' ident '.' '*' ')'
 		{ dlist *l = L();
   		  append_list(l, $1);
-  		  append_int(l, FALSE);
-  		  append_symbol(l, $3);
-  		  append_symbol(l, $5);
+		  append_int(l, FALSE); /* ignore distinct */
+  		  append_symbol(l, NULL);
 		  $$ = _symbol_create_list( SQL_AGGR, l ); }
+ |  qfunc '(' ')'
+		{ dlist *l = L();
+  		  append_list(l, $1);
+		  append_int(l, FALSE); /* ignore distinct */
+		  append_list(l, NULL);
+		  $$ = _symbol_create_list( SQL_OP, l ); }
+ |  qfunc '(' scalar_exp_list ')'
+		{ dlist *l = L();
+		  append_list(l, $1);
+		  append_int(l, FALSE); /* ignore distinct */
+ 		  if (dlist_length($3) == 1) {
+		  	append_symbol(l, $3->h->data.sym);
+			$$ = _symbol_create_list( SQL_UNOP, l ); 
+		  } else if (dlist_length($3) == 2) {
+		  	append_symbol(l, $3->h->data.sym);
+		  	append_symbol(l, $3->h->next->data.sym);
+			$$ = _symbol_create_list( SQL_BINOP, l ); 
+		  } else {
+		  	append_list(l, $3);
+		  	$$ = _symbol_create_list( SQL_NOP, l ); 
+		  }
+		}
+ |  qfunc '(' DISTINCT scalar_exp_list ')'
+		{ dlist *l = L();
+		  append_list(l, $1);
+		  append_int(l, TRUE);
+ 		  if (dlist_length($4) == 1) {
+		  	append_symbol(l, $4->h->data.sym);
+			$$ = _symbol_create_list( SQL_UNOP, l ); 
+		  } else if (dlist_length($4) == 2) {
+		  	append_symbol(l, $4->h->data.sym);
+		  	append_symbol(l, $4->h->next->data.sym);
+			$$ = _symbol_create_list( SQL_BINOP, l ); 
+		  } else {
+		  	append_list(l, $4);
+		  	$$ = _symbol_create_list( SQL_NOP, l ); 
+		  }
+		}
+ |  qfunc '(' ALL scalar_exp_list ')'
+		{ dlist *l = L();
+		  append_list(l, $1);
+		  append_int(l, FALSE);
+ 		  if (dlist_length($4) == 1) {
+		  	append_symbol(l, $4->h->data.sym);
+			$$ = _symbol_create_list( SQL_UNOP, l ); 
+		  } else if (dlist_length($4) == 2) {
+		  	append_symbol(l, $4->h->data.sym);
+		  	append_symbol(l, $4->h->next->data.sym);
+			$$ = _symbol_create_list( SQL_BINOP, l ); 
+		  } else {
+		  	append_list(l, $4);
+		  	$$ = _symbol_create_list( SQL_NOP, l ); 
+		  }
+		}
  |  XML_aggregate
  ;
 
@@ -5332,9 +5186,6 @@ case_opt_else:
  |  ELSE scalar_exp	{ $$ = $2; }
  ;
 
-case_scalar_exp:
-    scalar_exp	
- ;
 		/* data types, more types to come */
 
 nonzero:
@@ -5681,8 +5532,6 @@ calc_restricted_ident:
 		{ $$ = uescape_xform($1, $2); }
  |  aTYPE	{ $$ = $1; }
  |  ALIAS	{ $$ = $1; }
- |  AGGR	{ $$ = $1; } 	/* without '(' */
- |  AGGR2	{ $$ = $1; } 	/* without '(' */
  |  RANK	{ $$ = $1; }	/* without '(' */
  ;
 
@@ -5706,8 +5555,6 @@ calc_ident:
  |  aTYPE	{ $$ = $1; }
  |  FILTER_FUNC	{ $$ = $1; }
  |  ALIAS	{ $$ = $1; }
- |  AGGR	{ $$ = $1; } 	/* without '(' */
- |  AGGR2	{ $$ = $1; } 	/* without '(' */
  |  RANK	{ $$ = $1; }	/* without '(' */
  |  non_reserved_word
  ;
@@ -5990,11 +5837,13 @@ exec_ref:
     posint '(' ')'
 	{ dlist *l = L();
   	  append_int(l, $1);
+	  append_int(l, FALSE); /* ignore distinct */
   	  append_list(l, NULL);
 	  $$ = _symbol_create_list( SQL_NOP, l ); }
 |   posint '(' value_commalist ')'
 	{ dlist *l = L();
   	  append_int(l, $1);
+  	  append_int(l, FALSE); /* ignore distinct */
   	  append_list(l, $3);
 	  $$ = _symbol_create_list( SQL_NOP, l ); }
  ;
@@ -6535,8 +6384,7 @@ XML_valid_element_name:
 XML_aggregate:
   XMLAGG '(' XML_value_expression
       opt_order_by_clause
-      opt_XML_returning_clause
-      ')'
+      opt_XML_returning_clause ')'
 	{ 
           dlist *aggr = L();
 
@@ -6550,8 +6398,8 @@ XML_aggregate:
 			YYABORT;
 		}
 	  }
-          append_list(aggr, append_string(append_string(L(), "sys"), "xmlagg"));
-  	  append_int(aggr, FALSE);
+	  append_list(aggr, append_string(append_string(L(), "sys"), "xmlagg"));
+	  append_int(aggr, FALSE); /* ignore distinct */
 	  append_symbol(aggr, $3);
 	  /* int returning not used */
 	  $$ = _symbol_create_list( SQL_AGGR, aggr);

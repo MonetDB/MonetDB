@@ -268,10 +268,10 @@ WHERE (t0.start_time >= '2017/12/01 00:00:00' AND t0.start_time <= '2017/12/02 0
 
 rollback;
 
-select lag(null, aa) over () from analytics; --error
-select lag(null, null, aa) over () from analytics; --error
-select lead(null, aa) over () from analytics; --error
-select lead(null, null, aa) over () from analytics; --error
+select ntile(1) from analytics; --error, ntile requires an OVER clause
+select ntile(distinct aa) over () from analytics; --error
+select nth_value(distinct aa, bb) over () from analytics; --error
+
 select lead(aa, 34, 1000000000000) over (partition by bb) from analytics; --error
 
 drop table analytics;

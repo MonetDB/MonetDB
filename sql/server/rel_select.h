@@ -21,7 +21,7 @@ extern sql_exp * rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *
 
 extern sql_exp *rel_column_exp(sql_query *query, sql_rel **rel, symbol *column_e, int f);
 extern sql_exp * rel_value_exp(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek);
-extern sql_exp * rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek, int *is_last);
+extern sql_exp * rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek);
 
 /* TODO rename to exp_check_type + move to rel_exp.c */
 extern sql_exp *rel_check_type(mvc *sql, sql_subtype *t, sql_rel *rel, sql_exp *exp, check_type tpe);

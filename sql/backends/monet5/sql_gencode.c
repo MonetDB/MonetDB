@@ -907,13 +907,12 @@ monet5_resolve_function(ptr M, sql_func *f)
 	if (!mname || !fname)
 		return 0;
 
-	/* Some SQL functions MAL mapping such as count(*) aggregate, the number or arguments don't match */
+	/* Some SQL functions MAL mapping such as count(*) aggregate, the number of arguments don't match */
 	if (mname == calcRef && fname == getName("="))
 		return 1;
 	if (mname == aggrRef && fname == countRef)
 		return 1;
-	if (mname == sqlRef && (fname == first_valueRef || fname == lagRef || fname == leadRef || fname == nth_valueRef || fname == ntileRef ||
-		fname ==  minRef || fname == maxRef || fname == countRef || fname == prodRef || fname == sumRef || fname == avgRef))
+	if (f->type == F_ANALYTIC)
 		return 1;
 
 	c = MCgetClient(sql->clientid);
@@ -1372,13 +1371,13 @@ backend_create_subfunc(backend *be, sql_subfunc *f, list *ops)
 }
 
 int
-backend_create_subaggr(backend *be, sql_subaggr *f)
+backend_create_subaggr(backend *be, sql_subfunc *f)
 {
 	int res;
 	MalBlkPtr mb = be->mb;
 
 	be->mb = NULL;
-	res = backend_create_func(be, f->aggr, f->res, NULL);
+	res = backend_create_func(be, f->func, f->res, NULL);
 	be->mb = mb;
 	return res;
 }
