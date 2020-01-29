@@ -34,6 +34,7 @@ WHERE ss_customer_sk = c_customer_sk
 ORDER BY c_last_name,
          c_first_name,
          SUBSTRING(s_city,1,30),
-         profit
+         profit,
+         ss_ticket_number
 LIMIT 100;
 
