@@ -1,6 +1,5 @@
 ####technical depth####
 
-Expand the select interface to handle boolean unknown parameter.
 Add layout summary in analysis.
 Fix/check/test MOSlayout.
 Add the compression on OID heap for string valued columns too.
@@ -27,6 +26,7 @@ Find a more 'generic' model to estimate and explore compression space perhaps Mo
 Create a plug-in estimation model framework.
 
 ####code issues####
+Straighten out semantics MOSselect. Make them exact to BATselect.
 See if the iteration algorithms can be improved.
 Use GDK naming conventions, e.g. o for stuff coming out if canditer_next.
 Update copyright in 2020.
