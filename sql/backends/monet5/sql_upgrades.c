@@ -2497,10 +2497,14 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 			" external name mdb.\"setDebug\";\n"
 			"create function sys.debugflags()\n"
 			" returns table(flag string, val bool)\n"
-			" external name mdb.\"getDebugFlags\";\n");
+			" external name mdb.\"getDebugFlags\";\n"
+			"create procedure sys.\"sleep\"(msecs int)\n"
+			" external name \"alarm\".\"sleep\";\n"
+			"create function sys.\"sleep\"(msecs int) returns integer\n"
+			" external name \"alarm\".\"sleep\";\n");
 	pos += snprintf(buf + pos, bufsize - pos,
 			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
-			" and name in ('debug', 'debugflags');\n");
+			" and name in ('debug', 'debugflags', 'sleep');\n");
 
 	/* 26_sysmon */
 	t = mvc_bind_table(sql, sys, "queue");
