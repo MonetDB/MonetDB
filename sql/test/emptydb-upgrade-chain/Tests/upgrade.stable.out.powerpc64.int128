@@ -6038,7 +6038,11 @@ create function sys.debug(flag string) returns integer
 create function sys.debugflags()
  returns table(flag string, val bool)
  external name mdb."getDebugFlags";
-update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name in ('debug', 'debugflags');
+create procedure sys."sleep"(msecs int)
+ external name "alarm"."sleep";
+create function sys."sleep"(msecs int) returns integer
+ external name "alarm"."sleep";
+update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name in ('debug', 'debugflags', 'sleep');
 drop view sys.queue;
 drop function sys.queue;
 create function sys.queue()
