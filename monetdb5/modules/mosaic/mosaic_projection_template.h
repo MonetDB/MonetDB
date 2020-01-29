@@ -29,8 +29,6 @@ MOSprojection_SIGNATURE(NAME, TPE)
 
 	ASSERT_ALIGNMENT_BLOCK_HEADER(task->blk, NAME, TPE);
 
-	TPE* bt= (TPE*) task->src;
-
 	/* Advance the candidate iterator to the first element within
 	 * the oid range of the current block.
 	 */
@@ -52,7 +50,6 @@ MOSprojection_SIGNATURE(NAME, TPE)
 	else {
 		PROJECTION_LOOP(canditer_next);
 	}
-	task->src = (char*) bt;
 
 	if ((c = canditer_peekprev(task->ci)) >= last) {
 		/*Restore iterator if it went pass the end*/
