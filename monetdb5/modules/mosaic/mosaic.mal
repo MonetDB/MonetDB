@@ -12,76 +12,148 @@ command decompress(b:bat[:any_1]) :bat[:any_1]
 address MOSdecompress
 comment "Apply dynamic decompression over chunks producing a temporary version";
 
-pattern select(b:bat[:bte], low:bte, high:bte, li:bit, hi:bit, anti:bit) :bat[:oid]
-address MOSselect;
+command select(b:bat[:bte], low:bte, high:bte, li:bit, hi:bit, anti:bit) :bat[:oid]
+address MOSselect1;
 
-pattern select(b:bat[:bit], low:bit, high:bit, li:bit, hi:bit, anti:bit) :bat[:oid]
-address MOSselect;
+command select(b:bat[:bit], low:bit, high:bit, li:bit, hi:bit, anti:bit) :bat[:oid]
+address MOSselect1;
 
-pattern select(b:bat[:sht], low:sht, high:sht, li:bit, hi:bit, anti:bit) :bat[:oid]
-address MOSselect;
+command select(b:bat[:sht], low:sht, high:sht, li:bit, hi:bit, anti:bit) :bat[:oid]
+address MOSselect1;
 
-pattern select(b:bat[:int], low:int, high:int, li:bit, hi:bit, anti:bit) :bat[:oid]
-address MOSselect;
+command select(b:bat[:int], low:int, high:int, li:bit, hi:bit, anti:bit) :bat[:oid]
+address MOSselect1;
 
-pattern select(b:bat[:lng], low:lng, high:lng, li:bit, hi:bit, anti:bit) :bat[:oid]
-address MOSselect;
+command select(b:bat[:lng], low:lng, high:lng, li:bit, hi:bit, anti:bit) :bat[:oid]
+address MOSselect1;
 
-pattern select(b:bat[:oid], low:oid, high:oid, li:bit, hi:bit, anti:bit) :bat[:oid]
-address MOSselect;
+command select(b:bat[:oid], low:oid, high:oid, li:bit, hi:bit, anti:bit) :bat[:oid]
+address MOSselect1;
 
-pattern select(b:bat[:flt], low:flt, high:flt, li:bit, hi:bit, anti:bit) :bat[:oid]
-address MOSselect;
+command select(b:bat[:flt], low:flt, high:flt, li:bit, hi:bit, anti:bit) :bat[:oid]
+address MOSselect1;
 
-pattern select(b:bat[:dbl], low:dbl, high:dbl, li:bit, hi:bit, anti:bit) :bat[:oid]
-address MOSselect;
+command select(b:bat[:dbl], low:dbl, high:dbl, li:bit, hi:bit, anti:bit) :bat[:oid]
+address MOSselect1;
 
-pattern select(b:bat[:timestamp], low:timestamp, high:timestamp, li:bit, hi:bit, anti:bit) :bat[:oid]
-address MOSselect
+command select(b:bat[:timestamp], low:timestamp, high:timestamp, li:bit, hi:bit, anti:bit) :bat[:oid]
+address MOSselect1
 comment "Overloaded selection routine";
 
-pattern select(b:bat[:date], low:date, high:date, li:bit, hi:bit, anti:bit) :bat[:oid]
-address MOSselect
+command select(b:bat[:date], low:date, high:date, li:bit, hi:bit, anti:bit) :bat[:oid]
+address MOSselect1
 comment "Overloaded selection routine";
 
-pattern select(b:bat[:daytime], low:daytime, high:daytime, li:bit, hi:bit, anti:bit) :bat[:oid]
-address MOSselect
+command select(b:bat[:daytime], low:daytime, high:daytime, li:bit, hi:bit, anti:bit) :bat[:oid]
+address MOSselect1
 comment "Overloaded selection routine";
 
-pattern select(b:bat[:bte], cand:bat[:oid], low:bte, high:bte, li:bit, hi:bit, anti:bit) :bat[:oid]
-address MOSselect;
+command select(b:bat[:bte], low:bte, high:bte, li:bit, hi:bit, anti:bit, unknown:bit) :bat[:oid]
+address MOSselect1nil;
 
-pattern select(b:bat[:bit], cand:bat[:oid], low:bit, high:bit, li:bit, hi:bit, anti:bit) :bat[:oid]
-address MOSselect;
+command select(b:bat[:bit], low:bit, high:bit, li:bit, hi:bit, anti:bit, unknown:bit) :bat[:oid]
+address MOSselect1nil;
 
-pattern select(b:bat[:sht], cand:bat[:oid], low:sht, high:sht, li:bit, hi:bit, anti:bit) :bat[:oid]
-address MOSselect;
+command select(b:bat[:sht], low:sht, high:sht, li:bit, hi:bit, anti:bit, unknown:bit) :bat[:oid]
+address MOSselect1nil;
 
-pattern select(b:bat[:int], cand:bat[:oid], low:int, high:int, li:bit, hi:bit, anti:bit) :bat[:oid]
-address MOSselect;
+command select(b:bat[:int], low:int, high:int, li:bit, hi:bit, anti:bit, unknown:bit) :bat[:oid]
+address MOSselect1nil;
 
-pattern select(b:bat[:lng], cand:bat[:oid], low:lng, high:lng, li:bit, hi:bit, anti:bit) :bat[:oid]
-address MOSselect;
+command select(b:bat[:lng], low:lng, high:lng, li:bit, hi:bit, anti:bit, unknown:bit) :bat[:oid]
+address MOSselect1nil;
 
-pattern select(b:bat[:oid], cand:bat[:oid], low:oid, high:oid, li:bit, hi:bit, anti:bit) :bat[:oid]
-address MOSselect;
+command select(b:bat[:oid], low:oid, high:oid, li:bit, hi:bit, anti:bit, unknown:bit) :bat[:oid]
+address MOSselect1nil;
 
-pattern select(b:bat[:flt], cand:bat[:oid], low:flt, high:flt, li:bit, hi:bit, anti:bit) :bat[:oid]
-address MOSselect;
+command select(b:bat[:flt], low:flt, high:flt, li:bit, hi:bit, anti:bit, unknown:bit) :bat[:oid]
+address MOSselect1nil;
 
-pattern select(b:bat[:dbl], cand:bat[:oid], low:dbl, high:dbl, li:bit, hi:bit, anti:bit) :bat[:oid]
-address MOSselect;
+command select(b:bat[:dbl], low:dbl, high:dbl, li:bit, hi:bit, anti:bit, unknown:bit) :bat[:oid]
+address MOSselect1nil;
 
-pattern select(b:bat[:timestamp], cand:bat[:oid], low:timestamp, high:timestamp, li:bit, hi:bit, anti:bit) :bat[:oid]
-address MOSselect
+command select(b:bat[:timestamp], low:timestamp, high:timestamp, li:bit, hi:bit, anti:bit, unknown:bit) :bat[:oid]
+address MOSselect1nil
 comment "Overloaded selection routine";
 
-pattern select(b:bat[:date], cand:bat[:oid], low:date, high:date, li:bit, hi:bit, anti:bit) :bat[:oid]
-address MOSselect
+command select(b:bat[:date], low:date, high:date, li:bit, hi:bit, anti:bit, unknown:bit) :bat[:oid]
+address MOSselect1nil
 comment "Overloaded selection routine";
 
-pattern select(b:bat[:daytime], cand:bat[:oid], low:daytime, high:daytime, li:bit, hi:bit, anti:bit) :bat[:oid]
-address MOSselect
+command select(b:bat[:daytime], low:daytime, high:daytime, li:bit, hi:bit, anti:bit, unknown:bit) :bat[:oid]
+address MOSselect1nil
+comment "Overloaded selection routine";
+
+command select(b:bat[:bte], cand:bat[:oid], low:bte, high:bte, li:bit, hi:bit, anti:bit) :bat[:oid]
+address MOSselect2;
+
+command select(b:bat[:bit], cand:bat[:oid], low:bit, high:bit, li:bit, hi:bit, anti:bit) :bat[:oid]
+address MOSselect2;
+
+command select(b:bat[:sht], cand:bat[:oid], low:sht, high:sht, li:bit, hi:bit, anti:bit) :bat[:oid]
+address MOSselect2;
+
+command select(b:bat[:int], cand:bat[:oid], low:int, high:int, li:bit, hi:bit, anti:bit) :bat[:oid]
+address MOSselect2;
+
+command select(b:bat[:lng], cand:bat[:oid], low:lng, high:lng, li:bit, hi:bit, anti:bit) :bat[:oid]
+address MOSselect2;
+
+command select(b:bat[:oid], cand:bat[:oid], low:oid, high:oid, li:bit, hi:bit, anti:bit) :bat[:oid]
+address MOSselect2;
+
+command select(b:bat[:flt], cand:bat[:oid], low:flt, high:flt, li:bit, hi:bit, anti:bit) :bat[:oid]
+address MOSselect2;
+
+command select(b:bat[:dbl], cand:bat[:oid], low:dbl, high:dbl, li:bit, hi:bit, anti:bit) :bat[:oid]
+address MOSselect2;
+
+command select(b:bat[:timestamp], cand:bat[:oid], low:timestamp, high:timestamp, li:bit, hi:bit, anti:bit) :bat[:oid]
+address MOSselect2
+comment "Overloaded selection routine";
+
+command select(b:bat[:date], cand:bat[:oid], low:date, high:date, li:bit, hi:bit, anti:bit) :bat[:oid]
+address MOSselect2
+comment "Overloaded selection routine";
+
+command select(b:bat[:daytime], cand:bat[:oid], low:daytime, high:daytime, li:bit, hi:bit, anti:bit) :bat[:oid]
+address MOSselect2
+comment "Overloaded selection routine";
+
+command select(b:bat[:bte], cand:bat[:oid], low:bte, high:bte, li:bit, hi:bit, anti:bit, unknown:bit) :bat[:oid]
+address MOSselect2nil;
+
+command select(b:bat[:bit], cand:bat[:oid], low:bit, high:bit, li:bit, hi:bit, anti:bit, unknown:bit) :bat[:oid]
+address MOSselect2nil;
+
+command select(b:bat[:sht], cand:bat[:oid], low:sht, high:sht, li:bit, hi:bit, anti:bit, unknown:bit) :bat[:oid]
+address MOSselect2nil;
+
+command select(b:bat[:int], cand:bat[:oid], low:int, high:int, li:bit, hi:bit, anti:bit, unknown:bit) :bat[:oid]
+address MOSselect2nil;
+
+command select(b:bat[:lng], cand:bat[:oid], low:lng, high:lng, li:bit, hi:bit, anti:bit, unknown:bit) :bat[:oid]
+address MOSselect2nil;
+
+command select(b:bat[:oid], cand:bat[:oid], low:oid, high:oid, li:bit, hi:bit, anti:bit, unknown:bit) :bat[:oid]
+address MOSselect2nil;
+
+command select(b:bat[:flt], cand:bat[:oid], low:flt, high:flt, li:bit, hi:bit, anti:bit, unknown:bit) :bat[:oid]
+address MOSselect2nil;
+
+command select(b:bat[:dbl], cand:bat[:oid], low:dbl, high:dbl, li:bit, hi:bit, anti:bit, unknown:bit) :bat[:oid]
+address MOSselect2nil;
+
+command select(b:bat[:timestamp], cand:bat[:oid], low:timestamp, high:timestamp, li:bit, hi:bit, anti:bit, unknown:bit) :bat[:oid]
+address MOSselect2nil
+comment "Overloaded selection routine";
+
+command select(b:bat[:date], cand:bat[:oid], low:date, high:date, li:bit, hi:bit, anti:bit, unknown:bit) :bat[:oid]
+address MOSselect2nil
+comment "Overloaded selection routine";
+
+command select(b:bat[:daytime], cand:bat[:oid], low:daytime, high:daytime, li:bit, hi:bit, anti:bit, unknown:bit) :bat[:oid]
+address MOSselect2nil
 comment "Overloaded selection routine";
 
 pattern thetaselect(b:bat[:bte], low:bte, oper:str) :bat[:oid]

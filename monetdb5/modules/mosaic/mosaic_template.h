@@ -243,7 +243,7 @@ static void CONCAT2(MOSdecompressInternal_, TPE)(MOStask* task)
 	MOSadvance_##NAME##_##TPE(task);\
 }
 
-static str CONCAT2(MOSselect_, TPE) (MOStask* task, void* low, void* hgh, bit* li, bit* hi, bit* anti)
+static str CONCAT2(MOSselect_, TPE) (MOStask* task, const void* low, const void* hgh, const bit* li, const bit* hi, const bit* anti)
 {
 	while(task->start < task->stop ){
 		switch(MOSgetTag(task->blk)){

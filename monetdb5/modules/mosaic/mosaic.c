@@ -638,8 +638,8 @@ isCompressed(bat bid)
  * The oid-range can be reduced due to partitioning.
  */
 
-static str
-MOSselect2(bat *ret, const bat *bid, const bat *cid, void *low, void *hgh, bit *li, bit *hi, bit *anti) {
+str
+MOSselect2(bat *ret, const bat *bid, const bat *cid	, const void *low, const void *high, const bit *li, const bit *hi, const bit *anti) {
 	BAT *b, *bn, *cand = NULL;
 	str msg = MAL_SUCCEED;
 	BUN cnt = 0;
@@ -648,10 +648,12 @@ MOSselect2(bat *ret, const bat *bid, const bat *cid, void *low, void *hgh, bit *
 	// use default implementation if possible
 	if( !isCompressed(*bid)){
 		if(cid)
-			return ALGselect2(ret,bid,cid,low,hgh,li,hi,anti);
+			return ALGselect2(ret,bid,cid,low,high,li,hi,anti);
 		else
-			return ALGselect1(ret,bid,low,hgh,li,hi,anti);
+			return ALGselect1(ret,bid,low,high,li,hi,anti);
 	}
+
+	if ((*li != 0 && *li != 1) || (*hi != 0 && *hi != 1) || (*anti != 0 && *anti != 1)) throw(MAL, "mosaic.select", ILLEGAL_ARGUMENT);
 
 	b= BATdescriptor(*bid);
 	if( b == NULL)
@@ -690,14 +692,14 @@ MOSselect2(bat *ret, const bat *bid, const bat *cid, void *low, void *hgh, bit *
 	*/
 
 	switch(ATOMbasetype(task.type)){
-	case TYPE_bte: MOSselect_bte(&task, low, hgh, li, hi, anti); break;
-	case TYPE_sht: MOSselect_sht(&task, low, hgh, li, hi, anti); break;
-	case TYPE_int: MOSselect_int(&task, low, hgh, li, hi, anti); break;
-	case TYPE_lng: MOSselect_lng(&task, low, hgh, li, hi, anti); break;
-	case TYPE_flt: MOSselect_flt(&task, low, hgh, li, hi, anti); break;
-	case TYPE_dbl: MOSselect_dbl(&task, low, hgh, li, hi, anti); break;
+	case TYPE_bte: MOSselect_bte(&task, low, high, li, hi, anti); break;
+	case TYPE_sht: MOSselect_sht(&task, low, high, li, hi, anti); break;
+	case TYPE_int: MOSselect_int(&task, low, high, li, hi, anti); break;
+	case TYPE_lng: MOSselect_lng(&task, low, high, li, hi, anti); break;
+	case TYPE_flt: MOSselect_flt(&task, low, high, li, hi, anti); break;
+	case TYPE_dbl: MOSselect_dbl(&task, low, high, li, hi, anti); break;
 #ifdef HAVE_HGE
-	case TYPE_hge: MOSselect_hge(&task, low, hgh, li, hi, anti); break;
+	case TYPE_hge: MOSselect_hge(&task, low, high, li, hi, anti); break;
 #endif
 	}
 	// derive the filling
@@ -720,29 +722,49 @@ MOSselect2(bat *ret, const bat *bid, const bat *cid, void *low, void *hgh, bit *
 }
 
 str
-MOSselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	bit *li, *hi, *anti;
-	void *low, *hgh;
-	bat *ret, *bid, *cid = NULL;
-	int i;
-	(void) cntxt;
-	(void) mb;
-	ret = getArgReference_bat(stk, pci, 0);
-	bid = getArgReference_bat(stk, pci, 1);
+MOSselect2nil(bat *ret, const bat *bid, const bat *cid, const void *low, const void *high, const bit *li, const bit *hi, const bit *anti, const bit *unknown) {
+	str msg;
 
-	if (pci->argc == 8) {	/* candidate list included */
-		cid = getArgReference_bat(stk, pci, 2);
-		i = 3;
-	} else
-		i = 2;
-	low = (void *) getArgReference(stk, pci, i);
-	hgh = (void *) getArgReference(stk, pci, i + 1);
-	li = getArgReference_bit(stk, pci, i + 2);
-	hi = getArgReference_bit(stk, pci, i + 3);
-	anti = getArgReference_bit(stk, pci, i + 4);
+	if (!*unknown)
+		return MOSselect2(ret, bid, cid, low, high, li, hi, anti);
 
-	return MOSselect2(ret, bid, cid, low, hgh, li, hi, anti);
+	if ((*li != 0 && *li != 1) || (*hi != 0 && *hi != 1) || (*anti != 0 && *anti != 1)) throw(MAL, "mosaic.select", ILLEGAL_ARGUMENT);
+
+	BAT* b = BATdescriptor(*bid);
+
+	/* here we don't need open ended parts with nil */
+	const void* nilptr = ATOMnilptr(b->ttype);
+	if (*li == 1 && ATOMcmp(b->ttype, low, nilptr) == 0) 
+		low = high; 
+	else if (*hi == 1 && ATOMcmp(b->ttype, high, nilptr) == 0)
+		high = low;
+	if (ATOMcmp(b->ttype, low, high) == 0 && ATOMcmp(b->ttype, high, nilptr) == 0) /* ugh sql nil != nil */ {
+		const bit nanti = !*anti;
+
+		 /* GOD AWFUL UGLY work around to match up semantics MOSselect and BATselect.
+		  *	nil	nil	A*		B*		false	x != nil *it must hold that A && B == false.
+		  *	nil	nil	A*		B*		true	NOTHING *it must hold that A && B == false.
+		  */
+		const bit new_li = false;
+		msg = MOSselect2(ret, bid, cid, low, high, &new_li, hi, &nanti);
+	}
+	else {
+		msg =  MOSselect2(ret, bid, cid, low, high, li, hi, anti);
+	}
+
+	BBPunfix(b->batCacheid);
+
+	return msg;
+}
+
+str
+MOSselect1(bat *ret, const bat *bid, const void *low, const void *high, const bit *li, const bit *hi, const bit *anti) {
+	return MOSselect2(ret, bid, NULL, low, high, li, hi, anti);
+}
+
+str
+MOSselect1nil(bat *ret, const bat *bid, const void *low, const void *high, const bit *li, const bit *hi, const bit *anti, const bit *unknown) {
+	return MOSselect2nil(ret, bid, NULL, low, high, li, hi, anti, unknown);
 }
 
 str MOSthetaselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)

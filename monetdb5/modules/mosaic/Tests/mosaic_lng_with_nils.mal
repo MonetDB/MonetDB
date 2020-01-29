@@ -3006,3 +3006,1744 @@ eq  := batcalc.==(l, lc, true:bit);
 io.print(l, lc, eq);
 eq  := batcalc.==(r, rc, true:bit);
 io.print(r, rc, eq);
+
+# test select operators with 'unknown' bit argument set to 'true';
+sa:= algebra.select(a,nil:lng, nil:lng,false,false,false,true);
+sc:= mosaic.select (c,nil:lng, nil:lng,false,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,nil:lng, nil:lng,false,false,true,true);
+sc:= mosaic.select (c,nil:lng, nil:lng,false,false,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,1000:lng, nil:lng,false,false,false,true);
+sc:= mosaic.select (c,1000:lng, nil:lng,false,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,nil:lng, 1000:lng,false,false,false,true);
+sc:= mosaic.select (c,nil:lng, 1000:lng,false,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,900:lng, nil:lng,false,false,false,true);
+sc:= mosaic.select (c,900:lng, nil:lng,false,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,nil:lng, 900:lng,false,false,false,true);
+sc:= mosaic.select (c,nil:lng, 900:lng,false,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,900:lng, nil:lng,true,false,false,true);
+sc:= mosaic.select (c,900:lng, nil:lng,true,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,nil:lng, 900:lng,false,true,false,true);
+sc:= mosaic.select (c,nil:lng, 900:lng,false,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,1000:lng, nil:lng,true,false,false,true);
+sc:= mosaic.select (c,1000:lng, nil:lng,true,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,nil:lng, 1000:lng,false,true,false,true);
+sc:= mosaic.select (c,nil:lng, 1000:lng,false,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,1000:lng, 1000:lng,true,true,false,true);
+sc:= mosaic.select (c,1000:lng, 1000:lng,true,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,1000:lng, 1000:lng,true,true,true,true);
+sc:= mosaic.select (c,1000:lng, 1000:lng,true,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,1003:lng, 1003:lng,true,true,false,true);
+sc:= mosaic.select (c,1003:lng, 1003:lng,true,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,1003:lng, 1003:lng,true,true,true,true);
+sc:= mosaic.select (c,1003:lng, 1003:lng,true,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,900:lng, 900:lng,true,true,false,true);
+sc:= mosaic.select (c,900:lng, 900:lng,true,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,900:lng, 900:lng,true,true,true,true);
+sc:= mosaic.select (c,900:lng, 900:lng,true,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,1100:lng, 1100:lng,true,true,false,true);
+sc:= mosaic.select (c,1100:lng, 1100:lng,true,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,1100:lng, 1100:lng,true,true,true,true);
+sc:= mosaic.select (c,1100:lng, 1100:lng,true,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,1000:lng, 1000:lng,false,true,false,true);
+sc:= mosaic.select (c,1000:lng, 1000:lng,false,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,1000:lng, 1000:lng,true,false,false,true);
+sc:= mosaic.select (c,1000:lng, 1000:lng,true,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,1000:lng, 1000:lng,false,false,false,true);
+sc:= mosaic.select (c,1000:lng, 1000:lng,false,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,1000:lng, 1000:lng,false,true,true,true);
+sc:= mosaic.select (c,1000:lng, 1000:lng,false,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,1000:lng, 1000:lng,true,false,true,true);
+sc:= mosaic.select (c,1000:lng, 1000:lng,true,false,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,1000:lng, 1000:lng,false,false,true,true);
+sc:= mosaic.select (c,1000:lng, 1000:lng,false,false,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,1005:lng, 991:lng,true,true,false,true);
+sc:= mosaic.select (c,1005:lng, 991:lng,true,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,1005:lng, 991:lng,true,true,true,true);
+sc:= mosaic.select (c,1005:lng, 991:lng,true,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,991:lng, 1005:lng,true,true,false,true);
+sc:= mosaic.select (c,991:lng, 1005:lng,true,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,999:lng, 1005:lng,true,true,false,true);
+sc:= mosaic.select (c,999:lng, 1005:lng,true,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,991:lng, 1008:lng,true,true,false,true);
+sc:= mosaic.select (c,991:lng, 1008:lng,true,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,999:lng, 1008:lng,true,true,false,true);
+sc:= mosaic.select (c,999:lng, 1008:lng,true,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,991:lng, 1005:lng,false,true,false,true);
+sc:= mosaic.select (c,991:lng, 1005:lng,false,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,999:lng, 1005:lng,false,true,false,true);
+sc:= mosaic.select (c,999:lng, 1005:lng,false,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,991:lng, 1008:lng,false,true,false,true);
+sc:= mosaic.select (c,991:lng, 1008:lng,false,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,999:lng, 1008:lng,false,true,false,true);
+sc:= mosaic.select (c,999:lng, 1008:lng,false,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,991:lng, 1005:lng,true,false,false,true);
+sc:= mosaic.select (c,991:lng, 1005:lng,true,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,999:lng, 1005:lng,true,false,false,true);
+sc:= mosaic.select (c,999:lng, 1005:lng,true,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,991:lng, 1008:lng,true,false,false,true);
+sc:= mosaic.select (c,991:lng, 1008:lng,true,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,999:lng, 1008:lng,true,false,false,true);
+sc:= mosaic.select (c,999:lng, 1008:lng,true,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,991:lng, 1005:lng,false,false,false,true);
+sc:= mosaic.select (c,991:lng, 1005:lng,false,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,999:lng, 1005:lng,false,false,false,true);
+sc:= mosaic.select (c,999:lng, 1005:lng,false,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,991:lng, 1008:lng,false,false,false,true);
+sc:= mosaic.select (c,991:lng, 1008:lng,false,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,999:lng, 1008:lng,false,false,false,true);
+sc:= mosaic.select (c,999:lng, 1008:lng,false,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,991:lng, 1005:lng,true,true,true,true);
+sc:= mosaic.select (c,991:lng, 1005:lng,true,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,999:lng, 1005:lng,true,true,true,true);
+sc:= mosaic.select (c,999:lng, 1005:lng,true,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,991:lng, 1008:lng,true,true,true,true);
+sc:= mosaic.select (c,991:lng, 1008:lng,true,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,999:lng, 1008:lng,true,true,true,true);
+sc:= mosaic.select (c,999:lng, 1008:lng,true,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,991:lng, 1005:lng,false,true,true,true);
+sc:= mosaic.select (c,991:lng, 1005:lng,false,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,999:lng, 1005:lng,false,true,true,true);
+sc:= mosaic.select (c,999:lng, 1005:lng,false,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,991:lng, 1008:lng,false,true,true,true);
+sc:= mosaic.select (c,991:lng, 1008:lng,false,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,999:lng, 1008:lng,false,true,true,true);
+sc:= mosaic.select (c,999:lng, 1008:lng,false,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,991:lng, 1005:lng,true,false,true,true);
+sc:= mosaic.select (c,991:lng, 1005:lng,true,false,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,999:lng, 1005:lng,true,false,true,true);
+sc:= mosaic.select (c,999:lng, 1005:lng,true,false,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,991:lng, 1008:lng,true,false,true,true);
+sc:= mosaic.select (c,991:lng, 1008:lng,true,false,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,999:lng, 1008:lng,true,false,true,true);
+sc:= mosaic.select (c,999:lng, 1008:lng,true,false,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,991:lng, 1005:lng,false,false,true,true);
+sc:= mosaic.select (c,991:lng, 1005:lng,false,false,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,999:lng, 1005:lng,false,false,true,true);
+sc:= mosaic.select (c,999:lng, 1005:lng,false,false,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,991:lng, 1008:lng,false,false,true,true);
+sc:= mosaic.select (c,991:lng, 1008:lng,false,false,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,999:lng, 1008:lng,false,false,true,true);
+sc:= mosaic.select (c,999:lng, 1008:lng,false,false,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,980:lng, 1005:lng,true,true,false,true);
+sc:= mosaic.select (c,980:lng, 1005:lng,true,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,980:lng, 1008:lng,true,true,false,true);
+sc:= mosaic.select (c,980:lng, 1008:lng,true,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,999:lng, 1008:lng,true,true,false,true);
+sc:= mosaic.select (c,999:lng, 1008:lng,true,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,980:lng, 1005:lng,false,true,false,true);
+sc:= mosaic.select (c,980:lng, 1005:lng,false,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,980:lng, 1008:lng,false,true,false,true);
+sc:= mosaic.select (c,980:lng, 1008:lng,false,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,980:lng, 1005:lng,true,false,false,true);
+sc:= mosaic.select (c,980:lng, 1005:lng,true,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,980:lng, 1008:lng,true,false,false,true);
+sc:= mosaic.select (c,980:lng, 1008:lng,true,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,980:lng, 1005:lng,false,false,false,true);
+sc:= mosaic.select (c,980:lng, 1005:lng,false,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,980:lng, 1008:lng,false,false,false,true);
+sc:= mosaic.select (c,980:lng, 1008:lng,false,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,980:lng, 1005:lng,true,true,true,true);
+sc:= mosaic.select (c,980:lng, 1005:lng,true,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,980:lng, 1008:lng,true,true,true,true);
+sc:= mosaic.select (c,980:lng, 1008:lng,true,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,980:lng, 1005:lng,false,true,true,true);
+sc:= mosaic.select (c,980:lng, 1005:lng,false,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,980:lng, 1008:lng,false,true,true,true);
+sc:= mosaic.select (c,980:lng, 1008:lng,false,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,980:lng, 1005:lng,true,false,true,true);
+sc:= mosaic.select (c,980:lng, 1005:lng,true,false,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,980:lng, 1008:lng,true,false,true,true);
+sc:= mosaic.select (c,980:lng, 1008:lng,true,false,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,980:lng, 1005:lng,false,false,true,true);
+sc:= mosaic.select (c,980:lng, 1005:lng,false,false,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,980:lng, 1008:lng,false,false,true,true);
+sc:= mosaic.select (c,980:lng, 1008:lng,false,false,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,991:lng, 1020:lng,true,true,false,true);
+sc:= mosaic.select (c,991:lng, 1020:lng,true,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,999:lng, 1020:lng,true,true,false,true);
+sc:= mosaic.select (c,999:lng, 1020:lng,true,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,991:lng, 1020:lng,true,true,false,true);
+sc:= mosaic.select (c,991:lng, 1020:lng,true,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,999:lng, 1020:lng,true,true,false,true);
+sc:= mosaic.select (c,999:lng, 1020:lng,true,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,991:lng, 1020:lng,false,true,false,true);
+sc:= mosaic.select (c,991:lng, 1020:lng,false,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,999:lng, 1020:lng,false,true,false,true);
+sc:= mosaic.select (c,999:lng, 1020:lng,false,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,991:lng, 1020:lng,false,true,false,true);
+sc:= mosaic.select (c,991:lng, 1020:lng,false,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,999:lng, 1020:lng,false,true,false,true);
+sc:= mosaic.select (c,999:lng, 1020:lng,false,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,991:lng, 1020:lng,true,false,false,true);
+sc:= mosaic.select (c,991:lng, 1020:lng,true,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,999:lng, 1020:lng,true,false,false,true);
+sc:= mosaic.select (c,999:lng, 1020:lng,true,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,991:lng, 1020:lng,true,false,false,true);
+sc:= mosaic.select (c,991:lng, 1020:lng,true,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,999:lng, 1020:lng,true,false,false,true);
+sc:= mosaic.select (c,999:lng, 1020:lng,true,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,991:lng, 1020:lng,false,false,false,true);
+sc:= mosaic.select (c,991:lng, 1020:lng,false,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,999:lng, 1020:lng,false,false,false,true);
+sc:= mosaic.select (c,999:lng, 1020:lng,false,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,991:lng, 1020:lng,false,false,false,true);
+sc:= mosaic.select (c,991:lng, 1020:lng,false,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,999:lng, 1020:lng,false,false,false,true);
+sc:= mosaic.select (c,999:lng, 1020:lng,false,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,991:lng, 1020:lng,true,true,true,true);
+sc:= mosaic.select (c,991:lng, 1020:lng,true,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,999:lng, 1020:lng,true,true,true,true);
+sc:= mosaic.select (c,999:lng, 1020:lng,true,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,991:lng, 1020:lng,true,true,true,true);
+sc:= mosaic.select (c,991:lng, 1020:lng,true,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,999:lng, 1020:lng,true,true,true,true);
+sc:= mosaic.select (c,999:lng, 1020:lng,true,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,991:lng, 1020:lng,false,true,true,true);
+sc:= mosaic.select (c,991:lng, 1020:lng,false,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,999:lng, 1020:lng,false,true,true,true);
+sc:= mosaic.select (c,999:lng, 1020:lng,false,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,991:lng, 1020:lng,false,true,true,true);
+sc:= mosaic.select (c,991:lng, 1020:lng,false,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,999:lng, 1020:lng,false,true,true,true);
+sc:= mosaic.select (c,999:lng, 1020:lng,false,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,991:lng, 1020:lng,true,false,true,true);
+sc:= mosaic.select (c,991:lng, 1020:lng,true,false,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,999:lng, 1020:lng,true,false,true,true);
+sc:= mosaic.select (c,999:lng, 1020:lng,true,false,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,991:lng, 1020:lng,true,false,true,true);
+sc:= mosaic.select (c,991:lng, 1020:lng,true,false,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,999:lng, 1020:lng,true,false,true,true);
+sc:= mosaic.select (c,999:lng, 1020:lng,true,false,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,991:lng, 1020:lng,false,false,true,true);
+sc:= mosaic.select (c,991:lng, 1020:lng,false,false,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,999:lng, 1020:lng,false,false,true,true);
+sc:= mosaic.select (c,999:lng, 1020:lng,false,false,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,991:lng, 1020:lng,false,false,true,true);
+sc:= mosaic.select (c,991:lng, 1020:lng,false,false,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,999:lng, 1020:lng,false,false,true,true);
+sc:= mosaic.select (c,999:lng, 1020:lng,false,false,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,980:lng, 1020:lng,true,true,false,true);
+sc:= mosaic.select (c,980:lng, 1020:lng,true,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,999:lng, 1020:lng,true,true,false,true);
+sc:= mosaic.select (c,999:lng, 1020:lng,true,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,980:lng, 1020:lng,false,true,false,true);
+sc:= mosaic.select (c,980:lng, 1020:lng,false,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,980:lng, 1020:lng,true,false,false,true);
+sc:= mosaic.select (c,980:lng, 1020:lng,true,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,980:lng, 1020:lng,false,false,false,true);
+sc:= mosaic.select (c,980:lng, 1020:lng,false,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,980:lng, 1020:lng,true,true,true,true);
+sc:= mosaic.select (c,980:lng, 1020:lng,true,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,980:lng, 1020:lng,false,true,true,true);
+sc:= mosaic.select (c,980:lng, 1020:lng,false,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,980:lng, 1020:lng,true,false,true,true);
+sc:= mosaic.select (c,980:lng, 1020:lng,true,false,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a,980:lng, 1020:lng,false,false,true,true);
+sc:= mosaic.select (c,980:lng, 1020:lng,false,false,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,nil:lng, nil:lng,false,false,false,true);
+sc:= mosaic.select (c, mcl_a,nil:lng, nil:lng,false,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,nil:lng, nil:lng,false,false,true,true);
+sc:= mosaic.select (c, mcl_a,nil:lng, nil:lng,false,false,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,1000:lng, nil:lng,false,false,false,true);
+sc:= mosaic.select (c, mcl_a,1000:lng, nil:lng,false,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,nil:lng, 1000:lng,false,false,false,true);
+sc:= mosaic.select (c, mcl_a,nil:lng, 1000:lng,false,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,900:lng, nil:lng,false,false,false,true);
+sc:= mosaic.select (c, mcl_a,900:lng, nil:lng,false,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,nil:lng, 900:lng,false,false,false,true);
+sc:= mosaic.select (c, mcl_a,nil:lng, 900:lng,false,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,900:lng, nil:lng,true,false,false,true);
+sc:= mosaic.select (c, mcl_a,900:lng, nil:lng,true,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,nil:lng, 900:lng,false,true,false,true);
+sc:= mosaic.select (c, mcl_a,nil:lng, 900:lng,false,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,1000:lng, nil:lng,true,false,false,true);
+sc:= mosaic.select (c, mcl_a,1000:lng, nil:lng,true,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,nil:lng, 1000:lng,false,true,false,true);
+sc:= mosaic.select (c, mcl_a,nil:lng, 1000:lng,false,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,1000:lng, 1000:lng,true,true,false,true);
+sc:= mosaic.select (c, mcl_a,1000:lng, 1000:lng,true,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,1000:lng, 1000:lng,true,true,true,true);
+sc:= mosaic.select (c, mcl_a,1000:lng, 1000:lng,true,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,1003:lng, 1003:lng,true,true,false,true);
+sc:= mosaic.select (c, mcl_a,1003:lng, 1003:lng,true,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,1003:lng, 1003:lng,true,true,true,true);
+sc:= mosaic.select (c, mcl_a,1003:lng, 1003:lng,true,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,900:lng, 900:lng,true,true,false,true);
+sc:= mosaic.select (c, mcl_a,900:lng, 900:lng,true,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,900:lng, 900:lng,true,true,true,true);
+sc:= mosaic.select (c, mcl_a,900:lng, 900:lng,true,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,1100:lng, 1100:lng,true,true,false,true);
+sc:= mosaic.select (c, mcl_a,1100:lng, 1100:lng,true,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,1100:lng, 1100:lng,true,true,true,true);
+sc:= mosaic.select (c, mcl_a,1100:lng, 1100:lng,true,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,1000:lng, 1000:lng,false,true,false,true);
+sc:= mosaic.select (c, mcl_a,1000:lng, 1000:lng,false,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,1000:lng, 1000:lng,true,false,false,true);
+sc:= mosaic.select (c, mcl_a,1000:lng, 1000:lng,true,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,1000:lng, 1000:lng,false,false,false,true);
+sc:= mosaic.select (c, mcl_a,1000:lng, 1000:lng,false,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,1000:lng, 1000:lng,false,true,true,true);
+sc:= mosaic.select (c, mcl_a,1000:lng, 1000:lng,false,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,1000:lng, 1000:lng,true,false,true,true);
+sc:= mosaic.select (c, mcl_a,1000:lng, 1000:lng,true,false,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,1000:lng, 1000:lng,false,false,true,true);
+sc:= mosaic.select (c, mcl_a,1000:lng, 1000:lng,false,false,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,1005:lng, 991:lng,true,true,false,true);
+sc:= mosaic.select (c, mcl_a,1005:lng, 991:lng,true,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,1005:lng, 991:lng,true,true,true,true);
+sc:= mosaic.select (c, mcl_a,1005:lng, 991:lng,true,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,991:lng, 1005:lng,true,true,false,true);
+sc:= mosaic.select (c, mcl_a,991:lng, 1005:lng,true,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,999:lng, 1005:lng,true,true,false,true);
+sc:= mosaic.select (c, mcl_a,999:lng, 1005:lng,true,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,991:lng, 1008:lng,true,true,false,true);
+sc:= mosaic.select (c, mcl_a,991:lng, 1008:lng,true,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,999:lng, 1008:lng,true,true,false,true);
+sc:= mosaic.select (c, mcl_a,999:lng, 1008:lng,true,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,991:lng, 1005:lng,false,true,false,true);
+sc:= mosaic.select (c, mcl_a,991:lng, 1005:lng,false,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,999:lng, 1005:lng,false,true,false,true);
+sc:= mosaic.select (c, mcl_a,999:lng, 1005:lng,false,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,991:lng, 1008:lng,false,true,false,true);
+sc:= mosaic.select (c, mcl_a,991:lng, 1008:lng,false,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,999:lng, 1008:lng,false,true,false,true);
+sc:= mosaic.select (c, mcl_a,999:lng, 1008:lng,false,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,991:lng, 1005:lng,true,false,false,true);
+sc:= mosaic.select (c, mcl_a,991:lng, 1005:lng,true,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,999:lng, 1005:lng,true,false,false,true);
+sc:= mosaic.select (c, mcl_a,999:lng, 1005:lng,true,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,991:lng, 1008:lng,true,false,false,true);
+sc:= mosaic.select (c, mcl_a,991:lng, 1008:lng,true,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,999:lng, 1008:lng,true,false,false,true);
+sc:= mosaic.select (c, mcl_a,999:lng, 1008:lng,true,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,991:lng, 1005:lng,false,false,false,true);
+sc:= mosaic.select (c, mcl_a,991:lng, 1005:lng,false,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,999:lng, 1005:lng,false,false,false,true);
+sc:= mosaic.select (c, mcl_a,999:lng, 1005:lng,false,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,991:lng, 1008:lng,false,false,false,true);
+sc:= mosaic.select (c, mcl_a,991:lng, 1008:lng,false,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,999:lng, 1008:lng,false,false,false,true);
+sc:= mosaic.select (c, mcl_a,999:lng, 1008:lng,false,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,991:lng, 1005:lng,true,true,true,true);
+sc:= mosaic.select (c, mcl_a,991:lng, 1005:lng,true,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,999:lng, 1005:lng,true,true,true,true);
+sc:= mosaic.select (c, mcl_a,999:lng, 1005:lng,true,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,991:lng, 1008:lng,true,true,true,true);
+sc:= mosaic.select (c, mcl_a,991:lng, 1008:lng,true,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,999:lng, 1008:lng,true,true,true,true);
+sc:= mosaic.select (c, mcl_a,999:lng, 1008:lng,true,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,991:lng, 1005:lng,false,true,true,true);
+sc:= mosaic.select (c, mcl_a,991:lng, 1005:lng,false,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,999:lng, 1005:lng,false,true,true,true);
+sc:= mosaic.select (c, mcl_a,999:lng, 1005:lng,false,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,991:lng, 1008:lng,false,true,true,true);
+sc:= mosaic.select (c, mcl_a,991:lng, 1008:lng,false,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,999:lng, 1008:lng,false,true,true,true);
+sc:= mosaic.select (c, mcl_a,999:lng, 1008:lng,false,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,991:lng, 1005:lng,true,false,true,true);
+sc:= mosaic.select (c, mcl_a,991:lng, 1005:lng,true,false,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,999:lng, 1005:lng,true,false,true,true);
+sc:= mosaic.select (c, mcl_a,999:lng, 1005:lng,true,false,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,991:lng, 1008:lng,true,false,true,true);
+sc:= mosaic.select (c, mcl_a,991:lng, 1008:lng,true,false,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,999:lng, 1008:lng,true,false,true,true);
+sc:= mosaic.select (c, mcl_a,999:lng, 1008:lng,true,false,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,991:lng, 1005:lng,false,false,true,true);
+sc:= mosaic.select (c, mcl_a,991:lng, 1005:lng,false,false,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,999:lng, 1005:lng,false,false,true,true);
+sc:= mosaic.select (c, mcl_a,999:lng, 1005:lng,false,false,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,991:lng, 1008:lng,false,false,true,true);
+sc:= mosaic.select (c, mcl_a,991:lng, 1008:lng,false,false,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,999:lng, 1008:lng,false,false,true,true);
+sc:= mosaic.select (c, mcl_a,999:lng, 1008:lng,false,false,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,980:lng, 1005:lng,true,true,false,true);
+sc:= mosaic.select (c, mcl_a,980:lng, 1005:lng,true,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,980:lng, 1008:lng,true,true,false,true);
+sc:= mosaic.select (c, mcl_a,980:lng, 1008:lng,true,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,999:lng, 1008:lng,true,true,false,true);
+sc:= mosaic.select (c, mcl_a,999:lng, 1008:lng,true,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,980:lng, 1005:lng,false,true,false,true);
+sc:= mosaic.select (c, mcl_a,980:lng, 1005:lng,false,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,980:lng, 1008:lng,false,true,false,true);
+sc:= mosaic.select (c, mcl_a,980:lng, 1008:lng,false,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,980:lng, 1005:lng,true,false,false,true);
+sc:= mosaic.select (c, mcl_a,980:lng, 1005:lng,true,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,980:lng, 1008:lng,true,false,false,true);
+sc:= mosaic.select (c, mcl_a,980:lng, 1008:lng,true,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,980:lng, 1005:lng,false,false,false,true);
+sc:= mosaic.select (c, mcl_a,980:lng, 1005:lng,false,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,980:lng, 1008:lng,false,false,false,true);
+sc:= mosaic.select (c, mcl_a,980:lng, 1008:lng,false,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,980:lng, 1005:lng,true,true,true,true);
+sc:= mosaic.select (c, mcl_a,980:lng, 1005:lng,true,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,980:lng, 1008:lng,true,true,true,true);
+sc:= mosaic.select (c, mcl_a,980:lng, 1008:lng,true,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,980:lng, 1005:lng,false,true,true,true);
+sc:= mosaic.select (c, mcl_a,980:lng, 1005:lng,false,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,980:lng, 1008:lng,false,true,true,true);
+sc:= mosaic.select (c, mcl_a,980:lng, 1008:lng,false,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,980:lng, 1005:lng,true,false,true,true);
+sc:= mosaic.select (c, mcl_a,980:lng, 1005:lng,true,false,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,980:lng, 1008:lng,true,false,true,true);
+sc:= mosaic.select (c, mcl_a,980:lng, 1008:lng,true,false,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,980:lng, 1005:lng,false,false,true,true);
+sc:= mosaic.select (c, mcl_a,980:lng, 1005:lng,false,false,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,980:lng, 1008:lng,false,false,true,true);
+sc:= mosaic.select (c, mcl_a,980:lng, 1008:lng,false,false,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,991:lng, 1020:lng,true,true,false,true);
+sc:= mosaic.select (c, mcl_a,991:lng, 1020:lng,true,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,999:lng, 1020:lng,true,true,false,true);
+sc:= mosaic.select (c, mcl_a,999:lng, 1020:lng,true,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,991:lng, 1020:lng,true,true,false,true);
+sc:= mosaic.select (c, mcl_a,991:lng, 1020:lng,true,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,999:lng, 1020:lng,true,true,false,true);
+sc:= mosaic.select (c, mcl_a,999:lng, 1020:lng,true,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,991:lng, 1020:lng,false,true,false,true);
+sc:= mosaic.select (c, mcl_a,991:lng, 1020:lng,false,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,999:lng, 1020:lng,false,true,false,true);
+sc:= mosaic.select (c, mcl_a,999:lng, 1020:lng,false,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,991:lng, 1020:lng,false,true,false,true);
+sc:= mosaic.select (c, mcl_a,991:lng, 1020:lng,false,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,999:lng, 1020:lng,false,true,false,true);
+sc:= mosaic.select (c, mcl_a,999:lng, 1020:lng,false,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,991:lng, 1020:lng,true,false,false,true);
+sc:= mosaic.select (c, mcl_a,991:lng, 1020:lng,true,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,999:lng, 1020:lng,true,false,false,true);
+sc:= mosaic.select (c, mcl_a,999:lng, 1020:lng,true,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,991:lng, 1020:lng,true,false,false,true);
+sc:= mosaic.select (c, mcl_a,991:lng, 1020:lng,true,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,999:lng, 1020:lng,true,false,false,true);
+sc:= mosaic.select (c, mcl_a,999:lng, 1020:lng,true,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,991:lng, 1020:lng,false,false,false,true);
+sc:= mosaic.select (c, mcl_a,991:lng, 1020:lng,false,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,999:lng, 1020:lng,false,false,false,true);
+sc:= mosaic.select (c, mcl_a,999:lng, 1020:lng,false,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,991:lng, 1020:lng,false,false,false,true);
+sc:= mosaic.select (c, mcl_a,991:lng, 1020:lng,false,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,999:lng, 1020:lng,false,false,false,true);
+sc:= mosaic.select (c, mcl_a,999:lng, 1020:lng,false,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,991:lng, 1020:lng,true,true,true,true);
+sc:= mosaic.select (c, mcl_a,991:lng, 1020:lng,true,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,999:lng, 1020:lng,true,true,true,true);
+sc:= mosaic.select (c, mcl_a,999:lng, 1020:lng,true,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,991:lng, 1020:lng,true,true,true,true);
+sc:= mosaic.select (c, mcl_a,991:lng, 1020:lng,true,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,999:lng, 1020:lng,true,true,true,true);
+sc:= mosaic.select (c, mcl_a,999:lng, 1020:lng,true,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,991:lng, 1020:lng,false,true,true,true);
+sc:= mosaic.select (c, mcl_a,991:lng, 1020:lng,false,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,999:lng, 1020:lng,false,true,true,true);
+sc:= mosaic.select (c, mcl_a,999:lng, 1020:lng,false,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,991:lng, 1020:lng,false,true,true,true);
+sc:= mosaic.select (c, mcl_a,991:lng, 1020:lng,false,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,999:lng, 1020:lng,false,true,true,true);
+sc:= mosaic.select (c, mcl_a,999:lng, 1020:lng,false,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,991:lng, 1020:lng,true,false,true,true);
+sc:= mosaic.select (c, mcl_a,991:lng, 1020:lng,true,false,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,999:lng, 1020:lng,true,false,true,true);
+sc:= mosaic.select (c, mcl_a,999:lng, 1020:lng,true,false,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,991:lng, 1020:lng,true,false,true,true);
+sc:= mosaic.select (c, mcl_a,991:lng, 1020:lng,true,false,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,999:lng, 1020:lng,true,false,true,true);
+sc:= mosaic.select (c, mcl_a,999:lng, 1020:lng,true,false,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,991:lng, 1020:lng,false,false,true,true);
+sc:= mosaic.select (c, mcl_a,991:lng, 1020:lng,false,false,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,999:lng, 1020:lng,false,false,true,true);
+sc:= mosaic.select (c, mcl_a,999:lng, 1020:lng,false,false,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,991:lng, 1020:lng,false,false,true,true);
+sc:= mosaic.select (c, mcl_a,991:lng, 1020:lng,false,false,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,999:lng, 1020:lng,false,false,true,true);
+sc:= mosaic.select (c, mcl_a,999:lng, 1020:lng,false,false,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,980:lng, 1020:lng,true,true,false,true);
+sc:= mosaic.select (c, mcl_a,980:lng, 1020:lng,true,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,999:lng, 1020:lng,true,true,false,true);
+sc:= mosaic.select (c, mcl_a,999:lng, 1020:lng,true,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,980:lng, 1020:lng,false,true,false,true);
+sc:= mosaic.select (c, mcl_a,980:lng, 1020:lng,false,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,980:lng, 1020:lng,true,false,false,true);
+sc:= mosaic.select (c, mcl_a,980:lng, 1020:lng,true,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,980:lng, 1020:lng,false,false,false,true);
+sc:= mosaic.select (c, mcl_a,980:lng, 1020:lng,false,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,980:lng, 1020:lng,true,true,true,true);
+sc:= mosaic.select (c, mcl_a,980:lng, 1020:lng,true,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,980:lng, 1020:lng,false,true,true,true);
+sc:= mosaic.select (c, mcl_a,980:lng, 1020:lng,false,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,980:lng, 1020:lng,true,false,true,true);
+sc:= mosaic.select (c, mcl_a,980:lng, 1020:lng,true,false,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, mcl_a,980:lng, 1020:lng,false,false,true,true);
+sc:= mosaic.select (c, mcl_a,980:lng, 1020:lng,false,false,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,nil:lng, nil:lng,false,false,false,true);
+sc:= mosaic.select (c, dcl_a,nil:lng, nil:lng,false,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,nil:lng, nil:lng,false,false,true,true);
+sc:= mosaic.select (c, dcl_a,nil:lng, nil:lng,false,false,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,1000:lng, nil:lng,false,false,false,true);
+sc:= mosaic.select (c, dcl_a,1000:lng, nil:lng,false,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,nil:lng, 1000:lng,false,false,false,true);
+sc:= mosaic.select (c, dcl_a,nil:lng, 1000:lng,false,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,900:lng, nil:lng,false,false,false,true);
+sc:= mosaic.select (c, dcl_a,900:lng, nil:lng,false,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,nil:lng, 900:lng,false,false,false,true);
+sc:= mosaic.select (c, dcl_a,nil:lng, 900:lng,false,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,900:lng, nil:lng,true,false,false,true);
+sc:= mosaic.select (c, dcl_a,900:lng, nil:lng,true,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,nil:lng, 900:lng,false,true,false,true);
+sc:= mosaic.select (c, dcl_a,nil:lng, 900:lng,false,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,1000:lng, nil:lng,true,false,false,true);
+sc:= mosaic.select (c, dcl_a,1000:lng, nil:lng,true,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,nil:lng, 1000:lng,false,true,false,true);
+sc:= mosaic.select (c, dcl_a,nil:lng, 1000:lng,false,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,1000:lng, 1000:lng,true,true,false,true);
+sc:= mosaic.select (c, dcl_a,1000:lng, 1000:lng,true,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,1000:lng, 1000:lng,true,true,true,true);
+sc:= mosaic.select (c, dcl_a,1000:lng, 1000:lng,true,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,1003:lng, 1003:lng,true,true,false,true);
+sc:= mosaic.select (c, dcl_a,1003:lng, 1003:lng,true,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,1003:lng, 1003:lng,true,true,true,true);
+sc:= mosaic.select (c, dcl_a,1003:lng, 1003:lng,true,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,900:lng, 900:lng,true,true,false,true);
+sc:= mosaic.select (c, dcl_a,900:lng, 900:lng,true,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,900:lng, 900:lng,true,true,true,true);
+sc:= mosaic.select (c, dcl_a,900:lng, 900:lng,true,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,1100:lng, 1100:lng,true,true,false,true);
+sc:= mosaic.select (c, dcl_a,1100:lng, 1100:lng,true,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,1100:lng, 1100:lng,true,true,true,true);
+sc:= mosaic.select (c, dcl_a,1100:lng, 1100:lng,true,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,1000:lng, 1000:lng,false,true,false,true);
+sc:= mosaic.select (c, dcl_a,1000:lng, 1000:lng,false,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,1000:lng, 1000:lng,true,false,false,true);
+sc:= mosaic.select (c, dcl_a,1000:lng, 1000:lng,true,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,1000:lng, 1000:lng,false,false,false,true);
+sc:= mosaic.select (c, dcl_a,1000:lng, 1000:lng,false,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,1000:lng, 1000:lng,false,true,true,true);
+sc:= mosaic.select (c, dcl_a,1000:lng, 1000:lng,false,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,1000:lng, 1000:lng,true,false,true,true);
+sc:= mosaic.select (c, dcl_a,1000:lng, 1000:lng,true,false,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,1000:lng, 1000:lng,false,false,true,true);
+sc:= mosaic.select (c, dcl_a,1000:lng, 1000:lng,false,false,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,1005:lng, 991:lng,true,true,false,true);
+sc:= mosaic.select (c, dcl_a,1005:lng, 991:lng,true,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,1005:lng, 991:lng,true,true,true,true);
+sc:= mosaic.select (c, dcl_a,1005:lng, 991:lng,true,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,991:lng, 1005:lng,true,true,false,true);
+sc:= mosaic.select (c, dcl_a,991:lng, 1005:lng,true,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,999:lng, 1005:lng,true,true,false,true);
+sc:= mosaic.select (c, dcl_a,999:lng, 1005:lng,true,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,991:lng, 1008:lng,true,true,false,true);
+sc:= mosaic.select (c, dcl_a,991:lng, 1008:lng,true,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,999:lng, 1008:lng,true,true,false,true);
+sc:= mosaic.select (c, dcl_a,999:lng, 1008:lng,true,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,991:lng, 1005:lng,false,true,false,true);
+sc:= mosaic.select (c, dcl_a,991:lng, 1005:lng,false,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,999:lng, 1005:lng,false,true,false,true);
+sc:= mosaic.select (c, dcl_a,999:lng, 1005:lng,false,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,991:lng, 1008:lng,false,true,false,true);
+sc:= mosaic.select (c, dcl_a,991:lng, 1008:lng,false,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,999:lng, 1008:lng,false,true,false,true);
+sc:= mosaic.select (c, dcl_a,999:lng, 1008:lng,false,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,991:lng, 1005:lng,true,false,false,true);
+sc:= mosaic.select (c, dcl_a,991:lng, 1005:lng,true,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,999:lng, 1005:lng,true,false,false,true);
+sc:= mosaic.select (c, dcl_a,999:lng, 1005:lng,true,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,991:lng, 1008:lng,true,false,false,true);
+sc:= mosaic.select (c, dcl_a,991:lng, 1008:lng,true,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,999:lng, 1008:lng,true,false,false,true);
+sc:= mosaic.select (c, dcl_a,999:lng, 1008:lng,true,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,991:lng, 1005:lng,false,false,false,true);
+sc:= mosaic.select (c, dcl_a,991:lng, 1005:lng,false,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,999:lng, 1005:lng,false,false,false,true);
+sc:= mosaic.select (c, dcl_a,999:lng, 1005:lng,false,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,991:lng, 1008:lng,false,false,false,true);
+sc:= mosaic.select (c, dcl_a,991:lng, 1008:lng,false,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,999:lng, 1008:lng,false,false,false,true);
+sc:= mosaic.select (c, dcl_a,999:lng, 1008:lng,false,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,991:lng, 1005:lng,true,true,true,true);
+sc:= mosaic.select (c, dcl_a,991:lng, 1005:lng,true,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,999:lng, 1005:lng,true,true,true,true);
+sc:= mosaic.select (c, dcl_a,999:lng, 1005:lng,true,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,991:lng, 1008:lng,true,true,true,true);
+sc:= mosaic.select (c, dcl_a,991:lng, 1008:lng,true,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,999:lng, 1008:lng,true,true,true,true);
+sc:= mosaic.select (c, dcl_a,999:lng, 1008:lng,true,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,991:lng, 1005:lng,false,true,true,true);
+sc:= mosaic.select (c, dcl_a,991:lng, 1005:lng,false,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,999:lng, 1005:lng,false,true,true,true);
+sc:= mosaic.select (c, dcl_a,999:lng, 1005:lng,false,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,991:lng, 1008:lng,false,true,true,true);
+sc:= mosaic.select (c, dcl_a,991:lng, 1008:lng,false,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,999:lng, 1008:lng,false,true,true,true);
+sc:= mosaic.select (c, dcl_a,999:lng, 1008:lng,false,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,991:lng, 1005:lng,true,false,true,true);
+sc:= mosaic.select (c, dcl_a,991:lng, 1005:lng,true,false,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,999:lng, 1005:lng,true,false,true,true);
+sc:= mosaic.select (c, dcl_a,999:lng, 1005:lng,true,false,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,991:lng, 1008:lng,true,false,true,true);
+sc:= mosaic.select (c, dcl_a,991:lng, 1008:lng,true,false,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,999:lng, 1008:lng,true,false,true,true);
+sc:= mosaic.select (c, dcl_a,999:lng, 1008:lng,true,false,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,991:lng, 1005:lng,false,false,true,true);
+sc:= mosaic.select (c, dcl_a,991:lng, 1005:lng,false,false,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,999:lng, 1005:lng,false,false,true,true);
+sc:= mosaic.select (c, dcl_a,999:lng, 1005:lng,false,false,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,991:lng, 1008:lng,false,false,true,true);
+sc:= mosaic.select (c, dcl_a,991:lng, 1008:lng,false,false,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,999:lng, 1008:lng,false,false,true,true);
+sc:= mosaic.select (c, dcl_a,999:lng, 1008:lng,false,false,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,980:lng, 1005:lng,true,true,false,true);
+sc:= mosaic.select (c, dcl_a,980:lng, 1005:lng,true,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,980:lng, 1008:lng,true,true,false,true);
+sc:= mosaic.select (c, dcl_a,980:lng, 1008:lng,true,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,999:lng, 1008:lng,true,true,false,true);
+sc:= mosaic.select (c, dcl_a,999:lng, 1008:lng,true,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,980:lng, 1005:lng,false,true,false,true);
+sc:= mosaic.select (c, dcl_a,980:lng, 1005:lng,false,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,980:lng, 1008:lng,false,true,false,true);
+sc:= mosaic.select (c, dcl_a,980:lng, 1008:lng,false,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,980:lng, 1005:lng,true,false,false,true);
+sc:= mosaic.select (c, dcl_a,980:lng, 1005:lng,true,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,980:lng, 1008:lng,true,false,false,true);
+sc:= mosaic.select (c, dcl_a,980:lng, 1008:lng,true,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,980:lng, 1005:lng,false,false,false,true);
+sc:= mosaic.select (c, dcl_a,980:lng, 1005:lng,false,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,980:lng, 1008:lng,false,false,false,true);
+sc:= mosaic.select (c, dcl_a,980:lng, 1008:lng,false,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,980:lng, 1005:lng,true,true,true,true);
+sc:= mosaic.select (c, dcl_a,980:lng, 1005:lng,true,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,980:lng, 1008:lng,true,true,true,true);
+sc:= mosaic.select (c, dcl_a,980:lng, 1008:lng,true,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,980:lng, 1005:lng,false,true,true,true);
+sc:= mosaic.select (c, dcl_a,980:lng, 1005:lng,false,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,980:lng, 1008:lng,false,true,true,true);
+sc:= mosaic.select (c, dcl_a,980:lng, 1008:lng,false,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,980:lng, 1005:lng,true,false,true,true);
+sc:= mosaic.select (c, dcl_a,980:lng, 1005:lng,true,false,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,980:lng, 1008:lng,true,false,true,true);
+sc:= mosaic.select (c, dcl_a,980:lng, 1008:lng,true,false,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,980:lng, 1005:lng,false,false,true,true);
+sc:= mosaic.select (c, dcl_a,980:lng, 1005:lng,false,false,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,980:lng, 1008:lng,false,false,true,true);
+sc:= mosaic.select (c, dcl_a,980:lng, 1008:lng,false,false,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,991:lng, 1020:lng,true,true,false,true);
+sc:= mosaic.select (c, dcl_a,991:lng, 1020:lng,true,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,999:lng, 1020:lng,true,true,false,true);
+sc:= mosaic.select (c, dcl_a,999:lng, 1020:lng,true,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,991:lng, 1020:lng,true,true,false,true);
+sc:= mosaic.select (c, dcl_a,991:lng, 1020:lng,true,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,999:lng, 1020:lng,true,true,false,true);
+sc:= mosaic.select (c, dcl_a,999:lng, 1020:lng,true,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,991:lng, 1020:lng,false,true,false,true);
+sc:= mosaic.select (c, dcl_a,991:lng, 1020:lng,false,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,999:lng, 1020:lng,false,true,false,true);
+sc:= mosaic.select (c, dcl_a,999:lng, 1020:lng,false,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,991:lng, 1020:lng,false,true,false,true);
+sc:= mosaic.select (c, dcl_a,991:lng, 1020:lng,false,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,999:lng, 1020:lng,false,true,false,true);
+sc:= mosaic.select (c, dcl_a,999:lng, 1020:lng,false,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,991:lng, 1020:lng,true,false,false,true);
+sc:= mosaic.select (c, dcl_a,991:lng, 1020:lng,true,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,999:lng, 1020:lng,true,false,false,true);
+sc:= mosaic.select (c, dcl_a,999:lng, 1020:lng,true,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,991:lng, 1020:lng,true,false,false,true);
+sc:= mosaic.select (c, dcl_a,991:lng, 1020:lng,true,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,999:lng, 1020:lng,true,false,false,true);
+sc:= mosaic.select (c, dcl_a,999:lng, 1020:lng,true,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,991:lng, 1020:lng,false,false,false,true);
+sc:= mosaic.select (c, dcl_a,991:lng, 1020:lng,false,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,999:lng, 1020:lng,false,false,false,true);
+sc:= mosaic.select (c, dcl_a,999:lng, 1020:lng,false,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,991:lng, 1020:lng,false,false,false,true);
+sc:= mosaic.select (c, dcl_a,991:lng, 1020:lng,false,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,999:lng, 1020:lng,false,false,false,true);
+sc:= mosaic.select (c, dcl_a,999:lng, 1020:lng,false,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,991:lng, 1020:lng,true,true,true,true);
+sc:= mosaic.select (c, dcl_a,991:lng, 1020:lng,true,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,999:lng, 1020:lng,true,true,true,true);
+sc:= mosaic.select (c, dcl_a,999:lng, 1020:lng,true,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,991:lng, 1020:lng,true,true,true,true);
+sc:= mosaic.select (c, dcl_a,991:lng, 1020:lng,true,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,999:lng, 1020:lng,true,true,true,true);
+sc:= mosaic.select (c, dcl_a,999:lng, 1020:lng,true,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,991:lng, 1020:lng,false,true,true,true);
+sc:= mosaic.select (c, dcl_a,991:lng, 1020:lng,false,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,999:lng, 1020:lng,false,true,true,true);
+sc:= mosaic.select (c, dcl_a,999:lng, 1020:lng,false,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,991:lng, 1020:lng,false,true,true,true);
+sc:= mosaic.select (c, dcl_a,991:lng, 1020:lng,false,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,999:lng, 1020:lng,false,true,true,true);
+sc:= mosaic.select (c, dcl_a,999:lng, 1020:lng,false,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,991:lng, 1020:lng,true,false,true,true);
+sc:= mosaic.select (c, dcl_a,991:lng, 1020:lng,true,false,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,999:lng, 1020:lng,true,false,true,true);
+sc:= mosaic.select (c, dcl_a,999:lng, 1020:lng,true,false,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,991:lng, 1020:lng,true,false,true,true);
+sc:= mosaic.select (c, dcl_a,991:lng, 1020:lng,true,false,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,999:lng, 1020:lng,true,false,true,true);
+sc:= mosaic.select (c, dcl_a,999:lng, 1020:lng,true,false,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,991:lng, 1020:lng,false,false,true,true);
+sc:= mosaic.select (c, dcl_a,991:lng, 1020:lng,false,false,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,999:lng, 1020:lng,false,false,true,true);
+sc:= mosaic.select (c, dcl_a,999:lng, 1020:lng,false,false,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,991:lng, 1020:lng,false,false,true,true);
+sc:= mosaic.select (c, dcl_a,991:lng, 1020:lng,false,false,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,999:lng, 1020:lng,false,false,true,true);
+sc:= mosaic.select (c, dcl_a,999:lng, 1020:lng,false,false,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,980:lng, 1020:lng,true,true,false,true);
+sc:= mosaic.select (c, dcl_a,980:lng, 1020:lng,true,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,999:lng, 1020:lng,true,true,false,true);
+sc:= mosaic.select (c, dcl_a,999:lng, 1020:lng,true,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,980:lng, 1020:lng,false,true,false,true);
+sc:= mosaic.select (c, dcl_a,980:lng, 1020:lng,false,true,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,980:lng, 1020:lng,true,false,false,true);
+sc:= mosaic.select (c, dcl_a,980:lng, 1020:lng,true,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,980:lng, 1020:lng,false,false,false,true);
+sc:= mosaic.select (c, dcl_a,980:lng, 1020:lng,false,false,false,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,980:lng, 1020:lng,true,true,true,true);
+sc:= mosaic.select (c, dcl_a,980:lng, 1020:lng,true,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,980:lng, 1020:lng,false,true,true,true);
+sc:= mosaic.select (c, dcl_a,980:lng, 1020:lng,false,true,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,980:lng, 1020:lng,true,false,true,true);
+sc:= mosaic.select (c, dcl_a,980:lng, 1020:lng,true,false,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
+
+sa:= algebra.select(a, dcl_a,980:lng, 1020:lng,false,false,true,true);
+sc:= mosaic.select (c, dcl_a,980:lng, 1020:lng,false,false,true,true);
+eq  := batcalc.==(sa,  sc);
+io.print(sa, sc, eq);
