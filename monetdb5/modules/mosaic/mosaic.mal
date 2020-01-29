@@ -36,9 +36,6 @@ address MOSselect;
 pattern select(b:bat[:dbl], low:dbl, high:dbl, li:bit, hi:bit, anti:bit) :bat[:oid]
 address MOSselect;
 
-pattern select(b:bat[:str], low:str, high:str, li:bit, hi:bit, anti:bit) :bat[:oid]
-address MOSselect;
-
 pattern select(b:bat[:timestamp], low:timestamp, high:timestamp, li:bit, hi:bit, anti:bit) :bat[:oid]
 address MOSselect
 comment "Overloaded selection routine";
@@ -73,9 +70,6 @@ pattern select(b:bat[:flt], cand:bat[:oid], low:flt, high:flt, li:bit, hi:bit, a
 address MOSselect;
 
 pattern select(b:bat[:dbl], cand:bat[:oid], low:dbl, high:dbl, li:bit, hi:bit, anti:bit) :bat[:oid]
-address MOSselect;
-
-pattern select(b:bat[:str], cand:bat[:oid], low:str, high:str, li:bit, hi:bit, anti:bit) :bat[:oid]
 address MOSselect;
 
 pattern select(b:bat[:timestamp], cand:bat[:oid], low:timestamp, high:timestamp, li:bit, hi:bit, anti:bit) :bat[:oid]
@@ -114,9 +108,6 @@ address MOSthetaselect;
 pattern thetaselect(b:bat[:dbl], low:dbl, oper:str) :bat[:oid]
 address MOSthetaselect;
 
-pattern thetaselect(b:bat[:str], low:str, oper:str) :bat[:oid]
-address MOSthetaselect;
-
 pattern thetaselect(b:bat[:timestamp], low:timestamp, oper:str) :bat[:oid]
 address MOSthetaselect
 comment "Overloaded selection routine";
@@ -153,9 +144,6 @@ address MOSthetaselect;
 pattern thetaselect(b:bat[:dbl], c:bat[:oid], low:dbl, oper:str) :bat[:oid]
 address MOSthetaselect;
 
-pattern thetaselect(b:bat[:str], c:bat[:oid], low:str, oper:str) :bat[:oid]
-address MOSthetaselect;
-
 pattern thetaselect(b:bat[:timestamp], c:bat[:oid], low:timestamp, oper:str) :bat[:oid]
 address MOSthetaselect
 comment "Overloaded selection routine";
@@ -190,9 +178,6 @@ pattern projection(b:bat[:oid], cand:bat[:flt]) :bat[:flt]
 address MOSprojection;
 
 pattern projection(b:bat[:oid], cand:bat[:dbl]) :bat[:dbl]
-address MOSprojection;
-
-pattern projection(b:bat[:oid], cand:bat[:str]) :bat[:str]
 address MOSprojection;
 
 pattern projection(b:bat[:oid], cand:bat[:timestamp]) :bat[:timestamp]
