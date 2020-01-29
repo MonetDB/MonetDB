@@ -449,23 +449,17 @@ MSP_locate_sqlscript(const char *filename, bit recurse)
 
 int
 malLibraryEnabled(str name) {
-	if (strcmp(name, "pyapi") == 0) {
+	if (strcmp(name, "pyapi3") == 0) {
 		const char *val = GDKgetenv("embedded_py");
-		return val && (strcmp(val, "2") == 0 ||
+		return val && (strcmp(val, "3") == 0 ||
 					   strcasecmp(val, "true") == 0 ||
 					   strcasecmp(val, "yes") == 0);
-	} else if (strcmp(name, "pyapi3") == 0) {
-		const char *val = GDKgetenv("embedded_py");
-		return val && strcasecmp(val, "3") == 0;
 	}
 	return true;
 }
 
 char*
 malLibraryHowToEnable(str name) {
-	if (strcmp(name, "pyapi") == 0) {
-		return "Embedded Python 2 has not been enabled. Start server with --set embedded_py=2";
-	}
 	if (strcmp(name, "pyapi3") == 0) {
 		return "Embedded Python 3 has not been enabled. Start server with --set embedded_py=3";
 	}

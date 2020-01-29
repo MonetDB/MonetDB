@@ -24,8 +24,8 @@ liblas-c-dev		# optional: read LIDAR files
 liblzma-dev		# optional: read and write .xz compressed files
 libpcre3-dev		# optional: use PCRE library, enable some functions
 libreadline-dev		# optional, enable editing in mclient
-python-dev		# optional, needed for Python 2 integration
-python-numpy		# optional, needed for Python 2 integration
+python3-dev		# optional, needed for Python 3 integration
+python3-numpy		# optional, needed for Python 3 integration
 r-base			# optional, needed for R integration
 unixodbc-dev		# optional, needed for ODBC driver
 uuid-dev		# optional
@@ -36,5 +36,3 @@ These packages are optional.
 libcfitsio-dev		# optional: read FITS files
 liblz4-dev		# optional: compression in new (unused) MAPI protocol, also used to read and write .lz4 compressed files
 libsnappy-dev		# optional: compression in new (unused) MAPI protocol
-python3-dev		# optional, needed for Python 3 integration
-python3-numpy		# optional, needed for Python 3 integration

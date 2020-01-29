@@ -1,12 +1,16 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Wed Jan 29 2020 Sjoerd Mullender <sjoerd@acm.org>
+- Removed support for Python 2.  Python 2 itself is no longer supported.
+  Use Python 3 instead.
+
 * Wed Jan 29 2020 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
 - Implemented 'covar_pop' and 'covar_samp' aggregate functions, as well
   as their window function counterparts. Implemented 'stddev_samp',
   'stddev_pop', 'var_samp', 'var_pop', 'corr' and 'group_concat'
   window function correspondents.
-- Extended SQL catalog with CREATE WINDOW syntax for user-defined 
+- Extended SQL catalog with CREATE WINDOW syntax for user-defined
   SQL:2003 window functions. At the moment, window functions must be
   defined on the backend engine, ie on this case MAL. At the current
   implementation, the backend code generation, creates two additional

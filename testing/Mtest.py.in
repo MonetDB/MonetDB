@@ -35,10 +35,7 @@ import glob
 try:
     import winreg               # Python 3 on Windows
 except ImportError:
-    try:
-        import _winreg as winreg # Python 2 on Windows
-    except ImportError:
-        winreg = None           # not on Windows
+    winreg = None               # not on Windows
 
 MonetDB_VERSION = '@VERSION@'.split('.')
 
@@ -389,7 +386,6 @@ CONDITIONALS = {
     'HAVE_LIBLZ4'          : "@HAVE_LIBLZ4_FALSE@",
     'HAVE_LIBLZMA'         : "@HAVE_LIBLZMA_FALSE@",
     'HAVE_LIBR'            : "@HAVE_LIBR_FALSE@",
-    'HAVE_LIBPY2'          : "@HAVE_LIBPY2_FALSE@",
     'HAVE_LIBPY3'          : "@HAVE_LIBPY3_FALSE@",
     'HAVE_LIBXML'          : "@HAVE_LIBXML_FALSE@",
     'HAVE_LIBZ'            : "@HAVE_LIBZ_FALSE@",
@@ -415,14 +411,11 @@ CONDITIONALS = {
     'HAVE_JDBCTESTS_JAR'   : "",
     'HAVE_JDBCTESTS_DIR'   : "",
     'HAVE_JDBCTESTS'       : "",
-    'HAVE_LIBPANDAS2'      : "",
-    'HAVE_LIBSCIPY2'       : "",
 #    'HAVE_LIBPANDAS3'      : "",
     'HAVE_LIBSCIPY3'       : "",
     'HAVE_PERL'            : "",
     'HAVE_PHP'             : "",
     'HAVE_PYMONETDB'       : "", # default PYTHON can import pymonetdb
-    'HAVE_PY2MONETDB'      : "", # PYTHON2 exists and can import pymonetdb
     'HAVE_PY3MONETDB'      : "", # PYTHON3 exists and can import pymonetdb
     'HAVE_RUBY'            : "",
     'HAVE_DATA_PATH'       : "",
@@ -686,11 +679,7 @@ elif sys.version_info[0] == 3:
         return url
 
 def openutf8(file, mode='r'):
-    if sys.version[:1] == '3':
-        f = open(file, mode, encoding='utf-8', errors='replace') # Python 3
-    else:
-        f = open(file, mode)    # Python 2
-    return f
+    return open(file, mode, encoding='utf-8', errors='replace')
 
 def try_open(path, mode) :
     try:
@@ -3089,23 +3078,6 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEO
                     except WindowsError:
                         pass
                 Srvr.extend(['--set', 'embedded_py=3'])
-            elif (not all_tests or (COND != None and "HAVE_LIBPY2" in COND)) and CONDITIONALS['HAVE_LIBPY2']:
-                # enable Python integration in server
-                if winreg is not None:
-                    if env['TST_BITS'] == '32bit' and sys.maxsize > 2**32:
-                        regkey = r'SOFTWARE\Wow6432Node\Python\PythonCore\2.7\InstallPath'
-                    else:
-                        regkey = r'SOFTWARE\Python\PythonCore\2.7\InstallPath'
-                    try:
-                        with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, regkey) as key:
-                            instpath = winreg.QueryValue(key, None)
-                            os.environ['PYTHONHOME'] = instpath
-                            os.environ['PYTHONPATH'] = instpath + 'Lib'
-                            savepath = os.environ['PATH']
-                            os.environ['PATH'] = instpath.rstrip('\\') + os.pathsep + savepath
-                    except WindowsError:
-                        pass
-                Srvr.extend(['--set', 'embedded_py=2'])
 
             # enable C integration in server
             Srvr.extend(['--set', 'embedded_c=true'])
@@ -3821,29 +3793,10 @@ def main(argv) :
         if proc.returncode == 0 and pyout:
             python_version = pyout.strip()
             os.environ['PYTHON' + python_version] = 'python'
-    if python_version == '2':
-        py2list = ['python']
-    else:
-        py2list = []
     if python_version == '3':
         py3list = ['python']
     else:
         py3list = []
-    for py2 in py2list + ['python2', 'python2.7', 'python2.6']:
-        if CheckExec(py2):
-            try:
-                proc = process.Popen([py2, '-c', 'import pymonetdb'],
-                                     stdout=process.PIPE, stderr=process.PIPE,
-                                     universal_newlines=True)
-                pyout, pyerr = proc.communicate()
-                if proc.returncode == 0:
-                    CONDITIONALS['HAVE_PY2MONETDB'] = '#'
-                    os.environ['PYTHON2'] = py2
-                    break
-            except OSError:
-                pass
-    else:
-        CONDITIONALS['HAVE_PY2MONETDB'] = '' # no pymonetdb for python2
     for py3 in py3list + ['python3', 'python3.7', 'python3.6', 'python3.5', 'python3.4']:
         if CheckExec(py3):
             try:
@@ -3865,19 +3818,6 @@ def main(argv) :
         print('Python available, but pymonetdb package not available')
     else:
         CONDITIONALS['HAVE_PYMONETDB'] = '#'
-    if 'PYTHON2' in os.environ:
-        proc = process.Popen([os.environ['PYTHON2'], '-c', 'import scipy'],
-                             stdout=process.PIPE, stderr=process.PIPE,
-                             universal_newlines=True)
-        pyout, pyerr = proc.communicate()
-        if proc.returncode == 0:
-            CONDITIONALS['HAVE_LIBSCIPY2'] = '#'
-        proc = process.Popen([os.environ['PYTHON2'], '-c', 'import pandas'],
-                             stdout=process.PIPE, stderr=process.PIPE,
-                             universal_newlines=True)
-        pyout, pyerr = proc.communicate()
-        if proc.returncode == 0:
-            CONDITIONALS['HAVE_LIBPANDAS2'] = '#'
     if 'PYTHON3' in os.environ:
         proc = process.Popen([os.environ['PYTHON3'], '-c', 'import scipy'],
                              stdout=process.PIPE, stderr=process.PIPE,

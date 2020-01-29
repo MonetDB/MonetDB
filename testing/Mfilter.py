@@ -33,11 +33,7 @@ def wlen(str) :
 ### wlen(str) #
 
 def openutf8(file, mode='r'):
-    try:
-        f = open(file, mode, encoding='utf-8', errors='replace') # Python 3
-    except TypeError:
-        f = open(file, mode)    # Python 2
-    return f
+    return open(file, mode, encoding='utf-8', errors='replace')
 
 test = (
         # potential differences, which we want to ignore

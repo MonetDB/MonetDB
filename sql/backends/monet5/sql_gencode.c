@@ -983,19 +983,6 @@ backend_create_r_func(backend *be, sql_func *f)
 	return 0;
 }
 
-#define pyapi_enableflag "embedded_py"
-
-// returns the currently enabled python version, if any
-// defaults to python 2 if none is enabled
-static int
-enabled_python_version(void) {
-    const char* env = GDKgetenv(pyapi_enableflag);
-    if (env && strncmp(env, "3", 1) == 0) {
-    	return 3;
-    }
-   	return 2;
-}
-
 /* Create the MAL block for a registered function and optimize it */
 static int
 backend_create_py_func(backend *be, sql_func *f)
@@ -1003,22 +990,19 @@ backend_create_py_func(backend *be, sql_func *f)
 	(void)be;
 	switch(f->type) {
 	case  F_AGGR:
-		f->mod = "pyapi";
+		f->mod = "pyapi3";
 		f->imp = "eval_aggr";
 		break;
 	case F_LOADER:
-		f->mod = "pyapi";
+		f->mod = "pyapi3";
 		f->imp = "eval_loader";
 		break;
 	case  F_PROC: /* no output */
 	case  F_FUNC:
 	default: /* ie also F_FILT and F_UNION for now */
-		f->mod = "pyapi";
+		f->mod = "pyapi3";
 		f->imp = "eval";
 		break;
-	}
-	if (enabled_python_version() == 3) {
-		f->mod = "pyapi3";
 	}
 	return 0;
 }
@@ -1029,37 +1013,19 @@ backend_create_map_py_func(backend *be, sql_func *f)
 	(void)be;
 	switch(f->type) {
 	case  F_AGGR:
-		f->mod = "pyapimap";
+		f->mod = "pyapi3map";
 		f->imp = "eval_aggr";
 		break;
 	case  F_PROC: /* no output */
 	case  F_FUNC:
 	default: /* ie also F_FILT and F_UNION for now */
-		f->mod = "pyapimap";
+		f->mod = "pyapi3map";
 		f->imp = "eval";
 		break;
 	}
-	if (enabled_python_version() == 3) {
-		f->mod = "pyapi3map";
-	}
 	return 0;
 }
 
-static int
-backend_create_py2_func(backend *be, sql_func *f)
-{
-	backend_create_py_func(be, f);
-	f->mod = "pyapi";
-	return 0;
-}
-
-static int
-backend_create_map_py2_func(backend *be, sql_func *f)
-{
-	backend_create_map_py_func(be, f);
-	f->mod = "pyapimap";
-	return 0;
-}
 static int
 backend_create_py3_func(backend *be, sql_func *f)
 {
@@ -1341,10 +1307,6 @@ backend_create_func(backend *be, sql_func *f, list *restypes, list *ops)
 		return backend_create_py_func(be, f);
 	case FUNC_LANG_MAP_PY:
 		return backend_create_map_py_func(be, f);
-	case FUNC_LANG_PY2:
-		return backend_create_py2_func(be, f);
-	case FUNC_LANG_MAP_PY2:
-		return backend_create_map_py2_func(be, f);
 	case FUNC_LANG_PY3:
 		return backend_create_py3_func(be, f);
 	case FUNC_LANG_MAP_PY3:

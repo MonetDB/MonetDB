@@ -85,11 +85,6 @@
 %bcond_without rintegration
 %endif
 
-# On Fedora <= 30 and RHEL 7, create the MonetDB-python2 package.
-# On RHEL 6, numpy is too old.
-%if 0%{?rhel} == 7 || %{!?fedora:1000}%{?fedora} <= 30
-%bcond_without py2integration
-%endif
 %if %{?rhel:0}%{!?rhel:1}
 # On RHEL 6, Python 3 is too old, and on RHEL 7, the default Python 3
 # is too old (in both cases 3.4).
@@ -158,15 +153,6 @@ BuildRequires: unixODBC-devel
 BuildRequires: pkgconfig(zlib)
 %if %{with samtools}
 BuildRequires: samtools-devel
-%endif
-%if %{with py2integration}
-BuildRequires: python-devel
-%if %{?rhel:1}%{!?rhel:0}
-# RedHat Enterprise Linux calls it simply numpy
-BuildRequires: numpy
-%else
-BuildRequires: python2-numpy
-%endif
 %endif
 %if %{with py3integration}
 BuildRequires: python3-devel >= 3.5
@@ -516,32 +502,6 @@ install it.
 %{_libdir}/monetdb5/lib_rapi.so
 %endif
 
-%if %{with py2integration}
-%package python2
-Summary: Integration of MonetDB and Python, allowing use of Python from within SQL
-Group: Applications/Databases
-Requires: MonetDB-SQL-server5%{?_isa} = %{version}-%{release}
-
-%description python2
-MonetDB is a database management system that is developed from a
-main-memory perspective with use of a fully decomposed storage model,
-automatic index management, extensibility of data types and search
-accelerators.  It also has an SQL front end.
-
-This package contains the interface to use the Python language from
-within SQL queries.  This package is for Python 2.
-
-NOTE: INSTALLING THIS PACKAGE OPENS UP SECURITY ISSUES.  If you don't
-know how this package affects the security of your system, do not
-install it.
-
-%files python2
-%defattr(-,root,root)
-%{_libdir}/monetdb5/pyapi.*
-%{_libdir}/monetdb5/autoload/*_pyapi.mal
-%{_libdir}/monetdb5/lib_pyapi.so
-%endif
-
 %if %{with py3integration}
 %package python3
 Summary: Integration of MonetDB and Python, allowing use of Python from within SQL
@@ -642,9 +602,6 @@ exit 0
 %if %{with lidar}
 %exclude %{_libdir}/monetdb5/lidar.mal
 %endif
-%if %{with py2integration}
-%exclude %{_libdir}/monetdb5/pyapi.mal
-%endif
 %if %{with py3integration}
 %exclude %{_libdir}/monetdb5/pyapi3.mal
 %endif
@@ -662,9 +619,6 @@ exit 0
 %endif
 %if %{with lidar}
 %exclude %{_libdir}/monetdb5/autoload/*_lidar.mal
-%endif
-%if %{with py2integration}
-%exclude %{_libdir}/monetdb5/autoload/*_pyapi.mal
 %endif
 %if %{with py3integration}
 %exclude %{_libdir}/monetdb5/autoload/*_pyapi3.mal
@@ -967,7 +921,6 @@ export CFLAGS
 	--enable-netcdf=no \
 	--enable-odbc=yes \
 	--enable-profiler=no \
-	--enable-py2integration=%{?with_py2integration:yes}%{!?with_py2integration:no} \
 	--enable-py3integration=%{?with_py3integration:yes}%{!?with_py3integration:no} \
 	--enable-rintegration=%{?with_rintegration:yes}%{!?with_rintegration:no} \
 	--enable-sanitizer=no \
@@ -986,7 +939,6 @@ export CFLAGS
 	--with-openssl=yes \
 	--with-proj=no \
 	--with-pthread=yes \
-	--with-python2=%{?with_py2integration:yes}%{!?with_py2integration:no} \
 	--with-python3=yes \
 	--with-readline=yes \
 	--with-regex=%{?with_pcre:PCRE}%{!?with_pcre:POSIX} \

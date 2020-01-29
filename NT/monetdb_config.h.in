@@ -258,9 +258,6 @@
 /* #undef HAVE_LIBPTHREAD */
 
 /* Define if we can link to python */
-/* #undef HAVE_LIBPY2 */
-
-/* Define if we can link to python */
 /* #undef HAVE_LIBPY3 */
 
 /* Define if you have libR installed */
