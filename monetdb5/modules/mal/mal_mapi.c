@@ -932,7 +932,7 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 		throw(MAL, "mal_mapi.listen", OPERATION_FAILED ": starting thread failed");
 	}
 #ifdef DEBUG_SERVER
-	gethostname(host, (int) 512);
+	gethostname(host, sizeof(host));
 	snprintf(msg, (int) 512, "#Ready to accept connections on %s:%d\n", host, port);
 	fprintf(stderr, "%s", msg);
 #endif
