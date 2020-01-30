@@ -921,7 +921,7 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 		throw(MAL, "mal_mapi.listen", OPERATION_FAILED ": starting thread failed");
 	}
 
-	gethostname(host, (int) 512);
+	gethostname(host, sizeof(host));
 	TRC_DEBUG_ENDIF(MAL_SERVER, "Ready to accept connections on: %s:%d\n", host, port);
 	
 	/* seed the randomiser such that our challenges aren't
