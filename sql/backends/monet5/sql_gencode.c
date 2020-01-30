@@ -1148,7 +1148,7 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 	InstrPtr curInstr = NULL;
 	Client c = be->client;
 	Symbol backup = NULL, curPrg = NULL;
-	int i, retseen = 0, sideeffects = 0, vararg = (f->varres || f->vararg), no_inline = 0;
+	int i, retseen = 0, sideeffects = 0, vararg = (f->varres || f->vararg), no_inline = 0, clientid = be->mvc->clientid;
 	sql_rel *r;
 	str msg = MAL_SUCCEED;
 
@@ -1156,7 +1156,7 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 	if (!f->sql && (f->lang == FUNC_LANG_INT || f->lang == FUNC_LANG_MAL)) {
 		if (f->lang == FUNC_LANG_MAL && !f->imp && !mal_function_find_implementation_address(m, f))
 			return -1;
-		if (!backend_resolve_function(&(be->mvc->clientid), f)) {
+		if (!backend_resolve_function(&clientid, f)) {
 			if (f->lang == FUNC_LANG_INT)
 				(void) sql_error(m, 02, SQLSTATE(HY005) "Implementation for function %s.%s not found", f->mod, f->imp);
 			else
