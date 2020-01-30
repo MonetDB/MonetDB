@@ -994,6 +994,7 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 		} else { /* MAL implementation */
 			char *fmod = qname_module(ext_name);
 			char *fnme = qname_fname(ext_name);
+			int clientid = sql->clientid;
 
 			if (!fmod || !fnme)
 				return NULL;
@@ -1021,7 +1022,7 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 			if (!f)
 				f = sf->func;
 			assert(f);
-			if (!backend_resolve_function(sql, f))
+			if (!backend_resolve_function(&clientid, f))
 				return sql_error(sql, 01, SQLSTATE(3F000) "CREATE %s: external name %s.%s not bound (%s.%s)", F, fmod, fnme, s->base.name, fname );
 		}
 	}

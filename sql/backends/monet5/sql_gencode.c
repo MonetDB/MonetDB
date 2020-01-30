@@ -901,7 +901,7 @@ monet5_resolve_function(ptr M, sql_func *f)
 {
 	Client c;
 	Module m;
-	mvc *sql = (mvc *) M;
+	int clientID = *(int*) M;
 	str mname = getName(f->mod), fname = getName(f->imp);
 
 	if (!mname || !fname)
@@ -910,12 +910,12 @@ monet5_resolve_function(ptr M, sql_func *f)
 	/* Some SQL functions MAL mapping such as count(*) aggregate, the number of arguments don't match */
 	if (mname == calcRef && fname == getName("="))
 		return 1;
-	if (mname == aggrRef && fname == countRef)
+	if (mname == aggrRef && (fname == countRef || fname == count_no_nilRef))
 		return 1;
 	if (f->type == F_ANALYTIC)
 		return 1;
 
-	c = MCgetClient(sql->clientid);
+	c = MCgetClient(clientID);
 	for (m = findModule(c->usermodule, mname); m; m = m->link) {
 		for (Symbol s = findSymbolInModule(m, fname); s; s = s->peer) {
 			InstrPtr sig = getSignature(s);
@@ -1156,7 +1156,7 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 	if (!f->sql && (f->lang == FUNC_LANG_INT || f->lang == FUNC_LANG_MAL)) {
 		if (f->lang == FUNC_LANG_MAL && !f->imp && !mal_function_find_implementation_address(m, f))
 			return -1;
-		if (!backend_resolve_function(be->mvc, f)) {
+		if (!backend_resolve_function(&(be->mvc->clientid), f)) {
 			if (f->lang == FUNC_LANG_INT)
 				(void) sql_error(m, 02, SQLSTATE(HY005) "Implementation for function %s.%s not found", f->mod, f->imp);
 			else
