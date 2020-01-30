@@ -2597,7 +2597,7 @@ mvc_export_chunk(backend *b, stream *s, int res_id, BUN offset, BUN nr)
 
 
 int
-mvc_result_table(mvc *m, oid query_id, int nr_cols, sql_query_t type, BAT *order)
+mvc_result_table(mvc *m, oid query_id, int nr_cols, mapi_query_t type, BAT *order)
 {
 	res_table *t = res_table_create(m->session->tr, m->result_id++, query_id, nr_cols, type, m->results, order);
 	m->results = t;

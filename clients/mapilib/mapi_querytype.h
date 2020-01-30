@@ -6,10 +6,11 @@
  * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
-#ifndef _SQL_QUERYTYPE_H_
-#define _SQL_QUERYTYPE_H_
+#ifndef _MAPI_QUERYTYPE_H_INCLUDED
+#define _MAPI_QUERYTYPE_H_INCLUDED 1
 
-typedef enum sql_query_t {
+/* this definition is a straight copy from sql/include/sql_query.h */
+typedef enum {
 	Q_PARSE = 0,
 	Q_TABLE = 1,
 	Q_UPDATE = 2,
@@ -17,6 +18,6 @@ typedef enum sql_query_t {
 	Q_TRANS = 4,
 	Q_PREPARE = 5,
 	Q_BLOCK = 6
-} sql_query_t;
+} mapi_query_t;
 
-#endif /* _SQL_QUERYTYPE_H_ */
+#endif /* _MAPI_QUERYTYPE_H_INCLUDED */

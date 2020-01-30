@@ -314,7 +314,7 @@ This package contains the files needed to develop with the
 %defattr(-,root,root)
 %dir %{_includedir}/monetdb
 %{_libdir}/libmapi.so
-%{_includedir}/monetdb/mapi.h
+%{_includedir}/monetdb/mapi*.h
 %{_libdir}/pkgconfig/monetdb-mapi.pc
 
 %package client-odbc
