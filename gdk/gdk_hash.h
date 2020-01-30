@@ -9,7 +9,7 @@
 #ifndef _GDK_SEARCH_H_
 #define _GDK_SEARCH_H_
 
-typedef struct Hash {
+struct Hash {
 	int type;		/* type of index entity */
 	uint8_t width;		/* width of hash entries */
 	BUN mask1;		/* .mask1 < .nbucket <= .mask2 */
@@ -22,7 +22,7 @@ typedef struct Hash {
 	void *Link;		/* collision list, points into .heaplink */
 	Heap heaplink;		/* heap where the hash links are stored */
 	Heap heapbckt;		/* heap where the hash buckets are stored */
-} Hash;
+};
 
 static inline BUN
 HASHbucket(const Hash *h, BUN v)
