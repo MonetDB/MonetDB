@@ -4588,7 +4588,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 					}
 				} else if(is_nth_value && nfargs == 1) { /* nth_value second argument null handling case */
 					sql_subtype *empty = sql_bind_localtype("void");
-					if(subtype_cmp(&(in->tpe), empty) == 0) {
+					if(subtype_cmp(exp_subtype(in), empty) == 0) {
 						sql_exp *ep = rel_first_column(sql, p);
 						in = exp_convert(sql->sa, in, empty, exp_subtype(ep));
 					}
