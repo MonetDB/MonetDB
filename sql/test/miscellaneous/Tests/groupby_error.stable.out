@@ -72,7 +72,7 @@ stdout of test 'groupby_error` in directory 'sql/test/miscellaneous` itself:
 #INSERT INTO tab0 VALUES(97,1,99), (15,81,47), (87,21,10);
 [ 3	]
 #SELECT CAST(+ col1 * - col1 AS BIGINT) AS col2 FROM tab0 GROUP BY col2, col0, col1 HAVING + - col0 / - AVG ( ALL + col2 ) - - - AVG ( DISTINCT + col0 ) + col0 IS NULL;
-% sys.L2 # table_name
+% sys. # table_name
 % col2 # name
 % bigint # type
 % 1 # length

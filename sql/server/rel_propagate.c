@@ -188,11 +188,11 @@ create_range_partition_anti_rel(sql_query* query, sql_table *mt, sql_table *pt, 
 		sql_exp *range1, *range2;
 		e1 = exp_copy(sql, pmin);
 		if (subtype_cmp(exp_subtype(pmin), &tpe) != 0)
-			e1 = exp_convert(sql->sa, e1, &e1->tpe, &tpe);
+			e1 = exp_convert(sql->sa, e1, exp_subtype(e1), &tpe);
 
 		e2 = exp_copy(sql, pmax);
 		if (subtype_cmp(exp_subtype(e2), &tpe) != 0)
-			e2 = exp_convert(sql->sa, e2, &e2->tpe, &tpe);
+			e2 = exp_convert(sql->sa, e2, exp_subtype(e2), &tpe);
 
 		range1 = exp_compare(sql->sa, exp_copy(sql, anti_le), e1, 3);
 		range2 = exp_compare(sql->sa, exp_copy(sql, anti_le), e2, 1);
