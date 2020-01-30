@@ -5918,15 +5918,15 @@ rel_groupby_distinct(int *changes, mvc *sql, sql_rel *rel)
 					list *args = e->l;
 					sql_exp *dargs = args->h->data;
 
-					list_append(ngbe, exp_copy(sql, dargs));
-					list_append(exps, exp_copy(sql, dargs));
+					list_append(ngbe, exp_copy(sql->sa, dargs));
+					list_append(exps, exp_copy(sql->sa, dargs));
 				} else {
 					e = exp_ref(sql->sa, e);
 					append(ngbe, e);
 					append(exps, e);
 				}
 				if (e->type == e_aggr) /* aggregates must be copied */
-					e = exp_copy(sql, e);
+					e = exp_copy(sql->sa, e);
 				else
 					e = exp_ref(sql->sa, e);
 				append(nexps, e);
