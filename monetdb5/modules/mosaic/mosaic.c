@@ -24,10 +24,10 @@
 #include "mosaic_frame.h"
 #include "mosaic_prefix.h"
 
-#define DEFINE_METHOD(NAME) \
+#define DEFINE_METHOD(METHOD) \
 {\
-	.bit	= (1 << NAME),\
-	.name	= #NAME\
+	.bit	= (1 << METHOD),\
+	.name	= #METHOD\
 }
 
 const Method MOSmethods[] = {

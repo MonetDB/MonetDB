@@ -25,13 +25,13 @@
 #include "mosaic_select_template.h"
 #undef CAND_ITER
 
-#define select_general(HAS_NIL, ANTI, CAND_ITER) CONCAT6(select_general_, NAME, _, TPE, _, CAND_ITER)(HAS_NIL, ANTI, task, first, last, tl, th, li, hi)
+#define select_general(HAS_NIL, ANTI, CAND_ITER) CONCAT6(select_general_, METHOD, _, TPE, _, CAND_ITER)(HAS_NIL, ANTI, task, first, last, tl, th, li, hi)
 
 /* definition of type-specific core scan select function */
-MOSselect_SIGNATURE(NAME, TPE) {
+MOSselect_SIGNATURE(METHOD, TPE) {
 	BUN first,last;
 
-	ASSERT_ALIGNMENT_BLOCK_HEADER(task->blk, NAME, TPE);
+	ASSERT_ALIGNMENT_BLOCK_HEADER(task->blk, METHOD, TPE);
 
 	/* set the oid range covered and advance scan range*/
 	first = task->start;
@@ -99,29 +99,29 @@ MOSselect_SIGNATURE(NAME, TPE) {
 
 #define SCAN_LOOP_DEFINITION
 #define TEST TEST_ALWAYS_TRUE
-#include METHOD_SPECIFIC_INCLUDE
+#include METHOD_TEMPLATES_INCLUDE
 #undef TEST
 #define TEST TEST_IS_NIL
-#include METHOD_SPECIFIC_INCLUDE
+#include METHOD_TEMPLATES_INCLUDE
 #undef TEST
 #define TEST TEST_IS_NOT_NIL
-#include METHOD_SPECIFIC_INCLUDE
+#include METHOD_TEMPLATES_INCLUDE
 #undef TEST
 #define TEST TEST_UPPER_BOUND
-#include METHOD_SPECIFIC_INCLUDE
+#include METHOD_TEMPLATES_INCLUDE
 #undef TEST
 #define TEST TEST_LOWER_BOUND
-#include METHOD_SPECIFIC_INCLUDE
+#include METHOD_TEMPLATES_INCLUDE
 #undef TEST
 #define TEST TEST_EQUAL
-#include METHOD_SPECIFIC_INCLUDE
+#include METHOD_TEMPLATES_INCLUDE
 #undef TEST
 #define TEST TEST_RANGE
-#include METHOD_SPECIFIC_INCLUDE
+#include METHOD_TEMPLATES_INCLUDE
 #undef TEST
 #undef SCAN_LOOP_DEFINITION
 
-#define SCAN_LOOP(TEST) MOSscanloop_ID(NAME, TPE, CAND_ITER, TEST)(has_nil, anti, task, first, last, tl, th, li, hi)
+#define SCAN_LOOP(TEST) MOSscanloop_ID(METHOD, TPE, CAND_ITER, TEST)(has_nil, anti, task, first, last, tl, th, li, hi)
 /* generic range select
  *
  * This macro is based on the combined behavior of ALGselect2 and BATselect.
@@ -158,7 +158,7 @@ MOSselect_SIGNATURE(NAME, TPE) {
  *	v1	v2	true	false	true	x < v1 or x >= v2
  *	v1	v2	false	true	true	x <= v1 or x > v2
  */
-static inline void CONCAT6(select_general_, NAME, _, TPE, _, CAND_ITER)(
+static inline void CONCAT6(select_general_, METHOD, _, TPE, _, CAND_ITER)(
 	const bool has_nil, const bool anti,
 	MOStask* task, BUN first, BUN last,
 	TPE tl, TPE th, bool li, bool hi) {

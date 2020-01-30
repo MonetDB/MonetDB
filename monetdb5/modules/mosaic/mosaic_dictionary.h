@@ -59,28 +59,28 @@ typedef struct _GlobalDictionaryInfo {
 #define GetSizeInBytes(INFO)		(GET_COUNT(INFO) * GetTypeWidth(INFO))
 
 // task dependent macro's
-#define GET_FINAL_DICT(task, NAME, TPE) (((TPE*) (task)->bsrc->tvmosaic->base) + (task)->hdr->CONCAT2(pos_, NAME))
-#define GET_FINAL_BITS(task, NAME) ((task)->hdr->CONCAT2(bits_, NAME))
-#define GET_FINAL_DICT_COUNT(task, NAME) ((task)->hdr->CONCAT2(length_, NAME))
+#define GET_FINAL_DICT(task, METHOD, TPE) (((TPE*) (task)->bsrc->tvmosaic->base) + (task)->hdr->CONCAT2(pos_, METHOD))
+#define GET_FINAL_BITS(task, METHOD) ((task)->hdr->CONCAT2(bits_, METHOD))
+#define GET_FINAL_DICT_COUNT(task, METHOD) ((task)->hdr->CONCAT2(length_, METHOD))
 
-#define MosaicBlkHeader_DEF_dictionary(NAME, TPE)\
+#define MosaicBlkHeader_DEF_dictionary(METHOD, TPE)\
 typedef struct {\
 	MosaicBlkRec rec;\
 	char padding;\
 	BitVectorChunk bitvector; /*First chunk of bitvector to force correct alignment.*/\
-} MOSBlockHeader_##NAME##_##TPE;
+} MOSBlockHeader_##METHOD##_##TPE;
 
-#define DICTBlockHeaderTpe(NAME, TPE) MOSBlockHeader_##NAME##_##TPE
+#define DICTBlockHeaderTpe(METHOD, TPE) MOSBlockHeader_##METHOD##_##TPE
 
 // MOStask object dependent macro's
 
-#define MOScodevectorDict(task, NAME, TPE) ((BitVector) &((DICTBlockHeaderTpe(NAME, TPE)*) (task)->blk)->bitvector)
+#define MOScodevectorDict(task, METHOD, TPE) ((BitVector) &((DICTBlockHeaderTpe(METHOD, TPE)*) (task)->blk)->bitvector)
 
-#define outer_loop_dictionary(HAS_NIL, NIL_MATCHES, NAME, TPE, LEFT_CI_NEXT, RIGHT_CI_NEXT) \
+#define outer_loop_dictionary(HAS_NIL, NIL_MATCHES, METHOD, TPE, LEFT_CI_NEXT, RIGHT_CI_NEXT) \
 {\
-	bte bits		= GET_FINAL_BITS(task, NAME);\
-	TPE* dict		= GET_FINAL_DICT(task, NAME, TPE);\
-	BitVector base	= MOScodevectorDict(task, NAME, TPE);\
+	bte bits		= GET_FINAL_BITS(task, METHOD);\
+	TPE* dict		= GET_FINAL_DICT(task, METHOD, TPE);\
+	BitVector base	= MOScodevectorDict(task, METHOD, TPE);\
     for (oid lo = canditer_peekprev(task->ci); !is_oid_nil(lo) && lo < last; lo = LEFT_CI_NEXT(task->ci)) {\
         BUN i = (BUN) (lo - first);\
 		BitVectorChunk j= getBitVector(base,i,bits);\
@@ -92,11 +92,11 @@ typedef struct {\
 	}\
 }
 
-#define join_inner_loop_dictionary(NAME, TPE, HAS_NIL, RIGHT_CI_NEXT)\
+#define join_inner_loop_dictionary(METHOD, TPE, HAS_NIL, RIGHT_CI_NEXT)\
 {\
-	bte bits		= GET_FINAL_BITS(task, NAME);\
-	TPE* dict		= GET_FINAL_DICT(task, NAME, TPE);\
-	BitVector base	= MOScodevectorDict(task, NAME, TPE);\
+	bte bits		= GET_FINAL_BITS(task, METHOD);\
+	TPE* dict		= GET_FINAL_DICT(task, METHOD, TPE);\
+	BitVector base	= MOScodevectorDict(task, METHOD, TPE);\
     for (oid ro = canditer_peekprev(task->ci); !is_oid_nil(ro) && ro < last; ro = RIGHT_CI_NEXT(task->ci)) {\
         BUN i = (BUN) (ro - first);\
 		BitVectorChunk j= getBitVector(base,i,bits);\

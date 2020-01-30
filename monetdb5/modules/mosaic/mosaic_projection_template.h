@@ -12,22 +12,22 @@
 
 #define PROJECTION_LOOP_DEFINITION
 #define CAND_ITER canditer_next_dense
-#include METHOD_SPECIFIC_INCLUDE
+#include METHOD_TEMPLATES_INCLUDE
 #undef CAND_ITER
 
 #define CAND_ITER canditer_next
-#include METHOD_SPECIFIC_INCLUDE
+#include METHOD_TEMPLATES_INCLUDE
 #undef CAND_ITER
 #undef PROJECTION_LOOP_DEFINITION
 
-#define PROJECTION_LOOP(CAND_ITER) MOSprojectionloop_ID(NAME, TPE, CAND_ITER)(task, first, last)
+#define PROJECTION_LOOP(CAND_ITER) MOSprojectionloop_ID(METHOD, TPE, CAND_ITER)(task, first, last)
 
-MOSprojection_SIGNATURE(NAME, TPE)
+MOSprojection_SIGNATURE(METHOD, TPE)
 {
 	BUN first = task->start;
 	BUN last = first + MOSgetCnt(task->blk);
 
-	ASSERT_ALIGNMENT_BLOCK_HEADER(task->blk, NAME, TPE);
+	ASSERT_ALIGNMENT_BLOCK_HEADER(task->blk, METHOD, TPE);
 
 	/* Advance the candidate iterator to the first element within
 	 * the oid range of the current block.

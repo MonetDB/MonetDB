@@ -199,12 +199,12 @@ typedef struct _MosaicEstimation {
 	BUN* max_compression_length;
 } MosaicEstimation;
 
-#define GET_PADDING(blk, NAME, TPE) (((MOSBlockHeaderTpe(NAME, TPE)*) (blk))->padding)
+#define GET_PADDING(blk, METHOD, TPE) (((MOSBlockHeaderTpe(METHOD, TPE)*) (blk))->padding)
 
-#define ALIGN_BLOCK_HEADER(task, NAME, TPE)\
+#define ALIGN_BLOCK_HEADER(task, METHOD, TPE)\
 {\
 	if (task->padding) {\
-		ALIGNMENT_HELPER_TPE(NAME, TPE) dummy;\
+		ALIGNMENT_HELPER_TPE(METHOD, TPE) dummy;\
 		uintptr_t alignment = (BUN) ((uintptr_t) (void*) &dummy.b - (uintptr_t) (void*) &dummy.a);\
 		uintptr_t SZ = (uintptr_t) (char*)((task)->blk);\
 		BUN padding = (BUN) ( ( (SZ) % alignment ) ? ( alignment - ((SZ)%alignment) ) : 0 );\
@@ -213,13 +213,13 @@ typedef struct _MosaicEstimation {
 		*task->padding = (char) padding;\
 		/*printf("padding: %ld\n", padding);*/\
 	}\
-	task->padding = &GET_PADDING(task->blk, NAME, TPE);\
+	task->padding = &GET_PADDING(task->blk, METHOD, TPE);\
 	*task->padding = 0;\
 }
 
-#define ASSERT_ALIGNMENT_BLOCK_HEADER(ptr, NAME, TPE)\
+#define ASSERT_ALIGNMENT_BLOCK_HEADER(ptr, METHOD, TPE)\
 {\
-	ALIGNMENT_HELPER_TPE(NAME, TPE) dummy;\
+	ALIGNMENT_HELPER_TPE(METHOD, TPE) dummy;\
 	uintptr_t alignment = ((uintptr_t) (void*) &dummy.b - (uintptr_t) (void*) &dummy.a);\
 	assert((uintptr_t) (void*) (ptr) % alignment == 0);\
 	(void) alignment;\

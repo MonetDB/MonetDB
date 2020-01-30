@@ -1,9 +1,9 @@
 #ifdef PREPARATION_DEFINITION
 
-#define clean_up_info_ID(NAME) CONCAT2(clean_up_info_, NAME)
+#define clean_up_info_ID(METHOD) CONCAT2(clean_up_info_, METHOD)
 
-static inline void clean_up_info_ID(NAME)(MOStask* task) {
-	GlobalDictionaryInfo* info = task->CONCAT2(NAME, _info);
+static inline void clean_up_info_ID(METHOD)(MOStask* task) {
+	GlobalDictionaryInfo* info = task->CONCAT2(METHOD, _info);
 
 	BBPreclaim(info->dict);
 	BBPreclaim(info->admin);
@@ -12,19 +12,19 @@ static inline void clean_up_info_ID(NAME)(MOStask* task) {
 
 	GDKfree(info);
 
-	task->CONCAT2(NAME, _info) = NULL;
+	task->CONCAT2(METHOD, _info) = NULL;
 }
 
-MOSprepareDictionaryContext_SIGNATURE(NAME)
+MOSprepareDictionaryContext_SIGNATURE(METHOD)
 {
 	const unsigned int zero = 0;
 	str msg = MAL_SUCCEED;
 
-	GlobalDictionaryInfo** info = &task->CONCAT2(NAME, _info);
+	GlobalDictionaryInfo** info = &task->CONCAT2(METHOD, _info);
 	BAT* source = task->bsrc;
 
 	if ( (*info = GDKmalloc(sizeof(GlobalDictionaryInfo))) == NULL ) {
-		throw(MAL,"mosaic." STRINGIFY(NAME) ,MAL_MALLOC_FAIL);
+		throw(MAL,"mosaic." STRINGIFY(METHOD) ,MAL_MALLOC_FAIL);
 	}
 	(*info)->previous_start = task->start;
 
@@ -45,7 +45,7 @@ MOSprepareDictionaryContext_SIGNATURE(NAME)
 	 * TODO: there can be a single function that builds both the capped and the global dictionary
 	 */
 	if ( (source_copy = COLcopy(source, source->ttype, true /*writable = true*/, TRANSIENT)) == NULL) {
-		msg = createException(MAL, "mosaic." STRINGIFY(NAME) ".COLcopy", GDK_EXCEPTION);
+		msg = createException(MAL, "mosaic." STRINGIFY(METHOD) ".COLcopy", GDK_EXCEPTION);
 		goto finalize;
 	}
 
@@ -56,7 +56,7 @@ MOSprepareDictionaryContext_SIGNATURE(NAME)
 
 #ifdef MOS_CUT_OFF_SIZE
 	if (BATfirstn(&cand_capped_dict, NULL, freq, NULL, NULL, MOS_CUT_OFF_SIZE, false, true, false) != GDK_SUCCEED) {
-		msg = createException(MAL, "mosaic." STRINGIFY(NAME) ".BATfirstn_unique", GDK_EXCEPTION);
+		msg = createException(MAL, "mosaic." STRINGIFY(METHOD) ".BATfirstn_unique", GDK_EXCEPTION);
 		goto finalize;
 	}
 
@@ -64,38 +64,38 @@ MOSprepareDictionaryContext_SIGNATURE(NAME)
 	projection_chain[1] = next;
 	projection_chain[2] = source_copy;
 	if ((unsorted_dict = BATprojectchain(projection_chain)) == NULL) {
-		msg = createException(MAL, "mosaic." STRINGIFY(NAME) ".BATprojectchain", GDK_EXCEPTION);
+		msg = createException(MAL, "mosaic." STRINGIFY(METHOD) ".BATprojectchain", GDK_EXCEPTION);
 		goto finalize;
 	}
 #else
 	if ((unsorted_dict = BATproject(next, source_copy)) == NULL) {
-		msg = createException(MAL, "mosaic." STRINGIFY(NAME) ".BATproject", GDK_EXCEPTION);
+		msg = createException(MAL, "mosaic." STRINGIFY(METHOD) ".BATproject", GDK_EXCEPTION);
 		goto finalize;
 	}
 #endif
 
 	if (BATsort(&dict, NULL, NULL, unsorted_dict, NULL, NULL, false, false, false) != GDK_SUCCEED) {
-		msg = createException(MAL, "mosaic." STRINGIFY(NAME) ".BATfirstn_unique", GDK_EXCEPTION);
+		msg = createException(MAL, "mosaic." STRINGIFY(METHOD) ".BATfirstn_unique", GDK_EXCEPTION);
 		goto finalize;
 	}
 
 	if (BAThash(dict) != GDK_SUCCEED) {
-		msg = createException(MAL, "mosaic." STRINGIFY(NAME) ".BAThash", GDK_EXCEPTION);
+		msg = createException(MAL, "mosaic." STRINGIFY(METHOD) ".BAThash", GDK_EXCEPTION);
 		goto finalize;
 	}
 
 	if ((admin = BATconstant(0, TYPE_int, &zero, BATcount(dict), TRANSIENT)) == NULL) {
-		msg = createException(MAL, "mosaic." STRINGIFY(NAME) ".COLnew", GDK_EXCEPTION);
+		msg = createException(MAL, "mosaic." STRINGIFY(METHOD) ".COLnew", GDK_EXCEPTION);
 		goto finalize;
 	}
 
 	if ((selection_vector = COLnew(0, TYPE_oid, MOSAICMAXCNT, TRANSIENT)) == NULL) {
-		msg = createException(MAL, "mosaic." STRINGIFY(NAME) ".COLnew", GDK_EXCEPTION);
+		msg = createException(MAL, "mosaic." STRINGIFY(METHOD) ".COLnew", GDK_EXCEPTION);
 		goto finalize;
 	}
 
 	if ((increments = COLnew(0, TYPE_bte, MOSAICMAXCNT, TRANSIENT)) == NULL) {
-		msg = createException(MAL, "mosaic." STRINGIFY(NAME) ".COLnew", GDK_EXCEPTION);
+		msg = createException(MAL, "mosaic." STRINGIFY(METHOD) ".COLnew", GDK_EXCEPTION);
 		goto finalize;
 	}
 
@@ -114,7 +114,7 @@ finalize:
 		BBPreclaim(unsorted_dict);
 		BBPreclaim(cand_capped_dict);
 
-		if (msg != MAL_SUCCEED) clean_up_info_ID(NAME)(task);
+		if (msg != MAL_SUCCEED) clean_up_info_ID(METHOD)(task);
 
 		return msg;
 }
@@ -122,17 +122,17 @@ finalize:
 #endif
 
 #ifdef COMPRESSION_DEFINITION
-MOSestimate_SIGNATURE(NAME, TPE) {
+MOSestimate_SIGNATURE(METHOD, TPE) {
 	str msg = MAL_SUCCEED;
 	(void) previous;
-	GlobalDictionaryInfo* info = task->CONCAT2(NAME, _info);
+	GlobalDictionaryInfo* info = task->CONCAT2(METHOD, _info);
 	BUN limit = (BUN) (task->stop - task->start > MOSAICMAXCNT? MOSAICMAXCNT: task->stop - task->start);
 
 	BUN nr_compressed;
 
-	BUN old_keys_size		= (CONCAT3(current->nr_, NAME, _encoded_elements) * GET_BITS(info)) / CHAR_BIT;
+	BUN old_keys_size		= (CONCAT3(current->nr_, METHOD, _encoded_elements) * GET_BITS(info)) / CHAR_BIT;
 	BUN old_dict_size		= GET_COUNT(info) * sizeof(TPE);
-	BUN old_headers_size	= CONCAT3(current->nr_, NAME, _encoded_blocks) * 2 * sizeof(MOSBlockHeaderTpe(NAME, TPE));
+	BUN old_headers_size	= CONCAT3(current->nr_, METHOD, _encoded_blocks) * 2 * sizeof(MOSBlockHeaderTpe(METHOD, TPE));
 	BUN old_bytes			= old_keys_size + old_dict_size + old_headers_size;
 
 	bool full_build = true;
@@ -168,7 +168,7 @@ MOSestimate_SIGNATURE(NAME, TPE) {
 
 	BAT* pos_slice;
 	if ((pos_slice = BATslice(task->bsrc, pos_start, pos_start + pos_limit)) == NULL) {
-		clean_up_info_ID(NAME)(task);
+		clean_up_info_ID(METHOD)(task);
 		throw(MAL, "BATslice.pos_slice", MAL_MALLOC_FAIL);
 	}
 
@@ -218,7 +218,7 @@ MOSestimate_SIGNATURE(NAME, TPE) {
 	else /*incremental build*/ {
 		BAT* neg_slice;
 		if ((neg_slice = BATslice(task->bsrc, neg_start, neg_start + neg_limit)) == NULL){
-			clean_up_info_ID(NAME)(task);
+			clean_up_info_ID(METHOD)(task);
 			throw(MAL, "BATslice.neg_slice", MAL_MALLOC_FAIL);
 		}
 
@@ -287,18 +287,18 @@ MOSestimate_SIGNATURE(NAME, TPE) {
 	info->previous_limit = nr_compressed;
 
 	current->is_applicable = nr_compressed > 0;
-	CONCAT3(current->nr_, NAME, _encoded_elements) += nr_compressed;
-	CONCAT3(current->nr_, NAME, _encoded_blocks)++;
+	CONCAT3(current->nr_, METHOD, _encoded_elements) += nr_compressed;
+	CONCAT3(current->nr_, METHOD, _encoded_blocks)++;
 
 	BUN new_count = delta_count + info->count;
 	calculateBits(GET_BITS_EXTENDED(info), new_count);
 
-	BUN new_keys_size		= (CONCAT3(current->nr_, NAME, _encoded_elements) * GET_BITS_EXTENDED(info)) / CHAR_BIT;
+	BUN new_keys_size		= (CONCAT3(current->nr_, METHOD, _encoded_elements) * GET_BITS_EXTENDED(info)) / CHAR_BIT;
 	BUN new_dict_size		= new_count * sizeof(TPE);
-	BUN new_headers_size	= CONCAT3(current->nr_, NAME, _encoded_blocks) * 2 * sizeof(MOSBlockHeaderTpe(NAME, TPE));
+	BUN new_headers_size	= CONCAT3(current->nr_, METHOD, _encoded_blocks) * 2 * sizeof(MOSBlockHeaderTpe(METHOD, TPE));
 	BUN new_bytes			= new_keys_size + new_dict_size + new_headers_size;
 
-	current->compression_strategy.tag = NAME;
+	current->compression_strategy.tag = METHOD;
 	current->compression_strategy.cnt = (unsigned int) nr_compressed;
 
 	current->uncompressed_size	+= (BUN) ( nr_compressed * sizeof(TPE));
@@ -307,8 +307,8 @@ MOSestimate_SIGNATURE(NAME, TPE) {
 	return msg;
 }
 
-MOSpostEstimate_SIGNATURE(NAME, TPE) {
-	GlobalDictionaryInfo* info	= task->CONCAT2(NAME, _info);
+MOSpostEstimate_SIGNATURE(METHOD, TPE) {
+	GlobalDictionaryInfo* info	= task->CONCAT2(METHOD, _info);
 	MosaicBlkRec* bytevector	= Tloc(info->admin, 0);
 
 	BUN delta_count = 0;
@@ -325,12 +325,12 @@ MOSpostEstimate_SIGNATURE(NAME, TPE) {
 	GET_BITS(info) = GET_BITS_EXTENDED(info);
 }
 
-MOSfinalizeDictionary_SIGNATURE(NAME, TPE) {
+MOSfinalizeDictionary_SIGNATURE(METHOD, TPE) {
 	BAT* b = task->bsrc;
-	GlobalDictionaryInfo* info = task->CONCAT2(NAME, _info);
-	BUN* pos_dict = &task->hdr->CONCAT2(pos_, NAME);
-	BUN* length_dict = &task->hdr->CONCAT2(length_, NAME);
-	bte* bits_dict = &GET_FINAL_BITS(task, NAME);
+	GlobalDictionaryInfo* info = task->CONCAT2(METHOD, _info);
+	BUN* pos_dict = &task->hdr->CONCAT2(pos_, METHOD);
+	BUN* length_dict = &task->hdr->CONCAT2(length_, METHOD);
+	bte* bits_dict = &GET_FINAL_BITS(task, METHOD);
 
 	Heap* vmh = b->tvmosaic;
 
@@ -340,7 +340,7 @@ MOSfinalizeDictionary_SIGNATURE(NAME, TPE) {
 	BUN size_in_bytes = vmh->free + GetSizeInBytes(info);
 
 	if (HEAPextend(vmh, size_in_bytes, true) != GDK_SUCCEED) {
-		clean_up_info_ID(NAME)(task);
+		clean_up_info_ID(METHOD)(task);
 		throw(MAL, "HEAPextend", GDK_EXCEPTION);
 	}
 
@@ -360,9 +360,9 @@ MOSfinalizeDictionary_SIGNATURE(NAME, TPE) {
 	*length_dict = GET_COUNT(info);
 	calculateBits(*bits_dict, *length_dict);
 
-	GET_FINAL_DICT_COUNT(task, NAME) = *length_dict;
+	GET_FINAL_DICT_COUNT(task, METHOD) = *length_dict;
 
-	clean_up_info_ID(NAME)(task);
+	clean_up_info_ID(METHOD)(task);
 
 	return MAL_SUCCEED;
 }
@@ -388,17 +388,17 @@ BUN CONCAT2(find_value_, TPE)(TPE* dict, BUN dict_count, TPE val) {
 	return f + offset;
 }
 
-MOScompress_SIGNATURE(NAME, TPE) {
-	MOSsetTag(task->blk, NAME);
-	ALIGN_BLOCK_HEADER(task,  NAME, TPE);
+MOScompress_SIGNATURE(METHOD, TPE) {
+	MOSsetTag(task->blk, METHOD);
+	ALIGN_BLOCK_HEADER(task,  METHOD, TPE);
 
 	TPE *val = getSrc(TPE, (task));
 	BUN cnt = estimate->cnt;
-	BitVector base = MOScodevectorDict(task, NAME, TPE);
+	BitVector base = MOScodevectorDict(task, METHOD, TPE);
 	BUN i;
-	TPE* dict = GET_FINAL_DICT(task, NAME, TPE);
-	BUN dict_size = GET_FINAL_DICT_COUNT(task, NAME);
-	bte bits = GET_FINAL_BITS(task, NAME);
+	TPE* dict = GET_FINAL_DICT(task, METHOD, TPE);
+	BUN dict_size = GET_FINAL_DICT_COUNT(task, METHOD);
+	bte bits = GET_FINAL_BITS(task, METHOD);
 	for(i = 0; i < cnt; i++, val++) {
 		BUN key = CONCAT2(find_value_, TPE)(dict, dict_size, *val);
 		assert(key < dict_size);
@@ -407,25 +407,25 @@ MOScompress_SIGNATURE(NAME, TPE) {
 	MOSsetCnt(task->blk, i);
 }
 
-MOSadvance_SIGNATURE(NAME, TPE) {
+MOSadvance_SIGNATURE(METHOD, TPE) {
 	BUN cnt = MOSgetCnt(task->blk);
 
 	assert(cnt > 0);
 	task->start += (oid) cnt;
 
 	char* blk = (char*)task->blk;
-	blk += sizeof(MOSBlockHeaderTpe(NAME, TPE));
-	blk += BitVectorSize(cnt, GET_FINAL_BITS(task, NAME));
-	blk += GET_PADDING(task->blk, NAME, TPE);
+	blk += sizeof(MOSBlockHeaderTpe(METHOD, TPE));
+	blk += BitVectorSize(cnt, GET_FINAL_BITS(task, METHOD));
+	blk += GET_PADDING(task->blk, METHOD, TPE);
 
 	task->blk = (MosaicBlk) blk;
 }
 
-MOSdecompress_SIGNATURE(NAME, TPE) {
+MOSdecompress_SIGNATURE(METHOD, TPE) {
 	BUN cnt = MOSgetCnt((task)->blk);
-	BitVector base = MOScodevectorDict(task, NAME, TPE);
-	bte bits = GET_FINAL_BITS(task, NAME);
-	TPE* dict = GET_FINAL_DICT(task, NAME, TPE);
+	BitVector base = MOScodevectorDict(task, METHOD, TPE);
+	bte bits = GET_FINAL_BITS(task, METHOD);
+	TPE* dict = GET_FINAL_DICT(task, METHOD, TPE);
 	TPE* dest = (TPE*) (task)->src;
 	for(BUN i = 0; i < cnt; i++) {
 		BUN key = getBitVector(base,i,(int) bits);
@@ -437,7 +437,7 @@ MOSdecompress_SIGNATURE(NAME, TPE) {
 #endif
 
 #ifdef SCAN_LOOP_DEFINITION
-MOSscanloop_SIGNATURE(NAME, TPE, CAND_ITER, TEST)
+MOSscanloop_SIGNATURE(METHOD, TPE, CAND_ITER, TEST)
 {
     (void) has_nil;
     (void) anti;
@@ -448,9 +448,9 @@ MOSscanloop_SIGNATURE(NAME, TPE, CAND_ITER, TEST)
     (void) hi;
 
     oid* o = task->lb;
-    TPE* dict = GET_FINAL_DICT(task, NAME, TPE);
-	BitVector base = MOScodevectorDict(task, NAME, TPE);
-    bte bits = GET_FINAL_BITS(task, NAME);
+    TPE* dict = GET_FINAL_DICT(task, METHOD, TPE);
+	BitVector base = MOScodevectorDict(task, METHOD, TPE);
+    bte bits = GET_FINAL_BITS(task, METHOD);
     for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = CAND_ITER(task->ci)) {
         BUN i = (BUN) (c - first);
         BitVectorChunk j = getBitVector(base,i,bits); 
@@ -465,16 +465,16 @@ MOSscanloop_SIGNATURE(NAME, TPE, CAND_ITER, TEST)
 #endif
 
 #ifdef PROJECTION_LOOP_DEFINITION
-MOSprojectionloop_SIGNATURE(NAME, TPE, CAND_ITER)
+MOSprojectionloop_SIGNATURE(METHOD, TPE, CAND_ITER)
 {
     (void) first;
     (void) last;
 
 	TPE* bt= (TPE*) task->src;
 
-	TPE* dict = GET_FINAL_DICT(task, NAME, TPE);
-	BitVector base = MOScodevectorDict(task, NAME, TPE);
-    bte bits = GET_FINAL_BITS(task, NAME);
+	TPE* dict = GET_FINAL_DICT(task, METHOD, TPE);
+	BitVector base = MOScodevectorDict(task, METHOD, TPE);
+    bte bits = GET_FINAL_BITS(task, METHOD);
 	for (oid o = canditer_peekprev(task->ci); !is_oid_nil(o) && o < last; o = CAND_ITER(task->ci)) {
         BUN i = (BUN) (o - first);
         BitVectorChunk j = getBitVector(base,i,bits); 

@@ -17,9 +17,9 @@
 #include "mosaic.h"
 
 
-#define MOSjoin_COUI_SIGNATURE(NAME, TPE) \
+#define MOSjoin_COUI_SIGNATURE(METHOD, TPE) \
 str								\
-MOSjoin_COUI_##NAME##_##TPE(BAT* r1p, BAT* r2p,\
+MOSjoin_COUI_##METHOD##_##TPE(BAT* r1p, BAT* r2p,\
     MOStask* task, BAT* r, struct canditer* rci, bool nil_matches)\
 
 #define INNER_LOOP_UNCOMPRESSED(HAS_NIL, TPE, RIGHT_CI_NEXT) \
@@ -67,15 +67,15 @@ MOSjoin_COUI_##NAME##_##TPE(BAT* r1p, BAT* r2p,\
 	}\
 }
 
-#define MOSjoin_COUI_DEF(NAME, TPE)\
-MOSjoin_COUI_SIGNATURE(NAME, TPE)\
+#define MOSjoin_COUI_DEF(METHOD, TPE)\
+MOSjoin_COUI_SIGNATURE(METHOD, TPE)\
 {\
 	BUN first = task->start;\
 	BUN last = first + MOSgetCnt(task->blk);\
 	TPE* bt= (TPE*) task->src;\
 	bool nil = !task->bsrc->tnonil;\
 \
-	ASSERT_ALIGNMENT_BLOCK_HEADER(task->blk, NAME, TPE);\
+	ASSERT_ALIGNMENT_BLOCK_HEADER(task->blk, METHOD, TPE);\
 \
 	struct canditer* lci = task->ci;\
 \
@@ -94,7 +94,7 @@ MOSjoin_COUI_SIGNATURE(NAME, TPE)\
 		return MAL_SUCCEED;\
 	}\
 \
-    NESTED_LOOP_JOIN(TPE, outer_loop_##NAME);\
+    NESTED_LOOP_JOIN(TPE, outer_loop_##METHOD);\
 	task->src = (char*) bt;\
 \
 	if ((c = canditer_peekprev(lci)) >= last) {\
@@ -105,11 +105,11 @@ MOSjoin_COUI_SIGNATURE(NAME, TPE)\
 	return MAL_SUCCEED;\
 }
 
-#define join_COUI(NAME, TPE, DUMMY_ARGUMENT)\
+#define join_COUI(METHOD, TPE, DUMMY_ARGUMENT)\
 {\
-	str msg = MOSjoin_COUI_##NAME##_##TPE(r1p, r2p, task, r, rci, nil_matches);\
+	str msg = MOSjoin_COUI_##METHOD##_##TPE(r1p, r2p, task, r, rci, nil_matches);\
 	if (msg != MAL_SUCCEED) return msg;\
-	MOSadvance_##NAME##_##TPE(task);\
+	MOSadvance_##METHOD##_##TPE(task);\
 }
 
 /* Nested loop join with the left (C)ompressed side in the (O)uter loop 
@@ -175,10 +175,10 @@ static str MOSjoin_COUI_##TPE(MOStask* task, BAT* r, struct canditer* rci, bool 
  * and the right compressed side in the inner loop.
  */
 
-#define join_inner_loop(NAME, TPE, HAS_NIL, RIGHT_CI_NEXT)\
+#define join_inner_loop(METHOD, TPE, HAS_NIL, RIGHT_CI_NEXT)\
 {\
-	join_inner_loop_##NAME(TPE, HAS_NIL, RIGHT_CI_NEXT);\
-	MOSadvance_##NAME##_##TPE(task);\
+	join_inner_loop_##METHOD(TPE, HAS_NIL, RIGHT_CI_NEXT);\
+	MOSadvance_##METHOD##_##TPE(task);\
 }
 
 #define IF_EQUAL_APPEND_RESULT(HAS_NIL, TPE)\

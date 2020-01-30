@@ -1,12 +1,12 @@
 
-// TODO: NAME and NAME_TAG can be combined.
-#define estimate(NAME, TPE, NAME_TAG)\
+// TODO: METHOD and METHOD_TAG can be combined.
+#define estimate(METHOD, TPE, METHOD_TAG)\
 {\
-	str msg = MOSestimate_##NAME##_##TPE(task, &estimations[NAME_TAG], previous);\
+	str msg = MOSestimate_##METHOD##_##TPE(task, &estimations[METHOD_TAG], previous);\
 	if (msg != MAL_SUCCEED) return msg;\
 }
 
-#define postEstimate(NAME, TPE, DUMMY_ARGUMENT) if (current->is_applicable) { MOSpostEstimate_##NAME##_##TPE(task); }
+#define postEstimate(METHOD, TPE, DUMMY_ARGUMENT) if (current->is_applicable) { MOSpostEstimate_##METHOD##_##TPE(task); }
 
 static str CONCAT2(MOSestimate_inner_, TPE)(MOStask* task, MosaicEstimation* current, const MosaicEstimation* previous) {
 
@@ -139,12 +139,12 @@ static str CONCAT2(MOSestimate_, TPE)(MOStask* task, BAT* estimates, size_t* com
 #undef postEstimate
 
 
-#define compress(NAME, TPE, DUMMY_ARGUMENT)\
+#define compress(METHOD, TPE, DUMMY_ARGUMENT)\
 {\
-	ALGODEBUG mnstr_printf(GDKstdout, "#MOScompress_" #NAME "\n");\
-	MOScompress_##NAME##_##TPE(task, estimate);\
+	ALGODEBUG mnstr_printf(GDKstdout, "#MOScompress_" #METHOD "\n");\
+	MOScompress_##METHOD##_##TPE(task, estimate);\
 	MOSupdateHeader(task);\
-	MOSadvance_##NAME##_##TPE(task);\
+	MOSadvance_##METHOD##_##TPE(task);\
 	MOSnewBlk(task);\
 }
 
@@ -189,11 +189,11 @@ CONCAT2(MOScompressInternal_, TPE)(MOStask* task, BAT* estimates) {
 
 #undef compress
 
-#define decompress(NAME, TPE, DUMMY_ARGUMENT)\
+#define decompress(METHOD, TPE, DUMMY_ARGUMENT)\
 {\
-	ALGODEBUG mnstr_printf(GDKstdout, "#MOSdecompress_" #NAME "\n");\
-	MOSdecompress_##NAME##_##TPE(task);\
-	MOSadvance_##NAME##_##TPE(task);\
+	ALGODEBUG mnstr_printf(GDKstdout, "#MOSdecompress_" #METHOD "\n");\
+	MOSdecompress_##METHOD##_##TPE(task);\
+	MOSadvance_##METHOD##_##TPE(task);\
 }
 
 static void CONCAT2(MOSdecompressInternal_, TPE)(MOStask* task)
@@ -231,16 +231,16 @@ static void CONCAT2(MOSdecompressInternal_, TPE)(MOStask* task)
 
 #undef decompress
 
-#define select(NAME, TPE, DUMMY_ARGUMENT)\
+#define select(METHOD, TPE, DUMMY_ARGUMENT)\
 {\
-    MOSselect_##NAME##_##TPE(\
+    MOSselect_##METHOD##_##TPE(\
         task,\
         *(TPE*) low,\
         *(TPE*) hgh,\
         *li,\
         *hi,\
         *anti);\
-	MOSadvance_##NAME##_##TPE(task);\
+	MOSadvance_##METHOD##_##TPE(task);\
 }
 
 static str CONCAT2(MOSselect_, TPE) (MOStask* task, const void* low, const void* hgh, const bit* li, const bit* hi, const bit* anti)
@@ -294,10 +294,10 @@ static str CONCAT2(MOSselect_, TPE) (MOStask* task, const void* low, const void*
 
 #undef select
 
-#define projection(NAME, TPE, DUMMY_ARGUMENT) \
+#define projection(METHOD, TPE, DUMMY_ARGUMENT) \
 {\
-	MOSprojection_##NAME##_##TPE(task);\
-	MOSadvance_##NAME##_##TPE(task);\
+	MOSprojection_##METHOD##_##TPE(task);\
+	MOSadvance_##METHOD##_##TPE(task);\
 }
 
 static str CONCAT2(MOSprojection_, TPE)(MOStask* task)

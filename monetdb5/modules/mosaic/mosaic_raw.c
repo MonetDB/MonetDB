@@ -64,31 +64,31 @@ MOSlayout_raw(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput,
 		return;
 }
 
-#define NAME raw
-#define METHOD_SPECIFIC_INCLUDE MAKE_TEMPLATE_INCLUDE_FILE(NAME)
+#define METHOD raw
+#define METHOD_TEMPLATES_INCLUDE MAKE_TEMPLATES_INCLUDE_FILE(METHOD)
 
 #define COMPRESSION_DEFINITION
 #define TPE bte
-#include METHOD_SPECIFIC_INCLUDE
+#include METHOD_TEMPLATES_INCLUDE
 #undef TPE
 #define TPE sht
-#include METHOD_SPECIFIC_INCLUDE
+#include METHOD_TEMPLATES_INCLUDE
 #undef TPE
 #define TPE int
-#include METHOD_SPECIFIC_INCLUDE
+#include METHOD_TEMPLATES_INCLUDE
 #undef TPE
 #define TPE lng
-#include METHOD_SPECIFIC_INCLUDE
+#include METHOD_TEMPLATES_INCLUDE
 #undef TPE
 #define TPE flt
-#include METHOD_SPECIFIC_INCLUDE
+#include METHOD_TEMPLATES_INCLUDE
 #undef TPE
 #define TPE dbl
-#include METHOD_SPECIFIC_INCLUDE
+#include METHOD_TEMPLATES_INCLUDE
 #undef TPE
 #ifdef HAVE_HGE
 #define TPE hge
-#include METHOD_SPECIFIC_INCLUDE
+#include METHOD_TEMPLATES_INCLUDE
 #undef TPE
 #endif
 #undef COMPRESSION_DEFINITION
@@ -147,5 +147,5 @@ MOSjoin_COUI_DEF(raw, dbl)
 MOSjoin_COUI_DEF(raw, hge)
 #endif
 
-#undef METHOD_SPECIFIC_INCLUDE
-#undef NAME
+#undef METHOD_TEMPLATES_INCLUDE
+#undef METHOD

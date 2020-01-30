@@ -25,119 +25,119 @@
 #define _STRINGIFY(ARG)		#ARG
 #define STRINGIFY(ARG)		_STRINGIFY(ARG)
 
-#define MAKE_TEMPLATE_INCLUDE_FILE(NAME) STRINGIFY(CONCAT3(mosaic_, NAME, _templates.h))
+#define MAKE_TEMPLATES_INCLUDE_FILE(METHOD) STRINGIFY(CONCAT3(mosaic_, METHOD, _templates.h))
 
 #define IS_NIL(TPE, VAL) CONCAT3(is_, TPE, _nil)(VAL)
 #define ARE_EQUAL(v, w, HAS_NIL, TPE) ((v == w || (HAS_NIL && IS_NIL(TPE, v) && IS_NIL(TPE, w)) ) )
 
-#define MOSBlockHeaderTpe(NAME, TPE) CONCAT4(MOSBlockHeader_, NAME, _, TPE)
-#define ALIGNMENT_HELPER_TPE(NAME, TPE) struct CONCAT4(ALIGNMENT_HELPER_MOSBlockHeader_, NAME, _, TPE)
+#define MOSBlockHeaderTpe(METHOD, TPE) CONCAT4(MOSBlockHeader_, METHOD, _, TPE)
+#define ALIGNMENT_HELPER_TPE(METHOD, TPE) struct CONCAT4(ALIGNMENT_HELPER_MOSBlockHeader_, METHOD, _, TPE)
 
-#define ALIGNMENT_HELPER__DEF(NAME, TPE) \
-ALIGNMENT_HELPER_TPE(NAME, TPE)\
+#define ALIGNMENT_HELPER__DEF(METHOD, TPE) \
+ALIGNMENT_HELPER_TPE(METHOD, TPE)\
 {\
 	char a;\
-	MOSBlockHeaderTpe(NAME, TPE) b;\
+	MOSBlockHeaderTpe(METHOD, TPE) b;\
 };
 
-#define MOSadvance_SIGNATURE(NAME, TPE) void CONCAT4(MOSadvance_, NAME, _, TPE)(MOStask* task)
-#define MOSprepareDictionaryContext_ID(NAME) MOSprepareDictionaryContext_##NAME
-#define MOSprepareDictionaryContext_SIGNATURE(NAME) str MOSprepareDictionaryContext_ID(NAME)(MOStask* task)
-#define MOSestimate_SIGNATURE(NAME, TPE) str CONCAT4(MOSestimate_, NAME, _, TPE)(MOStask* task, MosaicEstimation* current, const MosaicEstimation* previous)
-#define MOSpostEstimate_SIGNATURE(NAME, TPE) void CONCAT4(MOSpostEstimate_, NAME, _, TPE)(MOStask* task)
-#define MOSfinalizeDictionary_ID(NAME, TPE) MOSfinalizeDictionary_##NAME##_##TPE
-#define MOSfinalizeDictionary_SIGNATURE(NAME, TPE) str MOSfinalizeDictionary_ID(NAME, TPE)(MOStask* task)
-#define MOScompress_SIGNATURE(NAME, TPE) void CONCAT4(MOScompress_, NAME, _, TPE)(MOStask* task, MosaicBlkRec* estimate)
-#define MOSdecompress_SIGNATURE(NAME, TPE) void CONCAT4(MOSdecompress_, NAME, _, TPE)(MOStask* task)
-#define MOSBlockHeader_DEF(NAME, TPE) MosaicBlkHeader_DEF_##NAME(TPE)
+#define MOSadvance_SIGNATURE(METHOD, TPE) void CONCAT4(MOSadvance_, METHOD, _, TPE)(MOStask* task)
+#define MOSprepareDictionaryContext_ID(METHOD) MOSprepareDictionaryContext_##METHOD
+#define MOSprepareDictionaryContext_SIGNATURE(METHOD) str MOSprepareDictionaryContext_ID(METHOD)(MOStask* task)
+#define MOSestimate_SIGNATURE(METHOD, TPE) str CONCAT4(MOSestimate_, METHOD, _, TPE)(MOStask* task, MosaicEstimation* current, const MosaicEstimation* previous)
+#define MOSpostEstimate_SIGNATURE(METHOD, TPE) void CONCAT4(MOSpostEstimate_, METHOD, _, TPE)(MOStask* task)
+#define MOSfinalizeDictionary_ID(METHOD, TPE) MOSfinalizeDictionary_##METHOD##_##TPE
+#define MOSfinalizeDictionary_SIGNATURE(METHOD, TPE) str MOSfinalizeDictionary_ID(METHOD, TPE)(MOStask* task)
+#define MOScompress_SIGNATURE(METHOD, TPE) void CONCAT4(MOScompress_, METHOD, _, TPE)(MOStask* task, MosaicBlkRec* estimate)
+#define MOSdecompress_SIGNATURE(METHOD, TPE) void CONCAT4(MOSdecompress_, METHOD, _, TPE)(MOStask* task)
+#define MOSBlockHeader_DEF(METHOD, TPE) MosaicBlkHeader_DEF_##METHOD(TPE)
 
-#define MOSscanloop_ID(NAME, TPE, CAND_ITER, TEST) CONCAT2(CONCAT4(scan_loop_, NAME, _, TPE), CONCAT4(_, CAND_ITER, _, TEST))
+#define MOSscanloop_ID(METHOD, TPE, CAND_ITER, TEST) CONCAT2(CONCAT4(scan_loop_, METHOD, _, TPE), CONCAT4(_, CAND_ITER, _, TEST))
 #define MOSscanloop_ARGS(TPE) (const bool has_nil, const bool anti, MOStask* task, BUN first, BUN last, TPE tl, TPE th, bool li, bool hi)
-#define MOSscanloop_SIGNATURE(NAME, TPE, CAND_ITER, TEST) static inline void MOSscanloop_ID(NAME, TPE, CAND_ITER, TEST) MOSscanloop_ARGS(TPE)
+#define MOSscanloop_SIGNATURE(METHOD, TPE, CAND_ITER, TEST) static inline void MOSscanloop_ID(METHOD, TPE, CAND_ITER, TEST) MOSscanloop_ARGS(TPE)
 
-#define MOSselect_FUNC(NAME, TPE) CONCAT4(MOSselect_, NAME, _, TPE)
-#define MOSselect_SIGNATURE(NAME, TPE) str MOSselect_FUNC(NAME, TPE)(MOStask* task, TPE tl, TPE th, bool li, bool hi, bool anti)
+#define MOSselect_FUNC(METHOD, TPE) CONCAT4(MOSselect_, METHOD, _, TPE)
+#define MOSselect_SIGNATURE(METHOD, TPE) str MOSselect_FUNC(METHOD, TPE)(MOStask* task, TPE tl, TPE th, bool li, bool hi, bool anti)
 
-#define MOSprojectionloop_ID(NAME, TPE, CAND_ITER) CONCAT6(projection_loop_, NAME, _, TPE, _, CAND_ITER)
+#define MOSprojectionloop_ID(METHOD, TPE, CAND_ITER) CONCAT6(projection_loop_, METHOD, _, TPE, _, CAND_ITER)
 #define MOSprojectionloop_ARGS (MOStask* task, BUN first, BUN last)
-#define MOSprojectionloop_SIGNATURE(NAME, TPE, CAND_ITER) static inline void MOSprojectionloop_ID(NAME, TPE, CAND_ITER) MOSprojectionloop_ARGS
+#define MOSprojectionloop_SIGNATURE(METHOD, TPE, CAND_ITER) static inline void MOSprojectionloop_ID(METHOD, TPE, CAND_ITER) MOSprojectionloop_ARGS
 
-#define MOSprojection_FUNC(NAME, TPE) CONCAT4(MOSprojection_, NAME, _, TPE)
-#define MOSprojection_SIGNATURE(NAME, TPE)  str MOSprojection_FUNC(NAME, TPE) (MOStask* task)
+#define MOSprojection_FUNC(METHOD, TPE) CONCAT4(MOSprojection_, METHOD, _, TPE)
+#define MOSprojection_SIGNATURE(METHOD, TPE)  str MOSprojection_FUNC(METHOD, TPE) (MOStask* task)
 
-#define ALGEBRA_INTERFACE(NAME, TPE) \
-MOSadvance_SIGNATURE(NAME, TPE);\
-MOSestimate_SIGNATURE(NAME, TPE);\
-MOSpostEstimate_SIGNATURE(NAME, TPE);\
-MOScompress_SIGNATURE(NAME, TPE);\
-MOSdecompress_SIGNATURE(NAME, TPE);\
-MOSselect_SIGNATURE(NAME, TPE);\
-MOSprojection_SIGNATURE(NAME, TPE);\
-MOSjoin_COUI_SIGNATURE(NAME, TPE);\
-MOSBlockHeader_DEF(NAME, TPE);\
-ALIGNMENT_HELPER__DEF(NAME, TPE);
+#define ALGEBRA_INTERFACE(METHOD, TPE) \
+MOSadvance_SIGNATURE(METHOD, TPE);\
+MOSestimate_SIGNATURE(METHOD, TPE);\
+MOSpostEstimate_SIGNATURE(METHOD, TPE);\
+MOScompress_SIGNATURE(METHOD, TPE);\
+MOSdecompress_SIGNATURE(METHOD, TPE);\
+MOSselect_SIGNATURE(METHOD, TPE);\
+MOSprojection_SIGNATURE(METHOD, TPE);\
+MOSjoin_COUI_SIGNATURE(METHOD, TPE);\
+MOSBlockHeader_DEF(METHOD, TPE);\
+ALIGNMENT_HELPER__DEF(METHOD, TPE);
 
 #ifdef HAVE_HGE
-#define ALGEBRA_INTERFACES_INTEGERS_ONLY(NAME) \
-ALGEBRA_INTERFACE(NAME, bte);\
-ALGEBRA_INTERFACE(NAME, sht);\
-ALGEBRA_INTERFACE(NAME, int);\
-ALGEBRA_INTERFACE(NAME, lng);\
-ALGEBRA_INTERFACE(NAME, hge);
+#define ALGEBRA_INTERFACES_INTEGERS_ONLY(METHOD) \
+ALGEBRA_INTERFACE(METHOD, bte);\
+ALGEBRA_INTERFACE(METHOD, sht);\
+ALGEBRA_INTERFACE(METHOD, int);\
+ALGEBRA_INTERFACE(METHOD, lng);\
+ALGEBRA_INTERFACE(METHOD, hge);
 #else
-#define ALGEBRA_INTERFACES_INTEGERS_ONLY(NAME) \
-ALGEBRA_INTERFACE(NAME, bte);\
-ALGEBRA_INTERFACE(NAME, sht);\
-ALGEBRA_INTERFACE(NAME, int);\
-ALGEBRA_INTERFACE(NAME, lng);
+#define ALGEBRA_INTERFACES_INTEGERS_ONLY(METHOD) \
+ALGEBRA_INTERFACE(METHOD, bte);\
+ALGEBRA_INTERFACE(METHOD, sht);\
+ALGEBRA_INTERFACE(METHOD, int);\
+ALGEBRA_INTERFACE(METHOD, lng);
 #endif
 
-#define ALGEBRA_INTERFACES_ALL_TYPES(NAME) \
-ALGEBRA_INTERFACES_INTEGERS_ONLY(NAME)\
-ALGEBRA_INTERFACE(NAME, flt);\
-ALGEBRA_INTERFACE(NAME, dbl);
+#define ALGEBRA_INTERFACES_ALL_TYPES(METHOD) \
+ALGEBRA_INTERFACES_INTEGERS_ONLY(METHOD)\
+ALGEBRA_INTERFACE(METHOD, flt);\
+ALGEBRA_INTERFACE(METHOD, dbl);
 
 #ifdef HAVE_HGE
-#define ALGEBRA_INTERFACES_ALL_TYPES_WITH_DICTIONARY(NAME) \
-ALGEBRA_INTERFACES_ALL_TYPES(NAME);\
-MOSprepareDictionaryContext_SIGNATURE(NAME);\
-MOSfinalizeDictionary_SIGNATURE(NAME, bte);\
-MOSfinalizeDictionary_SIGNATURE(NAME, sht);\
-MOSfinalizeDictionary_SIGNATURE(NAME, int);\
-MOSfinalizeDictionary_SIGNATURE(NAME, lng);\
-MOSfinalizeDictionary_SIGNATURE(NAME, hge);\
-MOSfinalizeDictionary_SIGNATURE(NAME, flt);\
-MOSfinalizeDictionary_SIGNATURE(NAME, dbl);
+#define ALGEBRA_INTERFACES_ALL_TYPES_WITH_DICTIONARY(METHOD) \
+ALGEBRA_INTERFACES_ALL_TYPES(METHOD);\
+MOSprepareDictionaryContext_SIGNATURE(METHOD);\
+MOSfinalizeDictionary_SIGNATURE(METHOD, bte);\
+MOSfinalizeDictionary_SIGNATURE(METHOD, sht);\
+MOSfinalizeDictionary_SIGNATURE(METHOD, int);\
+MOSfinalizeDictionary_SIGNATURE(METHOD, lng);\
+MOSfinalizeDictionary_SIGNATURE(METHOD, hge);\
+MOSfinalizeDictionary_SIGNATURE(METHOD, flt);\
+MOSfinalizeDictionary_SIGNATURE(METHOD, dbl);
 #else
-#define ALGEBRA_INTERFACES_ALL_TYPES_WITH_DICTIONARY(NAME) \
-ALGEBRA_INTERFACES_ALL_TYPES(NAME);\
-MOSprepareDictionaryContext_SIGNATURE(NAME);\
-MOSfinalizeDictionary_SIGNATURE(NAME, bte);\
-MOSfinalizeDictionary_SIGNATURE(NAME, sht);\
-MOSfinalizeDictionary_SIGNATURE(NAME, int);\
-MOSfinalizeDictionary_SIGNATURE(NAME, lng);\
-MOSfinalizeDictionary_SIGNATURE(NAME, flt);\
-MOSfinalizeDictionary_SIGNATURE(NAME, dbl);
+#define ALGEBRA_INTERFACES_ALL_TYPES_WITH_DICTIONARY(METHOD) \
+ALGEBRA_INTERFACES_ALL_TYPES(METHOD);\
+MOSprepareDictionaryContext_SIGNATURE(METHOD);\
+MOSfinalizeDictionary_SIGNATURE(METHOD, bte);\
+MOSfinalizeDictionary_SIGNATURE(METHOD, sht);\
+MOSfinalizeDictionary_SIGNATURE(METHOD, int);\
+MOSfinalizeDictionary_SIGNATURE(METHOD, lng);\
+MOSfinalizeDictionary_SIGNATURE(METHOD, flt);\
+MOSfinalizeDictionary_SIGNATURE(METHOD, dbl);
 #endif
 
 // This is just an ugly work around for Microsoft Visual Studio to get the expansion of __VA_ARGS__ right.
 #define EXPAND(X) X
 
-#define DO_OPERATION_ON_INTEGERS_ONLY_bte(OPERATION, NAME, ...) EXPAND(OPERATION(NAME, bte, __VA_ARGS__))
-#define DO_OPERATION_ON_INTEGERS_ONLY_sht(OPERATION, NAME, ...) EXPAND(OPERATION(NAME, sht, __VA_ARGS__))
-#define DO_OPERATION_ON_INTEGERS_ONLY_int(OPERATION, NAME, ...) EXPAND(OPERATION(NAME, int, __VA_ARGS__))
-#define DO_OPERATION_ON_INTEGERS_ONLY_lng(OPERATION, NAME, ...) EXPAND(OPERATION(NAME, lng, __VA_ARGS__))
-#define DO_OPERATION_ON_INTEGERS_ONLY_flt(OPERATION, NAME, ...) assert(0)
-#define DO_OPERATION_ON_INTEGERS_ONLY_dbl(OPERATION, NAME, ...) assert(0)
+#define DO_OPERATION_ON_INTEGERS_ONLY_bte(OPERATION, METHOD, ...) EXPAND(OPERATION(METHOD, bte, __VA_ARGS__))
+#define DO_OPERATION_ON_INTEGERS_ONLY_sht(OPERATION, METHOD, ...) EXPAND(OPERATION(METHOD, sht, __VA_ARGS__))
+#define DO_OPERATION_ON_INTEGERS_ONLY_int(OPERATION, METHOD, ...) EXPAND(OPERATION(METHOD, int, __VA_ARGS__))
+#define DO_OPERATION_ON_INTEGERS_ONLY_lng(OPERATION, METHOD, ...) EXPAND(OPERATION(METHOD, lng, __VA_ARGS__))
+#define DO_OPERATION_ON_INTEGERS_ONLY_flt(OPERATION, METHOD, ...) assert(0)
+#define DO_OPERATION_ON_INTEGERS_ONLY_dbl(OPERATION, METHOD, ...) assert(0)
 #ifdef HAVE_HGE
-#define DO_OPERATION_ON_INTEGERS_ONLY_hge(OPERATION, NAME, ...) EXPAND(OPERATION(NAME, hge, __VA_ARGS__))
+#define DO_OPERATION_ON_INTEGERS_ONLY_hge(OPERATION, METHOD, ...) EXPAND(OPERATION(METHOD, hge, __VA_ARGS__))
 #endif
 
-#define DO_OPERATION_ON_INTEGERS_ONLY(OPERATION, NAME, TPE, ...)    DO_OPERATION_ON_INTEGERS_ONLY_##TPE(OPERATION, NAME, __VA_ARGS__)
-#define DO_OPERATION_ON_ALL_TYPES(OPERATION, NAME, TPE, ...)        EXPAND(OPERATION(NAME, TPE, __VA_ARGS__))
+#define DO_OPERATION_ON_INTEGERS_ONLY(OPERATION, METHOD, TPE, ...)    DO_OPERATION_ON_INTEGERS_ONLY_##TPE(OPERATION, METHOD, __VA_ARGS__)
+#define DO_OPERATION_ON_ALL_TYPES(OPERATION, METHOD, TPE, ...)        EXPAND(OPERATION(METHOD, TPE, __VA_ARGS__))
 
 /*DUMMY_PARAM is just an ugly workaround for the fact that a variadic macro must have at least one variadic parameter*/
-#define DO_OPERATION_IF_ALLOWED(OPERATION, NAME, TPE)               DO_OPERATION_ON_##NAME(OPERATION, TPE, 0 /*DUMMY_PARAM*/)
-#define DO_OPERATION_IF_ALLOWED_VARIADIC(OPERATION, NAME, TPE, ...) DO_OPERATION_ON_##NAME(OPERATION, TPE, __VA_ARGS__)
+#define DO_OPERATION_IF_ALLOWED(OPERATION, METHOD, TPE)               DO_OPERATION_ON_##METHOD(OPERATION, TPE, 0 /*DUMMY_PARAM*/)
+#define DO_OPERATION_IF_ALLOWED_VARIADIC(OPERATION, METHOD, TPE, ...) DO_OPERATION_ON_##METHOD(OPERATION, TPE, __VA_ARGS__)
 
 #endif /* _MOSAIC_UTILITY_ */

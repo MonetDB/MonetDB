@@ -87,34 +87,34 @@ MOSlayout_dict(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput
 		return;
 }
 
-#define NAME dict
-#define METHOD_SPECIFIC_INCLUDE "mosaic_dictionary_templates.h"
+#define METHOD dict
+#define METHOD_TEMPLATES_INCLUDE "mosaic_dictionary_templates.h"
 #define PREPARATION_DEFINITION
-#include METHOD_SPECIFIC_INCLUDE
+#include METHOD_TEMPLATES_INCLUDE
 #undef PREPARATION_DEFINITION
 
 #define COMPRESSION_DEFINITION
 #define TPE bte
-#include METHOD_SPECIFIC_INCLUDE
+#include METHOD_TEMPLATES_INCLUDE
 #undef TPE
 #define TPE sht
-#include METHOD_SPECIFIC_INCLUDE
+#include METHOD_TEMPLATES_INCLUDE
 #undef TPE
 #define TPE int
-#include METHOD_SPECIFIC_INCLUDE
+#include METHOD_TEMPLATES_INCLUDE
 #undef TPE
 #define TPE lng
-#include METHOD_SPECIFIC_INCLUDE
+#include METHOD_TEMPLATES_INCLUDE
 #undef TPE
 #define TPE flt
-#include METHOD_SPECIFIC_INCLUDE
+#include METHOD_TEMPLATES_INCLUDE
 #undef TPE
 #define TPE dbl
-#include METHOD_SPECIFIC_INCLUDE
+#include METHOD_TEMPLATES_INCLUDE
 #undef TPE
 #ifdef HAVE_HGE
 #define TPE hge
-#include METHOD_SPECIFIC_INCLUDE
+#include METHOD_TEMPLATES_INCLUDE
 #undef TPE
 #endif
 #undef COMPRESSION_DEFINITION
@@ -163,5 +163,5 @@ MOSjoin_COUI_DEF(dict, dbl)
 MOSjoin_COUI_DEF(dict, hge)
 #endif
 
-#undef METHOD_SPECIFIC_INCLUDE
-#undef NAME
+#undef METHOD_TEMPLATES_INCLUDE
+#undef METHOD

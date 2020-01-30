@@ -61,25 +61,25 @@ MOSlayout_linear(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutp
 		return;
 }
 
-#define NAME linear
-#define METHOD_SPECIFIC_INCLUDE MAKE_TEMPLATE_INCLUDE_FILE(NAME)
+#define METHOD linear
+#define METHOD_TEMPLATES_INCLUDE MAKE_TEMPLATES_INCLUDE_FILE(METHOD)
 
 #define COMPRESSION_DEFINITION
 #define TPE bte
-#include METHOD_SPECIFIC_INCLUDE
+#include METHOD_TEMPLATES_INCLUDE
 #undef TPE
 #define TPE sht
-#include METHOD_SPECIFIC_INCLUDE
+#include METHOD_TEMPLATES_INCLUDE
 #undef TPE
 #define TPE int
-#include METHOD_SPECIFIC_INCLUDE
+#include METHOD_TEMPLATES_INCLUDE
 #undef TPE
 #define TPE lng
-#include METHOD_SPECIFIC_INCLUDE
+#include METHOD_TEMPLATES_INCLUDE
 #undef TPE
 #ifdef HAVE_HGE
 #define TPE hge
-#include METHOD_SPECIFIC_INCLUDE
+#include METHOD_TEMPLATES_INCLUDE
 #undef TPE
 #endif
 #undef COMPRESSION_DEFINITION
@@ -129,5 +129,5 @@ MOSjoin_COUI_DEF(linear, lng)
 MOSjoin_COUI_DEF(linear, hge)
 #endif
 
-#undef METHOD_SPECIFIC_INCLUDE
-#undef NAME
+#undef METHOD_TEMPLATES_INCLUDE
+#undef METHOD
