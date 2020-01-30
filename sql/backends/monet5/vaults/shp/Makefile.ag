@@ -20,7 +20,6 @@ INCLUDES = .. \
 	../../../../../common/utils \
 	../../../../../gdk \
 	../../../../../geom/lib \
-	../../../../../geom/monetdb5 \
 	$(GDAL_CFLAGS)
 
 lib__shp = {
