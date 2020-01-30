@@ -1,6 +1,9 @@
 # ChangeLog file for devel
 # This file is updated with Maddlog
 
+* Thu Jan 30 2020 Sjoerd Mullender <sjoerd@acm.org>
+- Removed support for bam and sam files.
+
 * Fri Dec  6 2019 Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com>
 - Added mserver5 option (--set raw_strings=true|false) and monetdb
   database property (raw_strings=yes|no) to control interpretation

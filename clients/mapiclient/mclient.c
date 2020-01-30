@@ -94,7 +94,6 @@ enum formatters {
 	TESTformatter,		// for testing, escape characters
 	TRASHformatter,		// remove the result set
 	ROWCOUNTformatter,	// only print the number of rows returned
-	SAMformatter,		// render a SAM result set
 	EXPANDEDformatter	// render as multi-row single record
 };
 static enum formatters formatter = NOformatter;
@@ -1326,83 +1325,6 @@ RAWrenderer(MapiHdl hdl)
 }
 
 static void
-SAMrenderer(MapiHdl hdl)
-{
-	/* Variables keeping track of which result set fields map to
-	 * qname, flag etc. (-1 means that it does not occur in result
-	 * set) */
-	int field_qname = -1;
-	int field_flag = -1;
-	int field_rname = -1;
-	int field_pos = -1;
-	int field_mapq = -1;
-	int field_cigar = -1;
-	int field_rnext = -1;
-	int field_pnext = -1;
-	int field_tlen = -1;
-	int field_seq = -1;
-	int field_qual = -1;
-
-	int field_count = mapi_get_field_count(hdl);
-	int t_fields;
-
-	int i;
-
-	/* First, initialize field variables properly */
-	for (i = 0; i < field_count; i++) {
-		char *field_name = mapi_get_name(hdl, i);
-		if (strcmp(field_name, "qname") == 0)
-			field_qname = i;
-		else if (strcmp(field_name, "flag" ) == 0)
-			field_flag  = i;
-		else if (strcmp(field_name, "rname") == 0)
-			field_rname = i;
-		else if (strcmp(field_name, "pos"  ) == 0)
-			field_pos   = i;
-		else if (strcmp(field_name, "mapq" ) == 0)
-			field_mapq  = i;
-		else if (strcmp(field_name, "cigar") == 0)
-			field_cigar = i;
-		else if (strcmp(field_name, "rnext") == 0)
-			field_rnext = i;
-		else if (strcmp(field_name, "pnext") == 0)
-			field_pnext = i;
-		else if (strcmp(field_name, "tlen" ) == 0)
-			field_tlen  = i;
-		else if (strcmp(field_name, "seq"  ) == 0)
-			field_seq   = i;
-		else if (strcmp(field_name, "qual" ) == 0)
-			field_qual  = i;
-		else
-			mnstr_printf(stderr_stream, "Unexpected column name in result set: '%s'. Data in this column is not used.\n", field_name);
-	}
-
-	/* Write all alignments */
-	while (!mnstr_errnr(toConsole) && (t_fields = fetch_row(hdl)) != 0) {
-		if (t_fields != field_count) {
-			mnstr_printf(stderr_stream,
-				     "invalid tuple received from server, "
-				     "got %d columns, expected %d, ignoring\n", t_fields, field_count);
-			continue;
-		}
-
-		/* Write fields to SAM line */
-		mnstr_printf(toConsole, "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
-			     (field_qname == -1 ? "*"   : mapi_fetch_field(hdl, field_qname)),
-			     (field_flag  == -1 ? "0"   : mapi_fetch_field(hdl, field_flag )),
-			     (field_rname == -1 ? "*"   : mapi_fetch_field(hdl, field_rname)),
-			     (field_pos   == -1 ? "0"   : mapi_fetch_field(hdl, field_pos  )),
-			     (field_mapq  == -1 ? "255" : mapi_fetch_field(hdl, field_mapq )),
-			     (field_cigar == -1 ? "*"   : mapi_fetch_field(hdl, field_cigar)),
-			     (field_rnext == -1 ? "*"   : mapi_fetch_field(hdl, field_rnext)),
-			     (field_pnext == -1 ? "0"   : mapi_fetch_field(hdl, field_pnext)),
-			     (field_tlen  == -1 ? "0"   : mapi_fetch_field(hdl, field_tlen )),
-			     (field_seq   == -1 ? "*"   : mapi_fetch_field(hdl, field_seq  )),
-			     (field_qual  == -1 ? "*"   : mapi_fetch_field(hdl, field_qual)));
-	}
-}
-
-static void
 SQLheader(MapiHdl hdl, int *len, int fields, char more)
 {
 	SQLseparator(len, fields, '-');
@@ -1772,8 +1694,6 @@ setFormatter(const char *s)
 		formatter = TRASHformatter;
 	} else if (strcmp(s, "rowcount") == 0) {
 		formatter = ROWCOUNTformatter;
-	} else if (strcmp(s, "sam") == 0) {
-		formatter = SAMformatter;
 	} else if (strcmp(s, "x") == 0 || strcmp(s, "expanded") == 0) {
 		formatter = EXPANDEDformatter;
 	} else {
@@ -2007,9 +1927,6 @@ format_result(Mapi mid, MapiHdl hdl, bool singleinstr)
 				mnstr_printf(toConsole,
 						"%" PRId64 " tuple%s\n", rows, rows != 1 ? "s" : "");
 				break;
-			case SAMformatter:
-				SAMrenderer(hdl);
-				break;
 			case EXPANDEDformatter:
 				EXPANDEDrenderer(hdl);
 				break;
@@ -2231,7 +2148,7 @@ showCommands(void)
 	}
 	mnstr_printf(toConsole, "\\e       - echo the query in sql formatting mode\n");
 	mnstr_printf(toConsole, "\\t       - set the timer {none,clock,performance} (none is default)\n");
-	mnstr_printf(toConsole, "\\f       - format using renderer {csv,tab,raw,sql,xml,trash,rowcount,expanded,sam}\n");
+	mnstr_printf(toConsole, "\\f       - format using renderer {csv,tab,raw,sql,xml,trash,rowcount,expanded}\n");
 	mnstr_printf(toConsole, "\\w#      - set maximal page width (-1=unlimited, 0=terminal width, >0=limit to num)\n");
 	mnstr_printf(toConsole, "\\r#      - set maximum rows per page (-1=raw)\n");
 	mnstr_printf(toConsole, "\\L file  - save client-server interaction\n");
@@ -2900,9 +2817,6 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, int save_history
 							break;
 						case EXPANDEDformatter:
 							mnstr_printf(toConsole, "expanded\n");
-							break;
-						case SAMformatter:
-							mnstr_printf(toConsole, "sam\n");
 							break;
 						default:
 							mnstr_printf(toConsole, "none\n");

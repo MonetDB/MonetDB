@@ -6346,6 +6346,29 @@ set schema "sys";
 ALTER TABLE sys.keywords SET READ ONLY;
 set schema "sys";
 
+Running database upgrade commands:
+set schema sys;
+update sys.schemas set system = false where name = 'bam';
+update sys._tables set system = false where schema_id in (select id from sys.schemas where name = 'bam');
+drop procedure bam.bam_loader_repos;
+drop procedure bam.bam_loader_files;
+drop procedure bam.bam_loader_file;
+drop procedure bam.bam_drop_file;
+drop function bam.bam_flag;
+drop function bam.reverse_seq;
+drop function bam.reverse_qual;
+drop function bam.seq_length;
+drop function bam.seq_char;
+drop procedure bam.sam_export;
+drop procedure bam.bam_export;
+drop table bam.sq;
+drop table bam.rg;
+drop table bam.pg;
+drop table bam.export;
+drop table bam.files;
+drop schema bam;
+set schema "sys";
+
 # MonetDB/SQL module loaded
 
 # 15:17:55 >  

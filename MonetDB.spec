@@ -66,16 +66,6 @@
 %endif
 %endif
 
-%if %{?rhel:0}%{!?rhel:1}
-# By default create the MonetDB-bam-MonetDB5 package.
-# Note that the samtools-devel RPM is not available on RedHat
-# Enterprise Linux and derivatives, even with EPEL availabe.
-# (Actually, at the moment of writing, samtools-devel is available in
-# EPEL for RHEL 6, but not for RHEL 7.  We don't make the distinction
-# here and just not build the MonetDB-bam-MonetDB5 RPM.)
-%bcond_without samtools
-%endif
-
 # By default use PCRE for the implementation of the SQL LIKE and ILIKE
 # operators.  Otherwise the POSIX regex functions are used.
 %bcond_without pcre
@@ -151,9 +141,6 @@ BuildRequires: readline-devel
 BuildRequires: unixODBC-devel
 # BuildRequires: uriparser-devel
 BuildRequires: pkgconfig(zlib)
-%if %{with samtools}
-BuildRequires: samtools-devel
-%endif
 %if %{with py3integration}
 BuildRequires: python3-devel >= 3.5
 BuildRequires: python3-numpy
@@ -453,29 +440,6 @@ This package contains support for reading and writing LiDAR data.
 %{_libdir}/monetdb5/lib_lidar.so
 %endif
 
-%if %{with samtools}
-%package bam-MonetDB5
-Summary: MonetDB5 SQL interface to the bam library
-Group: Applications/Databases
-Requires: MonetDB5-server%{?_isa} = %{version}-%{release}
-
-%description bam-MonetDB5
-MonetDB is a database management system that is developed from a
-main-memory perspective with use of a fully decomposed storage model,
-automatic index management, extensibility of data types and search
-accelerators.  It also has an SQL front end.
-
-This package contains the interface to load and query BAM (binary
-version of Sequence Alignment/Map) data.
-
-%files bam-MonetDB5
-%defattr(-,root,root)
-%{_libdir}/monetdb5/autoload/*_bam.mal
-%{_libdir}/monetdb5/createdb/*_bam.sql
-%{_libdir}/monetdb5/bam.mal
-%{_libdir}/monetdb5/lib_bam.so
-%endif
-
 %if %{with rintegration}
 %package R
 Summary: Integration of MonetDB and R, allowing use of R from within SQL
@@ -628,10 +592,6 @@ exit 0
 %endif
 %exclude %{_libdir}/monetdb5/autoload/??_sql*.mal
 %{_libdir}/monetdb5/autoload/*.mal
-%if %{with samtools}
-%exclude %{_libdir}/monetdb5/bam.mal
-%exclude %{_libdir}/monetdb5/autoload/*_bam.mal
-%endif
 %{_libdir}/monetdb5/lib_capi.so
 %{_libdir}/monetdb5/lib_generator.so
 %{_libdir}/monetdb5/lib_udf.so
@@ -734,9 +694,6 @@ use SQL with MonetDB, you will need to install this package.
 %endif
 %if %{with lidar}
 %exclude %{_libdir}/monetdb5/createdb/*_lidar.sql
-%endif
-%if %{with samtools}
-%exclude %{_libdir}/monetdb5/createdb/*_bam.sql
 %endif
 %{_libdir}/monetdb5/createdb/*.sql
 %{_libdir}/monetdb5/sql*.mal
@@ -942,7 +899,6 @@ export CFLAGS
 	--with-python3=yes \
 	--with-readline=yes \
 	--with-regex=%{?with_pcre:PCRE}%{!?with_pcre:POSIX} \
-	--with-samtools=%{?with_samtools:yes}%{!?with_samtools:no} \
 	--with-snappy=no \
 	--with-unixodbc=yes \
 	--with-uuid=yes \

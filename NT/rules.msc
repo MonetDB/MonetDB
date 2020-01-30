@@ -357,11 +357,6 @@ create_winconfig_conds_new_py:
 !ELSE
 	$(ECHO) HAVE_PROJ_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
-!IFDEF HAVE_SAMTOOLS
-	$(ECHO) HAVE_SAMTOOLS_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ELSE
-	$(ECHO) HAVE_SAMTOOLS_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ENDIF
 !IFDEF HAVE_SHP
 	$(ECHO) HAVE_SHP_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE

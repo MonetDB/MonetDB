@@ -396,7 +396,6 @@ CONDITIONALS = {
     'HAVE_ODBC'            : "@HAVE_ODBC_FALSE@",
     'HAVE_PCRE'            : "@HAVE_PCRE_FALSE@",
     'HAVE_PROJ'            : "@HAVE_PROJ_FALSE@",
-    'HAVE_SAMTOOLS'        : "@HAVE_SAMTOOLS_FALSE@",
     'HAVE_TESTING'         : "@HAVE_TESTING_FALSE@",
     'NATIVE_WIN32'         : "@NATIVE_WIN32_FALSE@",
     'NOT_WIN32'            : "@NOT_WIN32_FALSE@",

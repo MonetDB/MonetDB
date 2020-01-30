@@ -26,7 +26,6 @@ python3-numpy		# optional, needed for Python 3 integration
 R-core-devel		# optional, needed for R integration
 readline-devel		# optional, enable editing in mclient
 rpm-build		# optional, required to create RPMs (make rpm)
-samtools-devel		# optional: read BAM and SAM files
 selinux-policy-devel	# optional, required to create RPMs (make rpm)
 unixODBC-devel		# optional, needed for ODBC driver
 

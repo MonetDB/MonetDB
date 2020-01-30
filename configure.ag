@@ -1800,77 +1800,6 @@ AS_VAR_IF([have_proj], [no], [], [
 AM_CONDITIONAL([HAVE_PROJ], [test x"$have_proj" != xno])
 
 
-# samtools, only used by sql
-org_have_samtools="auto"
-have_samtools=$org_have_samtools
-AC_ARG_WITH([samtools],
-	[AS_HELP_STRING([--with-samtools=DIR],
-		[samtools (providing bam library) are installed in DIR])],
-	[have_samtools="$withval"])
-AS_VAR_IF([have_samtools], [no], [], [
-	AS_CASE([$have_samtools],
-	[auto|yes], [],
-	[
-		SAMTOOLS_CFLAGS="-I$have_samtools/include"
-		SAMTOOLS_LIBS="-L$have_samtools/lib -lbam"])
-
-	save_CPPFLAGS="$CPPFLAGS"
-	save_LDFLAGS="$LDFLAGS"
-	CPPFLAGS="$CPPFLAGS $SAMTOOLS_CFLAGS"
-	LDFLAGS="$LDFLAGS $SAMTOOLS_LIBS"
-
-	AC_CHECK_HEADER([samtools/bam.h],
-		[why_not_samtools=; AC_DEFINE([HAVE_SAMTOOLS_BAM_H], 1, [Define to 1 if you have the <samtools/bam.h> header file.]) ],
-		[why_not_samtools="bam.h header not found" ])
-	AS_VAR_IF([why_not_samtools], [],
-		[],
-		[AC_CHECK_HEADER([bam/bam.h],
-			[why_not_samtools=; AC_DEFINE([HAVE_BAM_BAM_H], 1, [Define to 1 if you have the <bam/bam.h> header file.]) ],
-			[why_not_samtools="Neither samtools/bam.h nor bam/bam.h header found" ])])
-
-	AS_VAR_IF([why_not_samtools], [],
-		[AC_CHECK_HEADER([samtools/sam.h],
-			[why_not_samtools=; AC_DEFINE([HAVE_SAMTOOLS_SAM_H], 1, [Define to 1 if you have the <samtools/sam.h> header file.]) ],
-			[why_not_samtools="samtools/sam.h header not found" ])])
-	AS_VAR_IF([why_not_samtools], [],
-		[],
-		[AC_CHECK_HEADER([bam/sam.h],
-			[why_not_samtools=; AC_DEFINE([HAVE_BAM_SAM_H], 1, [Define to 1 if you have the <bam/sam.h> header file.]) ],
-			[why_not_samtools="Neither samtools/sam.h nor bam/sam.h header found" ])])
-
-	AS_VAR_IF([why_not_samtools], [],
-		[AC_CHECK_HEADER([samtools/bgzf.h],
-			[why_not_samtools=; AC_DEFINE([HAVE_SAMTOOLS_BGZF_H], 1, [Define to 1 if you have the <samtools/bgzf.h> header file.]) ],
-			[why_not_samtools="samtools/bgzf.h header not found" ])])
-	AS_VAR_IF([why_not_samtools], [],
-		[],
-		[AC_CHECK_HEADER([bam/bgzf.h],
-			[why_not_samtools=; AC_DEFINE([HAVE_BAM_BGZF_H], 1, [Define to 1 if you have the <bam/bgzf.h> header file.]) ],
-			[why_not_samtools="Neither samtool/bgzf.h nor bam/bgzf.h header found" ])])
-
-	AS_VAR_IF([why_not_samtools], [],
-		[AC_CHECK_LIB([bam], [bam_header_read],
-			[AC_DEFINE([HAVE_SAMTOOLS], 1, [Define if you have the samtools version 0.1.x (providing the bam library)])],
-			[why_not_samtools="bam library not found" ],
-			[-lm -lpthread -lz])])
-
-	AS_VAR_IF([why_not_samtools], [],
-		[],
-		[AS_VAR_IF([have_samtools], [auto],
-			[],
-			[AC_MSG_ERROR([$why_not_samtools])])
-		 have_samtools=no
-		 why_not_samtools="($why_not_samtools)"])
-	LDFLAGS="$save_LDFLAGS"
-	CPPFLAGS="$save_CPPFLAGS"
-	AS_IF([test "x$have_samtools" = "xyes" -o "x$have_samtools" = "xauto"], [
-		SAMTOOLS_CFLAGS=
-		SAMTOOLS_LIBS="-lbam"
-		AC_CHECK_HEADERS([samtools/kstring.h bam/kstring.h])])])
-AC_SUBST([SAMTOOLS_CFLAGS], [$SAMTOOLS_CFLAGS])
-AC_SUBST([SAMTOOLS_LIBS], [$SAMTOOLS_LIBS])
-AM_CONDITIONAL([HAVE_SAMTOOLS], [test x"$have_samtools" != xno])
-
 # geos, only used in geom module
 org_have_geos=auto
 have_geos=$org_have_geos
@@ -2744,7 +2673,6 @@ for comp in \
 	'python3    ' \
 	'readline   ' \
 	'regex      ' \
-	'samtools   ' \
 	'shp        ' \
 	'snappy     ' \
 	'unixodbc   ' \
