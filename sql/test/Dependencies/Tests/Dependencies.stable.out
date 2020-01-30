@@ -86,7 +86,6 @@ Dependencies between database objects
 % name,	name,	%2 # name
 % varchar,	varchar,	char # type
 % 7,	8,	10 # length
-[ "monetdb",	"bam",	"DEP_SCHEMA"	]
 [ "monetdb",	"json",	"DEP_SCHEMA"	]
 [ "monetdb",	"logging",	"DEP_SCHEMA"	]
 [ "monetdb",	"profiler",	"DEP_SCHEMA"	]
@@ -124,10 +123,7 @@ Dependencies between database objects
 % .t,	.fk,	.%7 # table_name
 % name,	name,	%7 # name
 % varchar,	varchar,	char # type
-% 5,	15,	8 # length
-[ "files",	"pg_fkey_file_id",	"DEP_FKEY"	]
-[ "files",	"rg_fkey_file_id",	"DEP_FKEY"	]
-[ "files",	"sq_fkey_file_id",	"DEP_FKEY"	]
+% 2,	13,	8 # length
 [ "t1",	"t2_id_t1_fkey",	"DEP_FKEY"	]
 #SELECT t.name, f.name, 'DEP_FUNC' from functions as f, tables as t, dependencies as dep where t.id = dep.id AND f.id = dep.depend_id AND dep.depend_type = 7 AND t.type IN (0, 10) ORDER BY t.name, f.name;
 % .t,	.f,	.%7 # table_name
@@ -153,15 +149,9 @@ Dependencies between database objects
 % 20,	44,	7 # length
 [ "dependency_type_id",	"dependency_types_dependency_type_id_pkey",	"DEP_KEY"	]
 [ "dependency_type_name",	"dependency_types_dependency_type_name_unique",	"DEP_KEY"	]
-[ "file_id",	"files_pkey_file_id",	"DEP_KEY"	]
-[ "file_id",	"pg_pkey_id_file_id",	"DEP_KEY"	]
-[ "file_id",	"rg_pkey_id_file_id",	"DEP_KEY"	]
-[ "file_id",	"sq_pkey_sn_file_id",	"DEP_KEY"	]
 [ "function_type_id",	"function_types_function_type_id_pkey",	"DEP_KEY"	]
 [ "function_type_name",	"function_types_function_type_name_unique",	"DEP_KEY"	]
 [ "id",	"comments_id_pkey",	"DEP_KEY"	]
-[ "id",	"pg_pkey_id_file_id",	"DEP_KEY"	]
-[ "id",	"rg_pkey_id_file_id",	"DEP_KEY"	]
 [ "id",	"t1_id_pkey",	"DEP_KEY"	]
 [ "index_type_id",	"index_types_index_type_id_pkey",	"DEP_KEY"	]
 [ "index_type_name",	"index_types_index_type_name_unique",	"DEP_KEY"	]
@@ -172,7 +162,6 @@ Dependencies between database objects
 [ "language_name",	"function_languages_language_name_unique",	"DEP_KEY"	]
 [ "privilege_code_id",	"privilege_codes_privilege_code_id_pkey",	"DEP_KEY"	]
 [ "privilege_code_name",	"privilege_codes_privilege_code_name_unique",	"DEP_KEY"	]
-[ "sn",	"sq_pkey_sn_file_id",	"DEP_KEY"	]
 [ "srid",	"spatial_ref_sys_srid_pkey",	"DEP_KEY"	]
 [ "table_type_id",	"table_types_table_type_id_pkey",	"DEP_KEY"	]
 [ "table_type_name",	"table_types_table_type_name_unique",	"DEP_KEY"	]
@@ -244,10 +233,7 @@ Dependencies between database objects
 % sys.k,	sys.fk,	.%2 # table_name
 % name,	name,	%2 # name
 % varchar,	varchar,	char # type
-% 18,	15,	8 # length
-[ "files_pkey_file_id",	"pg_fkey_file_id",	"DEP_FKEY"	]
-[ "files_pkey_file_id",	"rg_fkey_file_id",	"DEP_FKEY"	]
-[ "files_pkey_file_id",	"sq_fkey_file_id",	"DEP_FKEY"	]
+% 10,	13,	8 # length
 [ "t1_id_pkey",	"t2_id_t1_fkey",	"DEP_FKEY"	]
 #DROP FUNCTION f2;
 #DROP TRIGGER trigger_test;
@@ -344,7 +330,6 @@ Cleanup
 % name,	name,	%2 # name
 % varchar,	varchar,	char # type
 % 7,	8,	10 # length
-[ "monetdb",	"bam",	"DEP_SCHEMA"	]
 [ "monetdb",	"json",	"DEP_SCHEMA"	]
 [ "monetdb",	"mosaic",	"DEP_SCHEMA"	]
 [ "monetdb",	"logging",	"DEP_SCHEMA"	]
@@ -482,10 +467,7 @@ Cleanup
 % .t,	.fk,	.%7 # table_name
 % name,	name,	%7 # name
 % varchar,	varchar,	char # type
-% 5,	15,	8 # length
-[ "files",	"pg_fkey_file_id",	"DEP_FKEY"	]
-[ "files",	"rg_fkey_file_id",	"DEP_FKEY"	]
-[ "files",	"sq_fkey_file_id",	"DEP_FKEY"	]
+% 0,	0,	8 # length
 #SELECT t.name, f.name, 'DEP_FUNC' from functions as f, tables as t, dependencies as dep where t.id = dep.id AND f.id = dep.depend_id AND dep.depend_type = 7 AND t.type in (0, 10, 20, 30) ORDER BY t.name, f.name;
 % .t,	.f,	.%7 # table_name
 % name,	name,	%7 # name
@@ -881,15 +863,9 @@ Cleanup
 % 20,	44,	7 # length
 [ "dependency_type_id",	"dependency_types_dependency_type_id_pkey",	"DEP_KEY"	]
 [ "dependency_type_name",	"dependency_types_dependency_type_name_unique",	"DEP_KEY"	]
-[ "file_id",	"files_pkey_file_id",	"DEP_KEY"	]
-[ "file_id",	"pg_pkey_id_file_id",	"DEP_KEY"	]
-[ "file_id",	"rg_pkey_id_file_id",	"DEP_KEY"	]
-[ "file_id",	"sq_pkey_sn_file_id",	"DEP_KEY"	]
 [ "function_type_id",	"function_types_function_type_id_pkey",	"DEP_KEY"	]
 [ "function_type_name",	"function_types_function_type_name_unique",	"DEP_KEY"	]
 [ "id",	"comments_id_pkey",	"DEP_KEY"	]
-[ "id",	"pg_pkey_id_file_id",	"DEP_KEY"	]
-[ "id",	"rg_pkey_id_file_id",	"DEP_KEY"	]
 [ "index_type_id",	"index_types_index_type_id_pkey",	"DEP_KEY"	]
 [ "index_type_name",	"index_types_index_type_name_unique",	"DEP_KEY"	]
 [ "key_type_id",	"key_types_key_type_id_pkey",	"DEP_KEY"	]
@@ -899,7 +875,6 @@ Cleanup
 [ "language_name",	"function_languages_language_name_unique",	"DEP_KEY"	]
 [ "privilege_code_id",	"privilege_codes_privilege_code_id_pkey",	"DEP_KEY"	]
 [ "privilege_code_name",	"privilege_codes_privilege_code_name_unique",	"DEP_KEY"	]
-[ "sn",	"sq_pkey_sn_file_id",	"DEP_KEY"	]
 [ "srid",	"spatial_ref_sys_srid_pkey",	"DEP_KEY"	]
 [ "table_type_id",	"table_types_table_type_id_pkey",	"DEP_KEY"	]
 [ "table_type_name",	"table_types_table_type_name_unique",	"DEP_KEY"	]
@@ -957,10 +932,7 @@ Cleanup
 % sys.k,	sys.fk,	.%2 # table_name
 % name,	name,	%2 # name
 % varchar,	varchar,	char # type
-% 18,	15,	8 # length
-[ "files_pkey_file_id",	"pg_fkey_file_id",	"DEP_FKEY"	]
-[ "files_pkey_file_id",	"rg_fkey_file_id",	"DEP_FKEY"	]
-[ "files_pkey_file_id",	"sq_fkey_file_id",	"DEP_FKEY"	]
+% 0,	0,	8 # length
 done
 
 # 09:38:23 >  

@@ -4,7 +4,6 @@ sample4
 smack00
 smack01
 HAVE_PERL?perl_dbi
-HAVE_PY2MONETDB?python2_dbapi
 HAVE_PY3MONETDB?python3_dbapi
 HAVE_PHP?php_monetdb
 utf8test
@@ -13,10 +12,8 @@ HAVE_HGE?mal_int128
 HAVE_HGE?sql_int128
 HAVE_PHP&HAVE_HGE?php_int128
 HAVE_PERL&HAVE_HGE?perl_int128
-HAVE_PY2MONETDB&HAVE_HGE?python2_int128
 HAVE_PY3MONETDB&HAVE_HGE?python3_int128
 HAVE_HGE?sql_dec38
 HAVE_PHP&HAVE_HGE?php_dec38
 HAVE_PERL&HAVE_HGE?perl_dec38
-HAVE_PY2MONETDB&HAVE_HGE?python2_dec38
 HAVE_PY3MONETDB&HAVE_HGE?python3_dec38

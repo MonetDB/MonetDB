@@ -931,6 +931,6 @@ from
 			"Ticker" is not null
 		group by "c2_h_field_2", "Ticker"
 ) as "t0" 
-where "c2_h_field_2" is null order by "count_1" desc;
+where "c2_h_field_2" is null order by "count_1" desc, "Ticker";
 
 ROLLBACK;

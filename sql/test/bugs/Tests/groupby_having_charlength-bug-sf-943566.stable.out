@@ -42,7 +42,6 @@ stdout of test 'groupby_having_charlength-bug-sf-943566` in directory 'sql/test/
 [ "wlr",	3,	10	]
 [ "logging",	7,	10	]
 [ "mosaic",	6,	10	]
-[ "bam",	3,	10	]
 
 # 12:48:35 >  
 # 12:48:35 >  Done.

@@ -251,11 +251,15 @@ SQLoptimizeQuery(Client c, MalBlkPtr mb)
 		if (c->listing)
 			printFunction(c->fdout, mb, 0, c->listing);
 		if (be->mvc->debug) {
-			msg = runMALDebugger(c, c->curprg->def);
-			if (msg != MAL_SUCCEED)
-				freeException(msg); /* ignore error */
+			str omsg = runMALDebugger(c, c->curprg->def);
+			if (omsg != MAL_SUCCEED)
+				freeException(omsg); /* ignore error */
 		}
-		return createException(MAL, "optimizer.optimizeQuery", "%s", mb->errors);
+		if (mb->errors && msg && msg != mb->errors) { /* if both set, throw mb->errors as the earliest one */
+			freeException(msg);
+			msg = MAL_SUCCEED;
+		}
+		return createException(MAL, "optimizer.optimizeQuery", "%s", mb->errors ? mb->errors : msg);
 	}
 
 	pipe = getSQLoptimizer(be->mvc);

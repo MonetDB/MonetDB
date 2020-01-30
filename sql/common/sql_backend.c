@@ -22,7 +22,6 @@
  * for the duration of a session.
  */
 
-
 #include "monetdb_config.h"
 #include "sql_backend.h"
 

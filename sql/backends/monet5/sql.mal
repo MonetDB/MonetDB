@@ -1156,12 +1156,6 @@ comment "Procedure triggered on update of the sys.schemas table";
 include sql_decimal;
 include sql_rank;
 #include sql_cast;
-include sql_aggr_bte;
-include sql_aggr_sht;
-include sql_aggr_int;
-include sql_aggr_lng;
-include sql_aggr_flt;
-include sql_aggr_dbl;
 include sql_inspect;
 include sql_subquery;
 

@@ -377,8 +377,7 @@ typedef enum sql_flang {
 	/* this should probably be done in a better way */
 	FUNC_LANG_PY = 6,       /* create .. language PYTHON */
 	FUNC_LANG_MAP_PY = 7,   /* create .. language PYTHON_MAP */
-	FUNC_LANG_PY2 = 8,      /* create .. language PYTHON2 */
-	FUNC_LANG_MAP_PY2 = 9,  /* create .. language PYTHON2_MAP */
+	/* values 8 and 9 were for Python 2 */
 	FUNC_LANG_PY3 = 10,     /* create .. language PYTHON3 */
 	FUNC_LANG_MAP_PY3 = 11, /* create .. language PYTHON3_MAP */
 	FUNC_LANG_CPP = 12      /* create .. language CPP */
@@ -429,11 +428,6 @@ typedef struct sql_subfunc {
 	list *colnames; /* we need this for copy into from loader */
 	char *sname, *tname; /* we need this for create table from loader */
 } sql_subfunc;
-
-typedef struct sql_subaggr {
-	sql_func *aggr;
-	list *res;
-} sql_subaggr;
 
 typedef enum key_type {
 	pkey,

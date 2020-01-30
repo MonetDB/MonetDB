@@ -39,7 +39,6 @@ stdout of test 'table_functions_fail_after_restart-0.Bug-3063` in directory 'sql
 [ "wlr"	]
 [ "mosaic"	]
 [ "logging"	]
-[ "bam"	]
 [ "ft"	]
 
 # 09:28:53 >  
