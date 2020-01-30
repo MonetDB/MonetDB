@@ -81,6 +81,11 @@ stdout of test 'groupby_error` in directory 'sql/test/miscellaneous` itself:
 % col2 # name
 % int # type
 % 1 # length
+#SELECT ALL * FROM tab0 AS cor0 WHERE col2 NOT IN ( 22, 18, CAST ( NULL AS INTEGER ) + - 77 );
+% sys.cor0,	sys.cor0,	sys.cor0 # table_name
+% col0,	col1,	col2 # name
+% int,	int,	int # type
+% 1,	1,	1 # length
 #ROLLBACK;
 
 # 10:56:47 >  
