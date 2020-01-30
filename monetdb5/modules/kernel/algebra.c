@@ -310,7 +310,7 @@ ALGselect2nil(bat *result, const bat *bid, const bat *sid, const void *low, cons
 		low = high; 
 	else if (*hi == 1 && ATOMcmp(b->ttype, high, nilptr) == 0)
 		high = low;
-	if (low == high && ATOMcmp(b->ttype, high, nilptr) == 0) /* ugh sql nil != nil */
+	if (ATOMcmp(b->ttype, low, high) == 0 && ATOMcmp(b->ttype, high, nilptr) == 0) /* ugh sql nil != nil */
 		nanti = !nanti;
 	bn = BATselect(b, s, low, high, *li, *hi, nanti);
 	BBPunfix(b->batCacheid);
