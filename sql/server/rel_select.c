@@ -510,14 +510,15 @@ find_table_function_type(mvc *sql, sql_schema *s, char *fname, list *exps, list 
 			for (n = exps->h, m = (*sf)->func->ops->h; n && m; n = n->next, m = m->next) {
 				sql_arg *a = m->data;
 				sql_exp *e = n->data;
+				sql_subtype *t = exp_subtype(e);
 
 				if (!aa && a->type.type->eclass == EC_ANY) {
-					atp = &e->tpe;
+					atp = t;
 					aa = a;
 				}
 				if (aa && a->type.type->eclass == EC_ANY &&
-				    e->tpe.type->localtype > atp->type->localtype){
-					atp = &e->tpe;
+				    t->type->localtype > atp->type->localtype){
+					atp = t;
 					aa = a;
 				}
 			}
@@ -1855,14 +1856,15 @@ _rel_nop(mvc *sql, sql_schema *s, char *fname, list *tl, sql_rel *rel, list *exp
 			for (n = exps->h, m = f->func->ops->h; n && m; n = n->next, m = m->next) {
 				sql_arg *a = m->data;
 				sql_exp *e = n->data;
+				sql_subtype *t = exp_subtype(e);
 
 				if (!aa && a->type.type->eclass == EC_ANY) {
-					atp = &e->tpe;
+					atp = t;
 					aa = a;
 				}
 				if (aa && a->type.type->eclass == EC_ANY &&
-				    e->tpe.type->localtype > atp->type->localtype){
-					atp = &e->tpe;
+				    t->type->localtype > atp->type->localtype){
+					atp = t;
 					aa = a;
 				}
 			}
@@ -4165,7 +4167,7 @@ rel_order_by(sql_query *query, sql_rel **R, symbol *orderby, int f)
 				e = rel_value_exp2(query, &rel, col, f, ek);
 
 				if (e && e->card <= CARD_ATOM) {
-					sql_subtype *tpe = &e->tpe;
+					sql_subtype *tpe = exp_subtype(e);
 					/* integer atom on the stack */
 					if (e->type == e_atom &&
 					    tpe->type->eclass == EC_NUM) {
@@ -4590,11 +4592,11 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 					return NULL;
 
 				/* corner case, if the argument is null convert it into something countable such as bte */
-				if (subtype_cmp(&(in->tpe), empty) == 0)
+				if (subtype_cmp(exp_subtype(in), empty) == 0)
 					in = exp_convert(sql->sa, in, empty, bte);
 				if ((is_lag || is_lead) && nfargs == 2) { /* lag and lead 3rd arg must have same type as 1st arg */
 					sql_exp *first = (sql_exp*) fargs->h->data;
-					if (!(in = rel_check_type(sql, &first->tpe, p, in, type_equal)))
+					if (!(in = rel_check_type(sql, exp_subtype(first), p, in, type_equal)))
 						return NULL;
 				}
 				if (!in)
@@ -4615,7 +4617,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 				return NULL;
 
 			/* corner case, if the argument is null convert it into something countable such as bte */
-			if (subtype_cmp(&(in->tpe), empty) == 0)
+			if (subtype_cmp(exp_subtype(in), empty) == 0)
 				in = exp_convert(sql->sa, in, empty, bte);
 			if (!in)
 				return NULL;
