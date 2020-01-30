@@ -76,6 +76,11 @@ stdout of test 'groupby_error` in directory 'sql/test/miscellaneous` itself:
 % col2 # name
 % bigint # type
 % 1 # length
+#SELECT DISTINCT + 40 / + + col0 AS col2 FROM tab0 GROUP BY col0, col0, col2 HAVING NOT ( NOT + - 80 BETWEEN NULL AND + - 73 ) OR NOT ( + col0 >= - COUNT ( * ) + - COUNT ( DISTINCT - col0 ) );
+% .L1 # table_name
+% col2 # name
+% int # type
+% 1 # length
 #ROLLBACK;
 
 # 10:56:47 >  

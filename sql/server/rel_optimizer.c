@@ -5917,9 +5917,10 @@ rel_groupby_distinct(int *changes, mvc *sql, sql_rel *rel)
 				if (e->type == e_aggr) { /* copy the arguments to the aggregate */
 					list *args = e->l;
 					sql_exp *dargs = args->h->data;
-
-					list_append(ngbe, exp_copy(sql->sa, dargs));
-					list_append(exps, exp_copy(sql->sa, dargs));
+					if (args) {
+						list_append(ngbe, exp_copy(sql->sa, dargs));
+						list_append(exps, exp_copy(sql->sa, dargs));
+					}
 				} else {
 					e = exp_ref(sql->sa, e);
 					append(ngbe, e);
