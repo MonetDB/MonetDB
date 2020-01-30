@@ -501,7 +501,7 @@ WLCmaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			throw(MAL, "wlc.master", "wlc master filename path is too large");
 	}
 	// set location for logs
-	if( GDKcreatedir(path) == GDK_FAIL)
+	if( GDKcreatedir(path) != GDK_SUCCEED)
 		throw(SQL,"wlc.master","Could not create %s\n", path);
 	len = snprintf(wlc_name, IDLENGTH, "%s", GDKgetenv("gdk_dbname"));
 	if (len == -1 || len >= IDLENGTH)

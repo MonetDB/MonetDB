@@ -989,7 +989,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 		}
 		GDKfree(astrings);
 	}
-	if (rres == GDK_FAIL)
+	if (rres != GDK_SUCCEED)
 		BBPreclaim(bn);
 
 	return rres;
