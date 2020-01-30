@@ -1039,7 +1039,6 @@ sql_create_func_(sql_allocator *sa, const char *name, const char *mod, const cha
 	list *ops = sa_list(sa);
 	sql_arg *fres = NULL;
 	sql_func *t = SA_ZNEW(sa, sql_func);
-	int clientID = 0;
 
 	for (int i = 0; i < nargs; i++) {
 		sql_type *tpe = va_arg(valist, sql_type*);
@@ -1067,8 +1066,8 @@ sql_create_func_(sql_allocator *sa, const char *name, const char *mod, const cha
 	t->system = TRUE;
 	list_append(funcs, t);
 
-	if (strlen(imp) && strlen(mod)) /* grouping aggregate doesn't have a backend */
-		assert(backend_resolve_function(&clientID, t));
+	/* grouping aggregate doesn't have a backend */
+	assert(strlen(imp) == 0 || strlen(mod) == 0 || backend_resolve_function(&(int){0}, t));
 
 	return t;
 }
