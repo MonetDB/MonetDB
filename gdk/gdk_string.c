@@ -1109,7 +1109,7 @@ finish:
 		}
 		GDKfree(astrings);
 	}
-	if (rres == GDK_FAIL)
+	if (rres != GDK_SUCCEED)
 		BBPreclaim(bn);
 
 	return rres;

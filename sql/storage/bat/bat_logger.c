@@ -1047,7 +1047,7 @@ snapshot_bats(stream *plan, const char *db_dir)
 		goto end;
 	}
 	ret = snapshot_immediate_copy_file(plan, bbpdir, bbpdir + strlen(db_dir) + 1);
-	if (ret == GDK_FAIL)
+	if (ret != GDK_SUCCEED)
 		goto end;
 
 	// Open the catalog and parse the header
