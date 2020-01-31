@@ -679,6 +679,61 @@ rel_op_(mvc *sql, sql_schema *s, char *fname, exp_kind ek)
 	}
 }
 
+static sql_exp*
+exp_values_set_supertype(mvc *sql, sql_exp *values)
+{
+	list *vals = values->f, *nexps;
+	sql_subtype *tpe = exp_subtype(vals->h->data);
+
+	if (tpe)
+		values->tpe = *tpe;
+
+	for (node *m = vals->h; m; m = m->next) {
+		sql_exp *e = m->data;
+		sql_subtype super, *ttpe;
+
+		/* if the expression is a parameter set its type */
+		if (tpe && e->type == e_atom && !e->l && !e->r && !e->f && !e->tpe.type) {
+			if (set_type_param(sql, tpe, e->flag) == 0)
+				e->tpe = *tpe;
+			else
+				return NULL;
+		}
+		ttpe = exp_subtype(e);
+		if (tpe && ttpe) {
+			supertype(&super, tpe, ttpe);
+			values->tpe = super;
+			tpe = &values->tpe;
+		} else {
+			tpe = ttpe;
+		}
+	}
+
+	if (tpe) {
+		/* if the expression is a parameter set its type */
+		for (node *m = vals->h; m; m = m->next) {
+			sql_exp *e = m->data;
+			if (e->type == e_atom && !e->l && !e->r && !e->f && !e->tpe.type) {
+				if (set_type_param(sql, tpe, e->flag) == 0)
+					e->tpe = *tpe;
+				else
+					return NULL;
+			}
+		}
+		values->tpe = *tpe;
+		nexps = sa_list(sql->sa);
+		for (node *m = vals->h; m; m = m->next) {
+			sql_exp *e = m->data;
+			e = rel_check_type(sql, &values->tpe, NULL, e, type_equal);
+			if (!e)
+				return NULL;
+			append(nexps, e); 
+		}
+		values->f = nexps;
+	}
+	return values;
+}
+
 static sql_rel *
 rel_values(sql_query *query, symbol *tableref)
 {
@@ -722,59 +777,9 @@ rel_values(sql_query *query, symbol *tableref)
 		}
 	}
 	/* loop to check types */
-	for (m = exps->h; m; m = m->next) {
-		node *n;
-		sql_exp *vals = m->data;
-		list *vals_list = vals->f;
-		list *nexps = sa_list(sql->sa);
-		sql_subtype *tpe = exp_subtype(vals_list->h->data);
+	for (m = exps->h; m; m = m->next)
+		m->data = exp_values_set_supertype(sql, (sql_exp*) m->data);
 
-		if (tpe)
-			vals->tpe = *tpe;
-
-		/* first get super type */
-		for (n = vals_list->h; n; n = n->next) {
-			sql_exp *e = n->data;
-			sql_subtype super, *ttpe;
-
-			/* if the expression is a parameter set its type */
-			if (tpe && e->type == e_atom && !e->l && !e->r && !e->f && !e->tpe.type) {
-				if (set_type_param(sql, tpe, e->flag) == 0)
-					e->tpe = *tpe;
-				else
-					return NULL;
-			}
-			ttpe = exp_subtype(e);
-			if (tpe && ttpe) {
-				supertype(&super, tpe, ttpe);
-				vals->tpe = super;
-				tpe = &vals->tpe;
-			} else {
-				tpe = ttpe;
-			}
-		}
-		if (!tpe)
-			continue;
-		/* if the expression is a parameter set its type */
-		for (n = vals_list->h; n; n = n->next) {
-			sql_exp *e = n->data;
-			if (e->type == e_atom && !e->l && !e->r && !e->f && !e->tpe.type) {
-				if (set_type_param(sql, tpe, e->flag) == 0)
-					e->tpe = *tpe;
-				else
-					return NULL;
-			}
-		}
-		vals->tpe = *tpe;
-		for (n = vals_list->h; n; n = n->next) {
-			sql_exp *e = n->data;
-			e = rel_check_type(sql, &vals->tpe, NULL, e, type_equal);
-			if (!e)
-				return NULL;
-			append(nexps, e); 
-		}
-		vals->f = nexps;
-	}
 	r = rel_project(sql->sa, NULL, exps);
 	r->nrcols = list_length(exps);
 	r->card = dlist_length(rowlist) == 1 ? CARD_ATOM : CARD_MULTI;
@@ -1959,46 +1964,13 @@ rel_exists_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 static sql_exp *
 rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 {
-	exp_kind ek = {type_value, card_column, FALSE};
-	mvc *sql = query->sql;
-	sql_exp *le, *e = NULL;
-	dlist *dl = sc->data.lval;
-	symbol *lo = dl->h->data.sym;
-	dnode *n = dl->h->next;
-	list *vals = NULL;
-
-	le = rel_value_exp(query, rel, lo, f, ek);
-	if (!le)
-		return NULL;
-	ek.card = card_set;
-	if (n->type == type_list) {
-		vals = sa_list(sql->sa);
-		n = n->data.lval->h;
-		for (; n; n = n->next) {
-			sql_exp *r = NULL;
-
-			r = rel_value_exp(query, rel, n->data.sym, f, ek);
-			if (!r)
-				return NULL;
-			append( vals, r);
-		}
-		e =  exp_in_func(sql, le, exp_values(sql->sa, vals), (sc->token == SQL_IN), 0);
-	}
-	if (e)
-		e->card = le->card;
-	return e;
-}
-
-static sql_rel *
-rel_in_exp(sql_query *query, sql_rel *rel, symbol *sc, int f) 
-{
 	mvc *sql = query->sql;
 	exp_kind ek = {type_value, card_column, TRUE};
 	dlist *dl = sc->data.lval;
 	symbol *lo = NULL;
 	dnode *n = dl->h->next, *dn = NULL;
-	sql_exp *le, *re;
-	list *vals = NULL, *ll = sa_list(sql->sa);
+	sql_exp *le = NULL, *re, *e = NULL;
+	list *ll = sa_list(sql->sa);
 	int is_tuple = 0;
 
 	/* complex case */
@@ -2010,7 +1982,7 @@ rel_in_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 		lo = dl->h->data.sym;
 	}
 	for( ; lo; lo = dn?dn->data.sym:NULL, dn = dn?dn->next:NULL ) {
-		le = rel_value_exp(query, &rel, lo, f, ek);
+		le = rel_value_exp(query, rel, lo, f, ek);
 		if (!le)
 			return NULL;
 		ek.card = card_set;
@@ -2025,28 +1997,45 @@ rel_in_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 	}
 	/* list of values or subqueries */
 	if (n->type == type_list) {
-		vals = sa_list(sql->sa);
+		sql_exp *values;
+		list *vals = sa_list(sql->sa);
+
 		n = dl->h->next;
 		n = n->data.lval->h;
 
 		for (; n; n = n->next) {
-			re = rel_value_exp(query, &rel, n->data.sym, f, ek);
+			re = rel_value_exp(query, rel, n->data.sym, f, ek);
 			if (!re)
 				return NULL;
 			if (is_tuple && !exp_is_rel(re)) 
-				return NULL;
+				return sql_error(sql, 02, SQLSTATE(42000) "Cannot match a tuple to a single value");
 			if (is_tuple)
 				re = exp_rel_label(sql, re);
 			append(vals, re);
 		}
+
+		values = exp_values(sql->sa, vals);
+		if (!is_tuple) /* if it's not a tuple, enforce coersion on the type for every element on the list */
+			values = exp_values_set_supertype(sql, values);
+		e = exp_in_func(sql, le, values, (sc->token == SQL_IN), is_tuple);
 	}
+	if (e && le)
+		e->card = le->card;
+	return e;
+}
+
+static sql_rel *
+rel_in_exp(sql_query *query, sql_rel *rel, symbol *sc, int f) 
+{
+	mvc *sql = query->sql;
+	sql_exp *e = rel_in_value_exp(query, &rel, sc, f);
 
 	assert(!is_sql_sel(f));
-	sql_exp *e = exp_in_func(sql, le, exp_values(sql->sa, vals), (sc->token == SQL_IN), is_tuple);
+	if (!e || !rel)
+		return NULL;
 	rel = rel_select_add_exp(sql->sa, rel, e);
 	return rel;
 }
-
 
 sql_exp *
 rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
