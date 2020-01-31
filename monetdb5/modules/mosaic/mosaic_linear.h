@@ -19,7 +19,6 @@
 #include "mosaic_utility.h"
 
 bool MOStypes_linear(BAT* b);
-mal_export void MOSlayout_linear(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
 
 #define MosaicBlkHeader_DEF_linear(TPE)\
 typedef struct {\

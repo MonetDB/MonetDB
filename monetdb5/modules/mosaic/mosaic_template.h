@@ -350,3 +350,48 @@ static str CONCAT2(MOSprojection_, TPE)(MOStask* task)
 }
 
 #undef projection
+
+#define layout(METHOD, TPE, DUMMY_ARGUMENT)\
+{\
+	str msg;\
+	ALGODEBUG mnstr_printf(GDKstdout, "#MOSdecompress_" #METHOD "\n");\
+	if ((msg = MOSlayout_##METHOD##_##TPE(task, layout)) != MAL_SUCCEED)\
+		return msg;\
+	MOSadvance_##METHOD##_##TPE(task);\
+}
+
+static str CONCAT2(MOSlayout_, TPE)(MOStask* task, MosaicLayout* layout) {
+	while(task->start != task->stop) {
+		switch(MOSgetTag(task->blk)){
+		case MOSAIC_RAW:
+			DO_OPERATION_IF_ALLOWED(layout, raw, TPE);
+			break;
+		case MOSAIC_RLE:
+			DO_OPERATION_IF_ALLOWED(layout, runlength, TPE);
+			break;
+		case MOSAIC_DICT256:
+			DO_OPERATION_IF_ALLOWED(layout, dict256, TPE);
+			break;
+		case MOSAIC_DICT:
+			DO_OPERATION_IF_ALLOWED(layout, dict, TPE);
+			break;
+		case MOSAIC_DELTA:
+			DO_OPERATION_IF_ALLOWED(layout, delta, TPE);
+			break;
+		case MOSAIC_LINEAR:
+			DO_OPERATION_IF_ALLOWED(layout, linear, TPE);
+			break;
+		case MOSAIC_FRAME:
+			DO_OPERATION_IF_ALLOWED(layout, frame, TPE);
+			break;
+		case MOSAIC_PREFIX:
+			DO_OPERATION_IF_ALLOWED(layout, prefix, TPE);
+			break;
+		default: assert(0);
+		}
+	}
+
+	return MAL_SUCCEED;
+}
+
+#undef layout

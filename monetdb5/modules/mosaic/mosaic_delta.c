@@ -39,30 +39,6 @@ bool MOStypes_delta(BAT* b) {
 }
 #define BitVectorSize(CNT, BITS) wordaligned(((CNT) * (BITS) / CHAR_BIT) + ( ((CNT) * (BITS)) % CHAR_BIT != 0 ), BitVectorChunk)
 
-void
-MOSlayout_delta(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
-{
-	MosaicBlk blk = task->blk;
-	lng cnt = MOSgetCnt(blk), input=0, output= 0;
-
-	input = cnt * ATOMsize(task->type);
-	switch(ATOMbasetype(task->type)){
-	case TYPE_bte: output = wordaligned(MosaicBlkSize + sizeof(bte) + MOSgetCnt(blk)-1,bte); break ;
-	case TYPE_sht: output = wordaligned(MosaicBlkSize + sizeof(sht) + MOSgetCnt(blk)-1,sht); break ;
-	case TYPE_int: output = wordaligned(MosaicBlkSize + sizeof(int) + MOSgetCnt(blk)-1,int); break ;
-	case TYPE_lng: output = wordaligned(MosaicBlkSize + sizeof(lng) + MOSgetCnt(blk)-1,lng); break ;
-#ifdef HAVE_HGE
-	case TYPE_hge: output = wordaligned(MosaicBlkSize + sizeof(hge) + MOSgetCnt(blk)-1,hge); break ;
-#endif
-	}
-	if( BUNappend(btech, "delta", false) != GDK_SUCCEED ||
-		BUNappend(bcount, &cnt, false) != GDK_SUCCEED ||
-		BUNappend(binput, &input, false) != GDK_SUCCEED ||
-		BUNappend(boutput, &output, false) != GDK_SUCCEED ||
-		BUNappend(bproperties, "", false) != GDK_SUCCEED)
-		return;
-}
-
 #define METHOD delta
 #define METHOD_TEMPLATES_INCLUDE MAKE_TEMPLATES_INCLUDE_FILE(METHOD)
 
@@ -85,6 +61,27 @@ MOSlayout_delta(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutpu
 #undef TPE
 #endif
 #undef COMPRESSION_DEFINITION
+
+#define LAYOUT_DEFINITION
+#include METHOD_TEMPLATES_INCLUDE
+#define TPE bte
+#include METHOD_TEMPLATES_INCLUDE
+#undef TPE
+#define TPE sht
+#include METHOD_TEMPLATES_INCLUDE
+#undef TPE
+#define TPE int
+#include METHOD_TEMPLATES_INCLUDE
+#undef TPE
+#define TPE lng
+#include METHOD_TEMPLATES_INCLUDE
+#undef TPE
+#ifdef HAVE_HGE
+#define TPE hge
+#include METHOD_TEMPLATES_INCLUDE
+#undef TPE
+#endif
+#undef LAYOUT_DEFINITION
 
 #define TPE bte
 #include "mosaic_select_template.h"

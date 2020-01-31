@@ -41,63 +41,6 @@ bool MOStypes_prefix(BAT* b) {
 	return false;
 }
 
-void
-MOSlayout_prefix(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
-{
-	MosaicBlk blk = task->blk;
-	BUN cnt = MOSgetCnt(blk), input=0, output= 0, bytes = 0;
-	int bits =0;
-	int size = ATOMsize(task->type);
-	char buf[32];
-
-	input = cnt * ATOMsize(task->type);
-	switch(size){
-	case 1:
-		{	unsigned char *dst = (unsigned char*)  MOScodevector(task);
-			unsigned char mask = *dst++;
-			unsigned char val = *dst;
-			bits = (int)(val & (~mask));
-			bytes = wordaligned(MosaicBlkSize + 2 * sizeof(unsigned char),BitVectorChunk);
-			bytes += wordaligned(getBitVectorSize(cnt,bits), lng);
-		}
-		break;
-	case 2:
-		{	unsigned short *dst = (unsigned short*)  MOScodevector(task);
-			unsigned short mask = *dst++;
-			unsigned short val = *dst;
-			bits = (int)(val & (~mask));
-			bytes = wordaligned(MosaicBlkSize + 2 * sizeof(unsigned short),BitVectorChunk);
-			bytes += wordaligned(getBitVectorSize(cnt,bits) , lng);
-		}
-		break;
-	case 4:
-		{	unsigned int *dst = (unsigned int*)  MOScodevector(task);
-			unsigned int mask = *dst++;
-			unsigned int val = *dst;
-			bits = (int)(val & (~mask));
-			bytes = wordaligned(MosaicBlkSize + 2 * sizeof(unsigned int),BitVectorChunk);
-			bytes += wordaligned(getBitVectorSize(cnt,bits) , lng);
-		}
-		break;
-	case 8:
-		{	ulng *dst = (ulng*)  MOScodevector(task);
-			ulng mask = *dst++;
-			ulng val = *dst;
-			bits = (int)(val & (~mask));
-			bytes = wordaligned(MosaicBlkSize + 2 * sizeof(ulng),BitVectorChunk);
-			bytes += wordaligned(getBitVectorSize(cnt,bits) , lng);
-		}
-	}
-	output = wordaligned(bytes, int); 
-	snprintf(buf,32,"%d bits",bits);
-	if( BUNappend(btech, "prefix blk", false) != GDK_SUCCEED ||
-		BUNappend(bcount, &cnt, false) != GDK_SUCCEED ||
-		BUNappend(binput, &input, false) != GDK_SUCCEED ||
-		BUNappend(boutput, &output, false) != GDK_SUCCEED ||
-		BUNappend(bproperties, buf, false) != GDK_SUCCEED)
-		return;
-}
-
 #define METHOD prefix
 #define METHOD_TEMPLATES_INCLUDE MAKE_TEMPLATES_INCLUDE_FILE(METHOD)
 
@@ -120,6 +63,27 @@ MOSlayout_prefix(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutp
 #undef TPE
 #endif
 #undef COMPRESSION_DEFINITION
+
+#define LAYOUT_DEFINITION
+#include METHOD_TEMPLATES_INCLUDE
+#define TPE bte
+#include METHOD_TEMPLATES_INCLUDE
+#undef TPE
+#define TPE sht
+#include METHOD_TEMPLATES_INCLUDE
+#undef TPE
+#define TPE int
+#include METHOD_TEMPLATES_INCLUDE
+#undef TPE
+#define TPE lng
+#include METHOD_TEMPLATES_INCLUDE
+#undef TPE
+#ifdef HAVE_HGE
+#define TPE hge
+#include METHOD_TEMPLATES_INCLUDE
+#undef TPE
+#endif
+#undef LAYOUT_DEFINITION
 
 #define TPE bte
 #include "mosaic_select_template.h"

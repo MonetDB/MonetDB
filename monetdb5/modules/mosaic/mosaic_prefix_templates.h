@@ -201,3 +201,16 @@ MOSprojectionloop_SIGNATURE(prefix, TPE, CAND_ITER)
 	task->src = (char*) bt;
 }
 #endif
+
+#ifdef LAYOUT_DEFINITION
+
+MOSlayout_SIGNATURE(prefix, TPE)
+{
+	(void) task;
+	(void) layout;
+
+	// TODO check what advance does.
+
+	return MAL_SUCCEED;
+}
+#endif

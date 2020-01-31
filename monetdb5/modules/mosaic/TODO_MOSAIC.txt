@@ -5,7 +5,6 @@ Fix/check/test MOSlayout.
 Add the compression on OID heap for string valued columns too.
 Figure out why mix compression don't seem to work that well.
 benchmark using TPC-H
-Refactor macro-ised functions to real functions in header files and apply the include trick
 Add negative values to tests
 Add test for huge
 create mix compression test cases particularly for dict/dict256 combo.
@@ -27,6 +26,8 @@ Create a plug-in estimation model framework.
 
 ####code issues####
 Straighten out semantics MOSselect. Make them exact to BATselect.
+Refactor macro-ised functions to real functions in header files and apply the include trick
+Refactor the structs MosaicEstimation, GlobalDictionaryInfo/EstimationParameters, MOStask.
 See if the iteration algorithms can be improved.
 Use GDK naming conventions, e.g. o for stuff coming out if canditer_next.
 Update copyright in 2020.

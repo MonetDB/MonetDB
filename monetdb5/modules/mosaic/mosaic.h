@@ -199,6 +199,17 @@ typedef struct _MosaicEstimation {
 	BUN* max_compression_length;
 } MosaicEstimation;
 
+
+
+typedef struct _MosaicLayout {
+	BAT *bsn;
+	BAT *tech;
+	BAT *count;
+	BAT *input;
+	BAT *output;
+	BAT *properties;
+} MosaicLayout;
+
 #define GET_PADDING(blk, METHOD, TPE) (((MOSBlockHeaderTpe(METHOD, TPE)*) (blk))->padding)
 
 #define ALIGN_BLOCK_HEADER(task, METHOD, TPE)\
@@ -237,7 +248,7 @@ mal_export str MOSselect2nil(bat *ret, const bat *bid, const bat *cid	, const vo
 mal_export str MOSthetaselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str MOSprojection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str MOSlayout(BAT *b, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
+mal_export str MOSlayout(BAT *b, BAT *bbsn, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
 mal_export str MOSAnalysis(BAT *b, BAT *btech, BAT *output, BAT *factor, BAT *compress, BAT *decompress, str compressions);
 
 #endif /* _MOSLIST_H */

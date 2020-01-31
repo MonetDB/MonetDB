@@ -20,7 +20,6 @@
 #include "gdk_bitvector.h"
 
 bool MOStypes_delta(BAT* b);
-mal_export void MOSlayout_delta(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
 
 #define MosaicBlkHeader_DEF_delta(TPE)\
 typedef struct {\

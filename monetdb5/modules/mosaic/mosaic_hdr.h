@@ -17,7 +17,9 @@
 #include "mal_interpreter.h"
 #include "mal_client.h"
 
-mal_export void MOSupdateHeader(MOStask* task);
-mal_export void MOSinitHeader(MOStask* task);
-mal_export void MOSinitializeScan(MOStask* task, BAT* b);
+void MOSupdateHeader(MOStask* task);
+void MOSinitHeader(MOStask* task);
+void MOSinitializeScan(MOStask* task, BAT* b);
+str  MOSlayout_hdr(MOStask* task, MosaicLayout* layout);
+
 #endif /* _MOSAIC_HDR_ */

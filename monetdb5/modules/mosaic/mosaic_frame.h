@@ -20,8 +20,6 @@
 
 bool MOStypes_frame(BAT* b);
 mal_export void MOScreateframeDictionary(MOStask* task);
-mal_export void MOSlayout_frame_hdr(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
-mal_export void MOSlayout_frame(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
 
 #define MosaicBlkHeader_DEF_frame(TPE)\
 typedef struct {\

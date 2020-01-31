@@ -145,102 +145,6 @@ MOSinit(MOStask* task, BAT *b) {
 	task->padding = NULL;
 }
 
-str
-MOSlayout(BAT *b, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
-{
-	MOStask task = {0};
-	unsigned i;
-	char buf[BUFSIZ];
-	lng zero=0;
-
-	if( b->tmosaic == NULL) {
-			throw(MAL,"mosaic.layout","Compression heap missing");
-	}
-
-	MOSinit(&task,b);
-	MOSinitializeScan(&task, b);
-	// safe the general properties
-
-		snprintf(buf,BUFSIZ,"%g", (task.hdr)->ratio);
-		if( BUNappend(btech, "ratio", false) != GDK_SUCCEED ||
-			BUNappend(bcount, &zero, false) != GDK_SUCCEED ||
-			BUNappend(binput, &zero, false) != GDK_SUCCEED ||
-			BUNappend(bproperties, buf, false) != GDK_SUCCEED ||
-			BUNappend(boutput, &zero , false) != GDK_SUCCEED)
-				throw(MAL,"mosaic.layout", MAL_MALLOC_FAIL);
-	for(i=0; i < MOSAIC_METHODS; i++){
-		lng zero = 0;
-		snprintf(buf,BUFSIZ,"%s blocks", MOSmethods[i].name);
-		if( BUNappend(btech, buf, false) != GDK_SUCCEED ||
-			BUNappend(bcount, &(task.hdr)->blks[i], false) != GDK_SUCCEED ||
-			BUNappend(binput, &(task.hdr)->elms[i], false) != GDK_SUCCEED ||
-			BUNappend(boutput, &zero , false) != GDK_SUCCEED ||
-			BUNappend(bproperties, "", false) != GDK_SUCCEED)
-				throw(MAL,"mosaic.layout", MAL_MALLOC_FAIL);
-	}
-	if( (task.hdr)->blks[MOSAIC_DICT256])
-		MOSlayout_dict256_hdr(&task,btech,bcount,binput,boutput,bproperties);
-	if( (task.hdr)->blks[MOSAIC_DICT])
-		MOSlayout_dict_hdr(&task,btech,bcount,binput,boutput,bproperties);
-
-	if( BUNappend(btech, "========", false) != GDK_SUCCEED ||
-		BUNappend(bcount, &zero, false) != GDK_SUCCEED ||
-		BUNappend(binput, &zero, false) != GDK_SUCCEED ||
-		BUNappend(boutput, &zero , false) != GDK_SUCCEED ||
-		BUNappend(bproperties, "", false) != GDK_SUCCEED)
-			throw(MAL,"mosaic.layout", MAL_MALLOC_FAIL);
-
-/*
-	while(task->start< task->stop){
-		switch(MOSgetTag(task->blk)){
-		case MOSAIC_RAW:
-			ALGODEBUG mnstr_printf(GDKstdout, "#MOSlayout_raw\n");
-			MOSlayout_raw(task,btech,bcount,binput,boutput,bproperties);
-			MOSadvance_raw(task);
-			break;
-		case MOSAIC_RLE:
-			ALGODEBUG mnstr_printf(GDKstdout, "#MOSlayout_runlength\n");
-			MOSlayout_runlength(task,btech,bcount,binput,boutput,bproperties);
-			MOSadvance_runlength(task);
-			break;
-		case MOSAIC_DICT256:
-			ALGODEBUG mnstr_printf(GDKstdout, "#MOSlayout_dict256\n");
-			MOSlayout_dict256(task,btech,bcount,binput,boutput,bproperties);
-			MOSadvance_dict256(task);
-			break;
-		case MOSAIC_DICT:
-			ALGODEBUG mnstr_printf(GDKstdout, "#MOSlayout_dict\n");
-			MOSlayout_dict(task,btech,bcount,binput,boutput,bproperties);
-			MOSadvance_dict(task);
-			break;
-		case MOSAIC_DELTA:
-			ALGODEBUG mnstr_printf(GDKstdout, "#MOSlayout_delta\n");
-			MOSlayout_delta(task,btech,bcount,binput,boutput,bproperties);
-			MOSadvance_delta(task);
-			break;
-		case MOSAIC_LINEAR:
-			ALGODEBUG mnstr_printf(GDKstdout, "#MOSlayout_linear\n");
-			MOSlayout_linear(task,btech,bcount,binput,boutput,bproperties);
-			MOSadvance_linear(task);
-			break;
-		case MOSAIC_FRAME:
-			ALGODEBUG mnstr_printf(GDKstdout, "#MOSlayout_frame\n");
-			MOSlayout_frame(task,btech,bcount,binput,boutput,bproperties);
-			MOSadvance_frame(task);
-			break;
-		case MOSAIC_PREFIX:
-			ALGODEBUG mnstr_printf(GDKstdout, "#MOSlayout_prefix\n");
-			MOSlayout_prefix(task,btech,bcount,binput,boutput,bproperties);
-			MOSadvance_prefix(task);
-			break;
-		default:
-			assert(0);
-		}
-	}
-*/
-	return MAL_SUCCEED;
-}
-
 /*
  * Compression is focussed on a single column.
  * Multiple compression MOSmethods are applied at the same time.
@@ -303,6 +207,61 @@ MOSprepareDictionaryContext(MOStask* task) {
 #undef TPE
 #endif
 
+static str
+layout_insert_record(MosaicLayout* layout, lng* bsn, str* tech, lng* count, lng* input, lng* output, str* properties) {
+	if(
+		BUNappend(layout->bsn		, bsn, false) != GDK_SUCCEED ||
+		BUNappend(layout->tech		, tech, false) != GDK_SUCCEED ||
+		BUNappend(layout->count		, count, false) != GDK_SUCCEED ||
+		BUNappend(layout->input		, input, false) != GDK_SUCCEED ||
+		BUNappend(layout->properties, properties, false) != GDK_SUCCEED ||
+		BUNappend(layout->output	, output, false) != GDK_SUCCEED
+	) throw(MAL,"mosaic.layout_insert_record", MAL_MALLOC_FAIL);
+
+	return MAL_SUCCEED;
+}
+
+str
+MOSlayout(BAT *b, BAT *bbsn, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties) {
+	str msg = MAL_SUCCEED;
+
+	if( b->tmosaic == NULL)
+		throw(MAL,"mosaic.layout","Compression heap missing");
+
+	MOStask task = {0};
+	MOSinit(&task,b);
+	MOSinitializeScan(&task, b);
+
+	MosaicLayout layout = {
+		.bsn		= bbsn,
+		.tech		= btech,
+		.count		= bcount,
+		.input		= binput,
+		.output		= boutput,
+		.properties = bproperties
+	};
+
+	if ((msg = MOSlayout_hdr(&task, &layout)) != MAL_SUCCEED) {
+		return msg;
+	}
+
+	switch(ATOMbasetype(task.type)){
+	case TYPE_bte: return MOSlayout_bte(&task, &layout);
+	case TYPE_sht: return MOSlayout_sht(&task, &layout);
+	case TYPE_int: return MOSlayout_int(&task, &layout);
+	case TYPE_lng: return MOSlayout_lng(&task, &layout);
+	case TYPE_flt: return MOSlayout_flt(&task, &layout);
+	case TYPE_dbl: return MOSlayout_dbl(&task, &layout);
+#ifdef HAVE_HGE
+	case TYPE_hge: return MOSlayout_hge(&task, &layout);
+#endif
+	default:
+		// Unknown type. Should not happen.
+		assert(0);
+	}
+
+	return MAL_SUCCEED;
+}
 
 static
 str MOSestimate(MOStask* task, BAT* estimates, size_t* compressed_size) {

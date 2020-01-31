@@ -6,8 +6,8 @@ MOSadvance_SIGNATURE(raw, TPE)
 
 	char* blk = (char*)task->blk;
 	blk += sizeof(MOSBlockHeaderTpe(raw, TPE));
-	blk += GET_PADDING(task->blk, raw, TPE);
 	blk += cnt * sizeof(TPE);
+	blk += GET_PADDING(task->blk, raw, TPE);
 
 	task->blk = (MosaicBlk) blk;
 }
@@ -114,5 +114,18 @@ MOSprojectionloop_SIGNATURE(raw, TPE, CAND_ITER)
 	}
 
 	task->src = (char*) bt;
+}
+#endif
+
+#ifdef LAYOUT_DEFINITION
+
+MOSlayout_SIGNATURE(METHOD, TPE)
+{
+	(void) task;
+	(void) layout;
+
+	// TODO check what advance does.
+
+	return MAL_SUCCEED;
 }
 #endif

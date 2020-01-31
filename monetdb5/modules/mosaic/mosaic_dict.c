@@ -49,44 +49,6 @@ bool MOStypes_dict(BAT* b) {
 
 #define CONDITIONAL_INSERT_dict(INFO, VAL, TPE)	(true)
 
-void
-MOSlayout_dict_hdr(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
-{
-	lng zero=0;
-	unsigned int i;
-	char buf[BUFSIZ];
-	char bufv[BUFSIZ];
-	(void) boutput;
-
-	BUN dictsize = GET_COUNT(task->dict_info);
-
-	for(i=0; i< dictsize; i++){
-		snprintf(buf, BUFSIZ,"dict[%u]",i);
-		if( BUNappend(btech, buf, false) != GDK_SUCCEED ||
-			BUNappend(bcount, &zero, false) != GDK_SUCCEED ||
-			BUNappend(binput, &zero, false) != GDK_SUCCEED ||
-			// BUNappend(boutput, MOSgetDictFreq(dict_hdr, i), false) != GDK_SUCCEED ||
-			BUNappend(bproperties, bufv, false) != GDK_SUCCEED)
-		return;
-	}
-}
-
-void
-MOSlayout_dict(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
-{
-	MosaicBlk blk = task->blk;
-	lng cnt = MOSgetCnt(blk), input=0, output= 0;
-
-	input = cnt * ATOMsize(task->type);
-	output =  MosaicBlkSize + (cnt * task->hdr->bits_dict)/8 + (((cnt * task->hdr->bits_dict) %8) != 0);
-	if( BUNappend(btech, "dict blk", false) != GDK_SUCCEED ||
-		BUNappend(bcount, &cnt, false) != GDK_SUCCEED ||
-		BUNappend(binput, &input, false) != GDK_SUCCEED ||
-		BUNappend(boutput, &output, false) != GDK_SUCCEED ||
-		BUNappend(bproperties, "", false) != GDK_SUCCEED)
-		return;
-}
-
 #define METHOD dict
 #define METHOD_TEMPLATES_INCLUDE "mosaic_dictionary_templates.h"
 #define PREPARATION_DEFINITION
@@ -118,6 +80,32 @@ MOSlayout_dict(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput
 #undef TPE
 #endif
 #undef COMPRESSION_DEFINITION
+
+#define LAYOUT_DEFINITION
+#define TPE bte
+#include METHOD_TEMPLATES_INCLUDE
+#undef TPE
+#define TPE sht
+#include METHOD_TEMPLATES_INCLUDE
+#undef TPE
+#define TPE int
+#include METHOD_TEMPLATES_INCLUDE
+#undef TPE
+#define TPE lng
+#include METHOD_TEMPLATES_INCLUDE
+#undef TPE
+#define TPE flt
+#include METHOD_TEMPLATES_INCLUDE
+#undef TPE
+#define TPE dbl
+#include METHOD_TEMPLATES_INCLUDE
+#undef TPE
+#ifdef HAVE_HGE
+#define TPE hge
+#include METHOD_TEMPLATES_INCLUDE
+#undef TPE
+#endif
+#undef LAYOUT_DEFINITION
 
 #define TPE bte
 #include "mosaic_select_template.h"
