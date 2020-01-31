@@ -2227,6 +2227,7 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 	list *l; 
 	node *en = NULL, *n;
 	stmt *left = NULL, *right = NULL, *join = NULL, *jl, *jr, *c;
+	int semi_used = 0;
 
 	if (rel->op == op_anti && !list_empty(rel->exps) && list_length(rel->exps) == 1 && ((sql_exp*)rel->exps->h->data)->flag == mark_notin)
 		return rel2bin_antijoin(be, rel, refs);
@@ -2244,7 +2245,37 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
  	 * 	first cheap join(s) (equality or idx) 
  	 * 	second selects/filters 
 	 */
-	if (rel->exps) {
+	if (rel->op != op_anti && rel->exps && list_length(rel->exps) == 1) {
+		sql_exp *e = rel->exps->h->data;
+
+		if (e->type == e_cmp && (e->flag == cmp_equal || e->flag == mark_in) && !e->anti && !e->f) {
+			stmt *r, *l = exp_bin(be, e->l, left, NULL, NULL, NULL, NULL, NULL);
+			int swap = 0;
+
+			if (!l) {
+				swap = 1;
+				l = exp_bin(be, e->l, right, NULL, NULL, NULL, NULL, NULL);
+			}
+			r = exp_bin(be, e->r, left, right, NULL, NULL, NULL, NULL);
+
+			if (swap) {
+				stmt *t = l;
+				l = r;
+				r = t;
+			}
+
+			if (!l || !r)
+				return NULL;
+			join = stmt_semijoin(be, l, r); 
+			if (join)
+				join = stmt_result(be, join, 0);
+			if (!join)
+				return NULL;
+			semi_used = 1;
+		}
+	}
+		
+	if (!semi_used && rel->exps) {
 		int idx = 0;
 		list *jexps = sa_list(sql->sa);
 		list *lje = sa_list(sql->sa);
@@ -2318,13 +2349,14 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 			stmt *r = bin_first_column(be, right);
 			join = stmt_join(be, l, r, 0, cmp_all); 
 		}
-	} else {
+	} else if (!semi_used) {
 		stmt *l = bin_first_column(be, left);
 		stmt *r = bin_first_column(be, right);
 		join = stmt_join(be, l, r, 0, cmp_all); 
 	}
-	jl = stmt_result(be, join, 0);
-	if (en) {
+	if (!semi_used)
+		jl = stmt_result(be, join, 0);
+	if (!semi_used && en) {
 		stmt *sub, *sel = NULL;
 		list *nl;
 
@@ -2374,13 +2406,15 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 	/* construct relation */
 	l = sa_list(sql->sa);
 
-	/* We did a full join, thats too much. 
-	   Reduce this using difference and intersect */
-	c = stmt_mirror(be, left->op4.lval->h->data);
-	if (rel->op == op_anti) {
-		join = stmt_tdiff(be, c, jl);
-	} else {
-		join = stmt_tinter(be, c, jl);
+	if (!semi_used) {
+		/* We did a full join, thats too much. 
+	   	Reduce this using difference and intersect */
+		c = stmt_mirror(be, left->op4.lval->h->data);
+		if (rel->op == op_anti) {
+			join = stmt_tdiff(be, c, jl);
+		} else {
+			join = stmt_tinter(be, c, jl);
+		}
 	}
 
 	/* project all the left columns */

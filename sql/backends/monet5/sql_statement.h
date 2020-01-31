@@ -66,6 +66,7 @@ typedef enum stmt_type {
 	st_join,
 	st_join2,
 	st_joinN,
+	st_semijoin,
 
 	st_export,
 	st_append,
@@ -185,6 +186,7 @@ extern stmt *stmt_join(backend *be, stmt *op1, stmt *op2, int anti, comp_type cm
 extern stmt *stmt_join2(backend *be, stmt *l, stmt *ra, stmt *rb, int cmp, int anti, int swapped);
 /* generic join operator, with a left and right statement list */
 extern stmt *stmt_genjoin(backend *be, stmt *l, stmt *r, sql_subfunc *op, int anti, int swapped);
+extern stmt *stmt_semijoin(backend *be, stmt *op1, stmt *op2);
 
 extern stmt *stmt_project(backend *be, stmt *op1, stmt *op2);
 extern stmt *stmt_project_delta(backend *be, stmt *col, stmt *upd, stmt *ins);
