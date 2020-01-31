@@ -5893,10 +5893,13 @@ rel_groupby_distinct(int *changes, mvc *sql, sql_rel *rel)
 			if (e != distinct) {
 				if (e->type == e_aggr) { /* copy the arguments to the aggregate */
 					list *args = e->l;
-					sql_exp *dargs = args->h->data;
-
-					list_append(ngbe, exp_copy(sql, dargs));
-					list_append(exps, exp_copy(sql, dargs));
+					if (args) {
+						for (node *n = args->h ; n ; n = n->next) {
+							sql_exp *e = n->data;
+							list_append(ngbe, exp_copy(sql, e));
+							list_append(exps, exp_copy(sql, e));
+						}
+					}
 				} else {
 					e = exp_ref(sql->sa, e);
 					append(ngbe, e);
