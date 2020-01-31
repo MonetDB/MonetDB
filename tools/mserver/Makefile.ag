@@ -25,18 +25,6 @@ INCLUDES = ../../monetdb5/mal \
 		   ../../sql/storage \
 		   $(openssl_CFLAGS) $(pcre_CFLAGS) $(libxml2_CFLAGS)
 
-headers_docx = {
-	HEADERS = docx
-	SOURCES = tomographintro.docx
-	DIR = datadir/doc/MonetDB-client-tools
-}
-
-headers_pdf = {
-	HEADERS = pdf
-	SOURCES = tomographintro.pdf
-	DIR = datadir/doc/MonetDB-client-tools
-}
-
 # see clients/mapiclient/Makefile.ag for use of logo file
 headers_png = {
 	HEADERS = png
