@@ -72,11 +72,11 @@ comment "Select all head values of the first input BAT for which the tail value
 
 command select(b:bat[:any_1], low:any_1, high:any_1, li:bit, hi:bit, anti:bit, unknown:bit) :bat[:oid]
 address ALGselect1nil
-comment "With unknow set, each nil != nil";
+comment "With unknown set, each nil != nil";
 
 command select(b:bat[:any_1], s:bat[:oid], low:any_1, high:any_1, li:bit, hi:bit, anti:bit, unknown:bit) :bat[:oid]
 address ALGselect2nil
-comment "With unknow set, each nil != nil";
+comment "With unknown set, each nil != nil";
 
 command thetaselect(b:bat[:any_1], val:any_1, op:str) :bat[:oid]
 address ALGthetaselect1
