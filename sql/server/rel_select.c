@@ -1267,8 +1267,12 @@ rel_set_type_param(mvc *sql, sql_subtype *type, sql_rel *rel, sql_exp *rel_exp, 
 	if ((rel_exp->type == e_atom || rel_exp->type == e_column) && (rel_exp->l || rel_exp->r || rel_exp->f)) {
 		/* it's not a parameter set possible parameters below */
 		const char *relname = exp_relname(rel_exp), *expname = exp_name(rel_exp);
-		return rel_set_type_recurse(sql, type, rel, &relname, &expname);
-	} else if (set_type_param(sql, type, rel_exp->flag) == 0) {
+		if (rel_set_type_recurse(sql, type, rel, &relname, &expname) < 0)
+			return -1;
+	}
+	if (exp_subtype(rel_exp))
+		return 0;
+	if (set_type_param(sql, type, rel_exp->flag) == 0) {
 		rel_exp->tpe = *type;
 		return 0;
 	}
@@ -1992,6 +1996,7 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 		le = ll->h->data;
 	} else {
 		le = exp_values(sql->sa, ll);
+		exp_label(sql->sa, le, ++sql->label);
 		ek.card = card_relation;
 		is_tuple = 1;
 	}
@@ -2015,8 +2020,38 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 		}
 
 		values = exp_values(sql->sa, vals);
-		if (!is_tuple) /* if it's not a tuple, enforce coersion on the type for every element on the list */
+		exp_label(sql->sa, values, ++sql->label);
+		if (is_tuple) { 
+			list *le_vals = le->f;
+
+			for (node *m = le_vals->h, *o = vals->h ; m && o ; m = m->next, o = o->next) {
+				sql_exp *e = m->data, *f = o->data;
+				sql_subtype *t1 = exp_subtype(e), *t2 = exp_subtype(f);
+
+				if (!t1 || !t2) {
+					if (t2 && !t1 && rel_set_type_param(sql, t2, rel ? *rel : NULL, e, 0) < 0)
+						return NULL;
+					if (t1 && !t2 && rel_set_type_param(sql, t1, rel ? *rel : NULL, f, 0) < 0)
+						return NULL;
+				}
+				if (!exp_subtype(e) || !exp_subtype(f))
+					return sql_error(sql, 01, SQLSTATE(42000) "Cannot have a parameter (?) on both sides of an expression");
+			}
+		} else { /* if it's not a tuple, enforce coersion on the type for every element on the list */
+			sql_subtype *t1 = exp_subtype(le), *t2;
+
 			values = exp_values_set_supertype(sql, values);
+			t2 = exp_subtype(values);
+
+			if (!t1 || !t2) {
+				if (t2 && !t1 && rel_set_type_param(sql, t2, rel ? *rel : NULL, le, 0) < 0)
+					return NULL;
+				if (t1 && !t2 && rel_set_type_param(sql, t1, rel ? *rel : NULL, values, 0) < 0)
+					return NULL;
+			}
+			if (!exp_subtype(le) || !exp_subtype(values))
+				return sql_error(sql, 01, SQLSTATE(42000) "Cannot have a parameter (?) on both sides of an expression");
+		}
 		e = exp_in_func(sql, le, values, (sc->token == SQL_IN), is_tuple);
 	}
 	if (e && le)

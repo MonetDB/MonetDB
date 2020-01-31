@@ -86,6 +86,31 @@ stdout of test 'groupby_error` in directory 'sql/test/miscellaneous` itself:
 % col0,	col1,	col2 # name
 % int,	int,	int # type
 % 1,	1,	1 # length
+#prepare select col0 from tab0 where (?) in (select col0 from tab0);
+#prepare select col0 from tab0 where (?) in (select col0 from tab0);
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 3,	3,	1,	0,	4,	4 # length
+[ "int",	32,	0,	"",	"tab0",	"col0"	]
+[ "int",	32,	0,	NULL,	NULL,	NULL	]
+#prepare select col0 from tab0 where (?,?) in (select col0,col1 from tab0);
+#prepare select col0 from tab0 where (?,?) in (select col0,col1 from tab0);
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 3,	3,	1,	0,	4,	4 # length
+[ "int",	32,	0,	"",	"tab0",	"col0"	]
+[ "int",	32,	0,	NULL,	NULL,	NULL	]
+[ "int",	32,	0,	NULL,	NULL,	NULL	]
+#prepare select col0 from tab0 where (col0) in (?);
+#prepare select col0 from tab0 where (col0) in (?);
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 3,	3,	1,	0,	4,	4 # length
+[ "int",	32,	0,	"",	"tab0",	"col0"	]
+[ "int",	32,	0,	NULL,	NULL,	NULL	]
 #ROLLBACK;
 
 # 10:56:47 >  
