@@ -856,6 +856,7 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f, sql_func *fo, int r
 	char *fn = is_loader?"loader":(is_aggr ? "aggregate" : (is_func ? "function" : "procedure"));
 	char *KF = f->type == F_FILT ? "FILTER " : f->type == F_UNION ? "UNION " : "";
 	char *kf = f->type == F_FILT ? "filter " : f->type == F_UNION ? "union " : "";
+	int clientid = sql->clientid;
 
 	(void)fname;
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
@@ -869,7 +870,7 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f, sql_func *fo, int r
 	switch (nf->lang) {
 	case FUNC_LANG_INT:
 	case FUNC_LANG_MAL: /* shouldn't be reachable, but leave it here */
-		if (!backend_resolve_function(sql, nf))
+		if (!backend_resolve_function(&clientid, nf))
 			throw(SQL,"sql.create_func", SQLSTATE(3F000) "CREATE %s%s: external name %s.%s not bound", KF, F, nf->mod, nf->base.name);
 		if (nf->query == NULL)
 			break;

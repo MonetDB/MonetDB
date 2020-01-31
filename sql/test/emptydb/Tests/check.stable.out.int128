@@ -33,7 +33,6 @@ stdout of test 'check` in directory 'sql/test/emptydb` itself:
 \dSv
 \dSs
 \dSf
-\dn bam
 \dn cquery
 \dn json
 \dn logging
@@ -42,11 +41,6 @@ stdout of test 'check` in directory 'sql/test/emptydb` itself:
 \dn tmp
 \dn wlc
 \dn wlr
-\dSt bam.export
-\dSt bam.files
-\dSt bam.pg
-\dSt bam.rg
-\dSt bam.sq
 \dSt sys._columns
 \dSt sys._streams
 \dSt sys._tables
@@ -374,7 +368,6 @@ stdout of test 'check` in directory 'sql/test/emptydb` itself:
 \dSf sys."var"
 \dSf sys."var_pop"
 \dSf sys."var_samp"
-SYSTEM SCHEMA  bam
 SYSTEM SCHEMA  cquery
 SYSTEM SCHEMA  json
 SYSTEM SCHEMA  logging
@@ -595,7 +588,6 @@ SYSTEM FUNCTION         sys.identity
 SYSTEM FUNCTION         sys.ifthenelse
 SYSTEM FILTER FUNCTION  sys.ilike
 SYSTEM FUNCTION         sys.imprintsize
-SYSTEM FUNCTION         sys.in
 SYSTEM FUNCTION         sys.index
 SYSTEM FUNCTION         sys.insert
 SYSTEM FUNCTION         sys.internaltransform
@@ -672,7 +664,6 @@ SYSTEM AGGREGATE        sys.not_exist
 SYSTEM FUNCTION         sys.not_ilike
 SYSTEM FUNCTION         sys.not_like
 SYSTEM AGGREGATE        sys.not_unique
-SYSTEM FUNCTION         sys.not_uniques
 SYSTEM FUNCTION         sys.nth_value
 SYSTEM FUNCTION         sys.ntile
 SYSTEM AGGREGATE        sys.null
@@ -899,7 +890,6 @@ SYSTEM FUNCTION         sys.window_bound
 SYSTEM FUNCTION         sys.xor
 SYSTEM FUNCTION         sys.year
 SYSTEM AGGREGATE        sys.zero_or_one
-CREATE SCHEMA "bam" AUTHORIZATION "monetdb";
 CREATE SCHEMA "cquery" AUTHORIZATION "monetdb";
 CREATE SCHEMA "json" AUTHORIZATION "monetdb";
 CREATE SCHEMA "logging" AUTHORIZATION "monetdb";
@@ -908,11 +898,6 @@ CREATE SCHEMA "sys";
 CREATE SCHEMA "tmp";
 CREATE SCHEMA "wlc" AUTHORIZATION "monetdb";
 CREATE SCHEMA "wlr" AUTHORIZATION "monetdb";
-CREATE TABLE "bam"."export" ("qname" CHARACTER LARGE OBJECT NOT NULL, "flag" SMALLINT NOT NULL, "rname" CHARACTER LARGE OBJECT NOT NULL, "pos" INTEGER NOT NULL, "mapq" SMALLINT NOT NULL, "cigar" CHARACTER LARGE OBJECT NOT NULL, "rnext" CHARACTER LARGE OBJECT NOT NULL, "pnext" INTEGER NOT NULL, "tlen" INTEGER NOT NULL, "seq" CHARACTER LARGE OBJECT NOT NULL, "qual" CHARACTER LARGE OBJECT NOT NULL);
-CREATE TABLE "bam"."files" ("file_id" BIGINT NOT NULL, "file_location" CHARACTER LARGE OBJECT NOT NULL, "dbschema" SMALLINT NOT NULL, "format_version" VARCHAR(7), "sorting_order" VARCHAR(10), "comments" CHARACTER LARGE OBJECT, CONSTRAINT "files_pkey_file_id" PRIMARY KEY ("file_id"));
-CREATE TABLE "bam"."pg" ("id" CHARACTER LARGE OBJECT NOT NULL, "file_id" BIGINT NOT NULL, "pn" CHARACTER LARGE OBJECT, "cl" CHARACTER LARGE OBJECT, "pp" CHARACTER LARGE OBJECT, "vn" CHARACTER LARGE OBJECT, CONSTRAINT "pg_pkey_id_file_id" PRIMARY KEY ("id", "file_id"), CONSTRAINT "pg_fkey_file_id" FOREIGN KEY ("file_id") REFERENCES "bam"."files" ("file_id"));
-CREATE TABLE "bam"."rg" ("id" CHARACTER LARGE OBJECT NOT NULL, "file_id" BIGINT NOT NULL, "cn" CHARACTER LARGE OBJECT, "ds" CHARACTER LARGE OBJECT, "dt" TIMESTAMP, "fo" CHARACTER LARGE OBJECT, "ks" CHARACTER LARGE OBJECT, "lb" CHARACTER LARGE OBJECT, "pg" CHARACTER LARGE OBJECT, "pi" INTEGER, "pl" CHARACTER LARGE OBJECT, "pu" CHARACTER LARGE OBJECT, "sm" CHARACTER LARGE OBJECT, CONSTRAINT "rg_pkey_id_file_id" PRIMARY KEY ("id", "file_id"), CONSTRAINT "rg_fkey_file_id" FOREIGN KEY ("file_id") REFERENCES "bam"."files" ("file_id"));
-CREATE TABLE "bam"."sq" ("sn" CHARACTER LARGE OBJECT NOT NULL, "file_id" BIGINT NOT NULL, "ln" INTEGER, "as" INTEGER, "m5" CHARACTER LARGE OBJECT, "sp" CHARACTER LARGE OBJECT, "ur" CHARACTER LARGE OBJECT, CONSTRAINT "sq_pkey_sn_file_id" PRIMARY KEY ("sn", "file_id"), CONSTRAINT "sq_fkey_file_id" FOREIGN KEY ("file_id") REFERENCES "bam"."files" ("file_id"));
 CREATE TABLE "sys"."_columns" ("id" INTEGER, "name" VARCHAR(1024), "type" VARCHAR(1024), "type_digits" INTEGER, "type_scale" INTEGER, "table_id" INTEGER, "default" VARCHAR(2048), "null" BOOLEAN, "number" INTEGER, "storage" VARCHAR(2048));
 CREATE TABLE "sys"."_streams" ("id" INTEGER, "table_id" INTEGER, "window" INTEGER, "stride" INTEGER);
 CREATE TABLE "sys"."_tables" ("id" INTEGER, "name" VARCHAR(1024), "schema_id" INTEGER, "query" VARCHAR(1048576), "type" SMALLINT, "system" BOOLEAN, "commit_action" SMALLINT, "access" SMALLINT);
@@ -1553,7 +1538,6 @@ drop function pcre_replace(string, string, string, string);
 % name,	authorization,	owner,	system # name
 % varchar,	int,	int,	boolean # type
 % 8,	1,	1,	5 # length
-[ "bam",	3,	3,	true	]
 [ "cquery",	3,	3,	true	]
 [ "json",	3,	3,	true	]
 [ "logging",	3,	3,	true	]
@@ -1567,11 +1551,6 @@ drop function pcre_replace(string, string, string, string);
 % name,	name,	query,	type,	system,	commit_action,	access # name
 % varchar,	varchar,	varchar,	varchar,	boolean,	char,	char # type
 % 3,	34,	2809,	5,	5,	8,	10 # length
-[ "bam",	"export",	NULL,	"TABLE",	true,	"COMMIT",	"WRITABLE"	]
-[ "bam",	"files",	NULL,	"TABLE",	true,	"COMMIT",	"WRITABLE"	]
-[ "bam",	"pg",	NULL,	"TABLE",	true,	"COMMIT",	"WRITABLE"	]
-[ "bam",	"rg",	NULL,	"TABLE",	true,	"COMMIT",	"WRITABLE"	]
-[ "bam",	"sq",	NULL,	"TABLE",	true,	"COMMIT",	"WRITABLE"	]
 [ "sys",	"_columns",	NULL,	"TABLE",	true,	"COMMIT",	"WRITABLE"	]
 [ "sys",	"_streams",	NULL,	"TABLE",	true,	"COMMIT",	"WRITABLE"	]
 [ "sys",	"_tables",	NULL,	"TABLE",	true,	"COMMIT",	"WRITABLE"	]
@@ -1938,23 +1917,6 @@ drop function pcre_replace(string, string, string, string);
 [ "dependency_views_on_views",	"depend_type",	"smallint",	16,	0,	NULL,	true,	6,	NULL	]
 [ "environment",	"name",	"varchar",	1024,	0,	NULL,	true,	0,	NULL	]
 [ "environment",	"value",	"varchar",	2048,	0,	NULL,	true,	1,	NULL	]
-[ "export",	"qname",	"clob",	0,	0,	NULL,	false,	0,	NULL	]
-[ "export",	"flag",	"smallint",	16,	0,	NULL,	false,	1,	NULL	]
-[ "export",	"rname",	"clob",	0,	0,	NULL,	false,	2,	NULL	]
-[ "export",	"pos",	"int",	32,	0,	NULL,	false,	3,	NULL	]
-[ "export",	"mapq",	"smallint",	16,	0,	NULL,	false,	4,	NULL	]
-[ "export",	"cigar",	"clob",	0,	0,	NULL,	false,	5,	NULL	]
-[ "export",	"rnext",	"clob",	0,	0,	NULL,	false,	6,	NULL	]
-[ "export",	"pnext",	"int",	32,	0,	NULL,	false,	7,	NULL	]
-[ "export",	"tlen",	"int",	32,	0,	NULL,	false,	8,	NULL	]
-[ "export",	"seq",	"clob",	0,	0,	NULL,	false,	9,	NULL	]
-[ "export",	"qual",	"clob",	0,	0,	NULL,	false,	10,	NULL	]
-[ "files",	"file_id",	"bigint",	64,	0,	NULL,	false,	0,	NULL	]
-[ "files",	"file_location",	"clob",	0,	0,	NULL,	false,	1,	NULL	]
-[ "files",	"dbschema",	"smallint",	16,	0,	NULL,	false,	2,	NULL	]
-[ "files",	"format_version",	"varchar",	7,	0,	NULL,	true,	3,	NULL	]
-[ "files",	"sorting_order",	"varchar",	10,	0,	NULL,	true,	4,	NULL	]
-[ "files",	"comments",	"clob",	0,	0,	NULL,	true,	5,	NULL	]
 [ "function_languages",	"language_id",	"smallint",	16,	0,	NULL,	false,	0,	NULL	]
 [ "function_languages",	"language_name",	"varchar",	20,	0,	NULL,	false,	1,	NULL	]
 [ "function_languages",	"language_keyword",	"varchar",	20,	0,	NULL,	true,	2,	NULL	]
@@ -2042,12 +2004,6 @@ drop function pcre_replace(string, string, string, string);
 [ "optimizers",	"name",	"clob",	0,	0,	NULL,	true,	0,	NULL	]
 [ "optimizers",	"def",	"clob",	0,	0,	NULL,	true,	1,	NULL	]
 [ "optimizers",	"status",	"clob",	0,	0,	NULL,	true,	2,	NULL	]
-[ "pg",	"id",	"clob",	0,	0,	NULL,	false,	0,	NULL	]
-[ "pg",	"file_id",	"bigint",	64,	0,	NULL,	false,	1,	NULL	]
-[ "pg",	"pn",	"clob",	0,	0,	NULL,	true,	2,	NULL	]
-[ "pg",	"cl",	"clob",	0,	0,	NULL,	true,	3,	NULL	]
-[ "pg",	"pp",	"clob",	0,	0,	NULL,	true,	4,	NULL	]
-[ "pg",	"vn",	"clob",	0,	0,	NULL,	true,	5,	NULL	]
 [ "prepared_statements",	"sessionid",	"int",	32,	0,	NULL,	true,	0,	NULL	]
 [ "prepared_statements",	"username",	"clob",	0,	0,	NULL,	true,	1,	NULL	]
 [ "prepared_statements",	"statementid",	"int",	32,	0,	NULL,	true,	2,	NULL	]
@@ -2120,19 +2076,6 @@ drop function pcre_replace(string, string, string, string);
 [ "rejects",	"fldid",	"int",	32,	0,	NULL,	true,	1,	NULL	]
 [ "rejects",	"message",	"clob",	0,	0,	NULL,	true,	2,	NULL	]
 [ "rejects",	"input",	"clob",	0,	0,	NULL,	true,	3,	NULL	]
-[ "rg",	"id",	"clob",	0,	0,	NULL,	false,	0,	NULL	]
-[ "rg",	"file_id",	"bigint",	64,	0,	NULL,	false,	1,	NULL	]
-[ "rg",	"cn",	"clob",	0,	0,	NULL,	true,	2,	NULL	]
-[ "rg",	"ds",	"clob",	0,	0,	NULL,	true,	3,	NULL	]
-[ "rg",	"dt",	"timestamp",	7,	0,	NULL,	true,	4,	NULL	]
-[ "rg",	"fo",	"clob",	0,	0,	NULL,	true,	5,	NULL	]
-[ "rg",	"ks",	"clob",	0,	0,	NULL,	true,	6,	NULL	]
-[ "rg",	"lb",	"clob",	0,	0,	NULL,	true,	7,	NULL	]
-[ "rg",	"pg",	"clob",	0,	0,	NULL,	true,	8,	NULL	]
-[ "rg",	"pi",	"int",	32,	0,	NULL,	true,	9,	NULL	]
-[ "rg",	"pl",	"clob",	0,	0,	NULL,	true,	10,	NULL	]
-[ "rg",	"pu",	"clob",	0,	0,	NULL,	true,	11,	NULL	]
-[ "rg",	"sm",	"clob",	0,	0,	NULL,	true,	12,	NULL	]
 [ "roles",	"id",	"int",	32,	0,	NULL,	true,	0,	NULL	]
 [ "roles",	"name",	"varchar",	1024,	0,	NULL,	true,	1,	NULL	]
 [ "roles",	"grantor",	"int",	32,	0,	NULL,	true,	2,	NULL	]
@@ -2171,13 +2114,6 @@ drop function pcre_replace(string, string, string, string);
 [ "spatial_ref_sys",	"auth_srid",	"int",	32,	0,	NULL,	true,	2,	NULL	]
 [ "spatial_ref_sys",	"srtext",	"varchar",	2048,	0,	NULL,	true,	3,	NULL	]
 [ "spatial_ref_sys",	"proj4text",	"varchar",	2048,	0,	NULL,	true,	4,	NULL	]
-[ "sq",	"sn",	"clob",	0,	0,	NULL,	false,	0,	NULL	]
-[ "sq",	"file_id",	"bigint",	64,	0,	NULL,	false,	1,	NULL	]
-[ "sq",	"ln",	"int",	32,	0,	NULL,	true,	2,	NULL	]
-[ "sq",	"as",	"int",	32,	0,	NULL,	true,	3,	NULL	]
-[ "sq",	"m5",	"clob",	0,	0,	NULL,	true,	4,	NULL	]
-[ "sq",	"sp",	"clob",	0,	0,	NULL,	true,	5,	NULL	]
-[ "sq",	"ur",	"clob",	0,	0,	NULL,	true,	6,	NULL	]
 [ "statistics",	"column_id",	"int",	32,	0,	NULL,	true,	0,	NULL	]
 [ "statistics",	"type",	"clob",	0,	0,	NULL,	true,	1,	NULL	]
 [ "statistics",	"width",	"int",	32,	0,	NULL,	true,	2,	NULL	]
@@ -2336,17 +2272,6 @@ drop function pcre_replace(string, string, string, string);
 % name,	name,	system,	query,	mod,	language_name,	function_type_name,	side_effect,	varres,	vararg,	name0,	type0,	type_digits0,	type_scale0,	inout0,	name1,	type1,	type_digits1,	type_scale1,	inout1,	name2,	type2,	type_digits2,	type_scale2,	inout2,	name3,	type3,	type_digits3,	type_scale3,	inout3,	name4,	type4,	type_digits4,	type_scale4,	inout4,	name5,	type5,	type_digits5,	type_scale5,	inout5,	name6,	type6,	type_digits6,	type_scale6,	inout6,	name7,	type7,	type_digits7,	type_scale7,	inout7,	name8,	type8,	type_digits8,	type_scale8,	inout8,	name9,	type9,	type_digits9,	type_scale9,	inout9,	name10,	type10,	type_digits10,	type_scale10,	inout10,	name11,	type11,	type_digits11,	type_scale11,	inout11,	name12,	type12,	type_digits12,	type_scale12,	inout12,	name13,	type13,	type_digits13,	type_scale13,	inout13,	name14,	type14,	type_digits14,	type_scale14,	inout14,	name15,	type15,	type_digits15,	type_scale15,	inout15 # name
 % varchar,	varchar,	char,	varchar,	varchar,	varchar,	varchar,	boolean,	boolean,	boolean,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char # type
 % 8,	24,	6,	1362,	9,	10,	26,	5,	5,	5,	11,	14,	4,	1,	3,	16,	14,	4,	1,	3,	16,	14,	4,	1,	3,	27,	12,	4,	1,	3,	9,	9,	2,	1,	3,	14,	14,	4,	1,	3,	12,	14,	3,	1,	3,	11,	7,	2,	1,	3,	11,	7,	2,	1,	3,	8,	6,	2,	1,	3,	6,	6,	2,	1,	3,	6,	7,	2,	1,	3,	8,	7,	2,	1,	3,	6,	7,	1,	1,	3,	9,	7,	1,	1,	3,	6,	7,	1,	1,	3 # length
-[ "bam",	"bam_drop_file",	"SYSTEM",	"create procedure bam.bam_drop_file(file_id bigint, dbschema smallint) external name bam.bam_drop_file;",	"bam",	"MAL",	"Procedure",	true,	false,	false,	"file_id",	"bigint",	64,	0,	"in",	"dbschema",	"smallint",	16,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ "bam",	"bam_export",	"SYSTEM",	"create procedure bam.bam_export(output_path string) external name bam.bam_export;",	"bam",	"MAL",	"Procedure",	true,	false,	false,	"output_path",	"clob",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ "bam",	"bam_flag",	"SYSTEM",	"create function bam.bam_flag(flag smallint, name string) returns boolean external name bam.bam_flag;",	"bam",	"MAL",	"Scalar function",	false,	false,	false,	"result",	"boolean",	1,	0,	"out",	"flag",	"smallint",	16,	0,	"in",	"name",	"clob",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ "bam",	"bam_loader_file",	"SYSTEM",	"create procedure bam.bam_loader_file(bam_file string, dbschema smallint) external name bam.bam_loader_file;",	"bam",	"MAL",	"Procedure",	true,	false,	false,	"bam_file",	"clob",	0,	0,	"in",	"dbschema",	"smallint",	16,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ "bam",	"bam_loader_files",	"SYSTEM",	"create procedure bam.bam_loader_files(bam_files string, dbschema smallint) external name bam.bam_loader_files;",	"bam",	"MAL",	"Procedure",	true,	false,	false,	"bam_files",	"clob",	0,	0,	"in",	"dbschema",	"smallint",	16,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ "bam",	"bam_loader_repos",	"SYSTEM",	"create procedure bam.bam_loader_repos(bam_repos string, dbschema smallint) external name bam.bam_loader_repos;",	"bam",	"MAL",	"Procedure",	true,	false,	false,	"bam_repos",	"clob",	0,	0,	"in",	"dbschema",	"smallint",	16,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ "bam",	"reverse_qual",	"SYSTEM",	"create function bam.reverse_qual(qual string) returns string external name bam.reverse_qual;",	"bam",	"MAL",	"Scalar function",	false,	false,	false,	"result",	"clob",	0,	0,	"out",	"qual",	"clob",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ "bam",	"reverse_seq",	"SYSTEM",	"create function bam.reverse_seq(seq string) returns string external name bam.reverse_seq;",	"bam",	"MAL",	"Scalar function",	false,	false,	false,	"result",	"clob",	0,	0,	"out",	"seq",	"clob",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ "bam",	"sam_export",	"SYSTEM",	"create procedure bam.sam_export(output_path string) external name bam.sam_export;",	"bam",	"MAL",	"Procedure",	true,	false,	false,	"output_path",	"clob",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ "bam",	"seq_char",	"SYSTEM",	"create function bam.seq_char(ref_pos int, alg_seq string, alg_pos int, alg_cigar string) returns char(1) external name bam.seq_char;",	"bam",	"MAL",	"Scalar function",	false,	false,	false,	"result",	"char",	1,	0,	"out",	"ref_pos",	"int",	32,	0,	"in",	"alg_seq",	"clob",	0,	0,	"in",	"alg_pos",	"int",	32,	0,	"in",	"alg_cigar",	"clob",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ "bam",	"seq_length",	"SYSTEM",	"create function bam.seq_length(cigar string) returns int external name bam.seq_length;",	"bam",	"MAL",	"Scalar function",	false,	false,	false,	"result",	"int",	32,	0,	"out",	"cigar",	"clob",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "cquery",	"beginat",	"SYSTEM",	"create procedure cquery.\"beginat\"(alias string, unixtime bigint) external name cquery.\"beginat\";",	"cquery",	"MAL",	"Procedure",	true,	false,	false,	"alias",	"clob",	0,	0,	"in",	"unixtime",	"bigint",	64,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "cquery",	"beginat",	"SYSTEM",	"create procedure cquery.\"beginat\"(unixtime bigint) external name cquery.\"beginat\";",	"cquery",	"MAL",	"Procedure",	true,	false,	false,	"unixtime",	"bigint",	64,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "cquery",	"cycles",	"SYSTEM",	"create procedure cquery.\"cycles\"(alias string, cqcycles integer) external name cquery.\"cycles\";",	"cquery",	"MAL",	"Procedure",	true,	false,	false,	"alias",	"clob",	0,	0,	"in",	"cqcycles",	"int",	32,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
@@ -2694,11 +2619,11 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"group_concat",	"SYSTEM",	"create aggregate sys.group_concat(str string, sep string) returns string external name \"aggr\".\"str_group_concat\";",	"aggr",	"MAL",	"Aggregate function",	false,	false,	false,	"result",	"clob",	0,	0,	"out",	"str",	"clob",	0,	0,	"in",	"sep",	"clob",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"group_concat",	"SYSTEM",	"create window sys.group_concat(str string) returns string external name \"sql\".\"str_group_concat\";",	"sql",	"MAL",	"Analytic function",	false,	false,	false,	"result",	"clob",	0,	0,	"out",	"str",	"clob",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"group_concat",	"SYSTEM",	"create window sys.group_concat(str string, sep string) returns string external name \"sql\".\"str_group_concat\";",	"sql",	"MAL",	"Analytic function",	false,	false,	false,	"result",	"clob",	0,	0,	"out",	"str",	"clob",	0,	0,	"in",	"sep",	"clob",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ "sys",	"grouping",	"SYSTEM",	"grouping",	"sql",	"Internal C",	"Aggregate function",	false,	false,	false,	"res",	"bigint",	64,	0,	"out",	"arg",	"any",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ "sys",	"grouping",	"SYSTEM",	"grouping",	"sql",	"Internal C",	"Aggregate function",	false,	false,	false,	"res",	"hugeint",	128,	0,	"out",	"arg",	"any",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ "sys",	"grouping",	"SYSTEM",	"grouping",	"sql",	"Internal C",	"Aggregate function",	false,	false,	false,	"res",	"int",	32,	0,	"out",	"arg",	"any",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ "sys",	"grouping",	"SYSTEM",	"grouping",	"sql",	"Internal C",	"Aggregate function",	false,	false,	false,	"res",	"smallint",	16,	0,	"out",	"arg",	"any",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ "sys",	"grouping",	"SYSTEM",	"grouping",	"sql",	"Internal C",	"Aggregate function",	false,	false,	false,	"res",	"tinyint",	8,	0,	"out",	"arg",	"any",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys",	"grouping",	"SYSTEM",	"",	"",	"Internal C",	"Aggregate function",	false,	false,	false,	"res",	"bigint",	64,	0,	"out",	"arg",	"any",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys",	"grouping",	"SYSTEM",	"",	"",	"Internal C",	"Aggregate function",	false,	false,	false,	"res",	"hugeint",	128,	0,	"out",	"arg",	"any",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys",	"grouping",	"SYSTEM",	"",	"",	"Internal C",	"Aggregate function",	false,	false,	false,	"res",	"int",	32,	0,	"out",	"arg",	"any",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys",	"grouping",	"SYSTEM",	"",	"",	"Internal C",	"Aggregate function",	false,	false,	false,	"res",	"smallint",	16,	0,	"out",	"arg",	"any",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys",	"grouping",	"SYSTEM",	"",	"",	"Internal C",	"Aggregate function",	false,	false,	false,	"res",	"tinyint",	8,	0,	"out",	"arg",	"any",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"has_m",	"SYSTEM",	"create function has_m(info integer) returns integer external name geom.\"hasM\";",	"geom",	"MAL",	"Scalar function",	false,	false,	false,	"result",	"int",	32,	0,	"out",	"info",	"int",	32,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"has_z",	"SYSTEM",	"create function has_z(info integer) returns integer external name geom.\"hasZ\";",	"geom",	"MAL",	"Scalar function",	false,	false,	false,	"result",	"int",	32,	0,	"out",	"info",	"int",	32,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"hash",	"SYSTEM",	"hash",	"mkey",	"Internal C",	"Scalar function",	false,	false,	false,	"res_0",	"bigint",	64,	0,	"out",	"arg_1",	"any",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
@@ -2717,7 +2642,6 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"ilike",	"SYSTEM",	"create filter function \"ilike\"(val string, pat string) external name algebra.\"ilike\";",	"algebra",	"MAL",	"Filter function",	false,	false,	false,	"val",	"clob",	0,	0,	"in",	"pat",	"clob",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"ilike",	"SYSTEM",	"create filter function \"ilike\"(val string, pat string, esc string) external name algebra.\"ilike\";",	"algebra",	"MAL",	"Filter function",	false,	false,	false,	"val",	"clob",	0,	0,	"in",	"pat",	"clob",	0,	0,	"in",	"esc",	"clob",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"imprintsize",	"SYSTEM",	"create function sys.imprintsize(tpe varchar(1024), count bigint) returns bigint begin if tpe in ('tinyint', 'boolean') then return cast(0.2 * count as bigint); end if; if tpe = 'smallint' then return cast(0.4 * count as bigint); end if; if tpe in ('int', 'real', 'date', 'time', 'timetz', 'sec_interval', 'month_interval') then return cast(0.8 * count as bigint); end if; if tpe in ('bigint', 'double', 'timestamp', 'timestamptz', 'inet', 'oid') then return cast(1.6 * count as bigint); end if; if tpe in ('hugeint', 'decimal', 'uuid', 'mbr') then return cast(3.2 * count as bigint); end if; return 0; end;",	"user",	"SQL",	"Scalar function",	false,	false,	false,	"result",	"bigint",	64,	0,	"out",	"tpe",	"varchar",	1024,	0,	"in",	"count",	"bigint",	64,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ "sys",	"in",	"SYSTEM",	"in",	"calc",	"Internal C",	"Scalar function",	false,	false,	false,	"res_0",	"boolean",	1,	0,	"out",	"arg_1",	"any",	0,	0,	"in",	"arg_2",	"any",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"index",	"SYSTEM",	"index",	"calc",	"Internal C",	"Scalar function",	false,	false,	false,	"res_0",	"int",	32,	0,	"out",	"arg_1",	"char",	0,	0,	"in",	"arg_2",	"boolean",	1,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"index",	"SYSTEM",	"index",	"calc",	"Internal C",	"Scalar function",	false,	false,	false,	"res_0",	"int",	32,	0,	"out",	"arg_1",	"clob",	0,	0,	"in",	"arg_2",	"boolean",	1,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"index",	"SYSTEM",	"index",	"calc",	"Internal C",	"Scalar function",	false,	false,	false,	"res_0",	"int",	32,	0,	"out",	"arg_1",	"varchar",	0,	0,	"in",	"arg_2",	"boolean",	1,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
@@ -2937,8 +2861,6 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"not_like",	"SYSTEM",	"not_like",	"algebra",	"Internal C",	"Scalar function",	false,	false,	false,	"res_0",	"boolean",	1,	0,	"out",	"arg_1",	"varchar",	0,	0,	"in",	"arg_2",	"varchar",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"not_like",	"SYSTEM",	"not_like",	"algebra",	"Internal C",	"Scalar function",	false,	false,	false,	"res_0",	"boolean",	1,	0,	"out",	"arg_1",	"varchar",	0,	0,	"in",	"arg_2",	"varchar",	0,	0,	"in",	"arg_3",	"varchar",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"not_unique",	"SYSTEM",	"not_unique",	"sql",	"Internal C",	"Aggregate function",	false,	false,	false,	"res",	"boolean",	1,	0,	"out",	"arg",	"oid",	63,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ "sys",	"not_uniques",	"SYSTEM",	"not_uniques",	"sql",	"Internal C",	"Scalar function",	false,	false,	false,	"res_0",	"oid",	63,	0,	"out",	"arg_1",	"bigint",	64,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ "sys",	"not_uniques",	"SYSTEM",	"not_uniques",	"sql",	"Internal C",	"Scalar function",	false,	false,	false,	"res_0",	"oid",	63,	0,	"out",	"arg_1",	"oid",	63,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"nth_value",	"SYSTEM",	"nth_value",	"sql",	"Internal C",	"Analytic function",	false,	false,	false,	"res_0",	"any",	0,	0,	"out",	"arg_1",	"any",	0,	0,	"in",	"arg_2",	"bigint",	64,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"nth_value",	"SYSTEM",	"nth_value",	"sql",	"Internal C",	"Analytic function",	false,	false,	false,	"res_0",	"any",	0,	0,	"out",	"arg_1",	"any",	0,	0,	"in",	"arg_2",	"hugeint",	128,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"nth_value",	"SYSTEM",	"nth_value",	"sql",	"Internal C",	"Analytic function",	false,	false,	false,	"res_0",	"any",	0,	0,	"out",	"arg_1",	"any",	0,	0,	"in",	"arg_2",	"int",	32,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
@@ -5048,17 +4970,7 @@ drop function pcre_replace(string, string, string, string);
 % sys.s1,	sys.t1,	sys.c1,	sys.s2,	sys.t2,	sys.k2,	.dt # table_name
 % name,	name,	name,	name,	name,	name,	dependency_type_name # name
 % varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar # type
-% 3,	18,	20,	3,	18,	44,	4 # length
-[ "bam",	"files",	"file_id",	"bam",	"files",	"files_pkey_file_id",	"KEY"	]
-[ "bam",	"pg",	"file_id",	"bam",	"pg",	"pg_fkey_file_id",	"FKEY"	]
-[ "bam",	"pg",	"file_id",	"bam",	"pg",	"pg_pkey_id_file_id",	"KEY"	]
-[ "bam",	"pg",	"id",	"bam",	"pg",	"pg_pkey_id_file_id",	"KEY"	]
-[ "bam",	"rg",	"file_id",	"bam",	"rg",	"rg_fkey_file_id",	"FKEY"	]
-[ "bam",	"rg",	"file_id",	"bam",	"rg",	"rg_pkey_id_file_id",	"KEY"	]
-[ "bam",	"rg",	"id",	"bam",	"rg",	"rg_pkey_id_file_id",	"KEY"	]
-[ "bam",	"sq",	"file_id",	"bam",	"sq",	"sq_fkey_file_id",	"FKEY"	]
-[ "bam",	"sq",	"file_id",	"bam",	"sq",	"sq_pkey_sn_file_id",	"KEY"	]
-[ "bam",	"sq",	"sn",	"bam",	"sq",	"sq_pkey_sn_file_id",	"KEY"	]
+% 3,	18,	20,	3,	18,	44,	3 # length
 [ "sys",	"comments",	"id",	"sys",	"comments",	"comments_id_pkey",	"KEY"	]
 [ "sys",	"dependency_types",	"dependency_type_id",	"sys",	"dependency_types",	"dependency_types_dependency_type_id_pkey",	"KEY"	]
 [ "sys",	"dependency_types",	"dependency_type_name",	"sys",	"dependency_types",	"dependency_types_dependency_type_name_unique",	"KEY"	]
@@ -5080,16 +4992,6 @@ drop function pcre_replace(string, string, string, string);
 % name,	name,	name,	name,	name,	name,	dependency_type_name # name
 % varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar # type
 % 3,	18,	20,	3,	18,	44,	5 # length
-[ "bam",	"files",	"file_id",	"bam",	"files",	"files_pkey_file_id",	"INDEX"	]
-[ "bam",	"pg",	"file_id",	"bam",	"pg",	"pg_fkey_file_id",	"INDEX"	]
-[ "bam",	"pg",	"file_id",	"bam",	"pg",	"pg_pkey_id_file_id",	"INDEX"	]
-[ "bam",	"pg",	"id",	"bam",	"pg",	"pg_pkey_id_file_id",	"INDEX"	]
-[ "bam",	"rg",	"file_id",	"bam",	"rg",	"rg_fkey_file_id",	"INDEX"	]
-[ "bam",	"rg",	"file_id",	"bam",	"rg",	"rg_pkey_id_file_id",	"INDEX"	]
-[ "bam",	"rg",	"id",	"bam",	"rg",	"rg_pkey_id_file_id",	"INDEX"	]
-[ "bam",	"sq",	"file_id",	"bam",	"sq",	"sq_fkey_file_id",	"INDEX"	]
-[ "bam",	"sq",	"file_id",	"bam",	"sq",	"sq_pkey_sn_file_id",	"INDEX"	]
-[ "bam",	"sq",	"sn",	"bam",	"sq",	"sq_pkey_sn_file_id",	"INDEX"	]
 [ "sys",	"comments",	"id",	"sys",	"comments",	"comments_id_pkey",	"INDEX"	]
 [ "sys",	"dependency_types",	"dependency_type_id",	"sys",	"dependency_types",	"dependency_types_dependency_type_id_pkey",	"INDEX"	]
 [ "sys",	"dependency_types",	"dependency_type_name",	"sys",	"dependency_types",	"dependency_types_dependency_type_name_unique",	"INDEX"	]
@@ -5164,7 +5066,6 @@ drop function pcre_replace(string, string, string, string);
 [ "comments",	"comments_id_pkey",	"Hash"	]
 [ "dependency_types",	"dependency_types_dependency_type_id_pkey",	"Hash"	]
 [ "dependency_types",	"dependency_types_dependency_type_name_unique",	"Hash"	]
-[ "files",	"files_pkey_file_id",	"Hash"	]
 [ "function_languages",	"function_languages_language_id_pkey",	"Hash"	]
 [ "function_languages",	"function_languages_language_name_unique",	"Hash"	]
 [ "function_types",	"function_types_function_type_id_pkey",	"Hash"	]
@@ -5174,25 +5075,18 @@ drop function pcre_replace(string, string, string, string);
 [ "key_types",	"key_types_key_type_id_pkey",	"Hash"	]
 [ "key_types",	"key_types_key_type_name_unique",	"Hash"	]
 [ "keywords",	"keywords_keyword_pkey",	"Hash"	]
-[ "pg",	"pg_fkey_file_id",	"Join"	]
-[ "pg",	"pg_pkey_id_file_id",	"Hash"	]
 [ "privilege_codes",	"privilege_codes_privilege_code_id_pkey",	"Hash"	]
 [ "privilege_codes",	"privilege_codes_privilege_code_name_unique",	"Hash"	]
-[ "rg",	"rg_fkey_file_id",	"Join"	]
-[ "rg",	"rg_pkey_id_file_id",	"Hash"	]
 [ "spatial_ref_sys",	"spatial_ref_sys_srid_pkey",	"Hash"	]
-[ "sq",	"sq_fkey_file_id",	"Join"	]
-[ "sq",	"sq_pkey_sn_file_id",	"Hash"	]
 [ "table_types",	"table_types_table_type_id_pkey",	"Hash"	]
 #select t.name, k.name, kt.key_type_name, k2.name, k.action from sys.keys k left outer join sys.keys k2 on k.rkey = k2.id left outer join sys._tables t on k.table_id = t.id left outer join sys.key_types kt on k.type = kt.key_type_id order by t.name, k.name;
 % .t,	.k,	.kt,	.k2,	.k # table_name
 % name,	name,	key_type_name,	name,	action # name
 % varchar,	varchar,	varchar,	varchar,	int # type
-% 18,	44,	11,	18,	3 # length
+% 18,	44,	11,	0,	2 # length
 [ "comments",	"comments_id_pkey",	"Primary Key",	NULL,	-1	]
 [ "dependency_types",	"dependency_types_dependency_type_id_pkey",	"Primary Key",	NULL,	-1	]
 [ "dependency_types",	"dependency_types_dependency_type_name_unique",	"Unique Key",	NULL,	-1	]
-[ "files",	"files_pkey_file_id",	"Primary Key",	NULL,	-1	]
 [ "function_languages",	"function_languages_language_id_pkey",	"Primary Key",	NULL,	-1	]
 [ "function_languages",	"function_languages_language_name_unique",	"Unique Key",	NULL,	-1	]
 [ "function_types",	"function_types_function_type_id_pkey",	"Primary Key",	NULL,	-1	]
@@ -5202,15 +5096,9 @@ drop function pcre_replace(string, string, string, string);
 [ "key_types",	"key_types_key_type_id_pkey",	"Primary Key",	NULL,	-1	]
 [ "key_types",	"key_types_key_type_name_unique",	"Unique Key",	NULL,	-1	]
 [ "keywords",	"keywords_keyword_pkey",	"Primary Key",	NULL,	-1	]
-[ "pg",	"pg_fkey_file_id",	"Foreign Key",	"files_pkey_file_id",	514	]
-[ "pg",	"pg_pkey_id_file_id",	"Primary Key",	NULL,	-1	]
 [ "privilege_codes",	"privilege_codes_privilege_code_id_pkey",	"Primary Key",	NULL,	-1	]
 [ "privilege_codes",	"privilege_codes_privilege_code_name_unique",	"Unique Key",	NULL,	-1	]
-[ "rg",	"rg_fkey_file_id",	"Foreign Key",	"files_pkey_file_id",	514	]
-[ "rg",	"rg_pkey_id_file_id",	"Primary Key",	NULL,	-1	]
 [ "spatial_ref_sys",	"spatial_ref_sys_srid_pkey",	"Primary Key",	NULL,	-1	]
-[ "sq",	"sq_fkey_file_id",	"Foreign Key",	"files_pkey_file_id",	514	]
-[ "sq",	"sq_pkey_sn_file_id",	"Primary Key",	NULL,	-1	]
 [ "table_types",	"table_types_table_type_id_pkey",	"Primary Key",	NULL,	-1	]
 #select name, nr from sys.objects order by name, nr;
 % sys.objects,	sys.objects # table_name
@@ -5221,28 +5109,10 @@ drop function pcre_replace(string, string, string, string);
 [ "dependency_type_id",	0	]
 [ "dependency_type_name",	0	]
 [ "dependency_type_name",	0	]
-[ "file_id",	0	]
-[ "file_id",	0	]
-[ "file_id",	0	]
-[ "file_id",	0	]
-[ "file_id",	0	]
-[ "file_id",	0	]
-[ "file_id",	0	]
-[ "file_id",	0	]
-[ "file_id",	1	]
-[ "file_id",	1	]
-[ "file_id",	1	]
-[ "file_id",	1	]
-[ "file_id",	1	]
-[ "file_id",	1	]
 [ "function_type_id",	0	]
 [ "function_type_id",	0	]
 [ "function_type_name",	0	]
 [ "function_type_name",	0	]
-[ "id",	0	]
-[ "id",	0	]
-[ "id",	0	]
-[ "id",	0	]
 [ "id",	0	]
 [ "id",	0	]
 [ "index_type_id",	0	]
@@ -5263,8 +5133,6 @@ drop function pcre_replace(string, string, string, string);
 [ "privilege_code_id",	0	]
 [ "privilege_code_name",	0	]
 [ "privilege_code_name",	0	]
-[ "sn",	0	]
-[ "sn",	0	]
 [ "srid",	0	]
 [ "srid",	0	]
 [ "table_type_id",	0	]
@@ -5316,8 +5184,6 @@ drop function pcre_replace(string, string, string, string);
 [ "dependency_views_on_procedures",	"public",	"SELECT",	"monetdb",	0	]
 [ "dependency_views_on_views",	"public",	"SELECT",	"monetdb",	0	]
 [ "environment",	"public",	"SELECT",	"monetdb",	0	]
-[ "export",	"public",	"SELECT",	"monetdb",	0	]
-[ "files",	"public",	"SELECT",	"monetdb",	0	]
 [ "function_languages",	"public",	"SELECT",	"monetdb",	0	]
 [ "function_types",	"public",	"SELECT",	"monetdb",	0	]
 [ "functions",	"public",	"SELECT",	NULL,	0	]
@@ -5334,19 +5200,16 @@ drop function pcre_replace(string, string, string, string);
 [ "netcdf_vardim",	"public",	"SELECT",	"monetdb",	0	]
 [ "netcdf_vars",	"public",	"SELECT",	"monetdb",	0	]
 [ "objects",	"public",	"SELECT",	NULL,	0	]
-[ "pg",	"public",	"SELECT",	"monetdb",	0	]
 [ "prepared_statements",	"public",	"SELECT",	"monetdb",	0	]
 [ "prepared_statements_args",	"public",	"SELECT",	"monetdb",	0	]
 [ "privilege_codes",	"public",	"SELECT",	"monetdb",	0	]
 [ "privileges",	"public",	"SELECT",	NULL,	0	]
 [ "queue",	"public",	"SELECT",	"monetdb",	0	]
 [ "range_partitions",	"public",	"SELECT",	NULL,	0	]
-[ "rg",	"public",	"SELECT",	"monetdb",	0	]
 [ "roles",	"public",	"SELECT",	"monetdb",	0	]
 [ "schemas",	"public",	"SELECT",	NULL,	0	]
 [ "sequences",	"public",	"SELECT",	NULL,	0	]
 [ "spatial_ref_sys",	"public",	"SELECT",	"monetdb",	0	]
-[ "sq",	"public",	"SELECT",	"monetdb",	0	]
 [ "systemfunctions",	"public",	"SELECT",	"monetdb",	0	]
 [ "table_partitions",	"public",	"SELECT",	NULL,	0	]
 [ "table_types",	"public",	"SELECT",	"monetdb",	0	]
@@ -5368,12 +5231,6 @@ drop function pcre_replace(string, string, string, string);
 % 24,	6,	7,	7,	1 # length
 [ "abbrev",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "alpha",	"public",	"EXECUTE",	"monetdb",	0	]
-[ "bam_drop_file",	"public",	"EXECUTE",	"monetdb",	0	]
-[ "bam_export",	"public",	"EXECUTE",	"monetdb",	0	]
-[ "bam_flag",	"public",	"EXECUTE",	"monetdb",	0	]
-[ "bam_loader_file",	"public",	"EXECUTE",	"monetdb",	0	]
-[ "bam_loader_files",	"public",	"EXECUTE",	"monetdb",	0	]
-[ "bam_loader_repos",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "broadcast",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "contains",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "corr",	"public",	"EXECUTE",	"monetdb",	0	]
@@ -5547,13 +5404,8 @@ drop function pcre_replace(string, string, string, string);
 [ "queue",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "radians",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "rejects",	"public",	"EXECUTE",	"monetdb",	0	]
-[ "reverse_qual",	"public",	"EXECUTE",	"monetdb",	0	]
-[ "reverse_seq",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "right_shift",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "right_shift_assign",	"public",	"EXECUTE",	"monetdb",	0	]
-[ "sam_export",	"public",	"EXECUTE",	"monetdb",	0	]
-[ "seq_char",	"public",	"EXECUTE",	"monetdb",	0	]
-[ "seq_length",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "setmasklen",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "st_area",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "st_asbinary",	"public",	"EXECUTE",	"monetdb",	0	]

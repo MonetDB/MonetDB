@@ -46,6 +46,7 @@
 #include "mal_private.h"
 #include "mal_runtime.h"
 #include "mal_authorize.h"
+#include "mapi_prompt.h"
 
 int MAL_MAXCLIENTS = 0;
 ClientRec *mal_clients = NULL;

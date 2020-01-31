@@ -16,6 +16,7 @@ INCLUDES = ../../include ../../common ../../storage ../../server \
 		   ../../../monetdb5/extras/rapi \
 		   ../../../common/stream \
 		   ../../../common/utils \
+		   ../../../clients/mapilib \
 		   ../../../gdk
 
 lib__sql = {

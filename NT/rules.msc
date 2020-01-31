@@ -65,16 +65,6 @@ ODBCINST_LIBS = odbccp32.lib user32.lib $(LEGACY_STDIO_DEFINITIONS)
 ODBC_LIBS = odbc32.lib
 
 !IFNDEF PY3VER
-PY2VER=7
-!ENDIF
-!IFNDEF PYTHON2BASE
-PYTHON2BASE=C:\Python2$(PY2VER)
-!ENDIF
-!IFNDEF PYTHON2LIB
-PYTHON2LIB=python2$(PY2VER).lib
-!ENDIF
-
-!IFNDEF PY3VER
 PY3VER=7
 !ENDIF
 !IFNDEF PYTHON3BASE
@@ -179,11 +169,6 @@ libr_CFLAGS = -DHAVE_LIBR "-I$(LIBR)\include"
 R.lib: "$(libr_DLL)"
 	dumpbin /exports "$(libr_DLL)" | "$(PYTHON)" "$(TOPDIR)\..\NT\makelibdef.py" > R.def
 	lib /machine:$(BITSMCHN) /def:R.def /out:R.lib
-!ENDIF
-
-!IFDEF HAVE_LIBPY2
-libpy2_LIBS = "$(PYTHON2DIR)\libs\$(PYTHON2LIB)"
-libpy2_CFLAGS = -DHAVE_LIBPY2 "-I$(PYTHON2DIR)\include" "-I$(PYTHON2DIR)\Lib\site-packages\numpy\core\include"
 !ENDIF
 
 !IFDEF HAVE_LIBPY3
@@ -327,11 +312,6 @@ create_winconfig_conds_new_py:
 !ELSE
 	$(ECHO) HAVE_LIBLZMA_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
-!IFDEF HAVE_LIBPY2
-	$(ECHO) HAVE_LIBPY2_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ELSE
-	$(ECHO) HAVE_LIBPY2_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ENDIF
 !IFDEF HAVE_LIBPY3
 	$(ECHO) HAVE_LIBPY3_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
@@ -377,11 +357,6 @@ create_winconfig_conds_new_py:
 !ELSE
 	$(ECHO) HAVE_PROJ_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
-!IFDEF HAVE_SAMTOOLS
-	$(ECHO) HAVE_SAMTOOLS_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ELSE
-	$(ECHO) HAVE_SAMTOOLS_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ENDIF
 !IFDEF HAVE_SHP
 	$(ECHO) HAVE_SHP_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
@@ -422,9 +397,7 @@ CONFIGURE="$(PYTHON)" $(CONFIGURE_PY) \
 	"PACKAGE=$(pkg)" \
 	"PYTHON=$(PYTHON)" \
 	"PYTHON_LIBDIR=$(PYTHON_LIBDIR)" \
-	"PY2VER=$(PY2VER)" \
 	"PY3VER=$(PY3VER)" \
-	"PYTHON2=$(PYTHON2)" \
 	"PYTHON3=$(PYTHON3)" \
 	"TOPDIR=$(TOPDIR)" \
 	"VERSION=$(VERSION)" \

@@ -1059,81 +1059,6 @@ sql_update_mar2018_netcdf(Client c, const char *prev_schema)
 }
 #endif	/* HAVE_NETCDF */
 
-#ifdef HAVE_SAMTOOLS
-static str
-sql_update_mar2018_samtools(Client c, mvc *sql, const char *prev_schema)
-{
-	size_t bufsize = 2000, pos = 0;
-	char *buf, *err;
-	sql_schema *s = mvc_bind_schema(sql, "bam");
-
-	if (s == NULL)
-		return MAL_SUCCEED;
-
-	buf = GDKmalloc(bufsize);
-	if (buf == NULL)
-		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-
-	pos += snprintf(buf + pos, bufsize - pos, "set schema sys;\n");
-
-	/* 85_bam.sql */
-	list *l = sa_list(sql->sa);
-	sql_subtype tpi, tps;
-	sql_find_subtype(&tpi, "int", 0, 0);
-	sql_find_subtype(&tps, "clob", 0, 0);
-	list_append(l, &tpi);
-	list_append(l, &tps);
-	list_append(l, &tpi);
-	list_append(l, &tps);
-	if (sql_bind_func_(sql->sa, s, "seq_char", l, F_FUNC) == NULL) {
-		pos += snprintf(buf + pos, bufsize - pos,
-				"CREATE FUNCTION bam.seq_char(ref_pos INT, alg_seq STRING, alg_pos INT, alg_cigar STRING)\n"
-				"RETURNS CHAR(1) EXTERNAL NAME bam.seq_char;\n"
-				"update sys.functions set system = true where name in ('seq_char') and schema_id = (select id from sys.schemas where name = 'bam');\n");
-	}
-	sql_find_subtype(&tpi, "smallint", 0, 0);
-	if (sql_bind_func3(sql->sa, s, "bam_loader_repos", &tps, &tpi, &tpi, F_PROC) != NULL) {
-		pos += snprintf(buf + pos, bufsize - pos,
-				"drop procedure bam.bam_loader_repos(string, smallint, smallint);\n"
-				"drop procedure bam.bam_loader_files(string, smallint, smallint);\n");
-	}
-	if (sql_bind_func(sql->sa, s, "bam_loader_repos", &tps, &tpi, F_PROC) == NULL) {
-		pos += snprintf(buf + pos, bufsize - pos,
-				"CREATE PROCEDURE bam.bam_loader_repos(bam_repos STRING, dbschema SMALLINT)\n"
-				"EXTERNAL NAME bam.bam_loader_repos;\n"
-				"CREATE PROCEDURE bam.bam_loader_files(bam_files STRING, dbschema SMALLINT)\n"
-				"EXTERNAL NAME bam.bam_loader_files;\n"
-				"update sys.functions set system = true where name in ('bam_loader_repos', 'bam_loader_files') and schema_id = (select id from sys.schemas where name = 'bam');\n");
-	}
-
-	pos += snprintf(buf + pos, bufsize - pos,
-			"GRANT SELECT ON bam.files TO PUBLIC;\n"
-			"GRANT SELECT ON bam.sq TO PUBLIC;\n"
-			"GRANT SELECT ON bam.rg TO PUBLIC;\n"
-			"GRANT SELECT ON bam.pg TO PUBLIC;\n"
-			"GRANT SELECT ON bam.export TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION bam.bam_flag(SMALLINT, STRING) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION bam.reverse_seq(STRING) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION bam.reverse_qual(STRING) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION bam.seq_length(STRING) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION bam.seq_char(INT, STRING, INT, STRING) TO PUBLIC;\n"
-			"GRANT EXECUTE ON PROCEDURE bam.bam_loader_repos(STRING, SMALLINT) TO PUBLIC;\n"
-			"GRANT EXECUTE ON PROCEDURE bam.bam_loader_files(STRING, SMALLINT) TO PUBLIC;\n"
-			"GRANT EXECUTE ON PROCEDURE bam.bam_loader_file(STRING, SMALLINT) TO PUBLIC;\n"
-			"GRANT EXECUTE ON PROCEDURE bam.bam_drop_file(BIGINT, SMALLINT) TO PUBLIC;\n"
-			"GRANT EXECUTE ON PROCEDURE bam.sam_export(STRING) TO PUBLIC;\n"
-			"GRANT EXECUTE ON PROCEDURE bam.bam_export(STRING) TO PUBLIC;\n");
-
-	pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
-
-	assert(pos < bufsize);
-	printf("Running database upgrade commands:\n%s\n", buf);
-	err = SQLstatementIntern(c, &buf, "update", true, false, NULL);
-	GDKfree(buf);
-	return err;		/* usually MAL_SUCCEED */
-}
-#endif	/* HAVE_SAMTOOLS */
-
 static str
 sql_update_mar2018_sp1(Client c, const char *prev_schema)
 {
@@ -2548,14 +2473,6 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 			"update sys._tables set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
 			" and name = 'queue';\n");
 
-	/* fix sql_privileges entries */
-	pos += snprintf(buf + pos, bufsize - pos,
-			"delete from \"privileges\" where\n"
-			"\"obj_id\" not in (select \"id\" from \"functions\" union select \"id\" from \"tables\" union select \"id\" from \"columns\" union select \"id\" from \"schemas\")\n"
-			"or (\"auth_id\",\"grantor\") not in (select \"id\",\"id\" from \"auths\" union select 0,0);\n"
-			"delete from \"auths\" where \"grantor\" not in (select \"id\" from \"auths\" union select 0);\n"
-			"delete from \"user_role\" where (\"login_id\",\"role_id\") not in (select \"id\",\"id\" from \"auths\" union select 0,0);\n");
-
 	/* 51_sys_schema_extensions */
 	pos += snprintf(buf + pos, bufsize - pos,
 			"ALTER TABLE sys.keywords SET READ WRITE;\n"
@@ -2828,14 +2745,13 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 	}
 #endif
 
-	/* 51_sys_schema_extension.sql */
 	pos += snprintf(buf + pos, bufsize - pos,
-		"create window group_concat(str STRING) returns STRING\n"
+		"create window sys.group_concat(str STRING) returns STRING\n"
 		" external name \"sql\".\"str_group_concat\";\n"
-		"GRANT EXECUTE ON WINDOW group_concat(STRING) TO PUBLIC;\n"
-		"create window group_concat(str STRING, sep STRING) returns STRING\n"
+		"GRANT EXECUTE ON WINDOW sys.group_concat(STRING) TO PUBLIC;\n"
+		"create window sys.group_concat(str STRING, sep STRING) returns STRING\n"
 		" external name \"sql\".\"str_group_concat\";\n"
-		"GRANT EXECUTE ON WINDOW group_concat(STRING, STRING) TO PUBLIC;\n");
+		"GRANT EXECUTE ON WINDOW sys.group_concat(STRING, STRING) TO PUBLIC;\n");
 
 	pos += snprintf(buf + pos, bufsize - pos,
 			"update sys.functions set system = true where name in"
@@ -2855,6 +2771,35 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 			"DROP AGGREGATE var_pop(date);\n"
 			"DROP AGGREGATE var_pop(time);\n"
 			"DROP AGGREGATE var_pop(timestamp);\n");
+
+	/* 81_tracer.sql */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"CREATE SCHEMA logging;\n"
+			"CREATE PROCEDURE logging.flush()\n"
+			" EXTERNAL NAME logging.flush;\n"
+			"CREATE PROCEDURE logging.setcomplevel(comp_id INT, lvl_id INT)\n"
+			" EXTERNAL NAME logging.setcomplevel;\n"
+			"CREATE PROCEDURE logging.resetcomplevel(comp_id INT)\n"
+			" EXTERNAL NAME logging.resetcomplevel;\n"
+			"CREATE PROCEDURE logging.setlayerlevel(layer_id INT, lvl_id INT)\n"
+			" EXTERNAL NAME logging.setlayerlevel;\n"
+			"CREATE PROCEDURE logging.resetlayerlevel(layer_id INT)\n"
+			" EXTERNAL NAME logging.resetlayerlevel;\n"
+			"CREATE PROCEDURE logging.setflushlevel(lvl_id INT)\n"
+			" EXTERNAL NAME logging.setflushlevel;\n"
+			"CREATE PROCEDURE logging.resetflushlevel()\n"
+			" EXTERNAL NAME logging.resetflushlevel;\n"
+			"CREATE PROCEDURE logging.setadapter(adapter_id INT)\n"
+			" EXTERNAL NAME logging.setadapter;\n"
+			"CREATE PROCEDURE logging.resetadapter()\n"
+			" EXTERNAL NAME logging.resetadapter;\n"
+			"CREATE PROCEDURE logging.showinfo()\n"
+			" EXTERNAL NAME logging.showinfo;\n");
+	pos += snprintf(buf + pos, bufsize - pos,
+			"update sys.schemas set system = true where name = 'logging';\n"
+			"update sys.functions set system = true where name in"
+			" ('flush', 'setcomplevel', 'resetcomplevel', 'setlayerlevel', 'resetlayerlevel', 'setflushlevel', 'resetflushlevel', 'setadapter', 'resetadapter', 'showinfo')"
+			" and schema_id = (select id from sys.schemas where name = 'logging');\n");
 
 	pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
@@ -2911,6 +2856,85 @@ sql_update_timetrails(Client c, mvc *sql, const char *prev_schema, bool *systabf
 	err = SQLstatementIntern(c, &buf, "update", true, false, NULL);
 	GDKfree(buf);
 	return err;		/* usually MAL_SUCCEED */
+}
+
+static str
+sql_update_default_bam(Client c, mvc *m, const char *prev_schema)
+{
+	size_t bufsize = 10240, pos = 0;
+	char *err = NULL, *buf;
+	res_table *output;
+	BAT *b;
+	sql_schema *s = mvc_bind_schema(m, "bam");
+	sql_table *t;
+
+	if (s == NULL || !s->system)
+		return NULL;	/* no system schema "bam": nothing to do */
+
+	buf = GDKmalloc(bufsize);
+	if (buf == NULL)
+		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+
+	s->system = 0;
+	if ((t = mvc_bind_table(m, s, "files")) != NULL)
+		t->system = 0;
+	if ((t = mvc_bind_table(m, s, "sq")) != NULL)
+		t->system = 0;
+	if ((t = mvc_bind_table(m, s, "rg")) != NULL)
+		t->system = 0;
+	if ((t = mvc_bind_table(m, s, "pg")) != NULL)
+		t->system = 0;
+	if ((t = mvc_bind_table(m, s, "export")) != NULL)
+		t->system = 0;
+
+	/* check if any of the tables in the bam schema have any content */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"select sum(count) from sys.storage('bam');\n");
+	err = SQLstatementIntern(c, &buf, "update", 1, 0, &output);
+	if (err) {
+		GDKfree(buf);
+		return err;
+	}
+	b = BATdescriptor(output->cols[0].b);
+	pos = 0;
+	pos += snprintf(buf + pos, bufsize - pos,
+			"set schema sys;\n"
+			"update sys.schemas set system = false where name = 'bam';\n"
+			"update sys._tables set system = false where schema_id in (select id from sys.schemas where name = 'bam');\n"
+			"drop procedure bam.bam_loader_repos;\n"
+			"drop procedure bam.bam_loader_files;\n"
+			"drop procedure bam.bam_loader_file;\n"
+			"drop procedure bam.bam_drop_file;\n"
+			"drop function bam.bam_flag;\n"
+			"drop function bam.reverse_seq;\n"
+			"drop function bam.reverse_qual;\n"
+			"drop function bam.seq_length;\n"
+			"drop function bam.seq_char;\n"
+			"drop procedure bam.sam_export;\n"
+			"drop procedure bam.bam_export;\n");
+	if (b) {
+		if (BATcount(b) > 0 && ((lng *) b->theap.base)[0] == 0) {
+			/* tables in bam schema are empty: drop them */
+			pos += snprintf(buf + pos, bufsize - pos,
+					"drop table bam.sq;\n"
+					"drop table bam.rg;\n"
+					"drop table bam.pg;\n"
+					"drop table bam.export;\n"
+					"drop table bam.files;\n"
+					"drop schema bam;\n");
+		}
+		BBPunfix(b->batCacheid);
+	}
+	res_table_destroy(output);
+
+	pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
+	assert(pos < bufsize);
+
+	printf("Running database upgrade commands:\n%s\n", buf);
+	err = SQLstatementIntern(c, &buf, "update", true, false, NULL);
+
+	GDKfree(buf);
+	return err;
 }
 
 int
@@ -3017,13 +3041,6 @@ SQLupgrades(Client c, mvc *m)
 #ifdef HAVE_NETCDF
 		if (mvc_bind_table(m, s, "netcdf_files") != NULL &&
 		    (err = sql_update_mar2018_netcdf(c, prev_schema)) != NULL) {
-			TRC_ERROR(SQL_UPGRADES, "%s\n", err);
-			freeException(err);
-			res = -1;
-		}
-#endif
-#ifdef HAVE_SAMTOOLS
-		if ((err = sql_update_mar2018_samtools(c, m, prev_schema)) != NULL) {
 			TRC_ERROR(SQL_UPGRADES, "%s\n", err);
 			freeException(err);
 			res = -1;
@@ -3200,6 +3217,12 @@ SQLupgrades(Client c, mvc *m)
 
 	if (!res && !sql_bind_func(m->sa, s, "suspend_log_flushing", NULL, NULL, F_PROC)) {
 		if ((err = sql_update_default(c, m, prev_schema, &systabfixed)) != NULL) {
+			TRC_ERROR(SQL_UPGRADES, "%s\n", err);
+			freeException(err);
+			res = -1;
+		}
+		if (!res &&
+		    (err = sql_update_default_bam(c, m, prev_schema)) != NULL) {
 			TRC_ERROR(SQL_UPGRADES, "%s\n", err);
 			freeException(err);
 			res = -1;

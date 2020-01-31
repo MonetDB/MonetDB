@@ -57,12 +57,12 @@ _GDKtracer_init_basic_adptr(void)
 
 
 static bool
-_GDKtracer_adapter_exists(int *adapter)
+_GDKtracer_adapter_exists(int adapter)
 {
-	if (*adapter == ADAPTERS_COUNT)
+	if (adapter == ADAPTERS_COUNT)
 		return false;
 
-	if (*adapter >= 0 && *adapter < ADAPTERS_COUNT)
+	if (adapter >= 0 && adapter < ADAPTERS_COUNT)
 		return true;
 
 	return false;
@@ -70,12 +70,12 @@ _GDKtracer_adapter_exists(int *adapter)
 
 
 static bool
-_GDKtracer_level_exists(int *lvl)
+_GDKtracer_level_exists(int lvl)
 {
-	if (*lvl == LOG_LEVELS_COUNT)
+	if (lvl == LOG_LEVELS_COUNT)
 		return false;
 
-	if (*lvl >= 0 && *lvl < LOG_LEVELS_COUNT)
+	if (lvl >= 0 && lvl < LOG_LEVELS_COUNT)
 		return true;
 
 	return false;
@@ -83,12 +83,12 @@ _GDKtracer_level_exists(int *lvl)
 
 
 static bool
-_GDKtracer_layer_exists(int *layer)
+_GDKtracer_layer_exists(int layer)
 {
-	if (*layer == LAYERS_COUNT)
+	if (layer == LAYERS_COUNT)
 		return false;
 
-	if (*layer >= 0 && *layer < LAYERS_COUNT)
+	if (layer >= 0 && layer < LAYERS_COUNT)
 		return true;
 
 	return false;
@@ -96,12 +96,12 @@ _GDKtracer_layer_exists(int *layer)
 
 
 static bool
-_GDKtracer_component_exists(int *comp)
+_GDKtracer_component_exists(int comp)
 {
-	if (*comp == COMPONENTS_COUNT)
+	if (comp == COMPONENTS_COUNT)
 		return false;
 
-	if (*comp >= 0 && *comp < COMPONENTS_COUNT)
+	if (comp >= 0 && comp < COMPONENTS_COUNT)
 		return true;
 
 	return false;
@@ -109,11 +109,11 @@ _GDKtracer_component_exists(int *comp)
 
 
 // Candidate for 'gnu_printf' format attribute [-Werror=suggest-attribute=format]
-static int
- _GDKtracer_fill_tracer(gdk_tracer * sel_tracer, char *fmt, va_list va) __attribute__((format(printf, 2, 0)));
+static int _GDKtracer_fill_tracer(gdk_tracer *sel_tracer, const char *fmt, va_list va)
+	__attribute__((format(printf, 2, 0)));
 
 static int
-_GDKtracer_fill_tracer(gdk_tracer * sel_tracer, char *fmt, va_list va)
+_GDKtracer_fill_tracer(gdk_tracer *sel_tracer, const char *fmt, va_list va)
 {
 	size_t fmt_len = strlen(fmt);
 	int bytes_written = 0;
@@ -134,19 +134,19 @@ _GDKtracer_fill_tracer(gdk_tracer * sel_tracer, char *fmt, va_list va)
 
 
 static gdk_return
-_GDKtracer_layer_level_helper(int *layer, int *lvl)
+_GDKtracer_layer_level_helper(int layer, int lvl)
 {
 	const char *tok = NULL;
-	LOG_LEVEL level = (LOG_LEVEL) * lvl;
+	LOG_LEVEL level = (LOG_LEVEL) lvl;
 
 	for (int i = 0; i < COMPONENTS_COUNT; i++) {
-		if (*layer == MDB_ALL) {
+		if (layer == MDB_ALL) {
 			if (LVL_PER_COMPONENT[i] != level)
 				LVL_PER_COMPONENT[i] = level;
 		} else {
 			tok = COMPONENT_STR[i];
 
-			switch (*layer) {
+			switch (layer) {
 			case SQL_ALL:
 				if (strncmp(tok, "SQL_", 4) == 0)
 					if (LVL_PER_COMPONENT[i] != level)
@@ -178,7 +178,7 @@ _GDKtracer_layer_level_helper(int *layer, int *lvl)
  *
  */
 char *
-GDKtracer_get_timestamp(char *fmt)
+GDKtracer_get_timestamp(const char *fmt)
 {
 	static char datetime[20];
 	time_t now = time(NULL);
@@ -209,11 +209,11 @@ GDKtracer_stop(void)
 
 
 gdk_return
-GDKtracer_set_component_level(int *comp, int *lvl)
+GDKtracer_set_component_level(int comp, int lvl)
 {
-	LOG_LEVEL level = (LOG_LEVEL) * lvl;
+	LOG_LEVEL level = (LOG_LEVEL) lvl;
 
-	if (LVL_PER_COMPONENT[*comp] == level)
+	if (LVL_PER_COMPONENT[comp] == level)
 		return GDK_SUCCEED;
 
 	if (!_GDKtracer_component_exists(comp))
@@ -222,28 +222,28 @@ GDKtracer_set_component_level(int *comp, int *lvl)
 	if (!_GDKtracer_level_exists(lvl))
 		return GDK_FAIL;
 
-	LVL_PER_COMPONENT[*comp] = level;
+	LVL_PER_COMPONENT[comp] = level;
 
 	return GDK_SUCCEED;
 }
 
 
 gdk_return
-GDKtracer_reset_component_level(int *comp)
+GDKtracer_reset_component_level(int comp)
 {
-	if (LVL_PER_COMPONENT[*comp] == DEFAULT_LOG_LEVEL)
+	if (LVL_PER_COMPONENT[comp] == DEFAULT_LOG_LEVEL)
 		return GDK_SUCCEED;
 
 	if (!_GDKtracer_component_exists(comp))
 		return GDK_FAIL;
 
-	LVL_PER_COMPONENT[*comp] = DEFAULT_LOG_LEVEL;
+	LVL_PER_COMPONENT[comp] = DEFAULT_LOG_LEVEL;
 	return GDK_SUCCEED;
 }
 
 
 gdk_return
-GDKtracer_set_layer_level(int *layer, int *lvl)
+GDKtracer_set_layer_level(int layer, int lvl)
 {
 	if (!_GDKtracer_layer_exists(layer))
 		return GDK_FAIL;
@@ -256,21 +256,19 @@ GDKtracer_set_layer_level(int *layer, int *lvl)
 
 
 gdk_return
-GDKtracer_reset_layer_level(int *layer)
+GDKtracer_reset_layer_level(int layer)
 {
 	if (!_GDKtracer_layer_exists(layer))
 		return GDK_FAIL;
 
-	int tmp = DEFAULT_LOG_LEVEL;
-	int *lvl = &tmp;
-	return _GDKtracer_layer_level_helper(layer, lvl);
+	return _GDKtracer_layer_level_helper(layer, DEFAULT_LOG_LEVEL);
 }
 
 
 gdk_return
-GDKtracer_set_flush_level(int *lvl)
+GDKtracer_set_flush_level(int lvl)
 {
-	LOG_LEVEL level = (LOG_LEVEL) * lvl;
+	LOG_LEVEL level = (LOG_LEVEL) lvl;
 
 	if (CUR_FLUSH_LEVEL == level)
 		return GDK_SUCCEED;
@@ -297,9 +295,9 @@ GDKtracer_reset_flush_level(void)
 
 
 gdk_return
-GDKtracer_set_adapter(int *adapter)
+GDKtracer_set_adapter(int adapter)
 {
-	if ((int) ATOMIC_GET(&CUR_ADAPTER) == *adapter)
+	if ((int) ATOMIC_GET(&CUR_ADAPTER) == adapter)
 		return GDK_SUCCEED;
 
 	// Here when switching between adapters we can open/close the file
@@ -310,7 +308,7 @@ GDKtracer_set_adapter(int *adapter)
 	if (!_GDKtracer_adapter_exists(adapter))
 		return GDK_FAIL;
 
-	ATOMIC_SET(&CUR_ADAPTER, *adapter);
+	ATOMIC_SET(&CUR_ADAPTER, adapter);
 
 	return GDK_SUCCEED;
 }
@@ -329,7 +327,7 @@ GDKtracer_reset_adapter(void)
 
 
 gdk_return
-GDKtracer_log(LOG_LEVEL level, char *fmt, ...)
+GDKtracer_log(LOG_LEVEL level, const char *fmt, ...)
 {
 	int bytes_written = 0;
 

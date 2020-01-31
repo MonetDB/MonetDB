@@ -45,11 +45,7 @@ set MONETDBPYTHONUDF=embedded_py=false
 
 if not exist "%MONETDB%\pyapi_locatepython3.bat" goto skippython3
 call "%MONETDB%\pyapi_locatepython3.bat"
-if not "%MONETDBPYTHONUDF%" == "embedded_py=false" goto skippython2
 :skippython3
-if not exist "%MONETDB%\pyapi_locatepython2.bat" goto skippython2
-call "%MONETDB%\pyapi_locatepython2.bat"
-:skippython2
 
 rem start the real server
 "%MONETDB%\bin\mserver5.exe" --set "prefix=%MONETDB%" --set %MONETDBPYTHONUDF% --set "exec_prefix=%MONETDB%" %MONETDBFARM% %*

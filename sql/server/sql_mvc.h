@@ -20,7 +20,7 @@
 #include "sql_relation.h"
 #include "sql_storage.h"
 #include "sql_keyword.h"
-#include "sql_querytype.h"
+#include "mapi_querytype.h"
 #include "sql_atom.h"
 #include "sql_tokens.h"
 #include "sql_symbol.h"
@@ -145,7 +145,7 @@ typedef struct mvc {
 
 	sql_session *session;	
 
-	sql_query_t type;	/* query type */
+	mapi_query_t type;	/* query type */
 	int pushdown;		/* AND or OR query handling */
 	unsigned int label;	/* numbers for relational projection labels */
 	int remote;

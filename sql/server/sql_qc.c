@@ -152,7 +152,7 @@ param_cmp(sql_subtype *t1, sql_subtype *t2)
 }
 
 static int
-param_list_cmp(sql_subtype *typelist, atom **atoms, int plen, sql_query_t type)
+param_list_cmp(sql_subtype *typelist, atom **atoms, int plen, mapi_query_t type)
 {
 	int i;
 
@@ -240,7 +240,7 @@ qc_match(qc *cache, mvc *sql, symbol *s, atom **params, int plen, int key)
 }
 
 cq *
-qc_insert(qc *cache, sql_allocator *sa, sql_rel *r, char *qname, symbol *s, atom **params, int paramlen, int key, sql_query_t type, char *cmd, int no_mitosis, bool prepared)
+qc_insert(qc *cache, sql_allocator *sa, sql_rel *r, char *qname, symbol *s, atom **params, int paramlen, int key, mapi_query_t type, char *cmd, int no_mitosis, bool prepared)
 {
 	int i, namelen;
 	cq *n = MNEW(cq);

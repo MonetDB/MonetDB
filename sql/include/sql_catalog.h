@@ -11,7 +11,7 @@
 
 #include "sql_mem.h"
 #include "sql_list.h"
-#include "sql_querytype.h"
+#include "mapi_querytype.h"
 #include "stream.h"
 
 #define tr_none		0
@@ -387,8 +387,7 @@ typedef enum sql_flang {
 	/* this should probably be done in a better way */
 	FUNC_LANG_PY = 6,       /* create .. language PYTHON */
 	FUNC_LANG_MAP_PY = 7,   /* create .. language PYTHON_MAP */
-	FUNC_LANG_PY2 = 8,      /* create .. language PYTHON2 */
-	FUNC_LANG_MAP_PY2 = 9,  /* create .. language PYTHON2_MAP */
+	/* values 8 and 9 were for Python 2 */
 	FUNC_LANG_PY3 = 10,     /* create .. language PYTHON3 */
 	FUNC_LANG_MAP_PY3 = 11, /* create .. language PYTHON3_MAP */
 	FUNC_LANG_CPP = 12      /* create .. language CPP */
@@ -669,7 +668,7 @@ typedef struct res_col {
 typedef struct res_table {
 	int id;
 	oid query_id;
-	sql_query_t query_type;
+	mapi_query_t query_type;
 	int nr_cols;
 	int cur_col;
 	const char *tsep;

@@ -1,9 +1,0 @@
-
-
-HAVE_LIBPY2&HAVE_HGE?pyapi_types_huge
-HAVE_LIBPY2?pyapi_returntypes
-HAVE_LIBPY2&HAVE_LIBPANDAS2?pyapi_pandas
-HAVE_LIBPY2?pyapi_types_string
-HAVE_LIBPY2?pyapi_numpy_boolean
-HAVE_LIBPY2?pyapi_types_numeric
-HAVE_LIBPY2?pyapi_numpy_numeric_nested

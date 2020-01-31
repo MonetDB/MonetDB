@@ -2211,10 +2211,6 @@ func_def:
 					lang = FUNC_LANG_MAP_PY3;
 				} else if (strcasecmp($9, "PYTHON3") == 0) {
 					lang = FUNC_LANG_PY3;
-				} else if (strcasecmp($9, "PYTHON2_MAP") == 0) {
-					lang = FUNC_LANG_MAP_PY2;
-				} else if (strcasecmp($9, "PYTHON2") == 0) {
-					lang = FUNC_LANG_PY2;
 				} else {
 					lang = FUNC_LANG_PY;
 				}

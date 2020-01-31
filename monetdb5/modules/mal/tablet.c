@@ -39,6 +39,7 @@
 #include "streams.h"
 #include "tablet.h"
 #include "algebra.h"
+#include "mapi_prompt.h"
 
 #include <string.h>
 #include <ctype.h>

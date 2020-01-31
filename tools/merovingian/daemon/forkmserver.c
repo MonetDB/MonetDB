@@ -502,10 +502,6 @@ forkMserver(char *database, sabdb** stats, bool force)
 	if (kv->val != NULL && strcmp(kv->val, "no") != 0)
 		embeddedr = "embedded_r=true";
 
-	kv = findConfKey(ckv, "embedpy");
-	if (kv->val != NULL && strcmp(kv->val, "no") != 0)
-		embeddedpy = "embedded_py=2";
-
 	kv = findConfKey(ckv, "embedpy3");
 	if (kv->val != NULL && strcmp(kv->val, "no") != 0) {
 		if (embeddedpy) {

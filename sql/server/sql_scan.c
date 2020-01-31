@@ -18,6 +18,7 @@
 #include "sql_parser.h"		/* for sql_error() */
 
 #include "stream.h"
+#include "mapi_prompt.h"
 #include <unistd.h>
 #include <string.h>
 #include <ctype.h>

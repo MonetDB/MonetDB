@@ -845,9 +845,7 @@ BATdel(BAT *b, BAT *d)
 gdk_return
 BATreplace(BAT *b, BAT *p, BAT *n, bool force)
 {
-	lng t0 = 0;
-
-	ALGODEBUG t0 = GDKusec();
+	lng t0 = GDKusec();
 
 	if (b == NULL || b->ttype == TYPE_void || p == NULL || n == NULL) {
 		return GDK_SUCCEED;
@@ -1170,11 +1168,10 @@ BATreplace(BAT *b, BAT *p, BAT *n, bool force)
 			}
 		}
 	}
-	ALGODEBUG fprintf(stderr,
-			  "#%s: BATreplace(" ALGOBATFMT "," ALGOBATFMT "," ALGOBATFMT ") " LLFMT " usec\n",
-			  MT_thread_getname(),
-			  ALGOBATPAR(b), ALGOBATPAR(p), ALGOBATPAR(n),
-			  GDKusec() - t0);
+	TRC_DEBUG(ALGO,
+		  "BATreplace(" ALGOBATFMT "," ALGOBATFMT "," ALGOBATFMT ") " LLFMT " usec\n",
+		  ALGOBATPAR(b), ALGOBATPAR(p), ALGOBATPAR(n),
+		  GDKusec() - t0);
 	return GDK_SUCCEED;
 }
 

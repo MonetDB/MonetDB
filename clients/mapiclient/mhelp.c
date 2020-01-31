@@ -716,7 +716,7 @@ SQLhelp sqlhelp2[] = {
 	 NULL},
 	{"language_keyword",
 	 NULL,
-	 "C | CPP | R | PYTHON | PYTHON_MAP | PYTHON2 | PYTHON2_MAP | PYTHON3 | PYTHON3_MAP",
+	 "C | CPP | R | PYTHON | PYTHON_MAP | PYTHON3 | PYTHON3_MAP",
 	 NULL,
 	 NULL},
 	{"match_options",

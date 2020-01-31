@@ -23,7 +23,6 @@
 #ifdef HAVE_HGE
 #include "mal.h"		/* for have_hge */
 #endif
-#include <string.h>
 
 list *aliases = NULL;
 list *types = NULL;
@@ -1066,6 +1065,10 @@ sql_create_func_(sql_allocator *sa, const char *name, const char *mod, const cha
 	t->s = NULL;
 	t->system = TRUE;
 	list_append(funcs, t);
+
+	/* grouping aggregate doesn't have a backend */
+	assert(strlen(imp) == 0 || strlen(mod) == 0 || backend_resolve_function(&(int){0}, t));
+
 	return t;
 }
 
@@ -1278,18 +1281,17 @@ sqltypeinit( sql_allocator *sa)
 	*t = NULL;
 
 //	sql_create_func(sa, "st_pointfromtext", "geom", "st_pointformtext", FALSE, SCALE_NONE, 0, OID, 1, OID);
-	sql_create_aggr(sa, "grouping", "sql", "grouping", BTE, 1, ANY);
-	sql_create_aggr(sa, "grouping", "sql", "grouping", SHT, 1, ANY);
-	sql_create_aggr(sa, "grouping", "sql", "grouping", INT, 1, ANY);
-	sql_create_aggr(sa, "grouping", "sql", "grouping", LNG, 1, ANY);
+	/* The grouping aggregate doesn't have a backend implementation. It gets replaced at rel_unnest */
+	sql_create_aggr(sa, "grouping", "", "", BTE, 1, ANY);
+	sql_create_aggr(sa, "grouping", "", "", SHT, 1, ANY);
+	sql_create_aggr(sa, "grouping", "", "", INT, 1, ANY);
+	sql_create_aggr(sa, "grouping", "", "", LNG, 1, ANY);
 #ifdef HAVE_HGE
-	sql_create_aggr(sa, "grouping", "sql", "grouping", HGE, 1, ANY);
+	sql_create_aggr(sa, "grouping", "", "", HGE, 1, ANY);
 #endif
 
 	sql_create_aggr(sa, "not_unique", "sql", "not_unique", BIT, 1, OID);
 	/* well to be precise it does reduce and map */
-	sql_create_func(sa, "not_uniques", "sql", "not_uniques", FALSE, SCALE_NONE, 0, OID, 1, LNG);
-	sql_create_func(sa, "not_uniques", "sql", "not_uniques", FALSE, SCALE_NONE, 0, OID, 1, OID);
 
 	/* functions needed for all types */
 	sql_create_func(sa, "hash", "mkey", "hash", FALSE, SCALE_FIX, 0, LNG, 1, ANY);
@@ -1316,7 +1318,6 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_func(sa, "sql_exists", "aggr", "exist", FALSE, SCALE_NONE, 0, BIT, 1, ANY);
 	sql_create_func(sa, "sql_not_exists", "aggr", "not_exist", FALSE, SCALE_NONE, 0, BIT, 1, ANY);
 	/* needed for relational version */
-	sql_create_func(sa, "in", "calc", "in", FALSE, SCALE_NONE, 0, BIT, 2, ANY, ANY);
 	sql_create_func(sa, "identity", "calc", "identity", FALSE, SCALE_NONE, 0, OID, 1, ANY);
 	sql_create_func(sa, "rowid", "calc", "identity", FALSE, SCALE_NONE, 0, INT, 1, ANY);
 	/* needed for indices/clusters oid(schema.table,val) returns max(head(schema.table))+1 */

@@ -1717,7 +1717,7 @@ do_covariance_and_correlation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 
 			for (BUN i = 0; i < cnt; i++) {
 				for (lng j = start[i] ; j < end[i] ; j++) {
-					curval = BUNtail(bi, j);
+					curval = BUNtail(bi, (BUN) j);
 					if (!cmp(curval, nil))
 						continue;
 					n++;

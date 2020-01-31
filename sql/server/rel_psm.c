@@ -1055,23 +1055,21 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 					slang = "Javascript";
 					break;
 				case FUNC_LANG_PY:
-				case FUNC_LANG_PY2:
 				case FUNC_LANG_PY3:
-					mod = "pyapi";
+					mod = "pyapi3";
 					slang = "Python";
 					break;
 				case FUNC_LANG_MAP_PY:
-				case FUNC_LANG_MAP_PY2:
 				case FUNC_LANG_MAP_PY3:
-					mod = "pyapimap";
+					mod = "pyapi3map";
 					slang = "Python";
 					break;
 				default:
 					assert(0);
 			}
 
-			if (type == F_LOADER && !(lang == FUNC_LANG_PY || lang == FUNC_LANG_PY2 || lang == FUNC_LANG_PY3))
-				return sql_error(sql, 01, SQLSTATE(42000) "CREATE %s: Language name \"Python[{2|3}]\" expected", F);
+			if (type == F_LOADER && !(lang == FUNC_LANG_PY || lang == FUNC_LANG_PY3))
+				return sql_error(sql, 01, SQLSTATE(42000) "CREATE %s: Language name \"Python[3]\" expected", F);
 
 			sql->params = NULL;
 			if (create) {
@@ -1109,6 +1107,7 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 		} else { /* MAL implementation */
 			char *fmod = qname_module(ext_name);
 			char *fnme = qname_fname(ext_name);
+			int clientid = sql->clientid;
 
 			if (!fmod || !fnme)
 				return NULL;
@@ -1136,7 +1135,7 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 			if (!f)
 				f = sf->func;
 			assert(f);
-			if (!backend_resolve_function(sql, f))
+			if (!backend_resolve_function(&clientid, f))
 				return sql_error(sql, 01, SQLSTATE(3F000) "CREATE %s: external name %s.%s not bound (%s.%s)", F, fmod, fnme, s->base.name, fname );
 		}
 	}

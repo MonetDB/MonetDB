@@ -14,6 +14,7 @@
 #include "sql_string.h"
 #include "sql_catalog.h"
 #include "sql_storage.h"
+#include "sql_backend.h"
 #include "stream.h"
 
 extern list *aliases;
