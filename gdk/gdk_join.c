@@ -3501,7 +3501,7 @@ BATleftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_mat
 {
 	return leftjoin(r1p, r2p, l, r, sl, sr, nil_matches,
 			false, false, false, false, estimate, __func__,
-			GDKdebug & ALGOMASK ? GDKusec() : 0);
+			GDK_TRACER_TEST(M_DEBUG, ALGO) ? GDKusec() : 0);
 }
 
 /* Performs a left outer join over l and r.  Returns two new, aligned,
@@ -3526,7 +3526,7 @@ BATsemijoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_mat
 {
 	return leftjoin(r1p, r2p, l, r, sl, sr, nil_matches,
 			false, true, false, false, estimate, __func__,
-			GDKdebug & ALGOMASK ? GDKusec() : 0);
+			GDK_TRACER_TEST(M_DEBUG, ALGO) ? GDKusec() : 0);
 }
 
 /* Return a candidate list with the list of rows in l whose value also
@@ -3538,7 +3538,7 @@ BATintersect(BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches, BUN estimate)
 
 	if (leftjoin(&bn, NULL, l, r, sl, sr, nil_matches,
 		     false, true, false, false, estimate, __func__,
-		     GDKdebug & ALGOMASK ? GDKusec() : 0) == GDK_SUCCEED)
+		     GDK_TRACER_TEST(M_DEBUG, ALGO) ? GDKusec() : 0) == GDK_SUCCEED)
 		return virtualize(bn);
 	return NULL;
 }
@@ -3554,7 +3554,7 @@ BATdiff(BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches, bool not_in,
 
 	if (leftjoin(&bn, NULL, l, r, sl, sr, nil_matches,
 		     false, false, true, not_in, estimate, __func__,
-		     GDKdebug & ALGOMASK ? GDKusec() : 0) == GDK_SUCCEED)
+		     GDK_TRACER_TEST(M_DEBUG, ALGO) ? GDKusec() : 0) == GDK_SUCCEED)
 		return virtualize(bn);
 	return NULL;
 }
