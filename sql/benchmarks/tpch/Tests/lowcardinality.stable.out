@@ -33,9 +33,9 @@ stdout of test 'lowcardinality` in directory 'sql/benchmarks/tpch` itself:
 % o_totalprice,	%1 # name
 % decimal,	bigint # type
 % 17,	1 # length
-[ 126476.16,	2	]
-[ 16236.69,	2	]
 [ 14623.67,	2	]
+[ 16236.69,	2	]
+[ 126476.16,	2	]
 [ 169049.46,	2	]
 #SELECT max(o_totalprice) FROM sys.orders;
 % sys.%1 # table_name

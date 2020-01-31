@@ -250,13 +250,6 @@ AC_ARG_ENABLE([rintegration],
 	[enable_rintegration=$enableval],
 	[enable_rintegration=$dft_rintegration])
 
-dft_py2integration=auto
-AC_ARG_ENABLE([py2integration],
-	[AS_HELP_STRING([--enable-py2integration],
-		[enable support for Python 2 integration into MonetDB (default=auto)])],
-	[enable_py2integration=$enableval],
-	[enable_py2integration=$dft_py2integration])
-
 dft_py3integration=auto
 AC_ARG_ENABLE(py3integration,
 	AS_HELP_STRING([--enable-py3integration],
@@ -988,37 +981,21 @@ AC_DEFINE_UNQUOTED([DIFF], ["$DIFF"], [Program to perform diffs])
 AC_CHECK_PROG([RPMBUILD], [rpmbuild], [rpmbuild], [false])
 
 # This is how we use the various Python-related configuration variables.
-# PYTHON - the Python interpreter we use for testing.  This can either
-#    be Python 3 (preferred) or Python 2.  Set automatically.
+# PYTHON - the Python interpreter we use for testing.  Set automatically.
 # PYTHON_LIBDIR - the location where the MonetDBtesting module, used
 #    during testing, is installed.  Based on PYTHON.
-# PYTHON2 - the Python version 2 interpreter
 # PYTHON3 - the Python version 3 interpreter
-# HAVE_LIBPY2 - Python 2 libraries available for linking to
-# libpy2_CFLAGS - compiler flags to compile with Python 2
-# libpy2_LIBS - Python 2 libraries to be linked
 # HAVE_LIBPY3 - Python 3 libraries available for linking to
 # libpy3_CFLAGS - compiler flags to compile with Python 3
 # libpy3_LIBS - Python 3 libraries to be linked
 
 # check major version of python
-# check if python2 and python3 exist
-# if python2 or python3 doesn't exist, use python if major matches
+# check if python3 exists
+# if python3 doesn't exist, use python if major matches
 
-org_have_python2=auto
-have_python2=$org_have_python2
-PYTHON2=python2
 org_have_python3=auto
 have_python3=$org_have_python3
 PYTHON3=python3
-
-AC_ARG_WITH([python2],
-	[AS_HELP_STRING([--with-python2=FILE], [python2 is installed as FILE])],
-	[have_python2="$withval"])
-
-AS_CASE([$have_python2],
-	[yes|no|auto], [],
-	[PYTHON2="$have_python2"])
 
 AC_ARG_WITH([python3],
 	[AS_HELP_STRING([--with-python3=FILE], [python3 is installed as FILE])],
@@ -1028,15 +1005,11 @@ AS_CASE([$have_python3],
 	[yes|no|auto], [],
 	[PYTHON3="$have_python3"])
 
-AC_ARG_WITH([py2config],
-	[AS_HELP_STRING([--with-py2config=FILE], [python2-config is installed as FILE])],
-	[have_py2config="$withval"])
-
 AC_ARG_WITH(py3config,
 	AS_HELP_STRING([--with-py3config=FILE], [python3-config is installed as FILE]),
 	have_py3config="$withval")
 
-# Figure out a default for PYTHON2 or PYTHON3
+# Figure out a default for PYTHON3
 AC_PATH_PROG([PYTHON], [python], [no], [$PATH])
 PYTHON_MAJ=unknown
 AS_VAR_IF([PYTHON], [no], [], [
@@ -1044,34 +1017,8 @@ AS_VAR_IF([PYTHON], [no], [], [
 	PYTHON_MAJ=`"$PYTHON" -c 'import sys; print(sys.version[[:1]])'`
 	AC_MSG_RESULT([$PYTHON_MAJ])])
 
-AS_VAR_IF([have_python2], [no],
-	[PYTHON2=no],
-	[AC_PATH_PROG([PYTHON2], [$PYTHON2], [no], [$PATH])
-	 AS_VAR_IF([PYTHON2], [no],
-		[AS_IF([test '(' "x$have_python2" = xyes -o "x$have_python2" = xauto ')' -a "x$PYTHON_MAJ" = x2],
-			[PYTHON2="$PYTHON"
-			 have_python2=yes],
-			[AS_VAR_IF([have_python2], [auto],
-				[have_python2=no
-			 	 why_not_python2="(Python 2 executable not found)"],
-				[AC_MSG_ERROR([Python 2 executable not found])])])],
-		[AS_CASE([`"$PYTHON2" -V 2>&1`],
-			["Python 2."[[67]]*], [],
-			[AS_VAR_IF([have_python2], [auto], [
-				PYTHON2=no
-				have_python2=no
-				why_not_python2="(Python 2 executable too old)"], [
-				AC_MSG_ERROR([Python 2 executable too old])])])])])
-
-AC_SUBST([PYTHON2])
-QPYTHON2="$PYTHON2"
-XPYTHON2=`$translatepath "$QPYTHON2"`
-QXPYTHON2=`AS_ECHO(["$XPYTHON2"]) | sed 's/\\\\/\\\\\\\\/g'`
-AC_SUBST([QXPYTHON2])
-
 AS_VAR_IF([have_python3], [no],
-	[AS_VAR_IF([PYTHON2], [no], [],
-		[PYTHON=$PYTHON2])],
+	[],
 	[AC_PATH_PROG([PYTHON3], [$PYTHON3], [no], [$PATH])
 	 AS_VAR_IF([PYTHON3], [no],
 		[AS_IF([test '(' "x$have_python3" = xyes -o "x$have_python3" = xauto ')' -a "x$PYTHON_MAJ" = x3],
@@ -1676,68 +1623,7 @@ AS_VAR_IF([enable_rintegration], [no], [], [
 			 CPPFLAGS="$save_CPPFLAGS"])])])
 AM_CONDITIONAL([HAVE_LIBR], [test x"$have_libr" != xno])
 
-# Python API (Python UDFs)
-have_libpy2=no
-AS_VAR_IF([enable_py2integration], [no], [], [
-	AS_CASE([$enable_py2integration],
-		[yes|auto], [XPATH="$PATH"],
-		[/*], [XPATH="$enable_py2integration"
-		       enable_py2integration=yes],
-		[AC_MSG_ERROR([--enable-py2integration value must be yes|no|auto|absolute path of python-config])])
-	AS_VAR_IF([have_py2config], [], [
-	   	AC_PATH_PROG([PY2CONFIG], [python2-config], [no], [$PATH])
-	   	AS_VAR_IF([PY2CONFIG], [no], [
-		   	AC_PATH_PROG([PYCMD2], [python-config], [no], [$PATH])
-		   	AS_VAR_IF([PYCMD2], [no], [
-		   		AS_VAR_IF([enable_py2integration], [yes],
-					[AC_MSG_ERROR([python2-config library required for Python integration support])],
-					[have_libpy2=no
-					 why_not_libpy2="(python2-config command not found)"
-					 enable_py2integration=no
-					 why_not_py2integration="(python2-config command not found)"])
-			], [PY2CONFIG="$PYCMD2"])
-	   	], [])
-	], [PY2CONFIG="$have_py2config"])
-	AS_VAR_IF([enable_py2integration], [no], [], [
-		NUMPYVER=`$PYTHON2 -c "import numpy; print(int(numpy.__version__.split('.').__getitem__(1)) >= 7)" 2> /dev/null`
-		# check numpyconfig.h because autoconf tests includes by
-		# compiling a small C program, and other numpy headers do
-		# not compile without Python.h
-		AC_CHECK_HEADER([numpy/numpyconfig.h],
-			[NUMPYHEADERS=True],
-			[NUMPYHEADERS=`$PYTHON2 -c "import numpy, os; print(os.path.isfile(os.path.join(numpy.get_include(), 'numpy/arrayobject.h')))" 2> /dev/null`])
-		AS_IF([test "x$NUMPYVER" = x -o "x$NUMPYVER" = xFalse],
-			[AS_VAR_IF([enable_py2integration], [yes],
-				[AC_MSG_ERROR([numpy version >= 1.7.0 required for Python integration support])],
-				[have_libpy2=no
-				 why_not_libpy2="(numpy version >= 1.7.0 not found)"
-				 enable_py2integration=no
-				 why_not_py2integration="(numpy version >= 1.7.0 not found)"])],
-			[test "x$NUMPYHEADERS" = xFalse ],
-			[AS_VAR_IF([enable_py2integration], [yes],
-				[AC_MSG_ERROR([numpy/arrayobject.h not found])],
-				[have_libpy2=no
-				 why_not_libpy2="(numpy/arrayobject.h not found)"
-				 enable_py2integration=no
-				 why_not_py2integration="(numpy/arrayobject.h not found)"])],
-			[libpy2_CFLAGS=`$PYTHON2 -c "from distutils.sysconfig import get_python_inc; import numpy; print(' -I' + get_python_inc() + ' -I' + numpy.get_include());" 2> /dev/null`
-			 libpy2_LIBS=`$PY2CONFIG --ldflags`
-			 HAVEPYTHONHEADER=`$PYTHON2 -c "import distutils.sysconfig, os; print(os.path.isfile(os.path.join(distutils.sysconfig.get_python_inc(), 'Python.h')))" 2> /dev/null`
-			 AS_VAR_IF([HAVEPYTHONHEADER], [True],
-				[have_libpy2=yes
-				 AC_DEFINE([HAVE_LIBPY2], 1, [Define if we can link to python2])
-				 AC_SUBST([libpy2_CFLAGS], [$libpy2_CFLAGS])
-				 AC_SUBST([libpy2_LIBS], [$libpy2_LIBS])],
-				[AS_VAR_IF([enable_py2integration], [yes],
-					[AC_MSG_ERROR([Python.h not found])],
-					[have_libpy2=no
-					 why_not_libpy2="Python.h not found"
-					 enable_py2integration=no
-					 why_not_py2integration="Python.h not found"])])])])])
-AM_CONDITIONAL([HAVE_LIBPY2], [test x"$have_libpy2" != xno])
-
-
-# Python 3 UDFs
+# Python API (Python 3 UDFs)
 have_libpy3=no
 AS_VAR_IF([enable_py3integration], [no], [],
 	[AS_CASE([`"$PYTHON3" -V 2>&1`],
@@ -1759,11 +1645,7 @@ AS_CASE([$enable_py3integration],
 AS_VAR_IF([enable_py3integration], [no], [],
 	[AS_VAR_IF([have_py3config], [],
 		[
-		# for some reason autoconf thinks python2-config and
-		# python3-config are the same program, so we have to
-		# explicitly tell it not to select python2-config when
-		# we want python3-config
-	   	AC_PATH_PROG(PY3CONFIG,python3-config,,$XPATH,$PY2CONFIG)
+	   	AC_PATH_PROG([PY3CONFIG],[python3-config],[],[$XPATH])
 	   	AS_VAR_IF([PY3CONFIG], [],
 			[AS_VAR_IF([enable_py3integration], [yes], [
 				AC_MSG_ERROR([python3-config required for Python3 integration support])],
@@ -1917,77 +1799,6 @@ AS_VAR_IF([have_proj], [no], [], [
 			 have_proj=no; why_not_proj="(proj library not found)"])])
 AM_CONDITIONAL([HAVE_PROJ], [test x"$have_proj" != xno])
 
-
-# samtools, only used by sql
-org_have_samtools="auto"
-have_samtools=$org_have_samtools
-AC_ARG_WITH([samtools],
-	[AS_HELP_STRING([--with-samtools=DIR],
-		[samtools (providing bam library) are installed in DIR])],
-	[have_samtools="$withval"])
-AS_VAR_IF([have_samtools], [no], [], [
-	AS_CASE([$have_samtools],
-	[auto|yes], [],
-	[
-		SAMTOOLS_CFLAGS="-I$have_samtools/include"
-		SAMTOOLS_LIBS="-L$have_samtools/lib -lbam"])
-
-	save_CPPFLAGS="$CPPFLAGS"
-	save_LDFLAGS="$LDFLAGS"
-	CPPFLAGS="$CPPFLAGS $SAMTOOLS_CFLAGS"
-	LDFLAGS="$LDFLAGS $SAMTOOLS_LIBS"
-
-	AC_CHECK_HEADER([samtools/bam.h],
-		[why_not_samtools=; AC_DEFINE([HAVE_SAMTOOLS_BAM_H], 1, [Define to 1 if you have the <samtools/bam.h> header file.]) ],
-		[why_not_samtools="bam.h header not found" ])
-	AS_VAR_IF([why_not_samtools], [],
-		[],
-		[AC_CHECK_HEADER([bam/bam.h],
-			[why_not_samtools=; AC_DEFINE([HAVE_BAM_BAM_H], 1, [Define to 1 if you have the <bam/bam.h> header file.]) ],
-			[why_not_samtools="Neither samtools/bam.h nor bam/bam.h header found" ])])
-
-	AS_VAR_IF([why_not_samtools], [],
-		[AC_CHECK_HEADER([samtools/sam.h],
-			[why_not_samtools=; AC_DEFINE([HAVE_SAMTOOLS_SAM_H], 1, [Define to 1 if you have the <samtools/sam.h> header file.]) ],
-			[why_not_samtools="samtools/sam.h header not found" ])])
-	AS_VAR_IF([why_not_samtools], [],
-		[],
-		[AC_CHECK_HEADER([bam/sam.h],
-			[why_not_samtools=; AC_DEFINE([HAVE_BAM_SAM_H], 1, [Define to 1 if you have the <bam/sam.h> header file.]) ],
-			[why_not_samtools="Neither samtools/sam.h nor bam/sam.h header found" ])])
-
-	AS_VAR_IF([why_not_samtools], [],
-		[AC_CHECK_HEADER([samtools/bgzf.h],
-			[why_not_samtools=; AC_DEFINE([HAVE_SAMTOOLS_BGZF_H], 1, [Define to 1 if you have the <samtools/bgzf.h> header file.]) ],
-			[why_not_samtools="samtools/bgzf.h header not found" ])])
-	AS_VAR_IF([why_not_samtools], [],
-		[],
-		[AC_CHECK_HEADER([bam/bgzf.h],
-			[why_not_samtools=; AC_DEFINE([HAVE_BAM_BGZF_H], 1, [Define to 1 if you have the <bam/bgzf.h> header file.]) ],
-			[why_not_samtools="Neither samtool/bgzf.h nor bam/bgzf.h header found" ])])
-
-	AS_VAR_IF([why_not_samtools], [],
-		[AC_CHECK_LIB([bam], [bam_header_read],
-			[AC_DEFINE([HAVE_SAMTOOLS], 1, [Define if you have the samtools version 0.1.x (providing the bam library)])],
-			[why_not_samtools="bam library not found" ],
-			[-lm -lpthread -lz])])
-
-	AS_VAR_IF([why_not_samtools], [],
-		[],
-		[AS_VAR_IF([have_samtools], [auto],
-			[],
-			[AC_MSG_ERROR([$why_not_samtools])])
-		 have_samtools=no
-		 why_not_samtools="($why_not_samtools)"])
-	LDFLAGS="$save_LDFLAGS"
-	CPPFLAGS="$save_CPPFLAGS"
-	AS_IF([test "x$have_samtools" = "xyes" -o "x$have_samtools" = "xauto"], [
-		SAMTOOLS_CFLAGS=
-		SAMTOOLS_LIBS="-lbam"
-		AC_CHECK_HEADERS([samtools/kstring.h bam/kstring.h])])])
-AC_SUBST([SAMTOOLS_CFLAGS], [$SAMTOOLS_CFLAGS])
-AC_SUBST([SAMTOOLS_LIBS], [$SAMTOOLS_LIBS])
-AM_CONDITIONAL([HAVE_SAMTOOLS], [test x"$have_samtools" != xno])
 
 # geos, only used in geom module
 org_have_geos=auto
@@ -2827,7 +2638,6 @@ AS_ECHO([''])
 AS_ECHO(["* Enabled/disabled components:"])
 for comp in \
 	'geom          ' \
-	'py2integration' \
 	'py3integration' \
 	'rintegration  ' \
 	'odbc          ' \
@@ -2860,11 +2670,9 @@ for comp in \
 	'openssl    ' \
 	'proj       ' \
 	'pthread    ' \
-	'python2    ' \
 	'python3    ' \
 	'readline   ' \
 	'regex      ' \
-	'samtools   ' \
 	'shp        ' \
 	'snappy     ' \
 	'unixodbc   ' \

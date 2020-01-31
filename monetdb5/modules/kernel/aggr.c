@@ -995,20 +995,18 @@ AGGRsubquantilecand_avg(bat *retval, const bat *bid, const bat *quantile, const 
 
 static str
 AGGRgroup_str_concat(bat *retval1, const bat *bid, const bat *gid, const bat *eid, const bat *sid, bool skip_nils,
-					 bool abort_on_error, BAT *(*str_func)(BAT *, BAT *, BAT *, BAT *, bool, bool, const char *),
-					 const char *separator, const char *malfunc)
+					 bool abort_on_error, const bat *sepid, const char *separator, const char *malfunc)
 {
-	BAT *b, *g, *e, *s, *bn = NULL;
-
-	assert(str_func != NULL);
+	BAT *b, *g, *e, *s, *sep, *bn = NULL;
 
 	b = BATdescriptor(*bid);
 	g = gid ? BATdescriptor(*gid) : NULL;
 	e = eid ? BATdescriptor(*eid) : NULL;
 	s = sid ? BATdescriptor(*sid) : NULL;
+	sep = sepid ? BATdescriptor(*sepid) : NULL;
 
 	if (b == NULL || (gid != NULL && g == NULL) || (eid != NULL && e == NULL) ||
-		(sid != NULL && s == NULL)) {
+		(sid != NULL && s == NULL) || (sepid != NULL && sep == NULL)) {
 		if (b)
 			BBPunfix(b->batCacheid);
 		if (g)
@@ -1017,10 +1015,12 @@ AGGRgroup_str_concat(bat *retval1, const bat *bid, const bat *gid, const bat *ei
 			BBPunfix(e->batCacheid);
 		if (s)
 			BBPunfix(s->batCacheid);
+		if (sep)
+			BBPunfix(sep->batCacheid);
 		throw(MAL, malfunc, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
-	bn = (*str_func)(b, g, e, s, skip_nils, abort_on_error, separator);
+	bn = BATgroupstr_group_concat(b, g, e, s, sep, skip_nils, abort_on_error, separator);
 
 	BBPunfix(b->batCacheid);
 	if (g)
@@ -1029,6 +1029,8 @@ AGGRgroup_str_concat(bat *retval1, const bat *bid, const bat *gid, const bat *ei
 		BBPunfix(e->batCacheid);
 	if (s)
 		BBPunfix(s->batCacheid);
+	if (sep)
+		BBPunfix(sep->batCacheid);
 	if (bn == NULL)
 		throw(MAL, malfunc, GDK_EXCEPTION);
 	*retval1 = bn->batCacheid;
@@ -1042,74 +1044,162 @@ mal_export str AGGRstr_group_concat(bat *retval, const bat *bid, const bat *gid,
 str
 AGGRstr_group_concat(bat *retval, const bat *bid, const bat *gid, const bat *eid)
 {
-	return AGGRgroup_str_concat(retval, bid, gid, eid, NULL, 1, 1, BATgroupstr_group_concat, DEFAULT_SEPARATOR,
-								"aggr.str_group_concat");
+	return AGGRgroup_str_concat(retval, bid, gid, eid, NULL, 1, 1, NULL, DEFAULT_SEPARATOR, "aggr.str_group_concat");
 }
 
 mal_export str AGGRsubstr_group_concat(bat *retval, const bat *bid, const bat *gid, const bat *eid, const bit *skip_nils, const bit *abort_on_error);
 str
 AGGRsubstr_group_concat(bat *retval, const bat *bid, const bat *gid, const bat *eid, const bit *skip_nils, const bit *abort_on_error)
 {
-	return AGGRgroup_str_concat(retval, bid, gid, eid, NULL, *skip_nils, *abort_on_error, BATgroupstr_group_concat,
-								DEFAULT_SEPARATOR, "aggr.substr_group_concat");
+	return AGGRgroup_str_concat(retval, bid, gid, eid, NULL, *skip_nils, *abort_on_error, NULL, DEFAULT_SEPARATOR, "aggr.substr_group_concat");
 }
 
 mal_export str AGGRsubstr_group_concatcand(bat *retval, const bat *bid, const bat *gid, const bat *eid, const bat *sid, const bit *skip_nils, const bit *abort_on_error);
 str
 AGGRsubstr_group_concatcand(bat *retval, const bat *bid, const bat *gid, const bat *eid, const bat *sid, const bit *skip_nils, const bit *abort_on_error)
 {
-	return AGGRgroup_str_concat(retval, bid, gid, eid, sid, *skip_nils, *abort_on_error, BATgroupstr_group_concat,
-								DEFAULT_SEPARATOR, "aggr.substr_group_concat");
+	return AGGRgroup_str_concat(retval, bid, gid, eid, sid, *skip_nils, *abort_on_error, NULL, DEFAULT_SEPARATOR, "aggr.substr_group_concat");
 }
 
-#define GET_SEPARATOR(MAL_FUNC)                                                  \
-	do {                                                                         \
-		BATiter bi;                                                              \
-		sep = BATdescriptor(*sepp);                                              \
-		if (sep == NULL)                                                         \
-			throw(MAL, MAL_FUNC, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);        \
-		bi = bat_iterator(sep);                                                  \
-		separator = BUNtvar(bi, 0);                                              \
-	} while (0);
-
-mal_export str AGGRstr_group_concat_sep(bat *retval, const bat *bid, const bat *sepp, const bat *gid, const bat *eid);
+mal_export str AGGRstr_group_concat_sep(bat *retval, const bat *bid, const bat *sep, const bat *gid, const bat *eid);
 str
-AGGRstr_group_concat_sep(bat *retval, const bat *bid, const bat *sepp, const bat *gid, const bat *eid)
+AGGRstr_group_concat_sep(bat *retval, const bat *bid, const bat *sep, const bat *gid, const bat *eid)
 {
-	BAT *sep = NULL;
-	str separator = DEFAULT_SEPARATOR, msg = MAL_SUCCEED;
-
-	GET_SEPARATOR("aggr.str_group_concat_sep")
-	msg = AGGRgroup_str_concat(retval, bid, gid, eid, NULL, 1, 1, BATgroupstr_group_concat, separator,
-								"aggr.str_group_concat_sep");
-	BBPunfix(sep->batCacheid);
-	return msg;
+	return AGGRgroup_str_concat(retval, bid, gid, eid, NULL, true, true, sep, NULL, "aggr.str_group_concat_sep");;
 }
 
-mal_export str AGGRsubstr_group_concat_sep(bat *retval, const bat *bid, const bat *sepp, const bat *gid, const bat *eid, const bit *skip_nils, const bit *abort_on_error);
+mal_export str AGGRsubstr_group_concat_sep(bat *retval, const bat *bid, const bat *sep, const bat *gid, const bat *eid, const bit *skip_nils, const bit *abort_on_error);
 str
-AGGRsubstr_group_concat_sep(bat *retval, const bat *bid, const bat *sepp, const bat *gid, const bat *eid, const bit *skip_nils, const bit *abort_on_error)
+AGGRsubstr_group_concat_sep(bat *retval, const bat *bid, const bat *sep, const bat *gid, const bat *eid, const bit *skip_nils, const bit *abort_on_error)
 {
-	BAT *sep = NULL;
-	str separator = DEFAULT_SEPARATOR, msg = MAL_SUCCEED;
-
-	GET_SEPARATOR("aggr.substr_group_concat_sep")
-	msg = AGGRgroup_str_concat(retval, bid, gid, eid, NULL, *skip_nils, *abort_on_error, BATgroupstr_group_concat,
-								separator, "aggr.substr_group_concat_sep");
-	BBPunfix(sep->batCacheid);
-	return msg;
+	return AGGRgroup_str_concat(retval, bid, gid, eid, NULL, *skip_nils, *abort_on_error, sep, NULL, "aggr.substr_group_concat_sep");
 }
 
-mal_export str AGGRsubstr_group_concatcand_sep(bat *retval, const bat *bid, const bat *sepp, const bat *gid, const bat *eid, const bat *sid, const bit *skip_nils, const bit *abort_on_error);
+mal_export str AGGRsubstr_group_concatcand_sep(bat *retval, const bat *bid, const bat *sep, const bat *gid, const bat *eid, const bat *sid, const bit *skip_nils, const bit *abort_on_error);
 str
-AGGRsubstr_group_concatcand_sep(bat *retval, const bat *bid, const bat *sepp, const bat *gid, const bat *eid, const bat *sid, const bit *skip_nils, const bit *abort_on_error)
+AGGRsubstr_group_concatcand_sep(bat *retval, const bat *bid, const bat *sep, const bat *gid, const bat *eid, const bat *sid, const bit *skip_nils, const bit *abort_on_error)
 {
-	BAT *sep = NULL;
-	str separator = DEFAULT_SEPARATOR, msg = MAL_SUCCEED;
+	return AGGRgroup_str_concat(retval, bid, gid, eid, sid, *skip_nils, *abort_on_error, sep, NULL, "aggr.substr_group_concat_sep");
+}
 
-	GET_SEPARATOR("aggr.substr_group_concat_sep")
-	msg = AGGRgroup_str_concat(retval, bid, gid, eid, sid, *skip_nils, *abort_on_error, BATgroupstr_group_concat,
-								separator, "aggr.substr_group_concat_sep");
-	BBPunfix(sep->batCacheid);
-	return msg;
+static str
+AGGRgrouped2(bat *retval, const bat *bid1, const bat *bid2, const bat *gid, const bat *eid, const bat *sid, bool skip_nils, bool abort_on_error, 
+			 int tp, BAT *(*func)(BAT *, BAT *, BAT *, BAT *, BAT *, int tp, bool skip_nils, bool abort_on_error),
+			 const char *malfunc)
+{
+	BAT *b1, *b2, *g, *e, *s, *bn = NULL;
+
+	assert(func != NULL);
+
+	b1 = BATdescriptor(*bid1);
+	b2 = BATdescriptor(*bid2);
+	g = gid ? BATdescriptor(*gid) : NULL;
+	e = eid ? BATdescriptor(*eid) : NULL;
+	s = sid ? BATdescriptor(*sid) : NULL;
+
+	if (b1 == NULL || b2 == NULL || (gid != NULL && g == NULL) || (eid != NULL && e == NULL) ||
+		(sid != NULL && s == NULL)) {
+		if (b1)
+			BBPunfix(b1->batCacheid);
+		if (b2)
+			BBPunfix(b2->batCacheid);
+		if (g)
+			BBPunfix(g->batCacheid);
+		if (e)
+			BBPunfix(e->batCacheid);
+		if (s)
+			BBPunfix(s->batCacheid);
+		throw(MAL, malfunc, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
+
+	if (b1->ttype != b2->ttype) {
+		BBPunfix(b1->batCacheid);
+		BBPunfix(b2->batCacheid);
+		if (g)
+			BBPunfix(g->batCacheid);
+		if (e)
+			BBPunfix(e->batCacheid);
+		if (s)
+			BBPunfix(s->batCacheid);
+		throw(MAL, malfunc, SQLSTATE(42000) "%s requires both arguments of the same type", malfunc);
+	}
+
+	bn = (*func)(b1, b2, g, e, s, tp, skip_nils, abort_on_error);
+
+	BBPunfix(b1->batCacheid);
+	BBPunfix(b2->batCacheid);
+	if (g)
+		BBPunfix(g->batCacheid);
+	if (e)
+		BBPunfix(e->batCacheid);
+	if (s)
+		BBPunfix(s->batCacheid);
+	if (bn == NULL)
+		throw(MAL, malfunc, GDK_EXCEPTION);
+	*retval = bn->batCacheid;
+	BBPkeepref(bn->batCacheid);
+	return MAL_SUCCEED;
+}
+
+mal_export str AGGRcovariance(bat *retval, const bat *b1, const bat *b2, const bat *gid, const bat *eid);
+str
+AGGRcovariance(bat *retval, const bat *b1, const bat *b2, const bat *gid, const bat *eid)
+{
+	return AGGRgrouped2(retval, b1, b2, gid, eid, NULL, 1, 0, TYPE_dbl, BATgroupcovariance_sample, "aggr.covariance");
+}
+
+mal_export str AGGRsubcovariance(bat *retval, const bat *b1, const bat *b2, const bat *gid, const bat *eid, const bit *skip_nils, const bit *abort_on_error);
+str
+AGGRsubcovariance(bat *retval, const bat *b1, const bat *b2, const bat *gid, const bat *eid, const bit *skip_nils, const bit *abort_on_error)
+{
+	return AGGRgrouped2(retval, b1, b2, gid, eid, NULL, *skip_nils, *abort_on_error, TYPE_dbl, BATgroupcovariance_sample, "aggr.subcovariance");
+}
+
+mal_export str AGGRsubcovariancecand(bat *retval, const bat *b1, const bat *b2, const bat *gid, const bat *eid, const bat *sid, const bit *skip_nils, const bit *abort_on_error);
+str
+AGGRsubcovariancecand(bat *retval, const bat *b1, const bat *b2, const bat *gid, const bat *eid, const bat *sid, const bit *skip_nils, const bit *abort_on_error)
+{
+	return AGGRgrouped2(retval, b1, b2, gid, eid, sid, *skip_nils, *abort_on_error, TYPE_dbl, BATgroupcovariance_sample, "aggr.subcovariance");
+}
+
+mal_export str AGGRcovariancep(bat *retval, const bat *b1, const bat *b2, const bat *gid, const bat *eid);
+str
+AGGRcovariancep(bat *retval, const bat *b1, const bat *b2, const bat *gid, const bat *eid)
+{
+	return AGGRgrouped2(retval, b1, b2, gid, eid, NULL, 1, 0, TYPE_dbl, BATgroupcovariance_population, "aggr.covariancep");
+}
+
+mal_export str AGGRsubcovariancep(bat *retval, const bat *b1, const bat *b2, const bat *gid, const bat *eid, const bit *skip_nils, const bit *abort_on_error);
+str
+AGGRsubcovariancep(bat *retval, const bat *b1, const bat *b2, const bat *gid, const bat *eid, const bit *skip_nils, const bit *abort_on_error)
+{
+	return AGGRgrouped2(retval, b1, b2, gid, eid, NULL, *skip_nils, *abort_on_error, TYPE_dbl, BATgroupcovariance_population, "aggr.subcovariancep");
+}
+
+mal_export str AGGRsubcovariancepcand(bat *retval, const bat *b1, const bat *b2, const bat *gid, const bat *eid, const bat *sid, const bit *skip_nils, const bit *abort_on_error);
+str
+AGGRsubcovariancepcand(bat *retval, const bat *b1, const bat *b2, const bat *gid, const bat *eid, const bat *sid, const bit *skip_nils, const bit *abort_on_error)
+{
+	return AGGRgrouped2(retval, b1, b2, gid, eid, sid, *skip_nils, *abort_on_error, TYPE_dbl, BATgroupcovariance_population, "aggr.subcovariancep");
+}
+
+mal_export str AGGRcorr(bat *retval, const bat *b1, const bat *b2, const bat *gid, const bat *eid);
+str
+AGGRcorr(bat *retval, const bat *b1, const bat *b2, const bat *gid, const bat *eid)
+{
+	return AGGRgrouped2(retval, b1, b2, gid, eid, NULL, 1, 0, TYPE_dbl, BATgroupcorrelation, "aggr.corr");
+}
+
+mal_export str AGGRsubcorr(bat *retval, const bat *b1, const bat *b2, const bat *gid, const bat *eid, const bit *skip_nils, const bit *abort_on_error);
+str
+AGGRsubcorr(bat *retval, const bat *b1, const bat *b2, const bat *gid, const bat *eid, const bit *skip_nils, const bit *abort_on_error)
+{
+	return AGGRgrouped2(retval, b1, b2, gid, eid, NULL, *skip_nils, *abort_on_error, TYPE_dbl, BATgroupcorrelation, "aggr.subcorr");
+}
+
+mal_export str AGGRsubcorrcand(bat *retval, const bat *b1, const bat *b2, const bat *gid, const bat *eid, const bat *sid, const bit *skip_nils, const bit *abort_on_error);
+str
+AGGRsubcorrcand(bat *retval, const bat *b1, const bat *b2, const bat *gid, const bat *eid, const bat *sid, const bit *skip_nils, const bit *abort_on_error)
+{
+	return AGGRgrouped2(retval, b1, b2, gid, eid, sid, *skip_nils, *abort_on_error, TYPE_dbl, BATgroupcorrelation, "aggr.subcorr");
 }

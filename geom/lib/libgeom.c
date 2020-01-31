@@ -106,24 +106,17 @@ getMbrGeos(mbr *res, const GEOSGeom geosGeometry)
 */
 
 GEOSGeom
-wkb2geos(GEOSContextHandle_t handle, const wkb *geomWKB)
+wkb2geos(const wkb *geomWKB)
 {
 	GEOSGeom geosGeometry;
 
 	if (is_wkb_nil(geomWKB))
 		return NULL;
 
-	if (handle)
-		geosGeometry = GEOSGeomFromWKB_buf_r(handle, (unsigned char *) geomWKB->data, geomWKB->len);
-	else
-		geosGeometry = GEOSGeomFromWKB_buf((unsigned char *) geomWKB->data, geomWKB->len);
+	geosGeometry = GEOSGeomFromWKB_buf((unsigned char *) geomWKB->data, geomWKB->len);
 
-	if (geosGeometry != NULL) {
-		if (handle)
-			GEOSSetSRID_r(handle, geosGeometry, geomWKB->srid);
-		else
-			GEOSSetSRID(geosGeometry, geomWKB->srid);
-	}
+	if (geosGeometry != NULL)
+		GEOSSetSRID(geosGeometry, geomWKB->srid);
 
 	return geosGeometry;
 }

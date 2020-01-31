@@ -189,11 +189,13 @@ gdk_export LOG_LEVEL LVL_PER_COMPONENT[];
 
 // If the LOG_LEVEL of the message is one of the following: CRITICAL, ERROR or WARNING
 // it is logged no matter the component. In any other case the component is taken into account
+#define GDK_TRACER_TEST(LOG_LEVEL, COMP)	\
+	(LOG_LEVEL == M_CRITICAL ||		\
+	 LOG_LEVEL == M_ERROR    ||		\
+	 LOG_LEVEL == M_WARNING  ||		\
+	 LVL_PER_COMPONENT[COMP] >= LOG_LEVEL)
 #define IF_GDK_TRACER_LOG(LOG_LEVEL, COMP)		\
-	if(LOG_LEVEL == M_CRITICAL ||			\
-	   LOG_LEVEL == M_ERROR    ||			\
-	   LOG_LEVEL == M_WARNING  ||			\
-	   (LVL_PER_COMPONENT[COMP] >= LOG_LEVEL))
+	if (GDK_TRACER_TEST(LOG_LEVEL, COMP))
 
 #define GDK_TRACER_LOG_BODY(LOG_LEVEL, COMP, MSG, ...)			\
 	GDKtracer_log(LOG_LEVEL,					\
@@ -326,7 +328,7 @@ typedef struct GDKtracer {
  * LOG_LEVEL, COMPONENT and LAYER enum respectively.
  */
 // Returns the timestamp in the form of datetime
-gdk_export char *GDKtracer_get_timestamp(char *fmt);
+gdk_export char *GDKtracer_get_timestamp(const char *fmt);
 
 
 gdk_export gdk_return GDKtracer_init(void);
@@ -335,31 +337,31 @@ gdk_export gdk_return GDKtracer_init(void);
 gdk_export gdk_return GDKtracer_stop(void);
 
 
-gdk_export gdk_return GDKtracer_set_component_level(int *comp, int *lvl);
+gdk_export gdk_return GDKtracer_set_component_level(int comp, int lvl);
 
 
-gdk_export gdk_return GDKtracer_reset_component_level(int *comp);
+gdk_export gdk_return GDKtracer_reset_component_level(int comp);
 
 
-gdk_export gdk_return GDKtracer_set_layer_level(int *layer, int *lvl);
+gdk_export gdk_return GDKtracer_set_layer_level(int layer, int lvl);
 
 
-gdk_export gdk_return GDKtracer_reset_layer_level(int *layer);
+gdk_export gdk_return GDKtracer_reset_layer_level(int layer);
 
 
-gdk_export gdk_return GDKtracer_set_flush_level(int *lvl);
+gdk_export gdk_return GDKtracer_set_flush_level(int lvl);
 
 
 gdk_export gdk_return GDKtracer_reset_flush_level(void);
 
 
-gdk_export gdk_return GDKtracer_set_adapter(int *adapter);
+gdk_export gdk_return GDKtracer_set_adapter(int adapter);
 
 
 gdk_export gdk_return GDKtracer_reset_adapter(void);
 
 
-gdk_export gdk_return GDKtracer_log(LOG_LEVEL level, char *fmt, ...)
+gdk_export gdk_return GDKtracer_log(LOG_LEVEL level, const char *fmt, ...)
 	__attribute__((format(printf, 2, 3)));
 
 

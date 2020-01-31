@@ -404,9 +404,7 @@ hasSideEffects(MalBlkPtr mb, InstrPtr p, int strict)
 		getModuleId(p) == alarmRef)
 		return TRUE;
 		
-	if( getModuleId(p) == pyapiRef ||
-		getModuleId(p) == pyapimapRef ||
-		getModuleId(p) == pyapi3Ref ||
+	if( getModuleId(p) == pyapi3Ref ||
 		getModuleId(p) == pyapi3mapRef ||
 		getModuleId(p) == rapiRef || 
 		getModuleId(p) == capiRef)
@@ -548,7 +546,6 @@ int isMapOp(InstrPtr p){
 		 (getModuleId(p) != batcalcRef && getModuleId(p) != batRef && strncmp(getModuleId(p), "bat", 3) == 0) ||
 		 (getModuleId(p) == mkeyRef)) && !isOrderDepenent(p) &&
 		 getModuleId(p) != batrapiRef &&
-		 getModuleId(p) != batpyapiRef &&
 		 getModuleId(p) != batpyapi3Ref &&
 		 getModuleId(p) != batcapiRef;
 }

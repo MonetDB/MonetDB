@@ -26,6 +26,14 @@ pattern sql.diff(p:bit, b:any_1) :bit
 address SQLdiff
 comment "return true if cur != prev row";
 
+pattern batsql.diff(p:bit, b:bat[:any_1]) :bat[:bit]
+address SQLdiff
+comment "return true if cur != prev row";
+
+pattern batsql.diff(p:bat[:bit], b:any_1) :bat[:bit]
+address SQLdiff
+comment "return true if cur != prev row";
+
 pattern batsql.diff(p:bat[:bit], b:bat[:any_1]) :bat[:bit]
 address SQLdiff
 comment "return true if cur != prev row";
@@ -125,7 +133,7 @@ pattern batsql.lag(b:bat[:any_1], l:any_2, p:any_3, o:any_4) :bat[:any_1]
 address SQLlag
 comment "return the value in the previous 'l' row in the partition or NULL if non existent";
 
-pattern sql.lag(b:any_1, l:bat[:any_2], p:any_3, o:any_4) :any_1
+pattern batsql.lag(b:any_1, l:bat[:any_2], p:any_3, o:any_4) :bat[:any_1]
 address SQLlag
 comment "return the value in the previous 'l' row in the partition or NULL if non existent";
 
@@ -142,7 +150,7 @@ pattern batsql.lag(b:bat[:any_1], l:any_2, d:any_1, p:any_3, o:any_4) :bat[:any_
 address SQLlag
 comment "return the value in the previous 'l' row in the partition or 'd' if non existent";
 
-pattern sql.lag(b:any_1, l:bat[:any_2], d:any_1, p:any_3, o:any_4) :any_1
+pattern batsql.lag(b:any_1, l:bat[:any_2], d:any_1, p:any_3, o:any_4) :bat[:any_1]
 address SQLlag
 comment "return the value in the previous 'l' row in the partition or 'd' if non existent";
 
@@ -150,7 +158,7 @@ pattern batsql.lag(b:bat[:any_1], l:bat[:any_2], d:any_1, p:any_3, o:any_4) :bat
 address SQLlag
 comment "return the value in the previous 'l' row in the partition or 'd' if non existent";
 
-pattern sql.lag(b:any_1, l:any_2, d:bat[:any_1], p:any_3, o:any_4) :any_1
+pattern batsql.lag(b:any_1, l:any_2, d:bat[:any_1], p:any_3, o:any_4) :bat[:any_1]
 address SQLlag
 comment "return the value in the previous 'l' row in the partition or 'd' if non existent";
 
@@ -158,7 +166,7 @@ pattern batsql.lag(b:bat[:any_1], l:any_2, d:bat[:any_1], p:any_3, o:any_4) :bat
 address SQLlag
 comment "return the value in the previous 'l' row in the partition or 'd' if non existent";
 
-pattern sql.lag(b:any_1, l:bat[:any_2], d:bat[:any_1], p:any_3, o:any_4) :any_1
+pattern batsql.lag(b:any_1, l:bat[:any_2], d:bat[:any_1], p:any_3, o:any_4) :bat[:any_1]
 address SQLlag
 comment "return the value in the previous 'l' row in the partition or 'd' if non existent";
 
@@ -184,7 +192,7 @@ pattern batsql.lead(b:bat[:any_1], l:any_2, p:any_3, o:any_4) :bat[:any_1]
 address SQLlead
 comment "return the value in the next 'l' row in the partition or NULL if non existent";
 
-pattern sql.lead(b:any_1, l:bat[:any_2], p:any_3, o:any_4) :any_1
+pattern batsql.lead(b:any_1, l:bat[:any_2], p:any_3, o:any_4) :bat[:any_1]
 address SQLlead
 comment "return the value in the next 'l' row in the partition or NULL if non existent";
 
@@ -201,7 +209,7 @@ pattern batsql.lead(b:bat[:any_1], l:any_2, d:any_1, p:any_3, o:any_4) :bat[:any
 address SQLlead
 comment "return the value in the next 'l' row in the partition or 'd' if non existent";
 
-pattern sql.lead(b:any_1, l:bat[:any_2], d:any_1, p:any_3, o:any_4) :any_1
+pattern batsql.lead(b:any_1, l:bat[:any_2], d:any_1, p:any_3, o:any_4) :bat[:any_1]
 address SQLlead
 comment "return the value in the next 'l' row in the partition or 'd' if non existent";
 
@@ -209,7 +217,7 @@ pattern batsql.lead(b:bat[:any_1], l:bat[:any_2], d:any_1, p:any_3, o:any_4) :ba
 address SQLlead
 comment "return the value in the next 'l' row in the partition or 'd' if non existent";
 
-pattern sql.lead(b:any_1, l:any_2, d:bat[:any_1], p:any_3, o:any_4) :any_1
+pattern batsql.lead(b:any_1, l:any_2, d:bat[:any_1], p:any_3, o:any_4) :bat[:any_1]
 address SQLlead
 comment "return the value in the next 'l' row in the partition or 'd' if non existent";
 
@@ -217,7 +225,7 @@ pattern batsql.lead(b:bat[:any_1], l:any_2, d:bat[:any_1], p:any_3, o:any_4) :ba
 address SQLlead
 comment "return the value in the next 'l' row in the partition or 'd' if non existent";
 
-pattern sql.lead(b:any_1, l:bat[:any_2], d:bat[:any_1], p:any_3, o:any_4) :any_1
+pattern batsql.lead(b:any_1, l:bat[:any_2], d:bat[:any_1], p:any_3, o:any_4) :bat[:any_1]
 address SQLlead
 comment "return the value in the next 'l' row in the partition or 'd' if non existent";
 
@@ -234,7 +242,7 @@ pattern batsql.ntile(b:bat[:any_1], n:any_2, p:any_3, o:any_4) :bat[:any_2]
 address SQLntile
 comment "return the groups divided as equally as possible";
 
-pattern sql.ntile(b:any_1, n:bat[:any_2], p:any_3, o:any_4) :any_2
+pattern batsql.ntile(b:any_1, n:bat[:any_2], p:any_3, o:any_4) :bat[:any_2]
 address SQLntile
 comment "return the groups divided as equally as possible";
 
@@ -274,7 +282,7 @@ pattern batsql.nth_value(b:bat[:any_1], n:any_2, s:bat[:lng], e:bat[:lng]) :bat[
 address SQLnth_value
 comment "return the nth value of each group";
 
-pattern sql.nth_value(b:any_1, n:bat[:any_2], s:lng, e:lng) :any_1
+pattern batsql.nth_value(b:any_1, n:bat[:any_2], s:lng, e:lng) :bat[:any_1]
 address SQLnth_value
 comment "return the nth value of each group";
 
@@ -359,15 +367,129 @@ EOF
     done
 done
 
-for tp1 in 1:bte 2:sht 4:int 8:lng 4:flt 8:dbl; do
+for tp in bte sht int lng flt dbl; do
 	cat <<EOF
-pattern sql.avg(b:${tp1#*:}, s:lng, e:lng) :dbl
+pattern sql.avg(b:${tp}, s:lng, e:lng) :dbl
 address SQLavg
 comment "return the average of groups";
 
-pattern batsql.avg(b:bat[:${tp1#*:}], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
+pattern batsql.avg(b:bat[:${tp}], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
 address SQLavg
 comment "return the average of groups";
+
+
+pattern sql.stdev(b:${tp}, s:lng, e:lng) :dbl
+address SQLstddev_samp
+comment "return the standard deviation sample of groups";
+
+pattern batsql.stdev(b:bat[:${tp}], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
+address SQLstddev_samp
+comment "return the standard deviation sample of groups";
+
+pattern sql.stdevp(b:${tp}, s:lng, e:lng) :dbl
+address SQLstddev_pop
+comment "return the standard deviation population of groups";
+
+pattern batsql.stdevp(b:bat[:${tp}], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
+address SQLstddev_pop
+comment "return the standard deviation population of groups";
+
+
+pattern sql.variance(b:${tp}, s:lng, e:lng) :dbl
+address SQLvar_samp
+comment "return the variance sample of groups";
+
+pattern batsql.variance(b:bat[:${tp}], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
+address SQLvar_samp
+comment "return the variance sample of groups";
+
+pattern sql.variancep(b:${tp}, s:lng, e:lng) :dbl
+address SQLvar_pop
+comment "return the variance population of groups";
+
+pattern batsql.variancep(b:bat[:${tp}], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
+address SQLvar_pop
+comment "return the variance population of groups";
+
+
+pattern sql.covariance(b:${tp}, c:${tp}, s:lng, e:lng) :dbl
+address SQLcovar_samp
+comment "return the covariance sample value of groups";
+
+pattern batsql.covariance(b:bat[:${tp}], c:${tp}, s:bat[:lng], e:bat[:lng]) :bat[:dbl]
+address SQLcovar_samp
+comment "return the covariance sample value of groups";
+
+pattern batsql.covariance(b:${tp}, c:bat[:${tp}], s:lng, e:lng) :bat[:dbl]
+address SQLcovar_samp
+comment "return the covariance sample value of groups";
+
+pattern batsql.covariance(b:bat[:${tp}], c:bat[:${tp}], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
+address SQLcovar_samp
+comment "return the covariance sample value of groups";
+
+
+pattern sql.covariancep(b:${tp}, c:${tp}, s:lng, e:lng) :dbl
+address SQLcovar_pop
+comment "return the covariance population value of groups";
+
+pattern batsql.covariancep(b:bat[:${tp}], c:${tp}, s:bat[:lng], e:bat[:lng]) :bat[:dbl]
+address SQLcovar_pop
+comment "return the covariance population value of groups";
+
+pattern batsql.covariancep(b:${tp}, c:bat[:${tp}], s:lng, e:lng) :bat[:dbl]
+address SQLcovar_pop
+comment "return the covariance population value of groups";
+
+pattern batsql.covariancep(b:bat[:${tp}], c:bat[:${tp}], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
+address SQLcovar_pop
+comment "return the covariance population value of groups";
+
+
+pattern sql.corr(b:${tp}, c:${tp}, s:lng, e:lng) :dbl
+address SQLcorr
+comment "return the correlation value of groups";
+
+pattern batsql.corr(b:bat[:${tp}], c:${tp}, s:bat[:lng], e:bat[:lng]) :bat[:dbl]
+address SQLcorr
+comment "return the correlation value of groups";
+
+pattern batsql.corr(b:${tp}, c:bat[:${tp}], s:lng, e:lng) :bat[:dbl]
+address SQLcorr
+comment "return the correlation value of groups";
+
+pattern batsql.corr(b:bat[:${tp}], c:bat[:${tp}], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
+address SQLcorr
+comment "return the correlation value of groups";
+
 
 EOF
 done
+
+cat <<EOF
+pattern sql.str_group_concat(b:str, s:lng, e:lng) :str
+address SQLstrgroup_concat
+comment "return the string concatenation of groups";
+
+pattern batsql.str_group_concat(b:bat[:str], s:bat[:lng], e:bat[:lng]) :bat[:str]
+address SQLstrgroup_concat
+comment "return the string concatenation of groups";
+
+
+pattern sql.str_group_concat(b:str, sep:str, s:lng, e:lng) :str
+address SQLstrgroup_concat
+comment "return the string concatenation of groups with a custom separator";
+
+pattern batsql.str_group_concat(b:bat[:str], sep:str, s:bat[:lng], e:bat[:lng]) :bat[:str]
+address SQLstrgroup_concat
+comment "return the string concatenation of groups with a custom separator";
+
+pattern batsql.str_group_concat(b:str, sep:bat[:str], s:lng, e:lng) :bat[:str]
+address SQLstrgroup_concat
+comment "return the string concatenation of groups with a custom separator";
+
+pattern batsql.str_group_concat(b:bat[:str], sep:bat[:str], s:bat[:lng], e:bat[:lng]) :bat[:str]
+address SQLstrgroup_concat
+comment "return the string concatenation of groups with a custom separator";
+
+EOF

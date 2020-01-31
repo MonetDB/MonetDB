@@ -12,7 +12,6 @@
 #include "sql_mem.h"
 #include "sql_catalog.h"
 #include "sql_relation.h"
-#include "sql_types.h"
 
 typedef void (*freestack_fptr) (int clientid, backend_stack stk);
 typedef void (*freecode_fptr) (int clientid, backend_code code, backend_stack stk, int nr, char *name);

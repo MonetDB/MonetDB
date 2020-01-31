@@ -118,7 +118,7 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 	 	break;
 	}
 	case e_convert: {
-		char *to_type = sql_subtype_string(&e->tpe);
+		char *to_type = sql_subtype_string(exp_subtype(e));
 		mnstr_printf(fout, "%s[", to_type);
 		exp_print(sql, fout, e->l, depth, refs, 0, 0);
 		mnstr_printf(fout, "]");
@@ -176,10 +176,10 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 			mnstr_printf(fout, " %s", e->flag==1?"ANY":"ALL");
 	} 	break;
 	case e_aggr: {
-		sql_subaggr *a = e->f;
+		sql_subfunc *a = e->f;
 		mnstr_printf(fout, "%s.%s",
-				a->aggr->s?a->aggr->s->base.name:"sys",
-				a->aggr->base.name);
+				a->func->s?a->func->s->base.name:"sys",
+				a->func->base.name);
 		if (need_distinct(e))
 			mnstr_printf(fout, " unique ");
 		if (need_no_nil(e))
@@ -409,8 +409,12 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int dec
 
 		if (rel->r)
 			exp_print(sql, fout, rel->r, depth, refs, 1, 0);
-		if (rel->l)
-			rel_print_(sql, fout, rel->l, depth+1, refs, decorate);
+		if (rel->l) {
+			if (rel->flag == 2) 
+		  		mnstr_printf(fout, "rel_dump not yet implemented for trigger input");
+			else
+				rel_print_(sql, fout, rel->l, depth+1, refs, decorate);
+		}
 		if (rel->exps)
 			exps_print(sql, fout, rel->exps, depth, refs, 1, 0);
 		break;
@@ -981,7 +985,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 	if (r[*pos] == '(') {
 		sql_schema *s;
 		sql_subfunc *f = NULL;
-		sql_subaggr *a = NULL;
+		sql_subfunc *a = NULL;
 		node *n;
 
 		exps = read_exps(sql, lrel, rrel, pexps, r, pos, '(', 0);
@@ -992,9 +996,9 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 		s = mvc_bind_schema(sql, tname);
 		if (grp) {
 			if (exps && exps->h)
-				a = sql_bind_aggr(sql->sa, s, cname, exp_subtype(exps->h->data));
+				a = sql_bind_func(sql->sa, s, cname, exp_subtype(exps->h->data), NULL, F_AGGR);
 			else
-				a = sql_bind_aggr(sql->sa, s, cname, NULL);
+				a = sql_bind_func(sql->sa, s, cname, sql_bind_localtype("void"), NULL, F_AGGR);
 			exp = exp_aggr( sql->sa, exps, a, unique, no_nils, CARD_ATOM, 1);
 		} else {
 			list *ops = sa_list(sql->sa);

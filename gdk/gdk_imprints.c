@@ -642,9 +642,10 @@ IMPSremove(BAT *b)
 	if ((imprints = b->timprints) != NULL) {
 		b->timprints = NULL;
 
-		if ((GDKdebug & ALGOMASK) &&
-		    * (size_t *) imprints->imprints.base & (1 << 16))
-			TRC_DEBUG(GDK_IMPRINTS, "Removing persisted imprints\n");
+		TRC_DEBUG_IF(GDK_IMPRINTS) {
+			if (* (size_t *) imprints->imprints.base & (1 << 16))
+				TRC_DEBUG_ENDIF(GDK_IMPRINTS, "Removing persisted imprints\n");
+		}
 		if (HEAPdelete(&imprints->imprints, BBP_physical(b->batCacheid),
 			       "timprints") != GDK_SUCCEED)
 			TRC_DEBUG(IO_, "IMPSremove(%s): imprints heap\n", BATgetId(b));

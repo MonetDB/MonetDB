@@ -11,7 +11,7 @@ INCLUDES = ../../common/stream ../../common/utils \
 
 lib_mapi = {
 	VERSION = $(MAPI_VERSION)
-	SOURCES = mapi.c mapi.rc
+	SOURCES = mapi.c mapi_prompt.h mapi.rc
 	LIBS = ../../common/utils/libmcrypt \
 		WIN32?../../common/stream/libstream \
 		WIN32?../../common/utils/libmutils \
@@ -22,7 +22,7 @@ lib_mapi = {
 headers_mapi = {
 	DIR = includedir/monetdb
 	HEADERS = h
-	SOURCES = mapi.h
+	SOURCES = mapi.h mapi_querytype.h
 }
 
 headers_pc = {

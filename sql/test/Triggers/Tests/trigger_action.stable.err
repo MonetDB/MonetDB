@@ -10,6 +10,10 @@ stderr of test 'trigger_action` in directory 'sql/test/Triggers` itself:
 # 21:20:08 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=37598  < trigger_action.sql
 # 21:20:08 >  
 
+MAPI  = (monetdb) /var/tmp/mtest-358294/.s.monetdb.33867
+QUERY = update t_4_1 set "name" = 'mo' where "id" = 10;
+ERROR = !SELECT: identifier 'id' ambiguous
+CODE  = 42000
 
 # 21:20:08 >  
 # 21:20:08 >  Done.

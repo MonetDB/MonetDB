@@ -458,7 +458,7 @@ column_option(
 			sql->session->status = 0;
 			sql->errstr[0] = '\0';
 		}
-	       	r = symbol2string(sql, s->data.sym, 0, &err);
+		r = symbol2string(sql, s->data.sym, 0, &err);
 		if (!r) {
 			(void) sql_error(sql, 02, SQLSTATE(42000) "Incorrect default value '%s'\n", err?err:"");
 			if (err) _DELETE(err);

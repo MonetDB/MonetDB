@@ -312,14 +312,11 @@ SQL.
 The value is
 .B true
 or
-.B 2
-for embedded Python 2, or
 .B 3
 for embedded Python 3.  Note that by enabling embedded Python, users
 of the server are allowed to execute arbitrary Python code, and are
 therefore able to read and modify all data that the server process has
-access to.  Also note that it is not possible to enable both Python 2
-and 3 at the same time.
+access to.
 .TP
 .B embedded_r=true
 Enable embedded R.  This means R code can be called from SQL.  Note

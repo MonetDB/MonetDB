@@ -4,7 +4,7 @@
 # clients/examples/python
 testpath="$TSTSRCBASE/clients/examples/python"
 # ignore PYTHONPATH from Mtest, it is hardcoded to the dirs for the
-# Python that runs Mtest (currently always Python 2)
+# Python that runs Mtest
 PYTHONPATH=${PYTHON3PATH}
 export PYTHONPATH
 

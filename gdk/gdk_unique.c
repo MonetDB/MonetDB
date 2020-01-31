@@ -187,9 +187,7 @@ BATunique(BAT *b, BAT *s)
 			     hb = HASHgetlink(hs, hb)) {
 				assert(hb < p + lo);
 				if (cmp(v, BUNtail(bi, hb)) == 0 &&
-				    canditer_search(&ci,
-						    hb - lo + seq,
-						    false) != BUN_NONE) {
+				    canditer_contains(&ci, hb - lo + seq)) {
 					/* we've seen this value
 					 * before */
 					break;
