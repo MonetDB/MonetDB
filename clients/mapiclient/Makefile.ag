@@ -43,26 +43,6 @@ bin_stethoscope = {
 		$(SOCKET_LIBS) $(zlib_LIBS) $(bzip2_LIBS) $(snappy_LIBS) $(lz4_LIBS) $(liblzma_LIBS) $(curl_LIBS) $(LTLIBICONV) $(openssl_LIBS)
 }
 
-bin_tachograph = {
-	SOURCES = tachograph.c
-	LIBS = libmcutil \
-		../mapilib/libmapi \
-		../../common/stream/libstream \
-		../../common/utils/libmutils \
-		WIN32?../../common/options/libmoptions \
-		$(SOCKET_LIBS) $(zlib_LIBS) $(bzip2_LIBS) $(snappy_LIBS) $(lz4_LIBS) $(liblzma_LIBS) $(curl_LIBS) $(LTLIBICONV) $(openssl_LIBS)
-}
-
-bin_tomograph = {
-	SOURCES = tomograph.c
-	LIBS = libmcutil \
-		../../common/utils/libmutils \
-		../mapilib/libmapi \
-		../../common/stream/libstream \
-		WIN32?../../common/options/libmoptions \
-		$(SOCKET_LIBS) $(zlib_LIBS) $(bzip2_LIBS) $(snappy_LIBS) $(lz4_LIBS) $(liblzma_LIBS) $(curl_LIBS) $(LTLIBICONV) $(openssl_LIBS)
-}
-
 man_MANS = mclient.1 msqldump.1
 
 EXTRA_DIST = $(man_MANS)

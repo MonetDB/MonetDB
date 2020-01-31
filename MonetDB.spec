@@ -266,34 +266,6 @@ MonetDB, you will very likely need this package.
 %doc %{_mandir}/man1/mclient.1.gz
 %doc %{_mandir}/man1/msqldump.1.gz
 
-%package client-tools
-Summary: MonetDB - Monet Database Management System Client Programs
-Group: Applications/Databases
-Requires: %{name}-client%{?_isa} = %{version}-%{release}
-%if (0%{?fedora} >= 22)
-# tomograph executes these two:
-Recommends: /usr/bin/gs
-Recommends: /usr/bin/gnuplot
-%endif
-
-%description client-tools
-MonetDB is a database management system that is developed from a
-main-memory perspective with use of a fully decomposed storage model,
-automatic index management, extensibility of data types and search
-accelerators.  It also has an SQL front end.
-
-This package contains stethoscope, tomograph, and tachograph.  These
-tools can be used to monitor the MonetDB database server.
-
-%files client-tools
-%defattr(-,root,root)
-%{_bindir}/stethoscope
-%{_bindir}/tachograph
-%{_bindir}/tomograph
-%dir %{_datadir}/doc/MonetDB-client-tools
-%docdir %{_datadir}/doc/MonetDB-client-tools
-%{_datadir}/doc/MonetDB-client-tools/*
-
 %package client-devel
 Summary: MonetDB - Monet Database Management System Client Programs
 Group: Applications/Databases

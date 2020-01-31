@@ -2632,7 +2632,6 @@ void setVariableScope(MalBlkPtr mb);
 void setVariableType(MalBlkPtr mb, const int idx, malType type);
 str setWriteModeRef;
 void setprofilerlimit(int limit);
-str shortStmtRendering(MalBlkPtr mb, MalStkPtr stl, InstrPtr p);
 void showAllScenarios(stream *f);
 void showCurrentScenario(void);
 void showMalBlkHistory(stream *out, MalBlkPtr mb);
