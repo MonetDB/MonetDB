@@ -3263,8 +3263,16 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 				else
 					groupby = subquery = gl;
 			}
-			if (!e || !exp_subtype(e)) /* we also do not expect parameters here */
+			if (!e)
 				return NULL;
+			if (!exp_subtype(e)) { /* we also do not expect parameters here */
+				char *uaname = GDKmalloc(strlen(aname) + 1);
+				sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: parameters not allowed as arguments to aggregate functions",
+						uaname ? toUpperCopy(uaname, aname) : aname);
+				if (uaname)
+					GDKfree(uaname);
+				return e;
+			}
 			all_aggr &= (exp_card(e) <= CARD_AGGR && !exp_is_atom(e) && !is_func(e->type) && (!is_groupby(groupby->op) || !groupby->r || !exps_find_exp(groupby->r, e)));
 			has_freevar |= exp_has_freevar(sql, e);
 			all_freevar &= (is_freevar(e)>0);
@@ -4631,8 +4639,16 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 				is_last = 0;
 				exp_kind ek = {type_value, card_column, FALSE};
 				in = rel_value_exp2(query, &p, nn->data.sym, f | sql_window, ek, &is_last);
-				if(!in)
+				if (!in)
 					return NULL;
+				if (!exp_subtype(in)) { /* we also do not expect parameters here */
+					char *uaname = GDKmalloc(strlen(aname) + 1);
+					(void) sql_error(sql, 02, SQLSTATE(42000) "%s: parameters not allowed as arguments to window functions",
+									uaname ? toUpperCopy(uaname, aname) : aname);
+					if (uaname)
+						GDKfree(uaname);
+					return NULL;
+				}
 				if(is_ntile && nfargs == 1) { /* ntile first argument null handling case */
 					sql_subtype *empty = sql_bind_localtype("void");
 					if(subtype_cmp(exp_subtype(in), empty) == 0) {
@@ -4678,8 +4694,16 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 				 * symbol compilation is required
 				 */
 				in = rel_value_exp2(query, &p, n->next->data.sym, f | sql_window, ek, &is_last);
-				if(!in)
+				if (!in)
 					return NULL;
+				if (!exp_subtype(in)) { /* we also do not expect parameters here */
+					char *uaname = GDKmalloc(strlen(aname) + 1);
+					(void) sql_error(sql, 02, SQLSTATE(42000) "%s: parameters not allowed as arguments to window functions",
+									uaname ? toUpperCopy(uaname, aname) : aname);
+					if (uaname)
+						GDKfree(uaname);
+					return NULL;
+				}
 
 				append(fargs, in);
 				if(strcmp(s->base.name, "sys") == 0 && strcmp(aname, "count") == 0) {

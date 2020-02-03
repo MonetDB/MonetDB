@@ -43,6 +43,8 @@ prepare select case when col0 = 0 then ? when col0 = 1 then ? else 1 end from ta
 prepare select case when col0 = 0 then ? when col0 = 1 then ? else ? end from tab0; --error
 
 prepare select ? is null from tab0; --error
+prepare select max(?); --error
+prepare select max(?) over (); --error
 
 CREATE TABLE tab1(col0 INTEGER, col1 STRING);
 prepare select 1 from tab1 where (col0,col1) in (select ?,? from tab1);
