@@ -15,9 +15,11 @@ SELECT ALL * FROM tab0 AS cor0 WHERE col2 NOT IN ( 22, 18, CAST ( NULL AS INTEGE
 
 prepare select col0 from tab0 where (?) in (select col0 from tab0);
 prepare select col0 from tab0 where (?,?) in (select col0,col1 from tab0);
-
-
+prepare select col0 from tab0 where (col1,col1) in (select col0,? from tab0);
+prepare select col0 from tab0 where (col1,col1) in (select ?,? from tab0);
 prepare select col0 from tab0 where (col0) in (?);
+prepare select col0 from tab0 where (col0) in (?,?);
 
+prepare select col0 from tab0 where (?) in (?); --error
 
 ROLLBACK;

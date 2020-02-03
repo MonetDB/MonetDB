@@ -1251,7 +1251,9 @@ exp_fix_scale(mvc *sql, sql_subtype *ct, sql_exp *e, int both, int always)
 static int
 rel_set_type_param(mvc *sql, sql_subtype *type, sql_rel *rel, sql_exp *rel_exp, int upcast)
 {
-	if (!type || !rel_exp || (rel_exp->type != e_atom && rel_exp->type != e_column))
+	sql_rel *r = rel;
+
+	if (!type || !rel_exp || (rel_exp->type != e_atom && rel_exp->type != e_column && rel_exp->type == e_psm && rel_exp->flag != PSM_REL))
 		return -1;
 
 	/* use largest numeric types */
@@ -1264,19 +1266,19 @@ rel_set_type_param(mvc *sql, sql_subtype *type, sql_rel *rel, sql_exp *rel_exp, 
 	if (upcast && type->type->eclass == EC_FLT) 
 		type = sql_bind_localtype("dbl");
 
-	if ((rel_exp->type == e_atom || rel_exp->type == e_column) && (rel_exp->l || rel_exp->r || rel_exp->f)) {
+	if (rel_exp->type == e_psm)
+		r = (sql_rel*) rel_exp->l;
+
+	if ((rel_exp->type == e_atom && (rel_exp->l || rel_exp->r || rel_exp->f)) || rel_exp->type == e_column || rel_exp->type == e_psm) {
 		/* it's not a parameter set possible parameters below */
 		const char *relname = exp_relname(rel_exp), *expname = exp_name(rel_exp);
-		if (rel_set_type_recurse(sql, type, rel, &relname, &expname) < 0)
+		if (rel_set_type_recurse(sql, type, r, &relname, &expname) < 0)
 			return -1;
-	}
-	if (exp_subtype(rel_exp))
-		return 0;
-	if (set_type_param(sql, type, rel_exp->flag) == 0) {
-		rel_exp->tpe = *type;
-		return 0;
-	}
-	return -1;
+	} else if (set_type_param(sql, type, rel_exp->flag) != 0)
+		return -1;
+
+	rel_exp->tpe = *type;
+	return 0;
 }
 
 /* try to do an in-place conversion
@@ -5314,7 +5316,7 @@ rel_select_exp(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind ek)
 		list *te = NULL;
 		sql_exp *ce = rel_column_exp(query, &inner, n->data.sym, sql_sel | group_totals);
 
-		if (ce && exp_subtype(ce)) {
+		if (ce && (exp_subtype(ce) || (ce->type == e_atom && !ce->l && !ce->f))) {
 			pexps = append(pexps, ce);
 			rel = inner;
 			continue;
