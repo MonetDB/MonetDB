@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #ifndef SQL_CATALOG_H
@@ -11,7 +11,7 @@
 
 #include "sql_mem.h"
 #include "sql_list.h"
-#include "sql_querytype.h"
+#include "mapi_querytype.h"
 #include "stream.h"
 
 #define tr_none		0
@@ -377,8 +377,7 @@ typedef enum sql_flang {
 	/* this should probably be done in a better way */
 	FUNC_LANG_PY = 6,       /* create .. language PYTHON */
 	FUNC_LANG_MAP_PY = 7,   /* create .. language PYTHON_MAP */
-	FUNC_LANG_PY2 = 8,      /* create .. language PYTHON2 */
-	FUNC_LANG_MAP_PY2 = 9,  /* create .. language PYTHON2_MAP */
+	/* values 8 and 9 were for Python 2 */
 	FUNC_LANG_PY3 = 10,     /* create .. language PYTHON3 */
 	FUNC_LANG_MAP_PY3 = 11, /* create .. language PYTHON3_MAP */
 	FUNC_LANG_CPP = 12      /* create .. language CPP */
@@ -429,11 +428,6 @@ typedef struct sql_subfunc {
 	list *colnames; /* we need this for copy into from loader */
 	char *sname, *tname; /* we need this for create table from loader */
 } sql_subfunc;
-
-typedef struct sql_subaggr {
-	sql_func *aggr;
-	list *res;
-} sql_subaggr;
 
 typedef enum key_type {
 	pkey,
@@ -653,7 +647,7 @@ typedef struct res_col {
 typedef struct res_table {
 	int id;
 	oid query_id;
-	sql_query_t query_type;
+	mapi_query_t query_type;
 	int nr_cols;
 	int cur_col;
 	const char *tsep;

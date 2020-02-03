@@ -22,3 +22,4 @@ function user.f1();
   transaction.commit();
 end f1;
 optimizer.commonTerms("user", "f1");
+optimizer.garbageCollector("user", "f1");

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -44,10 +44,10 @@ virtualize(BAT *bn)
 	     * (const oid *) Tloc(bn, 0) + BATcount(bn) - 1 ==
 	     * (const oid *) Tloc(bn, BUNlast(bn) - 1))) {
 		/* column is dense, replace by virtual oid */
-		ALGODEBUG fprintf(stderr, "#%s: %s(bn=" ALGOBATFMT ",seq="OIDFMT")\n",
-				  MT_thread_getname(), __func__,
-				  ALGOBATPAR(bn),
-				  BATcount(bn) > 0 ? * (const oid *) Tloc(bn, 0) : 0);
+		TRC_DEBUG(ALGO, "%s(bn=" ALGOBATFMT ",seq="OIDFMT")\n",
+					__func__,
+					ALGOBATPAR(bn),
+				  	BATcount(bn) > 0 ? * (const oid *) Tloc(bn, 0) : 0);
 		if (BATcount(bn) == 0)
 			bn->tseqbase = 0;
 		else
@@ -99,12 +99,12 @@ hashselect(BAT *b, struct canditer *restrict ci, BAT *bn,
 	if (phash) {
 		BAT *b2 = BBPdescriptor(VIEWtparent(b));
 		*algo = "hashselect on parent";
-		ALGODEBUG fprintf(stderr, "#%s: %s(" ALGOBATFMT "): "
-				  "using parent(" ALGOBATFMT ") "
-				  "for hash\n",
-				  MT_thread_getname(), __func__,
-				  ALGOBATPAR(b),
-				  ALGOBATPAR(b2));
+		TRC_DEBUG(ALGO, "%s(" ALGOBATFMT "): "
+				  	"using parent(" ALGOBATFMT ") "
+				  	"for hash\n",
+					__func__,
+				  	ALGOBATPAR(b),
+				  	ALGOBATPAR(b2));
 		d = (BUN) ((b->theap.base - b2->theap.base) >> b->tshift);
 		l += d;
 		h += d;
@@ -130,7 +130,7 @@ hashselect(BAT *b, struct canditer *restrict ci, BAT *bn,
 	if (ci->tpe != cand_dense) {
 		HASHloop_bound(bi, b->thash, i, tl, l, h) {
 			o = (oid) (i + seq - d);
-			if (canditer_search(ci, o, false) != BUN_NONE) {
+			if (canditer_contains(ci, o)) {
 				buninsfix(bn, dst, cnt, o,
 					  maximum - BATcapacity(bn),
 					  maximum, NULL);
@@ -1006,9 +1006,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		dbl v_dbl;
 		oid v_oid;
 	} vl, vh;
-	lng t0 = 0;
-
-	ALGODEBUG t0 = GDKusec();
+	lng t0 = GDKusec();
 
 	BATcheck(b, "BATselect", NULL);
 	BATcheck(tl, "BATselect: tl value required", NULL);
@@ -1022,13 +1020,13 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	if (canditer_init(&ci, b, s) == 0) {
 		/* trivially empty result */
 		bn = BATdense(0, 0, 0);
-		ALGODEBUG fprintf(stderr, "#%s: %s(b=" ALGOBATFMT
-				  ",s=" ALGOOPTBATFMT ",anti=%d)=" ALGOOPTBATFMT
-				  " (" LLFMT " usec): "
-				  "trivially empty\n",
-				  MT_thread_getname(), __func__,
-				  ALGOBATPAR(b), ALGOOPTBATPAR(s), anti,
-				  ALGOOPTBATPAR(bn), GDKusec() - t0);
+		TRC_DEBUG(ALGO, "%s(b=" ALGOBATFMT
+				  	",s=" ALGOOPTBATFMT ",anti=%d)=" ALGOOPTBATFMT
+				  	" (" LLFMT " usec): "
+				  	"trivially empty\n",
+					__func__,
+				  	ALGOBATPAR(b), ALGOOPTBATPAR(s), anti,
+				  	ALGOOPTBATPAR(bn), GDKusec() - t0);
 		return bn;
 	}
 
@@ -1043,13 +1041,13 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		 * want an interval that's open on at least one
 		 * side */
 		bn = BATdense(0, 0, 0);
-		ALGODEBUG fprintf(stderr, "#%s: %s(b=" ALGOBATFMT
-				  ",s=" ALGOOPTBATFMT ",li=%d,hi=%d,anti=%d)=" ALGOOPTBATFMT
-				  " (" LLFMT " usec): "
-				  "empty interval\n",
-				  MT_thread_getname(), __func__,
-				  ALGOBATPAR(b), ALGOOPTBATPAR(s),
-				  li, hi, anti, ALGOOPTBATPAR(bn), GDKusec() - t0);
+		TRC_DEBUG(ALGO, "%s(b=" ALGOBATFMT
+				  	",s=" ALGOOPTBATFMT ",li=%d,hi=%d,anti=%d)=" ALGOOPTBATFMT
+				  	" (" LLFMT " usec): "
+				  	"empty interval\n",
+					__func__,
+				  	ALGOBATPAR(b), ALGOOPTBATPAR(s),
+				  	li, hi, anti, ALGOOPTBATPAR(bn), GDKusec() - t0);
 		return bn;
 	}
 
@@ -1082,23 +1080,23 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			hval = ti;
 			lnil = ATOMcmp(t, tl, nil) == 0;
 			anti = false;
-			ALGODEBUG fprintf(stderr, "#%s: %s(b=" ALGOBATFMT
-					  ",s=" ALGOOPTBATFMT ",anti=%d): "
-					  "anti: switch ranges...\n",
-					  MT_thread_getname(), __func__,
-					  ALGOBATPAR(b), ALGOOPTBATPAR(s),
-					  anti);
+			TRC_DEBUG(ALGO, "%s(b=" ALGOBATFMT
+					  	",s=" ALGOOPTBATFMT ",anti=%d): "
+					  	"anti: switch ranges...\n",
+						__func__,
+					  	ALGOBATPAR(b), ALGOOPTBATPAR(s),
+					  	anti);
 		} else if (!lval && !hval) {
 			/* antiselect for nil-nil range: all non-nil
 			 * values are in range; we must return all
 			 * other non-nil values, i.e. nothing */
 			bn = BATdense(0, 0, 0);
-			ALGODEBUG fprintf(stderr, "#%s: %s(b=" ALGOBATFMT
-					  ",s=" ALGOOPTBATFMT ",anti=%d)=" ALGOOPTBATFMT
-					  " (" LLFMT " usec): "
-					  "anti: nil-nil range, nonil\n",
-					  MT_thread_getname(), __func__,
-					  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+			TRC_DEBUG(ALGO, "%s(b=" ALGOBATFMT
+					  	",s=" ALGOOPTBATFMT ",anti=%d)=" ALGOOPTBATFMT
+					  	" (" LLFMT " usec): "
+					  	"anti: nil-nil range, nonil\n",
+						__func__,
+					  	ALGOBATPAR(b), ALGOOPTBATPAR(s),
 					  anti, ALGOOPTBATPAR(bn), GDKusec() - t0);
 			return bn;
 		} else if (equi && lnil) {
@@ -1109,11 +1107,11 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			anti = false;
 			lval = false;
 			hval = false;
-			ALGODEBUG fprintf(stderr, "#%s: %s(b=" ALGOBATFMT
-					  ",s=" ALGOOPTBATFMT ",anti=0): "
-					  "anti-nil...\n",
-					  MT_thread_getname(), __func__,
-					  ALGOBATPAR(b), ALGOOPTBATPAR(s));
+			TRC_DEBUG(ALGO, "%s(b=" ALGOBATFMT
+					  	",s=" ALGOOPTBATFMT ",anti=0): "
+					  	"anti-nil...\n",
+						__func__,
+					  	ALGOBATPAR(b), ALGOOPTBATPAR(s));
 		} else if (equi) {
 			equi = false;
 			if (!(li && hi)) {
@@ -1123,13 +1121,13 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 				anti = false;
 				lval = false;
 				hval = false;
-				ALGODEBUG fprintf(stderr, "#%s: %s(b="
-						  ALGOBATFMT ",s="
-						  ALGOOPTBATFMT ",anti=0): "
-						  "anti-nothing...\n",
-						  MT_thread_getname(), __func__,
-						  ALGOBATPAR(b),
-						  ALGOOPTBATPAR(s));
+				TRC_DEBUG(ALGO, "%s(b="
+						  	ALGOBATFMT ",s="
+						  	ALGOOPTBATFMT ",anti=0): "
+						  	"anti-nothing...\n",
+							__func__,
+						  	ALGOBATPAR(b),
+						  	ALGOOPTBATPAR(s));
 			}
 		} else if (ATOMcmp(t, tl, th) > 0) {
 			/* empty range: turn into range select for
@@ -1138,39 +1136,39 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			anti = false;
 			lval = false;
 			hval = false;
-			ALGODEBUG fprintf(stderr, "#%s: %s(b=" ALGOBATFMT
-					  ",s=" ALGOOPTBATFMT ",anti=0): "
-					  "anti-nil...\n",
-					  MT_thread_getname(), __func__,
-					  ALGOBATPAR(b), ALGOOPTBATPAR(s));
+			TRC_DEBUG(ALGO, "%s(b=" ALGOBATFMT
+					  	",s=" ALGOOPTBATFMT ",anti=0): "
+					  	"anti-nil...\n",
+						__func__,
+					  	ALGOBATPAR(b), ALGOOPTBATPAR(s));
 		}
 	}
 
 	/* if equi set, then so are both lval and hval */
 	assert(!equi || (lval && hval));
 
-	if (hval && ((equi && !(li && hi)) || ATOMcmp(t, tl, th) > 0)) {
+	if (hval && (equi ? !li || !hi : ATOMcmp(t, tl, th) > 0)) {
 		/* empty range */
 		bn = BATdense(0, 0, 0);
-		ALGODEBUG fprintf(stderr, "#%s: %s(b=" ALGOBATFMT
-				  ",s=" ALGOOPTBATFMT ",anti=%d)=" ALGOOPTBATFMT
-				  " (" LLFMT " usec): "
-				  "empty range\n",
-				  MT_thread_getname(), __func__,
-				  ALGOBATPAR(b), ALGOOPTBATPAR(s), anti,
-				  ALGOOPTBATPAR(bn), GDKusec() - t0);
+		TRC_DEBUG(ALGO, "%s(b=" ALGOBATFMT
+				  	",s=" ALGOOPTBATFMT ",anti=%d)=" ALGOOPTBATFMT
+				  	" (" LLFMT " usec): "
+				  	"empty range\n",
+					__func__,
+				  	ALGOBATPAR(b), ALGOOPTBATPAR(s), anti,
+				  	ALGOOPTBATPAR(bn), GDKusec() - t0);
 		return bn;
 	}
 	if (equi && lnil && b->tnonil) {
 		/* return all nils, but there aren't any */
 		bn = BATdense(0, 0, 0);
-		ALGODEBUG fprintf(stderr, "#%s: %s(b=" ALGOBATFMT
-				  ",s=" ALGOOPTBATFMT ",anti=%d)=" ALGOOPTBATFMT
-				  " (" LLFMT " usec): "
-				  "equi-nil, nonil\n",
-				  MT_thread_getname(), __func__,
-				  ALGOBATPAR(b), ALGOOPTBATPAR(s), anti,
-				  ALGOOPTBATPAR(bn), GDKusec() - t0);
+		TRC_DEBUG(ALGO, "%s(b=" ALGOBATFMT
+				  	",s=" ALGOOPTBATFMT ",anti=%d)=" ALGOOPTBATFMT
+				  	" (" LLFMT " usec): "
+				  	"equi-nil, nonil\n",
+					__func__,
+				  	ALGOBATPAR(b), ALGOOPTBATPAR(s), anti,
+				  	ALGOOPTBATPAR(bn), GDKusec() - t0);
 		return bn;
 	}
 
@@ -1178,13 +1176,13 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		/* return all non-nils from a BAT that doesn't have
 		 * any: i.e. return everything */
 		bn = canditer_slice(&ci, 0, ci.ncand);
-		ALGODEBUG fprintf(stderr, "#%s: %s(b=" ALGOBATFMT
-				  ",s=" ALGOOPTBATFMT ",anti=%d)=" ALGOOPTBATFMT
-				  " (" LLFMT " usec): "
-				  "everything, nonil\n",
-				  MT_thread_getname(), __func__,
-				  ALGOBATPAR(b), ALGOOPTBATPAR(s), anti,
-				  ALGOOPTBATPAR(bn), GDKusec() - t0);
+		TRC_DEBUG(ALGO, "%s(b=" ALGOBATFMT
+				  	",s=" ALGOOPTBATFMT ",anti=%d)=" ALGOOPTBATFMT
+				  	" (" LLFMT " usec): "
+				  	"everything, nonil\n",
+					__func__,
+				  	ALGOBATPAR(b), ALGOOPTBATPAR(s), anti,
+				  	ALGOOPTBATPAR(bn), GDKusec() - t0);
 		return bn;
 	}
 
@@ -1205,12 +1203,11 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 						 * left over for
 						 * anti */
 						bn = BATdense(0, 0, 0);
-						ALGODEBUG fprintf(stderr, "#%s: %s(b=" ALGOBATFMT
-								  ",s=" ALGOOPTBATFMT ",anti=%d)=" ALGOOPTBATFMT
-								  " (" LLFMT " usec): "
-								  "nothing, out of range\n",
-								  MT_thread_getname(), __func__,
-								  ALGOBATPAR(b), ALGOOPTBATPAR(s), anti, ALGOOPTBATPAR(bn), GDKusec() - t0);
+						TRC_DEBUG(ALGO, "%s(b=" ALGOBATFMT
+								  	",s=" ALGOOPTBATFMT ",anti=%d)=" ALGOOPTBATFMT
+								  	" (" LLFMT " usec): "
+								  	"nothing, out of range\n",
+								  	__func__, ALGOBATPAR(b), ALGOOPTBATPAR(s), anti, ALGOOPTBATPAR(bn), GDKusec() - t0);
 						return bn;
 					}
 				}
@@ -1226,15 +1223,15 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 				/* smallest value in BAT larger than
 				 * what we're looking for */
 				bn = BATdense(0, 0, 0);
-				ALGODEBUG fprintf(stderr, "#%s: %s(b="
-						  ALGOBATFMT ",s="
-						  ALGOOPTBATFMT ",anti=%d)=" ALGOOPTBATFMT
-						  " (" LLFMT " usec): "
-						  "nothing, out of range\n",
-						  MT_thread_getname(), __func__,
-						  ALGOBATPAR(b),
-						  ALGOOPTBATPAR(s), anti,
-						  ALGOOPTBATPAR(bn), GDKusec() - t0);
+				TRC_DEBUG(ALGO, "%s(b="
+							ALGOBATFMT ",s="
+							ALGOOPTBATFMT ",anti=%d)=" ALGOOPTBATFMT
+							" (" LLFMT " usec): "
+							"nothing, out of range\n",
+							__func__,
+							ALGOBATPAR(b),
+							ALGOOPTBATPAR(s), anti,
+							ALGOOPTBATPAR(bn), GDKusec() - t0);
 				return bn;
 			}
 		}
@@ -1244,15 +1241,15 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 				/* largest value in BAT smaller than
 				 * what we're looking for */
 				bn = BATdense(0, 0, 0);
-				ALGODEBUG fprintf(stderr, "#%s: %s(b="
-						  ALGOBATFMT ",s="
-						  ALGOOPTBATFMT ",anti=%d)=" ALGOOPTBATFMT
-						  " (" LLFMT " usec): "
-						  "nothing, out of range\n",
-						  MT_thread_getname(), __func__,
-						  ALGOBATPAR(b),
-						  ALGOOPTBATPAR(s), anti,
-						  ALGOOPTBATPAR(bn), GDKusec() - t0);
+				TRC_DEBUG(ALGO, "%s(b="
+							ALGOBATFMT ",s="
+							ALGOOPTBATFMT ",anti=%d)=" ALGOOPTBATFMT
+							" (" LLFMT " usec): "
+							"nothing, out of range\n",
+							__func__,
+							ALGOBATPAR(b),
+							ALGOOPTBATPAR(s), anti,
+							ALGOOPTBATPAR(bn), GDKusec() - t0);
 				return bn;
 			}
 		}
@@ -1288,16 +1285,44 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		}
 	}
 
+	parent = VIEWtparent(b);
+	assert(parent >= 0);
+	/* use hash only for equi-join, and then only if b or its
+	 * parent already has a hash, or if b or its parent is
+	 * persistent and the total size wouldn't be too large; check
+	 * for existence of hash last since that may involve I/O */
+	hash = equi &&
+		(BATcheckhash(b) ||
+		 (!b->batTransient &&
+		  ATOMsize(b->ttype) >= sizeof(BUN) / 4 &&
+		  BATcount(b) * (ATOMsize(b->ttype) + 2 * sizeof(BUN)) < GDK_mem_maxsize / 2));
+	if (equi && !hash && parent != 0) {
+		/* use parent hash if it already exists and if either
+		 * a quick check shows the value we're looking for
+		 * does not occur, or if it is cheaper to check the
+		 * candidate list for each value in the hash chain
+		 * than to scan (cost for probe is average length of
+		 * hash chain (count divided by #slots) times the cost
+		 * to do a binary search on the candidate list (or 1
+		 * if no need for search)) */
+		tmp = BBPquickdesc(parent, false);
+		hash = phash = tmp && BATcheckhash(tmp) &&
+			(BATcount(tmp) == BATcount(b) ||
+			 BATcount(tmp) / tmp->thash->nheads * (ci.tpe != cand_dense ? ilog2(BATcount(s)) : 1) < (s ? BATcount(s) : BATcount(b)) ||
+			 HASHget(tmp->thash, HASHprobe(tmp->thash, tl)) == HASHnil(tmp->thash));
+	}
+
 	/* make sure tsorted and trevsorted flags are set */
 	(void) BATordered(b);
 	(void) BATordered_rev(b);
 
-	/* If there is an order index or it is a view and the parent has an ordered
-	 * index, and the bat is not tsorted or trevstorted then use the order
-	 * index.
-	 * And there is no cand list or if there is one, it is dense.
+	/* If there is an order index or it is a view and the parent
+	 * has an ordered index, and the bat is not tsorted or
+	 * trevstorted then use the order index.  And there is no cand
+	 * list or if there is one, it is dense.
 	 * TODO: we do not support anti-select with order index */
 	if (!anti &&
+	    !(hash && (phash || b->thash)) &&
 	    !(b->tsorted || b->trevsorted) &&
 	    ci.tpe == cand_dense &&
 	    (BATcheckorderidx(b) ||
@@ -1326,10 +1351,12 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			b = view;
 			view = NULL;
 		}
-		ALGODEBUG if (view) fprintf(stderr, "#%s: %s: switch from " ALGOBATFMT " to " ALGOBATFMT " " OIDFMT "-" OIDFMT " hseq " LLFMT "\n", MT_thread_getname(), __func__, ALGOBATPAR(view), ALGOBATPAR(b), vwl, vwh, vwo);
+		if( view)
+			TRC_DEBUG(ALGO, "Switch from " ALGOBATFMT " to " ALGOBATFMT " " OIDFMT "-" OIDFMT " hseq " LLFMT "\n", ALGOBATPAR(view), ALGOBATPAR(b), vwl, vwh, vwo);
 	}
 
-	if (b->tsorted || b->trevsorted || use_orderidx) {
+	if (!(hash && (phash || b->thash)) &&
+	    (b->tsorted || b->trevsorted || use_orderidx)) {
 		BUN low = 0;
 		BUN high = b->batCount;
 
@@ -1476,12 +1503,12 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		}
 
 		bn = virtualize(bn);
-		ALGODEBUG fprintf(stderr, "#%s: %s(b=" ALGOBATFMT ",anti=%s)="
-				  ALGOOPTBATFMT " %s (" LLFMT " usec)\n",
-				  MT_thread_getname(), __func__,
-				  ALGOBATPAR(b), anti ? "true" : "false",
-				  ALGOOPTBATPAR(bn), algo,
-				  GDKusec() - t0);
+		TRC_DEBUG(ALGO, "%s(b=" ALGOBATFMT ",anti=%s)="
+					ALGOOPTBATFMT " %s (" LLFMT " usec)\n",
+					__func__,
+					ALGOBATPAR(b), anti ? "true" : "false",
+					ALGOOPTBATPAR(bn), algo,
+					GDKusec() - t0);
 
 		return bn;
 	}
@@ -1519,36 +1546,10 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	}
 	/* refine upper limit by exact size (if known) */
 	maximum = MIN(maximum, estimate);
-	parent = VIEWtparent(b);
-	assert(parent >= 0);
-	/* use hash only for equi-join, and then only if b or its
-	 * parent already has a hash, or if b or its parent is
-	 * persistent and the total size wouldn't be too large; check
-	 * for existence of hash last since that may involve I/O */
-	hash = equi &&
-		((!b->batTransient &&
-		  ATOMsize(b->ttype) >= sizeof(BUN) / 4 &&
-		  BATcount(b) * (ATOMsize(b->ttype) + 2 * sizeof(BUN)) < GDK_mem_maxsize / 2) ||
-		 BATcheckhash(b));
-	if (equi && !hash && parent != 0) {
-		/* use parent hash if it already exists and if either
-		 * a quick check shows the value we're looking for
-		 * does not occur, or if it is cheaper to check the
-		 * candidate list for each value in the hash chain
-		 * than to scan (cost for probe is average length of
-		 * hash chain (count divided by #slots) times the cost
-		 * to do a binary search on the candidate list (or 1
-		 * if no need for search)) */
-		tmp = BBPquickdesc(parent, false);
-		hash = phash = BATcheckhash(tmp) &&
-			(BATcount(tmp) == BATcount(b) ||
-			 BATcount(tmp) / ((size_t *) tmp->thash->heap.base)[5] * (ci.tpe != cand_dense ? ilog2(ci.noids) : 1) < ci.ncand ||
-			 HASHget(tmp->thash, HASHprobe(tmp->thash, tl)) == HASHnil(tmp->thash));
-	}
 	if (hash &&
 	    !phash && /* phash implies there is a hash table already */
 	    estimate == BUN_NONE &&
-	    !BATcheckhash(b)) {
+	    !b->thash) {
 		/* no exact result size, but we need estimate to
 		 * choose between hash- & scan-select (if we already
 		 * have a hash, it's a no-brainer: we use it) */
@@ -1583,7 +1584,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 						  * (dbl) BATcount(b) * 1.1);
 			} else if (smpl_cnt > 0 && slct_cnt == 0) {
 				/* estimate low enough to trigger hash select */
-				estimate = (BATcount(b) / 100) - 1;
+				estimate = (ci.ncand / 100) - 1;
 			}
 		}
 		hash = estimate < ci.ncand / 100;
@@ -1620,13 +1621,13 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	}
 
 	bn = virtualize(bn);
-	ALGODEBUG fprintf(stderr, "#%s: %s(b=" ALGOBATFMT ",s=" ALGOOPTBATFMT",anti=%s)=" ALGOOPTBATFMT
-			  " %s (" LLFMT " usec)\n",
-			  MT_thread_getname(), __func__,
-			  ALGOBATPAR(b), ALGOOPTBATPAR(s),
-			  anti ? "true" : "false",
-			  ALGOOPTBATPAR(bn), algo,
-			  GDKusec() - t0);
+	TRC_DEBUG(ALGO, "%s(b=" ALGOBATFMT ",s=" ALGOOPTBATFMT",anti=%s)=" ALGOOPTBATFMT
+				" %s (" LLFMT " usec)\n",
+				__func__,
+				ALGOBATPAR(b), ALGOOPTBATPAR(s),
+				anti ? "true" : "false",
+				ALGOOPTBATPAR(bn), algo,
+				GDKusec() - t0);
 
 	return bn;
 }
@@ -1758,18 +1759,18 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 	assert(rl->ttype != TYPE_void || !is_oid_nil(rl->tseqbase));
 	assert(rh->ttype != TYPE_void || !is_oid_nil(rh->tseqbase));
 
-	ALGODEBUG fprintf(stderr, "#%s: %s(l=" ALGOBATFMT ","
-			  "rl=" ALGOBATFMT ",rh=" ALGOBATFMT ","
-			  "sl=" ALGOOPTBATFMT ",sr=" ALGOOPTBATFMT ","
-			  "anti=%s,symmetric=%s)\n",
-			  MT_thread_getname(), __func__,
-			  ALGOBATPAR(l),
-			  ALGOBATPAR(rl),
-			  ALGOBATPAR(rh),
-			  ALGOOPTBATPAR(lci->s),
-			  ALGOOPTBATPAR(rci->s),
-			  anti ? "true" : "false",
-			  symmetric ? "true" : "false");
+	TRC_DEBUG(ALGO, "%s(l=" ALGOBATFMT ","
+				"rl=" ALGOBATFMT ",rh=" ALGOBATFMT ","
+				"sl=" ALGOOPTBATFMT ",sr=" ALGOOPTBATFMT ","
+				"anti=%s,symmetric=%s)\n",
+				__func__,
+				ALGOBATPAR(l),
+				ALGOBATPAR(rl),
+				ALGOBATPAR(rh),
+				ALGOOPTBATPAR(lci->s),
+				ALGOOPTBATPAR(rci->s),
+				anti ? "true" : "false",
+				symmetric ? "true" : "false");
 
 	rlvals = rl->ttype == TYPE_void ? NULL : (const char *) Tloc(rl, 0);
 	rhvals = rh->ttype == TYPE_void ? NULL : (const char *) Tloc(rh, 0);
@@ -1909,7 +1910,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 				}
 
 				while (low < high) {
-					if (canditer_search(lci, ord[low], false) != BUN_NONE) {
+					if (canditer_contains(lci, ord[low])) {
 						dst1[r1->batCount++] = ord[low];
 						if (r2) {
 							dst2[r2->batCount++] = ro;
@@ -2327,11 +2328,11 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 		if (BATtdense(r2))
 			r2->tseqbase = cnt > 0 ? dst2[0] : 0;
 	}
-	ALGODEBUG fprintf(stderr, "#%s: %s(l=%s,rl=%s,rh=%s)="
-			  "(" ALGOBATFMT "," ALGOOPTBATFMT ")\n",
-			  MT_thread_getname(), __func__,
-			  BATgetId(l), BATgetId(rl), BATgetId(rh),
-			  ALGOBATPAR(r1), ALGOOPTBATPAR(r2));
+	TRC_DEBUG(ALGO, "%s(l=%s,rl=%s,rh=%s)="
+				"(" ALGOBATFMT "," ALGOOPTBATFMT ")\n",
+				__func__,
+				BATgetId(l), BATgetId(rl), BATgetId(rh),
+				ALGOBATPAR(r1), ALGOOPTBATPAR(r2));
 	return GDK_SUCCEED;
 
   bailout:

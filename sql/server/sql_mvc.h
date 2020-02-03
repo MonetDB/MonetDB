@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /* multi version catalog */
@@ -20,7 +20,7 @@
 #include "sql_relation.h"
 #include "sql_storage.h"
 #include "sql_keyword.h"
-#include "sql_querytype.h"
+#include "mapi_querytype.h"
 #include "sql_atom.h"
 #include "sql_tokens.h"
 #include "sql_symbol.h"
@@ -129,7 +129,7 @@ typedef struct mvc {
 
 	sql_session *session;	
 
-	sql_query_t type;	/* query type */
+	mapi_query_t type;	/* query type */
 	int pushdown;		/* AND or OR query handling */
 	unsigned int label;	/* numbers for relational projection labels */
 	int remote;

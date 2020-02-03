@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -22,18 +22,15 @@
  */
 #include "monetdb_config.h"
 #include "mal.h"
-#include <signal.h>
+#include "mal_client.h"
+#include "mal_interpreter.h"
 #include <time.h>
 
 mal_export str ALARMusec(lng *ret);
-mal_export str ALARMsleep(void *res, int *secs);
+mal_export str ALARMsleep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str ALARMctime(str *res);
 mal_export str ALARMepoch(int *res);
 mal_export str ALARMtime(int *res);
-
-#include "mal.h"
-#include "mal_exception.h"
-
 
 str
 ALARMusec(lng *ret)
@@ -43,13 +40,57 @@ ALARMusec(lng *ret)
 }
 
 str
-ALARMsleep(void *res, int *secs)
+ALARMsleep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	(void) res;		/* fool compilers */
-	if (*secs < 0)
-		throw(MAL, "alarm.sleep", "negative delay");
+	BAT *r, *b;
+	int *restrict rb, *restrict bb;
+	BUN i, j;
 
-	MT_sleep_ms(*secs * 1000);
+	(void) cntxt;
+	if (getArgType(mb, pci, 0) != TYPE_void && isaBatType(getArgType(mb, pci, 1))) {
+		bat *res = getArgReference_bat(stk, pci, 0);
+		bat *bid = getArgReference_bat(stk, pci, 1);
+		
+		if (!(b = BATdescriptor(*bid)))
+			throw(MAL, "alarm.sleepr", SQLSTATE(HY005) "Cannot access column descriptor");
+
+		j = BATcount(b);
+		bb = Tloc(b, 0);
+		for (i = 0; i < j ; i++) {
+			if (is_int_nil(bb[i])) {
+				BBPunfix(b->batCacheid);
+				throw(MAL, "alarm.sleepr", "NULL values not allowed for the sleeping time");
+			} else if (bb[i]) {
+				BBPunfix(b->batCacheid);
+				throw(MAL, "alarm.sleepr", "Cannot sleep for a negative time");
+			}
+		}
+
+		r = COLnew(0, TYPE_int, j, TRANSIENT);
+		if (r == NULL) {
+			BBPunfix(b->batCacheid);
+			throw(MAL, "alarm.sleepr", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		}
+
+		rb = Tloc(r, 0);
+		for (i = 0; i < j ; i++) {
+			MT_sleep_ms(bb[i]);
+			rb[i] = bb[i];
+		}
+
+		BBPunfix(b->batCacheid);
+		BBPkeepref(*res = r->batCacheid);
+	} else {
+		int *res = (int*) getArgReference(stk, pci, 0), *msecs = (int*) getArgReference(stk,pci,1);
+
+		if (is_int_nil(*msecs))
+			throw(MAL, "alarm.sleepr", "NULL values not allowed for the sleeping time");
+		else if (*msecs < 0)
+			throw(MAL, "alarm.sleepr", "Cannot sleep for a negative time");
+
+		MT_sleep_ms(*msecs);
+		*res = *msecs;
+	}
 	return MAL_SUCCEED;
 }
 

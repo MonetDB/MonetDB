@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -24,7 +24,6 @@
 static BAT *GDKkey = NULL;
 static BAT *GDKval = NULL;
 int GDKdebug = 0;
-int GDKverbose = 0;
 
 #include <signal.h>
 
@@ -81,15 +80,15 @@ static bool
 GDKenvironment(const char *dbpath)
 {
 	if (dbpath == NULL) {
-		fprintf(stderr, "!GDKenvironment: database name missing.\n");
+		TRC_ERROR(GDK_UTILS, "Database name missing.\n");
 		return false;
 	}
 	if (strlen(dbpath) >= FILENAME_MAX) {
-		fprintf(stderr, "!GDKenvironment: database name too long.\n");
+		TRC_ERROR(GDK_UTILS, "Database name too long.\n");
 		return false;
 	}
 	if (!MT_path_absolute(dbpath)) {
-		fprintf(stderr, "!GDKenvironment: directory not an absolute path: %s.\n", dbpath);
+		TRC_ERROR(GDK_UTILS, "Directory not an absolute path: %s.\n", dbpath);
 		return false;
 	}
 	return true;
@@ -405,9 +404,48 @@ MT_init(void)
 #ifdef __linux__
 	/* limit values to whatever cgroups gives us */
 	FILE *fc;
+	char buf[1024];
+	char cgr1[1024] = "/sys/fs/cgroup/memory";
+	char cgr2[1024] = "/sys/fs/cgroup";
+	fc = fopen("/proc/self/mountinfo", "r");
+	if (fc != NULL) {
+		while (fgets(buf, (int) sizeof(buf), fc) != NULL) {
+			char *p, *cgr;
+			if ((p = strstr(buf, " - cgroup ")) != NULL &&
+			    strstr(p, "memory") != NULL)
+				cgr = cgr1;
+			else if (strstr(buf, " - cgroup2 ") != NULL)
+				cgr = cgr2;
+			else
+				continue;
+			/* buf point at mount ID */
+			p = strchr(buf, ' ');
+			if (p++ == NULL)
+				break;
+			/* p points at parent ID */
+			p = strchr(p, ' ');
+			if (p++ == NULL)
+				break;
+			/* p points at major:minor */
+			p = strchr(p, ' ');
+			if (p++ == NULL)
+				break;
+			/* p points at root */
+			p = strchr(p, ' ');
+			if (p++ == NULL)
+				break;
+			/* p points at mount point */
+			char *dir = p;
+			p = strchr(p, ' ');
+			if (p == NULL)
+				break;
+			*p = 0;
+			strcpy(cgr, dir);
+		}
+		fclose(fc);
+	}
 	fc = fopen("/proc/self/cgroup", "r");
 	if (fc != NULL) {
-		char buf[1024];
 		/* each line is of the form:
 		 * hierarchy-ID:controller-list:cgroup-path
 		 *
@@ -441,8 +479,7 @@ MT_init(void)
 			if (strncmp(buf, "0::", 3) == 0) {
 				/* cgroup v2 entry */
 				l = strconcat_len(pth, sizeof(pth),
-						  "/sys/fs/cgroup",
-						  buf + 3, "/", NULL);
+						  cgr2, buf + 3, "/", NULL);
 				/* hard limit */
 				strcpy(pth + l, "memory.max");
 				f = fopen(pth, "r");
@@ -490,8 +527,7 @@ MT_init(void)
 				if (strstr(q, "memory") == NULL)
 					continue;
 				l = strconcat_len(pth, sizeof(pth),
-						  "/sys/fs/cgroup/", q,
-						  p, "/", NULL);
+						  cgr1, p, "/", NULL);
 				/* limit of memory usage */
 				strcpy(pth + l, "memory.limit_in_bytes");
 				f = fopen(pth, "r");
@@ -574,12 +610,6 @@ void
 GDKsetdebug(int debug)
 {
 	GDKdebug = debug;
-}
-
-void
-GDKsetverbose(int verbose)
-{
-	GDKverbose = verbose;
 }
 
 gdk_return
@@ -842,6 +872,10 @@ GDKinit(opt *set, int setlen)
 		return GDK_FAIL;
 	}
 
+	/* initialize GDKtracer */
+	if (!GDKtracer_init())
+		return GDK_FAIL;
+
 	return GDK_SUCCEED;
 }
 
@@ -861,7 +895,8 @@ GDKprepareExit(void)
 	if (ATOMIC_ADD(&GDKstopped, 1) > 0)
 		return;
 
-	THRDDEBUG dump_threads();
+	TRC_DEBUG_IF(GDK_UTILS)
+		dump_threads();
 	join_detached_threads();
 }
 
@@ -895,7 +930,7 @@ GDKreset(int status)
 
 					killed = true;
 					e = MT_kill_thread(victim);
-					fprintf(stderr, "#GDKexit: killing thread %d\n", e);
+					TRC_INFO(GDK_UTILS, "Killing thread: %d\n", e);
 					(void) ATOMIC_DEC(&GDKnrofthreads);
 				}
 				GDKfree(t->name);
@@ -927,7 +962,7 @@ GDKreset(int status)
 		}
 
 #ifdef LOCK_STATS
-		TEMDEBUG GDKlockstatistics(1);
+		TRC_DEBUG_IF(TEM) GDKlockstatistics(1);
 #endif
 		GDKdebug = 0;
 		GDK_mmap_minsize_persistent = MMAP_MINSIZE_PERSISTENT;
@@ -956,6 +991,9 @@ GDKreset(int status)
 		MT_lock_unset(&GDKthreadLock);
 	}
 	ATOMunknown_clean();
+
+	/* stop GDKtracer */
+	GDKtracer_stop();
 }
 
 /* coverity[+kill] */
@@ -966,6 +1004,9 @@ GDKexit(int status)
 #ifdef HAVE_EMBEDDED
 		return;
 #else
+		/* stop GDKtracer */
+		GDKtracer_stop();
+
 		/* no database lock, so no threads, so exit now */
 		exit(status);
 #endif
@@ -1023,11 +1064,13 @@ GDKlockHome(int farmid)
 	    GDKcreatedir(gdklockpath) != GDK_SUCCEED) {
 		GDKerror("GDKlockHome: could not create %s\n",
 			 BBPfarms[farmid].dirname);
+		GDKfree(gdklockpath);
 		return GDK_FAIL;
 	}
-	if ((fd = MT_lockf(gdklockpath, F_TLOCK, 4, 1)) < 0) {
+	if ((fd = MT_lockf(gdklockpath, F_TLOCK)) < 0) {
 		GDKerror("GDKlockHome: Database lock '%s' denied\n",
 			 gdklockpath);
+		GDKfree(gdklockpath);
 		return GDK_FAIL;
 	}
 
@@ -1037,6 +1080,7 @@ GDKlockHome(int farmid)
 	if ((GDKlockFile = fdopen(fd, "r+")) == NULL) {
 		close(fd);
 		GDKerror("GDKlockHome: Could not fdopen %s\n", gdklockpath);
+		GDKfree(gdklockpath);
 		return GDK_FAIL;
 	}
 
@@ -1046,16 +1090,19 @@ GDKlockHome(int farmid)
 	if (fseek(GDKlockFile, 0, SEEK_SET) == -1) {
 		fclose(GDKlockFile);
 		GDKerror("GDKlockHome: Error while setting the file pointer on %s\n", gdklockpath);
+		GDKfree(gdklockpath);
 		return GDK_FAIL;
 	}
 	if (ftruncate(fileno(GDKlockFile), 0) < 0) {
 		fclose(GDKlockFile);
 		GDKerror("GDKlockHome: Could not truncate %s\n", gdklockpath);
+		GDKfree(gdklockpath);
 		return GDK_FAIL;
 	}
 	if (fflush(GDKlockFile) == EOF) {
 		fclose(GDKlockFile);
 		GDKerror("GDKlockHome: Could not flush %s\n", gdklockpath);
+		GDKfree(gdklockpath);
 		return GDK_FAIL;
 	}
 	GDKlog(GDKlockFile, GDKLOGON);
@@ -1070,7 +1117,8 @@ GDKunlockHome(int farmid)
 {
 	if (BBPfarms[farmid].lock_file) {
 		char *gdklockpath = GDKfilepath(farmid, NULL, GDKLOCK, NULL);
-		MT_lockf(gdklockpath, F_ULOCK, 4, 1);
+		if (gdklockpath)
+			MT_lockf(gdklockpath, F_ULOCK);
 		fclose(BBPfarms[farmid].lock_file);
 		BBPfarms[farmid].lock_file = NULL;
 		GDKfree(gdklockpath);
@@ -1128,12 +1176,11 @@ doGDKaddbuf(const char *prefix, const char *message, size_t messagelen, const ch
 		}
 		*dst = '\0';
 	} else {
-		fprintf(stderr, "%s%.*s%s", prefix, (int) messagelen, message, suffix);
+		TRC_INFO(GDK_UTILS, "%s%.*s%s", prefix, (int) messagelen, message, suffix);
 	}
-	fprintf(stderr, "#%s:%s%.*s%s",
-		MT_thread_getname(),
-		prefix[0] == '#' ? prefix + 1 : prefix,
-		(int) messagelen, message, suffix);
+	TRC_INFO(GDK_UTILS, "%s%.*s%s\n",
+					prefix[0] == '#' ? prefix + 1 : prefix,
+					(int) messagelen, message, suffix);
 }
 
 /* print an error or warning message, making sure the message ends in
@@ -1221,7 +1268,7 @@ GDKerror(const char *format, ...)
 	}
 	va_start(ap, format);
 	if (vsnprintf(message + len, sizeof(message) - (len + 2), format, ap) < 0){
-		fprintf(stderr,GDKERROR "an error occurred within GDKerror.\n");
+		TRC_ERROR(GDK_UTILS, GDKERROR "an error occurred within GDKerror.\n");
 		strcpy(message, GDKERROR "an error occurred within GDKerror.\n");
 	}
 	va_end(ap);
@@ -1474,7 +1521,7 @@ THRnew(const char *name, MT_Id pid)
 	char *nme = GDKstrdup(name);
 
 	if (nme == NULL) {
-		IODEBUG fprintf(stderr, "#THRnew: malloc failure\n");
+		TRC_DEBUG(IO_, "Malloc failure\n");
 		GDKerror("THRnew: malloc failure\n");
 		return NULL;
 	}
@@ -1486,17 +1533,17 @@ THRnew(const char *name, MT_Id pid)
 			s->data[1] = THRdata[1];
 			s->sp = THRsp();
 			s->name = nme;
-			PARDEBUG fprintf(stderr, "#%x %zu sp = %zu\n",
-					 (unsigned) s->tid,
-					 (size_t) ATOMIC_GET(&s->pid),
-					 (size_t) s->sp);
-			PARDEBUG fprintf(stderr, "#nrofthreads %d\n",
-					 (int) ATOMIC_GET(&GDKnrofthreads) + 1);
+			TRC_DEBUG(PAR, "%x %zu sp = %zu\n",
+					 	(unsigned) s->tid,
+					 	(size_t) ATOMIC_GET(&s->pid),
+					 	(size_t) s->sp);
+			TRC_DEBUG(PAR, "Number of threads: %d\n",
+					 	(int) ATOMIC_GET(&GDKnrofthreads) + 1);
 			return s;
 		}
 	}
 	GDKfree(nme);
-	IODEBUG fprintf(stderr, "#THRnew: too many threads\n");
+	TRC_DEBUG(IO_, "Too many threads\n");
 	GDKerror("THRnew: too many threads\n");
 	return NULL;
 }
@@ -1547,7 +1594,7 @@ THRcreate(void (*f) (void *), void *arg, enum MT_thr_detach d, const char *name)
 	};
 	len = snprintf(semname, sizeof(semname), "THRcreate%" PRIu64, (uint64_t) ATOMIC_INC(&ctr));
 	if (len == -1 || len > (int) sizeof(semname)) {
-		IODEBUG fprintf(stderr, "#THRcreate: semaphore name is too large\n");
+		TRC_DEBUG(IO_, "Semaphore name is too large\n");
 		GDKerror("THRcreate: semaphore name is too large\n");
 		GDKfree(t);
 		GDKfree(s->name);
@@ -1578,9 +1625,9 @@ THRdel(Thread t)
 {
 	assert(GDKthreads <= t && t < GDKthreads + THREADS);
 	MT_thread_setdata(NULL);
-	PARDEBUG fprintf(stderr, "#pid = %zu, disconnected, %d left\n",
-			 (size_t) ATOMIC_GET(&t->pid),
-			 (int) ATOMIC_GET(&GDKnrofthreads));
+	TRC_DEBUG(PAR, "pid = %zu, disconnected, %d left\n",
+			 	(size_t) ATOMIC_GET(&t->pid),
+			 	(int) ATOMIC_GET(&GDKnrofthreads));
 
 	GDKfree(t->name);
 	t->name = NULL;
@@ -1738,7 +1785,7 @@ GDKmemfail(const char *s, size_t len)
 	   }
 	 */
 
-	fprintf(stderr, "#%s(%zu) fails, try to free up space [memory in use=%zu,virtual memory in use=%zu]\n", s, len, GDKmem_cursize(), GDKvm_cursize());
+	TRC_ERROR(GDK_UTILS, "%s(%zu) fails, try to free up space [memory in use=%zu,virtual memory in use=%zu]\n", s, len, GDKmem_cursize(), GDKvm_cursize());
 }
 
 /* Memory allocation

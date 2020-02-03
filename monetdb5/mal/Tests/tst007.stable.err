@@ -51,7 +51,7 @@ QUERY = # A collection of forloops, which should not execute
         	
         #een do-while loop
         	entry:= true;
-        barrier M:= entry_or_exittest;
+        barrier M:= entry_or_exit;
         	entry:= false;
         	# rest
         redo	M;
@@ -80,7 +80,8 @@ QUERY = # A collection of forloops, which should not execute
         exit	FS;
         
         end foo;
-ERROR = !TypeException:user.foo[16]:'entry_or_exittest' may not be used before being initialized
+ERROR = !MALException:user.foo:'entry_or_exit' may not be used before being initialized
+
 
 # 13:48:22 >  
 # 13:48:22 >  "Done."

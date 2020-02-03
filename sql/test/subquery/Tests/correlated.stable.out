@@ -11,7 +11,7 @@ stdout of test 'correlated` in directory 'sql/test/subquery` itself:
 # Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
 # Found 15.385 GiB available main-memory.
 # Copyright (c) 1993 - July 2008 CWI.
-# Copyright (c) August 2008 - 2019 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008 - 2020 MonetDB B.V., all rights reserved
 # Visit https://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://xps13:37437/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-8372/.s.monetdb.37437
@@ -302,8 +302,8 @@ stdout of test 'correlated` in directory 'sql/test/subquery` itself:
 [ 2,	3	]
 [ 3,	4	]
 #SELECT CAST(SUM((SELECT i+i1.i FROM integers WHERE i=1)) AS BIGINT) FROM integers i1;
-% .%3 # table_name
-% %3 # name
+% .%5 # table_name
+% %5 # name
 % bigint # type
 % 1 # length
 [ 9	]

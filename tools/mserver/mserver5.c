@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -96,7 +96,6 @@ usage(char *prog, int xit)
 	fprintf(stderr, "    --set <option>=<value>    Set configuration option\n");
 	fprintf(stderr, "    --help                    Print this list of options\n");
 	fprintf(stderr, "    --version                 Print version and compile time info\n");
-	fprintf(stderr, "    --verbose[=value]         Set or increase verbosity level\n");
 
 	fprintf(stderr, "The debug, testing & trace options:\n");
 	fprintf(stderr, "     --threads\n");
@@ -108,7 +107,6 @@ usage(char *prog, int xit)
 	fprintf(stderr, "     --modules\n");
 	fprintf(stderr, "     --algorithms\n");
 	fprintf(stderr, "     --performance\n");
-	fprintf(stderr, "     --optimizers\n");
 	fprintf(stderr, "     --forcemito\n");
 	fprintf(stderr, "     --debug=<bitmask>\n");
 
@@ -154,22 +152,30 @@ monet_hello(void)
 		sz_mem_h /= 1024.0;
 		qi++;
 	}
-	printf("# Found %.3f %ciB available main-memory",
-			sz_mem_h, qc[qi]);
+	printf("# Found %.3f %ciB available main-memory", sz_mem_h, qc[qi]);
 	sz_mem_h = (double) GDK_mem_maxsize;
 	qi = 0;
 	while (sz_mem_h >= 1000.0 && qi < 6) {
 		sz_mem_h /= 1024.0;
 		qi++;
 	}
-	printf(" of which we use %.3f %ciB\n",
-			sz_mem_h, qc[qi]);
+	printf(" of which we use %.3f %ciB\n", sz_mem_h, qc[qi]);
+	if (GDK_vm_maxsize < GDK_VM_MAXSIZE) {
+		sz_mem_h = (double) GDK_vm_maxsize;
+		qi = 0;
+		while (sz_mem_h >= 1000.0 && qi < 6) {
+			sz_mem_h /= 1024.0;
+			qi++;
+		}
+		printf("# Virtual memory usage limited to %.3f %ciB\n",
+		       sz_mem_h, qc[qi]);
+	}
 #ifdef MONET_GLOBAL_DEBUG
 	printf("# Database path:%s\n", GDKgetenv("gdk_dbpath"));
 	printf("# Module path:%s\n", GDKgetenv("monet_mod_path"));
 #endif
 	printf("# Copyright (c) 1993 - July 2008 CWI.\n");
-	printf("# Copyright (c) August 2008 - 2019 MonetDB B.V., all rights reserved\n");
+	printf("# Copyright (c) August 2008 - 2020 MonetDB B.V., all rights reserved\n");
 	printf("# Visit https://www.monetdb.org/ for further information\n");
 
 	// The properties shipped through the performance profiler
@@ -261,7 +267,6 @@ main(int argc, char **av)
 	char *binpath = NULL;
 	char *dbpath = NULL;
 	char *dbextra = NULL;
-	int verbosity = 0;
 	bool inmemory = false;
 	static struct option long_options[] = {
 		{ "config", required_argument, NULL, 'c' },
@@ -270,7 +275,6 @@ main(int argc, char **av)
 		{ "debug", optional_argument, NULL, 'd' },
 		{ "help", no_argument, NULL, '?' },
 		{ "version", no_argument, NULL, 0 },
-		{ "verbose", optional_argument, NULL, 'v' },
 		{ "readonly", no_argument, NULL, 'r' },
 		{ "single-user", no_argument, NULL, 0 },
 		{ "set", required_argument, NULL, 's' },
@@ -281,7 +285,6 @@ main(int argc, char **av)
 		{ "transactions", no_argument, NULL, 0 },
 		{ "modules", no_argument, NULL, 0 },
 		{ "algorithms", no_argument, NULL, 0 },
-		{ "optimizers", no_argument, NULL, 0 },
 		{ "performance", no_argument, NULL, 0 },
 		{ "forcemito", no_argument, NULL, 0 },
 		{ "heaps", no_argument, NULL, 0 },
@@ -372,10 +375,6 @@ main(int argc, char **av)
 				grpdebug |= GRPalgorithms;
 				break;
 			}
-			if (strcmp(long_options[option_index].name, "optimizers") == 0) {
-				grpdebug |= GRPoptimizers;
-				break;
-			}
 			if (strcmp(long_options[option_index].name, "forcemito") == 0) {
 				grpdebug |= GRPforcemito;
 				break;
@@ -442,19 +441,6 @@ main(int argc, char **av)
 				fprintf(stderr, "ERROR: wrong format %s\n", optarg);
 			}
 			break;
-		case 'v':
-			if (optarg) {
-				char *endarg;
-				verbosity = (int) strtol(optarg, &endarg, 10);
-				if (*endarg != '\0') {
-					fprintf(stderr, "ERROR: wrong format for --verbose=%s\n",
-							optarg);
-					usage(prog, -1);
-				}
-			} else {
-				verbosity++;
-			}
-			break;
 		case '?':
 			/* a bit of a hack: look at the option that the
 			   current `c' is based on and see if we recognize
@@ -476,7 +462,6 @@ main(int argc, char **av)
 	GDKsetdebug(debug | grpdebug);  /* add the algorithm tracers */
 	if (debug)
 		mo_print_options(set, setlen);
-	GDKsetverbose(verbosity);
 
 	if (dbpath && inmemory) {
 		fprintf(stderr, "!ERROR: both dbpath and in-memory must not be set at the same time\n");

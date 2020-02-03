@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -374,9 +374,12 @@ ORCAMprocessor(Client cntxt, MalBlkPtr mb, Symbol t)
 			} else
 				break;
 		}
-	chkTypes(cntxt->usermodule, mb, FALSE);
-	chkFlow(mb);
-	chkDeclarations(mb);
+	if (!msg)
+		msg = chkTypes(cntxt->usermodule, mb, FALSE);
+	if (!msg)
+		msg = chkFlow(mb);
+	if (!msg)
+		msg = chkDeclarations(mb);
 	return msg;
 }
 
@@ -474,7 +477,7 @@ OPTorcamImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 str OPTmacro(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	Symbol t;
-	str msg,mod,fcn;
+	str msg = MAL_SUCCEED, mod, fcn;
 	lng clk= GDKusec();
 	char buf[256];
 	lng usec = GDKusec();
@@ -505,9 +508,9 @@ str OPTmacro(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	}
 
     /* Defense line against incorrect plans */
-	chkTypes(cntxt->usermodule, mb, FALSE);
-	chkFlow(mb);
-	chkDeclarations(mb);
+	msg = chkTypes(cntxt->usermodule, mb, FALSE);
+	if( msg == MAL_SUCCEED) msg = chkFlow(mb);
+	if( msg == MAL_SUCCEED) msg = chkDeclarations(mb);
 	usec += GDKusec() - clk;
 	/* keep all actions taken as a post block comment */
 	snprintf(buf,256,"%-20s actions= 1 time=" LLFMT " usec","macro",usec);
@@ -547,9 +550,9 @@ str OPTorcam(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		msg= OPTorcamImplementation(cntxt,mb,stk,p);
 	if( msg) 
 		return msg;
-	chkTypes(cntxt->usermodule, mb, FALSE);
-	chkFlow(mb);
-	chkDeclarations(mb);
+	msg = chkTypes(cntxt->usermodule, mb, FALSE);
+	if( msg == MAL_SUCCEED) msg = chkFlow(mb);
+	if( msg == MAL_SUCCEED) msg = chkDeclarations(mb);
 	usec += GDKusec() - clk;
 	/* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;

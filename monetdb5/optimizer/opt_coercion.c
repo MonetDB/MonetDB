@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /* (c) M. Kersten
@@ -47,10 +47,7 @@ coercionOptimizerCalcStep(Client cntxt, MalBlkPtr mb, int i, Coercion *coerce)
 	varid = getArg(p,1);
 	if ( a == r && coerce[varid].src && coerce[varid].fromtype < r ) 
 	{
-		if( OPTdebug &  OPTaliases){
-			fprintf(stderr,"#remove upcast on first argument %d\n", varid);
-			fprintInstruction(stderr, mb, 0, p, LIST_MAL_ALL);
-		}
+		// Remove upcast on first argument 
 		getArg(p,1) = coerce[varid].src;
 		if ( chkInstruction(cntxt->usermodule, mb, p) || p->typechk == TYPE_UNKNOWN)
 			getArg(p,1) = varid;
@@ -58,18 +55,11 @@ coercionOptimizerCalcStep(Client cntxt, MalBlkPtr mb, int i, Coercion *coerce)
 	varid = getArg(p,2);
 	if ( b == r && coerce[varid].src &&  coerce[varid].fromtype < r ) 
 	{
-		if( OPTdebug &  OPTaliases){
-			fprintf(stderr,"#remove upcast on second argument %d\n", varid);
-			fprintInstruction(stderr, mb, 0, p, LIST_MAL_ALL);
-		}
+		// Remove upcast on second argument 
 		getArg(p,2) = coerce[varid].src;
 		if ( chkInstruction(cntxt->usermodule, mb, p) || p->typechk == TYPE_UNKNOWN)
 			getArg(p,2) = varid;
 	}
-		if( OPTdebug &  OPTaliases){
-			fprintf(stderr,"#final instruction\n");
-			fprintInstruction(stderr, mb, 0, p, LIST_MAL_ALL);
-		}
 	return;
 }
 
@@ -173,9 +163,11 @@ OPTcoercionImplementation(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 
     /* Defense line against incorrect plans */
     if( actions > 0){
-        chkTypes(cntxt->usermodule, mb, FALSE);
-        chkFlow(mb);
-        chkDeclarations(mb);
+        msg = chkTypes(cntxt->usermodule, mb, FALSE);
+	if (!msg)
+        	msg = chkFlow(mb);
+	if (!msg)
+        	msg = chkDeclarations(mb);
     } 
     /* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;

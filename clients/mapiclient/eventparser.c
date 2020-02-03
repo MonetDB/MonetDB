@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /* (c) M Kersten */
@@ -11,205 +11,177 @@
 #include "monetdb_config.h"
 #include "eventparser.h"
 
-char *statenames[]= {"","start","done","action","ping","wait","system"};
-
-char *maltypes[MAXMALARGS];
-char *malvariables[MAXMALARGS];
-char *malvalues[MAXMALARGS];
-int malcount[MAXMALARGS];
-int malargc;
-int malretc;
-
-int malsize;
 int debug=0;
-char *currentquery=0;
-int eventcounter = 0;
 
 #define DATETIME_CHAR_LENGTH 27
 
-static void
-clearArguments(void)
-{
-	int i;
-
-	if( currentquery){
-		free(currentquery);
-		currentquery = 0;
-	}
-
-	for(i = 0; i < MAXMALARGS; i++){
-		if( malvariables[i]){
-			free(malvariables[i]);
-			malvariables[i] = 0;
-		}
-		if( malvalues[i]){
-			free(malvalues[i]);
-			malvalues[i] = 0;
-		}
-		if( maltypes[i]){
-			free(maltypes[i]);
-			maltypes[i] = 0;
-		}
-	}
-}
+#define FREE(X)  if(X){ free(X); X= 0;}
 
 static void
-dumpArguments(void)
-{
-	int i;
-	for( i=0; i < MAXMALARGS; i++)
-	if( maltypes[i])
-		printf("[%d] variable %s value %s type %s\n", i, (malvariables[i]?malvariables[i]:""), malvalues[i], maltypes[i]);
-}
-
-char * 
-stripQuotes(char *currentquery)
-{
-	const char *c;
-	char *q, *qry;
-	if( currentquery ==0)
-		return NULL;
-	q = qry = (char *) malloc(strlen(currentquery) * 2);
-	if( q == NULL){
-		fprintf(stderr,"Could not allocate query buffer of size %zu\n", strlen(currentquery) * 2);
-		exit(-1);
-	}
-	c= currentquery;
-	if( *c == '"') c++;
-	for (; *c; ){
-		if ( strncmp(c,"\\\\t",3) == 0){
-			*q++ = '\t';
-			c+=3;
-		} else
-			if ( strncmp(c,"\\\\n",3) == 0){
-				*q++ = '\n';
-				c+=3;
-			} else if ( strncmp(c,"\\\"",2) == 0){
-				*q++= '"';
-				c+=2;
-			} else if ( strncmp(c,"\\\\",2) == 0){
-				c+= 2;
-			} else *q++ = *c++;
-	}
-	*q =0;
-	return qry;
-}
- 
-
-void
 resetEventRecord(EventRecord *ev)
-{
-	if( ev->version) free(ev->version);
-	if( ev->release) free(ev->release);
-	if( ev->memory) free(ev->memory);
-	if( ev->threads) free(ev->threads);
-	if( ev->host) free(ev->host);
-	if( ev->package) free(ev->package);
+{	int i;
+	
+	FREE(ev->version);
 
-	if( ev->function) free(ev->function);
-	if( ev->user) free(ev->user);
-	if( ev->time) free(ev->time);
-	if( ev->stmt) free(ev->stmt);
-	if( ev->fcn) free(ev->fcn);
-	if( ev->numa) free(ev->numa);
-	if(ev->beauty) free(ev->beauty);
-	if(ev->prereq) free(ev->prereq);
-	*ev = (EventRecord) {
-		.eventnr = -1,
-	};
-	clearArguments();
+	// event state
+	FREE(ev->version);
+	FREE(ev->user); 
+	FREE(ev->session);
+	FREE(ev->function);
+	FREE(ev->module);
+	FREE(ev->instruction);
+	FREE(ev->state);
+	FREE(ev->stmt);
+	FREE(ev->time);	
+	for(i=0; i< ev->maxarg; i++){
+		FREE(ev->args[i].alias);
+		FREE(ev->args[i].name);
+		FREE(ev->args[i].type);
+		FREE(ev->args[i].view);
+		FREE(ev->args[i].parent);
+		FREE(ev->args[i].persistence);
+		FREE(ev->args[i].file);
+		FREE(ev->args[i].seqbase);
+		FREE(ev->args[i].sorted);
+		FREE(ev->args[i].revsorted);
+		FREE(ev->args[i].nonil);
+		FREE(ev->args[i].nil);
+		FREE(ev->args[i].key);
+		FREE(ev->args[i].unique);
+		FREE(ev->args[i].value);
+		FREE(ev->args[i].debug);
+	}
+	ev->maxarg = 0;
 }
 
 /* simple json key:value object parser for event record.
- * each event pair on a single row, which is required for dealing with string values
- * It avoids lots of escaped charactor recognition, simply take with mserver delivers
+ * It is a restricted json parser, which uses the knowledge of the mal profiler.
  * Returns 1 if the closing bracket is found. 0 to continue, -1 upon error
  */
 
-#define skipto(C) { while(*c && *c != C) c++; if (*c != C) return -1;}
-#define skipstr() { while (*c && *c !='"') {if (*c =='\\') c++;if(*c)c++;} if (*c != '"') return -1;}
+#define skipto(H,C) { while(*H && *H != C) H++;}
+#define skipstr() { while (*c && *c !='"') {if (*c =='\\') c++;if(*c)c++;} }
 
 /*
- * The decomposition of the argument components is postponed
- * We just keep the concatenated json string
+ * Also parse the argument array structure
  */
 
-static int 
-parseArgument(char *txt, EventRecord *ev)
-{
-	char *s,*t;
-	int i=0;
-	// assume single strictly formatted key-value list line
-	(void) txt;
+static char *
+getstr(char *val){
+	val[strlen(val) -1] = 0;
+	return strdup(val + 1);
+}
+
+static int
+argparser(char *txt, EventRecord *ev){
+	char *c = NULL, *key = NULL,*val=NULL;
+	int cnt = 0, arg = -1;
+	c = txt;
+
 	(void) ev;
-	s= strstr(txt,"index\":\"");
-	if( s){
-		i = atoi(s + 8);
-		if( i <0 || i >= MAXMALARGS )
-			return 0;
+	(void) key;
+	/* First determine the number arguments to deal with */
+	while(*c){
+		skipto(c, '\t');
+		if(*c){
+			c++;
+			if(*c == '}')
+				cnt ++;
+		}
 	}
-	t= strstr(txt,"name\":\"");
-	s= strstr(txt,"\",value\":\"");
-	if( s && t){
-		t+= 7;
-		*s =0;
-		malvariables[i] = strdup(t);
-		s+= 10;
+	
+	/* Allocate the space for their properties */
+	if(ev->args) free(ev->args);
+	ev->args = (Argrecord*) malloc(cnt * sizeof(Argrecord));
+	memset(ev->args, 0, cnt * sizeof(Argrecord));
+	ev->maxarg = cnt;
+
+	/* parse the event argument structures, using the \t field separator */
+	c=  txt + 1;
+	while(*c){
+		if(*c == '{' || *c == '[')
+			c++;
+		if(*c == '}' || *c == ']')
+			break;
+
+		skipto(c, '"');
+		key = ++c;
+		skipstr();
+		*c++ = 0;
+		skipto(c, ':');
+		c++;
+		val = c;
+		/* we know that the value is terminated with a hard tab */
+		skipto(c, '\t');
+		if(*c){ --c; *c = 0; c++;}
+
+		/* These components should be the first */
+		if(strstr(key,"ret")) {
+			arg = atoi(val);
+			ev->args[arg].kind = MDB_RET;
+			continue;
+		}
+		if(strstr(key,"arg")) {
+			arg = atoi(val);
+			ev->args[arg].kind = MDB_ARG;
+			continue;
+		}
+		assert(arg> -1 && arg < ev->maxarg);
+		if(strstr(key,"bid")) { ev->args[arg].bid = atoi(val); continue;}
+		if(strstr(key,"alias")) { ev->args[arg].alias = getstr(val); continue;}
+		if(strstr(key,"name")) { ev->args[arg].name = getstr(val); continue;}
+		if(strstr(key,"type")) { ev->args[arg].type = getstr(val);continue;}
+		if(strstr(key,"view")) { ev->args[arg].view = getstr(val); continue;}
+		if(strstr(key,"parent")) { ev->args[arg].parent = getstr(val); continue;}
+		if(strstr(key,"persistence")) { ev->args[arg].persistence = getstr(val); continue;}
+		if(strstr(key,"file")) { ev->args[arg].file = getstr(val); continue;}
+		if(strstr(key,"seqbase")) { ev->args[arg].seqbase = getstr(val); continue;}
+		if(strstr(key,"sorted")) { ev->args[arg].sorted = getstr(val); continue;}
+		if(strstr(key,"revsorted")) { ev->args[arg].revsorted = getstr(val); continue;}
+		if(strstr(key,"nonil")) { ev->args[arg].nonil = getstr(val); continue;}
+		if(strstr(key,"nil")) { ev->args[arg].nil = getstr(val); continue;}
+		if(strstr(key,"key")) { ev->args[arg].key = getstr(val); continue;}
+		if(strstr(key,"unique")) { ev->args[arg].unique = getstr(val); continue;}
+		if(strstr(key,"count")) { ev->args[arg].count = atol(val); continue;}
+		if(strstr(key,"size")) { ev->args[arg].size = getstr(val); continue;}
+		if(strstr(key,"value")) { ev->args[arg].value = getstr(val); continue;}
+		if(strstr(key,"debug")) { ev->args[arg].debug = getstr(val); continue;}
+		if(strstr(key,"const")) { ev->args[arg].constant = atoi(val); continue;}
 	}
-	t= strstr(txt,"\",type\":\"");
-	if( s && t){
-		*t = 0;
-		*s =0;
-		malvariables[i] = strdup(t);
-		t+= 7;
-	}
-	if( s && t){
-		*t = 0;
-		t+= 9;
-		s+= 10;
-		maltypes[i] = strdup(t);
-	}
-	return 0;
+	return 1;
 }
 
 int
 keyvalueparser(char *txt, EventRecord *ev)
 {
-	char *c, *s, *key, *val;
+	char *c, *key, *val;
 	c = txt;
 
-	if( strstr(c,"\"argument\":") || strstr(c,"\"result\":"))
-		return parseArgument(txt,ev);
-	if( *c == '{'){
+	if(*c == '{'){
 		resetEventRecord(ev);
-		memset(malvariables, 0, sizeof(malvariables));
-		memset(malvalues, 0, sizeof(malvalues));
-		ev->eventnr= eventcounter++;
 		return 0;
 	}
-	if( *c == '}'){
-		dumpArguments();
+	if(*c == '}')
 		return 1;
-	}
 
-	skipto('"');
+	skipto(c, '"');
 	key = ++c;
 	skipstr();
 	*c++ = 0;
-	skipto(':');
+	skipto(c, ':');
 	c++;
-	while( *c && isspace((unsigned char) *c)) c++;
-	if( *c == '"'){
+	while(*c && isspace((unsigned char) *c)) c++;
+	if(*c == '"'){
 		val = ++c;
 		skipstr();
 		*c = 0;
 	} else val =c;
 
-	if( strstr(key,"ctime")){
+	if(strstr(key,"mclk")){
 		ev->usec = atol(val);
 		return 0;
 	}
-	if( strstr(key,"clk")){
+	if(strstr(key,"clk")){
 		time_t sec;
 		uint64_t microsec;
 		struct tm curr_time = (struct tm) {0};
@@ -245,348 +217,73 @@ keyvalueparser(char *txt, EventRecord *ev)
 		}
 		return 0;
 	}
-	if( strstr(key,"function")){ ev->function= strdup(val); return 0;}
-	if( strstr(key,"user")){ ev->user= strdup(val); return 0;}
-	if( strstr(key,"tag")){ ev->tag= atoi(val); return 0;}
-	if( strstr(key,"thread")){ ev->thread= atoi(val); return 0;}
-	if( strstr(key,"pc")){ ev->pc= atoi(val); return 0;}
-	if( strstr(key,"state")){
-		if( strstr(val,"start")) ev->state= MDB_START;
-		if( strstr(val,"done")) ev->state= MDB_DONE;
-		if( strstr(val,"ping")) ev->state= MDB_PING;
-		if( strstr(val,"wait")) ev->state= MDB_WAIT;
-		if( strstr(val,"system")) ev->state= MDB_SYSTEM;
-		return 0;
-	}
+	if(strstr(key,"version")) { ev->version= strdup(val); return 0;}
+	if(strstr(key,"user")){ ev->user= strdup(val); return 0;}
+	if(strstr(key,"session")) { ev->session= strdup(val); return 0;}
+	if(strstr(key,"function")){ ev->function= strdup(val); return 0;}
+	if(strstr(key,"tag")){ ev->tag= atoi(val); return 0;}
+	if(strstr(key,"thread")){ ev->thread= atoi(val); return 0;}
+	if(strstr(key,"module")){ ev->module= strdup(val); return 0;}
+	if(strstr(key,"instruction")){ ev->instruction= strdup(val); return 0;}
+	if(strstr(key,"pc")){ ev->pc= atoi(val); return 0;}
+	if(strstr(key,"state")){ ev->state= strdup(val);}
+	if(strstr(key,"stmt")){ ev->stmt= strdup(val);}
+	if(strstr(key,"usec")) { ev->ticks= atoi(val); return 0;}
+	if(strstr(key,"rss")) { ev->rss= atol(val); return 0;}
+	if(strstr(key,"inblock")) { ev->inblock= atol(val); return 0;}
+	if(strstr(key,"oublock")) { ev->oublock= atol(val); return 0;}
+	if(strstr(key,"majflt")) { ev->majflt= atol(val); return 0;}
+	if(strstr(key,"swaps")) { ev->swaps= atol(val); return 0;}
+	if(strstr(key,"nvcsw")) { ev->nvcsw= atol(val); return 0;}
 
-	if( strstr(key,"usec")) { ev->ticks= atoi(val); return 0;}
-	if( strstr(key,"rss")) { ev->rss= atol(val); return 0;}
-	if( strstr(key,"size")) { ev->size= atol(val); return 0;}
-	if( strstr(key,"inblock")) { ev->inblock= atol(val); return 0;}
-	if( strstr(key,"oublock")) { ev->oublock= atol(val); return 0;}
-	if( strstr(key,"majflt")) { ev->majflt= atol(val); return 0;}
-	if( strstr(key,"swaps")) { ev->swaps= atol(val); return 0;}
-	if( strstr(key,"nvcsw")) { ev->csw= atol(val); return 0;}
-	if( strstr(key,"stmt")) { 
-		ev->stmt= strdup(val); 
-		if( (key = strstr(val,"querylog.define(") ) ){
-			s =c= strstr(key,"\\\":str");
-			if( s){
-				s = strstr(c+6,":str,");
-				if( s)
-					malsize = atol(s+5);
-			}
-			c= strstr(key,"\\\":str");
-			if(c) *c = 0;
-			c= strchr(key,'(');
-			if (c) {
-				while(*c && *c != '"') c++;
-				if( *c == '"') c++;
-				currentquery = stripQuotes(c);
-			}
-		}
-		s= strstr(val," := ");
-		if( s) {
-			s += 4;
-			c= strchr(s,'(');
-			if( c){
-				*c =0;
-				ev->fcn= strdup(s); 
-			}
-		} else{
-			c= strchr(val,'(');
-			if( c){
-				*c =0;
-				ev->fcn= strdup(val); 
-			}
-		}
-		return 0;
-	}
-	if( strstr(key,"short")) { ev->beauty= strdup(val); return 0; }
-	if( strstr(key,"prereq")) { ev->prereq= strdup(val); return 0;}
-	if( strstr(key,"cpuload")) { 
-		ev->function= strdup(""); 
-		ev->stmt= strdup(val); return 0;
-	}
-
-	if( strstr(key,"version")) { ev->version= strdup(val); return 0;}
-	if( strstr(key,"release")) { ev->release= strdup(val); return 0;}
-	if( strstr(key,"host")) { ev->host= strdup(val); return 0;}
-	if( strstr(key,"memory")) { ev->memory= strdup(val); return 0;}
-	if( strstr(key,"threads")) { ev->threads= strdup(val); return 0;}
-	if( strstr(key,"oid")) { ev->oid= atoi(val); return 0;}
-	if( strstr(key,"package")) { ev->package= strdup(val); return 0;}
+	if (strstr(key,"args")) 
+		argparser(val,ev);
 	return 0;
 }
 
 void
-eventdump(void)
-{   int i;
-    for(i=0; i < malargc; i++)
-        fprintf(stderr,"arg[%d] %s %s %d\n",i,malvariables[i], maltypes[i], malcount[i]);
-    for(i=0; i < malretc; i++)
-        fprintf(stderr,"var[%d] %s\n",i,malvariables[i]);
+renderHeader(FILE *fd){
+	fprintf(fd, "[ctime\t\t\t\tfunction\t\tstate\tthread\tticks\tsize\tstatement]\n");
 }
 
-int
-lineparser(char *row, EventRecord *ev)
+/*
+static int
+renderArgs(FILE *fd, EventRecord *ev, int start, int kind)
 {
-	char *c, *cc, *v =0;
-	struct tm stm;
-
-	malargc = 0;
-	malretc = 0;
-	memset(malvariables, 0, sizeof(malvariables));
-	/* check basic validaty first */
-	if (row[0] =='#'){
-		return 1;	/* ok, but nothing filled in */
-	}
-	if (row[0] != '[')
-		return -1;
-	if ((cc= strrchr(row,']')) == 0 || *(cc+1) !=0)
-		return -1;
-
-	/* scan event record number */
-	c = row+1;
-	ev->eventnr = atoi(c + 1);
-
-	/* scan event time" */
-	c = strchr(c + 1, '"');
-	if (c == NULL)
-		return -3;
-	/* convert time to epoch in seconds*/
-	cc =c;
-	stm = (struct tm) {0};
-#ifdef HAVE_STRPTIME
-	c = strptime(c + 1, "%H:%M:%S", &stm);
-	ev->clkticks = (((int64_t) stm.tm_hour * 60 + stm.tm_min) * 60 + stm.tm_sec) * 1000000;
-	if (c == NULL)
-		return -3;
-#else
-	int pos;
-	if (sscanf(c + 1, "%d:%d:%d%n", &stm.tm_hour, &stm.tm_min, &stm.tm_sec, &pos) < 3)
-		return -3;
-	c += pos + 1;
-#endif
-	if (*c == '.') {
-		int64_t usec;
-		/* microseconds */
-		usec = strtoll(c + 1, NULL, 10);
-		assert(usec >= 0 && usec < 1000000);
-		ev->clkticks += usec;
-	}
-	c = strchr(c + 1, '"');
-	if (c == NULL)
-		return -3;
-	if (ev->clkticks < 0) {
-		fprintf(stderr, "parser: read negative value %"PRId64" from\n'%s'\n", ev->clkticks, cc);
-	}
-	c++;
-
-	/* skip pc tag */
-	{	// decode qry[pc]tag
-		char *nme = c;
-		c= strchr(c+1,'[');
-		if( c == 0)
-			return -4;
-		*c = 0;
-		ev->function= strdup(nme);
-		*c = '[';
-		ev->pc = atoi(c+1);
-		c= strchr(c+1,']');
-		if ( c == 0)
-			return -4;
-		ev->tag = atoi(c+1);
-	}
-	c = strchr(c+1, ',');
-	if (c == 0)
-		return -4;
-
-	/* scan thread */
-	ev->thread = atoi(c+1);
-
-	/* scan status */
-	c = strchr(c, '"');
-	if (c == 0)
-		return -5;
-	if (strncmp(c + 1, "start", 5) == 0) {
-		ev->state = MDB_START;
-		c += 6;
-	} else if (strncmp(c + 1, "done", 4) == 0) {
-		ev->state = MDB_DONE;
-		c += 5;
-	} else if (strncmp(c + 1, "ping", 4) == 0) {
-		ev->state = MDB_PING;
-		c += 5;
-	} else if (strncmp(c + 1, "system", 6) == 0) {
-		ev->state = MDB_SYSTEM;
-		c += 5;
-	} else if (strncmp(c + 1, "wait", 4) == 0) {
-		ev->state = MDB_WAIT;
-		c += 5;
-	} else {
-		ev->state = 0;
-		c = strchr(c + 1, '"');
-		if (c == 0)
-			return -5;
-	}
-
-
-	/* scan usec */
-	c = strchr(c + 1, ',');
-	if (c == 0)
-		return -6;
-	ev->ticks = strtoll(c + 1, NULL, 10);
-
-	/* scan rssMB */
-	c = strchr(c + 1, ',');
-	if (c == 0)
-		return -7;
-	ev->rss = strtoll(c + 1, NULL, 10);
-
-	/* scan tmpMB */
-	c = strchr(c + 1, ',');
-	if (c == 0)
-		return -8;
-	ev->size = strtoll(c + 1, NULL, 10);
-
-#ifdef NUMAPROFILING
-	for(; *c && *c !='"'; c++) ;
-	ev->numa = c+1;
-	for(c++; *c && *c !='"'; c++)
-		;
-	if (*c == 0)
-		return -1;
-	*c = 0;
-	ev->numa= strdup(numa);
-	*c = '"';
-#endif
-
-	/* scan inblock */
-	c = strchr(c + 1, ',');
-	if (c == 0) 
-		return -9;
-	ev->inblock = strtoll(c + 1, NULL, 10);
-
-	/* scan oublock */
-	c = strchr(c + 1, ',');
-	if (c == 0) 
-		return -10;
-	ev->oublock = strtoll(c + 1, NULL, 10);
-
-	/* scan majflt */
-	c = strchr(c + 1, ',');
-	if (c == 0) 
-		return -11;
-	ev->majflt = strtoll(c + 1, NULL, 10);
-
-	/* scan swaps */
-	c = strchr(c + 1, ',');
-	if (c == 0) 
-		return -12;
-	ev->swaps = strtoll(c + 1, NULL, 10);
-
-	/* scan context switches */
-	c = strchr(c + 1, ',');
-	if (c == 0) 
-		return -13;
-	ev->csw = strtoll(c + 1, NULL, 10);
-
-	/* parse the MAL call, check basic validity */
-	c = strchr(c, '"');
-	if (c == 0)
-		return -15;
-	c++;
-	ev->fcn = strdup(c);
-	ev->stmt = strdup(ev->fcn);
-	c= ev->fcn;
-	if( *c != '[')
-	{
-		v=c;
-		c = strstr(c + 1, ":= ");
-		if (c) {
-			*c = 0;
-			parseArgument( (*v == '('? v++:v),ev);
-			malretc =malargc;
-			*c=':';
-			ev->fcn = c + 2;
-			/* find genuine function calls */
-			while (isspace((unsigned char) *ev->fcn) && *ev->fcn)
-				ev->fcn++;
-			if (strchr(ev->fcn, '.') == 0) 
-				ev->fcn = 0;
-		} 
-		if( ev->fcn){
-			v=  strchr(ev->fcn+1,';');
-			if ( v ) *v = 0;
+	int i;
+	for(i=start; i< ev->maxarg && ev->args[i].kind == kind; i++){
+		if(ev->args[i].constant)
+			fprintf(fd, "%s:%s ", ev->args[i].value, ev->args[i].type);
+		else {
+			if(strncmp(ev->args[i].type, "bat",3) == 0)
+				fprintf(fd, "%s=[%ld]:%s ", ev->args[i].name, ev->args[i].count, ev->args[i].type);
+			else
+				fprintf(fd, "%s=%s:%s ", ev->args[i].name, ev->args[i].value, ev->args[i].type);
 		}
+		if(i< ev->maxarg-1 && ev->args[i+1].kind == kind) fprintf(fd,",");
 	}
-
-	if (ev->fcn && (v=strchr(ev->fcn, '('))){
-		*v = 0;
-		if( v)
-			parseArgument(v+1,ev);
-	 } else { //assigment statements
-		v= ev->stmt;
-		v = strstr(ev->stmt, ":= ");
-		if( v)
-			parseArgument(v+3,ev);
-	}
-	if (ev->stmt && (v=strstr(ev->stmt, ";\",\t")))
-		*v = 0;
-	return 0;
+	return i;
 }
+*/
 
 void
-renderJSONevent(FILE *fd, EventRecord *ev, int notfirst)
+renderSummary(FILE *fd, EventRecord *ev, char * filter)
 {	
-	int i;
-
-	if( notfirst)
-		fprintf(fd,"},\n{");
-	fprintf(fd,"\"user\":\"%s\",\n",ev->user?ev->user:"monetdb");
-	fprintf(fd,"\"clk\":%"PRId64",\n",ev->usec);
-	fprintf(fd,"\"ctime\":\"%s\",\n",ev->time);
-	fprintf(fd,"\"thread\":%d,\n",ev->thread);
-	fprintf(fd,"\"function\":\"%s\",\n",ev->function);
-	fprintf(fd,"\"pc\":%d,\n",ev->pc);
-	fprintf(fd,"\"tag\":%d,\n",ev->tag);
-	switch(ev->state){
-	case MDB_START:
-		fprintf(fd,"\"state\":\"start\",\n");
-		break;
-	case MDB_DONE:
-		fprintf(fd,"\"state\":\"done\",\n");
-		break;
-	case MDB_PING:
-		fprintf(fd,"\"state\":\"ping\",\n");
-		break;
-	case MDB_WAIT:
-		fprintf(fd,"\"state\":\"wait\",\n");
-		break;
-	case MDB_SYSTEM:
-		fprintf(fd,"\"state\":\"system\",\n");
-		break;
+	char *c, *t;
+	(void) filter;
+	fprintf(fd,"%s\t",ev->time);
+	fprintf(fd,"%s[%3d]%d\t",ev->function, ev->pc,ev->tag);
+	fprintf(fd,"%s\t",ev->state);
+	fprintf(fd,"%d\t",ev->thread);
+	fprintf(fd,"%"PRId64"\t",ev->ticks);
+	for (c = t = ev->stmt; *c; c++){
+		if( *c == '\\' && *(c+1) =='"'){
+				c++;
+				*t++ = *c;
+		} else
+			*t++ = *c;
 	}
-	fprintf(fd,"\"usec\":%"PRId64",\n",ev->ticks);
-	fprintf(fd,"\"rss\":%"PRId64",\n",ev->rss);
-	fprintf(fd,"\"size\":%"PRId64",\n",ev->size);
-	if( strstr(ev->stmt," ]"))
-		*strstr(ev->stmt," ]") = 0;
-	fprintf(fd,"\"stmt\":\"%s\",\n",ev->stmt);
-	fprintf(fd,"\"short\":\"%s\",\n",ev->beauty?ev->beauty:ev->stmt);
-	fprintf(fd,"\"prereq\":[]");
-	if(malretc > 0){
-		fprintf(fd,",\n\"ret\":[");
-	} 
-	for(i=0; i<malretc; i++){
-		if(i== malretc)
-			fprintf(fd,"],\n\"arg\":[");
-		else
-			if( i) fprintf(fd,",\n");
-		fprintf(fd,"{\"index\":%d,\"name\":\"%s\",\"type\":\"%s\", \"value\":\"%s\",\"eol\":%d}",	i, "","","",i);
-	}
-	if(malretc > 0)
-		fprintf(fd,"],\n");
-	else fprintf(fd,"\n");
+	*t = 0;
+	fprintf(fd,"%s\t",ev->stmt);
+	fprintf(fd,"\n");
 }

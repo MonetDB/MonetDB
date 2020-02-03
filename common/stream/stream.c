@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /* stream
@@ -2500,6 +2500,8 @@ socket_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 					       .events = POLLIN};
 
 			ret = poll(&pfd, 1, (int) s->timeout);
+			if (ret == -1 && errno == EINTR)
+				continue;
 			if (ret == -1 || (pfd.revents & POLLERR)) {
 				s->errnr = MNSTR_READ_ERROR;
 				return -1;
@@ -2550,6 +2552,8 @@ socket_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 		}
 #else
 		nr = read(s->stream_data.s, buf, size);
+		if (nr == -1 && errno == EINTR)
+			continue;
 		if (nr == -1) {
 			s->errnr = MNSTR_READ_ERROR;
 			return -1;
@@ -2643,6 +2647,8 @@ socket_isalive(stream *s)
 	pfd = (struct pollfd){.fd = fd};
 	if ((ret = poll(&pfd, 1, 0)) == 0)
 		return 1;
+	if (ret == -1 && errno == EINTR)
+		return socket_isalive(s);
 	if (ret < 0 || pfd.revents & (POLLERR | POLLHUP))
 		return 0;
 	assert(0);		/* unexpected revents value */

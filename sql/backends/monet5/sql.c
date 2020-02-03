@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -16,6 +16,7 @@
 #include "monetdb_config.h"
 #include "sql.h"
 #include "streams.h"
+#include "mapi_prompt.h"
 #include "sql_result.h"
 #include "sql_gencode.h"
 #include "sql_storage.h"
@@ -264,8 +265,8 @@ SQLshutdown_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg;
 
 	if ((msg = CLTshutdown(cntxt, mb, stk, pci)) == MAL_SUCCEED) {
-		/* administer the shutdown in the system log*/
-		fprintf(stderr, "#Shutdown:%s\n", *getArgReference_str(stk, pci, 0));
+		/* administer the shutdown in the system log */
+		TRC_INFO(SQL_MVC, "Shutdown: %s\n", *getArgReference_str(stk, pci, 0));
 	}
 	return msg;
 }
@@ -494,7 +495,10 @@ create_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *col
 			tpe = *t;
 		}
 
-		if (!(col = mvc_create_column(sql, t, columns[i].name, &tpe))) {
+		if (columns[i].name && columns[i].name[0] == '%') {
+			msg = sql_error(sql, 02, SQLSTATE(42000) "CREATE TABLE: generated labels not allowed in column names, use an alias instead");
+			goto cleanup;
+		} else if (!(col = mvc_create_column(sql, t, columns[i].name, &tpe))) {
 			msg = sql_error(sql, 02, SQLSTATE(3F000) "CREATE TABLE: could not create column %s", columns[i].name);
 			goto cleanup;
 		}
@@ -2812,7 +2816,7 @@ mvc_table_result_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg;
 	int *res_id;
 	int nr_cols;
-	sql_query_t qtype;
+	mapi_query_t qtype;
 	bat order_bid;
 
 	if ( pci->argc > 6)
@@ -2820,7 +2824,7 @@ mvc_table_result_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	res_id = getArgReference_int(stk, pci, 0);
 	nr_cols = *getArgReference_int(stk, pci, 1);
-	qtype = (sql_query_t) *getArgReference_int(stk, pci, 2);
+	qtype = (mapi_query_t) *getArgReference_int(stk, pci, 2);
 	order_bid = *getArgReference_bat(stk, pci, 3);
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
@@ -4367,10 +4371,12 @@ SQLargRecord(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) cntxt;
 	ret = getArgReference_str(stk, pci, 0);
-	s = instruction2str(mb, stk, getInstrPtr(mb, 0), LIST_MAL_ALL);
+	s = instruction2str(mb, stk, getInstrPtr(mb, 0), LIST_MAL_CALL);
 	if(s == NULL)
 		throw(SQL, "sql.argRecord", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	t = strchr(s, ' ');
+	if( ! t)
+		t = strchr(s, '\t');
 	*ret = GDKstrdup(t ? t + 1 : s);
 	GDKfree(s);
 	if(*ret == NULL)
@@ -4901,7 +4907,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 									if (BUNappend(heap, &sz, false) != GDK_SUCCEED)
 										goto bailout;
 
-									sz = bn->thash && bn->thash != (Hash *) 1 ? bn->thash->heap.size : 0; /* HASHsize() */
+									sz = bn->thash && bn->thash != (Hash *) 1 ? bn->thash->heaplink.size + bn->thash->heapbckt.size : 0; /* HASHsize() */
 									if (BUNappend(indices, &sz, false) != GDK_SUCCEED)
 										goto bailout;
 									bitval = 0; /* HASHispersistent(bn); */
@@ -4911,7 +4917,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 									sz = IMPSimprintsize(bn);
 									if (BUNappend(imprints, &sz, false) != GDK_SUCCEED)
 										goto bailout;
-									/*printf(" indices "BUNFMT, bn->thash?bn->thash->heap.size:0); */
+									/*printf(" indices "BUNFMT, bn->thash?bn->thash->heaplink.size+bn->thash->heapbckt.size:0); */
 									/*printf("\n"); */
 									bitval = BATtordered(bn);
 									if (!bitval && bn->tnosorted == 0)

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -19,14 +19,13 @@ BATidxsync(void *arg)
 	BAT *b = arg;
 	Heap *hp;
 	int fd;
-	lng t0 = 0;
+	lng t0  = GDKusec();
 	const char *failed = " failed";
 
-	ACCELDEBUG t0 = GDKusec();
 
 	MT_lock_set(&b->batIdxLock);
 	if ((hp = b->torderidx) != NULL) {
-		if (HEAPsave(hp, hp->filename, NULL) == GDK_SUCCEED) {
+		if (HEAPsave(hp, hp->filename, NULL, true) == GDK_SUCCEED) {
 			if (hp->storage == STORE_MEM) {
 				if ((fd = GDKfdlocate(hp->farmid, hp->filename, "rb+", NULL)) >= 0) {
 					((oid *) hp->base)[0] |= (oid) 1 << 24;
@@ -57,9 +56,9 @@ BATidxsync(void *arg)
 					failed = ""; /* not failed */
 				}
 			}
-			ACCELDEBUG fprintf(stderr, "#%s: BATidxsync(%s): orderidx persisted"
-					  " (" LLFMT " usec)%s\n", MT_thread_getname(),
-					  BATgetId(b), GDKusec() - t0, failed);
+			TRC_DEBUG(ACCELERATOR, "BATidxsync(%s): orderidx persisted"
+						" (" LLFMT " usec)%s\n",
+						BATgetId(b), GDKusec() - t0, failed);
 		}
 	}
 	MT_lock_unset(&b->batIdxLock);
@@ -73,11 +72,10 @@ bool
 BATcheckorderidx(BAT *b)
 {
 	bool ret;
-	lng t = 0;
+	lng t = GDKusec();
 
 	if (b == NULL)
 		return false;
-	ACCELDEBUG t = GDKusec();
 	assert(b->batCacheid > 0);
 	/* we don't need the lock just to read the value b->torderidx */
 	if (b->torderidx == (Heap *) 1) {
@@ -114,7 +112,7 @@ BATcheckorderidx(BAT *b)
 					    HEAPload(hp, nme, "torderidx", false) == GDK_SUCCEED) {
 						close(fd);
 						b->torderidx = hp;
-						ACCELDEBUG fprintf(stderr, "#%s: BATcheckorderidx(" ALGOBATFMT "): reusing persisted orderidx\n", MT_thread_getname(), ALGOBATPAR(b));
+						TRC_DEBUG(ACCELERATOR, "BATcheckorderidx(" ALGOBATFMT "): reusing persisted orderidx\n", ALGOBATPAR(b));
 						MT_lock_unset(&b->batIdxLock);
 						return true;
 					}
@@ -129,7 +127,8 @@ BATcheckorderidx(BAT *b)
 		MT_lock_unset(&b->batIdxLock);
 	}
 	ret = b->torderidx != NULL;
-	ACCELDEBUG if (ret) fprintf(stderr, "#%s: BATcheckorderidx(" ALGOBATFMT "): already has orderidx, waited " LLFMT " usec\n", MT_thread_getname(), ALGOBATPAR(b), GDKusec() - t);
+	if(ret)
+		TRC_DEBUG(ACCELERATOR, "BATcheckorderidx(" ALGOBATFMT "): already has orderidx, waited " LLFMT " usec\n", ALGOBATPAR(b), GDKusec() - t);
 	return ret;
 }
 
@@ -176,7 +175,7 @@ persistOIDX(BAT *b)
 				     MT_THR_DETACHED, name) < 0)
 			BBPunfix(b->batCacheid);
 	} else
-		ACCELDEBUG fprintf(stderr, "#%s: persistOIDX(" ALGOBATFMT "): NOT persisting order index\n", MT_thread_getname(), ALGOBATPAR(b));
+		TRC_DEBUG(ACCELERATOR, "persistOIDX(" ALGOBATFMT "): NOT persisting order index\n", ALGOBATPAR(b));
 #else
 	(void) b;
 #endif
@@ -189,7 +188,7 @@ BATorderidx(BAT *b, bool stable)
 		return GDK_SUCCEED;
 	if (!BATtdense(b)) {
 		BAT *on;
-		ACCELDEBUG fprintf(stderr, "#%s: BATorderidx(" ALGOBATFMT ",%d) create index\n", MT_thread_getname(), ALGOBATPAR(b), stable);
+		TRC_DEBUG(ACCELERATOR, "BATorderidx(" ALGOBATFMT ",%d) create index\n", ALGOBATPAR(b), stable);
 		if (BATsort(NULL, &on, NULL, b, NULL, NULL, false, false, stable) != GDK_SUCCEED)
 			return GDK_FAIL;
 		assert(BATcount(b) == BATcount(on));
@@ -359,7 +358,7 @@ GDKmergeidx(BAT *b, BAT**a, int n_ar)
 			 ATOMname(b->ttype));
 		return GDK_FAIL;
 	}
-	ACCELDEBUG fprintf(stderr, "#%s: GDKmergeidx(" ALGOBATFMT ") create index\n", MT_thread_getname(), ALGOBATPAR(b));
+	TRC_DEBUG(ACCELERATOR, "GDKmergeidx(" ALGOBATFMT ") create index\n", ALGOBATPAR(b));
 	MT_lock_set(&b->batIdxLock);
 	if (b->torderidx) {
 		MT_lock_unset(&b->batIdxLock);
@@ -487,7 +486,7 @@ GDKmergeidx(BAT *b, BAT**a, int n_ar)
 				     MT_THR_DETACHED, name) < 0)
 			BBPunfix(b->batCacheid);
 	} else
-		ACCELDEBUG fprintf(stderr, "#%s: GDKmergeidx(%s): NOT persisting index\n", MT_thread_getname(), BATgetId(b));
+		TRC_DEBUG(ACCELERATOR, "GDKmergeidx(%s): NOT persisting index\n", BATgetId(b));
 #endif
 
 	b->batDirtydesc = true;

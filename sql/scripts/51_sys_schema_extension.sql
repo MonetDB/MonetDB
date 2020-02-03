@@ -2,7 +2,7 @@
 -- License, v. 2.0.  If a copy of the MPL was not distributed with this
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/.
 --
--- Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+-- Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
 
 -- create additional tables in "sys" schema and fill them with static content
 
@@ -489,6 +489,10 @@ GRANT SELECT ON sys.var_values TO PUBLIC;
 
 CREATE AGGREGATE sys.group_concat(str string) RETURNS string EXTERNAL NAME "aggr"."str_group_concat";
 GRANT EXECUTE ON AGGREGATE sys.group_concat(string) TO PUBLIC;
-
 CREATE AGGREGATE sys.group_concat(str string, sep string) RETURNS string EXTERNAL NAME "aggr"."str_group_concat";
 GRANT EXECUTE ON AGGREGATE sys.group_concat(string, string) TO PUBLIC;
+
+CREATE WINDOW sys.group_concat(str string) RETURNS string EXTERNAL NAME "sql"."str_group_concat";
+GRANT EXECUTE ON WINDOW sys.group_concat(string) TO PUBLIC;
+CREATE WINDOW sys.group_concat(str string, sep string) RETURNS string EXTERNAL NAME "sql"."str_group_concat";
+GRANT EXECUTE ON WINDOW sys.group_concat(string, string) TO PUBLIC;

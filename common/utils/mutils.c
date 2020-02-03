@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -278,7 +278,7 @@ dirname(char *path)
 
 /* see contract of unix MT_lockf */
 int
-MT_lockf(char *filename, int mode, off_t off, off_t len)
+MT_lockf(char *filename, int mode)
 {
 	int ret = 1, fd = -1;
 	OVERLAPPED ov;
@@ -292,19 +292,11 @@ MT_lockf(char *filename, int mode, off_t off, off_t len)
 
 	ov = (OVERLAPPED) {0};
 #if defined(DUMMYSTRUCTNAME) && (defined(NONAMELESSUNION) || !defined(_MSC_EXTENSIONS))	/* Windows SDK v7.0 */
-	ov.u.s.Offset = (unsigned int) off;
-#if 0
-	ov.u.s.OffsetHigh = off >> 32;
+	ov.u.s.Offset = 4;
+	ov.u.s.OffsetHigh = 0;
 #else
-	ov.u.s.OffsetHigh = 0;	/* sizeof(off) == 4, i.e. off >> 32 is not possible */
-#endif
-#else
-	ov.Offset = (unsigned int) off;
-#if 0
-	ov.OffsetHigh = off >> 32;
-#else
-	ov.OffsetHigh = 0;	/* sizeof(off) == 4, i.e. off >> 32 is not possible */
-#endif
+	ov.Offset = 4;
+	ov.OffsetHigh = 0;
 #endif
 
 	if (mode == F_ULOCK) {
@@ -316,7 +308,7 @@ MT_lockf(char *filename, int mode, off_t off, off_t len)
 				fp = *fpp;
 				*fpp = fp->next;
 				free(fp);
-				ret = UnlockFileEx(fh, 0, len, 0, &ov);
+				ret = UnlockFileEx(fh, 0, 1, 0, &ov);
 				return ret ? 0 : -1;
 			}
 		}
@@ -327,7 +319,7 @@ MT_lockf(char *filename, int mode, off_t off, off_t len)
 				NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 		if (fh == INVALID_HANDLE_VALUE)
 			return -2;
-		ret = UnlockFileEx(fh, 0, len, 0, &ov);
+		ret = UnlockFileEx(fh, 0, 1, 0, &ov);
 		CloseHandle(fh);
 		return 0;
 	}
@@ -342,13 +334,13 @@ MT_lockf(char *filename, int mode, off_t off, off_t len)
 	}
 
 	if (mode == F_TLOCK) {
-		ret = LockFileEx(fh, LOCKFILE_FAIL_IMMEDIATELY | LOCKFILE_EXCLUSIVE_LOCK, 0, len, 0, &ov);
+		ret = LockFileEx(fh, LOCKFILE_FAIL_IMMEDIATELY | LOCKFILE_EXCLUSIVE_LOCK, 0, 1, 0, &ov);
 	} else if (mode == F_LOCK) {
-		ret = LockFileEx(fh, LOCKFILE_EXCLUSIVE_LOCK, 0, len, 0, &ov);
+		ret = LockFileEx(fh, LOCKFILE_EXCLUSIVE_LOCK, 0, 1, 0, &ov);
 	} else if (mode == F_TEST) {
-		ret = LockFileEx(fh, LOCKFILE_FAIL_IMMEDIATELY | LOCKFILE_EXCLUSIVE_LOCK, 0, len, 0, &ov);
+		ret = LockFileEx(fh, LOCKFILE_FAIL_IMMEDIATELY | LOCKFILE_EXCLUSIVE_LOCK, 0, 1, 0, &ov);
 		if (ret != 0) {
-			UnlockFileEx(fh, 0, len, 0, &ov);
+			UnlockFileEx(fh, 0, 1, 0, &ov);
 			close(fd);
 			return 0;
 		}
@@ -408,15 +400,15 @@ lockf(int fd, int cmd, off_t len)
  * returns the (open) file descriptor to the file when locking
  * returns 0 when unlocking */
 int
-MT_lockf(char *filename, int mode, off_t off, off_t len)
+MT_lockf(char *filename, int mode)
 {
 	int fd = open(filename, O_CREAT | O_RDWR | O_TEXT | O_CLOEXEC, MONETDB_MODE);
 
 	if (fd < 0)
 		return -2;
 
-	if (lseek(fd, off, SEEK_SET) >= 0 &&
-	    lockf(fd, mode, len) == 0) {
+	if (lseek(fd, 4, SEEK_SET) >= 0 &&
+	    lockf(fd, mode, 1) == 0) {
 		if (mode == F_ULOCK || mode == F_TEST) {
 			close(fd);
 			return 0;

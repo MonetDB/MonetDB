@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -431,7 +431,7 @@ forkMserver(char *database, sabdb** stats, bool force)
 	}
 
 	/* check if the vaultkey is there, otherwise abort early (value
-	 * lateron reused when server is started) */
+	 * later on reused when server is started) */
 	snprintf(vaultkey, sizeof(vaultkey), "%s/.vaultkey", (*stats)->path);
 	if (stat(vaultkey, &statbuf) == -1) {
 		msab_freeStatus(stats);
@@ -501,10 +501,6 @@ forkMserver(char *database, sabdb** stats, bool force)
 	kv = findConfKey(ckv, "embedr");
 	if (kv->val != NULL && strcmp(kv->val, "no") != 0)
 		embeddedr = "embedded_r=true";
-
-	kv = findConfKey(ckv, "embedpy");
-	if (kv->val != NULL && strcmp(kv->val, "no") != 0)
-		embeddedpy = "embedded_py=2";
 
 	kv = findConfKey(ckv, "embedpy3");
 	if (kv->val != NULL && strcmp(kv->val, "no") != 0) {
@@ -881,6 +877,7 @@ fork_profiler(char *dbname, sabdb **stats, char **log_path)
 	struct stat path_info;
 	int error_code;
 
+	*log_path = NULL;
 	error = msab_getStatus(stats, dbname);
 	if (error != NULL) {
 		return error;
@@ -1236,6 +1233,7 @@ shutdown_profiler(char *dbname, sabdb **stats)
 
   cleanup:
 	freeConfFile(ckv);
+	free(ckv);
 	free(pidfilename);
 	return error;
 }

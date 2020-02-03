@@ -28,4 +28,13 @@ select group_concat(a, 8) from testmore;
 select group_concat(a, b) from testmore;
 select group_concat(b, a) from testmore;
 
+/* listagg is the SQL standard name of group_concat */
+select listagg(a) from testmore;
+select listagg(b) from testmore;
+
+select listagg(a, a) from testmore;
+select listagg(b, b) from testmore;
+select listagg(a, b) from testmore;
+select listagg(b, a) from testmore;
+
 rollback;

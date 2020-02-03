@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -91,10 +91,6 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 	} else if (BATcount(b) < (BUN) pieces || BATcount(b) < MIN_PIECE) {
 		pieces = 1;
 	}
-#ifdef _DEBUG_OIDX_
-	fprintf(stderr,"#bat.orderidx pieces %d\n",pieces);
-	fprintf(stderr,"#oidx ttype %s bat %s\n", ATOMname(b->ttype),ATOMname(tpe));
-#endif
 
 	/* create a temporary MAL function to sort the BAT in parallel */
 	snprintf(name, IDLENGTH, "sort%d", rand()%1000);
@@ -168,28 +164,21 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 	q->barrier = EXITsymbol;
 	q->argv[0] = loopvar;
 	pushEndInstruction(smb);
-	chkProgram(cntxt->usermodule, smb);
-	//printFunction(THRdata[0], smb, 0 , 23);
-	if (smb->errors) {
-		msg = createException(MAL, "bat.orderidx",
-		                           "Type errors in generated code");
-	} else {
-		/* evaluate MAL block and keep the ordered OID bat */
-		newstk = prepareMALstack(smb, smb->vsize);
-		if (newstk == NULL) {
-			msg = createException(MAL, "bat.orderidx", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto bailout;
-		}
-		newstk->up = 0;
-		newstk->stk[arg].vtype= TYPE_bat;
-		newstk->stk[arg].val.bval= b->batCacheid;
-		BBPretain(newstk->stk[arg].val.bval);
-		msg = runMALsequence(cntxt, smb, 1, 0, newstk, 0, 0);
-		freeStack(newstk);
+	msg = chkProgram(cntxt->usermodule, smb);
+	if( msg )
+		goto bailout;
+	/* evaluate MAL block and keep the ordered OID bat */
+	newstk = prepareMALstack(smb, smb->vsize);
+	if (newstk == NULL) {
+		msg = createException(MAL, "bat.orderidx", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
 	}
-#ifdef _DEBUG_OIDX_
-	fprintFunction(stderr, smb, 0, LIST_MAL_ALL);
-#endif
+	newstk->up = 0;
+	newstk->stk[arg].vtype= TYPE_bat;
+	newstk->stk[arg].val.bval= b->batCacheid;
+	BBPretain(newstk->stk[arg].val.bval);
+	msg = runMALsequence(cntxt, smb, 1, 0, newstk, 0, 0);
+	freeStack(newstk);
 	/* get rid of temporary MAL block */
 bailout:
 	freeSymbol(snew);

@@ -2,7 +2,7 @@
 .. License, v. 2.0.  If a copy of the MPL was not distributed with this
 .. file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ..
-.. Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+.. Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
 
 .. This document is written in reStructuredText (see
    http://docutils.sourceforge.net/ for more information).
@@ -113,7 +113,7 @@ are on their website__.
 We have installed the following programs using Chocolatey_::
 
   choco install ActivePerl ant cmake ruby
-  choco install python2 python2-x86_32 python3 python3-x86_32
+  choco install python3 python3-x86_32
 
 .. _Chocolatey: https://chocolatey.org/
 
@@ -185,16 +185,16 @@ Windows binary distribution.
 
 .. Say something about py2integration.
 
-Note that you can use either or both Python2 and Python3, and on 64
-bit architectures, either the 32 bit or 64 bit version of Python.  All
-these versions are fine for building the MonetDB suite.  It is
-possible to install all versions.  Using Chocolatey_ you can do::
+Note that on 64 bit architectures you can use either the 32 bit or 64
+bit version of Python.  All these versions are fine for building the
+MonetDB suite.  It is possible to install all versions.  Using
+Chocolatey_ you can do::
 
-  choco install python2 python3 
-  choco install python2-x86_32 python3-x86_32
+  choco install python3
+  choco install python3-x86_32
 
 The latter command only on 64 bit architectures to install the 32 bit
-verions.
+verion.
 
 .. _Python: http://www.python.org/
 
@@ -685,7 +685,7 @@ in succession for commands that you are trying to execute (note, this
 is an example: version numbers may differ)::
 
  rem Python is required
- set Path=C:\Python27;%Path%
+ set Path=%ProgramFiles%\Python37;%Path%
  rem Bison (and Diff)
  set Path=%ProgramFiles%\GnuWin32\bin;%Path%
 

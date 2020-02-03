@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /* (c) M Kersten, S Manegold
@@ -73,152 +73,11 @@ static int beat = 0;
 static int json = 0;
 static Mapi dbh;
 static MapiHdl hdl = NULL;
-static FILE *trace = NULL;
+static FILE *trace ;
 
 /*
  * Tuple level reformatting
  */
-
-static void
-renderEvent(EventRecord *ev){
-	FILE *s;
-	if(trace != NULL)
-		s = trace;
-	else
-		s = stdout;
-	if( ev->eventnr ==0 && ev->version){
-		fprintf(s, "[ ");
-		fprintf(s, "0,	");
-		fprintf(s, "0,	");
-		fprintf(s, "\"\",	" );
-		fprintf(s, "0,	");
-		fprintf(s, "\"system\",	");
-		fprintf(s, "0,	");
-		fprintf(s, "0,	");
-		fprintf(s, "0,	");
-		fprintf(s, "0,	");
-		fprintf(s, "0,	");
-		fprintf(s, "0,	");
-		fprintf(s, "\"");
-		fprintf(s, "version:%s, release:%s, threads:%s, memory:%s, host:%s, oid:%d, package:%s ",
-			ev->version, ev->release, ev->threads, ev->memory, ev->host, ev->oid, ev->package);
-		fprintf(s, "\"	]\n");
-		return ;
-	}
-	if( ev->eventnr < 0)
-		return;
-	fprintf(s, "[ ");
-	fprintf(s, "%"PRId64",	", ev->eventnr);
-	fprintf(s, "\"%s\",	", ev->time);
-	if( ev->function && *ev->function)
-		fprintf(s, "\"%s[%d]%d\",	", ev->function, ev->pc, ev->tag);
-	else
-		fprintf(s, "\"\",	");
-	fprintf(s, "%d,	", ev->thread);
-	switch(ev->state){
-	case MDB_START: fprintf(s, "\"start\",	"); break;
-	case MDB_DONE: fprintf(s, "\"done \",	"); break;
-	case MDB_WAIT: fprintf(s, "\"wait \",	"); break;
-	case MDB_PING: fprintf(s, "\"ping \",	"); break;
-	case MDB_SYSTEM: fprintf(s, "\"system\",	");
-	}
-	fprintf(s, "%"PRId64",	", ev->ticks);
-	fprintf(s, "%"PRId64",	", ev->rss);
-	fprintf(s, "%"PRId64",	", ev->size);
-	fprintf(s, "%"PRId64",	", ev->inblock);
-	fprintf(s, "%"PRId64",	", ev->oublock);
-	fprintf(s, "%"PRId64",	", ev->majflt);
-	fprintf(s, "%"PRId64",	", ev->swaps);
-	fprintf(s, "%"PRId64",	", ev->csw);
-	fprintf(s, "\"%s\"	]\n", ev->stmt);
-}
-
-static void
-convertOldFormat(char *inputfile)
-{	FILE *fdin;
-	char basefile[BUFSIZ];
-	char *buf, *e;
-	int notfirst = 0, i;
-	size_t bufsize;
-	size_t len;
-	EventRecord event;
-
-	buf = malloc(BUFSIZ);
-	if (buf == NULL) {
-		fprintf(stderr, "Could not allocate memory\n");
-		return;
-	}
-	bufsize = BUFSIZ;
-	fprintf(stderr, "Converting a file to JSON\n");
-
-	fdin = fopen(inputfile,"r");
-	if( fdin == NULL){
-		fprintf(stderr,"Could not open the input file %s\n", inputfile);
-		free(buf);
-		return;
-	}
-	/* find file name extension */
-	e = strrchr(inputfile, '.');
-	if (e != NULL) {
-		char *s;
-		/* if last dot before last /, ignore the dot */
-		if ((s = strrchr(inputfile, '/')) != NULL && s > e)
-			e = NULL;
-#if DIR_SEP != '/'
-		/* on Windows, look at both directory separators */
-		else if ((s = strrchr(inputfile, DIR_SEP)) != NULL && s > e)
-			e = NULL;
-#endif
-	}
-	if (e == NULL)
-		i = (int) strlen(inputfile);
-	else
-		i = (int) (e - inputfile);
-	snprintf(basefile, BUFSIZ, "%.*s.json", i, inputfile);
-	trace = fopen(basefile, "w");
-	if( trace == NULL){
-		fprintf(stderr,"Could not create the output file %s\n", basefile);
-		free(buf);
-		fclose(fdin);
-		return;
-	}
-	fprintf(trace,"[\n{");
-	len = 0;
-	event = (EventRecord) {0};
-	while (fgets(buf + len, (int) (bufsize - len), fdin) != NULL) {
-		while ((e = strchr(buf + len, '\n')) == NULL) {
-			/* rediculously long line */
-			len += strlen(buf + len); /* i.e. len = strlen(buf) */
-			bufsize += BUFSIZ;
-			if ((e = realloc(buf, bufsize)) == NULL) {
-				free(buf);
-				fclose(fdin);
-				fclose(trace);
-				fprintf(stderr, "Could not allocate memory\n");
-				return;
-			}
-			buf = e;
-			if (fgets(buf + len, (int) (bufsize - len), fdin) == NULL) {
-				/* incomplete line */
-				e = NULL; /* no newline to zap */
-				break;
-			}
-		}
-		if (e)
-			*e = 0;	/* zap newline */
-		i = lineparser(buf, &event);
-		if (i == 0) {
-			renderJSONevent(trace, &event, notfirst);
-			resetEventRecord(&event);
-			notfirst = 1;
-		}
-	}
-	fprintf(trace,"}]\n");
-	free(buf);
-	fclose(fdin);
-	fclose(trace);
-	return;
-}
 
 static void
 usageStethoscope(void)
@@ -229,7 +88,6 @@ usageStethoscope(void)
     fprintf(stderr, "  -P | --password=<password>\n");
     fprintf(stderr, "  -p | --port=<portnr>\n");
     fprintf(stderr, "  -h | --host=<hostname>\n");
-    fprintf(stderr, "  -c | --convert=<old formated file>\n");
     fprintf(stderr, "  -j | --json\n");
     fprintf(stderr, "  -o | --output=<file>\n");
     fprintf(stderr, "  -b | --beat=<delay> in milliseconds (default 50)\n");
@@ -245,17 +103,13 @@ static void
 stopListening(int i)
 {
 	fprintf(stderr,"stethoscope: signal %d received\n",i);
-	if( dbh)
+	if(dbh)
 		doQ("profiler.stop();");
 stop_disconnect:
 	// show follow up action only once
-	/*
-	if(trace) {
-		fflush(trace);
-		int res = fclose(trace);
-		assert(res==0);
+	if(trace) { fflush(trace);
+		fclose(trace);
 	}
-	*/
 	if(dbh)
 		mapi_disconnect(dbh);
 	/* exit(0); */
@@ -267,7 +121,6 @@ main(int argc, char **argv)
 	ssize_t  n;
 	size_t len, buflen;
 	char *host = NULL;
-	char *conversion = NULL;
 	int portnr = 0;
 	char *dbname = NULL;
 	char *uri = NULL;
@@ -275,8 +128,11 @@ main(int argc, char **argv)
 	char *password = NULL;
 	char buf[BUFSIZ], *buffer, *e, *response;
 	int done = 0;
-	EventRecord *ev = calloc(1, sizeof(EventRecord));
+	int first = 1;
+	EventRecord *ev = (EventRecord *) malloc(sizeof(EventRecord));
 
+	(void) first;
+	memset(ev, 0, sizeof(EventRecord));
 	static struct option long_options[13] = {
 		{ "dbname", 1, 0, 'd' },
 		{ "user", 1, 0, 'u' },
@@ -284,7 +140,6 @@ main(int argc, char **argv)
 		{ "password", 1, 0, 'P' },
 		{ "host", 1, 0, 'h' },
 		{ "help", 0, 0, '?' },
-		{ "convert", 1, 0, 'c'},
 		{ "json", 0, 0, 'j'},
 		{ "pretty", 0, 0, 'y'},
 		{ "output", 1, 0, 'o' },
@@ -293,7 +148,7 @@ main(int argc, char **argv)
 		{ 0, 0, 0, 0 }
 	};
 
-	if( ev == NULL) {
+	if(ev == NULL) {
 		fprintf(stderr,"could not allocate space\n");
 		exit(-1);
 	}
@@ -340,9 +195,6 @@ main(int argc, char **argv)
 		case 'h':
 			host = optarg;
 			break;
-		case 'c':
-			conversion = optarg;
-			break;
 		case 'j':
 			json = 1;
 			break;
@@ -362,10 +214,6 @@ main(int argc, char **argv)
 		}
 	}
 
-	if( conversion){
-		convertOldFormat(conversion);
-		return 0;
-	}
 
 	if(dbname == NULL){
 		usageStethoscope();
@@ -416,19 +264,19 @@ main(int argc, char **argv)
 		fprintf(stderr,"-- connection with server %s\n", uri ? uri : host);
 
 	snprintf(buf,BUFSIZ-1,"profiler.setheartbeat(%d);",beat);
-	if( debug)
+	if(debug)
 		fprintf(stderr,"-- %s\n",buf);
 	doQ(buf);
 
 	snprintf(buf, BUFSIZ, "profiler.openstream();");
-	if( debug)
+	if(debug)
 		fprintf(stderr,"--%s\n",buf);
 	doQ(buf);
 
 	if(filename != NULL) {
 		trace = fopen(filename,"w");
 
-		if( trace == NULL) {
+		if(trace == NULL) {
 			fprintf(stderr,"Could not create file '%s', printing to stdout instead...\n", filename);
 			filename = NULL;
 		}
@@ -437,18 +285,22 @@ main(int argc, char **argv)
 	len = 0;
 	buflen = BUFSIZ;
 	buffer = (char *) malloc(buflen);
-	if( buffer == NULL){
+	if(buffer == NULL){
 		fprintf(stderr,"Could not create input buffer\n");
 		exit(-1);
 	}
 	conn = mapi_get_from(dbh);
+	if(!trace)
+		trace = stdout;
+	if(!json)
+		renderHeader(trace);
 	while ((n = mnstr_read(conn, buffer + len, 1, buflen - len-1)) >= 0) {
 		if (n == 0 &&
 		    (n = mnstr_read(conn, buffer + len, 1, buflen - len-1)) <= 0)
 			break;
 		buffer[len + n] = 0;
 		response = buffer;
-		if( debug)
+		if(debug)
 				printf("%s", response);
 		if(json) {
 			if(trace != NULL) {
@@ -461,12 +313,15 @@ main(int argc, char **argv)
 		}
 		while ((e = strchr(response, '\n')) != NULL) {
 			*e = 0;
-			if(!json) {
-				//printf("%s\n", response);
+			if(json) 
+				printf("%s\n", response);
+			else{
+				if (debug)
+					printf("%s\n", response);
 				done= keyvalueparser(response,ev);
-				if( done== 1){
-					renderEvent(ev);
-					resetEventRecord(ev);
+				if(done== 1){
+					renderSummary(trace, ev, "");
+					first = 0;
 				}
 			}
 			response = e + 1;
@@ -474,9 +329,9 @@ main(int argc, char **argv)
 
 		/* handle the case that the line is too long to
 		 * fit in the buffer */
-		if( response == buffer){
+		if(response == buffer){
 			char *new =  (char *) realloc(buffer, buflen + BUFSIZ);
-			if( new == NULL){
+			if(new == NULL){
 				fprintf(stderr,"Could not extend input buffer\n");
 				exit(-1);
 			}

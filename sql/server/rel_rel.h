@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #ifndef _REL_REL_H_
@@ -38,9 +38,6 @@
 #define is_sql_join(X)    ((X & sql_join) == sql_join)
 #define is_sql_outer(X)   ((X & sql_outer) == sql_outer)
 #define is_sql_group_totals(X) ((X & sql_group_totals) == sql_group_totals)
-
-#define rel_groupby_gbe(m,r,e) rel_groupby(m, r, append(new_exp_list(m->sa), e))
-#define new_rel_list(sa) sa_list(sa)
 
 #define is_updateble(rel) \
 	(rel->op == op_basetable || \

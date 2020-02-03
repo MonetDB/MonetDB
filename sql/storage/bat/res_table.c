@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -23,7 +23,7 @@ bat_decref(bat bid)
 }
 
 res_table *
-res_table_create(sql_trans *tr, int res_id, oid query_id, int nr_cols, sql_query_t type, res_table *next, void *O)
+res_table_create(sql_trans *tr, int res_id, oid query_id, int nr_cols, mapi_query_t type, res_table *next, void *O)
 {
 	BAT *order = (BAT*)O;
 	res_table *t = ZNEW(res_table);

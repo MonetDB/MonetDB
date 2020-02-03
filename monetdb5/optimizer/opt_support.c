@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
  /* (c) M. Kersten
@@ -17,47 +17,6 @@
 #include "opt_multiplex.h"
 #include "optimizer_private.h"
 #include "manifold.h"
-
-/*
- * Optimizer catalog with runtime statistics;
- */
-struct OPTcatalog {
-	char *name;
-	int enabled;
-	int calls;
-	int actions;
-} optcatalog[]= {
-{"aliases",		0,	0,	0},
-{"coercions",	0,	0,	0},
-{"commonTerms",	0,	0,	0},
-{"constants",	0,	0,	0},
-{"costModel",	0,	0,	0},
-{"dataflow",	0,	0,	0},
-{"deadcode",	0,	0,	0},
-{"emptybind",	0,	0,	0},
-{"evaluate",	0,	0,	0},
-{"garbage",		0,	0,	0},
-{"generator",	0,	0,	0},
-{"history",		0,	0,	0},
-{"inline",		0,	0,	0},
-{"projectionpath",	0,	0,	0},
-{"jit",			0,	0,	0},
-{"json",		0,	0,	0},
-{"macro",		0,	0,	0},
-{"matpack",		0,	0,	0},
-{"mergetable",	0,	0,	0},
-{"mitosis",		0,	0,	0},
-{"multiplex",	0,	0,	0},
-{"oltp",		0,	0,	0},
-{"postfix",		0,	0,	0},
-{"reduce",		0,	0,	0},
-{"remap",		0,	0,	0},
-{"remote",		0,	0,	0},
-{"reorder",		0,	0,	0},
-{"wlcr",		0,	0,	0},
-{"pushselect",	0,	0,	0},
-{ 0,	0,	0,	0}
-};
 
 /* some optimizers can only be applied once.
  * The optimizer trace at the end of the MAL block
@@ -76,17 +35,17 @@ optimizerIsApplied(MalBlkPtr mb, str optname)
 	return 0;
 }
 
-/*
- * Limit the loop count in the optimizer to guard against indefinite
- * recursion, provided the optimizer does not itself generate
- * a growing list.
+/* Hypothetical, optimizers may massage the plan in such a way 
+ * that multiple passes are needed.
+ * However, the current SQL driven approach only expects a single
+ * non-repeating pipeline of optimizer steps stored at the end of the MAL block.
+ * A single scan forward over the MAL plan is assumed.
  */
 str
 optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 {
 	InstrPtr p;
-	int pc;
-	int qot = 0;
+	int pc, oldstop;
 	str msg = MAL_SUCCEED;
 	int cnt = 0;
 	int actions = 0;
@@ -105,51 +64,48 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 	// strong defense line, assure that MAL plan is initially correct
 	if( mb->errors == 0 && mb->stop > 1){
 		resetMalBlk(mb, mb->stop);
-		chkTypes(cntxt->usermodule, mb, FALSE);
-		chkFlow(mb);
-		chkDeclarations(mb);
-		if( msg) 
+		msg = chkTypes(cntxt->usermodule, mb, FALSE);
+		if (!msg)
+			msg = chkFlow(mb);
+		if (!msg)
+			msg = chkDeclarations(mb);
+		if (msg) 
 			return msg;
-		if( mb->errors != MAL_SUCCEED){
+		if (mb->errors != MAL_SUCCEED){
 			msg = mb->errors;
 			mb->errors = MAL_SUCCEED;
 			return msg;
 		}
 	}
 
-	/* Optimizers may massage the plan in such a way that a new pass is needed.
-     * When no optimzer call is found, then terminate. */
-	do {
-		qot = 0;
-		for (pc = 0; pc < mb->stop; pc++) {
-			p = getInstrPtr(mb, pc);
-			if (getModuleId(p) == optimizerRef && p->fcn && p->token != REMsymbol) {
-				/* all optimizers should behave like patterns */
-				/* However, we don't have a stack now */
-				qot++;
-				actions++;
-				msg = (str) (*p->fcn) (cntxt, mb, 0, p);
-				if (msg) {
-					str place = getExceptionPlace(msg);
-					str nmsg = NULL;
-					if (place){
-						nmsg = createException(getExceptionType(msg), place, "%s", getExceptionMessageAndState(msg));
-						GDKfree(place);
-					}
-					if (nmsg ) {
-						freeException(msg);
-						msg = nmsg;
-					} 
-					goto wrapup;
+	oldstop = mb->stop;
+	for (pc = 0; pc < mb->stop; pc++) {
+		p = getInstrPtr(mb, pc);
+		if (getModuleId(p) == optimizerRef && p->fcn && p->token != REMsymbol) {
+			actions++;
+			msg = (str) (*p->fcn) (cntxt, mb, 0, p);
+			if (msg) {
+				str place = getExceptionPlace(msg);
+				str nmsg = NULL;
+				if (place){
+					nmsg = createException(getExceptionType(msg), place, "%s", getExceptionMessageAndState(msg));
+					GDKfree(place);
 				}
-				if (cntxt->mode == FINISHCLIENT){
-					mb->optimize = GDKusec() - clk;
-					throw(MAL, "optimizeMALBlock", SQLSTATE(42000) "prematurely stopped client");
-				}
-				pc= -1;
+				if (nmsg ) {
+					freeException(msg);
+					msg = nmsg;
+				} 
+				goto wrapup;
 			}
+			if (cntxt->mode == FINISHCLIENT){
+				mb->optimize = GDKusec() - clk;
+				throw(MAL, "optimizeMALBlock", SQLSTATE(42000) "prematurely stopped client");
+			}
+			/* the MAL block may have changed */
+			pc += mb->stop - oldstop - 1;
+			oldstop = mb->stop;
 		}
-	} while (qot && cnt++ < mb->stop);
+	}
 
 wrapup:
 	/* Keep the total time spent on optimizing the plan for inspection */
@@ -257,7 +213,7 @@ isDependent(InstrPtr p, InstrPtr q){
  * each MAL function. This calls for accessing the function MAL block
  * and to inspect the arguments of the signature.
  */
-int
+inline int
 isUnsafeFunction(InstrPtr q)
 {
 	InstrPtr p;
@@ -270,7 +226,7 @@ isUnsafeFunction(InstrPtr q)
 	return q->blk->unsafeProp;
 }
 
-int
+static inline int
 isSealedFunction(InstrPtr q)
 {
 	InstrPtr p;
@@ -340,7 +296,7 @@ safetyBarrier(InstrPtr p, InstrPtr q)
 }
 
 
-int
+inline int
 isUpdateInstruction(InstrPtr p){
 	if ( getModuleId(p) == sqlRef &&
 	   ( getFunctionId(p) == inplaceRef ||
@@ -358,6 +314,7 @@ isUpdateInstruction(InstrPtr p){
 			return TRUE;
 	return FALSE;
 }
+
 int
 hasSideEffects(MalBlkPtr mb, InstrPtr p, int strict)
 {
@@ -402,9 +359,7 @@ hasSideEffects(MalBlkPtr mb, InstrPtr p, int strict)
 		getModuleId(p) == alarmRef)
 		return TRUE;
 		
-	if( getModuleId(p) == pyapiRef ||
-		getModuleId(p) == pyapimapRef ||
-		getModuleId(p) == pyapi3Ref ||
+	if( getModuleId(p) == pyapi3Ref ||
 		getModuleId(p) == pyapi3mapRef ||
 		getModuleId(p) == rapiRef || 
 		getModuleId(p) == capiRef)
@@ -493,7 +448,7 @@ isSideEffectFree(MalBlkPtr mb){
  * identification of (partial) blocking instructions. A conservative
  * definition can be used.
  */
-int
+inline int
 isBlocking(InstrPtr p)
 {
 	if (blockStart(p) || blockExit(p) || blockCntrl(p))
@@ -536,7 +491,7 @@ isOrderDepenent(InstrPtr p)
 	return 0;
 }
 
-int isMapOp(InstrPtr p){
+inline int isMapOp(InstrPtr p){
 	if (isUnsafeFunction(p) || isSealedFunction(p))
 		return 0;
 	return	getModuleId(p) &&
@@ -546,12 +501,11 @@ int isMapOp(InstrPtr p){
 		 (getModuleId(p) != batcalcRef && getModuleId(p) != batRef && strncmp(getModuleId(p), "bat", 3) == 0) ||
 		 (getModuleId(p) == mkeyRef)) && !isOrderDepenent(p) &&
 		 getModuleId(p) != batrapiRef &&
-		 getModuleId(p) != batpyapiRef &&
 		 getModuleId(p) != batpyapi3Ref &&
 		 getModuleId(p) != batcapiRef;
 }
 
-int isLikeOp(InstrPtr p){
+inline int isLikeOp(InstrPtr p){
 	return	(getModuleId(p) == batalgebraRef &&
 		(getFunctionId(p) == likeRef || 
 		 getFunctionId(p) == not_likeRef || 
@@ -559,14 +513,14 @@ int isLikeOp(InstrPtr p){
 		 getFunctionId(p) == not_ilikeRef));
 }
 
-int 
+inline int 
 isTopn(InstrPtr p)
 {
 	return ((getModuleId(p) == algebraRef && getFunctionId(p) == firstnRef) ||
 			isSlice(p));
 }
 
-int 
+inline int 
 isSlice(InstrPtr p)
 {
 	return (getModuleId(p) == algebraRef &&
@@ -579,12 +533,12 @@ isSample(InstrPtr p)
 	return (getModuleId(p) == sampleRef && getFunctionId(p) == subuniformRef);
 }
 
-int isOrderby(InstrPtr p){
+inline int isOrderby(InstrPtr p){
 	return getModuleId(p) == algebraRef &&
 		getFunctionId(p) == sortRef;
 }
 
-int 
+inline int 
 isMatJoinOp(InstrPtr p)
 {
 	return (isSubJoin(p) || (getModuleId(p) == algebraRef &&
@@ -597,14 +551,14 @@ isMatJoinOp(InstrPtr p)
 		));
 }
 
-int 
+inline int 
 isMatLeftJoinOp(InstrPtr p)
 {
 	return (getModuleId(p) == algebraRef && 
 		getFunctionId(p) == leftjoinRef);
 }
 
-int isDelta(InstrPtr p){
+inline int isDelta(InstrPtr p){
 	return
 			(getModuleId(p)== sqlRef && (
 				getFunctionId(p)== deltaRef ||
@@ -627,7 +581,7 @@ int isFragmentGroup2(InstrPtr p){
 		);
 }
 
-int isSelect(InstrPtr p)
+inline int isSelect(InstrPtr p)
 {
 	char *func = getFunctionId(p);
 	size_t l = func?strlen(func):0;
@@ -635,7 +589,7 @@ int isSelect(InstrPtr p)
 	return (l >= 6 && strcmp(func+l-6,"select") == 0);
 }
 
-int isSubJoin(InstrPtr p)
+inline int isSubJoin(InstrPtr p)
 {
 	char *func = getFunctionId(p);
 	size_t l = func?strlen(func):0;
@@ -643,7 +597,7 @@ int isSubJoin(InstrPtr p)
 	return (l >= 7 && strcmp(func+l-7,"join") == 0);
 }
 
-int isMultiplex(InstrPtr p)
+inline int isMultiplex(InstrPtr p)
 {
 	return (malRef && (getModuleId(p) == malRef || getModuleId(p) == batmalRef) &&
 		getFunctionId(p) == multiplexRef);

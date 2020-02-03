@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -110,7 +110,7 @@ OPTremoveUnusedBlocks(Client cntxt, MalBlkPtr mb)
 			mb->stmt[j] = NULL;
 	}
 	if (action)
-		chkTypes(cntxt->usermodule, mb, TRUE);
+		msg = chkTypes(cntxt->usermodule, mb, TRUE);
 	return msg;
 }
 
@@ -219,22 +219,29 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		msg = OPTremoveUnusedBlocks(cntxt, mb);
 	cntxt->itrace = debugstate;
 
-    /* Defense line against incorrect plans */
+    	/* Defense line against incorrect plans */
 	/* Plan is unaffected */
-	chkTypes(cntxt->usermodule, mb, FALSE);
-	chkFlow(mb);
-	chkDeclarations(mb);
-    
-    /* keep all actions taken as a post block comment */
+	if (!msg)
+		msg = chkTypes(cntxt->usermodule, mb, FALSE);
+	if (!msg)
+		msg = chkFlow(mb);
+	if (!msg)
+		msg = chkDeclarations(mb);
+    	/* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;
-    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","evaluate",actions,usec);
-    newComment(mb,buf);
+    	snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","evaluate",actions,usec);
+    	newComment(mb,buf);
 	if( actions > 0)
 		addtoMalBlkHistory(mb);
 
 wrapup:
-	if ( env) freeStack(env);
-	if(assigned) GDKfree(assigned);
-	if(alias)	GDKfree(alias);
+	if (env) {
+		assert(env->stktop < env->stksize);
+		freeStack(env);
+	}
+	if (assigned) 
+		GDKfree(assigned);
+	if (alias)	
+		GDKfree(alias);
 	return msg;
 }

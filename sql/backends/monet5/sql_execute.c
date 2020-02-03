@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -187,8 +187,8 @@ SQLsetTrace(Client cntxt, MalBlkPtr mb)
 
 	pushInstruction(mb,resultset);
 	pushEndInstruction(mb);
-	chkTypes(cntxt->usermodule, mb, TRUE);
-
+	if( msg == MAL_SUCCEED)
+		msg = chkTypes(cntxt->usermodule, mb, TRUE);
 	return msg;
 }
 
@@ -727,10 +727,6 @@ SQLengineIntern(Client c, backend *be)
 		sqlcleanup(be->mvc, 0);
 		return MAL_SUCCEED;
 	}
-
-#ifdef SQL_SCENARIO_DEBUG
-	fprintf(stderr, "#Ready to execute SQL statement\n");
-#endif
 
 	if (c->curprg->def->stop == 1) {
 		if (mvc_status(m)) {

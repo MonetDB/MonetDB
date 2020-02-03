@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -41,13 +41,6 @@
  * Once it exceeds a threshold, we call upon the kernel to
  * ensure we are still within safe bounds.
  */
-/*
- * The clearStack operation throws away any space occupied by variables
- * Freeing the stack itself is automatic upon return from the interpreter
- * context. Since the stack is allocated and zeroed on the calling stack,
- * it may happen that entries are never set to a real value.
- * This can be recognized by the vtype component
- */
 #include "monetdb_config.h"
 #include "mal_stack.h"
 #include "mal_exception.h"
@@ -84,6 +77,34 @@ reallocGlobalStack(MalStkPtr old, int cnt)
 	GDKfree(old);
 	return s;
 }
+/*
+ * The clearStack operation throws away any space occupied by variables
+ * Freeing the stack itself is automatic upon return from the interpreter
+ * context. Since the stack is allocated and zeroed on the calling stack,
+ * it may happen that entries are never set to a real value.
+ * This can be recognized by the vtype component
+ */
+static void
+clearStack(MalStkPtr s)
+{
+	ValPtr v;
+	int i;
+
+	if (!s) return;
+	
+	i = s->stktop;
+	for (v = s->stk; i > 0; i--, v++)
+		if (ATOMextern(v->vtype) && v->val.pval) {
+			GDKfree(v->val.pval);
+			v->vtype = 0;
+			v->val.pval = NULL;
+		} else if (BATatoms[v->vtype].atomUnfix) {
+			BATatoms[v->vtype].atomUnfix(VALget(v));
+			v->vtype = 0;
+			v->val.pval = NULL;
+		}
+	s->stkbot = 0;
+}
 
 /*
  * When you add a value to the stack, you should ensure that
@@ -98,27 +119,5 @@ freeStack(MalStkPtr stk)
 		clearStack(stk);
 		GDKfree(stk);
 	}
-}
-
-void
-clearStack(MalStkPtr s)
-{
-	ValPtr v;
-	int i;
-
-	if (!s) return;
-	
-	i = s->stktop - 1;
-	for (v = s->stk; i > 0; i--, v++)
-		if (ATOMextern(v->vtype) && v->val.pval) {
-			GDKfree(v->val.pval);
-			v->vtype = 0;
-			v->val.pval = NULL;
-		} else if (BATatoms[v->vtype].atomUnfix) {
-			BATatoms[v->vtype].atomUnfix(VALget(v));
-			v->vtype = 0;
-			v->val.pval = NULL;
-		}
-	s->stkbot = 0;
 }
 

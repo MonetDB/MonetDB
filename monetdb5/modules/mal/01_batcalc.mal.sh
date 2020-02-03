@@ -2,7 +2,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
 
 sed '/^$/q' $0			# copy copyright from this file
 
@@ -425,8 +425,8 @@ done
 for func in '<:lt' '<=:le' '>:gt' '>=:ge' '==:eq' '!=:ne'; do
     op=${func%:*}
     func=${func#*:}
-    for tp in bit str blob oid; do
-	cat <<EOF
+    tp=any_1
+    cat <<EOF
 pattern $op(b1:bat[:$tp],b2:bat[:$tp]) :bat[:bit]
 address CMDbat${func^^}
 comment "Return B1 $op B2";
@@ -447,9 +447,9 @@ address CMDbat${func^^}
 comment "Return V $op B with candidates list";
 
 EOF
-	case $op in
-	== | !=)
-	    cat <<EOF
+    case $op in
+    == | !=)
+    cat <<EOF
 pattern $op(b1:bat[:$tp],b2:bat[:$tp],nil_matches:bit) :bat[:bit]
 address CMDbat${func^^}
 comment "Return B1 $op B2";
@@ -470,11 +470,11 @@ address CMDbat${func^^}
 comment "Return V $op B with candidates list";
 
 EOF
-	    ;;
-	esac
-    done
+    ;;
+    esac
     for tp1 in ${numeric[@]}; do
 	for tp2 in ${numeric[@]}; do
+	    [[ $tp1 == $tp2 ]] && continue
 	    cat <<EOF
 pattern $op(b1:bat[:$tp1],b2:bat[:$tp2]) :bat[:bit]
 address CMDbat${func^^}

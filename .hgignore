@@ -91,3 +91,6 @@ NT/unistd.h
 # package building on Mac OS X
 MacOSX/build
 MacOSX/usr
+
+# Don't keep the result of the documentation compilation
+documentation/build

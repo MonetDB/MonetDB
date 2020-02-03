@@ -29,3 +29,4 @@ io.print(c);
 io.print(d);
 
 optimizer.mergetable();
+optimizer.garbageCollector();

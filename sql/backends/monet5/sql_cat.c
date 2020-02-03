@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -771,6 +771,7 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f)
 	char is_func = (f->type != F_PROC);
 	char *F = is_aggr ? "AGGREGATE" : (is_func ? "FUNCTION" : "PROCEDURE");
 	char *KF = f->type == F_FILT ? "FILTER " : f->type == F_UNION ? "UNION " : "";
+	int clientid = sql->clientid;
 
 	(void)fname;
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
@@ -782,7 +783,7 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f)
 	switch (nf->lang) {
 	case FUNC_LANG_INT:
 	case FUNC_LANG_MAL: /* shouldn't be reachable, but leave it here */
-		if (!backend_resolve_function(sql, nf))
+		if (!backend_resolve_function(&clientid, nf))
 			throw(SQL,"sql.create_func", SQLSTATE(3F000) "CREATE %s%s: external name %s.%s not bound", KF, F, nf->mod, nf->base.name);
 		if (nf->query == NULL)
 			break;

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -687,6 +687,7 @@
 #include "stream.h"		/* include before mapi.h */
 #include "stream_socket.h"
 #include "mapi.h"
+#include "mapi_prompt.h"
 #include "mcrypt.h"
 #include "matomic.h"
 #include "mstring.h"
@@ -735,8 +736,55 @@
 
 #define MAPIBLKSIZE	256	/* minimum buffer shipped */
 
+#define MAPI_AUTO	0	/* automatic type detection */
+#define MAPI_TINY	1
+#define MAPI_UTINY	2
+#define MAPI_SHORT	3
+#define MAPI_USHORT	4
+#define MAPI_INT	5
+#define MAPI_UINT	6
+#define MAPI_LONG	7
+#define MAPI_ULONG	8
+#define MAPI_LONGLONG	9
+#define MAPI_ULONGLONG	10
+#define MAPI_CHAR	11
+#define MAPI_VARCHAR	12
+#define MAPI_FLOAT	13
+#define MAPI_DOUBLE	14
+#define MAPI_DATE	15
+#define MAPI_TIME	16
+#define MAPI_DATETIME	17
+#define MAPI_NUMERIC	18
+
+#define PLACEHOLDER	'?'
+
 /* number of elements in an array */
 #define NELEM(arr)	(sizeof(arr) / sizeof(arr[0]))
+
+/* three structures used for communicating date/time information */
+/* these structs are deliberately compatible with the ODBC versions
+   SQL_DATE_STRUCT, SQL_TIME_STRUCT, and SQL_TIMESTAMP_STRUCT */
+typedef struct {		/* used by MAPI_DATE */
+	short year;
+	unsigned short month;
+	unsigned short day;
+} MapiDate;
+
+typedef struct {		/* used by MAPI_TIME */
+	unsigned short hour;
+	unsigned short minute;
+	unsigned short second;
+} MapiTime;
+
+typedef struct {		/* used by MAPI_DATETIME */
+	short year;
+	unsigned short month;
+	unsigned short day;
+	unsigned short hour;
+	unsigned short minute;
+	unsigned short second;
+	unsigned int fraction;	/* in 1000 millionths of a second (10e-9) */
+} MapiDateTime;
 
 /* information about the columns in a result set */
 struct MapiColumn {
@@ -2696,6 +2744,7 @@ mapi_reconnect(Mapi mid)
 				hash = malloc(len);
 				if (hash == NULL) {
 					close_connection(mid);
+					free(pwh);
 					return mapi_setError(mid, "malloc failure", "mapi_reconnect", MERROR);
 				}
 				snprintf(hash, len, "{%s}%s", *algs, pwh);

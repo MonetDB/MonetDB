@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -1047,7 +1047,7 @@ snapshot_bats(stream *plan, const char *db_dir)
 		goto end;
 	}
 	ret = snapshot_immediate_copy_file(plan, bbpdir, bbpdir + strlen(db_dir) + 1);
-	if (ret == GDK_FAIL)
+	if (ret != GDK_SUCCEED)
 		goto end;
 
 	// Open the catalog and parse the header

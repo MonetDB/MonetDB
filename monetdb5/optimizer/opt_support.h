@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #ifndef _OPT_SUPPORT_H
@@ -26,7 +26,6 @@ mal_export void showOptimizerHistory(void);
 mal_export int optimizerIsApplied(MalBlkPtr mb, str name);
 mal_export int isUnsafeInstruction(InstrPtr q);
 mal_export int isUnsafeFunction(InstrPtr q);
-mal_export int isSealedFunction(InstrPtr q);
 mal_export int safetyBarrier(InstrPtr p, InstrPtr q);
 mal_export int hasSameSignature(MalBlkPtr mb, InstrPtr p, InstrPtr q);
 mal_export int hasSameArguments(MalBlkPtr mb, InstrPtr p, InstrPtr q);

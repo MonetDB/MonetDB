@@ -2,7 +2,7 @@
 -- License, v. 2.0.  If a copy of the MPL was not distributed with this
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/.
 --
--- Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+-- Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
 
 create aggregate stddev_samp(val TINYINT) returns DOUBLE
 	external name "aggr"."stdev";
@@ -23,21 +23,39 @@ create aggregate stddev_samp(val DOUBLE) returns DOUBLE
 	external name "aggr"."stdev";
 GRANT EXECUTE ON AGGREGATE stddev_samp(DOUBLE) TO PUBLIC;
 
-create aggregate stddev_samp(val DATE) returns DOUBLE
-	external name "aggr"."stdev";
-GRANT EXECUTE ON AGGREGATE stddev_samp(DATE) TO PUBLIC;
-create aggregate stddev_samp(val TIME) returns DOUBLE
-	external name "aggr"."stdev";
-GRANT EXECUTE ON AGGREGATE stddev_samp(TIME) TO PUBLIC;
-create aggregate stddev_samp(val TIMESTAMP) returns DOUBLE
-	external name "aggr"."stdev";
-GRANT EXECUTE ON AGGREGATE stddev_samp(TIMESTAMP) TO PUBLIC;
 create aggregate stddev_samp(val INTERVAL SECOND) returns DOUBLE
 	external name "aggr"."stdev";
 GRANT EXECUTE ON AGGREGATE stddev_samp(INTERVAL SECOND) TO PUBLIC;
 create aggregate stddev_samp(val INTERVAL MONTH) returns DOUBLE
 	external name "aggr"."stdev";
 GRANT EXECUTE ON AGGREGATE stddev_samp(INTERVAL MONTH) TO PUBLIC;
+
+create window stddev_samp(val TINYINT) returns DOUBLE
+	external name "sql"."stdev";
+GRANT EXECUTE ON WINDOW stddev_samp(TINYINT) TO PUBLIC;
+create window stddev_samp(val SMALLINT) returns DOUBLE
+	external name "sql"."stdev";
+GRANT EXECUTE ON WINDOW stddev_samp(SMALLINT) TO PUBLIC;
+create window stddev_samp(val INTEGER) returns DOUBLE
+	external name "sql"."stdev";
+GRANT EXECUTE ON WINDOW stddev_samp(INTEGER) TO PUBLIC;
+create window stddev_samp(val BIGINT) returns DOUBLE
+	external name "sql"."stdev";
+GRANT EXECUTE ON WINDOW stddev_samp(BIGINT) TO PUBLIC;
+create window stddev_samp(val REAL) returns DOUBLE
+	external name "sql"."stdev";
+GRANT EXECUTE ON WINDOW stddev_samp(REAL) TO PUBLIC;
+create window stddev_samp(val DOUBLE) returns DOUBLE
+	external name "sql"."stdev";
+GRANT EXECUTE ON WINDOW stddev_samp(DOUBLE) TO PUBLIC;
+
+create window stddev_samp(val INTERVAL SECOND) returns DOUBLE
+	external name "sql"."stdev";
+GRANT EXECUTE ON WINDOW stddev_samp(INTERVAL SECOND) TO PUBLIC;
+create window stddev_samp(val INTERVAL MONTH) returns DOUBLE
+	external name "sql"."stdev";
+GRANT EXECUTE ON WINDOW stddev_samp(INTERVAL MONTH) TO PUBLIC;
+
 
 create aggregate stddev_pop(val TINYINT) returns DOUBLE
 	external name "aggr"."stdevp";
@@ -58,21 +76,39 @@ create aggregate stddev_pop(val DOUBLE) returns DOUBLE
 	external name "aggr"."stdevp";
 GRANT EXECUTE ON AGGREGATE stddev_pop(DOUBLE) TO PUBLIC;
 
-create aggregate stddev_pop(val DATE) returns DOUBLE
-	external name "aggr"."stdevp";
-GRANT EXECUTE ON AGGREGATE stddev_pop(DATE) TO PUBLIC;
-create aggregate stddev_pop(val TIME) returns DOUBLE
-	external name "aggr"."stdevp";
-GRANT EXECUTE ON AGGREGATE stddev_pop(TIME) TO PUBLIC;
-create aggregate stddev_pop(val TIMESTAMP) returns DOUBLE
-	external name "aggr"."stdevp";
-GRANT EXECUTE ON AGGREGATE stddev_pop(TIMESTAMP) TO PUBLIC;
 create aggregate stddev_pop(val INTERVAL SECOND) returns DOUBLE
 	external name "aggr"."stdevp";
 GRANT EXECUTE ON AGGREGATE stddev_pop(INTERVAL SECOND) TO PUBLIC;
 create aggregate stddev_pop(val INTERVAL MONTH) returns DOUBLE
 	external name "aggr"."stdevp";
 GRANT EXECUTE ON AGGREGATE stddev_pop(INTERVAL MONTH) TO PUBLIC;
+
+create window stddev_pop(val TINYINT) returns DOUBLE
+	external name "sql"."stdevp";
+GRANT EXECUTE ON WINDOW stddev_pop(TINYINT) TO PUBLIC;
+create window stddev_pop(val SMALLINT) returns DOUBLE
+	external name "sql"."stdevp";
+GRANT EXECUTE ON WINDOW stddev_pop(SMALLINT) TO PUBLIC;
+create window stddev_pop(val INTEGER) returns DOUBLE
+	external name "sql"."stdevp";
+GRANT EXECUTE ON WINDOW stddev_pop(INTEGER) TO PUBLIC;
+create window stddev_pop(val BIGINT) returns DOUBLE
+	external name "sql"."stdevp";
+GRANT EXECUTE ON WINDOW stddev_pop(BIGINT) TO PUBLIC;
+create window stddev_pop(val REAL) returns DOUBLE
+	external name "sql"."stdevp";
+GRANT EXECUTE ON WINDOW stddev_pop(REAL) TO PUBLIC;
+create window stddev_pop(val DOUBLE) returns DOUBLE
+	external name "sql"."stdevp";
+GRANT EXECUTE ON WINDOW stddev_pop(DOUBLE) TO PUBLIC;
+
+create window stddev_pop(val INTERVAL SECOND) returns DOUBLE
+	external name "sql"."stdevp";
+GRANT EXECUTE ON WINDOW stddev_pop(INTERVAL SECOND) TO PUBLIC;
+create window stddev_pop(val INTERVAL MONTH) returns DOUBLE
+	external name "sql"."stdevp";
+GRANT EXECUTE ON WINDOW stddev_pop(INTERVAL MONTH) TO PUBLIC;
+
 
 create aggregate var_samp(val TINYINT) returns DOUBLE
 	external name "aggr"."variance";
@@ -93,21 +129,39 @@ create aggregate var_samp(val DOUBLE) returns DOUBLE
 	external name "aggr"."variance";
 GRANT EXECUTE ON AGGREGATE var_samp(DOUBLE) TO PUBLIC;
 
-create aggregate var_samp(val DATE) returns DOUBLE
-	external name "aggr"."variance";
-GRANT EXECUTE ON AGGREGATE var_samp(DATE) TO PUBLIC;
-create aggregate var_samp(val TIME) returns DOUBLE
-	external name "aggr"."variance";
-GRANT EXECUTE ON AGGREGATE var_samp(TIME) TO PUBLIC;
-create aggregate var_samp(val TIMESTAMP) returns DOUBLE
-	external name "aggr"."variance";
-GRANT EXECUTE ON AGGREGATE var_samp(TIMESTAMP) TO PUBLIC;
 create aggregate var_samp(val INTERVAL SECOND) returns DOUBLE
 	external name "aggr"."variance";
 GRANT EXECUTE ON AGGREGATE var_samp(INTERVAL SECOND) TO PUBLIC;
 create aggregate var_samp(val INTERVAL MONTH) returns DOUBLE
 	external name "aggr"."variance";
 GRANT EXECUTE ON AGGREGATE var_samp(INTERVAL MONTH) TO PUBLIC;
+
+create window var_samp(val TINYINT) returns DOUBLE
+	external name "sql"."variance";
+GRANT EXECUTE ON WINDOW var_samp(TINYINT) TO PUBLIC;
+create window var_samp(val SMALLINT) returns DOUBLE
+	external name "sql"."variance";
+GRANT EXECUTE ON WINDOW var_samp(SMALLINT) TO PUBLIC;
+create window var_samp(val INTEGER) returns DOUBLE
+	external name "sql"."variance";
+GRANT EXECUTE ON WINDOW var_samp(INTEGER) TO PUBLIC;
+create window var_samp(val BIGINT) returns DOUBLE
+	external name "sql"."variance";
+GRANT EXECUTE ON WINDOW var_samp(BIGINT) TO PUBLIC;
+create window var_samp(val REAL) returns DOUBLE
+	external name "sql"."variance";
+GRANT EXECUTE ON WINDOW var_samp(REAL) TO PUBLIC;
+create window var_samp(val DOUBLE) returns DOUBLE
+	external name "sql"."variance";
+GRANT EXECUTE ON WINDOW var_samp(DOUBLE) TO PUBLIC;
+
+create window var_samp(val INTERVAL SECOND) returns DOUBLE
+	external name "sql"."variance";
+GRANT EXECUTE ON WINDOW var_samp(INTERVAL SECOND) TO PUBLIC;
+create window var_samp(val INTERVAL MONTH) returns DOUBLE
+	external name "sql"."variance";
+GRANT EXECUTE ON WINDOW var_samp(INTERVAL MONTH) TO PUBLIC;
+
 
 create aggregate var_pop(val TINYINT) returns DOUBLE
 	external name "aggr"."variancep";
@@ -127,22 +181,145 @@ GRANT EXECUTE ON AGGREGATE var_pop(REAL) TO PUBLIC;
 create aggregate var_pop(val DOUBLE) returns DOUBLE
 	external name "aggr"."variancep";
 GRANT EXECUTE ON AGGREGATE var_pop(DOUBLE) TO PUBLIC;
-
-create aggregate var_pop(val DATE) returns DOUBLE
-	external name "aggr"."variancep";
-GRANT EXECUTE ON AGGREGATE var_pop(DATE) TO PUBLIC;
-create aggregate var_pop(val TIME) returns DOUBLE
-	external name "aggr"."variancep";
-GRANT EXECUTE ON AGGREGATE var_pop(TIME) TO PUBLIC;
-create aggregate var_pop(val TIMESTAMP) returns DOUBLE
-	external name "aggr"."variancep";
-GRANT EXECUTE ON AGGREGATE var_pop(TIMESTAMP) TO PUBLIC;
 create aggregate var_pop(val INTERVAL SECOND) returns DOUBLE
 	external name "aggr"."variancep";
 GRANT EXECUTE ON AGGREGATE var_pop(INTERVAL SECOND) TO PUBLIC;
 create aggregate var_pop(val INTERVAL MONTH) returns DOUBLE
 	external name "aggr"."variancep";
 GRANT EXECUTE ON AGGREGATE var_pop(INTERVAL MONTH) TO PUBLIC;
+
+create window var_pop(val TINYINT) returns DOUBLE
+	external name "sql"."variancep";
+GRANT EXECUTE ON WINDOW var_pop(TINYINT) TO PUBLIC;
+create window var_pop(val SMALLINT) returns DOUBLE
+	external name "sql"."variancep";
+GRANT EXECUTE ON WINDOW var_pop(SMALLINT) TO PUBLIC;
+create window var_pop(val INTEGER) returns DOUBLE
+	external name "sql"."variancep";
+GRANT EXECUTE ON WINDOW var_pop(INTEGER) TO PUBLIC;
+create window var_pop(val BIGINT) returns DOUBLE
+	external name "sql"."variancep";
+GRANT EXECUTE ON WINDOW var_pop(BIGINT) TO PUBLIC;
+create window var_pop(val REAL) returns DOUBLE
+	external name "sql"."variancep";
+GRANT EXECUTE ON WINDOW var_pop(REAL) TO PUBLIC;
+create window var_pop(val DOUBLE) returns DOUBLE
+	external name "sql"."variancep";
+GRANT EXECUTE ON WINDOW var_pop(DOUBLE) TO PUBLIC;
+
+create window var_pop(val INTERVAL SECOND) returns DOUBLE
+	external name "sql"."variancep";
+GRANT EXECUTE ON WINDOW var_pop(INTERVAL SECOND) TO PUBLIC;
+create window var_pop(val INTERVAL MONTH) returns DOUBLE
+	external name "sql"."variancep";
+GRANT EXECUTE ON WINDOW var_pop(INTERVAL MONTH) TO PUBLIC;
+
+
+create aggregate covar_samp(e1 TINYINT, e2 TINYINT) returns DOUBLE
+	external name "aggr"."covariance";
+GRANT EXECUTE ON AGGREGATE covar_samp(TINYINT, TINYINT) TO PUBLIC;
+create aggregate covar_samp(e1 SMALLINT, e2 SMALLINT) returns DOUBLE
+	external name "aggr"."covariance";
+GRANT EXECUTE ON AGGREGATE covar_samp(SMALLINT, SMALLINT) TO PUBLIC;
+create aggregate covar_samp(e1 INTEGER, e2 INTEGER) returns DOUBLE
+	external name "aggr"."covariance";
+GRANT EXECUTE ON AGGREGATE covar_samp(INTEGER, INTEGER) TO PUBLIC;
+create aggregate covar_samp(e1 BIGINT, e2 BIGINT) returns DOUBLE
+	external name "aggr"."covariance";
+GRANT EXECUTE ON AGGREGATE covar_samp(BIGINT, BIGINT) TO PUBLIC;
+create aggregate covar_samp(e1 REAL, e2 REAL) returns DOUBLE
+	external name "aggr"."covariance";
+GRANT EXECUTE ON AGGREGATE covar_samp(REAL, REAL) TO PUBLIC;
+create aggregate covar_samp(e1 DOUBLE, e2 DOUBLE) returns DOUBLE
+	external name "aggr"."covariance";
+GRANT EXECUTE ON AGGREGATE covar_samp(DOUBLE, DOUBLE) TO PUBLIC;
+
+create aggregate covar_samp(e1 INTERVAL SECOND, e2 INTERVAL SECOND) returns DOUBLE
+	external name "aggr"."covariance";
+GRANT EXECUTE ON AGGREGATE covar_samp(INTERVAL SECOND, INTERVAL SECOND) TO PUBLIC;
+create aggregate covar_samp(e1 INTERVAL MONTH, e2 INTERVAL MONTH) returns DOUBLE
+	external name "aggr"."covariance";
+GRANT EXECUTE ON AGGREGATE covar_samp(INTERVAL MONTH, INTERVAL MONTH) TO PUBLIC;
+
+create window covar_samp(e1 TINYINT, e2 TINYINT) returns DOUBLE
+	external name "sql"."covariance";
+GRANT EXECUTE ON WINDOW covar_samp(TINYINT, TINYINT) TO PUBLIC;
+create window covar_samp(e1 SMALLINT, e2 SMALLINT) returns DOUBLE
+	external name "sql"."covariance";
+GRANT EXECUTE ON WINDOW covar_samp(SMALLINT, SMALLINT) TO PUBLIC;
+create window covar_samp(e1 INTEGER, e2 INTEGER) returns DOUBLE
+	external name "sql"."covariance";
+GRANT EXECUTE ON WINDOW covar_samp(INTEGER, INTEGER) TO PUBLIC;
+create window covar_samp(e1 BIGINT, e2 BIGINT) returns DOUBLE
+	external name "sql"."covariance";
+GRANT EXECUTE ON WINDOW covar_samp(BIGINT, BIGINT) TO PUBLIC;
+create window covar_samp(e1 REAL, e2 REAL) returns DOUBLE
+	external name "sql"."covariance";
+GRANT EXECUTE ON WINDOW covar_samp(REAL, REAL) TO PUBLIC;
+create window covar_samp(e1 DOUBLE, e2 DOUBLE) returns DOUBLE
+	external name "sql"."covariance";
+GRANT EXECUTE ON WINDOW covar_samp(DOUBLE, DOUBLE) TO PUBLIC;
+
+create window covar_samp(e1 INTERVAL SECOND, e2 INTERVAL SECOND) returns DOUBLE
+	external name "sql"."covariance";
+GRANT EXECUTE ON WINDOW covar_samp(INTERVAL SECOND, INTERVAL SECOND) TO PUBLIC;
+create window covar_samp(e1 INTERVAL MONTH, e2 INTERVAL MONTH) returns DOUBLE
+	external name "sql"."covariance";
+GRANT EXECUTE ON WINDOW covar_samp(INTERVAL MONTH, INTERVAL MONTH) TO PUBLIC;
+
+
+create aggregate covar_pop(e1 TINYINT, e2 TINYINT) returns DOUBLE
+	external name "aggr"."covariancep";
+GRANT EXECUTE ON AGGREGATE covar_pop(TINYINT, TINYINT) TO PUBLIC;
+create aggregate covar_pop(e1 SMALLINT, e2 SMALLINT) returns DOUBLE
+	external name "aggr"."covariancep";
+GRANT EXECUTE ON AGGREGATE covar_pop(SMALLINT, SMALLINT) TO PUBLIC;
+create aggregate covar_pop(e1 INTEGER, e2 INTEGER) returns DOUBLE
+	external name "aggr"."covariancep";
+GRANT EXECUTE ON AGGREGATE covar_pop(INTEGER, INTEGER) TO PUBLIC;
+create aggregate covar_pop(e1 BIGINT, e2 BIGINT) returns DOUBLE
+	external name "aggr"."covariancep";
+GRANT EXECUTE ON AGGREGATE covar_pop(BIGINT, BIGINT) TO PUBLIC;
+create aggregate covar_pop(e1 REAL, e2 REAL) returns DOUBLE
+	external name "aggr"."covariancep";
+GRANT EXECUTE ON AGGREGATE covar_pop(REAL, REAL) TO PUBLIC;
+create aggregate covar_pop(e1 DOUBLE, e2 DOUBLE) returns DOUBLE
+	external name "aggr"."covariancep";
+GRANT EXECUTE ON AGGREGATE covar_pop(DOUBLE, DOUBLE) TO PUBLIC;
+
+create aggregate covar_pop(e1 INTERVAL SECOND, e2 INTERVAL SECOND) returns DOUBLE
+	external name "aggr"."covariancep";
+GRANT EXECUTE ON AGGREGATE covar_pop(INTERVAL SECOND, INTERVAL SECOND) TO PUBLIC;
+create aggregate covar_pop(e1 INTERVAL MONTH, e2 INTERVAL MONTH) returns DOUBLE
+	external name "aggr"."covariancep";
+GRANT EXECUTE ON AGGREGATE covar_pop(INTERVAL MONTH, INTERVAL MONTH) TO PUBLIC;
+
+create window covar_pop(e1 TINYINT, e2 TINYINT) returns DOUBLE
+	external name "sql"."covariancep";
+GRANT EXECUTE ON WINDOW covar_pop(TINYINT, TINYINT) TO PUBLIC;
+create window covar_pop(e1 SMALLINT, e2 SMALLINT) returns DOUBLE
+	external name "sql"."covariancep";
+GRANT EXECUTE ON WINDOW covar_pop(SMALLINT, SMALLINT) TO PUBLIC;
+create window covar_pop(e1 INTEGER, e2 INTEGER) returns DOUBLE
+	external name "sql"."covariancep";
+GRANT EXECUTE ON WINDOW covar_pop(INTEGER, INTEGER) TO PUBLIC;
+create window covar_pop(e1 BIGINT, e2 BIGINT) returns DOUBLE
+	external name "sql"."covariancep";
+GRANT EXECUTE ON WINDOW covar_pop(BIGINT, BIGINT) TO PUBLIC;
+create window covar_pop(e1 REAL, e2 REAL) returns DOUBLE
+	external name "sql"."covariancep";
+GRANT EXECUTE ON WINDOW covar_pop(REAL, REAL) TO PUBLIC;
+create window covar_pop(e1 DOUBLE, e2 DOUBLE) returns DOUBLE
+	external name "sql"."covariancep";
+GRANT EXECUTE ON WINDOW covar_pop(DOUBLE, DOUBLE) TO PUBLIC;
+
+create window covar_pop(e1 INTERVAL SECOND, e2 INTERVAL SECOND) returns DOUBLE
+	external name "sql"."covariancep";
+GRANT EXECUTE ON WINDOW covar_pop(INTERVAL SECOND, INTERVAL SECOND) TO PUBLIC;
+create window covar_pop(e1 INTERVAL MONTH, e2 INTERVAL MONTH) returns DOUBLE
+	external name "sql"."covariancep";
+GRANT EXECUTE ON WINDOW covar_pop(INTERVAL MONTH, INTERVAL MONTH) TO PUBLIC;
+
 
 create aggregate median(val TINYINT) returns TINYINT
 	external name "aggr"."median";
@@ -182,6 +359,7 @@ create aggregate median(val INTERVAL MONTH) returns INTERVAL MONTH
 	external name "aggr"."median";
 GRANT EXECUTE ON AGGREGATE median(INTERVAL MONTH) TO PUBLIC;
 
+
 create aggregate quantile(val TINYINT, q DOUBLE) returns TINYINT
 	external name "aggr"."quantile";
 GRANT EXECUTE ON AGGREGATE quantile(TINYINT, DOUBLE) TO PUBLIC;
@@ -220,6 +398,7 @@ create aggregate quantile(val INTERVAL MONTH, q DOUBLE) returns INTERVAL MONTH
 	external name "aggr"."quantile";
 GRANT EXECUTE ON AGGREGATE quantile(INTERVAL MONTH, DOUBLE) TO PUBLIC;
 
+
 create aggregate median_avg(val TINYINT) returns DOUBLE
 	external name "aggr"."median_avg";
 GRANT EXECUTE ON AGGREGATE median_avg(TINYINT) TO PUBLIC;
@@ -241,6 +420,7 @@ GRANT EXECUTE ON AGGREGATE median_avg(REAL) TO PUBLIC;
 create aggregate median_avg(val DOUBLE) returns DOUBLE
 	external name "aggr"."median_avg";
 GRANT EXECUTE ON AGGREGATE median_avg(DOUBLE) TO PUBLIC;
+
 
 create aggregate quantile_avg(val TINYINT, q DOUBLE) returns DOUBLE
 	external name "aggr"."quantile_avg";
@@ -264,6 +444,7 @@ create aggregate quantile_avg(val DOUBLE, q DOUBLE) returns DOUBLE
 	external name "aggr"."quantile_avg";
 GRANT EXECUTE ON AGGREGATE quantile_avg(DOUBLE, DOUBLE) TO PUBLIC;
 
+
 create aggregate corr(e1 TINYINT, e2 TINYINT) returns DOUBLE
 	external name "aggr"."corr";
 GRANT EXECUTE ON AGGREGATE corr(TINYINT, TINYINT) TO PUBLIC;
@@ -282,3 +463,36 @@ GRANT EXECUTE ON AGGREGATE corr(REAL, REAL) TO PUBLIC;
 create aggregate corr(e1 DOUBLE, e2 DOUBLE) returns DOUBLE
 	external name "aggr"."corr";
 GRANT EXECUTE ON AGGREGATE corr(DOUBLE, DOUBLE) TO PUBLIC;
+
+create aggregate corr(e1 INTERVAL SECOND, e2 INTERVAL SECOND) returns DOUBLE
+	external name "aggr"."corr";
+GRANT EXECUTE ON AGGREGATE corr(INTERVAL SECOND, INTERVAL SECOND) TO PUBLIC;
+create aggregate corr(e1 INTERVAL MONTH, e2 INTERVAL MONTH) returns DOUBLE
+	external name "aggr"."corr";
+GRANT EXECUTE ON AGGREGATE corr(INTERVAL MONTH, INTERVAL MONTH) TO PUBLIC;
+
+create window corr(e1 TINYINT, e2 TINYINT) returns DOUBLE
+	external name "sql"."corr";
+GRANT EXECUTE ON WINDOW corr(TINYINT, TINYINT) TO PUBLIC;
+create window corr(e1 SMALLINT, e2 SMALLINT) returns DOUBLE
+	external name "sql"."corr";
+GRANT EXECUTE ON WINDOW corr(SMALLINT, SMALLINT) TO PUBLIC;
+create window corr(e1 INTEGER, e2 INTEGER) returns DOUBLE
+	external name "sql"."corr";
+GRANT EXECUTE ON WINDOW corr(INTEGER, INTEGER) TO PUBLIC;
+create window corr(e1 BIGINT, e2 BIGINT) returns DOUBLE
+	external name "sql"."corr";
+GRANT EXECUTE ON WINDOW corr(BIGINT, BIGINT) TO PUBLIC;
+create window corr(e1 REAL, e2 REAL) returns DOUBLE
+	external name "sql"."corr";
+GRANT EXECUTE ON WINDOW corr(REAL, REAL) TO PUBLIC;
+create window corr(e1 DOUBLE, e2 DOUBLE) returns DOUBLE
+	external name "sql"."corr";
+GRANT EXECUTE ON WINDOW corr(DOUBLE, DOUBLE) TO PUBLIC;
+
+create window corr(e1 INTERVAL SECOND, e2 INTERVAL SECOND) returns DOUBLE
+	external name "sql"."corr";
+GRANT EXECUTE ON WINDOW corr(INTERVAL SECOND, INTERVAL SECOND) TO PUBLIC;
+create window corr(e1 INTERVAL MONTH, e2 INTERVAL MONTH) returns DOUBLE
+	external name "sql"."corr";
+GRANT EXECUTE ON WINDOW corr(INTERVAL MONTH, INTERVAL MONTH) TO PUBLIC;

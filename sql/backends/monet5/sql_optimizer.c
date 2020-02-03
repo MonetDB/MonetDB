@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -108,7 +108,6 @@ SQLgetSpace(mvc *m, MalBlkPtr mb, int prepare)
 				space += size;	// accumulate once per table
 				//lasttable = tname;	 invalidate this attempt
 				if( !prepare && size == 0  && ! t->system){
-					//fprintf(stderr,"found empty column %s.%s.%s prepare %d size "LLFMT"\n",sname,tname,cname,prepare,size);
 					setFunctionId(p, emptybindRef);
 				}
 			}
@@ -135,7 +134,6 @@ SQLgetSpace(mvc *m, MalBlkPtr mb, int prepare)
 
 						if( !prepare && size == 0 && ! i->t->system){
 							setFunctionId(p, emptybindidxRef);
-							//fprintf(stderr,"found empty column %s.%s.%s prepare %d size "LLFMT"\n",sname,tname,idxname,prepare,size);
 						}
 						BBPunfix(b->batCacheid);
 					}
@@ -178,7 +176,6 @@ addOptimizers(Client c, MalBlkPtr mb, char *pipe, int prepare)
 	if(space && (pipe == NULL || strcmp(pipe,"default_pipe")== 0)){
 		if( space > (lng)(0.8 * MT_npages() * MT_pagesize())  && GDKnr_threads > 1){
 			pipe = "volcano_pipe";
-			//fprintf(stderr, "#use volcano optimizer pipeline? %zu\n", space);
 		}else
 			pipe = "default_pipe";
 	} else
@@ -243,22 +240,26 @@ SQLoptimizeQuery(Client c, MalBlkPtr mb)
 	assert(be && be->mvc);	/* SQL clients should always have their state set */
 
 	c->blkmode = 0;
-	chkProgram(c->usermodule, mb);
+	msg = chkProgram(c->usermodule, mb);
 
 	/*
 	 * An error in the compilation should be reported to the user.
 	 * And if the debugging option is set, the debugger is called
 	 * to allow inspection.
 	 */
-	if (mb->errors) {
+	if (msg != MAL_SUCCEED || mb->errors) {
 		if (c->listing)
 			printFunction(c->fdout, mb, 0, c->listing);
 		if (be->mvc->debug) {
-			msg = runMALDebugger(c, c->curprg->def);
-			if (msg != MAL_SUCCEED)
-				freeException(msg); /* ignore error */
+			str omsg = runMALDebugger(c, c->curprg->def);
+			if (omsg != MAL_SUCCEED)
+				freeException(omsg); /* ignore error */
 		}
-		return createException(MAL, "optimizer.optimizeQuery", "%s", mb->errors);
+		if (mb->errors && msg && msg != mb->errors) { /* if both set, throw mb->errors as the earliest one */
+			freeException(msg);
+			msg = MAL_SUCCEED;
+		}
+		return createException(MAL, "optimizer.optimizeQuery", "%s", mb->errors ? mb->errors : msg);
 	}
 
 	pipe = getSQLoptimizer(be->mvc);

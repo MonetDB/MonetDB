@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -25,39 +25,39 @@
 			}					\
 		} else {					\
 			for (; bp < end; bp++, rb++) {		\
-				if (*bp == prev) { \
+				if (*bp == prev) {		\
 					*rb = FALSE;		\
-				} else {		\
-					*rb = TRUE;	\
-					prev = *bp;	\
-				} \
+				} else {			\
+					*rb = TRUE;		\
+					prev = *bp;		\
+				}				\
 			}					\
 		}						\
 	} while (0)
 
 /* We use NaN for floating point null values, which always output false on equality tests */
-#define ANALYTICAL_DIFF_FLOAT_IMP(TPE)				\
-	do {							\
-		TPE *bp = (TPE*)Tloc(b, 0);			\
-		TPE prev = *bp, *end = bp + cnt;		\
-		if (np) {					\
-			for (; bp < end; bp++, rb++, np++) {	\
-				*rb = *np;			\
+#define ANALYTICAL_DIFF_FLOAT_IMP(TPE)					\
+	do {								\
+		TPE *bp = (TPE*)Tloc(b, 0);				\
+		TPE prev = *bp, *end = bp + cnt;			\
+		if (np) {						\
+			for (; bp < end; bp++, rb++, np++) {		\
+				*rb = *np;				\
 				if (*bp != prev && (!is_##TPE##_nil(*bp) || !is_##TPE##_nil(prev))) { \
-					*rb = TRUE;		\
-					prev = *bp;		\
-				}				\
-			}					\
-		} else {					\
-			for (; bp < end; bp++, rb++) {		\
+					*rb = TRUE;			\
+					prev = *bp;			\
+				}					\
+			}						\
+		} else {						\
+			for (; bp < end; bp++, rb++) {			\
 				if (*bp == prev || (is_##TPE##_nil(*bp) && is_##TPE##_nil(prev))) { \
-					*rb = FALSE; \
-				} else {		\
-					*rb = TRUE;	\
-					prev = *bp;	\
-				} \
-			}					\
-		}						\
+					*rb = FALSE;			\
+				} else {				\
+					*rb = TRUE;			\
+					prev = *bp;			\
+				}					\
+			}						\
+		}							\
 	} while (0)
 
 gdk_return
@@ -272,8 +272,7 @@ nosupport:
 			be = bp + end[i];			\
 			curval = (be > bs) ? *bs : TPE##_nil;	\
 			*rb = curval;				\
-			if (is_##TPE##_nil(curval))		\
-				has_nils = true;		\
+			has_nils |= is_##TPE##_nil(curval);		\
 		}						\
 	} while (0)
 
@@ -325,8 +324,7 @@ GDKanalyticalfirst(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
 			curval = (end[i] > start[i]) ? BUNtail(bpi, (BUN) start[i]) : (void *) nil;
 			if (BUNappend(r, curval, false) != GDK_SUCCEED)
 				goto allocation_error;
-			if (atomcmp(curval, nil) == 0)
-				has_nils = true;
+			has_nils |= atomcmp(curval, nil) == 0;
 		}
 	}
 	}
@@ -349,8 +347,7 @@ GDKanalyticalfirst(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
 			be = bp + end[i];				\
 			curval = (be > bs) ? *(be - 1) : TPE##_nil;	\
 			*rb = curval;					\
-			if (is_##TPE##_nil(curval))			\
-				has_nils = true;			\
+			has_nils |= is_##TPE##_nil(curval);			\
 		}							\
 	} while (0)
 
@@ -402,8 +399,7 @@ GDKanalyticallast(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
 			curval = (end[i] > start[i]) ? BUNtail(bpi, (BUN) (end[i] - 1)) : (void *) nil;
 			if (BUNappend(r, curval, false) != GDK_SUCCEED)
 				goto allocation_error;
-			if (atomcmp(curval, nil) == 0)
-				has_nils = true;
+			has_nils |= atomcmp(curval, nil) == 0;
 		}
 	}
 	}
@@ -430,33 +426,33 @@ GDKanalyticallast(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
 				be = bp + end[i];			\
 				curval = (be > bs && nth < (end[i] - start[i])) ? *(bs + nth) : TPE1##_nil; \
 				*rb = curval;				\
-				if (is_##TPE1##_nil(curval))		\
-					has_nils = true;		\
+				has_nils |= is_##TPE1##_nil(curval);	\
 			}						\
 		}							\
 	} while (0)
 
-#define ANALYTICAL_NTHVALUE_IMP_MULTI_FIXED(TPE1, TPE2, TPE3)			\
+#define ANALYTICAL_NTHVALUE_IMP_MULTI_FIXED(TPE1, TPE2, TPE3)		\
 	do {								\
 		TPE2 *restrict lp = (TPE2*)Tloc(l, 0);			\
 		for (; i < cnt; i++, rb++) {				\
 			TPE2 lnth = lp[i];				\
 			bs = bp + start[i];				\
 			be = bp + end[i];				\
-			if (is_##TPE2##_nil(lnth) || be <= bs || (TPE3)(lnth - 1) > (TPE3)(end[i] - start[i])) \
-				curval = TPE1##_nil;			\
-			else						\
+			if (is_##TPE2##_nil(lnth) || be <= bs || (TPE3)(lnth - 1) > (TPE3)(end[i] - start[i])) { \
+				curval = TPE1##_nil;	\
+				has_nils = true;	\
+			} else {						\
 				curval = *(bs + lnth - 1);		\
-			*rb = curval;					\
-			if (is_##TPE1##_nil(curval))			\
-				has_nils = true;			\
+				has_nils |= is_##TPE1##_nil(curval);	\
+			}	\
+			*rb = curval;	\
 		}							\
 	} while (0)
 
 #ifdef HAVE_HGE
 #define ANALYTICAL_NTHVALUE_CALC_FIXED_HGE(TPE1)			\
 	case TYPE_hge:							\
-		ANALYTICAL_NTHVALUE_IMP_MULTI_FIXED(TPE1, hge, hge); \
+		ANALYTICAL_NTHVALUE_IMP_MULTI_FIXED(TPE1, hge, hge);	\
 		break;
 #else
 #define ANALYTICAL_NTHVALUE_CALC_FIXED_HGE(TPE1)
@@ -464,9 +460,7 @@ GDKanalyticallast(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
 
 #define ANALYTICAL_NTHVALUE_CALC_FIXED(TPE1)				\
 	do {								\
-		TPE1 *bp, *bs, *be, curval, *restrict rb;		\
-		bp = (TPE1*)Tloc(b, 0);					\
-		rb = (TPE1*)Tloc(r, 0);					\
+		TPE1 *bp = (TPE1*)Tloc(b, 0), *bs, *be, curval, *restrict rb = (TPE1*)Tloc(r, 0);	\
 		switch (tp2) {						\
 		case TYPE_bte:						\
 			ANALYTICAL_NTHVALUE_IMP_MULTI_FIXED(TPE1, bte, lng); \
@@ -480,25 +474,26 @@ GDKanalyticallast(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
 		case TYPE_lng:						\
 			ANALYTICAL_NTHVALUE_IMP_MULTI_FIXED(TPE1, lng, lng); \
 			break;						\
-		ANALYTICAL_NTHVALUE_CALC_FIXED_HGE(TPE1) \
+		ANALYTICAL_NTHVALUE_CALC_FIXED_HGE(TPE1)		\
 		default:						\
 			goto nosupport;					\
 		}							\
 	} while (0)
 
-#define ANALYTICAL_NTHVALUE_IMP_MULTI_VARSIZED(TPE1, TPE2)			\
+#define ANALYTICAL_NTHVALUE_IMP_MULTI_VARSIZED(TPE1, TPE2)		\
 	do {								\
 		TPE1 *restrict lp = (TPE1*)Tloc(l, 0);			\
 		for (; i < cnt; i++) {					\
 			TPE1 lnth = lp[i];				\
-			if (is_##TPE1##_nil(lnth) || end[i] <= start[i] || (TPE2)(lnth - 1) > (TPE2)(end[i] - start[i])) \
+			if (is_##TPE1##_nil(lnth) || end[i] <= start[i] || (TPE2)(lnth - 1) > (TPE2)(end[i] - start[i])) {	\
 				curval = (void *) nil;			\
-			else						\
+				has_nils = true; \
+			} else {	\
 				curval = BUNtail(bpi, (BUN) (start[i] + lnth - 1)); \
+				has_nils |= atomcmp(curval, nil) == 0;	\
+			}	\
 			if (BUNappend(r, curval, false) != GDK_SUCCEED) \
 				goto allocation_error;			\
-			if (atomcmp(curval, nil) == 0)			\
-				has_nils = true;			\
 		}							\
 	} while (0)
 
@@ -582,8 +577,7 @@ GDKanalyticalnthvalue(BAT *r, BAT *b, BAT *s, BAT *e, BAT *l, const void *restri
 					curval = (end[i] > start[i] && nth < (end[i] - start[i])) ? BUNtail(bpi, (BUN) (start[i] + nth)) : (void *) nil;
 					if (BUNappend(r, curval, false) != GDK_SUCCEED)
 						goto allocation_error;
-					if (atomcmp(curval, nil) == 0)
-						has_nils = true;
+					has_nils |= atomcmp(curval, nil) == 0;
 				}
 			}
 		}
@@ -658,13 +652,11 @@ GDKanalyticalnthvalue(BAT *r, BAT *b, BAT *s, BAT *e, BAT *l, const void *restri
 	do {							\
 		for (i = 0; i < lag && rb < rp; i++, rb++)	\
 			*rb = def;				\
-		if (lag > 0 && is_##TPE##_nil(def))		\
-			has_nils = true;			\
+		has_nils |= (lag > 0 && is_##TPE##_nil(def));	\
 		for (; rb < rp; rb++, bp++) {			\
 			next = *bp;				\
 			*rb = next;				\
-			if (is_##TPE##_nil(next))		\
-				has_nils = true;		\
+			has_nils |= is_##TPE##_nil(next);		\
 		}						\
 	} while (0)
 
@@ -686,9 +678,9 @@ GDKanalyticalnthvalue(BAT *r, BAT *b, BAT *s, BAT *e, BAT *l, const void *restri
 				if (*np) {				\
 					ncnt = (np - pnp);		\
 					rp += ncnt;			\
-					nbp = bp + ncnt; \
+					nbp = bp + ncnt;		\
 					ANALYTICAL_LAG_CALC(TPE);	\
-					bp = nbp; \
+					bp = nbp;			\
 					pnp = np;			\
 				}					\
 			}						\
@@ -706,15 +698,13 @@ GDKanalyticalnthvalue(BAT *r, BAT *b, BAT *s, BAT *e, BAT *l, const void *restri
 			if (BUNappend(r, default_value, false) != GDK_SUCCEED) \
 				goto allocation_error;			\
 		}							\
-		if (lag > 0 && atomcmp(default_value, nil) == 0)	\
-			has_nils = true;				\
+		has_nils |= (lag > 0 && atomcmp(default_value, nil) == 0);	\
 		for (l = k - lag; k < j; k++, l++) {			\
 			curval = BUNtail(bpi, l);			\
 			if (BUNappend(r, curval, false) != GDK_SUCCEED)	\
 				goto allocation_error;			\
-			if (atomcmp(curval, nil) == 0)			\
-				has_nils = true;			\
-		}							\
+			has_nils |= atomcmp(curval, nil) == 0;			\
+		}	\
 	} while (0)
 
 gdk_return
@@ -801,16 +791,14 @@ GDKanalyticallag(BAT *r, BAT *b, BAT *p, BUN lag, const void *restrict default_v
 			for (i = 0; i < l; i++, rb++, bp++) {	\
 				next = *bp;			\
 				*rb = next;			\
-				if (is_##TPE##_nil(next))	\
-					has_nils = true;	\
+				has_nils |= is_##TPE##_nil(next);	\
 			}					\
 		} else {					\
 			bp += ncnt;				\
 		}						\
 		for (;rb < rp; rb++)				\
 			*rb = def;				\
-		if (lead > 0 && is_##TPE##_nil(def))		\
-			has_nils = true;			\
+		has_nils |= (lead > 0 && is_##TPE##_nil(def));	\
 	} while (0)
 
 #define ANALYTICAL_LEAD_IMP(TPE)				\
@@ -854,8 +842,7 @@ GDKanalyticallag(BAT *r, BAT *b, BAT *p, BUN lag, const void *restrict default_v
 				curval = BUNtail(bpi, n);		\
 				if (BUNappend(r, curval, false) != GDK_SUCCEED)	\
 					goto allocation_error;		\
-				if (atomcmp(curval, nil) == 0)		\
-					has_nils = true;		\
+				has_nils |= atomcmp(curval, nil) == 0;		\
 			}						\
 			k += i;						\
 		}							\
@@ -863,8 +850,7 @@ GDKanalyticallag(BAT *r, BAT *b, BAT *p, BUN lag, const void *restrict default_v
 			if (BUNappend(r, default_value, false) != GDK_SUCCEED) \
 				goto allocation_error;			\
 		}							\
-		if (lead > 0 && atomcmp(default_value, nil) == 0)	\
-			has_nils = true;				\
+		has_nils |= (lead > 0 && atomcmp(default_value, nil) == 0);	\
 	} while (0)
 
 gdk_return
@@ -964,7 +950,7 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 			if (is_##TPE##_nil(curval))			\
 				has_nils = true;			\
 			else						\
-				curval = TPE##_nil;			\
+				curval = TPE##_nil;	/* For the next iteration */	\
 		}							\
 	} while (0)
 
@@ -1032,8 +1018,7 @@ GDKanalytical##OP(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)		\
 			}						\
 			if (BUNappend(r, curval, false) != GDK_SUCCEED) \
 				goto allocation_error;			\
-			if (atomcmp(curval, nil) == 0)			\
-				has_nils = true;			\
+			has_nils |= atomcmp(curval, nil) == 0;	\
 		}							\
 	}								\
 	}								\
@@ -1054,12 +1039,12 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 		TPE *bp, *bs, *be;				\
 		bp = (TPE*)Tloc(b, 0);				\
 		for (; i < cnt; i++, rb++) {			\
-			bs = bp + start[i];                     \
-			be = bp + end[i];                       \
+			bs = bp + start[i];		\
+			be = bp + end[i];		\
 			for (; bs < be; bs++)			\
 				curval += !is_##TPE##_nil(*bs);	\
-			*rb = curval;                           \
-			curval = 0;                             \
+			*rb = curval;		\
+			curval = 0;		\
 		}						\
 	} while (0)
 
@@ -1189,7 +1174,7 @@ GDKanalyticalcount(BAT *r, BAT *b, BAT *s, BAT *e, const bit *restrict ignore_ni
 			if (is_##TPE2##_nil(curval))			\
 				has_nils = true;			\
 			else						\
-				curval = TPE2##_nil;			\
+				curval = TPE2##_nil;	/* For the next iteration */ \
 		}							\
 	} while (0)
 
@@ -1213,7 +1198,7 @@ GDKanalyticalcount(BAT *r, BAT *b, BAT *s, BAT *e, const bit *restrict ignore_ni
 			if (is_##TPE2##_nil(curval))			\
 				has_nils = true;			\
 			else						\
-				curval = TPE2##_nil;			\
+				curval = TPE2##_nil;	/* For the next iteration */ \
 		}							\
 	} while (0)
 
@@ -1383,7 +1368,7 @@ GDKanalyticalsum(BAT *r, BAT *b, BAT *s, BAT *e, int tp1, int tp2)
 			if (is_##TPE2##_nil(curval))			\
 				has_nils = true;			\
 			else						\
-				curval = TPE2##_nil;			\
+				curval = TPE2##_nil;	/* For the next iteration */	\
 		}							\
 	} while (0)
 
@@ -1408,7 +1393,7 @@ GDKanalyticalsum(BAT *r, BAT *b, BAT *s, BAT *e, int tp1, int tp2)
 			if (is_##TPE2##_nil(curval))			\
 				has_nils = true;			\
 			else						\
-				curval = TPE2##_nil;			\
+				curval = TPE2##_nil;	/* For the next iteration */	\
 		}							\
 	} while (0)
 
@@ -1439,7 +1424,7 @@ GDKanalyticalsum(BAT *r, BAT *b, BAT *s, BAT *e, int tp1, int tp2)
 			if (is_##TPE2##_nil(curval))			\
 				has_nils = true;			\
 			else						\
-				curval = TPE2##_nil;			\
+				curval = TPE2##_nil;	/* For the next iteration */	\
 		}							\
 	} while (0)
 
@@ -1718,5 +1703,264 @@ GDKanalyticalavg(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
 	BATsetcount(r, cnt);
 	r->tnonil = !has_nils;
 	r->tnil = has_nils;
+	return GDK_SUCCEED;
+}
+
+#define ANALYTICAL_STDEV_VARIANCE_CALC(TPE, SAMPLE, OP)	\
+	do {								\
+		TPE *bp = (TPE*)Tloc(b, 0), *bs, *be, v;		\
+		for (; i < cnt; i++, rb++) {				\
+			bs = bp + start[i];				\
+			be = bp + end[i];				\
+			for (; bs < be; bs++) {				\
+				v = *bs;				\
+				if (is_##TPE##_nil(v))		\
+					continue;		\
+				n++;				\
+				SUBF_WITH_CHECK((dbl) v, mean, dbl, delta, GDK_dbl_max, goto calc_overflow); \
+				dn = delta / n; \
+				ADDF_WITH_CHECK(dn, mean, dbl, mean, GDK_dbl_max, goto calc_overflow); \
+				SUBF_WITH_CHECK((dbl) v, mean, dbl, dn, GDK_dbl_max, goto calc_overflow); \
+				MULF4_WITH_CHECK(delta, dn, dbl, dn2, GDK_dbl_max, dbl, goto calc_overflow); \
+				ADDF_WITH_CHECK(m2, dn2, dbl, m2, GDK_dbl_max, goto calc_overflow); \
+			}						\
+			if (n > SAMPLE) { \
+				*rb = OP; \
+			} else { \
+				*rb = dbl_nil; \
+				nils++; \
+			} \
+			n = 0;	\
+			mean = 0;	\
+			m2 = 0; \
+		}	\
+	} while (0)
+
+#ifdef HAVE_HGE
+#define ANALYTICAL_STDEV_VARIANCE_LIMIT(SAMPLE, OP) \
+	case TYPE_hge: \
+		ANALYTICAL_STDEV_VARIANCE_CALC(hge, SAMPLE, OP); \
+	break;
+#else
+#define ANALYTICAL_STDEV_VARIANCE_LIMIT(SAMPLE, OP)
+#endif
+
+#define GDK_ANALYTICAL_STDEV_VARIANCE(NAME, SAMPLE, OP, DESC) \
+gdk_return \
+GDKanalytical_##NAME(BAT *r, BAT *b, BAT *s, BAT *e, int tpe) \
+{ \
+	bool abort_on_error = true; \
+	BUN i = 0, cnt = BATcount(b), n = 0, nils = 0; \
+	lng *restrict start, *restrict end; \
+	dbl *restrict rb = (dbl *) Tloc(r, 0), mean = 0, m2 = 0, delta, dn, dn2; \
+ \
+	assert(s && e); \
+	start = (lng *) Tloc(s, 0); \
+	end = (lng *) Tloc(e, 0); \
+ \
+	switch (tpe) { \
+	case TYPE_bte: \
+		ANALYTICAL_STDEV_VARIANCE_CALC(bte, SAMPLE, OP); \
+		break; \
+	case TYPE_sht: \
+		ANALYTICAL_STDEV_VARIANCE_CALC(sht, SAMPLE, OP); \
+		break; \
+	case TYPE_int: \
+		ANALYTICAL_STDEV_VARIANCE_CALC(int, SAMPLE, OP); \
+		break; \
+	case TYPE_lng: \
+		ANALYTICAL_STDEV_VARIANCE_CALC(lng, SAMPLE, OP); \
+		break; \
+	ANALYTICAL_STDEV_VARIANCE_LIMIT(SAMPLE, OP) \
+	case TYPE_flt:\
+		ANALYTICAL_STDEV_VARIANCE_CALC(flt, SAMPLE, OP); \
+		break; \
+	case TYPE_dbl: \
+		ANALYTICAL_STDEV_VARIANCE_CALC(dbl, SAMPLE, OP); \
+		break; \
+	default: \
+		GDKerror("%s: %s of type %s unsupported.\n", __func__, DESC, ATOMname(tpe)); \
+		return GDK_FAIL; \
+	} \
+	BATsetcount(r, cnt); \
+	r->tnonil = nils == 0; \
+	r->tnil = nils > 0; \
+	return GDK_SUCCEED; \
+calc_overflow: \
+	GDKerror("22003!overflow in calculation.\n"); \
+	return GDK_FAIL; \
+}
+
+GDK_ANALYTICAL_STDEV_VARIANCE(stddev_samp, 1, sqrt(m2 / (n - 1)), "standard deviation")
+GDK_ANALYTICAL_STDEV_VARIANCE(stddev_pop, 0, sqrt(m2 / n), "standard deviation")
+GDK_ANALYTICAL_STDEV_VARIANCE(variance_samp, 1, m2 / (n - 1), "variance")
+GDK_ANALYTICAL_STDEV_VARIANCE(variance_pop, 0, m2 / n, "variance")
+
+#define ANALYTICAL_COVARIANCE_CALC(TPE, SAMPLE, OP)	\
+	do {								\
+		TPE *bp1 = (TPE*)Tloc(b1, 0), *bp2 = (TPE*)Tloc(b2, 0), *bs1, *be1, *bs2, v1, v2;	\
+		for (; i < cnt; i++, rb++) {		\
+			bs1 = bp1 + start[i];				\
+			be1 = bp1 + end[i];				\
+			bs2 = bp2 + start[i];		\
+			for (; bs1 < be1; bs1++, bs2++) {	\
+				v1 = *bs1;				\
+				v2 = *bs2;				\
+				if (is_##TPE##_nil(v1) || is_##TPE##_nil(v2))	\
+					continue;		\
+				n++;				\
+				delta1 = (dbl) v1 - mean1;		\
+				mean1 += delta1 / n;		\
+				delta2 = (dbl) v2 - mean2;		\
+				mean2 += delta2 / n;		\
+				m2 += delta1 * ((dbl) v2 - mean2);	\
+			}	\
+			if (n > SAMPLE) { \
+				*rb = OP; \
+			} else { \
+				*rb = dbl_nil; \
+				nils++; \
+			} \
+			n = 0;	\
+			mean1 = 0;	\
+			mean2 = 0;	\
+			m2 = 0; \
+		}	\
+	} while (0)
+
+#ifdef HAVE_HGE
+#define ANALYTICAL_COVARIANCE_LIMIT(SAMPLE, OP) \
+	case TYPE_hge: \
+		ANALYTICAL_COVARIANCE_CALC(hge, SAMPLE, OP); \
+	break;
+#else
+#define ANALYTICAL_COVARIANCE_LIMIT(SAMPLE, OP)
+#endif
+
+#define GDK_ANALYTICAL_COVARIANCE(NAME, SAMPLE, OP) \
+gdk_return \
+GDKanalytical_##NAME(BAT *r, BAT *b1, BAT *b2, BAT *s, BAT *e, int tpe) \
+{ \
+	BUN i = 0, cnt = BATcount(b1), n = 0, nils = 0; \
+	lng *restrict start, *restrict end; \
+	dbl *restrict rb = (dbl *) Tloc(r, 0), mean1 = 0, mean2 = 0, m2 = 0, delta1, delta2; \
+ \
+	assert(s && e && BATcount(b1) == BATcount(b2)); \
+	start = (lng *) Tloc(s, 0); \
+	end = (lng *) Tloc(e, 0); \
+ \
+	switch (tpe) { \
+	case TYPE_bte: \
+		ANALYTICAL_COVARIANCE_CALC(bte, SAMPLE, OP); \
+		break; \
+	case TYPE_sht: \
+		ANALYTICAL_COVARIANCE_CALC(sht, SAMPLE, OP); \
+		break; \
+	case TYPE_int: \
+		ANALYTICAL_COVARIANCE_CALC(int, SAMPLE, OP); \
+		break; \
+	case TYPE_lng: \
+		ANALYTICAL_COVARIANCE_CALC(lng, SAMPLE, OP); \
+		break; \
+	ANALYTICAL_COVARIANCE_LIMIT(SAMPLE, OP) \
+	case TYPE_flt:\
+		ANALYTICAL_COVARIANCE_CALC(flt, SAMPLE, OP); \
+		break; \
+	case TYPE_dbl: \
+		ANALYTICAL_COVARIANCE_CALC(dbl, SAMPLE, OP); \
+		break; \
+	default: \
+		GDKerror("%s: covariance of type %s unsupported.\n", __func__, ATOMname(tpe)); \
+		return GDK_FAIL; \
+	} \
+	BATsetcount(r, cnt); \
+	r->tnonil = nils == 0; \
+	r->tnil = nils > 0; \
+	return GDK_SUCCEED; \
+}
+
+GDK_ANALYTICAL_COVARIANCE(covariance_samp, 1, m2 / (n - 1))
+GDK_ANALYTICAL_COVARIANCE(covariance_pop, 0, m2 / n)
+
+#define ANALYTICAL_CORRELATION_CALC(TPE)	\
+	do {								\
+		TPE *bp1 = (TPE*)Tloc(b1, 0), *bp2 = (TPE*)Tloc(b2, 0), *bs1, *be1, *bs2, v1, v2;	\
+		for (; i < cnt; i++, rb++) {		\
+			bs1 = bp1 + start[i];				\
+			be1 = bp1 + end[i];				\
+			bs2 = bp2 + start[i];		\
+			for (; bs1 < be1; bs1++, bs2++) {	\
+				v1 = *bs1;				\
+				v2 = *bs2;				\
+				if (is_##TPE##_nil(v1) || is_##TPE##_nil(v2))	\
+					continue;		\
+				n++;	\
+				delta1 = (dbl) v1 - mean1;	\
+				mean1 += delta1 / n;	\
+				delta2 = (dbl) v2 - mean2;	\
+				mean2 += delta2 / n;	\
+				aux = (dbl) v2 - mean2; \
+				up += delta1 * aux;	\
+				down1 += delta1 * ((dbl) v1 - mean1);	\
+				down2 += delta2 * aux;	\
+			}	\
+			if (n > 0 && up > 0 && down1 > 0 && down2 > 0) { \
+				*rb = (up / n) / (sqrt(down1 / n) * sqrt(down2 / n)); \
+				assert(!is_dbl_nil(*rb)); \
+			} else { \
+				*rb = dbl_nil; \
+				nils++; \
+			} \
+			n = 0;	\
+			mean1 = 0;	\
+			mean2 = 0;	\
+			up = 0; \
+			down1 = 0;	\
+			down2 = 0;	\
+		}	\
+	} while (0)
+
+gdk_return
+GDKanalytical_correlation(BAT *r, BAT *b1, BAT *b2, BAT *s, BAT *e, int tpe)
+{
+	BUN i = 0, cnt = BATcount(b1), n = 0, nils = 0;
+	lng *restrict start, *restrict end;
+	dbl *restrict rb = (dbl *) Tloc(r, 0), mean1 = 0, mean2 = 0, up = 0, down1 = 0, down2 = 0, delta1, delta2, aux;
+
+	assert(s && e && BATcount(b1) == BATcount(b2));
+	start = (lng *) Tloc(s, 0);
+	end = (lng *) Tloc(e, 0);
+
+	switch (tpe) {
+	case TYPE_bte:
+		ANALYTICAL_CORRELATION_CALC(bte);
+		break;
+	case TYPE_sht:
+		ANALYTICAL_CORRELATION_CALC(sht);
+		break;
+	case TYPE_int:
+		ANALYTICAL_CORRELATION_CALC(int);
+		break;
+	case TYPE_lng:
+		ANALYTICAL_CORRELATION_CALC(lng);
+		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		ANALYTICAL_CORRELATION_CALC(hge);
+		break;
+#endif
+	case TYPE_flt:
+		ANALYTICAL_CORRELATION_CALC(flt);
+		break;
+	case TYPE_dbl:
+		ANALYTICAL_CORRELATION_CALC(dbl);
+		break;
+	default:
+		GDKerror("%s: correlation of type %s unsupported.\n", __func__, ATOMname(tpe));
+		return GDK_FAIL;
+	}
+	BATsetcount(r, cnt);
+	r->tnonil = nils == 0;
+	r->tnil = nils > 0;
 	return GDK_SUCCEED;
 }

@@ -11,7 +11,7 @@ stdout of test 'NOT_IN-AND-OR-wrong-results.Bug-6775` in directory 'sql/test/Bug
 # Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
 # Found 5.821 GiB available main-memory.
 # Copyright (c) 1993 - July 2008 CWI.
-# Copyright (c) August 2008 - 2019 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008 - 2020 MonetDB B.V., all rights reserved
 # Visit https://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://ubuntu-bionic:36021/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-25941/.s.monetdb.36021

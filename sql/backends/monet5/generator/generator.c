@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -388,7 +388,7 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				if(((is_timestamp_nil(tlow) || tsf >= tlow) &&
 				    (is_timestamp_nil(thgh) || tsf < thgh)) != anti ){
 					/* could be improved when no candidate list is available into a void/void BAT */
-					if( cand == NULL || canditer_search(&ci, o1, false) != BUN_NONE) {
+					if( cand == NULL || canditer_contains(&ci, o1)) {
 						*ol++ = o1;
 						n++;
 					}
@@ -526,7 +526,7 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			throw(MAL,"generator.thetaselect", SQLSTATE(42000) "Unknown operator");	\
 		for(j=0;j<cap;j++, f+=s, o++)				\
 			if( ((is_##TPE##_nil(low) || f >= low) && (is_##TPE##_nil(hgh) || f <= hgh)) != anti){ \
-				if(cand == NULL || canditer_search(&ci, o, false) != BUN_NONE) { \
+				if(cand == NULL || canditer_contains(&ci, o)) { \
 					*v++ = o;			\
 					c++;				\
 				}					\
@@ -649,7 +649,7 @@ str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 			for(j = 0; j< cap; j++,  o++){
 				if (((is_timestamp_nil(low) || val >= low) && 
 				     (is_timestamp_nil(hgh) || val <= hgh)) != anti){
-					if(cand == NULL || canditer_search(&ci, o, false) != BUN_NONE){
+					if(cand == NULL || canditer_contains(&ci, o)){
 						*v++ = o;
 						c++;
 					}

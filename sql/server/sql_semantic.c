@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -319,7 +319,7 @@ char *symbol2string(mvc *sql, symbol *se, int expression, char **err) /**/
 	switch (se->token) {
 	case SQL_NOP: {
 		dnode *lst = se->data.lval->h;
-		dnode *ops = lst->next->data.lval->h;
+		dnode *ops = lst->next->next->data.lval->h;
 		char *op = qname_fname(lst->data.lval);
 
 		len = snprintf( buf+len, BUFSIZ-len, "%s(", op); 
@@ -339,10 +339,10 @@ char *symbol2string(mvc *sql, symbol *se, int expression, char **err) /**/
 		char *op = qname_fname(lst->data.lval);
 		char *l;
 		char *r;
-		l = symbol2string(sql, lst->next->data.sym, expression, err);
+		l = symbol2string(sql, lst->next->next->data.sym, expression, err);
 		if (l == NULL)
 			return NULL;
-		r = symbol2string(sql, lst->next->next->data.sym, expression, err);
+		r = symbol2string(sql, lst->next->next->next->data.sym, expression, err);
 		if (r == NULL) {
 			_DELETE(l);
 			return NULL;
@@ -359,7 +359,7 @@ char *symbol2string(mvc *sql, symbol *se, int expression, char **err) /**/
 	case SQL_UNOP: {
 		dnode *lst = se->data.lval->h;
 		char *op = qname_fname(lst->data.lval);
-		char *l = symbol2string(sql, lst->next->data.sym, expression, err);
+		char *l = symbol2string(sql, lst->next->next->data.sym, expression, err);
 		if (l == NULL)
 			return NULL;
 		len = snprintf( buf+len, BUFSIZ-len, "%s(%s)", op, l); 

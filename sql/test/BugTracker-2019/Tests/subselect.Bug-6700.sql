@@ -24,24 +24,28 @@ select "A", "B", (
       select count(1)
       from "testTable1" "inner"
       where ("inner"."B" = "outer"."A")
-) from "testTable1" "outer";
+) from "testTable1" "outer"
+order by "A", "B";
 select "A", "B", (
       select count(*)
       from "testTable1" "inner"
       where ("inner"."B" = "outer"."A")
-) from "testTable1" "outer";
+) from "testTable1" "outer"
+order by "A", "B";
 
 
 select "A", "B", (
 	select count(1)
 	from "testTable1" "inner"
 	where ("inner"."B" = "outer"."A") and ("outer"."A" is not null)
-) from "testTable1" "outer";
+) from "testTable1" "outer"
+order by "A", "B";
 select "A", "B", (
 	select count(*)
 	from "testTable1" "inner"
 	where ("inner"."B" = "outer"."A") and ("outer"."A" is not null)
-) from "testTable1" "outer";
+) from "testTable1" "outer"
+order by "A", "B";
 
 
 select "A", "B", (
@@ -51,7 +55,8 @@ select "A", "B", (
          "inner"."A" = "outer"."A" or 
          ("inner"."A" is null and  "outer"."A" is null)
       )
-) from "testTable2" "outer";
+) from "testTable2" "outer"
+order by "A", "B";
 
 
 select "A", "B", (
@@ -61,7 +66,8 @@ select "A", "B", (
          "inner"."A" = "outer"."A" or 
          ("inner"."A" is null and  "outer"."A" is null)
       ) and ("A" = 'Cat7')
-) from "testTable2" "outer";
+) from "testTable2" "outer"
+order by "A", "B";
 
 
 select "A", "B", (
@@ -71,7 +77,8 @@ select "A", "B", (
          "inner"."A" = "outer"."A" or 
          ("inner"."A" is null and  "outer"."A" is null)
       ) and (true = false)
-) from "testTable2" "outer";
+) from "testTable2" "outer"
+order by "A", "B";
 
 
 rollback;

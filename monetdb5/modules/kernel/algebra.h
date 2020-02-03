@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #ifndef ALGEBRA_H
@@ -17,6 +17,9 @@ mal_export str ALGstdev(dbl *res, const bat *bid);
 mal_export str ALGstdevp(dbl *res, const bat *bid);
 mal_export str ALGvariance(dbl *res, const bat *bid);
 mal_export str ALGvariancep(dbl *res, const bat *bid);
+mal_export str ALGcovariance(dbl *res, const bat *bid1, const bat *bid2);
+mal_export str ALGcovariancep(dbl *res, const bat *bid1, const bat *bid2);
+mal_export str ALGcorr(dbl *res, const bat *bid1, const bat *bid2);
 
 mal_export str ALGminany(ptr result, const bat *bid);
 mal_export str ALGmaxany(ptr result, const bat *bid);

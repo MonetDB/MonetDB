@@ -3,15 +3,13 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
 #include "sql_mem.h"
 #include "sql_symbol.h"
 #include "sql_parser.h"
-
-int symbol_debug = 0;
 
 static symbol *
 symbol_init(symbol *s, tokens token, symtype type )
@@ -29,8 +27,7 @@ symbol_create(sql_allocator *sa, tokens token, char *data)
 	if (s) {
 		symbol_init(s, token, type_string);
 		s->data.sval = data;
-		if (symbol_debug)
-			fprintf(stderr, "%p = symbol_create_string(%s,%s)\n", s, token2string(s->token), s->data.sval);
+		TRC_DEBUG(SQL_SYMBOL, "%p = symbol_create_string(%s, %s)\n", s, token2string(s->token), s->data.sval);
 	}
 	return s;
 }
@@ -43,8 +40,7 @@ symbol_create_list(sql_allocator *sa, tokens token, dlist *data)
 	if (s) {
 		symbol_init(s, token, type_list);
 		s->data.lval = data;
-		if (symbol_debug)
-			fprintf(stderr, "%p = symbol_create_list(%s,%p)\n", s, token2string(s->token), s->data.lval);
+		TRC_DEBUG(SQL_SYMBOL, "%p = symbol_create_list(%s, %p)\n", s, token2string(s->token), s->data.lval);
 	}
 	return s;
 }
@@ -57,8 +53,7 @@ symbol_create_int(sql_allocator *sa, tokens token, int data)
 	if (s) {
 		symbol_init(s, token, type_int);
 		s->data.i_val = data;
-		if (symbol_debug)
-			fprintf(stderr, "%p = symbol_create_int(%s,%d)\n", s, token2string(s->token), data);
+		TRC_DEBUG(SQL_SYMBOL, "%p = symbol_create_int(%s, %d)\n", s, token2string(s->token), data);
 	}
 	return s;
 }
@@ -71,8 +66,7 @@ symbol_create_lng(sql_allocator *sa, tokens token, lng data)
 	if (s) {
 		symbol_init(s, token, type_lng);
 		s->data.l_val = data;
-		if (symbol_debug)
-			fprintf(stderr, "%p = symbol_create_lng(%s,"LLFMT")\n", s, token2string(s->token), data);
+		TRC_DEBUG(SQL_SYMBOL, "%p = symbol_create_lng(%s, "LLFMT")\n", s, token2string(s->token), data);
 	}
 	return s;
 }
@@ -85,8 +79,7 @@ symbol_create_symbol(sql_allocator *sa, tokens token, symbol *data)
 	if (s) {
 		symbol_init(s, token, type_symbol);
 		s->data.sym = data;
-		if (symbol_debug)
-			fprintf(stderr, "%p = symbol_create_symbol(%s,%s)\n", s, token2string(s->token), token2string(data->token));
+		TRC_DEBUG(SQL_SYMBOL, "%p = symbol_create_symbol(%s, %s)\n", s, token2string(s->token), token2string(data->token));
 	}
 	return s;
 }

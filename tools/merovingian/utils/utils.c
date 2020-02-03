@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /**
@@ -446,7 +446,12 @@ generatePassphraseFile(const char *path)
 
 	/* delete such that we are sure we recreate the file with restricted
 	 * permissions */
-	remove(path);
+	if (remove(path) == -1 && errno != ENOENT) {
+		char err[512];
+		snprintf(err, sizeof(err), "unable to remove '%s': %s",
+				path, strerror(errno));
+		return(strdup(err));
+	}
 	if ((fd = open(path, O_CREAT | O_WRONLY | O_CLOEXEC, S_IRUSR | S_IWUSR)) == -1) {
 		char err[512];
 		snprintf(err, sizeof(err), "unable to open '%s': %s",

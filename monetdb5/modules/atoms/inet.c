@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -434,13 +434,11 @@ INET_comp_CW(bit *retval, const inet *val1, const inet *val2)
 
 		/* all operations here are done byte based, to avoid byte sex
 		 * problems */
-
-		/* if you want to see some bytes, remove this comment
-		   fprintf(stderr, "%x %x %x %x => %x %x %x %x  %x %x %x %x\n",
-		   m[0], m[1], m[2], m[3], val1->q1, val1->q2,
-		   val1->q3, val1->q4, val2->q1, val2->q2, val2->q3,
-		   val2->q4);
-		 */
+		TRC_DEBUG(MAL_ATOMS, 
+			"%x %x %x %x => %x %x %x %x  %x %x %x %x\n",
+		   	m[0], m[1], m[2], m[3], val1->q1, val1->q2,
+		   	val1->q3, val1->q4, val2->q1, val2->q2, val2->q3,
+		   	val2->q4);
 
 		if ((val1->q1 & m[0]) == (val2->q1 & m[0]) &&
 			(val1->q2 & m[1]) == (val2->q2 & m[1]) &&
@@ -525,11 +523,10 @@ INETbroadcast(inet *retval, const inet *val)
 		m[2] = (msk >> 8) & 0xFF;
 		m[3] = msk & 0xFF;
 
-		/* if you want to see some bytes, remove this comment
-		   fprintf(stderr, "%x %x %x %x => %x %x %x %x\n",
-		   m[0], m[1], m[2], m[3], val->q1, val->q2,
-		   val->q3, val->q4);
-		 */
+		TRC_DEBUG(MAL_ATOMS, 
+			"%x %x %x %x => %x %x %x %x\n",
+			m[0], m[1], m[2], m[3], val->q1, val->q2,
+		   	val->q3, val->q4);
 
 		/* apply the inverted mask, so we get the broadcast */
 		retval->q1 |= m[0];

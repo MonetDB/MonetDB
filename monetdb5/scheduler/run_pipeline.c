@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -212,10 +212,7 @@ RUNsqlbind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			p->token = NOOPsymbol;
 		}
 	}
-#ifdef DEBUG_MAL_SCHEDULER
-	fprintf(stderr, "scheduler.sqlbind results\n");
-	fprintFunction(stderr, mb, stk, LIST_MAL_ALL);
-#endif
+
 	return msg;
 }
 #endif

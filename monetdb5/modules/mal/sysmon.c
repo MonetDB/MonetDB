@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -63,7 +63,7 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	MT_lock_set(&mal_delayLock);
 	for ( i = 0; i< qtop; i++)
-	if( QRYqueue[i].query && (QRYqueue[i].cntxt->user == MAL_ADMIN || QRYqueue[i].cntxt->user == cntxt->user)) {
+	if( QRYqueue[i].query && (cntxt->user == MAL_ADMIN || QRYqueue[i].cntxt->user == cntxt->user)) {
 		qtag = (lng) QRYqueue[i].tag;
 		if (BUNappend(tag, &qtag, false) != GDK_SUCCEED)
 			goto bailout;

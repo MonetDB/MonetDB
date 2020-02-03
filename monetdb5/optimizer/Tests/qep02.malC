@@ -7,3 +7,4 @@ barrier b;
 	(e,f):= algebra.join(a,c,nil:bat,nil:bat,false,nil:lng);
 exit b;
 optimizer.dumpQEP();
+optimizer.garbageCollector();

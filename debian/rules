@@ -4,7 +4,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
 
 DH_VERBOSE=1
 
@@ -25,7 +25,7 @@ override_dh_auto_configure:
 	--enable-netcdf=no \
 	--enable-odbc=yes \
 	--enable-optimize=yes \
-	--enable-py2integration=yes \
+	--enable-profiler=no \
 	--enable-py3integration=yes \
 	--enable-rintegration=yes \
 	--enable-sanitizer=no \
@@ -44,11 +44,9 @@ override_dh_auto_configure:
 	--with-openssl=yes \
 	--with-proj=no \
 	--with-pthread=yes \
-	--with-python2=yes \
 	--with-python3=yes \
 	--with-readline=yes \
 	--with-regex=PCRE \
-	--with-samtools=yes \
 	--with-snappy=no \
 	--with-unixodbc=yes \
 	--with-uuid=yes \

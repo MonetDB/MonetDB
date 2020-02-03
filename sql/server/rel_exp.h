@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #ifndef _REL_EXP_H_
@@ -53,7 +53,7 @@ extern sql_exp *exp_rank_op(sql_allocator *sa, list *largs, list *gbe, list *obe
 	exp_op(sa, append(append(append(new_exp_list(sa),l),r),r2), f)
 #define exp_op4(sa,l,r,r2,r3,f) \
 	exp_op(sa, append(append(append(append(new_exp_list(sa),l),r),r2),r3), f)
-extern sql_exp *exp_aggr(sql_allocator *sa, list *l, sql_subaggr *a, int distinct, int no_nils, unsigned int card, int has_nil );
+extern sql_exp *exp_aggr(sql_allocator *sa, list *l, sql_subfunc *a, int distinct, int no_nils, unsigned int card, int has_nil );
 #define exp_aggr1(sa, e, a, d, n, c, hn) \
 	exp_aggr(sa, append(new_exp_list(sa), e), a, d, n, c, hn)
 extern sql_exp * exp_atom(sql_allocator *sa, atom *a);

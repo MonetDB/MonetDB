@@ -11,7 +11,7 @@ stdout of test 'subselect.Bug-6688` in directory 'sql/test/BugTracker-2019` itse
 # Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
 # Found 15.511 GiB available main-memory.
 # Copyright (c) 1993 - July 2008 CWI.
-# Copyright (c) August 2008 - 2019 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008 - 2020 MonetDB B.V., all rights reserved
 # Visit https://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://meeuw.mullender.nl:30281/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-10238/.s.monetdb.30281
@@ -128,15 +128,15 @@ stdout of test 'subselect.Bug-6688` in directory 'sql/test/BugTracker-2019` itse
 % co_f1 # name
 % bigint # type
 % 2 # length
+[ 25	]
+[ 25	]
+[ 25	]
+[ 25	]
+[ 27	]
+[ 27	]
+[ 27	]
+[ 27	]
 [ 28	]
-[ 27	]
-[ 25	]
-[ 27	]
-[ 25	]
-[ 27	]
-[ 25	]
-[ 27	]
-[ 25	]
 #with "cp_t" as
 #(
 #  select
@@ -175,15 +175,15 @@ stdout of test 'subselect.Bug-6688` in directory 'sql/test/BugTracker-2019` itse
 % co_f1 # name
 % bigint # type
 % 2 # length
+[ 25	]
+[ 25	]
+[ 25	]
+[ 25	]
+[ 27	]
+[ 27	]
+[ 27	]
+[ 27	]
 [ 28	]
-[ 27	]
-[ 25	]
-[ 27	]
-[ 25	]
-[ 27	]
-[ 25	]
-[ 27	]
-[ 25	]
 #ROLLBACK;
 
 # 15:15:24 >  

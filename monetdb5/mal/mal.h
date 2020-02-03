@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -37,46 +37,6 @@
  * for additional system variable settings.
  */
 #define MAXSCRIPT 64
-
-/* The compile time debugging flags are turned into bit masks, akin to GDK */
-mal_export lng OPTdebug;
-
-#define OPTaliases			(1 )
-#define OPTcandidates		((lng)1 << 1)
-#define OPTcoercion			((lng)1 << 2)
-#define OPTcommonterms		((lng)1 << 3)
-#define OPTconstants		((lng)1 << 4)
-#define OPTcostmodel		((lng)1 << 5)
-#define OPTdataflow			((lng)1 << 6)
-#define OPTdeadcode			((lng)1 << 7)
-#define OPTemptybind		((lng)1 << 8)
-#define OPTevaluate			((lng)1 << 9)
-#define OPTgarbagecollector	((lng)1 << 10)
-#define OPTgenerator		((lng)1 << 11)
-#define OPTinline			((lng)1 << 12)
-#define OPTjit				((lng)1 << 13)
-#define OPTjson				((lng)1 << 14)
-#define OPTmacros			((lng)1 << 15)
-#define OPTmatpack			((lng)1 << 15)
-#define OPTmergetable		((lng)1 << 16)
-#define OPTmitosis			((lng)1 << 17)
-#define OPTmultiplex		((lng)1 << 18)
-#define OPToltp				((lng)1 << 19)
-#define OPTpipes			((lng)1 << 20)
-#define OPTpostfix			((lng)1 << 21)
-#define OPTprelude			((lng)1 << 22)
-#define OPTprofiler			((lng)1 << 23)
-#define OPTprojectionpath	((lng)1 << 24)
-#define OPTpushselect		((lng)1 << 25)
-#define OPTquerylog			((lng)1 << 26)
-#define OPTreduce			((lng)1 << 27)
-#define OPTremap			((lng)1 << 28)
-#define OPTremotequeries	((lng)1 << 29)
-#define OPTreorder			((lng)1 << 30)
-#define OPTsupport			((lng)1 << 31)
-#define OPTvolcano			((lng)1 << 32)
-#define OPTwlc				((lng)1 << 33)
-
 mal_export lng MALdebug;
 
 /*
@@ -108,7 +68,6 @@ mal_export int have_hge;
 #define GRPmodules (LOADMASK)
 #define GRPalgorithms (ALGOMASK | ESTIMASK)
 #define GRPperformance (DEADBEEFMASK)
-#define GRPoptimizers  (OPTMASK)
 #define GRPforcemito (FORCEMITOMASK | NOSYNCMASK)
 
 mal_export MT_Lock  mal_contextLock;
@@ -136,8 +95,9 @@ mal_export void mserver_reset(void);
 #define LIST_MAL_PROPS 16       /* show variable properties */
 #define LIST_MAL_MAPI  32       /* output Mapi compatible output */
 #define LIST_MAL_REMOTE  64       /* output MAL for remote execution */
+#define LIST_MAL_FLOW   128       /* output MAL dataflow dependencies */
 #define LIST_MAL_CALL  (LIST_MAL_NAME | LIST_MAL_VALUE )
-#define LIST_MAL_DEBUG (LIST_MAL_NAME | LIST_MAL_VALUE | LIST_MAL_TYPE | LIST_MAL_PROPS)
+#define LIST_MAL_DEBUG (LIST_MAL_NAME | LIST_MAL_VALUE | LIST_MAL_TYPE | LIST_MAL_PROPS | LIST_MAL_FLOW)
 #define LIST_MAL_ALL   (LIST_MAL_NAME | LIST_MAL_VALUE | LIST_MAL_TYPE | LIST_MAL_PROPS | LIST_MAL_MAPI)
 
 /* type check status is kept around to improve type checking efficiency */

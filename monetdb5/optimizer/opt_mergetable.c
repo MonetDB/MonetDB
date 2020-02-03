@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -1830,9 +1830,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			int input = getArg(p, p->retc); /* argument one is first input */
 
 			if (group_input[input]) {
-				if( OPTdebug &  OPTmergetable){
-					fprintf(stderr,"WARNING::: mergetable bailout on group input reuse in group statement \n");
-				}
+				TRC_ERROR(MAL_OPTIMIZER, "Mergetable bailout on group input reuse in group statement\n");
 				bailout = 1;
 			}
 
@@ -1840,9 +1838,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		}
 		if (getModuleId(p) == algebraRef && 
 		    getFunctionId(p) == selectNotNilRef ) {
-			if( OPTdebug &  OPTmergetable){
-				fprintf(stderr,"WARNING::: mergetable bailout not nil ref \n");
-			}
+			TRC_ERROR(MAL_OPTIMIZER, "Mergetable bailout not nil ref\n");
 			bailout = 1;
 		}
 		if (isSample(p)) {
@@ -2245,9 +2241,6 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		 * All other instructions should be checked for remaining MAT dependencies.
 		 * It requires MAT materialization.
 		 */
-		if( OPTdebug &  OPTmergetable){
-			fprintf(stderr, "# %s.%s %d\n", getModuleId(p), getFunctionId(p), match);
-		}
 
 		for (k = p->retc; k<p->argc; k++) {
 			if((m=is_a_mat(getArg(p,k), &ml)) >= 0){
@@ -2263,18 +2256,9 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		pushInstruction(mb, cp);
 	}
 	(void) stk; 
-	chkTypes(cntxt->usermodule,mb, TRUE);
-	if( mb->errors != MAL_SUCCEED)
+	msg = chkTypes(cntxt->usermodule,mb, TRUE);
+	if( msg)
 		goto cleanup;
-
-	if( OPTdebug &  OPTmergetable)
-	{
-		fprintf(stderr,"#Result of multi table optimizer\n");
-        chkTypes(cntxt->usermodule, mb, FALSE);
-        chkFlow(mb);
-        chkDeclarations(mb);
-		fprintFunction(stderr, mb, 0, LIST_MAL_ALL);
-	}
 
 	if ( mb->errors == MAL_SUCCEED) {
 		for(i=0; i<slimit; i++)
@@ -2293,9 +2277,12 @@ cleanup:
 	if (ml.vars) GDKfree(ml.vars);
     /* Defense line against incorrect plans */
     if( actions > 0 && msg == MAL_SUCCEED){
-        chkTypes(cntxt->usermodule, mb, FALSE);
-        chkFlow(mb);
-        chkDeclarations(mb);
+	    if (!msg)
+        	msg = chkTypes(cntxt->usermodule, mb, FALSE);
+	    if (!msg)
+        	msg = chkFlow(mb);
+	    if (!msg)
+        	msg = chkDeclarations(mb);
     }
     /* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -320,9 +320,10 @@ INSPECTgetSignature(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	while (s != NULL) {
 		if (idcmp(s->name, *fcn) == 0) {
+			InstrPtr p = getSignature(s);
 			char *c, *w;
 
-			ps = instruction2str(s->def, 0, getSignature(s), 0);
+			ps = instruction2str(s->def, 0, p, 0);
 			if (ps == 0) {
 				continue;
 			}
@@ -373,9 +374,10 @@ INSPECTgetAddress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	while (s != NULL) {
 		if (idcmp(s->name, *fcn) == 0) {
+			InstrPtr p = getSignature(s);
 			char *c,*w;
 
-			ps = instruction2str(s->def, 0, getSignature(s), 0);
+			ps = instruction2str(s->def, 0, p, 0);
 			if(ps == NULL)
 				continue;
 			c = strchr(ps, '(');

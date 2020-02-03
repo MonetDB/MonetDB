@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -25,7 +25,7 @@
 #include "sql_execute.h"
 #include "mal_exception.h"
 
-#include "geom.h"
+#include "libgeom.h"
 
 /* FIXME: the use of the 'rs' schema should be reconsidered so that the geotiff
  * catalog can be integrated into the SQL catalog.
@@ -68,7 +68,7 @@ GDALWConnection * GDALWConnect(char * source) {
 	OGRRegisterAll();
 	conn = malloc(sizeof(GDALWConnection));
 	if (conn == NULL) {
-		fprintf(stderr, "Could not allocate memory\n");
+		TRC_CRITICAL(SHP, "Could not allocate memory\n");
 		return NULL;
 	}
 	conn->handler = OGROpen(source, 0 , &(conn->driver));
@@ -94,7 +94,7 @@ GDALWConnection * GDALWConnect(char * source) {
 	if (conn->fieldDefinitions == NULL) {
 		OGRReleaseDataSource(conn->handler);
 		free(conn);
-		fprintf(stderr, "Could not allocate memory\n");
+		TRC_CRITICAL(SHP, "Could not allocate memory\n");
 		return NULL;
 	}
 	for (i=0 ; i<fieldCount ; i++) {
@@ -119,7 +119,7 @@ GDALWSimpleFieldDef * GDALWGetSimpleFieldDefinitions(GDALWConnection conn) {
 	}*/
 	columns = malloc(conn.numFieldDefinitions * sizeof(GDALWSimpleFieldDef));
 	if (columns == NULL) {
-		//fprintf(stderr, "Could not allocate memory\n");
+		TRC_CRITICAL(SHP, "Could not allocate memory\n");
 		return NULL;
 	}
 	for (i=0 ; i<conn.numFieldDefinitions ; i++) {

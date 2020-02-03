@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -161,7 +161,7 @@ _create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *
 		node *n;
 		list *ops = call->op4.lval;
 
-		for (n = ops->h; n; n = n->next) {
+		for (n = ops->h; n && !curBlk->errors; n = n->next) {
 			stmt *op = n->data;
 			sql_subtype *t = tail_type(op);
 			int type = t->type->localtype;
@@ -181,7 +181,7 @@ _create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *
 	} else if (rel_ops) {
 		node *n;
 
-		for (n = rel_ops->h; n; n = n->next) {
+		for (n = rel_ops->h; n && !curBlk->errors; n = n->next) {
 			sql_exp *e = n->data;
 			sql_subtype *t = &e->tpe;
 			int type = t->type->localtype;
@@ -197,6 +197,10 @@ _create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *
 			setVarType(curBlk, varid, type);
 			setVarUDFtype(curBlk, varid);
 		}
+	}
+	if (curBlk->errors) {
+		freeSymbol(curPrg);
+		return -1;
 	}
 
 	/* add return statement */
@@ -219,8 +223,9 @@ _create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *
 	if (curBlk->inlineProp == 0 && !c->curprg->def->errors) {
 		msg = SQLoptimizeQuery(c, c->curprg->def);
 	} else if (curBlk->inlineProp != 0) {
-		chkProgram(c->usermodule, c->curprg->def);
-		if (!c->curprg->def->errors)
+		if( msg == MAL_SUCCEED) 
+			msg = chkProgram(c->usermodule, c->curprg->def);
+		if (msg == MAL_SUCCEED && !c->curprg->def->errors)
 			msg = SQLoptimizeFunction(c,c->curprg->def);
 	}
 	if (msg) {
@@ -440,19 +445,14 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 
 	char *mal_session_uuid, *err = NULL;
 	if (!GDKinmemory() && (err = msab_getUUID(&mal_session_uuid)) == NULL) {
-		str rsupervisor_session = GDKstrdup(mal_session_uuid);
-		if (rsupervisor_session == NULL) {
-			free(mal_session_uuid);
-			return -1;
-		}
-
 		str lsupervisor_session = GDKstrdup(mal_session_uuid);
-		if (lsupervisor_session == NULL) {
-			free(mal_session_uuid);
+		str rsupervisor_session = GDKstrdup(mal_session_uuid);
+		free(mal_session_uuid);
+		if (lsupervisor_session == NULL || rsupervisor_session == NULL) {
+			GDKfree(lsupervisor_session);
 			GDKfree(rsupervisor_session);
 			return -1;
 		}
-		free(mal_session_uuid);
 
 		str rworker_plan_uuid = generateUUID();
 		if (rworker_plan_uuid == NULL) {
@@ -574,7 +574,7 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 	//curBlk->inlineProp = 1;
 
 	SQLaddQueryToCache(c);
-	//chkProgram(c->usermodule, c->curprg->def);
+	// (str) chkProgram(c->usermodule, c->curprg->def);
 	if (!c->curprg->def->errors)
 		c->curprg->def->errors = SQLoptimizeFunction(c, c->curprg->def);
 	if (c->curprg->def->errors)
@@ -901,22 +901,21 @@ monet5_resolve_function(ptr M, sql_func *f)
 {
 	Client c;
 	Module m;
-	mvc *sql = (mvc *) M;
+	int clientID = *(int*) M;
 	str mname = getName(f->mod), fname = getName(f->imp);
 
 	if (!mname || !fname)
 		return 0;
 
-	/* Some SQL functions MAL mapping such as count(*) aggregate, the number or arguments don't match */
+	/* Some SQL functions MAL mapping such as count(*) aggregate, the number of arguments don't match */
 	if (mname == calcRef && fname == getName("="))
 		return 1;
-	if (mname == aggrRef && fname == countRef)
+	if (mname == aggrRef && (fname == countRef || fname == count_no_nilRef))
 		return 1;
-	if (mname == sqlRef && (fname == first_valueRef || fname == lagRef || fname == leadRef || fname == nth_valueRef || fname == ntileRef ||
-		fname ==  minRef || fname == maxRef || fname == countRef || fname == prodRef || fname == sumRef || fname == avgRef))
+	if (f->type == F_ANALYTIC)
 		return 1;
 
-	c = MCgetClient(sql->clientid);
+	c = MCgetClient(clientID);
 	for (m = findModule(c->usermodule, mname); m; m = m->link) {
 		for (Symbol s = findSymbolInModule(m, fname); s; s = s->peer) {
 			InstrPtr sig = getSignature(s);
@@ -984,19 +983,6 @@ backend_create_r_func(backend *be, sql_func *f)
 	return 0;
 }
 
-#define pyapi_enableflag "embedded_py"
-
-// returns the currently enabled python version, if any
-// defaults to python 2 if none is enabled
-static int
-enabled_python_version(void) {
-    const char* env = GDKgetenv(pyapi_enableflag);
-    if (env && strncmp(env, "3", 1) == 0) {
-    	return 3;
-    }
-   	return 2;
-}
-
 /* Create the MAL block for a registered function and optimize it */
 static int
 backend_create_py_func(backend *be, sql_func *f)
@@ -1004,22 +990,19 @@ backend_create_py_func(backend *be, sql_func *f)
 	(void)be;
 	switch(f->type) {
 	case  F_AGGR:
-		f->mod = "pyapi";
+		f->mod = "pyapi3";
 		f->imp = "eval_aggr";
 		break;
 	case F_LOADER:
-		f->mod = "pyapi";
+		f->mod = "pyapi3";
 		f->imp = "eval_loader";
 		break;
 	case  F_PROC: /* no output */
 	case  F_FUNC:
 	default: /* ie also F_FILT and F_UNION for now */
-		f->mod = "pyapi";
+		f->mod = "pyapi3";
 		f->imp = "eval";
 		break;
-	}
-	if (enabled_python_version() == 3) {
-		f->mod = "pyapi3";
 	}
 	return 0;
 }
@@ -1030,37 +1013,19 @@ backend_create_map_py_func(backend *be, sql_func *f)
 	(void)be;
 	switch(f->type) {
 	case  F_AGGR:
-		f->mod = "pyapimap";
+		f->mod = "pyapi3map";
 		f->imp = "eval_aggr";
 		break;
 	case  F_PROC: /* no output */
 	case  F_FUNC:
 	default: /* ie also F_FILT and F_UNION for now */
-		f->mod = "pyapimap";
+		f->mod = "pyapi3map";
 		f->imp = "eval";
 		break;
 	}
-	if (enabled_python_version() == 3) {
-		f->mod = "pyapi3map";
-	}
 	return 0;
 }
 
-static int
-backend_create_py2_func(backend *be, sql_func *f)
-{
-	backend_create_py_func(be, f);
-	f->mod = "pyapi";
-	return 0;
-}
-
-static int
-backend_create_map_py2_func(backend *be, sql_func *f)
-{
-	backend_create_map_py_func(be, f);
-	f->mod = "pyapimap";
-	return 0;
-}
 static int
 backend_create_py3_func(backend *be, sql_func *f)
 {
@@ -1183,7 +1148,7 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 	InstrPtr curInstr = NULL;
 	Client c = be->client;
 	Symbol backup = NULL, curPrg = NULL;
-	int i, retseen = 0, sideeffects = 0, vararg = (f->varres || f->vararg), no_inline = 0;
+	int i, retseen = 0, sideeffects = 0, vararg = (f->varres || f->vararg), no_inline = 0, clientid = be->mvc->clientid;
 	sql_rel *r;
 	str msg = MAL_SUCCEED;
 
@@ -1191,7 +1156,7 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 	if (!f->sql && (f->lang == FUNC_LANG_INT || f->lang == FUNC_LANG_MAL)) {
 		if (f->lang == FUNC_LANG_MAL && !f->imp && !mal_function_find_implementation_address(m, f))
 			return -1;
-		if (!backend_resolve_function(be->mvc, f)) {
+		if (!backend_resolve_function(&clientid, f)) {
 			if (f->lang == FUNC_LANG_INT)
 				(void) sql_error(m, 02, SQLSTATE(HY005) "Implementation for function %s.%s not found", f->mod, f->imp);
 			else
@@ -1304,8 +1269,9 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 	if (curBlk->inlineProp == 0 && !c->curprg->def->errors) {
 		msg = SQLoptimizeFunction(c, c->curprg->def);
 	} else if (curBlk->inlineProp != 0) {
-		chkProgram(c->usermodule, c->curprg->def);
-		if (!c->curprg->def->errors)
+		if( msg == MAL_SUCCEED)
+			msg = chkProgram(c->usermodule, c->curprg->def);
+		if (msg == MAL_SUCCEED && !c->curprg->def->errors)
 			msg = SQLoptimizeFunction(c,c->curprg->def);
 	}
 	if (msg) {
@@ -1341,10 +1307,6 @@ backend_create_func(backend *be, sql_func *f, list *restypes, list *ops)
 		return backend_create_py_func(be, f);
 	case FUNC_LANG_MAP_PY:
 		return backend_create_map_py_func(be, f);
-	case FUNC_LANG_PY2:
-		return backend_create_py2_func(be, f);
-	case FUNC_LANG_MAP_PY2:
-		return backend_create_map_py2_func(be, f);
 	case FUNC_LANG_PY3:
 		return backend_create_py3_func(be, f);
 	case FUNC_LANG_MAP_PY3:
@@ -1371,13 +1333,13 @@ backend_create_subfunc(backend *be, sql_subfunc *f, list *ops)
 }
 
 int
-backend_create_subaggr(backend *be, sql_subaggr *f)
+backend_create_subaggr(backend *be, sql_subfunc *f)
 {
 	int res;
 	MalBlkPtr mb = be->mb;
 
 	be->mb = NULL;
-	res = backend_create_func(be, f->aggr, f->res, NULL);
+	res = backend_create_func(be, f->func, f->res, NULL);
 	be->mb = mb;
 	return res;
 }

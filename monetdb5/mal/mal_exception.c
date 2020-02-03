@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -29,7 +29,7 @@ static char *exceptionNames[] = {
 /*11 */	"ArithmeticException",
 /*12 */	"PermissionDeniedException",
 /*13 */	"SQLException",
-/*15 */	"Deprecated operation",
+/*14 */	"Deprecated operation",
 /*EOE*/	NULL
 };
 
@@ -65,9 +65,9 @@ createExceptionInternal(enum malexception type, const char *fcn, const char *for
 	message = GDKmalloc(GDKMAXERRLEN);
 	if (message == NULL){
 		/* Leave a message behind in the logging system */
-		len = snprintf(local, GDKMAXERRLEN, "%s:%s:", exceptionNames[type], fcn);
-		len = vsnprintf(local + len, GDKMAXERRLEN, format, ap);
-		fprintf(stderr, "%s", local);
+		len = snprintf(local, GDKMAXERRLEN - 1, "%s:%s:", exceptionNames[type], fcn);
+		len = vsnprintf(local + len, GDKMAXERRLEN -1, format, ap);
+		TRC_ERROR(MAL_EXCEPTION, "%s\n", local);
 		return M5OutOfMemory;	/* last resort */
 	}
 	len = snprintf(message, GDKMAXERRLEN, "%s:%s:", exceptionNames[type], fcn);
@@ -86,9 +86,9 @@ createExceptionInternal(enum malexception type, const char *fcn, const char *for
 	}
 	char *q = message;
 	for (char *p = strchr(q, '\n'); p; q = p + 1, p = strchr(q, '\n'))
-		fprintf(stderr, "#%s:!ERROR:%.*s\n", MT_thread_getname(), (int) (p - q), q);
+		TRC_ERROR(MAL_EXCEPTION, "%.*s\n", (int) (p - q), q);
 	if (*q)
-		fprintf(stderr, "#%s:!ERROR:%s\n", MT_thread_getname(), q);
+		TRC_ERROR(MAL_EXCEPTION, "%s\n", q);
 	return message;
 }
 
@@ -145,7 +145,6 @@ freeException(str msg)
 	if (msg != MAL_SUCCEED && msg != M5OutOfMemory)
 		GDKfree(msg);
 }
-
 
 /**
  * Internal helper function for createMalException and
