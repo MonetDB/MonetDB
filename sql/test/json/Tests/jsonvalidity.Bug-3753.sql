@@ -28,3 +28,6 @@ SELECT json.isValid('{"test":""""}'); 	-- false
 SELECT json.isValid(E'{"test":"\\"\\""}'); -- true
 
 SELECT json.isValid(R'"\u003c\""');	-- true
+
+SELECT json.isValid(R'01');             -- false
+SELECT json.isValid(R'[01]');           -- false
