@@ -6,10 +6,36 @@ SELECT parent."sys_id" FROM "kagami_dump"."test_task" parent INNER JOIN "kagami_
 
 DROP SCHEMA "kagami_dump" CASCADE;
 
-START TRANSACTION;
+
 CREATE TABLE tab0(col0 INTEGER, col1 INTEGER, col2 INTEGER);
 INSERT INTO tab0 VALUES(97,1,99), (15,81,47), (87,21,10);
+
 SELECT CAST(+ col1 * - col1 AS BIGINT) AS col2 FROM tab0 GROUP BY col2, col0, col1 HAVING + - col0 / - AVG ( ALL + col2 ) - - - AVG ( DISTINCT + col0 ) + col0 IS NULL;
 SELECT DISTINCT + 40 / + + col0 AS col2 FROM tab0 GROUP BY col0, col0, col2 HAVING NOT ( NOT + - 80 BETWEEN NULL AND + - 73 ) OR NOT ( + col0 >= - COUNT ( * ) + - COUNT ( DISTINCT - col0 ) );
 SELECT ALL * FROM tab0 AS cor0 WHERE col2 NOT IN ( 22, 18, CAST ( NULL AS INTEGER ) + - 77 );
-ROLLBACK;
+
+prepare select col0 from tab0 where (?) in (select col0 from tab0);
+prepare select col0 from tab0 where (?,?) in (select col0,col1 from tab0);
+prepare select col0 from tab0 where (col1,col1) in (select col0,? from tab0);
+prepare select col0 from tab0 where (col1,col1) in (select ?,? from tab0);
+prepare select col0 from tab0 where (col0) in (?);
+prepare select col0 from tab0 where (col0) in (?,?);
+
+prepare select ? < ANY (select max(col0) from tab0) from tab0 t1;
+prepare select col0 = ALL (select ? from tab0) from tab0 t1;
+
+prepare select 1 from tab0 where 1 between ? and ?;
+prepare select 1 from tab0 where ? between 1 and ?;
+prepare select 1 from tab0 where ? between ? and 1;
+
+prepare select EXISTS (SELECT ? FROM tab0) from tab0;
+prepare select EXISTS (SELECT ?,? FROM tab0) from tab0;
+
+prepare select col0 from tab0 where (?) in (?); --error
+prepare select ? = ALL (select ? from tab0) from tab0 t1; --error
+
+CREATE TABLE tab1(col0 INTEGER, col1 STRING);
+prepare select 1 from tab1 where (col0,col1) in (select ?,? from tab1);
+
+drop table tab0;
+drop table tab1;

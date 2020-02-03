@@ -782,7 +782,8 @@ exp_rel(mvc *sql, sql_rel *rel)
 	assert(rel);
 	if (is_project(rel->op)) {
 		sql_exp *last = rel->exps->t->data;
-		e->tpe = *exp_subtype(last);
+		sql_subtype *t = exp_subtype(last);
+		e->tpe = t ? *t : (sql_subtype) {0};
 	}
 	return e;
 }
@@ -1707,7 +1708,7 @@ exp_is_atom( sql_exp *e )
 int
 exp_is_rel( sql_exp *e )
 {
-	return (e->type == e_psm && e->flag == PSM_REL && e->l);
+	return (e && e->type == e_psm && e->flag == PSM_REL && e->l);
 }
 
 int
