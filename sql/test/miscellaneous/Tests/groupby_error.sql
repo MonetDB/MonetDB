@@ -24,7 +24,15 @@ prepare select col0 from tab0 where (col0) in (?,?);
 prepare select ? < ANY (select max(col0) from tab0) from tab0 t1;
 prepare select col0 = ALL (select ? from tab0) from tab0 t1;
 
+prepare select 1 from tab0 where 1 between ? and ?;
+prepare select 1 from tab0 where ? between 1 and ?;
+prepare select 1 from tab0 where ? between ? and 1;
+
+prepare select EXISTS (SELECT ? FROM tab0) from tab0;
+prepare select EXISTS (SELECT ?,? FROM tab0) from tab0;
+
 prepare select col0 from tab0 where (?) in (?); --error
+prepare select ? = ALL (select ? from tab0) from tab0 t1; --error
 
 CREATE TABLE tab1(col0 INTEGER, col1 STRING);
 prepare select 1 from tab1 where (col0,col1) in (select ?,? from tab1);

@@ -1827,8 +1827,6 @@ rel_compare(sql_query *query, sql_rel *rel, symbol *sc, symbol *lo, symbol *ro, 
 		if (!rs2)
 			return NULL;
 	}
-	if (!rs) 
-		return NULL;
 	if (ls->card > rs->card && rs->card == CARD_AGGR && is_sql_having(f))
 		return sql_error(sql, 05, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s.%s' in query results without an aggregate function", exp_relname(ls), exp_name(ls));
 	if (rs->card > ls->card && ls->card == CARD_AGGR && is_sql_having(f))
@@ -1928,18 +1926,25 @@ _rel_nop(mvc *sql, sql_schema *s, char *fname, list *tl, sql_rel *rel, list *exp
 }
 
 static sql_exp *
-exp_exist(sql_query *query, sql_exp *le, int exists)
+exp_exist(sql_query *query, sql_rel *rel, sql_exp *le, int exists)
 {
 	mvc *sql = query->sql;
 	sql_subfunc *exists_func = NULL;
-			
+	sql_subtype *t;
+
+	if (!exp_name(le))
+		exp_label(sql->sa, le, ++sql->label);
+	if (!exp_subtype(le) && rel_set_type_param(sql, sql_bind_localtype("bit"), rel, le, 0) < 0) /* workaround */
+		return NULL;
+	t = exp_subtype(le);
+
 	if (exists)
-		exists_func = sql_bind_func(sql->sa, sql->session->schema, "sql_exists", exp_subtype(le), NULL, F_FUNC);
+		exists_func = sql_bind_func(sql->sa, sql->session->schema, "sql_exists", t, NULL, F_FUNC);
 	else
-		exists_func = sql_bind_func(sql->sa, sql->session->schema, "sql_not_exists", exp_subtype(le), NULL, F_FUNC);
+		exists_func = sql_bind_func(sql->sa, sql->session->schema, "sql_not_exists", t, NULL, F_FUNC);
 
 	if (!exists_func) 
-		return sql_error(sql, 02, SQLSTATE(42000) "exist operator on type %s missing", exp_subtype(le)->type->sqlname);
+		return sql_error(sql, 02, SQLSTATE(42000) "exist operator on type %s missing", t->type->sqlname);
 	return exp_unop(sql->sa, le, exists_func);
 }
 
@@ -1952,7 +1957,7 @@ rel_exists_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 	le = rel_value_exp(query, rel, sc->data.sym, f, ek);
 	if (!le) 
 		return NULL;
-	e = exp_exist(query, le, sc->token == SQL_EXISTS);
+	e = exp_exist(query, rel ? *rel : NULL, le, sc->token == SQL_EXISTS);
 	if (e) {
 		/* only freevar should have CARD_AGGR */
 		e->card = CARD_ATOM;
@@ -1975,7 +1980,7 @@ rel_exists_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 	assert(!is_sql_sel(f));
 	if (sq) {
 		sql_exp *e = exp_rel(sql, sq);
-		e = exp_exist(query, e, sc->token == SQL_EXISTS);
+		e = exp_exist(query, rel, e, sc->token == SQL_EXISTS);
 		if (e) {
 			/* only freevar should have CARD_AGGR */
 			e->card = CARD_ATOM;
@@ -2531,10 +2536,22 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 		sql_exp *le = rel_value_exp(query, &rel, lo, f, ek);
 		sql_exp *re1 = rel_value_exp(query, &rel, ro1, f, ek);
 		sql_exp *re2 = rel_value_exp(query, &rel, ro2, f, ek);
+		sql_subtype *t1, *t2, *t3;
 		int flag = 0;
 
 		assert(sc->data.lval->h->next->type == type_int);
 		if (!le || !re1 || !re2) 
+			return NULL;
+
+		t1 = exp_subtype(le);
+		t2 = exp_subtype(re1);
+		t3 = exp_subtype(re2);
+
+		if (!t1 && (t2 || t3) && rel_binop_check_types(sql, rel, le, t2 ? re1 : re2, 0) < 0)
+			return NULL;
+		if (!t2 && (t1 || t3) && rel_binop_check_types(sql, rel, le, t1 ? le : re2, 0) < 0)
+			return NULL;
+		if (!t3 && (t1 || t2) && rel_binop_check_types(sql, rel, le, t1 ? le : re1, 0) < 0)
 			return NULL;
 
 		if (rel_convert_types(sql, rel, rel, &le, &re1, 1, type_equal) < 0 ||
@@ -2550,9 +2567,8 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 			sql_subfunc *min = sql_bind_func(sql->sa, sql->session->schema, "sql_min", exp_subtype(re1), exp_subtype(re2), F_FUNC);
 			sql_subfunc *max = sql_bind_func(sql->sa, sql->session->schema, "sql_max", exp_subtype(re1), exp_subtype(re2), F_FUNC);
 
-			if (!min || !max) {
+			if (!min || !max)
 				return sql_error(sql, 02, SQLSTATE(42000) "min or max operator on types %s %s missing", exp_subtype(re1)->type->sqlname, exp_subtype(re2)->type->sqlname);
-			}
 			tmp = exp_binop(sql->sa, re1, re2, min);
 			re2 = exp_binop(sql->sa, re1, re2, max);
 			re1 = tmp;
@@ -5685,7 +5701,6 @@ rel_joinquery_(sql_query *query, sql_rel *rel, symbol *tab1, int natural, jt joi
 static sql_rel *
 rel_joinquery(sql_query *query, sql_rel *rel, symbol *q)
 {
-
 	dnode *n = q->data.lval->h;
 	symbol *tab_ref1 = n->data.sym;
 	int natural = n->next->data.i_val;

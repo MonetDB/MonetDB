@@ -192,8 +192,7 @@ qname_catalog(dlist *qname)
 
 	if (dlist_length(qname) == 3) {
 		return qname->h->data.sval;
-	} 
-
+	}
 	return NULL;
 }
 
