@@ -236,6 +236,22 @@ typedef struct _MosaicLayout {
 	(void) alignment;\
 }
 
+#define LAYOUT_INSERT(SET_VALUES) \
+{\
+	lng bsn = *(lng*) Tloc(layout->bsn, BATcount(layout->bsn)-1);\
+	bsn++;\
+\
+	str tech = str_nil;\
+	lng count = lng_nil;\
+	lng input = lng_nil;\
+	lng output = lng_nil;\
+	str properties = str_nil;\
+\
+	SET_VALUES;\
+\
+	layout_insert_record(layout, &bsn, &tech, &count, &input, &output, &properties);\
+}
+
 mal_export const Method MOSmethods[];
 mal_export bit MOSisTypeAllowed(char compression, BAT* b);
 mal_export str MOScompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

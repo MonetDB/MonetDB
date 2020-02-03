@@ -119,6 +119,14 @@ MOSlayout_SIGNATURE(METHOD, TPE)
 	(void) layout;
 
 	// TODO check what advance does.
+	task->start += MOSgetCnt(task->blk);
+
+	char* blk = (char*)task->blk;
+	blk += sizeof(MOSBlockHeaderTpe(runlength, TPE));
+	blk += GET_PADDING(task->blk, runlength, TPE);
+	
+
+	LAYOUT_INSERT(SET_VALUES)
 
 	return MAL_SUCCEED;
 }

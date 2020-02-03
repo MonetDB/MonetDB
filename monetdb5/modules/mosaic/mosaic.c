@@ -356,21 +356,6 @@ MOSlayout_hdr(MOStask* task, MosaicLayout* layout) {
 			&properties)) != MAL_SUCCEED)
 			 return msg;
 
-	/*
-	for(i=0; i < MOSAIC_METHODS; i++){
-		lng nil = 0;
-		snprintf(buf,BUFSIZ,"%s blocks", MOSmethods[i].name);
-		if( BUNappend(bbsn, &zero, false) != GDK_SUCCEED ||
-			BUNappend(btech, buf, false) != GDK_SUCCEED ||
-			BUNappend(bcount, &(task->hdr)->blks[i], false) != GDK_SUCCEED ||
-			BUNappend(binput, &(task->hdr)->elms[i], false) != GDK_SUCCEED ||
-			BUNappend(boutput, &nil , false) != GDK_SUCCEED ||
-			BUNappend(bproperties, "", false) != GDK_SUCCEED)
-				throw(MAL,"mosaic.layout", MAL_MALLOC_FAIL);
-	}
-	*/
-
-
 	if( (task->hdr)->blks[MOSAIC_DICT256] && (msg = MOSlayoutDictionary_ID(dict256)(task,layout)) != MAL_SUCCEED)
 		return msg;
 
