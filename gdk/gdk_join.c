@@ -2476,7 +2476,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	oid lval = oid_nil;	/* hold value if l is dense */
 	const char *v = (const char *) &lval;
 	bool lskipped = false;	/* whether we skipped values in l */
-	Hash *restrict hsh;
+	Hash *restrict hsh = NULL;
 	int t;
 
 	(void) rcandend;
@@ -2560,7 +2560,6 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		}
 	} else {
 		if (BAThash(r) != GDK_SUCCEED) {
-			hsh = NULL;
 			goto bailout;
 		}
 		hsh = r->thash;
