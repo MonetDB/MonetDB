@@ -1252,8 +1252,9 @@ static int
 rel_set_type_param(mvc *sql, sql_subtype *type, sql_rel *rel, sql_exp *rel_exp, int upcast)
 {
 	sql_rel *r = rel;
+	int is_rel = exp_is_rel(rel_exp);
 
-	if (!type || !rel_exp || (rel_exp->type != e_atom && rel_exp->type != e_column && rel_exp->type == e_psm && rel_exp->flag != PSM_REL))
+	if (!type || !rel_exp || (rel_exp->type != e_atom && rel_exp->type != e_column && !is_rel))
 		return -1;
 
 	/* use largest numeric types */
@@ -1266,10 +1267,10 @@ rel_set_type_param(mvc *sql, sql_subtype *type, sql_rel *rel, sql_exp *rel_exp, 
 	if (upcast && type->type->eclass == EC_FLT) 
 		type = sql_bind_localtype("dbl");
 
-	if (rel_exp->type == e_psm)
+	if (is_rel)
 		r = (sql_rel*) rel_exp->l;
 
-	if ((rel_exp->type == e_atom && (rel_exp->l || rel_exp->r || rel_exp->f)) || rel_exp->type == e_column || rel_exp->type == e_psm) {
+	if ((rel_exp->type == e_atom && (rel_exp->l || rel_exp->r || rel_exp->f)) || rel_exp->type == e_column || is_rel) {
 		/* it's not a parameter set possible parameters below */
 		const char *relname = exp_relname(rel_exp), *expname = exp_name(rel_exp);
 		if (rel_set_type_recurse(sql, type, r, &relname, &expname) < 0)
@@ -1278,6 +1279,24 @@ rel_set_type_param(mvc *sql, sql_subtype *type, sql_rel *rel, sql_exp *rel_exp, 
 		return -1;
 
 	rel_exp->tpe = *type;
+	return 0;
+}
+
+static int
+rel_binop_check_types(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, int upcast)
+{
+	sql_subtype *t1 = exp_subtype(ls), *t2 = exp_subtype(rs);
+	
+	if (!t1 || !t2) {
+		if (t2 && !t1 && rel_set_type_param(sql, t2, rel, ls, upcast) < 0)
+			return -1;
+		if (t1 && !t2 && rel_set_type_param(sql, t1, rel, rs, upcast) < 0)
+			return -1;
+	}
+	if (!exp_subtype(ls) && !exp_subtype(rs)) {
+		(void) sql_error(sql, 01, SQLSTATE(42000) "Cannot have a parameter (?) on both sides of an expression");
+		return -1;
+	}
 	return 0;
 }
 
@@ -1619,6 +1638,8 @@ rel_compare_exp_(sql_query *query, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_e
 			if (anti)
 				set_anti(e);
 		} else {
+			if (rel_binop_check_types(sql, rel, ls, rs, 0) < 0)
+				return NULL;
 			e = exp_compare_func(sql, ls, rs, rs2, compare_func((comp_type)type, quantifier?0:anti), quantifier);
 			if (anti && quantifier)
 				e = rel_unop_(sql, NULL, e, NULL, "not", card_value);
@@ -1637,8 +1658,6 @@ rel_compare_exp_(sql_query *query, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_e
 
 			type = (int)swap_compare((comp_type)type);
 		}
-		if (!exp_subtype(ls) && !exp_subtype(rs))
-			return sql_error(sql, 01, SQLSTATE(42000) "Cannot have a parameter (?) on both sides of an expression");
 		if (rel_convert_types(sql, rel, rel, &ls, &rs, 1, type_equal_no_any) < 0)
 			return NULL;
 		e = exp_compare(sql->sa, ls, rs, type);
@@ -2024,35 +2043,20 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 		values = exp_values(sql->sa, vals);
 		exp_label(sql->sa, values, ++sql->label);
 		if (is_tuple) { 
-			list *le_vals = le->f;
+			sql_exp *e_rel = (sql_exp *) vals->h->data;
+			list *le_vals = le->f, *rel_vals = ((sql_rel*)e_rel->l)->exps;
 
-			for (node *m = le_vals->h, *o = vals->h ; m && o ; m = m->next, o = o->next) {
+			for (node *m = le_vals->h, *o = rel_vals->h ; m && o ; m = m->next, o = o->next) {
 				sql_exp *e = m->data, *f = o->data;
-				sql_subtype *t1 = exp_subtype(e), *t2 = exp_subtype(f);
 
-				if (!t1 || !t2) {
-					if (t2 && !t1 && rel_set_type_param(sql, t2, rel ? *rel : NULL, e, 0) < 0)
-						return NULL;
-					if (t1 && !t2 && rel_set_type_param(sql, t1, rel ? *rel : NULL, f, 0) < 0)
-						return NULL;
-				}
-				if (!exp_subtype(e) || !exp_subtype(f))
-					return sql_error(sql, 01, SQLSTATE(42000) "Cannot have a parameter (?) on both sides of an expression");
+				if (rel_binop_check_types(sql, rel ? *rel : NULL, e, f, 0) < 0)
+					return NULL;
 			}
 		} else { /* if it's not a tuple, enforce coersion on the type for every element on the list */
-			sql_subtype *t1 = exp_subtype(le), *t2;
-
 			values = exp_values_set_supertype(sql, values);
-			t2 = exp_subtype(values);
 
-			if (!t1 || !t2) {
-				if (t2 && !t1 && rel_set_type_param(sql, t2, rel ? *rel : NULL, le, 0) < 0)
-					return NULL;
-				if (t1 && !t2 && rel_set_type_param(sql, t1, rel ? *rel : NULL, values, 0) < 0)
-					return NULL;
-			}
-			if (!exp_subtype(le) || !exp_subtype(values))
-				return sql_error(sql, 01, SQLSTATE(42000) "Cannot have a parameter (?) on both sides of an expression");
+			if (rel_binop_check_types(sql, rel ? *rel : NULL, le, values, 0) < 0)
+				return NULL;
 		}
 		e = exp_in_func(sql, le, values, (sc->token == SQL_IN), is_tuple);
 	}
@@ -2193,6 +2197,9 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 
 		rs = rel_value_exp(query, rel, ro, f, ek);
 		if (!rs)
+			return NULL;
+
+		if (rel_binop_check_types(sql, rel ? *rel : NULL, ls, rs, 0) < 0)
 			return NULL;
 		ls = exp_compare_func(sql, ls, rs, NULL, compare_func(compare_str2type(compare_op), quantifier?0:need_not), quantifier);
 		if (need_not && quantifier)
@@ -2830,18 +2837,12 @@ rel_binop_(mvc *sql, sql_rel *rel, sql_exp *l, sql_exp *r, sql_schema *s, char *
 			if (!t2)
 				rel_set_type_param(sql, arg_type(f->func->ops->h->next->data), rel, r, 1);
 			f = NULL;
-		} else {
-			if (t2 && !t1 && rel_set_type_param(sql, t2, rel, l, 1) < 0)
-				return NULL;
-			if (t1 && !t2 && rel_set_type_param(sql, t1, rel, r, 1) < 0)
-				return NULL;
-		}
-		t1 = exp_subtype(l);
-		t2 = exp_subtype(r);
-	}
 
-	if (!t1 || !t2)
-		return sql_error(sql, 01, SQLSTATE(42000) "Cannot have a parameter (?) on both sides of an expression");
+			if (!exp_subtype(l) || !exp_subtype(r))
+				return sql_error(sql, 01, SQLSTATE(42000) "Cannot have a parameter (?) on both sides of an expression");
+		} else if (rel_binop_check_types(sql, rel, l, r, 1) < 0)
+			return NULL;
+	}
 
 	if (!f && (is_addition(fname) || is_subtraction(fname)) && 
 		((t1->type->eclass == EC_NUM && t2->type->eclass == EC_NUM) ||

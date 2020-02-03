@@ -197,7 +197,6 @@ qname_catalog(dlist *qname)
 	return NULL;
 }
 
-
 int
 set_type_param(mvc *sql, sql_subtype *type, int nr)
 {

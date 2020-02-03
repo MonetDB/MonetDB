@@ -137,7 +137,33 @@ stdout of test 'groupby_error` in directory 'sql/test/miscellaneous` itself:
 [ "int",	32,	0,	"",	"tab0",	"col0"	]
 [ "int",	32,	0,	NULL,	NULL,	NULL	]
 [ "int",	32,	0,	NULL,	NULL,	NULL	]
-#ROLLBACK;
+#prepare select ? < ANY (select max(col0) from tab0) from tab0 t1;
+#prepare select ? < ANY (select max(col0) from tab0) from tab0 t1;
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 7,	2,	1,	0,	2,	2 # length
+[ "boolean",	1,	0,	"",	"%5",	"%5"	]
+[ "int",	32,	0,	NULL,	NULL,	NULL	]
+#prepare select col0 = ALL (select ? from tab0) from tab0 t1;
+#prepare select col0 = ALL (select ? from tab0) from tab0 t1;
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 7,	2,	1,	0,	2,	2 # length
+[ "boolean",	1,	0,	"",	"%5",	"%5"	]
+[ "int",	32,	0,	NULL,	NULL,	NULL	]
+#CREATE TABLE tab1(col0 INTEGER, col1 STRING);
+#prepare select 1 from tab1 where (col0,col1) in (select ?,? from tab1);
+#prepare select 1 from tab1 where (col0,col1) in (select ?,? from tab1);
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 7,	2,	1,	0,	0,	0 # length
+[ "tinyint",	1,	0,	"",	"",	""	]
+[ "int",	32,	0,	NULL,	NULL,	NULL	]
+[ "clob",	0,	0,	NULL,	NULL,	NULL	]
+#drop table tab0;
 
 # 10:56:47 >  
 # 10:56:47 >  "Done."
