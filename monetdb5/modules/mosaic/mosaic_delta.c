@@ -63,7 +63,6 @@ bool MOStypes_delta(BAT* b) {
 #undef COMPRESSION_DEFINITION
 
 #define LAYOUT_DEFINITION
-#include METHOD_TEMPLATES_INCLUDE
 #define TPE bte
 #include METHOD_TEMPLATES_INCLUDE
 #undef TPE

@@ -8,7 +8,7 @@
 create schema mosaic;
 
 create function mosaic.layout(sch string, tbl string, col string) 
-returns table(technique string, "count" bigint, inputsize bigint, outputsize bigint,properties string)
+returns table(technique string, "count" bigint, inputsize bigint, outputsize bigint,properties string, bsn bigint)
 external name sql.mosaiclayout;
 
 create function mosaic.analysis(sch string, tbl string, col string) 

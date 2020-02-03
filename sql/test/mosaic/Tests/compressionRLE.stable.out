@@ -100,28 +100,28 @@ end user.s14_0;
 #total                actions= 1 time=274 usec 
 #alter table tmp3RLE alter column i set storage 'runlength';
 #select * from mosaic.layout('sys','tmp3RLE','i') limit 25;
-% .%4,	.%4,	.%4,	.%4,	.%4 # table_name
-% technique,	count,	inputsize,	outputsize,	properties # name
-% clob,	bigint,	bigint,	bigint,	clob # type
-% 0,	1,	1,	1,	0 # length
+% .%4,	.%4,	.%4,	.%4,	.%4,	.%4 # table_name
+% technique,	count,	inputsize,	outputsize,	properties,	bsn # name
+% clob,	bigint,	bigint,	bigint,	clob,	bigint # type
+% 0,	1,	1,	1,	0,	1 # length
 #alter table tmp3RLE alter column b set storage 'runlength';
 #select * from mosaic.layout('sys','tmp3RLE','b') limit 25;
-% .%4,	.%4,	.%4,	.%4,	.%4 # table_name
-% technique,	count,	inputsize,	outputsize,	properties # name
-% clob,	bigint,	bigint,	bigint,	clob # type
-% 0,	1,	1,	1,	0 # length
+% .%4,	.%4,	.%4,	.%4,	.%4,	.%4 # table_name
+% technique,	count,	inputsize,	outputsize,	properties,	bsn # name
+% clob,	bigint,	bigint,	bigint,	clob,	bigint # type
+% 0,	1,	1,	1,	0,	1 # length
 #alter table tmp3RLE alter column f set storage 'runlength';
 #select * from mosaic.layout('sys','tmp3RLE','f') limit 25;
-% .%4,	.%4,	.%4,	.%4,	.%4 # table_name
-% technique,	count,	inputsize,	outputsize,	properties # name
-% clob,	bigint,	bigint,	bigint,	clob # type
-% 0,	1,	1,	1,	0 # length
+% .%4,	.%4,	.%4,	.%4,	.%4,	.%4 # table_name
+% technique,	count,	inputsize,	outputsize,	properties,	bsn # name
+% clob,	bigint,	bigint,	bigint,	clob,	bigint # type
+% 0,	1,	1,	1,	0,	1 # length
 #alter table tmp3RLE alter column t set storage 'runlength';
 #select * from mosaic.layout('sys','tmp3RLE','t') limit 25;
-% .%4,	.%4,	.%4,	.%4,	.%4 # table_name
-% technique,	count,	inputsize,	outputsize,	properties # name
-% clob,	bigint,	bigint,	bigint,	clob # type
-% 0,	1,	1,	1,	0 # length
+% .%4,	.%4,	.%4,	.%4,	.%4,	.%4 # table_name
+% technique,	count,	inputsize,	outputsize,	properties,	bsn # name
+% clob,	bigint,	bigint,	bigint,	clob,	bigint # type
+% 0,	1,	1,	1,	0,	1 # length
 #explain select i from tmp3RLE;
 % .explain # table_name
 % mal # name
