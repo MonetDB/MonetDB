@@ -452,6 +452,9 @@ score_func( sql_subfunc *sf, list *tl)
 		sql_arg *a = n->data;
 		sql_subtype *t = m->data;
 
+		if (!t)
+			continue;
+
 		if (a->type.type->eclass == EC_ANY)
 			score += 100;
 		else if (is_subtype(t, &a->type))
@@ -516,7 +519,7 @@ find_table_function_type(mvc *sql, sql_schema *s, char *fname, list *exps, list 
 					atp = t;
 					aa = a;
 				}
-				if (aa && a->type.type->eclass == EC_ANY &&
+				if (aa && a->type.type->eclass == EC_ANY && t && atp &&
 				    t->type->localtype > atp->type->localtype){
 					atp = t;
 					aa = a;
@@ -527,7 +530,7 @@ find_table_function_type(mvc *sql, sql_schema *s, char *fname, list *exps, list 
 				sql_exp *e = n->data;
 				sql_subtype *ntp = &a->type;
 
-				if (a->type.type->eclass == EC_ANY)
+				if (a->type.type->eclass == EC_ANY && atp)
 					ntp = sql_create_subtype(sql->sa, atp->type, atp->digits, atp->scale);
 				e = rel_check_type(sql, ntp, NULL, e, type_equal);
 				if (!e) {
@@ -1890,7 +1893,7 @@ _rel_nop(mvc *sql, sql_schema *s, char *fname, list *tl, sql_rel *rel, list *exp
 					atp = t;
 					aa = a;
 				}
-				if (aa && a->type.type->eclass == EC_ANY &&
+				if (aa && a->type.type->eclass == EC_ANY && t && atp &&
 				    t->type->localtype > atp->type->localtype){
 					atp = t;
 					aa = a;
@@ -1901,7 +1904,7 @@ _rel_nop(mvc *sql, sql_schema *s, char *fname, list *tl, sql_rel *rel, list *exp
 				sql_exp *e = n->data;
 				sql_subtype *ntp = &a->type;
 
-				if (a->type.type->eclass == EC_ANY)
+				if (a->type.type->eclass == EC_ANY && atp)
 					ntp = sql_create_subtype(sql->sa, atp->type, atp->digits, atp->scale);
 				e = rel_check_type(sql, ntp, rel, e, type_equal);
 				if (!e) {
@@ -1916,7 +1919,7 @@ _rel_nop(mvc *sql, sql_schema *s, char *fname, list *tl, sql_rel *rel, list *exp
 				append(nexps, e);
 			}
 			/* dirty hack */
-			if (f->res && aa)
+			if (f->res && aa && atp)
 				f->res->h->data = sql_create_subtype(sql->sa, atp->type, atp->digits, atp->scale);
 			if (nexps) 
 				return exp_op(sql->sa, nexps, f);
