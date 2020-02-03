@@ -1134,33 +1134,19 @@ SOPREF=lib
 AS_CASE([$host_os],
 [mac*], [
 	# Mac OS 9 stuff
-	DIRSEP=':'
-	QDIRSEP=':'
 	AC_MSG_ERROR([mac not supported])],
 [*cygwin*], [
-	DIRSEP='/'
-	QDIRSEP='/'
-	PATHSEP=':'
 	SOEXT='-0.dll'
 	SOPREF=cyg],
 [*darwin*], [
-	DIRSEP='/'
-	QDIRSEP='/'
-	PATHSEP=':'
 	SOEXT='.dylib'],
 [
-	DIRSEP='/'
-	QDIRSEP='/'
-	PATHSEP=':'
 	SOEXT='.so'])
-AC_SUBST([DIRSEP])
-AC_SUBST([QDIRSEP])
-AC_SUBST([PATHSEP])
 AC_SUBST([SOEXT])
-AC_DEFINE_UNQUOTED([DIR_SEP], ['$QDIRSEP'], [Directory separator])
-AC_DEFINE_UNQUOTED([DIR_SEP_STR], ["$QDIRSEP"], [Directory separator])
-AC_DEFINE_UNQUOTED([PATH_SEP], ['$PATHSEP'], [Path separator])
-AC_DEFINE_UNQUOTED([PATH_SEP_STR], ["$PATHSEP"], [Path separator])
+AC_DEFINE_UNQUOTED([DIR_SEP], ['/'], [Directory separator])
+AC_DEFINE_UNQUOTED([DIR_SEP_STR], ["/"], [Directory separator])
+AC_DEFINE_UNQUOTED([PATH_SEP], [':'], [Path separator])
+AC_DEFINE_UNQUOTED([PATH_SEP_STR], [":"], [Path separator])
 AC_DEFINE_UNQUOTED([SO_PREFIX], ["$SOPREF"], [Shared Object prefix])
 AC_DEFINE_UNQUOTED([SO_EXT], ["$SOEXT"], [Shared Object extension])
 

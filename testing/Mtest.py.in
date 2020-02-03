@@ -3630,7 +3630,6 @@ def main(argv) :
         VARS = VARS + [ 'MALCLIENT', 'SQLCLIENT', 'SQLDUMP', 'RCLIENT', 'RUBYCLIENT']    #, 'MONETDB_MOD_PATH' ]
 
     env = {}
-    env['DIRSEP'] = os.sep
 
     # most intuitive (?) default settings
     dft['TSTSRCBASE']     = r"_configure('@QXSOURCE@')"
