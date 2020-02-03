@@ -3662,8 +3662,6 @@ rel_case(sql_query *query, sql_rel **rel, tokens token, symbol *opt_cond, dlist 
 		else
 			dn = dn->next;
 	}
-	if (!restype) 
-		return sql_error(sql, 02, SQLSTATE(42000) "result type missing");
 	/* for COALESCE we skip the last (else part) */
 	for (; dn && (token != SQL_COALESCE || dn->next); dn = dn->next) {
 		sql_exp *cond = NULL, *result = NULL;
@@ -3700,10 +3698,12 @@ rel_case(sql_query *query, sql_rel **rel, tokens token, symbol *opt_cond, dlist 
 		list_prepend(results, result);
 
 		tpe = exp_subtype(result);
-		if (!tpe) 
-			return sql_error(sql, 02, SQLSTATE(42000) "result type missing");
-		supertype(&rtype, restype, tpe);
-		restype = &rtype;
+		if (tpe && restype) {
+			supertype(&rtype, restype, tpe);
+			restype = &rtype;
+		} else if (tpe) {
+			restype = tpe;
+		}
 	}
 	if (opt_else || else_exp) {
 		sql_exp *result = else_exp;
@@ -3714,9 +3714,13 @@ rel_case(sql_query *query, sql_rel **rel, tokens token, symbol *opt_cond, dlist 
 		tpe = exp_subtype(result);
 		if (tpe && restype) {
 			supertype(&rtype, restype, tpe);
-			tpe = &rtype;
+			restype = &rtype;
+		} else if (tpe) {
+			restype = tpe;
 		}
-		restype = tpe;
+
+		if (!restype)
+			return sql_error(sql, 02, SQLSTATE(42000) "Result type missing");
 		if (restype->type->localtype == TYPE_void) /* NULL */
 			restype = sql_bind_localtype("str");
 
@@ -3727,6 +3731,8 @@ rel_case(sql_query *query, sql_rel **rel, tokens token, symbol *opt_cond, dlist 
 		if (!res) 
 			return NULL;
 	} else {
+		if (!restype)
+			return sql_error(sql, 02, SQLSTATE(42000) "Result type missing");
 		if (restype->type->localtype == TYPE_void) /* NULL */
 			restype = sql_bind_localtype("str");
 		res = exp_null(sql->sa, restype);
