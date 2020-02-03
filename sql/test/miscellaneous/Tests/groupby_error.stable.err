@@ -51,6 +51,10 @@ MAPI  = (monetdb) /var/tmp/mtest-128195/.s.monetdb.35720
 QUERY = prepare select case when col0 = 0 then ? when col0 = 1 then ? else ? end from tab0; --error
 ERROR = !Result type missing
 CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-143244/.s.monetdb.35226
+QUERY = prepare select ? is null from tab0; --error
+ERROR = !Could not determine type for argument number 1
+CODE  = 42000
 
 # 10:56:47 >  
 # 10:56:47 >  "Done."

@@ -792,7 +792,7 @@ backend_dumpproc(backend *be, Client c, cq *cq, sql_rel *r)
 			sql_type *tpe = a->type.type;
 			int type, varid = 0;
 
-			if (!tpe) {
+			if (!tpe || tpe->eclass == EC_ANY) {
 				sql_error(m, 003, SQLSTATE(42000) "Could not determine type for argument number %d\n", argc+1);
 				goto cleanup;
 			}
