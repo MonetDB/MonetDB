@@ -4428,10 +4428,14 @@ calculate_window_bound(sql_query *query, sql_rel *p, tokens token, symbol *bound
 		res = rel_value_exp2(query, &p, bound, f, ek, &is_last);
 		if (!res)
 			return NULL;
-		bt = exp_subtype(res);
-		if (bt)
-			bclass = bt->type->eclass;
-		if (!bt || !(bclass == EC_NUM || EC_INTERVAL(bclass) || bclass == EC_DEC || bclass == EC_FLT))
+		if (!(bt = exp_subtype(res))) {
+			sql_subtype *t = (frame_type == FRAME_ROWS || frame_type == FRAME_GROUPS) ? lon : exp_subtype(ie);
+			if (rel_set_type_param(sql, t, p, res, 0) < 0) /* workaround */
+				return NULL;
+			bt = exp_subtype(res);
+		}
+		bclass = bt->type->eclass;
+		if (!(bclass == EC_NUM || EC_INTERVAL(bclass) || bclass == EC_DEC || bclass == EC_FLT))
 			return sql_error(sql, 02, SQLSTATE(42000) "%s offset must be of a countable SQL type", bound_desc);
 		if ((frame_type == FRAME_ROWS || frame_type == FRAME_GROUPS) && bclass != EC_NUM) {
 			char *err = subtype2string(bt);
@@ -4744,6 +4748,9 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 			sql_subfunc *df;
 			sql_exp *e = n->data;
 
+			if (!exp_subtype(e))
+				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: parameters not allowed at PARTITION BY clause from window functions");
+
 			e = exp_copy(sql, e);
 			args = sa_list(sql->sa);
 			if (pe) { 
@@ -4753,7 +4760,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 				df = bind_func(sql, s, "diff", exp_subtype(e), NULL, F_ANALYTIC);
 			}
 			if (!df)
-				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: function '%s' not found", "diff" );
+				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: function 'diff' not found");
 			append(args, e);
 			pe = exp_op(sql->sa, args, df);
 		}
@@ -4768,6 +4775,9 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 			sql_subfunc *df;
 			sql_exp *e = n->data;
 
+			if (!exp_subtype(e))
+				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: parameters not allowed at ORDER BY clause from window functions");
+
 			e = exp_copy(sql, e);
 			args = sa_list(sql->sa);
 			if (oe) { 
@@ -4777,7 +4787,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 				df = bind_func(sql, s, "diff", exp_subtype(e), NULL, F_ANALYTIC);
 			}
 			if (!df)
-				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: function '%s' not found", "diff" );
+				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: function 'diff' not found");
 			append(args, e);
 			oe = exp_op(sql->sa, args, df);
 		}
