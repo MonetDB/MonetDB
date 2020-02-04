@@ -6,5 +6,16 @@
  * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
-extern void parse_dotmonetdb(char **user, char **passwd, char **dbname, char **language,
-			     int *save_history, char **output, int *pagewidth);
+typedef struct DotMonetdb {
+	char *user;
+	char *passwd;
+	char *dbname;
+	char *language;
+	char *host;
+	bool save_history;
+	char *output;
+	int pagewidth;
+	int port;
+} DotMonetdb;
+
+extern void parse_dotmonetdb(DotMonetdb *dotfile);

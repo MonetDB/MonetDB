@@ -130,6 +130,7 @@ main(int argc, char **argv)
 	int done = 0;
 	int first = 1;
 	EventRecord *ev = (EventRecord *) malloc(sizeof(EventRecord));
+	DotMonetdb dotfile;
 
 	(void) first;
 	memset(ev, 0, sizeof(EventRecord));
@@ -154,7 +155,12 @@ main(int argc, char **argv)
 	}
 
 	/* parse config file first, command line options override */
-	parse_dotmonetdb(&user, &password, &dbname, NULL, NULL, NULL, NULL);
+	parse_dotmonetdb(&dotfile);
+        user = dotfile.user;
+        password = dotfile.passwd;
+        dbname = dotfile.dbname;
+	host = dotfile.host;
+	portnr = dotfile.port;
 
 	while (1) {
 		int option_index = 0;
