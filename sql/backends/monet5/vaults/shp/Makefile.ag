@@ -18,9 +18,9 @@ INCLUDES = .. \
 	../../../../../monetdb5/scheduler \
 	../../../../../common/stream \
 	../../../../../common/utils \
+	../../../../../clients/mapilib \
 	../../../../../gdk \
 	../../../../../geom/lib \
-	../../../../../geom/monetdb5 \
 	$(GDAL_CFLAGS)
 
 lib__shp = {

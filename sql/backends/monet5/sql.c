@@ -16,6 +16,7 @@
 #include "monetdb_config.h"
 #include "sql.h"
 #include "streams.h"
+#include "mapi_prompt.h"
 #include "sql_result.h"
 #include "sql_gencode.h"
 #include "sql_storage.h"
@@ -2816,7 +2817,7 @@ mvc_table_result_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg;
 	int *res_id;
 	int nr_cols;
-	sql_query_t qtype;
+	mapi_query_t qtype;
 	bat order_bid;
 
 	if ( pci->argc > 6)
@@ -2824,7 +2825,7 @@ mvc_table_result_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	res_id = getArgReference_int(stk, pci, 0);
 	nr_cols = *getArgReference_int(stk, pci, 1);
-	qtype = (sql_query_t) *getArgReference_int(stk, pci, 2);
+	qtype = (mapi_query_t) *getArgReference_int(stk, pci, 2);
 	order_bid = *getArgReference_bat(stk, pci, 3);
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)

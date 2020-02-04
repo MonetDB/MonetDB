@@ -26,7 +26,6 @@ mal_export void showOptimizerHistory(void);
 mal_export int optimizerIsApplied(MalBlkPtr mb, str name);
 mal_export int isUnsafeInstruction(InstrPtr q);
 mal_export int isUnsafeFunction(InstrPtr q);
-mal_export int isSealedFunction(InstrPtr q);
 mal_export int safetyBarrier(InstrPtr p, InstrPtr q);
 mal_export int hasSameSignature(MalBlkPtr mb, InstrPtr p, InstrPtr q);
 mal_export int hasSameArguments(MalBlkPtr mb, InstrPtr p, InstrPtr q);

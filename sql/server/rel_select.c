@@ -510,14 +510,15 @@ find_table_function_type(mvc *sql, sql_schema *s, char *fname, list *exps, list 
 			for (n = exps->h, m = (*sf)->func->ops->h; n && m; n = n->next, m = m->next) {
 				sql_arg *a = m->data;
 				sql_exp *e = n->data;
+				sql_subtype *t = exp_subtype(e);
 
 				if (!aa && a->type.type->eclass == EC_ANY) {
-					atp = &e->tpe;
+					atp = t;
 					aa = a;
 				}
 				if (aa && a->type.type->eclass == EC_ANY &&
-				    e->tpe.type->localtype > atp->type->localtype){
-					atp = &e->tpe;
+				    t->type->localtype > atp->type->localtype){
+					atp = t;
 					aa = a;
 				}
 			}
@@ -679,6 +680,61 @@ rel_op_(mvc *sql, sql_schema *s, char *fname, exp_kind ek)
 	}
 }
 
+static sql_exp*
+exp_values_set_supertype(mvc *sql, sql_exp *values)
+{
+	list *vals = values->f, *nexps;
+	sql_subtype *tpe = exp_subtype(vals->h->data);
+
+	if (tpe)
+		values->tpe = *tpe;
+
+	for (node *m = vals->h; m; m = m->next) {
+		sql_exp *e = m->data;
+		sql_subtype super, *ttpe;
+
+		/* if the expression is a parameter set its type */
+		if (tpe && e->type == e_atom && !e->l && !e->r && !e->f && !e->tpe.type) {
+			if (set_type_param(sql, tpe, e->flag) == 0)
+				e->tpe = *tpe;
+			else
+				return NULL;
+		}
+		ttpe = exp_subtype(e);
+		if (tpe && ttpe) {
+			supertype(&super, tpe, ttpe);
+			values->tpe = super;
+			tpe = &values->tpe;
+		} else {
+			tpe = ttpe;
+		}
+	}
+
+	if (tpe) {
+		/* if the expression is a parameter set its type */
+		for (node *m = vals->h; m; m = m->next) {
+			sql_exp *e = m->data;
+			if (e->type == e_atom && !e->l && !e->r && !e->f && !e->tpe.type) {
+				if (set_type_param(sql, tpe, e->flag) == 0)
+					e->tpe = *tpe;
+				else
+					return NULL;
+			}
+		}
+		values->tpe = *tpe;
+		nexps = sa_list(sql->sa);
+		for (node *m = vals->h; m; m = m->next) {
+			sql_exp *e = m->data;
+			e = rel_check_type(sql, &values->tpe, NULL, e, type_equal);
+			if (!e)
+				return NULL;
+			append(nexps, e); 
+		}
+		values->f = nexps;
+	}
+	return values;
+}
+
 static sql_rel *
 rel_values(sql_query *query, symbol *tableref)
 {
@@ -722,59 +778,9 @@ rel_values(sql_query *query, symbol *tableref)
 		}
 	}
 	/* loop to check types */
-	for (m = exps->h; m; m = m->next) {
-		node *n;
-		sql_exp *vals = m->data;
-		list *vals_list = vals->f;
-		list *nexps = sa_list(sql->sa);
-		sql_subtype *tpe = exp_subtype(vals_list->h->data);
+	for (m = exps->h; m; m = m->next)
+		m->data = exp_values_set_supertype(sql, (sql_exp*) m->data);
 
-		if (tpe)
-			vals->tpe = *tpe;
-
-		/* first get super type */
-		for (n = vals_list->h; n; n = n->next) {
-			sql_exp *e = n->data;
-			sql_subtype super, *ttpe;
-
-			/* if the expression is a parameter set its type */
-			if (tpe && e->type == e_atom && !e->l && !e->r && !e->f && !e->tpe.type) {
-				if (set_type_param(sql, tpe, e->flag) == 0)
-					e->tpe = *tpe;
-				else
-					return NULL;
-			}
-			ttpe = exp_subtype(e);
-			if (tpe && ttpe) {
-				supertype(&super, tpe, ttpe);
-				vals->tpe = super;
-				tpe = &vals->tpe;
-			} else {
-				tpe = ttpe;
-			}
-		}
-		if (!tpe)
-			continue;
-		/* if the expression is a parameter set its type */
-		for (n = vals_list->h; n; n = n->next) {
-			sql_exp *e = n->data;
-			if (e->type == e_atom && !e->l && !e->r && !e->f && !e->tpe.type) {
-				if (set_type_param(sql, tpe, e->flag) == 0)
-					e->tpe = *tpe;
-				else
-					return NULL;
-			}
-		}
-		vals->tpe = *tpe;
-		for (n = vals_list->h; n; n = n->next) {
-			sql_exp *e = n->data;
-			e = rel_check_type(sql, &vals->tpe, NULL, e, type_equal);
-			if (!e)
-				return NULL;
-			append(nexps, e); 
-		}
-		vals->f = nexps;
-	}
 	r = rel_project(sql->sa, NULL, exps);
 	r->nrcols = list_length(exps);
 	r->card = dlist_length(rowlist) == 1 ? CARD_ATOM : CARD_MULTI;
@@ -1245,7 +1251,10 @@ exp_fix_scale(mvc *sql, sql_subtype *ct, sql_exp *e, int both, int always)
 static int
 rel_set_type_param(mvc *sql, sql_subtype *type, sql_rel *rel, sql_exp *rel_exp, int upcast)
 {
-	if (!type || !rel_exp || (rel_exp->type != e_atom && rel_exp->type != e_column))
+	sql_rel *r = rel;
+	int is_rel = exp_is_rel(rel_exp);
+
+	if (!type || !rel_exp || (rel_exp->type != e_atom && rel_exp->type != e_column && !is_rel))
 		return -1;
 
 	/* use largest numeric types */
@@ -1258,15 +1267,37 @@ rel_set_type_param(mvc *sql, sql_subtype *type, sql_rel *rel, sql_exp *rel_exp, 
 	if (upcast && type->type->eclass == EC_FLT) 
 		type = sql_bind_localtype("dbl");
 
-	if ((rel_exp->type == e_atom || rel_exp->type == e_column) && (rel_exp->l || rel_exp->r || rel_exp->f)) {
+	if (is_rel)
+		r = (sql_rel*) rel_exp->l;
+
+	if ((rel_exp->type == e_atom && (rel_exp->l || rel_exp->r || rel_exp->f)) || rel_exp->type == e_column || is_rel) {
 		/* it's not a parameter set possible parameters below */
 		const char *relname = exp_relname(rel_exp), *expname = exp_name(rel_exp);
-		return rel_set_type_recurse(sql, type, rel, &relname, &expname);
-	} else if (set_type_param(sql, type, rel_exp->flag) == 0) {
-		rel_exp->tpe = *type;
-		return 0;
+		if (rel_set_type_recurse(sql, type, r, &relname, &expname) < 0)
+			return -1;
+	} else if (set_type_param(sql, type, rel_exp->flag) != 0)
+		return -1;
+
+	rel_exp->tpe = *type;
+	return 0;
+}
+
+static int
+rel_binop_check_types(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, int upcast)
+{
+	sql_subtype *t1 = exp_subtype(ls), *t2 = exp_subtype(rs);
+	
+	if (!t1 || !t2) {
+		if (t2 && !t1 && rel_set_type_param(sql, t2, rel, ls, upcast) < 0)
+			return -1;
+		if (t1 && !t2 && rel_set_type_param(sql, t1, rel, rs, upcast) < 0)
+			return -1;
 	}
-	return -1;
+	if (!exp_subtype(ls) && !exp_subtype(rs)) {
+		(void) sql_error(sql, 01, SQLSTATE(42000) "Cannot have a parameter (?) on both sides of an expression");
+		return -1;
+	}
+	return 0;
 }
 
 /* try to do an in-place conversion
@@ -1607,6 +1638,8 @@ rel_compare_exp_(sql_query *query, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_e
 			if (anti)
 				set_anti(e);
 		} else {
+			if (rel_binop_check_types(sql, rel, ls, rs, 0) < 0)
+				return NULL;
 			e = exp_compare_func(sql, ls, rs, rs2, compare_func((comp_type)type, quantifier?0:anti), quantifier);
 			if (anti && quantifier)
 				e = rel_unop_(sql, NULL, e, NULL, "not", card_value);
@@ -1625,8 +1658,6 @@ rel_compare_exp_(sql_query *query, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_e
 
 			type = (int)swap_compare((comp_type)type);
 		}
-		if (!exp_subtype(ls) && !exp_subtype(rs))
-			return sql_error(sql, 01, SQLSTATE(42000) "Cannot have a parameter (?) on both sides of an expression");
 		if (rel_convert_types(sql, rel, rel, &ls, &rs, 1, type_equal_no_any) < 0)
 			return NULL;
 		e = exp_compare(sql->sa, ls, rs, type);
@@ -1796,8 +1827,6 @@ rel_compare(sql_query *query, sql_rel *rel, symbol *sc, symbol *lo, symbol *ro, 
 		if (!rs2)
 			return NULL;
 	}
-	if (!rs) 
-		return NULL;
 	if (ls->card > rs->card && rs->card == CARD_AGGR && is_sql_having(f))
 		return sql_error(sql, 05, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s.%s' in query results without an aggregate function", exp_relname(ls), exp_name(ls));
 	if (rs->card > ls->card && ls->card == CARD_AGGR && is_sql_having(f))
@@ -1855,14 +1884,15 @@ _rel_nop(mvc *sql, sql_schema *s, char *fname, list *tl, sql_rel *rel, list *exp
 			for (n = exps->h, m = f->func->ops->h; n && m; n = n->next, m = m->next) {
 				sql_arg *a = m->data;
 				sql_exp *e = n->data;
+				sql_subtype *t = exp_subtype(e);
 
 				if (!aa && a->type.type->eclass == EC_ANY) {
-					atp = &e->tpe;
+					atp = t;
 					aa = a;
 				}
 				if (aa && a->type.type->eclass == EC_ANY &&
-				    e->tpe.type->localtype > atp->type->localtype){
-					atp = &e->tpe;
+				    t->type->localtype > atp->type->localtype){
+					atp = t;
 					aa = a;
 				}
 			}
@@ -1896,18 +1926,25 @@ _rel_nop(mvc *sql, sql_schema *s, char *fname, list *tl, sql_rel *rel, list *exp
 }
 
 static sql_exp *
-exp_exist(sql_query *query, sql_exp *le, int exists)
+exp_exist(sql_query *query, sql_rel *rel, sql_exp *le, int exists)
 {
 	mvc *sql = query->sql;
 	sql_subfunc *exists_func = NULL;
-			
+	sql_subtype *t;
+
+	if (!exp_name(le))
+		exp_label(sql->sa, le, ++sql->label);
+	if (!exp_subtype(le) && rel_set_type_param(sql, sql_bind_localtype("bit"), rel, le, 0) < 0) /* workaround */
+		return NULL;
+	t = exp_subtype(le);
+
 	if (exists)
-		exists_func = sql_bind_func(sql->sa, sql->session->schema, "sql_exists", exp_subtype(le), NULL, F_FUNC);
+		exists_func = sql_bind_func(sql->sa, sql->session->schema, "sql_exists", t, NULL, F_FUNC);
 	else
-		exists_func = sql_bind_func(sql->sa, sql->session->schema, "sql_not_exists", exp_subtype(le), NULL, F_FUNC);
+		exists_func = sql_bind_func(sql->sa, sql->session->schema, "sql_not_exists", t, NULL, F_FUNC);
 
 	if (!exists_func) 
-		return sql_error(sql, 02, SQLSTATE(42000) "exist operator on type %s missing", exp_subtype(le)->type->sqlname);
+		return sql_error(sql, 02, SQLSTATE(42000) "exist operator on type %s missing", t->type->sqlname);
 	return exp_unop(sql->sa, le, exists_func);
 }
 
@@ -1920,7 +1957,7 @@ rel_exists_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 	le = rel_value_exp(query, rel, sc->data.sym, f, ek);
 	if (!le) 
 		return NULL;
-	e = exp_exist(query, le, sc->token == SQL_EXISTS);
+	e = exp_exist(query, rel ? *rel : NULL, le, sc->token == SQL_EXISTS);
 	if (e) {
 		/* only freevar should have CARD_AGGR */
 		e->card = CARD_ATOM;
@@ -1943,7 +1980,7 @@ rel_exists_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 	assert(!is_sql_sel(f));
 	if (sq) {
 		sql_exp *e = exp_rel(sql, sq);
-		e = exp_exist(query, e, sc->token == SQL_EXISTS);
+		e = exp_exist(query, rel, e, sc->token == SQL_EXISTS);
 		if (e) {
 			/* only freevar should have CARD_AGGR */
 			e->card = CARD_ATOM;
@@ -1963,7 +2000,7 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 	symbol *lo = NULL;
 	dnode *n = dl->h->next, *dn = NULL;
 	sql_exp *le = NULL, *re, *e = NULL;
-	list *vals = NULL, *ll = sa_list(sql->sa);
+	list *ll = sa_list(sql->sa);
 	int is_tuple = 0;
 
 	/* complex case */
@@ -1985,12 +2022,15 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 		le = ll->h->data;
 	} else {
 		le = exp_values(sql->sa, ll);
+		exp_label(sql->sa, le, ++sql->label);
 		ek.card = card_relation;
 		is_tuple = 1;
 	}
 	/* list of values or subqueries */
 	if (n->type == type_list) {
-		vals = sa_list(sql->sa);
+		sql_exp *values;
+		list *vals = sa_list(sql->sa);
+
 		n = dl->h->next;
 		n = n->data.lval->h;
 
@@ -2004,7 +2044,26 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 				re = exp_rel_label(sql, re);
 			append(vals, re);
 		}
-		e = exp_in_func(sql, le, exp_values(sql->sa, vals), (sc->token == SQL_IN), is_tuple);
+
+		values = exp_values(sql->sa, vals);
+		exp_label(sql->sa, values, ++sql->label);
+		if (is_tuple) { 
+			sql_exp *e_rel = (sql_exp *) vals->h->data;
+			list *le_vals = le->f, *rel_vals = ((sql_rel*)e_rel->l)->exps;
+
+			for (node *m = le_vals->h, *o = rel_vals->h ; m && o ; m = m->next, o = o->next) {
+				sql_exp *e = m->data, *f = o->data;
+
+				if (rel_binop_check_types(sql, rel ? *rel : NULL, e, f, 0) < 0)
+					return NULL;
+			}
+		} else { /* if it's not a tuple, enforce coersion on the type for every element on the list */
+			values = exp_values_set_supertype(sql, values);
+
+			if (rel_binop_check_types(sql, rel ? *rel : NULL, le, values, 0) < 0)
+				return NULL;
+		}
+		e = exp_in_func(sql, le, values, (sc->token == SQL_IN), is_tuple);
 	}
 	if (e && le)
 		e->card = le->card;
@@ -2143,6 +2202,9 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 
 		rs = rel_value_exp(query, rel, ro, f, ek);
 		if (!rs)
+			return NULL;
+
+		if (rel_binop_check_types(sql, rel ? *rel : NULL, ls, rs, 0) < 0)
 			return NULL;
 		ls = exp_compare_func(sql, ls, rs, NULL, compare_func(compare_str2type(compare_op), quantifier?0:need_not), quantifier);
 		if (need_not && quantifier)
@@ -2474,10 +2536,22 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 		sql_exp *le = rel_value_exp(query, &rel, lo, f, ek);
 		sql_exp *re1 = rel_value_exp(query, &rel, ro1, f, ek);
 		sql_exp *re2 = rel_value_exp(query, &rel, ro2, f, ek);
+		sql_subtype *t1, *t2, *t3;
 		int flag = 0;
 
 		assert(sc->data.lval->h->next->type == type_int);
 		if (!le || !re1 || !re2) 
+			return NULL;
+
+		t1 = exp_subtype(le);
+		t2 = exp_subtype(re1);
+		t3 = exp_subtype(re2);
+
+		if (!t1 && (t2 || t3) && rel_binop_check_types(sql, rel, le, t2 ? re1 : re2, 0) < 0)
+			return NULL;
+		if (!t2 && (t1 || t3) && rel_binop_check_types(sql, rel, le, t1 ? le : re2, 0) < 0)
+			return NULL;
+		if (!t3 && (t1 || t2) && rel_binop_check_types(sql, rel, le, t1 ? le : re1, 0) < 0)
 			return NULL;
 
 		if (rel_convert_types(sql, rel, rel, &le, &re1, 1, type_equal) < 0 ||
@@ -2493,9 +2567,8 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 			sql_subfunc *min = sql_bind_func(sql->sa, sql->session->schema, "sql_min", exp_subtype(re1), exp_subtype(re2), F_FUNC);
 			sql_subfunc *max = sql_bind_func(sql->sa, sql->session->schema, "sql_max", exp_subtype(re1), exp_subtype(re2), F_FUNC);
 
-			if (!min || !max) {
+			if (!min || !max)
 				return sql_error(sql, 02, SQLSTATE(42000) "min or max operator on types %s %s missing", exp_subtype(re1)->type->sqlname, exp_subtype(re2)->type->sqlname);
-			}
 			tmp = exp_binop(sql->sa, re1, re2, min);
 			re2 = exp_binop(sql->sa, re1, re2, max);
 			re1 = tmp;
@@ -2799,18 +2872,16 @@ rel_binop_(mvc *sql, sql_rel *rel, sql_exp *l, sql_exp *r, sql_schema *s, char *
 			if (!t2)
 				rel_set_type_param(sql, arg_type(f->func->ops->h->next->data), rel, r, 1);
 			f = NULL;
-		} else {
-			if (t2 && !t1 && rel_set_type_param(sql, t2, rel, l, 1) < 0)
-				return NULL;
-			if (t1 && !t2 && rel_set_type_param(sql, t1, rel, r, 1) < 0)
-				return NULL;
-		}
+
+			if (!exp_subtype(l) || !exp_subtype(r))
+				return sql_error(sql, 01, SQLSTATE(42000) "Cannot have a parameter (?) on both sides of an expression");
+		} else if (rel_binop_check_types(sql, rel, l, r, 1) < 0)
+			return NULL;
+
 		t1 = exp_subtype(l);
 		t2 = exp_subtype(r);
+		assert(t1 && t2);
 	}
-
-	if (!t1 || !t2)
-		return sql_error(sql, 01, SQLSTATE(42000) "Cannot have a parameter (?) on both sides of an expression");
 
 	if (!f && (is_addition(fname) || is_subtraction(fname)) && 
 		((t1->type->eclass == EC_NUM && t2->type->eclass == EC_NUM) ||
@@ -3210,8 +3281,16 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 				else
 					groupby = subquery = gl;
 			}
-			if (!e || !exp_subtype(e)) /* we also do not expect parameters here */
+			if (!e)
 				return NULL;
+			if (!exp_subtype(e)) { /* we also do not expect parameters here */
+				char *uaname = GDKmalloc(strlen(aname) + 1);
+				sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: parameters not allowed as arguments to aggregate functions",
+						uaname ? toUpperCopy(uaname, aname) : aname);
+				if (uaname)
+					GDKfree(uaname);
+				return e;
+			}
 			all_aggr &= (exp_card(e) <= CARD_AGGR && !exp_is_atom(e) && !is_func(e->type) && (!is_groupby(groupby->op) || !groupby->r || !exps_find_exp(groupby->r, e)));
 			has_freevar |= exp_has_freevar(sql, e);
 			all_freevar &= (is_freevar(e)>0);
@@ -3607,8 +3686,6 @@ rel_case(sql_query *query, sql_rel **rel, tokens token, symbol *opt_cond, dlist 
 		else
 			dn = dn->next;
 	}
-	if (!restype) 
-		return sql_error(sql, 02, SQLSTATE(42000) "result type missing");
 	/* for COALESCE we skip the last (else part) */
 	for (; dn && (token != SQL_COALESCE || dn->next); dn = dn->next) {
 		sql_exp *cond = NULL, *result = NULL;
@@ -3645,10 +3722,12 @@ rel_case(sql_query *query, sql_rel **rel, tokens token, symbol *opt_cond, dlist 
 		list_prepend(results, result);
 
 		tpe = exp_subtype(result);
-		if (!tpe) 
-			return sql_error(sql, 02, SQLSTATE(42000) "result type missing");
-		supertype(&rtype, restype, tpe);
-		restype = &rtype;
+		if (tpe && restype) {
+			supertype(&rtype, restype, tpe);
+			restype = &rtype;
+		} else if (tpe) {
+			restype = tpe;
+		}
 	}
 	if (opt_else || else_exp) {
 		sql_exp *result = else_exp;
@@ -3659,9 +3738,13 @@ rel_case(sql_query *query, sql_rel **rel, tokens token, symbol *opt_cond, dlist 
 		tpe = exp_subtype(result);
 		if (tpe && restype) {
 			supertype(&rtype, restype, tpe);
-			tpe = &rtype;
+			restype = &rtype;
+		} else if (tpe) {
+			restype = tpe;
 		}
-		restype = tpe;
+
+		if (!restype)
+			return sql_error(sql, 02, SQLSTATE(42000) "Result type missing");
 		if (restype->type->localtype == TYPE_void) /* NULL */
 			restype = sql_bind_localtype("str");
 
@@ -3672,6 +3755,8 @@ rel_case(sql_query *query, sql_rel **rel, tokens token, symbol *opt_cond, dlist 
 		if (!res) 
 			return NULL;
 	} else {
+		if (!restype)
+			return sql_error(sql, 02, SQLSTATE(42000) "Result type missing");
 		if (restype->type->localtype == TYPE_void) /* NULL */
 			restype = sql_bind_localtype("str");
 		res = exp_null(sql->sa, restype);
@@ -4165,7 +4250,7 @@ rel_order_by(sql_query *query, sql_rel **R, symbol *orderby, int f)
 				e = rel_value_exp2(query, &rel, col, f, ek);
 
 				if (e && e->card <= CARD_ATOM) {
-					sql_subtype *tpe = &e->tpe;
+					sql_subtype *tpe = exp_subtype(e);
 					/* integer atom on the stack */
 					if (e->type == e_atom &&
 					    tpe->type->eclass == EC_NUM) {
@@ -4588,13 +4673,21 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 				in = rel_value_exp2(query, &p, dargs->data.sym, f | sql_window, ek);
 				if (!in)
 					return NULL;
+				if (!exp_subtype(in)) { /* we also do not expect parameters here */
+					char *uaname = GDKmalloc(strlen(aname) + 1);
+					(void) sql_error(sql, 02, SQLSTATE(42000) "%s: parameters not allowed as arguments to window functions",
+									uaname ? toUpperCopy(uaname, aname) : aname);
+					if (uaname)
+						GDKfree(uaname);
+					return NULL;
+				}
 
 				/* corner case, if the argument is null convert it into something countable such as bte */
-				if (subtype_cmp(&(in->tpe), empty) == 0)
+				if (subtype_cmp(exp_subtype(in), empty) == 0)
 					in = exp_convert(sql->sa, in, empty, bte);
 				if ((is_lag || is_lead) && nfargs == 2) { /* lag and lead 3rd arg must have same type as 1st arg */
 					sql_exp *first = (sql_exp*) fargs->h->data;
-					if (!(in = rel_check_type(sql, &first->tpe, p, in, type_equal)))
+					if (!(in = rel_check_type(sql, exp_subtype(first), p, in, type_equal)))
 						return NULL;
 				}
 				if (!in)
@@ -4613,9 +4706,17 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 			in = rel_value_exp2(query, &p, dargs->data.sym, f | sql_window, ek);
 			if (!in)
 				return NULL;
+			if (!exp_subtype(in)) { /* we also do not expect parameters here */
+				char *uaname = GDKmalloc(strlen(aname) + 1);
+				(void) sql_error(sql, 02, SQLSTATE(42000) "%s: parameters not allowed as arguments to window functions",
+								uaname ? toUpperCopy(uaname, aname) : aname);
+				if (uaname)
+					GDKfree(uaname);
+				return NULL;
+			}
 
 			/* corner case, if the argument is null convert it into something countable such as bte */
-			if (subtype_cmp(&(in->tpe), empty) == 0)
+			if (subtype_cmp(exp_subtype(in), empty) == 0)
 				in = exp_convert(sql->sa, in, empty, bte);
 			if (!in)
 				return NULL;
@@ -5303,7 +5404,7 @@ rel_select_exp(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind ek)
 		list *te = NULL;
 		sql_exp *ce = rel_column_exp(query, &inner, n->data.sym, sql_sel | group_totals);
 
-		if (ce && exp_subtype(ce)) {
+		if (ce && (exp_subtype(ce) || (ce->type == e_atom && !ce->l && !ce->f))) {
 			pexps = append(pexps, ce);
 			rel = inner;
 			continue;
@@ -5671,7 +5772,6 @@ rel_joinquery_(sql_query *query, sql_rel *rel, symbol *tab1, int natural, jt joi
 static sql_rel *
 rel_joinquery(sql_query *query, sql_rel *rel, symbol *q)
 {
-
 	dnode *n = q->data.lval->h;
 	symbol *tab_ref1 = n->data.sym;
 	int natural = n->next->data.i_val;

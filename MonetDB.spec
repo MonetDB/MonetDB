@@ -75,9 +75,9 @@
 %bcond_without rintegration
 %endif
 
-%if %{?rhel:0}%{!?rhel:1}
-# On RHEL 6, Python 3 is too old, and on RHEL 7, the default Python 3
-# is too old (in both cases 3.4).
+%if 0%{?rhel} >= 7 || 0%{?fedora} > 0
+# On RHEL 6, Python 3 is too old.  On RHEL 7, Python 3 was too old
+# when RHEL 7 was released, but now it is ok.
 %bcond_without py3integration
 %endif
 
@@ -266,34 +266,6 @@ MonetDB, you will very likely need this package.
 %doc %{_mandir}/man1/mclient.1.gz
 %doc %{_mandir}/man1/msqldump.1.gz
 
-%package client-tools
-Summary: MonetDB - Monet Database Management System Client Programs
-Group: Applications/Databases
-Requires: %{name}-client%{?_isa} = %{version}-%{release}
-%if (0%{?fedora} >= 22)
-# tomograph executes these two:
-Recommends: /usr/bin/gs
-Recommends: /usr/bin/gnuplot
-%endif
-
-%description client-tools
-MonetDB is a database management system that is developed from a
-main-memory perspective with use of a fully decomposed storage model,
-automatic index management, extensibility of data types and search
-accelerators.  It also has an SQL front end.
-
-This package contains stethoscope, tomograph, and tachograph.  These
-tools can be used to monitor the MonetDB database server.
-
-%files client-tools
-%defattr(-,root,root)
-%{_bindir}/stethoscope
-%{_bindir}/tachograph
-%{_bindir}/tomograph
-%dir %{_datadir}/doc/MonetDB-client-tools
-%docdir %{_datadir}/doc/MonetDB-client-tools
-%{_datadir}/doc/MonetDB-client-tools/*
-
 %package client-devel
 Summary: MonetDB - Monet Database Management System Client Programs
 Group: Applications/Databases
@@ -314,7 +286,7 @@ This package contains the files needed to develop with the
 %defattr(-,root,root)
 %dir %{_includedir}/monetdb
 %{_libdir}/libmapi.so
-%{_includedir}/monetdb/mapi.h
+%{_includedir}/monetdb/mapi*.h
 %{_libdir}/pkgconfig/monetdb-mapi.pc
 
 %package client-odbc
@@ -553,6 +525,7 @@ exit 0
 %attr(2770,monetdb,monetdb) %dir %{_localstatedir}/monetdb5
 %attr(2770,monetdb,monetdb) %dir %{_localstatedir}/monetdb5/dbfarm
 %{_bindir}/mserver5
+%exclude %{_bindir}/stethoscope
 %{_libdir}/libmonetdb5.so.*
 %dir %{_libdir}/monetdb5
 %dir %{_libdir}/monetdb5/autoload

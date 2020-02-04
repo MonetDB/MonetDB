@@ -23,7 +23,7 @@ bat_decref(bat bid)
 }
 
 res_table *
-res_table_create(sql_trans *tr, int res_id, oid query_id, int nr_cols, sql_query_t type, res_table *next, void *O)
+res_table_create(sql_trans *tr, int res_id, oid query_id, int nr_cols, mapi_query_t type, res_table *next, void *O)
 {
 	BAT *order = (BAT*)O;
 	res_table *t = ZNEW(res_table);

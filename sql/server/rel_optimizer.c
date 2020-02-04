@@ -5889,10 +5889,24 @@ rel_groupby_distinct(int *changes, mvc *sql, sql_rel *rel)
 		for (n=rel->exps->h; n; n = n->next) {
 			sql_exp *e = n->data;
 			if (e != distinct) {
-				e = exp_ref(sql->sa, e);
-				append(ngbe, e);
-				append(exps, e);
-				e = exp_ref(sql->sa, e);
+				if (e->type == e_aggr) { /* copy the arguments to the aggregate */
+					list *args = e->l;
+					if (args) {
+						for (node *n = args->h ; n ; n = n->next) {
+							sql_exp *e = n->data;
+							list_append(ngbe, exp_copy(sql, e));
+							list_append(exps, exp_copy(sql, e));
+						}
+					}
+				} else {
+					e = exp_ref(sql->sa, e);
+					append(ngbe, e);
+					append(exps, e);
+				}
+				if (e->type == e_aggr) /* aggregates must be copied */
+					e = exp_copy(sql, e);
+				else
+					e = exp_ref(sql->sa, e);
 				append(nexps, e);
 			}
 		}
