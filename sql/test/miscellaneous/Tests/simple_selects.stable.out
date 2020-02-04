@@ -143,6 +143,24 @@ stdout of test 'simple_selects` in directory 'sql/test/miscellaneous` itself:
 % tinyint # type
 % 1 # length
 [ 1	]
+#select substring('abc' from 1 for null);
+% .L2 # table_name
+% L2 # name
+% clob # type
+% 0 # length
+[ NULL	]
+#select substring('abc' from null for 2);
+% .L2 # table_name
+% L2 # name
+% clob # type
+% 0 # length
+[ NULL	]
+#select substring('abc' from null for null);
+% .L2 # table_name
+% L2 # name
+% clob # type
+% 0 # length
+[ NULL	]
 
 # 17:31:38 >  
 # 17:31:38 >  "Done."
