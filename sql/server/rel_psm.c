@@ -1371,13 +1371,9 @@ psm_analyze(sql_query *query, char *analyzeType, dlist *qname, dlist *columns, s
 	append(exps, mm_exp = exp_atom_int(sql->sa, minmax));
 	append(tl, exp_subtype(mm_exp));
 	if (sample) {
-		sql_subtype *tpe = sql_bind_localtype("lng");
-		dlist* sample_parameters = sample->data.lval;
-
-		if (sample_parameters->cnt == 1 && (sample_exp = rel_value_exp(query, NULL, sample_parameters->h->data.sym, 0, ek)))
-			sample_exp = rel_check_type(sql, tpe, NULL, sample_exp, type_cast);
-		else
-			return sql_error(sql, 01, SQLSTATE(42000) "Analyze sample size incorrect");
+		sample_exp = rel_value_exp(query, NULL, sample, 0, ek);
+		if (!sample_exp || !(sample_exp = rel_check_type(sql, sql_bind_localtype("lng"), NULL, sample_exp, type_cast)))
+			return NULL;
 	} else {
 		sample_exp = exp_atom_lng(sql->sa, 0);
 	}
