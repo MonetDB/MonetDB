@@ -9938,15 +9938,15 @@ stdout of test 'VOC` in directory 'sql/test/VOC` itself:
 #(select 1 from voyages v
 #where c.trip = v.trip and v.boatname = 'AMSTERDAM'
 #and v.departure_harbour ='Texel');
-% voc.%1 # table_name
-% %1 # name
+% voc.%2 # table_name
+% %2 # name
 % bigint # type
 % 7 # length
 [ 1305366	]
 #select count(*) from craftsmen c, passengers p
 #where c.trip = p.trip and exists (select 1) ;
-% voc.%1 # table_name
-% %1 # name
+% voc.%2 # table_name
+% %2 # name
 % bigint # type
 % 7 # length
 [ 1308285	]
@@ -9957,8 +9957,8 @@ stdout of test 'VOC` in directory 'sql/test/VOC` itself:
 % 4 # length
 [ 2349	]
 #select count(*) from craftsmen c where exists (select 1) ;
-% voc.%1 # table_name
-% %1 # name
+% voc.%2 # table_name
+% %2 # name
 % bigint # type
 % 4 # length
 [ 2349	]
@@ -9983,7 +9983,7 @@ stdout of test 'VOC` in directory 'sql/test/VOC` itself:
 #   SELECT 'total' AS type, total.* FROM total
 #) AS onboard_people_table;
 #SELECT type, COUNT(*) AS total FROM onboard_people GROUP BY type ORDER BY type;
-% .onboard_people,	.%40 # table_name
+% .onboard_people,	. # table_name
 % type,	total # name
 % char,	bigint # type
 % 10,	4 # length
