@@ -1697,10 +1697,18 @@ MTIMElocal_timezone_msec(lng *ret)
 	}
 #elif defined(HAVE_STRUCT_TM_TM_ZONE)
 	time_t t;
-	struct tm *tmp;
+	struct tm tm = (struct tm) {0}, *tmp;
 
 	t = time(NULL);
+#ifdef HAVE_LOCALTIME_R
+	tmp = localtime_r(&t, &tm);
+#else
+	MT_lock_set(&timelock);
 	tmp = localtime(&t);
+	tm = *tmp;
+	tmp = &tm;
+	MT_lock_unset(&timelock);
+#endif
 	tzone = (int) tmp->tm_gmtoff;
 #else
 	time_t t;
@@ -1722,7 +1730,7 @@ MTIMElocal_timezone_msec(lng *ret)
 							tmp->tm_mday),
 					 mkdaytime(tmp->tm_hour,
 							   tmp->tm_min,
-							   tmp->tm_sec == 60 ? 59 : tmp->tm_sec,
+							   tmp->tm_sec >= 60 ? 59 : tmp->tm_sec,
 							   0));
 #ifdef HAVE_LOCALTIME_R
 	tmp = localtime_r(&t, &tm);
@@ -1738,7 +1746,7 @@ MTIMElocal_timezone_msec(lng *ret)
 							tmp->tm_mday),
 					 mkdaytime(tmp->tm_hour,
 							   tmp->tm_min,
-							   tmp->tm_sec == 60 ? 59 : tmp->tm_sec,
+							   tmp->tm_sec >= 60 ? 59 : tmp->tm_sec,
 							   0));
 	tzone = (int) (timestamp_diff(lt, gt) / 1000000);
 #endif
