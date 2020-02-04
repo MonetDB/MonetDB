@@ -2496,7 +2496,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	oid lval = oid_nil;	/* hold value if l is dense */
 	const char *v = (const char *) &lval;
 	bool lskipped = false;	/* whether we skipped values in l */
-	Hash *restrict hsh;
+	Hash *restrict hsh = NULL;
 	bool hash_cand = false;
 
 	assert(!BATtvoid(r));

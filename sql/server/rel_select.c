@@ -2268,10 +2268,22 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 		sql_exp *le = rel_value_exp(query, rel, lo, f, ek);
 		sql_exp *re1 = rel_value_exp(query, rel, ro1, f, ek);
 		sql_exp *re2 = rel_value_exp(query, rel, ro2, f, ek);
+		sql_subtype *t1, *t2, *t3;
 		sql_exp *e1 = NULL, *e2 = NULL;
 
 		assert(sc->data.lval->h->next->type == type_int);
 		if (!le || !re1 || !re2) 
+			return NULL;
+
+		t1 = exp_subtype(le);
+		t2 = exp_subtype(re1);
+		t3 = exp_subtype(re2);
+
+		if (!t1 && (t2 || t3) && rel_binop_check_types(sql, rel ? *rel : NULL, le, t2 ? re1 : re2, 0) < 0)
+			return NULL;
+		if (!t2 && (t1 || t3) && rel_binop_check_types(sql, rel ? *rel : NULL, le, t1 ? le : re2, 0) < 0)
+			return NULL;
+		if (!t3 && (t1 || t2) && rel_binop_check_types(sql, rel ? *rel : NULL, le, t1 ? le : re1, 0) < 0)
 			return NULL;
 
 		if (rel_convert_types(sql, rel ? *rel : NULL, rel ? *rel : NULL, &le, &re1, 1, type_equal) < 0 ||
@@ -2286,9 +2298,8 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 			sql_subfunc *min = sql_bind_func(sql->sa, sql->session->schema, "sql_min", exp_subtype(re1), exp_subtype(re2), F_FUNC);
 			sql_subfunc *max = sql_bind_func(sql->sa, sql->session->schema, "sql_max", exp_subtype(re1), exp_subtype(re2), F_FUNC);
 
-			if (!min || !max) {
+			if (!min || !max)
 				return sql_error(sql, 02, SQLSTATE(42000) "min or max operator on types %s %s missing", exp_subtype(re1)->type->sqlname, exp_subtype(re2)->type->sqlname);
-			}
 			tmp = exp_binop(sql->sa, re1, re2, min);
 			re2 = exp_binop(sql->sa, re1, re2, max);
 			re1 = tmp;

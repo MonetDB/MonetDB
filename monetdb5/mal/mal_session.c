@@ -442,7 +442,7 @@ MSresetVariables(Client cntxt, MalBlkPtr mb, MalStkPtr glb, int start)
 				assert(!mb->var[i].value.vtype || isVarConstant(mb, i));
 				setVarUsed(mb,i);
 			}
-			if (i < glb->stktop && glb && !isVarUsed(mb,i)) {
+			if (glb && i < glb->stktop && !isVarUsed(mb,i)) {
 				if (isVarConstant(mb, i))
 					garbageElement(cntxt, &glb->stk[i]);
 				/* clean stack entry */

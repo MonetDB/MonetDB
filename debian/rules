@@ -13,6 +13,7 @@ DH_VERBOSE=1
 
 override_dh_auto_configure:
 	dh_auto_configure -- \
+	--with-rundir=/run \
 	--enable-assert=no \
 	--enable-debug=yes \
 	--enable-developer=no \
