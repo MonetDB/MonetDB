@@ -359,16 +359,23 @@ rev(oid x)
 }
 
 /* population count: count number of 1 bits in a value */
-#ifdef __GNUC__
-#if SIZEOF_OID == SIZEOF_INT
-#define pop(x)		__builtin_popcount(x)
-#else
-#define pop(x)		__builtin_popcountl(x)
-#endif
-#else
 static inline int
 pop(oid x)
 {
+#ifdef __GNUC__
+#if SIZEOF_OID == SIZEOF_INT
+	return __builtin_popcount(x);
+#else
+	return __builtin_popcountl(x);
+#endif
+#else
+#ifdef _MSC_VER
+#if SIZEOF_OID == SIZEOF_INT
+	return (int) __popcnt((unsigned int) (x));
+#else
+	return (int) __popcnt64((unsigned __int64) (x));
+#endif
+#else
 	/* divide and conquer implementation */
 #if SIZEOF_OID == 8
 	x = (x & 0x5555555555555555) + ((x >>  1) & 0x5555555555555555);
@@ -385,8 +392,9 @@ pop(oid x)
 	x = (x & 0x0000FFFF) + ((x >> 16) & 0x0000FFFF);
 #endif
 	return (int) x;
-}
 #endif
+#endif
+}
 
 #define GRP_create_partial_hash_table_core(INIT_1,HASH,COMP,ASSERT,GRPTST) \
 	do {								\
