@@ -252,7 +252,7 @@ STRwidth(const char *s)
 	int c;
 	int n;
 
-	if (GDK_STRNIL(s))
+	if (strNil(s))
 		return int_nil;
 	c = 0;
 	n = 0;

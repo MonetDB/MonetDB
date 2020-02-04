@@ -249,7 +249,7 @@ BLOBfromstr(const char *instr, size_t *l, blob **val, bool external)
 	blob *result;
 	const char *s = instr;
 
-	if (GDK_STRNIL(instr) || (external && strncmp(instr, "nil", 3) == 0)) {
+	if (strNil(instr) || (external && strncmp(instr, "nil", 3) == 0)) {
 		nbytes = blobsize(0);
 		if (*l < nbytes || *val == NULL) {
 			GDKfree(*val);
@@ -257,7 +257,7 @@ BLOBfromstr(const char *instr, size_t *l, blob **val, bool external)
 				return -1;
 		}
 		**val = nullval;
-		return GDK_STRNIL(instr) ? 1 : 3;
+		return strNil(instr) ? 1 : 3;
 	}
 
 	/* count hexits and check for hexits/space

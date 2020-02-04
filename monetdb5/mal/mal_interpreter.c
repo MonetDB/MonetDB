@@ -1031,7 +1031,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					stkpc = pci->jump;
 				break;
 			case TYPE_str:
-				if (GDK_STRNIL(v->val.sval))
+				if (strNil(v->val.sval))
 					stkpc = pci->jump;
 				break;
 			default:
@@ -1051,7 +1051,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					stkpc++;
 				break;
 			case TYPE_str:
-				if (!GDK_STRNIL(v->val.sval))
+				if (!strNil(v->val.sval))
 					stkpc = pci->jump;
 				else
 					stkpc++;

@@ -8454,9 +8454,9 @@ exp_range_overlap( mvc *sql, sql_exp *e, char *min, char *max, atom *emin, atom 
 	if (!min || !max || !emin || !emax)
 		return 0;
 
-	if (GDK_STRNIL(min))
+	if (strNil(min))
 		return 0;
-	if (GDK_STRNIL(max))
+	if (strNil(max))
 		return 0;
 
 	if (t->type->localtype == TYPE_dbl) {

@@ -324,7 +324,7 @@ atom_general(sql_allocator *sa, sql_subtype *tpe, const char *val)
 
 	assert(a->data.vtype >= 0);
 
-	if (!GDK_STRNIL(val)) {
+	if (!strNil(val)) {
 		int type = a->data.vtype;
 
 		a->isnull = 0;

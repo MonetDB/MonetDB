@@ -3114,7 +3114,7 @@ UTF8_strlen(const char *s)
 
 	UTF8_assert(s);
 
-	if (GDK_STRNIL(s))
+	if (strNil(s))
 		return 1;
 
 	while (*s) {
@@ -3685,7 +3685,7 @@ STRStrip(str *res, const str *arg1)
 	size_t len;
 	size_t n;
 
-	if (GDK_STRNIL(s)) {
+	if (strNil(s)) {
 		*res = GDKstrdup(str_nil);
 	} else {
 		len = strlen(s);
@@ -3708,7 +3708,7 @@ STRLtrim(str *res, const str *arg1)
 	size_t len;
 	size_t n;
 
-	if (GDK_STRNIL(s)) {
+	if (strNil(s)) {
 		*res = GDKstrdup(str_nil);
 	} else {
 		len = strlen(s);
@@ -3728,7 +3728,7 @@ STRRtrim(str *res, const str *arg1)
 	size_t len;
 	size_t n;
 
-	if (GDK_STRNIL(s)) {
+	if (strNil(s)) {
 		*res = GDKstrdup(str_nil);
 	} else {
 		len = strlen(s);
@@ -3774,7 +3774,7 @@ STRStrip2(str *res, const str *arg1, const str *arg2)
 	size_t nchars;
 	int *chars;
 
-	if (GDK_STRNIL(s)) {
+	if (strNil(s)) {
 		*res = GDKstrdup(str_nil);
 	} else {
 		chars = trimchars(*arg2, &nchars);
@@ -3804,7 +3804,7 @@ STRLtrim2(str *res, const str *arg1, const str *arg2)
 	size_t nchars;
 	int *chars;
 
-	if (GDK_STRNIL(s)) {
+	if (strNil(s)) {
 		*res = GDKstrdup(str_nil);
 	} else {
 		chars = trimchars(*arg2, &nchars);
@@ -3831,7 +3831,7 @@ STRRtrim2(str *res, const str *arg1, const str *arg2)
 	size_t nchars;
 	int *chars;
 
-	if (GDK_STRNIL(s)) {
+	if (strNil(s)) {
 		*res = GDKstrdup(str_nil);
 	} else {
 		chars = trimchars(*arg2, &nchars);
@@ -3853,7 +3853,7 @@ pad(const char *s, const char *pad, int len, int left)
 	size_t slen, padlen, repeats, residual, i;
 	char *res;
 
-	if (GDK_STRNIL(s) || GDK_STRNIL(pad) || is_int_nil(len))
+	if (strNil(s) || strNil(pad) || is_int_nil(len))
 		return GDKstrdup(str_nil);
 
 	if (len < 0)

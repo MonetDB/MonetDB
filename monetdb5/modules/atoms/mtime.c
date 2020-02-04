@@ -1751,7 +1751,7 @@ MTIMEstr_to_date(date *ret, const char *const *s, const char *const *format)
 {
 	struct tm tm;
 
-	if (GDK_STRNIL(*s) || GDK_STRNIL(*format)) {
+	if (strNil(*s) || strNil(*format)) {
 		*ret = date_nil;
 		return MAL_SUCCEED;
 	}
@@ -1771,7 +1771,7 @@ MTIMEdate_to_str(str *ret, const date *d, const char *const *format)
 	char buf[512];
 	struct tm tm;
 
-	if (is_date_nil(*d) || GDK_STRNIL(*format)) {
+	if (is_date_nil(*d) || strNil(*format)) {
 		*ret = GDKstrdup(str_nil);
 		if (*ret == NULL)
 			throw(MAL, "mtime.date_to_str", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -1798,7 +1798,7 @@ MTIMEstr_to_time(daytime *ret, const char *const *s, const char *const *format)
 {
 	struct tm tm;
 
-	if (GDK_STRNIL(*s) || GDK_STRNIL(*format)) {
+	if (strNil(*s) || strNil(*format)) {
 		*ret = daytime_nil;
 		return MAL_SUCCEED;
 	}
@@ -1819,7 +1819,7 @@ MTIMEtime_to_str(str *ret, const daytime *d, const char *const *format)
 	daytime dt = *d;
 	struct tm tm;
 
-	if (is_daytime_nil(dt) || GDK_STRNIL(*format)) {
+	if (is_daytime_nil(dt) || strNil(*format)) {
 		*ret = GDKstrdup(str_nil);
 		if (*ret == NULL)
 			throw(MAL, "mtime.time_to_str", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -1857,7 +1857,7 @@ MTIMEstr_to_timestamp(timestamp *ret, const char *const *s, const char *const *f
 {
 	struct tm tm;
 
-	if (GDK_STRNIL(*s) || GDK_STRNIL(*format)) {
+	if (strNil(*s) || strNil(*format)) {
 		*ret = timestamp_nil;
 		return MAL_SUCCEED;
 	}
@@ -1885,7 +1885,7 @@ MTIMEtimestamp_to_str(str *ret, const timestamp *d, const char *const *format)
 	daytime t;
 	struct tm tm;
 
-	if (is_timestamp_nil(*d) || GDK_STRNIL(*format)) {
+	if (is_timestamp_nil(*d) || strNil(*format)) {
 		*ret = GDKstrdup(str_nil);
 		if (*ret == NULL)
 			throw(MAL, "mtime.timestamp_to_str", SQLSTATE(HY013) MAL_MALLOC_FAIL);

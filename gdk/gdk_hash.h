@@ -196,12 +196,12 @@ HASHgetlink(Hash *h, BUN i)
 	for (hb = HASHget(h, HASHbucket(h, ((BUN *) (v))[-1]));	\
 	     hb != HASHnil(h);					\
 	     hb = HASHgetlink(h, hb))				\
-		if (GDK_STREQ(v, BUNtvar(bi, hb)))
+		if (strEQ(v, BUNtvar(bi, hb)))
 #define HASHloop_str(bi, h, hb, v)				\
 	for (hb = HASHget(h, HASHbucket(h, strHash(v)));	\
 	     hb != HASHnil(h);					\
 	     hb = HASHgetlink(h, hb))				\
-		if (GDK_STREQ(v, BUNtvar(bi, hb)))
+		if (strEQ(v, BUNtvar(bi, hb)))
 
 #define HASHlooploc(bi, h, hb, v)				\
 	for (hb = HASHget(h, HASHprobe(h, v));			\

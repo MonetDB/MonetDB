@@ -5061,7 +5061,7 @@ BATSTRindex_int(bat *res, const bat *src, const bit *u)
 				BBPunfix(s->batCacheid);
 				throw(SQL, "calc.index", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
-			pos += GDK_STRLEN(p);
+			pos += strLen(p);
 		}
 	} else {
 		r = VIEWcreate(s->hseqbase, s);
@@ -5119,7 +5119,7 @@ BATSTRindex_sht(bat *res, const bat *src, const bit *u)
 				BBPreclaim(r);
 				throw(SQL, "calc.index", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
-			pos += GDK_STRLEN(s);
+			pos += strLen(s);
 		}
 	} else {
 		r = VIEWcreate(s->hseqbase, s);
@@ -5178,7 +5178,7 @@ BATSTRindex_bte(bat *res, const bat *src, const bit *u)
 				BBPunfix(s->batCacheid);
 				throw(SQL, "calc.index", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
-			pos += GDK_STRLEN(p);
+			pos += strLen(p);
 		}
 	} else {
 		r = VIEWcreate(s->hseqbase, s);
@@ -5235,7 +5235,7 @@ BATSTRstrings(bat *res, const bat *src)
 			BBPunfix(s->batCacheid);
 			throw(SQL, "calc.strings", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
-		pos += GDK_STRLEN(p);
+		pos += strLen(p);
 	}
 	BBPunfix(s->batCacheid);
 	BBPkeepref((*res = r->batCacheid));

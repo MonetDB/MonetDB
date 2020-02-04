@@ -64,24 +64,6 @@
 
 const char str_nil[2] = { '\200', 0 };
 
-int
-strNil(const char *s)
-{
-	return GDK_STRNIL(s);
-}
-
-size_t
-strLen(const char *s)
-{
-	return GDK_STRLEN(s);
-}
-
-int
-strCmp(const char *l, const char *r)
-{
-	return GDK_STRCMP(l, r);
-}
-
 void
 strHeap(Heap *d, size_t cap)
 {
@@ -144,7 +126,7 @@ strCleanHash(Heap *h, bool rebuild)
 			strhash = GDK_STRHASH(s);
 		off = strhash & GDK_STRHASHMASK;
 		newhash[off] = (stridx_t) (pos - extralen - sizeof(stridx_t));
-		pos += GDK_STRLEN(s);
+		pos += strLen(s);
 	}
 	/* only set dirty flag if the hash table actually changed */
 	if (memcmp(newhash, h->base, sizeof(newhash)) != 0) {
@@ -165,7 +147,7 @@ strCleanHash(Heap *h, bool rebuild)
 			pos += pad + extralen;
 			s = h->base + pos;
 			assert(strLocate(h, s) != 0);
-			pos += GDK_STRLEN(s);
+			pos += strLen(s);
 		}
 	}
 #endif
@@ -194,7 +176,7 @@ strLocate(Heap *h, const char *v)
 	/* search the linked list */
 	for (ref = ((stridx_t *) h->base) + off; *ref; ref = next) {
 		next = (stridx_t *) (h->base + *ref);
-		if (GDK_STRCMP(v, (str) (next + 1) + extralen) == 0)
+		if (strCmp(v, (str) (next + 1) + extralen) == 0)
 			return (var_t) ((sizeof(stridx_t) + *ref + extralen));	/* found */
 	}
 	return 0;
@@ -205,7 +187,7 @@ strPut(Heap *h, var_t *dst, const char *v)
 {
 	size_t elimbase = GDK_ELIMBASE(h->free);
 	size_t pad;
-	size_t pos, len = GDK_STRLEN(v);
+	size_t pos, len = strLen(v);
 	const size_t extralen = h->hashash ? EXTRALEN : 0;
 	stridx_t *bucket;
 	BUN off, strhash;
@@ -224,7 +206,7 @@ strPut(Heap *h, var_t *dst, const char *v)
 
 			do {
 				pos = *ref + sizeof(stridx_t) + extralen;
-				if (GDK_STRCMP(v, h->base + pos) == 0) {
+				if (strCmp(v, h->base + pos) == 0) {
 					/* found */
 					return *dst = (var_t) pos;
 				}
@@ -235,7 +217,7 @@ strPut(Heap *h, var_t *dst, const char *v)
 			 * linked list, so only look at single
 			 * entry */
 			pos = *bucket + extralen;
-			if (GDK_STRCMP(v, h->base + pos) == 0) {
+			if (strCmp(v, h->base + pos) == 0) {
 				/* already in heap: reuse */
 				return *dst = (var_t) pos;
 			}
@@ -604,7 +586,7 @@ strFromStr(const char *restrict src, size_t *restrict len, char **restrict dst, 
 		return (ssize_t) strcpy_len(*dst, src, sz);
 	}
 
-	if (GDK_STRNIL(src)) {
+	if (strNil(src)) {
 		atommem(2);
 		strcpy(*dst, str_nil);
 		return 1;
@@ -761,7 +743,7 @@ strToStr(char **restrict dst, size_t *restrict len, const char *restrict src, bo
 		atommem(sz);
 		return (ssize_t) strcpy_len(*dst, src, sz);
 	}
-	if (GDK_STRNIL(src)) {
+	if (strNil(src)) {
 		atommem(4);
 		strcpy(*dst, "nil");
 		return 3;
@@ -845,7 +827,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 		for (i = 0; i < ncand; i++) {
 			p = canditer_next(ci) - seqb;
 			s = BUNtvar(bi, p);
-			if (GDK_STRNIL(s)) {
+			if (strNil(s)) {
 				if (!skip_nils) {
 					nils = 1;
 					break;
@@ -869,7 +851,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 			for (i = 0; i < ncand; i++) {
 				p = canditer_next(ci) - seqb;
 				s = BUNtvar(bi, p);
-				if (GDK_STRNIL(s))
+				if (strNil(s))
 					continue;
 				if (!empty) {
 					memcpy(single_str + offset, separator, separator_length);
@@ -923,7 +905,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 				if (lengths[gid] == (size_t) -1)
 					continue;
 				s = BUNtvar(bi, i);
-				if (!GDK_STRNIL(s)) {
+				if (!strNil(s)) {
 					lengths[gid] += strlen(s) + separator_length;
 					astrings[gid] = NULL;
 				} else if (!skip_nils) {
@@ -951,7 +933,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 				gid = gids[i] - min;
 				if (astrings[gid]) {
 					s = BUNtvar(bi, i);
-					if (GDK_STRNIL(s))
+					if (strNil(s))
 						continue;
 					if (astrings[gid][lengths[gid]]) {
 						memcpy(astrings[gid] + lengths[gid], separator, separator_length);
@@ -1009,7 +991,7 @@ BATstr_group_concat(ValPtr res, BAT *b, BAT *s, bool skip_nils,
 
 	ncand = canditer_init(&ci, b, s);
 
-	if (ncand == 0 || GDK_STRNIL(separator)) {
+	if (ncand == 0 || strNil(separator)) {
 		if (VALinit(res, TYPE_str, nil_if_empty ? str_nil : "") == NULL)
 			return GDK_FAIL;
 		return GDK_SUCCEED;
@@ -1046,7 +1028,7 @@ BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, bool skip_nils,
 		return NULL;
 	}
 
-	if (ncand == 0 || ngrp == 0 || GDK_STRNIL(separator)) {
+	if (ncand == 0 || ngrp == 0 || strNil(separator)) {
 		/* trivial: no strings to concat, so return bat
 		 * aligned with g with nil in the tail */
 		return BATconstant(ngrp == 0 ? 0 : min, TYPE_str, str_nil, ngrp, TRANSIENT);

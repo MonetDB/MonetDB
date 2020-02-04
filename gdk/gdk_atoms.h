@@ -69,8 +69,6 @@ gdk_export ssize_t dblToStr(str *dst, size_t *len, const dbl *src, bool external
 gdk_export ssize_t GDKstrFromStr(unsigned char *restrict dst, const unsigned char *restrict src, ssize_t len);
 gdk_export ssize_t strFromStr(const char *restrict src, size_t *restrict len, str *restrict dst, bool external);
 gdk_export BUN strHash(const char *s);
-gdk_export size_t strLen(const char *s);
-gdk_export int strNil(const char *s);
 gdk_export size_t escapedStrlen(const char *restrict src, const char *sep1, const char *sep2, int quote);
 gdk_export size_t escapedStr(char *restrict dst, const char *restrict src, size_t dstlen, const char *sep1, const char *sep2, int quote);
 /*
@@ -323,11 +321,31 @@ ATOMreplaceVAR(int type, Heap *heap, var_t *dst, const void *src)
  * though we have to take corrective action to ensure that str(nil) is
  * the smallest value of the domain.
  */
-#define GDK_STREQ(l,r)	(strcmp(l,r) == 0)
-#define GDK_STRNIL(s)	((s) == NULL || *(const char*) (s) == '\200')
-#define GDK_STRLEN(s)	((GDK_STRNIL(s)?1:strlen(s))+1)
-#define GDK_STRCMP(l,r)	(GDK_STRNIL(l)?(GDK_STRNIL(r)?0:-1):GDK_STRNIL(r)?1: \
-			 strcmp((const char*)(l), (const char*)(r)))
+static inline bool
+strEQ(const char *l, const char *r)
+{
+	return strcmp(l, r) == 0;
+}
+
+static inline bool
+strNil(const char *s)
+{
+	return s == NULL || *s == '\200';
+}
+
+static inline size_t
+strLen(const char *s)
+{
+	return strNil(s) ? 2 : strlen(s) + 1;
+}
+
+static inline int
+strCmp(const char *l, const char *r)
+{
+	return strNil(r)
+		? !strNil(l)
+		: strNil(l) ? -1 : strcmp(l, r);
+}
 
 static inline var_t
 VarHeapValRaw(const void *b, BUN p, int w)
