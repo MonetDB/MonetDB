@@ -232,8 +232,6 @@ __hidden gdk_return rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, struct
 	__attribute__((__visibility__("hidden")));
 __hidden void strCleanHash(Heap *hp, bool rebuild)
 	__attribute__((__visibility__("hidden")));
-__hidden int strCmp(const char *l, const char *r)
-	__attribute__((__visibility__("hidden")));
 __hidden void strHeap(Heap *d, size_t cap)
 	__attribute__((__visibility__("hidden")));
 __hidden var_t strLocate(Heap *h, const char *v)

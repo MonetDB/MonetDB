@@ -3114,7 +3114,7 @@ UTF8_strlen(const char *s)
 
 	UTF8_assert(s);
 
-	if (GDK_STRNIL(s))
+	if (strNil(s))
 		return 1;
 
 	while (*s) {
@@ -3685,7 +3685,7 @@ STRStrip(str *res, const str *arg1)
 	size_t len;
 	size_t n;
 
-	if (GDK_STRNIL(s)) {
+	if (strNil(s)) {
 		*res = GDKstrdup(str_nil);
 	} else {
 		len = strlen(s);
@@ -3708,7 +3708,7 @@ STRLtrim(str *res, const str *arg1)
 	size_t len;
 	size_t n;
 
-	if (GDK_STRNIL(s)) {
+	if (strNil(s)) {
 		*res = GDKstrdup(str_nil);
 	} else {
 		len = strlen(s);
@@ -3728,7 +3728,7 @@ STRRtrim(str *res, const str *arg1)
 	size_t len;
 	size_t n;
 
-	if (GDK_STRNIL(s)) {
+	if (strNil(s)) {
 		*res = GDKstrdup(str_nil);
 	} else {
 		len = strlen(s);
@@ -3774,7 +3774,7 @@ STRStrip2(str *res, const str *arg1, const str *arg2)
 	size_t nchars;
 	int *chars;
 
-	if (GDK_STRNIL(s)) {
+	if (strNil(s)) {
 		*res = GDKstrdup(str_nil);
 	} else {
 		chars = trimchars(*arg2, &nchars);
@@ -3804,7 +3804,7 @@ STRLtrim2(str *res, const str *arg1, const str *arg2)
 	size_t nchars;
 	int *chars;
 
-	if (GDK_STRNIL(s)) {
+	if (strNil(s)) {
 		*res = GDKstrdup(str_nil);
 	} else {
 		chars = trimchars(*arg2, &nchars);
@@ -3831,7 +3831,7 @@ STRRtrim2(str *res, const str *arg1, const str *arg2)
 	size_t nchars;
 	int *chars;
 
-	if (GDK_STRNIL(s)) {
+	if (strNil(s)) {
 		*res = GDKstrdup(str_nil);
 	} else {
 		chars = trimchars(*arg2, &nchars);
@@ -3853,7 +3853,7 @@ pad(const char *s, const char *pad, int len, int left)
 	size_t slen, padlen, repeats, residual, i;
 	char *res;
 
-	if (GDK_STRNIL(s) || GDK_STRNIL(pad) || is_int_nil(len))
+	if (strNil(s) || strNil(pad) || is_int_nil(len))
 		return GDKstrdup(str_nil);
 
 	if (len < 0)
@@ -3986,7 +3986,7 @@ STRSubstitute(str *res, const str *arg1, const str *arg2, const str *arg3, const
 	const char *pfnd;
 	char *fnd;
 
-	if (s == NULL || strcmp(s, str_nil) == 0) {
+	if (strNil(s)) {
 		if ((*res = GDKstrdup(str_nil)) == NULL)
 			throw(MAL, "str.substitute", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
@@ -4025,7 +4025,8 @@ STRSubstitute(str *res, const str *arg1, const str *arg2, const str *arg3, const
 }
 
 str
-STRascii(int *ret, const str *s){
+STRascii(int *ret, const str *s)
+{
 	int offset=0;
 	return STRWChrAt(ret,s,&offset);
 }
@@ -4033,7 +4034,15 @@ STRascii(int *ret, const str *s){
 str
 STRsubstringTail(str *ret, const str *s, const int *start)
 {
-	int offset= *start;
+	int offset;
+
+	if (strNil(*s) || is_int_nil(*start)) {
+		if ((*ret = GDKstrdup(str_nil)) == NULL)
+			throw(MAL, "str.substringTail", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return MAL_SUCCEED;
+	}
+
+	offset= *start;
 	if( offset <1) offset =1;
 	offset--;
 	return STRTail(ret, s, &offset);
@@ -4042,31 +4051,57 @@ STRsubstringTail(str *ret, const str *s, const int *start)
 str
 STRsubstring(str *ret, const str *s, const int *start, const int *l)
 {
-	int offset= *start;
+	int offset;
+
+	if (strNil(*s) || is_int_nil(*start) || is_int_nil(*l)) {
+		if ((*ret = GDKstrdup(str_nil)) == NULL)
+			throw(MAL, "str.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return MAL_SUCCEED;
+	}
+
+	offset= *start;
 	if( offset <1) offset =1;
 	offset--;
 	return STRSubString(ret, s, &offset, l);
 }
+
 str
-STRprefix(str *ret, const str *s, const int *l){
+STRprefix(str *ret, const str *s, const int *l)
+{
 	int start =0;
 	return STRSubString(ret,s,&start,l);
 }
+
 str
-STRsuffix(str *ret, const str *s, const int *l){
-	int start = (int) (strlen(*s)- *l);
+STRsuffix(str *ret, const str *s, const int *l)
+{
+	int start;
+
+	if (strNil(*s) || is_int_nil(*l)) {
+		if ((*ret = GDKstrdup(str_nil)) == NULL)
+			throw(MAL, "str.suffix", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return MAL_SUCCEED;
+	}
+
+	start = (int) (strlen(*s)- *l);
 	return STRSubString(ret,s,&start,l);
 }
 
 str
 STRlocate2(int *ret, const str *needle, const str *haystack, const int *start)
 {
-	int off = *start <= 0 ? 1 : *start;
-	char *s = UTF8_strtail(*haystack, off - 1);
-	int res;
+	int off, res;
+	char *s;
 
+	if (strNil(*needle) || strNil(*haystack) || is_int_nil(*start)) {
+		*ret = int_nil;
+		return MAL_SUCCEED;
+	}
+
+	off = *start <= 0 ? 1 : *start;
+	s = UTF8_strtail(*haystack, off - 1);
 	STRstrSearch(&res, &s, needle);
-	*ret =  res >= 0 ? res + off : 0;
+	*ret = res >= 0 ? res + off : 0;
 	return MAL_SUCCEED;
 }
 
@@ -4089,9 +4124,8 @@ STRinsert(str *ret, const str *s, const int *start, const int *l, const str *s2)
 		size_t l1 = strlen(*s);
 		size_t l2 = strlen(*s2);
 
-		if (l1 + l2 + 1 >= INT_MAX) {
+		if (l1 + l2 + 1 >= INT_MAX)
 			throw(MAL, "str.insert", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		}
 		if (*l < 0)
 			throw(MAL, "str.insert", SQLSTATE(42000) ILLEGAL_ARGUMENT);
 		if (strt < 0) {
@@ -4116,7 +4150,8 @@ STRinsert(str *ret, const str *s, const int *start, const int *l, const str *s2)
 }
 
 str
-STRreplace(str *ret, const str *s1, const str *s2, const str *s3){
+STRreplace(str *ret, const str *s1, const str *s2, const str *s3)
+{
 	bit flag= TRUE;
 	return STRSubstitute(ret,s1,s2,s3,&flag);
 }
@@ -4145,8 +4180,10 @@ STRrepeat(str *ret, const str *s, const int *c)
 	}
 	return MAL_SUCCEED;
 }
+
 str
-STRspace(str *ret, const int *l){
+STRspace(str *ret, const int *l)
+{
 	char buf[]= " ", *s= buf;
 	return STRrepeat(ret,&s,l);
 }

@@ -2139,7 +2139,7 @@ wkbFROMSTR_withSRID(const char *geomWKT, size_t *len, wkb **geomWKB, int srid, s
 	*len = 0;
 	*geomWKB = NULL;
 
-	if (GDK_STRNIL(geomWKT)) {
+	if (strNil(geomWKT)) {
 		*geomWKB = wkbNULLcopy();
 		if (*geomWKB == NULL)
 			throw(MAL, "wkb.FromText", SQLSTATE(HY013) MAL_MALLOC_FAIL);

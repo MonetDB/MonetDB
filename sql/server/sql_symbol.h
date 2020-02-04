@@ -65,6 +65,7 @@ typedef struct SelectNode {
 	symbol *limit;
 	symbol *offset;
 	symbol *sample;
+	symbol *seed;
 	int distinct;
 	int lateral;
 	struct dlist *selection;
@@ -89,7 +90,7 @@ extern symbol *symbol_create_int(sql_allocator *sa, tokens token, int data);
 extern symbol *symbol_create_lng(sql_allocator *sa, tokens token, lng data);
 extern symbol *symbol_create_symbol(sql_allocator *sa, tokens token, symbol *data);
 
-extern symbol *newSelectNode(sql_allocator *sa, int distinct, struct dlist *selection, struct dlist *into, symbol *from, symbol *where, symbol *groupby, symbol *having, symbol *orderby, symbol *name, symbol *limit, symbol *offset, symbol *sample, symbol *window);
+extern symbol *newSelectNode(sql_allocator *sa, int distinct, struct dlist *selection, struct dlist *into, symbol *from, symbol *where, symbol *groupby, symbol *having, symbol *orderby, symbol *name, symbol *limit, symbol *offset, symbol *sample, symbol *seed, symbol *window);
 
 extern symbol *newAtomNode(sql_allocator *sa, atom *a);
 

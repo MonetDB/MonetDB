@@ -1831,9 +1831,9 @@ rel_compare(sql_query *query, sql_rel *rel, symbol *sc, symbol *lo, symbol *ro, 
 			return NULL;
 	}
 	if (ls->card > rs->card && rs->card == CARD_AGGR && is_sql_having(f))
-		return sql_error(sql, 05, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s.%s' in query results without an aggregate function", exp_relname(ls), exp_name(ls));
+		return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s.%s' in query results without an aggregate function", exp_relname(ls), exp_name(ls));
 	if (rs->card > ls->card && ls->card == CARD_AGGR && is_sql_having(f))
-		return sql_error(sql, 05, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s.%s' in query results without an aggregate function", exp_relname(rs), exp_name(rs));
+		return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s.%s' in query results without an aggregate function", exp_relname(rs), exp_name(rs));
 	return rel_compare_exp(query, rel, ls, rs, compare_op, rs2, k.reduce, quantifier, need_not);
 }
 
@@ -4440,10 +4440,14 @@ calculate_window_bound(sql_query *query, sql_rel *p, tokens token, symbol *bound
 		res = rel_value_exp2(query, &p, bound, f, ek);
 		if (!res)
 			return NULL;
-		bt = exp_subtype(res);
-		if (bt)
-			bclass = bt->type->eclass;
-		if (!bt || !(bclass == EC_NUM || EC_INTERVAL(bclass) || bclass == EC_DEC || bclass == EC_FLT))
+		if (!(bt = exp_subtype(res))) {
+			sql_subtype *t = (frame_type == FRAME_ROWS || frame_type == FRAME_GROUPS) ? lon : exp_subtype(ie);
+			if (rel_set_type_param(sql, t, p, res, 0) < 0) /* workaround */
+				return NULL;
+			bt = exp_subtype(res);
+		}
+		bclass = bt->type->eclass;
+		if (!(bclass == EC_NUM || EC_INTERVAL(bclass) || bclass == EC_DEC || bclass == EC_FLT))
 			return sql_error(sql, 02, SQLSTATE(42000) "%s offset must be of a countable SQL type", bound_desc);
 		if ((frame_type == FRAME_ROWS || frame_type == FRAME_GROUPS) && bclass != EC_NUM) {
 			char *err = subtype2string(bt);
@@ -4774,6 +4778,9 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 			sql_subfunc *df;
 			sql_exp *e = n->data;
 
+			if (!exp_subtype(e))
+				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: parameters not allowed at PARTITION BY clause from window functions");
+
 			e = exp_copy(sql, e);
 			args = sa_list(sql->sa);
 			if (pe) { 
@@ -4797,6 +4804,9 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 		for( n = obe->h; n; n = n->next) {
 			sql_subfunc *df;
 			sql_exp *e = n->data;
+
+			if (!exp_subtype(e))
+				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: parameters not allowed at ORDER BY clause from window functions");
 
 			e = exp_copy(sql, e);
 			args = sa_list(sql->sa);
@@ -5299,21 +5309,26 @@ rel_having_limits_nodes(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind
 		rel = rel_topn(sql->sa, rel, exps);
 	}
 
-	if (sn->sample) {
+	if (sn->sample || sn->seed) {
 		list *exps = new_exp_list(sql->sa);
-		dlist* sample_parameters = sn->sample->data.lval;
-		sql_exp *sample_size = rel_value_exp(query, NULL, sample_parameters->h->data.sym, 0, ek);
-		if (!sample_size)
-			return NULL;
-		append(exps, sample_size);
 
-		if (sample_parameters->cnt == 2) {
-			sql_exp *seed_value = rel_value_exp(query, NULL, sample_parameters->h->next->data.sym, 0, ek);
-			if (!seed_value)
+		if (sn->sample) {
+			sql_exp *s = rel_value_exp(query, NULL, sn->sample, 0, ek);
+			if (!s)
 				return NULL;
-			append(exps, seed_value);
+			if (!exp_subtype(s) && rel_set_type_param(sql, sql_bind_localtype("lng"), NULL, s, 0) < 0)
+				return NULL;
+			append(exps, s);
+		} else if (sn->seed)
+			return sql_error(sql, 02, SQLSTATE(42000) "SEED: cannot have SEED without SAMPLE");
+		else
+			append(exps, NULL);
+		if (sn->seed) {
+			sql_exp *e = rel_value_exp(query, NULL, sn->seed, 0, ek);
+			if (!e || !(e=rel_check_type(sql, sql_bind_localtype("int"), NULL, e, type_equal)))
+				return NULL;
+			append(exps, e);
 		}
-
 		rel = rel_sample(sql->sa, rel, exps);
 	}
 
@@ -5418,7 +5433,7 @@ rel_select_exp(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind ek)
 		list *te = NULL;
 		sql_exp *ce = rel_column_exp(query, &inner, n->data.sym, sql_sel | group_totals);
 
-		if (ce && (exp_subtype(ce) || (ce->type == e_atom && !ce->l && !ce->f))) {
+		if (ce && (exp_subtype(ce) || (ce->type == e_atom && !ce->l && !ce->f))) { /* Allow parameters to be propagated */
 			pexps = append(pexps, ce);
 			rel = inner;
 			continue;
@@ -5442,9 +5457,9 @@ rel_select_exp(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind ek)
 			sql_exp *ce = n->data;
 			if (rel->card < ce->card) {
 				if (exp_name(ce)) {
-					return sql_error(sql, 05, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s' in query results without an aggregate function", exp_name(ce));
+					return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s' in query results without an aggregate function", exp_name(ce));
 				} else {
-					return sql_error(sql, 05, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column in query results without an aggregate function");
+					return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column in query results without an aggregate function");
 				}
 			}
 		}

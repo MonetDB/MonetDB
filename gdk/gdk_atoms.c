@@ -450,7 +450,7 @@ bitFromStr(const char *src, size_t *len, bit **dst, bool external)
 
 	**dst = bit_nil;
 
-	if (GDK_STRNIL(src))
+	if (strNil(src))
 		return 1;
 
 	while (GDKisspace(*p))
@@ -508,7 +508,7 @@ batFromStr(const char *src, size_t *len, bat **dst, bool external)
 
 	atommem(sizeof(bat));
 
-	if (GDK_STRNIL(src)) {
+	if (strNil(src)) {
 		**dst = bat_nil;
 		return 1;
 	}
@@ -665,7 +665,7 @@ numFromStr(const char *src, size_t *len, void **dst, int tp, bool external)
 	 * values */
 	atommem(sz);
 
-	if (GDK_STRNIL(src)) {
+	if (strNil(src)) {
 		memcpy(*dst, ATOMnilptr(tp), sz);
 		return 1;
 	}
@@ -903,7 +903,7 @@ ptrFromStr(const char *src, size_t *len, ptr **dst, bool external)
 	atommem(sizeof(ptr));
 
 	**dst = ptr_nil;
-	if (GDK_STRNIL(src))
+	if (strNil(src))
 		return 1;
 
 	while (GDKisspace(*p))
@@ -956,7 +956,7 @@ dblFromStr(const char *src, size_t *len, dbl **dst, bool external)
 	/* alloc memory */
 	atommem(sizeof(dbl));
 
-	if (GDK_STRNIL(src)) {
+	if (strNil(src)) {
 		**dst = dbl_nil;
 		return 1;
 	}
@@ -1029,7 +1029,7 @@ fltFromStr(const char *src, size_t *len, flt **dst, bool external)
 	/* alloc memory */
 	atommem(sizeof(flt));
 
-	if (GDK_STRNIL(src)) {
+	if (strNil(src)) {
 		**dst = flt_nil;
 		return 1;
 	}
@@ -1110,7 +1110,7 @@ OIDfromStr(const char *src, size_t *len, oid **dst, bool external)
 	atommem(sizeof(oid));
 
 	**dst = oid_nil;
-	if (GDK_STRNIL(src))
+	if (strNil(src))
 		return 1;
 
 	while (GDKisspace(*p))
