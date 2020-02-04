@@ -45,7 +45,7 @@ stdout of test 'layout_dict` in directory 'sql/test/mosaic` itself:
 % clob,	bigint,	bigint,	bigint,	clob,	bigint # type
 % 7,	2,	4,	3,	76,	1 # length
 [ "header",	86,	2752,	252,	"{{\"blks\":[{\"dict256\":\"1\"}]},{\"elms\":[{\"dict256\":\"86\"}]},{\"ratio\":1.1621622}}",	0	]
-[ "dict256",	11,	NULL,	NULL,	"{{\"bits per key\" : 4\"}",	0	]
+[ "dict256",	11,	44,	NULL,	"{{\"bits per key\" : 4\"}",	0	]
 [ "dict256",	86,	344,	56,	NULL,	1	]
 #ROLLBACK;
 

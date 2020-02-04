@@ -518,6 +518,7 @@ MOSlayoutDictionary_SIGNATURE(METHOD)
 		bsn = current_bsn;
 		tech = STRINGIFY(METHOD);
 		count = GET_FINAL_DICT_COUNT(task, METHOD);
+		input = count * task->bsrc->twidth;
 		properties = final_properties;
 		);
 
