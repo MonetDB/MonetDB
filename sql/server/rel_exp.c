@@ -1503,6 +1503,12 @@ exp_is_null(mvc *sql, sql_exp *e )
 }
 
 int
+exp_is_rel( sql_exp *e )
+{
+	return (e && e->type == e_psm && e->flag == PSM_REL && e->l);
+}
+
+int
 exp_is_atom( sql_exp *e )
 {
 	switch (e->type) {

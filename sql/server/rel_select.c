@@ -521,6 +521,9 @@ score_func( sql_subfunc *sf, list *tl)
 		sql_arg *a = n->data;
 		sql_subtype *t = m->data;
 
+		if (!t)
+			continue;
+
 		if (a->type.type->eclass == EC_ANY)
 			score += 100;
 		else if (is_subtype(t, &a->type))
@@ -585,7 +588,7 @@ find_table_function_type(mvc *sql, sql_schema *s, char *fname, list *exps, list 
 					atp = t;
 					aa = a;
 				}
-				if (aa && a->type.type->eclass == EC_ANY &&
+				if (aa && a->type.type->eclass == EC_ANY && t && atp &&
 				    t->type->localtype > atp->type->localtype){
 					atp = t;
 					aa = a;
@@ -596,7 +599,7 @@ find_table_function_type(mvc *sql, sql_schema *s, char *fname, list *exps, list 
 				sql_exp *e = n->data;
 				sql_subtype *ntp = &a->type;
 
-				if (a->type.type->eclass == EC_ANY)
+				if (a->type.type->eclass == EC_ANY && atp)
 					ntp = sql_create_subtype(sql->sa, atp->type, atp->digits, atp->scale);
 				e = rel_check_type(sql, ntp, NULL, e, type_equal);
 				if (!e) {
@@ -1249,7 +1252,10 @@ exp_fix_scale(mvc *sql, sql_subtype *ct, sql_exp *e, int both, int always)
 static int
 rel_set_type_param(mvc *sql, sql_subtype *type, sql_rel *rel, sql_exp *rel_exp, int upcast)
 {
-	if (!type || !rel_exp || (rel_exp->type != e_atom && rel_exp->type != e_column))
+	sql_rel *r = rel;
+	int is_rel = exp_is_rel(rel_exp);
+
+	if (!type || !rel_exp || (rel_exp->type != e_atom && rel_exp->type != e_column && !is_rel))
 		return -1;
 
 	/* use largest numeric types */
@@ -1262,15 +1268,37 @@ rel_set_type_param(mvc *sql, sql_subtype *type, sql_rel *rel, sql_exp *rel_exp, 
 	if (upcast && type->type->eclass == EC_FLT) 
 		type = sql_bind_localtype("dbl");
 
-	if ((rel_exp->type == e_atom || rel_exp->type == e_column) && (rel_exp->l || rel_exp->r || rel_exp->f)) {
+	if (is_rel)
+		r = (sql_rel*) rel_exp->l;
+
+	if ((rel_exp->type == e_atom && (rel_exp->l || rel_exp->r || rel_exp->f)) || rel_exp->type == e_column || is_rel) {
 		/* it's not a parameter set possible parameters below */
 		const char *relname = exp_relname(rel_exp), *expname = exp_name(rel_exp);
-		return rel_set_type_recurse(sql, type, rel, &relname, &expname);
-	} else if (set_type_param(sql, type, rel_exp->flag) == 0) {
-		rel_exp->tpe = *type;
-		return 0;
+		if (rel_set_type_recurse(sql, type, r, &relname, &expname) < 0)
+			return -1;
+	} else if (set_type_param(sql, type, rel_exp->flag) != 0)
+		return -1;
+
+	rel_exp->tpe = *type;
+	return 0;
+}
+
+static int
+rel_binop_check_types(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, int upcast)
+{
+	sql_subtype *t1 = exp_subtype(ls), *t2 = exp_subtype(rs);
+	
+	if (!t1 || !t2) {
+		if (t2 && !t1 && rel_set_type_param(sql, t2, rel, ls, upcast) < 0)
+			return -1;
+		if (t1 && !t2 && rel_set_type_param(sql, t1, rel, rs, upcast) < 0)
+			return -1;
 	}
-	return -1;
+	if (!exp_subtype(ls) && !exp_subtype(rs)) {
+		(void) sql_error(sql, 01, SQLSTATE(42000) "Cannot have a parameter (?) on both sides of an expression");
+		return -1;
+	}
+	return 0;
 }
 
 /* try to do an in-place conversion
@@ -1650,8 +1678,6 @@ rel_compare_exp_(sql_query *query, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_e
 
 			type = (int)swap_compare((comp_type)type);
 		}
-		if (!exp_subtype(ls) && !exp_subtype(rs))
-			return sql_error(sql, 01, SQLSTATE(42000) "Cannot have a parameter (?) on both sides of an expression");
 		if (rel_convert_types(sql, rel, rel, &ls, &rs, 1, type_equal_no_any) < 0)
 			return NULL;
 		e = exp_compare(sql->sa, ls, rs, type);
@@ -2023,7 +2049,7 @@ _rel_nop(mvc *sql, sql_schema *s, char *fname, list *tl, sql_rel *rel, list *exp
 					atp = t;
 					aa = a;
 				}
-				if (aa && a->type.type->eclass == EC_ANY &&
+				if (aa && a->type.type->eclass == EC_ANY && t && atp &&
 				    t->type->localtype > atp->type->localtype){
 					atp = t;
 					aa = a;
@@ -2034,7 +2060,7 @@ _rel_nop(mvc *sql, sql_schema *s, char *fname, list *tl, sql_rel *rel, list *exp
 				sql_exp *e = n->data;
 				sql_subtype *ntp = &a->type;
 
-				if (a->type.type->eclass == EC_ANY)
+				if (a->type.type->eclass == EC_ANY && atp)
 					ntp = sql_create_subtype(sql->sa, atp->type, atp->digits, atp->scale);
 				e = rel_check_type(sql, ntp, rel, e, type_equal);
 				if (!e) {
@@ -2049,7 +2075,7 @@ _rel_nop(mvc *sql, sql_schema *s, char *fname, list *tl, sql_rel *rel, list *exp
 				append(nexps, e);
 			}
 			/* dirty hack */
-			if (f->res && aa)
+			if (f->res && aa && atp)
 				f->res->h->data = sql_create_subtype(sql->sa, atp->type, atp->digits, atp->scale);
 			if (nexps) 
 				return exp_op(sql->sa, nexps, f);
@@ -2723,10 +2749,22 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 		sql_exp *le = rel_value_exp(query, rel, lo, f, ek);
 		sql_exp *re1 = rel_value_exp(query, rel, ro1, f, ek);
 		sql_exp *re2 = rel_value_exp(query, rel, ro2, f, ek);
+		sql_subtype *t1, *t2, *t3;
 		sql_exp *e1 = NULL, *e2 = NULL;
 
 		assert(sc->data.lval->h->next->type == type_int);
 		if (!le || !re1 || !re2) 
+			return NULL;
+
+		t1 = exp_subtype(le);
+		t2 = exp_subtype(re1);
+		t3 = exp_subtype(re2);
+
+		if (!t1 && (t2 || t3) && rel_binop_check_types(sql, rel ? *rel : NULL, le, t2 ? re1 : re2, 0) < 0)
+			return NULL;
+		if (!t2 && (t1 || t3) && rel_binop_check_types(sql, rel ? *rel : NULL, le, t1 ? le : re2, 0) < 0)
+			return NULL;
+		if (!t3 && (t1 || t2) && rel_binop_check_types(sql, rel ? *rel : NULL, le, t1 ? le : re1, 0) < 0)
 			return NULL;
 
 		if (rel_convert_types(sql, rel ? *rel : NULL, rel ? *rel : NULL, &le, &re1, 1, type_equal) < 0 ||
@@ -2741,9 +2779,8 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 			sql_subfunc *min = sql_bind_func(sql->sa, sql->session->schema, "sql_min", exp_subtype(re1), exp_subtype(re2), F_FUNC);
 			sql_subfunc *max = sql_bind_func(sql->sa, sql->session->schema, "sql_max", exp_subtype(re1), exp_subtype(re2), F_FUNC);
 
-			if (!min || !max) {
+			if (!min || !max)
 				return sql_error(sql, 02, SQLSTATE(42000) "min or max operator on types %s %s missing", exp_subtype(re1)->type->sqlname, exp_subtype(re2)->type->sqlname);
-			}
 			tmp = exp_binop(sql->sa, re1, re2, min);
 			re2 = exp_binop(sql->sa, re1, re2, max);
 			re1 = tmp;
@@ -3665,18 +3702,16 @@ rel_binop_(sql_query *query, sql_rel *rel, sql_exp *l, sql_exp *r, sql_schema *s
 			if (!t2)
 				rel_set_type_param(sql, arg_type(f->func->ops->h->next->data), rel, r, 1);
 			f = NULL;
-		} else {
-			if (t2 && !t1 && rel_set_type_param(sql, t2, rel, l, 1) < 0)
-				return NULL;
-			if (t1 && !t2 && rel_set_type_param(sql, t1, rel, r, 1) < 0)
-				return NULL;
-		}
+
+			if (!exp_subtype(l) || !exp_subtype(r))
+				return sql_error(sql, 01, SQLSTATE(42000) "Cannot have a parameter (?) on both sides of an expression");
+		} else if (rel_binop_check_types(sql, rel, l, r, 1) < 0)
+			return NULL;
+
 		t1 = exp_subtype(l);
 		t2 = exp_subtype(r);
+		assert(t1 && t2);
 	}
-
-	if (!t1 || !t2)
-		return sql_error(sql, 01, SQLSTATE(42000) "Cannot have a parameter (?) on both sides of an expression");
 
 	if (!f && (is_addition(fname) || is_subtraction(fname)) && 
 		((t1->type->eclass == EC_NUM && t2->type->eclass == EC_NUM) ||
@@ -4503,8 +4538,6 @@ rel_case(sql_query *query, sql_rel **rel, tokens token, symbol *opt_cond, dlist 
 		else
 			dn = dn->next;
 	}
-	if (!restype) 
-		return sql_error(sql, 02, SQLSTATE(42000) "result type missing");
 	/* for COALESCE we skip the last (else part) */
 	for (; dn && (token != SQL_COALESCE || dn->next); dn = dn->next) {
 		sql_exp *cond = NULL, *result = NULL;
@@ -4537,10 +4570,12 @@ rel_case(sql_query *query, sql_rel **rel, tokens token, symbol *opt_cond, dlist 
 		list_prepend(results, result);
 
 		tpe = exp_subtype(result);
-		if (!tpe) 
-			return sql_error(sql, 02, SQLSTATE(42000) "result type missing");
-		supertype(&rtype, restype, tpe);
-		restype = &rtype;
+		if (tpe && restype) {
+			supertype(&rtype, restype, tpe);
+			restype = &rtype;
+		} else if (tpe) {
+			restype = tpe;
+		}
 	}
 	if (opt_else || else_exp) {
 		sql_exp *result = else_exp;
@@ -4551,9 +4586,13 @@ rel_case(sql_query *query, sql_rel **rel, tokens token, symbol *opt_cond, dlist 
 		tpe = exp_subtype(result);
 		if (tpe && restype) {
 			supertype(&rtype, restype, tpe);
-			tpe = &rtype;
+			restype = &rtype;
+		} else if (tpe) {
+			restype = tpe;
 		}
-		restype = tpe;
+
+		if (!restype)
+			return sql_error(sql, 02, SQLSTATE(42000) "Result type missing");
 		if (restype->type->localtype == TYPE_void) /* NULL */
 			restype = sql_bind_localtype("str");
 
@@ -4564,6 +4603,8 @@ rel_case(sql_query *query, sql_rel **rel, tokens token, symbol *opt_cond, dlist 
 		if (!res) 
 			return NULL;
 	} else {
+		if (!restype)
+			return sql_error(sql, 02, SQLSTATE(42000) "Result type missing");
 		if (restype->type->localtype == TYPE_void) /* NULL */
 			restype = sql_bind_localtype("str");
 		res = exp_null(sql->sa, restype);

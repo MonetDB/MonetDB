@@ -190,11 +190,9 @@ qname_catalog(dlist *qname)
 
 	if (dlist_length(qname) == 3) {
 		return qname->h->data.sval;
-	} 
-
+	}
 	return NULL;
 }
-
 
 int
 set_type_param(mvc *sql, sql_subtype *type, int nr)
