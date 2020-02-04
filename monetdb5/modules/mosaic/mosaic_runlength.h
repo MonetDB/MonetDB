@@ -19,7 +19,6 @@
 #include "mosaic_utility.h"
 
 bool MOStypes_runlength(BAT* b);
-mal_export void MOSlayout_runlength(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
 
 #define MosaicBlkHeader_DEF_runlength(TPE)\
 typedef struct {\

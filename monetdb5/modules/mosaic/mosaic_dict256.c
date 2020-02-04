@@ -70,44 +70,6 @@ typedef struct _CappedParameters_t {
 	MosaicBlkRec base;
 } MosaicBlkHeader_dict256_t;
 
-void
-MOSlayout_dict256_hdr(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
-{
-	lng zero=0;
-	unsigned int i;
-	char buf[BUFSIZ];
-	char bufv[BUFSIZ];
-	(void) boutput;
-
-	BUN dictsize = GET_COUNT(task->dict256_info);
-
-	for(i=0; i< dictsize; i++){
-		snprintf(buf, BUFSIZ,"dict256[%u]",i);
-		if( BUNappend(btech, buf, false) != GDK_SUCCEED ||
-			BUNappend(bcount, &zero, false) != GDK_SUCCEED ||
-			BUNappend(binput, &zero, false) != GDK_SUCCEED ||
-			// BUNappend(boutput, MOSgetDictFreq(dict_hdr, i), false) != GDK_SUCCEED ||
-			BUNappend(bproperties, bufv, false) != GDK_SUCCEED)
-		return;
-	}
-}
-
-void
-MOSlayout_dict256(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
-{
-	MosaicBlk blk = task->blk;
-	BUN cnt = MOSgetCnt(blk), input=0, output= 0;
-
-	input = cnt * ATOMsize(task->type);
-	output =  MosaicBlkSize + (cnt * GET_FINAL_BITS(task, dict256))/8 + (((cnt * GET_FINAL_BITS(task, dict256)) %8) != 0);
-	if( BUNappend(btech, "dict256 blk", false) != GDK_SUCCEED ||
-		BUNappend(bcount, &cnt, false) != GDK_SUCCEED ||
-		BUNappend(binput, &input, false) != GDK_SUCCEED ||
-		BUNappend(boutput, &output, false) != GDK_SUCCEED ||
-		BUNappend(bproperties, "", false) != GDK_SUCCEED)
-		return;
-}
-
 #define METHOD dict256
 #define METHOD_TEMPLATES_INCLUDE "mosaic_dictionary_templates.h"
 #define PREPARATION_DEFINITION
@@ -139,6 +101,33 @@ MOSlayout_dict256(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *bout
 #undef TPE
 #endif
 #undef COMPRESSION_DEFINITION
+
+#define LAYOUT_DEFINITION
+#include METHOD_TEMPLATES_INCLUDE
+#define TPE bte
+#include METHOD_TEMPLATES_INCLUDE
+#undef TPE
+#define TPE sht
+#include METHOD_TEMPLATES_INCLUDE
+#undef TPE
+#define TPE int
+#include METHOD_TEMPLATES_INCLUDE
+#undef TPE
+#define TPE lng
+#include METHOD_TEMPLATES_INCLUDE
+#undef TPE
+#define TPE flt
+#include METHOD_TEMPLATES_INCLUDE
+#undef TPE
+#define TPE dbl
+#include METHOD_TEMPLATES_INCLUDE
+#undef TPE
+#ifdef HAVE_HGE
+#define TPE hge
+#include METHOD_TEMPLATES_INCLUDE
+#undef TPE
+#endif
+#undef LAYOUT_DEFINITION
 
 #define TPE bte
 #include "mosaic_select_template.h"

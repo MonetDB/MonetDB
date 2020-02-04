@@ -145,102 +145,6 @@ MOSinit(MOStask* task, BAT *b) {
 	task->padding = NULL;
 }
 
-str
-MOSlayout(BAT *b, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
-{
-	MOStask task = {0};
-	unsigned i;
-	char buf[BUFSIZ];
-	lng zero=0;
-
-	if( b->tmosaic == NULL) {
-			throw(MAL,"mosaic.layout","Compression heap missing");
-	}
-
-	MOSinit(&task,b);
-	MOSinitializeScan(&task, b);
-	// safe the general properties
-
-		snprintf(buf,BUFSIZ,"%g", (task.hdr)->ratio);
-		if( BUNappend(btech, "ratio", false) != GDK_SUCCEED ||
-			BUNappend(bcount, &zero, false) != GDK_SUCCEED ||
-			BUNappend(binput, &zero, false) != GDK_SUCCEED ||
-			BUNappend(bproperties, buf, false) != GDK_SUCCEED ||
-			BUNappend(boutput, &zero , false) != GDK_SUCCEED)
-				throw(MAL,"mosaic.layout", MAL_MALLOC_FAIL);
-	for(i=0; i < MOSAIC_METHODS; i++){
-		lng zero = 0;
-		snprintf(buf,BUFSIZ,"%s blocks", MOSmethods[i].name);
-		if( BUNappend(btech, buf, false) != GDK_SUCCEED ||
-			BUNappend(bcount, &(task.hdr)->blks[i], false) != GDK_SUCCEED ||
-			BUNappend(binput, &(task.hdr)->elms[i], false) != GDK_SUCCEED ||
-			BUNappend(boutput, &zero , false) != GDK_SUCCEED ||
-			BUNappend(bproperties, "", false) != GDK_SUCCEED)
-				throw(MAL,"mosaic.layout", MAL_MALLOC_FAIL);
-	}
-	if( (task.hdr)->blks[MOSAIC_DICT256])
-		MOSlayout_dict256_hdr(&task,btech,bcount,binput,boutput,bproperties);
-	if( (task.hdr)->blks[MOSAIC_DICT])
-		MOSlayout_dict_hdr(&task,btech,bcount,binput,boutput,bproperties);
-
-	if( BUNappend(btech, "========", false) != GDK_SUCCEED ||
-		BUNappend(bcount, &zero, false) != GDK_SUCCEED ||
-		BUNappend(binput, &zero, false) != GDK_SUCCEED ||
-		BUNappend(boutput, &zero , false) != GDK_SUCCEED ||
-		BUNappend(bproperties, "", false) != GDK_SUCCEED)
-			throw(MAL,"mosaic.layout", MAL_MALLOC_FAIL);
-
-/*
-	while(task->start< task->stop){
-		switch(MOSgetTag(task->blk)){
-		case MOSAIC_RAW:
-			ALGODEBUG mnstr_printf(GDKstdout, "#MOSlayout_raw\n");
-			MOSlayout_raw(task,btech,bcount,binput,boutput,bproperties);
-			MOSadvance_raw(task);
-			break;
-		case MOSAIC_RLE:
-			ALGODEBUG mnstr_printf(GDKstdout, "#MOSlayout_runlength\n");
-			MOSlayout_runlength(task,btech,bcount,binput,boutput,bproperties);
-			MOSadvance_runlength(task);
-			break;
-		case MOSAIC_DICT256:
-			ALGODEBUG mnstr_printf(GDKstdout, "#MOSlayout_dict256\n");
-			MOSlayout_dict256(task,btech,bcount,binput,boutput,bproperties);
-			MOSadvance_dict256(task);
-			break;
-		case MOSAIC_DICT:
-			ALGODEBUG mnstr_printf(GDKstdout, "#MOSlayout_dict\n");
-			MOSlayout_dict(task,btech,bcount,binput,boutput,bproperties);
-			MOSadvance_dict(task);
-			break;
-		case MOSAIC_DELTA:
-			ALGODEBUG mnstr_printf(GDKstdout, "#MOSlayout_delta\n");
-			MOSlayout_delta(task,btech,bcount,binput,boutput,bproperties);
-			MOSadvance_delta(task);
-			break;
-		case MOSAIC_LINEAR:
-			ALGODEBUG mnstr_printf(GDKstdout, "#MOSlayout_linear\n");
-			MOSlayout_linear(task,btech,bcount,binput,boutput,bproperties);
-			MOSadvance_linear(task);
-			break;
-		case MOSAIC_FRAME:
-			ALGODEBUG mnstr_printf(GDKstdout, "#MOSlayout_frame\n");
-			MOSlayout_frame(task,btech,bcount,binput,boutput,bproperties);
-			MOSadvance_frame(task);
-			break;
-		case MOSAIC_PREFIX:
-			ALGODEBUG mnstr_printf(GDKstdout, "#MOSlayout_prefix\n");
-			MOSlayout_prefix(task,btech,bcount,binput,boutput,bproperties);
-			MOSadvance_prefix(task);
-			break;
-		default:
-			assert(0);
-		}
-	}
-*/
-	return MAL_SUCCEED;
-}
-
 /*
  * Compression is focussed on a single column.
  * Multiple compression MOSmethods are applied at the same time.
@@ -303,6 +207,202 @@ MOSprepareDictionaryContext(MOStask* task) {
 #undef TPE
 #endif
 
+str
+MOSlayout(BAT *b, BAT *bbsn, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties) {
+	str msg = MAL_SUCCEED;
+
+	if( b->tmosaic == NULL)
+		throw(MAL,"mosaic.layout","Compression heap missing");
+
+	MOStask task = {0};
+	MOSinit(&task,b);
+	MOSinitializeScan(&task, b);
+
+	MosaicLayout layout = {
+		.bsn		= bbsn,
+		.tech		= btech,
+		.count		= bcount,
+		.input		= binput,
+		.output		= boutput,
+		.properties = bproperties
+	};
+
+	if ((msg = MOSlayout_hdr(&task, &layout)) != MAL_SUCCEED) {
+		return msg;
+	}
+
+	switch(ATOMbasetype(task.type)){
+	case TYPE_bte: return MOSlayout_bte(&task, &layout);
+	case TYPE_sht: return MOSlayout_sht(&task, &layout);
+	case TYPE_int: return MOSlayout_int(&task, &layout);
+	case TYPE_lng: return MOSlayout_lng(&task, &layout);
+	case TYPE_flt: return MOSlayout_flt(&task, &layout);
+	case TYPE_dbl: return MOSlayout_dbl(&task, &layout);
+#ifdef HAVE_HGE
+	case TYPE_hge: return MOSlayout_hge(&task, &layout);
+#endif
+	default:
+		// Unknown type. Should not happen.
+		assert(0);
+	}
+
+	return MAL_SUCCEED;
+}
+
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ */
+
+/*
+ *  authors Martin Kersten, Aris Koning
+ * The header block contains the mapping from OIDs to chunks, which should become
+ * the basis for processing mitosis over a mosaic file.
+ */
+
+#include "monetdb_config.h"
+#include "mosaic.h"
+#include "mosaic_hdr.h"
+#include "mosaic_utility.h"
+
+// add the chunk to the index to facilitate 'fast' OID-based access
+void
+MOSupdateHeader(MOStask* task)
+{
+	MosaicHdr hdr = (MosaicHdr) task->hdr;
+
+    hdr->blks[MOSgetTag(task->blk)]++;
+    hdr->elms[MOSgetTag(task->blk)] += MOSgetCnt(task->blk);
+
+	if( hdr->top < METHOD_NOT_AVAILABLE -1 ){
+		if( hdr->top == 0){
+			hdr->top++;
+		}
+		hdr->top++;
+	}
+}
+
+void
+MOSinitHeader(MOStask* task)
+{
+	MosaicHdr hdr = (MosaicHdr) task->hdr;
+	int i;
+	for(i=0; i < MOSAIC_METHODS; i++){
+		hdr->elms[i] = hdr->blks[i] = METHOD_NOT_AVAILABLE;
+	}
+	hdr->ratio = 0;
+	hdr->version = MOSAIC_VERSION;
+	hdr->top = 0;
+	hdr->bits_dict = 0;
+	hdr->pos_dict = 0;
+	hdr->length_dict = 0;
+	hdr->bits_dict256 = 0;
+	hdr->pos_dict256 = 0;
+	hdr->length_dict256 = 0;
+
+	task->bsrc->tmosaic->free = MosaicHdrSize;
+}
+
+// position the task on the mosaic blk to be scanned
+void
+MOSinitializeScan(MOStask* task, BAT* /*compressed*/ b)
+{
+	task->blk = (MosaicBlk) (((char*)task->hdr) + MosaicHdrSize);
+
+	task->start = 0;
+	task->stop = b->batCount;
+}
+
+#define LAYOUT_BUFFER_SIZE 10000
+str
+MOSlayout_hdr(MOStask* task, MosaicLayout* layout) {
+	size_t written;
+
+	char buffer1[LAYOUT_BUFFER_SIZE] = {0};
+	char buffer2[LAYOUT_BUFFER_SIZE] = {0};
+
+	char* pbuffer2 = &buffer2[0];
+
+	size_t buffer_size = LAYOUT_BUFFER_SIZE;
+
+	strcpy(buffer1, "{");
+
+	strcat(buffer1, "{\"blks\":[");
+	for(int j=0; j < MOSAIC_METHODS; j++) {
+		if (task->hdr->blks[j] > 0) {
+
+			written = lngToStr(&pbuffer2, &buffer_size, &(task->hdr->blks[j]), true);
+
+			if (buffer1[strlen(buffer1)] == '[') {
+				strcat(buffer1, ",");
+			}
+
+			strcat(buffer1, "{\"");
+			strcat(buffer1, MOSmethods[j].name);
+			strcat(buffer1, "\":\"");
+			strcat(buffer1, buffer2);
+			strcat(buffer1, "\"}");
+
+			memset(buffer2, 0, written);
+		}
+	}
+	strcat(buffer1, "]}");
+
+	strcat(buffer1, ",");
+
+	strcat(buffer1, "{\"elms\":[");
+	for(int j=0; j < MOSAIC_METHODS; j++) {
+		if (task->hdr->blks[j] > 0) {
+
+			written = lngToStr(&pbuffer2, &buffer_size, &(task->hdr->elms[j]), true);
+
+			if (buffer1[strlen(buffer1)] == '[') {
+				strcat(buffer1, ",");
+			}
+
+			strcat(buffer1, "{\"");
+			strcat(buffer1, MOSmethods[j].name);
+			strcat(buffer1, "\":\"");
+			strcat(buffer1, buffer2);
+			strcat(buffer1, "\"}");
+
+			memset(buffer2, 0, written);
+		}
+	}
+	strcat(buffer1, "]}");
+
+	written = fltToStr(&pbuffer2, &buffer_size, &((task->hdr)->ratio), true);
+
+	strcat(buffer1, ",{\"ratio\":");
+
+	strcat(buffer1, buffer2);
+	strcat(buffer1, "}");
+	memset(buffer2, 0, written);
+
+	strcat(buffer1, "}");
+
+	LAYOUT_INSERT(
+		tech = "header";
+		properties = buffer1;
+		 /*TODO: These parameters might be problematic for large datasets.*/
+		count = BATcount(task->bsrc);
+		input = count * task->bsrc->twidth * CHAR_BIT;
+		output = task->bsrc->tmosaic->free;
+		, /*TODO*/);
+	str msg;
+	if( (task->hdr)->blks[MOSAIC_DICT256] && (msg = MOSlayoutDictionary_ID(dict256)(task,layout, 0)) != MAL_SUCCEED)
+		return msg;
+
+	if( (task->hdr)->blks[MOSAIC_DICT] && (msg = MOSlayoutDictionary_ID(dict)(task,layout, 0)) != MAL_SUCCEED)
+		return msg;
+
+	return MAL_SUCCEED;
+}
+#undef LAYOUT_BUFFER_SIZE
 
 static
 str MOSestimate(MOStask* task, BAT* estimates, size_t* compressed_size) {

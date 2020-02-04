@@ -163,7 +163,7 @@ MOSestimate_SIGNATURE(METHOD, TPE) {
 	}
 	else {
 		nr_compressed = info->previous_limit;
-		/* TODO: I think there is a bug here when using dict256. What if dictionary estimates exits prematurely*/
+		/* TODO: I think there is a bug here when using METHOD. What if dictionary estimates exits prematurely*/
 	}
 
 	BAT* pos_slice;
@@ -484,4 +484,63 @@ MOSprojectionloop_SIGNATURE(METHOD, TPE, CAND_ITER)
 
 	task->src = (char*) bt;
 }
+#endif
+
+#ifdef LAYOUT_DEFINITION
+
+#ifndef TPE
+
+MOSlayoutDictionary_SIGNATURE(METHOD)
+{
+	(void) task;
+	(void) layout;
+	(void) current_bsn;
+	/*
+	lng zero=0;
+	unsigned int i;
+	char buf[BUFSIZ];
+	char bufv[BUFSIZ];
+	(void) boutput;
+
+	BUN dictsize = GET_COUNT(task->METHOD_info);
+
+	for(i=0; i< dictsize; i++){
+		snprintf(buf, BUFSIZ,"METHOD[%u]",i);
+		if( BUNappend(btech, buf, false) != GDK_SUCCEED ||
+			BUNappend(bcount, &zero, false) != GDK_SUCCEED ||
+			BUNappend(binput, &zero, false) != GDK_SUCCEED ||
+			// BUNappend(boutput, MOSgetDictFreq(dict_hdr, i), false) != GDK_SUCCEED ||
+			BUNappend(bproperties, bufv, false) != GDK_SUCCEED)
+		return;
+	}
+	*/
+
+	return MAL_SUCCEED;
+}
+#else
+
+MOSlayout_SIGNATURE(METHOD, TPE)
+{
+	(void) task;
+	(void) layout;
+	(void) current_bsn;
+
+	/*
+	MosaicBlk blk = task->blk;
+	BUN cnt = MOSgetCnt(blk), input=0, output= 0;
+
+	input = cnt * ATOMsize(task->type);
+	output =  MosaicBlkSize + (cnt * GET_FINAL_BITS(task, dict256))/8 + (((cnt * GET_FINAL_BITS(task, dict256)) %8) != 0);
+	if( BUNappend(btech, "dict256 blk", false) != GDK_SUCCEED ||
+		BUNappend(bcount, &cnt, false) != GDK_SUCCEED ||
+		BUNappend(binput, &input, false) != GDK_SUCCEED ||
+		BUNappend(boutput, &output, false) != GDK_SUCCEED ||
+		BUNappend(bproperties, "", false) != GDK_SUCCEED)
+		return;
+	*/
+
+	return MAL_SUCCEED;
+}
+#endif
+
 #endif

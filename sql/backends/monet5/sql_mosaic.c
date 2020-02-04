@@ -21,6 +21,7 @@
 #include "mosaic.h"
 #include "sql_scenario.h"
 
+// TODO: clean up this function a bit.
 str
 sql_mosaicLayout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -29,21 +30,21 @@ sql_mosaicLayout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_trans *tr = m->session->tr;
 	node *nsch, *ntab, *ncol;
 	str sch = 0, tbl = 0, col = 0;
-	BAT *bn, *btech, *bcount, *binput, *boutput, *bproperties;
-	int *tech,*count,*input,*output, *properties;
+	BAT *bn, *btech, *bcount, *binput, *boutput, *bproperties, *bbsn;
+	int *tech,*count,*input,*output, *properties, *bsn;
 
 	if (msg != MAL_SUCCEED || (msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
 	btech = COLnew((oid)0, TYPE_str,0, TRANSIENT);
 	if( btech == NULL)
-		throw(SQL,"mosaicLayout", MAL_MALLOC_FAIL);
+		throw(SQL,__func__, MAL_MALLOC_FAIL);
 	tech = getArgReference_bat(stk, pci, 0);
 	*tech = btech->batCacheid;
 
 	bcount = COLnew((oid)0, TYPE_lng,0, TRANSIENT);
 	if( bcount == NULL){
 		BBPunfix(btech->batCacheid);
-		throw(SQL,"mosaicLayout", MAL_MALLOC_FAIL);
+		throw(SQL,__func__, MAL_MALLOC_FAIL);
 	}
 	count = getArgReference_bat(stk, pci, 1);
 	*count = bcount->batCacheid;
@@ -52,7 +53,7 @@ sql_mosaicLayout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( binput == NULL){
 		BBPunfix(btech->batCacheid);
 		BBPunfix(bcount->batCacheid);
-		throw(SQL,"mosaicLayout", MAL_MALLOC_FAIL);
+		throw(SQL,__func__, MAL_MALLOC_FAIL);
 	}
 	input = getArgReference_bat(stk, pci, 2);
 	*input = binput->batCacheid;
@@ -62,7 +63,7 @@ sql_mosaicLayout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPunfix(btech->batCacheid);
 		BBPunfix(bcount->batCacheid);
 		BBPunfix(binput->batCacheid);
-		throw(SQL,"mosaicLayout", MAL_MALLOC_FAIL);
+		throw(SQL,__func__, MAL_MALLOC_FAIL);
 	}
 	output = getArgReference_bat(stk, pci, 3);
 	*output = boutput->batCacheid;
@@ -73,14 +74,26 @@ sql_mosaicLayout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPunfix(bcount->batCacheid);
 		BBPunfix(binput->batCacheid);
 		BBPunfix(boutput->batCacheid);
-		throw(SQL,"mosaicLayout", MAL_MALLOC_FAIL);
+		throw(SQL,__func__, MAL_MALLOC_FAIL);
 	}
 	properties = getArgReference_bat(stk, pci, 4);
 	*properties = bproperties->batCacheid;
 
-	sch = *getArgReference_str(stk, pci, 5);
-	tbl = *getArgReference_str(stk, pci, 6);
-	col = *getArgReference_str(stk, pci, 7);
+	bbsn = COLnew((oid)0, TYPE_lng,0, TRANSIENT);
+	if( bbsn == NULL){
+		BBPunfix(btech->batCacheid);
+		BBPunfix(bcount->batCacheid);
+		BBPunfix(binput->batCacheid);
+		BBPunfix(boutput->batCacheid);
+		BBPunfix(bproperties->batCacheid);
+		throw(SQL,__func__, MAL_MALLOC_FAIL);
+	}
+	bsn = getArgReference_bat(stk, pci, 5);
+	*bsn = bbsn->batCacheid;
+
+	sch = *getArgReference_str(stk, pci, 6);
+	tbl = *getArgReference_str(stk, pci, 7);
+	col = *getArgReference_str(stk, pci, 8);
 
 #ifdef DEBUG_SQL_MOSAIC
 	mnstr_printf(cntxt->fdout, "#mosaic layout %s.%s.%s \n", sch, tbl, col);
@@ -108,7 +121,7 @@ sql_mosaicLayout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						// perform the analysis
 						bn = store_funcs.bind_col(m->session->tr, c, 0);
 
-						if ((msg = MOSlayout(bn, btech, bcount, binput, boutput, bproperties)) != MAL_SUCCEED) {
+						if ((msg = MOSlayout(bn, bbsn, btech, bcount, binput, boutput, bproperties)) != MAL_SUCCEED) {
 							break;
 						}
 						BBPunfix(bn->batCacheid);
@@ -122,6 +135,8 @@ sql_mosaicLayout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPunfix(bcount->batCacheid);
 		BBPunfix(binput->batCacheid);
 		BBPunfix(boutput->batCacheid);
+		BBPunfix(bproperties->batCacheid);
+		BBPunfix(bbsn->batCacheid);
 		return msg;
 	}
 
@@ -130,6 +145,7 @@ sql_mosaicLayout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPkeepref(*input);
 	BBPkeepref(*output);
 	BBPkeepref(*properties);
+	BBPkeepref(*bsn);
 	return MAL_SUCCEED;
 }
 

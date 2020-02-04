@@ -24,8 +24,6 @@
 
 bool MOStypes_dict256(BAT* b);
 mal_export str MOScreateCappedInfo(MOStask* task);
-mal_export void MOSlayout_dict256(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
-mal_export void MOSlayout_dict256_hdr(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
 
 #define MosaicBlkHeader_DEF_dict256(TPE) MosaicBlkHeader_DEF_dictionary(dict256, TPE)
 

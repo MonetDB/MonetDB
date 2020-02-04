@@ -47,21 +47,6 @@ bool MOStypes_frame(BAT* b) {
 	return false;
 }
 
-void
-MOSlayout_frame(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
-{
-	(void) boutput;
-	MosaicBlk blk = task->blk;
-	lng cnt = MOSgetCnt(blk), input=0;
-
-	input = cnt * ATOMsize(task->type);
-	if( BUNappend(btech, "frame blk", false) != GDK_SUCCEED ||
-		BUNappend(bcount, &cnt, false) != GDK_SUCCEED ||
-		BUNappend(binput, &input, false) != GDK_SUCCEED ||
-		BUNappend(bproperties, "", false) != GDK_SUCCEED)
-		return;
-}
-
 #define METHOD frame
 #define METHOD_TEMPLATES_INCLUDE MAKE_TEMPLATES_INCLUDE_FILE(METHOD)
 
@@ -84,6 +69,26 @@ MOSlayout_frame(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutpu
 #undef TPE
 #endif
 #undef COMPRESSION_DEFINITION
+
+#define LAYOUT_DEFINITION
+#define TPE bte
+#include METHOD_TEMPLATES_INCLUDE
+#undef TPE
+#define TPE sht
+#include METHOD_TEMPLATES_INCLUDE
+#undef TPE
+#define TPE int
+#include METHOD_TEMPLATES_INCLUDE
+#undef TPE
+#define TPE lng
+#include METHOD_TEMPLATES_INCLUDE
+#undef TPE
+#ifdef HAVE_HGE
+#define TPE hge
+#include METHOD_TEMPLATES_INCLUDE
+#undef TPE
+#endif
+#undef LAYOUT_DEFINITION
 
 #define TPE bte
 #include "mosaic_select_template.h"

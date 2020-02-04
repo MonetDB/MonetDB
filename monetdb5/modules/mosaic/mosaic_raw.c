@@ -38,32 +38,6 @@ bool MOStypes_raw(BAT* b) {
 	return false;
 }
 
-void
-MOSlayout_raw(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties)
-{
-	MosaicBlk blk = (MosaicBlk) task->blk;
-	lng cnt = MOSgetCnt(blk), input=0, output= 0;
-
-		input = cnt * ATOMsize(task->type);
-	switch(ATOMbasetype(task->type)){
-	case TYPE_bte: output = wordaligned( MosaicBlkSize + sizeof(bte)* MOSgetCnt(blk),bte); break;
-	case TYPE_sht: output = wordaligned( MosaicBlkSize + sizeof(sht)* MOSgetCnt(blk),sht); break;
-	case TYPE_int: output = wordaligned( MosaicBlkSize + sizeof(int)* MOSgetCnt(blk),int); break;
-	case TYPE_lng: output = wordaligned( MosaicBlkSize + sizeof(lng)* MOSgetCnt(blk),lng); break;
-	case TYPE_flt: output = wordaligned( MosaicBlkSize + sizeof(flt)* MOSgetCnt(blk),flt); break;
-	case TYPE_dbl: output = wordaligned( MosaicBlkSize + sizeof(dbl)* MOSgetCnt(blk),dbl); break;
-#ifdef HAVE_HGE
-	case TYPE_hge: output = wordaligned( MosaicBlkSize + sizeof(hge)* MOSgetCnt(blk),hge); break;
-#endif
-	}
-	if( BUNappend(btech, "raw blk", false) != GDK_SUCCEED ||
-		BUNappend(bcount, &cnt, false) != GDK_SUCCEED ||
-		BUNappend(binput, &input, false) != GDK_SUCCEED ||
-		BUNappend(boutput, &output, false) != GDK_SUCCEED ||
-		BUNappend(bproperties, "", false) != GDK_SUCCEED)
-		return;
-}
-
 #define METHOD raw
 #define METHOD_TEMPLATES_INCLUDE MAKE_TEMPLATES_INCLUDE_FILE(METHOD)
 
@@ -92,6 +66,32 @@ MOSlayout_raw(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput,
 #undef TPE
 #endif
 #undef COMPRESSION_DEFINITION
+
+#define LAYOUT_DEFINITION
+#define TPE bte
+#include METHOD_TEMPLATES_INCLUDE
+#undef TPE
+#define TPE sht
+#include METHOD_TEMPLATES_INCLUDE
+#undef TPE
+#define TPE int
+#include METHOD_TEMPLATES_INCLUDE
+#undef TPE
+#define TPE lng
+#include METHOD_TEMPLATES_INCLUDE
+#undef TPE
+#define TPE flt
+#include METHOD_TEMPLATES_INCLUDE
+#undef TPE
+#define TPE dbl
+#include METHOD_TEMPLATES_INCLUDE
+#undef TPE
+#ifdef HAVE_HGE
+#define TPE hge
+#include METHOD_TEMPLATES_INCLUDE
+#undef TPE
+#endif
+#undef LAYOUT_DEFINITION
 
 #define TPE bte
 #include "mosaic_select_template.h"

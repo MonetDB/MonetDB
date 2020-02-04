@@ -47,6 +47,13 @@ ALIGNMENT_HELPER_TPE(METHOD, TPE)\
 #define MOSpostEstimate_SIGNATURE(METHOD, TPE) void CONCAT4(MOSpostEstimate_, METHOD, _, TPE)(MOStask* task)
 #define MOSfinalizeDictionary_ID(METHOD, TPE) MOSfinalizeDictionary_##METHOD##_##TPE
 #define MOSfinalizeDictionary_SIGNATURE(METHOD, TPE) str MOSfinalizeDictionary_ID(METHOD, TPE)(MOStask* task)
+
+#define MOSlayoutARGUMENTS (MOStask* task, MosaicLayout* layout, lng current_bsn)
+#define MOSlayout_ID(METHOD, TPE) CONCAT4(MOSlayout_, METHOD, _, TPE)
+#define MOSlayout_SIGNATURE(METHOD, TPE) str MOSlayout_ID(METHOD, TPE) MOSlayoutARGUMENTS
+#define MOSlayoutDictionary_ID(METHOD) CONCAT3(MOSlayout_, METHOD, _hdr)
+#define MOSlayoutDictionary_SIGNATURE(METHOD) str MOSlayoutDictionary_ID(METHOD) MOSlayoutARGUMENTS
+
 #define MOScompress_SIGNATURE(METHOD, TPE) void CONCAT4(MOScompress_, METHOD, _, TPE)(MOStask* task, MosaicBlkRec* estimate)
 #define MOSdecompress_SIGNATURE(METHOD, TPE) void CONCAT4(MOSdecompress_, METHOD, _, TPE)(MOStask* task)
 #define MOSBlockHeader_DEF(METHOD, TPE) MosaicBlkHeader_DEF_##METHOD(TPE)
@@ -71,6 +78,7 @@ MOSestimate_SIGNATURE(METHOD, TPE);\
 MOSpostEstimate_SIGNATURE(METHOD, TPE);\
 MOScompress_SIGNATURE(METHOD, TPE);\
 MOSdecompress_SIGNATURE(METHOD, TPE);\
+MOSlayout_SIGNATURE(METHOD, TPE);\
 MOSselect_SIGNATURE(METHOD, TPE);\
 MOSprojection_SIGNATURE(METHOD, TPE);\
 MOSjoin_COUI_SIGNATURE(METHOD, TPE);\
@@ -107,7 +115,8 @@ MOSfinalizeDictionary_SIGNATURE(METHOD, int);\
 MOSfinalizeDictionary_SIGNATURE(METHOD, lng);\
 MOSfinalizeDictionary_SIGNATURE(METHOD, hge);\
 MOSfinalizeDictionary_SIGNATURE(METHOD, flt);\
-MOSfinalizeDictionary_SIGNATURE(METHOD, dbl);
+MOSfinalizeDictionary_SIGNATURE(METHOD, dbl);\
+MOSlayoutDictionary_SIGNATURE(METHOD)
 #else
 #define ALGEBRA_INTERFACES_ALL_TYPES_WITH_DICTIONARY(METHOD) \
 ALGEBRA_INTERFACES_ALL_TYPES(METHOD);\
@@ -117,7 +126,8 @@ MOSfinalizeDictionary_SIGNATURE(METHOD, sht);\
 MOSfinalizeDictionary_SIGNATURE(METHOD, int);\
 MOSfinalizeDictionary_SIGNATURE(METHOD, lng);\
 MOSfinalizeDictionary_SIGNATURE(METHOD, flt);\
-MOSfinalizeDictionary_SIGNATURE(METHOD, dbl);
+MOSfinalizeDictionary_SIGNATURE(METHOD, dbl);\
+MOSlayoutDictionary_SIGNATURE(METHOD)
 #endif
 
 // This is just an ugly work around for Microsoft Visual Studio to get the expansion of __VA_ARGS__ right.

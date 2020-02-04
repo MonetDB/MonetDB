@@ -39,20 +39,20 @@ stdout of test 'compressionRLE` in directory 'sql/test/mosaic` itself:
 #(1, true, 0.314,'2014-08-23 11:34:54.000000'),
 #(1, true, 0.314,'2014-08-23 11:34:54.000000'),
 [ 86	]
-#alter table tmp3RLE set read only;
-#select cast(sum(i) as bigint) from tmp3RLE;
+#alter table tmp3rle set read only;
+#select cast(sum(i) as bigint) from tmp3rle;
 % sys.%1 # table_name
 % %1 # name
 % bigint # type
 % 3 # length
 [ 270	]
-#select sum(f) from tmp3RLE;
+#select sum(f) from tmp3rle;
 % sys.%1 # table_name
 % %1 # name
 % real # type
 % 15 # length
 [ 27.104	]
-#explain select * from tmp3RLE;
+#explain select * from tmp3rle;
 % .explain # table_name
 % mal # name
 % clob # type
@@ -98,31 +98,82 @@ end user.s14_0;
 #candidates           actions= 1 time=1 usec 
 #garbagecollector     actions= 1 time=18 usec 
 #total                actions= 1 time=274 usec 
-#alter table tmp3RLE alter column i set storage 'runlength';
-#select * from mosaic.layout('sys','tmp3RLE','i') limit 25;
-% .%4,	.%4,	.%4,	.%4,	.%4 # table_name
-% technique,	count,	inputsize,	outputsize,	properties # name
-% clob,	bigint,	bigint,	bigint,	clob # type
-% 0,	1,	1,	1,	0 # length
-#alter table tmp3RLE alter column b set storage 'runlength';
-#select * from mosaic.layout('sys','tmp3RLE','b') limit 25;
-% .%4,	.%4,	.%4,	.%4,	.%4 # table_name
-% technique,	count,	inputsize,	outputsize,	properties # name
-% clob,	bigint,	bigint,	bigint,	clob # type
-% 0,	1,	1,	1,	0 # length
-#alter table tmp3RLE alter column f set storage 'runlength';
-#select * from mosaic.layout('sys','tmp3RLE','f') limit 25;
-% .%4,	.%4,	.%4,	.%4,	.%4 # table_name
-% technique,	count,	inputsize,	outputsize,	properties # name
-% clob,	bigint,	bigint,	bigint,	clob # type
-% 0,	1,	1,	1,	0 # length
-#alter table tmp3RLE alter column t set storage 'runlength';
-#select * from mosaic.layout('sys','tmp3RLE','t') limit 25;
-% .%4,	.%4,	.%4,	.%4,	.%4 # table_name
-% technique,	count,	inputsize,	outputsize,	properties # name
-% clob,	bigint,	bigint,	bigint,	clob # type
-% 0,	1,	1,	1,	0 # length
-#explain select i from tmp3RLE;
+#alter table tmp3rle alter column i set storage 'runlength';
+#select * from mosaic.layout('sys','tmp3rle','i') limit 25;
+% .%4,	.%4,	.%4,	.%4,	.%4,	.%4 # table_name
+% technique,	count,	inputsize,	outputsize,	properties,	bsn # name
+% clob,	bigint,	bigint,	bigint,	clob,	bigint # type
+% 9,	2,	4,	3,	82,	2 # length
+[ "header",	86,	2752,	556,	"{{\"blks\":[{\"runlength\":\"30\"}]},{\"elms\":[{\"runlength\":\"86\"}]},{\"ratio\":0.61870503}}",	0	]
+[ "runlength",	15,	60,	12,	"{\"value\" : 1\"}",	1	]
+[ "runlength",	1,	4,	12,	"{\"value\" : 2\"}",	2	]
+[ "runlength",	1,	4,	12,	"{\"value\" : 3\"}",	3	]
+[ "runlength",	1,	4,	12,	"{\"value\" : 2\"}",	4	]
+[ "runlength",	1,	4,	12,	"{\"value\" : 3\"}",	5	]
+[ "runlength",	1,	4,	12,	"{\"value\" : 2\"}",	6	]
+[ "runlength",	1,	4,	12,	"{\"value\" : 3\"}",	7	]
+[ "runlength",	15,	60,	12,	"{\"value\" : 4\"}",	8	]
+[ "runlength",	1,	4,	12,	"{\"value\" : 0\"}",	9	]
+[ "runlength",	1,	4,	12,	"{\"value\" : 5\"}",	10	]
+[ "runlength",	1,	4,	12,	"{\"value\" : 6\"}",	11	]
+[ "runlength",	1,	4,	12,	"{\"value\" : 7\"}",	12	]
+[ "runlength",	1,	4,	12,	"{\"value\" : 8\"}",	13	]
+[ "runlength",	1,	4,	12,	"{\"value\" : 9\"}",	14	]
+[ "runlength",	1,	4,	12,	"{\"value\" : 10\"}",	15	]
+[ "runlength",	15,	60,	12,	"{\"value\" : 1\"}",	16	]
+[ "runlength",	1,	4,	12,	"{\"value\" : 2\"}",	17	]
+[ "runlength",	1,	4,	12,	"{\"value\" : 3\"}",	18	]
+[ "runlength",	1,	4,	12,	"{\"value\" : 2\"}",	19	]
+[ "runlength",	1,	4,	12,	"{\"value\" : 3\"}",	20	]
+[ "runlength",	1,	4,	12,	"{\"value\" : 2\"}",	21	]
+[ "runlength",	1,	4,	12,	"{\"value\" : 3\"}",	22	]
+[ "runlength",	15,	60,	12,	"{\"value\" : 4\"}",	23	]
+[ "runlength",	1,	4,	12,	"{\"value\" : 0\"}",	24	]
+#alter table tmp3rle alter column b set storage 'runlength';
+#select * from mosaic.layout('sys','tmp3rle','b') limit 25;
+% .%4,	.%4,	.%4,	.%4,	.%4,	.%4 # table_name
+% technique,	count,	inputsize,	outputsize,	properties,	bsn # name
+% clob,	bigint,	bigint,	bigint,	clob,	bigint # type
+% 9,	2,	3,	3,	81,	2 # length
+[ "header",	86,	688,	324,	"{{\"blks\":[{\"runlength\":\"16\"}]},{\"elms\":[{\"runlength\":\"86\"}]},{\"ratio\":0.2654321}}",	0	]
+[ "runlength",	15,	15,	8,	"{\"value\" : 1\"}",	1	]
+[ "runlength",	1,	1,	8,	"{\"value\" : 0\"}",	2	]
+[ "runlength",	1,	1,	8,	"{\"value\" : 1\"}",	3	]
+[ "runlength",	1,	1,	8,	"{\"value\" : 0\"}",	4	]
+[ "runlength",	1,	1,	8,	"{\"value\" : 1\"}",	5	]
+[ "runlength",	1,	1,	8,	"{\"value\" : 0\"}",	6	]
+[ "runlength",	16,	16,	8,	"{\"value\" : 1\"}",	7	]
+[ "runlength",	7,	7,	8,	"{\"value\" : 0\"}",	8	]
+[ "runlength",	15,	15,	8,	"{\"value\" : 1\"}",	9	]
+[ "runlength",	1,	1,	8,	"{\"value\" : 0\"}",	10	]
+[ "runlength",	1,	1,	8,	"{\"value\" : 1\"}",	11	]
+[ "runlength",	1,	1,	8,	"{\"value\" : 0\"}",	12	]
+[ "runlength",	1,	1,	8,	"{\"value\" : 1\"}",	13	]
+[ "runlength",	1,	1,	8,	"{\"value\" : 0\"}",	14	]
+[ "runlength",	16,	16,	8,	"{\"value\" : 1\"}",	15	]
+[ "runlength",	7,	7,	8,	"{\"value\" : 0\"}",	16	]
+#alter table tmp3rle alter column f set storage 'runlength';
+#select * from mosaic.layout('sys','tmp3rle','f') limit 25;
+% .%4,	.%4,	.%4,	.%4,	.%4,	.%4 # table_name
+% technique,	count,	inputsize,	outputsize,	properties,	bsn # name
+% clob,	bigint,	bigint,	bigint,	clob,	bigint # type
+% 9,	2,	4,	3,	80,	1 # length
+[ "header",	86,	2752,	268,	"{{\"blks\":[{\"runlength\":\"6\"}]},{\"elms\":[{\"runlength\":\"86\"}]},{\"ratio\":1.2835821}}",	0	]
+[ "runlength",	21,	84,	12,	"{\"value\" : 0.314\"}",	1	]
+[ "runlength",	16,	64,	12,	"{\"value\" : 0.316\"}",	2	]
+[ "runlength",	6,	24,	12,	"{\"value\" : 0.317\"}",	3	]
+[ "runlength",	21,	84,	12,	"{\"value\" : 0.314\"}",	4	]
+[ "runlength",	16,	64,	12,	"{\"value\" : 0.316\"}",	5	]
+[ "runlength",	6,	24,	12,	"{\"value\" : 0.317\"}",	6	]
+#alter table tmp3rle alter column t set storage 'runlength';
+#select * from mosaic.layout('sys','tmp3rle','t') limit 25;
+% .%4,	.%4,	.%4,	.%4,	.%4,	.%4 # table_name
+% technique,	count,	inputsize,	outputsize,	properties,	bsn # name
+% clob,	bigint,	bigint,	bigint,	clob,	bigint # type
+% 9,	2,	4,	3,	80,	1 # length
+[ "header",	86,	5504,	212,	"{{\"blks\":[{\"runlength\":\"1\"}]},{\"elms\":[{\"runlength\":\"86\"}]},{\"ratio\":3.2452831}}",	0	]
+[ "runlength",	86,	688,	16,	"{\"value\" : 355009119119733632\"}",	1	]
+#explain select i from tmp3rle;
 % .explain # table_name
 % mal # name
 % clob # type
@@ -162,7 +213,7 @@ end user.s32_0;
 #candidates           actions= 1 time=0 usec 
 #garbagecollector     actions= 1 time=12 usec 
 #total                actions= 1 time=203 usec 
-#explain select b from tmp3RLE;
+#explain select b from tmp3rle;
 % .explain # table_name
 % mal # name
 % clob # type
@@ -202,7 +253,7 @@ end user.s34_0;
 #candidates           actions= 1 time=0 usec 
 #garbagecollector     actions= 1 time=11 usec 
 #total                actions= 1 time=201 usec 
-#explain select f from tmp3RLE;
+#explain select f from tmp3rle;
 % .explain # table_name
 % mal # name
 % clob # type
@@ -242,7 +293,7 @@ end user.s36_0;
 #candidates           actions= 1 time=0 usec 
 #garbagecollector     actions= 1 time=12 usec 
 #total                actions= 1 time=209 usec 
-#explain select t from tmp3RLE;
+#explain select t from tmp3rle;
 % .explain # table_name
 % mal # name
 % clob # type
@@ -282,7 +333,7 @@ end user.s38_0;
 #candidates           actions= 1 time=0 usec 
 #garbagecollector     actions= 1 time=13 usec 
 #total                actions= 1 time=203 usec 
-#select * from tmp3RLE;
+#select * from tmp3rle;
 % sys.tmp3rle,	sys.tmp3rle,	sys.tmp3rle,	sys.tmp3rle # table_name
 % i,	b,	f,	t # name
 % int,	boolean,	real,	timestamp # type
@@ -373,13 +424,13 @@ end user.s38_0;
 [ 8,	false,	0.317,	2014-08-23 11:34:54.000000	]
 [ 9,	false,	0.317,	2014-08-23 11:34:54.000000	]
 [ 10,	false,	0.317,	2014-08-23 11:34:54.000000	]
-#select cast(sum(i) as bigint) from tmp3RLE;
+#select cast(sum(i) as bigint) from tmp3rle;
 % sys.%1 # table_name
 % %1 # name
 % bigint # type
 % 3 # length
 [ 270	]
-#select sum(f) from tmp3RLE;
+#select sum(f) from tmp3rle;
 % sys.%1 # table_name
 % %1 # name
 % real # type

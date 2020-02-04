@@ -199,6 +199,17 @@ typedef struct _MosaicEstimation {
 	BUN* max_compression_length;
 } MosaicEstimation;
 
+
+
+typedef struct _MosaicLayout {
+	BAT *bsn;
+	BAT *tech;
+	BAT *count;
+	BAT *input;
+	BAT *output;
+	BAT *properties;
+} MosaicLayout;
+
 #define GET_PADDING(blk, METHOD, TPE) (((MOSBlockHeaderTpe(METHOD, TPE)*) (blk))->padding)
 
 #define ALIGN_BLOCK_HEADER(task, METHOD, TPE)\
@@ -225,6 +236,31 @@ typedef struct _MosaicEstimation {
 	(void) alignment;\
 }
 
+#define LAYOUT_INSERT(SET_VALUES, CATCH) \
+{\
+	lng bsn = 0;\
+\
+	const char* tech = str_nil;\
+	lng count = lng_nil;\
+	lng input = lng_nil;\
+	lng output = lng_nil;\
+	const char*  properties = str_nil;\
+\
+	SET_VALUES;\
+\
+	if(\
+		BUNappend(layout->bsn		, &bsn, false) != GDK_SUCCEED ||\
+		BUNappend(layout->tech		,tech, false) != GDK_SUCCEED ||\
+		BUNappend(layout->count		, &count, false) != GDK_SUCCEED ||\
+		BUNappend(layout->input		, &input, false) != GDK_SUCCEED ||\
+		BUNappend(layout->properties, properties, false) != GDK_SUCCEED ||\
+		BUNappend(layout->output	, &output, false) != GDK_SUCCEED\
+	) {\
+		CATCH;\
+		throw(MAL, __func__, MAL_MALLOC_FAIL);\
+	}\
+}
+
 mal_export const Method MOSmethods[];
 mal_export bit MOSisTypeAllowed(char compression, BAT* b);
 mal_export str MOScompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -237,7 +273,12 @@ mal_export str MOSselect2nil(bat *ret, const bat *bid, const bat *cid	, const vo
 mal_export str MOSthetaselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str MOSprojection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str MOSlayout(BAT *b, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
+mal_export str MOSlayout(BAT *b, BAT *bbsn, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
 mal_export str MOSAnalysis(BAT *b, BAT *btech, BAT *output, BAT *factor, BAT *compress, BAT *decompress, str compressions);
+
+void MOSupdateHeader(MOStask* task);
+void MOSinitHeader(MOStask* task);
+void MOSinitializeScan(MOStask* task, BAT* b);
+str  MOSlayout_hdr(MOStask* task, MosaicLayout* layout);
 
 #endif /* _MOSLIST_H */

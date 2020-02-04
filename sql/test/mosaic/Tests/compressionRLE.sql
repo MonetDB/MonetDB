@@ -1,7 +1,7 @@
 set optimizer='mosaic_pipe';
 
-create table tmp3RLE( i integer, b boolean, f real,t timestamp);
-insert into tmp3RLE values
+create table tmp3rle( i integer, b boolean, f real,t timestamp);
+insert into tmp3rle values
 (1, true, 0.314,'2014-08-23 11:34:54.000000'),
 (1, true, 0.314,'2014-08-23 11:34:54.000000'),
 (1, true, 0.314,'2014-08-23 11:34:54.000000'),
@@ -89,28 +89,28 @@ insert into tmp3RLE values
 (9, false, 0.317,'2014-08-23 11:34:54.000000'),
 (10, false, 0.317,'2014-08-23 11:34:54.000000');
 
-alter table tmp3RLE set read only;
-select cast(sum(i) as bigint) from tmp3RLE;
-select sum(f) from tmp3RLE;
+alter table tmp3rle set read only;
+select cast(sum(i) as bigint) from tmp3rle;
+select sum(f) from tmp3rle;
 
-explain select * from tmp3RLE;
---select * from tmp3RLE;
+explain select * from tmp3rle;
+--select * from tmp3rle;
 
-alter table tmp3RLE alter column i set storage 'runlength';
-select * from mosaic.layout('sys','tmp3RLE','i') limit 25;
-alter table tmp3RLE alter column b set storage 'runlength';
-select * from mosaic.layout('sys','tmp3RLE','b') limit 25;
-alter table tmp3RLE alter column f set storage 'runlength';
-select * from mosaic.layout('sys','tmp3RLE','f') limit 25;
-alter table tmp3RLE alter column t set storage 'runlength';
-select * from mosaic.layout('sys','tmp3RLE','t') limit 25;
+alter table tmp3rle alter column i set storage 'runlength';
+select * from mosaic.layout('sys','tmp3rle','i') limit 25;
+alter table tmp3rle alter column b set storage 'runlength';
+select * from mosaic.layout('sys','tmp3rle','b') limit 25;
+alter table tmp3rle alter column f set storage 'runlength';
+select * from mosaic.layout('sys','tmp3rle','f') limit 25;
+alter table tmp3rle alter column t set storage 'runlength';
+select * from mosaic.layout('sys','tmp3rle','t') limit 25;
 
 
-explain select i from tmp3RLE;
-explain select b from tmp3RLE;
-explain select f from tmp3RLE;
-explain select t from tmp3RLE;
-select * from tmp3RLE;
-select cast(sum(i) as bigint) from tmp3RLE;
-select sum(f) from tmp3RLE;
+explain select i from tmp3rle;
+explain select b from tmp3rle;
+explain select f from tmp3rle;
+explain select t from tmp3rle;
+select * from tmp3rle;
+select cast(sum(i) as bigint) from tmp3rle;
+select sum(f) from tmp3rle;
 

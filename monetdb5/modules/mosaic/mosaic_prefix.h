@@ -22,7 +22,6 @@
 #include "gdk_bitvector.h"
 
 bool MOStypes_prefix(BAT* b);
-mal_export void MOSlayout_prefix(MOStask* task, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
 
 #define Prefixbte uint8_t
 #define Prefixsht uint16_t
