@@ -264,7 +264,7 @@ dlist_append_type(sql_allocator *sa, dlist *l, sql_subtype *data)
 }
 
 symbol *
-newSelectNode(sql_allocator *sa, int distinct, struct dlist *selection, struct dlist *into, symbol *from, symbol *where, symbol *groupby, symbol *having, symbol *orderby, symbol *name, symbol *limit, symbol *offset, symbol *sample, symbol *window)
+newSelectNode(sql_allocator *sa, int distinct, struct dlist *selection, struct dlist *into, symbol *from, symbol *where, symbol *groupby, symbol *having, symbol *orderby, symbol *name, symbol *limit, symbol *offset, symbol *sample, symbol *seed, symbol *window)
 {
 	SelectNode *sn = SA_NEW(sa, SelectNode);
 	symbol *s = (symbol *) sn;
@@ -276,6 +276,7 @@ newSelectNode(sql_allocator *sa, int distinct, struct dlist *selection, struct d
 		sn->limit = limit;
 		sn->offset = offset;
 		sn->sample = sample;
+		sn->seed = seed;
 		sn->selection = selection;
 		sn->into = into;
 		sn->from = from;

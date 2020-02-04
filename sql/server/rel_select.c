@@ -5272,21 +5272,26 @@ rel_having_limits_nodes(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind
 		rel = rel_topn(sql->sa, rel, exps);
 	}
 
-	if (sn->sample) {
+	if (sn->sample || sn->seed) {
 		list *exps = new_exp_list(sql->sa);
-		dlist* sample_parameters = sn->sample->data.lval;
-		sql_exp *sample_size = rel_value_exp(query, NULL, sample_parameters->h->data.sym, 0, ek);
-		if (!sample_size)
-			return NULL;
-		append(exps, sample_size);
 
-		if (sample_parameters->cnt == 2) {
-			sql_exp *seed_value = rel_value_exp(query, NULL, sample_parameters->h->next->data.sym, 0, ek);
-			if (!seed_value)
+		if (sn->sample) {
+			sql_exp *s = rel_value_exp(query, NULL, sn->sample, 0, ek);
+			if (!s)
 				return NULL;
-			append(exps, seed_value);
+			if (!exp_subtype(s) && rel_set_type_param(sql, sql_bind_localtype("lng"), NULL, s, 0) < 0)
+				return NULL;
+			append(exps, s);
+		} else if (sn->seed)
+			return sql_error(sql, 02, SQLSTATE(42000) "SEED: cannot have SEED without SAMPLE");
+		else
+			append(exps, NULL);
+		if (sn->seed) {
+			sql_exp *e = rel_value_exp(query, NULL, sn->seed, 0, ek);
+			if (!e || !(e=rel_check_type(sql, sql_bind_localtype("int"), NULL, e, type_equal)))
+				return NULL;
+			append(exps, e);
 		}
-
 		rel = rel_sample(sql->sa, rel, exps);
 	}
 
@@ -5391,7 +5396,7 @@ rel_select_exp(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind ek)
 		list *te = NULL;
 		sql_exp *ce = rel_column_exp(query, &inner, n->data.sym, sql_sel | group_totals);
 
-		if (ce && (exp_subtype(ce) || (ce->type == e_atom && !ce->l && !ce->f))) {
+		if (ce && (exp_subtype(ce) || (ce->type == e_atom && !ce->l && !ce->f))) { /* Allow parameters to be propagated */
 			pexps = append(pexps, ce);
 			rel = inner;
 			continue;
