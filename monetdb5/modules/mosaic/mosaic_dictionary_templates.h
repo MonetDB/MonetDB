@@ -488,6 +488,8 @@ MOSprojectionloop_SIGNATURE(METHOD, TPE, CAND_ITER)
 
 #ifdef LAYOUT_DEFINITION
 
+#define LAYOUT_BUFFER_SIZE 10000
+
 #ifndef TPE
 
 MOSlayoutDictionary_SIGNATURE(METHOD)
@@ -495,25 +497,29 @@ MOSlayoutDictionary_SIGNATURE(METHOD)
 	(void) task;
 	(void) layout;
 	(void) current_bsn;
-	/*
-	lng zero=0;
-	unsigned int i;
-	char buf[BUFSIZ];
-	char bufv[BUFSIZ];
-	(void) boutput;
 
-	BUN dictsize = GET_COUNT(task->METHOD_info);
+	size_t buffer_size = LAYOUT_BUFFER_SIZE;
 
-	for(i=0; i< dictsize; i++){
-		snprintf(buf, BUFSIZ,"METHOD[%u]",i);
-		if( BUNappend(btech, buf, false) != GDK_SUCCEED ||
-			BUNappend(bcount, &zero, false) != GDK_SUCCEED ||
-			BUNappend(binput, &zero, false) != GDK_SUCCEED ||
-			// BUNappend(boutput, MOSgetDictFreq(dict_hdr, i), false) != GDK_SUCCEED ||
-			BUNappend(bproperties, bufv, false) != GDK_SUCCEED)
-		return;
-	}
-	*/
+	char key_size[LAYOUT_BUFFER_SIZE] = {0};
+
+	char* pkey_size = &key_size[0];
+
+	bteToStr(&pkey_size, &buffer_size, &GET_FINAL_BITS(task, METHOD), true);
+
+	char final_properties[1000] = {0};
+
+	strcat(final_properties, "{");
+
+	strcat(final_properties, "{\"bits per key\" : ");
+	strcat(final_properties, key_size);
+	strcat(final_properties, "\"}");
+
+	LAYOUT_INSERT(
+		bsn = current_bsn;
+		tech = STRINGIFY(METHOD);
+		count = GET_FINAL_DICT_COUNT(task, METHOD);
+		properties = final_properties;
+		);
 
 	return MAL_SUCCEED;
 }
@@ -521,26 +527,25 @@ MOSlayoutDictionary_SIGNATURE(METHOD)
 
 MOSlayout_SIGNATURE(METHOD, TPE)
 {
-	(void) task;
-	(void) layout;
-	(void) current_bsn;
+	size_t compressed_size = 0;
+	compressed_size += sizeof(MOSBlockHeaderTpe(METHOD, TPE));
+	lng cnt = (lng) MOSgetCnt(task->blk);
+	compressed_size += BitVectorSize(cnt, GET_FINAL_BITS(task, METHOD));	
+	compressed_size += GET_PADDING(task->blk, METHOD, TPE);
 
-	/*
-	MosaicBlk blk = task->blk;
-	BUN cnt = MOSgetCnt(blk), input=0, output= 0;
-
-	input = cnt * ATOMsize(task->type);
-	output =  MosaicBlkSize + (cnt * GET_FINAL_BITS(task, dict256))/8 + (((cnt * GET_FINAL_BITS(task, dict256)) %8) != 0);
-	if( BUNappend(btech, "dict256 blk", false) != GDK_SUCCEED ||
-		BUNappend(bcount, &cnt, false) != GDK_SUCCEED ||
-		BUNappend(binput, &input, false) != GDK_SUCCEED ||
-		BUNappend(boutput, &output, false) != GDK_SUCCEED ||
-		BUNappend(bproperties, "", false) != GDK_SUCCEED)
-		return;
-	*/
+	LAYOUT_INSERT(
+		bsn = current_bsn;
+		tech = STRINGIFY(METHOD);
+		count = cnt;
+		input = cnt * sizeof(TPE);
+		output = (lng) compressed_size;
+		);
 
 	return MAL_SUCCEED;
 }
+
 #endif
+
+#undef LAYOUT_BUFFER_SIZE
 
 #endif

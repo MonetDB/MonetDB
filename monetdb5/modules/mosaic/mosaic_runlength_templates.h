@@ -113,35 +113,28 @@ MOSprojectionloop_SIGNATURE(runlength, TPE, CAND_ITER)
 
 #ifdef LAYOUT_DEFINITION
 
+#define LAYOUT_BUFFER_SIZE 10000
+
 MOSlayout_SIGNATURE(runlength, TPE)
 {
 	size_t compressed_size = 0;
 	compressed_size += sizeof(MOSBlockHeaderTpe(runlength, TPE));
 	compressed_size += GET_PADDING(task->blk, runlength, TPE);
 
-	size_t buffer_size = 5;
-	str runlength_value_as_str;
-	if ( (runlength_value_as_str = GDKzalloc(buffer_size)) == NULL) {
-		throw(MAL, __func__, MAL_MALLOC_FAIL);
-	}
+	char rle_value[LAYOUT_BUFFER_SIZE] = {0};
+
+	char* prle_value = &rle_value[0];
+
+	size_t buffer_size = LAYOUT_BUFFER_SIZE;
 
 	MOSBlockHeaderTpe(runlength, TPE)* hdr = (MOSBlockHeaderTpe(runlength, TPE)*) task->blk;
 
-	size_t actual_size;
-
-	if ((actual_size = CONCAT2(TPE, ToStr)(&runlength_value_as_str, &buffer_size, &hdr->val, true)) > buffer_size) {
-		buffer_size = actual_size;
-		if ( (runlength_value_as_str = GDKrealloc(runlength_value_as_str, buffer_size)) == NULL) {
-			throw(MAL, __func__, MAL_MALLOC_FAIL);
-		}
-
-		CONCAT2(TPE, ToStr)(&runlength_value_as_str, &buffer_size, &hdr->val, true);
-	}
+	CONCAT2(TPE, ToStr)(&prle_value, &buffer_size, &hdr->val, true);
 
 	char final_properties[1000] = {0};
 
 	strcat(final_properties, "{\"value\" : ");
-	strcat(final_properties, runlength_value_as_str);
+	strcat(final_properties, rle_value);
 	strcat(final_properties, "\"}");
 
 	LAYOUT_INSERT(
@@ -151,12 +144,11 @@ MOSlayout_SIGNATURE(runlength, TPE)
 		input = (lng) count * sizeof(TPE);
 		output = (lng) compressed_size;
 		properties = final_properties;
-		,
-		GDKfree(runlength_value_as_str);
 		);
-
-	GDKfree(runlength_value_as_str);
 
 	return MAL_SUCCEED;
 }
+
+#undef LAYOUT_BUFFER_SIZE
+
 #endif

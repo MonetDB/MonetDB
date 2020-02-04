@@ -1,0 +1,55 @@
+stdout of test 'layout_dict` in directory 'sql/test/mosaic` itself:
+
+
+# 17:31:37 >  
+# 17:31:37 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=35815" "--set" "mapi_usock=/var/tmp/mtest-6995/.s.monetdb.35815" "--forcemito" "--dbpath=/home/aris/sources/monetdb/build/installation/var/MonetDB/mTests_sql_test_mosaic" "--set" "embedded_c=true"
+# 17:31:37 >  
+
+# MonetDB 5 server v11.36.0 (hg id: ecb80aea6b5a+)
+# This is an unreleased version
+# Serving database 'mTests_sql_test_mosaic', using 8 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
+# Found 15.323 GiB available main-memory of which we use 12.488 GiB
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2020 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://aris-XPS-13-9380:35815/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-6995/.s.monetdb.35815
+# MonetDB/SQL module loaded
+
+# 17:31:37 >  
+# 17:31:37 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-6995" "--port=35815"
+# 17:31:37 >  
+
+#START TRANSACTION;
+#set optimizer='mosaic_pipe';
+#create table tmp3rle( i integer, b boolean, f real,t timestamp);
+#insert into tmp3rle values
+#(1, true, 0.314,'2014-08-23 11:34:54.000000'),
+#(1, true, 0.314,'2014-08-23 11:34:54.000000'),
+#(1, true, 0.314,'2014-08-23 11:34:54.000000'),
+#(1, true, 0.314,'2014-08-23 11:34:54.000000'),
+#(1, true, 0.314,'2014-08-23 11:34:54.000000'),
+#(1, true, 0.314,'2014-08-23 11:34:54.000000'),
+#(1, true, 0.314,'2014-08-23 11:34:54.000000'),
+#(1, true, 0.314,'2014-08-23 11:34:54.000000'),
+#(1, true, 0.314,'2014-08-23 11:34:54.000000'),
+#(1, true, 0.314,'2014-08-23 11:34:54.000000'),
+#(1, true, 0.314,'2014-08-23 11:34:54.000000'),
+[ 86	]
+#alter table tmp3rle set read only;
+#alter table tmp3rle alter column i set storage 'dict256';
+#select * from mosaic.layout('sys','tmp3rle','i') limit 25;
+% .%4,	.%4,	.%4,	.%4,	.%4,	.%4 # table_name
+% technique,	count,	inputsize,	outputsize,	properties,	bsn # name
+% clob,	bigint,	bigint,	bigint,	clob,	bigint # type
+% 7,	2,	4,	3,	76,	1 # length
+[ "header",	86,	2752,	252,	"{{\"blks\":[{\"dict256\":\"1\"}]},{\"elms\":[{\"dict256\":\"86\"}]},{\"ratio\":1.1621622}}",	0	]
+[ "dict256",	11,	NULL,	NULL,	"{{\"bits per key\" : 4\"}",	0	]
+[ "dict256",	86,	344,	56,	NULL,	1	]
+#ROLLBACK;
+
+# 17:31:37 >  
+# 17:31:37 >  "Done."
+# 17:31:37 >  
+

@@ -236,7 +236,7 @@ typedef struct _MosaicLayout {
 	(void) alignment;\
 }
 
-#define LAYOUT_INSERT(SET_VALUES, CATCH) \
+#define LAYOUT_INSERT(SET_VALUES) \
 {\
 	lng bsn = 0;\
 \
@@ -256,7 +256,6 @@ typedef struct _MosaicLayout {
 		BUNappend(layout->properties, properties, false) != GDK_SUCCEED ||\
 		BUNappend(layout->output	, &output, false) != GDK_SUCCEED\
 	) {\
-		CATCH;\
 		throw(MAL, __func__, MAL_MALLOC_FAIL);\
 	}\
 }

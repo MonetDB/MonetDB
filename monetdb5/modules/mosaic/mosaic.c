@@ -391,13 +391,12 @@ MOSlayout_hdr(MOStask* task, MosaicLayout* layout) {
 		 /*TODO: These parameters might be problematic for large datasets.*/
 		count = BATcount(task->bsrc);
 		input = count * task->bsrc->twidth * CHAR_BIT;
-		output = task->bsrc->tmosaic->free;
-		, /*TODO*/);
+		output = task->bsrc->tmosaic->free;);
 	str msg;
-	if( (task->hdr)->blks[MOSAIC_DICT256] && (msg = MOSlayoutDictionary_ID(dict256)(task,layout, 0)) != MAL_SUCCEED)
+	if( (task->hdr)->blks[MOSAIC_DICT256] > 0 && (msg = MOSlayoutDictionary_ID(dict256)(task,layout, 0)) != MAL_SUCCEED)
 		return msg;
 
-	if( (task->hdr)->blks[MOSAIC_DICT] && (msg = MOSlayoutDictionary_ID(dict)(task,layout, 0)) != MAL_SUCCEED)
+	if( (task->hdr)->blks[MOSAIC_DICT] > 0 && (msg = MOSlayoutDictionary_ID(dict)(task,layout, 0)) != MAL_SUCCEED)
 		return msg;
 
 	return MAL_SUCCEED;
