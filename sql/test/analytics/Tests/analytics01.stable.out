@@ -2891,6 +2891,43 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 % 10,	24,	24 # length
 [ 2017-12-01,	20,	90	]
 [ 2017-12-01,	20,	50	]
+#CREATE TABLE "sys"."test2" (
+#	"name"       VARCHAR(100),
+#	"points"     INT,
+#	"start_time" TIMESTAMP
+#);
+#COPY 8 RECORDS INTO "sys"."test2" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+#"Ashish"	20	"2017-12-01 00:00:00.000000"
+#"Ashish"	40	"2017-12-01 01:00:00.000000"
+#"Ashish"	60	"2017-12-01 00:00:00.000000"
+#"Prashant"	10	"2017-12-01 00:00:00.000000"
+#"Prashant"	50	"2017-12-01 01:00:00.000000"
+#"Prashant"	90	"2017-12-01 00:00:00.000000"
+#"Prashant"	11	"2017-12-02 01:02:00.000000"
+#"Prashant"	15	"2017-12-02 02:02:00.000000"
+[ 8	]
+#SELECT distinct "name" ,
+#first_value("points") over (partition by cast("start_time" as date) order by cast("start_time" as date))
+#FROM test2
+#order by "name";
+% sys.test2,	sys.L4 # table_name
+% name,	L4 # name
+% varchar,	int # type
+% 8,	2 # length
+[ "Ashish",	20	]
+[ "Prashant",	20	]
+[ "Prashant",	11	]
+#SELECT distinct "name" ,
+#first_value("points") over (partition by cast("start_time" as date), "name" order by cast("start_time" as date))
+#FROM test2
+#order by "name";
+% sys.test2,	sys.L4 # table_name
+% name,	L4 # name
+% varchar,	int # type
+% 8,	2 # length
+[ "Ashish",	20	]
+[ "Prashant",	10	]
+[ "Prashant",	11	]
 #rollback;
 #drop table analytics;
 

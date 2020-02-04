@@ -452,15 +452,6 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 		/* exceptions must all be within range of s */
 		assert(ci->oids[0] >= ci->seq);
 		assert(ci->oids[ci->noids - 1] < ci->seq + cnt + ci->noids);
-		if (b != NULL) {
-			if (ci->seq + cnt + ci->noids <= b->hseqbase ||
-			    ci->seq >= b->hseqbase + BATcount(b)) {
-				*ci = (struct canditer) {
-					.tpe = cand_dense,
-				};
-				return 0;
-			}
-		}
 		/* prune exceptions at either end of range of s */
 		while (ci->noids > 0 && ci->oids[0] == ci->seq) {
 			ci->noids--;
@@ -470,6 +461,16 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 		while (ci->noids > 0 &&
 		       ci->oids[ci->noids - 1] == ci->seq + cnt + ci->noids - 1)
 			ci->noids--;
+		if (b != NULL) {
+			if (ci->seq + cnt + ci->noids <= b->hseqbase ||
+			    ci->seq >= b->hseqbase + BATcount(b)) {
+				/* candidate list does not overlap with b */
+				*ci = (struct canditer) {
+					.tpe = cand_dense,
+				};
+				return 0;
+			}
+		}
 		if (ci->noids > 0) {
 			if (b == NULL)
 				break;

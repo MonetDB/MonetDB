@@ -28,8 +28,7 @@ subs = [("@exec_prefix@", r'%prefix%'),
         ("@pkgdatadir@", r'%prefix%\share\@PACKAGE@'),
         ("@pkglibdir@", r'%exec_prefix%\lib\@PACKAGE@'),
         ("@pkgincludedir@", r'%prefix%\include\@PACKAGE@'),
-        ("@DIRSEP@", '\\'),
-        ("@PATHSEP@", ';')]
+]
 
 if len(sys.argv) > 1 and sys.argv[1].endswith(r'\winconfig_conds.py'):
     conds = {}

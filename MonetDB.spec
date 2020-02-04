@@ -41,6 +41,12 @@
 %global fedpkgs 1
 %endif
 
+%if %{?rhel:1}%{!?rhel:0} && 0%{?rhel} < 7
+# RedHat Enterprise Linux < 7
+# There is no macro _rundir, and no directory /run, instead use /var/run.
+%global _rundir %{_localstatedir}/run
+%endif
+
 # On Fedora, the geos library is available, and so we can require it
 # and build the geom modules.  On RedHat Enterprise Linux and
 # derivatives (CentOS, Scientific Linux), the geos library is not
@@ -642,14 +648,13 @@ use SQL with MonetDB, you will need to install this package.
 %{_bindir}/monetdb
 %{_bindir}/monetdbd
 %dir %attr(775,monetdb,monetdb) %{_localstatedir}/log/monetdb
+%dir %attr(775,monetdb,monetdb) %{_rundir}/monetdb
 %if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
 # RHEL >= 7, and all current Fedora
-%dir %attr(775,monetdb,monetdb) /run/monetdb
 %{_tmpfilesdir}/monetdbd.conf
 %{_unitdir}/monetdbd.service
 %else
 # RedHat Enterprise Linux < 7
-%dir %attr(775,monetdb,monetdb) %{_localstatedir}/run/monetdb
 %exclude %{_sysconfdir}/tmpfiles.d/monetdbd.conf
 # no _unitdir macro
 %exclude %{_prefix}/lib/systemd/system/monetdbd.service
@@ -784,9 +789,7 @@ do
   /usr/sbin/semodule -s ${selinuxvariant} -i \
     %{_datadir}/selinux/${selinuxvariant}/monetdb.pp &> /dev/null || :
 done
-# use %{_localstatedir}/run/monetdb here for EPEL 6; on other systems,
-# %{_localstatedir}/run is a symlink to /run
-/sbin/restorecon -R %{_localstatedir}/monetdb5 %{_localstatedir}/log/monetdb %{_localstatedir}/run/monetdb %{_bindir}/monetdbd %{_bindir}/mserver5 %{_unitdir}/monetdbd.service &> /dev/null || :
+/sbin/restorecon -R %{_localstatedir}/monetdb5 %{_localstatedir}/log/monetdb %{_rundir}/monetdb %{_bindir}/monetdbd %{_bindir}/mserver5 %{_unitdir}/monetdbd.service &> /dev/null || :
 /usr/bin/systemctl try-restart monetdbd.service
 
 %postun selinux
@@ -799,9 +802,7 @@ if [ $1 -eq 0 ] ; then
   do
     /usr/sbin/semodule -s ${selinuxvariant} -r monetdb &> /dev/null || :
   done
-  # use %{_localstatedir}/run/monetdb here for EPEL 6; on other systems,
-  # %{_localstatedir}/run is a symlink to /run
-  /sbin/restorecon -R %{_localstatedir}/monetdb5 %{_localstatedir}/log/monetdb %{_localstatedir}/run/monetdb %{_bindir}/monetdbd %{_bindir}/mserver5 %{_unitdir}/monetdbd.service &> /dev/null || :
+  /sbin/restorecon -R %{_localstatedir}/monetdb5 %{_localstatedir}/log/monetdb %{_rundir}/monetdb %{_bindir}/monetdbd %{_bindir}/mserver5 %{_unitdir}/monetdbd.service &> /dev/null || :
   if [ $active = active ]; then
     /usr/bin/systemctl start monetdbd.service
   fi
@@ -838,6 +839,7 @@ export CFLAGS
 # do not use --enable-optimize or --disable-optimize: we don't want
 # any changes to optimization flags
 %{configure} \
+ 	--with-rundir=%{_rundir} \
 	--enable-assert=no \
 	--enable-debug=yes \
 	--enable-developer=no \
@@ -909,13 +911,7 @@ rmdir %{buildroot}%{_sysconfdir}/tmpfiles.d
 install -d -m 0750 %{buildroot}%{_localstatedir}/MonetDB
 install -d -m 0770 %{buildroot}%{_localstatedir}/monetdb5/dbfarm
 install -d -m 0775 %{buildroot}%{_localstatedir}/log/monetdb
-%if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
-# RHEL >= 7, and all current Fedora
-install -d -m 0775 %{buildroot}/run/monetdb
-%else
-# RedHat Enterprise Linux < 7
-install -d -m 0775 %{buildroot}%{_localstatedir}/run/monetdb
-%endif
+install -d -m 0775 %{buildroot}%{_rundir}/monetdb
 
 # remove unwanted stuff
 # .la files
