@@ -531,7 +531,7 @@ pattern mosaiclayout(sch:str,tbl:str,col:str)(
 	count:bat[:lng],
 	inputsize:bat[:lng],
 	outputsize:bat[:lng],
-	properties:bat[:str],
+	properties:bat[:json],
 	bsn:bat[:lng])
 address sql_mosaicLayout
 comment "Return a table with detailed compression information ";

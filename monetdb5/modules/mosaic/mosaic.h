@@ -236,6 +236,8 @@ typedef struct _MosaicLayout {
 	(void) alignment;\
 }
 
+#include "json.h"
+
 #define LAYOUT_INSERT(SET_VALUES) \
 {\
 	lng bsn = 0;\
@@ -247,6 +249,14 @@ typedef struct _MosaicLayout {
 	const char*  properties = str_nil;\
 \
 	SET_VALUES;\
+\
+	if (!GDK_STRNIL(properties)) {\
+		char buffer[LAYOUT_BUFFER_SIZE];\
+		char* pbuffer = &buffer[0];\
+		str msg = JSONstr2json(&pbuffer, (char**) &properties);\
+		assert (msg == MAL_SUCCEED);\
+		if (msg != MAL_SUCCEED) return msg;\
+	}\
 \
 	if(\
 		BUNappend(layout->bsn		, &bsn, false) != GDK_SUCCEED ||\

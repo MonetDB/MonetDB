@@ -121,24 +121,24 @@ stdout of test 'layout_linear` in directory 'sql/test/mosaic` itself:
 #select * from mosaic.layout('sys','tmp3rle','i');
 % .%4,	.%4,	.%4,	.%4,	.%4,	.%4 # table_name
 % technique,	count,	inputsize,	outputsize,	properties,	bsn # name
-% clob,	bigint,	bigint,	bigint,	clob,	bigint # type
-% 6,	2,	4,	3,	76,	2 # length
-[ "header",	90,	2880,	436,	"{{\"blks\":[{\"linear\":\"15\"}]},{\"elms\":[{\"linear\":\"90\"}]},{\"ratio\":0.82568806}}",	0	]
-[ "linear",	15,	60,	16,	"{{\"offset\" : 1\"},{\"step\" : 0\"}}",	1	]
-[ "linear",	2,	8,	16,	"{{\"offset\" : 2\"},{\"step\" : 1\"}}",	2	]
-[ "linear",	2,	8,	16,	"{{\"offset\" : 2\"},{\"step\" : 1\"}}",	3	]
-[ "linear",	3,	12,	16,	"{{\"offset\" : 2\"},{\"step\" : 1\"}}",	4	]
-[ "linear",	14,	56,	16,	"{{\"offset\" : 4\"},{\"step\" : 0\"}}",	5	]
-[ "linear",	2,	8,	16,	"{{\"offset\" : 0\"},{\"step\" : 5\"}}",	6	]
-[ "linear",	5,	20,	16,	"{{\"offset\" : 6\"},{\"step\" : 1\"}}",	7	]
-[ "linear",	15,	60,	16,	"{{\"offset\" : 1\"},{\"step\" : 0\"}}",	8	]
-[ "linear",	2,	8,	16,	"{{\"offset\" : 2\"},{\"step\" : 1\"}}",	9	]
-[ "linear",	2,	8,	16,	"{{\"offset\" : 2\"},{\"step\" : 1\"}}",	10	]
-[ "linear",	3,	12,	16,	"{{\"offset\" : 2\"},{\"step\" : 1\"}}",	11	]
-[ "linear",	14,	56,	16,	"{{\"offset\" : 4\"},{\"step\" : 0\"}}",	12	]
-[ "linear",	2,	8,	16,	"{{\"offset\" : 0\"},{\"step\" : 5\"}}",	13	]
-[ "linear",	5,	20,	16,	"{{\"offset\" : 6\"},{\"step\" : 1\"}}",	14	]
-[ "linear",	4,	16,	16,	"{{\"offset\" : 9\"},{\"step\" : -1\"}}",	15	]
+% clob,	bigint,	bigint,	bigint,	json,	bigint # type
+% 6,	2,	4,	3,	66,	2 # length
+[ "header",	90,	2880,	436,	"{\"blks\":[{\"linear\":15}],\"elms\":[{\"linear\":90}],\"ratio\":0.82568806}",	0	]
+[ "linear",	15,	60,	16,	"{\"offset\" : 1,\"step\" : 0}",	1	]
+[ "linear",	2,	8,	16,	"{\"offset\" : 2,\"step\" : 1}",	2	]
+[ "linear",	2,	8,	16,	"{\"offset\" : 2,\"step\" : 1}",	3	]
+[ "linear",	3,	12,	16,	"{\"offset\" : 2,\"step\" : 1}",	4	]
+[ "linear",	14,	56,	16,	"{\"offset\" : 4,\"step\" : 0}",	5	]
+[ "linear",	2,	8,	16,	"{\"offset\" : 0,\"step\" : 5}",	6	]
+[ "linear",	5,	20,	16,	"{\"offset\" : 6,\"step\" : 1}",	7	]
+[ "linear",	15,	60,	16,	"{\"offset\" : 1,\"step\" : 0}",	8	]
+[ "linear",	2,	8,	16,	"{\"offset\" : 2,\"step\" : 1}",	9	]
+[ "linear",	2,	8,	16,	"{\"offset\" : 2,\"step\" : 1}",	10	]
+[ "linear",	3,	12,	16,	"{\"offset\" : 2,\"step\" : 1}",	11	]
+[ "linear",	14,	56,	16,	"{\"offset\" : 4,\"step\" : 0}",	12	]
+[ "linear",	2,	8,	16,	"{\"offset\" : 0,\"step\" : 5}",	13	]
+[ "linear",	5,	20,	16,	"{\"offset\" : 6,\"step\" : 1}",	14	]
+[ "linear",	4,	16,	16,	"{\"offset\" : 9,\"step\" : -1}",	15	]
 #ROLLBACK;
 
 # 12:46:35 >  

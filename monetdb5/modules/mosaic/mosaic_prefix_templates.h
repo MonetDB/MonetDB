@@ -168,17 +168,15 @@ MOSlayout_SIGNATURE(METHOD, TPE)
 	char final_properties[1000] = {0};
 
 	strcat(final_properties, "{");
-		strcat(final_properties, "{\"suffix\" : ");
+		strcat(final_properties, "\"suffix\" : ");
 			CONCAT2(TPE, ToStr)(&pbuffer, &buffer_size, (TPE*) &hdr->prefix, true);
 			strcat(final_properties, buffer);
 			memset(buffer, 0, buffer_size);
-		strcat(final_properties, "\"}");
 	strcat(final_properties, ",");
-		strcat(final_properties, "{\"suffix bits\" : ");
+		strcat(final_properties, "\"suffix bits\" : ");
 			bteToStr(&pbuffer, &buffer_size, (const bte*) &hdr->suffix_bits, true);
 			strcat(final_properties, buffer);
 			memset(buffer, 0, buffer_size);
-		strcat(final_properties, "\"}");
 	strcat(final_properties, "}");
 
 	LAYOUT_INSERT(

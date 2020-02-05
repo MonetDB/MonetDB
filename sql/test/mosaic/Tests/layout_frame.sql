@@ -95,6 +95,6 @@ alter table tmp3rle set read only;
 
 alter table tmp3rle alter column i set storage 'frame';
 
-select * from mosaic.layout('sys','tmp3rle','i') limit 25;
+select * from mosaic.layout('sys','tmp3rle','i');
 
 ROLLBACK;

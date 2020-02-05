@@ -89,7 +89,7 @@ MOSlayout_SIGNATURE(METHOD, TPE)
 
 	strcat(final_properties, "{\"value\" : ");
 	strcat(final_properties, rle_value);
-	strcat(final_properties, "\"}");
+	strcat(final_properties, "}");
 
 	LAYOUT_INSERT(
 		bsn = current_bsn;

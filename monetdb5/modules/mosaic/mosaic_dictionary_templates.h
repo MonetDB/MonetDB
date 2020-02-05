@@ -139,10 +139,9 @@ MOSlayoutDictionary_SIGNATURE(METHOD)
 	char final_properties[1000] = {0};
 
 	strcat(final_properties, "{");
-
-	strcat(final_properties, "{\"bits per key\" : ");
-	strcat(final_properties, key_size);
-	strcat(final_properties, "\"}");
+		strcat(final_properties, "\"bits per key\" : ");
+		strcat(final_properties, key_size);
+	strcat(final_properties, "}");
 
 	LAYOUT_INSERT(
 		bsn = current_bsn;

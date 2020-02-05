@@ -117,10 +117,10 @@ stdout of test 'layout_prefix` in directory 'sql/test/mosaic` itself:
 #select * from mosaic.layout('sys','tmp3rle','i') limit 25;
 % .%4,	.%4,	.%4,	.%4,	.%4,	.%4 # table_name
 % technique,	count,	inputsize,	outputsize,	properties,	bsn # name
-% clob,	bigint,	bigint,	bigint,	clob,	bigint # type
-% 6,	2,	4,	3,	72,	1 # length
-[ "header",	86,	2752,	256,	"{{\"blks\":[{\"prefix\":\"1\"}]},{\"elms\":[{\"prefix\":\"86\"}]},{\"ratio\":1.34375}}",	0	]
-[ "prefix",	86,	344,	60,	"{{\"suffix\" : 0\"},{\"suffix bits\" : 4\"}}",	1	]
+% clob,	bigint,	bigint,	bigint,	json,	bigint # type
+% 6,	2,	4,	3,	62,	1 # length
+[ "header",	86,	2752,	256,	"{\"blks\":[{\"prefix\":1}],\"elms\":[{\"prefix\":86}],\"ratio\":1.34375}",	0	]
+[ "prefix",	86,	344,	60,	"{\"suffix\" : 0,\"suffix bits\" : 4}",	1	]
 #ROLLBACK;
 
 # 12:03:51 >  

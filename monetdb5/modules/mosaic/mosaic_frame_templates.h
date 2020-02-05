@@ -147,17 +147,15 @@ MOSlayout_SIGNATURE(METHOD, TPE)
 	char final_properties[1000] = {0};
 
 	strcat(final_properties, "{");
-		strcat(final_properties, "{\"min\" : ");
+		strcat(final_properties, "\"min\" : ");
 			CONCAT2(TPE, ToStr)(&pbuffer, &buffer_size, &hdr->min, true);
 			strcat(final_properties, buffer);
 			memset(buffer, 0, buffer_size);
-		strcat(final_properties, "\"}");
 	strcat(final_properties, ",");
-		strcat(final_properties, "{\"offset size in bits\" : ");
+		strcat(final_properties, "\"offset size in bits\" : ");
 			bteToStr(&pbuffer, &buffer_size, (const bte*) &hdr->bits, true);
 			strcat(final_properties, buffer);
 			memset(buffer, 0, buffer_size);
-		strcat(final_properties, "\"}");
 	strcat(final_properties, "}");
 
 	LAYOUT_INSERT(

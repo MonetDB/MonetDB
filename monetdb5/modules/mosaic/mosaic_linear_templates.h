@@ -93,17 +93,15 @@ MOSlayout_SIGNATURE(METHOD, TPE)
 	char final_properties[1000] = {0};
 
 	strcat(final_properties, "{");
-		strcat(final_properties, "{\"offset\" : ");
+		strcat(final_properties, "\"offset\" : ");
 			CONCAT2(TPE, ToStr)(&pbuffer, &buffer_size, (TPE*) &hdr->offset, true);
 			strcat(final_properties, buffer);
 			memset(buffer, 0, buffer_size);
-		strcat(final_properties, "\"}");
 	strcat(final_properties, ",");
-		strcat(final_properties, "{\"step\" : ");
+		strcat(final_properties, "\"step\" : ");
 			bteToStr(&pbuffer, &buffer_size, (const bte*) (TPE*) &hdr->step, true);
 			strcat(final_properties, buffer);
 			memset(buffer, 0, buffer_size);
-		strcat(final_properties, "\"}");
 	strcat(final_properties, "}");
 
 	LAYOUT_INSERT(

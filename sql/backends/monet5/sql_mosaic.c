@@ -68,7 +68,7 @@ sql_mosaicLayout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	output = getArgReference_bat(stk, pci, 3);
 	*output = boutput->batCacheid;
 
-	bproperties = COLnew((oid)0, TYPE_str,0, TRANSIENT);
+	bproperties = COLnew((oid)0, ATOMindex("json"),0, TRANSIENT);
 	if( bproperties == NULL){
 		BBPunfix(btech->batCacheid);
 		BBPunfix(bcount->batCacheid);

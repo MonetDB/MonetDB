@@ -331,7 +331,7 @@ MOSlayout_hdr(MOStask* task, MosaicLayout* layout) {
 
 	strcpy(buffer1, "{");
 
-	strcat(buffer1, "{\"blks\":[");
+	strcat(buffer1, "\"blks\":[");
 	for(int j=0; j < MOSAIC_METHODS; j++) {
 		if (task->hdr->blks[j] > 0) {
 
@@ -343,18 +343,17 @@ MOSlayout_hdr(MOStask* task, MosaicLayout* layout) {
 
 			strcat(buffer1, "{\"");
 			strcat(buffer1, MOSmethods[j].name);
-			strcat(buffer1, "\":\"");
+			strcat(buffer1, "\":");
 			strcat(buffer1, buffer2);
-			strcat(buffer1, "\"}");
-
 			memset(buffer2, 0, written);
+			strcat(buffer1, "}");
 		}
 	}
-	strcat(buffer1, "]}");
+	strcat(buffer1, "]");
 
 	strcat(buffer1, ",");
 
-	strcat(buffer1, "{\"elms\":[");
+	strcat(buffer1, "\"elms\":[");
 	for(int j=0; j < MOSAIC_METHODS; j++) {
 		if (task->hdr->blks[j] > 0) {
 
@@ -366,21 +365,19 @@ MOSlayout_hdr(MOStask* task, MosaicLayout* layout) {
 
 			strcat(buffer1, "{\"");
 			strcat(buffer1, MOSmethods[j].name);
-			strcat(buffer1, "\":\"");
+			strcat(buffer1, "\":");
 			strcat(buffer1, buffer2);
-			strcat(buffer1, "\"}");
-
 			memset(buffer2, 0, written);
+			strcat(buffer1, "}");
 		}
 	}
-	strcat(buffer1, "]}");
+	strcat(buffer1, "]");
 
 	written = fltToStr(&pbuffer2, &buffer_size, &((task->hdr)->ratio), true);
 
-	strcat(buffer1, ",{\"ratio\":");
+	strcat(buffer1, ",\"ratio\":");
 
 	strcat(buffer1, buffer2);
-	strcat(buffer1, "}");
 	memset(buffer2, 0, written);
 
 	strcat(buffer1, "}");

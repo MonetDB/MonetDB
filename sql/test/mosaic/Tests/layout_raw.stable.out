@@ -121,9 +121,9 @@ stdout of test 'layout_raw` in directory 'sql/test/mosaic` itself:
 #select * from mosaic.layout('sys','tmp3rle','i');
 % .%4,	.%4,	.%4,	.%4,	.%4,	.%4 # table_name
 % technique,	count,	inputsize,	outputsize,	properties,	bsn # name
-% clob,	bigint,	bigint,	bigint,	clob,	bigint # type
-% 6,	2,	4,	3,	69,	1 # length
-[ "header",	90,	2880,	568,	"{{\"blks\":[{\"raw\":\"1\"}]},{\"elms\":[{\"raw\":\"90\"}]},{\"ratio\":0.63380283}}",	0	]
+% clob,	bigint,	bigint,	bigint,	json,	bigint # type
+% 6,	2,	4,	3,	59,	1 # length
+[ "header",	90,	2880,	568,	"{\"blks\":[{\"raw\":1}],\"elms\":[{\"raw\":90}],\"ratio\":0.63380283}",	0	]
 [ "raw",	90,	360,	368,	NULL,	1	]
 #ROLLBACK;
 

@@ -155,17 +155,15 @@ MOSlayout_SIGNATURE(METHOD, TPE)
 	char final_properties[1000] = {0};
 
 	strcat(final_properties, "{");
-		strcat(final_properties, "{\"init\" : ");
+		strcat(final_properties, "\"init\" : ");
 			CONCAT2(TPE, ToStr)(&pbuffer, &buffer_size, &hdr->init, true);
 			strcat(final_properties, buffer);
 			memset(buffer, 0, buffer_size);
-		strcat(final_properties, "\"}");
 	strcat(final_properties, ",");
-		strcat(final_properties, "{\"bits per delta\" : ");
+		strcat(final_properties, "\"bits per delta\" : ");
 			bteToStr(&pbuffer, &buffer_size, (const bte*) &hdr->bits, true);
 			strcat(final_properties, buffer);
 			memset(buffer, 0, buffer_size);
-		strcat(final_properties, "\"}");
 	strcat(final_properties, "}");
 
 	LAYOUT_INSERT(
