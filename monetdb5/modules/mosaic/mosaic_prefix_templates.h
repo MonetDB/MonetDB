@@ -3,9 +3,9 @@
 #define getSuffixMask(SUFFIX_BITS) ((PrefixTpe(TPE)) (~(~((IPTpe(TPE)) (0)) << (SUFFIX_BITS))))
 #define getPrefixMask(PREFIX_BITS) ((PrefixTpe(TPE)) ( (~(~((IPTpe(TPE)) (0)) >> (PREFIX_BITS))) >> OverShift))
 
-MOSadvance_SIGNATURE(prefix, TPE)
+MOSadvance_SIGNATURE(METHOD, TPE)
 {
-	MOSBlockHeaderTpe(prefix, TPE)* parameters = (MOSBlockHeaderTpe(prefix, TPE)*) (task)->blk;
+	MOSBlockHeaderTpe(METHOD, TPE)* parameters = (MOSBlockHeaderTpe(METHOD, TPE)*) (task)->blk;
 	BUN cnt = MOSgetCnt(task->blk);
 
 	assert(cnt > 0);
@@ -14,15 +14,15 @@ MOSadvance_SIGNATURE(prefix, TPE)
 	task->start += (oid) cnt;
 
 	char* blk = (char*)task->blk;
-	blk += sizeof(MOSBlockHeaderTpe(prefix, TPE));
+	blk += sizeof(MOSBlockHeaderTpe(METHOD, TPE));
 	blk += BitVectorSize(cnt, parameters->suffix_bits);
-	blk += GET_PADDING(task->blk, prefix, TPE);
+	blk += GET_PADDING(task->blk, METHOD, TPE);
 
 	task->blk = (MosaicBlk) blk;
 }
 
 static inline void CONCAT2(determineDeltaParameters, TPE)
-(MOSBlockHeaderTpe(prefix, TPE)* parameters, PrefixTpe(TPE)* src, BUN limit) {
+(MOSBlockHeaderTpe(METHOD, TPE)* parameters, PrefixTpe(TPE)* src, BUN limit) {
 	PrefixTpe(TPE) *val = (PrefixTpe(TPE)*) (src);
 	const int type_size_in_bits = sizeof(PrefixTpe(TPE))  * CHAR_BIT;
 	bte suffix_bits = 1;
@@ -67,14 +67,14 @@ static inline void CONCAT2(determineDeltaParameters, TPE)
 	parameters->prefix = prefix;
 }
 
-MOSestimate_SIGNATURE(prefix, TPE)
+MOSestimate_SIGNATURE(METHOD, TPE)
 {
 	(void) previous;
 	current->is_applicable = true;
 	current->compression_strategy.tag = MOSAIC_PREFIX;
 	PrefixTpe(TPE) *src = ((PrefixTpe(TPE)*) task->src) + task->start;
 	BUN limit = task->stop - task->start > MOSAICMAXCNT? MOSAICMAXCNT: task->stop - task->start;
-	MOSBlockHeaderTpe(prefix, TPE) parameters;
+	MOSBlockHeaderTpe(METHOD, TPE) parameters;
 	CONCAT2(determineDeltaParameters, TPE)(&parameters, src, limit);
 	assert(parameters.rec.cnt > 0);/*Should always compress.*/
 
@@ -82,7 +82,7 @@ MOSestimate_SIGNATURE(prefix, TPE)
 	int bits;
 	int i = parameters.rec.cnt;
 	bits = i * parameters.suffix_bits;
-	store = 2 * sizeof(MOSBlockHeaderTpe(prefix, TPE));
+	store = 2 * sizeof(MOSBlockHeaderTpe(METHOD, TPE));
 	store += wordaligned(bits/CHAR_BIT + ((bits % CHAR_BIT) > 0), lng);
 	assert(i > 0);/*Should always compress.*/
 	current->is_applicable = true;
@@ -99,16 +99,16 @@ MOSestimate_SIGNATURE(prefix, TPE)
 }
 
 #define MOSpostEstimate_DEF(TPE)
-MOSpostEstimate_SIGNATURE(prefix, TPE)
+MOSpostEstimate_SIGNATURE(METHOD, TPE)
 {
 	(void) task;
 }
 
 // rather expensive simple value non-compressed store
 #define MOScompress_DEF(TPE)
-MOScompress_SIGNATURE(prefix, TPE)
+MOScompress_SIGNATURE(METHOD, TPE)
 {
-	ALIGN_BLOCK_HEADER(task,  prefix, TPE);
+	ALIGN_BLOCK_HEADER(task,  METHOD, TPE);
 
 	MosaicBlk blk = task->blk;
 	MOSsetTag(blk,MOSAIC_PREFIX);
@@ -116,7 +116,7 @@ MOScompress_SIGNATURE(prefix, TPE)
 	PrefixTpe(TPE)* src = (PrefixTpe(TPE)*) getSrc(TPE, task);
 	BUN i = 0;
 	BUN limit = estimate->cnt;
-	MOSBlockHeaderTpe(prefix, TPE)* parameters = (MOSBlockHeaderTpe(prefix, TPE)*) (task)->blk;
+	MOSBlockHeaderTpe(METHOD, TPE)* parameters = (MOSBlockHeaderTpe(METHOD, TPE)*) (task)->blk;
 	CONCAT2(determineDeltaParameters, TPE)(parameters, src, limit);
 	BitVector base = MOScodevectorPrefix(task, TPE);
 	task->dst = (char*) base;
@@ -130,9 +130,9 @@ MOScompress_SIGNATURE(prefix, TPE)
 }
 
 #define MOSdecompress_DEF(TPE) 
-MOSdecompress_SIGNATURE(prefix, TPE)
+MOSdecompress_SIGNATURE(METHOD, TPE)
 {
-	MOSBlockHeaderTpe(prefix, TPE)* parameters = (MOSBlockHeaderTpe(prefix, TPE)*) (task)->blk;
+	MOSBlockHeaderTpe(METHOD, TPE)* parameters = (MOSBlockHeaderTpe(METHOD, TPE)*) (task)->blk;
 	BUN lim = MOSgetCnt(task->blk);
     PrefixTpe(TPE) prefix = parameters->prefix;
 	BitVector base = (BitVector) MOScodevectorPrefix(task, TPE);
@@ -152,7 +152,7 @@ MOSdecompress_SIGNATURE(prefix, TPE)
 #endif
 
 #ifdef SCAN_LOOP_DEFINITION
-MOSscanloop_SIGNATURE(prefix, TPE, CAND_ITER, TEST)
+MOSscanloop_SIGNATURE(METHOD, TPE, CAND_ITER, TEST)
 {
     (void) has_nil;
     (void) anti;
@@ -163,7 +163,7 @@ MOSscanloop_SIGNATURE(prefix, TPE, CAND_ITER, TEST)
     (void) hi;
 
     oid* o = task->lb;
-	MOSBlockHeaderTpe(prefix, TPE)* parameters = (MOSBlockHeaderTpe(prefix, TPE)*) task->blk;
+	MOSBlockHeaderTpe(METHOD, TPE)* parameters = (MOSBlockHeaderTpe(METHOD, TPE)*) task->blk;
 	BitVector base = (BitVector) MOScodevectorPrefix(task, TPE);
 	PrefixTpe(TPE) prefix = parameters->prefix;
 	bte suffix_bits = parameters->suffix_bits;
@@ -180,14 +180,14 @@ MOSscanloop_SIGNATURE(prefix, TPE, CAND_ITER, TEST)
 #endif
 
 #ifdef PROJECTION_LOOP_DEFINITION
-MOSprojectionloop_SIGNATURE(prefix, TPE, CAND_ITER)
+MOSprojectionloop_SIGNATURE(METHOD, TPE, CAND_ITER)
 {
     (void) first;
     (void) last;
 
 	TPE* bt= (TPE*) task->src;
 
-    MOSBlockHeaderTpe(prefix, TPE)* parameters = (MOSBlockHeaderTpe(prefix, TPE)*) task->blk;
+    MOSBlockHeaderTpe(METHOD, TPE)* parameters = (MOSBlockHeaderTpe(METHOD, TPE)*) task->blk;
 	BitVector base = (BitVector) MOScodevectorPrefix(task, TPE);
 	PrefixTpe(TPE) prefix = parameters->prefix;
 	bte suffix_bits = parameters->suffix_bits;

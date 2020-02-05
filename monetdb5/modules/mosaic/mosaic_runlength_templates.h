@@ -1,16 +1,16 @@
 #ifdef COMPRESSION_DEFINITION
-MOSadvance_SIGNATURE(runlength, TPE)
+MOSadvance_SIGNATURE(METHOD, TPE)
 {
 	task->start += MOSgetCnt(task->blk);
 
 	char* blk = (char*)task->blk;
-	blk += sizeof(MOSBlockHeaderTpe(runlength, TPE));
-	blk += GET_PADDING(task->blk, runlength, TPE);
+	blk += sizeof(MOSBlockHeaderTpe(METHOD, TPE));
+	blk += GET_PADDING(task->blk, METHOD, TPE);
 
 	task->blk = (MosaicBlk) blk;
 }
 
-MOSestimate_SIGNATURE(runlength, TPE)
+MOSestimate_SIGNATURE(METHOD, TPE)
 {	unsigned int i = 0;
 	(void) previous;
 	current->compression_strategy.tag = MOSAIC_RLE;
@@ -21,7 +21,7 @@ MOSestimate_SIGNATURE(runlength, TPE)
 	assert(i > 0);/*Should always compress.*/
 	current->is_applicable = true;
 	current->uncompressed_size += (BUN) (i * sizeof(TPE));
-	current->compressed_size += 2 * sizeof(MOSBlockHeaderTpe(runlength, TPE));
+	current->compressed_size += 2 * sizeof(MOSBlockHeaderTpe(METHOD, TPE));
 	current->compression_strategy.cnt = i;
 
 	if (i > *current->max_compression_length ) *current->max_compression_length = i;
@@ -29,15 +29,15 @@ MOSestimate_SIGNATURE(runlength, TPE)
 	return MAL_SUCCEED;
 }
 
-MOSpostEstimate_SIGNATURE(runlength, TPE)
+MOSpostEstimate_SIGNATURE(METHOD, TPE)
 {
 	(void) task;
 }
 
 // rather expensive simple value non-compressed store
-MOScompress_SIGNATURE(runlength, TPE)
+MOScompress_SIGNATURE(METHOD, TPE)
 {
-	ALIGN_BLOCK_HEADER(task,  runlength, TPE);
+	ALIGN_BLOCK_HEADER(task,  METHOD, TPE);
 
 	(void) estimate;
 	BUN i ;
@@ -56,7 +56,7 @@ MOScompress_SIGNATURE(runlength, TPE)
 	task->dst +=  sizeof(TPE);
 }
 
-MOSdecompress_SIGNATURE(runlength, TPE)
+MOSdecompress_SIGNATURE(METHOD, TPE)
 {
 	TPE val = GET_VAL_runlength(task, TPE);
 	BUN lim = MOSgetCnt(task->blk);
@@ -69,7 +69,7 @@ MOSdecompress_SIGNATURE(runlength, TPE)
 #endif
 
 #ifdef SCAN_LOOP_DEFINITION
-MOSscanloop_SIGNATURE(runlength, TPE, CAND_ITER, TEST)
+MOSscanloop_SIGNATURE(METHOD, TPE, CAND_ITER, TEST)
 {
     (void) has_nil;
     (void) anti;
@@ -94,7 +94,7 @@ MOSscanloop_SIGNATURE(runlength, TPE, CAND_ITER, TEST)
 #endif
 
 #ifdef PROJECTION_LOOP_DEFINITION
-MOSprojectionloop_SIGNATURE(runlength, TPE, CAND_ITER)
+MOSprojectionloop_SIGNATURE(METHOD, TPE, CAND_ITER)
 {
     (void) first;
     (void) last;
@@ -115,11 +115,11 @@ MOSprojectionloop_SIGNATURE(runlength, TPE, CAND_ITER)
 
 #define LAYOUT_BUFFER_SIZE 10000
 
-MOSlayout_SIGNATURE(runlength, TPE)
+MOSlayout_SIGNATURE(METHOD, TPE)
 {
 	size_t compressed_size = 0;
-	compressed_size += sizeof(MOSBlockHeaderTpe(runlength, TPE));
-	compressed_size += GET_PADDING(task->blk, runlength, TPE);
+	compressed_size += sizeof(MOSBlockHeaderTpe(METHOD, TPE));
+	compressed_size += GET_PADDING(task->blk, METHOD, TPE);
 
 	char rle_value[LAYOUT_BUFFER_SIZE] = {0};
 
@@ -127,7 +127,7 @@ MOSlayout_SIGNATURE(runlength, TPE)
 
 	size_t buffer_size = LAYOUT_BUFFER_SIZE;
 
-	MOSBlockHeaderTpe(runlength, TPE)* hdr = (MOSBlockHeaderTpe(runlength, TPE)*) task->blk;
+	MOSBlockHeaderTpe(METHOD, TPE)* hdr = (MOSBlockHeaderTpe(METHOD, TPE)*) task->blk;
 
 	CONCAT2(TPE, ToStr)(&prle_value, &buffer_size, &hdr->val, true);
 

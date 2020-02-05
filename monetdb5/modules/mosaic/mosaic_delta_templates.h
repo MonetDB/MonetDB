@@ -1,7 +1,7 @@
 #ifdef COMPRESSION_DEFINITION
-MOSadvance_SIGNATURE(delta, TPE)
+MOSadvance_SIGNATURE(METHOD, TPE)
 {
-	MOSBlockHeaderTpe(delta, TPE)* parameters = (MOSBlockHeaderTpe(delta, TPE)*) (task)->blk;
+	MOSBlockHeaderTpe(METHOD, TPE)* parameters = (MOSBlockHeaderTpe(METHOD, TPE)*) (task)->blk;
 	BUN cnt = MOSgetCnt(task->blk);
 
 	assert(cnt > 0);
@@ -10,16 +10,16 @@ MOSadvance_SIGNATURE(delta, TPE)
 	task->start += (oid) cnt;
 
 	char* blk = (char*)task->blk;
-	blk += sizeof(MOSBlockHeaderTpe(delta, TPE));
+	blk += sizeof(MOSBlockHeaderTpe(METHOD, TPE));
 	blk += BitVectorSize(cnt, parameters->bits);
-	blk += GET_PADDING(task->blk, delta, TPE);
+	blk += GET_PADDING(task->blk, METHOD, TPE);
 
 	task->blk = (MosaicBlk) blk;
 
 }
 
 static inline void CONCAT2(determineDeltaParameters, TPE)
-(MOSBlockHeaderTpe(delta, TPE)* parameters, TPE* src, BUN limit) {
+(MOSBlockHeaderTpe(METHOD, TPE)* parameters, TPE* src, BUN limit) {
 	TPE *val = src;
 	bte bits = 1;
 	unsigned int i;
@@ -61,18 +61,18 @@ static inline void CONCAT2(determineDeltaParameters, TPE)
 	parameters->bits = bits;
 }
 
-MOSestimate_SIGNATURE(delta, TPE)
+MOSestimate_SIGNATURE(METHOD, TPE)
 {
 	(void) previous;
 	current->is_applicable = true;
 	current->compression_strategy.tag = MOSAIC_DELTA;
 	TPE *src = getSrc(TPE, task);
 	BUN limit = task->stop - task->start > MOSAICMAXCNT? MOSAICMAXCNT: task->stop - task->start;
-	MOSBlockHeaderTpe(delta, TPE) parameters;
+	MOSBlockHeaderTpe(METHOD, TPE) parameters;
 	CONCAT2(determineDeltaParameters, TPE)(&parameters, src, limit);
 	assert(parameters.rec.cnt > 0);/*Should always compress.*/
 	current->uncompressed_size += (BUN) (parameters.rec.cnt * sizeof(TPE));
-	current->compressed_size += 2 * sizeof(MOSBlockHeaderTpe(delta, TPE)) + wordaligned((parameters.rec.cnt * parameters.bits) / CHAR_BIT, lng);
+	current->compressed_size += 2 * sizeof(MOSBlockHeaderTpe(METHOD, TPE)) + wordaligned((parameters.rec.cnt * parameters.bits) / CHAR_BIT, lng);
 	current->compression_strategy.cnt = (unsigned int) parameters.rec.cnt;
 
 	if (parameters.rec.cnt > *current->max_compression_length ) {
@@ -82,15 +82,15 @@ MOSestimate_SIGNATURE(delta, TPE)
 	return MAL_SUCCEED;
 }
 
-MOSpostEstimate_SIGNATURE(delta, TPE)
+MOSpostEstimate_SIGNATURE(METHOD, TPE)
 {
 	(void) task;
 }
 
 // rather expensive simple value non-compressed store
-MOScompress_SIGNATURE(delta, TPE)
+MOScompress_SIGNATURE(METHOD, TPE)
 {
-	ALIGN_BLOCK_HEADER(task,  delta, TPE);
+	ALIGN_BLOCK_HEADER(task,  METHOD, TPE);
 
 	MosaicBlk blk = task->blk;
 	MOSsetTag(blk,MOSAIC_DELTA);
@@ -98,28 +98,28 @@ MOScompress_SIGNATURE(delta, TPE)
 	TPE *src = getSrc(TPE, task);
 	BUN i = 0;
 	BUN limit = estimate->cnt;
-	MOSBlockHeaderTpe(delta, TPE)* parameters = (MOSBlockHeaderTpe(delta, TPE)*) (task)->blk;
+	MOSBlockHeaderTpe(METHOD, TPE)* parameters = (MOSBlockHeaderTpe(METHOD, TPE)*) (task)->blk;
 	CONCAT2(determineDeltaParameters, TPE)(parameters, src, limit);
 	BitVector base = MOScodevectorDelta(task, TPE);
 	task->dst = (char*) base;
 	TPE pv = parameters->init; /*previous value*/
-	/*Initial delta is zero.*/
+	/*Initial METHOD is zero.*/
 	setBitVector(base, 0, parameters->bits, (BitVectorChunk) 0);
 	DeltaTpe(TPE) sign_mask = (DeltaTpe(TPE)) ((IPTpe(TPE)) 1) << (parameters->bits - 1);
 
 	for(i = 1; i < MOSgetCnt(task->blk); i++) {
-		/*TODO: assert that delta's actually does not cause an overflow. */
+		/*TODO: assert that METHOD's actually does not cause an overflow. */
 		TPE cv = *++src; /*current value*/
-		DeltaTpe(TPE) delta = (DeltaTpe(TPE)) (cv > pv ? (IPTpe(TPE)) (cv - pv) : (IPTpe(TPE)) ((sign_mask) | (IPTpe(TPE)) (pv - cv)));
-		setBitVector(base, i, parameters->bits, (BitVectorChunk) /*TODO: fix this once we have increased capacity of bitvector*/ delta);
+		DeltaTpe(TPE) METHOD = (DeltaTpe(TPE)) (cv > pv ? (IPTpe(TPE)) (cv - pv) : (IPTpe(TPE)) ((sign_mask) | (IPTpe(TPE)) (pv - cv)));
+		setBitVector(base, i, parameters->bits, (BitVectorChunk) /*TODO: fix this once we have increased capacity of bitvector*/ METHOD);
 		pv = cv;
 	}
 	task->dst += BitVectorSize(i, parameters->bits);
 }
 
-MOSdecompress_SIGNATURE(delta, TPE)
+MOSdecompress_SIGNATURE(METHOD, TPE)
 {
-	MOSBlockHeaderTpe(delta, TPE)* parameters = (MOSBlockHeaderTpe(delta, TPE)*) (task)->blk;
+	MOSBlockHeaderTpe(METHOD, TPE)* parameters = (MOSBlockHeaderTpe(METHOD, TPE)*) (task)->blk;
 	BUN lim = MOSgetCnt(task->blk);
 	((TPE*)task->src)[0] = parameters->init; /*previous value*/
 	BitVector base = (BitVector) MOScodevectorDelta(task, TPE);
@@ -127,15 +127,15 @@ MOSdecompress_SIGNATURE(delta, TPE)
 	DeltaTpe(TPE) acc = (DeltaTpe(TPE)) parameters->init /*unsigned accumulating value*/;
 	BUN i;
 	for(i = 0; i < lim; i++) {
-		DeltaTpe(TPE) delta = getBitVector(base, i, parameters->bits);
-		((TPE*)task->src)[i] = ACCUMULATE(acc, delta, sign_mask, TPE);
+		DeltaTpe(TPE) METHOD = getBitVector(base, i, parameters->bits);
+		((TPE*)task->src)[i] = ACCUMULATE(acc, METHOD, sign_mask, TPE);
 	}
 	task->src += i * sizeof(TPE);
 }
 #endif
 
 #ifdef SCAN_LOOP_DEFINITION
-MOSscanloop_SIGNATURE(delta, TPE, CAND_ITER, TEST)
+MOSscanloop_SIGNATURE(METHOD, TPE, CAND_ITER, TEST)
 {
     (void) has_nil;
     (void) anti;
@@ -146,7 +146,7 @@ MOSscanloop_SIGNATURE(delta, TPE, CAND_ITER, TEST)
     (void) hi;
 
     oid* o = task->lb;
-    MOSBlockHeaderTpe(delta, TPE)* parameters = (MOSBlockHeaderTpe(delta, TPE)*) task->blk;
+    MOSBlockHeaderTpe(METHOD, TPE)* parameters = (MOSBlockHeaderTpe(METHOD, TPE)*) task->blk;
 	BitVector base = (BitVector) MOScodevectorDelta(task, TPE);
 	DeltaTpe(TPE) acc = (DeltaTpe(TPE)) parameters->init; /*previous value*/
 	const bte bits = parameters->bits;
@@ -157,8 +157,8 @@ MOSscanloop_SIGNATURE(delta, TPE, CAND_ITER, TEST)
     for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = CAND_ITER(task->ci)) {
         BUN i = (BUN) (c - first);
         for (;j <= i; j++) {
-            TPE delta = getBitVector(base, j, bits);
-			v = ACCUMULATE(acc, delta, sign_mask, TPE);
+            TPE METHOD = getBitVector(base, j, bits);
+			v = ACCUMULATE(acc, METHOD, sign_mask, TPE);
         }
         /*TODO: change from control to data dependency.*/
         if (CONCAT2(_, TEST))
@@ -169,14 +169,14 @@ MOSscanloop_SIGNATURE(delta, TPE, CAND_ITER, TEST)
 #endif
 
 #ifdef PROJECTION_LOOP_DEFINITION
-MOSprojectionloop_SIGNATURE(delta, TPE, CAND_ITER)
+MOSprojectionloop_SIGNATURE(METHOD, TPE, CAND_ITER)
 {
     (void) first;
     (void) last;
 
 	TPE* bt= (TPE*) task->src;
 
-	MOSBlockHeaderTpe(delta, TPE)* parameters = (MOSBlockHeaderTpe(delta, TPE)*) task->blk;
+	MOSBlockHeaderTpe(METHOD, TPE)* parameters = (MOSBlockHeaderTpe(METHOD, TPE)*) task->blk;
 	BitVector base = (BitVector) MOScodevectorDelta(task, TPE);
 	DeltaTpe(TPE) acc = (DeltaTpe(TPE)) parameters->init; /*previous value*/
 	const bte bits = parameters->bits;
@@ -186,8 +186,8 @@ MOSprojectionloop_SIGNATURE(delta, TPE, CAND_ITER)
 	for (oid o = canditer_peekprev(task->ci); !is_oid_nil(o) && o < last; o = CAND_ITER(task->ci)) {
         BUN i = (BUN) (o - first);
         for (;j <= i; j++) {
-            TPE delta = getBitVector(base, j, bits);
-			v = ACCUMULATE(acc, delta, sign_mask, TPE);
+            TPE METHOD = getBitVector(base, j, bits);
+			v = ACCUMULATE(acc, METHOD, sign_mask, TPE);
         }
 		*bt++ = v;
 		task->cnt++;

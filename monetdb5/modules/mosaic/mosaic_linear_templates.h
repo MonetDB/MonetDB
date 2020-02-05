@@ -1,15 +1,15 @@
 #ifdef COMPRESSION_DEFINITION
-MOSadvance_SIGNATURE(linear, TPE)
+MOSadvance_SIGNATURE(METHOD, TPE)
 {
 	task->start += MOSgetCnt(task->blk);
 	char* blk = (char*)task->blk;
-	blk += sizeof(MOSBlockHeaderTpe(linear, TPE));
-	blk += GET_PADDING(task->blk, linear, TPE);
+	blk += sizeof(MOSBlockHeaderTpe(METHOD, TPE));
+	blk += GET_PADDING(task->blk, METHOD, TPE);
 
 	task->blk = (MosaicBlk) blk;
 }
 
-MOSestimate_SIGNATURE(linear, TPE)
+MOSestimate_SIGNATURE(METHOD, TPE)
 {
 	(void) previous;
 	current->compression_strategy.tag = MOSAIC_LINEAR;
@@ -28,7 +28,7 @@ MOSestimate_SIGNATURE(linear, TPE)
 	assert(i > 0);/*Should always compress.*/
 	current->is_applicable = true;
 	current->uncompressed_size += (BUN) (i * sizeof(TPE));
-	current->compressed_size += 2 * sizeof(MOSBlockHeaderTpe(linear, TPE));
+	current->compressed_size += 2 * sizeof(MOSBlockHeaderTpe(METHOD, TPE));
 	current->compression_strategy.cnt = (unsigned int) i;
 
 	if (i > *current->max_compression_length ) {
@@ -38,14 +38,14 @@ MOSestimate_SIGNATURE(linear, TPE)
 	return MAL_SUCCEED;
 }
 
-MOSpostEstimate_SIGNATURE(linear, TPE)
+MOSpostEstimate_SIGNATURE(METHOD, TPE)
 {
 	(void) task;
 }
 
-MOScompress_SIGNATURE(linear, TPE)
+MOScompress_SIGNATURE(METHOD, TPE)
 {
-	ALIGN_BLOCK_HEADER(task,  linear, TPE);
+	ALIGN_BLOCK_HEADER(task,  METHOD, TPE);
 
 	MOSsetTag(task->blk,MOSAIC_LINEAR);
 	TPE *c = ((TPE*) task->src)+task->start; /*(c)urrent value*/
@@ -61,7 +61,7 @@ MOScompress_SIGNATURE(linear, TPE)
 	task->dst = ((char*) task->blk)+ wordaligned(MosaicBlkSize +  2 * sizeof(TPE),MosaicBlkRec);
 }
 
-MOSdecompress_SIGNATURE(linear, TPE)
+MOSdecompress_SIGNATURE(METHOD, TPE)
 {
 	MosaicBlk blk =  task->blk;
 	BUN i;
@@ -76,7 +76,7 @@ MOSdecompress_SIGNATURE(linear, TPE)
 #endif
 
 #ifdef SCAN_LOOP_DEFINITION
-MOSscanloop_SIGNATURE(linear, TPE, CAND_ITER, TEST)
+MOSscanloop_SIGNATURE(METHOD, TPE, CAND_ITER, TEST)
 {
     (void) has_nil;
     (void) anti;
@@ -102,7 +102,7 @@ MOSscanloop_SIGNATURE(linear, TPE, CAND_ITER, TEST)
 #endif
 
 #ifdef PROJECTION_LOOP_DEFINITION
-MOSprojectionloop_SIGNATURE(linear, TPE, CAND_ITER)
+MOSprojectionloop_SIGNATURE(METHOD, TPE, CAND_ITER)
 {
     (void) first;
     (void) last;

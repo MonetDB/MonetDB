@@ -1,18 +1,18 @@
 #ifdef COMPRESSION_DEFINITION
-MOSadvance_SIGNATURE(raw, TPE)
+MOSadvance_SIGNATURE(METHOD, TPE)
 {
 	BUN cnt = MOSgetCnt(task->blk);
 	task->start += MOSgetCnt(task->blk);
 
 	char* blk = (char*)task->blk;
-	blk += sizeof(MOSBlockHeaderTpe(raw, TPE));
+	blk += sizeof(MOSBlockHeaderTpe(METHOD, TPE));
 	blk += cnt * sizeof(TPE);
-	blk += GET_PADDING(task->blk, raw, TPE);
+	blk += GET_PADDING(task->blk, METHOD, TPE);
 
 	task->blk = (MosaicBlk) blk;
 }
 
-MOSestimate_SIGNATURE(raw, TPE)
+MOSestimate_SIGNATURE(METHOD, TPE)
 {
 	/*The raw compression technique is always applicable and only adds one item at a time.*/
 	(void) task;
@@ -36,15 +36,15 @@ MOSestimate_SIGNATURE(raw, TPE)
 	return MAL_SUCCEED;
 }
 
-MOSpostEstimate_SIGNATURE(raw, TPE)
+MOSpostEstimate_SIGNATURE(METHOD, TPE)
 {
 	(void) task;
 }
 
 // rather expensive simple value non-compressed store
-MOScompress_SIGNATURE(raw, TPE)
+MOScompress_SIGNATURE(METHOD, TPE)
 {
-	ALIGN_BLOCK_HEADER(task, raw, TPE);
+	ALIGN_BLOCK_HEADER(task, METHOD, TPE);
 
 	MosaicBlk blk = (MosaicBlk) task->blk;
 	MOSsetTag(blk, MOSAIC_RAW);
@@ -58,7 +58,7 @@ MOScompress_SIGNATURE(raw, TPE)
 	MOSsetCnt(blk,cnt);
 }
 
-MOSdecompress_SIGNATURE(raw, TPE)
+MOSdecompress_SIGNATURE(METHOD, TPE)
 {
 	MosaicBlk blk = (MosaicBlk) task->blk;
 	BUN i;
@@ -73,7 +73,7 @@ MOSdecompress_SIGNATURE(raw, TPE)
 #endif
 
 #ifdef SCAN_LOOP_DEFINITION
-MOSscanloop_SIGNATURE(raw, TPE, CAND_ITER, TEST)
+MOSscanloop_SIGNATURE(METHOD, TPE, CAND_ITER, TEST)
 {
     (void) has_nil;
     (void) anti;
@@ -98,7 +98,7 @@ MOSscanloop_SIGNATURE(raw, TPE, CAND_ITER, TEST)
 #endif
 
 #ifdef PROJECTION_LOOP_DEFINITION
-MOSprojectionloop_SIGNATURE(raw, TPE, CAND_ITER)
+MOSprojectionloop_SIGNATURE(METHOD, TPE, CAND_ITER)
 {
     (void) first;
     (void) last;
