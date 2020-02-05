@@ -872,10 +872,6 @@ GDKinit(opt *set, int setlen)
 		return GDK_FAIL;
 	}
 
-	/* initialize GDKtracer */
-	if (!GDKtracer_init())
-		return GDK_FAIL;
-
 	return GDK_SUCCEED;
 }
 

@@ -17,6 +17,7 @@ MT_Lock lock = MT_LOCK_INITIALIZER("GDKtracer_1");
 
 static FILE *output_file;
 static bool USE_STREAM = true;
+static bool INIT_BASIC_ADAPTER = false;
 
 static ATOMIC_TYPE CUR_ADAPTER = ATOMIC_VAR_INIT(DEFAULT_ADAPTER);
 
@@ -46,6 +47,7 @@ _GDKtracer_init_basic_adptr(void)
 	snprintf(file_name, sizeof(file_name), "%s%c%s%c%s%s", GDKgetenv("gdk_dbpath"), DIR_SEP, FILE_NAME, NAME_SEP, GDKtracer_get_timestamp("%Y%m%d_%H%M%S"), ".log");
 
 	output_file = fopen(file_name, "w");
+	INIT_BASIC_ADAPTER = true;
 
 	if (!output_file) {
 		GDK_TRACER_EXCEPTION("Failed to initialize BASIC adapter. Could not open file: %s\n", file_name);
@@ -190,13 +192,6 @@ GDKtracer_get_timestamp(const char *fmt)
 #endif
 	strftime(datetime, sizeof(datetime), fmt, &tmp);
 	return datetime;
-}
-
-
-gdk_return
-GDKtracer_init(void)
-{
-	return _GDKtracer_init_basic_adptr();
 }
 
 
@@ -407,12 +402,14 @@ GDKtracer_flush_buffer(void)
 	MT_lock_unset(&lock);
 
 	if (ATOMIC_GET(&CUR_ADAPTER) == BASIC) {
-		MT_lock_set(&lock); {
-			// Check if file is open - if not send the output to GDKstdout. There are cases that
-			// this is needed - e.g: on startup of mserver5 GDKmalloc is called before GDKinit.
-			// In GDKinit GDKtracer is getting initialized (open_file and initialize log level
-			// per component). Since the file is not open yet and there is an assert, we need
-			// to do something - and as a backup plan we send the logs to GDKstdout.
+		// Initialize the BASIC adapter. It is used in order to avoid cases with files being
+		// created and no logs being produced. Even if the creating the file fails the function
+		// is going to be called only once.
+		if(!INIT_BASIC_ADAPTER)
+			_GDKtracer_init_basic_adptr();
+
+		MT_lock_set(&lock); 
+		{
 			if (output_file) {
 				size_t nitems = 1;
 				size_t w = fwrite(&active_tracer->buffer, active_tracer->allocated_size, nitems, output_file);
