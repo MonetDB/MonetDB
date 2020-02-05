@@ -1,5 +1,8 @@
-#ifdef PREPARATION_DEFINITION
+#ifdef COMPRESSION_DEFINITION
 
+#define LAYOUT_BUFFER_SIZE 10000
+
+#ifndef TPE
 #define clean_up_info_ID(METHOD) CONCAT2(clean_up_info_, METHOD)
 
 static inline void clean_up_info_ID(METHOD)(MOStask* task) {
@@ -119,9 +122,40 @@ finalize:
 		return msg;
 }
 
-#endif
+MOSlayoutDictionary_SIGNATURE(METHOD)
+{
+	(void) task;
+	(void) layout;
+	(void) current_bsn;
 
-#ifdef COMPRESSION_DEFINITION
+	size_t buffer_size = LAYOUT_BUFFER_SIZE;
+
+	char key_size[LAYOUT_BUFFER_SIZE] = {0};
+
+	char* pkey_size = &key_size[0];
+
+	bteToStr(&pkey_size, &buffer_size, &GET_FINAL_BITS(task, METHOD), true);
+
+	char final_properties[1000] = {0};
+
+	strcat(final_properties, "{");
+
+	strcat(final_properties, "{\"bits per key\" : ");
+	strcat(final_properties, key_size);
+	strcat(final_properties, "\"}");
+
+	LAYOUT_INSERT(
+		bsn = current_bsn;
+		tech = STRINGIFY(METHOD);
+		count = GET_FINAL_DICT_COUNT(task, METHOD);
+		input = count * task->bsrc->twidth;
+		properties = final_properties;
+		);
+
+	return MAL_SUCCEED;
+}
+#else /*TPE is defined*/
+
 MOSestimate_SIGNATURE(METHOD, TPE) {
 	str msg = MAL_SUCCEED;
 	(void) previous;
@@ -434,7 +468,31 @@ MOSdecompress_SIGNATURE(METHOD, TPE) {
 	dest += cnt;
 	(task)->src = (char*) dest;
 }
-#endif
+
+MOSlayout_SIGNATURE(METHOD, TPE)
+{
+	size_t compressed_size = 0;
+	compressed_size += sizeof(MOSBlockHeaderTpe(METHOD, TPE));
+	lng cnt = (lng) MOSgetCnt(task->blk);
+	compressed_size += BitVectorSize(cnt, GET_FINAL_BITS(task, METHOD));	
+	compressed_size += GET_PADDING(task->blk, METHOD, TPE);
+
+	LAYOUT_INSERT(
+		bsn = current_bsn;
+		tech = STRINGIFY(METHOD);
+		count = cnt;
+		input = cnt * sizeof(TPE);
+		output = (lng) compressed_size;
+		);
+
+	return MAL_SUCCEED;
+}
+
+#endif /*ndef TPE*/
+
+#undef LAYOUT_BUFFER_SIZE
+
+#endif /*def COMPRESSION_DEFINITION*/
 
 #ifdef SCAN_LOOP_DEFINITION
 MOSscanloop_SIGNATURE(METHOD, TPE, CAND_ITER, TEST)
@@ -484,69 +542,4 @@ MOSprojectionloop_SIGNATURE(METHOD, TPE, CAND_ITER)
 
 	task->src = (char*) bt;
 }
-#endif
-
-#ifdef LAYOUT_DEFINITION
-
-#define LAYOUT_BUFFER_SIZE 10000
-
-#ifndef TPE
-
-MOSlayoutDictionary_SIGNATURE(METHOD)
-{
-	(void) task;
-	(void) layout;
-	(void) current_bsn;
-
-	size_t buffer_size = LAYOUT_BUFFER_SIZE;
-
-	char key_size[LAYOUT_BUFFER_SIZE] = {0};
-
-	char* pkey_size = &key_size[0];
-
-	bteToStr(&pkey_size, &buffer_size, &GET_FINAL_BITS(task, METHOD), true);
-
-	char final_properties[1000] = {0};
-
-	strcat(final_properties, "{");
-
-	strcat(final_properties, "{\"bits per key\" : ");
-	strcat(final_properties, key_size);
-	strcat(final_properties, "\"}");
-
-	LAYOUT_INSERT(
-		bsn = current_bsn;
-		tech = STRINGIFY(METHOD);
-		count = GET_FINAL_DICT_COUNT(task, METHOD);
-		input = count * task->bsrc->twidth;
-		properties = final_properties;
-		);
-
-	return MAL_SUCCEED;
-}
-#else
-
-MOSlayout_SIGNATURE(METHOD, TPE)
-{
-	size_t compressed_size = 0;
-	compressed_size += sizeof(MOSBlockHeaderTpe(METHOD, TPE));
-	lng cnt = (lng) MOSgetCnt(task->blk);
-	compressed_size += BitVectorSize(cnt, GET_FINAL_BITS(task, METHOD));	
-	compressed_size += GET_PADDING(task->blk, METHOD, TPE);
-
-	LAYOUT_INSERT(
-		bsn = current_bsn;
-		tech = STRINGIFY(METHOD);
-		count = cnt;
-		input = cnt * sizeof(TPE);
-		output = (lng) compressed_size;
-		);
-
-	return MAL_SUCCEED;
-}
-
-#endif
-
-#undef LAYOUT_BUFFER_SIZE
-
 #endif

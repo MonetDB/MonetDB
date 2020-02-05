@@ -66,6 +66,44 @@ MOSdecompress_SIGNATURE(METHOD, TPE)
 		((TPE*)task->src)[i] = val;
 	task->src += i * sizeof(TPE);
 }
+
+#define LAYOUT_BUFFER_SIZE 10000
+
+MOSlayout_SIGNATURE(METHOD, TPE)
+{
+	size_t compressed_size = 0;
+	compressed_size += sizeof(MOSBlockHeaderTpe(METHOD, TPE));
+	compressed_size += GET_PADDING(task->blk, METHOD, TPE);
+
+	char rle_value[LAYOUT_BUFFER_SIZE] = {0};
+
+	char* prle_value = &rle_value[0];
+
+	size_t buffer_size = LAYOUT_BUFFER_SIZE;
+
+	MOSBlockHeaderTpe(METHOD, TPE)* hdr = (MOSBlockHeaderTpe(METHOD, TPE)*) task->blk;
+
+	CONCAT2(TPE, ToStr)(&prle_value, &buffer_size, &hdr->val, true);
+
+	char final_properties[1000] = {0};
+
+	strcat(final_properties, "{\"value\" : ");
+	strcat(final_properties, rle_value);
+	strcat(final_properties, "\"}");
+
+	LAYOUT_INSERT(
+		bsn = current_bsn;
+		tech = STRINGIFY(METHOD);
+		count = (lng) MOSgetCnt(task->blk);
+		input = (lng) count * sizeof(TPE);
+		output = (lng) compressed_size;
+		properties = final_properties;
+		);
+
+	return MAL_SUCCEED;
+}
+
+#undef LAYOUT_BUFFER_SIZE
 #endif
 
 #ifdef SCAN_LOOP_DEFINITION
@@ -109,46 +147,4 @@ MOSprojectionloop_SIGNATURE(METHOD, TPE, CAND_ITER)
 
 	task->src = (char*) bt;
 }
-#endif
-
-#ifdef LAYOUT_DEFINITION
-
-#define LAYOUT_BUFFER_SIZE 10000
-
-MOSlayout_SIGNATURE(METHOD, TPE)
-{
-	size_t compressed_size = 0;
-	compressed_size += sizeof(MOSBlockHeaderTpe(METHOD, TPE));
-	compressed_size += GET_PADDING(task->blk, METHOD, TPE);
-
-	char rle_value[LAYOUT_BUFFER_SIZE] = {0};
-
-	char* prle_value = &rle_value[0];
-
-	size_t buffer_size = LAYOUT_BUFFER_SIZE;
-
-	MOSBlockHeaderTpe(METHOD, TPE)* hdr = (MOSBlockHeaderTpe(METHOD, TPE)*) task->blk;
-
-	CONCAT2(TPE, ToStr)(&prle_value, &buffer_size, &hdr->val, true);
-
-	char final_properties[1000] = {0};
-
-	strcat(final_properties, "{\"value\" : ");
-	strcat(final_properties, rle_value);
-	strcat(final_properties, "\"}");
-
-	LAYOUT_INSERT(
-		bsn = current_bsn;
-		tech = STRINGIFY(METHOD);
-		count = (lng) MOSgetCnt(task->blk);
-		input = (lng) count * sizeof(TPE);
-		output = (lng) compressed_size;
-		properties = final_properties;
-		);
-
-	return MAL_SUCCEED;
-}
-
-#undef LAYOUT_BUFFER_SIZE
-
 #endif

@@ -124,59 +124,6 @@ MOSdecompress_SIGNATURE(METHOD, TPE)
 	}
 	task->src += i * sizeof(TPE);
 }
-#endif
-
-#ifdef SCAN_LOOP_DEFINITION
-MOSscanloop_SIGNATURE(METHOD, TPE, CAND_ITER, TEST)
-{
-    (void) has_nil;
-    (void) anti;
-    (void) task;
-    (void) tl;
-    (void) th;
-    (void) li;
-    (void) hi;
-
-    oid* o = task->lb;
-	MOSBlockHeaderTpe(METHOD, TPE)* parameters = (MOSBlockHeaderTpe(METHOD, TPE)*) task->blk;
-    TPE min = parameters->min;
-	BitVector base = (BitVector) MOScodevectorFrame(task, TPE);
-    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = CAND_ITER(task->ci)) {
-        BUN i = (BUN) (c - first);
-        TPE delta = getBitVector(base, i, parameters->bits);
-        TPE v = ADD_DELTA(TPE, min, delta);
-        (void) v;
-        /*TODO: change from control to data dependency.*/
-        if (CONCAT2(_, TEST))
-            *o++ = c;
-    }
-    task->lb = o;
-}
-#endif
-
-#ifdef PROJECTION_LOOP_DEFINITION
-MOSprojectionloop_SIGNATURE(METHOD, TPE, CAND_ITER)
-{
-    (void) first;
-    (void) last;
-
-	TPE* bt= (TPE*) task->src;
-
-    MOSBlockHeaderTpe(METHOD, TPE)* parameters = (MOSBlockHeaderTpe(METHOD, TPE)*) ((task))->blk;
-	TPE METHOD =  parameters->min;
-	BitVector base = (BitVector) MOScodevectorFrame(task, TPE);
-	for (oid o = canditer_peekprev(task->ci); !is_oid_nil(o) && o < last; o = CAND_ITER(task->ci)) {
-		BUN i = (BUN) (o - first);
-		TPE w = ADD_DELTA(TPE, METHOD, getBitVector(base, i, parameters->bits));
-		*bt++ = w;
-		task->cnt++;
-	}
-
-	task->src = (char*) bt;
-}
-#endif
-
-#ifdef LAYOUT_DEFINITION
 
 #define LAYOUT_BUFFER_SIZE 10000
 
@@ -226,4 +173,54 @@ MOSlayout_SIGNATURE(METHOD, TPE)
 }
 
 #undef LAYOUT_BUFFER_SIZE
+#endif /*def TPE*/
+
+#ifdef SCAN_LOOP_DEFINITION
+MOSscanloop_SIGNATURE(METHOD, TPE, CAND_ITER, TEST)
+{
+    (void) has_nil;
+    (void) anti;
+    (void) task;
+    (void) tl;
+    (void) th;
+    (void) li;
+    (void) hi;
+
+    oid* o = task->lb;
+	MOSBlockHeaderTpe(METHOD, TPE)* parameters = (MOSBlockHeaderTpe(METHOD, TPE)*) task->blk;
+    TPE min = parameters->min;
+	BitVector base = (BitVector) MOScodevectorFrame(task, TPE);
+    for (oid c = canditer_peekprev(task->ci); !is_oid_nil(c) && c < last; c = CAND_ITER(task->ci)) {
+        BUN i = (BUN) (c - first);
+        TPE delta = getBitVector(base, i, parameters->bits);
+        TPE v = ADD_DELTA(TPE, min, delta);
+        (void) v;
+        /*TODO: change from control to data dependency.*/
+        if (CONCAT2(_, TEST))
+            *o++ = c;
+    }
+    task->lb = o;
+}
+#endif
+
+#ifdef PROJECTION_LOOP_DEFINITION
+MOSprojectionloop_SIGNATURE(METHOD, TPE, CAND_ITER)
+{
+    (void) first;
+    (void) last;
+
+	TPE* bt= (TPE*) task->src;
+
+    MOSBlockHeaderTpe(METHOD, TPE)* parameters = (MOSBlockHeaderTpe(METHOD, TPE)*) ((task))->blk;
+	TPE METHOD =  parameters->min;
+	BitVector base = (BitVector) MOScodevectorFrame(task, TPE);
+	for (oid o = canditer_peekprev(task->ci); !is_oid_nil(o) && o < last; o = CAND_ITER(task->ci)) {
+		BUN i = (BUN) (o - first);
+		TPE w = ADD_DELTA(TPE, METHOD, getBitVector(base, i, parameters->bits));
+		*bt++ = w;
+		task->cnt++;
+	}
+
+	task->src = (char*) bt;
+}
 #endif

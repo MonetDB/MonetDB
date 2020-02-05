@@ -62,26 +62,6 @@ bool MOStypes_delta(BAT* b) {
 #endif
 #undef COMPRESSION_DEFINITION
 
-#define LAYOUT_DEFINITION
-#define TPE bte
-#include METHOD_TEMPLATES_INCLUDE
-#undef TPE
-#define TPE sht
-#include METHOD_TEMPLATES_INCLUDE
-#undef TPE
-#define TPE int
-#include METHOD_TEMPLATES_INCLUDE
-#undef TPE
-#define TPE lng
-#include METHOD_TEMPLATES_INCLUDE
-#undef TPE
-#ifdef HAVE_HGE
-#define TPE hge
-#include METHOD_TEMPLATES_INCLUDE
-#undef TPE
-#endif
-#undef LAYOUT_DEFINITION
-
 #define TPE bte
 #include "mosaic_select_template.h"
 #include "mosaic_projection_template.h"

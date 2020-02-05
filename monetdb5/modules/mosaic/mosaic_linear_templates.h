@@ -73,7 +73,52 @@ MOSdecompress_SIGNATURE(METHOD, TPE)
 	}
 	task->src += i * sizeof(TPE);
 }
-#endif
+
+#define LAYOUT_BUFFER_SIZE 10000
+
+MOSlayout_SIGNATURE(METHOD, TPE)
+{
+	size_t compressed_size = 0;
+	compressed_size += sizeof(MOSBlockHeaderTpe(METHOD, TPE));
+	compressed_size += GET_PADDING(task->blk, METHOD, TPE);
+
+	MOSBlockHeaderTpe(METHOD, TPE)* hdr = (MOSBlockHeaderTpe(METHOD, TPE)*) task->blk;
+
+	char buffer[LAYOUT_BUFFER_SIZE] = {0};
+
+	char* pbuffer = &buffer[0];
+
+	size_t buffer_size = LAYOUT_BUFFER_SIZE;
+
+	char final_properties[1000] = {0};
+
+	strcat(final_properties, "{");
+		strcat(final_properties, "{\"offset\" : ");
+			CONCAT2(TPE, ToStr)(&pbuffer, &buffer_size, (TPE*) &hdr->offset, true);
+			strcat(final_properties, buffer);
+			memset(buffer, 0, buffer_size);
+		strcat(final_properties, "\"}");
+	strcat(final_properties, ",");
+		strcat(final_properties, "{\"step\" : ");
+			bteToStr(&pbuffer, &buffer_size, (const bte*) (TPE*) &hdr->step, true);
+			strcat(final_properties, buffer);
+			memset(buffer, 0, buffer_size);
+		strcat(final_properties, "\"}");
+	strcat(final_properties, "}");
+
+	LAYOUT_INSERT(
+		bsn = current_bsn;
+		tech = STRINGIFY(METHOD);
+		count = (lng) MOSgetCnt(task->blk);
+		input = (lng) count * sizeof(TPE);
+		output = (lng) compressed_size;
+		properties = final_properties;
+		);
+
+	return MAL_SUCCEED;
+}
+#undef LAYOUT_BUFFER_SIZE
+#endif /*def COMPRESSION_DEFINITION*/
 
 #ifdef SCAN_LOOP_DEFINITION
 MOSscanloop_SIGNATURE(METHOD, TPE, CAND_ITER, TEST)
@@ -120,53 +165,4 @@ MOSprojectionloop_SIGNATURE(METHOD, TPE, CAND_ITER)
 
 	task->src = (char*) bt;
 }
-#endif
-
-#ifdef LAYOUT_DEFINITION
-
-#define LAYOUT_BUFFER_SIZE 10000
-
-MOSlayout_SIGNATURE(METHOD, TPE)
-{
-	size_t compressed_size = 0;
-	compressed_size += sizeof(MOSBlockHeaderTpe(METHOD, TPE));
-	compressed_size += GET_PADDING(task->blk, METHOD, TPE);
-
-	MOSBlockHeaderTpe(METHOD, TPE)* hdr = (MOSBlockHeaderTpe(METHOD, TPE)*) task->blk;
-
-	char buffer[LAYOUT_BUFFER_SIZE] = {0};
-
-	char* pbuffer = &buffer[0];
-
-	size_t buffer_size = LAYOUT_BUFFER_SIZE;
-
-	char final_properties[1000] = {0};
-
-	strcat(final_properties, "{");
-		strcat(final_properties, "{\"offset\" : ");
-			CONCAT2(TPE, ToStr)(&pbuffer, &buffer_size, (TPE*) &hdr->offset, true);
-			strcat(final_properties, buffer);
-			memset(buffer, 0, buffer_size);
-		strcat(final_properties, "\"}");
-	strcat(final_properties, ",");
-		strcat(final_properties, "{\"step\" : ");
-			bteToStr(&pbuffer, &buffer_size, (const bte*) (TPE*) &hdr->step, true);
-			strcat(final_properties, buffer);
-			memset(buffer, 0, buffer_size);
-		strcat(final_properties, "\"}");
-	strcat(final_properties, "}");
-
-	LAYOUT_INSERT(
-		bsn = current_bsn;
-		tech = STRINGIFY(METHOD);
-		count = (lng) MOSgetCnt(task->blk);
-		input = (lng) count * sizeof(TPE);
-		output = (lng) compressed_size;
-		properties = final_properties;
-		);
-
-	return MAL_SUCCEED;
-}
-
-#undef LAYOUT_BUFFER_SIZE
 #endif

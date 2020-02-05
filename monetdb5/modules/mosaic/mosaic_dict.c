@@ -51,11 +51,9 @@ bool MOStypes_dict(BAT* b) {
 
 #define METHOD dict
 #define METHOD_TEMPLATES_INCLUDE "mosaic_dictionary_templates.h"
-#define PREPARATION_DEFINITION
-#include METHOD_TEMPLATES_INCLUDE
-#undef PREPARATION_DEFINITION
 
 #define COMPRESSION_DEFINITION
+#include METHOD_TEMPLATES_INCLUDE
 #define TPE bte
 #include METHOD_TEMPLATES_INCLUDE
 #undef TPE
@@ -80,33 +78,6 @@ bool MOStypes_dict(BAT* b) {
 #undef TPE
 #endif
 #undef COMPRESSION_DEFINITION
-
-#define LAYOUT_DEFINITION
-#include METHOD_TEMPLATES_INCLUDE
-#define TPE bte
-#include METHOD_TEMPLATES_INCLUDE
-#undef TPE
-#define TPE sht
-#include METHOD_TEMPLATES_INCLUDE
-#undef TPE
-#define TPE int
-#include METHOD_TEMPLATES_INCLUDE
-#undef TPE
-#define TPE lng
-#include METHOD_TEMPLATES_INCLUDE
-#undef TPE
-#define TPE flt
-#include METHOD_TEMPLATES_INCLUDE
-#undef TPE
-#define TPE dbl
-#include METHOD_TEMPLATES_INCLUDE
-#undef TPE
-#ifdef HAVE_HGE
-#define TPE hge
-#include METHOD_TEMPLATES_INCLUDE
-#undef TPE
-#endif
-#undef LAYOUT_DEFINITION
 
 #define TPE bte
 #include "mosaic_select_template.h"

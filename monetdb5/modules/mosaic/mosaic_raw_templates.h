@@ -70,7 +70,30 @@ MOSdecompress_SIGNATURE(METHOD, TPE)
 	}
 	task->src += i * sizeof(TPE);
 }
-#endif
+
+#define LAYOUT_BUFFER_SIZE 10000
+
+MOSlayout_SIGNATURE(METHOD, TPE)
+{
+	lng _count = (lng) MOSgetCnt(task->blk);
+	size_t compressed_size = 0;
+	compressed_size += sizeof(MOSBlockHeaderTpe(METHOD, TPE));
+	compressed_size += (lng) (_count - 1) * sizeof(TPE);
+	compressed_size += GET_PADDING(task->blk, METHOD, TPE);
+
+	LAYOUT_INSERT(
+		bsn = current_bsn;
+		tech = STRINGIFY(METHOD);
+		count = _count;
+		input = (lng) (_count * sizeof(TPE));
+		output = (lng) compressed_size;
+		);
+
+	return MAL_SUCCEED;
+}
+
+#undef LAYOUT_BUFFER_SIZE
+#endif /*def COMPRESSION_DEFINITION*/
 
 #ifdef SCAN_LOOP_DEFINITION
 MOSscanloop_SIGNATURE(METHOD, TPE, CAND_ITER, TEST)
@@ -115,30 +138,4 @@ MOSprojectionloop_SIGNATURE(METHOD, TPE, CAND_ITER)
 
 	task->src = (char*) bt;
 }
-#endif
-
-#ifdef LAYOUT_DEFINITION
-
-#define LAYOUT_BUFFER_SIZE 10000
-
-MOSlayout_SIGNATURE(METHOD, TPE)
-{
-	lng _count = (lng) MOSgetCnt(task->blk);
-	size_t compressed_size = 0;
-	compressed_size += sizeof(MOSBlockHeaderTpe(METHOD, TPE));
-	compressed_size += (lng) (_count - 1) * sizeof(TPE);
-	compressed_size += GET_PADDING(task->blk, METHOD, TPE);
-
-	LAYOUT_INSERT(
-		bsn = current_bsn;
-		tech = STRINGIFY(METHOD);
-		count = _count;
-		input = (lng) (_count * sizeof(TPE));
-		output = (lng) compressed_size;
-		);
-
-	return MAL_SUCCEED;
-}
-
-#undef LAYOUT_BUFFER_SIZE
 #endif
