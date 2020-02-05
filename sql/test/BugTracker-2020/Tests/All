@@ -1,2 +1,3 @@
 median_avg-nulls.Bug-6807
 ifthenelse-crash.Bug-6815
+alter-table-add-column-Bug-6816

@@ -3231,7 +3231,6 @@ sql_trans_name_conflict( sql_trans *tr, const char *sname, const char *tname, co
 			return sql_trans_tname_conflict(tr, s, NULL, tname, cname);
 	}
 	return 0;
-
 }
 
 sql_column *
@@ -4452,9 +4451,10 @@ reset_column(sql_trans *tr, sql_column *fc, sql_column *pfc)
 				return LOG_ERR;
 		}
 
-		fc->colnr = pfc->colnr;
+		fc->type = pfc->type;
 		fc->null = pfc->null;
 		fc->unique = pfc->unique;
+		fc->colnr = pfc->colnr;
 		fc->storage_type = NULL;
 		if (pfc->storage_type)
 			fc->storage_type = pfc->storage_type;
