@@ -7,6 +7,7 @@ layout_frame
 layout_prefix
 layout_delta
 layout_linear
+layout_raw
 xqueries
 xqueries_rle
 xqueries_delta

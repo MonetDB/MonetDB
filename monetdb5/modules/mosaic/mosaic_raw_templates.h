@@ -119,14 +119,26 @@ MOSprojectionloop_SIGNATURE(raw, TPE, CAND_ITER)
 
 #ifdef LAYOUT_DEFINITION
 
+#define LAYOUT_BUFFER_SIZE 10000
+
 MOSlayout_SIGNATURE(METHOD, TPE)
 {
-	(void) task;
-	(void) layout;
-	(void) current_bsn;
+	lng _count = (lng) MOSgetCnt(task->blk);
+	size_t compressed_size = 0;
+	compressed_size += sizeof(MOSBlockHeaderTpe(METHOD, TPE));
+	compressed_size += (lng) (_count - 1) * sizeof(TPE);
+	compressed_size += GET_PADDING(task->blk, METHOD, TPE);
 
-	// TODO check what advance does.
+	LAYOUT_INSERT(
+		bsn = current_bsn;
+		tech = STRINGIFY(METHOD);
+		count = _count;
+		input = (lng) (_count * sizeof(TPE));
+		output = (lng) compressed_size;
+		);
 
 	return MAL_SUCCEED;
 }
+
+#undef LAYOUT_BUFFER_SIZE
 #endif

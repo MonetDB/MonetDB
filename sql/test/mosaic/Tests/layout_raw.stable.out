@@ -1,0 +1,133 @@
+stdout of test 'layout_raw` in directory 'sql/test/mosaic` itself:
+
+
+# 13:05:28 >  
+# 13:05:28 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37598" "--set" "mapi_usock=/var/tmp/mtest-26687/.s.monetdb.37598" "--forcemito" "--dbpath=/home/aris/sources/monetdb/build/installation/var/MonetDB/mTests_sql_test_mosaic" "--set" "embedded_c=true"
+# 13:05:28 >  
+
+# MonetDB 5 server v11.36.0 (hg id: 3bf5e15ada7d+)
+# This is an unreleased version
+# Serving database 'mTests_sql_test_mosaic', using 8 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
+# Found 15.323 GiB available main-memory of which we use 12.488 GiB
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2020 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://aris-XPS-13-9380:37598/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-26687/.s.monetdb.37598
+# MonetDB/SQL module loaded
+
+# 13:05:28 >  
+# 13:05:28 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-26687" "--port=37598"
+# 13:05:28 >  
+
+#START TRANSACTION;
+#set optimizer='mosaic_pipe';
+#create table tmp3rle( i integer);
+#insert into tmp3rle values
+#(1),
+#(1),
+#(1),
+#(1),
+#(1),
+#(1),
+#(1),
+#(1),
+#(1),
+#(1),
+#(1),
+#(1),
+#(1),
+#(1),
+#(1),
+#(2),
+#(3),
+#(2),
+#(3),
+#(2),
+#(3),
+#(4),
+#(4),
+#(4),
+#(4),
+#(4),
+#(4),
+#(4),
+#(4),
+#(4),
+#(4),
+#(4),
+#(4),
+#(4),
+#(4),
+#(4),
+#(0),
+#(5),
+#(6),
+#(7),
+#(8),
+#(9),
+#(10),
+#(1),
+#(1),
+#(1),
+#(1),
+#(1),
+#(1),
+#(1),
+#(1),
+#(1),
+#(1),
+#(1),
+#(1),
+#(1),
+#(1),
+#(1),
+#(2),
+#(3),
+#(2),
+#(3),
+#(2),
+#(3),
+#(4),
+#(4),
+#(4),
+#(4),
+#(4),
+#(4),
+#(4),
+#(4),
+#(4),
+#(4),
+#(4),
+#(4),
+#(4),
+#(4),
+#(4),
+#(0),
+#(5),
+#(6),
+#(7),
+#(8),
+#(9),
+#(10),
+#(9),
+#(8),
+#(7),
+#(6);
+[ 90	]
+#alter table tmp3rle set read only;
+#alter table tmp3rle alter column i set storage 'raw';
+#select * from mosaic.layout('sys','tmp3rle','i');
+% .%4,	.%4,	.%4,	.%4,	.%4,	.%4 # table_name
+% technique,	count,	inputsize,	outputsize,	properties,	bsn # name
+% clob,	bigint,	bigint,	bigint,	clob,	bigint # type
+% 6,	2,	4,	3,	69,	1 # length
+[ "header",	90,	2880,	568,	"{{\"blks\":[{\"raw\":\"1\"}]},{\"elms\":[{\"raw\":\"90\"}]},{\"ratio\":0.63380283}}",	0	]
+[ "raw",	90,	360,	368,	NULL,	1	]
+#ROLLBACK;
+
+# 13:05:28 >  
+# 13:05:28 >  "Done."
+# 13:05:28 >  
+
