@@ -5,6 +5,7 @@ compressionRLE2
 layout_dict
 layout_frame
 layout_prefix
+layout_delta
 xqueries
 xqueries_rle
 xqueries_delta

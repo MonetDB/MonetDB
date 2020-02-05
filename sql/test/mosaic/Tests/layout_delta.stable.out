@@ -1,0 +1,129 @@
+stdout of test 'layout_delta` in directory 'sql/test/mosaic` itself:
+
+
+# 12:10:13 >  
+# 12:10:13 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=36501" "--set" "mapi_usock=/var/tmp/mtest-16581/.s.monetdb.36501" "--forcemito" "--dbpath=/home/aris/sources/monetdb/build/installation/var/MonetDB/mTests_sql_test_mosaic" "--set" "embedded_c=true"
+# 12:10:13 >  
+
+# MonetDB 5 server v11.36.0 (hg id: 3bf5e15ada7d+)
+# This is an unreleased version
+# Serving database 'mTests_sql_test_mosaic', using 8 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
+# Found 15.323 GiB available main-memory of which we use 12.488 GiB
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2020 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://aris-XPS-13-9380:36501/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-16581/.s.monetdb.36501
+# MonetDB/SQL module loaded
+
+# 12:10:13 >  
+# 12:10:13 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16581" "--port=36501"
+# 12:10:13 >  
+
+#START TRANSACTION;
+#set optimizer='mosaic_pipe';
+#create table tmp3rle( i integer);
+#insert into tmp3rle values
+#(1),
+#(1),
+#(1),
+#(1),
+#(1),
+#(1),
+#(1),
+#(1),
+#(1),
+#(1),
+#(1),
+#(1),
+#(1),
+#(1),
+#(1),
+#(2),
+#(3),
+#(2),
+#(3),
+#(2),
+#(3),
+#(4),
+#(4),
+#(4),
+#(4),
+#(4),
+#(4),
+#(4),
+#(4),
+#(4),
+#(4),
+#(4),
+#(4),
+#(4),
+#(4),
+#(4),
+#(0),
+#(5),
+#(6),
+#(7),
+#(8),
+#(9),
+#(10),
+#(1),
+#(1),
+#(1),
+#(1),
+#(1),
+#(1),
+#(1),
+#(1),
+#(1),
+#(1),
+#(1),
+#(1),
+#(1),
+#(1),
+#(1),
+#(2),
+#(3),
+#(2),
+#(3),
+#(2),
+#(3),
+#(4),
+#(4),
+#(4),
+#(4),
+#(4),
+#(4),
+#(4),
+#(4),
+#(4),
+#(4),
+#(4),
+#(4),
+#(4),
+#(4),
+#(4),
+#(0),
+#(5),
+#(6),
+#(7),
+#(8),
+#(9),
+#(10);
+[ 86	]
+#alter table tmp3rle set read only;
+#alter table tmp3rle alter column i set storage 'delta';
+#select * from mosaic.layout('sys','tmp3rle','i') limit 25;
+% .%4,	.%4,	.%4,	.%4,	.%4,	.%4 # table_name
+% technique,	count,	inputsize,	outputsize,	properties,	bsn # name
+% clob,	bigint,	bigint,	bigint,	clob,	bigint # type
+% 6,	2,	4,	3,	72,	1 # length
+[ "header",	86,	2752,	268,	"{{\"blks\":[{\"delta\":\"1\"}]},{\"elms\":[{\"delta\":\"86\"}]},{\"ratio\":1.2835821}}",	0	]
+[ "delta",	86,	344,	72,	"{{\"init\" : 1\"},{\"bits per delta\" : 5\"}}",	1	]
+#ROLLBACK;
+
+# 12:10:13 >  
+# 12:10:13 >  "Done."
+# 12:10:13 >  
+
