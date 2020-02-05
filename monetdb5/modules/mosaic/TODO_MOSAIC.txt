@@ -6,6 +6,7 @@ Fix/check/test MOSlayout.
 Add the compression on OID heap for string valued columns too.
 Figure out why mix compression don't seem to work that well.
 benchmark using TPC-H
+altering the storage doesn't seem to work.
 Add negative values to tests
 Add test for huge
 create mix compression test cases particularly for dict/dict256 combo.
