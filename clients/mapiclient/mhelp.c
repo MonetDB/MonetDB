@@ -500,7 +500,7 @@ SQLhelp sqlhelp1[] = {
 	 NULL},
 	{"START TRANSACTION",
 	 "Change transaction mode from auto-commit to user controlled commit/rollback",
-	 "START TRANSACTION transactionmode",
+	 "{ START | BEGIN } TRANSACTION transactionmode",
 	 "transactionmode,isolevel",
 	 "See also https://www.monetdb.org/Documentation/Manuals/SQLreference/Transactions"},
 	{"TABLE JOINS",
