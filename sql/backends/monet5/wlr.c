@@ -478,11 +478,7 @@ WLRprocessScheduler(void *arg)
 			gettimeofday(&clock, NULL);
 			clk = clock.tv_sec;
 			ctm = (struct tm) {0};
-#ifdef HAVE_LOCALTIME_R
-				(void) localtime_r(&clk, &ctm);
-#else
-				ctm = *localtime(&clk);
-#endif
+			(void) localtime_r(&clk, &ctm);
 
 			strftime(clktxt, sizeof(clktxt), "%Y-%m-%dT%H:%M:%S.000",&ctm);
 #ifdef _WLR_DEBUG_
@@ -593,11 +589,7 @@ WLRreplicate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	gettimeofday(&clock, NULL);
 	clk = clock.tv_sec;
 	ctm = (struct tm) {0};
-#ifdef HAVE_LOCALTIME_R
 	(void) localtime_r(&clk, &ctm);
-#else
-	ctm = *localtime(&clk);
-#endif
 	strftime(clktxt, sizeof(clktxt), "%Y-%m-%dT%H:%M:%S.000",&ctm);
 #ifdef _WLR_DEBUG_
 	fprintf(stderr, "#replicate: wait until wlr_limit = "LLFMT" (tag "LLFMT") time %s (%s)\n", wlr_limit, wlr_tag, (wlr_timelimit[0]? wlr_timelimit:""), clktxt);

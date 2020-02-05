@@ -1074,3 +1074,63 @@ MT_sleep_ms(unsigned int ms)
 #endif
 #endif
 }
+
+#if !defined(HAVE_LOCALTIME_R) || !defined(HAVE_GMTIME_R) || !defined(HAVE_ASCTIME_R) || !defined(HAVE_CTIME_R)
+static MT_Lock timelock = MT_LOCK_INITIALIZER("timelock");
+#endif
+
+#ifndef HAVE_LOCALTIME_R
+struct tm *
+localtime_r(const time_t *restrict timep, struct tm *restrict result)
+{
+	struct tm *tmp;
+	MT_lock_set(&timelock);
+	tmp = localtime(timep);
+	if (tmp)
+		*result = *tmp;
+	MT_lock_unset(&timelock);
+	return tmp ? result : NULL;
+}
+#endif
+
+#ifndef HAVE_GMTIME_R
+struct tm *
+gmtime_r(const time_t *restrict timep, struct tm *restrict result)
+{
+	struct tm *tmp;
+	MT_lock_set(&timelock);
+	tmp = gmtime(timep);
+	if (tmp)
+		*result = *tmp;
+	MT_lock_unset(&timelock);
+	return tmp ? result : NULL;
+}
+#endif
+
+#ifndef HAVE_ASCTIME_R
+char *
+asctime_r(const struct tm *restrict tm, char *restrict buf)
+{
+	char *tmp;
+	MT_lock_set(&timelock);
+	tmp = asctime(tm);
+	if (tmp)
+		strcpy(buf, tmp);
+	MT_lock_unset(&timelock);
+	return tmp ? buf : NULL;
+}
+#endif
+
+#ifndef HAVE_CTIME_R
+char *
+ctime_r(const time_t *restrict t, char *restrict buf)
+{
+	char *tmp;
+	MT_lock_set(&timelock);
+	tmp = ctime(t);
+	if (tmp)
+		strcpy(buf, tmp);
+	MT_lock_unset(&timelock);
+	return tmp ? buf : NULL;
+}
+#endif
