@@ -1,0 +1,147 @@
+stdout of test 'layout_linear` in directory 'sql/test/mosaic` itself:
+
+
+# 12:46:35 >  
+# 12:46:35 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34888" "--set" "mapi_usock=/var/tmp/mtest-21345/.s.monetdb.34888" "--forcemito" "--dbpath=/home/aris/sources/monetdb/build/installation/var/MonetDB/mTests_sql_test_mosaic" "--set" "embedded_c=true"
+# 12:46:35 >  
+
+# MonetDB 5 server v11.36.0 (hg id: 3bf5e15ada7d+)
+# This is an unreleased version
+# Serving database 'mTests_sql_test_mosaic', using 8 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
+# Found 15.323 GiB available main-memory of which we use 12.488 GiB
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2020 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://aris-XPS-13-9380:34888/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-21345/.s.monetdb.34888
+# MonetDB/SQL module loaded
+
+# 12:46:35 >  
+# 12:46:35 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-21345" "--port=34888"
+# 12:46:35 >  
+
+#START TRANSACTION;
+#set optimizer='mosaic_pipe';
+#create table tmp3rle( i integer);
+#insert into tmp3rle values
+#(1),
+#(1),
+#(1),
+#(1),
+#(1),
+#(1),
+#(1),
+#(1),
+#(1),
+#(1),
+#(1),
+#(1),
+#(1),
+#(1),
+#(1),
+#(2),
+#(3),
+#(2),
+#(3),
+#(2),
+#(3),
+#(4),
+#(4),
+#(4),
+#(4),
+#(4),
+#(4),
+#(4),
+#(4),
+#(4),
+#(4),
+#(4),
+#(4),
+#(4),
+#(4),
+#(4),
+#(0),
+#(5),
+#(6),
+#(7),
+#(8),
+#(9),
+#(10),
+#(1),
+#(1),
+#(1),
+#(1),
+#(1),
+#(1),
+#(1),
+#(1),
+#(1),
+#(1),
+#(1),
+#(1),
+#(1),
+#(1),
+#(1),
+#(2),
+#(3),
+#(2),
+#(3),
+#(2),
+#(3),
+#(4),
+#(4),
+#(4),
+#(4),
+#(4),
+#(4),
+#(4),
+#(4),
+#(4),
+#(4),
+#(4),
+#(4),
+#(4),
+#(4),
+#(4),
+#(0),
+#(5),
+#(6),
+#(7),
+#(8),
+#(9),
+#(10),
+#(9),
+#(8),
+#(7),
+#(6);
+[ 90	]
+#alter table tmp3rle set read only;
+#alter table tmp3rle alter column i set storage 'linear';
+#select * from mosaic.layout('sys','tmp3rle','i');
+% .%4,	.%4,	.%4,	.%4,	.%4,	.%4 # table_name
+% technique,	count,	inputsize,	outputsize,	properties,	bsn # name
+% clob,	bigint,	bigint,	bigint,	clob,	bigint # type
+% 6,	2,	4,	3,	76,	2 # length
+[ "header",	90,	2880,	436,	"{{\"blks\":[{\"linear\":\"15\"}]},{\"elms\":[{\"linear\":\"90\"}]},{\"ratio\":0.82568806}}",	0	]
+[ "linear",	15,	60,	16,	"{{\"offset\" : 1\"},{\"step\" : 0\"}}",	1	]
+[ "linear",	2,	8,	16,	"{{\"offset\" : 2\"},{\"step\" : 1\"}}",	2	]
+[ "linear",	2,	8,	16,	"{{\"offset\" : 2\"},{\"step\" : 1\"}}",	3	]
+[ "linear",	3,	12,	16,	"{{\"offset\" : 2\"},{\"step\" : 1\"}}",	4	]
+[ "linear",	14,	56,	16,	"{{\"offset\" : 4\"},{\"step\" : 0\"}}",	5	]
+[ "linear",	2,	8,	16,	"{{\"offset\" : 0\"},{\"step\" : 5\"}}",	6	]
+[ "linear",	5,	20,	16,	"{{\"offset\" : 6\"},{\"step\" : 1\"}}",	7	]
+[ "linear",	15,	60,	16,	"{{\"offset\" : 1\"},{\"step\" : 0\"}}",	8	]
+[ "linear",	2,	8,	16,	"{{\"offset\" : 2\"},{\"step\" : 1\"}}",	9	]
+[ "linear",	2,	8,	16,	"{{\"offset\" : 2\"},{\"step\" : 1\"}}",	10	]
+[ "linear",	3,	12,	16,	"{{\"offset\" : 2\"},{\"step\" : 1\"}}",	11	]
+[ "linear",	14,	56,	16,	"{{\"offset\" : 4\"},{\"step\" : 0\"}}",	12	]
+[ "linear",	2,	8,	16,	"{{\"offset\" : 0\"},{\"step\" : 5\"}}",	13	]
+[ "linear",	5,	20,	16,	"{{\"offset\" : 6\"},{\"step\" : 1\"}}",	14	]
+[ "linear",	4,	16,	16,	"{{\"offset\" : 9\"},{\"step\" : -1\"}}",	15	]
+#ROLLBACK;
+
+# 12:46:35 >  
+# 12:46:35 >  "Done."
+# 12:46:35 >  
+

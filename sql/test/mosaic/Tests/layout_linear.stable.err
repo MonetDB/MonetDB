@@ -1,0 +1,31 @@
+stderr of test 'layout_linear` in directory 'sql/test/mosaic` itself:
+
+
+# 12:46:35 >  
+# 12:46:35 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34888" "--set" "mapi_usock=/var/tmp/mtest-21345/.s.monetdb.34888" "--forcemito" "--dbpath=/home/aris/sources/monetdb/build/installation/var/MonetDB/mTests_sql_test_mosaic" "--set" "embedded_c=true"
+# 12:46:35 >  
+
+# builtin opt 	gdk_dbpath = /home/aris/sources/monetdb/build/installation/var/monetdb5/dbfarm/demo
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_ipv6 = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# builtin opt 	raw_strings = false
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 34888
+# cmdline opt 	mapi_usock = /var/tmp/mtest-21345/.s.monetdb.34888
+# cmdline opt 	gdk_dbpath = /home/aris/sources/monetdb/build/installation/var/MonetDB/mTests_sql_test_mosaic
+# cmdline opt 	embedded_c = true
+
+# 12:46:35 >  
+# 12:46:35 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-21345" "--port=34888"
+# 12:46:35 >  
+
+
+# 12:46:35 >  
+# 12:46:35 >  "Done."
+# 12:46:35 >  
+
