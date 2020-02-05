@@ -28,7 +28,7 @@ MAPI  = (monetdb) /var/tmp/mtest-29134/.s.monetdb.36370
 QUERY = # errors in the constant types
         x:= 1:bat[:int];
         io.print(x);
-ERROR = !MALException:io.print:HY002!Object not found
+ERROR = !TypeException:user.main[0]:BAT coercion error
 
 # 23:13:31 >  
 # 23:13:31 >  "Done."

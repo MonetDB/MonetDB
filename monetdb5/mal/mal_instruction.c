@@ -1004,6 +1004,8 @@ convertConstant(int type, ValPtr vr)
 		return MAL_SUCCEED;
 	if (type == TYPE_bat || isaBatType(type)) {
 		/* BAT variables can only be set to nil */
+		if( vr->vtype != TYPE_void)
+			throw(SYNTAX, "convertConstant", "BAT conversion error");
 		VALclear(vr);
 		vr->vtype = type;
 		vr->val.bval = bat_nil;
@@ -1079,10 +1081,15 @@ defConstant(MalBlkPtr mb, int type, ValPtr cst)
 	int k;
 	str msg;
 
-	if (isaBatType(type) && cst->vtype == TYPE_void) {
-		cst->vtype = TYPE_bat;
-		cst->val.bval = bat_nil;
-	} else if (cst->vtype != type && !isaBatType(type) && !isPolyType(type)) {
+	if (isaBatType(type)){
+		 if( cst->vtype == TYPE_void) {
+			cst->vtype = TYPE_bat;
+			cst->val.bval = bat_nil;
+		} else {
+			mb->errors = createMalException(mb, 0, TYPE, "BAT coercion error");
+			return -1;
+		}
+	} else if (cst->vtype != type && !isPolyType(type)) {
 		int otype = cst->vtype;
 		assert(type != TYPE_any);	/* help Coverity */
 		msg = convertConstant(getBatType(type), cst);
