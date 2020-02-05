@@ -2228,6 +2228,7 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 	node *en = NULL, *n;
 	stmt *left = NULL, *right = NULL, *join = NULL, *jl, *jr, *c;
 	int semi_used = 0;
+	int semi_disabled = mvc_debug_on(sql, 2048);
 
 	if (rel->op == op_anti && !list_empty(rel->exps) && list_length(rel->exps) == 1 && ((sql_exp*)rel->exps->h->data)->flag == mark_notin)
 		return rel2bin_antijoin(be, rel, refs);
@@ -2245,7 +2246,7 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
  	 * 	first cheap join(s) (equality or idx) 
  	 * 	second selects/filters 
 	 */
-	if (rel->op != op_anti && rel->exps && list_length(rel->exps) == 1) {
+	if (!semi_disabled && rel->op != op_anti && rel->exps && list_length(rel->exps) == 1) {
 		sql_exp *e = rel->exps->h->data;
 
 		if (e->type == e_cmp && (e->flag == cmp_equal || e->flag == mark_in) && !e->anti && !e->f) {
