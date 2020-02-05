@@ -473,11 +473,7 @@ WLRprocessScheduler(void *arg)
 			gettimeofday(&clock, NULL);
 			clk = clock.tv_sec;
 			ctm = (struct tm) {0};
-#ifdef HAVE_LOCALTIME_R
-				(void) localtime_r(&clk, &ctm);
-#else
-				ctm = *localtime(&clk);
-#endif
+			(void) localtime_r(&clk, &ctm);
 			strftime(clktxt, sizeof(clktxt), "%Y-%m-%d %H:%M:%S.000",&ctm);
 
 			// actually never wait longer then the timelimit requires

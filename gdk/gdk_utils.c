@@ -226,11 +226,7 @@ GDKlog(FILE *lockFile, const char *format, ...)
 #ifdef HAVE_CTIME_R3
 	ctm = ctime_r(&tm, tbuf, sizeof(tbuf));
 #else
-#ifdef HAVE_CTIME_R
 	ctm = ctime_r(&tm, tbuf);
-#else
-	ctm = ctime(&tm);
-#endif
 #endif
 	fprintf(lockFile, "USR=%d PID=%d TIME=%.24s @ %s\n", (int) getuid(), (int) getpid(), ctm, buf);
 	fflush(lockFile);

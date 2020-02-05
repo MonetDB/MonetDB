@@ -4266,7 +4266,7 @@ rel_order_by(sql_query *query, sql_rel **R, symbol *orderby, int f)
 				if (e && e->card <= CARD_ATOM) {
 					sql_subtype *tpe = exp_subtype(e);
 					/* integer atom on the stack */
-					if (e->type == e_atom &&
+					if (!is_sql_window(f) && e->type == e_atom &&
 					    tpe->type->eclass == EC_NUM) {
 						atom *a = e->l?e->l:sql->args[e->flag];
 						int nr = (int)atom_get_int(a);

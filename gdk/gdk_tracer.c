@@ -185,13 +185,7 @@ GDKtracer_get_timestamp(const char *fmt)
 	static char datetime[20];
 	time_t now = time(NULL);
 	struct tm tmp;
-	#ifdef HAVE_LOCALTIME_R
-		(void) localtime_r(&now, &tmp);
-	#else
-		MT_lock_set(&lock);
-		tmp = *localtime(&now);
-		MT_lock_unset(&lock);
-	#endif
+	(void) localtime_r(&now, &tmp);
 	strftime(datetime, sizeof(datetime), fmt, &tmp);
 
 	return datetime;
