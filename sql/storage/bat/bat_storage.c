@@ -2822,6 +2822,7 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 			}
 		}
 
+		oc->type = cc->type;
 		oc->colnr = cc->colnr;
 		oc->null = cc->null;
 		oc->unique = cc->unique;
