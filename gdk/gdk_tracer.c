@@ -182,15 +182,20 @@ _GDKtracer_layer_level_helper(int layer, int lvl)
 char *
 GDKtracer_get_timestamp(const char *fmt)
 {
+	MT_lock_set(&lock);
+
 	static char datetime[20];
 	time_t now = time(NULL);
 	struct tm tmp;
-#ifdef HAVE_LOCALTIME_R
-	(void) localtime_r(&now, &tmp);
-#else
-	tmp = *localtime(&now);
-#endif
-	strftime(datetime, sizeof(datetime), fmt, &tmp);
+	#ifdef HAVE_LOCALTIME_R
+		(void) localtime_r(&now, &tmp);
+	#else
+		tmp = *localtime(&now);
+	#endif
+		strftime(datetime, sizeof(datetime), fmt, &tmp);
+
+	MT_lock_unset(&lock);
+
 	return datetime;
 }
 
