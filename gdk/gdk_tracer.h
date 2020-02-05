@@ -300,7 +300,7 @@ typedef struct GDKtracer {
 // Exception
 #define GDK_TRACER_EXCEPTION(MSG, ...)					\
 	mnstr_printf(GDKstdout,						\
-		     "[%s] "						\
+		     "%s "						\
 		     "%-"MXW"s "					\
 		     "%"MXW"s:%d "					\
 		     "%"MXW"s "						\
