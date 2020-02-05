@@ -3343,8 +3343,13 @@ str
 STRBytes(int *res, const str *arg1)
 {
 	size_t l;
+	const char *s = *arg1;
 
-	l = strlen(*arg1);
+	if (strNil(s)) {
+		*res = int_nil;
+		return MAL_SUCCEED;
+	}
+	l = strlen(s);
 	assert(l < INT_MAX);
 	*res = (int) l;
 	return MAL_SUCCEED;
@@ -3566,7 +3571,7 @@ STRsplitpart(str *res, str *haystack, str *needle, int *field)
 	const char *s = *haystack;
 	const char *s2 = *needle;
 
-	if (strNil(s) || is_int_nil(*field)) {
+	if (strNil(s) || strNil(s2) || is_int_nil(*field)) {
 		*res = GDKstrdup(str_nil);
 		if (*res == NULL)
 			throw(MAL, "str.splitpart", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -3774,7 +3779,7 @@ STRStrip2(str *res, const str *arg1, const str *arg2)
 	size_t nchars;
 	int *chars;
 
-	if (strNil(s)) {
+	if (strNil(s) || strNil(*arg2)) {
 		*res = GDKstrdup(str_nil);
 	} else {
 		chars = trimchars(*arg2, &nchars);
@@ -3804,7 +3809,7 @@ STRLtrim2(str *res, const str *arg1, const str *arg2)
 	size_t nchars;
 	int *chars;
 
-	if (strNil(s)) {
+	if (strNil(s) || strNil(*arg2)) {
 		*res = GDKstrdup(str_nil);
 	} else {
 		chars = trimchars(*arg2, &nchars);
@@ -3831,7 +3836,7 @@ STRRtrim2(str *res, const str *arg1, const str *arg2)
 	size_t nchars;
 	int *chars;
 
-	if (strNil(s)) {
+	if (strNil(s) || strNil(*arg2)) {
 		*res = GDKstrdup(str_nil);
 	} else {
 		chars = trimchars(*arg2, &nchars);
@@ -4117,7 +4122,7 @@ STRinsert(str *ret, const str *s, const int *start, const int *l, const str *s2)
 {
 	str v;
 	int strt = *start;
-	if (strcmp(*s2, str_nil) == 0 || strcmp(*s, str_nil) == 0) {
+	if (strNil(*s) || strNil(*s2) || is_int_nil(*start) || is_int_nil(*l)) {
 		if ((*ret = GDKstrdup(str_nil)) == NULL)
 			throw(MAL, "str.insert", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	} else {
@@ -4163,7 +4168,7 @@ STRrepeat(str *ret, const str *s, const int *c)
 	int i;
 	size_t l;
 
-	if (*c < 0 || strcmp(*s, str_nil) == 0) {
+	if (*c < 0 || strNil(*s)) {
 		if ((*ret = GDKstrdup(str_nil)) == NULL)
 			throw(MAL, "str.repeat", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	} else {
