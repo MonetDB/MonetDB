@@ -164,7 +164,7 @@ static sql_rel *
 rel_orderby(mvc *sql, sql_rel *l)
 {
 	sql_rel *rel = rel_create(sql->sa);
-	if(!rel)
+	if (!rel)
 		return NULL;
 
 	assert(l->op == op_project && !l->r);
@@ -272,7 +272,7 @@ rel_with_query(sql_query *query, symbol *q )
 	symbol *next = d->next->data.sym;
 	sql_rel *rel;
 
-	if(!stack_push_frame(sql, "WITH"))
+	if (!stack_push_frame(sql, "WITH"))
 		return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	/* first handle all with's (ie inlined views) */
 	for (d = d->data.lval->h; d; d = d->next) {
@@ -290,7 +290,7 @@ rel_with_query(sql_query *query, symbol *q )
 			stack_pop_frame(sql);
 			return NULL;
 		}
-		if(!stack_push_rel_view(sql, name, nrel)) {
+		if (!stack_push_rel_view(sql, name, nrel)) {
 			stack_pop_frame(sql);
 			return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
@@ -645,9 +645,9 @@ rel_named_table_function(sql_query *query, sql_rel *rel, symbol *ast, int latera
 		for (m = sf->func->ops->h; m; m = m->next, i++) {
 			sql_arg *func_arg = m->data;
 			sql_exp *proj_parameter = (sql_exp*) list_fetch(rel->exps, i);
-			if(proj_parameter) {
+			if (proj_parameter) {
 				sql_arg *prep_arg = (sql_arg*) list_fetch(sql->params, proj_parameter->flag);
-				if(prep_arg && !prep_arg->type.type)
+				if (prep_arg && !prep_arg->type.type)
 					prep_arg->type = func_arg->type;
 			}
 		}
@@ -4469,7 +4469,7 @@ calculate_window_bound(sql_query *query, sql_rel *p, tokens token, symbol *bound
 				return sql_error(sql, 02, SQLSTATE(42000) "Values on %s boundary aren't decimals while on input are", bound_desc);
 			if (bclass != EC_SEC && iet->type->eclass == EC_TIME) {
 				char *err = subtype2string(iet);
-				if(!err)
+				if (!err)
 					return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				(void) sql_error(sql, 02, SQLSTATE(42000) "For %s input the %s boundary must be an interval type up to the day", err, bound_desc);
 				_DELETE(err);
@@ -4671,16 +4671,13 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 		distinct = dn->next->data.i_val;
 		if (!dl || is_ntile) { /* pass an input column for analytic functions that don't require it */
 			in = rel_first_column(sql, p);
-			if (is_atom(in->type)) {
-				in = exp_copy(sql, in);
-			} else {
-				if (!exp_name(in))
-					exp_label(sql->sa, in, ++sql->label);
-				in = exp_ref(sql->sa, in);
-			}
 			if (!in)
 				return NULL;
+			if (!exp_name(in))
+				exp_label(sql->sa, in, ++sql->label);
+			in = exp_ref(sql->sa, in);
 			append(fargs, in);
+			in = exp_ref_save(sql, in);
 			nfargs++;
 		}
 		if (dl)
@@ -4832,68 +4829,68 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 			   *rend = wend->data.lval->h->data.sym;
 		int excl = d->next->next->next->data.i_val;
 		frame_type = d->next->next->data.i_val;
-		sql_exp *ie = obe ? exp_copy(sql, obe->t->data) : in;
+		sql_exp *ie = obe ? exp_ref(sql->sa, (sql_exp*) obe->t->data) : in;
 
-		if(!supports_frames)
+		if (!supports_frames)
 			return sql_error(sql, 02, SQLSTATE(42000) "OVER: frame extend only possible with aggregation and first_value, last_value and nth_value functions");
-		if(!obe && frame_type == FRAME_GROUPS)
+		if (!obe && frame_type == FRAME_GROUPS)
 			return sql_error(sql, 02, SQLSTATE(42000) "GROUPS frame requires an order by expression");
-		if(wstart->token == SQL_FOLLOWING && wend->token == SQL_PRECEDING)
+		if (wstart->token == SQL_FOLLOWING && wend->token == SQL_PRECEDING)
 			return sql_error(sql, 02, SQLSTATE(42000) "FOLLOWING offset must come after PRECEDING offset");
-		if(wstart->token == SQL_CURRENT_ROW && wend->token == SQL_PRECEDING)
+		if (wstart->token == SQL_CURRENT_ROW && wend->token == SQL_PRECEDING)
 			return sql_error(sql, 02, SQLSTATE(42000) "CURRENT ROW offset must come after PRECEDING offset");
-		if(wstart->token == SQL_FOLLOWING && wend->token == SQL_CURRENT_ROW)
+		if (wstart->token == SQL_FOLLOWING && wend->token == SQL_CURRENT_ROW)
 			return sql_error(sql, 02, SQLSTATE(42000) "FOLLOWING offset must come after CURRENT ROW offset");
-		if(wstart->token != SQL_CURRENT_ROW && wend->token != SQL_CURRENT_ROW && wstart->token == wend->token &&
+		if (wstart->token != SQL_CURRENT_ROW && wend->token != SQL_CURRENT_ROW && wstart->token == wend->token &&
 		   (frame_type != FRAME_ROWS && frame_type != FRAME_ALL))
 			return sql_error(sql, 02, SQLSTATE(42000) "Non-centered windows are only supported in row frames");
-		if(!obe && frame_type == FRAME_RANGE) {
+		if (!obe && frame_type == FRAME_RANGE) {
 			bool ok_preceding = false, ok_following = false;
-			if((wstart->token == SQL_PRECEDING || wstart->token == SQL_CURRENT_ROW) &&
+			if ((wstart->token == SQL_PRECEDING || wstart->token == SQL_CURRENT_ROW) &&
 			   (rstart->token == SQL_PRECEDING || rstart->token == SQL_CURRENT_ROW) && rstart->type == type_int &&
 			   (rstart->data.i_val == UNBOUNDED_PRECEDING_BOUND || rstart->data.i_val == CURRENT_ROW_BOUND))
 				ok_preceding = true;
-			if((wend->token == SQL_FOLLOWING || wend->token == SQL_CURRENT_ROW) &&
+			if ((wend->token == SQL_FOLLOWING || wend->token == SQL_CURRENT_ROW) &&
 			   (rend->token == SQL_FOLLOWING || rend->token == SQL_CURRENT_ROW) && rend->type == type_int &&
 			   (rend->data.i_val == UNBOUNDED_FOLLOWING_BOUND || rend->data.i_val == CURRENT_ROW_BOUND))
 				ok_following = true;
-			if(!ok_preceding || !ok_following)
+			if (!ok_preceding || !ok_following)
 				return sql_error(sql, 02, SQLSTATE(42000) "RANGE frame with PRECEDING/FOLLOWING offset requires an order by expression");
 			frame_type = FRAME_ALL; /* special case, iterate the entire partition */
 		}
 
-		if((fstart = calculate_window_bound(query, p, wstart->token, rstart, ie, frame_type, f | sql_window)) == NULL)
+		if ((fstart = calculate_window_bound(query, p, wstart->token, rstart, ie, frame_type, f | sql_window)) == NULL)
 			return NULL;
-		if((fend = calculate_window_bound(query, p, wend->token, rend, ie, frame_type, f | sql_window)) == NULL)
+		if ((fend = calculate_window_bound(query, p, wend->token, rend, ie, frame_type, f | sql_window)) == NULL)
 			return NULL;
-		if(generate_window_bound_call(sql, &start, &eend, s, gbe ? pe : NULL, ie, fstart, fend, frame_type, excl,
+		if (generate_window_bound_call(sql, &start, &eend, s, gbe ? pe : NULL, ie, fstart, fend, frame_type, excl,
 									  wstart->token, wend->token) == NULL)
 			return NULL;
 	} else if (supports_frames) { /* for analytic functions with no frame clause, we use the standard default values */
-		sql_exp *ie = obe ? exp_copy(sql, obe->t->data) : in;
+		sql_exp *ie = obe ? exp_ref(sql->sa, (sql_exp*) obe->t->data) : in;
 		sql_subtype *it = sql_bind_localtype("int"), *lon = sql_bind_localtype("lng"), *bt;
 		unsigned char sclass;
 
 		bt = (frame_type == FRAME_ROWS || frame_type == FRAME_GROUPS) ? lon : exp_subtype(ie);
 		sclass = bt->type->eclass;
-		if(sclass == EC_POS || sclass == EC_NUM || sclass == EC_DEC || EC_INTERVAL(sclass)) {
+		if (sclass == EC_POS || sclass == EC_NUM || sclass == EC_DEC || EC_INTERVAL(sclass)) {
 			fstart = exp_null(sql->sa, bt);
-			if(order_by_clause)
+			if (order_by_clause)
 				fend = exp_atom(sql->sa, atom_zero_value(sql->sa, bt));
 			else
 				fend = exp_null(sql->sa, bt);
 		} else {
 			fstart = exp_null(sql->sa, it);
-			if(order_by_clause)
+			if (order_by_clause)
 				fend = exp_atom(sql->sa, atom_zero_value(sql->sa, it));
 			else
 				fend = exp_null(sql->sa, it);
 		}
-		if(!obe)
+		if (!obe)
 			frame_type = FRAME_ALL;
 
-		if(generate_window_bound_call(sql, &start, &eend, s, gbe ? pe : NULL, ie, fstart, fend, frame_type, EXCLUDE_NONE,
-									  SQL_PRECEDING, SQL_FOLLOWING) == NULL)
+		if (generate_window_bound_call(sql, &start, &eend, s, gbe ? pe : NULL, ie, fstart, fend, frame_type, EXCLUDE_NONE,
+									   SQL_PRECEDING, SQL_FOLLOWING) == NULL)
 			return NULL;
 	}
 
@@ -5519,9 +5516,9 @@ rel_query(sql_query *query, sql_rel *rel, symbol *sq, int toplevel, exp_kind ek)
 			dlist *wd = n->data.sym->data.lval;
 			const char *name = wd->h->data.sval;
 			dlist *wdef = wd->h->next->data.lval;
-			if(stack_get_window_def(sql, name, NULL)) {
+			if (stack_get_window_def(sql, name, NULL)) {
 				return sql_error(sql, 01, SQLSTATE(42000) "SELECT: Redefinition of window '%s'", name);
-			} else if(!stack_push_window_def(sql, name, wdef)) {
+			} else if (!stack_push_window_def(sql, name, wdef)) {
 				return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 		}
