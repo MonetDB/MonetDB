@@ -155,6 +155,7 @@ BATunique(BAT *b, BAT *s)
 		seen = NULL;
 	} else if (BATcheckhash(b) ||
 		   (!b->batTransient &&
+		    cnt == BATcount(b) &&
 		    BAThash(b) == GDK_SUCCEED) ||
 		   ((parent = VIEWtparent(b)) != 0 &&
 		    BATcheckhash(BBPdescriptor(parent)))) {
