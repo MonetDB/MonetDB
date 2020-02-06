@@ -1,7 +1,5 @@
 #ifdef COMPRESSION_DEFINITION
 
-#define LAYOUT_BUFFER_SIZE 10000
-
 #ifndef TPE
 #define clean_up_info_ID(METHOD) CONCAT2(clean_up_info_, METHOD)
 
@@ -489,7 +487,6 @@ MOSlayout_SIGNATURE(METHOD, TPE)
 
 #endif /*ndef TPE*/
 
-#undef LAYOUT_BUFFER_SIZE
 
 #endif /*def COMPRESSION_DEFINITION*/
 

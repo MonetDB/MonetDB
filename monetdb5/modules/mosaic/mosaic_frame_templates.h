@@ -125,8 +125,6 @@ MOSdecompress_SIGNATURE(METHOD, TPE)
 	task->src += i * sizeof(TPE);
 }
 
-#define LAYOUT_BUFFER_SIZE 10000
-
 MOSlayout_SIGNATURE(METHOD, TPE)
 {
 	size_t compressed_size = 0;
@@ -170,7 +168,6 @@ MOSlayout_SIGNATURE(METHOD, TPE)
 	return MAL_SUCCEED;
 }
 
-#undef LAYOUT_BUFFER_SIZE
 #endif /*def TPE*/
 
 #ifdef SCAN_LOOP_DEFINITION

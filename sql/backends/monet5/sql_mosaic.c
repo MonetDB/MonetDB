@@ -21,7 +21,7 @@
 #include "mosaic.h"
 #include "sql_scenario.h"
 
-// TODO: clean up this function a bit.
+// TODO: clean up these functions a bit.
 str
 sql_mosaicLayout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -157,8 +157,8 @@ sql_mosaicAnalysis(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_trans *tr = m->session->tr;
 	node *nsch, *ntab, *ncol;
 	str sch = 0, tbl = 0, col = 0;
-	int *tech,*output, *factor, *compress, *decompress;
-	BAT *bn, *btech, *boutput, *bfactor, *bcompress, *bdecompress;
+	int *tech,*output, *factor, *compress, *decompress, *layout;
+	BAT *bn, *btech, *boutput, *bfactor, *bcompress, *bdecompress, *blayout;
 	str compressions = NULL;
 
 	if (msg != MAL_SUCCEED || (msg = checkSQLContext(cntxt)) != NULL)
@@ -175,7 +175,7 @@ sql_mosaicAnalysis(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPunfix(btech->batCacheid);
 		throw(SQL,"mosaicAnalysis", MAL_MALLOC_FAIL);
 	}
-	output = getArgReference_bat(stk, pci, 1);
+	output = getArgReference_bat(stk, pci, 2);
 	*output = boutput->batCacheid;
 
 	bfactor = COLnew((oid)0, TYPE_dbl,0, TRANSIENT);
@@ -184,7 +184,7 @@ sql_mosaicAnalysis(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPunfix(boutput->batCacheid);
 		throw(SQL,"mosaicAnalysis", MAL_MALLOC_FAIL);
 	}
-	factor = getArgReference_bat(stk, pci, 2);
+	factor = getArgReference_bat(stk, pci, 3);
 	*factor = bfactor->batCacheid;
 
 	bcompress = COLnew((oid)0, TYPE_lng,0, TRANSIENT);
@@ -194,7 +194,7 @@ sql_mosaicAnalysis(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPunfix(bfactor->batCacheid);
 		throw(SQL,"mosaicAnalysis", MAL_MALLOC_FAIL);
 	}
-	compress = getArgReference_bat(stk, pci, 3);
+	compress = getArgReference_bat(stk, pci, 4);
 	*compress = bcompress->batCacheid;
 
 	bdecompress = COLnew((oid)0, TYPE_lng,0, TRANSIENT);
@@ -205,15 +205,26 @@ sql_mosaicAnalysis(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPunfix(bcompress->batCacheid);
 		throw(SQL,"mosaicAnalysis", MAL_MALLOC_FAIL);
 	}
-	decompress = getArgReference_bat(stk, pci, 4);
+	decompress = getArgReference_bat(stk, pci, 5);
 	*decompress = bdecompress->batCacheid;
 
-	sch = *getArgReference_str(stk, pci, 5);
-	tbl = *getArgReference_str(stk, pci, 6);
-	col = *getArgReference_str(stk, pci, 7);
-	if ( pci->argc == 9){
+	blayout = COLnew((oid)0, ATOMindex("json"),0, TRANSIENT);
+	if( blayout == NULL){
+		BBPunfix(btech->batCacheid);
+		BBPunfix(boutput->batCacheid);
+		BBPunfix(bfactor->batCacheid);
+		BBPunfix(bcompress->batCacheid);
+		throw(SQL,"mosaicAnalysis", MAL_MALLOC_FAIL);
+	}
+	layout = getArgReference_bat(stk, pci, 1);
+	*layout = blayout->batCacheid;
+
+	sch = *getArgReference_str(stk, pci, 6);
+	tbl = *getArgReference_str(stk, pci, 7);
+	col = *getArgReference_str(stk, pci, 8);
+	if ( pci->argc == 10){
 		// use a predefined collection of compression schemes.
-		compressions = *getArgReference_str(stk,pci,8);
+		compressions = *getArgReference_str(stk,pci,9);
 	}
 
 #ifdef DEBUG_SQL_MOSAIC
@@ -242,21 +253,24 @@ sql_mosaicAnalysis(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							continue;
 						// perform the analysis
 						bn = store_funcs.bind_col(m->session->tr, c, 0);
-						msg = MOSAnalysis(bn, btech, boutput, bfactor, bcompress, bdecompress, compressions);
+						msg = MOSAnalysis(bn, btech, blayout, boutput, bfactor, bcompress, bdecompress, compressions);
 						BBPunfix(bn->batCacheid);
 						(void) c;
 
 						if(msg != MAL_SUCCEED){
 							BBPunfix(btech->batCacheid);
+							BBPunfix(blayout->batCacheid);
 							BBPunfix(boutput->batCacheid);
 							BBPunfix(bfactor->batCacheid);
 							BBPunfix(bcompress->batCacheid);
+							BBPunfix(bdecompress->batCacheid);
 							return msg;
 						}
 					}
 			}
 	}
 	BBPkeepref(*tech);
+	BBPkeepref(*layout);
 	BBPkeepref(*output);
 	BBPkeepref(*factor);
 	BBPkeepref(*compress);

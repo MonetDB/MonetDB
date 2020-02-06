@@ -538,6 +538,7 @@ comment "Return a table with detailed compression information ";
 
 pattern mosaicanalysis(sch:str,tbl:str,col:str,compression:str)(
 	technique:bat[:str],
+	layout:bat[:json],
 	outputsize:bat[:lng],
 	factor:bat[:dbl],
 	compress:bat[:lng],
@@ -545,6 +546,7 @@ pattern mosaicanalysis(sch:str,tbl:str,col:str,compression:str)(
 address sql_mosaicAnalysis;
 pattern mosaicanalysis(sch:str,tbl:str,col:str)(
 	technique:bat[:str],
+	layout:bat[:json],
 	outputsize:bat[:lng],
 	factor:bat[:dbl],
 	compress:bat[:lng],

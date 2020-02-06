@@ -258,13 +258,13 @@ typedef struct _MosaicLayout {
 		if (msg != MAL_SUCCEED) return msg;\
 	}\
 \
-	if(\
-		BUNappend(layout->bsn		, &bsn, false) != GDK_SUCCEED ||\
-		BUNappend(layout->tech		,tech, false) != GDK_SUCCEED ||\
-		BUNappend(layout->count		, &count, false) != GDK_SUCCEED ||\
-		BUNappend(layout->input		, &input, false) != GDK_SUCCEED ||\
-		BUNappend(layout->properties, properties, false) != GDK_SUCCEED ||\
-		BUNappend(layout->output	, &output, false) != GDK_SUCCEED\
+	if (\
+		(layout->bsn		&& BUNappend(layout->bsn		, &bsn,			false) != GDK_SUCCEED) ||\
+		(layout->tech		&& BUNappend(layout->tech		, tech,			false) != GDK_SUCCEED) ||\
+		(layout->count		&& BUNappend(layout->count		, &count,		false) != GDK_SUCCEED) ||\
+		(layout->input		&& BUNappend(layout->input		, &input,		false) != GDK_SUCCEED) ||\
+		(layout->properties && BUNappend(layout->properties	, properties,	false) != GDK_SUCCEED) ||\
+		(layout->output		&& BUNappend(layout->output		, &output,		false) != GDK_SUCCEED)\
 	) {\
 		throw(MAL, __func__, MAL_MALLOC_FAIL);\
 	}\
@@ -283,11 +283,10 @@ mal_export str MOSthetaselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 mal_export str MOSprojection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str MOSlayout(BAT *b, BAT *bbsn, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
-mal_export str MOSAnalysis(BAT *b, BAT *btech, BAT *output, BAT *factor, BAT *compress, BAT *decompress, str compressions);
+mal_export str MOSAnalysis(BAT *b, BAT *btech, BAT *blayout, BAT *output, BAT *factor, BAT *compress, BAT *decompress, str compressions);
 
 void MOSupdateHeader(MOStask* task);
 void MOSinitHeader(MOStask* task);
 void MOSinitializeScan(MOStask* task, BAT* b);
-str  MOSlayout_hdr(MOStask* task, MosaicLayout* layout);
 
 #endif /* _MOSLIST_H */

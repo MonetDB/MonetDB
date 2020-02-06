@@ -207,6 +207,93 @@ MOSprepareDictionaryContext(MOStask* task) {
 #undef TPE
 #endif
 
+static void
+get_hdr_properties(char* dst, MosaicHdr hdr) {
+	char buffer2[LAYOUT_BUFFER_SIZE] = {0};
+	char* pbuffer2 = &buffer2[0];
+
+	size_t buffer_size = LAYOUT_BUFFER_SIZE;
+
+	strcpy(dst, "{");
+
+	strcat(dst, "\"blks\":[");
+	for(int j=0; j < MOSAIC_METHODS; j++) {
+		if (hdr->blks[j] > 0) {
+
+			lngToStr(&pbuffer2, &buffer_size, &(hdr->blks[j]), true);
+
+			if (dst[strlen(dst) - 1] != '[') {
+				strcat(dst, ",");
+			}
+
+			strcat(dst, "{\"");
+			strcat(dst, MOSmethods[j].name);
+			strcat(dst, "\":");
+			strcat(dst, buffer2);
+			memset(buffer2, 0, LAYOUT_BUFFER_SIZE);
+			strcat(dst, "}");
+		}
+	}
+	strcat(dst, "]");
+
+	strcat(dst, ",");
+
+	strcat(dst, "\"elms\":[");
+	for(int j=0; j < MOSAIC_METHODS; j++) {
+		if (hdr->blks[j] > 0) {
+
+			lngToStr(&pbuffer2, &buffer_size, &(hdr->elms[j]), true);
+
+			if (dst[strlen(dst) - 1] != '[') {
+				strcat(dst, ",");
+			}
+
+			strcat(dst, "{\"");
+			strcat(dst, MOSmethods[j].name);
+			strcat(dst, "\":");
+			strcat(dst, buffer2);
+			memset(buffer2, 0, LAYOUT_BUFFER_SIZE);
+			strcat(dst, "}");
+		}
+	}
+	strcat(dst, "]");
+
+	fltToStr(&pbuffer2, &buffer_size, &((hdr)->ratio), true);
+
+	strcat(dst, ",\"ratio\":");
+
+	strcat(dst, buffer2);
+	memset(buffer2, 0, LAYOUT_BUFFER_SIZE);
+
+	strcat(dst, "}");
+
+}
+
+static str
+MOSlayout_hdr(MOStask* task, MosaicLayout* layout) {
+
+	char buffer1[LAYOUT_BUFFER_SIZE] = {0};
+
+	get_hdr_properties(buffer1, task->hdr);
+
+	LAYOUT_INSERT(
+		tech = "header";
+		properties = buffer1;
+		 /*TODO: These parameters might be problematic for large datasets.*/
+		count = BATcount(task->bsrc);
+		input = count * task->bsrc->twidth * CHAR_BIT;
+		output = task->bsrc->tmosaic->free;
+	);
+	str msg;
+	if( (task->hdr)->blks[MOSAIC_DICT256] > 0 && (msg = MOSlayoutDictionary_ID(dict256)(task,layout, 0)) != MAL_SUCCEED)
+		return msg;
+
+	if( (task->hdr)->blks[MOSAIC_DICT] > 0 && (msg = MOSlayoutDictionary_ID(dict)(task,layout, 0)) != MAL_SUCCEED)
+		return msg;
+
+	return MAL_SUCCEED;
+}
+
 str
 MOSlayout(BAT *b, BAT *bbsn, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties) {
 	str msg = MAL_SUCCEED;
@@ -316,90 +403,6 @@ MOSinitializeScan(MOStask* task, BAT* /*compressed*/ b)
 	task->start = 0;
 	task->stop = b->batCount;
 }
-
-#define LAYOUT_BUFFER_SIZE 10000
-str
-MOSlayout_hdr(MOStask* task, MosaicLayout* layout) {
-	size_t written;
-
-	char buffer1[LAYOUT_BUFFER_SIZE] = {0};
-	char buffer2[LAYOUT_BUFFER_SIZE] = {0};
-
-	char* pbuffer2 = &buffer2[0];
-
-	size_t buffer_size = LAYOUT_BUFFER_SIZE;
-
-	strcpy(buffer1, "{");
-
-	strcat(buffer1, "\"blks\":[");
-	for(int j=0; j < MOSAIC_METHODS; j++) {
-		if (task->hdr->blks[j] > 0) {
-
-			written = lngToStr(&pbuffer2, &buffer_size, &(task->hdr->blks[j]), true);
-
-			if (buffer1[strlen(buffer1)] == '[') {
-				strcat(buffer1, ",");
-			}
-
-			strcat(buffer1, "{\"");
-			strcat(buffer1, MOSmethods[j].name);
-			strcat(buffer1, "\":");
-			strcat(buffer1, buffer2);
-			memset(buffer2, 0, written);
-			strcat(buffer1, "}");
-		}
-	}
-	strcat(buffer1, "]");
-
-	strcat(buffer1, ",");
-
-	strcat(buffer1, "\"elms\":[");
-	for(int j=0; j < MOSAIC_METHODS; j++) {
-		if (task->hdr->blks[j] > 0) {
-
-			written = lngToStr(&pbuffer2, &buffer_size, &(task->hdr->elms[j]), true);
-
-			if (buffer1[strlen(buffer1)] == '[') {
-				strcat(buffer1, ",");
-			}
-
-			strcat(buffer1, "{\"");
-			strcat(buffer1, MOSmethods[j].name);
-			strcat(buffer1, "\":");
-			strcat(buffer1, buffer2);
-			memset(buffer2, 0, written);
-			strcat(buffer1, "}");
-		}
-	}
-	strcat(buffer1, "]");
-
-	written = fltToStr(&pbuffer2, &buffer_size, &((task->hdr)->ratio), true);
-
-	strcat(buffer1, ",\"ratio\":");
-
-	strcat(buffer1, buffer2);
-	memset(buffer2, 0, written);
-
-	strcat(buffer1, "}");
-
-	LAYOUT_INSERT(
-		tech = "header";
-		properties = buffer1;
-		 /*TODO: These parameters might be problematic for large datasets.*/
-		count = BATcount(task->bsrc);
-		input = count * task->bsrc->twidth * CHAR_BIT;
-		output = task->bsrc->tmosaic->free;
-	);
-	str msg;
-	if( (task->hdr)->blks[MOSAIC_DICT256] > 0 && (msg = MOSlayoutDictionary_ID(dict256)(task,layout, 0)) != MAL_SUCCEED)
-		return msg;
-
-	if( (task->hdr)->blks[MOSAIC_DICT] > 0 && (msg = MOSlayoutDictionary_ID(dict)(task,layout, 0)) != MAL_SUCCEED)
-		return msg;
-
-	return MAL_SUCCEED;
-}
-#undef LAYOUT_BUFFER_SIZE
 
 static
 str MOSestimate(MOStask* task, BAT* estimates, size_t* compressed_size) {
@@ -1293,13 +1296,14 @@ makepatterns(uint16_t *patterns, int size, str compressions, BAT* b)
 struct PAT{
 	bool include;
 	str technique;
+	str layout;
 	BUN xsize;
 	dbl xf;
 	lng clk1, clk2;
 }pat[CANDIDATES];
 
 str
-MOSAnalysis(BAT *b, BAT *btech, BAT *boutput, BAT *bratio, BAT *bcompress, BAT *bdecompress, str compressions)
+MOSAnalysis(BAT *b, BAT *btech, BAT *blayout, BAT *boutput, BAT *bratio, BAT *bcompress, BAT *bdecompress, str compressions)
 {
 	unsigned i,j,cases, bid= b->batCacheid;
 	uint16_t pattern[CANDIDATES];
@@ -1360,6 +1364,17 @@ MOSAnalysis(BAT *b, BAT *btech, BAT *boutput, BAT *bratio, BAT *bcompress, BAT *
 		msg = MOScompressInternal( b, compressions);
 
 		pat[i].clk1 = GDKms()- pat[i].clk1;
+
+		if (msg == MAL_SUCCEED) {
+
+			char buffer1[LAYOUT_BUFFER_SIZE] = {0};
+
+			get_hdr_properties(buffer1, (MosaicHdr) b->tmosaic->base);
+		
+			if ( (pat[i].layout = GDKstrdup( buffer1)) == NULL) {
+				msg = createException(SQL,__func__, MAL_MALLOC_FAIL);
+			}
+		}
 
 		if(msg != MAL_SUCCEED || b->tmosaic == NULL){
 			if (msg != MAL_SUCCEED) {
@@ -1439,6 +1454,7 @@ MOSAnalysis(BAT *b, BAT *btech, BAT *boutput, BAT *bratio, BAT *bcompress, BAT *
 
 			if(msg == MAL_SUCCEED && (BUNappend(boutput,&pat[i].xsize,false) != GDK_SUCCEED ||
 				BUNappend(btech,pat[i].technique,false) != GDK_SUCCEED ||
+				BUNappend(blayout,pat[i].layout,false) != GDK_SUCCEED ||
 				BUNappend(bratio,&pat[i].xf,false) != GDK_SUCCEED ||
 				BUNappend(bcompress,&pat[i].clk1,false) != GDK_SUCCEED ||
 				BUNappend(bdecompress,&pat[i].clk2,false) != GDK_SUCCEED ))
@@ -1446,6 +1462,7 @@ MOSAnalysis(BAT *b, BAT *btech, BAT *boutput, BAT *bratio, BAT *bcompress, BAT *
 		}
 
 		GDKfree(pat[i].technique);
+		GDKfree(pat[i].layout);
 	}
 
 	return msg;
