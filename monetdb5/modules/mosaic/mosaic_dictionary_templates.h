@@ -478,7 +478,7 @@ MOSlayout_SIGNATURE(METHOD, TPE)
 		bsn = current_bsn;
 		tech = STRINGIFY(METHOD);
 		count = cnt;
-		input = cnt * sizeof(TPE);
+		input = (lng) (cnt * sizeof(TPE));
 		output = (lng) compressed_size;
 		);
 

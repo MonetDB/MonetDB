@@ -74,16 +74,16 @@ MOSdecompress_SIGNATURE(METHOD, TPE)
 
 MOSlayout_SIGNATURE(METHOD, TPE)
 {
-	lng _count = (lng) MOSgetCnt(task->blk);
+	size_t _count = MOSgetCnt(task->blk);
 	size_t compressed_size = 0;
 	compressed_size += sizeof(MOSBlockHeaderTpe(METHOD, TPE));
-	compressed_size += (lng) (_count - 1) * sizeof(TPE);
+	compressed_size += (_count - 1) * sizeof(TPE);
 	compressed_size += GET_PADDING(task->blk, METHOD, TPE);
 
 	LAYOUT_INSERT(
 		bsn = current_bsn;
 		tech = STRINGIFY(METHOD);
-		count = _count;
+		count = (lng) _count;
 		input = (lng) (_count * sizeof(TPE));
 		output = (lng) compressed_size;
 		);

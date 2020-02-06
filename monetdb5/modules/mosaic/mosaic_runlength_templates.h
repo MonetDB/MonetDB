@@ -94,7 +94,7 @@ MOSlayout_SIGNATURE(METHOD, TPE)
 		bsn = current_bsn;
 		tech = STRINGIFY(METHOD);
 		count = (lng) MOSgetCnt(task->blk);
-		input = (lng) count * sizeof(TPE);
+		input = (lng) (count * sizeof(TPE));
 		output = (lng) compressed_size;
 		properties = final_properties;
 		);

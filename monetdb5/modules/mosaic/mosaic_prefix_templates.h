@@ -151,7 +151,7 @@ MOSlayout_SIGNATURE(METHOD, TPE)
 {
 	size_t compressed_size = 0;
 	compressed_size += sizeof(MOSBlockHeaderTpe(METHOD, TPE));
-	lng cnt = (lng) MOSgetCnt(task->blk);
+	size_t cnt = MOSgetCnt(task->blk);
 
 	MOSBlockHeaderTpe(METHOD, TPE)* hdr = (MOSBlockHeaderTpe(METHOD, TPE)*) task->blk;
 
