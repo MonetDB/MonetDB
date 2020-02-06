@@ -47,14 +47,7 @@ parse_dotmonetdb(DotMonetdb *dotfile)
 	}
 
         if (dotfile) {
-		dotfile->user = NULL;
-		dotfile->passwd = NULL;
-		dotfile->dbname = NULL;
-		dotfile->language = NULL;
-		dotfile->output = NULL;
-		dotfile->save_history = 0;
-		dotfile->pagewidth = 0;
-		dotfile->port = 0;
+		*dotfile = (DotMonetdb) {0};
         }
 
 	if (config) {
