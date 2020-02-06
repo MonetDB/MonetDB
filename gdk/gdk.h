@@ -2662,6 +2662,15 @@ gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
 	     hb = HASHgetlink(h,hb))					\
 		if (* (const TYPE *) (v) == * (const TYPE *) BUNtloc(bi, hb))
 
+/* need to take special care comparing nil floating point values */
+#define HASHloop_fTYPE(bi, h, hb, v, TYPE)				\
+	for (hb = HASHget(h, hash_##TYPE(h, v));			\
+	     hb != HASHnil(h);						\
+	     hb = HASHgetlink(h,hb))					\
+		if (is_##TYPE##_nil(* (const TYPE *) (v))		\
+		    ? is_##TYPE##_nil(* (const TYPE *) BUNtloc(bi, hb)) \
+		    : * (const TYPE *) (v) == * (const TYPE *) BUNtloc(bi, hb))
+
 #define HASHloop_bte(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, bte)
 #define HASHloop_sht(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, sht)
 #define HASHloop_int(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, int)
@@ -2669,8 +2678,8 @@ gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
 #ifdef HAVE_HGE
 #define HASHloop_hge(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, hge)
 #endif
-#define HASHloop_flt(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, flt)
-#define HASHloop_dbl(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, dbl)
+#define HASHloop_flt(bi, h, hb, v)	HASHloop_fTYPE(bi, h, hb, v, flt)
+#define HASHloop_dbl(bi, h, hb, v)	HASHloop_fTYPE(bi, h, hb, v, dbl)
 
 /*
  * @+ Common BAT Operations
