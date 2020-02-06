@@ -622,6 +622,16 @@ BAThashsync(void *arg)
 }
 #endif
 
+#define EQbte(a, b)	((a) == (b))
+#define EQsht(a, b)	((a) == (b))
+#define EQint(a, b)	((a) == (b))
+#define EQlng(a, b)	((a) == (b))
+#ifdef HAVE_HGE
+#define EQhge(a, b)	((a) == (b))
+#endif
+#define EQflt(a, b)	(is_flt_nil(a) ? is_flt_nil(b) : (a) == (b))
+#define EQdbl(a, b)	(is_dbl_nil(a) ? is_dbl_nil(b) : (a) == (b))
+
 #define starthash(TYPE)							\
 	do {								\
 		const TYPE *restrict v = (const TYPE *) BUNtloc(bi, 0);	\
@@ -637,7 +647,7 @@ BAThashsync(void *arg)
 				for (hb = hget;				\
 				     hb != hnil;			\
 				     hb = HASHgetlink(h, hb)) {		\
-					if (v[o - b->hseqbase] == v[hb]) \
+					if (EQ##TYPE(v[o - b->hseqbase], v[hb])) \
 						break;			\
 				}					\
 				h->nunique += hb == hnil;		\
@@ -658,7 +668,7 @@ BAThashsync(void *arg)
 			for (hb = hget;					\
 			     hb != hnil;				\
 			     hb = HASHgetlink(h, hb)) {			\
-				if (v[o - b->hseqbase] == v[hb])	\
+				if (EQ##TYPE(v[o - b->hseqbase], v[hb])) \
 					break;				\
 			}						\
 			h->nunique += hb == hnil;			\

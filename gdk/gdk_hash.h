@@ -221,11 +221,11 @@ HASHgetlink(Hash *h, BUN i)
 		if (* (const TYPE *) (v) == * (const TYPE *) BUNtloc(bi, hb))
 
 /* need to take special care comparing nil floating point values */
-#define HASHloop_fTYPE(bi, h, hb, v, TYPE)                             \
-	for (hb = HASHget(h, hash_##TYPE(h, v));		       \
-	     hb != HASHnil(h);					       \
-	     hb = HASHgetlink(h,hb))				       \
-		if (is_##TYPE##_nil(* (const TYPE *) (v))	       \
+#define HASHloop_fTYPE(bi, h, hb, v, TYPE)				\
+	for (hb = HASHget(h, hash_##TYPE(h, v));			\
+	     hb != HASHnil(h);						\
+	     hb = HASHgetlink(h,hb))					\
+		if (is_##TYPE##_nil(* (const TYPE *) (v))		\
 		    ? is_##TYPE##_nil(* (const TYPE *) BUNtloc(bi, hb)) \
 		    : * (const TYPE *) (v) == * (const TYPE *) BUNtloc(bi, hb))
 
