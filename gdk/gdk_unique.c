@@ -217,10 +217,7 @@ BATunique(BAT *b, BAT *s)
 			mask = (BUN) 1 << 16;
 			cmp = NULL; /* no compare needed, "hash" is perfect */
 		} else {
-			if (s)
-				mask = HASHmask(s->batCount);
-			else
-				mask = HASHmask(b->batCount);
+			mask = HASHmask(cnt);
 			if (mask < ((BUN) 1 << 16))
 				mask = (BUN) 1 << 16;
 		}
