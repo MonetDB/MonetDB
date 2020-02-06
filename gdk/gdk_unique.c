@@ -94,32 +94,6 @@ BATunique(BAT *b, BAT *s)
 		return BATdense(0, cand ? *cand : b->hseqbase, 1);
 	}
 
-	if (cand && BATcount(b) > 16 * BATcount(s)) {
-		BAT *nb, *r, *nr;
-
-		ALGODEBUG fprintf(stderr, "#BATunique(b=" ALGOBATFMT ",s="
-				  ALGOBATFMT "): recurse: few candidates\n",
-				  ALGOBATPAR(b), ALGOBATPAR(s));
-		nb = BATproject(s, b);
-		if (nb == NULL)
-			return NULL;
-		r = BATunique(nb, NULL);
-		if (r == NULL) {
-			BBPunfix(nb->batCacheid);
-			return NULL;
-		}
-		nr = BATproject(r, s);
-		BBPunfix(nb->batCacheid);
-		BBPunfix(r->batCacheid);
-		nr = virtualize(nr);
-		ALGODEBUG fprintf(stderr, "#BATunique(b=" ALGOBATFMT ","
-				  "s=" ALGOBATFMT ")="
-				  ALGOOPTBATFMT "\n",
-				  ALGOBATPAR(b), ALGOBATPAR(s),
-				  ALGOOPTBATPAR(nr));
-		return nr;
-	}
-
 	assert(b->ttype != TYPE_void);
 
 	bn = COLnew(0, TYPE_oid, 1024, TRANSIENT);
@@ -233,6 +207,8 @@ BATunique(BAT *b, BAT *s)
 		seen = NULL;
 	} else if (BATcheckhash(b) ||
 		   (!b->batTransient &&
+		    cand == NULL &&
+		    end - start == BATcount(b) &&
 		    BAThash(b) == GDK_SUCCEED) ||
 		   ((parent = VIEWtparent(b)) != 0 &&
 		    BATcheckhash(BBPdescriptor(parent)))) {
