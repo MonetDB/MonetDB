@@ -1300,7 +1300,7 @@ struct PAT{
 	BUN xsize;
 	dbl xf;
 	lng clk1, clk2;
-}pat[CANDIDATES];
+};
 
 str
 MOSAnalysis(BAT *b, BAT *btech, BAT *blayout, BAT *boutput, BAT *bratio, BAT *bcompress, BAT *bdecompress, str compressions)
@@ -1311,6 +1311,8 @@ MOSAnalysis(BAT *b, BAT *btech, BAT *blayout, BAT *boutput, BAT *bratio, BAT *bc
 	unsigned antipatternSize = 0;
 	char buf[1024]={0}, *t;
 	str msg = MAL_SUCCEED;
+
+	struct PAT pat[CANDIDATES];
 
 	// create the list of all possible 2^6 compression patterns 
 	cases = makepatterns(pattern,CANDIDATES, compressions, b);
