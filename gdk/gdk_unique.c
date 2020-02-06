@@ -154,6 +154,7 @@ BATunique(BAT *b, BAT *s)
 		seen = NULL;
 	} else if (BATcheckhash(b) ||
 		   (!b->batTransient &&
+		    cnt == BATcount(b) &&
 		    BAThash(b) == GDK_SUCCEED) ||
 		   ((parent = VIEWtparent(b)) != 0 &&
 		    BATcheckhash(BBPdescriptor(parent)))) {
@@ -215,10 +216,7 @@ BATunique(BAT *b, BAT *s)
 			mask = (BUN) 1 << 16;
 			cmp = NULL; /* no compare needed, "hash" is perfect */
 		} else {
-			if (s)
-				mask = HASHmask(s->batCount);
-			else
-				mask = HASHmask(b->batCount);
+			mask = HASHmask(cnt);
 			if (mask < ((BUN) 1 << 16))
 				mask = (BUN) 1 << 16;
 		}
