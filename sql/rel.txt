@@ -137,9 +137,6 @@ e_cmp
 			cmp_joined = 17, 		/* special case already joined */
 			cmp_left = 18,			/* special case equi join, keep left order */
 			cmp_left_project = 19	/* last step of outer join */
-
-			cmp_all = 14,		cross product
-			cmp_project = 15, 	special case for projection joins
 		)
 
 e_func
