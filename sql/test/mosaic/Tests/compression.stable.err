@@ -26,12 +26,6 @@ stderr of test 'compression` in directory 'sql/test/mosaic` itself:
 # cmdline opt 	embedded_r = yes
 # cmdline opt 	gdk_debug = 536870922
 
-MAPI  = (monetdb) /var/tmp/mtest-27919/.s.monetdb.34449
-QUERY = alter table tmp3 alter column i set storage 'runlength,dict256';
-ERROR = !Currently only one non-trivial compression strategy is allowed.
-MAPI  = (monetdb) /var/tmp/mtest-27676/.s.monetdb.30479
-QUERY = alter table tmp3 alter column b set storage 'mosaic';
-ERROR = !Currently MonetDB does not support the mosaic storage strategy.
 
 
 

@@ -131,6 +131,16 @@ stdout of test 'mix` in directory 'sql/test/mosaic` itself:
 [ 9	]
 [ 9	]
 #alter table mix0 set read only;
+#alter table mix0 alter column i set storage 'mosaic';
+#select * from mosaic.layout('sys','mix0','i') ;
+% .%4,	.%4,	.%4,	.%4,	.%4,	.%4 # table_name
+% technique,	count,	inputsize,	outputsize,	properties,	bsn # name
+% clob,	bigint,	bigint,	bigint,	json,	bigint # type
+% 7,	2,	4,	3,	87,	1 # length
+[ "header",	90,	2880,	312,	"{\"blks\":[{\"dict256\":1},{\"frame\":1}],\"elms\":[{\"dict256\":50},{\"frame\":40}],\"ratio\":1.125}",	0	]
+[ "dict256",	2,	8,	NULL,	"{\"bits per key\" : 2}",	0	]
+[ "frame",	40,	160,	88,	"{\"min\" : 0,\"offset size in bits\" : 14}",	1	]
+[ "dict256",	50,	200,	28,	NULL,	2	]
 #drop table mix0;
 
 # 21:39:24 >  

@@ -22,7 +22,7 @@ select technique, factor, json.filter(layout, 'blks') as blocks, json.filter(lay
 
 set optimizer='mosaic_pipe';
 
-alter table tmp4 alter column i set storage 'dict';
+alter table tmp4 alter column i set storage 'runlength, linear';
 
 select technique, factor, json.filter(layout, 'blks') as blocks, json.filter(layout, 'elms') as elements from mosaic.analysis('sys', 'tmp4', 'i') order by technique, factor desc;
 
