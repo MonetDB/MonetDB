@@ -1,10 +1,7 @@
 ####technical depth####
 
-Make sure layout and analysis work on propper sql object identifiers ,e.g. schema, table column.
-Add layout summary in analysis.
-Fix/check/test MOSlayout.
-Add the compression on OID heap for string valued columns too.
 Figure out why mix compression don't seem to work that well.
+Add the compression on OID heap for string valued columns too.
 benchmark using TPC-H
 altering the storage doesn't seem to work.
 Add negative values to tests
