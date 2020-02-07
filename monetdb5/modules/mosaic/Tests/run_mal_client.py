@@ -11,8 +11,7 @@ def prepare_mal_script(generic_script_name, compression_type_id):
 def get_mal_script(fqn_calling_script_file):
     test_file = os.path.basename(fqn_calling_script_file)
     parts = test_file.split(".", 3)
-    dir_path = os.path.dirname(os.path.realpath(fqn_calling_script_file))
-    test_file = os.path.join(dir_path, parts[0] + ".mal")
+    test_file = os.path.join(os.environ['TSTSRCDIR'], parts[0] + ".mal")
     compression_type = parts[1]
     return test_file, compression_type
 
