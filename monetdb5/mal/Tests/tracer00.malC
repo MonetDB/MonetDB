@@ -75,5 +75,5 @@ logging.resetadapter();
 
 
 
-# Show log levels etc
-logging.showinfo();
+# Show the log level of each component
+logging.showcompinfo();
