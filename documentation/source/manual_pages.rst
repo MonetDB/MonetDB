@@ -8,3 +8,5 @@ Manual pages
    man_mclient
    man_msqldump
    man_mserver5
+   man_monetdbd
+   man_monetdb
