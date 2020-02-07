@@ -57,7 +57,7 @@ main(int argc, char **argv)
 	char *passwd = NULL;
 	char *host = NULL;
 	char *dbname = NULL;
-	DotMonetdb dotfile = {};
+	DotMonetdb dotfile = {0};
 	bool trace = false;
 	bool describe = false;
 	bool functions = false;

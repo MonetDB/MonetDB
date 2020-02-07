@@ -130,7 +130,7 @@ main(int argc, char **argv)
 	int done = 0;
 	int first = 1;
 	EventRecord *ev = (EventRecord *) malloc(sizeof(EventRecord));
-	DotMonetdb dotfile = {};
+	DotMonetdb dotfile = {0};
 
 	(void) first;
 	memset(ev, 0, sizeof(EventRecord));

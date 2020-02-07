@@ -3186,7 +3186,7 @@ main(int argc, char **argv)
 	char *command = NULL;
 	char *dbname = NULL;
 	char *output = NULL;	/* output format as string */
-	DotMonetdb dotfile = {};
+	DotMonetdb dotfile = {0};
 	FILE *fp = NULL;
 	bool trace = false;
 	bool dump = false;
