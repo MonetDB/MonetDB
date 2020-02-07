@@ -468,24 +468,25 @@ MOSdecompress_SIGNATURE(METHOD, TPE) {
 
 MOSlayout_SIGNATURE(METHOD, TPE)
 {
-	lng compressed_size = 0;
+	size_t _count = MOSgetCnt(task->blk);
+
+	size_t compressed_size = 0;
 	compressed_size += sizeof(MOSBlockHeaderTpe(METHOD, TPE));
-	BUN cnt = MOSgetCnt(task->blk);
-	compressed_size += BitVectorSize(cnt, GET_FINAL_BITS(task, METHOD));	
+	compressed_size += BitVectorSize(_count, GET_FINAL_BITS(task, METHOD));
 	compressed_size += GET_PADDING(task->blk, METHOD, TPE);
 
 	LAYOUT_INSERT(
-		bsn = current_bsn;
-		tech = STRINGIFY(METHOD);
-		count = cnt;
-		input = (lng) (cnt * sizeof(TPE));
-		output = (lng) compressed_size;
+		bsn		= current_bsn;
+		tech	= STRINGIFY(METHOD);
+		count	= (lng) _count;
+		input	= (lng) (_count * sizeof(TPE));
+		output	= (lng) compressed_size;
 		);
 
 	return MAL_SUCCEED;
 }
 
-#endif /*ndef TPE*/
+#endif /*def TPE*/
 
 
 #endif /*def COMPRESSION_DEFINITION*/
