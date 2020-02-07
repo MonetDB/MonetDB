@@ -114,9 +114,9 @@ TRACERreset_adapter(void *ret)
 
 
 str
-TRACERshow_info(void *ret)
+TRACERshow_comp_info(void *ret)
 {
     (void) ret;
-    GDKtracer_show_info();
+    GDKtracer_show_comp_info();
     return MAL_SUCCEED;
 }

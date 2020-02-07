@@ -25,7 +25,7 @@ mal_export str TRACERset_flush_level(void *ret, int *lvl_id);
 mal_export str TRACERreset_flush_level(void *ret);
 mal_export str TRACERset_adapter(void *ret, int *adapter_id);
 mal_export str TRACERreset_adapter(void *ret);
-mal_export str TRACERshow_info(void *ret);
+mal_export str TRACERshow_comp_info(void *ret);
 
 
 #endif /* _TRACER_H */

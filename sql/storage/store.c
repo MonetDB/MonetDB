@@ -4617,7 +4617,7 @@ static int
 reset_trans(sql_trans *tr, sql_trans *ptr)
 {
 	int res = reset_changeset(tr, &tr->schemas, &ptr->schemas, (sql_base *)tr->parent, (resetf) &reset_schema, (dupfunc) &schema_dup);
-	TRC_DEBUG(SQL_STORE, "Reset transaction: %d", tr->wtime);
+	TRC_DEBUG(SQL_STORE, "Reset transaction: %d\n", tr->wtime);
 	return res;
 }
 

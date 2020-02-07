@@ -44,10 +44,12 @@
 #define NEW_LINE '\n'
 #define MXW "20"
 
+#define BASIC_INIT_FAILED "Failed to initialize BASIC adapter"
+#define GDKTRACER_FAILED "Failed to write logs"
+
 #define AS_STR(x) #x
 #define STR(x) AS_STR(x)
 
-//#define __FILENAME__ (__builtin_strrchr(__FILE__, DIR_SEP) ? __builtin_strrchr(__FILE__, DIR_SEP) + 1 : __FILE__)
 #define __FILENAME__ __FILE__
 
 #define GENERATE_ENUM(ENUM) ENUM,
@@ -89,13 +91,13 @@ static const char *LEVEL_STR[] = {
 
 
 // LAYERS
-#define FOREACH_LAYER(LAYER)			\
+#define FOREACH_LAYER(LAYER)	\
 	LAYER( MDB_ALL )			\
 	LAYER( SQL_ALL )			\
 	LAYER( MAL_ALL )			\
 	LAYER( GDK_ALL )			\
-						\
-	LAYER( LAYERS_COUNT )			\
+								\
+	LAYER( LAYERS_COUNT )		\
 
 typedef enum {
 	FOREACH_LAYER(GENERATE_ENUM)
@@ -366,6 +368,6 @@ gdk_export gdk_return GDKtracer_log(LOG_LEVEL level, const char *fmt, ...)
 gdk_export gdk_return GDKtracer_flush_buffer(void);
 
 
-gdk_export gdk_return GDKtracer_show_info(void);
+gdk_export gdk_return GDKtracer_show_comp_info(void);
 
 #endif /* _GDK_TRACER_H_ */
