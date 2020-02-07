@@ -295,16 +295,18 @@ table. The file must be readable by the server. *$file* is the absolute
 path name of the file, *$table* is the name of the table, *$db* is the
 name of the database.
 
-mclient -d $db -s "COPY INTO $table FROM '$file' USING DELIMITERS
-',',E'\\n','\"'"
+::
+
+ mclient -d $db -s "COPY INTO $table FROM '$file' USING DELIMITERS ',',E'\\n','\"'"
 
 Efficiently import data from a CSV file into a table when the file is to
 be read by mclient (e.g. the server has no access to the file). *$file*
 is the (absolute or relative) path name of the file, *$table* is the
 name of the table, *$db* is the name of the database.
 
-mclient -d $db -s "COPY INTO $table FROM STDIN USING DELIMITERS
-',',E'\\n','\"'" - < $file
+::
+
+ mclient -d $db -s "COPY INTO $table FROM STDIN USING DELIMITERS ',',E'\\n','\"'" - < $file
 
 Note that in this latter case, if a count of records is supplied, it
 should be at least as large as the number of records actually present in
@@ -312,10 +314,9 @@ the CSV file. This, because otherwise the remainder of the file will be
 interpreted as SQL queries.
 
 Another, easier method to have the client read the file content is as
-follows:
+follows::
 
-mclient -d $db -s "COPY INTO $table FROM '$file' ON CLIENT USING
-DELIMITERS ',',E'\\n',\"'"
+ mclient -d $db -s "COPY INTO $table FROM '$file' ON CLIENT USING DELIMITERS ',',E'\\n',\"'"
 
 In this case the value of *$file* can be a path name relative to the
 directory in which *mclient* was started. If, in addition, the option
