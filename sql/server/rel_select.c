@@ -4541,7 +4541,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 	symbol *window_function = l->h->data.sym, *partition_by_clause = NULL, *order_by_clause = NULL, *frame_clause = NULL;
 	char *aname = NULL, *sname = NULL, *window_ident = NULL;
 	sql_subfunc *wf = NULL;
-	sql_exp *in = NULL, *pe = NULL, *oe = NULL, *call = NULL, *start = NULL, *eend = NULL, *fstart = NULL, *fend = NULL;
+	sql_exp *in = NULL, *pe = NULL, *oe = NULL, *call = NULL, *start = NULL, *eend = NULL, *fstart = NULL, *fend = NULL, *ie = NULL;
 	sql_rel *p;
 	list *gbe = NULL, *obe = NULL, *args = NULL, *types = NULL, *fargs = NULL;
 	sql_schema *s = sql->session->schema;
@@ -4792,6 +4792,11 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 		oe = exp_atom_bool(sql->sa, 0);
 	}
 
+	if (obe)
+		ie = exp_ref(sql->sa, (sql_exp*) obe->t->data);
+	else
+		ie = in;
+
 	/* Frame */
 	if (frame_clause) {
 		dnode *d = frame_clause->data.lval->h;
@@ -4799,7 +4804,6 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 			   *rend = wend->data.lval->h->data.sym;
 		int excl = d->next->next->next->data.i_val;
 		frame_type = d->next->next->data.i_val;
-		sql_exp *ie = obe ? exp_ref(sql->sa, (sql_exp*) obe->t->data) : in;
 
 		if (!supports_frames)
 			return sql_error(sql, 02, SQLSTATE(42000) "OVER: frame extend only possible with aggregation and first_value, last_value and nth_value functions");
@@ -4834,10 +4838,9 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 		if ((fend = calculate_window_bound(query, p, wend->token, rend, ie, frame_type, f | sql_window)) == NULL)
 			return NULL;
 		if (generate_window_bound_call(sql, &start, &eend, s, gbe ? pe : NULL, ie, fstart, fend, frame_type, excl,
-									  wstart->token, wend->token) == NULL)
+									   wstart->token, wend->token) == NULL)
 			return NULL;
 	} else if (supports_frames) { /* for analytic functions with no frame clause, we use the standard default values */
-		sql_exp *ie = obe ? exp_ref(sql->sa, (sql_exp*) obe->t->data) : in;
 		sql_subtype *it = sql_bind_localtype("int"), *lon = sql_bind_localtype("lng"), *bt;
 		unsigned char sclass;
 
