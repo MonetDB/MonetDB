@@ -22,7 +22,7 @@
 #include "blob.h"
 
 comp_type
-compare_str2type( char *compare_op)
+compare_str2type(const char *compare_op)
 {
 	comp_type type = cmp_filter;
 
@@ -243,7 +243,7 @@ exp_in_func(mvc *sql, sql_exp *le, sql_exp *vals, int anyequal, int is_tuple)
 }
 
 sql_exp *
-exp_compare_func(mvc *sql, sql_exp *le, sql_exp *re, sql_exp *oe, char *compareop, int quantifier)
+exp_compare_func(mvc *sql, sql_exp *le, sql_exp *re, sql_exp *oe, const char *compareop, int quantifier)
 {
 	sql_subfunc *cmp_func = NULL;
 	sql_exp *e;
@@ -789,7 +789,7 @@ exp_rel(mvc *sql, sql_rel *rel)
 }
 
 sql_exp *
-exp_exception(sql_allocator *sa, sql_exp *cond, char* error_message)
+exp_exception(sql_allocator *sa, sql_exp *cond, const char *error_message)
 {
 	sql_exp *e = exp_create(sa, e_psm);
 
@@ -2217,7 +2217,7 @@ exps_intern(list *exps)
 	return 0;
 }
 
-char *
+const char *
 compare_func( comp_type t, int anti )
 {
 	switch(t) {

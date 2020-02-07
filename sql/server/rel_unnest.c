@@ -314,7 +314,7 @@ rel_freevar(mvc *sql, sql_rel *rel)
 		exps = exps_freevar(sql, rel->exps);
 		lexps = rel_freevar(sql, rel->l);
 		if (rel->r) {
-			if (is_groupby(rel->op))
+			if (is_groupby(rel->op) || is_simple_project(rel->op))
 				rexps = exps_freevar(sql, rel->r);
 			else
 				rexps = rel_freevar(sql, rel->r);
@@ -2325,7 +2325,6 @@ rewrite_compare(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 	}
 	return e;
 }
-
 
 static sql_rel *
 rewrite_join2semi(mvc *sql, sql_rel *rel)
