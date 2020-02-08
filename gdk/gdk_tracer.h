@@ -368,6 +368,6 @@ gdk_export gdk_return GDKtracer_log(LOG_LEVEL level, const char *fmt, ...)
 gdk_export gdk_return GDKtracer_flush_buffer(void);
 
 
-gdk_export gdk_return GDKtracer_show_comp_info(void);
+gdk_export gdk_return GDKtracer_fill_comp_info(BAT *id, BAT *component, BAT *log_Level);
 
 #endif /* _GDK_TRACER_H_ */

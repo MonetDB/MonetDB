@@ -45,5 +45,14 @@ CREATE PROCEDURE logging.resetadapter()
 -- Returns in the form of a SQL result-set all the 
 -- components along with their ID the their current 
 -- logging level being set
-CREATE PROCEDURE logging.showcompinfo()
-       EXTERNAL NAME logging.showcompinfo;
+CREATE FUNCTION logging.compinfo()
+RETURNS TABLE(
+	"id" int,
+	"component" string,
+	"log_level" string
+)
+EXTERNAL NAME logging.compinfo;
+GRANT EXECUTE ON FUNCTION logging.compinfo TO public;
+
+CREATE view logging.compinfo AS SELECT * FROM logging.compinfo();
+GRANT SELECT ON logging.compinfo TO public;

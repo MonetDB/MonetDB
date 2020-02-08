@@ -114,9 +114,44 @@ TRACERreset_adapter(void *ret)
 
 
 str
-TRACERshow_comp_info(void *ret)
+TRACERcomp_info(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-    (void) ret;
-    GDKtracer_show_comp_info();
+    (void) cntxt;
+    (void) mb;
+
+    BAT *id, *component, *log_level;
+	bat *i = getArgReference_bat(stk, pci, 0);
+	bat *c = getArgReference_bat(stk, pci, 1);
+	bat *l = getArgReference_bat(stk, pci, 2);
+    str msg = MAL_SUCCEED;
+
+    id = COLnew(0, TYPE_int, MAL_MAXCLIENTS, TRANSIENT);
+	component = COLnew(0, TYPE_str, MAL_MAXCLIENTS, TRANSIENT);
+	log_level = COLnew(0, TYPE_str, MAL_MAXCLIENTS, TRANSIENT);
+
+    if ( id == NULL || component == NULL || log_level == NULL )
+    {
+        BBPreclaim(id);
+		BBPreclaim(component);
+		BBPreclaim(log_level);
+		throw(MAL, __FUNCTION__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+    }
+
+    // Fill the BATs
+    MT_lock_set(&mal_delayLock);
+        if(GDKtracer_fill_comp_info(id, component, log_level) == GDK_FAIL)
+            goto bailout;
+    MT_lock_unset(&mal_delayLock);
+
+    BBPkeepref(*i = id->batCacheid);
+	BBPkeepref(*c = component->batCacheid);
+	BBPkeepref(*l = log_level->batCacheid);
     return MAL_SUCCEED;
+
+    bailout:
+        MT_lock_unset(&mal_delayLock);
+        BBPunfix(id->batCacheid);
+        BBPunfix(component->batCacheid);
+        BBPunfix(log_level->batCacheid);
+        return msg ? msg : createException(MAL, __FUNCTION__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
