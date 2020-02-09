@@ -427,6 +427,10 @@ SELECT
 	(SELECT outt FROM evilfunction((SELECT t2.col1 FROM another_T t2))) 
 FROM another_T; --error, more than one row returned by a subquery used as an expression
 
+PREPARE SELECT
+	(SELECT ? FROM evilfunction((SELECT 1))) 
+FROM another_T;
+
 /* We shouldn't allow the following internal functions/procedures to be called from regular queries */
 --SELECT "identity"(col1) FROM another_T;
 --SELECT "rowid"(col1) FROM another_T;
