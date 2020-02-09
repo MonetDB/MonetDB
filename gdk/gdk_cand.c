@@ -393,11 +393,6 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 		ci->oids = (const oid *) s->theap.base;
 		ci->seq = ci->oids[0];
 		ci->noids = cnt;
-		if (ci->oids[ci->noids - 1] - ci->oids[0] == ci->noids - 1) {
-			/* actually dense */
-			ci->tpe = cand_dense;
-			ci->oids = NULL;
-		}
 	} else {
 		/* materialized dense: no exceptions */
 		ci->tpe = cand_dense;
@@ -405,47 +400,34 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 	switch (ci->tpe) {
 	case cand_materialized:
 		if (b != NULL) {
-			if (ci->oids[ci->noids - 1] < b->hseqbase) {
+			BUN p = binsearchcand(ci->oids, cnt - 1, b->hseqbase);
+			/* p == cnt means candidate list is completely
+			 * before b */
+			ci->offset = p;
+			ci->oids += p;
+			cnt -= p;
+			if (cnt > 0) {
+				cnt = binsearchcand(ci->oids, cnt  - 1,
+						    b->hseqbase + BATcount(b));
+				/* cnt == 0 means candidate list is
+				 * completely after b */
+			}
+			if (cnt == 0) {
+				/* no overlap */
 				*ci = (struct canditer) {
 					.tpe = cand_dense,
 					.s = s,
 				};
 				return 0;
 			}
-			if (ci->oids[0] < b->hseqbase) {
-				BUN lo = 0;
-				BUN hi = cnt - 1;
-				const oid o = b->hseqbase;
-				/* loop invariant:
-				 * ci->oids[lo] < o <= ci->oids[hi] */
-				while (hi - lo > 1) {
-					BUN mid = (lo + hi) / 2;
-					if (ci->oids[mid] >= o)
-						hi = mid;
-					else
-						lo = mid;
-				}
-				ci->offset = hi;
-				cnt -= hi;
-				ci->oids += hi;
-				ci->seq = ci->oids[0];
-			}
-			if (ci->oids[cnt - 1] >= b->hseqbase + BATcount(b)) {
-				BUN lo = 0;
-				BUN hi = cnt - 1;
-				const oid o = b->hseqbase + BATcount(b);
-				/* loop invariant:
-				 * ci->oids[lo] < o <= ci->oids[hi] */
-				while (hi - lo > 1) {
-					BUN mid = (lo + hi) / 2;
-					if (ci->oids[mid] >= o)
-						hi = mid;
-					else
-						lo = mid;
-				}
-				cnt = hi;
-			}
+			ci->seq = ci->oids[0];
 			ci->noids = cnt;
+			if (ci->oids[cnt - 1] - ci->seq == cnt - 1) {
+				/* actually dense */
+				ci->tpe = cand_dense;
+				ci->oids = NULL;
+				ci->noids = 0;
+			}
 		}
 		break;
 	case cand_except:

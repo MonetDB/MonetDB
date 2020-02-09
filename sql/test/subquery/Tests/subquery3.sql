@@ -409,6 +409,28 @@ SELECT col1 FROM another_T WHERE (col2, col3) IN (SELECT 1,2,3); -- error, too m
 
 SELECT col1 FROM another_T WHERE (col2, col3) IN (VALUES(1,2,3)); -- error, too many columns in the subquery
 
+CREATE FUNCTION evilfunction(input INT) RETURNS TABLE (outt INT) BEGIN RETURN TABLE(SELECT input); END;
+
+SELECT
+	(SELECT outt FROM evilfunction((SELECT col0))) 
+FROM another_T; --error, col0 doesn't exist
+
+SELECT
+	(SELECT outt FROM evilfunction((SELECT col1))) 
+FROM another_T; --error, more than one row returned by a subquery used as an expression
+
+SELECT
+	(SELECT outt FROM evilfunction((SELECT col1 FROM tbl_ProductSales))) 
+FROM another_T; --error, more than one row returned by a subquery used as an expression
+
+SELECT
+	(SELECT outt FROM evilfunction((SELECT t2.col1 FROM another_T t2))) 
+FROM another_T; --error, more than one row returned by a subquery used as an expression
+
+PREPARE SELECT
+	(SELECT ? FROM evilfunction((SELECT 1))) 
+FROM another_T;
+
 /* We shouldn't allow the following internal functions/procedures to be called from regular queries */
 --SELECT "identity"(col1) FROM another_T;
 --SELECT "rowid"(col1) FROM another_T;
@@ -417,6 +439,7 @@ SELECT col1 FROM another_T WHERE (col2, col3) IN (VALUES(1,2,3)); -- error, too 
 --CALL sys_update_schemas();
 --CALL sys_update_tables();
 
+DROP FUNCTION evilfunction(INT);
 DROP TABLE tbl_ProductSales;
 DROP TABLE another_T;
 DROP TABLE integers;
