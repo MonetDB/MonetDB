@@ -4149,7 +4149,8 @@ rel_push_aggr_down(int *changes, mvc *sql, sql_rel *rel)
 				sql_exp *e = n->data, *ne;
 
 				ne = exp_uses_exp( rel->exps, e);
-				assert(ne);
+				if (!ne)
+					continue;
 				ne = list_find_exp( u->exps, ne);
 				assert(ne);
 				ne = exp_column(sql->sa, exp_find_rel_name(ne), exp_name(ne), exp_subtype(ne), ne->card, has_nil(ne), is_intern(ne));
