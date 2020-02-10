@@ -2793,13 +2793,23 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 			" EXTERNAL NAME logging.setadapter;\n"
 			"CREATE PROCEDURE logging.resetadapter()\n"
 			" EXTERNAL NAME logging.resetadapter;\n"
-			"CREATE PROCEDURE logging.showinfo()\n"
-			" EXTERNAL NAME logging.showinfo;\n");
+			"CREATE FUNCTION logging.compinfo()\n"
+			"RETURNS TABLE(\n"
+			" \"id\" int,\n"
+			" \"component\" string,\n"
+			" \"log_level\" string\n"
+			")\n"
+			"EXTERNAL NAME logging.compinfo;\n"
+			"GRANT EXECUTE ON FUNCTION logging.compinfo TO public;\n"
+			"CREATE view logging.compinfo AS SELECT * FROM logging.compinfo();\n"
+			"GRANT SELECT ON logging.compinfo TO public;\n");
 	pos += snprintf(buf + pos, bufsize - pos,
 			"update sys.schemas set system = true where name = 'logging';\n"
 			"update sys.functions set system = true where name in"
-			" ('flush', 'setcomplevel', 'resetcomplevel', 'setlayerlevel', 'resetlayerlevel', 'setflushlevel', 'resetflushlevel', 'setadapter', 'resetadapter', 'showinfo')"
-			" and schema_id = (select id from sys.schemas where name = 'logging');\n");
+			" ('flush', 'setcomplevel', 'resetcomplevel', 'setlayerlevel', 'resetlayerlevel', 'setflushlevel', 'resetflushlevel', 'setadapter', 'resetadapter', 'compinfo')"
+			" and schema_id = (select id from sys.schemas where name = 'logging');\n"
+			"update sys._tables set system = true where schema_id = (select id from sys.schemas where name = 'logging')"
+			" and name = 'compinfo';\n");
 
 	pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);

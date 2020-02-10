@@ -5509,10 +5509,19 @@ CREATE PROCEDURE logging.setadapter(adapter_id INT)
  EXTERNAL NAME logging.setadapter;
 CREATE PROCEDURE logging.resetadapter()
  EXTERNAL NAME logging.resetadapter;
-CREATE PROCEDURE logging.showinfo()
- EXTERNAL NAME logging.showinfo;
+CREATE FUNCTION logging.compinfo()
+RETURNS TABLE(
+ "id" int,
+ "component" string,
+ "log_level" string
+)
+EXTERNAL NAME logging.compinfo;
+GRANT EXECUTE ON FUNCTION logging.compinfo TO public;
+CREATE view logging.compinfo AS SELECT * FROM logging.compinfo();
+GRANT SELECT ON logging.compinfo TO public;
 update sys.schemas set system = true where name = 'logging';
-update sys.functions set system = true where name in ('flush', 'setcomplevel', 'resetcomplevel', 'setlayerlevel', 'resetlayerlevel', 'setflushlevel', 'resetflushlevel', 'setadapter', 'resetadapter', 'showinfo') and schema_id = (select id from sys.schemas where name = 'logging');
+update sys.functions set system = true where name in ('flush', 'setcomplevel', 'resetcomplevel', 'setlayerlevel', 'resetlayerlevel', 'setflushlevel', 'resetflushlevel', 'setadapter', 'resetadapter', 'compinfo') and schema_id = (select id from sys.schemas where name = 'logging');
+update sys._tables set system = true where schema_id = (select id from sys.schemas where name = 'logging') and name = 'compinfo';
 commit;
 set schema "sys";
 
