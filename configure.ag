@@ -2148,22 +2148,6 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 	 AC_DEFINE([HAVE_STDATOMIC_H], 1, [Define to 1 if you have the <stdatomic.h> header file.])],
 	[AC_MSG_RESULT([no])])
 
-AC_MSG_CHECKING([if your compiler understands `__hidden'])
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
-	@%:@include <stdlib.h>
-
-	__hidden void foo (const char *a, ...);
-
-	void foo (const char *a, ...)
-		{ (void)a; }
-	]],
-	[[ foo ("%s", ""); ]]
-	)],
-	[AC_MSG_RESULT([yes])],
-	[AC_MSG_RESULT([no])
-	AC_DEFINE([__hidden], [/* empty */],
-		[Does your compiler support the `__hidden' specifier?])])
-
 AC_MSG_CHECKING([if your compiler understands `_Noreturn'])
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 	@%:@include <stdlib.h>

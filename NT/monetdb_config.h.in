@@ -767,9 +767,6 @@
    we just define __attribute__(a) to nothing. */
 #define __attribute__(a)
 
-/* Does your compiler support the `__hidden' specifier? */
-#define __hidden
-
 /* function to close a socket */
 /* #undef closesocket */
 
