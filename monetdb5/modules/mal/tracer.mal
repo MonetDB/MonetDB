@@ -43,6 +43,6 @@ address TRACERreset_adapter
 comment "Resets the adapter back to the default";
 
 pattern compinfo()(id:bat[:int], component:bat[:str], log_level:bat[:str])
-address TRACERcomp_info;
+address TRACERcomp_info
 comment "Returns in the form of a SQL result-set all the components along with their ID
 and the their current logging level being set";
