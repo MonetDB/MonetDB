@@ -9,6 +9,7 @@
 INCLUDES = .. ../../include ../../common \
 		   ../../../common/stream \
 		   ../../../common/utils \
+		   ../../../clients/mapilib \
 		   ../../../gdk \
 		   ../../../monetdb5/modules/atoms \
 		   ../../../monetdb5/modules/kernel \

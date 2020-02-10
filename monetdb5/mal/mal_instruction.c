@@ -762,6 +762,21 @@ makeVarSpace(MalBlkPtr mb)
 }
 
 /* create and initialize a variable record*/
+void
+setVariableType(MalBlkPtr mb, const int n, malType type)
+{
+	assert( n >= 0 && n <mb->vtop);
+	setVarType(mb, n, type);
+	setRowCnt(mb,n,0);
+	clrVarFixed(mb, n);
+	clrVarUsed(mb, n);
+	clrVarInit(mb, n);
+	clrVarDisabled(mb, n);
+	clrVarUDFtype(mb, n);
+	clrVarConstant(mb, n);
+	clrVarCleanup(mb, n);
+}
+
 int
 newVariable(MalBlkPtr mb, const char *name, size_t len, malType type)
 {
@@ -781,16 +796,8 @@ newVariable(MalBlkPtr mb, const char *name, size_t len, malType type)
 		(void) strcpy_len( getVarName(mb,n), name, len + 1);
 	}
 
-	setRowCnt(mb,n,0);
-	setVarType(mb, n, type);
-	clrVarFixed(mb, n);
-	clrVarUsed(mb, n);
-	clrVarInit(mb, n);
-	clrVarDisabled(mb, n);
-	clrVarUDFtype(mb, n);
-	clrVarConstant(mb, n);
-	clrVarCleanup(mb, n);
 	mb->vtop++;
+	setVariableType(mb, n, type);
 	return n;
 }
 
@@ -989,6 +996,8 @@ convertConstant(int type, ValPtr vr)
 		return MAL_SUCCEED;
 	if (type == TYPE_bat || isaBatType(type)) {
 		/* BAT variables can only be set to nil */
+		if( vr->vtype != TYPE_void)
+			throw(SYNTAX, "convertConstant", "BAT conversion error");
 		VALclear(vr);
 		vr->vtype = type;
 		vr->val.bval = bat_nil;
@@ -1064,10 +1073,15 @@ defConstant(MalBlkPtr mb, int type, ValPtr cst)
 	int k;
 	str msg;
 
-	if (isaBatType(type) && cst->vtype == TYPE_void) {
-		cst->vtype = TYPE_bat;
-		cst->val.bval = bat_nil;
-	} else if (cst->vtype != type && !isaBatType(type) && !isPolyType(type)) {
+	if (isaBatType(type)){
+		 if( cst->vtype == TYPE_void) {
+			cst->vtype = TYPE_bat;
+			cst->val.bval = bat_nil;
+		} else {
+			mb->errors = createMalException(mb, 0, TYPE, "BAT coercion error");
+			return -1;
+		}
+	} else if (cst->vtype != type && !isPolyType(type)) {
 		int otype = cst->vtype;
 		assert(type != TYPE_any);	/* help Coverity */
 		msg = convertConstant(getBatType(type), cst);

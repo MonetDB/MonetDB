@@ -46,16 +46,19 @@
 #include "mal_private.h"
 #include "mal_runtime.h"
 #include "mal_authorize.h"
+#include "mapi_prompt.h"
 
 int MAL_MAXCLIENTS = 0;
-ClientRec *mal_clients;
+ClientRec *mal_clients = NULL;
 
 void 
 mal_client_reset(void)
 {
 	MAL_MAXCLIENTS = 0;
-	if (mal_clients)
+	if (mal_clients) {
 		GDKfree(mal_clients);
+		mal_clients = NULL;
+	}
 }
 
 bool
@@ -68,7 +71,7 @@ MCinit(void)
 		maxclients = atoi(max_clients);
 	if (maxclients <= 0) {
 		maxclients = 64;
-		GDKsetenv("max_clients", "64") ;
+		GDKsetenv("max_clients", "64");
 	}
 
 	MAL_MAXCLIENTS = /* client connections */ maxclients;
@@ -172,11 +175,11 @@ MCgetClient(int id)
 static void
 MCresetProfiler(stream *fdout)
 {
-    if (fdout != maleventstream)
-        return;
-    MT_lock_set(&mal_profileLock);
-    maleventstream = 0;
-    MT_lock_unset(&mal_profileLock);
+	if (fdout != maleventstream)
+		return;
+	MT_lock_set(&mal_profileLock);
+	maleventstream = 0;
+	MT_lock_unset(&mal_profileLock);
 }
 
 void
@@ -185,14 +188,13 @@ MCexitClient(Client c)
 	finishSessionProfiler(c);
 	MCresetProfiler(c->fdout);
 	if (c->father == NULL) { /* normal client */
-		if (c->fdout && c->fdout != GDKstdout) {
+		if (c->fdout && c->fdout != GDKstdout)
 			close_stream(c->fdout);
-		}
 		assert(c->bak == NULL);
 		if (c->fdin) {
 			/* protection against closing stdin stream */
-                        if (c->fdin->s == GDKstdin)
-                                c->fdin->s = NULL;
+			if (c->fdin->s == GDKstdin)
+				c->fdin->s = NULL;
 			bstream_destroy(c->fdin);
 		}
 		c->fdout = NULL;
@@ -288,7 +290,6 @@ MCinitClient(oid user, bstream *fin, stream *fout)
 		return NULL;
 	return MCinitClientRecord(c, user, fin, fout);
 }
-
 
 /*
  * The administrator should be initialized to enable interpretation of

@@ -13,6 +13,7 @@ DH_VERBOSE=1
 
 override_dh_auto_configure:
 	dh_auto_configure -- \
+	--with-rundir=/run \
 	--enable-assert=no \
 	--enable-debug=yes \
 	--enable-developer=no \
@@ -26,7 +27,6 @@ override_dh_auto_configure:
 	--enable-odbc=yes \
 	--enable-optimize=yes \
 	--enable-profiler=no \
-	--enable-py2integration=yes \
 	--enable-py3integration=yes \
 	--enable-rintegration=yes \
 	--enable-sanitizer=no \
@@ -45,11 +45,9 @@ override_dh_auto_configure:
 	--with-openssl=yes \
 	--with-proj=no \
 	--with-pthread=yes \
-	--with-python2=yes \
 	--with-python3=yes \
 	--with-readline=yes \
 	--with-regex=PCRE \
-	--with-samtools=yes \
 	--with-snappy=no \
 	--with-unixodbc=yes \
 	--with-uuid=yes \

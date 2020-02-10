@@ -13,6 +13,7 @@ SUBDIRS = bat
 INCLUDES = ../include ../common \
 		   ../../common/stream \
 		   ../../common/utils \
+		   ../../clients/mapilib \
 		   ../../gdk
 
 lib_store = {

@@ -10,4 +10,5 @@ groupby_error
 alter_table_add_column
 view-mul-digits
 select_groupby
+HAVE_PYMONETDB?pk_fk_stress
 deallocate

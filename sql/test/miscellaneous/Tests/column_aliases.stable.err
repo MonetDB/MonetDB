@@ -37,6 +37,10 @@ MAPI  = (monetdb) /var/tmp/mtest-2631/.s.monetdb.38503
 QUERY = select t2.dd from t1 as t2(dd,ee,ff,gg); --error
 ERROR = !SELECT: The number of aliases is longer than the number of columns (4>3)
 CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-92354/.s.monetdb.36336
+QUERY = create table t2 as (select count(*) from t1); --error, labels not allowed in column names
+ERROR = !CREATE TABLE: generated labels not allowed in column names, use an alias instead
+CODE  = 42000
 
 # 11:21:19 >  
 # 11:21:19 >  "Done."

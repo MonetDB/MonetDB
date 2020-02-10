@@ -310,7 +310,7 @@ ALGselect2nil(bat *result, const bat *bid, const bat *sid, const void *low, cons
 		low = high; 
 	else if (*hi == 1 && ATOMcmp(b->ttype, high, nilptr) == 0)
 		high = low;
-	if (low == high && ATOMcmp(b->ttype, high, nilptr) == 0) /* ugh sql nil != nil */
+	if (ATOMcmp(b->ttype, low, high) == 0 && ATOMcmp(b->ttype, high, nilptr) == 0) /* ugh sql nil != nil */
 		nanti = !nanti;
 	bn = BATselect(b, s, low, high, *li, *hi, nanti);
 	BBPunfix(b->batCacheid);
@@ -1280,5 +1280,77 @@ ALGvariancep(dbl *res, const bat *bid)
 	if (is_dbl_nil(variance) && GDKerrbuf && GDKerrbuf[0])
 		throw(MAL, "aggr.variancep", SEMANTIC_TYPE_MISMATCH);
 	*res = variance;
+	return MAL_SUCCEED;
+}
+
+/*
+ * BAT covariance
+ */
+str
+ALGcovariance(dbl *res, const bat *bid1, const bat *bid2)
+{
+	BAT *b1, *b2;
+	dbl covariance;
+
+	if ((b1 = BATdescriptor(*bid1)) == NULL)
+		throw(MAL, "aggr.covariance", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	if ((b2 = BATdescriptor(*bid2)) == NULL) {
+		BBPunfix(b1->batCacheid);
+		throw(MAL, "aggr.covariance", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
+
+	covariance = BATcalccovariance_sample(b1, b2);
+	BBPunfix(b1->batCacheid);
+	BBPunfix(b2->batCacheid);
+	if (is_dbl_nil(covariance) && GDKerrbuf && GDKerrbuf[0])
+		throw(MAL, "aggr.covariance", SEMANTIC_TYPE_MISMATCH);
+	*res = covariance;
+	return MAL_SUCCEED;
+}
+
+str
+ALGcovariancep(dbl *res, const bat *bid1, const bat *bid2)
+{
+	BAT *b1, *b2;
+	dbl covariance;
+
+	if ((b1 = BATdescriptor(*bid1)) == NULL)
+		throw(MAL, "aggr.covariancep", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	if ((b2 = BATdescriptor(*bid2)) == NULL) {
+		BBPunfix(b1->batCacheid);
+		throw(MAL, "aggr.covariancep", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
+
+	covariance = BATcalccovariance_population(b1, b2);
+	BBPunfix(b1->batCacheid);
+	BBPunfix(b2->batCacheid);
+	if (is_dbl_nil(covariance) && GDKerrbuf && GDKerrbuf[0])
+		throw(MAL, "aggr.covariancep", SEMANTIC_TYPE_MISMATCH);
+	*res = covariance;
+	return MAL_SUCCEED;
+}
+
+/*
+ * BAT correlation
+ */
+str
+ALGcorr(dbl *res, const bat *bid1, const bat *bid2)
+{
+	BAT *b1, *b2;
+	dbl covariance;
+
+	if ((b1 = BATdescriptor(*bid1)) == NULL)
+		throw(MAL, "aggr.corr", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	if ((b2 = BATdescriptor(*bid2)) == NULL) {
+		BBPunfix(b1->batCacheid);
+		throw(MAL, "aggr.corr", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
+
+	covariance = BATcalccorrelation(b1, b2);
+	BBPunfix(b1->batCacheid);
+	BBPunfix(b2->batCacheid);
+	if (is_dbl_nil(covariance) && GDKerrbuf && GDKerrbuf[0])
+		throw(MAL, "aggr.corr", SEMANTIC_TYPE_MISMATCH);
+	*res = covariance;
 	return MAL_SUCCEED;
 }

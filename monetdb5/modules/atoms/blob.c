@@ -52,6 +52,12 @@ mal_export gdk_return BLOBwrite(const blob *a, stream *s, size_t cnt);
 mal_export str BLOBblob_blob(blob **d, blob **s);
 mal_export str BLOBblob_fromstr(blob **b, const char **d);
 
+static blob nullval = {
+	~(size_t) 0
+};
+
+#define is_blob_nil(x)	((x)->nitems == nullval.nitems)
+
 str
 BLOBprelude(void *ret)
 {
@@ -63,15 +69,11 @@ BLOBprelude(void *ret)
 var_t
 blobsize(size_t nitems)
 {
-	if (nitems == ~(size_t) 0)
+	if (nitems == nullval.nitems)
 		nitems = 0;
 	assert(offsetof(blob, data) + nitems <= VAR_MAX);
 	return (var_t) (offsetof(blob, data) + nitems);
 }
-
-static blob nullval = {
-	~(size_t) 0
-};
 
 static char hexit[] = "0123456789ABCDEF";
 
@@ -85,9 +87,9 @@ int
 BLOBcmp(const blob *l, const blob *r)
 {
 	int c;
-	if (r->nitems == ~(size_t)0)
-		return l->nitems != ~(size_t)0;
-	if (l->nitems == ~(size_t)0)
+	if (is_blob_nil(r))
+		return !is_blob_nil(l);
+	if (is_blob_nil(l))
 		return -1;
 	if (l->nitems < r->nitems) {
 		c = memcmp(l->data, r->data, l->nitems);
@@ -181,6 +183,10 @@ BLOBput(Heap *h, var_t *bun, const blob *val)
 str
 BLOBnitems(int *ret, blob **b)
 {
+	if (is_blob_nil(*b)) {
+		*ret = int_nil;
+		return MAL_SUCCEED;
+	}
 	assert((*b)->nitems <INT_MAX);
 	*ret = (int) (*b)->nitems;
 	return MAL_SUCCEED;
@@ -207,7 +213,7 @@ BLOBtostr(str *tostr, size_t *l, const blob *p, bool external)
 	size_t i;
 	size_t expectedlen;
 
-	if (p->nitems == ~(size_t) 0)
+	if (is_blob_nil(p))
 		expectedlen = external ? 4 : 2;
 	else
 		expectedlen = 24 + (p->nitems * 3);
@@ -218,7 +224,7 @@ BLOBtostr(str *tostr, size_t *l, const blob *p, bool external)
 			return -1;
 		*l = expectedlen;
 	}
-	if (p->nitems == ~(size_t) 0) {
+	if (is_blob_nil(p)) {
 		if (external) {
 			strcpy(*tostr, "nil");
 			return 3;
@@ -249,7 +255,7 @@ BLOBfromstr(const char *instr, size_t *l, blob **val, bool external)
 	blob *result;
 	const char *s = instr;
 
-	if (GDK_STRNIL(instr) || (external && strncmp(instr, "nil", 3) == 0)) {
+	if (strNil(instr) || (external && strncmp(instr, "nil", 3) == 0)) {
 		nbytes = blobsize(0);
 		if (*l < nbytes || *val == NULL) {
 			GDKfree(*val);
@@ -257,7 +263,7 @@ BLOBfromstr(const char *instr, size_t *l, blob **val, bool external)
 				return -1;
 		}
 		**val = nullval;
-		return GDK_STRNIL(instr) ? 1 : 3;
+		return strNil(instr) ? 1 : 3;
 	}
 
 	/* count hexits and check for hexits/space
@@ -341,7 +347,7 @@ BLOBblob_blob(blob **d, blob **s)
 	if (b == NULL)
 		throw(MAL,"blob", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	b->nitems = (*s)->nitems;
-	if (b->nitems != ~(size_t) 0 && b->nitems != 0)
+	if (!is_blob_nil(b) && b->nitems != 0)
 		memcpy(b->data, (*s)->data, b->nitems);
 	return MAL_SUCCEED;
 }

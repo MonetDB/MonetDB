@@ -1724,7 +1724,7 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ NULL	]
 #select ntile(null) over () from analytics;
 % sys. # table_name
-% %2 # name
+% %4 # name
 % tinyint # type
 % 1 # length
 [ NULL	]
@@ -1739,9 +1739,9 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ NULL	]
 #select first_value(null) over () from analytics;
 % . # table_name
-% %1 # name
-% char # type
-% 0 # length
+% %3 # name
+% tinyint # type
+% 1 # length
 [ NULL	]
 [ NULL	]
 [ NULL	]
@@ -1754,9 +1754,9 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ NULL	]
 #select last_value(null) over () from analytics;
 % . # table_name
-% %1 # name
-% char # type
-% 0 # length
+% %3 # name
+% tinyint # type
+% 1 # length
 [ NULL	]
 [ NULL	]
 [ NULL	]
@@ -1769,9 +1769,9 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ NULL	]
 #select nth_value(null, 1) over () from analytics;
 % . # table_name
-% %1 # name
-% char # type
-% 0 # length
+% %3 # name
+% tinyint # type
+% 1 # length
 [ NULL	]
 [ NULL	]
 [ NULL	]
@@ -1784,7 +1784,7 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ NULL	]
 #select nth_value(aa, null) over () from analytics;
 % sys. # table_name
-% %2 # name
+% %3 # name
 % int # type
 % 1 # length
 [ NULL	]
@@ -1799,7 +1799,7 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ NULL	]
 #select nth_value(1, null) over () from analytics;
 % . # table_name
-% %2 # name
+% %3 # name
 % tinyint # type
 % 1 # length
 [ NULL	]
@@ -1814,9 +1814,9 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ NULL	]
 #select nth_value(null, null) over () from analytics;
 % . # table_name
-% %2 # name
-% char # type
-% 0 # length
+% %4 # name
+% tinyint # type
+% 1 # length
 [ NULL	]
 [ NULL	]
 [ NULL	]
@@ -1829,9 +1829,9 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ NULL	]
 #select lag(null) over () from analytics;
 % . # table_name
-% %1 # name
-% char # type
-% 0 # length
+% %3 # name
+% tinyint # type
+% 1 # length
 [ NULL	]
 [ NULL	]
 [ NULL	]
@@ -1844,9 +1844,9 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ NULL	]
 #select lag(null, null) over () from analytics;
 % . # table_name
-% %1 # name
-% char # type
-% 0 # length
+% %4 # name
+% tinyint # type
+% 1 # length
 [ NULL	]
 [ NULL	]
 [ NULL	]
@@ -1859,9 +1859,9 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ NULL	]
 #select lag(null, null, null) over () from analytics;
 % . # table_name
-% %1 # name
-% char # type
-% 0 # length
+% %5 # name
+% tinyint # type
+% 1 # length
 [ NULL	]
 [ NULL	]
 [ NULL	]
@@ -1874,9 +1874,9 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ NULL	]
 #select lead(null) over () from analytics;
 % . # table_name
-% %1 # name
-% char # type
-% 0 # length
+% %3 # name
+% tinyint # type
+% 1 # length
 [ NULL	]
 [ NULL	]
 [ NULL	]
@@ -1889,9 +1889,9 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ NULL	]
 #select lead(null, null) over () from analytics;
 % . # table_name
-% %1 # name
-% char # type
-% 0 # length
+% %4 # name
+% tinyint # type
+% 1 # length
 [ NULL	]
 [ NULL	]
 [ NULL	]
@@ -1904,9 +1904,9 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ NULL	]
 #select lead(null, null, null) over () from analytics;
 % . # table_name
-% %1 # name
-% char # type
-% 0 # length
+% %5 # name
+% tinyint # type
+% 1 # length
 [ NULL	]
 [ NULL	]
 [ NULL	]
@@ -2761,8 +2761,8 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ 4	]
 [ NULL	]
 #select aa, bb, lead(aa, 2, 100) over (partition by bb), lead(aa, 1, '100') over (partition by bb) from analytics;
-% sys.analytics,	sys.analytics,	sys.%3,	sys.%6 # table_name
-% aa,	bb,	%3,	%6 # name
+% sys.analytics,	sys.analytics,	sys.%5,	sys.%10 # table_name
+% aa,	bb,	%5,	%10 # name
 % int,	int,	int,	int # type
 % 2,	1,	3,	3 # length
 [ 3,	1,	4,	2	]
@@ -2891,6 +2891,43 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 % 10,	24,	24 # length
 [ 2017-12-01,	20,	90	]
 [ 2017-12-01,	20,	50	]
+#CREATE TABLE "sys"."test2" (
+#	"name"       VARCHAR(100),
+#	"points"     INT,
+#	"start_time" TIMESTAMP
+#);
+#COPY 8 RECORDS INTO "sys"."test2" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+#"Ashish"	20	"2017-12-01 00:00:00.000000"
+#"Ashish"	40	"2017-12-01 01:00:00.000000"
+#"Ashish"	60	"2017-12-01 00:00:00.000000"
+#"Prashant"	10	"2017-12-01 00:00:00.000000"
+#"Prashant"	50	"2017-12-01 01:00:00.000000"
+#"Prashant"	90	"2017-12-01 00:00:00.000000"
+#"Prashant"	11	"2017-12-02 01:02:00.000000"
+#"Prashant"	15	"2017-12-02 02:02:00.000000"
+[ 8	]
+#SELECT distinct "name" ,
+#first_value("points") over (partition by cast("start_time" as date) order by cast("start_time" as date))
+#FROM test2
+#order by "name";
+% sys.test2,	sys.%2 # table_name
+% name,	%2 # name
+% varchar,	int # type
+% 8,	2 # length
+[ "Ashish",	20	]
+[ "Prashant",	20	]
+[ "Prashant",	11	]
+#SELECT distinct "name" ,
+#first_value("points") over (partition by cast("start_time" as date), "name" order by cast("start_time" as date))
+#FROM test2
+#order by "name";
+% sys.test2,	sys.%2 # table_name
+% name,	%2 # name
+% varchar,	int # type
+% 8,	2 # length
+[ "Ashish",	20	]
+[ "Prashant",	10	]
+[ "Prashant",	11	]
 #rollback;
 #drop table analytics;
 

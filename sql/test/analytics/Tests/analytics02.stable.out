@@ -27,8 +27,56 @@ stdout of test 'analytics02` in directory 'sql/test/analytics` itself:
 #create table analytics (aa int, bb int, cc bigint);
 #insert into analytics values (15, 3, 15), (3, 1, 3), (2, 1, 2), (5, 3, 5), (NULL, 2, NULL), (3, 2, 3), (4, 1, 4), (6, 3, 6), (8, 2, 8), (NULL, 4, NULL);
 [ 10	]
+#create table stressme (aa varchar(64), bb int);
+#insert into stressme values ('one', 1), ('another', 1), ('stress', 1), (NULL, 2), ('ok', 2), ('check', 3), ('me', 3), ('please', 3), (NULL, 4);
+[ 9	]
+#prepare select count(*) over (rows ? preceding) from analytics;
+#prepare select count(*) over (rows ? preceding) from analytics;
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 6,	3,	1,	0,	2,	2 # length
+[ "bigint",	64,	0,	"",	"%2",	"%2"	]
+[ "bigint",	64,	0,	NULL,	NULL,	NULL	]
+#exec 11(2);
+% sys. # table_name
+% %2 # name
+% bigint # type
+% 1 # length
+[ 1	]
+[ 2	]
+[ 3	]
+[ 3	]
+[ 3	]
+[ 3	]
+[ 3	]
+[ 3	]
+[ 3	]
+[ 3	]
+#prepare select max(aa) over (rows between 5 preceding and ? following) from stressme;
+#prepare select max(aa) over (rows between 5 preceding and ? following) from stressme;
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 7,	2,	1,	0,	2,	2 # length
+[ "varchar",	0,	0,	"",	"%1",	"%1"	]
+[ "bigint",	64,	0,	NULL,	NULL,	NULL	]
+#exec 13(2);
+% sys. # table_name
+% %1 # name
+% varchar # type
+% 6 # length
+[ "stress"	]
+[ "stress"	]
+[ "stress"	]
+[ "stress"	]
+[ "stress"	]
+[ "stress"	]
+[ "stress"	]
+[ "stress"	]
+[ "please"	]
 #select cast(sum(aa) over (rows between 5 preceding and 0 following) as bigint) from analytics;
-% sys.%1 # table_name
+% sys. # table_name
 % %1 # name
 % bigint # type
 % 2 # length
@@ -43,7 +91,7 @@ stdout of test 'analytics02` in directory 'sql/test/analytics` itself:
 [ 26	]
 [ 21	]
 #select cast(sum(aa) over (rows between 5 preceding and 2 following) as bigint) from analytics;
-% sys.%1 # table_name
+% sys. # table_name
 % %1 # name
 % bigint # type
 % 2 # length
@@ -58,8 +106,8 @@ stdout of test 'analytics02` in directory 'sql/test/analytics` itself:
 [ 26	]
 [ 21	]
 #select cast(sum(aa) over (partition by bb order by bb rows between 5 preceding and 0 following) as bigint) from analytics;
-% sys.%1 # table_name
-% %1 # name
+% sys.%3 # table_name
+% %3 # name
 % bigint # type
 % 2 # length
 [ 3	]
@@ -73,8 +121,8 @@ stdout of test 'analytics02` in directory 'sql/test/analytics` itself:
 [ 26	]
 [ NULL	]
 #select cast(sum(aa) over (partition by bb order by bb rows between 5 preceding and 2 following) as bigint) from analytics;
-% sys.%1 # table_name
-% %1 # name
+% sys.%3 # table_name
+% %3 # name
 % bigint # type
 % 2 # length
 [ 9	]
@@ -88,7 +136,7 @@ stdout of test 'analytics02` in directory 'sql/test/analytics` itself:
 [ 26	]
 [ NULL	]
 #select cast(prod(aa) over (rows between 5 preceding and 0 following) as bigint) from analytics;
-% sys.%1 # table_name
+% sys. # table_name
 % %1 # name
 % bigint # type
 % 4 # length
@@ -103,7 +151,7 @@ stdout of test 'analytics02` in directory 'sql/test/analytics` itself:
 [ 2880	]
 [ 576	]
 #select cast(prod(aa) over (rows between 5 preceding and 2 following) as bigint) from analytics;
-% sys.%1 # table_name
+% sys. # table_name
 % %1 # name
 % bigint # type
 % 5 # length
@@ -118,8 +166,8 @@ stdout of test 'analytics02` in directory 'sql/test/analytics` itself:
 [ 2880	]
 [ 576	]
 #select cast(prod(aa) over (partition by bb order by bb rows between 5 preceding and 0 following) as bigint) from analytics;
-% sys.%1 # table_name
-% %1 # name
+% sys.%3 # table_name
+% %3 # name
 % bigint # type
 % 3 # length
 [ 3	]
@@ -133,8 +181,8 @@ stdout of test 'analytics02` in directory 'sql/test/analytics` itself:
 [ 450	]
 [ NULL	]
 #select cast(prod(aa) over (partition by bb order by bb rows between 5 preceding and 2 following) as bigint) from analytics;
-% sys.%1 # table_name
-% %1 # name
+% sys.%3 # table_name
+% %3 # name
 % bigint # type
 % 3 # length
 [ 24	]
@@ -148,7 +196,7 @@ stdout of test 'analytics02` in directory 'sql/test/analytics` itself:
 [ 450	]
 [ NULL	]
 #select avg(aa) over (rows between 5 preceding and 0 following) from analytics;
-% sys.%1 # table_name
+% sys. # table_name
 % %1 # name
 % double # type
 % 24 # length
@@ -163,7 +211,7 @@ stdout of test 'analytics02` in directory 'sql/test/analytics` itself:
 [ 5.2	]
 [ 5.25	]
 #select avg(aa) over (rows between 5 preceding and 2 following) from analytics;
-% sys.%1 # table_name
+% sys. # table_name
 % %1 # name
 % double # type
 % 24 # length
@@ -208,7 +256,7 @@ stdout of test 'analytics02` in directory 'sql/test/analytics` itself:
 [ 8.666666667	]
 [ NULL	]
 #select min(aa) over (rows between 5 preceding and 0 following) from analytics;
-% sys.%1 # table_name
+% sys. # table_name
 % %1 # name
 % int # type
 % 2 # length
@@ -223,7 +271,7 @@ stdout of test 'analytics02` in directory 'sql/test/analytics` itself:
 [ 3	]
 [ 3	]
 #select min(aa) over (rows between 5 preceding and 2 following) from analytics;
-% sys.%1 # table_name
+% sys. # table_name
 % %1 # name
 % int # type
 % 1 # length
@@ -268,7 +316,7 @@ stdout of test 'analytics02` in directory 'sql/test/analytics` itself:
 [ 5	]
 [ NULL	]
 #select max(aa) over (rows between 5 preceding and 0 following) from analytics;
-% sys.%1 # table_name
+% sys. # table_name
 % %1 # name
 % int # type
 % 2 # length
@@ -283,7 +331,7 @@ stdout of test 'analytics02` in directory 'sql/test/analytics` itself:
 [ 8	]
 [ 8	]
 #select max(aa) over (rows between 5 preceding and 2 following) from analytics;
-% sys.%1 # table_name
+% sys. # table_name
 % %1 # name
 % int # type
 % 2 # length
@@ -328,7 +376,7 @@ stdout of test 'analytics02` in directory 'sql/test/analytics` itself:
 [ 15	]
 [ NULL	]
 #select min(bb) over (rows between 5 preceding and 0 following) from analytics;
-% sys.%1 # table_name
+% sys. # table_name
 % %1 # name
 % int # type
 % 1 # length
@@ -343,7 +391,7 @@ stdout of test 'analytics02` in directory 'sql/test/analytics` itself:
 [ 1	]
 [ 1	]
 #select min(bb) over (rows between 5 preceding and 2 following) from analytics;
-% sys.%1 # table_name
+% sys. # table_name
 % %1 # name
 % int # type
 % 1 # length
@@ -388,7 +436,7 @@ stdout of test 'analytics02` in directory 'sql/test/analytics` itself:
 [ 2	]
 [ 3	]
 #select max(bb) over (rows between 5 preceding and 0 following) from analytics;
-% sys.%1 # table_name
+% sys. # table_name
 % %1 # name
 % int # type
 % 1 # length
@@ -403,7 +451,7 @@ stdout of test 'analytics02` in directory 'sql/test/analytics` itself:
 [ 3	]
 [ 4	]
 #select max(bb) over (rows between 5 preceding and 2 following) from analytics;
-% sys.%1 # table_name
+% sys. # table_name
 % %1 # name
 % int # type
 % 1 # length
@@ -448,7 +496,7 @@ stdout of test 'analytics02` in directory 'sql/test/analytics` itself:
 [ 2	]
 [ 3	]
 #select count(*) over (rows between 5 preceding and 0 following) from analytics;
-% sys.%2 # table_name
+% sys. # table_name
 % %2 # name
 % bigint # type
 % 1 # length
@@ -463,7 +511,7 @@ stdout of test 'analytics02` in directory 'sql/test/analytics` itself:
 [ 6	]
 [ 6	]
 #select count(*) over (rows between 5 preceding and 2 following) from analytics;
-% sys.%2 # table_name
+% sys. # table_name
 % %2 # name
 % bigint # type
 % 1 # length
@@ -508,7 +556,7 @@ stdout of test 'analytics02` in directory 'sql/test/analytics` itself:
 [ 3	]
 [ 1	]
 #select count(aa) over (rows between 5 preceding and 0 following) from analytics;
-% sys.%1 # table_name
+% sys. # table_name
 % %1 # name
 % bigint # type
 % 1 # length
@@ -523,7 +571,7 @@ stdout of test 'analytics02` in directory 'sql/test/analytics` itself:
 [ 5	]
 [ 4	]
 #select count(aa) over (rows between 5 preceding and 2 following) from analytics;
-% sys.%1 # table_name
+% sys. # table_name
 % %1 # name
 % bigint # type
 % 1 # length
@@ -568,7 +616,7 @@ stdout of test 'analytics02` in directory 'sql/test/analytics` itself:
 [ 3	]
 [ 0	]
 #select count(bb) over (rows between 5 preceding and 0 following) from analytics;
-% sys.%1 # table_name
+% sys. # table_name
 % %1 # name
 % bigint # type
 % 1 # length
@@ -583,7 +631,7 @@ stdout of test 'analytics02` in directory 'sql/test/analytics` itself:
 [ 6	]
 [ 6	]
 #select count(bb) over (rows between 5 preceding and 2 following) from analytics;
-% sys.%1 # table_name
+% sys. # table_name
 % %1 # name
 % bigint # type
 % 1 # length
@@ -628,7 +676,7 @@ stdout of test 'analytics02` in directory 'sql/test/analytics` itself:
 [ 1	]
 [ 1	]
 #select count(*) over (rows between unbounded preceding and unbounded following) from analytics;
-% sys.%2 # table_name
+% sys. # table_name
 % %2 # name
 % bigint # type
 % 2 # length
@@ -658,7 +706,7 @@ stdout of test 'analytics02` in directory 'sql/test/analytics` itself:
 [ 3	]
 [ 1	]
 #select count(aa) over (rows between unbounded preceding and unbounded following) from analytics;
-% sys.%1 # table_name
+% sys. # table_name
 % %1 # name
 % bigint # type
 % 1 # length
@@ -688,7 +736,7 @@ stdout of test 'analytics02` in directory 'sql/test/analytics` itself:
 [ 3	]
 [ 0	]
 #select count(bb) over (rows between unbounded preceding and unbounded following) from analytics;
-% sys.%1 # table_name
+% sys. # table_name
 % %1 # name
 % bigint # type
 % 2 # length
@@ -718,25 +766,25 @@ stdout of test 'analytics02` in directory 'sql/test/analytics` itself:
 [ 1	]
 [ 1	]
 #select count(*) over (rows unbounded preceding);
-% .%2 # table_name
+% . # table_name
 % %2 # name
 % bigint # type
 % 1 # length
 [ 1	]
 #select count(*) over (rows 200 preceding);
-% .%2 # table_name
+% . # table_name
 % %2 # name
 % bigint # type
 % 1 # length
 [ 1	]
 #select count(*) over (rows between 5 preceding and 0 following);
-% .%2 # table_name
+% . # table_name
 % %2 # name
 % bigint # type
 % 1 # length
 [ 1	]
 #select min(aa) over (rows unbounded preceding) from analytics;
-% sys.%1 # table_name
+% sys. # table_name
 % %1 # name
 % int # type
 % 2 # length
@@ -766,7 +814,7 @@ stdout of test 'analytics02` in directory 'sql/test/analytics` itself:
 [ 5	]
 [ NULL	]
 #select max(aa) over (rows unbounded preceding) from analytics;
-% sys.%1 # table_name
+% sys. # table_name
 % %1 # name
 % int # type
 % 2 # length
@@ -796,7 +844,7 @@ stdout of test 'analytics02` in directory 'sql/test/analytics` itself:
 [ 15	]
 [ NULL	]
 #select cast(sum(aa) over (rows unbounded preceding) as bigint) from analytics;
-% sys.%1 # table_name
+% sys. # table_name
 % %1 # name
 % bigint # type
 % 2 # length
@@ -811,8 +859,8 @@ stdout of test 'analytics02` in directory 'sql/test/analytics` itself:
 [ 46	]
 [ 46	]
 #select cast(sum(aa) over (partition by bb order by bb rows unbounded preceding) as bigint) from analytics;
-% sys.%1 # table_name
-% %1 # name
+% sys.%3 # table_name
+% %3 # name
 % bigint # type
 % 2 # length
 [ 3	]
@@ -826,7 +874,7 @@ stdout of test 'analytics02` in directory 'sql/test/analytics` itself:
 [ 26	]
 [ NULL	]
 #select cast(prod(aa) over (rows unbounded preceding) as bigint) from analytics;
-% sys.%1 # table_name
+% sys. # table_name
 % %1 # name
 % bigint # type
 % 6 # length
@@ -841,8 +889,8 @@ stdout of test 'analytics02` in directory 'sql/test/analytics` itself:
 [ 259200	]
 [ 259200	]
 #select cast(prod(aa) over (partition by bb order by bb rows unbounded preceding) as bigint) from analytics;
-% sys.%1 # table_name
-% %1 # name
+% sys.%3 # table_name
+% %3 # name
 % bigint # type
 % 3 # length
 [ 3	]
@@ -856,7 +904,7 @@ stdout of test 'analytics02` in directory 'sql/test/analytics` itself:
 [ 450	]
 [ NULL	]
 #select avg(aa) over (rows unbounded preceding) from analytics;
-% sys.%1 # table_name
+% sys. # table_name
 % %1 # name
 % double # type
 % 24 # length
@@ -886,7 +934,7 @@ stdout of test 'analytics02` in directory 'sql/test/analytics` itself:
 [ 8.666666667	]
 [ NULL	]
 #select count(*) over (rows unbounded preceding) from analytics;
-% sys.%2 # table_name
+% sys. # table_name
 % %2 # name
 % bigint # type
 % 2 # length
@@ -916,7 +964,7 @@ stdout of test 'analytics02` in directory 'sql/test/analytics` itself:
 [ 3	]
 [ 1	]
 #select count(aa) over (rows unbounded preceding) from analytics;
-% sys.%1 # table_name
+% sys. # table_name
 % %1 # name
 % bigint # type
 % 1 # length
@@ -946,7 +994,7 @@ stdout of test 'analytics02` in directory 'sql/test/analytics` itself:
 [ 3	]
 [ 0	]
 #select min(aa) over (rows 2 preceding) from analytics;
-% sys.%1 # table_name
+% sys. # table_name
 % %1 # name
 % int # type
 % 2 # length
@@ -976,7 +1024,7 @@ stdout of test 'analytics02` in directory 'sql/test/analytics` itself:
 [ 5	]
 [ NULL	]
 #select max(aa) over (rows 2 preceding) from analytics;
-% sys.%1 # table_name
+% sys. # table_name
 % %1 # name
 % int # type
 % 2 # length
@@ -1006,7 +1054,7 @@ stdout of test 'analytics02` in directory 'sql/test/analytics` itself:
 [ 15	]
 [ NULL	]
 #select cast(sum(aa) over (rows 2 preceding) as bigint) from analytics;
-% sys.%1 # table_name
+% sys. # table_name
 % %1 # name
 % bigint # type
 % 2 # length
@@ -1021,8 +1069,8 @@ stdout of test 'analytics02` in directory 'sql/test/analytics` itself:
 [ 18	]
 [ 14	]
 #select cast(sum(aa) over (partition by bb order by bb rows 2 preceding) as bigint) from analytics;
-% sys.%1 # table_name
-% %1 # name
+% sys.%3 # table_name
+% %3 # name
 % bigint # type
 % 2 # length
 [ 3	]
@@ -1036,7 +1084,7 @@ stdout of test 'analytics02` in directory 'sql/test/analytics` itself:
 [ 26	]
 [ NULL	]
 #select cast(prod(aa) over (rows 2 preceding) as bigint) from analytics;
-% sys.%1 # table_name
+% sys. # table_name
 % %1 # name
 % bigint # type
 % 3 # length
@@ -1051,8 +1099,8 @@ stdout of test 'analytics02` in directory 'sql/test/analytics` itself:
 [ 192	]
 [ 48	]
 #select cast(prod(aa) over (partition by bb order by bb rows 2 preceding) as bigint) from analytics;
-% sys.%1 # table_name
-% %1 # name
+% sys.%3 # table_name
+% %3 # name
 % bigint # type
 % 3 # length
 [ 3	]
@@ -1066,7 +1114,7 @@ stdout of test 'analytics02` in directory 'sql/test/analytics` itself:
 [ 450	]
 [ NULL	]
 #select avg(aa) over (rows 2 preceding) from analytics;
-% sys.%1 # table_name
+% sys. # table_name
 % %1 # name
 % double # type
 % 24 # length
@@ -1096,7 +1144,7 @@ stdout of test 'analytics02` in directory 'sql/test/analytics` itself:
 [ 8.666666667	]
 [ NULL	]
 #select count(*) over (rows 2 preceding) from analytics;
-% sys.%2 # table_name
+% sys. # table_name
 % %2 # name
 % bigint # type
 % 1 # length
@@ -1126,7 +1174,7 @@ stdout of test 'analytics02` in directory 'sql/test/analytics` itself:
 [ 3	]
 [ 1	]
 #select count(aa) over (rows 2 preceding) from analytics;
-% sys.%1 # table_name
+% sys. # table_name
 % %1 # name
 % bigint # type
 % 1 # length
@@ -1155,11 +1203,8 @@ stdout of test 'analytics02` in directory 'sql/test/analytics` itself:
 [ 2	]
 [ 3	]
 [ 0	]
-#create table stressme (aa varchar(64), bb int);
-#insert into stressme values ('one', 1), ('another', 1), ('stress', 1), (NULL, 2), ('ok', 2), ('check', 3), ('me', 3), ('please', 3), (NULL, 4);
-[ 9	]
 #select avg(bb) over (rows between 5 preceding and 0 following) from stressme;
-% sys.%1 # table_name
+% sys. # table_name
 % %1 # name
 % double # type
 % 24 # length
@@ -1173,7 +1218,7 @@ stdout of test 'analytics02` in directory 'sql/test/analytics` itself:
 [ 2.333333333	]
 [ 2.833333333	]
 #select avg(bb) over (rows between 5 preceding and 2 following) from stressme;
-% sys.%1 # table_name
+% sys. # table_name
 % %1 # name
 % double # type
 % 24 # length
@@ -1215,7 +1260,7 @@ stdout of test 'analytics02` in directory 'sql/test/analytics` itself:
 [ 3	]
 [ 4	]
 #select min(aa) over (rows between 5 preceding and 0 following) from stressme;
-% sys.%1 # table_name
+% sys. # table_name
 % %1 # name
 % varchar # type
 % 7 # length
@@ -1229,7 +1274,7 @@ stdout of test 'analytics02` in directory 'sql/test/analytics` itself:
 [ "check"	]
 [ "check"	]
 #select min(aa) over (rows between 5 preceding and 2 following) from stressme;
-% sys.%1 # table_name
+% sys. # table_name
 % %1 # name
 % varchar # type
 % 7 # length
@@ -1271,7 +1316,7 @@ stdout of test 'analytics02` in directory 'sql/test/analytics` itself:
 [ "check"	]
 [ NULL	]
 #select max(aa) over (rows between 5 preceding and 0 following) from stressme;
-% sys.%1 # table_name
+% sys. # table_name
 % %1 # name
 % varchar # type
 % 6 # length
@@ -1285,7 +1330,7 @@ stdout of test 'analytics02` in directory 'sql/test/analytics` itself:
 [ "stress"	]
 [ "please"	]
 #select max(aa) over (rows between 5 preceding and 2 following) from stressme;
-% sys.%1 # table_name
+% sys. # table_name
 % %1 # name
 % varchar # type
 % 6 # length
@@ -1327,7 +1372,7 @@ stdout of test 'analytics02` in directory 'sql/test/analytics` itself:
 [ "please"	]
 [ NULL	]
 #select count(aa) over (rows between 5 preceding and 0 following) from stressme;
-% sys.%1 # table_name
+% sys. # table_name
 % %1 # name
 % bigint # type
 % 1 # length
@@ -1341,7 +1386,7 @@ stdout of test 'analytics02` in directory 'sql/test/analytics` itself:
 [ 5	]
 [ 4	]
 #select count(aa) over (rows between 5 preceding and 2 following) from stressme;
-% sys.%1 # table_name
+% sys. # table_name
 % %1 # name
 % bigint # type
 % 1 # length
@@ -1383,7 +1428,7 @@ stdout of test 'analytics02` in directory 'sql/test/analytics` itself:
 [ 3	]
 [ 0	]
 #select count(aa) over (rows between unbounded preceding and unbounded following) from stressme;
-% sys.%1 # table_name
+% sys. # table_name
 % %1 # name
 % bigint # type
 % 1 # length
@@ -1414,7 +1459,7 @@ stdout of test 'analytics02` in directory 'sql/test/analytics` itself:
 #insert into debugme values (15, 3), (3, 1), (2, 1), (5, 3), (NULL, 2), (3, 2), (4, 1), (6, 3), (8, 2), (NULL, 4);
 [ 10	]
 #select sum(aa) over (rows between 2 preceding and 0 following) from debugme;
-% sys.%1 # table_name
+% sys. # table_name
 % %1 # name
 % real # type
 % 15 # length
@@ -1429,7 +1474,7 @@ stdout of test 'analytics02` in directory 'sql/test/analytics` itself:
 [ 18	]
 [ 14	]
 #select sum(aa) over (rows between 2 preceding and 2 following) from debugme;
-% sys.%1 # table_name
+% sys. # table_name
 % %1 # name
 % real # type
 % 15 # length
@@ -1474,7 +1519,7 @@ stdout of test 'analytics02` in directory 'sql/test/analytics` itself:
 [ 26	]
 [ NULL	]
 #select prod(aa) over (rows between 2 preceding and 0 following) from debugme;
-% sys.%1 # table_name
+% sys. # table_name
 % %1 # name
 % real # type
 % 15 # length
@@ -1489,7 +1534,7 @@ stdout of test 'analytics02` in directory 'sql/test/analytics` itself:
 [ 192	]
 [ 48	]
 #select prod(aa) over (rows between 2 preceding and 2 following) from debugme;
-% sys.%1 # table_name
+% sys. # table_name
 % %1 # name
 % real # type
 % 15 # length
@@ -1534,7 +1579,7 @@ stdout of test 'analytics02` in directory 'sql/test/analytics` itself:
 [ 450	]
 [ NULL	]
 #select avg(aa) over (rows between 2 preceding and 0 following) from debugme;
-% sys.%1 # table_name
+% sys. # table_name
 % %1 # name
 % double # type
 % 24 # length
@@ -1549,7 +1594,7 @@ stdout of test 'analytics02` in directory 'sql/test/analytics` itself:
 [ 6	]
 [ 7	]
 #select avg(aa) over (rows between 2 preceding and 2 following) from debugme;
-% sys.%1 # table_name
+% sys. # table_name
 % %1 # name
 % double # type
 % 24 # length
@@ -1597,7 +1642,7 @@ stdout of test 'analytics02` in directory 'sql/test/analytics` itself:
 #insert into overflowme values (2147483644), (2147483645), (2147483646);
 [ 3	]
 #select floor(avg(a) over (rows between 2 preceding and 0 following)) from overflowme;
-% sys.%1 # table_name
+% sys. # table_name
 % %1 # name
 % double # type
 % 24 # length
@@ -1605,7 +1650,7 @@ stdout of test 'analytics02` in directory 'sql/test/analytics` itself:
 [ 2147483644	]
 [ 2147483645	]
 #select floor(avg(a) over (rows between 2 preceding and 2 following)) from overflowme;
-% sys.%1 # table_name
+% sys. # table_name
 % %1 # name
 % double # type
 % 24 # length

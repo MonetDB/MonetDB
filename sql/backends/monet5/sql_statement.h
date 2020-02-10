@@ -26,7 +26,6 @@ typedef union stmtdata {
 	struct sql_table *tval;
 
 	sql_subtype typeval;
-	struct sql_subaggr *aggrval;
 	struct sql_subfunc *funcval;
 	sql_rel *rel;
 } stmtdata;
@@ -66,6 +65,7 @@ typedef enum stmt_type {
 	st_join,
 	st_join2,
 	st_joinN,
+	st_semijoin,
 
 	st_export,
 	st_append,
@@ -185,6 +185,7 @@ extern stmt *stmt_join(backend *be, stmt *op1, stmt *op2, int anti, comp_type cm
 extern stmt *stmt_join2(backend *be, stmt *l, stmt *ra, stmt *rb, int cmp, int anti, int swapped);
 /* generic join operator, with a left and right statement list */
 extern stmt *stmt_genjoin(backend *be, stmt *l, stmt *r, sql_subfunc *op, int anti, int swapped);
+extern stmt *stmt_semijoin(backend *be, stmt *op1, stmt *op2);
 
 extern stmt *stmt_project(backend *be, stmt *op1, stmt *op2);
 extern stmt *stmt_project_delta(backend *be, stmt *col, stmt *upd, stmt *ins);
@@ -220,7 +221,7 @@ extern stmt *stmt_unop(backend *be, stmt *op1, sql_subfunc *op);
 extern stmt *stmt_binop(backend *be, stmt *op1, stmt *op2, sql_subfunc *op);
 extern stmt *stmt_Nop(backend *be, stmt *ops, sql_subfunc *op);
 extern stmt *stmt_func(backend *be, stmt *ops, const char *name, sql_rel *imp, int f_union);
-extern stmt *stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subaggr *op, int reduce, int no_nil, int nil_if_empty);
+extern stmt *stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int reduce, int no_nil, int nil_if_empty);
 
 extern stmt *stmt_alias(backend *be, stmt *op1, const char *tname, const char *name);
 

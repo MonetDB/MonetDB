@@ -68,7 +68,7 @@ bunins_failed:															\
 	throw(MAL, "batcolor." #NAME, OPERATION_FAILED " During bulk operation"); \
 }
 
-BATwalk(Color,CLRcolor,char *,GDK_STRNIL,color,getAtomIndex("color",5,TYPE_int),bunfastappTYPE(color, bn, &y))
+BATwalk(Color,CLRcolor,char *,strNil,color,getAtomIndex("color",5,TYPE_int),bunfastappTYPE(color, bn, &y))
 BATwalk(Str,CLRstr,color,is_color_nil,str,TYPE_str,bunfastappVAR(bn, &y))
 
 BATwalk(Red,CLRred,color,is_color_nil,int,TYPE_int,bunfastappTYPE(int, bn, &y))

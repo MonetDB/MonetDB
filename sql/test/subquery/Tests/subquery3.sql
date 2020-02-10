@@ -340,6 +340,97 @@ SELECT
     (SELECT SUM(SUM(i2.i)) FROM integers i2 GROUP BY i2.i)
 FROM integers i1; --error, aggregation functions cannot be nested
 
+SELECT (1) IN (1);
+	-- True
+
+SELECT (1) IN (SELECT 1);
+	-- True
+
+SELECT col1 FROM another_T WHERE 1 IN (SELECT 1);
+	-- 1
+	-- 11
+	-- 111
+	-- 1111
+
+SELECT (col1, col2) IN (VALUES (1,2)) FROM another_T; --TODO
+	-- True
+	-- False
+	-- False
+	-- False
+
+SELECT (col1, col2) IN (SELECT 1,2) FROM another_T; --TODO
+	-- True
+	-- False
+	-- False
+	-- False
+
+SELECT (col1, col2) IN (SELECT 1,3) FROM another_T; --TODO
+	-- False
+	-- False
+	-- False
+	-- False
+
+SELECT col1 FROM another_T WHERE (col2, col3) IN (SELECT col4, col5); --empty
+
+SELECT col1 FROM another_T WHERE (1, 2) IN (SELECT col4, col5); --empty
+
+SELECT col1 FROM another_T WHERE (col2) IN (VALUES(1)); --empty
+
+SELECT col1 FROM another_T WHERE col2 IN (VALUES(1)); --empty
+
+SELECT (1,2) IN (SELECT 1,2); --TODO
+-- True
+
+SELECT col1 FROM another_T WHERE (col2, col3) IN (VALUES(1,2)); --empty
+
+SELECT col1 FROM another_T WHERE (col2, col3) IN (SELECT 1,2); --empty
+
+SELECT (1,2) IN (1,2); --error, trying to match a tuple with a number
+
+SELECT (1,2) IN (1); --error, trying to match a tuple with a number
+
+SELECT (col1, col2) IN (VALUES (1)) FROM another_T; --error, subquery has too few columns
+
+SELECT (col1, col2) IN (1) FROM another_T; --error, trying to match a tuple with a number
+
+SELECT col1 FROM another_T WHERE (col2, col3) IN (1,2,3); --error, test tuple against individual numbers
+
+SELECT col1 FROM another_T WHERE (col2, col3) IN (SELECT 1); -- error, missing columns in the subquery
+
+SELECT col1 FROM another_T WHERE (col2, 1) IN (SELECT 1); -- error, missing columns in the subquery
+
+SELECT col1 FROM another_T WHERE (1, col2) IN (SELECT 1); -- error, missing columns in the subquery
+
+SELECT col1 FROM another_T WHERE (1, 1) IN (SELECT 1); -- error, missing columns in the subquery
+
+SELECT col1 FROM another_T WHERE (col2) IN (SELECT 1,2); -- error, too many columns in the subquery
+
+SELECT col1 FROM another_T WHERE (col2, col3) IN (SELECT 1,2,3); -- error, too many columns in the subquery
+
+SELECT col1 FROM another_T WHERE (col2, col3) IN (VALUES(1,2,3)); -- error, too many columns in the subquery
+
+CREATE FUNCTION evilfunction(input INT) RETURNS TABLE (outt INT) BEGIN RETURN TABLE(SELECT input); END;
+
+SELECT
+	(SELECT outt FROM evilfunction((SELECT col0))) 
+FROM another_T; --error, col0 doesn't exist
+
+SELECT
+	(SELECT outt FROM evilfunction((SELECT col1))) 
+FROM another_T; --error, more than one row returned by a subquery used as an expression
+
+SELECT
+	(SELECT outt FROM evilfunction((SELECT col1 FROM tbl_ProductSales))) 
+FROM another_T; --error, more than one row returned by a subquery used as an expression
+
+SELECT
+	(SELECT outt FROM evilfunction((SELECT t2.col1 FROM another_T t2))) 
+FROM another_T; --error, more than one row returned by a subquery used as an expression
+
+PREPARE SELECT
+	(SELECT ? FROM evilfunction((SELECT 1))) 
+FROM another_T;
+
 /* We shouldn't allow the following internal functions/procedures to be called from regular queries */
 --SELECT "identity"(col1) FROM another_T;
 --SELECT "rowid"(col1) FROM another_T;
@@ -348,6 +439,7 @@ FROM integers i1; --error, aggregation functions cannot be nested
 --CALL sys_update_schemas();
 --CALL sys_update_tables();
 
+DROP FUNCTION evilfunction(INT);
 DROP TABLE tbl_ProductSales;
 DROP TABLE another_T;
 DROP TABLE integers;

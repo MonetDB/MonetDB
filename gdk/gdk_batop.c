@@ -845,9 +845,7 @@ BATdel(BAT *b, BAT *d)
 gdk_return
 BATreplace(BAT *b, BAT *p, BAT *n, bool force)
 {
-	lng t0 = 0;
-
-	ALGODEBUG t0 = GDKusec();
+	lng t0 = GDKusec();
 
 	if (b == NULL || b->ttype == TYPE_void || p == NULL || n == NULL) {
 		return GDK_SUCCEED;
@@ -1170,11 +1168,10 @@ BATreplace(BAT *b, BAT *p, BAT *n, bool force)
 			}
 		}
 	}
-	ALGODEBUG fprintf(stderr,
-			  "#%s: BATreplace(" ALGOBATFMT "," ALGOBATFMT "," ALGOBATFMT ") " LLFMT " usec\n",
-			  MT_thread_getname(),
-			  ALGOBATPAR(b), ALGOBATPAR(p), ALGOBATPAR(n),
-			  GDKusec() - t0);
+	TRC_DEBUG(ALGO,
+		  "BATreplace(" ALGOBATFMT "," ALGOBATFMT "," ALGOBATFMT ") " LLFMT " usec\n",
+		  ALGOBATPAR(b), ALGOBATPAR(p), ALGOBATPAR(n),
+		  GDKusec() - t0);
 	return GDK_SUCCEED;
 }
 
@@ -1454,8 +1451,11 @@ BATordered(BAT *b)
 {
 	lng t0 = GDKusec();
 
-	if (b->ttype == TYPE_void)
+	if (b->ttype == TYPE_void || b->tsorted)
 		return true;
+	if (b->tnosorted > 0)
+		return false;
+
 	/* In order that multiple threads don't scan the same BAT at
 	 * the same time (happens a lot with mitosis/mergetable), we
 	 * use a lock.  We reuse the hash lock for this, not because
@@ -1542,11 +1542,11 @@ BATordered_rev(BAT *b)
 
 	if (b == NULL)
 		return false;
-	if (BATcount(b) <= 1)
+	if (BATcount(b) <= 1 || b->trevsorted)
 		return true;
 	if (b->ttype == TYPE_void)
 		return is_oid_nil(b->tseqbase);
-	if (BATtdense(b))
+	if (BATtdense(b) || b->tnorevsorted > 0)
 		return false;
 	MT_lock_set(&b->batIdxLock);
 	if (!b->trevsorted && b->tnorevsorted == 0) {

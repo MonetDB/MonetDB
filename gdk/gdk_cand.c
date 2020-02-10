@@ -386,7 +386,6 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 			} else {
 				/* why the vheap? */
 				ci->tpe = cand_dense;
-				ci->oids = NULL;
 			}
 		} else {
 			ci->tpe = cand_dense;
@@ -396,91 +395,47 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 		ci->oids = (const oid *) s->theap.base;
 		ci->seq = ci->oids[0];
 		ci->noids = cnt;
-		if (ci->oids[ci->noids - 1] - ci->oids[0] == ci->noids - 1) {
-			/* actually dense */
-			ci->tpe = cand_dense;
-			ci->oids = NULL;
-		}
 	} else {
 		/* materialized dense: no exceptions */
 		ci->tpe = cand_dense;
 	}
 	switch (ci->tpe) {
-	case cand_dense:
-	case_cand_dense:
-		if (b != NULL) {
-			if (ci->seq + cnt <= b->hseqbase ||
-			    ci->seq >= b->hseqbase + BATcount(b)) {
-				ci->ncand = 0;
-				return 0;
-			}
-			if (b->hseqbase > ci->seq) {
-				cnt -= b->hseqbase - ci->seq;
-				ci->offset += b->hseqbase - ci->seq;
-				ci->seq = b->hseqbase;
-			}
-			if (ci->seq + cnt > b->hseqbase + BATcount(b))
-				cnt = b->hseqbase + BATcount(b) - ci->seq;
-		}
-		break;
 	case cand_materialized:
 		if (b != NULL) {
-			if (ci->oids[ci->noids - 1] < b->hseqbase) {
+			BUN p = binsearchcand(ci->oids, cnt - 1, b->hseqbase);
+			/* p == cnt means candidate list is completely
+			 * before b */
+			ci->offset = p;
+			ci->oids += p;
+			cnt -= p;
+			if (cnt > 0) {
+				cnt = binsearchcand(ci->oids, cnt  - 1,
+						    b->hseqbase + BATcount(b));
+				/* cnt == 0 means candidate list is
+				 * completely after b */
+			}
+			if (cnt == 0) {
+				/* no overlap */
 				*ci = (struct canditer) {
 					.tpe = cand_dense,
 					.s = s,
 				};
 				return 0;
 			}
-			if (ci->oids[0] < b->hseqbase) {
-				BUN lo = 0;
-				BUN hi = cnt - 1;
-				const oid o = b->hseqbase;
-				/* loop invariant:
-				 * ci->oids[lo] < o <= ci->oids[hi] */
-				while (hi - lo > 1) {
-					BUN mid = (lo + hi) / 2;
-					if (ci->oids[mid] >= o)
-						hi = mid;
-					else
-						lo = mid;
-				}
-				ci->offset = hi;
-				cnt -= hi;
-				ci->oids += hi;
-				ci->seq = ci->oids[0];
-			}
-			if (ci->oids[cnt - 1] >= b->hseqbase + BATcount(b)) {
-				BUN lo = 0;
-				BUN hi = cnt - 1;
-				const oid o = b->hseqbase + BATcount(b);
-				/* loop invariant:
-				 * ci->oids[lo] < o <= ci->oids[hi] */
-				while (hi - lo > 1) {
-					BUN mid = (lo + hi) / 2;
-					if (ci->oids[mid] >= o)
-						hi = mid;
-					else
-						lo = mid;
-				}
-				cnt = hi;
-			}
+			ci->seq = ci->oids[0];
 			ci->noids = cnt;
+			if (ci->oids[cnt - 1] - ci->seq == cnt - 1) {
+				/* actually dense */
+				ci->tpe = cand_dense;
+				ci->oids = NULL;
+				ci->noids = 0;
+			}
 		}
 		break;
 	case cand_except:
 		/* exceptions must all be within range of s */
 		assert(ci->oids[0] >= ci->seq);
 		assert(ci->oids[ci->noids - 1] < ci->seq + cnt + ci->noids);
-		if (b != NULL) {
-			if (ci->seq + cnt + ci->noids <= b->hseqbase ||
-			    ci->seq >= b->hseqbase + BATcount(b)) {
-				*ci = (struct canditer) {
-					.tpe = cand_dense,
-				};
-				return 0;
-			}
-		}
 		/* prune exceptions at either end of range of s */
 		while (ci->noids > 0 && ci->oids[0] == ci->seq) {
 			ci->noids--;
@@ -490,14 +445,19 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 		while (ci->noids > 0 &&
 		       ci->oids[ci->noids - 1] == ci->seq + cnt + ci->noids - 1)
 			ci->noids--;
-		/* WARNING: don't reset ci->oids to NULL when setting
-		 * ci->tpe to cand_dense below: BATprojectchain will
-		 * fail */
-		if (ci->noids == 0) {
-			ci->tpe = cand_dense;
-			goto case_cand_dense;
-		}
 		if (b != NULL) {
+			if (ci->seq + cnt + ci->noids <= b->hseqbase ||
+			    ci->seq >= b->hseqbase + BATcount(b)) {
+				/* candidate list does not overlap with b */
+				*ci = (struct canditer) {
+					.tpe = cand_dense,
+				};
+				return 0;
+			}
+		}
+		if (ci->noids > 0) {
+			if (b == NULL)
+				break;
 			BUN p;
 			p = binsearchcand(ci->oids, ci->noids - 1, b->hseqbase);
 			if (p == ci->noids) {
@@ -507,6 +467,7 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 				ci->seq = b->hseqbase;
 				ci->noids = 0;
 				ci->tpe = cand_dense;
+				ci->oids = NULL;
 				break;
 			}
 			assert(b->hseqbase > ci->seq || p == 0);
@@ -534,10 +495,26 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 			while (ci->noids > 0 &&
 			       ci->oids[ci->noids - 1] == ci->seq + cnt + ci->noids - 1)
 				ci->noids--;
-			if (ci->noids == 0) {
-				ci->tpe = cand_dense;
-				goto case_cand_dense;
+			if (ci->noids > 0)
+				break;
+		}
+		ci->tpe = cand_dense;
+		ci->oids = NULL;
+		/* fall through */
+	case cand_dense:
+		if (b != NULL) {
+			if (ci->seq + cnt <= b->hseqbase ||
+			    ci->seq >= b->hseqbase + BATcount(b)) {
+				ci->ncand = 0;
+				return 0;
 			}
+			if (b->hseqbase > ci->seq) {
+				cnt -= b->hseqbase - ci->seq;
+				ci->offset += b->hseqbase - ci->seq;
+				ci->seq = b->hseqbase;
+			}
+			if (ci->seq + cnt > b->hseqbase + BATcount(b))
+				cnt = b->hseqbase + BATcount(b) - ci->seq;
 		}
 		break;
 	}

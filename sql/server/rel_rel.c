@@ -1164,10 +1164,9 @@ rel_bind_path_(mvc *sql, sql_rel *rel, sql_exp *e, list *path )
 static list *
 rel_bind_path(mvc *sql, sql_rel *rel, sql_exp *e)
 {
-	list *path = new_rel_list(sql->sa);
-	if(!path) {
+	list *path = sa_list(sql->sa);
+	if (!path)
 		return NULL;
-	}
 
 	if (e->type == e_convert)
 		e = e->l;
@@ -1634,11 +1633,11 @@ exp_deps(mvc *sql, sql_exp *e, list *refs, list *l)
 			}
 		} break;
 	case e_aggr: {
-			sql_subaggr *a = e->f;
+			sql_subfunc *a = e->f;
 
 			if (e->l &&exps_deps(sql, e->l, refs, l) != 0)
 				return -1;
-			cond_append(l, &a->aggr->base.id);
+			cond_append(l, &a->func->base.id);
 		} break;
 	case e_cmp: {
 			if (e->flag == cmp_or || e->flag == cmp_filter) {

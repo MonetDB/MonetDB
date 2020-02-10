@@ -192,11 +192,9 @@ qname_catalog(dlist *qname)
 
 	if (dlist_length(qname) == 3) {
 		return qname->h->data.sval;
-	} 
-
+	}
 	return NULL;
 }
-
 
 int
 set_type_param(mvc *sql, sql_subtype *type, int nr)
@@ -319,7 +317,7 @@ char *symbol2string(mvc *sql, symbol *se, int expression, char **err) /**/
 	switch (se->token) {
 	case SQL_NOP: {
 		dnode *lst = se->data.lval->h;
-		dnode *ops = lst->next->data.lval->h;
+		dnode *ops = lst->next->next->data.lval->h;
 		char *op = qname_fname(lst->data.lval);
 
 		len = snprintf( buf+len, BUFSIZ-len, "%s(", op); 
@@ -339,10 +337,10 @@ char *symbol2string(mvc *sql, symbol *se, int expression, char **err) /**/
 		char *op = qname_fname(lst->data.lval);
 		char *l;
 		char *r;
-		l = symbol2string(sql, lst->next->data.sym, expression, err);
+		l = symbol2string(sql, lst->next->next->data.sym, expression, err);
 		if (l == NULL)
 			return NULL;
-		r = symbol2string(sql, lst->next->next->data.sym, expression, err);
+		r = symbol2string(sql, lst->next->next->next->data.sym, expression, err);
 		if (r == NULL) {
 			_DELETE(l);
 			return NULL;
@@ -359,7 +357,7 @@ char *symbol2string(mvc *sql, symbol *se, int expression, char **err) /**/
 	case SQL_UNOP: {
 		dnode *lst = se->data.lval->h;
 		char *op = qname_fname(lst->data.lval);
-		char *l = symbol2string(sql, lst->next->data.sym, expression, err);
+		char *l = symbol2string(sql, lst->next->next->data.sym, expression, err);
 		if (l == NULL)
 			return NULL;
 		len = snprintf( buf+len, BUFSIZ-len, "%s(%s)", op, l); 

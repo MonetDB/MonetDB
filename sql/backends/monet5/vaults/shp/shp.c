@@ -25,7 +25,7 @@
 #include "sql_execute.h"
 #include "mal_exception.h"
 
-#include "geom.h"
+#include "libgeom.h"
 
 /* FIXME: the use of the 'rs' schema should be reconsidered so that the geotiff
  * catalog can be integrated into the SQL catalog.

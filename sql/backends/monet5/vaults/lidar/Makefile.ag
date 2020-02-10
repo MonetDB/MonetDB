@@ -18,6 +18,7 @@ INCLUDES = .. \
 	../../../../../monetdb5/scheduler \
 	../../../../../common/stream \
 	../../../../../common/utils \
+	../../../../../clients/mapilib \
 	../../../../../gdk \
 	$(LIBLAS_INCS)
 

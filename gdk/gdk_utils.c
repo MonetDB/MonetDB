@@ -226,11 +226,7 @@ GDKlog(FILE *lockFile, const char *format, ...)
 #ifdef HAVE_CTIME_R3
 	ctm = ctime_r(&tm, tbuf, sizeof(tbuf));
 #else
-#ifdef HAVE_CTIME_R
 	ctm = ctime_r(&tm, tbuf);
-#else
-	ctm = ctime(&tm);
-#endif
 #endif
 	fprintf(lockFile, "USR=%d PID=%d TIME=%.24s @ %s\n", (int) getuid(), (int) getpid(), ctm, buf);
 	fflush(lockFile);
@@ -404,9 +400,48 @@ MT_init(void)
 #ifdef __linux__
 	/* limit values to whatever cgroups gives us */
 	FILE *fc;
+	char buf[1024];
+	char cgr1[1024] = "/sys/fs/cgroup/memory";
+	char cgr2[1024] = "/sys/fs/cgroup";
+	fc = fopen("/proc/self/mountinfo", "r");
+	if (fc != NULL) {
+		while (fgets(buf, (int) sizeof(buf), fc) != NULL) {
+			char *p, *cgr;
+			if ((p = strstr(buf, " - cgroup ")) != NULL &&
+			    strstr(p, "memory") != NULL)
+				cgr = cgr1;
+			else if (strstr(buf, " - cgroup2 ") != NULL)
+				cgr = cgr2;
+			else
+				continue;
+			/* buf point at mount ID */
+			p = strchr(buf, ' ');
+			if (p++ == NULL)
+				break;
+			/* p points at parent ID */
+			p = strchr(p, ' ');
+			if (p++ == NULL)
+				break;
+			/* p points at major:minor */
+			p = strchr(p, ' ');
+			if (p++ == NULL)
+				break;
+			/* p points at root */
+			p = strchr(p, ' ');
+			if (p++ == NULL)
+				break;
+			/* p points at mount point */
+			char *dir = p;
+			p = strchr(p, ' ');
+			if (p == NULL)
+				break;
+			*p = 0;
+			strcpy(cgr, dir);
+		}
+		fclose(fc);
+	}
 	fc = fopen("/proc/self/cgroup", "r");
 	if (fc != NULL) {
-		char buf[1024];
 		/* each line is of the form:
 		 * hierarchy-ID:controller-list:cgroup-path
 		 *
@@ -440,8 +475,7 @@ MT_init(void)
 			if (strncmp(buf, "0::", 3) == 0) {
 				/* cgroup v2 entry */
 				l = strconcat_len(pth, sizeof(pth),
-						  "/sys/fs/cgroup",
-						  buf + 3, "/", NULL);
+						  cgr2, buf + 3, "/", NULL);
 				/* hard limit */
 				strcpy(pth + l, "memory.max");
 				f = fopen(pth, "r");
@@ -489,8 +523,7 @@ MT_init(void)
 				if (strstr(q, "memory") == NULL)
 					continue;
 				l = strconcat_len(pth, sizeof(pth),
-						  "/sys/fs/cgroup/", q,
-						  p, "/", NULL);
+						  cgr1, p, "/", NULL);
 				/* limit of memory usage */
 				strcpy(pth + l, "memory.limit_in_bytes");
 				f = fopen(pth, "r");
@@ -834,10 +867,6 @@ GDKinit(opt *set, int setlen)
 		GDKerror("GDKinit: GDKsetenv failed");
 		return GDK_FAIL;
 	}
-
-	/* initialize GDKtracer */
-	if (!GDKtracer_init())
-		return GDK_FAIL;
 
 	return GDK_SUCCEED;
 }

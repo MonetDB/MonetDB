@@ -138,7 +138,7 @@ UUIDfromString(const char *svalue, size_t *len, uuid **retval, bool external)
 		**retval = uuid_nil;
 		return 3;
 	}
-	if (GDK_STRNIL(svalue)) {
+	if (strNil(svalue)) {
 		**retval = uuid_nil;
 		return 1;
 	}
@@ -239,7 +239,7 @@ UUIDisaUUID(bit *retval, str *s)
 	uuid u;
 	uuid *pu = &u;
 	size_t l = UUID_SIZE;
-	*retval = UUIDfromString(*s, &l, &pu, false) == UUID_STRLEN;
+	*retval = UUIDfromString(*s, &l, &pu, false) > 1; /* valid, not nil */
 	return MAL_SUCCEED;
 }
 
@@ -249,7 +249,7 @@ UUIDstr2uuid(uuid *retval, str *s)
 {
 	size_t l = UUID_SIZE;
 
-	if (UUIDfromString(*s, &l, &retval, false) == UUID_STRLEN) {
+	if (UUIDfromString(*s, &l, &retval, false) > 0) {
 		return MAL_SUCCEED;
 	}
 	throw(MAL, "uuid.uuid", "Not a UUID");
@@ -270,7 +270,7 @@ UUIDstr2uuid(uuid **retval, str *s)
 {
 	size_t l = *retval ? UUID_SIZE : 0;
 
-	if (UUIDfromString(*s, &l, retval, false) == UUID_STRLEN) {
+	if (UUIDfromString(*s, &l, retval, false) > 0) {
 		return MAL_SUCCEED;
 	}
 	throw(MAL, "uuid.uuid", "Not a UUID");

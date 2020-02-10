@@ -18,7 +18,7 @@
 #include "sql_semantic.h"
 #include "sql_partition.h"
 #include "sql_privileges.h"
-#include "sql_querytype.h"
+#include "mapi_querytype.h"
 #include "rel_rel.h"
 #include "rel_exp.h"
 #include "rel_semantic.h"
@@ -2084,6 +2084,7 @@ SelectNodeCmp(mvc *sql, SelectNode *s1, SelectNode *s2)
 	if (symbol_cmp(sql, s1->limit, s2->limit) == 0 &&
 		symbol_cmp(sql, s1->offset, s2->offset) == 0 &&
 		symbol_cmp(sql, s1->sample, s2->sample) == 0 &&
+		symbol_cmp(sql, s1->seed, s2->seed) == 0 &&
 		s1->distinct == s2->distinct &&
 		s1->lateral == s2->lateral &&
 		symbol_cmp(sql, s1->name, s2->name) == 0 &&

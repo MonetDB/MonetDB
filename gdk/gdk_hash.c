@@ -627,6 +627,16 @@ BAThashsync(void *arg)
 }
 #endif
 
+#define EQbte(a, b)	((a) == (b))
+#define EQsht(a, b)	((a) == (b))
+#define EQint(a, b)	((a) == (b))
+#define EQlng(a, b)	((a) == (b))
+#ifdef HAVE_HGE
+#define EQhge(a, b)	((a) == (b))
+#endif
+#define EQflt(a, b)	(is_flt_nil(a) ? is_flt_nil(b) : (a) == (b))
+#define EQdbl(a, b)	(is_dbl_nil(a) ? is_dbl_nil(b) : (a) == (b))
+
 #define starthash(TYPE)							\
 	do {								\
 		const TYPE *restrict v = (const TYPE *) BUNtloc(bi, 0);	\
@@ -642,20 +652,20 @@ BAThashsync(void *arg)
 				for (hb = hget;				\
 				     hb != hnil;			\
 				     hb = HASHgetlink(h, hb)) {		\
-					if (v[o - b->hseqbase] == v[hb]) \
+					if (EQ##TYPE(v[o - b->hseqbase], v[hb])) \
 						break;			\
 				}					\
 				h->nunique += hb == hnil;		\
 			}						\
 			HASHputlink(h, p, hget);			\
 			HASHput(h, c, p);				\
-			o = canditer_next(&ci);				\
+			o = canditer_next(ci);				\
 		}							\
 	} while (0)
 #define finishhash(TYPE)						\
 	do {								\
 		const TYPE *restrict v = (const TYPE *) BUNtloc(bi, 0);	\
-		for (; p < cnt; p++) {					\
+		for (; p < ci->ncand; p++) {					\
 			c = hash_##TYPE(h, v + o - b->hseqbase);	\
 			c = hash_##TYPE(h, v + o - b->hseqbase);	\
 			hget = HASHget(h, c);				\
@@ -663,28 +673,27 @@ BAThashsync(void *arg)
 			for (hb = hget;					\
 			     hb != hnil;				\
 			     hb = HASHgetlink(h, hb)) {			\
-				if (v[o - b->hseqbase] == v[hb])	\
+				if (EQ##TYPE(v[o - b->hseqbase], v[hb])) \
 					break;				\
 			}						\
 			h->nunique += hb == hnil;			\
 			HASHputlink(h, p, hget);			\
 			HASHput(h, c, p);				\
-			o = canditer_next(&ci);				\
+			o = canditer_next(ci);				\
 		}							\
 	} while (0)
 
-/*
- * The prime routine for the BAT layer is to create a new hash index.
- * Its argument is the element type and the maximum number of BUNs be
- * stored under the hash function.
- */
+/* Internal function to create a hash table for the given BAT b.
+ * If a candidate list s is also given, the hash table is specific for
+ * the combination of the two: only values from b that are referred to
+ * by s are included in the hash table, so if a result is found when
+ * searching the hash table, the result is a candidate. */
 Hash *
-BAThash_impl(BAT *b, BAT *s, const char *ext)
+BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict ext)
 {
 	lng t0 = 0;
 	unsigned int tpe = ATOMbasetype(b->ttype);
-	BUN cnt, cnt1;
-	struct canditer ci;
+	BUN cnt1;
 	BUN mask, maxmask = 0;
 	BUN p, c;
 	oid o;
@@ -693,6 +702,9 @@ BAThash_impl(BAT *b, BAT *s, const char *ext)
 	const char *nme = GDKinmemory() ? ":inmemory" : BBP_physical(b->batCacheid);
 	BATiter bi = bat_iterator(b);
 	PROPrec *prop;
+	bool hascand = ci->tpe != cand_dense || ci->ncand != BATcount(b);
+
+	assert(strcmp(ext, "thash") != 0 || !hascand);
 
 	TRC_DEBUG_IF(ACCELERATOR) t0 = GDKusec();
 	TRC_DEBUG(ACCELERATOR,
@@ -710,8 +722,6 @@ BAThash_impl(BAT *b, BAT *s, const char *ext)
 		tpe = TYPE_void;
 	}
 
-	cnt = canditer_init(&ci, b, s);
-
 	if ((h = GDKzalloc(sizeof(*h))) == NULL ||
 	    (h->heaplink.farmid = BBPselectfarm(b->batRole, b->ttype, hashheap)) < 0 ||
 	    (h->heapbckt.farmid = BBPselectfarm(b->batRole, b->ttype, hashheap)) < 0) {
@@ -725,12 +735,12 @@ BAThash_impl(BAT *b, BAT *s, const char *ext)
 		      nme, ".", ext, "l", NULL);
 	strconcat_len(h->heapbckt.filename, sizeof(h->heapbckt.filename),
 		      nme, ".", ext, "b", NULL);
-	if (HEAPalloc(&h->heaplink, s ? cnt : BATcapacity(b),
+	if (HEAPalloc(&h->heaplink, hascand ? ci->ncand : BATcapacity(b),
 		      h->width) != GDK_SUCCEED) {
 		GDKfree(h);
 		return NULL;
 	}
-	h->heaplink.free = cnt * h->width;
+	h->heaplink.free = ci->ncand * h->width;
 	h->Link = h->heaplink.base;
 #ifndef NDEBUG
 	/* clear unused part of Link array */
@@ -747,35 +757,35 @@ BAThash_impl(BAT *b, BAT *s, const char *ext)
 	} else if (ATOMsize(tpe) == 2) {
 		/* perfect hash for two-byte sized atoms */
 		mask = (1 << 16);
-	} else if (b->tkey || cnt <= 4096) {
+	} else if (b->tkey || ci->ncand <= 4096) {
 		/* if key, or if small, don't bother dynamically
 		 * adjusting the hash mask */
-		mask = HASHmask(cnt);
- 	} else if (s == NULL && (prop = BATgetprop_nolock(b, GDK_NUNIQUE)) != NULL) {
+		mask = HASHmask(ci->ncand);
+ 	} else if (!hascand && (prop = BATgetprop_nolock(b, GDK_NUNIQUE)) != NULL) {
 		assert(prop->v.vtype == TYPE_oid);
 		mask = prop->v.val.oval * 8 / 7;
- 	} else if (s == NULL && (prop = BATgetprop_nolock(b, GDK_HASH_BUCKETS)) != NULL) {
+ 	} else if (!hascand && (prop = BATgetprop_nolock(b, GDK_HASH_BUCKETS)) != NULL) {
 		assert(prop->v.vtype == TYPE_oid);
 		mask = prop->v.val.oval;
-		maxmask = HASHmask(cnt);
+		maxmask = HASHmask(ci->ncand);
 		if (mask > maxmask)
 			mask = maxmask;
 	} else {
-		/* dynamic hash: we start with HASHmask(cnt)/64, or,
-		 * if cnt large enough, HASHmask(cnt)/256; if there
-		 * are too many collisions we try HASHmask(cnt)/64,
-		 * HASHmask(cnt)/16, HASHmask(cnt)/4, and finally
-		 * HASHmask(cnt), but we might skip some of these if
+		/* dynamic hash: we start with HASHmask(ci->ncand)/64, or,
+		 * if ci->ncand large enough, HASHmask(ci->ncand)/256; if there
+		 * are too many collisions we try HASHmask(ci->ncand)/64,
+		 * HASHmask(ci->ncand)/16, HASHmask(ci->ncand)/4, and finally
+		 * HASHmask(ci->ncand), but we might skip some of these if
 		 * there are many distinct values.  */
-		maxmask = HASHmask(cnt);
+		maxmask = HASHmask(ci->ncand);
 		mask = maxmask >> 6;
 		while (mask > 4096)
 			mask >>= 2;
 		/* try out on first 25% of b */
-		cnt1 = cnt >> 2;
+		cnt1 = ci->ncand >> 2;
 	}
 
-	o = canditer_next(&ci);	/* always one ahead */
+	o = canditer_next(ci);	/* always one ahead */
 	for (;;) {
 		lng t1 = 0;
 		TRC_DEBUG_IF(ACCELERATOR) t1 = GDKusec();
@@ -787,7 +797,7 @@ BAThash_impl(BAT *b, BAT *s, const char *ext)
 		HEAPfree(&h->heapbckt, true);
 		/* create the hash structures */
 		if (HASHnew(h, ATOMtype(b->ttype), BATcapacity(b),
-			    mask, cnt, true) != GDK_SUCCEED) {
+			    mask, ci->ncand, true) != GDK_SUCCEED) {
 			HEAPfree(&h->heaplink, true);
 			GDKfree(h);
 			return NULL;
@@ -842,7 +852,7 @@ BAThash_impl(BAT *b, BAT *s, const char *ext)
 				}
 				HASHputlink(h, p, hget);
 				HASHput(h, c, p);
-				o = canditer_next(&ci);
+				o = canditer_next(ci);
 			}
 			break;
 		}
@@ -861,8 +871,8 @@ BAThash_impl(BAT *b, BAT *s, const char *ext)
 			cnt1 = 0;
 		} else if (mask < maxmask && p <= maxslots * 1.2)
 			mask <<= 2;
-		canditer_reset(&ci);
-		o = canditer_next(&ci);
+		canditer_reset(ci);
+		o = canditer_next(ci);
 	}
 
 	/* finish the hashtable with the current mask */
@@ -891,7 +901,7 @@ BAThash_impl(BAT *b, BAT *s, const char *ext)
 		break;
 #endif
 	default:
-		for (; p < cnt; p++) {
+		for (; p < ci->ncand; p++) {
 			const void *restrict v = BUNtail(bi, o - b->hseqbase);
 			c = hash_any(h, v);
 			hget = HASHget(h, c);
@@ -905,11 +915,11 @@ BAThash_impl(BAT *b, BAT *s, const char *ext)
 			h->nunique += hb == hnil;
 			HASHputlink(h, p, hget);
 			HASHput(h, c, p);
-			o = canditer_next(&ci);
+			o = canditer_next(ci);
 		}
 		break;
 	}
-	if (s == NULL) {
+	if (!hascand) {
 		BATsetprop_nolock(b, GDK_HASH_BUCKETS, TYPE_oid, &(oid){h->nbucket});
 		BATsetprop_nolock(b, GDK_NUNIQUE, TYPE_oid, &(oid){h->nunique});
 	}
@@ -938,7 +948,9 @@ BAThash(BAT *b)
 	}
 	MT_lock_set(&b->batIdxLock);
 	if (b->thash == NULL) {
-		if ((b->thash = BAThash_impl(b, NULL, "thash")) == NULL) {
+		struct canditer ci;
+		canditer_init(&ci, b, NULL);
+		if ((b->thash = BAThash_impl(b, &ci, "thash")) == NULL) {
 			MT_lock_unset(&b->batIdxLock);
 			return GDK_FAIL;
 		}

@@ -90,6 +90,15 @@ stdout of test 'column_aliases` in directory 'sql/test/miscellaneous` itself:
 % tinyint # type
 % 1 # length
 [ 1	]
+#create table t2 as (select count(*) as "mylabel" from t1); --allowed
+#select count(*) from t2;
+% .%1 # table_name
+% %1 # name
+% bigint # type
+% 1 # length
+[ 1	]
+#drop table t1;
+#drop table t2;
 
 # 11:21:19 >  
 # 11:21:19 >  "Done."

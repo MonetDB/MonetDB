@@ -149,7 +149,7 @@ validate_alter_table_add_table(mvc *sql, char* call, char *msname, char *mtname,
 	*mt = rmt;
 	*pt = rpt;
 	if (!update && rmt && (!isMergeTable(rmt) && !isReplicaTable(rmt)))
-		throw(SQL,call,SQLSTATE(42S02) "ALTER TABLE: cannot add table '%s.%s' to table '%s.%s'", psname, ptname, msname, mtname);
+		throw(SQL,call,SQLSTATE(42S02) "ALTER TABLE: cannot add table '%s.%s' to %s '%s.%s'", psname, ptname, TABLE_TYPE_DESCRIPTION(rmt->type, rmt->properties), msname, mtname);
 	if (rmt && rpt) {
 		char *msg;
 		node *n = cs_find_id(&rmt->members, rpt->base.id);
@@ -160,9 +160,9 @@ validate_alter_table_add_table(mvc *sql, char* call, char *msname, char *mtname,
 		if (ms->base.id != ps->base.id)
 			throw(SQL,call,SQLSTATE(42000) "ALTER TABLE: all children tables of '%s.%s' must be part of schema '%s'", msname, mtname, msname);
 		if (n && !update)
-			throw(SQL,call,SQLSTATE(42S02) "ALTER TABLE: table '%s.%s' is already part of the %s '%s.%s'", psname, ptname, errtable, msname, mtname);
+			throw(SQL,call,SQLSTATE(42S02) "ALTER TABLE: table '%s.%s' is already part of %s '%s.%s'", psname, ptname, errtable, msname, mtname);
 		if (!n && update)
-			throw(SQL,call,SQLSTATE(42S02) "ALTER TABLE: table '%s.%s' isn't part of the %s '%s.%s'", psname, ptname, errtable, msname, mtname);
+			throw(SQL,call,SQLSTATE(42S02) "ALTER TABLE: table '%s.%s' isn't part of %s '%s.%s'", psname, ptname, errtable, msname, mtname);
 		if ((msg = rel_check_tables(rmt, rpt, errtable)) != NULL)
 			return msg;
 		return MAL_SUCCEED;
@@ -771,6 +771,7 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f)
 	char is_func = (f->type != F_PROC);
 	char *F = is_aggr ? "AGGREGATE" : (is_func ? "FUNCTION" : "PROCEDURE");
 	char *KF = f->type == F_FILT ? "FILTER " : f->type == F_UNION ? "UNION " : "";
+	int clientid = sql->clientid;
 
 	(void)fname;
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
@@ -782,7 +783,7 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f)
 	switch (nf->lang) {
 	case FUNC_LANG_INT:
 	case FUNC_LANG_MAL: /* shouldn't be reachable, but leave it here */
-		if (!backend_resolve_function(sql, nf))
+		if (!backend_resolve_function(&clientid, nf))
 			throw(SQL,"sql.create_func", SQLSTATE(3F000) "CREATE %s%s: external name %s.%s not bound", KF, F, nf->mod, nf->base.name);
 		if (nf->query == NULL)
 			break;

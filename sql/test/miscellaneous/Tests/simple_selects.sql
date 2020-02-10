@@ -15,5 +15,12 @@ select cast(sum(42) as bigint) having 42>80;
 select 1 having false;
 select 1 having true;
 
- select cast(true as interval second); --error, not possible
- select cast(true as interval month); --error, not possible
+select cast(true as interval second); --error, not possible
+select cast(true as interval month); --error, not possible
+
+select substring('abc' from 1 for null);
+select substring('abc' from null for 2);
+select substring('abc' from null for null);
+
+select length(myblob), octet_length(myblob), length(mystr), octet_length(mystr) 
+from (values (cast(null as blob), cast(null as char(32)))) as my(myblob, mystr);

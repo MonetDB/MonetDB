@@ -156,4 +156,43 @@ comment "Grouped ${comm} (population/biased) aggregate with candidates list";
 
 EOF
     done
+
+    cat <<EOF
+command covariance(b1:bat[:${tp}],b2:bat[:${tp}],g:bat[:oid],e:bat[:any_1]) :bat[:dbl]
+address AGGRcovariance
+comment "Covariance sample aggregate";
+
+command subcovariance(b1:bat[:${tp}],b2:bat[:${tp}],g:bat[:oid],e:bat[:any_1],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
+address AGGRsubcovariance
+comment "Grouped covariance sample aggregate";
+
+command subcovariance(b1:bat[:${tp}],b2:bat[:${tp}],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
+address AGGRsubcovariancecand
+comment "Grouped covariance sample aggregate with candidate list";
+
+command covariancep(b1:bat[:${tp}],b2:bat[:${tp}],g:bat[:oid],e:bat[:any_1]) :bat[:dbl]
+address AGGRcovariancep
+comment "Covariance population aggregate";
+
+command subcovariancep(b1:bat[:${tp}],b2:bat[:${tp}],g:bat[:oid],e:bat[:any_1],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
+address AGGRsubcovariancep
+comment "Grouped covariance population aggregate";
+
+command subcovariancep(b1:bat[:${tp}],b2:bat[:${tp}],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
+address AGGRsubcovariancepcand
+comment "Grouped covariance population aggregate with candidate list";
+
+command corr(b1:bat[:${tp}],b2:bat[:${tp}],g:bat[:oid],e:bat[:any_1]) :bat[:dbl]
+address AGGRcorr
+comment "Correlation aggregate";
+
+command subcorr(b1:bat[:${tp}],b2:bat[:${tp}],g:bat[:oid],e:bat[:any_1],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
+address AGGRsubcorr
+comment "Grouped correlation aggregate";
+
+command subcorr(b1:bat[:${tp}],b2:bat[:${tp}],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
+address AGGRsubcorrcand
+comment "Grouped correlation aggregate with candidate list";
+
+EOF
 done

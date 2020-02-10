@@ -267,7 +267,7 @@ str_2dec(TYPE *res, const str *val, const int *d, const int *sc)
 	BIG value;
 
 	s = *val;
-	if (GDK_STRNIL(s)) {
+	if (strNil(s)) {
 		*res = NIL(TYPE);
 		return MAL_SUCCEED;
 	}

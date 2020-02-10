@@ -551,14 +551,14 @@ matching_joins(sql_allocator *sa, list *rels, list *exps, sql_exp *je)
 	r = find_rel(rels, je->r);
 	if (l && r) {
 		list *res;
-		list *n_rels = new_rel_list(sa);	
+		list *n_rels = sa_list(sa);	
 
 		append(n_rels, l);
 		append(n_rels, r);
 		res = list_select(exps, n_rels, (fcmp) &exp_joins_rels, (fdup)NULL);
 		return res; 
 	}
-	return new_rel_list(sa);
+	return sa_list(sa);
 }
 
 static int
@@ -840,7 +840,7 @@ order_joins(mvc *sql, list *rels, list *exps)
 	sql_rel *top = NULL, *l = NULL, *r = NULL;
 	sql_exp *cje;
 	node *djn;
-	list *sdje, *n_rels = new_rel_list(sql->sa);
+	list *sdje, *n_rels = sa_list(sql->sa);
 	int fnd = 0;
 
 	/* find foreign keys and reorder the expressions on reducing quality */
@@ -1112,7 +1112,7 @@ reorder_join(mvc *sql, sql_rel *rel)
 	if (!exps) /* crosstable, ie order not important */
 		return rel;
 	rel->exps = NULL; /* should be all crosstables by now */
- 	rels = new_rel_list(sql->sa);
+ 	rels = sa_list(sql->sa);
 	if (is_outerjoin(rel->op)) {
 		sql_rel *l, *r;
 		int cnt = 0;
@@ -1774,7 +1774,7 @@ rel_push_count_down(int *changes, mvc *sql, sql_rel *rel)
 		args = new_exp_list(sql->sa);
 		srel = r->l;
 		{
-			sql_subaggr *cf = sql_bind_aggr(sql->sa, sql->session->schema, "count", NULL);
+			sql_subfunc *cf = sql_bind_func(sql->sa, sql->session->schema, "count", sql_bind_localtype("void"), NULL, F_AGGR);
 			sql_exp *cnt, *e = exp_aggr(sql->sa, NULL, cf, need_distinct(oce), need_no_nil(oce), oce->card, 0);
 
 			exp_label(sql->sa, e, ++sql->label);
@@ -1786,7 +1786,7 @@ rel_push_count_down(int *changes, mvc *sql, sql_rel *rel)
 
 		srel = r->r;
 		{
-			sql_subaggr *cf = sql_bind_aggr(sql->sa, sql->session->schema, "count", NULL);
+			sql_subfunc *cf = sql_bind_func(sql->sa, sql->session->schema, "count", sql_bind_localtype("void"), NULL, F_AGGR);
 			sql_exp *cnt, *e = exp_aggr(sql->sa, NULL, cf, need_distinct(oce), need_no_nil(oce), oce->card, 0);
 
 			exp_label(sql->sa, e, ++sql->label);
@@ -1993,7 +1993,7 @@ sum_limit_offset(mvc *sql, list *exps )
 	 * we copy it */
 	if (list_length(exps) == 1 && exps->h->data)
 		return append(nexps, exps->h->data);
-	add = sql_bind_func_result(sql->sa, sql->session->schema, "sql_add", lng, lng, lng);
+	add = sql_bind_func_result(sql->sa, sql->session->schema, "sql_add", F_FUNC, lng, 2, lng, lng);
 	return append(nexps, exp_op(sql->sa, exps, add));
 }
 
@@ -2949,7 +2949,7 @@ exp_case_fixup( mvc *sql, sql_rel *rel, sql_exp *e, sql_exp *cc )
 		list *l = NULL, *args = e->l;
 		node *n;
 		sql_exp *ne;
-		sql_subaggr *f = e->f;
+		sql_subfunc *f = e->f;
 
 		/* first fixup arguments */
 		if (args) {
@@ -3413,7 +3413,6 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 static sql_rel *
 rel_simplify_math(int *changes, mvc *sql, sql_rel *rel) 
 {
-	
 	if ((is_project(rel->op) || (rel->op == op_ddl && rel->flag == ddl_psm)) && rel->exps) {
 		list *exps = rel->exps;
 		node *n;
@@ -3440,6 +3439,66 @@ rel_simplify_math(int *changes, mvc *sql, sql_rel *rel)
 	} 
 	if (*changes) /* if rewritten don't cache this query */
 		sql->caching = 0;
+	return rel;
+}
+
+static sql_rel *
+rel_push_down_bounds(int *changes, mvc *sql, sql_rel *rel) 
+{
+	if (is_simple_project(rel->op) && rel->exps) {
+		list *exps = rel->exps;
+		node *n;
+
+		for (n = exps->h; n ; n = n->next) { 
+			sql_exp *e = n->data;
+			int cnt;
+			sql_exp *b1, *b2;
+			sql_subfunc *f;
+			list *l;
+
+			if (e->type != e_func || ((sql_subfunc*)e->f)->func->type != F_ANALYTIC)
+				continue;
+
+			f = (sql_subfunc*) e->f;
+			l = (list*) e->l; 
+			if (f->func->type != F_ANALYTIC || !strcmp(f->func->base.name, "diff") || !strcmp(f->func->base.name, "window_bound"))
+				continue;
+
+			/* Extract sql.diff calls into a lower projection and re-use them */
+			cnt = list_length(l);
+			assert(cnt >= 3); /* There will be at least 3 expressions in the parameters for the window function */ 
+			b1 = (sql_exp*) list_fetch(l, cnt - 2);
+			b2 = (sql_exp*) list_fetch(l, cnt - 1);
+			
+			if (b1->type == e_func && b2->type == e_func) { /* if both are 'window_bound' calls, push down a diff call */
+				sql_subfunc *sf1 = (sql_subfunc*) b1->f, *sf2 = (sql_subfunc*) b2->f;
+
+				if (!strcmp(sf1->func->base.name, "window_bound") && !strcmp(sf2->func->base.name, "window_bound")) {
+					list *args1 = (list*) b1->l, *args2 = (list*) b2->l;
+					sql_exp *first1 = (sql_exp*) args1->h->data, *first2 = (sql_exp*) args2->h->data;
+
+					if (first1->type == e_func && exp_match_exp(first1, first2)) { /* push down only function calls to avoid infinite recursion */
+						rel->l = rel_project(sql->sa, rel->l, rel_projections(sql, rel->l, NULL, 1, 1));
+						first1 = rel_project_add_exp(sql, rel->l, first1);
+						args1->h->data = exp_ref(sql->sa, first1);
+						args2->h->data = exp_ref(sql->sa, first1);
+
+						if (list_length(args1) == 6 && list_length(args2) == 6) {
+							sql_exp *second1 = (sql_exp*) args1->h->next->data, *second2 = (sql_exp*) args2->h->next->data;
+
+							if (second1->type == e_func && exp_match_exp(second1, second2)) {
+								second1 = rel_project_add_exp(sql, rel->l, second1);
+								args1->h->next->data = exp_ref(sql->sa, second1);
+								args2->h->next->data = exp_ref(sql->sa, second1);
+							}
+						}
+
+						(*changes)++;
+					}
+				}
+			}
+		}
+	}
 	return rel;
 }
 
@@ -4054,15 +4113,15 @@ rel_push_aggr_down(int *changes, mvc *sql, sql_rel *rel)
 		/* distinct should be done over the full result */
 		for (n = g->exps->h; n; n = n->next) {
 			sql_exp *e = n->data;
-			sql_subaggr *af = e->f;
+			sql_subfunc *af = e->f;
 
 			if (e->type == e_atom || 
 			    e->type == e_func || 
 			   (e->type == e_aggr && 
-			   ((strcmp(af->aggr->base.name, "sum") && 
-			     strcmp(af->aggr->base.name, "count") &&
-			     strcmp(af->aggr->base.name, "min") &&
-			     strcmp(af->aggr->base.name, "max")) ||
+			   ((strcmp(af->func->base.name, "sum") && 
+			     strcmp(af->func->base.name, "count") &&
+			     strcmp(af->func->base.name, "min") &&
+			     strcmp(af->func->base.name, "max")) ||
 			   need_distinct(e))))
 				return rel; 
 		}
@@ -4141,7 +4200,7 @@ rel_push_aggr_down(int *changes, mvc *sql, sql_rel *rel)
 
 				ne = exp_uses_exp( rel->exps, e);
 				if (!ne)
-					ne = e;
+					continue;
 				ne = list_find_exp( u->exps, ne);
 				assert(ne);
 				ne = exp_ref(sql->sa, ne);
@@ -4153,9 +4212,9 @@ rel_push_aggr_down(int *changes, mvc *sql, sql_rel *rel)
 			sql_exp *ne, *e = n->data, *oa = m->data;
 
 			if (oa->type == e_aggr) {
-				sql_subaggr *f = oa->f;
+				sql_subfunc *f = oa->f;
 				int cnt = exp_aggr_is_count(oa);
-				sql_subaggr *a = sql_bind_aggr(sql->sa, sql->session->schema, (cnt)?"sum":f->aggr->base.name, exp_subtype(e));
+				sql_subfunc *a = sql_bind_func(sql->sa, sql->session->schema, (cnt)?"sum":f->func->base.name, exp_subtype(e), NULL, F_AGGR);
 
 				assert(a);
 				/* union of aggr result may have nils 
@@ -5767,13 +5826,13 @@ rel_groupby_distinct2(int *changes, mvc *sql, sql_rel *rel)
 	 *  			  and only has one argument */
 	for (n = rel->exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
-		sql_subaggr *af = e->f;
+		sql_subfunc *af = e->f;
 
 		if (e->type == e_aggr && 
-		   (strcmp(af->aggr->base.name, "sum") && 
-		     strcmp(af->aggr->base.name, "count") &&
-		     strcmp(af->aggr->base.name, "min") &&
-		     strcmp(af->aggr->base.name, "max"))) 
+		   (strcmp(af->func->base.name, "sum") && 
+		     strcmp(af->func->base.name, "count") &&
+		     strcmp(af->func->base.name, "min") &&
+		     strcmp(af->func->base.name, "max"))) 
 			return rel; 
 	}
 
@@ -5805,9 +5864,9 @@ rel_groupby_distinct2(int *changes, mvc *sql, sql_rel *rel)
 			append(naggrs, v);
 		} else if (e->type == e_aggr && !need_distinct(e)) {
 			sql_exp *v;
-			sql_subaggr *f = e->f;
+			sql_subfunc *f = e->f;
 			int cnt = exp_aggr_is_count(e);
-			sql_subaggr *a = sql_bind_aggr(sql->sa, sql->session->schema, (cnt)?"sum":f->aggr->base.name, exp_subtype(e));
+			sql_subfunc *a = sql_bind_func(sql->sa, sql->session->schema, (cnt)?"sum":f->func->base.name, exp_subtype(e), NULL, F_AGGR);
 
 			append(aggrs, e);
 			if (!exp_name(e))
@@ -5889,10 +5948,24 @@ rel_groupby_distinct(int *changes, mvc *sql, sql_rel *rel)
 		for (n=rel->exps->h; n; n = n->next) {
 			sql_exp *e = n->data;
 			if (e != distinct) {
-				e = exp_ref(sql->sa, e);
-				append(ngbe, e);
-				append(exps, e);
-				e = exp_ref(sql->sa, e);
+				if (e->type == e_aggr) { /* copy the arguments to the aggregate */
+					list *args = e->l;
+					if (args) {
+						for (node *n = args->h ; n ; n = n->next) {
+							sql_exp *e = n->data;
+							list_append(ngbe, exp_copy(sql, e));
+							list_append(exps, exp_copy(sql, e));
+						}
+					}
+				} else {
+					e = exp_ref(sql->sa, e);
+					append(ngbe, e);
+					append(exps, e);
+				}
+				if (e->type == e_aggr) /* aggregates must be copied */
+					e = exp_copy(sql, e);
+				else
+					e = exp_ref(sql->sa, e);
 				append(nexps, e);
 			}
 		}
@@ -8165,7 +8238,7 @@ rel_semijoin_use_fk(int *changes, mvc *sql, sql_rel *rel)
 	(void)changes;
 	if (is_semi(rel->op) && rel->exps) {
 		list *exps = rel->exps;
-		list *rels = new_rel_list(sql->sa);
+		list *rels = sa_list(sql->sa);
 
 		rel->exps = NULL;
 		append(rels, rel->l);
@@ -8297,7 +8370,7 @@ exp_indexcol(mvc *sql, sql_exp *e, const char *tname, const char *cname, int de,
 {
 	sql_subtype *rt = sql_bind_localtype(de==1?"bte":de==2?"sht":"int");
 	sql_exp *u = exp_atom_bool(sql->sa, unique);
-	sql_subfunc *f = sql_bind_func_result(sql->sa, mvc_bind_schema(sql,"sys"), "index", exp_subtype(e), exp_subtype(u), rt);
+	sql_subfunc *f = sql_bind_func_result(sql->sa, mvc_bind_schema(sql,"sys"), "index", F_FUNC, rt, 2, exp_subtype(e), exp_subtype(u));
 
 	e = exp_binop(sql->sa, e, u, f);
 	exp_setname(sql->sa, e, tname, cname);
@@ -8438,9 +8511,9 @@ exp_range_overlap( mvc *sql, sql_exp *e, char *min, char *max, atom *emin, atom 
 	if (!min || !max || !emin || !emax)
 		return 0;
 
-	if (GDK_STRNIL(min))
+	if (strNil(min))
 		return 0;
-	if (GDK_STRNIL(max))
+	if (strNil(max))
 		return 0;
 
 	if (t->type->localtype == TYPE_dbl) {
@@ -9004,6 +9077,7 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, int value_based_
 			if (value_based_opt)
 				rel = rewrite(sql, rel, &rel_simplify_math, &changes);
 			rel = rewrite(sql, rel, &rel_distinct_aggregate_on_unique_values, &changes);
+			rel = rewrite(sql, rel, &rel_push_down_bounds, &changes);
 			rel = rewrite(sql, rel, &rel_distinct_project2groupby, &changes);
 		}
 	}

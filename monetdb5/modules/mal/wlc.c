@@ -390,7 +390,7 @@ WLClogger(void *arg)
 str 
 WLCinit(void)
 {
-	str conf;
+	str conf, msg;
 	int len;
 
 	if( wlc_state == WLC_STARTUP){
@@ -398,7 +398,7 @@ WLCinit(void)
 		if((conf = GDKfilepath(0,0,"wlc.config",0)) == NULL)
 			throw(MAL,"wlc.init","Could not access wlc.config\n");
 
-		if(access(conf, F_OK) ){
+		if (access(conf, F_OK) ){
 			GDKfree(conf);
 			return MAL_SUCCEED;
 		}
@@ -408,7 +408,8 @@ WLCinit(void)
 		if (len == -1 || len >= IDLENGTH)
 			throw(MAL, "wlc.init", "gdk_dbname variable is too large");
 
-		WLCgetConfig();
+		if ((msg = WLCgetConfig()) != MAL_SUCCEED)
+			return msg;
 		if (MT_create_thread(&wlc_logger, WLClogger , (void*) 0,
 							 MT_THR_DETACHED, "WLClogger") < 0) {
 			TRC_ERROR(MAL_WLC, "Thread could not be spawned\n");
@@ -500,7 +501,7 @@ WLCmaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			throw(MAL, "wlc.master", "wlc master filename path is too large");
 	}
 	// set location for logs
-	if( GDKcreatedir(path) == GDK_FAIL)
+	if( GDKcreatedir(path) != GDK_SUCCEED)
 		throw(SQL,"wlc.master","Could not create %s\n", path);
 	len = snprintf(wlc_name, IDLENGTH, "%s", GDKgetenv("gdk_dbname"));
 	if (len == -1 || len >= IDLENGTH)
@@ -537,11 +538,7 @@ WLCsettime(Client cntxt, InstrPtr pci, InstrPtr p, str fcn)
 	if(gettimeofday(&clock,NULL) == -1)
 		throw(MAL, fcn, "Unable to retrieve current time");
 	clk = clock.tv_sec;
-#ifdef HAVE_LOCALTIME_R
 	(void) gmtime_r(&clk, &ctm);
-#else
-	ctm = *gmtime(&clk);
-#endif
 	strftime(wlc_time, sizeof(wlc_time), "%Y-%m-%d %H:%M:%S.000",&ctm);
 	if (pushStr(cntxt->wlc, p, wlc_time) == NULL)
 		throw(MAL, fcn, MAL_MALLOC_FAIL);
@@ -588,8 +585,8 @@ WLCpreparewrite(Client cntxt)
 		resetMalBlk(cntxt->wlc, 0);
 		cntxt->wlc_kind = WLC_QUERY;
 	} else
-			throw(MAL,"wlc.write","WLC log path missing ");
-			
+		throw(MAL,"wlc.write","WLC log path missing ");
+
 	if( wlc_state == WLC_STOP)
 		throw(MAL,"wlc.write","Logging for this snapshot has been stopped. Use a new snapshot to continue logging.");
 	return msg;
@@ -611,7 +608,7 @@ WLCstart(Client cntxt, str fcn)
 	/* Find a single transaction sequence ending with COMMIT or ROLLBACK */
 	if( mb->stop > 1 ){
 		pci = getInstrPtr(mb, mb->stop -1 );
-		if (  ! (strcmp( getFunctionId(pci), "commit") == 0 || strcmp( getFunctionId(pci), "rollback") == 0))
+		if (!(strcmp( getFunctionId(pci), "commit") == 0 || strcmp( getFunctionId(pci), "rollback") == 0))
 			return MAL_SUCCEED;
 	}
 
@@ -668,7 +665,7 @@ WLCcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg = MAL_SUCCEED;
 
 	(void) stk;
-	msg =  WLCstart(cntxt, "wlr.catalog");
+	msg = WLCstart(cntxt, "wlr.catalog");
 	if(msg)
 		return msg;
 	cntxt->wlc_kind = WLC_CATALOG;
@@ -1026,7 +1023,6 @@ WLCclear_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return msg;
 }
 
-
 str
 WLCcommit(int clientid)
 {	
@@ -1059,6 +1055,7 @@ WLCrollback(int clientid)
 	}
 	return MAL_SUCCEED;
 }
+
 str
 WLCrollbackCmd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	str msg = MAL_SUCCEED;

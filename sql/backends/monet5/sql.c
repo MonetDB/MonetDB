@@ -16,6 +16,7 @@
 #include "monetdb_config.h"
 #include "sql.h"
 #include "streams.h"
+#include "mapi_prompt.h"
 #include "sql_result.h"
 #include "sql_gencode.h"
 #include "sql_storage.h"
@@ -494,7 +495,10 @@ create_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *col
 			tpe = *t;
 		}
 
-		if (!(col = mvc_create_column(sql, t, columns[i].name, &tpe))) {
+		if (columns[i].name && columns[i].name[0] == '%') {
+			msg = sql_error(sql, 02, SQLSTATE(42000) "CREATE TABLE: generated labels not allowed in column names, use an alias instead");
+			goto cleanup;
+		} else if (!(col = mvc_create_column(sql, t, columns[i].name, &tpe))) {
 			msg = sql_error(sql, 02, SQLSTATE(3F000) "CREATE TABLE: could not create column %s", columns[i].name);
 			goto cleanup;
 		}
@@ -2812,7 +2816,7 @@ mvc_table_result_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg;
 	int *res_id;
 	int nr_cols;
-	sql_query_t qtype;
+	mapi_query_t qtype;
 	bat order_bid;
 
 	if ( pci->argc > 6)
@@ -2820,7 +2824,7 @@ mvc_table_result_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	res_id = getArgReference_int(stk, pci, 0);
 	nr_cols = *getArgReference_int(stk, pci, 1);
-	qtype = (sql_query_t) *getArgReference_int(stk, pci, 2);
+	qtype = (mapi_query_t) *getArgReference_int(stk, pci, 2);
 	order_bid = *getArgReference_bat(stk, pci, 3);
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
@@ -5063,7 +5067,7 @@ BATSTRindex_int(bat *res, const bat *src, const bit *u)
 				BBPunfix(s->batCacheid);
 				throw(SQL, "calc.index", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
-			pos += GDK_STRLEN(p);
+			pos += strLen(p);
 		}
 	} else {
 		r = VIEWcreate(s->hseqbase, s);
@@ -5121,7 +5125,7 @@ BATSTRindex_sht(bat *res, const bat *src, const bit *u)
 				BBPreclaim(r);
 				throw(SQL, "calc.index", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
-			pos += GDK_STRLEN(s);
+			pos += strLen(s);
 		}
 	} else {
 		r = VIEWcreate(s->hseqbase, s);
@@ -5180,7 +5184,7 @@ BATSTRindex_bte(bat *res, const bat *src, const bit *u)
 				BBPunfix(s->batCacheid);
 				throw(SQL, "calc.index", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
-			pos += GDK_STRLEN(p);
+			pos += strLen(p);
 		}
 	} else {
 		r = VIEWcreate(s->hseqbase, s);
@@ -5237,7 +5241,7 @@ BATSTRstrings(bat *res, const bat *src)
 			BBPunfix(s->batCacheid);
 			throw(SQL, "calc.strings", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
-		pos += GDK_STRLEN(p);
+		pos += strLen(p);
 	}
 	BBPunfix(s->batCacheid);
 	BBPkeepref((*res = r->batCacheid));

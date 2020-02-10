@@ -2213,9 +2213,9 @@ BATassertProps(BAT *b)
 				assert(b->tvheap->free <= b->tvheap->size);
 				assert(b->tvheap->free % SIZEOF_OID == 0);
 				if (b->tvheap->free > 0) {
-		#ifndef NDEBUG
+#ifndef NDEBUG
 					const oid *oids = (const oid *) b->tvheap->base;
-		#endif
+#endif
 					q = b->tvheap->free / SIZEOF_OID;
 					assert(oids != NULL);
 					assert(b->tseqbase + BATcount(b) + q <= GDK_oid_max);
@@ -2242,9 +2242,9 @@ BATassertProps(BAT *b)
 		assert(b->tkey);
 		assert(b->tnonil);
 		if ((q = b->batCount) != 0) {
-	#ifndef NDEBUG
+#ifndef NDEBUG
 			const oid *o = (const oid *) Tloc(b, 0);
-		#endif
+#endif
 			assert(*o == b->tseqbase);
 			for (p = 1; p < q; p++)
 				assert(o[p - 1] + 1 == o[p]);

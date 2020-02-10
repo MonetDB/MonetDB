@@ -22,7 +22,7 @@
 #include "blob.h"
 
 comp_type
-compare_str2type( char *compare_op)
+compare_str2type(const char *compare_op)
 {
 	comp_type type = cmp_filter;
 
@@ -243,7 +243,7 @@ exp_in_func(mvc *sql, sql_exp *le, sql_exp *vals, int anyequal, int is_tuple)
 }
 
 sql_exp *
-exp_compare_func(mvc *sql, sql_exp *le, sql_exp *re, sql_exp *oe, char *compareop, int quantifier)
+exp_compare_func(mvc *sql, sql_exp *le, sql_exp *re, sql_exp *oe, const char *compareop, int quantifier)
 {
 	sql_subfunc *cmp_func = NULL;
 	sql_exp *e;
@@ -327,7 +327,7 @@ exp_rank_op( sql_allocator *sa, list *l, list *gbe, list *obe, sql_subfunc *f )
 }
 
 sql_exp * 
-exp_aggr( sql_allocator *sa, list *l, sql_subaggr *a, int distinct, int no_nils, unsigned int card, int has_nils )
+exp_aggr( sql_allocator *sa, list *l, sql_subfunc *a, int distinct, int no_nils, unsigned int card, int has_nils )
 {
 	sql_exp *e = exp_create(sa, e_aggr);
 	if (e == NULL)
@@ -782,13 +782,14 @@ exp_rel(mvc *sql, sql_rel *rel)
 	assert(rel);
 	if (is_project(rel->op)) {
 		sql_exp *last = rel->exps->t->data;
-		e->tpe = *exp_subtype(last);
+		sql_subtype *t = exp_subtype(last);
+		e->tpe = t ? *t : (sql_subtype) {0};
 	}
 	return e;
 }
 
 sql_exp *
-exp_exception(sql_allocator *sa, sql_exp *cond, char* error_message)
+exp_exception(sql_allocator *sa, sql_exp *cond, const char *error_message)
 {
 	sql_exp *e = exp_create(sa, e_psm);
 
@@ -926,12 +927,7 @@ exp_subtype( sql_exp *e )
 		if (e->tpe.type)
 			return &e->tpe;
 		break;
-	case e_aggr: {
-		sql_subaggr *a = e->f;
-		if (a->res && list_length(a->res) == 1) 
-			return a->res->h->data;
-		return NULL;
-	}
+	case e_aggr:
 	case e_func: {
 		if (e->f) {
 			sql_subfunc *f = e->f;
@@ -1249,7 +1245,7 @@ exp_match_exp( sql_exp *e1, sql_exp *e2)
 				return 1;
 			break;
 		case e_aggr:
-			if (!subaggr_cmp(e1->f, e2->f) && /* equal aggregation*/
+			if (!subfunc_cmp(e1->f, e2->f) && /* equal aggregation*/
 			    exps_equal(e1->l, e2->l) && 
 			    need_distinct(e1) == need_distinct(e2) &&
 			    need_no_nil(e1) == need_no_nil(e2)) 
@@ -1675,6 +1671,12 @@ exp_is_null(mvc *sql, sql_exp *e )
 }
 
 int
+exp_is_rel( sql_exp *e )
+{
+	return (e && e->type == e_psm && e->flag == PSM_REL && e->l);
+}
+
+int
 exp_is_atom( sql_exp *e )
 {
 	switch (e->type) {
@@ -1702,12 +1704,6 @@ exp_is_atom( sql_exp *e )
 		return 0;
 	}
 	return 0;
-}
-
-int
-exp_is_rel( sql_exp *e )
-{
-	return (e->type == e_psm && e->flag == PSM_REL && e->l);
 }
 
 int
@@ -2221,7 +2217,7 @@ exps_intern(list *exps)
 	return 0;
 }
 
-char *
+const char *
 compare_func( comp_type t, int anti )
 {
 	switch(t) {
@@ -2572,7 +2568,7 @@ create_table_part_atom_exp(mvc *sql, sql_subtype tpe, ptr value)
 int 
 exp_aggr_is_count(sql_exp *e)
 {
-	if (e->type == e_aggr && strcmp(((sql_subaggr *)e->f)->aggr->base.name, "count") == 0)
+	if (e->type == e_aggr && strcmp(((sql_subfunc *)e->f)->func->base.name, "count") == 0)
 		return 1;
 	return 0;
 }

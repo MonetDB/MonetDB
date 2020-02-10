@@ -279,10 +279,9 @@ rel_alter_seq(
 		val = exp_atom_lng(sql->sa, seq->start);
 	} else if (start_type == 1) { /* value (exp) */
 		exp_kind ek = {type_value, card_value, FALSE};
-		int is_last = 0;
 		sql_subtype *lng_t = sql_bind_localtype("lng");
 
-		val = rel_value_exp2(query, &r, start_list->h->next->data.sym, sql_sel, ek, &is_last);
+		val = rel_value_exp2(query, &r, start_list->h->next->data.sym, sql_sel, ek);
 		if (!val || !(val = rel_check_type(sql, lng_t, r, val, type_equal)))
 			return NULL;
 		if (r && r->op == op_project) {
@@ -294,7 +293,7 @@ rel_alter_seq(
 		val = exp_atom_lng(sql->sa, start_list->h->next->data.l_val);
 	}
 	if (val && val->card > CARD_ATOM) {
-		sql_subaggr *zero_or_one = sql_bind_aggr(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(val));
+		sql_subfunc *zero_or_one = sql_bind_func(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(val), NULL, F_AGGR);
 		val = exp_aggr1(sql->sa, val, zero_or_one, 0, 0, CARD_ATOM, has_nil(val));
 	}
 	return rel_seq(sql->sa, ddl_alter_seq, s->base.name, seq, r, val);

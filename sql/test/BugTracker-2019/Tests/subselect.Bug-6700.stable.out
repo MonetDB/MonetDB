@@ -91,8 +91,9 @@ stdout of test 'subselect.Bug-6700` in directory 'sql/test/BugTracker-2019` itse
 #      select count(1)
 #      from "testTable1" "inner"
 #      where ("inner"."B" = "outer"."A")
-#) from "testTable1" "outer";
-% .outer,	.outer,	.%1 # table_name
+#) from "testTable1" "outer"
+#order by "A", "B";
+% .outer,	.outer,	. # table_name
 % A,	B,	%1 # name
 % varchar,	varchar,	bigint # type
 % 4,	4,	1 # length
@@ -103,8 +104,9 @@ stdout of test 'subselect.Bug-6700` in directory 'sql/test/BugTracker-2019` itse
 #      select count(*)
 #      from "testTable1" "inner"
 #      where ("inner"."B" = "outer"."A")
-#) from "testTable1" "outer";
-% .outer,	.outer,	.%1 # table_name
+#) from "testTable1" "outer"
+#order by "A", "B";
+% .outer,	.outer,	. # table_name
 % A,	B,	%1 # name
 % varchar,	varchar,	bigint # type
 % 4,	4,	1 # length
@@ -115,8 +117,9 @@ stdout of test 'subselect.Bug-6700` in directory 'sql/test/BugTracker-2019` itse
 #	select count(1)
 #	from "testTable1" "inner"
 #	where ("inner"."B" = "outer"."A") and ("outer"."A" is not null)
-#) from "testTable1" "outer";
-% .outer,	.outer,	.%1 # table_name
+#) from "testTable1" "outer"
+#order by "A", "B";
+% .outer,	.outer,	. # table_name
 % A,	B,	%1 # name
 % varchar,	varchar,	bigint # type
 % 4,	4,	1 # length
@@ -127,8 +130,9 @@ stdout of test 'subselect.Bug-6700` in directory 'sql/test/BugTracker-2019` itse
 #	select count(*)
 #	from "testTable1" "inner"
 #	where ("inner"."B" = "outer"."A") and ("outer"."A" is not null)
-#) from "testTable1" "outer";
-% .outer,	.outer,	.%1 # table_name
+#) from "testTable1" "outer"
+#order by "A", "B";
+% .outer,	.outer,	. # table_name
 % A,	B,	%1 # name
 % varchar,	varchar,	bigint # type
 % 4,	4,	1 # length
@@ -142,15 +146,16 @@ stdout of test 'subselect.Bug-6700` in directory 'sql/test/BugTracker-2019` itse
 #         "inner"."A" = "outer"."A" or 
 #         ("inner"."A" is null and  "outer"."A" is null)
 #      )
-#) from "testTable2" "outer";
-% .outer,	.outer,	.%1 # table_name
+#) from "testTable2" "outer"
+#order by "A", "B";
+% .outer,	.outer,	. # table_name
 % A,	B,	%1 # name
 % varchar,	double,	double # type
 % 4,	24,	24 # length
+[ NULL,	NULL,	NULL	]
 [ "Cat1",	2,	2	]
 [ "Cat2",	3,	7	]
 [ "Cat2",	4,	7	]
-[ NULL,	NULL,	NULL	]
 #select "A", "B", (
 #	select sum("B") 
 #	from "testTable2" "inner"
@@ -158,15 +163,16 @@ stdout of test 'subselect.Bug-6700` in directory 'sql/test/BugTracker-2019` itse
 #         "inner"."A" = "outer"."A" or 
 #         ("inner"."A" is null and  "outer"."A" is null)
 #      ) and ("A" = 'Cat7')
-#) from "testTable2" "outer";
-% .outer,	.outer,	.%1 # table_name
+#) from "testTable2" "outer"
+#order by "A", "B";
+% .outer,	.outer,	. # table_name
 % A,	B,	%1 # name
 % varchar,	double,	double # type
 % 4,	24,	24 # length
+[ NULL,	NULL,	NULL	]
 [ "Cat1",	2,	NULL	]
 [ "Cat2",	3,	NULL	]
 [ "Cat2",	4,	NULL	]
-[ NULL,	NULL,	NULL	]
 #select "A", "B", (
 #	select sum("B") 
 #	from "testTable2" "inner"
@@ -174,15 +180,16 @@ stdout of test 'subselect.Bug-6700` in directory 'sql/test/BugTracker-2019` itse
 #         "inner"."A" = "outer"."A" or 
 #         ("inner"."A" is null and  "outer"."A" is null)
 #      ) and (true = false)
-#) from "testTable2" "outer";
-% .outer,	.outer,	.%1 # table_name
+#) from "testTable2" "outer"
+#order by "A", "B";
+% .outer,	.outer,	. # table_name
 % A,	B,	%1 # name
 % varchar,	double,	double # type
 % 4,	24,	24 # length
+[ NULL,	NULL,	NULL	]
 [ "Cat1",	2,	NULL	]
 [ "Cat2",	3,	NULL	]
 [ "Cat2",	4,	NULL	]
-[ NULL,	NULL,	NULL	]
 #rollback;
 
 # 09:38:47 >  
