@@ -652,7 +652,8 @@ rel_named_table_function(sql_query *query, sql_rel *rel, symbol *ast, int latera
 		if (l->next->type == type_symbol && l->next->data.sym->token == SQL_SELECT) {
 			if (l->next->next != NULL)
 				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: '%s' requires a single sub query", fname);
-			sq = rel_subquery(query, NULL, l->next->data.sym, ek);
+			if (!(sq = rel_subquery(query, NULL, l->next->data.sym, ek)))
+				return NULL;
 		} else if (l->next->type == type_symbol || l->next->type == type_list) {
 			dnode *n;
 			exp_kind iek = {type_value, card_column, TRUE};
@@ -6952,7 +6953,8 @@ rel_loader_function(sql_query *query, symbol* fcall, list *fexps, sql_subfunc **
 		if (l->next->type == type_symbol && l->next->data.sym->token == SQL_SELECT) {
 			if (l->next->next != NULL)
 				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: '%s' requires a single sub query", fname);
-			sq = rel_subquery(query, NULL, l->next->data.sym, ek);
+			if (!(sq = rel_subquery(query, NULL, l->next->data.sym, ek)))
+				return NULL;
 		} else if (l->next->type == type_symbol || l->next->type == type_list) {
 			dnode *n;
 			exp_kind iek = {type_value, card_column, TRUE};
