@@ -218,7 +218,19 @@ QUERY = SELECT
         FROM another_T; --error, col0 doesn't exist
 ERROR = !SELECT: identifier 'col0' unknown
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-135307/.s.monetdb.36213
+MAPI  = (monetdb) /var/tmp/mtest-139585/.s.monetdb.31629
+QUERY = SELECT
+        	(SELECT outt FROM evilfunction((SELECT col1))) 
+        FROM another_T; --error, more than one row returned by a subquery used as an expression
+ERROR = !zero_or_one: cardinality violation, scalar expression expected
+CODE  = M0M29
+MAPI  = (monetdb) /var/tmp/mtest-139585/.s.monetdb.31629
+QUERY = SELECT
+        	(SELECT outt FROM evilfunction((SELECT col1 FROM tbl_ProductSales))) 
+        FROM another_T; --error, more than one row returned by a subquery used as an expression
+ERROR = !zero_or_one: cardinality violation, scalar expression expected
+CODE  = M0M29
+MAPI  = (monetdb) /var/tmp/mtest-139585/.s.monetdb.31629
 QUERY = SELECT
         	(SELECT outt FROM evilfunction((SELECT t2.col1 FROM another_T t2))) 
         FROM another_T; --error, more than one row returned by a subquery used as an expression
