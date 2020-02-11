@@ -1576,24 +1576,22 @@ create_sql_table(sql_allocator *sa, const char *name, sht type, bit system, int 
 }
 
 void
-dup_column_sql_type(sql_trans *tr, sql_column *oc, sql_column *nc)
+dup_sql_type(sql_trans *tr, sql_schema *os, sql_subtype *oc, sql_subtype *nc)
 {
-	nc->type = oc->type;
-	if (nc->type.type->s) { /* user type */
-		sql_table *t = oc->t;
-		sql_schema *s = t->s;
+	*nc = *oc;
+	if (nc->type->s) { /* user type */
 		sql_type *lt = NULL;
 
-		if (s->base.id == nc->type.type->s->base.id) {
+		if (os->base.id == nc->type->s->base.id) {
 			/* Current user type belongs to current schema. So search there for current user type. */
-			lt = find_sql_type(s, nc->type.type->base.name);
+			lt = find_sql_type(os, nc->type->base.name);
 		} else {
 			/* Current user type belongs to another schema in the current transaction. Search there for current user type. */
-			lt = sql_trans_bind_type(tr, NULL, nc->type.type->base.name);
+			lt = sql_trans_bind_type(tr, NULL, nc->type->base.name);
 		}
 		if (lt == NULL) 
-			GDKfatal("SQL type %s missing", nc->type.type->base.name);
-		sql_init_subtype(&nc->type, lt, nc->type.digits, nc->type.scale);
+			GDKfatal("SQL type %s missing", nc->type->base.name);
+		sql_init_subtype(nc, lt, nc->digits, nc->scale);
 	}
 }
 
@@ -1603,7 +1601,7 @@ dup_sql_column(sql_allocator *sa, sql_table *t, sql_column *c)
 	sql_column *col = SA_ZNEW(sa, sql_column);
 
 	base_init(sa, &col->base, c->base.id, c->base.flags, c->base.name);
-	col->type = c->type; /* Both types belong to the same transaction, so no dup_column_sql_type call is needed I think */
+	col->type = c->type; /* Both types belong to the same transaction, so no dup_sql_type call is needed */
 	col->def = NULL;
 	if (c->def)
 		col->def = sa_strdup(sa, c->def);
@@ -1626,7 +1624,7 @@ dup_sql_part(sql_allocator *sa, sql_table *mt, sql_part *op)
 	sql_part *p = SA_ZNEW(sa, sql_part);
 
 	base_init(sa, &p->base, op->base.id, op->base.flags, op->base.name);
-	p->tpe = op->tpe;
+	p->tpe = op->tpe; /* No dup_sql_type call I think */
 	p->with_nills = op->with_nills;
 
 	if (isRangePartitionTable(mt)) {
@@ -1640,7 +1638,7 @@ dup_sql_part(sql_allocator *sa, sql_table *mt, sql_part *op)
 		p->part.values = list_new(sa, (fdestroy) NULL);
 		for (node *n = op->part.values->h ; n ; n = n->next) {
 			sql_part_value *prev = (sql_part_value*) n->data, *nextv = SA_ZNEW(sa, sql_part_value);
-			nextv->tpe = prev->tpe;
+			nextv->tpe = prev->tpe; /* No dup_sql_type call I think */
 			nextv->value = sa_alloc(sa, prev->length);
 			memcpy(nextv->value, prev->value, prev->length);
 			nextv->length = prev->length;
@@ -1667,7 +1665,7 @@ dup_sql_table(sql_allocator *sa, sql_table *t)
 	if (isPartitionedByExpressionTable(nt)) {
 		nt->part.pexp = SA_ZNEW(sa, sql_expression);
 		nt->part.pexp->exp = sa_strdup(sa, t->part.pexp->exp);
-		nt->part.pexp->type = t->part.pexp->type;
+		nt->part.pexp->type = t->part.pexp->type; /* No dup_sql_type call needed */
 		nt->part.pexp->cols = sa_list(sa);
 		for (n = t->part.pexp->cols->h; n; n = n->next) {
 			int *nid = sa_alloc(sa, sizeof(int));
@@ -2672,7 +2670,10 @@ sql_trans_copy_part( sql_trans *tr, sql_table *t, sql_part *pt)
 
 	base_init(tr->sa, &npt->base, pt->base.id, TR_NEW, npt->base.name);
 
-	npt->tpe = pt->tpe;
+	if (isNonPartitionedTable(t))
+		npt->tpe = pt->tpe;
+	else
+		dup_sql_type(tr, t->s, &(pt->tpe), &(npt->tpe));
 	npt->with_nills = pt->with_nills;
 	npt->t = t;
 
@@ -2688,7 +2689,7 @@ sql_trans_copy_part( sql_trans *tr, sql_table *t, sql_part *pt)
 		npt->part.values = list_new(tr->sa, (fdestroy) NULL);
 		for (node *n = pt->part.values->h ; n ; n = n->next) {
 			sql_part_value *prev = (sql_part_value*) n->data, *nextv = SA_ZNEW(tr->sa, sql_part_value);
-			nextv->tpe = prev->tpe;
+			dup_sql_type(tr, t->s, &(prev->tpe), &(nextv->tpe));
 			nextv->value = sa_alloc(tr->sa, prev->length);
 			memcpy(nextv->value, prev->value, prev->length);
 			nextv->length = prev->length;
@@ -2751,7 +2752,7 @@ column_dup(sql_trans *tr, int flags, sql_column *oc, sql_table *t)
 
 	base_init(sa, &c->base, oc->base.id, tr_flag(&oc->base, flags), oc->base.name);
 	obj_ref(oc,c,flags);
-	dup_column_sql_type((newFlagSet(flags))?tr->parent:tr, oc, c);
+	dup_sql_type((newFlagSet(flags))?tr->parent:tr, t->s, &(oc->type), &(c->type));
 	c->def = NULL;
 	if (oc->def)
 		c->def = sa_strdup(sa, oc->def);
@@ -2788,7 +2789,10 @@ part_dup(sql_trans *tr, int flags, sql_part *op, sql_table *mt)
 	sql_table *pt = find_sql_table(mt->s, op->base.name);
 
 	base_init(sa, &p->base, op->base.id, tr_flag(&op->base, flags), op->base.name);
-	p->tpe = op->tpe;
+	if (isNonPartitionedTable(mt))
+		p->tpe = op->tpe;
+	else
+		dup_sql_type(tr, mt->s, &(op->tpe), &(p->tpe));
 	p->with_nills = op->with_nills;
 	p->t = mt;
 	assert(isMergeTable(mt) || isReplicaTable(mt));
@@ -2808,7 +2812,7 @@ part_dup(sql_trans *tr, int flags, sql_part *op, sql_table *mt)
 		p->part.values = list_new(sa, (fdestroy) NULL);
 		for (node *n = op->part.values->h ; n ; n = n->next) {
 			sql_part_value *prev = (sql_part_value*) n->data, *nextv = SA_ZNEW(sa, sql_part_value);
-			nextv->tpe = prev->tpe;
+			dup_sql_type(tr, mt->s, &(prev->tpe), &(nextv->tpe));
 			nextv->value = sa_alloc(sa, prev->length);
 			memcpy(nextv->value, prev->value, prev->length);
 			nextv->length = prev->length;
@@ -2908,7 +2912,7 @@ sql_trans_copy_column( sql_trans *tr, sql_table *t, sql_column *c)
 	if (t->system && sql_trans_name_conflict(tr, t->s->base.name, t->base.name, c->base.name))
 		return NULL;
 	base_init(tr->sa, &col->base, c->base.id, TR_NEW, c->base.name);
-	dup_column_sql_type(tr, c, col);
+	dup_sql_type(tr, t->s, &(c->type), &(col->type));
 	col->def = NULL;
 	if (c->def)
 		col->def = sa_strdup(tr->sa, c->def);
@@ -3048,7 +3052,7 @@ table_dup(sql_trans *tr, int flags, sql_table *ot, sql_schema *s)
 }
 
 static sql_type *
-type_dup(sql_trans *tr, int flags, sql_type *ot, sql_schema * s)
+type_dup(sql_trans *tr, int flags, sql_type *ot, sql_schema *s)
 {
 	sql_allocator *sa = (newFlagSet(flags))?tr->parent->sa:tr->sa;
 	sql_type *t = SA_ZNEW(sa, sql_type);
@@ -3066,8 +3070,21 @@ type_dup(sql_trans *tr, int flags, sql_type *ot, sql_schema * s)
 	return t;
 }
 
+static sql_arg *
+arg_dup(sql_trans *tr, sql_schema *s, sql_arg *oa)
+{
+	sql_arg *a = SA_ZNEW(tr->sa, sql_arg);
+
+	if (a) {
+		a->name = sa_strdup(tr->sa, oa->name);
+		a->inout = oa->inout;
+		dup_sql_type(tr, s, &(oa->type), &(a->type));
+	}
+	return a;
+}
+
 static sql_func *
-func_dup(sql_trans *tr, int flags, sql_func *of, sql_schema * s)
+func_dup(sql_trans *tr, int flags, sql_func *of, sql_schema *s)
 {
 	sql_allocator *sa = (newFlagSet(flags))?tr->parent->sa:tr->sa;
 	sql_func *f = SA_ZNEW(sa, sql_func);
@@ -3088,11 +3105,11 @@ func_dup(sql_trans *tr, int flags, sql_func *of, sql_schema * s)
 	f->fix_scale = of->fix_scale;
 	f->system = of->system;
 	for (n=of->ops->h; n; n = n->next) 
-		list_append(f->ops, arg_dup(sa, n->data));
+		list_append(f->ops, arg_dup(newFlagSet(flags)?tr->parent:tr, s, n->data));
 	if (of->res) {
 		f->res = list_new(sa, of->res->destroy);
 		for (n=of->res->h; n; n = n->next) 
-			list_append(f->res, arg_dup(sa, n->data));
+			list_append(f->res, arg_dup(newFlagSet(flags)?tr->parent:tr, s, n->data));
 	}
 	f->s = s;
 	f->sa = sa;
@@ -3764,7 +3781,7 @@ rollforward_update_part(sql_trans *tr, sql_base *fpt, sql_base *tpt, int mode)
 			pt->part.values = list_new(tr->sa, (fdestroy) NULL);
 			for (node *n = opt->part.values->h ; n ; n = n->next) {
 				sql_part_value *prev = (sql_part_value*) n->data, *nextv = SA_ZNEW(tr->sa, sql_part_value);
-				nextv->tpe = prev->tpe;
+				dup_sql_type(tr, opt->t->s, &(prev->tpe), &(nextv->tpe));
 				nextv->value = sa_alloc(tr->sa, prev->length);
 				memcpy(nextv->value, prev->value, prev->length);
 				nextv->length = prev->length;
@@ -4124,7 +4141,7 @@ reset_column(sql_trans *tr, sql_column *fc, sql_column *pfc)
 				return LOG_ERR;
 		}
 
-		dup_column_sql_type(tr, pfc, fc);
+		dup_sql_type(tr, pfc->t->s, &(pfc->type), &(fc->type));
 		fc->null = pfc->null;
 		fc->unique = pfc->unique;
 		fc->colnr = pfc->colnr;
@@ -4165,8 +4182,13 @@ reset_part(sql_trans *tr, sql_part *ft, sql_part *pft)
 				assert(isMergeTable(fmt) || isReplicaTable(fmt));
 				ft->t = fmt;
 			}
+			if (isNonPartitionedTable(mt) || !s)
+				ft->tpe = pft->tpe;
+			else
+				dup_sql_type(tr, s, &(pft->tpe), &(ft->tpe));
 		} else {
 			ft->t = NULL;
+			ft->tpe = pft->tpe;
 		}
 
 		ft->with_nills = pft->with_nills;
@@ -5033,11 +5055,11 @@ sql_trans_create_func(sql_trans *tr, sql_schema *s, const char *func, list *args
 	t->fix_scale = SCALE_EQ;
 	t->system = system;
 	for (n=args->h; n; n = n->next) 
-		list_append(t->ops, arg_dup(tr->sa, n->data));
+		list_append(t->ops, arg_dup(tr, s, n->data));
 	if (res) {
 		t->res = sa_list(tr->sa);
 		for (n=res->h; n; n = n->next)
-			list_append(t->res, arg_dup(tr->sa, n->data));
+			list_append(t->res, arg_dup(tr, s, n->data));
 	}
 	t->query = (query)?sa_strdup(tr->sa, query):NULL;
 	t->s = s;
@@ -5342,7 +5364,7 @@ sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 		assert(isMergeTable(mt) || isReplicaTable(mt));
 		pt->p = mt;
 		p->t = mt;
-		p->tpe = tpe;
+		dup_sql_type(tr, mt->s, &tpe, &(p->tpe));
 	} else {
 		p = find_sql_part(mt, pt->base.name);
 	}
@@ -5418,7 +5440,7 @@ sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 		assert(isMergeTable(mt) || isReplicaTable(mt));
 		pt->p = mt;
 		p->t = mt;
-		p->tpe = tpe;
+		dup_sql_type(tr, mt->s, &tpe, &(p->tpe));
 	} else {
 		rids *rs;
 		p = find_sql_part(mt, pt->base.name);
