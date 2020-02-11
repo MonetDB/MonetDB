@@ -2822,7 +2822,7 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 			}
 		}
 
-		dup_column_sql_type(tr, cc, oc);
+		dup_sql_type(tr, ft->s, &(cc->type), &(oc->type));
 		oc->colnr = cc->colnr;
 		oc->null = cc->null;
 		oc->unique = cc->unique;

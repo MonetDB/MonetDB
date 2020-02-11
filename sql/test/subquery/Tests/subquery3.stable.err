@@ -236,6 +236,12 @@ QUERY = SELECT
         FROM another_T; --error, more than one row returned by a subquery used as an expression
 ERROR = !Cardinality violation, scalar value expected
 CODE  = 21000
+MAPI  = (monetdb) /var/tmp/mtest-228187/.s.monetdb.33099
+QUERY = PREPARE SELECT
+        	(SELECT ? FROM evilfunction((SELECT 1))) 
+        FROM another_T;
+ERROR = !Could not determine type for argument number 1
+CODE  = 42000
 
 # 17:40:41 >  
 # 17:40:41 >  "Done."

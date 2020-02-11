@@ -1217,19 +1217,6 @@ sql_create_arg(sql_allocator *sa, const char *name, sql_subtype *t, char inout)
 	return create_arg(sa, name, t, inout);
 }
 
-sql_arg *
-arg_dup(sql_allocator *sa, sql_arg *oa)
-{
-	sql_arg *a = SA_ZNEW(sa, sql_arg);
-
-	if(a) {
-		a->name = sa_strdup(sa, oa->name);
-		a->type = oa->type;
-		a->inout = oa->inout;
-	}
-	return a;
-}
-
 static sql_func *
 sql_create_func_(sql_allocator *sa, const char *name, const char *mod, const char *imp, list *ops, sql_arg *res, bit side_effect, sql_ftype type, int fix_scale)
 {
