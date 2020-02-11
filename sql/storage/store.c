@@ -1575,13 +1575,35 @@ create_sql_table(sql_allocator *sa, const char *name, sht type, bit system, int 
 	return create_sql_table_with_id(sa, next_oid(), name, type, system, persistence, commit_action, properties);
 }
 
+void
+dup_column_sql_type(sql_trans *tr, sql_column *oc, sql_column *nc)
+{
+	nc->type = oc->type;
+	if (nc->type.type->s) { /* user type */
+		sql_table *t = oc->t;
+		sql_schema *s = t->s;
+		sql_type *lt = NULL;
+
+		if (s->base.id == nc->type.type->s->base.id) {
+			/* Current user type belongs to current schema. So search there for current user type. */
+			lt = find_sql_type(s, nc->type.type->base.name);
+		} else {
+			/* Current user type belongs to another schema in the current transaction. Search there for current user type. */
+			lt = sql_trans_bind_type(tr, NULL, nc->type.type->base.name);
+		}
+		if (lt == NULL) 
+			GDKfatal("SQL type %s missing", nc->type.type->base.name);
+		sql_init_subtype(&nc->type, lt, nc->type.digits, nc->type.scale);
+	}
+}
+
 static sql_column *
 dup_sql_column(sql_allocator *sa, sql_table *t, sql_column *c)
 {
 	sql_column *col = SA_ZNEW(sa, sql_column);
 
 	base_init(sa, &col->base, c->base.id, c->base.flags, c->base.name);
-	col->type = c->type;
+	col->type = c->type; /* Both types belong to the same transaction, so no dup_column_sql_type call is needed I think */
 	col->def = NULL;
 	if (c->def)
 		col->def = sa_strdup(sa, c->def);
@@ -2729,22 +2751,7 @@ column_dup(sql_trans *tr, int flags, sql_column *oc, sql_table *t)
 
 	base_init(sa, &c->base, oc->base.id, tr_flag(&oc->base, flags), oc->base.name);
 	obj_ref(oc,c,flags);
-	c->type = oc->type;
-	if (c->type.type->s) { /* user type */
-		sql_schema *s = t->s;
-		sql_type *lt = NULL;
-
-		if (s->base.id == c->type.type->s->base.id) {
-			/* Current user type belongs to current schema. So search there for current user type. */
-			lt = find_sql_type(s, c->type.type->base.name);
-		} else {
-			/* Current user type belongs to another schema in the current transaction. Search there for current user type. */
-			lt = sql_trans_bind_type((newFlagSet(flags))?tr->parent:tr, NULL, c->type.type->base.name);
-		}
-		if (lt == NULL) 
-			GDKfatal("SQL type %s missing", c->type.type->base.name);
-		sql_init_subtype(&c->type, lt, c->type.digits, c->type.scale);
-	}
+	dup_column_sql_type((newFlagSet(flags))?tr->parent:tr, oc, c);
 	c->def = NULL;
 	if (oc->def)
 		c->def = sa_strdup(sa, oc->def);
@@ -2901,7 +2908,7 @@ sql_trans_copy_column( sql_trans *tr, sql_table *t, sql_column *c)
 	if (t->system && sql_trans_name_conflict(tr, t->s->base.name, t->base.name, c->base.name))
 		return NULL;
 	base_init(tr->sa, &col->base, c->base.id, TR_NEW, c->base.name);
-	col->type = c->type;
+	dup_column_sql_type(tr, c, col);
 	col->def = NULL;
 	if (c->def)
 		col->def = sa_strdup(tr->sa, c->def);
@@ -4117,7 +4124,7 @@ reset_column(sql_trans *tr, sql_column *fc, sql_column *pfc)
 				return LOG_ERR;
 		}
 
-		fc->type = pfc->type;
+		dup_column_sql_type(tr, pfc, fc);
 		fc->null = pfc->null;
 		fc->unique = pfc->unique;
 		fc->colnr = pfc->colnr;
