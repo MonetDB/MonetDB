@@ -1200,7 +1200,7 @@ push_up_table(mvc *sql, sql_rel *rel, list *ad)
 			if (tf->l) {
 				sql_rel *l = tf->l;
 
-				assert(!l->l);
+				assert(tf->flag == TABLE_FROM_RELATION || !l->l); /* TODO table functions implementation */
 				l->l = rel_dup(d);
 			} else {
 				tf->l = rel_dup(d);

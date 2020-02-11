@@ -1694,10 +1694,11 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 		nme = number2name(name, sizeof(name), ++sql->remote);
 
 		l = rel2bin_args(be, rel->l, sa_list(sql->sa));
-		if(!l)
+		if (!l)
 			return NULL;
 		sub = stmt_list(be, l);
-		sub = stmt_func(be, sub, sa_strdup(sql->sa, nme), rel->l, 0);
+		if (!(sub = stmt_func(be, sub, sa_strdup(sql->sa, nme), rel->l, 0)))
+			return NULL;
 		fr = rel->l;
 		l = sa_list(sql->sa);
 		for(i = 0, n = rel->exps->h; n; n = n->next, i++ ) {
