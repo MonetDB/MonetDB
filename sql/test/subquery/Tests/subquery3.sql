@@ -451,10 +451,6 @@ FROM another_T;
 	-- 1
 	-- 1
 
-PREPARE SELECT
-	(SELECT ? FROM evilfunction((SELECT 1))) 
-FROM another_T;
-
 /* We shouldn't allow the following internal functions/procedures to be called from regular queries */
 --SELECT "identity"(col1) FROM another_T;
 --SELECT "rowid"(col1) FROM another_T;
