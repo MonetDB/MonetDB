@@ -2267,7 +2267,7 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 
 			if (!l || !r)
 				return NULL;
-			join = stmt_semijoin(be, l, r); 
+			join = stmt_semijoin(be, column(be, l), column(be, r)); 
 			if (join)
 				join = stmt_result(be, join, 0);
 			if (!join)
