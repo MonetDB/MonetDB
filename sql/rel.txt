@@ -159,15 +159,15 @@ e_column
 
 e_psm
 	-> flag
-		psm_declare 	name 
-				type
-		psm_set		name 
+		psm_var ->f sql_table if it is a table
+				->tpe type of variable if not a table
+		psm_set ->l name
 				->l value_exp
-		psm_if		->l cond_exp, 
-				->r then_exp_list 
+		psm_if	->l cond_exp
+				->r then_exp_list
 				->f else_exp_list
 		psm_while	->l cond_exp
-				->r loop_exp_list
+					->r loop_exp_list
 		psm_return	->l return_exp
 		psm_rel		->l relation
 		psm_exception ->l cond_exp
