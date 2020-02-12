@@ -440,12 +440,9 @@ WLRprocessBatch(Client cntxt)
  */
 static void
 WLRprocessScheduler(void *arg)
-{	Client cntxt = (Client) arg;
+{
+	Client cntxt = (Client) arg;
 	int duration = 0;
-	struct timeval clock;
-	time_t clk;
-	struct tm ctm;
-	char clktxt[26];
 	str msg = MAL_SUCCEED;
 
 	msg = WLRgetConfig();
@@ -470,16 +467,22 @@ WLRprocessScheduler(void *arg)
 		// wait at most for the cycle period, also at start
 		duration = (wlc_beat > 0 ? wlc_beat:1) * 1000 ;
 		if( wlr_timelimit[0]){
-			gettimeofday(&clock, NULL);
-			clk = clock.tv_sec;
-			ctm = (struct tm) {0};
-			(void) localtime_r(&clk, &ctm);
-			strftime(clktxt, sizeof(clktxt), "%Y-%m-%d %H:%M:%S.000",&ctm);
+			timestamp ts = timestamp_current();
+			str wlc_time = NULL;
+			size_t wlc_limit = 0;
+			int compare;
 
+			assert(!is_timestamp_nil(ts));
+			if (timestamp_tostr(&wlc_time, &wlc_limit, &ts, true) < 0) {
+				snprintf(wlr_error, BUFSIZ, "Unable to retrieve current time");
+				return;
+			}
 			// actually never wait longer then the timelimit requires
 			// preference is given to the beat.
+			compare = strncmp(wlc_time, wlr_timelimit, sizeof(wlr_timelimit));
+			GDKfree(wlc_time);
 			MT_thread_setworking("sleeping");
-			if(strncmp(clktxt, wlr_timelimit,sizeof(wlr_timelimit)) >= 0 && duration >100)
+			if (compare >= 0 && duration >100)
 				MT_sleep_ms(duration);
 		} 
 		for( ; duration > 0  && wlr_state != WLR_STOP; duration -= 200){
