@@ -15,6 +15,10 @@ PREPARE SELECT
 	(SELECT 1 FROM evilfunction((SELECT ?))) 
 FROM another_T;
 
+PREPARE SELECT
+	(SELECT 1 FROM evilfunction((SELECT ?, ?))) 
+FROM another_T;
+
 DROP FUNCTION evilfunction(INT);
 DROP FUNCTION evilfunction(INT, INT);
 DROP TABLE tbl_ProductSales;
