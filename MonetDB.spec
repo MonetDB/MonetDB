@@ -1057,6 +1057,9 @@ fi
 %postun -p /sbin/ldconfig
 
 %changelog
+* Wed Feb 12 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.35.13-20200212
+- Rebuilt.
+
 * Tue Feb 11 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.35.11-20200211
 - Rebuilt.
 - BZ#6805: Using the cascade operator in a drop table statement ends in
