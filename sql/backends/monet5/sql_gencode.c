@@ -203,6 +203,7 @@ _create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *
 		}
 	}
 	if (curBlk->errors) {
+		sql_error(m, 003, SQLSTATE(42000) "Internal error while compiling statement: %s", curBlk->errors);
 		freeSymbol(curPrg);
 		return -1;
 	}
@@ -762,8 +763,10 @@ backend_callinline(backend *be, Client c)
 		}
 	}
 	c->curprg->def = curBlk;
-	if (curBlk->errors)
+	if (curBlk->errors) {
+		sql_error(m, 003, SQLSTATE(42000) "Internal error while compiling statement: %s", curBlk->errors);
 		return -1;
+	}
 	return 0;
 }
 
@@ -935,8 +938,14 @@ backend_call(backend *be, Client c, cq *cq)
 			}
 		}
 	}
-	if (!q || mb->errors)
+	if (!q) {
+		sql_error(m, 001, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return -1;
+	}
+	if (mb->errors) {
+		sql_error(m, 003, SQLSTATE(42000) "Internal error while compiling statement: %s", mb->errors);
+		return -1;
+	}
 	return 0;
 }
 
@@ -1227,7 +1236,6 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 			f->sql--;
 		return -1;
 	}
-	assert(r);
 
 	backup = c->curprg;
 	curPrg = c->curprg = newFunction(userRef, putName(f->base.name), FUNCTIONsymbol);
