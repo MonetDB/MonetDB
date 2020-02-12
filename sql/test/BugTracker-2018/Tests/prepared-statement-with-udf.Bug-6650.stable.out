@@ -120,6 +120,16 @@ stdout of test 'prepared-statement-with-udf.Bug-6650` in directory 'sql/test/Bug
 [ "a",	"b",	"c",	"a"	]
 #drop function get_onet;
 #drop table onet;
+#CREATE FUNCTION twoargs(input1 INT, input2 CLOB) RETURNS TABLE (outt CLOB) BEGIN RETURN TABLE(SELECT input1 || input2); END;
+#prepare select 1 from twoargs(?,?);
+#prepare select 1 from twoargs(?,?);
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 7,	2,	1,	0,	0,	0 # length
+[ "tinyint",	1,	0,	"",	"",	""	]
+[ "int",	32,	0,	NULL,	NULL,	NULL	]
+[ "clob",	0,	0,	NULL,	NULL,	NULL	]
 #rollback;
 
 # 13:30:56 >  

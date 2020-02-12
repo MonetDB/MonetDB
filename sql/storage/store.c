@@ -3012,10 +3012,10 @@ sql_trans_copy_part( sql_trans *tr, sql_table *t, sql_part *pt)
 
 	base_init(tr->sa, &npt->base, pt->base.id, TR_NEW, npt->base.name);
 
-	if (isNonPartitionedTable(t))
-		npt->tpe = pt->tpe;
-	else
+	if (isRangePartitionTable(t) || isListPartitionTable(t))
 		dup_sql_type(tr, t->s, &(pt->tpe), &(npt->tpe));
+	else
+		npt->tpe = pt->tpe;
 	npt->with_nills = pt->with_nills;
 	npt->t = t;
 
@@ -3131,10 +3131,10 @@ part_dup(sql_trans *tr, int flags, sql_part *op, sql_table *mt)
 	sql_table *pt = find_sql_table(mt->s, op->base.name);
 
 	base_init(sa, &p->base, op->base.id, tr_flag(&op->base, flags), op->base.name);
-	if (isNonPartitionedTable(mt))
-		p->tpe = op->tpe;
-	else
+	if (isRangePartitionTable(mt) || isListPartitionTable(mt))
 		dup_sql_type(tr, mt->s, &(op->tpe), &(p->tpe));
+	else
+		p->tpe = op->tpe;
 	p->with_nills = op->with_nills;
 	p->t = mt;
 	assert(isMergeTable(mt) || isReplicaTable(mt));
@@ -4516,10 +4516,10 @@ reset_part(sql_trans *tr, sql_part *ft, sql_part *pft)
 				assert(isMergeTable(fmt) || isReplicaTable(fmt));
 				ft->t = fmt;
 			}
-			if (isNonPartitionedTable(mt) || !s)
-				ft->tpe = pft->tpe;
-			else
+			if (s && (isRangePartitionTable(mt) || isListPartitionTable(mt)))
 				dup_sql_type(tr, s, &(pft->tpe), &(ft->tpe));
+			else
+				ft->tpe = pft->tpe;
 		} else {
 			ft->t = NULL;
 			ft->tpe = pft->tpe;

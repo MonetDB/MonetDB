@@ -10,4 +10,8 @@ prepare with something as (select a from onet where a = ?) select * from get_one
 exec **('a', 'a');
 drop function get_onet;
 drop table onet;
+
+CREATE FUNCTION twoargs(input1 INT, input2 CLOB) RETURNS TABLE (outt CLOB) BEGIN RETURN TABLE(SELECT input1 || input2); END;
+prepare select 1 from twoargs(?,?);
+
 rollback;

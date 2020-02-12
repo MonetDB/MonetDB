@@ -675,10 +675,10 @@ rel_named_table_function(sql_query *query, sql_rel *rel, symbol *ast, int latera
 	}
 
 	if (sq) {
-		for (node *n = sq->exps->h, *m = sf->res->h ; n && m ; n = n->next, m = m->next) {
+		for (node *n = sq->exps->h, *m = sf->func->ops->h ; n && m ; n = n->next, m = m->next) {
 			sql_exp *e = (sql_exp*) n->data;
-			sql_subtype *t = (sql_subtype*) m->data;
-			if (!exp_subtype(e) && rel_set_type_param(sql, t, sq, e, 0) < 0)
+			sql_arg *a = (sql_arg*) m->data;
+			if (!exp_subtype(e) && rel_set_type_param(sql, &(a->type), sq, e, 0) < 0)
 				return NULL;
 		}
 	}
@@ -6023,10 +6023,10 @@ rel_loader_function(sql_query *query, symbol* fcall, list *fexps, sql_subfunc **
 		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: no such operator '%s'", fname);
 
 	if (sq) {
-		for (node *n = sq->exps->h, *m = sf->res->h ; n && m ; n = n->next, m = m->next) {
+		for (node *n = sq->exps->h, *m = sf->func->ops->h ; n && m ; n = n->next, m = m->next) {
 			sql_exp *e = (sql_exp*) n->data;
-			sql_subtype *t = (sql_subtype*) m->data;
-			if (!exp_subtype(e) && rel_set_type_param(sql, t, sq, e, 0) < 0)
+			sql_arg *a = (sql_arg*) m->data;
+			if (!exp_subtype(e) && rel_set_type_param(sql, &(a->type), sq, e, 0) < 0)
 				return NULL;
 		}
 	}
