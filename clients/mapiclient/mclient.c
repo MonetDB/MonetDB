@@ -2890,7 +2890,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, int save_history
 
 		if (mapi_get_querytype(hdl) == Q_PREPARE) {
 			prepno = mapi_get_tableid(hdl);
-			assert(prepno < 100);
+			assert(mode != SQL || formatter != TESTformatter || prepno < 100); /* prepno is used only at the TestWeb */
 		}
 
 		rc = format_result(mid, hdl, interactive || echoquery);
