@@ -1415,6 +1415,15 @@ BBPinit(void)
 	unsigned bbpversion = 0;
 	int i;
 
+	/* the maximum number of BATs allowed in the system and the
+	 * size of the "physical" array are linked in a complicated
+	 * manner.  The expression below shows the relationship */
+	static_assert((uint64_t) N_BBPINIT * BBPINIT < (UINT64_C(1) << (3 * ((sizeof(BBP[0][0].physical) + 2) * 2 / 5))), "\"physical\" array in BBPrec is too small");
+	/* similarly, the maximum number of BATs allowed also has a
+	 * (somewhat simpler) relation with the size of the "bak"
+	 * array */
+	static_assert((uint64_t) N_BBPINIT * BBPINIT < (UINT64_C(1) << (3 * (sizeof(BBP[0][0].bak) - 5))), "\"bak\" array in BBPrec is too small");
+
 	if (!GDKinmemory()) {
 		str bbpdirstr, backupbbpdirstr;
 
