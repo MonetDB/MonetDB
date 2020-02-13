@@ -19,8 +19,8 @@ strcpy_len(char *restrict dst, const char *restrict src, size_t n)
 			if ((dst[i] = src[i]) == 0)
 				return i;
 		}
-		dst[n - 1] = 0;
-		return n-1;
+		dst[--n] = 0;
+		return n + strlen(src + n);
 	}
 	return strlen(src);
 }
