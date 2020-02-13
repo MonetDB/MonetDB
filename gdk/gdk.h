@@ -1536,10 +1536,10 @@ typedef struct {
 	BAT *cache;		/* if loaded: BAT* handle */
 	char *logical;		/* logical name (may point at bak) */
 	char bak[16];		/* logical name backup (tmp_%o) */
-	bat next;		/* next BBP slot in linked list */
 	BAT *desc;		/* the BAT descriptor */
+	char *options;		/* A string list of options */
 	char physical[20];	/* dir + basename for storage */
-	str options;		/* A string list of options */
+	bat next;		/* next BBP slot in linked list */
 	int refs;		/* in-memory references on which the loaded status of a BAT relies */
 	int lrefs;		/* logical references on which the existence of a BAT relies */
 	volatile unsigned status; /* status mask used for spin locking */
