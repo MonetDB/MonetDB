@@ -4791,7 +4791,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 	}
 
 	if (frame_clause || supports_frames)
-		ie = obe ? exp_ref(sql->sa, (sql_exp*) obe->t->data) : in;
+		ie = exp_copy(sql, obe ? (sql_exp*) obe->t->data : in);
 
 	/* Frame */
 	if (frame_clause) {

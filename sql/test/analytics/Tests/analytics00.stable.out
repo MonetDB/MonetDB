@@ -188,8 +188,8 @@ stdout of test 'analytics00` in directory 'sql/test/analytics` itself:
 [ 15	]
 [ 15	]
 #select cast(sum(aa) over (partition by bb) as bigint) from analytics;
-% sys.%1 # table_name
-% %1 # name
+% sys.%3 # table_name
+% %3 # name
 % bigint # type
 % 2 # length
 [ 9	]
@@ -203,8 +203,8 @@ stdout of test 'analytics00` in directory 'sql/test/analytics` itself:
 [ 26	]
 [ NULL	]
 #select cast(sum(aa) over (partition by bb order by bb asc) as bigint) from analytics;
-% sys.%1 # table_name
-% %1 # name
+% sys.%3 # table_name
+% %3 # name
 % bigint # type
 % 2 # length
 [ 9	]
@@ -218,8 +218,8 @@ stdout of test 'analytics00` in directory 'sql/test/analytics` itself:
 [ 26	]
 [ NULL	]
 #select cast(sum(aa) over (partition by bb order by bb desc) as bigint) from analytics;
-% sys.%1 # table_name
-% %1 # name
+% sys.%3 # table_name
+% %3 # name
 % bigint # type
 % 2 # length
 [ NULL	]
@@ -233,8 +233,8 @@ stdout of test 'analytics00` in directory 'sql/test/analytics` itself:
 [ 9	]
 [ 9	]
 #select cast(sum(aa) over (order by bb desc) as bigint) from analytics;
-% sys.%1 # table_name
-% %1 # name
+% sys.%3 # table_name
+% %3 # name
 % bigint # type
 % 2 # length
 [ NULL	]
@@ -248,8 +248,8 @@ stdout of test 'analytics00` in directory 'sql/test/analytics` itself:
 [ 46	]
 [ 46	]
 #select cast(prod(aa) over (partition by bb) as bigint) from analytics;
-% sys.%1 # table_name
-% %1 # name
+% sys.%3 # table_name
+% %3 # name
 % bigint # type
 % 3 # length
 [ 24	]
@@ -263,8 +263,8 @@ stdout of test 'analytics00` in directory 'sql/test/analytics` itself:
 [ 450	]
 [ NULL	]
 #select cast(prod(aa) over (partition by bb order by bb asc) as bigint) from analytics;
-% sys.%1 # table_name
-% %1 # name
+% sys.%3 # table_name
+% %3 # name
 % bigint # type
 % 3 # length
 [ 24	]
@@ -278,8 +278,8 @@ stdout of test 'analytics00` in directory 'sql/test/analytics` itself:
 [ 450	]
 [ NULL	]
 #select cast(prod(aa) over (partition by bb order by bb desc) as bigint) from analytics;
-% sys.%1 # table_name
-% %1 # name
+% sys.%3 # table_name
+% %3 # name
 % bigint # type
 % 3 # length
 [ NULL	]
@@ -293,8 +293,8 @@ stdout of test 'analytics00` in directory 'sql/test/analytics` itself:
 [ 24	]
 [ 24	]
 #select cast(prod(aa) over (order by bb desc) as bigint) from analytics;
-% sys.%1 # table_name
-% %1 # name
+% sys.%3 # table_name
+% %3 # name
 % bigint # type
 % 6 # length
 [ NULL	]
@@ -548,8 +548,8 @@ stdout of test 'analytics00` in directory 'sql/test/analytics` itself:
 [ 15	]
 [ 15	]
 #select cast(sum(cc) over (partition by bb) as bigint) from analytics;
-% sys.%1 # table_name
-% %1 # name
+% sys.%3 # table_name
+% %3 # name
 % bigint # type
 % 2 # length
 [ 9	]
@@ -563,8 +563,8 @@ stdout of test 'analytics00` in directory 'sql/test/analytics` itself:
 [ 26	]
 [ NULL	]
 #select cast(sum(cc) over (partition by bb order by bb asc) as bigint) from analytics;
-% sys.%1 # table_name
-% %1 # name
+% sys.%3 # table_name
+% %3 # name
 % bigint # type
 % 2 # length
 [ 9	]
@@ -578,8 +578,8 @@ stdout of test 'analytics00` in directory 'sql/test/analytics` itself:
 [ 26	]
 [ NULL	]
 #select cast(sum(cc) over (partition by bb order by bb desc) as bigint) from analytics;
-% sys.%1 # table_name
-% %1 # name
+% sys.%3 # table_name
+% %3 # name
 % bigint # type
 % 2 # length
 [ NULL	]
@@ -593,8 +593,8 @@ stdout of test 'analytics00` in directory 'sql/test/analytics` itself:
 [ 9	]
 [ 9	]
 #select cast(sum(cc) over (order by bb desc) as bigint) from analytics;
-% sys.%1 # table_name
-% %1 # name
+% sys.%3 # table_name
+% %3 # name
 % bigint # type
 % 2 # length
 [ NULL	]
@@ -608,8 +608,8 @@ stdout of test 'analytics00` in directory 'sql/test/analytics` itself:
 [ 46	]
 [ 46	]
 #select cast(prod(cc) over (partition by bb) as bigint) from analytics;
-% sys.%1 # table_name
-% %1 # name
+% sys.%3 # table_name
+% %3 # name
 % bigint # type
 % 3 # length
 [ 24	]
@@ -623,8 +623,8 @@ stdout of test 'analytics00` in directory 'sql/test/analytics` itself:
 [ 450	]
 [ NULL	]
 #select cast(prod(cc) over (partition by bb order by bb asc) as bigint) from analytics;
-% sys.%1 # table_name
-% %1 # name
+% sys.%3 # table_name
+% %3 # name
 % bigint # type
 % 3 # length
 [ 24	]
@@ -638,8 +638,8 @@ stdout of test 'analytics00` in directory 'sql/test/analytics` itself:
 [ 450	]
 [ NULL	]
 #select cast(prod(cc) over (partition by bb order by bb desc) as bigint) from analytics;
-% sys.%1 # table_name
-% %1 # name
+% sys.%3 # table_name
+% %3 # name
 % bigint # type
 % 3 # length
 [ NULL	]
@@ -833,7 +833,7 @@ stdout of test 'analytics00` in directory 'sql/test/analytics` itself:
 [ 10	]
 [ 10	]
 #select min(aa) over () from analytics;
-% sys.%1 # table_name
+% sys. # table_name
 % %1 # name
 % int # type
 % 1 # length
@@ -848,7 +848,7 @@ stdout of test 'analytics00` in directory 'sql/test/analytics` itself:
 [ 2	]
 [ 2	]
 #select max(aa) over () from analytics;
-% sys.%1 # table_name
+% sys. # table_name
 % %1 # name
 % int # type
 % 2 # length
@@ -863,7 +863,7 @@ stdout of test 'analytics00` in directory 'sql/test/analytics` itself:
 [ 15	]
 [ 15	]
 #select cast(sum(aa) over () as bigint) from analytics;
-% sys.%1 # table_name
+% sys. # table_name
 % %1 # name
 % bigint # type
 % 2 # length
@@ -878,7 +878,7 @@ stdout of test 'analytics00` in directory 'sql/test/analytics` itself:
 [ 46	]
 [ 46	]
 #select cast(prod(aa) over () as bigint) from analytics;
-% sys.%1 # table_name
+% sys. # table_name
 % %1 # name
 % bigint # type
 % 6 # length
@@ -893,7 +893,7 @@ stdout of test 'analytics00` in directory 'sql/test/analytics` itself:
 [ 259200	]
 [ 259200	]
 #select avg(aa) over () from analytics;
-% sys.%1 # table_name
+% sys. # table_name
 % %1 # name
 % double # type
 % 24 # length
@@ -908,7 +908,7 @@ stdout of test 'analytics00` in directory 'sql/test/analytics` itself:
 [ 5.75	]
 [ 5.75	]
 #select count(aa) over () from analytics;
-% sys.%1 # table_name
+% sys. # table_name
 % %1 # name
 % bigint # type
 % 1 # length
@@ -923,7 +923,7 @@ stdout of test 'analytics00` in directory 'sql/test/analytics` itself:
 [ 8	]
 [ 8	]
 #select count(*) over () from analytics;
-% sys.%2 # table_name
+% sys. # table_name
 % %2 # name
 % bigint # type
 % 2 # length
@@ -938,13 +938,13 @@ stdout of test 'analytics00` in directory 'sql/test/analytics` itself:
 [ 10	]
 [ 10	]
 #select count(*) over ();
-% .%2 # table_name
+% . # table_name
 % %2 # name
 % bigint # type
 % 1 # length
 [ 1	]
 #select min(null) over () from analytics;
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % char # type
 % 0 # length
@@ -959,7 +959,7 @@ stdout of test 'analytics00` in directory 'sql/test/analytics` itself:
 [ NULL	]
 [ NULL	]
 #select max(null) over () from analytics;
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % char # type
 % 0 # length
@@ -974,7 +974,7 @@ stdout of test 'analytics00` in directory 'sql/test/analytics` itself:
 [ NULL	]
 [ NULL	]
 #select cast(sum(null) over () as bigint) from analytics;
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % bigint # type
 % 1 # length
@@ -989,7 +989,7 @@ stdout of test 'analytics00` in directory 'sql/test/analytics` itself:
 [ NULL	]
 [ NULL	]
 #select cast(prod(null) over () as bigint) from analytics;
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % bigint # type
 % 1 # length
@@ -1004,7 +1004,7 @@ stdout of test 'analytics00` in directory 'sql/test/analytics` itself:
 [ NULL	]
 [ NULL	]
 #select avg(null) over () from analytics;
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % double # type
 % 24 # length
@@ -1019,7 +1019,7 @@ stdout of test 'analytics00` in directory 'sql/test/analytics` itself:
 [ NULL	]
 [ NULL	]
 #select count(null) over () from analytics;
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % bigint # type
 % 1 # length
@@ -1034,7 +1034,7 @@ stdout of test 'analytics00` in directory 'sql/test/analytics` itself:
 [ 0	]
 [ 0	]
 #select min(2) over () from analytics;
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % tinyint # type
 % 1 # length
@@ -1049,7 +1049,7 @@ stdout of test 'analytics00` in directory 'sql/test/analytics` itself:
 [ 2	]
 [ 2	]
 #select max(100) over () from analytics;
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % tinyint # type
 % 3 # length
@@ -1064,7 +1064,7 @@ stdout of test 'analytics00` in directory 'sql/test/analytics` itself:
 [ 100	]
 [ 100	]
 #select cast(sum(2) over () as bigint) from analytics;
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % bigint # type
 % 2 # length
@@ -1079,8 +1079,8 @@ stdout of test 'analytics00` in directory 'sql/test/analytics` itself:
 [ 20	]
 [ 20	]
 #select cast(prod(4 + 0) over () as bigint) from analytics;
-% .%1 # table_name
-% %1 # name
+% . # table_name
+% %3 # name
 % bigint # type
 % 7 # length
 [ 1048576	]
@@ -1094,7 +1094,7 @@ stdout of test 'analytics00` in directory 'sql/test/analytics` itself:
 [ 1048576	]
 [ 1048576	]
 #select avg(4) over () from analytics;
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % double # type
 % 24 # length
@@ -1109,7 +1109,7 @@ stdout of test 'analytics00` in directory 'sql/test/analytics` itself:
 [ 4	]
 [ 4	]
 #select count(4) over () from analytics;
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % bigint # type
 % 2 # length
@@ -1463,8 +1463,8 @@ stdout of test 'analytics00` in directory 'sql/test/analytics` itself:
 [ 4	]
 [ 4	]
 #select cast(sum(bb) over (partition by aa) as bigint) from stressme;
-% sys.%1 # table_name
-% %1 # name
+% sys.%3 # table_name
+% %3 # name
 % bigint # type
 % 1 # length
 [ 6	]
@@ -1477,8 +1477,8 @@ stdout of test 'analytics00` in directory 'sql/test/analytics` itself:
 [ 3	]
 [ 1	]
 #select cast(sum(bb) over (partition by aa order by aa asc) as bigint) from stressme;
-% sys.%1 # table_name
-% %1 # name
+% sys.%3 # table_name
+% %3 # name
 % bigint # type
 % 1 # length
 [ 6	]
@@ -1491,8 +1491,8 @@ stdout of test 'analytics00` in directory 'sql/test/analytics` itself:
 [ 3	]
 [ 1	]
 #select cast(sum(bb) over (partition by aa order by aa desc) as bigint) from stressme;
-% sys.%1 # table_name
-% %1 # name
+% sys.%3 # table_name
+% %3 # name
 % bigint # type
 % 1 # length
 [ 1	]
@@ -1505,8 +1505,8 @@ stdout of test 'analytics00` in directory 'sql/test/analytics` itself:
 [ 6	]
 [ 6	]
 #select cast(sum(bb) over (order by aa desc) as bigint) from stressme;
-% sys.%1 # table_name
-% %1 # name
+% sys.%3 # table_name
+% %3 # name
 % bigint # type
 % 2 # length
 [ 1	]
@@ -1519,8 +1519,8 @@ stdout of test 'analytics00` in directory 'sql/test/analytics` itself:
 [ 20	]
 [ 20	]
 #select cast(prod(bb) over (partition by aa) as bigint) from stressme;
-% sys.%1 # table_name
-% %1 # name
+% sys.%3 # table_name
+% %3 # name
 % bigint # type
 % 1 # length
 [ 8	]
@@ -1533,8 +1533,8 @@ stdout of test 'analytics00` in directory 'sql/test/analytics` itself:
 [ 3	]
 [ 1	]
 #select cast(prod(bb) over (partition by aa order by aa asc) as bigint) from stressme;
-% sys.%1 # table_name
-% %1 # name
+% sys.%3 # table_name
+% %3 # name
 % bigint # type
 % 1 # length
 [ 8	]
@@ -1547,8 +1547,8 @@ stdout of test 'analytics00` in directory 'sql/test/analytics` itself:
 [ 3	]
 [ 1	]
 #select cast(prod(bb) over (partition by aa order by aa desc) as bigint) from stressme;
-% sys.%1 # table_name
-% %1 # name
+% sys.%3 # table_name
+% %3 # name
 % bigint # type
 % 1 # length
 [ 1	]
@@ -1561,8 +1561,8 @@ stdout of test 'analytics00` in directory 'sql/test/analytics` itself:
 [ 8	]
 [ 8	]
 #select cast(prod(bb) over (order by aa desc) as bigint) from stressme;
-% sys.%1 # table_name
-% %1 # name
+% sys.%3 # table_name
+% %3 # name
 % bigint # type
 % 3 # length
 [ 1	]
@@ -1771,8 +1771,8 @@ stdout of test 'analytics00` in directory 'sql/test/analytics` itself:
 [ 100	]
 [ 100	]
 #select cast(sum(8 / (- 2)) over (partition by aa order by aa asc) as bigint) from stressme;
-% .%1 # table_name
-% %1 # name
+% .%4 # table_name
+% %4 # name
 % bigint # type
 % 2 # length
 [ -8	]
@@ -1785,8 +1785,8 @@ stdout of test 'analytics00` in directory 'sql/test/analytics` itself:
 [ -4	]
 [ -4	]
 #select cast(prod(4 + 0) over (partition by bb order by bb asc) as bigint) from stressme;
-% .%1 # table_name
-% %1 # name
+% .%4 # table_name
+% %4 # name
 % bigint # type
 % 2 # length
 [ 64	]
@@ -1799,8 +1799,8 @@ stdout of test 'analytics00` in directory 'sql/test/analytics` itself:
 [ 64	]
 [ 4	]
 #select avg(4 + null) over (partition by bb order by bb asc) from stressme;
-% .%3 # table_name
-% %3 # name
+% .%4 # table_name
+% %4 # name
 % double # type
 % 24 # length
 [ NULL	]
@@ -1813,8 +1813,8 @@ stdout of test 'analytics00` in directory 'sql/test/analytics` itself:
 [ NULL	]
 [ NULL	]
 #select count(case when 4 = 4 then 4 else 0 end) over (partition by aa order by aa asc) from stressme;
-% .%3 # table_name
-% %3 # name
+% .%4 # table_name
+% %4 # name
 % bigint # type
 % 1 # length
 [ 2	]
@@ -2013,13 +2013,30 @@ stdout of test 'analytics00` in directory 'sql/test/analytics` itself:
 #insert into overflowme values (2147483644), (2147483645), (2147483646);
 [ 3	]
 #select floor(avg(a) over ()) from overflowme;
-% sys.%1 # table_name
+% sys. # table_name
 % %1 # name
 % double # type
 % 24 # length
 [ 2147483645	]
 [ 2147483645	]
 [ 2147483645	]
+#CREATE TABLE myorders (
+#O_ORDERKEY       INTEGER NOT NULL,
+#O_CUSTKEY        INTEGER NOT NULL,
+#O_ORDERSTATUS    CHAR(1) NOT NULL,
+#O_TOTALPRICE     DECIMAL(15,2) NOT NULL,
+#O_ORDERDATE      DATE NOT NULL,
+#O_ORDERPRIORITY  CHAR(15) NOT NULL,  
+#O_CLERK          CHAR(15) NOT NULL, 
+#O_SHIPPRIORITY   INTEGER NOT NULL,
+#O_COMMENT        VARCHAR(79) NOT NULL);
+#SELECT o_custkey, EXTRACT(MONTH FROM o_orderdate) AS purchase_month, 
+#       CAST(SUM(o_totalprice) OVER (PARTITION BY o_custkey  ORDER BY EXTRACT(MONTH FROM o_orderdate) ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS DECIMAL(15,2))
+#FROM myorders;
+% sys.myorders,	sys.,	sys.%3 # table_name
+% o_custkey,	purchase_month,	%3 # name
+% int,	int,	decimal # type
+% 1,	1,	17 # length
 #rollback;
 
 # 16:31:40 >  
