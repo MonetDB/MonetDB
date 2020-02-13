@@ -11,6 +11,11 @@ select "TABEL", "VELD"
 
 select "TABEL", "VELD"
  from dd_field f
+ where (rtrim("TABEL")) in (select "TABEL" from dd_field);
+-- no problemo
+
+select "TABEL", "VELD"
+ from dd_field f
  where (rtrim("TABEL"), rtrim("VELD")) in (select "TABEL", "VELD" from dd_field);
 -- sql/backends/monet5/rel_bin.c:920: exp_bin: Assertion `0' failed.
 
