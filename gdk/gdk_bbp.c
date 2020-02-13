@@ -1046,7 +1046,7 @@ BBPreadEntries(FILE *fp, unsigned bbpversion)
 		uint64_t batid;
 		uint16_t status;
 		char headname[129];
-		char filename[20];
+		char filename[sizeof(BBP_physical(0))];
 		unsigned int properties;
 		int nread, n;
 		char *s, *options = NULL;
@@ -1054,8 +1054,6 @@ BBPreadEntries(FILE *fp, unsigned bbpversion)
 		uint64_t count, capacity, base = 0;
 		int Thashash;
 
-		static_assert(sizeof(BBP_physical(0)) == sizeof(filename),
-			"filename should be same size as BBPrec.physical");
 		if ((s = strchr(buf, '\r')) != NULL) {
 			/* convert \r\n into just \n */
 			if (s[1] != '\n') {
