@@ -1,3 +1,5 @@
 median_avg-nulls.Bug-6807
 ifthenelse-crash.Bug-6815
-alter-table-add-column-Bug-6816
+alter-table-add-column.Bug-6816
+analyze-stream-table.Bug-6817
+select-where-in-rtrim-crash.Bug-6818
