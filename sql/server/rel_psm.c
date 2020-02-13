@@ -200,16 +200,11 @@ rel_psm_declare(mvc *sql, dnode *n)
 			sql_exp *r = NULL;
 
 			/* check if we overwrite a scope local variable declare x; declare x; */
-			if (frame_find_var(sql, name)) {
-				return sql_error(sql, 01,
-					SQLSTATE(42000) "Variable '%s' already declared", name);
-			}
-			/* variables are put on stack, 
- 			 * TODO make sure on plan/explain etc they only 
- 			 * exist during plan phase */
-			if(!stack_push_var(sql, name, ctype)) {
+			if (frame_find_var(sql, name))
+				return sql_error(sql, 01, SQLSTATE(42000) "Variable '%s' already declared", name);
+			/* variables are put on stack */
+			if (!stack_push_var(sql, name, ctype))
 				return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			}
 			r = exp_var(sql->sa, sa_strdup(sql->sa, name), ctype, sql->frame);
 			append(l, r);
 			ids = ids->next;

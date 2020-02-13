@@ -119,6 +119,7 @@ sql_symbol2relation(mvc *sql, symbol *sym)
 {
 	sql_rel *rel;
 	sql_query *query = query_create(sql);
+	int top = sql->topvars;
 
 	rel = rel_semantic(query, sym);
 	if (rel)
@@ -129,6 +130,10 @@ sql_symbol2relation(mvc *sql, symbol *sym)
 		rel = rel_partition(sql, rel);
 	if (rel && (rel_no_mitosis(rel) || rel_need_distinct_query(rel)))
 		sql->no_mitosis = 1;
+
+	/* On explain and plan modes, drop declared variables after generating the AST */
+	if ((sql->emod & mod_explain) || (sql->emode != m_normal && sql->emode != m_execute))
+		stack_pop_until(sql, top);
 	return rel;
 }
 
