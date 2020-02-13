@@ -2466,7 +2466,7 @@ tar_copy_stream(stream *tarfile, const char *path, time_t mtime, stream *content
 	assert( (bufsize % TAR_BLOCK_SIZE) == 0);
 	assert(bufsize >= TAR_BLOCK_SIZE);
 
-	buf = malloc(bufsize);
+	buf = GDKmalloc(bufsize);
 	if (!buf) {
 		GDKerror("could not allocate buffer");
 		goto end;
@@ -2493,7 +2493,7 @@ tar_copy_stream(stream *tarfile, const char *path, time_t mtime, stream *content
 	ret = GDK_SUCCEED;
 end:
 	if (buf)
-		free(buf);
+		GDKfree(buf);
 	return ret;
 }
 

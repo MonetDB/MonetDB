@@ -624,27 +624,23 @@ exps_count(list *exps)
 static list *
 order_join_expressions(mvc *sql, list *dje, list *rels)
 {
-	list *res;
+	list *res = sa_list(sql->sa);
 	node *n = NULL;
 	int i, *keys, cnt = list_length(dje);
 	void **data;
 	int debug = mvc_debug_on(sql, 16);
 
-	keys = malloc(cnt*sizeof(int));
-	data = malloc(cnt*sizeof(void *));
+	if (cnt == 0)
+		return res;
+
+	keys = GDKmalloc(cnt*sizeof(int));
+	data = GDKmalloc(cnt*sizeof(void *));
 	if (keys == NULL || data == NULL) {
-		if (keys)
-			free(keys);
-		if (data)
-			free(data);
+		GDKfree(keys);
+		GDKfree(data);
 		return NULL;
 	}
-	res = sa_list(sql->sa);
-	if (res == NULL) {
-		free(keys);
-		free(data);
-		return NULL;
-	}
+
 	for (n = dje->h, i = 0; n; n = n->next, i++) {
 		sql_exp *e = n->data;
 
@@ -666,8 +662,8 @@ order_join_expressions(mvc *sql, list *dje, list *rels)
 	for(i=0; i<cnt; i++) {
 		list_append(res, data[i]);
 	}
-	free(keys);
-	free(data);
+	GDKfree(keys);
+	GDKfree(data);
 	return res;
 }
 
@@ -3612,6 +3608,9 @@ exps_cse( mvc *sql, list *oexps, list *l, list *r )
 	char *lu, *ru;
 	int lc = 0, rc = 0, match = 0, res = 0;
 
+	if (list_length(l) == 0 || list_length(r) == 0)
+		return 0;
+
 	/* first recusive exps_cse */
 	nexps = new_exp_list(sql->sa);
 	for (n = l->h; n; n = n->next) {
@@ -3651,8 +3650,8 @@ exps_cse( mvc *sql, list *oexps, list *l, list *r )
 		}
 	}
 
-	lu = calloc(list_length(l), sizeof(char));
-	ru = calloc(list_length(r), sizeof(char));
+	lu = GDKzalloc(list_length(l) * sizeof(char));
+	ru = GDKzalloc(list_length(r) * sizeof(char));
 	for (n = l->h, lc = 0; n; n = n->next, lc++) {
 		sql_exp *le = n->data;
 
@@ -3689,8 +3688,8 @@ exps_cse( mvc *sql, list *oexps, list *l, list *r )
 		append(oexps, exp_or(sql->sa, list_dup(l, (fdup)NULL), 
 				     list_dup(r, (fdup)NULL), 0));
 	}
-	free(lu);
-	free(ru);
+	GDKfree(lu);
+	GDKfree(ru);
 	return res;
 }
 
@@ -5581,12 +5580,12 @@ rel_groupby_order(int *changes, mvc *sql, sql_rel *rel)
 	(void)*changes;
 	if (is_groupby(rel->op) && list_length(gbe) > 1 && list_length(gbe)<9) {
 		node *n;
-		int i, *scores = calloc(list_length(gbe), sizeof(int));
+		int i, *scores = GDKzalloc(list_length(gbe) * sizeof(int));
 
 		for (i = 0, n = gbe->h; n; i++, n = n->next) 
 			scores[i] = score_gbe(sql, rel, n->data);
 		rel->r = list_keysort(gbe, scores, (fdup)NULL);
-		free(scores);
+		GDKfree(scores);
 	}
 	return rel;
 }
@@ -5602,24 +5601,21 @@ rel_reduce_groupby_exps(int *changes, mvc *sql, sql_rel *rel)
 {
 	list *gbe = rel->r;
 
-	if (is_groupby(rel->op) && rel->r && !rel_is_ref(rel)) {
+	if (is_groupby(rel->op) && rel->r && !rel_is_ref(rel) && list_length(gbe)) {
 		node *n, *m;
-		int8_t *scores = malloc(list_length(gbe));
+		int8_t *scores = GDKmalloc(list_length(gbe));
 		int k, j, i;
 		sql_column *c;
 		sql_table **tbls;
 		sql_rel **bts, *bt = NULL;
 
 		gbe = rel->r;
-		tbls = (sql_table**)malloc(sizeof(sql_table*)*list_length(gbe));
-		bts = (sql_rel**)malloc(sizeof(sql_rel*)*list_length(gbe));
+		tbls = (sql_table**)GDKmalloc(sizeof(sql_table*)*list_length(gbe));
+		bts = (sql_rel**)GDKmalloc(sizeof(sql_rel*)*list_length(gbe));
 		if (scores == NULL || tbls == NULL || bts == NULL) {
-			if (scores)
-				free(scores);
-			if (tbls)
-				free(tbls);
-			if (bts)
-				free(bts);
+			GDKfree(scores);
+			GDKfree(tbls);
+			GDKfree(bts);
 			return NULL;
 		}
 		for (k = 0, i = 0, n = gbe->h; n; n = n->next, k++) {
@@ -5727,17 +5723,17 @@ rel_reduce_groupby_exps(int *changes, mvc *sql, sql_rel *rel)
 					rel->exps = nexps;
 					/* only one reduction at a time */
 					*changes = 1;
-					free(bts);
-					free(tbls);
-					free(scores);
+					GDKfree(bts);
+					GDKfree(tbls);
+					GDKfree(scores);
 					return rel;
 				} 
 				gbe = rel->r;
 			}
 		}
-		free(bts);
-		free(tbls);
-		free(scores);
+		GDKfree(bts);
+		GDKfree(tbls);
+		GDKfree(scores);
 	}
 	/* remove constants from group by list */
 	if (is_groupby(rel->op) && rel->r && !rel_is_ref(rel)) {
@@ -7263,13 +7259,13 @@ rel_select_order(int *changes, mvc *sql, sql_rel *rel)
 {
 	(void)changes;
 	if (is_select(rel->op) && rel->exps && list_length(rel->exps)>1) {
-		int i, *scores = calloc(list_length(rel->exps), sizeof(int));
+		int i, *scores = GDKzalloc(list_length(rel->exps) * sizeof(int));
 		node *n;
 
 		for (i = 0, n = rel->exps->h; n; i++, n = n->next) 
 			scores[i] = score_se(sql, rel, n->data);
 		rel->exps = list_keysort(rel->exps, scores, (fdup)NULL);
-		free(scores);
+		GDKfree(scores);
 	}
 	return rel;
 }

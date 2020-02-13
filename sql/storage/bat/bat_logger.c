@@ -921,7 +921,7 @@ snapshot_immediate_copy_file(stream *plan, const char *path, const char *name)
 
 	buf = GDKmalloc(bufsize);
 	if (!buf) {
-		GDKerror("malloc failed");
+		GDKerror("GDKmalloc failed");
 		goto end;
 	}
 
