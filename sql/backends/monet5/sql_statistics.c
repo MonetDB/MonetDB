@@ -84,13 +84,13 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	sys = mvc_bind_schema(m, "sys");
 	if (sys == NULL)
-		throw(SQL, "sql.analyze", SQLSTATE(3F000) "Internal error");
+		throw(SQL, "sql.analyze", SQLSTATE(3F000) "Internal error: No schema sys");
 	sysstats = mvc_bind_table(m, sys, "statistics");
 	if (sysstats == NULL)
-		throw(SQL, "sql.analyze", SQLSTATE(3F000) "No table sys.statistics");
+		throw(SQL, "sql.analyze", SQLSTATE(3F000) "Internal error: No table sys.statistics");
 	statsid = mvc_bind_column(m, sysstats, "column_id");
 	if (statsid == NULL)
-		throw(SQL, "sql.analyze", SQLSTATE(3F000) "No table sys.statistics");
+		throw(SQL, "sql.analyze", SQLSTATE(3F000) "Internal error: No table sys.statistics");
 
 	switch (argc) {
 	case 6:
@@ -121,12 +121,12 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 				if (tbl && strcmp(bt->name, tbl))
 					continue;
-				if (t->persistence != SQL_PERSIST) {
+				tfnd = 1;
+				if (tbl && !isTable(t)) {
 					GDKfree(maxval);
 					GDKfree(minval);
-					throw(SQL, "analyze", SQLSTATE(42S02) "Table '%s' is not persistent", bt->name);
+					throw(SQL, "analyze", SQLSTATE(42S02) "%s '%s' is not persistent", TABLE_TYPE_DESCRIPTION(t->type, t->properties), bt->name);
 				}
-				tfnd = 1;
 				if (isTable(t) && t->columns.set)
 					for (ncol = (t)->columns.set->h; ncol; ncol = ncol->next) {
 						sql_base *bc = ncol->data;

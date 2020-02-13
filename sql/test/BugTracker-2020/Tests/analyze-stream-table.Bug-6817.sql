@@ -13,8 +13,7 @@ analyze "sys"."strt";
 -- Error: Table 'strt' is not persistent   SQLState:  42S02
 select (count(*) > 0) as has_rows from statistics;
 
-analyze sys;
--- Error: Table 'strt' is not persistent   SQLState:  42S02
+analyze sys; --not an error, skip stream table "strt"
 select (count(*) > 0) as has_rows from statistics;
 
 drop table "sys"."strt";

@@ -25,6 +25,10 @@ stderr of test 'analyze-stream-table.Bug-6817` in directory 'sql/test/BugTracker
 # 13:50:18 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-891865" "--port=35996"
 # 13:50:18 >  
 
+MAPI  = (monetdb) /var/tmp/mtest-161340/.s.monetdb.34379
+QUERY = analyze "sys"."strt";
+ERROR = !STREAM TABLE 'strt' is not persistent
+CODE  = 42S02
 
 # 13:50:18 >  
 # 13:50:18 >  "Done."
