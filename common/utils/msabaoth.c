@@ -640,7 +640,7 @@ msab_getSingleStatus(const char *pathbuf, const char *dbname, sabdb *next)
 			}
 			(void)fclose(f);
 		}
-	} else if ((snprintf(buf, sizeof(buf), "%s/%s/%s", pathbuf, dbname, ".gdk_lock") > 0) & /* no typo */
+	} else if (snprintf(buf, sizeof(buf), "%s/%s/%s", pathbuf, dbname, ".gdk_lock"),
 			   ((fd = MT_lockf(buf, F_TEST)) == -2)) {
 		/* Locking failed; this can be because the lockfile couldn't
 		 * be created.  Probably there is no Mserver running for
