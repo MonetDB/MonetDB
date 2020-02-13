@@ -1538,7 +1538,11 @@ typedef struct {
 	char bak[16];		/* logical name backup (tmp_%o) */
 	BAT *desc;		/* the BAT descriptor */
 	char *options;		/* A string list of options */
+#if SIZEOF_VOID_P == 4
 	char physical[20];	/* dir + basename for storage */
+#else
+	char physical[24];	/* dir + basename for storage */
+#endif
 	bat next;		/* next BBP slot in linked list */
 	int refs;		/* in-memory references on which the loaded status of a BAT relies */
 	int lrefs;		/* logical references on which the existence of a BAT relies */
@@ -1547,19 +1551,20 @@ typedef struct {
 } BBPrec;
 
 gdk_export bat BBPlimit;
-#define N_BBPINIT	1000
 #if SIZEOF_VOID_P == 4
+#define N_BBPINIT	1000
 #define BBPINITLOG	11
 #else
+#define N_BBPINIT	10000
 #define BBPINITLOG	14
 #endif
 #define BBPINIT		(1 << BBPINITLOG)
 /* absolute maximum number of BATs is N_BBPINIT * BBPINIT
  * this also gives the longest possible "physical" name and "bak" name
- * of a BAT: the "bak" name is "tmp_%o", so at most 12 + \0 bytes on
+ * of a BAT: the "bak" name is "tmp_%o", so at most 14 + \0 bytes on
  * 64 bit architecture and 11 + \0 on 32 bit architecture; the
  * physical name is a bit more complicated, but the longest possible
- * name is 17 + \0 bytes (16 + \0 on 32 bits) */
+ * name is 22 + \0 bytes (16 + \0 on 32 bits) */
 gdk_export BBPrec *BBP[N_BBPINIT];
 
 /* fast defines without checks; internal use only  */
