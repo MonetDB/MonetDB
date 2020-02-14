@@ -36,6 +36,13 @@ stdout of test 'select-where-in-rtrim-crash.Bug-6818` in directory 'sql/test/Bug
 % 0,	0 # length
 #select "TABEL", "VELD"
 # from dd_field f
+# where (rtrim("TABEL")) in (select "TABEL" from dd_field);
+% sys.f,	sys.f # table_name
+% TABEL,	VELD # name
+% varchar,	varchar # type
+% 0,	0 # length
+#select "TABEL", "VELD"
+# from dd_field f
 # where (rtrim("TABEL"), rtrim("VELD")) in (select "TABEL", "VELD" from dd_field);
 % sys.f,	sys.f # table_name
 % TABEL,	VELD # name
