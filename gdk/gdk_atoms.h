@@ -9,6 +9,69 @@
 #ifndef _GDK_ATOMS_H_
 #define _GDK_ATOMS_H_
 
+/* atomFromStr returns the number of bytes of the input string that
+ * were processed.  atomToStr returns the length of the string
+ * produced.  Both functions return -1 on (any kind of) failure.  If
+ * *dst is not NULL, *len specifies the available space.  If there is
+ * not enough space, or if *dst is NULL, *dst will be freed (if not
+ * NULL) and a new buffer will be allocated and returned in *dst.
+ * *len will be set to reflect the actual size allocated.  If
+ * allocation fails, *dst will be NULL on return and *len is
+ * undefined.  In any case, if the function returns, *buf is either
+ * NULL or a valid pointer and then *len is the size of the area *buf
+ * points to.
+ *
+ * atomCmp returns a value less than zero/equal to zero/greater than
+ * zer if the first argument points to a values which is deemed
+ * smaller/equal to/larger than the value pointed to by the second
+ * argument.
+ *
+ * atomHash calculates a hash function for the value pointed to by the
+ * argument.
+ */
+
+typedef struct {
+	/* simple attributes */
+	char name[IDLENGTH];
+	uint8_t storage;	/* stored as another type? */
+	bool linear;		/* atom can be ordered linearly */
+	uint16_t size;		/* fixed size of atom */
+
+	/* automatically generated fields */
+	const void *atomNull;	/* global nil value */
+
+	/* generic (fixed + varsized atom) ADT functions */
+	ssize_t (*atomFromStr) (const char *src, size_t *len, void **dst, bool external);
+	ssize_t (*atomToStr) (char **dst, size_t *len, const void *src, bool external);
+	void *(*atomRead) (void *dst, stream *s, size_t cnt);
+	gdk_return (*atomWrite) (const void *src, stream *s, size_t cnt);
+	int (*atomCmp) (const void *v1, const void *v2);
+	BUN (*atomHash) (const void *v);
+	/* optional functions */
+	int (*atomFix) (const void *atom);
+	int (*atomUnfix) (const void *atom);
+
+	/* varsized atom-only ADT functions */
+	var_t (*atomPut) (Heap *, var_t *off, const void *src);
+	void (*atomDel) (Heap *, var_t *atom);
+	size_t (*atomLen) (const void *atom);
+	void (*atomHeap) (Heap *, size_t);
+} atomDesc;
+
+gdk_export atomDesc BATatoms[];
+gdk_export int GDKatomcnt;
+
+gdk_export int ATOMallocate(const char *nme);
+gdk_export int ATOMindex(const char *nme);
+
+gdk_export str ATOMname(int id);
+gdk_export size_t ATOMlen(int id, const void *v);
+gdk_export void *ATOMnil(int id);
+gdk_export int ATOMprint(int id, const void *val, stream *fd);
+gdk_export char *ATOMformat(int id, const void *val);
+
+gdk_export void *ATOMdup(int id, const void *val);
+
 #define MAXATOMS	128
 
 /*
