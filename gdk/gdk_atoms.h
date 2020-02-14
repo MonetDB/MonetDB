@@ -284,9 +284,7 @@ gdk_export const ptr ptr_nil;
  * this would make the commit tremendously complicated.
  */
 
-static inline gdk_return ATOMputVAR(int type, Heap *heap, var_t *dst, const void *src)
-	__attribute__((__warn_unused_result__));
-static inline gdk_return
+static inline gdk_return __attribute__((__warn_unused_result__))
 ATOMputVAR(int type, Heap *heap, var_t *dst, const void *src)
 {
 	assert(BATatoms[type].atomPut != NULL);
@@ -327,9 +325,7 @@ ATOMputFIX(int type, void *dst, const void *src)
 	}
 }
 
-static inline gdk_return ATOMreplaceVAR(int type, Heap *heap, var_t *dst, const void *src)
-	__attribute__((__warn_unused_result__));
-static inline gdk_return
+static inline gdk_return __attribute__((__warn_unused_result__))
 ATOMreplaceVAR(int type, Heap *heap, var_t *dst, const void *src)
 {
 	var_t loc = *dst;
@@ -383,25 +379,25 @@ ATOMreplaceVAR(int type, Heap *heap, var_t *dst, const void *src)
  * though we have to take corrective action to ensure that str(nil) is
  * the smallest value of the domain.
  */
-static inline bool
+static inline bool __attribute__((__pure__))
 strEQ(const char *l, const char *r)
 {
 	return strcmp(l, r) == 0;
 }
 
-static inline bool
+static inline bool __attribute__((__pure__))
 strNil(const char *s)
 {
 	return s == NULL || *s == '\200';
 }
 
-static inline size_t
+static inline size_t __attribute__((__pure__))
 strLen(const char *s)
 {
 	return strNil(s) ? 2 : strlen(s) + 1;
 }
 
-static inline int
+static inline int __attribute__((__pure__))
 strCmp(const char *l, const char *r)
 {
 	return strNil(r)
@@ -428,15 +424,7 @@ VarHeapValRaw(const void *b, BUN p, int w)
 
 #define VarHeapVal(b,p,w)	((size_t) VarHeapValRaw(b,p,w))
 
-/*
- * @- Hash Function
- * The string hash function is a very simple hash function that xors
- * and rotates all characters together. It is optimized to process 2
- * characters at a time (adding 16-bits to the hash value each
- * iteration).
- */
-static BUN strHash(const char *key) __attribute__((__pure__));
-static inline BUN
+static inline BUN __attribute__((__pure__))
 strHash(const char *key)
 {
 	BUN y = 0;

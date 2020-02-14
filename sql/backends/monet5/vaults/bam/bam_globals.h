@@ -58,10 +58,7 @@ prepare_for_log(const char *str, bit first_line_hash) {
 }
 
 /* Function that adds a hash before every printed line, so Mtest.py will not notice a difference in whether or not we are debugging. Arguments to this function should  */
-static inline int
-hash_fprintf(FILE *f, const char *format, ...) __attribute__ ((format (printf, 2, 3) ));
-
-static inline int
+static inline int __attribute__ ((format (printf, 2, 3) ))
 hash_fprintf(FILE *f, const char *format, ...) {
 	va_list arg;
 	int done;

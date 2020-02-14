@@ -36,9 +36,8 @@ typedef struct {
 
 #define kroundup32(x) (--(x), (x)|=(x)>>1, (x)|=(x)>>2, (x)|=(x)>>4, (x)|=(x)>>8, (x)|=(x)>>16, ++(x))
 
-static int ksprintf(kstring_t *s, const char *fmt, ...)
-	__attribute__((__format__(__printf__, 2, 3)));
-static int ksprintf(kstring_t *s, const char *fmt, ...)
+static int __attribute__((__format__(__printf__, 2, 3)))
+ksprintf(kstring_t *s, const char *fmt, ...)
 {
 	va_list ap;
 	int l;

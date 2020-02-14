@@ -50,10 +50,7 @@ static char *M5OutOfMemory = MAL_MALLOC_FAIL;
  * showException such that they share the same code, because reuse
  * is good.
  */
-static str createExceptionInternal(enum malexception type, const char *fcn, const char *format, va_list ap)
-	__attribute__((__format__(__printf__, 3, 0)))
-	__attribute__((__returns_nonnull__));
-static str
+static str __attribute__((__format__(__printf__, 3, 0), __returns_nonnull__))
 createExceptionInternal(enum malexception type, const char *fcn, const char *format, va_list ap)
 {
 	char *message, local[GDKMAXERRLEN];
@@ -151,11 +148,7 @@ freeException(str msg)
  * showScriptException such that they share the same code, because reuse
  * is good.
  */
-static str
-createMalExceptionInternal(MalBlkPtr mb, int pc, enum malexception type, char *prev, const char *format, va_list ap)
-	__attribute__((__format__(__printf__, 5, 0)))
-	__attribute__((__returns_nonnull__));
-static str
+static str __attribute__((__format__(__printf__, 5, 0), __returns_nonnull__))
 createMalExceptionInternal(MalBlkPtr mb, int pc, enum malexception type, char *prev, const char *format, va_list ap)
 {
 	char buf[GDKMAXERRLEN];

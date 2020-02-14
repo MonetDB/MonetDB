@@ -1519,9 +1519,7 @@ gdk_export void GDKclrerr(void);
  * @end itemize
  */
 /* NOTE: `p' is evaluated after a possible upgrade of the heap */
-static inline gdk_return Tputvalue(BAT *b, BUN p, const void *v, bool copyall)
-	__attribute__((__warn_unused_result__));
-static inline gdk_return
+static inline gdk_return __attribute__((__warn_unused_result__))
 Tputvalue(BAT *b, BUN p, const void *v, bool copyall)
 {
 	if (b->tvarsized && b->ttype) {
@@ -1561,18 +1559,14 @@ Tputvalue(BAT *b, BUN p, const void *v, bool copyall)
 	return GDK_SUCCEED;
 }
 
-static inline gdk_return tfastins_nocheck(BAT *b, BUN p, const void *v, int s)
-	__attribute__((__warn_unused_result__));
-static inline gdk_return
+static inline gdk_return __attribute__((__warn_unused_result__))
 tfastins_nocheck(BAT *b, BUN p, const void *v, int s)
 {
 	b->theap.free += s;
 	return Tputvalue(b, p, v, false);
 }
 
-static inline gdk_return bunfastapp_nocheck(BAT *b, BUN p, const void *v, int ts)
-	__attribute__((__warn_unused_result__));
-static inline gdk_return
+static inline gdk_return __attribute__((__warn_unused_result__))
 bunfastapp_nocheck(BAT *b, BUN p, const void *v, int ts)
 {
 	gdk_return rc;
@@ -1582,9 +1576,7 @@ bunfastapp_nocheck(BAT *b, BUN p, const void *v, int ts)
 	return rc;
 }
 
-static inline gdk_return bunfastapp(BAT *b, const void *v)
-	__attribute__((__warn_unused_result__));
-static inline gdk_return
+static inline gdk_return __attribute__((__warn_unused_result__))
 bunfastapp(BAT *b, const void *v)
 {
 	if (BATcount(b) >= BATcapacity(b)) {
@@ -1610,9 +1602,7 @@ bunfastapp(BAT *b, const void *v)
 	  ((TYPE *) (b)->theap.base)[(b)->batCount++] = * (const TYPE *) (v), \
 	  GDK_SUCCEED)) 
 
-static inline gdk_return tfastins_nocheckVAR(BAT *b, BUN p, const void *v, int s)
-	__attribute__((__warn_unused_result__));
-static inline gdk_return
+static inline gdk_return __attribute__((__warn_unused_result__))
 tfastins_nocheckVAR(BAT *b, BUN p, const void *v, int s)
 {
 	var_t d;
@@ -1647,9 +1637,7 @@ tfastins_nocheckVAR(BAT *b, BUN p, const void *v, int s)
 	return GDK_SUCCEED;
 }
 
-static inline gdk_return bunfastapp_nocheckVAR(BAT *b, BUN p, const void *v, int ts)
-	__attribute__((__warn_unused_result__));
-static inline gdk_return
+static inline gdk_return __attribute__((__warn_unused_result__))
 bunfastapp_nocheckVAR(BAT *b, BUN p, const void *v, int ts)
 {
 	gdk_return rc;
@@ -1659,9 +1647,7 @@ bunfastapp_nocheckVAR(BAT *b, BUN p, const void *v, int ts)
 	return rc;
 }
 
-static inline gdk_return bunfastappVAR(BAT *b, const void *v)
-	__attribute__((__warn_unused_result__));
-static inline gdk_return
+static inline gdk_return __attribute__((__warn_unused_result__))
 bunfastappVAR(BAT *b, const void *v)
 {
 	if (BATcount(b) >= BATcapacity(b)) {
