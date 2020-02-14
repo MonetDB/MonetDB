@@ -1009,14 +1009,20 @@ HASHins(BAT *b, BUN i, const void *v)
 {
 	MT_lock_set(&b->batIdxLock);
 	Hash *h = b->thash;
-	if (h == (Hash *) 1 ||
-	    h == NULL ||
-	    (ATOMsize(b->ttype) > 2 &&
-	     HASHgrowbucket(b) != GDK_SUCCEED) ||
-	    ((i + 1) * h->width > h->heaplink.size &&
-	     HEAPextend(&h->heaplink,
-			i * h->width + GDK_mmap_pagesize,
-			true) != GDK_SUCCEED)) {
+	if (h == NULL) {
+		/* nothing to do */
+	} else if (h == (Hash *) 1) {
+		GDKunlink(BBPselectfarm(b->batRole, b->ttype, hashheap),
+			  BATDIR,
+			  BBP_physical(b->batCacheid),
+			  "thash");
+		b->thash = NULL;
+	} else if ((ATOMsize(b->ttype) > 2 &&
+		    HASHgrowbucket(b) != GDK_SUCCEED) ||
+		   ((i + 1) * h->width > h->heaplink.size &&
+		    HEAPextend(&h->heaplink,
+			       i * h->width + GDK_mmap_pagesize,
+			       true) != GDK_SUCCEED)) {
 		b->thash = NULL;
 		HEAPfree(&h->heapbckt, true);
 		HEAPfree(&h->heaplink, true);
