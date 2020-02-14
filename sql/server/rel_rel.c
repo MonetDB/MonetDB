@@ -1782,7 +1782,6 @@ rel_dependencies(mvc *sql, sql_rel *r)
 	return l;
 }
 
-
 static list *exps_exp_visitor(mvc *sql, sql_rel *rel, list *exps, int depth, exp_rewrite_fptr exp_rewriter);
 
 static list *
@@ -1955,66 +1954,67 @@ rel_exp_visitor(mvc *sql, sql_rel *rel, exp_rewrite_fptr exp_rewriter)
 	return rel;
 }
 
-static list *exps_rel_visitor(mvc *sql, list *exps, rel_rewrite_fptr rel_rewriter);
+static list *exps_rel_visitor(mvc *sql, list *exps, rel_rewrite_fptr rel_rewriter, int *changes,bool topdown);
 
 static sql_exp *
-exp_rel_visitor(mvc *sql, sql_exp *e, rel_rewrite_fptr rel_rewriter) 
+exp_rel_visitor(mvc *sql, sql_exp *e, rel_rewrite_fptr rel_rewriter, int *changes,bool topdown) 
 {
 	assert(e);
 	switch(e->type) {
 	case e_column:
 		break;
 	case e_convert:
-		if ((e->l = exp_rel_visitor(sql, e->l, rel_rewriter)) == NULL)
+		if ((e->l = exp_rel_visitor(sql, e->l, rel_rewriter, changes, topdown)) == NULL)
 			return NULL;
 		break;
 	case e_aggr:
 	case e_func: 
 		if (e->r) /* rewrite rank */
-			if ((e->r = exps_rel_visitor(sql, e->r, rel_rewriter)) == NULL)
+			if ((e->r = exps_rel_visitor(sql, e->r, rel_rewriter, changes, topdown)) == NULL)
 				return NULL;
 		if (e->l)
-			if ((e->l = exps_rel_visitor(sql, e->l, rel_rewriter)) == NULL)
+			if ((e->l = exps_rel_visitor(sql, e->l, rel_rewriter, changes, topdown)) == NULL)
 				return NULL;
 		break;
 	case e_cmp:	
 		if (e->flag == cmp_or || e->flag == cmp_filter) {
-			if ((e->l = exps_rel_visitor(sql, e->l, rel_rewriter)) == NULL)
+			if ((e->l = exps_rel_visitor(sql, e->l, rel_rewriter, changes, topdown)) == NULL)
 				return NULL;
-			if ((e->r = exps_rel_visitor(sql, e->r, rel_rewriter)) == NULL)
+			if ((e->r = exps_rel_visitor(sql, e->r, rel_rewriter, changes, topdown)) == NULL)
 				return NULL;
 		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
-			if ((e->l = exp_rel_visitor(sql, e->l, rel_rewriter)) == NULL)
+			if ((e->l = exp_rel_visitor(sql, e->l, rel_rewriter, changes, topdown)) == NULL)
 				return NULL;
-			if ((e->r = exps_rel_visitor(sql, e->r, rel_rewriter)) == NULL)
+			if ((e->r = exps_rel_visitor(sql, e->r, rel_rewriter, changes, topdown)) == NULL)
 				return NULL;
 		} else {
-			if ((e->l = exp_rel_visitor(sql, e->l, rel_rewriter)) == NULL)
+			if ((e->l = exp_rel_visitor(sql, e->l, rel_rewriter, changes, topdown)) == NULL)
 				return NULL;
-			if ((e->r = exp_rel_visitor(sql, e->r, rel_rewriter)) == NULL)
+			if ((e->r = exp_rel_visitor(sql, e->r, rel_rewriter, changes, topdown)) == NULL)
 				return NULL;
-			if (e->f && (e->f = exp_rel_visitor(sql, e->f, rel_rewriter)) == NULL)
+			if (e->f && (e->f = exp_rel_visitor(sql, e->f, rel_rewriter, changes, topdown)) == NULL)
 				return NULL;
 		}
 		break;
 	case e_psm:
 		if (e->flag & PSM_SET || e->flag & PSM_RETURN) {
-			if ((e->l = exp_rel_visitor(sql, e->l, rel_rewriter)) == NULL)
+			if ((e->l = exp_rel_visitor(sql, e->l, rel_rewriter, changes, topdown)) == NULL)
 				return NULL;
 		} else if (e->flag & PSM_VAR) {
 			return e;
 		} else if (e->flag & PSM_WHILE || e->flag & PSM_IF) {
-			if ((e->l = exp_rel_visitor(sql, e->l, rel_rewriter)) == NULL)
+			if ((e->l = exp_rel_visitor(sql, e->l, rel_rewriter, changes, topdown)) == NULL)
 				return NULL;
-			if ((e->r = exps_rel_visitor(sql, e->r, rel_rewriter)) == NULL)
+			if ((e->r = exps_rel_visitor(sql, e->r, rel_rewriter, changes, topdown)) == NULL)
 				return NULL;
-			if (e->flag == PSM_IF && e->f && (e->f = exps_rel_visitor(sql, e->f, rel_rewriter)) == NULL)
+			if (e->flag == PSM_IF && e->f && (e->f = exps_rel_visitor(sql, e->f, rel_rewriter, changes, topdown)) == NULL)
 				return NULL;
 		} else if (e->flag & PSM_REL) {
-			if ((e->l = rel_visitor(sql, e->l, rel_rewriter)) == NULL)
+			sql_rel *(*func)(mvc *, sql_rel *, rel_rewrite_fptr, int*) = topdown ? rel_visitor_topdown : rel_visitor_bottomup;
+			if ((e->l = func(sql, e->l, rel_rewriter, changes)) == NULL)
 				return NULL;
 		} else if (e->flag & PSM_EXCEPTION) {
-			if ((e->l = exp_rel_visitor(sql, e->l, rel_rewriter)) == NULL)
+			if ((e->l = exp_rel_visitor(sql, e->l, rel_rewriter, changes, topdown)) == NULL)
 				return NULL;
 		}
 		break;
@@ -2025,7 +2025,7 @@ exp_rel_visitor(mvc *sql, sql_exp *e, rel_rewrite_fptr rel_rewriter)
 }
 
 static list *
-exps_rel_visitor(mvc *sql, list *exps, rel_rewrite_fptr rel_rewriter) 
+exps_rel_visitor(mvc *sql, list *exps, rel_rewrite_fptr rel_rewriter, int *changes,bool topdown) 
 {
 	node *n;
 
@@ -2034,46 +2034,60 @@ exps_rel_visitor(mvc *sql, list *exps, rel_rewrite_fptr rel_rewriter)
 	for (n = exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
 
-		if (e && (n->data = exp_rel_visitor(sql, e, rel_rewriter)) == NULL)
+		if (e && (n->data = exp_rel_visitor(sql, e, rel_rewriter, changes, topdown)) == NULL)
 			return NULL;
 	}
 	list_hash_clear(exps);
 	return exps;
 }
 
-sql_rel *
-rel_visitor(mvc *sql, sql_rel *rel, rel_rewrite_fptr rel_rewriter) 
+static inline sql_rel *
+do_rel_visitor(mvc *sql, sql_rel *rel, rel_rewrite_fptr rel_rewriter, int *changes, bool topdown)
+{
+	if (rel->exps && (rel->exps = exps_rel_visitor(sql, rel->exps, rel_rewriter, changes, topdown)) == NULL)
+		return NULL;
+	if ((is_groupby(rel->op) || is_simple_project(rel->op)) && rel->r && (rel->r = exps_rel_visitor(sql, rel->r, rel_rewriter, changes, topdown)) == NULL)
+		return NULL;
+	return rel_rewriter(sql, rel, changes);
+}
+
+static inline sql_rel *
+rel_visitor(mvc *sql, sql_rel *rel, rel_rewrite_fptr rel_rewriter, int *changes, bool topdown) 
 {
 	if (!rel)
 		return rel;
+	if (topdown) {
+		if (!(rel = do_rel_visitor(sql, rel, rel_rewriter, changes, true)))
+			return rel;
+	}
 
-	if (rel->exps && (rel->exps = exps_rel_visitor(sql, rel->exps, rel_rewriter)) == NULL)
-		return NULL;
-	if ((is_groupby(rel->op) || is_simple_project(rel->op)) && rel->r && (rel->r = exps_rel_visitor(sql, rel->r, rel_rewriter)) == NULL)
-		return NULL;
+	sql_rel *(*func)(mvc *, sql_rel *, rel_rewrite_fptr, int*) = topdown ? rel_visitor_topdown : rel_visitor_bottomup;
 
 	switch(rel->op){
 	case op_basetable:
 	case op_table:
-		return rel;
+		if (rel->op == op_table && rel->l && rel->flag != 2) 
+			if ((rel->l = func(sql, rel->l, rel_rewriter, changes)) == NULL)
+				return NULL;
+		break;
 	case op_ddl:
 		if (rel->flag == ddl_output) {
 			if (rel->l) 
-				if ((rel->l = rel_visitor(sql, rel->l, rel_rewriter)) == NULL)
+				if ((rel->l = func(sql, rel->l, rel_rewriter, changes)) == NULL)
 					return NULL;
 		} else if (rel->flag == ddl_list || rel->flag == ddl_exception) {
 			if (rel->l)
-				if ((rel->l = rel_visitor(sql, rel->l, rel_rewriter)) == NULL)
+				if ((rel->l = func(sql, rel->l, rel_rewriter, changes)) == NULL)
 					return NULL;
 			if (rel->r)
-				if ((rel->r = rel_visitor(sql, rel->r, rel_rewriter)) == NULL)
+				if ((rel->r = func(sql, rel->r, rel_rewriter, changes)) == NULL)
 					return NULL;
 		} else if (rel->flag == ddl_psm) {
-			if ((rel->exps = exps_rel_visitor(sql, rel->exps, rel_rewriter)) == NULL)
+			if ((rel->exps = exps_rel_visitor(sql, rel->exps, rel_rewriter, changes, topdown)) == NULL)
 				return NULL;
 		} else if (rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq) {
 			if (rel->l)
-				if ((rel->l = rel_visitor(sql, rel->l, rel_rewriter)) == NULL)
+				if ((rel->l = func(sql, rel->l, rel_rewriter, changes)) == NULL)
 					return NULL;
 		}
 		return rel;
@@ -2094,10 +2108,10 @@ rel_visitor(mvc *sql, sql_rel *rel, rel_rewrite_fptr rel_rewriter)
 	case op_inter:
 	case op_except:
 		if (rel->l)
-			if ((rel->l = rel_visitor(sql, rel->l, rel_rewriter)) == NULL)
+			if ((rel->l = func(sql, rel->l, rel_rewriter, changes)) == NULL)
 				return NULL;
 		if (rel->r)
-			if ((rel->r = rel_visitor(sql, rel->r, rel_rewriter)) == NULL)
+			if ((rel->r = func(sql, rel->r, rel_rewriter, changes)) == NULL)
 				return NULL;
 		break;
 	case op_select:
@@ -2106,11 +2120,24 @@ rel_visitor(mvc *sql, sql_rel *rel, rel_rewrite_fptr rel_rewriter)
 	case op_project:
 	case op_groupby:
 		if (rel->l)
-			if ((rel->l = rel_visitor(sql, rel->l, rel_rewriter)) == NULL)
+			if ((rel->l = func(sql, rel->l, rel_rewriter, changes)) == NULL)
 				return NULL;
-		if ((rel->exps = exps_rel_visitor(sql, rel->exps, rel_rewriter)) == NULL)
-			return NULL;
 		break;
 	}
-	return rel_rewriter(sql, rel);
+
+	if (!topdown)
+		rel = do_rel_visitor(sql, rel, rel_rewriter, changes, false);
+	return rel;
+}
+
+sql_rel *
+rel_visitor_topdown(mvc *sql, sql_rel *rel, rel_rewrite_fptr rel_rewriter, int *changes)
+{
+	return rel_visitor(sql, rel, rel_rewriter, changes, true);
+}
+
+sql_rel *
+rel_visitor_bottomup(mvc *sql, sql_rel *rel, rel_rewrite_fptr rel_rewriter, int *changes)
+{
+	return rel_visitor(sql, rel, rel_rewriter, changes, false);
 }
