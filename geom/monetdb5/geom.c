@@ -5551,7 +5551,7 @@ wkbaFROMSTR(const char *fromStr, size_t *len, wkba **toArray, bool external)
 const wkba *
 wkbaNULL(void)
 {
-	static wkba nullval = {.itemsNum = ~0};
+	static const wkba nullval = {.itemsNum = ~0};
 
 	return &nullval;
 }
