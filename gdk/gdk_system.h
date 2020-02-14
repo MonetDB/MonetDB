@@ -37,6 +37,7 @@
 #define __has_attribute__malloc__ 1
 #define __has_attribute__nonstring__ 0
 #define __has_attribute__noreturn__ 1
+#define __has_attribute__pure__ 0
 #define __has_attribute__returns_nonnull__ 0
 #define __has_attribute__visibility__ 1
 #define __has_attribute__warn_unused_result__ 1
@@ -60,6 +61,9 @@
 #endif
 #if !__has_attribute(__noreturn__)
 #define __noreturn__
+#endif
+#if !__has_attribute(__pure__)
+#define __pure__
 #endif
 /* these are used in some *private.h files */
 #if !__has_attribute(__visibility__)

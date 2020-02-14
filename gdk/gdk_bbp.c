@@ -127,7 +127,7 @@ static bool havehge = false;
 static void
 BBP_insert(bat i)
 {
-	bat idx = (bat) (GDK_STRHASH(BBP_logical(i)) & BBP_mask);
+	bat idx = (bat) (strHash(BBP_logical(i)) & BBP_mask);
 
 	BBP_next(i) = BBP_hash[idx];
 	BBP_hash[idx] = i;
@@ -138,7 +138,7 @@ BBP_delete(bat i)
 {
 	bat *h = BBP_hash;
 	const char *s = BBP_logical(i);
-	bat idx = (bat) (GDK_STRHASH(s) & BBP_mask);
+	bat idx = (bat) (strHash(s) & BBP_mask);
 
 	for (h += idx; (i = *h) != 0; h = &BBP_next(i)) {
 		if (strcmp(BBP_logical(i), s) == 0) {
@@ -2031,7 +2031,7 @@ BBP_find(const char *nme, bool lock)
 		/* must lock since hash-lookup traverses other BATs */
 		if (lock)
 			MT_lock_set(&GDKnameLock);
-		for (i = BBP_hash[GDK_STRHASH(nme) & BBP_mask]; i; i = BBP_next(i)) {
+		for (i = BBP_hash[strHash(nme) & BBP_mask]; i; i = BBP_next(i)) {
 			if (strcmp(BBP_logical(i), nme) == 0)
 				break;
 		}
