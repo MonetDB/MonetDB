@@ -35,6 +35,7 @@
 #define __has_attribute__cold__ 1
 #define __has_attribute__format__ 1
 #define __has_attribute__malloc__ 1
+#define __has_attribute__nonstring__ 0
 #define __has_attribute__noreturn__ 1
 #define __has_attribute__returns_nonnull__ 0
 #define __has_attribute__visibility__ 1
@@ -53,6 +54,9 @@
 #endif
 #if !__has_attribute(__format__)
 #define __format__(a,b,c)
+#endif
+#if !__has_attribute(__nonstring__)
+#define __nonstring__
 #endif
 #if !__has_attribute(__noreturn__)
 #define __noreturn__
