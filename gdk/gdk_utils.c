@@ -1412,7 +1412,7 @@ GDKfatal(const char *format, ...)
 #ifdef COREDUMP
 			abort();
 #else
-			GDKexit(1);
+			exit(1);
 #endif
 		}
 	}

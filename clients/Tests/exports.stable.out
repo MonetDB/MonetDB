@@ -512,7 +512,6 @@ ssize_t shtFromStr(const char *src, size_t *len, sht **dst, bool external);
 ssize_t shtToStr(str *dst, size_t *len, const sht *src, bool external);
 const sht sht_nil;
 ssize_t strFromStr(const char *restrict src, size_t *restrict len, str *restrict dst, bool external);
-BUN strHash(const char *s);
 const char str_nil[2];
 gdk_return void_inplace(BAT *b, oid id, const void *val, bool force) __attribute__((__warn_unused_result__));
 int win_mkdir(const char *, const int mode);

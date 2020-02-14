@@ -527,18 +527,14 @@ build up the hash (not copied in the trans dup)) */
 	if (valide) {
 		store_unlock();
 		if (sql_save_snapshots(tr) != SQL_OK) {
-			char *err = sql_message(SQLSTATE(40000) "%s transaction commit failed (perhaps your disk is full?) exiting (kernel error: %s)", operation, GDKerrbuf);
-			GDKfatal("%s", err);
-			_DELETE(err);
+			GDKfatal("%s transaction commit failed (perhaps your disk is full?) exiting (kernel error: %s)", operation, GDKerrbuf);
 		}
 		store_lock();
 	}
 	valide = sql_trans_validate(tr);
 	if (valide) {
 		if ((ok = sql_trans_commit(tr)) != SQL_OK) {
-			char *err = sql_message(SQLSTATE(40000) "%s transaction commit failed (perhaps your disk is full?) exiting (kernel error: %s)", operation, GDKerrbuf);
-			GDKfatal("%s", err);
-			_DELETE(err);
+			GDKfatal("%s transaction commit failed (perhaps your disk is full?) exiting (kernel error: %s)", operation, GDKerrbuf);
 		}
 	} else {
 		store_unlock();

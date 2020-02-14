@@ -2337,9 +2337,7 @@ store_unlock(void)
 
 // Helper function for tar_write_header.
 // Our stream.h makes sure __attribute__ exists.
-static void tar_write_header_field(char **cursor_ptr, size_t size, const char *fmt, ...)
-	__attribute__((__format__(__printf__, 3, 4)));
-static void
+static void __attribute__((__format__(__printf__, 3, 4)))
 tar_write_header_field(char **cursor_ptr, size_t size, const char *fmt, ...)
 {
 	va_list ap;
