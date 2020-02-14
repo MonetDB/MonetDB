@@ -1640,7 +1640,7 @@ rewrite_simplify(mvc *sql, sql_rel *rel)
 	if (!rel)
 		return rel;
 
-	if ((is_select(rel->op) || is_join(rel->op)) && !list_empty(rel->exps))
+	if ((is_select(rel->op) || is_join(rel->op) || is_semi(rel->op)) && !list_empty(rel->exps))
 		rel->exps = exps_simplify_exp(sql, rel->exps);
 	return rel;
 }
@@ -1773,7 +1773,7 @@ rewrite_aggregates(mvc *sql, sql_rel *rel)
 static sql_rel *
 rewrite_or_exp(mvc *sql, sql_rel *rel)
 {
-	if ((is_select(rel->op) || is_join(rel->op)) && !list_empty(rel->exps)) {
+	if ((is_select(rel->op) || is_join(rel->op) || is_semi(rel->op)) && !list_empty(rel->exps)) {
 		for(node *n=rel->exps->h; n; n=n->next) {
 			sql_exp *e = n->data;
 
@@ -2561,7 +2561,7 @@ rewrite_compare_exps(mvc *sql, list *exps)
 static sql_rel *
 rewrite_compare_exp(mvc *sql, sql_rel *rel)
 {
-	if ((is_select(rel->op) || is_join(rel->op)) && !list_empty(rel->exps))
+	if ((is_select(rel->op) || is_join(rel->op) || is_semi(rel->op)) && !list_empty(rel->exps))
 		rel->exps = rewrite_compare_exps(sql, rel->exps);
 	return rel;
 }
