@@ -887,32 +887,42 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 		if (body && LANG_EXT(lang)) {
 			char *lang_body = body->h->data.sval, *mod = NULL, *slang = NULL;
 			switch (lang) {
-				case FUNC_LANG_R:
-					mod = "rapi";
-					slang = "R";
-					break;
-				case FUNC_LANG_C:
-					mod = "capi";
-					slang = "C";
-					break;
-				case FUNC_LANG_CPP:
-					mod = "capi";
-					slang = "CPP";
-					break;
-				case FUNC_LANG_J:
-					mod = "japi";
-					slang = "Javascript";
-					break;
-				case FUNC_LANG_PY:
-					mod = "pyapi";
-					slang = "Python";
-					break;
-				case FUNC_LANG_MAP_PY:
-					mod = "pyapimap";
-					slang = "Python";
-					break;
-				default:
-					assert(0);
+			case FUNC_LANG_R:
+				mod = "rapi";
+				slang = "R";
+				break;
+			case FUNC_LANG_C:
+				mod = "capi";
+				slang = "C";
+				break;
+			case FUNC_LANG_CPP:
+				mod = "capi";
+				slang = "CPP";
+				break;
+			case FUNC_LANG_J:
+				mod = "japi";
+				slang = "Javascript";
+				break;
+			case FUNC_LANG_PY:
+			case FUNC_LANG_PY2:
+				mod = "pyapi";
+				slang = "Python";
+				break;
+			case FUNC_LANG_MAP_PY:
+			case FUNC_LANG_MAP_PY2:
+				mod = "pyapimap";
+				slang = "Python";
+				break;
+			case FUNC_LANG_PY3:
+				mod = "pyapi3";
+				slang = "Python";
+				break;
+			case FUNC_LANG_MAP_PY3:
+				mod = "pyapi3map";
+				slang = "Python";
+				break;
+			default:
+				assert(0);
 			}
 			sql->params = NULL;
 			if (create) {
