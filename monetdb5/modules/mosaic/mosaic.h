@@ -250,7 +250,7 @@ typedef struct _MosaicLayout {
 \
 	SET_VALUES;\
 \
-	if (!GDK_STRNIL(properties)) {\
+	if (!strNil(properties)) {\
 		char buffer[LAYOUT_BUFFER_SIZE];\
 		char* pbuffer = &buffer[0];\
 		str msg = JSONstr2json(&pbuffer, (char**) &properties);\

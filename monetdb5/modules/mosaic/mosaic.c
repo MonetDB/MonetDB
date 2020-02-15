@@ -63,7 +63,7 @@ bit MOSisTypeAllowed(char compression, BAT* b) {
 
 static void
 _construct_compression_mask(sht* compression_mask, char* compressions) {
-	if (GDK_STRNIL(compressions)) {
+	if (strNil(compressions)) {
 		*compression_mask = ~0;
 		return;
 	}
