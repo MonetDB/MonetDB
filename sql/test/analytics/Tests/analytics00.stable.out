@@ -2020,6 +2020,23 @@ stdout of test 'analytics00` in directory 'sql/test/analytics` itself:
 [ 2147483645	]
 [ 2147483645	]
 [ 2147483645	]
+#CREATE TABLE myorders (
+#O_ORDERKEY       INTEGER NOT NULL,
+#O_CUSTKEY        INTEGER NOT NULL,
+#O_ORDERSTATUS    CHAR(1) NOT NULL,
+#O_TOTALPRICE     DECIMAL(15,2) NOT NULL,
+#O_ORDERDATE      DATE NOT NULL,
+#O_ORDERPRIORITY  CHAR(15) NOT NULL,
+#O_CLERK          CHAR(15) NOT NULL,
+#O_SHIPPRIORITY   INTEGER NOT NULL,
+#O_COMMENT        VARCHAR(79) NOT NULL);
+#SELECT o_custkey, EXTRACT(MONTH FROM o_orderdate) AS purchase_month, 
+#       CAST(SUM(o_totalprice) OVER (PARTITION BY o_custkey  ORDER BY EXTRACT(MONTH FROM o_orderdate) ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS DECIMAL(15,2))
+#FROM myorders;
+% sys.myorders,	sys.,	sys.%3 # table_name
+% o_custkey,	purchase_month,	%3 # name
+% int,	int,	decimal # type
+% 1,	1,	17 # length
 #rollback;
 
 # 16:31:40 >  

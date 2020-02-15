@@ -77,7 +77,7 @@ color_fromstr(const char *colorStr, size_t *len, color **c, bool external)
 		*len = sizeof(color);
 	}
 
-	if (GDK_STRNIL(colorStr)) {
+	if (strNil(colorStr)) {
 		**c = color_nil;
 		return 1;
 	}

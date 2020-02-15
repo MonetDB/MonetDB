@@ -109,7 +109,8 @@ extern sql_exp * exps_find_match_exp(list *l, sql_exp *e);
 typedef sql_exp *(*exp_rewrite_fptr)(mvc *sql, sql_rel *rel, sql_exp *e, int depth /* depth of the nested expression */ );
 extern sql_rel *rel_exp_visitor(mvc *sql, sql_rel *rel, exp_rewrite_fptr exp_rewriter);
 
-typedef sql_rel *(*rel_rewrite_fptr)(mvc *sql, sql_rel *rel);
-extern sql_rel *rel_visitor(mvc *sql, sql_rel *rel, rel_rewrite_fptr rel_rewriter);
+typedef sql_rel *(*rel_rewrite_fptr)(mvc *sql, sql_rel *rel, int *changes);
+extern sql_rel *rel_visitor_topdown(mvc *sql, sql_rel *rel, rel_rewrite_fptr rel_rewriter, int *changes);
+extern sql_rel *rel_visitor_bottomup(mvc *sql, sql_rel *rel, rel_rewrite_fptr rel_rewriter, int *changes);
 
 #endif /* _REL_REL_H_ */

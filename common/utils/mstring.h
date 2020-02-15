@@ -23,7 +23,6 @@ strcpy_len(char *restrict dst, const char *restrict src, size_t n)
 				return i;
 		}
 		dst[n - 1] = 0;
-		return n-1;
 	}
 	return strlen(src);
 }

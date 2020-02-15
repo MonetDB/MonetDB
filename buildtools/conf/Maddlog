@@ -149,7 +149,6 @@ case "$CL" in
 esac
 
 PROJECT=${dir##*/}
-IDENTITY=$(hg showconfig ui.username)
 
 if [ $# -gt 0 ]; then
     msg=$(echo "  $*" | fmt)

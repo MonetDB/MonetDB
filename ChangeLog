@@ -1,6 +1,9 @@
 # ChangeLog file for devel
 # This file is updated with Maddlog
 
+* Thu Feb  6 2020 Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com>
+- Add port and host as fields in the .monetdb file.
+
 * Thu Jan 30 2020 Sjoerd Mullender <sjoerd@acm.org>
 - Removed support for bam and sam files.
 

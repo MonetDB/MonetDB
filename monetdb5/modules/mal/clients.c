@@ -92,27 +92,12 @@ CLTtimeConvert(time_t l, char *s)
 {
 	struct tm localt = (struct tm) {0};
 
-#ifdef HAVE_LOCALTIME_R
 	(void) localtime_r(&l, &localt);
-#else
-	/* race condition: return value could be
-	 * overwritten in parallel thread before
-	 * assignment complete */
-	localt = *localtime(&l);
-#endif
 
 #ifdef HAVE_ASCTIME_R3
 	asctime_r(&localt, s, 26);
 #else
-#ifdef HAVE_ASCTIME_R
 	asctime_r(&localt, s);
-#else
-	/* race condition: return value could be
-	 * overwritten in parallel thread before copy
-	 * complete, however on Windows, asctime is
-	 * thread-safe */
-	strcpy_len(s, asctime(&localt), 26);
-#endif
 #endif
 	s[24] = 0;		/* remove newline */
 }

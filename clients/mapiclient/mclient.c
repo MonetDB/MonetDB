@@ -2890,7 +2890,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, int save_history
 
 		if (mapi_get_querytype(hdl) == Q_PREPARE) {
 			prepno = mapi_get_tableid(hdl);
-			assert(prepno < 100);
+			assert(mode != SQL || formatter != TESTformatter || prepno < 100); /* prepno is used only at the TestWeb */
 		}
 
 		rc = format_result(mid, hdl, interactive || echoquery);
@@ -3186,6 +3186,7 @@ main(int argc, char **argv)
 	char *command = NULL;
 	char *dbname = NULL;
 	char *output = NULL;	/* output format as string */
+	DotMonetdb dotfile = {0};
 	FILE *fp = NULL;
 	bool trace = false;
 	bool dump = false;
@@ -3265,7 +3266,17 @@ main(int argc, char **argv)
 	}
 
 	/* parse config file first, command line options override */
-	parse_dotmonetdb(&user, &passwd, &dbname, &language, &save_history, &output, &pagewidth);
+	// parse_dotmonetdb(&user, &passwd, &dbname, &language, &save_history, &output, &pagewidth);
+	parse_dotmonetdb(&dotfile);
+        user = dotfile.user;
+        passwd = dotfile.passwd;
+	dbname = dotfile.dbname;
+        language = dotfile.language;
+	host = dotfile.host;
+	save_history = (int)dotfile.save_history;
+        output = dotfile.output;
+        pagewidth = dotfile.pagewidth;
+	port = dotfile.port;
 	pagewidthset = pagewidth != 0;
 	if (language) {
 		if (strcmp(language, "sql") == 0) {

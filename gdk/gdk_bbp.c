@@ -127,7 +127,7 @@ static bool havehge = false;
 static void
 BBP_insert(bat i)
 {
-	bat idx = (bat) (GDK_STRHASH(BBP_logical(i)) & BBP_mask);
+	bat idx = (bat) (strHash(BBP_logical(i)) & BBP_mask);
 
 	BBP_next(i) = BBP_hash[idx];
 	BBP_hash[idx] = i;
@@ -138,7 +138,7 @@ BBP_delete(bat i)
 {
 	bat *h = BBP_hash;
 	const char *s = BBP_logical(i);
-	bat idx = (bat) (GDK_STRHASH(s) & BBP_mask);
+	bat idx = (bat) (strHash(s) & BBP_mask);
 
 	for (h += idx; (i = *h) != 0; h = &BBP_next(i)) {
 		if (strcmp(BBP_logical(i), s) == 0) {
@@ -1046,7 +1046,7 @@ BBPreadEntries(FILE *fp, unsigned bbpversion)
 		uint64_t batid;
 		uint16_t status;
 		char headname[129];
-		char filename[20];
+		char filename[sizeof(BBP_physical(0))];
 		unsigned int properties;
 		int nread, n;
 		char *s, *options = NULL;
@@ -1054,8 +1054,6 @@ BBPreadEntries(FILE *fp, unsigned bbpversion)
 		uint64_t count, capacity, base = 0;
 		int Thashash;
 
-		static_assert(sizeof(BBP_physical(0)) == sizeof(filename),
-			"filename should be same size as BBPrec.physical");
 		if ((s = strchr(buf, '\r')) != NULL) {
 			/* convert \r\n into just \n */
 			if (s[1] != '\n') {
@@ -1416,6 +1414,15 @@ BBPinit(void)
 	struct stat st;
 	unsigned bbpversion = 0;
 	int i;
+
+	/* the maximum number of BATs allowed in the system and the
+	 * size of the "physical" array are linked in a complicated
+	 * manner.  The expression below shows the relationship */
+	static_assert((uint64_t) N_BBPINIT * BBPINIT < (UINT64_C(1) << (3 * ((sizeof(BBP[0][0].physical) + 2) * 2 / 5))), "\"physical\" array in BBPrec is too small");
+	/* similarly, the maximum number of BATs allowed also has a
+	 * (somewhat simpler) relation with the size of the "bak"
+	 * array */
+	static_assert((uint64_t) N_BBPINIT * BBPINIT < (UINT64_C(1) << (3 * (sizeof(BBP[0][0].bak) - 5))), "\"bak\" array in BBPrec is too small");
 
 	if (!GDKinmemory()) {
 		str bbpdirstr, backupbbpdirstr;
@@ -2029,7 +2036,7 @@ BBP_find(const char *nme, bool lock)
 		/* must lock since hash-lookup traverses other BATs */
 		if (lock)
 			MT_lock_set(&GDKnameLock);
-		for (i = BBP_hash[GDK_STRHASH(nme) & BBP_mask]; i; i = BBP_next(i)) {
+		for (i = BBP_hash[strHash(nme) & BBP_mask]; i; i = BBP_next(i)) {
 			if (strcmp(BBP_logical(i), nme) == 0)
 				break;
 		}

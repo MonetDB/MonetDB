@@ -99,19 +99,12 @@ ALARMctime(str *res)
 {
 	time_t t = time(0);
 	char *base;
+	char buf[26];
 
 #ifdef HAVE_CTIME_R3
-	char buf[26];
-
 	base = ctime_r(&t, buf, sizeof(buf));
 #else
-#ifdef HAVE_CTIME_R
-	char buf[26];
-
 	base = ctime_r(&t, buf);
-#else
-	base = ctime(&t);
-#endif
 #endif
 	if (base == NULL)
 		/* very unlikely to happen... */

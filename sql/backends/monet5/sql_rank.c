@@ -1855,7 +1855,7 @@ SQLstrgroup_concat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		if (pci->argc == 4) {
 			str sep = *getArgReference_str(stk, pci, 2);
-			size_t l1 = GDK_STRNIL(in) ? 0 : strlen(in), l2 = GDK_STRNIL(sep) ? 0 : strlen(sep);
+			size_t l1 = strNil(in) ? 0 : strlen(in), l2 = strNil(sep) ? 0 : strlen(sep);
 
 			if ((*res = GDKmalloc(l1+l2+1))) {
 				if (l1)
@@ -1865,7 +1865,7 @@ SQLstrgroup_concat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				(*res)[l1+l2] = '\0';
 			}
 		} else {
-			*res = GDK_STRNIL(in) ? GDKstrdup("") : GDKstrdup(in);
+			*res = strNil(in) ? GDKstrdup("") : GDKstrdup(in);
 		}
 		if (!*res)
 			throw(SQL, "sql.strgroup_concat", SQLSTATE(HY013) MAL_MALLOC_FAIL);

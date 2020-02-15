@@ -54,19 +54,15 @@ setaccess(BAT *b, restrict_t mode)
 	return bn;
 }
 
-static char *
-pre(str s1, str s2)
+static inline char *
+pre(const char *s1, const char *s2, char *buf)
 {
-	static char buf[64];
-
 	snprintf(buf, 64, "%s%s", s1, s2);
 	return buf;
 }
-static char *
-local_itoa(ssize_t i)
+static inline char *
+local_itoa(ssize_t i, char *buf)
 {
-	static char buf[32];
-
 	snprintf(buf, 32, "%zd", i);
 	return buf;
 }
@@ -87,10 +83,11 @@ HASHinfo(BAT *bk, BAT *bv, Hash *h, str s)
 	BUN k;
 	BUN cnt[COLLISION + 1];
 	char buf[32];
+	char prebuf[64];
 
-	if (BUNappend(bk, pre(s, "type"), false) != GDK_SUCCEED ||
+	if (BUNappend(bk, pre(s, "type", prebuf), false) != GDK_SUCCEED ||
 	    BUNappend(bv, ATOMname(h->type),false) != GDK_SUCCEED ||
-	    BUNappend(bk, pre(s, "mask"), false) != GDK_SUCCEED ||
+	    BUNappend(bk, pre(s, "mask", prebuf), false) != GDK_SUCCEED ||
 	    BUNappend(bv, local_utoa(h->nbucket, buf),false) != GDK_SUCCEED)
 		return GDK_FAIL;
 
@@ -106,7 +103,7 @@ HASHinfo(BAT *bk, BAT *bv, Hash *h, str s)
 
 	for (i = 0; i < COLLISION + 1; i++)
 		if (cnt[i]) {
-			if (BUNappend(bk, pre(s, local_utoa(i?(((size_t)1)<<(i-1)):0, buf)), false) != GDK_SUCCEED ||
+			if (BUNappend(bk, pre(s, local_utoa(i?(((size_t)1)<<(i-1)):0, buf), prebuf), false) != GDK_SUCCEED ||
 			    BUNappend(bv, local_utoa((size_t) cnt[i], buf), false) != GDK_SUCCEED)
 				return GDK_FAIL;
 		}
@@ -684,15 +681,15 @@ BKCinfo(bat *ret1, bat *ret2, const bat *bid)
 	if (BUNappend(bk, "batId", false) != GDK_SUCCEED ||
 	    BUNappend(bv, BATgetId(b), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "batCacheid", false) != GDK_SUCCEED ||
-	    BUNappend(bv, local_itoa((ssize_t)(b->batCacheid)), false) != GDK_SUCCEED ||
+	    BUNappend(bv, local_itoa((ssize_t) b->batCacheid, buf), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "tparentid", false) != GDK_SUCCEED ||
-	    BUNappend(bv, local_itoa((ssize_t)(b->theap.parentid)), false) != GDK_SUCCEED ||
+	    BUNappend(bv, local_itoa((ssize_t) b->theap.parentid, buf), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "batSharecnt", false) != GDK_SUCCEED ||
-	    BUNappend(bv, local_itoa((ssize_t)(b->batSharecnt)), false) != GDK_SUCCEED ||
+	    BUNappend(bv, local_itoa((ssize_t) b->batSharecnt, buf), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "batCount", false) != GDK_SUCCEED ||
-	    BUNappend(bv, local_utoa((size_t)b->batCount, buf), false) != GDK_SUCCEED ||
+	    BUNappend(bv, local_utoa((size_t) b->batCount, buf), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "batCapacity", false) != GDK_SUCCEED ||
-	    BUNappend(bv, local_utoa((size_t)b->batCapacity, buf), false) != GDK_SUCCEED ||
+	    BUNappend(bv, local_utoa((size_t) b->batCapacity, buf), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "head", false) != GDK_SUCCEED ||
 	    BUNappend(bv, ATOMname(TYPE_void), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "tail", false) != GDK_SUCCEED ||
@@ -702,9 +699,9 @@ BKCinfo(bat *ret1, bat *ret2, const bat *bid)
 	    BUNappend(bk, "batRestricted", false) != GDK_SUCCEED ||
 	    BUNappend(bv, accessmode, false) != GDK_SUCCEED ||
 	    BUNappend(bk, "batRefcnt", false) != GDK_SUCCEED ||
-	    BUNappend(bv, local_itoa((ssize_t)(BBP_refs(b->batCacheid))), false) != GDK_SUCCEED ||
+	    BUNappend(bv, local_itoa((ssize_t) BBP_refs(b->batCacheid), buf), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "batLRefcnt", false) != GDK_SUCCEED ||
-	    BUNappend(bv, local_itoa((ssize_t)(BBP_lrefs(b->batCacheid))), false) != GDK_SUCCEED ||
+	    BUNappend(bv, local_itoa((ssize_t) BBP_lrefs(b->batCacheid), buf), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "batDirty", false) != GDK_SUCCEED ||
 	    BUNappend(bv, BATdirty(b) ? "dirty" : "clean", false) != GDK_SUCCEED ||
 
@@ -714,17 +711,17 @@ BKCinfo(bat *ret1, bat *ret2, const bat *bid)
 	    BUNappend(bk, "tident", false) != GDK_SUCCEED ||
 	    BUNappend(bv, b->tident, false) != GDK_SUCCEED ||
 	    BUNappend(bk, "tdense", false) != GDK_SUCCEED ||
-	    BUNappend(bv, local_itoa((ssize_t)BATtdense(b)), false) != GDK_SUCCEED ||
+	    BUNappend(bv, local_itoa((ssize_t) BATtdense(b), buf), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "tseqbase", false) != GDK_SUCCEED ||
 	    BUNappend(bv, oidtostr(b->tseqbase, bf, sizeof(bf)), FALSE) != GDK_SUCCEED ||
 	    BUNappend(bk, "tsorted", false) != GDK_SUCCEED ||
-	    BUNappend(bv, local_itoa((ssize_t)BATtordered(b)), false) != GDK_SUCCEED ||
+	    BUNappend(bv, local_itoa((ssize_t) BATtordered(b), buf), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "trevsorted", false) != GDK_SUCCEED ||
-	    BUNappend(bv, local_itoa((ssize_t)BATtrevordered(b)), false) != GDK_SUCCEED ||
+	    BUNappend(bv, local_itoa((ssize_t) BATtrevordered(b), buf), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "tkey", false) != GDK_SUCCEED ||
-	    BUNappend(bv, local_itoa((ssize_t)(b->tkey)), false) != GDK_SUCCEED ||
+	    BUNappend(bv, local_itoa((ssize_t) b->tkey, buf), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "tvarsized", false) != GDK_SUCCEED ||
-	    BUNappend(bv, local_itoa((ssize_t)(b->tvarsized)), false) != GDK_SUCCEED ||
+	    BUNappend(bv, local_itoa((ssize_t) b->tvarsized, buf), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "tnosorted", false) != GDK_SUCCEED ||
 	    BUNappend(bv, local_utoa(b->tnosorted, buf), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "tnorevsorted", false) != GDK_SUCCEED ||
@@ -743,7 +740,7 @@ BKCinfo(bat *ret1, bat *ret2, const bat *bid)
 	    BUNappend(bk, "ttop", false) != GDK_SUCCEED ||
 	    BUNappend(bv, local_utoa(b->theap.free, buf), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "batCopiedtodisk", false) != GDK_SUCCEED ||
-	    BUNappend(bv, local_itoa((ssize_t)(b->batCopiedtodisk)), false) != GDK_SUCCEED ||
+	    BUNappend(bv, local_itoa((ssize_t) b->batCopiedtodisk, buf), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "batDirtydesc", false) != GDK_SUCCEED ||
 	    BUNappend(bv, b->batDirtydesc ? "dirty" : "clean", false) != GDK_SUCCEED ||
 

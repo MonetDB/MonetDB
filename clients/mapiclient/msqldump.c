@@ -57,6 +57,7 @@ main(int argc, char **argv)
 	char *passwd = NULL;
 	char *host = NULL;
 	char *dbname = NULL;
+	DotMonetdb dotfile = {0};
 	bool trace = false;
 	bool describe = false;
 	bool functions = false;
@@ -83,7 +84,12 @@ main(int argc, char **argv)
 		{0, 0, 0, 0}
 	};
 
-	parse_dotmonetdb(&user, &passwd, &dbname, NULL, NULL, NULL, NULL);
+	parse_dotmonetdb(&dotfile);
+        user = dotfile.user;
+        passwd = dotfile.passwd;
+        dbname = dotfile.dbname;
+	host = dotfile.host;
+	port = dotfile.port;
 
 	while ((c = getopt_long(argc, argv, "h:p:d:Dft:NXu:qv?", long_options, NULL)) != -1) {
 		switch (c) {
@@ -159,7 +165,7 @@ main(int argc, char **argv)
 	if (user_set_as_flag)
 		passwd = NULL;
 
-	if( dbname == NULL){
+	if(dbname == NULL){
 		printf("msqldump, please specify a database\n");
 		usage(argv[0], -1);
 	}

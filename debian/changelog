@@ -1,3 +1,21 @@
+monetdb (11.35.13) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 12 Feb 2020 11:03:15 +0100
+
+monetdb (11.35.11) unstable; urgency=low
+
+  * Rebuilt.
+  * BZ#6805: Using the cascade operator in a drop table statement ends in
+    an exit from the Monetdb shell.
+  * BZ#6807: Median_avg and quantile_avg ignore NULL values
+  * BZ#6815: query with ifthenelse() crashes mserver5
+  * BZ#6816: Monetdb Crashes on INSERT statement after ALTER statement in
+    another connection
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 11 Feb 2020 14:07:49 +0100
+
 monetdb (11.35.9) unstable; urgency=low
 
   * Rebuilt.

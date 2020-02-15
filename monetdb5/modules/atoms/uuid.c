@@ -138,7 +138,7 @@ UUIDfromString(const char *svalue, size_t *len, uuid **retval, bool external)
 		**retval = uuid_nil;
 		return 3;
 	}
-	if (GDK_STRNIL(svalue)) {
+	if (strNil(svalue)) {
 		**retval = uuid_nil;
 		return 1;
 	}

@@ -11,7 +11,7 @@
 #include <string.h>
 
 void
-parse_dotmonetdb(char **user, char **passwd, char **dbname, char **language, int *save_history, char **output, int *pagewidth)
+parse_dotmonetdb(DotMonetdb *dotfile)
 {
 	char *cfile;
 	FILE *config = NULL;
@@ -46,20 +46,9 @@ parse_dotmonetdb(char **user, char **passwd, char **dbname, char **language, int
 		cfile = strdup(cfile);
 	}
 
-	if (user)
-		*user = NULL;
-	if (passwd)
-		*passwd = NULL;
-	if (dbname)
-		*dbname = NULL;
-	if (language)
-		*language = NULL;
-	if (output)
-		*output = NULL;
-	if (save_history)
-		*save_history = 0;
-	if (pagewidth)
-		*pagewidth = 0;
+        if (dotfile) {
+		*dotfile = (DotMonetdb) {0};
+        }
 
 	if (config) {
 		int line = 0;
@@ -81,16 +70,16 @@ parse_dotmonetdb(char **user, char **passwd, char **dbname, char **language, int
 			 * a default, hence I only do things I think are useful
 			 * for now, needs a better solution */
 			if (strcmp(buf, "user") == 0) {
-				if (user)
-					*user = strdup(q);
+				dotfile->user = strdup(q);
 				q = NULL;
 			} else if (strcmp(buf, "password") == 0) {
-				if (passwd)
-					*passwd = strdup(q);
+				dotfile->passwd = strdup(q);
 				q = NULL;
 			} else if (strcmp(buf, "database") == 0) {
-				if (dbname)
-					*dbname = strdup(q);
+				dotfile->dbname = strdup(q);
+				q = NULL;
+                        } else if (strcmp(buf, "host") == 0) {
+				dotfile->host = strdup(q);
 				q = NULL;
 			} else if (strcmp(buf, "language") == 0) {
 				/* make sure we don't set garbage */
@@ -99,28 +88,27 @@ parse_dotmonetdb(char **user, char **passwd, char **dbname, char **language, int
 					fprintf(stderr, "%s:%d: unsupported "
 						"language: %s\n",
 						cfile, line, q);
-				} else if (language)
-					*language = strdup(q);
+				}
+				dotfile->language = strdup(q);
 				q = NULL;
 			} else if (strcmp(buf, "save_history") == 0) {
 				if (strcmp(q, "true") == 0 ||
 				    strcmp(q, "on") == 0) {
-					if (save_history)
-						*save_history = 1;
+					dotfile->save_history = true;
 					q = NULL;
 				} else if (strcmp(q, "false") == 0 ||
 					   strcmp(q, "off") == 0) {
-					if (save_history)
-						*save_history = 0;
+					dotfile->save_history = false;
 					q = NULL;
 				}
 			} else if (strcmp(buf, "format") == 0) {
-				if (output)
-					*output = strdup(q);
+				dotfile->output = strdup(q);
 				q = NULL;
 			} else if (strcmp(buf, "width") == 0) {
-				if (pagewidth)
-					*pagewidth = atoi(q);
+				dotfile->pagewidth = atoi(q);
+				q = NULL;
+                        } else if (strcmp(buf, "port") == 0) {
+				dotfile->port = atoi(q);
 				q = NULL;
 			}
 			if (q != NULL)

@@ -36,7 +36,7 @@ stdout of test 'subquery3` in directory 'sql/test/subquery` itself:
 #FROM another_T t1
 #GROUP BY t1.col6, t1.col7;
 % . # table_name
-% %31 # name
+% %32 # name
 % boolean # type
 % 5 # length
 [ false	]
@@ -63,7 +63,7 @@ stdout of test 'subquery3` in directory 'sql/test/subquery` itself:
 #FROM another_T
 #GROUP BY col1, col2, col5;
 % .,	. # table_name
-% %45,	%46 # name
+% %50,	%51 # name
 % int,	int # type
 % 1,	1 # length
 [ 1,	0	]
@@ -103,7 +103,7 @@ stdout of test 'subquery3` in directory 'sql/test/subquery` itself:
 #	EXISTS (SELECT RANK() OVER (PARTITION BY SUM(DISTINCT col5)))
 #FROM another_T t1;
 % . # table_name
-% %24 # name
+% %25 # name
 % boolean # type
 % 5 # length
 [ true	]
@@ -193,8 +193,8 @@ stdout of test 'subquery3` in directory 'sql/test/subquery` itself:
 #    NOT SUM(t1.col2) * MIN(t1.col6 + t1.col6 - t1.col6 * t1.col6) NOT IN (SELECT MAX(t2.col6) FROM another_T t2 GROUP BY t1.col6 HAVING t1.col7 + MIN(t2.col8) < MAX(t2.col7 - t1.col6))
 #FROM another_T t1
 #GROUP BY t1.col7, t1.col6;
-% .%21 # table_name
-% %21 # name
+% .%22 # table_name
+% %22 # name
 % boolean # type
 % 5 # length
 [ false	]
@@ -207,7 +207,7 @@ stdout of test 'subquery3` in directory 'sql/test/subquery` itself:
 #FROM another_T t1
 #GROUP BY t1.col1, t1.col2;
 % .,	. # table_name
-% %203,	%204 # name
+% %205,	%206 # name
 % tinyint,	tinyint # type
 % 1,	1 # length
 [ 2,	2	]
@@ -231,7 +231,7 @@ stdout of test 'subquery3` in directory 'sql/test/subquery` itself:
 #FROM another_T t1
 #GROUP BY t1.col1;
 % . # table_name
-% %25 # name
+% %26 # name
 % tinyint # type
 % 1 # length
 [ 1	]
@@ -272,8 +272,8 @@ stdout of test 'subquery3` in directory 'sql/test/subquery` itself:
 #    NOT SUM(t1.col6) NOT IN (SELECT MAX(t2.col6) FROM another_T t2 GROUP BY t1.col6 HAVING t1.col7 < MAX(t1.col6))
 #FROM another_T t1
 #GROUP BY t1.col7, t1.col6;
-% .t1,	.t1,	.%15 # table_name
-% col6,	col7,	%15 # name
+% .t1,	.t1,	.%16 # table_name
+% col6,	col7,	%16 # name
 % int,	int,	boolean # type
 % 4,	4,	5 # length
 [ 6,	7,	false	]
@@ -286,8 +286,8 @@ stdout of test 'subquery3` in directory 'sql/test/subquery` itself:
 #    NOT SUM(t1.col6) NOT IN (SELECT MAX(t2.col6) FROM another_T t2 GROUP BY t1.col6 HAVING t1.col7 < MAX(t2.col7 - t1.col6))
 #FROM another_T t1
 #GROUP BY t1.col7, t1.col6;
-% .t1,	.t1,	.%15 # table_name
-% col6,	col7,	%15 # name
+% .t1,	.t1,	.%16 # table_name
+% col6,	col7,	%16 # name
 % int,	int,	boolean # type
 % 4,	4,	5 # length
 [ 6,	7,	false	]
@@ -299,7 +299,7 @@ stdout of test 'subquery3` in directory 'sql/test/subquery` itself:
 #FROM another_T t1
 #GROUP BY t1.col1, t1.col2;
 % . # table_name
-% %32 # name
+% %33 # name
 % tinyint # type
 % 1 # length
 [ 2	]
@@ -310,7 +310,7 @@ stdout of test 'subquery3` in directory 'sql/test/subquery` itself:
 #    CASE WHEN NULL NOT IN (SELECT 1 FROM tbl_ProductSales tp FULL OUTER JOIN another_T t2 ON tp.ColID = t1.col1) THEN 1 ELSE 2 END
 #FROM another_T t1;
 % . # table_name
-% %34 # name
+% %35 # name
 % tinyint # type
 % 1 # length
 [ 2	]
@@ -331,8 +331,8 @@ stdout of test 'subquery3` in directory 'sql/test/subquery` itself:
 #FROM another_T t1
 #GROUP BY (NOT t1.col6 NOT IN (SELECT MAX(t2.col6) FROM another_T t2 GROUP BY t1.col6 HAVING t1.col7 < MAX(t2.col7 - t1.col6)))
 #HAVING (MIN(t1.col7) <> ANY(SELECT MAX(t2.col5) FROM another_T t2 GROUP BY t2.col6 HAVING t2.col6 + MIN(t2.col2) = MAX(t1.col7)));
-% .%4 # table_name
-% %4 # name
+% .%5 # table_name
+% %5 # name
 % int # type
 % 1 # length
 #SELECT
@@ -361,7 +361,7 @@ stdout of test 'subquery3` in directory 'sql/test/subquery` itself:
 #FROM another_T t1
 #GROUP BY t1.col6;
 % . # table_name
-% %26 # name
+% %27 # name
 % bigint # type
 % 1 # length
 [ 1	]
@@ -378,13 +378,13 @@ stdout of test 'subquery3` in directory 'sql/test/subquery` itself:
 [ 1	]
 #SELECT (1) IN (1);
 % . # table_name
-% %1 # name
+% %2 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT (1) IN (SELECT 1);
-% .%12 # table_name
-% %12 # name
+% .%13 # table_name
+% %13 # name
 % boolean # type
 % 5 # length
 [ true	]
@@ -427,6 +427,41 @@ stdout of test 'subquery3` in directory 'sql/test/subquery` itself:
 % col1 # name
 % int # type
 % 1 # length
+#CREATE FUNCTION evilfunction(input INT) RETURNS TABLE (outt INT) BEGIN RETURN TABLE(SELECT input); END;
+#SELECT
+#	(SELECT outt FROM evilfunction((SELECT MIN(col1)))) 
+#FROM another_T;
+% .%4 # table_name
+% %4 # name
+% int # type
+% 1 # length
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+#SELECT
+#	(SELECT outt FROM evilfunction((SELECT MAX(col1) FROM tbl_ProductSales))) 
+#FROM another_T; 
+% .%4 # table_name
+% %4 # name
+% int # type
+% 4 # length
+[ 1111	]
+[ 1111	]
+[ 1111	]
+[ 1111	]
+#SELECT
+#	(SELECT outt FROM evilfunction((SELECT MIN(t2.col1) FROM another_T t2))) 
+#FROM another_T;
+% .%4 # table_name
+% %4 # name
+% int # type
+% 1 # length
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+#DROP FUNCTION evilfunction(INT);
 #DROP TABLE tbl_ProductSales;
 #DROP TABLE another_T;
 

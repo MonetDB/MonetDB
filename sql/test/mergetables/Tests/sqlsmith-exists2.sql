@@ -69,4 +69,133 @@ from
 where subq_0.c0 is not null
 limit 32; -- 3 NULL values on 3 rows, 1 column
 
+select
+ subq_0.c18 as c0, 
+ 19 as c1, 
+ subq_1.c2 as c2, 
+ subq_1.c3 as c3, 
+ subq_0.c6 as c4
+ from 
+ (select 
+ ref_0.col1 as c0, 
+ ref_0.col5 as c1, 
+ ref_0.col2 as c2, 
+ ref_0.col1 as c3, 
+ ref_0.col5 as c4, 
+ ref_0.col5 as c5, 
+ ref_0.col5 as c6, 
+ ref_0.col1 as c7, 
+ ref_0.col4 as c8, 
+ ref_0.col3 as c9, 
+ ref_0.col6 as c10, 
+ ref_0.col1 as c11, 
+ case when ref_0.col4 is null then ref_0.col2 else ref_0.col2 end
+ as c12, 
+ ref_0.col3 as c13, 
+ ref_0.col2 as c14, 
+ ref_0.col4 as c15, 
+ ref_0.col4 as c16, 
+ ref_0.col4 as c17, 
+ ref_0.col4 as c18, 
+ ref_0.col3 as c19
+ from 
+ tbl_productsales as ref_0
+ where ref_0.col3 is not null
+ limit 136) as subq_0
+ inner join (select 
+ ref_1.i as c0, 
+ ref_1.i as c1, 
+ ref_1.i as c2, 
+ ref_1.i as c3, 
+ ref_1.i as c4
+ from 
+ integers as ref_1
+ where exists (
+ select 
+ ref_1.i as c0, 
+ ref_1.i as c1, 
+ ref_2.col2 as c2, 
+ ref_2.col1 as c3
+ from 
+ tab1 as ref_2
+ where (((ref_1.i is null) 
+ and (ref_2.col0 is null)) 
+ and ((true) 
+ or (false))) 
+ and (((ref_1.i is null) 
+ and (67 is null)) 
+ and (true)))
+ limit 41) as subq_1
+ on ((false) 
+ or (subq_1.c4 is null))
+where subq_1.c1 is null
+limit 151;
+-- empty result set
+
+select 
+ subq_0.c4 as c0, 
+ subq_0.c8 as c1, 
+ subq_0.c2 as c2, 
+ 1 as c3, 
+ subq_0.c0 as c4, 
+ subq_0.c9 as c5, 
+ subq_0.c9 as c6, 
+ subq_0.c6 as c7
+from 
+ (select 
+ ref_4.i as c0, 
+ case when (false) 
+ or (ref_7.col3 is not null) then ref_2.col2 else ref_2.col2 end
+ as c1, 
+ ref_7.col6 as c2, 
+ ref_7.col1 as c3, 
+ ref_4.i as c4, 
+ ref_2.col0 as c5, 
+ ref_3.col3 as c6, 
+ ref_0.col1 as c7, 
+ ref_2.col2 as c8, 
+ ref_3.col2 as c9, 
+ ref_7.col1 as c10, 
+ ref_1.aa as c11, 
+ ref_2.col1 as c12, 
+ ref_1.cc as c13, 
+ ref_2.col2 as c14, 
+ ref_1.cc as c15
+ from 
+ tab0 as ref_0
+ inner join analytics as ref_1
+ inner join tab2 as ref_2
+ on (ref_2.col2 is not null)
+ inner join another_t as ref_3
+ on (ref_1.bb is null)
+ inner join integers as ref_4
+ on (exists (
+ select 
+ 79 as c0
+ from 
+ integers as ref_5
+ where (true) 
+ and (((exists (
+ select 
+ 24 as c0, 
+ ref_2.col2 as c1, 
+ ref_6.i as c2, 
+ ref_3.col6 as c3
+ from 
+ integers as ref_6
+ where true)) 
+ or (false)) 
+ and ((true) 
+ and (ref_4.i is not null)))))
+ inner join tbl_productsales as ref_7
+ on (ref_2.col2 = ref_7.col1 )
+ on ((ref_1.bb is null) 
+ or ((false) 
+ and (false)))
+ where ref_3.col4 is null
+ limit 59) as subq_0
+where subq_0.c6 is null
+limit 106;
+-- empty result set
+
 ROLLBACK;

@@ -360,7 +360,7 @@ initialize_sql_parts(mvc* sql, sql_table *mt)
 			base_init(sql->session->tr->sa, &p->base, pt->base.id, TR_NEW, pt->base.name);
 			p->t = mt;
 			assert(isMergeTable(mt) || isReplicaTable(mt));
-			p->tpe = found;
+			dup_sql_type(sql->session->tr, mt->s, &found, &(p->tpe));
 			p->with_nills = next->with_nills;
 
 			if (isListPartitionTable(mt)) {
@@ -371,7 +371,7 @@ initialize_sql_parts(mvc* sql, sql_table *mt)
 					ValRecord vvalue;
 					ptr ok;
 
-					nv->tpe = found;
+					dup_sql_type(sql->session->tr, mt->s, &found, &(nv->tpe));
 					vvalue = (ValRecord) {.vtype = TYPE_void,};
 					ok = VALinit(&vvalue, TYPE_str, v->value);
 					if (ok)

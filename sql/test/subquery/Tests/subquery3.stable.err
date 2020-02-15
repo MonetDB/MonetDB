@@ -212,6 +212,30 @@ MAPI  = (monetdb) /var/tmp/mtest-54567/.s.monetdb.37260
 QUERY = SELECT col1 FROM another_T WHERE (col2, col3) IN (VALUES(1,2,3)); -- error, too many columns in the subquery
 ERROR = !Subquery has too many columns
 CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-135307/.s.monetdb.36213
+QUERY = SELECT
+        	(SELECT outt FROM evilfunction((SELECT col0))) 
+        FROM another_T; --error, col0 doesn't exist
+ERROR = !SELECT: identifier 'col0' unknown
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-139585/.s.monetdb.31629
+QUERY = SELECT
+        	(SELECT outt FROM evilfunction((SELECT col1))) 
+        FROM another_T; --error, more than one row returned by a subquery used as an expression
+ERROR = !zero_or_one: cardinality violation, scalar expression expected
+CODE  = M0M29
+MAPI  = (monetdb) /var/tmp/mtest-139585/.s.monetdb.31629
+QUERY = SELECT
+        	(SELECT outt FROM evilfunction((SELECT col1 FROM tbl_ProductSales))) 
+        FROM another_T; --error, more than one row returned by a subquery used as an expression
+ERROR = !zero_or_one: cardinality violation, scalar expression expected
+CODE  = M0M29
+MAPI  = (monetdb) /var/tmp/mtest-139585/.s.monetdb.31629
+QUERY = SELECT
+        	(SELECT outt FROM evilfunction((SELECT t2.col1 FROM another_T t2))) 
+        FROM another_T; --error, more than one row returned by a subquery used as an expression
+ERROR = !Cardinality violation, scalar value expected
+CODE  = 21000
 
 # 17:40:41 >  
 # 17:40:41 >  "Done."

@@ -653,7 +653,7 @@ XMLfromString(const char *src, size_t *len, xml *x, bool external)
 		if (*x == NULL)
 			return -1;
 		return 3;
-	} else if (GDK_STRNIL(src)) {
+	} else if (strNil(src)) {
 		*x = GDKstrdup(str_nil);
 		if (*x == NULL)
 			return -1;
@@ -675,7 +675,7 @@ XMLtoString(str *s, size_t *len, const char *src, bool external)
 {
 	size_t l;
 
-	if (GDK_STRNIL(src))
+	if (strNil(src))
 		src = external ? "nil" : str_nil;
 	else
 		src++;
