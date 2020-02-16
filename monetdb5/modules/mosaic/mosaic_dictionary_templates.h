@@ -468,9 +468,9 @@ MOSdecompress_SIGNATURE(METHOD, TPE) {
 
 MOSlayout_SIGNATURE(METHOD, TPE)
 {
-	size_t compressed_size = 0;
+	lng compressed_size = 0;
 	compressed_size += sizeof(MOSBlockHeaderTpe(METHOD, TPE));
-	lng cnt = (lng) MOSgetCnt(task->blk);
+	BUN cnt = MOSgetCnt(task->blk);
 	compressed_size += BitVectorSize(cnt, GET_FINAL_BITS(task, METHOD));	
 	compressed_size += GET_PADDING(task->blk, METHOD, TPE);
 
