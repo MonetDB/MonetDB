@@ -30,8 +30,8 @@ stdout of test 'groupby_having_charlength-bug-sf-943566` in directory 'sql/test/
 #	where t.name IN ('args', 'columns', 'functions', 'idxs',
 #		'objects', 'keys', 'modules', 'sequences')
 #	group by s.name having count(*) > char_length(s.name);
-% .s,	.,	.%6 # table_name
-% name,	%12,	%6 # name
+% .s,	.,	.%7 # table_name
+% name,	%13,	%7 # name
 % varchar,	int,	bigint # type
 % 8,	1,	2 # length
 [ "sys",	3,	10	]
@@ -41,7 +41,6 @@ stdout of test 'groupby_having_charlength-bug-sf-943566` in directory 'sql/test/
 [ "wlc",	3,	10	]
 [ "wlr",	3,	10	]
 [ "logging",	7,	10	]
-[ "mosaic",	6,	10	]
 
 # 12:48:35 >  
 # 12:48:35 >  Done.
