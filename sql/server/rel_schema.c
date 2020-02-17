@@ -1069,6 +1069,8 @@ rel_create_table(sql_query *query, sql_schema *ss, int temp, const char *sname, 
 		}
 	}
 
+	if (!strcmp(s->base.name, "cquery"))
+		return sql_error(sql, 02, SQLSTATE(42000) "CREATE VIEW: views not allowed in cquery schema");
 	if(tt == tt_stream_per || tt == tt_stream_temp) {
 		window_size = stream_details->h->data.i_val;
 		stride = stream_details->h->next->data.i_val;
@@ -1193,6 +1195,8 @@ rel_create_view(sql_query *query, sql_schema *ss, dlist *qname, dlist *column_sp
 		return sql_error(sql, 02, SQLSTATE(3F000) "CREATE VIEW: no such schema '%s'", sname);
 	if (s == NULL)
 		s = cur_schema(sql);
+	if (!strcmp(s->base.name, "cquery"))
+		return sql_error(sql, 02, SQLSTATE(42000) "CREATE VIEW: views not allowed in cquery schema");
 
 	if (create && (!mvc_schema_privs(sql, s) && !(isTempSchema(s) && persistent == SQL_LOCAL_TEMP))) {
 		return sql_error(sql, 02, SQLSTATE(42000) "%s VIEW: access denied for %s to schema '%s'", base, stack_get_string(sql, "current_user"), s->base.name);
@@ -2722,6 +2726,8 @@ rel_set_table_schema(sql_query *query, char* old_schema, char *tname, char *new_
 		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: access denied for '%s' to schema '%s'", stack_get_string(sql, "current_user"), new_schema);
 	if (isTempSchema(ns))
 		return sql_error(sql, 02, SQLSTATE(3F000) "ALTER TABLE: not possible to change table's schema to temporary");
+	if (!strcmp(ns->base.name, "cquery"))
+		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: tables not allowed in cquery schema");
 	if (mvc_bind_table(sql, ns, tname))
 		return sql_error(sql, 02, SQLSTATE(42S02) "ALTER TABLE: table '%s' on schema '%s' already exists", tname, new_schema);
 

@@ -1601,12 +1601,14 @@ create_table_from_loader(sql_query *query, dlist *qname, symbol *fcall)
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_error(sql, 02, SQLSTATE(3F000) "CREATE TABLE: no such schema '%s'", sname);
-
-	if (mvc_bind_table(sql, s, tname)) {
-		return sql_error(sql, 02, SQLSTATE(42S01) "CREATE TABLE: name '%s' already in use", tname);
-	} else if (!mvc_schema_privs(sql, s)){
+	if (s == NULL)
+		s = cur_schema(sql);
+	if (!mvc_schema_privs(sql, s))
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE TABLE: insufficient privileges for user '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
-	}
+	if (mvc_bind_table(sql, s, tname))
+		return sql_error(sql, 02, SQLSTATE(42S01) "CREATE TABLE: name '%s' already in use", tname);
+	if (!strcmp(s->base.name, "cquery"))
+		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: tables not allowed in cquery schema");
 
 	rel = rel_loader_function(query, fcall, new_exp_list(sql->sa), &loader);
 	if (!rel || !loader) {
