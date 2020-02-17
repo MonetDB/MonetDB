@@ -435,7 +435,7 @@ column_option(
 		char buf[512] = {0};
 
 		if (!opt_name)
-			opt_name = column_constraint_name(sym, cs, t, buf, 512);
+			opt_name = column_constraint_name(sym, cs, t, buf, sizeof(buf));
 		res = column_constraint_type(sql, opt_name, sym, ss, t, cs);
 	} 	break;
 	case SQL_DEFAULT: {

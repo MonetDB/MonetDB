@@ -919,36 +919,42 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 				return sql_error(sql, 01, SQLSTATE(42000) "CREATE %s: failed to get restype", F);
 		}
 		if (body && LANG_EXT(lang)) {
-			char *lang_body = body->h->data.sval, *mod = NULL, *slang = NULL;
+			const char *lang_body = body->h->data.sval, *mod = "unknown", *slang = "Unknown";
 			switch (lang) {
-				case FUNC_LANG_R:
-					mod = "rapi";
-					slang = "R";
-					break;
-				case FUNC_LANG_C:
-					mod = "capi";
-					slang = "C";
-					break;
-				case FUNC_LANG_CPP:
-					mod = "capi";
-					slang = "CPP";
-					break;
-				case FUNC_LANG_J:
-					mod = "japi";
-					slang = "Javascript";
-					break;
-				case FUNC_LANG_PY:
-				case FUNC_LANG_PY3:
-					mod = "pyapi3";
-					slang = "Python";
-					break;
-				case FUNC_LANG_MAP_PY:
-				case FUNC_LANG_MAP_PY3:
-					mod = "pyapi3map";
-					slang = "Python";
-					break;
-				default:
-					assert(0);
+			case FUNC_LANG_R:
+				mod = "rapi";
+				slang = "R";
+				break;
+			case FUNC_LANG_C:
+				mod = "capi";
+				slang = "C";
+				break;
+			case FUNC_LANG_CPP:
+				mod = "capi";
+				slang = "CPP";
+				break;
+			case FUNC_LANG_J:
+				mod = "japi";
+				slang = "Javascript";
+				break;
+			case FUNC_LANG_PY:
+				mod = "pyapi";
+				slang = "Python";
+				break;
+			case FUNC_LANG_MAP_PY:
+				mod = "pyapimap";
+				slang = "Python";
+				break;
+			case FUNC_LANG_PY3:
+				mod = "pyapi3";
+				slang = "Python";
+				break;
+			case FUNC_LANG_MAP_PY3:
+				mod = "pyapi3map";
+				slang = "Python";
+				break;
+			default:
+				assert(0);
 			}
 
 			if (type == F_LOADER && !(lang == FUNC_LANG_PY || lang == FUNC_LANG_PY3))
