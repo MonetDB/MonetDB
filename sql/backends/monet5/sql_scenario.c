@@ -353,6 +353,10 @@ SQLresetClient(Client c)
 
 MT_Id sqllogthread, idlethread;
 
+#ifdef HAVE_EMBEDDED
+extern char* createdb_inline;
+#endif
+
 static str
 SQLinit(Client c)
 {
@@ -673,10 +677,6 @@ SQLtrans(mvc *m)
 	}
 	return MAL_SUCCEED;
 }
-
-#ifdef HAVE_EMBEDDED
-extern char* createdb_inline;
-#endif
 
 str
 SQLinitClient(Client c)
