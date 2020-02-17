@@ -463,7 +463,6 @@
 #define FALSE		false
 #endif
 
-#define IDLENGTH	64	/* maximum BAT id length */
 #define BATMARGIN	1.2	/* extra free margin for new heaps */
 #define BATTINY_BITS	8
 #define BATTINY		((BUN)1<<BATTINY_BITS)	/* minimum allocation buncnt for a BAT */

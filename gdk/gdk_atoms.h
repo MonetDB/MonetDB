@@ -30,6 +30,8 @@
  * argument.
  */
 
+#define IDLENGTH	64	/* maximum BAT id length */
+
 typedef struct {
 	/* simple attributes */
 	char name[IDLENGTH];
