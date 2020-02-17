@@ -75,6 +75,64 @@ stdout of test 'declared_tables` in directory 'sql/test/miscellaneous` itself:
 [ 1,	"one"	]
 #drop table iamdeclared;
 #rollback;
+#declare a int;
+#select a;
+% . # table_name
+% single_value # name
+% int # type
+% 1 # length
+[ NULL	]
+#plan declare b int;
+% .plan # table_name
+% rel # name
+% clob # type
+% 26 # length
+ddl [ declare b  as "b" ]
+#explain declare b int;
+% .explain # table_name
+% mal # name
+% clob # type
+% 89 # length
+function user.s14_0():void;
+    X_1:void := querylog.define("explain declare b int;":str, "default_pipe":str, 6:int);
+    X_4:int := sql.mvc();
+    X_5:int := sql.getVariable(X_4:int, "b":str);
+    sql.exportOperation();
+end user.s14_0;
+#inline               actions= 0 time=0 usec 
+#remap                actions= 0 time=1 usec 
+#costmodel            actions= 1 time=1 usec 
+#coercion             actions= 0 time=1 usec 
+#aliases              actions= 0 time=0 usec 
+#evaluate             actions= 0 time=3 usec 
+#emptybind            actions= 0 time=0 usec 
+#pushselect           actions= 0 time=1 usec 
+#aliases              actions= 0 time=0 usec 
+#mitosis              actions=1 time=0 usec 
+#mergetable           actions= 0 time=13 usec 
+#deadcode             actions= 0 time=4 usec 
+#aliases              actions= 0 time=1 usec 
+#constants            actions= 0 time=1 usec 
+#commonTerms          actions= 0 time=1 usec 
+#projectionpath       actions= 0 time=1 usec 
+#deadcode             actions= 0 time=3 usec 
+#reorder              actions= 1 time=10 usec 
+#matpack              actions= 0 time=0 usec 
+#dataflow             actions= 0 time=3 usec 
+#multiplex            actions= 0 time=1 usec 
+#profiler             actions= 1 time=0 usec 
+#candidates           actions= 1 time=0 usec 
+#deadcode             actions= 0 time=3 usec 
+#postfix              actions= 0 time=1 usec 
+#wlc                  actions= 0 time=0 usec 
+#garbagecollector     actions= 1 time=11 usec 
+#total                actions=29 time=119 usec 
+#select a;
+% . # table_name
+% single_value # name
+% int # type
+% 1 # length
+[ NULL	]
 
 # 14:29:33 >  
 # 14:29:33 >  "Done."

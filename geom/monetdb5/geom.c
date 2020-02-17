@@ -5248,12 +5248,17 @@ wkbHEAP(Heap *heap, size_t capacity)
 ssize_t
 mbrTOSTR(char **dst, size_t *len, const mbr *atom, bool external)
 {
-	static char tempWkt[MBR_WKTLEN];
-	size_t dstStrLen = 0;
+	char tempWkt[MBR_WKTLEN];
+	size_t dstStrLen;
 
 	if (!is_mbr_nil(atom)) {
-		snprintf(tempWkt, MBR_WKTLEN, "BOX (%f %f, %f %f)", atom->xmin, atom->ymin, atom->xmax, atom->ymax);
-		dstStrLen = strlen(tempWkt);
+		dstStrLen = (size_t) snprintf(tempWkt, MBR_WKTLEN,
+					      "BOX (%f %f, %f %f)",
+					      atom->xmin, atom->ymin,
+					      atom->xmax, atom->ymax);
+	} else {
+		tempWkt[0] = 0;	/* not used */
+		dstStrLen = 0;
 	}
 
 	if (*len < dstStrLen + 4 || *dst == NULL) {
@@ -5550,7 +5555,7 @@ wkbaFROMSTR(const char *fromStr, size_t *len, wkba **toArray, bool external)
 const wkba *
 wkbaNULL(void)
 {
-	static wkba nullval = {.itemsNum = ~0};
+	static const wkba nullval = {.itemsNum = ~0};
 
 	return &nullval;
 }

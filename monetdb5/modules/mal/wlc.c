@@ -162,6 +162,7 @@
 #include <time.h>
 #include "mal_builder.h"
 #include "wlc.h"
+#include "mtime.h"
 
 MT_Lock     wlc_lock = MT_LOCK_INITIALIZER("wlc_lock");
 
@@ -529,18 +530,18 @@ WLCstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 static str
 WLCsettime(Client cntxt, InstrPtr pci, InstrPtr p, str fcn)
 {
-	struct timeval clock;
-	time_t clk ;
-	struct tm ctm = (struct tm) {0};
-	char wlc_time[26];
+	timestamp ts = timestamp_current();
+	str wlc_time = NULL;
+	size_t wlc_limit = 0;
+	InstrPtr ins;
 
 	(void) pci;
-	if(gettimeofday(&clock,NULL) == -1)
+	assert(!is_timestamp_nil(ts));
+	if (timestamp_tostr(&wlc_time, &wlc_limit, &ts, true) < 0)
 		throw(MAL, fcn, "Unable to retrieve current time");
-	clk = clock.tv_sec;
-	(void) gmtime_r(&clk, &ctm);
-	strftime(wlc_time, sizeof(wlc_time), "%Y-%m-%d %H:%M:%S.000",&ctm);
-	if (pushStr(cntxt->wlc, p, wlc_time) == NULL)
+	ins = pushStr(cntxt->wlc, p, wlc_time);
+	GDKfree(wlc_time);
+	if (ins == NULL)
 		throw(MAL, fcn, MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }

@@ -200,16 +200,11 @@ rel_psm_declare(mvc *sql, dnode *n)
 			sql_exp *r = NULL;
 
 			/* check if we overwrite a scope local variable declare x; declare x; */
-			if (frame_find_var(sql, name)) {
-				return sql_error(sql, 01,
-					SQLSTATE(42000) "Variable '%s' already declared", name);
-			}
-			/* variables are put on stack, 
- 			 * TODO make sure on plan/explain etc they only 
- 			 * exist during plan phase */
-			if(!stack_push_var(sql, name, ctype)) {
+			if (frame_find_var(sql, name))
+				return sql_error(sql, 01, SQLSTATE(42000) "Variable '%s' already declared", name);
+			/* variables are put on stack */
+			if (!stack_push_var(sql, name, ctype))
 				return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			}
 			r = exp_var(sql->sa, sa_strdup(sql->sa, name), ctype, sql->frame);
 			append(l, r);
 			ids = ids->next;
@@ -924,36 +919,42 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 				return sql_error(sql, 01, SQLSTATE(42000) "CREATE %s: failed to get restype", F);
 		}
 		if (body && LANG_EXT(lang)) {
-			char *lang_body = body->h->data.sval, *mod = NULL, *slang = NULL;
+			const char *lang_body = body->h->data.sval, *mod = "unknown", *slang = "Unknown";
 			switch (lang) {
-				case FUNC_LANG_R:
-					mod = "rapi";
-					slang = "R";
-					break;
-				case FUNC_LANG_C:
-					mod = "capi";
-					slang = "C";
-					break;
-				case FUNC_LANG_CPP:
-					mod = "capi";
-					slang = "CPP";
-					break;
-				case FUNC_LANG_J:
-					mod = "japi";
-					slang = "Javascript";
-					break;
-				case FUNC_LANG_PY:
-				case FUNC_LANG_PY3:
-					mod = "pyapi3";
-					slang = "Python";
-					break;
-				case FUNC_LANG_MAP_PY:
-				case FUNC_LANG_MAP_PY3:
-					mod = "pyapi3map";
-					slang = "Python";
-					break;
-				default:
-					assert(0);
+			case FUNC_LANG_R:
+				mod = "rapi";
+				slang = "R";
+				break;
+			case FUNC_LANG_C:
+				mod = "capi";
+				slang = "C";
+				break;
+			case FUNC_LANG_CPP:
+				mod = "capi";
+				slang = "CPP";
+				break;
+			case FUNC_LANG_J:
+				mod = "japi";
+				slang = "Javascript";
+				break;
+			case FUNC_LANG_PY:
+				mod = "pyapi";
+				slang = "Python";
+				break;
+			case FUNC_LANG_MAP_PY:
+				mod = "pyapimap";
+				slang = "Python";
+				break;
+			case FUNC_LANG_PY3:
+				mod = "pyapi3";
+				slang = "Python";
+				break;
+			case FUNC_LANG_MAP_PY3:
+				mod = "pyapi3map";
+				slang = "Python";
+				break;
+			default:
+				assert(0);
 			}
 
 			if (type == F_LOADER && !(lang == FUNC_LANG_PY || lang == FUNC_LANG_PY3))

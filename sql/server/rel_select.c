@@ -471,6 +471,40 @@ score_func( sql_subfunc *sf, list *tl)
 	return score;
 }
 
+static int
+rel_set_type_param(mvc *sql, sql_subtype *type, sql_rel *rel, sql_exp *rel_exp, int upcast)
+{
+	sql_rel *r = rel;
+	int is_rel = exp_is_rel(rel_exp);
+
+	if (!type || !rel_exp || (rel_exp->type != e_atom && rel_exp->type != e_column && !is_rel))
+		return -1;
+
+	/* use largest numeric types */
+	if (upcast && type->type->eclass == EC_NUM) 
+#ifdef HAVE_HGE
+		type = sql_bind_localtype(have_hge ? "hge" : "lng");
+#else
+		type = sql_bind_localtype("lng");
+#endif
+	if (upcast && type->type->eclass == EC_FLT) 
+		type = sql_bind_localtype("dbl");
+
+	if (is_rel)
+		r = (sql_rel*) rel_exp->l;
+
+	if ((rel_exp->type == e_atom && (rel_exp->l || rel_exp->r || rel_exp->f)) || rel_exp->type == e_column || is_rel) {
+		/* it's not a parameter set possible parameters below */
+		const char *relname = exp_relname(rel_exp), *expname = exp_name(rel_exp);
+		if (rel_set_type_recurse(sql, type, r, &relname, &expname) < 0)
+			return -1;
+	} else if (set_type_param(sql, type, rel_exp->flag) != 0)
+		return -1;
+
+	rel_exp->tpe = *type;
+	return 0;
+}
+
 static sql_exp *
 find_table_function_type(mvc *sql, sql_schema *s, char *fname, list *exps, list *tl, sql_ftype type, sql_subfunc **sf)
 {
@@ -584,7 +618,8 @@ rel_named_table_function(sql_query *query, sql_rel *rel, symbol *ast, int latera
 		if (l->next->type == type_symbol && l->next->data.sym->token == SQL_SELECT) {
 			if (l->next->next != NULL)
 				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: '%s' requires a single sub query", fname);
-			sq = rel_subquery(query, NULL, l->next->data.sym, ek);
+			if (!(sq = rel_subquery(query, NULL, l->next->data.sym, ek)))
+				return NULL;
 		} else if (l->next->type == type_symbol || l->next->type == type_list) {
 			dnode *n;
 			exp_kind iek = {type_value, card_column, TRUE};
@@ -639,17 +674,12 @@ rel_named_table_function(sql_query *query, sql_rel *rel, symbol *ast, int latera
 		return NULL;
 	}
 
-	if (sql->emode == m_prepare && rel && rel->exps && sql->params) {
-		int i = 0;
-		/* for prepared statements set possible missing parameter SQL types from */
-		for (m = sf->func->ops->h; m; m = m->next, i++) {
-			sql_arg *func_arg = m->data;
-			sql_exp *proj_parameter = (sql_exp*) list_fetch(rel->exps, i);
-			if (proj_parameter) {
-				sql_arg *prep_arg = (sql_arg*) list_fetch(sql->params, proj_parameter->flag);
-				if (prep_arg && !prep_arg->type.type)
-					prep_arg->type = func_arg->type;
-			}
+	if (sq) {
+		for (node *n = sq->exps->h, *m = sf->func->ops->h ; n && m ; n = n->next, m = m->next) {
+			sql_exp *e = (sql_exp*) n->data;
+			sql_arg *a = (sql_arg*) m->data;
+			if (!exp_subtype(e) && rel_set_type_param(sql, &(a->type), sq, e, 0) < 0)
+				return NULL;
 		}
 	}
 
@@ -1251,39 +1281,7 @@ exp_fix_scale(mvc *sql, sql_subtype *ct, sql_exp *e, int both, int always)
 	return e;
 }
 
-static int
-rel_set_type_param(mvc *sql, sql_subtype *type, sql_rel *rel, sql_exp *rel_exp, int upcast)
-{
-	sql_rel *r = rel;
-	int is_rel = exp_is_rel(rel_exp);
 
-	if (!type || !rel_exp || (rel_exp->type != e_atom && rel_exp->type != e_column && !is_rel))
-		return -1;
-
-	/* use largest numeric types */
-	if (upcast && type->type->eclass == EC_NUM) 
-#ifdef HAVE_HGE
-		type = sql_bind_localtype(have_hge ? "hge" : "lng");
-#else
-		type = sql_bind_localtype("lng");
-#endif
-	if (upcast && type->type->eclass == EC_FLT) 
-		type = sql_bind_localtype("dbl");
-
-	if (is_rel)
-		r = (sql_rel*) rel_exp->l;
-
-	if ((rel_exp->type == e_atom && (rel_exp->l || rel_exp->r || rel_exp->f)) || rel_exp->type == e_column || is_rel) {
-		/* it's not a parameter set possible parameters below */
-		const char *relname = exp_relname(rel_exp), *expname = exp_name(rel_exp);
-		if (rel_set_type_recurse(sql, type, r, &relname, &expname) < 0)
-			return -1;
-	} else if (set_type_param(sql, type, rel_exp->flag) != 0)
-		return -1;
-
-	rel_exp->tpe = *type;
-	return 0;
-}
 
 static int
 rel_binop_check_types(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, int upcast)
@@ -4823,7 +4821,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 	}
 
 	if (frame_clause || supports_frames)
-		ie = obe ? exp_ref(sql->sa, (sql_exp*) obe->t->data) : in;
+		ie = exp_copy(sql, obe ? (sql_exp*) obe->t->data : in);
 
 	/* Frame */
 	if (frame_clause) {
@@ -5026,7 +5024,8 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 			if (!has_label(e))
 				exp_label(sql->sa, e, ++sql->label);
 			if (ek.card < card_set && r->card > CARD_ATOM) {
-				sql_subfunc *zero_or_one = sql_bind_func(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(e), NULL, F_AGGR);
+				sql_subtype *t = exp_subtype(e); /* parameters don't have a type defined, for those use 'void' one */
+				sql_subfunc *zero_or_one = sql_bind_func(sql->sa, sql->session->schema, "zero_or_one", t ? t : sql_bind_localtype("void"), NULL, F_AGGR);
 
 				e = exp_ref(sql->sa, e);
 				e = exp_aggr1(sql->sa, e, zero_or_one, 0, 0, CARD_ATOM, has_nil(e));
@@ -5983,7 +5982,8 @@ rel_loader_function(sql_query *query, symbol* fcall, list *fexps, sql_subfunc **
 		if (l->next->type == type_symbol && l->next->data.sym->token == SQL_SELECT) {
 			if (l->next->next != NULL)
 				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: '%s' requires a single sub query", fname);
-			sq = rel_subquery(query, NULL, l->next->data.sym, ek);
+			if (!(sq = rel_subquery(query, NULL, l->next->data.sym, ek)))
+				return NULL;
 		} else if (l->next->type == type_symbol || l->next->type == type_list) {
 			dnode *n;
 			exp_kind iek = {type_value, card_column, TRUE};
@@ -6021,6 +6021,15 @@ rel_loader_function(sql_query *query, symbol* fcall, list *fexps, sql_subfunc **
 	e = find_table_function_type(sql, s, fname, exps, tl, F_LOADER, &sf);
 	if (!e || !sf)
 		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: no such operator '%s'", fname);
+
+	if (sq) {
+		for (node *n = sq->exps->h, *m = sf->func->ops->h ; n && m ; n = n->next, m = m->next) {
+			sql_exp *e = (sql_exp*) n->data;
+			sql_arg *a = (sql_arg*) m->data;
+			if (!exp_subtype(e) && rel_set_type_param(sql, &(a->type), sq, e, 0) < 0)
+				return NULL;
+		}
+	}
 
 	if (loader_function)
 		*loader_function = sf;

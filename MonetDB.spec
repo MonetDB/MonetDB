@@ -105,7 +105,7 @@ Group: Applications/Databases
 License: MPLv2.0
 URL: https://www.monetdb.org/
 BugURL: https://bugs.monetdb.org/
-Source: https://www.monetdb.org/downloads/sources/Nov2019-SP1/%{name}-%{version}.tar.bz2
+Source: https://www.monetdb.org/downloads/sources/Nov2019-SP2/%{name}-%{version}.tar.bz2
 
 # we need systemd for the _unitdir macro to exist
 # we need checkpolicy and selinux-policy-devel for the SELinux policy
@@ -941,6 +941,24 @@ fi
 %postun -p /sbin/ldconfig
 
 %changelog
+* Mon Feb 17 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.35.15-20200217
+- Rebuilt.
+- BZ#6817: running analyze on a schema which contains a stream table
+  stops with an error
+- BZ#6819: functions do not persist
+
+* Wed Feb 12 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.35.13-20200212
+- Rebuilt.
+
+* Tue Feb 11 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.35.11-20200211
+- Rebuilt.
+- BZ#6805: Using the cascade operator in a drop table statement ends in
+  an exit from the Monetdb shell.
+- BZ#6807: Median_avg and quantile_avg ignore NULL values
+- BZ#6815: query with ifthenelse() crashes mserver5
+- BZ#6816: Monetdb Crashes on INSERT statement after ALTER statement in
+  another connection
+
 * Wed Dec 18 2019 Sjoerd Mullender <sjoerd@acm.org> - 11.35.9-20191218
 - Rebuilt.
 - BZ#6804: DNS resolution of 0.0.0.0 fails on recent Ubuntus

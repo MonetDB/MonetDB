@@ -153,7 +153,7 @@ insert_string_bat(BAT *b, BAT *n, BAT *s, bool force)
 				if (off < b->tvheap->free &&
 				    strcmp(b->tvheap->base + off, n->tvheap->base + off) == 0 &&
 				    (!b->tvheap->hashash ||
-				     ((BUN *) (b->tvheap->base + off))[-1] == (n->tvheap->hashash ? ((BUN *) (n->tvheap->base + off))[-1] : GDK_STRHASH(n->tvheap->base + off))))
+				     ((BUN *) (b->tvheap->base + off))[-1] == (n->tvheap->hashash ? ((BUN *) (n->tvheap->base + off))[-1] : strHash(n->tvheap->base + off))))
 					match++;
 				len += (strlen(n->tvheap->base + off) + 8) & ~7;
 			}
@@ -338,7 +338,7 @@ insert_string_bat(BAT *b, BAT *n, BAT *s, bool force)
 			if (off < b->tvheap->free &&
 			    strcmp(b->tvheap->base + off, tp) == 0 &&
 			    (!b->tvheap->hashash ||
-			     ((BUN *) (b->tvheap->base + off))[-1] == (n->tvheap->hashash ? ((BUN *) tp)[-1] : GDK_STRHASH(tp)))) {
+			     ((BUN *) (b->tvheap->base + off))[-1] == (n->tvheap->hashash ? ((BUN *) tp)[-1] : strHash(tp)))) {
 				/* we found the string at the same
 				 * offset in b's string heap as it was
 				 * in n's string heap, so we don't
@@ -385,12 +385,9 @@ insert_string_bat(BAT *b, BAT *n, BAT *s, bool force)
 		}
 	}
 	b->theap.dirty = true;
-	if (b->thash) {
-		/* maintain hash */
-		for (r = oldcnt, cnt = BATcount(b); r < cnt; r++) {
-			tp = Tbase(b) + VarHeapVal(b->theap.base, r, b->twidth);
-			HASHins(b, r, tp);
-		}
+	/* maintain hash */
+	for (r = oldcnt, cnt = BATcount(b); b->thash && r < cnt; r++) {
+		HASHins(b, r, Tbase(b) + VarHeapVal(b->theap.base, r, b->twidth));
 	}
 	return GDK_SUCCEED;
       bunins_failed:
@@ -453,14 +450,11 @@ append_varsized_bat(BAT *b, BAT *n, BAT *s)
 		}
 		b->theap.dirty = true;
 		BATsetcount(b, BATcount(b) + ci.ncand);
-		if (b->thash) {
-			/* maintain hash table */
-			for (BUN i = BATcount(b) - ci.ncand;
-			     i < BATcount(b);
-			     i++) {
-				const void *v = (void *) (b->tvheap->base + ((var_t *) b->theap.base)[i]);
-				HASHins(b, i, v);
-			}
+		/* maintain hash table */
+		for (BUN i = BATcount(b) - ci.ncand;
+		     b->thash && i < BATcount(b);
+		     i++) {
+			HASHins(b, i, b->tvheap->base + ((var_t *) b->theap.base)[i]);
 		}
 		return GDK_SUCCEED;
 	}
@@ -491,7 +485,8 @@ append_varsized_bat(BAT *b, BAT *n, BAT *s)
 		const void *t = BUNtvar(ni, p);
 		if (bunfastapp_nocheckVAR(b, r, t, Tsize(b)) != GDK_SUCCEED)
 			return GDK_FAIL;
-		HASHins(b, r, t);
+		if (b->thash)
+			HASHins(b, r, t);
 		r++;
 	}
 	b->theap.dirty = true;
@@ -697,12 +692,9 @@ BATappend(BAT *b, BAT *n, BAT *s, bool force)
 			memcpy(Tloc(b, BUNlast(b)),
 			       Tloc(n, ci.seq - hseq),
 			       cnt * Tsize(n));
-			if (b->thash) {
-				for (BUN i = 0; i < cnt; i++) {
-					const void *v = b->theap.base + r * b->twidth;
-					HASHins(b, r, v);
-					r++;
-				}
+			for (BUN i = 0; b->thash && i < cnt; i++) {
+				HASHins(b, r, b->theap.base + r * b->twidth);
+				r++;
 			}
 			BATsetcount(b, BATcount(b) + cnt);
 		} else {
@@ -714,7 +706,8 @@ BATappend(BAT *b, BAT *n, BAT *s, bool force)
 				const void *t = BUNtail(ni, p);
 				if (bunfastapp_nocheck(b, r, t, Tsize(b)) != GDK_SUCCEED)
 					return GDK_FAIL;
-				HASHins(b, r, t);
+				if (b->thash)
+					HASHins(b, r, t);
 				r++;
 			}
 		}

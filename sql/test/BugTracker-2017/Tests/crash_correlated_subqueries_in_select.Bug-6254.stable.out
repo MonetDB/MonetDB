@@ -26,6 +26,70 @@ stdout of test 'crash_correlated_subqueries_in_select.Bug-6254` in directory 'sq
 # 10:01:40 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-24581" "--port=30412"
 # 10:01:40 >  
 
+#START TRANSACTION;
+#CREATE TABLE "myschemas" (
+#	"id"            INTEGER,
+#	"name"          VARCHAR(1024),
+#	"authorization" INTEGER,
+#	"owner"         INTEGER,
+#	"system"        BOOLEAN
+#);
+#COPY 7 RECORDS INTO "myschemas" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+#2000	"sys"	2	3	true
+#2114	"tmp"	2	3	true
+#8824	"json"	3	3	true
+#8928	"profiler"	3	3	true
+#9027	"wlc"	3	3	true
+#9046	"wlr"	3	3	true
+#9398	"logging"	3	3	true
+[ 7	]
+#CREATE TABLE "mytables" (
+#	"id"            INTEGER,
+#	"name"          VARCHAR(1024),
+#	"schema_id"     INTEGER,
+#	"query"         VARCHAR(1048576),
+#	"type"          SMALLINT,
+#	"system"        BOOLEAN,
+#	"commit_action" SMALLINT,
+#	"access"        SMALLINT
+#);
+#COPY 68 RECORDS INTO "mytables" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+#2001	"schemas"	2000	NULL	0	true	0	0
+#2007	"types"	2000	NULL	0	true	0	0
+#2016	"functions"	2000	NULL	0	true	0	0
+#2028	"args"	2000	NULL	0	true	0	0
+#2037	"sequences"	2000	NULL	0	true	0	0
+#2047	"table_partitions"	2000	NULL	0	true	0	0
+#2053	"range_partitions"	2000	NULL	0	true	0	0
+#2059	"value_partitions"	2000	NULL	0	true	0	0
+#2063	"dependencies"	2000	NULL	0	true	0	0
+#2067	"_tables"	2000	NULL	0	true	0	0
+#2076	"_columns"	2000	NULL	0	true	0	0
+#2087	"keys"	2000	NULL	0	true	0	0
+[ 68	]
+#CREATE TABLE "mycolumns" (
+#	"id"          INTEGER,
+#	"name"        VARCHAR(1024),
+#	"type"        VARCHAR(1024),
+#	"type_digits" INTEGER,
+#	"type_scale"  INTEGER,
+#	"table_id"    INTEGER,
+#	"default"     VARCHAR(2048),
+#	"null"        BOOLEAN,
+#	"number"      INTEGER,
+#	"storage"     VARCHAR(2048)
+#);
+#COPY 92 RECORDS INTO "mycolumns" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+#2002	"id"	"int"	32	0	2001	NULL	true	0	NULL
+#2003	"name"	"varchar"	1024	0	2001	NULL	true	1	NULL
+#2004	"authorization"	"int"	32	0	2001	NULL	true	2	NULL
+#2005	"owner"	"int"	32	0	2001	NULL	true	3	NULL
+#2006	"system"	"boolean"	1	0	2001	NULL	true	4	NULL
+#2008	"id"	"int"	32	0	2007	NULL	true	0	NULL
+#2009	"systemname"	"varchar"	256	0	2007	NULL	true	1	NULL
+#2010	"sqlname"	"varchar"	1024	0	2007	NULL	true	2	NULL
+#2011	"digits"	"int"	32	0	2007	NULL	true	3	NULL
+[ 92	]
 #CREATE VIEW sys.view_stats AS
 #SELECT s.name AS schema_nm, s.id AS schema_id, t.name AS table_nm, /* t.id AS table_id, */ t.system AS is_system_view
 #, (SELECT CAST(COUNT(*) as int) FROM sys.columns c WHERE c.table_id = t.id) AS "# columns"
@@ -37,118 +101,68 @@ stdout of test 'crash_correlated_subqueries_in_select.Bug-6254` in directory 'sq
 % .view_stats,	.view_stats,	.view_stats,	.view_stats,	.view_stats # table_name
 % schema_nm,	schema_id,	table_nm,	is_system_view,	"# columns" # name
 % varchar,	int,	varchar,	boolean,	int # type
-% 3,	4,	34,	5,	2 # length
-[ "sys",	2000,	"tables",	true,	9	]
-[ "sys",	2000,	"columns",	true,	10	]
-[ "sys",	2000,	"users",	true,	3	]
-[ "sys",	2000,	"querylog_catalog",	true,	8	]
-[ "sys",	2000,	"querylog_calls",	true,	9	]
-[ "sys",	2000,	"querylog_history",	true,	16	]
-[ "sys",	2000,	"tracelog",	true,	2	]
-[ "sys",	2000,	"ids",	true,	7	]
-[ "sys",	2000,	"dependencies_vw",	true,	8	]
-[ "sys",	2000,	"dependency_owners_on_schemas",	true,	4	]
-[ "sys",	2000,	"dependency_columns_on_keys",	true,	10	]
-[ "sys",	2000,	"dependency_tables_on_views",	true,	7	]
-[ "sys",	2000,	"dependency_views_on_views",	true,	7	]
-[ "sys",	2000,	"dependency_columns_on_views",	true,	9	]
-[ "sys",	2000,	"dependency_functions_on_views",	true,	7	]
-[ "sys",	2000,	"dependency_schemas_on_users",	true,	4	]
-[ "sys",	2000,	"dependency_tables_on_functions",	true,	6	]
-[ "sys",	2000,	"dependency_views_on_functions",	true,	6	]
-[ "sys",	2000,	"dependency_columns_on_functions",	true,	7	]
-[ "sys",	2000,	"dependency_functions_on_functions",	true,	9	]
-[ "sys",	2000,	"dependency_tables_on_triggers",	true,	6	]
-[ "sys",	2000,	"dependency_columns_on_triggers",	true,	8	]
-[ "sys",	2000,	"dependency_functions_on_triggers",	true,	8	]
-[ "sys",	2000,	"dependency_tables_on_indexes",	true,	7	]
-[ "sys",	2000,	"dependency_columns_on_indexes",	true,	10	]
-[ "sys",	2000,	"dependency_tables_on_foreignkeys",	true,	6	]
-[ "sys",	2000,	"dependency_keys_on_foreignkeys",	true,	8	]
-[ "sys",	2000,	"dependency_tables_on_procedures",	true,	7	]
-[ "sys",	2000,	"dependency_views_on_procedures",	true,	7	]
-[ "sys",	2000,	"dependency_columns_on_procedures",	true,	7	]
-[ "sys",	2000,	"dependency_functions_on_procedures",	true,	9	]
-[ "sys",	2000,	"dependency_columns_on_types",	true,	8	]
-[ "sys",	2000,	"dependency_functions_on_types",	true,	6	]
-[ "sys",	2000,	"dependency_args_on_types",	true,	8	]
-[ "sys",	2000,	"sessions",	true,	9	]
-[ "sys",	2000,	"prepared_statements",	true,	5	]
-[ "sys",	2000,	"prepared_statements_args",	true,	9	]
-[ "sys",	2000,	"optimizers",	true,	3	]
-[ "sys",	2000,	"environment",	true,	2	]
-[ "sys",	2000,	"queue",	true,	9	]
-[ "sys",	2000,	"rejects",	true,	4	]
-[ "sys",	2000,	"roles",	true,	3	]
-[ "sys",	2000,	"var_values",	true,	2	]
-[ "sys",	2000,	"storage",	true,	17	]
-[ "sys",	2000,	"tablestorage",	true,	9	]
-[ "sys",	2000,	"schemastorage",	true,	7	]
-[ "sys",	2000,	"storagemodel",	true,	13	]
-[ "sys",	2000,	"tablestoragemodel",	true,	9	]
-[ "sys",	2000,	"systemfunctions",	true,	1	]
-[ "sys",	2000,	"view_stats",	false,	5	]
+% 7,	4,	24,	5,	1 # length
+[ "sys",	2000,	"analytics",	false,	1	]
+[ "sys",	2000,	"tables",	true,	0	]
+[ "sys",	2000,	"columns",	true,	0	]
+[ "sys",	2000,	"users",	true,	0	]
+[ "sys",	2000,	"querylog_catalog",	true,	0	]
+[ "sys",	2000,	"querylog_calls",	true,	0	]
+[ "sys",	2000,	"querylog_history",	true,	0	]
+[ "sys",	2000,	"tracelog",	true,	0	]
+[ "sys",	2000,	"ids",	true,	0	]
+[ "sys",	2000,	"sessions",	true,	0	]
+[ "sys",	2000,	"prepared_statements",	true,	0	]
+[ "sys",	2000,	"prepared_statements_args",	true,	0	]
+[ "sys",	2000,	"optimizers",	true,	0	]
+[ "sys",	2000,	"environment",	true,	0	]
+[ "sys",	2000,	"queue",	true,	0	]
+[ "sys",	2000,	"rejects",	true,	0	]
+[ "sys",	2000,	"roles",	true,	0	]
+[ "sys",	2000,	"var_values",	true,	0	]
+[ "sys",	2000,	"storage",	true,	0	]
+[ "sys",	2000,	"tablestorage",	true,	0	]
+[ "sys",	2000,	"schemastorage",	true,	0	]
+[ "sys",	2000,	"storagemodel",	true,	0	]
+[ "sys",	2000,	"tablestoragemodel",	true,	0	]
+[ "logging",	9398,	"compinfo",	true,	0	]
+[ "sys",	2000,	"systemfunctions",	true,	0	]
 #SELECT * FROM sys.view_stats WHERE is_system_view;
 % .view_stats,	.view_stats,	.view_stats,	.view_stats,	.view_stats # table_name
 % schema_nm,	schema_id,	table_nm,	is_system_view,	"# columns" # name
 % varchar,	int,	varchar,	boolean,	int # type
-% 3,	4,	34,	5,	2 # length
-[ "sys",	2000,	"tables",	true,	9	]
-[ "sys",	2000,	"columns",	true,	10	]
-[ "sys",	2000,	"users",	true,	3	]
-[ "sys",	2000,	"querylog_catalog",	true,	8	]
-[ "sys",	2000,	"querylog_calls",	true,	9	]
-[ "sys",	2000,	"querylog_history",	true,	16	]
-[ "sys",	2000,	"tracelog",	true,	2	]
-[ "sys",	2000,	"ids",	true,	7	]
-[ "sys",	2000,	"dependencies_vw",	true,	8	]
-[ "sys",	2000,	"dependency_owners_on_schemas",	true,	4	]
-[ "sys",	2000,	"dependency_columns_on_keys",	true,	10	]
-[ "sys",	2000,	"dependency_tables_on_views",	true,	7	]
-[ "sys",	2000,	"dependency_views_on_views",	true,	7	]
-[ "sys",	2000,	"dependency_columns_on_views",	true,	9	]
-[ "sys",	2000,	"dependency_functions_on_views",	true,	7	]
-[ "sys",	2000,	"dependency_schemas_on_users",	true,	4	]
-[ "sys",	2000,	"dependency_tables_on_functions",	true,	6	]
-[ "sys",	2000,	"dependency_views_on_functions",	true,	6	]
-[ "sys",	2000,	"dependency_columns_on_functions",	true,	7	]
-[ "sys",	2000,	"dependency_functions_on_functions",	true,	9	]
-[ "sys",	2000,	"dependency_tables_on_triggers",	true,	6	]
-[ "sys",	2000,	"dependency_columns_on_triggers",	true,	8	]
-[ "sys",	2000,	"dependency_functions_on_triggers",	true,	8	]
-[ "sys",	2000,	"dependency_tables_on_indexes",	true,	7	]
-[ "sys",	2000,	"dependency_columns_on_indexes",	true,	10	]
-[ "sys",	2000,	"dependency_tables_on_foreignkeys",	true,	6	]
-[ "sys",	2000,	"dependency_keys_on_foreignkeys",	true,	8	]
-[ "sys",	2000,	"dependency_tables_on_procedures",	true,	7	]
-[ "sys",	2000,	"dependency_views_on_procedures",	true,	7	]
-[ "sys",	2000,	"dependency_columns_on_procedures",	true,	7	]
-[ "sys",	2000,	"dependency_functions_on_procedures",	true,	9	]
-[ "sys",	2000,	"dependency_columns_on_types",	true,	8	]
-[ "sys",	2000,	"dependency_functions_on_types",	true,	6	]
-[ "sys",	2000,	"dependency_args_on_types",	true,	8	]
-[ "sys",	2000,	"sessions",	true,	9	]
-[ "sys",	2000,	"prepared_statements",	true,	5	]
-[ "sys",	2000,	"prepared_statements_args",	true,	9	]
-[ "sys",	2000,	"optimizers",	true,	3	]
-[ "sys",	2000,	"environment",	true,	2	]
-[ "sys",	2000,	"queue",	true,	9	]
-[ "sys",	2000,	"rejects",	true,	4	]
-[ "sys",	2000,	"roles",	true,	3	]
-[ "sys",	2000,	"var_values",	true,	2	]
-[ "sys",	2000,	"storage",	true,	17	]
-[ "sys",	2000,	"tablestorage",	true,	9	]
-[ "sys",	2000,	"schemastorage",	true,	7	]
-[ "sys",	2000,	"storagemodel",	true,	13	]
-[ "sys",	2000,	"tablestoragemodel",	true,	9	]
-[ "sys",	2000,	"systemfunctions",	true,	1	]
+% 7,	4,	24,	5,	1 # length
+[ "sys",	2000,	"tables",	true,	0	]
+[ "sys",	2000,	"columns",	true,	0	]
+[ "sys",	2000,	"users",	true,	0	]
+[ "sys",	2000,	"querylog_catalog",	true,	0	]
+[ "sys",	2000,	"querylog_calls",	true,	0	]
+[ "sys",	2000,	"querylog_history",	true,	0	]
+[ "sys",	2000,	"tracelog",	true,	0	]
+[ "sys",	2000,	"ids",	true,	0	]
+[ "sys",	2000,	"sessions",	true,	0	]
+[ "sys",	2000,	"prepared_statements",	true,	0	]
+[ "sys",	2000,	"prepared_statements_args",	true,	0	]
+[ "sys",	2000,	"optimizers",	true,	0	]
+[ "sys",	2000,	"environment",	true,	0	]
+[ "sys",	2000,	"queue",	true,	0	]
+[ "sys",	2000,	"rejects",	true,	0	]
+[ "sys",	2000,	"roles",	true,	0	]
+[ "sys",	2000,	"var_values",	true,	0	]
+[ "sys",	2000,	"storage",	true,	0	]
+[ "sys",	2000,	"tablestorage",	true,	0	]
+[ "sys",	2000,	"schemastorage",	true,	0	]
+[ "sys",	2000,	"storagemodel",	true,	0	]
+[ "sys",	2000,	"tablestoragemodel",	true,	0	]
+[ "logging",	9398,	"compinfo",	true,	0	]
+[ "sys",	2000,	"systemfunctions",	true,	0	]
 #SELECT * FROM sys.view_stats WHERE NOT is_system_view;
 % .view_stats,	.view_stats,	.view_stats,	.view_stats,	.view_stats # table_name
 % schema_nm,	schema_id,	table_nm,	is_system_view,	"# columns" # name
 % varchar,	int,	varchar,	boolean,	int # type
-% 3,	4,	10,	5,	1 # length
-[ "sys",	2000,	"view_stats",	false,	5	]
-#DROP VIEW sys.view_stats;
+% 3,	4,	9,	5,	1 # length
+[ "sys",	2000,	"analytics",	false,	1	]
+#ROLLBACK;
 
 # 10:01:40 >  
 # 10:01:40 >  "Done."

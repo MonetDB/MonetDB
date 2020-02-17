@@ -9,6 +9,71 @@
 #ifndef _GDK_ATOMS_H_
 #define _GDK_ATOMS_H_
 
+/* atomFromStr returns the number of bytes of the input string that
+ * were processed.  atomToStr returns the length of the string
+ * produced.  Both functions return -1 on (any kind of) failure.  If
+ * *dst is not NULL, *len specifies the available space.  If there is
+ * not enough space, or if *dst is NULL, *dst will be freed (if not
+ * NULL) and a new buffer will be allocated and returned in *dst.
+ * *len will be set to reflect the actual size allocated.  If
+ * allocation fails, *dst will be NULL on return and *len is
+ * undefined.  In any case, if the function returns, *buf is either
+ * NULL or a valid pointer and then *len is the size of the area *buf
+ * points to.
+ *
+ * atomCmp returns a value less than zero/equal to zero/greater than
+ * zer if the first argument points to a values which is deemed
+ * smaller/equal to/larger than the value pointed to by the second
+ * argument.
+ *
+ * atomHash calculates a hash function for the value pointed to by the
+ * argument.
+ */
+
+#define IDLENGTH	64	/* maximum BAT id length */
+
+typedef struct {
+	/* simple attributes */
+	char name[IDLENGTH];
+	uint8_t storage;	/* stored as another type? */
+	bool linear;		/* atom can be ordered linearly */
+	uint16_t size;		/* fixed size of atom */
+
+	/* automatically generated fields */
+	const void *atomNull;	/* global nil value */
+
+	/* generic (fixed + varsized atom) ADT functions */
+	ssize_t (*atomFromStr) (const char *src, size_t *len, void **dst, bool external);
+	ssize_t (*atomToStr) (char **dst, size_t *len, const void *src, bool external);
+	void *(*atomRead) (void *dst, stream *s, size_t cnt);
+	gdk_return (*atomWrite) (const void *src, stream *s, size_t cnt);
+	int (*atomCmp) (const void *v1, const void *v2);
+	BUN (*atomHash) (const void *v);
+	/* optional functions */
+	int (*atomFix) (const void *atom);
+	int (*atomUnfix) (const void *atom);
+
+	/* varsized atom-only ADT functions */
+	var_t (*atomPut) (Heap *, var_t *off, const void *src);
+	void (*atomDel) (Heap *, var_t *atom);
+	size_t (*atomLen) (const void *atom);
+	void (*atomHeap) (Heap *, size_t);
+} atomDesc;
+
+gdk_export atomDesc BATatoms[];
+gdk_export int GDKatomcnt;
+
+gdk_export int ATOMallocate(const char *nme);
+gdk_export int ATOMindex(const char *nme);
+
+gdk_export str ATOMname(int id);
+gdk_export size_t ATOMlen(int id, const void *v);
+gdk_export void *ATOMnil(int id);
+gdk_export int ATOMprint(int id, const void *val, stream *fd);
+gdk_export char *ATOMformat(int id, const void *val);
+
+gdk_export void *ATOMdup(int id, const void *val);
+
 #define MAXATOMS	128
 
 /*
@@ -68,7 +133,6 @@ gdk_export ssize_t dblFromStr(const char *src, size_t *len, dbl **dst, bool exte
 gdk_export ssize_t dblToStr(str *dst, size_t *len, const dbl *src, bool external);
 gdk_export ssize_t GDKstrFromStr(unsigned char *restrict dst, const unsigned char *restrict src, ssize_t len);
 gdk_export ssize_t strFromStr(const char *restrict src, size_t *restrict len, str *restrict dst, bool external);
-gdk_export BUN strHash(const char *s);
 gdk_export size_t escapedStrlen(const char *restrict src, const char *sep1, const char *sep2, int quote);
 gdk_export size_t escapedStr(char *restrict dst, const char *restrict src, size_t dstlen, const char *sep1, const char *sep2, int quote);
 /*
@@ -222,9 +286,7 @@ gdk_export const ptr ptr_nil;
  * this would make the commit tremendously complicated.
  */
 
-static inline gdk_return ATOMputVAR(int type, Heap *heap, var_t *dst, const void *src)
-	__attribute__((__warn_unused_result__));
-static inline gdk_return
+static inline gdk_return __attribute__((__warn_unused_result__))
 ATOMputVAR(int type, Heap *heap, var_t *dst, const void *src)
 {
 	assert(BATatoms[type].atomPut != NULL);
@@ -265,9 +327,7 @@ ATOMputFIX(int type, void *dst, const void *src)
 	}
 }
 
-static inline gdk_return ATOMreplaceVAR(int type, Heap *heap, var_t *dst, const void *src)
-	__attribute__((__warn_unused_result__));
-static inline gdk_return
+static inline gdk_return __attribute__((__warn_unused_result__))
 ATOMreplaceVAR(int type, Heap *heap, var_t *dst, const void *src)
 {
 	var_t loc = *dst;
@@ -321,25 +381,25 @@ ATOMreplaceVAR(int type, Heap *heap, var_t *dst, const void *src)
  * though we have to take corrective action to ensure that str(nil) is
  * the smallest value of the domain.
  */
-static inline bool
+static inline bool __attribute__((__pure__))
 strEQ(const char *l, const char *r)
 {
 	return strcmp(l, r) == 0;
 }
 
-static inline bool
+static inline bool __attribute__((__pure__))
 strNil(const char *s)
 {
 	return s == NULL || *s == '\200';
 }
 
-static inline size_t
+static inline size_t __attribute__((__pure__))
 strLen(const char *s)
 {
 	return strNil(s) ? 2 : strlen(s) + 1;
 }
 
-static inline int
+static inline int __attribute__((__pure__))
 strCmp(const char *l, const char *r)
 {
 	return strNil(r)
@@ -366,15 +426,8 @@ VarHeapValRaw(const void *b, BUN p, int w)
 
 #define VarHeapVal(b,p,w)	((size_t) VarHeapValRaw(b,p,w))
 
-/*
- * @- Hash Function
- * The string hash function is a very simple hash function that xors
- * and rotates all characters together. It is optimized to process 2
- * characters at a time (adding 16-bits to the hash value each
- * iteration).
- */
-static inline BUN
-GDK_STRHASH(const char *key)
+static inline BUN __attribute__((__pure__))
+strHash(const char *key)
 {
 	BUN y = 0;
 

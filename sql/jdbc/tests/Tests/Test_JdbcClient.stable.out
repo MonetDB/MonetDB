@@ -25,14 +25,10 @@ stdout of test 'Test_JdbcClient` in directory 'sql/jdbc/tests` itself:
 # 18:15:40 >  
 
 
-# 18:15:40 >  
-# 18:15:40 >  java nl.cwi.monetdb.client.JdbcClient -h catskill -p 31817 -d mTests_sql_jdbc_tests --help
-# 18:15:40 >  
-
-Usage java -jar jdbcclient.jre7.jar
+Usage java -jar jdbcclient.jre8.jar
 		[-h host[:port]] [-p port] [-f file] [-u user]
-		[-l language] [-d database] [-e] [-D [table]]
-		[-X<opt>]
+		[-l language] [-d database] [-e] [-D [table]] [-X<opt>]
+		| [--help] | [--version]
 or using long option equivalents --host --port --file --user --language
 --dump --echo --database.
 Arguments may be written directly after the option like -p50000.

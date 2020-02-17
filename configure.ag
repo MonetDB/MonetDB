@@ -1147,7 +1147,7 @@ AS_VAR_IF([have_bz2], [no], [], [
 		[AC_SUBST([PKG_BZIP2], [bzip2])])
 	AS_VAR_IF([have_bz2], [yes],
 		[AC_DEFINE([HAVE_LIBBZ2], 1, [Define if you have the bz2 library])])])
-AM_CONDITIONAL([HAVE_LIBBZ2], [test x"$have_libbz2" != xno])
+AM_CONDITIONAL([HAVE_LIBBZ2], [test x"$have_bz2" != xno])
 
 
 
@@ -1556,12 +1556,12 @@ AC_ARG_WITH([lzma],
 		[include lzma support (default=yes)])],
 	[have_lzma=$withval])
 AS_VAR_IF([have_lzma], [no], [], [
-	PKG_CHECK_MODULES([liblzma], [liblzma], [have_liblzma=yes], [have_liblzma=no; why_not_liblzma="(liblzma not found, install xz-libs and xz-devel)"])
-	AS_VAR_IF([have_liblzma], [yes], [
+	PKG_CHECK_MODULES([liblzma], [liblzma], [have_lzma=yes], [have_lzma=no; why_not_liblzma="(liblzma not found, install xz-libs and xz-devel)"])
+	AS_VAR_IF([have_lzma], [yes], [
 		AC_SUBST([PKG_LIBLZMA], [liblzma])])
-	AS_VAR_IF([have_liblzma], [yes], [
+	AS_VAR_IF([have_lzma], [yes], [
 		AC_DEFINE([HAVE_LIBLZMA], 1, [Define if you have the lzma library])])])
-AM_CONDITIONAL([HAVE_LIBLZMA], [test x"$have_liblzma" != xno])
+AM_CONDITIONAL([HAVE_LIBLZMA], [test x"$have_lzma" != xno])
 
 org_have_valgrind=no
 have_valgrind=$org_have_valgrind

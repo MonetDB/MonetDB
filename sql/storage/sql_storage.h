@@ -495,4 +495,6 @@ extern sql_part *sql_trans_copy_part(sql_trans *tr, sql_table *t, sql_part *pt);
 extern void sql_trans_drop_any_comment(sql_trans *tr, sqlid id);
 extern void sql_trans_drop_obj_priv(sql_trans *tr, sqlid obj_id);
 
+extern void dup_sql_type(sql_trans *tr, sql_schema *os, sql_subtype *oc, sql_subtype *nc);
+
 #endif /*SQL_STORAGE_H */

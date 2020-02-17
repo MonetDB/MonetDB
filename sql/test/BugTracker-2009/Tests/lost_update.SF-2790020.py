@@ -1,6 +1,6 @@
 import sys
 import os
-import time
+
 try:
     from MonetDBtesting import process
 except ImportError:
@@ -46,6 +46,7 @@ insert into lost_update_t1 (select * from lost_update_t1);
 insert into lost_update_t1 (select * from lost_update_t1);
 insert into lost_update_t1 (select * from lost_update_t1);
 update lost_update_t1 set a = 2;
+call sys.flush_log();
 '''
 script3 = '''\
 select a from lost_update_t2;
@@ -62,7 +63,6 @@ def main():
 
     s = server()
     client(script2)
-    time.sleep(20)                      # wait until log is flushed originally 60 sec
     server_stop(s)
 
     s = server()

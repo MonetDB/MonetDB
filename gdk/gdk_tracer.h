@@ -208,7 +208,7 @@ gdk_export LOG_LEVEL LVL_PER_COMPONENT[];
 		      "%"MXW"s "									\
 		      "%-"MXW"s "									\
 		      "%-"MXW"s # "MSG,								\
-		      GDKtracer_get_timestamp("%Y-%m-%d %H:%M:%S"),	\
+		      GDKtracer_get_timestamp("%Y-%m-%d %H:%M:%S", (char[20]){0}, 20), \
 		      __FILENAME__,									\
 		      __FUNCTION__,									\
 		      __LINE__,										\
@@ -309,7 +309,7 @@ typedef struct GDKtracer {
 		     "%"MXW"s "										\
 		     "%-"MXW"s "									\
 		     "%-"MXW"s # "MSG,								\
-		     GDKtracer_get_timestamp("%Y-%m-%d %H:%M:%S"),	\
+		     GDKtracer_get_timestamp("%Y-%m-%d %H:%M:%S", (char[20]){0}, 20), \
 		     __FILENAME__,									\
 		     __FUNCTION__,									\
 		     __LINE__,										\
@@ -331,7 +331,7 @@ typedef struct GDKtracer {
  * LOG_LEVEL, COMPONENT and LAYER enum respectively.
  */
 // Returns the timestamp in the form of datetime
-gdk_export char *GDKtracer_get_timestamp(const char *fmt);
+gdk_export char *GDKtracer_get_timestamp(const char *fmt, char *buf, size_t sz);
 
 
 gdk_export gdk_return GDKtracer_stop(void);

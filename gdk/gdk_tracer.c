@@ -35,7 +35,7 @@ static gdk_return
 _GDKtracer_init_basic_adptr(void)
 {
 	char file_name[FILENAME_MAX];
-	snprintf(file_name, sizeof(file_name), "%s%c%s%c%s%s", GDKgetenv("gdk_dbpath"), DIR_SEP, FILE_NAME, NAME_SEP, GDKtracer_get_timestamp("%Y%m%d_%H%M%S"), ".log");
+	snprintf(file_name, sizeof(file_name), "%s%c%s%c%s%s", GDKgetenv("gdk_dbpath"), DIR_SEP, FILE_NAME, NAME_SEP, GDKtracer_get_timestamp("%Y%m%d_%H%M%S", (char[20]){0}, 20), ".log");
 
 	output_file = fopen(file_name, "w");
 
@@ -174,13 +174,12 @@ _GDKtracer_layer_level_helper(int layer, int lvl)
  *
  */
 char *
-GDKtracer_get_timestamp(const char *fmt)
+GDKtracer_get_timestamp(const char *fmt, char *datetime, size_t dtsz)
 {
-	static char datetime[20];
 	time_t now = time(NULL);
 	struct tm tmp;
 	(void) localtime_r(&now, &tmp);
-	strftime(datetime, sizeof(datetime), fmt, &tmp);
+	strftime(datetime, dtsz, fmt, &tmp);
 
 	return datetime;
 }
