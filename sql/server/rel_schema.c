@@ -426,9 +426,10 @@ column_option(
 		dlist *l = s->data.lval;
 		char *opt_name = l->h->data.sval;
 		symbol *sym = l->h->next->data.sym;
+		char buf[512] = {0};
 
 		if (!opt_name)
-			opt_name = column_constraint_name(sym, cs, t, (char[512]){0}, 512);
+			opt_name = column_constraint_name(sym, cs, t, buf, sizeof(buf));
 		res = column_constraint_type(sql, opt_name, sym, ss, t, cs);
 	} 	break;
 	case SQL_DEFAULT: {
