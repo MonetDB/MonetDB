@@ -163,3 +163,31 @@ rewrite_simplify(mvc *sql, sql_rel *rel, int *changes)
 		rel->exps = exps_simplify_exp(sql, rel->exps, changes);
 	return rel;
 }
+
+sql_rel *
+rel_remove_empty_select(mvc *sql, sql_rel *rel, int *changes)
+{
+	(void)sql;
+
+	if ((is_join(rel->op) || is_semi(rel->op) || is_select(rel->op) || is_project(rel->op) || is_topn(rel->op) || is_sample(rel->op)) && rel->l) {
+		sql_rel *l = rel->l;
+		if (is_select(l->op) && !(rel_is_ref(l)) && list_empty(l->exps)) {
+			rel->l = l->l;
+			l->l = NULL;
+			rel_destroy(l);
+			(*changes)++;
+		} 
+	}
+	if ((is_join(rel->op) || is_semi(rel->op) || is_set(rel->op)) && rel->r) {
+		sql_rel *r = rel->r;
+		if (is_select(r->op) && !(rel_is_ref(r)) && list_empty(r->exps)) {
+			rel->r = r->l;
+			r->l = NULL;
+			rel_destroy(r);
+			(*changes)++;
+		}
+	} 
+	if (is_join(rel->op) && list_empty(rel->exps)) 
+		rel->exps = NULL; /* crossproduct */
+	return rel;
+}

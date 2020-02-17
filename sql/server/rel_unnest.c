@@ -2646,12 +2646,13 @@ rel_unnest(mvc *sql, sql_rel *rel)
 {
 	int changes = 0;
 
-	(void) changes;
 	rel_reset_subquery(rel);
 	rel = rel_exp_visitor(sql, rel, &rewrite_simplify_exp);
 	rel = rel_visitor_bottomup(sql, rel, &rewrite_simplify, &changes);
-	rel = rel_visitor_bottomup(sql, rel, &rewrite_aggregates, &changes);
 	rel = rel_visitor_bottomup(sql, rel, &rewrite_or_exp, &changes);
+	if (changes > 0)
+		rel = rel_visitor_bottomup(sql, rel, &rel_remove_empty_select, &changes);
+	rel = rel_visitor_bottomup(sql, rel, &rewrite_aggregates, &changes);
 	rel = rel_exp_visitor(sql, rel, &rewrite_rank);
 	rel = rel_exp_visitor(sql, rel, &rewrite_anyequal);
 	rel = rel_exp_visitor(sql, rel, &rewrite_exists);
