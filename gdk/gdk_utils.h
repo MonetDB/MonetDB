@@ -70,6 +70,31 @@ gdk_export size_t _MT_pagesize;
 #define MT_pagesize()	_MT_pagesize
 #define MT_npages()	_MT_npages
 
+gdk_export size_t GDK_mem_maxsize;	/* max allowed size of committed memory */
+gdk_export size_t GDK_vm_maxsize;	/* max allowed size of reserved vm */
+
+gdk_export void *GDKmmap(const char *path, int mode, size_t len);
+
+gdk_export size_t GDKmem_cursize(void);	/* RAM/swapmem that MonetDB has claimed from OS */
+gdk_export size_t GDKvm_cursize(void);	/* current MonetDB VM address space usage */
+
+gdk_export void *GDKmalloc(size_t size)
+	__attribute__((__malloc__))
+	__attribute__((__alloc_size__(1)))
+	__attribute__((__warn_unused_result__));
+gdk_export void *GDKzalloc(size_t size)
+	__attribute__((__malloc__))
+	__attribute__((__alloc_size__(1)))
+	__attribute__((__warn_unused_result__));
+gdk_export void *GDKrealloc(void *pold, size_t size)
+	__attribute__((__alloc_size__(2)))
+	__attribute__((__warn_unused_result__));
+gdk_export void GDKfree(void *blk);
+gdk_export str GDKstrdup(const char *s)
+	__attribute__((__warn_unused_result__));
+gdk_export str GDKstrndup(const char *s, size_t n)
+	__attribute__((__warn_unused_result__));
+
 gdk_export void MT_init(void);	/*  init the package. */
 struct opt;
 gdk_export gdk_return GDKinit(struct opt *set, int setlen);
@@ -106,5 +131,271 @@ gdk_export bit GDKfataljumpenable;
 gdk_export lng GDKusec(void);
 gdk_export int GDKms(void);
 
+
+#if !defined(NDEBUG) && !defined(STATIC_CODE_ANALYSIS)
+/* In debugging mode, replace GDKmalloc and other functions with a
+ * version that optionally prints calling information.
+ *
+ * We have two versions of this code: one using a GNU C extension, and
+ * one using traditional C.  The GNU C version also prints the name of
+ * the calling function.
+ */
+#ifdef __GNUC__
+#define GDKmalloc(s)						\
+	({							\
+		size_t _size = (s);				\
+		void *_res = GDKmalloc(_size);			\
+		ALLOCDEBUG					\
+			fprintf(stderr,				\
+				"#GDKmalloc(%zu) -> %p"		\
+				" %s[%s:%d]\n",			\
+				_size, _res,			\
+				__func__, __FILE__, __LINE__);	\
+		_res;						\
+	})
+#define GDKzalloc(s)						\
+	({							\
+		size_t _size = (s);				\
+		void *_res = GDKzalloc(_size);			\
+		ALLOCDEBUG					\
+			fprintf(stderr,				\
+				"#GDKzalloc(%zu) -> %p"		\
+				" %s[%s:%d]\n",			\
+				_size, _res,			\
+				__func__, __FILE__, __LINE__);	\
+		_res;						\
+	})
+#define GDKrealloc(p, s)					\
+	({							\
+		void *_ptr = (p);				\
+		size_t _size = (s);				\
+		void *_res = GDKrealloc(_ptr, _size);		\
+		ALLOCDEBUG					\
+			fprintf(stderr,				\
+				"#GDKrealloc(%p,%zu) -> %p"	\
+				" %s[%s:%d]\n",			\
+				_ptr, _size, _res,		\
+				__func__, __FILE__, __LINE__);	\
+		_res;						\
+	 })
+#define GDKfree(p)						\
+	({							\
+		void *_ptr = (p);				\
+		ALLOCDEBUG if (_ptr)				\
+			fprintf(stderr,				\
+				"#GDKfree(%p)"			\
+				" %s[%s:%d]\n",			\
+				_ptr,				\
+				__func__, __FILE__, __LINE__);	\
+		GDKfree(_ptr);					\
+	})
+#define GDKstrdup(s)						\
+	({							\
+		const char *_str = (s);				\
+		void *_res = GDKstrdup(_str);			\
+		ALLOCDEBUG					\
+			fprintf(stderr,				\
+				"#GDKstrdup(len=%zu) -> %p"	\
+				" %s[%s:%d]\n",			\
+				_str ? strlen(_str) : 0,	\
+				_res,				\
+				__func__, __FILE__, __LINE__);	\
+		_res;						\
+	})
+#define GDKstrndup(s, n)					\
+	({							\
+		const char *_str = (s);				\
+		size_t _n = (n);				\
+		void *_res = GDKstrndup(_str, _n);		\
+		ALLOCDEBUG					\
+			fprintf(stderr,				\
+				"#GDKstrndup(len=%zu) -> %p"	\
+				" %s[%s:%d]\n",			\
+				_n,				\
+				_res,				\
+				__func__, __FILE__, __LINE__);	\
+		_res;						\
+	})
+#define GDKmmap(p, m, l)					\
+	({							\
+		const char *_path = (p);			\
+		int _mode = (m);				\
+		size_t _len = (l);				\
+		void *_res = GDKmmap(_path, _mode, _len);	\
+		ALLOCDEBUG					\
+			fprintf(stderr,				\
+				"#GDKmmap(%s,0x%x,%zu) -> %p"	\
+				" %s[%s:%d]\n",			\
+				_path ? _path : "NULL",		\
+				(unsigned) _mode, _len,		\
+				_res,				\
+				__func__, __FILE__, __LINE__);	\
+		_res;						\
+	 })
+#define malloc(s)						\
+	({							\
+		size_t _size = (s);				\
+		void *_res = malloc(_size);			\
+		ALLOCDEBUG					\
+			fprintf(stderr,				\
+				"#malloc(%zu) -> %p"		\
+				" %s[%s:%d]\n",			\
+				_size, _res,			\
+				__func__, __FILE__, __LINE__);	\
+		_res;						\
+	})
+#define calloc(n, s)						\
+	({							\
+		size_t _nmemb = (n);				\
+		size_t _size = (s);				\
+		void *_res = calloc(_nmemb,_size);		\
+		ALLOCDEBUG					\
+			fprintf(stderr,				\
+				"#calloc(%zu,%zu) -> %p"	\
+				" %s[%s:%d]\n",			\
+				_nmemb, _size, _res,		\
+				__func__, __FILE__, __LINE__);	\
+		_res;						\
+	})
+#define realloc(p, s)						\
+	({							\
+		void *_ptr = (p);				\
+		size_t _size = (s);				\
+		void *_res = realloc(_ptr, _size);		\
+		ALLOCDEBUG					\
+			fprintf(stderr,				\
+				"#realloc(%p,%zu) -> %p"	\
+				" %s[%s:%d]\n",			\
+				_ptr, _size, _res,		\
+				__func__, __FILE__, __LINE__);	\
+		_res;						\
+	 })
+#define free(p)							\
+	({							\
+		void *_ptr = (p);				\
+		ALLOCDEBUG					\
+			fprintf(stderr,				\
+				"#free(%p)"			\
+				" %s[%s:%d]\n",			\
+				_ptr,				\
+				__func__, __FILE__, __LINE__);	\
+		free(_ptr);					\
+	})
+#else
+static inline void *
+GDKmalloc_debug(size_t size, const char *funcname, const char *filename, int lineno)
+{
+	void *res = GDKmalloc(size);
+	ALLOCDEBUG fprintf(stderr,
+			   "#GDKmalloc(%zu) -> %p %s[%s:%d]\n",
+			   size, res, funcname, filename, lineno);
+	return res;
+}
+#define GDKmalloc(s)	GDKmalloc_debug((s), __func__, __FILE__, __LINE__)
+static inline void *
+GDKzalloc_debug(size_t size, const char *funcname, const char *filename, int lineno)
+{
+	void *res = GDKzalloc(size);
+	ALLOCDEBUG fprintf(stderr,
+			   "#GDKzalloc(%zu) -> %p %s[%s:%d]\n",
+			   size, res, funcname, filename, lineno);
+	return res;
+}
+#define GDKzalloc(s)	GDKzalloc_debug((s), __func__, __FILE__, __LINE__)
+static inline void *
+GDKrealloc_debug(void *ptr, size_t size, const char *funcname, const char *filename, int lineno)
+{
+	void *res = GDKrealloc(ptr, size);
+	ALLOCDEBUG fprintf(stderr,
+			   "#GDKrealloc(%p,%zu) -> "
+			   "%p %s[%s:%d]\n",
+			   ptr, size, res,
+			   funcname, filename, lineno);
+	return res;
+}
+#define GDKrealloc(p, s)	GDKrealloc_debug((p), (s), __func__, __FILE__, __LINE__)
+static inline void
+GDKfree_debug(void *ptr, const char *funcname, const char *filename, int lineno)
+{
+	ALLOCDEBUG fprintf(stderr, "#GDKfree(%p) %s[%s:%d]\n",
+			   ptr, funcname, filename, lineno);
+	GDKfree(ptr);
+}
+#define GDKfree(p)	GDKfree_debug((p), __func__, __FILE__, __LINE__)
+static inline char *
+GDKstrdup_debug(const char *str, const char *funcname, const char *filename, int lineno)
+{
+	void *res = GDKstrdup(str);
+	ALLOCDEBUG fprintf(stderr, "#GDKstrdup(len=%zu) -> "
+			   "%p %s[%s:%d]\n",
+			   str ? strlen(str) : 0, res, funcname, filename, lineno);
+	return res;
+}
+#define GDKstrdup(s)	GDKstrdup_debug((s), __func__, __FILE__, __LINE__)
+static inline char *
+GDKstrndup_debug(const char *str, size_t n, const char *funcname, const char *filename, int lineno)
+{
+	void *res = GDKstrndup(str, n);
+	ALLOCDEBUG fprintf(stderr, "#GDKstrndup(len=%zu) -> "
+			   "%p %s[%s:%d]\n",
+			   n, res, funcname, filename, lineno);
+	return res;
+}
+#define GDKstrndup(s, n)	GDKstrndup_debug((s), (n), __func__, __FILE__, __LINE__)
+static inline void *
+GDKmmap_debug(const char *path, int mode, size_t len, const char *funcname, const char *filename, int lineno)
+{
+	void *res = GDKmmap(path, mode, len);
+	ALLOCDEBUG fprintf(stderr,
+			   "#GDKmmap(%s,0x%x,%zu) -> "
+			   "%p %s[%s:%d]\n",
+			   path ? path : "NULL", mode, len,
+			   res, funcname, filename, lineno);
+	return res;
+}
+#define GDKmmap(p, m, l)	GDKmmap_debug((p), (m), (l), __func__, __FILE__, __LINE__)
+static inline void *
+malloc_debug(size_t size, const char *funcname, const char *filename, int lineno)
+{
+	void *res = malloc(size);
+	ALLOCDEBUG fprintf(stderr,
+			   "#malloc(%zu) -> %p %s[%s:%d]\n",
+			   size, res, funcname, filename, lineno);
+	return res;
+}
+#define malloc(s)	malloc_debug((s), __func__, __FILE__, __LINE__)
+static inline void *
+calloc_debug(size_t nmemb, size_t size, const char *funcname, const char *filename, int lineno)
+{
+	void *res = calloc(nmemb, size);
+	ALLOCDEBUG fprintf(stderr,
+			   "#calloc(%zu,%zu) -> "
+			   "%p %s[%s:%d]\n",
+			   nmemb, size, res, funcname, filename, lineno);
+	return res;
+}
+#define calloc(n, s)	calloc_debug((n), (s), __func__, __FILE__, __LINE__)
+static inline void *
+realloc_debug(void *ptr, size_t size, const char *funcname, const char *filename, int lineno)
+{
+	void *res = realloc(ptr, size);
+	ALLOCDEBUG fprintf(stderr,
+			   "#realloc(%p,%zu) -> "
+			   "%p %s[%s:%d]\n",
+			   ptr, size, res,
+			   funcname, filename, lineno);
+	return res;
+}
+#define realloc(p, s)	realloc_debug((p), (s), __func__, __FILE__, __LINE__)
+static inline void
+free_debug(void *ptr, const char *funcname, const char *filename, int lineno)
+{
+	ALLOCDEBUG fprintf(stderr, "#free(%p) %s[%s:%d]\n",
+			   ptr, funcname, filename, lineno);
+	free(ptr);
+}
+#define free(p)	free_debug((p), __func__, __FILE__, __LINE__)
+#endif
+#endif
 
 #endif /* _GDK_UTILS_H_ */
