@@ -626,6 +626,8 @@ GDKinit(opt *set, int setlen)
 	char buf[16];
 
 	/* some sanity checks (should also find if symbols are not defined) */
+	static_assert(sizeof(int) == sizeof(int32_t),
+		      "int is not equal in size to int32_t");
 	static_assert(sizeof(char) == SIZEOF_CHAR,
 		      "error in configure: bad value for SIZEOF_CHAR");
 	static_assert(sizeof(short) == SIZEOF_SHORT,
