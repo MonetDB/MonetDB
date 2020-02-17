@@ -169,6 +169,14 @@ command_help(int argc, char *argv[])
 	} else if (strcmp(argv[1], "version") == 0) {
 		printf("Usage: monetdb version\n");
 		printf("  prints the version of this monetdb utility\n");
+	} else if (strcmp(argv[1], "snapshot") == 0) {
+		printf("Usage: monetdb snapshot -f <filename> <database>\n");
+		printf("  Takes a snapshot of database <database> in file <filename>.\n");
+		printf("  The snapshot is a tar file that contains a full database directory.\n");
+		printf("  If the filename ends in .gz or another supported compression\n");
+		printf("  algorithm, the contents of the file are compressed.\n");
+		printf("Options:\n");
+		printf("  -f <filename>  File on server to write snapshot to.\n");
 	} else {
 		printf("help: unknown command: %s\n", argv[1]);
 	}
@@ -1658,6 +1666,93 @@ command_profilerstop(int argc, char *argv[])
 	simple_command(argc, argv, "profilerstop", "stopped profiler", 1);
 }
 
+static void snapshot_adhoc(sabdb *databases, char *filename) {
+	/* databases is supposed to only hold a single database */
+	assert(databases != NULL);
+	assert(databases->next == NULL);
+
+	char *merocmd = malloc(100 + strlen(filename));
+	sprintf(merocmd, "snapshot adhoc %s", filename);
+
+	simple_argv_cmd("snapshot", databases, merocmd, NULL, "snapshotting database");
+
+	free(merocmd);
+}
+
+static void
+command_snapshot(int argc, char *argv[])
+{
+	char *filename = NULL;
+	char *err;
+	if (argc == 1) {
+		/* print help message for this command */
+		command_help(argc + 1, &argv[-1]);
+		exit(1);
+	}
+
+	/* walk through the arguments and hunt for "options" */
+	for (int i = 1; i < argc; i++) {
+		if (strcmp(argv[i], "--") == 0) {
+			argv[i] = NULL;
+			break;
+		}
+		if (argv[i][0] == '-') {
+			if (argv[i][1] == 'f') {
+				if (argv[i][2] != '\0') {
+					filename = &argv[i][2];
+					argv[i] = NULL;
+				} else if (i + 1 < argc && argv[i+1][0] != '-') {
+					filename = argv[i+1];
+					argv[i] = NULL;
+					argv[i+1] = NULL;
+					i++;
+				} else {
+					fprintf(stderr, "snapshot: -f needs an argument\n");
+				}
+			} else {
+				fprintf(stderr, "destroy: unknown option: %s\n", argv[i]);
+				command_help(argc + 1, &argv[-1]);
+				exit(1);
+			}
+		}
+	}
+
+	/* Look up the databases to snapshot */
+	sabdb *all = NULL;
+	err = MEROgetStatus(&all, NULL);
+	if (err != NULL) {
+		fprintf(stderr, "snapshot: %s\n", err);
+		free(err);
+		exit(2);
+	}
+	sabdb *databases = globMatchDBS(argc, argv, &all, "snapshot");
+	msab_freeStatus(&all);
+	if (databases == NULL)
+		exit(1);
+
+
+	/* Until we implement a default snapshot location, filename is mandatory */
+	if (filename == NULL) {
+		fprintf(stderr, "snapshot: filename is mandatory\n");
+		command_help(argc + 1, &argv[-1]);
+		exit(1);
+	}
+
+	/* Go do the work */
+	if (filename != NULL) {
+		if (databases->next != NULL) {
+			fprintf(stderr, "snapshot: -f only allows a single database\n");
+			exit(1);
+		}
+		snapshot_adhoc(databases, filename);
+	} else {
+		/* to be implemented: trigger multiple databases to snapshot
+		 * to a default location */
+	}
+
+	msab_freeStatus(&databases);
+}
+
 int
 main(int argc, char *argv[])
 {
@@ -1856,6 +1951,8 @@ main(int argc, char *argv[])
 		command_set(argc - i, &argv[i], INHERIT);
 	} else if (strcmp(argv[i], "discover") == 0) {
 		command_discover(argc - i, &argv[i]);
+	} else if (strcmp(argv[i], "snapshot") == 0) {
+		command_snapshot(argc - i, &argv[i]);
 	} else {
 		fprintf(stderr, "monetdb: unknown command: %s\n", argv[i]);
 		command_help(0, NULL);
