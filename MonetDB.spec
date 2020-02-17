@@ -941,6 +941,12 @@ fi
 %postun -p /sbin/ldconfig
 
 %changelog
+* Mon Feb 17 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.35.15-20200217
+- Rebuilt.
+- BZ#6817: running analyze on a schema which contains a stream table
+  stops with an error
+- BZ#6819: functions do not persist
+
 * Wed Feb 12 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.35.13-20200212
 - Rebuilt.
 
