@@ -14,6 +14,7 @@
 #include "rel_dump.h"
 #include "rel_planner.h"
 #include "rel_propagate.h"
+#include "rel_rewriter.h"
 #include "sql_mvc.h"
 #ifdef HAVE_HGE
 #include "mal.h"		/* for have_hge */
@@ -8942,6 +8943,7 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, int value_based_
 			rel = rel_project_reduce_casts(sql, rel, &changes);
 			rel = rel_visitor_bottomup(sql, rel, &rel_reduce_casts, &changes);
 		}
+		rel = rel_visitor_bottomup(sql, rel, &rewrite_simplify, &changes);
 	}
 
 	if (gp.cnt[op_union])
