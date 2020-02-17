@@ -885,7 +885,7 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 				return sql_error(sql, 01, SQLSTATE(42000) "CREATE %s%s: failed to get restype", KF, F);
 		}
 		if (body && LANG_EXT(lang)) {
-			char *lang_body = body->h->data.sval, *mod = NULL, *slang = NULL;
+			const char *lang_body = body->h->data.sval, *mod = "unknown", *slang = "Unknown";
 			switch (lang) {
 			case FUNC_LANG_R:
 				mod = "rapi";
