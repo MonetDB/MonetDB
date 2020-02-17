@@ -431,17 +431,18 @@ SELECT
 	(SELECT outt FROM evilfunction((SELECT MIN(col1)))) 
 FROM another_T;
 	-- 1
-	-- 1
-	-- 1
-	-- 1
 
 SELECT
-	(SELECT outt FROM evilfunction((SELECT MAX(col1) FROM tbl_ProductSales))) 
-FROM another_T; 
-	-- 1111
-	-- 1111
-	-- 1111
-	-- 1111
+	(SELECT outt FROM evilfunction((SELECT MAX(ColID) FROM tbl_ProductSales))) 
+FROM another_T;
+	-- 4
+	-- 4
+	-- 4
+	-- 4
+
+SELECT
+	(SELECT outt FROM evilfunction((SELECT MAX(t1.col1) FROM tbl_ProductSales))) 
+FROM another_T t1; --error, more than one row returned by a subquery used as an expression
 
 SELECT
 	(SELECT outt FROM evilfunction((SELECT MIN(t2.col1) FROM another_T t2))) 

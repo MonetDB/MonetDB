@@ -436,20 +436,17 @@ stdout of test 'subquery3` in directory 'sql/test/subquery` itself:
 % int # type
 % 1 # length
 [ 1	]
-[ 1	]
-[ 1	]
-[ 1	]
 #SELECT
 #	(SELECT outt FROM evilfunction((SELECT MAX(col1) FROM tbl_ProductSales))) 
 #FROM another_T; 
 % .%4 # table_name
 % %4 # name
 % int # type
-% 4 # length
-[ 1111	]
-[ 1111	]
-[ 1111	]
-[ 1111	]
+% 1 # length
+[ 4	]
+[ 4	]
+[ 4	]
+[ 4	]
 #SELECT
 #	(SELECT outt FROM evilfunction((SELECT MIN(t2.col1) FROM another_T t2))) 
 #FROM another_T;
