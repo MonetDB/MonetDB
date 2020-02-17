@@ -3,3 +3,4 @@ ifthenelse-crash.Bug-6815
 alter-table-add-column.Bug-6816
 analyze-stream-table.Bug-6817
 select-where-in-rtrim-crash.Bug-6818
+NOT_WIN32&HAVE_LIBR&HAVE_LIBPY3?functions-not-persist.Bug-6819
