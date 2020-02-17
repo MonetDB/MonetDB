@@ -1,3 +1,12 @@
+monetdb (11.35.15) unstable; urgency=low
+
+  * Rebuilt.
+  * BZ#6817: running analyze on a schema which contains a stream table
+    stops with an error
+  * BZ#6819: functions do not persist
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 17 Feb 2020 12:40:46 +0100
+
 monetdb (11.35.13) unstable; urgency=low
 
   * Rebuilt.
