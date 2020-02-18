@@ -1055,7 +1055,7 @@ mvc_bind_trigger(mvc *m, sql_schema *s, const char *tname)
 }
 
 sql_type *
-mvc_create_type(mvc *sql, sql_schema * s, const char *name, int digits, int scale, int radix, const char *impl)
+mvc_create_type(mvc *sql, sql_schema *s, const char *name, int digits, int scale, int radix, const char *impl)
 {
 	sql_type *t = NULL;
 	
@@ -1355,7 +1355,7 @@ mvc_create_column(mvc *m, sql_table *t, const char *name, sql_subtype *tpe)
 	TRC_DEBUG(SQL_MVC, "Create column: %s %s %s\n", t->base.name, name, tpe->type->sqlname);
 	if (t->persistence == SQL_DECLARED_TABLE && (!t->s || strcmp(t->s->base.name, dt_schema))) 
 		/* declared tables should not end up in the catalog */
-		return create_sql_column(m->sa, t, name, tpe);
+		return create_sql_column(m->session->tr, t, name, tpe);
 	else
 		return sql_trans_create_column(m->session->tr, t, name, tpe);
 }
