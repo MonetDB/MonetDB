@@ -1552,7 +1552,7 @@ dup_sql_type(sql_trans *tr, sql_schema *os, sql_subtype *oc, sql_subtype *nc)
 	nc->digits = oc->digits;
 	nc->scale = oc->scale;
 	nc->type = oc->type;
-	if (nc->type->s) { /* user type */
+	if (os && nc->type->s) { /* user type */
 		sql_type *lt = NULL;
 
 		if (os->base.id == nc->type->s->base.id) {
