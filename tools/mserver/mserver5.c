@@ -89,6 +89,7 @@ usage(char *prog, int xit)
 	fprintf(stderr, "Usage: %s [options]\n", prog);
 	fprintf(stderr, "    --dbpath=<directory>      Specify database location\n");
 	fprintf(stderr, "    --dbextra=<directory>     Directory for transient BATs\n");
+	fprintf(stderr, "    --dbtrace=<directory>     Directory for produced traces\n");
 	fprintf(stderr, "    --in-memory               Run database in-memory only\n");
 	fprintf(stderr, "    --config=<config_file>    Use config_file to read options from\n");
 	fprintf(stderr, "    --single-user             Allow only one user at a time\n");
@@ -258,6 +259,7 @@ handler(int sig)
 int
 main(int argc, char **av)
 {
+	DIR *dirp;
 	char *prog = *av;
 	opt *set = NULL;
 	int grpdebug = 0, debug = 0, setlen = 0;
@@ -267,11 +269,13 @@ main(int argc, char **av)
 	char *binpath = NULL;
 	char *dbpath = NULL;
 	char *dbextra = NULL;
+	char *dbtrace = NULL;
 	bool inmemory = false;
 	static struct option long_options[] = {
 		{ "config", required_argument, NULL, 'c' },
 		{ "dbpath", required_argument, NULL, 0 },
 		{ "dbextra", required_argument, NULL, 0 },
+		{ "dbtrace", optional_argument, NULL, 0 },
 		{ "debug", optional_argument, NULL, 'd' },
 		{ "help", no_argument, NULL, '?' },
 		{ "version", no_argument, NULL, 0 },
@@ -358,6 +362,22 @@ main(int argc, char **av)
 					dbextra = optarg;
 				break;
 			}
+
+			if (strcmp(long_options[option_index].name, "dbtrace") == 0) {
+				size_t optarglen = strlen(optarg);
+				/* remove trailing directory separator */
+				while (optarglen > 0 &&
+				       (optarg[optarglen - 1] == '/' ||
+					optarg[optarglen - 1] == '\\'))
+					optarg[--optarglen] = '\0';
+				dbtrace = absolute_path(optarg);
+				if(dbtrace == NULL)
+					fprintf(stderr, "#error: can not allocate memory for dbtrace\n");
+				else
+					setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_dbtrace", dbtrace);
+				break;
+			}
+
 			if (strcmp(long_options[option_index].name, "single-user") == 0) {
 				setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_single_user", "yes");
 				break;
@@ -492,6 +512,28 @@ main(int argc, char **av)
 		}
 	}
 	GDKfree(dbpath);
+
+	if (dbtrace) {
+		/* GDKcreatedir makes sure that all parent directories of dbtrace exist */
+		if (GDKcreatedir(dbtrace) != GDK_SUCCEED) {
+			fprintf(stderr, "!ERROR: cannot create directory for %s\n", dbtrace);
+			exit(1);
+		}
+		/* create the actual dir for db-trace */
+		if (mkdir(dbtrace, MONETDB_DIRMODE) < 0) {
+			if (errno != EEXIST) {
+				fprintf(stderr, "!ERROR: cannot create directory for %s\n", dbtrace);
+				exit(1);
+			}
+			if ((dirp = opendir(dbtrace)) == NULL) {
+				fprintf(stderr, "!ERROR: cannot create directory for %s\n", dbtrace);
+				exit(1);
+			}
+			closedir(dirp);
+		}
+		GDKfree(dbtrace);
+	}
+
 	if (monet_init(set, setlen) == 0) {
 		mo_free_options(set, setlen);
 		if (GDKerrbuf && *GDKerrbuf)

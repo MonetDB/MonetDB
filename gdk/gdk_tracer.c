@@ -34,20 +34,25 @@ LOG_LEVEL LVL_PER_COMPONENT[] = {
 static gdk_return
 _GDKtracer_init_basic_adptr(void)
 {
-	char file_name[FILENAME_MAX];
-	snprintf(file_name, sizeof(file_name), "%s%c%s%c%s%s", GDKgetenv("gdk_dbpath"), DIR_SEP, FILE_NAME, NAME_SEP, GDKtracer_get_timestamp("%Y%m%d_%H%M%S", (char[20]){0}, 20), ".log");
+	char file_name[FILENAME_MAX];	
+	const char* TRACE_PATH = GDKgetenv("gdk_dbpath");
 
-	output_file = fopen(file_name, "w");
+	if(GDKgetenv("gdk_dbtrace") != NULL)
+		TRACE_PATH = GDKgetenv("gdk_dbtrace");
+
+	snprintf(file_name, sizeof(file_name), "%s%c%s", TRACE_PATH, DIR_SEP, FILE_NAME);
+	output_file = fopen(file_name, "a");
 
 	// Even if creating the file failed, the adapter has 
 	// still tried to initialize and we shouldn't retry it
 	INIT_BASIC_ADAPTER = true;
-
-	if (!output_file) {
+	
+	if(!output_file)
+	{
 		GDK_TRACER_EXCEPTION(BASIC_INIT_FAILED ": %s\n", file_name);
 		return GDK_FAIL;
 	}
-
+	
 	return GDK_SUCCEED;
 }
 

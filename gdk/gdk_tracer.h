@@ -38,7 +38,7 @@
 #define DEFAULT_LOG_LEVEL M_ERROR
 #define DEFAULT_FLUSH_LEVEL M_INFO
 
-#define FILE_NAME "trace"
+#define FILE_NAME "mdbtrace.log"
 #define NAME_SEP '_'
 #define NULL_CHAR '\0'
 #define NEW_LINE '\n'

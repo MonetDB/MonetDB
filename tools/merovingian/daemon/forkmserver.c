@@ -201,6 +201,7 @@ forkMserver(char *database, sabdb** stats, bool force)
 	char *sabdbfarm;
 	char dbpath[1024];
 	char dbextra_path[1024];
+	char dbtrace_path[1024];
 	char port[32];
 	char listenaddr[512];
 	char muri[512]; /* possibly undersized */
@@ -218,6 +219,7 @@ forkMserver(char *database, sabdb** stats, bool force)
 	char *raw_strings = NULL;
 	char *ipv6 = NULL;
 	char *dbextra = NULL;
+	char *dbtrace = NULL;
 	char *mserver5_extra = NULL;
 	char *mserver5_extra_token = NULL;
 	char *argv[MAX_NR_ARGS+1];	/* for the exec arguments */
@@ -522,6 +524,10 @@ forkMserver(char *database, sabdb** stats, bool force)
 		dbextra = kv->val;
 	}
 
+	kv = findConfKey(ckv, "dbtrace");
+	if (kv != NULL && kv->val != NULL)
+		dbtrace = kv->val;
+
 	kv = findConfKey(ckv, "listenaddr");
 	if (kv->val != NULL) {
 		if (mydoproxy) {
@@ -561,6 +567,13 @@ forkMserver(char *database, sabdb** stats, bool force)
 				 "--dbextra=%s", dbextra);
 		argv[c++] = dbextra_path;
 	}
+
+	if (dbtrace != NULL) {
+		snprintf(dbtrace_path, sizeof(dbtrace_path),
+				 "--dbtrace=%s", dbtrace);
+		argv[c++] = dbtrace_path;
+	}
+	
 	if (mydoproxy) {
 		argv[c++] = set; argv[c++] = "mapi_open=false";
 		/* we "proxy", so we can just solely use UNIX domain sockets
