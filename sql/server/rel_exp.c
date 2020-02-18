@@ -1592,6 +1592,8 @@ exp_is_true(mvc *sql, sql_exp *e)
 			return atom_is_true(sql->args[e->flag]);
 		}
 	}
+	if (e->type == e_cmp && e->flag == cmp_equal)
+		return (exp_is_true(sql, e->l) && exp_is_true(sql, e->r));
 	return 0;
 }
 
