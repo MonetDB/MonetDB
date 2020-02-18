@@ -300,10 +300,11 @@ ssize_t GDKstrFromStr(unsigned char *restrict dst, const unsigned char *restrict
 str GDKstrdup(const char *s) __attribute__((__warn_unused_result__));
 str GDKstrndup(const char *s, size_t n) __attribute__((__warn_unused_result__));
 void GDKsyserror(_In_z_ _Printf_format_string_ const char *format, ...) __attribute__((__format__(__printf__, 1, 2)));
-gdk_return GDKtracer_fill_comp_info(BAT *id, BAT *component, BAT *log_Level);
+gdk_return GDKtracer_fill_comp_info(BAT *id, BAT *component, BAT *log_level);
 gdk_return GDKtracer_flush_buffer(void);
 char *GDKtracer_get_timestamp(const char *fmt, char *buf, size_t sz);
 gdk_return GDKtracer_log(LOG_LEVEL level, const char *fmt, ...) __attribute__((format(printf, 2, 3)));
+void GDKtracer_reinit_basic(int sig);
 gdk_return GDKtracer_reset_adapter(void);
 gdk_return GDKtracer_reset_component_level(int comp);
 gdk_return GDKtracer_reset_flush_level(void);
