@@ -915,7 +915,7 @@ BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_o
 	    (BATtdense(g) || (g->tkey && g->tnonil))) {
 		/* trivial: singleton groups, so all results are equal
 		 * to the inputs (but possibly a different type) */
-		return BATconvert(b, s, tp, abort_on_error);
+		return BATconvert(b, s, NULL, tp, abort_on_error);
 	}
 
 	bn = BATconstant(min, tp, ATOMnilptr(tp), ngrp, TRANSIENT);
@@ -1490,7 +1490,7 @@ BATgroupprod(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_
 	    (BATtdense(g) || (g->tkey && g->tnonil))) {
 		/* trivial: singleton groups, so all results are equal
 		 * to the inputs (but possibly a different type) */
-		return BATconvert(b, s, tp, abort_on_error);
+		return BATconvert(b, s, NULL, tp, abort_on_error);
 	}
 
 	bn = BATconstant(min, tp, ATOMnilptr(tp), ngrp, TRANSIENT);
@@ -1704,7 +1704,7 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool
 	    (BATtdense(g) || (g->tkey && g->tnonil))) {
 		/* trivial: singleton groups, so all results are equal
 		 * to the inputs (but possibly a different type) */
-		if ((bn = BATconvert(b, s, TYPE_dbl, abort_on_error)) == NULL)
+		if ((bn = BATconvert(b, s, NULL, TYPE_dbl, abort_on_error)) == NULL)
 			return GDK_FAIL;
 		if (cntsp) {
 			lng one = 1;
@@ -2804,7 +2804,7 @@ doBATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 			/* singleton groups, so calculating quantile is
 			 * easy */
 			if (average)
-				bn = BATconvert(b, NULL, TYPE_dbl, abort_on_error);
+				bn = BATconvert(b, NULL, NULL, TYPE_dbl, abort_on_error);
 			else
 				bn = COLcopy(b, tp, false, TRANSIENT);
 			BAThseqbase(bn, g->tseqbase); /* deals with NULL */

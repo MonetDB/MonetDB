@@ -36,23 +36,48 @@ mythrow(enum malexception type, const char *fcn, const char *msg)
 
 static str
 CMDbatUNARY(MalStkPtr stk, InstrPtr pci,
-			BAT *(*batfunc)(BAT *, BAT *), const char *malfunc)
+			BAT *(*batfunc)(BAT *, BAT *, BAT *), const char *malfunc)
 {
 	bat *bid;
-	BAT *bn, *b, *s = NULL;
+	BAT *bn, *b, *s = NULL, *r = NULL;
 
 	bid = getArgReference_bat(stk, pci, 1);
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, malfunc, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	if (pci->argc == 3) {
-		bat *sid = getArgReference_bat(stk, pci, 2);
-		if (*sid && (s = BATdescriptor(*sid)) == NULL) {
+		bid = getArgReference_bat(stk, pci, 2);
+		if (*bid && (s = BATdescriptor(*bid)) == NULL) {
 			BBPunfix(b->batCacheid);
+			throw(MAL, malfunc, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		}
+		switch (s->ttype) {
+		case TYPE_oid:
+		case TYPE_void:
+			break;
+		case TYPE_bit:
+			r = s;
+			s = NULL;
+			break;
+		default:
+			BBPunfix(b->batCacheid);
+			BBPunfix(s->batCacheid);
+			throw(MAL, malfunc, SQLSTATE(42000) ILLEGAL_ARGUMENT);
+		}
+	} else if (pci->argc == 4) {
+		bid = getArgReference_bat(stk, pci, 2);
+		if (*bid && (s = BATdescriptor(*bid)) == NULL) {
+			BBPunfix(b->batCacheid);
+			throw(MAL, malfunc, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		}
+		bid = getArgReference_bat(stk, pci, 3);
+		if (*bid && (r = BATdescriptor(*bid)) == NULL) {
+			BBPunfix(b->batCacheid);
+			BBPunfix(s->batCacheid);
 			throw(MAL, malfunc, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
 	}
 
-	bn = (*batfunc)(b, s);
+	bn = (*batfunc)(b, s, r);
 	BBPunfix(b->batCacheid);
 	if (s)
 		BBPunfix(s->batCacheid);
@@ -66,23 +91,48 @@ CMDbatUNARY(MalStkPtr stk, InstrPtr pci,
 
 static str
 CMDbatUNARY1(MalStkPtr stk, InstrPtr pci, bool abort_on_error,
-			 BAT *(*batfunc)(BAT *, BAT *, bool), const char *malfunc)
+			 BAT *(*batfunc)(BAT *, BAT *, BAT *, bool), const char *malfunc)
 {
 	bat *bid;
-	BAT *bn, *b, *s = NULL;
+	BAT *bn, *b, *s = NULL, *r = NULL;
 
 	bid = getArgReference_bat(stk, pci, 1);
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, malfunc, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	if (pci->argc == 3) {
-		bat *sid = getArgReference_bat(stk, pci, 2);
-		if (*sid && (s = BATdescriptor(*sid)) == NULL) {
+		bid = getArgReference_bat(stk, pci, 2);
+		if (*bid && (s = BATdescriptor(*bid)) == NULL) {
 			BBPunfix(b->batCacheid);
+			throw(MAL, malfunc, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		}
+		switch (s->ttype) {
+		case TYPE_oid:
+		case TYPE_void:
+			break;
+		case TYPE_bit:
+			r = s;
+			s = NULL;
+			break;
+		default:
+			BBPunfix(b->batCacheid);
+			BBPunfix(s->batCacheid);
+			throw(MAL, malfunc, SQLSTATE(42000) ILLEGAL_ARGUMENT);
+		}
+	} else if (pci->argc == 4) {
+		bid = getArgReference_bat(stk, pci, 2);
+		if (*bid && (s = BATdescriptor(*bid)) == NULL) {
+			BBPunfix(b->batCacheid);
+			throw(MAL, malfunc, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		}
+		bid = getArgReference_bat(stk, pci, 3);
+		if (*bid && (r = BATdescriptor(*bid)) == NULL) {
+			BBPunfix(b->batCacheid);
+			BBPunfix(s->batCacheid);
 			throw(MAL, malfunc, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
 	}
 
-	bn = (*batfunc)(b, s, abort_on_error);
+	bn = (*batfunc)(b, s, r, abort_on_error);
 	BBPunfix(b->batCacheid);
 	if (s)
 		BBPunfix(s->batCacheid);
@@ -290,19 +340,19 @@ calcmodtype(int tp1, int tp2)
 
 static str
 CMDbatBINARY2(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
-			  BAT *(*batfunc)(BAT *, BAT *, BAT *, BAT *, int, bool),
-			  BAT *(batfunc1)(BAT *, const ValRecord *, BAT *, int, bool),
-			  BAT *(batfunc2)(const ValRecord *, BAT *, BAT *, int, bool),
+			  BAT *(*batfunc)(BAT *, BAT *, BAT *, BAT *, BAT *, int, bool),
+			  BAT *(batfunc1)(BAT *, const ValRecord *, BAT *, BAT *, int, bool),
+			  BAT *(batfunc2)(const ValRecord *, BAT *, BAT *, BAT *, int, bool),
 			  int (*typefunc)(int, int),
 			  bool abort_on_error, const char *malfunc)
 {
-	bat bid, sid;
-	BAT *bn, *b1 = NULL, *b2 = NULL, *s1 = NULL, *s2 = NULL;
+	bat bid;
+	BAT *bn, *b1 = NULL, *b2 = NULL, *s1 = NULL, *s2 = NULL, *r = NULL;
 	int tp1, tp2, tp3, stp;
 
-	tp1 = stk->stk[getArg(pci, 1)].vtype;
-	tp2 = stk->stk[getArg(pci, 2)].vtype;
-	tp3 = getArgType(mb, pci, 0);
+	tp1 = stk->stk[getArg(pci, 1)].vtype; /* first argument */
+	tp2 = stk->stk[getArg(pci, 2)].vtype; /* second argument */
+	tp3 = getArgType(mb, pci, 0);		  /* return argument */
 	assert(isaBatType(tp3));
 	tp3 = getBatType(tp3);
 
@@ -314,9 +364,13 @@ CMDbatBINARY2(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		if (pci->argc >= 4
 			&& ((stp = stk->stk[getArg(pci, 3)].vtype) == TYPE_bat
 				|| isaBatType(stp))) {
-			sid = *getArgReference_bat(stk, pci, 3);
-			if (sid && (s1 = BATdescriptor(sid)) == NULL)
+			bid = *getArgReference_bat(stk, pci, 3);
+			if (bid && (s1 = BATdescriptor(bid)) == NULL)
 				goto bailout;
+			if (pci->argc == 4 && s1->ttype == TYPE_bit) {
+				r = s1;
+				s1 = NULL;
+			}
 		}
 	}
 
@@ -328,24 +382,35 @@ CMDbatBINARY2(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		if (pci->argc >= 4 + (b1 != NULL)
 			&& ((stp = stk->stk[getArg(pci, 3 + (b1 != NULL))].vtype) == TYPE_bat
 				|| isaBatType(stp))) {
-			sid = *getArgReference_bat(stk, pci, 3 + (b1 != NULL));
-			if (sid && (s2 = BATdescriptor(sid)) == NULL)
+			bid = *getArgReference_bat(stk, pci, 3 + (b1 != NULL));
+			if (bid && (s2 = BATdescriptor(bid)) == NULL)
 				goto bailout;
+			if (pci->argc == 4 + (b1 != NULL) && s2->ttype == TYPE_bit) {
+				r = s2;
+				s2 = NULL;
+			}
 		}
+	}
+
+	if (r == NULL && pci->argc == 4 + (s1 != NULL) + (s2 != NULL)) {
+		bid = *getArgReference_bat(stk, pci, pci->argc - 1);
+		if (bid && (r = BATdescriptor(bid)) == NULL)
+			goto bailout;
+		assert(r->ttype == TYPE_bit);
 	}
 
 	if (b1 && b2) {
 		if (tp3 == TYPE_any)
 			tp3 = (*typefunc)(b1->ttype, b2->ttype);
-		bn = (*batfunc)(b1, b2, s1, s2, tp3, abort_on_error);
+		bn = (*batfunc)(b1, b2, s1, s2, r, tp3, abort_on_error);
 	} else if (b1) {
 		if (tp3 == TYPE_any)
 			tp3 = (*typefunc)(b1->ttype, tp2);
-		bn = (*batfunc1)(b1, &stk->stk[getArg(pci, 2)], s1, tp3, abort_on_error);
+		bn = (*batfunc1)(b1, &stk->stk[getArg(pci, 2)], s1, r, tp3, abort_on_error);
 	} else if (b2) {
 		if (tp3 == TYPE_any)
 			tp3 = (*typefunc)(tp1, b2->ttype);
-		bn = (*batfunc2)(&stk->stk[getArg(pci, 1)], b2, s2, tp3, abort_on_error);
+		bn = (*batfunc2)(&stk->stk[getArg(pci, 1)], b2, s2, r, tp3, abort_on_error);
 	} else
 		goto bailout;			/* cannot happen */
 	if (b1)
@@ -356,6 +421,8 @@ CMDbatBINARY2(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		BBPunfix(s1->batCacheid);
 	if (s2)
 		BBPunfix(s2->batCacheid);
+	if (r)
+		BBPunfix(r->batCacheid);
 	if (bn == NULL)
 		return mythrow(MAL, malfunc, GDK_EXCEPTION);
 	*getArgReference_bat(stk, pci, 0) = bn->batCacheid;
@@ -371,28 +438,25 @@ bailout:
 		BBPunfix(s1->batCacheid);
 	if (s2)
 		BBPunfix(s2->batCacheid);
+	if (r)
+		BBPunfix(r->batCacheid);
 	throw(MAL, malfunc, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 }
 
 static str
 CMDbatBINARY1(MalStkPtr stk, InstrPtr pci,
-			  BAT *(*batfunc)(BAT *, BAT *, BAT *, BAT *, bool),
-			  BAT *(*batfunc1)(BAT *, const ValRecord *, BAT *, bool),
-			  BAT *(*batfunc2)(const ValRecord *, BAT *, BAT *, bool),
+			  BAT *(*batfunc)(BAT *, BAT *, BAT *, BAT *, BAT *, bool),
+			  BAT *(*batfunc1)(BAT *, const ValRecord *, BAT *, BAT *, bool),
+			  BAT *(*batfunc2)(const ValRecord *, BAT *, BAT *, BAT *, bool),
 			  bool abort_on_error,
 			  const char *malfunc)
 {
-	bat bid, sid;
-	BAT *bn, *b1 = NULL, *b2 = NULL, *s1 = NULL, *s2 = NULL;
+	bat bid;
+	BAT *bn, *b1 = NULL, *b2 = NULL, *s1 = NULL, *s2 = NULL, *r = NULL;
 	int tp1, tp2, stp;
 
-	assert(3 <= pci->argc && pci->argc <= 5);
-
-	tp1 = stk->stk[getArg(pci, 1)].vtype;
-	tp2 = stk->stk[getArg(pci, 2)].vtype;
-
-	if (pci->argc >= 4 && stk->stk[getArg(pci, pci->argc - 1)].vtype == TYPE_bit)
-		abort_on_error = *getArgReference_bit(stk, pci, pci->argc - 1);
+	tp1 = stk->stk[getArg(pci, 1)].vtype; /* first argument */
+	tp2 = stk->stk[getArg(pci, 2)].vtype; /* second argument */
 
 	if (tp1 == TYPE_bat || isaBatType(tp1)) {
 		bid = *getArgReference_bat(stk, pci, 1);
@@ -402,9 +466,13 @@ CMDbatBINARY1(MalStkPtr stk, InstrPtr pci,
 		if (pci->argc >= 4
 			&& ((stp = stk->stk[getArg(pci, 3)].vtype) == TYPE_bat
 				|| isaBatType(stp))) {
-			sid = *getArgReference_bat(stk, pci, 3);
-			if (sid && (s1 = BATdescriptor(sid)) == NULL)
+			bid = *getArgReference_bat(stk, pci, 3);
+			if (bid && (s1 = BATdescriptor(bid)) == NULL)
 				goto bailout;
+			if (pci->argc == 4 && s1->ttype == TYPE_bit) {
+				r = s1;
+				s1 = NULL;
+			}
 		}
 	}
 
@@ -416,18 +484,25 @@ CMDbatBINARY1(MalStkPtr stk, InstrPtr pci,
 		if (pci->argc >= 4 + (b1 != NULL)
 			&& ((stp = stk->stk[getArg(pci, 3 + (b1 != NULL))].vtype) == TYPE_bat
 				|| isaBatType(stp))) {
-			sid = *getArgReference_bat(stk, pci, 3 + (b1 != NULL));
-			if (sid && (s2 = BATdescriptor(sid)) == NULL)
+			bid = *getArgReference_bat(stk, pci, 3 + (b1 != NULL));
+			if (bid && (s2 = BATdescriptor(bid)) == NULL)
 				goto bailout;
+			if (pci->argc == 4 + (b1 != NULL) && s2->ttype == TYPE_bit) {
+				r = s2;
+				s2 = NULL;
+			}
 		}
 	}
 
+	if (pci->argc > 3 && stk->stk[getArg(pci, pci->argc - 1)].vtype == TYPE_bit)
+		abort_on_error = *getArgReference_bit(stk, pci, pci->argc - 1);
+
 	if (b1 && b2)
-		bn = (*batfunc)(b1, b2, s1, s2, abort_on_error);
+		bn = (*batfunc)(b1, b2, s1, s2, r, abort_on_error);
 	else if (b1)
-		bn = (*batfunc1)(b1, &stk->stk[getArg(pci, 2)], s1, abort_on_error);
+		bn = (*batfunc1)(b1, &stk->stk[getArg(pci, 2)], s1, r, abort_on_error);
 	else if (b2)
-		bn = (*batfunc2)(&stk->stk[getArg(pci, 1)], b2, s2, abort_on_error);
+		bn = (*batfunc2)(&stk->stk[getArg(pci, 1)], b2, s2, r, abort_on_error);
 	else
 		goto bailout;			/* cannot happen */
 	if (b1)
@@ -438,6 +513,8 @@ CMDbatBINARY1(MalStkPtr stk, InstrPtr pci,
 		BBPunfix(s1->batCacheid);
 	if (s2)
 		BBPunfix(s2->batCacheid);
+	if (r)
+		BBPunfix(r->batCacheid);
 	if (bn == NULL)
 		return mythrow(MAL, malfunc, GDK_EXCEPTION);
 	*getArgReference_bat(stk, pci, 0) = bn->batCacheid;
@@ -453,23 +530,25 @@ bailout:
 		BBPunfix(s1->batCacheid);
 	if (s2)
 		BBPunfix(s2->batCacheid);
+	if (r)
+		BBPunfix(r->batCacheid);
 	throw(MAL, malfunc, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 }
 
 static str
 CMDbatBINARY0(MalStkPtr stk, InstrPtr pci,
-			  BAT *(*batfunc)(BAT *, BAT *, BAT *, BAT *),
-			  BAT *(*batfunc1)(BAT *, const ValRecord *, BAT *),
-			  BAT *(*batfunc2)(const ValRecord *, BAT *, BAT *),
+			  BAT *(*batfunc)(BAT *, BAT *, BAT *, BAT *, BAT *),
+			  BAT *(*batfunc1)(BAT *, const ValRecord *, BAT *, BAT *),
+			  BAT *(*batfunc2)(const ValRecord *, BAT *, BAT *, BAT *),
 			  const char *malfunc)
 {
-	bat bid, sid;
-	BAT *bn, *b1 = NULL, *b2 = NULL, *s1 = NULL, *s2 = NULL;
+	bat bid;
+	BAT *bn, *b1 = NULL, *b2 = NULL, *s1 = NULL, *s2 = NULL, *r = NULL;
 	int tp1, tp2, stp;
 
-	tp1 = stk->stk[getArg(pci, 1)].vtype;
-	tp2 = stk->stk[getArg(pci, 2)].vtype;
-	
+	tp1 = stk->stk[getArg(pci, 1)].vtype; /* first argument */
+	tp2 = stk->stk[getArg(pci, 2)].vtype; /* second argument */
+
 	if (tp1 == TYPE_bat || isaBatType(tp1)) {
 		bid = *getArgReference_bat(stk, pci, 1);
 		b1 = BATdescriptor(bid);
@@ -478,9 +557,13 @@ CMDbatBINARY0(MalStkPtr stk, InstrPtr pci,
 		if (pci->argc >= 4
 			&& ((stp = stk->stk[getArg(pci, 3)].vtype) == TYPE_bat
 				|| isaBatType(stp))) {
-			sid = *getArgReference_bat(stk, pci, 3);
-			if (sid && (s1 = BATdescriptor(sid)) == NULL)
+			bid = *getArgReference_bat(stk, pci, 3);
+			if (bid && (s1 = BATdescriptor(bid)) == NULL)
 				goto bailout;
+			if (pci->argc == 4 && s1->ttype == TYPE_bit) {
+				r = s1;
+				s1 = NULL;
+			}
 		}
 	}
 
@@ -490,20 +573,24 @@ CMDbatBINARY0(MalStkPtr stk, InstrPtr pci,
 		if (b2 == NULL)
 			goto bailout;
 		if (pci->argc >= 4 + (b1 != NULL)
-			&& ((stp = stk->stk[getArg(pci, pci->argc - 1)].vtype) == TYPE_bat
+			&& ((stp = stk->stk[getArg(pci, 3 + (b1 != NULL))].vtype) == TYPE_bat
 				|| isaBatType(stp))) {
-			sid = *getArgReference_bat(stk, pci, pci->argc - 1);
-			if (sid && (s2 = BATdescriptor(sid)) == NULL)
+			bid = *getArgReference_bat(stk, pci, 3 + (b1 != NULL));
+			if (bid && (s2 = BATdescriptor(bid)) == NULL)
 				goto bailout;
+			if (pci->argc == 4 + (b1 != NULL) && s2->ttype == TYPE_bit) {
+				r = s2;
+				s2 = NULL;
+			}
 		}
 	}
 
 	if (b1 && b2)
-		bn = (*batfunc)(b1, b2, s1, s2);
+		bn = (*batfunc)(b1, b2, s1, s2, r);
 	else if (b1)
-		bn = (*batfunc1)(b1, &stk->stk[getArg(pci, 2)], s1);
+		bn = (*batfunc1)(b1, &stk->stk[getArg(pci, 2)], s1, r);
 	else if (b2)
-		bn = (*batfunc2)(&stk->stk[getArg(pci, 1)], b2, s2);
+		bn = (*batfunc2)(&stk->stk[getArg(pci, 1)], b2, s2, r);
 	else
 		goto bailout;			/* cannot happen */
 	if (b1)
@@ -514,6 +601,8 @@ CMDbatBINARY0(MalStkPtr stk, InstrPtr pci,
 		BBPunfix(s1->batCacheid);
 	if (s2)
 		BBPunfix(s2->batCacheid);
+	if (r)
+		BBPunfix(r->batCacheid);
 	if (bn == NULL)
 		return mythrow(MAL, malfunc, GDK_EXCEPTION);
 	*getArgReference_bat(stk, pci, 0) = bn->batCacheid;
@@ -529,6 +618,8 @@ bailout:
 		BBPunfix(s1->batCacheid);
 	if (s2)
 		BBPunfix(s2->batCacheid);
+	if (r)
+		BBPunfix(r->batCacheid);
 	throw(MAL, malfunc, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 }
 
@@ -892,10 +983,10 @@ mal_export str CMDbatBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 str
 CMDbatBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	bat *bid, *sid;
-	BAT *bn, *b = NULL, *lo = NULL, *hi = NULL, *s = NULL, *slo = NULL, *shi = NULL;
+	bat bid;
+	BAT *bn, *b = NULL, *lo = NULL, *hi = NULL, *s = NULL, *slo = NULL, *shi = NULL, *r = NULL;
 	int tp1, tp2, tp3;
-	int bc = 3;					/* number of BAT arguments */
+	int bc = 0;					/* number of extra BAT arguments */
 	bool symmetric, linc, hinc, nils_false, anti;
 
 	(void) cntxt;
@@ -906,56 +997,79 @@ CMDbatBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	tp3 = stk->stk[getArg(pci, 3)].vtype;
 	if (tp1 != TYPE_bat && !isaBatType(tp1))
 		goto bailout;
-	bid = getArgReference_bat(stk, pci, 1);
-	b = BATdescriptor(*bid);
+	bid = *getArgReference_bat(stk, pci, 1);
+	b = BATdescriptor(bid);
 	if (b == NULL)
 		goto bailout;
-	if (pci->argc > bc + 1 && isaBatType(getArgType(mb, pci, bc + 1))) {
-		sid = getArgReference_bat(stk, pci, bc + 1);
-		if (*sid && (s = BATdescriptor(*sid)) == NULL)
-			goto bailout;
-		bc++;
-	}
-	if ((tp2 == TYPE_bat || isaBatType(tp2)) &&
-		pci->argc > bc + 1 && isaBatType(getArgType(mb, pci, bc + 1))) {
-		bid = getArgReference_bat(stk, pci, 2);
-		lo = BATdescriptor(*bid);
+	if (tp2 == TYPE_bat || isaBatType(tp2)) {
+		bid = *getArgReference_bat(stk, pci, 2);
+		lo = BATdescriptor(bid);
 		if (lo == NULL)
 			goto bailout;
-		sid = getArgReference_bat(stk, pci, bc + 1);
-		if (*sid && (slo = BATdescriptor(*sid)) == NULL)
-			goto bailout;
-		bc++;
 	}
-	if ((tp3 == TYPE_bat || isaBatType(tp3)) &&
-		pci->argc > bc + 1 && isaBatType(getArgType(mb, pci, bc + 1))) {
-		bid = getArgReference_bat(stk, pci, 3);
-		hi = BATdescriptor(*bid);
+	if (tp3 == TYPE_bat || isaBatType(tp3)) {
+		bid = *getArgReference_bat(stk, pci, 3);
+		hi = BATdescriptor(bid);
 		if (hi == NULL)
 			goto bailout;
-		bat *sid = getArgReference_bat(stk, pci, bc + 1);
-		if (*sid && (shi = BATdescriptor(*sid)) == NULL)
+	}
+	if (isaBatType(getArgType(mb, pci, 4))) {
+		bid = *getArgReference_bat(stk, pci, 4);
+		s = BATdescriptor(bid);
+		if (s == NULL)
+			goto bailout;
+		if (s->ttype == TYPE_bit) {
+			r = s;
+			s = NULL;
+		}
+		bc++;
+	}
+	if (s != NULL && lo) {
+		if (!isaBatType(getArgType(mb, pci, 4 + bc)))
+			goto bailout;
+		bid = *getArgReference_bat(stk, pci, 4 + bc);
+		slo = BATdescriptor(bid);
+		if (slo == NULL)
 			goto bailout;
 		bc++;
 	}
-	symmetric = *getArgReference_bit(stk, pci, bc + 1);
-	linc = *getArgReference_bit(stk, pci, bc + 2);
-	hinc = *getArgReference_bit(stk, pci, bc + 3);
-	nils_false = *getArgReference_bit(stk, pci, bc + 4);
-	anti = *getArgReference_bit(stk, pci, bc + 5);
+	if (s != NULL && hi) {
+		if (!isaBatType(getArgType(mb, pci, 4 + bc)))
+			goto bailout;
+		bid = *getArgReference_bat(stk, pci, 4 + bc);
+		shi = BATdescriptor(bid);
+		if (shi == NULL)
+			goto bailout;
+		bc++;
+	}
+	if (r == NULL && isaBatType(getArgType(mb, pci, 4 + bc))) {
+		bid = *getArgReference_bat(stk, pci, 4 + bc);
+		r = BATdescriptor(bid);
+		if (r == NULL)
+			goto bailout;
+		if (r->ttype != TYPE_bit)
+			goto bailout;
+		bc++;
+	}
+
+	symmetric = *getArgReference_bit(stk, pci, bc + 4);
+	linc = *getArgReference_bit(stk, pci, bc + 5);
+	hinc = *getArgReference_bit(stk, pci, bc + 6);
+	nils_false = *getArgReference_bit(stk, pci, bc + 7);
+	anti = *getArgReference_bit(stk, pci, bc + 8);
 
 	if (b && lo && hi)
-		bn = BATcalcbetween(b, lo, hi, s, slo, shi,
+		bn = BATcalcbetween(b, lo, hi, s, slo, shi, r,
 							symmetric, linc, hinc, nils_false, anti);
 	else if (b && lo)
-		bn = BATcalcbetweenbatcst(b, lo, &stk->stk[getArg(pci, 3)], s, slo,
+		bn = BATcalcbetweenbatcst(b, lo, &stk->stk[getArg(pci, 3)], s, slo, r,
 								  symmetric, linc, hinc, nils_false, anti);
 	else if (b && hi)
-		bn = BATcalcbetweencstbat(b, &stk->stk[getArg(pci, 2)], hi, s, shi,
+		bn = BATcalcbetweencstbat(b, &stk->stk[getArg(pci, 2)], hi, s, shi, r,
 								  symmetric, linc, hinc, nils_false, anti);
 	else
 		bn = BATcalcbetweencstcst(b, &stk->stk[getArg(pci, 2)],
-								  &stk->stk[getArg(pci, 3)], s,
+								  &stk->stk[getArg(pci, 3)], s, r,
 								  symmetric, linc, hinc, nils_false, anti);
 	BBPunfix(b->batCacheid);
 	if (lo)
@@ -968,10 +1082,12 @@ CMDbatBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPunfix(slo->batCacheid);
 	if (shi)
 		BBPunfix(shi->batCacheid);
+	if (r)
+		BBPunfix(r->batCacheid);
 	if (bn == NULL)
 		return mythrow(MAL, "batcalc.between", OPERATION_FAILED);
-	bid = getArgReference_bat(stk, pci, 0);
-	BBPkeepref(*bid = bn->batCacheid);
+	*getArgReference_bat(stk, pci, 0) = bn->batCacheid;
+	BBPkeepref(bn->batCacheid);
 	return MAL_SUCCEED;
 
   bailout:
@@ -987,6 +1103,8 @@ CMDbatBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPunfix(slo->batCacheid);
 	if (shi)
 		BBPunfix(shi->batCacheid);
+	if (r)
+		BBPunfix(r->batCacheid);
 	throw(MAL, "batcalc.between", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 }
 
@@ -1011,8 +1129,8 @@ CMDcalcavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ((pci->argc == pci->retc + 2 &&
 		 stk->stk[pci->argv[pci->retc + 1]].vtype == TYPE_bat) ||
 		pci->argc == pci->retc + 3) {
-		bat *sid = getArgReference_bat(stk, pci, pci->retc + 1);
-		if (*sid && (s = BATdescriptor(*sid)) == NULL) {
+		bid = getArgReference_bat(stk, pci, pci->retc + 1);
+		if (*bid && (s = BATdescriptor(*bid)) == NULL) {
 			BBPunfix(b->batCacheid);
 			throw(MAL, "aggr.avg", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
@@ -1037,20 +1155,45 @@ static str
 CMDconvertbat(MalStkPtr stk, InstrPtr pci, int tp, bool abort_on_error)
 {
 	bat *bid;
-	BAT *b, *bn, *s = NULL;
+	BAT *b, *bn, *s = NULL, *r = NULL;
 
 	bid = getArgReference_bat(stk, pci, 1);
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "batcalc.convert", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	if (pci->argc == 3) {
-		bat *sid = getArgReference_bat(stk, pci, 2);
-		if (*sid && (s = BATdescriptor(*sid)) == NULL) {
+		bid = getArgReference_bat(stk, pci, 2);
+		if (*bid && (s = BATdescriptor(*bid)) == NULL) {
 			BBPunfix(b->batCacheid);
+			throw(MAL, "batcalc.convert", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		}
+		switch (s->ttype) {
+		case TYPE_oid:
+		case TYPE_void:
+			break;
+		case TYPE_bit:
+			r = s;
+			s = NULL;
+			break;
+		default:
+			BBPunfix(b->batCacheid);
+			BBPunfix(s->batCacheid);
+			throw(MAL, "batcalc.convert", SQLSTATE(42000) ILLEGAL_ARGUMENT);
+		}
+	} else if (pci->argc == 4) {
+		bid = getArgReference_bat(stk, pci, 2);
+		if (*bid && (s = BATdescriptor(*bid)) == NULL) {
+			BBPunfix(b->batCacheid);
+			throw(MAL, "batcalc.convert", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		}
+		bid = getArgReference_bat(stk, pci, 3);
+		if (*bid && (r = BATdescriptor(*bid)) == NULL) {
+			BBPunfix(b->batCacheid);
+			BBPunfix(s->batCacheid);
 			throw(MAL, "batcalc.convert", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
 	}
 
-	bn = BATconvert(b, s, tp, abort_on_error);
+	bn = BATconvert(b, s, r, tp, abort_on_error);
 	BBPunfix(b->batCacheid);
 	if (s)
 		BBPunfix(s->batCacheid);
