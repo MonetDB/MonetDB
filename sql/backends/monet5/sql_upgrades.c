@@ -2352,7 +2352,7 @@ sql_update_nov2019_sp1_hugeint(Client c, mvc *sql, const char *prev_schema, bool
 #endif
 
 static str
-sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixed)
+sql_update_linear_hashing(Client c, mvc *sql, const char *prev_schema, bool *systabfixed)
 {
 	sql_table *t;
 	size_t bufsize = 8192, pos = 0;
@@ -2870,7 +2870,7 @@ SQLupgrades(Client c, mvc *m)
 #endif
 
 	if (!res && !sql_bind_func(m->sa, s, "suspend_log_flushing", NULL, NULL, F_PROC)) {
-		if ((err = sql_update_default(c, m, prev_schema, &systabfixed)) != NULL) {
+		if ((err = sql_update_linear_hashing(c, m, prev_schema, &systabfixed)) != NULL) {
 			fprintf(stderr, "!%s\n", err);
 			freeException(err);
 			res = -1;
