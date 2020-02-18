@@ -445,7 +445,7 @@ GDKtracer_flush_buffer(void)
 
 
 gdk_return
-GDKtracer_fill_comp_info(BAT *id, BAT *component, BAT *log_Level)
+GDKtracer_fill_comp_info(BAT *id, BAT *component, BAT *log_level)
 {
 	for (int i = 0; i < COMPONENTS_COUNT; i++) {
 		if (BUNappend(id, &i, false) != GDK_SUCCEED)
@@ -454,7 +454,7 @@ GDKtracer_fill_comp_info(BAT *id, BAT *component, BAT *log_Level)
 		if (BUNappend(component, COMPONENT_STR[i], false) != GDK_SUCCEED)
 			return GDK_FAIL;
 
-		if (BUNappend(log_Level, LEVEL_STR[LVL_PER_COMPONENT[i]], false) != GDK_SUCCEED) 
+		if (BUNappend(log_level, LEVEL_STR[LVL_PER_COMPONENT[i]], false) != GDK_SUCCEED) 
 			return GDK_FAIL;
 	}
 
