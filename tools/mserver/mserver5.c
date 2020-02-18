@@ -733,6 +733,9 @@ main(int argc, char **av)
 		free(err);
 	}
 
+	// Register signal to GDKtracer (logrotate)
+	signal(SIGHUP, GDKtracer_reinit_basic);
+
 #ifdef _MSC_VER
 	printf("# MonetDB server is started. To stop server press Ctrl-C.\n");
 #endif

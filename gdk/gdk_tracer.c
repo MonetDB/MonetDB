@@ -16,6 +16,8 @@ static gdk_tracer *active_tracer = &tracer;
 MT_Lock lock = MT_LOCK_INITIALIZER("GDKtracer_1");
 
 static FILE *output_file;
+static char file_name[FILENAME_MAX];
+
 static ATOMIC_TYPE CUR_ADAPTER = ATOMIC_VAR_INIT(DEFAULT_ADAPTER);
 static bool INIT_BASIC_ADAPTER = false;
 static bool LOG_EXC_REP = false;
@@ -29,12 +31,11 @@ LOG_LEVEL LVL_PER_COMPONENT[] = {
 
 
 
-// When BASIC adapter is active, all the log messages are getting output to a file.
+// When BASIC adapter is active, all the log messages are getting printed to a file.
 // This function prepares a file in order to write the contents of the buffer when necessary.
 static gdk_return
 _GDKtracer_init_basic_adptr(void)
 {
-	char file_name[FILENAME_MAX];	
 	const char* TRACE_PATH = GDKgetenv("gdk_dbpath");
 
 	if(GDKgetenv("gdk_dbtrace") != NULL)
@@ -42,17 +43,17 @@ _GDKtracer_init_basic_adptr(void)
 
 	snprintf(file_name, sizeof(file_name), "%s%c%s", TRACE_PATH, DIR_SEP, FILE_NAME);
 	output_file = fopen(file_name, "a");
-
+	
 	// Even if creating the file failed, the adapter has 
 	// still tried to initialize and we shouldn't retry it
 	INIT_BASIC_ADAPTER = true;
-	
+
 	if(!output_file)
 	{
-		GDK_TRACER_EXCEPTION(BASIC_INIT_FAILED ": %s\n", file_name);
+		GDK_TRACER_EXCEPTION(OPENFILE_FAILED);
 		return GDK_FAIL;
 	}
-	
+
 	return GDK_SUCCEED;
 }
 
@@ -187,6 +188,35 @@ GDKtracer_get_timestamp(const char *fmt, char *datetime, size_t dtsz)
 	strftime(datetime, dtsz, fmt, &tmp);
 
 	return datetime;
+}
+
+
+void
+GDKtracer_reinit_basic(int sig)
+{
+	(void) sig;
+
+	// GDKtracer needs to reopen the file only in 
+	// case the adapter is BASIC
+	if ((int) ATOMIC_GET(&CUR_ADAPTER) != BASIC)
+		return;
+
+	// BASIC adapter has been initialized already and file is open
+	if(INIT_BASIC_ADAPTER && output_file) {
+		// Make sure that GDKtracer is not trying to flush the buffer
+		MT_lock_set(&lock);
+		{
+			// Close file 
+			fclose(output_file);
+			output_file = NULL;
+			
+			// Open a new file in append mode
+			output_file = fopen(file_name, "a");
+			if(!output_file)
+				GDK_TRACER_EXCEPTION(OPENFILE_FAILED);
+		}
+		MT_lock_unset(&lock);		
+	}
 }
 
 

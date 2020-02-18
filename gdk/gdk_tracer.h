@@ -44,7 +44,7 @@
 #define NEW_LINE '\n'
 #define MXW "20"
 
-#define BASIC_INIT_FAILED "Failed to initialize BASIC adapter"
+#define OPENFILE_FAILED "Failed to open "FILE_NAME
 #define GDKTRACER_FAILED "Failed to write logs"
 
 #define AS_STR(x) #x
@@ -332,6 +332,10 @@ typedef struct GDKtracer {
  */
 // Returns the timestamp in the form of datetime
 gdk_export char *GDKtracer_get_timestamp(const char *fmt, char *buf, size_t sz);
+
+
+// Used for logrotate
+gdk_export void GDKtracer_reinit_basic(int sig);
 
 
 gdk_export gdk_return GDKtracer_stop(void);
