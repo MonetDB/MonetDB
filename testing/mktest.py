@@ -10,10 +10,12 @@ import re
 import sys
 import getopt
 
-port=50000
-db="demo"
-hostname='localhost'
-opts, args = getopt.getopt(sys.argv[1:], '', ['host=', 'port=', 'database='])
+port = 50000
+db = 'demo'
+hostname = 'localhost'
+defsorting = 'rowsort'
+hashlimit = 10
+opts, args = getopt.getopt(sys.argv[1:], '', ['host=', 'port=', 'database=', 'sort=', 'hashlimit='])
 for o, a in opts:
     if o == '--host':
         hostname = a
@@ -21,6 +23,14 @@ for o, a in opts:
         port = int(a)
     elif o == '--database':
         db = a
+    elif o == '--sort':
+        if a in ('nosort', 'valuesort', 'rowsort'):
+            defsorting = a
+        else:
+            print('unknown sort option', out=sys.stderr)
+            sys.exit(1)
+    elif o == '--hashlimit':
+        hashlimit = int(a)
 
 dbh = pymonetdb.connect(username='monetdb', password='monetdb', hostname=hostname, port=port, database=db, autocommit=True)
 crs = dbh.cursor()
@@ -87,22 +97,30 @@ while True:
                 for arg in crs.description:
                     if arg.type_code.endswith('int'):
                         args += 'I'
-                    elif arg.type_code in ('real', 'double'):
+                    elif arg.type_code in ('real', 'double', 'decimal'):
                         args += 'R'
                     else:
                         args += 'T'
                 if 'order by' in query or 'ORDER BY' in query:
                     sorting = 'nosort'
                 else:
-                    sorting = 'rowsort'
+                    sorting = defsorting
                 print('query {} {}'.format(args, sorting))
                 print(query)
                 print('----')
                 data = crs.fetchall()
                 data = convertresult(args, data)
-                if sorting == 'rowsort':
+                nvalues = len(args) * len(data)
+                if sorting == 'valuesort':
+                    ndata = []
+                    for row in data:
+                        for col in row:
+                            ndata.append(col)
+                    ndata.sort()
+                    data = [ndata]
+                elif sorting == 'rowsort':
                     data.sort()
-                if len(args) * len(data) < 10:
+                if nvalues < hashlimit:
                     for row in data:
                         for col in row:
                             print(col)
