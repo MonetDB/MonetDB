@@ -1,25 +1,24 @@
-stdout of test 'test1` in directory 'sql/test/SQLite_regress/sqllogictest` itself:
+stdout of test 'select1` in directory 'sql/test/SQLite_regress/sqllogictest` itself:
 
 
-# 15:45:40 >  
-# 15:45:40 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=35669" "--set" "mapi_usock=/var/tmp/mtest-31665/.s.monetdb.35669" "--forcemito" "--dbpath=/ufs/sjoerd/@Monet-candidate/var/MonetDB/mTests_sql_test_SQLite_regress_sqllogictest" "--set" "embedded_c=true"
-# 15:45:40 >  
+# 13:54:51 >  
+# 13:54:51 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=39316" "--set" "mapi_usock=/var/tmp/mtest-360223/.s.monetdb.39316" "--forcemito" "--dbpath=/home/sjoerd/@Monet-stable/var/MonetDB/mTests_sql_test_SQLite_regress_sqllogictest" "--set" "embedded_c=true"
+# 13:54:51 >  
 
-# MonetDB 5 server v11.35.0 (hg id: 535fc010773c+)
+# MonetDB 5 server v11.35.14 (hg id: 285fbcf1d34e+)
 # This is an unreleased version
-# Serving database 'mTests_sql_test_SQLite_regress_sqllogictest', using 8 threads
+# Serving database 'mTests_sql_test_SQLite_regress_sqllogictest', using 4 threads
 # Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
-# Found 62.692 GiB available main-memory.
+# Found 15.482 GiB available main-memory of which we use 12.618 GiB
 # Copyright (c) 1993 - July 2008 CWI.
 # Copyright (c) August 2008 - 2020 MonetDB B.V., all rights reserved
 # Visit https://www.monetdb.org/ for further information
-# Listening for connection requests on mapi:monetdb://methuselah.da.cwi.nl:35669/
-# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-31665/.s.monetdb.35669
+# Listening for connection requests on mapi:monetdb://meeuw.mullender.nl:39316/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-360223/.s.monetdb.39316
 # MonetDB/GIS module loaded
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql
-# loading sql script: 11_times.sql
 # loading sql script: 12_url.sql
 # loading sql script: 13_date.sql
 # loading sql script: 14_inet.sql
@@ -44,6 +43,7 @@ stdout of test 'test1` in directory 'sql/test/SQLite_regress/sqllogictest` itsel
 # loading sql script: 46_profiler.sql
 # loading sql script: 51_sys_schema_extension.sql
 # loading sql script: 60_wlcr.sql
+# loading sql script: 61_wlcr.sql
 # loading sql script: 72_fits.sql
 # loading sql script: 74_netcdf.sql
 # loading sql script: 75_lidar.sql
@@ -58,17 +58,7 @@ stdout of test 'test1` in directory 'sql/test/SQLite_regress/sqllogictest` itsel
 # loading sql script: 99_system.sql
 # MonetDB/SQL module loaded
 
-# 15:45:41 >  
-# 15:45:41 >  "./test1.SQL.sh" "test1"
-# 15:45:41 >  
-
-
-# 15:45:41 >  
-# 15:45:41 >  python3 /net/methuselah/export/scratch1/sjoerd/src/MonetDB/candidate/sql/test/SQLite_regress/sqllogictest/sqllogictest.py --host=localhost --port=35669 --database=mTests_sql_test_SQLite_regress_sqllogictest /net/methuselah/export/scratch1/sjoerd/src/MonetDB/candidate/sql/test/SQLite_regress/sqllogictest/select2.test
-# 15:45:41 >  
-
-
-# 15:45:50 >  
-# 15:45:50 >  "Done."
-# 15:45:50 >  
+# 13:54:59 >  
+# 13:54:59 >  "Done."
+# 13:54:59 >  
 

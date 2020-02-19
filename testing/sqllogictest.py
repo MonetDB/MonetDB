@@ -1,3 +1,9 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0.  If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
+
 # skipif <system>
 # onlyif <system>
 
@@ -13,21 +19,7 @@
 import pymonetdb
 import hashlib
 import re
-import getopt
 import sys
-
-port = 50000
-db = "demo"
-hostname = 'localhost'
-
-opts, args = getopt.getopt(sys.argv[1:], '', ['host=', 'port=', 'database='])
-for o, a in opts:
-    if o == '--host':
-        hostname = a
-    elif o == '--port':
-        port = int(a)
-    elif o == '--database':
-        db = a
 
 skipidx = re.compile(r'create index .* \b(asc|desc)\b', re.I)
 
@@ -35,8 +27,10 @@ class SQLLogicSyntaxError(Exception):
     pass
 
 class SQLLogic:
-    def __init__(self):
-        pass
+    def __init__(self, out=sys.stdout):
+        self.dbh = None
+        self.crs = None
+        self.out = out
 
     def connect(self, username='monetdb', password='monetdb',
                 hostname='localhost', port=None, database='demo'):
@@ -47,6 +41,14 @@ class SQLLogic:
                                        database=database,
                                        autocommit=True)
         self.crs = self.dbh.cursor()
+
+    def close(self):
+        if self.crs:
+            self.crs.close()
+            self.crs = None
+        if self.dbh:
+            self.dbh.close()
+            self.dbh = None
 
     def drop(self):
         self.command('select name from tables where not system')
@@ -106,13 +108,14 @@ class SQLLogic:
         return ndata
 
     def query_error(self, query, message, exception=None):
-        print(message)
+        print(message, file=self.out)
         if exception:
-            print(exception.rstrip('\n'))
-        print("query started on line %d fo file %s" % (self.qline, self.name))
-        print("query text:")
-        print(query)
-        print('')
+            print(exception.rstrip('\n'), file=self.out)
+        print("query started on line %d of file %s" % (self.qline, self.name),
+              file=self.out)
+        print("query text:", file=self.out)
+        print(query, file=self.out)
+        print('', file=self.out)
 
     def exec_query(self, query, columns, sorting, hashlabel, nresult, hash, expected):
         err = False
@@ -121,8 +124,11 @@ class SQLLogic:
         except pymonetdb.DatabaseError as e:
             self.query_error(query, 'query failed', e.args[0])
             return
+        if len(self.crs.description) != len(columns):
+            self.query_error(query, 'received {} columns, expected {} columns'.format(len(self.crs.description), len(columns)))
+            return
         if rows * len(columns) != nresult:
-            self.query_error(query, 'wrong number of rows received')
+            self.query_error(query, 'received {} rows, expected {} rows'.format(rows, nresult // len(columns)))
             return
         data = self.crs.fetchall()
         data = self.convertresult(query, columns, data)
@@ -244,10 +250,3 @@ class SQLLogic:
                     nresult = len(expected)
                 if not skipping:
                     self.exec_query('\n'.join(query), columns, sorting, hashlabel, nresult, hash, expected)
-
-sql = SQLLogic()
-sql.connect(hostname=hostname, port=port, database=db)
-
-for arg in args:
-    sql.drop()
-    sql.parse(arg)
