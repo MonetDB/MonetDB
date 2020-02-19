@@ -1598,7 +1598,7 @@ exp_is_true(mvc *sql, sql_exp *e)
 		}
 	}
 	if (e->type == e_cmp && e->flag == cmp_equal)
-		return (exp_is_true(sql, e->l) && exp_is_true(sql, e->r));
+		return (exp_is_true(sql, e->l) && exp_is_true(sql, e->r) && exp_match_exp(e->l, e->r));
 	return 0;
 }
 
