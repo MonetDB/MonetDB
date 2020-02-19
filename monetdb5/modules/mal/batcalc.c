@@ -534,7 +534,6 @@ CMDbatBINARY1(MalStkPtr stk, InstrPtr pci,
 				if (s2 == NULL)
 					goto bailout;
 				if (s2->ttype == TYPE_bit) {
-					assert(pci->argc == 5);
 					assert(r == NULL);
 					assert(b1 == NULL || b2 == NULL);
 					r = s2;
@@ -554,7 +553,6 @@ CMDbatBINARY1(MalStkPtr stk, InstrPtr pci,
 				if (s1 == NULL)
 					goto bailout;
 				if (s1->ttype == TYPE_bit) {
-					assert(pci->argc == 4);
 					r = s1;
 					s1 = NULL;
 				} else if (b1 == NULL) {
