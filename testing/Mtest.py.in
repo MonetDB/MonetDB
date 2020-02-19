@@ -1750,15 +1750,13 @@ def GetBitsAndModsAndThreads(env) :
             proc.wait()
             qOut = sOut + qOut
             qErr = sErr + qErr
+    finally:
         t.cancel()
+        if proc.returncode is None:
+            killProc(proc, proc.stderr, cmd)
+            proc.wait()
         if procdebug:
             print('GetBitsAndModsAndThreads: process exited "%s" (%s)\n' % ('" "'.join(cmd), proc.returncode))
-    except KeyboardInterrupt:
-        t.cancel()
-        killProc(proc, proc.stderr, cmd)
-        if procdebug:
-            print('GetBitsAndModsAndThreads: process killed "%s"\n' % '" "'.join(cmd))
-        raise
     env['TST_MODS'] = []
     env['TST_BITS'] = ""
     env['TST_INT128'] = ""
