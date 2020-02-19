@@ -117,12 +117,17 @@ class SQLLogic:
     def exec_query(self, query, columns, sorting, hashlabel, nresult, hash, expected):
         err = False
         try:
-            rows = self.command(query)
+            self.command(query)
         except pymonetdb.DatabaseError as e:
             self.query_error(query, 'query failed', e.args[0])
             return
+        rows = self.crs.rowcount
+        cols = len(self.crs.description)
+        if cols != len(columns):
+            self.query_error(query, 'received {} columns, expected {} columns'.format(cols, len(columns)))
+            return
         if rows * len(columns) != nresult:
-            self.query_error(query, 'wrong number of rows received')
+            self.query_error(query, 'received {} rows, expected {} rows ({} values)'.format(rows, nresult / len(columns), nresult))
             return
         data = self.crs.fetchall()
         data = self.convertresult(query, columns, data)
