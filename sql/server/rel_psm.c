@@ -106,7 +106,9 @@ psm_set_exp(sql_query *query, dnode *n)
 		node *n;
 		list *b;
 
-		if (!rel_val || !is_project(rel_val->op) || dlist_length(vars) != list_length(rel_val->exps))
+		if (!rel_val)
+			return NULL;
+		if (!is_project(rel_val->op) || dlist_length(vars) != list_length(rel_val->exps))
 			return sql_error(sql, 02, SQLSTATE(42000) "SET: Number of variables not equal to number of supplied values");
 
 		b = sa_list(sql->sa);
