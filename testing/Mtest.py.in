@@ -241,7 +241,7 @@ except AttributeError:
             setpgrp = False
             pid = osfork()
             if pid == 0 and _setpgrp:
-                os.setpgrp()
+                os.setpgid(0, 0)
             return pid
         os.fork = myfork
 else:
@@ -252,7 +252,7 @@ else:
         setpgrp = False
         pid = osfork()
         if pid == 0 and _setpgrp:
-            os.setpgid(0, 0)
+            os.setpgrp()
         return pid
     os.fork = myfork
 setpgrp = False
