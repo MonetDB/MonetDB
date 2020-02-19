@@ -16,7 +16,6 @@ TABLE 	(card MULTI)
 	-> exps		is list of column expressions (also used for aliases)
 	-> l 		optional input relation
 	-> r		table function expression
-		
 
 /* Wrapping relational operator, is a big complex top level only 
    operator, which only does DDL kind of statements
@@ -82,6 +81,9 @@ INSERT|DELETE|UPDATE|TRUNCATE 	(card MULTI)
 only (UPDATE)
 	-> exps		
 			Named columns to update
+only (TRUNCATE)
+	-> exps		
+			The first expression is a e_atom integer indicating to restart sequences, and the second is another e_atom integer telling to cascade the truncate if the table has fk dependents
 
 INSERT/UPDATE have a special case 	
 
