@@ -230,6 +230,7 @@ stmt_create(sql_allocator *sa, st_type type)
 	s->nr = 0;
 	s->partition = 0;
 	s->tname = s->cname = NULL;
+	s->cand = NULL;
 	return s;
 }
 
@@ -1396,6 +1397,7 @@ stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f, stmt *sub, i
 		s->nrcols = (lops->nrcols == 2) ? 2 : 1;
 		s->nr = getDestVar(q);
 		s->q = q;
+		s->cand = sub;
 		return s;
 	}
 	return NULL;
@@ -1407,6 +1409,7 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
 	int l, r;
+	stmt *sel = sub;
 
 	if (op1->nr < 0 || op2->nr < 0 || (sub && sub->nr < 0))
 		return NULL;
@@ -1447,6 +1450,16 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 
 		if ((q = multiplex2(mb, mod, convertOperator(op), l, r, TYPE_bit)) == NULL) 
 			return NULL;
+		if (sub && (op1->cand || op2->cand)) {
+			if (op1->cand && !op2->cand) {
+				q = pushNil(mb, q, TYPE_bat);
+				q = pushArgument(mb, q, sub->nr);
+			} else if (!op1->cand && op2->cand) {
+				q = pushArgument(mb, q, sub->nr);
+				q = pushNil(mb, q, TYPE_bat);
+			}
+			sub = NULL;
+		}
 		if (cmptype == cmp_equal_nil)
 			q = pushBit(mb, q, TRUE); 
 		k = getDestVar(q);
@@ -1468,7 +1481,7 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 		if (cmptype == cmp_equal_nil) {
 			q = newStmt(mb, algebraRef, selectRef);
 			q = pushArgument(mb, q, l);
-			if (sub)
+			if (sub && !op1->cand)
 				q = pushArgument(mb, q, sub->nr);
 			q = pushArgument(mb, q, r);
 			q = pushArgument(mb, q, r);
@@ -1478,8 +1491,10 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 		} else {
 			q = newStmt(mb, algebraRef, thetaselectRef);
 			q = pushArgument(mb, q, l);
-			if (sub)
+			if (sub && !op1->cand)
 				q = pushArgument(mb, q, sub->nr);
+			else
+				sub = NULL;
 			q = pushArgument(mb, q, r);
 			switch (cmptype) {
 			case mark_in:
@@ -1526,6 +1541,9 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 		s->nrcols = (op1->nrcols == 2) ? 2 : 1;
 		s->nr = getDestVar(q);
 		s->q = q;
+		s->cand = sub;
+		if (!sub && sel) /* project back the old ids */
+			return stmt_project(be, s, sel);
 		return s;
 	}
 	return NULL;
@@ -1734,6 +1752,7 @@ stmt_uselect2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sub, 
 		s->nrcols = (op1->nrcols == 2) ? 2 : 1;
 		s->nr = getDestVar(q);
 		s->q = q;
+		s->cand = sub;
 		return s;
 	}
 	return NULL;
@@ -2889,6 +2908,7 @@ stmt_convert(backend *be, stmt *v, sql_subtype *f, sql_subtype *t, stmt *sel)
 		s->op4.typeval = *t;
 		s->nr = getDestVar(q);
 		s->q = q;
+		s->cand = sel;
 		return s;
 	}
 	return NULL;
@@ -2927,7 +2947,7 @@ stmt_Nop(backend *be, stmt *ops, sql_subfunc *f)
 		for (n = ops->op4.lval->h, o = n->data; n; n = n->next) {
 			stmt *c = n->data;
 
-			if (o->nrcols < c->nrcols)
+			if (c && o->nrcols < c->nrcols)
 				o = c;
 		}
 	}
@@ -2992,8 +3012,11 @@ stmt_Nop(backend *be, stmt *ops, sql_subfunc *f)
 	for (n = ops->op4.lval->h; n; n = n->next) {
 		stmt *op = n->data;
 
-		q = pushArgument(mb, q, op->nr);
-		if (special) {
+		if (!op)
+			q = pushNil(mb, q, TYPE_bat); 
+		else
+			q = pushArgument(mb, q, op->nr);
+		if (op && special) {
 			q = pushInt(mb, q, tpe->digits);
 			setVarUDFtype(mb, getArg(q, q->argc-1));
 			q = pushInt(mb, q, tpe->scale);

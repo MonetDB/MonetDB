@@ -115,8 +115,9 @@ typedef struct stmt {
 	char aggr;		/* aggregated */
 	char partition;		/* selected as mitosis candidate */
 
-	int flag;
+	struct stmt *cand;	/* optional candidate list */
 
+	int flag;
 	int nr;			/* variable assignment */
 
 	const char *tname;

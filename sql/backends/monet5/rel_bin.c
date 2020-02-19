@@ -592,6 +592,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		if (!l)
 			return NULL;
 		s = stmt_convert(be, l, from, to, NULL);
+		s->cand = l->cand;
 	} 	break;
 	case e_func: {
 		node *en;
@@ -599,6 +600,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		sql_subfunc *f = e->f;
 		stmt *rows = NULL, *cond_execution = NULL;
 		char name[16], *nme = NULL;
+		int nrcands = 0, push_cands = 0;
 
 		if (f->func->side_effect && left) {
 			if (!exps || list_empty(exps))
@@ -613,11 +615,15 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		assert(!e->r);
 		if (exps) {
 			int nrcols = 0;
+
+                        if (sel && strcmp(sql_func_mod(f->func), "calc") == 0 && strcmp(sql_func_imp(f->func), "ifthenelse") != 0) 
+				push_cands = 1;
+
 			for (en = exps->h; en; en = en->next) {
 				sql_exp *e = en->data;
 				stmt *es;
 
-				es = exp_bin(be, e, left, right, grp, ext, cnt, sel);
+				es = exp_bin(be, e, left, right, grp, ext, cnt, (push_cands)?sel:NULL);
 
 				if (!es) 
 					return NULL;
@@ -633,6 +639,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				}
 				/* last argument is condition, change into candidate list */
 				if (f->func->type != F_ANALYTIC && !en->next && !f->func->varres && !f->func->vararg && list_length(exps) > list_length(f->func->ops)) {
+					/* optional bit column for applying the function only on the selected rows */
 					if (es->nrcols) {
 						if (!nrcols) {
 							node *n;
@@ -645,7 +652,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 							l = nl;
 
 						}
-						es = stmt_uselect(be, es, stmt_bool(be,1), cmp_equal, NULL, 0);
+						//es = stmt_uselect(be, es, stmt_bool(be,1), cmp_equal, NULL, 0);
 					} else /* need a condition */
 						cond_execution = es;
 				}
@@ -653,9 +660,23 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 					nrcols = es->nrcols;
 				if (!cond_execution)
 					list_append(l,es);
+				if (push_cands && es->nrcols) 
+					nrcands++;
 			}
-			if (sel && strcmp(sql_func_mod(f->func), "calc") == 0 && nrcols && strcmp(sql_func_imp(f->func), "ifthenelse") != 0)
-				list_append(l,sel);
+			//if (sel && strcmp(sql_func_mod(f->func), "calc") == 0 && nrcols && strcmp(sql_func_imp(f->func), "ifthenelse") != 0) {
+			if (push_cands) {
+				if (strcmp(sql_func_imp(f->func), "and") != 0 && strcmp(sql_func_imp(f->func), "or") != 0) {
+					int i;
+					for (i=0, en = l->h; i<nrcands && en; i++, en = en->next) {
+						stmt *s = en->data;
+						/* if handled use bat nil */
+						if (s->cand)
+							list_append(l, NULL);
+						else
+							list_append(l,sel);
+					}
+				}
+			}
 		}
 		if (cond_execution) {
 			/* var_x = nil; */
@@ -670,6 +691,8 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			s = stmt_Nop(be, stmt_list(be, l), e->f); 
 		if (!s)
 			return NULL;
+		if (s && sel && push_cands)
+			s->cand = sel;
 		if (cond_execution) {
 			/* var_x = s */
 			(void)stmt_assign(be, nme, s, 2);
