@@ -424,6 +424,7 @@ SERVERlistenThread(SOCKET *Sock)
 			msgh.msg_namelen = 0;
 			msgh.msg_iov = &iov;
 			msgh.msg_iovlen = 1;
+			msgh.msg_flags = 0;
 			msgh.msg_control = ccmsg;
 			msgh.msg_controllen = sizeof(ccmsg);
 

@@ -1171,6 +1171,7 @@ int
 atom_neg( atom *a )
 {
 	ValRecord dst;
+	VALempty(&dst);
 	dst.vtype = a->data.vtype;
 	if (VARcalcnegate(&dst, &a->data) != GDK_SUCCEED)
 		return -1;

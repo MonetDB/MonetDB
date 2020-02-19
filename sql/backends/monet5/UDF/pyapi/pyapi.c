@@ -143,7 +143,7 @@ PYFUNCNAME(PyAPIevalAggrMap)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 //! If 'mapped' is set to True, it will fork a separate process at [FORK_PROCESS] that executes Step 1-3, the process will then write the return values into memory mapped files and exit, then Step 4 is executed by the main process
 static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool grouped, bool mapped) {
 	sql_func * sqlfun = NULL;
-	str exprStr;
+	str exprStr = NULL;
 
 	const int additional_columns = 3;
 	int i = 1, ai = 0;
