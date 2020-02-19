@@ -3661,6 +3661,19 @@ trans_init(sql_trans *tr, backend_stack stk, sql_trans *otr)
 							assert(0);
 						}
 					}
+					if (pt->members.set && t->members.set)
+					for (i = pt->members.set->h, j = t->members.set->h; i && j; i = i->next, j = j->next ) { 
+						sql_part *pt = i->data; /* parent transactions part */
+						sql_part *p = j->data; 
+
+						if (pt->base.id == p->base.id) {
+							p->base.rtime = p->base.wtime = 0;
+							p->base.stime = pt->base.wtime;
+						} else {
+							/* for now assert */
+							assert(0);
+						}
+					}
 				} else {
 					/* for now assert */
 					assert(0);
@@ -4230,12 +4243,6 @@ rollforward_update_part(sql_trans *tr, sql_base *fpt, sql_base *tpt, int mode)
 				list_append(pt->part.values, nextv);
 			}
 		}
-
-		if (tpt->rtime < fpt->rtime)
-			tpt->rtime = fpt->rtime;
-		if (tpt->wtime < fpt->wtime)
-			tpt->wtime = fpt->wtime;
-		fpt->rtime = fpt->wtime = 0;
 	}
 	return LOG_OK;
 }
@@ -4681,8 +4688,6 @@ reset_part(sql_trans *tr, sql_part *ft, sql_part *pft)
 		} else if (pft->t && isListPartitionTable(pft->t)) {
 			ft->part.values = pft->part.values;
 		}
-
-		ft->base.wtime = ft->base.rtime = 0;
 	}
 	return LOG_OK;
 }
