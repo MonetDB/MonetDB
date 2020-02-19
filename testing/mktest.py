@@ -1,0 +1,107 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0.  If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
+
+import pymonetdb
+import hashlib
+import re
+import sys
+
+dbh = pymonetdb.connect(username='monetdb', password='monetdb', hostname='localhost', port=50012, database='stable', autocommit=True)
+crs = dbh.cursor()
+
+def convertresult(columns, data):
+    ndata = []
+    for row in data:
+        nrow = []
+        for i in range(len(columns)):
+            if row[i] is None or row[i] == 'NULL':
+                nrow.append('NULL')
+            elif columns[i] == 'I':
+                if row[i] == 'true':
+                    nrow.append('1')
+                elif row[i] == 'false':
+                    nrow.append('0')
+                else:
+                    nrow.append('%d' % row[i])
+            elif columns[i] == 'T':
+                if row[i] == '':
+                    nrow.append('(empty)')
+                else:
+                    nval = []
+                    for c in str(row[i]):
+                        if ' ' <= c <= '~':
+                            nval.append(c)
+                        else:
+                            nval.append('@')
+                    nrow.append(''.join(nval))
+            elif columns[i] == 'R':
+                nrow.append('%.3f' % row[i])
+        ndata.append(tuple(nrow))
+    return ndata
+
+query = []
+while True:
+    line = sys.stdin.readline()
+    if not line:
+        break
+    line = line.rstrip()
+    if not line or line.lstrip().startswith('--') or line.lstrip().startswith('#'):
+        continue
+    if '--' in line:
+        line = line[:line.index('--')].rstrip()
+    if line.endswith(';'):
+        query.append(line.rstrip(';'))
+        query = '\n'.join(query)
+        try:
+            crs.execute(query)
+        except pymonetdb.DatabaseError:
+            print('statement error')
+            print(query)
+            print('')
+        except pymonetdb.Error:
+            print('exception raised on query "{}"'.format(query), file=sys.stderr)
+            sys.exit(1)
+        else:
+            if crs.description is None:
+                print('statement ok')
+                print(query)
+                print('')
+            else:
+                args = ''
+                for arg in crs.description:
+                    if arg.type_code.endswith('int'):
+                        args += 'I'
+                    elif arg.type_code in ('real', 'double'):
+                        args += 'R'
+                    else:
+                        args += 'T'
+                if 'order by' in query or 'ORDER BY' in query:
+                    sorting = 'nosort'
+                else:
+                    sorting = 'rowsort'
+                print('query {} {}'.format(args, sorting))
+                print(query)
+                print('----')
+                data = crs.fetchall()
+                data = convertresult(args, data)
+                if sorting == 'rowsort':
+                    data.sort()
+                if len(args) * len(data) < 10:
+                    for row in data:
+                        for col in row:
+                            print(col)
+                else:
+                    m = hashlib.md5()
+                    for row in data:
+                        for col in row:
+                            m.update(bytes(col, encoding='ascii'))
+                            m.update(b'\n')
+                    h = m.hexdigest()
+                    print('{} values hashing to {}'.format(len(args) * crs.rowcount, h))
+                print('')
+        query = []
+    else:
+        query.append(line)
