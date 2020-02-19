@@ -8,8 +8,21 @@ import pymonetdb
 import hashlib
 import re
 import sys
+import getopt
 
-dbh = pymonetdb.connect(username='monetdb', password='monetdb', hostname='localhost', port=50012, database='stable', autocommit=True)
+port=50000
+db="demo"
+hostname='localhost'
+opts, args = getopt.getopt(sys.argv[1:], '', ['host=', 'port=', 'database='])
+for o, a in opts:
+    if o == '--host':
+        hostname = a
+    elif o == '--port':
+        port = int(a)
+    elif o == '--database':
+        db = a
+
+dbh = pymonetdb.connect(username='monetdb', password='monetdb', hostname=hostname, port=port, database=db, autocommit=True)
 crs = dbh.cursor()
 
 def convertresult(columns, data):
