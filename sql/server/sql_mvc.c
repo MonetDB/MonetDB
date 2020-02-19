@@ -803,20 +803,21 @@ mvc_create(int clientid, backend_stack stk, int debug, bstream *rs, stream *ws)
 int
 mvc_reset(mvc *m, bstream *rs, stream *ws, int debug)
 {
-	int i, res = 1;
+	int i, res = 1, reset;
 	sql_trans *tr;
 
 	if (mvc_debug)
 		fprintf(stderr, "#mvc_reset\n");
 	tr = m->session->tr;
+	store_lock();
 	if (tr && tr->parent) {
 		assert(m->session->tr->active == 0);
-		store_lock();
 		while (tr->parent->parent != NULL) 
 			tr = sql_trans_destroy(tr, true);
-		store_unlock();
 	}
-	if (tr && !sql_session_reset(m->session, 1 /*autocommit on*/))
+	reset = sql_session_reset(m->session, 1 /*autocommit on*/);
+	store_unlock();
+	if (tr && !reset)
 		res = 0;
 
 	if (m->sa)
@@ -877,16 +878,16 @@ mvc_destroy(mvc *m)
 	if (mvc_debug)
 		fprintf(stderr, "#mvc_destroy\n");
 	tr = m->session->tr;
+	store_lock();
 	if (tr) {
-		store_lock();
 		if (m->session->tr->active)
 			sql_trans_end(m->session);
 		while (tr->parent)
 			tr = sql_trans_destroy(tr, true);
 		m->session->tr = NULL;
-		store_unlock();
 	}
 	sql_session_destroy(m->session);
+	store_unlock();
 
 	stack_pop_until(m, 0);
 	_DELETE(m->vars);
