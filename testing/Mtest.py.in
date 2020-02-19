@@ -257,29 +257,13 @@ else:
     os.fork = myfork
 setpgrp = False
 
-ttywidth = 0
-if isatty and os.isatty(sys.stdin.fileno()):
-    if os.name == 'nt':
-        ttywidth = 79
-    else:
-        try:
-            proc = process.Popen(['stty', '-a'], stdout = process.PIPE,
-                                 stderr = process.PIPE,
-                                 universal_newlines = True)
-        except OSError:
-            pass
-        else:
-            out, err = proc.communicate()
-            res = re.search('columns ([0-9]+)', out)
-            if res is not None:
-                ttywidth = int(res.group(1))
-            else:
-                res = re.search(' ([0-9]+) columns', out)
-                if res is not None:
-                    ttywidth = int(res.group(1))
-            if ttywidth < 60:
-                # ridiculously narrow tty, ignore value
-                ttywidth = 0
+try:
+    ttywidth = os.get_terminal_size(1).columns
+except:
+    ttywidth = 0
+else:
+    if ttywidth > 0 and os.name == 'nt':
+        ttywidth -= 1           # don't go to the edge
 
 import string                   # for whitespace
 def splitcommand(cmd):
@@ -319,18 +303,18 @@ def isexecutable(TST, ext = '.sh') :
             if TST.lower().endswith(ext):
                 ext = ''
             if os.path.isfile(TST+ext) or os.path.isfile(TST+ext+".src"):
-                return [ 1, ext ]
+                return (True, ext)
     elif os.name == "posix":
         #TODO:
         # check with "file", and set executable
         TST += ext
         if ( os.path.isfile(TST       ) and os.access(TST       ,os.X_OK) ) or \
            ( os.path.isfile(TST+".src") and os.access(TST+".src",os.X_OK) ):
-            return [ 1, ext ]
+            return (True, ext)
     #TODO:
     #else:
         # ???
-    return [ 0, "" ]
+    return (False, '')
 ### isexecutable(TST, ext = '.sh') #
 
 def CheckExec(cmd) :
@@ -1240,7 +1224,7 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
         for tc in allf:
             if '#' in tc:
                 # get rid of comment anywhere on line
-                tc = tc.split('#', 1)[0]
+                tc = tc[:tc.index('#')]
             tc = tc.strip()
             if tc:
                 if '?' in tc:
