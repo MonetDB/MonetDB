@@ -1069,7 +1069,7 @@ rel_create_table(sql_query *query, sql_schema *ss, int temp, const char *sname, 
 		}
 	}
 
-	if (!strcmp(s->base.name, "cquery"))
+	if (s && !strcmp(s->base.name, "cquery"))
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE VIEW: views not allowed in cquery schema");
 	if(tt == tt_stream_per || tt == tt_stream_temp) {
 		window_size = stream_details->h->data.i_val;
