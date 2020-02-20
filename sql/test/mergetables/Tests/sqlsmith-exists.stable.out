@@ -226,6 +226,9 @@ stdout of test 'sqlsmith-exists` in directory 'sql/test/mergetables` itself:
 % c0 # name
 % int # type
 % 1 # length
+[ 1	]
+[ 2	]
+[ 3	]
 #select 
 # subq_1.c1 as c0, 
 # subq_1.c2 as c1, 
