@@ -102,8 +102,6 @@ subqueries
 
 trace
 
-HAVE_JDBCCLIENT_JAR?bogus-auto-generated-keys
-
 str-pad
 str-trim
 
