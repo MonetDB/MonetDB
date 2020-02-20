@@ -11,6 +11,8 @@ Welcome to MonetDB's documentation!
    :caption: Contents:
 
    input
+   clients
+   manual_pages
 
 
 Indices and tables

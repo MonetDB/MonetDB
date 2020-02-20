@@ -133,7 +133,7 @@ INETfromString(const char *src, size_t *len, inet **retval, bool external)
 		in_setnil(*retval);
 		return 3;
 	}
-	if (GDK_STRNIL(src)) {
+	if (strNil(src)) {
 		in_setnil(*retval);
 		return 1;
 	}

@@ -67,7 +67,7 @@ stdout of test 'alter_table_set_schema.Bug-6701` in directory 'sql/test/BugTrack
 % 1 # length
 [ 1	]
 #select count(*) as count_rows from keys where table_id in (select id from tables where name = 'test2');
-% sys. # table_name
+% . # table_name
 % count_rows # name
 % bigint # type
 % 1 # length
@@ -86,7 +86,7 @@ stdout of test 'alter_table_set_schema.Bug-6701` in directory 'sql/test/BugTrack
 % 1 # length
 [ 1	]
 #select count(*) as count_rows from keys where table_id in (select id from tables where name = 'test2');
-% sys. # table_name
+% . # table_name
 % count_rows # name
 % bigint # type
 % 1 # length
@@ -105,7 +105,7 @@ stdout of test 'alter_table_set_schema.Bug-6701` in directory 'sql/test/BugTrack
 % 1 # length
 [ 1	]
 #select count(*) as count_rows from keys where table_id in (select id from tables where name = 'test2');
-% sys. # table_name
+% . # table_name
 % count_rows # name
 % bigint # type
 % 1 # length
@@ -124,7 +124,7 @@ stdout of test 'alter_table_set_schema.Bug-6701` in directory 'sql/test/BugTrack
 % 1 # length
 [ 1	]
 #select count(*) as count_rows from keys where table_id in (select id from tables where name = 'test2');
-% sys. # table_name
+% . # table_name
 % count_rows # name
 % bigint # type
 % 1 # length

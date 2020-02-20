@@ -31,15 +31,15 @@ stderr of test 'mergepart05` in directory 'sql/test/merge-partitions` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-1799/.s.monetdb.30832
 QUERY = ALTER TABLE listparts ADD TABLE subtable1 AS PARTITION FROM 'else' TO RANGE MAXVALUE; --error
-ERROR = !ALTER TABLE: table 'sys.subtable1' is already part of the RANGE PARTITION TABLE 'sys.listparts'
+ERROR = !ALTER TABLE: table 'sys.subtable1' is already part of RANGE PARTITION TABLE 'sys.listparts'
 CODE  = 42S02
 MAPI  = (monetdb) /var/tmp/mtest-1799/.s.monetdb.30832
 QUERY = ALTER TABLE listparts ADD TABLE subtable1 AS PARTITION FROM RANGE MINVALUE TO RANGE MAXVALUE; --error
-ERROR = !ALTER TABLE: table 'sys.subtable1' is already part of the RANGE PARTITION TABLE 'sys.listparts'
+ERROR = !ALTER TABLE: table 'sys.subtable1' is already part of RANGE PARTITION TABLE 'sys.listparts'
 CODE  = 42S02
 MAPI  = (monetdb) /var/tmp/mtest-1799/.s.monetdb.30832
 QUERY = ALTER TABLE listparts ADD TABLE subtable1 AS PARTITION FROM 'hello' TO 'world';
-ERROR = !ALTER TABLE: table 'sys.subtable1' is already part of the RANGE PARTITION TABLE 'sys.listparts'
+ERROR = !ALTER TABLE: table 'sys.subtable1' is already part of RANGE PARTITION TABLE 'sys.listparts'
 CODE  = 42S02
 MAPI  = (monetdb) /var/tmp/mtest-1799/.s.monetdb.30832
 QUERY = ALTER TABLE listparts ADD TABLE subtable1 AS PARTITION FROM 'hello"' TO '"world'; --error

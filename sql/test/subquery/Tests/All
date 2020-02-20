@@ -3,6 +3,7 @@ any
 all
 subquery2
 subquery3
+subquery4
 scalar
 any_all
 exists

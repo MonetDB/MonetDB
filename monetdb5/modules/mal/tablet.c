@@ -881,6 +881,7 @@ SQLinsert_val(READERtask *task, int col, int idx)
 		}
 		ret = -!task->besteffort; /* yep, two unary operators ;-) */
 		freeException(err);
+		err = NULL;
 		/* replace it with a nil */
 		adt = fmt->nildata;
 		fmt->c->tnonil = false;

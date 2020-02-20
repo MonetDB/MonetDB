@@ -119,6 +119,7 @@ sql_symbol2relation(mvc *sql, symbol *sym)
 {
 	sql_rel *rel;
 	sql_query *query = query_create(sql);
+	int top = sql->topvars;
 
 	rel = rel_semantic(query, sym);
 	if (rel)
@@ -129,6 +130,10 @@ sql_symbol2relation(mvc *sql, symbol *sym)
 		rel = rel_partition(sql, rel);
 	if (rel && (rel_no_mitosis(rel) || rel_need_distinct_query(rel)))
 		sql->no_mitosis = 1;
+
+	/* On explain and plan modes, drop declared variables after generating the AST */
+	if ((sql->emod & mod_explain) || (sql->emode != m_normal && sql->emode != m_execute))
+		stack_pop_until(sql, top);
 	return rel;
 }
 
@@ -5069,7 +5074,7 @@ BATSTRindex_int(bat *res, const bat *src, const bit *u)
 				BBPunfix(s->batCacheid);
 				throw(SQL, "calc.index", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
-			pos += GDK_STRLEN(p);
+			pos += strLen(p);
 		}
 	} else {
 		r = VIEWcreate(s->hseqbase, s);
@@ -5127,7 +5132,7 @@ BATSTRindex_sht(bat *res, const bat *src, const bit *u)
 				BBPreclaim(r);
 				throw(SQL, "calc.index", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
-			pos += GDK_STRLEN(s);
+			pos += strLen(s);
 		}
 	} else {
 		r = VIEWcreate(s->hseqbase, s);
@@ -5186,7 +5191,7 @@ BATSTRindex_bte(bat *res, const bat *src, const bit *u)
 				BBPunfix(s->batCacheid);
 				throw(SQL, "calc.index", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
-			pos += GDK_STRLEN(p);
+			pos += strLen(p);
 		}
 	} else {
 		r = VIEWcreate(s->hseqbase, s);
@@ -5243,7 +5248,7 @@ BATSTRstrings(bat *res, const bat *src)
 			BBPunfix(s->batCacheid);
 			throw(SQL, "calc.strings", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
-		pos += GDK_STRLEN(p);
+		pos += strLen(p);
 	}
 	BBPunfix(s->batCacheid);
 	BBPkeepref((*res = r->batCacheid));

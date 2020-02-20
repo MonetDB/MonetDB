@@ -1976,6 +1976,40 @@ stmt_join(backend *be, stmt *op1, stmt *op2, int anti, comp_type cmptype)
 	return NULL;
 }
 
+stmt *
+stmt_semijoin(backend *be, stmt *op1, stmt *op2)
+{
+	MalBlkPtr mb = be->mb;
+	InstrPtr q = NULL;
+
+	if (op1->nr < 0 || op2->nr < 0)
+		return NULL;
+
+	q = newStmt(mb, algebraRef, semijoinRef);
+	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+	q = pushArgument(mb, q, op1->nr);
+	q = pushArgument(mb, q, op2->nr);
+	q = pushNil(mb, q, TYPE_bat);
+	q = pushNil(mb, q, TYPE_bat);
+	q = pushBit(mb, q, FALSE);
+	q = pushNil(mb, q, TYPE_lng);
+	if (q == NULL)
+		return NULL;
+	if (q) {
+		stmt *s = stmt_create(be->mvc->sa, st_semijoin);
+
+		s->op1 = op1;
+		s->op2 = op2;
+		s->flag = cmp_equal;
+		s->key = 0;
+		s->nrcols = 2;
+		s->nr = getDestVar(q);
+		s->q = q;
+		return s;
+	}
+	return NULL;
+}
+
 static InstrPtr 
 stmt_project_join(backend *be, stmt *op1, stmt *op2, stmt *ins) 
 {
@@ -3231,6 +3265,7 @@ tail_type(stmt *st)
 			st = st->op2;
 			continue;
 
+		case st_semijoin:
 		case st_uselect:
 		case st_uselect2:
 		case st_limit:
@@ -3319,6 +3354,7 @@ stmt_has_null(stmt *s)
 	switch (s->type) {
 	case st_aggr:
 	case st_Nop:
+	case st_semijoin:
 	case st_uselect:
 	case st_uselect2:
 	case st_atom:
@@ -3387,6 +3423,7 @@ _column_name(sql_allocator *sa, stmt *st)
 	case st_result:
 	case st_append:
 	case st_gen_group:
+	case st_semijoin:
 	case st_uselect:
 	case st_uselect2:
 	case st_limit:
@@ -3444,6 +3481,7 @@ schema_name(sql_allocator *sa, stmt *st)
 {
 	switch (st->type) {
 	case st_const:
+	case st_semijoin:
 	case st_join:
 	case st_join2:
 	case st_joinN:

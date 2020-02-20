@@ -31,6 +31,10 @@ stderr of test 'sample.15` in directory 'sql/test/sample` itself:
 MAPI  = (monetdb) /var/tmp/mtest-27873/.s.monetdb.33041
 QUERY = select * from GENERATE_SERIES(1,41) sample 1.25;            --should give error
 ERROR = !Illegal argument p should be between 0 and 1.0
+MAPI  = (monetdb) /var/tmp/mtest-225090/.s.monetdb.36040
+QUERY = select * from GENERATE_SERIES(1,41) seed 1; --error, seed without sample
+ERROR = !SEED: cannot have SEED without SAMPLE
+CODE  = 42000
 
 
 # 10:58:47 >  

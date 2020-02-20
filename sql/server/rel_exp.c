@@ -22,7 +22,7 @@
 #include "blob.h"
 
 comp_type
-compare_str2type( char *compare_op)
+compare_str2type(const char *compare_op)
 {
 	comp_type type = cmp_filter;
 
@@ -243,7 +243,7 @@ exp_in_func(mvc *sql, sql_exp *le, sql_exp *vals, int anyequal, int is_tuple)
 }
 
 sql_exp *
-exp_compare_func(mvc *sql, sql_exp *le, sql_exp *re, sql_exp *oe, char *compareop, int quantifier)
+exp_compare_func(mvc *sql, sql_exp *le, sql_exp *re, sql_exp *oe, const char *compareop, int quantifier)
 {
 	sql_subfunc *cmp_func = NULL;
 	sql_exp *e;
@@ -794,13 +794,14 @@ exp_rel(mvc *sql, sql_rel *rel)
 	assert(rel);
 	if (is_project(rel->op)) {
 		sql_exp *last = rel->exps->t->data;
-		e->tpe = *exp_subtype(last);
+		sql_subtype *t = exp_subtype(last);
+		e->tpe = t ? *t : (sql_subtype) {0};
 	}
 	return e;
 }
 
 sql_exp *
-exp_exception(sql_allocator *sa, sql_exp *cond, char* error_message)
+exp_exception(sql_allocator *sa, sql_exp *cond, const char *error_message)
 {
 	sql_exp *e = exp_create(sa, e_psm);
 
@@ -1177,10 +1178,10 @@ exp_match_list( list *l, list *r)
 
 	if (!l || !r)
 		return l == r;
-	if (list_length(l) != list_length(r))
+	if (list_length(l) != list_length(r) || list_length(l) == 0 || list_length(r) == 0)
 		return 0;
-	lu = calloc(list_length(l), sizeof(char));
-	ru = calloc(list_length(r), sizeof(char));
+	lu = GDKzalloc(list_length(l) * sizeof(char));
+	ru = GDKzalloc(list_length(r) * sizeof(char));
 	for (n = l->h, lc = 0; n; n = n->next, lc++) {
 		sql_exp *le = n->data;
 
@@ -1200,8 +1201,8 @@ exp_match_list( list *l, list *r)
 	for (n = r->h, rc = 0; n && match; n = n->next, rc++) 
 		if (!ru[rc])
 			match = 0;
-	free(lu);
-	free(ru);
+	GDKfree(lu);
+	GDKfree(ru);
 	return match;
 }
 
@@ -1603,6 +1604,8 @@ exp_is_true(mvc *sql, sql_exp *e)
 			return atom_is_true(sql->args[e->flag]);
 		}
 	}
+	if (e->type == e_cmp && e->flag == cmp_equal)
+		return (exp_is_true(sql, e->l) && exp_is_true(sql, e->r) && exp_match_exp(e->l, e->r));
 	return 0;
 }
 
@@ -1682,6 +1685,12 @@ exp_is_null(mvc *sql, sql_exp *e )
 }
 
 int
+exp_is_rel( sql_exp *e )
+{
+	return (e && e->type == e_psm && e->flag == PSM_REL && e->l);
+}
+
+int
 exp_is_atom( sql_exp *e )
 {
 	switch (e->type) {
@@ -1709,12 +1718,6 @@ exp_is_atom( sql_exp *e )
 		return 0;
 	}
 	return 0;
-}
-
-int
-exp_is_rel( sql_exp *e )
-{
-	return (e->type == e_psm && e->flag == PSM_REL && e->l);
 }
 
 int
@@ -2228,7 +2231,7 @@ exps_intern(list *exps)
 	return 0;
 }
 
-char *
+const char *
 compare_func( comp_type t, int anti )
 {
 	switch(t) {

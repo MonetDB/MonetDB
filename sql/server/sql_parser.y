@@ -3403,7 +3403,7 @@ simple_select:
 		$4->h->next->data.sym,
 		$4->h->next->next->data.sym,
 		$4->h->next->next->next->data.sym,
-		NULL, NULL, NULL, NULL, NULL,
+		NULL, NULL, NULL, NULL, NULL, NULL,
 		$4->h->next->next->next->next->data.sym);
 	}
     ;
@@ -3415,16 +3415,16 @@ select_statement_single_row:
 		$6->h->next->data.sym,
 		$6->h->next->next->data.sym,
 		$6->h->next->next->next->data.sym,
-		NULL, NULL, NULL, NULL, NULL,
+		NULL, NULL, NULL, NULL, NULL, NULL,
 		$6->h->next->next->next->next->data.sym);
 	}
     ;
 
 select_no_parens_orderby:
-     select_no_parens opt_order_by_clause opt_limit opt_offset opt_sample
+     select_no_parens opt_order_by_clause opt_limit opt_offset opt_sample opt_seed
 	 { 
 	  $$ = $1;
-	  if ($2 || $3 || $4 || $5) {
+	  if ($2 || $3 || $4 || $5 || $6) {
 	  	if ($1 != NULL &&
 		    ($1->token == SQL_SELECT ||
 		     $1->token == SQL_UNION  ||
@@ -3437,11 +3437,12 @@ select_no_parens_orderby:
 	  			s -> limit = $3;
 	  			s -> offset = $4;
 	  			s -> sample = $5;
+				s -> seed = $6;
 			} else { /* Add extra select * from .. in case of UNION, EXCEPT, INTERSECT */
 				$$ = newSelectNode( 
 					SA, 0, 
 					append_symbol(L(), _symbol_create_list(SQL_TABLE, append_string(append_string(L(),NULL),NULL))), NULL,
-					_symbol_create_list( SQL_FROM, append_symbol(L(), $1)), NULL, NULL, NULL, $2, _symbol_create_list(SQL_NAME, append_list(append_string(L(),"inner"),NULL)), $3, $4, $5, NULL);
+					_symbol_create_list( SQL_FROM, append_symbol(L(), $1)), NULL, NULL, NULL, $2, _symbol_create_list(SQL_NAME, append_list(append_string(L(),"inner"),NULL)), $3, $4, $5, $6, NULL);
 			}
 	  	} else {
 			yyerror(m, "missing SELECT operator");
@@ -3720,38 +3721,25 @@ opt_offset:
 
 opt_sample:
 	/* empty */	{ $$ = NULL; }
- |  SAMPLE poslng opt_seed	{
-
-	 				dlist *l = L();
-
-					 append_symbol(l,
-					 	_newAtomNode( atom_int(SA, sql_bind_localtype("lng"), $2)) );
-
-					if ($3)
-						append_symbol(l,$3);
-
-			  $$ = _symbol_create_list(SQL_SAMPLE, l);
+ |  SAMPLE poslng	{ 
+		  	  sql_subtype *t = sql_bind_localtype("lng");
+			  $$ = _newAtomNode( atom_int(SA, t, $2)); 
 			}
- |  SAMPLE INTNUM opt_seed	{
-
-	 				dlist *l = L();
-
-				append_symbol(l,
-					 	_newAtomNode( atom_float(SA, sql_bind_localtype("dbl"), strtod($2,NULL))) );
-				
-				if ($3)
-						append_symbol(l,$3);
-
-			  $$ = _symbol_create_list(SQL_SAMPLE, l);
+ |  SAMPLE INTNUM	{ 
+		  	  sql_subtype *t = sql_bind_localtype("dbl");
+			  $$ = _newAtomNode( atom_float(SA, t, strtod($2, NULL)));
 			}
  |  SAMPLE param	{ $$ = $2; }
  ;
 
- opt_seed:
+opt_seed:
 	/* empty */	{ $$ = NULL; }
- | SEED intval {
-			  $$ = _newAtomNode( atom_int(SA, sql_bind_localtype("int"), $2));
- }
+ |  SEED intval	{ 
+		  	  sql_subtype *t = sql_bind_localtype("int");
+			  $$ = _newAtomNode( atom_int(SA, t, $2)); 
+			}
+ |  SEED param	{ $$ = $2; }
+ ;
 
 sort_specification_list:
     ordering_spec	 { $$ = append_symbol(L(), $1); }
@@ -6735,7 +6723,6 @@ char *token2string(tokens token)
 	SQL(REVOKE_ROLES);
 	SQL(ROLLUP);
 	SQL(ROUTINE);
-	SQL(SAMPLE);
 	SQL(SCHEMA);
 	SQL(SELECT);
 	SQL(SEQUENCE);

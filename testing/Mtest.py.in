@@ -238,7 +238,7 @@ except AttributeError:
             setpgrp = False
             pid = osfork()
             if pid == 0 and _setpgrp:
-                os.setpgrp()
+                os.setpgid(0, 0)
             return pid
         os.fork = myfork
 else:
@@ -249,34 +249,18 @@ else:
         setpgrp = False
         pid = osfork()
         if pid == 0 and _setpgrp:
-            os.setpgid(0, 0)
+            os.setpgrp()
         return pid
     os.fork = myfork
 setpgrp = False
 
-ttywidth = 0
-if isatty and os.isatty(sys.stdin.fileno()):
-    if os.name == 'nt':
-        ttywidth = 79
-    else:
-        try:
-            proc = process.Popen(['stty', '-a'], stdout = process.PIPE,
-                                 stderr = process.PIPE,
-                                 universal_newlines = True)
-        except OSError:
-            pass
-        else:
-            out, err = proc.communicate()
-            res = re.search('columns ([0-9]+)', out)
-            if res is not None:
-                ttywidth = int(res.group(1))
-            else:
-                res = re.search(' ([0-9]+) columns', out)
-                if res is not None:
-                    ttywidth = int(res.group(1))
-            if ttywidth < 60:
-                # ridiculously narrow tty, ignore value
-                ttywidth = 0
+try:
+    ttywidth = os.get_terminal_size(1).columns
+except:
+    ttywidth = 0
+else:
+    if ttywidth > 0 and os.name == 'nt':
+        ttywidth -= 1           # don't go to the edge
 
 import string                   # for whitespace
 def splitcommand(cmd):
@@ -316,18 +300,18 @@ def isexecutable(TST, ext = '.sh') :
             if TST.lower().endswith(ext):
                 ext = ''
             if os.path.isfile(TST+ext) or os.path.isfile(TST+ext+".src"):
-                return [ 1, ext ]
+                return (True, ext)
     elif os.name == "posix":
         #TODO:
         # check with "file", and set executable
         TST += ext
         if ( os.path.isfile(TST       ) and os.access(TST       ,os.X_OK) ) or \
            ( os.path.isfile(TST+".src") and os.access(TST+".src",os.X_OK) ):
-            return [ 1, ext ]
+            return (True, ext)
     #TODO:
     #else:
         # ???
-    return [ 0, "" ]
+    return (False, '')
 ### isexecutable(TST, ext = '.sh') #
 
 def CheckExec(cmd) :
@@ -1228,7 +1212,7 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
         for tc in allf:
             if '#' in tc:
                 # get rid of comment anywhere on line
-                tc = tc.split('#', 1)[0]
+                tc = tc[:tc.index('#')]
             tc = tc.strip()
             if tc:
                 if '?' in tc:
@@ -1237,6 +1221,7 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
                     cond,tst = None,tc
                 alltests.append((tst,cond))
         allf.close()
+    oneserver = os.path.exists(os.path.join(TSTSRCDIR, "SingleServer"))
 
     if testlist:
         tl = []
@@ -1324,9 +1309,10 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
                     # add "something" to HTML output
                     return td, elem, max(FdOut, FdErr), interrupted
                 z.close()
-                pSrvr = ServerClass()
-                pSrvr.LaunchIt(splitcommand(env['exe']['mserver5'][1]) + ['--dbpath=%s' % LogDBdir], open(os.devnull, 'w'), open(os.devnull, 'w'), par['TIMEOUT'], os.path.join(LogDBdir, '.started'), int(env['MAPIPORT']))
-                pSrvr.terminate()
+                if not oneserver:
+                    pSrvr = ServerClass()
+                    pSrvr.LaunchIt(splitcommand(env['exe']['mserver5'][1]) + ['--dbpath=%s' % LogDBdir], open(os.devnull, 'w'), open(os.devnull, 'w'), par['TIMEOUT'], os.path.join(LogDBdir, '.started'), int(env['MAPIPORT']))
+                    pSrvr.terminate()
         if not os.path.exists(TSTTRGDIR):
             #TODO: set mode to umask
             os.makedirs(TSTTRGDIR)
@@ -1337,35 +1323,45 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
         if not verbose and not quiet:
             print('\nRunning in %s' % TSTDIR)
         alllinks = []
+        pSrvr = None
         try:
-            for TST,COND in testlist:
-                if global_timeout and start_time + global_timeout < time.time():
-                    if not testweb:
-                        print('\nGlobal testing timeout reached\n')
-                        break
-                    tt, FtOut, FtErr, bodyline, reason = 0,F_SKIP,F_SKIP,None,"as the global timeout has been reached"
-                else:
-                    os.environ['TST'] = TST
-                    tt, FtOut, FtErr, bodyline, reason, links = RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests)
-                    alllinks.extend(links)
-                if tt:
-                    t = "%7.3f" % tt
-                else:
-                    t = '-.---'
-                TIMES.append((TSTDIR, TST, t, tt, FtOut, FtErr, reason))
-                td += tt
-                FdOut = max(FdOut,FtOut)
-                FdErr = max(FdErr,FtErr)
-                if bodyline is not None:
-                    if FtOut <= F_OK and FtErr <= F_OK:
-                        body_good.append(bodyline)
+            try:
+                for TST,COND in testlist:
+                    if oneserver and (pSrvr is None or pSrvr.poll() is not None):
+                        # restart server
+                        pSrvr = ServerClass()
+                        pSrvr.LaunchIt(splitcommand(env['exe']['mserver5'][1]) + ['--dbpath=%s' % LogDBdir], open(os.devnull, 'w'), open(os.devnull, 'w'), 0, os.path.join(LogDBdir, '.started'), int(env['MAPIPORT']))
+                    if global_timeout and start_time + global_timeout < time.time():
+                        if not testweb:
+                            print('\nGlobal testing timeout reached\n')
+                            break
+                        tt, FtOut, FtErr, bodyline, reason = 0,F_SKIP,F_SKIP,None,"as the global timeout has been reached"
                     else:
-                        body_bad.append(bodyline)
-                if FtOut in (F_OK, F_WARN) and FtErr in (F_OK, F_WARN):
-                    oktests.append(TST)
-        except KeyboardInterrupt:
-            print('\nInterrupted')
-            interrupted = True
+                        os.environ['TST'] = TST
+                        tt, FtOut, FtErr, bodyline, reason, links = RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests, pSrvr)
+                        alllinks.extend(links)
+                    if tt:
+                        t = "%7.3f" % tt
+                    else:
+                        t = '-.---'
+                    TIMES.append((TSTDIR, TST, t, tt, FtOut, FtErr, reason))
+                    td += tt
+                    FdOut = max(FdOut,FtOut)
+                    FdErr = max(FdErr,FtErr)
+                    if bodyline is not None:
+                        if FtOut <= F_OK and FtErr <= F_OK:
+                            body_good.append(bodyline)
+                        else:
+                            body_bad.append(bodyline)
+                    if FtOut in (F_OK, F_WARN) and FtErr in (F_OK, F_WARN):
+                        oktests.append(TST)
+            except KeyboardInterrupt:
+                print('\nInterrupted')
+                interrupted = True
+        finally:
+            if pSrvr is not None:
+                pSrvr.terminate()
+                pSrvr = None
         TIMES.append((TSTDIR, '', "%7.3f" % td, td, FdOut, FdErr, None))
         if testweb:
             os.chdir(TSTTRGDIR)
@@ -1739,15 +1735,13 @@ def GetBitsAndModsAndThreads(env) :
             proc.wait()
             qOut = sOut + qOut
             qErr = sErr + qErr
+    finally:
         t.cancel()
+        if proc.returncode is None:
+            killProc(proc, proc.stderr, cmd)
+            proc.wait()
         if procdebug:
             print('GetBitsAndModsAndThreads: process exited "%s" (%s)\n' % ('" "'.join(cmd), proc.returncode))
-    except KeyboardInterrupt:
-        t.cancel()
-        killProc(proc, proc.stderr, cmd)
-        if procdebug:
-            print('GetBitsAndModsAndThreads: process killed "%s"\n' % '" "'.join(cmd))
-        raise
     env['TST_MODS'] = []
     env['TST_BITS'] = ""
     env['TST_INT128'] = ""
@@ -1923,7 +1917,7 @@ relcond = {
                              'previous hugeint chained empty'),
 }
 
-def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests) :
+def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests, pSrvr) :
     global setpgrp
     Failed = F_SKIP
     FailedOut = F_SKIP
@@ -1969,6 +1963,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests) :
             ('.sql',          '.sql',    'sql',    'SQL'),
             ('_s00.sql',      '.sql',    'sqlXs',  'SQL'),
             ('_p00.sql',      '.sql',    'sqlXp',  'SQL'),
+            ('.test',         '.test',   'sqltest','SQL'),
             ('.R',            '.R',      'R',      'SQL'),
             ('.rb',           '.rb',     'ruby',   'SQL'),
             #TODO:
@@ -2096,6 +2091,9 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests) :
     elif EXT == ".sql" and  not env['exe']['SQL_Dump'][0]:
         reason = "as %s is not available." % env['SQLDUMP'].split(None, 1)[0]
         elem = SkipTest(env, TST, EXT, reason, length)
+    elif EXT == ".test" and not CONDITIONALS['HAVE_PYMONETDB']:
+        reason = "as pymonetdb is not available."
+        elem = SkipTest(env, TST, EXT, reason, length)
     elif SERVER in ["MAL", "SQL"] and not env['exe']['mserver5'][0]:
         reason = "as %s is not available." % env['MSERVER'].split(None, 1)[0]
         elem = SkipTest(env, TST, EXT, reason, length)
@@ -2136,11 +2134,14 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests) :
                         raise
 
         # Check for available sockets and block them until we're ready to run the actual test
-        MAPIsockets, reason = CheckSocket2(env, "MAPI")   #, SrvrErr)
-        if MAPIsockets is None:
-            reason = 'as ' + reason
-            elem = SkipTest(env, TST, EXT, reason, length)
-            return TX,Failed,Failed,elem,reason,links
+        if pSrvr is None:
+            MAPIsockets, reason = CheckSocket2(env, "MAPI")   #, SrvrErr)
+            if MAPIsockets is None:
+                reason = 'as ' + reason
+                elem = SkipTest(env, TST, EXT, reason, length)
+                return TX,Failed,Failed,elem,reason,links
+        else:
+            MAPIsockets = None
 
         if os.path.isfile(TST+EXT+".src")  and not os.path.isfile(TST+EXT):
             f = openutf8(TST+EXT+".src","r")
@@ -2156,9 +2157,10 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests) :
             else:
                 reason = "as source file '%s` is missing." % TSTSRC
                 elem = SkipTest(env, TST, EXT+".src", reason, length)
-                # Release reserved sockets before bailing out
-                MAPIsockets[0].close()
-                MAPIsockets[1].close()
+                if MAPIsockets is not None:
+                    # Release reserved sockets before bailing out
+                    MAPIsockets[0].close()
+                    MAPIsockets[1].close()
                 return TX,Failed,Failed,elem,reason,links
         test = re.compile("^"+TST+"((_[sp][0-9][0-9])?\..*)?\.src$", re.MULTILINE)
         for ff in listdir(TSTTRGDIR):
@@ -2249,7 +2251,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests) :
         TestErr.close()
 
         t0 = time.time()
-        tres = DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, ME, MAPIsockets, length, nomito, threads, user, passwd, COND, all_tests)
+        tres = DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, ME, MAPIsockets, length, nomito, threads, user, passwd, COND, all_tests, pSrvr)
 
         t1 = time.time()
         TX = t1 - t0
@@ -2273,7 +2275,18 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests) :
         else:
             errcode = F_OK
 
-        sockerr = CheckSocket3(env, "MAPI", TestErrFile)
+        if pSrvr is None:
+            sockerr = CheckSocket3(env, "MAPI", TestErrFile)
+        elif pSrvr.poll() is None:
+            sockerr = F_OK
+        else:
+            sres = returnCode(pSrvr, TestErrFile)
+            if sres == 'segfault':
+                sockerr = F_SEGV
+            elif sres == 'abort':
+                sockerr = F_ABRT
+            else:
+                sockerr = F_ERROR
 
         #TODO:
         ##if [ ! -f $TSTTRGBASE/Tests/.old.left-over.tmp.bats. ] ; then  touch $TSTTRGBASE/Tests/.old.left-over.tmp.bats. ; fi
@@ -2824,6 +2837,9 @@ class ServerClass:
         self.code = None
         self.started = False
 
+    def poll(self):
+        return self.proc.poll()
+
     def terminate(self):
         if os.name == 'nt':
             self.proc.send_signal(signal.CTRL_BREAK_EVENT)
@@ -2974,7 +2990,7 @@ def mapi_ping(port) :
     return False
 ### mapi_ping() #
 
-def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, ME, MAPIsockets, length, nomito, threads, user, passwd, COND, all_tests) :
+def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, ME, MAPIsockets, length, nomito, threads, user, passwd, COND, all_tests, PSRVR) :
     ATJOB2 = ""
     STDERR.flush()
     if quiet:
@@ -3006,12 +3022,16 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEO
     TSTDB = env['TSTDB']
     exe = env['exe']
 
-    # Release reserved sockets and run the actual test
-    MAPIsockets[0].close()
-    MAPIsockets[1].close()
+    if MAPIsockets is not None:
+        # Release reserved sockets and run the actual test
+        MAPIsockets[0].close()
+        MAPIsockets[1].close()
 
     returncode = None
-    pSrvr = ServerClass()
+    if PSRVR is None:
+        pSrvr = ServerClass()
+    else:
+        pSrvr = PSRVR
     try:
         if SERVER in ["MAL", "SQL"]:
             SrvrOutFile = TST+".server.out"
@@ -3081,7 +3101,8 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEO
             # enable C integration in server
             Srvr.extend(['--set', 'embedded_c=true'])
 
-            pSrvr.LaunchIt(Srvr, SrvrOut, SrvrErr, TIMEOUT, os.path.join(dbpath, '.started'), int(env['MAPIPORT']))
+            if PSRVR is None:
+                pSrvr.LaunchIt(Srvr, SrvrOut, SrvrErr, TIMEOUT, os.path.join(dbpath, '.started'), int(env['MAPIPORT']))
             if savepath is not None:
                 os.environ['PATH'] = savepath
                 if savepypath:
@@ -3124,7 +3145,21 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEO
                     returncode = RunIt(Clnt, True, openutf8(f), ClntOut, ClntErr, TIMEOUT)
                     if returncode:
                         break
-
+            elif CALL == "sqltest":
+                import MonetDBtesting.sqllogictest as sqllogictest
+                sql = sqllogictest.SQLLogic(ClntErr)
+                sql.connect(hostname='localhost',
+                            port=int(env['MAPIPORT']),
+                            database=TSTDB)
+                sql.drop()
+                try:
+                    sql.parse(TST+EXT)
+                except sqllogictest.SQLLogicSyntaxError:
+                    pass
+                except BrokenPipeError:
+                    # server timeout
+                    pass
+                sql.close()
             elif CALL in ["sql", "sqlXs"]:
                 TSTs = []
                 if CALL == "sql":
@@ -3164,7 +3199,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEO
         ClntErr.close()
 
         if SERVER in ["MAL", "SQL"]:
-            if pSrvr.started:
+            if PSRVR is None and pSrvr.started:
                 pSrvr.terminate()
                 if procdebug:
                     print('DoIt: process exited "%s" (%s)\n' % ('" "'.join(Srvr), pSrvr.code))
@@ -3210,7 +3245,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEO
             TestErr.close()
 
     except KeyboardInterrupt:
-        if pSrvr.started:
+        if PSRVR is None and pSrvr.started:
             pSrvr.kill(SrvrErr, Srvr)
         raise
 
@@ -3601,7 +3636,6 @@ def main(argv) :
         VARS = VARS + [ 'MALCLIENT', 'SQLCLIENT', 'SQLDUMP', 'RCLIENT', 'RUBYCLIENT']    #, 'MONETDB_MOD_PATH' ]
 
     env = {}
-    env['DIRSEP'] = os.sep
 
     # most intuitive (?) default settings
     dft['TSTSRCBASE']     = r"_configure('@QXSOURCE@')"

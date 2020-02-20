@@ -383,6 +383,12 @@ LIMIT 73;
 -- 2
 -- 3
 
+SELECT 1 FROM integers WHERE CASE WHEN EXISTS (SELECT 1 WHERE i IS NULL) THEN true ELSE true END;
+-- 1
+-- 1
+-- 1
+-- 1
+
 select 
  subq_1.c1 as c0, 
  subq_1.c2 as c1, 

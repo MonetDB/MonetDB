@@ -953,7 +953,7 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (rel)
 		rel = sql_processrelation(m, rel, 0);
 	if (!rel || monet5_create_relational_function(m, *mod, *nme, rel, NULL, ops, 0) < 0)
-		throw(SQL, "sql.register", SQLSTATE(42000) "Cannot register %s", buf);
+		throw(SQL, "sql.register", SQLSTATE(42000) "Cannot register %s: %s", buf, m->errstr);
 	rel_destroy(rel);
 	sqlcleanup(m, 0);
 	return msg;

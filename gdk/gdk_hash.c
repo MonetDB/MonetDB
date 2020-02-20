@@ -627,6 +627,16 @@ BAThashsync(void *arg)
 }
 #endif
 
+#define EQbte(a, b)	((a) == (b))
+#define EQsht(a, b)	((a) == (b))
+#define EQint(a, b)	((a) == (b))
+#define EQlng(a, b)	((a) == (b))
+#ifdef HAVE_HGE
+#define EQhge(a, b)	((a) == (b))
+#endif
+#define EQflt(a, b)	(is_flt_nil(a) ? is_flt_nil(b) : (a) == (b))
+#define EQdbl(a, b)	(is_dbl_nil(a) ? is_dbl_nil(b) : (a) == (b))
+
 #define starthash(TYPE)							\
 	do {								\
 		const TYPE *restrict v = (const TYPE *) BUNtloc(bi, 0);	\
@@ -642,7 +652,7 @@ BAThashsync(void *arg)
 				for (hb = hget;				\
 				     hb != hnil;			\
 				     hb = HASHgetlink(h, hb)) {		\
-					if (v[o - b->hseqbase] == v[hb]) \
+					if (EQ##TYPE(v[o - b->hseqbase], v[hb])) \
 						break;			\
 				}					\
 				h->nunique += hb == hnil;		\
@@ -663,7 +673,7 @@ BAThashsync(void *arg)
 			for (hb = hget;					\
 			     hb != hnil;				\
 			     hb = HASHgetlink(h, hb)) {			\
-				if (v[o - b->hseqbase] == v[hb])	\
+				if (EQ##TYPE(v[o - b->hseqbase], v[hb])) \
 					break;				\
 			}						\
 			h->nunique += hb == hnil;			\
@@ -992,6 +1002,54 @@ HASHprobe(const Hash *h, const void *v)
 	default:
 		return hash_any(h, v);
 	}
+}
+
+void
+HASHins(BAT *b, BUN i, const void *v)
+{
+	MT_lock_set(&b->batIdxLock);
+	Hash *h = b->thash;
+	if (h == NULL) {
+		/* nothing to do */
+	} else if (h == (Hash *) 1) {
+		GDKunlink(BBPselectfarm(b->batRole, b->ttype, hashheap),
+			  BATDIR,
+			  BBP_physical(b->batCacheid),
+			  "thash");
+		b->thash = NULL;
+	} else if ((ATOMsize(b->ttype) > 2 &&
+		    HASHgrowbucket(b) != GDK_SUCCEED) ||
+		   ((i + 1) * h->width > h->heaplink.size &&
+		    HEAPextend(&h->heaplink,
+			       i * h->width + GDK_mmap_pagesize,
+			       true) != GDK_SUCCEED)) {
+		b->thash = NULL;
+		HEAPfree(&h->heapbckt, true);
+		HEAPfree(&h->heaplink, true);
+		GDKfree(h);
+	} else {
+		h->Link = h->heaplink.base;
+		BUN c = HASHprobe(h, v);
+		h->heaplink.free += h->width;
+		BUN hb = HASHget(h, c);
+		BUN hb2;
+		BATiter bi = bat_iterator(b);
+		for (hb2 = hb;
+		     hb2 != HASHnil(h);
+		     hb2 = HASHgetlink(h, hb2)) {
+			if (ATOMcmp(h->type,
+				    v,
+				    BUNtail(bi, hb2)) == 0)
+				break;
+		}
+		h->nheads += hb == HASHnil(h);
+		h->nunique += hb2 == HASHnil(h);
+		HASHputlink(h, i, hb);
+		HASHput(h, c, i);
+		h->heapbckt.dirty = true;
+		h->heaplink.dirty = true;
+	}
+	MT_lock_unset(&b->batIdxLock);
 }
 
 BUN

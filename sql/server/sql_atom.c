@@ -319,7 +319,7 @@ atom_general(sql_allocator *sa, sql_subtype *tpe, const char *val)
 
 	assert(a->data.vtype >= 0);
 
-	if (!GDK_STRNIL(val)) {
+	if (!strNil(val)) {
 		int type = a->data.vtype;
 
 		a->isnull = 0;
@@ -1166,6 +1166,7 @@ int
 atom_neg( atom *a )
 {
 	ValRecord dst;
+	VALempty(&dst);
 	dst.vtype = a->data.vtype;
 	if (VARcalcnegate(&dst, &a->data) != GDK_SUCCEED)
 		return -1;
