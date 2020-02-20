@@ -1358,7 +1358,7 @@ CQscheduler(void *dummy)
 		memset((void*) claimed, 0, sizeof(claimed));
 
 		aux = timestamp_current();
-		now = timestamp_diff(aux, (timestamp) {0});
+		now = timestamp_diff(aux, (timestamp) {0}) / 1000; /* continuous queries currently have millisecond precision */
 
 		pntasks=0;
 		for (k = i = 0; i < pnettop; i++) {
