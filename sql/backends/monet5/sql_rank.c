@@ -585,6 +585,7 @@ SQLcume_dist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					if (*np) {
 						ncnt = no - bo2;
 						cnt_cast = (dbl) ncnt;
+						j = 0;
 						for (; bo2<no; bo2++) {
 							if (*bo2) {
 								j += (bo2 - bo1);
@@ -597,6 +598,7 @@ SQLcume_dist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							*rb = 1;
 					}
 				}
+				j = 0;
 				ncnt = no - bo2;
 				cnt_cast = (dbl) ncnt;
 				for (; bo2<no; bo2++) {
