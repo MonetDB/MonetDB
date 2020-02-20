@@ -77,7 +77,7 @@ stdout of test 'window-order-by-extract.Bug-6828` in directory 'sql/test/BugTrac
 #    ('sls', 'Wilson',72,str_to_date('21-09-2019', '%d-%m-%Y')),
 [ 10	]
 #SELECT dep, name, salary, SUM(salary) OVER (ORDER BY EXTRACT(MONTH FROM hire_date)) salary_sum FROM employees;
-% sys.employees,	sys.employees,	sys.employees,	sys.L5 # table_name
+% sys.employees,	sys.employees,	sys.employees,	sys. # table_name
 % dep,	name,	salary,	salary_sum # name
 % varchar,	varchar,	double,	double # type
 % 4,	8,	24,	24 # length
@@ -92,7 +92,7 @@ stdout of test 'window-order-by-extract.Bug-6828` in directory 'sql/test/BugTrac
 [ "sls",	"Evans",	87,	730	]
 [ "sls",	"Wilson",	72,	730	]
 #SELECT dep, name, salary, SUM(salary) OVER (ORDER BY hire_date) salary_sum FROM employees;
-% sys.employees,	sys.employees,	sys.employees,	sys.L4 # table_name
+% sys.employees,	sys.employees,	sys.employees,	sys. # table_name
 % dep,	name,	salary,	salary_sum # name
 % varchar,	varchar,	double,	double # type
 % 4,	8,	24,	24 # length
@@ -107,7 +107,7 @@ stdout of test 'window-order-by-extract.Bug-6828` in directory 'sql/test/BugTrac
 [ "sls",	"Evans",	87,	658	]
 [ "sls",	"Wilson",	72,	730	]
 #SELECT dep, name, salary, SUM(salary) OVER (PARTITION BY dep ORDER BY EXTRACT(MONTH FROM hire_date)) salary_sum FROM employees;
-% sys.employees,	sys.employees,	sys.employees,	sys.L5 # table_name
+% sys.employees,	sys.employees,	sys.employees,	sys. # table_name
 % dep,	name,	salary,	salary_sum # name
 % varchar,	varchar,	double,	double # type
 % 4,	8,	24,	24 # length
