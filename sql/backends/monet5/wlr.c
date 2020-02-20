@@ -558,8 +558,10 @@ WLRreplicate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		wlr_limit = INT64_MAX;
 	else
 	if( getArgType(mb, pci, 1) == TYPE_timestamp){
-		if (timestamp_precision_tostr(&timelimit, &size, *getArgReference_TYPE(stk, pci, 1, timestamp), 3, true) < 0)
+		if (timestamp_precision_tostr(&timelimit, &size, *getArgReference_TYPE(stk, pci, 1, timestamp), 3, true) < 0){
+			GDKfree(timelimit);
 			throw(SQL, "wlr.replicate", GDK_EXCEPTION);
+		}
 		fprintf(stderr,"#time limit %s\n",timelimit);
 	} else
 	if( getArgType(mb, pci, 1) == TYPE_bte)
