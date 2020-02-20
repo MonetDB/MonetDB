@@ -1824,7 +1824,8 @@ GDKmalloc_internal(size_t size)
 		return NULL;
 	}
 #endif
-	if (GDKvm_cursize() + size >= GDK_vm_maxsize) {
+	if (GDKvm_cursize() + size >= GDK_vm_maxsize &&
+	    !MT_thread_override_limits()) {
 		GDKerror("allocating too much memory\n");
 		return NULL;
 	}
@@ -1967,7 +1968,8 @@ GDKrealloc(void *s, size_t size)
 	asize = ((size_t *) s)[-1]; /* how much allocated last */
 
 	if (nsize > asize &&
-	    GDKvm_cursize() + nsize - asize >= GDK_vm_maxsize) {
+	    GDKvm_cursize() + nsize - asize >= GDK_vm_maxsize &&
+	    !MT_thread_override_limits()) {
 		GDKerror("allocating too much memory\n");
 		return NULL;
 	}
@@ -2097,7 +2099,8 @@ GDKmmap(const char *path, int mode, size_t len)
 {
 	void *ret;
 
-	if (GDKvm_cursize() + len >= GDK_vm_maxsize) {
+	if (GDKvm_cursize() + len >= GDK_vm_maxsize &&
+	    !MT_thread_override_limits()) {
 		GDKmemfail("GDKmmap", len);
 		GDKerror("allocating too much virtual address space\n");
 		return NULL;
@@ -2131,7 +2134,8 @@ GDKmremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 	void *ret;
 
 	if (*new_size > old_size &&
-	    GDKvm_cursize() + *new_size - old_size >= GDK_vm_maxsize) {
+	    GDKvm_cursize() + *new_size - old_size >= GDK_vm_maxsize &&
+	    !MT_thread_override_limits()) {
 		GDKmemfail("GDKmmap", *new_size);
 		GDKerror("allocating too much virtual address space\n");
 		return NULL;

@@ -2334,6 +2334,9 @@ void
 store_lock(void)
 {
 	MT_lock_set(&bs_lock);
+	/* tell GDK allocation functions to ignore limits */
+	MT_thread_setworking("store locked");
+
 #ifdef STORE_DEBUG
 	fprintf(stderr, "#locked\n");
 #endif
@@ -2345,6 +2348,8 @@ store_unlock(void)
 #ifdef STORE_DEBUG
 	fprintf(stderr, "#unlocked\n");
 #endif
+	/* tell GDK allocation functions to honor limits again */
+	MT_thread_setworking("store unlocked");
 	MT_lock_unset(&bs_lock);
 }
 
