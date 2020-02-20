@@ -2280,7 +2280,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests, pSrvr) :
         elif pSrvr.poll() is None:
             sockerr = F_OK
         else:
-            sres = returnCode(pSrvr, TestErrFile)
+            sres = returnCode(pSrvr.proc, TestErrFile)
             if sres == 'segfault':
                 sockerr = F_SEGV
             elif sres == 'abort':
