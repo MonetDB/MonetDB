@@ -670,10 +670,12 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 					for (i=0, en = l->h; i<nrcands && en; i++, en = en->next) {
 						stmt *s = en->data;
 						/* if handled use bat nil */
-						if (s->cand)
-							list_append(l, NULL);
-						else
-							list_append(l,sel);
+						if (s->nrcols) { /* only for cols not values */
+							if (s->cand)
+								list_append(l, NULL);
+							else
+								list_append(l,sel);
+						}
 					}
 				}
 			}
