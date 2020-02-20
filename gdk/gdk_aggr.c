@@ -3169,7 +3169,7 @@ BATcalcvariance_sample(dbl *avgp, BAT *b)
 	} while (0)
 
 static dbl
-calccovariance(const void *restrict v1, const void *restrict v2, BUN cnt, int tp, bool issample, const char *func)
+calccovariance(const void *v1, const void *v2, BUN cnt, int tp, bool issample, const char *func)
 {
 	BUN n = 0, i;
 	dbl mean1 = 0, mean2 = 0, m2 = 0, delta1, delta2;
@@ -3246,7 +3246,7 @@ BATcalccorrelation(BAT *b1, BAT *b2)
 {
 	BUN n = 0, i, cnt = BATcount(b1);
 	dbl mean1 = 0, mean2 = 0, up = 0, down1 = 0, down2 = 0, delta1, delta2, aux;
-	const void *restrict v1 = (const void *) Tloc(b1, 0), *restrict v2 = (const void *) Tloc(b2, 0);
+	const void *v1 = (const void *) Tloc(b1, 0), *v2 = (const void *) Tloc(b2, 0);
 	int tp = b1->ttype;
 
 	switch (tp) {
@@ -3517,8 +3517,8 @@ BATgroupvariance_population(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 
 #define AGGR_COVARIANCE(TYPE)						\
 	do {								\
-		const TYPE *restrict vals1 = (const TYPE *) Tloc(b1, 0);	\
-		const TYPE *restrict vals2 = (const TYPE *) Tloc(b2, 0);	\
+		const TYPE *vals1 = (const TYPE *) Tloc(b1, 0);	\
+		const TYPE *vals2 = (const TYPE *) Tloc(b2, 0);	\
 		while (ncand > 0) {					\
 			ncand--;					\
 			i = canditer_next(&ci) - b1->hseqbase;		\
@@ -3691,8 +3691,8 @@ BATgroupcovariance_population(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp, 
 
 #define AGGR_CORRELATION(TYPE)						\
 	do {								\
-		const TYPE *restrict vals1 = (const TYPE *) Tloc(b1, 0);	\
-		const TYPE *restrict vals2 = (const TYPE *) Tloc(b2, 0);	\
+		const TYPE *vals1 = (const TYPE *) Tloc(b1, 0);	\
+		const TYPE *vals2 = (const TYPE *) Tloc(b2, 0);	\
 		while (ncand > 0) {					\
 			ncand--;					\
 			i = canditer_next(&ci) - b1->hseqbase;		\

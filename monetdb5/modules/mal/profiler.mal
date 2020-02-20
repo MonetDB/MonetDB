@@ -38,10 +38,6 @@ pattern openstream():void
 address CMDopenProfilerStream
 comment "Start profiling the events, send to output stream";
 
-pattern openstream(mode:int):void
-address CMDopenProfilerStream
-comment "Start profiling the events, send to output stream";
-
 pattern closestream():void
 address CMDcloseProfilerStream
 comment "Stop offline proviling";

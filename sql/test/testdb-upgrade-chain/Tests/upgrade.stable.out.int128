@@ -6081,6 +6081,16 @@ update sys._tables set system = true where schema_id = (select id from sys.schem
 ALTER TABLE sys.keywords SET READ WRITE;
 DELETE FROM sys.keywords where "keyword" IN ('NOCYCLE','NOMAXVALUE','NOMINVALUE');
 insert into sys.keywords values ('ANALYZE'),('AT'),('AUTHORIZATION'),('CACHE'),('CENTURY'),('COLUMN'),('CLIENT'),('CUBE'),('CYCLE'),('DATA'),('DATE'),('DEBUG'),('DECADE'),('DEALLOCATE'),('DIAGNOSTICS'),('DISTINCT'),('DOW'),('DOY'),('EXEC'),('EXECUTE'),('EXPLAIN'),('FIRST'),('FWF'),('GROUPING'),('GROUPS'),('INCREMENT'),('INTERVAL'),('KEY'),('LANGUAGE'),('LARGE'),('LAST'),('LATERAL'),('LEVEL'),('LOADER'),('MATCH'),('MATCHED'),('MAXVALUE'),('MINVALUE'),('NAME'),('NO'),('NULLS'),('OBJECT'),('OPTIONS'),('PASSWORD'),('PLAN'),('PRECISION'),('PREP'),('PREPARE'),('QUARTER'),('RELEASE'),('REPLACE'),('ROLLUP'),('SCHEMA'),('SEED'),('SERVER'),('SESSION'),('SETS'),('SIZE'),('STATEMENT'),('TABLE'),('TEMP'),('TEMPORARY'),('TEXT'),('TIME'),('TIMESTAMP'),('TRACE'),('TYPE'),('UNIONJOIN'),('WEEK'),('YEAR'),('ZONE');
+commit;
+set schema "sys";
+
+Running database upgrade commands:
+set schema "sys";
+ALTER TABLE sys.keywords SET READ ONLY;
+set schema "sys";
+
+Running database upgrade commands:
+set schema "sys";
 create window stddev_samp(val TINYINT) returns DOUBLE
  external name "sql"."stdev";
 GRANT EXECUTE ON WINDOW stddev_samp(TINYINT) TO PUBLIC;

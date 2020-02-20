@@ -43,7 +43,7 @@ CREATE PROCEDURE logging.resetadapter()
        EXTERNAL NAME logging.resetadapter;
 
 -- Returns in the form of a SQL result-set all the 
--- components along with their ID the their current 
+-- components along with their ID and their current 
 -- logging level being set
 CREATE FUNCTION logging.compinfo()
 RETURNS TABLE(

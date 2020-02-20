@@ -2333,7 +2333,7 @@ rewrite_exists(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 				if (exp_is_rel(ie))
 					ie->l = sq;
 				ea = sql_bind_func(sql->sa, sql->session->schema, is_exists(sf)?"exist":"not_exist", exp_subtype(le), NULL, F_AGGR);
-				le = exp_aggr1(sql->sa, le, ea, 0, 0, CARD_AGGR, has_nil(le));
+				le = exp_aggr1(sql->sa, le, ea, 0, 0, CARD_AGGR, 0);
 				le = rel_groupby_add_aggr(sql, sq, le);
 				if (rel_has_freevar(sql, sq))
 					ne = le;
@@ -2662,6 +2662,7 @@ rel_unnest(mvc *sql, sql_rel *rel)
 	rel = rel_visitor_bottomup(sql, rel, &rewrite_join2semi, &changes);	/* where possible convert anyequal functions into marks */
 	rel = rel_visitor_bottomup(sql, rel, &rewrite_compare_exp, &changes);	/* only allow for e_cmp in selects and  handling */
 	rel = rel_visitor_bottomup(sql, rel, &rewrite_remove_xp_project, &changes);	/* remove crossproducts with project ( project [ atom ] ) [ etc ] */
+	rel = rel_visitor_bottomup(sql, rel, &rewrite_simplify, &changes);		/* as expressions got merged before, lets try to simplify again */
 	rel = _rel_unnest(sql, rel);
 	rel = rel_visitor_bottomup(sql, rel, &rewrite_fix_count, &changes);	/* fix count inside a left join (adds a project (if (cnt IS null) then (0) else (cnt)) */
 	rel = rel_visitor_bottomup(sql, rel, &rewrite_remove_xp, &changes);	/* remove crossproducts with project [ atom ] */
