@@ -42,15 +42,11 @@ drop user "mydummyuser";
 
 
 def main():
-    s = process.server(stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE)
     client(script1, 'monetdb', 'monetdb')
     client(script2, 'mydummyuser', 'mydummyuser')
     client(script3, 'monetdb', 'monetdb')
     client(script4, 'mydummyuser', 'mydummyuser')
     client(script5, 'monetdb', 'monetdb')
-    out, err = s.communicate()
-    sys.stdout.write(out)
-    sys.stderr.write(err)
 
 
 if __name__ == '__main__':
