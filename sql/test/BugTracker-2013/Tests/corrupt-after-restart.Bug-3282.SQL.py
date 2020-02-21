@@ -13,10 +13,11 @@ def freeport():
 
 farm_dir = tempfile.mkdtemp()
 os.mkdir(os.path.join(farm_dir, 'db1'))
+myport = freeport()
 
-s = process.server(mapiport=freeport(), dbname='db1', dbfarm=os.path.join(farm_dir, 'db1'), stdin = process.PIPE,
+s = process.server(mapiport=myport, dbname='db1', dbfarm=os.path.join(farm_dir, 'db1'), stdin = process.PIPE,
                    stdout = process.PIPE, stderr = process.PIPE)
-c = process.client('sql', stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
+c = process.client('sql', port=myport, dbname='db1', stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
 out, err = c.communicate('''start transaction;
 create table table3282 (i int);
 insert into table3282 values (0);
@@ -49,9 +50,9 @@ sys.stderr.write(err)
 out, err = s.communicate()
 sys.stdout.write(out)
 sys.stderr.write(err)
-s = process.server(mapiport=freeport(), dbname='db1', dbfarm=os.path.join(farm_dir, 'db1'), stdin = process.PIPE,
+s = process.server(mapiport=myport, dbname='db1', dbfarm=os.path.join(farm_dir, 'db1'), stdin = process.PIPE,
                    stdout = process.PIPE, stderr = process.PIPE)
-c = process.client('sql', stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
+c = process.client('sql', port=myport, dbname='db1', stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
 out, err = c.communicate('''select * from table3282 offset 2097140;
 ''')
 sys.stdout.write(out)
@@ -59,9 +60,9 @@ sys.stderr.write(err)
 out, err = s.communicate()
 sys.stdout.write(out)
 sys.stderr.write(err)
-s = process.server(mapiport=freeport(), dbname='db1', dbfarm=os.path.join(farm_dir, 'db1'), stdin = process.PIPE,
+s = process.server(mapiport=myport, dbname='db1', dbfarm=os.path.join(farm_dir, 'db1'), stdin = process.PIPE,
                    stdout = process.PIPE, stderr = process.PIPE)
-c = process.client('sql', stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
+c = process.client('sql', port=myport, dbname='db1', stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
 out, err = c.communicate('''select * from table3282 offset 2097140;
 drop table table3282;
 ''')

@@ -15,15 +15,18 @@ def freeport():
 
 farm_dir = tempfile.mkdtemp()
 os.mkdir(os.path.join(farm_dir, 'db1'))
+myport = freeport()
 
-s = process.server(mapiport=freeport(), dbname='db1', dbfarm=os.path.join(farm_dir, 'db1'), stdin = process.PIPE,
+s = process.server(mapiport=myport, dbname='db1', dbfarm=os.path.join(farm_dir, 'db1'), stdin = process.PIPE,
                    stdout = process.PIPE, stderr = process.PIPE)
 out, err = s.communicate()
 sys.stdout.write(out)
 sys.stderr.write(err)
-s = process.server(mapiport=freeport(), dbname='db1', dbfarm=os.path.join(farm_dir, 'db1'), stdin = process.PIPE,
+s = process.server(mapiport=myport, dbname='db1', dbfarm=os.path.join(farm_dir, 'db1'), stdin = process.PIPE,
                    stdout = process.PIPE, stderr = process.PIPE)
 c = process.client(lang = 'sqldump',
+                   port=myport,
+                   dbname='db1',
                    stdin = process.PIPE,
                    stdout = process.PIPE,
                    stderr = process.PIPE,
