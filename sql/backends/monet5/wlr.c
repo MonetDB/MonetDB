@@ -539,10 +539,10 @@ WLRmaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 str
 WLRreplicate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{	str timelimit = wlr_timelimit;
+{
+	str msg, timelimit = NULL;
 	size_t size = 0;
 	lng limit = INT64_MAX;
-	str msg;
 
 	if( wlr_thread)
 		throw(MAL, "sql.replicate", "WLR thread already running, stop it before continueing");
@@ -560,10 +560,8 @@ WLRreplicate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		wlr_limit = INT64_MAX;
 	else
 	if( getArgType(mb, pci, 1) == TYPE_timestamp){
-		if (timestamp_precision_tostr(&timelimit, &size, *getArgReference_TYPE(stk, pci, 1, timestamp), 3, true) < 0){
-			GDKfree(timelimit);
+		if (timestamp_precision_tostr(&timelimit, &size, *getArgReference_TYPE(stk, pci, 1, timestamp), 3, true) < 0)
 			throw(SQL, "wlr.replicate", GDK_EXCEPTION);
-		}
 		fprintf(stderr,"#time limit %s\n",timelimit);
 	} else
 	if( getArgType(mb, pci, 1) == TYPE_bte)
@@ -577,7 +575,9 @@ WLRreplicate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	else
 	if( getArgType(mb, pci, 1) == TYPE_lng)
 		limit = getVarConstant(mb,getArg(pci,1)).val.lval;
-	
+
+	if (!timelimit)
+		timelimit = wlr_timelimit;
 	if ( limit < 0 && timelimit[0] == 0)
 		throw(MAL, "sql.replicate", "Stop tag limit should be positive or timestamp should be set");
 	if( wlc_tag == 0) {
