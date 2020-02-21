@@ -425,7 +425,7 @@ callString(Client cntxt, str s, int listing)
 		GDKfree(qry);
 		throw(MAL,"callstring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	c= MCinitClient((oid)0, bs,0);
+	c= MCinitClient((oid)0, bs, cntxt->fdout);
 	if( c == NULL){
 		GDKfree(b);
 		GDKfree(qry);
@@ -448,10 +448,13 @@ callString(Client cntxt, str s, int listing)
 		c->usermodule = 0;
 		GDKfree(b);
 		GDKfree(qry);
+		c->fdout = GDKstdout;
 		MCcloseClient(c);
 		return msg;
 	}
-	if((msg = runScenario(c,1)) != MAL_SUCCEED) {
+	msg = runScenario(c,1);
+	c->fdout = GDKstdout;
+	if (msg != MAL_SUCCEED) {
 		c->usermodule = 0;
 		GDKfree(b);
 		GDKfree(qry);

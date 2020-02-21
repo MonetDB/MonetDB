@@ -5,8 +5,6 @@ try:
 except ImportError:
     import process
 
-s = process.server(args=[], stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE)
-
 c = process.client('sql', stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE)
 out, err = c.communicate('''\
 start transaction;\
@@ -680,9 +678,5 @@ drop table if exists catalog_sales cascade;\
 drop table if exists store_sales cascade;\
 commit;
 ''')
-sys.stdout.write(out)
-sys.stderr.write(err)
-
-out, err = s.communicate()
 sys.stdout.write(out)
 sys.stderr.write(err)
