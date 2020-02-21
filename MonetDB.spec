@@ -955,7 +955,7 @@ export CFLAGS
 # do not use --enable-optimize or --disable-optimize: we don't want
 # any changes to optimization flags
 %{configure} \
- 	--with-rundir=%{_rundir} \
+ 	--with-rundir=%{_rundir}/monetdb \
 	--enable-assert=no \
 	--enable-debug=yes \
 	--enable-developer=no \
