@@ -3274,10 +3274,9 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEO
             TestErr.write(Prompt('Done.'))
             TestErr.close()
 
-    except KeyboardInterrupt:
+    finally:
         if PSRVR is None and pSrvr.started:
-            pSrvr.kill(SrvrErr, Srvr)
-        raise
+            pSrvr.terminate()
 
     if returncode is not None or pSrvr.code is not None:
         # something failed
