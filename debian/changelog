@@ -1,3 +1,10 @@
+monetdb (11.35.17) unstable; urgency=low
+
+  * Rebuilt.
+  * BZ#6827: CUME_DIST window function returns incorrect results
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 21 Feb 2020 14:22:38 +0100
+
 monetdb (11.35.15) unstable; urgency=low
 
   * Rebuilt.
