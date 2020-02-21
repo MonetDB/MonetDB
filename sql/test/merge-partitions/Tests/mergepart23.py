@@ -1,4 +1,4 @@
-import sys
+import os, socket, sys, tempfile, shutil
 
 try:
     from MonetDBtesting import process
@@ -92,18 +92,30 @@ DROP TABLE subtable2;\
 DROP TABLE subtable3;
 '''
 
-s = process.server(args = [], stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
+def freeport():
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.bind(('', 0))
+    port = sock.getsockname()[1]
+    sock.close()
+    return port
+
+farm_dir = tempfile.mkdtemp()
+os.mkdir(os.path.join(farm_dir, 'db1'))
+
+s = process.server(mapiport=freeport(), dbname='db1', dbfarm=os.path.join(farm_dir, 'db1'), stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE)
 client(script1)
 server_stop(s)
-s = process.server(args = [], stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
+s = process.server(mapiport=freeport(), dbname='db1', dbfarm=os.path.join(farm_dir, 'db1'), stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE)
 client(script2)
 server_stop(s)
-s = process.server(args = [], stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
+s = process.server(mapiport=freeport(), dbname='db1', dbfarm=os.path.join(farm_dir, 'db1'), stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE)
 client(script3)
 server_stop(s)
-s = process.server(args = [], stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
+s = process.server(mapiport=freeport(), dbname='db1', dbfarm=os.path.join(farm_dir, 'db1'), stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE)
 client(script4)
 server_stop(s)
-s = process.server(args = [], stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
+s = process.server(mapiport=freeport(), dbname='db1', dbfarm=os.path.join(farm_dir, 'db1'), stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE)
 client(script5)
 server_stop(s)
+
+shutil.rmtree(farm_dir)

@@ -214,11 +214,11 @@ stdout of test 'mergepart23` in directory 'sql/test/merge-partitions` itself:
 % a,	b # name
 % int,	varchar # type
 % 2,	5 # length
-[ 10,	"two"	]
-[ 40,	"three"	]
 [ NULL,	"one"	]
 [ NULL,	"four"	]
 [ NULL,	"five"	]
+[ 10,	"two"	]
+[ 40,	"three"	]
 #INSERT INTO upsme VALUES (10, 'two'), (40, 'three'), (NULL, 'four');INSERT INTO subtable3 VALUES (NULL, 'five');SELECT a,b FROM upsme;SELECT a,b FROM subtable1;SELECT a,b FROM subtable2;SELECT a,b FROM subtable3;ALTER TABLE upsme DROP TABLE subtable1;ALTER TABLE upsme DROP TABLE subtable2;ALTER TABLE upsme DROP TABLE subtable3;SELECT "value" FROM value_partitions;DROP TABLE upsme;DROP TABLE subtable1;DROP TABLE subtable2;DROP TABLE subtable3;
 % sys.subtable1,	sys.subtable1 # table_name
 % a,	b # name
