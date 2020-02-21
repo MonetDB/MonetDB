@@ -38,6 +38,7 @@
 #include "discoveryrunner.h" /* broadcast, remotedb */
 #include "forkmserver.h"
 #include "controlrunner.h"
+#include "snapshot.h"
 #include "multiplex-funnel.h"
 
 #if !defined(HAVE_ACCEPT4) || !defined(SOCK_CLOEXEC)
@@ -690,6 +691,22 @@ static void ctl_handle_client(
 							 origin, q);
 				}
 				msab_freeStatus(&stats);
+			} else if (strncmp(p, "snapshot adhoc ", strlen("snapshot adhoc ")) == 0) {
+				char *dest = p + strlen("snapshot adhoc ");
+				Mfprintf(_mero_ctlout, "Start snapshot of database '%s' to file '%s'\n", q, dest);
+				char *e = snapshot_adhoc(q, dest);
+				if (e != NULL) {
+					Mfprintf(_mero_ctlerr, "%s: snapshot database '%s' to %s failed: %s",
+						origin, q, dest, getErrMsg(e));
+					len = snprintf(buf2, sizeof(buf2), "%s\n", getErrMsg(e));
+					send_client("!");
+					freeErr(e);
+				} else {
+					len = snprintf(buf2, sizeof(buf2), "OK\n");
+					send_client("=");
+					Mfprintf(_mero_ctlout, "%s: completed snapshot of database '%s' to '%s'\n",
+						origin, q, dest);
+				}
 			} else if (strncmp(p, "name=", strlen("name=")) == 0) {
 				char *e;
 
