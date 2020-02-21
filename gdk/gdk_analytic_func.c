@@ -133,37 +133,28 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 	return GDK_SUCCEED;
 }
 
-#define NTILE_CALC					\
-	do {						\
-		if (bval >= ncnt) {			\
-			j = 1;				\
-			for (; rb < rp; j++, rb++)	\
-				*rb = j;		\
-		} else if (ncnt % bval == 0) {		\
-			buckets = ncnt / bval;		\
-			for (; rb < rp; i++, rb++) {	\
-				if (i == buckets) {	\
-					j++;		\
-					i = 0;		\
-				}			\
-				*rb = j;		\
-			}				\
-		} else {				\
-			buckets = ncnt / bval;		\
-			for (; rb < rp; i++, rb++) {	\
-				*rb = j;		\
-				if (i == buckets) {	\
-					j++;		\
-					i = 0;		\
-				}			\
-			}				\
-		}					\
+#define NTILE_CALC(TPE)		\
+	do {			\
+		if (ntile_value >= ncnt) {	\
+			for (i = 1; rb < rp; i++, rb++)	\
+				*rb = i;		\
+		} else { \
+			BUN bsize = ncnt / ntile_value; \
+			for (i = 0; rb < rp; i++, rb++) {	\
+				BUN top = ncnt - ntile_value * bsize; \
+				BUN small = top * (bsize + 1); \
+				if ((BUN)i < small) \
+					*rb = (TPE)((1 + (BUN)i / (bsize + 1))); \
+				else \
+					*rb = (TPE)((1 + top + ((BUN)i - small) / bsize)); \
+			} \
+		} \
 	} while (0)
 
 #define ANALYTICAL_NTILE_IMP(TPE)				\
 	do {							\
-		TPE j = 1, *rp, *rb, val = *(TPE*) ntile;	\
-		BUN bval = (BUN) val;				\
+		TPE i, *rp, *rb, val = *(TPE*) ntile;	\
+		BUN ntile_value = (BUN) val;				\
 		rb = rp = (TPE*)Tloc(r, 0);			\
 		if (is_##TPE##_nil(val)) {			\
 			TPE *end = rp + cnt;			\
@@ -175,29 +166,25 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 			end = np + cnt;				\
 			for (; np < end; np++) {		\
 				if (*np) {			\
-					i = 0;			\
-					j = 1;			\
 					ncnt = np - pnp;	\
 					rp += ncnt;		\
-					NTILE_CALC;		\
+					NTILE_CALC(TPE);		\
 					pnp = np;		\
 				}				\
 			}					\
-			i = 0;					\
-			j = 1;					\
 			ncnt = np - pnp;			\
 			rp += ncnt;				\
-			NTILE_CALC;				\
+			NTILE_CALC(TPE);				\
 		} else {					\
 			rp += cnt;				\
-			NTILE_CALC;				\
+			NTILE_CALC(TPE);				\
 		}						\
 	} while (0)
 
 gdk_return
 GDKanalyticalntile(BAT *r, BAT *b, BAT *p, int tpe, const void *restrict ntile)
 {
-	BUN cnt = BATcount(b), ncnt = cnt, buckets, i = 0;
+	BUN cnt = BATcount(b), ncnt = cnt;
 	bit *np, *pnp, *end;
 	bool has_nils = false;
 
