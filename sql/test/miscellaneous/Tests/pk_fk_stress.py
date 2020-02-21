@@ -2,13 +2,6 @@ from __future__ import print_function
 
 import pymonetdb, sys, threading, os
 
-try:
-    from MonetDBtesting import process
-except ImportError:
-    import process
-
-
-s = process.server(stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
 client1 = pymonetdb.connect(port = int(os.getenv('MAPIPORT', '50000')), database = os.getenv('TSTDB', 'demo'), hostname = os.getenv('MAPIHOST', 'localhost'), autocommit=True)
 client2 = pymonetdb.connect(port = int(os.getenv('MAPIPORT', '50000')), database = os.getenv('TSTDB', 'demo'), hostname = os.getenv('MAPIHOST', 'localhost'), autocommit=True)
 cursor1 = client1.cursor()
@@ -115,7 +108,3 @@ cursor1.close()
 cursor2.close()
 client1.close()
 client2.close()
-
-out, err = s.communicate()
-sys.stdout.write(out)
-sys.stderr.write(err)
