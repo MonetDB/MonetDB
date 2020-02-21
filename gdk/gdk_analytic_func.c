@@ -142,13 +142,17 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 				*rb = TPE##_nil;	\
 			} else { \
 				TPE nval = NEXT_CAST; \
-				BUN bsize = ncnt / nval; \
-				BUN top = ncnt - nval * bsize; \
-				BUN small = top * (bsize + 1); \
-				if ((BUN)i < small) \
-					*rb = (TPE)((1 + (BUN)i / (bsize + 1))); \
-				else \
-					*rb = (TPE)((1 + top + ((BUN)i - small) / bsize)); \
+				if ((BUN) nval >= ncnt) { \
+					*rb = i + 1;  \
+				} else { \
+					BUN bsize = ncnt / nval; \
+					BUN top = ncnt - nval * bsize; \
+					BUN small = top * (bsize + 1); \
+					if ((BUN)i < small) \
+						*rb = (TPE)((1 + (BUN)i / (bsize + 1))); \
+					else \
+						*rb = (TPE)((1 + top + ((BUN)i - small) / bsize)); \
+				} \
 			} \
 		} \
 	} while (0)
