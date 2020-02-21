@@ -2001,7 +2001,8 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests, pSrvr) :
                 CALL = cll
                 SERVER = srv
                 if not SERVER and pSrvr is not None:
-                    prred('conflict!')
+                    prred('No serverless tests allowed with SingleServer')
+                    STDOUT.write('\n')
                 break
         else:
             if os.name == "nt":
