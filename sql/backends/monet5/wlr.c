@@ -52,7 +52,7 @@ static char wlr_master[IDLENGTH];
 static int	wlr_batches; 				// the next file to be processed
 static lng 	wlr_tag = -1;				// the last transaction id being processed
 static char wlr_read[26];				// last record read
-static char wlr_timelimit[26];			// stop re-processing transactions when time limit is reached
+static char wlr_timelimit[128];			// stop re-processing transactions when time limit is reached
 static int 	wlr_beat;					// period between successive synchronisations with master
 static char wlr_error[BUFSIZ];	// error that stopped the replication process
 
@@ -576,9 +576,15 @@ WLRreplicate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( getArgType(mb, pci, 1) == TYPE_lng)
 		limit = getVarConstant(mb,getArg(pci,1)).val.lval;
 
-	if (!timelimit)
-		timelimit = wlr_timelimit;
-	if ( limit < 0 && timelimit[0] == 0)
+	if (timelimit) {
+		if (size > sizeof(wlr_timelimit)) {
+			GDKfree(timelimit);
+			throw(MAL, "sql.replicate", "Limit timestamp size is too large");
+		}
+		strcpy(wlr_timelimit, timelimit);
+		GDKfree(timelimit);
+	}
+	if ( limit < 0 && wlr_timelimit[0] == 0)
 		throw(MAL, "sql.replicate", "Stop tag limit should be positive or timestamp should be set");
 	if( wlc_tag == 0) {
 		if ((msg = WLRgetMaster()))
