@@ -1,11 +1,6 @@
 from __future__ import print_function
 
-import os
-import socket
-import sys
-import tempfile
-import shutil
-import pymonetdb
+import os, socket, sys, tempfile, shutil, pymonetdb
 
 try:
     from MonetDBtesting import process

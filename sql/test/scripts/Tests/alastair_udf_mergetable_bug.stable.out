@@ -1,4 +1,4 @@
-stdout of test 'alastair_udf_mergetable_bug` in directory 'sql/test` itself:
+stdout of test 'alastair_udf_mergetable_bug` in directory 'sql/test/scripts` itself:
 
 
 # 14:10:49 >  
@@ -13,14 +13,14 @@ stdout of test 'alastair_udf_mergetable_bug` in directory 'sql/test` itself:
 [ 4	]
 #set optimizer='default_pipe';
 #select optimizer;
-% . # table_name
-% single_value # name
+% .L2 # table_name
+% L2 # name
 % varchar # type
 % 12 # length
 [ "default_pipe"	]
 #select tab1.group_by_col,SUM(fuse(cast (tab1.f as INT),cast (tab2.f as INT))) from tab2 inner join tab1 on tab1.index_col = tab2.index_col group by tab1.group_by_col;
-% sys.tab1,	sys.%3 # table_name
-% group_by_col,	%3 # name
+% sys.tab1,	sys.L5 # table_name
+% group_by_col,	L5 # name
 % int,	bigint # type
 % 1,	11 # length
 [ 1,	12884902221	]
@@ -42,31 +42,6 @@ stdout of test 'alastair_udf_mergetable_bug` in directory 'sql/test` itself:
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 # SQL catalog created, loading sql scripts once
-# loading sql script: 09_like.sql
-# loading sql script: 10_math.sql
-# loading sql script: 11_times.sql
-# loading sql script: 12_url.sql
-# loading sql script: 13_date.sql
-# loading sql script: 14_inet.sql
-# loading sql script: 15_querylog.sql
-# loading sql script: 16_tracelog.sql
-# loading sql script: 17_compress.sql
-# loading sql script: 18_dictionary.sql
-# loading sql script: 19_cluster.sql
-# loading sql script: 20_vacuum.sql
-# loading sql script: 21_dependency_functions.sql
-# loading sql script: 22_clients.sql
-# loading sql script: 23_skyserver.sql
-# loading sql script: 24_zorder.sql
-# loading sql script: 25_debug.sql
-# loading sql script: 26_sysmon.sql
-# loading sql script: 39_analytics.sql
-# loading sql script: 40_geom.sql
-# loading sql script: 46_gsl.sql
-# loading sql script: 75_storagemodel.sql
-# loading sql script: 80_statistics.sql
-# loading sql script: 80_udf.sql
-# loading sql script: 99_system.sql
 
 # 14:10:50 >  
 # 14:10:50 >  "Done."

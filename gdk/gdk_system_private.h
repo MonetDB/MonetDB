@@ -18,3 +18,5 @@ __hidden void join_detached_threads(void)
 	__attribute__((__visibility__("hidden")));
 __hidden int MT_kill_thread(MT_Id t)
 	__attribute__((__visibility__("hidden")));
+__hidden bool MT_thread_override_limits(void)
+	__attribute__((__visibility__("hidden")));

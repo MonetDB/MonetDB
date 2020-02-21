@@ -1,12 +1,4 @@
-import os
-import sys
-import threading
-import pymonetdb
-
-try:
-    from MonetDBtesting import process
-except ImportError:
-    import process
+import os, sys, threading, pymonetdb
 
 """
 Attempt to modify a merge table in a conflicting transaction. After the rollback, the table's contents must be cleaned
@@ -31,7 +23,6 @@ class MergeTableWriter(threading.Thread):
             self._wcursor.execute('ROLLBACK;')
             i += 1
 
-server = process.server(stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE)
 conn = pymonetdb.connect(port = int(os.getenv('MAPIPORT', '50000')), database = os.getenv('TSTDB', 'demo'), hostname = os.getenv('MAPIHOST', 'localhost'), autocommit=True)
 cursor = conn.cursor()
 barrier1 = threading.Barrier(2)
@@ -68,7 +59,3 @@ DROP TABLE "mt";
 DROP TABLE "part";
 COMMIT;
 """)
-
-sout, serr = server.communicate()
-sys.stdout.write(sout)
-sys.stderr.write(serr)

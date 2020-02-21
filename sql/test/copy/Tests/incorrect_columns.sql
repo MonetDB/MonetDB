@@ -1,4 +1,5 @@
 -- test the situation where the number of column values are incorrect
+start transaction;
 create table t_columns(i int, t string);
 
 copy 7 records into t_columns from stdin delimiters ',',E'\n' best effort;
@@ -15,3 +16,4 @@ select * from t_columns;
 select * from sys.rejects();
 
 drop table t_columns;
+rollback;
