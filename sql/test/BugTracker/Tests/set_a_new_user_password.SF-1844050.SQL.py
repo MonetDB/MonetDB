@@ -13,18 +13,19 @@ def freeport():
 
 farm_dir = tempfile.mkdtemp()
 os.mkdir(os.path.join(farm_dir, 'db1'))
+myport = freeport()
 
 def server_start():
     sys.stderr.write('#mserver\n')
     sys.stderr.flush()
-    srv = process.server(mapiport=freeport(), dbname='db1', dbfarm=os.path.join(farm_dir, 'db1'), stdin = process.PIPE,
+    srv = process.server(mapiport=myport, dbname='db1', dbfarm=os.path.join(farm_dir, 'db1'), stdin = process.PIPE,
                          stdout = process.PIPE, stderr = process.PIPE)
     return srv
 
 def client(lang, file, user = 'monetdb', passwd = 'monetdb'):
     sys.stderr.write('#client\n')
     sys.stderr.flush()
-    clt = process.client(lang, user = user, passwd = passwd,
+    clt = process.client(lang, port = myport, dbname='db1', user = user, passwd = passwd,
                          stdin = open(file),
                          stdout = process.PIPE, stderr = process.PIPE)
     return clt.communicate()
