@@ -2000,8 +2000,6 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests, pSrvr) :
                 EXT = ext
                 CALL = cll
                 SERVER = srv
-                if not SERVER and pSrvr is not None:
-                    prred('conflict!')
                 break
         else:
             if os.name == "nt":
