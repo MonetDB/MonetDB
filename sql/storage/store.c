@@ -2327,13 +2327,16 @@ void
 store_lock(void)
 {
 	MT_lock_set(&bs_lock);
-	TRC_DEBUG(SQL_STORE, "Store locked\n");
+	/* tell GDK allocation functions to ignore limits */
+	MT_thread_setworking("store locked");
 }
 
 void
 store_unlock(void)
 {
 	TRC_DEBUG(SQL_STORE, "Store unlocked\n");
+	/* tell GDK allocation functions to honor limits again */
+	MT_thread_setworking("store unlocked");
 	MT_lock_unset(&bs_lock);
 }
 

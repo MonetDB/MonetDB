@@ -135,27 +135,23 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 
 #define NTILE_CALC(TPE, NEXT_VALUE, NEXT_CAST)	\
 	do {					\
-		TPE buckets, i, j; \
-		for (; rb < rp; rb++) { \
+		for (TPE i = 0; rb < rp; i++, rb++) {	\
 			TPE val = NEXT_VALUE; \
 			if (is_##TPE##_nil(val)) {	\
 				has_nils = true;	\
 				*rb = TPE##_nil;	\
 			} else { \
-				BUN bval = (BUN) val; \
-				if (bval >= ncnt) {	\
-					*rb = (TPE) ((rb - prb1) + 1);	\
+				TPE nval = NEXT_CAST; \
+				if ((BUN) nval >= ncnt) { \
+					*rb = i + 1;  \
 				} else { \
-					buckets = (TPE) (ncnt / bval);	\
-					i = (ncnt % bval == 0) ? 1 : 0; \
-					j = 1; \
-					for (prb2 = prb1; prb2 < rb; i++, prb2++) {	\
-						if (i == buckets) {	\
-							j++;	\
-							i = 0;	\
-						}	\
-					} \
-					*rb = j;	\
+					BUN bsize = ncnt / nval; \
+					BUN top = ncnt - nval * bsize; \
+					BUN small = top * (bsize + 1); \
+					if ((BUN)i < small) \
+						*rb = (TPE)((1 + (BUN)i / (bsize + 1))); \
+					else \
+						*rb = (TPE)((1 + top + ((BUN)i - small) / bsize)); \
 				} \
 			} \
 		} \
@@ -163,8 +159,8 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 
 #define ANALYTICAL_NTILE_IMP(TPE, NEXT_VALUE, NEXT_CAST)	\
 	do {							\
-		TPE *rp, *rb, *prb1, *prb2;	\
-		prb1 = rb = rp = (TPE*)Tloc(r, 0);		\
+		TPE *rp, *rb;	\
+		rb = rp = (TPE*)Tloc(r, 0);		\
 		if (p) {					\
 			pnp = np = (bit*)Tloc(p, 0);	\
 			end = np + cnt;				\
@@ -174,7 +170,6 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 					rp += ncnt;		\
 					NTILE_CALC(TPE, NEXT_VALUE, NEXT_CAST);\
 					pnp = np;	\
-					prb1 = rp;	\
 				}				\
 			}					\
 			ncnt = np - pnp;			\
@@ -182,7 +177,7 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 			NTILE_CALC(TPE, NEXT_VALUE, NEXT_CAST);	\
 		} else {					\
 			rp += cnt;				\
-			NTILE_CALC(TPE, NEXT_VALUE, NEXT_CAST);\
+			NTILE_CALC(TPE, NEXT_VALUE, NEXT_CAST);	\
 		}						\
 	} while (0)
 

@@ -539,7 +539,7 @@ WLRmaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 str
 WLRreplicate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{	str timelimit = wlr_timelimit, slimit= 0;
+{	str timelimit = wlr_timelimit;
 	size_t size = 0;
 	lng limit = INT64_MAX;
 	str msg;
@@ -560,10 +560,11 @@ WLRreplicate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		wlr_limit = INT64_MAX;
 	else
 	if( getArgType(mb, pci, 1) == TYPE_timestamp){
-		timestamp_tostr(&slimit, &size, (timestamp*) getArgReference(stk, pci, 1), TRUE);
-		strncpy(wlr_timelimit, slimit, sizeof(wlr_timelimit)-1);
-		wlr_timelimit[sizeof(wlr_timelimit)-1] = 0;
-		GDKfree(slimit);
+		if (timestamp_precision_tostr(&timelimit, &size, *getArgReference_TYPE(stk, pci, 1, timestamp), 3, true) < 0){
+			GDKfree(timelimit);
+			throw(SQL, "wlr.replicate", GDK_EXCEPTION);
+		}
+		fprintf(stderr,"#time limit %s\n",timelimit);
 	} else
 	if( getArgType(mb, pci, 1) == TYPE_bte)
 		limit = getVarConstant(mb,getArg(pci,1)).val.btval;

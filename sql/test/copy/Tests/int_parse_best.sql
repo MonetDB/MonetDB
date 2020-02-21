@@ -1,3 +1,4 @@
+start transaction;
 create table t_int(i int);
 
 -- If a numeric is enclosed as string we have to be careful
@@ -46,3 +47,4 @@ call sys.clearrejects();
 delete from t_int;
 
 drop table t_int;
+rollback;

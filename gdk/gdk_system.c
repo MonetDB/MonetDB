@@ -282,6 +282,14 @@ MT_thread_setworking(const char *work)
 		w->working = work;
 }
 
+bool
+MT_thread_override_limits(void)
+{
+	struct winthread *w = TlsGetValue(threadslot);
+
+	return w && w->working && strcmp(w->working, "store locked") == 0;
+}
+
 void *
 MT_thread_getdata(void)
 {
@@ -599,6 +607,14 @@ MT_thread_setworking(const char *work)
 
 	if (p)
 		p->working = work;
+}
+
+bool
+MT_thread_override_limits(void)
+{
+	struct posthread *p = pthread_getspecific(threadkey);
+
+	return p && p->working && strcmp(p->working, "store locked") == 0;
 }
 
 #ifdef HAVE_PTHREAD_SIGMASK
