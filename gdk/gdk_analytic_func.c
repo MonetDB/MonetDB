@@ -133,7 +133,7 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 	return GDK_SUCCEED;
 }
 
-#define NTILE_CALC(TPE, NEXT_VALUE, NEXT_CAST)	\
+#define NTILE_CALC(TPE, NEXT_VALUE, CAST1, CAST2, CAST3)	\
 	do {					\
 		for (TPE i = 0; rb < rp; i++, rb++) {	\
 			TPE val = NEXT_VALUE; \
@@ -141,23 +141,23 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 				has_nils = true;	\
 				*rb = TPE##_nil;	\
 			} else { \
-				TPE nval = NEXT_CAST; \
-				if ((BUN) nval >= ncnt) { \
+				TPE nval = CAST1; \
+				if ((CAST2) nval >= (CAST3) ncnt) { \
 					*rb = i + 1;  \
 				} else { \
 					BUN bsize = ncnt / nval; \
 					BUN top = ncnt - nval * bsize; \
 					BUN small = top * (bsize + 1); \
-					if ((BUN)i < small) \
-						*rb = (TPE)((1 + (BUN)i / (bsize + 1))); \
+					if ((CAST2) i < (CAST3) small) \
+						*rb = (TPE)(1 + i / (bsize + 1)); \
 					else \
-						*rb = (TPE)((1 + top + ((BUN)i - small) / bsize)); \
+						*rb = (TPE)(1 + top + (i - small) / bsize); \
 				} \
 			} \
 		} \
 	} while (0)
 
-#define ANALYTICAL_NTILE_IMP(TPE, NEXT_VALUE, NEXT_CAST)	\
+#define ANALYTICAL_NTILE_IMP(TPE, NEXT_VALUE, CAST1, CAST2, CAST3)	\
 	do {							\
 		TPE *rp, *rb;	\
 		rb = rp = (TPE*)Tloc(r, 0);		\
@@ -168,30 +168,30 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 				if (*np) {			\
 					ncnt = np - pnp;	\
 					rp += ncnt;		\
-					NTILE_CALC(TPE, NEXT_VALUE, NEXT_CAST);\
+					NTILE_CALC(TPE, NEXT_VALUE, CAST1, CAST2, CAST3);\
 					pnp = np;	\
 				}				\
 			}					\
 			ncnt = np - pnp;			\
 			rp += ncnt;				\
-			NTILE_CALC(TPE, NEXT_VALUE, NEXT_CAST);	\
+			NTILE_CALC(TPE, NEXT_VALUE, CAST1, CAST2, CAST3);	\
 		} else {					\
 			rp += cnt;				\
-			NTILE_CALC(TPE, NEXT_VALUE, NEXT_CAST);	\
+			NTILE_CALC(TPE, NEXT_VALUE, CAST1, CAST2, CAST3);	\
 		}						\
 	} while (0)
 
-#define ANALYTICAL_NTILE_SINGLE_IMP(TPE, NEXT_CAST) \
+#define ANALYTICAL_NTILE_SINGLE_IMP(TPE, CAST1, CAST2, CAST3) \
 	do {	\
 		TPE ntl = *(TPE*) ntile; \
-		ANALYTICAL_NTILE_IMP(TPE, ntl, NEXT_CAST); \
+		ANALYTICAL_NTILE_IMP(TPE, ntl, CAST1, CAST2, CAST3); \
 	} while (0)
 
-#define ANALYTICAL_NTILE_MULTI_IMP(TPE, NEXT_CAST) \
+#define ANALYTICAL_NTILE_MULTI_IMP(TPE, CAST1, CAST2, CAST3) \
 	do {	\
 		BUN k = 0; \
 		TPE *restrict nn = (TPE*)Tloc(n, 0);	\
-		ANALYTICAL_NTILE_IMP(TPE, nn[k++], NEXT_CAST); \
+		ANALYTICAL_NTILE_IMP(TPE, nn[k++], CAST1, CAST2, CAST3); \
 	} while (0)
 
 gdk_return
@@ -206,21 +206,28 @@ GDKanalyticalntile(BAT *r, BAT *b, BAT *p, BAT *n, int tpe, const void *restrict
 	if (ntile) {
 		switch (tpe) {
 		case TYPE_bte:
-			ANALYTICAL_NTILE_SINGLE_IMP(bte, val);
+			ANALYTICAL_NTILE_SINGLE_IMP(bte, val, BUN, BUN);
 			break;
 		case TYPE_sht:
-			ANALYTICAL_NTILE_SINGLE_IMP(sht, val);
+			ANALYTICAL_NTILE_SINGLE_IMP(sht, val, BUN, BUN);
 			break;
 		case TYPE_int:
-			ANALYTICAL_NTILE_SINGLE_IMP(int, val);
+			ANALYTICAL_NTILE_SINGLE_IMP(int, val, BUN, BUN);
 			break;
 		case TYPE_lng:
-			ANALYTICAL_NTILE_SINGLE_IMP(lng, val);
+#if SIZEOF_OID == SIZEOF_INT
+			ANALYTICAL_NTILE_SINGLE_IMP(lng, val, lng, lng);
+#else
+			ANALYTICAL_NTILE_SINGLE_IMP(lng, val, BUN, BUN);
+#endif
 			break;
 #ifdef HAVE_HGE
 		case TYPE_hge:
-			ANALYTICAL_NTILE_SINGLE_IMP(hge, ((val > (hge) GDK_lng_max) ? GDK_lng_max : (lng) val));
-		break;
+#if SIZEOF_OID == SIZEOF_INT
+			ANALYTICAL_NTILE_SINGLE_IMP(hge, (val > (hge) GDK_lng_max) ? GDK_lng_max : (lng) val, lng, lng);
+#else
+			ANALYTICAL_NTILE_SINGLE_IMP(hge, (val > (hge) GDK_lng_max) ? GDK_lng_max : (lng) val, BUN, BUN);
+#endif
 #endif
 		default:
 			goto nosupport;
@@ -228,20 +235,28 @@ GDKanalyticalntile(BAT *r, BAT *b, BAT *p, BAT *n, int tpe, const void *restrict
 	} else {
 		switch (tpe) {
 		case TYPE_bte:
-			ANALYTICAL_NTILE_MULTI_IMP(bte, val);
+			ANALYTICAL_NTILE_MULTI_IMP(bte, val, BUN, BUN);
 			break;
 		case TYPE_sht:
-			ANALYTICAL_NTILE_MULTI_IMP(sht, val);
+			ANALYTICAL_NTILE_MULTI_IMP(sht, val, BUN, BUN);
 			break;
 		case TYPE_int:
-			ANALYTICAL_NTILE_MULTI_IMP(int, val);
+			ANALYTICAL_NTILE_MULTI_IMP(int, val, BUN, BUN);
 			break;
 		case TYPE_lng:
-			ANALYTICAL_NTILE_MULTI_IMP(lng, val);
+#if SIZEOF_OID == SIZEOF_INT
+			ANALYTICAL_NTILE_MULTI_IMP(lng, val, lng, lng);
+#else
+			ANALYTICAL_NTILE_MULTI_IMP(lng, val, BUN, BUN);
+#endif
 			break;
 #ifdef HAVE_HGE
 		case TYPE_hge:
-			ANALYTICAL_NTILE_MULTI_IMP(hge, ((val > (hge) GDK_lng_max) ? GDK_lng_max : (lng) val));
+#if SIZEOF_OID == SIZEOF_INT
+			ANALYTICAL_NTILE_MULTI_IMP(hge, (val > (hge) GDK_lng_max) ? GDK_lng_max : (lng) val, lng, lng);
+#else
+			ANALYTICAL_NTILE_MULTI_IMP(hge, (val > (hge) GDK_lng_max) ? GDK_lng_max : (lng) val, BUN, BUN);
+#endif
 		break;
 #endif
 		default:
