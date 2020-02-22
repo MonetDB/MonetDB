@@ -1059,6 +1059,10 @@ fi
 %postun -p /sbin/ldconfig
 
 %changelog
+* Sat Feb 22 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.35.19-20200222
+- Rebuilt.
+- BZ#6829: NTILE window function returns incorrect results
+
 * Fri Feb 21 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.35.17-20200221
 - Rebuilt.
 - BZ#6827: CUME_DIST window function returns incorrect results
