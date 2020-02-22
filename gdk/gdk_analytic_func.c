@@ -200,23 +200,19 @@ GDKanalyticalntile(BAT *r, BAT *b, BAT *p, int tpe, const void *restrict ntile)
 		ANALYTICAL_NTILE_IMP(int, val, BUN, BUN);
 		break;
 	case TYPE_lng:
-		ANALYTICAL_NTILE_IMP(lng, val,
-#if SIZEOF_VAR_T == SIZEOF_INT
-			lng, lng
+#if SIZEOF_OID == SIZEOF_INT
+		ANALYTICAL_NTILE_IMP(lng, val, lng, lng);
 #else
-			BUN, BUN
+		ANALYTICAL_NTILE_IMP(lng, val, BUN, BUN);
 #endif
-			);
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
-		ANALYTICAL_NTILE_IMP(hge, (val > (hge) GDK_lng_max) ? GDK_lng_max : (lng) val,
-#if SIZEOF_VAR_T == SIZEOF_INT
-			lng, lng
+#if SIZEOF_OID == SIZEOF_INT
+		ANALYTICAL_NTILE_IMP(hge, (val > (hge) GDK_lng_max) ? GDK_lng_max : (lng) val, lng, lng);
 #else
-			BUN, BUN
+		ANALYTICAL_NTILE_IMP(hge, (val > (hge) GDK_lng_max) ? GDK_lng_max : (lng) val, BUN, BUN);
 #endif
-			);
 		break;
 #endif
 	default:
