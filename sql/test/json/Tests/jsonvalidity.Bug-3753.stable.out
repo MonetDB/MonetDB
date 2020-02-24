@@ -29,161 +29,177 @@ stdout of test 'jsonvalidity.Bug-3753` in directory 'sql/test/json` itself:
 # 23:37:49 >
 
 #SELECT json.isvalid('[0,1]');
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT json.isvalid('[0,,1]');
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT json.isValid(null); 	-- false
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT json.isValid(''); 	-- false
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT json.isValid('null'); 	-- false
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT json.isValid('"'); 	-- false
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT json.isValid('""'); 	-- false
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT json.isValid('"""'); 	-- false
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT json.isValid(E'"\\""'); 		-- false
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT json.isValid('""""'); 	-- false
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT json.isValid(E'"\\"\\""');	-- false
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT json.isValid('[]'); 	-- true
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT json.isValid('[null]'); 	-- true
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT json.isValid('[""]'); 	-- true
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT json.isValid('["""]'); 	-- false
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT json.isValid(E'["\\""]');	-- true
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT json.isValid('[""""]'); 	-- false
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT json.isValid(E'["\\"\\""]'); 	-- true
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT json.isValid('{}'); 	-- true
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT json.isValid('{"test":null}'); 	-- true
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT json.isValid('{"test":""}'); 	-- true
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT json.isValid('{"test":"""}'); 	-- false
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT json.isValid(E'{"test":"\\""}');	-- true
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT json.isValid('{"test":""""}'); 	-- false
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT json.isValid(E'{"test":"\\"\\""}'); -- true
-% .%1 # table_name
+% . # table_name
 % %1 # name
 % boolean # type
 % 5 # length
 [ true	]
-#SELECT json.isValid(J'"\u003c\""');	-- true
-% .%1 # table_name
+#SELECT json.isValid(R'"\u003c\""');	-- true
+% . # table_name
 % %1 # name
 % boolean # type
 % 5 # length
 [ true	]
+#SELECT json.isValid(R'01');             -- false
+% . # table_name
+% %1 # name
+% boolean # type
+% 5 # length
+[ false	]
+#SELECT json.isValid(R'[01]');           -- false
+% . # table_name
+% %1 # name
+% boolean # type
+% 5 # length
+[ false	]
+
+# 16:25:22 >  
+# 16:25:22 >  "Done."
+# 16:25:22 >  
 
 # 23:37:50 >
 # 23:37:50 >  "Done."
