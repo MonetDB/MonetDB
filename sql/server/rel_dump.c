@@ -762,6 +762,8 @@ read_prop( mvc *sql, sql_exp *exp, char *r, int *pos)
 		r[*pos] = 0;
 
 		s = mvc_bind_schema(sql, sname);
+		if (sname && !s)
+			return sql_error(sql, -1, SQLSTATE(42000) "Schema %s missing\n", sname);
 		if (!find_prop(exp->p, PROP_JOINIDX)) {
 			p = exp->p = prop_create(sql->sa, PROP_JOINIDX, exp->p);
 			p->value = mvc_bind_idx(sql, s, iname);
@@ -769,7 +771,7 @@ read_prop( mvc *sql, sql_exp *exp, char *r, int *pos)
 		r[*pos] = old;
 		skipWS(r,pos);
 	}
-	return exp->p;
+	return exp;
 }
 
 static list*
@@ -789,12 +791,13 @@ read_exps(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos
 			return sql_error(sql, -1, SQLSTATE(42000) "Missing closing %c\n", ebracket);
 		} else if (!e) {
 			(*pos)++;
-			skipWS( r, pos);
-			return exps;
+			skipWS(r, pos);
+			return sql->errstr[0] ? NULL : exps; /* A function call might not have any input expressions, so return empty exps on that case */
 		}
 		append(exps, e);
 		skipWS( r, pos);
-		read_prop( sql, e, r, pos);
+		if (!read_prop(sql, e, r, pos))
+			return NULL;
 		while (r[*pos] == ',') {
 			int op = 0;
 
@@ -810,7 +813,8 @@ read_exps(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos
 				return NULL;
 			append(exps, e);
 			skipWS( r, pos);
-			read_prop( sql, e, r, pos);
+			if (!read_prop(sql, e, r, pos))
+				return NULL;
 		}
 		if (r[*pos] != ebracket)
 			return sql_error(sql, -1, SQLSTATE(42000) "Missing closing %c\n", ebracket);
@@ -824,7 +828,7 @@ static sql_exp*
 exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos, int grp)
 {
 	int f = -1, not = 1, old, d=0, s=0, unique = 0, no_nils = 0, quote = 0;
-	char *tname, *cname = NULL, *e, *b = r + *pos, *st;
+	char *tname = NULL, *cname = NULL, *var_cname = NULL, *e, *b = r + *pos, *st;
 	sql_exp *exp = NULL;
 	list *exps = NULL;
 	sql_subtype *tpe;
@@ -869,7 +873,8 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 			list *lexps,*rexps;
 			char *fname = NULL;
 
-			lexps = read_exps(sql, lrel, rrel, pexps, r, pos, '(', 0);
+			if (!(lexps = read_exps(sql, lrel, rrel, pexps, r, pos, '(', 0)))
+				return NULL;
 			skipWS(r, pos);
 			if (r[*pos] == '!') {
 				anti = 1;
@@ -895,7 +900,8 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 				skipWS(r,pos);
 			}
 
-			rexps = read_exps(sql, lrel, rrel, pexps, r, pos, '(', 0);
+			if (!(rexps = read_exps(sql, lrel, rrel, pexps, r, pos, '(', 0)))
+				return NULL;
 			if (filter) {
 				sql_subfunc *func = sql_find_func(sql->sa, mvc_bind_schema(sql, "sys"), fname, 1+list_length(exps), F_FILT, NULL);
 				if (!func)
@@ -909,8 +915,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 	case '[':
 		tname = b;
 		if (tname && *tname == '[') { /* list of values */
-			exps = read_exps(sql, lrel, rrel, pexps, r, pos, '[', 0);
-			if (!exps)
+			if (!(exps = read_exps(sql, lrel, rrel, pexps, r, pos, '[', 0)))
 				return NULL;
 			exp = exp_values(sql->sa, exps);
 		} else {
@@ -929,14 +934,14 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 					return sql_error(sql, -1, SQLSTATE(42000) "Type: missing ')'\n");
 				(*pos)++;
 			}
-			tpe = sql_bind_subtype(sql->sa, tname, d, s);
+			if (!(tpe = sql_bind_subtype(sql->sa, tname, d, s)))
+				return sql_error(sql, -1, SQLSTATE(42000) "SQL type %s(%d, %d) not found\n", tname, d, s);
 			skipWS(r, pos);
 			*e = old;
 			if (r[*pos] == '[') { /* convert */
 				(*pos)++;
 				skipWS(r, pos);
-				exp = exp_read(sql, lrel, rrel, pexps, r, pos, 0);
-				if (!exp)
+				if (!(exp = exp_read(sql, lrel, rrel, pexps, r, pos, 0)))
 					return NULL;
 				if (r[*pos] != ']')
 					return sql_error(sql, -1, SQLSTATE(42000) "Convert: missing ']'\n");
@@ -956,7 +961,8 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 	case '\"':
 		*e = 0;
 		tname = b;
-		tpe = sql_bind_subtype(sql->sa, tname, 0, 0);
+		if (!(tpe = sql_bind_subtype(sql->sa, tname, 0, 0)))
+			return sql_error(sql, -1, SQLSTATE(42000) "SQL type %s not found\n", tname);
 		st = readString(r,pos);
 		if (st && strcmp(st, "NULL") == 0)
 			exp = exp_atom(sql->sa, atom_general(sql->sa, tpe, NULL));
@@ -988,18 +994,21 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 		sql_subaggr *a = NULL;
 		node *n;
 
-		exps = read_exps(sql, lrel, rrel, pexps, r, pos, '(', 0);
-		if (!exps)
+		if (!(exps = read_exps(sql, lrel, rrel, pexps, r, pos, '(', 0)))
 			return NULL;
 		tname = b;
 		*e = 0;
 		s = mvc_bind_schema(sql, tname);
+		if (tname && !s)
+			return sql_error(sql, -1, SQLSTATE(42000) "Schema %s not found\n", tname);
 		if (grp) {
 			if (exps && exps->h)
 				a = sql_bind_aggr(sql->sa, s, cname, exp_subtype(exps->h->data));
 			else
 				a = sql_bind_aggr(sql->sa, s, cname, NULL);
-			exp = exp_aggr( sql->sa, exps, a, unique, no_nils, CARD_ATOM, 1);
+			if (!a)
+				return sql_error(sql, -1, SQLSTATE(42000) "Aggregate %s%s%s not found\n", tname ? tname : "", tname ? "." : "", cname);
+			exp = exp_aggr(sql->sa, exps, a, unique, no_nils, CARD_ATOM, 1);
 		} else {
 			list *ops = sa_list(sql->sa);
 			for( n = exps->h; n; n = n->next)
@@ -1028,6 +1037,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 	}
 
 	if (!exp && b != e) { /* simple ident */
+		var_cname = b;
 		if (b[0] == 'A' && isdigit((unsigned char) b[1])) {
 			char *e2;
 			int nr = strtol(b+1,&e2,10);
@@ -1051,28 +1061,35 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 		}
 		if (!exp && lrel) {
 			int amb = 0;
-			char *cname;
 
 			old = *e;
 			*e = 0;
-			cname = sa_strdup(sql->sa, b);
+			var_cname = sa_strdup(sql->sa, b);
 			if (pexps) {
-				exp = exps_bind_column(pexps, cname, &amb, 1);
+				exp = exps_bind_column(pexps, var_cname, &amb, 1);
 				if (exp)
-					exp = exp_alias_or_copy(sql, exp_relname(exp), cname, lrel, exp);
+					exp = exp_alias_or_copy(sql, exp_relname(exp), var_cname, lrel, exp);
 			}
 			(void)amb;
 			assert(amb == 0);
 			if (!exp && lrel)
-				exp = rel_bind_column(sql, lrel, cname, 0, 1);
+				exp = rel_bind_column(sql, lrel, var_cname, 0, 1);
 			if (!exp && rrel)
-				exp = rel_bind_column(sql, rrel, cname, 0, 1);
+				exp = rel_bind_column(sql, rrel, var_cname, 0, 1);
 			*e = old;
 			skipWS(r,pos);
 		}
 	}
-	if (!exp)
+
+	if (!exp) {
+		if (cname) {
+			bool has_tname = tname && strcmp(tname, cname) != 0;
+			return sql_error(sql, -1, SQLSTATE(42000) "Identifier %s%s%s doesn't exist\n", has_tname ? tname : "", has_tname ? "." : "", cname);
+		} else if (var_cname) {
+			return sql_error(sql, -1, SQLSTATE(42000) "Identifier %s doesn't exist\n", var_cname);
+		}
 		return NULL;
+	}
 
 	if (r[*pos] == '!') {
 		(*pos)++;
@@ -1137,7 +1154,8 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 			exp->p = prop_create(sql->sa, PROP_FETCH, exp->p);
 		skipWS(r,pos);
 	}
-	read_prop( sql, exp, r, pos);
+	if (!read_prop(sql, exp, r, pos))
+		return NULL;
 	skipWS(r,pos);
 
 	/* as alias */
@@ -1240,12 +1258,16 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 		skipWS(r,pos);
 		if (f == cmp_in || f == cmp_notin) {
 			list *exps = read_exps(sql, lrel, rrel, pexps, r, pos, '(', 0);
+			if (!exps)
+				return NULL;
 			if (f == cmp_in || f == cmp_notin)
 				return exp_in(sql->sa, exp, exps, f);
 		} else {
 			int sym = 0, between = 0;
 			sql_exp *e = exp_read(sql, lrel, rrel, pexps, r, pos, 0);
 
+			if (!e)
+				return NULL;
 			if (strncmp(r+*pos, "BETWEEN",  strlen("BETWEEN")) == 0) {
 				(*pos)+= (int) strlen("BETWEEN");
 				skipWS(r,pos);
@@ -1256,7 +1278,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 				skipWS(r,pos);
 				sym = 1;
 			}
-			if (e && e->type == e_cmp) {
+			if (e->type == e_cmp) {
 				sql_exp *ne = exp_compare2(sql->sa, e->l, exp, e->r, compare2range(swap_compare((comp_type)f), e->flag));
 				if (sym)
 					ne->flag |= CMP_SYMMETRIC;
@@ -1265,7 +1287,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 				if (is_anti(exp))
 					set_anti(ne);
 				return ne;
-			} else if (e) {
+			} else {
 				sql_exp *ne = exp_compare(sql->sa, exp, e, f);
 				if (sym)
 					ne->flag |= CMP_SYMMETRIC;
@@ -1314,7 +1336,8 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 		(*pos)++; /* ( */
 		(void)readInt(r,pos); /* skip nr refs */
 		(*pos)++; /* ) */
-		rel = rel_read(sql, r, pos, refs);
+		if (!(rel = rel_read(sql, r, pos, refs)))
+			return NULL;
 		append(refs, rel);
 		skipWS(r,pos);
 	}
@@ -1332,9 +1355,11 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 		*pos += (int) strlen("insert");
 		skipWS(r, pos);
 		(*pos)++; /* ( */
-		lrel = rel_read(sql, r, pos, refs); /* to be inserted relation */
+		if (!(lrel = rel_read(sql, r, pos, refs))) /* to be inserted relation */
+			return NULL;
 		skipWS(r,pos);
-		rrel = rel_read(sql, r, pos, refs); /* the inserts relation */
+		if (!(rrel = rel_read(sql, r, pos, refs))) /* the inserts relation */
+			return NULL;
 		skipWS(r,pos);
 		(*pos)++; /* ) */
 
@@ -1345,9 +1370,11 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 		*pos += (int) strlen("delete");
 		skipWS(r, pos);
 		(*pos)++; /* ( */
-		lrel = rel_read(sql, r, pos, refs); /* to be deleted relation */
+		if (!(lrel = rel_read(sql, r, pos, refs))) /* to be deleted relation */
+			return NULL;
 		skipWS(r,pos);
-		rrel = rel_read(sql, r, pos, refs); /* the deletes relation */
+		if (!(rrel = rel_read(sql, r, pos, refs))) /* the deletes relation */
+			return NULL;
 		skipWS(r,pos);
 		(*pos)++; /* ) */
 
@@ -1371,7 +1398,8 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 		}
 		skipWS(r, pos);
 		(*pos)++; /* ( */
-		lrel = rel_read(sql, r, pos, refs); /* to be truncated relation */
+		if (!(lrel = rel_read(sql, r, pos, refs))) /* to be truncated relation */
+			return NULL;
 		skipWS(r,pos);
 		(*pos)++; /* ) */
 
@@ -1382,14 +1410,15 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 		*pos += (int) strlen("update");
 		skipWS(r, pos);
 		(*pos)++; /* ( */
-		lrel = rel_read(sql, r, pos, refs); /* to be updated relation */
+		if (!(lrel = rel_read(sql, r, pos, refs))) /* to be updated relation */
+			return NULL;
 		skipWS(r,pos);
-		rrel = rel_read(sql, r, pos, refs); /* the updates relation */
+		if (!(rrel = rel_read(sql, r, pos, refs))) /* the updates relation */
+			return NULL;
 		skipWS(r,pos);
 		(*pos)++; /* ) */
 
-		exps = read_exps(sql, lrel, rrel, NULL, r, pos, '[', 0); /* columns to be updated */
-		if (!exps)
+		if (!(exps = read_exps(sql, lrel, rrel, NULL, r, pos, '[', 0))) /* columns to be updated */
 			return NULL;
 		return rel_update(sql, lrel, rrel, NULL, exps);
 	}
@@ -1438,9 +1467,9 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 				return rel;
 
 			/* scan aliases */
-			exps = read_exps(sql, rel, NULL, NULL, r, pos, '[', 0);
-			if (exps && list_length(exps))
-				rel->exps = exps;
+			if (!(exps = read_exps(sql, rel, NULL, NULL, r, pos, '[', 0)))
+				return NULL;
+			rel->exps = exps;
 			if (strncmp(r+*pos, "COUNT",  strlen("COUNT")) == 0) {
 				(*pos)+= (int) strlen("COUNT");
 				skipWS( r, pos);
@@ -1452,12 +1481,14 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 				return sql_error(sql, -1, SQLSTATE(42000) "Top N: missing '('\n");
 			(*pos)++;
 			skipWS(r, pos);
-			nrel = rel_read(sql, r, pos, refs);
+			if (!(nrel = rel_read(sql, r, pos, refs)))
+				return NULL;
 			if (r[*pos] != ')')
 				return sql_error(sql, -1, SQLSTATE(42000) "Top N: missing ')'\n");
 			(*pos)++;
 			skipWS(r, pos);
-			exps = read_exps(sql, nrel, NULL, NULL, r, pos, '[', 0);
+			if (!(exps = read_exps(sql, nrel, NULL, NULL, r, pos, '[', 0)))
+				return NULL;
 			rel = rel_topn(sql->sa, nrel, exps);
 		}
 		break;
@@ -1469,18 +1500,21 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 			return sql_error(sql, -1, SQLSTATE(42000) "Project: missing '('\n");
 		(*pos)++;
 		skipWS(r, pos);
-		nrel = rel_read(sql, r, pos, refs);
+		if (!(nrel = rel_read(sql, r, pos, refs)))
+			return NULL;
 		skipWS(r, pos);
 		if (r[*pos] != ')')
 			return sql_error(sql, -1, SQLSTATE(42000) "Project: missing ')'\n");
 		(*pos)++;
 		skipWS(r, pos);
 
-		exps = read_exps(sql, nrel, NULL, NULL, r, pos, '[', 0);
+		if (!(exps = read_exps(sql, nrel, NULL, NULL, r, pos, '[', 0)))
+			return NULL;
 		rel = rel_project(sql->sa, nrel, exps);
 		/* order by ? */
 		if (r[*pos] == '[')
-			rel->r = read_exps(sql, nrel, rel, NULL, r, pos, '[', 0);
+			if (!(rel->r = read_exps(sql, nrel, rel, NULL, r, pos, '[', 0)))
+				return NULL;
 		if (distinct)
 			set_distinct(rel);
 		distinct = 0;
@@ -1493,17 +1527,18 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 			return sql_error(sql, -1, SQLSTATE(42000) "Group by: missing '('\n");
 		(*pos)++;
 		skipWS(r, pos);
-		nrel = rel_read(sql, r, pos, refs);
+		if (!(nrel = rel_read(sql, r, pos, refs)))
+			return NULL;
 		skipWS(r, pos);
 		if (r[*pos] != ')')
 			return sql_error(sql, -1, SQLSTATE(42000) "Group by: missing ')'\n");
 		(*pos)++;
 		skipWS(r, pos);
 
-		gexps = read_exps(sql, nrel, NULL, NULL, r, pos, '[', 0);
+		if (!(gexps = read_exps(sql, nrel, NULL, NULL, r, pos, '[', 0)))
+			return NULL;
 		skipWS(r, pos);
-		exps = read_exps(sql, nrel, NULL, gexps, r, pos, '[', 1);
-		if (!exps)
+		if (!(exps = read_exps(sql, nrel, NULL, gexps, r, pos, '[', 1)))
 			return NULL;
 
 		rel = rel_groupby(sql, nrel, gexps);
@@ -1518,12 +1553,14 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 				return sql_error(sql, -1, SQLSTATE(42000) "Sample: missing '('\n");
 			(*pos)++;
 			skipWS(r, pos);
-			nrel = rel_read(sql, r, pos, refs);
+			if (!(nrel = rel_read(sql, r, pos, refs)))
+				return NULL;
 			if (r[*pos] != ')')
 				return sql_error(sql, -1, SQLSTATE(42000) "Sample: missing ')'\n");
 			(*pos)++;
 			skipWS(r, pos);
-			exps = read_exps(sql, nrel, NULL, NULL, r, pos, '[', 0);
+			if (!(exps = read_exps(sql, nrel, NULL, NULL, r, pos, '[', 0)))
+				return NULL;
 			rel = rel_sample(sql->sa, nrel, exps);
 		} else if (r[*pos+2] == 'l') {
 			*pos += (int) strlen("select");
@@ -1532,14 +1569,16 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 				return sql_error(sql, -1, SQLSTATE(42000) "Select: missing '('\n");
 			(*pos)++;
 			skipWS(r, pos);
-			nrel = rel_read(sql, r, pos, refs);
+			if (!(nrel = rel_read(sql, r, pos, refs)))
+				return NULL;
 			skipWS(r, pos);
 			if (r[*pos] != ')')
 				return sql_error(sql, -1, SQLSTATE(42000) "Select: missing ')'\n");
 			(*pos)++;
 			skipWS(r, pos);
 
-			exps = read_exps(sql, nrel, NULL, NULL, r, pos, '[', 0);
+			if (!(exps = read_exps(sql, nrel, NULL, NULL, r, pos, '[', 0)))
+				return NULL;
 			rel = rel_select_copy(sql->sa, nrel, exps);
 			/* semijoin or antijoin */
 		} else if (r[*pos+1] == 'e' || r[*pos+1] == 'n') {
@@ -1554,14 +1593,16 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 				return sql_error(sql, -1, SQLSTATE(42000) "Semijoin: missing '('\n");
 			(*pos)++;
 			skipWS(r, pos);
-			lrel = rel_read(sql, r, pos, refs);
+			if (!(lrel = rel_read(sql, r, pos, refs)))
+				return NULL;
 			skipWS(r, pos);
 
 			if (r[*pos] != ',')
 				return sql_error(sql, -1, SQLSTATE(42000) "Semijoin: missing ','\n");
 			(*pos)++;
 			skipWS(r, pos);
-			rrel = rel_read(sql, r, pos, refs);
+			if (!(rrel = rel_read(sql, r, pos, refs)))
+				return NULL;
 
 			skipWS(r, pos);
 			if (r[*pos] != ')')
@@ -1569,7 +1610,8 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 			(*pos)++;
 			skipWS(r, pos);
 
-			exps = read_exps(sql, lrel, rrel, NULL, r, pos, '[', 0);
+			if (!(exps = read_exps(sql, lrel, rrel, NULL, r, pos, '[', 0)))
+				return NULL;
 			rel = rel_crossproduct(sql->sa, lrel, rrel, j);
 			rel->exps = exps;
 		}
@@ -1607,14 +1649,16 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 			return sql_error(sql, -1, SQLSTATE(42000) "Join: missing '('\n");
 		(*pos)++;
 		skipWS(r, pos);
-		lrel = rel_read(sql, r, pos, refs);
+		if (!(lrel = rel_read(sql, r, pos, refs)))
+			return NULL;
 		skipWS(r, pos);
 
 		if (r[*pos] != ',')
 			return sql_error(sql, -1, SQLSTATE(42000) "Join: missing ','\n");
 		(*pos)++;
 		skipWS(r, pos);
-		rrel = rel_read(sql, r, pos, refs);
+		if (!(rrel = rel_read(sql, r, pos, refs)))
+			return NULL;
 
 		skipWS(r, pos);
 		if (r[*pos] != ')')
@@ -1622,7 +1666,8 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 		(*pos)++;
 		skipWS(r, pos);
 
-		exps = read_exps(sql, lrel, rrel, NULL, r, pos, '[', 0);
+		if (!(exps = read_exps(sql, lrel, rrel, NULL, r, pos, '[', 0)))
+			return NULL;
 		rel = rel_crossproduct(sql->sa, lrel, rrel, j);
 		rel->exps = exps;
 		break;
@@ -1649,14 +1694,16 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 			return sql_error(sql, -1, SQLSTATE(42000) "Setop: missing '('\n");
 		(*pos)++;
 		skipWS(r, pos);
-		lrel = rel_read(sql, r, pos, refs);
+		if (!(lrel = rel_read(sql, r, pos, refs)))
+			return NULL;
 		skipWS(r, pos);
 
 		if (r[*pos] != ',')
 			return sql_error(sql, -1, SQLSTATE(42000) "Setop: missing ','\n");
 		(*pos)++;
 		skipWS(r, pos);
-		rrel = rel_read(sql, r, pos, refs);
+		if (!(rrel = rel_read(sql, r, pos, refs)))
+			return NULL;
 
 		skipWS(r, pos);
 		if (r[*pos] != ')')
@@ -1664,23 +1711,22 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 		(*pos)++;
 		skipWS(r, pos);
 
-		exps = read_exps(sql, NULL, NULL, NULL, r, pos, '[', 0);
-		rel = rel_setop(sql->sa, lrel, rrel, j);
-		if (!exps)
+		if (!(exps = read_exps(sql, NULL, NULL, NULL, r, pos, '[', 0)))
 			return NULL;
+		rel = rel_setop(sql->sa, lrel, rrel, j);
 		rel->exps = exps;
 		if (rel_set_types(sql, rel) < 0)
-			return NULL;
+			return sql_error(sql, -1, SQLSTATE(42000) "Setop: number of expressions don't match\n");
 		set_processed(rel);
 		break;
 	case '[': /* projection of list of values */
-		exps = read_exps(sql, NULL, NULL, NULL, r, pos, '[', 0);
-		if (!exps)
+		if (!(exps = read_exps(sql, NULL, NULL, NULL, r, pos, '[', 0)))
 			return NULL;
 		rel = rel_project(sql->sa, NULL, exps);
 		/* order by ? */
 		if (r[*pos] == '[')
-			rel->r = read_exps(sql, NULL, rel, NULL, r, pos, '[', 0);
+			if (!(rel->r = read_exps(sql, NULL, rel, NULL, r, pos, '[', 0)))
+				return NULL;
 		if (distinct)
 			set_distinct(rel);
 		distinct = 0;

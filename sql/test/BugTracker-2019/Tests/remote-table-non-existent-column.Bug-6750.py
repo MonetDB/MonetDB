@@ -46,11 +46,11 @@ try:
             try:
                 cur2.execute("select col2 from tab1;")  # col2 doesn't exist
             except pymonetdb.OperationalError as e:
-                print(e)
+                sys.stderr.write(str(e))
             try:
                 cur2.execute("select col1 from tab2;")  # col1 is not a floating point column
             except pymonetdb.OperationalError as e:
-                print(e)
+                sys.stderr.write(str(e))
             cur2.execute("drop table tab1;")
             cur2.execute("drop table tab2;")
 
@@ -61,7 +61,10 @@ try:
             cur2.execute("create remote table m1 (col1 clob) on 'mapi:monetdb://localhost:"+str(prt1)+"/node1';")
             cur1.execute("alter table m1 add table m2;")
             cur2.execute("alter table m2 add table m1;")
-            cur2.execute("select * from m2;")
+            try:
+                cur2.execute("select * from m2;")  # Infinite loop while resolving the children of m2
+            except pymonetdb.OperationalError as e:
+                sys.stderr.write(str(e))
 
             cur1.close()
             conn1.close()
