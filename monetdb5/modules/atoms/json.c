@@ -763,6 +763,11 @@ JSONnumberParser(const char *j, const char **next)
 		*next = j;
 		throw(MAL, "json.parser", "Number expected");
 	}
+	if (*j == '0') {
+		*next = j + 1;
+		return MAL_SUCCEED;
+	}
+
 	for (; *j; j++)
 		if (!isdigit((unsigned char) *j))
 			break;
