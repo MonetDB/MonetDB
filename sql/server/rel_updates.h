@@ -15,13 +15,14 @@
 #include "sql_relation.h"
 #include "sql_query.h"
 
+extern sql_table *get_table(sql_rel *t); /* needed for rel_read at rel_dump */
 extern sql_rel *rel_update(mvc *sql, sql_rel *t, sql_rel *uprel, sql_exp **updates, list *exps);
 
 extern sql_rel *rel_insert(mvc *sql, sql_rel *t, sql_rel *inserts);
 extern sql_rel *rel_delete(sql_allocator *sa, sql_rel *t, sql_rel *deletes);
 extern sql_rel *rel_truncate(sql_allocator *sa, sql_rel *t, int drop_action, int check_identity);
 
-extern sql_exp * rel_parse_val(mvc *m, char *query, char emode, sql_rel *from);
+extern sql_exp *rel_parse_val(mvc *m, char *query, char emode, sql_rel *from);
 
 extern sql_rel *rel_updates(sql_query *query, symbol *sym);
 

@@ -1352,6 +1352,8 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 	}
 
 	if (r[*pos] == 'i' && r[*pos+1] == 'n' && r[*pos+2] == 's') {
+		sql_table *t;
+
 		*pos += (int) strlen("insert");
 		skipWS(r, pos);
 		(*pos)++; /* ( */
@@ -1363,10 +1365,15 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 		skipWS(r,pos);
 		(*pos)++; /* ) */
 
+		t = get_table(lrel);
+		if (!insert_allowed(sql, t, t->base.name, "INSERT", "insert"))
+			return NULL;
 		return rel_insert(sql, lrel, rrel);
 	}
 
 	if (r[*pos] == 'd' && r[*pos+1] == 'e' && r[*pos+2] == 'l') {
+		sql_table *t;
+
 		*pos += (int) strlen("delete");
 		skipWS(r, pos);
 		(*pos)++; /* ( */
@@ -1378,11 +1385,17 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 		skipWS(r,pos);
 		(*pos)++; /* ) */
 
+		t = get_table(lrel);
+		if (!update_allowed(sql, t, t->base.name, "DELETE", "delete", 1))
+			return NULL;
+
 		return rel_delete(sql->sa, lrel, rrel);
 	}
 
 	if (r[*pos] == 't' && r[*pos+1] == 'r' && r[*pos+2] == 'u') {
+		sql_table *t;
 		int restart_sequences = 0, drop_action = 0;
+
 		*pos += (int) strlen("truncate ");
 		if (r[*pos] == 'r') {
 			restart_sequences = 1;
@@ -1403,10 +1416,16 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 		skipWS(r,pos);
 		(*pos)++; /* ) */
 
+		t = get_table(lrel);
+		if (!update_allowed(sql, t, t->base.name, "TRUNCATE", "truncate", 2))
+			return NULL;
+
 		return rel_truncate(sql->sa, lrel, drop_action, restart_sequences);
 	}
 
 	if (r[*pos] == 'u' && r[*pos+1] == 'p' && r[*pos+2] == 'd') {
+		sql_table *t;
+
 		*pos += (int) strlen("update");
 		skipWS(r, pos);
 		(*pos)++; /* ( */
@@ -1417,6 +1436,10 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 			return NULL;
 		skipWS(r,pos);
 		(*pos)++; /* ) */
+
+		t = get_table(lrel);
+		if (!update_allowed(sql, t, t->base.name, "UPDATE", "update", 0) )
+			return NULL;
 
 		if (!(exps = read_exps(sql, lrel, rrel, NULL, r, pos, '[', 0))) /* columns to be updated */
 			return NULL;
@@ -1461,6 +1484,12 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 				t = mvc_bind_table(sql, s, tname);
 			if (!s || !t)
 				return sql_error(sql, -1, SQLSTATE(42000) "Table: missing '%s.%s'\n", sname, tname);
+			if (isMergeTable(t))
+				return sql_error(sql, -1, SQLSTATE(42000) "Merge tables not supported under remote connections\n");
+			if (isRemote(t))
+				return sql_error(sql, -1, SQLSTATE(42000) "Remote tables not supported under remote connections\n");
+			if (isReplicaTable(t))
+				return sql_error(sql, -1, SQLSTATE(42000) "Replica tables not supported under remote connections\n");
 			rel = rel_basetable(sql, t, tname);
 
 			if (!r[*pos])
@@ -1737,7 +1766,7 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 		return NULL;
 	}
 	/* sometimes the properties are send */
-	while (strncmp(r+*pos, "REMOTE",  strlen("REMOTE")) == 0) {
+	while (strncmp(r+*pos, "REMOTE",  strlen("REMOTE")) == 0) { /* Remote tables under remote tables not supported, so remove REMOTE property */
 		(*pos)+= (int) strlen("REMOTE");
 		skipWS(r, pos);
 		skipUntilWS(r, pos);
@@ -1745,10 +1774,20 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 	}
 	while (strncmp(r+*pos, "USED", strlen("USED")) == 0) {
 		(*pos)+= (int) strlen("USED");
+		if (!find_prop(rel->p, PROP_USED))
+			rel->p = prop_create(sql->sa, PROP_USED, rel->p);
 		skipWS(r, pos);
 	}
 	while (strncmp(r+*pos, "DISTRIBUTE", strlen("DISTRIBUTE")) == 0) {
 		(*pos)+= (int) strlen("DISTRIBUTE");
+		if (!find_prop(rel->p, PROP_DISTRIBUTE))
+			rel->p = prop_create(sql->sa, PROP_DISTRIBUTE, rel->p);
+		skipWS(r, pos);
+	}
+	while (strncmp(r+*pos, "GROUPINGS", strlen("GROUPINGS")) == 0) {
+		(*pos)+= (int) strlen("GROUPINGS");
+		if (!find_prop(rel->p, PROP_GROUPINGS))
+			rel->p = prop_create(sql->sa, PROP_GROUPINGS, rel->p);
 		skipWS(r, pos);
 	}
 	return rel;
