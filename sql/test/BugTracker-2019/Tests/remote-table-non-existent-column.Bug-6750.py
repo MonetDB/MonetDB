@@ -46,11 +46,11 @@ try:
             try:
                 cur2.execute("select col2 from tab1;")  # col2 doesn't exist
             except pymonetdb.OperationalError as e:
-                print(e)
+                sys.stderr.write(str(e))
             try:
                 cur2.execute("select col1 from tab2;")  # col1 is not a floating point column
             except pymonetdb.OperationalError as e:
-                print(e)
+                sys.stderr.write(str(e))
             cur2.execute("drop table tab1;")
             cur2.execute("drop table tab2;")
 
