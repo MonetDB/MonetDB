@@ -42,8 +42,17 @@ CREATE PROCEDURE logging.setadapter(adapter_id INT)
 CREATE PROCEDURE logging.resetadapter()
        EXTERNAL NAME logging.resetadapter;
 
--- Dumps to the console all the available logging levels, 
--- layers and the components along with their current logging 
--- level being set
-CREATE PROCEDURE logging.showinfo()
-       EXTERNAL NAME logging.showinfo;
+-- Returns in the form of a SQL result-set all the 
+-- components along with their ID and their current 
+-- logging level being set
+CREATE FUNCTION logging.compinfo()
+RETURNS TABLE(
+	"id" int,
+	"component" string,
+	"log_level" string
+)
+EXTERNAL NAME logging.compinfo;
+GRANT EXECUTE ON FUNCTION logging.compinfo TO public;
+
+CREATE view logging.compinfo AS SELECT * FROM logging.compinfo();
+GRANT SELECT ON logging.compinfo TO public;

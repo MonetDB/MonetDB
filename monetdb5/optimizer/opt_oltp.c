@@ -22,7 +22,7 @@ addLock(Client cntxt, OLTPlocks locks, MalBlkPtr mb, InstrPtr p, int sch, int tb
 	(void) cntxt;
 	r =(sch?getVarConstant(mb, getArg(p,sch)).val.sval : "sqlcatalog");
 	s =(tbl? getVarConstant(mb, getArg(p,tbl)).val.sval : "");
-	hash = (GDK_STRHASH(r)  ^ GDK_STRHASH(s)) % MAXOLTPLOCKS ;
+	hash = (strHash(r)  ^ strHash(s)) % MAXOLTPLOCKS ;
 	hash += (hash == 0);
 	locks[hash] = 1;
 }

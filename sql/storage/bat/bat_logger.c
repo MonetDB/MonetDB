@@ -921,7 +921,7 @@ snapshot_immediate_copy_file(stream *plan, const char *path, const char *name)
 
 	buf = GDKmalloc(bufsize);
 	if (!buf) {
-		GDKerror("malloc failed");
+		GDKerror("GDKmalloc failed");
 		goto end;
 	}
 
@@ -1087,7 +1087,7 @@ snapshot_bats(stream *plan, const char *db_dir)
 		uint64_t batid;
 		uint64_t tail_free;
 		uint64_t theap_free;
-		char filename[20];
+		char filename[sizeof(BBP_physical(0))];
 		// The lines in BBP.dir come in various lengths.
 		// we try to parse the longest variant then check
 		// the return value of sscanf to see which fields

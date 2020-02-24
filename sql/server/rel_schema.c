@@ -283,11 +283,10 @@ table_constraint_name(symbol *s, sql_table *t)
 }
 
 static char *
-column_constraint_name(symbol *s, sql_column *sc, sql_table *t)
+column_constraint_name(symbol *s, sql_column *sc, sql_table *t, char *buf, size_t bufsiz)
 {
 	/* create a descriptive name like table_col_pkey */
 	char *suffix;		/* stores the type of this constraint */
-	static char buf[BUFSIZ];
 
 	switch (s->token) {
 		case SQL_UNIQUE:
@@ -306,13 +305,13 @@ column_constraint_name(symbol *s, sql_column *sc, sql_table *t)
 			suffix = "?";
 	}
 
-	snprintf(buf, BUFSIZ, "%s_%s_%s", t->base.name, sc->base.name, suffix);
+	snprintf(buf, bufsiz, "%s_%s_%s", t->base.name, sc->base.name, suffix);
 
 	return buf;
 }
 
 static int
-column_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table *t, sql_column *cs)
+column_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sql_table *t, sql_column *cs)
 {
 	int res = SQL_ERR;
 
@@ -433,9 +432,10 @@ column_option(
 		dlist *l = s->data.lval;
 		char *opt_name = l->h->data.sval;
 		symbol *sym = l->h->next->data.sym;
+		char buf[512] = {0};
 
 		if (!opt_name)
-			opt_name = column_constraint_name(sym, cs, t);
+			opt_name = column_constraint_name(sym, cs, t, buf, sizeof(buf));
 		res = column_constraint_type(sql, opt_name, sym, ss, t, cs);
 	} 	break;
 	case SQL_DEFAULT: {

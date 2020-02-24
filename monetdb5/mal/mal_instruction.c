@@ -793,7 +793,12 @@ newVariable(MalBlkPtr mb, const char *name, size_t len, malType type)
 	if( name == 0 || len == 0){
 		(void) snprintf(getVarName(mb,n), IDLENGTH,"%c%c%d", REFMARKER, TMPMARKER,mb->vid++);
 	} else {
-		(void) strcpy_len( getVarName(mb,n), name, len + 1);
+		/* avoid calling strcpy_len since we're not interested in the
+		 * source length, and that may be very large */
+		char *nme = getVarName(mb,n);
+		for (size_t i = 0; i < len; i++)
+			nme[i] = name[i];
+		nme[len] = 0;
 	}
 
 	mb->vtop++;

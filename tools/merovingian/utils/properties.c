@@ -39,6 +39,7 @@ static const confkeyval _internal_prop_keys[PROPLENGTH] = {
 	{"nclients",    NULL, 0, INT},
 	{"mfunnel",     NULL, 0, STR},
 	{"dbextra",     NULL, 0, STR},
+	{"dbtrace",     NULL, 0, STR},
 	{"memmaxsize",  NULL, 0, INT},
 	{"vmmaxsize",   NULL, 0, INT},
 	{"raw_strings", NULL, 0, BOOLEAN},

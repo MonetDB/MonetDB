@@ -110,7 +110,7 @@ JSONfromString(const char *src, size_t *len, json *j, bool external)
 	size_t slen = strlen(src);
 	JSON *jt;
 
-	if (GDK_STRNIL(src) || (external && strncmp(src, "nil", 3) == 0)) {
+	if (strNil(src) || (external && strncmp(src, "nil", 3) == 0)) {
 		if (*len < 2 || *j == NULL) {
 			GDKfree(*j);
 			if ((*j = GDKmalloc(2)) == NULL)
@@ -118,7 +118,7 @@ JSONfromString(const char *src, size_t *len, json *j, bool external)
 			*len = 2;
 		}
 		strcpy(*j, str_nil);
-		return GDK_STRNIL(src) ? 1 : 3;
+		return strNil(src) ? 1 : 3;
 	}
 	if (*len <= slen || *j == NULL) {
 		GDKfree(*j);
@@ -147,7 +147,7 @@ JSONtoString(str *s, size_t *len, const char *src, bool external)
 	const char *c;
 	char *dst;
 
-	if (GDK_STRNIL(src)) {
+	if (strNil(src)) {
 		if (*s == NULL || *len < 4) {
 			GDKfree(*s);
 			*len = 4;
@@ -2234,7 +2234,7 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 					}
 					break;
 				}
-				if (!v || strNil(v)) {
+				if (strNil(v)) {
 					if (skip_nils) {
 						/*
 						 * if q is 1 and the value is
@@ -2326,7 +2326,7 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 				}
 				break;
 			}
-			if (!v || strNil(v)) {
+			if (strNil(v)) {
 				if (skip_nils)
 					continue;
 				strncpy(buf, str_nil, buflen);
@@ -2383,7 +2383,7 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 				break;
 			}
 
-			if (!v || strNil(v)) {
+			if (strNil(v)) {
 				if (skip_nils)
 					continue;
 				strncpy(buf, str_nil, buflen);

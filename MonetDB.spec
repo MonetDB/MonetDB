@@ -41,6 +41,12 @@
 %global fedpkgs 1
 %endif
 
+%if %{?rhel:1}%{!?rhel:0} && 0%{?rhel} < 7
+# RedHat Enterprise Linux < 7
+# There is no macro _rundir, and no directory /run, instead use /var/run.
+%global _rundir %{_localstatedir}/run
+%endif
+
 # On Fedora, the geos library is available, and so we can require it
 # and build the geom modules.  On RedHat Enterprise Linux and
 # derivatives (CentOS, Scientific Linux), the geos library is not
@@ -99,7 +105,7 @@ Group: Applications/Databases
 License: MPLv2.0
 URL: https://www.monetdb.org/
 BugURL: https://bugs.monetdb.org/
-Source: https://www.monetdb.org/downloads/sources/Nov2019-SP1/%{name}-%{version}.tar.bz2
+Source: https://www.monetdb.org/downloads/sources/Nov2019-SP3/%{name}-%{version}.tar.bz2
 
 # we need systemd for the _unitdir macro to exist
 # we need checkpolicy and selinux-policy-devel for the SELinux policy
@@ -642,14 +648,13 @@ use SQL with MonetDB, you will need to install this package.
 %{_bindir}/monetdb
 %{_bindir}/monetdbd
 %dir %attr(775,monetdb,monetdb) %{_localstatedir}/log/monetdb
+%dir %attr(775,monetdb,monetdb) %{_rundir}/monetdb
 %if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
 # RHEL >= 7, and all current Fedora
-%dir %attr(775,monetdb,monetdb) /run/monetdb
 %{_tmpfilesdir}/monetdbd.conf
 %{_unitdir}/monetdbd.service
 %else
 # RedHat Enterprise Linux < 7
-%dir %attr(775,monetdb,monetdb) %{_localstatedir}/run/monetdb
 %exclude %{_sysconfdir}/tmpfiles.d/monetdbd.conf
 # no _unitdir macro
 %exclude %{_prefix}/lib/systemd/system/monetdbd.service
@@ -784,9 +789,9 @@ do
   /usr/sbin/semodule -s ${selinuxvariant} -i \
     %{_datadir}/selinux/${selinuxvariant}/monetdb.pp &> /dev/null || :
 done
-# use %{_localstatedir}/run/monetdb here for EPEL 6; on other systems,
-# %{_localstatedir}/run is a symlink to /run
-/sbin/restorecon -R %{_localstatedir}/monetdb5 %{_localstatedir}/log/monetdb %{_localstatedir}/run/monetdb %{_bindir}/monetdbd %{_bindir}/mserver5 %{_unitdir}/monetdbd.service &> /dev/null || :
+# use /var/run/monetdb since that's what it says in the monetdb.fc file
+# it says that because /run/monetdb for some reason doesn't work
+/sbin/restorecon -R %{_localstatedir}/monetdb5 %{_localstatedir}/log/monetdb /var/run/monetdb %{_bindir}/monetdbd %{_bindir}/mserver5 %{_unitdir}/monetdbd.service &> /dev/null || :
 /usr/bin/systemctl try-restart monetdbd.service
 
 %postun selinux
@@ -799,9 +804,7 @@ if [ $1 -eq 0 ] ; then
   do
     /usr/sbin/semodule -s ${selinuxvariant} -r monetdb &> /dev/null || :
   done
-  # use %{_localstatedir}/run/monetdb here for EPEL 6; on other systems,
-  # %{_localstatedir}/run is a symlink to /run
-  /sbin/restorecon -R %{_localstatedir}/monetdb5 %{_localstatedir}/log/monetdb %{_localstatedir}/run/monetdb %{_bindir}/monetdbd %{_bindir}/mserver5 %{_unitdir}/monetdbd.service &> /dev/null || :
+  /sbin/restorecon -R %{_localstatedir}/monetdb5 %{_localstatedir}/log/monetdb %{_rundir}/monetdb %{_bindir}/monetdbd %{_bindir}/mserver5 %{_unitdir}/monetdbd.service &> /dev/null || :
   if [ $active = active ]; then
     /usr/bin/systemctl start monetdbd.service
   fi
@@ -838,6 +841,7 @@ export CFLAGS
 # do not use --enable-optimize or --disable-optimize: we don't want
 # any changes to optimization flags
 %{configure} \
+ 	--with-rundir=%{_rundir}/monetdb \
 	--enable-assert=no \
 	--enable-debug=yes \
 	--enable-developer=no \
@@ -909,13 +913,7 @@ rmdir %{buildroot}%{_sysconfdir}/tmpfiles.d
 install -d -m 0750 %{buildroot}%{_localstatedir}/MonetDB
 install -d -m 0770 %{buildroot}%{_localstatedir}/monetdb5/dbfarm
 install -d -m 0775 %{buildroot}%{_localstatedir}/log/monetdb
-%if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
-# RHEL >= 7, and all current Fedora
-install -d -m 0775 %{buildroot}/run/monetdb
-%else
-# RedHat Enterprise Linux < 7
-install -d -m 0775 %{buildroot}%{_localstatedir}/run/monetdb
-%endif
+install -d -m 0775 %{buildroot}%{_rundir}/monetdb
 
 # remove unwanted stuff
 # .la files
@@ -945,6 +943,32 @@ fi
 %postun -p /sbin/ldconfig
 
 %changelog
+* Sat Feb 22 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.35.19-20200222
+- Rebuilt.
+- BZ#6829: NTILE window function returns incorrect results
+
+* Fri Feb 21 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.35.17-20200221
+- Rebuilt.
+- BZ#6827: CUME_DIST window function returns incorrect results
+
+* Mon Feb 17 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.35.15-20200217
+- Rebuilt.
+- BZ#6817: running analyze on a schema which contains a stream table
+  stops with an error
+- BZ#6819: functions do not persist
+
+* Wed Feb 12 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.35.13-20200212
+- Rebuilt.
+
+* Tue Feb 11 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.35.11-20200211
+- Rebuilt.
+- BZ#6805: Using the cascade operator in a drop table statement ends in
+  an exit from the Monetdb shell.
+- BZ#6807: Median_avg and quantile_avg ignore NULL values
+- BZ#6815: query with ifthenelse() crashes mserver5
+- BZ#6816: Monetdb Crashes on INSERT statement after ALTER statement in
+  another connection
+
 * Wed Dec 18 2019 Sjoerd Mullender <sjoerd@acm.org> - 11.35.9-20191218
 - Rebuilt.
 - BZ#6804: DNS resolution of 0.0.0.0 fails on recent Ubuntus

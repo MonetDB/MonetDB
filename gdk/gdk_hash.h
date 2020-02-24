@@ -196,12 +196,12 @@ HASHgetlink(Hash *h, BUN i)
 	for (hb = HASHget(h, HASHbucket(h, ((BUN *) (v))[-1]));	\
 	     hb != HASHnil(h);					\
 	     hb = HASHgetlink(h, hb))				\
-		if (GDK_STREQ(v, BUNtvar(bi, hb)))
+		if (strEQ(v, BUNtvar(bi, hb)))
 #define HASHloop_str(bi, h, hb, v)				\
 	for (hb = HASHget(h, HASHbucket(h, strHash(v)));	\
 	     hb != HASHnil(h);					\
 	     hb = HASHgetlink(h, hb))				\
-		if (GDK_STREQ(v, BUNtvar(bi, hb)))
+		if (strEQ(v, BUNtvar(bi, hb)))
 
 #define HASHlooploc(bi, h, hb, v)				\
 	for (hb = HASHget(h, HASHprobe(h, v));			\
@@ -220,6 +220,15 @@ HASHgetlink(Hash *h, BUN i)
 	     hb = HASHgetlink(h,hb))					\
 		if (* (const TYPE *) (v) == * (const TYPE *) BUNtloc(bi, hb))
 
+/* need to take special care comparing nil floating point values */
+#define HASHloop_fTYPE(bi, h, hb, v, TYPE)				\
+	for (hb = HASHget(h, hash_##TYPE(h, v));			\
+	     hb != HASHnil(h);						\
+	     hb = HASHgetlink(h,hb))					\
+		if (is_##TYPE##_nil(* (const TYPE *) (v))		\
+		    ? is_##TYPE##_nil(* (const TYPE *) BUNtloc(bi, hb)) \
+		    : * (const TYPE *) (v) == * (const TYPE *) BUNtloc(bi, hb))
+
 #define HASHloop_bte(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, bte)
 #define HASHloop_sht(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, sht)
 #define HASHloop_int(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, int)
@@ -227,8 +236,8 @@ HASHgetlink(Hash *h, BUN i)
 #ifdef HAVE_HGE
 #define HASHloop_hge(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, hge)
 #endif
-#define HASHloop_flt(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, flt)
-#define HASHloop_dbl(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, dbl)
+#define HASHloop_flt(bi, h, hb, v)	HASHloop_fTYPE(bi, h, hb, v, flt)
+#define HASHloop_dbl(bi, h, hb, v)	HASHloop_fTYPE(bi, h, hb, v, dbl)
 
 #define HASHfnd_str(x,y,z)						\
 	do {								\
@@ -275,53 +284,5 @@ HASHgetlink(Hash *h, BUN i)
 #endif
 #define HASHfnd_flt(x,y,z)	HASHfnd_TYPE(x,y,z,flt)
 #define HASHfnd_dbl(x,y,z)	HASHfnd_TYPE(x,y,z,dbl)
-
-/*
- * A new entry is added with HASHins using the BAT, the BUN index, and
- * a pointer to the value to be stored.
- *
- * HASHins receives a BAT* param and is adaptive, killing wrongly
- * configured hash tables.  Also, persistent hashes cannot be
- * maintained, so must be destroyed before this macro is called. */
-#define HASHins(b,i,v)							\
-	do {								\
-		if ((b)->thash) {					\
-			MT_lock_set(&(b)->batIdxLock);			\
-			Hash *_h = (b)->thash;				\
-			if (_h == (Hash *) 1 ||				\
-			    _h == NULL ||				\
-			    (ATOMsize(b->ttype) > 2 &&			\
-			     HASHgrowbucket(b) != GDK_SUCCEED) ||	\
-			    (((i) + 1) * _h->width > _h->heaplink.size && \
-			     HEAPextend(&_h->heaplink,			\
-					(i) * _h->width + GDK_mmap_pagesize, \
-					true) != GDK_SUCCEED)) {	\
-				MT_lock_unset(&(b)->batIdxLock);	\
-				HASHdestroy(b);				\
-			} else {					\
-				_h->Link = _h->heaplink.base;		\
-				BUN _c = HASHprobe(_h, (v));		\
-				_h->heaplink.free += _h->width;		\
-				BUN _hb = HASHget(_h, _c);		\
-				BUN _hb2;				\
-				BATiter _bi = bat_iterator(b);		\
-				for (_hb2 = _hb;			\
-				     _hb2 != HASHnil(_h);		\
-				     _hb2 = HASHgetlink(_h, _hb2)) {	\
-					if (ATOMcmp(_h->type,		\
-						    (v),		\
-						    BUNtail(_bi, _hb2)) == 0) \
-						break;			\
-				}					\
-				_h->nheads += _hb == HASHnil(_h);	\
-				_h->nunique += _hb2 == HASHnil(_h);	\
-				HASHputlink(_h, i, _hb);		\
-				HASHput(_h, _c, i);			\
-				_h->heapbckt.dirty = true;		\
-				_h->heaplink.dirty = true;		\
-				MT_lock_unset(&(b)->batIdxLock);	\
-			}						\
-		}							\
-	} while (0)
 
 #endif /* _GDK_SEARCH_H_ */

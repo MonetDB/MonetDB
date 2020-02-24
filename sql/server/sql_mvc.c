@@ -523,22 +523,18 @@ build up the hash (not copied in the trans dup)) */
 	}
 
 	/* validation phase */
-	int valide = sql_trans_validate(tr);
-	if (valide) {
+	bool valid = sql_trans_validate(tr);
+	if (valid) {
 		store_unlock();
 		if (sql_save_snapshots(tr) != SQL_OK) {
-			char *err = sql_message(SQLSTATE(40000) "%s transaction commit failed (perhaps your disk is full?) exiting (kernel error: %s)", operation, GDKerrbuf);
-			GDKfatal("%s", err);
-			_DELETE(err);
+			GDKfatal("%s transaction commit failed (perhaps your disk is full?) exiting (kernel error: %s)", operation, GDKerrbuf);
 		}
 		store_lock();
 	}
-	valide = sql_trans_validate(tr);
-	if (valide) {
+	valid = sql_trans_validate(tr);
+	if (valid) {
 		if ((ok = sql_trans_commit(tr)) != SQL_OK) {
-			char *err = sql_message(SQLSTATE(40000) "%s transaction commit failed (perhaps your disk is full?) exiting (kernel error: %s)", operation, GDKerrbuf);
-			GDKfatal("%s", err);
-			_DELETE(err);
+			GDKfatal("%s transaction commit failed (perhaps your disk is full?) exiting (kernel error: %s)", operation, GDKerrbuf);
 		}
 	} else {
 		store_unlock();
@@ -760,19 +756,20 @@ mvc_create(int clientid, backend_stack stk, int debug, bstream *rs, stream *ws)
 int
 mvc_reset(mvc *m, bstream *rs, stream *ws, int debug)
 {
-	int i, res = 1;
+	int i, res = 1, reset;
 	sql_trans *tr;
 
 	TRC_DEBUG(SQL_MVC, "MVC reset\n");
 	tr = m->session->tr;
+	store_lock();
 	if (tr && tr->parent) {
 		assert(m->session->tr->active == 0);
-		store_lock();
 		while (tr->parent->parent != NULL) 
 			tr = sql_trans_destroy(tr, true);
-		store_unlock();
 	}
-	if (tr && !sql_session_reset(m->session, 1 /*autocommit on*/))
+	reset = sql_session_reset(m->session, 1 /*autocommit on*/);
+	store_unlock();
+	if (tr && !reset)
 		res = 0;
 
 	if (m->sa)
@@ -832,16 +829,16 @@ mvc_destroy(mvc *m)
 
 	TRC_DEBUG(SQL_MVC, "MVC destroy\n");
 	tr = m->session->tr;
+	store_lock();
 	if (tr) {
-		store_lock();
 		if (m->session->tr->active)
 			sql_trans_end(m->session);
 		while (tr->parent)
 			tr = sql_trans_destroy(tr, true);
 		m->session->tr = NULL;
-		store_unlock();
 	}
 	sql_session_destroy(m->session);
+	store_unlock();
 
 	stack_pop_until(m, 0);
 	_DELETE(m->vars);
@@ -1059,7 +1056,7 @@ mvc_bind_trigger(mvc *m, sql_schema *s, const char *tname)
 }
 
 sql_type *
-mvc_create_type(mvc *sql, sql_schema * s, const char *name, int digits, int scale, int radix, const char *impl)
+mvc_create_type(mvc *sql, sql_schema *s, const char *name, int digits, int scale, int radix, const char *impl)
 {
 	sql_type *t = NULL;
 	
@@ -1359,7 +1356,7 @@ mvc_create_column(mvc *m, sql_table *t, const char *name, sql_subtype *tpe)
 	TRC_DEBUG(SQL_MVC, "Create column: %s %s %s\n", t->base.name, name, tpe->type->sqlname);
 	if (t->persistence == SQL_DECLARED_TABLE && (!t->s || strcmp(t->s->base.name, dt_schema))) 
 		/* declared tables should not end up in the catalog */
-		return create_sql_column(m->sa, t, name, tpe);
+		return create_sql_column(m->session->tr, t, name, tpe);
 	else
 		return sql_trans_create_column(m->session->tr, t, name, tpe);
 }
@@ -2084,6 +2081,7 @@ SelectNodeCmp(mvc *sql, SelectNode *s1, SelectNode *s2)
 	if (symbol_cmp(sql, s1->limit, s2->limit) == 0 &&
 		symbol_cmp(sql, s1->offset, s2->offset) == 0 &&
 		symbol_cmp(sql, s1->sample, s2->sample) == 0 &&
+		symbol_cmp(sql, s1->seed, s2->seed) == 0 &&
 		s1->distinct == s2->distinct &&
 		s1->lateral == s2->lateral &&
 		symbol_cmp(sql, s1->name, s2->name) == 0 &&

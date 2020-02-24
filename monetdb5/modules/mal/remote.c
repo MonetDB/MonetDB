@@ -407,7 +407,7 @@ RMTgetId(char *buf, MalBlkPtr mb, InstrPtr p, int arg) {
 	char *mod;
 	char *var;
 	str rt;
-	static int idtag=0;
+	static ATOMIC_TYPE idtag = ATOMIC_VAR_INIT(0);
 
 	if( p->retc == 0)
 		throw(MAL, "remote.getId", ILLEGAL_ARGUMENT "MAL instruction misses retc");
@@ -421,7 +421,7 @@ RMTgetId(char *buf, MalBlkPtr mb, InstrPtr p, int arg) {
 	if (rt == NULL)
 		throw(MAL, "remote.put", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
-	snprintf(buf, BUFSIZ, "rmt%d_%s_%s", idtag++, var, rt);
+	snprintf(buf, BUFSIZ, "rmt%u_%s_%s", (unsigned) ATOMIC_ADD(&idtag, 1), var, rt);
 
 	GDKfree(rt);
 	return(MAL_SUCCEED);

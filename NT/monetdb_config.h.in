@@ -110,7 +110,7 @@
 /* Define if you have asctime_r(struct tm*,char *buf,size_t s) */
 #define HAVE_ASCTIME_R3 1
 /* there is something very similar to asctime_r on Windows: */
-#define asctime_r(t,b,s)	asctime_s(b,s,t)
+#define asctime_r(t,b,s)	(asctime_s(b,s,t) == 0 ? (b) : NULL)
 
 /* Define to 1 if you have the `cbrt' function. */
 #define HAVE_CBRT 1
@@ -127,7 +127,7 @@
 /* Define if you have ctime_r(time_t*,char *buf,size_t s) */
 #define HAVE_CTIME_R3 1
 /* there is something very similar to ctime_r on Windows: */
-#define ctime_r(t,b,s)	(ctime_s(b,s,t) ? NULL : (b))
+#define ctime_r(t,b,s)	(ctime_s(b,s,t) == 0 ? (b) : NULL)
 
 /* Define if you have the cURL library */
 /* #undef HAVE_CURL */
@@ -207,6 +207,11 @@
 /* Define to 1 if you have the `getuid' function. */
 /* #undef HAVE_GETUID */
 
+/* Define to 1 if you have the `gmtime_r' function. */
+#define HAVE_GMTIME_R 1
+/* there is something very similar to gmtime_r on Windows: */
+#define gmtime_r(tp,tm)	(gmtime_s(tm,tp) == 0 ? (tm) : NULL)
+
 /* Define if you have the iconv() function and it works. */
 /* #undef HAVE_ICONV */		/* optionally defined in rules.msc */
 
@@ -266,8 +271,7 @@
 /* Define to 1 if you have the `localtime_r' function. */
 #define HAVE_LOCALTIME_R 1
 /* there is something very similar to localtime_r on Windows: */
-#define localtime_r(tp,tm)	localtime_s(tm,tp)
-#define gmtime_r(tp,tm)		gmtime_s(tm,tp)
+#define localtime_r(tp,tm)	(localtime_s(tm,tp) == 0 ? (tm) : NULL)
 
 /* Define to 1 if you have the `lockf' function. */
 /* #undef HAVE_LOCKF */
@@ -762,9 +766,6 @@
 /* If the compiler does not support function attributes via __attribute__,
    we just define __attribute__(a) to nothing. */
 #define __attribute__(a)
-
-/* Does your compiler support the `__hidden' specifier? */
-#define __hidden
 
 /* function to close a socket */
 /* #undef closesocket */

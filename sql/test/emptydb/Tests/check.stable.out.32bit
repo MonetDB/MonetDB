@@ -82,6 +82,7 @@ stdout of test 'check` in directory 'sql/test/emptydb` itself:
 \dSt tmp.keys
 \dSt tmp.objects
 \dSt tmp.triggers
+\dSv logging.compinfo
 \dSv sys.columns
 \dSv sys.dependencies_vw
 \dSv sys.dependency_args_on_types
@@ -936,6 +937,7 @@ CREATE TABLE "tmp"."idxs" ("id" INTEGER, "table_id" INTEGER, "type" INTEGER, "na
 CREATE TABLE "tmp"."keys" ("id" INTEGER, "table_id" INTEGER, "type" INTEGER, "name" VARCHAR(1024), "rkey" INTEGER, "action" INTEGER);
 CREATE TABLE "tmp"."objects" ("id" INTEGER, "name" VARCHAR(1024), "nr" INTEGER);
 CREATE TABLE "tmp"."triggers" ("id" INTEGER, "name" VARCHAR(1024), "table_id" INTEGER, "time" SMALLINT, "orientation" SMALLINT, "event" SMALLINT, "old_name" VARCHAR(1024), "new_name" VARCHAR(1024), "condition" VARCHAR(2048), "statement" VARCHAR(2048));
+create view logging.compinfo as select * from logging.compinfo();
 SELECT * FROM (SELECT p.* FROM "sys"."_columns" AS p UNION ALL SELECT t.* FROM "tmp"."_columns" AS t) AS columns;
 create view sys.dependencies_vw as select d.id, i1.obj_type, i1.name, d.depend_id as used_by_id, i2.obj_type as used_by_obj_type, i2.name as used_by_name, d.depend_type, dt.dependency_type_name from sys.dependencies d join sys.ids i1 on d.id = i1.id join sys.ids i2 on d.depend_id = i2.id join sys.dependency_types dt on d.depend_type = dt.dependency_type_id order by id, depend_id;
 create view sys.dependency_args_on_types as select dt.id as type_id, dt.sqlname as type_name, f.id as function_id, f.name as function_name, a.id as arg_id, a.name as arg_name, a.number as arg_nr, dep.depend_type as depend_type from sys.args as a, sys.functions as f, sys.types as dt, sys.dependencies as dep where dep.id = dt.id and dep.depend_id = a.id and a.func_id = f.id and dep.depend_type = 15 order by dt.sqlname, f.name, a.number, a.name;
@@ -1511,7 +1513,8 @@ drop function pcre_replace(string, string, string, string);
 % .s,	.t,	.,	.,	.t,	.,	. # table_name
 % name,	name,	query,	type,	system,	commit_action,	access # name
 % varchar,	varchar,	varchar,	varchar,	boolean,	char,	char # type
-% 3,	34,	2809,	5,	5,	8,	10 # length
+% 7,	34,	2809,	5,	5,	8,	10 # length
+[ "logging",	"compinfo",	"create view logging.compinfo as select * from logging.compinfo();",	"VIEW",	true,	"COMMIT",	"WRITABLE"	]
 [ "sys",	"_columns",	NULL,	"TABLE",	true,	"COMMIT",	"WRITABLE"	]
 [ "sys",	"_tables",	NULL,	"TABLE",	true,	"COMMIT",	"WRITABLE"	]
 [ "sys",	"args",	NULL,	"TABLE",	true,	"COMMIT",	"WRITABLE"	]
@@ -1668,6 +1671,9 @@ drop function pcre_replace(string, string, string, string);
 [ "columns",	"storage",	"varchar",	2048,	0,	NULL,	true,	9,	NULL	]
 [ "comments",	"id",	"int",	32,	0,	NULL,	false,	0,	NULL	]
 [ "comments",	"remark",	"varchar",	65000,	0,	NULL,	false,	1,	NULL	]
+[ "compinfo",	"id",	"int",	32,	0,	NULL,	true,	0,	NULL	]
+[ "compinfo",	"component",	"clob",	0,	0,	NULL,	true,	1,	NULL	]
+[ "compinfo",	"log_level",	"clob",	0,	0,	NULL,	true,	2,	NULL	]
 [ "db_user_info",	"name",	"varchar",	1024,	0,	NULL,	true,	0,	NULL	]
 [ "db_user_info",	"fullname",	"varchar",	2048,	0,	NULL,	true,	1,	NULL	]
 [ "db_user_info",	"default_schema",	"int",	9,	0,	NULL,	true,	2,	NULL	]
@@ -2247,6 +2253,7 @@ drop function pcre_replace(string, string, string, string);
 [ "json",	"tojsonarray",	"SYSTEM",	"create aggregate json.tojsonarray(x double) returns string external name aggr.jsonaggr;",	"aggr",	"MAL",	"Aggregate function",	false,	false,	false,	"result",	"clob",	0,	0,	"out",	"x",	"double",	53,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "json",	"tojsonarray",	"SYSTEM",	"create aggregate json.tojsonarray(x string) returns string external name aggr.jsonaggr;",	"aggr",	"MAL",	"Aggregate function",	false,	false,	false,	"result",	"clob",	0,	0,	"out",	"x",	"clob",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "json",	"valuearray",	"SYSTEM",	"create function json.valuearray(js json) returns json external name json.valuearray;",	"json",	"MAL",	"Scalar function",	false,	false,	false,	"result",	"json",	0,	0,	"out",	"js",	"json",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "logging",	"compinfo",	"SYSTEM",	"create function logging.compinfo() returns table(\"id\" int, \"component\" string, \"log_level\" string) external name logging.compinfo;",	"logging",	"MAL",	"Function returning a table",	true,	false,	false,	"id",	"int",	32,	0,	"out",	"component",	"clob",	0,	0,	"out",	"log_level",	"clob",	0,	0,	"out",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "logging",	"flush",	"SYSTEM",	"create procedure logging.flush() external name logging.flush;",	"logging",	"MAL",	"Procedure",	true,	false,	false,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "logging",	"resetadapter",	"SYSTEM",	"create procedure logging.resetadapter() external name logging.resetadapter;",	"logging",	"MAL",	"Procedure",	true,	false,	false,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "logging",	"resetcomplevel",	"SYSTEM",	"create procedure logging.resetcomplevel(comp_id int) external name logging.resetcomplevel;",	"logging",	"MAL",	"Procedure",	true,	false,	false,	"comp_id",	"int",	32,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
@@ -2256,7 +2263,6 @@ drop function pcre_replace(string, string, string, string);
 [ "logging",	"setcomplevel",	"SYSTEM",	"create procedure logging.setcomplevel(comp_id int, lvl_id int) external name logging.setcomplevel;",	"logging",	"MAL",	"Procedure",	true,	false,	false,	"comp_id",	"int",	32,	0,	"in",	"lvl_id",	"int",	32,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "logging",	"setflushlevel",	"SYSTEM",	"create procedure logging.setflushlevel(lvl_id int) external name logging.setflushlevel;",	"logging",	"MAL",	"Procedure",	true,	false,	false,	"lvl_id",	"int",	32,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "logging",	"setlayerlevel",	"SYSTEM",	"create procedure logging.setlayerlevel(layer_id int, lvl_id int) external name logging.setlayerlevel;",	"logging",	"MAL",	"Procedure",	true,	false,	false,	"layer_id",	"int",	32,	0,	"in",	"lvl_id",	"int",	32,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ "logging",	"showinfo",	"SYSTEM",	"create procedure logging.showinfo() external name logging.showinfo;",	"logging",	"MAL",	"Procedure",	true,	false,	false,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "profiler",	"getlimit",	"SYSTEM",	"create function profiler.getlimit() returns integer external name profiler.getlimit;",	"profiler",	"MAL",	"Scalar function",	true,	false,	false,	"result",	"int",	32,	0,	"out",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "profiler",	"setheartbeat",	"SYSTEM",	"create procedure profiler.setheartbeat(beat int) external name profiler.setheartbeat;",	"profiler",	"MAL",	"Procedure",	true,	false,	false,	"beat",	"int",	32,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "profiler",	"setlimit",	"SYSTEM",	"create procedure profiler.setlimit(lim integer) external name profiler.setlimit;",	"profiler",	"MAL",	"Procedure",	true,	false,	false,	"lim",	"int",	32,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
@@ -4149,7 +4155,8 @@ drop function pcre_replace(string, string, string, string);
 % sys.s1,	sys.f1,	sys.s2,	sys.t2,	.dt # table_name
 % name,	name,	name,	name,	dependency_type_name # name
 % varchar,	varchar,	varchar,	varchar,	varchar # type
-% 3,	24,	3,	24,	4 # length
+% 7,	24,	7,	24,	4 # length
+[ "logging",	"compinfo",	"logging",	"compinfo",	"VIEW"	]
 [ "sys",	"env",	"sys",	"environment",	"VIEW"	]
 [ "sys",	"get_type",	"sys",	"geometry_columns",	"VIEW"	]
 [ "sys",	"has_m",	"sys",	"geometry_columns",	"VIEW"	]
@@ -4864,6 +4871,7 @@ drop function pcre_replace(string, string, string, string);
 [ "auths",	"public",	"SELECT",	NULL,	0	]
 [ "columns",	"public",	"SELECT",	NULL,	0	]
 [ "comments",	"public",	"SELECT",	NULL,	0	]
+[ "compinfo",	"public",	"SELECT",	"monetdb",	0	]
 [ "dependencies",	"public",	"SELECT",	NULL,	0	]
 [ "dependencies_vw",	"public",	"SELECT",	"monetdb",	0	]
 [ "dependency_args_on_types",	"public",	"SELECT",	"monetdb",	0	]
@@ -4941,6 +4949,7 @@ drop function pcre_replace(string, string, string, string);
 [ "abbrev",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "alpha",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "broadcast",	"public",	"EXECUTE",	"monetdb",	0	]
+[ "compinfo",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "contains",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "corr",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "corr",	"public",	"EXECUTE",	"monetdb",	0	]

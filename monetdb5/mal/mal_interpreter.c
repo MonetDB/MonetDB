@@ -760,7 +760,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					} else if (lhs->vtype == TYPE_bat)
 						BBPretain(lhs->val.bval);
 				}
-				if(ret == MAL_SUCCEED && ii == pci->argc) {
+				if (ret == MAL_SUCCEED && ii == pci->argc) {
 					ret = runMALsequence(cntxt, pci->blk, 1, pci->blk->stop, nstk, stk, pci);
 					for (ii = 0; ii < nstk->stktop; ii++)
 						if (ATOMextern(nstk->stk[ii].vtype))
@@ -1027,7 +1027,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					stkpc = pci->jump;
 				break;
 			case TYPE_str:
-				if (GDK_STRNIL(v->val.sval))
+				if (strNil(v->val.sval))
 					stkpc = pci->jump;
 				break;
 			default:
@@ -1047,7 +1047,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					stkpc++;
 				break;
 			case TYPE_str:
-				if (!GDK_STRNIL(v->val.sval))
+				if (!strNil(v->val.sval))
 					stkpc = pci->jump;
 				else
 					stkpc++;

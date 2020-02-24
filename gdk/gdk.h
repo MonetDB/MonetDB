@@ -463,7 +463,6 @@
 #define FALSE		false
 #endif
 
-#define IDLENGTH	64	/* maximum BAT id length */
 #define BATMARGIN	1.2	/* extra free margin for new heaps */
 #define BATTINY_BITS	8
 #define BATTINY		((BUN)1<<BATTINY_BITS)	/* minimum allocation buncnt for a BAT */
@@ -913,8 +912,6 @@ gdk_export void HEAP_free(Heap *heap, var_t block);
  * The routine BATclone creates an empty BAT storage area with the
  * properties inherited from its argument.
  */
-#define BATDELETE	(-9999)
-
 gdk_export BAT *COLnew(oid hseq, int tltype, BUN capacity, role_t role)
 	__attribute__((__warn_unused_result__));
 gdk_export BAT *BATdense(oid hseq, oid tseq, BUN cnt)
@@ -984,203 +981,6 @@ typedef var_t stridx_t;
 #define BUNlast(b)	(assert((b)->batCount <= BUN_MAX), (b)->batCount)
 
 #define BATcount(b)	((b)->batCount)
-
-/*
- * @+ GDK Extensibility
- * GDK can be extended with new atoms, search accelerators and storage
- * modes.
- *
- * @- Atomic Type Descriptors
- * The atomic types over which the binary associations are maintained
- * are described by an atom descriptor.
- *  @multitable @columnfractions 0.08 0.7
- * @item void
- * @tab ATOMallocate    (str   nme);
- * @item int
- * @tab ATOMindex       (char *nme);
- * @item int
- * @tab ATOMdump        ();
- * @item void
- * @tab ATOMdelete      (int id);
- * @item str
- * @tab ATOMname        (int id);
- * @item unsigned int
- * @tab ATOMsize        (int id);
- * @item int
- * @tab ATOMvarsized    (int id);
- * @item ptr
- * @tab ATOMnilptr      (int id);
- * @item ssize_t
- * @tab ATOMfromstr     (int id, str s, size_t* len, ptr* v_dst);
- * @item ssize_t
- * @tab ATOMtostr       (int id, str s, size_t* len, ptr* v_dst);
- * @item hash_t
- * @tab ATOMhash        (int id, ptr val, in mask);
- * @item int
- * @tab ATOMcmp         (int id, ptr val_1, ptr val_2);
- * @item int
- * @tab ATOMfix         (int id, ptr v);
- * @item int
- * @tab ATOMunfix       (int id, ptr v);
- * @item int
- * @tab ATOMheap        (int id, Heap *hp, size_t cap);
- * @item int
- * @tab ATOMput         (int id, Heap *hp, BUN pos_dst, ptr val_src);
- * @item int
- * @tab ATOMdel         (int id, Heap *hp, BUN v_src);
- * @item size_t
- * @tab ATOMlen         (int id, ptr val);
- * @item ptr
- * @tab ATOMnil         (int id);
- * @item ssize_t
- * @tab ATOMformat      (int id, ptr val, char** buf);
- * @item int
- * @tab ATOMprint       (int id, ptr val, stream *fd);
- * @item ptr
- * @tab ATOMdup         (int id, ptr val );
- * @end multitable
- *
- * @- Atom Definition
- * User defined atomic types can be added to a running system with the
- * following interface:.
- *
- * @itemize
- * @item @emph{ATOMallocate()} registers a new atom definition if
- * there is no atom registered yet under that name.
- *
- * @item @emph{ATOMdelete()} unregisters an atom definition.
- *
- * @item @emph{ATOMindex()} looks up the atom descriptor with a certain name.
- * @end itemize
- *
- * @- Atom Manipulation
- *
- * @itemize
- * @item The @emph{ATOMname()} operation retrieves the name of an atom
- * using its id.
- *
- * @item The @emph{ATOMsize()} operation returns the atoms fixed size.
- *
- * @item The @emph{ATOMnilptr()} operation returns a pointer to the
- * nil-value of an atom. We usually take one dedicated value halfway
- * down the negative extreme of the atom range (if such a concept
- * fits), as the nil value.
- *
- * @item The @emph{ATOMnil()} operation returns a copy of the nil
- * value, allocated with GDKmalloc().
- *
- * @item The @emph{ATOMheap()} operation creates a new var-sized atom
- * heap in 'hp' with capacity 'cap'.
- *
- * @item The @emph{ATOMhash()} computes a hash index for a
- * value. `val' is a direct pointer to the atom value. Its return
- * value should be an hash_t between 0 and 'mask'.
- *
- * @item The @emph{ATOMcmp()} operation compares two atomic
- * values. Its parameters are pointers to atomic values.
- *
- * @item The @emph{ATOMlen()} operation computes the byte length for a
- * value.  `val' is a direct pointer to the atom value. Its return
- * value should be an integer between 0 and 'mask'.
- *
- * @item The @emph{ATOMdel()} operation deletes a var-sized atom from
- * its heap `hp'.  The integer byte-index of this value in the heap is
- * pointed to by `val_src'.
- *
- * @item The @emph{ATOMput()} operation inserts an atom `src_val' in a
- * BUN at `dst_pos'. This involves copying the fixed sized part in the
- * BUN. In case of a var-sized atom, this fixed sized part is an
- * integer byte-index into a heap of var-sized atoms. The atom is then
- * also copied into that heap `hp'.
- *
- * @item The @emph{ATOMfix()} and @emph{ATOMunfix()} operations do
- * bookkeeping on the number of references that a GDK application
- * maintains to the atom.  In MonetDB, we use this to count the number
- * of references directly, or through BATs that have columns of these
- * atoms. The only operator for which this is currently relevant is
- * BAT. The operators return the POST reference count to the
- * atom. BATs with fixable atoms may not be stored persistently.
- *
- * @item The @emph{ATOMfromstr()} parses an atom value from string
- * `s'. The memory allocation policy is the same as in
- * @emph{ATOMget()}. The return value is the number of parsed
- * characters or -1 on failure.  Also in case of failure, the output
- * parameter buf is a valid pointer or NULL.
- *
- * @item The @emph{ATOMprint()} prints an ASCII description of the
- * atom value pointed to by `val' on file descriptor `fd'. The return
- * value is the number of parsed characters.
- *
- * @item The @emph{ATOMformat()} is similar to @emph{ATOMprint()}. It
- * prints an atom on a newly allocated string. It must later be freed
- * with @strong{GDKfree}.  The number of characters written is
- * returned. This is minimally the size of the allocated buffer.
- *
- * @item The @emph{ATOMdup()} makes a copy of the given atom. The
- * storage needed for this is allocated and should be removed by the
- * user.
- * @end itemize
- *
- * These wrapper functions correspond closely to the interface
- * functions one has to provide for a user-defined atom. They
- * basically (with exception of @emph{ATOMput()}, @emph{ATOMprint()}
- * and @emph{ATOMformat()}) just have the atom id parameter prepended
- * to them.
- */
-
-/* atomFromStr returns the number of bytes of the input string that
- * were processed.  atomToStr returns the length of the string
- * produced.  Both functions return -1 on (any kind of) failure.  If
- * *dst is not NULL, *len specifies the available space.  If there is
- * not enough space, or if *dst is NULL, *dst will be freed (if not
- * NULL) and a new buffer will be allocated and returned in *dst.
- * *len will be set to reflect the actual size allocated.  If
- * allocation fails, *dst will be NULL on return and *len is
- * undefined.  In any case, if the function returns, *buf is either
- * NULL or a valid pointer and then *len is the size of the area *buf
- * points to. */
-
-typedef struct {
-	/* simple attributes */
-	char name[IDLENGTH];
-	uint8_t storage;	/* stored as another type? */
-	bool linear;		/* atom can be ordered linearly */
-	uint16_t size;		/* fixed size of atom */
-
-	/* automatically generated fields */
-	const void *atomNull;	/* global nil value */
-
-	/* generic (fixed + varsized atom) ADT functions */
-	ssize_t (*atomFromStr) (const char *src, size_t *len, void **dst, bool external);
-	ssize_t (*atomToStr) (char **dst, size_t *len, const void *src, bool external);
-	void *(*atomRead) (void *dst, stream *s, size_t cnt);
-	gdk_return (*atomWrite) (const void *src, stream *s, size_t cnt);
-	int (*atomCmp) (const void *v1, const void *v2);
-	BUN (*atomHash) (const void *v);
-	/* optional functions */
-	int (*atomFix) (const void *atom);
-	int (*atomUnfix) (const void *atom);
-
-	/* varsized atom-only ADT functions */
-	var_t (*atomPut) (Heap *, var_t *off, const void *src);
-	void (*atomDel) (Heap *, var_t *atom);
-	size_t (*atomLen) (const void *atom);
-	void (*atomHeap) (Heap *, size_t);
-} atomDesc;
-
-gdk_export atomDesc BATatoms[];
-gdk_export int GDKatomcnt;
-
-gdk_export int ATOMallocate(const char *nme);
-gdk_export int ATOMindex(const char *nme);
-
-gdk_export str ATOMname(int id);
-gdk_export size_t ATOMlen(int id, const void *v);
-gdk_export void *ATOMnil(int id);
-gdk_export int ATOMprint(int id, const void *val, stream *fd);
-gdk_export char *ATOMformat(int id, const void *val);
-
-gdk_export void *ATOMdup(int id, const void *val);
 
 #include "gdk_atoms.h"
 
@@ -1536,10 +1336,14 @@ typedef struct {
 	BAT *cache;		/* if loaded: BAT* handle */
 	char *logical;		/* logical name (may point at bak) */
 	char bak[16];		/* logical name backup (tmp_%o) */
-	bat next;		/* next BBP slot in linked list */
 	BAT *desc;		/* the BAT descriptor */
+	char *options;		/* A string list of options */
+#if SIZEOF_VOID_P == 4
 	char physical[20];	/* dir + basename for storage */
-	str options;		/* A string list of options */
+#else
+	char physical[24];	/* dir + basename for storage */
+#endif
+	bat next;		/* next BBP slot in linked list */
 	int refs;		/* in-memory references on which the loaded status of a BAT relies */
 	int lrefs;		/* logical references on which the existence of a BAT relies */
 	volatile unsigned status; /* status mask used for spin locking */
@@ -1547,19 +1351,20 @@ typedef struct {
 } BBPrec;
 
 gdk_export bat BBPlimit;
-#define N_BBPINIT	1000
 #if SIZEOF_VOID_P == 4
+#define N_BBPINIT	1000
 #define BBPINITLOG	11
 #else
+#define N_BBPINIT	10000
 #define BBPINITLOG	14
 #endif
 #define BBPINIT		(1 << BBPINITLOG)
 /* absolute maximum number of BATs is N_BBPINIT * BBPINIT
  * this also gives the longest possible "physical" name and "bak" name
- * of a BAT: the "bak" name is "tmp_%o", so at most 12 + \0 bytes on
+ * of a BAT: the "bak" name is "tmp_%o", so at most 14 + \0 bytes on
  * 64 bit architecture and 11 + \0 on 32 bit architecture; the
  * physical name is a bit more complicated, but the longest possible
- * name is 17 + \0 bytes (16 + \0 on 32 bits) */
+ * name is 22 + \0 bytes (16 + \0 on 32 bits) */
 gdk_export BBPrec *BBP[N_BBPINIT];
 
 /* fast defines without checks; internal use only  */
@@ -1711,9 +1516,7 @@ gdk_export void GDKclrerr(void);
  * @end itemize
  */
 /* NOTE: `p' is evaluated after a possible upgrade of the heap */
-static inline gdk_return Tputvalue(BAT *b, BUN p, const void *v, bool copyall)
-	__attribute__((__warn_unused_result__));
-static inline gdk_return
+static inline gdk_return __attribute__((__warn_unused_result__))
 Tputvalue(BAT *b, BUN p, const void *v, bool copyall)
 {
 	if (b->tvarsized && b->ttype) {
@@ -1753,18 +1556,14 @@ Tputvalue(BAT *b, BUN p, const void *v, bool copyall)
 	return GDK_SUCCEED;
 }
 
-static inline gdk_return tfastins_nocheck(BAT *b, BUN p, const void *v, int s)
-	__attribute__((__warn_unused_result__));
-static inline gdk_return
+static inline gdk_return __attribute__((__warn_unused_result__))
 tfastins_nocheck(BAT *b, BUN p, const void *v, int s)
 {
 	b->theap.free += s;
 	return Tputvalue(b, p, v, false);
 }
 
-static inline gdk_return bunfastapp_nocheck(BAT *b, BUN p, const void *v, int ts)
-	__attribute__((__warn_unused_result__));
-static inline gdk_return
+static inline gdk_return __attribute__((__warn_unused_result__))
 bunfastapp_nocheck(BAT *b, BUN p, const void *v, int ts)
 {
 	gdk_return rc;
@@ -1774,9 +1573,7 @@ bunfastapp_nocheck(BAT *b, BUN p, const void *v, int ts)
 	return rc;
 }
 
-static inline gdk_return bunfastapp(BAT *b, const void *v)
-	__attribute__((__warn_unused_result__));
-static inline gdk_return
+static inline gdk_return __attribute__((__warn_unused_result__))
 bunfastapp(BAT *b, const void *v)
 {
 	if (BATcount(b) >= BATcapacity(b)) {
@@ -1802,9 +1599,7 @@ bunfastapp(BAT *b, const void *v)
 	  ((TYPE *) (b)->theap.base)[(b)->batCount++] = * (const TYPE *) (v), \
 	  GDK_SUCCEED))
 
-static inline gdk_return tfastins_nocheckVAR(BAT *b, BUN p, const void *v, int s)
-	__attribute__((__warn_unused_result__));
-static inline gdk_return
+static inline gdk_return __attribute__((__warn_unused_result__))
 tfastins_nocheckVAR(BAT *b, BUN p, const void *v, int s)
 {
 	var_t d;
@@ -1839,9 +1634,7 @@ tfastins_nocheckVAR(BAT *b, BUN p, const void *v, int s)
 	return GDK_SUCCEED;
 }
 
-static inline gdk_return bunfastapp_nocheckVAR(BAT *b, BUN p, const void *v, int ts)
-	__attribute__((__warn_unused_result__));
-static inline gdk_return
+static inline gdk_return __attribute__((__warn_unused_result__))
 bunfastapp_nocheckVAR(BAT *b, BUN p, const void *v, int ts)
 {
 	gdk_return rc;
@@ -1851,9 +1644,7 @@ bunfastapp_nocheckVAR(BAT *b, BUN p, const void *v, int ts)
 	return rc;
 }
 
-static inline gdk_return bunfastappVAR(BAT *b, const void *v)
-	__attribute__((__warn_unused_result__));
-static inline gdk_return
+static inline gdk_return __attribute__((__warn_unused_result__))
 bunfastappVAR(BAT *b, const void *v)
 {
 	if (BATcount(b) >= BATcapacity(b)) {
@@ -1890,271 +1681,6 @@ gdk_export lng IMPSimprintsize(BAT *b);
 gdk_export gdk_return BATorderidx(BAT *b, bool stable);
 gdk_export gdk_return GDKmergeidx(BAT *b, BAT**a, int n_ar);
 gdk_export bool BATcheckorderidx(BAT *b);
-
-/*
- * @- Multilevel Storage Modes
- *
- * We should bring in the compressed mode as the first, maybe
- * built-in, mode. We could then add for instance HTTP remote storage,
- * SQL storage, and READONLY (cd-rom) storage.
- *
- * @+ GDK Utilities
- * Interfaces for memory management, error handling, thread management
- * and system information.
- *
- * @- GDK memory management
- * @multitable @columnfractions 0.08 0.8
- * @item void*
- * @tab GDKmalloc (size_t size)
- * @item void*
- * @tab GDKzalloc (size_t size)
- * @item void*
- * @tab GDKmallocmax (size_t size, size_t *maxsize, int emergency)
- * @item void*
- * @tab GDKrealloc (void* pold, size_t size)
- * @item void*
- * @tab GDKreallocmax (void* pold, size_t size, size_t *maxsize, int emergency)
- * @item void
- * @tab GDKfree (void* blk)
- * @item str
- * @tab GDKstrdup (str s)
- * @item str
- * @tab GDKstrndup (str s, size_t n)
- * @end multitable
- *
- * These utilities are primarily used to maintain control over
- * critical interfaces to the C library.  Moreover, the statistic
- * routines help in identifying performance and bottlenecks in the
- * current implementation.
- *
- * Compiled with -DMEMLEAKS the GDK memory management log their
- * activities, and are checked on inconsistent frees and memory leaks.
- */
-
-/* we prefer to use vm_alloc routines on size > GDKmmap */
-gdk_export void *GDKmmap(const char *path, int mode, size_t len);
-
-gdk_export size_t GDK_mem_maxsize;	/* max allowed size of committed memory */
-gdk_export size_t GDK_vm_maxsize;	/* max allowed size of reserved vm */
-
-gdk_export size_t GDKmem_cursize(void);	/* RAM/swapmem that MonetDB has claimed from OS */
-gdk_export size_t GDKvm_cursize(void);	/* current MonetDB VM address space usage */
-
-gdk_export void *GDKmalloc(size_t size)
-	__attribute__((__malloc__))
-	__attribute__((__alloc_size__(1)))
-	__attribute__((__warn_unused_result__));
-gdk_export void *GDKzalloc(size_t size)
-	__attribute__((__malloc__))
-	__attribute__((__alloc_size__(1)))
-	__attribute__((__warn_unused_result__));
-gdk_export void *GDKrealloc(void *pold, size_t size)
-	__attribute__((__alloc_size__(2)))
-	__attribute__((__warn_unused_result__));
-gdk_export void GDKfree(void *blk);
-gdk_export str GDKstrdup(const char *s)
-	__attribute__((__warn_unused_result__));
-gdk_export str GDKstrndup(const char *s, size_t n)
-	__attribute__((__warn_unused_result__));
-
-#include "gdk_tracer.h"
-
-#if !defined(NDEBUG) && !defined(STATIC_CODE_ANALYSIS)
-/* In debugging mode, replace GDKmalloc and other functions with a
- * version that optionally prints calling information.
- *
- * We have two versions of this code: one using a GNU C extension, and
- * one using traditional C.  The GNU C version also prints the name of
- * the calling function.
- */
-#ifdef __GNUC__
-#define GDKmalloc(s)						\
-	({							\
-		size_t _size = (s);				\
-		void *_res = GDKmalloc(_size);			\
-		TRC_DEBUG(ALLOC, "GDKmalloc(%zu) -> %p\n",	\
-					_size, _res);		\
-		_res;						\
-	})
-#define GDKzalloc(s)						\
-	({							\
-		size_t _size = (s);				\
-		void *_res = GDKzalloc(_size);			\
-		TRC_DEBUG(ALLOC, "GDKzalloc(%zu) -> %p\n",	\
-					_size, _res);		\
-		_res;						\
-	})
-#define GDKrealloc(p, s)					\
-	({							\
-		void *_ptr = (p);				\
-		size_t _size = (s);				\
-		void *_res = GDKrealloc(_ptr, _size);		\
-		TRC_DEBUG(ALLOC, "GDKrealloc(%p,%zu) -> %p\n",	\
-					_ptr, _size, _res);	\
-		_res;						\
-	 })
-#define GDKfree(p)							\
-	({								\
-		void *_ptr = (p);					\
-		if (_ptr)						\
-			TRC_DEBUG(ALLOC, "GDKfree(%p)\n", _ptr);	\
-		GDKfree(_ptr);						\
-	})
-#define GDKstrdup(s)							\
-	({								\
-		const char *_str = (s);					\
-		void *_res = GDKstrdup(_str);				\
-		TRC_DEBUG(ALLOC, "GDKstrdup(len=%zu) -> %p\n",		\
-					_str ? strlen(_str) : 0, _res);	\
-		_res;							\
-	})
-#define GDKstrndup(s, n)					\
-	({							\
-		const char *_str = (s);				\
-		size_t _n = (n);				\
-		void *_res = GDKstrndup(_str, _n);		\
-		TRC_DEBUG(ALLOC, "GDKstrndup(len=%zu) -> %p\n", \
-					_n,	_res);		\
-		_res;						\
-	})
-#define GDKmmap(p, m, l)						\
-	({								\
-		const char *_path = (p);				\
-		int _mode = (m);					\
-		size_t _len = (l);					\
-		void *_res = GDKmmap(_path, _mode, _len);		\
-		TRC_DEBUG(ALLOC, "GDKmmap(%s,0x%x,%zu) -> %p\n",	\
-					_path ? _path : "NULL",		\
-					(unsigned) _mode, _len,		\
-					_res);				\
-		_res;							\
-	 })
-#define malloc(s)					\
-	({						\
-		size_t _size = (s);			\
-		void *_res = malloc(_size);		\
-		TRC_DEBUG(ALLOC, "malloc(%zu) -> %p\n", \
-					_size, _res); 	\
-		_res;					\
-	})
-#define calloc(n, s)						\
-	({							\
-		size_t _nmemb = (n);				\
-		size_t _size = (s);				\
-		void *_res = calloc(_nmemb,_size);		\
-		TRC_DEBUG(ALLOC, "calloc(%zu,%zu) -> %p\n",	\
-					_nmemb, _size, _res);	\
-		_res;						\
-	})
-#define realloc(p, s)						\
-	({							\
-		void *_ptr = (p);				\
-		size_t _size = (s);				\
-		void *_res = realloc(_ptr, _size);		\
-		TRC_DEBUG(ALLOC, "realloc(%p,%zu) -> %p\n",	\
-					_ptr, _size, _res);	\
-		_res;						\
-	 })
-#define free(p)						\
-	({						\
-		void *_ptr = (p);			\
-		TRC_DEBUG(ALLOC, "free(%p)\n", _ptr);	\
-		free(_ptr);				\
-	})
-#else
-static inline void *
-GDKmalloc_debug(size_t size)
-{
-	void *res = GDKmalloc(size);
-	TRC_DEBUG(ALLOC, "GDKmalloc(%zu) -> %p\n", size, res);
-	return res;
-}
-#define GDKmalloc(s)	GDKmalloc_debug((s))
-static inline void *
-GDKzalloc_debug(size_t size)
-{
-	void *res = GDKzalloc(size);
-	TRC_DEBUG(ALLOC, "GDKzalloc(%zu) -> %p\n",
-			   	  size, res);
-	return res;
-}
-#define GDKzalloc(s)	GDKzalloc_debug((s))
-static inline void *
-GDKrealloc_debug(void *ptr, size_t size)
-{
-	void *res = GDKrealloc(ptr, size);
-	TRC_DEBUG(ALLOC, "GDKrealloc(%p,%zu) -> %p\n",
-			   	ptr, size, res);
-	return res;
-}
-#define GDKrealloc(p, s)	GDKrealloc_debug((p), (s))
-static inline void
-GDKfree_debug(void *ptr)
-{
-	TRC_DEBUG(ALLOC, "GDKfree(%p)\n", ptr);
-	GDKfree(ptr);
-}
-#define GDKfree(p)	GDKfree_debug((p))
-static inline char *
-GDKstrdup_debug(const char *str)
-{
-	void *res = GDKstrdup(str);
-	TRC_DEBUG(ALLOC, "GDKstrdup(len=%zu) -> %p\n",
-			   	str ? strlen(str) : 0, res);
-	return res;
-}
-#define GDKstrdup(s)	GDKstrdup_debug((s))
-static inline char *
-GDKstrndup_debug(const char *str, size_t n)
-{
-	void *res = GDKstrndup(str, n);
-	TRC_DEBUG(ALLOC, "GDKstrndup(len=%zu) -> %p\n", n, res);
-	return res;
-}
-#define GDKstrndup(s, n)	GDKstrndup_debug((s), (n))
-static inline void *
-GDKmmap_debug(const char *path, int mode, size_t len)
-{
-	void *res = GDKmmap(path, mode, len);
-	TRC_DEBUG(ALLOC, "GDKmmap(%s,0x%x,%zu) -> %p\n",
-			   	path ? path : "NULL", mode, len,
-			   	res);
-	return res;
-}
-#define GDKmmap(p, m, l)	GDKmmap_debug((p), (m), (l))
-static inline void *
-malloc_debug(size_t size)
-{
-	void *res = malloc(size);
-	TRC_DEBUG(ALLOC, "malloc(%zu) -> %p\n", size, res);
-	return res;
-}
-#define malloc(s)	malloc_debug((s))
-static inline void *
-calloc_debug(size_t nmemb, size_t size)
-{
-	void *res = calloc(nmemb, size);
-	TRC_DEBUG(ALLOC, "calloc(%zu,%zu) -> %p\n", nmemb, size, res);
-	return res;
-}
-#define calloc(n, s)	calloc_debug((n), (s))
-static inline void *
-realloc_debug(void *ptr, size_t size)
-{
-	void *res = realloc(ptr, size);
-	TRC_DEBUG(ALLOC, "realloc(%p,%zu) -> %p \n", ptr, size, res);
-	return res;
-}
-#define realloc(p, s)	realloc_debug((p), (s))
-static inline void
-free_debug(void *ptr)
-{
-	TRC_DEBUG(ALLOC, "free(%p)\n", ptr);
-	free(ptr);
-}
-#define free(p)	free_debug((p))
-#endif
-#endif
 
 #include "gdk_delta.h"
 #include "gdk_hash.h"

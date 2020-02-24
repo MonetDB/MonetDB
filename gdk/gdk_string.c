@@ -64,24 +64,6 @@
 
 const char str_nil[2] = { '\200', 0 };
 
-int
-strNil(const char *s)
-{
-	return GDK_STRNIL(s);
-}
-
-size_t
-strLen(const char *s)
-{
-	return GDK_STRLEN(s);
-}
-
-int
-strCmp(const char *l, const char *r)
-{
-	return GDK_STRCMP(l, r);
-}
-
 void
 strHeap(Heap *d, size_t cap)
 {
@@ -101,12 +83,6 @@ strHeap(Heap *d, size_t cap)
 	}
 }
 
-
-BUN
-strHash(const char *s)
-{
-	return GDK_STRHASH(s);
-}
 
 void
 strCleanHash(Heap *h, bool rebuild)
@@ -141,10 +117,10 @@ strCleanHash(Heap *h, bool rebuild)
 		if (h->hashash)
 			strhash = ((const BUN *) s)[-1];
 		else
-			strhash = GDK_STRHASH(s);
+			strhash = strHash(s);
 		off = strhash & GDK_STRHASHMASK;
 		newhash[off] = (stridx_t) (pos - extralen - sizeof(stridx_t));
-		pos += GDK_STRLEN(s);
+		pos += strLen(s);
 	}
 	/* only set dirty flag if the hash table actually changed */
 	if (memcmp(newhash, h->base, sizeof(newhash)) != 0) {
@@ -165,7 +141,7 @@ strCleanHash(Heap *h, bool rebuild)
 			pos += pad + extralen;
 			s = h->base + pos;
 			assert(strLocate(h, s) != 0);
-			pos += GDK_STRLEN(s);
+			pos += strLen(s);
 		}
 	}
 #endif
@@ -185,7 +161,7 @@ strLocate(Heap *h, const char *v)
 
 	/* search hash-table, if double-elimination is still in place */
 	BUN off;
-	off = GDK_STRHASH(v);
+	off = strHash(v);
 	off &= GDK_STRHASHMASK;
 
 	/* should only use strLocate iff fully double eliminated */
@@ -194,7 +170,7 @@ strLocate(Heap *h, const char *v)
 	/* search the linked list */
 	for (ref = ((stridx_t *) h->base) + off; *ref; ref = next) {
 		next = (stridx_t *) (h->base + *ref);
-		if (GDK_STRCMP(v, (str) (next + 1) + extralen) == 0)
+		if (strCmp(v, (str) (next + 1) + extralen) == 0)
 			return (var_t) ((sizeof(stridx_t) + *ref + extralen));	/* found */
 	}
 	return 0;
@@ -205,12 +181,12 @@ strPut(Heap *h, var_t *dst, const char *v)
 {
 	size_t elimbase = GDK_ELIMBASE(h->free);
 	size_t pad;
-	size_t pos, len = GDK_STRLEN(v);
+	size_t pos, len = strLen(v);
 	const size_t extralen = h->hashash ? EXTRALEN : 0;
 	stridx_t *bucket;
 	BUN off, strhash;
 
-	off = GDK_STRHASH(v);
+	off = strHash(v);
 	strhash = off;
 	off &= GDK_STRHASHMASK;
 	bucket = ((stridx_t *) h->base) + off;
@@ -224,7 +200,7 @@ strPut(Heap *h, var_t *dst, const char *v)
 
 			do {
 				pos = *ref + sizeof(stridx_t) + extralen;
-				if (GDK_STRCMP(v, h->base + pos) == 0) {
+				if (strCmp(v, h->base + pos) == 0) {
 					/* found */
 					return *dst = (var_t) pos;
 				}
@@ -235,7 +211,7 @@ strPut(Heap *h, var_t *dst, const char *v)
 			 * linked list, so only look at single
 			 * entry */
 			pos = *bucket + extralen;
-			if (GDK_STRCMP(v, h->base + pos) == 0) {
+			if (strCmp(v, h->base + pos) == 0) {
 				/* already in heap: reuse */
 				return *dst = (var_t) pos;
 			}
@@ -604,7 +580,7 @@ strFromStr(const char *restrict src, size_t *restrict len, char **restrict dst, 
 		return (ssize_t) strcpy_len(*dst, src, sz);
 	}
 
-	if (GDK_STRNIL(src)) {
+	if (strNil(src)) {
 		atommem(2);
 		strcpy(*dst, str_nil);
 		return 1;
@@ -761,7 +737,7 @@ strToStr(char **restrict dst, size_t *restrict len, const char *restrict src, bo
 		atommem(sz);
 		return (ssize_t) strcpy_len(*dst, src, sz);
 	}
-	if (GDK_STRNIL(src)) {
+	if (strNil(src)) {
 		atommem(4);
 		strcpy(*dst, "nil");
 		return 3;
@@ -818,8 +794,8 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 {
 	oid gid;
 	BUN i, p, nils = 0;
-	size_t *lengths = NULL, *lastseplength = NULL, separator_length = 0, next_length;
-	str *astrings = NULL, s, sl;
+	size_t *restrict lengths = NULL, *restrict lastseplength = NULL, separator_length = 0, next_length;
+	str *restrict astrings = NULL, s, sl;
 	BATiter bi, bis = (BATiter) {0};
 	BAT *bn = NULL;
 	gdk_return rres = GDK_SUCCEED;
@@ -850,7 +826,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 			for (i = 0; i < ncand; i++) {
 				p = canditer_next(ci) - seqb;
 				s = BUNtvar(bi, p);
-				if (GDK_STRNIL(s)) {
+				if (strNil(s)) {
 					if (!skip_nils) {
 						nils = 1;
 						break;
@@ -867,7 +843,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 				p = canditer_next(ci) - seqb;
 				s = BUNtvar(bi, p);
 				sl = BUNtvar(bis, p);
-				if (GDK_STRNIL(s)) {
+				if (strNil(s)) {
 					if (!skip_nils) {
 						nils = 1;
 						break;
@@ -875,7 +851,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 				} else {
 					single_length += strlen(s);
 					if (!empty) {
-						if (GDK_STRNIL(sl)) {
+						if (strNil(sl)) {
 							if (!skip_nils) {
 								nils = 1;
 								break;
@@ -899,7 +875,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 				for (i = 0; i < ncand; i++) {
 					p = canditer_next(ci) - seqb;
 					s = BUNtvar(bi, p);
-					if (GDK_STRNIL(s))
+					if (strNil(s))
 						continue;
 					if (!empty) {
 						memcpy(single_str + offset, separator, separator_length);
@@ -915,9 +891,9 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 					p = canditer_next(ci) - seqb;
 					s = BUNtvar(bi, p);
 					sl = BUNtvar(bis, p);
-					if (GDK_STRNIL(s))
+					if (strNil(s))
 						continue;
-					if (!empty && !GDK_STRNIL(sl)) {
+					if (!empty && !strNil(sl)) {
 						next_length = strlen(sl);
 						memcpy(single_str + offset, sl, next_length);
 						offset += next_length;
@@ -974,7 +950,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 					if (lengths[gid] == (size_t) -1)
 						continue;
 					s = BUNtvar(bi, i);
-					if (!GDK_STRNIL(s)) {
+					if (!strNil(s)) {
 						lengths[gid] += strlen(s) + separator_length;
 						astrings[gid] = NULL;
 					} else if (!skip_nils) {
@@ -993,9 +969,9 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 						continue;
 					s = BUNtvar(bi, i);
 					sl = BUNtvar(bis, i);
-					if (!GDK_STRNIL(s)) {
+					if (!strNil(s)) {
 						lengths[gid] += strlen(s);
-						if (!GDK_STRNIL(sl)) {
+						if (!strNil(sl)) {
 							next_length = strlen(sl);
 							lengths[gid] += next_length;
 							lastseplength[gid] = next_length;
@@ -1046,7 +1022,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 					gid = gids[i] - min;
 					if (astrings[gid]) {
 						s = BUNtvar(bi, i);
-						if (GDK_STRNIL(s))
+						if (strNil(s))
 							continue;
 						if (astrings[gid][lengths[gid]]) {
 							memcpy(astrings[gid] + lengths[gid], separator, separator_length);
@@ -1067,9 +1043,9 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 					if (astrings[gid]) {
 						s = BUNtvar(bi, i);
 						sl = BUNtvar(bis, i);
-						if (GDK_STRNIL(s))
+						if (strNil(s))
 							continue;
-						if (astrings[gid][lengths[gid]] && !GDK_STRNIL(sl)) {
+						if (astrings[gid][lengths[gid]] && !strNil(sl)) {
 							next_length = strlen(sl);
 							memcpy(astrings[gid] + lengths[gid], sl, next_length);
 							lengths[gid] += next_length;
@@ -1134,7 +1110,7 @@ BATstr_group_concat(ValPtr res, BAT *b, BAT *s, BAT *sep, bool skip_nils,
 		sep = NULL;
 	}
 
-	if (ncand == 0 || (separator && GDK_STRNIL(separator))) {
+	if (ncand == 0 || (separator && strNil(separator))) {
 		if (VALinit(res, TYPE_str, nil_if_empty ? str_nil : "") == NULL)
 			return GDK_FAIL;
 		return GDK_SUCCEED;
@@ -1174,7 +1150,7 @@ BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, BAT *sep, bool skip_nil
 		sep = NULL;
 	}
 
-	if (ncand == 0 || ngrp == 0 || (separator && GDK_STRNIL(separator))) {
+	if (ncand == 0 || ngrp == 0 || (separator && strNil(separator))) {
 		/* trivial: no strings to concat, so return bat
 		 * aligned with g with nil in the tail */
 		return BATconstant(ngrp == 0 ? 0 : min, TYPE_str, str_nil, ngrp, TRANSIENT);
@@ -1235,7 +1211,7 @@ GDKanalytical_str_group_concat(BAT *r, BAT *b, BAT *sep, BAT *s, BAT *e, const c
 			sb = BUNtvar(bi, (BUN) j);
 
 			if (separator) {
-				if (!GDK_STRNIL(sb)) {
+				if (!strNil(sb)) {
 					next_group_length += strlen(sb);
 					if (!empty)
 						next_group_length += separator_length;
@@ -1244,9 +1220,9 @@ GDKanalytical_str_group_concat(BAT *r, BAT *b, BAT *sep, BAT *s, BAT *e, const c
 			} else { /* sep case */
 				sl = BUNtvar(bis, (BUN) j);
 
-				if (!GDK_STRNIL(sb)) {
+				if (!strNil(sb)) {
 					next_group_length += strlen(sb);
-					if (!empty && !GDK_STRNIL(sl))
+					if (!empty && !strNil(sl))
 						next_group_length += strlen(sl);
 					empty = false;
 				}
@@ -1270,7 +1246,7 @@ GDKanalytical_str_group_concat(BAT *r, BAT *b, BAT *sep, BAT *s, BAT *e, const c
 			sb = BUNtvar(bi, (BUN) j);
 
 			if (separator) {
-				if (GDK_STRNIL(sb))
+				if (strNil(sb))
 					continue;
 				if (!empty) {
 					memcpy(single_str + offset, separator, separator_length);
@@ -1283,9 +1259,9 @@ GDKanalytical_str_group_concat(BAT *r, BAT *b, BAT *sep, BAT *s, BAT *e, const c
 			} else { /* sep case */
 				sl = BUNtvar(bis, (BUN) j);
 
-				if (GDK_STRNIL(sb))
+				if (strNil(sb))
 					continue;
-				if (!empty && !GDK_STRNIL(sl)) {
+				if (!empty && !strNil(sl)) {
 					next_length = strlen(sl);
 					memcpy(single_str + offset, sl, next_length);
 					offset += next_length;

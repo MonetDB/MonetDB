@@ -6,10 +6,60 @@ SELECT parent."sys_id" FROM "kagami_dump"."test_task" parent INNER JOIN "kagami_
 
 DROP SCHEMA "kagami_dump" CASCADE;
 
-START TRANSACTION;
 CREATE TABLE tab0(col0 INTEGER, col1 INTEGER, col2 INTEGER);
 INSERT INTO tab0 VALUES(97,1,99), (15,81,47), (87,21,10);
+CREATE TABLE tab1(col0 INTEGER, col1 INTEGER, col2 INTEGER);
+INSERT INTO tab1 VALUES (51,14,96), (85,5,59), (91,47,68);
+
 SELECT CAST(+ col1 * - col1 AS BIGINT) AS col2 FROM tab0 GROUP BY col2, col0, col1 HAVING + - col0 / - AVG ( ALL + col2 ) - - - AVG ( DISTINCT + col0 ) + col0 IS NULL;
 SELECT DISTINCT + 40 / + + col0 AS col2 FROM tab0 GROUP BY col0, col0, col2 HAVING NOT ( NOT + - 80 BETWEEN NULL AND + - 73 ) OR NOT ( + col0 >= - COUNT ( * ) + - COUNT ( DISTINCT - col0 ) );
 SELECT ALL * FROM tab0 AS cor0 WHERE col2 NOT IN ( 22, 18, CAST ( NULL AS INTEGER ) + - 77 );
-ROLLBACK;
+
+SELECT * FROM tab0 AS cor0 WHERE NOT - 39 <> 11; --empty
+SELECT DISTINCT * FROM tab0 WHERE NOT - - 12 <> + + 96; --empty
+SELECT * FROM tab0 AS cor0 WHERE - 52 = + 32; --empty
+SELECT ALL * FROM tab0 WHERE 68 = - + 83; --empty
+
+SELECT 11 FROM tab1 AS cor0 LEFT JOIN tab0 ON 80 = 70;
+	-- 11
+	-- 11
+	-- 11
+
+prepare select col0 from tab0 where (?) in (select col0 from tab0);
+prepare select col0 from tab0 where (?,?) in (select col0,col1 from tab0);
+prepare select col0 from tab0 where (col1,col1) in (select col0,? from tab0);
+prepare select col0 from tab0 where (col1,col1) in (select ?,? from tab0);
+prepare select col0 from tab0 where (col0) in (?);
+prepare select col0 from tab0 where (col0) in (?,?);
+
+prepare select ? < ANY (select max(col0) from tab0) from tab0 t1;
+prepare select col0 = ALL (select ? from tab0) from tab0 t1;
+
+prepare select 1 from tab0 where 1 between ? and ?;
+prepare select 1 from tab0 where ? between 1 and ?;
+prepare select 1 from tab0 where ? between ? and 1;
+
+prepare select EXISTS (SELECT ? FROM tab0) from tab0;
+prepare select EXISTS (SELECT ?,? FROM tab0) from tab0;
+
+prepare select col0 from tab0 where (?) in (?); --error
+prepare select ? = ALL (select ? from tab0) from tab0 t1; --error
+prepare select 1 from tab0 where ? between ? and ?; --error
+
+prepare select case when col0 = 0 then ? else 1 end from tab0;
+prepare select case when col0 = 0 then 1 else ? end from tab0;
+prepare select case when col0 = 0 then ? else ? end from tab0; --error
+
+prepare select case when col0 = 0 then ? when col0 = 1 then ? else 1 end from tab0;
+prepare select case when col0 = 0 then ? when col0 = 1 then ? else ? end from tab0; --error
+
+prepare select ? is null from tab0; --error
+prepare select max(?); --error
+prepare select max(?) over (); --error
+
+drop table tab1;
+CREATE TABLE tab1(col0 INTEGER, col1 STRING);
+prepare select 1 from tab1 where (col0,col1) in (select ?,? from tab1);
+
+drop table tab0;
+drop table tab1;

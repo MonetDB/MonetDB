@@ -1091,33 +1091,19 @@ SOPREF=lib
 AS_CASE([$host_os],
 [mac*], [
 	# Mac OS 9 stuff
-	DIRSEP=':'
-	QDIRSEP=':'
 	AC_MSG_ERROR([mac not supported])],
 [*cygwin*], [
-	DIRSEP='/'
-	QDIRSEP='/'
-	PATHSEP=':'
 	SOEXT='-0.dll'
 	SOPREF=cyg],
 [*darwin*], [
-	DIRSEP='/'
-	QDIRSEP='/'
-	PATHSEP=':'
 	SOEXT='.dylib'],
 [
-	DIRSEP='/'
-	QDIRSEP='/'
-	PATHSEP=':'
 	SOEXT='.so'])
-AC_SUBST([DIRSEP])
-AC_SUBST([QDIRSEP])
-AC_SUBST([PATHSEP])
 AC_SUBST([SOEXT])
-AC_DEFINE_UNQUOTED([DIR_SEP], ['$QDIRSEP'], [Directory separator])
-AC_DEFINE_UNQUOTED([DIR_SEP_STR], ["$QDIRSEP"], [Directory separator])
-AC_DEFINE_UNQUOTED([PATH_SEP], ['$PATHSEP'], [Path separator])
-AC_DEFINE_UNQUOTED([PATH_SEP_STR], ["$PATHSEP"], [Path separator])
+AC_DEFINE_UNQUOTED([DIR_SEP], ['/'], [Directory separator])
+AC_DEFINE_UNQUOTED([DIR_SEP_STR], ["/"], [Directory separator])
+AC_DEFINE_UNQUOTED([PATH_SEP], [':'], [Path separator])
+AC_DEFINE_UNQUOTED([PATH_SEP_STR], [":"], [Path separator])
 AC_DEFINE_UNQUOTED([SO_PREFIX], ["$SOPREF"], [Shared Object prefix])
 AC_DEFINE_UNQUOTED([SO_EXT], ["$SOEXT"], [Shared Object extension])
 
@@ -1161,7 +1147,7 @@ AS_VAR_IF([have_bz2], [no], [], [
 		[AC_SUBST([PKG_BZIP2], [bzip2])])
 	AS_VAR_IF([have_bz2], [yes],
 		[AC_DEFINE([HAVE_LIBBZ2], 1, [Define if you have the bz2 library])])])
-AM_CONDITIONAL([HAVE_LIBBZ2], [test x"$have_libbz2" != xno])
+AM_CONDITIONAL([HAVE_LIBBZ2], [test x"$have_bz2" != xno])
 
 
 
@@ -1570,12 +1556,12 @@ AC_ARG_WITH([lzma],
 		[include lzma support (default=yes)])],
 	[have_lzma=$withval])
 AS_VAR_IF([have_lzma], [no], [], [
-	PKG_CHECK_MODULES([liblzma], [liblzma], [have_liblzma=yes], [have_liblzma=no; why_not_liblzma="(liblzma not found, install xz-libs and xz-devel)"])
-	AS_VAR_IF([have_liblzma], [yes], [
+	PKG_CHECK_MODULES([liblzma], [liblzma], [have_lzma=yes], [have_lzma=no; why_not_liblzma="(liblzma not found, install xz-libs and xz-devel)"])
+	AS_VAR_IF([have_lzma], [yes], [
 		AC_SUBST([PKG_LIBLZMA], [liblzma])])
-	AS_VAR_IF([have_liblzma], [yes], [
+	AS_VAR_IF([have_lzma], [yes], [
 		AC_DEFINE([HAVE_LIBLZMA], 1, [Define if you have the lzma library])])])
-AM_CONDITIONAL([HAVE_LIBLZMA], [test x"$have_liblzma" != xno])
+AM_CONDITIONAL([HAVE_LIBLZMA], [test x"$have_lzma" != xno])
 
 org_have_valgrind=no
 have_valgrind=$org_have_valgrind
@@ -2161,22 +2147,6 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 	[AC_MSG_RESULT([yes])
 	 AC_DEFINE([HAVE_STDATOMIC_H], 1, [Define to 1 if you have the <stdatomic.h> header file.])],
 	[AC_MSG_RESULT([no])])
-
-AC_MSG_CHECKING([if your compiler understands `__hidden'])
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
-	@%:@include <stdlib.h>
-
-	__hidden void foo (const char *a, ...);
-
-	void foo (const char *a, ...)
-		{ (void)a; }
-	]],
-	[[ foo ("%s", ""); ]]
-	)],
-	[AC_MSG_RESULT([yes])],
-	[AC_MSG_RESULT([no])
-	AC_DEFINE([__hidden], [/* empty */],
-		[Does your compiler support the `__hidden' specifier?])])
 
 AC_MSG_CHECKING([if your compiler understands `_Noreturn'])
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[

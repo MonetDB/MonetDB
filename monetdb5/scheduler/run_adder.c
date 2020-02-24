@@ -72,7 +72,7 @@ RUNadder(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	int batch;
 	int size;
 	int i,pc;
-	InstrPtr q, *old;
+	InstrPtr q =  NULL, *old;
 	int oldtop;
 	str msg = MAL_SUCCEED;
 

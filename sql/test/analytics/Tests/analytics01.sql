@@ -265,6 +265,31 @@ LAST_VALUE(t0.points) OVER (PARTITION BY CAST(t0.start_time AS DATE) ORDER BY t0
 FROM test1 t0
 WHERE (t0.start_time >= '2017/12/01 00:00:00' AND t0.start_time <= '2017/12/02 00:00:00');
 
+CREATE TABLE "sys"."test2" (
+	"name"       VARCHAR(100),
+	"points"     INT,
+	"start_time" TIMESTAMP
+);
+
+COPY 8 RECORDS INTO "sys"."test2" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+"Ashish"	20	"2017-12-01 00:00:00.000000"
+"Ashish"	40	"2017-12-01 01:00:00.000000"
+"Ashish"	60	"2017-12-01 00:00:00.000000"
+"Prashant"	10	"2017-12-01 00:00:00.000000"
+"Prashant"	50	"2017-12-01 01:00:00.000000"
+"Prashant"	90	"2017-12-01 00:00:00.000000"
+"Prashant"	11	"2017-12-02 01:02:00.000000"
+"Prashant"	15	"2017-12-02 02:02:00.000000"
+
+SELECT distinct "name" ,
+first_value("points") over (partition by cast("start_time" as date) order by cast("start_time" as date))
+FROM test2
+order by "name";
+
+SELECT distinct "name" ,
+first_value("points") over (partition by cast("start_time" as date), "name" order by cast("start_time" as date))
+FROM test2
+order by "name";
 
 rollback;
 

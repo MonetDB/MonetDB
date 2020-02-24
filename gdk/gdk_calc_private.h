@@ -311,7 +311,7 @@
 		}							\
 	} while (0)
 
-__hidden BUN dofsum(const void *restrict values, oid seqb,
+BUN dofsum(const void *restrict values, oid seqb,
 		    struct canditer *restrict ci, BUN ncand,
 		    void *restrict results, BUN ngrp, int tp1, int tp2,
 		    const oid *restrict gids,

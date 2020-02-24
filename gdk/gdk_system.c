@@ -192,18 +192,21 @@ static DWORD threadslot = TLS_OUT_OF_INDEXES;
 void
 dump_threads(void)
 {
-	EnterCriticalSection(&winthread_cs);
-	for (struct winthread *w = winthreads; w; w = w->next) {
-		TRC_DEBUG(THRD, "%s, waiting for %s, working on %.200s\n",
-						w->threadname,
-						w->lockwait ? w->lockwait->name :
-						w->semawait ? w->semawait->name :
-						w->joinwait ? w->joinwait->threadname :
-						"nothing",
-						ATOMIC_GET(&w->exited) ? "exiting" :
-						w->working ? w->working : "nothing");
+	TRC_DEBUG_IF(THRD)
+	{
+		EnterCriticalSection(&winthread_cs);
+		for (struct winthread *w = winthreads; w; w = w->next) {
+			TRC_DEBUG_ENDIF(THRD, "%s, waiting for %s, working on %.200s\n",
+							w->threadname,
+							w->lockwait ? w->lockwait->name :
+							w->semawait ? w->semawait->name :
+							w->joinwait ? w->joinwait->threadname :
+							"nothing",
+							ATOMIC_GET(&w->exited) ? "exiting" :
+							w->working ? w->working : "nothing");
+		}
+		LeaveCriticalSection(&winthread_cs);
 	}
-	LeaveCriticalSection(&winthread_cs);
 }
 
 bool
@@ -277,6 +280,14 @@ MT_thread_setworking(const char *work)
 
 	if (w)
 		w->working = work;
+}
+
+bool
+MT_thread_override_limits(void)
+{
+	struct winthread *w = TlsGetValue(threadslot);
+
+	return w && w->working && strcmp(w->working, "store locked") == 0;
 }
 
 void *
@@ -500,18 +511,21 @@ static pthread_key_t threadkey;
 void
 dump_threads(void)
 {
-	pthread_mutex_lock(&posthread_lock);
-	for (struct posthread *p = posthreads; p; p = p->next) {
-		TRC_DEBUG(THRD, "%s, waiting for %s, working on %.200s\n",
-						p->threadname,
-						p->lockwait ? p->lockwait->name :
-						p->semawait ? p->semawait->name :
-						p->joinwait ? p->joinwait->threadname :
-						"nothing",
-						ATOMIC_GET(&p->exited) ? "exiting" :
-						p->working ? p->working : "nothing");
+	TRC_DEBUG_IF(THRD)
+	{
+		pthread_mutex_lock(&posthread_lock);
+		for (struct posthread *p = posthreads; p; p = p->next) {
+			TRC_DEBUG_ENDIF(THRD, "%s, waiting for %s, working on %.200s\n",
+							p->threadname,
+							p->lockwait ? p->lockwait->name :
+							p->semawait ? p->semawait->name :
+							p->joinwait ? p->joinwait->threadname :
+							"nothing",
+							ATOMIC_GET(&p->exited) ? "exiting" :
+							p->working ? p->working : "nothing");
+		}
+		pthread_mutex_unlock(&posthread_lock);
 	}
-	pthread_mutex_unlock(&posthread_lock);
 }
 
 bool
@@ -593,6 +607,14 @@ MT_thread_setworking(const char *work)
 
 	if (p)
 		p->working = work;
+}
+
+bool
+MT_thread_override_limits(void)
+{
+	struct posthread *p = pthread_getspecific(threadkey);
+
+	return p && p->working && strcmp(p->working, "store locked") == 0;
 }
 
 #ifdef HAVE_PTHREAD_SIGMASK

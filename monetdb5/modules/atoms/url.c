@@ -319,7 +319,7 @@ URLtoString(str *s, size_t *len, const char *src, bool external)
 	}
 
 	if (external) {
-		if (GDK_STRNIL(src)) {
+		if (strNil(src)) {
 			strcpy(*s, "nil");
 			return 3;
 		}
@@ -707,7 +707,7 @@ URLnew3(url *u, str *protocol, str *server, str *file)
 {
 	size_t l;
 
-	l = GDK_STRLEN(*file) + GDK_STRLEN(*server) + GDK_STRLEN(*protocol) + 10;
+	l = strLen(*file) + strLen(*server) + strLen(*protocol) + 10;
 	*u = GDKmalloc(l);
 	if (*u == NULL)
 		throw(MAL, "url.newurl", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -723,13 +723,13 @@ URLnew4(url *u, str *protocol, str *server, int *port, str *file)
 	str File = *file;
 	size_t l;
 
-	if (GDK_STRNIL(File))
+	if (strNil(File))
 		File = "";
 	else if (*File == '/')
 		File++;
-	if (GDK_STRNIL(Server))
+	if (strNil(Server))
 		Server = "";
-	if (GDK_STRNIL(Protocol))
+	if (strNil(Protocol))
 		Protocol = "";
 	l = strlen(File) + strlen(Server) + strlen(Protocol) + 20;
 	*u = GDKmalloc(l);

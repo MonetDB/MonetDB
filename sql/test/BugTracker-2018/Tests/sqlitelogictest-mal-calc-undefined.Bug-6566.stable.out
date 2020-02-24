@@ -27,7 +27,7 @@ stdout of test 'sqlitelogictest-mal-calc-undefined.Bug-6566` in directory 'sql/t
 #INSERT INTO tab0 VALUES(97,1,99), (15,81,47), (87,21,10);
 [ 3	]
 #SELECT CAST ( - col0 - - - col0 * + CAST ( NULL AS INTEGER ) AS BIGINT ) FROM tab0;
-% . # table_name
+% sys. # table_name
 % %1 # name
 % bigint # type
 % 1 # length

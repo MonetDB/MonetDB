@@ -177,7 +177,7 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 			}
 
 			else if(isUpdateInstruction(p)){
-				TRC_DEBUG_ENDIF(MAL_OPTIMIZER, "Skipped: %d %d\n", mayhaveSideEffects(cntxt, mb, q, TRUE) , isUpdateInstruction(p));
+				TRC_DEBUG(MAL_OPTIMIZER, "Skipped: %d %d\n", mayhaveSideEffects(cntxt, mb, q, TRUE) , isUpdateInstruction(p));
 				traceInstruction(MAL_OPTIMIZER, mb, 0, q, LIST_MAL_ALL);
 			}
 

@@ -149,7 +149,7 @@ validate_alter_table_add_table(mvc *sql, char* call, char *msname, char *mtname,
 	*mt = rmt;
 	*pt = rpt;
 	if (!update && rmt && (!isMergeTable(rmt) && !isReplicaTable(rmt)))
-		throw(SQL,call,SQLSTATE(42S02) "ALTER TABLE: cannot add table '%s.%s' to table '%s.%s'", psname, ptname, msname, mtname);
+		throw(SQL,call,SQLSTATE(42S02) "ALTER TABLE: cannot add table '%s.%s' to %s '%s.%s'", psname, ptname, TABLE_TYPE_DESCRIPTION(rmt->type, rmt->properties), msname, mtname);
 	if (rmt && rpt) {
 		char *msg;
 		node *n = cs_find_id(&rmt->members, rpt->base.id);
@@ -160,9 +160,9 @@ validate_alter_table_add_table(mvc *sql, char* call, char *msname, char *mtname,
 		if (ms->base.id != ps->base.id)
 			throw(SQL,call,SQLSTATE(42000) "ALTER TABLE: all children tables of '%s.%s' must be part of schema '%s'", msname, mtname, msname);
 		if (n && !update)
-			throw(SQL,call,SQLSTATE(42S02) "ALTER TABLE: table '%s.%s' is already part of the %s '%s.%s'", psname, ptname, errtable, msname, mtname);
+			throw(SQL,call,SQLSTATE(42S02) "ALTER TABLE: table '%s.%s' is already part of %s '%s.%s'", psname, ptname, errtable, msname, mtname);
 		if (!n && update)
-			throw(SQL,call,SQLSTATE(42S02) "ALTER TABLE: table '%s.%s' isn't part of the %s '%s.%s'", psname, ptname, errtable, msname, mtname);
+			throw(SQL,call,SQLSTATE(42S02) "ALTER TABLE: table '%s.%s' isn't part of %s '%s.%s'", psname, ptname, errtable, msname, mtname);
 		if ((msg = rel_check_tables(rmt, rpt, errtable)) != NULL)
 			return msg;
 		return MAL_SUCCEED;

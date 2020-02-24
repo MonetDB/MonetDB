@@ -28,6 +28,10 @@ stderr of test 'declared_tables` in directory 'sql/test/miscellaneous` itself:
 # 14:29:32 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-20678" "--port=39353"
 # 14:29:32 >  
 
+MAPI  = (monetdb) /var/tmp/mtest-111853/.s.monetdb.31638
+QUERY = select b; --error, b was never declared
+ERROR = !SELECT: identifier 'b' unknown
+CODE  = 42000
 
 # 14:29:33 >  
 # 14:29:33 >  "Done."
