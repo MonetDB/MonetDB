@@ -949,7 +949,7 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (rel)
 		rel = rel_unnest(m, rel);
 	if (rel)
-		rel = rel_optimizer(m, rel, 0);
+		rel = rel_optimizer(m, rel, 1);
 	if (!rel || monet5_create_relational_function(m, *mod, *nme, rel, NULL, ops, 0) < 0) {
 		if (strlen(m->errstr) > 6 && m->errstr[5] == '!')
 			msg = createException(SQL, "RAstatement2", "%s", m->errstr);
