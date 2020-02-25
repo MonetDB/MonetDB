@@ -202,12 +202,14 @@ CLTquit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int id;
 	(void) mb;		/* fool compiler */
-	
+
 	if ( pci->argc==2)
 		id = *getArgReference_int(stk,pci,1);
 	else id =cntxt->idx;
 
-	if ( !(cntxt->user == MAL_ADMIN ||  mal_clients[id].user == cntxt->user) )
+	if ( id < 0 || id > MAL_MAXCLIENTS)
+		throw(MAL,"clients.quit", "Illegal session id");
+	if ( !(cntxt->user == MAL_ADMIN || mal_clients[id].user == cntxt->user) )
 		throw(MAL, "client.quit", INVCRED_ACCESS_DENIED);
 
 	/* A user can only quite a session under the same id */
@@ -225,6 +227,8 @@ CLTstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int id = *getArgReference_int(stk,pci,1);
 
 	(void) mb;
+	if ( id < 0 || id > MAL_MAXCLIENTS)
+		throw(MAL,"clients.stop","Illegal session id");
 	if (cntxt->user == mal_clients[id].user || cntxt->user == MAL_ADMIN)
 		mal_clients[id].qtimeout = 1; /* stop client in one microsecond */
 	/* this forces the designated client to stop at the next instruction */
@@ -235,12 +239,15 @@ CLTstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 CLTsuspend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int *id=  getArgReference_int(stk,pci,1);
+	int id = *getArgReference_int(stk,pci,1);
 	(void) cntxt;
 	(void) mb;
-	if ( !(cntxt->user == MAL_ADMIN ||  mal_clients[*id].user == cntxt->user) )
+
+	if ( id < 0 || id > MAL_MAXCLIENTS)
+		throw(MAL,"clients.suspend", "Illegal session id");
+	if ( !(cntxt->user == MAL_ADMIN || mal_clients[id].user == cntxt->user) )
 		throw(MAL, "client.suspend", INVCRED_ACCESS_DENIED);
-    return MCsuspendClient(*id);
+	return MCsuspendClient(id);
 }
 
 str
@@ -558,6 +565,10 @@ CLTshutdown(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 	if (cntxt->user != MAL_ADMIN)
 		throw(MAL,"mal.shutdown", "Administrator rights required");
+	if (delay < 0)
+		throw(MAL,"mal.shutdown", "Delay cannot be negative");
+	if (is_bit_nil(force))
+		throw(MAL,"mal.shutdown", "Force cannot be null");
 	MCstopClients(cntxt);
 	do{
 		if ( (leftover = MCactiveClients()-1) )
