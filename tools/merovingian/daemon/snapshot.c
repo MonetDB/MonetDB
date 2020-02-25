@@ -71,6 +71,5 @@ bailout:
 		mapi_destroy(conn);
 	if (stats != NULL)
 		msab_freeStatus(&stats);
-	(void)dest;
 	return e;
 }

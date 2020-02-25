@@ -367,6 +367,8 @@ main(int argc, char *argv[])
 		{"control",       strdup("false"),         0,                  BOOLEAN},
 		{"passphrase",    NULL,                    0,                  STR},
 
+		{"snapshotdir",   NULL,                    0,                  STR},
+
 		{ NULL,           NULL,                    0,                  INVALID}
 	};
 	confkeyval *kv;
