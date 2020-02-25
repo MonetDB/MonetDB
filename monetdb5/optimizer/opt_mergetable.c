@@ -1417,8 +1417,13 @@ mat_group_new(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int b)
 		pushInstruction(mb, q);
 		if(setPartnr(ml, getArg(ml->v[b].mi,i), getArg(q,0), i) ||
 		   setPartnr(ml, getArg(ml->v[b].mi,i), getArg(q,1), i) ||
-		   setPartnr(ml, getArg(ml->v[b].mi,i), getArg(q,2), i))
+		   setPartnr(ml, getArg(ml->v[b].mi,i), getArg(q,2), i)){
+			freeInstruction(r0);
+			freeInstruction(r1);
+			freeInstruction(r2);
+			freeInstruction(attr);
 			return -1;
+		}
 
 		/* add result to mats */
 		r0 = addArgument(mb,r0,getArg(q,0));
@@ -1429,8 +1434,13 @@ mat_group_new(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int b)
 		getArg(r, 0) = newTmpVariable(mb, atp);
 		r = addArgument(mb, r, getArg(q,1));
 		r = addArgument(mb, r, getArg(ml->v[b].mi,i));
-		if(setPartnr(ml, getArg(ml->v[b].mi,i), getArg(r,0), i))
+		if(setPartnr(ml, getArg(ml->v[b].mi,i), getArg(r,0), i)){
+			freeInstruction(r0);
+			freeInstruction(r1);
+			freeInstruction(r2);
+			freeInstruction(attr);
 			return -1;
+		}
 		pushInstruction(mb,r);
 
 		attr = addArgument(mb, attr, getArg(r, 0)); 
