@@ -106,6 +106,7 @@ static PyObject *_connection_execute(Py_ConnectionObject *self, PyObject *args)
 		}
 	} else {
 		PyErr_Format(PyExc_Exception, "Loopback queries are not supported in parallel.");
+		GDKfree(query);
 		return NULL;
 	}
 }

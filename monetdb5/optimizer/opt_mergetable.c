@@ -309,8 +309,10 @@ mat_delta(matlist_t *ml, MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int n, int
 			for(j=1; j < mat[m].mi->argc; j++) {
 				if (overlap(ml, getArg(mat[e].mi, k), getArg(mat[m].mi, j), k, j, 0)){
 					InstrPtr q = copyInstruction(p);
-					if(!q)
+					if(!q){
+						freeInstruction(r);
 						return NULL;
+					}
 
 					/* remove last argument (inserts only on last part) */
 					if (k < mat[m].mi->argc-1)
@@ -777,6 +779,7 @@ mat_join2(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n)
 				if(propagatePartnr(ml, getArg(mat[m].mi, k), getArg(q,0), nr) ||
 				   propagatePartnr(ml, getArg(mat[n].mi, j), getArg(q,1), nr)) {
 					freeInstruction(r);
+					freeInstruction(l);
 					return -1;
 				}
 
