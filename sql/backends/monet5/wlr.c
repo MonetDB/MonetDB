@@ -163,7 +163,7 @@ WLRgetMaster(void)
 {
 	char path[FILENAME_MAX];
 	int len;
-	str dir, msg;
+	str dir, msg = MAL_SUCCEED;
 	FILE *fd;
 
 	if( wlr_master[0] == 0 )
@@ -173,12 +173,19 @@ WLRgetMaster(void)
 	len = snprintf(path, FILENAME_MAX, "..%c%s", DIR_SEP, wlr_master);
 	if (len == -1 || len >= FILENAME_MAX)
 		throw(MAL, "wlr.getMaster", "wlc.config filename path is too large");
-	if((dir = GDKfilepath(0, path, "wlc.config", 0)) == NULL)
+	if ((dir = GDKfilepath(0, path, "wlc.config", 0)) == NULL)
 		throw(MAL,"wlr.getMaster","Could not access wlc.config file %s/wlc.config\n", path);
 
 	fd = fopen(dir,"r");
 	GDKfree(dir);
-	if( fd == NULL )
+	if( fd ){
+		msg = WLCreadConfig(fd);
+		if( msg != MAL_SUCCEED)
+			return msg;
+		if( ! wlr_master[0] )
+			throw(MAL,"wlr.getMaster","Master not identified\n");
+		wlc_state = WLC_CLONE; // not used as master
+	} else
 		throw(MAL,"wlr.getMaster","Could not get read access to '%s'config file\n", wlr_master);
 	if((msg = WLCreadConfig(fd)))
 		return msg;

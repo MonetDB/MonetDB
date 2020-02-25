@@ -200,9 +200,7 @@ malInclude(Client c, str name, int listing)
 		}
 		bstream_next(c->fdin);
 		parseMAL(c, c->curprg, 1, INT_MAX);
-		free(mal_init_buf);
-		free(mal_init_stream);
-		free(c->fdin);
+		bstream_destroy(c->fdin);
 		c->fdin = NULL;
 		GDKfree(mal_init_buf);
 	}

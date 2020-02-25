@@ -48,6 +48,8 @@ io_stdin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bstream **ret= (bstream**) getArgReference(stk,pci,0);
 	(void) mb;
+	if( cntxt->fdin == NULL)
+		throw(MAL, "io.print", SQLSTATE(HY002) "Input channel missing");
 	*ret = cntxt->fdin;
 	return MAL_SUCCEED;
 }
@@ -57,6 +59,8 @@ io_stdout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	stream **ret= (stream**) getArgReference(stk,pci,0);
 	(void) mb;
+	if( cntxt->fdout == NULL)
+		throw(MAL, "io.print", SQLSTATE(HY002) "Output channel missing");
 	*ret = cntxt->fdout;
 	return MAL_SUCCEED;
 }
@@ -69,6 +73,8 @@ IOprintBoth(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int indx, s
 	stream *fp = cntxt->fdout;
 
 	(void) mb;
+	if( cntxt->fdout == NULL)
+		throw(MAL, "io.print", SQLSTATE(HY002) "Output channel missing");
 
 	if (tpe == TYPE_any)
 		tpe = stk->stk[pci->argv[indx]].vtype;
