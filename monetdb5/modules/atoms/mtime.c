@@ -23,6 +23,9 @@
  *
  * Times, both in the daytime and the timestamp types, are recorded
  * with microsecond precision.
+ *
+ * Times and timestamps are all in UTC.  Conversion from the system
+ * time zone where appropriate is done automatically.
  */
 
 #include "monetdb_config.h"
@@ -37,7 +40,7 @@ extern char *strptime(const char *, const char *, struct tm *);
 #define YEAR_MIN		(-4712)	/* 4713 BC */
 
 #define YEAR_OFFSET		(-YEAR_MIN)
-#define DTDAY_WIDTH		5		/* 1..28/29/30/31, depending on month */
+#define DTDAY_WIDTH		5		/* 1..28/29/30/31, depending on month/year */
 #define DTDAY_SHIFT		0
 #define DTMONTH_WIDTH	21		/* enough for 174761 years (and 8 months) */
 #define DTMONTH_SHIFT	(DTDAY_WIDTH+DTDAY_SHIFT)
@@ -79,7 +82,7 @@ static const int cumdays[13] = { /* cumulative days in non leap year */
 	0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365
 };
 #define isleapyear(y)		((y) % 4 == 0 && ((y) % 100 != 0 || (y) % 400 == 0))
-#define monthdays(y, m)		((m) != 2 ? leapdays[m] : 28 + isleapyear(y))
+#define monthdays(y, m)		(leapdays[m] - ((m) == 2 && !isleapyear(y)))
 
 int TYPE_date;
 int TYPE_daytime;
@@ -342,7 +345,7 @@ timestamp_fromtime(time_t timeval)
 	date d;
 	daytime t;
 
-	if (gmtime_r(&timeval, &tm) == NULL)
+	if (timeval == (time_t) -1 || gmtime_r(&timeval, &tm) == NULL)
 		return timestamp_nil;
 	if (tm.tm_sec >= 60)
 		tm.tm_sec = 59;			/* ignore leap seconds */
@@ -378,6 +381,7 @@ timestamp_create(date dt, daytime tm)
 	return mktimestamp(dt, tm);
 }
 
+/* return the current time in UTC */
 timestamp
 timestamp_current(void)
 {
@@ -393,17 +397,14 @@ timestamp_current(void)
 #elif defined(HAVE_CLOCK_GETTIME)
 	struct timespec ts;
 	clock_gettime(CLOCK_REALTIME, &ts);
-	return timestamp_add_usec(unixepoch,
-							  ts.tv_sec * LL_CONSTANT(1000000)
-							  + ts.tv_nsec / 1000);
+	return timestamp_add_usec(timestamp_fromtime(ts.tv_sec),
+							  (lng) (ts.tv_nsec / 1000));
 #elif defined(HAVE_GETTIMEOFDAY)
 	struct timeval tv;
 	gettimeofday(&tv, NULL);
-	return timestamp_add_usec(unixepoch,
-							  tv.tv_sec * LL_CONSTANT(1000000) + tv.tv_usec);
+	return timestamp_add_usec(timestamp_fromtime(tv.tv_sec), (lng) tv.tv_usec);
 #else
-	return timestamp_add_usec(unixepoch,
-							  (lng) time(NULL) * LL_CONSTANT(1000000));
+	return timestamp_fromtime(time(NULL));
 #endif
 }
 
@@ -531,12 +532,6 @@ parse_date(const char *buf, date *d, bool external)
 	if ((yearneg = (buf[0] == '-')))
 		buf++;
 	if (!yearneg && !GDKisdigit(buf[0])) {
-#ifdef HAVE_SYNONYMS
-		if (!synonyms) {
-			GDKerror("Syntax error in date.\n");
-			return -1;
-		}
-#endif
 		yearlast = true;
 		sep = ' ';
 	} else {
@@ -546,12 +541,6 @@ parse_date(const char *buf, date *d, bool external)
 				break;
 		}
 		sep = (unsigned char) buf[pos++];
-#ifdef HAVE_SYNONYMS
-		if (!synonyms && sep != '-') {
-			GDKerror("Syntax error in date.\n");
-			return -1;
-		}
-#endif
 		sep = tolower(sep);
 		if (sep >= 'a' && sep <= 'z') {
 			sep = 0;
@@ -568,11 +557,6 @@ parse_date(const char *buf, date *d, bool external)
 		if (GDKisdigit(buf[pos])) {
 			month = (buf[pos++] - '0') + month * 10;
 		}
-#ifdef HAVE_SYNONYMS
-	} else if (!synonyms) {
-		GDKerror("Syntax error in date.\n");
-		return -1;
-#endif
 	} else {
 		pos += parse_substr(&month, buf + pos, 3, MONTHS, 12);
 	}
@@ -606,7 +590,7 @@ parse_date(const char *buf, date *d, bool external)
 				break;
 		}
 	}
-	/* handle semantic error here (returns nil in that case) */
+	/* handle semantic error here */
 	*d = date_create(yearneg ? -year : year, month, day);
 	if (is_date_nil(*d)) {
 		GDKerror("Semantic error in date.\n");
@@ -654,7 +638,8 @@ date_tostr(str *buf, size_t *len, const date *val, bool external)
 static ssize_t
 parse_daytime(const char *buf, daytime *dt, bool external)
 {
-	int hour, min, sec = 0, usec = 0;
+	unsigned int hour, min, sec = 0, usec = 0;
+	int n1, n2;
 	ssize_t pos = 0;
 
 	*dt = daytime_nil;
@@ -662,52 +647,49 @@ parse_daytime(const char *buf, daytime *dt, bool external)
 		return 1;
 	if (external && strncmp(buf, "nil", 3) == 0)
 		return 3;
-	if (!GDKisdigit(buf[pos])) {
+	/* accept plenty (6) of digits, but the range is still limited */
+	switch (sscanf(buf, "%6u:%6u%n:%6u%n", &hour, &min, &n1, &sec, &n2)) {
+	default:
 		GDKerror("Syntax error in time.\n");
 		return -1;
-	}
-	for (hour = 0; GDKisdigit(buf[pos]); pos++) {
-		if (hour <= 24)
-			hour = (buf[pos] - '0') + hour * 10;
-	}
-	if ((buf[pos++] != ':') || !GDKisdigit(buf[pos])) {
-		GDKerror("Syntax error in time.\n");
-		return -1;
-	}
-	for (min = 0; GDKisdigit(buf[pos]); pos++) {
-		if (min <= 60)
-			min = (buf[pos] - '0') + min * 10;
-	}
-	if ((buf[pos] == ':') && GDKisdigit(buf[pos + 1])) {
-		for (pos++, sec = 0; GDKisdigit(buf[pos]); pos++) {
-			if (sec <= 60)
-				sec = (buf[pos] - '0') + sec * 10;
+	case 2:
+		/* read hour and min, but not sec */
+		if (hour >= 24 || min >= 60) {
+			GDKerror("Syntax error in time.\n");
+			return -1;
 		}
-		if ((buf[pos] == '.' || (
-#ifdef HAVE_SYNONYMS
-				 synonyms &&
-#endif
-				 buf[pos] == ':')) &&
-			GDKisdigit(buf[pos + 1])) {
-			pos++;
-			for (int i = 0; i < 6; i++) {
-				usec *= 10;
-				if (GDKisdigit(buf[pos])) {
-					usec += buf[pos] - '0';
-					pos++;
-				}
+		pos += n1;
+		break;
+	case 3:
+		/* read hour, min, and sec */
+		if (hour >= 24 || min >= 60 || sec >= 60) {
+			GDKerror("Syntax error in time.\n");
+			return -1;
+		}
+		pos += n2;
+		if (buf[pos] == '.' && GDKisdigit(buf[pos+1])) {
+			if (sscanf(buf + pos + 1, "%7u%n", &usec, &n1) < 1) {
+				/* cannot happen: buf[pos+1] is a digit */
+				GDKerror("Syntax error in time.\n");
+				return -1;
 			}
-#ifndef TRUNCATE_NUMBERS
-			if (GDKisdigit(buf[pos]) && buf[pos] >= '5') {
-				/* round the value */
-				if (++usec == 1000000) {
+			pos += n1 + 1;
+			while (n1 < 6) {
+				usec *= 10;
+				n1++;
+			}
+			if (n1 == 7) {
+#ifdef TRUNCATE_NUMBERS
+				usec /= 10;
+#else
+				usec = (usec + 5) / 10;
+				if (usec == 1000000) {
 					usec = 0;
 					if (++sec == 60) {
 						sec = 0;
 						if (++min == 60) {
 							min = 0;
 							if (++hour == 24) {
-								/* forget about rounding if it doesn't fit */
 								hour = 23;
 								min = 59;
 								sec = 59;
@@ -716,13 +698,14 @@ parse_daytime(const char *buf, daytime *dt, bool external)
 						}
 					}
 				}
-			}
 #endif
+			}
+			/* ignore excess digits */
 			while (GDKisdigit(buf[pos]))
 				pos++;
 		}
+		break;
 	}
-	/* handle semantic error here (returns nil in that case) */
 	*dt = daytime_create(hour, min, sec, usec);
 	if (is_daytime_nil(*dt)) {
 		GDKerror("Semantic error in time.\n");
@@ -747,10 +730,11 @@ ssize_t
 daytime_tz_fromstr(const char *buf, size_t *len, daytime **ret, bool external)
 {
 	const char *s = buf;
-	ssize_t pos = daytime_fromstr(s, len, ret, external);
+	ssize_t pos;
 	daytime val;
 	int offset = 0;
 
+	pos = daytime_fromstr(s, len, ret, external);
 	if (pos < 0 || is_daytime_nil(**ret))
 		return pos;
 
@@ -758,7 +742,7 @@ daytime_tz_fromstr(const char *buf, size_t *len, daytime **ret, bool external)
 	pos = 0;
 	while (GDKisspace(*s))
 		s++;
-	/* in case of gmt we need to add the time zone */
+	/* for GMT we need to add the time zone */
 	if (fleximatch(s, "gmt", 0) == 3) {
 		s += 3;
 	}
@@ -767,17 +751,18 @@ daytime_tz_fromstr(const char *buf, size_t *len, daytime **ret, bool external)
 		((s[3] == ':' && GDKisdigit(s[5])) || GDKisdigit(s[pos = 3]))) {
 		offset = (((s[1] - '0') * 10 + (s[2] - '0')) * 60 + (s[pos] - '0') * 10 + (s[pos + 1] - '0')) * 60;
 		pos += 2;
-		if (s[0] != '-')
-			offset = -offset;
+		if (s[0] == '+')
+			offset = -offset;	/* East of Greenwich */
 		s += pos;
 	}
-	val = **ret + (lng) offset * 1000000;
+	/* convert to UTC */
+	val = **ret + offset * LL_CONSTANT(1000000);
 	if (val < 0)
-		**ret = DAY_USEC + val;
+		val += DAY_USEC;
 	else if (val >= DAY_USEC)
-		**ret = val - DAY_USEC;
-	else
-		**ret = val;
+		val -= DAY_USEC;
+	/* and return */
+	**ret = val;
 	return (ssize_t) (s - buf);
 }
 
@@ -910,7 +895,7 @@ timestamp_tz_fromstr(const char *buf, size_t *len, timestamp **ret, bool externa
 	pos = 0;
 	while (GDKisspace(*s))
 		s++;
-	/* incase of gmt we need to add the time zone */
+	/* in case of gmt we need to add the time zone */
 	if (fleximatch(s, "gmt", 0) == 3) {
 		s += 3;
 	}
@@ -1581,8 +1566,10 @@ MTIMEseconds_since_epoch(int *ret, const timestamp *t)
 	return MAL_SUCCEED;
 }
 
-#define mktsfromsec(sec)	timestamp_add_usec(unixepoch, sec * LL_CONSTANT(1000000))
-#define mktsfrommsec(msec)	timestamp_add_usec(unixepoch, msec * 1000)
+#define mktsfromsec(sec)	timestamp_add_usec(unixepoch,				\
+											   (sec) * LL_CONSTANT(1000000))
+#define mktsfrommsec(msec)	timestamp_add_usec(unixepoch,				\
+											   (msec) * LL_CONSTANT(1000))
 func1(MTIMEtimestamp_fromsecond, MTIMEtimestamp_fromsecond_bulk, "timestamp", int, timestamp, mktsfromsec, COPYFLAGS)
 func1(MTIMEtimestamp_frommsec, MTIMEtimestamp_frommsec_bulk, "timestamp", lng, timestamp, mktsfrommsec, COPYFLAGS)
 
@@ -1655,11 +1642,14 @@ MTIMEdaytime_fromseconds_bulk(bat *ret, bat *bid)
 
 func1(MTIMEtimestamp_extract_daytime, MTIMEtimestamp_extract_daytime_bulk, "daytime", timestamp, daytime, ts_time, SETFLAGS)
 
-str
-MTIMElocal_timezone_msec(lng *ret)
+/* return current system time zone offset in seconds East of Greenwich */
+static int
+local_timezone(int *isdst)
 {
 	int tzone = 0;
 
+	if (isdst)
+		*isdst = -1;
 #if defined(_MSC_VER)
 	DYNAMIC_TIME_ZONE_INFORMATION tzinf;
 
@@ -1684,15 +1674,22 @@ MTIMElocal_timezone_msec(lng *ret)
 	time_t t;
 	struct tm tm = (struct tm) {0};
 
-	t = time(NULL);
-	if (localtime_r(&t, &tm))
+	if ((t = time(NULL)) == (time_t) -1)
+		return 0;
+	if (localtime_r(&t, &tm)) {
 		tzone = (int) tm.tm_gmtoff;
+		if (isdst)
+			*isdst = tm.tm_isdst;
+	}
 #else
 	time_t t;
 	timestamp lt, gt;
 	struct tm tm = (struct tm) {0};
 
-	t = time(NULL);
+	if ((t = time(NULL)) == (time_t) -1)
+		return 0;
+	if (isdst)
+		*isdst = tm.tm_isdst;
 	if (gmtime_r(&t, &tm)) {
 		gt = mktimestamp(mkdate(tm.tm_year + 1900,
 								tm.tm_mon + 1,
@@ -1713,7 +1710,14 @@ MTIMElocal_timezone_msec(lng *ret)
 		}
 	}
 #endif
-	*ret = tzone * 1000;
+	return tzone;
+}
+
+str
+MTIMElocal_timezone_msec(lng *ret)
+{
+	int tzone = local_timezone(NULL);
+	*ret = (lng) tzone * 1000;
 	return MAL_SUCCEED;
 }
 
@@ -1721,6 +1725,7 @@ str
 MTIMEstr_to_date(date *ret, const char *const *s, const char *const *format)
 {
 	struct tm tm;
+	time_t t;
 
 	if (strNil(*s) || strNil(*format)) {
 		*ret = date_nil;
@@ -1730,44 +1735,72 @@ MTIMEstr_to_date(date *ret, const char *const *s, const char *const *format)
 	if (strptime(*s, *format, &tm) == NULL)
 		throw(MAL, "mtime.str_to_date", "format '%s', doesn't match date '%s'",
 			  *format, *s);
+	if ((t = mktime(&tm)) == (time_t) -1)
+		throw(MAL, "mtime.str_to_date", "cannot convert to time_t");
+	tm = (struct tm) {0};
+	if (gmtime_r(&t, &tm) == NULL)
+		throw(MAL, "mtime.str_to_date", "cannot convert to UTC");
 	*ret = mkdate(tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday);
 	if (is_date_nil(*ret))
 		throw(MAL, "mtime.str_to_date", "bad date '%s'", *s);
 	return MAL_SUCCEED;
 }
 
+static str
+timestamp_to_str(str *ret, const timestamp *d, const char *const *format,
+				 const char *type, const char *malfunc)
+{
+	char buf[512];
+	timestamp ts;
+	date dt;
+	daytime t;
+	struct tm tm;
+	int isdst;
+
+	if (is_timestamp_nil(*d) || strNil(*format)) {
+		*ret = GDKstrdup(str_nil);
+		if (*ret == NULL)
+			throw(MAL, malfunc, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return MAL_SUCCEED;
+	}
+	/* convert UTC to system local time */
+	ts = timestamp_add_usec(*d, local_timezone(&isdst) * LL_CONSTANT(1000000));
+	dt = ts_date(ts);
+	t = ts_time(ts);
+	tm = (struct tm) {
+		.tm_year = date_extract_year(dt) - 1900,
+		.tm_mon = date_extract_month(dt) - 1,
+		.tm_mday = date_extract_day(dt),
+		.tm_isdst = isdst,
+	};
+	t /= 1000000;
+	tm.tm_sec = t % 60;
+	t /= 60;
+	tm.tm_min = t % 60;
+	t /= 60;
+	tm.tm_hour = (int) t;
+	if (mktime(&tm) == (time_t) -1)
+		throw(MAL, malfunc, "cannot convert %s", type);
+	if (strftime(buf, sizeof(buf), *format, &tm) == 0)
+		throw(MAL, malfunc, "cannot convert %s", type);
+	*ret = GDKstrdup(buf);
+	if (*ret == NULL)
+		throw(MAL, malfunc, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	return MAL_SUCCEED;
+}
+
 str
 MTIMEdate_to_str(str *ret, const date *d, const char *const *format)
 {
-	char buf[512];
-	struct tm tm;
-
-	if (is_date_nil(*d) || strNil(*format)) {
-		*ret = GDKstrdup(str_nil);
-		if (*ret == NULL)
-			throw(MAL, "mtime.date_to_str", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		return MAL_SUCCEED;
-	}
-	tm = (struct tm) {
-		.tm_year = date_extract_year(*d) - 1900,
-		.tm_mon = date_extract_month(*d) - 1,
-		.tm_mday = date_extract_day(*d),
-		.tm_isdst = -1,
-	};
-	if (mktime(&tm) == (time_t) -1)
-		throw(MAL, "mtime.date_to_str", "cannot convert date");
-	if (strftime(buf, sizeof(buf), *format, &tm) == 0)
-		throw(MAL, "mtime.date_to_str", "cannot convert date");
-	*ret = GDKstrdup(buf);
-	if (*ret == NULL)
-		throw(MAL, "mtime.date_to_str", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	return MAL_SUCCEED;
+	timestamp ts = timestamp_create(*d, timestamp_daytime(timestamp_current()));
+	return timestamp_to_str(ret, &ts, format, "date", "mtime.date_to_str");
 }
 
 str
 MTIMEstr_to_time(daytime *ret, const char *const *s, const char *const *format)
 {
 	struct tm tm;
+	time_t t;
 
 	if (strNil(*s) || strNil(*format)) {
 		*ret = daytime_nil;
@@ -1777,6 +1810,11 @@ MTIMEstr_to_time(daytime *ret, const char *const *s, const char *const *format)
 	if (strptime(*s, *format, &tm) == NULL)
 		throw(MAL, "mtime.str_to_time", "format '%s', doesn't match time '%s'",
 			  *format, *s);
+	if ((t = mktime(&tm)) == (time_t) -1)
+		throw(MAL, "mtime.str_to_time", "cannot convert to time_t");
+	tm = (struct tm) {0};
+	if (gmtime_r(&t, &tm) == NULL)
+		throw(MAL, "mtime.str_to_time", "cannot convert to UTC");
 	*ret = mkdaytime(tm.tm_hour, tm.tm_min, tm.tm_sec == 60 ? 59 : tm.tm_sec, 0);
 	if (is_daytime_nil(*ret))
 		throw(MAL, "mtime.str_to_time", "bad time '%s'", *s);
@@ -1786,42 +1824,15 @@ MTIMEstr_to_time(daytime *ret, const char *const *s, const char *const *format)
 str
 MTIMEtime_to_str(str *ret, const daytime *d, const char *const *format)
 {
-	char buf[512];
-	daytime dt = *d;
-	struct tm tm;
-
-	if (is_daytime_nil(dt) || strNil(*format)) {
-		*ret = GDKstrdup(str_nil);
-		if (*ret == NULL)
-			throw(MAL, "mtime.time_to_str", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		return MAL_SUCCEED;
-	}
-	time_t now = time(NULL);
-	tm = (struct tm) {0};
-	/* fill in current date in struct tm */
-	if (localtime_r(&now, &tm) == NULL)
-		throw(MAL, "mtime.time_to_str", "internal error");
-	/* replace time with requested time */
-	dt /= 1000000;
-	tm.tm_sec = dt % 60;
-	dt /= 60;
-	tm.tm_min = dt % 60;
-	dt /= 60;
-	tm.tm_hour = (int) dt;
-	if (mktime(&tm) == (time_t) -1)
-		throw(MAL, "mtime.time_to_str", "cannot convert time");
-	if (strftime(buf, sizeof(buf), *format, &tm) == 0)
-		throw(MAL, "mtime.time_to_str", "cannot convert time");
-	*ret = GDKstrdup(buf);
-	if (*ret == NULL)
-		throw(MAL, "mtime.time_to_str", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	return MAL_SUCCEED;
+	timestamp ts = timestamp_create(timestamp_date(timestamp_current()), *d);
+	return timestamp_to_str(ret, &ts, format, "time", "mtime.time_to_str");
 }
 
 str
 MTIMEstr_to_timestamp(timestamp *ret, const char *const *s, const char *const *format)
 {
 	struct tm tm;
+	time_t t;
 
 	if (strNil(*s) || strNil(*format)) {
 		*ret = timestamp_nil;
@@ -1831,6 +1842,11 @@ MTIMEstr_to_timestamp(timestamp *ret, const char *const *s, const char *const *f
 	if (strptime(*s, *format, &tm) == NULL)
 		throw(MAL, "mtime.str_to_timestamp",
 			  "format '%s', doesn't match timestamp '%s'", *format, *s);
+	if ((t = mktime(&tm)) == (time_t) -1)
+		throw(MAL, "mtime.str_to_timestamp", "cannot convert to time_t");
+	tm = (struct tm) {0};
+	if (gmtime_r(&t, &tm) == NULL)
+		throw(MAL, "mtime.str_to_timestamp", "cannot convert to UTC");
 	*ret = mktimestamp(mkdate(tm.tm_year + 1900,
 							  tm.tm_mon + 1,
 							  tm.tm_mday),
@@ -1846,37 +1862,6 @@ MTIMEstr_to_timestamp(timestamp *ret, const char *const *s, const char *const *f
 str
 MTIMEtimestamp_to_str(str *ret, const timestamp *d, const char *const *format)
 {
-	char buf[512];
-	date dt;
-	daytime t;
-	struct tm tm;
-
-	if (is_timestamp_nil(*d) || strNil(*format)) {
-		*ret = GDKstrdup(str_nil);
-		if (*ret == NULL)
-			throw(MAL, "mtime.timestamp_to_str", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		return MAL_SUCCEED;
-	}
-	dt = ts_date(*d);
-	t = ts_time(*d);
-	tm = (struct tm) {
-		.tm_year = date_extract_year(dt) - 1900,
-		.tm_mon = date_extract_month(dt) - 1,
-		.tm_mday = date_extract_day(dt),
-		.tm_isdst = -1,
-	};
-	t /= 1000000;
-	tm.tm_sec = t % 60;
-	t /= 60;
-	tm.tm_min = t % 60;
-	t /= 60;
-	tm.tm_hour = (int) t;
-	if (mktime(&tm) == (time_t) -1)
-		throw(MAL, "mtime.timestamp_to_str", "cannot convert timestamp");
-	if (strftime(buf, sizeof(buf), *format, &tm) == 0)
-		throw(MAL, "mtime.timestamp_to_str", "cannot convert timestamp");
-	*ret = GDKstrdup(buf);
-	if (*ret == NULL)
-		throw(MAL, "mtime.timestamp_to_str", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	return MAL_SUCCEED;
+	return timestamp_to_str(ret, d, format,
+							"timestamp", "mtime.timestamp_to_str");
 }
