@@ -3666,12 +3666,12 @@ trans_init(sql_trans *tr, backend_stack stk, sql_trans *otr)
 					}
 					if (pt->members.set && t->members.set)
 					for (i = pt->members.set->h, j = t->members.set->h; i && j; i = i->next, j = j->next ) { 
-						sql_part *pt = i->data; /* parent transactions part */
-						sql_part *p = j->data; 
+						sql_part *pc = i->data; /* parent transactions part */
+						sql_part *c = j->data; 
 
-						if (pt->base.id == p->base.id) {
-							p->base.rtime = p->base.wtime = 0;
-							p->base.stime = pt->base.wtime;
+						if (pc->base.id == c->base.id) {
+							c->base.rtime = c->base.wtime = 0;
+							c->base.stime = pc->base.wtime;
 						} else {
 							/* for now assert */
 							assert(0);
@@ -4579,7 +4579,7 @@ static int
 reset_type(sql_trans *tr, sql_type *ft, sql_type *pft)
 {
 	/* did we access the type or is the global changed after we started */
-	if (ft->base.rtime || ft->base.wtime || tr->stime < pft->base.wtime) {
+	if (ft->base.rtime || ft->base.wtime || ft->base.stime < pft->base.wtime) {
 
 		ft->sqlname = pft->sqlname;
 		ft->radix = pft->radix;
@@ -4597,7 +4597,7 @@ static int
 reset_func(sql_trans *tr, sql_func *ff, sql_func *pff)
 {
 	/* did we access the type or is the global changed after we started */
-	if (ff->base.rtime || ff->base.wtime || tr->stime < pff->base.wtime) {
+	if (ff->base.rtime || ff->base.wtime || ff->base.stime < pff->base.wtime) {
 
 		ff->imp = pff->imp;
 		ff->mod = pff->mod;
