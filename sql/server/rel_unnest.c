@@ -15,6 +15,7 @@
 #include "rel_rel.h"
 #include "rel_exp.h"
 #include "rel_select.h"
+#include "rel_rewriter.h"
 #include "mal_errors.h" /* for SQLSTATE() */
  
 static void
@@ -1496,157 +1497,6 @@ rewrite_exp_rel(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 	return e;
 }
 
-#define is_not_func(sf) (strcmp(sf->func->base.name, "not") == 0) 
-#define is_not_anyequal(sf) (strcmp(sf->func->base.name, "sql_not_anyequal") == 0)
-
-/* simplify expressions, such as not(not(x)) */
-/* exp visitor */
-
-static list *
-exps_simplify_exp(mvc *sql, list *exps, int *changes)
-{
-	if (list_empty(exps))
-		return exps;
-
-	int needed = 0;
-	for (node *n=exps->h; n && !needed; n = n->next) {
-		sql_exp *e = n->data;
-
-		needed = (exp_is_true(sql, e) || exp_is_false(sql, e) || (is_compare(e->type) && e->flag == cmp_or)); 
-	}
-	if (needed) {
-		list *nexps = sa_list(sql->sa);
-		sql->caching = 0;
-		for (node *n=exps->h; n; n = n->next) {
-			sql_exp *e = n->data;
-	
-			/* TRUE or X -> TRUE
-		 	* FALSE or X -> X */
-			if (is_compare(e->type) && e->flag == cmp_or) {
-				list *l = e->l = exps_simplify_exp(sql, e->l, changes);
-				list *r = e->r = exps_simplify_exp(sql, e->r, changes); 
-
-				if (list_length(l) == 1) {
-					sql_exp *ie = l->h->data; 
-	
-					if (exp_is_true(sql, ie)) {
-						continue;
-					} else if (exp_is_false(sql, ie)) {
-						nexps = list_merge(nexps, r, (fdup)NULL);
-						continue;
-					}
-				} else if (list_length(l) == 0) { /* left is true */
-					continue;
-				}
-				if (list_length(r) == 1) {
-					sql_exp *ie = r->h->data; 
-	
-					if (exp_is_true(sql, ie))
-						continue;
-					else if (exp_is_false(sql, ie)) {
-						nexps = list_merge(nexps, l, (fdup)NULL);
-						continue;
-					}
-				} else if (list_length(r) == 0) { /* right is true */
-					continue;
-				}
-			}
-			/* TRUE and X -> X */
-			if (exp_is_true(sql, e)) {
-				continue;
-			/* FALSE and X -> FALSE */
-			} else if (exp_is_false(sql, e)) {
-				return append(sa_list(sql->sa), e);
-			} else {
-				append(nexps, e);
-			}
-		}
-		(*changes)++;
-		return nexps;
-	}
-	return exps;
-}
-
-static sql_exp *
-rewrite_simplify_exp(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
-{
-	if (!e)
-		return e;
-
-	int changes = 0;
-	(void)sql; (void)rel; (void)depth; (void) changes;
-
-	sql_subfunc *sf = e->f;
-	if (is_func(e->type) && list_length(e->l) == 1 && is_not_func(sf)) {
-		list *args = e->l;
-		sql_exp *ie = args->h->data;
-
-		if (!ie)
-			return e;
-
-		sql_subfunc *sf = ie->f;
-		if (is_func(ie->type) && list_length(ie->l) == 1 && is_not_func(sf)) {
-			args = ie->l;
-
-			ie = args->h->data;	
-			if (exp_name(e))
-				exp_prop_alias(sql->sa, ie, e);
-			return ie;
-		}
-		if (is_func(ie->type) && list_length(ie->l) == 2 && is_not_anyequal(sf)) {
-			args = ie->l;
-
-			sql_exp *l = args->h->data;
-			sql_exp *vals = args->h->next->data;
-
-			ie = exp_in_func(sql, l, vals, 1, 0);
-			if (exp_name(e))
-				exp_prop_alias(sql->sa, ie, e);
-			return ie;
-		}
-		/* TRUE or X -> TRUE
-		 * FALSE or X -> X */
-		if (is_compare(e->type) && e->flag == cmp_or) {
-			list *l = e->l = exps_simplify_exp(sql, e->l, &changes);
-			list *r = e->r = exps_simplify_exp(sql, e->r, &changes); 
-
-			sql->caching = 0;
-			if (list_length(l) == 1) {
-				sql_exp *ie = l->h->data; 
-
-				if (exp_is_true(sql, ie))
-					return ie;
-				else if (exp_is_false(sql, ie) && list_length(r) == 1)
-					return r->h->data;
-			} else if (list_length(l) == 0) { /* left is true */
-				return exp_atom_bool(sql->sa, 1);
-			}
-			if (list_length(r) == 1) {
-				sql_exp *ie = r->h->data; 
-
-				if (exp_is_true(sql, ie))
-					return ie;
-				else if (exp_is_false(sql, ie) && list_length(l) == 1)
-					return l->h->data;
-			} else if (list_length(r) == 0) { /* right is true */
-				return exp_atom_bool(sql->sa, 1);
-			}
-		}
-	}
-	return e;
-}
-
-static sql_rel *
-rewrite_simplify(mvc *sql, sql_rel *rel, int *changes)
-{
-	if (!rel)
-		return rel;
-
-	if ((is_select(rel->op) || is_join(rel->op) || is_semi(rel->op)) && !list_empty(rel->exps))
-		rel->exps = exps_simplify_exp(sql, rel->exps, changes);
-	return rel;
-}
-
 /* add an dummy true projection column */
 static sql_rel *
 rewrite_empty_project(mvc *sql, sql_rel *rel, int *changes)
@@ -2483,7 +2333,7 @@ rewrite_exists(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 				if (exp_is_rel(ie))
 					ie->l = sq;
 				ea = sql_bind_func(sql->sa, sql->session->schema, is_exists(sf)?"exist":"not_exist", exp_subtype(le), NULL, F_AGGR);
-				le = exp_aggr1(sql->sa, le, ea, 0, 0, CARD_AGGR, has_nil(le));
+				le = exp_aggr1(sql->sa, le, ea, 0, 0, CARD_AGGR, 0);
 				le = rel_groupby_add_aggr(sql, sq, le);
 				if (rel_has_freevar(sql, sq))
 					ne = le;
@@ -2796,12 +2646,13 @@ rel_unnest(mvc *sql, sql_rel *rel)
 {
 	int changes = 0;
 
-	(void) changes;
 	rel_reset_subquery(rel);
 	rel = rel_exp_visitor(sql, rel, &rewrite_simplify_exp);
 	rel = rel_visitor_bottomup(sql, rel, &rewrite_simplify, &changes);
-	rel = rel_visitor_bottomup(sql, rel, &rewrite_aggregates, &changes);
 	rel = rel_visitor_bottomup(sql, rel, &rewrite_or_exp, &changes);
+	if (changes > 0)
+		rel = rel_visitor_bottomup(sql, rel, &rel_remove_empty_select, &changes);
+	rel = rel_visitor_bottomup(sql, rel, &rewrite_aggregates, &changes);
 	rel = rel_exp_visitor(sql, rel, &rewrite_rank);
 	rel = rel_exp_visitor(sql, rel, &rewrite_anyequal);
 	rel = rel_exp_visitor(sql, rel, &rewrite_exists);
@@ -2811,6 +2662,10 @@ rel_unnest(mvc *sql, sql_rel *rel)
 	rel = rel_visitor_bottomup(sql, rel, &rewrite_join2semi, &changes);	/* where possible convert anyequal functions into marks */
 	rel = rel_visitor_bottomup(sql, rel, &rewrite_compare_exp, &changes);	/* only allow for e_cmp in selects and  handling */
 	rel = rel_visitor_bottomup(sql, rel, &rewrite_remove_xp_project, &changes);	/* remove crossproducts with project ( project [ atom ] ) [ etc ] */
+	changes = 0;
+	rel = rel_visitor_bottomup(sql, rel, &rewrite_simplify, &changes);		/* as expressions got merged before, lets try to simplify again */
+	if (changes > 0)
+		rel = rel_visitor_bottomup(sql, rel, &rel_remove_empty_select, &changes);
 	rel = _rel_unnest(sql, rel);
 	rel = rel_visitor_bottomup(sql, rel, &rewrite_fix_count, &changes);	/* fix count inside a left join (adds a project (if (cnt IS null) then (0) else (cnt)) */
 	rel = rel_visitor_bottomup(sql, rel, &rewrite_remove_xp, &changes);	/* remove crossproducts with project [ atom ] */

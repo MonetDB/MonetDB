@@ -794,8 +794,8 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 {
 	oid gid;
 	BUN i, p, nils = 0;
-	size_t *lengths = NULL, *lastseplength = NULL, separator_length = 0, next_length;
-	str *astrings = NULL, s, sl;
+	size_t *restrict lengths = NULL, *restrict lastseplength = NULL, separator_length = 0, next_length;
+	str *restrict astrings = NULL, s, sl;
 	BATiter bi, bis = (BATiter) {0};
 	BAT *bn = NULL;
 	gdk_return rres = GDK_SUCCEED;

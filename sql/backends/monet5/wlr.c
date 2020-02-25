@@ -52,7 +52,7 @@ static char wlr_master[IDLENGTH];
 static int	wlr_batches; 				// the next file to be processed
 static lng 	wlr_tag = -1;				// the last transaction id being processed
 static char wlr_read[26];				// last record read
-static char wlr_timelimit[26];			// stop re-processing transactions when time limit is reached
+static char wlr_timelimit[128];			// stop re-processing transactions when time limit is reached
 static int 	wlr_beat;					// period between successive synchronisations with master
 static char wlr_error[BUFSIZ];	// error that stopped the replication process
 
@@ -539,10 +539,10 @@ WLRmaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 str
 WLRreplicate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{	str timelimit = wlr_timelimit, slimit= 0;
+{
+	str msg, timelimit = NULL;
 	size_t size = 0;
 	lng limit = INT64_MAX;
-	str msg;
 
 	if( wlr_thread)
 		throw(MAL, "sql.replicate", "WLR thread already running, stop it before continueing");
@@ -560,10 +560,9 @@ WLRreplicate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		wlr_limit = INT64_MAX;
 	else
 	if( getArgType(mb, pci, 1) == TYPE_timestamp){
-		timestamp_tostr(&slimit, &size, (timestamp*) getArgReference(stk, pci, 1), TRUE);
-		strncpy(wlr_timelimit, slimit, sizeof(wlr_timelimit)-1);
-		wlr_timelimit[sizeof(wlr_timelimit)-1] = 0;
-		GDKfree(slimit);
+		if (timestamp_precision_tostr(&timelimit, &size, *getArgReference_TYPE(stk, pci, 1, timestamp), 3, true) < 0)
+			throw(SQL, "wlr.replicate", GDK_EXCEPTION);
+		fprintf(stderr,"#time limit %s\n",timelimit);
 	} else
 	if( getArgType(mb, pci, 1) == TYPE_bte)
 		limit = getVarConstant(mb,getArg(pci,1)).val.btval;
@@ -576,8 +575,16 @@ WLRreplicate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	else
 	if( getArgType(mb, pci, 1) == TYPE_lng)
 		limit = getVarConstant(mb,getArg(pci,1)).val.lval;
-	
-	if ( limit < 0 && timelimit[0] == 0)
+
+	if (timelimit) {
+		if (size > sizeof(wlr_timelimit)) {
+			GDKfree(timelimit);
+			throw(MAL, "sql.replicate", "Limit timestamp size is too large");
+		}
+		strcpy(wlr_timelimit, timelimit);
+		GDKfree(timelimit);
+	}
+	if ( limit < 0 && wlr_timelimit[0] == 0)
 		throw(MAL, "sql.replicate", "Stop tag limit should be positive or timestamp should be set");
 	if( wlc_tag == 0) {
 		if ((msg = WLRgetMaster()))

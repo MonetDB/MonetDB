@@ -1467,9 +1467,12 @@ parseEnd(Client cntxt)
 		} else {
 			str msg;
 			if((msg = MSinitClientPrg(cntxt,cntxt->curmodule->name,"main")) != MAL_SUCCEED) {
-				if(!errors)
+				if(!msg){
 					cntxt->curprg->def->errors = msg;
-				else
+					GDKfree(errors);
+				} else if(!errors){
+					cntxt->curprg->def->errors = errors;
+				} else
 					freeException(msg);
 				return 1;
 			}

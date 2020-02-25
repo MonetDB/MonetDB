@@ -1,4 +1,4 @@
-policy_module(monetdb, 0.8)
+policy_module(monetdb, 0.9)
 # The above line declares that this file is a SELinux policy file. Its
 # name is monetdb, so the file should be saved as monetdb.te
 

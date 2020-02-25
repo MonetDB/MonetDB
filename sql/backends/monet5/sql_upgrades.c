@@ -2272,10 +2272,10 @@ sql_update_nov2019_sp1_hugeint(Client c, mvc *sql, const char *prev_schema, bool
 #endif
 
 static str
-sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixed)
+sql_update_linear_hashing(Client c, mvc *sql, const char *prev_schema, bool *systabfixed)
 {
 	sql_table *t;
-	size_t bufsize = 32768, pos = 0;
+	size_t bufsize = 8192, pos = 0;
 	char *err = NULL, *buf = GDKmalloc(bufsize);
 	sql_schema *sys = mvc_bind_schema(sql, "sys");
 
@@ -2485,6 +2485,41 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 			"('QUARTER'),('RELEASE'),('REPLACE'),('ROLLUP'),('SCHEMA'),('SEED'),('SERVER'),('SESSION'),('SETS'),('SIZE'),"
 			"('STATEMENT'),('TABLE'),('TEMP'),('TEMPORARY'),('TEXT'),('TIME'),('TIMESTAMP'),('TRACE'),('TYPE'),('UNIONJOIN'),"
 			"('WEEK'),('YEAR'),('ZONE');\n");
+
+	pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
+	assert(pos < bufsize);
+
+	printf("Running database upgrade commands:\n%s\n", buf);
+	err = SQLstatementIntern(c, &buf, "update", true, false, NULL);
+	if (err == MAL_SUCCEED) {
+		pos = snprintf(buf, bufsize, "set schema \"sys\";\n"
+			       "ALTER TABLE sys.keywords SET READ ONLY;\n");
+		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
+		assert(pos < bufsize);
+		printf("Running database upgrade commands:\n%s\n", buf);
+		err = SQLstatementIntern(c, &buf, "update", true, false, NULL);
+	}
+	GDKfree(buf);
+	return err;		/* usually MAL_SUCCEED */
+}
+
+static str
+sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixed)
+{
+	size_t bufsize = 32768, pos = 0;
+	char *err = NULL, *buf = GDKmalloc(bufsize);
+
+	if (!*systabfixed &&
+	    (err = sql_fix_system_tables(c, sql, prev_schema)) != NULL)
+		return err;
+	*systabfixed = true;
+
+	if (buf == NULL)
+		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+
+	pos += snprintf(buf + pos, bufsize - pos,
+			"set schema \"sys\";\n");
 
 	/* 39_analytics.sql */
 	pos += snprintf(buf + pos, bufsize - pos,
@@ -3178,7 +3213,7 @@ SQLupgrades(Client c, mvc *m)
 		sql_find_subtype(&tp, "hugeint", 0, 0);
 		if (!sql_bind_func(m->sa, s, "median_avg", &tp, NULL, F_AGGR)) {
 			if ((err = sql_update_nov2019_sp1_hugeint(c, m, prev_schema, &systabfixed)) != NULL) {
-				fprintf(stderr, "!%s\n", err);
+				TRC_ERROR(SQL_UPGRADES, "%s\n", err);
 				freeException(err);
 				res = -1;
 			}
@@ -3187,17 +3222,27 @@ SQLupgrades(Client c, mvc *m)
 #endif
 
 	if (!res && !sql_bind_func(m->sa, s, "suspend_log_flushing", NULL, NULL, F_PROC)) {
+		if ((err = sql_update_linear_hashing(c, m, prev_schema, &systabfixed)) != NULL) {
+			TRC_ERROR(SQL_UPGRADES, "%s\n", err);
+			freeException(err);
+			res = -1;
+		}
+	}
+
+	sql_find_subtype(&tp, "tinyint", 0, 0);
+	if (!sql_bind_func(m->sa, s, "stddev_samp", &tp, NULL, F_ANALYTIC)) {
 		if ((err = sql_update_default(c, m, prev_schema, &systabfixed)) != NULL) {
 			TRC_ERROR(SQL_UPGRADES, "%s\n", err);
 			freeException(err);
 			res = -1;
 		}
-		if (!res &&
-		    (err = sql_update_default_bam(c, m, prev_schema)) != NULL) {
-			TRC_ERROR(SQL_UPGRADES, "%s\n", err);
-			freeException(err);
-			res = -1;
-		}
+	}
+
+	if (!res &&
+	    (err = sql_update_default_bam(c, m, prev_schema)) != NULL) {
+		TRC_ERROR(SQL_UPGRADES, "%s\n", err);
+		freeException(err);
+		res = -1;
 	}
 
 	GDKfree(prev_schema);

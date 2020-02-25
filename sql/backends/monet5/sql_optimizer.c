@@ -259,7 +259,9 @@ SQLoptimizeQuery(Client c, MalBlkPtr mb)
 			freeException(msg);
 			msg = MAL_SUCCEED;
 		}
-		return createException(MAL, "optimizer.optimizeQuery", "%s", mb->errors ? mb->errors : msg);
+		str nmsg = createException(MAL, "optimizer.optimizeQuery", "%s", mb->errors ? mb->errors : msg);
+		freeException(msg);
+		return nmsg;
 	}
 
 	pipe = getSQLoptimizer(be->mvc);

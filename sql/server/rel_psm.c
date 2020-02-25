@@ -132,7 +132,9 @@ psm_set_exp(sql_query *query, dnode *n)
 		node *n;
 		list *b;
 
-		if (!rel_val || !is_project(rel_val->op) || dlist_length(vars) != list_length(rel_val->exps))
+		if (!rel_val)
+			return NULL;
+		if (!is_project(rel_val->op) || dlist_length(vars) != list_length(rel_val->exps))
 			return sql_error(sql, 02, SQLSTATE(42000) "SET: Number of variables not equal to number of supplied values");
 
 		b = sa_list(sql->sa);
@@ -919,36 +921,42 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 				return sql_error(sql, 01, SQLSTATE(42000) "CREATE %s: failed to get restype", F);
 		}
 		if (body && LANG_EXT(lang)) {
-			char *lang_body = body->h->data.sval, *mod = NULL, *slang = NULL;
+			const char *lang_body = body->h->data.sval, *mod = "unknown", *slang = "Unknown";
 			switch (lang) {
-				case FUNC_LANG_R:
-					mod = "rapi";
-					slang = "R";
-					break;
-				case FUNC_LANG_C:
-					mod = "capi";
-					slang = "C";
-					break;
-				case FUNC_LANG_CPP:
-					mod = "capi";
-					slang = "CPP";
-					break;
-				case FUNC_LANG_J:
-					mod = "japi";
-					slang = "Javascript";
-					break;
-				case FUNC_LANG_PY:
-				case FUNC_LANG_PY3:
-					mod = "pyapi3";
-					slang = "Python";
-					break;
-				case FUNC_LANG_MAP_PY:
-				case FUNC_LANG_MAP_PY3:
-					mod = "pyapi3map";
-					slang = "Python";
-					break;
-				default:
-					assert(0);
+			case FUNC_LANG_R:
+				mod = "rapi";
+				slang = "R";
+				break;
+			case FUNC_LANG_C:
+				mod = "capi";
+				slang = "C";
+				break;
+			case FUNC_LANG_CPP:
+				mod = "capi";
+				slang = "CPP";
+				break;
+			case FUNC_LANG_J:
+				mod = "japi";
+				slang = "Javascript";
+				break;
+			case FUNC_LANG_PY:
+				mod = "pyapi";
+				slang = "Python";
+				break;
+			case FUNC_LANG_MAP_PY:
+				mod = "pyapimap";
+				slang = "Python";
+				break;
+			case FUNC_LANG_PY3:
+				mod = "pyapi3";
+				slang = "Python";
+				break;
+			case FUNC_LANG_MAP_PY3:
+				mod = "pyapi3map";
+				slang = "Python";
+				break;
+			default:
+				assert(0);
 			}
 
 			if (type == F_LOADER && !(lang == FUNC_LANG_PY || lang == FUNC_LANG_PY3))
@@ -1142,8 +1150,8 @@ rel_drop_func(mvc *sql, dlist *qname, dlist *typelist, int drop_action, sql_ftyp
 		return sql_error(sql, 02, SQLSTATE(3F000) "DROP %s: no such schema '%s'", F, sname);
 
 	if (s == NULL) 
-		s =  cur_schema(sql);
-	
+		s = cur_schema(sql);
+
 	func = resolve_func(sql, s, name, typelist, type, "DROP", if_exists);
 	if (!func && !sname) {
 		s = tmp_schema(sql);
@@ -1169,10 +1177,9 @@ rel_drop_all_func(mvc *sql, dlist *qname, int drop_action, sql_ftype type)
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_error(sql, 02, SQLSTATE(3F000) "DROP %s: no such schema '%s'", F, sname);
-
 	if (s == NULL) 
 		s =  cur_schema(sql);
-	
+
 	list_func = schema_bind_func(sql, s, name, type);
 	if (!list_func) 
 		return sql_error(sql, 02, SQLSTATE(3F000) "DROP ALL %s: no such %s '%s'", F, fn, name);
@@ -1478,21 +1485,20 @@ create_table_from_loader(sql_query *query, dlist *qname, symbol *fcall)
 	sql_rel* rel = NULL;
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
-		return sql_error(sql, 02, SQLSTATE(3F000) "CREATE TABLE: no such schema '%s'", sname);
-
-	if (mvc_bind_table(sql, s, tname)) {
-		return sql_error(sql, 02, SQLSTATE(42S01) "CREATE TABLE: name '%s' already in use", tname);
-	} else if (!mvc_schema_privs(sql, s)){
-		return sql_error(sql, 02, SQLSTATE(42000) "CREATE TABLE: insufficient privileges for user '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
-	}
+		return sql_error(sql, 02, SQLSTATE(3F000) "CREATE TABLE FROM LOADER: no such schema '%s'", sname);
+	if (s == NULL) 
+		s = cur_schema(sql);
+	if (!mvc_schema_privs(sql, s))
+		return sql_error(sql, 02, SQLSTATE(42000) "CREATE TABLE FROM LOADER: insufficient privileges for user '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
+	if (mvc_bind_table(sql, s, tname))
+		return sql_error(sql, 02, SQLSTATE(42S01) "CREATE TABLE FROM LOADER: name '%s' already in use", tname);
 
 	rel = rel_loader_function(query, fcall, new_exp_list(sql->sa), &loader);
-	if (!rel || !loader) {
+	if (!rel || !loader)
 		return NULL;
-	}
+
 	loader->sname = sname ? sa_zalloc(sql->sa, strlen(sname) + 1) : NULL;
 	loader->tname = tname ? sa_zalloc(sql->sa, strlen(tname) + 1) : NULL;
-
 	if (sname) strcpy(loader->sname, sname);
 	if (tname) strcpy(loader->tname, tname);
 

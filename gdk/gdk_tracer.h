@@ -38,13 +38,13 @@
 #define DEFAULT_LOG_LEVEL M_ERROR
 #define DEFAULT_FLUSH_LEVEL M_INFO
 
-#define FILE_NAME "trace"
+#define FILE_NAME "mdbtrace.log"
 #define NAME_SEP '_'
 #define NULL_CHAR '\0'
 #define NEW_LINE '\n'
 #define MXW "20"
 
-#define BASIC_INIT_FAILED "Failed to initialize BASIC adapter"
+#define OPENFILE_FAILED "Failed to open "FILE_NAME
 #define GDKTRACER_FAILED "Failed to write logs"
 
 #define AS_STR(x) #x
@@ -334,6 +334,10 @@ typedef struct GDKtracer {
 gdk_export char *GDKtracer_get_timestamp(const char *fmt, char *buf, size_t sz);
 
 
+// Used for logrotate
+gdk_export void GDKtracer_reinit_basic(int sig);
+
+
 gdk_export gdk_return GDKtracer_stop(void);
 
 
@@ -368,6 +372,6 @@ gdk_export gdk_return GDKtracer_log(LOG_LEVEL level, const char *fmt, ...)
 gdk_export gdk_return GDKtracer_flush_buffer(void);
 
 
-gdk_export gdk_return GDKtracer_fill_comp_info(BAT *id, BAT *component, BAT *log_Level);
+gdk_export gdk_return GDKtracer_fill_comp_info(BAT *id, BAT *component, BAT *log_level);
 
 #endif /* _GDK_TRACER_H_ */

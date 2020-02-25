@@ -1549,8 +1549,10 @@ create_sql_table(sql_allocator *sa, const char *name, sht type, bit system, int 
 void
 dup_sql_type(sql_trans *tr, sql_schema *os, sql_subtype *oc, sql_subtype *nc)
 {
-	*nc = *oc;
-	if (nc->type->s) { /* user type */
+	nc->digits = oc->digits;
+	nc->scale = oc->scale;
+	nc->type = oc->type;
+	if (os && nc->type->s) { /* user type */
 		sql_type *lt = NULL;
 
 		if (os->base.id == nc->type->s->base.id) {
@@ -2325,13 +2327,16 @@ void
 store_lock(void)
 {
 	MT_lock_set(&bs_lock);
-	TRC_DEBUG(SQL_STORE, "Store locked\n");
+	/* tell GDK allocation functions to ignore limits */
+	MT_thread_setworking("store locked");
 }
 
 void
 store_unlock(void)
 {
 	TRC_DEBUG(SQL_STORE, "Store unlocked\n");
+	/* tell GDK allocation functions to honor limits again */
+	MT_thread_setworking("store unlocked");
 	MT_lock_unset(&bs_lock);
 }
 
@@ -3407,6 +3412,8 @@ type_dup(sql_trans *tr, int flags, sql_type *ot, sql_schema *s)
 	t->bits = ot->bits;
 	t->localtype = ot->localtype;
 	t->s = s;
+	if (isNew(ot) && newFlagSet(flags) && tr->parent == gtrans)
+		removeNewFlag(ot);
 	return t;
 }
 
@@ -3453,11 +3460,13 @@ func_dup(sql_trans *tr, int flags, sql_func *of, sql_schema *s)
 	}
 	f->s = s;
 	f->sa = sa;
+	if (isNew(of) && newFlagSet(flags) && tr->parent == gtrans)
+		removeNewFlag(of);
 	return f;
 }
 
 static sql_sequence *
-seq_dup(sql_trans *tr, int flags, sql_sequence *oseq, sql_schema * s)
+seq_dup(sql_trans *tr, int flags, sql_sequence *oseq, sql_schema *s)
 {
 	sql_allocator *sa = (newFlagSet(flags))?tr->parent->sa:tr->sa;
 	sql_sequence *seq = SA_ZNEW(sa, sql_sequence);
@@ -3471,6 +3480,8 @@ seq_dup(sql_trans *tr, int flags, sql_sequence *oseq, sql_schema * s)
 	seq->cacheinc = oseq->cacheinc;
 	seq->cycle = oseq->cycle;
 	seq->s = s;
+	if (isNew(oseq) && newFlagSet(flags) && tr->parent == gtrans)
+		removeNewFlag(oseq);
 	return seq;
 }
 
@@ -3540,8 +3551,6 @@ _trans_init(sql_trans *tr, backend_stack stk, sql_trans *otr)
 	tr->schema_updates = 0;
 	tr->dropped = NULL;
 	tr->status = 0;
-	if (otr != gtrans)
-		tr->schema_updates = otr->schema_updates;
 
 	tr->schema_number = store_schema_number();
 	tr->parent = otr;
@@ -3612,10 +3621,47 @@ trans_init(sql_trans *tr, backend_stack stk, sql_trans *otr)
 							assert(0);
 						}
 					}
+					if (pt->members.set && t->members.set)
+					for (i = pt->members.set->h, j = t->members.set->h; i && j; i = i->next, j = j->next ) { 
+						sql_part *pt = i->data; /* parent transactions part */
+						sql_part *p = j->data; 
+
+						if (pt->base.id == p->base.id) {
+							p->base.rtime = p->base.wtime = 0;
+							p->base.stime = pt->base.wtime;
+						} else {
+							/* for now assert */
+							assert(0);
+						}
+					}
 				} else {
 					/* for now assert */
 					assert(0);
 				}
+			}
+			if (ps->seqs.set && s->seqs.set)
+			for (k = ps->seqs.set->h, l = s->seqs.set->h; k && l; k = k->next, l = l->next ) { 
+				sql_sequence *pt = k->data; /* parent transactions sequence */
+				sql_sequence *t = l->data; 
+
+				t->base.rtime = t->base.wtime = 0;
+				t->base.stime = pt->base.wtime;
+			}
+			if (ps->funcs.set && s->funcs.set)
+			for (k = ps->funcs.set->h, l = s->funcs.set->h; k && l; k = k->next, l = l->next ) { 
+				sql_func *pt = k->data; /* parent transactions func */
+				sql_func *t = l->data; 
+
+				t->base.rtime = t->base.wtime = 0;
+				t->base.stime = pt->base.wtime;
+			}
+			if (ps->types.set && s->types.set)
+			for (k = ps->types.set->h, l = s->types.set->h; k && l; k = k->next, l = l->next ) { 
+				sql_type *pt = k->data; /* parent transactions type */
+				sql_type *t = l->data; 
+
+				t->base.rtime = t->base.wtime = 0;
+				t->base.stime = pt->base.wtime;
 			}
 		} else {
 			/* for now assert */
@@ -4037,7 +4083,7 @@ rollforward_drop_key(sql_trans *tr, sql_key *k, int mode)
 }
 
 static int
-rollforward_drop_trigger(sql_trans *tr, sql_trigger * i, int mode)
+rollforward_drop_trigger(sql_trans *tr, sql_trigger *i, int mode)
 {
 	(void)tr;
 	if (mode == R_APPLY)
@@ -4046,12 +4092,30 @@ rollforward_drop_trigger(sql_trans *tr, sql_trigger * i, int mode)
 }
 
 static int
-rollforward_drop_seq(sql_trans *tr, sql_sequence * seq, int mode)
+rollforward_drop_seq(sql_trans *tr, sql_sequence *seq, int mode)
 {
 	(void)tr;
 	(void)seq;
 	(void)mode;
 	/* TODO drop sequence? */
+	return LOG_OK;
+}
+
+static int
+rollforward_drop_type(sql_trans *tr, sql_type *t, int mode)
+{
+	(void)tr;
+	(void)t;
+	(void)mode;
+	return LOG_OK;
+}
+
+static int
+rollforward_drop_func(sql_trans *tr, sql_func *f, int mode)
+{
+	(void)tr;
+	(void)f;
+	(void)mode;
 	return LOG_OK;
 }
 
@@ -4086,16 +4150,26 @@ rollforward_drop_schema(sql_trans *tr, sql_schema *s, int mode)
 {
 	int ok = LOG_OK;
 
-	ok = rollforward_changeset_deletes(tr, &s->seqs, (rfdfunc) &rollforward_drop_seq, mode);
+	ok = rollforward_changeset_deletes(tr, &s->types, (rfdfunc) &rollforward_drop_type, mode);
 	if (ok == LOG_OK)
-		return rollforward_changeset_deletes(tr, &s->tables, (rfdfunc) &rollforward_drop_table, mode);
+		ok = rollforward_changeset_deletes(tr, &s->tables, (rfdfunc) &rollforward_drop_table, mode);
+	if (ok == LOG_OK)
+		ok = rollforward_changeset_deletes(tr, &s->funcs, (rfdfunc) &rollforward_drop_func, mode);
+	if (ok == LOG_OK)
+		ok = rollforward_changeset_deletes(tr, &s->seqs, (rfdfunc) &rollforward_drop_seq, mode);
 	return ok;
 }
 
 static sql_schema *
 rollforward_create_schema(sql_trans *tr, sql_schema *s, int mode)
 {
+	if (rollforward_changeset_creates(tr, &s->types, (rfcfunc) &rollforward_create_type, mode) != LOG_OK)
+		return NULL;
 	if (rollforward_changeset_creates(tr, &s->tables, (rfcfunc) &rollforward_create_table, mode) != LOG_OK)
+		return NULL;
+	if (rollforward_changeset_creates(tr, &s->funcs, (rfcfunc) &rollforward_create_func, mode) != LOG_OK)
+		return NULL;
+	if (rollforward_changeset_creates(tr, &s->seqs, (rfcfunc) &rollforward_create_seq, mode) != LOG_OK)
 		return NULL;
 	return s;
 }
@@ -4125,12 +4199,6 @@ rollforward_update_part(sql_trans *tr, sql_base *fpt, sql_base *tpt, int mode)
 				list_append(pt->part.values, nextv);
 			}
 		}
-
-		if (tpt->rtime < fpt->rtime)
-			tpt->rtime = fpt->rtime;
-		if (tpt->wtime < fpt->wtime)
-			tpt->wtime = fpt->wtime;
-		fpt->rtime = fpt->wtime = 0;
 	}
 	return LOG_OK;
 }
@@ -4260,13 +4328,13 @@ rollforward_update_schema(sql_trans *tr, sql_schema *fs, sql_schema *ts, int mod
 	}
 
 	if (ok == LOG_OK)
-		ok = rollforward_changeset_updates(tr, &fs->types, &ts->types, &ts->base, (rfufunc) NULL, (rfcfunc) &rollforward_create_type, (rfdfunc) NULL, (dupfunc) &type_dup, mode);
+		ok = rollforward_changeset_updates(tr, &fs->types, &ts->types, &ts->base, (rfufunc) NULL, (rfcfunc) &rollforward_create_type, (rfdfunc) &rollforward_drop_type, (dupfunc) &type_dup, mode);
 
 	if (ok == LOG_OK)
 		ok = rollforward_changeset_updates(tr, &fs->tables, &ts->tables, &ts->base, (rfufunc) &rollforward_update_table, (rfcfunc) &rollforward_create_table, (rfdfunc) &rollforward_drop_table, (dupfunc) &conditional_table_dup, mode);
 
 	if (ok == LOG_OK) /* last as it may require complex (table) types */
-		ok = rollforward_changeset_updates(tr, &fs->funcs, &ts->funcs, &ts->base, (rfufunc) NULL, (rfcfunc) &rollforward_create_func, (rfdfunc) NULL, (dupfunc) &func_dup, mode);
+		ok = rollforward_changeset_updates(tr, &fs->funcs, &ts->funcs, &ts->base, (rfufunc) NULL, (rfcfunc) &rollforward_create_func, (rfdfunc) &rollforward_drop_func, (dupfunc) &func_dup, mode);
 
 	if (ok == LOG_OK) /* last as it may require complex (table) types */
 		ok = rollforward_changeset_updates(tr, &fs->seqs, &ts->seqs, &ts->base, (rfufunc) &rollforward_update_seq, (rfcfunc) &rollforward_create_seq, (rfdfunc) &rollforward_drop_seq, (dupfunc) &seq_dup, mode);
@@ -4288,7 +4356,7 @@ rollforward_trans(sql_trans *tr, int mode)
 
 	if (mode == R_APPLY && tr->parent && tr->wtime > tr->parent->wtime) {
 		tr->parent->wtime = tr->wtime;
-		tr->parent->schema_updates = tr->schema_updates;
+		tr->parent->schema_updates += tr->schema_updates;
 	}
 
 	if (tr->moved_tables) {
@@ -4448,10 +4516,55 @@ reset_changeset(sql_trans *tr, changeset * fs, changeset * pfs, sql_base *b, res
 static int
 reset_idx(sql_trans *tr, sql_idx *fi, sql_idx *pfi)
 {
+	(void)tr;
 	/* did we access the idx or is the global changed after we started */
-	if (fi->base.rtime || fi->base.wtime || tr->stime < pfi->base.wtime) {
+	if (fi->base.rtime || fi->base.wtime || fi->base.stime < pfi->base.wtime) {
 		if (isTable(fi->t)) 
 			store_funcs.destroy_idx(NULL, fi);
+	}
+	return LOG_OK;
+}
+
+static int
+reset_type(sql_trans *tr, sql_type *ft, sql_type *pft)
+{
+	/* did we access the type or is the global changed after we started */
+	if (ft->base.rtime || ft->base.wtime || tr->stime < pft->base.wtime) {
+
+		ft->sqlname = pft->sqlname;
+		ft->radix = pft->radix;
+		ft->eclass = pft->eclass;
+		ft->bits = pft->bits;
+		ft->localtype = pft->localtype;
+		ft->digits = pft->digits;
+		ft->scale = pft->scale;
+		ft->s = find_sql_schema(tr, pft->s->base.name);
+	}
+	return LOG_OK;
+}
+
+static int
+reset_func(sql_trans *tr, sql_func *ff, sql_func *pff)
+{
+	/* did we access the type or is the global changed after we started */
+	if (ff->base.rtime || ff->base.wtime || tr->stime < pff->base.wtime) {
+
+		ff->imp = pff->imp;
+		ff->mod = pff->mod;
+		ff->type = pff->type;
+		ff->query = pff->query;
+		ff->lang = pff->lang;
+		ff->sql = pff->sql;
+		ff->side_effect = pff->side_effect;
+		ff->varres = pff->varres;
+		ff->vararg = pff->vararg;
+		ff->ops = pff->ops;
+		ff->res = pff->res;
+		ff->fix_scale = pff->fix_scale;
+		ff->system = pff->system;
+		ff->ops = pff->ops;
+		ff->s = find_sql_schema(tr, pff->s->base.name);
+		ff->sa = tr->sa;
 	}
 	return LOG_OK;
 }
@@ -4460,7 +4573,7 @@ static int
 reset_column(sql_trans *tr, sql_column *fc, sql_column *pfc)
 {
 	/* did we access the column or is the global changed after we started */
-	if (fc->base.rtime || fc->base.wtime || tr->stime < pfc->base.wtime) {
+	if (fc->base.rtime || fc->base.wtime || fc->base.stime < pfc->base.wtime) {
 
 		if (isTable(fc->t)) 
 			store_funcs.destroy_col(NULL, fc);
@@ -4504,7 +4617,7 @@ reset_seq(sql_trans *tr, sql_sequence *ft, sql_sequence *pft)
 static int
 reset_part(sql_trans *tr, sql_part *ft, sql_part *pft)
 {
-	if (ft->base.rtime || ft->base.wtime || tr->stime < pft->base.wtime) {
+	if (ft->base.rtime || ft->base.wtime || ft->base.stime < pft->base.wtime) {
 
 		if (pft->t) {
 			sql_table *mt = pft->t;
@@ -4529,8 +4642,6 @@ reset_part(sql_trans *tr, sql_part *ft, sql_part *pft)
 		} else if (pft->t && isListPartitionTable(pft->t)) {
 			ft->part.values = pft->part.values;
 		}
-
-		ft->base.wtime = ft->base.rtime = 0;
 	}
 	return LOG_OK;
 }
@@ -4542,7 +4653,7 @@ reset_table(sql_trans *tr, sql_table *ft, sql_table *pft)
 		return LOG_OK;
 
 	/* did we access the table or did the global change */
-	if (ft->base.rtime || ft->base.wtime || tr->stime < pft->base.wtime) {
+	if (ft->base.rtime || ft->base.wtime || ft->base.stime < pft->base.wtime) {
 		int ok = LOG_OK;
 
 		if (isTable(ft) && !isTempTable(ft)) 
@@ -4617,26 +4728,22 @@ reset_schema(sql_trans *tr, sql_schema *fs, sql_schema *pfs)
 		return ok;
 	}
 
-	/* did we access the schema or is the global changed after we started */
-	if (fs->base.rtime || fs->base.wtime || tr->stime < pfs->base.wtime) {
-
-		/* apply possible renaming -> transaction rollbacks or when it starts, inherit from the previous transaction */
-		if (strcmp(fs->base.name, pfs->base.name) != 0) {
-			list_hash_delete(tr->schemas.set, fs, NULL);
-			fs->base.name = sa_strdup(tr->parent->sa, pfs->base.name);
-			if (!list_hash_add(tr->schemas.set, fs, NULL))
-				ok = LOG_ERR;
-		}
-
-		if (ok == LOG_OK)
-			ok = reset_changeset(tr, &fs->types, &pfs->types, &fs->base, (resetf) NULL, (dupfunc) &type_dup);
-		if (ok == LOG_OK)
-			ok = reset_changeset(tr, &fs->funcs, &pfs->funcs, &fs->base, (resetf) NULL, (dupfunc) &func_dup);
-		if (ok == LOG_OK)
-			ok = reset_changeset(tr, &fs->seqs, &pfs->seqs, &fs->base, (resetf) &reset_seq, (dupfunc) &seq_dup);
-		if (ok == LOG_OK)
-			ok = reset_changeset(tr, &fs->tables, &pfs->tables, &fs->base, (resetf) &reset_table, (dupfunc) &table_dup);
+	/* apply possible renaming -> transaction rollbacks or when it starts, inherit from the previous transaction */
+	if (strcmp(fs->base.name, pfs->base.name) != 0) {
+		list_hash_delete(tr->schemas.set, fs, NULL);
+		fs->base.name = sa_strdup(tr->parent->sa, pfs->base.name);
+		if (!list_hash_add(tr->schemas.set, fs, NULL))
+			ok = LOG_ERR;
 	}
+
+	if (ok == LOG_OK)
+		ok = reset_changeset(tr, &fs->types, &pfs->types, &fs->base, (resetf) &reset_type, (dupfunc) &type_dup);
+	if (ok == LOG_OK)
+		ok = reset_changeset(tr, &fs->funcs, &pfs->funcs, &fs->base, (resetf) &reset_func, (dupfunc) &func_dup);
+	if (ok == LOG_OK)
+		ok = reset_changeset(tr, &fs->seqs, &pfs->seqs, &fs->base, (resetf) &reset_seq, (dupfunc) &seq_dup);
+	if (ok == LOG_OK)
+		ok = reset_changeset(tr, &fs->tables, &pfs->tables, &fs->base, (resetf) &reset_table, (dupfunc) &table_dup);
 	return ok;
 }
 
@@ -4775,7 +4882,6 @@ sql_trans_commit(sql_trans *tr)
 		prev_oid = store_oid;
 		if (ok == LOG_OK)
 			ok = logger_funcs.log_tend();
-		tr->schema_number = store_schema_number();
 	}
 	if (ok == LOG_OK) {
 		/* It is save to rollforward the changes now. In case 
@@ -5277,7 +5383,7 @@ sys_drop_sequences(sql_trans *tr, sql_schema *s, int drop_action)
 }
 
 sql_type *
-sql_trans_create_type(sql_trans *tr, sql_schema * s, const char *sqlname, int digits, int scale, int radix, const char *impl)
+sql_trans_create_type(sql_trans *tr, sql_schema *s, const char *sqlname, int digits, int scale, int radix, const char *impl)
 {
 	sql_type *t;
 	sql_table *systype;
@@ -5613,6 +5719,7 @@ sql_trans_add_table(sql_trans *tr, sql_table *mt, sql_table *pt)
 	cs_add(&mt->members, p, TR_NEW);
 	mt->s->base.wtime = mt->base.wtime = pt->s->base.wtime = pt->base.wtime = p->base.wtime = tr->wtime = tr->wstime;
 	table_funcs.table_insert(tr, sysobj, &mt->base.id, p->base.name, &p->base.id);
+	tr->schema_updates ++;
 	return mt;
 }
 
@@ -5877,7 +5984,11 @@ sql_trans_set_table_schema(sql_trans *tr, sqlid id, sql_schema *os, sql_schema *
 	m->t = t;
 	list_append(tr->moved_tables, m);
 
-	tr->wtime = tr->wstime;
+	t->base.wtime = os->base.wtime = ns->base.wtime = tr->wtime = tr->wstime;
+	for (node *n = t->columns.set->h ; n ; n = n->next) {
+		sql_column *col = (sql_column*) n->data;
+		col->base.wtime = tr->wstime; /* the table's columns types have to be set again */
+	}
 	tr->schema_updates ++;
 	return t;
 }
@@ -5919,6 +6030,7 @@ sql_trans_del_table(sql_trans *tr, sql_table *mt, sql_table *pt, int drop_action
 
 	if (drop_action == DROP_CASCADE)
 		sql_trans_drop_table(tr, mt->s, pt->base.id, drop_action);
+	tr->schema_updates ++;
 	return mt;
 }
 
@@ -6098,12 +6210,12 @@ create_sql_idx(sql_allocator *sa, sql_table *t, const char *name, idx_type it)
 }
 
 sql_column *
-create_sql_column(sql_allocator *sa, sql_table *t, const char *name, sql_subtype *tpe)
+create_sql_column(sql_trans *tr, sql_table *t, const char *name, sql_subtype *tpe)
 {
-	sql_column *col = SA_ZNEW(sa, sql_column);
+	sql_column *col = SA_ZNEW(tr->sa, sql_column);
 
-	base_init(sa, &col->base, next_oid(), TR_NEW, name);
-	col->type = *tpe;
+	base_init(tr->sa, &col->base, next_oid(), TR_NEW, name);
+	dup_sql_type(tr, t->s, tpe, &(col->type));
 	col->def = NULL;
 	col->null = 1;
 	col->colnr = table_next_column_nr(t);
@@ -6201,7 +6313,7 @@ sql_trans_create_column(sql_trans *tr, sql_table *t, const char *name, sql_subty
 
 	if (t->system && sql_trans_name_conflict(tr, t->s->base.name, t->base.name, name))
 		return NULL;
-	col = create_sql_column(tr->sa, t, name, tpe);
+	col = create_sql_column(tr, t, name, tpe);
 
 	if (isTable(col->t))
 		if (store_funcs.create_col(tr, col) != LOG_OK)

@@ -33,6 +33,7 @@ http://monetdb.cwi.nl/Development/TestWeb/index.html
     * a Python script                                       (TST.py)        (1,3)
     * a MAL script to be executed by mclient -lmal          (TST.malC) (2,3,4)
     * a SQL script to be executed by mclient -lsql          (TST.sql)  (2,3,4)
+    * a sqllogictest-compatible test script                 (TST.test)
    (1) In case the name of an arbitrary executable or Python script is
         suffixed with ".MAL" (i.e., TST.MAL[.(sh|exe|com|bat|cmd|py)]),
         Mtest.py starts an mserver5 with a MAL-listerner on MAPIPORT

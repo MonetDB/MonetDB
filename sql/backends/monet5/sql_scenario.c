@@ -353,6 +353,10 @@ SQLresetClient(Client c)
 
 MT_Id sqllogthread, idlethread;
 
+#ifdef HAVE_EMBEDDED
+extern char* createdb_inline;
+#endif
+
 static str
 SQLinit(Client c)
 {
@@ -673,10 +677,6 @@ SQLtrans(mvc *m)
 	}
 	return MAL_SUCCEED;
 }
-
-#ifdef HAVE_EMBEDDED
-extern char* createdb_inline;
-#endif
 
 str
 SQLinitClient(Client c)
@@ -1123,6 +1123,8 @@ SQLparser(Client c)
 	}
 	if (be->language !='S') {
 		msg = createException(SQL, "SQLparser", SQLSTATE(42000) "Unrecognized language prefix: %ci\n", be->language);
+		in->pos = in->len;	/* skip rest of the input */
+		c->mode = FINISHCLIENT; /* and disconnect, as client doesn't respect the mapi protocol */
 		goto finalize;
 	}
 

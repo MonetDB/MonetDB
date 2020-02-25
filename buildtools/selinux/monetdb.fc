@@ -4,6 +4,6 @@
 /var/log/monetdb(/.*)?					gen_context(system_u:object_r:monetdbd_log_t,s0)
 /var/monetdb5/dbfarm(/.*)?				gen_context(system_u:object_r:mserver5_db_t,s0)
 /var/monetdb5/dbfarm/\.merovingian_properties	--	gen_context(system_u:object_r:monetdbd_etc_t,s0)
-/run/monetdb(/.*)?					gen_context(system_u:object_r:monetdbd_var_run_t,s0)
+/var/run/monetdb(/.*)?					gen_context(system_u:object_r:monetdbd_var_run_t,s0)
 /var/monetdb5/dbfarm/\.merovingian_lock		--	gen_context(system_u:object_r:monetdbd_lock_t,s0)
 /var/monetdb5/dbfarm/.*/\.gdk_lock		--	gen_context(system_u:object_r:mserver5_lock_t,s0)

@@ -1,6 +1,10 @@
 # ChangeLog file for devel
 # This file is updated with Maddlog
 
+* Tue Feb 18 2020 Thodoris Zois <thodoris.zois@monetdbsolutions.com>
+- Added mserver5 option (--dbtrace=<path>) in order to be able to
+  specify the output directory of the produced traces.
+
 * Thu Feb  6 2020 Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com>
 - Add port and host as fields in the .monetdb file.
 

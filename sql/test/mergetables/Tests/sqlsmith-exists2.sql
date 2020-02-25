@@ -198,4 +198,20 @@ where subq_0.c6 is null
 limit 106;
 -- empty result set
 
+select 
+ 1
+ from 
+ tab0
+ inner join analytics as ref_1
+ inner join integers as ref_4
+ on (exists (
+ select 
+ 1
+ where (exists (
+ select 
+ 1)
+ and (ref_4.i is not null))))
+ on (ref_1.bb is null);
+ -- empty result set
+
 ROLLBACK;

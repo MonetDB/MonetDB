@@ -105,7 +105,7 @@ Group: Applications/Databases
 License: MPLv2.0
 URL: https://www.monetdb.org/
 BugURL: https://bugs.monetdb.org/
-Source: https://www.monetdb.org/downloads/sources/Nov2019-SP2/%{name}-%{version}.tar.bz2
+Source: https://www.monetdb.org/downloads/sources/Nov2019-SP3/%{name}-%{version}.tar.bz2
 
 # we need systemd for the _unitdir macro to exist
 # we need checkpolicy and selinux-policy-devel for the SELinux policy
@@ -789,7 +789,9 @@ do
   /usr/sbin/semodule -s ${selinuxvariant} -i \
     %{_datadir}/selinux/${selinuxvariant}/monetdb.pp &> /dev/null || :
 done
-/sbin/restorecon -R %{_localstatedir}/monetdb5 %{_localstatedir}/log/monetdb %{_rundir}/monetdb %{_bindir}/monetdbd %{_bindir}/mserver5 %{_unitdir}/monetdbd.service &> /dev/null || :
+# use /var/run/monetdb since that's what it says in the monetdb.fc file
+# it says that because /run/monetdb for some reason doesn't work
+/sbin/restorecon -R %{_localstatedir}/monetdb5 %{_localstatedir}/log/monetdb /var/run/monetdb %{_bindir}/monetdbd %{_bindir}/mserver5 %{_unitdir}/monetdbd.service &> /dev/null || :
 /usr/bin/systemctl try-restart monetdbd.service
 
 %postun selinux
@@ -839,7 +841,7 @@ export CFLAGS
 # do not use --enable-optimize or --disable-optimize: we don't want
 # any changes to optimization flags
 %{configure} \
- 	--with-rundir=%{_rundir} \
+ 	--with-rundir=%{_rundir}/monetdb \
 	--enable-assert=no \
 	--enable-debug=yes \
 	--enable-developer=no \
@@ -941,6 +943,20 @@ fi
 %postun -p /sbin/ldconfig
 
 %changelog
+* Sat Feb 22 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.35.19-20200222
+- Rebuilt.
+- BZ#6829: NTILE window function returns incorrect results
+
+* Fri Feb 21 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.35.17-20200221
+- Rebuilt.
+- BZ#6827: CUME_DIST window function returns incorrect results
+
+* Mon Feb 17 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.35.15-20200217
+- Rebuilt.
+- BZ#6817: running analyze on a schema which contains a stream table
+  stops with an error
+- BZ#6819: functions do not persist
+
 * Wed Feb 12 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.35.13-20200212
 - Rebuilt.
 
