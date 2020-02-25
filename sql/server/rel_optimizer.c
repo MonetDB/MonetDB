@@ -5074,7 +5074,7 @@ rel_push_join_down_union(int *changes, mvc *sql, sql_rel *rel)
 		list *exps = rel->exps;
 		sql_exp *je = !list_empty(exps)?exps->h->data:NULL;
 
-		if (!l || !r || need_distinct(l) || need_distinct(r))
+		if (!l || !r || need_distinct(l) || need_distinct(r) || rel_is_ref(l) || rel_is_ref(r))
 			return rel;
 		if (l->op == op_project)
 			l = l->l;
