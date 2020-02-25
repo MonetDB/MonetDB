@@ -184,6 +184,7 @@ WLRgetMaster(void)
 	int len;
 	str dir;
 	FILE *fd;
+	str msg = MAL_SUCCEED;
 
 	if( wlr_master[0] == 0 )
 		return MAL_SUCCEED;
@@ -198,7 +199,9 @@ WLRgetMaster(void)
 	fd = fopen(dir,"r");
 	GDKfree(dir);
 	if( fd ){
-		WLCreadConfig(fd);
+		msg = WLCreadConfig(fd);
+		if( msg != MAL_SUCCEED)
+			return msg;
 		if( ! wlr_master[0] )
 			throw(MAL,"wlr.getMaster","Master not identified\n");
 		wlc_state = WLC_CLONE; // not used as master
