@@ -714,6 +714,7 @@ re_likeselect(BAT **bnp, BAT *b, BAT *s, const char *pat, bool caseignore, bool 
 	oid o, off;
 	const char *v;
 	RE *re = NULL;
+	uint32_t *wpat = NULL;
 
 	assert(ATOMstorage(b->ttype) == TYPE_str);
 
@@ -735,7 +736,6 @@ re_likeselect(BAT **bnp, BAT *b, BAT *s, const char *pat, bool caseignore, bool 
 
 		if (use_strcmp) {
 			if (caseignore) {
-				uint32_t *wpat;
 				wpat = utf8stoucs(pat);
 				if (wpat == NULL)
 					throw(MAL, "pcre.likeselect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -746,6 +746,7 @@ re_likeselect(BAT **bnp, BAT *b, BAT *s, const char *pat, bool caseignore, bool 
 					candscanloop(v && *v != '\200' &&
 								 mywstrcasecmp(v, wpat) == 0);
 				GDKfree(wpat);
+				wpat = NULL;
 			} else {
 				if (anti)
 					candscanloop(v && *v != '\200' &&
@@ -786,7 +787,6 @@ re_likeselect(BAT **bnp, BAT *b, BAT *s, const char *pat, bool caseignore, bool 
 		}
 		if (use_strcmp) {
 			if (caseignore) {
-				uint32_t *wpat;
 				wpat = utf8stoucs(pat);
 				if (wpat == NULL)
 					throw(MAL, "pcre.likeselect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -797,6 +797,7 @@ re_likeselect(BAT **bnp, BAT *b, BAT *s, const char *pat, bool caseignore, bool 
 					scanloop(v && *v != '\200' &&
 							 mywstrcasecmp(v, wpat) == 0);
 				GDKfree(wpat);
+				wpat = NULL;
 			} else {
 				if (anti)
 					scanloop(v && *v != '\200' &&
@@ -834,6 +835,7 @@ re_likeselect(BAT **bnp, BAT *b, BAT *s, const char *pat, bool caseignore, bool 
 
   bunins_failed:
 	re_destroy(re);
+	GDKfree(wpat);
 	BBPreclaim(bn);
 	*bnp = NULL;
 	throw(MAL, "pcre.likeselect", OPERATION_FAILED);
