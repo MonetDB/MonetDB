@@ -178,17 +178,14 @@ WLRgetMaster(void)
 
 	fd = fopen(dir,"r");
 	GDKfree(dir);
-	if( fd ){
-		msg = WLCreadConfig(fd);
-		if( msg != MAL_SUCCEED)
-			return msg;
-		if( ! wlr_master[0] )
-			throw(MAL,"wlr.getMaster","Master not identified\n");
-		wlc_state = WLC_CLONE; // not used as master
-	} else
+	if (fd == NULL)
 		throw(MAL,"wlr.getMaster","Could not get read access to '%s'config file\n", wlr_master);
-	if((msg = WLCreadConfig(fd)))
+	msg = WLCreadConfig(fd);
+	if( msg != MAL_SUCCEED)
 		return msg;
+	if( ! wlr_master[0] )
+		throw(MAL,"wlr.getMaster","Master not identified\n");
+	wlc_state = WLC_CLONE; // not used as master
 	if( !wlr_master[0] )
 		throw(MAL,"wlr.getMaster","Master not identified\n");
 	wlc_state = WLC_CLONE; // not used as master
