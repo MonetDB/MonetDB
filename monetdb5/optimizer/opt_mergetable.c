@@ -1156,8 +1156,10 @@ mat_group_project(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int e, int a)
 		getArg(q,1) = getArg(mat[e].mi,k);
 		getArg(q,2) = getArg(mat[a].mi,k);
 		pushInstruction(mb,q);
-		if(setPartnr(ml, getArg(mat[a].mi,k), getArg(q,0), k))
+		if(setPartnr(ml, getArg(mat[a].mi,k), getArg(q,0), k)){
+			freeInstruction(ai1);
 			return -1;
+		}
 
 		/* pack the result into a mat */
 		ai1 = addArgument(mb,ai1,getArg(q,0));
