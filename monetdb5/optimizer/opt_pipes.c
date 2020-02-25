@@ -488,7 +488,7 @@ compileOptimizer(Client cntxt, const char *name)
 							pipes[j].mb = compiled->def;
 							//fprintFunction(stderr, pipes[j].mb, 0, LIST_MAL_ALL);
 						}
-					}
+					} else break;
 				}
 			}
 			if (msg != MAL_SUCCEED ||
