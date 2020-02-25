@@ -873,13 +873,14 @@ str
 RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int pos = 0;
-	str *mod = getArgReference_str(stk, pci, 1);
-	str *nme = getArgReference_str(stk, pci, 2);
-	str *expr = getArgReference_str(stk, pci, 3);
-	str *sig = getArgReference_str(stk, pci, 4), c = *sig;
+	str mod = *getArgReference_str(stk, pci, 1);
+	str nme = *getArgReference_str(stk, pci, 2);
+	str expr = *getArgReference_str(stk, pci, 3);
+	str sig = *getArgReference_str(stk, pci, 4);
+	str types = pci->argc == 6 ? *getArgReference_str(stk, pci, 5) : NULL;
 	backend *be = NULL;
 	mvc *m = NULL;
-	str msg;
+	str msg = MAL_SUCCEED;
 	sql_rel *rel;
 	list *refs, *ops;
 	char buf[BUFSIZ];
@@ -892,18 +893,22 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	if (!m->sa)
 		m->sa = sa_create();
-	if (!m->sa)
+	if (!m->sa) {
+		sqlcleanup(m, 0);
 		return createException(SQL,"RAstatement2",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
 
 	/* keep copy of signature and relational expression */
-	snprintf(buf, BUFSIZ, "%s %s", *sig, *expr);
+	snprintf(buf, BUFSIZ, "%s %s", sig, expr);
 
-	if(!stack_push_frame(m, NULL))
+	if (!stack_push_frame(m, NULL)) {
+		sqlcleanup(m, 0);
 		return createException(SQL,"RAstatement2",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
 	ops = sa_list(m->sa);
-	while (c && *c && !isspace((unsigned char) *c)) {
-		char *vnme = c, *tnme;
-		char *p = strchr(++c, (int)' ');
+	while (sig && *sig && !isspace((unsigned char) *sig)) {
+		char *vnme = sig, *tnme;
+		char *p = strchr(++sig, (int)' ');
 		int d,s,nr = -1;
 		sql_subtype t;
 		atom *a;
@@ -917,7 +922,7 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		*p++ = 0;
 		tnme = sa_strdup(m->sa, tnme);
 		if (!tnme) {
-			stack_pop_frame(m);
+			sqlcleanup(m, 0);
 			return createException(SQL,"RAstatement2",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		d = strtol(p, &p, 10);
@@ -932,32 +937,56 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		 * */
 		if (nr >= 0) { 
 			append(ops, exp_atom_ref(m->sa, nr, &t));
-			if(!sql_set_arg(m, nr, a)) {
-				stack_pop_frame(m);
+			if (!sql_set_arg(m, nr, a)) {
+				sqlcleanup(m, 0);
 				return createException(SQL,"RAstatement2",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 		} else {
-			if(!stack_push_var(m, vnme+1, &t)) {
-				stack_pop_frame(m);
+			if (!stack_push_var(m, vnme+1, &t)) {
+				sqlcleanup(m, 0);
 				return createException(SQL,"RAstatement2",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 			append(ops, exp_var(m->sa, sa_strdup(m->sa, vnme+1), &t, m->frame));
 		}
-		c = strchr(p, (int)',');
-		if (c)
-			c++;
+		sig = strchr(p, (int)',');
+		if (sig)
+			sig++;
 	}
 	refs = sa_list(m->sa);
-	rel = rel_read(m, *expr, &pos, refs);
+	rel = rel_read(m, expr, &pos, refs);
 	stack_pop_frame(m);
 	if (rel)
 		rel = sql_processrelation(m, rel, 1);
-	if (!rel || monet5_create_relational_function(m, *mod, *nme, rel, NULL, ops, 0) < 0) {
+	if (!rel) {
 		if (strlen(m->errstr) > 6 && m->errstr[5] == '!')
 			msg = createException(SQL, "RAstatement2", "%s", m->errstr);
 		else
 			msg = createException(SQL, "RAstatement2", SQLSTATE(42000) "%s", m->errstr);
+	} else if (rel && types && is_simple_project(rel->op)) { /* Test if types match */
+		list *types_list = sa_list(m->sa);
+		str token, rest;
+
+		for (token = strtok_r(types, "%%", &rest); token; token = strtok_r(NULL, "%%", &rest))
+			list_append(types_list, token);
+
+		if (list_length(types_list) != list_length(rel->exps))
+			msg = createException(SQL, "RAstatement2", SQLSTATE(42000) "The number of projections don't match between the generated plan and the expected one: %d != %d", 
+								  list_length(types_list), list_length(rel->exps));
+		else {
+			int i = 1;
+			for (node *n = rel->exps->h, *m = types_list->h ; n && m && !msg ; n = n->next, m = m->next) {
+				sql_exp *e = (sql_exp *) n->data;
+				sql_subtype *t = exp_subtype(e);
+				str got = subtype2string(t), expected = (str) m->data;
+
+				if (strcmp(expected, got) != 0)
+					msg = createException(SQL, "RAstatement2", SQLSTATE(42000) "Parameter %d has wrong SQL type, expected %s, but got %s instead", i, expected, got);
+				i++;
+			}
+		}
 	}
+	if (!msg && monet5_create_relational_function(m, mod, nme, rel, NULL, ops, 0) < 0)
+		msg = createException(SQL, "RAstatement2", "%s", m->errstr);
 	rel_destroy(rel);
 	sqlcleanup(m, 0);
 	return msg;
