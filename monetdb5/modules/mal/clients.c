@@ -310,13 +310,17 @@ CLTsetPrintTimeout(void *ret, int *secs)
 
 str CLTmd5sum(str *ret, str *pw) {
 #ifdef HAVE_MD5_UPDATE
-	char *mret = mcrypt_MD5Sum(*pw, strlen(*pw));
+	if (strNil(*pw)) {
+		*ret = GDKstrdup(str_nil);
+	} else {
+		char *mret = mcrypt_MD5Sum(*pw, strlen(*pw));
 
-	if (!mret)
-		throw(MAL, "clients.md5sum", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	*ret = GDKstrdup(mret);
-	free(mret);
-	if(*ret == NULL)
+		if (!mret)
+			throw(MAL, "clients.md5sum", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		*ret = GDKstrdup(mret);
+		free(mret);
+	}
+	if (*ret == NULL)
 		throw(MAL, "clients.md5sum", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 #else
@@ -328,13 +332,17 @@ str CLTmd5sum(str *ret, str *pw) {
 
 str CLTsha1sum(str *ret, str *pw) {
 #ifdef HAVE_SHA1_UPDATE
-	char *mret = mcrypt_SHA1Sum(*pw, strlen(*pw));
+	if (strNil(*pw)) {
+		*ret = GDKstrdup(str_nil);
+	} else {
+		char *mret = mcrypt_SHA1Sum(*pw, strlen(*pw));
 
-	if (!mret)
-		throw(MAL, "clients.sha1sum", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	*ret = GDKstrdup(mret);
-	free(mret);
-	if(*ret == NULL)
+		if (!mret)
+			throw(MAL, "clients.sha1sum", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		*ret = GDKstrdup(mret);
+		free(mret);
+	}
+	if (*ret == NULL)
 		throw(MAL, "clients.sha1sum", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 #else
@@ -346,13 +354,17 @@ str CLTsha1sum(str *ret, str *pw) {
 
 str CLTripemd160sum(str *ret, str *pw) {
 #ifdef HAVE_RIPEMD160_UPDATE
-	char *mret = mcrypt_RIPEMD160Sum(*pw, strlen(*pw));
+	if (strNil(*pw)) {
+		*ret = GDKstrdup(str_nil);
+	} else {
+		char *mret = mcrypt_RIPEMD160Sum(*pw, strlen(*pw));
 
-	if (!mret)
-		throw(MAL, "clients.ripemd160sum", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	*ret = GDKstrdup(mret);
-	free(mret);
-	if(*ret == NULL)
+		if (!mret)
+			throw(MAL, "clients.ripemd160sum", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		*ret = GDKstrdup(mret);
+		free(mret);
+	}
+	if (*ret == NULL)
 		throw(MAL, "clients.ripemd160sum", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 #else
@@ -363,49 +375,56 @@ str CLTripemd160sum(str *ret, str *pw) {
 }
 
 str CLTsha2sum(str *ret, str *pw, int *bits) {
-	char *mret;
-	switch (*bits) {
+	if (strNil(*pw) || is_int_nil(*bits)) {
+		*ret = GDKstrdup(str_nil);
+	} else {
+		char *mret;
+		switch (*bits) {
 #ifdef HAVE_SHA512_UPDATE
-		case 512:
-			mret = mcrypt_SHA512Sum(*pw, strlen(*pw));
-			break;
+			case 512:
+				mret = mcrypt_SHA512Sum(*pw, strlen(*pw));
+				break;
 #endif
 #ifdef HAVE_SHA384_UPDATE
-		case 384:
-			mret = mcrypt_SHA384Sum(*pw, strlen(*pw));
-			break;
+			case 384:
+				mret = mcrypt_SHA384Sum(*pw, strlen(*pw));
+				break;
 #endif
 #ifdef HAVE_SHA256_UPDATE
-		case 256:
-			mret = mcrypt_SHA256Sum(*pw, strlen(*pw));
-			break;
+			case 256:
+				mret = mcrypt_SHA256Sum(*pw, strlen(*pw));
+				break;
 #endif
 #ifdef HAVE_SHA224_UPDATE
-		case 224:
-			mret = mcrypt_SHA224Sum(*pw, strlen(*pw));
-			break;
+			case 224:
+				mret = mcrypt_SHA224Sum(*pw, strlen(*pw));
+				break;
 #endif
-		default:
-			throw(ILLARG, "clients.sha2sum", "wrong number of bits "
-					"for SHA2 sum: %d", *bits);
+			default:
+				throw(ILLARG, "clients.sha2sum", "wrong number of bits "
+						"for SHA2 sum: %d", *bits);
+		}
+		if (!mret)
+			throw(MAL, "clients.sha2sum", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		*ret = GDKstrdup(mret);
+		free(mret);
 	}
-
-	if (!mret)
-		throw(MAL, "clients.sha2sum", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	*ret = GDKstrdup(mret);
-	free(mret);
-	if(*ret == NULL)
+	if (*ret == NULL)
 		throw(MAL, "clients.sha2sum", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
 str CLTbackendsum(str *ret, str *pw) {
-	char *mret = mcrypt_BackendSum(*pw, strlen(*pw));
-	if (mret == NULL)
-		throw(MAL, "clients.backendsum", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	*ret = GDKstrdup(mret);
-	free(mret);
-	if(*ret == NULL)
+	if (strNil(*pw)) {
+		*ret = GDKstrdup(str_nil);
+	} else {
+		char *mret = mcrypt_BackendSum(*pw, strlen(*pw));
+		if (mret == NULL)
+			throw(MAL, "clients.backendsum", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		*ret = GDKstrdup(mret);
+		free(mret);
+	}
+	if (*ret == NULL)
 		throw(MAL, "clients.backendsum", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
@@ -550,7 +569,7 @@ CLTshutdown(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	*ret = GDKstrdup(buf);
 	if ( force)
 		mal_exit(0);
-	if(*ret == NULL)
+	if (*ret == NULL)
 		throw(MAL, "mal.shutdown", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
