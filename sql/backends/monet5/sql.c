@@ -2789,8 +2789,10 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			goto wrapup_result_set;
 		}
 	}
-	if (mvc_export_result(cntxt->sqlcontext, s, res, strcmp(filename, "stdout") == 0, mb->starttime, mb->optimize))
+	if (mvc_export_result(cntxt->sqlcontext, s, res, strcmp(filename, "stdout") == 0, mb->starttime, mb->optimize)){
 		msg = createException(SQL, "sql.resultset", SQLSTATE(45000) "Result set construction failed");
+		goto wrapup_result_set;
+	}
 	mb->starttime = 0;
 	mb->optimize = 0;
 	if (onclient) {
