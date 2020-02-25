@@ -951,9 +951,13 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	rel = rel_read(m, *expr, &pos, refs);
 	stack_pop_frame(m);
 	if (rel)
-		rel = sql_processrelation(m, rel, 0);
-	if (!rel || monet5_create_relational_function(m, *mod, *nme, rel, NULL, ops, 0) < 0)
-		throw(SQL, "sql.register", SQLSTATE(42000) "Cannot register %s: %s", buf, m->errstr);
+		rel = sql_processrelation(m, rel, 1);
+	if (!rel || monet5_create_relational_function(m, *mod, *nme, rel, NULL, ops, 0) < 0) {
+		if (strlen(m->errstr) > 6 && m->errstr[5] == '!')
+			msg = createException(SQL, "RAstatement2", "%s", m->errstr);
+		else
+			msg = createException(SQL, "RAstatement2", SQLSTATE(42000) "%s", m->errstr);
+	}
 	rel_destroy(rel);
 	sqlcleanup(m, 0);
 	return msg;
