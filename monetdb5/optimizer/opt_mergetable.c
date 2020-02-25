@@ -1204,6 +1204,7 @@ mat_group_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int b, int g, int e)
 		InstrPtr q = copyInstruction(p);
 		if(!q) {
 			freeInstruction(ai1);
+			freeInstruction(ai10);
 			return -1;
 		}
 
@@ -1675,8 +1676,10 @@ mat_topn(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n, int o)
 		cst.val.lval= 0;
 		cst.len = 0;
 		zero = defConstant(mb, cst.vtype, &cst);
-		if( zero < 0)
+		if( zero < 0){
+			freeInstruction(pck);
 			return -1;
+		}
 	}
 	assert( (n<0 && o<0) || 
 		(ml->v[m].mi->argc == ml->v[n].mi->argc && 

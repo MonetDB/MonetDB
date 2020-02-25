@@ -171,6 +171,7 @@ inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 		ns[k] = copyInstruction(q);
 		if( ns[k] == NULL){
 			GDKfree(nv);
+			GDKfree(ns);
 			return -1;
 		}
 
