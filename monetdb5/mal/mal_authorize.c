@@ -424,7 +424,7 @@ AUTHcheckCredentials(
 	assert(user);
 	assert(pass);
 
-	if (username == NULL || strNil(username))
+	if (strNil(username))
 		throw(INVCRED, "checkCredentials", "invalid credentials for unknown user");
 
 	p = AUTHfindUser(username);
@@ -436,7 +436,7 @@ AUTHcheckCredentials(
 	/* a NULL password is impossible (since we should be dealing with
 	 * hashes here) so we can bail out immediately
 	 */
-	if (passwd == NULL || strNil(passwd)) {
+	if (strNil(passwd)) {
 		/* DO NOT reveal that the password is NULL here! */
 		throw(INVCRED, "checkCredentials", INVCRED_INVALID_USER " '%s'", username);
 	}
@@ -481,9 +481,9 @@ AUTHaddUser(oid *uid, Client cntxt, const char *username, const char *passwd)
 		rethrow("addUser", tmp, AUTHrequireAdmin(cntxt));
 
 	/* some pre-condition checks */
-	if (username == NULL || strNil(username))
+	if (strNil(username))
 		throw(ILLARG, "addUser", "username should not be nil");
-	if (passwd == NULL || strNil(passwd))
+	if (strNil(passwd))
 		throw(ILLARG, "addUser", "password should not be nil");
 	rethrow("addUser", tmp, AUTHverifyPassword(passwd));
 
@@ -527,7 +527,7 @@ AUTHremoveUser(Client cntxt, const char *username)
 	assert(pass);
 
 	/* pre-condition check */
-	if (username == NULL || strNil(username))
+	if (strNil(username))
 		throw(ILLARG, "removeUser", "username should not be nil");
 
 	/* ensure that the username exists */
@@ -563,9 +563,9 @@ AUTHchangeUsername(Client cntxt, const char *olduser, const char *newuser)
 	rethrow("addUser", tmp, AUTHrequireAdminOrUser(cntxt, olduser));
 
 	/* precondition checks */
-	if (olduser == NULL || strNil(olduser))
+	if (strNil(olduser))
 		throw(ILLARG, "changeUsername", "old username should not be nil");
-	if (newuser == NULL || strNil(newuser))
+	if (strNil(newuser))
 		throw(ILLARG, "changeUsername", "new username should not be nil");
 
 	/* see if the olduser is valid */
@@ -600,9 +600,9 @@ AUTHchangePassword(Client cntxt, const char *oldpass, const char *passwd)
 	str msg= MAL_SUCCEED;
 
 	/* precondition checks */
-	if (oldpass == NULL || strNil(oldpass))
+	if (strNil(oldpass))
 		throw(ILLARG, "changePassword", "old password should not be nil");
-	if (passwd == NULL || strNil(passwd))
+	if (strNil(passwd))
 		throw(ILLARG, "changePassword", "password should not be nil");
 	rethrow("changePassword", tmp, AUTHverifyPassword(passwd));
 
@@ -657,9 +657,9 @@ AUTHsetPassword(Client cntxt, const char *username, const char *passwd)
 	rethrow("setPassword", tmp, AUTHrequireAdmin(cntxt));
 
 	/* precondition checks */
-	if (username == NULL || strNil(username))
+	if (strNil(username))
 		throw(ILLARG, "setPassword", "username should not be nil");
-	if (passwd == NULL || strNil(passwd))
+	if (strNil(passwd))
 		throw(ILLARG, "setPassword", "password should not be nil");
 	rethrow("setPassword", tmp, AUTHverifyPassword(passwd));
 
@@ -786,7 +786,7 @@ AUTHgetPasswordHash(str *ret, Client cntxt, const char *username)
 
 	rethrow("getPasswordHash", tmp, AUTHrequireAdmin(cntxt));
 
-	if (username == NULL || strNil(username))
+	if (strNil(username))
 		throw(ILLARG, "getPasswordHash", "username should not be nil");
 
 	p = AUTHfindUser(username);
@@ -818,7 +818,7 @@ AUTHgetPasswordHash(str *ret, Client cntxt, const char *username)
 str
 AUTHunlockVault(const char *password)
 {
-	if (password == NULL || strNil(password))
+	if (strNil(password))
 		throw(ILLARG, "unlockVault", "password should not be nil");
 
 	/* even though I think this function should be called only once, it
@@ -996,7 +996,7 @@ AUTHgetRemoteTableCredentials(const char *local_table, str *uri, str *username, 
 	str tmp;
 	str pwhash;
 
-	if (local_table == NULL || strNil(local_table)) {
+	if (strNil(local_table)) {
 		throw(ILLARG, "getRemoteTableCredentials", "local table should not be nil");
 	}
 
@@ -1034,9 +1034,9 @@ AUTHaddRemoteTableCredentials(const char *local_table, const char *local_user, c
 	str tmp, output = MAL_SUCCEED;
 	BUN p;
 
-	if (uri == NULL || strNil(uri))
+	if (strNil(uri))
 		throw(ILLARG, "addRemoteTableCredentials", "URI cannot be nil");
-	if (local_user == NULL || strNil(local_user))
+	if (strNil(local_user))
 		throw(ILLARG, "addRemoteTableCredentials", "local user name cannot be nil");
 
 	assert(rt_key);
@@ -1158,7 +1158,7 @@ AUTHdeleteRemoteTableCredentials(const char *local_table)
 	assert(rt_hashedpwd);
 
 	/* pre-condition check */
-	if (local_table == NULL || strNil(local_table))
+	if (strNil(local_table))
 		throw(ILLARG, "deleteRemoteTableCredentials", "local table cannot be nil");
 
 	/* ensure that the username exists */

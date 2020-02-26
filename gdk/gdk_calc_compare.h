@@ -705,12 +705,10 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 			CHECKCAND(dst, k, candoff, TPE_nil);
 			s1 = hp1 ? hp1 + VarHeapVal(lft, i, wd1) : (const char *) lft;
 			s2 = hp2 ? hp2 + VarHeapVal(rgt, j, wd2) : (const char *) rgt;
-			if (s1 == NULL || strNil(s1) ||
-			    s2 == NULL || strNil(s2)) {
+			if (strNil(s1) || strNil(s2)) {
 #ifdef NIL_MATCHES_FLAG
 				if (nil_matches) {
-					dst[k] = OP(s1 == NULL || strNil(s1),
-						    s2 == NULL || strNil(s2));
+					dst[k] = OP(strNil(s1), strNil(s2));
 				} else
 #endif
 				{

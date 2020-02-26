@@ -1451,7 +1451,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				for (j = 0; j < count; j++) {
 					const char *ptr = source_base[j];
 					const void *appended_element;
-					if (!ptr || strNil(ptr)) {
+					if (strNil(ptr)) {
 						appended_element = (void *)BATatoms[bat_type].atomNull;
 					} else {
 						if (BATatoms[bat_type].atomFromStr(ptr, &len, &element, false) ==

@@ -2203,7 +2203,7 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 					}
 					break;
 				}
-				if (!v || strNil(v)) {
+				if (strNil(v)) {
 					if (skip_nils) {
 						/*
 						 * if q is 1 and the value is
@@ -2292,7 +2292,7 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 				}
 				break;
 			}
-			if (!v || strNil(v)) {
+			if (strNil(v)) {
 				if (skip_nils)
 					continue;
 				strncpy(buf, str_nil, buflen);
@@ -2349,7 +2349,7 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 				break;
 			}
 
-			if (!v || strNil(v)) {
+			if (strNil(v)) {
 				if (skip_nils)
 					continue;
 				strncpy(buf, str_nil, buflen);
