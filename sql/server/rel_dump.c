@@ -405,7 +405,7 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int dec
 	} 	break;
 	case op_table:
 		print_indent(sql, fout, depth, decorate);
-		mnstr_printf(fout, "table ");
+		mnstr_printf(fout, "table (");
 
 		if (rel->r)
 			exp_print(sql, fout, rel->r, depth, refs, 1, 0);
@@ -415,6 +415,8 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int dec
 			else
 				rel_print_(sql, fout, rel->l, depth+1, refs, decorate);
 		}
+		print_indent(sql, fout, depth, decorate);
+		mnstr_printf(fout, ")");
 		if (rel->exps)
 			exps_print(sql, fout, rel->exps, depth, refs, 1, 0);
 		break;
