@@ -241,7 +241,7 @@ CLTsetoptimizer(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (mal_clients[idx].mode == FREECLIENT)
 		throw(MAL,"clients.setoptimizer","Session not active anymore");
 	if (cntxt->user == mal_clients[idx].user || cntxt->user == MAL_ADMIN){
-		if (strcmp(opt, str_nil) == 0)
+		if (strNil(opt))
 			throw(MAL,"clients.setoptimizer","Input string cannot be NULL");
 		if (strlen(opt) >= sizeof(mal_clients[idx].optimizer))
 			throw(MAL,"clients.setoptimizer","Input string is too large");
