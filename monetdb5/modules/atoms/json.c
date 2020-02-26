@@ -295,7 +295,6 @@ JSONdump(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-
 str
 JSONjson2str(str *ret, json *j)
 {
@@ -327,32 +326,43 @@ JSONstr2json(json *ret, str *j)
 str
 JSONisvalid(bit *ret, json *j)
 {
-	JSON *jt = JSONparse(*j);
-
-	if (jt == NULL)
-		throw(MAL, "json.isvalid", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	*ret = jt->error == MAL_SUCCEED;
-	JSONfree(jt);
+	if (strNil(*j)) {
+		*ret = bit_nil;
+	} else {
+		JSON *jt = JSONparse(*j);
+		if (jt == NULL)
+			throw(MAL, "json.isvalid", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		*ret = jt->error == MAL_SUCCEED;
+		JSONfree(jt);
+	}
 	return MAL_SUCCEED;
 }
 
 str
 JSONisobject(bit *ret, json *js)
 {
-	char *j = *js;
+	if (strNil(*js)) {
+		*ret = bit_nil;
+	} else {
+		char *j = *js;
 
-	skipblancs(j);
-	*ret = *j == '{';
+		skipblancs(j);
+		*ret = *j == '{';
+	}
 	return MAL_SUCCEED;
 }
 
 str
 JSONisarray(bit *ret, json *js)
 {
-	char *j = *js;
+	if (strNil(*js)) {
+		*ret = bit_nil;
+	} else {
+		char *j = *js;
 
-	skipblancs(j);
-	*ret = *j == '[';
+		skipblancs(j);
+		*ret = *j == '[';
+	}
 	return MAL_SUCCEED;
 }
 
