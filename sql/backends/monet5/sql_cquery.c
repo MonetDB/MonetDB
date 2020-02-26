@@ -448,7 +448,7 @@ CQregister(Client cntxt, str sname, str fname, int argc, atom **args, str alias,
 		freeMB = 1;
 	}
 
-	rschema = (!sname || strcmp(sname, str_nil) == 0) ? m->session->schema_name : sname;
+	rschema = strNil(sname) ? m->session->schema_name : sname;
 	if((s = mvc_bind_schema(m, rschema)) == NULL) { //bind the schema
 		msg = createException(SQL,"cquery.register",SQLSTATE(3F000) "Failed to bind schema %s\n", rschema);
 		goto finish;
@@ -486,7 +486,7 @@ CQregister(Client cntxt, str sname, str fname, int argc, atom **args, str alias,
 		FREE_CQ_MB(finish)
 	}
 
-	if(!alias || strcmp(alias, str_nil) == 0) { //set the alias
+	if(strNil(alias)) { //set the alias
 		ralias = GDKstrdup(fname);
 	} else {
 		ralias = GDKstrdup(alias);

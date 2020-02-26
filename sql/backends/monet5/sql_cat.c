@@ -51,7 +51,7 @@ SaveArgReference(MalStkPtr stk, InstrPtr pci, int arg)
 {
 	char *val = *getArgReference_str(stk, pci, arg);
 
-	if (val && strcmp(val, str_nil) == 0)
+	if (val && strNil(val))
 		val = NULL;
 	return val;
 }
@@ -1348,7 +1348,7 @@ SQLgrant(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sqlid grantor = (sqlid) *getArgReference_int(stk, pci, 7);
 
 	initcontext();
-	if (!tname || strcmp(tname, str_nil) == 0)
+	if (!tname || strNil(tname))
 		msg = sql_grant_global_privs(sql, grantee, privs, grant, grantor);
 	else
 		msg = sql_grant_table_privs(sql, grantee, privs, sname, tname, cname, grant, grantor);
@@ -1367,7 +1367,7 @@ str SQLrevoke(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sqlid grantor = (sqlid) *getArgReference_int(stk, pci, 7);
 
 	initcontext();
-	if (!tname || strcmp(tname, str_nil) == 0)
+	if (!tname || strNil(tname))
 		msg = sql_revoke_global_privs(sql, grantee, privs, grant, grantor);
 	else
 		msg = sql_revoke_table_privs(sql, grantee, privs, sname, tname, cname, grant, grantor);
@@ -1588,9 +1588,9 @@ SQLcreate_trigger(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	char *query = *getArgReference_str(stk, pci, 10);
 
 	initcontext();
-	old_name=(!old_name || strcmp(old_name, str_nil) == 0)?NULL:old_name; 
-	new_name=(!new_name || strcmp(new_name, str_nil) == 0)?NULL:new_name; 
-	condition=(!condition || strcmp(condition, str_nil) == 0)?NULL:condition;
+	old_name=(!old_name || strNil(old_name))?NULL:old_name; 
+	new_name=(!new_name || strNil(new_name))?NULL:new_name; 
+	condition=(!condition || strNil(condition))?NULL:condition;
 	msg = create_trigger(sql, sname, tname, triggername, time, orientation, event, old_name, new_name, condition, query);
 	return msg;
 }
@@ -1730,7 +1730,7 @@ SQLcomment_on(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!id_col || !remark_col)
 		throw(SQL, "sql.comment_on", SQLSTATE(3F000) "no table sys.comments");
 	rid = table_funcs.column_find_row(tx, id_col, &objid, NULL);
-	if (remark != NULL && *remark && strcmp(remark, str_nil) != 0) {
+	if (remark != NULL && *remark && !strNil(remark)) {
 		if (!is_oid_nil(rid)) {
 			// have new remark and found old one, so update field
 			/* UPDATE sys.comments SET remark = %s WHERE id = %d */
@@ -1770,7 +1770,7 @@ SQLrename_schema(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "sql.rename_schema", SQLSTATE(3F000) "ALTER SCHEMA: cannot rename a system schema");
 	if (!list_empty(s->tables.set) || !list_empty(s->types.set) || !list_empty(s->funcs.set) || !list_empty(s->seqs.set))
 		throw(SQL, "sql.rename_schema", SQLSTATE(2BM37) "ALTER SCHEMA: unable to rename schema '%s' (there are database objects which depend on it)", old_name);
-	if (!new_name || strcmp(new_name, str_nil) == 0 || *new_name == '\0')
+	if (!new_name || strNil(new_name) || *new_name == '\0')
 		throw(SQL, "sql.rename_schema", SQLSTATE(3F000) "ALTER SCHEMA: invalid new schema name");
 	if (mvc_bind_schema(sql, new_name))
 		throw(SQL, "sql.rename_schema", SQLSTATE(3F000) "ALTER SCHEMA: there is a schema named '%s' in the database", new_name);
@@ -1808,7 +1808,7 @@ SQLrename_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			throw(SQL, "sql.rename_table", SQLSTATE(42000) "ALTER TABLE: cannot rename a system table");
 		if (mvc_check_dependency(sql, t->base.id, TABLE_DEPENDENCY, NULL))
 			throw (SQL,"sql.rename_table", SQLSTATE(2BM37) "ALTER TABLE: unable to rename table '%s' (there are database objects which depend on it)", otable_name);
-		if (!ntable_name || strcmp(ntable_name, str_nil) == 0 || *ntable_name == '\0')
+		if (!ntable_name || strNil(ntable_name) || *ntable_name == '\0')
 			throw(SQL, "sql.rename_table", SQLSTATE(3F000) "ALTER TABLE: invalid new table name");
 		if (mvc_bind_table(sql, s, ntable_name))
 			throw(SQL, "sql.rename_table", SQLSTATE(3F000) "ALTER TABLE: there is a table named '%s' in schema '%s'", ntable_name, oschema_name);
@@ -1878,7 +1878,7 @@ SQLrename_column(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "sql.rename_column", SQLSTATE(42S22) "ALTER TABLE: no such column '%s' in table '%s'", old_name, table_name);
 	if (mvc_check_dependency(sql, col->base.id, COLUMN_DEPENDENCY, NULL))
 		throw(SQL, "sql.rename_column", SQLSTATE(2BM37) "ALTER TABLE: cannot rename column '%s' (there are database objects which depend on it)", old_name);
-	if (!new_name || strcmp(new_name, str_nil) == 0 || *new_name == '\0')
+	if (!new_name || strNil(new_name) || *new_name == '\0')
 		throw(SQL, "sql.rename_column", SQLSTATE(3F000) "ALTER TABLE: invalid new column name");
 	if (mvc_bind_column(sql, t, new_name))
 		throw(SQL, "sql.rename_column", SQLSTATE(3F000) "ALTER TABLE: there is a column named '%s' in table '%s'", new_name, table_name);

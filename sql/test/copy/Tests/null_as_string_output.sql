@@ -1,4 +1,4 @@
-
+start transaction;
 -- here we test the NULL as 'string' feature
 
 create table null_as_string (i int, s string, d decimal(5,2));
@@ -34,3 +34,4 @@ copy select * from null_as_string into stdout delimiters ',',E'\n' NULL as E'\\N
 delete from null_as_string;
 
 drop table null_as_string;
+rollback;

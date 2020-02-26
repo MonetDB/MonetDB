@@ -169,8 +169,11 @@ inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 
 		/* copy the instruction and fix variable references */
 		ns[k] = copyInstruction(q);
-		if( ns[k] == NULL)
+		if( ns[k] == NULL){
+			GDKfree(nv);
+			GDKfree(ns);
 			return -1;
+		}
 
 		for (n = 0; n < q->argc; n++)
 			getArg(ns[k], n) = nv[getArg(q, n)];
@@ -311,8 +314,11 @@ replaceMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 
 	p = getInstrPtr(mb, pc);
 	q = copyInstruction(getInstrPtr(mc, 0));	/* the signature */
-	if( q == NULL)
+	if( q == NULL){
+		GDKfree(cvar);
+		GDKfree(mvar);
 		return -1;
+	}
 	q->token = ASSIGNsymbol;
 	mb->stmt[pc] = q;
 

@@ -3108,14 +3108,12 @@ strEpilogue(void *ret)
 //	(1 + ((UC) > 0x7F) + ((UC) > 0x7FF) + ((UC) > 0xFFFF))
 
 static inline size_t
-UTF8_strlen(const char *s)
+UTF8_strlen(const char *s) /* This function assumes, s is never nil */
 {
 	size_t pos = 0;
 
 	UTF8_assert(s);
-
-	if (strNil(s))
-		return 1;
+	assert(!strNil(s));
 
 	while (*s) {
 		/* just count leading bytes of encoded code points; only works

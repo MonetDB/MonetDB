@@ -609,7 +609,6 @@ move_join_exps(mvc *sql, sql_rel *j, sql_rel *rel)
 static sql_rel *
 rel_general_unnest(mvc *sql, sql_rel *rel, list *ad)
 {
-	/* current unnest only possible for equality joins, <, <> etc needs more work */
 	if (rel && (is_join(rel->op) || is_semi(rel->op)) && is_dependent(rel) && ad) {
 		list *fd;
 		node *n, *m;
@@ -653,7 +652,7 @@ rel_general_unnest(mvc *sql, sql_rel *rel, list *ad)
 
 			l = exp_ref(sql->sa, l);
 			r = exp_ref(sql->sa, r);
-			e = exp_compare(sql->sa, l, r, (is_outerjoin(rel->op)|is_semi(rel->op))?cmp_equal_nil:cmp_equal);
+			e = exp_compare(sql->sa, l, r, cmp_equal_nil);
 			if (!rel->exps)
 				rel->exps = sa_list(sql->sa);
 			append(rel->exps, e);
@@ -1477,7 +1476,7 @@ rewrite_exp_rel(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 {
 	(void)depth;
 	if (exp_has_rel(e) && !is_ddl(rel->op)) {
-		sql_exp *ne = rewrite_inner(sql, rel, exp_rel_get_rel(sql->sa, e), op_join);
+		sql_exp *ne = rewrite_inner(sql, rel, exp_rel_get_rel(sql->sa, e), depth?op_left:op_join);
 
 		if (!ne)
 			return ne;
@@ -1904,7 +1903,7 @@ rewrite_anyequal(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 				}
 			}
 
-			if (is_project(rel->op) || depth > 0) {
+			if (is_project(rel->op) || depth > 0 || (!is_tuple && rsq && rel_has_freevar(sql, rsq) && !is_anyequal(sf))) {
 				list *exps = NULL;
 				sql_exp *rid, *lid, *a = NULL;
 				sql_rel *sq = lsq;
@@ -2381,8 +2380,9 @@ rewrite_ifthenelse(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 		list *l = e->l;
 		sql_exp *cond = l->h->data; 
 		sql_subfunc *nf = cond->f;
+		sql_rel *inner = rel->l;
 
-		if (has_nil(cond) && (cond->type != e_func || !is_isnull_func(nf))) {
+		if ((has_nil(cond) || (inner && is_outerjoin(inner->op))) && (cond->type != e_func || !is_isnull_func(nf))) {
 			/* add is null */
 			sql_exp *condnil = rel_unop_(sql, rel, cond, NULL, "isnull", card_value);
 
@@ -2662,7 +2662,10 @@ rel_unnest(mvc *sql, sql_rel *rel)
 	rel = rel_visitor_bottomup(sql, rel, &rewrite_join2semi, &changes);	/* where possible convert anyequal functions into marks */
 	rel = rel_visitor_bottomup(sql, rel, &rewrite_compare_exp, &changes);	/* only allow for e_cmp in selects and  handling */
 	rel = rel_visitor_bottomup(sql, rel, &rewrite_remove_xp_project, &changes);	/* remove crossproducts with project ( project [ atom ] ) [ etc ] */
+	changes = 0;
 	rel = rel_visitor_bottomup(sql, rel, &rewrite_simplify, &changes);		/* as expressions got merged before, lets try to simplify again */
+	if (changes > 0)
+		rel = rel_visitor_bottomup(sql, rel, &rel_remove_empty_select, &changes);
 	rel = _rel_unnest(sql, rel);
 	rel = rel_visitor_bottomup(sql, rel, &rewrite_fix_count, &changes);	/* fix count inside a left join (adds a project (if (cnt IS null) then (0) else (cnt)) */
 	rel = rel_visitor_bottomup(sql, rel, &rewrite_remove_xp, &changes);	/* remove crossproducts with project [ atom ] */
