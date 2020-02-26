@@ -916,7 +916,7 @@ static str RMTregisterInternal(Client cntxt, const char *conn, const char *mod, 
 	MapiHdl mhdl = NULL;
 	Symbol sym;
 
-	if (conn == NULL || strcmp(conn, str_nil) == 0)
+	if (conn == NULL || strNil(conn))
 		throw(ILLARG, "remote.register", ILLEGAL_ARGUMENT ": connection name is NULL or nil");
 
 	/* find local definition */

@@ -947,7 +947,7 @@ mvc_bind_schema(mvc *m, const char *sname)
 		return NULL;
 
 	/* declared tables */
-	if (strcmp(sname, str_nil) == 0)
+	if (strNil(sname))
 		sname = dt_schema;
  	s = find_sql_schema(tr, sname);
 	if (!s)

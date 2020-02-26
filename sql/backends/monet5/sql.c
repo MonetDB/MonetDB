@@ -738,7 +738,7 @@ mvc_logfile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		m->scanner.log = NULL;
 	}
 
-	if (strcmp(filename, str_nil)) {
+	if (!strNil(filename)) {
 		if((m->scanner.log = open_wastream(filename)) == NULL)
 			throw(SQL, "sql.logfile", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
@@ -1263,7 +1263,7 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		return MAL_SUCCEED;
 	}
-	if (sname && strcmp(sname, str_nil) != 0)
+	if (sname && !strNil(sname))
 		throw(SQL, "sql.bind", SQLSTATE(42000) "unable to find %s.%s(%s)", sname, tname, cname);
 	throw(SQL, "sql.bind", SQLSTATE(42000) "unable to find %s(%s)", tname, cname);
 }
@@ -3055,10 +3055,10 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* The CSV parser expects ssep to have the value 0 if the user does not
 	 * specify a quotation character
 	 */
-	if (*ssep == 0 || strcmp(ssep, str_nil) == 0)
+	if (*ssep == 0 || strNil(ssep))
 		ssep = NULL;
 
-	if (fname != NULL && strcmp(str_nil, fname) == 0)
+	if (fname != NULL && strNil(fname))
 		fname = NULL;
 	if (fname == NULL) {
 		msg = mvc_import_table(cntxt, &b, be->mvc, be->mvc->scanner.rs, t, tsep, rsep, ssep, ns, sz, offset, locked, besteffort, true);
@@ -3101,7 +3101,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		}
 
-		if (fixed_widths && strcmp(fixed_widths, str_nil) != 0) {
+		if (fixed_widths && !strNil(fixed_widths)) {
 			size_t ncol = 0, current_width_entry = 0, i;
 			size_t *widths;
 			char* val_start = fixed_widths;
@@ -3305,7 +3305,7 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		const char *fname = *getArgReference_str(stk, pci, i);
 
 		/* handle the various cases */
-		if (strcmp(fname, str_nil) == 0) {
+		if (strNil(fname)) {
 			// no filename for this column, skip for now because we potentially don't know the count yet
 			continue;
 		}
@@ -3408,7 +3408,7 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			int tpe = col->type.type->localtype;
 
 			const char *fname = *getArgReference_str(stk, pci, i);
-			if (strcmp(fname, str_nil) == 0) {
+			if (strNil(fname)) {
 				// fill the new BAT with NULL values
 				c = BATconstant(0, tpe, ATOMnilptr(tpe), cnt, TRANSIENT);
 				if (c == NULL) {
@@ -3554,7 +3554,7 @@ str_2time_daytimetz(daytime *res, const str *v, const int *digits, int *tz)
 	size_t len = sizeof(daytime);
 	ssize_t pos;
 
-	if (!*v || strcmp(str_nil, *v) == 0) {
+	if (!*v || strNil(*v)) {
 		*res = daytime_nil;
 		return MAL_SUCCEED;
 	}
@@ -3641,7 +3641,7 @@ str_2time_timestamptz(timestamp *res, const str *v, const int *digits, int *tz)
 	size_t len = sizeof(timestamp);
 	ssize_t pos;
 
-	if (!*v || strcmp(str_nil, *v) == 0) {
+	if (!*v || strNil(*v)) {
 		*res = timestamp_nil;
 		return MAL_SUCCEED;
 	}
@@ -4766,7 +4766,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 										cnt1 = cnt2 = 512;
 									BATloop(bn, p, q) {
 										str s = BUNtvar(bi, p);
-										if (s != NULL && strcmp(s, str_nil))
+										if (s != NULL && !strNil(s))
 											sum += strlen(s);
 										if (--cnt1 <= 0)
 											break;
@@ -4884,7 +4884,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 											cnt1 = cnt2 = 512;
 										BATloop(bn, p, q) {
 											str s = BUNtvar(bi, p);
-											if (s != NULL && strcmp(s, str_nil))
+											if (s != NULL && !strNil(s))
 												sum += strlen(s);
 											if (--cnt1 <= 0)
 												break;

@@ -5699,7 +5699,7 @@ sql_trans_rename_schema(sql_trans *tr, sqlid id, const char *new_name)
 	sql_schema *s = n->data;
 	oid rid;
 
-	assert(new_name && strcmp(new_name, str_nil) != 0);
+	assert(new_name && !strNil(new_name));
 
 	list_hash_delete(tr->schemas.set, s, NULL); /* has to re-hash the entry in the changeset */
 	s->base.name = sa_strdup(tr->sa, new_name);
@@ -6002,7 +6002,7 @@ sql_trans_rename_table(sql_trans *tr, sql_schema *s, sqlid id, const char *new_n
 	sql_table *t = n->data;
 	oid rid;
 
-	assert(new_name && strcmp(new_name, str_nil) != 0);
+	assert(new_name && !strNil(new_name));
 
 	list_hash_delete(s->tables.set, t, NULL); /* has to re-hash the entry in the changeset */
 	t->base.name = sa_strdup(tr->sa, new_name);
@@ -6423,7 +6423,7 @@ sql_trans_rename_column(sql_trans *tr, sql_table *t, const char *old_name, const
 	sql_column *c = find_sql_column(t, old_name);
 	oid rid;
 
-	assert(new_name && strcmp(new_name, str_nil) != 0);
+	assert(new_name && !strNil(new_name));
 
 	list_hash_delete(t->columns.set, c, NULL); /* has to re-hash the entry in the changeset */
 	c->base.name = sa_strdup(tr->sa, new_name);
