@@ -87,11 +87,15 @@ cleanBaskets(int idx) //Always called within a lock
 
 	for(m=0; m< MAXSTREAMS && pnet[idx].baskets[m]; m++) {
 		found = 0;
+		if (!baskets[pnet[idx].baskets[m]].table)
+			continue;
 		sch = baskets[pnet[idx].baskets[m]].table->s->base.name;
 		tbl = baskets[pnet[idx].baskets[m]].table->base.name;
 		for(n=0; n < pnettop && !found; n++) {
 			if(n != idx) {
 				for(o=0; o< MAXSTREAMS && pnet[n].baskets[o] && !found; o++) {
+					if (!baskets[pnet[n].baskets[o]].table)
+						continue;
 					if (strcmp(sch, baskets[pnet[n].baskets[o]].table->s->base.name) == 0 &&
 						strcmp(tbl, baskets[pnet[n].baskets[o]].table->base.name) == 0)
 						found = 1;
