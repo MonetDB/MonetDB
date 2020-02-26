@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #include "monetdb_config.h"
 #include "msabaoth.h"
@@ -25,7 +26,7 @@ static err validate_destination(const char *dest);
  * TODO: Make it work for databases without monetdb/monetdb root account.
  */
 err
-snapshot_adhoc(char *dbname, char *dest)
+snapshot_database_to(char *dbname, char *dest)
 {
 	err e = NO_ERR;
 	sabdb *stats = NULL;
@@ -87,6 +88,43 @@ bailout:
 		msab_freeStatus(&stats);
 	return e;
 }
+
+err
+snapshot_default_filename(char **ret, const char *dbname)
+{
+	err e = NO_ERR;
+	time_t now;
+	size_t len;
+	char *name_buf = NULL;
+	char *p;
+
+	/* get the snapdir */
+	char *snapdir = getConfVal(_mero_props, "snapshotdir");
+	if (snapdir == NULL || snapdir[0] == '\0') {
+		e = newErr("Snapshot target file not allowed because no 'snapshotdir' has been configured");
+		goto bailout;
+	}
+
+	/* get the current time, in UTC */
+	now  = time(NULL);
+	struct tm time_parts;
+	gmtime_r(&now, &time_parts);
+
+	/* allocate and write the filename buffer */
+	len = strlen(dbname) + strlen(snapdir) + 100;
+	name_buf = malloc(len + 1);
+	p = name_buf + sprintf(name_buf, "%s%c%s_", snapdir, DIR_SEP, dbname);
+	strftime(p, len - (p - name_buf), "%Y%m%dT%H%M%SUTC.tar.gz", &time_parts);
+
+	/* return it */
+	*ret = name_buf;
+
+bailout:
+	if (e != NULL)
+		free(name_buf);
+	return e;
+}
+
 
 static err
 validate_destination(const char *dest)

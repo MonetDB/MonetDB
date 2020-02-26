@@ -694,7 +694,7 @@ static void ctl_handle_client(
 			} else if (strncmp(p, "snapshot adhoc ", strlen("snapshot adhoc ")) == 0) {
 				char *dest = p + strlen("snapshot adhoc ");
 				Mfprintf(_mero_ctlout, "Start snapshot of database '%s' to file '%s'\n", q, dest);
-				char *e = snapshot_adhoc(q, dest);
+				char *e = snapshot_database_to(q, dest);
 				if (e != NULL) {
 					Mfprintf(_mero_ctlerr, "%s: snapshot database '%s' to %s failed: %s",
 						origin, q, dest, getErrMsg(e));
@@ -706,6 +706,32 @@ static void ctl_handle_client(
 					send_client("=");
 					Mfprintf(_mero_ctlout, "%s: completed snapshot of database '%s' to '%s'\n",
 						origin, q, dest);
+				}
+			} else if (strcmp(p, "snapshot automatic") == 0) {
+				char *dest = NULL;
+				char *e = snapshot_default_filename(&dest, q);
+				if (e != NULL) {
+					Mfprintf(_mero_ctlerr, "%s: snapshot database '%s': %s",
+						origin, q, getErrMsg(e));
+					len = snprintf(buf2, sizeof(buf2), "%s\n", getErrMsg(e));
+					send_client("!");
+					freeErr(e);
+				} else {
+					Mfprintf(_mero_ctlout, "Start snapshot of database '%s' to file '%s'\n", q, dest);
+					e = snapshot_database_to(q, dest);
+					if (e != NULL) {
+						Mfprintf(_mero_ctlerr, "%s: snapshot database '%s' to %s failed: %s",
+							origin, q, dest, getErrMsg(e));
+						len = snprintf(buf2, sizeof(buf2), "%s\n", getErrMsg(e));
+						send_client("!");
+						freeErr(e);
+					} else {
+						len = snprintf(buf2, sizeof(buf2), "OK\n");
+						send_client("=");
+						Mfprintf(_mero_ctlout, "%s: completed snapshot of database '%s' to '%s'\n",
+							origin, q, dest);
+					}
+					free(dest);
 				}
 			} else if (strncmp(p, "name=", strlen("name=")) == 0) {
 				char *e;
