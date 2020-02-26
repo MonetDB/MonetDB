@@ -651,7 +651,8 @@ rel_general_unnest(mvc *sql, sql_rel *rel, list *ad)
 
 			l = exp_ref(sql->sa, l);
 			r = exp_ref(sql->sa, r);
-			e = exp_compare(sql->sa, l, r, cmp_equal_nil);
+			e = exp_compare(sql->sa, l, r, cmp_equal);
+			set_semantics(e);
 			if (!rel->exps)
 				rel->exps = sa_list(sql->sa);
 			append(rel->exps, e);
@@ -1113,7 +1114,8 @@ push_up_join(mvc *sql, sql_rel *rel, list *ad)
 					append(nr->exps, pe);
 					pe = exp_ref(sql->sa, pe);
 					e = exp_ref(sql->sa, e);
-					je = exp_compare(sql->sa, e, pe, cmp_equal_nil);
+					je = exp_compare(sql->sa, e, pe, cmp_equal);
+					set_semantics(je);
 					append(n->exps, je);
 				}
 				return n;
