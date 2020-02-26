@@ -24,3 +24,4 @@ select substring('abc' from null for null);
 
 select length(myblob), octet_length(myblob), length(mystr), octet_length(mystr) 
 from (values (cast(null as blob), cast(null as char(32)))) as my(myblob, mystr);
+select md5(null);
