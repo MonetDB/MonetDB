@@ -236,7 +236,13 @@ QUERY = SELECT
         FROM another_T; --error, more than one row returned by a subquery used as an expression
 ERROR = !Cardinality violation, scalar value expected
 CODE  = 21000
-MAPI  = (monetdb) /var/tmp/mtest-228187/.s.monetdb.33099
+MAPI  = (monetdb) /var/tmp/mtest-511176/.s.monetdb.31334
+QUERY = SELECT
+        	(SELECT outt FROM evilfunction((SELECT MAX(col1) FROM tbl_ProductSales))) 
+        FROM another_T;  --error, more than one row returned by a subquery used as an expression
+ERROR = !zero_or_one: cardinality violation, scalar expression expected
+CODE  = M0M29
+MAPI  = (monetdb) /var/tmp/mtest-511176/.s.monetdb.31334
 QUERY = PREPARE SELECT
         	(SELECT ? FROM evilfunction((SELECT 1))) 
         FROM another_T;

@@ -427,21 +427,14 @@ SELECT
 	(SELECT outt FROM evilfunction((SELECT t2.col1 FROM another_T t2))) 
 FROM another_T; --error, more than one row returned by a subquery used as an expression
 
-/*SELECT
+SELECT
 	(SELECT outt FROM evilfunction((SELECT MIN(col1)))) 
 FROM another_T;
-	-- 1
-	-- 1
-	-- 1
 	-- 1
 
 SELECT
 	(SELECT outt FROM evilfunction((SELECT MAX(col1) FROM tbl_ProductSales))) 
-FROM another_T; 
-	-- 1111
-	-- 1111
-	-- 1111
-	-- 1111*/
+FROM another_T;  --error, more than one row returned by a subquery used as an expression
 
 SELECT
 	(SELECT outt FROM evilfunction((SELECT MIN(t2.col1) FROM another_T t2))) 
