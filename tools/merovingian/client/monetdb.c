@@ -1671,7 +1671,8 @@ command_profilerstop(int argc, char *argv[])
 	simple_command(argc, argv, "profilerstop", "stopped profiler", 1);
 }
 
-static void snapshot_adhoc(sabdb *databases, char *filename) {
+static void
+snapshot_adhoc(sabdb *databases, char *filename) {
 	/* databases is supposed to only hold a single database */
 	assert(databases != NULL);
 	assert(databases->next == NULL);
@@ -1682,6 +1683,11 @@ static void snapshot_adhoc(sabdb *databases, char *filename) {
 	simple_argv_cmd("snapshot", databases, merocmd, NULL, "snapshotting database");
 
 	free(merocmd);
+}
+
+static void
+snapshot_automatic(sabdb *databases) {
+	simple_argv_cmd("snapshot", databases, "snapshot automatic", NULL, "snapshotting database");
 }
 
 static void
@@ -1730,14 +1736,6 @@ command_snapshot_create(int argc, char *argv[])
 	if (databases == NULL)
 		exit(1);
 
-
-	/* Until we implement a default snapshot location, targetfile is mandatory */
-	if (targetfile == NULL) {
-		fprintf(stderr, "snapshot: targetfile is mandatory\n");
-		command_help(argc + 1, &argv[-1]);
-		exit(1);
-	}
-
 	/* Go do the work */
 	if (targetfile != NULL) {
 		if (databases->next != NULL) {
@@ -1746,8 +1744,7 @@ command_snapshot_create(int argc, char *argv[])
 		}
 		snapshot_adhoc(databases, targetfile);
 	} else {
-		/* to be implemented: trigger multiple databases to snapshot
-		 * to a default location */
+		snapshot_automatic(databases);
 	}
 
 	msab_freeStatus(&databases);
