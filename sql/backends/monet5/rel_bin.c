@@ -1508,7 +1508,7 @@ exp2bin_args(backend *be, sql_exp *e, list *args)
 		} else {
 			char nme[16];
 
-			snprintf(nme, 16, "A%d", e->flag);
+			snprintf(nme, 16, "A%u", e->flag);
 			if (!list_find(args, nme, (fcmp)&alias_cmp)) {
 				atom *a = sql->args[e->flag];
 				stmt *s = stmt_varnr(be, e->flag, &a->tpe);
