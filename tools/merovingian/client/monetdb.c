@@ -58,10 +58,11 @@ command_help(int argc, char *argv[])
 	if (argc < 2) {
 		printf("Usage: monetdb [options] command [command-options-and-arguments]\n");
 		printf("  where command is one of:\n");
-		printf("    create, destroy, lock, release\n");
-		printf("    status, start, stop, kill\n");
-		printf("    profilerstart, profilerstop\n");
-		printf("    set, get, inherit\n");
+		printf("    create, destroy, lock, release,\n");
+		printf("    status, start, stop, kill,\n");
+		printf("    profilerstart, profilerstop,\n");
+		printf("    snapshot,\n");
+		printf("    set, get, inherit,\n");
 		printf("    discover, help, version\n");
 		printf("  options can be:\n");
 		printf("    -q       suppress status output\n");
@@ -170,13 +171,17 @@ command_help(int argc, char *argv[])
 		printf("Usage: monetdb version\n");
 		printf("  prints the version of this monetdb utility\n");
 	} else if (strcmp(argv[1], "snapshot") == 0) {
-		printf("Usage: monetdb snapshot -f <filename> <database>\n");
-		printf("  Takes a snapshot of database <database> in file <filename>.\n");
-		printf("  The snapshot is a tar file that contains a full database directory.\n");
-		printf("  If the filename ends in .gz or another supported compression\n");
-		printf("  algorithm, the contents of the file are compressed.\n");
-		printf("Options:\n");
-		printf("  -f <filename>  File on server to write snapshot to.\n");
+		if (argc > 2 && strcmp(argv[2], "create") == 0) {
+			printf("Usage: monetdb snapshot create [-t <targetfile>] <dbname> [<dbname>..]\n");
+			printf("  Take a snapshot of the listed databases. Unless -t is given, the snapshots\n");
+			printf("  are written to files named\n");
+			printf("  <snapshotdir>/<dbname>_<YYYY><MM><DD>T<HH><MM>UTC.tar.gz.\n");
+			printf("Options:\n");
+			printf("  -t <targetfile>  File on the server to write the snapshot to.\n");
+		} else {
+			printf("Usage: monetdb <create|list|restore|destroy> [arguments]\n");
+			printf("  Manage database snapshots\n");
+		}
 	} else {
 		printf("help: unknown command: %s\n", argv[1]);
 	}
@@ -1680,15 +1685,10 @@ static void snapshot_adhoc(sabdb *databases, char *filename) {
 }
 
 static void
-command_snapshot(int argc, char *argv[])
+command_snapshot_create(int argc, char *argv[])
 {
-	char *filename = NULL;
+	char *targetfile = NULL;
 	char *err;
-	if (argc == 1) {
-		/* print help message for this command */
-		command_help(argc + 1, &argv[-1]);
-		exit(1);
-	}
 
 	/* walk through the arguments and hunt for "options" */
 	for (int i = 1; i < argc; i++) {
@@ -1697,21 +1697,21 @@ command_snapshot(int argc, char *argv[])
 			break;
 		}
 		if (argv[i][0] == '-') {
-			if (argv[i][1] == 'f') {
+			if (argv[i][1] == 't') {
 				if (argv[i][2] != '\0') {
-					filename = &argv[i][2];
+					targetfile = &argv[i][2];
 					argv[i] = NULL;
 				} else if (i + 1 < argc && argv[i+1][0] != '-') {
-					filename = argv[i+1];
+					targetfile = argv[i+1];
 					argv[i] = NULL;
 					argv[i+1] = NULL;
 					i++;
 				} else {
-					fprintf(stderr, "snapshot: -f needs an argument\n");
+					fprintf(stderr, "snapshot: -t needs an argument\n");
 				}
 			} else {
-				fprintf(stderr, "destroy: unknown option: %s\n", argv[i]);
-				command_help(argc + 1, &argv[-1]);
+				fprintf(stderr, "snapshot create: unknown option: %s\n", argv[i]);
+				command_help(argc + 2, &argv[-2]);  // ewww
 				exit(1);
 			}
 		}
@@ -1731,26 +1731,49 @@ command_snapshot(int argc, char *argv[])
 		exit(1);
 
 
-	/* Until we implement a default snapshot location, filename is mandatory */
-	if (filename == NULL) {
-		fprintf(stderr, "snapshot: filename is mandatory\n");
+	/* Until we implement a default snapshot location, targetfile is mandatory */
+	if (targetfile == NULL) {
+		fprintf(stderr, "snapshot: targetfile is mandatory\n");
 		command_help(argc + 1, &argv[-1]);
 		exit(1);
 	}
 
 	/* Go do the work */
-	if (filename != NULL) {
+	if (targetfile != NULL) {
 		if (databases->next != NULL) {
-			fprintf(stderr, "snapshot: -f only allows a single database\n");
+			fprintf(stderr, "snapshot: -t only allows a single database\n");
 			exit(1);
 		}
-		snapshot_adhoc(databases, filename);
+		snapshot_adhoc(databases, targetfile);
 	} else {
 		/* to be implemented: trigger multiple databases to snapshot
 		 * to a default location */
 	}
 
 	msab_freeStatus(&databases);
+}
+
+static void
+command_snapshot(int argc, char *argv[])
+{
+	if (argc <= 2) {
+		/* print help message for this command */
+		command_help(argc + 1, &argv[-1]);
+		exit(1);
+	}
+	if (argv[1][0] == '-') {
+		/* print help message for this command */
+		command_help(argc + 1, &argv[-1]);
+		exit(1);
+	}
+
+	/* pick the right subcommand */
+	if (strcmp(argv[1], "create") == 0) {
+		command_snapshot_create(argc - 1, &argv[1]);
+	} else {
+		/* print help message for this command */
+		command_help(argc - 1, &argv[1]);
+	}
 }
 
 int
