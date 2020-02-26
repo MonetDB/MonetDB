@@ -1725,7 +1725,6 @@ str
 MTIMEstr_to_date(date *ret, const char *const *s, const char *const *format)
 {
 	struct tm tm;
-	time_t t;
 
 	if (strNil(*s) || strNil(*format)) {
 		*ret = date_nil;
@@ -1735,11 +1734,6 @@ MTIMEstr_to_date(date *ret, const char *const *s, const char *const *format)
 	if (strptime(*s, *format, &tm) == NULL)
 		throw(MAL, "mtime.str_to_date", "format '%s', doesn't match date '%s'",
 			  *format, *s);
-	if ((t = mktime(&tm)) == (time_t) -1)
-		throw(MAL, "mtime.str_to_date", "cannot convert to time_t");
-	tm = (struct tm) {0};
-	if (gmtime_r(&t, &tm) == NULL)
-		throw(MAL, "mtime.str_to_date", "cannot convert to UTC");
 	*ret = mkdate(tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday);
 	if (is_date_nil(*ret))
 		throw(MAL, "mtime.str_to_date", "bad date '%s'", *s);
