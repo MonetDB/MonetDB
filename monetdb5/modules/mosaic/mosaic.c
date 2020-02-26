@@ -1421,7 +1421,6 @@ MOSAnalysis(BAT *b, BAT *btech, BAT *blayout, BAT *boutput, BAT *bratio, BAT *bc
 		for(j=0; j < MOSAIC_METHODS; j++){
 			if ( ((MosaicHdr)  b->tmosaic->base)->blks[j] == 0) {
 				antipattern[antipatternSize++] = pattern[i];
-				pat[i].include = false;
 			}
 		}
 
