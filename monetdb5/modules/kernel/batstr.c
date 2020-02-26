@@ -131,7 +131,7 @@ do_batstr_int(bat *ret, const bat *l, const char *name, str (*func)(int *, const
 
 	BATloop(b, p, q) {
 		x = (str) BUNtvar(bi, p);
-		if (x == 0 || strcmp(x, str_nil) == 0) {
+		if (x == 0 || strNil(x)) {
 			y = int_nil;
 			bn->tnonil = false;
 			bn->tnil = true;
@@ -179,7 +179,7 @@ do_batstr_str(bat *ret, const bat *l, const char *name, str (*func)(str *, const
 	BATloop(b, p, q) {
 		y = NULL;
 		x = (str) BUNtvar(bi, p);
-		if (x != 0 && strcmp(x, str_nil) != 0 &&
+		if (x != 0 && !strNil(x) &&
 			(msg = (*func)(&y, &x)) != MAL_SUCCEED)
 			goto bunins_failed1;
 		if (y == NULL)
@@ -224,7 +224,7 @@ do_batstr_conststr_str(bat *ret, const bat *l, const str *s2, const char *name, 
 	BATloop(b, p, q) {
 		y = NULL;
 		x = (str) BUNtvar(bi, p);
-		if (x != 0 && strcmp(x, str_nil) != 0 &&
+		if (x != 0 && !strNil(x) &&
 			(msg = (*func)(&y, &x, s2)) != MAL_SUCCEED)
 			goto bunins_failed1;
 		if (y == NULL)
@@ -276,8 +276,8 @@ do_batstr_batstr_str(bat *ret, const bat *l, const bat *l2, const char *name, st
 		y = NULL;
 		x = (str) BUNtvar(bi, p);
 		x2 = (str) BUNtvar(bi2, p);
-		if (x != 0 && strcmp(x, str_nil) != 0 &&
-			x2 != 0 && strcmp(x2, str_nil) != 0 &&
+		if (x != 0 && !strNil(x) &&
+			x2 != 0 && !strNil(x2) &&
 			(msg = (*func)(&y, &x, &x2)) != MAL_SUCCEED)
 			goto bunins_failed1;
 		if (y == NULL)
@@ -323,7 +323,7 @@ do_batstr_constint_str(bat *ret, const bat *l, const int *n, const char *name, s
 	BATloop(b, p, q) {
 		y = NULL;
 		x = (str) BUNtvar(bi, p);
-		if (x != 0 && strcmp(x, str_nil) != 0 &&
+		if (x != 0 && !strNil(x) &&
 			(msg = (*func)(&y, &x, n)) != MAL_SUCCEED)
 			goto bunins_failed1;
 		if (y == NULL)
@@ -376,7 +376,7 @@ do_batstr_batint_str(bat *ret, const bat *l, const bat *n, const char *name, str
 		y = NULL;
 		x = (str) BUNtvar(bi, p);
 		nn = *(int *)BUNtloc(bi2, p);
-		if (x != 0 && strcmp(x, str_nil) != 0 &&
+		if (x != 0 && !strNil(x) &&
 			(msg = (*func)(&y, &x, &nn)) != MAL_SUCCEED)
 			goto bunins_failed1;
 		if (y == NULL)
@@ -422,7 +422,7 @@ do_batstr_constint_conststr_str(bat *ret, const bat *l, const int *n, const str 
 	BATloop(b, p, q) {
 		y = NULL;
 		x = (str) BUNtvar(bi, p);
-		if (x != 0 && strcmp(x, str_nil) != 0 &&
+		if (x != 0 && !strNil(x) &&
 			(msg = (*func)(&y, &x, n, s2)) != MAL_SUCCEED)
 			goto bunins_failed1;
 		if (y == NULL)
@@ -475,7 +475,7 @@ do_batstr_batint_conststr_str(bat *ret, const bat *l, const bat *n, const str *s
 		y = NULL;
 		x = (str) BUNtvar(bi, p);
 		nn = *(int *)BUNtloc(bi2, p);
-		if (x != 0 && strcmp(x, str_nil) != 0 &&
+		if (x != 0 && !strNil(x) &&
 			(msg = (*func)(&y, &x, &nn, s2)) != MAL_SUCCEED)
 			goto bunins_failed1;
 		if (y == NULL)
@@ -528,8 +528,8 @@ do_batstr_constint_batstr_str(bat *ret, const bat *l, const int *n, const bat *l
 		y = NULL;
 		x = (str) BUNtvar(bi, p);
 		x2 = (str) BUNtvar(bi2, p);
-		if (x != 0 && strcmp(x, str_nil) != 0 &&
-			x2 != 0 && strcmp(x2, str_nil) != 0 &&
+		if (x != 0 && !strNil(x) &&
+			x2 != 0 && !strNil(x2) &&
 			(msg = (*func)(&y, &x, n, &x2)) != MAL_SUCCEED)
 			goto bunins_failed1;
 		if (y == NULL)
@@ -595,8 +595,8 @@ do_batstr_batint_batstr_str(bat *ret, const bat *l, const bat *n, const bat *l2,
 		x = (str) BUNtvar(bi, p);
 		nn = *(int *)BUNtloc(bi2, p);
 		x2 = (str) BUNtvar(bi3, p);
-		if (x != 0 && strcmp(x, str_nil) != 0 &&
-			x2 != 0 && strcmp(x2, str_nil) != 0 &&
+		if (x != 0 && !strNil(x) &&
+			x2 != 0 && !strNil(x2) &&
 			(msg = (*func)(&y, &x, &nn, &x2)) != MAL_SUCCEED)
 			goto bunins_failed1;
 		if (y == NULL)
@@ -1175,7 +1175,7 @@ STRbatSubstitutecst(bat *ret, const bat *l, const str *arg2, const str *arg3, co
 	BATloop(b, p, q) {
 		y = (str) str_nil;
 		x = (str) BUNtvar(bi, p);
-		if (x != 0 && strcmp(x, str_nil) != 0 &&
+		if (x != 0 && !strNil(x) &&
 			(err = STRSubstitute(&y, &x, arg2, arg3, rep)) != MAL_SUCCEED)
 			goto bunins_failed;
 		bunfastappVAR(bn, y);

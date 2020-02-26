@@ -1011,7 +1011,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			BATloop(input_bats[index], p, q)
 			{
 				char *t = (char *)BUNtvar(li, p);
-				if (strcmp(t, str_nil) == 0) {
+				if (strNil(t)) {
 					bat_data->data[j] = NULL;
 				} else {
 					if (can_mprotect_varheap) {
@@ -1451,7 +1451,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				for (j = 0; j < count; j++) {
 					const char *ptr = source_base[j];
 					const void *appended_element;
-					if (!ptr || strcmp(ptr, str_nil) == 0) {
+					if (!ptr || strNil(ptr)) {
 						appended_element = (void *)BATatoms[bat_type].atomNull;
 					} else {
 						if (BATatoms[bat_type].atomFromStr(ptr, &len, &element, false) ==

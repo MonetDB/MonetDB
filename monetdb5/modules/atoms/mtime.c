@@ -539,7 +539,7 @@ parse_date(const char *buf, date *d, bool external)
 	int sep;
 
 	*d = date_nil;
-	if (strcmp(buf, str_nil) == 0)
+	if (strNil(buf))
 		return 1;
 	if (external && strncmp(buf, "nil", 3) == 0)
 		return 3;
@@ -673,7 +673,7 @@ parse_daytime(const char *buf, daytime *dt, bool external)
 	ssize_t pos = 0;
 
 	*dt = daytime_nil;
-	if (strcmp(buf, str_nil) == 0)
+	if (strNil(buf))
 		return 1;
 	if (external && strncmp(buf, "nil", 3) == 0)
 		return 3;

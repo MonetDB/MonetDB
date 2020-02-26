@@ -1891,7 +1891,7 @@ JSONfoldKeyValue(str *ret, const bat *id, const bat *key, const bat *values)
 				goto memfail;
 			}
 			row = p;
-			if (strcmp(nme, str_nil)) {
+			if (!strNil(nme)) {
 				snprintf(row + len, lim - len, "\"%s\":", nme);
 				len += l + 3;
 			}

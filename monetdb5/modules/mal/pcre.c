@@ -391,7 +391,7 @@ is_strcmpable(const char *pat, const char *esc)
 {
 	if (pat[strcspn(pat, "%_")])
 		return false;
-	return strlen(esc) == 0 || strcmp(esc, str_nil) == 0 || strstr(pat, esc) == NULL;
+	return strlen(esc) == 0 || strNil(esc) || strstr(pat, esc) == NULL;
 }
 
 static bool
@@ -1292,7 +1292,7 @@ pcre_match_with_flags(bit *ret, const char *val, const char *pat, const char *fl
 		}
 		flags++;
 	}
-	if (strcmp(val, str_nil) == 0) {
+	if (strNil(val)) {
 		*ret = FALSE;
 		return MAL_SUCCEED;
 	}
@@ -1616,7 +1616,7 @@ PCRElike4(bit *ret, const str *s, const str *pat, const str *esc, const bit *ise
 
 	if (!r) {
 		assert(ppat);
-		if (strcmp(ppat, str_nil) == 0) {
+		if (strNil(ppat)) {
 			*ret = FALSE;
 			if (*isens) {
 				if (mystrcasecmp(*s, *pat) == 0)
@@ -1741,7 +1741,7 @@ BATPCRElike3(bat *ret, const bat *bid, const str *pat, const str *esc, const bit
 		br = (bit*)Tloc(r, 0);
 		strsi = bat_iterator(strs);
 
-		if (strcmp(ppat, str_nil) == 0) {
+		if (strNil(ppat)) {
 			BATloop(strs, p, q) {
 				const char *s = (str)BUNtvar(strsi, p);
 
@@ -1938,7 +1938,7 @@ PCRElikeselect2(bat *ret, const bat *bid, const bat *sid, const str *pat, const 
 				BBPunfix(s->batCacheid);
 			return res;
 		}
-		if (strcmp(ppat, str_nil) == 0) {
+		if (strNil(ppat)) {
 			GDKfree(ppat);
 			ppat = NULL;
 			if (*caseignore) {
@@ -2110,7 +2110,7 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			vr = VALUE(r, rstart);
 			ro = rstart++ + r->hseqbase;
 		}
-		if (strcmp(vr, str_nil) == 0)
+		if (strNil(vr))
 			continue;
 		if (re_simple(vr, esc && *esc != '\200' ? (unsigned char) *esc : 0)) {
 			re = re_create(vr, caseignore, esc && *esc != '\200' ? (unsigned char) *esc : 0);
@@ -2123,7 +2123,7 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			msg = sql2pcre(&pcrepat, vr, esc);
 			if (msg != MAL_SUCCEED)
 				goto bailout;
-			if (strcmp(pcrepat, str_nil) == 0) {
+			if (strNil(pcrepat)) {
 				GDKfree(pcrepat);
 				if (caseignore) {
 					pcrepat = GDKmalloc(strlen(vr) + 3);
@@ -2182,7 +2182,7 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				vl = VALUE(l, n);
 				lo = n++ + l->hseqbase;
 			}
-			if (strcmp(vl, str_nil) == 0)
+			if (strNil(vl))
 				continue;
 			if (re) {
 				if (caseignore) {

@@ -3440,7 +3440,7 @@ addstr_loop(BAT *b1, const char *l, BAT *b2, const char *r, BAT *bn,
 			l = BUNtvar(b1i, i);
 		if (b2)
 			r = BUNtvar(b2i, i);
-		if (strcmp(l, str_nil) == 0 || strcmp(r, str_nil) == 0) {
+		if (strNil(l) || strNil(r)) {
 			nils++;
 			tfastins_nocheckVAR(bn, i, str_nil, Tsize(bn));
 		} else {
@@ -13798,7 +13798,7 @@ convert_str_any(BAT *b, int tp, void *restrict dst,
 				end = i + 1;
 		}
 		s = BUNtail(bi, i);
-		if (strcmp(s, str_nil) == 0) {
+		if (strNil(s)) {
 			memcpy(dst, nil, len);
 			nils++;
 		} else {
@@ -14534,7 +14534,7 @@ VARconvert(ValPtr ret, const ValRecord *v, bool abort_on_error)
 		if (VALinit(ret, ret->vtype, ATOMnilptr(ret->vtype)) == NULL)
 			nils = BUN_NONE;
 	} else if (v->vtype == TYPE_str) {
-		if (v->val.sval == NULL || strcmp(v->val.sval, str_nil) == 0) {
+		if (v->val.sval == NULL || strNil(v->val.sval)) {
 			if (VALinit(ret, ret->vtype, ATOMnilptr(ret->vtype)) == NULL)
 				nils = BUN_NONE;
 		} else if (ATOMstorage(ret->vtype) == TYPE_ptr) {

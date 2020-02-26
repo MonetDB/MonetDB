@@ -393,7 +393,7 @@ GDKstrFromStr(unsigned char *restrict dst, const unsigned char *restrict src, ss
 	bool escaped = false;
 	int mask = 0, n, c, utf8char = 0;
 
-	if (len >= 2 && strcmp((const char *) src, str_nil) == 0) {
+	if (len >= 2 && strNil((const char *) src)) {
 		strcpy((char *) dst, str_nil);
 		return 1;
 	}
