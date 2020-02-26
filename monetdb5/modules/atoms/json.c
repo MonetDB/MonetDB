@@ -44,8 +44,7 @@
 			jt->error = NULL;											\
 			JSONfree(jt);												\
 		} else {														\
-			msg = createException(MAL, "json.new",						\
-								  SQLSTATE(HY013) MAL_MALLOC_FAIL);		\
+			msg = createException(MAL, "json.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);		\
 		}																\
 		return msg;														\
 	}
@@ -132,7 +131,7 @@ JSONfromString(const char *src, size_t *len, json *j, bool external)
 	}
 	if (external) {
 		if (GDKstrFromStr((unsigned char *) *j,
-						  (const unsigned char *) src, (ssize_t) slen) < 0)
+				(const unsigned char *) src, (ssize_t) slen) < 0)
 			return -1;
 		src = *j;
 	} else {
@@ -1832,7 +1831,7 @@ JSONfoldKeyValue(str *ret, const bat *id, const bat *key, const bat *values)
 	BUN i, cnt;
 	size_t len, lim, l;
 	void *p;
-	oid o = 0;;
+	oid o = 0;
 
 	if (key) {
 		bk = BATdescriptor(*key);
