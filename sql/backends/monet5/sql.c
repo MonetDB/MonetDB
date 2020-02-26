@@ -1263,7 +1263,7 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		return MAL_SUCCEED;
 	}
-	if (sname && !strNil(sname))
+	if (!strNil(sname))
 		throw(SQL, "sql.bind", SQLSTATE(42000) "unable to find %s.%s(%s)", sname, tname, cname);
 	throw(SQL, "sql.bind", SQLSTATE(42000) "unable to find %s(%s)", tname, cname);
 }
@@ -3058,7 +3058,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (*ssep == 0 || strNil(ssep))
 		ssep = NULL;
 
-	if (fname != NULL && strNil(fname))
+	if (strNil(fname))
 		fname = NULL;
 	if (fname == NULL) {
 		msg = mvc_import_table(cntxt, &b, be->mvc, be->mvc->scanner.rs, t, tsep, rsep, ssep, ns, sz, offset, locked, besteffort, true);
@@ -3101,7 +3101,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		}
 
-		if (fixed_widths && !strNil(fixed_widths)) {
+		if (!strNil(fixed_widths)) {
 			size_t ncol = 0, current_width_entry = 0, i;
 			size_t *widths;
 			char* val_start = fixed_widths;
@@ -3554,7 +3554,7 @@ str_2time_daytimetz(daytime *res, const str *v, const int *digits, int *tz)
 	size_t len = sizeof(daytime);
 	ssize_t pos;
 
-	if (!*v || strNil(*v)) {
+	if (strNil(*v)) {
 		*res = daytime_nil;
 		return MAL_SUCCEED;
 	}
@@ -3641,7 +3641,7 @@ str_2time_timestamptz(timestamp *res, const str *v, const int *digits, int *tz)
 	size_t len = sizeof(timestamp);
 	ssize_t pos;
 
-	if (!*v || strNil(*v)) {
+	if (strNil(*v)) {
 		*res = timestamp_nil;
 		return MAL_SUCCEED;
 	}
@@ -4766,7 +4766,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 										cnt1 = cnt2 = 512;
 									BATloop(bn, p, q) {
 										str s = BUNtvar(bi, p);
-										if (s != NULL && !strNil(s))
+										if (!strNil(s))
 											sum += strlen(s);
 										if (--cnt1 <= 0)
 											break;
@@ -4884,7 +4884,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 											cnt1 = cnt2 = 512;
 										BATloop(bn, p, q) {
 											str s = BUNtvar(bi, p);
-											if (s != NULL && !strNil(s))
+											if (!strNil(s))
 												sum += strlen(s);
 											if (--cnt1 <= 0)
 												break;
