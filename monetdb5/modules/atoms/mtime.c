@@ -1809,6 +1809,10 @@ MTIMEstr_to_time(daytime *ret, const char *const *s, const char *const *format)
 	if (strptime(*s, *format, &tm) == NULL)
 		throw(MAL, "mtime.str_to_time", "format '%s', doesn't match time '%s'",
 			  *format, *s);
+#ifdef HAVE_STRUCT_TM_TM_ZONE
+	tm.tm_sec -= tm.tm_gmtoff;
+	tm.tm_sec += tm.tm_gmtoff = local_timezone(NULL);
+#endif
 	if ((t = mktime(&tm)) == (time_t) -1)
 		throw(MAL, "mtime.str_to_time", "cannot convert to time_t");
 	tm = (struct tm) {0};
@@ -1841,6 +1845,10 @@ MTIMEstr_to_timestamp(timestamp *ret, const char *const *s, const char *const *f
 	if (strptime(*s, *format, &tm) == NULL)
 		throw(MAL, "mtime.str_to_timestamp",
 			  "format '%s', doesn't match timestamp '%s'", *format, *s);
+#ifdef HAVE_STRUCT_TM_TM_ZONE
+	tm.tm_sec -= tm.tm_gmtoff;
+	tm.tm_sec += tm.tm_gmtoff = local_timezone(NULL);
+#endif
 	if ((t = mktime(&tm)) == (time_t) -1)
 		throw(MAL, "mtime.str_to_timestamp", "cannot convert to time_t");
 	tm = (struct tm) {0};
