@@ -1659,10 +1659,15 @@ local_timezone(int *isdst)
 	 * period, UTC = localtime + Bias */
 	switch (GetDynamicTimeZoneInformation(&tzinf)) {
 	case TIME_ZONE_ID_STANDARD:
+		if (isdst)
+			*isdst = 0;
+		/* fall through */
 	case TIME_ZONE_ID_UNKNOWN:
 		tzone = -(int) tzinf.Bias * 60;
 		break;
 	case TIME_ZONE_ID_DAYLIGHT:
+		if (isdst)
+			*isdst = 1;
 		tzone = -(int) (tzinf.Bias + tzinf.DaylightBias) * 60;
 		break;
 	default:
@@ -1688,8 +1693,6 @@ local_timezone(int *isdst)
 
 	if ((t = time(NULL)) == (time_t) -1)
 		return 0;
-	if (isdst)
-		*isdst = tm.tm_isdst;
 	if (gmtime_r(&t, &tm)) {
 		gt = mktimestamp(mkdate(tm.tm_year + 1900,
 								tm.tm_mon + 1,
@@ -1699,6 +1702,8 @@ local_timezone(int *isdst)
 								   tm.tm_sec == 60 ? 59 : tm.tm_sec,
 								   0));
 		if (localtime_r(&t, &tm)) {
+			if (isdst)
+				*isdst = tm.tm_isdst;
 			lt = mktimestamp(mkdate(tm.tm_year + 1900,
 									tm.tm_mon + 1,
 									tm.tm_mday),
