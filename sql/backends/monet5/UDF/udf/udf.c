@@ -24,7 +24,7 @@ UDFreverse_(char **ret, const char *src)
 	assert(ret != NULL);
 
 	/* handle NULL pointer and NULL value */
-	if (src == NULL || strNil(src)) {
+	if (strNil(src)) {
 		*ret = GDKstrdup(str_nil);
 		if (*ret == NULL)
 			throw(MAL, "udf.reverse",

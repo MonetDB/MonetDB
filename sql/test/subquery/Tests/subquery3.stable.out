@@ -50,7 +50,7 @@ stdout of test 'subquery3` in directory 'sql/test/subquery` itself:
 #FROM another_T
 #GROUP BY col1, col2, col5, col8;
 % .,	.,	. # table_name
-% %34,	evil,	%36 # name
+% %44,	evil,	%46 # name
 % bigint,	double,	bigint # type
 % 4,	24,	5 # length
 [ 6,	8,	10	]
@@ -103,15 +103,15 @@ stdout of test 'subquery3` in directory 'sql/test/subquery` itself:
 #	EXISTS (SELECT RANK() OVER (PARTITION BY SUM(DISTINCT col5)))
 #FROM another_T t1;
 % . # table_name
-% %25 # name
+% %27 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT
 #    (SELECT SUM(AVG(ColID)) OVER (PARTITION BY SUM(ColID) ORDER BY MAX(ColID) ROWS UNBOUNDED PRECEDING) FROM tbl_ProductSales GROUP BY t1.col1)
 #FROM another_T t1;
-% .%5 # table_name
-% %5 # name
+% .%13 # table_name
+% %13 # name
 % double # type
 % 24 # length
 [ 2.5	]
@@ -121,8 +121,8 @@ stdout of test 'subquery3` in directory 'sql/test/subquery` itself:
 #SELECT
 #    (SELECT SUM(AVG(ColID + col1)) OVER (PARTITION BY SUM(ColID + col3) ORDER BY MAX(ColID) * col4 ROWS UNBOUNDED PRECEDING) FROM tbl_ProductSales GROUP BY t1.col1)
 #FROM another_T t1;
-% .%6 # table_name
-% %6 # name
+% .%14 # table_name
+% %14 # name
 % double # type
 % 24 # length
 [ 3.5	]
@@ -132,32 +132,32 @@ stdout of test 'subquery3` in directory 'sql/test/subquery` itself:
 #SELECT
 #    (SELECT MAX(t1.col2) * SUM(AVG(ColID)) OVER (PARTITION BY SUM(ColID) ORDER BY MAX(ColID) ROWS UNBOUNDED PRECEDING) FROM tbl_ProductSales)
 #FROM another_T t1;
-% .%5 # table_name
-% %5 # name
+% .%14 # table_name
+% %14 # name
 % double # type
 % 24 # length
 [ 5555	]
 #SELECT
 #    (SELECT SUM(AVG(ColID)) OVER (PARTITION BY MAX(t1.col2) * SUM(ColID) ORDER BY MAX(ColID) ROWS UNBOUNDED PRECEDING) FROM tbl_ProductSales)
 #FROM another_T t1;
-% .%5 # table_name
-% %5 # name
+% .%14 # table_name
+% %14 # name
 % double # type
 % 24 # length
 [ 2.5	]
 #SELECT
 #    (SELECT SUM(AVG(ColID)) OVER (PARTITION BY SUM(ColID) ORDER BY MAX(t1.col2) * MAX(ColID) ROWS UNBOUNDED PRECEDING) FROM tbl_ProductSales)
 #FROM another_T t1;
-% .%6 # table_name
-% %6 # name
+% .%14 # table_name
+% %14 # name
 % double # type
 % 24 # length
 [ 2.5	]
 #SELECT
 #    (SELECT MAX(ColID) * SUM(AVG(ColID)) OVER (PARTITION BY SUM(ColID) ORDER BY MAX(ColID) ROWS UNBOUNDED PRECEDING) FROM tbl_ProductSales)
 #FROM another_T t1; --MonetDB outputs this one right, but we should leave it here, as it doesn't trigger an error
-% .%5 # table_name
-% %5 # name
+% .%14 # table_name
+% %14 # name
 % double # type
 % 24 # length
 [ 10	]
@@ -168,8 +168,8 @@ stdout of test 'subquery3` in directory 'sql/test/subquery` itself:
 #    (SELECT SUM(SUM(col2)) OVER (PARTITION BY SUM(col2) ORDER BY MAX(col1) ROWS UNBOUNDED PRECEDING) FROM another_T)
 #FROM another_T t1
 #GROUP BY col1; --MonetDB outputs this one right, but we should leave it here, as it doesn't trigger an error
-% .%4 # table_name
-% %4 # name
+% .%12 # table_name
+% %12 # name
 % bigint # type
 % 4 # length
 [ 2468	]
@@ -360,8 +360,8 @@ stdout of test 'subquery3` in directory 'sql/test/subquery` itself:
 #    SUM(CAST(SUM(CAST (NOT t1.col1 IN (SELECT 1) AS INTEGER)) < ANY (SELECT 1) AS INT)) OVER ()
 #FROM another_T t1
 #GROUP BY t1.col6;
-% . # table_name
-% %27 # name
+% .%15 # table_name
+% %15 # name
 % bigint # type
 % 1 # length
 [ 1	]

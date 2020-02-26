@@ -566,7 +566,7 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 	if (psock == NULL)
 		throw(MAL,"mal_mapi.listen", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
-	if (usockfile == NULL || strNil(usockfile)) {
+	if (strNil(usockfile)) {
 		usockfile = NULL;
 	} else {
 #ifndef HAVE_SYS_UN_H

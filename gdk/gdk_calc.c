@@ -14365,7 +14365,7 @@ VARconvert(ValPtr ret, const ValRecord *v, bool abort_on_error)
 		if (VALinit(ret, ret->vtype, ATOMnilptr(ret->vtype)) == NULL)
 			nils = BUN_NONE;
 	} else if (v->vtype == TYPE_str) {
-		if (v->val.sval == NULL || strNil(v->val.sval)) {
+		if (strNil(v->val.sval)) {
 			if (VALinit(ret, ret->vtype, ATOMnilptr(ret->vtype)) == NULL)
 				nils = BUN_NONE;
 		} else if (ATOMstorage(ret->vtype) == TYPE_ptr) {
