@@ -116,7 +116,7 @@ parseError(Client cntxt, str msg)
 	if (old){
 		strcpy(new, old);
 		GDKfree(old);
-	} 
+	}
 	strcat(new,line);
 	strcat(new,marker);
 
@@ -129,7 +129,7 @@ parseError(Client cntxt, str msg)
  * This command should be executed at the beginning of a parse
  * request and each time we encounter EOL.
 */
-static void 
+static void
 echoInput(Client cntxt)
 {
 	char *c = CURRENT(cntxt);
@@ -229,7 +229,7 @@ idLength(Client cntxt)
 		// skip remainder
 		while (idCharacter2[(unsigned char) (*s)])
 			s++;
-	return (int) (s-t);;
+	return (int) (s-t);
 }
 
 /* Simple type identifiers can not be marked with a type variable. */
@@ -722,7 +722,7 @@ parseTypeId(Client cntxt, int defaultType)
 
 		if (currChar(cntxt) != ']')
 			parseError(cntxt, "']' expected\n");
-		nextChar(cntxt); // skip ']' 
+		nextChar(cntxt); // skip ']'
 		skipSpace(cntxt);
 		return i;
 	}
@@ -999,7 +999,7 @@ parseModule(Client cntxt)
 	advance(cntxt, l);
 	if( strcmp(modnme, cntxt->usermodule->name) ==0){
 		// ignore this module definition
-	} else 
+	} else
 	if( getModule(modnme) == NULL){
 		if( globalModule(modnme) == NULL)
 			parseError(cntxt,"<module> could not be created");
@@ -1115,7 +1115,7 @@ fcnHeader(Client cntxt, int kind)
 		}
 		fnme = putNameLen(((char *) CURRENT(cntxt)), l);
 		advance(cntxt, l);
-	} else 
+	} else
 		modnme= cntxt->curmodule->name;
 
 	/* temporary suspend capturing statements in main block */
@@ -1359,7 +1359,7 @@ parseFunction(Client cntxt, int kind)
 	MalBlkPtr curBlk = 0;
 
 	curBlk = fcnHeader(cntxt, kind);
-	if (curBlk == NULL) 
+	if (curBlk == NULL)
 		return curBlk;
 	if (MALkeyword(cntxt, "address", 7)) {
 		str nme;
@@ -1406,7 +1406,7 @@ parseEnd(Client cntxt)
 		l = idLength(cntxt);
 		if (l == 0)
 			l = operatorLength(cntxt);
-		sig = getInstrPtr(cntxt->curprg->def,0); 
+		sig = getInstrPtr(cntxt->curprg->def,0);
 		if (strncmp(CURRENT(cntxt), getModuleId(sig), l) == 0) {
 			advance(cntxt, l);
 			skipSpace(cntxt);
@@ -1421,7 +1421,7 @@ parseEnd(Client cntxt)
 		if ((l == strlen(curPrg->name) &&
 			strncmp(CURRENT(cntxt), curPrg->name, l) == 0) || l == 0)
 				advance(cntxt, l);
-		else 
+		else
 			parseError(cntxt, "non matching end label\n");
 		pushEndInstruction(cntxt->curprg->def);
 		cntxt->blkmode = 0;
@@ -1510,7 +1510,7 @@ parseArguments(Client cntxt, MalBlkPtr curBlk, InstrPtr *curInstr)
 			break;
 		case 2: return 2;
 		case 3: return 3;
-		case 4: 
+		case 4:
 			parseError(cntxt, "Argument type overwrites previous definition\n");
 			return 0;
 		default:
@@ -1643,7 +1643,7 @@ parseAssign(Client cntxt, int cntrl)
 			int e;
 			InstrPtr sig = getInstrPtr(curBlk,0);
 			curInstr->retc = 0;
-			for (e = 0; e < sig->retc; e++) 
+			for (e = 0; e < sig->retc; e++)
 				curInstr = pushReturn(curBlk, curInstr, getArg(sig, e));
 		}
 
@@ -1899,7 +1899,7 @@ parseMAL(Client cntxt, Symbol curPrg, int skipcomments, int lines)
 				break;
 			}
 			goto allLeft;
-		case 'I': case 'i': 
+		case 'I': case 'i':
 			if (MALkeyword(cntxt, "inline", 6)) {
 				inlineProp= 1;
 				skipSpace(cntxt);
@@ -1907,7 +1907,7 @@ parseMAL(Client cntxt, Symbol curPrg, int skipcomments, int lines)
 			} else
 			if (MALkeyword(cntxt, "include", 7)){
 				parseInclude(cntxt);
-				break;;
+				break;
 			}
 			goto allLeft;
 		case 'L': case 'l':
@@ -1957,7 +1957,7 @@ parseMAL(Client cntxt, Symbol curPrg, int skipcomments, int lines)
 				continue;
 			}
 			goto allLeft;
-		case 'U': case 'u': 
+		case 'U': case 'u':
 			if (MALkeyword(cntxt, "unsafe", 6)) {
 				unsafeProp= 1;
 				skipSpace(cntxt);

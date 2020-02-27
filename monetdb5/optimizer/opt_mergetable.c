@@ -309,8 +309,10 @@ mat_delta(matlist_t *ml, MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int n, int
 			for(j=1; j < mat[m].mi->argc; j++) {
 				if (overlap(ml, getArg(mat[e].mi, k), getArg(mat[m].mi, j), k, j, 0)){
 					InstrPtr q = copyInstruction(p);
-					if(!q)
+					if(!q){
+						freeInstruction(r);
 						return NULL;
+					}
 
 					/* remove last argument (inserts only on last part) */
 					if (k < mat[m].mi->argc-1)
@@ -777,6 +779,7 @@ mat_join2(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n)
 				if(propagatePartnr(ml, getArg(mat[m].mi, k), getArg(q,0), nr) ||
 				   propagatePartnr(ml, getArg(mat[n].mi, j), getArg(q,1), nr)) {
 					freeInstruction(r);
+					freeInstruction(l);
 					return -1;
 				}
 
@@ -1156,8 +1159,10 @@ mat_group_project(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int e, int a)
 		getArg(q,1) = getArg(mat[e].mi,k);
 		getArg(q,2) = getArg(mat[a].mi,k);
 		pushInstruction(mb,q);
-		if(setPartnr(ml, getArg(mat[a].mi,k), getArg(q,0), k))
+		if(setPartnr(ml, getArg(mat[a].mi,k), getArg(q,0), k)){
+			freeInstruction(ai1);
 			return -1;
+		}
 
 		/* pack the result into a mat */
 		ai1 = addArgument(mb,ai1,getArg(q,0));
@@ -1202,6 +1207,7 @@ mat_group_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int b, int g, int e)
 		InstrPtr q = copyInstruction(p);
 		if(!q) {
 			freeInstruction(ai1);
+			freeInstruction(ai10);
 			return -1;
 		}
 
@@ -1417,8 +1423,13 @@ mat_group_new(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int b)
 		pushInstruction(mb, q);
 		if(setPartnr(ml, getArg(ml->v[b].mi,i), getArg(q,0), i) ||
 		   setPartnr(ml, getArg(ml->v[b].mi,i), getArg(q,1), i) ||
-		   setPartnr(ml, getArg(ml->v[b].mi,i), getArg(q,2), i))
+		   setPartnr(ml, getArg(ml->v[b].mi,i), getArg(q,2), i)){
+			freeInstruction(r0);
+			freeInstruction(r1);
+			freeInstruction(r2);
+			freeInstruction(attr);
 			return -1;
+		}
 
 		/* add result to mats */
 		r0 = addArgument(mb,r0,getArg(q,0));
@@ -1429,8 +1440,13 @@ mat_group_new(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int b)
 		getArg(r, 0) = newTmpVariable(mb, atp);
 		r = addArgument(mb, r, getArg(q,1));
 		r = addArgument(mb, r, getArg(ml->v[b].mi,i));
-		if(setPartnr(ml, getArg(ml->v[b].mi,i), getArg(r,0), i))
+		if(setPartnr(ml, getArg(ml->v[b].mi,i), getArg(r,0), i)){
+			freeInstruction(r0);
+			freeInstruction(r1);
+			freeInstruction(r2);
+			freeInstruction(attr);
 			return -1;
+		}
 		pushInstruction(mb,r);
 
 		attr = addArgument(mb, attr, getArg(r, 0)); 
@@ -1508,8 +1524,13 @@ mat_group_derive(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int b, int g)
 		pushInstruction(mb,q);
 		if(setPartnr(ml, getArg(ml->v[b].mi,i), getArg(q,0), i) ||
 		   setPartnr(ml, getArg(ml->v[b].mi,i), getArg(q,1), i) ||
-		   setPartnr(ml, getArg(ml->v[b].mi,i), getArg(q,2), i))
+		   setPartnr(ml, getArg(ml->v[b].mi,i), getArg(q,2), i)){
+			freeInstruction(r0);
+			freeInstruction(r1);
+			freeInstruction(r2);
+			freeInstruction(attr);
 			return -1;
+		}
 
 		/* add result to mats */
 		r0 = addArgument(mb,r0,getArg(q,0));
@@ -1520,8 +1541,13 @@ mat_group_derive(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int b, int g)
 		getArg(r, 0) = newTmpVariable(mb, atp);
 		r = addArgument(mb, r, getArg(q,1));
 		r = addArgument(mb, r, getArg(ml->v[b].mi,i));
-		if(setPartnr(ml, getArg(ml->v[b].mi,i), getArg(r,0), i))
+		if(setPartnr(ml, getArg(ml->v[b].mi,i), getArg(r,0), i)){
+			freeInstruction(r0);
+			freeInstruction(r1);
+			freeInstruction(r2);
+			freeInstruction(attr);
 			return -1;
+		}
 		pushInstruction(mb,r);
 
 		attr = addArgument(mb, attr, getArg(r, 0)); 
@@ -1653,8 +1679,10 @@ mat_topn(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n, int o)
 		cst.val.lval= 0;
 		cst.len = 0;
 		zero = defConstant(mb, cst.vtype, &cst);
-		if( zero < 0)
+		if( zero < 0){
+			freeInstruction(pck);
 			return -1;
+		}
 	}
 	assert( (n<0 && o<0) || 
 		(ml->v[m].mi->argc == ml->v[n].mi->argc && 

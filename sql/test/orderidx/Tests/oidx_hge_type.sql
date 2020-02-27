@@ -1,3 +1,4 @@
+start transaction;
 create table hge_types (
 	"hugeint" hugeint,
 	"decimal" decimal,  -- is synonym for decimal(18,3)
@@ -92,4 +93,4 @@ drop table hge_types;
 drop table if exists hge_types cascade;
 
 select type, name from sys.idxs where table_id in (select id from sys._tables where name = 'hge_types') order by name;
-
+rollback;

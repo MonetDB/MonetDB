@@ -120,6 +120,7 @@ exp_create(sql_allocator *sa, int type )
 	e->freevar = 0;
 	e->intern = 0;
 	e->anti = 0;
+	e->semantics = 0;
 	e->ascending = 0;
 	e->nulls_last = 0;
 	e->distinct = 0;
@@ -606,6 +607,8 @@ exp_propagate(sql_allocator *sa, sql_exp *ne, sql_exp *oe)
 		set_intern(ne);
 	if (is_anti(oe))
 		set_anti(ne);
+	if (is_semantics(oe))
+		set_semantics(ne);
 	if (is_ascending(oe))
 		set_ascending(ne);
 	if (nulls_last(oe))

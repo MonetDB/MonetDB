@@ -84,8 +84,8 @@ stdout of test 'analytics13` in directory 'sql/test/analytics` itself:
 #    col1 IN (SELECT ColID FROM tbl_ProductSales)
 #FROM another_T
 #GROUP BY ROLLUP(col1);
-% .%11 # table_name
-% %11 # name
+% .%12 # table_name
+% %12 # name
 % boolean # type
 % 5 # length
 [ true	]
@@ -97,8 +97,8 @@ stdout of test 'analytics13` in directory 'sql/test/analytics` itself:
 #    col1 IN (SELECT ColID + col1 FROM tbl_ProductSales)
 #FROM another_T
 #GROUP BY ROLLUP(col1);
-% .%13 # table_name
-% %13 # name
+% .%14 # table_name
+% %14 # name
 % boolean # type
 % 5 # length
 [ false	]
@@ -110,8 +110,8 @@ stdout of test 'analytics13` in directory 'sql/test/analytics` itself:
 #    col1 IN (SELECT SUM(ColID + col1) FROM tbl_ProductSales)
 #FROM another_T
 #GROUP BY ROLLUP(col1);
-% .%13 # table_name
-% %13 # name
+% .%14 # table_name
+% %14 # name
 % boolean # type
 % 5 # length
 [ false	]
@@ -161,8 +161,8 @@ stdout of test 'analytics13` in directory 'sql/test/analytics` itself:
 #    SUM(col1) IN (SELECT DISTINCT col2 FROM another_T GROUP BY col2)
 #FROM another_T
 #GROUP BY CUBE(col4);
-% .%12 # table_name
-% %12 # name
+% .%13 # table_name
+% %13 # name
 % boolean # type
 % 5 # length
 [ false	]
@@ -175,7 +175,7 @@ stdout of test 'analytics13` in directory 'sql/test/analytics` itself:
 #FROM another_T t1
 #GROUP BY col1;
 % . # table_name
-% %61 # name
+% %62 # name
 % tinyint # type
 % 1 # length
 [ 1	]
@@ -185,8 +185,8 @@ stdout of test 'analytics13` in directory 'sql/test/analytics` itself:
 #SELECT 
 #    1 IN (SELECT 1 FROM tbl_ProductSales GROUP BY CUBE(t1.col1, tbl_ProductSales.ColID))
 #FROM another_T t1;
-% .%13 # table_name
-% %13 # name
+% .%14 # table_name
+% %14 # name
 % boolean # type
 % 5 # length
 [ true	]
@@ -197,8 +197,8 @@ stdout of test 'analytics13` in directory 'sql/test/analytics` itself:
 #    t1.col1 IN (SELECT ColID FROM tbl_ProductSales GROUP BY CUBE(t1.col1, tbl_ProductSales.ColID))
 #FROM another_T t1
 #GROUP BY CUBE(col1, col2);
-% .%13 # table_name
-% %13 # name
+% .%14 # table_name
+% %14 # name
 % boolean # type
 % 5 # length
 [ true	]
@@ -224,8 +224,8 @@ stdout of test 'analytics13` in directory 'sql/test/analytics` itself:
 #    GROUPING(t1.col6) = ALL (SELECT GROUPING(t1.col7) FROM tbl_ProductSales)
 #FROM another_T t1
 #GROUP BY CUBE(t1.col6, t1.col7);
-% .,	.%45,	.,	.,	.,	.,	. # table_name
-% %317,	%45,	%321,	%322,	%323,	%324,	%325 # name
+% .,	.%47,	.,	.,	.,	.,	. # table_name
+% %321,	%47,	%323,	%324,	%325,	%326,	%327 # name
 % boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean # type
 % 5,	5,	5,	5,	5,	5,	5 # length
 [ true,	false,	false,	false,	false,	true,	true	]
@@ -251,8 +251,8 @@ stdout of test 'analytics13` in directory 'sql/test/analytics` itself:
 #    GROUPING(t1.col6) = ALL (SELECT GROUPING(t1.col7)),
 #    GROUPING(t1.col6) = ALL (SELECT GROUPING(t1.col7) FROM tbl_ProductSales)
 #FROM another_T t1
-% .,	.%45,	.,	.,	.,	.,	. # table_name
-% %317,	%45,	%321,	%322,	%323,	%324,	%325 # name
+% .,	.%47,	.,	.,	.,	.,	. # table_name
+% %321,	%47,	%323,	%324,	%325,	%326,	%327 # name
 % boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean # type
 % 5,	5,	5,	5,	5,	5,	5 # length
 [ true,	false,	false,	false,	false,	true,	true	]
@@ -266,7 +266,7 @@ stdout of test 'analytics13` in directory 'sql/test/analytics` itself:
 #    CAST (NOT col1 IN (SELECT col2 FROM another_T GROUP BY col2) AS INTEGER) | CAST (col2 IN (SELECT col2 FROM another_T GROUP BY col2) AS INTEGER),
 #    CAST (EXISTS (SELECT MAX(col5) * MAX(col4) FROM another_T GROUP BY col5, col4) AS INTEGER) & CAST (GROUPING(col1, col5) IN (SELECT DISTINCT col2 FROM another_T GROUP BY col2) AS INTEGER)
 % .,	.,	.,	.,	. # table_name
-% %216,	%217,	%220,	%221,	%222 # name
+% %221,	%222,	%223,	%224,	%225 # name
 % boolean,	boolean,	boolean,	int,	int # type
 % 5,	5,	5,	1,	1 # length
 [ true,	true,	false,	1,	0	]
@@ -343,8 +343,8 @@ stdout of test 'analytics13` in directory 'sql/test/analytics` itself:
 #FROM another_T
 #GROUP BY ROLLUP(col1, col2, col3, col4, col5, col6, col7, col8) --with 8 columns, a smallint is necessary for grouping's output
 #ORDER BY GROUPING(col1, col2, col3, col4, col5, col6, col7, col8);
-% .%1,	.%2,	.%11,	.%12,	.%13,	.another_t,	.%14,	.%15 # table_name
-% %1,	%2,	%11,	%12,	%13,	col7,	%14,	%15 # name
+% .%1,	.%2,	.%13,	.%14,	.%15,	.another_t,	.%16,	.%17 # table_name
+% %1,	%2,	%13,	%14,	%15,	col7,	%16,	%17 # name
 % smallint,	double,	bigint,	bigint,	bigint,	int,	boolean,	boolean # type
 % 3,	24,	4,	4,	8,	4,	5,	5 # length
 [ 0,	1,	6,	7,	30,	7,	true,	false	]
@@ -386,7 +386,7 @@ stdout of test 'analytics13` in directory 'sql/test/analytics` itself:
 #FROM another_T
 #GROUP BY ROLLUP(col1);
 % . # table_name
-% %14 # name
+% %15 # name
 % boolean # type
 % 5 # length
 [ true	]
@@ -395,8 +395,8 @@ stdout of test 'analytics13` in directory 'sql/test/analytics` itself:
 #    LAST_VALUE(col5) OVER (PARTITION BY AVG(col8) ORDER BY SUM(col7) NULLS FIRST)
 #FROM another_T
 #GROUP BY CUBE(col1, col2, col5, col8);
-% .%5 # table_name
-% %5 # name
+% .%11 # table_name
+% %11 # name
 % int # type
 % 4 # length
 [ NULL	]
@@ -468,7 +468,7 @@ stdout of test 'analytics13` in directory 'sql/test/analytics` itself:
 #    CAST (NOT col1 IN (SELECT col2 FROM another_T GROUP BY col2) AS INTEGER) | CAST (col2 IN (SELECT col2 FROM another_T GROUP BY col2) AS INTEGER),
 #    CAST (EXISTS (SELECT MAX(col5) * MAX(col4) FROM another_T GROUP BY col5, col4) AS INTEGER) & CAST (GROUPING(col1, col5) IN (SELECT DISTINCT col2 FROM another_T GROUP BY col2) AS INTEGER)
 % .,	.,	.,	.,	. # table_name
-% %216,	%217,	%220,	%221,	%222 # name
+% %221,	%222,	%223,	%224,	%225 # name
 % boolean,	boolean,	boolean,	int,	int # type
 % 5,	5,	5,	1,	1 # length
 [ true,	true,	false,	1,	0	]
@@ -623,8 +623,8 @@ stdout of test 'analytics13` in directory 'sql/test/analytics` itself:
 #    GROUPING(t1.col6, t1.col7) NOT IN (SELECT MIN(t2.col2) FROM another_T t2 GROUP BY t1.col6),
 #    NOT SUM(t1.col2) * GROUPING(t1.col6, t1.col6, t1.col6, t1.col6) NOT IN (SELECT MAX(t2.col6) FROM another_T t2 GROUP BY t1.col6 HAVING t1.col7 + MIN(t2.col8) < MAX(t2.col7 - t1.col6)),
 #    GROUPING(t1.col6) <> ANY (SELECT t1.col7 INTERSECT SELECT t1.col6),
-% .%43,	.,	.%65,	.%77,	.,	. # table_name
-% %43,	%374,	%65,	%77,	%377,	%400 # name
+% .%47,	.,	.%71,	.%103,	.,	. # table_name
+% %47,	%400,	%71,	%103,	%403,	%404 # name
 % boolean,	boolean,	boolean,	boolean,	boolean,	boolean # type
 % 5,	5,	5,	5,	5,	5 # length
 [ false,	true,	true,	false,	NULL,	false	]
@@ -647,25 +647,25 @@ stdout of test 'analytics13` in directory 'sql/test/analytics` itself:
 #FROM another_T t1
 #GROUP BY ROLLUP(t1.col1, t1.col2);
 % .,	.,	. # table_name
-% %134,	%135,	%136 # name
+% %145,	%146,	%147 # name
 % tinyint,	tinyint,	tinyint # type
 % 1,	1,	1 # length
 [ 1,	1,	2	]
-[ 1,	1,	2	]
-[ 2,	1,	2	]
-[ 2,	1,	2	]
-[ 2,	1,	2	]
 [ 2,	1,	2	]
 [ 2,	1,	2	]
 [ 2,	1,	2	]
 [ 2,	2,	2	]
+[ 1,	1,	2	]
+[ 2,	1,	2	]
+[ 2,	1,	2	]
+[ 2,	1,	2	]
 #SELECT
 #    CASE WHEN t1.col2 IN (SELECT MIN(ColID) FROM tbl_ProductSales tp INNER JOIN another_T t2 ON tp.ColID = t1.col1 AND tp.ColID = t2.col2) THEN 1 ELSE 2 END,
 #    CASE WHEN t1.col2 IN (SELECT MIN(ColID) FROM tbl_ProductSales tp LEFT JOIN another_T t2 ON tp.ColID = t1.col1 AND tp.ColID = t2.col2) THEN 1 ELSE 2 END,
 #    CASE WHEN t1.col2 IN (SELECT MIN(ColID) FROM tbl_ProductSales tp RIGHT JOIN another_T t2 ON tp.ColID = t1.col1 AND tp.ColID = t2.col2) THEN 1 ELSE 2 END,
 #    CASE WHEN t1.col2 IN (SELECT MIN(ColID) FROM tbl_ProductSales tp FULL OUTER JOIN another_T t2 ON tp.ColID = t1.col1 AND tp.ColID = t2.col2) THEN 1 ELSE 2 END
 % .,	.,	.,	. # table_name
-% %223,	%224,	%225,	%226 # name
+% %227,	%230,	%231,	%232 # name
 % tinyint,	tinyint,	tinyint,	tinyint # type
 % 1,	1,	1,	1 # length
 [ 2,	2,	2,	2	]
@@ -682,7 +682,7 @@ stdout of test 'analytics13` in directory 'sql/test/analytics` itself:
 #    CASE WHEN NOT t1.col2 NOT IN (SELECT (SELECT MAX(t1.col7)) UNION (SELECT MIN(ColID) FROM tbl_ProductSales LEFT JOIN another_T t2 ON MIN(t1.col5) = t1.col1)) THEN 1 ELSE 2 END,
 #    CASE WHEN NOT t1.col2 NOT IN (SELECT (SELECT MAX(t1.col7)) UNION (SELECT MIN(ColID) FROM tbl_ProductSales tp LEFT JOIN another_T t2 ON tp.ColID = t1.col1 AND tp.ColID = t2.col2)) THEN 1 ELSE 2 END
 % .,	.,	. # table_name
-% %365,	%366,	%367 # name
+% %370,	%371,	%372 # name
 % tinyint,	tinyint,	tinyint # type
 % 1,	1,	1 # length
 [ 2,	2,	2	]

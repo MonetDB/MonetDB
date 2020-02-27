@@ -391,7 +391,7 @@ is_strcmpable(const char *pat, const char *esc)
 {
 	if (pat[strcspn(pat, "%_")])
 		return false;
-	return strlen(esc) == 0 || strcmp(esc, str_nil) == 0 || strstr(pat, esc) == NULL;
+	return strlen(esc) == 0 || strNil(esc) || strstr(pat, esc) == NULL;
 }
 
 static bool
@@ -714,6 +714,7 @@ re_likeselect(BAT **bnp, BAT *b, BAT *s, const char *pat, bool caseignore, bool 
 	oid o, off;
 	const char *v;
 	RE *re = NULL;
+	uint32_t *wpat = NULL;
 
 	assert(ATOMstorage(b->ttype) == TYPE_str);
 
@@ -735,7 +736,6 @@ re_likeselect(BAT **bnp, BAT *b, BAT *s, const char *pat, bool caseignore, bool 
 
 		if (use_strcmp) {
 			if (caseignore) {
-				uint32_t *wpat;
 				wpat = utf8stoucs(pat);
 				if (wpat == NULL)
 					throw(MAL, "pcre.likeselect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -746,6 +746,7 @@ re_likeselect(BAT **bnp, BAT *b, BAT *s, const char *pat, bool caseignore, bool 
 					candscanloop(v && *v != '\200' &&
 								 mywstrcasecmp(v, wpat) == 0);
 				GDKfree(wpat);
+				wpat = NULL;
 			} else {
 				if (anti)
 					candscanloop(v && *v != '\200' &&
@@ -786,7 +787,6 @@ re_likeselect(BAT **bnp, BAT *b, BAT *s, const char *pat, bool caseignore, bool 
 		}
 		if (use_strcmp) {
 			if (caseignore) {
-				uint32_t *wpat;
 				wpat = utf8stoucs(pat);
 				if (wpat == NULL)
 					throw(MAL, "pcre.likeselect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -797,6 +797,7 @@ re_likeselect(BAT **bnp, BAT *b, BAT *s, const char *pat, bool caseignore, bool 
 					scanloop(v && *v != '\200' &&
 							 mywstrcasecmp(v, wpat) == 0);
 				GDKfree(wpat);
+				wpat = NULL;
 			} else {
 				if (anti)
 					scanloop(v && *v != '\200' &&
@@ -834,6 +835,7 @@ re_likeselect(BAT **bnp, BAT *b, BAT *s, const char *pat, bool caseignore, bool 
 
   bunins_failed:
 	re_destroy(re);
+	GDKfree(wpat);
 	BBPreclaim(bn);
 	*bnp = NULL;
 	throw(MAL, "pcre.likeselect", OPERATION_FAILED);
@@ -1280,7 +1282,7 @@ pcre_match_with_flags(bit *ret, const char *val, const char *pat, const char *fl
 		}
 		flags++;
 	}
-	if (strcmp(val, str_nil) == 0) {
+	if (strNil(val)) {
 		*ret = FALSE;
 		return MAL_SUCCEED;
 	}
@@ -1604,7 +1606,7 @@ PCRElike4(bit *ret, const str *s, const str *pat, const str *esc, const bit *ise
 
 	if (!r) {
 		assert(ppat);
-		if (strcmp(ppat, str_nil) == 0) {
+		if (strNil(ppat)) {
 			*ret = FALSE;
 			if (*isens) {
 				if (mystrcasecmp(*s, *pat) == 0)
@@ -1729,7 +1731,7 @@ BATPCRElike3(bat *ret, const bat *bid, const str *pat, const str *esc, const bit
 		br = (bit*)Tloc(r, 0);
 		strsi = bat_iterator(strs);
 
-		if (strcmp(ppat, str_nil) == 0) {
+		if (strNil(ppat)) {
 			BATloop(strs, p, q) {
 				const char *s = (str)BUNtvar(strsi, p);
 
@@ -1926,7 +1928,7 @@ PCRElikeselect2(bat *ret, const bat *bid, const bat *sid, const str *pat, const 
 				BBPunfix(s->batCacheid);
 			return res;
 		}
-		if (strcmp(ppat, str_nil) == 0) {
+		if (strNil(ppat)) {
 			GDKfree(ppat);
 			ppat = NULL;
 			if (*caseignore) {
@@ -2084,7 +2086,7 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	for (BUN ri = 0; ri < rci.ncand; ri++) {
 		ro = canditer_next(&rci);
 		vr = VALUE(r, ro - r->hseqbase);
-		if (strcmp(vr, str_nil) == 0)
+		if (strNil(vr))
 			continue;
 		if (re_simple(vr, esc && *esc != '\200' ? (unsigned char) *esc : 0)) {
 			re = re_create(vr, caseignore, esc && *esc != '\200' ? (unsigned char) *esc : 0);
@@ -2097,7 +2099,7 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			msg = sql2pcre(&pcrepat, vr, esc);
 			if (msg != MAL_SUCCEED)
 				goto bailout;
-			if (strcmp(pcrepat, str_nil) == 0) {
+			if (strNil(pcrepat)) {
 				GDKfree(pcrepat);
 				if (caseignore) {
 					pcrepat = GDKmalloc(strlen(vr) + 3);
@@ -2146,7 +2148,7 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		for (BUN li = 0; li < lci.ncand; li++) {
 			lo = canditer_next(&lci);
 			vl = VALUE(l, lo - l->hseqbase);
-			if (strcmp(vl, str_nil) == 0)
+			if (strNil(vl))
 				continue;
 			if (re) {
 				if (caseignore) {

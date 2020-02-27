@@ -1,0 +1,41 @@
+stderr of test 'remote-table-non-existent-column.Bug-6750` in directory 'sql/test/BugTracker-2019` itself:
+
+
+# 10:42:19 >  
+# 10:42:19 >  "/usr/bin/python3" "remote-table-non-existent-column.Bug-6750.py" "remote-table-non-existent-column.Bug-6750"
+# 10:42:19 >  
+
+(mapi:monetdb://monetdb@localhost/node1) Identifier tab1.col2 doesn't exist
+(mapi:monetdb://monetdb@localhost/node1) Parameter 1 has wrong SQL type, expected double(53), but got tinyint(8) instead
+(mapi:monetdb://monetdb@localhost/node1) Merge tables not supported under remote connections
+# builtin opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-default/BUILD/var/monetdb5/dbfarm/demo
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_ipv6 = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# builtin opt 	raw_strings = false
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 38041
+# cmdline opt 	mapi_usock = /var/tmp/mtest-33709/.s.monetdb.38041
+# cmdline opt 	gdk_dbpath = /tmp/tmpqf47zci8/node2/node2
+# builtin opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-default/BUILD/var/monetdb5/dbfarm/demo
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_ipv6 = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# builtin opt 	raw_strings = false
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 33677
+# cmdline opt 	mapi_usock = /var/tmp/mtest-33709/.s.monetdb.33677
+# cmdline opt 	gdk_dbpath = /tmp/tmpqf47zci8/node1/node1
+
+# 10:42:21 >  
+# 10:42:21 >  "Done."
+# 10:42:21 >  
+

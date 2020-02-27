@@ -433,6 +433,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 						GDKfree(slices);
 						GDKfree(rslices);
 						GDKfree(old);
+						GDKfree(vars);
 						throw(MAL,"optimizer.pushselect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					}
 

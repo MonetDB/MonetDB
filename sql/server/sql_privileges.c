@@ -892,7 +892,7 @@ sql_alter_user(mvc *sql, char *user, char *passwd, char enc, char *schema, char 
 {
 	sqlid schema_id = 0;
 	/* we may be called from MAL (nil) */
-	if (user != NULL && strcmp(user, str_nil) == 0)
+	if (strNil(user))
 		user = NULL;
 	/* USER == NULL -> current_user */
 	if (user != NULL && backend_find_user(sql, user) < 0)

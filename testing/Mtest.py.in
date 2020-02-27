@@ -1221,7 +1221,15 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
                     cond,tst = None,tc
                 alltests.append((tst,cond))
         allf.close()
-    oneserver = os.path.exists(os.path.join(TSTSRCDIR, "SingleServer"))
+    try:
+        f = openutf8(os.path.join(TSTSRCDIR, "SingleServer"))
+    except IOError:
+        oneserver = False
+        options = []            # not used
+    else:
+        oneserver = True
+        options = f.read().split()
+        f.close()
 
     if testlist:
         tl = []
@@ -1310,8 +1318,8 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
                     return td, elem, max(FdOut, FdErr), interrupted
                 z.close()
                 if not oneserver:
-                    pSrvr = ServerClass()
-                    pSrvr.LaunchIt(splitcommand(env['exe']['mserver5'][1]) + ['--dbpath=%s' % LogDBdir], open(os.devnull, 'w'), open(os.devnull, 'w'), par['TIMEOUT'], os.path.join(LogDBdir, '.started'), int(env['MAPIPORT']))
+                    pSrvr = ServerClass(splitcommand(env['exe']['mserver5'][1]) + ['--dbpath=%s' % LogDBdir], open(os.devnull, 'w'), open(os.devnull, 'w'), par['TIMEOUT'], os.path.join(LogDBdir, '.started'), int(env['MAPIPORT']))
+                    pSrvr.LaunchIt()
                     pSrvr.terminate()
         if not os.path.exists(TSTTRGDIR):
             #TODO: set mode to umask
@@ -1329,8 +1337,9 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
                 for TST,COND in testlist:
                     if oneserver and (pSrvr is None or pSrvr.poll() is not None):
                         # restart server
-                        pSrvr = ServerClass()
-                        pSrvr.LaunchIt(splitcommand(env['exe']['mserver5'][1]) + ['--dbpath=%s' % LogDBdir], open(os.devnull, 'w'), open(os.devnull, 'w'), 0, os.path.join(LogDBdir, '.started'), int(env['MAPIPORT']))
+                        pSrvr = ServerClass(splitcommand(env['exe']['mserver5'][1]) + ['--dbpath=%s' % LogDBdir] + options, open(os.devnull, 'w'), open(os.devnull, 'w'), 0, os.path.join(LogDBdir, '.started'), int(env['MAPIPORT']))
+                        os.chdir(TSTTRGDIR)
+                        pSrvr.LaunchIt()
                     if global_timeout and start_time + global_timeout < time.time():
                         if not testweb:
                             print('\nGlobal testing timeout reached\n')
@@ -2280,7 +2289,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests, pSrvr) :
         elif pSrvr.poll() is None:
             sockerr = F_OK
         else:
-            sres = returnCode(pSrvr.proc, TestErrFile)
+            sres = returnCode(pSrvr.proc, openutf8(TestErrFile, 'a'))
             if sres == 'segfault':
                 sockerr = F_SEGV
             elif sres == 'abort':
@@ -2830,12 +2839,17 @@ def killProc(proc, outfile = None, cmd = None):
         killchildren(proc.pid)
 
 class ServerClass:
-    def __init__(self):
+    def __init__(self, cmd, TestOut, TestErr, TimeOut, pollfile, port):
         self.proc = None
         self.timer = None
-        self.errfile = None
+        self.outfile = TestOut
+        self.errfile = TestErr
         self.code = None
         self.started = False
+        self.cmd = cmd
+        self.timeout = TimeOut
+        self.pollfile = pollfile
+        self.port = port
 
     def poll(self):
         return self.proc.poll()
@@ -2849,48 +2863,43 @@ class ServerClass:
         self.timer.cancel()
         self.code = returnCode(self.proc, self.errfile)
 
-    def kill(self, outfile=None, cmd=None):
-        self.timer.cancel()
-        killProc(self.proc, outfile, cmd)
-
-    def LaunchIt(self, cmd, TestOut, TestErr, TimeOut, pollfile, port) :
+    def LaunchIt(self):
         global setpgrp
 
-        TestOut.write(Prompt(cmd))
-        TestOut.flush()
-        TestErr.write(Prompt(cmd))
-        TestErr.flush()
-
-        self.errfile = TestErr
+        self.outfile.write(Prompt(self.cmd))
+        self.outfile.flush()
+        self.errfile.write(Prompt(self.cmd))
+        self.errfile.flush()
 
         if procdebug:
-            print('LaunchIt: starting process "%s" (inpipe)\n' % '" "'.join(cmd))
+            print('LaunchIt: starting process "%s" (inpipe)\n' % '" "'.join(self.cmd))
         setpgrp = True
-        if pollfile:
+        if self.pollfile:
             try:
-                os.unlink(pollfile)
+                os.unlink(self.pollfile)
             except OSError:
                 pass
         if os.name == "nt":
-            proc = process.Popen(cmd, stdin=open(os.devnull), stdout=TestOut,
-                                 stderr=TestErr, universal_newlines=True,
+            proc = process.Popen(self.cmd, stdin=open(os.devnull), stdout=self.outfile,
+                                 stderr=self.errfile, universal_newlines=True,
                                  creationflags=process.CREATE_NEW_PROCESS_GROUP)
         else:
-            proc = process.Popen(cmd, stdin=open(os.devnull), stdout=TestOut,
-                                 stderr=TestErr, universal_newlines=True)
+            proc = process.Popen(self.cmd, stdin=open(os.devnull), stdout=self.outfile,
+                                 stderr=self.errfile, universal_newlines=True)
         # maybe buffer output as it comes to avoid deadlock
-        if TestOut == process.PIPE:
+        if self.outfile == process.PIPE:
             proc.stdout = process._BufferedPipe(proc.stdout)
-        if TestErr == process.PIPE:
+        if self.errfile == process.PIPE:
             proc.stderr = process._BufferedPipe(proc.stderr)
         proc.killed = False
         proc.onechild = True
-        t = Timer(TimeOut, killProc, args = [proc, TestErr, cmd])
+        t = Timer(self.timeout, killProc, args = [proc, self.errfile, self.cmd])
         t.start()
         self.proc = proc
         self.timer = t
 
-        if pollfile:
+        port = self.port
+        if self.pollfile:
             while True:
                 proc.poll()
                 if proc.returncode is not None:
@@ -2898,7 +2907,7 @@ class ServerClass:
                     proc.wait()
                     t.cancel()
                     return
-                if os.path.exists(pollfile):
+                if os.path.exists(self.pollfile):
                     break
                 time.sleep(0.001)
         elif port is not None:
@@ -3028,10 +3037,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEO
         MAPIsockets[1].close()
 
     returncode = None
-    if PSRVR is None:
-        pSrvr = ServerClass()
-    else:
-        pSrvr = PSRVR
+    pSrvr = PSRVR
     try:
         if SERVER in ["MAL", "SQL"]:
             SrvrOutFile = TST+".server.out"
@@ -3102,7 +3108,8 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEO
             Srvr.extend(['--set', 'embedded_c=true'])
 
             if PSRVR is None:
-                pSrvr.LaunchIt(Srvr, SrvrOut, SrvrErr, TIMEOUT, os.path.join(dbpath, '.started'), int(env['MAPIPORT']))
+                pSrvr = ServerClass(Srvr, SrvrOut, SrvrErr, TIMEOUT, os.path.join(dbpath, '.started'), int(env['MAPIPORT']))
+                pSrvr.LaunchIt()
             if savepath is not None:
                 os.environ['PATH'] = savepath
                 if savepypath:
@@ -3244,19 +3251,20 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEO
             TestErr.write(Prompt('Done.'))
             TestErr.close()
 
-    except KeyboardInterrupt:
-        if PSRVR is None and pSrvr.started:
-            pSrvr.kill(SrvrErr, Srvr)
-        raise
+    finally:
+        if PSRVR is None and pSrvr is not None and pSrvr.started:
+            pSrvr.terminate()
 
-    if returncode is not None or pSrvr.code is not None:
+    if returncode is None and pSrvr is not None:
+        returncode = pSrvr.code # can still be None
+    if returncode is not None:
         # something failed
-        if returncode == 'interrupt' or pSrvr.code == 'interrupt':
+        if returncode == 'interrupt':
             raise KeyboardInterrupt
         for err in ('timeout', 'segfault', 'abort', 'signal', 'error'):
-            if pSrvr.code == err or returncode == err:
+            if returncode == err:
                 return err
-        return returncode or pSrvr.code # remaining error (shouldn't get here)
+        return returncode       # remaining error (shouldn't get here)
 
     if CALL not in ('python', 'other', 'ruby'):
         # running mserver/mclient directly, so we know they didn't fail

@@ -3277,8 +3277,7 @@ addstr_loop(BAT *b1, const char *l, BAT *b2, const char *r, BAT *bn,
 			l = BUNtvar(b1i, x1);
 		if (b2)
 			r = BUNtvar(b2i, x2);
-		if ((rv != NULL && !rv[i]) ||
-		    strcmp(l, str_nil) == 0 || strcmp(r, str_nil) == 0) {
+		if ((rv != NULL && !rv[i]) || strNil(l) || strNil(r)) {
 			nils++;
 			if (tfastins_nocheckVAR(bn, i, str_nil, Tsize(bn)) != GDK_SUCCEED)
 				goto bunins_failed;
@@ -13340,7 +13339,7 @@ convert_any_str(BAT *b, BAT *bn, struct canditer *restrict ci,
 				nils++;
 			} else {
 				src = BUNtvar(bi, x);
-				if ((*atomcmp)(src, str_nil) == 0)
+				if (strNil(src))
 					nils++;
 			}
 			if (tfastins_nocheckVAR(bn, i, src, bn->twidth) != GDK_SUCCEED)
@@ -13407,7 +13406,7 @@ convert_str_any(BAT *b, int tp, void *restrict dst,
 	for (BUN i = 0; i < ci->ncand; i++) {
 		oid x = canditer_next(ci) - candoff;
 		const char *s = BUNtvar(bi, x);
-		if ((rv != NULL && !rv[i]) || strcmp(s, str_nil) == 0) {
+		if ((rv != NULL && !rv[i]) || strNil(s)) {
 			memcpy(dst, nil, len);
 			nils++;
 		} else {
@@ -14000,7 +13999,7 @@ VARconvert(ValPtr ret, const ValRecord *v, bool abort_on_error)
 		if (VALinit(ret, ret->vtype, ATOMnilptr(ret->vtype)) == NULL)
 			nils = BUN_NONE;
 	} else if (v->vtype == TYPE_str) {
-		if (v->val.sval == NULL || strcmp(v->val.sval, str_nil) == 0) {
+		if (strNil(v->val.sval)) {
 			if (VALinit(ret, ret->vtype, ATOMnilptr(ret->vtype)) == NULL)
 				nils = BUN_NONE;
 		} else if (ATOMstorage(ret->vtype) == TYPE_ptr) {

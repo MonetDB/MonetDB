@@ -1,3 +1,4 @@
+start transaction;
 CREATE TABLE orders_1 (o_orderkey INT NOT NULL, o_custkey INT NOT NULL, o_orderstatus VARCHAR(1) NOT NULL, o_totalprice FLOAT NOT NULL, o_orderdate DATE NOT NULL, o_orderpriority VARCHAR(15) NOT NULL, o_clerk VARCHAR(15) NOT NULL, o_shippriority INT NOT NULL, o_comment VARCHAR(79) NOT NULL) ;
 CREATE TABLE orders_2 (o_orderkey INT NOT NULL, o_custkey INT NOT NULL, o_orderstatus VARCHAR(1) NOT NULL, o_totalprice FLOAT NOT NULL, o_orderdate DATE NOT NULL, o_orderpriority VARCHAR(15) NOT NULL, o_clerk VARCHAR(15) NOT NULL, o_shippriority INT NOT NULL, o_comment VARCHAR(79) NOT NULL) ;
 
@@ -312,5 +313,4 @@ o1.o_orderkey = o2.o_orderkey and o1.o_orderdate <> o2.o_orderdate;
 select count(*) from orders_1;
 select count(*) from orders_2;
 
-drop table orders_1;
-drop table orders_2;
+rollback;

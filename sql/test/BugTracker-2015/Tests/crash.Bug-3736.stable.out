@@ -97,7 +97,7 @@ join (
 | | | ) [ "o"."open_auction_id" NOT NULL, "b3"."increase" NOT NULL as "%2"."%2" ]
 | | ) [ "o"."open_auction_id" NOT NULL ] [ sys.zero_or_one("%2"."%2" NOT NULL) NOT NULL as "%3"."%3", "o"."open_auction_id" NOT NULL ]
 | ) [ "%3"."%3" NOT NULL, "o"."open_auction_id" NOT NULL as "%25"."%25" ]
-) [ "o"."open_auction_id" NOT NULL = "%25"."%25" NOT NULL ]
+) [ "o"."open_auction_id" NOT NULL * = "%25"."%25" NOT NULL ]
 project (
 | select (
 | | join (
@@ -123,7 +123,7 @@ project (
 | | | | | ) [ "o"."open_auction_id" NOT NULL, "b2"."increase" NOT NULL as "%5"."%5" ]
 | | | | ) [ "o"."open_auction_id" NOT NULL ] [ sys.zero_or_one("%5"."%5" NOT NULL) NOT NULL as "%6"."%6", "o"."open_auction_id" NOT NULL ]
 | | | ) [ "%6"."%6" NOT NULL, "o"."open_auction_id" NOT NULL as "%47"."%47" ]
-| | ) [ "o"."open_auction_id" NOT NULL = "%47"."%47" NOT NULL ]
+| | ) [ "o"."open_auction_id" NOT NULL * = "%47"."%47" NOT NULL ]
 | ) [ sys.sql_mul("%3"."%3" NOT NULL, double "2") <= "%6"."%6" NOT NULL ]
 ) [ "b"."id" NOT NULL HASHCOL , "b"."open_auction_id" NOT NULL, "b"."date" NOT NULL, "b"."time" NOT NULL, "b"."personref" NOT NULL, "b"."increase" NOT NULL ]
 #Select b.* FROM open_auctions o, bidder b WHERE (select b3.INCREASE from bidder b3 where b3.id = (select min(b3a.id) from bidder b3a where b3a.open_auction_id = o.open_auction_id)) * 2 <= (Select b2.INCREASE from bidder b2 where b2.id = (SELECT MAX(b2a.id) from bidder b2a where b2a.open_auction_id = o.open_auction_id)) AND o.open_auction_id = b.open_auction_id order by date, time;

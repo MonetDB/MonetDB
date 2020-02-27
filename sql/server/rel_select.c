@@ -4483,6 +4483,8 @@ calculate_window_bound(sql_query *query, sql_rel *p, tokens token, symbol *bound
 			}
 		}
 	}
+	if (res && !exp_name(res))
+		exp_label(sql->sa, res, ++sql->label);
 	return res;
 }
 
@@ -4694,6 +4696,8 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 						GDKfree(uaname);
 					return NULL;
 				}
+				if (!exp_name(in))
+					exp_label(sql->sa, in, ++sql->label);
 
 				/* corner case, if the argument is null convert it into something countable such as bte */
 				if (subtype_cmp(exp_subtype(in), empty) == 0)
@@ -4727,6 +4731,8 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 					GDKfree(uaname);
 				return NULL;
 			}
+			if (!exp_name(in))
+				exp_label(sql->sa, in, ++sql->label);
 
 			/* corner case, if the argument is null convert it into something countable such as bte */
 			if (subtype_cmp(exp_subtype(in), empty) == 0)
@@ -4775,6 +4781,8 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 
 			if (!exp_subtype(e))
 				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: parameters not allowed at PARTITION BY clause from window functions");
+			if (!exp_name(e))
+				exp_label(sql->sa, e, ++sql->label);
 
 			e = exp_copy(sql, e);
 			args = sa_list(sql->sa);
@@ -4792,6 +4800,8 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 	} else {
 		pe = exp_atom_bool(sql->sa, 0);
 	}
+	if (pe && !exp_name(pe))
+		exp_label(sql->sa, pe, ++sql->label);
 	/* diff for orderby */
 	if (obe) {
 		sql_subtype *bt = sql_bind_localtype("bit");
@@ -4802,6 +4812,8 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 
 			if (!exp_subtype(e))
 				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: parameters not allowed at ORDER BY clause from window functions");
+			if (!exp_name(e))
+				exp_label(sql->sa, e, ++sql->label);
 
 			e = exp_copy(sql, e);
 			args = sa_list(sql->sa);
@@ -4819,6 +4831,8 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 	} else {
 		oe = exp_atom_bool(sql->sa, 0);
 	}
+	if (oe && !exp_name(oe))
+		exp_label(sql->sa, oe, ++sql->label);
 
 	if (frame_clause || supports_frames)
 		ie = exp_copy(sql, obe ? (sql_exp*) obe->t->data : in);
@@ -4888,6 +4902,11 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 		if (!obe)
 			frame_type = FRAME_ALL;
 
+		if (fstart && !exp_name(fstart))
+			exp_label(sql->sa, fstart, ++sql->label);
+		if (fend && !exp_name(fend))
+			exp_label(sql->sa, fend, ++sql->label);
+
 		if (generate_window_bound_call(sql, &start, &eend, s, gbe ? pe : NULL, ie, fstart, fend, frame_type, EXCLUDE_NONE,
 									   SQL_PRECEDING, SQL_FOLLOWING) == NULL)
 			return NULL;
@@ -4895,6 +4914,10 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 
 	if (!pe || !oe)
 		return NULL;
+	if (start && !exp_name(start))
+		exp_label(sql->sa, start, ++sql->label);
+	if (eend && !exp_name(eend))
+		exp_label(sql->sa, eend, ++sql->label);
 
 	if (!supports_frames) {
 		append(fargs, pe);
@@ -4943,6 +4966,8 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 		append(args, eend);
 	}
 	call = exp_rank_op(sql->sa, args, gbe, obe, wf);
+	if (call && !exp_name(call))
+		exp_label(sql->sa, call, ++sql->label);
 	*rel = p;
 	return call;
 }
