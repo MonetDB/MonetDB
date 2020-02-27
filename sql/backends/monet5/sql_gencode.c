@@ -459,14 +459,23 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 	for (n = r->exps->h; n; n = n->next) { /* Send SQL types of the projection's expressions */
 		sql_exp *e = n->data;
 		sql_subtype *t = exp_subtype(e);
+		str next = subtype2string(t);
 
+		if (!next) {
+			GDKfree(buf);
+			buf = NULL;
+			break;
+		}
 		if ((nr + 100) > len) {
 			buf = GDKrealloc(buf, len*=2);
-			if(buf == NULL)
+			if (buf == NULL) {
+				GDKfree(next);
 				break;
+			}
 		}
 
-		nr += snprintf(buf+nr, len-nr, "%s%s", subtype2string(t), n->next?"%%":"");
+		nr += snprintf(buf+nr, len-nr, "%s%s", next, n->next?"%%":"");
+		GDKfree(next);
 	}
 	if (buf) {
 		o = newFcnCall(curBlk, remoteRef, putRef);
