@@ -85,9 +85,7 @@ typedef enum {
 	FOREACH_LEVEL(GENERATE_ENUM)
 } LOG_LEVEL;
 
-static const char *LEVEL_STR[] = {
-	FOREACH_LEVEL(GENERATE_STRING)
-};
+gdk_export const char *LEVEL_STR[];
 
 
 
@@ -174,9 +172,7 @@ typedef enum {
 	FOREACH_COMP(GENERATE_ENUM)
 } COMPONENT;
 
-static const char *COMPONENT_STR[] = {
-	FOREACH_COMP(GENERATE_STRING)
-};
+gdk_export const char *COMPONENT_STR[];
 
 
 

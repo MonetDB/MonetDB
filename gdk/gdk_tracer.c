@@ -29,6 +29,14 @@ LOG_LEVEL LVL_PER_COMPONENT[] = {
 	FOREACH_COMP(GENERATE_LOG_LEVEL)
 };
 
+const char *COMPONENT_STR[] = {
+	FOREACH_COMP(GENERATE_STRING)
+};
+
+const char *LEVEL_STR[] = {
+	FOREACH_LEVEL(GENERATE_STRING)
+};
+
 
 
 // When BASIC adapter is active, all the log messages are getting printed to a file.
