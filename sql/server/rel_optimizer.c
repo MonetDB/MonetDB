@@ -7366,9 +7366,11 @@ rel_simplify_predicates(mvc *sql, sql_rel *rel, int *changes)
 						l = args->h->data;
 						if (exp_subtype(l)) {
 							r = exp_atom(sql->sa, atom_general(sql->sa, exp_subtype(l), NULL));
-							e = exp_compare2(sql->sa, l, r, r, 3);
+							e = exp_compare(sql->sa, l, r, cmp_equal);
 							if (e && !flag)
 								set_anti(e);
+							if (e)
+								set_semantics(e);
 						}
 					} else if (!f->func->s && !strcmp(f->func->base.name, "not")) {
 						if (is_atom(r->type) && r->l) { /* direct literal */
