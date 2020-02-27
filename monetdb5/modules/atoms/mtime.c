@@ -1644,12 +1644,11 @@ func1(MTIMEtimestamp_extract_daytime, MTIMEtimestamp_extract_daytime_bulk, "dayt
 
 /* return current system time zone offset in seconds East of Greenwich */
 static int
-local_timezone(int *isdst)
+local_timezone(int *isdstp)
 {
 	int tzone = 0;
+	int isdst = -1;
 
-	if (isdst)
-		*isdst = -1;
 #if defined(_MSC_VER)
 	DYNAMIC_TIME_ZONE_INFORMATION tzinf;
 
@@ -1658,19 +1657,16 @@ local_timezone(int *isdst)
 	 * + Bias + DaylightBias, and presumably during non DST
 	 * period, UTC = localtime + Bias */
 	switch (GetDynamicTimeZoneInformation(&tzinf)) {
-	case TIME_ZONE_ID_STANDARD:
-		if (isdst)
-			*isdst = 0;
-		/* fall through */
-	case TIME_ZONE_ID_UNKNOWN:
+	case TIME_ZONE_ID_STANDARD:	/* using standard time */
+	case TIME_ZONE_ID_UNKNOWN:	/* no daylight saving time in this zone */
+		isdst = 0;
 		tzone = -(int) tzinf.Bias * 60;
 		break;
-	case TIME_ZONE_ID_DAYLIGHT:
-		if (isdst)
-			*isdst = 1;
+	case TIME_ZONE_ID_DAYLIGHT:	/* using daylight saving time */
+		isdst = 1;
 		tzone = -(int) (tzinf.Bias + tzinf.DaylightBias) * 60;
 		break;
-	default:
+	default:			/* aka TIME_ZONE_ID_INVALID */
 		/* call failed, we don't know the time zone */
 		tzone = 0;
 		break;
@@ -1679,21 +1675,16 @@ local_timezone(int *isdst)
 	time_t t;
 	struct tm tm = (struct tm) {0};
 
-	if ((t = time(NULL)) == (time_t) -1)
-		return 0;
-	if (localtime_r(&t, &tm)) {
+	if ((t = time(NULL)) != (time_t) -1 && localtime_r(&t, &tm)) {
 		tzone = (int) tm.tm_gmtoff;
-		if (isdst)
-			*isdst = tm.tm_isdst;
+		isdst = tm.tm_isdst;
 	}
 #else
 	time_t t;
-	timestamp lt, gt;
 	struct tm tm = (struct tm) {0};
 
-	if ((t = time(NULL)) == (time_t) -1)
-		return 0;
-	if (gmtime_r(&t, &tm)) {
+	if ((t = time(NULL)) != (time_t) -1 && gmtime_r(&t, &tm)) {
+		timestamp lt, gt;
 		gt = mktimestamp(mkdate(tm.tm_year + 1900,
 								tm.tm_mon + 1,
 								tm.tm_mday),
@@ -1702,8 +1693,7 @@ local_timezone(int *isdst)
 								   tm.tm_sec == 60 ? 59 : tm.tm_sec,
 								   0));
 		if (localtime_r(&t, &tm)) {
-			if (isdst)
-				*isdst = tm.tm_isdst;
+			isdst = tm.tm_isdst;
 			lt = mktimestamp(mkdate(tm.tm_year + 1900,
 									tm.tm_mon + 1,
 									tm.tm_mday),
@@ -1715,6 +1705,8 @@ local_timezone(int *isdst)
 		}
 	}
 #endif
+	if (isdstp)
+		*isdstp = isdst;
 	return tzone;
 }
 
