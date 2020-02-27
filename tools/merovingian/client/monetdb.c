@@ -178,6 +178,11 @@ command_help(int argc, char *argv[])
 			printf("  <snapshotdir>/<dbname>_<YYYY><MM><DD>T<HH><MM>UTC.tar.gz.\n");
 			printf("Options:\n");
 			printf("  -t <targetfile>  File on the server to write the snapshot to.\n");
+		} else if (argc > 2 && strcmp(argv[2], "restore") == 0) {
+			printf("Usage: monetdb snapshot restore -s <sourcefile> <dbname>\n");
+			printf("  Restore a database from the given snapshot file.\n");
+			printf("Options:\n");
+			printf("  -s <sourcefile>  Full path to the snapshot file on the server.\n");
 		} else {
 			printf("Usage: monetdb <create|list|restore|destroy> [arguments]\n");
 			printf("  Manage database snapshots\n");
@@ -1672,13 +1677,13 @@ command_profilerstop(int argc, char *argv[])
 }
 
 static void
-snapshot_adhoc(sabdb *databases, char *filename) {
+snapshot_create_adhoc(sabdb *databases, char *filename) {
 	/* databases is supposed to only hold a single database */
 	assert(databases != NULL);
 	assert(databases->next == NULL);
 
 	char *merocmd = malloc(100 + strlen(filename));
-	sprintf(merocmd, "snapshot adhoc %s", filename);
+	sprintf(merocmd, "snapshot create adhoc %s", filename);
 
 	simple_argv_cmd("snapshot", databases, merocmd, NULL, "snapshotting database");
 
@@ -1686,8 +1691,38 @@ snapshot_adhoc(sabdb *databases, char *filename) {
 }
 
 static void
-snapshot_automatic(sabdb *databases) {
-	simple_argv_cmd("snapshot", databases, "snapshot automatic", NULL, "snapshotting database");
+snapshot_create_automatic(sabdb *databases) {
+	simple_argv_cmd("snapshot", databases, "snapshot create automatic", NULL, "snapshotting database");
+}
+
+static void
+snapshot_restore_adhoc(char *sourcefile, char *dbname)
+{
+	char *ret;
+	char *out;
+	char *merocmd = malloc(100 + strlen(sourcefile));
+
+	if (!monetdb_quiet) {
+		printf("Restore '%s' from '%s'... ", dbname, sourcefile);
+		fflush(stdout);
+	}
+
+	sprintf(merocmd, "snapshot restore adhoc %s", sourcefile);
+	ret = control_send(&out, mero_host, mero_port, dbname, merocmd, 0, mero_pass);
+	free(merocmd);
+
+	if (ret != NULL) {
+		fprintf(stderr, "snapshot restore: %s", ret);
+		exit(2);
+	}
+	if (strcmp(out, "OK") == 0) {
+		if (!monetdb_quiet) {
+			printf("done\n");
+		}
+	} else {
+		fprintf(stderr, "snapshot restore: %s\n", out);
+		exit(1);
+	}
 }
 
 static void
@@ -1742,12 +1777,70 @@ command_snapshot_create(int argc, char *argv[])
 			fprintf(stderr, "snapshot: -t only allows a single database\n");
 			exit(1);
 		}
-		snapshot_adhoc(databases, targetfile);
+		snapshot_create_adhoc(databases, targetfile);
 	} else {
-		snapshot_automatic(databases);
+		snapshot_create_automatic(databases);
 	}
 
 	msab_freeStatus(&databases);
+}
+
+
+static void
+command_snapshot_restore(int argc, char *argv[])
+{
+	char *sourcefile = NULL;
+	char *dbname = NULL;
+
+	/* walk through the arguments and hunt for "options" */
+	for (int i = 1; i < argc; i++) {
+		if (strcmp(argv[i], "--") == 0) {
+			argv[i] = NULL;
+			break;
+		}
+		if (argv[i][0] == '-') {
+			if (argv[i][1] == 's') {
+				if (argv[i][2] != '\0') {
+					sourcefile = &argv[i][2];
+					argv[i] = NULL;
+				} else if (i + 1 < argc && argv[i+1][0] != '-') {
+					sourcefile = argv[i+1];
+					argv[i] = NULL;
+					argv[i+1] = NULL;
+					i++;
+				} else {
+					fprintf(stderr, "snapshot: -s needs an argument\n");
+				}
+			} else {
+				fprintf(stderr, "snapshot restore: unknown option: %s\n", argv[i]);
+				command_help(argc + 2, &argv[-2]);  // ewww
+				exit(1);
+			}
+		}
+	}
+
+	/* Find the dbname */
+	for (int i = 1; i < argc; i++) {
+		if (argv[i] == NULL)
+			continue;
+		if (dbname != NULL) {
+			fprintf(stderr, "snapshot restore: only a single database at a time\n");
+			return;
+		}
+		dbname = argv[i];
+	}
+
+	if (dbname == NULL) {
+		fprintf(stderr, "snapshot restore: dbname is mandatory\n");
+		return;
+	}
+	if (sourcefile == NULL) {
+		fprintf(stderr, "snapshot restore: sourcefile is mandatory\n");
+		return;
+
+	}
+
+	snapshot_restore_adhoc(sourcefile, dbname);
 }
 
 static void
@@ -1767,6 +1860,8 @@ command_snapshot(int argc, char *argv[])
 	/* pick the right subcommand */
 	if (strcmp(argv[1], "create") == 0) {
 		command_snapshot_create(argc - 1, &argv[1]);
+	} else if (strcmp(argv[1], "restore") == 0) {
+		command_snapshot_restore(argc - 1, &argv[1]);
 	} else {
 		/* print help message for this command */
 		command_help(argc - 1, &argv[1]);

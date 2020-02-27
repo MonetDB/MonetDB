@@ -691,8 +691,8 @@ static void ctl_handle_client(
 							 origin, q);
 				}
 				msab_freeStatus(&stats);
-			} else if (strncmp(p, "snapshot adhoc ", strlen("snapshot adhoc ")) == 0) {
-				char *dest = p + strlen("snapshot adhoc ");
+			} else if (strncmp(p, "snapshot create adhoc ", strlen("snapshot create adhoc ")) == 0) {
+				char *dest = p + strlen("snapshot create adhoc ");
 				Mfprintf(_mero_ctlout, "Start snapshot of database '%s' to file '%s'\n", q, dest);
 				char *e = snapshot_database_to(q, dest);
 				if (e != NULL) {
@@ -707,7 +707,7 @@ static void ctl_handle_client(
 					Mfprintf(_mero_ctlout, "%s: completed snapshot of database '%s' to '%s'\n",
 						origin, q, dest);
 				}
-			} else if (strcmp(p, "snapshot automatic") == 0) {
+			} else if (strcmp(p, "snapshot create automatic") == 0) {
 				char *dest = NULL;
 				char *e = snapshot_default_filename(&dest, q);
 				if (e != NULL) {
