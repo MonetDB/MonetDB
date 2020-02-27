@@ -93,7 +93,7 @@ psm_set_exp(sql_query *query, dnode *n)
 	sql_subtype *tpe = NULL;
 	sql_rel *rel = NULL;
 	sql_exp *res = NULL;
-	int single = (n->type == type_string);
+	int single = (dlist_length(n->data.lval) == 1);
 
 	if (single) {
 		exp_kind ek = {type_value, card_value, FALSE};

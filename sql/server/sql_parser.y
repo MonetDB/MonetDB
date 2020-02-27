@@ -450,7 +450,6 @@ int yydebug=1;
 	ident_commalist
 	interval_qualifier
 	merge_when_list
-	name_commalist
 	object_privileges
 	old_or_new_values_alias
 	old_or_new_values_alias_list
@@ -508,6 +507,9 @@ int yydebug=1;
 	typelist
 	value_commalist
 	variable_list
+	variable_ref
+	variable_ref_commalist
+	variable_ref_commalist_parens
 	when_search_list
 	when_search_statements
 	when_statements
@@ -864,32 +866,35 @@ opt_minmax:
  ;
 
 declare_statement:
-	declare variable_list
-		{ $$ = _symbol_create_list( SQL_DECLARE, $2); }
-    |   declare table_def { $$ = $2; if ($$) $$->token = SQL_DECLARE_TABLE; }
-    ;
+	declare variable_list { $$ = _symbol_create_list( SQL_DECLARE, $2); }
+  | declare table_def     { $$ = $2; if ($$) $$->token = SQL_DECLARE_TABLE; }
+ ;
+
+variable_ref_commalist:
+    variable_ref                            { $$ = append_list(L(), $1); }
+ |  variable_ref_commalist ',' variable_ref { $$ = append_list( $1, $3 ); }
+ ;
 
 variable_list:
-	ident_commalist data_type
+	variable_ref_commalist data_type
 		{ dlist *l = L();
 		append_list(l, $1 );
 		append_type(l, &$2 );
 		$$ = append_symbol(L(), _symbol_create_list( SQL_DECLARE, l)); }
-    |	variable_list ',' ident_commalist data_type
+    |	variable_list ',' variable_ref_commalist data_type
 		{ dlist *l = L();
 		append_list(l, $3 );
 		append_type(l, &$4 );
 		$$ = append_symbol($1, _symbol_create_list( SQL_DECLARE, l)); }
-    ;
+ ;
 
 set_statement:
-	/*set ident '=' simple_atom*/
-        set ident '=' search_condition
+	set variable_ref '=' search_condition
 		{ dlist *l = L();
-		append_string(l, $2 );
+		append_list(l, $2 );
 		append_symbol(l, $4 );
 		$$ = _symbol_create_list( SQL_SET, l); }
-  |     set column_commalist_parens '=' subquery
+  | set variable_ref_commalist_parens '=' subquery
 		{ dlist *l = L();
 	  	append_list(l, $2);
 	  	append_symbol(l, $4);
@@ -897,8 +902,8 @@ set_statement:
   |	set sqlSESSION AUTHORIZATION ident
 		{ dlist *l = L();
 		  sql_subtype t;
-	        sql_find_subtype(&t, "char", UTF8_strlen($4), 0 );
-		append_string(l, sa_strdup(SA, "current_user"));
+		sql_find_subtype(&t, "char", UTF8_strlen($4), 0 );
+		append_list(l, append_string(append_string(L(), sa_strdup(SA, "tmp")), sa_strdup(SA, "current_user")));
 		append_symbol(l,
 			_newAtomNode( _atom_string(&t, $4)) );
 		$$ = _symbol_create_list( SQL_SET, l); }
@@ -906,7 +911,7 @@ set_statement:
 		{ dlist *l = L();
 		  sql_subtype t;
 		sql_find_subtype(&t, "char", UTF8_strlen($3), 0 );
-		append_string(l, sa_strdup(SA, "current_schema"));
+		append_list(l, append_string(append_string(L(), sa_strdup(SA, "tmp")), sa_strdup(SA, "current_schema")));
 		append_symbol(l,
 			_newAtomNode( _atom_string(&t, $3)) );
 		$$ = _symbol_create_list( SQL_SET, l); }
@@ -914,7 +919,7 @@ set_statement:
 		{ dlist *l = L();
 		  sql_subtype t;
 		sql_find_subtype(&t, "char", UTF8_strlen($4), 0 );
-		append_string(l, sa_strdup(SA, "current_user"));
+		append_list(l, append_string(append_string(L(), sa_strdup(SA, "tmp")), sa_strdup(SA, "current_user")));
 		append_symbol(l,
 			_newAtomNode( _atom_string(&t, $4)) );
 		$$ = _symbol_create_list( SQL_SET, l); }
@@ -922,23 +927,23 @@ set_statement:
 		{ dlist *l = L();
 		  sql_subtype t;
 		sql_find_subtype(&t, "char", UTF8_strlen($3), 0);
-		append_string(l, sa_strdup(SA, "current_role"));
+		append_list(l, append_string(append_string(L(), sa_strdup(SA, "tmp")), sa_strdup(SA, "current_role")));
 		append_symbol(l,
 			_newAtomNode( _atom_string(&t, $3)) );
 		$$ = _symbol_create_list( SQL_SET, l); }
   |	set TIME ZONE LOCAL
 		{ dlist *l = L();
-		sql_subtype t;
-		append_string(l, sa_strdup(SA, "current_timezone"));
+		  sql_subtype t;
 		sql_find_subtype(&t, "sec_interval", inttype2digits(ihour, isec), 0);
+		append_list(l, append_string(append_string(L(), sa_strdup(SA, "tmp")), sa_strdup(SA, "current_timezone")));
 		append_symbol(l, _newAtomNode(atom_int(SA, &t, 0)));
 		$$ = _symbol_create_list( SQL_SET, l); }
   |	set TIME ZONE interval_expression
 		{ dlist *l = L();
-		append_string(l, sa_strdup(SA, "current_timezone"));
+		append_list(l, append_string(append_string(L(), sa_strdup(SA, "tmp")), sa_strdup(SA, "current_timezone")));
 		append_symbol(l, $4 );
 		$$ = _symbol_create_list( SQL_SET, l); }
-  ;
+ ;
 
 schema:
 	create SCHEMA if_not_exists schema_name_clause opt_schema_default_char_set
@@ -2060,6 +2065,10 @@ opt_column_list:
 
 column_commalist_parens:
    '(' ident_commalist ')'	{ $$ = $2; }
+ ;
+
+variable_ref_commalist_parens:
+   '(' variable_ref_commalist ')'	{ $$ = $2; }
  ;
 
 type_def:
@@ -3449,7 +3458,7 @@ table_ref:
  ;
 
 table_name:
-    AS ident '(' name_commalist ')'
+    AS ident '(' ident_commalist ')'
 				{ dlist *l = L();
 		  		  append_string(l, $2);
 		  	  	  append_list(l, $4);
@@ -3459,7 +3468,7 @@ table_name:
 		  		  append_string(l, $2);
 		  	  	  append_list(l, NULL);
 		  		  $$ = _symbol_create_list(SQL_NAME, l); }
- |  ident '(' name_commalist ')'
+ |  ident '(' ident_commalist ')'
 				{ dlist *l = L();
 		  		  append_string(l, $1);
 		  	  	  append_list(l, $3);
@@ -4079,7 +4088,7 @@ value_exp:
  |  case_exp
  |  cast_exp
  |  column_ref                            { $$ = _symbol_create_list(SQL_COLUMN, $1); }
- |  CURRENT_ROLE   { $$ = _symbol_create_list(SQL_COLUMN, append_string(L(), sa_strdup(SA, "current_role"))); }
+ |  CURRENT_ROLE   { $$ = _symbol_create_list(SQL_COLUMN, append_string(append_string(L(), sa_strdup(SA, "tmp")), sa_strdup(SA, "current_role"))); }
  |  datetime_funcs
  |  GROUPING '(' column_ref_commalist ')' { dlist *l = L();
 										    append_list(l, append_string(L(), "grouping"));
@@ -4093,7 +4102,7 @@ value_exp:
  |  null
  |  param
  |  string_funcs
- |  user            { $$ = _symbol_create_list(SQL_COLUMN, append_string(L(), sa_strdup(SA, "current_user"))); }
+ |  user            { $$ = _symbol_create_list(SQL_COLUMN, append_string(append_string(L(), sa_strdup(SA, "tmp")), sa_strdup(SA, "current_user"))); }
  |  var_ref
  |  XML_value_function
  ;
@@ -5079,6 +5088,15 @@ column_ref:
 				  L(), $1), $3), $5);}
  ;
 
+variable_ref:
+    ident		{ $$ = append_string(
+				L(), $1); }
+
+ |  ident '.' ident	{ $$ = append_string(
+				append_string(
+				 L(), $1), $3);}
+ ;
+
 cast_exp:
      CAST '(' cast_value AS data_type ')'
  	{ dlist *l = L();
@@ -5652,12 +5670,6 @@ non_reserved_word:
 | WHITESPACE	{ $$ = sa_strdup(SA, "whitespace"); }
 ;
 
-name_commalist:
-    ident	{ $$ = append_string(L(), $1); }
- |  name_commalist ',' ident
-			{ $$ = append_string($1, $3); }
- ;
-
 lngval:
 	sqlINT	
  		{
@@ -5848,8 +5860,7 @@ path_specification:
         PATH schema_name_list 	{ $$ = _symbol_create_list( SQL_PATH, $2); }
    ;
 
-schema_name_list: name_commalist ;
-
+schema_name_list: ident_commalist ;
 
 comment_on_statement:
 	COMMENT ON catalog_object IS string
