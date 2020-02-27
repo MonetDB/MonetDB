@@ -1720,7 +1720,7 @@ snapshot_restore_adhoc(char *sourcefile, char *dbname)
 			printf("done\n");
 		}
 	} else {
-		fprintf(stderr, "snapshot restore: %s\n", out);
+		fprintf(stderr, "failed: %s\n", out);
 		exit(1);
 	}
 }

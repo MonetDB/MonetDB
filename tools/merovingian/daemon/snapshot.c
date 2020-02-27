@@ -11,15 +11,19 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <time.h>
 
 #include "monetdb_config.h"
+#include "stream.h"
 #include "msabaoth.h"
 #include "merovingian.h"
 #include "mapi.h"
 #include "snapshot.h"
 
 static err validate_location(const char *path);
+static err unpack_tarstream(stream *tarstream, char *destdir, int skipcomponents);
 
 /* Create a snapshot of database dbname to file dest.
  * TODO: Make it work for databases without monetdb/monetdb root account.
@@ -97,6 +101,11 @@ snapshot_restore_from(char *dbname, char *source)
 	err e;
 	(void)dbname;
 	(void)source;
+	sabdb *stats = NULL;
+	char *dbfarm = NULL;
+	char *tmppath = NULL;
+	char *destpath = NULL;
+	stream *instream = NULL;
 
 	/* Do not read random files on the system. */
 	e = validate_location(source);
@@ -104,9 +113,67 @@ snapshot_restore_from(char *dbname, char *source)
 		goto bailout;
 	}
 
-	e =  newErr("not implemented");
+	/* For the time being, do not restore existing databases */
+	e = msab_getStatus(&stats, dbname);
+	if (e != NO_ERR)
+		goto bailout;
+	if (stats != NULL) {
+		e = newErr("database '%s' already exists", dbname);
+		goto bailout;
+	}
+
+	/* Figure out the directory to create */
+	e = msab_getDBfarm(&dbfarm);
+	if (e != NO_ERR)
+		goto bailout;
+	tmppath = malloc(strlen(dbfarm) + strlen(dbname) + 100);
+	sprintf(tmppath, "%s/.tmp.%s", dbfarm, dbname);
+	destpath = malloc(strlen(dbfarm) + strlen(dbname) + 100);
+	sprintf(destpath, "%s/%s", dbfarm, dbname);
+
+	/* Remove the tmp directory, if it exists. */
+	e = deletedir(tmppath);
+	if (e != NO_ERR)
+		goto bailout;
+
+	/* Open the file */
+	instream = open_rstream(source);
+	if (instream == NULL) {
+		e = newErr("Could not open %s", source);
+		goto bailout;
+	}
+
+	/* Now create the tmp directory */
+	if (mkdir(tmppath, 0755) < 0) {
+		e = newErr("could not create dir '%s': %s", tmppath, strerror(errno));
+		goto bailout;
+	}
+
+	/* fill it */
+	e = unpack_tarstream(instream, tmppath, 1);
+	if (e != NO_ERR)
+		goto bailout;
+
+	/* remove whatever's laying around in the destination directory */
+	e = deletedir(destpath);
+	if (e != NO_ERR)
+		goto bailout;
+
+	/* and finally, move the thing into place */
+	if (rename(tmppath, destpath) < 0) {
+		e = newErr("Couldn't rename '%s' to '%s': %s",
+			tmppath, destpath, strerror(errno));
+		goto bailout;
+	}
 
 bailout:
+	if (stats != NULL)
+		msab_freeStatus(&stats);
+	if (instream != NULL)
+		close_stream(instream);
+	free(dbfarm);
+	free(tmppath);
+	free(destpath);
 	return e;
 }
 
@@ -200,12 +267,164 @@ validate_location(const char *dest)
 		goto bailout;
 	}
 
-
-
 bailout:
 	free(resolved_snapdir);
 	free(dest_dup);
 	free(resolved_destination);
 
+	return e;
+}
+
+#define TAR_BLOCK_SIZE (512)
+
+/* Read a full block from the stream.
+ * Return 0 on succes, -1 on failure.
+ * Set *err to NULL if the failure is caused by an end of file
+ * on a block boundary, non-NULL on read error.
+ */
+static int
+read_tar_block(stream *s, char *block, err *error)
+{
+	ssize_t nread = mnstr_read(s, block, 1, TAR_BLOCK_SIZE);
+	if (nread <= 0) {
+		if (mnstr_errnr(s) != 0) {
+			/* failure */
+			*error = newErr("Read error (%zd): %s", nread, mnstr_error(s));
+		} else {
+			*error = NULL;
+		}
+		return -1;
+	}
+	if (nread < TAR_BLOCK_SIZE) {
+		*error = newErr("Incomplete read");
+		return -1;
+	}
+	*error = NULL;
+	return 0;
+}
+
+static char *
+extract_tar_member_filename(const char *block)
+{
+	const char *name_field = block;
+	size_t name_len = strnlen(name_field, 100);
+	const char *prefix_field = block + 345;
+	size_t prefix_len = strnlen(prefix_field, 155);
+	char *buf = malloc(100 + 1 + 155 + 1); // prefix slash name nul
+
+	if (prefix_len == 0) {
+		memmove(buf, name_field, name_len);
+		buf[name_len] = '\0';
+	} else {
+		memmove(buf, prefix_field, prefix_len);
+		buf[prefix_len] = '/';
+		memmove(buf + prefix_len + 1, name_field, name_len);
+		buf[prefix_len + 1 + name_len] = '\0';
+	}
+
+	return buf;
+}
+
+static ssize_t
+extract_tar_member_size(const char *block)
+{
+	size_t size;
+	char buf[13];
+	memmove(buf, block + 124, 12);
+	buf[12] = '\0';
+	if (sscanf(buf, "%zo", &size) != 1)
+		return -1;
+	return (ssize_t) size;
+}
+
+
+/* We're implementing our own untar instead of invoking /usr/bin/tar. Why?
+ * Wrapping /usr/bin/tar correctly is quite a lot of work. We have to fork, we
+ * have to get any error messages from tar to the child process and then to the
+ * parent process, etc. Also, we cannot depend on /usr/bin/tar being able to
+ * decompress any compression algorithms so to do it right we should decompress
+ * the data ourselves and pipe it to tar to unpack it. A lot of work and a lot
+ * of corner cases. Moreover, the snapshot generating tar code is also home
+ * grown. This is necessary because we snapshot parts of files, not whole files.
+ */
+static err
+unpack_tarstream(stream *tarstream, char *destdir, int skipfirstcomponent)
+{
+	char block[TAR_BLOCK_SIZE];
+	err e = NO_ERR;
+	char *whole_filename = NULL;
+	char *destfile = NULL;
+	FILE *outfile = NULL;
+
+	while (read_tar_block(tarstream, block, &e) >= 0) {
+		if (e != NO_ERR)
+			return e;
+
+		// Determine the target filename
+		free(whole_filename);
+		whole_filename = extract_tar_member_filename(block);
+		if (strlen(whole_filename) == 0) {
+			goto bailout; // done
+		}
+
+		char *useful_part;
+		if (skipfirstcomponent) {
+			useful_part = strchr(whole_filename, '/');
+			if (useful_part != NULL)
+				useful_part += 1;
+			else
+				useful_part = whole_filename;
+		} else {
+			useful_part = whole_filename;
+		}
+		destfile = realloc(destfile, strlen(destdir) + 1 + strlen(useful_part) + 1);
+		sprintf(destfile, "%s/%s", destdir, useful_part);
+
+		// Create any missing directories
+		for (char *p = destfile + strlen(destdir) + 1; *p != '\0'; p++) {
+			if (*p == '/') {
+				*p = '\0';
+				int ret = mkdir(destfile, 0755);
+				if (ret < 0 && errno != EEXIST) {
+					e = newErr("Could not create directory %s: %s", destfile, strerror(errno));
+					goto bailout;
+				}
+				*p = '/';
+			}
+		}
+
+		// Copy the data
+		outfile = fopen(destfile, "w");
+		if (outfile == NULL) {
+			e = newErr("Could not open %s", destfile);
+			goto bailout;
+		}
+		ssize_t size = extract_tar_member_size(block);
+		while (size > 0) {
+			int read_result = read_tar_block(tarstream, block, &e);
+			if (e != NO_ERR) {
+				goto bailout;
+			}
+			if (read_result < 0) {
+				e = newErr("unexpected end of tar file");
+				goto bailout;
+			}
+			size_t nwrite = size > TAR_BLOCK_SIZE ? TAR_BLOCK_SIZE : size;
+			size_t written = fwrite(block, 1, nwrite, outfile);
+			if (written < nwrite) {
+				e = newErr("Error writing %s: %s", destfile, strerror(errno));
+				goto bailout;
+			}
+			size -= TAR_BLOCK_SIZE;
+		}
+		fclose(outfile);
+		outfile = NULL;
+	}
+
+bailout:
+	if (outfile != NULL)
+		fclose(outfile);
+	free(whole_filename);
+	free(destfile);
 	return e;
 }
