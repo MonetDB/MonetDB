@@ -57,16 +57,14 @@ insert_exp_array(mvc *sql, sql_table *t, int *Len)
 	return SA_ZNEW_ARRAY(sql->sa, sql_exp*, *Len);
 }
 
-#define get_basetable(rel) rel->l
-
-static sql_table *
-get_table( sql_rel *t)
+sql_table *
+get_table(sql_rel *t)
 {
 	sql_table *tab = NULL;
 
 	assert(is_updateble(t)); 
 	if (t->op == op_basetable) { /* existing base table */
-		tab = get_basetable(t);
+		tab = t->l;
 	} else if (t->op == op_ddl &&
 			   (t->flag == ddl_alter_table || t->flag == ddl_create_table || t->flag == ddl_create_view)) {
 		return rel_ddl_table_get(t);

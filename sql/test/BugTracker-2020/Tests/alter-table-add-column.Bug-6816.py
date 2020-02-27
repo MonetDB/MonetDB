@@ -5,7 +5,6 @@ try:
 except ImportError:
     import process
 
-s = process.server(args = [], stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
 c1 = process.client('sql', stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
 c2 = process.client('sql', stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
 
@@ -23,9 +22,5 @@ out, err = c2.communicate('''\
 INSERT INTO "testVarcharToClob" VALUES ('value3');\
 DROP TABLE "testVarcharToClob";
 ''')
-sys.stdout.write(out)
-sys.stderr.write(err)
-
-out, err = s.communicate()
 sys.stdout.write(out)
 sys.stderr.write(err)

@@ -222,10 +222,22 @@ stdout of test 'sqlsmith-exists` in directory 'sql/test/mergetables` itself:
 #          subq_0.c5 AS c11,
 #          subq_0.c4 AS c12
 #   FROM
-% sys. # table_name
+% . # table_name
 % c0 # name
 % int # type
 % 1 # length
+[ 1	]
+[ 2	]
+[ 3	]
+#SELECT 1 FROM integers WHERE CASE WHEN EXISTS (SELECT 1 WHERE i IS NULL) THEN true ELSE true END;
+% . # table_name
+% single_value # name
+% tinyint # type
+% 1 # length
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
 #select 
 # subq_1.c1 as c0, 
 # subq_1.c2 as c1, 

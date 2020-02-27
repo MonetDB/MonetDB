@@ -72,7 +72,7 @@ ssize_t
 IDtoString(str *retval, size_t *len, const char *handle, bool external)
 {
 	size_t hl = strlen(handle) + 1;
-	if (external && strcmp(handle, str_nil) == 0)
+	if (external && strNil(handle))
 		hl = 4;
 	if (*len < hl || *retval == NULL) {
 		GDKfree(*retval);
@@ -81,7 +81,7 @@ IDtoString(str *retval, size_t *len, const char *handle, bool external)
 			return -1;
 		*len = hl;
 	}
-	if (external && strcmp(handle, str_nil) == 0)
+	if (external && strNil(handle))
 		strcpy(*retval, "nil");
 	else
 		memcpy(*retval, handle, hl);

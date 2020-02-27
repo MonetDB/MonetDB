@@ -423,6 +423,7 @@ SERVERlistenThread(SOCKET *Sock)
 			msgh.msg_namelen = 0;
 			msgh.msg_iov = &iov;
 			msgh.msg_iovlen = 1;
+			msgh.msg_flags = 0;
 			msgh.msg_control = ccmsg;
 			msgh.msg_controllen = sizeof(ccmsg);
 
@@ -565,7 +566,7 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 	if (psock == NULL)
 		throw(MAL,"mal_mapi.listen", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
-	if (usockfile == NULL || strcmp(usockfile, str_nil) == 0) {
+	if (strNil(usockfile)) {
 		usockfile = NULL;
 	} else {
 #ifndef HAVE_SYS_UN_H

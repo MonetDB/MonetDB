@@ -13,9 +13,6 @@ def client(next_user, next_passwd, input):
     sys.stdout.write(out)
     sys.stderr.write(err)
 
-
-s = process.server(args=[], stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE)
-
 client('monetdb', 'monetdb', '''\
 CREATE schema  "myschema";\
 CREATE TABLE "myschema"."test" ("id" integer, "name" varchar(20));\
@@ -42,7 +39,3 @@ client('monetdb', 'monetdb', '''\
 DROP USER myuser;\
 DROP SCHEMA "myschema" CASCADE;
 ''')
-
-out, err = s.communicate()
-sys.stdout.write(out)
-sys.stderr.write(err)

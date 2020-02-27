@@ -3931,7 +3931,7 @@ exps_merge_select_rse( mvc *sql, list *l, list *r )
 					continue;
 				mine = exp_binop(sql->sa, le->r, re->r, min);
 				maxe = exp_binop(sql->sa, le->f, re->f, max);
-				fnd = exp_compare2(sql->sa, le->l, mine, maxe, le->flag);
+				fnd = exp_compare2(sql->sa, le->l, mine, maxe, CMP_BETWEEN|le->flag);
 			}
 			if (fnd)
 				append(nexps, fnd);
@@ -5034,7 +5034,7 @@ rel_push_join_down_union(mvc *sql, sql_rel *rel, int *changes)
 		list *exps = rel->exps;
 		sql_exp *je = !list_empty(exps)?exps->h->data:NULL;
 
-		if (!l || !r || need_distinct(l) || need_distinct(r))
+		if (!l || !r || need_distinct(l) || need_distinct(r) || rel_is_ref(l) || rel_is_ref(r))
 			return rel;
 		if (l->op == op_project)
 			l = l->l;
@@ -7743,9 +7743,9 @@ exp_merge_range(sql_allocator *sa, list *exps)
 					    f->flag == cmp_lte)) 
 						continue;
 					if (!swap) 
-						ne = exp_compare2(sa, le, re, rf, compare2range(e->flag, f->flag));
+						ne = exp_compare2(sa, le, re, rf, CMP_BETWEEN|compare2range(e->flag, f->flag));
 					else
-						ne = exp_compare2(sa, le, rf, re, compare2range(f->flag, e->flag));
+						ne = exp_compare2(sa, le, rf, re, CMP_BETWEEN|compare2range(f->flag, e->flag));
 
 					list_remove_data(exps, e);
 					list_remove_data(exps, f);
@@ -7768,7 +7768,7 @@ exp_merge_range(sql_allocator *sa, list *exps)
 					comp_type ef = (comp_type) e->flag, ff = (comp_type) f->flag;
 				
 					/* both swapped ? */
-				     	if (exp_match_exp(re, rf)) {
+					if (exp_match_exp(re, rf)) {
 						t = re; 
 						re = le;
 						le = t;
@@ -7780,7 +7780,7 @@ exp_merge_range(sql_allocator *sa, list *exps)
 					}
 
 					/* is left swapped ? */
-				     	if (exp_match_exp(re, lf)) {
+					if (exp_match_exp(re, lf)) {
 						t = re; 
 						re = le;
 						le = t;
@@ -7788,14 +7788,14 @@ exp_merge_range(sql_allocator *sa, list *exps)
 					}
 
 					/* is right swapped ? */
-				     	if (exp_match_exp(le, rf)) {
+					if (exp_match_exp(le, rf)) {
 						t = rf; 
 						rf = lf;
 						lf = t;
 						ff = swap_compare(ff);
 					}
 
-				    	if (!exp_match_exp(le, lf))
+					if (!exp_match_exp(le, lf))
 						continue;
 
 					/* for now only   c1 <[=] x <[=] c2 */ 
@@ -7807,9 +7807,9 @@ exp_merge_range(sql_allocator *sa, list *exps)
 					if (lt && (ff == cmp_lt || ff == cmp_lte)) 
 						continue;
 					if (!swap) 
-						ne = exp_compare2(sa, le, re, rf, compare2range(ef, ff));
+						ne = exp_compare2(sa, le, re, rf, CMP_BETWEEN|compare2range(ef, ff));
 					else
-						ne = exp_compare2(sa, le, rf, re, compare2range(ff, ef));
+						ne = exp_compare2(sa, le, rf, re, CMP_BETWEEN|compare2range(ff, ef));
 
 					list_remove_data(exps, e);
 					list_remove_data(exps, f);

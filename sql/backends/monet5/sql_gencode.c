@@ -424,7 +424,7 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 	free(s); 
 
 	s = "";
-	if (call && call->type == st_list) {
+	if (call && call->type == st_list) { /* Send existing variables in the plan */
 		node *n;
 
 		buf[0] = 0;
@@ -443,10 +443,44 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 		}
 		s = buf;
 	}
-	if(buf) {
+	if (buf) {
 		o = newFcnCall(curBlk, remoteRef, putRef);
 		o = pushArgument(curBlk, o, q);
 		o = pushStr(curBlk, o, s);	/* signature */
+		p = pushArgument(curBlk, p, getArg(o,0));
+	} else {
+		GDKfree(lname);
+		sql_error(m, 001, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return -1;
+	}
+
+	buf[0] = 0;
+	nr = 0;
+	for (n = r->exps->h; n; n = n->next) { /* Send SQL types of the projection's expressions */
+		sql_exp *e = n->data;
+		sql_subtype *t = exp_subtype(e);
+		str next = subtype2string(t);
+
+		if (!next) {
+			GDKfree(buf);
+			buf = NULL;
+			break;
+		}
+		if ((nr + 100) > len) {
+			buf = GDKrealloc(buf, len*=2);
+			if (buf == NULL) {
+				GDKfree(next);
+				break;
+			}
+		}
+
+		nr += snprintf(buf+nr, len-nr, "%s%s", next, n->next?"%%":"");
+		GDKfree(next);
+	}
+	if (buf) {
+		o = newFcnCall(curBlk, remoteRef, putRef);
+		o = pushArgument(curBlk, o, q);
+		o = pushStr(curBlk, o, s);	/* SQL types as a single string */
 		p = pushArgument(curBlk, p, getArg(o,0));
 		GDKfree(buf);
 	} else {

@@ -44,6 +44,7 @@ OPTjsonImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			q = addArgument(mb, q, bu);
 			q = addArgument(mb, q, br);
 			q = addArgument(mb, q, bj);
+			pushInstruction(mb,q);
 			j = getArg(q,0);
 			p= getInstrPtr(mb,0);
 			setDestVar(q, newTmpVariable(mb, TYPE_str));

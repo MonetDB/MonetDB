@@ -2327,13 +2327,16 @@ void
 store_lock(void)
 {
 	MT_lock_set(&bs_lock);
-	TRC_DEBUG(SQL_STORE, "Store locked\n");
+	/* tell GDK allocation functions to ignore limits */
+	MT_thread_setworking("store locked");
 }
 
 void
 store_unlock(void)
 {
 	TRC_DEBUG(SQL_STORE, "Store unlocked\n");
+	/* tell GDK allocation functions to honor limits again */
+	MT_thread_setworking("store unlocked");
 	MT_lock_unset(&bs_lock);
 }
 
@@ -3548,8 +3551,6 @@ _trans_init(sql_trans *tr, backend_stack stk, sql_trans *otr)
 	tr->schema_updates = 0;
 	tr->dropped = NULL;
 	tr->status = 0;
-	if (otr != gtrans)
-		tr->schema_updates = otr->schema_updates;
 
 	tr->schema_number = store_schema_number();
 	tr->parent = otr;
@@ -3615,6 +3616,19 @@ trans_init(sql_trans *tr, backend_stack stk, sql_trans *otr)
 							if (!istmp && !c->base.allocated)
 								c->data = NULL;
 							assert (istmp || !c->base.allocated);
+						} else {
+							/* for now assert */
+							assert(0);
+						}
+					}
+					if (pt->members.set && t->members.set)
+					for (i = pt->members.set->h, j = t->members.set->h; i && j; i = i->next, j = j->next ) { 
+						sql_part *pc = i->data; /* parent transactions part */
+						sql_part *c = j->data; 
+
+						if (pc->base.id == c->base.id) {
+							c->base.rtime = c->base.wtime = 0;
+							c->base.stime = pc->base.wtime;
 						} else {
 							/* for now assert */
 							assert(0);
@@ -4185,12 +4199,6 @@ rollforward_update_part(sql_trans *tr, sql_base *fpt, sql_base *tpt, int mode)
 				list_append(pt->part.values, nextv);
 			}
 		}
-
-		if (tpt->rtime < fpt->rtime)
-			tpt->rtime = fpt->rtime;
-		if (tpt->wtime < fpt->wtime)
-			tpt->wtime = fpt->wtime;
-		fpt->rtime = fpt->wtime = 0;
 	}
 	return LOG_OK;
 }
@@ -4348,7 +4356,7 @@ rollforward_trans(sql_trans *tr, int mode)
 
 	if (mode == R_APPLY && tr->parent && tr->wtime > tr->parent->wtime) {
 		tr->parent->wtime = tr->wtime;
-		tr->parent->schema_updates = tr->schema_updates;
+		tr->parent->schema_updates += tr->schema_updates;
 	}
 
 	if (tr->moved_tables) {
@@ -4508,8 +4516,9 @@ reset_changeset(sql_trans *tr, changeset * fs, changeset * pfs, sql_base *b, res
 static int
 reset_idx(sql_trans *tr, sql_idx *fi, sql_idx *pfi)
 {
+	(void)tr;
 	/* did we access the idx or is the global changed after we started */
-	if (fi->base.rtime || fi->base.wtime || tr->stime < pfi->base.wtime) {
+	if (fi->base.rtime || fi->base.wtime || fi->base.stime < pfi->base.wtime) {
 		if (isTable(fi->t)) 
 			store_funcs.destroy_idx(NULL, fi);
 	}
@@ -4520,7 +4529,7 @@ static int
 reset_type(sql_trans *tr, sql_type *ft, sql_type *pft)
 {
 	/* did we access the type or is the global changed after we started */
-	if (ft->base.rtime || ft->base.wtime || tr->stime < pft->base.wtime) {
+	if (ft->base.rtime || ft->base.wtime || ft->base.stime < pft->base.wtime) {
 
 		ft->sqlname = pft->sqlname;
 		ft->radix = pft->radix;
@@ -4538,7 +4547,7 @@ static int
 reset_func(sql_trans *tr, sql_func *ff, sql_func *pff)
 {
 	/* did we access the type or is the global changed after we started */
-	if (ff->base.rtime || ff->base.wtime || tr->stime < pff->base.wtime) {
+	if (ff->base.rtime || ff->base.wtime || ff->base.stime < pff->base.wtime) {
 
 		ff->imp = pff->imp;
 		ff->mod = pff->mod;
@@ -4564,7 +4573,7 @@ static int
 reset_column(sql_trans *tr, sql_column *fc, sql_column *pfc)
 {
 	/* did we access the column or is the global changed after we started */
-	if (fc->base.rtime || fc->base.wtime || tr->stime < pfc->base.wtime) {
+	if (fc->base.rtime || fc->base.wtime || fc->base.stime < pfc->base.wtime) {
 
 		if (isTable(fc->t)) 
 			store_funcs.destroy_col(NULL, fc);
@@ -4608,7 +4617,7 @@ reset_seq(sql_trans *tr, sql_sequence *ft, sql_sequence *pft)
 static int
 reset_part(sql_trans *tr, sql_part *ft, sql_part *pft)
 {
-	if (ft->base.rtime || ft->base.wtime || tr->stime < pft->base.wtime) {
+	if (ft->base.rtime || ft->base.wtime || ft->base.stime < pft->base.wtime) {
 
 		if (pft->t) {
 			sql_table *mt = pft->t;
@@ -4633,8 +4642,6 @@ reset_part(sql_trans *tr, sql_part *ft, sql_part *pft)
 		} else if (pft->t && isListPartitionTable(pft->t)) {
 			ft->part.values = pft->part.values;
 		}
-
-		ft->base.wtime = ft->base.rtime = 0;
 	}
 	return LOG_OK;
 }
@@ -4646,7 +4653,7 @@ reset_table(sql_trans *tr, sql_table *ft, sql_table *pft)
 		return LOG_OK;
 
 	/* did we access the table or did the global change */
-	if (ft->base.rtime || ft->base.wtime || tr->stime < pft->base.wtime) {
+	if (ft->base.rtime || ft->base.wtime || ft->base.stime < pft->base.wtime) {
 		int ok = LOG_OK;
 
 		if (isTable(ft) && !isTempTable(ft)) 
@@ -4721,26 +4728,22 @@ reset_schema(sql_trans *tr, sql_schema *fs, sql_schema *pfs)
 		return ok;
 	}
 
-	/* did we access the schema or is the global changed after we started */
-	if (fs->base.rtime || fs->base.wtime || tr->stime < pfs->base.wtime) {
-
-		/* apply possible renaming -> transaction rollbacks or when it starts, inherit from the previous transaction */
-		if (strcmp(fs->base.name, pfs->base.name) != 0) {
-			list_hash_delete(tr->schemas.set, fs, NULL);
-			fs->base.name = sa_strdup(tr->parent->sa, pfs->base.name);
-			if (!list_hash_add(tr->schemas.set, fs, NULL))
-				ok = LOG_ERR;
-		}
-
-		if (ok == LOG_OK)
-			ok = reset_changeset(tr, &fs->types, &pfs->types, &fs->base, (resetf) &reset_type, (dupfunc) &type_dup);
-		if (ok == LOG_OK)
-			ok = reset_changeset(tr, &fs->funcs, &pfs->funcs, &fs->base, (resetf) &reset_func, (dupfunc) &func_dup);
-		if (ok == LOG_OK)
-			ok = reset_changeset(tr, &fs->seqs, &pfs->seqs, &fs->base, (resetf) &reset_seq, (dupfunc) &seq_dup);
-		if (ok == LOG_OK)
-			ok = reset_changeset(tr, &fs->tables, &pfs->tables, &fs->base, (resetf) &reset_table, (dupfunc) &table_dup);
+	/* apply possible renaming -> transaction rollbacks or when it starts, inherit from the previous transaction */
+	if (strcmp(fs->base.name, pfs->base.name) != 0) {
+		list_hash_delete(tr->schemas.set, fs, NULL);
+		fs->base.name = sa_strdup(tr->parent->sa, pfs->base.name);
+		if (!list_hash_add(tr->schemas.set, fs, NULL))
+			ok = LOG_ERR;
 	}
+
+	if (ok == LOG_OK)
+		ok = reset_changeset(tr, &fs->types, &pfs->types, &fs->base, (resetf) &reset_type, (dupfunc) &type_dup);
+	if (ok == LOG_OK)
+		ok = reset_changeset(tr, &fs->funcs, &pfs->funcs, &fs->base, (resetf) &reset_func, (dupfunc) &func_dup);
+	if (ok == LOG_OK)
+		ok = reset_changeset(tr, &fs->seqs, &pfs->seqs, &fs->base, (resetf) &reset_seq, (dupfunc) &seq_dup);
+	if (ok == LOG_OK)
+		ok = reset_changeset(tr, &fs->tables, &pfs->tables, &fs->base, (resetf) &reset_table, (dupfunc) &table_dup);
 	return ok;
 }
 
@@ -4879,7 +4882,6 @@ sql_trans_commit(sql_trans *tr)
 		prev_oid = store_oid;
 		if (ok == LOG_OK)
 			ok = logger_funcs.log_tend();
-		tr->schema_number = store_schema_number();
 	}
 	if (ok == LOG_OK) {
 		/* It is save to rollforward the changes now. In case 
@@ -5639,7 +5641,7 @@ sql_trans_rename_schema(sql_trans *tr, sqlid id, const char *new_name)
 	sql_schema *s = n->data;
 	oid rid;
 
-	assert(new_name && strcmp(new_name, str_nil) != 0);
+	assert(!strNil(new_name));
 
 	list_hash_delete(tr->schemas.set, s, NULL); /* has to re-hash the entry in the changeset */
 	s->base.name = sa_strdup(tr->sa, new_name);
@@ -5717,6 +5719,7 @@ sql_trans_add_table(sql_trans *tr, sql_table *mt, sql_table *pt)
 	cs_add(&mt->members, p, TR_NEW);
 	mt->s->base.wtime = mt->base.wtime = pt->s->base.wtime = pt->base.wtime = p->base.wtime = tr->wtime = tr->wstime;
 	table_funcs.table_insert(tr, sysobj, &mt->base.id, p->base.name, &p->base.id);
+	tr->schema_updates ++;
 	return mt;
 }
 
@@ -5941,7 +5944,7 @@ sql_trans_rename_table(sql_trans *tr, sql_schema *s, sqlid id, const char *new_n
 	sql_table *t = n->data;
 	oid rid;
 
-	assert(new_name && strcmp(new_name, str_nil) != 0);
+	assert(!strNil(new_name));
 
 	list_hash_delete(s->tables.set, t, NULL); /* has to re-hash the entry in the changeset */
 	t->base.name = sa_strdup(tr->sa, new_name);
@@ -6027,6 +6030,7 @@ sql_trans_del_table(sql_trans *tr, sql_table *mt, sql_table *pt, int drop_action
 
 	if (drop_action == DROP_CASCADE)
 		sql_trans_drop_table(tr, mt->s, pt->base.id, drop_action);
+	tr->schema_updates ++;
 	return mt;
 }
 
@@ -6360,7 +6364,7 @@ sql_trans_rename_column(sql_trans *tr, sql_table *t, const char *old_name, const
 	sql_column *c = find_sql_column(t, old_name);
 	oid rid;
 
-	assert(new_name && strcmp(new_name, str_nil) != 0);
+	assert(!strNil(new_name));
 
 	list_hash_delete(t->columns.set, c, NULL); /* has to re-hash the entry in the changeset */
 	c->base.name = sa_strdup(tr->sa, new_name);

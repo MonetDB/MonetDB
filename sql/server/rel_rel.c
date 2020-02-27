@@ -1801,6 +1801,9 @@ exps_exps_exp_visitor(mvc *sql, sql_rel *rel, list *lists, int depth, exp_rewrit
 static sql_exp *
 exp_visitor(mvc *sql, sql_rel *rel, sql_exp *e, int depth, exp_rewrite_fptr exp_rewriter) 
 {
+	if (THRhighwater())
+		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
+
 	assert(e);
 	switch(e->type) {
 	case e_column:
@@ -1883,6 +1886,9 @@ exps_exp_visitor(mvc *sql, sql_rel *rel, list *exps, int depth, exp_rewrite_fptr
 sql_rel *
 rel_exp_visitor(mvc *sql, sql_rel *rel, exp_rewrite_fptr exp_rewriter) 
 {
+	if (THRhighwater())
+		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
+
 	if (!rel)
 		return rel;
 
@@ -1952,6 +1958,9 @@ static list *exps_rel_visitor(mvc *sql, list *exps, rel_rewrite_fptr rel_rewrite
 static sql_exp *
 exp_rel_visitor(mvc *sql, sql_exp *e, rel_rewrite_fptr rel_rewriter, int *changes, bool topdown) 
 {
+	if (THRhighwater())
+		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
+
 	assert(e);
 	switch(e->type) {
 	case e_column:
@@ -2044,8 +2053,12 @@ do_rel_visitor(mvc *sql, sql_rel *rel, rel_rewrite_fptr rel_rewriter, int *chang
 static inline sql_rel *
 rel_visitor(mvc *sql, sql_rel *rel, rel_rewrite_fptr rel_rewriter, int *changes, bool topdown) 
 {
+	if (THRhighwater())
+		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
+
 	if (!rel)
 		return rel;
+
 	if (topdown) {
 		if (!(rel = do_rel_visitor(sql, rel, rel_rewriter, changes, true)))
 			return rel;

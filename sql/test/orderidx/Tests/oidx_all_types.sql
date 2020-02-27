@@ -1,3 +1,4 @@
+start transaction;
 SET TIME ZONE INTERVAL '+01:00' HOUR TO MINUTE;
 
 -- first create a table for all basic data types and fill it with some data rows (including duplicate rows)
@@ -338,3 +339,4 @@ drop table if exists all_types cascade;
 
 select type, name from sys.idxs where table_id in (select id from sys._tables where name = 'all_types') order by name;
 
+rollback;
