@@ -77,9 +77,7 @@
 
 /* also see gdk.h for these */
 #define THRDMASK	(1)
-#define THRDDEBUG	if (GDKdebug & THRDMASK)
 #define TEMMASK		(1<<10)
-#define TEMDEBUG	if (GDKdebug & TEMMASK)
 
 /*
  * @- pthreads Includes and Definitions

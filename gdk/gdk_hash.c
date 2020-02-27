@@ -116,7 +116,7 @@ doHASHdestroy(BAT *b, Hash *hs)
 			hp = BBP_cache(p);
 
 		if (!hp || hs != hp->thash) {
-			ACCELDEBUG fprintf(stderr, "#%s: HASHdestroy(" ALGOBATFMT "): removing%s hash\n", MT_thread_getname(), ALGOBATPAR(b), *(size_t *) hs->heapbckt.base & (1 << 24) ? " persisted" : "");
+			TRC_DEBUG(ACCELERATOR, ALGOBATFMT ": removing%s hash\n", ALGOBATPAR(b), *(size_t *) hs->heapbckt.base & (1 << 24) ? " persisted" : "");
 			HEAPfree(&hs->heapbckt, true);
 			HEAPfree(&hs->heaplink, true);
 			GDKfree(hs);
@@ -199,7 +199,7 @@ HASHcollisions(BAT *b, Hash *h, const char *func)
 				max = cnt;
 			total += cnt;
 		}
-	TRC_DEBUG(GDK_HASH,
+	TRC_DEBUG(ACCELERATOR,
 		"%s(" ALGOBATFMT "): statistics " BUNFMT ", "
 		"entries " LLFMT ", nunique " BUNFMT ", nbucket " BUNFMT ", "
 		"max " LLFMT ", avg %2.6f;\n",
@@ -300,7 +300,7 @@ HASHgrowbucket(BAT *b)
 	BUN onbucket = h->nbucket;
 	lng t0 = 0;
 
-	ACCELDEBUG t0 = GDKusec();
+	TRC_DEBUG_IF(ACCELERATOR) t0 = GDKusec();
 
 	/* only needed to fix hash tables built before this fix was
 	 * introduced */
@@ -384,10 +384,10 @@ HASHgrowbucket(BAT *b)
 		BATsetprop_nolock(b, GDK_HASH_BUCKETS, TYPE_oid,
 				  &(oid){h->nbucket});
 	}
-	ACCELDEBUG if (h->nbucket > onbucket) {
-		fprintf(stderr, "#%s: %s(" ALGOBATFMT ") " BUNFMT
+	TRC_DEBUG_IF(ACCELERATOR) if (h->nbucket > onbucket) {
+		TRC_DEBUG_ENDIF(ACCELERATOR, ALGOBATFMT " " BUNFMT
 			" -> " BUNFMT " buckets (" LLFMT " usec)\n",
-			MT_thread_getname(), __func__, ALGOBATPAR(b),
+			ALGOBATPAR(b),
 			onbucket, h->nbucket, GDKusec() - t0);
 		HASHcollisions(b, h, __func__);
 	}
@@ -499,7 +499,7 @@ BATcheckhash(BAT *b)
 									&(oid){h->nunique});
 								b->thash = h;
 								TRC_DEBUG(ACCELERATOR,
-									  "BATcheckhash(" ALGOBATFMT "): reusing persisted hash\n", ALGOBATPAR(b));
+									  ALGOBATFMT ": reusing persisted hash\n", ALGOBATPAR(b));
 								MT_lock_unset(&b->batIdxLock);
 								return true;
 							}
@@ -536,8 +536,7 @@ BATcheckhash(BAT *b)
 	}
 	ret = b->thash != NULL;
 	if (ret)
-		TRC_DEBUG(ACCELERATOR,
-				"(" ALGOBATFMT "): already has hash, waited " LLFMT " usec\n", ALGOBATPAR(b), t);
+		TRC_DEBUG(ACCELERATOR, ALGOBATFMT ": already has hash, waited " LLFMT " usec\n", ALGOBATPAR(b), t);
 	return ret;
 }
 
@@ -605,7 +604,7 @@ BAThashsave(BAT *b, bool dosync)
 				}
 			}
 			TRC_DEBUG(ACCELERATOR,
-					"(" ALGOBATFMT ") persisting hash %s%s (" LLFMT " usec)%s\n", ALGOBATPAR(b), hp->filename, dosync ? "" : " no sync", GDKusec() - t0, rc == GDK_SUCCEED ? "" : " failed");
+				  ALGOBATFMT ": persisting hash %s%s (" LLFMT " usec)%s\n", ALGOBATPAR(b), hp->filename, dosync ? "" : " no sync", GDKusec() - t0, rc == GDK_SUCCEED ? "" : " failed");
 		}
 	}
 	return rc;
@@ -708,16 +707,16 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 
 	TRC_DEBUG_IF(ACCELERATOR) t0 = GDKusec();
 	TRC_DEBUG(ACCELERATOR,
-			"BAThash(" ALGOBATFMT "): create hash;\n", ALGOBATPAR(b));
+		  ALGOBATFMT ": create hash;\n", ALGOBATPAR(b));
 	if (b->ttype == TYPE_void) {
 		if (is_oid_nil(b->tseqbase)) {
 			TRC_DEBUG(ACCELERATOR,
-					"cannot create hash-table on void-NIL column.\n");
+				  "cannot create hash-table on void-NIL column.\n");
 			GDKerror("BAThash: no hash on void/nil column\n");
 			return NULL;
 		}
 		TRC_DEBUG(ACCELERATOR,
-				"creating hash-table on void column..\n");
+			  "creating hash-table on void column..\n");
 		assert(0);
 		tpe = TYPE_void;
 	}
@@ -858,7 +857,7 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 		}
 		TRC_DEBUG_IF(ACCELERATOR) if (p < cnt1)
 			TRC_DEBUG_ENDIF(ACCELERATOR,
-					"(%s): abort starthash with "
+					"%s: abort starthash with "
 				"mask " BUNFMT " at " BUNFMT " after " LLFMT " usec\n", BATgetId(b), mask, p, GDKusec() - t1);
 		if (p == cnt1 || mask == maxmask)
 			break;
@@ -1088,10 +1087,9 @@ HASHfree(BAT *b)
 		MT_lock_set(&b->batIdxLock);
 		if ((h = b->thash) != NULL && h != (Hash *) 1) {
 			bool rmheap = GDKinmemory() || h->heaplink.dirty || h->heapbckt.dirty;
-			ACCELDEBUG fprintf(stderr, "#%s: %s: "ALGOBATFMT" free hash %s\n",
-					   MT_thread_getname(), __func__,
-					   ALGOBATPAR(b),
-					   rmheap ? "removing" : "keeping");
+			TRC_DEBUG(ACCELERATOR, ALGOBATFMT " free hash %s\n",
+				  ALGOBATPAR(b),
+				  rmheap ? "removing" : "keeping");
 
 			b->thash = rmheap ? NULL : (Hash *) 1;
 			HEAPfree(&h->heapbckt, rmheap);

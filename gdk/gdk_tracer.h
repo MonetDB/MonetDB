@@ -115,22 +115,22 @@ typedef enum {
  */
 // COMPONENTS
 #define FOREACH_COMP(COMP)			\
-	COMP( ALLOC )				\
-	COMP( PAR )				\
-	COMP( ALGO )				\
-	COMP( DELTA )				\
-	COMP( IO_ )				\
-	COMP( TEM )				\
-	COMP( HEAP )				\
-	COMP( BAT_ )				\
 	COMP( ACCELERATOR )			\
-	COMP( TRACE )				\
+	COMP( ALGO )				\
+	COMP( ALLOC )				\
+	COMP( BAT_ )				\
 	COMP( CHECK_ )				\
+	COMP( DELTA )				\
+	COMP( HEAP )				\
+	COMP( IO_ )				\
+	COMP( PAR )				\
+	COMP( PERF )				\
+	COMP( TEM )				\
 	COMP( THRD )				\
+	COMP( TRACE )				\
 						\
 	COMP( GEOM )				\
 	COMP( LIDAR )				\
-	COMP( BAM_ )				\
 	COMP( FITS )				\
 	COMP( SHP )				\
 						\
@@ -166,12 +166,7 @@ typedef enum {
 						\
 	COMP( MAL_OPTIMIZER )			\
 						\
-	COMP( GDK_TM )				\
-	COMP( GDK_UTILS )			\
-	COMP( GDK_POSIX )			\
-	COMP( GDK_SYSTEM )			\
-	COMP( GDK_IMPRINTS )			\
-	COMP( GDK_HASH )			\
+	COMP( GDK )				\
 						\
 	COMP( COMPONENTS_COUNT )
 
