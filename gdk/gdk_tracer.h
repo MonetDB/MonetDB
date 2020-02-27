@@ -338,25 +338,25 @@ gdk_export void GDKtracer_reinit_basic(int sig);
 gdk_export gdk_return GDKtracer_stop(void);
 
 
-gdk_export gdk_return GDKtracer_set_component_level(int comp, int lvl);
+gdk_export gdk_return GDKtracer_set_component_level(const char *comp, const char *lvl);
 
 
-gdk_export gdk_return GDKtracer_reset_component_level(int comp);
+gdk_export gdk_return GDKtracer_reset_component_level(const char *comp);
 
 
-gdk_export gdk_return GDKtracer_set_layer_level(int layer, int lvl);
+gdk_export gdk_return GDKtracer_set_layer_level(const char *layer, const char *lvl);
 
 
-gdk_export gdk_return GDKtracer_reset_layer_level(int layer);
+gdk_export gdk_return GDKtracer_reset_layer_level(const char *layer);
 
 
-gdk_export gdk_return GDKtracer_set_flush_level(int lvl);
+gdk_export gdk_return GDKtracer_set_flush_level(const char *lvl);
 
 
 gdk_export gdk_return GDKtracer_reset_flush_level(void);
 
 
-gdk_export gdk_return GDKtracer_set_adapter(int adapter);
+gdk_export gdk_return GDKtracer_set_adapter(const char *adapter);
 
 
 gdk_export gdk_return GDKtracer_reset_adapter(void);

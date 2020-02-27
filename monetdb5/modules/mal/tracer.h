@@ -17,13 +17,13 @@
 
 
 mal_export str TRACERflush_buffer(void *ret);
-mal_export str TRACERset_component_level(void *ret, int *comp_id, int *lvl_id);
-mal_export str TRACERreset_component_level(void *ret, int *comp_id);
-mal_export str TRACERset_layer_level(void *ret, int *layer_id, int *lvl_id);
-mal_export str TRACERreset_layer_level(void *ret, int *layer_id);
-mal_export str TRACERset_flush_level(void *ret, int *lvl_id);
+mal_export str TRACERset_component_level(void *ret, str *comp_id, str *lvl_id);
+mal_export str TRACERreset_component_level(void *ret, str *comp_id);
+mal_export str TRACERset_layer_level(void *ret, str *layer_id, str *lvl_id);
+mal_export str TRACERreset_layer_level(void *ret, str *layer_id);
+mal_export str TRACERset_flush_level(void *ret, str *lvl_id);
 mal_export str TRACERreset_flush_level(void *ret);
-mal_export str TRACERset_adapter(void *ret, int *adapter_id);
+mal_export str TRACERset_adapter(void *ret, str *adapter_id);
 mal_export str TRACERreset_adapter(void *ret);
 mal_export str TRACERcomp_info(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 

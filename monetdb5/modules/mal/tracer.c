@@ -26,18 +26,18 @@ TRACERflush_buffer(void *ret)
 
 
 str
-TRACERset_component_level(void *ret, int *comp_id, int *lvl_id)
+TRACERset_component_level(void *ret, str *comp_id, str *lvl_id)
 {
     (void) ret;
     if (GDKtracer_set_component_level(*comp_id, *lvl_id) != GDK_SUCCEED)
-        throw(MAL, __FUNCTION__, ILLEGAL_ARGUMENT"\n");
+        throw(MAL, __FUNCTION__, ILLEGAL_ARGUMENT);
 
     return MAL_SUCCEED; 
 }
 
 
 str
-TRACERreset_component_level(void *ret, int *comp_id)
+TRACERreset_component_level(void *ret, str *comp_id)
 {
     (void) ret;
     if (GDKtracer_reset_component_level(*comp_id) != GDK_SUCCEED)
@@ -48,7 +48,7 @@ TRACERreset_component_level(void *ret, int *comp_id)
 
 
 str
-TRACERset_layer_level(void *ret, int *layer_id, int *lvl_id)
+TRACERset_layer_level(void *ret, str *layer_id, str *lvl_id)
 {
     (void) ret;
     if (GDKtracer_set_layer_level(*layer_id, *lvl_id) != GDK_SUCCEED)
@@ -59,7 +59,7 @@ TRACERset_layer_level(void *ret, int *layer_id, int *lvl_id)
 
 
 str
-TRACERreset_layer_level(void *ret, int *layer_id)
+TRACERreset_layer_level(void *ret, str *layer_id)
 {
     (void) ret;
     if (GDKtracer_reset_layer_level(*layer_id) != GDK_SUCCEED)
@@ -70,7 +70,7 @@ TRACERreset_layer_level(void *ret, int *layer_id)
 
 
 str
-TRACERset_flush_level(void *ret, int *lvl_id)
+TRACERset_flush_level(void *ret, str *lvl_id)
 {
     (void) ret;
     if (GDKtracer_set_flush_level(*lvl_id) != GDK_SUCCEED)
@@ -92,7 +92,7 @@ TRACERreset_flush_level(void *ret)
 
 
 str
-TRACERset_adapter(void *ret, int *adapter_id)
+TRACERset_adapter(void *ret, str *adapter_id)
 {
     (void) ret;
     if (GDKtracer_set_adapter(*adapter_id) != GDK_SUCCEED)
@@ -125,9 +125,9 @@ TRACERcomp_info(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
     bat *l = getArgReference_bat(stk, pci, 2);
     str msg = MAL_SUCCEED;
 
-    id = COLnew(0, TYPE_int, MAL_MAXCLIENTS, TRANSIENT);
-    component = COLnew(0, TYPE_str, MAL_MAXCLIENTS, TRANSIENT);
-    log_level = COLnew(0, TYPE_str, MAL_MAXCLIENTS, TRANSIENT);
+    id = COLnew(0, TYPE_int, (BUN) COMPONENTS_COUNT, TRANSIENT);
+    component = COLnew(0, TYPE_str, (BUN) COMPONENTS_COUNT, TRANSIENT);
+    log_level = COLnew(0, TYPE_str, (BUN) COMPONENTS_COUNT, TRANSIENT);
 
     if ( id == NULL || component == NULL || log_level == NULL )
     {
