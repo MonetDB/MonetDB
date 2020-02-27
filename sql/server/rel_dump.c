@@ -60,7 +60,6 @@ cmp_print(mvc *sql, stream *fout, int cmp)
 	case cmp_or: 		r = "or"; break;
 	case cmp_in: 		r = "in"; break;
 	case cmp_notin: 	r = "notin"; break;
-	case cmp_equal_nil: 	r = "=*"; break;
 
 	case mark_in: 		r = "any ="; break;
 	case mark_notin: 	r = "all <>"; break;
@@ -243,6 +242,8 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 			exp_print(sql, fout, e->l, depth+1, refs, 0, 0);
 			if (is_anti(e))
 				mnstr_printf(fout, " !");
+			if (is_semantics(e))
+				mnstr_printf(fout, " *");
 			cmp_print(sql, fout, e->flag);
 
 			exp_print(sql, fout, e->r, depth+1, refs, 0, 0);
@@ -405,7 +406,7 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int dec
 	} 	break;
 	case op_table:
 		print_indent(sql, fout, depth, decorate);
-		mnstr_printf(fout, "table ");
+		mnstr_printf(fout, "table (");
 
 		if (rel->r)
 			exp_print(sql, fout, rel->r, depth, refs, 1, 0);
@@ -415,6 +416,8 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int dec
 			else
 				rel_print_(sql, fout, rel->l, depth+1, refs, decorate);
 		}
+		print_indent(sql, fout, depth, decorate);
+		mnstr_printf(fout, ")");
 		if (rel->exps)
 			exps_print(sql, fout, rel->exps, depth, refs, 1, 0);
 		break;
@@ -1096,6 +1099,11 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 		skipWS(r, pos);
 		set_anti(exp);
 	}
+	if (r[*pos] == '*') {
+		(*pos)++;
+		skipWS(r, pos);
+		set_semantics(exp);
+	}
 	/* [ COUNT ] */
 	if (strncmp(r+*pos, "COUNT",  strlen("COUNT")) == 0) {
 		(*pos)+= (int) strlen("COUNT");
@@ -1227,10 +1235,6 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 	case '=':
 		f = cmp_equal;
 		(*pos)++;
-		if (r[(*pos)] == '*') {
-			f = cmp_equal_nil;
-			(*pos)++;
-		}
 		break;
 	case '<':
 		f = cmp_lt;

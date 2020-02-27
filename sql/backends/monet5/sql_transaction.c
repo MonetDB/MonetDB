@@ -40,7 +40,7 @@
 		return msg;\
 	if ((msg = checkSQLContext(cntxt)) != NULL)\
 		return msg; \
-	if (name && strcmp(name, str_nil) == 0)\
+	if (strNil(name))\
 		name = NULL;
 
 str

@@ -979,8 +979,11 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				sql_subtype *t = exp_subtype(e);
 				str got = subtype2string(t), expected = (str) m->data;
 
-				if (strcmp(expected, got) != 0)
+				if (!got)
+					msg = createException(SQL, "RAstatement2", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				else if (strcmp(expected, got) != 0)
 					msg = createException(SQL, "RAstatement2", SQLSTATE(42000) "Parameter %d has wrong SQL type, expected %s, but got %s instead", i, expected, got);
+				GDKfree(got);
 				i++;
 			}
 		}

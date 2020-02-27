@@ -37,8 +37,8 @@ typedef struct expression {
 	void *l;
 	void *r;
 	void *f;	/* func's and aggr's, also e_cmp may have have 2 arguments */
+	unsigned int flag; /* cmp types, PSM types/level */
 	unsigned int
-	 flag:16,	/* cmp types, PSM types/level */
 	 card:2,	/* card (0 truth value!) (1 atoms) (2 aggr) (3 multi value) */
 	 freevar:4,	/* free variable, ie binds to the upper dependent join */
 	 intern:1,
@@ -47,8 +47,11 @@ typedef struct expression {
 	 nulls_last:1,	/* return null after all other rows */
 	 zero_if_empty:1, 	/* in case of partial aggregator computation, some aggregators need to return 0 instead of NULL */
 	 distinct:1,	
+
+	 semantics:1,	/* is vs = semantics (nil = nil vs unknown != unknown), ranges with or without nil, aggregation with or without nil */
 	 need_no_nil:1,	
 	 has_no_nil:1,	
+
 	 base:1,
 	 ref:1,		/* used to indicate an other expression may reference this one */
 	 used:1;	/* used for quick dead code removal */
@@ -215,8 +218,10 @@ typedef enum operator_type {
 #define set_nulls_first(e) 	((e)->nulls_last=0)
 #define set_direction(e, dir) 	((e)->ascending = (dir&1), (e)->nulls_last = (dir&2)?1:0)
 
-#define is_anti(e) 			((e)->anti)
+#define is_anti(e) 		((e)->anti)
 #define set_anti(e)  		(e)->anti = 1
+#define is_semantics(e) 	((e)->semantics)
+#define set_semantics(e) 	(e)->semantics = 1
 #define is_intern(e) 		((e)->intern)
 #define set_intern(e) 		(e)->intern = 1
 #define is_basecol(e) 		((e)->base)

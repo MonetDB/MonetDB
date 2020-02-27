@@ -239,7 +239,14 @@ UUIDisaUUID(bit *retval, str *s)
 	uuid u;
 	uuid *pu = &u;
 	size_t l = UUID_SIZE;
-	*retval = UUIDfromString(*s, &l, &pu, false) > 1; /* valid, not nil */
+	ssize_t res = UUIDfromString(*s, &l, &pu, false);
+
+	if (res > 1)
+		*retval = true;
+	else if (res == 1)
+		*retval = bit_nil;
+	else
+		*retval = false;
 	return MAL_SUCCEED;
 }
 

@@ -669,7 +669,7 @@ rel_generate_subinserts(sql_query *query, sql_rel *rel, sql_rel **anti_rel, sql_
 				sql_exp *e1, *e2;
 				e1 = create_table_part_atom_exp(sql, pt->tpe, pt->part.range.minvalue);
 				e2 = create_table_part_atom_exp(sql, pt->tpe, pt->part.range.maxvalue);
-				range = exp_compare2(sql->sa, le, e1, e2, 1);
+				range = exp_compare2(sql->sa, le, e1, e2, cmp_gte|CMP_BETWEEN);
 				full_range = range;
 			} else {
 				assert(pt->with_nills);
