@@ -123,7 +123,7 @@ _GDKtracer_fill_tracer(gdk_tracer *sel_tracer, const char *fmt, va_list va)
 	// vsnprintf(char *str, size_t count, ...) -> including null terminating character
 	bytes_written = vsnprintf(sel_tracer->buffer +sel_tracer->allocated_size, BUFFER_SIZE - sel_tracer->allocated_size, fmt, va);
 	// Add \n if it doesn't exist
-	if (bytes_written && fmt[fmt_len - 1] != NEW_LINE)
+	if (bytes_written && fmt[fmt_len - 1] != '\n')
 		bytes_written += snprintf(sel_tracer->buffer +sel_tracer->allocated_size, BUFFER_SIZE - sel_tracer->allocated_size, "\n");
 
 	// Let GDKtracer_log to know about the failure
