@@ -43,6 +43,8 @@ void abbreviateString(char *ret, const char *in, size_t width);
 void generateSalt(char *buf, unsigned int len);
 char *generatePassphraseFile(const char *path);
 void sleep_ms(size_t ms);
+char* deletedir(const char *dir);
+
 
 #endif
 

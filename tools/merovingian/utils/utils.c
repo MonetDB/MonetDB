@@ -19,12 +19,10 @@
 #include "utils.h"
 #include <unistd.h> /* unlink */
 #include <string.h> /* memcpy */
-#include <strings.h> /* strcasecmp */
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
 #include <time.h>
 #include <ctype.h>
+#include <dirent.h> /* readdir */
+#include <fcntl.h>
 #ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>
 #endif
@@ -487,5 +485,57 @@ sleep_ms(size_t ms)
 	tv.tv_usec = 1000 * (ms % 1000);
 	(void) select(0, NULL, NULL, NULL, &tv);
 }
+
+
+/* recursive helper function to delete a directory */
+char*
+deletedir(const char *dir)
+{
+	DIR *d;
+	struct dirent *e;
+	char buf[8192];
+	char path[4096];
+
+	d = opendir(dir);
+	if (d == NULL) {
+		/* silently return if we cannot find the directory; it's
+		 * probably already deleted */
+		if (errno == ENOENT)
+			return(NULL);
+		if (errno == ENOTDIR) {
+			if (remove(dir) != 0 && errno != ENOENT) {
+				snprintf(buf, sizeof(buf),
+					 "unable to remove file %s: %s",
+					 dir, strerror(errno));
+				return(strdup(buf));
+			}
+			return NULL;
+		}
+		snprintf(buf, sizeof(buf), "unable to open dir %s: %s",
+				dir, strerror(errno));
+		return(strdup(buf));
+	}
+	while ((e = readdir(d)) != NULL) {
+		/* ignore . and .. */
+		if (strcmp(e->d_name, ".") != 0 &&
+		    strcmp(e->d_name, "..") != 0) {
+			char* er;
+			snprintf(path, sizeof(path), "%s/%s", dir, e->d_name);
+			if ((er = deletedir(path)) != NULL) {
+				closedir(d);
+				return(er);
+			}
+		}
+	}
+	closedir(d);
+	if (rmdir(dir) == -1 && errno != ENOENT) {
+		snprintf(buf, sizeof(buf), "unable to remove directory %s: %s",
+				dir, strerror(errno));
+		return(strdup(buf));
+	}
+
+	return(NULL);
+}
+
 
 /* vim:set ts=4 sw=4 noexpandtab: */
