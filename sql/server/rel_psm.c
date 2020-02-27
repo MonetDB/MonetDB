@@ -82,7 +82,7 @@ rel_psm_stmt(sql_allocator *sa, sql_exp *e)
 	return NULL;
 }
 
-/* SET variable = value and set (variable1, .., variableN) = (query) */
+/* SET [ schema '.' ] variable = value and set ( [ schema1 '.' ] variable1, .., [ schemaN '.' ] variableN) = (query) */
 static sql_exp *
 psm_set_exp(sql_query *query, dnode *n)
 {
@@ -222,7 +222,7 @@ rel_psm_declare_table(sql_query *query, dnode *n)
 	mvc *sql = query->sql;
 	sql_rel *rel = NULL, *baset = NULL;
 	dlist *qname = n->next->data.lval;
-	const char *name = qname_table(qname);
+	const char *name = qname_schema_object(qname);
 	const char *sname = qname_schema(qname);
 	sql_table *t;
 
@@ -808,7 +808,7 @@ static sql_rel *
 rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlist *ext_name, dlist *body, sql_ftype type, sql_flang lang, int replace)
 {
 	mvc *sql = query->sql;
-	const char *fname = qname_table(qname);
+	const char *fname = qname_schema_object(qname);
 	const char *sname = qname_schema(qname);
 	sql_schema *s = NULL;
 	sql_func *f = NULL;
@@ -996,7 +996,7 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 				return rel_psm_block(sql->sa, b);
 		} else { /* MAL implementation */
 			char *fmod = qname_module(ext_name);
-			char *fnme = qname_fname(ext_name);
+			char *fnme = qname_schema_object(ext_name);
 			int clientid = sql->clientid;
 
 			if (!fmod || !fnme)
@@ -1137,7 +1137,7 @@ resolve_func( mvc *sql, sql_schema *s, const char *name, dlist *typelist, sql_ft
 static sql_rel* 
 rel_drop_func(mvc *sql, dlist *qname, dlist *typelist, int drop_action, sql_ftype type, int if_exists)
 {
-	const char *name = qname_table(qname);
+	const char *name = qname_schema_object(qname);
 	const char *sname = qname_schema(qname);
 	sql_schema *s = NULL;
 	sql_func *func = NULL;
@@ -1167,7 +1167,7 @@ rel_drop_func(mvc *sql, dlist *qname, dlist *typelist, int drop_action, sql_ftyp
 static sql_rel* 
 rel_drop_all_func(mvc *sql, dlist *qname, int drop_action, sql_ftype type)
 {
-	const char *name = qname_table(qname);
+	const char *name = qname_schema_object(qname);
 	const char *sname = qname_schema(qname);
 	sql_schema *s = NULL;
 	list * list_func = NULL;
@@ -1228,9 +1228,9 @@ create_trigger(sql_query *query, dlist *qname, int time, symbol *trigger_event, 
 {
 	mvc *sql = query->sql;
 	const char *triggerschema = qname_schema(qname);
-	const char *triggername = qname_table(qname);
+	const char *triggername = qname_schema_object(qname);
 	const char *sname = qname_schema(tqname);
-	const char *tname = qname_table(tqname);
+	const char *tname = qname_schema_object(tqname);
 	sql_schema *ss = cur_schema(sql);
 	sql_table *t = NULL;
 	sql_trigger *st = NULL;
@@ -1382,7 +1382,7 @@ static sql_rel *
 drop_trigger(mvc *sql, dlist *qname, int if_exists)
 {
 	const char *sname = qname_schema(qname);
-	const char *tname = qname_table(qname);
+	const char *tname = qname_schema_object(qname);
 	sql_schema *ss = cur_schema(sql);
 
 	if (!sname)
@@ -1424,11 +1424,11 @@ psm_analyze(sql_query *query, char *analyzeType, dlist *qname, dlist *columns, s
 		if (qname->h->next)
 			sname = qname_schema(qname);
 		else
-			sname = qname_table(qname);
+			sname = qname_schema_object(qname);
 		if (!sname)
 			sname = cur_schema(sql)->base.name;
 		if (qname->h->next)
-			tname = qname_table(qname);
+			tname = qname_schema_object(qname);
 	}
 	/* call analyze( [schema, [ table ]], opt_sample_size, opt_minmax ) */
 	if (sname) {
@@ -1480,7 +1480,7 @@ create_table_from_loader(sql_query *query, dlist *qname, symbol *fcall)
 	mvc *sql = query->sql;
 	sql_schema *s = NULL;
 	char *sname = qname_schema(qname);
-	char *tname = qname_table(qname);
+	char *tname = qname_schema_object(qname);
 	sql_subfunc *loader = NULL;
 	sql_rel* rel = NULL;
 

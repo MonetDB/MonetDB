@@ -171,7 +171,7 @@ qname_schema(dlist *qname)
 }
 
 char *
-qname_table(dlist *qname)
+qname_schema_object(dlist *qname)
 {
 	assert(qname && qname->h);
 
@@ -318,7 +318,7 @@ char *symbol2string(mvc *sql, symbol *se, int expression, char **err) /**/
 	case SQL_NOP: {
 		dnode *lst = se->data.lval->h;
 		dnode *ops = lst->next->next->data.lval->h;
-		char *op = qname_fname(lst->data.lval);
+		char *op = qname_schema_object(lst->data.lval);
 
 		len = snprintf( buf+len, BUFSIZ-len, "%s(", op); 
 		for (; ops; ops = ops->next) {
@@ -334,7 +334,7 @@ char *symbol2string(mvc *sql, symbol *se, int expression, char **err) /**/
 	} break;
 	case SQL_BINOP: {
 		dnode *lst = se->data.lval->h;
-		char *op = qname_fname(lst->data.lval);
+		char *op = qname_schema_object(lst->data.lval);
 		char *l;
 		char *r;
 		l = symbol2string(sql, lst->next->next->data.sym, expression, err);
@@ -351,12 +351,12 @@ char *symbol2string(mvc *sql, symbol *se, int expression, char **err) /**/
 	} break;
 	case SQL_OP: {
 		dnode *lst = se->data.lval->h;
-		char *op = qname_fname(lst->data.lval);
+		char *op = qname_schema_object(lst->data.lval);
 		len = snprintf( buf+len, BUFSIZ-len, "%s()", op ); 
 	} break;
 	case SQL_UNOP: {
 		dnode *lst = se->data.lval->h;
-		char *op = qname_fname(lst->data.lval);
+		char *op = qname_schema_object(lst->data.lval);
 		char *l = symbol2string(sql, lst->next->next->data.sym, expression, err);
 		if (l == NULL)
 			return NULL;
@@ -379,7 +379,7 @@ char *symbol2string(mvc *sql, symbol *se, int expression, char **err) /**/
 		break;
 	}
 	case SQL_NEXT:{
-		const char *seq = qname_table(se->data.lval);
+		const char *seq = qname_schema_object(se->data.lval);
 		const char *sname = qname_schema(se->data.lval);
 		const char *s;
 

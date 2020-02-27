@@ -86,7 +86,7 @@ rel_create_seq(
 {
 	sql_rel *res = NULL;
 	sql_sequence *seq = NULL;
-	char *name = qname_table(qname);
+	char *name = qname_schema_object(qname);
 	char *sname = qname_schema(qname);
 	sql_schema *s = NULL;
 
@@ -246,7 +246,7 @@ rel_alter_seq(
 		bit cycle)
 {
 	mvc *sql = query->sql;
-	char* name = qname_table(qname);
+	char* name = qname_schema_object(qname);
 	char *sname = qname_schema(qname);
 	sql_sequence *seq;
 	sql_schema *s = NULL;
@@ -414,7 +414,7 @@ rel_sequences(sql_query *query, symbol *s)
 		{
 			dlist *l = s->data.lval;
 			char *sname = qname_schema(l->h->data.lval);
-			char *seqname = qname_table(l->h->data.lval);
+			char *seqname = qname_schema_object(l->h->data.lval);
 
 			if (!sname) {
 				sql_schema *ss = cur_schema(sql);

@@ -1208,7 +1208,7 @@ mal_function_find_implementation_address(mvc *m, sql_func *f)
 	assert(m->sym->token == SQL_CREATE_FUNC);
 	l = m->sym->data.lval;
 	ext_name = l->h->next->next->next->data.lval;
-	f->imp = sa_strdup(f->sa, qname_fname(ext_name)); /* found the implementation, set it */
+	f->imp = sa_strdup(f->sa, qname_schema_object(ext_name)); /* found the implementation, set it */
 
 bailout:
 	if (m) {

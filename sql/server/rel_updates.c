@@ -612,7 +612,7 @@ insert_into(sql_query *query, dlist *qname, dlist *columns, symbol *val_or_q)
 {
 	mvc *sql = query->sql;
 	char *sname = qname_schema(qname);
-	char *tname = qname_table(qname);
+	char *tname = qname_schema_object(qname);
 	sql_schema *s = NULL;
 	sql_table *t = NULL;
 	sql_rel *r = NULL;
@@ -1112,7 +1112,7 @@ update_table(sql_query *query, dlist *qname, str alias, dlist *assignmentlist, s
 {
 	mvc *sql = query->sql;
 	char *sname = qname_schema(qname);
-	char *tname = qname_table(qname);
+	char *tname = qname_schema_object(qname);
 	sql_schema *s = NULL;
 	sql_table *t = NULL;
 
@@ -1223,7 +1223,7 @@ delete_table(sql_query *query, dlist *qname, str alias, symbol *opt_where)
 {
 	mvc *sql = query->sql;
 	char *sname = qname_schema(qname);
-	char *tname = qname_table(qname);
+	char *tname = qname_schema_object(qname);
 	sql_schema *schema = NULL;
 	sql_table *t = NULL;
 
@@ -1284,7 +1284,7 @@ static sql_rel *
 truncate_table(mvc *sql, dlist *qname, int restart_sequences, int drop_action)
 {
 	char *sname = qname_schema(qname);
-	char *tname = qname_table(qname);
+	char *tname = qname_schema_object(qname);
 	sql_schema *schema = NULL;
 	sql_table *t = NULL;
 
@@ -1363,7 +1363,7 @@ static sql_rel *
 merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol *search_cond, dlist *merge_list)
 {
 	mvc *sql = query->sql;
-	char *sname = qname_schema(qname), *tname = qname_table(qname), *alias_name;
+	char *sname = qname_schema(qname), *tname = qname_schema_object(qname), *alias_name;
 	sql_schema *s = NULL;
 	sql_table *t = NULL;
 	sql_rel *bt, *joined, *join_rel = NULL, *extra_project, *insert = NULL, *upd_del = NULL, *res = NULL, *extra_select;
@@ -1638,7 +1638,7 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 	mvc *sql = query->sql;
 	sql_rel *rel = NULL;
 	char *sname = qname_schema(qname);
-	char *tname = qname_table(qname);
+	char *tname = qname_schema_object(qname);
 	sql_schema *s = NULL;
 	sql_table *t = NULL, *nt = NULL;
 	const char *tsep = seps->h->data.sval;
@@ -1848,7 +1848,7 @@ bincopyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, int co
 {
 	mvc *sql = query->sql;
 	char *sname = qname_schema(qname);
-	char *tname = qname_table(qname);
+	char *tname = qname_schema_object(qname);
 	sql_schema *s = NULL;
 	sql_table *t = NULL;
 
@@ -1940,7 +1940,7 @@ copyfromloader(sql_query *query, dlist *qname, symbol *fcall)
 	mvc *sql = query->sql;
 	sql_schema *s = NULL;
 	char *sname = qname_schema(qname);
-	char *tname = qname_table(qname);
+	char *tname = qname_schema_object(qname);
 	sql_subfunc *loader = NULL;
 	sql_rel* rel = NULL;
 	sql_table* t;

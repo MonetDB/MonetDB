@@ -22,10 +22,6 @@
 
 #include "mal_authorize.h"
 
-#define qname_index(qname) qname_table(qname)
-#define qname_func(qname) qname_table(qname)
-#define qname_type(qname) qname_table(qname)
-
 static sql_table *
 _bind_table(sql_table *t, sql_schema *ss, sql_schema *s, char *name)
 {
@@ -342,7 +338,7 @@ column_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sq
 	case SQL_FOREIGN_KEY: {
 		dnode *n = s->data.lval->h;
 		char *rsname = qname_schema(n->data.lval);
-		char *rtname = qname_table(n->data.lval);
+		char *rtname = qname_schema_object(n->data.lval);
 		int ref_actions = n->next->next->next->data.i_val; 
 		sql_schema *rs;
 		sql_table *rt;
@@ -528,7 +524,7 @@ table_foreign_key(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table *t)
 {
 	dnode *n = s->data.lval->h;
 	char *rsname = qname_schema(n->data.lval);
-	char *rtname = qname_table(n->data.lval);
+	char *rtname = qname_schema_object(n->data.lval);
 	sql_schema *fs;
 	sql_table *ft;
 
@@ -861,7 +857,7 @@ table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 	case SQL_LIKE:
 	{
 		char *sname = qname_schema(s->data.lval);
-		char *name = qname_table(s->data.lval);
+		char *name = qname_schema_object(s->data.lval);
 		sql_schema *os = NULL;
 		sql_table *ot = NULL;
 		node *n;
@@ -1149,7 +1145,7 @@ static sql_rel *
 rel_create_view(sql_query *query, sql_schema *ss, dlist *qname, dlist *column_spec, symbol *ast, int check, int persistent, int replace)
 {
 	mvc *sql = query->sql;
-	char *name = qname_table(qname);
+	char *name = qname_schema_object(qname);
 	char *sname = qname_schema(qname);
 	sql_schema *s = NULL;
 	sql_table *t = NULL;
@@ -1286,7 +1282,7 @@ rel_schema3(sql_allocator *sa, int cat_type, char *sname, char *tname, char *nam
 static sql_rel *
 rel_drop_type(mvc *sql, dlist *qname, int drop_action)
 {
-	char *name = qname_table(qname);
+	char *name = qname_schema_object(qname);
 	char *sname = qname_schema(qname);
 	sql_schema *s = NULL;
 
@@ -1306,7 +1302,7 @@ rel_drop_type(mvc *sql, dlist *qname, int drop_action)
 static sql_rel *
 rel_create_type(mvc *sql, dlist *qname, char *impl)
 {
-	char *name = qname_table(qname);
+	char *name = qname_schema_object(qname);
 	char *sname = qname_schema(qname);
 	sql_schema *s = NULL;
 
@@ -1451,7 +1447,7 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 {
 	mvc *sql = query->sql;
 	char *sname = qname_schema(qname);
-	char *tname = qname_table(qname);
+	char *tname = qname_schema_object(qname);
 	sql_schema *s = NULL;
 	sql_table *t = NULL;
 
@@ -1483,7 +1479,7 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 			sql_schema *spt = NULL;
 			sql_table *pt = NULL;
 			char *nsname = qname_schema(nqname);
-			char *ntname = qname_table(nqname);
+			char *ntname = qname_schema_object(nqname);
 
 			/* partition sname */
 			if (!nsname)
@@ -1781,7 +1777,7 @@ rel_grant_table(mvc *sql, sql_schema *cur, dlist *privs, dlist *qname, dlist *gr
 	dnode *gn;
 	int all = PRIV_SELECT | PRIV_UPDATE | PRIV_INSERT | PRIV_DELETE | PRIV_TRUNCATE;
 	char *sname = qname_schema(qname);
-	char *tname = qname_table(qname);
+	char *tname = qname_schema_object(qname);
 
 	if (!sname)
 		sname = cur->base.name;
@@ -1849,7 +1845,7 @@ rel_grant_func(mvc *sql, sql_schema *cur, dlist *privs, dlist *qname, dlist *typ
 	sql_rel *res = NULL;
 	dnode *gn;
 	char *sname = qname_schema(qname);
-	char *fname = qname_func(qname);
+	char *fname = qname_schema_object(qname);
 	sql_schema *s = NULL;
 	sql_func *func = NULL;
 
@@ -1902,7 +1898,7 @@ rel_grant_privs(mvc *sql, sql_schema *cur, dlist *privs, dlist *grantees, int gr
 	if (token == SQL_NAME) {
 		dlist *qname = obj->data.lval;
 		char *sname = qname_schema(qname);
-		char *tname = qname_table(qname);
+		char *tname = qname_schema_object(qname);
 		sql_schema *s = cur;
 
 		if (sname)
@@ -1965,7 +1961,7 @@ rel_revoke_table(mvc *sql, sql_schema *cur, dlist *privs, dlist *qname, dlist *g
 	sql_rel *res = NULL;
 	int all = PRIV_SELECT | PRIV_UPDATE | PRIV_INSERT | PRIV_DELETE | PRIV_TRUNCATE;
 	char *sname = qname_schema(qname);
-	char *tname = qname_table(qname);
+	char *tname = qname_schema_object(qname);
 
 	if (!sname)
 		sname = cur->base.name;
@@ -2033,7 +2029,7 @@ rel_revoke_func(mvc *sql, sql_schema *cur, dlist *privs, dlist *qname, dlist *ty
 	dnode *gn;
 	sql_rel *res = NULL;
 	char *sname = qname_schema(qname);
-	char *fname = qname_func(qname);
+	char *fname = qname_schema_object(qname);
 	sql_func *func = NULL;
 
 	sql_schema *s = NULL;
@@ -2086,7 +2082,7 @@ rel_revoke_privs(mvc *sql, sql_schema *cur, dlist *privs, dlist *grantees, int g
 	if (token == SQL_NAME) {
 		dlist *qname = obj->data.lval;
 		char *sname = qname_schema(qname);
-		char *tname = qname_table(qname);
+		char *tname = qname_schema_object(qname);
 		sql_schema *s = cur;
 
 		if (sname)
@@ -2126,7 +2122,7 @@ rel_create_index(mvc *sql, char *iname, idx_type itype, dlist *qname, dlist *col
 	sql_idx *i;
 	dnode *n;
 	char *sname = qname_schema(qname);
-	char *tname = qname_table(qname);
+	char *tname = qname_schema_object(qname);
 
 	if (sname && !(s = mvc_bind_schema(sql, sname))) 
 		return sql_error(sql, 02, SQLSTATE(3F000) "CREATE INDEX: no such schema '%s'", sname);
@@ -2264,7 +2260,7 @@ rel_find_designated_table(mvc *sql, symbol *sym, sql_schema **schema_out) {
 	qname = sym->data.lval;
 	if (!(s = current_or_designated_schema(sql, qname_schema(qname))))
 		return 0;
-	tname = qname_table(qname);
+	tname = qname_schema_object(qname);
 	t = mvc_bind_table(sql, s, tname);
 	if (t && !want_table == !isKindOfTable(t)) {	/* comparing booleans can be tricky */
 		*schema_out = s;
@@ -2326,7 +2322,7 @@ rel_find_designated_index(mvc *sql, symbol *sym, sql_schema **schema_out) {
 	qname = sym->data.lval;
 	if (!(s = current_or_designated_schema(sql, qname_schema(qname))))
 		return 0;
-	iname = qname_table(qname);
+	iname = qname_schema_object(qname);
 	idx = mvc_bind_idx(sql, s, iname);
 	if (idx) {
 		*schema_out = s;
@@ -2351,7 +2347,7 @@ rel_find_designated_sequence(mvc *sql, symbol *sym, sql_schema **schema_out) {
 	qname = sym->data.lval;
 	if (!(s = current_or_designated_schema(sql, qname_schema(qname))))
 		return 0;
-	seqname = qname_table(qname);
+	seqname = qname_schema_object(qname);
 	seq = find_sql_sequence(s, seqname);
 	if (seq) {
 		*schema_out = s;
@@ -2385,7 +2381,7 @@ rel_find_designated_routine(mvc *sql, symbol *sym, sql_schema **schema_out) {
 	if (!(s = current_or_designated_schema(sql, qname_schema(qname))))
 		return 0;
 
-	fname = qname_func(qname);
+	fname = qname_schema_object(qname);
 	func = resolve_func(sql, s, fname, typelist, func_type, "COMMENT", 0);
 	if (!func && func_type == F_FUNC) {
 		// functions returning a table have a special type
@@ -2694,7 +2690,7 @@ rel_schemas(sql_query *query, symbol *s)
 		dlist *l = s->data.lval;
 		dlist *qname = l->h->next->data.lval;
 		char *sname = qname_schema(qname);
-		char *name = qname_table(qname);
+		char *name = qname_schema_object(qname);
 		int temp = l->h->data.i_val;
 		dlist *credentials = l->h->next->next->next->next->next->data.lval;
 		char *username = credentials_username(credentials);
@@ -2732,7 +2728,7 @@ rel_schemas(sql_query *query, symbol *s)
 	{
 		dlist *l = s->data.lval;
 		char *sname = qname_schema(l->h->data.lval);
-		char *tname = qname_table(l->h->data.lval);
+		char *tname = qname_schema_object(l->h->data.lval);
 
 		assert(l->h->next->type == type_int);
 		sname = get_schema_name(sql, sname, tname);
@@ -2745,7 +2741,7 @@ rel_schemas(sql_query *query, symbol *s)
 	{
 		dlist *l = s->data.lval;
 		char *sname = qname_schema(l->h->data.lval);
-		char *tname = qname_table(l->h->data.lval);
+		char *tname = qname_schema_object(l->h->data.lval);
 
 		assert(l->h->next->type == type_int);
 		sname = get_schema_name(sql, sname, tname);
@@ -2834,7 +2830,7 @@ rel_schemas(sql_query *query, symbol *s)
 
 		if (!sname)
 			sname = cur_schema(sql)->base.name;
-		ret = rel_schema2(sql->sa, ddl_drop_index, sname, qname_index(l), 0);
+		ret = rel_schema2(sql->sa, ddl_drop_index, sname, qname_schema_object(l), 0);
 	} 	break;
 	case SQL_CREATE_USER: {
 		dlist *l = s->data.lval;
@@ -2871,7 +2867,7 @@ rel_schemas(sql_query *query, symbol *s)
 	case SQL_RENAME_TABLE: {
 		dlist *l = s->data.lval;
 		char *sname = qname_schema(l->h->data.lval);
-		char *tname = qname_table(l->h->data.lval);
+		char *tname = qname_schema_object(l->h->data.lval);
 		if (!sname)
 			sname = cur_schema(sql)->base.name;
 		ret = rel_rename_table(sql, sname, tname, l->h->next->data.sval, l->h->next->next->data.i_val);
@@ -2879,7 +2875,7 @@ rel_schemas(sql_query *query, symbol *s)
 	case SQL_RENAME_COLUMN: {
 		dlist *l = s->data.lval;
 		char *sname = qname_schema(l->h->data.lval);
-		char *tname = qname_table(l->h->data.lval);
+		char *tname = qname_schema_object(l->h->data.lval);
 		if (!sname)
 			sname = cur_schema(sql)->base.name;
 		ret = rel_rename_column(sql, sname, tname, l->h->next->data.sval, l->h->next->next->data.sval, l->h->next->next->next->data.i_val);
@@ -2887,7 +2883,7 @@ rel_schemas(sql_query *query, symbol *s)
 	case SQL_SET_TABLE_SCHEMA: {
 		dlist *l = s->data.lval;
 		char *sname = qname_schema(l->h->data.lval);
-		char *tname = qname_table(l->h->data.lval);
+		char *tname = qname_schema_object(l->h->data.lval);
 		if (!sname)
 			sname = cur_schema(sql)->base.name;
 		ret = rel_set_table_schema(query, sname, tname, l->h->next->data.sval, l->h->next->next->data.i_val);

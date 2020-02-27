@@ -278,7 +278,7 @@ rel_with_query(sql_query *query, symbol *q )
 	for (d = d->data.lval->h; d; d = d->next) {
 		symbol *sym = d->data.sym;
 		dnode *dn = sym->data.lval->h;
-		char *name = qname_table(dn->data.lval);
+		char *name = qname_schema_object(dn->data.lval);
 		sql_rel *nrel;
 
 		if (frame_find_var(sql, name)) {
@@ -605,7 +605,7 @@ rel_named_table_function(sql_query *query, sql_rel *rel, symbol *ast, int latera
 	symbol *sym = ast->data.lval->h->data.sym;
 	dnode *l = sym->data.lval->h;
 	char *tname = NULL;
-	char *fname = qname_fname(l->data.lval); 
+	char *fname = qname_schema_object(l->data.lval); 
 	char *sname = qname_schema(l->data.lval);
 	node *en;
 	sql_schema *s = sql->session->schema;
@@ -872,7 +872,7 @@ table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral)
 		sql_schema *s = NULL;
 		int allowed = 1;
 
-		tname = qname_table(name);
+		tname = qname_schema_object(name);
 
 		if (dlist_length(name) > 2)
 			return sql_error(sql, 02, SQLSTATE(3F000) "SELECT: only a schema and table name expected");
@@ -2121,7 +2121,7 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 		dnode *ln = sc->data.lval->h->data.lval->h;
 		dnode *rn = sc->data.lval->h->next->next->data.lval->h;
 		dlist *filter_op = sc->data.lval->h->next->data.lval;
-		char *fname = qname_fname(filter_op);
+		char *fname = qname_schema_object(filter_op);
 		char *sname = qname_schema(filter_op);
 		list *exps, *tl;
 		sql_schema *s = sql->session->schema;
@@ -2459,7 +2459,7 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 		dnode *ln = sc->data.lval->h->data.lval->h;
 		dnode *rn = sc->data.lval->h->next->next->data.lval->h;
 		dlist *filter_op = sc->data.lval->h->next->data.lval;
-		char *fname = qname_fname(filter_op);
+		char *fname = qname_schema_object(filter_op);
 		char *sname = qname_schema(filter_op);
 		list *l, *r;
 
@@ -2707,7 +2707,7 @@ rel_op(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek )
 {
 	mvc *sql = query->sql;
 	dnode *l = se->data.lval->h;
-	char *fname = qname_fname(l->data.lval);
+	char *fname = qname_schema_object(l->data.lval);
 	char *sname = qname_schema(l->data.lval);
 	sql_schema *s = sql->session->schema;
 	sql_subfunc *sf = NULL;
@@ -2813,7 +2813,7 @@ rel_unop(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 {
 	mvc *sql = query->sql;
 	dnode *l = se->data.lval->h;
-	char *fname = qname_fname(l->data.lval);
+	char *fname = qname_schema_object(l->data.lval);
 	char *sname = qname_schema(l->data.lval);
 	sql_schema *s = sql->session->schema;
 	exp_kind iek = {type_value, card_column, FALSE};
@@ -3096,7 +3096,7 @@ rel_binop(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 	mvc *sql = query->sql;
 	dnode *dl = se->data.lval->h;
 	sql_exp *l, *r;
-	char *fname = qname_fname(dl->data.lval);
+	char *fname = qname_schema_object(dl->data.lval);
 	char *sname = qname_schema(dl->data.lval);
 	sql_schema *s = sql->session->schema;
 	exp_kind iek = {type_value, card_column, FALSE};
@@ -3179,7 +3179,7 @@ rel_nop(sql_query *query, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 	list *tl = sa_list(sql->sa);
 	sql_subfunc *f = NULL;
 	sql_subtype *obj_type = NULL;
-	char *fname = qname_fname(l->data.lval);
+	char *fname = qname_schema_object(l->data.lval);
 	char *sname = qname_schema(l->data.lval);
 	sql_schema *s = sql->session->schema;
 	exp_kind iek = {type_value, card_column, FALSE};
@@ -3621,7 +3621,7 @@ rel_aggr(sql_query *query, sql_rel **rel, symbol *se, int f)
 	dlist *l = se->data.lval;
 	dnode *d = l->h->next->next;
 	int distinct = l->h->next->data.i_val;
-	char *aname = qname_fname(l->h->data.lval);
+	char *aname = qname_schema_object(l->h->data.lval);
 	char *sname = qname_schema(l->h->data.lval);
 	sql_schema *s = query->sql->session->schema;
 
@@ -3850,7 +3850,7 @@ rel_cast(sql_query *query, sql_rel **rel, symbol *se, int f)
 static sql_exp *
 rel_next_value_for( mvc *sql, symbol *se )
 {
-	char *seq = qname_table(se->data.lval);
+	char *seq = qname_schema_object(se->data.lval);
 	char *sname = qname_schema(se->data.lval);
 	sql_schema *s = NULL;
 	sql_subtype t;
@@ -4605,7 +4605,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 		return NULL;
 
 	frame_type = order_by_clause ? FRAME_RANGE : FRAME_ROWS;
-	aname = qname_fname(dn->data.lval);
+	aname = qname_schema_object(dn->data.lval);
 	sname = qname_schema(dn->data.lval);
 
 	if (sname)
@@ -5093,7 +5093,7 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 	case SQL_NULLIF:
 		return rel_case_exp(query, rel, se, f);
 	case SQL_RANK:
-		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: window function %s requires an OVER clause", qname_fname(se->data.lval->h->data.lval));
+		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: window function %s requires an OVER clause", qname_schema_object(se->data.lval->h->data.lval));
 	case SQL_DEFAULT:
 		return sql_error(sql, 02, SQLSTATE(42000) "DEFAULT keyword not allowed outside insert and update statements");
 	case SQL_XMLELEMENT:
@@ -5993,7 +5993,7 @@ rel_loader_function(sql_query *query, symbol* fcall, list *fexps, sql_subfunc **
 	symbol *sym = fcall;
 	dnode *l = sym->data.lval->h;
 	char *sname = qname_schema(l->data.lval);
-	char *fname = qname_fname(l->data.lval);
+	char *fname = qname_schema_object(l->data.lval);
 	char *tname = NULL;
 	node *en;
 	sql_schema *s = sql->session->schema;
