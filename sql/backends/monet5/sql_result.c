@@ -1489,11 +1489,11 @@ mvc_export_table_prot10(backend *b, stream *s, res_table *t, BAT *order, BUN off
 		mtype = b->ttype;
 		typelen = ATOMsize(mtype);
 		iterators[i] = bat_iterator(b);
-		
+
 		if (type->eclass == EC_TIMESTAMP || type->eclass == EC_DATE) {
 			// dates and timestamps are converted to Unix Timestamps
 			mtype = TYPE_lng;
-			typelen = sizeof(lng);	
+			typelen = sizeof(lng);
 		}
 		if (ATOMvarsized(mtype) || convert_to_string) {
 			varsized++;
@@ -1591,7 +1591,7 @@ mvc_export_table_prot10(backend *b, stream *s, res_table *t, BAT *order, BUN off
 			message_header = "-\n";
 		}
 		initial_transfer = 0;
-		
+
 		if (!mnstr_writeStr(s, message_header) || !mnstr_writeLng(s, (lng)(row - srow))) {
 			fres = -1;
 			goto cleanup;
@@ -1820,7 +1820,7 @@ mvc_export_table(backend *b, stream *s, res_table *t, BAT *order, BUN offset, BU
 		if (json) {
 			res_col *p = t->cols + (i - 1);
 
-			/*  
+			/*
 			 * We define the "proper" way of returning
 			 * a relational table in json format as a
 			 * json array of objects, where each row is
@@ -1905,7 +1905,7 @@ mvc_export_table(backend *b, stream *s, res_table *t, BAT *order, BUN offset, BU
 static lng
 get_print_width(int mtype, sql_class eclass, int digits, int scale, int tz, bat bid, ptr p)
 {
-	size_t count = 0, incr = 0;;
+	size_t count = 0, incr = 0;
 
 	if (eclass == EC_SEC)
 		incr = 1;
@@ -2207,7 +2207,7 @@ mvc_export_head_prot10(backend *b, stream *s, int res_id, int only_header, int c
 		if (type->eclass == EC_TIMESTAMP || type->eclass == EC_DATE) {
 			// timestamps are converted to Unix Timestamps
 			mtype = TYPE_lng;
-			typelen = sizeof(lng);	
+			typelen = sizeof(lng);
 		}
 
 		if (convert_to_string) {
@@ -2591,7 +2591,7 @@ mvc_export_chunk(backend *b, stream *s, int res_id, BUN offset, BUN nr)
 	}
 
 	res = mvc_export_table(b, s, t, order, offset, cnt, "[ ", ",\t", "\t]\n", "\"", "NULL");
-	BBPunfix(order->batCacheid);	
+	BBPunfix(order->batCacheid);
 	return res;
 }
 

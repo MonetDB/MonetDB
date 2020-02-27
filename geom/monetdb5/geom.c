@@ -4652,8 +4652,7 @@ mbrrelation_wkb(bit *out, wkb **geom1WKB, wkb **geom2WKB, str (*func)(bit *, mbr
 	return ret;
 }
 
-/*returns true if the two
- * 	mbrs overlap */
+/*returns true if the two mbrs overlap */
 str
 mbrOverlaps(bit *out, mbr **b1, mbr **b2)
 {
@@ -5579,7 +5578,7 @@ wkbaHASH(const wkba *wArray)
 int
 wkbaCOMP(const wkba *l, const wkba *r)
 {
-	int i, res = 0;;
+	int i, res = 0;
 
 	//compare the number of items
 	if (l->itemsNum != r->itemsNum)

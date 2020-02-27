@@ -1,5 +1,5 @@
 # This  is a scenario for continual replication
-# first create a master with some sampl edata
+# first create a master with some sample data
 wlcr00
 wlc01
 
@@ -13,7 +13,7 @@ wlr10
 wlc20
 wlc21
 
-#and automatically roll forward the clone in 2 steps
+# and automatically roll forward the clone in 2 steps
 wlr20
 
 # prepare an update to the master
@@ -22,12 +22,12 @@ wlc30
 # roll forward to clone
 wlr30
 
-#delete some tupples
+# delete some tupples
 wlc40
 wlr35
 wlr40
 
-#clear the complete table
+# clear the complete table
 wlc50
 wlr50
 
@@ -35,8 +35,7 @@ wlr50
 wlc70
 wlr70
 
-#
-#stop the master
+# stop the master
 wlc100
 wlr100
 wlr110
