@@ -733,6 +733,22 @@ static void ctl_handle_client(
 					}
 					free(dest);
 				}
+			} else if (strncmp(p, "snapshot restore adhoc ", strlen("snapshot restore adhoc ")) == 0) {
+				char *source = p + strlen("snapshot restore adhoc ");
+				Mfprintf(_mero_ctlout, "Start restore snapshot of database '%s' from file '%s'\n", q, source);
+				char *e = snapshot_restore_from(q, source);
+				if (e != NULL) {
+					Mfprintf(_mero_ctlerr, "%s: restore  database '%s' from snapshot %s failed: %s",
+						origin, q, source, getErrMsg(e));
+					len = snprintf(buf2, sizeof(buf2), "%s\n", getErrMsg(e));
+					send_client("!");
+					freeErr(e);
+				} else {
+					len = snprintf(buf2, sizeof(buf2), "OK\n");
+					send_client("=");
+					Mfprintf(_mero_ctlout, "%s: restored database '%s' from snapshot '%s'\n",
+						origin, q, source);
+				}
 			} else if (strncmp(p, "name=", strlen("name=")) == 0) {
 				char *e;
 

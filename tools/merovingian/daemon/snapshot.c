@@ -19,10 +19,9 @@
 #include "mapi.h"
 #include "snapshot.h"
 
-static err validate_destination(const char *dest);
+static err validate_location(const char *path);
 
 /* Create a snapshot of database dbname to file dest.
- * TODO: verify that dest is a safe location.
  * TODO: Make it work for databases without monetdb/monetdb root account.
  */
 err
@@ -46,7 +45,7 @@ snapshot_database_to(char *dbname, char *dest)
 	}
 
 	/* Do not overwrite random files on the system. */
-	e = validate_destination(dest);
+	e = validate_location(dest);
 	if (e != NO_ERR) {
 		goto bailout;
 	}
@@ -89,6 +88,28 @@ bailout:
 	return e;
 }
 
+/* Restore a database from a snapshot file.
+ * TODO: Make it work for databases without monetdb/monetdb root account.
+ */
+err
+snapshot_restore_from(char *dbname, char *source)
+{
+	err e;
+	(void)dbname;
+	(void)source;
+
+	/* Do not read random files on the system. */
+	e = validate_location(source);
+	if (e != NO_ERR) {
+		goto bailout;
+	}
+
+	e =  newErr("not implemented");
+
+bailout:
+	return e;
+}
+
 err
 snapshot_default_filename(char **ret, const char *dbname)
 {
@@ -127,7 +148,7 @@ bailout:
 
 
 static err
-validate_destination(const char *dest)
+validate_location(const char *dest)
 {
 	err e = NO_ERR;
 	/* these are malloc'ed: */
@@ -141,7 +162,7 @@ validate_destination(const char *dest)
 	/* Get the canonical path of the snapshot directory */
 	configured_snapdir = getConfVal(_mero_props, "snapshotdir");
 	if (configured_snapdir == NULL || configured_snapdir[0] == '\0') {
-		e = newErr("Snapshot target file not allowed because no 'snapshotdir' has been configured");
+		e = newErr("Action not allowed because no 'snapshotdir' has been configured");
 		goto bailout;
 	}
 	if (configured_snapdir[0] != '/') {
@@ -161,7 +182,7 @@ validate_destination(const char *dest)
 
 	resolved_destination = realpath(dest_dir, NULL);
 	if (resolved_destination == NULL) {
-		e = newErr("Cannot resolve snapshot target directory '%s': %s",
+		e = newErr("Cannot resolve snapshot directory '%s': %s",
 			dest_dir, strerror(errno));
 		goto bailout;
 	}
@@ -174,7 +195,7 @@ validate_destination(const char *dest)
 			resolved_destination,
 			strlen(resolved_snapdir))
 	) {
-		e = newErr("Snapshot target '%s' is not inside configured snapshot directory '%s'",
+		e = newErr("Snapshot directory '%s' is not inside configured snapshot directory '%s'",
 			dest, resolved_snapdir);
 		goto bailout;
 	}
