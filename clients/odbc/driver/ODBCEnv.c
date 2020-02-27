@@ -113,7 +113,7 @@ ODBCError *
 getEnvError(ODBCEnv *env)
 {
 	assert(isValidEnv(env));
-	return env->Error;;
+	return env->Error;
 }
 
 

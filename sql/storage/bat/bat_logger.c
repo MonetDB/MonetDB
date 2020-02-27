@@ -176,7 +176,7 @@ bl_postversion(void *lg)
 
 #ifdef CATALOG_MAR2018
 	if (catalog_version <= CATALOG_MAR2018) {
-		/* In the past, the sys._tables.readlonly and
+		/* In the past, the sys._tables.readonly and
 		 * tmp._tables.readonly columns were renamed to
 		 * (sys|tmp)._tables.access and the type was changed
 		 * from BOOLEAN to SMALLINT.  It may be that this

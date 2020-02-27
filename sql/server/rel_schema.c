@@ -367,7 +367,7 @@ column_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sq
 		}
 
 		/* find unique referenced key */
-		if (n->next->data.lval) {	
+		if (n->next->data.lval) {
 			char *rcname = n->next->data.lval->h->data.sval;
 
 			cols = list_append(sa_list(sql->sa), rcname);
@@ -438,7 +438,7 @@ column_option(
 
 		if (sym->token == SQL_COLUMN || sym->token == SQL_IDENT) {
 			sql_exp *e = rel_logical_value_exp(query, NULL, sym, sql_sel);
-			
+
 			if (e && is_atom(e->type)) {
 				atom *a = exp_value(sql, e, sql->args, sql->argc);
 
@@ -561,7 +561,7 @@ table_foreign_key(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table *t)
 
 			/* find key in ft->keys */
 			rk = mvc_bind_ukey(ft, cols);
-		} else if (ft->pkey) {	
+		} else if (ft->pkey) {
 			/* no columns specified use ft.pkey */
 			rk = &ft->pkey->k;
 		}
@@ -610,8 +610,8 @@ table_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table
 					kt == pkey ? "PRIMARY KEY" : "UNIQUE", name);
 			return SQL_ERR;
 		}
-			
- 		k = (sql_key*)mvc_create_ukey(sql, t, name, kt);
+
+		k = (sql_key*)mvc_create_ukey(sql, t, name, kt);
 		for (; nms; nms = nms->next) {
 			char *nm = nms->data.sval;
 			sql_column *c = mvc_bind_column(sql, t, nm);
@@ -724,13 +724,13 @@ table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 		char *msg = "";
 
 		switch (s->token) {
-		case SQL_TABLE: 	
+		case SQL_TABLE:
 			msg = "add table to"; 
 			break;
-		case SQL_COLUMN: 	
+		case SQL_COLUMN:
 			msg = "add column to"; 
 			break;
-		case SQL_CONSTRAINT: 	
+		case SQL_CONSTRAINT:
 			msg = "add constraint to"; 
 			break;
 		case SQL_COLUMN_OPTIONS:
@@ -1168,12 +1168,12 @@ rel_create_view(sql_query *query, sql_schema *ss, dlist *qname, dlist *column_sp
 				return sql_error(sql, 02, SQLSTATE(42000) "%s VIEW: cannot replace view '%s', there are database objects which depend on it", base, t->base.name);
 			} else {
 				str output;
-				if((output = mvc_drop_table(sql, s, t, 0)) != MAL_SUCCEED) {
+				if ((output = mvc_drop_table(sql, s, t, 0)) != MAL_SUCCEED) {
 					sql_error(sql, 02, SQLSTATE(42000) "%s", output);
 					freeException(output);
 					return NULL;
 				}
-		 	}
+			}
 		} else {
 			return sql_error(sql, 02, SQLSTATE(42S01) "%s VIEW: name '%s' already in use", base, name);
 		}
@@ -1206,7 +1206,6 @@ rel_create_view(sql_query *query, sql_schema *ss, dlist *qname, dlist *column_sp
 					return NULL;
 				}
 			}
-			//rel_add_intern(sql, sq);
 		}
 
 		if (create) {
@@ -1792,7 +1791,7 @@ rel_grant_table(mvc *sql, sql_schema *cur, dlist *privs, dlist *qname, dlist *gr
 		for (opn = privs->h; opn; opn = opn->next) {
 			symbol *op = opn->data.sym;
 			int priv = PRIV_SELECT;
-	
+
 			switch (op->token) {
 			case SQL_SELECT:
 				priv = PRIV_SELECT;
@@ -1869,7 +1868,7 @@ rel_grant_func(mvc *sql, sql_schema *cur, dlist *privs, dlist *qname, dlist *typ
 		}
 		for (opn = privs->h; opn; opn = opn->next) {
 			symbol *op = opn->data.sym;
-	
+
 			if (op->token != SQL_EXECUTE) 
 				return sql_error(sql, 02, SQLSTATE(42000) "Can only GRANT 'EXECUTE' on function '%s'", fname);
 			if ((res = rel_list(sql->sa, res, rel_func_priv(sql->sa, s->base.name, func->base.id, grantee, PRIV_EXECUTE, grant, grantor, ddl_grant_func))) == NULL) {
@@ -2464,7 +2463,7 @@ credentials_password(dlist *credentials)
 	}
 	assert(credentials->h);
 
-	char *password = credentials->h->next->next->data.sval;;
+	char *password = credentials->h->next->next->data.sval;
 
 	return password;
 }
