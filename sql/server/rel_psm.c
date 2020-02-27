@@ -87,43 +87,50 @@ static sql_exp *
 psm_set_exp(sql_query *query, dnode *n)
 {
 	mvc *sql = query->sql;
+	dlist *qname = n->data.lval;
 	symbol *val = n->next->data.sym;
-	sql_exp *e = NULL;
-	int level = 0;
+	sql_exp *res = NULL, *e = NULL;
+	int level = 0, single = (dlist_length(qname) == 1);
 	sql_subtype *tpe = NULL;
 	sql_rel *rel = NULL;
-	sql_exp *res = NULL;
-	int single = (dlist_length(n->data.lval) == 1);
 
 	if (single) {
 		exp_kind ek = {type_value, card_value, FALSE};
-		const char *name = n->data.sval;
-		/* name can be 
+		const char *sname = qname_schema(qname);
+		const char *vname = qname_schema_object(qname);
+		sql_schema *s = NULL;
+
+		if (sname && !(s = mvc_bind_schema(sql, sname)))
+			return sql_error(sql, 02, SQLSTATE(3F000) "SET: No such schema '%s'", sname);
+		if (s == NULL)
+			s = cur_schema(sql);
+
+		/* vname can be 
 			'parameter of the function' (ie in the param list)
 			or a local or global variable, declared earlier
 		*/
 
 		/* check if variable is known from the stack */
-		if (!stack_find_var(sql, name)) {
-			sql_arg *a = sql_bind_param(sql, name);
+		if (!stack_find_var(sql, vname)) {
+			sql_arg *a = sql_bind_param(sql, vname);
 
 			if (!a) /* not parameter, ie local var ? */
-				return sql_error(sql, 01, SQLSTATE(42000) "Variable %s unknown", name);
+				return sql_error(sql, 01, SQLSTATE(42000) "SET: Variable '%s%s%s' unknown", sname ? sname : "", sname ? "." : "", vname);
 			tpe = &a->type;
 		} else { 
-			tpe = stack_find_type(sql, name);
+			tpe = stack_find_type(sql, vname);
 		}
 
 		e = rel_value_exp2(query, &rel, val, sql_sel, ek);
 		if (!e || (rel && e->card > CARD_AGGR))
 			return NULL;
 
-		level = stack_find_frame(sql, name);
+		level = stack_find_frame(sql, vname);
 		e = rel_check_type(sql, tpe, rel, e, type_cast);
 		if (!e)
 			return NULL;
 
-		res = exp_set(sql->sa, name, e, level);
+		res = exp_set(sql->sa, sname, vname, e, level);
 	} else { /* multi assignment */
 		exp_kind ek = {type_value, card_relation, FALSE};
 		sql_rel *rel_val = rel_subquery(query, NULL, val, ek);
@@ -140,15 +147,23 @@ psm_set_exp(sql_query *query, dnode *n)
 		b = sa_list(sql->sa);
 		append(b, exp_rel(sql, rel_val));
 
-		for(m = vars->h, n = rel_val->exps->h; n && m; n = n->next, m = m->next) {
-			char *vname = m->data.sval;
+		for (m = vars->h, n = rel_val->exps->h; n && m; n = n->next, m = m->next) {
+			dlist *nqname = m->data.lval;
+			const char *sname = qname_schema(nqname);
+			const char *vname = qname_schema_object(nqname);
 			sql_exp *v = n->data;
+			sql_schema *s = NULL;
+
+			if (sname && !(s = mvc_bind_schema(sql, sname)))
+				return sql_error(sql, 02, SQLSTATE(3F000) "SET: No such schema '%s'", sname);
+			if (s == NULL)
+				s = cur_schema(sql);
 
 			if (!stack_find_var(sql, vname)) {
 				sql_arg *a = sql_bind_param(sql, vname);
 
 				if (!a) /* not parameter, ie local var ? */
-					return sql_error(sql, 01, SQLSTATE(42000) "Variable %s unknown", vname);
+					return sql_error(sql, 01, SQLSTATE(42000) "SET: Variable '%s%s%s' unknown", sname ? sname : "", sname ? "." : "", vname);
 				tpe = &a->type;
 			} else { 
 				tpe = stack_find_type(sql, vname);
@@ -167,7 +182,7 @@ psm_set_exp(sql_query *query, dnode *n)
 				assert(zero_or_one);
 				v = exp_aggr1(sql->sa, v, zero_or_one, 0, 0, CARD_ATOM, has_nil(v));
 			}
-			append(b, exp_set(sql->sa, vname, v, level));
+			append(b, exp_set(sql->sa, sname, vname, v, level));
 		}
 		res = exp_rel(sql, rel_psm_block(sql->sa, b));
 	}
@@ -194,20 +209,28 @@ rel_psm_declare(mvc *sql, dnode *n)
 {
 	list *l = sa_list(sql->sa);
 
-	while(n) { /* list of 'identfiers with type' */
+	while (n) { /* list of 'identfiers with type' */
 		dnode *ids = n->data.sym->data.lval->h->data.lval->h;
 		sql_subtype *ctype = &n->data.sym->data.lval->h->next->data.typeval;
-		while(ids) {
-			const char *name = ids->data.sval;
+		while (ids) {
+			dlist *qname = ids->data.lval;
+			const char *sname = qname_schema(qname);
+			const char *tname = qname_schema_object(qname);
+			sql_schema *s = NULL;
 			sql_exp *r = NULL;
 
+			if (sname && !(s = mvc_bind_schema(sql, sname)))
+				return sql_error(sql, 02, SQLSTATE(3F000) "DECLARE: No such schema '%s'", sname);
+			if (s == NULL)
+				s = cur_schema(sql);
+
 			/* check if we overwrite a scope local variable declare x; declare x; */
-			if (frame_find_var(sql, name))
-				return sql_error(sql, 01, SQLSTATE(42000) "Variable '%s' already declared", name);
+			if (frame_find_var(sql, tname))
+				return sql_error(sql, 01, SQLSTATE(42000) "DECLARE: Variable '%s%s%s' already declared", sname ? sname : "", sname ? "." : "", tname);
 			/* variables are put on stack */
-			if (!stack_push_var(sql, name, ctype))
+			if (!stack_push_var(sql, tname, ctype))
 				return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			r = exp_var(sql->sa, sa_strdup(sql->sa, name), ctype, sql->frame);
+			r = exp_var(sql->sa, sa_strdup(sql->sa, sname), sa_strdup(sql->sa, tname), ctype, sql->frame);
 			append(l, r);
 			ids = ids->next;
 		}
@@ -226,30 +249,28 @@ rel_psm_declare_table(sql_query *query, dnode *n)
 	const char *sname = qname_schema(qname);
 	sql_table *t;
 
-	if (sname)  /* not allowed here */
-		return sql_error(sql, 02, SQLSTATE(42000) "DECLARE TABLE: qualified name not allowed");
 	if (frame_find_var(sql, name))
-		return sql_error(sql, 01, SQLSTATE(42000) "Variable '%s' already declared", name);
+		return sql_error(sql, 01, SQLSTATE(42000) "DECLARE: Variable '%s' already declared", name);
 
 	assert(n->next->next->next->type == type_int);
-	rel = rel_create_table(query, cur_schema(sql), SQL_DECLARED_TABLE, NULL, name, n->next->next->data.sym,
-			n->next->next->next->data.i_val, NULL, NULL, NULL, false, NULL, 0);
+	rel = rel_create_table(query, cur_schema(sql), SQL_DECLARED_TABLE, sname, name, n->next->next->data.sym,
+						   n->next->next->next->data.i_val, NULL, NULL, NULL, false, NULL, 0);
 
 	if (!rel)
 		return NULL;
-	if(rel->op == op_ddl) {
+	if (rel->op == op_ddl) {
 		baset = rel;
-	} else if(rel->op == op_insert) {
+	} else if (rel->op == op_insert) {
 		baset = rel->l;
 	} else {
 		return NULL;
 	}
-	if(baset->flag != ddl_create_table)
+	if (baset->flag != ddl_create_table)
 		return NULL;
 	t = (sql_table*)((atom*)((sql_exp*)baset->exps->t->data)->l)->data.val.pval;
-	if(!stack_push_table(sql, name, baset, t))
+	if (!stack_push_table(sql, name, baset, t))
 		return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	return exp_table(sql->sa, sa_strdup(sql->sa, name), t, sql->frame);
+	return exp_table(sql->sa, sa_strdup(sql->sa, sname), sa_strdup(sql->sa, name), t, sql->frame);
 }
 
 /* [ label: ]
@@ -571,24 +592,32 @@ rel_select_into( sql_query *query, symbol *sq, exp_kind ek)
 	nl = sa_list(sql->sa);
 	append(nl, exp_rel(sql, r));
 	for (m = r->exps->h, n = into->h; m && n; m = m->next, n = n->next) {
+		dlist *qname = n->data.lval;
+		const char *sname = qname_schema(qname);
+		const char *name = qname_schema_object(qname);
 		sql_subtype *tpe = NULL;
-		char *nme = n->data.sval;
+		sql_schema *s = NULL;
 		sql_exp *v = m->data;
 		int level;
 
-		if (!stack_find_var(sql, nme)) 
-			return sql_error(sql, 02, SQLSTATE(42000) "SELECT INTO: variable '%s' unknown", nme);
+		if (sname && !(s = mvc_bind_schema(sql, sname)))
+			return sql_error(sql, 02, SQLSTATE(3F000) "SELECT INTO: No such schema '%s'", sname);
+		if (s == NULL)
+			s = cur_schema(sql);
+
+		if (!stack_find_var(sql, name)) 
+			return sql_error(sql, 02, SQLSTATE(42000) "SELECT INTO: Variable '%s%s%s' unknown", sname ? sname : "", sname ? "." : "", name);
 		/* dynamic check for single values */
 		if (v->card > CARD_AGGR) {
 			sql_subfunc *zero_or_one = sql_bind_func(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(v), NULL, F_AGGR);
 			assert(zero_or_one);
 			v = exp_aggr1(sql->sa, v, zero_or_one, 0, 0, CARD_ATOM, has_nil(v));
 		}
-		tpe = stack_find_type(sql, nme);
-		level = stack_find_frame(sql, nme);
+		tpe = stack_find_type(sql, name);
+		level = stack_find_frame(sql, name);
 		if (!v || !(v = rel_check_type(sql, tpe, r, v, type_equal)))
 			return NULL;
-		v = exp_set(sql->sa, nme, v, level);
+		v = exp_set(sql->sa, sname, name, v, level);
 		list_append(nl, v);
 	}
 	return nl;

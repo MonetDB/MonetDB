@@ -410,7 +410,6 @@ int yydebug=1;
 	restricted_ident
 	sstring
 	string
-	target_specification
 	type_alias
 	ustring
 	varchar
@@ -488,7 +487,6 @@ int yydebug=1;
 	schema_name_clause
 	schema_name_list
 	search_condition_commalist
-	select_target_list
 	selection
 	serial_opt_params
 	single_datetime_field
@@ -3268,7 +3266,7 @@ simple_select:
     ;
 
 select_statement_single_row:
-    SELECT opt_distinct selection INTO select_target_list table_exp
+    SELECT opt_distinct selection INTO variable_ref_commalist table_exp
 	{ $$ = newSelectNode( SA, $2, $3, $5,
 		$6->h->data.sym,
 		$6->h->next->data.sym,
@@ -3310,16 +3308,6 @@ select_no_parens_orderby:
 	 } 
 	}
     ;
-
-select_target_list:
-	target_specification 	{ $$ = append_string(L(), $1); }
- |  	select_target_list ',' target_specification
-				{ $$ = append_string($1, $3); }
- ;
-
-target_specification:
-	ident
- ;
 
 select_no_parens:
     select_no_parens UNION set_distinct opt_corresponding select_no_parens

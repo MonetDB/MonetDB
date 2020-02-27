@@ -691,12 +691,13 @@ exp_alias_ref(mvc *sql, sql_exp *e)
 }
 
 sql_exp *
-exp_set(sql_allocator *sa, const char *name, sql_exp *val, int level)
+exp_set(sql_allocator *sa, const char *sname, const char *name, sql_exp *val, int level)
 {
 	sql_exp *e = exp_create(sa, e_psm);
 
 	if (e == NULL)
 		return NULL;
+	e->alias.rname = sname;
 	e->alias.name = name;
 	e->l = val;
 	e->flag = PSM_SET + SET_PSM_LEVEL(level);
@@ -704,12 +705,13 @@ exp_set(sql_allocator *sa, const char *name, sql_exp *val, int level)
 }
 
 sql_exp * 
-exp_var(sql_allocator *sa, const char *name, sql_subtype *type, int level)
+exp_var(sql_allocator *sa, const char *sname, const char *name, sql_subtype *type, int level)
 {
 	sql_exp *e = exp_create(sa, e_psm);
 
 	if (e == NULL)
 		return NULL;
+	e->alias.rname = sname;
 	e->alias.name = name;
 	e->tpe = *type;
 	e->flag = PSM_VAR + SET_PSM_LEVEL(level);
@@ -717,12 +719,13 @@ exp_var(sql_allocator *sa, const char *name, sql_subtype *type, int level)
 }
 
 sql_exp * 
-exp_table(sql_allocator *sa, const char *name, sql_table *t, int level)
+exp_table(sql_allocator *sa, const char *sname, const char *name, sql_table *t, int level)
 {
 	sql_exp *e = exp_create(sa, e_psm);
 
 	if (e == NULL)
 		return NULL;
+	e->alias.rname = sname;
 	e->alias.name = name;
 	e->f = t;
 	e->flag = PSM_VAR + SET_PSM_LEVEL(level);
@@ -2377,7 +2380,7 @@ exp_copy( mvc *sql, sql_exp * e)
 		break;
 	case e_psm:
 		if (e->flag & PSM_SET) 
-			ne = exp_set(sql->sa, e->alias.name, exp_copy(sql, e->l), GET_PSM_LEVEL(e->flag));
+			ne = exp_set(sql->sa, e->alias.rname, e->alias.name, exp_copy(sql, e->l), GET_PSM_LEVEL(e->flag));
 		if (e->flag & PSM_REL) {
 			if (!exp_name(e))
 				exp_label(sql->sa, e, ++sql->label);

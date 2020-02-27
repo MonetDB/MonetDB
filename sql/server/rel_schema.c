@@ -41,7 +41,7 @@ rel_table(mvc *sql, int cat_type, const char *sname, sql_table *t, int nr)
 {
 	sql_rel *rel = rel_create(sql->sa);
 	list *exps = new_exp_list(sql->sa);
-	if(!rel || !exps)
+	if (!rel || !exps)
 		return NULL;
 
 	append(exps, exp_atom_int(sql->sa, nr));
@@ -63,7 +63,7 @@ rel_alter_table(sql_allocator *sa, int cattype, char *sname, char *tname, char *
 {
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);
-	if(!rel || !exps)
+	if (!rel || !exps)
 		return NULL;
 
 	append(exps, exp_atom_clob(sa, sname));
@@ -88,7 +88,7 @@ sql_rel *
 rel_list(sql_allocator *sa, sql_rel *l, sql_rel *r) 
 {
 	sql_rel *rel = rel_create(sa);
-	if(!rel)
+	if (!rel)
 		return NULL;
 	if (!l)
 		return r;
@@ -100,7 +100,7 @@ rel_list(sql_allocator *sa, sql_rel *l, sql_rel *r)
 }
 
 static sql_rel *
-view_rename_columns( mvc *sql, char *name, sql_rel *sq, dlist *column_spec)
+view_rename_columns(mvc *sql, const char *name, sql_rel *sq, dlist *column_spec)
 {
 	dnode *n = column_spec->h;
 	node *m = sq->exps->h, *p = m;
@@ -186,7 +186,7 @@ as_subquery(mvc *sql, sql_table *t, table_types tt, sql_rel *sq, dlist *column_s
 }
 
 sql_table *
-mvc_create_table_as_subquery( mvc *sql, sql_rel *sq, sql_schema *s, const char *tname, dlist *column_spec, int temp, int commit_action )
+mvc_create_table_as_subquery(mvc *sql, sql_rel *sq, sql_schema *s, const char *tname, dlist *column_spec, int temp, int commit_action, const char *action)
 {
 	table_types tt =(temp == SQL_REMOTE)?tt_remote:
 		(temp == SQL_STREAM)?tt_stream:
@@ -194,7 +194,7 @@ mvc_create_table_as_subquery( mvc *sql, sql_rel *sq, sql_schema *s, const char *
 		(temp == SQL_REPLICA_TABLE)?tt_replica_table:tt_table;
 
 	sql_table *t = mvc_create_table(sql, s, tname, tt, 0, SQL_DECLARED_TABLE, commit_action, -1, 0);
-	if (as_subquery(sql, t, tt, sq, column_spec, "CREATE TABLE") != 0)
+	if (as_subquery(sql, t, tt, sq, column_spec, action) != 0)
 		return NULL;
 	return t;
 }
@@ -712,7 +712,7 @@ create_column(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 }
 
 static int
-table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alter)
+table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alter, const char *action)
 {
 	mvc *sql = query->sql;
 	int res = SQL_OK;
@@ -759,10 +759,11 @@ table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 			msg = "drop constraint from"; 
 			break;
 		default:
-			sql_error(sql, 02, SQLSTATE(M0M03) "Unknown table element (%p)->token = %s\n", s, token2string(s->token));
+			sql_error(sql, 02, SQLSTATE(M0M03) "%s: Unknown table element (%p)->token = %s\n", action, s, token2string(s->token));
 			return SQL_ERR;
 		}
-		sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: cannot %s %s '%s'%s\n",
+		sql_error(sql, 02, SQLSTATE(42000) "%s: cannot %s %s '%s'%s\n",
+				action,
 				msg, 
 				isPartition(t)?"a PARTITION of a MERGE or REPLICA TABLE":
 				isMergeTable(t)?"MERGE TABLE":
@@ -788,7 +789,7 @@ table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 		dlist *olist = n->next->data.lval;
 
 		if (!c) {
-			sql_error(sql, 02, SQLSTATE(42S22) "ALTER TABLE: no such column '%s'\n", cname);
+			sql_error(sql, 02, SQLSTATE(42S22) "%s: no such column '%s'\n", action, cname);
 			return SQL_ERR;
 		} else {
 			return column_options(query, olist, ss, t, c);
@@ -803,12 +804,12 @@ table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 		sql_column *c = mvc_bind_column(sql, t, cname);
 
 		if (!c) {
-			sql_error(sql, 02, SQLSTATE(42S22) "ALTER TABLE: no such column '%s'\n", cname);
+			sql_error(sql, 02, SQLSTATE(42S22) "%s: no such column '%s'\n", action, cname);
 			return SQL_ERR;
 		}
 		r = symbol2string(sql, sym, 0, &err);
 		if (!r) {
-			(void) sql_error(sql, 02, SQLSTATE(42000) "incorrect default value '%s'\n", err?err:"");
+			(void) sql_error(sql, 02, SQLSTATE(42000) "%s: incorrect default value '%s'\n", action, err?err:"");
 			if (err) _DELETE(err);
 			return SQL_ERR;
 		}
@@ -824,7 +825,7 @@ table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 		sql_column *c = mvc_bind_column(sql, t, cname);
 
 		if (!c) {
-			sql_error(sql, 02, SQLSTATE(42S22) "ALTER TABLE: no such column '%s'\n", cname);
+			sql_error(sql, 02, SQLSTATE(42S22) "%s: no such column '%s'\n", action, cname);
 			return SQL_ERR;
 		}
 		mvc_storage(sql, c, storage_type);
@@ -839,7 +840,7 @@ table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 		int null = (s->token != SQL_NOT_NULL);
 
 		if (!c) {
-			sql_error(sql, 02, SQLSTATE(42S22) "ALTER TABLE: no such column '%s'\n", cname);
+			sql_error(sql, 02, SQLSTATE(42S22) "%s: no such column '%s'\n", action, cname);
 			return SQL_ERR;
 		}
 		mvc_null(sql, c, null);
@@ -849,7 +850,7 @@ table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 		char *cname = s->data.sval;
 		sql_column *c = mvc_bind_column(sql, t, cname);
 		if (!c) {
-			sql_error(sql, 02, SQLSTATE(42S22) "ALTER TABLE: no such column '%s'\n", cname);
+			sql_error(sql, 02, SQLSTATE(42S22) "%s: no such column '%s'\n", action, cname);
 			return SQL_ERR;
 		}
 		mvc_drop_default(sql,c);
@@ -863,24 +864,24 @@ table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 		node *n;
 
 		if (sname && !(os = mvc_bind_schema(sql, sname))) {
-			sql_error(sql, 02, SQLSTATE(3F000) "CREATE TABLE: no such schema '%s'", sname);
+			sql_error(sql, 02, SQLSTATE(3F000) "%s: no such schema '%s'", action, sname);
 			return SQL_ERR;
 		}
 		if (!os)
 			os = ss;
 		ot = mvc_bind_table(sql, os, name);
 		if (!ot) {
-			sql_error(sql, 02, SQLSTATE(3F000) "CREATE TABLE: no such table '%s'", name);
+			sql_error(sql, 02, SQLSTATE(3F000) "%s: no such table '%s'", action, name);
 			return SQL_ERR;
 		}
 		for (n = ot->columns.set->h; n; n = n->next) {
 			sql_column *oc = n->data;
 
 			if (!isView(t) && oc->base.name && oc->base.name[0] == '%') {
-				sql_error(sql, 02, SQLSTATE(42000) "CREATE TABLE: generated labels not allowed in column names, use an alias instead");
+				sql_error(sql, 02, SQLSTATE(42000) "%s: generated labels not allowed in column names, use an alias instead", action);
 				return SQL_ERR;
 			} else if (mvc_bind_column(sql, t, oc->base.name)) {
-				sql_error(sql, 02, SQLSTATE(42S21) "CREATE TABLE: a column named '%s' already exists\n", oc->base.name);
+				sql_error(sql, 02, SQLSTATE(42S21) "%s: a column named '%s' already exists\n", action, oc->base.name);
 				return SQL_ERR;
 			}
 			(void)mvc_create_column(sql, t, oc->base.name, &oc->type);
@@ -895,23 +896,23 @@ table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 
 		assert(l->h->next->type == type_int);
 		if (col == NULL) {
-			sql_error(sql, 02, SQLSTATE(42S22) "ALTER TABLE: no such column '%s'\n", cname);
+			sql_error(sql, 02, SQLSTATE(42S22) "%s: no such column '%s'\n", action, cname);
 			return SQL_ERR;
 		}
 		if (cs_size(&t->columns) <= 1) {
-			sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: cannot drop column '%s': table needs at least one column\n", cname);
+			sql_error(sql, 02, SQLSTATE(42000) "%s: cannot drop column '%s': table needs at least one column\n", action, cname);
 			return SQL_ERR;
 		}
 		if (t->system) {
-			sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: cannot drop column '%s': table is a system table\n", cname);
+			sql_error(sql, 02, SQLSTATE(42000) "%s: cannot drop column '%s': table is a system table\n", action, cname);
 			return SQL_ERR;
 		}
 		if (isView(t)) {
-			sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: cannot drop column '%s': '%s' is a view\n", cname, t->base.name);
+			sql_error(sql, 02, SQLSTATE(42000) "%s: cannot drop column '%s': '%s' is a view\n", action, cname, t->base.name);
 			return SQL_ERR;
 		}
 		if (!drop_action && mvc_check_dependency(sql, col->base.id, COLUMN_DEPENDENCY, NULL)) {
-			sql_error(sql, 02, SQLSTATE(2BM37) "ALTER TABLE: cannot drop column '%s': there are database objects which depend on it\n", cname);
+			sql_error(sql, 02, SQLSTATE(2BM37) "%s: cannot drop column '%s': there are database objects which depend on it\n", action, cname);
 			return SQL_ERR;
 		}
 		if (!drop_action  && t->keys.set) {
@@ -922,27 +923,27 @@ table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 				for (m = k->columns->h; m; m = m->next) {
 					sql_kc *kc = m->data;
 					if (strcmp(kc->c->base.name, cname) == 0) {
-						sql_error(sql, 02, SQLSTATE(2BM37) "ALTER TABLE: cannot drop column '%s': there are constraints which depend on it\n", cname);
+						sql_error(sql, 02, SQLSTATE(2BM37) "%s: cannot drop column '%s': there are constraints which depend on it\n", action, cname);
 						return SQL_ERR;
 					}
 				}
 			}
 		}
 		if (isPartitionedByColumnTable(t) && t->part.pcol->base.id == col->base.id) {
-			sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: cannot drop column '%s': is the partitioned column on the table '%s'\n", cname, t->base.name);
+			sql_error(sql, 02, SQLSTATE(42000) "%s: cannot drop column '%s': is the partitioned column on the table '%s'\n", action, cname, t->base.name);
 			return SQL_ERR;
 		}
 		if (isPartitionedByExpressionTable(t)) {
-			for(node *n = t->part.pexp->cols->h; n; n = n->next) {
+			for (node *n = t->part.pexp->cols->h; n; n = n->next) {
 				int next = *(int*) n->data;
-				if(next == col->colnr) {
-					sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: cannot drop column '%s': the expression used in '%s' depends on it\n", cname, t->base.name);
+				if (next == col->colnr) {
+					sql_error(sql, 02, SQLSTATE(42000) "%s: cannot drop column '%s': the expression used in '%s' depends on it\n", action, cname, t->base.name);
 					return SQL_ERR;
 				}
 			}
 		}
 		if (mvc_drop_column(sql, t, col, drop_action)) {
-			sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: %s\n", MAL_MALLOC_FAIL);
+			sql_error(sql, 02, SQLSTATE(42000) "%s: %s\n", action, MAL_MALLOC_FAIL);
 			return SQL_ERR;
 		}
 	} 	break;
@@ -953,7 +954,7 @@ table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 		res = SQL_ERR;
 	}
 	if (res == SQL_ERR) {
-		sql_error(sql, 02, SQLSTATE(M0M03) "Unknown table element (%p)->token = %s\n", s, token2string(s->token));
+		sql_error(sql, 02, SQLSTATE(M0M03) "%s: Unknown table element (%p)->token = %s\n", action, s, token2string(s->token));
 		return SQL_ERR;
 	}
 	return res;
@@ -964,27 +965,27 @@ create_partition_definition(mvc *sql, sql_table *t, symbol *partition_def)
 {
 	char *err = NULL;
 
-	if(partition_def) {
+	if (partition_def) {
 		dlist *list = partition_def->data.lval;
 		symbol *type = list->h->next->data.sym;
 		dlist *list2 = type->data.lval;
-		if(isPartitionedByColumnTable(t)) {
+		if (isPartitionedByColumnTable(t)) {
 			str colname = list2->h->data.sval;
 			node *n;
 			sql_class sql_ec;
 			for (n = t->columns.set->h; n ; n = n->next) {
 				sql_column *col = n->data;
-				if(!strcmp(col->base.name, colname)) {
+				if (!strcmp(col->base.name, colname)) {
 					t->part.pcol = col;
 					break;
 				}
 			}
-			if(!t->part.pcol) {
+			if (!t->part.pcol) {
 				sql_error(sql, 02, SQLSTATE(42000) "CREATE MERGE TABLE: the partition column '%s' is not part of the table", colname);
 				return SQL_ERR;
 			}
 			sql_ec = t->part.pcol->type.type->eclass;
-			if(!(sql_ec == EC_BIT || EC_VARCHAR(sql_ec) || EC_TEMP(sql_ec) || sql_ec == EC_POS || sql_ec == EC_NUM ||
+			if (!(sql_ec == EC_BIT || EC_VARCHAR(sql_ec) || EC_TEMP(sql_ec) || sql_ec == EC_POS || sql_ec == EC_NUM ||
 				 EC_INTERVAL(sql_ec)|| sql_ec == EC_DEC || sql_ec == EC_BLOB)) {
 				err = sql_subtype_string(&(t->part.pcol->type));
 				if (!err) {
@@ -995,7 +996,7 @@ create_partition_definition(mvc *sql, sql_table *t, symbol *partition_def)
 				}
 				return SQL_ERR;
 			}
-		} else if(isPartitionedByExpressionTable(t)) {
+		} else if (isPartitionedByExpressionTable(t)) {
 			sql_subtype *empty = sql_bind_localtype("void");
 			char *query = symbol2string(sql, list2->h->data.sym, 1, &err);
 			if (!query) {
@@ -1028,10 +1029,11 @@ rel_create_table(sql_query *query, sql_schema *ss, int temp, const char *sname, 
 		 (temp == SQL_MERGE_TABLE)?tt_merge_table:
 		 (temp == SQL_REPLICA_TABLE)?tt_replica_table:tt_table;
 	bit properties = partition_def ? (bit) partition_def->data.lval->h->next->next->data.i_val : 0;
+	const char *action = (temp == SQL_DECLARED_TABLE)?"DECLARE":"CREATE";
 
 	(void)create;
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
-		return sql_error(sql, 02, SQLSTATE(3F000) "CREATE TABLE: no such schema '%s'", sname);
+		return sql_error(sql, 02, SQLSTATE(3F000) "%s TABLE: no such schema '%s'", action, sname);
 
 	if (temp != SQL_PERSIST && tt == tt_table &&
 			commit_action == CA_COMMIT)
@@ -1041,8 +1043,8 @@ rel_create_table(sql_query *query, sql_schema *ss, int temp, const char *sname, 
 		if (temp != SQL_PERSIST && tt == tt_table) {
 			if (temp == SQL_LOCAL_TEMP || temp == SQL_GLOBAL_TEMP) {
 				if (sname && strcmp(sname, "tmp") != 0)
-					return sql_error(sql, 02, SQLSTATE(3F000) "CREATE TABLE: %s temporary tables should be stored in the 'tmp' schema",
-									 (temp == SQL_LOCAL_TEMP) ? "local" : "global");
+					return sql_error(sql, 02, SQLSTATE(3F000) "%s TABLE: %s temporary tables should be stored in the 'tmp' schema",
+									 action, (temp == SQL_LOCAL_TEMP) ? "local" : "global");
 				s = mvc_bind_schema(sql, "tmp");
 			}
 		} else if (s == NULL) {
@@ -1050,18 +1052,17 @@ rel_create_table(sql_query *query, sql_schema *ss, int temp, const char *sname, 
 		}
 	}
 
-	if (temp != SQL_DECLARED_TABLE && s)
+	if (s)
 		sname = s->base.name;
 
 	if (mvc_bind_table(sql, s, name)) {
 		if (if_not_exists) {
 			return rel_psm_block(sql->sa, new_exp_list(sql->sa));
 		} else {
-			char *cd = (temp == SQL_DECLARED_TABLE)?"DECLARE":"CREATE";
-			return sql_error(sql, 02, SQLSTATE(42S01) "%s TABLE: name '%s' already in use", cd, name);
+			return sql_error(sql, 02, SQLSTATE(42S01) "%s TABLE: name '%s' already in use", action, name);
 		}
-	} else if (temp != SQL_DECLARED_TABLE && (!mvc_schema_privs(sql, s) && !(isTempSchema(s) && temp == SQL_LOCAL_TEMP))){
-		return sql_error(sql, 02, SQLSTATE(42000) "CREATE TABLE: insufficient privileges for user '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
+	} else if (!mvc_schema_privs(sql, s) && !(isTempSchema(s) && temp == SQL_LOCAL_TEMP)) {
+		return sql_error(sql, 02, SQLSTATE(42000) "%s TABLE: insufficient privileges for user '%s' in schema '%s'", action, stack_get_string(sql, "current_user"), s->base.name);
 	} else if (table_elements_or_subquery->token == SQL_CREATE_TABLE) {
 		/* table element list */
 		dnode *n;
@@ -1072,18 +1073,18 @@ rel_create_table(sql_query *query, sql_schema *ss, int temp, const char *sname, 
 			char *local_user = stack_get_string(sql, "current_user");
 			char *local_table = sa_strconcat(sql->sa, sa_strconcat(sql->sa, sname, "."), name);
 			if (!local_table) {
-				return sql_error(sql, 02, SQLSTATE(HY013) "CREATE TABLE: " MAL_MALLOC_FAIL);
+				return sql_error(sql, 02, SQLSTATE(HY013) "%s TABLE: " MAL_MALLOC_FAIL, action);
 			}
 			if (!mapiuri_valid(loc))
-				return sql_error(sql, 02, SQLSTATE(42000) "CREATE TABLE: incorrect uri '%s' for remote table '%s'", loc, name);
+				return sql_error(sql, 02, SQLSTATE(42000) "%s TABLE: incorrect uri '%s' for remote table '%s'", action, loc, name);
 
 			const char *remote_uri = mapiuri_uri(loc, sql->sa);
 			if (remote_uri == NULL) {
-				return sql_error(sql, 02, SQLSTATE(HY013) "CREATE TABLE: " MAL_MALLOC_FAIL);
+				return sql_error(sql, 02, SQLSTATE(HY013) "%s TABLE: " MAL_MALLOC_FAIL, action);
 			}
 			char *reg_credentials = AUTHaddRemoteTableCredentials(local_table, local_user, remote_uri, username, password, pw_encrypted);
 			if (reg_credentials != 0) {
-				return sql_error(sql, 02, SQLSTATE(42000) "CREATE TABLE: cannot register credentials for remote table '%s' in vault: %s", name, reg_credentials);
+				return sql_error(sql, 02, SQLSTATE(42000) "%s TABLE: cannot register credentials for remote table '%s' in vault: %s", action, name, reg_credentials);
 			}
 			t = mvc_create_remote(sql, s, name, SQL_DECLARED_TABLE, loc);
 		} else {
@@ -1094,13 +1095,13 @@ rel_create_table(sql_query *query, sql_schema *ss, int temp, const char *sname, 
 
 		for (n = columns->h; n; n = n->next) {
 			symbol *sym = n->data.sym;
-			int res = table_element(query, sym, s, t, 0);
+			int res = table_element(query, sym, s, t, 0, (temp == SQL_DECLARED_TABLE)?"DECLARE TABLE":"CREATE TABLE");
 
 			if (res == SQL_ERR)
 				return NULL;
 		}
 
-		if(create_partition_definition(sql, t, partition_def) != SQL_OK)
+		if (create_partition_definition(sql, t, partition_def) != SQL_OK)
 			return NULL;
 
 		temp = (tt == tt_table)?temp:SQL_PERSIST;
@@ -1119,11 +1120,11 @@ rel_create_table(sql_query *query, sql_schema *ss, int temp, const char *sname, 
 			return NULL;
 
 		if ((tt == tt_merge_table || tt == tt_remote || tt == tt_replica_table) && with_data)
-			return sql_error(sql, 02, SQLSTATE(42000) "CREATE TABLE: cannot create %s 'with data'",
+			return sql_error(sql, 02, SQLSTATE(42000) "%s TABLE: cannot create %s 'with data'", action,
 							 TABLE_TYPE_DESCRIPTION(tt, properties));
 
 		/* create table */
-		if ((t = mvc_create_table_as_subquery( sql, sq, s, name, column_spec, temp, commit_action)) == NULL) { 
+		if ((t = mvc_create_table_as_subquery(sql, sq, s, name, column_spec, temp, commit_action, (temp == SQL_DECLARED_TABLE)?"DECLARE TABLE":"CREATE TABLE")) == NULL) { 
 			rel_destroy(sq);
 			return NULL;
 		}
@@ -1138,21 +1139,21 @@ rel_create_table(sql_query *query, sql_schema *ss, int temp, const char *sname, 
 		}
 		return res;
 	}
-	/*return NULL;*/ /* never reached as all branches of the above if() end with return ... */
+	/*return NULL;*/ /* never reached as all branches of the above if () end with return ... */
 }
 
 static sql_rel *
 rel_create_view(sql_query *query, sql_schema *ss, dlist *qname, dlist *column_spec, symbol *ast, int check, int persistent, int replace)
 {
 	mvc *sql = query->sql;
-	char *name = qname_schema_object(qname);
-	char *sname = qname_schema(qname);
+	const char *name = qname_schema_object(qname);
+	const char *sname = qname_schema(qname);
 	sql_schema *s = NULL;
 	sql_table *t = NULL;
 	int instantiate = (sql->emode == m_instantiate || !persistent);
 	int deps = (sql->emode == m_deps);
 	int create = (!instantiate && !deps);
-	char *base = replace ? "CREATE OR REPLACE" : "CREATE";
+	const char *base = replace ? "CREATE OR REPLACE" : "CREATE";
 
 	(void) ss;
 	(void) check;		/* Stefan: unused!? */
@@ -1227,7 +1228,7 @@ rel_create_view(sql_query *query, sql_schema *ss, dlist *qname, dlist *column_sp
 		}
 		t = mvc_bind_table(sql, s, name);
 		if (!persistent && column_spec) 
-			sq = view_rename_columns( sql, name, sq, column_spec);
+			sq = view_rename_columns(sql, name, sq, column_spec);
 		if (sq && sq->op == op_project && sq->l && sq->exps && sq->card == CARD_AGGR) {
 			exps_setcard(sq->exps, CARD_MULTI);
 			sq->card = CARD_MULTI;
@@ -1242,7 +1243,7 @@ rel_schema2(sql_allocator *sa, int cat_type, char *sname, char *auth, int nr)
 {
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);
-	if(!rel || !exps)
+	if (!rel || !exps)
 		return NULL;
 
 	append(exps, exp_atom_clob(sa, sname));
@@ -1263,7 +1264,7 @@ rel_schema3(sql_allocator *sa, int cat_type, char *sname, char *tname, char *nam
 {
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);
-	if(!rel || !exps)
+	if (!rel || !exps)
 		return NULL;
 
 	append(exps, exp_atom_clob(sa, sname));
@@ -1357,7 +1358,7 @@ rel_create_schema_dll(sql_allocator *sa, char *sname, char *auth, int nr)
 {
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);
-	if(!rel || !exps)
+	if (!rel || !exps)
 		return NULL;
 
 	append(exps, exp_atom_int(sa, nr));
@@ -1452,7 +1453,7 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 	sql_table *t = NULL;
 
 	if (sname && !(s=mvc_bind_schema(sql, sname))) {
-		if(if_exists)
+		if (if_exists)
 			return rel_psm_block(sql->sa, new_exp_list(sql->sa));
 		return sql_error(sql, 02, SQLSTATE(3F000) "ALTER TABLE: no such schema '%s'", sname);
 	}
@@ -1462,7 +1463,7 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 	if ((t = mvc_bind_table(sql, s, tname)) == NULL) {
 		if (mvc_bind_table(sql, mvc_bind_schema(sql, "tmp"), tname) != NULL) 
 			return sql_error(sql, 02, SQLSTATE(42S02) "ALTER TABLE: not supported on TEMPORARY table '%s'", tname);
-		if(if_exists)
+		if (if_exists)
 			return rel_psm_block(sql->sa, new_exp_list(sql->sa));
 		return sql_error(sql, 02, SQLSTATE(42S02) "ALTER TABLE: no such table '%s' in schema '%s'", tname, s->base.name);
 	} else {
@@ -1564,7 +1565,7 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 		}
 
 		nt = dup_sql_table(sql->sa, t);
-		if (!nt || (te && table_element(query, te, s, nt, 1) == SQL_ERR)) 
+		if (!nt || (te && table_element(query, te, s, nt, 1, "ALTER TABLE") == SQL_ERR)) 
 			return NULL;
 
 		if (te->token == SQL_DROP_CONSTRAINT) {
@@ -1626,7 +1627,7 @@ rel_role(sql_allocator *sa, char *grantee, char *auth, int grantor, int admin, i
 {
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);
-	if(!rel || !exps)
+	if (!rel || !exps)
 		return NULL;
 
 	assert(type == ddl_grant_roles || type == ddl_revoke_roles);
@@ -1695,7 +1696,7 @@ rel_priv(sql_allocator *sa, char *sname, char *name, char *grantee, int privs, c
 {
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);
-	if(!rel || !exps)
+	if (!rel || !exps)
 		return NULL;
 
 	assert(type == ddl_grant || type == ddl_revoke);
@@ -1721,7 +1722,7 @@ rel_func_priv(sql_allocator *sa, char *sname, int func, char *grantee, int privs
 {
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);
-	if(!rel || !exps)
+	if (!rel || !exps)
 		return NULL;
 
 	assert(type == ddl_grant_func || type == ddl_revoke_func);
@@ -2170,7 +2171,7 @@ rel_create_user(sql_allocator *sa, char *user, char *passwd, int enc, char *full
 {
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);
-	if(!rel || !exps)
+	if (!rel || !exps)
 		return NULL;
 
 	append(exps, exp_atom_clob(sa, user));
@@ -2193,7 +2194,7 @@ rel_alter_user(sql_allocator *sa, char *user, char *passwd, int enc, char *schem
 {
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);
-	if(!rel || !exps)
+	if (!rel || !exps)
 		return NULL;
 
 	append(exps, exp_atom_clob(sa, user));
