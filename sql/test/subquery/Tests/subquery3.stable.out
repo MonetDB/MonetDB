@@ -458,6 +458,14 @@ stdout of test 'subquery3` in directory 'sql/test/subquery` itself:
 [ 1	]
 [ 1	]
 [ 1	]
+#CREATE OR REPLACE FUNCTION evilfunction(input INT) RETURNS TABLE (outt INT) BEGIN RETURN TABLE(VALUES (input), (input)); END;
+#SELECT * FROM evilfunction(1);
+% .%2 # table_name
+% outt # name
+% int # type
+% 1 # length
+[ 1	]
+[ 1	]
 #DROP FUNCTION evilfunction(INT);
 #DROP TABLE tbl_ProductSales;
 #DROP TABLE another_T;
