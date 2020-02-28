@@ -193,7 +193,7 @@ _create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *
 			char buf[64];
 
 			if (e->type == e_atom)
-				snprintf(buf,64,"A%d",e->flag);
+				snprintf(buf,64,"A%u",e->flag);
 			else
 				snprintf(buf,64,"A%s",exp_name(e));
 			varid = newVariable(curBlk, (char *)buf, strlen(buf), type);

@@ -156,7 +156,7 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 				list *l = e->f;
 				exps_print(sql, fout, l, depth, refs, 0, 0);
 			} else { /* numbered arguments */
-				mnstr_printf(fout, "A%d", e->flag);
+				mnstr_printf(fout, "A%u", e->flag);
 			}
 		}
 	} 	break;
