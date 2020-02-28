@@ -2868,7 +2868,7 @@ class ServerClass:
 
     def terminate(self):
         self.timer.cancel()
-        t = Timer(60, killProc, args = [proc, self.errfile, self.cmd])
+        t = Timer(60, killProc, args = [self.proc, self.errfile, self.cmd])
         t.start()
         if os.name == 'nt':
             self.proc.send_signal(signal.CTRL_BREAK_EVENT)
