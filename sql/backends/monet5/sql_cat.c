@@ -465,13 +465,13 @@ static char *
 drop_trigger(mvc *sql, char *sname, char *tname, int if_exists)
 {
 	sql_trigger *tri = NULL;
-	sql_schema *s = NULL;
+	sql_schema *s = cur_schema(sql);
 
-	if (sname && !(s = mvc_bind_schema(sql, sname)))
+	if (sname && !(s = mvc_bind_schema(sql, sname))) {
+		if (if_exists)
+			return MAL_SUCCEED;
 		throw(SQL,"sql.drop_trigger",SQLSTATE(3F000) "DROP TRIGGER: no such schema '%s'", sname);
-	if (!s)
-		s = cur_schema(sql);
-	assert(s);
+	}
 	if (!mvc_schema_privs(sql, s))
 		throw(SQL,"sql.drop_trigger",SQLSTATE(3F000) "DROP TRIGGER: access denied for %s to schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
 
@@ -488,14 +488,15 @@ drop_trigger(mvc *sql, char *sname, char *tname, int if_exists)
 static char *
 drop_table(mvc *sql, char *sname, char *tname, int drop_action, int if_exists)
 {
-	sql_schema *s = NULL;
+	sql_schema *s = cur_schema(sql);
 	sql_table *t = NULL;
 	node *n;
 
-	if (sname && !(s = mvc_bind_schema(sql, sname)))
+	if (sname && !(s = mvc_bind_schema(sql, sname))) {
+		if (if_exists)
+			return MAL_SUCCEED;
 		throw(SQL,"sql.drop_table",SQLSTATE(3F000) "DROP TABLE: no such schema '%s'", sname);
-	if (!s)
-		s = cur_schema(sql);
+	}
 	t = mvc_bind_table(sql, s, tname);
 	if (!t && !sname) {
 		s = tmp_schema(sql);
@@ -543,21 +544,20 @@ static char *
 drop_view(mvc *sql, char *sname, char *tname, int drop_action, int if_exists)
 {
 	sql_table *t = NULL;
-	sql_schema *ss = NULL;
+	sql_schema *ss = cur_schema(sql);
 
-	if (sname != NULL && (ss = mvc_bind_schema(sql, sname)) == NULL)
+	if (sname && !(ss = mvc_bind_schema(sql, sname))) {
+		if (if_exists)
+			return MAL_SUCCEED;
 		throw(SQL,"sql.dropview", SQLSTATE(3F000) "DROP VIEW: no such schema '%s'", sname);
-
-	if (ss == NULL)
-		ss = cur_schema(sql);
+	}
 
 	t = mvc_bind_table(sql, ss, tname);
 	if (!mvc_schema_privs(sql, ss) && !(isTempSchema(ss) && t && t->persistence == SQL_LOCAL_TEMP)) {
 		throw(SQL,"sql.dropview", SQLSTATE(42000) "DROP VIEW: access denied for %s to schema '%s'", stack_get_string(sql, "current_user"), ss->base.name);
 	} else if (!t) {
-		if (if_exists){
+		if (if_exists)
 			return MAL_SUCCEED;
-		}
 		throw(SQL,"sql.drop_view",SQLSTATE(42S02) "DROP VIEW: unknown view '%s'", tname);
 	} else if (!isView(t)) {
 		throw(SQL,"sql.drop_view", SQLSTATE(42000) "DROP VIEW: unable to drop view '%s': is a table", tname);
@@ -712,7 +712,7 @@ drop_seq(mvc *sql, char *sname, char *name)
 static str
 drop_func(mvc *sql, char *sname, char *name, sqlid fid, sql_ftype type, int action)
 {
-	sql_schema *s = NULL;
+	sql_schema *s = cur_schema(sql);
 	char is_aggr = (type == F_AGGR);
 	char is_func = (type != F_PROC);
 	char *F = is_aggr ? "AGGREGATE" : (is_func ? "FUNCTION" : "PROCEDURE");
@@ -720,10 +720,11 @@ drop_func(mvc *sql, char *sname, char *name, sqlid fid, sql_ftype type, int acti
 	char *KF = type == F_FILT ? "FILTER " : type == F_UNION ? "UNION " : "";
 	char *kf = type == F_FILT ? "filter " : type == F_UNION ? "union " : "";
 
-	if (sname && !(s = mvc_bind_schema(sql, sname)))
+	if (sname && !(s = mvc_bind_schema(sql, sname))) {
+		if (fid == -2) /* if exists option */
+			return MAL_SUCCEED;
 		throw(SQL,"sql.drop_func", SQLSTATE(3F000) "DROP %s%s: no such schema '%s'", KF, F, sname);
-	if (!s)
-		s = cur_schema(sql);
+	}
 	if (fid >= 0) {
 		node *n = find_sql_func_node(s, fid);
 		if (n) {
@@ -738,9 +739,9 @@ drop_func(mvc *sql, char *sname, char *name, sqlid fid, sql_ftype type, int acti
 			if (mvc_drop_func(sql, s, func, action))
 				throw(SQL,"sql.drop_func", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
-	} else if (fid == -2) { //if exists option
+	} else if (fid == -2) { /* if exists option */
 		return MAL_SUCCEED;
-	} else { //fid == -1
+	} else { /* fid == -1 */
 		node *n = NULL;
 		list *list_func = schema_bind_func(sql, s, name, type);
 		int res;
