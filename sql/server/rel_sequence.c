@@ -99,7 +99,7 @@ rel_create_seq(
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE SEQUENCE: name '%s' already in use", name);
 	} else if (!mvc_schema_privs(sql, s)) {
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE SEQUENCE: insufficient privileges "
-				"for '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
+				"for '%s' in schema '%s'", stack_get_string(sql, mvc_bind_schema(sql, "tmp"), "current_user"), s->base.name);
 	}
 
 	/* generate defaults */
@@ -115,7 +115,7 @@ rel_create_seq(
 	res = rel_seq(sql->sa, ddl_create_seq, s->base.name, seq, NULL, NULL);
 	/* for multi statements we keep the sequence around */
 	if (res && stack_has_frame(sql, "MUL") != 0) {
-		if(!stack_push_rel_view(sql, name, rel_dup(res)))
+		if (!stack_push_rel_view(sql, name, rel_dup(res)))
 			return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
@@ -266,7 +266,7 @@ rel_alter_seq(
 	}
 	if (!mvc_schema_privs(sql, s)) {
 		return sql_error(sql, 02, SQLSTATE(42000) "ALTER SEQUENCE: insufficient privileges "
-				"for '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
+				"for '%s' in schema '%s'", stack_get_string(sql, mvc_bind_schema(sql, "tmp"), "current_user"), s->base.name);
 	}
 
 	/* first alter the known values */

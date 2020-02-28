@@ -294,7 +294,7 @@ create_table_or_view(mvc *sql, char* sname, char *tname, sql_table *t, int temp)
 		char *cd = (temp == SQL_DECLARED_TABLE) ? "DECLARE" : "CREATE";
 		return sql_message(SQLSTATE(42S01) "%s TABLE: name '%s' already in use", cd, t->base.name);
 	} else if (temp != SQL_DECLARED_TABLE && (!mvc_schema_privs(sql, s) && !(isTempSchema(s) && temp == SQL_LOCAL_TEMP))) {
-		return sql_message(SQLSTATE(42000) "CREATE TABLE: insufficient privileges for user '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
+		return sql_message(SQLSTATE(42000) "CREATE TABLE: insufficient privileges for user '%s' in schema '%s'", stack_get_string(sql, mvc_bind_schema(sql, "tmp"), "current_user"), s->base.name);
 	} else if (temp == SQL_DECLARED_TABLE && !list_empty(t->keys.set)) {
 		return sql_message(SQLSTATE(42000) "DECLARE TABLE: '%s' cannot have constraints", t->base.name);
 	}
@@ -617,26 +617,31 @@ SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return sql_message(SQLSTATE(25006) "Deprecated statement");
 }
 
-/* setVariable(int *ret, str *name, any value) */
+/* setVariable(int *ret, str *sname, str *name, any value) */
 str
 setVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int *res = getArgReference_int(stk, pci, 0);
 	mvc *m = NULL;
 	str msg;
-	const char *varname = *getArgReference_str(stk, pci, 2);
-	int mtype = getArgType(mb, pci, 3);
+	const char *sname = *getArgReference_str(stk, pci, 2);
+	const char *varname = *getArgReference_str(stk, pci, 3);
+	int mtype = getArgType(mb, pci, 4);
 	ValRecord *src;
+	sql_schema *s;
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
 
+	if (!(s = mvc_bind_schema(m, sname)))
+		throw(SQL, "sql.setVariable", SQLSTATE(3F000) "Cannot find the schema %s", sname);
+
 	*res = 0;
 	if (mtype < 0 || mtype >= 255)
 		throw(SQL, "sql.setVariable", SQLSTATE(42100) "Variable type error");
-	if (strcmp("optimizer", varname) == 0) {
+	if (!strcmp("tmp", s->base.name) && !strcmp("optimizer", varname)) {
 		const char *newopt = *getArgReference_str(stk, pci, 3);
 		if (newopt) {
 			char buf[BUFSIZ];
@@ -648,30 +653,30 @@ setVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				msg = addPipeDefinition(cntxt, buf, newopt);
 				if (msg)
 					return msg;
-				if (stack_find_var(m, varname)) {
-					if(!stack_set_string(m, varname, buf))
+				if (stack_find_var(m, s, varname)) {
+					if (!stack_set_string(m, s, varname, buf))
 						throw(SQL, "sql.setVariable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				}
-			} else if (stack_find_var(m, varname)) {
-				if(!stack_set_string(m, varname, newopt))
+			} else if (stack_find_var(m, s, varname)) {
+				if (!stack_set_string(m, s, varname, newopt))
 					throw(SQL, "sql.setVariable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 		}
 		return MAL_SUCCEED;
 	}
 	src = &stk->stk[getArg(pci, 3)];
-	if (stack_find_var(m, varname)) {
+	if (stack_find_var(m, s, varname)) {
 #ifdef HAVE_HGE
 		hge sgn = val_get_number(src);
 #else
 		lng sgn = val_get_number(src);
 #endif
-		if ((msg = sql_update_var(m, varname, src->val.sval, sgn)) != NULL)
+		if ((msg = sql_update_var(m, s, varname, src->val.sval, sgn)) != NULL)
 			return msg;
-		if(!stack_set_var(m, varname, src))
+		if (!stack_set_var(m, s, varname, src))
 			throw(SQL, "sql.setVariable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	} else {
-		throw(SQL, "sql.setVariable", SQLSTATE(42100) "variable '%s' unknown", varname);
+		throw(SQL, "sql.setVariable", SQLSTATE(42100) "Variable '%s.%s' unknown", sname, varname);
 	}
 	return MAL_SUCCEED;
 }
@@ -683,18 +688,23 @@ getVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int mtype = getArgType(mb, pci, 0);
 	mvc *m = NULL;
 	str msg;
-	const char *varname = *getArgReference_str(stk, pci, 2);
+	const char *sname = *getArgReference_str(stk, pci, 2);
+	const char *varname = *getArgReference_str(stk, pci, 3);
 	atom *a;
 	ValRecord *dst, *src;
+	sql_schema *s;
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
+
+	if (!(s = mvc_bind_schema(m, sname)))
+		throw(SQL, "sql.getVariable", SQLSTATE(3F000) "Cannot find the schema %s", sname);
 	if (mtype < 0 || mtype >= 255)
 		throw(SQL, "sql.getVariable", SQLSTATE(42100) "Variable type error");
-	if (!(a = stack_get_var(m, varname)))
-		throw(SQL, "sql.getVariable", SQLSTATE(42100) "variable '%s' unknown", varname);
+	if (!(a = stack_get_var(m, s, varname)))
+		throw(SQL, "sql.getVariable", SQLSTATE(42100) "Variable'%s.%s' unknown", sname, varname);
 	src = &a->data;
 	dst = &stk->stk[getArg(pci, 0)];
 	if (VALcopy(dst, src) == NULL)
@@ -777,7 +787,7 @@ mvc_next_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (seq_next_value(seq, res)) {
 		m->last_id = *res;
-		stack_set_number(m, "last_id", m->last_id);
+		stack_set_number(m, mvc_bind_schema(m, "tmp"), "last_id", m->last_id);
 		return MAL_SUCCEED;
 	}
 	throw(SQL, "sql.next_value", SQLSTATE(42000) "Error in fetching next value for sequence %s.%s", sname, seqname);

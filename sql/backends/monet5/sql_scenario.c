@@ -206,8 +206,8 @@ SQLepilogue(void *ret)
 	return MAL_SUCCEED;
 }
 
-#define SQLglobal(name, val) \
-	if (!stack_push_var(sql, name, &ctype) || !stack_set_var(sql, name, VALset(&src, ctype.type->localtype, (char*)(val)))) \
+#define SQLglobal(name, s, val) \
+	if (!stack_push_var(sql, s, name, &ctype) || !stack_set_var(sql, s, name, VALset(&src, ctype.type->localtype, (char*)(val)))) \
 		failure--;
 
 /* NR_GLOBAL_VAR should match exactly the number of variables created in global_variables */
@@ -220,28 +220,29 @@ global_variables(mvc *sql, const char *user, const char *schema)
 	ValRecord src;
 	const char *opt;
 	int failure = 0;
+	sql_schema *s = mvc_bind_schema(sql, "tmp");
 
 	sql_find_subtype(&ctype, "int", 0, 0);
-	SQLglobal("debug", &sql->debug);
-	SQLglobal("cache", &sql->cache);
+	SQLglobal("debug", s, &sql->debug);
+	SQLglobal("cache", s, &sql->cache);
 
 	sql_find_subtype(&ctype,  "varchar", 1024, 0);
-	SQLglobal("current_schema", schema);
-	SQLglobal("current_user", user);
-	SQLglobal("current_role", user);
+	SQLglobal("current_schema", s, schema);
+	SQLglobal("current_user", s, user);
+	SQLglobal("current_role", s, user);
 
 	/* inherit the optimizer from the server */
 	opt = GDKgetenv("sql_optimizer");
 	if (!opt)
 		opt = "default_pipe";
-	SQLglobal("optimizer", opt);
+	SQLglobal("optimizer", s, opt);
 
 	sql_find_subtype(&ctype, "sec_interval", inttype2digits(ihour, isec), 0);
-	SQLglobal("current_timezone", &sec);
+	SQLglobal("current_timezone", s, &sec);
 
 	sql_find_subtype(&ctype, "bigint", 0, 0);
-	SQLglobal("last_id", &sql->last_id);
-	SQLglobal("rowcnt", &sql->rowcnt);
+	SQLglobal("last_id", s, &sql->last_id);
+	SQLglobal("rowcnt", s, &sql->rowcnt);
 	return failure;
 }
 

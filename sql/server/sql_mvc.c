@@ -793,16 +793,16 @@ mvc_reset(mvc *m, bstream *rs, stream *ws, int debug)
 	m->emode = m_normal;
 	m->emod = mod_none;
 	if (m->reply_size != 100)
-		stack_set_number(m, "reply_size", 100);
+		stack_set_number(m, mvc_bind_schema(m, "tmp"), "reply_size", 100);
 	m->reply_size = 100;
 	if (m->timezone != 0)
-		stack_set_number(m, "current_timezone", 0);
+		stack_set_number(m, mvc_bind_schema(m, "tmp"), "current_timezone", 0);
 	m->timezone = 0;
 	if (m->debug != debug)
-		stack_set_number(m, "debug", debug);
+		stack_set_number(m, mvc_bind_schema(m, "tmp"), "debug", debug);
 	m->debug = debug;
 	if (m->cache != DEFAULT_CACHESIZE)
-		stack_set_number(m, "cache", DEFAULT_CACHESIZE);
+		stack_set_number(m, mvc_bind_schema(m, "tmp"), "cache", DEFAULT_CACHESIZE);
 	m->cache = DEFAULT_CACHESIZE;
 	m->caching = m->cache;
 
@@ -908,9 +908,6 @@ mvc_bind_schema(mvc *m, const char *sname)
 	if (!tr)
 		return NULL;
 
-	/* declared tables */
-	if (strNil(sname))
-		sname = dt_schema;
  	s = find_sql_schema(tr, sname);
 	if (!s)
 		return NULL;
@@ -921,19 +918,10 @@ mvc_bind_schema(mvc *m, const char *sname)
 sql_table *
 mvc_bind_table(mvc *m, sql_schema *s, const char *tname)
 {
-	sql_table *t = NULL;
+	sql_table *t = stack_find_table(m, s, tname);
 
-	if (!s) { /* Declared tables during query compilation have no schema */
-		sql_table *tpe = stack_find_table(m, tname);
-		if (tpe) {
-			t = tpe;
-		} else { /* during exection they are in the declared table schema */
-				s = mvc_bind_schema(m, dt_schema);
-			return mvc_bind_table(m, s, tname);
-		}
-	} else {
+	if (!t)
  		t = find_sql_table(s, tname);
-	}
 	if (!t)
 		return NULL;
 	TRC_DEBUG(SQL_MVC, "Bind table: %s.%s\n", s ? s->base.name : "<noschema>", tname);

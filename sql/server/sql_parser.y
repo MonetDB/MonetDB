@@ -4076,7 +4076,7 @@ value_exp:
  |  case_exp
  |  cast_exp
  |  column_ref                            { $$ = _symbol_create_list(SQL_COLUMN, $1); }
- |  CURRENT_ROLE   { $$ = _symbol_create_list(SQL_COLUMN, append_string(append_string(L(), sa_strdup(SA, "tmp")), sa_strdup(SA, "current_role"))); }
+ |  CURRENT_ROLE   { $$ = _symbol_create_list(SQL_NAME, append_string(append_string(L(), sa_strdup(SA, "tmp")), sa_strdup(SA, "current_role"))); }
  |  datetime_funcs
  |  GROUPING '(' column_ref_commalist ')' { dlist *l = L();
 										    append_list(l, append_string(L(), "grouping"));
@@ -4090,7 +4090,7 @@ value_exp:
  |  null
  |  param
  |  string_funcs
- |  user            { $$ = _symbol_create_list(SQL_COLUMN, append_string(append_string(L(), sa_strdup(SA, "tmp")), sa_strdup(SA, "current_user"))); }
+ |  user            { $$ = _symbol_create_list(SQL_NAME, append_string(append_string(L(), sa_strdup(SA, "tmp")), sa_strdup(SA, "current_user"))); }
  |  var_ref
  |  XML_value_function
  ;
@@ -4190,7 +4190,7 @@ window_frame_exclusion:
   ;
 
 var_ref:
-	AT ident 	{ $$ = _symbol_create( SQL_NAME, $2 ); }
+	AT variable_ref { $$ = _symbol_create_list( SQL_NAME, $2 ); }
  ;
 
 func_ref:
@@ -5712,7 +5712,7 @@ intval:
 		  char *name = $1;
 		  sql_subtype *tpe;
 
-		  if (!stack_find_var(m, name)) {
+		  if (!stack_find_var(m, cur_schema(m), name)) {
 			char *msg = sql_message(SQLSTATE(22000) "Constant (%s) unknown", $1);
 
 			yyerror(m, msg);
@@ -5726,10 +5726,10 @@ intval:
 		      tpe->type->localtype == TYPE_sht ||
 		      tpe->type->localtype == TYPE_bte ) {
 #ifdef HAVE_HGE
-			hge sgn = stack_get_number(m, name);
+			hge sgn = stack_get_number(m, cur_schema(m), name);
 			assert((hge) GDK_int_min <= sgn && sgn <= (hge) GDK_int_max);
 #else
-			lng sgn = stack_get_number(m, name);
+			lng sgn = stack_get_number(m, cur_schema(m), name);
 			assert((lng) GDK_int_min <= sgn && sgn <= (lng) GDK_int_max);
 #endif
 			$$ = (int) sgn;

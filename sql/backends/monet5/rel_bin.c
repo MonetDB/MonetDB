@@ -4552,7 +4552,7 @@ sql_stack_add_updated(mvc *sql, const char *on, const char *nn, sql_table *t, st
 	r->l = ti;
 
 	/* put single table into the stack with 2 names, needed for the psm code */
-	if(!stack_push_rel_view(sql, on, r) || !stack_push_rel_view(sql, nn, rel_dup(r)))
+	if (!stack_push_rel_view(sql, on, r) || !stack_push_rel_view(sql, nn, rel_dup(r)))
 		return 0;
 	return 1;
 }

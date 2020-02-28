@@ -2109,7 +2109,7 @@ mvc_export_affrows(backend *b, stream *s, lng val, str w, oid query_id, lng star
 		return 0;
 
 	m->rowcnt = val;
-	stack_set_number(m, "rowcnt", m->rowcnt);
+	stack_set_number(m, mvc_bind_schema(m, "tmp"), "rowcnt", m->rowcnt);
 	if (mnstr_write(s, "&2 ", 3, 1) != 1 ||
 	    !mvc_send_lng(s, val) ||
 	    mnstr_write(s, " ", 1, 1) != 1 ||
@@ -2337,7 +2337,7 @@ mvc_export_head(backend *b, stream *s, int res_id, int only_header, int compute_
 			count = 1;
 	}
 	m->rowcnt = count;
-	stack_set_number(m, "rowcnt", m->rowcnt);
+	stack_set_number(m, mvc_bind_schema(m, "tmp"), "rowcnt", m->rowcnt);
 	if (!mvc_send_lng(s, (lng) count) || mnstr_write(s, " ", 1, 1) != 1)
 		return -1;
 

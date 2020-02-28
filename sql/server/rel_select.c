@@ -281,7 +281,7 @@ rel_with_query(sql_query *query, symbol *q )
 		char *name = qname_schema_object(dn->data.lval);
 		sql_rel *nrel;
 
-		if (frame_find_var(sql, name)) {
+		if (frame_find_var(sql, NULL, name)) { /* may conflict with any */
 			stack_pop_frame(sql);
 			return sql_error(sql, 01, SQLSTATE(42000) "Variable '%s' already declared", name);
 		}
@@ -877,14 +877,12 @@ table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral)
 		if (dlist_length(name) > 2)
 			return sql_error(sql, 02, SQLSTATE(3F000) "SELECT: only a schema and table name expected");
 
-		if (sname && !(s=mvc_bind_schema(sql,sname)))
+		if (sname && !(s = mvc_bind_schema(sql, sname)))
 			return sql_error(sql, 02, SQLSTATE(3F000) "SELECT: no such schema '%s'", sname);
-		if (!t && !sname) {
-			t = stack_find_table(sql, tname);
-			if (!t) 
-				temp_table = stack_find_rel_view(sql, tname);
-		}
-		if (!t && !temp_table) {
+		if (!sname)
+			temp_table = stack_find_rel_view(sql, tname);
+
+		if (!temp_table) {
 			if (!s)
 				s = cur_schema(sql);
 			t = mvc_bind_table(sql, s, tname);
@@ -898,9 +896,8 @@ table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral)
 		} else if (!temp_table && !table_privs(sql, t, PRIV_SELECT)) {
 			allowed = 0;
 		}
-		if (tableref->data.lval->h->next->data.sym) {	/* AS */
+		if (tableref->data.lval->h->next->data.sym)	/* AS */
 			tname = tableref->data.lval->h->next->data.sym->data.lval->h->data.sval;
-		}
 		if (temp_table && !t) {
 			node *n;
 			int needed = !is_simple_project(temp_table->op);
@@ -925,7 +922,7 @@ table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral)
 			}
 			if (allowed)
 				return temp_table;
-			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: access denied for %s to table '%s.%s'", stack_get_string(sql, "current_user"), s->base.name, tname);
+			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: access denied for %s to table '%s.%s'", stack_get_string(sql, mvc_bind_schema(sql, "tmp"), "current_user"), s->base.name, tname);
 		} else if (isView(t)) {
 			/* instantiate base view */
 			node *n,*m;
@@ -956,7 +953,7 @@ table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral)
 				rel = rel_reduce_on_column_privileges(sql, rel, t);
 			if (allowed && rel)
 				return rel;
-			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: access denied for %s to table '%s.%s'", stack_get_string(sql, "current_user"), s->base.name, tname);
+			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: access denied for %s to table '%s.%s'", stack_get_string(sql, mvc_bind_schema(sql, "tmp"), "current_user"), s->base.name, tname);
 		}
 		if ((isMergeTable(t) || isReplicaTable(t)) && list_empty(t->members.set))
 			return sql_error(sql, 02, SQLSTATE(42000) "MERGE or REPLICA TABLE should have at least one table associated");
@@ -964,7 +961,7 @@ table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral)
 		if (!allowed) {
 			res = rel_reduce_on_column_privileges(sql, res, t);
 			if (!res)
-				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: access denied for %s to table '%s.%s'", stack_get_string(sql, "current_user"), s->base.name, tname);
+				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: access denied for %s to table '%s.%s'", stack_get_string(sql, mvc_bind_schema(sql, "tmp"), "current_user"), s->base.name, tname);
 		}
 		if (tableref->data.lval->h->next->data.sym && tableref->data.lval->h->next->data.sym->data.lval->h->next->data.lval) /* AS with column aliases */
 			res = rel_table_optname(sql, res, tableref->data.lval->h->next->data.sym);
@@ -981,17 +978,19 @@ table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral)
 }
 
 static sql_exp *
-rel_var_ref(mvc *sql, char *name, int at)
+rel_var_ref(mvc *sql, const char *sname, const char *name)
 {
-	if (stack_find_var(sql, name)) {
-		sql_subtype *tpe = stack_find_type(sql, name);
-		int frame = stack_find_frame(sql, name);
+	sql_schema *s = cur_schema(sql);
 
+	if (sname && !(s = mvc_bind_schema(sql, sname)))
+		return sql_error(sql, 02, SQLSTATE(3F000) "SELECT: no such schema '%s'", sname);
+
+	if (stack_find_var(sql, s, name)) {
+		sql_subtype *tpe = stack_find_type(sql, name);
+		int frame = stack_find_frame(sql, s, name);
 		return exp_param(sql->sa, name, tpe, frame);
-	} else if (at) {
-		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: '@""%s' unknown", name);
 	} else {
-		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: identifier '%s' unknown", name);
+		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: identifier '%s%s%s' unknown", sname ? sname : "", sname ? "." : "", name);
 	}
 }
 
@@ -1075,9 +1074,9 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 		}
 		return NULL;
 	} else if (dlist_length(l) == 1) {
-		char *name = l->h->data.sval;
+		const char *name = l->h->data.sval;
 		sql_arg *a = sql_bind_param(sql, name);
-		int var = stack_find_var(sql, name);
+		int var = stack_find_var(sql, NULL, name); /* find one */
 
 		if (!exp && inner)
 			exp = rel_bind_column(sql, inner, name, f, 0);
@@ -1130,7 +1129,7 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 				*rel = r;
 				return exp_rel(sql, r);
 			}
-			return rel_var_ref(sql, name, 0);
+			return rel_var_ref(sql, NULL, name);
 		}
 		if (!exp && !var)
 			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: identifier '%s' unknown", name);
@@ -1139,28 +1138,26 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 		if (exp && inner && is_groupby(inner->op) && !is_sql_aggr(f) && !is_freevar(exp))
 			exp = rel_groupby_add_aggr(sql, inner, exp);
 	} else if (dlist_length(l) == 2) {
-		char *tname = l->h->data.sval;
-		char *cname = l->h->next->data.sval;
+		const char *tname = l->h->data.sval;
+		const char *cname = l->h->next->data.sval;
 
 		if (!exp && rel && inner)
 			exp = rel_bind_column2(sql, inner, tname, cname, f);
 		if (!exp && inner && is_sql_having(f) && inner->op == op_select)
 			inner = inner->l;
-		if (!exp && inner && (is_sql_having(f) || is_sql_aggr(f)) && is_groupby(inner->op)) {
+		if (!exp && inner && (is_sql_having(f) || is_sql_aggr(f)) && is_groupby(inner->op))
 			exp = rel_bind_column2(sql, inner->l, tname, cname, f);
-		}
 		if (!exp && query && query_has_outer(query)) {
 			int i;
 			sql_rel *outer;
 
 			for (i=query_has_outer(query)-1; i>= 0 && !exp && (outer = query_fetch_outer(query,i)); i--) {
 				exp = rel_bind_column2(sql, outer, tname, cname, f | sql_outer);
-				if (!exp && (is_sql_having(f) || is_sql_aggr(f)) && is_groupby(outer->op)) {
+				if (!exp && (is_sql_having(f) || is_sql_aggr(f)) && is_groupby(outer->op))
 					exp = rel_bind_column2(sql, outer->l, tname, cname, f);
-				}
-				if (exp && is_simple_project(outer->op) && !rel_find_exp(outer, exp)) {
+				if (exp && is_simple_project(outer->op) && !rel_find_exp(outer, exp))
 					exp = rel_project_add_exp(sql, outer, exp);
-				}
+
 				if (exp)
 					break;
 			}
@@ -5021,8 +5018,12 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 	case SQL_IDENT:
 	case SQL_COLUMN:
 		return rel_column_ref(query, rel, se, f );
-	case SQL_NAME:
-		return rel_var_ref(sql, se->data.sval, 1);
+	case SQL_NAME: {
+		dlist *l = se->data.lval;
+		const char *sname = qname_schema(l);
+		const char *vname = qname_schema_object(l);
+		return rel_var_ref(sql, sname, vname);
+	}
 	case SQL_VALUES:
 	case SQL_WITH: 
 	case SQL_SELECT: {

@@ -406,7 +406,7 @@ insert_allowed(mvc *sql, sql_table *t, char *tname, char *op, char *opname)
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: %s table '%s' not allowed in readonly mode", op, opname, tname);
 
 	if (!table_privs(sql, t, PRIV_INSERT)) {
-		return sql_error(sql, 02, SQLSTATE(42000) "%s: insufficient privileges for user '%s' to %s table '%s'", op, stack_get_string(sql, "current_user"), opname, tname);
+		return sql_error(sql, 02, SQLSTATE(42000) "%s: insufficient privileges for user '%s' to %s table '%s'", op, stack_get_string(sql, mvc_bind_schema(sql, "tmp"), "current_user"), opname, tname);
 	}
 	return t;
 }
@@ -444,7 +444,7 @@ update_allowed(mvc *sql, sql_table *t, char *tname, char *op, char *opname, int 
 	if (t && !isTempTable(t) && STORE_READONLY)
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: %s table '%s' not allowed in readonly mode", op, opname, tname);
 	if ((is_delete == 1 && !table_privs(sql, t, PRIV_DELETE)) || (is_delete == 2 && !table_privs(sql, t, PRIV_TRUNCATE)))
-		return sql_error(sql, 02, SQLSTATE(42000) "%s: insufficient privileges for user '%s' to %s table '%s'", op, stack_get_string(sql, "current_user"), opname, tname);
+		return sql_error(sql, 02, SQLSTATE(42000) "%s: insufficient privileges for user '%s' to %s table '%s'", op, stack_get_string(sql, mvc_bind_schema(sql, "tmp"), "current_user"), opname, tname);
 	return t;
 }
 
@@ -919,7 +919,7 @@ update_check_column(mvc *sql, sql_table *t, sql_column *c, sql_exp *v, sql_rel *
 		return sql_error(sql, 02, SQLSTATE(42S22) "%s: no such column '%s.%s'", action, t->base.name, cname);
 	}
 	if (!table_privs(sql, t, PRIV_UPDATE) && !sql_privilege(sql, sql->user_id, c->base.id, PRIV_UPDATE)) 
-		return sql_error(sql, 02, SQLSTATE(42000) "%s: insufficient privileges for user '%s' to update table '%s' on column '%s'", action, stack_get_string(sql, "current_user"), t->base.name, cname);
+		return sql_error(sql, 02, SQLSTATE(42000) "%s: insufficient privileges for user '%s' to update table '%s' on column '%s'", action, stack_get_string(sql, mvc_bind_schema(sql, "tmp"), "current_user"), t->base.name, cname);
 	if (!v || (v = rel_check_type(sql, &c->type, r, v, type_equal)) == NULL) {
 		rel_destroy(r);
 		return NULL;
@@ -1126,10 +1126,6 @@ update_table(sql_query *query, dlist *qname, str alias, dlist *assignmentlist, s
 	if (!t && !sname) {
 		s = tmp_schema(sql);
 		t = mvc_bind_table(sql, s, tname);
-		if (!t) 
-			t = mvc_bind_table(sql, NULL, tname);
-		if (!t) 
-			t = stack_find_table(sql, tname);
 	}
 	if (update_allowed(sql, t, tname, "UPDATE", "update", 0) != NULL) {
 		sql_rel *r = NULL, *bt = rel_basetable(sql, t, t->base.name), *res = bt;
@@ -1164,7 +1160,7 @@ update_table(sql_query *query, dlist *qname, str alias, dlist *assignmentlist, s
 			int status = sql->session->status;
 
 			if (!table_privs(sql, t, PRIV_SELECT)) 
-				return sql_error(sql, 02, SQLSTATE(42000) "UPDATE: insufficient privileges for user '%s' to update table '%s'", stack_get_string(sql, "current_user"), tname);
+				return sql_error(sql, 02, SQLSTATE(42000) "UPDATE: insufficient privileges for user '%s' to update table '%s'", stack_get_string(sql, mvc_bind_schema(sql, "tmp"), "current_user"), tname);
 			r = rel_logical_exp(query, NULL, opt_where, sql_where);
 			if (!r) { 
 				sql->errstr[0] = 0;
@@ -1237,10 +1233,6 @@ delete_table(sql_query *query, dlist *qname, str alias, symbol *opt_where)
 	if (!t && !sname) {
 		schema = tmp_schema(sql);
 		t = mvc_bind_table(sql, schema, tname);
-		if (!t) 
-			t = mvc_bind_table(sql, NULL, tname);
-		if (!t) 
-			t = stack_find_table(sql, tname);
 	}
 	if (update_allowed(sql, t, tname, "DELETE FROM", "delete from", 1) != NULL) {
 		sql_rel *r = NULL;
@@ -1250,7 +1242,7 @@ delete_table(sql_query *query, dlist *qname, str alias, symbol *opt_where)
 			int status = sql->session->status;
 
 			if (!table_privs(sql, t, PRIV_SELECT)) 
-				return sql_error(sql, 02, SQLSTATE(42000) "DELETE FROM: insufficient privileges for user '%s' to delete from table '%s'", stack_get_string(sql, "current_user"), tname);
+				return sql_error(sql, 02, SQLSTATE(42000) "DELETE FROM: insufficient privileges for user '%s' to delete from table '%s'", stack_get_string(sql, mvc_bind_schema(sql, "tmp"), "current_user"), tname);
 
 			r = rel_logical_exp(query, NULL, opt_where, sql_where);
 			if (r) { /* simple predicate which is not using the to 
@@ -1298,10 +1290,6 @@ truncate_table(mvc *sql, dlist *qname, int restart_sequences, int drop_action)
 	if (!t && !sname) {
 		schema = tmp_schema(sql);
 		t = mvc_bind_table(sql, schema, tname);
-		if (!t)
-			t = mvc_bind_table(sql, NULL, tname);
-		if (!t)
-			t = stack_find_table(sql, tname);
 	}
 	if (update_allowed(sql, t, tname, "TRUNCATE", "truncate", 2) != NULL)
 		return rel_truncate(sql->sa, rel_basetable(sql, t, tname), restart_sequences, drop_action);
@@ -1380,15 +1368,11 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 	if (!t && !sname) {
 		s = tmp_schema(sql);
 		t = mvc_bind_table(sql, s, tname);
-		if (!t)
-			t = mvc_bind_table(sql, NULL, tname);
-		if (!t)
-			t = stack_find_table(sql, tname);
 	}
 	if (!t)
 		return sql_error(sql, 02, SQLSTATE(42S02) "MERGE: no such table '%s'", tname);
 	if (!table_privs(sql, t, PRIV_SELECT))
-		return sql_error(sql, 02, SQLSTATE(42000) "MERGE: access denied for %s to table '%s.%s'", stack_get_string(sql, "current_user"), s->base.name, tname);
+		return sql_error(sql, 02, SQLSTATE(42000) "MERGE: access denied for %s to table '%s.%s'", stack_get_string(sql, mvc_bind_schema(sql, "tmp"), "current_user"), s->base.name, tname);
 	if (isMergeTable(t))
 		return sql_error(sql, 02, SQLSTATE(42000) "MERGE: merge statements not available for merge tables yet");
 
@@ -1661,8 +1645,6 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 	if (!t && !sname) {
 		s = tmp_schema(sql);
 		t = mvc_bind_table(sql, s, tname);
-		if (!t)
-			t = stack_find_table(sql, tname);
 	}
 	if (insert_allowed(sql, t, tname, "COPY INTO", "copy into") == NULL)
 		return NULL;
@@ -1880,8 +1862,6 @@ bincopyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, int co
 	if (!t && !sname) {
 		s = tmp_schema(sql);
 		t = mvc_bind_table(sql, s, tname);
-		if (!t) 
-			t = stack_find_table(sql, tname);
 	}
 	if (insert_allowed(sql, t, tname, "COPY INTO", "copy into") == NULL) 
 		return NULL;
@@ -1960,8 +1940,6 @@ copyfromloader(sql_query *query, dlist *qname, symbol *fcall)
 	if (!t && !sname) {
 		s = tmp_schema(sql);
 		t = mvc_bind_table(sql, s, tname);
-		if (!t)
-			t = stack_find_table(sql, tname);
 	}
 	//TODO the COPY LOADER INTO should return an insert relation (instead of ddl) to handle partitioned tables properly
 	if (insert_allowed(sql, t, tname, "COPY INTO", "copy into") == NULL) {

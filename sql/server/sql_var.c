@@ -24,7 +24,7 @@ stack_set(mvc *sql, int var, const char *name, sql_subtype *type, sql_rel *rel, 
 	if (var == nextsize) {
 		nextsize <<= 1;
 		nvars = RENEW_ARRAY(sql_var,sql->vars,nextsize);
-		if(!nvars) {
+		if (!nvars) {
 			return NULL;
 		} else {
 			sql->vars = nvars;
@@ -49,17 +49,18 @@ stack_set(mvc *sql, int var, const char *name, sql_subtype *type, sql_rel *rel, 
 	}
 	if (name) {
 		v->name = _STRDUP(name);
-		if(!v->name)
+		if (!v->name)
 			return NULL;
 	}
 	return v;
 }
 
 sql_var*
-stack_push_var(mvc *sql, const char *name, sql_subtype *type)
+stack_push_var(mvc *sql, sql_schema *s, const char *name, sql_subtype *type)
 {
+	(void) s; /* for now ignore sname */
 	sql_var* res = stack_set(sql, sql->topvars, name, type, NULL, NULL, NULL, NULL, 0, 0);
-	if(res)
+	if (res)
 		sql->topvars++;
 	return res;
 }
@@ -68,16 +69,17 @@ sql_var*
 stack_push_rel_var(mvc *sql, const char *name, sql_rel *var, sql_subtype *type)
 {
 	sql_var* res = stack_set(sql, sql->topvars, name, type, var, NULL, NULL, NULL, 0, 0);
-	if(res)
+	if (res)
 		sql->topvars++;
 	return res;
 }
 
 sql_var*
-stack_push_table(mvc *sql, const char *name, sql_rel *var, sql_table *t)
+stack_push_table(mvc *sql, sql_schema *s, const char *name, sql_rel *var, sql_table *t)
 {
+	(void) s; /* for now ignore sname */
 	sql_var* res = stack_set(sql, sql->topvars, name, NULL, var, t, NULL, NULL, 0, 0);
-	if(res)
+	if (res)
 		sql->topvars++;
 	return res;
 }
@@ -86,7 +88,7 @@ sql_var*
 stack_push_rel_view(mvc *sql, const char *name, sql_rel *var)
 {
 	sql_var* res = stack_set(sql, sql->topvars, name, NULL, var, NULL, NULL, NULL, 1, 0);
-	if(res)
+	if (res)
 		sql->topvars++;
 	return res;
 }
@@ -95,7 +97,7 @@ sql_var*
 stack_push_window_def(mvc *sql, const char *name, dlist *wdef)
 {
 	sql_var* res = stack_set(sql, sql->topvars, name, NULL, NULL, NULL, wdef, NULL, 0, 0);
-	if(res)
+	if (res)
 		sql->topvars++;
 	return res;
 }
@@ -105,7 +107,7 @@ stack_get_window_def(mvc *sql, const char *name, int *pos)
 {
 	for (int i = sql->topvars-1; i >= 0; i--) {
 		if (!sql->vars[i].frame && sql->vars[i].wdef && sql->vars[i].name && strcmp(sql->vars[i].name, name)==0) {
-			if(pos)
+			if (pos)
 				*pos = i;
 			return sql->vars[i].wdef;
 		}
@@ -119,13 +121,13 @@ stack_push_groupby_expression(mvc *sql, symbol *def, sql_exp *exp)
 	sql_var* res = NULL;
 	sql_groupby_expression *sge = MNEW(sql_groupby_expression);
 
-	if(sge) {
+	if (sge) {
 		sge->sdef = def;
 		sge->token = def->token;
 		sge->exp = exp;
 
 		res = stack_set(sql, sql->topvars, NULL, NULL, NULL, NULL, NULL, sge, 0, 0);
-		if(res)
+		if (res)
 			sql->topvars++;
 	}
 	return res;
@@ -145,7 +147,7 @@ stack_get_groupby_expression(mvc *sql, symbol *def)
 char
 stack_check_var_visited(mvc *sql, int i)
 {
-	if(i < 0 || i >= sql->topvars)
+	if (i < 0 || i >= sql->topvars)
 		return 0;
 	return sql->vars[i].visited;
 }
@@ -153,7 +155,7 @@ stack_check_var_visited(mvc *sql, int i)
 void
 stack_set_var_visited(mvc *sql, int i)
 {
-	if(i < 0 || i >= sql->topvars)
+	if (i < 0 || i >= sql->topvars)
 		return;
 	sql->vars[i].visited = 1;
 }
@@ -166,15 +168,14 @@ stack_clear_frame_visited_flag(mvc *sql)
 }
 
 atom *
-stack_set_var(mvc *sql, const char *name, ValRecord *v)
+stack_set_var(mvc *sql, sql_schema *s, const char *name, ValRecord *v)
 {
-	int i;
 	atom *res = NULL;
-
-	for (i = sql->topvars-1; i >= 0; i--) {
+	(void) s; /* for now ignore sname */
+	for (int i = sql->topvars-1; i >= 0; i--) {
 		if (!sql->vars[i].frame && sql->vars[i].name && strcmp(sql->vars[i].name, name)==0) {
 			VALclear(&sql->vars[i].a.data);
-			if(VALcopy(&sql->vars[i].a.data, v) == NULL)
+			if (VALcopy(&sql->vars[i].a.data, v) == NULL)
 				return NULL;
 			sql->vars[i].a.isnull = VALisnil(v);
 			if (v->vtype == TYPE_flt)
@@ -188,11 +189,10 @@ stack_set_var(mvc *sql, const char *name, ValRecord *v)
 }
 
 atom *
-stack_get_var(mvc *sql, const char *name)
+stack_get_var(mvc *sql, sql_schema *s, const char *name)
 {
-	int i;
-
-	for (i = sql->topvars-1; i >= 0; i--) {
+	(void) s; /* for now ignore sname */
+	for (int i = sql->topvars-1; i >= 0; i--) {
 		if (!sql->vars[i].frame && sql->vars[i].name && strcmp(sql->vars[i].name, name)==0) {
 			return &sql->vars[i].a;
 		}
@@ -239,7 +239,7 @@ stack_pop_frame(mvc *sql)
 			table_destroy(v->t);
 		else if (v->rel)
 			rel_destroy(v->rel);
-		else if(v->exp)
+		else if (v->exp)
 			_DELETE(v->exp);
 		v->wdef = NULL;
 	}
@@ -251,9 +251,7 @@ stack_pop_frame(mvc *sql)
 sql_subtype *
 stack_find_type(mvc *sql, const char *name)
 {
-	int i;
-
-	for (i = sql->topvars-1; i >= 0; i--) {
+	for (int i = sql->topvars-1; i >= 0; i--) {
 		if (!sql->vars[i].frame && !sql->vars[i].view && sql->vars[i].name && strcmp(sql->vars[i].name, name)==0)
 			return &sql->vars[i].a.tpe;
 	}
@@ -261,11 +259,10 @@ stack_find_type(mvc *sql, const char *name)
 }
 
 sql_table *
-stack_find_table(mvc *sql, const char *name)
+stack_find_table(mvc *sql, sql_schema *s, const char *name)
 {
-	int i;
-
-	for (i = sql->topvars-1; i >= 0; i--) {
+	(void) s; /* for now ignore sname */
+	for (int i = sql->topvars-1; i >= 0; i--) {
 		if (!sql->vars[i].frame && !sql->vars[i].view && sql->vars[i].t
 			&& sql->vars[i].name && strcmp(sql->vars[i].name, name)==0)
 			return sql->vars[i].t;
@@ -276,9 +273,7 @@ stack_find_table(mvc *sql, const char *name)
 sql_rel *
 stack_find_rel_view(mvc *sql, const char *name)
 {
-	int i;
-
-	for (i = sql->topvars-1; i >= 0; i--) {
+	for (int i = sql->topvars-1; i >= 0; i--) {
 		if (!sql->vars[i].frame && sql->vars[i].view &&
 		    sql->vars[i].rel && sql->vars[i].name && strcmp(sql->vars[i].name, name)==0)
 			return rel_dup(sql->vars[i].rel);
@@ -289,9 +284,7 @@ stack_find_rel_view(mvc *sql, const char *name)
 void 
 stack_update_rel_view(mvc *sql, const char *name, sql_rel *view)
 {
-	int i;
-
-	for (i = sql->topvars-1; i >= 0; i--) {
+	for (int i = sql->topvars-1; i >= 0; i--) {
 		if (!sql->vars[i].frame && sql->vars[i].view &&
 		    sql->vars[i].rel && sql->vars[i].name && strcmp(sql->vars[i].name, name)==0) {
 			rel_destroy(sql->vars[i].rel);
@@ -301,11 +294,10 @@ stack_update_rel_view(mvc *sql, const char *name, sql_rel *view)
 }
 
 int 
-stack_find_var(mvc *sql, const char *name)
+stack_find_var(mvc *sql, sql_schema *s, const char *name)
 {
-	int i;
-
-	for (i = sql->topvars-1; i >= 0; i--) {
+	(void) s; /* for now ignore sname */
+	for (int i = sql->topvars-1; i >= 0; i--) {
 		if (!sql->vars[i].frame && !sql->vars[i].view && sql->vars[i].name && strcmp(sql->vars[i].name, name)==0)
 			return 1;
 	}
@@ -315,9 +307,7 @@ stack_find_var(mvc *sql, const char *name)
 sql_rel *
 stack_find_rel_var(mvc *sql, const char *name)
 {
-	int i;
-
-	for (i = sql->topvars-1; i >= 0; i--) {
+	for (int i = sql->topvars-1; i >= 0; i--) {
 		if (!sql->vars[i].frame && !sql->vars[i].view &&
 		    sql->vars[i].rel && sql->vars[i].name && strcmp(sql->vars[i].name, name)==0)
 			return rel_dup(sql->vars[i].rel);
@@ -326,11 +316,10 @@ stack_find_rel_var(mvc *sql, const char *name)
 }
 
 int 
-frame_find_var(mvc *sql, const char *name)
+frame_find_var(mvc *sql, sql_schema *s, const char *name)
 {
-	int i;
-
-	for (i = sql->topvars-1; i >= 0 && !sql->vars[i].frame; i--) {
+	(void) s; /* for now ignore sname */
+	for (int i = sql->topvars-1; i >= 0 && !sql->vars[i].frame; i--) {
 		if (sql->vars[i].name && strcmp(sql->vars[i].name, name)==0)
 			return 1;
 	}
@@ -338,11 +327,12 @@ frame_find_var(mvc *sql, const char *name)
 }
 
 int
-stack_find_frame(mvc *sql, const char *name)
+stack_find_frame(mvc *sql, sql_schema *s, const char *name)
 {
-	int i, frame = sql->frame;
+	int frame = sql->frame;
 
-	for (i = sql->topvars-1; i >= 0; i--) {
+	(void) s; /* for now ignore sname */
+	for (int i = sql->topvars-1; i >= 0; i--) {
 		if (sql->vars[i].frame) 
 			frame--;
 		else if (sql->vars[i].name && strcmp(sql->vars[i].name, name)==0)
@@ -354,9 +344,7 @@ stack_find_frame(mvc *sql, const char *name)
 int
 stack_has_frame(mvc *sql, const char *name)
 {
-	int i;
-
-	for (i = sql->topvars-1; i >= 0; i--) {
+	for (int i = sql->topvars-1; i >= 0; i--) {
 		if (sql->vars[i].frame && sql->vars[i].name && strcmp(sql->vars[i].name, name)==0)
 			return 1;
 	}
@@ -366,9 +354,9 @@ stack_has_frame(mvc *sql, const char *name)
 int
 stack_nr_of_declared_tables(mvc *sql)
 {
-	int i, dt = 0;
+	int dt = 0;
 
-	for (i = sql->topvars-1; i >= 0; i--) {
+	for (int i = sql->topvars-1; i >= 0; i--) {
 		if (sql->vars[i].rel && !sql->vars[i].view) {
 			sql_var *v = &sql->vars[i];
 			if (v->t)
@@ -379,9 +367,9 @@ stack_nr_of_declared_tables(mvc *sql)
 }
 
 str
-stack_set_string(mvc *sql, const char *name, const char *val)
+stack_set_string(mvc *sql, sql_schema *s, const char *name, const char *val)
 {
-	atom *a = stack_get_var(sql, name);
+	atom *a = stack_get_var(sql, s, name);
 	str new_val = _STRDUP(val);
 
 	if (a != NULL && new_val != NULL) {
@@ -391,16 +379,16 @@ stack_set_string(mvc *sql, const char *name, const char *val)
 			_DELETE(v->val.sval);
 		v->val.sval = new_val;
 		return new_val;
-	} else if(new_val) {
+	} else if (new_val) {
 		_DELETE(new_val);
 	}
 	return NULL;
 }
 
 str
-stack_get_string(mvc *sql, const char *name)
+stack_get_string(mvc *sql, sql_schema *s, const char *name)
 {
-	atom *a = stack_get_var(sql, name);
+	atom *a = stack_get_var(sql, s, name);
 
 	if (!a || a->data.vtype != TYPE_str)
 		return NULL;
@@ -409,12 +397,12 @@ stack_get_string(mvc *sql, const char *name)
 
 void
 #ifdef HAVE_HGE
-stack_set_number(mvc *sql, const char *name, hge val)
+stack_set_number(mvc *sql, sql_schema *s, const char *name, hge val)
 #else
-stack_set_number(mvc *sql, const char *name, lng val)
+stack_set_number(mvc *sql, sql_schema *s, const char *name, lng val)
 #endif
 {
-	atom *a = stack_get_var(sql, name);
+	atom *a = stack_get_var(sql, s, name);
 
 	if (a != NULL) {
 		ValRecord *v = &a->data;
@@ -472,8 +460,8 @@ hge
 #else
 lng
 #endif
-stack_get_number(mvc *sql, const char *name)
+stack_get_number(mvc *sql, sql_schema *s, const char *name)
 {
-	atom *a = stack_get_var(sql, name);
+	atom *a = stack_get_var(sql, s, name);
 	return val_get_number(a?&a->data:NULL);
 }

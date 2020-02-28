@@ -234,9 +234,9 @@ extern void mvc_create_dependencies(mvc *m, list *id_l, sqlid depend_id, sql_dep
 extern int mvc_check_dependency(mvc *m, sqlid id, sql_dependency type, list *ignore_ids);
 
 /* variable management */
-extern sql_var* stack_push_var(mvc *sql, const char *name, sql_subtype *type);
+extern sql_var* stack_push_var(mvc *sql, sql_schema *s, const char *name, sql_subtype *type);
 extern sql_var* stack_push_rel_var(mvc *sql, const char *name, sql_rel *var, sql_subtype *type);
-extern sql_var* stack_push_table(mvc *sql, const char *name, sql_rel *var, sql_table *t);
+extern sql_var* stack_push_table(mvc *sql, sql_schema *s, const char *name, sql_rel *var, sql_table *t);
 extern sql_var* stack_push_rel_view(mvc *sql, const char *name, sql_rel *view);
 extern sql_var* stack_push_window_def(mvc *sql, const char *name, dlist *sym);
 extern dlist* stack_get_window_def(mvc *sql, const char *name, int *pos);
@@ -252,31 +252,31 @@ extern sql_var* stack_push_frame(mvc *sql, const char *name);
 extern void stack_pop_frame(mvc *sql);
 extern void stack_pop_until(mvc *sql, int top);
 extern sql_subtype *stack_find_type(mvc *sql, const char *name);
-extern sql_table *stack_find_table(mvc *sql, const char *name);
+extern sql_table *stack_find_table(mvc *sql, sql_schema *s, const char *name);
 extern sql_rel *stack_find_rel_view(mvc *sql, const char *name);
-extern int stack_find_var(mvc *sql, const char *name);
+extern int stack_find_var(mvc *sql, sql_schema *s, const char *name);
 extern sql_rel *stack_find_rel_var(mvc *sql, const char *name);
 /* find var in current frame */
-extern int frame_find_var(mvc *sql, const char *name);
+extern int frame_find_var(mvc *sql, sql_schema *s, const char *name);
 /* find frame holding variable 'name' */
-extern int stack_find_frame(mvc *sql, const char *name);
+extern int stack_find_frame(mvc *sql, sql_schema *s, const char *name);
 /* find frame with given name */
 extern int stack_has_frame(mvc *sql, const char *name);
 extern int stack_nr_of_declared_tables(mvc *sql);
 
-extern atom* stack_get_var(mvc *sql, const char *name);
-extern atom* stack_set_var(mvc *sql, const char *name, ValRecord *v);
+extern atom* stack_get_var(mvc *sql, sql_schema *s, const char *name);
+extern atom* stack_set_var(mvc *sql, sql_schema *s, const char *name, ValRecord *v);
 
-extern str stack_get_string(mvc *sql, const char *name);
-extern str stack_set_string(mvc *sql, const char *name, const char *v);
+extern str stack_get_string(mvc *sql, sql_schema *s, const char *name);
+extern str stack_set_string(mvc *sql, sql_schema *s, const char *name, const char *v);
 #ifdef HAVE_HGE
 extern hge val_get_number(ValRecord *val);
-extern hge stack_get_number(mvc *sql, const char *name);
-extern void stack_set_number(mvc *sql, const char *name, hge v);
+extern hge stack_get_number(mvc *sql, sql_schema *s, const char *name);
+extern void stack_set_number(mvc *sql, sql_schema *s, const char *name, hge v);
 #else
 extern lng val_get_number(ValRecord *val);
-extern lng stack_get_number(mvc *sql, const char *name);
-extern void stack_set_number(mvc *sql, const char *name, lng v);
+extern lng stack_get_number(mvc *sql, sql_schema *s, const char *name);
+extern void stack_set_number(mvc *sql, sql_schema *s, const char *name, lng v);
 #endif
 
 extern sql_column *mvc_copy_column(mvc *m, sql_table *t, sql_column *c);

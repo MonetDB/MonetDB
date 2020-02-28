@@ -476,7 +476,7 @@ monet5_user_get_def_schema(mvc *m, int user)
 	rid = table_funcs.column_find_row(m->session->tr, schemas_id, &schema_id, NULL);
 	if (!is_oid_nil(rid))
 		schema = table_funcs.column_find_value(m->session->tr, schemas_name, rid);
-	if(!stack_set_string(m, "current_schema", schema))
+	if(!stack_set_string(m, mvc_bind_schema(m, "tmp"), "current_schema", schema))
 		return NULL;
 	return schema;
 }
@@ -561,9 +561,9 @@ monet5_user_set_def_schema(mvc *m, oid user)
 		return NULL;
 	}
 	/* reset the user and schema names */
-	if(!stack_set_string(m, "current_schema", schema) ||
-		!stack_set_string(m, "current_user", username) ||
-		!stack_set_string(m, "current_role", username)) {
+	if(!stack_set_string(m, mvc_bind_schema(m, "tmp"), "current_schema", schema) ||
+		!stack_set_string(m, mvc_bind_schema(m, "tmp"), "current_user", username) ||
+		!stack_set_string(m, mvc_bind_schema(m, "tmp"), "current_role", username)) {
 		schema = NULL;
 	}
 	GDKfree(username);

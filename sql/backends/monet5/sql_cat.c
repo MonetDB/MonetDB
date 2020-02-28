@@ -423,7 +423,7 @@ create_trigger(mvc *sql, char *sname, char *tname, char *triggername, int time, 
 	if (!s)
 		s = cur_schema(sql);
 	if (!mvc_schema_privs(sql, s))
-		throw(SQL,"sql.create_trigger",SQLSTATE(3F000) "CREATE TRIGGER: access denied for %s to schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
+		throw(SQL,"sql.create_trigger",SQLSTATE(3F000) "CREATE TRIGGER: access denied for %s to schema '%s'", stack_get_string(sql, mvc_bind_schema(sql, "tmp"), "current_user"), s->base.name);
 	if (mvc_bind_trigger(sql, s, triggername) != NULL)
 		throw(SQL,"sql.create_trigger",SQLSTATE(3F000) "CREATE TRIGGER: name '%s' already in use", triggername);
 
@@ -470,7 +470,7 @@ drop_trigger(mvc *sql, char *sname, char *tname, int if_exists)
 		s = cur_schema(sql);
 	assert(s);
 	if (!mvc_schema_privs(sql, s))
-		throw(SQL,"sql.drop_trigger",SQLSTATE(3F000) "DROP TRIGGER: access denied for %s to schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
+		throw(SQL,"sql.drop_trigger",SQLSTATE(3F000) "DROP TRIGGER: access denied for %s to schema '%s'", stack_get_string(sql, mvc_bind_schema(sql, "tmp"), "current_user"), s->base.name);
 
 	if ((tri = mvc_bind_trigger(sql, s, tname)) == NULL) {
 		if (if_exists)
@@ -507,7 +507,7 @@ drop_table(mvc *sql, char *sname, char *tname, int drop_action, int if_exists)
 	} else if (t->system) {
 		throw(SQL,"sql.droptable", SQLSTATE(42000) "DROP TABLE: cannot drop system table '%s'", tname);
 	} else if (!mvc_schema_privs(sql, s) && !(isTempSchema(s) && t->persistence == SQL_LOCAL_TEMP)) {
-		throw(SQL,"sql.droptable",SQLSTATE(42000) "DROP TABLE: access denied for %s to schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
+		throw(SQL,"sql.droptable",SQLSTATE(42000) "DROP TABLE: access denied for %s to schema '%s'", stack_get_string(sql, mvc_bind_schema(sql, "tmp"), "current_user"), s->base.name);
 	}
 	if (!drop_action && t->keys.set) {
 		for (n = t->keys.set->h; n; n = n->next) {
@@ -550,7 +550,7 @@ drop_view(mvc *sql, char *sname, char *tname, int drop_action, int if_exists)
 
 	t = mvc_bind_table(sql, ss, tname);
 	if (!mvc_schema_privs(sql, ss) && !(isTempSchema(ss) && t && t->persistence == SQL_LOCAL_TEMP)) {
-		throw(SQL,"sql.dropview", SQLSTATE(42000) "DROP VIEW: access denied for %s to schema '%s'", stack_get_string(sql, "current_user"), ss->base.name);
+		throw(SQL,"sql.dropview", SQLSTATE(42000) "DROP VIEW: access denied for %s to schema '%s'", stack_get_string(sql, mvc_bind_schema(sql, "tmp"), "current_user"), ss->base.name);
 	} else if (!t) {
 		if (if_exists){
 			return MAL_SUCCEED;
@@ -599,7 +599,7 @@ drop_index(Client cntxt, mvc *sql, char *sname, char *iname)
 	if (!i) {
 		throw(SQL,"sql.drop_index", SQLSTATE(42S12) "DROP INDEX: no such index '%s'", iname);
 	} else if (!mvc_schema_privs(sql, s)) {
-		throw(SQL,"sql.drop_index", SQLSTATE(42000) "DROP INDEX: access denied for %s to schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
+		throw(SQL,"sql.drop_index", SQLSTATE(42000) "DROP INDEX: access denied for %s to schema '%s'", stack_get_string(sql, mvc_bind_schema(sql, "tmp"), "current_user"), s->base.name);
 	} else {
 		if (i->type == ordered_idx) {
 			sql_kc *ic = i->columns->h->data;
@@ -636,7 +636,7 @@ create_seq(mvc *sql, char *sname, char *seqname, sql_sequence *seq)
 	if (find_sql_sequence(s, seq->base.name)) {
 		throw(SQL,"sql.create_seq", SQLSTATE(42000) "CREATE SEQUENCE: name '%s' already in use", seq->base.name);
 	} else if (!mvc_schema_privs(sql, s)) {
-		throw(SQL,"sql.create_seq", SQLSTATE(42000) "CREATE SEQUENCE: insufficient privileges for '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
+		throw(SQL,"sql.create_seq", SQLSTATE(42000) "CREATE SEQUENCE: insufficient privileges for '%s' in schema '%s'", stack_get_string(sql, mvc_bind_schema(sql, "tmp"), "current_user"), s->base.name);
 	} else if (is_lng_nil(seq->start) || is_lng_nil(seq->minvalue) || is_lng_nil(seq->maxvalue) ||
 			   is_lng_nil(seq->increment) || is_lng_nil(seq->cacheinc) || is_bit_nil(seq->cycle)) {
 		throw(SQL,"sql.create_seq", SQLSTATE(42000) "CREATE SEQUENCE: sequence properties must be non-NULL");
@@ -665,7 +665,7 @@ alter_seq(mvc *sql, char *sname, char *seqname, sql_sequence *seq, const lng *va
 	if (!(nseq = find_sql_sequence(s, seq->base.name)))
 		throw(SQL,"sql.alter_seq", SQLSTATE(42000) "ALTER SEQUENCE: no such sequence '%s'", seq->base.name);
 	else if (!mvc_schema_privs(sql, s))
-		throw(SQL,"sql.alter_seq", SQLSTATE(42000) "ALTER SEQUENCE: insufficient privileges for '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
+		throw(SQL,"sql.alter_seq", SQLSTATE(42000) "ALTER SEQUENCE: insufficient privileges for '%s' in schema '%s'", stack_get_string(sql, mvc_bind_schema(sql, "tmp"), "current_user"), s->base.name);
 	/* if seq properties hold NULL values, then they should be ignored during the update */
 	/* first alter the known values */
 	sql_trans_alter_sequence(sql->session->tr, nseq, seq->minvalue, seq->maxvalue, seq->increment, seq->cacheinc, seq->cycle);
@@ -697,7 +697,7 @@ drop_seq(mvc *sql, char *sname, char *name)
 	if (!(seq = find_sql_sequence(s, name))) {
 		throw(SQL,"sql.drop_seq", SQLSTATE(42M35) "DROP SEQUENCE: no such sequence '%s'", name);
 	} else if (!mvc_schema_privs(sql, s)) {
-		throw(SQL,"sql.drop_seq", SQLSTATE(42000) "DROP SEQUENCE: insufficient privileges for '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
+		throw(SQL,"sql.drop_seq", SQLSTATE(42000) "DROP SEQUENCE: insufficient privileges for '%s' in schema '%s'", stack_get_string(sql, mvc_bind_schema(sql, "tmp"), "current_user"), s->base.name);
 	}
 	if (mvc_check_dependency(sql, seq->base.id, BEDROPPED_DEPENDENCY, NULL))
 		throw(SQL,"sql.drop_seq", SQLSTATE(2B000) "DROP SEQUENCE: unable to drop sequence %s (there are database objects which depend on it)\n", seq->base.name);
@@ -727,7 +727,7 @@ drop_func(mvc *sql, char *sname, char *name, sqlid fid, sql_ftype type, int acti
 			sql_func *func = n->data;
 
 			if (!mvc_schema_privs(sql, s)) {
-				throw(SQL,"sql.drop_func", SQLSTATE(42000) "DROP %s%s: access denied for %s to schema '%s'", KF, F, stack_get_string(sql, "current_user"), s->base.name);
+				throw(SQL,"sql.drop_func", SQLSTATE(42000) "DROP %s%s: access denied for %s to schema '%s'", KF, F, stack_get_string(sql, mvc_bind_schema(sql, "tmp"), "current_user"), s->base.name);
 			}
 			if (!action && mvc_check_dependency(sql, func->base.id, !IS_PROC(func) ? FUNC_DEPENDENCY : PROC_DEPENDENCY, NULL))
 				throw(SQL,"sql.drop_func", SQLSTATE(42000) "DROP %s%s: there are database objects dependent on %s%s %s;", KF, F, kf, f, func->base.name);
@@ -744,7 +744,7 @@ drop_func(mvc *sql, char *sname, char *name, sqlid fid, sql_ftype type, int acti
 
 		if (!mvc_schema_privs(sql, s)) {
 			list_destroy(list_func);
-			throw(SQL,"sql.drop_func", SQLSTATE(42000) "DROP %s%s: access denied for %s to schema '%s'", KF, F, stack_get_string(sql, "current_user"), s->base.name);
+			throw(SQL,"sql.drop_func", SQLSTATE(42000) "DROP %s%s: access denied for %s to schema '%s'", KF, F, stack_get_string(sql, mvc_bind_schema(sql, "tmp"), "current_user"), s->base.name);
 		}
 		for (n = list_func->h; n; n = n->next) {
 			sql_func *func = n->data;
@@ -845,7 +845,7 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 	if ((nt = mvc_bind_table(sql, s, t->base.name)) == NULL) {
 		throw(SQL,"sql.alter_table", SQLSTATE(42S02) "ALTER TABLE: no such table '%s'", t->base.name);
 	} else if (!mvc_schema_privs(sql, s) && !(isTempSchema(s) && t->persistence == SQL_LOCAL_TEMP)) {
-		throw(SQL,"sql.alter_table", SQLSTATE(42000) "ALTER TABLE: insufficient privileges for user '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
+		throw(SQL,"sql.alter_table", SQLSTATE(42000) "ALTER TABLE: insufficient privileges for user '%s' in schema '%s'", stack_get_string(sql, mvc_bind_schema(sql, "tmp"), "current_user"), s->base.name);
 	}
 
 	/* First check if all the changes are allowed */
@@ -1034,7 +1034,7 @@ SQLcreate_schema(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL,"sql.create_schema", SQLSTATE(42M32) "CREATE SCHEMA: no such authorization '%s'", name);
 	}
 	if (sql->user_id != USER_MONETDB && sql->role_id != ROLE_SYSADMIN) {
-		throw(SQL,"sql.create_schema", SQLSTATE(42000) "CREATE SCHEMA: insufficient privileges for user '%s'", stack_get_string(sql, "current_user"));
+		throw(SQL,"sql.create_schema", SQLSTATE(42000) "CREATE SCHEMA: insufficient privileges for user '%s'", stack_get_string(sql, mvc_bind_schema(sql, "tmp"), "current_user"));
 	}
 	if (mvc_bind_schema(sql, sname)) {
 		throw(SQL,"sql.create_schema", SQLSTATE(3F000) "CREATE SCHEMA: name '%s' already in use", sname);
@@ -1061,7 +1061,7 @@ SQLdrop_schema(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (!if_exists)
 			throw(SQL,"sql.drop_schema",SQLSTATE(3F000) "DROP SCHEMA: name %s does not exist", sname);
 	} else if (!mvc_schema_privs(sql, s)) {
-		throw(SQL,"sql.drop_schema",SQLSTATE(42000) "DROP SCHEMA: access denied for %s to schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
+		throw(SQL,"sql.drop_schema",SQLSTATE(42000) "DROP SCHEMA: access denied for %s to schema '%s'", stack_get_string(sql, mvc_bind_schema(sql, "tmp"), "current_user"), s->base.name);
 	} else if (s == cur_schema(sql)) {
 		throw(SQL,"sql.drop_schema",SQLSTATE(42000) "DROP SCHEMA: cannot drop current schema");
 	} else if (s->system) {
@@ -1180,7 +1180,7 @@ SQLcreate_type(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		s = cur_schema(sql);
 
 	if (!mvc_schema_privs(sql, s))
-		throw(SQL,"sql.create_type", SQLSTATE(42000) "CREATE TYPE: access denied for %s to schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
+		throw(SQL,"sql.create_type", SQLSTATE(42000) "CREATE TYPE: access denied for %s to schema '%s'", stack_get_string(sql, mvc_bind_schema(sql, "tmp"), "current_user"), s->base.name);
 	if (schema_bind_type(sql, s, name))
 		throw(SQL,"sql.create_type", SQLSTATE(42S02) "CREATE TYPE: type '%s' already exists", name);
 	if (!mvc_create_type(sql, s, name, 0, 0, 0, impl))
@@ -1206,7 +1206,7 @@ SQLdrop_type(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		s = cur_schema(sql);
 
 	if (!mvc_schema_privs(sql, s))
-		throw(SQL,"sql.drop_type", SQLSTATE(42000) "DROP TYPE:  access denied for %s to schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
+		throw(SQL,"sql.drop_type", SQLSTATE(42000) "DROP TYPE:  access denied for %s to schema '%s'", stack_get_string(sql, mvc_bind_schema(sql, "tmp"), "current_user"), s->base.name);
 	else if (!(t = schema_bind_type(sql, s, name)))
 		throw(SQL,"sql.drop_type", SQLSTATE(3F000) "DROP TYPE: type '%s' does not exist", name);
 	else if (!drop_action && mvc_check_dependency(sql, t->base.id, TYPE_DEPENDENCY, NULL))
@@ -1611,7 +1611,7 @@ SQLrename_schema(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!(s = mvc_bind_schema(sql, old_name)))
 		throw(SQL, "sql.rename_schema", SQLSTATE(42S02) "ALTER SCHEMA: no such schema '%s'", old_name);
 	if (!mvc_schema_privs(sql, s))
-		throw(SQL, "sql.rename_schema", SQLSTATE(3F000) "ALTER SCHEMA: access denied for %s to schema '%s'", stack_get_string(sql, "current_user"), old_name);
+		throw(SQL, "sql.rename_schema", SQLSTATE(3F000) "ALTER SCHEMA: access denied for %s to schema '%s'", stack_get_string(sql, mvc_bind_schema(sql, "tmp"), "current_user"), old_name);
 	if (s->system)
 		throw(SQL, "sql.rename_schema", SQLSTATE(3F000) "ALTER SCHEMA: cannot rename a system schema");
 	if (!list_empty(s->tables.set) || !list_empty(s->types.set) || !list_empty(s->funcs.set) || !list_empty(s->seqs.set))
@@ -1647,7 +1647,7 @@ SQLrename_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (!(s = mvc_bind_schema(sql, oschema_name)))
 			throw(SQL, "sql.rename_table", SQLSTATE(42S02) "ALTER TABLE: no such schema '%s'", oschema_name);
 		if (!mvc_schema_privs(sql, s))
-			throw(SQL, "sql.rename_table", SQLSTATE(42000) "ALTER TABLE: access denied for %s to schema '%s'", stack_get_string(sql, "current_user"), oschema_name);
+			throw(SQL, "sql.rename_table", SQLSTATE(42000) "ALTER TABLE: access denied for %s to schema '%s'", stack_get_string(sql, mvc_bind_schema(sql, "tmp"), "current_user"), oschema_name);
 		if (!(t = mvc_bind_table(sql, s, otable_name)))
 			throw(SQL, "sql.rename_table", SQLSTATE(42S02) "ALTER TABLE: no such table '%s' in schema '%s'", otable_name, oschema_name);
 		if (t->system)
@@ -1667,7 +1667,7 @@ SQLrename_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (!(o = mvc_bind_schema(sql, oschema_name)))
 			throw(SQL, "sql.rename_table", SQLSTATE(42S02) "ALTER TABLE: no such schema '%s'", oschema_name);
 		if (!mvc_schema_privs(sql, o))
-			throw(SQL, "sql.rename_table", SQLSTATE(42000) "ALTER TABLE: access denied for %s to schema '%s'", stack_get_string(sql, "current_user"), oschema_name);
+			throw(SQL, "sql.rename_table", SQLSTATE(42000) "ALTER TABLE: access denied for %s to schema '%s'", stack_get_string(sql, mvc_bind_schema(sql, "tmp"), "current_user"), oschema_name);
 		if (!(t = mvc_bind_table(sql, o, otable_name)))
 			throw(SQL, "sql.rename_table", SQLSTATE(42S02) "ALTER TABLE: no such table '%s' in schema '%s'", otable_name, oschema_name);
 		if (t->system)
@@ -1683,7 +1683,7 @@ SQLrename_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (!(s = mvc_bind_schema(sql, nschema_name)))
 			throw(SQL, "sql.rename_table", SQLSTATE(42S02) "ALTER TABLE: no such schema '%s'", nschema_name);
 		if (!mvc_schema_privs(sql, s))
-			throw(SQL, "sql.rename_table", SQLSTATE(42000) "ALTER TABLE: access denied for '%s' to schema '%s'", stack_get_string(sql, "current_user"), nschema_name);
+			throw(SQL, "sql.rename_table", SQLSTATE(42000) "ALTER TABLE: access denied for '%s' to schema '%s'", stack_get_string(sql, mvc_bind_schema(sql, "tmp"), "current_user"), nschema_name);
 		if (isTempSchema(s))
 			throw(SQL, "sql.rename_table", SQLSTATE(3F000) "ALTER TABLE: not possible to change table's schema to temporary");
 		if (mvc_bind_table(sql, s, otable_name))
@@ -1713,7 +1713,7 @@ SQLrename_column(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!(s = mvc_bind_schema(sql, schema_name)))
 		throw(SQL, "sql.rename_column", SQLSTATE(42S02) "ALTER TABLE: no such schema '%s'", schema_name);
 	if (!mvc_schema_privs(sql, s))
-		throw(SQL, "sql.rename_column", SQLSTATE(42000) "ALTER TABLE: access denied for %s to schema '%s'", stack_get_string(sql, "current_user"), schema_name);
+		throw(SQL, "sql.rename_column", SQLSTATE(42000) "ALTER TABLE: access denied for %s to schema '%s'", stack_get_string(sql, mvc_bind_schema(sql, "tmp"), "current_user"), schema_name);
 	if (!(t = mvc_bind_table(sql, s, table_name)))
 		throw(SQL, "sql.rename_column", SQLSTATE(42S02) "ALTER TABLE: no such table '%s' in schema '%s'", table_name, schema_name);
 	if (t->system)

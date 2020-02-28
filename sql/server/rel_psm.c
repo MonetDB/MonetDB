@@ -111,7 +111,7 @@ psm_set_exp(sql_query *query, dnode *n)
 		*/
 
 		/* check if variable is known from the stack */
-		if (!stack_find_var(sql, vname)) {
+		if (!stack_find_var(sql, s, vname)) {
 			sql_arg *a = sql_bind_param(sql, vname);
 
 			if (!a) /* not parameter, ie local var ? */
@@ -125,7 +125,7 @@ psm_set_exp(sql_query *query, dnode *n)
 		if (!e || (rel && e->card > CARD_AGGR))
 			return NULL;
 
-		level = stack_find_frame(sql, vname);
+		level = stack_find_frame(sql, s, vname);
 		e = rel_check_type(sql, tpe, rel, e, type_cast);
 		if (!e)
 			return NULL;
@@ -159,7 +159,7 @@ psm_set_exp(sql_query *query, dnode *n)
 			if (s == NULL)
 				s = cur_schema(sql);
 
-			if (!stack_find_var(sql, vname)) {
+			if (!stack_find_var(sql, s, vname)) {
 				sql_arg *a = sql_bind_param(sql, vname);
 
 				if (!a) /* not parameter, ie local var ? */
@@ -173,7 +173,7 @@ psm_set_exp(sql_query *query, dnode *n)
 				exp_label(sql->sa, v, ++sql->label);
 			v = exp_ref(sql->sa, v);
 
-			level = stack_find_frame(sql, vname);
+			level = stack_find_frame(sql, s, vname);
 			v = rel_check_type(sql, tpe, rel_val, v, type_cast);
 			if (!v)
 				return NULL;
@@ -225,10 +225,10 @@ rel_psm_declare(mvc *sql, dnode *n)
 				s = cur_schema(sql);
 
 			/* check if we overwrite a scope local variable declare x; declare x; */
-			if (frame_find_var(sql, tname))
+			if (frame_find_var(sql, s, tname))
 				return sql_error(sql, 01, SQLSTATE(42000) "DECLARE: Variable '%s%s%s' already declared", sname ? sname : "", sname ? "." : "", tname);
 			/* variables are put on stack */
-			if (!stack_push_var(sql, tname, ctype))
+			if (!stack_push_var(sql, s, tname, ctype))
 				return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			r = exp_var(sql->sa, sa_strdup(sql->sa, sname), sa_strdup(sql->sa, tname), ctype, sql->frame);
 			append(l, r);
@@ -245,11 +245,14 @@ rel_psm_declare_table(sql_query *query, dnode *n)
 	mvc *sql = query->sql;
 	sql_rel *rel = NULL, *baset = NULL;
 	dlist *qname = n->next->data.lval;
-	const char *name = qname_schema_object(qname);
 	const char *sname = qname_schema(qname);
+	const char *name = qname_schema_object(qname);
 	sql_table *t;
+	sql_schema *s = cur_schema(sql);
 
-	if (frame_find_var(sql, name))
+	if (sname && !(s = mvc_bind_schema(sql, sname)))
+		return sql_error(sql, 02, SQLSTATE(3F000) "DECLARE: No such schema '%s'", sname);
+	if (frame_find_var(sql, s, name))
 		return sql_error(sql, 01, SQLSTATE(42000) "DECLARE: Variable '%s' already declared", name);
 
 	assert(n->next->next->next->type == type_int);
@@ -268,7 +271,7 @@ rel_psm_declare_table(sql_query *query, dnode *n)
 	if (baset->flag != ddl_create_table)
 		return NULL;
 	t = (sql_table*)((atom*)((sql_exp*)baset->exps->t->data)->l)->data.val.pval;
-	if (!stack_push_table(sql, name, baset, t))
+	if (!stack_push_table(sql, s, name, baset, t))
 		return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return exp_table(sql->sa, sa_strdup(sql->sa, sname), sa_strdup(sql->sa, name), t, sql->frame);
 }
@@ -596,16 +599,14 @@ rel_select_into( sql_query *query, symbol *sq, exp_kind ek)
 		const char *sname = qname_schema(qname);
 		const char *name = qname_schema_object(qname);
 		sql_subtype *tpe = NULL;
-		sql_schema *s = NULL;
+		sql_schema *s = cur_schema(sql);
 		sql_exp *v = m->data;
 		int level;
 
 		if (sname && !(s = mvc_bind_schema(sql, sname)))
 			return sql_error(sql, 02, SQLSTATE(3F000) "SELECT INTO: No such schema '%s'", sname);
-		if (s == NULL)
-			s = cur_schema(sql);
 
-		if (!stack_find_var(sql, name)) 
+		if (!stack_find_var(sql, s, name)) 
 			return sql_error(sql, 02, SQLSTATE(42000) "SELECT INTO: Variable '%s%s%s' unknown", sname ? sname : "", sname ? "." : "", name);
 		/* dynamic check for single values */
 		if (v->card > CARD_AGGR) {
@@ -614,7 +615,7 @@ rel_select_into( sql_query *query, symbol *sq, exp_kind ek)
 			v = exp_aggr1(sql->sa, v, zero_or_one, 0, 0, CARD_ATOM, has_nil(v));
 		}
 		tpe = stack_find_type(sql, name);
-		level = stack_find_frame(sql, name);
+		level = stack_find_frame(sql, s, name);
 		if (!v || !(v = rel_check_type(sql, tpe, r, v, type_equal)))
 			return NULL;
 		v = exp_set(sql->sa, sname, name, v, level);
@@ -884,7 +885,7 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 		if (replace) {
 			sql_func *func = sf->func;
 			if (!mvc_schema_privs(sql, s))
-				return sql_error(sql, 02, SQLSTATE(42000) "CREATE OR REPLACE %s: access denied for %s to schema '%s'", F, stack_get_string(sql, "current_user"), s->base.name);
+				return sql_error(sql, 02, SQLSTATE(42000) "CREATE OR REPLACE %s: access denied for %s to schema '%s'", F, stack_get_string(sql, mvc_bind_schema(sql, "tmp"), "current_user"), s->base.name);
 			if (mvc_check_dependency(sql, func->base.id, !IS_PROC(func) ? FUNC_DEPENDENCY : PROC_DEPENDENCY, NULL))
 				return sql_error(sql, 02, SQLSTATE(42000) "CREATE OR REPLACE %s: there are database objects dependent on %s %s;", F, fn, func->base.name);
 			if (!func->s)
@@ -922,7 +923,7 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 	list_destroy(type_list);
 	if (create && !mvc_schema_privs(sql, s)) {
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE %s: insufficient privileges for user '%s' in schema '%s'", F,
-						 stack_get_string(sql, "current_user"), s->base.name);
+						 stack_get_string(sql, mvc_bind_schema(sql, "tmp"), "current_user"), s->base.name);
 	} else {
 		char *q = QUERY(sql->scanner);
 		list *l = NULL;
@@ -1295,7 +1296,7 @@ create_trigger(sql_query *query, dlist *qname, int time, symbol *trigger_event, 
 	}
 
 	if (create && !mvc_schema_privs(sql, ss))
-		return sql_error(sql, 02, SQLSTATE(42000) "%s TRIGGER: access denied for %s to schema '%s'", base, stack_get_string(sql, "current_user"), ss->base.name);
+		return sql_error(sql, 02, SQLSTATE(42000) "%s TRIGGER: access denied for %s to schema '%s'", base, stack_get_string(sql, mvc_bind_schema(sql, "tmp"), "current_user"), ss->base.name);
 	if (create && !(t = mvc_bind_table(sql, ss, tname)))
 		return sql_error(sql, 02, SQLSTATE(42000) "%s TRIGGER: unknown table '%s'", base, tname);
 	if (create && isView(t))
@@ -1421,7 +1422,7 @@ drop_trigger(mvc *sql, dlist *qname, int if_exists)
 		return sql_error(sql, 02, SQLSTATE(3F000) "DROP TRIGGER: no such schema '%s'", sname);
 
 	if (!mvc_schema_privs(sql, ss)) 
-		return sql_error(sql, 02, SQLSTATE(3F000) "DROP TRIGGER: access denied for %s to schema '%s'", stack_get_string(sql, "current_user"), ss->base.name);
+		return sql_error(sql, 02, SQLSTATE(3F000) "DROP TRIGGER: access denied for %s to schema '%s'", stack_get_string(sql, mvc_bind_schema(sql, "tmp"), "current_user"), ss->base.name);
 	return rel_drop_trigger(sql, ss->base.name, tname, if_exists);
 }
 
@@ -1518,7 +1519,7 @@ create_table_from_loader(sql_query *query, dlist *qname, symbol *fcall)
 	if (s == NULL) 
 		s = cur_schema(sql);
 	if (!mvc_schema_privs(sql, s))
-		return sql_error(sql, 02, SQLSTATE(42000) "CREATE TABLE FROM LOADER: insufficient privileges for user '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
+		return sql_error(sql, 02, SQLSTATE(42000) "CREATE TABLE FROM LOADER: insufficient privileges for user '%s' in schema '%s'", stack_get_string(sql, mvc_bind_schema(sql, "tmp"), "current_user"), s->base.name);
 	if (mvc_bind_table(sql, s, tname))
 		return sql_error(sql, 02, SQLSTATE(42S01) "CREATE TABLE FROM LOADER: name '%s' already in use", tname);
 

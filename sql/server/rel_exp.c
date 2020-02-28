@@ -509,7 +509,7 @@ exp_value(mvc *sql, sql_exp *e, atom **args, int maxarg)
 		return e->l;
 	} else if (e->r) { /* param (ie not set) */
 		if (e->flag <= 1) /* global variable */
-			return stack_get_var(sql, e->r); 
+			return stack_get_var(sql, mvc_bind_schema(sql, "tmp"), e->r); 
 		return NULL; 
 	} else if (sql->emode == m_normal && e->flag < (unsigned) maxarg) { /* do not get the value in the prepared case */
 		return args[e->flag]; 
