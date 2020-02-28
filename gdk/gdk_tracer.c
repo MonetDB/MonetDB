@@ -10,6 +10,28 @@
 #include "gdk.h"
 #include "gdk_tracer.h"
 
+// GDKtracer struct - Buffer and info
+#define BUFFER_SIZE 64000
+typedef struct GDKtracer {
+	int id;
+	char buffer[BUFFER_SIZE];
+	int allocated_size;
+} gdk_tracer;
+
+#define DEFAULT_ADAPTER BASIC
+#define DEFAULT_LOG_LEVEL M_ERROR
+#define DEFAULT_FLUSH_LEVEL M_INFO
+
+#define FILE_NAME "mdbtrace.log"
+
+#define OPENFILE_FAILED "Failed to open "FILE_NAME
+#define GDKTRACER_FAILED "Failed to write logs"
+
+#define AS_STR(x) #x
+#define STR(x) AS_STR(x)
+
+#define GENERATE_STRING(STRING) #STRING,
+
 static gdk_tracer tracer = {.id = 0, .allocated_size = 0};
 
 static gdk_tracer *active_tracer = &tracer;
@@ -25,6 +47,7 @@ static bool LOG_EXC_REP = false;
 static LOG_LEVEL CUR_FLUSH_LEVEL = DEFAULT_FLUSH_LEVEL;
 static bool GDK_TRACER_STOP = false;
 
+#define GENERATE_LOG_LEVEL(COMP) DEFAULT_LOG_LEVEL,
 LOG_LEVEL LVL_PER_COMPONENT[] = {
 	FOREACH_COMP(GENERATE_LOG_LEVEL)
 };
@@ -44,6 +67,31 @@ const char *COMPONENT_STR[] = {
 const char *LEVEL_STR[] = {
 	FOREACH_LEVEL(GENERATE_STRING)
 };
+
+
+
+/*
+ * GDKtracer Stream Macros
+ */
+// Exception
+#define GDK_TRACER_EXCEPTION(MSG, ...)					\
+	mnstr_printf(GDKstdout,						\
+		     "%s "						\
+		     "%-"MXW"s "					\
+		     "%"MXW"s:%d "					\
+		     "%"MXW"s "						\
+		     "%-"MXW"s "					\
+		     "%-"MXW"s # "MSG,					\
+		     GDKtracer_get_timestamp("%Y-%m-%d %H:%M:%S",	\
+					     (char[20]){0}, 20),	\
+		     __FILE__,						\
+		     __func__,						\
+		     __LINE__,						\
+		     STR(M_CRITICAL),					\
+		     STR(GDK_TRACER),					\
+		     MT_thread_getname(),				\
+		     ## __VA_ARGS__);
+
 
 
 

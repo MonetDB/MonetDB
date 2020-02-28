@@ -35,27 +35,9 @@
 #ifndef _GDK_TRACER_H_
 #define _GDK_TRACER_H_
 
-#define INT_MAX_LEN ((__CHAR_BIT__ * sizeof(int) - 1) / 3  + 2)
-#define BUFFER_SIZE 64000
-
-#define DEFAULT_ADAPTER BASIC
-#define DEFAULT_LOG_LEVEL M_ERROR
-#define DEFAULT_FLUSH_LEVEL M_INFO
-
-#define FILE_NAME "mdbtrace.log"
-#define NAME_SEP '_'
-#define NULL_CHAR '\0'
 #define MXW "20"
 
-#define OPENFILE_FAILED "Failed to open "FILE_NAME
-#define GDKTRACER_FAILED "Failed to write logs"
-
-#define AS_STR(x) #x
-#define STR(x) AS_STR(x)
-
 #define GENERATE_ENUM(ENUM) ENUM,
-#define GENERATE_STRING(STRING) #STRING,
-#define GENERATE_LOG_LEVEL(COMP) DEFAULT_LOG_LEVEL,
 
 
 // ADAPTERS
@@ -273,44 +255,6 @@ gdk_export LOG_LEVEL LVL_PER_COMPONENT[];
 
 #define TRC_DEBUG_ENDIF(COMP, MSG, ...)				\
 	GDK_TRACER_LOG_BODY(M_DEBUG, COMP, MSG, ## __VA_ARGS__)
-
-
-
-// GDKtracer struct - Buffer and info
-typedef struct GDKtracer {
-	int id;
-	char buffer[BUFFER_SIZE];
-	int allocated_size;
-} gdk_tracer;
-
-
-
-/*
- * GDKtracer Stream Macros
- */
-// Exception
-#define GDK_TRACER_EXCEPTION(MSG, ...)					\
-	mnstr_printf(GDKstdout,						\
-		     "%s "						\
-		     "%-"MXW"s "					\
-		     "%"MXW"s:%d "					\
-		     "%"MXW"s "						\
-		     "%-"MXW"s "					\
-		     "%-"MXW"s # "MSG,					\
-		     GDKtracer_get_timestamp("%Y-%m-%d %H:%M:%S",	\
-					     (char[20]){0}, 20),	\
-		     __FILE__,						\
-		     __func__,						\
-		     __LINE__,						\
-		     STR(M_CRITICAL),					\
-		     STR(GDK_TRACER),					\
-		     MT_thread_getname(),				\
-		     ## __VA_ARGS__);
-
-
-#define GDK_TRACER_OSTREAM(MSG, ...)			\
-	mnstr_printf(GDKstdout, MSG, ## __VA_ARGS__)
-
 
 
 
