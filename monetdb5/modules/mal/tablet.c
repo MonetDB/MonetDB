@@ -255,7 +255,6 @@ static int
 TABLET_error(stream *s)
 {
 	char *err = mnstr_error(s);
-	TRC_ERROR(MAL_TABLET, "Stream error: %s\n", err);
 	/* use free as stream allocates out side GDK */
 	if (err)
 		free(err);
@@ -667,7 +666,6 @@ tablet_error(READERtask *task, lng row, int col, const char *msg, const char *fc
 		} else
 			task->as->error = createException(MAL, "sql.copy_from", "%s", msg);
 	}
-	TRC_ERROR(MAL_TABLET, "Error: " LLFMT ", %d:%s:%s\n", row, col, msg, fcn);
 	task->errorcnt++;
 	MT_lock_unset(&errorlock);
 }
@@ -1058,8 +1056,6 @@ SQLload_parse_line(READERtask *task, int idx)
 		GDKfree(errline);
 		error = true;
 	}
-	if (error)
-		TRC_ERROR(MAL_TABLET, "Line break failed: %d:%s\n", idx, line ? line : "EOF");
 	return error ? -1 : 0;
 }
 
@@ -1241,7 +1237,7 @@ SQLproducer(void *p)
 		goto reportlackofinput;
 	}
 
-	TRC_DEBUG(MAL_TABLET, "SQLproducer started size '%zu' and len '%zu'\n", task->b->size, task->b->len);
+/*	TRC_DEBUG(MAL_SERVER, "SQLproducer started size '%zu' and len '%zu'\n", task->b->size, task->b->len);*/
 	
 	base = end = s = task->input[cur];
 	*s = 0;
@@ -1266,7 +1262,7 @@ SQLproducer(void *p)
 		if (task->errbuf && task->errbuf[0]) {
 			if (GDKerrbuf && GDKerrbuf[0]) {
 				tablet_error(task, rowno, int_nil, GDKerrbuf, "SQLload_file");
-				TRC_DEBUG(MAL_TABLET, "Bailout on SQLload\n");
+/*				TRC_DEBUG(MAL_SERVER, "Bailout on SQLload\n");*/
 				ateof[cur] = true;
 				break;
 			}
@@ -1286,7 +1282,7 @@ SQLproducer(void *p)
 			   Mimick an ateof instead; */
 			tablet_error(task, rowno, int_nil, "record too long", "");
 			ateof[cur] = true;
-			TRC_DEBUG(MAL_TABLET, "Bailout on SQLload confronted with too large record\n");
+/*			TRC_DEBUG(MAL_SERVER, "Bailout on SQLload confronted with too large record\n");*/
 			goto reportlackofinput;
 		}
 		memcpy(end, task->b->buf + task->b->pos, task->b->len - task->b->pos);
@@ -1394,7 +1390,7 @@ SQLproducer(void *p)
 		}
 
 	  reportlackofinput:
-	  TRC_DEBUG(MAL_TABLET, "SQL producer got buffer '%d' filled with '%d' records\n", cur, task->top[cur]);
+/*	  TRC_DEBUG(MAL_SERVER, "SQL producer got buffer '%d' filled with '%d' records\n", cur, task->top[cur]);*/
 
 		if (consoleinput) {
 			task->cur = cur;
@@ -1412,7 +1408,7 @@ SQLproducer(void *p)
 			assert(!blocked[cur]);
 			if (blocked[(cur + 1) % MAXBUFFERS]) {
 				/* first wait until other buffer is done */
-				TRC_DEBUG(MAL_TABLET, "Wait for consumers to finish buffer: %d\n", (cur + 1) % MAXBUFFERS);
+/*				TRC_DEBUG(MAL_SERVER, "Wait for consumers to finish buffer: %d\n", (cur + 1) % MAXBUFFERS);*/
 
 				MT_sema_down(&task->producer);
 				blocked[(cur + 1) % MAXBUFFERS] = false;
@@ -1427,25 +1423,25 @@ SQLproducer(void *p)
 			task->cur = cur;
 			task->ateof = ateof[cur];
 			task->cnt = bufcnt[cur];
-			TRC_DEBUG(MAL_TABLET, "SQL producer got buffer '%d' filled with '%d' records\n", cur, task->top[cur]);
+/*			TRC_DEBUG(MAL_SERVER, "SQL producer got buffer '%d' filled with '%d' records\n", cur, task->top[cur]);*/
 
 			MT_sema_up(&task->consumer);
 
 			cur = (cur + 1) % MAXBUFFERS;
-			TRC_DEBUG(MAL_TABLET, "May continue with buffer: %d\n", cur);
+/*			TRC_DEBUG(MAL_SERVER, "May continue with buffer: %d\n", cur);*/
 
 			if (cnt == task->maxrow) {
 				MT_sema_down(&task->producer);
-				TRC_DEBUG(MAL_TABLET, "Producer delivered all\n");
+/*				TRC_DEBUG(MAL_SERVER, "Producer delivered all\n");*/
 				GDKfree(rdfa);
 				return;
 			}
 		}
-		TRC_DEBUG(MAL_TABLET, "Continue producer buffer: %d\n", cur);
+/*		TRC_DEBUG(MAL_SERVER, "Continue producer buffer: %d\n", cur);*/
 
 		/* we ran out of input? */
 		if (task->ateof) {
-			TRC_DEBUG(MAL_TABLET, "Producer encountered eof\n");
+/*			TRC_DEBUG(MAL_SERVER, "Producer encountered eof\n");*/
 			GDKfree(rdfa);
 			return;
 		}
@@ -1512,7 +1508,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 	lng lio = 0, tio, t1 = 0, total = 0, iototal = 0;
 	char name[16];
 
-	TRC_DEBUG(MAL_TABLET, "Prepare copy work for '%d' threads col '%s' rec '%s' quot '%c'\n", threads, csep, rsep, quote);
+/*	TRC_DEBUG(MAL_SERVER, "Prepare copy work for '%d' threads col '%s' rec '%s' quot '%c'\n", threads, csep, rsep, quote);*/
 
 	memset(ptask, 0, sizeof(ptask));
 	task = (READERtask) {
@@ -1622,7 +1618,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 		tablet_error(&task, lng_nil, int_nil, SQLSTATE(42000) "failed to start producer thread", "SQLload_file");
 		goto bailout;
 	}
-	TRC_DEBUG(MAL_TABLET, "Parallel bulk load " LLFMT " - " BUNFMT "\n", skip, task.maxrow);
+/*	TRC_DEBUG(MAL_SERVER, "Parallel bulk load " LLFMT " - " BUNFMT "\n", skip, task.maxrow);*/
 
 	task.workers = threads;
 	for (j = 0; j < threads; j++) {
@@ -1679,7 +1675,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 		t1 = GDKusec() - t1;
 		total += t1;
 		iototal += tio;
-		TRC_DEBUG(MAL_TABLET, "Break: %d lines\n", task.top[task.cur]);
+/*		TRC_DEBUG(MAL_SERVER, "Break: %d lines\n", task.top[task.cur]);*/
 
 		t1 = GDKusec();
 		if (task.top[task.cur]) {
@@ -1703,14 +1699,14 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 				MT_sema_down(&ptask[j].reply);
 				if (ptask[j].error) {
 					res = -1;
-					TRC_ERROR(MAL_TABLET, "Error in task: %d %d\n", j, ptask[j].error);
+/*					TRC_ERROR(MAL_SERVER, "Error in task: %d %d\n", j, ptask[j].error);*/
 				}
 			}
 		}
 
-		TRC_DEBUG(MAL_TABLET, 
+/*		TRC_DEBUG(MAL_SERVER, 
 			"Fill the BATs '%d' " BUNFMT " cap " BUNFMT "\n", 
-			task.top[task.cur], task.cnt, BATcapacity(as->format[task.cur].c));
+			task.top[task.cur], task.cnt, BATcapacity(as->format[task.cur].c));*/
 
 		lio += GDKusec() - t1;	/* line break done */
 		if (task.top[task.cur]) {
@@ -1756,8 +1752,8 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 			BATsetcount(task.as->format[attr].c, leftover );			\
 		} while (0)
 
-		TRC_DEBUG(MAL_TABLET, "Trim bbest '%d' table size " BUNFMT " - rows found so far " BUNFMT "\n",
-					 best, BATcount(as->format[firstcol].c), task.cnt);
+/*		TRC_DEBUG(MAL_SERVER, "Trim bbest '%d' table size " BUNFMT " - rows found so far " BUNFMT "\n",
+					 best, BATcount(as->format[firstcol].c), task.cnt); */
 
 		if (best && BATcount(as->format[firstcol].c)) {
 			BUN limit;
@@ -1818,13 +1814,13 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 		MT_sema_up(&task.producer);
 	}
 
-	TRC_DEBUG(MAL_TABLET, "End of block stream eof=%d - res=%d\n", task.ateof, res);
+/*	TRC_DEBUG(MAL_SERVER, "End of block stream eof=%d - res=%d\n", task.ateof, res);*/
 
 	cnt = BATcount(task.as->format[firstcol].c);
 
 	task.ateof = true;
 	task.state = ENDOFCOPY;
-	TRC_DEBUG(MAL_TABLET, "Activate sync on disk\n");
+/*	TRC_DEBUG(MAL_SERVER, "Activate sync on disk\n");*/
 	
 	// activate the workers to sync the BATs to disk
 	if (res == 0) {
@@ -1836,7 +1832,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 	}
 
 	if (!task.ateof || cnt < task.maxrow) {
-		TRC_DEBUG(MAL_TABLET, "Shut down reader\n");
+/*		TRC_DEBUG(MAL_SERVER, "Shut down reader\n");*/
 		MT_sema_up(&task.producer);
 	}
 	MT_join_thread(task.tid);
@@ -1846,7 +1842,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 			MT_sema_down(&ptask[j].reply);
 	}
 
-	TRC_DEBUG(MAL_TABLET, "Activate endofcopy\n");
+/*	TRC_DEBUG(MAL_SERVER, "Activate endofcopy\n");*/
 
 	for (j = 0; j < threads; j++) {
 		ptask[j].state = ENDOFCOPY;
@@ -1856,7 +1852,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 	for (j = 0; j < threads; j++)
 		MT_sema_down(&ptask[j].reply);
 
-	TRC_DEBUG(MAL_TABLET, "Kill the workers\n");
+/*	TRC_DEBUG(MAL_SERVER, "Kill the workers\n");*/
 
 	for (j = 0; j < threads; j++) {
 		MT_join_thread(ptask[j].tid);
@@ -1865,8 +1861,8 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 		MT_sema_destroy(&ptask[j].reply);
 	}
 
-	TRC_DEBUG(MAL_TABLET, "Found " BUNFMT " tuples\n", cnt);
-	TRC_DEBUG(MAL_TABLET, "Leftover input: %.63s\n", task.b->buf + task.b->pos);
+/*	TRC_DEBUG(MAL_SERVER, "Found " BUNFMT " tuples\n", cnt);*/
+/*	TRC_DEBUG(MAL_SERVER, "Leftover input: %.63s\n", task.b->buf + task.b->pos);*/
 
 	for (i = 0; i < as->nr_attrs; i++) {
 		BAT *b = task.as->format[i].c;

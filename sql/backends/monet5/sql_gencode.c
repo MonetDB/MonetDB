@@ -193,7 +193,7 @@ _create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *
 			char buf[64];
 
 			if (e->type == e_atom)
-				snprintf(buf,64,"A%d",e->flag);
+				snprintf(buf,64,"A%u",e->flag);
 			else
 				snprintf(buf,64,"A%s",exp_name(e));
 			varid = newVariable(curBlk, (char *)buf, strlen(buf), type);
@@ -434,9 +434,13 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 			const char *nme = (op->op3)?op->op3->op4.aval->data.val.sval:op->cname;
 
 			if ((nr + 100) > len) {
-				buf = GDKrealloc(buf, len*=2);
-				if(buf == NULL)
+				char *tmp = GDKrealloc(buf, len*=2);
+				if (tmp == NULL) {
+					GDKfree(buf);
+					buf = NULL;
 					break;
+				}
+				buf = tmp;
 			}
 
 			nr += snprintf(buf+nr, len-nr, "%s %s(%u,%u)%c", nme, t->type->sqlname, t->digits, t->scale, n->next?',':' ');
@@ -467,11 +471,14 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 			break;
 		}
 		if ((nr + 100) > len) {
-			buf = GDKrealloc(buf, len*=2);
-			if (buf == NULL) {
+			char *tmp = GDKrealloc(buf, len*=2);
+			if (tmp == NULL) {
 				GDKfree(next);
+				GDKfree(buf);
+				buf = NULL;
 				break;
 			}
+			buf = tmp;
 		}
 
 		nr += snprintf(buf+nr, len-nr, "%s%s", next, n->next?"%%":"");

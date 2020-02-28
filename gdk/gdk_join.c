@@ -3514,7 +3514,7 @@ BATouterjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_ma
 {
 	return leftjoin(r1p, r2p, l, r, sl, sr, nil_matches,
 			true, false, false, false, estimate, __func__,
-			GDKdebug & ALGOMASK ? GDKusec() : 0);
+			GDK_TRACER_TEST(M_DEBUG, ALGO) ? GDKusec() : 0);
 }
 
 /* Perform a semi-join over l and r.  Returns one or two new, bats

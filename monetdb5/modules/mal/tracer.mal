@@ -10,23 +10,23 @@ command flush() :void
 address TRACERflush_buffer
 comment "Flush the buffer";
 
-command setcomplevel(comp:int, lvl:int) :void
+command setcomplevel(comp:str, lvl:str) :void
 address TRACERset_component_level
 comment "Sets the log level for a specific component";
 
-command resetcomplevel(comp:int) :void
+command resetcomplevel(comp:str) :void
 address TRACERreset_component_level
 comment "Resets the log level for a specific component back to the default";
 
-command setlayerlevel(layer:int, lvl:int) :void
+command setlayerlevel(layer:str, lvl:str) :void
 address TRACERset_layer_level
 comment "Sets the log level for a specific layer";
 
-command resetlayerlevel(layer:int) :void
+command resetlayerlevel(layer:str) :void
 address TRACERreset_layer_level
 comment "Resets the log level for a specific layer back to the default";
 
-command setflushlevel(lvl:int) :void
+command setflushlevel(lvl:str) :void
 address TRACERset_flush_level
 comment "Sets the flush level";
 
@@ -34,7 +34,7 @@ command resetflushlevel() :void
 address TRACERreset_flush_level
 comment "Resets the flush level back to the default";
 
-command setadapter(adapter:int) :void
+command setadapter(adapter:str) :void
 address TRACERset_adapter
 comment "Sets the adapter";
 
