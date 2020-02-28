@@ -1299,6 +1299,8 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 					ne->flag |= CMP_BETWEEN;
 				if (is_anti(exp))
 					set_anti(ne);
+				if (is_semantics(exp))
+					set_semantics(ne);
 				return ne;
 			}
 		}

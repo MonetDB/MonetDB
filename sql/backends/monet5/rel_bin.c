@@ -981,7 +981,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 
 					if (is_atom(re->type) && re->l && atom_null((atom*)re->l) &&
 					    is_atom(re2->type) && re2->l && atom_null((atom*)re2->l)) {
-						s = sql_unop_(be, NULL, "isnull", l);
+						assert(0); // old hack is gone ...
 					} else {
 						assert(lf && rf && a);
 						s = stmt_binop(be, 
@@ -1009,7 +1009,20 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 							compare_func((comp_type)e->flag, is_anti(e)),
 							tail_type(l), tail_type(l), F_FUNC);
 					assert(f);
-					s = stmt_binop(be, l, r, f);
+					if (is_semantics(e)) {
+						if (exp_is_null(sql, e->l) && exp_is_null(sql, e->r)) {
+							s = stmt_bool(be, !is_anti(e));
+						} else {
+							list *args = sa_list(sql->sa);
+							/* add nil semantics bit */
+							list_append(args, l);
+							list_append(args, r);
+							list_append(args, stmt_bool(be, 1));
+							s = stmt_Nop(be, stmt_list(be, args), f);
+						}
+					} else {
+						s = stmt_binop(be, l, r, f);
+					}
 				} else {
 					/* this can still be a join (as relational algebra and single value subquery results still means joins */
 					s = stmt_uselect(be, l, r, (comp_type)e->flag, sel, is_anti(e), is_semantics(e));

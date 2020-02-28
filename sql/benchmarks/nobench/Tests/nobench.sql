@@ -118,7 +118,7 @@ group by f.h;
 --                   ON (left.nested_obj.str = right.str1)
 --                   WHERE left.num BETWEEN XXXXX AND YYYYY;
 select * from bench10 as "left" inner join bench10 as "right" on (json.filter("left".js,'nested_obj.str') = json.filter("right".js, 'str1'))
- where json.number(json.filter("left".js,'num')) between 0.0 and 3.0;
+ where json.number(json.filter("left".js,'num')) between 0.0 and 3.0 order by "left".js;
 
 -- Q12 (use "extra" data file provided by generator):
 --   MongoDB:
