@@ -45,6 +45,14 @@ isExceptionVariable(str nme){
 
 static char *M5OutOfMemory = MAL_MALLOC_FAIL;
 
+char *
+dupError(const char *err)
+{
+	char *msg = GDKstrdup(err);
+
+	return msg ? msg : M5OutOfMemory;
+}
+
 /**
  * Internal helper function for createException and
  * showException such that they share the same code, because reuse

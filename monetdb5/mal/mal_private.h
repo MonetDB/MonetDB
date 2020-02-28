@@ -97,3 +97,6 @@ mal_export void mal_resource_reset(void)
 
 mal_export void mal_runtime_reset(void)
 	__attribute__((__visibility__("hidden")));
+
+char *dupError(const char *err)
+	__attribute__((__visibility__("hidden"), __returns_nonnull__));
