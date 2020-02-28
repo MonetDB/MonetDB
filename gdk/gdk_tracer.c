@@ -124,7 +124,7 @@ _GDKtracer_init_basic_adptr(void)
 
 // Candidate for 'gnu_printf' format attribute [-Werror=suggest-attribute=format]
 static int _GDKtracer_fill_tracer(gdk_tracer *sel_tracer, const char *fmt, va_list va)
-	__attribute__((format(printf, 2, 0)));
+	__attribute__((__format__(__printf__, 2, 0)));
 
 static int
 _GDKtracer_fill_tracer(gdk_tracer *sel_tracer, const char *fmt, va_list va)

@@ -299,7 +299,7 @@ gdk_export gdk_return GDKtracer_reset_adapter(void);
 
 
 gdk_export gdk_return GDKtracer_log(LOG_LEVEL level, const char *fmt, ...)
-	__attribute__((format(printf, 2, 3)));
+	__attribute__((__format__(__printf__, 2, 3)));
 
 
 gdk_export gdk_return GDKtracer_flush_buffer(void);
