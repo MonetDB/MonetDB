@@ -837,11 +837,14 @@ CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			timeout = (int)(c->querytimeout / 1000000);
 			if (BUNappend(querytimeout, &timeout, false) != GDK_SUCCEED)
 				goto bailout;
-			ret = timestamp_fromtime(c->idle);
-			if (is_timestamp_nil(ret)) {
-				msg = createException(SQL, "sql.sessions", SQLSTATE(22003) "Failed to convert user logged time");
-				goto bailout;
-			}
+			if( c->idle){
+				ret = timestamp_fromtime(c->idle);
+				if (is_timestamp_nil(ret)) {
+					msg = createException(SQL, "sql.sessions", SQLSTATE(22003) "Failed to convert user logged time");
+					goto bailout;
+				}
+			} else
+				ret = timestamp_nil;
 			if (BUNappend(idle, &ret, false) != GDK_SUCCEED)
 				goto bailout;
 			if (BUNappend(opt, &c->optimizer, false) != GDK_SUCCEED)
