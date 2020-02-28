@@ -524,7 +524,7 @@ typedef struct {
 
 #define MT_sema_down(s)							\
 	do {								\
-		TRC_DEBUG(TEM, "Sema %s down...\n",	(s)->name);	\
+		TRC_DEBUG(TEM, "Sema %s down...\n", (s)->name);		\
 		if (WaitForSingleObject((s)->sema, 0) != WAIT_OBJECT_0) { \
 			MT_thread_setsemawait(s);			\
 			while (WaitForSingleObject((s)->sema, INFINITE) != WAIT_OBJECT_0) \
@@ -625,7 +625,7 @@ typedef struct {
 
 #define MT_sema_down(s)							\
 	do {								\
-		TRC_DEBUG(TEM, "Sema %s down...\n",	(s)->name);	\
+		TRC_DEBUG(TEM, "Sema %s down...\n", (s)->name);		\
 		if (sem_trywait(&(s)->sema) != 0) {			\
 			MT_thread_setsemawait(s);			\
 			while (sem_wait(&(s)->sema) != 0)		\

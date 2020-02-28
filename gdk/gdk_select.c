@@ -45,9 +45,9 @@ virtualize(BAT *bn)
 	     * (const oid *) Tloc(bn, BUNlast(bn) - 1))) {
 		/* column is dense, replace by virtual oid */
 		TRC_DEBUG(ALGO, "%s(bn=" ALGOBATFMT ",seq="OIDFMT")\n",
-					__func__,
-					ALGOBATPAR(bn),
-				  	BATcount(bn) > 0 ? * (const oid *) Tloc(bn, 0) : 0);
+			  __func__,
+			  ALGOBATPAR(bn),
+			  BATcount(bn) > 0 ? * (const oid *) Tloc(bn, 0) : 0);
 		if (BATcount(bn) == 0)
 			bn->tseqbase = 0;
 		else
@@ -100,11 +100,11 @@ hashselect(BAT *b, struct canditer *restrict ci, BAT *bn,
 		BAT *b2 = BBPdescriptor(VIEWtparent(b));
 		*algo = "hashselect on parent";
 		TRC_DEBUG(ALGO, "%s(" ALGOBATFMT "): "
-				  	"using parent(" ALGOBATFMT ") "
-				  	"for hash\n",
-					__func__,
-				  	ALGOBATPAR(b),
-				  	ALGOBATPAR(b2));
+			  "using parent(" ALGOBATFMT ") "
+			  "for hash\n",
+			  __func__,
+			  ALGOBATPAR(b),
+			  ALGOBATPAR(b2));
 		d = (BUN) ((b->theap.base - b2->theap.base) >> b->tshift);
 		l += d;
 		h += d;
@@ -1021,12 +1021,12 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		/* trivially empty result */
 		bn = BATdense(0, 0, 0);
 		TRC_DEBUG(ALGO, "%s(b=" ALGOBATFMT
-				  	",s=" ALGOOPTBATFMT ",anti=%d)=" ALGOOPTBATFMT
-				  	" (" LLFMT " usec): "
-				  	"trivially empty\n",
-					__func__,
-				  	ALGOBATPAR(b), ALGOOPTBATPAR(s), anti,
-				  	ALGOOPTBATPAR(bn), GDKusec() - t0);
+			  ",s=" ALGOOPTBATFMT ",anti=%d)=" ALGOOPTBATFMT
+			  " (" LLFMT " usec): "
+			  "trivially empty\n",
+			  __func__,
+			  ALGOBATPAR(b), ALGOOPTBATPAR(s), anti,
+			  ALGOOPTBATPAR(bn), GDKusec() - t0);
 		return bn;
 	}
 
@@ -1042,12 +1042,12 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		 * side */
 		bn = BATdense(0, 0, 0);
 		TRC_DEBUG(ALGO, "%s(b=" ALGOBATFMT
-				  	",s=" ALGOOPTBATFMT ",li=%d,hi=%d,anti=%d)=" ALGOOPTBATFMT
-				  	" (" LLFMT " usec): "
-				  	"empty interval\n",
-					__func__,
-				  	ALGOBATPAR(b), ALGOOPTBATPAR(s),
-				  	li, hi, anti, ALGOOPTBATPAR(bn), GDKusec() - t0);
+			  ",s=" ALGOOPTBATFMT ",li=%d,hi=%d,anti=%d)=" ALGOOPTBATFMT
+			  " (" LLFMT " usec): "
+			  "empty interval\n",
+			  __func__,
+			  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+			  li, hi, anti, ALGOOPTBATPAR(bn), GDKusec() - t0);
 		return bn;
 	}
 
@@ -1081,23 +1081,23 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			lnil = ATOMcmp(t, tl, nil) == 0;
 			anti = false;
 			TRC_DEBUG(ALGO, "%s(b=" ALGOBATFMT
-					  	",s=" ALGOOPTBATFMT ",anti=%d): "
-					  	"anti: switch ranges...\n",
-						__func__,
-					  	ALGOBATPAR(b), ALGOOPTBATPAR(s),
-					  	anti);
+				  ",s=" ALGOOPTBATFMT ",anti=%d): "
+				  "anti: switch ranges...\n",
+				  __func__,
+				  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+				  anti);
 		} else if (!lval && !hval) {
 			/* antiselect for nil-nil range: all non-nil
 			 * values are in range; we must return all
 			 * other non-nil values, i.e. nothing */
 			bn = BATdense(0, 0, 0);
 			TRC_DEBUG(ALGO, "%s(b=" ALGOBATFMT
-					  	",s=" ALGOOPTBATFMT ",anti=%d)=" ALGOOPTBATFMT
-					  	" (" LLFMT " usec): "
-					  	"anti: nil-nil range, nonil\n",
-						__func__,
-					  	ALGOBATPAR(b), ALGOOPTBATPAR(s),
-					  anti, ALGOOPTBATPAR(bn), GDKusec() - t0);
+				  ",s=" ALGOOPTBATFMT ",anti=%d)=" ALGOOPTBATFMT
+				  " (" LLFMT " usec): "
+				  "anti: nil-nil range, nonil\n",
+				  __func__,
+				  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+				  anti, ALGOOPTBATPAR(bn), GDKusec() - t0);
 			return bn;
 		} else if (equi && lnil) {
 			/* antiselect for nil value: turn into range
@@ -1108,10 +1108,10 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			lval = false;
 			hval = false;
 			TRC_DEBUG(ALGO, "%s(b=" ALGOBATFMT
-					  	",s=" ALGOOPTBATFMT ",anti=0): "
-					  	"anti-nil...\n",
-						__func__,
-					  	ALGOBATPAR(b), ALGOOPTBATPAR(s));
+				  ",s=" ALGOOPTBATFMT ",anti=0): "
+				  "anti-nil...\n",
+				  __func__,
+				  ALGOBATPAR(b), ALGOOPTBATPAR(s));
 		} else if (equi) {
 			equi = false;
 			if (!(li && hi)) {
@@ -1122,12 +1122,12 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 				lval = false;
 				hval = false;
 				TRC_DEBUG(ALGO, "%s(b="
-						  	ALGOBATFMT ",s="
-						  	ALGOOPTBATFMT ",anti=0): "
-						  	"anti-nothing...\n",
-							__func__,
-						  	ALGOBATPAR(b),
-						  	ALGOOPTBATPAR(s));
+					  ALGOBATFMT ",s="
+					  ALGOOPTBATFMT ",anti=0): "
+					  "anti-nothing...\n",
+					  __func__,
+					  ALGOBATPAR(b),
+					  ALGOOPTBATPAR(s));
 			}
 		} else if (ATOMcmp(t, tl, th) > 0) {
 			/* empty range: turn into range select for
@@ -1137,10 +1137,10 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			lval = false;
 			hval = false;
 			TRC_DEBUG(ALGO, "%s(b=" ALGOBATFMT
-					  	",s=" ALGOOPTBATFMT ",anti=0): "
-					  	"anti-nil...\n",
-						__func__,
-					  	ALGOBATPAR(b), ALGOOPTBATPAR(s));
+				  ",s=" ALGOOPTBATFMT ",anti=0): "
+				  "anti-nil...\n",
+				  __func__,
+				  ALGOBATPAR(b), ALGOOPTBATPAR(s));
 		}
 	}
 
@@ -1151,24 +1151,24 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		/* empty range */
 		bn = BATdense(0, 0, 0);
 		TRC_DEBUG(ALGO, "%s(b=" ALGOBATFMT
-				  	",s=" ALGOOPTBATFMT ",anti=%d)=" ALGOOPTBATFMT
-				  	" (" LLFMT " usec): "
-				  	"empty range\n",
-					__func__,
-				  	ALGOBATPAR(b), ALGOOPTBATPAR(s), anti,
-				  	ALGOOPTBATPAR(bn), GDKusec() - t0);
+			  ",s=" ALGOOPTBATFMT ",anti=%d)=" ALGOOPTBATFMT
+			  " (" LLFMT " usec): "
+			  "empty range\n",
+			  __func__,
+			  ALGOBATPAR(b), ALGOOPTBATPAR(s), anti,
+			  ALGOOPTBATPAR(bn), GDKusec() - t0);
 		return bn;
 	}
 	if (equi && lnil && b->tnonil) {
 		/* return all nils, but there aren't any */
 		bn = BATdense(0, 0, 0);
 		TRC_DEBUG(ALGO, "%s(b=" ALGOBATFMT
-				  	",s=" ALGOOPTBATFMT ",anti=%d)=" ALGOOPTBATFMT
-				  	" (" LLFMT " usec): "
-				  	"equi-nil, nonil\n",
-					__func__,
-				  	ALGOBATPAR(b), ALGOOPTBATPAR(s), anti,
-				  	ALGOOPTBATPAR(bn), GDKusec() - t0);
+			  ",s=" ALGOOPTBATFMT ",anti=%d)=" ALGOOPTBATFMT
+			  " (" LLFMT " usec): "
+			  "equi-nil, nonil\n",
+			  __func__,
+			  ALGOBATPAR(b), ALGOOPTBATPAR(s), anti,
+			  ALGOOPTBATPAR(bn), GDKusec() - t0);
 		return bn;
 	}
 
@@ -1177,12 +1177,12 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		 * any: i.e. return everything */
 		bn = canditer_slice(&ci, 0, ci.ncand);
 		TRC_DEBUG(ALGO, "%s(b=" ALGOBATFMT
-				  	",s=" ALGOOPTBATFMT ",anti=%d)=" ALGOOPTBATFMT
-				  	" (" LLFMT " usec): "
-				  	"everything, nonil\n",
-					__func__,
-				  	ALGOBATPAR(b), ALGOOPTBATPAR(s), anti,
-				  	ALGOOPTBATPAR(bn), GDKusec() - t0);
+			  ",s=" ALGOOPTBATFMT ",anti=%d)=" ALGOOPTBATFMT
+			  " (" LLFMT " usec): "
+			  "everything, nonil\n",
+			  __func__,
+			  ALGOBATPAR(b), ALGOOPTBATPAR(s), anti,
+			  ALGOOPTBATPAR(bn), GDKusec() - t0);
 		return bn;
 	}
 
@@ -1204,10 +1204,10 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 						 * anti */
 						bn = BATdense(0, 0, 0);
 						TRC_DEBUG(ALGO, "%s(b=" ALGOBATFMT
-								  	",s=" ALGOOPTBATFMT ",anti=%d)=" ALGOOPTBATFMT
-								  	" (" LLFMT " usec): "
-								  	"nothing, out of range\n",
-								  	__func__, ALGOBATPAR(b), ALGOOPTBATPAR(s), anti, ALGOOPTBATPAR(bn), GDKusec() - t0);
+							  ",s=" ALGOOPTBATFMT ",anti=%d)=" ALGOOPTBATFMT
+							  " (" LLFMT " usec): "
+							  "nothing, out of range\n",
+							  __func__, ALGOBATPAR(b), ALGOOPTBATPAR(s), anti, ALGOOPTBATPAR(bn), GDKusec() - t0);
 						return bn;
 					}
 				}
@@ -1224,14 +1224,14 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 				 * what we're looking for */
 				bn = BATdense(0, 0, 0);
 				TRC_DEBUG(ALGO, "%s(b="
-							ALGOBATFMT ",s="
-							ALGOOPTBATFMT ",anti=%d)=" ALGOOPTBATFMT
-							" (" LLFMT " usec): "
-							"nothing, out of range\n",
-							__func__,
-							ALGOBATPAR(b),
-							ALGOOPTBATPAR(s), anti,
-							ALGOOPTBATPAR(bn), GDKusec() - t0);
+					  ALGOBATFMT ",s="
+					  ALGOOPTBATFMT ",anti=%d)=" ALGOOPTBATFMT
+					  " (" LLFMT " usec): "
+					  "nothing, out of range\n",
+					  __func__,
+					  ALGOBATPAR(b),
+					  ALGOOPTBATPAR(s), anti,
+					  ALGOOPTBATPAR(bn), GDKusec() - t0);
 				return bn;
 			}
 		}
@@ -1242,14 +1242,14 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 				 * what we're looking for */
 				bn = BATdense(0, 0, 0);
 				TRC_DEBUG(ALGO, "%s(b="
-							ALGOBATFMT ",s="
-							ALGOOPTBATFMT ",anti=%d)=" ALGOOPTBATFMT
-							" (" LLFMT " usec): "
-							"nothing, out of range\n",
-							__func__,
-							ALGOBATPAR(b),
-							ALGOOPTBATPAR(s), anti,
-							ALGOOPTBATPAR(bn), GDKusec() - t0);
+					  ALGOBATFMT ",s="
+					  ALGOOPTBATFMT ",anti=%d)=" ALGOOPTBATFMT
+					  " (" LLFMT " usec): "
+					  "nothing, out of range\n",
+					  __func__,
+					  ALGOBATPAR(b),
+					  ALGOOPTBATPAR(s), anti,
+					  ALGOOPTBATPAR(bn), GDKusec() - t0);
 				return bn;
 			}
 		}
@@ -1504,11 +1504,11 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 
 		bn = virtualize(bn);
 		TRC_DEBUG(ALGO, "%s(b=" ALGOBATFMT ",anti=%s)="
-					ALGOOPTBATFMT " %s (" LLFMT " usec)\n",
-					__func__,
-					ALGOBATPAR(b), anti ? "true" : "false",
-					ALGOOPTBATPAR(bn), algo,
-					GDKusec() - t0);
+			  ALGOOPTBATFMT " %s (" LLFMT " usec)\n",
+			  __func__,
+			  ALGOBATPAR(b), anti ? "true" : "false",
+			  ALGOOPTBATPAR(bn), algo,
+			  GDKusec() - t0);
 
 		return bn;
 	}
@@ -1622,12 +1622,12 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 
 	bn = virtualize(bn);
 	TRC_DEBUG(ALGO, "%s(b=" ALGOBATFMT ",s=" ALGOOPTBATFMT",anti=%s)=" ALGOOPTBATFMT
-				" %s (" LLFMT " usec)\n",
-				__func__,
-				ALGOBATPAR(b), ALGOOPTBATPAR(s),
-				anti ? "true" : "false",
-				ALGOOPTBATPAR(bn), algo,
-				GDKusec() - t0);
+		  " %s (" LLFMT " usec)\n",
+		  __func__,
+		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+		  anti ? "true" : "false",
+		  ALGOOPTBATPAR(bn), algo,
+		  GDKusec() - t0);
 
 	return bn;
 }
@@ -1760,17 +1760,17 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 	assert(rh->ttype != TYPE_void || !is_oid_nil(rh->tseqbase));
 
 	TRC_DEBUG(ALGO, "%s(l=" ALGOBATFMT ","
-				"rl=" ALGOBATFMT ",rh=" ALGOBATFMT ","
-				"sl=" ALGOOPTBATFMT ",sr=" ALGOOPTBATFMT ","
-				"anti=%s,symmetric=%s)\n",
-				__func__,
-				ALGOBATPAR(l),
-				ALGOBATPAR(rl),
-				ALGOBATPAR(rh),
-				ALGOOPTBATPAR(lci->s),
-				ALGOOPTBATPAR(rci->s),
-				anti ? "true" : "false",
-				symmetric ? "true" : "false");
+		  "rl=" ALGOBATFMT ",rh=" ALGOBATFMT ","
+		  "sl=" ALGOOPTBATFMT ",sr=" ALGOOPTBATFMT ","
+		  "anti=%s,symmetric=%s)\n",
+		  __func__,
+		  ALGOBATPAR(l),
+		  ALGOBATPAR(rl),
+		  ALGOBATPAR(rh),
+		  ALGOOPTBATPAR(lci->s),
+		  ALGOOPTBATPAR(rci->s),
+		  anti ? "true" : "false",
+		  symmetric ? "true" : "false");
 
 	rlvals = rl->ttype == TYPE_void ? NULL : (const char *) Tloc(rl, 0);
 	rhvals = rh->ttype == TYPE_void ? NULL : (const char *) Tloc(rh, 0);
@@ -2329,10 +2329,10 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 			r2->tseqbase = cnt > 0 ? dst2[0] : 0;
 	}
 	TRC_DEBUG(ALGO, "%s(l=%s,rl=%s,rh=%s)="
-				"(" ALGOBATFMT "," ALGOOPTBATFMT ")\n",
-				__func__,
-				BATgetId(l), BATgetId(rl), BATgetId(rh),
-				ALGOBATPAR(r1), ALGOOPTBATPAR(r2));
+		  "(" ALGOBATFMT "," ALGOOPTBATFMT ")\n",
+		  __func__,
+		  BATgetId(l), BATgetId(rl), BATgetId(rh),
+		  ALGOBATPAR(r1), ALGOOPTBATPAR(r2));
 	return GDK_SUCCEED;
 
   bailout:
