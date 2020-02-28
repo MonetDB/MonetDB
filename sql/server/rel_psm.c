@@ -815,7 +815,7 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 	mvc *sql = query->sql;
 	const char *fname = qname_table(qname);
 	const char *sname = qname_schema(qname);
-	sql_schema *s = NULL;
+	sql_schema *s = cur_schema(sql);
 	sql_func *f = NULL;
 	sql_subfunc *sf;
 	dnode *n;
@@ -852,8 +852,6 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_error(sql, 02, SQLSTATE(3F000) "CREATE %s: no such schema '%s'", F, sname);
-	if (s == NULL)
-		s = cur_schema(sql);
 
 	type_list = create_type_list(sql, params, 1);
 	if ((sf = sql_bind_func_(sql->sa, s, fname, type_list, type)) != NULL && create) {
@@ -1144,7 +1142,7 @@ rel_drop_func(mvc *sql, dlist *qname, dlist *typelist, int drop_action, sql_ftyp
 {
 	const char *name = qname_table(qname);
 	const char *sname = qname_schema(qname);
-	sql_schema *s = NULL;
+	sql_schema *s = cur_schema(sql);
 	sql_func *func = NULL;
 	char *F = NULL, *fn = NULL;
 
@@ -1153,9 +1151,6 @@ rel_drop_func(mvc *sql, dlist *qname, dlist *typelist, int drop_action, sql_ftyp
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_error(sql, 02, SQLSTATE(3F000) "DROP %s: no such schema '%s'", F, sname);
-
-	if (s == NULL) 
-		s = cur_schema(sql);
 
 	func = resolve_func(sql, s, name, typelist, type, "DROP", if_exists);
 	if (!func && !sname) {
@@ -1174,7 +1169,7 @@ rel_drop_all_func(mvc *sql, dlist *qname, int drop_action, sql_ftype type)
 {
 	const char *name = qname_table(qname);
 	const char *sname = qname_schema(qname);
-	sql_schema *s = NULL;
+	sql_schema *s = cur_schema(sql);
 	list * list_func = NULL;
 	char *F = NULL, *fn = NULL;
 
@@ -1182,8 +1177,6 @@ rel_drop_all_func(mvc *sql, dlist *qname, int drop_action, sql_ftype type)
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_error(sql, 02, SQLSTATE(3F000) "DROP %s: no such schema '%s'", F, sname);
-	if (s == NULL) 
-		s =  cur_schema(sql);
 
 	list_func = schema_bind_func(sql, s, name, type);
 	if (!list_func) 
@@ -1250,9 +1243,6 @@ create_trigger(sql_query *query, dlist *qname, int time, symbol *trigger_event, 
 	dlist *stmts = triggered_action->h->next->next->data.lval;
 	symbol *condition = triggered_action->h->next->data.sym;
 
-	if (!sname)
-		sname = ss->base.name;
-
 	if (sname && !(ss = mvc_bind_schema(sql, sname)))
 		return sql_error(sql, 02, SQLSTATE(3F000) "%s TRIGGER: no such schema '%s'", base, sname);
 
@@ -1280,7 +1270,7 @@ create_trigger(sql_query *query, dlist *qname, int time, symbol *trigger_event, 
 		return sql_error(sql, 02, SQLSTATE(42000) "%s TRIGGER: trigger and respective table must belong to the same schema", base);
 	if (create && (st = mvc_bind_trigger(sql, ss, triggername)) != NULL) {
 		if (replace) {
-			if(mvc_drop_trigger(sql, ss, st))
+			if (mvc_drop_trigger(sql, ss, st))
 				return sql_error(sql, 02, SQLSTATE(HY013) "%s TRIGGER: %s", base, MAL_MALLOC_FAIL);
 		} else {
 			return sql_error(sql, 02, SQLSTATE(42000) "%s TRIGGER: name '%s' already in use", base, triggername);
@@ -1390,9 +1380,6 @@ drop_trigger(mvc *sql, dlist *qname, int if_exists)
 	const char *tname = qname_table(qname);
 	sql_schema *ss = cur_schema(sql);
 
-	if (!sname)
-		sname = ss->base.name;
-
 	if (sname && !(ss = mvc_bind_schema(sql, sname)))
 		return sql_error(sql, 02, SQLSTATE(3F000) "DROP TRIGGER: no such schema '%s'", sname);
 
@@ -1483,7 +1470,7 @@ static sql_rel*
 create_table_from_loader(sql_query *query, dlist *qname, symbol *fcall)
 {
 	mvc *sql = query->sql;
-	sql_schema *s = NULL;
+	sql_schema *s = cur_schema(sql);
 	char *sname = qname_schema(qname);
 	char *tname = qname_table(qname);
 	sql_subfunc *loader = NULL;
@@ -1491,8 +1478,6 @@ create_table_from_loader(sql_query *query, dlist *qname, symbol *fcall)
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_error(sql, 02, SQLSTATE(3F000) "CREATE TABLE FROM LOADER: no such schema '%s'", sname);
-	if (s == NULL) 
-		s = cur_schema(sql);
 	if (!mvc_schema_privs(sql, s))
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE TABLE FROM LOADER: insufficient privileges for user '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
 	if (mvc_bind_table(sql, s, tname))
