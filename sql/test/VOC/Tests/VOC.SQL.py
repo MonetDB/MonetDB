@@ -6,18 +6,18 @@ except ImportError:
 
 d = os.environ['RELSRCDIR']
 
-def client(file, user, passwd):
+def client(file, user, passwd, echo=None):
     sys.stdout.flush()
     sys.stderr.flush()
     c = process.client(lang = 'sql',
                        user = user, passwd = passwd,
                        args = [os.path.join(d, os.pardir, file)],
-                       log = True)
+                       log=True, echo=echo)
     c.communicate()
 
 client('VOCcreate_user.sql', 'monetdb', 'monetdb')
 client('VOCschema.sql', 'voc', 'voc')
-client('VOCinsert.sql', 'voc', 'voc')
+client('VOCinsert.sql', 'voc', 'voc', echo=False)
 client('VOCquery.sql', 'voc', 'voc')
 client('VOCmanual_examples.sql', 'voc', 'voc')
 client('VOCdrop.sql', 'voc', 'voc')
