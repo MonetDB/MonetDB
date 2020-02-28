@@ -84,6 +84,6 @@ step 4: for each element in the j_pred's list of filter expressions that is of t
 
 1) if e_cmp is of type =-semantics or is-semantics.
     if =-semantics apply is_null check on each of the operand terms in the e_cmp expression if there  is a null term then null rejection applies 
-    else if is-semantics we must check if the e_cmp expression is of the form 'r is not null' to have null rejaction
+    else if is-semantics we must check if the e_cmp expression is of the form 'r is not null' to have null rejection
     else we are not sure and null-jection is false.
 2) else if the expression is of type e_or, we require that both terms of e_or are null rejecting which is a recursive traversal until we have reached terms of e_cmp for which the previously described procedure 1) applies to check null rejection.
