@@ -2867,12 +2867,15 @@ class ServerClass:
         return self.proc.poll()
 
     def terminate(self):
+        self.timer.cancel()
+        t = Timer(60, killProc, args = [self.proc, self.errfile, self.cmd])
+        t.start()
         if os.name == 'nt':
             self.proc.send_signal(signal.CTRL_BREAK_EVENT)
         else:
             self.proc.terminate()
         self.proc.wait()
-        self.timer.cancel()
+        t.cancel()
         self.code = returnCode(self.proc, self.errfile)
 
     def LaunchIt(self):

@@ -1106,30 +1106,32 @@ rel_drop_func(mvc *sql, dlist *qname, dlist *typelist, int drop_action, sql_ftyp
 {
 	const char *name = qname_table(qname);
 	const char *sname = qname_schema(qname);
-	sql_schema *s = NULL;
+	sql_schema *s = cur_schema(sql);
 	sql_func *func = NULL;
 
 	char is_aggr = (type == F_AGGR);
 	char is_func = (type != F_PROC);
 	char *F = is_aggr?"AGGREGATE":(is_func?"FUNCTION":"PROCEDURE");
 	char *KF = type==F_FILT?"FILTER ": type==F_UNION?"UNION ": "";
+	char *f = is_aggr?"aggregate":(is_func?"function":"procedure");
+	char *kf = type==F_FILT?"filter ": type==F_UNION?"union ": "";
 
-	if (sname && !(s = mvc_bind_schema(sql, sname)))
-		return sql_error(sql, 02, SQLSTATE(3F000) "DROP %s%s: no such schema '%s'", KF, F, sname);
+	if (sname && !(s = mvc_bind_schema(sql, sname))) {
+		if (!if_exists)
+			return sql_error(sql, 02, SQLSTATE(3F000) "DROP %s%s: no such schema '%s'", KF, F, sname);
+	}
 
-	if (s == NULL) 
-		s =  cur_schema(sql);
-	
-	func = resolve_func(sql, s, name, typelist, type, "DROP", if_exists);
+	if (s)
+		func = resolve_func(sql, s, name, typelist, type, "DROP", if_exists);
 	if (!func && !sname) {
 		s = tmp_schema(sql);
 		func = resolve_func(sql, s, name, typelist, type, "DROP", if_exists);
 	}
-	if (func)
+	if (func && s)
 		return rel_drop_function(sql->sa, s->base.name, name, func->base.id, type, drop_action);
-	else if(if_exists && !sql->session->status)
-		return rel_drop_function(sql->sa, s->base.name, name, -2, type, drop_action);
-	return NULL;
+	if (if_exists)
+		return rel_drop_function(sql->sa, sname, name, -2, type, drop_action);
+	return sql_error(sql, 02, SQLSTATE(42000) "DROP %s%s: %s%s %s not found", KF, F, kf, f, name);
 }
 
 static sql_rel* 
@@ -1358,11 +1360,11 @@ drop_trigger(mvc *sql, dlist *qname, int if_exists)
 	const char *tname = qname_table(qname);
 	sql_schema *ss = cur_schema(sql);
 
-	if (!sname)
-		sname = ss->base.name;
-
-	if (sname && !(ss = mvc_bind_schema(sql, sname)))
+	if (sname && !(ss = mvc_bind_schema(sql, sname))) {
+		if (if_exists)
+			return rel_drop_trigger(sql, sname, tname, if_exists);
 		return sql_error(sql, 02, SQLSTATE(3F000) "DROP TRIGGER: no such schema '%s'", sname);
+	}
 
 	if (!mvc_schema_privs(sql, ss)) 
 		return sql_error(sql, 02, SQLSTATE(3F000) "DROP TRIGGER: access denied for %s to schema '%s'", stack_get_string(sql, "current_user"), ss->base.name);
