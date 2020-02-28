@@ -193,7 +193,7 @@ _create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *
 			char buf[64];
 
 			if (e->type == e_atom)
-				snprintf(buf,64,"A%d",e->flag);
+				snprintf(buf,64,"A%u",e->flag);
 			else
 				snprintf(buf,64,"A%s",exp_name(e));
 			varid = newVariable(curBlk, (char *)buf, strlen(buf), type);
@@ -434,9 +434,13 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 			const char *nme = (op->op3)?op->op3->op4.aval->data.val.sval:op->cname;
 
 			if ((nr + 100) > len) {
-				buf = GDKrealloc(buf, len*=2);
-				if(buf == NULL)
+				char *tmp = GDKrealloc(buf, len*=2);
+				if (tmp == NULL) {
+					GDKfree(buf);
+					buf = NULL;
 					break;
+				}
+				buf = tmp;
 			}
 
 			nr += snprintf(buf+nr, len-nr, "%s %s(%u,%u)%c", nme, t->type->sqlname, t->digits, t->scale, n->next?',':' ');
@@ -459,14 +463,23 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 	for (n = r->exps->h; n; n = n->next) { /* Send SQL types of the projection's expressions */
 		sql_exp *e = n->data;
 		sql_subtype *t = exp_subtype(e);
+		str next = subtype2string(t);
 
+		if (!next) {
+			GDKfree(buf);
+			buf = NULL;
+			break;
+		}
 		if ((nr + 100) > len) {
 			buf = GDKrealloc(buf, len*=2);
-			if(buf == NULL)
+			if (buf == NULL) {
+				GDKfree(next);
 				break;
+			}
 		}
 
-		nr += snprintf(buf+nr, len-nr, "%s%s", subtype2string(t), n->next?"%%":"");
+		nr += snprintf(buf+nr, len-nr, "%s%s", next, n->next?"%%":"");
+		GDKfree(next);
 	}
 	if (buf) {
 		o = newFcnCall(curBlk, remoteRef, putRef);

@@ -652,7 +652,8 @@ rel_general_unnest(mvc *sql, sql_rel *rel, list *ad)
 
 			l = exp_ref(sql->sa, l);
 			r = exp_ref(sql->sa, r);
-			e = exp_compare(sql->sa, l, r, cmp_equal_nil);
+			e = exp_compare(sql->sa, l, r, cmp_equal);
+			set_semantics(e);
 			if (!rel->exps)
 				rel->exps = sa_list(sql->sa);
 			append(rel->exps, e);
@@ -1114,7 +1115,8 @@ push_up_join(mvc *sql, sql_rel *rel, list *ad)
 					append(nr->exps, pe);
 					pe = exp_ref(sql->sa, pe);
 					e = exp_ref(sql->sa, e);
-					je = exp_compare(sql->sa, e, pe, cmp_equal_nil);
+					je = exp_compare(sql->sa, e, pe, cmp_equal);
+					set_semantics(je);
 					append(n->exps, je);
 				}
 				return n;
@@ -1188,6 +1190,8 @@ push_up_set(mvc *sql, sql_rel *rel, list *ad)
 	return rel;
 }
 
+static sql_rel * rel_unnest_dependent(mvc *sql, sql_rel *rel);
+
 static sql_rel *
 push_up_table(mvc *sql, sql_rel *rel, list *ad) 
 {
@@ -1195,16 +1199,23 @@ push_up_table(mvc *sql, sql_rel *rel, list *ad)
 	if (rel && (is_join(rel->op) || is_semi(rel->op)) && is_dependent(rel)) {
 		sql_rel *d = rel->l, *tf = rel->r;
 
-		/* for now just push d into function */
+		/* push d into function */
 		if (d && is_distinct_set(sql, d, ad) && tf && is_base(tf->op)) {
 			if (tf->l) {
 				sql_rel *l = tf->l;
 
-				assert(tf->flag == TABLE_FROM_RELATION || !l->l); /* TODO table functions implementation */
-				l->l = rel_dup(d);
+				assert(tf->flag == TABLE_FROM_RELATION || !l->l);
+				if (l->l) {
+					l = tf->l = rel_crossproduct(sql->sa, rel_dup(d), l, op_join);
+					set_dependent(l);
+					tf->l = rel_unnest_dependent(sql, l);
+				} else {
+					l->l = rel_dup(d);
+				}
 			} else {
 				tf->l = rel_dup(d);
 			}
+			reset_dependent(rel);
 			return rel;
 		}
 	}
@@ -1310,7 +1321,7 @@ rel_unnest_dependent(mvc *sql, sql_rel *rel)
 				return rel_unnest_dependent(sql, rel);
 			}
 
-			if (r && is_base(r->op) && is_distinct_set(sql, l, ad)) { /* TODO table functions need dependent implementation */
+			if (r && is_base(r->op) && is_distinct_set(sql, l, ad)) {
 				rel = push_up_table(sql, rel, ad);
 				return rel; 
 			}

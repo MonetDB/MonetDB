@@ -181,7 +181,7 @@ bat_to_sexp(BAT* b, int type)
 				const char *t = (const char *) BUNtvar(li, p);
 				ptrdiff_t offset = t - b->tvheap->base;
 				if (!sexp_ptrs[offset]) {
-					if (strcmp(t, str_nil) == 0) {
+					if (strNil(t)) {
 						sexp_ptrs[offset] = NA_STRING;
 					} else {
 						sexp_ptrs[offset] = RSTR(t);
@@ -201,7 +201,7 @@ bat_to_sexp(BAT* b, int type)
 			else {
 				BATloop(b, p, q) {
 					const char *t = (const char *) BUNtvar(li, p);
-					if (strcmp(t, str_nil) == 0) {
+					if (strNil(t)) {
 						SET_STRING_ELT(varvalue, j++, NA_STRING);
 					} else {
 						SET_STRING_ELT(varvalue, j++, RSTR(t));

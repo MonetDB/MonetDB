@@ -115,8 +115,13 @@ psm_set_exp(sql_query *query, dnode *n)
 		}
 
 		e = rel_value_exp2(query, &rel, val, sql_sel, ek);
-		if (!e || (rel && e->card > CARD_AGGR))
+		if (!e)
 			return NULL;
+		if (e->card > CARD_AGGR) {
+			sql_subfunc *zero_or_one = sql_bind_func(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(e), NULL, F_AGGR);
+			assert(zero_or_one);
+			e = exp_aggr1(sql->sa, e, zero_or_one, 0, 0, CARD_ATOM, has_nil(e));
+		}
 
 		level = stack_find_frame(sql, name);
 		e = rel_check_type(sql, tpe, rel, e, type_cast);

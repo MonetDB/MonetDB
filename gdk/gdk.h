@@ -361,41 +361,31 @@
 */
 
 #define THRDMASK	(1)
-#define THRDDEBUG	if (GDKdebug & THRDMASK)
 #define CHECKMASK	(1<<1)
 #define CHECKDEBUG	if (GDKdebug & CHECKMASK)
 #define MEMMASK		(1<<2)
-#define MEMDEBUG	if (GDKdebug & MEMMASK)
 #define PROPMASK	(1<<3)
 #define PROPDEBUG	if (GDKdebug & PROPMASK)
 #define IOMASK		(1<<4)
-#define IODEBUG		if (GDKdebug & IOMASK)
 #define BATMASK		(1<<5)
-#define BATDEBUG	if (GDKdebug & BATMASK)
 /* PARSEMASK not used anymore
 #define PARSEMASK	(1<<6)
 #define PARSEDEBUG	if (GDKdebug & PARSEMASK)
 */
 #define PARMASK		(1<<7)
-#define PARDEBUG	if (GDKdebug & PARMASK)
 /* HEADLESSMASK not used anymore
 #define HEADLESSMASK	(1<<8)
 #define HEADLESSDEBUG	if (GDKdebug & HEADLESSMASK)
 */
 #define TMMASK		(1<<9)
-#define TMDEBUG		if (GDKdebug & TMMASK)
 #define TEMMASK		(1<<10)
-#define TEMDEBUG	if (GDKdebug & TEMMASK)
 /* DLMASK not used anymore
 #define DLMASK		(1<<11)
 #define DLDEBUG		if (GDKdebug & DLMASK)
 */
 #define PERFMASK	(1<<12)
-#define PERFDEBUG	if (GDKdebug & PERFMASK)
 #define DELTAMASK	(1<<13)
-#define DELTADEBUG	if (GDKdebug & DELTAMASK)
 #define LOADMASK	(1<<14)
-#define LOADDEBUG	if (GDKdebug & LOADMASK)
 /* YACCMASK not used anymore
 #define YACCMASK	(1<<15)
 #define YACCDEBUG	if (GDKdebug & YACCMASK)
@@ -408,11 +398,8 @@
 #define ?ddbench?	if (GDKdebug&(1<<20))
 */
 #define ACCELMASK	(1<<20)
-#define ACCELDEBUG	if (GDKdebug & (ACCELMASK|ALGOMASK))
 #define ALGOMASK	(1<<21)
-#define ALGODEBUG	if (GDKdebug & ALGOMASK)
 #define ESTIMASK	(1<<22)
-#define ESTIDEBUG	if (GDKdebug & ESTIMASK)
 /* XPROPMASK not used anymore
 #define XPROPMASK	(1<<23)
 #define XPROPDEBUG	if (GDKdebug & XPROPMASK)
@@ -424,16 +411,13 @@
 #define DEADBEEFCHK	if (!(GDKdebug & DEADBEEFMASK))
 
 #define ALLOCMASK	(1<<26)
-#define ALLOCDEBUG	if (GDKdebug & ALLOCMASK)
 
 /* M5, only; cf.,
  * monetdb5/mal/mal.h
  */
 #define OPTMASK		(1<<27)
-#define OPTDEBUG	if (GDKdebug & OPTMASK)
 
 #define HEAPMASK	(1<<28)
-#define HEAPDEBUG	if (GDKdebug & HEAPMASK)
 
 #define FORCEMITOMASK	(1<<29)
 #define FORCEMITODEBUG	if (GDKdebug & FORCEMITOMASK)

@@ -1,3 +1,7 @@
+=======
+MCLIENT
+=======
+
 NAME
 ====
 
@@ -32,17 +36,16 @@ the **--interactive** (**-i**) option is given, *mclient* interprets
 lines starting with **\\** (backslash) specially. See the section
 BACKSLASH COMMANDS below.
 
-Before *mclient* starts parsing command line options, it reads a
-*.monetdb* file. If the environment variable **DOTMONETDBFILE** is set,
-it reads the file pointed to by that variable instead. When unset,
-*mclient* searches for a *.monetdb* file in the current working
-directory, and if that doesn't exist, in the current user's home
-directory. This file can contain defaults for the flags **user**,
-**password**, **language**, **database**, **save_history**, **format**,
-and **width**. For example, an entry in a *.monetdb* file that sets the
-default language for *mclient* to mal looks like this: **language=mal**.
-To disable reading the *.monetdb* file, set the variable
-**DOTMONETDBFILE** to the empty string in the environment.
+Before *mclient* starts parsing command line options, it reads a *.monetdb*
+file. If the environment variable **DOTMONETDBFILE** is set, it reads the file
+pointed to by that variable instead. When unset, *mclient* searches for a
+*.monetdb* file in the current working directory, and if that doesn't exist, in
+the current user's home directory. This file can contain defaults for the flags
+**user**, **password**, **language**, **database**, **save_history**,
+**format**, **host**, **port**, and **width**. For example, an entry in a
+*.monetdb* file that sets the default language for *mclient* to mal looks like
+this: **language=mal**.  To disable reading the *.monetdb* file, set the
+variable **DOTMONETDBFILE** to the empty string in the environment.
 
 OPTIONS
 =======

@@ -689,7 +689,10 @@ URLisaURL(bit *retval, str *val)
 {
 	if (val == NULL || *val == NULL)
 		throw(ILLARG, "url.isaURL", "url missing");
-	*retval = skip_scheme(*val) != NULL;
+	if (strNil(*val))
+		*retval = bit_nil;
+	else
+		*retval = skip_scheme(*val) != NULL;
 	return MAL_SUCCEED;
 }
 

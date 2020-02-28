@@ -44,8 +44,7 @@
 			jt->error = NULL;											\
 			JSONfree(jt);												\
 		} else {														\
-			msg = createException(MAL, "json.new",						\
-								  SQLSTATE(HY013) MAL_MALLOC_FAIL);		\
+			msg = createException(MAL, "json.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);		\
 		}																\
 		return msg;														\
 	}
@@ -132,7 +131,7 @@ JSONfromString(const char *src, size_t *len, json *j, bool external)
 	}
 	if (external) {
 		if (GDKstrFromStr((unsigned char *) *j,
-						  (const unsigned char *) src, (ssize_t) slen) < 0)
+				(const unsigned char *) src, (ssize_t) slen) < 0)
 			return -1;
 		src = *j;
 	} else {
@@ -295,7 +294,6 @@ JSONdump(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-
 str
 JSONjson2str(str *ret, json *j)
 {
@@ -327,32 +325,43 @@ JSONstr2json(json *ret, str *j)
 str
 JSONisvalid(bit *ret, json *j)
 {
-	JSON *jt = JSONparse(*j);
-
-	if (jt == NULL)
-		throw(MAL, "json.isvalid", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	*ret = jt->error == MAL_SUCCEED;
-	JSONfree(jt);
+	if (strNil(*j)) {
+		*ret = bit_nil;
+	} else {
+		JSON *jt = JSONparse(*j);
+		if (jt == NULL)
+			throw(MAL, "json.isvalid", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		*ret = jt->error == MAL_SUCCEED;
+		JSONfree(jt);
+	}
 	return MAL_SUCCEED;
 }
 
 str
 JSONisobject(bit *ret, json *js)
 {
-	char *j = *js;
+	if (strNil(*js)) {
+		*ret = bit_nil;
+	} else {
+		char *j = *js;
 
-	skipblancs(j);
-	*ret = *j == '{';
+		skipblancs(j);
+		*ret = *j == '{';
+	}
 	return MAL_SUCCEED;
 }
 
 str
 JSONisarray(bit *ret, json *js)
 {
-	char *j = *js;
+	if (strNil(*js)) {
+		*ret = bit_nil;
+	} else {
+		char *j = *js;
 
-	skipblancs(j);
-	*ret = *j == '[';
+		skipblancs(j);
+		*ret = *j == '[';
+	}
 	return MAL_SUCCEED;
 }
 
@@ -1832,7 +1841,7 @@ JSONfoldKeyValue(str *ret, const bat *id, const bat *key, const bat *values)
 	BUN i, cnt;
 	size_t len, lim, l;
 	void *p;
-	oid o = 0;;
+	oid o = 0;
 
 	if (key) {
 		bk = BATdescriptor(*key);
@@ -1891,7 +1900,7 @@ JSONfoldKeyValue(str *ret, const bat *id, const bat *key, const bat *values)
 				goto memfail;
 			}
 			row = p;
-			if (strcmp(nme, str_nil)) {
+			if (!strNil(nme)) {
 				snprintf(row + len, lim - len, "\"%s\":", nme);
 				len += l + 3;
 			}

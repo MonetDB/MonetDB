@@ -608,7 +608,10 @@ rel_named_table_function(sql_query *query, sql_rel *rel, symbol *ast, int latera
 	char *fname = qname_fname(l->data.lval); 
 	char *sname = qname_schema(l->data.lval);
 	node *en;
-	sql_schema *s = sql->session->schema;
+	sql_schema *s = cur_schema(sql);
+
+	if (sname && !(s = mvc_bind_schema(sql, sname)))
+		return sql_error(sql, 02, SQLSTATE(3F000) "SELECT: no such schema '%s'", sname);
 
 	tl = sa_list(sql->sa);
 	exps = new_exp_list(sql->sa);
@@ -655,8 +658,6 @@ rel_named_table_function(sql_query *query, sql_rel *rel, symbol *ast, int latera
 		}
 	}
 
-	if (sname)
-		s = mvc_bind_schema(sql, sname);
 	e = find_table_function(sql, s, fname, exps, tl);
 	if (!e)
 		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: no such operator '%s'", fname);
@@ -869,7 +870,7 @@ table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral)
 		dlist *name = tableref->data.lval->h->data.lval;
 		sql_rel *temp_table = NULL;
 		char *sname = qname_schema(name);
-		sql_schema *s = NULL;
+		sql_schema *s = cur_schema(sql);
 		int allowed = 1;
 
 		tname = qname_table(name);
@@ -877,7 +878,7 @@ table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral)
 		if (dlist_length(name) > 2)
 			return sql_error(sql, 02, SQLSTATE(3F000) "SELECT: only a schema and table name expected");
 
-		if (sname && !(s=mvc_bind_schema(sql,sname)))
+		if (sname && !(s = mvc_bind_schema(sql, sname)))
 			return sql_error(sql, 02, SQLSTATE(3F000) "SELECT: no such schema '%s'", sname);
 		if (!t && !sname) {
 			t = stack_find_table(sql, tname);
@@ -885,8 +886,6 @@ table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral)
 				temp_table = stack_find_rel_view(sql, tname);
 		}
 		if (!t && !temp_table) {
-			if (!s)
-				s = cur_schema(sql);
 			t = mvc_bind_table(sql, s, tname);
 			if (!t && !sname) {
 				s = tmp_schema(sql);
@@ -1507,7 +1506,7 @@ rel_filter(mvc *sql, sql_rel *rel, list *l, list *r, char *sname, char *filter_o
 	node *n;
 	sql_exp *L = l->h->data, *R = r->h->data, *e = NULL;
 	sql_subfunc *f = NULL;
-	sql_schema *s = sql->session->schema;
+	sql_schema *s = cur_schema(sql);
 	list *tl, *exps;
 
 	exps = sa_list(sql->sa);
@@ -1524,8 +1523,8 @@ rel_filter(mvc *sql, sql_rel *rel, list *l, list *r, char *sname, char *filter_o
 		list_append(exps, e);
 		list_append(tl, exp_subtype(e));
 	}
-	if (sname)
-		s = mvc_bind_schema(sql, sname);
+	if (sname && !(s = mvc_bind_schema(sql, sname)))
+		return sql_error(sql, 02, SQLSTATE(3F000) "SELECT: no such schema '%s'", sname);
 	/* find filter function */
 	f = sql_bind_func_(sql->sa, s, filter_op, tl, F_FILT);
 
@@ -2124,11 +2123,11 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 		char *fname = qname_fname(filter_op);
 		char *sname = qname_schema(filter_op);
 		list *exps, *tl;
-		sql_schema *s = sql->session->schema;
+		sql_schema *s = cur_schema(sql);
 		sql_subtype *obj_type = NULL;
 
-		if (sname)
-			s = mvc_bind_schema(sql, sname);
+		if (sname && !(s = mvc_bind_schema(sql, sname)))
+			return sql_error(sql, 02, SQLSTATE(3F000) "SELECT: no such schema '%s'", sname);
 
 		exps = sa_list(sql->sa);
 		tl = sa_list(sql->sa);
@@ -2709,13 +2708,11 @@ rel_op(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek )
 	dnode *l = se->data.lval->h;
 	char *fname = qname_fname(l->data.lval);
 	char *sname = qname_schema(l->data.lval);
-	sql_schema *s = sql->session->schema;
+	sql_schema *s = cur_schema(sql);
 	sql_subfunc *sf = NULL;
 
-	if (sname)
-		s = mvc_bind_schema(sql, sname);
-	if (!s)
-		return NULL;
+	if (sname && !(s = mvc_bind_schema(sql, sname)))
+		return sql_error(sql, 02, SQLSTATE(3F000) "SELECT: no such schema '%s'", sname);
 
 	sf = find_func(sql, s, fname, 0, F_AGGR, NULL);
 	if (!sf && *rel && (*rel)->card == CARD_AGGR) {
@@ -2815,16 +2812,14 @@ rel_unop(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 	dnode *l = se->data.lval->h;
 	char *fname = qname_fname(l->data.lval);
 	char *sname = qname_schema(l->data.lval);
-	sql_schema *s = sql->session->schema;
+	sql_schema *s = cur_schema(sql);
 	exp_kind iek = {type_value, card_column, FALSE};
 	sql_exp *e = NULL;
 	sql_subfunc *sf = NULL;
 	sql_ftype type = (ek.card == card_loader)?F_LOADER:((ek.card == card_none)?F_PROC:F_FUNC);
 
-	if (sname)
-		s = mvc_bind_schema(sql, sname);
-	if (!s)
-		return NULL;
+	if (sname && !(s = mvc_bind_schema(sql, sname)))
+		return sql_error(sql, 02, SQLSTATE(3F000) "SELECT: no such schema '%s'", sname);
 
 	e = rel_value_exp(query, rel, l->next->next->data.sym, f|sql_farg, iek);
 	if (!e)
@@ -3098,15 +3093,13 @@ rel_binop(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 	sql_exp *l, *r;
 	char *fname = qname_fname(dl->data.lval);
 	char *sname = qname_schema(dl->data.lval);
-	sql_schema *s = sql->session->schema;
+	sql_schema *s = cur_schema(sql);
 	exp_kind iek = {type_value, card_column, FALSE};
 	sql_ftype type = (ek.card == card_loader)?F_LOADER:((ek.card == card_none)?F_PROC:F_FUNC);
 	sql_subfunc *sf = NULL;
 
-	if (sname)
-		s = mvc_bind_schema(sql, sname);
-	if (!s)
-		return NULL;
+	if (sname && !(s = mvc_bind_schema(sql, sname)))
+		return sql_error(sql, 02, SQLSTATE(3F000) "SELECT: no such schema '%s'", sname);
 
 	l = rel_value_exp(query, rel, dl->next->next->data.sym, f|sql_farg, iek);
 	r = rel_value_exp(query, rel, dl->next->next->next->data.sym, f|sql_farg, iek);
@@ -3159,7 +3152,7 @@ rel_nop_(mvc *sql, sql_rel *rel, sql_exp *a1, sql_exp *a2, sql_exp *a3, sql_exp 
 		append(tl, exp_subtype(a4));
 
 	if (!s)
-		s = sql->session->schema;
+		s = cur_schema(sql);
 	f = bind_func_(sql, s, fname, tl, type);
 	if (!f)
 		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: no such operator '%s'", fname);
@@ -3181,9 +3174,12 @@ rel_nop(sql_query *query, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 	sql_subtype *obj_type = NULL;
 	char *fname = qname_fname(l->data.lval);
 	char *sname = qname_schema(l->data.lval);
-	sql_schema *s = sql->session->schema;
+	sql_schema *s = cur_schema(sql);
 	exp_kind iek = {type_value, card_column, FALSE};
 	int err = 0;
+
+	if (sname && !(s = mvc_bind_schema(sql, sname)))
+		return sql_error(sql, 02, SQLSTATE(3F000) "SELECT: no such schema '%s'", sname);
 
 	for (; ops; ops = ops->next, nr_args++) {
 		sql_exp *e = rel_value_exp(query, rel, ops->data.sym, fs|sql_farg, iek);
@@ -3199,9 +3195,7 @@ rel_nop(sql_query *query, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 			append(tl, tpe);
 		}
 	}
-	if (sname)
-		s = mvc_bind_schema(sql, sname);
-	
+
 	/* first try aggregate */
 	f = find_func(sql, s, fname, nr_args, F_AGGR, NULL);
 	if (!f && err && *rel && (*rel)->card == CARD_AGGR) {
@@ -3618,15 +3612,16 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 static sql_exp *
 rel_aggr(sql_query *query, sql_rel **rel, symbol *se, int f)
 {
+	mvc *sql = query->sql;
 	dlist *l = se->data.lval;
 	dnode *d = l->h->next->next;
 	int distinct = l->h->next->data.i_val;
 	char *aname = qname_fname(l->h->data.lval);
 	char *sname = qname_schema(l->h->data.lval);
-	sql_schema *s = query->sql->session->schema;
+	sql_schema *s = cur_schema(sql);
 
-	if (sname)
-		s = mvc_bind_schema(query->sql, sname);
+	if (sname && !(s = mvc_bind_schema(sql, sname)))
+		return sql_error(sql, 02, SQLSTATE(3F000) "SELECT: no such schema '%s'", sname);
 	return _rel_aggr( query, rel, distinct, s, aname, d, f);
 }
 
@@ -3852,19 +3847,15 @@ rel_next_value_for( mvc *sql, symbol *se )
 {
 	char *seq = qname_table(se->data.lval);
 	char *sname = qname_schema(se->data.lval);
-	sql_schema *s = NULL;
+	sql_schema *s = cur_schema(sql);
 	sql_subtype t;
 	sql_subfunc *f;
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
-		return sql_error(sql, 02,
-			SQLSTATE(3F000) "NEXT VALUE FOR: no such schema '%s'", sname);
-	if (!s)
-		s = sql->session->schema;
+		return sql_error(sql, 02, SQLSTATE(3F000) "NEXT VALUE FOR: no such schema '%s'", sname);
 
 	if (!find_sql_sequence(s, seq) && !stack_find_rel_view(sql, seq))
-		return sql_error(sql, 02, SQLSTATE(42000) "NEXT VALUE FOR: "
-			"no such sequence '%s'.'%s'", s->base.name, seq);
+		return sql_error(sql, 02, SQLSTATE(42000) "NEXT VALUE FOR: no such sequence '%s'.'%s'", s->base.name, seq);
 	sql_find_subtype(&t, "varchar", 0, 0);
 	f = sql_bind_func(sql->sa, s, "next_value_for", &t, &t, F_FUNC);
 	assert(f);
@@ -4578,7 +4569,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 	sql_exp *in = NULL, *pe = NULL, *oe = NULL, *call = NULL, *start = NULL, *eend = NULL, *fstart = NULL, *fend = NULL, *ie = NULL;
 	sql_rel *p;
 	list *gbe = NULL, *obe = NULL, *args = NULL, *types = NULL, *fargs = NULL;
-	sql_schema *s = sql->session->schema;
+	sql_schema *s = cur_schema(sql);
 	dnode *dn = window_function->data.lval->h, *dargs = NULL;
 	int distinct = 0, frame_type, pos, nf = f, nfargs = 0;
 	bool is_nth_value, supports_frames;
@@ -4608,8 +4599,8 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 	aname = qname_fname(dn->data.lval);
 	sname = qname_schema(dn->data.lval);
 
-	if (sname)
-		s = mvc_bind_schema(sql, sname);
+	if (sname && !(s = mvc_bind_schema(sql, sname)))
+		return sql_error(sql, 02, SQLSTATE(3F000) "SELECT: no such schema '%s'", sname);
 
 	is_nth_value = !strcmp(aname, "nth_value");
 	supports_frames = window_function->token != SQL_RANK || is_nth_value || !strcmp(aname, "first_value") || !strcmp(aname, "last_value");
@@ -5996,8 +5987,11 @@ rel_loader_function(sql_query *query, symbol* fcall, list *fexps, sql_subfunc **
 	char *fname = qname_fname(l->data.lval);
 	char *tname = NULL;
 	node *en;
-	sql_schema *s = sql->session->schema;
+	sql_schema *s = cur_schema(sql);
 	sql_subfunc* sf;
+
+	if (sname && !(s = mvc_bind_schema(sql, sname)))
+		return sql_error(sql, 02, SQLSTATE(3F000) "SELECT: no such schema '%s'", sname);
 
 	tl = sa_list(sql->sa);
 	exps = new_exp_list(sql->sa);
@@ -6040,8 +6034,6 @@ rel_loader_function(sql_query *query, symbol* fcall, list *fexps, sql_subfunc **
 			append(tl, exp_subtype(e));
 		}
 	}
-	if (sname)
-		s = mvc_bind_schema(sql, sname);
 
 	e = find_table_function_type(sql, s, fname, exps, tl, F_LOADER, &sf);
 	if (!e || !sf)
