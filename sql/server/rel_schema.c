@@ -344,7 +344,7 @@ column_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sq
 		char *rsname = qname_schema(n->data.lval);
 		char *rtname = qname_table(n->data.lval);
 		int ref_actions = n->next->next->next->data.i_val; 
-		sql_schema *rs;
+		sql_schema *rs = cur_schema(sql);
 		sql_table *rt;
 		sql_fkey *fk;
 		list *cols;
@@ -358,15 +358,11 @@ column_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sq
 		}
 */
 
-		if (rsname) {
-			if (!(rs = mvc_bind_schema(sql, rsname))) {
-				(void) sql_error(sql, 02, SQLSTATE(3F000) "CONSTRAINT FOREIGN KEY: no such schema '%s'", rsname);
-				return res;
-			}
-		} else 
-			rs = cur_schema(sql);
-		rt = _bind_table(t, ss, rs, rtname);
-		if (!rt) {
+		if (rsname && !(rs = mvc_bind_schema(sql, rsname))) {
+			(void) sql_error(sql, 02, SQLSTATE(3F000) "CONSTRAINT FOREIGN KEY: no such schema '%s'", rsname);
+			return res;
+		}
+		if (!(rt = _bind_table(t, ss, rs, rtname))) {
 			(void) sql_error(sql, 02, SQLSTATE(42S02) "CONSTRAINT FOREIGN KEY: no such table '%s'\n", rtname);
 			return res;
 		}
@@ -532,17 +528,13 @@ table_foreign_key(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table *t)
 	dnode *n = s->data.lval->h;
 	char *rsname = qname_schema(n->data.lval);
 	char *rtname = qname_table(n->data.lval);
-	sql_schema *fs;
+	sql_schema *fs = ss;
 	sql_table *ft;
 
-
-	if (rsname) {
-		if (!(fs = mvc_bind_schema(sql, rsname))) {
-			(void) sql_error(sql, 02, SQLSTATE(3F000) "CONSTRAINT FOREIGN KEY: no such schema '%s'", rsname);
-			return SQL_ERR;
-		}
-	} else 
-		fs = ss;
+	if (rsname && !(fs = mvc_bind_schema(sql, rsname))) {
+		(void) sql_error(sql, 02, SQLSTATE(3F000) "CONSTRAINT FOREIGN KEY: no such schema '%s'", rsname);
+		return SQL_ERR;
+	}
 	ft = mvc_bind_table(sql, fs, rtname);
 	/* self referenced table */
 	if (!ft && t->s == fs && strcmp(t->base.name, rtname) == 0)
@@ -1848,14 +1840,11 @@ rel_grant_func(mvc *sql, sql_schema *cur, dlist *privs, dlist *qname, dlist *typ
 	dnode *gn;
 	char *sname = qname_schema(qname);
 	char *fname = qname_func(qname);
-	sql_schema *s = NULL;
+	sql_schema *s = cur;
 	sql_func *func = NULL;
 
-	if (sname) {
-		if (!(s = mvc_bind_schema(sql, sname)))
-			return sql_error(sql, 02, SQLSTATE(3F000) "GRANT: no such schema '%s'", sname);
-	} else 
-		s = cur;
+	if (sname && !(s = mvc_bind_schema(sql, sname)))
+		return sql_error(sql, 02, SQLSTATE(3F000) "GRANT: no such schema '%s'", sname);
 	func = resolve_func(sql, s, fname, typelist, type, "GRANT", 0);
 	if (!func) 
 		return NULL;
@@ -2034,13 +2023,10 @@ rel_revoke_func(mvc *sql, sql_schema *cur, dlist *privs, dlist *qname, dlist *ty
 	char *sname = qname_schema(qname);
 	char *fname = qname_func(qname);
 	sql_func *func = NULL;
-	sql_schema *s = NULL;
+	sql_schema *s = cur;
 
-	if (sname) {
-		if (sname && !(s = mvc_bind_schema(sql, sname)))
-			return sql_error(sql, 02, SQLSTATE(3F000) "REVOKE: no such schema '%s'", sname);
-	} else
-		s = cur;
+	if (sname && !(s = mvc_bind_schema(sql, sname)))
+		return sql_error(sql, 02, SQLSTATE(3F000) "REVOKE: no such schema '%s'", sname);
 	func = resolve_func(sql, s, fname, typelist, type, "REVOKE", 0);
 	if (!func) 
 		return NULL;

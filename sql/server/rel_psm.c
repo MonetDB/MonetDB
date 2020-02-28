@@ -1266,7 +1266,7 @@ create_trigger(sql_query *query, dlist *qname, int time, symbol *trigger_event, 
 		return sql_error(sql, 02, SQLSTATE(42000) "%s TRIGGER: unknown table '%s'", base, tname);
 	if (create && isView(t))
 		return sql_error(sql, 02, SQLSTATE(42000) "%s TRIGGER: cannot create trigger on view '%s'", base, tname);
-	if (triggerschema && strcmp(triggerschema, sname) != 0)
+	if (triggerschema && strcmp(triggerschema, ss->base.name) != 0)
 		return sql_error(sql, 02, SQLSTATE(42000) "%s TRIGGER: trigger and respective table must belong to the same schema", base);
 	if (create && (st = mvc_bind_trigger(sql, ss, triggername)) != NULL) {
 		if (replace) {
