@@ -149,18 +149,10 @@ typedef enum {
 	COMP( SQL_STATEMENT )			\
 	COMP( SQL_BAT )				\
 						\
-	COMP( MAL_INTERPRETER )			\
 	COMP( MAL_WLC )				\
 	COMP( MAL_REMOTE )			\
-	COMP( MAL_ATOMS )			\
-	COMP( MAL_TABLET )			\
-	COMP( MAL_OLTP )			\
 	COMP( MAL_MAPI )			\
 	COMP( MAL_SERVER )			\
-	COMP( MAL_DATAFLOW )			\
-	COMP( MAL_MANIFOLD )			\
-	COMP( MAL_EXCEPTION )			\
-	COMP( MAL_MAL )				\
 						\
 	COMP( MAL_OPTIMIZER )			\
 						\

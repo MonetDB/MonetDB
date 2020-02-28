@@ -434,11 +434,13 @@ INET_comp_CW(bit *retval, const inet *val1, const inet *val2)
 
 		/* all operations here are done byte based, to avoid byte sex
 		 * problems */
-		TRC_DEBUG(MAL_ATOMS, 
+		/*
+		TRC_DEBUG(MAL_SERVER, 
 			"%x %x %x %x => %x %x %x %x  %x %x %x %x\n",
 		   	m[0], m[1], m[2], m[3], val1->q1, val1->q2,
 		   	val1->q3, val1->q4, val2->q1, val2->q2, val2->q3,
 		   	val2->q4);
+		*/
 
 		if ((val1->q1 & m[0]) == (val2->q1 & m[0]) &&
 			(val1->q2 & m[1]) == (val2->q2 & m[1]) &&
@@ -523,10 +525,12 @@ INETbroadcast(inet *retval, const inet *val)
 		m[2] = (msk >> 8) & 0xFF;
 		m[3] = msk & 0xFF;
 
-		TRC_DEBUG(MAL_ATOMS, 
+	/*
+		TRC_DEBUG(MAL_SERVER, 
 			"%x %x %x %x => %x %x %x %x\n",
 			m[0], m[1], m[2], m[3], val->q1, val->q2,
 		   	val->q3, val->q4);
+	*/
 
 		/* apply the inverted mask, so we get the broadcast */
 		retval->q1 |= m[0];
