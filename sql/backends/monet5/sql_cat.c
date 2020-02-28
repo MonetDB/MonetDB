@@ -719,9 +719,9 @@ drop_func(mvc *sql, char *sname, char *name, sqlid fid, sql_ftype type, int acti
 			if (mvc_drop_func(sql, s, func, action))
 				throw(SQL,"sql.drop_func", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
-	} else if (fid == -2) { //if exists option
+	} else if (fid == -2) { /* if exists option */
 		return MAL_SUCCEED;
-	} else { //fid == -1
+	} else { /* fid == -1 */
 		node *n = NULL;
 		list *list_func = schema_bind_func(sql, s, name, type);
 		int res;
