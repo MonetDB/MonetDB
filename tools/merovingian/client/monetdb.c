@@ -171,7 +171,11 @@ command_help(int argc, char *argv[])
 		printf("Usage: monetdb version\n");
 		printf("  prints the version of this monetdb utility\n");
 	} else if (strcmp(argv[1], "snapshot") == 0) {
-		if (argc > 2 && strcmp(argv[2], "create") == 0) {
+		if (argc > 2 && strcmp(argv[2], "list") == 0) {
+			printf("Usage: monetdb snapshot list ]<dbname>...]\n");
+			printf("  List snapshots for the given database, or all databases\n");
+			printf("  if none given.\n");
+		} else if (argc > 2 && strcmp(argv[2], "create") == 0) {
 			printf("Usage: monetdb snapshot create [-t <targetfile>] <dbname> [<dbname>..]\n");
 			printf("  Take a snapshot of the listed databases. Unless -t is given, the snapshots\n");
 			printf("  are written to files named\n");
@@ -1696,6 +1700,27 @@ snapshot_create_automatic(sabdb *databases) {
 }
 
 static void
+snapshot_list(sabdb *databases) {
+	char *ret;
+	char *out;
+
+	for (sabdb *db = databases; db != NULL; db = db->next) {
+		printf("Listing %s:\n", db->dbname);
+		ret = control_send(&out, mero_host, mero_port, db->dbname, "snapshot list", 1, mero_pass);
+		if (ret != NULL) {
+			fprintf(stderr, "snapshot list: %s\n", ret);
+			exit(2);
+		}
+		if (strncmp(out, "OK\n", 3) == 0) {
+			printf("  ok.");
+		} else {
+			printf("failed: %s\n", out);
+		}
+		free(out);
+	}
+}
+
+static void
 snapshot_restore_adhoc(char *sourcefile, char *dbname)
 {
 	char *ret;
@@ -1719,6 +1744,7 @@ snapshot_restore_adhoc(char *sourcefile, char *dbname)
 		if (!monetdb_quiet) {
 			printf("done\n");
 		}
+		free(out);
 	} else {
 		fprintf(stderr, "failed: %s\n", out);
 		exit(1);
@@ -1781,6 +1807,43 @@ command_snapshot_create(int argc, char *argv[])
 	} else {
 		snapshot_create_automatic(databases);
 	}
+
+	msab_freeStatus(&databases);
+}
+
+
+static void
+command_snapshot_list(int argc, char *argv[])
+{
+	char *err;
+
+	/* walk through the arguments and hunt for "options" */
+	for (int i = 1; i < argc; i++) {
+		if (strcmp(argv[i], "--") == 0) {
+			argv[i] = NULL;
+			break;
+		}
+		if (argv[i][0] == '-') {
+			fprintf(stderr, "snapshot create: unknown option: %s\n", argv[i]);
+			command_help(argc + 2, &argv[-2]);  // ewww
+			exit(1);
+		}
+	}
+
+	/* Look up the databases */
+	sabdb *all = NULL;
+	err = MEROgetStatus(&all, NULL);
+	if (err != NULL) {
+		fprintf(stderr, "snapshot: %s\n", err);
+		free(err);
+		exit(2);
+	}
+	sabdb *databases = globMatchDBS(argc, argv, &all, "snapshot");
+	msab_freeStatus(&all);
+	if (databases == NULL)
+		exit(1);
+
+	snapshot_list(databases);
 
 	msab_freeStatus(&databases);
 }
@@ -1860,6 +1923,8 @@ command_snapshot(int argc, char *argv[])
 	/* pick the right subcommand */
 	if (strcmp(argv[1], "create") == 0) {
 		command_snapshot_create(argc - 1, &argv[1]);
+	} else if (strcmp(argv[1], "list") == 0) {
+		command_snapshot_list(argc - 1, &argv[1]);
 	} else if (strcmp(argv[1], "restore") == 0) {
 		command_snapshot_restore(argc - 1, &argv[1]);
 	} else {
