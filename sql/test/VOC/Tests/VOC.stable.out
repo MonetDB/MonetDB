@@ -154,133 +154,20 @@ stdout of test 'VOC` in directory 'sql/test/VOC` itself:
 #	"death_during_voyage"  integer,
 #	"onboard_at_arrival"   integer
 #);
-#COPY 8115 RECORDS INTO "voc"."voyages" FROM stdin USING DELIMITERS E'\t',E'\n','"';
-#1	""	1	""	"AMSTERDAM"	"Jan Jakobsz. Schellinger"	260	NULL	"1594"	NULL	NULL	"A"	NULL	1595-04-02	"Texel"	NULL	NULL	true	1596-06-06	"Engano"	NULL	"from 04-08 till 11-08 in the Mosselbaai; from 13-09 till 07-10 in the Ampalazabaai; from 09-10 till 13-12 in S. Augustins Bay, where before departure 127 of the 249 men were still alive; 11-01 till 21-01 at Ste. Marie I.; from 23-01 till 12-02 in the Bay of Antongil. The AMSTERDAM was set on fire near Bawean, 11-01-1597."
-[ 8115	]
-#COPY 2349 RECORDS INTO "voc"."craftsmen" FROM stdin USING DELIMITERS E'\t',E'\n','"';
-#1376	""	3	""	19	NULL	NULL	NULL	NULL	19
-#1378	""	5	""	22	NULL	NULL	NULL	NULL	22
-#1379	""	5	""	18	NULL	NULL	NULL	2	16
-#1380	""	3	""	11	NULL	NULL	NULL	1	10
-#1381	""	5	""	11	NULL	NULL	NULL	NULL	11
-#1383	""	5	""	7	NULL	NULL	NULL	NULL	7
-#1397	""	3	""	7	NULL	NULL	NULL	NULL	7
-#1401	""	1	""	4	NULL	NULL	NULL	1	3
-#1403	""	3	""	13	NULL	NULL	1	4	10
-#1482	""	2	""	3	NULL	3	NULL	NULL	NULL
-#1507	""	2	""	3	NULL	3	NULL	NULL	NULL
-#1516	""	1	""	NULL	NULL	NULL	2	NULL	2
-[ 2349	]
-#COPY 938 RECORDS INTO "voc"."impotenten" FROM stdin USING DELIMITERS E'\t',E'\n','"';
-#5733	""	3	""	18	NULL	NULL	NULL	NULL	NULL
-#5734	""	2	""	19	NULL	NULL	NULL	NULL	NULL
-#5735	""	1	""	18	NULL	NULL	NULL	NULL	NULL
-#5736	""	1	""	20	NULL	NULL	NULL	NULL	NULL
-#5737	""	4	""	20	NULL	NULL	NULL	NULL	NULL
-#5751	""	1	""	9	NULL	NULL	NULL	NULL	NULL
-#5752	""	5	""	9	NULL	NULL	NULL	NULL	NULL
-#5755	""	3	""	16	NULL	NULL	NULL	NULL	NULL
-#5758	""	5	""	24	NULL	NULL	NULL	NULL	NULL
-#5759	""	5	""	17	NULL	NULL	NULL	NULL	NULL
-#5764	""	2	""	1	NULL	NULL	NULL	NULL	NULL
-[ 938	]
-#COPY 3782 RECORDS INTO "voc"."invoices" FROM stdin USING DELIMITERS E'\t',E'\n','"';
-#5102	""	2	""	268964	"A"
-#5103	""	2	""	164562	"Z"
-#5105	""	2	""	110370	"A"
-#5106	""	2	""	127181	"D"
-#5107	""	2	""	101522	"A"
-#5108	""	3	""	110370	"A"
-#5110	""	1	""	21160	"A"
-#5112	""	3	""	192449	"R"
-#5113	""	1	""	231099	"A"
-#5114	""	1	""	32449	"Z"
-#5115	""	1	""	88907	"A"
-#5116	""	2	""	39787	"D"
-#5117	""	1	""	207498	"A"
-#5118	""	1	""	189448	"Z"
-#5119	""	1	""	136414	"H"
-#5120	""	2	""	56526	"H"
-#5121	""	1	""	48766	"E"
-#5122	""	1	""	235346	"A"
-#5123	""	1	""	140348	"E"
-[ 3782	]
-#COPY 2813 RECORDS INTO "voc"."passengers" FROM stdin USING DELIMITERS E'\t',E'\n','"';
-#310	""	2	""	66	NULL	NULL	NULL	2	64
-#311	""	2	""	55	NULL	NULL	NULL	5	55
-#318	""	5	""	17	NULL	NULL	NULL	4	13
-#320	""	3	""	23	NULL	NULL	NULL	NULL	NULL
-#321	""	2	""	10	NULL	NULL	NULL	NULL	NULL
-#335	""	1	""	6	NULL	NULL	NULL	NULL	NULL
-#340	""	1	""	20	NULL	NULL	NULL	NULL	NULL
-#469	""	1	""	NULL	NULL	NULL	NULL	NULL	1
-#557	""	1	""	NULL	NULL	NULL	NULL	NULL	13
-#559	""	1	""	NULL	NULL	NULL	NULL	NULL	2
-#560	""	5	""	NULL	NULL	NULL	NULL	NULL	7
-#561	""	2	""	NULL	NULL	NULL	NULL	NULL	3
-[ 2813	]
-#COPY 4468 RECORDS INTO "voc"."seafarers" FROM stdin USING DELIMITERS E'\t',E'\n','"';
-#196	""	1	""	65	NULL	NULL	NULL	NULL	NULL
-#197	""	1	""	22	NULL	NULL	NULL	NULL	NULL
-#296	""	1	""	126	NULL	NULL	NULL	NULL	NULL
-#298	""	1	""	147	NULL	NULL	NULL	NULL	NULL
-#299	""	1	""	89	NULL	NULL	NULL	NULL	NULL
-#301	""	1	""	152	NULL	NULL	NULL	NULL	NULL
-#302	""	1	""	105	NULL	NULL	NULL	NULL	NULL
-#303	""	1	""	54	NULL	NULL	NULL	NULL	NULL
-#304	""	1	""	20	NULL	NULL	NULL	NULL	NULL
-#305	""	1	""	109	NULL	NULL	NULL	NULL	NULL
-#306	""	1	""	50	NULL	NULL	NULL	NULL	NULL
-[ 4468	]
-#COPY 4177 RECORDS INTO "voc"."soldiers" FROM stdin USING DELIMITERS E'\t',E'\n','"';
-#296	""	1	""	90	NULL	NULL	NULL	NULL	NULL
-#298	""	1	""	90	NULL	NULL	NULL	NULL	NULL
-#299	""	1	""	55	NULL	NULL	NULL	NULL	NULL
-#300	""	1	""	53	NULL	NULL	NULL	NULL	NULL
-#301	""	1	""	90	NULL	NULL	NULL	NULL	NULL
-#302	""	1	""	5	NULL	NULL	NULL	NULL	NULL
-#303	""	1	""	24	NULL	NULL	NULL	NULL	NULL
-#305	""	1	""	73	NULL	NULL	NULL	NULL	NULL
-#306	""	1	""	30	NULL	NULL	NULL	NULL	NULL
-#307	""	1	""	66	NULL	NULL	NULL	NULL	NULL
-#310	""	2	""	101	NULL	NULL	NULL	4	97
-[ 4177	]
-#COPY 2454 RECORDS INTO "voc"."total" FROM stdin USING DELIMITERS E'\t',E'\n','"';
-#1	""	1	""	59	NULL	NULL	NULL	NULL	NULL
-#2	""	1	""	20	NULL	NULL	NULL	NULL	NULL
-#3	""	1	""	85	NULL	NULL	NULL	NULL	NULL
-#4	""	1	""	85	NULL	NULL	NULL	NULL	NULL
-#5	""	1	""	75	NULL	NULL	NULL	NULL	NULL
-#8	""	1	""	123	NULL	NULL	NULL	NULL	NULL
-#9	""	1	""	100	NULL	NULL	NULL	NULL	NULL
-#31	""	2	""	46	NULL	NULL	NULL	NULL	NULL
-#32	""	3	""	95	NULL	NULL	NULL	NULL	NULL
-#33	""	3	""	21	NULL	NULL	NULL	NULL	NULL
-#34	""	3	""	101	NULL	NULL	NULL	NULL	NULL
-#41	""	1	""	175	NULL	NULL	NULL	NULL	NULL
-[ 2454	]
-#ALTER TABLE "voyages" ADD PRIMARY KEY ("number", "number_sup");
-#ALTER TABLE "craftsmen" ADD PRIMARY KEY ("number", "number_sup");
-#ALTER TABLE "impotenten" ADD PRIMARY KEY ("number", "number_sup");
-#ALTER TABLE "passengers" ADD PRIMARY KEY ("number", "number_sup");
-#ALTER TABLE "seafarers" ADD PRIMARY KEY ("number", "number_sup");
-#ALTER TABLE "soldiers" ADD PRIMARY KEY ("number", "number_sup");
-#ALTER TABLE "total" ADD PRIMARY KEY ("number", "number_sup");
-#ALTER TABLE "craftsmen" ADD FOREIGN KEY ("number", "number_sup")
-#	REFERENCES "voyages" ("number", "number_sup");
-#ALTER TABLE "impotenten" ADD FOREIGN KEY ("number", "number_sup")
-#	REFERENCES "voyages" ("number", "number_sup");
-#ALTER TABLE "invoices" ADD FOREIGN KEY ("number", "number_sup")
-#	REFERENCES "voyages" ("number", "number_sup");
-#ALTER TABLE "passengers" ADD FOREIGN KEY ("number", "number_sup")
-#	REFERENCES "voyages" ("number", "number_sup");
-#ALTER TABLE "seafarers" ADD FOREIGN KEY ("number", "number_sup")
-#	REFERENCES "voyages" ("number", "number_sup");
-#ALTER TABLE "soldiers" ADD FOREIGN KEY ("number", "number_sup")
-#	REFERENCES "voyages" ("number", "number_sup");
-#ALTER TABLE "total" ADD FOREIGN KEY ("number", "number_sup")
-#	REFERENCES "voyages" ("number", "number_sup");
 #commit;
+
+# 17:10:01 >  
+# 17:10:01 >  Mtimeout -timeout 120 mclient -lsql -ftest -e --host=ottar --port=37097 --database=mTests_test_VOC ../../../../../../../scratch1/sjoerd/src/MonetDB/candidate/sql/test/VOC/Tests/../VOCinsert.sql
+# 17:10:01 >  
+
+[ 8115	]
+[ 2349	]
+[ 938	]
+[ 3782	]
+[ 2813	]
+[ 4468	]
+[ 4177	]
+[ 2454	]
 
 # 17:10:07 >  
 # 17:10:07 >  Mtimeout -timeout 120 mclient -lsql -ftest -e --host=ottar --port=37097 --database=mTests_test_VOC ../../../../../../../scratch1/sjoerd/src/MonetDB/candidate/sql/test/VOC/Tests/../VOCquery.sql
