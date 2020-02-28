@@ -68,29 +68,29 @@ __hidden char *MSP_locate_script(const char *mod_name)
 	__attribute__((__visibility__("hidden")));
 
 /* Reset primitives */
-__hidden mal_export void AUTHreset(void)
+__hidden void AUTHreset(void)
 	__attribute__((__visibility__("hidden")));
 
-__hidden mal_export void mal_client_reset(void)
+__hidden void mal_client_reset(void)
 	__attribute__((__visibility__("hidden")));
 
-__hidden mal_export void mal_dataflow_reset(void)
+__hidden void mal_dataflow_reset(void)
 	__attribute__((__visibility__("hidden")));
 
-__hidden mal_export void mal_factory_reset(void)
+__hidden void mal_factory_reset(void)
 	__attribute__((__visibility__("hidden")));
 
-__hidden mal_export void mal_linker_reset(void)
+__hidden void mal_linker_reset(void)
 	__attribute__((__visibility__("hidden")));
 
-__hidden mal_export void mal_module_reset(void)
+__hidden void mal_module_reset(void)
 	__attribute__((__visibility__("hidden")));
 
-__hidden mal_export void mal_namespace_reset(void)
+__hidden void mal_namespace_reset(void)
 	__attribute__((__visibility__("hidden")));
 
-__hidden mal_export void mal_resource_reset(void)
+__hidden void mal_resource_reset(void)
 	__attribute__((__visibility__("hidden")));
 
-__hidden mal_export void mal_runtime_reset(void)
+__hidden void mal_runtime_reset(void)
 	__attribute__((__visibility__("hidden")));

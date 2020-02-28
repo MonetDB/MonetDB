@@ -47,6 +47,8 @@ def extract(f):
         decl = res.group('decl')
         if '{' in decl:
             sys.stderr.write('export on definition:\n%s\n' % res.group(0))
+        elif '"hidden"' in decl:
+            sys.stderr.write('cannot export hidden function\n%s\n' % res.group(0))
         else:
             decl = exportutils.normalize(decl)
             res = nmere.search(decl)
