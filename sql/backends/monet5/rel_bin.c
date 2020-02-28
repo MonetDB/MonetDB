@@ -98,7 +98,7 @@ print_stmtlist(sql_allocator *sa, stmt *l)
 			const char *rnme = table_name(sa, n->data);
 			const char *nme = column_name(sa, n->data);
 
-			TRC_INFO(SQL_RELATION, "%s.%s\n", rnme ? rnme : "(null!)", nme ? nme : "(null!)");
+			TRC_INFO(SQL_EXECUTION, "%s.%s\n", rnme ? rnme : "(null!)", nme ? nme : "(null!)");
 		}
 	}
 }
@@ -740,11 +740,11 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		if (s && grp)
 			s = stmt_project(be, ext, s);
 		if (!s && right) {
-			TRC_CRITICAL(SQL_RELATION, "Could not find %s.%s\n", (char*)e->l, (char*)e->r);
+			TRC_CRITICAL(SQL_EXECUTION, "Could not find %s.%s\n", (char*)e->l, (char*)e->r);
 			print_stmtlist(sql->sa, left);
 			print_stmtlist(sql->sa, right);
 			if (!s) {
-				TRC_ERROR(SQL_RELATION, "Query: '%s'\n", sql->query);
+				TRC_ERROR(SQL_EXECUTION, "Query: '%s'\n", sql->query);
 			}
 			assert(s);
 			return NULL;
@@ -916,7 +916,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
  			r2 = exp_bin(be, re2, left, right, grp, ext, cnt, sel);
 
 		if (!l || !r || (re2 && !r2)) {
-			TRC_ERROR(SQL_RELATION, "Query: '%s'\n", sql->query);
+			TRC_ERROR(SQL_EXECUTION, "Query: '%s'\n", sql->query);
 			return NULL;
 		}
 
