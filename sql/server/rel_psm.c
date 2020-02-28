@@ -16,40 +16,6 @@
 #include "rel_updates.h"
 #include "sql_privileges.h"
 
-#define FUNC_TYPE_STR \
-	switch (type) { \
-		case F_FUNC: \
-			F = "FUNCTION"; \
-			fn = "function"; \
-			break; \
-		case F_PROC: \
-			F = "PROCEDURE"; \
-			fn = "procedure"; \
-			break; \
-		case F_AGGR: \
-			F = "AGGREGATE"; \
-			fn = "aggregate"; \
-			break; \
-		case F_FILT: \
-			F = "FILTER FUNCTION"; \
-			fn = "filter function"; \
-			break; \
-		case F_UNION: \
-			F = "UNION FUNCTION"; \
-			fn = "union function"; \
-			break; \
-		case F_ANALYTIC: \
-			F = "WINDOW FUNCTION"; \
-			fn = "window function"; \
-			break; \
-		case F_LOADER: \
-			F = "LOADER FUNCTION"; \
-			fn = "loader function"; \
-			break; \
-		default: \
-			assert(0); \
-	}
-
 static list *sequential_block(sql_query *query, sql_subtype *restype, list *restypelist, dlist *blk, char *opt_name, int is_func);
 
 sql_rel *
@@ -829,7 +795,7 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 	if (res && res->token == SQL_TABLE)
 		type = F_UNION;
 
-	FUNC_TYPE_STR
+	FUNC_TYPE_STR(type)
 
 	is_func = (type != F_PROC && type != F_LOADER);
 	assert(lang != FUNC_LANG_INT);
@@ -1065,7 +1031,7 @@ resolve_func( mvc *sql, sql_schema *s, const char *name, dlist *typelist, sql_ft
 	list *list_func = NULL, *type_list = NULL;
 	char is_func = (type != F_PROC && type != F_LOADER), *F = NULL, *fn = NULL;
 
-	FUNC_TYPE_STR
+	FUNC_TYPE_STR(type)
 
 	if (typelist) {
 		sql_subfunc *sub_func;
@@ -1146,7 +1112,7 @@ rel_drop_func(mvc *sql, dlist *qname, dlist *typelist, int drop_action, sql_ftyp
 	sql_func *func = NULL;
 	char *F = NULL, *fn = NULL;
 
-	FUNC_TYPE_STR
+	FUNC_TYPE_STR(type)
 	(void) fn;
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
@@ -1173,7 +1139,7 @@ rel_drop_all_func(mvc *sql, dlist *qname, int drop_action, sql_ftype type)
 	list * list_func = NULL;
 	char *F = NULL, *fn = NULL;
 
-	FUNC_TYPE_STR
+	FUNC_TYPE_STR(type)
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_error(sql, 02, SQLSTATE(3F000) "DROP %s: no such schema '%s'", F, sname);

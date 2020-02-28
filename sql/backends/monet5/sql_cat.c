@@ -698,27 +698,24 @@ static str
 drop_func(mvc *sql, char *sname, char *name, sqlid fid, sql_ftype type, int action)
 {
 	sql_schema *s = cur_schema(sql);
-	char is_aggr = (type == F_AGGR);
-	char is_func = (type != F_PROC);
-	char *F = is_aggr ? "AGGREGATE" : (is_func ? "FUNCTION" : "PROCEDURE");
-	char *f = is_aggr ? "aggregate" : (is_func ? "function" : "procedure");
-	char *KF = type == F_FILT ? "FILTER " : type == F_UNION ? "UNION " : "";
-	char *kf = type == F_FILT ? "filter " : type == F_UNION ? "union " : "";
+	char *F = NULL, *fn = NULL;
+
+	FUNC_TYPE_STR(type)
 
 	if (sname && !(s = mvc_bind_schema(sql, sname))) {
 		if (fid == -2) /* if exists option */
 			return MAL_SUCCEED;
-		throw(SQL,"sql.drop_func", SQLSTATE(3F000) "DROP %s%s: no such schema '%s'", KF, F, sname);
+		throw(SQL,"sql.drop_func", SQLSTATE(3F000) "DROP %s: no such schema '%s'", F, sname);
 	}
 	if (!mvc_schema_privs(sql, s))
-		throw(SQL,"sql.drop_func", SQLSTATE(42000) "DROP %s%s: access denied for %s to schema '%s'", KF, F, stack_get_string(sql, "current_user"), s->base.name);
+		throw(SQL,"sql.drop_func", SQLSTATE(42000) "DROP %s: access denied for %s to schema '%s'", F, stack_get_string(sql, "current_user"), s->base.name);
 	if (fid >= 0) {
 		node *n = find_sql_func_node(s, fid);
 		if (n) {
 			sql_func *func = n->data;
 
 			if (!action && mvc_check_dependency(sql, func->base.id, !IS_PROC(func) ? FUNC_DEPENDENCY : PROC_DEPENDENCY, NULL))
-				throw(SQL,"sql.drop_func", SQLSTATE(42000) "DROP %s%s: there are database objects dependent on %s%s %s;", KF, F, kf, f, func->base.name);
+				throw(SQL,"sql.drop_func", SQLSTATE(42000) "DROP %s: there are database objects dependent on %s %s;", F, fn, func->base.name);
 			if (mvc_drop_func(sql, s, func, action))
 				throw(SQL,"sql.drop_func", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
@@ -734,7 +731,7 @@ drop_func(mvc *sql, char *sname, char *name, sqlid fid, sql_ftype type, int acti
 
 			if (!action && mvc_check_dependency(sql, func->base.id, !IS_PROC(func) ? FUNC_DEPENDENCY : PROC_DEPENDENCY, list_func)) {
 				list_destroy(list_func);
-				throw(SQL,"sql.drop_func", SQLSTATE(42000) "DROP %s%s: there are database objects dependent on %s%s %s;", KF, F, kf, f, func->base.name);
+				throw(SQL,"sql.drop_func", SQLSTATE(42000) "DROP %s: there are database objects dependent on %s %s;", F, fn, func->base.name);
 			}
 		}
 		res = mvc_drop_all_func(sql, s, list_func, action);
@@ -750,24 +747,24 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f)
 {
 	sql_func *nf;
 	sql_schema *s = cur_schema(sql);
-	char is_aggr = (f->type == F_AGGR);
-	char is_func = (f->type != F_PROC);
-	char *F = is_aggr ? "AGGREGATE" : (is_func ? "FUNCTION" : "PROCEDURE");
-	char *KF = f->type == F_FILT ? "FILTER " : f->type == F_UNION ? "UNION " : "";
 	int clientid = sql->clientid;
+	char *F = NULL, *fn = NULL;
 
-	(void)fname;
+	FUNC_TYPE_STR(f->type)
+
+	(void) fname;
+	(void) fn;
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
-		throw(SQL,"sql.create_func", SQLSTATE(3F000) "CREATE %s%s: no such schema '%s'", KF, F, sname);
+		throw(SQL,"sql.create_func", SQLSTATE(3F000) "CREATE %s: no such schema '%s'", F, sname);
 	if (!mvc_schema_privs(sql, s))
-		throw(SQL,"sql.create_func", SQLSTATE(42000) "CREATE %s%s: access denied for %s to schema '%s'", KF, F, stack_get_string(sql, "current_user"), s->base.name);
+		throw(SQL,"sql.create_func", SQLSTATE(42000) "CREATE %s: access denied for %s to schema '%s'", F, stack_get_string(sql, "current_user"), s->base.name);
 	nf = mvc_create_func(sql, NULL, s, f->base.name, f->ops, f->res, f->type, f->lang, f->mod, f->imp, f->query, f->varres, f->vararg, f->system);
 	assert(nf);
 	switch (nf->lang) {
 	case FUNC_LANG_INT:
 	case FUNC_LANG_MAL: /* shouldn't be reachable, but leave it here */
 		if (!backend_resolve_function(&clientid, nf))
-			throw(SQL,"sql.create_func", SQLSTATE(3F000) "CREATE %s%s: external name %s.%s not bound", KF, F, nf->mod, nf->base.name);
+			throw(SQL,"sql.create_func", SQLSTATE(3F000) "CREATE %s: external name %s.%s not bound", F, nf->mod, nf->base.name);
 		if (nf->query == NULL)
 			break;
 		/* fall through */
