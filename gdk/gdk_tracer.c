@@ -157,7 +157,7 @@ find_level(const char *lvl)
 		return LOG_LEVELS_COUNT;
 
 	for (int i = 0; i < (int) LOG_LEVELS_COUNT; i++) {
-		if (strcasecmp(LEVEL_STR[i], lvl) == 0) {
+		if (strcasecmp(LEVEL_STR[i] + 2, lvl) == 0) {
 			return (LOG_LEVEL) i;
 		}
 	}

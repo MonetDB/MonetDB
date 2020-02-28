@@ -944,7 +944,7 @@ retryRead:
 		case 'd':
 			if (strncmp(b, "debug", 5) == 0) {
 				skipWord(cntxt, b);
-				GDKdebug = atol(b);
+				GDKsetdebug(atoi(b));
 				mnstr_printf(out, "#Set debug mask to %d\n", GDKdebug);
 				break;
 			}
