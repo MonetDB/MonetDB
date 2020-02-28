@@ -184,6 +184,56 @@ _GDKtracer_layer_level_helper(int layer, int lvl)
 	return GDK_SUCCEED;
 }
 
+static gdk_return
+_GDKtracer_flush_buffer_locked(void)
+{
+	// No reason to flush a buffer with no content
+	if (active_tracer->allocated_size == 0) {
+		return GDK_SUCCEED;
+	}
+
+	if (ATOMIC_GET(&CUR_ADAPTER) == BASIC) {
+		// Initialize the BASIC adapter. It is used in order to avoid cases with files being
+		// created and no logs being produced. Even if the creating the file fails the function
+		// is going to be called only once.
+		if(!INIT_BASIC_ADAPTER)
+			_GDKtracer_init_basic_adptr();
+
+		if (output_file) {
+			size_t nitems = 1;
+			size_t w = fwrite(&active_tracer->buffer, active_tracer->allocated_size, nitems, output_file);
+
+			if (w == nitems)
+				fflush(output_file);
+			else
+				// fwrite failed for whatever reason (e.g: disk is full)
+				if(!LOG_EXC_REP) {
+					GDK_TRACER_EXCEPTION(GDKTRACER_FAILED "\n");
+					LOG_EXC_REP = true;
+				}
+		}
+
+		// Reset buffer
+		memset(active_tracer->buffer, 0, BUFFER_SIZE);
+		active_tracer->allocated_size = 0;
+	} else {
+		memset(active_tracer->buffer, 0, BUFFER_SIZE);
+		active_tracer->allocated_size = 0;
+
+		// Here we are supposed to send the logs to the profiler
+	}
+
+	// The file is kept open no matter the adapter
+	// When GDKtracer stops we need also to close the file
+	if (GDK_TRACER_STOP && output_file) {
+		fclose(output_file);
+		output_file = NULL;
+	}
+
+	return GDK_SUCCEED;
+}
+
+
 static inline ADAPTER
 find_adapter(const char *adptr)
 {
@@ -275,22 +325,20 @@ GDKtracer_reinit_basic(int sig)
 	if ((int) ATOMIC_GET(&CUR_ADAPTER) != BASIC)
 		return;
 
+	// Make sure that GDKtracer is not trying to flush the buffer
+	MT_lock_set(&lock);
 	// BASIC adapter has been initialized already and file is open
 	if(INIT_BASIC_ADAPTER && output_file) {
-		// Make sure that GDKtracer is not trying to flush the buffer
-		MT_lock_set(&lock);
-		{
-			// Close file 
-			fclose(output_file);
-			output_file = NULL;
-			
-			// Open a new file in append mode
-			output_file = fopen(file_name, "a");
-			if(!output_file)
-				GDK_TRACER_EXCEPTION(OPENFILE_FAILED);
-		}
-		MT_lock_unset(&lock);		
+		// Close file
+		fclose(output_file);
+		output_file = NULL;
+
+		// Open a new file in append mode
+		output_file = fopen(file_name, "a");
+		if(!output_file)
+			GDK_TRACER_EXCEPTION(OPENFILE_FAILED);
 	}
+	MT_lock_unset(&lock);
 }
 
 
@@ -433,13 +481,9 @@ GDKtracer_log(LOG_LEVEL level, const char *fmt, ...)
 		// The message fits the buffer OR the buffer is empty but the message does not fit (we cut it off)
 		if (bytes_written < (BUFFER_SIZE - active_tracer->allocated_size) || active_tracer->allocated_size == 0) {
 			active_tracer->allocated_size += bytes_written;
-			MT_lock_unset(&lock);
 		} else {
-			MT_lock_unset(&lock);
+			_GDKtracer_flush_buffer_locked();
 
-			GDKtracer_flush_buffer();
-
-			MT_lock_set(&lock);
 			va_list va;
 			va_start(va, fmt);
 			bytes_written = _GDKtracer_fill_tracer(active_tracer, fmt, va);
@@ -450,9 +494,7 @@ GDKtracer_log(LOG_LEVEL level, const char *fmt, ...)
 				// So if the message does not fit we cut it off
 				// message might be > BUFFER_SIZE
 				active_tracer->allocated_size += bytes_written;
-				MT_lock_unset(&lock);
 			} else {
-				MT_lock_unset(&lock);
 
 				// Failed to write to the buffer - bytes_written < 0
 				if(!LOG_EXC_REP)
@@ -463,7 +505,6 @@ GDKtracer_log(LOG_LEVEL level, const char *fmt, ...)
 			}
 		}
 	} else {
-		MT_lock_unset(&lock);
 
 		// Failed to write to the buffer - bytes_written < 0
 		if(!LOG_EXC_REP)
@@ -480,8 +521,9 @@ GDKtracer_log(LOG_LEVEL level, const char *fmt, ...)
 	// and the error is never reported to the user because it
 	// is still in the buffer which it never gets flushed.
 	if (level == CUR_FLUSH_LEVEL || level == M_CRITICAL || level == M_ERROR) {
-		GDKtracer_flush_buffer();
+		_GDKtracer_flush_buffer_locked();
 	}
+	MT_lock_unset(&lock);
 	return GDK_SUCCEED;
 }
 
@@ -489,59 +531,13 @@ GDKtracer_log(LOG_LEVEL level, const char *fmt, ...)
 gdk_return
 GDKtracer_flush_buffer(void)
 {
+	gdk_return rc;
+
 	// No reason to flush a buffer with no content
 	MT_lock_set(&lock);
-	if (active_tracer->allocated_size == 0) {
-		MT_lock_unset(&lock);
-		return GDK_SUCCEED;
-	}
+	rc = _GDKtracer_flush_buffer_locked();
 	MT_lock_unset(&lock);
-
-	if (ATOMIC_GET(&CUR_ADAPTER) == BASIC) {
-		// Initialize the BASIC adapter. It is used in order to avoid cases with files being
-		// created and no logs being produced. Even if the creating the file fails the function
-		// is going to be called only once.
-		if(!INIT_BASIC_ADAPTER)
-			_GDKtracer_init_basic_adptr();
-
-		MT_lock_set(&lock); 
-		{
-			if (output_file) {
-				size_t nitems = 1;
-				size_t w = fwrite(&active_tracer->buffer, active_tracer->allocated_size, nitems, output_file);
-
-				if (w == nitems)
-					fflush(output_file);
-				else
-					// fwrite failed for whatever reason (e.g: disk is full)
-					if(!LOG_EXC_REP)
-					{
-						GDK_TRACER_EXCEPTION(GDKTRACER_FAILED "\n");
-						LOG_EXC_REP = true;
-					}
-			}
-
-			// Reset buffer
-			memset(active_tracer->buffer, 0, BUFFER_SIZE);
-			active_tracer->allocated_size = 0;
-		}
-		MT_lock_unset(&lock);
-	} else {
-		MT_lock_set(&lock);
-		memset(active_tracer->buffer, 0, BUFFER_SIZE);
-		active_tracer->allocated_size = 0;
-		MT_lock_unset(&lock);
-
-		// Here we are supposed to send the logs to the profiler
-	}
-
-	// The file is kept open no matter the adapter
-	// When GDKtracer stops we need also to close the file
-	if (GDK_TRACER_STOP)
-		if (output_file)
-			fclose(output_file);
-
-	return GDK_SUCCEED;
+	return rc;
 }
 
 
