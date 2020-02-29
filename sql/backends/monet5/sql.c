@@ -4649,6 +4649,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_trans *tr;
 	node *nsch, *ntab, *ncol;
 	int w;
+	lng szz;
 	bit bitval;
 	bat *rsch = getArgReference_bat(stk, pci, 0);
 	bat *rtab = getArgReference_bat(stk, pci, 1);
@@ -4695,7 +4696,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	revsort = COLnew(0, TYPE_bit, 0, TRANSIENT);
 	key = COLnew(0, TYPE_bit, 0, TRANSIENT);
 	oidx = COLnew(0, TYPE_lng, 0, TRANSIENT);
-	compressed = COLnew(0, TYPE_bit, 0, TRANSIENT);
+	compressed = COLnew(0, TYPE_lng, 0, TRANSIENT);
 
 	if (sch == NULL || tab == NULL || col == NULL || type == NULL || mode == NULL || loc == NULL || imprints == NULL || 
 	    sort == NULL || cnt == NULL || atom == NULL || size == NULL || heap == NULL || indices == NULL || phash == NULL ||
@@ -4803,8 +4804,11 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								if (BUNappend(heap, &sz, false) != GDK_SUCCEED)
 									goto bailout;
 
-								sz = hashinfo(bn->thash, bn->batCacheid);
-								if (BUNappend(indices, &sz, false) != GDK_SUCCEED)
+								if( bn->thash)
+									szz = hashinfo(bn->thash, bn->batCacheid);
+								else
+									szz = lng_nil;
+								if (BUNappend(indices, &szz, false) != GDK_SUCCEED)
 									goto bailout;
 
 								bitval = 0; /* HASHispersistent(bn); */
@@ -4835,11 +4839,13 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								if (BUNappend(key, &bitval, false) != GDK_SUCCEED)
 									goto bailout;
 
-								sz = bn->torderidx && bn->torderidx != (Heap *) 1 ? bn->torderidx->free : 0;
-								if (BUNappend(oidx, &sz, false) != GDK_SUCCEED)
+								szz = bn->torderidx && bn->torderidx != (Heap *) 1 ? (lng)bn->torderidx->free : lng_nil;
+								if (BUNappend(oidx, &szz, false) != GDK_SUCCEED)
 									goto bailout;
+
 								w = BATcheckmosaic(bn);
-								if( BUNappend(compressed, &w, false) != GDK_SUCCEED)
+								szz = bn->tmosaic && bn->tmosaic != (Heap *) 1 ? (lng) bn->tmosaic->free : lng_nil;
+								if( BUNappend(compressed, &szz, false) != GDK_SUCCEED)
 									goto bailout;
 								BBPunfix(bn->batCacheid);
 							}
@@ -4918,8 +4924,8 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 									if (BUNappend(heap, &sz, false) != GDK_SUCCEED)
 										goto bailout;
 
-									sz = bn->thash && bn->thash != (Hash *) 1 ? bn->thash->heaplink.size + bn->thash->heapbckt.size : 0; /* HASHsize() */
-									if (BUNappend(indices, &sz, false) != GDK_SUCCEED)
+									szz = bn->thash && bn->thash != (Hash *) 1 ? (lng) (bn->thash->heaplink.size + bn->thash->heapbckt.size) : lng_nil; /* HASHsize() */
+									if (BUNappend(indices, &szz, false) != GDK_SUCCEED)
 										goto bailout;
 									bitval = 0; /* HASHispersistent(bn); */
 									if (BUNappend(phash, &bitval, false) != GDK_SUCCEED)
@@ -4945,11 +4951,12 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 										bitval = bit_nil;
 									if (BUNappend(key, &bitval, false) != GDK_SUCCEED)
 										goto bailout;
-									sz = bn->torderidx && bn->torderidx != (Heap *) 1 ? bn->torderidx->free : 0;
-									if (BUNappend(oidx, &sz, false) != GDK_SUCCEED)
+									szz = bn->torderidx && bn->torderidx != (Heap *) 1 ? (lng)bn->torderidx->free : lng_nil;
+									if (BUNappend(oidx, &szz, false) != GDK_SUCCEED)
 										goto bailout;
 									w = BATcheckmosaic(bn);
-									if( BUNappend(compressed, &w, false) != GDK_SUCCEED)
+									szz = bn->tmosaic && bn->tmosaic != (Heap *) 1 ? (lng) bn->tmosaic->free : lng_nil;
+									if( BUNappend(compressed, &szz, false) != GDK_SUCCEED)
 										goto bailout;
 									BBPunfix(bn->batCacheid);
 								}

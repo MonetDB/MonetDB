@@ -623,7 +623,7 @@ IMPSgetbin(int tpe, bte bits, const char *restrict inbins, const void *restrict 
 lng
 IMPSimprintsize(BAT *b)
 {
-	lng sz = 0;
+	lng sz = lng_nil;
 	if (b->timprints && b->timprints != (Imprints *) 1) {
 		sz = b->timprints->impcnt * b->timprints->bits / 8;
 		sz += b->timprints->dictcnt * sizeof(cchdc_t);

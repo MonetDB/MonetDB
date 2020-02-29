@@ -36,7 +36,7 @@ returns table (
 	revsorted boolean,
 	"unique" boolean,
 	orderidx bigint,
-	compressed boolean
+	compressed bigint
 )
 external name sql."storage";
 
@@ -94,7 +94,7 @@ returns table (
 	revsorted boolean,
 	"unique" boolean,
 	orderidx bigint,
-	compressed boolean
+	compressed bigint
 )
 external name sql."storage";
 
@@ -140,7 +140,7 @@ returns table (
 	revsorted boolean,
 	"unique" boolean,
 	orderidx bigint,
-	compressed boolean
+	compressed bigint
 )
 external name sql."storage";
 
@@ -162,7 +162,7 @@ create table sys.storagemodelinput(
 	sorted boolean,			-- if set there is no need for an ordered index
 	"unique" boolean,		-- are values unique or not
 	isacolumn boolean NOT NULL DEFAULT TRUE,
-	compressed boolean
+	compressed bigint
 );
 
 -- The model input can be derived from the current database using intitalisation procedure:
