@@ -105,6 +105,8 @@ select * from mosaic.layout('sys','tmp3rle','f') limit 25;
 alter table tmp3rle alter column t set storage 'runlength';
 select * from mosaic.layout('sys','tmp3rle','t') limit 25;
 
+select compressed from storage where "table"='tmp3rle’;
+
 
 explain select i from tmp3rle;
 explain select b from tmp3rle;

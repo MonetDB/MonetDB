@@ -95,6 +95,7 @@ alter table tmp3rle set read only;
 
 alter table tmp3rle alter column i set storage 'frame';
 
+select compressed from storage where "table"='tmp3rle';
 select * from mosaic.layout('sys','tmp3rle','i');
 
 ROLLBACK;

@@ -103,6 +103,9 @@ select count(*) from xtmp3 where b = true;
 alter table xtmp3 alter column i set storage 'runlength';
 alter table xtmp3 alter column b set storage 'runlength';
 alter table xtmp3 alter column f set storage 'runlength';
+
+select compressed from storage where "table"='xtmp3';
+
 select cast(sum(i) as bigint) from xtmp3;
 select sum(f) from xtmp3;
 
@@ -117,6 +120,9 @@ select count(*) from xtmp3 where b = true;
 alter table xtmp3 alter column i set storage NULL;
 alter table xtmp3 alter column b set storage NULL;
 alter table xtmp3 alter column f set storage NULL;
+
+select compressed from storage where "table"='xtmp3';
+
 select cast(sum(i) as bigint) from xtmp3;
 select sum(f) from xtmp3;
 

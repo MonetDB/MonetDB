@@ -104,6 +104,8 @@ alter table dtmp3 alter column i set storage 'delta';
 alter table dtmp3 alter column b set storage 'delta';
 alter table dtmp3 alter column f set storage 'delta';
 
+select compressed from storage where "table"='dtmp3';
+
 select count(*) from dtmp3;
 select cast(sum(i) as bigint) from dtmp3;
 select sum(f) from dtmp3;
@@ -118,7 +120,10 @@ select count(*) from dtmp3 where b = true;
 --select * from storage where "table" = 'dtmp3';
 alter table dtmp3 alter column i set storage NULL;
 alter table dtmp3 alter column b set storage NULL;
+
 alter table dtmp3 alter column f set storage NULL;
+select compressed from storage where "table"='dtmp3';
+
 select cast(sum(i) as bigint) from dtmp3;
 select sum(f) from dtmp3;
 

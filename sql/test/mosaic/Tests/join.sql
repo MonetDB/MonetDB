@@ -29,6 +29,7 @@ insert into tmp3 values
 alter table tmp3 set read only;
 
 alter table tmp3 alter column i set storage 'delta';
+select compressed from storage where "table"='tmp3';
 
 create table tmp4( i int, b boolean, f real,t timestamp);
 insert into tmp4 values

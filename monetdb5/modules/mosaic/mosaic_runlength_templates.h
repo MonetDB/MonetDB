@@ -19,10 +19,10 @@ MOSestimate_SIGNATURE(METHOD, TPE)
 	BUN limit = task->stop - task->start > MOSAICMAXCNT? MOSAICMAXCNT: task->stop - task->start;
 	for(v++,i = 1; i < limit; i++,v++) if ( !ARE_EQUAL(*v, val, nil, TPE) ) break;
 	assert(i > 0);/*Should always compress.*/
-	current->is_applicable = true;
 	current->uncompressed_size += (BUN) (i * sizeof(TPE));
 	current->compressed_size += 2 * sizeof(MOSBlockHeaderTpe(METHOD, TPE));
 	current->compression_strategy.cnt = i;
+	current->is_applicable = current->compressed_size < current->uncompressed_size;
 
 	if (i > *current->max_compression_length ) *current->max_compression_length = i;
 
