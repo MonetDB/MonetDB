@@ -143,7 +143,6 @@ MOScheck_##HEAP(BAT *b)\
 \
 	assert(b->batCacheid > 0);\
 	t = GDKusec();\
-	t = GDKusec() - t;\
 	if (b->t##HEAP == (Heap *) 1) {\
 		Heap *hp;\
 		const char *nme = BBP_physical(b->batCacheid);\
@@ -180,6 +179,7 @@ MOScheck_##HEAP(BAT *b)\
 		GDKfree(hp);\
 		GDKclrerr();	/* we're not currently interested in errors */\
 	}\
+	t = GDKusec() - t;\
 	ret = b->t##HEAP != NULL;\
 	ALGODEBUG if (ret) fprintf(stderr, "#BATcheckmosaic" #HEAP ": already has " #HEAP " %d, waited " LLFMT " usec\n", b->batCacheid, t);\
 	return ret;\
