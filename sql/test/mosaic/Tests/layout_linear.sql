@@ -103,4 +103,5 @@ select compressed from storage where "table"='tmp3rle';
 
 select * from mosaic.layout('sys','tmp3rle','i');
 
+drop table tmp3rle;
 ROLLBACK;
