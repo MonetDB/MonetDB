@@ -60,7 +60,7 @@ mal_export int have_hge;
    for a documentation of all debug options.
 */
 #define GRPthreads (THRDMASK | PARMASK)
-#define GRPmemory (MEMMASK | ALLOCMASK )
+#define GRPmemory (ALLOCMASK )
 #define GRPproperties (CHECKMASK | PROPMASK | BATMASK )
 #define GRPio (IOMASK | PERFMASK )
 #define GRPheaps (HEAPMASK)

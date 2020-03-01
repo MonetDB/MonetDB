@@ -324,9 +324,9 @@ BATimpsync(void *arg)
 				}
 			}
 			TRC_DEBUG(ACCELERATOR, "BATimpsync(" ALGOBATFMT "): "
-						"imprints persisted "
-						"(" LLFMT " usec)%s\n", ALGOBATPAR(b),
-						GDKusec() - t0, failed);
+				  "imprints persisted "
+				  "(" LLFMT " usec)%s\n", ALGOBATPAR(b),
+				  GDKusec() - t0, failed);
 		}
 	}
 	MT_lock_unset(&b->batIdxLock);
@@ -384,13 +384,13 @@ BATimprints(BAT *b)
 
 		if (s2)
 			TRC_DEBUG(ACCELERATOR, "BATimprints(b=" ALGOBATFMT
-					"): creating imprints on parent "
-					ALGOBATFMT "\n",
-					ALGOBATPAR(s2), ALGOBATPAR(b));
+				  "): creating imprints on parent "
+				  ALGOBATFMT "\n",
+				  ALGOBATPAR(s2), ALGOBATPAR(b));
 		else
 			TRC_DEBUG(ACCELERATOR, "BATimprints(b=" ALGOBATFMT
-					"): creating imprints\n",
-					ALGOBATPAR(b));
+				  "): creating imprints\n",
+				  ALGOBATPAR(b));
 
 		s2 = NULL;
 
@@ -642,9 +642,9 @@ IMPSremove(BAT *b)
 	if ((imprints = b->timprints) != NULL) {
 		b->timprints = NULL;
 
-		TRC_DEBUG_IF(GDK_IMPRINTS) {
+		TRC_DEBUG_IF(ACCELERATOR) {
 			if (* (size_t *) imprints->imprints.base & (1 << 16))
-				TRC_DEBUG_ENDIF(GDK_IMPRINTS, "Removing persisted imprints\n");
+				TRC_DEBUG_ENDIF(ACCELERATOR, "Removing persisted imprints\n");
 		}
 		if (HEAPdelete(&imprints->imprints, BBP_physical(b->batCacheid),
 			       "timprints") != GDK_SUCCEED)
@@ -726,7 +726,7 @@ IMPSprint(BAT *b)
 	int i;
 
 	if (!BATcheckimprints(b)) {
-		TRC_DEBUG(GDK_IMPRINTS, "No imprint\n");
+		TRC_DEBUG(ACCELERATOR, "No imprint\n");
 		return;
 	}
 	imprints = b->timprints;
@@ -735,33 +735,33 @@ IMPSprint(BAT *b)
 	max_bins = min_bins + 64;
 	cnt_bins = max_bins + 64;
 
-	TRC_DEBUG(GDK_IMPRINTS,
-		"bits = %d, impcnt = " BUNFMT ", dictcnt = " BUNFMT "\n",
-		imprints->bits, imprints->impcnt, imprints->dictcnt);
-	TRC_DEBUG(GDK_IMPRINTS, "MIN\n");
+	TRC_DEBUG(ACCELERATOR,
+		  "bits = %d, impcnt = " BUNFMT ", dictcnt = " BUNFMT "\n",
+		  imprints->bits, imprints->impcnt, imprints->dictcnt);
+	TRC_DEBUG(ACCELERATOR, "MIN\n");
 	for (i = 0; i < imprints->bits; i++) {
-		TRC_DEBUG(GDK_IMPRINTS, "[ " BUNFMT " ]\n", min_bins[i]);
+		TRC_DEBUG(ACCELERATOR, "[ " BUNFMT " ]\n", min_bins[i]);
 	}
 	
-	TRC_DEBUG(GDK_IMPRINTS, "MAX\n");
+	TRC_DEBUG(ACCELERATOR, "MAX\n");
 	for (i = 0; i < imprints->bits; i++) {
-		TRC_DEBUG(GDK_IMPRINTS, "[ " BUNFMT " ]\n", max_bins[i]);
+		TRC_DEBUG(ACCELERATOR, "[ " BUNFMT " ]\n", max_bins[i]);
 	}
-	TRC_DEBUG(GDK_IMPRINTS, "COUNT\n");
+	TRC_DEBUG(ACCELERATOR, "COUNT\n");
 	for (i = 0; i < imprints->bits; i++) {
-		TRC_DEBUG(GDK_IMPRINTS, "[ " BUNFMT " ]\n", cnt_bins[i]);
+		TRC_DEBUG(ACCELERATOR, "[ " BUNFMT " ]\n", cnt_bins[i]);
 	}
 	for (dcnt = 0, icnt = 0, pages = 1; dcnt < imprints->dictcnt; dcnt++) {
 		if (d[dcnt].repeat) {
 			BINSIZE(imprints->bits, IMPSPRNTMASK, " ");
 			pages += d[dcnt].cnt;
-			TRC_DEBUG(GDK_IMPRINTS, "[ " BUNFMT " ]r %s\n", pages, s);
+			TRC_DEBUG(ACCELERATOR, "[ " BUNFMT " ]r %s\n", pages, s);
 			icnt++;
 		} else {
 			l = icnt + d[dcnt].cnt;
 			for (; icnt < l; icnt++) {
 				BINSIZE(imprints->bits, IMPSPRNTMASK, " ");
-				TRC_DEBUG(GDK_IMPRINTS, "[ " BUNFMT " ]  %s\n", pages++, s);
+				TRC_DEBUG(ACCELERATOR, "[ " BUNFMT " ]  %s\n", pages++, s);
 			}
 		}
 	}

@@ -2820,19 +2820,19 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 			"CREATE SCHEMA logging;\n"
 			"CREATE PROCEDURE logging.flush()\n"
 			" EXTERNAL NAME logging.flush;\n"
-			"CREATE PROCEDURE logging.setcomplevel(comp_id INT, lvl_id INT)\n"
+			"CREATE PROCEDURE logging.setcomplevel(comp_id STRING, lvl_id STRING)\n"
 			" EXTERNAL NAME logging.setcomplevel;\n"
-			"CREATE PROCEDURE logging.resetcomplevel(comp_id INT)\n"
+			"CREATE PROCEDURE logging.resetcomplevel(comp_id STRING)\n"
 			" EXTERNAL NAME logging.resetcomplevel;\n"
-			"CREATE PROCEDURE logging.setlayerlevel(layer_id INT, lvl_id INT)\n"
+			"CREATE PROCEDURE logging.setlayerlevel(layer_id STRING, lvl_id STRING)\n"
 			" EXTERNAL NAME logging.setlayerlevel;\n"
-			"CREATE PROCEDURE logging.resetlayerlevel(layer_id INT)\n"
+			"CREATE PROCEDURE logging.resetlayerlevel(layer_id STRING)\n"
 			" EXTERNAL NAME logging.resetlayerlevel;\n"
-			"CREATE PROCEDURE logging.setflushlevel(lvl_id INT)\n"
+			"CREATE PROCEDURE logging.setflushlevel(lvl_id STRING)\n"
 			" EXTERNAL NAME logging.setflushlevel;\n"
 			"CREATE PROCEDURE logging.resetflushlevel()\n"
 			" EXTERNAL NAME logging.resetflushlevel;\n"
-			"CREATE PROCEDURE logging.setadapter(adapter_id INT)\n"
+			"CREATE PROCEDURE logging.setadapter(adapter_id STRING)\n"
 			" EXTERNAL NAME logging.setadapter;\n"
 			"CREATE PROCEDURE logging.resetadapter()\n"
 			" EXTERNAL NAME logging.resetadapter;\n"
@@ -2964,7 +2964,7 @@ SQLupgrades(Client c, mvc *m)
 	int res = 0;
 
 	if (!prev_schema) {
-		TRC_CRITICAL(SQL_UPGRADES, "Allocation failure while running SQL upgrades\n");
+		TRC_CRITICAL(SQL_PARSER, "Allocation failure while running SQL upgrades\n");
 		res = -1;
 	}
 
@@ -2973,7 +2973,7 @@ SQLupgrades(Client c, mvc *m)
 		sql_find_subtype(&tp, "hugeint", 0, 0);
 		if (!sql_bind_func(m->sa, s, "var_pop", &tp, NULL, F_AGGR)) {
 			if ((err = sql_update_hugeint(c, m, prev_schema, &systabfixed)) != NULL) {
-				TRC_ERROR(SQL_UPGRADES, "%s\n", err);
+				TRC_ERROR(SQL_PARSER, "%s\n", err);
 				freeException(err);
 				res = -1;
 			}
@@ -2997,7 +2997,7 @@ SQLupgrades(Client c, mvc *m)
 		/* type sys.point exists: this is an old geom-enabled
 		 * database */
 		if ((err = sql_update_geom(c, m, 1, prev_schema)) != NULL) {
-			TRC_ERROR(SQL_UPGRADES, "%s\n", err);
+			TRC_ERROR(SQL_PARSER, "%s\n", err);
 			freeException(err);
 			res = -1;
 		}
@@ -3008,7 +3008,7 @@ SQLupgrades(Client c, mvc *m)
 				   &tp, NULL, F_FUNC)) {
 			/* ... but the database is not geom-enabled */
 			if ((err = sql_update_geom(c, m, 0, prev_schema)) != NULL) {
-				TRC_ERROR(SQL_UPGRADES, "%s\n", err);
+				TRC_ERROR(SQL_PARSER, "%s\n", err);
 				freeException(err);
 				res = -1;
 			}
@@ -3017,20 +3017,20 @@ SQLupgrades(Client c, mvc *m)
 
 	if (!res && mvc_bind_table(m, s, "function_languages") == NULL) {
 		if ((err = sql_update_jul2017(c, prev_schema)) != NULL) {
-			TRC_ERROR(SQL_UPGRADES, "%s\n", err);
+			TRC_ERROR(SQL_PARSER, "%s\n", err);
 			freeException(err);
 			res = -1;
 		}
 	}
 
 	if (!res && (err = sql_update_jul2017_sp2(c)) != NULL) {
-		TRC_ERROR(SQL_UPGRADES, "%s\n", err);
+		TRC_ERROR(SQL_PARSER, "%s\n", err);
 		freeException(err);
 		res = -1;
 	}
 
 	if (!res && (err = sql_update_jul2017_sp3(c, m, prev_schema, &systabfixed)) != NULL) {
-		TRC_ERROR(SQL_UPGRADES, "%s\n", err);
+		TRC_ERROR(SQL_PARSER, "%s\n", err);
 		freeException(err);
 		res = -1;
 	}
@@ -3039,7 +3039,7 @@ SQLupgrades(Client c, mvc *m)
 	    (col = mvc_bind_column(m, t, "coord_dimension")) != NULL &&
 	    strcmp(col->type.type->sqlname, "int") != 0) {
 		if ((err = sql_update_mar2018_geom(c, t, prev_schema)) != NULL) {
-			TRC_ERROR(SQL_UPGRADES, "%s\n", err);
+			TRC_ERROR(SQL_PARSER, "%s\n", err);
 			freeException(err);
 			res = -1;
 		}
@@ -3048,14 +3048,14 @@ SQLupgrades(Client c, mvc *m)
 	if (!res && mvc_bind_schema(m, "wlc") == NULL &&
 	    !sql_bind_func(m->sa, s, "master", NULL, NULL, F_PROC)) {
 		if ((err = sql_update_mar2018(c, m, prev_schema, &systabfixed)) != NULL) {
-			TRC_ERROR(SQL_UPGRADES, "%s\n", err);
+			TRC_ERROR(SQL_PARSER, "%s\n", err);
 			freeException(err);
 			res = -1;
 		}
 #ifdef HAVE_NETCDF
 		if (mvc_bind_table(m, s, "netcdf_files") != NULL &&
 		    (err = sql_update_mar2018_netcdf(c, prev_schema)) != NULL) {
-			TRC_ERROR(SQL_UPGRADES, "%s\n", err);
+			TRC_ERROR(SQL_PARSER, "%s\n", err);
 			freeException(err);
 			res = -1;
 		}
@@ -3064,7 +3064,7 @@ SQLupgrades(Client c, mvc *m)
 
 	if (!res && sql_bind_func(m->sa, s, "dependencies_functions_os_triggers", NULL, NULL, F_UNION)) {
 		if ((err = sql_update_mar2018_sp1(c, prev_schema)) != NULL) {
-			TRC_ERROR(SQL_UPGRADES, "%s\n", err);
+			TRC_ERROR(SQL_PARSER, "%s\n", err);
 			freeException(err);
 			res = -1;
 		}
@@ -3076,7 +3076,7 @@ SQLupgrades(Client c, mvc *m)
 		res_table *output = NULL;
 		err = SQLstatementIntern(c, &qry, "update", true, false, &output);
 		if (err) {
-			TRC_ERROR(SQL_UPGRADES, "%s\n", err);
+			TRC_ERROR(SQL_PARSER, "%s\n", err);
 			freeException(err);
 			res = -1;
 		} else {
@@ -3085,7 +3085,7 @@ SQLupgrades(Client c, mvc *m)
 				if (BATcount(b) > 0) {
 					/* yes old view definition exists, it needs to be replaced */
 					if ((err = sql_replace_Mar2018_ids_view(c, m, prev_schema)) != NULL) {
-						TRC_ERROR(SQL_UPGRADES, "%s\n", err);
+						TRC_ERROR(SQL_PARSER, "%s\n", err);
 						freeException(err);
 						res = -1;
 					}
@@ -3106,7 +3106,7 @@ SQLupgrades(Client c, mvc *m)
 			/* sys.chi2prob exists, but there is no
 			 * implementation */
 			if ((err = sql_update_gsl(c, prev_schema)) != NULL) {
-				TRC_ERROR(SQL_UPGRADES, "%s\n", err);
+				TRC_ERROR(SQL_PARSER, "%s\n", err);
 				freeException(err);
 				res = -1;
 			}
@@ -3116,7 +3116,7 @@ SQLupgrades(Client c, mvc *m)
 	sql_find_subtype(&tp, "clob", 0, 0);
 	if (!res && sql_bind_func(m->sa, s, "group_concat", &tp, NULL, F_AGGR) == NULL) {
 		if ((err = sql_update_aug2018(c, m, prev_schema)) != NULL) {
-			TRC_ERROR(SQL_UPGRADES, "%s\n", err);
+			TRC_ERROR(SQL_PARSER, "%s\n", err);
 			freeException(err);
 			res = -1;
 		}
@@ -3140,14 +3140,14 @@ SQLupgrades(Client c, mvc *m)
 	 && sql_bind_func(m->sa, s, "dependencies_functions_on_triggers", NULL, NULL, F_UNION)
 	 && sql_bind_func(m->sa, s, "dependencies_keys_on_foreignkeys", NULL, NULL, F_UNION)	) {
 		if ((err = sql_drop_functions_dependencies_Xs_on_Ys(c, prev_schema)) != NULL) {
-			TRC_ERROR(SQL_UPGRADES, "%s\n", err);
+			TRC_ERROR(SQL_PARSER, "%s\n", err);
 			freeException(err);
 			res = -1;
 		}
 	}
 
 	if (!res && (err = sql_update_aug2018_sp2(c, prev_schema)) != NULL) {
-		TRC_ERROR(SQL_UPGRADES, "%s\n", err);
+		TRC_ERROR(SQL_PARSER, "%s\n", err);
 		freeException(err);
 		res = -1;
 	}
@@ -3156,13 +3156,13 @@ SQLupgrades(Client c, mvc *m)
 	    t->type == tt_table) {
 		if (!systabfixed &&
 		    (err = sql_fix_system_tables(c, m, prev_schema)) != NULL) {
-			TRC_ERROR(SQL_UPGRADES, "%s\n", err);
+			TRC_ERROR(SQL_PARSER, "%s\n", err);
 			freeException(err);
 			res = -1;
 		}
 		systabfixed = true;
 		if ((err = sql_update_apr2019(c, m, prev_schema)) != NULL) {
-			TRC_ERROR(SQL_UPGRADES, "%s\n", err);
+			TRC_ERROR(SQL_PARSER, "%s\n", err);
 			freeException(err);
 			res = -1;
 		}
@@ -3175,21 +3175,21 @@ SQLupgrades(Client c, mvc *m)
 	 && (t = mvc_bind_table(m, s, "tablestorage")) == NULL
 	 && (t = mvc_bind_table(m, s, "schemastorage")) == NULL ) {
 		if ((err = sql_update_storagemodel(c, m, prev_schema)) != NULL) {
-			TRC_ERROR(SQL_UPGRADES, "%s\n", err);
+			TRC_ERROR(SQL_PARSER, "%s\n", err);
 			freeException(err);
 			res = -1;
 		}
 	}
 
 	if (!res && (err = sql_update_apr2019_sp1(c)) != NULL) {
-		TRC_ERROR(SQL_UPGRADES, "%s\n", err);
+		TRC_ERROR(SQL_PARSER, "%s\n", err);
 		freeException(err);
 		res = -1;
 	}
 
 	if (!res && sql_bind_func(m->sa, s, "times", NULL, NULL, F_PROC)) {
 		if (!res && (err = sql_update_apr2019_sp2(c, m, prev_schema, &systabfixed)) != NULL) {
-			TRC_ERROR(SQL_UPGRADES, "%s\n", err);
+			TRC_ERROR(SQL_PARSER, "%s\n", err);
 			freeException(err);
 			res = -1;
 		}
@@ -3198,19 +3198,19 @@ SQLupgrades(Client c, mvc *m)
 	sql_find_subtype(&tp, "string", 0, 0);
 	if (!res && !sql_bind_func3(m->sa, s, "deltas", &tp, &tp, &tp, F_UNION)) {
 		if ((err = sql_update_nov2019_missing_dependencies(c, m)) != NULL) {
-			TRC_ERROR(SQL_UPGRADES, "%s\n", err);
+			TRC_ERROR(SQL_PARSER, "%s\n", err);
 			freeException(err);
 			res = -1;
 		}
 		if (!systabfixed &&
 		    (err = sql_fix_system_tables(c, m, prev_schema)) != NULL) {
-			TRC_ERROR(SQL_UPGRADES, "%s\n", err);
+			TRC_ERROR(SQL_PARSER, "%s\n", err);
 			freeException(err);
 			res = -1;
 		}
 		systabfixed = true;
 		if ((err = sql_update_nov2019(c, m, prev_schema, &systabfixed)) != NULL) {
-			TRC_ERROR(SQL_UPGRADES, "%s\n", err);
+			TRC_ERROR(SQL_PARSER, "%s\n", err);
 			freeException(err);
 			res = -1;
 		}
@@ -3221,7 +3221,7 @@ SQLupgrades(Client c, mvc *m)
 		sql_find_subtype(&tp, "hugeint", 0, 0);
 		if (!sql_bind_func(m->sa, s, "median_avg", &tp, NULL, F_AGGR)) {
 			if ((err = sql_update_nov2019_sp1_hugeint(c, m, prev_schema, &systabfixed)) != NULL) {
-				TRC_ERROR(SQL_UPGRADES, "%s\n", err);
+				TRC_ERROR(SQL_PARSER, "%s\n", err);
 				freeException(err);
 				res = -1;
 			}
@@ -3231,7 +3231,7 @@ SQLupgrades(Client c, mvc *m)
 
 	if (!res && !sql_bind_func(m->sa, s, "suspend_log_flushing", NULL, NULL, F_PROC)) {
 		if ((err = sql_update_linear_hashing(c, m, prev_schema, &systabfixed)) != NULL) {
-			TRC_ERROR(SQL_UPGRADES, "%s\n", err);
+			TRC_ERROR(SQL_PARSER, "%s\n", err);
 			freeException(err);
 			res = -1;
 		}
@@ -3240,7 +3240,7 @@ SQLupgrades(Client c, mvc *m)
 	sql_find_subtype(&tp, "tinyint", 0, 0);
 	if (!sql_bind_func(m->sa, s, "stddev_samp", &tp, NULL, F_ANALYTIC)) {
 		if ((err = sql_update_default(c, m, prev_schema, &systabfixed)) != NULL) {
-			TRC_ERROR(SQL_UPGRADES, "%s\n", err);
+			TRC_ERROR(SQL_PARSER, "%s\n", err);
 			freeException(err);
 			res = -1;
 		}
@@ -3248,7 +3248,7 @@ SQLupgrades(Client c, mvc *m)
 
 	if (!res &&
 	    (err = sql_update_default_bam(c, m, prev_schema)) != NULL) {
-		TRC_ERROR(SQL_UPGRADES, "%s\n", err);
+		TRC_ERROR(SQL_PARSER, "%s\n", err);
 		freeException(err);
 		res = -1;
 	}

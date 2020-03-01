@@ -171,7 +171,7 @@ MANIFOLDjob(MULTItask *mut)
 		}
 	}
 
-	TRC_DEBUG(MAL_MANIFOLD, "fvar %d lvar %d type %d\n", mut->fvar,mut->lvar, ATOMstorage(mut->args[mut->fvar].b->ttype));
+	/* TRC_DEBUG(MAL_SERVER, "fvar %d lvar %d type %d\n", mut->fvar,mut->lvar, ATOMstorage(mut->args[mut->fvar].b->ttype));*/
 
 	// use limited argument list expansion.
 	switch(mut->pci->argc){
@@ -228,10 +228,11 @@ MANIFOLDtypecheck(Client cntxt, MalBlkPtr mb, InstrPtr pci, int checkprops){
 		setVarUDFtype(nmb,k);
 	}
 
-	TRC_DEBUG(MAL_MANIFOLD, "Manifold operation\n");
-	traceInstruction(MAL_MANIFOLD, mb, 0, pci, LIST_MAL_ALL);
-	traceInstruction(MAL_MANIFOLD, nmb, 0, q, LIST_MAL_ALL);
-
+/*
+	TRC_DEBUG(MAL_SERVER, "Manifold operation\n");
+	traceInstruction(MAL_SERVER, mb, 0, pci, LIST_MAL_ALL);
+	traceInstruction(MAL_SERVER, nmb, 0, q, LIST_MAL_ALL);
+*/
 	// Localize the underlying scalar operator
 	typeChecker(cntxt->usermodule, nmb, q, getPC(nmb, q), TRUE);
 	if (nmb->errors || q->fcn == NULL || q->token != CMDcall ||
@@ -244,8 +245,10 @@ MANIFOLDtypecheck(Client cntxt, MalBlkPtr mb, InstrPtr pci, int checkprops){
 			setVarType( mb, getArg(pci,0), newBatType(getArgType(nmb,q,0)) );
 	}
 
-	TRC_DEBUG(MAL_MANIFOLD, "Success? %s\n", (fcn == NULL? "no":"yes"));
-	traceInstruction(MAL_MANIFOLD, nmb, 0, q, LIST_MAL_ALL);
+/*
+	TRC_DEBUG(MAL_SERVER, "Success? %s\n", (fcn == NULL? "no":"yes"));
+	traceInstruction(MAL_SERVER, nmb, 0, q, LIST_MAL_ALL);
+*/
 
 	freeMalBlk(nmb);
 	return fcn;

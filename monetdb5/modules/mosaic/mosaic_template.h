@@ -141,7 +141,7 @@ static str CONCAT2(MOSestimate_, TPE)(MOStask* task, BAT* estimates, size_t* com
 
 #define compress(METHOD, TPE, DUMMY_ARGUMENT)\
 {\
-	ALGODEBUG mnstr_printf(GDKstdout, "#MOScompress_" #METHOD "\n");\
+	TRC_DEBUG(ALGO, "#MOScompress_" #METHOD "\n");\
 	MOScompress_##METHOD##_##TPE(task, estimate);\
 	MOSupdateHeader(task);\
 	MOSadvance_##METHOD##_##TPE(task);\
@@ -191,7 +191,7 @@ CONCAT2(MOScompressInternal_, TPE)(MOStask* task, BAT* estimates) {
 
 #define decompress(METHOD, TPE, DUMMY_ARGUMENT)\
 {\
-	ALGODEBUG mnstr_printf(GDKstdout, "#MOSdecompress_" #METHOD "\n");\
+	TRC_DEBUG(ALGO, "#MOSdecompress_" #METHOD "\n");\
 	MOSdecompress_##METHOD##_##TPE(task);\
 	MOSadvance_##METHOD##_##TPE(task);\
 }
@@ -248,35 +248,35 @@ static str CONCAT2(MOSselect_, TPE) (MOStask* task, const void* low, const void*
 	while(task->start < task->stop ){
 		switch(MOSgetTag(task->blk)){
 		case MOSAIC_RLE:
-			ALGODEBUG mnstr_printf(GDKstdout, "#MOSselect_runlength\n");
+			TRC_DEBUG(ALGO, "#MOSselect_runlength\n");
 			DO_OPERATION_IF_ALLOWED(select, runlength, TPE);
 			break;
 		case MOSAIC_DICT256:
-			ALGODEBUG mnstr_printf(GDKstdout, "#MOSselect_dict256\n");
+			TRC_DEBUG(ALGO, "#MOSselect_dict256\n");
 			DO_OPERATION_IF_ALLOWED(select, dict256, TPE);
 			break;
 		case MOSAIC_DICT:
-			ALGODEBUG mnstr_printf(GDKstdout, "#MOSselect_var\n");
+			TRC_DEBUG(ALGO, "#MOSselect_var\n");
 			DO_OPERATION_IF_ALLOWED(select, dict, TPE);
 			break;
 		case MOSAIC_FRAME:
-			ALGODEBUG mnstr_printf(GDKstdout, "#MOSselect_frame\n");
+			TRC_DEBUG(ALGO, "#MOSselect_frame\n");
 			DO_OPERATION_IF_ALLOWED(select, frame, TPE);
 			break;
 		case MOSAIC_DELTA:
-			ALGODEBUG mnstr_printf(GDKstdout, "#MOSselect_delta\n");
+			TRC_DEBUG(ALGO, "#MOSselect_delta\n");
 			DO_OPERATION_IF_ALLOWED(select, delta, TPE);
 			break;
 		case MOSAIC_PREFIX:
-			ALGODEBUG mnstr_printf(GDKstdout, "#MOSselect_prefix\n");
+			TRC_DEBUG(ALGO, "#MOSselect_prefix\n");
 			DO_OPERATION_IF_ALLOWED(select, prefix, TPE);
 			break;
 		case MOSAIC_LINEAR:
-			ALGODEBUG mnstr_printf(GDKstdout, "#MOSselect_linear\n");
+			TRC_DEBUG(ALGO, "#MOSselect_linear\n");
 			DO_OPERATION_IF_ALLOWED(select, linear, TPE);
 			break;
 		case MOSAIC_RAW:
-			ALGODEBUG mnstr_printf(GDKstdout, "#MOSselect_raw\n");
+			TRC_DEBUG(ALGO, "#MOSselect_raw\n");
 			DO_OPERATION_IF_ALLOWED(select, raw, TPE);
 			break;
 		}
@@ -305,35 +305,35 @@ static str CONCAT2(MOSprojection_, TPE)(MOStask* task)
 	while(task->start < task->stop ){
 		switch(MOSgetTag(task->blk)){
 		case MOSAIC_RLE:
-			ALGODEBUG mnstr_printf(GDKstdout, "#MOSprojection_runlength\n");
+			TRC_DEBUG(ALGO, "#MOSprojection_runlength\n");
 			DO_OPERATION_IF_ALLOWED(projection, runlength, TPE);
 			break;
 		case MOSAIC_DICT256:
-			ALGODEBUG mnstr_printf(GDKstdout, "#MOSprojection_dict256\n");
+			TRC_DEBUG(ALGO, "#MOSprojection_dict256\n");
 			DO_OPERATION_IF_ALLOWED(projection, dict256, TPE);
 			break;
 		case MOSAIC_DICT:
-			ALGODEBUG mnstr_printf(GDKstdout, "#MOSprojection_var\n");
+			TRC_DEBUG(ALGO, "#MOSprojection_var\n");
 			DO_OPERATION_IF_ALLOWED(projection, dict, TPE);
 			break;
 		case MOSAIC_FRAME:
-			ALGODEBUG mnstr_printf(GDKstdout, "#MOSprojection_frame\n");
+			TRC_DEBUG(ALGO, "#MOSprojection_frame\n");
 			DO_OPERATION_IF_ALLOWED(projection, frame, TPE);
 			break;
 		case MOSAIC_DELTA:
-			ALGODEBUG mnstr_printf(GDKstdout, "#MOSprojection_delta\n");
+			TRC_DEBUG(ALGO, "#MOSprojection_delta\n");
 			DO_OPERATION_IF_ALLOWED(projection, delta, TPE);
 			break;
 		case MOSAIC_PREFIX:
-			ALGODEBUG mnstr_printf(GDKstdout, "#MOSprojection_prefix\n");
+			TRC_DEBUG(ALGO, "#MOSprojection_prefix\n");
 			DO_OPERATION_IF_ALLOWED(projection, prefix, TPE);
 			break;
 		case MOSAIC_LINEAR:
-			ALGODEBUG mnstr_printf(GDKstdout, "#MOSprojection_linear\n");
+			TRC_DEBUG(ALGO, "#MOSprojection_linear\n");
 			DO_OPERATION_IF_ALLOWED(projection, linear, TPE);
 			break;
 		case MOSAIC_RAW:
-			ALGODEBUG mnstr_printf(GDKstdout, "#MOSprojection_raw\n");
+			TRC_DEBUG(ALGO, "#MOSprojection_raw\n");
 			DO_OPERATION_IF_ALLOWED(projection, raw, TPE);
 			break;
 		}
@@ -354,7 +354,7 @@ static str CONCAT2(MOSprojection_, TPE)(MOStask* task)
 #define layout(METHOD, TPE, DUMMY_ARGUMENT)\
 {\
 	str msg;\
-	ALGODEBUG mnstr_printf(GDKstdout, "#MOSdecompress_" #METHOD "\n");\
+	TRC_DEBUG(ALGO, "#MOSdecompress_" #METHOD "\n");\
 	if ((msg = MOSlayout_##METHOD##_##TPE(task, layout, bsn)) != MAL_SUCCEED)\
 		return msg;\
 	MOSadvance_##METHOD##_##TPE(task);\

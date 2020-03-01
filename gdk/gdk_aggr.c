@@ -944,13 +944,14 @@ BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_o
 		bn = NULL;
 	}
 
-	TRC_DEBUG(ALGO, "%s(b="ALGOBATFMT",g="ALGOOPTBATFMT",e="ALGOOPTBATFMT",s="ALGOOPTBATFMT")="ALGOOPTBATFMT": %s; "
-			  	"start " OIDFMT ", count " BUNFMT " (" LLFMT " usec)\n",
-				__func__,
-				ALGOBATPAR(b), ALGOOPTBATPAR(g), ALGOOPTBATPAR(e),
-				ALGOOPTBATPAR(s), ALGOOPTBATPAR(bn),
-				algo ? algo : "",
-				ci.seq, ncand, GDKusec() - t0);
+	TRC_DEBUG(ALGO, "%s(b=" ALGOBATFMT ",g=" ALGOOPTBATFMT ","
+		  "e=" ALGOOPTBATFMT ",s=" ALGOOPTBATFMT ")=" ALGOOPTBATFMT ":"
+		  " %s; start " OIDFMT ", count " BUNFMT " (" LLFMT " usec)\n",
+		  __func__,
+		  ALGOBATPAR(b), ALGOOPTBATPAR(g), ALGOOPTBATPAR(e),
+		  ALGOOPTBATPAR(s), ALGOOPTBATPAR(bn),
+		  algo ? algo : "",
+		  ci.seq, ncand, GDKusec() - t0);
 	return bn;
 }
 
@@ -1067,11 +1068,11 @@ BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, b
 		     res, true, b->ttype, tp, &min, min, max,
 		     skip_nils, abort_on_error, nil_if_empty, "BATsum", &algo);
 	TRC_DEBUG(ALGO, "%s(b="ALGOBATFMT",s="ALGOOPTBATFMT"): %s; "
-				"start " OIDFMT ", count " BUNFMT " (" LLFMT " usec)\n",
-				__func__,
-				ALGOBATPAR(b), ALGOOPTBATPAR(s),
-				algo ? algo : "",
-				ci.seq, ncand, GDKusec() - t0);
+		  "start " OIDFMT ", count " BUNFMT " (" LLFMT " usec)\n",
+		  __func__,
+		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+		  algo ? algo : "",
+		  ci.seq, ncand, GDKusec() - t0);
 	return nils < BUN_NONE ? GDK_SUCCEED : GDK_FAIL;
 }
 

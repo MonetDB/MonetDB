@@ -71,7 +71,7 @@ MOS_sync(BAT *bn) {
     int fd = -1, err = 0;
 
 	if (!((BBP_status(bn->batCacheid) & BBPEXISTING) && bn->batInserted == bn->batCount)) {
-		ALGODEBUG fprintf(stderr, "#BAT NOT persisting index %d\n", bn->batCacheid);
+		TRC_DEBUG(ALGO, "#BAT NOT persisting index %d\n", bn->batCacheid);
 		return err;
 	}
 
@@ -137,7 +137,7 @@ MOScheck_heap(BAT *b, const char *ext){
 				st.st_size >= (off_t) (hp->size = hp->free = (oid) BATcount(b) * SIZEOF_OID) &&
 				HEAPload(hp, nme, ext, false) == GDK_SUCCEED) {
 					close(fd);
-					ALGODEBUG fprintf(stderr, "#BATcheckmosaic %s: reusing persisted heap %d\n", ext, b->batCacheid);
+					TRC_DEBUG(ALGO, "#BATcheckmosaic %s: reusing persisted heap %d\n", ext, b->batCacheid);
 					return hp;
 				}
 			close(fd);
@@ -198,8 +198,6 @@ BATcheckmosaic(BAT *bn) {
 gdk_return
 BATmosaic(BAT *b, BUN cap) {
 	Heap *m = NULL;
-	if( cap < 128)
-		cap = 128;
 
 	if (b->tmosaic == NULL && (m = BATmosaic_heap(b, cap, "mosaic")) ) {
 		m->parentid = b->batCacheid;

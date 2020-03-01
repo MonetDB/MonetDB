@@ -127,35 +127,35 @@ static str MOSjoin_COUI_##TPE(MOStask* task, BAT* r, struct canditer* rci, bool 
 \
 		switch(MOSgetTag(task->blk)){\
 		case MOSAIC_RLE:\
-			ALGODEBUG mnstr_printf(GDKstdout, "#MOSjoin_COUI_runlength\n");\
+			TRC_DEBUG(ALGO, "#MOSjoin_COUI_runlength\n");\
 			DO_OPERATION_IF_ALLOWED(join_COUI, runlength, TPE);\
 			break;\
 		case MOSAIC_DICT256:\
-			ALGODEBUG mnstr_printf(GDKstdout, "#MOSjoin_COUI_dict256\n");\
+			TRC_DEBUG(ALGO, "#MOSjoin_COUI_dict256\n");\
 			DO_OPERATION_IF_ALLOWED(join_COUI, dict256, TPE);\
 			break;\
 		case MOSAIC_DICT:\
-			ALGODEBUG mnstr_printf(GDKstdout, "#MOSjoin_COUI_dict\n");\
+			TRC_DEBUG(ALGO, "#MOSjoin_COUI_dict\n");\
 			DO_OPERATION_IF_ALLOWED(join_COUI, dict, TPE);\
 			break;\
 		case MOSAIC_FRAME:\
-			ALGODEBUG mnstr_printf(GDKstdout, "#MOSjoin_COUI_frame\n");\
+			TRC_DEBUG(ALGO, "#MOSjoin_COUI_frame\n");\
 			DO_OPERATION_IF_ALLOWED(join_COUI, frame, TPE);\
 			break;\
 		case MOSAIC_DELTA:\
-			ALGODEBUG mnstr_printf(GDKstdout, "#MOSjoin_COUI_delta\n");\
+			TRC_DEBUG(ALGO, "#MOSjoin_COUI_delta\n");\
 			DO_OPERATION_IF_ALLOWED(join_COUI, delta, TPE);\
 			break;\
 		case MOSAIC_PREFIX:\
-			ALGODEBUG mnstr_printf(GDKstdout, "#MOSjoin_COUI_prefix\n");\
+			TRC_DEBUG(ALGO, "#MOSjoin_COUI_prefix\n");\
 			DO_OPERATION_IF_ALLOWED(join_COUI, prefix, TPE);\
 			break;\
 		case MOSAIC_LINEAR:\
-			ALGODEBUG mnstr_printf(GDKstdout, "#MOSjoin_COUI_linear\n");\
+			TRC_DEBUG(ALGO, "#MOSjoin_COUI_linear\n");\
 			DO_OPERATION_IF_ALLOWED(join_COUI, linear, TPE);\
 			break;\
 		case MOSAIC_RAW:\
-			ALGODEBUG mnstr_printf(GDKstdout, "#MOSjoin_COUI_raw\n");\
+			TRC_DEBUG(ALGO, "#MOSjoin_COUI_raw\n");\
 			DO_OPERATION_IF_ALLOWED(join_COUI, raw, TPE);\
 			break;\
 		}\
@@ -211,35 +211,35 @@ static str MOSjoin_COUI_##TPE(MOStask* task, BAT* r, struct canditer* rci, bool 
 			}\
 			switch(MOSgetTag(task->blk)){\
 			case MOSAIC_RLE:\
-				ALGODEBUG mnstr_printf(GDKstdout, "#MOSjoin_runlength\n");\
+				TRC_DEBUG(ALGO, "#MOSjoin_runlength\n");\
 				DO_OPERATION_IF_ALLOWED_VARIADIC(join_inner_loop, runlength, TPE, HAS_NIL, RIGHT_CI_NEXT);\
 				break;\
 			case MOSAIC_DICT256:\
-				ALGODEBUG mnstr_printf(GDKstdout, "#MOSjoin_dict256\n");\
+				TRC_DEBUG(ALGO, "#MOSjoin_dict256\n");\
 				DO_OPERATION_IF_ALLOWED_VARIADIC(join_inner_loop, dict256, TPE, HAS_NIL, RIGHT_CI_NEXT);\
 				break;\
 			case MOSAIC_DICT:\
-				ALGODEBUG mnstr_printf(GDKstdout, "#MOSjoin_dict\n");\
+				TRC_DEBUG(ALGO, "#MOSjoin_dict\n");\
 				DO_OPERATION_IF_ALLOWED_VARIADIC(join_inner_loop, dict, TPE, HAS_NIL, RIGHT_CI_NEXT);\
 				break;\
 			case MOSAIC_FRAME:\
-				ALGODEBUG mnstr_printf(GDKstdout, "#MOSjoin_frame\n");\
+				TRC_DEBUG(ALGO, "#MOSjoin_frame\n");\
 				DO_OPERATION_IF_ALLOWED_VARIADIC(join_inner_loop, frame, TPE, HAS_NIL, RIGHT_CI_NEXT);\
 				break;\
 			case MOSAIC_DELTA:\
-				ALGODEBUG mnstr_printf(GDKstdout, "#MOSjoin_delta\n");\
+				TRC_DEBUG(ALGO, "#MOSjoin_delta\n");\
 				DO_OPERATION_IF_ALLOWED_VARIADIC(join_inner_loop, delta, TPE, HAS_NIL, RIGHT_CI_NEXT);\
 				break;\
 			case MOSAIC_PREFIX:\
-				ALGODEBUG mnstr_printf(GDKstdout, "#MOSjoin_prefix\n");\
+				TRC_DEBUG(ALGO, "#MOSjoin_prefix\n");\
 				DO_OPERATION_IF_ALLOWED_VARIADIC(join_inner_loop, prefix, TPE, HAS_NIL, RIGHT_CI_NEXT);\
 				break;\
 			case MOSAIC_LINEAR:\
-				ALGODEBUG mnstr_printf(GDKstdout, "#MOSjoin_linear\n");\
+				TRC_DEBUG(ALGO, "#MOSjoin_linear\n");\
 				DO_OPERATION_IF_ALLOWED_VARIADIC(join_inner_loop, linear, TPE, HAS_NIL, RIGHT_CI_NEXT);\
 				break;\
 			case MOSAIC_RAW:\
-				ALGODEBUG mnstr_printf(GDKstdout, "#MOSjoin_raw\n");\
+				TRC_DEBUG(ALGO, "#MOSjoin_raw\n");\
 				DO_OPERATION_IF_ALLOWED_VARIADIC(join_inner_loop, raw, TPE, HAS_NIL, RIGHT_CI_NEXT);\
 				break;\
 			}\

@@ -11,6 +11,9 @@
  */
 #ifndef _MOSLIST_H
 #define _MOSLIST_H
+
+#include "gdk.h"
+#include "gdk_tracer.h"
 #include "mal_interpreter.h"
 #include "mal_exception.h"
 #include "mal_function.h"

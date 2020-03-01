@@ -163,7 +163,7 @@ WLRgetMaster(void)
 {
 	char path[FILENAME_MAX];
 	int len;
-	str dir, msg;
+	str dir, msg = MAL_SUCCEED;
 	FILE *fd;
 
 	if( wlr_master[0] == 0 )
@@ -173,15 +173,19 @@ WLRgetMaster(void)
 	len = snprintf(path, FILENAME_MAX, "..%c%s", DIR_SEP, wlr_master);
 	if (len == -1 || len >= FILENAME_MAX)
 		throw(MAL, "wlr.getMaster", "wlc.config filename path is too large");
-	if((dir = GDKfilepath(0, path, "wlc.config", 0)) == NULL)
+	if ((dir = GDKfilepath(0, path, "wlc.config", 0)) == NULL)
 		throw(MAL,"wlr.getMaster","Could not access wlc.config file %s/wlc.config\n", path);
 
 	fd = fopen(dir,"r");
 	GDKfree(dir);
-	if( fd == NULL )
+	if (fd == NULL)
 		throw(MAL,"wlr.getMaster","Could not get read access to '%s'config file\n", wlr_master);
-	if((msg = WLCreadConfig(fd)))
+	msg = WLCreadConfig(fd);
+	if( msg != MAL_SUCCEED)
 		return msg;
+	if( ! wlr_master[0] )
+		throw(MAL,"wlr.getMaster","Master not identified\n");
+	wlc_state = WLC_CLONE; // not used as master
 	if( !wlr_master[0] )
 		throw(MAL,"wlr.getMaster","Master not identified\n");
 	wlc_state = WLC_CLONE; // not used as master
@@ -357,7 +361,7 @@ WLRprocessBatch(Client cntxt)
 					sql->session->ac_on_commit = 1;
 					sql->session->level = 0;
 					if(mvc_trans(sql) < 0) {
-						TRC_ERROR(SQL_WLR, "Allocation failure while starting the transaction\n");
+						TRC_ERROR(SQL_TRANS, "Allocation failure while starting the transaction\n");
 					} else {
 						msg= runMAL(c,mb,0,0);
 						if( msg == MAL_SUCCEED){
@@ -1044,7 +1048,7 @@ WLRupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		break;
 	default:
-		TRC_ERROR(SQL_WLR, "Missing type in WLRupdate\n");
+		TRC_ERROR(SQL_TRANS, "Missing type in WLRupdate\n");
 	}
 
 	BATmsync(tids);

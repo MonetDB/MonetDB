@@ -80,15 +80,15 @@ static bool
 GDKenvironment(const char *dbpath)
 {
 	if (dbpath == NULL) {
-		TRC_ERROR(GDK_UTILS, "Database name missing.\n");
+		TRC_ERROR(GDK, "Database name missing.\n");
 		return false;
 	}
 	if (strlen(dbpath) >= FILENAME_MAX) {
-		TRC_ERROR(GDK_UTILS, "Database name too long.\n");
+		TRC_ERROR(GDK, "Database name too long.\n");
 		return false;
 	}
 	if (!MT_path_absolute(dbpath)) {
-		TRC_ERROR(GDK_UTILS, "Directory not an absolute path: %s.\n", dbpath);
+		TRC_ERROR(GDK, "Directory not an absolute path: %s.\n", dbpath);
 		return false;
 	}
 	return true;
@@ -606,6 +606,54 @@ void
 GDKsetdebug(int debug)
 {
 	GDKdebug = debug;
+	if (debug & ACCELMASK)
+		GDKtracer_set_component_level("accelerator", "debug");
+	else
+		GDKtracer_reset_component_level("accelerator");
+	if (debug & ALGOMASK)
+		GDKtracer_set_component_level("algo", "debug");
+	else
+		GDKtracer_reset_component_level("algo");
+	if (debug & ALLOCMASK)
+		GDKtracer_set_component_level("alloc", "debug");
+	else
+		GDKtracer_reset_component_level("alloc");
+	if (debug & BATMASK)
+		GDKtracer_set_component_level("bat", "debug");
+	else
+		GDKtracer_reset_component_level("bat");
+	if (debug & CHECKMASK)
+		GDKtracer_set_component_level("check", "debug");
+	else
+		GDKtracer_reset_component_level("check");
+	if (debug & DELTAMASK)
+		GDKtracer_set_component_level("delta", "debug");
+	else
+		GDKtracer_reset_component_level("delta");
+	if (debug & HEAPMASK)
+		GDKtracer_set_component_level("heap", "debug");
+	else
+		GDKtracer_reset_component_level("heap");
+	if (debug & IOMASK)
+		GDKtracer_set_component_level("io", "debug");
+	else
+		GDKtracer_reset_component_level("io");
+	if (debug & PARMASK)
+		GDKtracer_set_component_level("par", "debug");
+	else
+		GDKtracer_reset_component_level("par");
+	if (debug & PERFMASK)
+		GDKtracer_set_component_level("perf", "debug");
+	else
+		GDKtracer_reset_component_level("perf");
+	if (debug & TEMMASK)
+		GDKtracer_set_component_level("tem", "debug");
+	else
+		GDKtracer_reset_component_level("tem");
+	if (debug & THRDMASK)
+		GDKtracer_set_component_level("thrd", "debug");
+	else
+		GDKtracer_reset_component_level("thrd");
 }
 
 gdk_return
@@ -889,7 +937,7 @@ GDKprepareExit(void)
 	if (ATOMIC_ADD(&GDKstopped, 1) > 0)
 		return;
 
-	TRC_DEBUG_IF(GDK_UTILS)
+	TRC_DEBUG_IF(THRD)
 		dump_threads();
 	join_detached_threads();
 }
@@ -924,7 +972,7 @@ GDKreset(int status)
 
 					killed = true;
 					e = MT_kill_thread(victim);
-					TRC_INFO(GDK_UTILS, "Killing thread: %d\n", e);
+					TRC_INFO(GDK, "Killing thread: %d\n", e);
 					(void) ATOMIC_DEC(&GDKnrofthreads);
 				}
 				GDKfree(t->name);
@@ -1169,12 +1217,13 @@ doGDKaddbuf(const char *prefix, const char *message, size_t messagelen, const ch
 			dst += sufflen;
 		}
 		*dst = '\0';
+		TRC_INFO(GDK, "%s%.*s%s\n",
+			 prefix[0] == '#' ? prefix + 1 : prefix,
+			 (int) messagelen, message, suffix);
 	} else {
-		TRC_INFO(GDK_UTILS, "%s%.*s%s", prefix, (int) messagelen, message, suffix);
+		TRC_ERROR(GDK, "%s%.*s%s",
+			  prefix, (int) messagelen, message, suffix);
 	}
-	TRC_INFO(GDK_UTILS, "%s%.*s%s\n",
-					prefix[0] == '#' ? prefix + 1 : prefix,
-					(int) messagelen, message, suffix);
 }
 
 /* print an error or warning message, making sure the message ends in
@@ -1262,7 +1311,7 @@ GDKerror(const char *format, ...)
 	}
 	va_start(ap, format);
 	if (vsnprintf(message + len, sizeof(message) - (len + 2), format, ap) < 0){
-		TRC_ERROR(GDK_UTILS, GDKERROR "an error occurred within GDKerror.\n");
+		TRC_ERROR(GDK, "an error occurred within GDKerror.\n");
 		strcpy(message, GDKERROR "an error occurred within GDKerror.\n");
 	}
 	va_end(ap);
@@ -1377,7 +1426,7 @@ GDKfatal(const char *format, ...)
 	size_t len = strlen(GDKFATAL);
 	va_list ap;
 
-	GDKdebug |= IOMASK;
+	GDKtracer_set_component_level("io", "debug");
 #ifndef NATIVE_WIN32
 	BATSIGinit();
 #endif
@@ -1528,11 +1577,11 @@ THRnew(const char *name, MT_Id pid)
 			s->sp = THRsp();
 			s->name = nme;
 			TRC_DEBUG(PAR, "%x %zu sp = %zu\n",
-					 	(unsigned) s->tid,
-					 	(size_t) ATOMIC_GET(&s->pid),
-					 	(size_t) s->sp);
+				  (unsigned) s->tid,
+				  (size_t) ATOMIC_GET(&s->pid),
+				  (size_t) s->sp);
 			TRC_DEBUG(PAR, "Number of threads: %d\n",
-					 	(int) ATOMIC_GET(&GDKnrofthreads) + 1);
+				  (int) ATOMIC_GET(&GDKnrofthreads) + 1);
 			return s;
 		}
 	}
@@ -1620,8 +1669,8 @@ THRdel(Thread t)
 	assert(GDKthreads <= t && t < GDKthreads + THREADS);
 	MT_thread_setdata(NULL);
 	TRC_DEBUG(PAR, "pid = %zu, disconnected, %d left\n",
-			 	(size_t) ATOMIC_GET(&t->pid),
-			 	(int) ATOMIC_GET(&GDKnrofthreads));
+		  (size_t) ATOMIC_GET(&t->pid),
+		  (int) ATOMIC_GET(&GDKnrofthreads));
 
 	GDKfree(t->name);
 	t->name = NULL;
@@ -1779,7 +1828,7 @@ GDKmemfail(const char *s, size_t len)
 	   }
 	 */
 
-	TRC_ERROR(GDK_UTILS, "%s(%zu) fails, try to free up space [memory in use=%zu,virtual memory in use=%zu]\n", s, len, GDKmem_cursize(), GDKvm_cursize());
+	TRC_ERROR(GDK, "%s(%zu) fails, try to free up space [memory in use=%zu,virtual memory in use=%zu]\n", s, len, GDKmem_cursize(), GDKvm_cursize());
 }
 
 /* Memory allocation

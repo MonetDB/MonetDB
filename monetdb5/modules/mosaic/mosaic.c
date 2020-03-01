@@ -577,7 +577,7 @@ MOScompressInternal(BAT* bsrc, const char* compressions)
 finalize:
 
 	t1 = GDKusec();
-	ALGODEBUG mnstr_printf(GDKstdout, "##BATmosaic: mosaic construction " LLFMT " usec\n", t1 - t0);
+	TRC_DEBUG(ALGO, "##BATmosaic: mosaic construction " LLFMT " usec\n", t1 - t0);
 
 	return msg;
 }
