@@ -33,184 +33,191 @@ MOSsync(int fd) {
 #endif
 }
 
-#ifdef PERSISTENTMOSAIC
-#define PERSIST_MOSAIC(HEAP, BN) MOS_##HEAP##_sync(BN)
-#else
-#define PERSIST_MOSAIC(HEAP, BN)
-#endif
-#define CREATE_(HEAP)\
-\
-static void \
-MOS_##HEAP##_sync(void *arg) {\
-	BAT *bn = arg;\
-	if (!((BBP_status(bn->batCacheid) & BBPEXISTING) && bn->batInserted == bn->batCount)) {\
-		ALGODEBUG fprintf(stderr, "#BAT" #HEAP ": NOT persisting index %d\n", bn->batCacheid);\
-		return;\
-	}\
-\
-	/*TODO: This part is normally - e.g. imprints & hash - done in a different thread, look into this.*/\
-	/*only for large ones  and when there is no concurrency: MT_create_thread(&tid, <some-mosaic-specific-sync-function>, bn, MT_THR_DETACHED);*/\
-	BBPfix(bn->batCacheid);\
-\
-    Heap *hp = bn->t##HEAP;\
-    int fd;\
-    lng t0 = GDKusec();\
-\
-    if (HEAPsave(hp, hp->filename, NULL, true) != GDK_SUCCEED ||\
-        (fd = GDKfdlocate(hp->farmid, hp->filename, "rb+", NULL)) < 0) {\
-        BBPunfix(bn->batCacheid);\
-        GDKfree(hp);\
-		bn->t##HEAP = NULL;\
-        return;\
-    }\
-    ((oid *) hp->base)[0] |= (oid) 1 << 24;\
-    if (write(fd, hp->base, SIZEOF_SIZE_T) < 0)\
-        perror("write " #HEAP);\
-    if (!(GDKdebug & FORCEMITOMASK)) {\
-		MOSsync(fd);\
-    }\
-    close(fd);\
-    BBPunfix(bn->batCacheid);\
-    ALGODEBUG fprintf(stderr, "#%s: persisting " #HEAP " %s (" LLFMT " usec)\n", "BAT" #HEAP, hp->filename, GDKusec() - t0);\
-}\
-\
-static gdk_return \
-BATmosaic_##HEAP(BAT *bn, BUN cap)\
-{\
-    const char *nme;\
-	Heap *m;\
-	char *fname = 0;\
-\
-	if( bn->t##HEAP){\
-		return GDK_SUCCEED;\
-	}\
-\
-    nme = BBP_physical(bn->batCacheid);\
-    if ( (m = (Heap*)GDKzalloc(sizeof(Heap))) == NULL ||\
-		(m->farmid = BBPselectfarm(bn->batRole, bn->ttype, mosaicheap)) < 0 ||\
-        (fname = GDKfilepath(NOFARM, NULL, nme, #HEAP)) == NULL){\
-			if( fname)\
-				GDKfree(fname);\
-			GDKfree(m);\
-			return GDK_FAIL;\
-	}\
-\
-	if (strlen(fname) >= sizeof(m->filename)) {\
-		/* TODO: check if this can actually happen.*/\
-		GDKfree(fname);\
-		GDKfree(m);\
-		return GDK_FAIL;\
-	}\
-\
-	strcpy(m->filename, fname);\
-	GDKfree(fname);\
-\
-    if( HEAPalloc(m, cap, Tsize(bn)) != GDK_SUCCEED){\
-        return GDK_FAIL;\
-	}\
-    m->parentid = bn->batCacheid;\
-\
-	bn->t##HEAP = m;\
-	PERSIST_MOSAIC(HEAP, bn);\
-	bn->batDirtydesc = TRUE;\
-    return GDK_SUCCEED;\
-}\
-\
-static void \
-MOSdestroy_##HEAP(BAT *bn) {\
-	if (bn && bn->t##HEAP) {\
-		/* Only destroy the mosaic-specific heap of the BAT if it is not sharing the mosaic-specific heap of some parent BAT.*/\
-		if(!VIEW##HEAP##tparent(bn)){\
-			Heap* h= bn->t##HEAP;\
-			if( HEAPdelete(h, BBP_physical(bn->batCacheid), #HEAP))\
-				IODEBUG fprintf(stderr,"#MOSdestroy" #HEAP " (%s) failed", BATgetId(bn));\
-			bn->t##HEAP = NULL;\
-			GDKfree(h);\
-		}\
-	}\
-}\
-/* return TRUE if we have a mosaic-specific heap on the tail, even if we need to read one from disk */\
-static int \
-MOScheck_##HEAP(BAT *b)\
-{\
-	int ret;\
-	lng t;\
-\
-    if (VIEWtparent(b)) { /* TODO: does this make sense?*/\
-        assert(b->t##HEAP == NULL);\
-        b = BBPdescriptor(VIEWtparent(b));\
-    }\
-\
-	assert(b->batCacheid > 0);\
-	t = GDKusec();\
-	if (b->t##HEAP == (Heap *) 1) {\
-		Heap *hp;\
-		const char *nme = BBP_physical(b->batCacheid);\
-		const char *ext = #HEAP;\
-		int fd;\
-\
-		b->t##HEAP = NULL;\
-		if ((hp = GDKzalloc(sizeof(*hp))) != NULL &&\
-		    (hp->farmid = BBPselectfarm(b->batRole, b->ttype, mosaicheap)) >= 0 ){\
-\
-			sprintf(hp->filename, "%s.%s", nme, ext);\
-\
-			/* check whether a persisted mosaic-specific heap can be found */\
-			if ((fd = GDKfdlocate(hp->farmid, nme, "rb+", ext)) >= 0) {\
-				struct stat st;\
-				int hdata;\
-\
-				if (BATcount(b) > 0 && read(fd, &hdata, sizeof(hdata)) == sizeof(hdata) &&\
-					hdata == MOSAIC_VERSION &&\
-				    fstat(fd, &st) == 0 &&\
-				    st.st_size >= (off_t) (hp->size = hp->free = (oid) BATcount(b) * SIZEOF_OID) &&\
-				    HEAPload(hp, nme, ext, 0) == GDK_SUCCEED) {\
-					close(fd);\
-					b->t##HEAP = hp;\
-					ALGODEBUG fprintf(stderr, "#BATcheckmosaic" #HEAP ": reusing persisted heap %d\n", b->batCacheid);\
-					return 1;\
-				}\
-				close(fd);\
-				/* unlink unusable file */\
-				GDKunlink(hp->farmid, BATDIR, nme, ext);\
-			}\
-			GDKfree(hp->filename);\
-		}\
-		GDKfree(hp);\
-		GDKclrerr();	/* we're not currently interested in errors */\
-	}\
-	t = GDKusec() - t;\
-	ret = b->t##HEAP != NULL;\
-	ALGODEBUG if (ret) fprintf(stderr, "#BATcheckmosaic" #HEAP ": already has " #HEAP " %d, waited " LLFMT " usec\n", b->batCacheid, t);\
-	return ret;\
+static Heap * 
+BATmosaic_heap(BAT *bn, BUN cap, const char *ext)
+{
+    const char *nme;
+	Heap *m =  NULL;
+	char *fname = 0;
+
+    nme = BBP_physical(bn->batCacheid);
+    if ( (m = (Heap*)GDKzalloc(sizeof(Heap))) == NULL ||
+		(m->farmid = BBPselectfarm(bn->batRole, bn->ttype, mosaicheap)) < 0 ||
+        (fname = GDKfilepath(NOFARM, NULL, nme, ext)) == NULL){
+			if( fname)
+				GDKfree(fname);
+			GDKfree(m);
+			return NULL;
+	}
+
+	if (strlen(fname) >= sizeof(m->filename)) {
+		/* TODO: check if this can actually happen.*/
+		GDKfree(fname);
+		GDKfree(m);
+		return NULL;
+	}
+
+	strcpy(m->filename, fname);
+	GDKfree(fname);
+
+    if( HEAPalloc(m, cap, Tsize(bn)) != GDK_SUCCEED)
+        return NULL;
+    return m;
 }
 
-CREATE_(mosaic)
-CREATE_(vmosaic)
+static int 
+MOS_sync(BAT *bn) {
+    Heap *hp;
+    int fd = -1, err = 0;
+
+	if (!((BBP_status(bn->batCacheid) & BBPEXISTING) && bn->batInserted == bn->batCount)) {
+		ALGODEBUG fprintf(stderr, "#BAT NOT persisting index %d\n", bn->batCacheid);
+		return err;
+	}
+
+	/*TODO: This part is normally - e.g. imprints & hash - done in a different thread, look into this.*/
+	/*only for large ones  and when there is no concurrency: MT_create_thread(&tid, <some-mosaic-specific-sync-function>, bn, MT_THR_DETACHED);*/
+	BBPfix(bn->batCacheid);
+
+    hp = bn->tmosaic;
+    if (HEAPsave(hp, hp->filename, NULL, true) != GDK_SUCCEED ||
+        (fd = GDKfdlocate(hp->farmid, hp->filename, "rb+", NULL)) < 0) {
+        GDKfree(hp);
+		err = 1;
+		bn->tmosaic = NULL;
+    } else {
+		((oid *) hp->base)[0] |= (oid) 1 << 24;
+		if (write(fd, hp->base, SIZEOF_SIZE_T) < 0)
+			GDKerror("write mosaic heap failed");
+		else 
+			MOSsync(fd);
+	}
+	if( fd >= 0){
+		close(fd);
+		fd = -1;
+	}
+
+    hp = bn->tvmosaic;
+    if (HEAPsave(hp, hp->filename, NULL, true) != GDK_SUCCEED ||
+        (fd = GDKfdlocate(hp->farmid, hp->filename, "rb+", NULL)) < 0) {
+        GDKfree(hp);
+		err = 1;
+    } else {
+		((oid *) hp->base)[0] |= (oid) 1 << 24;
+		if (write(fd, hp->base, SIZEOF_SIZE_T) < 0)
+			GDKerror("write vmosaic heap failed");
+		else
+			MOSsync(fd);
+	}
+	if( fd >= 0)
+		close(fd);
+    BBPunfix(bn->batCacheid);
+	return err;
+}
+
+static Heap *
+MOScheck_heap(BAT *b, const char *ext){
+	Heap *hp;
+	const char *nme = BBP_physical(b->batCacheid);
+	int fd;
+
+	if ((hp = GDKzalloc(sizeof(*hp))) != NULL &&
+		(hp->farmid = BBPselectfarm(b->batRole, b->ttype, mosaicheap)) >= 0 ){
+
+		sprintf(hp->filename, "%s.%s", nme, ext);
+
+		/* check whether a persisted mosaic-specific heap can be found */
+		if ((fd = GDKfdlocate(hp->farmid, nme, "rb+", ext)) >= 0) {
+			struct stat st;
+			int hdata;
+
+			if (BATcount(b) > 0 && read(fd, &hdata, sizeof(hdata)) == sizeof(hdata) &&
+				hdata == MOSAIC_VERSION &&
+				fstat(fd, &st) == 0 &&
+				st.st_size >= (off_t) (hp->size = hp->free = (oid) BATcount(b) * SIZEOF_OID) &&
+				HEAPload(hp, nme, ext, false) == GDK_SUCCEED) {
+					close(fd);
+					ALGODEBUG fprintf(stderr, "#BATcheckmosaic %s: reusing persisted heap %d\n", ext, b->batCacheid);
+					return hp;
+				}
+			close(fd);
+			/* unlink unusable file */
+			GDKunlink(hp->farmid, BATDIR, nme, ext);
+		}
+		GDKfree(hp->filename);
+	}
+	GDKfree(hp);
+	GDKclrerr();	/* we're not currently interested in errors */
+	return NULL;
+}
+
+static int
+MOScheck(BAT *b)
+{
+    if (VIEWtparent(b)){
+        b = BBPdescriptor(VIEWtparent(b));
+	}
+
+	if (b->tmosaic == (Heap *) 1) 
+		b->tmosaic = MOScheck_heap(b, "mosaic");
+	
+	/* a vmosaic can only exist if the mosaic exists as well */
+	if (b->tvmosaic == (Heap *) 1) 
+		b->tvmosaic = MOScheck_heap(b, "vmosaic");
+	return b->tmosaic != NULL;
+}
 
 void
 MOSdestroy(BAT *bn) {
-	MOSdestroy_mosaic(bn);
-	MOSdestroy_vmosaic(bn);
+	Heap *h;
+	/* If there is a view then don't drop the mosaic. However, not needed because we don;t slice over the tmosaic BAT (yet) */
+    if (!bn || VIEWtparent(bn)) 
+		return;
+	if (bn->tvmosaic){
+		h= bn->tvmosaic;
+		if( HEAPdelete(h, BBP_physical(bn->batCacheid), "vmosaic"))
+			GDKerror("MOSdestroy vmosaic failed");
+		bn->tvmosaic = NULL;
+		GDKfree(h);
+    }
+	if (bn->tmosaic){
+		h= bn->tmosaic;
+		if( HEAPdelete(h, BBP_physical(bn->batCacheid), "mosaic"))
+			GDKerror("MOSdestroy mosaic failed");
+		bn->tmosaic = NULL;
+		GDKfree(h);
+    }
 }
-
 
 int
 BATcheckmosaic(BAT *bn) {
-	return MOScheck_mosaic(bn) && MOScheck_vmosaic(bn);
+	/* A dictionary vmosaic is dependent on mosaic heap, no need to check */
+	return MOScheck(bn);
 }
 
 gdk_return
 BATmosaic(BAT *b, BUN cap) {
-	if (BATmosaic_mosaic(b, cap) != GDK_SUCCEED) {
+	Heap *m = NULL;
+	if( cap < 128)
+		cap = 128;
+
+	if (b->tmosaic == NULL && (m = BATmosaic_heap(b, cap, "mosaic")) ) {
+		m->parentid = b->batCacheid;
+		b->tmosaic =  m;
+	} else
+		return GDK_FAIL;
+
+	if (b->tvmosaic == NULL && (m = BATmosaic_heap(b, 128 /*start with a small dictionary*/, "vmosaic")) ) {
+		m->parentid = b->batCacheid;
+		b->tvmosaic =  m;
+	} else {
+		MOSdestroy(b);
 		return GDK_FAIL;
 	}
-
-	if (BATmosaic_vmosaic(b, 128 /*start with a small dictionary*/) != GDK_SUCCEED) {
-		MOSdestroy_mosaic(b);
-		return GDK_FAIL;
-	}
-
+#ifdef PERSISTENTMOSAIC
+	MOS_sync(b);
+#endif
+	b->batDirtydesc = TRUE;
 	return GDK_SUCCEED;
 }
 
