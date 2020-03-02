@@ -190,12 +190,21 @@ end user.s10_0;
 #alter table tmp3 alter column i set storage 'raw';
 #alter table tmp3 alter column b set storage 'raw';
 #alter table tmp3 alter column f set storage 'raw';
+#select compressed from storage where "table"='tmp3';
+% .storage # table_name
+% compressed # name
+% bigint # type
+% 3 # length
+[ 290	]
+[ 552	]
+[ 552	]
+[ NULL	]
 #explain select * from tmp3;
 % .explain # table_name
 % mal # name
 % clob # type
 % 168 # length
-function user.s22_0():void;
+function user.s24_0():void;
     X_1:void := querylog.define("explain select * from tmp3;":str, "mosaic_pipe":str, 19:int);
     X_22:bat[:str] := bat.pack("sys.tmp3":str, "sys.tmp3":str, "sys.tmp3":str, "sys.tmp3":str);
     X_23:bat[:str] := bat.pack("i":str, "b":str, "f":str, "t":str);
@@ -213,7 +222,7 @@ function user.s22_0():void;
     X_18:bat[:timestamp] := sql.bind(X_4:int, "sys":str, "tmp3":str, "t":str, 0:int);
     X_20:bat[:timestamp] := mosaic.projection(C_5:bat[:oid], X_18:bat[:timestamp]);
     sql.resultSet(X_22:bat[:str], X_23:bat[:str], X_24:bat[:str], X_25:bat[:int], X_26:bat[:int], X_11:bat[:int], X_14:bat[:bit], X_17:bat[:flt], X_20:bat[:timestamp]);
-end user.s22_0;
+end user.s24_0;
 #inline               actions= 0 time=0 usec 
 #remap                actions= 0 time=1 usec 
 #costmodel            actions= 1 time=1 usec 
@@ -349,12 +358,21 @@ end user.s22_0;
 #alter table tmp3 alter column i set storage NULL;
 #alter table tmp3 alter column b set storage NULL;
 #alter table tmp3 alter column f set storage NULL;
+#select compressed from storage where "table"='tmp3';
+% .storage # table_name
+% compressed # name
+% bigint # type
+% 3 # length
+[ 290	]
+[ 552	]
+[ 552	]
+[ NULL	]
 #explain select * from tmp3;
 % .explain # table_name
 % mal # name
 % clob # type
 % 168 # length
-function user.s36_0():void;
+function user.s40_0():void;
     X_1:void := querylog.define("explain select * from tmp3;":str, "mosaic_pipe":str, 19:int);
     X_22:bat[:str] := bat.pack("sys.tmp3":str, "sys.tmp3":str, "sys.tmp3":str, "sys.tmp3":str);
     X_23:bat[:str] := bat.pack("i":str, "b":str, "f":str, "t":str);
@@ -372,11 +390,12 @@ function user.s36_0():void;
     X_18:bat[:timestamp] := sql.bind(X_4:int, "sys":str, "tmp3":str, "t":str, 0:int);
     X_20:bat[:timestamp] := mosaic.projection(C_5:bat[:oid], X_18:bat[:timestamp]);
     sql.resultSet(X_22:bat[:str], X_23:bat[:str], X_24:bat[:str], X_25:bat[:int], X_26:bat[:int], X_11:bat[:int], X_14:bat[:bit], X_17:bat[:flt], X_20:bat[:timestamp]);
-end user.s36_0;
-#inline               actions= 0 time=1 usec 
-#remap                actions= 0 time=4 usec 
-#costmodel            actions= 1 time=2 usec 
-#coercion             actions= 0 time=2 usec 
+end user.s40_0;
+#inline               actions= 0 time=0 usec 
+#remap                actions= 0 time=1 usec 
+#costmodel            actions= 1 time=1 usec 
+#coercion             actions= 0 time=1 usec 
+#aliases              actions= 0 time=0 usec 
 #evaluate             actions= 0 time=4 usec 
 #aliases              actions= 0 time=9 usec 
 #mergetable           actions= 0 time=46 usec 
@@ -497,6 +516,17 @@ end user.s36_0;
 % real # type
 % 15 # length
 [ 27.104	]
+#alter table tmp3 alter column i set storage 'runlength,dict256';
+#alter table tmp3 alter column b set storage 'mosaic';
+#select compressed from storage where "table"='tmp3';
+% .storage # table_name
+% compressed # name
+% bigint # type
+% 3 # length
+[ 290	]
+[ 552	]
+[ 552	]
+[ NULL	]
 #alter table tmp3 set read write;
 #select * from tmp3;
 % sys.tmp3,	sys.tmp3,	sys.tmp3,	sys.tmp3 # table_name

@@ -56,6 +56,15 @@ stdout of test 'join` in directory 'sql/test/mosaic` itself:
 [ 20	]
 #alter table tmp3 set read only;
 #alter table tmp3 alter column i set storage 'delta';
+#select compressed from storage where "table"='tmp3';
+% .storage # table_name
+% compressed # name
+% bigint # type
+% 3 # length
+[ NULL	]
+[ NULL	]
+[ 224	]
+[ NULL	]
 #create table tmp4( i int, b boolean, f real,t timestamp);
 #insert into tmp4 values
 #(1, true, 0.314,'2014-08-23 11:34:54.000000'),
@@ -75,7 +84,7 @@ stdout of test 'join` in directory 'sql/test/mosaic` itself:
 % mal # name
 % clob # type
 % 135 # length
-function user.s16_0():void;
+function user.s18_0():void;
     X_1:void := querylog.define("explain select tmp3.i, tmp4.i from tmp3, tmp4 where tmp3.i = tmp4.i;":str, "mosaic_pipe":str, 19:int);
     X_25:bat[:str] := bat.pack("sys.tmp3":str, "sys.tmp4":str);
     X_26:bat[:str] := bat.pack("i":str, "i":str);
@@ -93,8 +102,8 @@ function user.s16_0():void;
     X_22:bat[:int] := mosaic.projection(X_16:bat[:oid], X_11:bat[:int]);
     X_23:bat[:int] := mosaic.projection(X_17:bat[:oid], X_15:bat[:int]);
     sql.resultSet(X_25:bat[:str], X_26:bat[:str], X_27:bat[:str], X_28:bat[:int], X_29:bat[:int], X_22:bat[:int], X_23:bat[:int]);
-end user.s16_0;
-#inline               actions= 0 time=1 usec 
+end user.s18_0;
+#inline               actions= 0 time=0 usec 
 #remap                actions= 0 time=1 usec 
 #costmodel            actions= 1 time=1 usec 
 #coercion             actions= 0 time=1 usec 
@@ -192,7 +201,7 @@ end user.s16_0;
 % mal # name
 % clob # type
 % 139 # length
-function user.s20_0():void;
+function user.s22_0():void;
     X_1:void := querylog.define("explain select tmp3.i, tmp4.i from tmp3, tmp4 where tmp3.i = tmp4.i;":str, "mosaiccoui_pipe":str, 19:int);
     X_25:bat[:str] := bat.pack("sys.tmp3":str, "sys.tmp4":str);
     X_26:bat[:str] := bat.pack("i":str, "i":str);
@@ -210,7 +219,7 @@ function user.s20_0():void;
     X_22:bat[:int] := mosaic.projection(X_16:bat[:oid], X_11:bat[:int]);
     X_23:bat[:int] := mosaic.projection(X_17:bat[:oid], X_15:bat[:int]);
     sql.resultSet(X_25:bat[:str], X_26:bat[:str], X_27:bat[:str], X_28:bat[:int], X_29:bat[:int], X_22:bat[:int], X_23:bat[:int]);
-end user.s20_0;
+end user.s22_0;
 #inline               actions= 0 time=0 usec 
 #remap                actions= 0 time=1 usec 
 #costmodel            actions= 1 time=1 usec 

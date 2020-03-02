@@ -117,7 +117,7 @@ returns table (
 	revsorted boolean,
 	"unique" boolean,
 	orderidx bigint,
-	compressed boolean
+	compressed bigint
 )
 external name sql."storage";
 

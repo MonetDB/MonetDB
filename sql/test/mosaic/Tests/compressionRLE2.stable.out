@@ -129,12 +129,21 @@ stdout of test 'compressionRLE2` in directory 'sql/test/mosaic` itself:
 #alter table tmp3rle alter column b set storage NULL;
 #alter table tmp3rle alter column f set storage NULL;
 #alter table tmp3rle alter column t set storage NULL;
+#select compressed from storage where "table"='tmp3rle';
+% .storage # table_name
+% compressed # name
+% bigint # type
+% 3 # length
+[ 324	]
+[ 268	]
+[ NULL	]
+[ 212	]
 #explain select * from tmp3rle;
 % .explain # table_name
 % mal # name
 % clob # type
 % 168 # length
-function user.s16_0():void;
+function user.s18_0():void;
     X_1:void := querylog.define("explain select * from tmp3rle;":str, "mosaic_pipe":str, 19:int);
     X_22:bat[:str] := bat.pack("sys.tmp3rle":str, "sys.tmp3rle":str, "sys.tmp3rle":str, "sys.tmp3rle":str);
     X_23:bat[:str] := bat.pack("i":str, "b":str, "f":str, "t":str);
@@ -152,7 +161,7 @@ function user.s16_0():void;
     X_18:bat[:timestamp] := sql.bind(X_4:int, "sys":str, "tmp3rle":str, "t":str, 0:int);
     X_20:bat[:timestamp] := mosaic.projection(C_5:bat[:oid], X_18:bat[:timestamp]);
     sql.resultSet(X_22:bat[:str], X_23:bat[:str], X_24:bat[:str], X_25:bat[:int], X_26:bat[:int], X_11:bat[:int], X_14:bat[:bit], X_17:bat[:flt], X_20:bat[:timestamp]);
-end user.s16_0;
+end user.s18_0;
 #inline               actions= 0 time=0 usec 
 #remap                actions= 0 time=1 usec 
 #costmodel            actions= 1 time=1 usec 

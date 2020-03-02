@@ -173,12 +173,21 @@ end user.s14_0;
 % 9,	2,	4,	3,	70,	1 # length
 [ "header",	86,	5504,	212,	"{\"blks\":[{\"runlength\":1}],\"elms\":[{\"runlength\":86}],\"ratio\":3.2452831}",	0	]
 [ "runlength",	86,	688,	16,	"{\"value\" : 355009119119733632}",	1	]
+#select compressed from storage where "table"='tmp3rle';
+% .storage # table_name
+% compressed # name
+% bigint # type
+% 3 # length
+[ 324	]
+[ 268	]
+[ 556	]
+[ 212	]
 #explain select i from tmp3rle;
 % .explain # table_name
 % mal # name
 % clob # type
 % 114 # length
-function user.s32_0():void;
+function user.s34_0():void;
     X_1:void := querylog.define("explain select i from tmp3rle;":str, "mosaic_pipe":str, 13:int);
     X_13:bat[:str] := bat.pack("sys.tmp3rle":str);
     X_14:bat[:str] := bat.pack("i":str);
@@ -190,7 +199,7 @@ function user.s32_0():void;
     X_8:bat[:int] := sql.bind(X_4:int, "sys":str, "tmp3rle":str, "i":str, 0:int);
     X_11:bat[:int] := mosaic.projection(C_5:bat[:oid], X_8:bat[:int]);
     sql.resultSet(X_13:bat[:str], X_14:bat[:str], X_15:bat[:str], X_16:bat[:int], X_17:bat[:int], X_11:bat[:int]);
-end user.s32_0;
+end user.s34_0;
 #inline               actions= 0 time=0 usec 
 #remap                actions= 0 time=2 usec 
 #costmodel            actions= 1 time=1 usec 
@@ -218,7 +227,7 @@ end user.s32_0;
 % mal # name
 % clob # type
 % 114 # length
-function user.s34_0():void;
+function user.s36_0():void;
     X_1:void := querylog.define("explain select b from tmp3rle;":str, "mosaic_pipe":str, 13:int);
     X_13:bat[:str] := bat.pack("sys.tmp3rle":str);
     X_14:bat[:str] := bat.pack("b":str);
@@ -230,8 +239,8 @@ function user.s34_0():void;
     X_8:bat[:bit] := sql.bind(X_4:int, "sys":str, "tmp3rle":str, "b":str, 0:int);
     X_11:bat[:bit] := mosaic.projection(C_5:bat[:oid], X_8:bat[:bit]);
     sql.resultSet(X_13:bat[:str], X_14:bat[:str], X_15:bat[:str], X_16:bat[:int], X_17:bat[:int], X_11:bat[:bit]);
-end user.s34_0;
-#inline               actions= 0 time=1 usec 
+end user.s36_0;
+#inline               actions= 0 time=0 usec 
 #remap                actions= 0 time=1 usec 
 #costmodel            actions= 1 time=1 usec 
 #coercion             actions= 0 time=1 usec 
@@ -258,7 +267,7 @@ end user.s34_0;
 % mal # name
 % clob # type
 % 114 # length
-function user.s36_0():void;
+function user.s38_0():void;
     X_1:void := querylog.define("explain select f from tmp3rle;":str, "mosaic_pipe":str, 13:int);
     X_13:bat[:str] := bat.pack("sys.tmp3rle":str);
     X_14:bat[:str] := bat.pack("f":str);
@@ -270,7 +279,7 @@ function user.s36_0():void;
     X_8:bat[:flt] := sql.bind(X_4:int, "sys":str, "tmp3rle":str, "f":str, 0:int);
     X_11:bat[:flt] := mosaic.projection(C_5:bat[:oid], X_8:bat[:flt]);
     sql.resultSet(X_13:bat[:str], X_14:bat[:str], X_15:bat[:str], X_16:bat[:int], X_17:bat[:int], X_11:bat[:flt]);
-end user.s36_0;
+end user.s38_0;
 #inline               actions= 0 time=0 usec 
 #remap                actions= 0 time=1 usec 
 #costmodel            actions= 1 time=1 usec 
@@ -298,7 +307,7 @@ end user.s36_0;
 % mal # name
 % clob # type
 % 120 # length
-function user.s38_0():void;
+function user.s40_0():void;
     X_1:void := querylog.define("explain select t from tmp3rle;":str, "mosaic_pipe":str, 13:int);
     X_13:bat[:str] := bat.pack("sys.tmp3rle":str);
     X_14:bat[:str] := bat.pack("t":str);
@@ -310,10 +319,10 @@ function user.s38_0():void;
     X_8:bat[:timestamp] := sql.bind(X_4:int, "sys":str, "tmp3rle":str, "t":str, 0:int);
     X_11:bat[:timestamp] := mosaic.projection(C_5:bat[:oid], X_8:bat[:timestamp]);
     sql.resultSet(X_13:bat[:str], X_14:bat[:str], X_15:bat[:str], X_16:bat[:int], X_17:bat[:int], X_11:bat[:timestamp]);
-end user.s38_0;
-#inline               actions= 0 time=0 usec 
-#remap                actions= 0 time=2 usec 
-#costmodel            actions= 1 time=1 usec 
+end user.s40_0;
+#inline               actions= 0 time=1 usec 
+#remap                actions= 0 time=0 usec 
+#costmodel            actions= 1 time=0 usec 
 #coercion             actions= 0 time=1 usec 
 #evaluate             actions= 0 time=2 usec 
 #emptybind            actions= 0 time=6 usec 

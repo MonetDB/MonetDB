@@ -39,6 +39,11 @@ stdout of test 'prefix` in directory 'sql/test/mosaic` itself:
 [ 2	]
 [ 2	]
 #alter table tmpPrefix alter column i set storage 'prefix';
+#select compressed from storage where "table"='tmpPrefix';
+% .storage # table_name
+% compressed # name
+% bigint # type
+% 1 # length
 #select * from tmpPrefix;
 % sys.tmpprefix # table_name
 % i # name
@@ -59,6 +64,11 @@ stdout of test 'prefix` in directory 'sql/test/mosaic` itself:
 % 1 # length
 [ 8	]
 #alter table tmpPrefix alter column i set storage NULL;
+#select compressed from storage where "table"='tmpPrefix';
+% .storage # table_name
+% compressed # name
+% bigint # type
+% 1 # length
 #select * from tmpPrefix;
 % sys.tmpprefix # table_name
 % i # name

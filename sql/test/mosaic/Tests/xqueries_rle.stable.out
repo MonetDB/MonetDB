@@ -150,6 +150,15 @@ end user.s16_0;
 #alter table xtmp3 alter column i set storage 'runlength';
 #alter table xtmp3 alter column b set storage 'runlength';
 #alter table xtmp3 alter column f set storage 'runlength';
+#select compressed from storage where "table"='xtmp3';
+% .storage # table_name
+% compressed # name
+% bigint # type
+% 3 # length
+[ 324	]
+[ 268	]
+[ 556	]
+[ NULL	]
 #select cast(sum(i) as bigint) from xtmp3;
 % sys.%1 # table_name
 % %1 # name
@@ -167,7 +176,7 @@ end user.s16_0;
 % mal # name
 % clob # type
 % 113 # length
-function user.s32_0():void;
+function user.s34_0():void;
     X_2:void := querylog.define("explain select count(*) from xtmp3 where i <4;":str, "mosaic_pipe":str, 13:int);
     X_5:int := sql.mvc();
     X_9:bat[:int] := sql.bind(X_5:int, "sys":str, "xtmp3":str, "i":str, 0:int);
@@ -175,7 +184,7 @@ function user.s32_0():void;
     X_15:bat[:oid] := mosaic.thetaselect(X_9:bat[:int], C_6:bat[:oid], 4:int, "<":str);
     X_18:lng := aggr.count(X_15:bat[:oid]);
     sql.resultSet("sys.%1":str, "%1":str, "bigint":str, 64:int, 0:int, 7:int, X_18:lng);
-end user.s32_0;
+end user.s34_0;
 #inline               actions= 0 time=1 usec 
 #remap                actions= 0 time=1 usec 
 #costmodel            actions= 1 time=1 usec 
@@ -208,7 +217,7 @@ end user.s32_0;
 % mal # name
 % clob # type
 % 114 # length
-function user.s34_0():void;
+function user.s36_0():void;
     X_2:void := querylog.define("explain select count(*) from xtmp3 where i = 7;":str, "mosaic_pipe":str, 13:int);
     X_5:int := sql.mvc();
     X_9:bat[:int] := sql.bind(X_5:int, "sys":str, "xtmp3":str, "i":str, 0:int);
@@ -216,7 +225,7 @@ function user.s34_0():void;
     X_15:bat[:oid] := mosaic.thetaselect(X_9:bat[:int], C_6:bat[:oid], 7:int, "==":str);
     X_18:lng := aggr.count(X_15:bat[:oid]);
     sql.resultSet("sys.%1":str, "%1":str, "bigint":str, 64:int, 0:int, 7:int, X_18:lng);
-end user.s34_0;
+end user.s36_0;
 #inline               actions= 0 time=0 usec 
 #remap                actions= 0 time=1 usec 
 #costmodel            actions= 1 time=0 usec 
@@ -261,6 +270,15 @@ end user.s34_0;
 #alter table xtmp3 alter column i set storage NULL;
 #alter table xtmp3 alter column b set storage NULL;
 #alter table xtmp3 alter column f set storage NULL;
+#select compressed from storage where "table"='xtmp3';
+% .storage # table_name
+% compressed # name
+% bigint # type
+% 3 # length
+[ 324	]
+[ 268	]
+[ 556	]
+[ NULL	]
 #select cast(sum(i) as bigint) from xtmp3;
 % sys.%1 # table_name
 % %1 # name
@@ -278,7 +296,7 @@ end user.s34_0;
 % mal # name
 % clob # type
 % 113 # length
-function user.s50_0():void;
+function user.s54_0():void;
     X_2:void := querylog.define("explain select count(*) from xtmp3 where i <4;":str, "mosaic_pipe":str, 13:int);
     X_5:int := sql.mvc();
     X_9:bat[:int] := sql.bind(X_5:int, "sys":str, "xtmp3":str, "i":str, 0:int);
@@ -286,7 +304,7 @@ function user.s50_0():void;
     X_15:bat[:oid] := mosaic.thetaselect(X_9:bat[:int], C_6:bat[:oid], 4:int, "<":str);
     X_18:lng := aggr.count(X_15:bat[:oid]);
     sql.resultSet("sys.%1":str, "%1":str, "bigint":str, 64:int, 0:int, 7:int, X_18:lng);
-end user.s50_0;
+end user.s54_0;
 #inline               actions= 0 time=0 usec 
 #remap                actions= 0 time=3 usec 
 #costmodel            actions= 1 time=1 usec 
@@ -319,7 +337,7 @@ end user.s50_0;
 % mal # name
 % clob # type
 % 114 # length
-function user.s52_0():void;
+function user.s56_0():void;
     X_2:void := querylog.define("explain select count(*) from xtmp3 where i = 7;":str, "mosaic_pipe":str, 13:int);
     X_5:int := sql.mvc();
     X_9:bat[:int] := sql.bind(X_5:int, "sys":str, "xtmp3":str, "i":str, 0:int);
@@ -327,9 +345,9 @@ function user.s52_0():void;
     X_15:bat[:oid] := mosaic.thetaselect(X_9:bat[:int], C_6:bat[:oid], 7:int, "==":str);
     X_18:lng := aggr.count(X_15:bat[:oid]);
     sql.resultSet("sys.%1":str, "%1":str, "bigint":str, 64:int, 0:int, 7:int, X_18:lng);
-end user.s52_0;
-#inline               actions= 0 time=0 usec 
-#remap                actions= 0 time=2 usec 
+end user.s56_0;
+#inline               actions= 0 time=1 usec 
+#remap                actions= 0 time=1 usec 
 #costmodel            actions= 1 time=1 usec 
 #coercion             actions= 0 time=1 usec 
 #evaluate             actions= 0 time=3 usec 

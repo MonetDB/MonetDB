@@ -118,6 +118,12 @@ stdout of test 'layout_linear` in directory 'sql/test/mosaic` itself:
 [ 90	]
 #alter table tmp3rle set read only;
 #alter table tmp3rle alter column i set storage 'linear';
+#select compressed from storage where "table"='tmp3rle';
+% .storage # table_name
+% compressed # name
+% bigint # type
+% 3 # length
+[ 436	]
 #select * from mosaic.layout('sys','tmp3rle','i');
 % .%4,	.%4,	.%4,	.%4,	.%4,	.%4 # table_name
 % technique,	count,	inputsize,	outputsize,	properties,	bsn # name
