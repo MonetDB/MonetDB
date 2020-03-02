@@ -432,7 +432,7 @@ str
 CLTsetTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str msg = MAL_SUCCEED;
-	lng qto,sto;
+	lng qto,sto = 0;
 	int idx = cntxt->idx;
 
 	(void) mb;
