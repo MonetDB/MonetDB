@@ -470,7 +470,7 @@ CLTsessionTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		idx = cntxt->idx;
 		sto = *getArgReference_int(stk,pci,1);
 	}
-	if (is_lng_nil(sto))
+	if (is_int_nil(sto))
 		throw(MAL,"clients.sessionTimeout","Session timeout cannot be NULL");
 	if( sto < 0)
 		throw(MAL,"clients.sessionTimeout","Session timeout should be >= 0");
