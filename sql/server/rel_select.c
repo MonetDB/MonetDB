@@ -370,7 +370,7 @@ query_exp_optname(sql_query *query, sql_rel *r, symbol *q)
 		return rel_table_optname(sql, tq, q->data.lval->t->data.sym);
 	}
 	default:
-		(void) sql_error(sql, 02, SQLSTATE(42000) "case %d %s\n", q->token, token2string(q->token));
+		(void) sql_error(sql, 02, SQLSTATE(42000) "case %d %s", q->token, token2string(q->token));
 	}
 	return NULL;
 }
@@ -1492,9 +1492,8 @@ rel_convert_types(mvc *sql, sql_rel *ll, sql_rel *rr, sql_exp **L, sql_exp **R, 
 		}
 		*L = ls;
 		*R = rs;
-		if (!ls || !rs) {
+		if (!ls || !rs)
 			return -1;
-		}
 		return 0;
 	}
 	return -1;
@@ -1556,10 +1555,8 @@ rel_filter(mvc *sql, sql_rel *rel, list *l, list *r, char *sname, char *filter_o
 		}
 		r = nexps;
 	}
-	if (!f) {
+	if (!f)
 		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: no such FILTER function '%s'", filter_op);
-		return NULL;
-	}
 	e = exp_filter(sql->sa, l, r, f, anti);
 
 	/* atom or row => select */
@@ -4053,10 +4050,8 @@ rel_groupings(sql_query *query, sql_rel **rel, symbol *groupby, dlist *selection
 						if (!e)
 							return NULL;
 						if (e->type != e_column) { /* store group by expressions in the stack */
-							if (is_sql_group_totals(f)) {
-								(void) sql_error(sql, 02, SQLSTATE(42000) "GROUP BY: grouping expressions not possible with ROLLUP, CUBE and GROUPING SETS");
-								return NULL;
-							}
+							if (is_sql_group_totals(f))
+								return sql_error(sql, 02, SQLSTATE(42000) "GROUP BY: grouping expressions not possible with ROLLUP, CUBE and GROUPING SETS");
 							if (!stack_push_groupby_expression(sql, grp, e))
 								return NULL;
 						}
@@ -5147,7 +5142,6 @@ rel_table_exp(sql_query *query, sql_rel **rel, symbol *column_e )
 		if (!is_project((*rel)->op))
 			return NULL;
 		r = rel_named_table_function( query, (*rel)->l, column_e, 0);
-	
 		if (!r)
 			return NULL;
 		*rel = r;
@@ -5195,9 +5189,8 @@ rel_table_exp(sql_query *query, sql_rel **rel, symbol *column_e )
 sql_exp *
 rel_column_exp(sql_query *query, sql_rel **rel, symbol *column_e, int f)
 {
-	if (column_e->token == SQL_COLUMN || column_e->token == SQL_IDENT) {
+	if (column_e->token == SQL_COLUMN || column_e->token == SQL_IDENT)
 		return column_exp(query, rel, column_e, f);
-	}
 	return NULL;
 }
 
@@ -5362,7 +5355,7 @@ join_on_column_name(sql_query *query, sql_rel *rel, sql_rel *t1, sql_rel *t2, in
 	node *n;
 
 	nme = number2name(name, sizeof(name), nr);
-	if (!exps)
+	if (!exps || !r_exps)
 		return NULL;
 	for (n = exps->h; n; n = n->next) {
 		sql_exp *le = n->data;
@@ -5681,9 +5674,6 @@ rel_joinquery_(sql_query *query, sql_rel *rel, symbol *tab1, int natural, jt joi
 		l_nil = 1;
 		r_nil = 1;
 		break;
-	case jt_union:
-		/* fool compiler */
-		return NULL;
 	}
 
 	lateral = check_is_lateral(tab2);
@@ -5712,7 +5702,7 @@ rel_joinquery_(sql_query *query, sql_rel *rel, symbol *tab1, int natural, jt joi
 		return NULL;
 
 	if (!lateral && rel_name(t1) && rel_name(t2) && strcmp(rel_name(t1), rel_name(t2)) == 0) {
-		sql_error(sql, 02, SQLSTATE(42000) "SELECT: '%s' on both sides of the JOIN expression;", rel_name(t1));
+		sql_error(sql, 02, SQLSTATE(42000) "SELECT: '%s' on both sides of the JOIN expression", rel_name(t1));
 		rel_destroy(t1);
 		rel_destroy(t2);
 		return NULL;
@@ -5723,12 +5713,10 @@ rel_joinquery_(sql_query *query, sql_rel *rel, symbol *tab1, int natural, jt joi
 	if (lateral)
 		set_dependent(inner);
 
-	if (js && natural) {
-		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: cannot have a NATURAL JOIN with a join specification (ON or USING);");
-	}
-	if (!js && !natural) {
-		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: must have NATURAL JOIN or a JOIN with a join specification (ON or USING);");
-	}
+	if (js && natural)
+		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: cannot have a NATURAL JOIN with a join specification (ON or USING)");
+	if (!js && !natural)
+		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: must have NATURAL JOIN or a JOIN with a join specification (ON or USING)");
 
 	if (js && js->token != SQL_USING) {	/* On sql_logical_exp */
 		rel = rel_logical_exp(query, rel, js, sql_where | sql_join);
@@ -5746,7 +5734,7 @@ rel_joinquery_(sql_query *query, sql_rel *rel, symbol *tab1, int natural, jt joi
 			sql_exp *rs = rel_bind_column(sql, t2, nm, sql_where, 0);
 
 			if (!ls || !rs) {
-				sql_error(sql, 02, SQLSTATE(42000) "JOIN: tables '%s' and '%s' do not have a matching column '%s'\n", rel_name(t1)?rel_name(t1):"", rel_name(t2)?rel_name(t2):"", nm);
+				sql_error(sql, 02, SQLSTATE(42000) "JOIN: tables '%s' and '%s' do not have a matching column '%s'", rel_name(t1)?rel_name(t1):"", rel_name(t2)?rel_name(t2):"", nm);
 				rel_destroy(rel);
 				return NULL;
 			}
@@ -5872,7 +5860,7 @@ rel_unionjoinquery(sql_query *query, sql_rel *rel, symbol *q)
 	for (m = lexps->h; m; m = m->next) {
 		sql_exp *le = m->data;
 		sql_exp *rc = rel_bind_column(sql, rv, exp_name(le), sql_where, 0);
-			
+
 		if (!rc && all)
 			break;
 		if (rc) {
