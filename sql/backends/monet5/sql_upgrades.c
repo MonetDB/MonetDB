@@ -2350,16 +2350,26 @@ sql_update_linear_hashing(Client c, mvc *sql, const char *prev_schema, bool *sys
 			"create view sys.sessions as select * from sys.sessions();\n");
 
 	pos += snprintf(buf + pos, bufsize - pos,
+			"grant execute on procedure sys.settimeout(bigint) to public;\n"
+			"grant execute on procedure sys.settimeout(bigint,bigint) to public;\n"
+			"grant execute on procedure sys.setsession(bigint) to public;\n");
+
+	pos += snprintf(buf + pos, bufsize - pos,
 			"create procedure sys.setoptimizer(\"optimizer\" string)\n"
 			" external name clients.setoptimizer;\n"
+			"grant execute on procedure sys.setoptimizer(string) to public;\n"
 			"create procedure sys.setquerytimeout(\"query\" int)\n"
 			" external name clients.setquerytimeout;\n"
+			"grant execute on procedure sys.setquerytimeout(int) to public;\n"
 			"create procedure sys.setsessiontimeout(\"timeout\" int)\n"
 			" external name clients.setsessiontimeout;\n"
+			"grant execute on procedure sys.setsessiontimeout(int) to public;\n"
 			"create procedure sys.setworkerlimit(\"limit\" int)\n"
 			" external name clients.setworkerlimit;\n"
+			"grant execute on procedure sys.setworkerlimit(int) to public;\n"
 			"create procedure sys.setmemorylimit(\"limit\" int)\n"
 			" external name clients.setmemorylimit;\n"
+			"grant execute on procedure sys.setmemorylimit(int) to public;\n"
 			"create procedure sys.setoptimizer(\"sessionid\" int, \"optimizer\" string)\n"
 			" external name clients.setoptimizer;\n"
 			"create procedure sys.setquerytimeout(\"sessionid\" int, \"query\" int)\n"
@@ -2418,10 +2428,24 @@ sql_update_linear_hashing(Client c, mvc *sql, const char *prev_schema, bool *sys
 			"create function sys.debugflags()\n"
 			" returns table(flag string, val bool)\n"
 			" external name mdb.\"getDebugFlags\";\n"
+			"create procedure sys.\"sleep\"(msecs tinyint)\n"
+			" external name \"alarm\".\"sleep\";\n"
+			"grant execute on procedure sys.\"sleep\"(tinyint) to public;\n"
+			"create procedure sys.\"sleep\"(msecs smallint)\n"
+			" external name \"alarm\".\"sleep\";\n"
+			"grant execute on procedure sys.\"sleep\"(smallint) to public;\n"
 			"create procedure sys.\"sleep\"(msecs int)\n"
 			" external name \"alarm\".\"sleep\";\n"
-			"create function sys.\"sleep\"(msecs int) returns integer\n"
-			" external name \"alarm\".\"sleep\";\n");
+			" grant execute on procedure sys.\"sleep\"(int) to public;\n"
+			"create function sys.\"sleep\"(msecs tinyint) returns tinyint\n"
+			" external name \"alarm\".\"sleep\";\n"
+			"grant execute on function sys.\"sleep\"(tinyint) to public;\n"
+			"create function sys.\"sleep\"(msecs smallint) returns smallint\n"
+			" external name \"alarm\".\"sleep\";\n"
+			"grant execute on function sys.\"sleep\"(smallint) to public;\n"
+			"create function sys.\"sleep\"(msecs int) returns int\n"
+			" external name \"alarm\".\"sleep\";\n"
+			" grant execute on function sys.\"sleep\"(int) to public;\n");
 	pos += snprintf(buf + pos, bufsize - pos,
 			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
 			" and name in ('debug', 'debugflags', 'sleep');\n");
@@ -2450,18 +2474,44 @@ sql_update_linear_hashing(Client c, mvc *sql, const char *prev_schema, bool *sys
 			"grant select on sys.queue to public;\n"
 
 			"create procedure sys.pause(tag tinyint)\n"
-			"external name sql.sysmon_pause;\n"
+			" external name sql.sysmon_pause;\n"
+			"grant execute on procedure sys.pause(tinyint) to public;\n"
 			"create procedure sys.resume(tag tinyint)\n"
-			"external name sql.sysmon_resume;\n"
+			" external name sql.sysmon_resume;\n"
+			"grant execute on procedure sys.resume(tinyint) to public;\n"
 			"create procedure sys.stop(tag tinyint)\n"
 			"external name sql.sysmon_stop;\n"
+			"grant execute on procedure sys.stop(tinyint) to public;\n"
 
 			"create procedure sys.pause(tag smallint)\n"
-			"external name sql.sysmon_pause;\n"
+			" external name sql.sysmon_pause;\n"
+			"grant execute on procedure sys.pause(smallint) to public;\n"
 			"create procedure sys.resume(tag smallint)\n"
-			"external name sql.sysmon_resume;\n"
+			" external name sql.sysmon_resume;\n"
+			"grant execute on procedure sys.resume(smallint) to public;\n"
 			"create procedure sys.stop(tag smallint)\n"
-			"external name sql.sysmon_stop;\n");
+			" external name sql.sysmon_stop;\n"
+			"grant execute on procedure sys.stop(smallint) to public;\n"
+
+			"create procedure sys.pause(tag int)\n"
+			" external name sql.sysmon_pause;\n"
+			"grant execute on procedure sys.pause(int) to public;\n"
+			"create procedure sys.resume(tag int)\n"
+			" external name sql.sysmon_resume;\n"
+			"grant execute on procedure sys.resume(int) to public;\n"
+			"create procedure sys.stop(tag int)\n"
+			" external name sql.sysmon_stop;\n"
+			"grant execute on procedure sys.stop(int) to public;\n"
+
+			"create procedure sys.pause(tag bigint)\n"
+			" external name sql.sysmon_pause;\n"
+			"grant execute on procedure sys.pause(bigint) to public;\n"
+			"create procedure sys.resume(tag bigint)\n"
+			" external name sql.sysmon_resume;\n"
+			"grant execute on procedure sys.resume(bigint) to public;\n"
+			"create procedure sys.stop(tag bigint)\n"
+			" external name sql.sysmon_stop;\n"
+			"grant execute on procedure sys.stop(bigint) to public;\n");
 
 	pos += snprintf(buf + pos, bufsize - pos,
 			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"

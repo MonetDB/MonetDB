@@ -267,8 +267,10 @@ CLTsetworkerlimit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if( idx < 0 || idx > MAL_MAXCLIENTS)
 		throw(MAL,"clients.setworkerlimit","Illegal session id");
+	if( is_int_nil(limit))
+		throw(MAL, "clients.setworkerlimit","The number of workers cannot be NULL");
 	if( limit < 0)
-		throw(MAL, "clients.setworkerlimit", "At least one worker needed");
+		throw(MAL, "clients.setworkerlimit","The number of workers cannot be negative");
 	if (mal_clients[idx].mode == FREECLIENT)
 		throw(MAL,"clients.setworkerlimit","Session not active anymore");
 	if (cntxt->user == mal_clients[idx].user || cntxt->user == MAL_ADMIN){
@@ -295,6 +297,10 @@ CLTsetmemorylimit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL,"clients.setmemorylimit","Illegal session id");
 	if (mal_clients[idx].mode == FREECLIENT)
 		throw(MAL,"clients.setmemorylimit","Session not active anymore");
+	if( is_int_nil(limit))
+		throw(MAL, "clients.setmemorylimit", "The memmory limit cannot be NULL");
+	if( limit < 0)
+		throw(MAL, "clients.setmemorylimit", "The memmory limit cannot be negative");
 	if (cntxt->user == mal_clients[idx].user || cntxt->user == MAL_ADMIN){
 		mal_clients[idx].memorylimit = limit;
 	}
@@ -366,7 +372,9 @@ CLTsetSessionTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL,"clients.setsession","Illegal session id %d", idx);
 	if (mal_clients[idx].mode == FREECLIENT)
 		throw(MAL,"clients.setsession","Session not active anymore");
-	sto =  *getArgReference_lng(stk,pci,1);
+	sto = *getArgReference_lng(stk,pci,1);
+	if (is_lng_nil(sto))
+		throw(MAL,"clients.setsession","Session timeout cannot be NULL");
 	if (sto < 0)
 		throw(MAL,"clients.setsession","Session timeout should be >= 0");
 	mal_clients[idx].sessiontimeout = sto * 1000000;
@@ -386,10 +394,14 @@ CLTsetTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (mal_clients[idx].mode == FREECLIENT)
 		throw(MAL,"clients.settimeout","Session not active anymore");
 	qto = *getArgReference_lng(stk,pci,1);
+	if (is_lng_nil(qto))
+		throw(MAL,"clients.settimeout","Query timeout cannot be NULL");
 	if (qto < 0)
 		throw(MAL,"clients.settimeout","Query timeout should be >= 0");
 	if (pci->argc == 3) {
 		sto = *getArgReference_lng(stk,pci,2);
+		if (is_lng_nil(sto))
+			throw(MAL,"clients.settimeout","Session timeout cannot be NULL");
 		if( sto < 0)
 			throw(MAL,"clients.settimeout","Session timeout should be >= 0");
 		mal_clients[idx].sessiontimeout = sto * 1000000;
@@ -424,8 +436,10 @@ CLTqueryTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		idx = cntxt->idx;
 		qto=  *getArgReference_int(stk,pci,1);
 	}
+	if (is_int_nil(qto))
+		throw(MAL,"clients.queryTimeout","Query timeout cannot be NULL");
 	if( qto < 0)
-		throw(MAL,"clients.queryTimeout","Query time-out should be >= 0");
+		throw(MAL,"clients.queryTimeout","Query timeout should be >= 0");
 	mal_clients[idx].querytimeout = (lng) qto * 1000000;
 	return MAL_SUCCEED;
 }
@@ -456,8 +470,10 @@ CLTsessionTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		idx = cntxt->idx;
 		sto = *getArgReference_int(stk,pci,1);
 	}
+	if (is_lng_nil(sto))
+		throw(MAL,"clients.sessionTimeout","Session timeout cannot be NULL");
 	if( sto < 0)
-		throw(MAL,"clients.sessionTimeout","Session time-out should be >= 0");
+		throw(MAL,"clients.sessionTimeout","Session timeout should be >= 0");
 	if( idx < 0 || idx > MAL_MAXCLIENTS)
 		throw(MAL,"clients.sessionTimeout","Illegal session id %d", idx);
 	if (mal_clients[idx].mode == FREECLIENT)
@@ -749,10 +765,12 @@ CLTshutdown(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 	if (cntxt->user != MAL_ADMIN)
 		throw(MAL,"mal.shutdown", "Administrator rights required");
+	if (is_int_nil(delay))
+		throw(MAL,"mal.shutdown", "Delay cannot be NULL");
 	if (delay < 0)
 		throw(MAL,"mal.shutdown", "Delay cannot be negative");
 	if (is_bit_nil(force))
-		throw(MAL,"mal.shutdown", "Force cannot be null");
+		throw(MAL,"mal.shutdown", "Force cannot be NULL");
 	MCstopClients(cntxt);
 	do{
 		if ( (leftover = MCactiveClients()-1) )
@@ -837,11 +855,14 @@ CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			timeout = (int)(c->querytimeout / 1000000);
 			if (BUNappend(querytimeout, &timeout, false) != GDK_SUCCEED)
 				goto bailout;
-			ret = timestamp_fromtime(c->idle);
-			if (is_timestamp_nil(ret)) {
-				msg = createException(SQL, "sql.sessions", SQLSTATE(22003) "Failed to convert user logged time");
-				goto bailout;
-			}
+			if( c->idle){
+				ret = timestamp_fromtime(c->idle);
+				if (is_timestamp_nil(ret)) {
+					msg = createException(SQL, "sql.sessions", SQLSTATE(22003) "Failed to convert user logged time");
+					goto bailout;
+				}
+			} else
+				ret = timestamp_nil;
 			if (BUNappend(idle, &ret, false) != GDK_SUCCEED)
 				goto bailout;
 			if (BUNappend(opt, &c->optimizer, false) != GDK_SUCCEED)
