@@ -8,6 +8,7 @@
 
 #include "monetdb_config.h"
 #include "gdk.h"
+#include "gdk_commons.h"
 #include "gdk_private.h"
 
 struct qsort_t {
@@ -17,10 +18,6 @@ struct qsort_t {
 	const char *base;
 	const void *nil;
 };
-
-#define glue(a, b, c)		a ## b ## c
-#define CONCAT2(a, b)		a ## b
-#define CONCAT3(a, b, c)	glue(a, b, c)
 
 /* nil is smallest value, i.e. first for ascending, last for descending */
 #define fixltf(i, j, TPE)	(((TPE *) h)[i] < ((TPE *) h)[j])
