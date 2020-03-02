@@ -749,6 +749,31 @@ static void ctl_handle_client(
 					Mfprintf(_mero_ctlout, "%s: restored database '%s' from snapshot '%s'\n",
 						origin, q, source);
 				}
+			} else if (strcmp(p, "snapshot list") == 0) {
+				Mfprintf(_mero_ctlout, "Start snapshot list of database '%s'\n", q);
+				int nsnaps = 0;
+				struct snapshot *snaps = NULL;
+				char *e = snapshot_list(q, &nsnaps, &snaps);
+				if (e != NULL) {
+					Mfprintf(_mero_ctlerr, "%s snapshot list failed for database '%s': %s", origin, q, getErrMsg(e));
+					len = snprintf(buf2, sizeof(buf2), "%s\n", getErrMsg(e));
+					send_client("!");
+					freeErr(e);
+					break; // <================== DISCONNECT!!!!
+				}
+				len = snprintf(buf2, sizeof(buf2), "OK1\n");
+				send_client("=");
+				for (int i = 0; i < nsnaps; i++) {
+					struct snapshot *snap = &snaps[i];
+					len = snprintf(buf2, sizeof(buf2), "%jd %jd %s %s\n",
+						(intmax_t)snap->time,
+						(intmax_t)snap->size,
+						snap->dbname,
+						snap->path != NULL ? snap->path : "");
+					send_client("=");
+				}
+				free_snapshots(snaps, nsnaps);
+				break; // <==================== DISCONNECT!!!!
 			} else if (strncmp(p, "name=", strlen("name=")) == 0) {
 				char *e;
 

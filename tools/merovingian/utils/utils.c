@@ -537,5 +537,33 @@ deletedir(const char *dir)
 	return(NULL);
 }
 
+void
+free_snapshots(struct snapshot *snapshots, int nsnapshots)
+{
+	for (struct snapshot *snap = snapshots; snap < &snapshots[nsnapshots]; snap++) {
+		free(snap->dbname);
+		free(snap->name);
+		free(snap->path);
+	}
+	free(snapshots);
+}
+
+/* Increment *nsnapsnots by 1 and call realloc() on *snapshots to make it
+ * accomodate one more snapshot. Return a pointer to the newly allocated
+ * snapshot, which has been initialized with 0's and NULL's.
+ */
+struct snapshot *
+push_snapshot(struct snapshot **snapshots, int *nsnapshots)
+{
+	*nsnapshots += 1;
+	*snapshots = realloc(*snapshots, *nsnapshots * sizeof(struct snapshot));
+	struct snapshot *snap = *snapshots + *nsnapshots - 1;
+	snap->dbname = NULL;
+	snap->time = 0;
+	snap->size = 0;
+	snap->name = NULL;
+	snap->path = NULL;
+	return snap;
+}
 
 /* vim:set ts=4 sw=4 noexpandtab: */

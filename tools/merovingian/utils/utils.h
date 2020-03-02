@@ -46,6 +46,18 @@ void sleep_ms(size_t ms);
 char* deletedir(const char *dir);
 
 
+struct snapshot {
+	char *dbname;
+	time_t time;
+	off_t size;
+	char *name;
+	char *path;
+};
+
+struct snapshot *push_snapshot(struct snapshot **snapshots, int *nsnapshots);
+void free_snapshots(struct snapshot *snapshots, int nsnapshots);
+
+
 #endif
 
 /* vim:set ts=4 sw=4 noexpandtab: */

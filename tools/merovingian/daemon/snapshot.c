@@ -6,6 +6,9 @@
  * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
+#include "monetdb_config.h"
+
+#include <dirent.h>
 #include <libgen.h>
 #include <limits.h>
 #include <stdio.h>
@@ -15,13 +18,12 @@
 #include <sys/types.h>
 #include <time.h>
 
-#include "monetdb_config.h"
 #include "stream.h"
 #include "msabaoth.h"
-#include "merovingian.h"
 #include "mapi.h"
 #include "snapshot.h"
 
+static time_t parse_snapshot_name(const char *filename, const char *dbname);
 static err validate_location(const char *path);
 static err unpack_tarstream(stream *tarstream, char *destdir, int skipcomponents);
 
@@ -175,6 +177,88 @@ bailout:
 	free(tmppath);
 	free(destpath);
 	return e;
+}
+
+err
+snapshot_list(char *dbname, int *nsnapshots, struct snapshot **snapshots)
+{
+	err e = NO_ERR;
+	DIR *dir = NULL;
+	struct dirent *ent;
+
+	/* get the snapdir */
+	char *snapdir = getConfVal(_mero_props, "snapshotdir");
+	if (snapdir == NULL || snapdir[0] == '\0') {
+		e = newErr("Snapshot target file not allowed because no 'snapshotdir' has been configured");
+		goto bailout;
+	}
+
+	dir = opendir(snapdir);
+	if (dir == NULL) {
+		e = newErr("could not open dir %s: %s", snapdir, strerror(errno));
+		goto bailout;
+	}
+	while ((ent = readdir(dir)) != NULL) {
+		struct stat statbuf;
+		if (fstatat(dirfd(dir), ent->d_name, &statbuf, 0) < 0) {
+			e = newErr("couldn't stat %s/%s: %s", snapdir, ent->d_name, strerror(errno));
+			goto bailout;
+		}
+		if ((statbuf.st_mode & S_IFREG) == 0)
+			continue;
+		time_t timestamp = parse_snapshot_name(ent->d_name, dbname);
+		if (timestamp == 0)
+			continue;
+
+		struct snapshot *snap = push_snapshot(snapshots, nsnapshots);
+		snap->dbname = strdup(dbname);
+		snap->time = timestamp;
+		snap->size = statbuf.st_size;
+		snap->path = malloc(strlen(snapdir) + 1 + strlen(ent->d_name) + 1);
+		sprintf(snap->path, "%s/%s", snapdir, ent->d_name);
+	}
+
+bailout:
+	if (dir != NULL)
+		closedir(dir);
+	return e;
+}
+
+/* Return 0 if the filename is not a valid snapshot name for the
+ * given datase. Otherwise, return the timestamp encoded in
+ * the filename.
+ */
+static time_t
+parse_snapshot_name(const char *filename, const char *dbname)
+{
+	// dbname_YYYYMMMDDTHHMMUTC.tar.gz
+	//       ^^^^^^^^^^^^^^^^^^^^^^^^^ 26 chars from underscore to end
+
+	if (strlen(filename) <= 26)
+		return 0;
+	int namelen = strlen(filename) - 26;
+
+	if (strncmp(filename, dbname, namelen) != 0)
+		return 0;
+
+	struct tm tm = {0};
+	char *end = strptime(filename + namelen, "_%Y%m%dT%H%M%SUTC.tar.gz", &tm);
+	if (end != NULL && *end != '\0')
+		return 0;
+
+        // We want to interpret this as UTC.
+        // Unfortunately, mktime interprets it as Localtime.
+        time_t wrong = mktime(&tm);
+
+        // Let's adjust it.
+        // Take a timestamp, render it in UTC, then read back as Localtime.
+	// Look at the difference.
+        time_t before = time(NULL);
+        gmtime_r(&before, &tm);
+        time_t after = mktime(&tm);
+        time_t correct = before - after + wrong;
+
+	return correct;
 }
 
 err
@@ -428,3 +512,4 @@ bailout:
 	free(destfile);
 	return e;
 }
+

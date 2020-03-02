@@ -1699,25 +1699,137 @@ snapshot_create_automatic(sabdb *databases) {
 	simple_argv_cmd("snapshot", databases, "snapshot create automatic", NULL, "snapshotting database");
 }
 
+static int
+snapshot_enumerate_helper(const void *left, const void *right)
+{
+	const struct snapshot *left_snap = left;
+	const struct snapshot *right_snap = right;
+	int cmp;
+
+	cmp = strcmp(left_snap->dbname, right_snap->dbname);
+	if (cmp != 0)
+		return cmp;
+
+	// Careful! Sort newest to oldest
+	if (left_snap->time < right_snap->time)
+		return +1; // !!
+	if (left_snap->time > right_snap->time)
+		return -1; // !!
+
+	// No preference
+	return 0;
+}
+
+static char*
+snapshot_enumerate(sabdb *databases, struct snapshot **snapshots, int *nsnapshots)
+{
+	int ninitial = *nsnapshots;
+
+	// Retrieve the available snapshots
+	for (sabdb *db = databases; db != NULL; db = db->next) {
+		char *out = NULL;
+		char *ret = control_send(&out, mero_host, mero_port, db->dbname, "snapshot list", 1, mero_pass);
+		if (ret != NULL)
+			return ret;
+
+		if (strcmp(out, "OK1") == 0) {
+			// ok, empty resultset
+			free(out);
+		} else if (strncmp(out, "OK1\n", 4) == 0) {
+			// ok, nonempty resultset. Parse it.
+			char *p = out + 4;
+			char *end = p + strlen(p);
+			while (p < end) {
+				char *eol = strchr(p, '\n');
+				eol = (eol != NULL) ? eol : end;
+				intmax_t time;
+				intmax_t size;
+				int len;
+				if (sscanf(p, "%jd %jd %n", &time, &size, &len) != 2) {
+					free(out);
+					return strdup("internal parse error");
+				}
+				p += len;
+				char *dbend = strchr(p, ' ');
+				if (dbend == NULL) {
+					free(out);
+					return strdup("internal parse error");
+				}
+				int dblen = dbend - p;
+				char *path = dbend + 1;
+				struct snapshot *snap = push_snapshot(snapshots, nsnapshots);
+				snap->dbname = malloc(dblen + 1);
+				memmove(snap->dbname, p, dblen);
+				snap->dbname[dblen] = '\0';
+				snap->time = time;
+				snap->size = size;
+				snap->path = strdup(path);
+				p = eol + 1;
+			};
+			free(out);
+		} else {
+			return out;
+		}
+	}
+
+	// Sort them and give names
+	if (*nsnapshots > ninitial) {
+		int sort_len = *nsnapshots - ninitial;
+		struct snapshot *sort_start = *snapshots + ninitial;
+		qsort(sort_start, sort_len, sizeof(struct snapshot), snapshot_enumerate_helper);
+		struct snapshot *prev = NULL;
+		int counter;
+		for (struct snapshot *cur = sort_start; cur < sort_start + sort_len; cur++) {
+			if (prev == NULL || strcmp(prev->dbname, cur->dbname) != 0)
+				counter = 0;
+			counter++;
+			cur->name = malloc(strlen(cur->dbname) + 10);
+			sprintf(cur->name, "%s@%d", cur->dbname, counter);
+			prev = cur;
+		}
+	}
+
+	return NULL;
+}
+
 static void
 snapshot_list(sabdb *databases) {
-	char *ret;
-	char *out;
+	struct snapshot *snapshots = NULL;
+	int nsnapshots = 0;
 
-	for (sabdb *db = databases; db != NULL; db = db->next) {
-		printf("Listing %s:\n", db->dbname);
-		ret = control_send(&out, mero_host, mero_port, db->dbname, "snapshot list", 1, mero_pass);
-		if (ret != NULL) {
-			fprintf(stderr, "snapshot list: %s\n", ret);
-			exit(2);
-		}
-		if (strncmp(out, "OK\n", 3) == 0) {
-			printf("  ok.");
-		} else {
-			printf("failed: %s\n", out);
-		}
-		free(out);
+	char *err = snapshot_enumerate(databases, &snapshots, &nsnapshots);
+	if (err != NULL) {
+		fprintf(stderr, "snapshot list: %s\n", err);
+		exit(1);
 	}
+
+	int width = 0;
+	for (struct snapshot *snap = snapshots; snap < snapshots + nsnapshots; snap++) {
+		int w = strlen(snap->name);
+		width = (width >= w) ? width : w;
+	}
+
+	printf("%-*s    %-25s    %s\n", width, "name", "time", "size");
+
+	for (struct snapshot *snap = snapshots; snap < snapshots + nsnapshots; snap++) {
+		char buf[100];
+		struct tm tm;
+		// format time
+		localtime_r(&snap->time, &tm);
+		strftime(buf, sizeof(buf), "%a %Y-%m-%d %H:%M:%S", &tm);
+		// format size
+		double size = snap->size;
+		char *units[] = {"B", "KiB", "MiB", "GiB", "TiB", NULL};
+		char **unit = &units[0];
+		while (size >= 1024 && unit[1] != NULL) {
+			size /= 1024;
+			unit++;
+		}
+		// output
+		printf("%-*s    %-25s    %.1f %s\n", width, snap->name, buf, size, *unit);
+	}
+
+	free_snapshots(snapshots, nsnapshots);
 }
 
 static void
