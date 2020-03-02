@@ -391,7 +391,7 @@ is_strcmpable(const char *pat, const char *esc)
 {
 	if (pat[strcspn(pat, "%_")])
 		return false;
-	return strlen(esc) == 0 || strcmp(esc, str_nil) == 0 || strstr(pat, esc) == NULL;
+	return strlen(esc) == 0 || strNil(esc) || strstr(pat, esc) == NULL;
 }
 
 static bool
@@ -555,10 +555,10 @@ pcre_compile_wrap(pcre **res, const char *pattern, bit insensitive)
 /* scan select loop with candidates */
 #define candscanloop(TEST)												\
 	do {																\
-		TRC_DEBUG(ALGO, 													\
-			"BATselect(b=%s#"BUNFMT",s=%s,anti=%d): "					\
-			"scanselect %s\n", BATgetId(b), BATcount(b),				\
-			s ? BATgetId(s) : "NULL", anti, #TEST);						\
+		TRC_DEBUG(ALGO,													\
+				  "BATselect(b=%s#"BUNFMT",s=%s,anti=%d): "				\
+				  "scanselect %s\n", BATgetId(b), BATcount(b),			\
+				  s ? BATgetId(s) : "NULL", anti, #TEST);				\
 		for (p = 0; p < ci.ncand; p++) {								\
 			o = canditer_next(&ci);										\
 			r = (BUN) (o - off);										\
@@ -572,10 +572,10 @@ pcre_compile_wrap(pcre **res, const char *pattern, bit insensitive)
 /* scan select loop without candidates */
 #define scanloop(TEST)													\
 	do {																\
-		TRC_DEBUG(ALGO,														\
-			"BATselect(b=%s#"BUNFMT",s=%s,anti=%d): "					\
-			"scanselect %s\n", BATgetId(b), BATcount(b),				\
-			s ? BATgetId(s) : "NULL", anti, #TEST);						\
+		TRC_DEBUG(ALGO,													\
+				  "BATselect(b=%s#"BUNFMT",s=%s,anti=%d): "				\
+				  "scanselect %s\n", BATgetId(b), BATcount(b),			\
+				  s ? BATgetId(s) : "NULL", anti, #TEST);				\
 		while (p < q) {													\
 			v = BUNtvar(bi, p-off);										\
 			if (TEST) {													\
@@ -1282,7 +1282,7 @@ pcre_match_with_flags(bit *ret, const char *val, const char *pat, const char *fl
 		}
 		flags++;
 	}
-	if (strcmp(val, str_nil) == 0) {
+	if (strNil(val)) {
 		*ret = FALSE;
 		return MAL_SUCCEED;
 	}
@@ -1606,7 +1606,7 @@ PCRElike4(bit *ret, const str *s, const str *pat, const str *esc, const bit *ise
 
 	if (!r) {
 		assert(ppat);
-		if (strcmp(ppat, str_nil) == 0) {
+		if (strNil(ppat)) {
 			*ret = FALSE;
 			if (*isens) {
 				if (mystrcasecmp(*s, *pat) == 0)
@@ -1731,7 +1731,7 @@ BATPCRElike3(bat *ret, const bat *bid, const str *pat, const str *esc, const bit
 		br = (bit*)Tloc(r, 0);
 		strsi = bat_iterator(strs);
 
-		if (strcmp(ppat, str_nil) == 0) {
+		if (strNil(ppat)) {
 			BATloop(strs, p, q) {
 				const char *s = (str)BUNtvar(strsi, p);
 
@@ -1928,7 +1928,7 @@ PCRElikeselect2(bat *ret, const bat *bid, const bat *sid, const str *pat, const 
 				BBPunfix(s->batCacheid);
 			return res;
 		}
-		if (strcmp(ppat, str_nil) == 0) {
+		if (strNil(ppat)) {
 			GDKfree(ppat);
 			ppat = NULL;
 			if (*caseignore) {
@@ -2043,21 +2043,21 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 #endif
 
 	TRC_DEBUG(ALGO, 
-		"pcrejoin(l=%s#" BUNFMT "[%s]%s%s,"
-		"r=%s#" BUNFMT "[%s]%s%s,sl=%s#" BUNFMT "%s%s,"
-		"sr=%s#" BUNFMT "%s%s)\n",
-		BATgetId(l), BATcount(l), ATOMname(l->ttype),
-		l->tsorted ? "-sorted" : "",
-		l->trevsorted ? "-revsorted" : "",
-		BATgetId(r), BATcount(r), ATOMname(r->ttype),
-		r->tsorted ? "-sorted" : "",
-		r->trevsorted ? "-revsorted" : "",
-		sl ? BATgetId(sl) : "NULL", sl ? BATcount(sl) : 0,
-		sl && sl->tsorted ? "-sorted" : "",
-		sl && sl->trevsorted ? "-revsorted" : "",
-		sr ? BATgetId(sr) : "NULL", sr ? BATcount(sr) : 0,
-		sr && sr->tsorted ? "-sorted" : "",
-		sr && sr->trevsorted ? "-revsorted" : "");
+			  "pcrejoin(l=%s#" BUNFMT "[%s]%s%s,"
+			  "r=%s#" BUNFMT "[%s]%s%s,sl=%s#" BUNFMT "%s%s,"
+			  "sr=%s#" BUNFMT "%s%s)\n",
+			  BATgetId(l), BATcount(l), ATOMname(l->ttype),
+			  l->tsorted ? "-sorted" : "",
+			  l->trevsorted ? "-revsorted" : "",
+			  BATgetId(r), BATcount(r), ATOMname(r->ttype),
+			  r->tsorted ? "-sorted" : "",
+			  r->trevsorted ? "-revsorted" : "",
+			  sl ? BATgetId(sl) : "NULL", sl ? BATcount(sl) : 0,
+			  sl && sl->tsorted ? "-sorted" : "",
+			  sl && sl->trevsorted ? "-revsorted" : "",
+			  sr ? BATgetId(sr) : "NULL", sr ? BATcount(sr) : 0,
+			  sr && sr->tsorted ? "-sorted" : "",
+			  sr && sr->trevsorted ? "-revsorted" : "");
 
 	assert(ATOMtype(l->ttype) == ATOMtype(r->ttype));
 	assert(ATOMtype(l->ttype) == TYPE_str);
@@ -2086,7 +2086,7 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	for (BUN ri = 0; ri < rci.ncand; ri++) {
 		ro = canditer_next(&rci);
 		vr = VALUE(r, ro - r->hseqbase);
-		if (strcmp(vr, str_nil) == 0)
+		if (strNil(vr))
 			continue;
 		if (re_simple(vr, esc && *esc != '\200' ? (unsigned char) *esc : 0)) {
 			re = re_create(vr, caseignore, esc && *esc != '\200' ? (unsigned char) *esc : 0);
@@ -2099,7 +2099,7 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			msg = sql2pcre(&pcrepat, vr, esc);
 			if (msg != MAL_SUCCEED)
 				goto bailout;
-			if (strcmp(pcrepat, str_nil) == 0) {
+			if (strNil(pcrepat)) {
 				GDKfree(pcrepat);
 				if (caseignore) {
 					pcrepat = GDKmalloc(strlen(vr) + 3);
@@ -2148,7 +2148,7 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		for (BUN li = 0; li < lci.ncand; li++) {
 			lo = canditer_next(&lci);
 			vl = VALUE(l, lo - l->hseqbase);
-			if (strcmp(vl, str_nil) == 0)
+			if (strNil(vl))
 				continue;
 			if (re) {
 				if (caseignore) {
@@ -2240,14 +2240,14 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		r1->tseqbase = r2->tseqbase = 0;
 	}
 	TRC_DEBUG(ALGO, 
-		"pcrejoin(l=%s,r=%s)=(%s#"BUNFMT"%s%s,%s#"BUNFMT"%s%s\n",
-		BATgetId(l), BATgetId(r),
-		BATgetId(r1), BATcount(r1),
-		r1->tsorted ? "-sorted" : "",
-		r1->trevsorted ? "-revsorted" : "",
-		BATgetId(r2), BATcount(r2),
-		r2->tsorted ? "-sorted" : "",
-		r2->trevsorted ? "-revsorted" : "");
+			  "pcrejoin(l=%s,r=%s)=(%s#"BUNFMT"%s%s,%s#"BUNFMT"%s%s\n",
+			  BATgetId(l), BATgetId(r),
+			  BATgetId(r1), BATcount(r1),
+			  r1->tsorted ? "-sorted" : "",
+			  r1->trevsorted ? "-revsorted" : "",
+			  BATgetId(r2), BATcount(r2),
+			  r2->tsorted ? "-sorted" : "",
+			  r2->trevsorted ? "-revsorted" : "");
 	return MAL_SUCCEED;
 
   bailout:

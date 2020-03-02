@@ -323,7 +323,6 @@ DFLOWworker(void *T)
 	struct worker *t = (struct worker *) T;
 	DataFlow flow;
 	FlowEvent fe = 0, fnxt = 0;
-	int id = (int) (t - workers);
 	int tid = THRgettid();
 	str error = 0;
 	int i,last;
@@ -395,8 +394,6 @@ DFLOWworker(void *T)
 			}
 		}
 		error = runMALsequence(flow->cntxt, flow->mb, fe->pc, fe->pc + 1, flow->stk, 0, 0);
-		TRC_DEBUG(MAL_DATAFLOW, "Executed pc=%d wrk=%d claim=" LLFMT "," LLFMT "," LLFMT " %s\n",
-						 fe->pc, id, claim, fe->hotclaim, fe->maxclaim, error ? error : "");
 		/* release the memory claim */
 		MALadmission_release(flow->cntxt, flow->mb, flow->stk, p,  claim);
 		/* update the numa information. keep the thread-id producing the value */
@@ -668,23 +665,6 @@ DFLOWinitBlk(DataFlow flow, MalBlkPtr mb, int size)
  * They take effect after we have ensured that the basic properties for
  * execution hold.
  */
-/*
-static void showFlowEvent(DataFlow flow, int pc)
-{
-	int i;
-	FlowEvent fe = flow->status;
-
-	TRC_DEBUG(MAL_DATAFLOW, "End of data flow '%d' done '%d'\n", pc, flow->stop - flow->start);
-	for (i = 0; i < flow->stop - flow->start; i++)
-		if (fe[i].state != DFLOWwrapup && fe[i].pc >= 0) {
-			{
-				TRC_DEBUG(MAL_DATAFLOW, "Missed pc %d status %d %d blocks %d\n", fe[i].state, i, fe[i].pc, fe[i].blocks);
-				traceInstruction(MAL_DATAFLOW, fe[i].flow->mb, 0, getInstrPtr(fe[i].flow->mb, fe[i].pc),  LIST_MAL_MAPI);
-			}
-		}
-}
-*/
-
 static str
 DFLOWscheduler(DataFlow flow, struct worker *w)
 {
@@ -716,7 +696,6 @@ DFLOWscheduler(DataFlow flow, struct worker *w)
 				fe[i].argclaim = getMemoryClaim(fe[0].flow->mb, fe[0].flow->stk, p, j, FALSE);
 			q_enqueue(todo, flow->status + i);
 			flow->status[i].state = DFLOWrunning;
-			TRC_DEBUG(MAL_DATAFLOW, "Enqueue pc=%d\n", flow->status[i].pc);
 		}
 	MT_lock_unset(&flow->flowlock);
 	MT_sema_up(&w->s);
@@ -743,7 +722,6 @@ DFLOWscheduler(DataFlow flow, struct worker *w)
 					flow->status[i].state = DFLOWrunning;
 					flow->status[i].blocks--;
 					q_enqueue(todo, flow->status + i);
-					TRC_DEBUG(MAL_DATAFLOW, "Enqueue pc=%d\n", flow->status[i].pc);
 				} else {
 					flow->status[i].blocks--;
 				}
@@ -756,7 +734,7 @@ DFLOWscheduler(DataFlow flow, struct worker *w)
 	/* wrap up errors */
 	assert(flow->done->last == 0);
 	if ((ret = ATOMIC_PTR_XCG(&flow->error, NULL)) != NULL ) {
-		TRC_DEBUG(MAL_DATAFLOW, "Errors encountered: %s\n", ret);
+		TRC_DEBUG(MAL_SERVER, "Errors encountered: %s\n", ret);
 	}
 	return ret;
 }

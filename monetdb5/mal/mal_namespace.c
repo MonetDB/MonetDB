@@ -74,7 +74,7 @@ void mal_namespace_reset(void) {
  * is conflict free.
  */
 
-static str findName(const char *nme, size_t len, int allocate)
+static str findName(const char *nme, size_t len, bool allocate)
 {
 	NamePtr *n, m;
 	size_t key;
@@ -120,7 +120,7 @@ static str findName(const char *nme, size_t len, int allocate)
 		struct namespace *ns = GDKmalloc(sizeof(struct namespace));
 		if (ns == NULL) {
 			/* error we cannot recover from */
-			TRC_CRITICAL(MAL_MAL, SQLSTATE(HY013) MAL_MALLOC_FAIL "\n");
+			TRC_CRITICAL(MAL_SERVER, MAL_MALLOC_FAIL "\n");
 			mal_exit(1);
 		}
 		ns->next = namespace;
@@ -138,12 +138,12 @@ static str findName(const char *nme, size_t len, int allocate)
 }
 
 str getName(const char *nme) {
-	return findName(nme, strlen(nme), 0);
+	return findName(nme, strlen(nme), false);
 }
 
 str getNameLen(const char *nme, size_t len)
 {
-	return findName(nme, len, 0);
+	return findName(nme, len, false);
 }
 /*
  * Name deletion from the namespace is tricky, because there may
@@ -162,10 +162,10 @@ void delName(const char *nme, size_t len){
 }
 
 str putName(const char *nme) {
-	return findName(nme, strlen(nme), 1);
+	return findName(nme, strlen(nme), true);
 }
 
 str putNameLen(const char *nme, size_t len)
 {
-	return findName(nme, len, 1);
+	return findName(nme, len, true);
 }

@@ -1402,7 +1402,7 @@ stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f, stmt *sub, i
 }
 
 stmt *
-stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, int anti)
+stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, int anti, int is_semantics)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
@@ -1423,7 +1423,6 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 		case mark_in:
 		case mark_notin:
 		case cmp_equal:
-		case cmp_equal_nil:
 			op = "=";
 			break;
 		case cmp_notequal:
@@ -1442,12 +1441,12 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 			op = ">=";
 			break;
 		default:
-			TRC_ERROR(SQL_STATEMENT, "Unknown operator\n");
+			TRC_ERROR(SQL_EXECUTION, "Unknown operator\n");
 		}
 
 		if ((q = multiplex2(mb, mod, convertOperator(op), l, r, TYPE_bit)) == NULL) 
 			return NULL;
-		if (cmptype == cmp_equal_nil)
+		if (is_semantics)
 			q = pushBit(mb, q, TRUE); 
 		k = getDestVar(q);
 
@@ -1465,7 +1464,7 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 		k = getDestVar(q);
 	} else {
 		assert (cmptype != cmp_filter);
-		if (cmptype == cmp_equal_nil) {
+		if (is_semantics) {
 			q = newStmt(mb, algebraRef, selectRef);
 			q = pushArgument(mb, q, l);
 			if (sub)
@@ -1503,7 +1502,7 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 				q = pushStr(mb, q, anti?"<":">=");
 				break;
 			default:
-				TRC_ERROR(SQL_STATEMENT, "Impossible select compare\n");
+				TRC_ERROR(SQL_EXECUTION, "Impossible select compare\n");
 				if (q)
 					freeInstruction(q);
 				q = NULL;
@@ -1869,7 +1868,7 @@ stmt_tinter(backend *be, stmt *op1, stmt *op2)
 }
 
 stmt *
-stmt_join(backend *be, stmt *op1, stmt *op2, int anti, comp_type cmptype)
+stmt_join(backend *be, stmt *op1, stmt *op2, int anti, comp_type cmptype, int is_semantics)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
@@ -1895,19 +1894,7 @@ stmt_join(backend *be, stmt *op1, stmt *op2, int anti, comp_type cmptype)
 		q = pushArgument(mb, q, op2->nr);
 		q = pushNil(mb, q, TYPE_bat);
 		q = pushNil(mb, q, TYPE_bat);
-		q = pushBit(mb, q, FALSE);
-		q = pushNil(mb, q, TYPE_lng);
-		if (q == NULL)
-			return NULL;
-		break;
-	case cmp_equal_nil: /* nil == nil */
-		q = newStmt(mb, algebraRef, sjt);
-		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-		q = pushArgument(mb, q, op1->nr);
-		q = pushArgument(mb, q, op2->nr);
-		q = pushNil(mb, q, TYPE_bat);
-		q = pushNil(mb, q, TYPE_bat);
-		q = pushBit(mb, q, TRUE);
+		q = pushBit(mb, q, is_semantics?TRUE:FALSE);
 		q = pushNil(mb, q, TYPE_lng);
 		if (q == NULL)
 			return NULL;
@@ -1959,7 +1946,7 @@ stmt_join(backend *be, stmt *op1, stmt *op2, int anti, comp_type cmptype)
 		q = op1->q;
 		break;
 	default:
-		TRC_ERROR(SQL_STATEMENT, "Impossible action\n");
+		TRC_ERROR(SQL_EXECUTION, "Impossible action\n");
 	}
 	if (q) {
 		stmt *s = stmt_create(be->mvc->sa, st_join);
@@ -1977,7 +1964,7 @@ stmt_join(backend *be, stmt *op1, stmt *op2, int anti, comp_type cmptype)
 }
 
 stmt *
-stmt_semijoin(backend *be, stmt *op1, stmt *op2)
+stmt_semijoin(backend *be, stmt *op1, stmt *op2, int is_semantics)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
@@ -1991,7 +1978,7 @@ stmt_semijoin(backend *be, stmt *op1, stmt *op2)
 	q = pushArgument(mb, q, op2->nr);
 	q = pushNil(mb, q, TYPE_bat);
 	q = pushNil(mb, q, TYPE_bat);
-	q = pushBit(mb, q, FALSE);
+	q = pushBit(mb, q, is_semantics?TRUE:FALSE);
 	q = pushNil(mb, q, TYPE_lng);
 	if (q == NULL)
 		return NULL;
@@ -2378,7 +2365,7 @@ stmt_trans(backend *be, int type, stmt *chain, stmt *name)
 		q = newStmt(mb, sqlRef, transaction_beginRef);
 		break;
 	default:
-		TRC_ERROR(SQL_STATEMENT, "Unknown transaction type\n");
+		TRC_ERROR(SQL_EXECUTION, "Unknown transaction type\n");
 	}
 	q = pushArgument(mb, q, chain->nr);
 	if (name)
@@ -2453,7 +2440,7 @@ stmt_catalog(backend *be, int type, stmt *args)
 	case ddl_rename_table: q = newStmt(mb, sqlcatalogRef, rename_tableRef); break;
 	case ddl_rename_column: q = newStmt(mb, sqlcatalogRef, rename_columnRef); break;
 	default:
-		TRC_ERROR(SQL_STATEMENT, "Unknown catalog operation\n");
+		TRC_ERROR(SQL_EXECUTION, "Unknown catalog operation\n");
 	}
 	// pass all arguments as before
 	for (n = args->op4.lval->h; n; n = n->next) {

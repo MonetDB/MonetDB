@@ -106,7 +106,7 @@ select * from bench10 where json.text(json.filter(js,'sparse_000')) = 'GBRDA==='
 --   Argo/SQL:
 --     SELECT COUNT(*) FROM nobench_main WHERE num BETWEEN XXXXX AND YYYYY GROUP BY thousandth;
 select f.h, count(*) from (
-	select json.filter(js,'..thousanth') as g, json.number(json.filter(js,'num')) as h from bench10 where json.number(json.filter(js,'num')) between 0.0 and 3.0 ) as f
+	select json.filter(js,'..thousandth') as g, json.number(json.filter(js,'num')) as h from bench10 where json.number(json.filter(js,'num')) between 0.0 and 3.0 ) as f
 group by f.h;
 
 -- Q11 (replace XXXXX and YYYYY with literal integers):
@@ -117,9 +117,8 @@ group by f.h;
 --                   INNER JOIN nobench_main AS right
 --                   ON (left.nested_obj.str = right.str1)
 --                   WHERE left.num BETWEEN XXXXX AND YYYYY;
---select * from bench10 as left inner join bench10 as right on (json.filter(left.js,'nested_obj.str') = json.filter(right.js, 'str1'))
---where json.number(json.filter(left.js,'num')) between 0.0 and 3.0;
-
+select * from bench10 as "left" inner join bench10 as "right" on (json.filter("left".js,'nested_obj.str') = json.filter("right".js, 'str1'))
+ where json.number(json.filter("left".js,'num')) between 0.0 and 3.0 order by "left".js;
 
 -- Q12 (use "extra" data file provided by generator):
 --   MongoDB:

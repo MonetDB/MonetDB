@@ -140,7 +140,7 @@ renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int
 	*/
 	if( !start && pci->calls > HIGHWATERMARK){
 		if( pci->calls == 10000 || pci->calls == 100000 || pci->calls == 1000000 || pci->calls == 10000000)
-			TRC_WARNING(MAL_MAL, "Too many calls: %d\n", pci->calls);
+			TRC_WARNING(MAL_SERVER, "Too many calls: %d\n", pci->calls);
 		return;
 	}
 
@@ -833,9 +833,6 @@ void initProfiler(void)
 
 void initHeartbeat(void)
 {
-#ifdef HAVE_EMBEDDED
-	return;
-#endif
 	ATOMIC_SET(&hbrunning, 1);
 	if (MT_create_thread(&hbthread, profilerHeartbeat, NULL, MT_THR_JOINABLE,
 						 "heartbeat") < 0) {

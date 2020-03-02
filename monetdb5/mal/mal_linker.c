@@ -185,16 +185,9 @@ loadLibrary(str filename, int flag)
 		for (p = mod_path; *p && *p != PATH_SEP; p++)
 			;
 
-		/* try hardcoded SO_EXT if that is the same for modules */
-#ifdef _AIX
-		len = snprintf(nme, FILENAME_MAX, "%.*s%c%s_%s%s(%s_%s.0)",
-				 (int) (p - mod_path),
-				 mod_path, DIR_SEP, SO_PREFIX, s, SO_EXT, SO_PREFIX, s);
-#else
 		len = snprintf(nme, FILENAME_MAX, "%.*s%c%s_%s%s",
 				 (int) (p - mod_path),
 				 mod_path, DIR_SEP, SO_PREFIX, s, SO_EXT);
-#endif
 		if (len == -1 || len >= FILENAME_MAX)
 			throw(LOADER, "loadLibrary", RUNTIME_LOAD_ERROR "Library filename path is too large");
 		handle = dlopen(nme, mode);

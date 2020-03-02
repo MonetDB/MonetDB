@@ -271,9 +271,9 @@ nomatch(BAT **r1p, BAT **r2p, BAT *l, BAT *r, struct canditer *restrict lci,
 		}
 		*r1p = r1;
 		TRC_DEBUG(ALGO, "%s(l=%s,r=%s)=(" ALGOBATFMT "," ALGOOPTBATFMT ") " LLFMT "us -- nomatch\n",
-				  	func, BATgetId(l), BATgetId(r),
-				  	ALGOBATPAR(r1), ALGOOPTBATPAR(r2),
-				  	GDKusec() - t0);
+			  func, BATgetId(l), BATgetId(r),
+			  ALGOBATPAR(r1), ALGOOPTBATPAR(r2),
+			  GDKusec() - t0);
 		return GDK_SUCCEED;
 	}
 
@@ -287,9 +287,9 @@ nomatch(BAT **r1p, BAT **r2p, BAT *l, BAT *r, struct canditer *restrict lci,
 	}
 	*r1p = r1;
 	TRC_DEBUG(ALGO, "%s(l=%s,r=%s)=(" ALGOBATFMT "," ALGOOPTBATFMT ") " LLFMT "us -- nomatch\n",
-				func, BATgetId(l), BATgetId(r),
-				ALGOBATPAR(r1), ALGOOPTBATPAR(r2),
-				GDKusec() - t0);
+		  func, BATgetId(l), BATgetId(r),
+		  ALGOBATPAR(r1), ALGOOPTBATPAR(r2),
+		  GDKusec() - t0);
 	return GDK_SUCCEED;
 }
 
@@ -399,16 +399,16 @@ selectjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	}
 	BBPunfix(bn->batCacheid);
 	TRC_DEBUG(ALGO, "%s(l=" ALGOBATFMT ","
-			"r=" ALGOBATFMT ",sl=" ALGOOPTBATFMT ","
-			"sr=" ALGOOPTBATFMT ",nil_matches=%d)%s %s "
-			"-> (" ALGOBATFMT "," ALGOOPTBATFMT ") " LLFMT "us\n",
-			__func__,
-			ALGOBATPAR(l), ALGOBATPAR(r),
-			ALGOOPTBATPAR(lci->s), ALGOOPTBATPAR(rci->s),
-			nil_matches,
-			swapped ? " swapped" : "", reason,
-			ALGOBATPAR(r1), ALGOOPTBATPAR(r2),
-			GDKusec() - t0);
+		  "r=" ALGOBATFMT ",sl=" ALGOOPTBATFMT ","
+		  "sr=" ALGOOPTBATFMT ",nil_matches=%d)%s %s "
+		  "-> (" ALGOBATFMT "," ALGOOPTBATFMT ") " LLFMT "us\n",
+		  __func__,
+		  ALGOBATPAR(l), ALGOBATPAR(r),
+		  ALGOOPTBATPAR(lci->s), ALGOOPTBATPAR(rci->s),
+		  nil_matches,
+		  swapped ? " swapped" : "", reason,
+		  ALGOBATPAR(r1), ALGOOPTBATPAR(r2),
+		  GDKusec() - t0);
 
 	return GDK_SUCCEED;
 }
@@ -743,17 +743,17 @@ mergejoin_void(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		virtualize(r2);
   doreturn2:
 	TRC_DEBUG(ALGO, "%s(l=" ALGOBATFMT ","
-			"r=" ALGOBATFMT ",sl=" ALGOOPTBATFMT ","
-			"sr=" ALGOOPTBATFMT ","
-			"nil_on_miss=%d,only_misses=%d)%s %s "
-			"-> (" ALGOBATFMT "," ALGOOPTBATFMT ") " LLFMT "us\n",
-			__func__,
-			ALGOBATPAR(l), ALGOBATPAR(r),
-			ALGOOPTBATPAR(lci->s), ALGOOPTBATPAR(rci->s),
-			nil_on_miss, only_misses,
-			swapped ? " swapped" : "", reason,
-			ALGOBATPAR(r1), ALGOOPTBATPAR(r2),
-			GDKusec() - t0);
+		  "r=" ALGOBATFMT ",sl=" ALGOOPTBATFMT ","
+		  "sr=" ALGOOPTBATFMT ","
+		  "nil_on_miss=%d,only_misses=%d)%s %s "
+		  "-> (" ALGOBATFMT "," ALGOOPTBATFMT ") " LLFMT "us\n",
+		  __func__,
+		  ALGOBATPAR(l), ALGOBATPAR(r),
+		  ALGOOPTBATPAR(lci->s), ALGOOPTBATPAR(rci->s),
+		  nil_on_miss, only_misses,
+		  swapped ? " swapped" : "", reason,
+		  ALGOBATPAR(r1), ALGOOPTBATPAR(r2),
+		  GDKusec() - t0);
 
 	return GDK_SUCCEED;
 }
@@ -1040,15 +1040,15 @@ mergejoin_int(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		}
 	}
 	TRC_DEBUG(ALGO, "%s(l=" ALGOBATFMT ","
-			"r=" ALGOBATFMT ","
-			"nil_matches=%d)%s %s "
-			"-> (" ALGOBATFMT "," ALGOOPTBATFMT ") " LLFMT "us\n",
-			__func__,
-			ALGOBATPAR(l), ALGOBATPAR(r),
-			nil_matches,
-			swapped ? " swapped" : "", reason,
-			ALGOBATPAR(r1), ALGOOPTBATPAR(r2),
-			GDKusec() - t0);
+		  "r=" ALGOBATFMT ","
+		  "nil_matches=%d)%s %s "
+		  "-> (" ALGOBATFMT "," ALGOOPTBATFMT ") " LLFMT "us\n",
+		  __func__,
+		  ALGOBATPAR(l), ALGOBATPAR(r),
+		  nil_matches,
+		  swapped ? " swapped" : "", reason,
+		  ALGOBATPAR(r1), ALGOOPTBATPAR(r2),
+		  GDKusec() - t0);
 
 	return GDK_SUCCEED;
 
@@ -1340,15 +1340,15 @@ mergejoin_lng(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		}
 	}
 	TRC_DEBUG(ALGO, "%s(l=" ALGOBATFMT ","
-			"r=" ALGOBATFMT ","
-			"nil_matches=%d)%s %s "
-			"-> (" ALGOBATFMT "," ALGOOPTBATFMT ") " LLFMT "us\n",
-			__func__,
-			ALGOBATPAR(l), ALGOBATPAR(r),
-			nil_matches,
-			swapped ? " swapped" : "", reason,
-			ALGOBATPAR(r1), ALGOOPTBATPAR(r2),
-			GDKusec() - t0);
+		  "r=" ALGOBATFMT ","
+		  "nil_matches=%d)%s %s "
+		  "-> (" ALGOBATFMT "," ALGOOPTBATFMT ") " LLFMT "us\n",
+		  __func__,
+		  ALGOBATPAR(l), ALGOBATPAR(r),
+		  nil_matches,
+		  swapped ? " swapped" : "", reason,
+		  ALGOBATPAR(r1), ALGOOPTBATPAR(r2),
+		  GDKusec() - t0);
 
 	return GDK_SUCCEED;
 
@@ -1619,15 +1619,15 @@ mergejoin_cand(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		}
 	}
 	TRC_DEBUG(ALGO, "%s(l=" ALGOBATFMT ","
-			"r=" ALGOBATFMT ","
-			"nil_matches=%d)%s %s "
-			"-> (" ALGOBATFMT "," ALGOOPTBATFMT ") " LLFMT "us\n",
-			__func__,
-			ALGOBATPAR(l), ALGOBATPAR(r),
-			nil_matches,
-			swapped ? " swapped" : "", reason,
-			ALGOBATPAR(r1), ALGOOPTBATPAR(r2),
-			GDKusec() - t0);
+		  "r=" ALGOBATFMT ","
+		  "nil_matches=%d)%s %s "
+		  "-> (" ALGOBATFMT "," ALGOOPTBATFMT ") " LLFMT "us\n",
+		  __func__,
+		  ALGOBATPAR(l), ALGOBATPAR(r),
+		  nil_matches,
+		  swapped ? " swapped" : "", reason,
+		  ALGOBATPAR(r1), ALGOOPTBATPAR(r2),
+		  GDKusec() - t0);
 
 	return GDK_SUCCEED;
 
@@ -2345,18 +2345,18 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		}
 	}
 	TRC_DEBUG(ALGO, "%s(l=" ALGOBATFMT ","
-			"r=" ALGOBATFMT ",sl=" ALGOOPTBATFMT ","
-			"sr=" ALGOOPTBATFMT ",nil_matches=%d,"
-			"nil_on_miss=%d,semi=%d,only_misses=%d,"
-			"not_in=%d)%s %s "
-			"-> (" ALGOBATFMT "," ALGOOPTBATFMT ") " LLFMT "us\n",
-			__func__,
-			ALGOBATPAR(l), ALGOBATPAR(r),
-			ALGOOPTBATPAR(lci->s), ALGOOPTBATPAR(rci->s),
-			nil_matches, nil_on_miss, semi, only_misses, not_in,
-			swapped ? " swapped" : "", reason,
-			ALGOBATPAR(r1), ALGOOPTBATPAR(r2),
-			GDKusec() - t0);
+		  "r=" ALGOBATFMT ",sl=" ALGOOPTBATFMT ","
+		  "sr=" ALGOOPTBATFMT ",nil_matches=%d,"
+		  "nil_on_miss=%d,semi=%d,only_misses=%d,"
+		  "not_in=%d)%s %s "
+		  "-> (" ALGOBATFMT "," ALGOOPTBATFMT ") " LLFMT "us\n",
+		  __func__,
+		  ALGOBATPAR(l), ALGOBATPAR(r),
+		  ALGOOPTBATPAR(lci->s), ALGOOPTBATPAR(rci->s),
+		  nil_matches, nil_on_miss, semi, only_misses, not_in,
+		  swapped ? " swapped" : "", reason,
+		  ALGOBATPAR(r1), ALGOOPTBATPAR(r2),
+		  GDKusec() - t0);
 
 	return GDK_SUCCEED;
 
@@ -2535,9 +2535,9 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		BAT *b = BBPdescriptor(VIEWtparent(r));
 		assert(rci->tpe == cand_dense && rci->ncand == BATcount(r));
 		TRC_DEBUG(ALGO, "%s(%s): using "
-				  "parent(" ALGOBATFMT ") for hash\n",
-				  __func__,
-				  BATgetId(r), ALGOBATPAR(b));
+			  "parent(" ALGOBATFMT ") for hash\n",
+			  __func__,
+			  BATgetId(r), ALGOBATPAR(b));
 		rl += (BUN) ((r->theap.base - b->theap.base) >> r->tshift);
 		rh += rl;
 		r = b;
@@ -2550,8 +2550,8 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 			/* there is a hash already and the collision
 			 * chains aren't too long, use it */
 			TRC_DEBUG(ALGO, "%s(%s): using "
-					  "existing hash with candidate list\n",
-					  __func__, BATgetId(r));
+				  "existing hash with candidate list\n",
+				  __func__, BATgetId(r));
 			hsh = r->thash;
 		} else if (rci->ncand == BATcount(r) ||
 			   (!r->batTransient &&
@@ -2747,18 +2747,18 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		}
 	}
 	TRC_DEBUG(ALGO, "%s(l=" ALGOBATFMT ","
-			  "r=" ALGOBATFMT ",sl=" ALGOOPTBATFMT ","
-			  "sr=" ALGOOPTBATFMT ",nil_matches=%d,"
-			  "nil_on_miss=%d,semi=%d,only_misses=%d,"
-			  "not_in=%d)%s %s "
-			  "-> (" ALGOBATFMT "," ALGOOPTBATFMT ") " LLFMT "us\n",
-			  __func__,
-			  ALGOBATPAR(l), ALGOBATPAR(r),
-			  ALGOOPTBATPAR(lci->s), ALGOOPTBATPAR(rci->s),
-			  nil_matches, nil_on_miss, semi, only_misses, not_in,
-			  swapped ? " swapped" : "", reason,
-			  ALGOBATPAR(r1), ALGOOPTBATPAR(r2),
-			  GDKusec() - t0);
+		  "r=" ALGOBATFMT ",sl=" ALGOOPTBATFMT ","
+		  "sr=" ALGOOPTBATFMT ",nil_matches=%d,"
+		  "nil_on_miss=%d,semi=%d,only_misses=%d,"
+		  "not_in=%d)%s %s "
+		  "-> (" ALGOBATFMT "," ALGOOPTBATFMT ") " LLFMT "us\n",
+		  __func__,
+		  ALGOBATPAR(l), ALGOBATPAR(r),
+		  ALGOOPTBATPAR(lci->s), ALGOOPTBATPAR(rci->s),
+		  nil_matches, nil_on_miss, semi, only_misses, not_in,
+		  swapped ? " swapped" : "", reason,
+		  ALGOBATPAR(r1), ALGOOPTBATPAR(r2),
+		  GDKusec() - t0);
 
 	return GDK_SUCCEED;
 
@@ -2800,12 +2800,12 @@ thetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int opcode, BU
 	oid lval = oid_nil, rval = oid_nil;
 
 	TRC_DEBUG(ALGO, "thetajoin(l=" ALGOBATFMT ","
-			  "r=" ALGOBATFMT ",sl=" ALGOOPTBATFMT ","
-			  "sr=" ALGOOPTBATFMT ",op=%s%s%s)\n",
-			  ALGOBATPAR(l), ALGOBATPAR(r), ALGOOPTBATPAR(sl), ALGOOPTBATPAR(sr),
-			  opcode & MASK_LT ? "<" : "",
-			  opcode & MASK_GT ? ">" : "",
-			  opcode & MASK_EQ ? "=" : "");
+		  "r=" ALGOBATFMT ",sl=" ALGOOPTBATFMT ","
+		  "sr=" ALGOOPTBATFMT ",op=%s%s%s)\n",
+		  ALGOBATPAR(l), ALGOBATPAR(r), ALGOOPTBATPAR(sl), ALGOOPTBATPAR(sr),
+		  opcode & MASK_LT ? "<" : "",
+		  opcode & MASK_GT ? ">" : "",
+		  opcode & MASK_EQ ? "=" : "");
 
 	assert(ATOMtype(l->ttype) == ATOMtype(r->ttype));
 	assert(sl == NULL || sl->tsorted);
@@ -2943,9 +2943,9 @@ thetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int opcode, BU
 		}
 	}
 	TRC_DEBUG(ALGO, "thetajoin(l=%s,r=%s)=(" ALGOBATFMT "," ALGOOPTBATFMT ") " LLFMT "us\n",
-			  BATgetId(l), BATgetId(r),
-			  ALGOBATPAR(r1), ALGOOPTBATPAR(r2),
-			  GDKusec() - t0);
+		  BATgetId(l), BATgetId(r),
+		  ALGOBATPAR(r1), ALGOOPTBATPAR(r2),
+		  GDKusec() - t0);
 	return GDK_SUCCEED;
 
   bailout:
@@ -3324,9 +3324,9 @@ bandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		}
 	}
 	TRC_DEBUG(ALGO, "BATbandjoin(l=%s,r=%s)=(" ALGOBATFMT "," ALGOOPTBATFMT ") " LLFMT "us\n",
-			  BATgetId(l), BATgetId(r),
-			  ALGOBATPAR(r1), ALGOOPTBATPAR(r2),
-			  GDKusec() - t0);
+		  BATgetId(l), BATgetId(r),
+		  ALGOBATPAR(r1), ALGOOPTBATPAR(r2),
+		  GDKusec() - t0);
 	return GDK_SUCCEED;
 
   bailout:
@@ -3383,15 +3383,15 @@ fetchjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	r1->trevsorted = r->trevsorted || e - b <= 1;
 	r1->tseqbase = e == b ? 0 : e - b == 1 ? *(const oid *)Tloc(r1, 0) : oid_nil;
 	TRC_DEBUG(ALGO, "%s(l=" ALGOBATFMT ","
-			"r=" ALGOBATFMT ",sl=" ALGOOPTBATFMT ","
-			"sr=" ALGOOPTBATFMT ") %s "
-			"-> (" ALGOBATFMT "," ALGOOPTBATFMT ") " LLFMT "us\n",
-			__func__,
-			ALGOBATPAR(l), ALGOBATPAR(r),
-			ALGOOPTBATPAR(sl), ALGOOPTBATPAR(sr),
-			reason,
-			ALGOBATPAR(r1), ALGOOPTBATPAR(r2),
-			GDKusec() - t0);
+		  "r=" ALGOBATFMT ",sl=" ALGOOPTBATFMT ","
+		  "sr=" ALGOOPTBATFMT ") %s "
+		  "-> (" ALGOBATFMT "," ALGOOPTBATFMT ") " LLFMT "us\n",
+		  __func__,
+		  ALGOBATPAR(l), ALGOBATPAR(r),
+		  ALGOOPTBATPAR(sl), ALGOOPTBATPAR(sr),
+		  reason,
+		  ALGOBATPAR(r1), ALGOOPTBATPAR(r2),
+		  GDKusec() - t0);
 
 	return GDK_SUCCEED;
 }
@@ -3438,15 +3438,15 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 
 	if (lcnt == 0 || (!only_misses && !nil_on_miss && rcnt == 0)) {
 		TRC_DEBUG(ALGO, "%s(l=" ALGOBATFMT ","
-				"r=" ALGOBATFMT ",sl=" ALGOOPTBATFMT ","
-				"sr=" ALGOOPTBATFMT ",nil_matches=%d,"
-				"nil_on_miss=%d,semi=%d,only_misses=%d,"
-				"not_in=%d)\n",
-				func,
-				ALGOBATPAR(l), ALGOBATPAR(r),
-				ALGOOPTBATPAR(sl), ALGOOPTBATPAR(sr),
-				nil_matches, nil_on_miss, semi, only_misses,
-				not_in);
+			  "r=" ALGOBATFMT ",sl=" ALGOOPTBATFMT ","
+			  "sr=" ALGOOPTBATFMT ",nil_matches=%d,"
+			  "nil_on_miss=%d,semi=%d,only_misses=%d,"
+			  "not_in=%d)\n",
+			  func,
+			  ALGOBATPAR(l), ALGOBATPAR(r),
+			  ALGOOPTBATPAR(sl), ALGOOPTBATPAR(sr),
+			  nil_matches, nil_on_miss, semi, only_misses,
+			  not_in);
 		return nomatch(r1p, r2p, l, r, &lci,
 			       nil_on_miss, only_misses, func, t0);
 	}
@@ -3514,7 +3514,7 @@ BATouterjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_ma
 {
 	return leftjoin(r1p, r2p, l, r, sl, sr, nil_matches,
 			true, false, false, false, estimate, __func__,
-			GDKdebug & ALGOMASK ? GDKusec() : 0);
+			GDK_TRACER_TEST(M_DEBUG, ALGO) ? GDKusec() : 0);
 }
 
 /* Perform a semi-join over l and r.  Returns one or two new, bats
@@ -3646,11 +3646,11 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 
 	if (lcnt == 0 || rcnt == 0) {
 		TRC_DEBUG(ALGO, "BATjoin(l=" ALGOBATFMT ","
-				"r=" ALGOBATFMT ",sl=" ALGOOPTBATFMT ","
-				"sr=" ALGOOPTBATFMT ",nil_matches=%d)\n",
-				ALGOBATPAR(l), ALGOBATPAR(r),
-				ALGOOPTBATPAR(sl), ALGOOPTBATPAR(sr),
-				nil_matches);
+			  "r=" ALGOBATFMT ",sl=" ALGOOPTBATFMT ","
+			  "sr=" ALGOOPTBATFMT ",nil_matches=%d)\n",
+			  ALGOBATPAR(l), ALGOBATPAR(r),
+			  ALGOOPTBATPAR(sl), ALGOOPTBATPAR(sr),
+			  nil_matches);
 		return nomatch(r1p, r2p, l, r, &lci,
 			       false, false, __func__, t0);
 	}
@@ -3802,10 +3802,10 @@ BATbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	TRC_DEBUG(ALGO, "BATbandjoin("
-			  "l=" ALGOBATFMT ",r=" ALGOBATFMT ","
-			  "sl=" ALGOOPTBATFMT ",sr=" ALGOOPTBATFMT ")\n",
-			  ALGOBATPAR(l), ALGOBATPAR(r),
-			  ALGOOPTBATPAR(sl), ALGOOPTBATPAR(sr));
+		  "l=" ALGOBATFMT ",r=" ALGOBATFMT ","
+		  "sl=" ALGOOPTBATFMT ",sr=" ALGOOPTBATFMT ")\n",
+		  ALGOBATPAR(l), ALGOBATPAR(r),
+		  ALGOOPTBATPAR(sl), ALGOOPTBATPAR(sr));
 
 	*r1p = NULL;
 	if (r2p) {
