@@ -34,7 +34,7 @@ QUERY = call setquerytimeout(-1);
 ERROR = !Query timeout should be >= 0
 MAPI  = (monetdb) /var/tmp/mtest-61463/.s.monetdb.39827
 QUERY = call setworkerlimit( -1);
-ERROR = !At least one worker needed
+ERROR = !The number of workers cannot be negative
 
 # 18:15:20 >  
 # 18:15:20 >  "Done."
