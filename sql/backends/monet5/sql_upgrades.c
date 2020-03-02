@@ -2430,16 +2430,26 @@ sql_update_linear_hashing(Client c, mvc *sql, const char *prev_schema, bool *sys
 			"create view sys.sessions as select * from sys.sessions();\n");
 
 	pos += snprintf(buf + pos, bufsize - pos,
+			"grant execute on procedure sys.settimeout(bigint) to public;\n"
+			"grant execute on procedure sys.settimeout(bigint,bigint) to public;\n"
+			"grant execute on procedure sys.setsession(bigint) to public;\n");
+
+	pos += snprintf(buf + pos, bufsize - pos,
 			"create procedure sys.setoptimizer(\"optimizer\" string)\n"
 			" external name clients.setoptimizer;\n"
+			"grant execute on procedure sys.setoptimizer(string) to public;\n"
 			"create procedure sys.setquerytimeout(\"query\" int)\n"
 			" external name clients.setquerytimeout;\n"
+			"grant execute on procedure sys.setquerytimeout(int) to public;\n"
 			"create procedure sys.setsessiontimeout(\"timeout\" int)\n"
 			" external name clients.setsessiontimeout;\n"
+			"grant execute on procedure sys.setsessiontimeout(int) to public;\n"
 			"create procedure sys.setworkerlimit(\"limit\" int)\n"
 			" external name clients.setworkerlimit;\n"
+			"grant execute on procedure sys.setworkerlimit(int) to public;\n"
 			"create procedure sys.setmemorylimit(\"limit\" int)\n"
 			" external name clients.setmemorylimit;\n"
+			"grant execute on procedure sys.setmemorylimit(int) to public;\n"
 			"create procedure sys.setoptimizer(\"sessionid\" int, \"optimizer\" string)\n"
 			" external name clients.setoptimizer;\n"
 			"create procedure sys.setquerytimeout(\"sessionid\" int, \"query\" int)\n"
@@ -2500,8 +2510,10 @@ sql_update_linear_hashing(Client c, mvc *sql, const char *prev_schema, bool *sys
 			" external name mdb.\"getDebugFlags\";\n"
 			"create procedure sys.\"sleep\"(msecs int)\n"
 			" external name \"alarm\".\"sleep\";\n"
+			"grant execute on procedure sys.\"sleep\"(int) to public;\n"
 			"create function sys.\"sleep\"(msecs int) returns integer\n"
-			" external name \"alarm\".\"sleep\";\n");
+			" external name \"alarm\".\"sleep\";\n"
+			"grant execute on function sys.\"sleep\"(int) to public;\n");
 	pos += snprintf(buf + pos, bufsize - pos,
 			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
 			" and name in ('debug', 'debugflags', 'sleep');\n");
