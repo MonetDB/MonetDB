@@ -186,82 +186,91 @@ bailout:
 str
 CLTquit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int id;
+	str msg = MAL_SUCCEED;
+	int idx = cntxt->idx;
 	(void) mb;		/* fool compiler */
 
-	if ( pci->argc==2)
-		id = *getArgReference_int(stk,pci,1);
-	else id =cntxt->idx;
+	if ( pci->argc == 2 && cntxt->user == MAL_ADMIN)
+		idx = *getArgReference_int(stk,pci,1);
 
-	if ( id < 0 || id > MAL_MAXCLIENTS)
+	if ( idx < 0 || idx > MAL_MAXCLIENTS)
 		throw(MAL,"clients.quit", "Illegal session id");
-	if ( !(cntxt->user == MAL_ADMIN || mal_clients[id].user == cntxt->user) )
-		throw(MAL, "client.quit", INVCRED_ACCESS_DENIED);
 
 	/* A user can only quite a session under the same id */
-	if ( cntxt->idx == mal_clients[id].idx)
-		mal_clients[id].mode = FINISHCLIENT;
-	else 
-		throw(MAL, "client.quit", INVCRED_ACCESS_DENIED);
-	return MAL_SUCCEED;
+	MT_lock_set(&mal_contextLock);
+	if (mal_clients[idx].mode == FREECLIENT)
+		msg = createException(MAL,"clients.stop","Session not active anymore");
+	else
+		mal_clients[idx].mode = FINISHCLIENT;
+	MT_lock_unset(&mal_contextLock);
+	return msg;
 }
 
 /* Stopping a client in a softmanner by setting the time out marker */
 str
 CLTstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int id = *getArgReference_int(stk,pci,1);
+	int idx = cntxt->idx;
+	str msg = MAL_SUCCEED;
 
 	(void) mb;
-	if ( id < 0 || id > MAL_MAXCLIENTS)
+	if (cntxt->user == MAL_ADMIN)
+		idx = *getArgReference_int(stk,pci,1);
+
+	if ( idx < 0 || idx > MAL_MAXCLIENTS)
 		throw(MAL,"clients.stop","Illegal session id");
-	if (cntxt->user == mal_clients[id].user || cntxt->user == MAL_ADMIN)
-		mal_clients[id].querytimeout = 1; /* stop client in one microsecond */
+	
+	MT_lock_set(&mal_contextLock);
+	if (mal_clients[idx].mode == FREECLIENT)
+		msg = createException(MAL,"clients.stop","Session not active anymore");
+	else
+		mal_clients[idx].querytimeout = 1; /* stop client in one microsecond */
 	/* this forces the designated client to stop at the next instruction */
-	return MAL_SUCCEED;
+	MT_lock_unset(&mal_contextLock);
+	return msg;
 }
 
 str
 CLTsetoptimizer(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int idx;
-	str opt;
+	int idx = cntxt->idx;
+	str opt, msg = MAL_SUCCEED;
 
 	(void) mb;
-	if( pci->argc == 3){
+	if( pci->argc == 3 && cntxt->user == MAL_ADMIN){
 		idx = *getArgReference_int(stk,pci,1);
 		opt = *getArgReference_str(stk,pci,2);
 	} else {
-		idx = cntxt->idx;
 		opt = *getArgReference_str(stk,pci,1);
 	}
 
 	if( idx < 0 || idx > MAL_MAXCLIENTS)
 		throw(MAL,"clients.setoptimizer","Illegal session id");
+	if (strNil(opt))
+		throw(MAL,"clients.setoptimizer","Input string cannot be NULL");
+	if (strlen(opt) >= sizeof(mal_clients[idx].optimizer))
+		throw(MAL,"clients.setoptimizer","Input string is too large");
+
+	MT_lock_set(&mal_contextLock);
 	if (mal_clients[idx].mode == FREECLIENT)
-		throw(MAL,"clients.setoptimizer","Session not active anymore");
-	if (cntxt->user == mal_clients[idx].user || cntxt->user == MAL_ADMIN){
-		if (strNil(opt))
-			throw(MAL,"clients.setoptimizer","Input string cannot be NULL");
-		if (strlen(opt) >= sizeof(mal_clients[idx].optimizer))
-			throw(MAL,"clients.setoptimizer","Input string is too large");
-		strcpy_len(mal_clients[idx].optimizer, opt,
-			   sizeof(mal_clients[idx].optimizer));
-	}
-	return MAL_SUCCEED;
+		msg = createException(MAL,"clients.setoptimizer","Session not active anymore");
+	else
+		strcpy_len(mal_clients[idx].optimizer, opt, sizeof(mal_clients[idx].optimizer));
+	MT_lock_unset(&mal_contextLock);
+	return msg;
 }
 
 str
 CLTsetworkerlimit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int idx, limit;
+	str msg = MAL_SUCCEED;
+	int idx = cntxt->idx, limit;
 
 	(void) mb;
-	if(pci->argc == 3){
+	if (pci->argc == 3 && cntxt->user == MAL_ADMIN){
 		idx = *getArgReference_int(stk,pci,1);
 		limit = *getArgReference_int(stk,pci,2);
 	} else {
-		idx = cntxt->idx;
 		limit = *getArgReference_int(stk,pci,1);
 	}
 
@@ -271,128 +280,164 @@ CLTsetworkerlimit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "clients.setworkerlimit","The number of workers cannot be NULL");
 	if( limit < 0)
 		throw(MAL, "clients.setworkerlimit","The number of workers cannot be negative");
+
+	MT_lock_set(&mal_contextLock);
 	if (mal_clients[idx].mode == FREECLIENT)
-		throw(MAL,"clients.setworkerlimit","Session not active anymore");
-	if (cntxt->user == mal_clients[idx].user || cntxt->user == MAL_ADMIN){
+		msg = createException(MAL,"clients.setworkerlimit","Session not active anymore");
+	else
 		mal_clients[idx].workerlimit = limit;
-	}
-	return MAL_SUCCEED;
+	MT_lock_unset(&mal_contextLock);
+	return msg;
 }
 
 str
 CLTsetmemorylimit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int idx, limit;
+	str msg = MAL_SUCCEED;
+	int idx = cntxt->idx, limit;
 
 	(void) mb;
-	if(pci->argc == 3){
+	if (pci->argc == 3 && cntxt->user == MAL_ADMIN){
 		idx = *getArgReference_sht(stk,pci,1);
 		limit = *getArgReference_int(stk,pci,2);
-	} else{
-		idx = cntxt->idx;
+	} else {
 		limit = *getArgReference_int(stk,pci,1);
 	}
 
 	if( idx < 0 || idx > MAL_MAXCLIENTS)
 		throw(MAL,"clients.setmemorylimit","Illegal session id");
-	if (mal_clients[idx].mode == FREECLIENT)
-		throw(MAL,"clients.setmemorylimit","Session not active anymore");
 	if( is_int_nil(limit))
 		throw(MAL, "clients.setmemorylimit", "The memmory limit cannot be NULL");
 	if( limit < 0)
 		throw(MAL, "clients.setmemorylimit", "The memmory limit cannot be negative");
-	if (cntxt->user == mal_clients[idx].user || cntxt->user == MAL_ADMIN){
+
+	MT_lock_set(&mal_contextLock);
+	if (mal_clients[idx].mode == FREECLIENT)
+		msg = createException(MAL,"clients.setmemorylimit","Session not active anymore");
+	else
 		mal_clients[idx].memorylimit = limit;
-	}
-	return MAL_SUCCEED;
+	MT_lock_unset(&mal_contextLock);
+	return msg;
 }
 
 str
 CLTstopSession(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int idx;
+	str msg = MAL_SUCCEED;
+	int idx = cntxt->idx;
 
-	(void) mb;
-	switch( getArgType(mb,pci,1)){
-	case TYPE_bte:
-		idx = *getArgReference_bte(stk,pci,1);
-		break;
-	case TYPE_sht:
-		idx = *getArgReference_sht(stk,pci,1);
-		break;
-	case TYPE_int:
-		idx = *getArgReference_int(stk,pci,1);
-		break;
-	default:
-		throw(MAL,"clients.stopSession","Unexpected index type");
+	if (cntxt->user == MAL_ADMIN) {
+		switch( getArgType(mb,pci,1)){
+		case TYPE_bte:
+			idx = *getArgReference_bte(stk,pci,1);
+			break;
+		case TYPE_sht:
+			idx = *getArgReference_sht(stk,pci,1);
+			break;
+		case TYPE_int:
+			idx = *getArgReference_int(stk,pci,1);
+			break;
+		default:
+			throw(MAL,"clients.stopSession","Unexpected index type");
+		}
 	}
 	if( idx < 0 || idx > MAL_MAXCLIENTS)
 		throw(MAL,"clients.stopSession","Illegal session id");
-	if (mal_clients[idx].mode == FREECLIENT)
-		throw(MAL,"clients.stopSession","Session not active anymore");
-	if (cntxt->user == mal_clients[idx].user || cntxt->user == MAL_ADMIN){
+
+	MT_lock_set(&mal_contextLock);
+	if (mal_clients[idx].mode == FREECLIENT) {
+		msg = createException(MAL,"clients.stopSession","Session not active anymore");
+	} else {
 		mal_clients[idx].querytimeout = 1; /* stop client in one microsecond */
 		mal_clients[idx].sessiontimeout = 1; /* stop client session */
 	}
+	MT_lock_unset(&mal_contextLock);
 	/* this forces the designated client to stop at the next instruction */
-	return MAL_SUCCEED;
+	return msg;
 }
 
 /* Queries can be temporarily suspended */
 str
 CLTsuspend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int id = *getArgReference_int(stk,pci,1);
-	(void) cntxt;
+	str msg = MAL_SUCCEED;
+	int idx = cntxt->idx;
+	
+	if (cntxt->user == MAL_ADMIN)
+		idx = *getArgReference_int(stk,pci,1);
 	(void) mb;
 
-	if ( id < 0 || id > MAL_MAXCLIENTS)
+	if( idx < 0 || idx > MAL_MAXCLIENTS)
 		throw(MAL,"clients.suspend", "Illegal session id");
-	if ( !(cntxt->user == MAL_ADMIN || mal_clients[id].user == cntxt->user) )
-		throw(MAL, "client.suspend", INVCRED_ACCESS_DENIED);
-	return MCsuspendClient(id);
+
+	MT_lock_set(&mal_contextLock);
+	if (mal_clients[idx].mode == FREECLIENT)
+		msg = createException(MAL,"clients.suspend","Session not active anymore");
+	else
+		msg = MCsuspendClient(idx);
+	MT_lock_unset(&mal_contextLock);
+	return msg;
 }
 
 str
-CLTwakeup(void *ret, int *id)
+CLTwakeup(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	(void) ret;     /* fool compiler */
-	return MCawakeClient(*id);
+	str msg = MAL_SUCCEED;
+	int idx = cntxt->idx;
+	
+	if (cntxt->user == MAL_ADMIN)
+		idx = *getArgReference_int(stk,pci,1);
+	(void) mb;
+
+	if( idx < 0 || idx > MAL_MAXCLIENTS)
+		throw(MAL,"clients.wakeup", "Illegal session id");
+
+	MT_lock_set(&mal_contextLock);
+	if (mal_clients[idx].mode == FREECLIENT)
+		msg = createException(MAL,"clients.wakeup","Session not active anymore");
+	else
+		msg = MCawakeClient(idx);
+	MT_lock_unset(&mal_contextLock);
+	return msg;
 }
 
 /* Set session time out based in seconds. As of December 2019, this function is deprecated */
 str
 CLTsetSessionTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	str msg = MAL_SUCCEED;
 	lng sto;
 	int idx = cntxt->idx;
 
 	(void) mb;
 	if( idx < 0 || idx > MAL_MAXCLIENTS)
 		throw(MAL,"clients.setsession","Illegal session id %d", idx);
-	if (mal_clients[idx].mode == FREECLIENT)
-		throw(MAL,"clients.setsession","Session not active anymore");
 	sto = *getArgReference_lng(stk,pci,1);
 	if (is_lng_nil(sto))
 		throw(MAL,"clients.setsession","Session timeout cannot be NULL");
 	if (sto < 0)
 		throw(MAL,"clients.setsession","Session timeout should be >= 0");
-	mal_clients[idx].sessiontimeout = sto * 1000000;
-	return MAL_SUCCEED;
+
+	MT_lock_set(&mal_contextLock);
+	if (mal_clients[idx].mode == FREECLIENT)
+		msg = createException(MAL,"clients.setsession","Session not active anymore");
+	else
+		mal_clients[idx].sessiontimeout = sto * 1000000;
+	MT_lock_unset(&mal_contextLock);
+	return msg;
 }
 
 /* Set the current query timeout in seconds. As of December 2019, this function is deprecated */
 str
 CLTsetTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	str msg = MAL_SUCCEED;
 	lng qto,sto;
 	int idx = cntxt->idx;
 
 	(void) mb;
 	if( idx < 0 || idx > MAL_MAXCLIENTS)
 		throw(MAL,"clients.settimeout","Illegal session id %d", idx);
-	if (mal_clients[idx].mode == FREECLIENT)
-		throw(MAL,"clients.settimeout","Session not active anymore");
 	qto = *getArgReference_lng(stk,pci,1);
 	if (is_lng_nil(qto))
 		throw(MAL,"clients.settimeout","Query timeout cannot be NULL");
@@ -404,20 +449,28 @@ CLTsetTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			throw(MAL,"clients.settimeout","Session timeout cannot be NULL");
 		if( sto < 0)
 			throw(MAL,"clients.settimeout","Session timeout should be >= 0");
-		mal_clients[idx].sessiontimeout = sto * 1000000;
 	}
-	mal_clients[idx].querytimeout = qto * 1000000;
-	return MAL_SUCCEED;
+
+	MT_lock_set(&mal_contextLock);
+	if (mal_clients[idx].mode == FREECLIENT) {
+		msg = createException(MAL, "clients.settimeout","Session not active anymore");
+	} else {
+		if (pci->argc == 3)
+			mal_clients[idx].sessiontimeout = sto * 1000000;
+		mal_clients[idx].querytimeout = qto * 1000000;
+	}
+	MT_lock_unset(&mal_contextLock);
+	return msg;
 }
 
 /* set session time out based in seconds, converted into microseconds */
 str
 CLTqueryTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int qto, idx = -1;
-	(void) cntxt;
-	(void) mb;
-	if ( pci->argc == 3){
+	str msg = MAL_SUCCEED;
+	int qto, idx = cntxt->idx;
+
+	if (cntxt->user == MAL_ADMIN && pci->argc == 3){
 		switch( getArgType(mb,pci,1)){
 		case TYPE_bte:
 			idx = *getArgReference_bte(stk,pci,1);
@@ -431,27 +484,32 @@ CLTqueryTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		default:
 			throw(MAL,"clients.queryTimeout","Unexpected index type");
 		}
-		qto=  *getArgReference_int(stk,pci,2);
+		qto = *getArgReference_int(stk,pci,2);
 	} else {
-		idx = cntxt->idx;
-		qto=  *getArgReference_int(stk,pci,1);
+		qto = *getArgReference_int(stk,pci,1);
 	}
 	if (is_int_nil(qto))
 		throw(MAL,"clients.queryTimeout","Query timeout cannot be NULL");
 	if( qto < 0)
 		throw(MAL,"clients.queryTimeout","Query timeout should be >= 0");
-	mal_clients[idx].querytimeout = (lng) qto * 1000000;
-	return MAL_SUCCEED;
+
+	MT_lock_set(&mal_contextLock);
+	if (mal_clients[idx].mode == FREECLIENT)
+		msg = createException(MAL,"clients.queryTimeout","Session not active anymore");
+	else
+		mal_clients[idx].querytimeout = (lng) qto * 1000000;
+	MT_lock_unset(&mal_contextLock);
+	return msg;
 }
 
 /* Set the current session timeout in seconds */
 str
 CLTsessionTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int sto = -1, idx = -1;
+	str msg = MAL_SUCCEED;
+	int sto = -1, idx = cntxt->idx;
 
-	(void) cntxt;
-	if( pci->argc == 3){
+	if(cntxt->user == MAL_ADMIN && pci->argc == 3){
 		switch( getArgType(mb,pci,1)){
 		case TYPE_bte:
 			idx = *getArgReference_bte(stk,pci,1);
@@ -467,7 +525,6 @@ CLTsessionTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		sto = *getArgReference_int(stk,pci,2);
 	} else {
-		idx = cntxt->idx;
 		sto = *getArgReference_int(stk,pci,1);
 	}
 	if (is_int_nil(sto))
@@ -476,10 +533,14 @@ CLTsessionTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL,"clients.sessionTimeout","Session timeout should be >= 0");
 	if( idx < 0 || idx > MAL_MAXCLIENTS)
 		throw(MAL,"clients.sessionTimeout","Illegal session id %d", idx);
+
+	MT_lock_set(&mal_contextLock);
 	if (mal_clients[idx].mode == FREECLIENT)
-		throw(MAL,"clients.sessionTimeout","Session not active anymore");
-	mal_clients[idx].sessiontimeout = (lng) sto * 1000000;
-	return MAL_SUCCEED;
+		msg = createException(MAL,"clients.sessionTimeout","Session not active anymore");
+	else
+		mal_clients[idx].sessiontimeout = (lng) sto * 1000000;
+	MT_lock_unset(&mal_contextLock);
+	return msg;
 }
 
 /* Retrieve the session time out */
