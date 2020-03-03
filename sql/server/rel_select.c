@@ -5276,14 +5276,14 @@ rel_having_limits_nodes(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind
 				sql_subaggr *zero_or_one = sql_bind_aggr(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(l));
 				l = exp_aggr1(sql->sa, l, zero_or_one, 0, 0, CARD_ATOM, has_nil(l));
 			}
-			append(exps, l);
+			list_append(exps, l);
 		} else
-			append(exps, NULL);
+			list_append(exps, exp_atom(sql->sa, atom_null_value(sql->sa, lng)));
 		if (sn->offset) {
 			sql_exp *o = rel_value_exp( query, NULL, sn->offset, 0, ek);
 			if (!o || !(o=rel_check_type(sql, lng, NULL, o, type_equal)))
 				return NULL;
-			append(exps, o);
+			list_append(exps, o);
 		}
 		rel = rel_topn(sql->sa, rel, exps);
 	}
@@ -5297,16 +5297,16 @@ rel_having_limits_nodes(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind
 				return NULL;
 			if (!exp_subtype(s) && rel_set_type_param(sql, sql_bind_localtype("lng"), NULL, s, 0) < 0)
 				return NULL;
-			append(exps, s);
-		} else if (sn->seed)
+			list_append(exps, s);
+		} else {
+			assert(sn->seed);
 			return sql_error(sql, 02, SQLSTATE(42000) "SEED: cannot have SEED without SAMPLE");
-		else
-			append(exps, NULL);
+		}
 		if (sn->seed) {
 			sql_exp *e = rel_value_exp(query, NULL, sn->seed, 0, ek);
 			if (!e || !(e=rel_check_type(sql, sql_bind_localtype("int"), NULL, e, type_equal)))
 				return NULL;
-			append(exps, e);
+			list_append(exps, e);
 		}
 		rel = rel_sample(sql->sa, rel, exps);
 	}
