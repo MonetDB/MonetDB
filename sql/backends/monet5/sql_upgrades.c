@@ -2565,9 +2565,6 @@ sql_update_linear_hashing(Client c, mvc *sql, const char *prev_schema, bool *sys
 			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
 			" and name = 'queue' and type = %d;\n", (int) F_UNION);
 	pos += snprintf(buf + pos, bufsize - pos,
-			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
-			" and name in ('pause', 'resume', 'stop') and type = %d;\n", (int) F_PROC);
-	pos += snprintf(buf + pos, bufsize - pos,
 			"update sys._tables set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
 			" and name = 'queue';\n");
 
