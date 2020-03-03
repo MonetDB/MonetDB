@@ -24,6 +24,7 @@ select * from "idontexist"."idontexist"(); --error, it doesn't exist
 select * from "idontexist"."idontexist"(1); --error, it doesn't exist
 call "idontexist"."idontexist"(); --error, it doesn't exist
 call "idontexist"."idontexist"(1); --error, it doesn't exist
+select "idontexist"."idontexist"(1) over (); --error, it doesn't exist
 
 select cast(true as interval second); --error, not possible
 select cast(true as interval month); --error, not possible
