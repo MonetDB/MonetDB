@@ -5258,7 +5258,6 @@ grant execute on procedure sys.pause(bigint) to public;
 grant execute on procedure sys.resume(bigint) to public;
 grant execute on procedure sys.stop(bigint) to public;
 update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name = 'queue' and type = 5;
-update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name in ('pause', 'resume', 'stop') and type = 2;
 update sys._tables set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name = 'queue';
 ALTER TABLE sys.keywords SET READ WRITE;
 DELETE FROM sys.keywords where "keyword" IN ('NOCYCLE','NOMAXVALUE','NOMINVALUE');
