@@ -36,7 +36,7 @@ ERROR = !CREATE FUNC: identifier 'schema' ambiguous
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = select * from places3();
-ERROR = !SELECT: no such operator 'places3'
+ERROR = !SELECT: no such table returning function 'places3'
 CODE  = 42000
 
 # 12:37:42 >  

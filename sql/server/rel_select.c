@@ -602,8 +602,8 @@ rel_named_table_function(sql_query *query, sql_rel *rel, symbol *ast, int latera
 	sql_rel *sq = NULL, *outer = NULL;
 	sql_exp *e = NULL;
 	sql_subfunc *sf = NULL;
-	symbol *sym = ast->data.lval->h->data.sym;
-	dnode *l = sym->data.lval->h;
+	symbol *sym = ast->data.lval->h->data.sym, *subquery = NULL;
+	dnode *l = sym->data.lval->h, *n;
 	char *tname = NULL;
 	char *fname = qname_fname(l->data.lval); 
 	char *sname = qname_schema(l->data.lval);
@@ -614,42 +614,48 @@ rel_named_table_function(sql_query *query, sql_rel *rel, symbol *ast, int latera
 		return sql_error(sql, 02, SQLSTATE(3F000) "SELECT: no such schema '%s'", sname);
 
 	tl = sa_list(sql->sa);
-	exps = new_exp_list(sql->sa);
+	exps = sa_list(sql->sa);
 	if (l->next)
 		l = l->next; /* skip distinct */
 	if (l->next) { /* table call with subquery */
-		if (l->next->type == type_symbol && l->next->data.sym->token == SQL_SELECT) {
-			if (l->next->next != NULL)
-				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: '%s' requires a single sub query", fname);
-			if (!(sq = rel_subquery(query, NULL, l->next->data.sym, ek)))
-				return NULL;
-		} else if (l->next->type == type_symbol || l->next->type == type_list) {
-			dnode *n;
+		if (l->next->type == type_symbol || l->next->type == type_list) {
 			exp_kind iek = {type_value, card_column, TRUE};
-			list *exps = sa_list (sql->sa);
+			list *exps = sa_list(sql->sa);
+			int count = 0;
 
 			if (l->next->type == type_symbol)
 				n = l->next;
-			else 
+			else
 				n = l->next->data.lval->h;
-			for ( ; n; n = n->next) {
-				sql_exp *e = rel_value_exp(query, &outer, n->data.sym, sql_sel, iek);
 
-				if (!e)
-					return NULL;
-				append(exps, e);
+			for (dnode *m = n; m; m = m->next) {
+				if (m->type == type_symbol && m->data.sym->token == SQL_SELECT)
+					subquery = m->data.sym;
+				count++;
 			}
-			sq = rel_project(sql->sa, NULL, exps);
-			if (lateral && outer) {
-				sq = rel_crossproduct(sql->sa, sq, outer, op_join);
-				set_dependent(sq);
+			if (subquery && count > 1)
+				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: The input for the table returning function '%s' must be either a single sub query, or a list of values", fname);
+
+			if (subquery) {
+				if (!(sq = rel_subquery(query, NULL, subquery, ek)))
+					return NULL;
+			} else {
+				for ( ; n; n = n->next) {
+					sql_exp *e = rel_value_exp(query, &outer, n->data.sym, sql_sel, iek);
+
+					if (!e)
+						return NULL;
+					append(exps, e);
+				}
+				sq = rel_project(sql->sa, NULL, exps);
+				if (lateral && outer) {
+					sq = rel_crossproduct(sql->sa, sq, outer, op_join);
+					set_dependent(sq);
+				}
 			}
 		}
-		/* reset error */
-		sql->session->status = 0;
-		sql->errstr[0] = '\0';
 		if (!sq || (!lateral && outer))
-			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: no such operator '%s'", fname);
+			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: no such table returning function '%s'", fname);
 		for (en = sq->exps->h; en; en = en->next) {
 			sql_exp *e = en->data;
 
@@ -660,7 +666,7 @@ rel_named_table_function(sql_query *query, sql_rel *rel, symbol *ast, int latera
 
 	e = find_table_function(sql, s, fname, exps, tl);
 	if (!e)
-		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: no such operator '%s'", fname);
+		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: no such table returning function '%s'", fname);
 	rel = sq;
 
 	if (ast->data.lval->h->next->data.sym)
@@ -670,10 +676,8 @@ rel_named_table_function(sql_query *query, sql_rel *rel, symbol *ast, int latera
 
 	/* column or table function */
 	sf = e->f;
-	if (e->type != e_func || sf->func->type != F_UNION) {
-		(void) sql_error(sql, 02, SQLSTATE(42000) "SELECT: '%s' does not return a table", exp_func_name(e));
-		return NULL;
-	}
+	if (e->type != e_func || sf->func->type != F_UNION)
+		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: '%s' does not return a table", exp_func_name(e));
 
 	if (sq) {
 		for (node *n = sq->exps->h, *m = sf->func->ops->h ; n && m ; n = n->next, m = m->next) {
@@ -5969,8 +5973,8 @@ rel_loader_function(sql_query *query, symbol* fcall, list *fexps, sql_subfunc **
 	exp_kind ek = { type_value, card_relation, TRUE };
 	sql_rel *sq = NULL;
 	sql_exp *e = NULL;
-	symbol *sym = fcall;
-	dnode *l = sym->data.lval->h;
+	symbol *sym = fcall, *subquery = NULL;
+	dnode *l = sym->data.lval->h, *n;
 	char *sname = qname_schema(l->data.lval);
 	char *fname = qname_fname(l->data.lval);
 	char *tname = NULL;
@@ -5982,39 +5986,44 @@ rel_loader_function(sql_query *query, symbol* fcall, list *fexps, sql_subfunc **
 		return sql_error(sql, 02, SQLSTATE(3F000) "SELECT: no such schema '%s'", sname);
 
 	tl = sa_list(sql->sa);
-	exps = new_exp_list(sql->sa);
+	exps = sa_list(sql->sa);
 	if (l->next)
 		l = l->next; /* skip distinct */
 	if (l->next) { /* table call with subquery */
-		if (l->next->type == type_symbol && l->next->data.sym->token == SQL_SELECT) {
-			if (l->next->next != NULL)
-				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: '%s' requires a single sub query", fname);
-			if (!(sq = rel_subquery(query, NULL, l->next->data.sym, ek)))
-				return NULL;
-		} else if (l->next->type == type_symbol || l->next->type == type_list) {
-			dnode *n;
+		if (l->next->type == type_symbol || l->next->type == type_list) {
 			exp_kind iek = {type_value, card_column, TRUE};
-			list *exps = sa_list (sql->sa);
+			list *exps = sa_list(sql->sa);
+			int count = 0;
 
 			if (l->next->type == type_symbol)
 				n = l->next;
-			else 
+			else
 				n = l->next->data.lval->h;
-			for ( ; n; n = n->next) {
-				sql_exp *e = rel_value_exp(query, NULL, n->data.sym, sql_sel, iek);
 
-				if (!e)
-					return NULL;
-				append(exps, e);
+			for (dnode *m = n; m; m = m->next) {
+				if (m->type == type_symbol && m->data.sym->token == SQL_SELECT)
+					subquery = m->data.sym;
+				count++;
 			}
-			sq = rel_project(sql->sa, NULL, exps);
-		}
+			if (subquery && count > 1)
+				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: The input for the loader function '%s' must be either a single sub query, or a list of values", fname);
 
-		/* reset error */
-		sql->session->status = 0;
-		sql->errstr[0] = '\0';
+			if (subquery) {
+				if (!(sq = rel_subquery(query, NULL, subquery, ek)))
+					return NULL;
+			} else {
+				for ( ; n; n = n->next) {
+					sql_exp *e = rel_value_exp(query, NULL, n->data.sym, sql_sel, iek);
+
+					if (!e)
+						return NULL;
+					append(exps, e);
+				}
+				sq = rel_project(sql->sa, NULL, exps);
+			}
+		}
 		if (!sq)
-			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: no such operator '%s'", fname);
+			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: no such loader function '%s'", fname);
 		for (en = sq->exps->h; en; en = en->next) {
 			sql_exp *e = en->data;
 
@@ -6025,7 +6034,7 @@ rel_loader_function(sql_query *query, symbol* fcall, list *fexps, sql_subfunc **
 
 	e = find_table_function_type(sql, s, fname, exps, tl, F_LOADER, &sf);
 	if (!e || !sf)
-		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: no such operator '%s'", fname);
+		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: no such loader function '%s'", fname);
 
 	if (sq) {
 		for (node *n = sq->exps->h, *m = sf->func->ops->h ; n && m ; n = n->next, m = m->next) {

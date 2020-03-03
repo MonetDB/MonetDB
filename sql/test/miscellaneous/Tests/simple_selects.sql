@@ -15,7 +15,15 @@ select cast(sum(42) as bigint) having 42>80;
 select 1 having false;
 select 1 having true;
 
-select "idontexist"."idontexist"(1); --error, it doesn;t exist
+select "idontexist"."idontexist"(); --error, it doesn't exist
+select "idontexist"."idontexist"(1); --error, it doesn't exist
+select "idontexist"."idontexist"(1,2); --error, it doesn't exist
+select "idontexist"."idontexist"(1,2,3); --error, it doesn't exist
+select "idontexist".SUM(1); --error, it doesn't exist
+select * from "idontexist"."idontexist"(); --error, it doesn't exist
+select * from "idontexist"."idontexist"(1); --error, it doesn't exist
+call "idontexist"."idontexist"(); --error, it doesn't exist
+call "idontexist"."idontexist"(1); --error, it doesn't exist
 
 select cast(true as interval second); --error, not possible
 select cast(true as interval month); --error, not possible
