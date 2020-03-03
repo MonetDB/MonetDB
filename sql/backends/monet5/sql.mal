@@ -546,7 +546,7 @@ pattern mosaicanalysis(sch:str,tbl:str,col:str,compression:str)(
 	compress:bat[:lng],
 	decompress:bat[:lng])
 address sql_mosaicAnalysis;
-pattern mosaicanalysis(sch:str,tbl:str,col:str)(
+pattern mosaicanalysis(sch:str,tbl:str,col:str,compression:str, common_compression:str)(
 	technique:bat[:str],
 	layout:bat[:json],
 	outputsize:bat[:lng],

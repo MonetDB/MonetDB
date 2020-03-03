@@ -27,8 +27,8 @@ stdout of test 'analysis` in directory 'sql/test/mosaic` itself:
 [ 0	]
 #insert into tmp4 select * from generate_series(0, 10000000);
 [ 10000000	]
-#select technique, factor, json.filter(layout, 'blks') as blocks, json.filter(layout, 'elms') as elements from mosaic.analysis('sys', 'tmp4', 'i') order by technique, factor desc;
-% .%4,	.%4,	.,	. # table_name
+#select technique, factor, json.filter(layout, 'blks') as blocks, json.filter(layout, 'elms') as elements from mosaic.analysis('sys', 'tmp4', 'i', NULL, '') order by technique, factor desc;
+% .%6,	.%6,	.,	. # table_name
 % technique,	factor,	blocks,	elements # name
 % clob,	double,	json,	json # type
 % 18,	24,	39,	41 # length
@@ -68,8 +68,8 @@ stdout of test 'analysis` in directory 'sql/test/mosaic` itself:
 [ "runlength prefix ",	2.132,	"[[{\"prefix\":306}]]",	"[[{\"prefix\":10000000}]]"	]
 #insert into tmp4 select 10000000 from tmp4;
 [ 10000000	]
-#select technique, factor, json.filter(layout, 'blks') as blocks, json.filter(layout, 'elms') as elements from mosaic.analysis('sys', 'tmp4', 'i') order by technique, factor desc;
-% .%4,	.%4,	.,	. # table_name
+#select technique, factor, json.filter(layout, 'blks') as blocks, json.filter(layout, 'elms') as elements from mosaic.analysis('sys', 'tmp4', 'i', NULL, '') order by technique, factor desc;
+% .%6,	.%6,	.,	. # table_name
 % technique,	factor,	blocks,	elements # name
 % clob,	double,	json,	json # type
 % 18,	24,	39,	46 # length
@@ -107,18 +107,26 @@ stdout of test 'analysis` in directory 'sql/test/mosaic` itself:
 [ "runlength frame ",	2.285,	"[[{\"frame\":306}]]",	"[[{\"frame\":20000000}]]"	]
 [ "runlength linear ",	357142.843,	"[[{\"runlength\":1},{\"linear\":1}]]",	"[[{\"runlength\":9999999},{\"linear\":10000001}]]"	]
 [ "runlength prefix ",	2.285,	"[[{\"prefix\":306}]]",	"[[{\"prefix\":20000000}]]"	]
-#select technique, factor, json.filter(layout, 'blks') as blocks, json.filter(layout, 'elms') as elements from mosaic.analysis('sys', 'tmp4', 'i', 'linear, runlength') order by technique, factor desc;
-% .%5,	.%5,	.,	. # table_name
+#select technique, factor, json.filter(layout, 'blks') as blocks, json.filter(layout, 'elms') as elements from mosaic.analysis('sys', 'tmp4', 'i', 'linear, runlength', '') order by technique, factor desc;
+% .%6,	.%6,	.,	. # table_name
 % technique,	factor,	blocks,	elements # name
 % clob,	double,	json,	json # type
 % 17,	24,	32,	45 # length
 [ "linear ",	350877.187,	"[[{\"linear\":2}]]",	"[[{\"linear\":20000000}]]"	]
 [ "runlength ",	0.666,	"[[{\"runlength\":10000001}]]",	"[[{\"runlength\":20000000}]]"	]
 [ "runlength linear ",	357142.843,	"[[{\"runlength\":1},{\"linear\":1}]]",	"[[{\"runlength\":9999999},{\"linear\":10000001}]]"	]
+#select technique, factor, json.filter(layout, 'blks') as blocks, json.filter(layout, 'elms') as elements from mosaic.analysis('sys', 'tmp4', 'i', 'linear, runlength', 'raw') order by technique, factor desc;
+% .%6,	.%6,	.,	. # table_name
+% technique,	factor,	blocks,	elements # name
+% clob,	double,	json,	json # type
+% 21,	24,	32,	45 # length
+[ "raw linear ",	350877.187,	"[[{\"linear\":2}]]",	"[[{\"linear\":20000000}]]"	]
+[ "raw runlength ",	1.999,	"[[{\"raw\":1},{\"runlength\":1}]]",	"[[{\"raw\":10000000},{\"runlength\":10000000}]]"	]
+[ "raw runlength linear ",	357142.843,	"[[{\"runlength\":1},{\"linear\":1}]]",	"[[{\"runlength\":9999999},{\"linear\":10000001}]]"	]
 #set optimizer='mosaic_pipe';
-#alter table tmp4 alter column i set storage 'dict';
-#select technique, factor, json.filter(layout, 'blks') as blocks, json.filter(layout, 'elms') as elements from mosaic.analysis('sys', 'tmp4', 'i') order by technique, factor desc;
-% .%4,	.%4,	.,	. # table_name
+#alter table tmp4 alter column i set storage 'runlength, linear';
+#select technique, factor, json.filter(layout, 'blks') as blocks, json.filter(layout, 'elms') as elements from mosaic.analysis('sys', 'tmp4', 'i', NULL, '') order by technique, factor desc;
+% .%6,	.%6,	.,	. # table_name
 % technique,	factor,	blocks,	elements # name
 % clob,	double,	json,	json # type
 % 18,	24,	39,	46 # length
@@ -156,8 +164,8 @@ stdout of test 'analysis` in directory 'sql/test/mosaic` itself:
 [ "runlength frame ",	2.285,	"[[{\"frame\":306}]]",	"[[{\"frame\":20000000}]]"	]
 [ "runlength linear ",	357142.843,	"[[{\"runlength\":1},{\"linear\":1}]]",	"[[{\"runlength\":9999999},{\"linear\":10000001}]]"	]
 [ "runlength prefix ",	2.285,	"[[{\"prefix\":306}]]",	"[[{\"prefix\":20000000}]]"	]
-#select technique, factor, json.filter(layout, 'blks') as blocks, json.filter(layout, 'elms') as elements  from mosaic.analysis('sys', 'tmp4', 'i', 'linear, runlength') order by technique, factor desc;
-% .%5,	.%5,	.,	. # table_name
+#select technique, factor, json.filter(layout, 'blks') as blocks, json.filter(layout, 'elms') as elements  from mosaic.analysis('sys', 'tmp4', 'i', 'linear, runlength', '') order by technique, factor desc;
+% .%6,	.%6,	.,	. # table_name
 % technique,	factor,	blocks,	elements # name
 % clob,	double,	json,	json # type
 % 17,	24,	32,	45 # length

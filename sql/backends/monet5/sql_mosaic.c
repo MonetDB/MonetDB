@@ -160,6 +160,7 @@ sql_mosaicAnalysis(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int *tech,*output, *factor, *compress, *decompress, *layout;
 	BAT *bn, *btech, *boutput, *bfactor, *bcompress, *bdecompress, *blayout;
 	str compressions = NULL;
+	str common_compressions = "raw";
 
 	if (msg != MAL_SUCCEED || (msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
@@ -219,12 +220,14 @@ sql_mosaicAnalysis(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	layout = getArgReference_bat(stk, pci, 1);
 	*layout = blayout->batCacheid;
 
-	sch = *getArgReference_str(stk, pci, 6);
-	tbl = *getArgReference_str(stk, pci, 7);
-	col = *getArgReference_str(stk, pci, 8);
-	if ( pci->argc == 10){
+	sch				= *getArgReference_str(stk, pci, 6);
+	tbl				= *getArgReference_str(stk, pci, 7);
+	col				= *getArgReference_str(stk, pci, 8);
+	compressions	= *getArgReference_str(stk, pci, 9);
+
+	if ( pci->argc == 11) {
 		// use a predefined collection of compression schemes.
-		compressions = *getArgReference_str(stk,pci,9);
+		common_compressions = *getArgReference_str(stk, pci, 10);
 	}
 
 #ifdef DEBUG_SQL_MOSAIC
@@ -253,7 +256,7 @@ sql_mosaicAnalysis(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							continue;
 						// perform the analysis
 						bn = store_funcs.bind_col(m->session->tr, c, 0);
-						msg = MOSAnalysis(bn, btech, blayout, boutput, bfactor, bcompress, bdecompress, compressions);
+						msg = MOSAnalysis(bn, btech, blayout, boutput, bfactor, bcompress, bdecompress, compressions, common_compressions);
 						BBPunfix(bn->batCacheid);
 						(void) c;
 

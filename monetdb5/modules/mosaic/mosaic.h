@@ -286,7 +286,7 @@ mal_export str MOSthetaselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 mal_export str MOSprojection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str MOSlayout(BAT *b, BAT *bbsn, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties);
-mal_export str MOSAnalysis(BAT *b, BAT *btech, BAT *blayout, BAT *output, BAT *factor, BAT *compress, BAT *decompress, str compressions);
+mal_export str MOSAnalysis(BAT *b, BAT *btech, BAT *blayout, BAT *output, BAT *factor, BAT *compress, BAT *decompress, str compressions, str common_compressions);
 
 void MOSupdateHeader(MOStask* task);
 void MOSinitHeader(MOStask* task);

@@ -11,10 +11,10 @@ create function mosaic.layout(sch string, tbl string, col string)
 returns table(technique string, "count" bigint, inputsize bigint, outputsize bigint,properties json, bsn bigint)
 external name sql.mosaiclayout;
 
-create function mosaic.analysis(sch string, tbl string, col string) 
+create function mosaic.analysis(sch string, tbl string, col string, compression string) 
 returns table(technique string, layout json, outputsize bigint, factor float, "compress" bigint, "decompress" bigint)
 external name sql.mosaicanalysis;
 
-create function mosaic.analysis(sch string, tbl string, col string, compression string) 
+create function mosaic.analysis(sch string, tbl string, col string, compression string, common_compression string) 
 returns table(technique string, layout json, outputsize bigint, factor float, "compress" bigint, "decompress" bigint)
 external name sql.mosaicanalysis;

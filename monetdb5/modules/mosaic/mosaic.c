@@ -1238,7 +1238,7 @@ MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
  */
 
 static int
-makepatterns(uint16_t *patterns, int size, str compressions, BAT* b)
+makepatterns(uint16_t *patterns, int size, str compressions, sht common_mask, BAT* b)
 {
 	int i,j,k, idx, bit=1, step = MOSAIC_METHODS;
 	int lim= 8*7*6*5*4*3*2;
@@ -1252,6 +1252,10 @@ makepatterns(uint16_t *patterns, int size, str compressions, BAT* b)
 			// Unset corresponding bit if type is not allowed.
 			UNSET_METHOD(compression_mask, i);
 		}
+		if ( METHOD_IS_SET(common_mask, i) && !MOSisTypeAllowed(i, b) ) {
+			// Unset corresponding bit if type is not allowed.
+			UNSET_METHOD(common_mask, i);
+		}
 	}
 
 	for( k=0, i=0; i<lim && k <size; i++){
@@ -1264,11 +1268,13 @@ makepatterns(uint16_t *patterns, int size, str compressions, BAT* b)
 			idx /= step;
 		}
 
+		patterns[k] |= common_mask; // Make sure the common mask is always present in the to-be-analyzed patterns.
+
 		// weed out duplicates
 		for( j=0; j< k; j++)
 			if(patterns[k] == patterns[j]) break;
 		if( j < k ) continue;
-		
+
 #ifdef _MOSAIC_DEBUG_
 		mnstr_printf(GDKstdout,"#");
 		for(j=0, bit=1; j < MOSAIC_METHODS; j++){
@@ -1303,7 +1309,7 @@ struct PAT{
 };
 
 str
-MOSAnalysis(BAT *b, BAT *btech, BAT *blayout, BAT *boutput, BAT *bratio, BAT *bcompress, BAT *bdecompress, str compressions)
+MOSAnalysis(BAT *b, BAT *btech, BAT *blayout, BAT *boutput, BAT *bratio, BAT *bcompress, BAT *bdecompress, str compressions, str common_compressions)
 {
 	unsigned i,j,cases, bid= b->batCacheid;
 	uint16_t pattern[CANDIDATES];
@@ -1314,8 +1320,12 @@ MOSAnalysis(BAT *b, BAT *btech, BAT *blayout, BAT *boutput, BAT *bratio, BAT *bc
 
 	struct PAT pat[CANDIDATES];
 
+	// create mask of common compressions, e.g. exception methods.
+	sht common_mask = 0;
+	_construct_compression_mask(&common_mask, common_compressions);
+
 	// create the list of all possible 2^6 compression patterns 
-	cases = makepatterns(pattern,CANDIDATES, compressions, b);
+	cases = makepatterns(pattern,CANDIDATES, compressions, common_mask, b);
 
 	memset(antipattern,0, sizeof(antipattern));
 	antipatternSize++; // the first pattern aka 0 is always an antipattern.
@@ -1419,7 +1429,7 @@ MOSAnalysis(BAT *b, BAT *btech, BAT *blayout, BAT *boutput, BAT *bratio, BAT *bc
 		}
 
 		for(j=0; j < MOSAIC_METHODS; j++){
-			if ( ((MosaicHdr)  b->tmosaic->base)->blks[j] == 0) {
+			if ( ((MosaicHdr)  b->tmosaic->base)->blks[j] == 0 && (!(MOSmethods[j].bit & common_mask))) {
 				antipattern[antipatternSize++] = pattern[i];
 			}
 		}
