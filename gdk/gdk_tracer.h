@@ -114,22 +114,11 @@ typedef enum {
 	COMP( FITS )				\
 	COMP( SHP )				\
 						\
-	COMP( SQL_ATOM_TR )			\
-	COMP( SQL_STATISTICS )			\
-	COMP( SQL_ORDERIDX )			\
-	COMP( SQL_OPTIMIZER )			\
-	COMP( SQL_WLR )				\
-	COMP( SQL_USER )			\
-	COMP( SQL_SCENARIO )			\
-	COMP( SQL_CACHE_TR )			\
-	COMP( SQL_SYMBOL )			\
-	COMP( SQL_MVC )				\
+	COMP( SQL_PARSER )			\
+	COMP( SQL_TRANS )			\
+	COMP( SQL_REWRITER )			\
+	COMP( SQL_EXECUTION )			\
 	COMP( SQL_STORE )			\
-	COMP( SQL_UPGRADES )			\
-	COMP( SQL_RELATION )			\
-	COMP( SQL_RESULT )			\
-	COMP( SQL_STATEMENT )			\
-	COMP( SQL_BAT )				\
 						\
 	COMP( MAL_WLC )				\
 	COMP( MAL_REMOTE )			\

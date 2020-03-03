@@ -1217,12 +1217,13 @@ doGDKaddbuf(const char *prefix, const char *message, size_t messagelen, const ch
 			dst += sufflen;
 		}
 		*dst = '\0';
+		TRC_INFO(GDK, "%s%.*s%s\n",
+			 prefix[0] == '#' ? prefix + 1 : prefix,
+			 (int) messagelen, message, suffix);
 	} else {
-		TRC_INFO(GDK, "%s%.*s%s", prefix, (int) messagelen, message, suffix);
+		TRC_ERROR(GDK, "%s%.*s%s",
+			  prefix, (int) messagelen, message, suffix);
 	}
-	TRC_INFO(GDK, "%s%.*s%s\n",
-		 prefix[0] == '#' ? prefix + 1 : prefix,
-		 (int) messagelen, message, suffix);
 }
 
 /* print an error or warning message, making sure the message ends in

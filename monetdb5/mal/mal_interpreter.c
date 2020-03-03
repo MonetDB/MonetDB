@@ -1410,16 +1410,11 @@ void garbageCollector(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int flag)
 	int k;
 	ValPtr v;
 
-#ifdef STACKTRACE
-	if (cntxt) {
-		mnstr_printf(cntxt->fdout, "#--->stack before garbage collector\n");
-		printStack(cntxt->fdout, mb, stk, 0);
-	}
-#endif
 	assert(mb->vtop <= mb->vsize);
 	assert(stk->stktop <= stk->stksize);
 	(void) flag;
 	(void)mb;
+	(void)cntxt;
 	for (k = 0; k < stk->stktop; k++) {
 	//	if (isVarCleanup(mb, k) ){
 			garbageElement(cntxt, v = &stk->stk[k]);
@@ -1427,12 +1422,4 @@ void garbageCollector(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int flag)
 			v->val.ival = int_nil;
 	//	}
 	}
-#ifdef STACKTRACE
-	if (cntxt) {
-		mnstr_printf(cntxt->fdout, "#-->stack after garbage collector\n");
-		printStack(cntxt->fdout, mb, stk, 0);
-	}
-#else
-	(void)cntxt;
-#endif
 }

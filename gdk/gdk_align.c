@@ -137,7 +137,8 @@ VIEWcreate(oid seq, BAT *b)
 		GDKfree(bn);
 		return NULL;
 	}
-	TRC_DEBUG(ALGO, "VIEWcreate(" ALGOBATFMT ")=" ALGOBATFMT "\n", ALGOBATPAR(b), ALGOBATPAR(bn));
+	TRC_DEBUG(ALGO, "VIEWcreate(" ALGOBATFMT ")=" ALGOBATFMT "\n",
+		  ALGOBATPAR(b), ALGOBATPAR(bn));
 	return bn;
 }
 

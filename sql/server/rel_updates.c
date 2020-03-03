@@ -1566,10 +1566,8 @@ rel_import(mvc *sql, sql_table *t, const char *tsep, const char *rsep, const cha
 			fwf_string_cur += sprintf(fwf_string_cur, LLFMT"%c", dn->data.l_val, STREAM_FWF_FIELD_SEP);
 			ncol++;
 		}
-		if(list_length(f->res) != ncol) {
-			(void) sql_error(sql, 02, SQLSTATE(3F000) "COPY INTO: fixed width import for %d columns but %d widths given.", list_length(f->res), ncol);
-			return NULL;
-		}
+		if (list_length(f->res) != ncol)
+			return sql_error(sql, 02, SQLSTATE(3F000) "COPY INTO: fixed width import for %d columns but %d widths given.", list_length(f->res), ncol);
 		*fwf_string_cur = '\0';
 	}
 

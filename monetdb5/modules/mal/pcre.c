@@ -555,10 +555,10 @@ pcre_compile_wrap(pcre **res, const char *pattern, bit insensitive)
 /* scan select loop with candidates */
 #define candscanloop(TEST)												\
 	do {																\
-		TRC_DEBUG(ALGO, 													\
-			"BATselect(b=%s#"BUNFMT",s=%s,anti=%d): "					\
-			"scanselect %s\n", BATgetId(b), BATcount(b),				\
-			s ? BATgetId(s) : "NULL", anti, #TEST);						\
+		TRC_DEBUG(ALGO,													\
+				  "BATselect(b=%s#"BUNFMT",s=%s,anti=%d): "				\
+				  "scanselect %s\n", BATgetId(b), BATcount(b),			\
+				  s ? BATgetId(s) : "NULL", anti, #TEST);				\
 		for (p = 0; p < ci.ncand; p++) {								\
 			o = canditer_next(&ci);										\
 			r = (BUN) (o - off);										\
@@ -572,10 +572,10 @@ pcre_compile_wrap(pcre **res, const char *pattern, bit insensitive)
 /* scan select loop without candidates */
 #define scanloop(TEST)													\
 	do {																\
-		TRC_DEBUG(ALGO,														\
-			"BATselect(b=%s#"BUNFMT",s=%s,anti=%d): "					\
-			"scanselect %s\n", BATgetId(b), BATcount(b),				\
-			s ? BATgetId(s) : "NULL", anti, #TEST);						\
+		TRC_DEBUG(ALGO,													\
+				  "BATselect(b=%s#"BUNFMT",s=%s,anti=%d): "				\
+				  "scanselect %s\n", BATgetId(b), BATcount(b),			\
+				  s ? BATgetId(s) : "NULL", anti, #TEST);				\
 		while (p < q) {													\
 			v = BUNtvar(bi, p-off);										\
 			if (TEST) {													\
@@ -2043,21 +2043,21 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 #endif
 
 	TRC_DEBUG(ALGO, 
-		"pcrejoin(l=%s#" BUNFMT "[%s]%s%s,"
-		"r=%s#" BUNFMT "[%s]%s%s,sl=%s#" BUNFMT "%s%s,"
-		"sr=%s#" BUNFMT "%s%s)\n",
-		BATgetId(l), BATcount(l), ATOMname(l->ttype),
-		l->tsorted ? "-sorted" : "",
-		l->trevsorted ? "-revsorted" : "",
-		BATgetId(r), BATcount(r), ATOMname(r->ttype),
-		r->tsorted ? "-sorted" : "",
-		r->trevsorted ? "-revsorted" : "",
-		sl ? BATgetId(sl) : "NULL", sl ? BATcount(sl) : 0,
-		sl && sl->tsorted ? "-sorted" : "",
-		sl && sl->trevsorted ? "-revsorted" : "",
-		sr ? BATgetId(sr) : "NULL", sr ? BATcount(sr) : 0,
-		sr && sr->tsorted ? "-sorted" : "",
-		sr && sr->trevsorted ? "-revsorted" : "");
+			  "pcrejoin(l=%s#" BUNFMT "[%s]%s%s,"
+			  "r=%s#" BUNFMT "[%s]%s%s,sl=%s#" BUNFMT "%s%s,"
+			  "sr=%s#" BUNFMT "%s%s)\n",
+			  BATgetId(l), BATcount(l), ATOMname(l->ttype),
+			  l->tsorted ? "-sorted" : "",
+			  l->trevsorted ? "-revsorted" : "",
+			  BATgetId(r), BATcount(r), ATOMname(r->ttype),
+			  r->tsorted ? "-sorted" : "",
+			  r->trevsorted ? "-revsorted" : "",
+			  sl ? BATgetId(sl) : "NULL", sl ? BATcount(sl) : 0,
+			  sl && sl->tsorted ? "-sorted" : "",
+			  sl && sl->trevsorted ? "-revsorted" : "",
+			  sr ? BATgetId(sr) : "NULL", sr ? BATcount(sr) : 0,
+			  sr && sr->tsorted ? "-sorted" : "",
+			  sr && sr->trevsorted ? "-revsorted" : "");
 
 	assert(ATOMtype(l->ttype) == ATOMtype(r->ttype));
 	assert(ATOMtype(l->ttype) == TYPE_str);
@@ -2240,14 +2240,14 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		r1->tseqbase = r2->tseqbase = 0;
 	}
 	TRC_DEBUG(ALGO, 
-		"pcrejoin(l=%s,r=%s)=(%s#"BUNFMT"%s%s,%s#"BUNFMT"%s%s\n",
-		BATgetId(l), BATgetId(r),
-		BATgetId(r1), BATcount(r1),
-		r1->tsorted ? "-sorted" : "",
-		r1->trevsorted ? "-revsorted" : "",
-		BATgetId(r2), BATcount(r2),
-		r2->tsorted ? "-sorted" : "",
-		r2->trevsorted ? "-revsorted" : "");
+			  "pcrejoin(l=%s,r=%s)=(%s#"BUNFMT"%s%s,%s#"BUNFMT"%s%s\n",
+			  BATgetId(l), BATgetId(r),
+			  BATgetId(r1), BATcount(r1),
+			  r1->tsorted ? "-sorted" : "",
+			  r1->trevsorted ? "-revsorted" : "",
+			  BATgetId(r2), BATcount(r2),
+			  r2->tsorted ? "-sorted" : "",
+			  r2->trevsorted ? "-revsorted" : "");
 	return MAL_SUCCEED;
 
   bailout:

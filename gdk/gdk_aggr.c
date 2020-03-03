@@ -944,13 +944,14 @@ BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_o
 		bn = NULL;
 	}
 
-	TRC_DEBUG(ALGO, "%s(b="ALGOBATFMT",g="ALGOOPTBATFMT",e="ALGOOPTBATFMT",s="ALGOOPTBATFMT")="ALGOOPTBATFMT": %s; "
-			  	"start " OIDFMT ", count " BUNFMT " (" LLFMT " usec)\n",
-				__func__,
-				ALGOBATPAR(b), ALGOOPTBATPAR(g), ALGOOPTBATPAR(e),
-				ALGOOPTBATPAR(s), ALGOOPTBATPAR(bn),
-				algo ? algo : "",
-				ci.seq, ncand, GDKusec() - t0);
+	TRC_DEBUG(ALGO, "%s(b=" ALGOBATFMT ",g=" ALGOOPTBATFMT ","
+		  "e=" ALGOOPTBATFMT ",s=" ALGOOPTBATFMT ")=" ALGOOPTBATFMT ":"
+		  " %s; start " OIDFMT ", count " BUNFMT " (" LLFMT " usec)\n",
+		  __func__,
+		  ALGOBATPAR(b), ALGOOPTBATPAR(g), ALGOOPTBATPAR(e),
+		  ALGOOPTBATPAR(s), ALGOOPTBATPAR(bn),
+		  algo ? algo : "",
+		  ci.seq, ncand, GDKusec() - t0);
 	return bn;
 }
 
@@ -1067,11 +1068,11 @@ BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, b
 		     res, true, b->ttype, tp, &min, min, max,
 		     skip_nils, abort_on_error, nil_if_empty, "BATsum", &algo);
 	TRC_DEBUG(ALGO, "%s(b="ALGOBATFMT",s="ALGOOPTBATFMT"): %s; "
-				"start " OIDFMT ", count " BUNFMT " (" LLFMT " usec)\n",
-				__func__,
-				ALGOBATPAR(b), ALGOOPTBATPAR(s),
-				algo ? algo : "",
-				ci.seq, ncand, GDKusec() - t0);
+		  "start " OIDFMT ", count " BUNFMT " (" LLFMT " usec)\n",
+		  __func__,
+		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+		  algo ? algo : "",
+		  ci.seq, ncand, GDKusec() - t0);
 	return nils < BUN_NONE ? GDK_SUCCEED : GDK_FAIL;
 }
 
@@ -3594,13 +3595,19 @@ dogroupcovariance(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp,
 
 	delta1 = GDKmalloc(ngrp * sizeof(dbl));
 	delta2 = GDKmalloc(ngrp * sizeof(dbl));
-	m2 = GDKzalloc(ngrp * sizeof(dbl));
+	m2 = GDKmalloc(ngrp * sizeof(dbl));
 	cnts = GDKzalloc(ngrp * sizeof(BUN));
-	mean1 = GDKzalloc(ngrp * sizeof(dbl));
-	mean2 = GDKzalloc(ngrp * sizeof(dbl));
+	mean1 = GDKmalloc(ngrp * sizeof(dbl));
+	mean2 = GDKmalloc(ngrp * sizeof(dbl));
 
 	if (mean1 == NULL || mean2 == NULL || delta1 == NULL || delta2 == NULL || m2 == NULL || cnts == NULL)
 		goto alloc_fail;
+
+	for (i = 0; i < ngrp; i++) {
+		m2[i] = 0;
+		mean1[i] = 0;
+		mean2[i] = 0;
+	}
 
 	bn = COLnew(min, TYPE_dbl, ngrp, TRANSIENT);
 	if (bn == NULL)
@@ -3766,15 +3773,23 @@ BATgroupcorrelation(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp, bool skip_
 
 	delta1 = GDKmalloc(ngrp * sizeof(dbl));
 	delta2 = GDKmalloc(ngrp * sizeof(dbl));
-	up = GDKzalloc(ngrp * sizeof(dbl));
-	down1 = GDKzalloc(ngrp * sizeof(dbl));
-	down2 = GDKzalloc(ngrp * sizeof(dbl));
+	up = GDKmalloc(ngrp * sizeof(dbl));
+	down1 = GDKmalloc(ngrp * sizeof(dbl));
+	down2 = GDKmalloc(ngrp * sizeof(dbl));
 	cnts = GDKzalloc(ngrp * sizeof(BUN));
-	mean1 = GDKzalloc(ngrp * sizeof(dbl));
-	mean2 = GDKzalloc(ngrp * sizeof(dbl));
+	mean1 = GDKmalloc(ngrp * sizeof(dbl));
+	mean2 = GDKmalloc(ngrp * sizeof(dbl));
 
 	if (mean1 == NULL || mean2 == NULL || delta1 == NULL || delta2 == NULL || up == NULL || down1 == NULL || down2 == NULL || cnts == NULL)
 		goto alloc_fail;
+
+	for (i = 0; i < ngrp; i++) {
+		up[i] = 0;
+		down1[i] = 0;
+		down2[i] = 0;
+		mean1[i] = 0;
+		mean2[i] = 0;
+	}
 
 	bn = COLnew(min, TYPE_dbl, ngrp, TRANSIENT);
 	if (bn == NULL)

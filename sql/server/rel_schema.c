@@ -1055,13 +1055,12 @@ rel_create_table(sql_query *query, sql_schema *ss, int temp, const char *sname, 
 		sname = s->base.name;
 
 	if (mvc_bind_table(sql, s, name)) {
-		if (if_not_exists) {
+		char *cd = (temp == SQL_DECLARED_TABLE)?"DECLARE":"CREATE";
+		if (if_not_exists)
 			return rel_psm_block(sql->sa, new_exp_list(sql->sa));
-		} else {
-			return sql_error(sql, 02, SQLSTATE(42S01) "%s TABLE: name '%s' already in use", action, name);
-		}
-	} else if (!mvc_schema_privs(sql, s) && !(isTempSchema(s) && temp == SQL_LOCAL_TEMP)) {
-		return sql_error(sql, 02, SQLSTATE(42000) "%s TABLE: insufficient privileges for user '%s' in schema '%s'", action, stack_get_string(sql, mvc_bind_schema(sql, "tmp"), "current_user"), s->base.name);
+		return sql_error(sql, 02, SQLSTATE(42S01) "%s TABLE: name '%s' already in use", cd, name);
+	} else if (temp != SQL_DECLARED_TABLE && (!mvc_schema_privs(sql, s) && !(isTempSchema(s) && temp == SQL_LOCAL_TEMP))){
+		return sql_error(sql, 02, SQLSTATE(42000) "CREATE TABLE: insufficient privileges for user '%s' in schema '%s'", stack_get_string(sql, mvc_bind_schema(sql, "tmp"), "current_user"), s->base.name);
 	} else if (table_elements_or_subquery->token == SQL_CREATE_TABLE) {
 		/* table element list */
 		dnode *n;
@@ -1376,24 +1375,17 @@ rel_create_schema(sql_query *query, dlist *auth_name, dlist *schema_elements, in
 	char *auth = schema_auth(auth_name);
 	sqlid auth_id = sql->role_id;
 
-	if (auth && (auth_id = sql_find_auth(sql, auth)) < 0) {
-		sql_error(sql, 02, SQLSTATE(28000) "CREATE SCHEMA: no such authorization '%s'", auth);
-		return NULL;
-	}
-	if (sql->user_id != USER_MONETDB && sql->role_id != ROLE_SYSADMIN) {
-		sql_error(sql, 02, SQLSTATE(42000) "CREATE SCHEMA: insufficient privileges for user '%s'", stack_get_string(sql, mvc_bind_schema(sql, "tmp"), "current_user"));
-		return NULL;
-	}
+	if (auth && (auth_id = sql_find_auth(sql, auth)) < 0)
+		return sql_error(sql, 02, SQLSTATE(28000) "CREATE SCHEMA: no such authorization '%s'", auth);
+	if (sql->user_id != USER_MONETDB && sql->role_id != ROLE_SYSADMIN)
+		return sql_error(sql, 02, SQLSTATE(42000) "CREATE SCHEMA: insufficient privileges for user '%s'", stack_get_string(sql, mvc_bind_schema(sql, "tmp"), "current_user"));
 	if (!name) 
 		name = auth;
 	assert(name);
 	if (mvc_bind_schema(sql, name)) {
-		if (!if_not_exists) {
-			sql_error(sql, 02, SQLSTATE(3F000) "CREATE SCHEMA: name '%s' already in use", name);
-			return NULL;
-		} else {
-			return rel_psm_block(sql->sa, new_exp_list(sql->sa));
-		}
+		if (!if_not_exists)
+			return sql_error(sql, 02, SQLSTATE(3F000) "CREATE SCHEMA: name '%s' already in use", name);
+		return rel_psm_block(sql->sa, new_exp_list(sql->sa));
 	} else {
 		sql_schema *os = sql->session->schema;
 		dnode *n;

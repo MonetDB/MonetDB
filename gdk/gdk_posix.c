@@ -603,17 +603,17 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 						GDKsyserror("MT_mremap: growing file failed\n");
 						close(fd);
 						TRC_ERROR(GDK,
-							"MT_mremap(%s,%p,%zu,%zu): write() or "
+							  "MT_mremap(%s,%p,%zu,%zu): write() or "
 #ifdef HAVE_FALLOCATE
-							"fallocate()"
+							  "fallocate()"
 #else
 #ifdef HAVE_POSIX_FALLOCATE
-							"posix_fallocate()"
+							  "posix_fallocate()"
 #else
-							"ftruncate()"
+							  "ftruncate()"
 #endif
 #endif
-							" failed\n", path, old_address, old_size, *new_size);
+							  " failed\n", path, old_address, old_size, *new_size);
 						return NULL;
 					}
 					p = mmap(NULL, *new_size, prot, flags,

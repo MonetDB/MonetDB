@@ -715,7 +715,7 @@ mvc_set_role(mvc *m, char *role)
 	sql_column *auths_name = find_sql_column(auths, "name");
 	sqlid res = 0;
 
-	TRC_DEBUG(SQL_MVC, "Set role: %s\n", role);
+	TRC_DEBUG(SQL_TRANS, "Set role: %s\n", role);
 
 	rid = table_funcs.column_find_row(m->session->tr, auths_name, role, NULL);
 	if (!is_oid_nil(rid)) {
