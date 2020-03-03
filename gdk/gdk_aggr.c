@@ -3376,8 +3376,8 @@ dogroupstdev(BAT **avgb, BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 		return BATconstant(ngrp == 0 ? 0 : min, TYPE_dbl, &v, ngrp, TRANSIENT);
 	}
 
-	delta = GDKzalloc(ngrp * sizeof(dbl));
-	m2 = GDKzalloc(ngrp * sizeof(dbl));
+	delta = GDKmalloc(ngrp * sizeof(dbl));
+	m2 = GDKmalloc(ngrp * sizeof(dbl));
 	cnts = GDKzalloc(ngrp * sizeof(BUN));
 	if (avgb) {
 		if ((*avgb = COLnew(0, TYPE_dbl, ngrp, TRANSIENT)) == NULL) {
@@ -3385,9 +3385,8 @@ dogroupstdev(BAT **avgb, BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 			goto alloc_fail;
 		}
 		mean = (dbl *) Tloc(*avgb, 0);
-		memset(mean, 0, sizeof(dbl) * ngrp);
 	} else {
-		mean = GDKzalloc(ngrp * sizeof(dbl));
+		mean = GDKmalloc(ngrp * sizeof(dbl));
 	}
 	if (mean == NULL || delta == NULL || m2 == NULL || cnts == NULL)
 		goto alloc_fail;
@@ -3396,6 +3395,12 @@ dogroupstdev(BAT **avgb, BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 	if (bn == NULL)
 		goto alloc_fail;
 	dbls = (dbl *) Tloc(bn, 0);
+
+	for (i = 0; i < ngrp; i++) {
+		mean[i] = 0;
+		delta[i] = 0;
+		m2[i] = 0;
+	}
 
 	if (BATtdense(g))
 		gids = NULL;
