@@ -1612,11 +1612,11 @@ exp_is_cmp_exp_is_false(mvc *sql, sql_exp* e) {
     /* Handle 'v is x' and 'v is not x' expressions.
      * Other cases in is-semantics are unspecified.
      */
-    if (e->flag == cmp_equal) {
-        return (exp_is_null(sql, l) != exp_is_null(sql, r));
+    if (e->flag == cmp_equal && !e->anti) {
+        return (exp_is_null(sql, l) && exp_is_null(sql, r));
     }
-    if (e->flag == cmp_notequal) {
-        return (exp_is_null(sql, l) == exp_is_null(sql, r));
+    if (((e->flag == cmp_notequal) && !e->anti) || ((e->flag == cmp_equal) && e->anti) ) {
+        return ((exp_is_null(sql, l) && exp_is_not_null(sql, r))) || ((exp_is_not_null(sql, l) && exp_is_null(sql, r)));
     }
 
     return false;
