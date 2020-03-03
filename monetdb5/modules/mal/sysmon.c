@@ -135,20 +135,14 @@ SYSMONpause(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	(void) stk;
 	(void) pci;
-	
+
 	switch( getArgType(mb,pci,1)){
 	case TYPE_bte: tag = *getArgReference_bte(stk,pci,1); break;
 	case TYPE_sht: tag = *getArgReference_sht(stk,pci,1); break;
 	case TYPE_int: tag = *getArgReference_int(stk,pci,1); break;
 	case TYPE_lng: tag = *getArgReference_lng(stk,pci,1); break;
-#ifdef HAVE_HGE
-	case TYPE_hge:
-		/* Does this happen?
-		 * If so, what do we have TODO ? */
-		throw(MAL, "SYSMONpause", SQLSTATE(42000) "type hge not handled, yet");
-#endif
 	default:
-		throw(MAL, "SYSMONpause", SQLSTATE(42000) "Pause requires integer");
+		throw(MAL, "SYSMONpause", SQLSTATE(42000) "SYSMONpause requires a 64-bit integer");
 	}
 	if (tag < 1)
 		throw(MAL, "SYSMONpause", SQLSTATE(42000) "Tag must be positive");
@@ -171,20 +165,14 @@ SYSMONresume(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	(void) stk;
 	(void) pci;
-	
+
 	switch( getArgType(mb,pci,1)){
 	case TYPE_bte: tag = *getArgReference_bte(stk,pci,1); break;
 	case TYPE_sht: tag = *getArgReference_sht(stk,pci,1); break;
 	case TYPE_int: tag = *getArgReference_int(stk,pci,1); break;
 	case TYPE_lng: tag = *getArgReference_lng(stk,pci,1); break;
-#ifdef HAVE_HGE
-	case TYPE_hge:
-		/* Does this happen?
-		 * If so, what do we have TODO ? */
-		throw(MAL, "SYSMONresume", SQLSTATE(42000) "type hge not handled, yet");
-#endif
 	default:
-		throw(MAL, "SYSMONresume", SQLSTATE(42000) "Resume requires integer");
+		throw(MAL, "SYSMONresume", SQLSTATE(42000) "SYSMONresume requires a 64-bit integer");
 	}
 	if (tag < 1)
 		throw(MAL, "SYSMONresume", SQLSTATE(42000) "Tag must be positive");
@@ -207,20 +195,14 @@ SYSMONstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	(void) stk;
 	(void) pci;
-	
+
 	switch( getArgType(mb,pci,1)){
 	case TYPE_bte: tag = *getArgReference_bte(stk,pci,1); break;
 	case TYPE_sht: tag = *getArgReference_sht(stk,pci,1); break;
 	case TYPE_int: tag = *getArgReference_int(stk,pci,1); break;
 	case TYPE_lng: tag = *getArgReference_lng(stk,pci,1); break;
-#ifdef HAVE_HGE
-	case TYPE_hge:
-		/* Does this happen?
-		 * If so, what do we have TODO ? */
-		throw(MAL, "SYSMONstop", SQLSTATE(42000) "type hge not handled, yet");
-#endif
 	default:
-		throw(MAL, "SYSMONstop", SQLSTATE(42000) "Stop requires integer");
+		throw(MAL, "SYSMONstop", SQLSTATE(42000) "SYSMONstop requires a 64-bit integer");
 	}
 	if (tag < 1)
 		throw(MAL, "SYSMONstop", SQLSTATE(42000) "Tag must be positive");
