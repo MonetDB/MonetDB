@@ -2355,7 +2355,7 @@ static str
 sql_update_linear_hashing(Client c, mvc *sql, const char *prev_schema, bool *systabfixed)
 {
 	sql_table *t;
-	size_t bufsize = 10000, pos = 0;
+	size_t bufsize = 16384, pos = 0;
 	char *err = NULL, *buf = GDKmalloc(bufsize);
 	sql_schema *sys = mvc_bind_schema(sql, "sys");
 
