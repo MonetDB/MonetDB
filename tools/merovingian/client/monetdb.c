@@ -1811,12 +1811,25 @@ snapshot_list(sabdb *databases) {
 
 	printf("%-*s    %-25s    %s\n", width, "name", "time", "size");
 
+	char *name_buf = malloc(width + 100);
 	for (struct snapshot *snap = snapshots; snap < snapshots + nsnapshots; snap++) {
-		char buf[100];
+		char tm_buf[100];
 		struct tm tm;
+		// format name
+		char *name;
+		if (snap == snapshots || strcmp(snap[0].dbname, snap[-1].dbname) != 0) {
+			// subheader, show whole name
+			name = snap->name;
+		} else {
+			// continuation, show only sequence number
+			strcpy(name_buf, snap->name);
+			for (size_t i = 0; i < strlen(snap->dbname); i++)
+				name_buf[i] = ' ';
+			name = name_buf;
+		}
 		// format time
 		localtime_r(&snap->time, &tm);
-		strftime(buf, sizeof(buf), "%a %Y-%m-%d %H:%M:%S", &tm);
+		strftime(tm_buf, sizeof(tm_buf), "%a %Y-%m-%d %H:%M:%S", &tm);
 		// format size
 		double size = snap->size;
 		char *units[] = {"B", "KiB", "MiB", "GiB", "TiB", NULL};
@@ -1825,10 +1838,11 @@ snapshot_list(sabdb *databases) {
 			size /= 1024;
 			unit++;
 		}
+		printf("%-*s    %-25s    %.1f %s\n", width, name, tm_buf, size, *unit);
 		// output
-		printf("%-*s    %-25s    %.1f %s\n", width, snap->name, buf, size, *unit);
 	}
 
+	free(name_buf);
 	free_snapshots(snapshots, nsnapshots);
 }
 
