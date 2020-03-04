@@ -172,7 +172,7 @@ command_help(int argc, char *argv[])
 		printf("  prints the version of this monetdb utility\n");
 	} else if (strcmp(argv[1], "snapshot") == 0) {
 		if (argc > 2 && strcmp(argv[2], "list") == 0) {
-			printf("Usage: monetdb snapshot list ]<dbname>...]\n");
+			printf("Usage: monetdb snapshot list [<dbname>...]\n");
 			printf("  List snapshots for the given database, or all databases\n");
 			printf("  if none given.\n");
 		} else if (argc > 2 && strcmp(argv[2], "create") == 0) {
@@ -1950,8 +1950,14 @@ command_snapshot_list(int argc, char *argv[])
 		free(err);
 		exit(2);
 	}
-	sabdb *databases = globMatchDBS(argc, argv, &all, "snapshot");
-	msab_freeStatus(&all);
+	sabdb *databases;
+	if (argc > 1) {
+		databases = globMatchDBS(argc, argv, &all, "snapshot");
+		msab_freeStatus(&all);
+	} else {
+		databases = all;
+		all = NULL;
+	}
 	if (databases == NULL)
 		exit(1);
 
@@ -2021,7 +2027,7 @@ command_snapshot_restore(int argc, char *argv[])
 static void
 command_snapshot(int argc, char *argv[])
 {
-	if (argc <= 2) {
+	if (argc <= 1) {
 		/* print help message for this command */
 		command_help(argc + 1, &argv[-1]);
 		exit(1);
