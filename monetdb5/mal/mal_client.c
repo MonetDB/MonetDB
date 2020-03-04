@@ -605,7 +605,6 @@ MCreadClient(Client c)
 	return 1;
 }
 
-
 int
 MCvalid(Client tc)
 {

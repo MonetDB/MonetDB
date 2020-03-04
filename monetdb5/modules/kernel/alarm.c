@@ -39,57 +39,95 @@ ALARMusec(lng *ret)
 	return MAL_SUCCEED;
 }
 
+#define SLEEP_SINGLE(TPE) \
+	do { \
+		TPE *res = (TPE*) getArgReference(stk, pci, 0), *msecs = (TPE*) getArgReference(stk,pci,1); \
+		if (is_##TPE##_nil(*msecs)) \
+			throw(MAL, "alarm.sleepr", "NULL values not allowed for sleeping time"); \
+		if (*msecs < 0) \
+			throw(MAL, "alarm.sleepr", "Cannot sleep for a negative time"); \
+		MT_sleep_ms((unsigned int) *msecs); \
+		*res = *msecs; \
+	} while (0)
+
+#define SLEEP_MULTI(TPE) \
+	do { \
+		for (i = 0; i < j ; i++) { \
+			if (is_##TPE##_nil(bb[i])) { \
+				BBPreclaim(r); \
+				BBPunfix(b->batCacheid); \
+				throw(MAL, "alarm.sleepr", "NULL values not allowed for sleeping time"); \
+			} \
+			if (bb[i] < 0) { \
+				BBPreclaim(r); \
+				BBPunfix(b->batCacheid); \
+				throw(MAL, "alarm.sleepr", "Cannot sleep for a negative time"); \
+			} \
+		} \
+		for (i = 0; i < j ; i++) { \
+			MT_sleep_ms((unsigned int) bb[i]); \
+			rb[i] = bb[i]; \
+		} \
+	} while (0)
+
 str
 ALARMsleep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	BAT *r, *b;
-	int *restrict rb, *restrict bb;
+	BAT *r = NULL, *b = NULL;
+	int *restrict rb, *restrict bb, tpe;
 	BUN i, j;
 
 	(void) cntxt;
 	if (getArgType(mb, pci, 0) != TYPE_void && isaBatType(getArgType(mb, pci, 1))) {
 		bat *res = getArgReference_bat(stk, pci, 0);
 		bat *bid = getArgReference_bat(stk, pci, 1);
-		
+		tpe = getArgType(mb, pci, 1);
+
 		if (!(b = BATdescriptor(*bid)))
 			throw(MAL, "alarm.sleepr", SQLSTATE(HY005) "Cannot access column descriptor");
 
 		j = BATcount(b);
 		bb = Tloc(b, 0);
-		for (i = 0; i < j ; i++) {
-			if (is_int_nil(bb[i])) {
-				BBPunfix(b->batCacheid);
-				throw(MAL, "alarm.sleepr", "NULL values not allowed for the sleeping time");
-			} else if (bb[i]) {
-				BBPunfix(b->batCacheid);
-				throw(MAL, "alarm.sleepr", "Cannot sleep for a negative time");
-			}
-		}
 
-		r = COLnew(0, TYPE_int, j, TRANSIENT);
-		if (r == NULL) {
+		if (!(r = COLnew(0, tpe, j, TRANSIENT))) {
 			BBPunfix(b->batCacheid);
 			throw(MAL, "alarm.sleepr", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
-
 		rb = Tloc(r, 0);
-		for (i = 0; i < j ; i++) {
-			MT_sleep_ms(bb[i]);
-			rb[i] = bb[i];
+
+		switch (tpe) {
+			case TYPE_bte:
+				SLEEP_MULTI(bte);
+				break;
+			case TYPE_sht:
+				SLEEP_MULTI(sht);
+				break;
+			case TYPE_int:
+				SLEEP_MULTI(int);
+				break;
+			default: {
+				BBPreclaim(r);
+				BBPunfix(b->batCacheid);
+				throw(MAL, "alarm.sleepr", SQLSTATE(42000) "Sleep function not available for type %s", ATOMname(tpe));
+			}
 		}
 
 		BBPunfix(b->batCacheid);
 		BBPkeepref(*res = r->batCacheid);
 	} else {
-		int *res = (int*) getArgReference(stk, pci, 0), *msecs = (int*) getArgReference(stk,pci,1);
-
-		if (is_int_nil(*msecs))
-			throw(MAL, "alarm.sleepr", "NULL values not allowed for the sleeping time");
-		else if (*msecs < 0)
-			throw(MAL, "alarm.sleepr", "Cannot sleep for a negative time");
-
-		MT_sleep_ms(*msecs);
-		*res = *msecs;
+		switch (getArgType(mb, pci, 1)) {
+			case TYPE_bte:
+				SLEEP_SINGLE(bte);
+				break;
+			case TYPE_sht:
+				SLEEP_SINGLE(sht);
+				break;
+			case TYPE_int:
+				SLEEP_SINGLE(int);
+				break;
+			default:
+				throw(MAL, "alarm.sleepr", SQLSTATE(42000) "Sleep function not available for type %s", ATOMname(getArgType(mb, pci, 1)));
+		}
 	}
 	return MAL_SUCCEED;
 }

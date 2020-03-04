@@ -992,7 +992,7 @@ str CLTshutdown(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str CLTstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str CLTstopSession(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str CLTsuspend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-str CLTwakeup(void *ret, int *id);
+str CLTwakeup(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str CMDBATimprints(void *ret, bat *bid);
 str CMDBATimprintsize(lng *ret, bat *bid);
 str CMDBATnew(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p);

@@ -3595,13 +3595,19 @@ dogroupcovariance(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp,
 
 	delta1 = GDKmalloc(ngrp * sizeof(dbl));
 	delta2 = GDKmalloc(ngrp * sizeof(dbl));
-	m2 = GDKzalloc(ngrp * sizeof(dbl));
+	m2 = GDKmalloc(ngrp * sizeof(dbl));
 	cnts = GDKzalloc(ngrp * sizeof(BUN));
-	mean1 = GDKzalloc(ngrp * sizeof(dbl));
-	mean2 = GDKzalloc(ngrp * sizeof(dbl));
+	mean1 = GDKmalloc(ngrp * sizeof(dbl));
+	mean2 = GDKmalloc(ngrp * sizeof(dbl));
 
 	if (mean1 == NULL || mean2 == NULL || delta1 == NULL || delta2 == NULL || m2 == NULL || cnts == NULL)
 		goto alloc_fail;
+
+	for (i = 0; i < ngrp; i++) {
+		m2[i] = 0;
+		mean1[i] = 0;
+		mean2[i] = 0;
+	}
 
 	bn = COLnew(min, TYPE_dbl, ngrp, TRANSIENT);
 	if (bn == NULL)
@@ -3767,15 +3773,23 @@ BATgroupcorrelation(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp, bool skip_
 
 	delta1 = GDKmalloc(ngrp * sizeof(dbl));
 	delta2 = GDKmalloc(ngrp * sizeof(dbl));
-	up = GDKzalloc(ngrp * sizeof(dbl));
-	down1 = GDKzalloc(ngrp * sizeof(dbl));
-	down2 = GDKzalloc(ngrp * sizeof(dbl));
+	up = GDKmalloc(ngrp * sizeof(dbl));
+	down1 = GDKmalloc(ngrp * sizeof(dbl));
+	down2 = GDKmalloc(ngrp * sizeof(dbl));
 	cnts = GDKzalloc(ngrp * sizeof(BUN));
-	mean1 = GDKzalloc(ngrp * sizeof(dbl));
-	mean2 = GDKzalloc(ngrp * sizeof(dbl));
+	mean1 = GDKmalloc(ngrp * sizeof(dbl));
+	mean2 = GDKmalloc(ngrp * sizeof(dbl));
 
 	if (mean1 == NULL || mean2 == NULL || delta1 == NULL || delta2 == NULL || up == NULL || down1 == NULL || down2 == NULL || cnts == NULL)
 		goto alloc_fail;
+
+	for (i = 0; i < ngrp; i++) {
+		up[i] = 0;
+		down1[i] = 0;
+		down2[i] = 0;
+		mean1[i] = 0;
+		mean2[i] = 0;
+	}
 
 	bn = COLnew(min, TYPE_dbl, ngrp, TRANSIENT);
 	if (bn == NULL)
