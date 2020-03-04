@@ -5107,8 +5107,6 @@ drop function pcre_replace(string, string, string, string);
 [ "radians",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "rejects",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "resume",	"public",	"EXECUTE",	"monetdb",	0	]
-[ "reverse_qual",	"public",	"EXECUTE",	"monetdb",	0	]
-[ "reverse_seq",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "right_shift",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "right_shift_assign",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "setmasklen",	"public",	"EXECUTE",	"monetdb",	0	]
