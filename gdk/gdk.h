@@ -363,47 +363,19 @@
 #define THRDMASK	(1)
 #define CHECKMASK	(1<<1)
 #define CHECKDEBUG	if (GDKdebug & CHECKMASK)
-#define MEMMASK		(1<<2)
 #define PROPMASK	(1<<3)
 #define PROPDEBUG	if (GDKdebug & PROPMASK)
 #define IOMASK		(1<<4)
 #define BATMASK		(1<<5)
-/* PARSEMASK not used anymore
-#define PARSEMASK	(1<<6)
-#define PARSEDEBUG	if (GDKdebug & PARSEMASK)
-*/
 #define PARMASK		(1<<7)
-/* HEADLESSMASK not used anymore
-#define HEADLESSMASK	(1<<8)
-#define HEADLESSDEBUG	if (GDKdebug & HEADLESSMASK)
-*/
 #define TMMASK		(1<<9)
 #define TEMMASK		(1<<10)
-/* DLMASK not used anymore
-#define DLMASK		(1<<11)
-#define DLDEBUG		if (GDKdebug & DLMASK)
-*/
 #define PERFMASK	(1<<12)
 #define DELTAMASK	(1<<13)
 #define LOADMASK	(1<<14)
-/* YACCMASK not used anymore
-#define YACCMASK	(1<<15)
-#define YACCDEBUG	if (GDKdebug & YACCMASK)
-*/
-/*
-#define ?tcpip?		if (GDKdebug&(1<<16))
-#define ?monet_multiplex?	if (GDKdebug&(1<<17))
-#define ?ddbench?	if (GDKdebug&(1<<18))
-#define ?ddbench?	if (GDKdebug&(1<<19))
-#define ?ddbench?	if (GDKdebug&(1<<20))
-*/
 #define ACCELMASK	(1<<20)
 #define ALGOMASK	(1<<21)
 #define ESTIMASK	(1<<22)
-/* XPROPMASK not used anymore
-#define XPROPMASK	(1<<23)
-#define XPROPDEBUG	if (GDKdebug & XPROPMASK)
-*/
 
 #define NOSYNCMASK	(1<<24)
 

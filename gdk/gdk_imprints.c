@@ -324,9 +324,9 @@ BATimpsync(void *arg)
 				}
 			}
 			TRC_DEBUG(ACCELERATOR, "BATimpsync(" ALGOBATFMT "): "
-						"imprints persisted "
-						"(" LLFMT " usec)%s\n", ALGOBATPAR(b),
-						GDKusec() - t0, failed);
+				  "imprints persisted "
+				  "(" LLFMT " usec)%s\n", ALGOBATPAR(b),
+				  GDKusec() - t0, failed);
 		}
 	}
 	MT_lock_unset(&b->batIdxLock);
@@ -384,13 +384,13 @@ BATimprints(BAT *b)
 
 		if (s2)
 			TRC_DEBUG(ACCELERATOR, "BATimprints(b=" ALGOBATFMT
-					"): creating imprints on parent "
-					ALGOBATFMT "\n",
-					ALGOBATPAR(s2), ALGOBATPAR(b));
+				  "): creating imprints on parent "
+				  ALGOBATFMT "\n",
+				  ALGOBATPAR(s2), ALGOBATPAR(b));
 		else
 			TRC_DEBUG(ACCELERATOR, "BATimprints(b=" ALGOBATFMT
-					"): creating imprints\n",
-					ALGOBATPAR(b));
+				  "): creating imprints\n",
+				  ALGOBATPAR(b));
 
 		s2 = NULL;
 
@@ -736,8 +736,8 @@ IMPSprint(BAT *b)
 	cnt_bins = max_bins + 64;
 
 	TRC_DEBUG(ACCELERATOR,
-		"bits = %d, impcnt = " BUNFMT ", dictcnt = " BUNFMT "\n",
-		imprints->bits, imprints->impcnt, imprints->dictcnt);
+		  "bits = %d, impcnt = " BUNFMT ", dictcnt = " BUNFMT "\n",
+		  imprints->bits, imprints->impcnt, imprints->dictcnt);
 	TRC_DEBUG(ACCELERATOR, "MIN\n");
 	for (i = 0; i < imprints->bits; i++) {
 		TRC_DEBUG(ACCELERATOR, "[ " BUNFMT " ]\n", min_bins[i]);

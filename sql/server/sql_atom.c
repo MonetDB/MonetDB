@@ -123,13 +123,10 @@ atom_int( sql_allocator *sa, sql_subtype *tpe,
 			break;
 #endif
 		default:
-			TRC_INFO(SQL_ATOM_TR, "%d\n", a->data.vtype);
 			assert(0);
 		}
 		a->d = (dbl) val;
 		a->data.len = 0;
-
-		TRC_DEBUG(SQL_ATOM_TR, "(%s, %.40g)\n", tpe->type->sqlname, (dbl)val);
 		return a;
 	}
 }
@@ -207,8 +204,6 @@ atom_string(sql_allocator *sa, sql_subtype *tpe, const char *val)
 		a->data.val.sval = (char*)val;
 		a->data.len = strlen(a->data.val.sval);
 	}
-
-	TRC_DEBUG(SQL_ATOM_TR, "(%s, %s)\n", tpe->type->sqlname, val);
 	return a;
 }
 
@@ -229,7 +224,6 @@ atom_float(sql_allocator *sa, sql_subtype *tpe, double val)
 	}
 	a->data.vtype = tpe->type->localtype;
 	a->data.len = 0;
-	TRC_DEBUG(SQL_ATOM_TR, "(%s, %f)\n", tpe->type->sqlname, val);
 	return a;
 }
 
@@ -304,8 +298,6 @@ atom_general(sql_allocator *sa, sql_subtype *tpe, const char *val)
 {
 	atom *a;
 	ptr p = NULL;
-
-	TRC_DEBUG(SQL_ATOM_TR, "(%s, %s)\n", tpe->type->sqlname, val);
 
 	if (tpe->type->localtype == TYPE_str)
 		return atom_string(sa, tpe, val);

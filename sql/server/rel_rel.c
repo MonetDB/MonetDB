@@ -2057,12 +2057,10 @@ rel_visitor(mvc *sql, sql_rel *rel, rel_rewrite_fptr rel_rewriter, int *changes,
 		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
 	if (!rel)
-		return rel;
+		return NULL;
 
-	if (topdown) {
-		if (!(rel = do_rel_visitor(sql, rel, rel_rewriter, changes, true)))
-			return rel;
-	}
+	if (topdown && !(rel = do_rel_visitor(sql, rel, rel_rewriter, changes, true)))
+		return NULL;
 
 	sql_rel *(*func)(mvc *, sql_rel *, rel_rewrite_fptr, int*) = topdown ? rel_visitor_topdown : rel_visitor_bottomup;
 

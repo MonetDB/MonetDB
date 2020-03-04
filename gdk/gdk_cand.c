@@ -898,8 +898,8 @@ BATnegcands(BAT *dense_cands, BAT *odels)
 	dense_cands->tvheap = dels;
 	BATsetcount(dense_cands, dense_cands->batCount - (hi - lo));
 	TRC_DEBUG(ALGO, "BATnegcands(cands=" ALGOBATFMT ","
-			  	"dels=" ALGOBATFMT ")\n",
-			  	ALGOBATPAR(dense_cands),
-			  	ALGOBATPAR(odels));
+		  "dels=" ALGOBATFMT ")\n",
+		  ALGOBATPAR(dense_cands),
+		  ALGOBATPAR(odels));
     	return GDK_SUCCEED;
 }

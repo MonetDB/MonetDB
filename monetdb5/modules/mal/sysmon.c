@@ -129,93 +129,90 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 str
 SYSMONpause(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{	lng i, tag = 0;
+{
+	bool set = false;
+	lng tag = 0;
 	(void) mb;
 	(void) stk;
 	(void) pci;
-	
+
 	switch( getArgType(mb,pci,1)){
 	case TYPE_bte: tag = *getArgReference_bte(stk,pci,1); break;
 	case TYPE_sht: tag = *getArgReference_sht(stk,pci,1); break;
 	case TYPE_int: tag = *getArgReference_int(stk,pci,1); break;
 	case TYPE_lng: tag = *getArgReference_lng(stk,pci,1); break;
-#ifdef HAVE_HGE
-	case TYPE_hge:
-		/* Does this happen?
-		 * If so, what do we have TODO ? */
-		throw(MAL, "SYSMONpause", "type hge not handled, yet");
-#endif
 	default:
-		throw(MAL, "SYSMONpause", "Pause requires integer");
+		throw(MAL, "SYSMONpause", SQLSTATE(42000) "SYSMONpause requires a 64-bit integer");
 	}
+	if (tag < 1)
+		throw(MAL, "SYSMONpause", SQLSTATE(42000) "Tag must be positive");
 	MT_lock_set(&mal_delayLock);
-	for ( i = 0; QRYqueue[i].tag; i++)
+	for (lng i = 0; QRYqueue[i].tag; i++)
 		if( (lng) QRYqueue[i].tag == tag && (QRYqueue[i].cntxt->user == cntxt->user || cntxt->user == MAL_ADMIN)){
 			QRYqueue[i].stk->status = 'p';
 			QRYqueue[i].status = "paused";
+			set = true;
 		}
 	MT_lock_unset(&mal_delayLock);
-	return MAL_SUCCEED;
+	return set ? MAL_SUCCEED : createException(MAL, "SYSMONpause", SQLSTATE(42000) "Tag " LLFMT " unknown", tag);
 }
 
 str
 SYSMONresume(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{	lng i,tag = 0;
+{
+	bool set = false;
+	lng tag = 0;
 	(void) mb;
 	(void) stk;
 	(void) pci;
-	
+
 	switch( getArgType(mb,pci,1)){
 	case TYPE_bte: tag = *getArgReference_bte(stk,pci,1); break;
 	case TYPE_sht: tag = *getArgReference_sht(stk,pci,1); break;
 	case TYPE_int: tag = *getArgReference_int(stk,pci,1); break;
 	case TYPE_lng: tag = *getArgReference_lng(stk,pci,1); break;
-#ifdef HAVE_HGE
-	case TYPE_hge:
-		/* Does this happen?
-		 * If so, what do we have TODO ? */
-		throw(MAL, "SYSMONresume", "type hge not handled, yet");
-#endif
 	default:
-		throw(MAL, "SYSMONresume", "Resume requires integer");
+		throw(MAL, "SYSMONresume", SQLSTATE(42000) "SYSMONresume requires a 64-bit integer");
 	}
+	if (tag < 1)
+		throw(MAL, "SYSMONresume", SQLSTATE(42000) "Tag must be positive");
 	MT_lock_set(&mal_delayLock);
-	for ( i = 0; QRYqueue[i].tag; i++)
+	for (lng i = 0; QRYqueue[i].tag; i++)
 		if( (lng)QRYqueue[i].tag == tag && (QRYqueue[i].cntxt->user == cntxt->user || cntxt->user == MAL_ADMIN)){
 			QRYqueue[i].stk->status = 0;
 			QRYqueue[i].status = "running";
+			set = true;
 		}
 	MT_lock_unset(&mal_delayLock);
-	return MAL_SUCCEED;
+	return set ? MAL_SUCCEED : createException(MAL, "SYSMONresume", SQLSTATE(42000) "Tag " LLFMT " unknown", tag);
 }
 
 str
 SYSMONstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{	lng i,tag = 0;
+{
+	bool set = false;
+	lng tag = 0;
 	(void) mb;
 	(void) stk;
 	(void) pci;
-	
+
 	switch( getArgType(mb,pci,1)){
 	case TYPE_bte: tag = *getArgReference_bte(stk,pci,1); break;
 	case TYPE_sht: tag = *getArgReference_sht(stk,pci,1); break;
 	case TYPE_int: tag = *getArgReference_int(stk,pci,1); break;
 	case TYPE_lng: tag = *getArgReference_lng(stk,pci,1); break;
-#ifdef HAVE_HGE
-	case TYPE_hge:
-		/* Does this happen?
-		 * If so, what do we have TODO ? */
-		throw(MAL, "SYSMONstop", "type hge not handled, yet");
-#endif
 	default:
-		throw(MAL, "SYSMONstop", "Stop requires integer");
+		throw(MAL, "SYSMONstop", SQLSTATE(42000) "SYSMONstop requires a 64-bit integer");
 	}
+	if (tag < 1)
+		throw(MAL, "SYSMONstop", SQLSTATE(42000) "Tag must be positive");
 	MT_lock_set(&mal_delayLock);
-	for ( i = 0; QRYqueue[i].tag; i++)
+	for (lng i = 0; QRYqueue[i].tag; i++)
 		if( (lng) QRYqueue[i].tag == tag && (QRYqueue[i].cntxt->user == cntxt->user || cntxt->user == MAL_ADMIN)){
 			QRYqueue[i].stk->status = 'q';
 			QRYqueue[i].status = "stopping";
+			set = true;
 		}
 	MT_lock_unset(&mal_delayLock);
-	return MAL_SUCCEED;
+	return set ? MAL_SUCCEED : createException(MAL, "SYSMONstop", SQLSTATE(42000) "Tag " LLFMT " unknown", tag);
 }

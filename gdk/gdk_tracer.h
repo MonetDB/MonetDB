@@ -35,27 +35,9 @@
 #ifndef _GDK_TRACER_H_
 #define _GDK_TRACER_H_
 
-#define INT_MAX_LEN ((__CHAR_BIT__ * sizeof(int) - 1) / 3  + 2)
-#define BUFFER_SIZE 64000
-
-#define DEFAULT_ADAPTER BASIC
-#define DEFAULT_LOG_LEVEL M_ERROR
-#define DEFAULT_FLUSH_LEVEL M_INFO
-
-#define FILE_NAME "mdbtrace.log"
-#define NAME_SEP '_'
-#define NULL_CHAR '\0'
 #define MXW "20"
 
-#define OPENFILE_FAILED "Failed to open "FILE_NAME
-#define GDKTRACER_FAILED "Failed to write logs"
-
-#define AS_STR(x) #x
-#define STR(x) AS_STR(x)
-
 #define GENERATE_ENUM(ENUM) ENUM,
-#define GENERATE_STRING(STRING) #STRING,
-#define GENERATE_LOG_LEVEL(COMP) DEFAULT_LOG_LEVEL,
 
 
 // ADAPTERS
@@ -132,35 +114,16 @@ typedef enum {
 	COMP( FITS )				\
 	COMP( SHP )				\
 						\
-	COMP( SQL_ATOM_TR )			\
-	COMP( SQL_STATISTICS )			\
-	COMP( SQL_ORDERIDX )			\
-	COMP( SQL_OPTIMIZER )			\
-	COMP( SQL_WLR )				\
-	COMP( SQL_USER )			\
-	COMP( SQL_SCENARIO )			\
-	COMP( SQL_CACHE_TR )			\
-	COMP( SQL_SYMBOL )			\
-	COMP( SQL_MVC )				\
+	COMP( SQL_PARSER )			\
+	COMP( SQL_TRANS )			\
+	COMP( SQL_REWRITER )			\
+	COMP( SQL_EXECUTION )			\
 	COMP( SQL_STORE )			\
-	COMP( SQL_UPGRADES )			\
-	COMP( SQL_RELATION )			\
-	COMP( SQL_RESULT )			\
-	COMP( SQL_STATEMENT )			\
-	COMP( SQL_BAT )				\
 						\
-	COMP( MAL_INTERPRETER )			\
 	COMP( MAL_WLC )				\
 	COMP( MAL_REMOTE )			\
-	COMP( MAL_ATOMS )			\
-	COMP( MAL_TABLET )			\
-	COMP( MAL_OLTP )			\
 	COMP( MAL_MAPI )			\
 	COMP( MAL_SERVER )			\
-	COMP( MAL_DATAFLOW )			\
-	COMP( MAL_MANIFOLD )			\
-	COMP( MAL_EXCEPTION )			\
-	COMP( MAL_MAL )				\
 						\
 	COMP( MAL_OPTIMIZER )			\
 						\
@@ -284,44 +247,6 @@ gdk_export LOG_LEVEL LVL_PER_COMPONENT[];
 
 
 
-// GDKtracer struct - Buffer and info
-typedef struct GDKtracer {
-	int id;
-	char buffer[BUFFER_SIZE];
-	int allocated_size;
-} gdk_tracer;
-
-
-
-/*
- * GDKtracer Stream Macros
- */
-// Exception
-#define GDK_TRACER_EXCEPTION(MSG, ...)					\
-	mnstr_printf(GDKstdout,						\
-		     "%s "						\
-		     "%-"MXW"s "					\
-		     "%"MXW"s:%d "					\
-		     "%"MXW"s "						\
-		     "%-"MXW"s "					\
-		     "%-"MXW"s # "MSG,					\
-		     GDKtracer_get_timestamp("%Y-%m-%d %H:%M:%S",	\
-					     (char[20]){0}, 20),	\
-		     __FILE__,						\
-		     __func__,						\
-		     __LINE__,						\
-		     STR(M_CRITICAL),					\
-		     STR(GDK_TRACER),					\
-		     MT_thread_getname(),				\
-		     ## __VA_ARGS__);
-
-
-#define GDK_TRACER_OSTREAM(MSG, ...)			\
-	mnstr_printf(GDKstdout, MSG, ## __VA_ARGS__)
-
-
-
-
 /*
  * GDKtracer API
  * For the allowed log_levels, components and layers see the
@@ -363,7 +288,7 @@ gdk_export gdk_return GDKtracer_reset_adapter(void);
 
 
 gdk_export gdk_return GDKtracer_log(LOG_LEVEL level, const char *fmt, ...)
-	__attribute__((format(printf, 2, 3)));
+	__attribute__((__format__(__printf__, 2, 3)));
 
 
 gdk_export gdk_return GDKtracer_flush_buffer(void);

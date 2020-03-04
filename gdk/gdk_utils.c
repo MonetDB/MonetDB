@@ -606,6 +606,54 @@ void
 GDKsetdebug(int debug)
 {
 	GDKdebug = debug;
+	if (debug & ACCELMASK)
+		GDKtracer_set_component_level("accelerator", "debug");
+	else
+		GDKtracer_reset_component_level("accelerator");
+	if (debug & ALGOMASK)
+		GDKtracer_set_component_level("algo", "debug");
+	else
+		GDKtracer_reset_component_level("algo");
+	if (debug & ALLOCMASK)
+		GDKtracer_set_component_level("alloc", "debug");
+	else
+		GDKtracer_reset_component_level("alloc");
+	if (debug & BATMASK)
+		GDKtracer_set_component_level("bat", "debug");
+	else
+		GDKtracer_reset_component_level("bat");
+	if (debug & CHECKMASK)
+		GDKtracer_set_component_level("check", "debug");
+	else
+		GDKtracer_reset_component_level("check");
+	if (debug & DELTAMASK)
+		GDKtracer_set_component_level("delta", "debug");
+	else
+		GDKtracer_reset_component_level("delta");
+	if (debug & HEAPMASK)
+		GDKtracer_set_component_level("heap", "debug");
+	else
+		GDKtracer_reset_component_level("heap");
+	if (debug & IOMASK)
+		GDKtracer_set_component_level("io", "debug");
+	else
+		GDKtracer_reset_component_level("io");
+	if (debug & PARMASK)
+		GDKtracer_set_component_level("par", "debug");
+	else
+		GDKtracer_reset_component_level("par");
+	if (debug & PERFMASK)
+		GDKtracer_set_component_level("perf", "debug");
+	else
+		GDKtracer_reset_component_level("perf");
+	if (debug & TEMMASK)
+		GDKtracer_set_component_level("tem", "debug");
+	else
+		GDKtracer_reset_component_level("tem");
+	if (debug & THRDMASK)
+		GDKtracer_set_component_level("thrd", "debug");
+	else
+		GDKtracer_reset_component_level("thrd");
 }
 
 gdk_return
@@ -1169,12 +1217,13 @@ doGDKaddbuf(const char *prefix, const char *message, size_t messagelen, const ch
 			dst += sufflen;
 		}
 		*dst = '\0';
+		TRC_INFO(GDK, "%s%.*s%s\n",
+			 prefix[0] == '#' ? prefix + 1 : prefix,
+			 (int) messagelen, message, suffix);
 	} else {
-		TRC_INFO(GDK, "%s%.*s%s", prefix, (int) messagelen, message, suffix);
+		TRC_ERROR(GDK, "%s%.*s%s",
+			  prefix, (int) messagelen, message, suffix);
 	}
-	TRC_INFO(GDK, "%s%.*s%s\n",
-		 prefix[0] == '#' ? prefix + 1 : prefix,
-		 (int) messagelen, message, suffix);
 }
 
 /* print an error or warning message, making sure the message ends in
@@ -1377,7 +1426,7 @@ GDKfatal(const char *format, ...)
 	size_t len = strlen(GDKFATAL);
 	va_list ap;
 
-	GDKdebug |= IOMASK;
+	GDKtracer_set_component_level("io", "debug");
 #ifndef NATIVE_WIN32
 	BATSIGinit();
 #endif

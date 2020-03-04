@@ -15,6 +15,7 @@
 #include "mal_function.h"		/* for getPC() */
 #include "mal_utils.h"
 #include "mal_exception.h"
+#include "mal_private.h"
 
 /* If we encounter an error it can be left behind in the MalBlk
  * for the upper layers to abandon the track
@@ -27,19 +28,16 @@ addMalException(MalBlkPtr mb, str msg)
 	if( msg == NULL)
 		return;
 	if( mb->errors){
-		new = GDKzalloc(strlen(mb->errors) + strlen(msg) + 4);
+		size_t len = strlen(mb->errors) + strlen(msg) + 1;
+		new = GDKzalloc(len);
 		if (new == NULL)
 			// just stick to one error message, ignore rest
-			return ; 
-		strcpy(new, mb->errors);
-		strcat(new, msg);
+			return ;
+		strconcat_len(new, len, mb->errors, msg, NULL);
 		freeException(mb->errors);
 		mb->errors = new;
 	} else {
-		new = GDKstrdup(msg);
-		if( new == NULL)
-			return ; // just stick to one error message, ignore rest
-		mb->errors = new;
+		mb->errors = dupError(msg);
 	}
 }
 

@@ -613,16 +613,12 @@ insert_into(sql_query *query, dlist *qname, dlist *columns, symbol *val_or_q)
 	mvc *sql = query->sql;
 	char *sname = qname_schema(qname);
 	char *tname = qname_table(qname);
-	sql_schema *s = NULL;
+	sql_schema *s = cur_schema(sql);
 	sql_table *t = NULL;
 	sql_rel *r = NULL;
 
-	if (sname && !(s=mvc_bind_schema(sql, sname))) {
-		(void) sql_error(sql, 02, SQLSTATE(3F000) "INSERT INTO: no such schema '%s'", sname);
-		return NULL;
-	}
-	if (!s)
-		s = cur_schema(sql);
+	if (sname && !(s = mvc_bind_schema(sql, sname)))
+		return sql_error(sql, 02, SQLSTATE(3F000) "INSERT INTO: no such schema '%s'", sname);
 	t = mvc_bind_table(sql, s, tname);
 	if (!t && !sname) {
 		s = tmp_schema(sql);
@@ -1113,15 +1109,11 @@ update_table(sql_query *query, dlist *qname, str alias, dlist *assignmentlist, s
 	mvc *sql = query->sql;
 	char *sname = qname_schema(qname);
 	char *tname = qname_table(qname);
-	sql_schema *s = NULL;
+	sql_schema *s = cur_schema(sql);
 	sql_table *t = NULL;
 
-	if (sname && !(s=mvc_bind_schema(sql,sname))) {
-		(void) sql_error(sql, 02, SQLSTATE(3F000) "UPDATE: no such schema '%s'", sname);
-		return NULL;
-	}
-	if (!s)
-		s = cur_schema(sql);
+	if (sname && !(s = mvc_bind_schema(sql,sname)))
+		return sql_error(sql, 02, SQLSTATE(3F000) "UPDATE: no such schema '%s'", sname);
 	t = mvc_bind_table(sql, s, tname);
 	if (!t && !sname) {
 		s = tmp_schema(sql);
@@ -1224,15 +1216,11 @@ delete_table(sql_query *query, dlist *qname, str alias, symbol *opt_where)
 	mvc *sql = query->sql;
 	char *sname = qname_schema(qname);
 	char *tname = qname_table(qname);
-	sql_schema *schema = NULL;
+	sql_schema *schema = cur_schema(sql);
 	sql_table *t = NULL;
 
-	if (sname && !(schema=mvc_bind_schema(sql, sname))) {
-		(void) sql_error(sql, 02, SQLSTATE(3F000) "DELETE FROM: no such schema '%s'", sname);
-		return NULL;
-	}
-	if (!schema)
-		schema = cur_schema(sql);
+	if (sname && !(schema = mvc_bind_schema(sql, sname)))
+		return sql_error(sql, 02, SQLSTATE(3F000) "DELETE FROM: no such schema '%s'", sname);
 	t = mvc_bind_table(sql, schema, tname);
 	if (!t && !sname) {
 		schema = tmp_schema(sql);
@@ -1285,15 +1273,11 @@ truncate_table(mvc *sql, dlist *qname, int restart_sequences, int drop_action)
 {
 	char *sname = qname_schema(qname);
 	char *tname = qname_table(qname);
-	sql_schema *schema = NULL;
+	sql_schema *schema = cur_schema(sql);
 	sql_table *t = NULL;
 
-	if (sname && !(schema=mvc_bind_schema(sql, sname))) {
-		(void) sql_error(sql, 02, SQLSTATE(3F000) "TRUNCATE: no such schema '%s'", sname);
-		return NULL;
-	}
-	if (!schema)
-		schema = cur_schema(sql);
+	if (sname && !(schema = mvc_bind_schema(sql, sname)))
+		return sql_error(sql, 02, SQLSTATE(3F000) "TRUNCATE: no such schema '%s'", sname);
 	t = mvc_bind_table(sql, schema, tname);
 	if (!t && !sname) {
 		schema = tmp_schema(sql);
@@ -1364,7 +1348,7 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 {
 	mvc *sql = query->sql;
 	char *sname = qname_schema(qname), *tname = qname_table(qname), *alias_name;
-	sql_schema *s = NULL;
+	sql_schema *s = cur_schema(sql);
 	sql_table *t = NULL;
 	sql_rel *bt, *joined, *join_rel = NULL, *extra_project, *insert = NULL, *upd_del = NULL, *res = NULL, *extra_select;
 	sql_exp *nils, *project_first;
@@ -1372,10 +1356,8 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 
 	assert(tref && search_cond && merge_list);
 
-	if (sname && !(s=mvc_bind_schema(sql, sname)))
+	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_error(sql, 02, SQLSTATE(3F000) "MERGE: no such schema '%s'", sname);
-	if (!s)
-		s = cur_schema(sql);
 	t = mvc_bind_table(sql, s, tname);
 	if (!t && !sname) {
 		s = tmp_schema(sql);
@@ -1600,10 +1582,8 @@ rel_import(mvc *sql, sql_table *t, const char *tsep, const char *rsep, const cha
 			fwf_string_cur += sprintf(fwf_string_cur, LLFMT"%c", dn->data.l_val, STREAM_FWF_FIELD_SEP);
 			ncol++;
 		}
-		if(list_length(f->res) != ncol) {
-			(void) sql_error(sql, 02, SQLSTATE(3F000) "COPY INTO: fixed width import for %d columns but %d widths given.", list_length(f->res), ncol);
-			return NULL;
-		}
+		if (list_length(f->res) != ncol)
+			return sql_error(sql, 02, SQLSTATE(3F000) "COPY INTO: fixed width import for %d columns but %d widths given.", list_length(f->res), ncol);
 		*fwf_string_cur = '\0';
 	}
 
@@ -1639,7 +1619,7 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 	sql_rel *rel = NULL;
 	char *sname = qname_schema(qname);
 	char *tname = qname_table(qname);
-	sql_schema *s = NULL;
+	sql_schema *s = cur_schema(sql);
 	sql_table *t = NULL, *nt = NULL;
 	const char *tsep = seps->h->data.sval;
 	const char *rsep = seps->h->next->data.sval;
@@ -1651,12 +1631,9 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 	int reorder = 0;
 	assert(!nr_offset || nr_offset->h->type == type_lng);
 	assert(!nr_offset || nr_offset->h->next->type == type_lng);
-	if (sname && !(s=mvc_bind_schema(sql, sname))) {
-		(void) sql_error(sql, 02, SQLSTATE(3F000) "COPY INTO: no such schema '%s'", sname);
-		return NULL;
-	}
-	if (!s)
-		s = cur_schema(sql);
+
+	if (sname && !(s = mvc_bind_schema(sql, sname)))
+		return sql_error(sql, 02, SQLSTATE(3F000) "COPY INTO: no such schema '%s'", sname);
 	t = mvc_bind_table(sql, s, tname);
 	if (!t && !sname) {
 		s = tmp_schema(sql);
@@ -1849,9 +1826,8 @@ bincopyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, int co
 	mvc *sql = query->sql;
 	char *sname = qname_schema(qname);
 	char *tname = qname_table(qname);
-	sql_schema *s = NULL;
+	sql_schema *s = cur_schema(sql);
 	sql_table *t = NULL;
-
 	dnode *dn;
 	node *n;
 	sql_rel *res;
@@ -1864,18 +1840,12 @@ bincopyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, int co
 	int i;
 
 	assert(f);
-	if (!copy_allowed(sql, 1)) {
-		(void) sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: insufficient privileges: "
+	if (!copy_allowed(sql, 1))
+		return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: insufficient privileges: "
 				"binary COPY INTO requires database administrator rights");
-		return NULL;
-	}
 
-	if (sname && !(s=mvc_bind_schema(sql, sname))) {
-		(void) sql_error(sql, 02, SQLSTATE(3F000) "COPY INTO: no such schema '%s'", sname);
-		return NULL;
-	}
-	if (!s)
-		s = cur_schema(sql);
+	if (sname && !(s = mvc_bind_schema(sql, sname)))
+		return sql_error(sql, 02, SQLSTATE(3F000) "COPY INTO: no such schema '%s'", sname);
 	t = mvc_bind_table(sql, s, tname);
 	if (!t && !sname) {
 		s = tmp_schema(sql);
@@ -1938,24 +1908,18 @@ static sql_rel *
 copyfromloader(sql_query *query, dlist *qname, symbol *fcall)
 {
 	mvc *sql = query->sql;
-	sql_schema *s = NULL;
+	sql_schema *s = cur_schema(sql);
 	char *sname = qname_schema(qname);
 	char *tname = qname_table(qname);
 	sql_subfunc *loader = NULL;
 	sql_rel* rel = NULL;
 	sql_table* t;
 
-	if (!copy_allowed(sql, 1)) {
-		(void) sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: insufficient privileges: "
+	if (!copy_allowed(sql, 1))
+		return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: insufficient privileges: "
 				"binary COPY INTO requires database administrator rights");
-		return NULL;
-	}
-	if (sname && !(s = mvc_bind_schema(sql, sname))) {
-		(void) sql_error(sql, 02, SQLSTATE(3F000) "COPY INTO: no such schema '%s'", sname);
-		return NULL;
-	}
-	if (!s)
-		s = cur_schema(sql);
+	if (sname && !(s = mvc_bind_schema(sql, sname)))
+		return sql_error(sql, 02, SQLSTATE(3F000) "COPY INTO: no such schema '%s'", sname);
 	t = mvc_bind_table(sql, s, tname);
 	if (!t && !sname) {
 		s = tmp_schema(sql);
@@ -1964,20 +1928,16 @@ copyfromloader(sql_query *query, dlist *qname, symbol *fcall)
 			t = stack_find_table(sql, tname);
 	}
 	//TODO the COPY LOADER INTO should return an insert relation (instead of ddl) to handle partitioned tables properly
-	if (insert_allowed(sql, t, tname, "COPY INTO", "copy into") == NULL) {
+	if (insert_allowed(sql, t, tname, "COPY INTO", "copy into") == NULL)
 		return NULL;
-	} else if (isPartitionedByColumnTable(t) || isPartitionedByExpressionTable(t)) {
-		(void) sql_error(sql, 02, SQLSTATE(3F000) "COPY LOADER INTO: not possible for partitioned tables at the moment");
-		return NULL;
-	} else if (t->p && (isPartitionedByColumnTable(t->p) || isPartitionedByExpressionTable(t->p))) {
-		(void) sql_error(sql, 02, SQLSTATE(3F000) "COPY LOADER INTO: not possible for tables child of partitioned tables at the moment");
-		return NULL;
-	}
+	else if (isPartitionedByColumnTable(t) || isPartitionedByExpressionTable(t))
+		return sql_error(sql, 02, SQLSTATE(42000) "COPY LOADER INTO: not possible for partitioned tables at the moment");
+	else if (t->p && (isPartitionedByColumnTable(t->p) || isPartitionedByExpressionTable(t->p)))
+		return sql_error(sql, 02, SQLSTATE(42000) "COPY LOADER INTO: not possible for tables child of partitioned tables at the moment");
 
 	rel = rel_loader_function(query, fcall, new_exp_list(sql->sa), &loader);
-	if (!rel || !loader) {
+	if (!rel || !loader)
 		return NULL;
-	}
 
 	loader->sname = sname ? sa_zalloc(sql->sa, strlen(sname) + 1) : NULL;
 	loader->tname = tname ? sa_zalloc(sql->sa, strlen(tname) + 1) : NULL;

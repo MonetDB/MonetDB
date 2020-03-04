@@ -375,9 +375,9 @@ recover_dir(int farmid, bool direxists)
 	if (direxists) {
 		/* just try; don't care about these non-vital files */
 		if (GDKunlink(farmid, BATDIR, "BBP", "bak") != GDK_SUCCEED)
-			TRC_WARNING(GDK, "unlink of BBP.bak failed");
+			TRC_WARNING(GDK, "unlink of BBP.bak failed\n");
 		if (GDKmove(farmid, BATDIR, "BBP", "dir", BATDIR, "BBP", "bak") != GDK_SUCCEED)
-			TRC_WARNING(GDK, "rename of BBP.dir to BBP.bak failed");
+			TRC_WARNING(GDK, "rename of BBP.dir to BBP.bak failed\n");
 	}
 	return GDKmove(farmid, BAKDIR, "BBP", "dir", BATDIR, "BBP", "dir");
 }
@@ -1723,7 +1723,7 @@ new_bbpentry(FILE *fp, bat i, const char *prefix)
 		return GDK_FAIL;
 	}
 	TRC_DEBUG(IO_, "%s%zd %u %s %s %d " BUNFMT " "
-		  BUNFMT " " OIDFMT " %s", prefix,
+		  BUNFMT " " OIDFMT " %s\n", prefix,
 		  /* BAT info */
 		  (ssize_t) i,
 		  BBP_status(i) & BBPPERSISTENT,
@@ -3705,7 +3705,7 @@ BBPrecover_subdir(void)
 	if (ret == GDK_SUCCEED) {
 		ret = GDKremovedir(0, SUBDIR);
 		if (backup_dir == 2) {
-			TRC_DEBUG(IO_, "%s%cBBP.dir had disappeared!", SUBDIR, DIR_SEP);
+			TRC_DEBUG(IO_, "%s%cBBP.dir had disappeared!\n", SUBDIR, DIR_SEP);
 			backup_dir = 0;
 		}
 	}

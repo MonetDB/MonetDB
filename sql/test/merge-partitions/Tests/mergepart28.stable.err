@@ -35,7 +35,7 @@ CODE  = M0M29
 MAPI  = (monetdb) /var/tmp/mtest-28639/.s.monetdb.36178
 QUERY = COPY LOADER INTO ratings FROM tryaloader();
 ERROR = !COPY LOADER INTO: not possible for partitioned tables at the moment
-CODE  = 3F000
+CODE  = 42000
 
 # 17:13:18 >  
 # 17:13:18 >  "Done."

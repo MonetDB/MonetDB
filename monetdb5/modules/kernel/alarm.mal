@@ -6,15 +6,15 @@
 
 module alarm;
 
-unsafe pattern alarm.sleep(msecs:int) :void
+unsafe pattern alarm.sleep(msecs:any_1) :void
 address ALARMsleep
 comment "Sleep a few milliseconds";
 
-unsafe pattern alarm.sleep(msecs:int) :int
+unsafe pattern alarm.sleep(msecs:any_1) :any_1
 address ALARMsleep
 comment "Sleep a few milliseconds and return the slept value";
 
-unsafe pattern alarm.sleep(msecs:bat[:int]) :bat[:int]
+unsafe pattern alarm.sleep(msecs:bat[:any_1]) :bat[:any_1]
 address ALARMsleep
 comment "Sleep a few milliseconds and return the slept value";
 

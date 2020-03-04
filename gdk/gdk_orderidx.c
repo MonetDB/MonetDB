@@ -57,8 +57,8 @@ BATidxsync(void *arg)
 				}
 			}
 			TRC_DEBUG(ACCELERATOR, "BATidxsync(%s): orderidx persisted"
-						" (" LLFMT " usec)%s\n",
-						BATgetId(b), GDKusec() - t0, failed);
+				  " (" LLFMT " usec)%s\n",
+				  BATgetId(b), GDKusec() - t0, failed);
 		}
 	}
 	MT_lock_unset(&b->batIdxLock);

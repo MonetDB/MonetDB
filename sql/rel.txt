@@ -62,12 +62,12 @@ GROUPBY  (card ATOM (no group by exps), AGGR)
 	-> r 		is list of group by expressions
 
 TOPN	(card ATOM, AGGR, or MULTI (same card as lower relation))
-	-> exps 	(list) lng limit, [ lng offset ]
+	-> exps 	(list) lng limit, [ lng offset ] -> if the limit is a NULL value, then it's ignored, ie only the offset will be used
 	-> l		is relation
 	-> flag 	(bounds for limit can be including (1) or excluding (0) (ie later just returns the topN, including will return atleast N)
 
 SAMPLE	(card ATOM, AGGR, or MULTI (same card as lower relation))
-	-> exps		first is either an lng for rownumbers or double between [0,1] for percentage. An optional second contains an int for the seed value
+	-> exps		first is either an lng for rownumbers or double between [0,1] for percentage. An optional second contains an int for the seed value. -> if the first value is a NULL, then it's ignored, ie only the offset will be used
 	-> l		is relation
 	-> flag		(0) no flags
 
@@ -125,20 +125,18 @@ e_cmp
 			cmp_or = 7,			or handling  		->l/r are both lists
 			cmp_in = 8,			in list handling 	->r is a list of values
 			cmp_notin = 9		not in list handling	->r is a list of values
-			cmp_equal_nil = 10, special equal for equi join case, with nil = nil, at rel_dump, it prints =*
 
-			/* mark join cases */
-			mark_in = 11,
-			mark_not_in = 12,
-			mark_exists = 13,
-			mark_not_exists = 14,
+			mark_in = 10,			/* mark joins */
+			mark_notin = 11,
+			mark_exists = 12,
+			mark_notexists = 13,
 
 			/* The followin cmp_* are only used within stmt (not sql_exp) */
-			cmp_all = 15,			/* special case for crossproducts */
-			cmp_project = 16,		/* special case for projection joins */
-			cmp_joined = 17, 		/* special case already joined */
-			cmp_left = 18,			/* special case equi join, keep left order */
-			cmp_left_project = 19	/* last step of outer join */
+			cmp_all = 14,			/* special case for crossproducts */
+			cmp_project = 15,		/* special case for projection joins */
+			cmp_joined = 16, 		/* special case already joined */
+			cmp_left = 17,			/* special case equi join, keep left order */
+			cmp_left_project = 18	/* last step of outer join */
 		)
 
 e_func
