@@ -25,6 +25,13 @@ SELECT 11 FROM tab1 AS cor0 LEFT JOIN tab0 ON 80 = 70;
 	-- 11
 	-- 11
 
+SELECT col0 FROM tab0 ORDER BY tab0.col0;
+	-- 15
+	-- 87
+	-- 97
+
+SELECT col0 FROM tab0 ORDER BY sys.tab0.col0; --error, TODO
+
 prepare select col0 from tab0 where (?) in (select col0 from tab0);
 prepare select col0 from tab0 where (?,?) in (select col0,col1 from tab0);
 prepare select col0 from tab0 where (col1,col1) in (select col0,? from tab0);
