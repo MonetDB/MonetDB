@@ -409,6 +409,14 @@ SELECT col1 FROM another_T WHERE (col2, col3) IN (SELECT 1,2,3); -- error, too m
 
 SELECT col1 FROM another_T WHERE (col2, col3) IN (VALUES(1,2,3)); -- error, too many columns in the subquery
 
+SELECT * FROM integers i1 ORDER BY SUM(i); --column "i1.i" must appear in the GROUP BY clause or be used in an aggregate function
+
+SELECT i FROM integers i1 ORDER BY SUM(i); --column "i1.i" must appear in the GROUP BY clause or be used in an aggregate function
+
+SELECT * FROM integers i1 ORDER BY (SELECT SUM(i1.i) FROM integers i2); --column "i1.i" must appear in the GROUP BY clause or be used in an aggregate function
+
+SELECT i FROM integers i1 ORDER BY (SELECT SUM(i1.i) FROM integers i2); --column "i1.i" must appear in the GROUP BY clause or be used in an aggregate function
+
 CREATE FUNCTION evilfunction(input INT) RETURNS TABLE (outt INT) BEGIN RETURN TABLE(SELECT input); END;
 
 SELECT
