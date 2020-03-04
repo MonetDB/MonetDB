@@ -236,9 +236,13 @@ parse_snapshot_name(const char *filename, const char *dbname)
 
 	if (strlen(filename) <= 26)
 		return 0;
-	int namelen = strlen(filename) - 26;
+	size_t namelen = strlen(filename) - 26;
 
+	if (strlen(dbname) != namelen)
+		return 0;
 	if (strncmp(filename, dbname, namelen) != 0)
+		return 0;
+	if (filename[namelen] != '_')
 		return 0;
 
 	struct tm tm = {0};
