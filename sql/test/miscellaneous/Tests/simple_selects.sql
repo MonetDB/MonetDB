@@ -14,6 +14,7 @@ select cast(sum(42) as bigint) having 42>80;
 
 select 1 having false;
 select 1 having true;
+select -NULL;
 
 create table x (x interval second, y interval month);
 insert into x values (1, 1);

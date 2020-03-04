@@ -143,6 +143,12 @@ stdout of test 'simple_selects` in directory 'sql/test/miscellaneous` itself:
 % tinyint # type
 % 1 # length
 [ 1	]
+#select -NULL;
+% .L2 # table_name
+% L2 # name
+% char # type
+% 0 # length
+[ NULL	]
 #create table x (x interval second, y interval month);
 #insert into x values (1, 1);
 [ 1	]
