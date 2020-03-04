@@ -1284,8 +1284,6 @@ exp_fix_scale(mvc *sql, sql_subtype *ct, sql_exp *e, int both, int always)
 	return e;
 }
 
-
-
 static int
 rel_binop_check_types(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, int upcast)
 {
@@ -4176,10 +4174,20 @@ rel_order_by_column_exp(sql_query *query, sql_rel **R, symbol *column_r, int f)
 		p->l = r;
 	if (e && p) {
 		e = rel_project_add_exp(sql, p, e);
+		for (node *n = p->exps->h ; n ; n = n->next) {
+			sql_exp *ee = n->data;
+
+			if (ee->card > r->card) {
+				if (exp_name(ee))
+					return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s' in query results without an aggregate function", exp_name(ee));
+				else
+					return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column in query results without an aggregate function");
+			}
+		}
 		return e;
 	}
 	if (e && r && is_project(r->op)) {
-		sql_exp * found = exps_find_exp(r->exps, e);
+		sql_exp *found = exps_find_exp(r->exps, e);
 
 		if (!found) {
 			append(r->exps, e);
@@ -4262,14 +4270,14 @@ rel_order_by(sql_query *query, sql_rel **R, symbol *orderby, int f)
 						return sql_error(sql, 02, SQLSTATE(42000) "order not of type SQL_COLUMN");
 					}
 				} else if (e && exp_card(e) > rel->card) {
-					if (e && exp_name(e)) {
+					if (exp_name(e)) {
 						return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s' in query results without an aggregate function", exp_name(e));
 					} else {
 						return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column in query results without an aggregate function");
 					}
 				}
 				if (e && rel && is_project(rel->op)) {
-					sql_exp * found = exps_find_exp(rel->exps, e);
+					sql_exp *found = exps_find_exp(rel->exps, e);
 
 					if (!found) {
 						append(rel->exps, e);
