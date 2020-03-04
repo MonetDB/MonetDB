@@ -182,6 +182,12 @@ stdout of test 'simple_selects` in directory 'sql/test/miscellaneous` itself:
 % int,	int,	int,	int,	int,	int,	int,	int,	int,	int,	int,	int,	double,	double,	double,	double,	int,	int,	int,	int # type
 % 1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	24,	24,	24,	24,	1,	1,	1,	1 # length
 [ 1,	NULL,	NULL,	NULL,	1,	NULL,	NULL,	NULL,	1,	NULL,	NULL,	NULL,	0.9090909091,	NULL,	NULL,	NULL,	1,	NULL,	NULL,	NULL	]
+#select avg(10), avg(NULL);
+% .L3,	.L5 # table_name
+% L3,	L5 # name
+% double,	double # type
+% 24,	24 # length
+[ 10,	NULL	]
 #select substring('abc' from 1 for null);
 % .L2 # table_name
 % L2 # name
