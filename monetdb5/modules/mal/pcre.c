@@ -1552,13 +1552,17 @@ PCREindex(int *res, const pcre *pattern, const str *s)
 #endif
 }
 
-
 str
 PCREpatindex(int *ret, const str *pat, const str *val)
 {
 #ifdef HAVE_LIBPCRE
 	pcre *re = NULL;
 	char *ppat = NULL, *msg;
+
+	if (strNil(*pat) || strNil(*val)) {
+		*ret = int_nil;
+		return MAL_SUCCEED;
+	}
 
 	if ((msg = pat2pcre(&ppat, *pat)) != MAL_SUCCEED)
 		return msg;
@@ -1600,7 +1604,6 @@ PCREquote(str *ret, const str *val)
 	*p = 0;
 	return MAL_SUCCEED;
 }
-
 
 str
 PCREsql2pcre(str *ret, const str *pat, const str *esc)
