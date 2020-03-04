@@ -172,6 +172,16 @@ stdout of test 'simple_selects` in directory 'sql/test/miscellaneous` itself:
 #insert into x values (null, null, null);
 [ 1	]
 #drop table x;
+#select difference('foobar', 'oobar'), difference(NULL, 'oobar'), difference('foobar', NULL), difference(NULL, NULL),
+#       editdistance('foobar', 'oobar'), editdistance(NULL, 'oobar'), editdistance('foobar', NULL), editdistance(NULL, NULL), 
+#       editdistance2('foobar', 'oobar'), editdistance2(NULL, 'oobar'), editdistance2('foobar', NULL), editdistance2(NULL, NULL),
+#       similarity('foobar', 'oobar'), similarity(NULL, 'oobar'), similarity('foobar', NULL), similarity(NULL, NULL),
+#       levenshtein('foobar', 'oobar'), levenshtein(NULL, 'oobar'), levenshtein('foobar', NULL), levenshtein(NULL, NULL);
+% .L2,	.L4,	.L6,	.L10,	.L12,	.L14,	.L16,	.L20,	.L22,	.L24,	.L26,	.L30,	.L32,	.L34,	.L36,	.L40,	.L42,	.L44,	.L46,	.L50 # table_name
+% L2,	L4,	L6,	L10,	L12,	L14,	L16,	L20,	L22,	L24,	L26,	L30,	L32,	L34,	L36,	L40,	L42,	L44,	L46,	L50 # name
+% int,	int,	int,	int,	int,	int,	int,	int,	int,	int,	int,	int,	double,	double,	double,	double,	int,	int,	int,	int # type
+% 1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	24,	24,	24,	24,	1,	1,	1,	1 # length
+[ 1,	NULL,	NULL,	NULL,	1,	NULL,	NULL,	NULL,	1,	NULL,	NULL,	NULL,	0.9090909091,	NULL,	NULL,	NULL,	1,	NULL,	NULL,	NULL	]
 #select substring('abc' from 1 for null);
 % .L2 # table_name
 % L2 # name

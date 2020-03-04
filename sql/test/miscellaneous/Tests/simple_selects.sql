@@ -43,6 +43,12 @@ select cast(z as interval second) from x; --error, cannot cast
 select cast(z as interval month) from x; --error, cannot cast
 drop table x;
 
+select difference('foobar', 'oobar'), difference(NULL, 'oobar'), difference('foobar', NULL), difference(NULL, NULL),
+       editdistance('foobar', 'oobar'), editdistance(NULL, 'oobar'), editdistance('foobar', NULL), editdistance(NULL, NULL), 
+       editdistance2('foobar', 'oobar'), editdistance2(NULL, 'oobar'), editdistance2('foobar', NULL), editdistance2(NULL, NULL),
+       similarity('foobar', 'oobar'), similarity(NULL, 'oobar'), similarity('foobar', NULL), similarity(NULL, NULL),
+       levenshtein('foobar', 'oobar'), levenshtein(NULL, 'oobar'), levenshtein('foobar', NULL), levenshtein(NULL, NULL);
+
 select "idontexist"."idontexist"(); --error, it doesn't exist
 select "idontexist"."idontexist"(1); --error, it doesn't exist
 select "idontexist"."idontexist"(1,2); --error, it doesn't exist
