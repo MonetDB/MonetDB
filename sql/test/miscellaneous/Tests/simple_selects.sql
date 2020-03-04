@@ -17,19 +17,29 @@ select 1 having true;
 
 create table x (x interval second, y interval month);
 insert into x values (1, 1);
-select cast(x as date) from x;
+select cast(x as date) from x; --error, cannot cast
 select cast(x as time) from x;
-select cast(x as timestamp) from x;
-select cast(y as date) from x;
-select cast(y as time) from x;
-select cast(y as timestamp) from x;
+select cast(x as timestamp) from x; --error, cannot cast
+select cast(y as date) from x; --error, cannot cast
+select cast(y as time) from x; --We throw error, but PostgreSQL doesn't
+select cast(y as timestamp) from x; --error, cannot cast
 insert into x values (null, null);
 select cast(x as date) from x; --error, cannot cast
 select cast(x as time) from x;
-select cast(x as timestamp) from x;
-select cast(y as date) from x;
-select cast(y as time) from x;
-select cast(y as timestamp) from x;
+select cast(x as timestamp) from x; --error, cannot cast
+select cast(y as date) from x; --error, cannot cast
+select cast(y as time) from x; --We throw error, but PostgreSQL doesn't
+select cast(y as timestamp) from x; --error, cannot cast
+drop table x;
+
+create table x (x time, y date, z timestamp);
+insert into x values (null, null, null);
+select cast(x as interval second) from x; --We throw error, but PostgreSQL doesn't
+select cast(x as interval month) from x; --We throw error, but PostgreSQL doesn't
+select cast(y as interval second) from x; --error, cannot cast
+select cast(y as interval month) from x; --error, cannot cast
+select cast(z as interval second) from x; --error, cannot cast
+select cast(z as interval month) from x; --error, cannot cast
 drop table x;
 
 select "idontexist"."idontexist"(); --error, it doesn't exist

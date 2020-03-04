@@ -143,6 +143,29 @@ stdout of test 'simple_selects` in directory 'sql/test/miscellaneous` itself:
 % tinyint # type
 % 1 # length
 [ 1	]
+#create table x (x interval second, y interval month);
+#insert into x values (1, 1);
+[ 1	]
+#select cast(x as time) from x;
+% sys.L1 # table_name
+% L1 # name
+% time # type
+% 8 # length
+[ 00:00:01	]
+#insert into x values (null, null);
+[ 1	]
+#select cast(x as time) from x;
+% sys.L1 # table_name
+% L1 # name
+% time # type
+% 8 # length
+[ 00:00:01	]
+[ NULL	]
+#drop table x;
+#create table x (x time, y date, z timestamp);
+#insert into x values (null, null, null);
+[ 1	]
+#drop table x;
 #select substring('abc' from 1 for null);
 % .L2 # table_name
 % L2 # name
