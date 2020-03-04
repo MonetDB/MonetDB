@@ -252,7 +252,8 @@ supertype(sql_subtype *super, sql_subtype *r, sql_subtype *i)
 	return super;
 }
 
-char * toUpperCopy(char *dest, const char *src) 
+char *
+toUpperCopy(char *dest, const char *src) 
 {
 	size_t i, len;
 
@@ -269,7 +270,8 @@ char * toUpperCopy(char *dest, const char *src)
 	return(dest);
 }
 
-char *dlist2string(mvc *sql, dlist *l, int expression, char **err)
+char *
+dlist2string(mvc *sql, dlist *l, int expression, char **err)
 {
 	char *b = NULL;
 	dnode *n;
@@ -302,7 +304,8 @@ char *dlist2string(mvc *sql, dlist *l, int expression, char **err)
 	return b;
 }
 
-char *symbol2string(mvc *sql, symbol *se, int expression, char **err) /**/
+char *
+symbol2string(mvc *sql, symbol *se, int expression, char **err) /**/
 {
 	int len = 0;
 	char buf[BUFSIZ];
@@ -372,18 +375,25 @@ char *symbol2string(mvc *sql, symbol *se, int expression, char **err) /**/
 			strcpy(buf,"NULL");
 		break;
 	}
-	case SQL_NEXT:{
-		const char *seq = qname_table(se->data.lval);
-		const char *sname = qname_schema(se->data.lval);
-		const char *s;
+	case SQL_NEXT: {
+		const char *seq = qname_table(se->data.lval), *sname = qname_schema(se->data.lval);
+		char *res;
 
 		if (!sname)
 			sname = sql->session->schema->base.name;
-		s = sql_escape_ident(seq);
-		if(!s)
+
+		const char *sname_esc = sql_escape_ident(sname);
+		const char *seq_esc = sql_escape_ident(seq);
+		if (!seq_esc || !sname_esc) {
+			c_delete(sname_esc);
+			c_delete(seq_esc);
 			return NULL;
-		len = snprintf( buf+len, BUFSIZ-len, "next value for \"%s\".\"%s\"", sname, s);
-		c_delete(s);
+		}
+		if ((res = NEW_ARRAY(char, strlen("next value for \"") + strlen(sname_esc) + strlen(seq_esc) + 5)))
+			stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(res, "next value for \""), sname_esc), "\".\""), seq_esc), "\"");
+		c_delete(sname_esc);
+		c_delete(seq_esc);
+		return res;
 	}	break;
 	case SQL_IDENT:
 	case SQL_COLUMN: {
@@ -395,19 +405,33 @@ char *symbol2string(mvc *sql, symbol *se, int expression, char **err) /**/
 			return atom2sql(a);
 		} else if (expression && dlist_length(l) == 1 && l->h->type == type_string) {
 			/* when compiling an expression, a column of a table might be present in the symbol, so we need this case */
-			return _STRDUP(l->h->data.sval);
-		} else if (expression && dlist_length(l) == 2 && l->h->type == type_string && l->h->next->type == type_string) {
-			char *first = l->h->data.sval;
-			char *second = l->h->next->data.sval;
+			const char *l_escp = sql_escape_ident(l->h->data.sval);
 			char *res;
 
-			if(!first || !second) {
+			if (!l_escp)
+				return NULL;
+
+			if ((res = NEW_ARRAY(char, strlen(l_escp) + 3)))
+				stpcpy(stpcpy(stpcpy(res, "\""), l_escp), "\"");
+			c_delete(l_escp);
+			return res;
+		} else if (expression && dlist_length(l) == 2 && l->h->type == type_string && l->h->next->type == type_string) {
+			char *first = l->h->data.sval, *second = l->h->next->data.sval, *res;
+
+			if (!first || !second)
+				return NULL;
+			const char *first_esc = sql_escape_ident(first);
+			const char *second_esc = sql_escape_ident(first);
+			if (!first_esc || !second_esc) {
+				c_delete(first_esc);
+				c_delete(second_esc);
 				return NULL;
 			}
-			res = NEW_ARRAY(char, strlen(first) + strlen(second) + 2);
-			if (res) {
-				stpcpy(stpcpy(stpcpy(res, first), "."), second);
-			}
+
+			if ((res = NEW_ARRAY(char, strlen(first_esc) + strlen(second_esc) + 6)))
+				stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(res, "\""), first_esc), "\".\""), second_esc), "\"");
+			c_delete(first_esc);
+			c_delete(second);
 			return res;
 		} else {
 			char *e = dlist2string(sql, l, expression, err);
@@ -429,8 +453,7 @@ char *symbol2string(mvc *sql, symbol *se, int expression, char **err) /**/
 			_DELETE(val);
 			return NULL;
 		}
-		len = snprintf( buf+len, BUFSIZ-len, "cast ( %s as %s )",
-				val, tpe);
+		len = snprintf( buf+len, BUFSIZ-len, "cast ( %s as %s )", val, tpe);
 		_DELETE(val);
 		_DELETE(tpe);
 		break;

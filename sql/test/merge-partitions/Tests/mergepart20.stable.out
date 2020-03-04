@@ -71,8 +71,8 @@ stdout of test 'mergepart20` in directory 'sql/test/merge-partitions` itself:
 % sys.table_partitions,	sys.table_partitions # table_name
 % column_id,	expression # name
 % int,	varchar # type
-% 1,	6 # length
-[ NULL,	"md5(a)"	]
+% 1,	8 # length
+[ NULL,	"md5(\"a\")"	]
 #ALTER TABLE testme ADD TABLE subtable1 AS PARTITION FROM '00000000000000000000000000000000' TO '7fffffffffffffffffffffffffffffff';
 #ALTER TABLE testme ADD TABLE subtable2 AS PARTITION FROM '80000000000000000000000000000000' TO 'ffffffffffffffffffffffffffffffff';
 #INSERT INTO testme VALUES (1, 'first'), (2000, 'second'), (3, 'third'), (4000, 'fourth');
