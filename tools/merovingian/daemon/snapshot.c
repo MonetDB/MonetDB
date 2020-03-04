@@ -23,7 +23,7 @@
 #include "mapi.h"
 #include "snapshot.h"
 
-static time_t parse_snapshot_name(const char *filename, const char *dbname);
+static bool parse_snapshot_name(const char *filename, char **dbname, time_t *timestamp);
 static err validate_location(const char *path);
 static err unpack_tarstream(stream *tarstream, char *destdir, int skipcomponents);
 
@@ -180,7 +180,7 @@ bailout:
 }
 
 err
-snapshot_list(char *dbname, int *nsnapshots, struct snapshot **snapshots)
+snapshot_list(int *nsnapshots, struct snapshot **snapshots)
 {
 	err e = NO_ERR;
 	DIR *dir = NULL;
@@ -206,12 +206,13 @@ snapshot_list(char *dbname, int *nsnapshots, struct snapshot **snapshots)
 		}
 		if ((statbuf.st_mode & S_IFREG) == 0)
 			continue;
-		time_t timestamp = parse_snapshot_name(ent->d_name, dbname);
-		if (timestamp == 0)
+		time_t timestamp = 0;
+		char *dbname = NULL;
+		if (!parse_snapshot_name(ent->d_name, &dbname, &timestamp))
 			continue;
 
 		struct snapshot *snap = push_snapshot(snapshots, nsnapshots);
-		snap->dbname = strdup(dbname);
+		snap->dbname = dbname;
 		snap->time = timestamp;
 		snap->size = statbuf.st_size;
 		snap->path = malloc(strlen(snapdir) + 1 + strlen(ent->d_name) + 1);
@@ -228,27 +229,20 @@ bailout:
  * given datase. Otherwise, return the timestamp encoded in
  * the filename.
  */
-static time_t
-parse_snapshot_name(const char *filename, const char *dbname)
+static bool
+parse_snapshot_name(const char *filename, char **dbname, time_t *timestamp)
 {
 	// dbname_YYYYMMMDDTHHMMUTC.tar.gz
 	//       ^^^^^^^^^^^^^^^^^^^^^^^^^ 26 chars from underscore to end
 
 	if (strlen(filename) <= 26)
-		return 0;
+		return false;
 	size_t namelen = strlen(filename) - 26;
-
-	if (strlen(dbname) != namelen)
-		return 0;
-	if (strncmp(filename, dbname, namelen) != 0)
-		return 0;
-	if (filename[namelen] != '_')
-		return 0;
 
 	struct tm tm = {0};
 	char *end = strptime(filename + namelen, "_%Y%m%dT%H%M%SUTC.tar.gz", &tm);
 	if (end != NULL && *end != '\0')
-		return 0;
+		return false;
 
         // We want to interpret this as UTC.
         // Unfortunately, mktime interprets it as Localtime.
@@ -262,7 +256,12 @@ parse_snapshot_name(const char *filename, const char *dbname)
         time_t after = mktime(&tm);
         time_t correct = before - after + wrong;
 
-	return correct;
+	// Return the results
+	*timestamp = correct;
+	*dbname = malloc(namelen + 1);
+	memcpy(*dbname, filename, namelen);
+	(*dbname)[namelen] = '\0';
+	return true;
 }
 
 err

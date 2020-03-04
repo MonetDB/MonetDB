@@ -1721,55 +1721,51 @@ snapshot_enumerate_helper(const void *left, const void *right)
 }
 
 static char*
-snapshot_enumerate(sabdb *databases, struct snapshot **snapshots, int *nsnapshots)
+snapshot_enumerate(struct snapshot **snapshots, int *nsnapshots)
 {
 	int ninitial = *nsnapshots;
+	char *out = NULL;
+	char *ret = control_send(&out, mero_host, mero_port, "", "snapshot list", 1, mero_pass);
+	if (ret != NULL)
+		return ret;
 
-	// Retrieve the available snapshots
-	for (sabdb *db = databases; db != NULL; db = db->next) {
-		char *out = NULL;
-		char *ret = control_send(&out, mero_host, mero_port, db->dbname, "snapshot list", 1, mero_pass);
-		if (ret != NULL)
-			return ret;
-
-		if (strcmp(out, "OK1") == 0) {
-			// ok, empty resultset
-			free(out);
-		} else if (strncmp(out, "OK1\n", 4) == 0) {
-			// ok, nonempty resultset. Parse it.
-			char *p = out + 4;
-			char *end = p + strlen(p);
-			while (p < end) {
-				char *eol = strchr(p, '\n');
-				eol = (eol != NULL) ? eol : end;
-				intmax_t time;
-				intmax_t size;
-				int len;
-				if (sscanf(p, "%jd %jd %n", &time, &size, &len) != 2) {
-					free(out);
-					return strdup("internal parse error");
-				}
-				p += len;
-				char *dbend = strchr(p, ' ');
-				if (dbend == NULL) {
-					free(out);
-					return strdup("internal parse error");
-				}
-				int dblen = dbend - p;
-				char *path = dbend + 1;
-				struct snapshot *snap = push_snapshot(snapshots, nsnapshots);
-				snap->dbname = malloc(dblen + 1);
-				memmove(snap->dbname, p, dblen);
-				snap->dbname[dblen] = '\0';
-				snap->time = time;
-				snap->size = size;
-				snap->path = strdup(path);
-				p = eol + 1;
-			};
-			free(out);
-		} else {
-			return out;
-		}
+	if (strcmp(out, "OK1") == 0) {
+		// ok, empty resultset
+		free(out);
+	} else if (strncmp(out, "OK1\n", 4) == 0) {
+		// ok, nonempty resultset. Parse it.
+		char *p = out + 4;
+		char *end = p + strlen(p);
+		while (p < end) {
+			char *eol = strchr(p, '\n');
+			eol = (eol != NULL) ? eol : end;
+			intmax_t time;
+			intmax_t size;
+			int len;
+			if (sscanf(p, "%jd %jd %n", &time, &size, &len) != 2) {
+				free(out);
+				return strdup("internal parse error");
+			}
+			p += len;
+			char *dbend = strchr(p, ' ');
+			if (dbend == NULL) {
+				free(out);
+				return strdup("internal parse error");
+			}
+			int dblen = dbend - p;
+			char *path = dbend + 1;
+			struct snapshot *snap = push_snapshot(snapshots, nsnapshots);
+			snap->dbname = malloc(dblen + 1);
+			memmove(snap->dbname, p, dblen);
+			snap->dbname[dblen] = '\0';
+			snap->time = time;
+			snap->size = size;
+			snap->path = strdup(path);
+			p = eol + 1;
+		};
+		free(out);
+	} else {
+		return out;
 	}
 
 	// Sort them and give names
@@ -1793,18 +1789,35 @@ snapshot_enumerate(sabdb *databases, struct snapshot **snapshots, int *nsnapshot
 }
 
 static void
-snapshot_list(sabdb *databases) {
+snapshot_list(int nglobs, char *globs[]) {
 	struct snapshot *snapshots = NULL;
 	int nsnapshots = 0;
 
-	char *err = snapshot_enumerate(databases, &snapshots, &nsnapshots);
+	// Retrieve the full snapshot list
+	char *err = snapshot_enumerate(&snapshots, &nsnapshots);
 	if (err != NULL) {
 		fprintf(stderr, "snapshot list: %s\n", err);
 		exit(1);
 	}
 
-	int width = 0;
+	// Narrow it down
+	struct snapshot *wanted = NULL;
+	int nwanted = 0;
 	for (struct snapshot *snap = snapshots; snap < snapshots + nsnapshots; snap++) {
+		for (int i = 0; i < nglobs; i++) {
+			char *glob = globs[i];
+			if (glob == NULL)
+				continue;
+			if (db_glob(glob, snap->dbname)) {
+				struct snapshot *w = push_snapshot(&wanted, &nwanted);
+				*w = *snap;
+				break;
+			}
+		}
+	}
+
+	int width = 0;
+	for (struct snapshot *snap = wanted; snap < wanted + nwanted; snap++) {
 		int w = strlen(snap->name);
 		width = (width >= w) ? width : w;
 	}
@@ -1812,12 +1825,12 @@ snapshot_list(sabdb *databases) {
 	printf("%-*s    %-25s    %s\n", width, "name", "time", "size");
 
 	char *name_buf = malloc(width + 100);
-	for (struct snapshot *snap = snapshots; snap < snapshots + nsnapshots; snap++) {
+	for (struct snapshot *snap = wanted; snap < wanted + nwanted; snap++) {
 		char tm_buf[100];
 		struct tm tm;
 		// format name
 		char *name;
-		if (snap == snapshots || strcmp(snap[0].dbname, snap[-1].dbname) != 0) {
+		if (snap == wanted || strcmp(snap[0].dbname, snap[-1].dbname) != 0) {
 			// subheader, show whole name
 			name = snap->name;
 		} else {
@@ -1843,6 +1856,7 @@ snapshot_list(sabdb *databases) {
 	}
 
 	free(name_buf);
+	free(wanted); // not free_snapshots, because it shared pointers with 'snapshots'
 	free_snapshots(snapshots, nsnapshots);
 }
 
@@ -1941,8 +1955,6 @@ command_snapshot_create(int argc, char *argv[])
 static void
 command_snapshot_list(int argc, char *argv[])
 {
-	char *err;
-
 	/* walk through the arguments and hunt for "options" */
 	for (int i = 1; i < argc; i++) {
 		if (strcmp(argv[i], "--") == 0) {
@@ -1956,28 +1968,12 @@ command_snapshot_list(int argc, char *argv[])
 		}
 	}
 
-	/* Look up the databases */
-	sabdb *all = NULL;
-	err = MEROgetStatus(&all, NULL);
-	if (err != NULL) {
-		fprintf(stderr, "snapshot: %s\n", err);
-		free(err);
-		exit(2);
+	if (argc == 1) {
+		char *args[] = {"*"};
+		snapshot_list(1, args);
 	}
-	sabdb *databases;
-	if (argc > 1) {
-		databases = globMatchDBS(argc, argv, &all, "snapshot");
-		msab_freeStatus(&all);
-	} else {
-		databases = all;
-		all = NULL;
-	}
-	if (databases == NULL)
-		exit(1);
-
-	snapshot_list(databases);
-
-	msab_freeStatus(&databases);
+	else
+		snapshot_list(argc - 1, &argv[1]);
 }
 
 
