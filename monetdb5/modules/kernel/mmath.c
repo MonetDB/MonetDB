@@ -308,4 +308,3 @@ MATHpi(dbl *pi)
 	*pi = 3.14159265358979323846;
 	return MAL_SUCCEED;
 }
-

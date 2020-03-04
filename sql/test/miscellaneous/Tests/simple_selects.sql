@@ -15,6 +15,23 @@ select cast(sum(42) as bigint) having 42>80;
 select 1 having false;
 select 1 having true;
 
+create table x (x interval second, y interval month);
+insert into x values (1, 1);
+select cast(x as date) from x;
+select cast(x as time) from x;
+select cast(x as timestamp) from x;
+select cast(y as date) from x;
+select cast(y as time) from x;
+select cast(y as timestamp) from x;
+insert into x values (null, null);
+select cast(x as date) from x; --error, cannot cast
+select cast(x as time) from x;
+select cast(x as timestamp) from x;
+select cast(y as date) from x;
+select cast(y as time) from x;
+select cast(y as timestamp) from x;
+drop table x;
+
 select "idontexist"."idontexist"(); --error, it doesn't exist
 select "idontexist"."idontexist"(1); --error, it doesn't exist
 select "idontexist"."idontexist"(1,2); --error, it doesn't exist

@@ -3515,6 +3515,10 @@ str
 second_interval_2_daytime(daytime *res, const lng *s, const int *digits)
 {
 	daytime d;
+	if (is_lng_nil(*s)) {
+		*res = daytime_nil;
+		return MAL_SUCCEED;
+	}
 	d = daytime_add_usec(daytime_create(0, 0, 0, 0), *s * 1000);
 	return daytime_2time_daytime(res, &d, digits);
 }
@@ -3773,32 +3777,38 @@ str
 month_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int *ret = getArgReference_int(stk, pci, 0);
-	int k = digits2ek(*getArgReference_int(stk, pci, 2));
-	int r;
+	int k = digits2ek(*getArgReference_int(stk, pci, 2)), r = 0, isnil = 0;
 
 	(void) cntxt;
-	(void) mb;
+	*ret = int_nil;
 	switch (getArgType(mb, pci, 1)) {
 	case TYPE_bte:
 		r = stk->stk[getArg(pci, 1)].val.btval;
+		isnil = (stk->stk[getArg(pci, 1)].val.btval == bte_nil);
 		break;
 	case TYPE_sht:
 		r = stk->stk[getArg(pci, 1)].val.shval;
+		isnil = (stk->stk[getArg(pci, 1)].val.shval == sht_nil);
 		break;
 	case TYPE_int:
 		r = stk->stk[getArg(pci, 1)].val.ival;
+		isnil = (stk->stk[getArg(pci, 1)].val.ival == int_nil);
 		break;
 	case TYPE_lng:
 		r = (int) stk->stk[getArg(pci, 1)].val.lval;
+		isnil = (stk->stk[getArg(pci, 1)].val.lval == lng_nil);
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
 		r = (int) stk->stk[getArg(pci, 1)].val.hval;
+		isnil = (stk->stk[getArg(pci, 1)].val.hval == hge_nil);
 		break;
 #endif
 	default:
 		throw(ILLARG, "calc.month_interval", SQLSTATE(42000) "Illegal argument");
 	}
+	if (isnil) 
+		return MAL_SUCCEED;
 	switch (k) {
 	case iyear:
 		r *= 12;
@@ -4101,7 +4111,6 @@ sql_rt_credentials_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (hashb) BBPunfix(hashb->batCacheid);
 	return msg;
 }
-
 
 str
 sql_querylog_catalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -4412,7 +4421,6 @@ vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, str (*func) (bat
 		return MAL_SUCCEED;
 	}
 
-
 	i = 0;
 	bids[i] = 0;
 	for (o = t->columns.set->h; o; o = o->next, i++) {
@@ -4581,7 +4589,6 @@ SQLdrop_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	return MAL_SUCCEED;
 }
-
 
 /* after an update on the optimizer catalog, we have to change
  * the internal optimizer pipe line administration
@@ -5231,4 +5238,3 @@ SQLflush_log(void *ret)
 	store_flush_log();
 	return MAL_SUCCEED;
 }
-
