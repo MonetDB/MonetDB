@@ -183,10 +183,10 @@ command_help(int argc, char *argv[])
 			printf("Options:\n");
 			printf("  -t <targetfile>  File on the server to write the snapshot to.\n");
 		} else if (argc > 2 && strcmp(argv[2], "restore") == 0) {
-			printf("Usage: monetdb snapshot restore -s <sourcefile> <dbname>\n");
-			printf("  Restore a database from the given snapshot file.\n");
-			printf("Options:\n");
-			printf("  -s <sourcefile>  Full path to the snapshot file on the server.\n");
+			printf("Usage: monetdb snapshot restore <snapid> [dbname]\n");
+			printf("  Create a database from the given snapshot, where  <snapid> is either\n");
+			printf("  a path on the server or <dbname>@<num> as produced\n");
+			printf("  by 'monetdb snapshot list'. If using a path, dbname is mandatory.\n");
 		} else {
 			printf("Usage: monetdb <create|list|restore|destroy> [arguments]\n");
 			printf("  Manage database snapshots\n");
@@ -1863,7 +1863,7 @@ snapshot_list(int nglobs, char *globs[]) {
 }
 
 static void
-snapshot_restore_adhoc(char *sourcefile, char *dbname)
+snapshot_restore_file(char *sourcefile, char *dbname)
 {
 	char *ret;
 	char *out;
@@ -1982,7 +1982,7 @@ command_snapshot_list(int argc, char *argv[])
 static void
 command_snapshot_restore(int argc, char *argv[])
 {
-	char *sourcefile = NULL;
+	char *snapid = NULL;
 	char *dbname = NULL;
 
 	/* walk through the arguments and hunt for "options" */
@@ -1992,18 +1992,18 @@ command_snapshot_restore(int argc, char *argv[])
 			break;
 		}
 		if (argv[i][0] == '-') {
-			if (argv[i][1] == 's') {
-				if (argv[i][2] != '\0') {
-					sourcefile = &argv[i][2];
-					argv[i] = NULL;
-				} else if (i + 1 < argc && argv[i+1][0] != '-') {
-					sourcefile = argv[i+1];
-					argv[i] = NULL;
-					argv[i+1] = NULL;
-					i++;
-				} else {
-					fprintf(stderr, "snapshot: -s needs an argument\n");
-				}
+			if (0 /* we'll be adding options later */) {
+				// if (argv[i][2] != '\0') {
+				// 	sourcefile = &argv[i][2];
+				// 	argv[i] = NULL;
+				// } else if (i + 1 < argc && argv[i+1][0] != '-') {
+				// 	sourcefile = argv[i+1];
+				// 	argv[i] = NULL;
+				// 	argv[i+1] = NULL;
+				// 	i++;
+				// } else {
+				// 	fprintf(stderr, "snapshot: -s needs an argument\n");
+				// }
 			} else {
 				fprintf(stderr, "snapshot restore: unknown option: %s\n", argv[i]);
 				command_help(argc + 2, &argv[-2]);  // ewww
@@ -2012,28 +2012,66 @@ command_snapshot_restore(int argc, char *argv[])
 		}
 	}
 
-	/* Find the dbname */
+	/* Find snapid and dbname */
 	for (int i = 1; i < argc; i++) {
 		if (argv[i] == NULL)
 			continue;
-		if (dbname != NULL) {
-			fprintf(stderr, "snapshot restore: only a single database at a time\n");
-			return;
+		if (snapid == NULL)
+			snapid = argv[i];
+		else if (dbname == NULL)
+			dbname = argv[i];
+		else {
+			fprintf(stderr, "snapshot restore: unexpected argument: %s\n", argv[i]);
+			command_help(argc + 2, &argv[-2]);
+			exit(1);
 		}
-		dbname = argv[i];
 	}
 
-	if (dbname == NULL) {
-		fprintf(stderr, "snapshot restore: dbname is mandatory\n");
-		return;
-	}
-	if (sourcefile == NULL) {
-		fprintf(stderr, "snapshot restore: sourcefile is mandatory\n");
-		return;
-
+	if (snapid == NULL) {
+		fprintf(stderr, "snapshot restore: snapid is mandatory\n");
+		command_help(argc + 2, &argv[-2]);
+		exit(1);
 	}
 
-	snapshot_restore_adhoc(sourcefile, dbname);
+	// is snapid a file name?
+	if (strchr(snapid, DIR_SEP) != NULL) {
+		// filename, so dbname argument is mandatory
+		if (dbname == NULL) {
+			fprintf(stderr, "snapshot restore: dbname is mandatory\n");
+			exit(1);
+		}
+		snapshot_restore_file(snapid, dbname);
+	} else {
+		// it must be <dbname>@<seqno> then.
+		if (strchr(snapid, '@') == NULL) {
+			fprintf(stderr, "snapshot restore: please provide either a snapshot id or a filename\n");
+			exit(1);
+		}
+		struct snapshot *snapshots = NULL;
+		int nsnapshots = 0;
+		char *err = snapshot_enumerate(&snapshots, &nsnapshots);
+		if (err != NULL) {
+			fprintf(stderr, "snapshot restore: %s", err);
+			exit(2);
+		}
+		struct snapshot *snap = NULL;
+		struct snapshot *s;
+		for (int i = 0; i < nsnapshots; i++) {
+			s = &snapshots[i];
+			if (strcmp(s->name, snapid) == 0) {
+				// found it
+				snap = s;
+				break;
+			}
+		}
+		if (snap == NULL) {
+			fprintf(stderr, "snapshot restore: unknown snapshot '%s'\n", snapid);
+			exit(1);
+		}
+		if (dbname == NULL)
+			dbname = snap->dbname;
+		snapshot_restore_file(snap->path, dbname);
+	}
 }
 
 static void
