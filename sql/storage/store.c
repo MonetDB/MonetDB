@@ -934,6 +934,8 @@ load_func(sql_trans *tr, sql_schema *s, sqlid fid, subrids *rs)
 	v = table_funcs.column_find_value(tr, find_sql_column(funcs, "type"), rid);
 	t->sql = (t->lang==FUNC_LANG_SQL||t->lang==FUNC_LANG_MAL);
 	t->type = (sql_ftype) *(int *)v;			_DELETE(v);
+	v = table_funcs.column_find_value(tr, find_sql_column(funcs, "semantics"), rid);
+	t->semantics = *(bit *)v;		_DELETE(v);
 	v = table_funcs.column_find_value(tr, find_sql_column(funcs, "side_effect"), rid);
 	t->side_effect = *(bit *)v;		_DELETE(v);
 	if (t->type==F_FILT)
@@ -1423,13 +1425,14 @@ insert_functions(sql_trans *tr, sql_table *sysfunc, sql_table *sysarg)
 			}
 		} else {
 			bit se = f->side_effect;
+			bit semantics = f->semantics;
 			int number = 0, ftype = (int) f->type, flang = (int) FUNC_LANG_INT;
 			char arg_nme[7] = "arg_0";
 
 			if (f->s)
-				table_funcs.table_insert(tr, sysfunc, &f->base.id, f->base.name, f->imp, f->mod, &flang, &ftype, &se, &f->varres, &f->vararg, &f->s->base.id, &f->system);
+				table_funcs.table_insert(tr, sysfunc, &f->base.id, f->base.name, f->imp, f->mod, &flang, &ftype, &semantics, &se, &f->varres, &f->vararg, &f->s->base.id, &f->system);
 			else
-				table_funcs.table_insert(tr, sysfunc, &f->base.id, f->base.name, f->imp, f->mod, &flang, &ftype, &se, &f->varres, &f->vararg, &zero, &f->system);
+				table_funcs.table_insert(tr, sysfunc, &f->base.id, f->base.name, f->imp, f->mod, &flang, &ftype, &semantics, &se, &f->varres, &f->vararg, &zero, &f->system);
 
 			if (f->res) {
 				char res_nme[] = "res_0";
@@ -1819,6 +1822,7 @@ store_load(void) {
 
 	/* func, proc, aggr or filter */
 	bootstrap_create_column(tr, t, "type", "int", 32);
+	bootstrap_create_column(tr, t, "semantics", "boolean", 1);
 	bootstrap_create_column(tr, t, "side_effect", "boolean", 1);
 	bootstrap_create_column(tr, t, "varres", "boolean", 1);
 	bootstrap_create_column(tr, t, "vararg", "boolean", 1);
@@ -5439,6 +5443,7 @@ create_sql_func(sql_allocator *sa, const char *func, list *args, list *res, sql_
 	t->type = type;
 	t->lang = lang;
 	t->sql = (lang==FUNC_LANG_SQL||lang==FUNC_LANG_MAL);
+	t->semantics = TRUE;
 	t->side_effect = (type==F_FILT || (res && (lang==FUNC_LANG_SQL || !list_empty(args))))?FALSE:TRUE;
 	t->varres = varres;
 	t->vararg = vararg;
@@ -5469,6 +5474,7 @@ sql_trans_create_func(sql_trans *tr, sql_schema *s, const char *func, list *args
 	t->type = type;
 	t->lang = lang;
 	t->sql = (lang==FUNC_LANG_SQL||lang==FUNC_LANG_MAL);
+	t->semantics = TRUE;
 	se = t->side_effect = (type==F_FILT || (res && (lang==FUNC_LANG_SQL || !list_empty(args))))?FALSE:TRUE;
 	t->varres = varres;
 	t->vararg = vararg;

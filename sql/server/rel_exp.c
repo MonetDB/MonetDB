@@ -1743,8 +1743,8 @@ exp_is_null(mvc *sql, sql_exp *e )
 		node *n;
 		list *l = e->l;
 
-		if (!e->semantics /*exclude isnull() and similar null-semantics-respecting functions*/ &&
-			!r && l && list_length(l) == 2) {
+		if (!((sql_subfunc *)e->f)->func->semantics /*exclude isnull() and similar null-semantics-respecting functions*/ &&
+			!r && l) {
 			for (n = l->h; n && !r; n = n->next) 
 				r |= exp_is_null(sql, n->data);
 		}
