@@ -437,6 +437,17 @@ stdout of test 'subquery3` in directory 'sql/test/subquery` itself:
 % 1 # length
 [ 1	]
 #SELECT
+#	(SELECT outt FROM evilfunction((SELECT MAX(col1) FROM tbl_ProductSales))) 
+#FROM another_T; 
+% .%4 # table_name
+% %4 # name
+% int # type
+% 1 # length
+[ 4	]
+[ 4	]
+[ 4	]
+[ 4	]
+#SELECT
 #	(SELECT outt FROM evilfunction((SELECT MIN(t2.col1) FROM another_T t2))) 
 #FROM another_T;
 % .%4 # table_name
@@ -445,6 +456,14 @@ stdout of test 'subquery3` in directory 'sql/test/subquery` itself:
 % 1 # length
 [ 1	]
 [ 1	]
+[ 1	]
+[ 1	]
+#CREATE OR REPLACE FUNCTION evilfunction(input INT) RETURNS TABLE (outt INT) BEGIN RETURN TABLE(VALUES (input), (input)); END;
+#SELECT * FROM evilfunction(1);
+% .%2 # table_name
+% outt # name
+% int # type
+% 1 # length
 [ 1	]
 [ 1	]
 #DROP FUNCTION evilfunction(INT);
