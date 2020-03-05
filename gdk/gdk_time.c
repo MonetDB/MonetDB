@@ -661,7 +661,7 @@ parse_daytime(const char *buf, daytime *dt, bool external)
 		break;
 	case 3:
 		/* read hour, min, and sec */
-		if (hour >= 24 || min >= 60 || sec >= 60) {
+		if (hour >= 24 || min >= 60 || sec > 60) {
 			GDKerror("Syntax error in time.\n");
 			return -1;
 		}
