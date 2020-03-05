@@ -792,11 +792,9 @@ timestamp_to_str(str *ret, const timestamp *d, const char *const *format,
 				 const char *type, const char *malfunc)
 {
 	char buf[512];
-	timestamp ts;
 	date dt;
 	daytime t;
 	struct tm tm;
-	int isdst;
 
 	if (is_timestamp_nil(*d) || strNil(*format)) {
 		*ret = GDKstrdup(str_nil);
@@ -804,24 +802,18 @@ timestamp_to_str(str *ret, const timestamp *d, const char *const *format,
 			throw(MAL, malfunc, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
-	/* convert UTC to system local time */
-	ts = timestamp_add_usec(*d, local_timezone(&isdst) * LL_CONSTANT(1000000));
-	dt = timestamp_date(ts);
-	t = timestamp_daytime(ts);
+	dt = timestamp_date(*d);
+	t = timestamp_daytime(*d);
 	tm = (struct tm) {
 		.tm_year = date_year(dt) - 1900,
 		.tm_mon = date_month(dt) - 1,
 		.tm_mday = date_day(dt),
-		.tm_isdst = isdst,
+		.tm_wday = date_dayofweek(dt) % 7,
+		.tm_yday = date_dayofyear(dt) - 1,
+		.tm_hour = daytime_hour(t),
+		.tm_min = daytime_min(t),
+		.tm_sec = daytime_sec(t),
 	};
-	t /= 1000000;
-	tm.tm_sec = t % 60;
-	t /= 60;
-	tm.tm_min = t % 60;
-	t /= 60;
-	tm.tm_hour = (int) t;
-	if (mktime(&tm) == (time_t) -1)
-		throw(MAL, malfunc, "cannot convert %s", type);
 	if (strftime(buf, sizeof(buf), *format, &tm) == 0)
 		throw(MAL, malfunc, "cannot convert %s", type);
 	*ret = GDKstrdup(buf);
@@ -841,7 +833,6 @@ str
 MTIMEstr_to_time(daytime *ret, const char *const *s, const char *const *format)
 {
 	struct tm tm;
-	time_t t;
 
 	if (strNil(*s) || strNil(*format)) {
 		*ret = daytime_nil;
@@ -851,15 +842,6 @@ MTIMEstr_to_time(daytime *ret, const char *const *s, const char *const *format)
 	if (strptime(*s, *format, &tm) == NULL)
 		throw(MAL, "mtime.str_to_time", "format '%s', doesn't match time '%s'",
 			  *format, *s);
-#ifdef HAVE_STRUCT_TM_TM_ZONE
-	tm.tm_sec -= tm.tm_gmtoff;
-	tm.tm_sec += tm.tm_gmtoff = local_timezone(NULL);
-#endif
-	if ((t = mktime(&tm)) == (time_t) -1)
-		throw(MAL, "mtime.str_to_time", "cannot convert to time_t");
-	tm = (struct tm) {0};
-	if (gmtime_r(&t, &tm) == NULL)
-		throw(MAL, "mtime.str_to_time", "cannot convert to UTC");
 	*ret = daytime_create(tm.tm_hour, tm.tm_min, tm.tm_sec == 60 ? 59 : tm.tm_sec, 0);
 	if (is_daytime_nil(*ret))
 		throw(MAL, "mtime.str_to_time", "bad time '%s'", *s);
@@ -877,7 +859,6 @@ str
 MTIMEstr_to_timestamp(timestamp *ret, const char *const *s, const char *const *format)
 {
 	struct tm tm;
-	time_t t;
 
 	if (strNil(*s) || strNil(*format)) {
 		*ret = timestamp_nil;
@@ -887,15 +868,6 @@ MTIMEstr_to_timestamp(timestamp *ret, const char *const *s, const char *const *f
 	if (strptime(*s, *format, &tm) == NULL)
 		throw(MAL, "mtime.str_to_timestamp",
 			  "format '%s', doesn't match timestamp '%s'", *format, *s);
-#ifdef HAVE_STRUCT_TM_TM_ZONE
-	tm.tm_sec -= tm.tm_gmtoff;
-	tm.tm_sec += tm.tm_gmtoff = local_timezone(NULL);
-#endif
-	if ((t = mktime(&tm)) == (time_t) -1)
-		throw(MAL, "mtime.str_to_timestamp", "cannot convert to time_t");
-	tm = (struct tm) {0};
-	if (gmtime_r(&t, &tm) == NULL)
-		throw(MAL, "mtime.str_to_timestamp", "cannot convert to UTC");
 	*ret = timestamp_create(date_create(tm.tm_year + 1900,
 										tm.tm_mon + 1,
 										tm.tm_mday),
