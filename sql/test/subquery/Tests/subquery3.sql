@@ -342,6 +342,14 @@ SELECT
 FROM another_T
 GROUP BY (SELECT AVG(col2)); --error, aggregate function not allowed in GROUP BY clause
 
+SELECT
+	(SELECT 1 FROM integers i2 WHERE AVG(i2.i))
+FROM integers i1; --error, aggregate functions not allowed in WHERE clause
+
+SELECT
+	(SELECT 1 FROM integers i2 INNER JOIN integers i3 on MAX(i3.i) = MIN(i2.i))
+FROM integers i1; --error, aggregate functions not allowed in JOIN conditions
+
 SELECT 
     (SELECT SUM(SUM(i1.i) + i2.i) FROM integers i2 GROUP BY i2.i)
 FROM integers i1; --SUM(i1.i) is a correlation from the outer query, so the sum aggregates can be nested at this case

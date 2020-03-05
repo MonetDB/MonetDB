@@ -46,7 +46,15 @@ MAPI  = (monetdb) /var/tmp/mtest-228798/.s.monetdb.32449
 QUERY = UPDATE another_T SET col5 = 1 WHERE col5 = (SELECT AVG(col2)); --error, aggregates not allowed in where clause
 ERROR = !SELECT: aggregate functions not allowed in WHERE clauses inside UPDATE statements
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-229080/.s.monetdb.36783
+MAPI  = (monetdb) /var/tmp/mtest-399977/.s.monetdb.34656
+QUERY = UPDATE another_T SET col8 = (SELECT 1 FROM integers i2 WHERE AVG(i2.i)); --error, aggregates not allowed in update set clause
+ERROR = !AVG: aggregate functions not allowed in WHERE clause
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-399977/.s.monetdb.34656
+QUERY = UPDATE another_T SET col7 = 1 WHERE col5 = (SELECT 1 FROM integers i2 WHERE AVG(i2.i)); --error, aggregates not allowed in where clause
+ERROR = !AVG: aggregate functions not allowed in WHERE clause
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-399977/.s.monetdb.34656
 QUERY = DELETE FROM another_T WHERE col1 = COUNT(col2); --error, aggregates not allowed in where clause
 ERROR = !COUNT: aggregate functions not allowed in WHERE clauses inside UPDATE statements (use subquery)
 CODE  = 42000
@@ -54,7 +62,11 @@ MAPI  = (monetdb) /var/tmp/mtest-229080/.s.monetdb.36783
 QUERY = DELETE FROM another_T WHERE col7 = (SELECT MIN(col3)); --error, aggregates not allowed in where clause
 ERROR = !SELECT: aggregate functions not allowed in WHERE clauses inside UPDATE statements
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-234504/.s.monetdb.39561
+MAPI  = (monetdb) /var/tmp/mtest-400794/.s.monetdb.37110
+QUERY = DELETE FROM another_T WHERE col2 = (SELECT 1 FROM integers i2 WHERE AVG(i2.i)); --error, aggregates not allowed in where clause
+ERROR = !AVG: aggregate functions not allowed in WHERE clause
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-400794/.s.monetdb.37110
 QUERY = UPDATE another_T SET col1 = AVG(col1) OVER (); --error, window functions not allowed in update set clause
 ERROR = !AVG: window function 'avg' not allowed in UPDATE SET clause (use subquery)
 CODE  = 42000
