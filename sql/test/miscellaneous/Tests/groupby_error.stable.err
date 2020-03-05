@@ -31,7 +31,11 @@ MAPI  = (monetdb) /var/tmp/mtest-13678/.s.monetdb.36667
 QUERY = SELECT parent."sys_id" FROM "kagami_dump"."test_task" parent INNER JOIN "kagami_dump"."test_task" child ON child."parent" = parent."sys_id" GROUP BY parent."sys_id" HAVING count(child."sys_id") >= 1 ORDER BY parent."number"; --error, parent."number" requires an aggregate function
 ERROR = !SELECT: no such column 'parent.number'
 CODE  = 42S22
-MAPI  = (monetdb) /var/tmp/mtest-19682/.s.monetdb.38130
+MAPI  = (monetdb) /var/tmp/mtest-561836/.s.monetdb.32526
+QUERY = SELECT col0 FROM tab0 ORDER BY sys.tab0.col0; --error, TODO
+ERROR = !TODO: column names of level >= 3
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-561836/.s.monetdb.32526
 QUERY = prepare select col0 from tab0 where (?) in (?); --error
 ERROR = !Cannot have a parameter (?) on both sides of an expression
 CODE  = 42000

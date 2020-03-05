@@ -1284,8 +1284,6 @@ exp_fix_scale(mvc *sql, sql_subtype *ct, sql_exp *e, int both, int always)
 	return e;
 }
 
-
-
 static int
 rel_binop_check_types(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, int upcast)
 {
@@ -4130,37 +4128,7 @@ rel_partition_groupings(sql_query *query, sql_rel **rel, symbol *partitionby, dl
 }
 
 /* find selection expressions matching the order by column expression */
-
-/* first limit to simple columns only */
-static sql_exp *
-rel_order_by_simple_column_exp(mvc *sql, sql_rel *r, symbol *column_r, int f)
-{
-	sql_exp *e = NULL;
-	dlist *l = column_r->data.lval;
-
-	if (!r || !is_project(r->op) || column_r->type == type_int)
-		return NULL;
-	assert(column_r->token == SQL_COLUMN && column_r->type == type_list);
-
-	r = r->l;
-	if (!r)
-		return e;
-	if (dlist_length(l) == 1) {
-		char *name = l->h->data.sval;
-		e = rel_bind_column(sql, r, name, f, 0);
-	}
-	if (dlist_length(l) == 2) {
-		char *tname = l->h->data.sval;
-		char *name = l->h->next->data.sval;
-
-		e = rel_bind_column2(sql, r, tname, name, f);
-	}
-	if (e) 
-		return e;
-	return sql_error(sql, 02, SQLSTATE(42000) "ORDER BY: absolute column names not supported");
-}
-
-/* second complex columns only */
+/* complex columns only */
 static sql_exp *
 rel_order_by_column_exp(sql_query *query, sql_rel **R, symbol *column_r, int f)
 {
@@ -4185,10 +4153,20 @@ rel_order_by_column_exp(sql_query *query, sql_rel **R, symbol *column_r, int f)
 		p->l = r;
 	if (e && p) {
 		e = rel_project_add_exp(sql, p, e);
+		for (node *n = p->exps->h ; n ; n = n->next) {
+			sql_exp *ee = n->data;
+
+			if (ee->card > r->card) {
+				if (exp_name(ee))
+					return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s' in query results without an aggregate function", exp_name(ee));
+				else
+					return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column in query results without an aggregate function");
+			}
+		}
 		return e;
 	}
 	if (e && r && is_project(r->op)) {
-		sql_exp * found = exps_find_exp(r->exps, e);
+		sql_exp *found = exps_find_exp(r->exps, e);
 
 		if (!found) {
 			append(r->exps, e);
@@ -4270,14 +4248,13 @@ rel_order_by(sql_query *query, sql_rel **R, symbol *orderby, int f)
 						return sql_error(sql, 02, SQLSTATE(42000) "order not of type SQL_COLUMN");
 					}
 				} else if (e && exp_card(e) > rel->card) {
-					if (e && exp_name(e)) {
+					if (exp_name(e))
 						return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s' in query results without an aggregate function", exp_name(e));
-					} else {
+					else
 						return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column in query results without an aggregate function");
-					}
 				}
 				if (e && rel && is_project(rel->op)) {
-					sql_exp * found = exps_find_exp(rel->exps, e);
+					sql_exp *found = exps_find_exp(rel->exps, e);
 
 					if (!found) {
 						append(rel->exps, e);
@@ -4288,17 +4265,6 @@ rel_order_by(sql_query *query, sql_rel **R, symbol *orderby, int f)
 				}
 			}
 
-			if (!e && sql->session->status != -ERR_AMBIGUOUS && (col->token == SQL_COLUMN || col->token == SQL_IDENT)) {
-				/* reset error */
-				sql->session->status = 0;
-				sql->errstr[0] = '\0';
-
-				e = rel_order_by_simple_column_exp(sql, rel, col, sql_sel | sql_orderby | (f & sql_group_totals));
-				if (e && e->card > rel->card) 
-					e = NULL;
-				if (e)
-					e = rel_project_add_exp(sql, rel, e);
-			}
 			if (rel && !e && sql->session->status != -ERR_AMBIGUOUS) {
 				/* reset error */
 				sql->session->status = 0;
