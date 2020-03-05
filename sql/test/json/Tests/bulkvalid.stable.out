@@ -67,7 +67,7 @@ stdout of test 'bulkvalid` in directory 'sql/test/json` itself:
 [ "{\"f1\":{\"f12\":3},\"f2\":[2,3,4]}"	]
 [ "[1,\"f2\", 2]"	]
 #select json.isvalid(j) from nosql;
-% sys.%1 # table_name
+% sys. # table_name
 % %1 # name
 % boolean # type
 % 5 # length
@@ -78,7 +78,7 @@ stdout of test 'bulkvalid` in directory 'sql/test/json` itself:
 [ true	]
 [ true	]
 #select json.isobject(j) from nosql;
-% sys.%1 # table_name
+% sys. # table_name
 % %1 # name
 % boolean # type
 % 5 # length
@@ -89,7 +89,7 @@ stdout of test 'bulkvalid` in directory 'sql/test/json` itself:
 [ true	]
 [ false	]
 #select json.isarray(j) from nosql;
-% sys.%1 # table_name
+% sys. # table_name
 % %1 # name
 % boolean # type
 % 5 # length
@@ -120,7 +120,7 @@ stdout of test 'bulkvalid` in directory 'sql/test/json` itself:
 [ "{\"f1\":{\"f12\":3},\"f2\":[2,3,4]}"	]
 [ "[1,\"f2\", 2]"	]
 #select json.isvalid(j) from nosql;
-% sys.%1 # table_name
+% sys. # table_name
 % %1 # name
 % boolean # type
 % 5 # length
@@ -131,7 +131,7 @@ stdout of test 'bulkvalid` in directory 'sql/test/json` itself:
 [ true	]
 [ true	]
 #select json.isobject(j) from nosql;
-% sys.%1 # table_name
+% sys. # table_name
 % %1 # name
 % boolean # type
 % 5 # length
@@ -142,7 +142,7 @@ stdout of test 'bulkvalid` in directory 'sql/test/json` itself:
 [ true	]
 [ false	]
 #select json.isarray(j) from nosql;
-% sys.%1 # table_name
+% sys. # table_name
 % %1 # name
 % boolean # type
 % 5 # length

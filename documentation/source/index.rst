@@ -11,6 +11,7 @@ Welcome to MonetDB's documentation!
    :caption: Contents:
 
    input
+   json
    clients
    manual_pages
 
