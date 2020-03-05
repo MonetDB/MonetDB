@@ -969,12 +969,12 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 			int status = sql->session->status;
 			exp_kind ek = {type_value, (single)?card_column:card_relation, FALSE};
 
-			if(single && a->token == SQL_DEFAULT) {
+			if (single && a->token == SQL_DEFAULT) {
 				char *colname = assignment->h->next->data.sval;
 				sql_column *col = mvc_bind_column(sql, t, colname);
 				if (col->def) {
 					char *typestr = subtype2string2(&col->type);
-					if(!typestr)
+					if (!typestr)
 						return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					v = rel_parse_val(sql, sa_message(sql->sa, "select cast(%s as %s);", col->def, typestr), sql->emode, NULL);
 					_DELETE(typestr);
@@ -982,7 +982,7 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 					return sql_error(sql, 02, SQLSTATE(42000) "%s: column '%s' has no valid default value", action, col->base.name);
 				}
 			} else if (single) {
-				v = rel_value_exp(query, &rel_val, a, sql_sel, ek);
+				v = rel_value_exp(query, &rel_val, a, sql_sel | sql_update_set, ek);
 				outer = 1;
 			} else {
 				rel_val = rel_subquery(query, NULL, a, ek);
@@ -993,9 +993,9 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 				assert(!rel_val);
 				outer = 1;
 				if (single) {
-					v = rel_value_exp(query, &r, a, sql_sel, ek);
+					v = rel_value_exp(query, &r, a, sql_sel | sql_update_set, ek);
 				} else if (!rel_val && r) {
-					query_push_outer(query, r, sql_sel);
+					query_push_outer(query, r, sql_sel | sql_update_set);
 					rel_val = rel_subquery(query, NULL, a, ek);
 					r = query_pop_outer(query);
 					if (/* DISABLES CODE */ (0) && r) {
@@ -1166,11 +1166,11 @@ update_table(sql_query *query, dlist *qname, str alias, dlist *assignmentlist, s
 
 			if (!table_privs(sql, t, PRIV_SELECT)) 
 				return sql_error(sql, 02, SQLSTATE(42000) "UPDATE: insufficient privileges for user '%s' to update table '%s'", stack_get_string(sql, "current_user"), tname);
-			r = rel_logical_exp(query, NULL, opt_where, sql_where);
+			r = rel_logical_exp(query, NULL, opt_where, sql_where | sql_update_where);
 			if (!r) { 
 				sql->errstr[0] = 0;
 				sql->session->status = status;
-				r = rel_logical_exp(query, res, opt_where, sql_where);
+				r = rel_logical_exp(query, res, opt_where, sql_where | sql_update_where);
 				if (!r)
 					return NULL;
 				/* handle join */
@@ -1253,7 +1253,7 @@ delete_table(sql_query *query, dlist *qname, str alias, symbol *opt_where)
 			if (!table_privs(sql, t, PRIV_SELECT)) 
 				return sql_error(sql, 02, SQLSTATE(42000) "DELETE FROM: insufficient privileges for user '%s' to delete from table '%s'", stack_get_string(sql, "current_user"), tname);
 
-			r = rel_logical_exp(query, NULL, opt_where, sql_where);
+			r = rel_logical_exp(query, NULL, opt_where, sql_where | sql_update_where);
 			if (r) { /* simple predicate which is not using the to 
 					    be updated table. We add a select all */
 				sql_rel *l = rel_basetable(sql, t, t->base.name );
@@ -1266,7 +1266,7 @@ delete_table(sql_query *query, dlist *qname, str alias, symbol *opt_where)
 					for (node *nn = r->exps->h ; nn ; nn = nn->next)
 						exp_setname(sql->sa, (sql_exp*) nn->data, alias, NULL); //the last parameter is optional, hence NULL
 				}
-				r = rel_logical_exp(query, r, opt_where, sql_where);
+				r = rel_logical_exp(query, r, opt_where, sql_where | sql_update_where);
 			}
 			if (!r)
 				return NULL;
@@ -1431,7 +1431,7 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 					join_rel = rel_dup(join_rel);
 				} else {
 					join_rel = rel_crossproduct(sql->sa, joined, bt, op_left);
-					if (!(join_rel = rel_logical_exp(query, join_rel, search_cond, sql_where)))
+					if (!(join_rel = rel_logical_exp(query, join_rel, search_cond, sql_where | sql_join)))
 						return NULL;
 					set_processed(join_rel);
 				}
@@ -1461,7 +1461,7 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 					join_rel = rel_dup(join_rel);
 				} else {
 					join_rel = rel_crossproduct(sql->sa, joined, bt, op_left);
-					if (!(join_rel = rel_logical_exp(query, join_rel, search_cond, sql_where)))
+					if (!(join_rel = rel_logical_exp(query, join_rel, search_cond, sql_where | sql_join)))
 						return NULL;
 					set_processed(join_rel);
 				}
@@ -1498,7 +1498,7 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 				join_rel = rel_dup(join_rel);
 			} else {
 				join_rel = rel_crossproduct(sql->sa, joined, bt, op_left);
-				if (!(join_rel = rel_logical_exp(query, join_rel, search_cond, sql_where)))
+				if (!(join_rel = rel_logical_exp(query, join_rel, search_cond, sql_where | sql_join)))
 					return NULL;
 				set_processed(join_rel);
 			}

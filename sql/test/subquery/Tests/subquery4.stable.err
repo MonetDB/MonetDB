@@ -30,6 +30,54 @@ QUERY = PREPARE SELECT
         FROM another_T;
 ERROR = !Could not determine type for argument number 1
 CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-228798/.s.monetdb.32449
+QUERY = UPDATE another_T SET col1 = MIN(col1); --error, aggregates not allowed in update set clause
+ERROR = !MIN: aggregate functions not allowed in UPDATE SET clause (use subquery)
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-228798/.s.monetdb.32449
+QUERY = UPDATE another_T SET col2 = 1 WHERE col1 = SUM(col2); --error, aggregates not allowed in update set clause
+ERROR = !SUM: aggregate functions not allowed in WHERE clauses inside UPDATE statements (use subquery)
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-228798/.s.monetdb.32449
+QUERY = UPDATE another_T SET col3 = (SELECT MAX(col5)); --error, aggregates not allowed in update set clause
+ERROR = !SELECT: aggregate functions not allowed in UPDATE SET clause
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-228798/.s.monetdb.32449
+QUERY = UPDATE another_T SET col5 = 1 WHERE col5 = (SELECT AVG(col2)); --error, aggregates not allowed in where clause
+ERROR = !SELECT: aggregate functions not allowed in WHERE clauses inside UPDATE statements
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-229080/.s.monetdb.36783
+QUERY = DELETE FROM another_T WHERE col1 = COUNT(col2); --error, aggregates not allowed in where clause
+ERROR = !COUNT: aggregate functions not allowed in WHERE clauses inside UPDATE statements (use subquery)
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-229080/.s.monetdb.36783
+QUERY = DELETE FROM another_T WHERE col7 = (SELECT MIN(col3)); --error, aggregates not allowed in where clause
+ERROR = !SELECT: aggregate functions not allowed in WHERE clauses inside UPDATE statements
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-234504/.s.monetdb.39561
+QUERY = UPDATE another_T SET col1 = AVG(col1) OVER (); --error, window functions not allowed in update set clause
+ERROR = !AVG: window function 'avg' not allowed in UPDATE SET clause (use subquery)
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-234504/.s.monetdb.39561
+QUERY = UPDATE another_T SET col2 = 1 WHERE col1 = COUNT(col2) OVER (); --error, window functions not allowed in where clause
+ERROR = !COUNT: window function 'count' not allowed in WHERE clause inside updates (use subquery)
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-234504/.s.monetdb.39561
+QUERY = UPDATE another_T SET col4 = (SELECT MIN(col4 + ColID) OVER () FROM tbl_ProductSales); --error, more than one row returned by a subquery used as an expression
+ERROR = !zero_or_one: cardinality violation, scalar expression expected
+CODE  = M0M29
+MAPI  = (monetdb) /var/tmp/mtest-234504/.s.monetdb.39561
+QUERY = UPDATE another_T SET col6 = 1 WHERE col6 = (SELECT MIN(col3 + ColID) OVER () FROM tbl_ProductSales); --error, more than one row returned by a subquery used as an expression
+ERROR = !zero_or_one: cardinality violation, scalar expression expected
+CODE  = M0M29
+MAPI  = (monetdb) /var/tmp/mtest-234504/.s.monetdb.39561
+QUERY = DELETE FROM another_T WHERE col1 = AVG(col2) OVER (); --error, window functions not allowed in where clause
+ERROR = !AVG: window function 'avg' not allowed in WHERE clause inside updates (use subquery)
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-234504/.s.monetdb.39561
+QUERY = DELETE FROM another_T WHERE col8 = (SELECT MAX(col6 + ColID) OVER () FROM tbl_ProductSales); --error, more than one row returned by a subquery used as an expression
+ERROR = !zero_or_one: cardinality violation, scalar expression expected
+CODE  = M0M29
 
 # 15:41:18 >  
 # 15:41:18 >  "Done."
