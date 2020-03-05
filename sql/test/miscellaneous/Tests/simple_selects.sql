@@ -48,7 +48,9 @@ select difference('foobar', 'oobar'), difference(NULL, 'oobar'), difference('foo
        editdistance2('foobar', 'oobar'), editdistance2(NULL, 'oobar'), editdistance2('foobar', NULL), editdistance2(NULL, NULL),
        similarity('foobar', 'oobar'), similarity(NULL, 'oobar'), similarity('foobar', NULL), similarity(NULL, NULL),
        levenshtein('foobar', 'oobar'), levenshtein(NULL, 'oobar'), levenshtein('foobar', NULL), levenshtein(NULL, NULL);
-select avg(10), avg(NULL);
+select avg(10), avg(NULL),
+       patindex('o', 'foo'), patindex(NULL, 'foo'), patindex('o', NULL), patindex('o', NULL), patindex(NULL, NULL),
+       "hash"(null);
 
 select "idontexist"."idontexist"(); --error, it doesn't exist
 select "idontexist"."idontexist"(1); --error, it doesn't exist
