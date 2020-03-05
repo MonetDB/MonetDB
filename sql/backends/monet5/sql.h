@@ -38,7 +38,7 @@
 
 #include "tablet.h"
 #include "streams.h"
-#include "mtime.h"
+#include "gdk_time.h"
 #include <math.h>
 #include "blob.h"
 #include "mkey.h"

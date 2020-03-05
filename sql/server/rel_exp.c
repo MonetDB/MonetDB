@@ -18,7 +18,7 @@
 #ifdef HAVE_HGE
 #include "mal.h"		/* for have_hge */
 #endif
-#include "mtime.h"
+#include "gdk_time.h"
 #include "blob.h"
 
 comp_type

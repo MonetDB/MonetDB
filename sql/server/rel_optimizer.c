@@ -19,7 +19,7 @@
 #ifdef HAVE_HGE
 #include "mal.h"		/* for have_hge */
 #endif
-#include "mtime.h"
+#include "gdk_time.h"
 
 typedef struct global_props {
 	int cnt[ddl_maxops];

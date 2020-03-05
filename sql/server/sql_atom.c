@@ -10,7 +10,7 @@
 #include "sql_atom.h"
 #include "sql_string.h"
 #include "sql_decimal.h"
-#include "mtime.h"
+#include "gdk_time.h"
 
 void
 atom_init( atom *a )

@@ -6,13 +6,13 @@
 
 -- assume milliseconds when converted to TIMESTAMP
 create function sys."epoch"(sec BIGINT) returns TIMESTAMP WITH TIME ZONE
-	external name timestamp."epoch";
+	external name mtime."epoch";
 
 create function sys."epoch"(sec INT) returns TIMESTAMP WITH TIME ZONE
-	external name timestamp."epoch";
+	external name mtime."epoch";
 
 create function sys."epoch"(ts TIMESTAMP WITH TIME ZONE) returns INT
-	external name timestamp."epoch";
+	external name mtime."epoch";
 
 grant execute on function sys."epoch" (BIGINT) to public;
 grant execute on function sys."epoch" (INT) to public;

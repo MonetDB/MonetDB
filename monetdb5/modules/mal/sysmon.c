@@ -11,7 +11,7 @@
 #include "mal_authorize.h"
 #include "mal_client.h"
 #include "mal_runtime.h"
-#include "mtime.h"
+#include "gdk_time.h"
 
 /* (c) M.L. Kersten
  * The queries currently in execution are returned to the front-end for managing expensive ones.

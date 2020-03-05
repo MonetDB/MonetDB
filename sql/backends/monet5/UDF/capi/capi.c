@@ -10,7 +10,7 @@
 #include "cheader.h"
 #include "cheader.text.h"
 
-#include "mtime.h"
+#include "gdk_time.h"
 #include "blob.h"
 
 #include <setjmp.h>

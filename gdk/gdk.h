@@ -482,6 +482,9 @@ enum {
 #ifdef HAVE_HGE
 	TYPE_hge,
 #endif
+	TYPE_date,
+	TYPE_daytime,
+	TYPE_timestamp,
 	TYPE_str,
 	TYPE_any = 255,		/* limit types to <255! */
 };

@@ -14,7 +14,7 @@
 #include "mal_backend.h"
 #include "sql_execute.h"
 #include "sql_mvc.h"
-#include "mtime.h"
+#include "gdk_time.h"
 #include <unistd.h>
 #include "sql_upgrades.h"
 #include "rel_rel.h"
@@ -2520,6 +2520,21 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 
 	pos += snprintf(buf + pos, bufsize - pos,
 			"set schema \"sys\";\n");
+
+	/* 17_temporal.sql */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"drop function sys.epoch(bigint);\n"
+			"drop function sys.epoch(int);\n"
+			"drop function sys.epoch(timestamp);\n"
+			"create function sys.\"epoch\"(sec BIGINT) returns TIMESTAMP WITH TIME ZONE\n"
+			" external name mtime.\"epoch\";\n"
+			"create function sys.\"epoch\"(sec INT) returns TIMESTAMP WITH TIME ZONE\n"
+			" external name mtime.\"epoch\";\n"
+			"create function sys.\"epoch\"(ts TIMESTAMP WITH TIME ZONE) returns INT\n"
+			" external name mtime.\"epoch\";\n"
+			"grant execute on function sys.\"epoch\" (BIGINT) to public;\n"
+			"grant execute on function sys.\"epoch\" (INT) to public;\n"
+			"grant execute on function sys.\"epoch\" (TIMESTAMP WITH TIME ZONE) to public;\n");
 
 	/* 39_analytics.sql */
 	pos += snprintf(buf + pos, bufsize - pos,
