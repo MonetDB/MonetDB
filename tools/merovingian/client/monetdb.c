@@ -1754,13 +1754,15 @@ snapshot_enumerate(struct snapshot **snapshots, int *nsnapshots)
 			}
 			int dblen = dbend - p;
 			char *path = dbend + 1;
+			int pathlen = eol - path;
 			struct snapshot *snap = push_snapshot(snapshots, nsnapshots);
 			snap->dbname = malloc(dblen + 1);
 			memmove(snap->dbname, p, dblen);
 			snap->dbname[dblen] = '\0';
 			snap->time = time;
 			snap->size = size;
-			snap->path = strdup(path);
+			snap->path = malloc(pathlen + 1);
+			memmove(snap->path, path, pathlen);
 			p = eol + 1;
 		};
 		free(out);
