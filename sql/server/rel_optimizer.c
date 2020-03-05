@@ -7366,9 +7366,11 @@ rel_simplify_predicates(mvc *sql, sql_rel *rel, int *changes)
 						l = args->h->data;
 						if (exp_subtype(l)) {
 							r = exp_atom(sql->sa, atom_general(sql->sa, exp_subtype(l), NULL));
-							e = exp_compare2(sql->sa, l, r, r, 3);
+							e = exp_compare(sql->sa, l, r, cmp_equal);
 							if (e && !flag)
 								set_anti(e);
+							if (e)
+								set_semantics(e);
 						}
 					} else if (!f->func->s && !strcmp(f->func->base.name, "not")) {
 						if (is_atom(r->type) && r->l) { /* direct literal */
@@ -8859,11 +8861,11 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, int value_based_
 	gp = (global_props) {.cnt = {0},};
 	rel_properties(sql, &gp, rel);
 
-	TRC_DEBUG_IF(SQL_OPTIMIZER) {
+	TRC_DEBUG_IF(SQL_REWRITER) {
 		int i;
 		for (i = 0; i < ddl_maxops; i++) {
 			if (gp.cnt[i]> 0)
-				TRC_DEBUG_ENDIF(SQL_OPTIMIZER, "%s %d\n", op2string((operator_type)i), gp.cnt[i]);
+				TRC_DEBUG_ENDIF(SQL_REWRITER, "%s %d\n", op2string((operator_type)i), gp.cnt[i]);
 		}
 	}
 

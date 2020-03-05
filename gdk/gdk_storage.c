@@ -382,8 +382,8 @@ GDKextendf(int fd, size_t size, const char *fn)
 		}
 	}
 	TRC_DEBUG(IO_, "GDKextend %s %zu -> %zu %dms%s\n",
-			fn, (size_t) stb.st_size, size,
-			GDKms() - t0, rt != 0 ? " (failed)" : "");
+		  fn, (size_t) stb.st_size, size,
+		  GDKms() - t0, rt != 0 ? " (failed)" : "");
 	/* posix_fallocate returns != 0 on failure, fallocate and
 	 * ftruncate return -1 on failure, but all three return 0 on
 	 * success */
@@ -436,9 +436,8 @@ GDKsave(int farmid, const char *nme, const char *ext, void *buf, size_t size, st
 			GDKsyserror("GDKsave: error on: name=%s, ext=%s, "
 				    "mode=%d\n", nme, ext ? ext : "",
 				    (int) mode);
-		TRC_DEBUG(IO_, "MT_msync(buf %p, size %zu"
-					") = %d\n",
-					buf, size, err);
+		TRC_DEBUG(IO_, "MT_msync(buf %p, size %zu) = %d\n",
+			  buf, size, err);
 	} else {
 		int fd;
 
@@ -465,10 +464,10 @@ GDKsave(int farmid, const char *nme, const char *ext, void *buf, size_t size, st
 				size -= ret;
 				buf = (void *) ((char *) buf + ret);
 				TRC_DEBUG(IO_, "Write(fd %d, buf %p"
-							", size %u) = %zd\n",
-							fd, buf,
-							(unsigned) MIN(1 << 30, size),
-							ret);
+					  ", size %u) = %zd\n",
+					  fd, buf,
+					  (unsigned) MIN(1 << 30, size),
+					  ret);
 			}
 			if (dosync && !(GDKdebug & NOSYNCMASK)
 #if defined(NATIVE_WIN32)

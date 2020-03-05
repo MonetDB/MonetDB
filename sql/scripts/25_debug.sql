@@ -83,9 +83,23 @@ create function sys.deltas ("schema" string, "table" string, "column" string)
 	external name "sql"."deltas";
 
 -- Sleep procedure
+create procedure sys."sleep"(msecs tinyint)
+	external name "alarm"."sleep";
+grant execute on procedure sys."sleep"(tinyint) to public;
+create procedure sys."sleep"(msecs smallint)
+	external name "alarm"."sleep";
+grant execute on procedure sys."sleep"(smallint) to public;
 create procedure sys."sleep"(msecs int)
 	external name "alarm"."sleep";
+grant execute on procedure sys."sleep"(int) to public;
 
 -- Sleep function
-create function sys."sleep"(msecs int) returns integer
+create function sys."sleep"(msecs tinyint) returns tinyint
 	external name "alarm"."sleep";
+grant execute on function sys."sleep"(tinyint) to public;
+create function sys."sleep"(msecs smallint) returns smallint
+	external name "alarm"."sleep";
+grant execute on function sys."sleep"(smallint) to public;
+create function sys."sleep"(msecs int) returns int
+	external name "alarm"."sleep";
+grant execute on function sys."sleep"(int) to public;

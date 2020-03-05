@@ -156,7 +156,7 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 				list *l = e->f;
 				exps_print(sql, fout, l, depth, refs, 0, 0);
 			} else { /* numbered arguments */
-				mnstr_printf(fout, "A%d", e->flag);
+				mnstr_printf(fout, "A%u", e->flag);
 			}
 		}
 	} 	break;
@@ -1299,6 +1299,8 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 					ne->flag |= CMP_BETWEEN;
 				if (is_anti(exp))
 					set_anti(ne);
+				if (is_semantics(exp))
+					set_semantics(ne);
 				return ne;
 			}
 		}

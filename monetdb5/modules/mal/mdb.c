@@ -177,8 +177,8 @@ MDBgetDebug(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	(void) mb;
 	(void) stk;
 	(void) p;
-    *ret = GDKdebug;
-    return MAL_SUCCEED;
+	*ret = GDKdebug;
+	return MAL_SUCCEED;
 }
 
 str
@@ -191,9 +191,9 @@ MDBsetDebug(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	(void) mb;
 	(void) stk;
 	(void) p;
-    GDKdebug = *flg;
+	GDKsetdebug(*flg);
 	*ret = GDKdebug;
-    return MAL_SUCCEED;
+	return MAL_SUCCEED;
 }
 
 #define addFlag(NME, FLG, DSET) \
@@ -205,7 +205,7 @@ str
 MDBgetDebugFlags(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	bat *f = getArgReference_bat(stk,p,0);
-    bat *v = getArgReference_bat(stk,p,1);
+	bat *v = getArgReference_bat(stk,p,1);
 	BAT *flg, *val;
 	bit state = 0;
 
@@ -231,8 +231,8 @@ MDBgetDebugFlags(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	addFlag("performance", GRPperformance, GDKdebug);
 	addFlag("forcemito", GRPforcemito, GDKdebug);
 
-    BBPkeepref( *f = flg->batCacheid);
-    BBPkeepref( *v = val->batCacheid);
+	BBPkeepref( *f = flg->batCacheid);
+	BBPkeepref( *v = val->batCacheid);
 	return MAL_SUCCEED;
 
 bailout:
@@ -244,20 +244,34 @@ bailout:
 /* Toggle the debug flags on/off */
 static str
 MDBsetDebugStr_(int *ret, str *flg)
-{	
-	if( strcmp("threads",*flg)==0) GDKdebug ^= GRPthreads;
-	if( strcmp("memory",*flg)==0) GDKdebug ^= GRPmemory;
-	if( strcmp("properties",*flg)==0) GDKdebug ^= GRPproperties;
-	if( strcmp("io",*flg)==0) GDKdebug ^= GRPio;
-	if( strcmp("heaps",*flg)==0) GDKdebug ^= GRPheaps;
-	if( strcmp("transactions",*flg)==0) GDKdebug ^= GRPtransactions;
-	if( strcmp("modules",*flg)==0) GDKdebug ^= GRPmodules;
-	if( strcmp("algorithms",*flg)==0) GDKdebug ^= GRPalgorithms;
-	if( strcmp("performance",*flg)==0) GDKdebug ^= GRPperformance;
-	if( strcmp("forcemito",*flg)==0) GDKdebug ^= GRPforcemito;
+{
+	int debug = GDKdebug;
+	if( strcmp("threads",*flg)==0)
+		debug ^= GRPthreads;
+	else if( strcmp("memory",*flg)==0)
+		debug ^= GRPmemory;
+	else if( strcmp("properties",*flg)==0)
+		debug ^= GRPproperties;
+	else if( strcmp("io",*flg)==0)
+		debug ^= GRPio;
+	else if( strcmp("heaps",*flg)==0)
+		debug ^= GRPheaps;
+	else if( strcmp("transactions",*flg)==0)
+		debug ^= GRPtransactions;
+	else if( strcmp("modules",*flg)==0)
+		debug ^= GRPmodules;
+	else if( strcmp("algorithms",*flg)==0)
+		debug ^= GRPalgorithms;
+	else if( strcmp("performance",*flg)==0)
+		debug ^= GRPperformance;
+	else if( strcmp("forcemito",*flg)==0)
+		debug ^= GRPforcemito;
+	else
+		throw(MAL, "mdb.setDebugStr", ILLEGAL_ARGUMENT);
+	GDKsetdebug(debug);
 	*ret = GDKdebug;
 
-    return MAL_SUCCEED;
+	return MAL_SUCCEED;
 }
 
 str

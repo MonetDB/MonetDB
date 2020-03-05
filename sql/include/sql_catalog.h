@@ -367,6 +367,40 @@ typedef enum sql_ftype {
 #define IS_ANALYTIC(f) ((f)->type == F_ANALYTIC)
 #define IS_LOADER(f)   ((f)->type == F_LOADER)
 
+#define FUNC_TYPE_STR(type) \
+	switch (type) { \
+		case F_FUNC: \
+			F = "FUNCTION"; \
+			fn = "function"; \
+			break; \
+		case F_PROC: \
+			F = "PROCEDURE"; \
+			fn = "procedure"; \
+			break; \
+		case F_AGGR: \
+			F = "AGGREGATE"; \
+			fn = "aggregate"; \
+			break; \
+		case F_FILT: \
+			F = "FILTER FUNCTION"; \
+			fn = "filter function"; \
+			break; \
+		case F_UNION: \
+			F = "UNION FUNCTION"; \
+			fn = "union function"; \
+			break; \
+		case F_ANALYTIC: \
+			F = "WINDOW FUNCTION"; \
+			fn = "window function"; \
+			break; \
+		case F_LOADER: \
+			F = "LOADER FUNCTION"; \
+			fn = "loader function"; \
+			break; \
+		default: \
+			assert(0); \
+	}
+
 typedef enum sql_flang {
 	FUNC_LANG_INT = 0, /* internal */
 	FUNC_LANG_MAL = 1, /* create sql external mod.func */

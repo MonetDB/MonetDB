@@ -52,7 +52,7 @@ comment "Put a client process to sleep for some time.
 It will simple sleep for a second at a time, until
 the awake bit has been set in its descriptor";
 
-command wakeup(id:int):void
+pattern wakeup(id:int):void
 address CLTwakeup
 comment "Wakeup a client process";
 

@@ -612,17 +612,17 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	if (b->tkey || cnt <= 1 || (g && (g->tkey || BATtdense(g)))) {
 		/* grouping is trivial: 1 element per group */
 		TRC_DEBUG(ALGO, "BATgroup(b=%s#" BUNFMT "[%s],"
-				  "s=%s#" BUNFMT ","
-				  "g=%s#" BUNFMT ","
-				  "e=%s#" BUNFMT ","
-				  "h=%s#" BUNFMT ",subsorted=%d): "
-				  "trivial case: 1 element per group\n",
-				  BATgetId(b), BATcount(b), ATOMname(b->ttype),
-				  s ? BATgetId(s) : "NULL", s ? BATcount(s) : 0,
-				  g ? BATgetId(g) : "NULL", g ? BATcount(g) : 0,
-				  e ? BATgetId(e) : "NULL", e ? BATcount(e) : 0,
-				  h ? BATgetId(h) : "NULL", h ? BATcount(h) : 0,
-				  subsorted);
+			  "s=%s#" BUNFMT ","
+			  "g=%s#" BUNFMT ","
+			  "e=%s#" BUNFMT ","
+			  "h=%s#" BUNFMT ",subsorted=%d): "
+			  "trivial case: 1 element per group\n",
+			  BATgetId(b), BATcount(b), ATOMname(b->ttype),
+			  s ? BATgetId(s) : "NULL", s ? BATcount(s) : 0,
+			  g ? BATgetId(g) : "NULL", g ? BATcount(g) : 0,
+			  e ? BATgetId(e) : "NULL", e ? BATcount(e) : 0,
+			  h ? BATgetId(h) : "NULL", h ? BATcount(h) : 0,
+			  subsorted);
 		gn = BATdense(hseqb, 0, BATcount(b));
 		if (gn == NULL)
 			goto error;
@@ -808,17 +808,17 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	     (g == NULL || BATordered(g) || BATordered_rev(g)))) {
 		/* we only need to compare each entry with the previous */
 		TRC_DEBUG(ALGO, "BATgroup(b=%s#" BUNFMT "[%s],"
-				  "s=%s#" BUNFMT ","
-				  "g=%s#" BUNFMT ","
-				  "e=%s#" BUNFMT ","
-				  "h=%s#" BUNFMT ",subsorted=%d): "
-				  "compare consecutive values\n",
-				  BATgetId(b), BATcount(b), ATOMname(b->ttype),
-				  s ? BATgetId(s) : "NULL", s ? BATcount(s) : 0,
-				  g ? BATgetId(g) : "NULL", g ? BATcount(g) : 0,
-				  e ? BATgetId(e) : "NULL", e ? BATcount(e) : 0,
-				  h ? BATgetId(h) : "NULL", h ? BATcount(h) : 0,
-				  subsorted);
+			  "s=%s#" BUNFMT ","
+			  "g=%s#" BUNFMT ","
+			  "e=%s#" BUNFMT ","
+			  "h=%s#" BUNFMT ",subsorted=%d): "
+			  "compare consecutive values\n",
+			  BATgetId(b), BATcount(b), ATOMname(b->ttype),
+			  s ? BATgetId(s) : "NULL", s ? BATcount(s) : 0,
+			  g ? BATgetId(g) : "NULL", g ? BATcount(g) : 0,
+			  e ? BATgetId(e) : "NULL", e ? BATcount(e) : 0,
+			  h ? BATgetId(h) : "NULL", h ? BATcount(h) : 0,
+			  subsorted);
 
 		switch (t) {
 		case TYPE_bte:
@@ -866,17 +866,17 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		 * saw the old group of the current value is within
 		 * this range, we can reuse the new group */
 		TRC_DEBUG(ALGO, "BATgroup(b=%s#" BUNFMT "[%s],"
-				  "s=%s#" BUNFMT ","
-				  "g=%s#" BUNFMT ","
-				  "e=%s#" BUNFMT ","
-				  "h=%s#" BUNFMT ",subsorted=%d): "
-				  "subscan old groups\n",
-				  BATgetId(b), BATcount(b), ATOMname(b->ttype),
-				  s ? BATgetId(s) : "NULL", s ? BATcount(s) : 0,
-				  g ? BATgetId(g) : "NULL", g ? BATcount(g) : 0,
-				  e ? BATgetId(e) : "NULL", e ? BATcount(e) : 0,
-				  h ? BATgetId(h) : "NULL", h ? BATcount(h) : 0,
-				  subsorted);
+			  "s=%s#" BUNFMT ","
+			  "g=%s#" BUNFMT ","
+			  "e=%s#" BUNFMT ","
+			  "h=%s#" BUNFMT ",subsorted=%d): "
+			  "subscan old groups\n",
+			  BATgetId(b), BATcount(b), ATOMname(b->ttype),
+			  s ? BATgetId(s) : "NULL", s ? BATcount(s) : 0,
+			  g ? BATgetId(g) : "NULL", g ? BATcount(g) : 0,
+			  e ? BATgetId(e) : "NULL", e ? BATcount(e) : 0,
+			  h ? BATgetId(h) : "NULL", h ? BATcount(h) : 0,
+			  subsorted);
 		/* determine how many old groups there are */
 		if (e) {
 			j = BATcount(e) + (BUN) e->hseqbase;
@@ -1003,17 +1003,17 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		 * duplicates in the hash table to find an old
 		 * group */
 		TRC_DEBUG(ALGO, "BATgroup(b=%s#" BUNFMT "[%s],"
-				  "s=%s#" BUNFMT ","
-				  "g=%s#" BUNFMT ","
-				  "e=%s#" BUNFMT ","
-				  "h=%s#" BUNFMT ",subsorted=%d): "
-				  "use existing hash table\n",
-				  BATgetId(b), BATcount(b), ATOMname(b->ttype),
-				  s ? BATgetId(s) : "NULL", s ? BATcount(s) : 0,
-				  g ? BATgetId(g) : "NULL", g ? BATcount(g) : 0,
-				  e ? BATgetId(e) : "NULL", e ? BATcount(e) : 0,
-				  h ? BATgetId(h) : "NULL", h ? BATcount(h) : 0,
-				  subsorted);
+			  "s=%s#" BUNFMT ","
+			  "g=%s#" BUNFMT ","
+			  "e=%s#" BUNFMT ","
+			  "h=%s#" BUNFMT ",subsorted=%d): "
+			  "use existing hash table\n",
+			  BATgetId(b), BATcount(b), ATOMname(b->ttype),
+			  s ? BATgetId(s) : "NULL", s ? BATcount(s) : 0,
+			  g ? BATgetId(g) : "NULL", g ? BATcount(g) : 0,
+			  e ? BATgetId(e) : "NULL", e ? BATcount(e) : 0,
+			  h ? BATgetId(h) : "NULL", h ? BATcount(h) : 0,
+			  subsorted);
 		if (b->thash == NULL && (parent = VIEWtparent(b)) != 0) {
 			/* b is a view on another bat (b2 for now).
 			 * calculate the bounds [lo, lo+BATcount(b))
@@ -1069,17 +1069,17 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		 * BATassertProps for similar code; we also exploit if
 		 * g is clustered */
 		TRC_DEBUG(ALGO, "BATgroup(b=%s#" BUNFMT "[%s],"
-				  "s=%s#" BUNFMT ","
-				  "g=%s#" BUNFMT ","
-				  "e=%s#" BUNFMT ","
-				  "h=%s#" BUNFMT ",subsorted=%d): "
-				  "create partial hash table%s\n",
-				  BATgetId(b), BATcount(b), ATOMname(b->ttype),
-				  s ? BATgetId(s) : "NULL", s ? BATcount(s) : 0,
-				  g ? BATgetId(g) : "NULL", g ? BATcount(g) : 0,
-				  e ? BATgetId(e) : "NULL", e ? BATcount(e) : 0,
-				  h ? BATgetId(h) : "NULL", h ? BATcount(h) : 0,
-				  subsorted, gc ? " (g clustered)" : "");
+			  "s=%s#" BUNFMT ","
+			  "g=%s#" BUNFMT ","
+			  "e=%s#" BUNFMT ","
+			  "h=%s#" BUNFMT ",subsorted=%d): "
+			  "create partial hash table%s\n",
+			  BATgetId(b), BATcount(b), ATOMname(b->ttype),
+			  s ? BATgetId(s) : "NULL", s ? BATcount(s) : 0,
+			  g ? BATgetId(g) : "NULL", g ? BATcount(g) : 0,
+			  e ? BATgetId(e) : "NULL", e ? BATcount(e) : 0,
+			  h ? BATgetId(h) : "NULL", h ? BATcount(h) : 0,
+			  subsorted, gc ? " (g clustered)" : "");
 		nme = GDKinmemory() ? ":inmemory" : BBP_physical(b->batCacheid);
 		if (grps && !gc) {
 			/* we manipulate the hash value after having

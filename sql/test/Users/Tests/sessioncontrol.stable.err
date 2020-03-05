@@ -28,13 +28,13 @@ stderr of test 'sessioncontrol` in directory 'sql/test/Users` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-5773/.s.monetdb.30383
 QUERY = call setsessiontimeout(-1);
-ERROR = !Session time-out should be >= 0
-MAPI  = (monetdb) /var/tmp/mtest-5773/.s.monetdb.30383
+ERROR = !Session timeout should be >= 0
+MAPI  = (monetdb) /var/tmp/mtest-61463/.s.monetdb.39827
 QUERY = call setquerytimeout(-1);
-ERROR = !Query time-out should be >= 0
-MAPI  = (monetdb) /var/tmp/mtest-5773/.s.monetdb.30383
+ERROR = !Query timeout should be >= 0
+MAPI  = (monetdb) /var/tmp/mtest-61463/.s.monetdb.39827
 QUERY = call setworkerlimit( -1);
-ERROR = !At least one worker needed
+ERROR = !The number of workers cannot be negative
 
 # 18:15:20 >  
 # 18:15:20 >  "Done."

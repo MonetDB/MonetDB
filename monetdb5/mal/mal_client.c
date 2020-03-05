@@ -77,7 +77,7 @@ MCinit(void)
 	MAL_MAXCLIENTS = /* client connections */ maxclients;
 	mal_clients = GDKzalloc(sizeof(ClientRec) * MAL_MAXCLIENTS);
 	if( mal_clients == NULL){
-		TRC_CRITICAL(MAL_MAL, "Initialization failed: " MAL_MALLOC_FAIL "\n");
+		TRC_CRITICAL(MAL_SERVER, "Initialization failed: " MAL_MALLOC_FAIL "\n");
 		return false;
 	}
 	for (int i = 0; i < MAL_MAXCLIENTS; i++){
@@ -217,7 +217,7 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	c->fdin = fin ? fin : bstream_create(GDKstdin, 0);
 	if ( c->fdin == NULL){
 		c->mode = FREECLIENT;
-		TRC_ERROR(MAL_MAL, "No stdin channel available\n");
+		TRC_ERROR(MAL_SERVER, "No stdin channel available\n");
 		return NULL;
 	}
 	c->yycur = 0;
@@ -604,7 +604,6 @@ MCreadClient(Client c)
 	}
 	return 1;
 }
-
 
 int
 MCvalid(Client tc)

@@ -14,4 +14,9 @@ DROP VIEW IF EXISTS view2;
 DROP VIEW view2; -- should fail
 SELECT * FROM view2; -- should fail
 
+DROP FUNCTION IF EXISTS "idontexist"."idontexist"();
+DROP FUNCTION IF EXISTS "idontexist"."idontexist"(INT);
+DROP FUNCTION IF EXISTS "sys"."idontexist"();
+DROP FUNCTION IF EXISTS "sys"."idontexist"(INT);
+
 DROP TABLE tab0;
