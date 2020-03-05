@@ -34,6 +34,10 @@
 #include "mtime.h"
 #include "mal_exception.h"
 
+#ifndef HAVE_STRPTIME
+extern char *strptime(const char *, const char *, struct tm *);
+#endif
+
 /* interfaces callable from MAL, not used from any C code */
 mal_export str MTIMEcurrent_date(date *ret);
 mal_export str MTIMEcurrent_time(daytime *ret);
