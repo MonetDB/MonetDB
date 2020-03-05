@@ -30,7 +30,7 @@ stdout of test 'crash-orderby-alias.Bug-6527` in directory 'sql/test/BugTracker-
 #    "d1" as "value"
 #from "t1"
 #order by "value";
-% sys.L2 # table_name
+% sys. # table_name
 % value # name
 % int # type
 % 1 # length

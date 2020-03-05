@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -18,7 +18,7 @@
 #include "opt_multiplex.h"
 
 static int
-OPTremapDirect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Module scope){
+OPTremapDirect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int idx, Module scope){
 	str mod,fcn;
 	char buf[1024];
 	int i, retc = pci->retc;
@@ -32,10 +32,6 @@ OPTremapDirect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Module s
 
 	if(strncmp(mod,"bat",3)==0)
 		mod+=3;
-
-    if( OPTdebug &  OPTremap){
-		fprintf(stderr,"#Found a candidate %s.%s\n",mod,fcn);
-	}
 
 
 	snprintf(buf,1024,"bat%s",mod);
@@ -53,28 +49,15 @@ OPTremapDirect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Module s
 			p = pushReturn(mb, p, getArg(pci,i));
 	p->retc= p->argc= pci->retc;
 	for(i= pci->retc+2; i<pci->argc; i++)
-		p= pushArgument(mb,p,getArg(pci,i));
-
-    if( OPTdebug &  OPTremap){
-		fprintInstruction(stderr,mb,0,p,LIST_MAL_ALL);
-	}
+		p= addArgument(mb,p,getArg(pci,i));
 
 	/* now see if we can resolve the instruction */
-	typeChecker(scope,mb,p,TRUE);
+	typeChecker(scope,mb,p,idx,TRUE);
 	if( p->typechk== TYPE_UNKNOWN) {
-
-		if( OPTdebug &  OPTremap){
-			fprintf(stderr,"#type error\n");
-			fprintInstruction(stderr,mb,0,p,LIST_MAL_ALL);
-		}
-
 		freeInstruction(p);
 		return 0;
 	}
 	pushInstruction(mb,p);
-	if( OPTdebug &  OPTremap){
-		fprintf(stderr,"success\n");
-	}
 	return 1;
 }
 
@@ -115,7 +98,7 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 	MalBlkPtr mq;
 	InstrPtr q = NULL, sig;
 	char buf[1024];
-	int i,j,k, actions=0;
+	int i,j,k,m, actions=0;
 	int refbat=0, retc = p->retc;
 	bit *upgrade;
 	Symbol s;
@@ -128,14 +111,6 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 
 	if( s== NULL || !isSideEffectFree(s->def) || 
 		getInstrPtr(s->def,0)->retc != p->retc ) {
-
-		if( OPTdebug &  OPTremap){
-			if( s== NULL)
-				fprintf(stderr,"#not found \n");
-			else
-				fprintf(stderr,"#side-effects\n");
-		}
-
 		return 0;
 	}
 	/*
@@ -145,13 +120,6 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 		return 0;
 	}
 	sig= getInstrPtr(mq,0);
-
-	if( OPTdebug &  OPTremap){
-		fprintf(stderr,"#Modify the code\n");
-		fprintFunction(stderr,mq, 0, LIST_MAL_ALL);
-		fprintInstruction(stderr,mb, 0, p,LIST_MAL_ALL);
-	}
-
 
 	upgrade = (bit*) GDKzalloc(sizeof(bit)*mq->vtop);
 	if( upgrade == NULL) {
@@ -168,15 +136,7 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 			isaBatType( getArgType(mb,p,i)) ){
 
 			if( getBatType(getArgType(mb,p,i)) != getArgType(mq,sig,i-2)){
-
-				if( OPTdebug &  OPTremap){
-					fprintf(stderr,"#Type mismatch %d\n",i);
-				}
-
 				goto terminateMX;
-			}
-			if( OPTdebug &  OPTremap){
-				fprintf(stderr,"#Upgrade type %d %d\n",i, getArg(sig,i-2));
 			}
 
 			setVarType(mq, i-2,newBatType(getArgType(mb,p,i)));
@@ -226,8 +186,11 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 				cst.vtype = TYPE_bat;
 				cst.val.bval = bat_nil;
 				cst.len = 0;
-				getArg(q,1) = defConstant(mq, tpe, &cst);
-				setVarType(mq, getArg(q,1), tpe);
+				m =defConstant(mq, tpe, &cst);
+				if( m >= 0){
+					getArg(q,1) = m;
+					setVarType(mq, getArg(q,1), tpe);
+				}
 			} else{
 				/* handle constant tail setting */
 				int tpe = newBatType(getArgType(mq, q, 1));
@@ -235,7 +198,8 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 				setVarType(mq,getArg(q,0),tpe);
 				setModuleId(q,algebraRef);
 				setFunctionId(q,projectRef);
-				q= pushArgument(mb,q, getArg(q,1));
+				q= addArgument(mb,q, getArg(q,1));
+				mq->stmt[i] = q;
 				getArg(q,1)= refbat;
 			}
 		}
@@ -257,7 +221,7 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 					q->typechk = TYPE_UNKNOWN;
 
 					/* now see if we can resolve the instruction */
-					typeChecker(cntxt->usermodule,mq,q,TRUE);
+					typeChecker(cntxt->usermodule,mq,q,i,TRUE);
 					if( q->typechk== TYPE_UNKNOWN)
 						goto terminateMX;
 					actions++;
@@ -269,11 +233,12 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 					!(isaBatType( getArgType(mq,q,1))) ){
 					setModuleId(q,algebraRef);
 					setFunctionId(q,projectRef);
-					q= pushArgument(mq,q, getArg(q,1));
+					q= addArgument(mq,q, getArg(q,1));
+					mq->stmt[i] = q;
 					getArg(q,1)= refbat;
 				
 					q->typechk = TYPE_UNKNOWN;
-					typeChecker(cntxt->usermodule,mq,q,TRUE);
+					typeChecker(cntxt->usermodule,mq,q,i,TRUE);
 					if( q->typechk== TYPE_UNKNOWN)
 						goto terminateMX;
 					actions++;
@@ -285,12 +250,6 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 
 	if(mq->errors){
 terminateMX:
-
-		if( OPTdebug &  OPTremap){
-			fprintf(stderr,"Abort remap\n");
-			if (q)
-				fprintInstruction(stderr,mb,0,q,LIST_MAL_ALL);
-		}
 
 		freeMalBlk(mq);
 		GDKfree(upgrade);
@@ -311,14 +270,6 @@ terminateMX:
 	delArgument(p,2);
 	delArgument(p,1);
 	inlineMALblock(mb,pc,mq);
-
-	if( OPTdebug &  OPTremap){
-		fprintInstruction(stderr,mb,0,p,LIST_MAL_ALL);
-		fprintf(stderr,"#NEW BLOCK\n");
-		fprintFunction(stderr,mq, 0, LIST_MAL_ALL);
-		fprintf(stderr,"#INLINED RESULT\n");
-		fprintFunction(stderr,mb, 0, LIST_MAL_ALL);
-	}
 
 	freeMalBlk(mq);
 	GDKfree(upgrade);
@@ -341,7 +292,7 @@ static struct{
 {0,0,0}};
 
 static int
-OPTremapSwitched(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Module scope){
+OPTremapSwitched(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int idx, Module scope){
 	char *fcn;
 	int r,i;
 	(void) stk;
@@ -360,7 +311,7 @@ OPTremapSwitched(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Module
 		getVarConstant(mb, getArg(pci, 2)).val.sval = putNameLen(OperatorMap[i].dst,OperatorMap[i].len);
 		getVarConstant(mb, getArg(pci, 2)).len = OperatorMap[i].len;
 		r= getArg(pci,3); getArg(pci,3)=getArg(pci,4);getArg(pci,4)=r;
-		r= OPTremapDirect(cntxt,mb, stk, pci, scope);
+		r= OPTremapDirect(cntxt,mb, stk, pci, idx, scope);
 
 		/* always restore the allocated function name */
 		getVarConstant(mb, getArg(pci, 2)).val.sval= fcn;
@@ -391,7 +342,7 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	limit = mb->stop;
 	slimit = mb->ssize;
 	if ( newMalBlkStmt(mb, mb->ssize) < 0 )
-		throw(MAL,"optmizer.remap", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL,"optmizer.remap", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	for (i = 0; i < limit; i++) {
 		p = old[i];
@@ -407,23 +358,12 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			Symbol s = findSymbol(cntxt->usermodule, mod,fcn);
 
 			if (s && s->def->inlineProp ){
-
-				if( OPTdebug &  OPTremap){
-					fprintf(stderr,"#Multiplex inline\n");
-					fprintInstruction(stderr,mb,0,p,LIST_MAL_ALL);
-				}
-
 				pushInstruction(mb, p);
 				if( OPTmultiplexInline(cntxt,mb,p,mb->stop-1) ){
 					doit++;
-
-					if( OPTdebug &  OPTremap){
-						fprintf(stderr,"#actions %d\n",doit);
-					}
 				}
-
-			} else if (OPTremapDirect(cntxt, mb, stk, p, scope) ||
-				OPTremapSwitched(cntxt, mb, stk, p, scope)) {
+			} else if (OPTremapDirect(cntxt, mb, stk, p, i, scope) ||
+				OPTremapSwitched(cntxt, mb, stk, p, i, scope)) {
 				freeInstruction(p); 
 				doit++;
 			} else {
@@ -437,11 +377,11 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			InstrPtr cnt;
 			sum = copyInstruction(p);
 			if( sum == NULL)
-				throw(MAL, "remap", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				throw(MAL, "remap", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			cnt = copyInstruction(p);
 			if( cnt == NULL){
 				freeInstruction(sum);
-				throw(MAL, "remap", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				throw(MAL, "remap", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 			setFunctionId(sum, sumRef);
 			setFunctionId(cnt, countRef);
@@ -452,35 +392,35 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 			t = newInstruction(mb, batcalcRef, putName("=="));
 			getArg(t,0) = newTmpVariable(mb, newBatType(TYPE_bit));
-			t = pushArgument(mb, t, getDestVar(cnt));
+			t = addArgument(mb, t, getDestVar(cnt));
 			t = pushLng(mb, t, 0);
 			pushInstruction(mb, t);
 			iszero = t;
 
 			t = newInstruction(mb, batcalcRef, dblRef);
 			getArg(t,0) = newTmpVariable(mb, getArgType(mb, p, 0));
-			t = pushArgument(mb, t, getDestVar(sum));
+			t = addArgument(mb, t, getDestVar(sum));
 			pushInstruction(mb, t);
 			sum = t;
 
 			t = newInstruction(mb, batcalcRef, putName("ifthenelse"));
 			getArg(t,0) = newTmpVariable(mb, getArgType(mb, p, 0));
-			t = pushArgument(mb, t, getDestVar(iszero));
+			t = addArgument(mb, t, getDestVar(iszero));
 			t = pushNil(mb, t, TYPE_dbl);
-			t = pushArgument(mb, t, getDestVar(sum));
+			t = addArgument(mb, t, getDestVar(sum));
 			pushInstruction(mb, t);
 			sum = t;
 
 			t = newInstruction(mb, batcalcRef, dblRef);
 			getArg(t,0) = newTmpVariable(mb, getArgType(mb, p, 0));
-			t = pushArgument(mb, t, getDestVar(cnt));
+			t = addArgument(mb, t, getDestVar(cnt));
 			pushInstruction(mb, t);
 			cnt = t;
 
 			avg = newInstruction(mb, batcalcRef, divRef);
 			getArg(avg, 0) = getArg(p, 0);
-			avg = pushArgument(mb, avg, getDestVar(sum));
-			avg = pushArgument(mb, avg, getDestVar(cnt));
+			avg = addArgument(mb, avg, getDestVar(sum));
+			avg = addArgument(mb, avg, getDestVar(cnt));
 			freeInstruction(p);
 			pushInstruction(mb, avg);
 		} else {
@@ -493,12 +433,14 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	GDKfree(old);
 
 	if (doit) 
-		chkTypes(cntxt->usermodule,mb,TRUE);
+		msg = chkTypes(cntxt->usermodule,mb,TRUE);
     /* Defense line against incorrect plans */
-    if( mb->errors == MAL_SUCCEED && doit > 0){
-        chkTypes(cntxt->usermodule, mb, FALSE);
-        chkFlow(mb);
-        chkDeclarations(mb);
+    if( msg == MAL_SUCCEED && doit > 0){
+        msg = chkTypes(cntxt->usermodule, mb, FALSE);
+	if (!msg)
+        	msg = chkFlow(mb);
+	if (!msg)
+        	msg = chkDeclarations(mb);
     }
     /* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;
@@ -506,10 +448,5 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
     newComment(mb,buf);
 	if( doit >= 0)
 		addtoMalBlkHistory(mb);
-
-    if( OPTdebug &  OPTremap){
-        fprintf(stderr, "#REMAP optimizer exit\n");
-        fprintFunction(stderr, mb, 0,  LIST_MAL_ALL);
-    }
 	return msg;
 }

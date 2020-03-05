@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -87,8 +87,8 @@ static struct PIPELINES {
 	 "optimizer.generator();"
 	 "optimizer.profiler();"
 	 "optimizer.candidates();"
-	 "optimizer.postfix();"
 	 "optimizer.deadcode();"
+	 "optimizer.postfix();"
 //	 "optimizer.jit();" awaiting the new batcalc api
 	 "optimizer.wlc();"
 	 "optimizer.garbageCollector();",
@@ -123,8 +123,8 @@ static struct PIPELINES {
 	 "optimizer.generator();"
 	 "optimizer.profiler();"
 	 "optimizer.candidates();"
-	 "optimizer.postfix();"
 	 "optimizer.deadcode();"
+	 "optimizer.postfix();"
 //	 "optimizer.jit();" awaiting the new batcalc api
 	 "optimizer.oltp();"
 	 "optimizer.wlc();"
@@ -160,8 +160,8 @@ static struct PIPELINES {
 	 "optimizer.volcano();"
 	 "optimizer.profiler();"
 	 "optimizer.candidates();"
-	 "optimizer.postfix();"
 	 "optimizer.deadcode();"
+	 "optimizer.postfix();"
 //	 "optimizer.jit();" awaiting the new batcalc api
 	 "optimizer.wlc();"
 	 "optimizer.garbageCollector();",
@@ -201,8 +201,8 @@ static struct PIPELINES {
 	 "optimizer.generator();"
 	 "optimizer.profiler();"
 	 "optimizer.candidates();"
-	 "optimizer.postfix();"
 	 "optimizer.deadcode();"
+	 "optimizer.postfix();"
 //	 "optimizer.jit();" awaiting the new batcalc api
 	 "optimizer.wlc();"
 	 "optimizer.garbageCollector();",
@@ -241,8 +241,8 @@ static struct PIPELINES {
 	 "optimizer.generator();"
 	 "optimizer.profiler();"
 	 "optimizer.candidates();"
-	 "optimizer.postfix();"
 	 "optimizer.deadcode();"
+	 "optimizer.postfix();"
 //	 "optimizer.jit();" awaiting the new batcalc api
 	 "optimizer.wlc();"
 	 "optimizer.garbageCollector();",
@@ -285,7 +285,7 @@ addPipeDefinition(Client cntxt, const char *name, const char *pipe)
 
 	if (i == MAXOPTPIPES) {
 		MT_lock_unset(&pipeLock);
-		throw(MAL, "optimizer.addPipeDefinition", SQLSTATE(HY001) "Out of slots");
+		throw(MAL, "optimizer.addPipeDefinition", SQLSTATE(HY013) "Out of slots");
 	}
 	if (pipes[i].name && pipes[i].builtin) {
 		MT_lock_unset(&pipeLock);
@@ -305,7 +305,7 @@ addPipeDefinition(Client cntxt, const char *name, const char *pipe)
 		pipes[i].def = oldpipe.def;
 		pipes[i].status = oldpipe.status;
 		MT_lock_unset(&pipeLock);
-		throw(MAL, "optimizer.addPipeDefinition", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "optimizer.addPipeDefinition", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	pipes[i].mb = NULL;
 	MT_lock_unset(&pipeLock);
@@ -367,7 +367,7 @@ getPipeCatalog(bat *nme, bat *def, bat *stat)
 		BBPreclaim(b);
 		BBPreclaim(bn);
 		BBPreclaim(bs);
-		throw(MAL, "optimizer.getpipeDefinition", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "optimizer.getpipeDefinition", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	for (i = 0; i < MAXOPTPIPES && pipes[i].name; i++) {
@@ -383,7 +383,7 @@ getPipeCatalog(bat *nme, bat *def, bat *stat)
 			BBPreclaim(b);
 			BBPreclaim(bn);
 			BBPreclaim(bs);
-			throw(MAL, "optimizer.getpipeDefinition", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "optimizer.getpipeDefinition", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 	}
 
@@ -451,14 +451,12 @@ validateOptimizerPipes(void)
 	int i;
 	str msg = MAL_SUCCEED;
 
-	MT_lock_set(&mal_contextLock);
 	for (i = 0; i < MAXOPTPIPES && pipes[i].def; i++)
 		if (pipes[i].mb) {
 			msg = validatePipe(pipes[i].mb);
 			if (msg != MAL_SUCCEED)
 				break;
 		}
-	MT_lock_unset(&mal_contextLock);
 	return msg;
 }
 
@@ -486,11 +484,9 @@ compileOptimizer(Client cntxt, const char *name)
 					msg = compileString(&fcn,cntxt, buf);
 					if( msg == MAL_SUCCEED){
 						compiled = findSymbol(cntxt->usermodule,getName("optimizer"), getName(pipes[j].name));
-						if( compiled){
+						if( compiled)
 							pipes[j].mb = compiled->def;
-							//fprintFunction(stderr, pipes[j].mb, 0, LIST_MAL_ALL);
-						}
-					}
+					} else break;
 				}
 			}
 			if (msg != MAL_SUCCEED ||
@@ -512,6 +508,10 @@ compileAllOptimizers(Client cntxt)
     }
 	return msg;
 }
+
+/* 
+ * Add a new components of the optimizer pipe to the plan
+ */
 str
 addOptimizerPipe(Client cntxt, MalBlkPtr mb, const char *name)
 {
@@ -524,7 +524,7 @@ addOptimizerPipe(Client cntxt, MalBlkPtr mb, const char *name)
 			break;
 
 	if (i == MAXOPTPIPES)
-		throw(MAL, "optimizer.addOptimizerPipe", SQLSTATE(HY001) "Out of slots");
+		throw(MAL, "optimizer.addOptimizerPipe", SQLSTATE(HY013) "Out of slots");
 
 	if (pipes[i].mb == NULL)
 		msg = compileOptimizer(cntxt, name);
@@ -535,12 +535,11 @@ addOptimizerPipe(Client cntxt, MalBlkPtr mb, const char *name)
 			if( getModuleId(q) != optimizerRef)
 				continue;
 			p = copyInstruction(q);
-			if (!p) { // oh malloc you cruel mistress
-				throw(MAL, "optimizer.addOptimizerPipe", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-			}
+			if (!p)
+				throw(MAL, "optimizer.addOptimizerPipe", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			for (k = 0; k < p->argc; k++)
 				getArg(p, k) = cloneVariable(mb, pipes[i].mb, getArg(p, k));
-			typeChecker(cntxt->usermodule, mb, p, FALSE);
+			typeChecker(cntxt->usermodule, mb, p, j, FALSE);
 			pushInstruction(mb, p);
 		}
 	}

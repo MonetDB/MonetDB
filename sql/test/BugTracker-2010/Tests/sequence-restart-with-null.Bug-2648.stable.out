@@ -26,15 +26,15 @@ stdout of test 'sequence-restart-with-null.Bug-2648` in directory 'sql/test/BugT
 #create sequence testseq_2648 as integer start with 1;
 #create table testtbl_2648 (id integer);
 #select next value for testseq_2648;
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 1	]
 #alter sequence testseq_2648 restart with (select max(id) from testtbl_2648);
 #select next value for testseq_2648;
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 2	]

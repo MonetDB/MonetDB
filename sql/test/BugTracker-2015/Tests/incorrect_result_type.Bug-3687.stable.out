@@ -27,20 +27,17 @@ stdout of test 'incorrect_result_type.Bug-3687` in directory 'sql/test/BugTracke
 #create table foo (a int);
 #insert into foo values (1),(2),(3);
 [ 3     ]
-#select sum(1) as v from foo group by a;
+#select cast(sum(1) as bigint) as v from foo group by a;
 % . # table_name
-# .L3 # table_name
 % v # name
 % bigint # type
 % 1 # length
 [ 1     ]
 [ 1     ]
 [ 1     ]
-#select 100*v from (select sum(1) as v from foo group by a) as t;
+#select cast(100*v as bigint) from (select sum(1) as v from foo group by a) as t;
 % . # table_name
-# .L5 # table_name
-% L # name
-# L5 # name
+% %2 # name
 % bigint # type
 % 3 # length
 [ 100   ]

@@ -2,7 +2,7 @@
 -- License, v. 2.0.  If a copy of the MPL was not distributed with this
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/.
 --
--- Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+-- Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
 
 -- (co) Martin Kersten
 -- The JSON type comes with a few operators.
@@ -81,12 +81,6 @@ GRANT EXECUTE ON FUNCTION json.valuearray(json) TO PUBLIC;
 create function json.text(js json)
 returns string external name json.text;
 GRANT EXECUTE ON FUNCTION json.text(json) TO PUBLIC;
-create function json.text(js string)
-returns string external name json.text;
-GRANT EXECUTE ON FUNCTION json.text(string) TO PUBLIC;
-create function json.text(js int)
-returns string external name json.text;
-GRANT EXECUTE ON FUNCTION json.text(int) TO PUBLIC;
 
 -- The remainder awaits the implementation
 

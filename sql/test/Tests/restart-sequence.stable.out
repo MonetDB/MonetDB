@@ -34,14 +34,14 @@ stdout of test 'restart-sequence` in directory 'sql/test` itself:
 % 6,	3,	1,	1,	1,	1,	1,	5 # length
 [ "mytest",	"sys",	1,	0,	0,	1,	1,	false	]
 #SELECT NEXT VALUE FOR "mytest";
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 1	]
 #SELECT NEXT VALUE FOR "mytest";
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 2	]
@@ -56,14 +56,14 @@ stdout of test 'restart-sequence` in directory 'sql/test` itself:
 % 6,	3,	2,	1,	1,	1,	1,	5 # length
 [ "mytest",	"sys",	10,	0,	0,	1,	1,	false	]
 #SELECT NEXT VALUE FOR "mytest";
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% %1 # name
 % bigint # type
 % 2 # length
 [ 10	]
 #SELECT NEXT VALUE FOR "mytest";
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% %1 # name
 % bigint # type
 % 2 # length
 [ 11	]

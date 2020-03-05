@@ -4,7 +4,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
 
 TOPDIR = .
 srcdir = $(TOPDIR)\..
@@ -25,6 +25,8 @@ _all: update_winconfig_conds_py "$(srcdir)\Makefile.msc" monetdb_config.h unistd
 install: targetdirs all
 	$(MAKE) /nologo /f "$(srcdir)\Makefile.msc" "prefix=$(prefix)" "bits=$(bits)" install
 	$(INSTALL) .monetdb "$(sysconfdir)"
+
+makewxs:
 	$(PYTHON) $(NT)\mksqlwxs.py $(VERSION) "$(MAKE_INCLUDEFILE)" "$(prefix)" > "$(prefix)\MonetDB5-SQL-Installer.wxs"
 	$(PYTHON) $(NT)\mkodbcwxs.py $(VERSION) "$(MAKE_INCLUDEFILE)" "$(prefix)" > "$(prefix)\MonetDB-ODBC-Installer.wxs"
 

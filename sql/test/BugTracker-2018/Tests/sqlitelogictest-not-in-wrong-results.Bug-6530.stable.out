@@ -27,8 +27,8 @@ stdout of test 'sqlitelogictest-not-in-wrong-results.Bug-6530` in directory 'sql
 #INSERT INTO tab0 VALUES (97,1,99), (15,81,47), (87,21,10);
 [ 3	]
 #SELECT ALL - ( - COUNT ( * ) ) FROM tab0 AS cor0 WHERE col0 / ( - + col2 ) NOT IN ( + + col0, + col0 * + ( col1 ), + ( + - col0 ) * - 45, + CAST ( NULL AS INTEGER ) );
-% sys.L31 # table_name
-% L31 # name
+% sys. # table_name
+% %3 # name
 % bigint # type
 % 1 # length
 [ 0	]

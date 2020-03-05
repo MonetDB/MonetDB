@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /* Declarations for getopt.
@@ -47,16 +47,7 @@ extern "C" {
 #endif
 
 #ifndef moptions_export
-/* avoid using "#ifdef WIN32" so that this file does not need our config.h */
-#if defined(_MSC_VER) || defined(__CYGWIN__) || defined(__MINGW32__)
-#if !defined(LIBMOPTIONS) && !defined(LIBGDK) && !defined(LIBMAPI)
-#define moptions_export extern __declspec(dllimport)
-#else
-#define moptions_export extern __declspec(dllexport)
-#endif
-#else
 #define moptions_export extern
-#endif
 #endif
 
 /* For communication from `getopt' to the caller.

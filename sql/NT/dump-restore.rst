@@ -2,16 +2,18 @@
 .. License, v. 2.0.  If a copy of the MPL was not distributed with this
 .. file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ..
-.. Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+.. Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
 
-Dumping the SQL database
-------------------------
+Dumping a MonetDB SQL database
+------------------------------
 
-Start the SQL Server and SQL Client as usual.
+Start MonetDB Server (msqlserver.bat) and MonetDB Client (mclient.bat)
+as usual.
 
-In the SQL Client, type the following three commands.  Type them
-without any extra white space::
+In the mclient shell, type the following three commands.  Type them
+without any extra white space:
 
+::
 	>.../dump.sql
 	\D
 	>
@@ -25,30 +27,32 @@ file.  And finally a line with just a greater than symbol.  This
 closes the file and redirects the output again to the screen.
 
 [Note: if you don't use the absolute path name of a file, the file
-will be created in the directory where the SQL Client was started.  On
+will be created in the directory where the mclient was started.  On
 Windows this is at the location where the program was installed, and
 therefore using an absolute path name is highly recommended.]
 
-It is also possible to dump from the command line.  Start a SQL
-Server, and then issue the command
+It is also possible to dump from the command line.  Start a MonetDB
+Server, and then issue the command:
 
 ::
-	msqldump -umonetdb > dump.sql
+	msqldump.bat -umonetdb > dump.sql
 
 You will need to provide the password (monetdb).
 
-This command will connect to the SQL Server and dump the database into
-the file dump.sql in the current directory.
+This command will connect to the MonetDB Server and dump the database
+into the file dump.sql in the current directory.
 
-Restoring the SQL database
---------------------------
+
+Restoring a MonetDB SQL database
+--------------------------------
 
 After having dumped the database per the preceding instructions, it is
 possible to restore the database using the following commands.
 
-Start the SQL Server and SQL Client as usual.
+Start MonetDB Server (msqlserver.bat) and MonetDB Client (mclient.bat)
+as usual.
 
-In the SQL Client, type the following command.
+In the mclient shell, type the following command:
 
 ::
 	<.../dump.sql
@@ -56,14 +60,24 @@ In the SQL Client, type the following command.
 That is, a less than symbol followed by the absolute (!) path name of
 the dump file that was produced using the dump instructions.   Again,
 unless you use an absolute path name, the file name is relative to
-where the SQL client was started, which on Windows may not be where
+where the mclient was started, which on Windows may not be where
 you expect.
 
-It is also possible to restore from the command line.  Start a SQL
-Server, and then issue the command
+It is also possible to restore from the command line.  Start a MonetDB
+Server, and then issue the command:
 
 ::
-	mclient -lsql -umonetdb < dump.sql
+	mclient.bat -lsql -umonetdb < dump.sql
 
 You will need to provide the password (monetdb).
+
+
+Online documentation
+--------------------
+
+For more information visit web pages:
+.. Dump-Restore Guide: https://www.monetdb.org/Documentation/UserGuide/DumpRestore
+.. msqldump-man-page: https://www.monetdb.org/Documentation/msqldump-man-page
+.. mclient-man-page: https://www.monetdb.org/Documentation/mclient-man-page
+.. mserver5-man-page: https://www.monetdb.org/Documentation/mserver5-man-page
 

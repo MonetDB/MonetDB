@@ -11,7 +11,7 @@ stdout of test 'subselect.Bug-6700` in directory 'sql/test/BugTracker-2019` itse
 # Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
 # Found 62.693 GiB available main-memory.
 # Copyright (c) 1993 - July 2008 CWI.
-# Copyright (c) August 2008 - 2019 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008 - 2020 MonetDB B.V., all rights reserved
 # Visit https://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://methuselah.da.cwi.nl:36777/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-26939/.s.monetdb.36777
@@ -91,9 +91,10 @@ stdout of test 'subselect.Bug-6700` in directory 'sql/test/BugTracker-2019` itse
 #      select count(1)
 #      from "testTable1" "inner"
 #      where ("inner"."B" = "outer"."A")
-#) from "testTable1" "outer";
-% sys.outer,	sys.outer,	.L6 # table_name
-% A,	B,	L6 # name
+#) from "testTable1" "outer"
+#order by "A", "B";
+% .outer,	.outer,	. # table_name
+% A,	B,	%1 # name
 % varchar,	varchar,	bigint # type
 % 4,	4,	1 # length
 [ "Cat1",	"Cat1",	2	]
@@ -103,9 +104,10 @@ stdout of test 'subselect.Bug-6700` in directory 'sql/test/BugTracker-2019` itse
 #      select count(*)
 #      from "testTable1" "inner"
 #      where ("inner"."B" = "outer"."A")
-#) from "testTable1" "outer";
-% sys.outer,	sys.outer,	.L6 # table_name
-% A,	B,	L6 # name
+#) from "testTable1" "outer"
+#order by "A", "B";
+% .outer,	.outer,	. # table_name
+% A,	B,	%1 # name
 % varchar,	varchar,	bigint # type
 % 4,	4,	1 # length
 [ "Cat1",	"Cat1",	2	]
@@ -115,9 +117,10 @@ stdout of test 'subselect.Bug-6700` in directory 'sql/test/BugTracker-2019` itse
 #	select count(1)
 #	from "testTable1" "inner"
 #	where ("inner"."B" = "outer"."A") and ("outer"."A" is not null)
-#) from "testTable1" "outer";
-% sys.outer,	sys.outer,	.L6 # table_name
-% A,	B,	L6 # name
+#) from "testTable1" "outer"
+#order by "A", "B";
+% .outer,	.outer,	. # table_name
+% A,	B,	%1 # name
 % varchar,	varchar,	bigint # type
 % 4,	4,	1 # length
 [ "Cat1",	"Cat1",	2	]
@@ -127,9 +130,10 @@ stdout of test 'subselect.Bug-6700` in directory 'sql/test/BugTracker-2019` itse
 #	select count(*)
 #	from "testTable1" "inner"
 #	where ("inner"."B" = "outer"."A") and ("outer"."A" is not null)
-#) from "testTable1" "outer";
-% sys.outer,	sys.outer,	.L6 # table_name
-% A,	B,	L6 # name
+#) from "testTable1" "outer"
+#order by "A", "B";
+% .outer,	.outer,	. # table_name
+% A,	B,	%1 # name
 % varchar,	varchar,	bigint # type
 % 4,	4,	1 # length
 [ "Cat1",	"Cat1",	2	]
@@ -142,15 +146,16 @@ stdout of test 'subselect.Bug-6700` in directory 'sql/test/BugTracker-2019` itse
 #         "inner"."A" = "outer"."A" or 
 #         ("inner"."A" is null and  "outer"."A" is null)
 #      )
-#) from "testTable2" "outer";
-% sys.outer,	sys.outer,	.L6 # table_name
-% A,	B,	L6 # name
+#) from "testTable2" "outer"
+#order by "A", "B";
+% .outer,	.outer,	. # table_name
+% A,	B,	%1 # name
 % varchar,	double,	double # type
 % 4,	24,	24 # length
+[ NULL,	NULL,	NULL	]
 [ "Cat1",	2,	2	]
 [ "Cat2",	3,	7	]
 [ "Cat2",	4,	7	]
-[ NULL,	NULL,	NULL	]
 #select "A", "B", (
 #	select sum("B") 
 #	from "testTable2" "inner"
@@ -158,15 +163,16 @@ stdout of test 'subselect.Bug-6700` in directory 'sql/test/BugTracker-2019` itse
 #         "inner"."A" = "outer"."A" or 
 #         ("inner"."A" is null and  "outer"."A" is null)
 #      ) and ("A" = 'Cat7')
-#) from "testTable2" "outer";
-% sys.outer,	sys.outer,	.L6 # table_name
-% A,	B,	L6 # name
+#) from "testTable2" "outer"
+#order by "A", "B";
+% .outer,	.outer,	. # table_name
+% A,	B,	%1 # name
 % varchar,	double,	double # type
 % 4,	24,	24 # length
+[ NULL,	NULL,	NULL	]
 [ "Cat1",	2,	NULL	]
 [ "Cat2",	3,	NULL	]
 [ "Cat2",	4,	NULL	]
-[ NULL,	NULL,	NULL	]
 #select "A", "B", (
 #	select sum("B") 
 #	from "testTable2" "inner"
@@ -174,15 +180,16 @@ stdout of test 'subselect.Bug-6700` in directory 'sql/test/BugTracker-2019` itse
 #         "inner"."A" = "outer"."A" or 
 #         ("inner"."A" is null and  "outer"."A" is null)
 #      ) and (true = false)
-#) from "testTable2" "outer";
-% sys.outer,	sys.outer,	.L6 # table_name
-% A,	B,	L6 # name
+#) from "testTable2" "outer"
+#order by "A", "B";
+% .outer,	.outer,	. # table_name
+% A,	B,	%1 # name
 % varchar,	double,	double # type
 % 4,	24,	24 # length
+[ NULL,	NULL,	NULL	]
 [ "Cat1",	2,	NULL	]
 [ "Cat2",	3,	NULL	]
 [ "Cat2",	4,	NULL	]
-[ NULL,	NULL,	NULL	]
 #rollback;
 
 # 09:38:47 >  

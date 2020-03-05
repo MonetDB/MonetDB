@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /**
@@ -96,10 +96,11 @@ readConfFileFull(confkeyval *list, FILE *cnf) {
 	while (fgets(buf, sizeof(buf), cnf) != NULL) {
 		if (strlen(buf) > 1 && buf[0] != '#') {
 			/* tokenize */
-			key = strtok(buf, separator);
-			val = strtok(NULL, separator);
+			char *sp;
+			key = strtok_r(buf, separator, &sp);
+			val = strtok_r(NULL, separator, &sp);
 			/* strip trailing newline */
-			val = strtok(val, "\n");
+			val = strtok_r(val, "\n", &sp);
 			if ((err = setConfValForKey(t, key, val)) != NULL) {
 				if (strstr(err, "is not recognized") != NULL) {
 					/* If we already have PROPLENGTH entries in the list, ignore
@@ -445,7 +446,12 @@ generatePassphraseFile(const char *path)
 
 	/* delete such that we are sure we recreate the file with restricted
 	 * permissions */
-	remove(path);
+	if (remove(path) == -1 && errno != ENOENT) {
+		char err[512];
+		snprintf(err, sizeof(err), "unable to remove '%s': %s",
+				path, strerror(errno));
+		return(strdup(err));
+	}
 	if ((fd = open(path, O_CREAT | O_WRONLY | O_CLOEXEC, S_IRUSR | S_IWUSR)) == -1) {
 		char err[512];
 		snprintf(err, sizeof(err), "unable to open '%s': %s",

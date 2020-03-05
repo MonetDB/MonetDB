@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -102,7 +102,7 @@ epilogue(int cnt, bat *subcommit)
 			if (b) {
 				/* check mmap modes */
 				if (BATcheckmodes(b, true) != GDK_SUCCEED)
-					fprintf(stderr, "#epilogue: BATcheckmodes failed\n");
+					TRC_ERROR(GDK, "BATcheckmodes failed\n");
 			}
 		}
 		if ((BBP_status(bid) & BBPDELETED) && BBP_refs(bid) <= 0 && BBP_lrefs(bid) <= 0) {

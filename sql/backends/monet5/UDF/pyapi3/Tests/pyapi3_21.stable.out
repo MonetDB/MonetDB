@@ -57,8 +57,8 @@ stdout of test 'pyapi3_21` in directory 'sql/backends/monet5/UDF/pyapi3` itself:
 #};
 #CREATE TABLE python_objects AS SELECT * FROM pyapi21_create() WITH DATA;
 #SELECT pyapi21_load(s) FROM python_objects;
-% sys.L2 # table_name
-% L2 # name
+% sys.%1 # table_name
+% %1 # name
 % boolean # type
 % 5 # length
 [ true	]

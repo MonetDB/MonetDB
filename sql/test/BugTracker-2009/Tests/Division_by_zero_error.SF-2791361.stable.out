@@ -27,16 +27,16 @@ stdout of test 'Division_by_zero_error.SF-2791361` in directory 'sql/test/BugTra
 [ 1	]
 [ 1	]
 #select case when (bla1 - bla2) > 0 then 1/(bla1 - bla2) else 0 end from test2;
-% sys.L2 # table_name
-% L2 # name
+% sys. # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ 0	]
 [ 0	]
 [ 0	]
 #select case when (bla1 - bla2) > 0 then 1/(bla1 - bla2) else 0 end from test2;
-% sys.L2 # table_name
-% L2 # name
+% sys. # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ 0	]
@@ -59,14 +59,14 @@ stdout of test 'Division_by_zero_error.SF-2791361` in directory 'sql/test/BugTra
 #then (n2.long - n1.long)/(n2.lat - n1.lat) else 0 end from nodes_legacy as
 #n1, nodes_legacy as n2, segments where node1 = n1.id and node2 = n2.id
 #limit 10;
-% sys.n1,	sys.n1,	sys.n2,	sys.n2,	sys.L6 # table_name
-% lat,	long,	lat,	long,	L6 # name
+% sys.n1,	sys.n1,	sys.n2,	sys.n2,	sys. # table_name
+% lat,	long,	lat,	long,	%5 # name
 % double,	double,	double,	double,	double # type
 % 24,	24,	24,	24,	24 # length
 #drop table "sys"."segments";
 #drop table "sys"."nodes_legacy";
 #select case when (2 - 2) > 0 then (3 - 2)/(2 - 2) else 0 end as "test";
-% .L2 # table_name
+% . # table_name
 % test # name
 % tinyint # type
 % 1 # length

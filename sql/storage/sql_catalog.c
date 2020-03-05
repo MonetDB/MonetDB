@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -74,7 +74,6 @@ _cs_find_name(changeset * cs, const char *name)
 {
 	return _list_find_name(cs->set, name);
 }
-
 
 node *
 cs_find_name(changeset * cs, const char *name)
@@ -165,10 +164,54 @@ find_sql_key(sql_table *t, const char *kname)
 	return _cs_find_name(&t->keys, kname);
 }
 
+node *
+find_sql_key_node(sql_schema *s, sqlid id)
+{
+	return list_find_base_id(s->keys, id);
+}
+
+sql_key *
+sql_trans_find_key(sql_trans *tr, sqlid id)
+{
+	node *n, *m;
+	sql_key *k = NULL;
+
+	if (tr->schemas.set) {
+		for (n = tr->schemas.set->h; n && !k; n = n->next) {
+			m = find_sql_key_node(n->data, id);
+			if (m)
+				k = m->data;
+		}
+	}
+	return k;
+}
+
 sql_idx *
 find_sql_idx(sql_table *t, const char *iname)
 {
 	return _cs_find_name(&t->idxs, iname);
+}
+
+node *
+find_sql_idx_node(sql_schema *s, sqlid id)
+{
+	return list_find_base_id(s->idxs, id);
+}
+
+sql_idx *
+sql_trans_find_idx(sql_trans *tr, sqlid id)
+{
+	node *n, *m;
+	sql_idx *i = NULL;
+
+	if (tr->schemas.set) {
+		for (n = tr->schemas.set->h; n && !i; n = n->next) {
+			m = find_sql_idx_node(n->data, id);
+			if (m)
+				i = m->data;
+		}
+	}
+	return i;
 }
 
 sql_column *
@@ -203,6 +246,22 @@ node *
 find_sql_table_node(sql_schema *s, sqlid id)
 {
 	return cs_find_id(&s->tables, id);
+}
+
+sql_table *
+sql_trans_find_table(sql_trans *tr, sqlid id)
+{
+	node *n, *m;
+	sql_table *t = NULL;
+
+	if (tr->schemas.set) {
+		for (n = tr->schemas.set->h; n && !t; n = n->next) {
+			m = find_sql_table_node(n->data, id);
+			if (m)
+				t = m->data;
+		}
+	}
+	return t;
 }
 
 sql_sequence *
@@ -250,13 +309,13 @@ find_sqlname(list *l, const char *name)
 }
 
 node *
-find_sql_type_node(sql_schema * s, sqlid id)
+find_sql_type_node(sql_schema *s, sqlid id)
 {
 	return cs_find_id(&s->types, id);
 }
 
 sql_type *
-find_sql_type(sql_schema * s, const char *tname)
+find_sql_type(sql_schema *s, const char *tname)
 {
 	return find_sqlname(s->types.set, tname);
 }
@@ -279,20 +338,36 @@ sql_trans_bind_type(sql_trans *tr, sql_schema *c, const char *name)
 	return t;
 }
 
+sql_type *
+sql_trans_find_type(sql_trans *tr, sqlid id)
+{
+	node *n, *m;
+	sql_type *t = NULL;
+
+	if (tr->schemas.set) {
+		for (n = tr->schemas.set->h; n && !t; n = n->next) {
+			m = find_sql_type_node(n->data, id);
+			if (m)
+				t = m->data;
+		}
+	}
+	return t;
+}
+
 node *
-find_sql_func_node(sql_schema * s, sqlid id)
+find_sql_func_node(sql_schema *s, sqlid id)
 {
 	return cs_find_id(&s->funcs, id);
 }
 
 sql_func *
-find_sql_func(sql_schema * s, const char *tname)
+find_sql_func(sql_schema *s, const char *tname)
 {
 	return _cs_find_name(&s->funcs, tname);
 }
 
 list *
-find_all_sql_func(sql_schema * s, const char *name, sql_ftype type)
+find_all_sql_func(sql_schema *s, const char *name, sql_ftype type)
 {
 	list *l = s->funcs.set, *res = NULL;
 	node *n = NULL;
@@ -342,6 +417,28 @@ sql_trans_find_func(sql_trans *tr, sqlid id)
 	if (tr->schemas.set) {
 		for (n = tr->schemas.set->h; n && !t; n = n->next) {
 			m = find_sql_func_node(n->data, id);
+			if (m)
+				t = m->data;
+		}
+	}
+	return t;
+}
+
+node *
+find_sql_trigger_node(sql_schema *s, sqlid id)
+{
+	return list_find_base_id(s->triggers, id);
+}
+
+sql_trigger *
+sql_trans_find_trigger(sql_trans *tr, sqlid id)
+{
+	node *n, *m;
+	sql_trigger *t = NULL;
+
+	if (tr->schemas.set) {
+		for (n = tr->schemas.set->h; n && !t; n = n->next) {
+			m = find_sql_trigger_node(n->data, id);
 			if (m)
 				t = m->data;
 		}

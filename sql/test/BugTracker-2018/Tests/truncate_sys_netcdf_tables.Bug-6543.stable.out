@@ -24,61 +24,61 @@ stdout of test 'truncate_sys_netcdf_tables.Bug-6543` in directory 'sql/test/BugT
 # 17:32:24 >  
 
 #SELECT (COUNT(*) > 0) AS has_rows FROM sys.netcdf_vars;
-% .L4 # table_name
+% . # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM sys.netcdf_vars;
-% .L4 # table_name
+% . # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM sys.netcdf_vardim;
-% .L4 # table_name
+% . # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM sys.netcdf_vardim;
-% .L4 # table_name
+% . # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM sys.netcdf_files;
-% .L4 # table_name
+% . # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM sys.netcdf_files;
-% .L4 # table_name
+% . # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM sys.netcdf_dims;
-% .L4 # table_name
+% . # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM sys.netcdf_dims;
-% .L4 # table_name
+% . # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM sys.netcdf_attrs;
-% .L4 # table_name
+% . # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM sys.netcdf_attrs;
-% .L4 # table_name
+% . # table_name
 % has_rows # name
 % boolean # type
 % 5 # length

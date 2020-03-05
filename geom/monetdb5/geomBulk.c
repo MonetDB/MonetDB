@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -32,7 +32,7 @@ geom_2_geom_bat(bat *outBAT_id, bat *inBAT_id, int *columnType, int *columnSRID)
 	//create a new BAT, aligned with input BAT
 	if ((outBAT = COLnew(inBAT->hseqbase, ATOMindex("wkb"), BATcount(inBAT), TRANSIENT)) == NULL) {
 		BBPunfix(inBAT->batCacheid);
-		throw(MAL, "batcalc.wkb", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "batcalc.wkb", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	//iterator over the BAT
@@ -52,7 +52,7 @@ geom_2_geom_bat(bat *outBAT_id, bat *inBAT_id, int *columnType, int *columnSRID)
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
 			GDKfree(outWKB);
-			throw(MAL, "batcalc.wkb", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "batcalc.wkb", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		GDKfree(outWKB);
 		outWKB = NULL;
@@ -81,7 +81,7 @@ wkbFromText_bat(bat *outBAT_id, bat *inBAT_id, int *srid, int *tpe)
 	//create a new for the output BAT
 	if ((outBAT = COLnew(inBAT->hseqbase, ATOMindex("wkb"), BATcount(inBAT), TRANSIENT)) == NULL) {
 		BBPunfix(inBAT->batCacheid);
-		throw(MAL, "batgeom.wkbFromText", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "batgeom.wkbFromText", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	//iterator over the input BAT
@@ -100,7 +100,7 @@ wkbFromText_bat(bat *outBAT_id, bat *inBAT_id, int *srid, int *tpe)
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
 			GDKfree(outSingle);
-			throw(MAL, "batgeom.wkbFromText", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "batgeom.wkbFromText", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		GDKfree(outSingle);
 		outSingle = NULL;
@@ -135,7 +135,7 @@ wkbCoordinateFromMBR_bat(bat *outBAT_id, bat *inBAT_id, int *coordinateIdx)
 	//create a new BAT for the output
 	if ((outBAT = COLnew(inBAT->hseqbase, ATOMindex("dbl"), BATcount(inBAT), TRANSIENT)) == NULL) {
 		BBPunfix(inBAT->batCacheid);
-		throw(MAL, "batgeom.coordinateFromMBR", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "batgeom.coordinateFromMBR", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	//iterator over the BAT
@@ -152,7 +152,7 @@ wkbCoordinateFromMBR_bat(bat *outBAT_id, bat *inBAT_id, int *coordinateIdx)
 		if (BUNappend(outBAT, &outDbl, false) != GDK_SUCCEED) {
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
-			throw(MAL, "batgeom.coordinateFromMBR", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "batgeom.coordinateFromMBR", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 	}
 
@@ -181,7 +181,7 @@ WKBtoSTRflagINT_bat(bat *outBAT_id, bat *inBAT_id, int *flag, str (*func) (char 
 	//create a new for the output BAT
 	if ((outBAT = COLnew(inBAT->hseqbase, ATOMindex("str"), BATcount(inBAT), TRANSIENT)) == NULL) {
 		BBPunfix(inBAT->batCacheid);
-		throw(MAL, name, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	//iterator over the input BAT
@@ -200,7 +200,7 @@ WKBtoSTRflagINT_bat(bat *outBAT_id, bat *inBAT_id, int *flag, str (*func) (char 
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
 			GDKfree(outSingle);
-			throw(MAL, name, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		GDKfree(outSingle);
 		outSingle = NULL;
@@ -248,7 +248,7 @@ WKBtoWKB_bat(bat *outBAT_id, bat *inBAT_id, str (*func) (wkb **, wkb **), const 
 	//create a new for the output BAT
 	if ((outBAT = COLnew(inBAT->hseqbase, ATOMindex("wkb"), BATcount(inBAT), TRANSIENT)) == NULL) {
 		BBPunfix(inBAT->batCacheid);
-		throw(MAL, name, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	//iterator over the input BAT
@@ -267,7 +267,7 @@ WKBtoWKB_bat(bat *outBAT_id, bat *inBAT_id, str (*func) (wkb **, wkb **), const 
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
 			GDKfree(outSingle);
-			throw(MAL, name, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		GDKfree(outSingle);
 		outSingle = NULL;
@@ -309,7 +309,7 @@ WKBtoWKBflagINT_bat(bat *outBAT_id, bat *inBAT_id, const int *flag, str (*func) 
 	//create a new for the output BAT
 	if ((outBAT = COLnew(inBAT->hseqbase, ATOMindex("wkb"), BATcount(inBAT), TRANSIENT)) == NULL) {
 		BBPunfix(inBAT->batCacheid);
-		throw(MAL, name, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	//iterator over the input BAT
@@ -328,7 +328,7 @@ WKBtoWKBflagINT_bat(bat *outBAT_id, bat *inBAT_id, const int *flag, str (*func) 
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
 			GDKfree(outSingle);
-			throw(MAL, name, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		GDKfree(outSingle);
 		outSingle = NULL;
@@ -369,7 +369,7 @@ WKBtoBIT_bat(bat *outBAT_id, bat *inBAT_id, str (*func) (bit *, wkb **), const c
 	//create a new for the output BAT
 	if ((outBAT = COLnew(inBAT->hseqbase, ATOMindex("bit"), BATcount(inBAT), TRANSIENT)) == NULL) {
 		BBPunfix(inBAT->batCacheid);
-		throw(MAL, name, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	//iterator over the input BAT
@@ -387,7 +387,7 @@ WKBtoBIT_bat(bat *outBAT_id, bat *inBAT_id, str (*func) (bit *, wkb **), const c
 		if (BUNappend(outBAT, &outSingle, false) != GDK_SUCCEED) {
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
-			throw(MAL, name, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 	}
 
@@ -452,7 +452,7 @@ WKBtoINT_bat(bat *outBAT_id, bat *inBAT_id, str (*func) (int *, wkb **), const c
 	//create a new for the output BAT
 	if ((outBAT = COLnew(inBAT->hseqbase, ATOMindex("int"), BATcount(inBAT), TRANSIENT)) == NULL) {
 		BBPunfix(inBAT->batCacheid);
-		throw(MAL, name, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	//iterator over the input BAT
@@ -470,7 +470,7 @@ WKBtoINT_bat(bat *outBAT_id, bat *inBAT_id, str (*func) (int *, wkb **), const c
 		if (BUNappend(outBAT, &outSingle, false) != GDK_SUCCEED) {
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
-			throw(MAL, name, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 	}
 
@@ -516,7 +516,7 @@ WKBtoINTflagINT_bat(bat *outBAT_id, bat *inBAT_id, int *flag, str (*func) (int *
 	//create a new for the output BAT
 	if ((outBAT = COLnew(inBAT->hseqbase, ATOMindex("int"), BATcount(inBAT), TRANSIENT)) == NULL) {
 		BBPunfix(inBAT->batCacheid);
-		throw(MAL, name, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	//iterator over the input BAT
@@ -534,7 +534,7 @@ WKBtoINTflagINT_bat(bat *outBAT_id, bat *inBAT_id, int *flag, str (*func) (int *
 		if (BUNappend(outBAT, &outSingle, false) != GDK_SUCCEED) {
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
-			throw(MAL, name, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 	}
 
@@ -580,7 +580,7 @@ wkbGetCoordinate_bat(bat *outBAT_id, bat *inBAT_id, int *flag)
 	//create a new for the output BAT
 	if ((outBAT = COLnew(inBAT->hseqbase, ATOMindex("dbl"), BATcount(inBAT), TRANSIENT)) == NULL) {
 		BBPunfix(inBAT->batCacheid);
-		throw(MAL, "batgeom.wkbGetCoordinate", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "batgeom.wkbGetCoordinate", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	//iterator over the input BAT
@@ -598,7 +598,7 @@ wkbGetCoordinate_bat(bat *outBAT_id, bat *inBAT_id, int *flag)
 		if (BUNappend(outBAT, &outSingle, false) != GDK_SUCCEED) {
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
-			throw(MAL, "batgeom.wkbGetCoordinate", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "batgeom.wkbGetCoordinate", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 	}
 
@@ -636,7 +636,7 @@ wkbBox2D_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 	}
 	//create a new BAT for the output
 	if ((outBAT = COLnew(aBAT->hseqbase, ATOMindex("mbr"), BATcount(aBAT), TRANSIENT)) == NULL) {
-		ret = createException(MAL, "batgeom.wkbBox2D", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		ret = createException(MAL, "batgeom.wkbBox2D", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto clean;
 	}
 
@@ -657,7 +657,7 @@ wkbBox2D_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 		if (BUNappend(outBAT, outSingle, false) != GDK_SUCCEED) {
 			BBPreclaim(outBAT);
 			GDKfree(outSingle);
-			ret = createException(MAL, "batgeom.wkbBox2D", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			ret = createException(MAL, "batgeom.wkbBox2D", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto clean;
 		}
 		GDKfree(outSingle);
@@ -694,7 +694,7 @@ wkbContains_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 	}
 	//create a new BAT for the output
 	if ((outBAT = COLnew(aBAT->hseqbase, ATOMindex("bit"), BATcount(aBAT), TRANSIENT)) == NULL) {
-		ret = createException(MAL, "batgeom.Contains", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		ret = createException(MAL, "batgeom.Contains", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto clean;
 	}
 
@@ -714,7 +714,7 @@ wkbContains_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 		}
 		if (BUNappend(outBAT, &outBIT, false) != GDK_SUCCEED) {
 			BBPreclaim(outBAT);
-			ret = createException(MAL, "batgeom.Contains", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			ret = createException(MAL, "batgeom.Contains", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto clean;
 		}
 	}
@@ -745,7 +745,7 @@ wkbContains_geom_bat(bat *outBAT_id, wkb **geomWKB, bat *inBAT_id)
 	//create a new BAT for the output
 	if ((outBAT = COLnew(inBAT->hseqbase, ATOMindex("bit"), BATcount(inBAT), TRANSIENT)) == NULL) {
 		BBPunfix(inBAT->batCacheid);
-		throw(MAL, "batgeom.Contains", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "batgeom.Contains", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	//iterator over the BATs
@@ -764,7 +764,7 @@ wkbContains_geom_bat(bat *outBAT_id, wkb **geomWKB, bat *inBAT_id)
 		if (BUNappend(outBAT, &outBIT, false) != GDK_SUCCEED) {
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
-			throw(MAL, "batgeom.Contains", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "batgeom.Contains", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 	}
 
@@ -790,7 +790,7 @@ wkbContains_bat_geom(bat *outBAT_id, bat *inBAT_id, wkb **geomWKB)
 	//create a new BAT for the output
 	if ((outBAT = COLnew(inBAT->hseqbase, ATOMindex("bit"), BATcount(inBAT), TRANSIENT)) == NULL) {
 		BBPunfix(inBAT->batCacheid);
-		throw(MAL, "batgeom.Contains", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "batgeom.Contains", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	//iterator over the BATs
@@ -809,7 +809,7 @@ wkbContains_bat_geom(bat *outBAT_id, bat *inBAT_id, wkb **geomWKB)
 		if (BUNappend(outBAT, &outBIT, false) != GDK_SUCCEED) {
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
-			throw(MAL, "batgeom.Contains", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "batgeom.Contains", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 	}
 
@@ -837,7 +837,7 @@ wkbFromWKB_bat(bat *outBAT_id, bat *inBAT_id)
 	//create a new BAT
 	if ((outBAT = COLnew(inBAT->hseqbase, ATOMindex("wkb"), BATcount(inBAT))) == NULL) {
 		BBPunfix(inBAT->batCacheid);
-		throw(MAL, "batgeom.wkb", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "batgeom.wkb", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	//pointers to the first valid elements of the x and y BATS
@@ -853,7 +853,7 @@ wkbFromWKB_bat(bat *outBAT_id, bat *inBAT_id)
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
 			GDKfree(outWKB);
-			throw(MAL, "batgeom.wkb", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "batgeom.wkb", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		GDKfree(outWKB);
 		outWKB = NULL;
@@ -897,7 +897,7 @@ wkbMakePoint_bat(bat *outBAT_id, bat *xBAT_id, bat *yBAT_id, bat *zBAT_id, bat *
 	}
 	//create a new BAT for the output
 	if ((outBAT = COLnew(xBAT->hseqbase, ATOMindex("wkb"), BATcount(xBAT), TRANSIENT)) == NULL) {
-		ret = createException(MAL, "batgeom.wkbMakePoint", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		ret = createException(MAL, "batgeom.wkbMakePoint", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto clean;
 	}
 
@@ -930,7 +930,7 @@ wkbMakePoint_bat(bat *outBAT_id, bat *xBAT_id, bat *yBAT_id, bat *zBAT_id, bat *
 		if (BUNappend(outBAT, pointWKB, false) != GDK_SUCCEED) {
 			BBPreclaim(outBAT);
 			GDKfree(pointWKB);
-			ret = createException(MAL, "batgeom.WkbMakePoint", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			ret = createException(MAL, "batgeom.WkbMakePoint", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto clean;
 		}
 		GDKfree(pointWKB);
@@ -968,7 +968,7 @@ wkbSetSRID_bat(bat *outBAT_id, bat *inBAT_id, int *srid)
 	//create a new BAT for the output
 	if ((outBAT = COLnew(inBAT->hseqbase, ATOMindex("wkb"), BATcount(inBAT), TRANSIENT)) == NULL) {
 		BBPunfix(inBAT->batCacheid);
-		throw(MAL, "batgeom.SetSRID", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "batgeom.SetSRID", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	//iterator over the BATs
@@ -988,7 +988,7 @@ wkbSetSRID_bat(bat *outBAT_id, bat *inBAT_id, int *srid)
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
 			GDKfree(outWKB);
-			throw(MAL, "batgeom.SetSRID", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "batgeom.SetSRID", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		GDKfree(outWKB);
 		outWKB = NULL;
@@ -1020,7 +1020,7 @@ wkbDistance_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 	}
 	//create a new BAT for the output
 	if ((outBAT = COLnew(aBAT->hseqbase, ATOMindex("dbl"), BATcount(aBAT), TRANSIENT)) == NULL) {
-		ret = createException(MAL, "batgeom.Distance", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		ret = createException(MAL, "batgeom.Distance", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto clean;
 	}
 
@@ -1041,7 +1041,7 @@ wkbDistance_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 		}
 		if (BUNappend(outBAT, &distanceVal, false) != GDK_SUCCEED) {
 			BBPreclaim(outBAT);
-			ret = createException(MAL, "batgeom.Distance", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			ret = createException(MAL, "batgeom.Distance", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto clean;
 		}
 	}
@@ -1073,7 +1073,7 @@ wkbDistance_geom_bat(bat *outBAT_id, wkb **geomWKB, bat *inBAT_id)
 	//create a new BAT for the output
 	if ((outBAT = COLnew(inBAT->hseqbase, ATOMindex("dbl"), BATcount(inBAT), TRANSIENT)) == NULL) {
 		BBPunfix(inBAT->batCacheid);
-		throw(MAL, "batgeom.Distance", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "batgeom.Distance", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	//iterator over the BAT
@@ -1092,7 +1092,7 @@ wkbDistance_geom_bat(bat *outBAT_id, wkb **geomWKB, bat *inBAT_id)
 		if (BUNappend(outBAT, &distanceVal, false) != GDK_SUCCEED) {
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
-			throw(MAL, "batgeom.Distance", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "batgeom.Distance", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 	}
 
@@ -1141,12 +1141,12 @@ wkbFilter_bat(bat *aBATfiltered_id, bat *bBATfiltered_id, bat *aBAT_id, bat *bBA
 	if ((aBATfiltered = COLnew(aBAT->hseqbase, ATOMindex("wkb"), BATcount(aBAT), TRANSIENT)) == NULL) {
 		BBPunfix(aBAT->batCacheid);
 		BBPunfix(bBAT->batCacheid);
-		throw(MAL, "batgeom.MBRfilter", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "batgeom.MBRfilter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	if ((bBATfiltered = COLnew(bBAT->hseqbase, ATOMindex("wkb"), BATcount(bBAT), TRANSIENT)) == NULL) {
 		BBPunfix(aBAT->batCacheid);
 		BBPunfix(bBAT->batCacheid);
-		throw(MAL, "batgeom.MBRfilter", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "batgeom.MBRfilter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	//iterator over the BATs
@@ -1173,7 +1173,7 @@ wkbFilter_bat(bat *aBATfiltered_id, bat *bBATfiltered_id, bat *aBAT_id, bat *bBA
 				BBPunfix(bBAT->batCacheid);
 				BBPunfix(aBATfiltered->batCacheid);
 				BBPunfix(bBATfiltered->batCacheid);
-				throw(MAL, "batgeom.MBRfilter", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				throw(MAL, "batgeom.MBRfilter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 			remainingElements++;
 		}
@@ -1212,7 +1212,7 @@ wkbFilter_geom_bat(bat *BATfiltered_id, wkb **geomWKB, bat *BAToriginal_id)
 	//create the new BAT
 	if ((BATfiltered = COLnew(BAToriginal->hseqbase, ATOMindex("wkb"), BATcount(BAToriginal), TRANSIENT)) == NULL) {
 		BBPunfix(BAToriginal->batCacheid);
-		throw(MAL, "batgeom.MBRfilter", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "batgeom.MBRfilter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	//iterator over the BAT
@@ -1254,7 +1254,7 @@ wkbFilter_geom_bat(bat *BATfiltered_id, wkb **geomWKB, bat *BAToriginal_id)
 				BBPunfix(BATfiltered->batCacheid);
 				GDKfree(geomMBR);
 				GDKfree(MBRoriginal);
-				throw(MAL, "batgeom.MBRfilter", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				throw(MAL, "batgeom.MBRfilter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 			remainingElements++;
 		}
@@ -1296,7 +1296,7 @@ wkbMBR_bat(bat *outBAT_id, bat *inBAT_id)
 	//create a new BAT for the output
 	if ((outBAT = COLnew(inBAT->hseqbase, ATOMindex("mbr"), BATcount(inBAT), TRANSIENT)) == NULL) {
 		BBPunfix(inBAT->batCacheid);
-		throw(MAL, "batgeom.mbr", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "batgeom.mbr", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	//iterator over the BAT
@@ -1314,7 +1314,7 @@ wkbMBR_bat(bat *outBAT_id, bat *inBAT_id)
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
 			GDKfree(outMBR);
-			throw(MAL, "batgeom.mbr", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "batgeom.mbr", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		GDKfree(outMBR);
 		outMBR = NULL;
@@ -1366,7 +1366,7 @@ wkbMakeLine_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 	if ((outBAT = COLnew(aBAT->hseqbase, ATOMindex("wkb"), BATcount(aBAT), TRANSIENT)) == NULL) {
 		BBPunfix(aBAT->batCacheid);
 		BBPunfix(bBAT->batCacheid);
-		throw(MAL, "batgeom.MakeLine", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "batgeom.MakeLine", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	//iterator over the BATs
@@ -1391,7 +1391,7 @@ wkbMakeLine_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 			BBPunfix(aBAT->batCacheid);
 			BBPunfix(bBAT->batCacheid);
 			GDKfree(outWKB);
-			throw(MAL, "batgeom.MakeLine", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "batgeom.MakeLine", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		GDKfree(outWKB);
 		outWKB = NULL;
@@ -1431,7 +1431,7 @@ wkbUnion_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 	if ((outBAT = COLnew(aBAT->hseqbase, ATOMindex("wkb"), BATcount(aBAT), TRANSIENT)) == NULL) {
 		BBPunfix(aBAT->batCacheid);
 		BBPunfix(bBAT->batCacheid);
-		throw(MAL, "batgeom.Union", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "batgeom.Union", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	//iterator over the BATs
@@ -1456,7 +1456,7 @@ wkbUnion_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 			BBPunfix(aBAT->batCacheid);
 			BBPunfix(bBAT->batCacheid);
 			GDKfree(outWKB);
-			throw(MAL, "batgeom.Union", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "batgeom.Union", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		GDKfree(outWKB);
 		outWKB = NULL;

@@ -19,13 +19,9 @@ stdout of test 'sqlitelogictest-count-coalesce-nullif.Bug-6586` in directory 'sq
 # MonetDB/SQL module loaded
 
 
-# 15:44:28 >  
-# 15:44:28 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-13646" "--port=38111"
-# 15:44:28 >  
-
-#SELECT - 59 + - 66, - 66 * + - COUNT ( ALL COALESCE ( NULLIF ( 90, + COALESCE ( - 67, 72 + - 30 ) + 17 ), 90 + 96, + 63 ) ) AS col1;
-% .L2,	.L6 # table_name
-% L2,	col1 # name
+#SELECT - 59 + - 66, CAST( - 66 * + - COUNT ( ALL COALESCE ( NULLIF ( 90, + COALESCE ( - 67, 72 + - 30 ) + 17 ), 90 + 96, + 63 ) ) AS BIGINT) AS col1;
+% .,	. # table_name
+% %10,	col1 # name
 % smallint,	bigint # type
 % 4,	2 # length
 [ -125,	66	]

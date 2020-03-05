@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -20,6 +20,7 @@
 # include <sys/uio.h>
 #endif
 
+#include "mstring.h"
 #include "stream.h"
 #include "stream_socket.h"
 
@@ -107,9 +108,11 @@ startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 					if ((t = strchr(port, '/')) != NULL)
 						*t = '\0';
 				} else {
+					free(conn);
 					return(newErr("can't find a port in redirect: %s", url));
 				}
 			} else {
+				free(conn);
 				return(newErr("invalid IPv6 address in redirect: %s", url));
 			}
 		} else if ((port = strchr(conn, ':')) != NULL) { /* drop anything off after the hostname */
@@ -141,7 +144,7 @@ startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 		server = (struct sockaddr_un) {
 			.sun_family = AF_UNIX,
 		};
-		strncpy(server.sun_path, conn, sizeof(server.sun_path) - 1);
+		strcpy_len(server.sun_path, conn, sizeof(server.sun_path));
 		free(conn);
 		if ((ssock = socket(PF_UNIX, SOCK_STREAM
 #ifdef SOCK_CLOEXEC

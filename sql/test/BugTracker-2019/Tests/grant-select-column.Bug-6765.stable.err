@@ -1,0 +1,29 @@
+stderr of test 'grant-select-column.Bug-6765` in directory 'sql/test/BugTracker-2019` itself:
+
+
+# 22:34:40 >  
+# 22:34:40 >  "/usr/bin/python3" "grant-select-column.Bug-6765.py" "grant-select-column.Bug-6765"
+# 22:34:40 >  
+
+MAPI  = (myuser) /var/tmp/mtest-26496/.s.monetdb.31053
+QUERY = SELECT "id", "name" FROM "myschema"."test"; --error, no permission on column "name"
+ERROR = !SELECT: identifier 'id' unknown
+CODE  = 42000
+# builtin opt 	gdk_dbpath = /home/niels/scratch/rc-nov2019/Linux-x86_64/var/monetdb5/dbfarm/demo
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_ipv6 = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 31053
+# cmdline opt 	mapi_usock = /var/tmp/mtest-26496/.s.monetdb.31053
+# cmdline opt 	gdk_dbpath = /home/niels/scratch/rc-nov2019/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2019
+#client4:!ERROR:ParseException:SQLparser:42000!SELECT: identifier 'id' unknown
+
+# 22:34:40 >  
+# 22:34:40 >  "Done."
+# 22:34:40 >  
+

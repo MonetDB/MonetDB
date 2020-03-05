@@ -55,8 +55,8 @@ stdout of test 'sqlitelogictest-comparisons-between-floating-points-and-NULL.Bug
 [ 8,	535,	18.11,	"ijika",	630,	489.63,	"hpnyu"	]
 [ 9,	501,	776.4,	"cvygg",	725,	75.5,	"etlyv"	]
 #SELECT + - COUNT ( * ) FROM tab0 AS cor0 WHERE NOT ( - col0 ) BETWEEN - + col4 AND NULL; --should be -5
-% sys.L3 # table_name
-% L3 # name
+% sys. # table_name
+% %3 # name
 % bigint # type
 % 2 # length
 [ -5	]
@@ -74,8 +74,8 @@ stdout of test 'sqlitelogictest-comparisons-between-floating-points-and-NULL.Bug
 % int,	int,	int # type
 % 1,	1,	1 # length
 #SELECT ALL + COUNT ( DISTINCT 64 ) FROM tab1 AS cor0 WHERE col2 + 5 > NULL; --should be 0
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 0	]

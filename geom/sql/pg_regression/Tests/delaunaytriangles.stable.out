@@ -24,26 +24,26 @@ stdout of test 'delaunaytriangles` in directory 'geom/sql/pg_regression` itself:
 # 11:45:10 >  
 
 #SELECT 1,  ST_AsText(ST_DelaunayTriangles(ST_WKTToSQL('MULTIPOINT(5 5, 6 0, 7 9)'), 0.0, 0));
-% .L2,	.L4 # table_name
-% L2,	L4 # name
+% .%1,	.%2 # table_name
+% %1,	%2 # name
 % tinyint,	clob # type
 % 1,	51 # length
 [ 1,	"GEOMETRYCOLLECTION (POLYGON ((5 5, 6 0, 7 9, 5 5)))"	]
 #SELECT 2,  ST_AsText(ST_DelaunayTriangles(ST_WKTToSQL('MULTIPOINT(5 5, 6 0, 7 9, 8 9)'), 0.0, 0));
-% .L2,	.L4 # table_name
-% L2,	L4 # name
+% .%1,	.%2 # table_name
+% %1,	%2 # name
 % tinyint,	clob # type
 % 1,	83 # length
 [ 2,	"GEOMETRYCOLLECTION (POLYGON ((5 5, 6 0, 8 9, 5 5)), POLYGON ((5 5, 8 9, 7 9, 5 5)))"	]
 #SELECT 3,  ST_AsText(ST_DelaunayTriangles(ST_WKTToSQL('MULTIPOINT(5 5, 6 0, 7 9, 8 9)'), 2.0, 0));
-% .L2,	.L4 # table_name
-% L2,	L4 # name
+% .%1,	.%2 # table_name
+% %1,	%2 # name
 % tinyint,	clob # type
 % 1,	51 # length
 [ 3,	"GEOMETRYCOLLECTION (POLYGON ((5 5, 6 0, 7 9, 5 5)))"	]
 #SELECT 4,  ST_AsText(ST_DelaunayTriangles(ST_WKTToSQL('MULTIPOINT(5 5, 6 0, 7 9, 8 9)'), 2.0, 1));
-% .L2,	.L4 # table_name
-% L2,	L4 # name
+% .%1,	.%2 # table_name
+% %1,	%2 # name
 % tinyint,	clob # type
 % 1,	52 # length
 [ 4,	"MULTILINESTRING ((5 5, 7 9), (5 5, 6 0), (6 0, 7 9))"	]

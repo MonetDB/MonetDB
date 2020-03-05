@@ -80,26 +80,26 @@ stdout of test 'nestedcalls` in directory 'sql/test/BugTracker-2013` itself:
 #	UNION  select name from leaf2();
 #END;
 #SELECT count(*) FROM bottom();
-% .L5 # table_name
-% L4 # name
+% .%2 # table_name
+% %2 # name
 % bigint # type
 % 1 # length
 [ 1	]
 #SELECT count(*) FROM leaf1();
-% .L5 # table_name
-% L4 # name
+% .%2 # table_name
+% %2 # name
 % bigint # type
 % 1 # length
 [ 1	]
 #SELECT count(*) FROM leaf2();
-% .L5 # table_name
-% L4 # name
+% .%2 # table_name
+% %2 # name
 % bigint # type
 % 1 # length
 [ 1	]
 #SELECT count(*) FROM leaf3();
-% .L5 # table_name
-% L4 # name
+% .%2 # table_name
+% %2 # name
 % bigint # type
 % 1 # length
 [ 1	]

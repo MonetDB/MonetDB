@@ -11,7 +11,7 @@ stdout of test 'subquery` in directory 'sql/test/subquery` itself:
 # Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
 # Found 15.385 GiB available main-memory.
 # Copyright (c) 1993 - July 2008 CWI.
-# Copyright (c) August 2008 - 2019 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008 - 2020 MonetDB B.V., all rights reserved
 # Visit https://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://da200:30011/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-28086/.s.monetdb.30011
@@ -90,8 +90,8 @@ stdout of test 'subquery` in directory 'sql/test/subquery` itself:
 % 1 # length
 [ 3	]
 #SELECT *, (SELECT MAX(i) FROM integers) FROM integers ORDER BY i;
-% sys.integers,	.L3 # table_name
-% i,	L3 # name
+% .integers,	.%2 # table_name
+% i,	%2 # name
 % int,	int # type
 % 1,	1 # length
 [ NULL,	3	]
@@ -99,14 +99,14 @@ stdout of test 'subquery` in directory 'sql/test/subquery` itself:
 [ 2,	3	]
 [ 3,	3	]
 #SELECT (SELECT 42) AS k, MAX(i) FROM integers GROUP BY k; -- 42, 3
-% .L1,	sys.L2 # table_name
-% k,	L2 # name
+% .%1,	.%2 # table_name
+% k,	%2 # name
 % tinyint,	int # type
 % 2,	1 # length
 [ 42,	3	]
 #SELECT i, MAX((SELECT 42)) FROM integers GROUP BY i ORDER BY i;
-% sys.integers,	.L1 # table_name
-% i,	L1 # name
+% .integers,	.%2 # table_name
+% i,	%2 # name
 % int,	tinyint # type
 % 1,	2 # length
 [ NULL,	42	]
@@ -114,8 +114,8 @@ stdout of test 'subquery` in directory 'sql/test/subquery` itself:
 [ 2,	42	]
 [ 3,	42	]
 #SELECT (SELECT * FROM integers WHERE i>10) FROM integers;
-% .L2 # table_name
-% L2 # name
+% .%3 # table_name
+% %3 # name
 % int # type
 % 1 # length
 [ NULL	]
@@ -141,8 +141,8 @@ stdout of test 'subquery` in directory 'sql/test/subquery` itself:
 [ 3	]
 [ NULL	]
 #SELECT (SELECT i FROM integers WHERE i=1); --1
-% sys.L2 # table_name
-% L2 # name
+% .%2 # table_name
+% %2 # name
 % int # type
 % 1 # length
 [ 1	]
@@ -186,32 +186,32 @@ stdout of test 'subquery` in directory 'sql/test/subquery` itself:
 % int # type
 % 1 # length
 #SELECT EXISTS(SELECT * FROM integers); -- true
-% .L3 # table_name
-% L3 # name
+% .%3 # table_name
+% %3 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT EXISTS(SELECT * FROM integers WHERE i>10); -- false
-% .L3 # table_name
-% L3 # name
+% .%3 # table_name
+% %3 # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT EXISTS(SELECT * FROM integers), EXISTS(SELECT * FROM integers); -- true, true
-% .L3,	.L6 # table_name
-% L3,	L6 # name
+% .%5,	.%6 # table_name
+% %5,	%6 # name
 % boolean,	boolean # type
 % 5,	5 # length
 [ true,	true	]
 #SELECT EXISTS(SELECT * FROM integers) AND EXISTS(SELECT * FROM integers); -- true
-% .L6 # table_name
-% L6 # name
+% .%11 # table_name
+% %11 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT EXISTS(SELECT EXISTS(SELECT * FROM integers)); -- true
-% .L7 # table_name
-% L7 # name
+% .%5 # table_name
+% %5 # name
 % boolean # type
 % 5 # length
 [ true	]
@@ -239,8 +239,8 @@ stdout of test 'subquery` in directory 'sql/test/subquery` itself:
 % int # type
 % 1 # length
 #SELECT 1 IN (SELECT NULL) FROM integers; 
-% .L7 # table_name
-% L7 # name
+% .%11 # table_name
+% %11 # name
 % boolean # type
 % 5 # length
 [ NULL	]
@@ -248,8 +248,8 @@ stdout of test 'subquery` in directory 'sql/test/subquery` itself:
 [ NULL	]
 [ NULL	]
 #SELECT NULL IN (SELECT * FROM integers) FROM integers;
-% .L11 # table_name
-% L11 # name
+% .%12 # table_name
+% %12 # name
 % boolean # type
 % 5 # length
 [ NULL	]
@@ -257,20 +257,20 @@ stdout of test 'subquery` in directory 'sql/test/subquery` itself:
 [ NULL	]
 [ NULL	]
 #SELECT CAST(SUM(i) AS BIGINT) FROM integers WHERE 1 IN (SELECT * FROM integers); -- 6
-% sys.L5 # table_name
-% L5 # name
+% sys.%3 # table_name
+% %3 # name
 % bigint # type
 % 1 # length
 [ 6	]
 #SELECT (SELECT (SELECT (SELECT 42))); -- 42
-% .L2 # table_name
-% L2 # name
+% .%3 # table_name
+% %3 # name
 % tinyint # type
 % 2 # length
 [ 42	]
 #SELECT (SELECT EXISTS(SELECT * FROM integers WHERE i>2)) FROM integers; -- single column 4xtrue
-% .L2 # table_name
-% L2 # name
+% .%3 # table_name
+% %3 # name
 % boolean # type
 % 5 # length
 [ true	]
@@ -278,14 +278,14 @@ stdout of test 'subquery` in directory 'sql/test/subquery` itself:
 [ true	]
 [ true	]
 #SELECT (SELECT MAX(i) FROM integers) AS k, CAST(SUM(i) AS BIGINT) FROM integers GROUP BY k; -- 3,6
-% .L3,	.L5 # table_name
-% k,	L5 # name
+% .%5,	.%2 # table_name
+% k,	%2 # name
 % int,	bigint # type
 % 1,	1 # length
 [ 3,	6	]
 #SELECT i % 2 AS k, CAST(SUM(i) AS BIGINT) FROM integers GROUP BY k HAVING SUM(i) > (SELECT MAX(i) FROM integers); -- 1,4
-% sys.L1,	sys.L3 # table_name
-% k,	L3 # name
+% sys.%5,	sys.%1 # table_name
+% k,	%1 # name
 % int,	bigint # type
 % 1,	1 # length
 [ 1,	4	]
@@ -296,39 +296,83 @@ stdout of test 'subquery` in directory 'sql/test/subquery` itself:
 % 1 # length
 [ 1	]
 #SELECT (SELECT CAST(SUM(i) AS BIGINT) FROM integers), (SELECT 42);
-% .L5,	.L7 # table_name
-% L5,	L7 # name
+% .%1,	.%2 # table_name
+% %1,	%2 # name
 % bigint,	tinyint # type
 % 1,	2 # length
 [ 6,	42	]
+#SELECT (VALUES(1));
+% .%1 # table_name
+% %1 # name
+% tinyint # type
+% 1 # length
+[ 1	]
+#SELECT i FROM integers ORDER BY (SELECT 1);
+% sys.integers # table_name
+% i # name
+% int # type
+% 1 # length
+[ NULL	]
+[ 1	]
+[ 2	]
+[ 3	]
 #drop TABLE integers;
 #CREATE TABLE strings(v VARCHAR(128));
 #INSERT INTO strings VALUES ('hello'), ('world'), (NULL);
 [ 3	]
 #SELECT NULL IN (SELECT * FROM strings); -- NULL
-% .L13 # table_name
-% L13 # name
+% .%13 # table_name
+% %13 # name
 % boolean # type
 % 5 # length
 [ NULL	]
 #SELECT 'hello' IN (SELECT * FROM strings); -- true
-% .L13 # table_name
-% L13 # name
+% .%13 # table_name
+% %13 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT 'bla' IN (SELECT * FROM strings); -- NULL
-% .L13 # table_name
-% L13 # name
+% .%13 # table_name
+% %13 # name
 % boolean # type
 % 5 # length
 [ NULL	]
 #SELECT 'bla' IN (SELECT * FROM strings WHERE v IS NOT NULL); -- false
-% .L13 # table_name
-% L13 # name
+% .%13 # table_name
+% %13 # name
 % boolean # type
 % 5 # length
 [ false	]
+#SELECT * FROM strings WHERE EXISTS(SELECT NULL);
+% sys.strings # table_name
+% v # name
+% varchar # type
+% 5 # length
+[ "hello"	]
+[ "world"	]
+[ NULL	]
+#SELECT * FROM strings WHERE EXISTS(SELECT v FROM strings WHERE v='bla');
+% sys.strings # table_name
+% v # name
+% varchar # type
+% 0 # length
+#SELECT (SELECT v FROM strings WHERE v='hello') FROM strings;
+% .%2 # table_name
+% %2 # name
+% varchar # type
+% 5 # length
+[ "hello"	]
+[ "hello"	]
+[ "hello"	]
+#SELECT (SELECT v FROM strings WHERE v='bla') FROM strings;
+% .%2 # table_name
+% %2 # name
+% varchar # type
+% 0 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
 #drop table strings;
 
 # 17:27:37 >  

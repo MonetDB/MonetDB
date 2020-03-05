@@ -14,14 +14,14 @@ stdout of test 'cast_interval2time.SF-1488247` in directory 'sql/test/BugTracker
 
 
 #select interval '60' second;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % sec_interval # type
 % 6 # length
 [ 60.000	]
 #select cast(interval '60' second as time);
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% %1 # name
 % time # type
 % 8 # length
 [ 00:01:00	]

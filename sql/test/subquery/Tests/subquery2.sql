@@ -75,7 +75,7 @@ FROM another_T GROUP BY col1, col2, col5, col8;
 SELECT
 	col1 + col5 = (SELECT MIN(ColID) FROM tbl_ProductSales),
 	CAST(SUM(DISTINCT CASE WHEN col5 - col8 = (SELECT MIN(ColID / col2) FROM tbl_ProductSales) THEN col2 - 5 ELSE ABS(col1) END) AS BIGINT),
-	(SELECT MAX(ColID + col2) FROM tbl_ProductSales) * DENSE_RANK() OVER (PARTITION BY AVG(DISTINCT col5))
+	CAST((SELECT MAX(ColID + col2) FROM tbl_ProductSales) * DENSE_RANK() OVER (PARTITION BY AVG(DISTINCT col5)) AS BIGINT)
 FROM another_T
 GROUP BY col1, col2, col5, col8;
 	-- False 1    6
@@ -109,7 +109,7 @@ SELECT NOT col2 <> ANY (SELECT 20 FROM tbl_ProductSales GROUP BY ColID HAVING NO
 SELECT
 	NOT -SUM(col2) NOT IN (SELECT ColID FROM tbl_ProductSales GROUP BY ColID HAVING SUM(ColID - col8) <> col5),
 	NOT col5 = ALL (SELECT 1 FROM tbl_ProductSales HAVING MAX(col8) > 2 AND MIN(col8) IS NOT NULL),
---	NOT col2 <> ANY (SELECT 20 FROM tbl_ProductSales GROUP BY ColID HAVING NOT MAX(col1) <> col1 * AVG(col1 + ColID) * ColID),
+	NOT col2 <> ANY (SELECT 20 FROM tbl_ProductSales GROUP BY ColID HAVING NOT MAX(col1) <> col1 * AVG(col1 + ColID) * ColID),
 	NOT EXISTS (SELECT ColID - 12 FROM tbl_ProductSales GROUP BY ColID HAVING MAX(col2) IS NULL OR NOT col8 <> 2 / col1)
 FROM another_T
 GROUP BY col1, col2, col5, col8;
@@ -173,7 +173,7 @@ FROM another_T
 GROUP BY col1; --error, subquery returns more than 1 row
 
 SELECT
-	SUM(col3 + col2)
+	CAST(SUM(col3 + col2) AS BIGINT)
 FROM another_T
 GROUP BY col1
 HAVING NOT col1 = ANY (SELECT 0 FROM tbl_ProductSales GROUP BY ColID HAVING NOT MAX(col1) <> AVG(col1));
@@ -182,9 +182,8 @@ HAVING NOT col1 = ANY (SELECT 0 FROM tbl_ProductSales GROUP BY ColID HAVING NOT 
 	-- 55
 	-- 5555
 
--- TODO incorrect empty result
 SELECT
-	SUM(col3) * col1
+	CAST(SUM(col3) * col1 AS BIGINT)
 FROM another_T
 GROUP BY col1
 HAVING NOT col1 <> ANY (SELECT 0 FROM tbl_ProductSales GROUP BY ColID HAVING NOT MAX(col1) <> col1 * AVG(col1 + ColID) * ColID);
@@ -194,7 +193,7 @@ HAVING NOT col1 <> ANY (SELECT 0 FROM tbl_ProductSales GROUP BY ColID HAVING NOT
 	-- 3702963
 
 SELECT
-	SUM(CAST(t1.col1 IN (SELECT t1.col1 FROM another_T) AS INTEGER))
+	CAST(SUM(CAST(t1.col1 IN (SELECT t1.col1 FROM another_T) AS INTEGER)) AS BIGINT)
 FROM another_T t1
 GROUP BY t1.col2;
 	-- 1
@@ -202,7 +201,6 @@ GROUP BY t1.col2;
 	-- 1
 	-- 1
 
--- TODO incorrect empty result
 SELECT
     (SELECT MIN(ColID) FROM tbl_ProductSales INNER JOIN another_T t2 ON t1.col7 <> SOME(SELECT MAX(t1.col1 + t3.col4) FROM another_T t3))
 FROM another_T t1;
@@ -215,6 +213,27 @@ FROM another_T t1;
 SELECT
 	CASE WHEN 1 IN (SELECT (SELECT MAX(col7)) UNION ALL (SELECT MIN(ColID) FROM tbl_ProductSales INNER JOIN another_T t2 ON t2.col5 = t2.col1)) THEN 2 ELSE NULL END
 FROM another_T t1;	
+	-- NULL
+
+SELECT
+	CASE WHEN 1 IN (SELECT MAX(col7) UNION ALL (SELECT MIN(ColID) FROM tbl_ProductSales INNER JOIN another_T t2 ON t2.col5 = t2.col1)) THEN 2 ELSE NULL END
+FROM another_T t1;
+	-- NULL
+	-- NULL
+	-- NULL
+	-- NULL
+
+SELECT
+	CASE WHEN 1 IN (SELECT (SELECT MAX(col7))) THEN 2 ELSE NULL END
+FROM another_T t1;
+	-- NULL
+
+SELECT
+	CASE WHEN 1 IN (SELECT (SELECT MIN(ColID) FROM tbl_ProductSales INNER JOIN another_T t2 ON t2.col5 = t2.col1) UNION ALL (SELECT MAX(col7))) THEN 2 ELSE NULL END
+FROM another_T t1;
+	-- NULL
+	-- NULL
+	-- NULL
 	-- NULL
 
 SELECT

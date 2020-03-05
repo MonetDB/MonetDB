@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /* this file is included multiple times by gdk_calc.c */
@@ -708,12 +708,10 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 			const char *s1, *s2;
 			s1 = hp1 ? hp1 + VarHeapVal(lft, i, wd1) : (const char *) lft;
 			s2 = hp2 ? hp2 + VarHeapVal(rgt, j, wd2) : (const char *) rgt;
-			if (s1 == NULL || strcmp(s1, str_nil) == 0 ||
-			    s2 == NULL || strcmp(s2, str_nil) == 0) {
+			if (strNil(s1) || strNil(s2)) {
 #ifdef NIL_MATCHES_FLAG
 				if (nil_matches) {
-					dst[k] = OP(s1 == NULL || strcmp(s1, str_nil) == 0,
-						    s2 == NULL || strcmp(s2, str_nil) == 0);
+					dst[k] = OP(strNil(s1), strNil(s2));
 				} else
 #endif
 				{

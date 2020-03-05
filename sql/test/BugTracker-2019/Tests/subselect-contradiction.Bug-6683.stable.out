@@ -11,7 +11,7 @@ stdout of test 'subselect-contradiction.Bug-6683` in directory 'sql/test/BugTrac
 # Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
 # Found 15.528 GiB available main-memory.
 # Copyright (c) 1993 - July 2008 CWI.
-# Copyright (c) August 2008 - 2019 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008 - 2020 MonetDB B.V., all rights reserved
 # Visit https://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://localhost.localdomain:32013/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-21561/.s.monetdb.32013
@@ -69,7 +69,7 @@ stdout of test 'subselect-contradiction.Bug-6683` in directory 'sql/test/BugTrac
 #  as "c2_f1"
 #from
 #  "c3_t";
-% .L20 # table_name
+% . # table_name
 % c2_f1 # name
 % bigint # type
 % 2 # length
@@ -109,7 +109,7 @@ stdout of test 'subselect-contradiction.Bug-6683` in directory 'sql/test/BugTrac
 #  as "c2_f1"
 #from
 #  "c3_t";
-% .L20 # table_name
+% . # table_name
 % c2_f1 # name
 % bigint # type
 % 2 # length

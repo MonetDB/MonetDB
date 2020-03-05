@@ -42,7 +42,7 @@ stdout of test 'zones` in directory 'sql/test` itself:
 #select abs(expected - computed) as err
 #from alphatest 
 #where abs(expected - computed)>epsilon;
-% sys.L2 # table_name
+% sys. # table_name
 % err # name
 % double # type
 % 24 # length
@@ -108,8 +108,8 @@ stdout of test 'zones` in directory 'sql/test` itself:
 #    set z1 = sin(radians(pdec));
 #select count(S.objID) 
 #from GetNearbyObjects(193.75, 1.48, 0.1) as S;
-% .L6 # table_name
-% L6 # name
+% .%4 # table_name
+% %4 # name
 % bigint # type
 % 1 # length
 [ 3	]
@@ -140,9 +140,11 @@ stdout of test 'zones` in directory 'sql/test` itself:
 #	from GetNearestObject(pra,pdec) G);
 #        return ob;
 #end;
-#select fGetNearestObjIdAllEq(193.75,1.48,0.1) - nearest;
-% .L2 # table_name
-% L2 # name
+#declare nearest bigint;
+#set nearest=687726014001184891;
+#select cast(fGetNearestObjIdAllEq(193.75,1.48,0.1) - nearest as bigint);
+% . # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 0	]

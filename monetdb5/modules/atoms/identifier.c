@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -72,7 +72,7 @@ ssize_t
 IDtoString(str *retval, size_t *len, const char *handle, bool external)
 {
 	size_t hl = strlen(handle) + 1;
-	if (external && strcmp(handle, str_nil) == 0)
+	if (external && strNil(handle))
 		hl = 4;
 	if (*len < hl || *retval == NULL) {
 		GDKfree(*retval);
@@ -81,7 +81,7 @@ IDtoString(str *retval, size_t *len, const char *handle, bool external)
 			return -1;
 		*len = hl;
 	}
-	if (external && strcmp(handle, str_nil) == 0)
+	if (external && strNil(handle))
 		strcpy(*retval, "nil");
 	else
 		memcpy(*retval, handle, hl);

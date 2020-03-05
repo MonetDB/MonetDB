@@ -67,7 +67,7 @@ stdout of test 'round-sorted.Bug-3562` in directory 'sql/test/BugTracker-2014` i
 [ 1.23456789e+200	]
 [ 1.23456789e-200	]
 #SELECT f.f1, round(f.f1, 0) AS round_f1 FROM FLOAT8_TBL f;
-% sys.f,	sys.L3 # table_name
+% sys.f,	sys. # table_name
 % f1,	round_f1 # name
 % double,	double # type
 % 24,	24 # length
@@ -76,7 +76,7 @@ stdout of test 'round-sorted.Bug-3562` in directory 'sql/test/BugTracker-2014` i
 #INSERT INTO FLOAT8_TBL(f1) VALUES ('1.2345678901234e+200');
 [ 1	]
 #SELECT f.f1, round(f.f1, 0) AS round_f1 FROM FLOAT8_TBL f;
-% sys.f,	sys.L3 # table_name
+% sys.f,	sys. # table_name
 % f1,	round_f1 # name
 % double,	double # type
 % 24,	24 # length

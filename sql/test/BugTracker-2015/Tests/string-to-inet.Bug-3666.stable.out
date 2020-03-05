@@ -63,8 +63,8 @@ stdout of test 'string-to-inet.Bug-3666` in directory 'sql/test/BugTracker-2015`
 #insert into iptable values ('192.168.10.2');
 [ 1	]
 #select cast(textip as inet) from iptable;
-% sys.L2 # table_name
-% L2 # name
+% sys.iptable # table_name
+% textip # name
 % inet # type
 % 0 # length
 [ 192.168.0.1	]

@@ -4,7 +4,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
 
 VERSION=11.36.0
 #       ^^^^^^
@@ -64,18 +64,14 @@ PTHREAD_LIBS =
 ODBCINST_LIBS = odbccp32.lib user32.lib $(LEGACY_STDIO_DEFINITIONS)
 ODBC_LIBS = odbc32.lib
 
-!IFNDEF PYTHON2BASE
-PYTHON2BASE=C:\Python27
+!IFNDEF PY3VER
+PY3VER=7
 !ENDIF
-!IFNDEF PYTHON2LIB
-PYTHON2LIB=python27.lib
-!ENDIF
-
 !IFNDEF PYTHON3BASE
-PYTHON3BASE=C:\Python32
+PYTHON3BASE=C:\Python3$(PY3VER)
 !ENDIF
 !IFNDEF PYTHON3LIB
-PYTHON3LIB=python32.lib
+PYTHON3LIB=python3$(PY3VER).lib
 !ENDIF
 
 PYTHON_LIBDIR=share\MonetDB\python
@@ -139,14 +135,19 @@ bzip2_CFLAGS = -DHAVE_LIBBZ2 "-I$(LIBBZIP2)\include"
 !IFNDEF LIBXML2
 LIBXML2 = C:\libxml2-2.6.30.win$(bits)
 !ENDIF
-libxml2_CFLAGS = -DHAVE_LIBXML "-I$(LIBXML2)\include" $(zlib_CFLAGS) $(ICONV_CFLAGS)
+# by default libxml2 include files get installed in ...\include\libxml2\libxml
+# but this has sometimes been moved to ...\include\libxml
+libxml2_CFLAGS = -DHAVE_LIBXML "-I$(LIBXML2)\include\libxml2" "-I$(LIBXML2)\include" $(zlib_CFLAGS) $(ICONV_CFLAGS)
 libxml2_LIBS = "$(LIBXML2)\lib\libxml2.lib" $(zlib_LIBS) $(ICONV_LIBS)
 !ENDIF
 
 !IFNDEF LIBGEOS
 LIBGEOS = C:\geos-3.0.win$(bits)
 !ENDIF
-GEOS_LIBS = $(LIBGEOS)\lib\geos_c_i.lib
+!IFNDEF GEOSFILE
+GEOSFILE = geos_c
+!ENDIF
+GEOS_LIBS = $(LIBGEOS)\lib\$(GEOSFILE).lib
 GEOS_INCS = -I$(LIBGEOS)\include
 
 !IFDEF HAVE_LIBR
@@ -170,13 +171,8 @@ R.lib: "$(libr_DLL)"
 	lib /machine:$(BITSMCHN) /def:R.def /out:R.lib
 !ENDIF
 
-!IFDEF HAVE_LIBPY2
-libpy2_LIBS = "$(PYTHON2DIR)\libs\python27.lib"
-libpy2_CFLAGS = -DHAVE_LIBPY2 "-I$(PYTHON2DIR)\include" "-I$(PYTHON2DIR)\Lib\site-packages\numpy\core\include"
-!ENDIF
-
 !IFDEF HAVE_LIBPY3
-libpy3_LIBS = "$(PYTHON3DIR)\libs\python37.lib"
+libpy3_LIBS = "$(PYTHON3DIR)\libs\$(PYTHON3LIB)"
 libpy3_CFLAGS = -DHAVE_LIBPY3 "-I$(PYTHON3DIR)\include" "-I$(PYTHON3DIR)\Lib\site-packages\numpy\core\include"
 !ENDIF
 
@@ -186,8 +182,7 @@ libpy3_CFLAGS = -DHAVE_LIBPY3 "-I$(PYTHON3DIR)\include" "-I$(PYTHON3DIR)\Lib\sit
 # PYTHON may be either a version 2 or a version 3
 # here we let %Path% determine which version we get
 PYTHON = python
-YACC = bison
-LEX = flex
+BISON = bison
 
 ARCHIVER = lib /nologo
 GENDLL =
@@ -317,11 +312,6 @@ create_winconfig_conds_new_py:
 !ELSE
 	$(ECHO) HAVE_LIBLZMA_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
-!IFDEF HAVE_LIBPY2
-	$(ECHO) HAVE_LIBPY2_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ELSE
-	$(ECHO) HAVE_LIBPY2_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ENDIF
 !IFDEF HAVE_LIBPY3
 	$(ECHO) HAVE_LIBPY3_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
@@ -367,11 +357,6 @@ create_winconfig_conds_new_py:
 !ELSE
 	$(ECHO) HAVE_PROJ_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
-!IFDEF HAVE_SAMTOOLS
-	$(ECHO) HAVE_SAMTOOLS_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ELSE
-	$(ECHO) HAVE_SAMTOOLS_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ENDIF
 !IFDEF HAVE_SHP
 	$(ECHO) HAVE_SHP_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
@@ -412,7 +397,7 @@ CONFIGURE="$(PYTHON)" $(CONFIGURE_PY) \
 	"PACKAGE=$(pkg)" \
 	"PYTHON=$(PYTHON)" \
 	"PYTHON_LIBDIR=$(PYTHON_LIBDIR)" \
-	"PYTHON2=$(PYTHON2)" \
+	"PY3VER=$(PY3VER)" \
 	"PYTHON3=$(PYTHON3)" \
 	"TOPDIR=$(TOPDIR)" \
 	"VERSION=$(VERSION)" \

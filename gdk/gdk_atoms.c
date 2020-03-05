@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -450,7 +450,7 @@ bitFromStr(const char *src, size_t *len, bit **dst, bool external)
 
 	**dst = bit_nil;
 
-	if (GDK_STRNIL(src))
+	if (strNil(src))
 		return 1;
 
 	while (GDKisspace(*p))
@@ -508,7 +508,7 @@ batFromStr(const char *src, size_t *len, bat **dst, bool external)
 
 	atommem(sizeof(bat));
 
-	if (GDK_STRNIL(src)) {
+	if (strNil(src)) {
 		**dst = bat_nil;
 		return 1;
 	}
@@ -554,7 +554,7 @@ batToStr(char **dst, size_t *len, const bat *src, bool external)
 	}
 	i = strlen(s) + 3;
 	atommem(i);
-	return stpconcat(*dst, "<", s, ">", NULL) - *dst;
+	return (ssize_t) strconcat_len(*dst, *len, "<", s, ">", NULL);
 }
 
 
@@ -665,7 +665,7 @@ numFromStr(const char *src, size_t *len, void **dst, int tp, bool external)
 	 * values */
 	atommem(sz);
 
-	if (GDK_STRNIL(src)) {
+	if (strNil(src)) {
 		memcpy(*dst, ATOMnilptr(tp), sz);
 		return 1;
 	}
@@ -873,8 +873,7 @@ hgeToStr(char **dst, size_t *len, const hge *src, bool external)
 	atommem(hgeStrlen);
 	if (is_hge_nil(*src)) {
 		if (external) {
-			strncpy(*dst, "nil", 4);
-			return 3;
+			return (ssize_t) strcpy_len(*dst, "nil", 4);
 		}
 		strcpy(*dst, str_nil);
 		return 1;
@@ -904,7 +903,7 @@ ptrFromStr(const char *src, size_t *len, ptr **dst, bool external)
 	atommem(sizeof(ptr));
 
 	**dst = ptr_nil;
-	if (GDK_STRNIL(src))
+	if (strNil(src))
 		return 1;
 
 	while (GDKisspace(*p))
@@ -934,7 +933,12 @@ ptrFromStr(const char *src, size_t *len, ptr **dst, bool external)
 	return (ssize_t) (p - src);
 }
 
+#ifdef _MSC_VER
+/* Windows doesn't put 0x in front whereas Linux does, so we do it ourselves */
+atomtostr(ptr, "0x%p", )
+#else
 atomtostr(ptr, "%p", )
+#endif
 
 #if SIZEOF_VOID_P == SIZEOF_INT
 atom_io(ptr, Int, int)
@@ -952,7 +956,7 @@ dblFromStr(const char *src, size_t *len, dbl **dst, bool external)
 	/* alloc memory */
 	atommem(sizeof(dbl));
 
-	if (GDK_STRNIL(src)) {
+	if (strNil(src)) {
 		**dst = dbl_nil;
 		return 1;
 	}
@@ -1025,7 +1029,7 @@ fltFromStr(const char *src, size_t *len, flt **dst, bool external)
 	/* alloc memory */
 	atommem(sizeof(flt));
 
-	if (GDK_STRNIL(src)) {
+	if (strNil(src)) {
 		**dst = flt_nil;
 		return 1;
 	}
@@ -1106,7 +1110,7 @@ OIDfromStr(const char *src, size_t *len, oid **dst, bool external)
 	atommem(sizeof(oid));
 
 	**dst = oid_nil;
-	if (GDK_STRNIL(src))
+	if (strNil(src))
 		return 1;
 
 	while (GDKisspace(*p))

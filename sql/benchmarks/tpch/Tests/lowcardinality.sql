@@ -1,5 +1,5 @@
 -- lowselectivity queries that should be considered
-SELECT o_totalprice, count(*) FROM sys.orders GROUP BY o_totalprice HAVING count(*) >1 limit 10;
+SELECT o_totalprice, count(*) FROM sys.orders GROUP BY o_totalprice HAVING count(*) >1 order by o_totalprice limit 10;
 SELECT max(o_totalprice) FROM sys.orders;
 SELECT min(o_totalprice) FROM sys.orders;
 

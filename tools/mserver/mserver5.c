@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -89,6 +89,7 @@ usage(char *prog, int xit)
 	fprintf(stderr, "Usage: %s [options]\n", prog);
 	fprintf(stderr, "    --dbpath=<directory>      Specify database location\n");
 	fprintf(stderr, "    --dbextra=<directory>     Directory for transient BATs\n");
+	fprintf(stderr, "    --dbtrace=<directory>     Directory for produced traces\n");
 	fprintf(stderr, "    --in-memory               Run database in-memory only\n");
 	fprintf(stderr, "    --config=<config_file>    Use config_file to read options from\n");
 	fprintf(stderr, "    --single-user             Allow only one user at a time\n");
@@ -96,7 +97,6 @@ usage(char *prog, int xit)
 	fprintf(stderr, "    --set <option>=<value>    Set configuration option\n");
 	fprintf(stderr, "    --help                    Print this list of options\n");
 	fprintf(stderr, "    --version                 Print version and compile time info\n");
-	fprintf(stderr, "    --verbose[=value]         Set or increase verbosity level\n");
 
 	fprintf(stderr, "The debug, testing & trace options:\n");
 	fprintf(stderr, "     --threads\n");
@@ -108,7 +108,6 @@ usage(char *prog, int xit)
 	fprintf(stderr, "     --modules\n");
 	fprintf(stderr, "     --algorithms\n");
 	fprintf(stderr, "     --performance\n");
-	fprintf(stderr, "     --optimizers\n");
 	fprintf(stderr, "     --forcemito\n");
 	fprintf(stderr, "     --debug=<bitmask>\n");
 
@@ -121,16 +120,9 @@ usage(char *prog, int xit)
 static void
 monet_hello(void)
 {
-	dbl sz_mem_h;
+	double sz_mem_h;
 	char  *qc = " kMGTPE";
 	int qi = 0;
-
-	monet_memory = MT_npages() * MT_pagesize();
-	sz_mem_h = (dbl) monet_memory;
-	while (sz_mem_h >= 1000.0 && qi < 6) {
-		sz_mem_h /= 1024.0;
-		qi++;
-	}
 
 	printf("# MonetDB 5 server v%s", GDKversion());
 	{
@@ -156,14 +148,35 @@ monet_hello(void)
 			""
 #endif
 			);
-	printf("# Found %.3f %ciB available main-memory.\n",
-			sz_mem_h, qc[qi]);
+	sz_mem_h = (double) MT_npages() * MT_pagesize();
+	while (sz_mem_h >= 1000.0 && qi < 6) {
+		sz_mem_h /= 1024.0;
+		qi++;
+	}
+	printf("# Found %.3f %ciB available main-memory", sz_mem_h, qc[qi]);
+	sz_mem_h = (double) GDK_mem_maxsize;
+	qi = 0;
+	while (sz_mem_h >= 1000.0 && qi < 6) {
+		sz_mem_h /= 1024.0;
+		qi++;
+	}
+	printf(" of which we use %.3f %ciB\n", sz_mem_h, qc[qi]);
+	if (GDK_vm_maxsize < GDK_VM_MAXSIZE) {
+		sz_mem_h = (double) GDK_vm_maxsize;
+		qi = 0;
+		while (sz_mem_h >= 1000.0 && qi < 6) {
+			sz_mem_h /= 1024.0;
+			qi++;
+		}
+		printf("# Virtual memory usage limited to %.3f %ciB\n",
+		       sz_mem_h, qc[qi]);
+	}
 #ifdef MONET_GLOBAL_DEBUG
 	printf("# Database path:%s\n", GDKgetenv("gdk_dbpath"));
 	printf("# Module path:%s\n", GDKgetenv("monet_mod_path"));
 #endif
 	printf("# Copyright (c) 1993 - July 2008 CWI.\n");
-	printf("# Copyright (c) August 2008 - 2019 MonetDB B.V., all rights reserved\n");
+	printf("# Copyright (c) August 2008 - 2020 MonetDB B.V., all rights reserved\n");
 	printf("# Visit https://www.monetdb.org/ for further information\n");
 
 	// The properties shipped through the performance profiler
@@ -246,6 +259,7 @@ handler(int sig)
 int
 main(int argc, char **av)
 {
+	DIR *dirp;
 	char *prog = *av;
 	opt *set = NULL;
 	int grpdebug = 0, debug = 0, setlen = 0;
@@ -255,16 +269,16 @@ main(int argc, char **av)
 	char *binpath = NULL;
 	char *dbpath = NULL;
 	char *dbextra = NULL;
-	int verbosity = 0;
+	char *dbtrace = NULL;
 	bool inmemory = false;
 	static struct option long_options[] = {
 		{ "config", required_argument, NULL, 'c' },
 		{ "dbpath", required_argument, NULL, 0 },
 		{ "dbextra", required_argument, NULL, 0 },
+		{ "dbtrace", optional_argument, NULL, 0 },
 		{ "debug", optional_argument, NULL, 'd' },
 		{ "help", no_argument, NULL, '?' },
 		{ "version", no_argument, NULL, 0 },
-		{ "verbose", optional_argument, NULL, 'v' },
 		{ "readonly", no_argument, NULL, 'r' },
 		{ "single-user", no_argument, NULL, 0 },
 		{ "set", required_argument, NULL, 's' },
@@ -275,7 +289,6 @@ main(int argc, char **av)
 		{ "transactions", no_argument, NULL, 0 },
 		{ "modules", no_argument, NULL, 0 },
 		{ "algorithms", no_argument, NULL, 0 },
-		{ "optimizers", no_argument, NULL, 0 },
 		{ "performance", no_argument, NULL, 0 },
 		{ "forcemito", no_argument, NULL, 0 },
 		{ "heaps", no_argument, NULL, 0 },
@@ -349,6 +362,22 @@ main(int argc, char **av)
 					dbextra = optarg;
 				break;
 			}
+
+			if (strcmp(long_options[option_index].name, "dbtrace") == 0) {
+				size_t optarglen = strlen(optarg);
+				/* remove trailing directory separator */
+				while (optarglen > 0 &&
+				       (optarg[optarglen - 1] == '/' ||
+					optarg[optarglen - 1] == '\\'))
+					optarg[--optarglen] = '\0';
+				dbtrace = absolute_path(optarg);
+				if(dbtrace == NULL)
+					fprintf(stderr, "#error: can not allocate memory for dbtrace\n");
+				else
+					setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_dbtrace", dbtrace);
+				break;
+			}
+
 			if (strcmp(long_options[option_index].name, "single-user") == 0) {
 				setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_single_user", "yes");
 				break;
@@ -364,10 +393,6 @@ main(int argc, char **av)
 			}
 			if (strcmp(long_options[option_index].name, "algorithms") == 0) {
 				grpdebug |= GRPalgorithms;
-				break;
-			}
-			if (strcmp(long_options[option_index].name, "optimizers") == 0) {
-				grpdebug |= GRPoptimizers;
 				break;
 			}
 			if (strcmp(long_options[option_index].name, "forcemito") == 0) {
@@ -436,19 +461,6 @@ main(int argc, char **av)
 				fprintf(stderr, "ERROR: wrong format %s\n", optarg);
 			}
 			break;
-		case 'v':
-			if (optarg) {
-				char *endarg;
-				verbosity = (int) strtol(optarg, &endarg, 10);
-				if (*endarg != '\0') {
-					fprintf(stderr, "ERROR: wrong format for --verbose=%s\n",
-							optarg);
-					usage(prog, -1);
-				}
-			} else {
-				verbosity++;
-			}
-			break;
 		case '?':
 			/* a bit of a hack: look at the option that the
 			   current `c' is based on and see if we recognize
@@ -470,7 +482,6 @@ main(int argc, char **av)
 	GDKsetdebug(debug | grpdebug);  /* add the algorithm tracers */
 	if (debug)
 		mo_print_options(set, setlen);
-	GDKsetverbose(verbosity);
 
 	if (dbpath && inmemory) {
 		fprintf(stderr, "!ERROR: both dbpath and in-memory must not be set at the same time\n");
@@ -501,6 +512,28 @@ main(int argc, char **av)
 		}
 	}
 	GDKfree(dbpath);
+
+	if (dbtrace) {
+		/* GDKcreatedir makes sure that all parent directories of dbtrace exist */
+		if (GDKcreatedir(dbtrace) != GDK_SUCCEED) {
+			fprintf(stderr, "!ERROR: cannot create directory for %s\n", dbtrace);
+			exit(1);
+		}
+		/* create the actual dir for db-trace */
+		if (mkdir(dbtrace, MONETDB_DIRMODE) < 0) {
+			if (errno != EEXIST) {
+				fprintf(stderr, "!ERROR: cannot create directory for %s\n", dbtrace);
+				exit(1);
+			}
+			if ((dirp = opendir(dbtrace)) == NULL) {
+				fprintf(stderr, "!ERROR: cannot create directory for %s\n", dbtrace);
+				exit(1);
+			}
+			closedir(dirp);
+		}
+		GDKfree(dbtrace);
+	}
+
 	if (monet_init(set, setlen) == 0) {
 		mo_free_options(set, setlen);
 		if (GDKerrbuf && *GDKerrbuf)
@@ -699,6 +732,15 @@ main(int argc, char **av)
 		fprintf(stderr, "!%s\n", err);
 		free(err);
 	}
+
+#ifdef SIGHUP
+	// Register signal to GDKtracer (logrotate)
+	signal(SIGHUP, GDKtracer_reinit_basic);
+#endif
+
+#ifdef _MSC_VER
+	printf("# MonetDB server is started. To stop server press Ctrl-C.\n");
+#endif
 
 	/* why busy wait ? */
 	while (!interrupted && !GDKexiting()) {

@@ -27,8 +27,6 @@ INSERT INTO TIMESTAMP_TBL VALUES (cast(test_current_date as timestamp));
 INSERT INTO TIMESTAMP_TBL VALUES (cast(sql_sub(test_current_date, 24*60*60.0) as timestamp));
 --INSERT INTO TIMESTAMP_TBL VALUES ('tomorrow');
 INSERT INTO TIMESTAMP_TBL VALUES (cast(sql_add(test_current_date, 24*60*60.0) as timestamp));
-INSERT INTO TIMESTAMP_TBL VALUES ('tomorrow EST');
-INSERT INTO TIMESTAMP_TBL VALUES ('tomorrow zulu');
 
 --SELECT d1 FROM TIMESTAMP_TBL;
 SELECT count(*) AS One FROM TIMESTAMP_TBL WHERE d1 = cast(test_current_date as timestamp);
@@ -36,10 +34,15 @@ SELECT count(*) AS One FROM TIMESTAMP_TBL WHERE d1 = cast(sql_add(test_current_d
 SELECT count(*) AS One FROM TIMESTAMP_TBL WHERE d1 = cast(sql_sub(test_current_date, 24*60*60.0) as timestamp);
 SELECT count(*) AS None FROM TIMESTAMP_TBL WHERE d1 = cast(test_now as timestamp);
 
+INSERT INTO TIMESTAMP_TBL VALUES ('tomorrow EST');
+INSERT INTO TIMESTAMP_TBL VALUES ('tomorrow zulu');
+
 DELETE FROM TIMESTAMP_TBL;
 
 -- verify uniform transaction time within transaction block
 START TRANSACTION;
+DECLARE test_now timestamp(2);
+SET test_now = now;
 INSERT INTO TIMESTAMP_TBL VALUES (test_now);
 INSERT INTO TIMESTAMP_TBL VALUES (test_now);
 SELECT count(*) AS two FROM TIMESTAMP_TBL WHERE d1 <= cast(test_now as timestamp);

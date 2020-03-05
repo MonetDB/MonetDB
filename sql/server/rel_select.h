@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #ifndef _REL_SELECT_H_
@@ -21,14 +21,14 @@ extern sql_exp * rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *
 
 extern sql_exp *rel_column_exp(sql_query *query, sql_rel **rel, symbol *column_e, int f);
 extern sql_exp * rel_value_exp(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek);
-extern sql_exp * rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek, int *is_last);
+extern sql_exp * rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek);
 
 /* TODO rename to exp_check_type + move to rel_exp.c */
-extern sql_exp *rel_check_type(mvc *sql, sql_subtype *t, sql_rel *rel, sql_exp *exp, int tpe);
+extern sql_exp *rel_check_type(mvc *sql, sql_subtype *t, sql_rel *rel, sql_exp *exp, check_type tpe);
 
-extern sql_exp *rel_unop_(sql_query *query, sql_rel *rel, sql_exp *e, sql_schema *s, char *fname, int card);
-extern sql_exp *rel_binop_(sql_query *query, sql_rel *rel, sql_exp *l, sql_exp *r, sql_schema *s, char *fname, int card);
-extern sql_exp *rel_nop_(sql_query *query, sql_rel *rel, sql_exp *l, sql_exp *r, sql_exp *r2, sql_exp *r3, sql_schema *s,
+extern sql_exp *rel_unop_(mvc *sql, sql_rel *rel, sql_exp *e, sql_schema *s, char *fname, int card);
+extern sql_exp *rel_binop_(mvc *sql, sql_rel *rel, sql_exp *l, sql_exp *r, sql_schema *s, char *fname, int card);
+extern sql_exp *rel_nop_(mvc *sql, sql_rel *rel, sql_exp *l, sql_exp *r, sql_exp *r2, sql_exp *r3, sql_schema *s,
 						 char *fname, int card);
 extern sql_rel *rel_with_query(sql_query *query, symbol *q);
 extern sql_rel *table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral);

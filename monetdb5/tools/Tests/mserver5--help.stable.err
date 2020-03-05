@@ -13,6 +13,7 @@ stderr of test 'mserver5--help` in directory 'monetdb5/tools` itself:
 Usage: mserver5 [options]
     --dbpath=<directory>      Specify database location
     --dbextra=<directory>     Directory for transient BATs
+    --dbtrace=<directory>     Directory for produced traces
     --in-memory               Run database in-memory only
     --config=<config_file>    Use config_file to read options from
     --single-user             Allow only one user at a time
@@ -20,7 +21,6 @@ Usage: mserver5 [options]
     --set <option>=<value>    Set configuration option
     --help                    Print this list of options
     --version                 Print version and compile time info
-    --verbose[=value]         Set or increase verbosity level
 The debug, testing & trace options:
      --threads
      --memory
@@ -31,7 +31,6 @@ The debug, testing & trace options:
      --modules
      --algorithms
      --performance
-     --optimizers
      --forcemito
      --debug=<bitmask>
 

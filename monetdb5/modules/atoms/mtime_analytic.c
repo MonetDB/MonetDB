@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -33,57 +33,90 @@
 		lng m = k - 1;													\
 		TPE1 v, vmin, vmax;												\
 		TPE2 rlimit;													\
-		for(; k<i; k++, rb++) {											\
-			rlimit = (TPE2) LIMIT;										\
-			v = bp[k];													\
-			if(is_##TPE1##_nil(v)) {									\
-				for(j=k; ; j--) {										\
-					if(!is_##TPE1##_nil(bp[j]))							\
-						break;											\
-				}														\
-			} else {													\
+		if (b->tnonil) {												\
+			for (; k<i; k++, rb++) {									\
+				rlimit = (TPE2) LIMIT;									\
+				v = bp[k];												\
 				vmin = SUB(v, rlimit);									\
 				vmax = ADD(v, rlimit);									\
-				for(j=k; ; j--) {										\
-					if(j == m)											\
-						break;											\
-					if(is_##TPE1##_nil(bp[j]))							\
+				for (j=k; ; j--) {										\
+					if (j == m)											\
 						break;											\
 					if ((!is_##TPE1##_nil(vmin) && bp[j] < vmin) ||		\
 						(!is_##TPE1##_nil(vmax) && bp[j] > vmax))		\
 						break;											\
 				}														\
+				j++;													\
+				*rb = j;												\
 			}															\
-			j++;														\
-			*rb = j;													\
-		}																\
+		} else {														\
+			for (; k<i; k++, rb++) {									\
+				rlimit = (TPE2) LIMIT;									\
+				v = bp[k];												\
+				if (is_##TPE1##_nil(v)) {								\
+					for (j=k; ; j--) {									\
+						if (!is_##TPE1##_nil(bp[j]))					\
+							break;										\
+					}													\
+				} else {												\
+					vmin = SUB(v, rlimit);								\
+					vmax = ADD(v, rlimit);								\
+					for (j=k; ; j--) {									\
+						if (j == m)										\
+							break;										\
+						if (is_##TPE1##_nil(bp[j]))						\
+							break;										\
+						if ((!is_##TPE1##_nil(vmin) && bp[j] < vmin) ||	\
+							(!is_##TPE1##_nil(vmax) && bp[j] > vmax))	\
+							break;										\
+					}													\
+				}														\
+				j++;													\
+				*rb = j;												\
+			}															\
+		} \
 	} while(0)
 
 #define ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_MTIME_FOLLOWING(TPE1, LIMIT, TPE2, SUB, ADD) \
 	do {																\
 		TPE1 v, vmin, vmax;												\
 		TPE2 rlimit;													\
-		for(; k<i; k++, rb++) {											\
-			rlimit = (TPE2) LIMIT;										\
-			v = bp[k];													\
-			if(is_##TPE1##_nil(v)) {									\
-				for(j=k+1; j<i; j++) {									\
-					if(!is_##TPE1##_nil(bp[j]))							\
-						break;											\
-				}														\
-			} else {													\
+		if (b->tnonil) {												\
+			for (; k<i; k++, rb++) {									\
+				rlimit = (TPE2) LIMIT;									\
+				v = bp[k];												\
 				vmin = SUB(v, rlimit);									\
 				vmax = ADD(v, rlimit);									\
-				for(j=k+1; j<i; j++) {									\
-					if(is_##TPE1##_nil(bp[j]))							\
-						break;											\
+				for (j=k+1; j<i; j++) {									\
 					if ((!is_##TPE1##_nil(vmin) && bp[j] < vmin) ||		\
 						(!is_##TPE1##_nil(vmax) && bp[j] > vmax))		\
 						break;											\
 				}														\
+				*rb = j;												\
 			}															\
-			*rb = j;													\
-		}																\
+		} else {														\
+			for (; k<i; k++, rb++) {									\
+				rlimit = (TPE2) LIMIT;									\
+				v = bp[k];												\
+				if (is_##TPE1##_nil(v)) {								\
+					for (j=k+1; j<i; j++) {								\
+						if (!is_##TPE1##_nil(bp[j]))					\
+							break;										\
+					}													\
+				} else {												\
+					vmin = SUB(v, rlimit);								\
+					vmax = ADD(v, rlimit);								\
+					for (j=k+1; j<i; j++) {								\
+						if (is_##TPE1##_nil(bp[j]))						\
+							break;										\
+						if ((!is_##TPE1##_nil(vmin) && bp[j] < vmin) ||	\
+							(!is_##TPE1##_nil(vmax) && bp[j] > vmax))	\
+							break;										\
+					}													\
+				}														\
+				*rb = j;												\
+			}															\
+		} \
 	} while(0)
 
 #define ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED_MTIME(TPE1, IMP, LIMIT, TPE2, SUB, ADD) \

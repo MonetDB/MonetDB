@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -170,9 +170,7 @@ malAtomDefinition(str name, int tpe)
 		throw (SYNTAX, "atomDefinition", "Atom name '%s' too long", name);
 	}
 	if (ATOMindex(name) >= 0) {
-#ifndef HAVE_EMBEDDED /* we can restart embedded MonetDB, making this an expected error */
-		throw(TYPE, "atomDefinition", "Redefinition of atom '%s'", name);
-#endif
+		return MAL_SUCCEED;
 	}
 	if (tpe < 0 || tpe >= GDKatomcnt) {
 		throw(TYPE, "atomDefinition", "Undefined atom inheritance '%s'", name);
@@ -182,12 +180,11 @@ malAtomDefinition(str name, int tpe)
 
 	i = ATOMallocate(name);
 	if (is_int_nil(i))
-		throw(TYPE,"atomDefinition", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(TYPE,"atomDefinition", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	/* overload atom ? */
 	if (tpe) {
 		BATatoms[i] = BATatoms[tpe];
-		strncpy(BATatoms[i].name, name, sizeof(BATatoms[i].name));
-		BATatoms[i].name[sizeof(BATatoms[i].name) - 1] = 0; /* make coverity happy */
+		strcpy_len(BATatoms[i].name, name, sizeof(BATatoms[i].name));
 		BATatoms[i].storage = ATOMstorage(tpe);
 	} else { /* cannot overload void atoms */
 		BATatoms[i].storage = i;

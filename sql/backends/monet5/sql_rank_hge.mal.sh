@@ -2,7 +2,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
 
 sed '/^$/q' $0			# copy copyright from this file
 
@@ -61,6 +61,7 @@ pattern batsql.prod(b:bat[:${tp1#*:}], s:bat[:lng], e:bat[:lng]) :bat[:${tp2#*:}
 address SQLprod
 comment "return the product of groups";
 
+
 EOF
 	fi
     done
@@ -74,5 +75,85 @@ comment "return the average of groups";
 pattern batsql.avg(b:bat[:hge], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
 address SQLavg
 comment "return the average of groups";
+
+pattern sql.stdev(b:hge, s:lng, e:lng) :dbl
+address SQLstddev_samp
+comment "return the standard deviation of groups";
+
+pattern batsql.stdev(b:bat[:hge], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
+address SQLstddev_samp
+comment "return the standard deviation of groups";
+
+pattern sql.stdevp(b:hge, s:lng, e:lng) :dbl
+address SQLstddev_pop
+comment "return the standard deviation of groups";
+
+pattern batsql.stdevp(b:bat[:hge], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
+address SQLstddev_pop
+comment "return the standard deviation of groups";
+
+pattern sql.variance(b:hge, s:lng, e:lng) :dbl
+address SQLvar_samp
+comment "return the variance of groups";
+
+pattern batsql.variance(b:bat[:hge], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
+address SQLvar_samp
+comment "return the variance of groups";
+
+pattern sql.variancep(b:hge, s:lng, e:lng) :dbl
+address SQLvar_pop
+comment "return the variance of groups";
+
+pattern batsql.variancep(b:bat[:hge], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
+address SQLvar_pop
+comment "return the variance of groups";
+
+pattern sql.covariance(b:hge, c:hge, s:lng, e:lng) :dbl
+address SQLcovar_samp
+comment "return the covariance sample value of groups";
+
+pattern batsql.covariance(b:bat[:hge], c:hge, s:bat[:lng], e:bat[:lng]) :bat[:dbl]
+address SQLcovar_samp
+comment "return the covariance sample value of groups";
+
+pattern batsql.covariance(b:hge, c:bat[:hge], s:lng, e:lng) :bat[:dbl]
+address SQLcovar_samp
+comment "return the covariance sample value of groups";
+
+pattern batsql.covariance(b:bat[:hge], c:bat[:hge], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
+address SQLcovar_samp
+comment "return the covariance sample value of groups";
+
+pattern sql.covariancep(b:hge, c:hge, s:lng, e:lng) :dbl
+address SQLcovar_pop
+comment "return the covariance population value of groups";
+
+pattern batsql.covariancep(b:bat[:hge], c:hge, s:bat[:lng], e:bat[:lng]) :bat[:dbl]
+address SQLcovar_pop
+comment "return the covariance population value of groups";
+
+pattern batsql.covariancep(b:hge, c:bat[:hge], s:lng, e:lng) :bat[:dbl]
+address SQLcovar_pop
+comment "return the covariance population value of groups";
+
+pattern batsql.covariancep(b:bat[:hge], c:bat[:hge], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
+address SQLcovar_pop
+comment "return the covariance population value of groups";
+
+pattern sql.corr(b:hge, c:hge, s:lng, e:lng) :dbl
+address SQLcorr
+comment "return the correlation value of groups";
+
+pattern batsql.corr(b:bat[:hge], c:hge, s:bat[:lng], e:bat[:lng]) :bat[:dbl]
+address SQLcorr
+comment "return the correlation value of groups";
+
+pattern batsql.corr(b:hge, c:bat[:hge], s:lng, e:lng) :bat[:dbl]
+address SQLcorr
+comment "return the correlation value of groups";
+
+pattern batsql.corr(b:bat[:hge], c:bat[:hge], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
+address SQLcorr
+comment "return the correlation value of groups";
 
 EOF

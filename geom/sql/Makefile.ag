@@ -2,7 +2,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
 
 headers_sql = {
 	HEADERS = sql
@@ -10,4 +10,4 @@ headers_sql = {
 	SOURCES = 40_geom.sql
 }
 
-EXTRA_DIST_DIR = Tests conformance functions pg_regression
+EXTRA_DIST_DIR = conformance functions pg_regression

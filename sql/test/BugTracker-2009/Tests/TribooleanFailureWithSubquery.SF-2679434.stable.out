@@ -33,7 +33,6 @@ stdout of test 'TribooleanFailureWithSubquery.SF-2679434` in directory 'sql/test
 #) sub2
 #;
 % . # table_name
-# .L13 # table_name
 % suma # name
 % bigint # type
 % 1 # length
@@ -49,7 +48,6 @@ stdout of test 'TribooleanFailureWithSubquery.SF-2679434` in directory 'sql/test
 #HAVING SUM(a) IS NULL
 #;
 % . # table_name
-# .L12 # table_name
 % suma # name
 % bigint # type
 % 1 # length
@@ -65,7 +63,6 @@ stdout of test 'TribooleanFailureWithSubquery.SF-2679434` in directory 'sql/test
 #HAVING SUM(a) IS NOT NULL
 #;
 % . # table_name
-# .L12 # table_name
 % suma # name
 % bigint # type
 % 1 # length
@@ -80,7 +77,6 @@ stdout of test 'TribooleanFailureWithSubquery.SF-2679434` in directory 'sql/test
 #HAVING SUM(a) > 0
 #;
 % . # table_name
-# .L12 # table_name
 % suma # name
 % bigint # type
 % 1 # length
@@ -201,8 +197,7 @@ stdout of test 'TribooleanFailureWithSubquery.SF-2679434` in directory 'sql/test
 #, a AND b AS "a_AND_b"
 #FROM dummy
 #;
-% sys.dummy,    sys.dummy,      sys.,   sys.,   sys.,   sys.,   sys.,   sys.,   sys.,   sys.,   sys. # table_name
-# sys.dummy,    sys.dummy,      sys.L4, sys.L6, sys.L10,        sys.L12,        sys.L14,        sys.L16,        sys.L20,        sys.L22,        sys.L24 # table_name
+% sys.dummy,	sys.dummy,	sys.,	sys.,	sys.,	sys.,	sys.,	sys.,	sys.,	sys.,	sys. # table_name
 % a,    b,      NOT_a,  a_EQ_b, a_NE_b, a_LT_b, a_LE_b, a_GT_b, a_GE_b, a_OR_b, a_AND_b # name
 % boolean,      boolean,        boolean,        boolean,        boolean,        boolean,        boolean,        boolean,        boolean,        boolean,        boolean # type
 % 5,    5,      5,      5,      5,      5,      5,      5,      5,      5,      5 # length

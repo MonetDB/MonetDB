@@ -42,7 +42,7 @@ stdout of test 'CrashMe_SQL_server_crash-2.SF-921673` in directory 'sql/test/Bug
 #	null AS SCOPE_CATALOG,
 #	null AS SCOPE_SCHEMA,
 #	null AS SCOPE_TABLE
-% .L53,	.L55,	.L57,	.L61,	.L63,	.L65,	.L67,	.L71,	.L73,	.L75,	.L77,	.L101,	.L103,	.L105,	.L107,	.L111,	.L113,	.L115,	.L117 # table_name
+% .,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	. # table_name
 % table_cat,	table_schem,	table_name,	column_name,	type_name,	column_size,	decimal_digits,	buffer_length,	num_prec_radix,	nullable,	remarks,	column_def,	sql_data_type,	sql_datetime_sub,	char_octet_length,	ordinal_position,	scope_catalog,	scope_schema,	scope_table # name
 % char,	varchar,	varchar,	varchar,	varchar,	int,	int,	tinyint,	tinyint,	char,	char,	varchar,	tinyint,	tinyint,	tinyint,	bigint,	char,	char,	char # type
 % 0,	3,	9,	11,	7,	4,	1,	1,	2,	0,	0,	0,	1,	1,	1,	2,	0,	0,	0 # length

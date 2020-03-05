@@ -53,7 +53,7 @@ decimal2
 null
 joins
 default
-HAVE_GEOM&HAVE_SAMTOOLS?keys
+HAVE_GEOM?keys
 
 like_tests
 
@@ -102,11 +102,8 @@ subqueries
 
 trace
 
-HAVE_JDBCCLIENT_JAR?bogus-auto-generated-keys
-
 str-pad
 str-trim
-alastair_udf_mergetable_bug
 
 copy-into-fwf
 HAVE_LIBZ&HAVE_LIBBZ2&HAVE_LIBLZMA?copy-from-compressed
@@ -120,11 +117,6 @@ drop-trigger-if-exists
 
 constant-not-in
 
-fsum
-THREADS=1?fsum1
-
-NOT_WIN32&HAVE_LIBLZ4?copy-into-lz4
-NOT_WIN32&HAVE_LIBLZ4?copy-from-lz4
 unicode
 
 window_functions

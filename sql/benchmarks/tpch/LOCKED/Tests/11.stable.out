@@ -33,13 +33,13 @@ stdout of test '11` in directory 'sql/benchmarks/tpch/LOCKED` itself:
 #	sum(ps_supplycost * ps_availqty) >
 #	(
 #		select
-#			sum(ps_supplycost * ps_availqty) * 0.0100000000
+#			sum(ps_supplycost * ps_availqty) * 0.01000000
 #			-- The above constant needs to be adjusted according
 #			-- to the scale factor (SF): constant = 0.0001 / SF.
 #		from
 #			partsupp,
 #			supplier,
-% sys.partsupp,	sys.L4 # table_name
+% sys.partsupp,	sys.%1 # table_name
 % ps_partkey,	value # name
 % int,	decimal # type
 % 4,	20 # length

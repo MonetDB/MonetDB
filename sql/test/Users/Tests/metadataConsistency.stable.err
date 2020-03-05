@@ -1,0 +1,12 @@
+stderr of test 'metadataConsistency` in directory 'sql/test/Users` itself:
+
+
+# 14:51:39 >  
+# 14:51:39 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-648617" "--port=36823"
+# 14:51:39 >  
+
+
+# 14:51:39 >  
+# 14:51:39 >  "Done."
+# 14:51:39 >  
+

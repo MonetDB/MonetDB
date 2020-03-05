@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /* (c) M Kersten
@@ -40,65 +40,63 @@
 #define US_HH (US_MM * 60)
 #define US_DD (US_HH * 24)
 
-#define  MDB_START 1
-#define  MDB_DONE 2
-#define  MDB_PING 3
-#define  MDB_WAIT 4
-#define  MDB_SYSTEM 5
+#define MDB_RET 1
+#define MDB_ARG 2
 
-extern char *statenames[];
-
-#define MAXMALARGS 2048
+typedef struct{
+	int index;
+	int kind;	// MDB_RET, MDB_ARG
+    int	bid;
+	int constant;
+	long count;
+	char *alias;
+	char *name;
+	char *type;
+	char *view;
+	char *parent;
+	char *file;
+	char *persistence;
+	char *seqbase;
+	char *sorted;
+	char *revsorted;
+	char *nonil;
+	char *nil;
+	char *key;
+	char *unique;
+	char *size;
+	char *value;
+	char *debug;
+} Argrecord;
 
 // the break down of a profiler event message
 typedef struct  {
-	// system state
 	char *version;
-	char *release;
-	char *threads;
-	char *memory;
-	char *host;
-	int oid;
-	char *package;
-
-	// event state
-	int index; // return/arg index
-	int state;
-	char *function;	// name of MAL block
 	char *user; 
+	char *session;
+	char *function;	// name of MAL block
+	char *operator;
+	char *module, *instruction;
+	char *state;
+	char *stmt;
+	int thread;	// worker thread involved
 	int pc;		// instruction counter in block
 	int tag;	// unique MAL block invocation tag
-	int64_t eventnr;// serial event number
-	int thread;	// worker thread involved
 	int64_t usec;	// usec since start of session
 	char *time;	// string rep of clock
 	int64_t clkticks;
 	int64_t ticks;
 	int64_t rss;
-	int64_t size;	// size of temporary produced
 	int64_t inblock;
 	int64_t oublock;
 	int64_t majflt;
 	int64_t swaps;
-	int64_t csw;
-	char *stmt;	// MAL statement, cpu loads or commentary
-	char *beauty;// MAL statement compressed
-	char *fcn;	// MAL operator
-	char *numa;
-	char *prereq;	// pre-requisite statements
+	int64_t nvcsw;
+	int maxarg;
+	Argrecord *args;
 } EventRecord;
 
-extern char *maltypes[MAXMALARGS];
-extern char *malvariables[MAXMALARGS];
-extern char *malvalues[MAXMALARGS];
-extern int malsize;
 extern int debug;
-extern char *currentquery;
-
-extern void resetEventRecord(EventRecord *ev);
-extern void eventdump(void);
 extern int keyvalueparser(char *txt, EventRecord *ev);
-extern int lineparser(char *row, EventRecord *ev);
-extern void renderJSONevent(FILE *fd, EventRecord *ev, int notfirst);
-extern char *stripQuotes(char *currentquery);
+extern void renderHeader(FILE *fd);
+extern void renderSummary(FILE *fd, EventRecord *ev, char *filter);
 #endif /*_EVENT_PARSER_*/

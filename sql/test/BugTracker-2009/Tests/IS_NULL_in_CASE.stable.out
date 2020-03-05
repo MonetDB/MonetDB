@@ -36,7 +36,7 @@ stdout of test 'IS_NULL_in_CASE` in directory 'sql/test/BugTracker-2009` itself:
 #END AS "NewColumnName"
 #FROM sometable
 #;
-% sys.sometable,	sys.L3 # table_name
+% sys.sometable,	sys. # table_name
 % somecol,	NewColumnName # name
 % int,	char # type
 % 1,	10 # length
@@ -53,7 +53,7 @@ stdout of test 'IS_NULL_in_CASE` in directory 'sql/test/BugTracker-2009` itself:
 #END AS "NewColumnName"
 #FROM sometable
 #;
-% sys.sometable,	sys.L3 # table_name
+% sys.sometable,	sys. # table_name
 % somecol,	NewColumnName # name
 % int,	char # type
 % 1,	10 # length

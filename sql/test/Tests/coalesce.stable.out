@@ -45,14 +45,14 @@ stdout of test 'coalesce` in directory 'sql/test` itself:
 [ 1	]
 [ 1	]
 #select avg(coalesce(age,38)) from coalescetest;
-% sys.L3 # table_name
-% L3 # name
+% sys.%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ 30.5	]
 #select id, coalesce(name,'user unknown') from coalescetest;
-% sys.coalescetest,	sys.L3 # table_name
-% id,	L3 # name
+% sys.coalescetest,	sys. # table_name
+% id,	%2 # name
 % int,	varchar # type
 % 1,	12 # length
 [ 1,	"a"	]
@@ -60,8 +60,8 @@ stdout of test 'coalesce` in directory 'sql/test` itself:
 [ 3,	"c"	]
 [ 4,	"user unknown"	]
 #select id, coalesce(age,'age unknown') from coalescetest;
-% sys.coalescetest,	sys.L3 # table_name
-% id,	L3 # name
+% sys.coalescetest,	sys. # table_name
+% id,	%2 # name
 % int,	char # type
 % 1,	11 # length
 [ 1,	"20"	]
@@ -69,8 +69,8 @@ stdout of test 'coalesce` in directory 'sql/test` itself:
 [ 3,	"age unknown"	]
 [ 4,	"age unknown"	]
 #select id, coalesce(age,-1) from coalescetest;
-% sys.coalescetest,	sys.L3 # table_name
-% id,	L3 # name
+% sys.coalescetest,	sys. # table_name
+% id,	%2 # name
 % int,	int # type
 % 1,	2 # length
 [ 1,	20	]
@@ -78,8 +78,8 @@ stdout of test 'coalesce` in directory 'sql/test` itself:
 [ 3,	-1	]
 [ 4,	-1	]
 #select id, coalesce(name, age, 'unknown') from coalescetest;
-% sys.coalescetest,	sys.L3 # table_name
-% id,	L3 # name
+% sys.coalescetest,	sys. # table_name
+% id,	%2 # name
 % int,	char # type
 % 1,	10 # length
 [ 1,	"a"	]
@@ -87,8 +87,8 @@ stdout of test 'coalesce` in directory 'sql/test` itself:
 [ 3,	"c"	]
 [ 4,	"unknown"	]
 #SELECT COALESCE(NULL,'x');
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% %1 # name
 % char # type
 % 1 # length
 [ "x"	]

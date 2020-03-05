@@ -68,14 +68,14 @@ stdout of test 'case-with-string-Bug.3932` in directory 'sql/test/BugTracker-201
 #INSERT INTO bug3932 VALUES ('12345','1234567890');
 [ 1	]
 #SELECT CASE WHEN 1=2 THEN a ELSE b END FROM bug3932;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% %1 # name
 % varchar # type
 % 10 # length
 [ "1234567890"	]
 #SELECT CASE WHEN 1=2 THEN a ELSE 'lala' END FROM bug3932;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% %1 # name
 % varchar # type
 % 4 # length
 [ "lala"	]

@@ -4,7 +4,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
 
 import sys
 import fileinput
@@ -28,8 +28,7 @@ subs = [("@exec_prefix@", r'%prefix%'),
         ("@pkgdatadir@", r'%prefix%\share\@PACKAGE@'),
         ("@pkglibdir@", r'%exec_prefix%\lib\@PACKAGE@'),
         ("@pkgincludedir@", r'%prefix%\include\@PACKAGE@'),
-        ("@DIRSEP@", '\\'),
-        ("@PATHSEP@", ';')]
+]
 
 if len(sys.argv) > 1 and sys.argv[1].endswith(r'\winconfig_conds.py'):
     conds = {}

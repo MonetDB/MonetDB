@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -240,14 +240,10 @@ newODBCError(const char *SQLState, const char *msg, int nativeCode)
 	}
 
 	if (SQLState) {
-		strncpy(error->sqlState, SQLState, SQL_SQLSTATE_SIZE);
-		error->sqlState[SQL_SQLSTATE_SIZE] = '\0';
+		strcpy_len(error->sqlState, SQLState, sizeof(error->sqlState));
 	} else {
 		/* initialize it with nulls */
-		int i = 0;
-
-		for (; i <= SQL_SQLSTATE_SIZE; i++)
-			error->sqlState[i] = 0;
+		memset(error->sqlState, 0, sizeof(error->sqlState));
 	}
 
 	if (msg) {

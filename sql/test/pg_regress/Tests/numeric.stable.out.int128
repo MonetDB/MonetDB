@@ -912,7 +912,7 @@ stdout of test 'numeric` in directory 'sql/test/pg_regress` itself:
 #    FROM num_result t1, num_exp_add t2
 #    WHERE t1.id1 = t2.id1 AND t1.id2 = t2.id2
 #    AND t1.result <> round(t2.expected, 20);
-% sys.t1,	sys.t1,	sys.t1,	sys.L5 # table_name
+% sys.t1,	sys.t1,	sys.t1,	sys. # table_name
 % id1,	id2,	result,	expected # name
 % int,	int,	decimal,	decimal # type
 % 1,	1,	40,	40 # length
@@ -938,7 +938,7 @@ stdout of test 'numeric` in directory 'sql/test/pg_regress` itself:
 #    FROM num_result t1, num_exp_sub t2
 #    WHERE t1.id1 = t2.id1 AND t1.id2 = t2.id2
 #    AND t1.result <> round(t2.expected, 40);
-% sys.t1,	sys.t1,	sys.t1,	sys.L5 # table_name
+% sys.t1,	sys.t1,	sys.t1,	sys. # table_name
 % id1,	id2,	result,	expected # name
 % int,	int,	decimal,	decimal # type
 % 1,	1,	40,	40 # length
@@ -964,7 +964,7 @@ stdout of test 'numeric` in directory 'sql/test/pg_regress` itself:
 #    FROM num_result t1, num_exp_mul t2
 #    WHERE t1.id1 = t2.id1 AND t1.id2 = t2.id2
 #    AND t1.result <> round(t2.expected, 30);
-% sys.t1,	sys.t1,	sys.t1,	sys.L5 # table_name
+% sys.t1,	sys.t1,	sys.t1,	sys. # table_name
 % id1,	id2,	result,	expected # name
 % int,	int,	decimal,	decimal # type
 % 1,	1,	40,	40 # length
@@ -1049,7 +1049,7 @@ stdout of test 'numeric` in directory 'sql/test/pg_regress` itself:
 #    FROM num_result t1, num_exp_div t2
 #    WHERE t1.id1 = t2.id1 AND t1.id2 = t2.id2
 #    AND t1.result <> round(t2.expected, 80);
-% sys.t1,	sys.t1,	sys.t1,	sys.L5 # table_name
+% sys.t1,	sys.t1,	sys.t1,	sys. # table_name
 % id1,	id2,	result,	expected # name
 % int,	int,	decimal,	decimal # type
 % 1,	1,	40,	40 # length
@@ -1197,8 +1197,8 @@ stdout of test 'numeric` in directory 'sql/test/pg_regress` itself:
 [ 8,	167361463828.0748873417400254464,	167361463828.0749132006901612595	]
 [ 9,	107511333880051856.8737742196435845120,	107511333880052007.0414112467354033746	]
 #SELECT AVG(val) FROM num_data;
-% sys.L3 # table_name
-% L3 # name
+% sys.%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ -13430913.59	]
@@ -1243,8 +1243,8 @@ stdout of test 'numeric` in directory 'sql/test/pg_regress` itself:
 #INSERT INTO ceil_floor_round VALUES ('-0.000001');
 [ 1	]
 #SELECT a, ceil(a), ceiling(a), floor(a) FROM ceil_floor_round;
-% sys.ceil_floor_round,	sys.L3,	sys.L5,	sys.L7 # table_name
-% a,	L3,	L5,	L7 # name
+% sys.ceil_floor_round,	sys.,	sys.,	sys. # table_name
+% a,	%2,	%3,	%4 # name
 % decimal,	double,	double,	double # type
 % 20,	24,	24,	24 # length
 [ -5.500,	-5,	-5,	-6	]
@@ -1255,8 +1255,8 @@ stdout of test 'numeric` in directory 'sql/test/pg_regress` itself:
 [ 0.000,	0,	0,	0	]
 [ 0.000,	0,	0,	0	]
 #SELECT a, round(a, 0) FROM ceil_floor_round;
-% sys.ceil_floor_round,	sys.L3 # table_name
-% a,	L3 # name
+% sys.ceil_floor_round,	sys. # table_name
+% a,	%2 # name
 % decimal,	decimal # type
 % 20,	20 # length
 [ -5.500,	-6.000	]

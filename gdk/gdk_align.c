@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -137,7 +137,8 @@ VIEWcreate(oid seq, BAT *b)
 		GDKfree(bn);
 		return NULL;
 	}
-	ALGODEBUG fprintf(stderr, "#VIEWcreate(" ALGOBATFMT ")=" ALGOBATFMT "\n", ALGOBATPAR(b), ALGOBATPAR(bn));
+	TRC_DEBUG(ALGO, "VIEWcreate(" ALGOBATFMT ")=" ALGOBATFMT "\n",
+		  ALGOBATPAR(b), ALGOBATPAR(bn));
 	return bn;
 }
 
@@ -164,8 +165,7 @@ BATmaterialize(BAT *b)
 	p = 0;
 	q = BUNlast(b);
 	assert(cnt >= q - p);
-	ALGODEBUG fprintf(stderr, "#BATmaterialize(" ALGOBATFMT ")\n",
-			  ALGOBATPAR(b));
+	TRC_DEBUG(ALGO, "BATmaterialize(" ALGOBATFMT ")\n", ALGOBATPAR(b));
 
 	if (tt != TYPE_void) {
 		/* no voids */
@@ -178,7 +178,8 @@ BATmaterialize(BAT *b)
 	IMPSdestroy(b);
 	OIDXdestroy(b);
 
-	stpconcat(b->theap.filename, BBP_physical(b->batCacheid), ".tail", NULL);
+	strconcat_len(b->theap.filename, sizeof(b->theap.filename),
+		      BBP_physical(b->batCacheid), ".tail", NULL);
 	if (HEAPalloc(&b->theap, cnt, sizeof(oid)) != GDK_SUCCEED) {
 		b->theap = tail;
 		return GDK_FAIL;
@@ -292,7 +293,8 @@ VIEWreset(BAT *b)
 		assert(tp || tvp || !b->ttype);
 
 		tail.farmid = BBPselectfarm(b->batRole, b->ttype, offheap);
-		stpconcat(tail.filename, nme, ".tail", NULL);
+		strconcat_len(tail.filename, sizeof(tail.filename),
+			      nme, ".tail", NULL);
 		if (b->ttype && HEAPalloc(&tail, cnt, Tsize(b)) != GDK_SUCCEED)
 			goto bailout;
 		if (b->tvheap) {
@@ -300,7 +302,8 @@ VIEWreset(BAT *b)
 			if (th == NULL)
 				goto bailout;
 			th->farmid = BBPselectfarm(b->batRole, b->ttype, varheap);
-			stpconcat(th->filename, nme, ".tail", NULL);
+			strconcat_len(th->filename, sizeof(th->filename),
+				      nme, ".tail", NULL);
 			if (ATOMheap(b->ttype, th, cnt) != GDK_SUCCEED)
 				goto bailout;
 		}
@@ -332,7 +335,6 @@ VIEWreset(BAT *b)
 		b->batRestricted = BAT_WRITE;
 
 		b->tkey = BATtkey(v);
-		b->tunique = false;
 
 		/* copy the heaps */
 		b->theap = tail;
@@ -357,7 +359,6 @@ VIEWreset(BAT *b)
 		b->batDirtydesc = true;
 
 		b->tkey = BATtkey(v);
-		b->tunique = false;
 
 		/* make the BAT empty and insert all again */
 		DELTAinit(b);

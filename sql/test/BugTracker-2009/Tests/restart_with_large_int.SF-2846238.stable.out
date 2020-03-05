@@ -29,15 +29,15 @@ stdout of test 'restart_with_large_int.SF-2846238` in directory 'sql/test/BugTra
 
 #CREATE SEQUENCE "test_seq" as bigint;
 #select next value for test_seq;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 1	]
 #alter sequence test_seq restart with 3000000000;
 #select next value for test_seq;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% %1 # name
 % bigint # type
 % 10 # length
 [ 3000000000	]

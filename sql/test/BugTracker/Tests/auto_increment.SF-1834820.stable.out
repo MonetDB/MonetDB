@@ -49,15 +49,15 @@ stdout of test 'auto_increment.SF-1834820` in directory 'sql/test/BugTracker` it
 [ 1,	"wendy",	"Wendy\nWones"	]
 [ 2,	"fred",	"Fred Flintstone"	]
 #select count(*) from sequences;
-% .L3 # table_name
-% L3 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 1	]
 #drop table testusers;
 #select count(*) from sequences;
-% .L3 # table_name
-% L3 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 0	]

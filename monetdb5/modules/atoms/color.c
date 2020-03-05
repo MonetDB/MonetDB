@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -77,7 +77,7 @@ color_fromstr(const char *colorStr, size_t *len, color **c, bool external)
 		*len = sizeof(color);
 	}
 
-	if (GDK_STRNIL(colorStr)) {
+	if (strNil(colorStr)) {
 		**c = color_nil;
 		return 1;
 	}

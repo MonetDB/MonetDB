@@ -31,7 +31,7 @@ stdout of test 'rapi05` in directory 'sql/backends/monet5` itself:
 #language R {kmeans(arg1,arg2)$cluster};
 #SELECT cluster FROM (SELECT MIN(x) AS minx, MAX(x) AS maxx, kmeans(x,5) AS cluster FROM xdata 
 #	GROUP BY cluster) as cdata ORDER BY cluster;
-% sys.L12 # table_name
+% sys.cdata # table_name
 % cluster # name
 % int # type
 % 1 # length

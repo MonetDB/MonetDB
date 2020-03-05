@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #ifndef _SQL_STATEMENT_H_
@@ -26,7 +26,6 @@ typedef union stmtdata {
 	struct sql_table *tval;
 
 	sql_subtype typeval;
-	struct sql_subaggr *aggrval;
 	struct sql_subfunc *funcval;
 	sql_rel *rel;
 } stmtdata;
@@ -66,6 +65,7 @@ typedef enum stmt_type {
 	st_join,
 	st_join2,
 	st_joinN,
+	st_semijoin,
 
 	st_export,
 	st_append,
@@ -166,7 +166,7 @@ extern stmt *stmt_atom_lng(backend *be, lng i);
 extern stmt *stmt_atom_lng_nil(backend *be);
 extern stmt *stmt_bool(backend *be, int b);
 
-extern stmt *stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, int anti);
+extern stmt *stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, int anti, int is_semantics);
 /* cmp
        0 ==   l <  x <  h
        1 ==   l <  x <= h
@@ -181,10 +181,11 @@ extern stmt *stmt_tdiff(backend *be, stmt *op1, stmt *op2);
 extern stmt *stmt_tdiff2(backend *be, stmt *op1, stmt *op2);
 extern stmt *stmt_tinter(backend *be, stmt *op1, stmt *op2);
 
-extern stmt *stmt_join(backend *be, stmt *op1, stmt *op2, int anti, comp_type cmptype);
+extern stmt *stmt_join(backend *be, stmt *op1, stmt *op2, int anti, comp_type cmptype, int is_semantics);
 extern stmt *stmt_join2(backend *be, stmt *l, stmt *ra, stmt *rb, int cmp, int anti, int swapped);
 /* generic join operator, with a left and right statement list */
 extern stmt *stmt_genjoin(backend *be, stmt *l, stmt *r, sql_subfunc *op, int anti, int swapped);
+extern stmt *stmt_semijoin(backend *be, stmt *op1, stmt *op2, int is_semantics);
 
 extern stmt *stmt_project(backend *be, stmt *op1, stmt *op2);
 extern stmt *stmt_project_delta(backend *be, stmt *col, stmt *upd, stmt *ins);
@@ -220,7 +221,7 @@ extern stmt *stmt_unop(backend *be, stmt *op1, sql_subfunc *op);
 extern stmt *stmt_binop(backend *be, stmt *op1, stmt *op2, sql_subfunc *op);
 extern stmt *stmt_Nop(backend *be, stmt *ops, sql_subfunc *op);
 extern stmt *stmt_func(backend *be, stmt *ops, const char *name, sql_rel *imp, int f_union);
-extern stmt *stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subaggr *op, int reduce, int no_nil, int nil_if_empty);
+extern stmt *stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int reduce, int no_nil, int nil_if_empty);
 
 extern stmt *stmt_alias(backend *be, stmt *op1, const char *tname, const char *name);
 

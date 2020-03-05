@@ -79,8 +79,8 @@ stdout of test 'pyapi3_27` in directory 'sql/backends/monet5/UDF/pyapi3` itself:
 #CREATE AGGREGATE aggrmedian_dbl(val double) RETURNS integer LANGUAGE PYTHON_MAP { return numpy.median(val) };
 #CREATE AGGREGATE aggrmedian_str(val string) RETURNS integer LANGUAGE PYTHON_MAP { return numpy.median([int(x) for x in val]) };
 #SELECT groupcol,aggrmedian_int(intcol) FROM rvalfunc() GROUP BY groupcol;
-% .L1,	.L5 # table_name
-% groupcol,	L4 # name
+% .%1,	.%2 # table_name
+% groupcol,	%2 # name
 % int,	int # type
 % 1,	2 # length
 [ 0,	31	]
@@ -88,8 +88,8 @@ stdout of test 'pyapi3_27` in directory 'sql/backends/monet5/UDF/pyapi3` itself:
 [ 2,	31	]
 [ 3,	21	]
 #SELECT groupcol,aggrmedian_flt(fltcol) FROM rvalfunc() GROUP BY groupcol;
-% .L1,	.L5 # table_name
-% groupcol,	L4 # name
+% .%1,	.%2 # table_name
+% groupcol,	%2 # name
 % int,	int # type
 % 1,	2 # length
 [ 0,	31	]
@@ -97,8 +97,8 @@ stdout of test 'pyapi3_27` in directory 'sql/backends/monet5/UDF/pyapi3` itself:
 [ 2,	31	]
 [ 3,	21	]
 #SELECT groupcol,aggrmedian_dbl(dblcol) FROM rvalfunc() GROUP BY groupcol;
-% .L1,	.L5 # table_name
-% groupcol,	L4 # name
+% .%1,	.%2 # table_name
+% groupcol,	%2 # name
 % int,	int # type
 % 1,	2 # length
 [ 0,	31	]
@@ -106,8 +106,8 @@ stdout of test 'pyapi3_27` in directory 'sql/backends/monet5/UDF/pyapi3` itself:
 [ 2,	31	]
 [ 3,	21	]
 #SELECT groupcol,aggrmedian_str(strcol) FROM rvalfunc() GROUP BY groupcol;
-% .L1,	.L5 # table_name
-% groupcol,	L4 # name
+% .%1,	.%2 # table_name
+% groupcol,	%2 # name
 % int,	int # type
 % 1,	2 # length
 [ 0,	31	]

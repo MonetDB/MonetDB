@@ -2,7 +2,7 @@
 -- License, v. 2.0.  If a copy of the MPL was not distributed with this
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/.
 --
--- Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+-- Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
 
 -- show the optimizer statistics maintained by the SQL frontend
 create function sys.optimizer_stats()
@@ -54,11 +54,11 @@ create procedure sys.flush_log ()
 
 -- Helper function to disable the log merger
 create procedure suspend_log_flushing()
-        external name sql.suspend_log_flushing;
+	external name sql.suspend_log_flushing;
 
 -- Helper function to enable the log merger
 create procedure resume_log_flushing()
-        external name sql.resume_log_flushing;
+	external name sql.resume_log_flushing;
 
 create function sys.debug(debug int) returns integer
 	external name mdb."setDebug";
@@ -67,17 +67,39 @@ create function sys.debug(flag string) returns integer
 	external name mdb."setDebug";
 
 create function sys.debugflags()
-	returns table("flag" string, "val" bool)
-	external name "mdb"."getDebugFlags";
+	returns table(flag string, val bool)
+	external name mdb."getDebugFlags";
 
 create function sys.deltas ("schema" string)
-    returns table ("id" int, "cleared" boolean, "immutable" bigint, "inserted" bigint, "updates" bigint, "deletes" bigint, "level" int)
-    external name "sql"."deltas";
+	returns table ("id" int, "cleared" boolean, "immutable" bigint, "inserted" bigint, "updates" bigint, "deletes" bigint, "level" int)
+	external name "sql"."deltas";
 
 create function sys.deltas ("schema" string, "table" string)
-    returns table ("id" int, "cleared" boolean, "immutable" bigint, "inserted" bigint, "updates" bigint, "deletes" bigint, "level" int)
-    external name "sql"."deltas";
+	returns table ("id" int, "cleared" boolean, "immutable" bigint, "inserted" bigint, "updates" bigint, "deletes" bigint, "level" int)
+	external name "sql"."deltas";
 
 create function sys.deltas ("schema" string, "table" string, "column" string)
-    returns table ("id" int, "cleared" boolean, "immutable" bigint, "inserted" bigint, "updates" bigint, "deletes" bigint, "level" int)
-    external name "sql"."deltas";
+	returns table ("id" int, "cleared" boolean, "immutable" bigint, "inserted" bigint, "updates" bigint, "deletes" bigint, "level" int)
+	external name "sql"."deltas";
+
+-- Sleep procedure
+create procedure sys."sleep"(msecs tinyint)
+	external name "alarm"."sleep";
+grant execute on procedure sys."sleep"(tinyint) to public;
+create procedure sys."sleep"(msecs smallint)
+	external name "alarm"."sleep";
+grant execute on procedure sys."sleep"(smallint) to public;
+create procedure sys."sleep"(msecs int)
+	external name "alarm"."sleep";
+grant execute on procedure sys."sleep"(int) to public;
+
+-- Sleep function
+create function sys."sleep"(msecs tinyint) returns tinyint
+	external name "alarm"."sleep";
+grant execute on function sys."sleep"(tinyint) to public;
+create function sys."sleep"(msecs smallint) returns smallint
+	external name "alarm"."sleep";
+grant execute on function sys."sleep"(smallint) to public;
+create function sys."sleep"(msecs int) returns int
+	external name "alarm"."sleep";
+grant execute on function sys."sleep"(int) to public;

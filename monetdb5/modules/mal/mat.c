@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -68,7 +68,7 @@ MATpackInternal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	bn = COLnew(0, tt, cap, TRANSIENT);
 	if (bn == NULL)
-		throw(MAL, "mat.pack", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "mat.pack", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	for (i = 1; i < p->argc; i++) {
 		b = BATdescriptor(stk->stk[getArg(p,i)].val.ival);
@@ -116,7 +116,7 @@ MATpackIncrement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		bn = COLnew(b->hseqbase, ATOMtype(b->ttype), (BUN)(1.2 * BATcount(b) * pieces), TRANSIENT);
 		if (bn == NULL) {
 			BBPunfix(b->batCacheid);
-			throw(MAL, "mat.pack", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "mat.pack", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		/* allocate enough space for the vheap, but not for strings,
 		 * since BATappend does clever things for strings */
@@ -125,7 +125,7 @@ MATpackIncrement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			if (HEAPextend(bn->tvheap, newsize, true) != GDK_SUCCEED) {
 				BBPunfix(b->batCacheid);
 				BBPunfix(bn->batCacheid);
-				throw(MAL, "mat.pack", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				throw(MAL, "mat.pack", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 		}
 		BATtseqbase(bn, b->tseqbase);
@@ -186,15 +186,15 @@ MATpackValues(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	type = getArgType(mb,p,first);
 	bn = COLnew(0, type, p->argc, TRANSIENT);
 	if( bn == NULL)
-		throw(MAL, "mat.pack", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "mat.pack", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	if (ATOMextern(type)) {
 		for(i = first; i < p->argc; i++)
-			if (BUNappend(bn, stk->stk[getArg(p,i)].val.pval, true) != GDK_SUCCEED)
+			if (BUNappend(bn, stk->stk[getArg(p,i)].val.pval, false) != GDK_SUCCEED)
 				goto bailout;
 	} else {
 		for(i = first; i < p->argc; i++)
-			if (BUNappend(bn, getArgReference(stk, p, i), true) != GDK_SUCCEED)
+			if (BUNappend(bn, getArgReference(stk, p, i), false) != GDK_SUCCEED)
 				goto bailout;
 	}
 	ret= getArgReference_bat(stk,p,0);
@@ -202,5 +202,5 @@ MATpackValues(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	return MAL_SUCCEED;
   bailout:
 	BBPreclaim(bn);
-	throw(MAL, "mat.pack", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	throw(MAL, "mat.pack", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }

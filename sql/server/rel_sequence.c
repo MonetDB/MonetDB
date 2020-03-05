@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -88,12 +88,10 @@ rel_create_seq(
 	sql_sequence *seq = NULL;
 	char *name = qname_table(qname);
 	char *sname = qname_schema(qname);
-	sql_schema *s = NULL;
+	sql_schema *s = ss;
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_error(sql, 02, SQLSTATE(3F000) "CREATE SEQUENCE: no such schema '%s'", sname);
-	if (s == NULL)
-		s = ss;
 	(void) tpe;
 	if (find_sql_sequence(s, name)) {
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE SEQUENCE: name '%s' already in use", name);
@@ -116,7 +114,7 @@ rel_create_seq(
 	/* for multi statements we keep the sequence around */
 	if (res && stack_has_frame(sql, "MUL") != 0) {
 		if(!stack_push_rel_view(sql, name, rel_dup(res)))
-			return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	return res;
@@ -218,7 +216,17 @@ list_create_seq(
 				assert(0);
 			}
 		}
+		if (!is_lng_nil(start)) {
+			if (!is_lng_nil(min) && start < min)
+				return sql_error(sql, 02, SQLSTATE(42000) "CREATE SEQUENCE: START value is lesser than MINVALUE ("LLFMT" < "LLFMT")", start, min);
+			if (!is_lng_nil(max) && start > max)
+				return sql_error(sql, 02, SQLSTATE(42000) "CREATE SEQUENCE: START value is higher than MAXVALUE ("LLFMT" > "LLFMT")", start, max);
+		}
+		if (!is_lng_nil(min) && !is_lng_nil(max) && max < min)
+			return sql_error(sql, 02, SQLSTATE(42000) "CREATE SEQUENCE: MAXVALUE value is lesser than MINVALUE ("LLFMT" < "LLFMT")", max, min);
 	}
+	if (is_lng_nil(start) && !is_lng_nil(min) && min) /* if start value not set, set it to the minimum if available */
+		start = min;
 	return rel_create_seq(sql, ss, qname, t, start, inc, min, max, cache, cycle, bedropped);
 }
 
@@ -239,7 +247,7 @@ rel_alter_seq(
 	char* name = qname_table(qname);
 	char *sname = qname_schema(qname);
 	sql_sequence *seq;
-	sql_schema *s = NULL;
+	sql_schema *s = ss;
 
 	int start_type = start_list->h->data.i_val;
 	sql_rel *r = NULL;
@@ -248,8 +256,6 @@ rel_alter_seq(
 	assert(start_list->h->type == type_int);
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SEQUENCE: no such schema '%s'", sname);
-	if (!s)
-		s = ss;
 	(void) tpe;
 	if (!(seq = find_sql_sequence(s, name))) {
 		return sql_error(sql, 02, SQLSTATE(42000) "ALTER SEQUENCE: no such sequence '%s'", name);
@@ -269,24 +275,22 @@ rel_alter_seq(
 		val = exp_atom_lng(sql->sa, seq->start);
 	} else if (start_type == 1) { /* value (exp) */
 		exp_kind ek = {type_value, card_value, FALSE};
-		int is_last = 0;
 		sql_subtype *lng_t = sql_bind_localtype("lng");
 
-		val = rel_value_exp2(query, &r, start_list->h->next->data.sym, sql_sel, ek, &is_last);
+		val = rel_value_exp2(query, &r, start_list->h->next->data.sym, sql_sel, ek);
 		if (!val || !(val = rel_check_type(sql, lng_t, r, val, type_equal)))
 			return NULL;
 		if (r && r->op == op_project) {
 			exp_label(sql->sa, val, ++sql->label);
 			val = rel_project_add_exp(sql, r, val);
-			val = exp_ref(sql->sa, val);
 		}
 	} else if (start_type == 2) {
 		assert (start_list->h->next->type == type_lng);
 		val = exp_atom_lng(sql->sa, start_list->h->next->data.l_val);
 	}
 	if (val && val->card > CARD_ATOM) {
-		sql_subaggr *zero_or_one = sql_bind_aggr(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(val));
-		val = exp_aggr1(sql->sa, val, zero_or_one, 0, 0, CARD_ATOM, 0);
+		sql_subfunc *zero_or_one = sql_bind_func(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(val), NULL, F_AGGR);
+		val = exp_aggr1(sql->sa, val, zero_or_one, 0, 0, CARD_ATOM, has_nil(val));
 	}
 	return rel_seq(sql->sa, ddl_alter_seq, s->base.name, seq, r, val);
 }
@@ -367,6 +371,8 @@ list_alter_seq(
 			assert(0);
 		}
 	}
+	if (!is_lng_nil(min) && !is_lng_nil(max) && max < min)
+		return sql_error(sql, 02, SQLSTATE(42000) "ALTER SEQUENCE: MAXVALUE value is lesser than MINVALUE ("LLFMT" < "LLFMT")", max, min);
 	return rel_alter_seq(query, ss, qname, t, start, inc, min, max, cache, cycle);
 }
 

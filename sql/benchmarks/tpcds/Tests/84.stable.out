@@ -11,7 +11,7 @@ stdout of test '84` in directory 'sql/benchmarks/tpcds` itself:
 # Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
 # Found 62.694 GiB available main-memory.
 # Copyright (c) 1993 - July 2008 CWI.
-# Copyright (c) August 2008 - 2019 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008 - 2020 MonetDB B.V., all rights reserved
 # Visit https://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://methuselah.da.cwi.nl:30709/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-16393/.s.monetdb.30709
@@ -35,7 +35,10 @@ stdout of test '84` in directory 'sql/benchmarks/tpcds` itself:
 #  AND c_current_addr_sk = ca_address_sk
 #  AND ib_lower_bound >= 38128
 #  AND ib_upper_bound <= 38128 + 50000
-% sys.L2,	sys.L4 # table_name
+#  AND ib_income_band_sk = hd_income_band_sk
+#  AND cd_demo_sk = c_current_cdemo_sk
+#  AND hd_demo_sk = c_current_hdemo_sk
+% sys.,	sys. # table_name
 % customer_id,	customername # name
 % char,	varchar # type
 % 16,	19 # length

@@ -44,7 +44,7 @@ stdout of test 'sqlsmith.Bug-6453` in directory 'sql/test/mergetables` itself:
 #              ref_1.role_id as c3, 
 #              ref_0.z as c4, 
 #              ref_1.login_id as c5, 
-% .L133 # table_name
+% . # table_name
 % c0 # name
 % int # type
 % 1 # length

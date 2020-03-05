@@ -24,8 +24,8 @@ stdout of test 'T39` in directory 'geom/sql/conformance` itself:
 # 15:05:54 >  
 
 #SELECT ST_Touches(centerline, shore) FROM streams, lakes WHERE streams.name = 'Cam Stream' AND lakes.name = 'Blue Lake';
-% sys.L1 # table_name
-% L1 # name
+% sys.%1 # table_name
+% %1 # name
 % boolean # type
 % 5 # length
 [ true	]

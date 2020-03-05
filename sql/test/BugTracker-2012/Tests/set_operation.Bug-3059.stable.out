@@ -96,7 +96,7 @@ stdout of test 'set_operation.Bug-3059` in directory 'sql/test/BugTracker-2012` 
 [ 3,	1,	16	]
 [ 3,	2,	2	]
 #SELECT count(*) as c FROM ((SELECT * FROM S) INTERSECT (SELECT * FROM R)) as inter;
-% sys.L16 # table_name
+% sys. # table_name
 % c # name
 % bigint # type
 % 1 # length
@@ -111,7 +111,7 @@ stdout of test 'set_operation.Bug-3059` in directory 'sql/test/BugTracker-2012` 
 [ 2,	1,	28	]
 [ 3,	0,	1	]
 #SELECT count(*) as c FROM ((SELECT * FROM S) EXCEPT (SELECT * FROM R)) as diff;
-% sys.L16 # table_name
+% sys. # table_name
 % c # name
 % bigint # type
 % 1 # length

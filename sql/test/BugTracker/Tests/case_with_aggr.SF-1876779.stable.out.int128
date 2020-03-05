@@ -28,20 +28,20 @@ stdout of test 'case_with_aggr.SF-1876779` in directory 'sql/test/BugTracker` it
 
 #CREATE TABLE casebug(a int);
 #SELECT SUM(a) FROM casebug;
-% sys.L3 # table_name
-% L3 # name
+% sys.%1 # table_name
+% %1 # name
 % hugeint # type
 % 1 # length
 [ NULL	]
 #SELECT MIN(a) FROM casebug;
-% sys.L3 # table_name
-% L3 # name
+% sys.%1 # table_name
+% %1 # name
 % int # type
 % 1 # length
 [ NULL	]
 #SELECT COALESCE(MIN(a), 0) FROM casebug;
-% sys.L4 # table_name
-% L4 # name
+% sys. # table_name
+% %2 # name
 % int # type
 % 1 # length
 [ 0	]

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -21,6 +21,7 @@
 #include "stream.h"
 #include "stream_socket.h"
 #include "mcrypt.h"
+#include "mstring.h"
 
 #define SOCKPTR struct sockaddr *
 
@@ -69,7 +70,7 @@ char* control_send(
 		server = (struct sockaddr_un) {
 			.sun_family = AF_UNIX,
 		};
-		strncpy(server.sun_path, host, sizeof(server.sun_path) - 1);
+		strcpy_len(server.sun_path, host, sizeof(server.sun_path));
 		if (connect(sock, (SOCKPTR) &server, sizeof(struct sockaddr_un)) == -1) {
 			snprintf(sbuf, sizeof(sbuf), "cannot connect: %s", strerror(errno));
 			closesocket(sock);
@@ -101,6 +102,7 @@ char* control_send(
 				continue;
 			if (connect(sock, rp->ai_addr, (socklen_t) rp->ai_addrlen) != SOCKET_ERROR)
 				break;  /* success */
+			closesocket(sock);
 		}
 		freeaddrinfo(res);
 		if (rp == NULL) {
@@ -143,9 +145,8 @@ char* control_send(
 			fdin = block_stream(socket_rstream(sock, "client in"));
 			fdout = block_stream(socket_wstream(sock, "client out"));
 		} else {
-			if (len > 2 &&
-					(strstr(rbuf + 2, ":BIG:") != NULL ||
-					 strstr(rbuf + 2, ":LIT:") != NULL))
+			if (strstr(rbuf + 2, ":BIG:") != NULL ||
+				strstr(rbuf + 2, ":LIT:") != NULL)
 			{
 				snprintf(sbuf, sizeof(sbuf), "cannot connect: "
 						"server looks like a mapi server, "
@@ -298,6 +299,14 @@ char* control_send(
 				{
 					snprintf(sbuf, sizeof(sbuf), "cannot connect: "
 							"monetdbd server requires unknown hash: %s", shash);
+					close_stream(fdout);
+					close_stream(fdin);
+					return(strdup(sbuf));
+				}
+
+				if (!phash) {
+					snprintf(sbuf, sizeof(sbuf), "cannot connect: "
+							"allocation failure while establishing connection");
 					close_stream(fdout);
 					close_stream(fdin);
 					return(strdup(sbuf));

@@ -29,8 +29,8 @@ stdout of test 'unsafe_project_push_down.Bug-3523` in directory 'sql/test/BugTra
 #insert into foo values (42);
 [ 1	]
 #select id-row_number() over (order by id) from (select id from foo union all select id from foo) as z;
-% .L14 # table_name
-% L14 # name
+% . # table_name
+% %12 # name
 % bigint # type
 % 2 # length
 [ 41	]

@@ -33,8 +33,8 @@ stdout of test 'cast_on_groupby_col_crash.Bug-3769` in directory 'sql/test/BugTr
 #create table union_b (id bigint, mytimestamp timestamp);
 #create view union_view as select * from union_a union all select * from union_b;
 #select count(*), cast(mytimestamp as date) as mydate from union_view group by mydate;
-% .L16,	.L20 # table_name
-% L15,	mydate # name
+% .%10,	. # table_name
+% %10,	mydate # name
 % bigint,	date # type
 % 1,	10 # length
 #Rollback;

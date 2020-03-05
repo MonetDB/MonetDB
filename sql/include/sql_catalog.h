@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #ifndef SQL_CATALOG_H
@@ -11,7 +11,7 @@
 
 #include "sql_mem.h"
 #include "sql_list.h"
-#include "sql_querytype.h"
+#include "mapi_querytype.h"
 #include "stream.h"
 
 #define tr_none		0
@@ -85,9 +85,8 @@ typedef enum sql_dependency {
 #define SCALE_EQ	7	/* user defined functions need equal scales */
 #define SCALE_DIGITS_FIX 8	/* the geom module requires the types and functions to have the same scale and digits */
 
-/* Warning TR flags are a bitmask */
+/* Warning TR flags is a bitmask */
 #define TR_NEW 1
-#define TR_RENAMED 2
 
 #define RDONLY 0
 #define RD_INS 1
@@ -162,19 +161,18 @@ typedef enum comp_type {
 	cmp_or = 7,
 	cmp_in = 8,			/* in value list */
 	cmp_notin = 9,			/* not in value list */
-	cmp_equal_nil = 10, 		/* case equi join, with nil = nil */
 
-	mark_in = 11,			/* mark joins */
-	mark_notin = 12,
-	mark_exists = 13,
-	mark_notexists = 14,
+	mark_in = 10,			/* mark joins */
+	mark_notin = 11,
+	mark_exists = 12,
+	mark_notexists = 13,
 
 	/* The followin cmp_* are only used within stmt (not sql_exp) */
-	cmp_all = 15,			/* special case for crossproducts */
-	cmp_project = 16,		/* special case for projection joins */
-	cmp_joined = 17, 		/* special case already joined */
-	cmp_left = 18,			/* special case equi join, keep left order */
-	cmp_left_project = 19		/* last step of outer join */
+	cmp_all = 14,			/* special case for crossproducts */
+	cmp_project = 15,		/* special case for projection joins */
+	cmp_joined = 16, 		/* special case already joined */
+	cmp_left = 17,			/* special case equi join, keep left order */
+	cmp_left_project = 18		/* last step of outer join */
 } comp_type;
 
 /* for ranges we keep the requirment for symmetric */
@@ -184,7 +182,7 @@ typedef enum comp_type {
 #define is_theta_exp(e) ((e) == cmp_gt || (e) == cmp_gte || (e) == cmp_lte ||\
 		         (e) == cmp_lt || (e) == cmp_equal || (e) == cmp_notequal)
 
-#define is_complex_exp(e) ((e&CMPMASK) == cmp_or || (e) == cmp_in || (e) == cmp_notin || (e&CMPMASK) == cmp_filter)
+#define is_complex_exp(et) ((et) == cmp_or || (et) == cmp_in || (et) == cmp_notin || (et) == cmp_filter)
 
 typedef enum commit_action_t { 
 	CA_COMMIT, 	/* commit rows, only for persistent tables */
@@ -209,10 +207,6 @@ typedef struct sql_base {
 #define newFlagSet(x)     ((x & TR_NEW) == TR_NEW)
 #define removeNewFlag(x)  ((x)->base.flags &= ~TR_NEW)
 #define isNew(x)          (newFlagSet((x)->base.flags))
-
-#define setRenamedFlag(x)    ((x)->base.flags |= TR_RENAMED)
-#define removeRenamedFlag(x) ((x)->base.flags &= ~TR_RENAMED)
-#define isRenamed(x)         (((x)->base.flags & TR_RENAMED) == TR_RENAMED)
 
 extern void base_init(sql_allocator *sa, sql_base * b, sqlid id, int flags, const char *name);
 
@@ -364,13 +358,47 @@ typedef enum sql_ftype {
 	F_LOADER = 7
 } sql_ftype;
 
-#define IS_FUNC(f) (f->type == F_FUNC)
-#define IS_PROC(f) (f->type == F_PROC)
-#define IS_AGGR(f) (f->type == F_AGGR)
-#define IS_FILT(f) (f->type == F_FILT)
-#define IS_UNION(f) (f->type == F_UNION)
-#define IS_ANALYTIC(f) (f->type == F_ANALYTIC)
-#define IS_LOADER(f) (f->type == F_LOADER)
+#define IS_FUNC(f)     ((f)->type == F_FUNC)
+#define IS_PROC(f)     ((f)->type == F_PROC)
+#define IS_AGGR(f)     ((f)->type == F_AGGR)
+#define IS_FILT(f)     ((f)->type == F_FILT)
+#define IS_UNION(f)    ((f)->type == F_UNION)
+#define IS_ANALYTIC(f) ((f)->type == F_ANALYTIC)
+#define IS_LOADER(f)   ((f)->type == F_LOADER)
+
+#define FUNC_TYPE_STR(type) \
+	switch (type) { \
+		case F_FUNC: \
+			F = "FUNCTION"; \
+			fn = "function"; \
+			break; \
+		case F_PROC: \
+			F = "PROCEDURE"; \
+			fn = "procedure"; \
+			break; \
+		case F_AGGR: \
+			F = "AGGREGATE"; \
+			fn = "aggregate"; \
+			break; \
+		case F_FILT: \
+			F = "FILTER FUNCTION"; \
+			fn = "filter function"; \
+			break; \
+		case F_UNION: \
+			F = "UNION FUNCTION"; \
+			fn = "union function"; \
+			break; \
+		case F_ANALYTIC: \
+			F = "WINDOW FUNCTION"; \
+			fn = "window function"; \
+			break; \
+		case F_LOADER: \
+			F = "LOADER FUNCTION"; \
+			fn = "loader function"; \
+			break; \
+		default: \
+			assert(0); \
+	}
 
 typedef enum sql_flang {
 	FUNC_LANG_INT = 0, /* internal */
@@ -382,8 +410,7 @@ typedef enum sql_flang {
 	/* this should probably be done in a better way */
 	FUNC_LANG_PY = 6,       /* create .. language PYTHON */
 	FUNC_LANG_MAP_PY = 7,   /* create .. language PYTHON_MAP */
-	FUNC_LANG_PY2 = 8,      /* create .. language PYTHON2 */
-	FUNC_LANG_MAP_PY2 = 9,  /* create .. language PYTHON2_MAP */
+	/* values 8 and 9 were for Python 2 */
 	FUNC_LANG_PY3 = 10,     /* create .. language PYTHON3 */
 	FUNC_LANG_MAP_PY3 = 11, /* create .. language PYTHON3_MAP */
 	FUNC_LANG_CPP = 12      /* create .. language CPP */
@@ -435,11 +462,6 @@ typedef struct sql_subfunc {
 	char *sname, *tname; /* we need this for create table from loader */
 } sql_subfunc;
 
-typedef struct sql_subaggr {
-	sql_func *aggr;
-	list *res;
-} sql_subaggr;
-
 typedef enum key_type {
 	pkey,
 	ukey,
@@ -464,6 +486,7 @@ typedef enum idx_type {
 #define hash_index(t) 		(t == hash_idx || t == oph_idx )
 #define idx_has_column(t) 	(hash_index(t) || t == join_idx)
 #define oid_index(t)		(t == join_idx)
+#define non_updatable_index(t) (t == ordered_idx || t == no_idx)
 
 typedef struct sql_idx {
 	sql_base base;
@@ -561,19 +584,19 @@ typedef enum table_types {
 (tt == tt_merge_table && (properties & PARTITION_LIST) == PARTITION_LIST)?"LIST PARTITION TABLE":                   \
 (tt == tt_merge_table && (properties & PARTITION_RANGE) == PARTITION_RANGE)?"RANGE PARTITION TABLE":"REPLICA TABLE"
 
-#define isTable(x)                        (x->type==tt_table)
-#define isView(x)                         (x->type==tt_view)
-#define isNonPartitionedTable(x)          (x->type==tt_merge_table && !x->properties)
-#define isRangePartitionTable(x)          (x->type==tt_merge_table && (x->properties & PARTITION_RANGE) == PARTITION_RANGE)
-#define isListPartitionTable(x)           (x->type==tt_merge_table && (x->properties & PARTITION_LIST) == PARTITION_LIST)
-#define isPartitionedByColumnTable(x)     (x->type==tt_merge_table && (x->properties & PARTITION_COLUMN) == PARTITION_COLUMN)
-#define isPartitionedByExpressionTable(x) (x->type==tt_merge_table && (x->properties & PARTITION_EXPRESSION) == PARTITION_EXPRESSION)
-#define isMergeTable(x)                   (x->type==tt_merge_table)
-#define isStream(x)                       (x->type==tt_stream)
-#define isRemote(x)                       (x->type==tt_remote)
-#define isReplicaTable(x)                 (x->type==tt_replica_table)
+#define isTable(x)                        ((x)->type==tt_table)
+#define isView(x)                         ((x)->type==tt_view)
+#define isNonPartitionedTable(x)          ((x)->type==tt_merge_table && !(x)->properties)
+#define isRangePartitionTable(x)          ((x)->type==tt_merge_table && ((x)->properties & PARTITION_RANGE) == PARTITION_RANGE)
+#define isListPartitionTable(x)           ((x)->type==tt_merge_table && ((x)->properties & PARTITION_LIST) == PARTITION_LIST)
+#define isPartitionedByColumnTable(x)     ((x)->type==tt_merge_table && ((x)->properties & PARTITION_COLUMN) == PARTITION_COLUMN)
+#define isPartitionedByExpressionTable(x) ((x)->type==tt_merge_table && ((x)->properties & PARTITION_EXPRESSION) == PARTITION_EXPRESSION)
+#define isMergeTable(x)                   ((x)->type==tt_merge_table)
+#define isStream(x)                       ((x)->type==tt_stream)
+#define isRemote(x)                       ((x)->type==tt_remote)
+#define isReplicaTable(x)                 ((x)->type==tt_replica_table)
 #define isKindOfTable(x)                  (isTable(x) || isMergeTable(x) || isRemote(x) || isReplicaTable(x))
-#define isPartition(x)                    (isTable(x) && x->p)
+#define isPartition(x)                    (isTable(x) && (x)->p)
 
 #define TABLE_WRITABLE	0
 #define TABLE_READONLY	1
@@ -657,7 +680,7 @@ typedef struct res_col {
 typedef struct res_table {
 	int id;
 	oid query_id;
-	sql_query_t query_type;
+	mapi_query_t query_type;
 	int nr_cols;
 	int cur_col;
 	const char *tsep;
@@ -695,8 +718,12 @@ extern node *list_find_id(list *l, sqlid id);
 extern node *list_find_base_id(list *l, sqlid id);
 
 extern sql_key *find_sql_key(sql_table *t, const char *kname);
+extern node *find_sql_key_node(sql_schema *s, sqlid id);
+extern sql_key *sql_trans_find_key(sql_trans *tr, sqlid id);
 
 extern sql_idx *find_sql_idx(sql_table *t, const char *kname);
+extern node *find_sql_idx_node(sql_schema *s, sqlid id);
+extern sql_idx *sql_trans_find_idx(sql_trans *tr, sqlid id);
 
 extern sql_column *find_sql_column(sql_table *t, const char *cname);
 
@@ -705,6 +732,7 @@ extern sql_part *find_sql_part(sql_table *t, const char *tname);
 extern sql_table *find_sql_table(sql_schema *s, const char *tname);
 extern sql_table *find_sql_table_id(sql_schema *s, sqlid id);
 extern node *find_sql_table_node(sql_schema *s, sqlid id);
+extern sql_table *sql_trans_find_table(sql_trans *tr, sqlid id);
 
 extern sql_sequence *find_sql_sequence(sql_schema *s, const char *sname);
 
@@ -715,12 +743,16 @@ extern node *find_sql_schema_node(sql_trans *t, sqlid id);
 extern sql_type *find_sql_type(sql_schema * s, const char *tname);
 extern sql_type *sql_trans_bind_type(sql_trans *tr, sql_schema *s, const char *name);
 extern node *find_sql_type_node(sql_schema *s, sqlid id);
+extern sql_type *sql_trans_find_type(sql_trans *tr, sqlid id);
 
 extern sql_func *find_sql_func(sql_schema * s, const char *tname);
 extern list *find_all_sql_func(sql_schema * s, const char *tname, sql_ftype type);
 extern sql_func *sql_trans_bind_func(sql_trans *tr, const char *name);
 extern sql_func *sql_trans_find_func(sql_trans *tr, sqlid id);
 extern node *find_sql_func_node(sql_schema *s, sqlid id);
+
+extern node *find_sql_trigger_node(sql_schema *s, sqlid id);
+extern sql_trigger *sql_trans_find_trigger(sql_trans *tr, sqlid id);
 
 extern void *sql_values_list_element_validate_and_insert(void *v1, void *v2, int* res);
 extern void *sql_range_part_validate_and_insert(void *v1, void *v2);

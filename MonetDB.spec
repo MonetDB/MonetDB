@@ -41,6 +41,12 @@
 %global fedpkgs 1
 %endif
 
+%if %{?rhel:1}%{!?rhel:0} && 0%{?rhel} < 7
+# RedHat Enterprise Linux < 7
+# There is no macro _rundir, and no directory /run, instead use /var/run.
+%global _rundir %{_localstatedir}/run
+%endif
+
 # On Fedora, the geos library is available, and so we can require it
 # and build the geom modules.  On RedHat Enterprise Linux and
 # derivatives (CentOS, Scientific Linux), the geos library is not
@@ -66,16 +72,6 @@
 %endif
 %endif
 
-%if %{?rhel:0}%{!?rhel:1}
-# By default create the MonetDB-bam-MonetDB5 package.
-# Note that the samtools-devel RPM is not available on RedHat
-# Enterprise Linux and derivatives, even with EPEL availabe.
-# (Actually, at the moment of writing, samtools-devel is available in
-# EPEL for RHEL 6, but not for RHEL 7.  We don't make the distinction
-# here and just not build the MonetDB-bam-MonetDB5 RPM.)
-%bcond_without samtools
-%endif
-
 # By default use PCRE for the implementation of the SQL LIKE and ILIKE
 # operators.  Otherwise the POSIX regex functions are used.
 %bcond_without pcre
@@ -85,14 +81,9 @@
 %bcond_without rintegration
 %endif
 
-# On Fedora <= 30 and RHEL 7, create the MonetDB-python2 package.
-# On RHEL 6, numpy is too old.
-%if 0%{?rhel} == 7 || %{!?fedora:1000}%{?fedora} <= 30
-%bcond_without py2integration
-%endif
-%if %{?rhel:0}%{!?rhel:1}
-# On RHEL 6, Python 3 is too old, and on RHEL 7, the default Python 3
-# is too old (in both cases 3.4).
+%if 0%{?rhel} >= 7 || 0%{?fedora} > 0
+# On RHEL 6, Python 3 is too old.  On RHEL 7, Python 3 was too old
+# when RHEL 7 was released, but now it is ok.
 %bcond_without py3integration
 %endif
 
@@ -114,7 +105,7 @@ Group: Applications/Databases
 License: MPLv2.0
 URL: https://www.monetdb.org/
 BugURL: https://bugs.monetdb.org/
-Source: https://www.monetdb.org/downloads/sources/Apr2019-SP1/%{name}-%{version}.tar.bz2
+Source: https://www.monetdb.org/downloads/sources/Nov2019-SP3/%{name}-%{version}.tar.bz2
 
 # we need systemd for the _unitdir macro to exist
 # we need checkpolicy and selinux-policy-devel for the SELinux policy
@@ -156,18 +147,6 @@ BuildRequires: readline-devel
 BuildRequires: unixODBC-devel
 # BuildRequires: uriparser-devel
 BuildRequires: pkgconfig(zlib)
-%if %{with samtools}
-BuildRequires: samtools-devel
-%endif
-%if %{with py2integration}
-BuildRequires: python-devel
-%if %{?rhel:1}%{!?rhel:0}
-# RedHat Enterprise Linux calls it simply numpy
-BuildRequires: numpy
-%else
-BuildRequires: python2-numpy
-%endif
-%endif
 %if %{with py3integration}
 BuildRequires: python3-devel >= 3.5
 BuildRequires: python3-numpy
@@ -293,34 +272,6 @@ MonetDB, you will very likely need this package.
 %doc %{_mandir}/man1/mclient.1.gz
 %doc %{_mandir}/man1/msqldump.1.gz
 
-%package client-tools
-Summary: MonetDB - Monet Database Management System Client Programs
-Group: Applications/Databases
-Requires: %{name}-client%{?_isa} = %{version}-%{release}
-%if (0%{?fedora} >= 22)
-# tomograph executes these two:
-Recommends: /usr/bin/gs
-Recommends: /usr/bin/gnuplot
-%endif
-
-%description client-tools
-MonetDB is a database management system that is developed from a
-main-memory perspective with use of a fully decomposed storage model,
-automatic index management, extensibility of data types and search
-accelerators.  It also has an SQL front end.
-
-This package contains stethoscope, tomograph, and tachograph.  These
-tools can be used to monitor the MonetDB database server.
-
-%files client-tools
-%defattr(-,root,root)
-%{_bindir}/stethoscope
-%{_bindir}/tachograph
-%{_bindir}/tomograph
-%dir %{_datadir}/doc/MonetDB-client-tools
-%docdir %{_datadir}/doc/MonetDB-client-tools
-%{_datadir}/doc/MonetDB-client-tools/*
-
 %package client-devel
 Summary: MonetDB - Monet Database Management System Client Programs
 Group: Applications/Databases
@@ -341,7 +292,7 @@ This package contains the files needed to develop with the
 %defattr(-,root,root)
 %dir %{_includedir}/monetdb
 %{_libdir}/libmapi.so
-%{_includedir}/monetdb/mapi.h
+%{_includedir}/monetdb/mapi*.h
 %{_libdir}/pkgconfig/monetdb-mapi.pc
 
 %package client-odbc
@@ -467,29 +418,6 @@ This package contains support for reading and writing LiDAR data.
 %{_libdir}/monetdb5/lib_lidar.so
 %endif
 
-%if %{with samtools}
-%package bam-MonetDB5
-Summary: MonetDB5 SQL interface to the bam library
-Group: Applications/Databases
-Requires: MonetDB5-server%{?_isa} = %{version}-%{release}
-
-%description bam-MonetDB5
-MonetDB is a database management system that is developed from a
-main-memory perspective with use of a fully decomposed storage model,
-automatic index management, extensibility of data types and search
-accelerators.  It also has an SQL front end.
-
-This package contains the interface to load and query BAM (binary
-version of Sequence Alignment/Map) data.
-
-%files bam-MonetDB5
-%defattr(-,root,root)
-%{_libdir}/monetdb5/autoload/*_bam.mal
-%{_libdir}/monetdb5/createdb/*_bam.sql
-%{_libdir}/monetdb5/bam.mal
-%{_libdir}/monetdb5/lib_bam.so
-%endif
-
 %if %{with rintegration}
 %package R
 Summary: Integration of MonetDB and R, allowing use of R from within SQL
@@ -514,32 +442,6 @@ install it.
 %{_libdir}/monetdb5/rapi.*
 %{_libdir}/monetdb5/autoload/*_rapi.mal
 %{_libdir}/monetdb5/lib_rapi.so
-%endif
-
-%if %{with py2integration}
-%package python2
-Summary: Integration of MonetDB and Python, allowing use of Python from within SQL
-Group: Applications/Databases
-Requires: MonetDB-SQL-server5%{?_isa} = %{version}-%{release}
-
-%description python2
-MonetDB is a database management system that is developed from a
-main-memory perspective with use of a fully decomposed storage model,
-automatic index management, extensibility of data types and search
-accelerators.  It also has an SQL front end.
-
-This package contains the interface to use the Python language from
-within SQL queries.  This package is for Python 2.
-
-NOTE: INSTALLING THIS PACKAGE OPENS UP SECURITY ISSUES.  If you don't
-know how this package affects the security of your system, do not
-install it.
-
-%files python2
-%defattr(-,root,root)
-%{_libdir}/monetdb5/pyapi.*
-%{_libdir}/monetdb5/autoload/*_pyapi.mal
-%{_libdir}/monetdb5/lib_pyapi.so
 %endif
 
 %if %{with py3integration}
@@ -629,22 +531,19 @@ exit 0
 %attr(2770,monetdb,monetdb) %dir %{_localstatedir}/monetdb5
 %attr(2770,monetdb,monetdb) %dir %{_localstatedir}/monetdb5/dbfarm
 %{_bindir}/mserver5
+%exclude %{_bindir}/stethoscope
 %{_libdir}/libmonetdb5.so.*
 %dir %{_libdir}/monetdb5
 %dir %{_libdir}/monetdb5/autoload
 %if %{with fits}
 %exclude %{_libdir}/monetdb5/fits.mal
 %exclude %{_libdir}/monetdb5/autoload/*_fits.mal
-%exclude %{_libdir}/monetdb5/createdb/*_fits.sql
 %endif
 %if %{with geos}
 %exclude %{_libdir}/monetdb5/geom.mal
 %endif
 %if %{with lidar}
 %exclude %{_libdir}/monetdb5/lidar.mal
-%endif
-%if %{with py2integration}
-%exclude %{_libdir}/monetdb5/pyapi.mal
 %endif
 %if %{with py3integration}
 %exclude %{_libdir}/monetdb5/pyapi3.mal
@@ -664,9 +563,6 @@ exit 0
 %if %{with lidar}
 %exclude %{_libdir}/monetdb5/autoload/*_lidar.mal
 %endif
-%if %{with py2integration}
-%exclude %{_libdir}/monetdb5/autoload/*_pyapi.mal
-%endif
 %if %{with py3integration}
 %exclude %{_libdir}/monetdb5/autoload/*_pyapi3.mal
 %endif
@@ -675,13 +571,8 @@ exit 0
 %endif
 %exclude %{_libdir}/monetdb5/autoload/??_sql*.mal
 %{_libdir}/monetdb5/autoload/*.mal
-%if %{with samtools}
-%exclude %{_libdir}/monetdb5/bam.mal
-%exclude %{_libdir}/monetdb5/autoload/*_bam.mal
-%endif
 %{_libdir}/monetdb5/lib_capi.so
 %{_libdir}/monetdb5/lib_generator.so
-%{_libdir}/monetdb5/lib_opt_sql_append.so
 %{_libdir}/monetdb5/lib_udf.so
 %doc %{_mandir}/man1/mserver5.1.gz
 %dir %{_datadir}/doc/MonetDB
@@ -757,14 +648,13 @@ use SQL with MonetDB, you will need to install this package.
 %{_bindir}/monetdb
 %{_bindir}/monetdbd
 %dir %attr(775,monetdb,monetdb) %{_localstatedir}/log/monetdb
+%dir %attr(775,monetdb,monetdb) %{_rundir}/monetdb
 %if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
 # RHEL >= 7, and all current Fedora
-%dir %attr(775,monetdb,monetdb) /run/monetdb
 %{_tmpfilesdir}/monetdbd.conf
 %{_unitdir}/monetdbd.service
 %else
 # RedHat Enterprise Linux < 7
-%dir %attr(775,monetdb,monetdb) %{_localstatedir}/run/monetdb
 %exclude %{_sysconfdir}/tmpfiles.d/monetdbd.conf
 # no _unitdir macro
 %exclude %{_prefix}/lib/systemd/system/monetdbd.service
@@ -774,14 +664,14 @@ use SQL with MonetDB, you will need to install this package.
 %{_libdir}/monetdb5/autoload/??_sql.mal
 %{_libdir}/monetdb5/lib_sql.so
 %dir %{_libdir}/monetdb5/createdb
+%if %{with fits}
+%exclude %{_libdir}/monetdb5/createdb/*_fits.sql
+%endif
 %if %{with geos}
 %exclude %{_libdir}/monetdb5/createdb/*_geom.sql
 %endif
 %if %{with lidar}
 %exclude %{_libdir}/monetdb5/createdb/*_lidar.sql
-%endif
-%if %{with samtools}
-%exclude %{_libdir}/monetdb5/createdb/*_bam.sql
 %endif
 %{_libdir}/monetdb5/createdb/*.sql
 %{_libdir}/monetdb5/sql*.mal
@@ -899,9 +789,9 @@ do
   /usr/sbin/semodule -s ${selinuxvariant} -i \
     %{_datadir}/selinux/${selinuxvariant}/monetdb.pp &> /dev/null || :
 done
-# use %{_localstatedir}/run/monetdb here for EPEL 6; on other systems,
-# %{_localstatedir}/run is a symlink to /run
-/sbin/restorecon -R %{_localstatedir}/monetdb5 %{_localstatedir}/log/monetdb %{_localstatedir}/run/monetdb %{_bindir}/monetdbd %{_bindir}/mserver5 %{_unitdir}/monetdbd.service &> /dev/null || :
+# use /var/run/monetdb since that's what it says in the monetdb.fc file
+# it says that because /run/monetdb for some reason doesn't work
+/sbin/restorecon -R %{_localstatedir}/monetdb5 %{_localstatedir}/log/monetdb /var/run/monetdb %{_bindir}/monetdbd %{_bindir}/mserver5 %{_unitdir}/monetdbd.service &> /dev/null || :
 /usr/bin/systemctl try-restart monetdbd.service
 
 %postun selinux
@@ -914,9 +804,7 @@ if [ $1 -eq 0 ] ; then
   do
     /usr/sbin/semodule -s ${selinuxvariant} -r monetdb &> /dev/null || :
   done
-  # use %{_localstatedir}/run/monetdb here for EPEL 6; on other systems,
-  # %{_localstatedir}/run is a symlink to /run
-  /sbin/restorecon -R %{_localstatedir}/monetdb5 %{_localstatedir}/log/monetdb %{_localstatedir}/run/monetdb %{_bindir}/monetdbd %{_bindir}/mserver5 %{_unitdir}/monetdbd.service &> /dev/null || :
+  /sbin/restorecon -R %{_localstatedir}/monetdb5 %{_localstatedir}/log/monetdb %{_rundir}/monetdb %{_bindir}/monetdbd %{_bindir}/mserver5 %{_unitdir}/monetdbd.service &> /dev/null || :
   if [ $active = active ]; then
     /usr/bin/systemctl start monetdbd.service
   fi
@@ -953,6 +841,7 @@ export CFLAGS
 # do not use --enable-optimize or --disable-optimize: we don't want
 # any changes to optimization flags
 %{configure} \
+ 	--with-rundir=%{_rundir}/monetdb \
 	--enable-assert=no \
 	--enable-debug=yes \
 	--enable-developer=no \
@@ -965,7 +854,7 @@ export CFLAGS
 	--enable-mapi=yes \
 	--enable-netcdf=no \
 	--enable-odbc=yes \
-	--enable-py2integration=%{?with_py2integration:yes}%{!?with_py2integration:no} \
+	--enable-profiler=no \
 	--enable-py3integration=%{?with_py3integration:yes}%{!?with_py3integration:no} \
 	--enable-rintegration=%{?with_rintegration:yes}%{!?with_rintegration:no} \
 	--enable-sanitizer=no \
@@ -984,11 +873,9 @@ export CFLAGS
 	--with-openssl=yes \
 	--with-proj=no \
 	--with-pthread=yes \
-	--with-python2=%{?with_py2integration:yes}%{!?with_py2integration:no} \
 	--with-python3=yes \
 	--with-readline=yes \
 	--with-regex=%{?with_pcre:PCRE}%{!?with_pcre:POSIX} \
-	--with-samtools=%{?with_samtools:yes}%{!?with_samtools:no} \
 	--with-snappy=no \
 	--with-unixodbc=yes \
 	--with-uuid=yes \
@@ -1026,18 +913,15 @@ rmdir %{buildroot}%{_sysconfdir}/tmpfiles.d
 install -d -m 0750 %{buildroot}%{_localstatedir}/MonetDB
 install -d -m 0770 %{buildroot}%{_localstatedir}/monetdb5/dbfarm
 install -d -m 0775 %{buildroot}%{_localstatedir}/log/monetdb
-%if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
-# RHEL >= 7, and all current Fedora
-install -d -m 0775 %{buildroot}/run/monetdb
-%else
-# RedHat Enterprise Linux < 7
-install -d -m 0775 %{buildroot}%{_localstatedir}/run/monetdb
-%endif
+install -d -m 0775 %{buildroot}%{_rundir}/monetdb
 
 # remove unwanted stuff
 # .la files
 rm -f %{buildroot}%{_libdir}/*.la
 rm -f %{buildroot}%{_libdir}/monetdb5/*.la
+rm -f %{buildroot}%{_libdir}/monetdb5/opt_sql_append.mal
+rm -f %{buildroot}%{_libdir}/monetdb5/lib_opt_sql_append.so
+rm -f %{buildroot}%{_libdir}/monetdb5/autoload/??_opt_sql_append.mal
 
 %if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
 for selinuxvariant in %{selinux_variants}
@@ -1059,6 +943,205 @@ fi
 %postun -p /sbin/ldconfig
 
 %changelog
+* Sat Feb 22 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.35.19-20200222
+- Rebuilt.
+- BZ#6829: NTILE window function returns incorrect results
+
+* Fri Feb 21 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.35.17-20200221
+- Rebuilt.
+- BZ#6827: CUME_DIST window function returns incorrect results
+
+* Mon Feb 17 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.35.15-20200217
+- Rebuilt.
+- BZ#6817: running analyze on a schema which contains a stream table
+  stops with an error
+- BZ#6819: functions do not persist
+
+* Wed Feb 12 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.35.13-20200212
+- Rebuilt.
+
+* Tue Feb 11 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.35.11-20200211
+- Rebuilt.
+- BZ#6805: Using the cascade operator in a drop table statement ends in
+  an exit from the Monetdb shell.
+- BZ#6807: Median_avg and quantile_avg ignore NULL values
+- BZ#6815: query with ifthenelse() crashes mserver5
+- BZ#6816: Monetdb Crashes on INSERT statement after ALTER statement in
+  another connection
+
+* Wed Dec 18 2019 Sjoerd Mullender <sjoerd@acm.org> - 11.35.9-20191218
+- Rebuilt.
+- BZ#6804: DNS resolution of 0.0.0.0 fails on recent Ubuntus
+
+* Tue Dec 17 2019 Sjoerd Mullender <sjoerd@acm.org> - 11.35.7-20191217
+- Rebuilt.
+
+* Thu Dec 12 2019 Sjoerd Mullender <sjoerd@acm.org> - 11.35.5-20191212
+- Rebuilt.
+- BZ#6723: columns aliases duplicates should not be allowed. automatic
+  aliasing required.
+- BZ#6724: Prepare confuses types when more than one argument is used
+- BZ#6726: Python aggregation does not create aggr_group when aggregating
+  over all rows
+- BZ#6765: GRANT SELECT privilege on a subset of table columns results
+  in access denied error when selecting the same columns from the table
+- BZ#6790: Count distinct giving wrong results
+- BZ#6791: str_to_time('11:40', '%H:%M') creates wrong time value
+- BZ#6792: JSON path compiler accepts invalid input
+- BZ#6793: cast(interval second value to int or decimal) is wrong (by
+  a factor of 1000), cast(interval month value to decimal or floating
+  point) fails
+- BZ#6794: external name fits.listdir not bound (sys.listdir) Fatal
+  error during initialization:
+- BZ#6796: Incorrect crash time reported by monetdb tool after crash
+  of mserver5
+- BZ#6798: json.text off by one error
+
+* Mon Nov 25 2019 Sjoerd Mullender <sjoerd@acm.org> - 11.35.3-20191125
+- Rebuilt.
+- BZ#3533: SQL aggregate functions avg(), sum() and median() return an
+  error when used on a column with datatype interval second
+
+* Mon Nov 18 2019 Sjoerd Mullender <sjoerd@acm.org> - 11.35.1-20191118
+- Rebuilt.
+- BZ#6134: Query produces error: HEAPalloc: Insufficient space for HEAP
+  of 1168033427456 bytes.
+- BZ#6613: LATERAL crash /.../rel_bin.c:1473: rel2bin_table: Assertion
+  `0' failed.
+- BZ#6683: Bug in subselect
+- BZ#6686: Bug in subselect (count function)
+- BZ#6688: Bug in subselect (or condition)
+- BZ#6689: Trying to improve the performance of SQL queries with a large
+  list of members in IN clause.
+- BZ#6695: timestamp transformation
+- BZ#6700: Monetdb Bugs in Subselect statements:
+- BZ#6722: window functions issues
+- BZ#6740: while upgrading the database from verison (MonetDB-11.27.13)
+  to (MonetDB-11.33.3) we are unable to bring up the database
+- BZ#6754: in mclient a strang msg is reported after issueing command:
+  set schema sys;
+- BZ#6755: Assertion failure in rel_bin.c
+- BZ#6756: Error in optimizer garbageCollector on merge tables select
+- BZ#6757: Double free or corruption (out)
+- BZ#6758: SIGSEGV in __strcmp_sse2_unaligned()
+- BZ#6759: Python JSON loader creates invalid data type for strings
+- BZ#6761: Error: Program contains errors.:(NONE).multiplex
+- BZ#6762: mserver5 crashes on (re-)start
+- BZ#6764: mserver5 crashes with corruption, double free, invalid size
+  or invalid pointer
+- BZ#6766: Missing bulk implementation for get_value and next_value calls
+- BZ#6769: ProfilerStart is not threadsafe
+- BZ#6771: R-devel
+- BZ#6773: json.filter returns corrupted string when selecting JSON
+  null value
+- BZ#6774: PROD aggregation gives wrong result
+- BZ#6775: NOT IN with an AND containing an OR gives wrong result
+- BZ#6776: Creating a table with a full outer join query gives type with
+  wrong digits on the joined key.
+- BZ#6779: Using Windows Messages translation for errno error codes.
+- BZ#6780: Wrong value of the rank function
+- BZ#6781: Insert after index creation crash
+- BZ#6782: JDBC IsValid(int) does not reset lastquerytimeout on server
+- BZ#6783: AVG changes scale of its results
+- BZ#6784: function sys.isauuid(string) should return false if string
+  value cannot be converted to a UUID
+
+* Mon Nov  4 2019 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com> - 11.35.1-20191118
+- sql: Removed functions json.text(string) returns string and json.text(int)
+  returns string. Their MAL implementation didn't exist, so they were
+  meaningless.
+
+* Thu Oct 17 2019 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com> - 11.35.1-20191118
+- merovingian: Added "vmmaxsize" and "memmaxsize" mserver5 options to the daemon in
+  order to set mserver5's maximum virtual and committed memory
+  respectively.
+
+* Wed Sep 25 2019 Sjoerd Mullender <sjoerd@acm.org> - 11.35.1-20191118
+- sql: Strings are now limited to 1GB, double-quoted tokens are limited to 2kB.
+  These sizes are bytes of (UTF-8 encoded) input data.
+
+* Mon Sep 23 2019 Sjoerd Mullender <sjoerd@acm.org> - 11.35.1-20191118
+- sql: There are new aggregate functions sys.median_avg and sys.quantile_avg
+  that return the interpolated value if the median/quantile doesn't fall
+  exactly on a particular row.  These functions always return a value
+  of type DOUBLE and only work for numeric types (various width integers
+  and floating point).
+
+* Sun Sep  8 2019 Sjoerd Mullender <sjoerd@acm.org> - 11.35.1-20191118
+- gdk: BATcalcbetween and all its variants now have an extra bool parameter
+  "anti" to invert the test.
+
+* Thu Sep  5 2019 Sjoerd Mullender <sjoerd@acm.org> - 11.35.1-20191118
+- monetdb5: The server "console" has been removed, as has the --daemon option.
+  The server now doesn't read from standard input anymore.  The way to
+  stop a server is by sending it a TERM signal (on Linux/Unix) or by
+  sending it an interrupt signal (usually control-C -- on all
+  systems).
+
+* Fri Aug 30 2019 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com> - 11.35.1-20191118
+- sql: Added sys.deltas ("schema" string, "table" string, "column" string)
+  returns table ("values" bigint) system function which returns a single
+  column with 6 values: a flag indicating if the column's upper table is
+  cleared or not, the count of the RDONLY, RD_INS and RD_UPD_ID deltas
+  of the column itself, the number of deleted values of the column's
+  table, as well as the level of the current transaction in the
+  transaction level tree. It should be used for debugging purposes only.
+
+* Fri Aug 30 2019 Sjoerd Mullender <sjoerd@acm.org> - 11.35.1-20191118
+- monetdb5: Implemented a function bat.diffcand to calculate difference of two
+  candidate lists.
+
+* Fri Aug 30 2019 Sjoerd Mullender <sjoerd@acm.org> - 11.35.1-20191118
+- monetdb5: The mtime module was completely rewritten, the atom types date,
+  daytime, and timestamp were changed.  Upgrade code for BATs
+  containing these types has been implemented.  The old daytime type
+  used a 32 bit integer to record milliseconds since the start of the
+  day.  The new daytime type uses a 64 bit integer to record
+  microseconds since the start of the day.  The old date type recorded
+  days since or before the year 1.  The new daytime type records the
+  day of the month and the number of months since the year -4712
+  separately in a single 32 bit integer of which only 26 bits are
+  used.  Dates now use the proleptic Gregorian calendar, meaning the
+  normal Gregorian callendar has been extended backward, and before
+  the year 1, we have the year 0.  Both the old and new timestamp
+  types are a combination of a daytime and a date value, but since
+  those types have changed, the timestamp type has also changed.  The
+  new date type has a smaller range than the old.  The new date range
+  is from the year -4712 to the year 170049.  During conversion of
+  date and timestamp columns, the dates are clamped to this range.
+- monetdb5: The tzone and rule atom types have been removed.  They were not used
+  by any code, and they were defined in a non-portable way.
+
+* Fri Aug 30 2019 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com> - 11.35.1-20191118
+- sql: Added "VALUES row_list" statement as a top SQL projection statement.
+
+* Fri Aug 30 2019 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com> - 11.35.1-20191118
+- merovingian: Added ipv6 property to monetdbd properties to force IPv6 addresses
+  binding only.  By default this property is false to allow IPv4
+  addresses as well.
+
+* Fri Aug 30 2019 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com> - 11.35.1-20191118
+- monetdb5: Added "mapi_ipv6" property to monet_options to force ipv6 address
+  binding only.  This property is inherited while forking from
+  monetdbd if it is also set there.
+
+* Fri Aug 30 2019 Sjoerd Mullender <sjoerd@acm.org> - 11.35.1-20191118
+- gdk: All forms of BATcalcbetween and VARcalcbetween have extra bool arguments
+  for low inclusive, high inclusive and nils false.  The latter causes
+  the result to be false instead of nil if the value being checked is nil.
+
+* Fri Aug 30 2019 Sjoerd Mullender <sjoerd@acm.org> - 11.35.1-20191118
+- monetdb5: Removed (bat)calc.between_symmetric and changed (bat)calc.between
+  by adding a number of extra arguments, all of type :bit: symmetric,
+  low inclusive, high inclusive, nils false.
+
+* Fri Aug 30 2019 Aris Koning <aris.koning@monetdbsolutions.com> - 11.35.1-20191118
+- sql: The implementation of in-expression now follows a join-based approach
+  instead of using iterative union/selects. This greatly improves
+  performance for large in-value-lists. Furthermore the old approach has
+  large in-value-lists generate large MAL plans. This is now no longer
+  the case.
+
 * Fri Aug 30 2019 Sjoerd Mullender <sjoerd@acm.org> - 11.33.11-20190830
 - Rebuilt.
 - BZ#6749: mserver5 restart aborts/segfaults after dropping column

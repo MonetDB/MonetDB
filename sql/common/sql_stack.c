@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -54,6 +54,20 @@ sql_stack_peek(sql_stack *s, int p)
 	if (p>=s->top)
 		return NULL;
 	return s->values[(s->top-1)-p];
+}
+
+void *
+sql_stack_fetch(sql_stack *s, int p)
+{
+	if (p>=s->top)
+		return NULL;
+	return s->values[p];
+}
+
+int
+sql_stack_top(sql_stack *s)
+{
+	return s->top;
 }
 
 int

@@ -19,8 +19,8 @@ stdout of test 'float2dec` in directory 'sql/test/bugs` itself:
 
 [ 1	]
 #select CAST(AVG(col) as decimal(4,2)) from float2dec;
-% sys.L4 # table_name
-% L4 # name
+% sys.%1 # table_name
+% %1 # name
 % decimal # type
 % 6 # length
 [ 74.95	]

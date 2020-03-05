@@ -27,8 +27,8 @@ stdout of test 'sqlitelogictest-count-not-in.Bug-6518` in directory 'sql/test/Bu
 #INSERT INTO tab2 VALUES (64,77,40), (75,67,58), (46,51,23);
 [ 3	]
 #SELECT DISTINCT - 15 * - 19 + - CAST( COUNT ( * ) AS INT) * + 70 FROM tab2 WHERE ( col2 ) NOT IN ( + 12 + col0 );
-% sys.L10 # table_name
-% L10 # name
+% . # table_name
+% %3 # name
 % bigint # type
 % 2 # length
 [ 75	]

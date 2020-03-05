@@ -1,6 +1,6 @@
 set optimizer = 'sequential_pipe'; -- to get predictable errors
 
-create table ttt (a int, b int, c int);
+create table ttt (averylongcolumnnametomakeitlargeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee int, b int, c int);
 select optimizer;
 select def from optimizers() where name = optimizer;
 

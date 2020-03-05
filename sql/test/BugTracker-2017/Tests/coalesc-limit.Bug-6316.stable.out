@@ -27,8 +27,8 @@ stdout of test 'coalesc-limit.Bug-6316` in directory 'sql/test/BugTracker-2017` 
 #          cast(coalesce(role_id, login_id) as int) 
 #from sys.user_role 
 #limit 145;
-% sys.user_role,	sys.L3 # table_name
-% role_id,	L3 # name
+% sys.user_role,	sys. # table_name
+% role_id,	%2 # name
 % int,	int # type
 % 1,	1 # length
 

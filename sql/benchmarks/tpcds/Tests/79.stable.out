@@ -11,7 +11,7 @@ stdout of test '79` in directory 'sql/benchmarks/tpcds` itself:
 # Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
 # Found 62.694 GiB available main-memory.
 # Copyright (c) 1993 - July 2008 CWI.
-# Copyright (c) August 2008 - 2019 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008 - 2020 MonetDB B.V., all rights reserved
 # Visit https://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://methuselah.da.cwi.nl:30709/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-16393/.s.monetdb.30709
@@ -34,8 +34,16 @@ stdout of test '79` in directory 'sql/benchmarks/tpcds` itself:
 #          ss_customer_sk ,
 #          store.s_city ,
 #          sum(ss_coupon_amt) amt ,
-% sys.customer,	sys.customer,	sys.L15,	sys.ms,	sys.ms,	sys.ms # table_name
-% c_last_name,	c_first_name,	L15,	ss_ticket_number,	amt,	profit # name
+#          sum(ss_net_profit) profit
+#   FROM store_sales,
+#        date_dim,
+#        store,
+#        household_demographics
+#   WHERE store_sales.ss_sold_date_sk = date_dim.d_date_sk
+#     AND store_sales.ss_store_sk = store.s_store_sk
+#     AND store_sales.ss_hdemo_sk = household_demographics.hd_demo_sk
+% sys.customer,	sys.customer,	sys.%4,	sys.ms,	sys.ms,	sys.ms # table_name
+% c_last_name,	c_first_name,	%4,	ss_ticket_number,	amt,	profit # name
 % char,	char,	clob,	int,	decimal,	decimal # type
 % 30,	20,	8,	6,	20,	20 # length
 [ NULL,	NULL,	"Fairview",	158139,	3721.39,	-23039.01	]

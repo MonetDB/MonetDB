@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #ifdef _MSC_VER
@@ -114,7 +114,8 @@ main(int argc, char **argv)
 	check(ret, SQL_HANDLE_ENV, env, "SQLAllocHandle 1");
 
 	ret = SQLConnect(dbc, (SQLCHAR *) dsn, SQL_NTS, (SQLCHAR *) user, SQL_NTS, (SQLCHAR *) pass, SQL_NTS);
-	check(ret, SQL_HANDLE_DBC, dbc, "SQLConnect");
+	if (!check(ret, SQL_HANDLE_DBC, dbc, "SQLConnect"))
+		exit(1);
 
 	ret = SQLGetInfo(dbc, SQL_ACCESSIBLE_PROCEDURES, str, sizeof(str), &resultlen);
 	if (check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo SQL_ACCESSIBLE_PROCEDURES")) {

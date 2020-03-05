@@ -23,68 +23,68 @@ stdout of test 'aggr_single_value` in directory 'sql/test/bugs` itself:
 # 19:26:22 >  
 
 #SELECT count(*);
-% .L3 # table_name
-% L3 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 1	]
 #SELECT count(1);
-% .L3 # table_name
-% L3 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 1	]
 #SELECT count(NULL);
-% .L3 # table_name
-% L3 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 0	]
 #SELECT avg(1);
-% .L3 # table_name
-% L3 # name
+% .%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ 1	]
 #SELECT avg(cast (NULL as int));
-% .L4 # table_name
-% L4 # name
+% .%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ NULL	]
 #SELECT cast( sum(1) as bigint);
-% .L4 # table_name
-% L4 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 1	]
 #SELECT cast( sum(cast (NULL as int)) as bigint);
-% .L5 # table_name
-% L5 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ NULL	]
 #SELECT max(1);
-% .L3 # table_name
-% L3 # name
+% .%1 # table_name
+% %1 # name
 % tinyint # type
 % 1 # length
 [ 1	]
 #SELECT max(cast (NULL as int));
-% .L4 # table_name
-% L4 # name
+% .%1 # table_name
+% %1 # name
 % int # type
 % 1 # length
 [ NULL	]
 #SELECT min(1);
-% .L3 # table_name
-% L3 # name
+% .%1 # table_name
+% %1 # name
 % tinyint # type
 % 1 # length
 [ 1	]
 #SELECT min(cast (NULL as int));
-% .L4 # table_name
-% L4 # name
+% .%1 # table_name
+% %1 # name
 % int # type
 % 1 # length
 [ NULL	]

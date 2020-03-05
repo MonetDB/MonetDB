@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -31,15 +31,13 @@
 
 #define copyDiagString(str, buf, len, lenp)				\
 		do {							\
-			SQLSMALLINT _l;					\
+			size_t _l;					\
 			if (len < 0)					\
 				return SQL_ERROR;			\
-			_l = (SQLSMALLINT) strlen(str);			\
-			if (buf && len > 0)				\
-				strncpy((char *) buf, str, len);	\
+			_l = strcpy_len((char *) buf, str, len);	\
 			if (lenp)					\
-				*lenp = _l;				\
-			if (buf == NULL || _l >= len)			\
+				*lenp = (SQLSMALLINT) _l;		\
+			if (buf == NULL || _l >= (size_t) len)		\
 				return SQL_SUCCESS_WITH_INFO;		\
 		} while (0)
 

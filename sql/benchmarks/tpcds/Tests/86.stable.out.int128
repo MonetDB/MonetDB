@@ -11,7 +11,7 @@ stdout of test '86` in directory 'sql/benchmarks/tpcds` itself:
 # Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
 # Found 62.694 GiB available main-memory.
 # Copyright (c) 1993 - July 2008 CWI.
-# Copyright (c) August 2008 - 2019 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008 - 2020 MonetDB B.V., all rights reserved
 # Visit https://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://methuselah.da.cwi.nl:30709/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-16393/.s.monetdb.30709
@@ -35,7 +35,12 @@ stdout of test '86` in directory 'sql/benchmarks/tpcds` itself:
 # and i_item_sk  = ws_item_sk
 # group by i_category,i_class
 # ) ,
-% .results_rollup,	.results_rollup,	.results_rollup,	.results_rollup,	.L102 # table_name
+#
+# results_rollup as
+#( select total_sum ,i_category ,i_class, g_category, g_class, 0 as lochierarchy from results
+#  union
+#  select sum(total_sum) as total_sum, i_category, NULL as i_class, 0 as g_category, 1 as g_class, 1 as lochierarchy from results group by i_category
+% .results_rollup,	.results_rollup,	.results_rollup,	.results_rollup,	. # table_name
 % total_sum,	i_category,	i_class,	lochierarchy,	rank_within_parent # name
 % decimal,	char,	char,	tinyint,	int # type
 % 40,	50,	50,	1,	2 # length

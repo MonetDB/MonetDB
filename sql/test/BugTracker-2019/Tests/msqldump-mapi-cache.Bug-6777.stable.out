@@ -1,0 +1,1160 @@
+stdout of test 'msqldump-mapi-cache.Bug-6777` in directory 'sql/test/BugTracker-2019` itself:
+
+
+# 10:39:12 >  
+# 10:39:12 >  "/usr/bin/python3" "msqldump-mapi-cache.Bug-6777.py" "msqldump-mapi-cache.Bug-6777"
+# 10:39:12 >  
+
+#start transaction;
+#create table dbgen_version
+#(
+# dv_version varchar(16),
+# dv_create_date date,
+# dv_create_time time,
+# dv_cmdline_args varchar(200)
+#);
+#create table customer_address
+#(
+# ca_address_sk integer not null,
+# ca_address_id char(16) not null,
+# ca_street_number char(10),
+# ca_street_name varchar(60),
+# ca_street_type char(15),
+# ca_suite_number char(10),
+# ca_city varchar(60),
+# ca_county varchar(30),
+# ca_state char(2),
+# ca_zip char(10),
+# ca_country varchar(20),
+# ca_gmt_offset decimal(5,2),
+# ca_location_type char(20),
+# primary key (ca_address_sk)
+#);
+#create table customer_demographics
+#(
+# cd_demo_sk integer not null,
+# cd_gender char(1),
+# cd_marital_status char(1),
+# cd_education_status char(20),
+# cd_purchase_estimate integer,
+# cd_credit_rating char(10),
+# cd_dep_count integer,
+# cd_dep_employed_count integer,
+# cd_dep_college_count integer,
+# primary key (cd_demo_sk)
+#);
+#create table date_dim
+#(
+# d_date_sk integer not null,
+# d_date_id char(16) not null,
+# d_date date,
+# d_month_seq integer,
+# d_week_seq integer,
+# d_quarter_seq integer,
+# d_year integer,
+# d_dow integer,
+# d_moy integer,
+# d_dom integer,
+# d_qoy integer,
+# d_fy_year integer,
+# d_fy_quarter_seq integer,
+# d_fy_week_seq integer,
+# d_day_name char(9),
+# d_quarter_name char(6),
+# d_holiday char(1),
+# d_weekend char(1),
+# d_following_holiday char(1),
+# d_first_dom integer,
+# d_last_dom integer,
+# d_same_day_ly integer,
+# d_same_day_lq integer,
+#create table warehouse
+#(
+# w_warehouse_sk integer not null,
+# w_warehouse_id char(16) not null,
+# w_warehouse_name varchar(20),
+# w_warehouse_sq_ft integer,
+# w_street_number char(10),
+# w_street_name varchar(60),
+# w_street_type char(15),
+# w_suite_number char(10),
+# w_city varchar(60),
+# w_county varchar(30),
+# w_state char(2),
+# w_zip char(10),
+# w_country varchar(20),
+# w_gmt_offset decimal(5,2),
+# primary key (w_warehouse_sk)
+#);
+#create table ship_mode
+#(
+# sm_ship_mode_sk integer not null,
+# sm_ship_mode_id char(16) not null,
+# sm_type char(30),
+# sm_code char(10),
+# sm_carrier char(20),
+# sm_contract char(20),
+# primary key (sm_ship_mode_sk)
+#);
+#create table time_dim
+#(
+# t_time_sk integer not null,
+# t_time_id char(16) not null,
+# t_time integer,
+# t_hour integer,
+# t_minute integer,
+# t_second integer,
+# t_am_pm char(2),
+# t_shift char(20),
+# t_sub_shift char(20),
+# t_meal_time char(20),
+# primary key (t_time_sk)
+#);
+#create table reason
+#(
+# r_reason_sk integer not null,
+# r_reason_id char(16) not null,
+# r_reason_desc char(100),
+# primary key (r_reason_sk)
+#);
+#create table income_band
+#(
+# ib_income_band_sk integer not null,
+# ib_lower_bound integer,
+# ib_upper_bound integer,
+# primary key (ib_income_band_sk)
+#);
+#create table item
+#(
+# i_item_sk integer not null,
+# i_item_id char(16) not null,
+# i_rec_start_date date,
+# i_rec_end_date date,
+# i_item_desc varchar(200),
+# i_current_price decimal(7,2),
+# i_wholesale_cost decimal(7,2),
+# i_brand_id integer,
+# i_brand char(50),
+# i_class_id integer,
+# i_class char(50),
+# i_category_id integer,
+# i_category char(50),
+# i_manufact_id integer,
+# i_manufact char(50),
+# i_size char(20),
+# i_formulation char(20),
+# i_color char(20),
+# i_units char(10),
+# i_container char(10),
+# i_manager_id integer,
+#create table store
+#(
+# s_store_sk integer not null,
+# s_store_id char(16) not null,
+# s_rec_start_date date,
+# s_rec_end_date date,
+# s_closed_date_sk integer,
+# s_store_name varchar(50),
+# s_number_employees integer,
+# s_floor_space integer,
+# s_hours char(20),
+# s_manager varchar(40),
+# s_market_id integer,
+# s_geography_class varchar(100),
+# s_market_desc varchar(100),
+# s_market_manager varchar(40),
+# s_division_id integer,
+# s_division_name varchar(50),
+# s_company_id integer,
+# s_company_name varchar(50),
+# s_street_number varchar(10),
+#create table call_center
+#(
+# cc_call_center_sk integer not null,
+# cc_call_center_id char(16) not null,
+# cc_rec_start_date date,
+# cc_rec_end_date date,
+# cc_closed_date_sk integer,
+# cc_open_date_sk integer,
+# cc_name varchar(50),
+# cc_class varchar(50),
+# cc_employees integer,
+# cc_sq_ft integer,
+# cc_hours char(20),
+# cc_manager varchar(40),
+# cc_mkt_id integer,
+# cc_mkt_class char(50),
+# cc_mkt_desc varchar(100),
+# cc_market_manager varchar(40),
+# cc_division integer,
+# cc_division_name varchar(50),
+# cc_company integer,
+#create table customer
+#(
+# c_customer_sk integer not null,
+# c_customer_id char(16) not null,
+# c_current_cdemo_sk integer,
+# c_current_hdemo_sk integer,
+# c_current_addr_sk integer,
+# c_first_shipto_date_sk integer,
+# c_first_sales_date_sk integer,
+# c_salutation char(10),
+# c_first_name char(20),
+# c_last_name char(30),
+# c_preferred_cust_flag char(1),
+# c_birth_day integer,
+# c_birth_month integer,
+# c_birth_year integer,
+# c_birth_country varchar(20),
+# c_login char(13),
+# c_email_address char(50),
+# c_last_review_date_sk integer,
+#create table web_site
+#(
+# web_site_sk integer not null,
+# web_site_id char(16) not null,
+# web_rec_start_date date,
+# web_rec_end_date date,
+# web_name varchar(50),
+# web_open_date_sk integer,
+# web_close_date_sk integer,
+# web_class varchar(50),
+# web_manager varchar(40),
+# web_mkt_id integer,
+# web_mkt_class varchar(50),
+# web_mkt_desc varchar(100),
+# web_market_manager varchar(40),
+# web_company_id integer,
+# web_company_name char(50),
+# web_street_number char(10),
+# web_street_name varchar(60),
+# web_street_type char(15),
+#create table store_returns
+#(
+# sr_returned_date_sk integer,
+# sr_return_time_sk integer,
+# sr_item_sk integer not null,
+# sr_customer_sk integer,
+# sr_cdemo_sk integer,
+# sr_hdemo_sk integer,
+# sr_addr_sk integer,
+# sr_store_sk integer,
+# sr_reason_sk integer,
+# sr_ticket_number integer not null,
+# sr_return_quantity integer,
+# sr_return_amt decimal(7,2),
+# sr_return_tax decimal(7,2),
+# sr_return_amt_inc_tax decimal(7,2),
+# sr_fee decimal(7,2),
+# sr_return_ship_cost decimal(7,2),
+# sr_refunded_cash decimal(7,2),
+# sr_reversed_charge decimal(7,2),
+#create table household_demographics
+#(
+# hd_demo_sk integer not null,
+# hd_income_band_sk integer,
+# hd_buy_potential char(15),
+# hd_dep_count integer,
+# hd_vehicle_count integer,
+# primary key (hd_demo_sk)
+#);
+#create table web_page
+#(
+# wp_web_page_sk integer not null,
+# wp_web_page_id char(16) not null,
+# wp_rec_start_date date,
+# wp_rec_end_date date,
+# wp_creation_date_sk integer,
+# wp_access_date_sk integer,
+# wp_autogen_flag char(1),
+# wp_customer_sk integer,
+# wp_url varchar(100),
+# wp_type char(50),
+# wp_char_count integer,
+# wp_link_count integer,
+# wp_image_count integer,
+# wp_max_ad_count integer,
+# primary key (wp_web_page_sk)
+#);
+#create table promotion
+#(
+# p_promo_sk integer not null,
+# p_promo_id char(16) not null,
+# p_start_date_sk integer,
+# p_end_date_sk integer,
+# p_item_sk integer,
+# p_cost decimal(15,2),
+# p_response_target integer,
+# p_promo_name char(50),
+# p_channel_dmail char(1),
+# p_channel_email char(1),
+# p_channel_catalog char(1),
+# p_channel_tv char(1),
+# p_channel_radio char(1),
+# p_channel_press char(1),
+# p_channel_event char(1),
+# p_channel_demo char(1),
+# p_channel_details varchar(100),
+# p_purpose char(15),
+# p_discount_active char(1),
+#create table catalog_page
+#(
+# cp_catalog_page_sk integer not null,
+# cp_catalog_page_id char(16) not null,
+# cp_start_date_sk integer,
+# cp_end_date_sk integer,
+# cp_department varchar(50),
+# cp_catalog_number integer,
+# cp_catalog_page_number integer,
+# cp_description varchar(100),
+# cp_type varchar(100),
+# primary key (cp_catalog_page_sk)
+#);
+#create table inventory
+#(
+# inv_date_sk integer not null,
+# inv_item_sk integer not null,
+# inv_warehouse_sk integer not null,
+# inv_quantity_on_hand integer,
+# primary key (inv_date_sk, inv_item_sk, inv_warehouse_sk)
+#);
+#create table catalog_returns
+#(
+# cr_returned_date_sk integer,
+# cr_returned_time_sk integer,
+# cr_item_sk integer not null,
+# cr_refunded_customer_sk integer,
+# cr_refunded_cdemo_sk integer,
+# cr_refunded_hdemo_sk integer,
+# cr_refunded_addr_sk integer,
+# cr_returning_customer_sk integer,
+# cr_returning_cdemo_sk integer,
+# cr_returning_hdemo_sk integer,
+# cr_returning_addr_sk integer,
+# cr_call_center_sk integer,
+# cr_catalog_page_sk integer,
+# cr_ship_mode_sk integer,
+# cr_warehouse_sk integer,
+# cr_reason_sk integer,
+# cr_order_number integer not null,
+#create table web_returns
+#(
+# wr_returned_date_sk integer,
+# wr_returned_time_sk integer,
+# wr_item_sk integer not null,
+# wr_refunded_customer_sk integer,
+# wr_refunded_cdemo_sk integer,
+# wr_refunded_hdemo_sk integer,
+# wr_refunded_addr_sk integer,
+# wr_returning_customer_sk integer,
+# wr_returning_cdemo_sk integer,
+# wr_returning_hdemo_sk integer,
+# wr_returning_addr_sk integer,
+# wr_web_page_sk integer,
+# wr_reason_sk integer,
+# wr_order_number integer not null,
+# wr_return_quantity integer,
+# wr_return_amt decimal(7,2),
+#create table web_sales
+#(
+# ws_sold_date_sk integer,
+# ws_sold_time_sk integer,
+# ws_ship_date_sk integer,
+# ws_item_sk integer not null,
+# ws_bill_customer_sk integer,
+# ws_bill_cdemo_sk integer,
+# ws_bill_hdemo_sk integer,
+# ws_bill_addr_sk integer,
+# ws_ship_customer_sk integer,
+# ws_ship_cdemo_sk integer,
+# ws_ship_hdemo_sk integer,
+# ws_ship_addr_sk integer,
+# ws_web_page_sk integer,
+# ws_web_site_sk integer,
+# ws_ship_mode_sk integer,
+# ws_warehouse_sk integer,
+# ws_promo_sk integer,
+# ws_order_number integer not null,
+#create table catalog_sales
+#(
+# cs_sold_date_sk integer,
+# cs_sold_time_sk integer,
+# cs_ship_date_sk integer,
+# cs_bill_customer_sk integer,
+# cs_bill_cdemo_sk integer,
+# cs_bill_hdemo_sk integer,
+# cs_bill_addr_sk integer,
+# cs_ship_customer_sk integer,
+# cs_ship_cdemo_sk integer,
+# cs_ship_hdemo_sk integer,
+# cs_ship_addr_sk integer,
+# cs_call_center_sk integer,
+# cs_catalog_page_sk integer,
+# cs_ship_mode_sk integer,
+# cs_warehouse_sk integer,
+# cs_item_sk integer not null,
+# cs_promo_sk integer,
+# cs_order_number integer not null,
+#create table store_sales
+#(
+# ss_sold_date_sk integer,
+# ss_sold_time_sk integer,
+# ss_item_sk integer not null,
+# ss_customer_sk integer,
+# ss_cdemo_sk integer,
+# ss_hdemo_sk integer,
+# ss_addr_sk integer,
+# ss_store_sk integer,
+# ss_promo_sk integer,
+# ss_ticket_number integer not null,
+# ss_quantity integer,
+# ss_wholesale_cost decimal(7,2),
+# ss_list_price decimal(7,2),
+# ss_sales_price decimal(7,2),
+# ss_ext_discount_amt decimal(7,2),
+# ss_ext_sales_price decimal(7,2),
+# ss_ext_wholesale_cost decimal(7,2),
+# ss_ext_list_price decimal(7,2),
+#alter table call_center add constraint cc_d1 foreign key (cc_closed_date_sk) references date_dim (d_date_sk);
+#alter table call_center add constraint cc_d2 foreign key (cc_open_date_sk) references date_dim (d_date_sk);
+#alter table catalog_page add constraint cp_d1 foreign key (cp_end_date_sk) references date_dim (d_date_sk);
+#alter table catalog_page add constraint cp_d2 foreign key (cp_start_date_sk) references date_dim (d_date_sk);
+#alter table catalog_returns add constraint cr_cc foreign key (cr_call_center_sk) references call_center (cc_call_center_sk);
+#alter table catalog_returns add constraint cr_cp foreign key (cr_catalog_page_sk) references catalog_page (cp_catalog_page_sk);
+#alter table catalog_returns add constraint cr_i foreign key (cr_item_sk) references item (i_item_sk);
+#alter table catalog_returns add constraint cr_r foreign key (cr_reason_sk) references reason (r_reason_sk);
+#alter table catalog_returns add constraint cr_a1 foreign key (cr_refunded_addr_sk) references customer_address (ca_address_sk);
+#alter table catalog_returns add constraint cr_cd1 foreign key (cr_refunded_cdemo_sk) references customer_demographics (cd_demo_sk);
+#alter table catalog_returns add constraint cr_c1 foreign key (cr_refunded_customer_sk) references customer (c_customer_sk);
+#alter table catalog_returns add constraint cr_hd1 foreign key (cr_refunded_hdemo_sk) references household_demographics (hd_demo_sk);
+#alter table catalog_returns add constraint cr_d1 foreign key (cr_returned_date_sk) references date_dim (d_date_sk);
+#alter table catalog_returns add constraint cr_t foreign key (cr_returned_time_sk) references time_dim (t_time_sk);
+#alter table catalog_returns add constraint cr_a2 foreign key (cr_returning_addr_sk) references customer_address (ca_address_sk);
+#alter table catalog_returns add constraint cr_cd2 foreign key (cr_returning_cdemo_sk) references customer_demographics (cd_demo_sk);
+#alter table catalog_returns add constraint cr_c2 foreign key (cr_returning_customer_sk) references customer (c_customer_sk);
+#alter table catalog_returns add constraint cr_hd2 foreign key (cr_returning_hdemo_sk) references household_demographics (hd_demo_sk);
+#alter table catalog_returns add constraint cr_sm foreign key (cr_ship_mode_sk) references ship_mode (sm_ship_mode_sk);
+#alter table catalog_returns add constraint cr_w2 foreign key (cr_warehouse_sk) references warehouse (w_warehouse_sk);
+#alter table catalog_sales add constraint cs_b_a foreign key (cs_bill_addr_sk) references customer_address (ca_address_sk);
+#alter table catalog_sales add constraint cs_b_cd foreign key (cs_bill_cdemo_sk) references customer_demographics (cd_demo_sk);
+#alter table catalog_sales add constraint cs_b_c foreign key (cs_bill_customer_sk) references customer (c_customer_sk);
+#alter table catalog_sales add constraint cs_b_hd foreign key (cs_bill_hdemo_sk) references household_demographics (hd_demo_sk);
+#alter table catalog_sales add constraint cs_cc foreign key (cs_call_center_sk) references call_center (cc_call_center_sk);
+#alter table catalog_sales add constraint cs_cp foreign key (cs_catalog_page_sk) references catalog_page (cp_catalog_page_sk);
+#alter table catalog_sales add constraint cs_i foreign key (cs_item_sk) references item (i_item_sk);
+#alter table catalog_sales add constraint cs_p foreign key (cs_promo_sk) references promotion (p_promo_sk);
+#alter table catalog_sales add constraint cs_s_a foreign key (cs_ship_addr_sk) references customer_address (ca_address_sk);
+#alter table catalog_sales add constraint cs_s_cd foreign key (cs_ship_cdemo_sk) references customer_demographics (cd_demo_sk);
+#alter table catalog_sales add constraint cs_s_c foreign key (cs_ship_customer_sk) references customer (c_customer_sk);
+#alter table catalog_sales add constraint cs_d1 foreign key (cs_ship_date_sk) references date_dim (d_date_sk);
+#alter table catalog_sales add constraint cs_s_hd foreign key (cs_ship_hdemo_sk) references household_demographics (hd_demo_sk);
+#alter table catalog_sales add constraint cs_sm foreign key (cs_ship_mode_sk) references ship_mode (sm_ship_mode_sk);
+#alter table catalog_sales add constraint cs_d2 foreign key (cs_sold_date_sk) references date_dim (d_date_sk);
+#alter table catalog_sales add constraint cs_t foreign key (cs_sold_time_sk) references time_dim (t_time_sk);
+#alter table catalog_sales add constraint cs_w foreign key (cs_warehouse_sk) references warehouse (w_warehouse_sk);
+#alter table customer add constraint c_a foreign key (c_current_addr_sk) references customer_address (ca_address_sk);
+#alter table customer add constraint c_cd foreign key (c_current_cdemo_sk) references customer_demographics (cd_demo_sk);
+#alter table customer add constraint c_hd foreign key (c_current_hdemo_sk) references household_demographics (hd_demo_sk);
+#alter table customer add constraint c_fsd foreign key (c_first_sales_date_sk) references date_dim (d_date_sk);
+#alter table customer add constraint c_fsd2 foreign key (c_first_shipto_date_sk) references date_dim (d_date_sk);
+#alter table household_demographics add constraint hd_ib foreign key (hd_income_band_sk) references income_band (ib_income_band_sk);
+#alter table inventory add constraint inv_d foreign key (inv_date_sk) references date_dim (d_date_sk);
+#alter table inventory add constraint inv_i foreign key (inv_item_sk) references item (i_item_sk);
+#alter table inventory add constraint inv_w foreign key (inv_warehouse_sk) references warehouse (w_warehouse_sk);
+#alter table promotion add constraint p_end_date foreign key (p_end_date_sk) references date_dim (d_date_sk);
+#alter table promotion add constraint p_i foreign key (p_item_sk) references item (i_item_sk);
+#alter table promotion add constraint p_start_date foreign key (p_start_date_sk) references date_dim (d_date_sk);
+#alter table store add constraint s_close_date foreign key (s_closed_date_sk) references date_dim (d_date_sk);
+#alter table store_returns add constraint sr_a foreign key (sr_addr_sk) references customer_address (ca_address_sk);
+#alter table store_returns add constraint sr_cd foreign key (sr_cdemo_sk) references customer_demographics (cd_demo_sk);
+#alter table store_returns add constraint sr_c foreign key (sr_customer_sk) references customer (c_customer_sk);
+#alter table store_returns add constraint sr_hd foreign key (sr_hdemo_sk) references household_demographics (hd_demo_sk);
+#alter table store_returns add constraint sr_i foreign key (sr_item_sk) references item (i_item_sk);
+#alter table store_returns add constraint sr_r foreign key (sr_reason_sk) references reason (r_reason_sk);
+#alter table store_returns add constraint sr_ret_d foreign key (sr_returned_date_sk) references date_dim (d_date_sk);
+#alter table store_returns add constraint sr_t foreign key (sr_return_time_sk) references time_dim (t_time_sk);
+#alter table store_returns add constraint sr_s foreign key (sr_store_sk) references store (s_store_sk);
+#alter table store_sales add constraint ss_a foreign key (ss_addr_sk) references customer_address (ca_address_sk);
+#alter table store_sales add constraint ss_cd foreign key (ss_cdemo_sk) references customer_demographics (cd_demo_sk);
+#alter table store_sales add constraint ss_c foreign key (ss_customer_sk) references customer (c_customer_sk);
+#alter table store_sales add constraint ss_hd foreign key (ss_hdemo_sk) references household_demographics (hd_demo_sk);
+#alter table store_sales add constraint ss_i foreign key (ss_item_sk) references item (i_item_sk);
+#alter table store_sales add constraint ss_p foreign key (ss_promo_sk) references promotion (p_promo_sk);
+#alter table store_sales add constraint ss_d foreign key (ss_sold_date_sk) references date_dim (d_date_sk);
+#alter table store_sales add constraint ss_t foreign key (ss_sold_time_sk) references time_dim (t_time_sk);
+#alter table store_sales add constraint ss_s foreign key (ss_store_sk) references store (s_store_sk);
+#alter table web_page add constraint wp_ad foreign key (wp_access_date_sk) references date_dim (d_date_sk);
+#alter table web_page add constraint wp_cd foreign key (wp_creation_date_sk) references date_dim (d_date_sk);
+#alter table web_returns add constraint wr_i foreign key (wr_item_sk) references item (i_item_sk);
+#alter table web_returns add constraint wr_r foreign key (wr_reason_sk) references reason (r_reason_sk);
+#alter table web_returns add constraint wr_ref_a foreign key (wr_refunded_addr_sk) references customer_address (ca_address_sk);
+#alter table web_returns add constraint wr_ref_cd foreign key (wr_refunded_cdemo_sk) references customer_demographics (cd_demo_sk);
+#alter table web_returns add constraint wr_ref_c foreign key (wr_refunded_customer_sk) references customer (c_customer_sk);
+#alter table web_returns add constraint wr_ref_hd foreign key (wr_refunded_hdemo_sk) references household_demographics (hd_demo_sk);
+#alter table web_returns add constraint wr_ret_d foreign key (wr_returned_date_sk) references date_dim (d_date_sk);
+#alter table web_returns add constraint wr_ret_t foreign key (wr_returned_time_sk) references time_dim (t_time_sk);
+#alter table web_returns add constraint wr_ret_a foreign key (wr_returning_addr_sk) references customer_address (ca_address_sk);
+#alter table web_returns add constraint wr_ret_cd foreign key (wr_returning_cdemo_sk) references customer_demographics (cd_demo_sk);
+#alter table web_returns add constraint wr_ret_c foreign key (wr_returning_customer_sk) references customer (c_customer_sk);
+#alter table web_returns add constraint wr_ret_hd foreign key (wr_returning_hdemo_sk) references household_demographics (hd_demo_sk);
+#alter table web_returns add constraint wr_wp foreign key (wr_web_page_sk) references web_page (wp_web_page_sk);
+#alter table web_sales add constraint ws_b_a foreign key (ws_bill_addr_sk) references customer_address (ca_address_sk);
+#alter table web_sales add constraint ws_b_cd foreign key (ws_bill_cdemo_sk) references customer_demographics (cd_demo_sk);
+#alter table web_sales add constraint ws_b_c foreign key (ws_bill_customer_sk) references customer (c_customer_sk);
+#alter table web_sales add constraint ws_b_hd foreign key (ws_bill_hdemo_sk) references household_demographics (hd_demo_sk);
+#alter table web_sales add constraint ws_i foreign key (ws_item_sk) references item (i_item_sk);
+#alter table web_sales add constraint ws_p foreign key (ws_promo_sk) references promotion (p_promo_sk);
+#alter table web_sales add constraint ws_s_a foreign key (ws_ship_addr_sk) references customer_address (ca_address_sk);
+#alter table web_sales add constraint ws_s_cd foreign key (ws_ship_cdemo_sk) references customer_demographics (cd_demo_sk);
+#alter table web_sales add constraint ws_s_c foreign key (ws_ship_customer_sk) references customer (c_customer_sk);
+#alter table web_sales add constraint ws_s_d foreign key (ws_ship_date_sk) references date_dim (d_date_sk);
+#alter table web_sales add constraint ws_s_hd foreign key (ws_ship_hdemo_sk) references household_demographics (hd_demo_sk);
+#alter table web_sales add constraint ws_sm foreign key (ws_ship_mode_sk) references ship_mode (sm_ship_mode_sk);
+#alter table web_sales add constraint ws_d2 foreign key (ws_sold_date_sk) references date_dim (d_date_sk);
+#alter table web_sales add constraint ws_t foreign key (ws_sold_time_sk) references time_dim (t_time_sk);
+#alter table web_sales add constraint ws_w2 foreign key (ws_warehouse_sk) references warehouse (w_warehouse_sk);
+#alter table web_sales add constraint ws_wp foreign key (ws_web_page_sk) references web_page (wp_web_page_sk);
+#alter table web_sales add constraint ws_ws foreign key (ws_web_site_sk) references web_site (web_site_sk);
+#alter table web_site add constraint web_d1 foreign key (web_close_date_sk) references date_dim (d_date_sk);
+#alter table web_site add constraint web_d2 foreign key (web_open_date_sk) references date_dim (d_date_sk);
+#commit;
+START TRANSACTION;
+SET SCHEMA "sys";
+CREATE TABLE "sys"."dbgen_version" (
+	"dv_version"      VARCHAR(16),
+	"dv_create_date"  DATE,
+	"dv_create_time"  TIME,
+	"dv_cmdline_args" VARCHAR(200)
+);
+CREATE TABLE "sys"."customer_address" (
+	"ca_address_sk"    INTEGER       NOT NULL,
+	"ca_address_id"    CHAR(16)      NOT NULL,
+	"ca_street_number" CHAR(10),
+	"ca_street_name"   VARCHAR(60),
+	"ca_street_type"   CHAR(15),
+	"ca_suite_number"  CHAR(10),
+	"ca_city"          VARCHAR(60),
+	"ca_county"        VARCHAR(30),
+	"ca_state"         CHAR(2),
+	"ca_zip"           CHAR(10),
+	"ca_country"       VARCHAR(20),
+	"ca_gmt_offset"    DECIMAL(5,2),
+	"ca_location_type" CHAR(20),
+	CONSTRAINT "customer_address_ca_address_sk_pkey" PRIMARY KEY ("ca_address_sk")
+);
+CREATE TABLE "sys"."customer_demographics" (
+	"cd_demo_sk"            INTEGER       NOT NULL,
+	"cd_gender"             CHAR(1),
+	"cd_marital_status"     CHAR(1),
+	"cd_education_status"   CHAR(20),
+	"cd_purchase_estimate"  INTEGER,
+	"cd_credit_rating"      CHAR(10),
+	"cd_dep_count"          INTEGER,
+	"cd_dep_employed_count" INTEGER,
+	"cd_dep_college_count"  INTEGER,
+	CONSTRAINT "customer_demographics_cd_demo_sk_pkey" PRIMARY KEY ("cd_demo_sk")
+);
+CREATE TABLE "sys"."date_dim" (
+	"d_date_sk"           INTEGER       NOT NULL,
+	"d_date_id"           CHAR(16)      NOT NULL,
+	"d_date"              DATE,
+	"d_month_seq"         INTEGER,
+	"d_week_seq"          INTEGER,
+	"d_quarter_seq"       INTEGER,
+	"d_year"              INTEGER,
+	"d_dow"               INTEGER,
+	"d_moy"               INTEGER,
+	"d_dom"               INTEGER,
+	"d_qoy"               INTEGER,
+	"d_fy_year"           INTEGER,
+	"d_fy_quarter_seq"    INTEGER,
+	"d_fy_week_seq"       INTEGER,
+	"d_day_name"          CHAR(9),
+	"d_quarter_name"      CHAR(6),
+	"d_holiday"           CHAR(1),
+	"d_weekend"           CHAR(1),
+	"d_following_holiday" CHAR(1),
+	"d_first_dom"         INTEGER,
+	"d_last_dom"          INTEGER,
+	"d_same_day_ly"       INTEGER,
+	"d_same_day_lq"       INTEGER,
+	"d_current_day"       CHAR(1),
+	"d_current_week"      CHAR(1),
+	"d_current_month"     CHAR(1),
+	"d_current_quarter"   CHAR(1),
+	"d_current_year"      CHAR(1),
+	CONSTRAINT "date_dim_d_date_sk_pkey" PRIMARY KEY ("d_date_sk")
+);
+CREATE TABLE "sys"."warehouse" (
+	"w_warehouse_sk"    INTEGER       NOT NULL,
+	"w_warehouse_id"    CHAR(16)      NOT NULL,
+	"w_warehouse_name"  VARCHAR(20),
+	"w_warehouse_sq_ft" INTEGER,
+	"w_street_number"   CHAR(10),
+	"w_street_name"     VARCHAR(60),
+	"w_street_type"     CHAR(15),
+	"w_suite_number"    CHAR(10),
+	"w_city"            VARCHAR(60),
+	"w_county"          VARCHAR(30),
+	"w_state"           CHAR(2),
+	"w_zip"             CHAR(10),
+	"w_country"         VARCHAR(20),
+	"w_gmt_offset"      DECIMAL(5,2),
+	CONSTRAINT "warehouse_w_warehouse_sk_pkey" PRIMARY KEY ("w_warehouse_sk")
+);
+CREATE TABLE "sys"."ship_mode" (
+	"sm_ship_mode_sk" INTEGER       NOT NULL,
+	"sm_ship_mode_id" CHAR(16)      NOT NULL,
+	"sm_type"         CHAR(30),
+	"sm_code"         CHAR(10),
+	"sm_carrier"      CHAR(20),
+	"sm_contract"     CHAR(20),
+	CONSTRAINT "ship_mode_sm_ship_mode_sk_pkey" PRIMARY KEY ("sm_ship_mode_sk")
+);
+CREATE TABLE "sys"."time_dim" (
+	"t_time_sk"   INTEGER       NOT NULL,
+	"t_time_id"   CHAR(16)      NOT NULL,
+	"t_time"      INTEGER,
+	"t_hour"      INTEGER,
+	"t_minute"    INTEGER,
+	"t_second"    INTEGER,
+	"t_am_pm"     CHAR(2),
+	"t_shift"     CHAR(20),
+	"t_sub_shift" CHAR(20),
+	"t_meal_time" CHAR(20),
+	CONSTRAINT "time_dim_t_time_sk_pkey" PRIMARY KEY ("t_time_sk")
+);
+CREATE TABLE "sys"."reason" (
+	"r_reason_sk"   INTEGER       NOT NULL,
+	"r_reason_id"   CHAR(16)      NOT NULL,
+	"r_reason_desc" CHAR(100),
+	CONSTRAINT "reason_r_reason_sk_pkey" PRIMARY KEY ("r_reason_sk")
+);
+CREATE TABLE "sys"."income_band" (
+	"ib_income_band_sk" INTEGER       NOT NULL,
+	"ib_lower_bound"    INTEGER,
+	"ib_upper_bound"    INTEGER,
+	CONSTRAINT "income_band_ib_income_band_sk_pkey" PRIMARY KEY ("ib_income_band_sk")
+);
+CREATE TABLE "sys"."item" (
+	"i_item_sk"        INTEGER       NOT NULL,
+	"i_item_id"        CHAR(16)      NOT NULL,
+	"i_rec_start_date" DATE,
+	"i_rec_end_date"   DATE,
+	"i_item_desc"      VARCHAR(200),
+	"i_current_price"  DECIMAL(7,2),
+	"i_wholesale_cost" DECIMAL(7,2),
+	"i_brand_id"       INTEGER,
+	"i_brand"          CHAR(50),
+	"i_class_id"       INTEGER,
+	"i_class"          CHAR(50),
+	"i_category_id"    INTEGER,
+	"i_category"       CHAR(50),
+	"i_manufact_id"    INTEGER,
+	"i_manufact"       CHAR(50),
+	"i_size"           CHAR(20),
+	"i_formulation"    CHAR(20),
+	"i_color"          CHAR(20),
+	"i_units"          CHAR(10),
+	"i_container"      CHAR(10),
+	"i_manager_id"     INTEGER,
+	"i_product_name"   CHAR(50),
+	CONSTRAINT "item_i_item_sk_pkey" PRIMARY KEY ("i_item_sk")
+);
+CREATE TABLE "sys"."store" (
+	"s_store_sk"         INTEGER       NOT NULL,
+	"s_store_id"         CHAR(16)      NOT NULL,
+	"s_rec_start_date"   DATE,
+	"s_rec_end_date"     DATE,
+	"s_closed_date_sk"   INTEGER,
+	"s_store_name"       VARCHAR(50),
+	"s_number_employees" INTEGER,
+	"s_floor_space"      INTEGER,
+	"s_hours"            CHAR(20),
+	"s_manager"          VARCHAR(40),
+	"s_market_id"        INTEGER,
+	"s_geography_class"  VARCHAR(100),
+	"s_market_desc"      VARCHAR(100),
+	"s_market_manager"   VARCHAR(40),
+	"s_division_id"      INTEGER,
+	"s_division_name"    VARCHAR(50),
+	"s_company_id"       INTEGER,
+	"s_company_name"     VARCHAR(50),
+	"s_street_number"    VARCHAR(10),
+	"s_street_name"      VARCHAR(60),
+	"s_street_type"      CHAR(15),
+	"s_suite_number"     CHAR(10),
+	"s_city"             VARCHAR(60),
+	"s_county"           VARCHAR(30),
+	"s_state"            CHAR(2),
+	"s_zip"              CHAR(10),
+	"s_country"          VARCHAR(20),
+	"s_gmt_offset"       DECIMAL(5,2),
+	"s_tax_precentage"   DECIMAL(5,2),
+	CONSTRAINT "store_s_store_sk_pkey" PRIMARY KEY ("s_store_sk")
+);
+CREATE TABLE "sys"."call_center" (
+	"cc_call_center_sk" INTEGER       NOT NULL,
+	"cc_call_center_id" CHAR(16)      NOT NULL,
+	"cc_rec_start_date" DATE,
+	"cc_rec_end_date"   DATE,
+	"cc_closed_date_sk" INTEGER,
+	"cc_open_date_sk"   INTEGER,
+	"cc_name"           VARCHAR(50),
+	"cc_class"          VARCHAR(50),
+	"cc_employees"      INTEGER,
+	"cc_sq_ft"          INTEGER,
+	"cc_hours"          CHAR(20),
+	"cc_manager"        VARCHAR(40),
+	"cc_mkt_id"         INTEGER,
+	"cc_mkt_class"      CHAR(50),
+	"cc_mkt_desc"       VARCHAR(100),
+	"cc_market_manager" VARCHAR(40),
+	"cc_division"       INTEGER,
+	"cc_division_name"  VARCHAR(50),
+	"cc_company"        INTEGER,
+	"cc_company_name"   CHAR(50),
+	"cc_street_number"  CHAR(10),
+	"cc_street_name"    VARCHAR(60),
+	"cc_street_type"    CHAR(15),
+	"cc_suite_number"   CHAR(10),
+	"cc_city"           VARCHAR(60),
+	"cc_county"         VARCHAR(30),
+	"cc_state"          CHAR(2),
+	"cc_zip"            CHAR(10),
+	"cc_country"        VARCHAR(20),
+	"cc_gmt_offset"     DECIMAL(5,2),
+	"cc_tax_percentage" DECIMAL(5,2),
+	CONSTRAINT "call_center_cc_call_center_sk_pkey" PRIMARY KEY ("cc_call_center_sk")
+);
+CREATE TABLE "sys"."customer" (
+	"c_customer_sk"          INTEGER       NOT NULL,
+	"c_customer_id"          CHAR(16)      NOT NULL,
+	"c_current_cdemo_sk"     INTEGER,
+	"c_current_hdemo_sk"     INTEGER,
+	"c_current_addr_sk"      INTEGER,
+	"c_first_shipto_date_sk" INTEGER,
+	"c_first_sales_date_sk"  INTEGER,
+	"c_salutation"           CHAR(10),
+	"c_first_name"           CHAR(20),
+	"c_last_name"            CHAR(30),
+	"c_preferred_cust_flag"  CHAR(1),
+	"c_birth_day"            INTEGER,
+	"c_birth_month"          INTEGER,
+	"c_birth_year"           INTEGER,
+	"c_birth_country"        VARCHAR(20),
+	"c_login"                CHAR(13),
+	"c_email_address"        CHAR(50),
+	"c_last_review_date_sk"  INTEGER,
+	CONSTRAINT "customer_c_customer_sk_pkey" PRIMARY KEY ("c_customer_sk")
+);
+CREATE TABLE "sys"."web_site" (
+	"web_site_sk"        INTEGER       NOT NULL,
+	"web_site_id"        CHAR(16)      NOT NULL,
+	"web_rec_start_date" DATE,
+	"web_rec_end_date"   DATE,
+	"web_name"           VARCHAR(50),
+	"web_open_date_sk"   INTEGER,
+	"web_close_date_sk"  INTEGER,
+	"web_class"          VARCHAR(50),
+	"web_manager"        VARCHAR(40),
+	"web_mkt_id"         INTEGER,
+	"web_mkt_class"      VARCHAR(50),
+	"web_mkt_desc"       VARCHAR(100),
+	"web_market_manager" VARCHAR(40),
+	"web_company_id"     INTEGER,
+	"web_company_name"   CHAR(50),
+	"web_street_number"  CHAR(10),
+	"web_street_name"    VARCHAR(60),
+	"web_street_type"    CHAR(15),
+	"web_suite_number"   CHAR(10),
+	"web_city"           VARCHAR(60),
+	"web_county"         VARCHAR(30),
+	"web_state"          CHAR(2),
+	"web_zip"            CHAR(10),
+	"web_country"        VARCHAR(20),
+	"web_gmt_offset"     DECIMAL(5,2),
+	"web_tax_percentage" DECIMAL(5,2),
+	CONSTRAINT "web_site_web_site_sk_pkey" PRIMARY KEY ("web_site_sk")
+);
+CREATE TABLE "sys"."store_returns" (
+	"sr_returned_date_sk"   INTEGER,
+	"sr_return_time_sk"     INTEGER,
+	"sr_item_sk"            INTEGER       NOT NULL,
+	"sr_customer_sk"        INTEGER,
+	"sr_cdemo_sk"           INTEGER,
+	"sr_hdemo_sk"           INTEGER,
+	"sr_addr_sk"            INTEGER,
+	"sr_store_sk"           INTEGER,
+	"sr_reason_sk"          INTEGER,
+	"sr_ticket_number"      INTEGER       NOT NULL,
+	"sr_return_quantity"    INTEGER,
+	"sr_return_amt"         DECIMAL(7,2),
+	"sr_return_tax"         DECIMAL(7,2),
+	"sr_return_amt_inc_tax" DECIMAL(7,2),
+	"sr_fee"                DECIMAL(7,2),
+	"sr_return_ship_cost"   DECIMAL(7,2),
+	"sr_refunded_cash"      DECIMAL(7,2),
+	"sr_reversed_charge"    DECIMAL(7,2),
+	"sr_store_credit"       DECIMAL(7,2),
+	"sr_net_loss"           DECIMAL(7,2),
+	CONSTRAINT "store_returns_sr_item_sk_sr_ticket_number_pkey" PRIMARY KEY ("sr_item_sk", "sr_ticket_number")
+);
+CREATE TABLE "sys"."household_demographics" (
+	"hd_demo_sk"        INTEGER       NOT NULL,
+	"hd_income_band_sk" INTEGER,
+	"hd_buy_potential"  CHAR(15),
+	"hd_dep_count"      INTEGER,
+	"hd_vehicle_count"  INTEGER,
+	CONSTRAINT "household_demographics_hd_demo_sk_pkey" PRIMARY KEY ("hd_demo_sk")
+);
+CREATE TABLE "sys"."web_page" (
+	"wp_web_page_sk"      INTEGER       NOT NULL,
+	"wp_web_page_id"      CHAR(16)      NOT NULL,
+	"wp_rec_start_date"   DATE,
+	"wp_rec_end_date"     DATE,
+	"wp_creation_date_sk" INTEGER,
+	"wp_access_date_sk"   INTEGER,
+	"wp_autogen_flag"     CHAR(1),
+	"wp_customer_sk"      INTEGER,
+	"wp_url"              VARCHAR(100),
+	"wp_type"             CHAR(50),
+	"wp_char_count"       INTEGER,
+	"wp_link_count"       INTEGER,
+	"wp_image_count"      INTEGER,
+	"wp_max_ad_count"     INTEGER,
+	CONSTRAINT "web_page_wp_web_page_sk_pkey" PRIMARY KEY ("wp_web_page_sk")
+);
+CREATE TABLE "sys"."promotion" (
+	"p_promo_sk"        INTEGER       NOT NULL,
+	"p_promo_id"        CHAR(16)      NOT NULL,
+	"p_start_date_sk"   INTEGER,
+	"p_end_date_sk"     INTEGER,
+	"p_item_sk"         INTEGER,
+	"p_cost"            DECIMAL(15,2),
+	"p_response_target" INTEGER,
+	"p_promo_name"      CHAR(50),
+	"p_channel_dmail"   CHAR(1),
+	"p_channel_email"   CHAR(1),
+	"p_channel_catalog" CHAR(1),
+	"p_channel_tv"      CHAR(1),
+	"p_channel_radio"   CHAR(1),
+	"p_channel_press"   CHAR(1),
+	"p_channel_event"   CHAR(1),
+	"p_channel_demo"    CHAR(1),
+	"p_channel_details" VARCHAR(100),
+	"p_purpose"         CHAR(15),
+	"p_discount_active" CHAR(1),
+	CONSTRAINT "promotion_p_promo_sk_pkey" PRIMARY KEY ("p_promo_sk")
+);
+CREATE TABLE "sys"."catalog_page" (
+	"cp_catalog_page_sk"     INTEGER       NOT NULL,
+	"cp_catalog_page_id"     CHAR(16)      NOT NULL,
+	"cp_start_date_sk"       INTEGER,
+	"cp_end_date_sk"         INTEGER,
+	"cp_department"          VARCHAR(50),
+	"cp_catalog_number"      INTEGER,
+	"cp_catalog_page_number" INTEGER,
+	"cp_description"         VARCHAR(100),
+	"cp_type"                VARCHAR(100),
+	CONSTRAINT "catalog_page_cp_catalog_page_sk_pkey" PRIMARY KEY ("cp_catalog_page_sk")
+);
+CREATE TABLE "sys"."inventory" (
+	"inv_date_sk"          INTEGER       NOT NULL,
+	"inv_item_sk"          INTEGER       NOT NULL,
+	"inv_warehouse_sk"     INTEGER       NOT NULL,
+	"inv_quantity_on_hand" INTEGER,
+	CONSTRAINT "inventory_inv_date_sk_inv_item_sk_inv_warehouse_sk_pkey" PRIMARY KEY ("inv_date_sk", "inv_item_sk", "inv_warehouse_sk")
+);
+CREATE TABLE "sys"."catalog_returns" (
+	"cr_returned_date_sk"      INTEGER,
+	"cr_returned_time_sk"      INTEGER,
+	"cr_item_sk"               INTEGER       NOT NULL,
+	"cr_refunded_customer_sk"  INTEGER,
+	"cr_refunded_cdemo_sk"     INTEGER,
+	"cr_refunded_hdemo_sk"     INTEGER,
+	"cr_refunded_addr_sk"      INTEGER,
+	"cr_returning_customer_sk" INTEGER,
+	"cr_returning_cdemo_sk"    INTEGER,
+	"cr_returning_hdemo_sk"    INTEGER,
+	"cr_returning_addr_sk"     INTEGER,
+	"cr_call_center_sk"        INTEGER,
+	"cr_catalog_page_sk"       INTEGER,
+	"cr_ship_mode_sk"          INTEGER,
+	"cr_warehouse_sk"          INTEGER,
+	"cr_reason_sk"             INTEGER,
+	"cr_order_number"          INTEGER       NOT NULL,
+	"cr_return_quantity"       INTEGER,
+	"cr_return_amount"         DECIMAL(7,2),
+	"cr_return_tax"            DECIMAL(7,2),
+	"cr_return_amt_inc_tax"    DECIMAL(7,2),
+	"cr_fee"                   DECIMAL(7,2),
+	"cr_return_ship_cost"      DECIMAL(7,2),
+	"cr_refunded_cash"         DECIMAL(7,2),
+	"cr_reversed_charge"       DECIMAL(7,2),
+	"cr_store_credit"          DECIMAL(7,2),
+	"cr_net_loss"              DECIMAL(7,2),
+	CONSTRAINT "catalog_returns_cr_item_sk_cr_order_number_pkey" PRIMARY KEY ("cr_item_sk", "cr_order_number")
+);
+CREATE TABLE "sys"."web_returns" (
+	"wr_returned_date_sk"      INTEGER,
+	"wr_returned_time_sk"      INTEGER,
+	"wr_item_sk"               INTEGER       NOT NULL,
+	"wr_refunded_customer_sk"  INTEGER,
+	"wr_refunded_cdemo_sk"     INTEGER,
+	"wr_refunded_hdemo_sk"     INTEGER,
+	"wr_refunded_addr_sk"      INTEGER,
+	"wr_returning_customer_sk" INTEGER,
+	"wr_returning_cdemo_sk"    INTEGER,
+	"wr_returning_hdemo_sk"    INTEGER,
+	"wr_returning_addr_sk"     INTEGER,
+	"wr_web_page_sk"           INTEGER,
+	"wr_reason_sk"             INTEGER,
+	"wr_order_number"          INTEGER       NOT NULL,
+	"wr_return_quantity"       INTEGER,
+	"wr_return_amt"            DECIMAL(7,2),
+	"wr_return_tax"            DECIMAL(7,2),
+	"wr_return_amt_inc_tax"    DECIMAL(7,2),
+	"wr_fee"                   DECIMAL(7,2),
+	"wr_return_ship_cost"      DECIMAL(7,2),
+	"wr_refunded_cash"         DECIMAL(7,2),
+	"wr_reversed_charge"       DECIMAL(7,2),
+	"wr_account_credit"        DECIMAL(7,2),
+	"wr_net_loss"              DECIMAL(7,2),
+	CONSTRAINT "web_returns_wr_item_sk_wr_order_number_pkey" PRIMARY KEY ("wr_item_sk", "wr_order_number")
+);
+CREATE TABLE "sys"."web_sales" (
+	"ws_sold_date_sk"          INTEGER,
+	"ws_sold_time_sk"          INTEGER,
+	"ws_ship_date_sk"          INTEGER,
+	"ws_item_sk"               INTEGER       NOT NULL,
+	"ws_bill_customer_sk"      INTEGER,
+	"ws_bill_cdemo_sk"         INTEGER,
+	"ws_bill_hdemo_sk"         INTEGER,
+	"ws_bill_addr_sk"          INTEGER,
+	"ws_ship_customer_sk"      INTEGER,
+	"ws_ship_cdemo_sk"         INTEGER,
+	"ws_ship_hdemo_sk"         INTEGER,
+	"ws_ship_addr_sk"          INTEGER,
+	"ws_web_page_sk"           INTEGER,
+	"ws_web_site_sk"           INTEGER,
+	"ws_ship_mode_sk"          INTEGER,
+	"ws_warehouse_sk"          INTEGER,
+	"ws_promo_sk"              INTEGER,
+	"ws_order_number"          INTEGER       NOT NULL,
+	"ws_quantity"              INTEGER,
+	"ws_wholesale_cost"        DECIMAL(7,2),
+	"ws_list_price"            DECIMAL(7,2),
+	"ws_sales_price"           DECIMAL(7,2),
+	"ws_ext_discount_amt"      DECIMAL(7,2),
+	"ws_ext_sales_price"       DECIMAL(7,2),
+	"ws_ext_wholesale_cost"    DECIMAL(7,2),
+	"ws_ext_list_price"        DECIMAL(7,2),
+	"ws_ext_tax"               DECIMAL(7,2),
+	"ws_coupon_amt"            DECIMAL(7,2),
+	"ws_ext_ship_cost"         DECIMAL(7,2),
+	"ws_net_paid"              DECIMAL(7,2),
+	"ws_net_paid_inc_tax"      DECIMAL(7,2),
+	"ws_net_paid_inc_ship"     DECIMAL(7,2),
+	"ws_net_paid_inc_ship_tax" DECIMAL(7,2),
+	"ws_net_profit"            DECIMAL(7,2),
+	CONSTRAINT "web_sales_ws_item_sk_ws_order_number_pkey" PRIMARY KEY ("ws_item_sk", "ws_order_number")
+);
+CREATE TABLE "sys"."catalog_sales" (
+	"cs_sold_date_sk"          INTEGER,
+	"cs_sold_time_sk"          INTEGER,
+	"cs_ship_date_sk"          INTEGER,
+	"cs_bill_customer_sk"      INTEGER,
+	"cs_bill_cdemo_sk"         INTEGER,
+	"cs_bill_hdemo_sk"         INTEGER,
+	"cs_bill_addr_sk"          INTEGER,
+	"cs_ship_customer_sk"      INTEGER,
+	"cs_ship_cdemo_sk"         INTEGER,
+	"cs_ship_hdemo_sk"         INTEGER,
+	"cs_ship_addr_sk"          INTEGER,
+	"cs_call_center_sk"        INTEGER,
+	"cs_catalog_page_sk"       INTEGER,
+	"cs_ship_mode_sk"          INTEGER,
+	"cs_warehouse_sk"          INTEGER,
+	"cs_item_sk"               INTEGER       NOT NULL,
+	"cs_promo_sk"              INTEGER,
+	"cs_order_number"          INTEGER       NOT NULL,
+	"cs_quantity"              INTEGER,
+	"cs_wholesale_cost"        DECIMAL(7,2),
+	"cs_list_price"            DECIMAL(7,2),
+	"cs_sales_price"           DECIMAL(7,2),
+	"cs_ext_discount_amt"      DECIMAL(7,2),
+	"cs_ext_sales_price"       DECIMAL(7,2),
+	"cs_ext_wholesale_cost"    DECIMAL(7,2),
+	"cs_ext_list_price"        DECIMAL(7,2),
+	"cs_ext_tax"               DECIMAL(7,2),
+	"cs_coupon_amt"            DECIMAL(7,2),
+	"cs_ext_ship_cost"         DECIMAL(7,2),
+	"cs_net_paid"              DECIMAL(7,2),
+	"cs_net_paid_inc_tax"      DECIMAL(7,2),
+	"cs_net_paid_inc_ship"     DECIMAL(7,2),
+	"cs_net_paid_inc_ship_tax" DECIMAL(7,2),
+	"cs_net_profit"            DECIMAL(7,2),
+	CONSTRAINT "catalog_sales_cs_item_sk_cs_order_number_pkey" PRIMARY KEY ("cs_item_sk", "cs_order_number")
+);
+CREATE TABLE "sys"."store_sales" (
+	"ss_sold_date_sk"       INTEGER,
+	"ss_sold_time_sk"       INTEGER,
+	"ss_item_sk"            INTEGER       NOT NULL,
+	"ss_customer_sk"        INTEGER,
+	"ss_cdemo_sk"           INTEGER,
+	"ss_hdemo_sk"           INTEGER,
+	"ss_addr_sk"            INTEGER,
+	"ss_store_sk"           INTEGER,
+	"ss_promo_sk"           INTEGER,
+	"ss_ticket_number"      INTEGER       NOT NULL,
+	"ss_quantity"           INTEGER,
+	"ss_wholesale_cost"     DECIMAL(7,2),
+	"ss_list_price"         DECIMAL(7,2),
+	"ss_sales_price"        DECIMAL(7,2),
+	"ss_ext_discount_amt"   DECIMAL(7,2),
+	"ss_ext_sales_price"    DECIMAL(7,2),
+	"ss_ext_wholesale_cost" DECIMAL(7,2),
+	"ss_ext_list_price"     DECIMAL(7,2),
+	"ss_ext_tax"            DECIMAL(7,2),
+	"ss_coupon_amt"         DECIMAL(7,2),
+	"ss_net_paid"           DECIMAL(7,2),
+	"ss_net_paid_inc_tax"   DECIMAL(7,2),
+	"ss_net_profit"         DECIMAL(7,2),
+	CONSTRAINT "store_sales_ss_item_sk_ss_ticket_number_pkey" PRIMARY KEY ("ss_item_sk", "ss_ticket_number")
+);
+ALTER TABLE "sys"."call_center" ADD CONSTRAINT "cc_d1" FOREIGN KEY ("cc_closed_date_sk") REFERENCES "sys"."date_dim" ("d_date_sk");
+ALTER TABLE "sys"."call_center" ADD CONSTRAINT "cc_d2" FOREIGN KEY ("cc_open_date_sk") REFERENCES "sys"."date_dim" ("d_date_sk");
+ALTER TABLE "sys"."catalog_page" ADD CONSTRAINT "cp_d1" FOREIGN KEY ("cp_end_date_sk") REFERENCES "sys"."date_dim" ("d_date_sk");
+ALTER TABLE "sys"."catalog_page" ADD CONSTRAINT "cp_d2" FOREIGN KEY ("cp_start_date_sk") REFERENCES "sys"."date_dim" ("d_date_sk");
+ALTER TABLE "sys"."catalog_returns" ADD CONSTRAINT "cr_a1" FOREIGN KEY ("cr_refunded_addr_sk") REFERENCES "sys"."customer_address" ("ca_address_sk");
+ALTER TABLE "sys"."catalog_returns" ADD CONSTRAINT "cr_a2" FOREIGN KEY ("cr_returning_addr_sk") REFERENCES "sys"."customer_address" ("ca_address_sk");
+ALTER TABLE "sys"."catalog_returns" ADD CONSTRAINT "cr_c1" FOREIGN KEY ("cr_refunded_customer_sk") REFERENCES "sys"."customer" ("c_customer_sk");
+ALTER TABLE "sys"."catalog_returns" ADD CONSTRAINT "cr_c2" FOREIGN KEY ("cr_returning_customer_sk") REFERENCES "sys"."customer" ("c_customer_sk");
+ALTER TABLE "sys"."catalog_returns" ADD CONSTRAINT "cr_cc" FOREIGN KEY ("cr_call_center_sk") REFERENCES "sys"."call_center" ("cc_call_center_sk");
+ALTER TABLE "sys"."catalog_returns" ADD CONSTRAINT "cr_cd1" FOREIGN KEY ("cr_refunded_cdemo_sk") REFERENCES "sys"."customer_demographics" ("cd_demo_sk");
+ALTER TABLE "sys"."catalog_returns" ADD CONSTRAINT "cr_cd2" FOREIGN KEY ("cr_returning_cdemo_sk") REFERENCES "sys"."customer_demographics" ("cd_demo_sk");
+ALTER TABLE "sys"."catalog_returns" ADD CONSTRAINT "cr_cp" FOREIGN KEY ("cr_catalog_page_sk") REFERENCES "sys"."catalog_page" ("cp_catalog_page_sk");
+ALTER TABLE "sys"."catalog_returns" ADD CONSTRAINT "cr_d1" FOREIGN KEY ("cr_returned_date_sk") REFERENCES "sys"."date_dim" ("d_date_sk");
+ALTER TABLE "sys"."catalog_returns" ADD CONSTRAINT "cr_hd1" FOREIGN KEY ("cr_refunded_hdemo_sk") REFERENCES "sys"."household_demographics" ("hd_demo_sk");
+ALTER TABLE "sys"."catalog_returns" ADD CONSTRAINT "cr_hd2" FOREIGN KEY ("cr_returning_hdemo_sk") REFERENCES "sys"."household_demographics" ("hd_demo_sk");
+ALTER TABLE "sys"."catalog_returns" ADD CONSTRAINT "cr_i" FOREIGN KEY ("cr_item_sk") REFERENCES "sys"."item" ("i_item_sk");
+ALTER TABLE "sys"."catalog_returns" ADD CONSTRAINT "cr_r" FOREIGN KEY ("cr_reason_sk") REFERENCES "sys"."reason" ("r_reason_sk");
+ALTER TABLE "sys"."catalog_returns" ADD CONSTRAINT "cr_sm" FOREIGN KEY ("cr_ship_mode_sk") REFERENCES "sys"."ship_mode" ("sm_ship_mode_sk");
+ALTER TABLE "sys"."catalog_returns" ADD CONSTRAINT "cr_t" FOREIGN KEY ("cr_returned_time_sk") REFERENCES "sys"."time_dim" ("t_time_sk");
+ALTER TABLE "sys"."catalog_returns" ADD CONSTRAINT "cr_w2" FOREIGN KEY ("cr_warehouse_sk") REFERENCES "sys"."warehouse" ("w_warehouse_sk");
+ALTER TABLE "sys"."catalog_sales" ADD CONSTRAINT "cs_b_a" FOREIGN KEY ("cs_bill_addr_sk") REFERENCES "sys"."customer_address" ("ca_address_sk");
+ALTER TABLE "sys"."catalog_sales" ADD CONSTRAINT "cs_b_c" FOREIGN KEY ("cs_bill_customer_sk") REFERENCES "sys"."customer" ("c_customer_sk");
+ALTER TABLE "sys"."catalog_sales" ADD CONSTRAINT "cs_b_cd" FOREIGN KEY ("cs_bill_cdemo_sk") REFERENCES "sys"."customer_demographics" ("cd_demo_sk");
+ALTER TABLE "sys"."catalog_sales" ADD CONSTRAINT "cs_b_hd" FOREIGN KEY ("cs_bill_hdemo_sk") REFERENCES "sys"."household_demographics" ("hd_demo_sk");
+ALTER TABLE "sys"."catalog_sales" ADD CONSTRAINT "cs_cc" FOREIGN KEY ("cs_call_center_sk") REFERENCES "sys"."call_center" ("cc_call_center_sk");
+ALTER TABLE "sys"."catalog_sales" ADD CONSTRAINT "cs_cp" FOREIGN KEY ("cs_catalog_page_sk") REFERENCES "sys"."catalog_page" ("cp_catalog_page_sk");
+ALTER TABLE "sys"."catalog_sales" ADD CONSTRAINT "cs_d1" FOREIGN KEY ("cs_ship_date_sk") REFERENCES "sys"."date_dim" ("d_date_sk");
+ALTER TABLE "sys"."catalog_sales" ADD CONSTRAINT "cs_d2" FOREIGN KEY ("cs_sold_date_sk") REFERENCES "sys"."date_dim" ("d_date_sk");
+ALTER TABLE "sys"."catalog_sales" ADD CONSTRAINT "cs_i" FOREIGN KEY ("cs_item_sk") REFERENCES "sys"."item" ("i_item_sk");
+ALTER TABLE "sys"."catalog_sales" ADD CONSTRAINT "cs_p" FOREIGN KEY ("cs_promo_sk") REFERENCES "sys"."promotion" ("p_promo_sk");
+ALTER TABLE "sys"."catalog_sales" ADD CONSTRAINT "cs_s_a" FOREIGN KEY ("cs_ship_addr_sk") REFERENCES "sys"."customer_address" ("ca_address_sk");
+ALTER TABLE "sys"."catalog_sales" ADD CONSTRAINT "cs_s_c" FOREIGN KEY ("cs_ship_customer_sk") REFERENCES "sys"."customer" ("c_customer_sk");
+ALTER TABLE "sys"."catalog_sales" ADD CONSTRAINT "cs_s_cd" FOREIGN KEY ("cs_ship_cdemo_sk") REFERENCES "sys"."customer_demographics" ("cd_demo_sk");
+ALTER TABLE "sys"."catalog_sales" ADD CONSTRAINT "cs_s_hd" FOREIGN KEY ("cs_ship_hdemo_sk") REFERENCES "sys"."household_demographics" ("hd_demo_sk");
+ALTER TABLE "sys"."catalog_sales" ADD CONSTRAINT "cs_sm" FOREIGN KEY ("cs_ship_mode_sk") REFERENCES "sys"."ship_mode" ("sm_ship_mode_sk");
+ALTER TABLE "sys"."catalog_sales" ADD CONSTRAINT "cs_t" FOREIGN KEY ("cs_sold_time_sk") REFERENCES "sys"."time_dim" ("t_time_sk");
+ALTER TABLE "sys"."catalog_sales" ADD CONSTRAINT "cs_w" FOREIGN KEY ("cs_warehouse_sk") REFERENCES "sys"."warehouse" ("w_warehouse_sk");
+ALTER TABLE "sys"."customer" ADD CONSTRAINT "c_a" FOREIGN KEY ("c_current_addr_sk") REFERENCES "sys"."customer_address" ("ca_address_sk");
+ALTER TABLE "sys"."customer" ADD CONSTRAINT "c_cd" FOREIGN KEY ("c_current_cdemo_sk") REFERENCES "sys"."customer_demographics" ("cd_demo_sk");
+ALTER TABLE "sys"."customer" ADD CONSTRAINT "c_fsd" FOREIGN KEY ("c_first_sales_date_sk") REFERENCES "sys"."date_dim" ("d_date_sk");
+ALTER TABLE "sys"."customer" ADD CONSTRAINT "c_fsd2" FOREIGN KEY ("c_first_shipto_date_sk") REFERENCES "sys"."date_dim" ("d_date_sk");
+ALTER TABLE "sys"."customer" ADD CONSTRAINT "c_hd" FOREIGN KEY ("c_current_hdemo_sk") REFERENCES "sys"."household_demographics" ("hd_demo_sk");
+ALTER TABLE "sys"."household_demographics" ADD CONSTRAINT "hd_ib" FOREIGN KEY ("hd_income_band_sk") REFERENCES "sys"."income_band" ("ib_income_band_sk");
+ALTER TABLE "sys"."inventory" ADD CONSTRAINT "inv_d" FOREIGN KEY ("inv_date_sk") REFERENCES "sys"."date_dim" ("d_date_sk");
+ALTER TABLE "sys"."inventory" ADD CONSTRAINT "inv_i" FOREIGN KEY ("inv_item_sk") REFERENCES "sys"."item" ("i_item_sk");
+ALTER TABLE "sys"."inventory" ADD CONSTRAINT "inv_w" FOREIGN KEY ("inv_warehouse_sk") REFERENCES "sys"."warehouse" ("w_warehouse_sk");
+ALTER TABLE "sys"."promotion" ADD CONSTRAINT "p_end_date" FOREIGN KEY ("p_end_date_sk") REFERENCES "sys"."date_dim" ("d_date_sk");
+ALTER TABLE "sys"."promotion" ADD CONSTRAINT "p_i" FOREIGN KEY ("p_item_sk") REFERENCES "sys"."item" ("i_item_sk");
+ALTER TABLE "sys"."promotion" ADD CONSTRAINT "p_start_date" FOREIGN KEY ("p_start_date_sk") REFERENCES "sys"."date_dim" ("d_date_sk");
+ALTER TABLE "sys"."store" ADD CONSTRAINT "s_close_date" FOREIGN KEY ("s_closed_date_sk") REFERENCES "sys"."date_dim" ("d_date_sk");
+ALTER TABLE "sys"."store_returns" ADD CONSTRAINT "sr_a" FOREIGN KEY ("sr_addr_sk") REFERENCES "sys"."customer_address" ("ca_address_sk");
+ALTER TABLE "sys"."store_returns" ADD CONSTRAINT "sr_c" FOREIGN KEY ("sr_customer_sk") REFERENCES "sys"."customer" ("c_customer_sk");
+ALTER TABLE "sys"."store_returns" ADD CONSTRAINT "sr_cd" FOREIGN KEY ("sr_cdemo_sk") REFERENCES "sys"."customer_demographics" ("cd_demo_sk");
+ALTER TABLE "sys"."store_returns" ADD CONSTRAINT "sr_hd" FOREIGN KEY ("sr_hdemo_sk") REFERENCES "sys"."household_demographics" ("hd_demo_sk");
+ALTER TABLE "sys"."store_returns" ADD CONSTRAINT "sr_i" FOREIGN KEY ("sr_item_sk") REFERENCES "sys"."item" ("i_item_sk");
+ALTER TABLE "sys"."store_returns" ADD CONSTRAINT "sr_r" FOREIGN KEY ("sr_reason_sk") REFERENCES "sys"."reason" ("r_reason_sk");
+ALTER TABLE "sys"."store_returns" ADD CONSTRAINT "sr_ret_d" FOREIGN KEY ("sr_returned_date_sk") REFERENCES "sys"."date_dim" ("d_date_sk");
+ALTER TABLE "sys"."store_returns" ADD CONSTRAINT "sr_s" FOREIGN KEY ("sr_store_sk") REFERENCES "sys"."store" ("s_store_sk");
+ALTER TABLE "sys"."store_returns" ADD CONSTRAINT "sr_t" FOREIGN KEY ("sr_return_time_sk") REFERENCES "sys"."time_dim" ("t_time_sk");
+ALTER TABLE "sys"."store_sales" ADD CONSTRAINT "ss_a" FOREIGN KEY ("ss_addr_sk") REFERENCES "sys"."customer_address" ("ca_address_sk");
+ALTER TABLE "sys"."store_sales" ADD CONSTRAINT "ss_c" FOREIGN KEY ("ss_customer_sk") REFERENCES "sys"."customer" ("c_customer_sk");
+ALTER TABLE "sys"."store_sales" ADD CONSTRAINT "ss_cd" FOREIGN KEY ("ss_cdemo_sk") REFERENCES "sys"."customer_demographics" ("cd_demo_sk");
+ALTER TABLE "sys"."store_sales" ADD CONSTRAINT "ss_d" FOREIGN KEY ("ss_sold_date_sk") REFERENCES "sys"."date_dim" ("d_date_sk");
+ALTER TABLE "sys"."store_sales" ADD CONSTRAINT "ss_hd" FOREIGN KEY ("ss_hdemo_sk") REFERENCES "sys"."household_demographics" ("hd_demo_sk");
+ALTER TABLE "sys"."store_sales" ADD CONSTRAINT "ss_i" FOREIGN KEY ("ss_item_sk") REFERENCES "sys"."item" ("i_item_sk");
+ALTER TABLE "sys"."store_sales" ADD CONSTRAINT "ss_p" FOREIGN KEY ("ss_promo_sk") REFERENCES "sys"."promotion" ("p_promo_sk");
+ALTER TABLE "sys"."store_sales" ADD CONSTRAINT "ss_s" FOREIGN KEY ("ss_store_sk") REFERENCES "sys"."store" ("s_store_sk");
+ALTER TABLE "sys"."store_sales" ADD CONSTRAINT "ss_t" FOREIGN KEY ("ss_sold_time_sk") REFERENCES "sys"."time_dim" ("t_time_sk");
+ALTER TABLE "sys"."web_page" ADD CONSTRAINT "wp_ad" FOREIGN KEY ("wp_access_date_sk") REFERENCES "sys"."date_dim" ("d_date_sk");
+ALTER TABLE "sys"."web_page" ADD CONSTRAINT "wp_cd" FOREIGN KEY ("wp_creation_date_sk") REFERENCES "sys"."date_dim" ("d_date_sk");
+ALTER TABLE "sys"."web_returns" ADD CONSTRAINT "wr_i" FOREIGN KEY ("wr_item_sk") REFERENCES "sys"."item" ("i_item_sk");
+ALTER TABLE "sys"."web_returns" ADD CONSTRAINT "wr_r" FOREIGN KEY ("wr_reason_sk") REFERENCES "sys"."reason" ("r_reason_sk");
+ALTER TABLE "sys"."web_returns" ADD CONSTRAINT "wr_ref_a" FOREIGN KEY ("wr_refunded_addr_sk") REFERENCES "sys"."customer_address" ("ca_address_sk");
+ALTER TABLE "sys"."web_returns" ADD CONSTRAINT "wr_ref_c" FOREIGN KEY ("wr_refunded_customer_sk") REFERENCES "sys"."customer" ("c_customer_sk");
+ALTER TABLE "sys"."web_returns" ADD CONSTRAINT "wr_ref_cd" FOREIGN KEY ("wr_refunded_cdemo_sk") REFERENCES "sys"."customer_demographics" ("cd_demo_sk");
+ALTER TABLE "sys"."web_returns" ADD CONSTRAINT "wr_ref_hd" FOREIGN KEY ("wr_refunded_hdemo_sk") REFERENCES "sys"."household_demographics" ("hd_demo_sk");
+ALTER TABLE "sys"."web_returns" ADD CONSTRAINT "wr_ret_a" FOREIGN KEY ("wr_returning_addr_sk") REFERENCES "sys"."customer_address" ("ca_address_sk");
+ALTER TABLE "sys"."web_returns" ADD CONSTRAINT "wr_ret_c" FOREIGN KEY ("wr_returning_customer_sk") REFERENCES "sys"."customer" ("c_customer_sk");
+ALTER TABLE "sys"."web_returns" ADD CONSTRAINT "wr_ret_cd" FOREIGN KEY ("wr_returning_cdemo_sk") REFERENCES "sys"."customer_demographics" ("cd_demo_sk");
+ALTER TABLE "sys"."web_returns" ADD CONSTRAINT "wr_ret_d" FOREIGN KEY ("wr_returned_date_sk") REFERENCES "sys"."date_dim" ("d_date_sk");
+ALTER TABLE "sys"."web_returns" ADD CONSTRAINT "wr_ret_hd" FOREIGN KEY ("wr_returning_hdemo_sk") REFERENCES "sys"."household_demographics" ("hd_demo_sk");
+ALTER TABLE "sys"."web_returns" ADD CONSTRAINT "wr_ret_t" FOREIGN KEY ("wr_returned_time_sk") REFERENCES "sys"."time_dim" ("t_time_sk");
+ALTER TABLE "sys"."web_returns" ADD CONSTRAINT "wr_wp" FOREIGN KEY ("wr_web_page_sk") REFERENCES "sys"."web_page" ("wp_web_page_sk");
+ALTER TABLE "sys"."web_sales" ADD CONSTRAINT "ws_b_a" FOREIGN KEY ("ws_bill_addr_sk") REFERENCES "sys"."customer_address" ("ca_address_sk");
+ALTER TABLE "sys"."web_sales" ADD CONSTRAINT "ws_b_c" FOREIGN KEY ("ws_bill_customer_sk") REFERENCES "sys"."customer" ("c_customer_sk");
+ALTER TABLE "sys"."web_sales" ADD CONSTRAINT "ws_b_cd" FOREIGN KEY ("ws_bill_cdemo_sk") REFERENCES "sys"."customer_demographics" ("cd_demo_sk");
+ALTER TABLE "sys"."web_sales" ADD CONSTRAINT "ws_b_hd" FOREIGN KEY ("ws_bill_hdemo_sk") REFERENCES "sys"."household_demographics" ("hd_demo_sk");
+ALTER TABLE "sys"."web_sales" ADD CONSTRAINT "ws_d2" FOREIGN KEY ("ws_sold_date_sk") REFERENCES "sys"."date_dim" ("d_date_sk");
+ALTER TABLE "sys"."web_sales" ADD CONSTRAINT "ws_i" FOREIGN KEY ("ws_item_sk") REFERENCES "sys"."item" ("i_item_sk");
+ALTER TABLE "sys"."web_sales" ADD CONSTRAINT "ws_p" FOREIGN KEY ("ws_promo_sk") REFERENCES "sys"."promotion" ("p_promo_sk");
+ALTER TABLE "sys"."web_sales" ADD CONSTRAINT "ws_s_a" FOREIGN KEY ("ws_ship_addr_sk") REFERENCES "sys"."customer_address" ("ca_address_sk");
+ALTER TABLE "sys"."web_sales" ADD CONSTRAINT "ws_s_c" FOREIGN KEY ("ws_ship_customer_sk") REFERENCES "sys"."customer" ("c_customer_sk");
+ALTER TABLE "sys"."web_sales" ADD CONSTRAINT "ws_s_cd" FOREIGN KEY ("ws_ship_cdemo_sk") REFERENCES "sys"."customer_demographics" ("cd_demo_sk");
+ALTER TABLE "sys"."web_sales" ADD CONSTRAINT "ws_s_d" FOREIGN KEY ("ws_ship_date_sk") REFERENCES "sys"."date_dim" ("d_date_sk");
+ALTER TABLE "sys"."web_sales" ADD CONSTRAINT "ws_s_hd" FOREIGN KEY ("ws_ship_hdemo_sk") REFERENCES "sys"."household_demographics" ("hd_demo_sk");
+ALTER TABLE "sys"."web_sales" ADD CONSTRAINT "ws_sm" FOREIGN KEY ("ws_ship_mode_sk") REFERENCES "sys"."ship_mode" ("sm_ship_mode_sk");
+ALTER TABLE "sys"."web_sales" ADD CONSTRAINT "ws_t" FOREIGN KEY ("ws_sold_time_sk") REFERENCES "sys"."time_dim" ("t_time_sk");
+ALTER TABLE "sys"."web_sales" ADD CONSTRAINT "ws_w2" FOREIGN KEY ("ws_warehouse_sk") REFERENCES "sys"."warehouse" ("w_warehouse_sk");
+ALTER TABLE "sys"."web_sales" ADD CONSTRAINT "ws_wp" FOREIGN KEY ("ws_web_page_sk") REFERENCES "sys"."web_page" ("wp_web_page_sk");
+ALTER TABLE "sys"."web_sales" ADD CONSTRAINT "ws_ws" FOREIGN KEY ("ws_web_site_sk") REFERENCES "sys"."web_site" ("web_site_sk");
+ALTER TABLE "sys"."web_site" ADD CONSTRAINT "web_d1" FOREIGN KEY ("web_close_date_sk") REFERENCES "sys"."date_dim" ("d_date_sk");
+ALTER TABLE "sys"."web_site" ADD CONSTRAINT "web_d2" FOREIGN KEY ("web_open_date_sk") REFERENCES "sys"."date_dim" ("d_date_sk");
+COMMIT;
+#start transaction;
+#drop table if exists dbgen_version cascade;
+#drop table if exists customer_address cascade;
+#drop table if exists customer_demographics cascade;
+#drop table if exists date_dim cascade;
+#drop table if exists warehouse cascade;
+#drop table if exists ship_mode cascade;
+#drop table if exists time_dim cascade;
+#drop table if exists reason cascade;
+#drop table if exists income_band cascade;
+#drop table if exists item cascade;
+#drop table if exists store cascade;
+#drop table if exists call_center cascade;
+#drop table if exists customer cascade;
+#drop table if exists web_site cascade;
+#drop table if exists store_returns cascade;
+#drop table if exists household_demographics cascade;
+#drop table if exists web_page cascade;
+#drop table if exists promotion cascade;
+#drop table if exists catalog_page cascade;
+#drop table if exists inventory cascade;
+#drop table if exists catalog_returns cascade;
+#drop table if exists web_returns cascade;
+#drop table if exists web_sales cascade;
+#drop table if exists catalog_sales cascade;
+#drop table if exists store_sales cascade;
+#commit;
+
+# 10:39:14 >  
+# 10:39:14 >  "Done."
+# 10:39:14 >  
+

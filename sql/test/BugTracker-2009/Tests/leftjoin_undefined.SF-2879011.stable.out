@@ -27,7 +27,7 @@ stdout of test 'leftjoin_undefined.SF-2879011` in directory 'sql/test/BugTracker
 [ 2	]
 [ 2	]
 #SELECT a1.name as x, b1.name as y FROM a1,b1 WHERE a1.name LIKE b1.name;
-% sys.L2,	sys.L4 # table_name
+% sys.,	sys. # table_name
 % x,    y # name
 % varchar,      varchar # type
 % 1,    1 # length

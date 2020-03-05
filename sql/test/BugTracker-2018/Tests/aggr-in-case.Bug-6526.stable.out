@@ -48,7 +48,7 @@ stdout of test 'aggr-in-case.Bug-6526` in directory 'sql/test/BugTracker-2018` i
 #from "t1"
 #group by "c1"
 #having sum("d1") < case when 5 > 10 then 500 else 400 end;
-% sys.t1,	sys.L4,	sys.L7 # table_name
+% sys.t1,	sys.,	sys. # table_name
 % c1,	d1,	d2 # name
 % varchar,	bigint,	bigint # type
 % 1,	3,	3 # length
@@ -60,7 +60,7 @@ stdout of test 'aggr-in-case.Bug-6526` in directory 'sql/test/BugTracker-2018` i
 #    1.0 * sum("d1") / (1.0 * case when sum("d2") > 0 then sum("d2") else null end) as "formula"
 #from "t1"
 #group by "c1";
-% sys.t1,	sys.L4,	sys.L7,	sys.L14 # table_name
+% sys.t1,	sys.,	sys.,	sys. # table_name
 % c1,	d1,	d2,	formula # name
 % varchar,	bigint,	bigint,	decimal # type
 % 1,	4,	4,	20 # length
@@ -76,7 +76,7 @@ stdout of test 'aggr-in-case.Bug-6526` in directory 'sql/test/BugTracker-2018` i
 #from "t1"
 #group by "c1"
 #having (1.0 * sum("d1") / (1.0 * case when sum("d2") > 0 then sum("d2") else null end)) > 1;
-% sys.t1,	sys.L4,	sys.L7,	sys.L14 # table_name
+% sys.t1,	sys.,	sys.,	sys. # table_name
 % c1,	d1,	d2,	formula # name
 % varchar,	bigint,	bigint,	decimal # type
 % 1,	4,	3,	20 # length

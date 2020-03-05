@@ -11,7 +11,7 @@ stdout of test '70` in directory 'sql/benchmarks/tpcds` itself:
 # Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
 # Found 62.694 GiB available main-memory.
 # Copyright (c) 1993 - July 2008 CWI.
-# Copyright (c) August 2008 - 2019 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008 - 2020 MonetDB B.V., all rights reserved
 # Visit https://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://methuselah.da.cwi.nl:30709/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-16393/.s.monetdb.30709
@@ -35,7 +35,13 @@ stdout of test '70` in directory 'sql/benchmarks/tpcds` itself:
 #   WHERE d1.d_month_seq BETWEEN 1200 AND 1200 + 11
 #     AND d1.d_date_sk = ss_sold_date_sk
 #     AND s_store_sk = ss_store_sk
-% .results_rollup,	.results_rollup,	.results_rollup,	.results_rollup,	.L127 # table_name
+#     AND s_state IN
+#       (SELECT s_state
+#        FROM
+#          (SELECT s_state AS s_state,
+#                  rank() OVER (PARTITION BY s_state
+#                               ORDER BY sum(ss_net_profit) DESC) AS ranking
+% .results_rollup,	.results_rollup,	.results_rollup,	.results_rollup,	. # table_name
 % total_sum,	s_state,	s_county,	lochierarchy,	rank_within_parent # name
 % decimal,	char,	varchar,	tinyint,	int # type
 % 40,	2,	17,	1,	1 # length

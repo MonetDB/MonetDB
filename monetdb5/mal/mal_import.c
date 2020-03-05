@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /* Author(s) M.L. Kersten
@@ -136,7 +136,7 @@ malLoadScript(str name, bstream **fdin)
 	assert(c->glb == 0 || c->glb == oldglb); /* detect leak */ \
 	c->glb = oldglb; \
 	c->usermodule = oldusermodule; \
-	c->curmodule = oldcurmodule;; \
+	c->curmodule = oldcurmodule; \
 	c->curprg = oldprg;
 #define restoreClient \
 	restoreClient1 \
@@ -167,7 +167,7 @@ malInclude(Client c, str name, int listing)
 
 	MalStkPtr oldglb = c->glb;
 	Module oldusermodule = c->usermodule;
-	Module oldcurmodule = c->curmodule; 
+	Module oldcurmodule = c->curmodule;
 	Symbol oldprg = c->curprg;
 
 	c->prompt = GDKstrdup("");	/* do not produce visible prompts */
@@ -200,9 +200,7 @@ malInclude(Client c, str name, int listing)
 		}
 		bstream_next(c->fdin);
 		parseMAL(c, c->curprg, 1, INT_MAX);
-		free(mal_init_buf);
-		free(mal_init_stream);
-		free(c->fdin);
+		bstream_destroy(c->fdin);
 		c->fdin = NULL;
 		GDKfree(mal_init_buf);
 	}
@@ -255,14 +253,14 @@ malInclude(Client c, str name, int listing)
  */
 str
 evalFile(str fname, int listing)
-{	
+{
 	Client c;
 	stream *fd;
 	str filename;
 	str msg = MAL_SUCCEED;
 
 	filename = malResolveFile(fname);
-	if (filename == NULL) 
+	if (filename == NULL)
 		throw(MAL, "mal.eval","could not open file: %s\n", fname);
 	fd = malOpenSource(filename);
 	GDKfree(filename);
@@ -279,7 +277,7 @@ evalFile(str fname, int listing)
 	c->curmodule = c->usermodule = userModule();
 	if(c->curmodule == NULL) {
 		MCcloseClient(c);
-		throw(MAL,"mal.eval",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL,"mal.eval",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	c->promptlength = 0;
 	c->listing = listing;
@@ -332,14 +330,14 @@ compileString(Symbol *fcn, Client cntxt, str s)
 	if (old == s) {
 		qry = GDKstrdup(s);
 		if(!qry)
-			throw(MAL,"mal.eval",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL,"mal.eval",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	mal_unquote(qry);
 	b = (buffer *) GDKzalloc(sizeof(buffer));
 	if (b == NULL) {
 		GDKfree(qry);
-		throw(MAL,"mal.eval",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL,"mal.eval",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	buffer_init(b, qry, len);
@@ -347,13 +345,13 @@ compileString(Symbol *fcn, Client cntxt, str s)
 	if (bs == NULL) {
 		GDKfree(qry);
 		GDKfree(b);
-		throw(MAL,"mal.eval",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL,"mal.eval",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	fdin = bstream_create(bs, b->len);
 	if (fdin == NULL) {
 		GDKfree(qry);
 		GDKfree(b);
-		throw(MAL,"mal.eval",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL,"mal.eval",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	strncpy(fdin->buf, qry, len+1);
 
@@ -408,14 +406,14 @@ callString(Client cntxt, str s, int listing)
 	if (old == s) {
 		qry = GDKstrdup(s);
 		if(!qry)
-			throw(MAL,"callstring", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL,"callstring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	mal_unquote(qry);
 	b = (buffer *) GDKzalloc(sizeof(buffer));
 	if (b == NULL){
 		GDKfree(qry);
-		throw(MAL,"callstring", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL,"callstring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	buffer_init(b, qry, len);
@@ -423,9 +421,9 @@ callString(Client cntxt, str s, int listing)
 	if (bs == NULL){
 		GDKfree(b);
 		GDKfree(qry);
-		throw(MAL,"callstring", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL,"callstring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	c= MCinitClient((oid)0, bs,0);
+	c= MCinitClient((oid)0, bs, cntxt->fdout);
 	if( c == NULL){
 		GDKfree(b);
 		GDKfree(qry);
@@ -448,10 +446,13 @@ callString(Client cntxt, str s, int listing)
 		c->usermodule = 0;
 		GDKfree(b);
 		GDKfree(qry);
+		c->fdout = GDKstdout;
 		MCcloseClient(c);
 		return msg;
 	}
-	if((msg = runScenario(c,1)) != MAL_SUCCEED) {
+	msg = runScenario(c,1);
+	c->fdout = GDKstdout;
+	if (msg != MAL_SUCCEED) {
 		c->usermodule = 0;
 		GDKfree(b);
 		GDKfree(qry);
@@ -474,7 +475,7 @@ callString(Client cntxt, str s, int listing)
 		if(msg == MAL_SUCCEED && cntxt->phase[0] != c->phase[0]){
 			cntxt->phase[0] = c->phase[0];
 			cntxt->state[0] = c->state[0];
-			msg = (str) (*cntxt->phase[0])(cntxt); 	// force re-initialize client context
+			msg = (str) (*cntxt->phase[0])(cntxt);	// force re-initialize client context
 		}
 	//}
 	c->usermodule = 0; // keep it around

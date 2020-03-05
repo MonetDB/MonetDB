@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /**
@@ -101,7 +101,7 @@ typedef struct _threadlist {
 char *_mero_mserver = NULL;
 /* list of databases that we have started */
 dpair _mero_topdp = NULL;
-/* lock to _mero_topdp, initialised as recursive lateron */
+/* lock to _mero_topdp, initialised as recursive later on */
 pthread_mutex_t _mero_topdp_lock = PTHREAD_MUTEX_INITIALIZER;
 /* for the logger, when set to 0, the logger terminates */
 volatile int _mero_keep_logging = 1;
@@ -196,8 +196,7 @@ logListener(void *x)
 		/* wait max 1 second, tradeoff between performance and being
 		 * able to catch up new logger streams */
 #ifndef HAVE_POLL
-		tv.tv_sec = 1;
-		tv.tv_usec = 0;
+		tv = (struct timeval) {.tv_sec = 1};
 		FD_ZERO(&readfds);
 #endif
 		nfds = 0;
@@ -344,7 +343,7 @@ main(int argc, char *argv[])
 	int socku = -1;
 	char* host = NULL;
 	unsigned short port = 0;
-	char discovery = 0;
+	bool discovery = false;
 	struct stat sb;
 	FILE *oerr = NULL;
 	int thret;
@@ -427,7 +426,7 @@ main(int argc, char *argv[])
 #if defined(HAVE_SYSCONF) && defined(_SC_NPROCESSORS_ONLN)
 		/* this works on Linux, Solaris and AIX */
 		ncpus = sysconf(_SC_NPROCESSORS_ONLN);
-#elif defined(HAVE_SYS_SYSCTL_H) && defined(HW_NCPU)   /* BSD */
+#elif defined(HW_NCPU)   /* BSD */
 		size_t len = sizeof(int);
 		int mib[3];
 
@@ -662,7 +661,7 @@ main(int argc, char *argv[])
 	discovery = getConfNum(_mero_props, "discovery");
 
 	/* check and trim the hash-algo from the passphrase for easy use
-	 * lateron */
+	 * later on */
 	kv = findConfKey(_mero_props, "passphrase");
 	if (kv->val != NULL) {
 		char *h = kv->val + 1;
@@ -687,7 +686,7 @@ main(int argc, char *argv[])
 	}
 
 	/* lock such that we are alone on this world */
-	if ((lockfd = MT_lockf(".merovingian_lock", F_TLOCK, 4, 1)) == -1) {
+	if ((lockfd = MT_lockf(".merovingian_lock", F_TLOCK)) == -1) {
 		/* locking failed */
 		Mfprintf(stderr, "another monetdbd is already running\n");
 		MERO_EXIT_CLEAN(1);
@@ -950,12 +949,12 @@ main(int argc, char *argv[])
 	/* open up connections */
 	if ((e = openConnectionTCP(&sock, use_ipv6, host, port, stdout)) == NO_ERR &&
 		(e = openConnectionUNIX(&socku, mapi_usock, 0, stdout)) == NO_ERR &&
-		(discovery == 0 || (e = openConnectionUDP(&discsock, false, host, port)) == NO_ERR) &&
+		(!discovery || (e = openConnectionUDP(&discsock, false, host, port)) == NO_ERR) &&
 		(e = openConnectionUNIX(&unsock, control_usock, S_IRWXO, _mero_ctlout)) == NO_ERR) {
 		pthread_t ctid = 0;
 		pthread_t dtid = 0;
 
-		if (discovery == 1) {
+		if (discovery) {
 			_mero_broadcastsock = socket(AF_INET, SOCK_DGRAM
 #ifdef SOCK_CLOEXEC
 										 | SOCK_CLOEXEC
@@ -1114,7 +1113,7 @@ shutdown:
 	}
 
 	if (lockfd >= 0) {
-		MT_lockf(".merovingian_lock", F_ULOCK, 4, 1);
+		MT_lockf(".merovingian_lock", F_ULOCK);
 		close(lockfd);
 	}
 

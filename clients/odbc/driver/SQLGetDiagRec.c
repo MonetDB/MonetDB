@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -96,47 +96,23 @@ MNDBGetDiagRec(SQLSMALLINT HandleType,
 		/* copy only the first SQL_SQLSTATE_SIZE (5) chars in
 		 * the buffer and make it null terminated
 		 */
-		strncpy((char *) SQLState, state, SQL_SQLSTATE_SIZE);
-		SQLState[SQL_SQLSTATE_SIZE] = 0;
+		strcpy_len((char *) SQLState, state, SQL_SQLSTATE_SIZE + 1);
 	}
 
 	if (NativeErrorPtr)
 		*NativeErrorPtr = getNativeErrorCode(err);
 
 	msg = getMessage(err);
-	msgLen = msg ? (SQLSMALLINT) strlen(msg) : 0;
 	retCode = SQL_SUCCESS;
 
-	if (MessageText && BufferLength > 0) {
-		BufferLength--;	/* reserve space for term NULL byte */
-		MessageText[BufferLength] = 0;	/* write it already */
-
-		/* first write the error message prefix text:
-		 * [MonetDB][ODBC driver VERSION]; this is
-		 * required by the ODBC spec and used to
-		 * determine where the error originated
-		 */
-		if (BufferLength > 0)
-			strncpy((char *) MessageText, ODBCErrorMsgPrefix, BufferLength);
-		BufferLength -= ODBCErrorMsgPrefixLength;
-		MessageText += ODBCErrorMsgPrefixLength;
-
-		/* next append the error msg itself */
-		if (msg && BufferLength > 0) {
-			strncpy((char *) MessageText, msg, BufferLength);
-			BufferLength -= msgLen;
-		}
-
-		if (BufferLength < 0) {
-			/* it didn't fit */
-			retCode = SQL_SUCCESS_WITH_INFO;
-		}
-	} else {
-		/* There is no valid MessageText buffer or its
-		 * buffer size is 0.  In these cases we cannot
-		 * write the prefix and message.  We just set
-		 * the return code.
-		 */
+	/* first write the error message prefix text:
+	 * [MonetDB][ODBC driver VERSION]; this is
+	 * required by the ODBC spec and used to
+	 * determine where the error originated
+	 */
+	msgLen = (SQLSMALLINT) strconcat_len((char *) MessageText, BufferLength, ODBCErrorMsgPrefix, msg, NULL);
+	if (MessageText == NULL || msgLen >= BufferLength) {
+		/* it didn't fit */
 		retCode = SQL_SUCCESS_WITH_INFO;
 	}
 

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /**
@@ -213,6 +213,7 @@ MEROgetStatus(sabdb **ret, char *database)
 	char *p;
 	char *buf;
 	char *e;
+	char *sp;
 
 	if (database == NULL)
 		database = "#all";
@@ -224,14 +225,14 @@ MEROgetStatus(sabdb **ret, char *database)
 
 	sw = malloc(sizeof(sabdb *) * swlen);
 	orig = NULL;
-	if ((p = strtok(buf, "\n")) != NULL) {
+	if ((p = strtok_r(buf, "\n", &sp)) != NULL) {
 		if (strcmp(p, "OK") != 0) {
 			p = strdup(p);
 			free(buf);
 			free(sw);
 			return(p);
 		}
-		for (swpos = 0; (p = strtok(NULL, "\n")) != NULL; swpos++) {
+		for (swpos = 0; (p = strtok_r(NULL, "\n", &sp)) != NULL; swpos++) {
 			e = msab_deserialise(&stats, p);
 			if (e != NULL) {
 				printf("WARNING: failed to parse response from "
@@ -282,7 +283,7 @@ printStatus(sabdb *stats, int mode, int dbwidth, int uriwidth)
 		char locked = '\0';
 		char uptime[12];
 		char avg[8];
-		char info[32];
+		char info[64];
 		char *dbname;
 		char *uri;
 
@@ -304,7 +305,7 @@ printStatus(sabdb *stats, int mode, int dbwidth, int uriwidth)
 			break;
 		}
 		/* override if locked for brevity */
-		if (stats->locked == 1)
+		if (stats->locked)
 			locked = 'L';
 
 		info[0] = '\0';
@@ -318,7 +319,7 @@ printStatus(sabdb *stats, int mode, int dbwidth, int uriwidth)
 		{
 			struct tm *t;
 			t = localtime(&uplog.lastcrash);
-			strftime(info, sizeof(info), "crashed on %Y-%m-%d %H:%M:%S", t);
+			strftime(info, sizeof(info), "crashed (started on %Y-%m-%d %H:%M:%S)", t);
 		}
 
 		switch (stats->state) {
@@ -388,7 +389,7 @@ printStatus(sabdb *stats, int mode, int dbwidth, int uriwidth)
 		printf("  connection uri: %s\n", stats->uri);
 		printf("  database name: %s\n", stats->dbname);
 		printf("  state: %s\n", state);
-		printf("  locked: %s\n", stats->locked == 1 ? "yes" : "no");
+		printf("  locked: %s\n", stats->locked ? "yes" : "no");
 		entry = stats->scens;
 		printf("  scenarios:");
 		if (entry == NULL) {
@@ -461,7 +462,7 @@ printStatus(sabdb *stats, int mode, int dbwidth, int uriwidth)
 			break;
 			case SABdbCrashed:
 				t = localtime(&uplog.lastcrash);
-				strftime(buf, sizeof(buf), "crashed on %Y-%m-%d %H:%M:%S", t);
+				strftime(buf, sizeof(buf), "crashed (started on %Y-%m-%d %H:%M:%S)", t);
 			break;
 			case SABdbInactive:
 				snprintf(buf, sizeof(buf), "not running");
@@ -470,7 +471,7 @@ printStatus(sabdb *stats, int mode, int dbwidth, int uriwidth)
 				snprintf(buf, sizeof(buf), "unknown");
 			break;
 		}
-		if (stats->locked == 1)
+		if (stats->locked)
 			strcat(buf, ", locked");
 		printf("database %s, %s\n", stats->dbname, buf);
 		printf("  crash average: %d.00 %.2f %.2f (over 1, 15, 30 starts) "
@@ -505,7 +506,7 @@ globMatchDBS(int argc, char *argv[], sabdb **orig, char *cmd)
 					/* move out of orig into w, such that we can't
 					 * get double matches in the same output list
 					 * (as side effect also avoids a double free
-					 * lateron) */
+					 * later on) */
 					if (w == NULL) {
 						top = w = stats;
 					} else {
@@ -582,10 +583,10 @@ simple_argv_cmd(char *cmd, sabdb *dbs, char *merocmd,
 			if (premsg != NULL && !monetdb_quiet)
 				printf("FAILED\n");
 			fprintf(stderr, "%s: %s\n", cmd, out);
-			free(out);
 
 			state |= 1;
 		}
+		free(out);
 
 		hadwork = 1;
 	}
@@ -736,7 +737,7 @@ command_status(int argc, char *argv[])
 				}
 			}
 			/* make this option no longer available, for easy use
-			 * lateron */
+			 * later on */
 			argv[i] = NULL;
 		} else {
 			doall = 0;
@@ -759,7 +760,7 @@ command_status(int argc, char *argv[])
 
 	/* perform selection based on state (and order at the same time) */
 	for (p = &state[strlen(state) - 1]; p >= state; p--) {
-		int curLock = 0;
+		bool curLock = false;
 		SABdbState curMode = SABdbIllegal;
 		switch (*p) {
 			case 'b':
@@ -775,15 +776,15 @@ command_status(int argc, char *argv[])
 				curMode = SABdbCrashed;
 			break;
 			case 'l':
-				curLock = 1;
+				curLock = true;
 			break;
 		}
 		stats = orig;
 		prev = NULL;
 		while (stats != NULL) {
 			if (stats->locked == curLock &&
-					(curLock == 1 ||
-					 (curLock == 0 && stats->state == curMode)))
+					(curLock ||
+					 (!curLock && stats->state == curMode)))
 			{
 				sabdb *next = stats->next;
 				stats->next = neworig;
@@ -807,13 +808,12 @@ command_status(int argc, char *argv[])
 		int len = 0;
 
 		/* calculate dbwidth and uriwidth */
+		uriwidth = 32;
 		for (stats = orig; stats != NULL; stats = stats->next) {
 			if ((t = strlen(stats->dbname)) > dbwidth)
 				dbwidth = t;
 			if (stats->uri != NULL && (t = strlen(stats->uri)) > uriwidth)
 				uriwidth = t;
-			if (uriwidth < 32)
-				uriwidth = 32;
 		}
 
 		/* Ultra Condensed State(tm) since Feb2013:
@@ -899,6 +899,7 @@ command_discover(int argc, char *argv[])
 	size_t posloc = 0;
 	size_t loclen = 0;
 	char **locations = malloc(sizeof(char*) * numlocs);
+	char *sp;
 
 	if (argc == 0) {
 		exit(2);
@@ -922,14 +923,14 @@ command_discover(int argc, char *argv[])
 		exit(2);
 	}
 
-	if ((p = strtok(buf, "\n")) != NULL) {
+	if ((p = strtok_r(buf, "\n", &sp)) != NULL) {
 		if (strcmp(p, "OK") != 0) {
 			fprintf(stderr, "%s: %s\n", argv[0], p);
 			exit(1);
 		}
 		if (twidth > 0)
 			location = malloc(twidth + 1);
-		while ((p = strtok(NULL, "\n")) != NULL) {
+		while ((p = strtok_r(NULL, "\n", &sp)) != NULL) {
 			if ((q = strchr(p, '\t')) == NULL) {
 				/* doesn't look correct */
 				printf("%s: WARNING: discarding incorrect line: %s\n",
@@ -1042,7 +1043,7 @@ command_startstop(int argc, char *argv[], startstop mode)
 				}
 			}
 			/* make this option no longer available, for easy use
-			 * lateron */
+			 * later on */
 			argv[i] = NULL;
 		}
 	}
@@ -1147,7 +1148,7 @@ command_set(int argc, char *argv[], meroset type)
 				}
 			}
 			/* make this option no longer available, for easy use
-			 * lateron */
+			 * later on */
 			argv[i] = NULL;
 		} else if (property[0] == '\0') {
 			/* first non-option is property, rest is database */
@@ -1281,7 +1282,7 @@ command_get(int argc, char *argv[])
 				}
 			}
 			/* make this option no longer available, for easy use
-			 * lateron */
+			 * later on */
 			argv[i] = NULL;
 		} else if (property == NULL) {
 			/* first non-option is property, rest is database */
@@ -1377,9 +1378,10 @@ command_get(int argc, char *argv[])
 		} else {
 			/* check validity of properties before printing them */
 			if (stats == orig) {
+				char *sp;
 				snprintf(vbuf, sizeof(vbuf), "%s", property);
 				buf = vbuf;
-				while ((p = strtok(buf, ",")) != NULL) {
+				while ((p = strtok_r(buf, ",", &sp)) != NULL) {
 					buf = NULL;
 					if (strcmp(p, "name") == 0)
 						continue;
@@ -1395,7 +1397,8 @@ command_get(int argc, char *argv[])
 		if (stats == orig)
 			printf("     name          prop     source           value\n");
 
-		while ((p = strtok(buf, ",")) != NULL) {
+		char *sp;
+		while ((p = strtok_r(buf, ",", &sp)) != NULL) {
 			buf = NULL;
 
 			/* filter properties based on object type */
@@ -1545,6 +1548,11 @@ command_create(int argc, char *argv[])
 	} else {
 		simple_argv_cmd(argv[0], orig, "create",
 				"created database in maintenance mode", NULL);
+	}
+	/* msab_freeStatus does not free dbname */
+	for (stats = orig; stats; stats = stats->next) {
+		free(stats->dbname);
+		stats->dbname = NULL;
 	}
 	msab_freeStatus(&orig);
 }
@@ -1812,7 +1820,7 @@ main(int argc, char *argv[])
 			fprintf(stderr, "monetdb: cannot find a control socket, use -h and/or -p\n");
 			exit(1);
 		}
-		/* don't confuse control_send lateron */
+		/* don't confuse control_send later on */
 		mero_port = -1;
 	}
 	/* for TCP connections */

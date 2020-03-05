@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -384,7 +384,6 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 			} else {
 				/* why the vheap? */
 				ci->tpe = cand_dense;
-				ci->oids = NULL;
 			}
 		} else {
 			ci->tpe = cand_dense;
@@ -394,91 +393,47 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 		ci->oids = (const oid *) s->theap.base;
 		ci->seq = ci->oids[0];
 		ci->noids = cnt;
-		if (ci->oids[ci->noids - 1] - ci->oids[0] == ci->noids - 1) {
-			/* actually dense */
-			ci->tpe = cand_dense;
-			ci->oids = NULL;
-		}
 	} else {
 		/* materialized dense: no exceptions */
 		ci->tpe = cand_dense;
 	}
 	switch (ci->tpe) {
-	case cand_dense:
-	case_cand_dense:
-		if (b != NULL) {
-			if (ci->seq + cnt <= b->hseqbase ||
-			    ci->seq >= b->hseqbase + BATcount(b)) {
-				ci->ncand = 0;
-				return 0;
-			}
-			if (b->hseqbase > ci->seq) {
-				cnt -= b->hseqbase - ci->seq;
-				ci->offset += b->hseqbase - ci->seq;
-				ci->seq = b->hseqbase;
-			}
-			if (ci->seq + cnt > b->hseqbase + BATcount(b))
-				cnt = b->hseqbase + BATcount(b) - ci->seq;
-		}
-		break;
 	case cand_materialized:
 		if (b != NULL) {
-			if (ci->oids[ci->noids - 1] < b->hseqbase) {
+			BUN p = binsearchcand(ci->oids, cnt - 1, b->hseqbase);
+			/* p == cnt means candidate list is completely
+			 * before b */
+			ci->offset = p;
+			ci->oids += p;
+			cnt -= p;
+			if (cnt > 0) {
+				cnt = binsearchcand(ci->oids, cnt  - 1,
+						    b->hseqbase + BATcount(b));
+				/* cnt == 0 means candidate list is
+				 * completely after b */
+			}
+			if (cnt == 0) {
+				/* no overlap */
 				*ci = (struct canditer) {
 					.tpe = cand_dense,
 					.s = s,
 				};
 				return 0;
 			}
-			if (ci->oids[0] < b->hseqbase) {
-				BUN lo = 0;
-				BUN hi = cnt - 1;
-				const oid o = b->hseqbase;
-				/* loop invariant:
-				 * ci->oids[lo] < o <= ci->oids[hi] */
-				while (lo + 1 < hi) {
-					BUN mid = (lo + hi) / 2;
-					if (ci->oids[mid] > o)
-						hi = mid;
-					else
-						lo = mid;
-				}
-				ci->offset = hi;
-				cnt -= hi;
-				ci->oids += hi;
-				ci->seq = ci->oids[0];
-			}
-			if (ci->oids[cnt - 1] >= b->hseqbase + BATcount(b)) {
-				BUN lo = 0;
-				BUN hi = cnt - 1;
-				const oid o = b->hseqbase + BATcount(b);
-				/* loop invariant:
-				 * ci->oids[lo] < o <= ci->oids[hi] */
-				while (lo + 1 < hi) {
-					BUN mid = (lo + hi) / 2;
-					if (ci->oids[mid] > o)
-						hi = mid;
-					else
-						lo = mid;
-				}
-				cnt = hi;
-			}
+			ci->seq = ci->oids[0];
 			ci->noids = cnt;
+			if (ci->oids[cnt - 1] - ci->seq == cnt - 1) {
+				/* actually dense */
+				ci->tpe = cand_dense;
+				ci->oids = NULL;
+				ci->noids = 0;
+			}
 		}
 		break;
 	case cand_except:
 		/* exceptions must all be within range of s */
 		assert(ci->oids[0] >= ci->seq);
 		assert(ci->oids[ci->noids - 1] < ci->seq + cnt + ci->noids);
-		if (b != NULL) {
-			if (ci->seq + cnt + ci->noids <= b->hseqbase ||
-			    ci->seq >= b->hseqbase + BATcount(b)) {
-				*ci = (struct canditer) {
-					.tpe = cand_dense,
-				};
-				return 0;
-			}
-		}
 		/* prune exceptions at either end of range of s */
 		while (ci->noids > 0 && ci->oids[0] == ci->seq) {
 			ci->noids--;
@@ -488,14 +443,19 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 		while (ci->noids > 0 &&
 		       ci->oids[ci->noids - 1] == ci->seq + cnt + ci->noids - 1)
 			ci->noids--;
-		/* WARNING: don't reset ci->oids to NULL when setting
-		 * ci->tpe to cand_dense below: BATprojectchain will
-		 * fail */
-		if (ci->noids == 0) {
-			ci->tpe = cand_dense;
-			goto case_cand_dense;
-		}
 		if (b != NULL) {
+			if (ci->seq + cnt + ci->noids <= b->hseqbase ||
+			    ci->seq >= b->hseqbase + BATcount(b)) {
+				/* candidate list does not overlap with b */
+				*ci = (struct canditer) {
+					.tpe = cand_dense,
+				};
+				return 0;
+			}
+		}
+		if (ci->noids > 0) {
+			if (b == NULL)
+				break;
 			BUN p;
 			p = binsearchcand(ci->oids, ci->noids - 1, b->hseqbase);
 			if (p == ci->noids) {
@@ -505,6 +465,7 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 				ci->seq = b->hseqbase;
 				ci->noids = 0;
 				ci->tpe = cand_dense;
+				ci->oids = NULL;
 				break;
 			}
 			assert(b->hseqbase > ci->seq || p == 0);
@@ -532,10 +493,26 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 			while (ci->noids > 0 &&
 			       ci->oids[ci->noids - 1] == ci->seq + cnt + ci->noids - 1)
 				ci->noids--;
-			if (ci->noids == 0) {
-				ci->tpe = cand_dense;
-				goto case_cand_dense;
+			if (ci->noids > 0)
+				break;
+		}
+		ci->tpe = cand_dense;
+		ci->oids = NULL;
+		/* fall through */
+	case cand_dense:
+		if (b != NULL) {
+			if (ci->seq + cnt <= b->hseqbase ||
+			    ci->seq >= b->hseqbase + BATcount(b)) {
+				ci->ncand = 0;
+				return 0;
 			}
+			if (b->hseqbase > ci->seq) {
+				cnt -= b->hseqbase - ci->seq;
+				ci->offset += b->hseqbase - ci->seq;
+				ci->seq = b->hseqbase;
+			}
+			if (ci->seq + cnt > b->hseqbase + BATcount(b))
+				cnt = b->hseqbase + BATcount(b) - ci->seq;
 		}
 		break;
 	}
@@ -543,6 +520,7 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 	return cnt;
 }
 
+/* return the next candidate without advancing */
 oid
 canditer_peek(struct canditer *ci)
 {
@@ -567,6 +545,7 @@ canditer_peek(struct canditer *ci)
 	return o;
 }
 
+/* return the previous candidate */
 oid
 canditer_prev(struct canditer *ci)
 {
@@ -588,6 +567,7 @@ canditer_prev(struct canditer *ci)
 	return o;
 }
 
+/* return the previous candidate without retreating */
 oid
 canditer_peekprev(struct canditer *ci)
 {
@@ -609,6 +589,7 @@ canditer_peekprev(struct canditer *ci)
 	return o;
 }
 
+/* return the last candidate */
 oid
 canditer_last(struct canditer *ci)
 {
@@ -627,6 +608,7 @@ canditer_last(struct canditer *ci)
 	return ci->seq + ci->ncand + ci->noids - 1;
 }
 
+/* return the candidate at the given index */
 oid
 canditer_idx(struct canditer *ci, BUN p)
 {
@@ -647,15 +629,18 @@ canditer_idx(struct canditer *ci, BUN p)
 		return o;
 	if (o + ci->noids > ci->oids[ci->noids - 1])
 		return o + ci->noids;
-	BUN i = 0;
-	if (ci->noids > 1024)
-		i = binsearchcand(ci->oids, ci->noids, o);
-	for (; i < ci->noids; i++)
-		if (o + i < ci->oids[i])
-			return o + i;
-	return o + ci->noids;
+	BUN lo = 0, hi = ci->noids - 1;
+	while (hi - lo > 1) {
+		BUN mid = (hi + lo) / 2;
+		if (ci->oids[mid] - mid > o)
+			hi = mid;
+		else
+			lo = mid;
+	}
+	return o + hi;
 }
 
+/* set the index for the next candidate to be returned */
 void
 canditer_setidx(struct canditer *ci, BUN p)
 {
@@ -672,6 +657,7 @@ canditer_setidx(struct canditer *ci, BUN p)
 	}
 }
 
+/* reset */
 void
 canditer_reset(struct canditer *ci)
 {
@@ -679,6 +665,9 @@ canditer_reset(struct canditer *ci)
 	ci->add = 0;
 }
 
+/* return index of given candidate if it occurs; if the candidate does
+ * not occur, if next is set, return index of next larger candidate,
+ * if next is not set, return BUN_NONE */
 BUN
 canditer_search(struct canditer *ci, oid o, bool next)
 {
@@ -773,6 +762,7 @@ canditer_slice(struct canditer *ci, BUN lo, BUN hi)
 	return virtualize(bn);
 }
 
+/* return the combination of two slices */
 BAT *
 canditer_slice2(struct canditer *ci, BUN lo1, BUN hi1, BUN lo2, BUN hi2)
 {
@@ -886,21 +876,27 @@ BATnegcands(BAT *dense_cands, BAT *odels)
 		GDKfree(dels);
 		return GDK_FAIL;
 	}
-	stpconcat(dels->filename, nme, ".theap", NULL);
+	strconcat_len(dels->filename, sizeof(dels->filename),
+		      nme, ".theap", NULL);
 
     	if (HEAPalloc(dels, hi - lo, sizeof(oid)) != GDK_SUCCEED) {
 		GDKfree(dels);
         	return GDK_FAIL;
 	}
     	dels->parentid = dense_cands->batCacheid;
-	memcpy(dels->base, Tloc(odels, lo), sizeof(oid) * (hi - lo));
-	dels->free += sizeof(oid) * (hi - lo);
+	dels->free = sizeof(oid) * (hi - lo);
+	if (odels->ttype == TYPE_void) {
+		for (BUN x = lo; x < hi; x++)
+			((oid *) dels->base)[x - lo] = x + odels->tseqbase;
+	} else {
+		memcpy(dels->base, Tloc(odels, lo), dels->free);
+	}
 	dense_cands->batDirtydesc = true;
 	dense_cands->tvheap = dels;
 	BATsetcount(dense_cands, dense_cands->batCount - (hi - lo));
-	ALGODEBUG fprintf(stderr, "#BATnegcands(cands=" ALGOBATFMT ","
-			  "dels=" ALGOBATFMT ")\n",
-			  ALGOBATPAR(dense_cands),
-			  ALGOBATPAR(odels));
+	TRC_DEBUG(ALGO, "BATnegcands(cands=" ALGOBATFMT ","
+		  "dels=" ALGOBATFMT ")\n",
+		  ALGOBATPAR(dense_cands),
+		  ALGOBATPAR(odels));
     	return GDK_SUCCEED;
 }

@@ -66,7 +66,7 @@ stdout of test 'all_minus_count_star.Bug-6297` in directory 'sql/test/BugTracker
 # 15:02:31 >  
 
 #SELECT  - 0 + - 12 * 2 - 0 AS col2;
-% .L2 # table_name
+% . # table_name
 % col2 # name
 % int # type
 % 3 # length
@@ -74,7 +74,7 @@ stdout of test 'all_minus_count_star.Bug-6297` in directory 'sql/test/BugTracker
 #CREATE TABLE tab1(col0 INTEGER, col1 INTEGER, col2 INTEGER);
 #CREATE TABLE tab2(col0 INTEGER, col1 INTEGER, col2 INTEGER);
 #SELECT ALL - CAST(COUNT ( * ) AS INT) + - 12 * - CAST(COUNT ( * ) AS INT) AS col2 FROM tab2, tab1 AS cor0;
-% sys.L7 # table_name
+% sys. # table_name
 % col2 # name
 % bigint # type
 % 1 # length

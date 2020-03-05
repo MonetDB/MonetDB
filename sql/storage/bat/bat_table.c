@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -105,7 +105,7 @@ delta_full_bat_( sql_column *c, sql_delta *bat, int temp)
 					return NULL;
 				}
 			}
-			if (void_replace_bat(b, ui, uv, true) != GDK_SUCCEED) {
+			if (BATreplace(b, ui, uv, true) != GDK_SUCCEED) {
 				bat_destroy(ui);
 				bat_destroy(uv);
 				bat_destroy(b);
@@ -257,7 +257,8 @@ table_insert(sql_trans *tr, sql_table *t, ...)
 	}
 	va_end(va);
 	if (n) {
-		fprintf(stderr, "called table_insert(%s) with wrong number of args (%d,%d)\n", t->base.name, list_length(t->columns.set), cnt);
+		// This part of the code should never get reached  
+		TRC_ERROR(SQL_STORE, "Called table_insert(%s) with wrong number of args (%d,%d)\n", t->base.name, list_length(t->columns.set), cnt);
 		assert(0);
 		return LOG_ERR;
 	}

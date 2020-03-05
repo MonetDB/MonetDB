@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /* (author) M.L. Kersten
@@ -60,8 +60,8 @@ malBootstrap(void)
 		return msg;
 	}
 	pushEndInstruction(c->curprg->def);
-	chkProgram(c->usermodule, c->curprg->def);
-	if ( (msg= c->curprg->def->errors) != MAL_SUCCEED ) {
+	msg = chkProgram(c->usermodule, c->curprg->def);
+	if ( msg != MAL_SUCCEED || (msg= c->curprg->def->errors) != MAL_SUCCEED ) {
 		MCfreeClient(c);
 		return msg;
 	}
@@ -101,14 +101,6 @@ MSresetClientPrg(Client cntxt, str mod, str fcn)
 	p->argc = 1;
 	p->argv[0] = 0;
 
-#ifdef _DEBUG_SESSION_
-	fprintf(stderr,"reset sym %s %s to %s, id %d\n", 
-		cntxt->curprg->name, getFunctionId(p), nme, findVariable(mb,nme) );
-	fprintf(stderr,"vtop %d\n", mb->vtop);
-	if( mb->vtop)
-	fprintf(stderr,"first var %s\n", mb->var[0].id);
-#endif
-
 	setModuleId(p, mod);
 	setFunctionId(p, fcn);
 	if( findVariable(mb,fcn) < 0)
@@ -136,7 +128,7 @@ MSinitClientPrg(Client cntxt, str mod, str nme)
 		return MSresetClientPrg(cntxt, putName(mod), putName(nme));
 	cntxt->curprg = newFunction(putName(mod), putName(nme), FUNCTIONsymbol);
 	if( cntxt->curprg == 0)
-		throw(MAL, "initClientPrg", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "initClientPrg", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	if( (idx= findVariable(cntxt->curprg->def,"main")) >=0)
 		setVarType(cntxt->curprg->def, idx, TYPE_void);
 	insertSymbol(cntxt->usermodule,cntxt->curprg);
@@ -144,7 +136,7 @@ MSinitClientPrg(Client cntxt, str mod, str nme)
 	if (cntxt->glb == NULL )
 		cntxt->glb = newGlobalStack(MAXGLOBALS + cntxt->curprg->def->vsize);
 	if( cntxt->glb == NULL)
-		throw(MAL,"initClientPrg", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL,"initClientPrg", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	assert(cntxt->curprg->def != NULL);
 	assert(cntxt->curprg->def->vtop >0);
 	return MAL_SUCCEED;
@@ -287,7 +279,6 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 			if (err != NULL) {
 				/* this is kind of awful, but we need to get rid of this
 				 * message */
-				fprintf(stderr, "!msab_getMyStatus: %s\n", err);
 				free(err);
 				mnstr_printf(fout, "!internal server error, "
 							 "please try again later\n");
@@ -295,7 +286,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 				GDKfree(command);
 				return;
 			}
-			if (stats->locked == 1) {
+			if (stats->locked) {
 				if (uid == 0) {
 					mnstr_printf(fout, "#server is running in "
 								 "maintenance mode\n");
@@ -431,9 +422,6 @@ MSresetVariables(Client cntxt, MalBlkPtr mb, MalStkPtr glb, int start)
 {
 	int i;
 
-#ifdef _DEBUG_SESSION_
-	fprintf(stderr,"resetVarables %d  vtop %d errors %s\n", start, mb->vtop,mb->errors);
-#endif
 	for (i = 0; i < start && i < mb->vtop ; i++)
 		setVarUsed(mb,i);
 	if (mb->errors == MAL_SUCCEED)
@@ -442,7 +430,7 @@ MSresetVariables(Client cntxt, MalBlkPtr mb, MalStkPtr glb, int start)
 				assert(!mb->var[i].value.vtype || isVarConstant(mb, i));
 				setVarUsed(mb,i);
 			}
-			if (glb && !isVarUsed(mb,i)) {
+			if (glb && i < glb->stktop && !isVarUsed(mb,i)) {
 				if (isVarConstant(mb, i))
 					garbageElement(cntxt, &glb->stk[i]);
 				/* clean stack entry */
@@ -452,14 +440,8 @@ MSresetVariables(Client cntxt, MalBlkPtr mb, MalStkPtr glb, int start)
 			}
 		}
 
-#ifdef _DEBUG_SESSION_
-	fprintf(stderr,"resetVar %s %d\n", getFunctionId(mb->stmt[0]), mb->var[mb->stmt[0]->argv[0]].used);
-#endif
 	if (mb->errors == MAL_SUCCEED)
 		trimMalVariables_(mb, glb);
-#ifdef _DEBUG_SESSION_
-	fprintf(stderr,"after trim %s %d\n", getFunctionId(mb->stmt[0]), mb->vtop);
-#endif
 }
 
 /*
@@ -486,7 +468,7 @@ MSserveClient(Client c)
 		c->glb = newGlobalStack(MAXGLOBALS + mb->vsize);
 	if (c->glb == NULL) {
 		c->mode = RUNCLIENT;
-		throw(MAL, "serveClient", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "serveClient", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	} else {
 		c->glb->stktop = mb->vtop;
 		c->glb->blk = mb;
@@ -601,7 +583,8 @@ MALparser(Client c)
 	c->curprg->def->errors = 0;
 	oldstate = *c->curprg->def;
 
-	prepareMalBlk(c->curprg->def, CURRENT(c));
+	if( prepareMalBlk(c->curprg->def, CURRENT(c)) < 0)
+		throw(MAL, "mal.parser", "Failed to prepare");
 	parseMAL(c, c->curprg, 0, INT_MAX);
 
 	/* now the parsing is done we should advance the stream */
@@ -627,8 +610,8 @@ MALparser(Client c)
 		return msg;
 	}
 	pushEndInstruction(c->curprg->def);
-	chkProgram(c->usermodule, c->curprg->def);
-	if ( (msg =c->curprg->def->errors) ){
+	msg = chkProgram(c->usermodule, c->curprg->def);
+	if (msg !=MAL_SUCCEED || (msg =c->curprg->def->errors) ){
 		c->curprg->def->errors = 0;
 		MSresetVariables(c, c->curprg->def, c->glb, oldstate.vtop);
 		resetMalBlk(c->curprg->def, 1);
@@ -700,7 +683,7 @@ MALengine(Client c)
 		if (prg->def && c->glb->stksize < prg->def->vsize){
 			c->glb = reallocGlobalStack(c->glb, prg->def->vsize);
 			if( c->glb == NULL)
-				throw(MAL, "mal.engine", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				throw(MAL, "mal.engine", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		c->glb->stktop = prg->def->vtop;
 		c->glb->blk = prg->def;
@@ -739,4 +722,3 @@ MALengine(Client c)
 		mnstr_printf(c->fdout, "mdb>#EOD\n");
 	return msg;
 }
-

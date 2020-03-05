@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /* This file should not be included in any file outside of this directory */
@@ -19,6 +19,7 @@
 #define PERSISTENTIDX 1
 
 #include "gdk_system_private.h"
+#include "gdk_tracer.h"
 
 enum heaptype {
 	offheap,
@@ -29,261 +30,267 @@ enum heaptype {
 };
 
 #ifdef GDKLIBRARY_OLDDATE
-__hidden int cvtdate(int n)
+int cvtdate(int n)
 	__attribute__((__visibility__("hidden")));
 #endif
 
-__hidden gdk_return ATOMheap(int id, Heap *hp, size_t cap)
+gdk_return ATOMheap(int id, Heap *hp, size_t cap)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
-__hidden bool ATOMisdescendant(int id, int parentid)
+bool ATOMisdescendant(int id, int parentid)
 	__attribute__((__visibility__("hidden")));
-__hidden int ATOMunknown_find(const char *nme)
+int ATOMunknown_find(const char *nme)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
-__hidden str ATOMunknown_name(int a)
+str ATOMunknown_name(int a)
 	__attribute__((__visibility__("hidden")));
-__hidden void ATOMunknown_clean(void)
+void ATOMunknown_clean(void)
 	__attribute__((__visibility__("hidden")));
-__hidden bool BATcheckhash(BAT *b)
+bool BATcheckhash(BAT *b)
 	__attribute__((__visibility__("hidden")));
-__hidden bool BATcheckimprints(BAT *b)
+bool BATcheckimprints(BAT *b)
 	__attribute__((__visibility__("hidden")));
-__hidden gdk_return BATcheckmodes(BAT *b, bool persistent)
+gdk_return BATcheckmodes(BAT *b, bool persistent)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
-__hidden BAT *BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role)
+BAT *BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role)
 	__attribute__((__visibility__("hidden")));
-__hidden void BATdelete(BAT *b)
+void BATdelete(BAT *b)
 	__attribute__((__visibility__("hidden")));
-__hidden void BATdestroy(BAT *b)
+void BATdestroy(BAT *b)
 	__attribute__((__visibility__("hidden")));
-__hidden void BATfree(BAT *b)
+void BATfree(BAT *b)
 	__attribute__((__visibility__("hidden")));
-__hidden gdk_return BATgroup_internal(BAT **groups, BAT **extents, BAT **histo, BAT *b, BAT *s, BAT *g, BAT *e, BAT *h, bool subsorted)
+PROPrec *BATgetprop(BAT *b, enum prop_t idx)
+	__attribute__((__visibility__("hidden")));
+PROPrec * BATgetprop_nolock(BAT *b, enum prop_t idx)
+	__attribute__((__visibility__("hidden")));
+gdk_return BATgroup_internal(BAT **groups, BAT **extents, BAT **histo, BAT *b, BAT *s, BAT *g, BAT *e, BAT *h, bool subsorted)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
-__hidden Hash *BAThash_impl(BAT *b, BAT *s, const char *ext)
+Hash *BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict ext)
 	__attribute__((__visibility__("hidden")));
-__hidden void BATinit_idents(BAT *bn)
+gdk_return BAThashsave(BAT *b, bool dosync)
 	__attribute__((__visibility__("hidden")));
-__hidden BAT *BATload_intern(bat bid, bool lock)
+gdk_return BAThashsave(BAT *b, bool dosync)
 	__attribute__((__visibility__("hidden")));
-__hidden gdk_return BATmaterialize(BAT *b)
+void BATinit_idents(BAT *bn)
+	__attribute__((__visibility__("hidden")));
+BAT *BATload_intern(bat bid, bool lock)
+	__attribute__((__visibility__("hidden")));
+gdk_return BATmaterialize(BAT *b)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
-__hidden void BATsetdims(BAT *b)
+void BATrmprop(BAT *b, enum prop_t idx)
 	__attribute__((__visibility__("hidden")));
-__hidden gdk_return BBPcacheit(BAT *bn, bool lock)
+void BATsetdims(BAT *b)
+	__attribute__((__visibility__("hidden")));
+void BATsetprop(BAT *b, enum prop_t idx, int type, const void *v)
+	__attribute__((__visibility__("hidden")));
+void BATsetprop_nolock(BAT *b, enum prop_t idx, int type, const void *v)
+	__attribute__((__visibility__("hidden")));
+gdk_return BBPcacheit(BAT *bn, bool lock)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
 void BBPdump(void)		/* never called: for debugging only */
 	__attribute__((__cold__));
-__hidden void BBPexit(void)
+void BBPexit(void)
 	__attribute__((__visibility__("hidden")));
-__hidden BAT *BBPgetdesc(bat i)
+BAT *BBPgetdesc(bat i)
 	__attribute__((__visibility__("hidden")));
-__hidden gdk_return BBPinit(void)
+gdk_return BBPinit(void)
 	__attribute__((__visibility__("hidden")));
-__hidden bat BBPinsert(BAT *bn)
+bat BBPinsert(BAT *bn)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
-__hidden int BBPselectfarm(role_t role, int type, enum heaptype hptype)
+int BBPselectfarm(role_t role, int type, enum heaptype hptype)
 	__attribute__((__visibility__("hidden")));
-__hidden void BBPunshare(bat b)
+void BBPunshare(bat b)
 	__attribute__((__visibility__("hidden")));
-__hidden BUN binsearch(const oid *restrict indir, oid offset, int type, const void *restrict vals, const char * restrict vars, int width, BUN lo, BUN hi, const void *restrict v, int ordering, int last)
+BUN binsearch(const oid *restrict indir, oid offset, int type, const void *restrict vals, const char * restrict vars, int width, BUN lo, BUN hi, const void *restrict v, int ordering, int last)
 	__attribute__((__visibility__("hidden")));
-__hidden BUN binsearch_bte(const oid *restrict indir, oid offset, const bte *restrict vals, BUN lo, BUN hi, bte v, int ordering, int last)
+BUN binsearch_bte(const oid *restrict indir, oid offset, const bte *restrict vals, BUN lo, BUN hi, bte v, int ordering, int last)
 	__attribute__((__visibility__("hidden")));
-__hidden BUN binsearch_sht(const oid *restrict indir, oid offset, const sht *restrict vals, BUN lo, BUN hi, sht v, int ordering, int last)
+BUN binsearch_sht(const oid *restrict indir, oid offset, const sht *restrict vals, BUN lo, BUN hi, sht v, int ordering, int last)
 	__attribute__((__visibility__("hidden")));
-__hidden BUN binsearch_int(const oid *restrict indir, oid offset, const int *restrict vals, BUN lo, BUN hi, int v, int ordering, int last)
+BUN binsearch_int(const oid *restrict indir, oid offset, const int *restrict vals, BUN lo, BUN hi, int v, int ordering, int last)
 	__attribute__((__visibility__("hidden")));
-__hidden BUN binsearch_lng(const oid *restrict indir, oid offset, const lng *restrict vals, BUN lo, BUN hi, lng v, int ordering, int last)
+BUN binsearch_lng(const oid *restrict indir, oid offset, const lng *restrict vals, BUN lo, BUN hi, lng v, int ordering, int last)
 	__attribute__((__visibility__("hidden")));
 #ifdef HAVE_HGE
-__hidden BUN binsearch_hge(const oid *restrict indir, oid offset, const hge *restrict vals, BUN lo, BUN hi, hge v, int ordering, int last)
+BUN binsearch_hge(const oid *restrict indir, oid offset, const hge *restrict vals, BUN lo, BUN hi, hge v, int ordering, int last)
 	__attribute__((__visibility__("hidden")));
 #endif
-__hidden BUN binsearch_flt(const oid *restrict indir, oid offset, const flt *restrict vals, BUN lo, BUN hi, flt v, int ordering, int last)
+BUN binsearch_flt(const oid *restrict indir, oid offset, const flt *restrict vals, BUN lo, BUN hi, flt v, int ordering, int last)
 	__attribute__((__visibility__("hidden")));
-__hidden BUN binsearch_dbl(const oid *restrict indir, oid offset, const dbl *restrict vals, BUN lo, BUN hi, dbl v, int ordering, int last)
+BUN binsearch_dbl(const oid *restrict indir, oid offset, const dbl *restrict vals, BUN lo, BUN hi, dbl v, int ordering, int last)
 	__attribute__((__visibility__("hidden")));
-__hidden gdk_return BUNreplace(BAT *b, oid left, const void *right, bool force)
+gdk_return BUNreplace(BAT *b, oid left, const void *right, bool force)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
-__hidden Heap *createOIDXheap(BAT *b, bool stable)
+Heap *createOIDXheap(BAT *b, bool stable)
 	__attribute__((__visibility__("hidden")));
-__hidden void gdk_bbp_reset(void)
+void gdk_bbp_reset(void)
 	__attribute__((__visibility__("hidden")));
-__hidden gdk_return GDKextend(const char *fn, size_t size)
+gdk_return GDKextend(const char *fn, size_t size)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
-__hidden gdk_return GDKextendf(int fd, size_t size, const char *fn)
+gdk_return GDKextendf(int fd, size_t size, const char *fn)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
-__hidden int GDKfdlocate(int farmid, const char *nme, const char *mode, const char *ext)
+int GDKfdlocate(int farmid, const char *nme, const char *mode, const char *ext)
 	__attribute__((__visibility__("hidden")));
-__hidden FILE *GDKfilelocate(int farmid, const char *nme, const char *mode, const char *ext)
+FILE *GDKfilelocate(int farmid, const char *nme, const char *mode, const char *ext)
 	__attribute__((__visibility__("hidden")));
-__hidden FILE *GDKfileopen(int farmid, const char *dir, const char *name, const char *extension, const char *mode)
+FILE *GDKfileopen(int farmid, const char *dir, const char *name, const char *extension, const char *mode)
 	__attribute__((__visibility__("hidden")));
-__hidden char *GDKload(int farmid, const char *nme, const char *ext, size_t size, size_t *maxsize, storage_t mode)
+char *GDKload(int farmid, const char *nme, const char *ext, size_t size, size_t *maxsize, storage_t mode)
 	__attribute__((__visibility__("hidden")));
-__hidden void GDKlog(_In_z_ _Printf_format_string_ FILE * fl, const char *format, ...)
+void GDKlog(_In_z_ _Printf_format_string_ FILE * fl, const char *format, ...)
 	__attribute__((__format__(__printf__, 2, 3)))
 	__attribute__((__visibility__("hidden")));
-__hidden gdk_return GDKmove(int farmid, const char *dir1, const char *nme1, const char *ext1, const char *dir2, const char *nme2, const char *ext2)
+gdk_return GDKmove(int farmid, const char *dir1, const char *nme1, const char *ext1, const char *dir2, const char *nme2, const char *ext2)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
-__hidden void *GDKmremap(const char *path, int mode, void *old_address, size_t old_size, size_t *new_size)
+void *GDKmremap(const char *path, int mode, void *old_address, size_t old_size, size_t *new_size)
 	__attribute__((__visibility__("hidden")));
-__hidden gdk_return GDKmunmap(void *addr, size_t len)
+gdk_return GDKmunmap(void *addr, size_t len)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
-__hidden gdk_return GDKremovedir(int farmid, const char *nme)
+gdk_return GDKremovedir(int farmid, const char *nme)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
-__hidden gdk_return GDKsave(int farmid, const char *nme, const char *ext, void *buf, size_t size, storage_t mode, bool dosync)
+gdk_return GDKsave(int farmid, const char *nme, const char *ext, void *buf, size_t size, storage_t mode, bool dosync)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
-__hidden gdk_return GDKssort_rev(void *restrict h, void *restrict t, const void *restrict base, size_t n, int hs, int ts, int tpe)
+gdk_return GDKssort_rev(void *restrict h, void *restrict t, const void *restrict base, size_t n, int hs, int ts, int tpe)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
-__hidden gdk_return GDKssort(void *restrict h, void *restrict t, const void *restrict base, size_t n, int hs, int ts, int tpe)
+gdk_return GDKssort(void *restrict h, void *restrict t, const void *restrict base, size_t n, int hs, int ts, int tpe)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
-__hidden gdk_return GDKunlink(int farmid, const char *dir, const char *nme, const char *extension)
+gdk_return GDKunlink(int farmid, const char *dir, const char *nme, const char *extension)
 	__attribute__((__visibility__("hidden")));
-__hidden void HASHfree(BAT *b)
+#ifdef NATIVE_WIN32
+void GDKwinerror(_In_z_ _Printf_format_string_ const char *format, ...)
+	__attribute__((__format__(__printf__, 1, 2)))
 	__attribute__((__visibility__("hidden")));
-__hidden bool HASHgonebad(BAT *b, const void *v)
+#endif
+void HASHfree(BAT *b)
 	__attribute__((__visibility__("hidden")));
-__hidden BUN HASHmask(BUN cnt)
+bool HASHgonebad(BAT *b, const void *v)
 	__attribute__((__visibility__("hidden")));
-__hidden gdk_return HASHnew(Hash *h, int tpe, BUN size, BUN mask, BUN count)
+void HASHins(BAT *b, BUN i, const void *v)
 	__attribute__((__visibility__("hidden")));
-__hidden gdk_return HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
+BUN HASHmask(BUN cnt)
+	__attribute__((__visibility__("hidden")));
+gdk_return HASHnew(Hash *h, int tpe, BUN size, BUN mask, BUN count, bool bcktonly)
+	__attribute__((__visibility__("hidden")));
+gdk_return HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
-__hidden gdk_return HEAPcopy(Heap *dst, Heap *src)
+gdk_return HEAPcopy(Heap *dst, Heap *src)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
-__hidden gdk_return HEAPdelete(Heap *h, const char *o, const char *ext)
+gdk_return HEAPdelete(Heap *h, const char *o, const char *ext)
 	__attribute__((__visibility__("hidden")));
-__hidden void HEAPfree(Heap *h, bool remove)
+void HEAPfree(Heap *h, bool remove)
 	__attribute__((__visibility__("hidden")));
-__hidden gdk_return HEAPload(Heap *h, const char *nme, const char *ext, bool trunc)
+gdk_return HEAPload(Heap *h, const char *nme, const char *ext, bool trunc)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
-__hidden void HEAP_recover(Heap *, const var_t *, BUN)
+void HEAP_recover(Heap *, const var_t *, BUN)
 	__attribute__((__visibility__("hidden")));
-__hidden gdk_return HEAPsave(Heap *h, const char *nme, const char *ext)
+gdk_return HEAPsave(Heap *h, const char *nme, const char *ext, bool dosync)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
-__hidden gdk_return HEAPshrink(Heap *h, size_t size)
+gdk_return HEAPshrink(Heap *h, size_t size)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
-__hidden int HEAPwarm(Heap *h)
+int HEAPwarm(Heap *h)
 	__attribute__((__visibility__("hidden")));
-__hidden void IMPSfree(BAT *b)
+void IMPSfree(BAT *b)
 	__attribute__((__visibility__("hidden")));
-__hidden int IMPSgetbin(int tpe, bte bits, const char *restrict bins, const void *restrict v)
+int IMPSgetbin(int tpe, bte bits, const char *restrict bins, const void *restrict v)
 	__attribute__((__visibility__("hidden")));
 #ifndef NDEBUG
 void IMPSprint(BAT *b)		/* never called: for debugging only */
 	__attribute__((__cold__));
 #endif
-__hidden void MT_init_posix(void)
+void MT_init_posix(void)
 	__attribute__((__visibility__("hidden")));
-__hidden void *MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t *new_size)
+void *MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t *new_size)
 	__attribute__((__visibility__("hidden")));
-__hidden int MT_msync(void *p, size_t len)
+int MT_msync(void *p, size_t len)
 	__attribute__((__visibility__("hidden")));
-__hidden void OIDXfree(BAT *b)
+void OIDXfree(BAT *b)
 	__attribute__((__visibility__("hidden")));
-__hidden void persistOIDX(BAT *b)
+void persistOIDX(BAT *b)
 	__attribute__((__visibility__("hidden")));
-__hidden gdk_return rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, bool li, bool hi, BUN maxsize)
+void PROPdestroy(BAT *b)
+	__attribute__((__visibility__("hidden")));
+gdk_return rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, struct canditer *lci, struct canditer *rci, bool li, bool hi, bool anti, bool symmetric, BUN maxsize)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
-static inline char *
-stpconcat(char *restrict dst, const char *src, ...)
-{
-	va_list ap;
-
-	va_start(ap, src);
-	while (src) {
-		dst = stpcpy(dst, src);
-		src = va_arg(ap, const char *);
-	}
-	va_end(ap);
-	return dst;
-}
-__hidden void strCleanHash(Heap *hp, bool rebuild)
+void strCleanHash(Heap *hp, bool rebuild)
 	__attribute__((__visibility__("hidden")));
-__hidden int strCmp(const char *l, const char *r)
+void strHeap(Heap *d, size_t cap)
 	__attribute__((__visibility__("hidden")));
-__hidden int strCmpNoNil(const unsigned char *l, const unsigned char *r)
+var_t strLocate(Heap *h, const char *v)
 	__attribute__((__visibility__("hidden")));
-__hidden void strHeap(Heap *d, size_t cap)
+var_t strPut(Heap *h, var_t *dst, const char *v)
 	__attribute__((__visibility__("hidden")));
-__hidden var_t strLocate(Heap *h, const char *v)
+str strRead(str a, stream *s, size_t cnt)
 	__attribute__((__visibility__("hidden")));
-__hidden var_t strPut(Heap *h, var_t *dst, const char *v)
+ssize_t strToStr(char **restrict dst, size_t *restrict len, const char *restrict src, bool external)
 	__attribute__((__visibility__("hidden")));
-__hidden str strRead(str a, stream *s, size_t cnt)
+gdk_return strWrite(const char *a, stream *s, size_t cnt)
 	__attribute__((__visibility__("hidden")));
-__hidden ssize_t strToStr(char **restrict dst, size_t *restrict len, const char *restrict src, bool external)
-	__attribute__((__visibility__("hidden")));
-__hidden gdk_return strWrite(const char *a, stream *s, size_t cnt)
-	__attribute__((__visibility__("hidden")));
-__hidden gdk_return unshare_string_heap(BAT *b)
+gdk_return unshare_string_heap(BAT *b)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
-__hidden void VIEWdestroy(BAT *b)
+void VIEWdestroy(BAT *b)
 	__attribute__((__visibility__("hidden")));
-__hidden gdk_return VIEWreset(BAT *b)
+gdk_return VIEWreset(BAT *b)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
-__hidden BAT *virtualize(BAT *bn)
+BAT *virtualize(BAT *bn)
 	__attribute__((__visibility__("hidden")));
 
 /* some macros to help print info about BATs when using ALGODEBUG */
 #define ALGOBATFMT	"%s#" BUNFMT "@" OIDFMT "[%s]%s%s%s%s%s%s%s%s%s"
-#define ALGOBATPAR(b)	BATgetId(b),			\
-			BATcount(b),			\
-			b->hseqbase,			\
-			ATOMname(b->ttype),		\
+#define ALGOBATPAR(b)	BATgetId(b),					\
+			BATcount(b),					\
+			b->hseqbase,					\
+			ATOMname(b->ttype),				\
 			!b->batTransient ? "P" : isVIEW(b) ? "V" : "T", \
 			BATtdense(b) ? "D" : b->ttype == TYPE_void && b->tvheap ? "X" :"", \
-			b->tsorted ? "S" : "",		\
-			b->trevsorted ? "R" : "",	\
-			b->tkey ? "K" : "",		\
-			b->tnonil ? "N" : "",		\
-			b->thash ? "H" : "",		\
-			b->torderidx ? "O" : "",	\
+			b->tsorted ? "S" : "",				\
+			b->trevsorted ? "R" : "",			\
+			b->tkey ? "K" : "",				\
+			b->tnonil ? "N" : "",				\
+			b->thash ? "H" : "",				\
+			b->torderidx ? "O" : "",			\
 			b->timprints ? "I" : b->theap.parentid && BBP_cache(b->theap.parentid)->timprints ? "(I)" : ""
 /* use ALGOOPTBAT* when BAT is optional (can be NULL) */
 #define ALGOOPTBATFMT	"%s%s" BUNFMT "%s" OIDFMT "%s%s%s%s%s%s%s%s%s%s%s%s"
-#define ALGOOPTBATPAR(b)				\
-			b ? BATgetId(b) : "",		\
-			b ? "#" : "",			\
-			b ? BATcount(b) : 0,		\
-			b ? "@" : "",			\
-			b ? b->hseqbase : 0,		\
-			b ? "[" : "",			\
-			b ? ATOMname(b->ttype) : "",	\
-			b ? "]" : "",			\
+#define ALGOOPTBATPAR(b)						\
+			b ? BATgetId(b) : "",				\
+			b ? "#" : "",					\
+			b ? BATcount(b) : 0,				\
+			b ? "@" : "",					\
+			b ? b->hseqbase : 0,				\
+			b ? "[" : "",					\
+			b ? ATOMname(b->ttype) : "",			\
+			b ? "]" : "",					\
 			b ? !b->batTransient ? "P" : isVIEW(b) ? "V" : "T" : "", \
 			b && BATtdense(b) ? "D" : b && b->ttype == TYPE_void && b->tvheap ? "X" :"", \
-			b && b->tsorted ? "S" : "",	\
-			b && b->trevsorted ? "R" : "",	\
-			b && b->tkey ? "K" : "",	\
-			b && b->tnonil ? "N" : "",	\
-			b && b->thash ? "H" : "",	\
-			b && b->torderidx ? "O" : "",	\
+			b && b->tsorted ? "S" : "",			\
+			b && b->trevsorted ? "R" : "",			\
+			b && b->tkey ? "K" : "",			\
+			b && b->tnonil ? "N" : "",			\
+			b && b->thash ? "H" : "",			\
+			b && b->torderidx ? "O" : "",			\
 			b ? b->timprints ? "I" : b->theap.parentid && BBP_cache(b->theap.parentid)->timprints ? "(I)" : "" : ""
 
 #define BBP_BATMASK	(128 * SIZEOF_SIZE_T - 1)
@@ -355,7 +362,7 @@ extern MT_Lock GDKtmLock;
 
 #define GDKswapLock(x)  GDKbatLock[(x)&BBP_BATMASK].swap
 #if SIZEOF_SIZE_T == 8
-#define threadmask(y)	((int) ((mix_int((unsigned int) y) ^ mix_int((unsigned int) (y >> 32))) & BBP_THREADMASK))
+#define threadmask(y)	((int) (mix_lng(y) & BBP_THREADMASK))
 #else
 #define threadmask(y)	((int) (mix_int(y) & BBP_THREADMASK))
 #endif
@@ -375,12 +382,9 @@ extern MT_Lock GDKtmLock;
 	({	void *_ptr = (p);				\
 		size_t _len = (l);				\
 		gdk_return _res = GDKmunmap(_ptr, _len);	\
-		ALLOCDEBUG					\
-			fprintf(stderr,				\
-				"#GDKmunmap(%p,%zu) -> %u"	\
-				" %s[%s:%d]\n",			\
-				_ptr, _len, _res,		\
-				__func__, __FILE__, __LINE__);	\
+		TRC_DEBUG(ALLOC,				\
+			  "GDKmunmap(%p,%zu) -> %u\n",		\
+			  _ptr, _len, _res);			\
 		_res;						\
 	})
 #define GDKmremap(p, m, oa, os, ns)					\
@@ -392,43 +396,33 @@ extern MT_Lock GDKtmLock;
 		size_t *_ns = (ns);					\
 		size_t _ons = *_ns;					\
 		void *_res = GDKmremap(_path, _mode, _oa, _os, _ns);	\
-		ALLOCDEBUG						\
-			fprintf(stderr,					\
-				"#GDKmremap(%s,0x%x,%p,%zu,%zu > %zu) -> %p" \
-				" %s[%s:%d]\n",				\
-				_path ? _path : "NULL", (unsigned) _mode, \
-				_oa, _os, _ons, *_ns,			\
-				_res,					\
-				__func__, __FILE__, __LINE__);		\
+		TRC_DEBUG(ALLOC,					\
+			  "GDKmremap(%s,0x%x,%p,%zu,%zu > %zu) -> %p\n", \
+			  _path ? _path : "NULL", (unsigned) _mode,	\
+			  _oa, _os, _ons, *_ns, _res);			\
 		_res;							\
 	 })
 #else
 static inline gdk_return
-GDKmunmap_debug(void *ptr, size_t len, const char *filename, int lineno)
+GDKmunmap_debug(void *ptr, size_t len)
 {
 	gdk_return res = GDKmunmap(ptr, len);
-	ALLOCDEBUG fprintf(stderr,
-			   "#GDKmunmap(%p,%zu) -> %d [%s:%d]\n",
-			   ptr, len, (int) res, filename, lineno);
+	TRC_DEBUG(ALLOC, "GDKmunmap(%p,%zu) -> %d\n",
+			   	  ptr, len, (int) res);
 	return res;
 }
-#define GDKmunmap(p, l)		GDKmunmap_debug((p), (l), __FILE__, __LINE__)
+#define GDKmunmap(p, l)		GDKmunmap_debug((p), (l))
 static inline void *
-GDKmremap_debug(const char *path, int mode, void *old_address, size_t old_size, size_t *new_size, const char *filename, int lineno)
+GDKmremap_debug(const char *path, int mode, void *old_address, size_t old_size, size_t *new_size)
 {
 	size_t orig_new_size = *new_size;
 	void *res = GDKmremap(path, mode, old_address, old_size, new_size);
-	ALLOCDEBUG
-		fprintf(stderr,
-			"#GDKmremap(%s,0x%x,%p,%zu,%zu > %zu) -> %p"
-			" [%s:%d]\n",
-			path ? path : "NULL", mode,
-			old_address, old_size, orig_new_size, *new_size,
-			res,
-			filename, lineno);
+	TRC_DEBUG(ALLOC, "GDKmremap(%s,0x%x,%p,%zu,%zu > %zu) -> %p\n",
+		  path ? path : "NULL", mode,
+		  old_address, old_size, orig_new_size, *new_size, res);
 	return res;
 }
-#define GDKmremap(p, m, oa, os, ns)	GDKmremap_debug(p, m, oa, os, ns, __FILE__, __LINE__)
+#define GDKmremap(p, m, oa, os, ns)	GDKmremap_debug(p, m, oa, os, ns)
 
 #endif
 #endif

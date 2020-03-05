@@ -17,5 +17,6 @@ end tst;
 
 mdb.list("user","tst");
 optimizer.evaluate("user","tst");
+optimizer.garbageCollector("user","tst");
 mdb.list("user","tst");
 tst();

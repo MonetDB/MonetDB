@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #ifndef JSON_H
@@ -15,25 +15,28 @@
 #include "mal_instruction.h"
 #include "mal_exception.h"
 
-#define JSON_OBJECT 1
-#define JSON_ARRAY 2
-#define JSON_ELEMENT 3
-#define JSON_VALUE 4
-#define JSON_STRING 5
-#define JSON_NUMBER 6
-#define JSON_BOOL 7
-#define JSON_NULL 8
+typedef enum JSONkind {
+  JSON_OBJECT=1,
+  JSON_ARRAY,
+  JSON_ELEMENT,
+  JSON_VALUE,
+  JSON_STRING,
+  JSON_NUMBER,
+  JSON_BOOL,
+  JSON_NULL
+} JSONkind;
 
 /* The JSON index structure is meant for short lived versions */
 typedef struct JSONterm {
-    short kind;
-    char *name; /* exclude the quotes */
-    size_t namelen;
-    const char *value; /* start of string rep */
-    size_t valuelen;
-    int child, next, tail; /* next offsets allow you to walk array/object chains and append quickly */
-    /* An array or object item has a number of components */
-} JSONterm; 
+  JSONkind kind;
+  char *name; /* exclude the quotes */
+  size_t namelen;
+  const char *value; /* start of string rep */
+  size_t valuelen;
+  int child, next, tail; /* next offsets allow you to walk array/object chains
+													and append quickly */
+  /* An array or object item has a number of components */
+} JSONterm;
 
 typedef struct JSON{
     JSONterm *elm;
@@ -85,7 +88,7 @@ mal_export str JSONvalueArray(json *ret, json *arg);
 
 mal_export str JSONtextString(str *ret, bat *bid);
 mal_export str JSONtextGrouped(bat *ret, bat *bid, bat *gid, bat *ext, bit *flg);
-mal_export str JSONdump(void *ret, json *val);
+mal_export str JSONdump(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str JSONprelude(void *ret);
 
 mal_export str JSONrenderobject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

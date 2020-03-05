@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #ifndef STORE_SEQ_H
@@ -14,9 +14,11 @@
 extern void* sequences_init(void);
 extern void sequences_exit(void);
 
+extern int seq_get_value(sql_sequence *seq, lng *val);
 extern int seq_next_value(sql_sequence *seq, lng *val);
+extern int seq_restart(sql_sequence *seq, lng start);
 
-/* for bulk next values, the API is split in 3 parts */
+/* for bulk calls, the API is split in 3 parts */
 
 typedef struct seqbulk {
 	void *internal_seq;
@@ -26,10 +28,9 @@ typedef struct seqbulk {
 } seqbulk;
 
 extern seqbulk *seqbulk_create(sql_sequence *seq, BUN cnt);
+extern int seqbulk_get_value(seqbulk *seq, lng *val);
 extern int seqbulk_next_value(seqbulk *seq, lng *val);
+extern int seqbulk_restart(seqbulk *seq, lng start);
 extern void seqbulk_destroy(seqbulk *seq);
-
-extern int seq_get_value(sql_sequence *seq, lng *val);
-extern int seq_restart(sql_sequence *seq, lng start);
 
 #endif /* STORE_SEQ_H */

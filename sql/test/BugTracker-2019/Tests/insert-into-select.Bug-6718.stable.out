@@ -11,7 +11,7 @@ stdout of test 'insert-into-select.Bug-6718` in directory 'sql/test/BugTracker-2
 # Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
 # Found 31.305 GiB available main-memory.
 # Copyright (c) 1993 - July 2008 CWI.
-# Copyright (c) August 2008 - 2019 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008 - 2020 MonetDB B.V., all rights reserved
 # Visit https://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://catskill.da.cwi.nl:35973/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-18256/.s.monetdb.35973
@@ -28,7 +28,7 @@ stdout of test 'insert-into-select.Bug-6718` in directory 'sql/test/BugTracker-2
 #qnt INTEGER NOT NULL
 #);
 CREATE TABLE "sys"."test2" (
-	"order_number" INTEGER       NOT NULL DEFAULT next value for "sys"."seq_9041",
+	"order_number" INTEGER       NOT NULL DEFAULT next value for "sys"."seq_9266",
 	"order_id"     INTEGER       NOT NULL,
 	"qnt"          INTEGER       NOT NULL,
 	CONSTRAINT "test2_order_number_pkey" PRIMARY KEY ("order_number")

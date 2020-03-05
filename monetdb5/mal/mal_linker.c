@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -103,7 +103,7 @@ getAddress(str fcnname)
 	 *
 	 * the first argument must be the same as the base name of the
 	 * library that is created in src/tools */
-	dl = mdlopen("libmonetdb5", RTLD_NOW | RTLD_GLOBAL);
+	dl = mdlopen(SO_PREFIX "monetdb5" SO_EXT, RTLD_NOW | RTLD_GLOBAL);
 	if (dl == NULL) 
 		return NULL;
 
@@ -185,16 +185,9 @@ loadLibrary(str filename, int flag)
 		for (p = mod_path; *p && *p != PATH_SEP; p++)
 			;
 
-		/* try hardcoded SO_EXT if that is the same for modules */
-#ifdef _AIX
-		len = snprintf(nme, FILENAME_MAX, "%.*s%c%s_%s%s(%s_%s.0)",
-				 (int) (p - mod_path),
-				 mod_path, DIR_SEP, SO_PREFIX, s, SO_EXT, SO_PREFIX, s);
-#else
 		len = snprintf(nme, FILENAME_MAX, "%.*s%c%s_%s%s",
 				 (int) (p - mod_path),
 				 mod_path, DIR_SEP, SO_PREFIX, s, SO_EXT);
-#endif
 		if (len == -1 || len >= FILENAME_MAX)
 			throw(LOADER, "loadLibrary", RUNTIME_LOAD_ERROR "Library filename path is too large");
 		handle = dlopen(nme, mode);
@@ -449,23 +442,17 @@ MSP_locate_sqlscript(const char *filename, bit recurse)
 
 int
 malLibraryEnabled(str name) {
-	if (strcmp(name, "pyapi") == 0) {
+	if (strcmp(name, "pyapi3") == 0) {
 		const char *val = GDKgetenv("embedded_py");
-		return val && (strcmp(val, "2") == 0 ||
+		return val && (strcmp(val, "3") == 0 ||
 					   strcasecmp(val, "true") == 0 ||
 					   strcasecmp(val, "yes") == 0);
-	} else if (strcmp(name, "pyapi3") == 0) {
-		const char *val = GDKgetenv("embedded_py");
-		return val && strcasecmp(val, "3") == 0;
 	}
 	return true;
 }
 
 char*
 malLibraryHowToEnable(str name) {
-	if (strcmp(name, "pyapi") == 0) {
-		return "Embedded Python 2 has not been enabled. Start server with --set embedded_py=2";
-	}
 	if (strcmp(name, "pyapi3") == 0) {
 		return "Embedded Python 3 has not been enabled. Start server with --set embedded_py=3";
 	}

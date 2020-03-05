@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #ifndef MAL_PRELUDE
@@ -51,7 +51,6 @@ mal_export  str batmalRef;
 mal_export  str batmmathRef;
 mal_export  str batmtimeRef;
 mal_export  str batpyapi3Ref;
-mal_export  str batpyapiRef;
 mal_export  str batrapiRef;
 mal_export  str batRef;
 mal_export  str batsqlRef;
@@ -225,8 +224,6 @@ mal_export  str projectRef;
 mal_export  str putRef;
 mal_export  str pyapi3mapRef;
 mal_export  str pyapi3Ref;
-mal_export  str pyapimapRef;
-mal_export  str pyapiRef;
 mal_export  str querylogRef;
 mal_export  str queryRef;
 mal_export  str raiseRef;

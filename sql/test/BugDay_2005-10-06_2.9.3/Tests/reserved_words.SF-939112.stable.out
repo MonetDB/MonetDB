@@ -29,8 +29,8 @@ stdout of test 'reserved_words.SF-939112` in directory 'sql/test/BugDay_2005-10-
 
 #SELECT (count(columns.number) > 1)
 #FROM columns;
-% .L16 # table_name
-% L16 # name
+% . # table_name
+% %11 # name
 % boolean # type
 % 5 # length
 [ true	]

@@ -69,16 +69,7 @@ QUERY = # syntax analysis test for guarded blocks, redo's and leave's
         	f:=1;
         end;
         end foo;
-ERROR = !MALException:user.foo[3]:label 'Z' not in guarded block
-        !MALException:user.foo[7]:label 'L' not in guarded block
-        !MALException:user.foo[9]:label 'X' not in guarded block
-        !MALException:user.foo[11]:label 'A' not in guarded block
-        !MALException:user.foo[14]:label 'L' not in guarded block
-        !MALException:user.foo[17]:label 'L' not in guarded block
-        !MALException:user.foo[27]:exit-label 'B' doesnot match 'A'
-        !MALException:user.foo[29]:exit-label 'F' without begin-label
-        !MALException:user.foo[39]:exit-label 'A' without begin-label
-        !SyntaxException:parseError:end foo;
+ERROR = !MALException:user.foo:label 'Z' not in guarded blockSyntaxException:parseError:end foo;
         !SyntaxException:parseError:   ^non matching end label
 
 # 10:57:17 >  

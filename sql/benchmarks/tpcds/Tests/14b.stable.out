@@ -11,7 +11,7 @@ stdout of test '14b` in directory 'sql/benchmarks/tpcds` itself:
 # Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
 # Found 62.694 GiB available main-memory.
 # Copyright (c) 1993 - July 2008 CWI.
-# Copyright (c) August 2008 - 2019 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008 - 2020 MonetDB B.V., all rights reserved
 # Visit https://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://methuselah.da.cwi.nl:30709/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-16393/.s.monetdb.30709
@@ -35,7 +35,11 @@ stdout of test '14b` in directory 'sql/benchmarks/tpcds` itself:
 #      WHERE ss_item_sk = iss.i_item_sk
 #        AND ss_sold_date_sk = d1.d_date_sk
 #        AND d1.d_year BETWEEN 1999 AND 1999 + 2 INTERSECT
-% .L146,	sys.L150,	sys.L152,	sys.L154,	sys.L156,	sys.L160,	.L162,	sys.L164,	sys.L166,	sys.L170,	sys.L172,	sys.L174 # table_name
+#        SELECT ics.i_brand_id,
+#               ics.i_class_id,
+#               ics.i_category_id
+#        FROM catalog_sales,
+% .,	sys.,	sys.,	sys.,	sys.,	sys.,	.,	sys.,	sys.,	sys.,	sys.,	sys. # table_name
 % ty_channel,	ty_brand,	ty_class,	ty_category,	ty_sales,	ty_number_sales,	ly_channel,	ly_brand,	ly_class,	ly_category,	ly_sales,	ly_number_sales # name
 % char,	int,	int,	int,	decimal,	bigint,	char,	int,	int,	int,	decimal,	bigint # type
 % 5,	7,	1,	1,	20,	3,	5,	7,	1,	1,	20,	3 # length

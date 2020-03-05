@@ -45,7 +45,7 @@ stdout of test 'sqlsmith.Bug-6451` in directory 'sql/test/mergetables` itself:
 #  select  
 #      case when false then ref_9.z else ref_9.z end
 #         as c0, 
-% sys.L62,	sys.L65,	sys.L67,	sys.L71,	sys.L73,	sys.L76,	sys.L100 # table_name
+% sys.,	sys.,	sys.,	sys.,	sys.,	sys.,	sys. # table_name
 % c0,	c1,	c2,	c3,	c4,	c5,	c6 # name
 % int,	clob,	clob,	clob,	int,	clob,	int # type
 % 1,	0,	0,	0,	1,	0,	1 # length

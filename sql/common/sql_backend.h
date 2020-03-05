@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #ifndef _SQL_BACKEND_H_
@@ -12,7 +12,6 @@
 #include "sql_mem.h"
 #include "sql_catalog.h"
 #include "sql_relation.h"
-#include "sql_types.h"
 
 typedef void (*freestack_fptr) (int clientid, backend_stack stk);
 typedef void (*freecode_fptr) (int clientid, backend_code code, backend_stack stk, int nr, char *name);

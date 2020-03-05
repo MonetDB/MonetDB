@@ -30,8 +30,8 @@ stderr of test 'negative-sequences.Bug-6665` in directory 'sql/test/BugTracker-2
 
 MAPI  = (monetdb) /var/tmp/mtest-15463/.s.monetdb.37644
 QUERY = select next value for "other_seq";
-ERROR = !Error in fetching next value
-CODE  = 42000
+ERROR = !Cannot generate next sequence value sys.other_seq
+CODE  = HY050
 
 # 16:24:28 >  
 # 16:24:28 >  "Done."

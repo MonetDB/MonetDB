@@ -11,7 +11,7 @@ stdout of test 'prepare-types.Bug-6724` in directory 'sql/test/BugTracker-2019` 
 # Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
 # Found 15.528 GiB available main-memory.
 # Copyright (c) 1993 - July 2008 CWI.
-# Copyright (c) August 2008 - 2019 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008 - 2020 MonetDB B.V., all rights reserved
 # Visit https://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://localhost.localdomain:30297/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-26605/.s.monetdb.30297
@@ -58,8 +58,6 @@ stdout of test 'prepare-types.Bug-6724` in directory 'sql/test/BugTracker-2019` 
 # loading sql script: 99_system.sql
 # MonetDB/SQL module loaded
 
-Ready.
-
 # 11:53:57 >  
 # 11:53:57 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-26605" "--port=30297"
 # 11:53:57 >  
@@ -73,11 +71,11 @@ Ready.
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	str,	str,	str # type
 % 4,	2,	1,	0,	2,	2 # length
-[ "int",	32,	0,	"",	"L2",	"L2"	]
+[ "int",	32,	0,	"",	"%1",	"%1"	]
 [ "clob",	0,	0,	NULL,	NULL,	NULL	]
 #exec  7('abc');
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% %1 # name
 % int # type
 % 1 # length
 [ 3	]
@@ -87,11 +85,11 @@ Ready.
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	str,	str,	str # type
 % 4,	2,	1,	0,	2,	2 # length
-[ "int",	32,	0,	"",	"L3",	"L3"	]
+[ "int",	32,	0,	"",	"%1",	"%1"	]
 [ "clob",	0,	0,	NULL,	NULL,	NULL	]
 #exec  9('abc');
-% .L3 # table_name
-% L3 # name
+% . # table_name
+% %1 # name
 % int # type
 % 1 # length
 [ 5	]
@@ -102,11 +100,11 @@ Ready.
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	str,	str,	str # type
 % 3,	3,	1,	0,	2,	2 # length
-[ "int",	32,	0,	"",	"L3",	"L3"	]
+[ "int",	32,	0,	"",	"%1",	"%1"	]
 [ "int",	32,	0,	NULL,	NULL,	NULL	]
 #exec 11(1);
-% .L3 # table_name
-% L3 # name
+% . # table_name
+% %1 # name
 % int # type
 % 1 # length
 [ 1	]

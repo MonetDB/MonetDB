@@ -1,3 +1,25 @@
 # ChangeLog file for MonetDB5
 # This file is updated with Maddlog
 
+* Tue Dec  3 2019 Sjoerd Mullender <sjoerd@acm.org>
+- Removed function bat.setKey().
+
+* Fri Nov 22 2019 Sjoerd Mullender <sjoerd@acm.org>
+- algebra.rangejoin now has two extra arguments: anti:bit and
+  symmetric:bit.
+
+* Tue Nov 19 2019 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
+- Added session identifier, number of workers and memory claim to the
+  sysmon queue.
+- The worker (number of threads), memory (in MB) and optimizer pipeline
+  limits can now be set per user session basis. The query and session
+  timeouts are now set in seconds.
+- With required privileges an user can set resource limits for a session.
+
+* Wed Nov 13 2019 Sjoerd Mullender <sjoerd@acm.org>
+- There are now versions of group.(sub)group(done) that produce a single
+  output containing just the groups.
+- algebra.join and algebra.leftjoin now have forms which return a single
+  column.  The column that is returned is the left column of the two
+  column version.
+

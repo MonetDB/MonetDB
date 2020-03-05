@@ -37,7 +37,7 @@ stdout of test 'push-select-div-down.SF-2593341` in directory 'sql/test/BugTrack
 #WHERE y2/y2 < 0  -- but here we get a division by zero
 #GROUP BY x2
 #;
-% sys.L11,	sys.L14 # table_name
+% sys.,	sys. # table_name
 % x3,	y3 # name
 % double,	double # type
 % 24,	24 # length

@@ -23,9 +23,9 @@ stdout of test 'max_min_sum_null.SF-1123132` in directory 'sql/test/BugDay_2005-
 # 12:43:28 >  
 
 [ 3	]
-#SELECT MIN(aap),MAX(aap),SUM(aap) FROM t1123132;
-% sys.L2,	sys.L4,	sys.L6 # table_name
-% L1,	L3,	L5 # name
+#SELECT MIN(aap),MAX(aap),cast(SUM(aap) as bigint) FROM t1123132;
+% sys.%1,	sys.%2,	sys.%3 # table_name
+% %1,	%2,	%3 # name
 % int,	int,	bigint # type
 % 1,	1,	1 # length
 [ 1,	2,	3	]

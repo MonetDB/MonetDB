@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*  author M.L. Kersten
@@ -143,15 +143,16 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 			msg = (str)(*(codes[i].fcn))(cntxt, mb, stk, 0);
 			codes[i].timing += GDKusec() - clk;
 			codes[i].calls++;
-			if (msg) 
-				throw(MAL, optimizer, SQLSTATE(42000) "Error in optimizer %s", optimizer);
+			if (msg) {
+				throw(MAL, optimizer, SQLSTATE(42000) "Error in optimizer %s: %s", optimizer, msg);
+			}
 			break;	
 		}
 	if (codes[i].nme == 0)
 		throw(MAL, optimizer, SQLSTATE(HY002) "Optimizer implementation '%s' missing", fcnnme);
 
 	if ( mb->errors)
-		throw(MAL, optimizer, SQLSTATE(42000) PROGRAM_GENERAL ":%s.%s", modnme, fcnnme);
+		throw(MAL, optimizer, SQLSTATE(42000) PROGRAM_GENERAL ":%s.%s %s", modnme, fcnnme, mb->errors);
 	return MAL_SUCCEED;
 }
 
@@ -175,7 +176,7 @@ OPTstatistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		BBPreclaim(n);
 		BBPreclaim(c);
 		BBPreclaim(t);
-		throw(MAL,"optimizer.statistics", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL,"optimizer.statistics", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	for( i= 0; codes[i].nme; i++){
 		if (BUNappend(n, codes[i].nme, false) != GDK_SUCCEED ||
@@ -184,7 +185,7 @@ OPTstatistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			BBPreclaim(n);
 			BBPreclaim(c);
 			BBPreclaim(t);
-			throw(MAL,"optimizer.statistics", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL,"optimizer.statistics", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 	}
 	BBPkeepref( *nme = n->batCacheid);

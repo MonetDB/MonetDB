@@ -24,20 +24,20 @@ stdout of test 'sqlitelogictest-select-errors.Bug-6600` in directory 'sql/test/B
 # 12:42:15 >  
 
 #SELECT ALL + 60 * - NULLIF ( - CAST ( NULL AS INTEGER ), 51 * 70 * 62 / + 52 * + 58 / 90 - CAST ( + 44 AS INTEGER ) ) AS col2, 35;
-% .L4,	.L6 # table_name
-% col2,	L6 # name
+% .,	. # table_name
+% col2,	%5 # name
 % bigint,	tinyint # type
 % 1,	2 # length
 [ NULL,	35	]
-#SELECT ALL 11 * COUNT ( * ) * + 2 * 6;
-% .L4 # table_name
-% L4 # name
+#SELECT ALL CAST( 11 * COUNT ( * ) * + 2 * 6 AS BIGINT);
+% . # table_name
+% %2 # name
 % bigint # type
 % 3 # length
 [ 132	]
 #SELECT ALL - 9 * NULLIF ( + 30, + 64 ) * + 46 * 1;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% %1 # name
 % int # type
 % 6 # length
 [ -12420	]

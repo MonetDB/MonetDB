@@ -19,15 +19,19 @@ stdout of test 'sqlsmith.Bug-6418` in directory 'sql/test/BugTracker-2017` itsel
 # MonetDB/SQL module loaded
 
 
-# 23:28:48 >  
-# 23:28:48 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-25365" "--port=30700"
-# 23:28:48 >  
-
-#CREATE TABLE PARTSUPP_6418 ( PS_PARTKEY     INTEGER NOT NULL,
-#                             PS_SUPPKEY     INTEGER NOT NULL,
-#                             PS_AVAILQTY    INTEGER NOT NULL,
-#                             PS_SUPPLYCOST  DECIMAL(15,2)  NOT NULL,
-#                             PS_COMMENT     VARCHAR(199) NOT NULL );
+#START TRANSACTION;
+#CREATE TABLE integers(i INTEGER);
+#INSERT INTO integers VALUES (1), (2), (3), (NULL);
+[ 4	]
+#CREATE TABLE tab0(col0 INTEGER, col1 INTEGER, col2 INTEGER);
+#INSERT INTO tab0 VALUES (97,1,99), (15,81,47),(87,21,10);
+[ 3	]
+#CREATE TABLE tab1(col0 INTEGER, col1 INTEGER, col2 INTEGER);
+#INSERT INTO tab1 VALUES (51,14,96), (85,5,59), (91,47,68);
+[ 3	]
+#CREATE TABLE tab2(col0 INTEGER, col1 INTEGER, col2 INTEGER);
+#INSERT INTO tab2 VALUES (64,77,40), (75,67,58),(46,51,23);
+[ 3	]
 #select  
 #  ref_2.key_type_id as c0, 
 #  ref_3.ps_availqty as c1, 
@@ -44,11 +48,11 @@ stdout of test 'sqlsmith.Bug-6418` in directory 'sql/test/BugTracker-2017` itsel
 #    on (sample_1.schema_id is NULL)
 #where true
 #limit 116;
-% .L2,	.L4,	.L6 # table_name
+% .,	.,	. # table_name
 % c0,	c1,	c2 # name
-% smallint,	int,	varchar # type
-% 1,	1,	0 # length
-#drop table partsupp_6418;
+% int,	int,	int # type
+% 1,	1,	1 # length
+#ROLLBACK;
 
 # 23:28:48 >  
 # 23:28:48 >  "Done."

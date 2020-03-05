@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -54,9 +54,7 @@ OLTPreset(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) pci;
 	
 	MT_lock_set(&mal_oltpLock);
-#ifdef _DEBUG_OLTP_
-	fprintf(stderr,"#OLTP %6d reset locktable\n", GDKms());
-#endif
+
 	for( i=0; i<MAXOLTPLOCKS; i++){
 		oltp_locks[i].locked = 0;
 		oltp_locks[i].cntxt = 0;
@@ -75,9 +73,7 @@ OLTPenable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) stk;
 	(void) pci;
 	(void) cntxt;
-#ifdef _DEBUG_OLTP_
-	fprintf(stderr,"#OLTP %6d enabled\n",GDKms());
-#endif
+
 	oltp_delay = TRUE;
 	return MAL_SUCCEED;
 }
@@ -87,11 +83,7 @@ OLTPdisable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	OLTPreset(cntxt, mb, stk,pci);
 	oltp_delay = FALSE;
-#ifdef _DEBUG_OLTP_
-	fprintf(stderr,"#OLTP %6d disabled\n",GDKms());
-#else
 	(void) cntxt;
-#endif
 	return MAL_SUCCEED;
 }
 
@@ -118,10 +110,8 @@ OLTPlock(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ( oltp_delay == FALSE )
 		return MAL_SUCCEED;
 
-#ifdef _DEBUG_OLTP_
-	fprintf(stderr,"#OLTP %6d lock request for client %d:", GDKms(), cntxt->idx);
-	fprintInstruction(stderr,mb,stk,pci, LIST_MAL_ALL);
-#endif
+	TRC_DEBUG(MAL_SERVER, "%6d lock request for client: %d, pc %d", GDKms(), cntxt->idx, pci->pc);
+
 	do{
 		MT_lock_set(&mal_oltpLock);
 		clk = GDKms();
@@ -134,9 +124,8 @@ OLTPlock(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 
 		if( i  == pci->argc ){
-#ifdef _DEBUG_OLTP_
-			fprintf(stderr,"#OLTP %6d set lock for client %d\n", GDKms(), cntxt->idx);
-#endif
+			TRC_DEBUG(MAL_SERVER, "OLTP '%6d' set lock for client: %d\n", GDKms(), cntxt->idx);
+
 			for( i=1; i< pci->argc; i++){
 				lck= getVarConstant(mb, getArg(pci,i)).val.ival;
 				// only set the write locks
@@ -151,25 +140,20 @@ OLTPlock(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			return MAL_SUCCEED;
 		} else {
 			MT_lock_unset(&mal_oltpLock);
-#ifdef _DEBUG_OLTP_
-			fprintf(stderr,"#OLTP %d delay imposed for client %d\n", GDKms(), cntxt->idx);
-#endif
+			TRC_DEBUG(MAL_SERVER, "%d delay imposed for client: %d\n", GDKms(), cntxt->idx);
 			MT_sleep_ms(LOCKDELAY);
 		}
 	} while( clk - wait < LOCKTIMEOUT);
 
-#ifdef _DEBUG_OLTP_
-	fprintf(stderr,"#OLTP %6d proceed query for client %d\n", GDKms(), cntxt->idx);
-#endif
+	TRC_DEBUG(MAL_SERVER, "%6d proceed query for client: %d\n", GDKms(), cntxt->idx);
+
 	// if the time out is related to a copy_from query, we should not start it either.
 	sql = getName("sql");
 	cpy = getName("copy_from");
 
 	for( i = 0; i < mb->stop; i++)
 		if( getFunctionId(getInstrPtr(mb,i)) == cpy && getModuleId(getInstrPtr(mb,i)) == sql ){
-#ifdef _DEBUG_OLTP_
-			fprintf(stderr,"#OLTP %6d bail out a concurrent copy into %d\n", GDKms(), cntxt->idx);
-#endif
+			TRC_DEBUG(MAL_SERVER, "%6d bail out a concurrent copy into: %d\n", GDKms(), cntxt->idx);
 			throw(SQL,"oltp.lock","Conflicts with other write operations\n");
 		}
 	return MAL_SUCCEED;
@@ -188,10 +172,9 @@ OLTPrelease(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	MT_lock_set(&mal_oltpLock);
 	clk = GDKusec();
-#ifdef _DEBUG_OLTP_
-	fprintf(stderr,"#OLTP %6d release the locks %d:", GDKms(), cntxt->idx);
-	fprintInstruction(stderr,mb,stk,pci, LIST_MAL_ALL);
-#endif
+
+	TRC_DEBUG(MAL_SERVER, "%6d release the locks: %d", GDKms(), cntxt->idx);
+
 	for( i=1; i< pci->argc; i++){
 		lck= getVarConstant(mb, getArg(pci,i)).val.ival;
 		if( lck > 0){
@@ -204,9 +187,7 @@ OLTPrelease(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				if( delay > LOCKDELAY || delay < LOCKDELAY/10)
 					delay = LOCKDELAY;
 				oltp_locks[lck].retention = clk + delay;
-#ifdef _DEBUG_OLTP_
-				fprintf(stderr,"#OLTP  retention period for lock %d: "LLFMT"\n", lck,delay);
-#endif
+				TRC_DEBUG(MAL_SERVER, "Retention period for lock: %d " LLFMT"\n", lck, delay);
 			}
 	}
 	MT_lock_unset(&mal_oltpLock);
@@ -240,7 +221,7 @@ OLTPtable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if( bu) BBPunfix(bu->batCacheid);
 		if( bc) BBPunfix(bc->batCacheid);
 		if( bq) BBPunfix(bq->batCacheid);
-		throw(MAL,"oltp.table", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL,"oltp.table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	for( i = 0; msg ==  MAL_SUCCEED && i < MAXOLTPLOCKS; i++)
 	if (oltp_locks[i].used ){
@@ -263,7 +244,7 @@ OLTPtable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPunfix(bu->batCacheid);
 	BBPunfix(bc->batCacheid);
 	BBPunfix(bq->batCacheid);
-	return msg ? msg : createException(MAL, "oltp.table", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	return msg ? msg : createException(MAL, "oltp.table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
 
 str

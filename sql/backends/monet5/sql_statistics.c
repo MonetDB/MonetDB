@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /* (c) M.L. Kersten
@@ -84,13 +84,13 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	sys = mvc_bind_schema(m, "sys");
 	if (sys == NULL)
-		throw(SQL, "sql.analyze", SQLSTATE(3F000) "Internal error");
+		throw(SQL, "sql.analyze", SQLSTATE(3F000) "Internal error: No schema sys");
 	sysstats = mvc_bind_table(m, sys, "statistics");
 	if (sysstats == NULL)
-		throw(SQL, "sql.analyze", SQLSTATE(3F000) "No table sys.statistics");
+		throw(SQL, "sql.analyze", SQLSTATE(3F000) "Internal error: No table sys.statistics");
 	statsid = mvc_bind_column(m, sysstats, "column_id");
 	if (statsid == NULL)
-		throw(SQL, "sql.analyze", SQLSTATE(3F000) "No table sys.statistics");
+		throw(SQL, "sql.analyze", SQLSTATE(3F000) "Internal error: No table sys.statistics");
 
 	switch (argc) {
 	case 6:
@@ -102,9 +102,9 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	case 4:
 		sch = *getArgReference_str(stk, pci, 3);
 	}
-#ifdef DEBUG_SQL_STATISTICS
-	fprintf(stderr, "analyze %s.%s.%s sample " LLFMT "%s\n", (sch ? sch : ""), (tbl ? tbl : " "), (col ? col : " "), samplesize, (minmax)?"MinMax":"");
-#endif
+
+	TRC_DEBUG(SQL_PARSER, "analyze %s.%s.%s sample " LLFMT "%s\n", (sch ? sch : ""), (tbl ? tbl : " "), (col ? col : " "), samplesize, (minmax)?"MinMax":"");
+
 	for (nsch = tr->schemas.set->h; nsch; nsch = nsch->next) {
 		sql_base *b = nsch->data;
 		sql_schema *s = (sql_schema *) nsch->data;
@@ -121,12 +121,12 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 				if (tbl && strcmp(bt->name, tbl))
 					continue;
-				if (t->persistence != SQL_PERSIST) {
+				tfnd = 1;
+				if (tbl && !isTable(t)) {
 					GDKfree(maxval);
 					GDKfree(minval);
-					throw(SQL, "analyze", SQLSTATE(42S02) "Table '%s' is not persistent", bt->name);
+					throw(SQL, "analyze", SQLSTATE(42S02) "%s '%s' is not persistent", TABLE_TYPE_DESCRIPTION(t->type, t->properties), bt->name);
 				}
-				tfnd = 1;
 				if (isTable(t) && t->columns.set)
 					for (ncol = (t)->columns.set->h; ncol; ncol = ncol->next) {
 						sql_base *bc = ncol->data;
@@ -201,7 +201,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							maxval = GDKmalloc(4);
 							if (maxval == NULL) {
 								GDKfree(minval);
-								throw(SQL, "analyze", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+								throw(SQL, "analyze", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 							}
 							maxlen = 4;
 						}
@@ -210,7 +210,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							minval = GDKmalloc(4);
 							if (minval == NULL){
 								GDKfree(maxval);
-								throw(SQL, "analyze", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+								throw(SQL, "analyze", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 							}
 							minlen = 4;
 						}

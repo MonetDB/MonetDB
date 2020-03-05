@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -65,7 +65,7 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg)
 	int nameused = 0;
 	size_t len = 0, maxlen = BUFSIZ;
 	ValRecord *val = 0;
-	char *cv =0;
+	char *cv =0, *c;
 	str tpe;
 	int showtype = 0, closequote=0;
 	int varid = getArg(p,idx);
@@ -124,8 +124,14 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg)
 				strcat(buf+len,"\"");
 				len++;
 			}
-			strcat(buf+len,cv);
-			len += strlen(buf+len);
+			if ( isaBatType(getVarType(mb,varid))){
+				c = strchr(cv, '>');
+				strcat(buf+len,c+1);
+				len += strlen(buf+len);
+			} else {
+				strcat(buf+len,cv);
+				len += strlen(buf+len);
+			}
 			GDKfree(cv);
 
 			if( closequote ){
@@ -167,7 +173,7 @@ beginning of each line.
 str
 fcnDefinition(MalBlkPtr mb, InstrPtr p, str t, int flg, str base, size_t len)
 {
-	int i;
+	int i, j;
 	str arg, tpe;
 
 	len -= t - base;
@@ -238,6 +244,34 @@ fcnDefinition(MalBlkPtr mb, InstrPtr p, str t, int flg, str base, size_t len)
 			return base;
 	}
 	(void) copystring(&t, ";", &len);
+	/* add the extra properties for debugging */
+	if( flg & LIST_MAL_PROPS){
+		char extra[256];
+		if (p->token == REMsymbol){
+		} else{
+			snprintf(extra, 256, "\t#[%d] ("BUNFMT") %s ", getPC(mb,p), getRowCnt(mb,getArg(p,0)), (p->blk? p->blk->binding:""));
+			if (!copystring(&t, extra, &len))
+				return base;
+			for(j =0; j < p->retc; j++){
+				snprintf(extra, 256, "%d ", getArg(p,j));
+				if (!copystring(&t, extra, &len))
+					return base;
+			}
+			if( p->argc - p->retc > 0){
+				if (!copystring(&t, "<- ", &len))
+					return base;
+			}
+			for(; j < p->argc; j++){
+				snprintf(extra, 256, "%d ", getArg(p,j));
+				if (!copystring(&t, extra, &len))
+					return base;
+			}
+			if( p->typechk == TYPE_UNKNOWN){
+				if (!copystring(&t, " type check needed" , &len))
+					return base;
+			}
+		}
+	}
 	return base;
 }
 
@@ -259,14 +293,21 @@ operatorName(int i)
 	case FACTORYsymbol: return "factory";
 	case COMMANDsymbol: return "command";
 	case PATTERNsymbol: return "pattern";
+
+	/* internal symbols */
+	case FCNcall:	return "FCNcall";
+	case FACcall:     return "FACcall";
+	case CMDcall:     return "CMDcall";
+	case THRDcall:    return "THRcall";
+	case PATcall:     return "PATcall";
 	}
-	return "Undefined";
+	return "";
 }
 
 str
 instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 {
-	int i;
+	int i,j;
 	str base, t;
 	size_t len = 512 + (p->argc * 128);		 /* max realistic line length estimate */
 	str arg;
@@ -413,6 +454,34 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 		if (!copystring(&t, ";", &len))
 			return base;
 	}
+	/* add the extra properties for debugging */
+	if( flg & LIST_MAL_PROPS){
+		char extra[256];
+		if (p->token == REMsymbol){
+		} else{
+			snprintf(extra, 256, "\t#[%d] ("BUNFMT") %s ", p->pc, getRowCnt(mb,getArg(p,0)), (p->blk? p->blk->binding:""));
+			if (!copystring(&t, extra, &len))
+				return base;
+			for(j =0; j < p->retc; j++){
+				snprintf(extra, 256, "%d ", getArg(p,j));
+				if (!copystring(&t, extra, &len))
+					return base;
+			}
+			if( p->argc - p->retc > 0){
+				if (!copystring(&t, "<- ", &len))
+					return base;
+			}
+			for(; j < p->argc; j++){
+				snprintf(extra, 256, "%d ", getArg(p,j));
+				if (!copystring(&t, extra, &len))
+					return base;
+			}
+			if( p->typechk == TYPE_UNKNOWN){
+				if (!copystring(&t, " type check needed" , &len))
+					return base;
+			}
+		}
+	}
 	return base;
 }
 
@@ -421,144 +490,6 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
  * If the status is set, then we consider the instruction DONE and the result variables 
  * should be shown as well.
  */
-static str
-shortRenderingTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx)
-{
-	str s, nme;
-	BAT *b;
-	ValRecord *val;
-	char *cv =0;
-	int varid = getArg(p,idx);
-	size_t len = BUFSIZ;
-
-	s= GDKmalloc(len);
-	if( s == NULL)
-		return NULL;
-	*s = 0;
-
-	if( isVarConstant(mb,varid) ){
-		val =&getVarConstant(mb, varid);
-		if ((cv = VALformat(val)) == NULL) {
-			GDKfree(s);
-			return NULL;
-		}
-		if (strlen(cv) >= len) {
-			char *nbuf;
-			len = strlen(cv);
-			nbuf = GDKrealloc(s, len + 1);
-			if (nbuf == NULL) {
-				GDKfree(s);
-				GDKfree(cv);
-				return NULL;
-			}
-			s = nbuf;
-		}
-		snprintf(s,len + 1,"%s",cv);
-	} else {
-		val = &stk->stk[varid];
-		if ((cv = VALformat(val)) == NULL) {
-			GDKfree(s);
-			return NULL;
-		}
-		nme = getVarName(mb, varid);
-		if ( isaBatType(getArgType(mb,p,idx))){
-			b = BBPquickdesc(stk->stk[varid].val.bval, true);
-			snprintf(s,BUFSIZ,"%s["BUNFMT"]" ,nme, b?BATcount(b):0);
-		} else
-			snprintf(s,BUFSIZ,"%s=%s ",nme,cv);
-	}
-	GDKfree(cv);
-	return s;
-}
-
-str
-shortStmtRendering(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p)
-{
-	int i;
-	str base, s, t, nme;
-	size_t len=  (mb->stop < 1000? 1000: mb->stop) * 128 /* max realistic line length estimate */;
-
-	base = s = GDKmalloc(len);
-	if ( s == NULL)
-		return s;
-	*s =0;
-	t=s;
-	if (p->token == REMsymbol && !( getModuleId(p) && strcmp(getModuleId(p),"querylog") == 0  && getFunctionId(p) && strcmp(getFunctionId(p),"define") == 0)) 
-		return base;
-	if (p->barrier == LEAVEsymbol || 
-		p->barrier == REDOsymbol || 
-		p->barrier == RETURNsymbol || 
-		p->barrier == YIELDsymbol || 
-		p->barrier == EXITsymbol || 
-		p->barrier == RAISEsymbol) {
-			snprintf(t,(len-(t-base)), "%s ", operatorName(p->barrier));
-			advance(t,base,len);
-		}
-	if( p->token == FUNCTIONsymbol) {
-			snprintf(t,(len-(t-base)), "function %s.", getModuleId(p));
-			advance(t,base,len);
-		}
-	if (p->token == ENDsymbol ){
-		snprintf(t,(len-(t-base)), "end %s.%s", getModuleId(getInstrPtr(mb,0)), getFunctionId(getInstrPtr(mb,0)));
-		return base;
-	}
-	// handle the result variables
-	for (i = 0; i < p->retc; i++)
-		if ( !isTmpVar(mb,getArg(p,i)) || isVarUsed(mb, getArg(p, i)) || isVarUDFtype(mb,getArg(p,i)))
-			break;
-
-	if (i == p->retc) // no result arguments
-		goto short_end;
-
-	/* display optional multi-assignment list */
-	if( getArgType(mb,p,0) != TYPE_void){
-		if (p->retc > 1 && t < base + len-1){
-			*t++ = '(';
-			*t=0;
-		}
-
-		for (i = 0; i < p->retc; i++) {
-			nme = shortRenderingTerm(mb, stk, p,i);
-			snprintf(t,(len-(t-base)), "%s%s", (i?", ":""), nme);
-			GDKfree(nme);
-			advance(t,base,len);
-		}
-		if (p->retc > 1 && t< base+len)
-			*t++ = ')';
-		if( t < base +len) *t++ = ':';
-		if( t < base +len) *t++ = '=';
-		if( t < base +len) *t++ = ' ';
-	}
-	*t =0;
-
-	short_end:
-	advance(t,base,len);
-
-	// handle the instruction mapping
-	snprintf(t,  (len-(t-base)),"%s", (getFunctionId(p)?getFunctionId(p):""));
-	advance(t,base,len);
-
-	// handle the arguments, constants should  be shown including their non-default type
-	/* display optional multi-assignment list */
-	if( t< base + len) *t++ = '(';
-	for (i = p->retc; i < p->argc; i++) {
-		nme = shortRenderingTerm(mb, stk, p,i);
-		snprintf(t,(len-(t-base)), "%s%s", (i!= p->retc? ", ":" "), nme);
-		GDKfree(nme);
-		advance(t,base,len);
-		if (i < p->retc - 1 && t < base+len){
-			*t++ = ',';
-			*t++ = ' ';
-		}
-	}
-	if( t < base + len) *t++ = ' ';
-	if( t < base + len) *t++ = ')';
-	*t=0;
-
-	if (t >= s + len)
-		throw(MAL,"instruction2str:","instruction too long");
-	return base;
-}
 
 /* Remote execution of MAL calls for more type/property information to be exchanged */
 str
@@ -582,9 +513,6 @@ mal2str(MalBlkPtr mb, int first, int last)
 			txt[i] = instruction2str(mb, 0, getInstrPtr(mb, i), LIST_MAL_NAME | LIST_MAL_TYPE  | LIST_MAL_PROPS);
 		else
 			txt[i] = instruction2str(mb, 0, getInstrPtr(mb, i), LIST_MAL_CALL | LIST_MAL_PROPS | LIST_MAL_REMOTE);
-#ifdef _DEBUG_LISTING_
-		fprintf(stderr,"%s\n",txt[i]);
-#endif
 
 		if ( txt[i])
 			totlen += len[i] = strlen(txt[i]);
@@ -641,21 +569,19 @@ printInstruction(stream *fd, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int flg)
 }
 
 void
-fprintInstruction(FILE *fd, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int flg)
+traceInstruction(COMPONENT comp, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int flg)
 {
 	str ps;
-
-	if (fd == 0)
-		return;
-	ps = instruction2str(mb, stk, p, flg);
-	/* ps[strlen(ps)-1] = 0; remove '\n' */
-	if ( ps ){
-		fprintf(fd, "%s%s", (flg & LIST_MAL_MAPI ? "=" : ""), ps);
-		GDKfree(ps);
-	} else {
-		fprintf(fd,"#failed instruction2str()");
+	TRC_DEBUG_IF(comp){
+		ps = instruction2str(mb, stk, p, flg);
+		/* ps[strlen(ps)-1] = 0; remove '\n' */
+		if ( ps ){
+			TRC_DEBUG_ENDIF(comp, "%s%s\n", (flg & LIST_MAL_MAPI ? "=" : ""), ps);
+			GDKfree(ps);
+		} else {
+			TRC_DEBUG_ENDIF(comp, "Failed instruction2str()\n");
+		}
 	}
-	fprintf(fd, "\n");
 }
 
 void

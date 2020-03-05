@@ -40,12 +40,6 @@ stdout of test 'file_s08` in directory 'sql/test/Via-m` itself:
 #                        'empty',
 #                        250,
 #                        250);
-#select id_file1;
-% .L2 # table_name
-% L2 # name
-% int # type
-% 1 # length
-[ 2	]
 
 # 10:49:49 >  
 # 10:49:49 >  "Done."

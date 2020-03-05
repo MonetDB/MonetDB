@@ -23,14 +23,6 @@ stderr of test 'dump-again` in directory 'sql/test/Dump` itself:
 # cmdline opt 	gdk_dbpath = /home/sjoerd/@Monet-stable/var/MonetDB/mTests_sql_test_Dump
 # cmdline opt 	embedded_c = true
 # cmdline opt 	gdk_debug = 553648138
-#WARNING To speedup sql.get_value a bulk operator implementation is needed
-#    X_258:bat[:lng] := mal.multiplex("sql":str, "get_value":str, X_230:bat[:str], X_238:bat[:str]);
-#WARNING To speedup sql.get_value a bulk operator implementation is needed
-#    X_259:bat[:lng] := mal.multiplex("sql":str, "get_value":str, X_231:bat[:str], X_239:bat[:str]);
-#WARNING To speedup sql.get_value a bulk operator implementation is needed
-#    X_260:bat[:lng] := mal.multiplex("sql":str, "get_value":str, X_232:bat[:str], X_240:bat[:str]);
-#WARNING To speedup sql.get_value a bulk operator implementation is needed
-#    X_261:bat[:lng] := mal.multiplex("sql":str, "get_value":str, X_233:bat[:str], X_241:bat[:str]);
 
 # 22:27:57 >  
 # 22:27:57 >  "/usr/bin/python" "dump-again.SQL.py" "dump-again"

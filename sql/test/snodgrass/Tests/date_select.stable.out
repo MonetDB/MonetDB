@@ -44,32 +44,32 @@ stdout of test 'date_select` in directory 'sql/test/snodgrass` itself:
 # 21:26:36 >  
 
 #SELECT DATE '1996-02-24' + INTERVAL '7' DAY = DATE '1996-03-02';
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT DATE '1996-02-24' + INTERVAL '12:30' HOUR TO MINUTE; -- err: disallowed
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % date # type
 % 10 # length
 [ 1996-02-24	]
 #SELECT DATE '1996-02-24' + INTERVAL '2 12' DAY TO HOUR; -- err: disallowed
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % date # type
 % 10 # length
 [ 1996-02-26	]
 #SELECT INTERVAL '7' DAY + DATE '1996-02-24' = DATE '1996-03-02';
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT DATE '1996-03-02' - INTERVAL '7' DAY = DATE '1996-02-24';
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % boolean # type
 % 5 # length
 [ true	]

@@ -2,7 +2,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
 
 from __future__ import print_function
 
@@ -19,7 +19,7 @@ from filesplit import split_filename, rsplit_filename, automake_ext
 # buildtools/conf.  The generated sources should therefore be included
 # in the tar ball and not be removed with `make distclean' when
 # running "in" said tar ball.
-buildtools_ext = ['brg', 'l', 'pm.i', 'syms', 't', 'y']
+buildtools_ext = ['syms', 'y']
 
 am_assign = "+="
 
@@ -150,6 +150,8 @@ def am_find_srcs(target, deps, am, cond):
                 am['CLEAN'].append(pf)
     b, ext = split_filename(pf)
     if ext in automake_ext:
+        if ext in ['tab.c', 'tab.h']:
+            dist = True
         return dist, pf
     return dist, ""
 
@@ -563,7 +565,7 @@ def am_binary(fd, var, binmap, am):
         if ext in scripts_ext:
             if target not in SCRIPTS:
                 SCRIPTS.append(target)
-        elif ext in ('o', 'glue.o', 'tab.o', 'yy.o'):
+        elif ext in ('o', 'tab.o'):
             dist, src = am_find_srcs(target, binmap['DEPS'], am, cond)
             if src in binmap['SOURCES']:
                 dist = True

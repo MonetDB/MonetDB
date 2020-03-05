@@ -35,7 +35,7 @@ stdout of test 'outerref_in_selection` in directory 'sql/test` itself:
 #        FROM capediff AS a
 #        WHERE a.cape_date <= b.cape_date) AS numppl
 #    FROM capediff AS b;
-% sys.b,	.L6 # table_name
+% .b,	. # table_name
 % cape_date,	numppl # name
 % date,	bigint # type
 % 10,	1 # length

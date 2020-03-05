@@ -27,8 +27,8 @@ stdout of test 'sqlitelogictest-groupby-having-in-cast.Bug-6561` in directory 's
 #INSERT INTO tab0 VALUES(83,0,38), (26,0,79), (43,81,24);
 [ 3	]
 #SELECT CAST (- col0 * - + 8 + + + col0 + + + col0 + + + 42 * col0 AS BIGINT) FROM tab0 GROUP BY col0, col0, col1 HAVING NOT 18 + - col0 IN ( + CAST ( + col0 AS INTEGER ) );
-% sys.L1 # table_name
-% L1 # name
+% sys. # table_name
+% %2 # name
 % bigint # type
 % 4 # length
 [ 4316	]

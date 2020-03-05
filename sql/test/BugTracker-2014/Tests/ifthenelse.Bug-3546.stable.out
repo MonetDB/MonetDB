@@ -38,7 +38,6 @@ stdout of test 'ifthenelse.Bug-3546` in directory 'sql/test/BugTracker-2014` its
 [ 3,    NULL    ]
 #select case when not (a is null) and a > 0.0 then r/a else -1 end as s from t;
 % sys. # table_name
-# sys.L2 # table_name
 % s # name
 % smallint # type
 % 2 # length
@@ -47,7 +46,6 @@ stdout of test 'ifthenelse.Bug-3546` in directory 'sql/test/BugTracker-2014` its
 [ -1    ]
 #select case when not (a is null) and a > 0.0 then 1.0*r/a else -1 end as r from t;
 % sys. # table_name
-# sys.L2 # table_name
 % r # name
 % decimal # type
 % 19 # length

@@ -72,7 +72,7 @@ stdout of test 'cast_boolean_to_string.Bug-6110` in directory 'sql/test/BugTrack
 #INSERT INTO t_boolean VALUES (Null, 'Null');
 [ 1	]
 #SELECT val, valstr, cast(val as bool) as cast2bool FROM t_boolean order by val;
-% sys.t_boolean,	sys.t_boolean,	sys.L5 # table_name
+% sys.t_boolean,	sys.t_boolean,	sys. # table_name
 % val,	valstr,	cast2bool # name
 % boolean,	varchar,	boolean # type
 % 5,	5,	5 # length
@@ -80,14 +80,14 @@ stdout of test 'cast_boolean_to_string.Bug-6110` in directory 'sql/test/BugTrack
 [ false,	"False",	false	]
 [ true,	"True",	true	]
 #SELECT val, valstr, cast(valstr as bool) as caststr2bool FROM t_boolean where val is not null order by val;
-% sys.t_boolean,	sys.t_boolean,	sys.L5 # table_name
+% sys.t_boolean,	sys.t_boolean,	sys. # table_name
 % val,	valstr,	caststr2bool # name
 % boolean,	varchar,	boolean # type
 % 5,	5,	5 # length
 [ false,	"False",	false	]
 [ true,	"True",	true	]
 #SELECT val, valstr, cast(val as string) as cast2str FROM t_boolean order by val;
-% sys.t_boolean,	sys.t_boolean,	sys.L5 # table_name
+% sys.t_boolean,	sys.t_boolean,	sys. # table_name
 % val,	valstr,	cast2str # name
 % boolean,	varchar,	clob # type
 % 5,	5,	5 # length
@@ -95,7 +95,7 @@ stdout of test 'cast_boolean_to_string.Bug-6110` in directory 'sql/test/BugTrack
 [ false,	"False",	"false"	]
 [ true,	"True",	"true"	]
 #SELECT val, valstr, cast(val as char(5)) as cast2char5 FROM t_boolean order by val;
-% sys.t_boolean,	sys.t_boolean,	sys.L5 # table_name
+% sys.t_boolean,	sys.t_boolean,	sys. # table_name
 % val,	valstr,	cast2char5 # name
 % boolean,	varchar,	char # type
 % 5,	5,	5 # length
@@ -103,7 +103,7 @@ stdout of test 'cast_boolean_to_string.Bug-6110` in directory 'sql/test/BugTrack
 [ false,	"False",	"false"	]
 [ true,	"True",	"true"	]
 #SELECT val, valstr, cast(val as varchar(5)) as cast2varchar5 FROM t_boolean order by val;
-% sys.t_boolean,	sys.t_boolean,	sys.L5 # table_name
+% sys.t_boolean,	sys.t_boolean,	sys. # table_name
 % val,	valstr,	cast2varchar5 # name
 % boolean,	varchar,	varchar # type
 % 5,	5,	5 # length
@@ -111,7 +111,7 @@ stdout of test 'cast_boolean_to_string.Bug-6110` in directory 'sql/test/BugTrack
 [ false,	"False",	"false"	]
 [ true,	"True",	"true"	]
 #SELECT val, valstr, cast(val as clob) as cast2clob FROM t_boolean order by val;
-% sys.t_boolean,	sys.t_boolean,	sys.L5 # table_name
+% sys.t_boolean,	sys.t_boolean,	sys. # table_name
 % val,	valstr,	cast2clob # name
 % boolean,	varchar,	clob # type
 % 5,	5,	5 # length
@@ -119,7 +119,7 @@ stdout of test 'cast_boolean_to_string.Bug-6110` in directory 'sql/test/BugTrack
 [ false,	"False",	"false"	]
 [ true,	"True",	"true"	]
 #SELECT val, valstr, convert(val, string) as convert2str FROM t_boolean order by val;
-% sys.t_boolean,	sys.t_boolean,	sys.L5 # table_name
+% sys.t_boolean,	sys.t_boolean,	sys. # table_name
 % val,	valstr,	convert2str # name
 % boolean,	varchar,	clob # type
 % 5,	5,	5 # length
@@ -127,7 +127,7 @@ stdout of test 'cast_boolean_to_string.Bug-6110` in directory 'sql/test/BugTrack
 [ false,	"False",	"false"	]
 [ true,	"True",	"true"	]
 #SELECT val, valstr, convert(val, char(5)) as convert2char5 FROM t_boolean order by val;
-% sys.t_boolean,	sys.t_boolean,	sys.L5 # table_name
+% sys.t_boolean,	sys.t_boolean,	sys. # table_name
 % val,	valstr,	convert2char5 # name
 % boolean,	varchar,	char # type
 % 5,	5,	5 # length
@@ -135,7 +135,7 @@ stdout of test 'cast_boolean_to_string.Bug-6110` in directory 'sql/test/BugTrack
 [ false,	"False",	"false"	]
 [ true,	"True",	"true"	]
 #SELECT val, valstr, convert(val, varchar(5)) as convert2varchar5 FROM t_boolean order by val;
-% sys.t_boolean,	sys.t_boolean,	sys.L5 # table_name
+% sys.t_boolean,	sys.t_boolean,	sys. # table_name
 % val,	valstr,	convert2varchar5 # name
 % boolean,	varchar,	varchar # type
 % 5,	5,	5 # length
@@ -143,7 +143,7 @@ stdout of test 'cast_boolean_to_string.Bug-6110` in directory 'sql/test/BugTrack
 [ false,	"False",	"false"	]
 [ true,	"True",	"true"	]
 #SELECT val, valstr, convert(val, clob) as convert2clob FROM t_boolean order by val;
-% sys.t_boolean,	sys.t_boolean,	sys.L5 # table_name
+% sys.t_boolean,	sys.t_boolean,	sys. # table_name
 % val,	valstr,	convert2clob # name
 % boolean,	varchar,	clob # type
 % 5,	5,	5 # length
@@ -151,7 +151,7 @@ stdout of test 'cast_boolean_to_string.Bug-6110` in directory 'sql/test/BugTrack
 [ false,	"False",	"false"	]
 [ true,	"True",	"true"	]
 #SELECT val, valstr, cast(val as int) as cast2int FROM t_boolean order by val;
-% sys.t_boolean,	sys.t_boolean,	sys.L5 # table_name
+% sys.t_boolean,	sys.t_boolean,	sys. # table_name
 % val,	valstr,	cast2int # name
 % boolean,	varchar,	int # type
 % 5,	5,	1 # length
@@ -159,7 +159,7 @@ stdout of test 'cast_boolean_to_string.Bug-6110` in directory 'sql/test/BugTrack
 [ false,	"False",	0	]
 [ true,	"True",	1	]
 #SELECT val, valstr, cast(val as smallint) as cast2smallint FROM t_boolean order by val;
-% sys.t_boolean,	sys.t_boolean,	sys.L5 # table_name
+% sys.t_boolean,	sys.t_boolean,	sys. # table_name
 % val,	valstr,	cast2smallint # name
 % boolean,	varchar,	smallint # type
 % 5,	5,	1 # length
@@ -167,7 +167,7 @@ stdout of test 'cast_boolean_to_string.Bug-6110` in directory 'sql/test/BugTrack
 [ false,	"False",	0	]
 [ true,	"True",	1	]
 #SELECT val, valstr, cast(val as tinyint) as cast2tinyint FROM t_boolean order by val;
-% sys.t_boolean,	sys.t_boolean,	sys.L5 # table_name
+% sys.t_boolean,	sys.t_boolean,	sys. # table_name
 % val,	valstr,	cast2tinyint # name
 % boolean,	varchar,	tinyint # type
 % 5,	5,	1 # length
@@ -175,7 +175,7 @@ stdout of test 'cast_boolean_to_string.Bug-6110` in directory 'sql/test/BugTrack
 [ false,	"False",	0	]
 [ true,	"True",	1	]
 #SELECT val, valstr, cast(val as bigint) as cast2bigint FROM t_boolean order by val;
-% sys.t_boolean,	sys.t_boolean,	sys.L5 # table_name
+% sys.t_boolean,	sys.t_boolean,	sys. # table_name
 % val,	valstr,	cast2bigint # name
 % boolean,	varchar,	bigint # type
 % 5,	5,	1 # length
@@ -183,7 +183,7 @@ stdout of test 'cast_boolean_to_string.Bug-6110` in directory 'sql/test/BugTrack
 [ false,	"False",	0	]
 [ true,	"True",	1	]
 #SELECT val, valstr, cast(cast(val as tinyint) as char(1)) as cast2char1 FROM t_boolean order by val;
-% sys.t_boolean,	sys.t_boolean,	sys.L6 # table_name
+% sys.t_boolean,	sys.t_boolean,	sys. # table_name
 % val,	valstr,	cast2char1 # name
 % boolean,	varchar,	char # type
 % 5,	5,	1 # length

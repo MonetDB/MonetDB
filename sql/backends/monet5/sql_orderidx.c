@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /* (c) M.L. Kersten
@@ -39,9 +39,6 @@ sql_createorderindex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	tbl = *getArgReference_str(stk, pci, 2);
 	col = *getArgReference_str(stk, pci, 3);
 
-#ifdef DEBUG_SQL_ORDERIDX
-	fprintf(stderr, "#orderindex layout %s.%s.%s \n", sch, tbl, col);
-#endif
 	s = mvc_bind_schema(m, sch);
 	if (s == NULL)
 		throw(SQL, "sql.createorderindex", SQLSTATE(42000) "Unknown schema %s", sch);
@@ -80,9 +77,6 @@ sql_droporderindex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	tbl = *getArgReference_str(stk, pci, 2);
 	col = *getArgReference_str(stk, pci, 3);
 
-#ifdef DEBUG_SQL_ORDERIDX
-	fprintf(stderr, "#orderindex layout %s.%s.%s \n", sch, tbl, col);
-#endif
 	s = mvc_bind_schema(m, sch);
 	if (s == NULL)
 		throw(SQL, "sql.droporderindex", SQLSTATE(3FOOO) "Unknown schema %s", sch);

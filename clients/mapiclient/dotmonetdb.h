@@ -3,8 +3,19 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
-extern void parse_dotmonetdb(char **user, char **passwd, char **dbname, char **language,
-			     int *save_history, char **output, int *pagewidth);
+typedef struct DotMonetdb {
+	char *user;
+	char *passwd;
+	char *dbname;
+	char *language;
+	char *host;
+	bool save_history;
+	char *output;
+	int pagewidth;
+	int port;
+} DotMonetdb;
+
+extern void parse_dotmonetdb(DotMonetdb *dotfile);

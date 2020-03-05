@@ -52,56 +52,56 @@ stdout of test 'str-trim` in directory 'sql/test` itself:
 # 22:56:50 >  
 
 #SELECT '#' || trim('zzzytrimxxxx', 'zyx') || '#';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% %1 # name
 % varchar # type
 % 6 # length
 [ "#trim#"	]
 #SELECT '#' || trim('zzëzytrimxxëxx', 'zëyx') || '#';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% %1 # name
 % varchar # type
 % 6 # length
 [ "#trim#"	]
 #SELECT '#' || trim('zzë颖zytrimxx颖ëxx', 'zëy颖x') || '#';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% %1 # name
 % varchar # type
 % 6 # length
 [ "#trim#"	]
 #SELECT '#' || ltrim('zzzytrim', 'zyx') || '#';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% %1 # name
 % varchar # type
 % 6 # length
 [ "#trim#"	]
 #SELECT '#' || ltrim('zzëzytrim', 'zëyx') || '#';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% %1 # name
 % varchar # type
 % 6 # length
 [ "#trim#"	]
 #SELECT '#' || ltrim('zzë颖zytrim', 'zëy颖x') || '#';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% %1 # name
 % varchar # type
 % 6 # length
 [ "#trim#"	]
 #SELECT '#' || rtrim('trimxxxx', 'zyx') || '#';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% %1 # name
 % varchar # type
 % 6 # length
 [ "#trim#"	]
 #SELECT '#' || rtrim('trimxxëxx', 'zëyx') || '#';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% %1 # name
 % varchar # type
 % 6 # length
 [ "#trim#"	]
 #SELECT '#' || rtrim('trimxx颖ëxx', 'zëy颖x') || '#';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% %1 # name
 % varchar # type
 % 6 # length
 [ "#trim#"	]
@@ -109,16 +109,16 @@ stdout of test 'str-trim` in directory 'sql/test` itself:
 #INSERT INTO t VALUES ('zzzytrimxxxx', 'zyx'), ('zzëzytrimxxëxx', 'zëyx'), ('zzë颖zytrimxx颖ëxx', 'zëy颖x');
 [ 3	]
 #SELECT trim(s, 'zëy颖x') FROM t;
-% sys.L2 # table_name
-% L2 # name
+% sys. # table_name
+% %1 # name
 % varchar # type
 % 4 # length
 [ "trim"	]
 [ "trim"	]
 [ "trim"	]
 #SELECT trim(s, s2) FROM t;
-% sys.L2 # table_name
-% L2 # name
+% sys. # table_name
+% %1 # name
 % varchar # type
 % 4 # length
 [ "trim"	]
@@ -128,16 +128,16 @@ stdout of test 'str-trim` in directory 'sql/test` itself:
 #INSERT INTO lt VALUES ('zzzytrim', 'zyx'), ('zzëzytrim', 'zëyx'), ('zzë颖zytrim', 'zëy颖x');
 [ 3	]
 #SELECT ltrim(s, 'zëy颖x') FROM lt;
-% sys.L2 # table_name
-% L2 # name
+% sys. # table_name
+% %1 # name
 % varchar # type
 % 4 # length
 [ "trim"	]
 [ "trim"	]
 [ "trim"	]
 #SELECT ltrim(s, s2) FROM lt;
-% sys.L2 # table_name
-% L2 # name
+% sys. # table_name
+% %1 # name
 % varchar # type
 % 4 # length
 [ "trim"	]
@@ -147,16 +147,16 @@ stdout of test 'str-trim` in directory 'sql/test` itself:
 #INSERT INTO rt VALUES ('trimxxxx', 'zyx'), ('trimxxëxx', 'zëyx'), ('trimxx颖ëxx', 'zëy颖x');
 [ 3	]
 #SELECT rtrim(s, 'zëy颖x') FROM rt;
-% sys.L2 # table_name
-% L2 # name
+% sys. # table_name
+% %1 # name
 % varchar # type
 % 4 # length
 [ "trim"	]
 [ "trim"	]
 [ "trim"	]
 #SELECT rtrim(s, s2) FROM rt;
-% sys.L2 # table_name
-% L2 # name
+% sys. # table_name
+% %1 # name
 % varchar # type
 % 4 # length
 [ "trim"	]

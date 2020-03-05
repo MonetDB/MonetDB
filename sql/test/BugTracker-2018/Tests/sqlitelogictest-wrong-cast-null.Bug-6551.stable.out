@@ -23,7 +23,7 @@ stdout of test 'sqlitelogictest-wrong-cast-null.Bug-6551` in directory 'sql/test
 # 14:54:45 >  
 
 #SELECT 0 * + 77 * CAST ( NULL AS INTEGER ) AS col2;
-% .L3 # table_name
+% . # table_name
 % col2 # name
 % bigint # type
 % 1 # length

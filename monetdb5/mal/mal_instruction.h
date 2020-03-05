@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #ifndef _MAL_INSTR_H
@@ -20,7 +20,6 @@
 #endif
 
 #define DEBUG_MAL_INSTR
-/* #define DEBUG_REDUCE */
 #define MAXARG 8				/* was 4 BEWARE the code depends on this knowledge, where? */
 #define STMT_INCREMENT 4
 #define MAL_VAR_WINDOW  32
@@ -38,6 +37,7 @@
 #define garbageControl(P)	((P)->gc & GARBAGECONTROL)
 
 #define getInstrPtr(M,I)	(M)->stmt[I]
+#define putInstrPtr(M,I,P)	(M)->stmt[I] = P
 #define getSignature(S)		getInstrPtr((S)->def,0)
 #define isMain(M)			((getInstrPtr(M,0))->fcnname== putName("main",4))
 #define getFcnName(M)		getFunctionId(getInstrPtr(M,0))
@@ -110,9 +110,6 @@
 #define setRowCnt(M,I,C)	(M)->var[I].rowcnt = C
 #define getRowCnt(M,I)		((M)->var[I].rowcnt)
 
-#define setMitosisPartition(P,C)	(P)->mitosis = C
-#define getMitosisPartition(P)		((P)->mitosis)
-
 #define getVarSTC(M,I)			((M)->var[I].stc)
 
 #define getDestVar(P)		(P)->argv[0]
@@ -129,6 +126,7 @@
 mal_export void addMalException(MalBlkPtr mb, str msg);
 mal_export void mal_instruction_reset(void);
 mal_export InstrPtr newInstruction(MalBlkPtr mb, str modnme, str fcnnme);
+mal_export InstrPtr newInstructionArgs(MalBlkPtr mb, str modnme, str fcnnme, int args);
 mal_export InstrPtr copyInstruction(InstrPtr p);
 mal_export void oldmoveInstruction(InstrPtr dst, InstrPtr src);
 mal_export void clrInstruction(InstrPtr p);
@@ -166,6 +164,7 @@ mal_export int cloneVariable(MalBlkPtr dst, MalBlkPtr src, int varid);
 /* generate a new variable name based on a pattern with 1 %d argument
  * -- not used, but this is how to do it */
 /* #define renameVariable(mb, id, pattern, newid) snprintf(getVarName(mb,id),IDLENGTH,pattern,newid) */
+mal_export void setVariableType(MalBlkPtr mb, const int idx, malType type);
 mal_export int newTmpVariable(MalBlkPtr mb, malType type);
 mal_export int newTypeVariable(MalBlkPtr mb, malType type);
 mal_export void freeVariable(MalBlkPtr mb, int varid);
@@ -177,6 +176,7 @@ mal_export str convertConstant(malType type, ValPtr vr);
 
 mal_export void pushInstruction(MalBlkPtr mb, InstrPtr p);
 mal_export InstrPtr pushArgument(MalBlkPtr mb, InstrPtr p, int varid);
+mal_export InstrPtr addArgument(MalBlkPtr mb, InstrPtr p, int varid);
 mal_export InstrPtr setArgument(MalBlkPtr mb, InstrPtr p, int idx, int varid);
 mal_export InstrPtr pushReturn(MalBlkPtr mb, InstrPtr p, int varid);
 mal_export InstrPtr pushArgumentId(MalBlkPtr mb, InstrPtr p, const char *name);

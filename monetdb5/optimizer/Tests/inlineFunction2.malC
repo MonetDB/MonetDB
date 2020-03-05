@@ -9,6 +9,7 @@ function tst();
 end tst;
 optimizer.multiplex("user","tst");
 optimizer.inline("user","tst");
+optimizer.garbageCollector("user","tst");
 io.printf("#result of inline\n");
 mdb.list("user","tst");
 

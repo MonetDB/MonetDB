@@ -11,7 +11,7 @@ stdout of test '87` in directory 'sql/benchmarks/tpcds` itself:
 # Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
 # Found 62.694 GiB available main-memory.
 # Copyright (c) 1993 - July 2008 CWI.
-# Copyright (c) August 2008 - 2019 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008 - 2020 MonetDB B.V., all rights reserved
 # Visit https://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://methuselah.da.cwi.nl:30709/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-16393/.s.monetdb.30709
@@ -35,8 +35,11 @@ stdout of test '87` in directory 'sql/benchmarks/tpcds` itself:
 #           AND d_month_seq BETWEEN 1200 AND 1200+11)
 #      EXCEPT
 #        (SELECT DISTINCT c_last_name,
-% sys.L27 # table_name
-% L27 # name
+#                         c_first_name,
+#                         d_date
+#         FROM catalog_sales,
+% sys.%15 # table_name
+% %15 # name
 % bigint # type
 % 5 # length
 [ 47298	]

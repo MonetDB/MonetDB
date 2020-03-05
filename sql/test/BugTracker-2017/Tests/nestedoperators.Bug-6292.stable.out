@@ -86,8 +86,8 @@ stdout of test 'nestedoperators.Bug-6292` in directory 'sql/test/BugTracker-2017
 #AS (SELECT min(time) AS mintime, max(time) as maxtime, epoch(time)/60 AS period FROM rooms GROUP BY period) 
 #SELECT r2.time, r2.room, r2.level, (r2.temp - r1.temp)/ (epoch(bounds.last) - epoch(bounds.first)) FROM bounds, rooms r1, rooms r2
 #WHERE r1.time = bounds.first and r2.time = bounds.last and r1.room = r2.room and r1.level = r2.level;
-% sys.r2,	sys.r2,	sys.r2,	sys.L17 # table_name
-% time,	room,	level,	L17 # name
+% sys.r2,	sys.r2,	sys.r2,	sys. # table_name
+% time,	room,	level,	%20 # name
 % timestamp,	clob,	int,	double # type
 % 26,	4,	1,	24 # length
 [ 2017-01-01 09:00:45.000000,	"L302",	3,	0.004444444444	]

@@ -25,8 +25,8 @@ stdout of test 'exists.Bug-6392` in directory 'sql/test/BugTracker-2017` itself:
 
 #CREATE TABLE foo(i INT);
 #SELECT EXISTS (SELECT i FROM foo WHERE FALSE);
-% .L3 # table_name
-% L3 # name
+% .%2 # table_name
+% %2 # name
 % boolean # type
 % 5 # length
 [ false	]

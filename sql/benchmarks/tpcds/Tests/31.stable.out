@@ -11,7 +11,7 @@ stdout of test '31` in directory 'sql/benchmarks/tpcds` itself:
 # Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
 # Found 62.694 GiB available main-memory.
 # Copyright (c) 1993 - July 2008 CWI.
-# Copyright (c) August 2008 - 2019 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008 - 2020 MonetDB B.V., all rights reserved
 # Visit https://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://methuselah.da.cwi.nl:30709/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-16393/.s.monetdb.30709
@@ -35,7 +35,17 @@ stdout of test '31` in directory 'sql/benchmarks/tpcds` itself:
 #     AND ss_addr_sk=ca_address_sk
 #   GROUP BY ca_county,
 #            d_qoy,
-% sys.ss1,	sys.ss1,	sys.L30,	sys.L32,	sys.L34,	sys.L36 # table_name
+#            d_year),
+#     ws AS
+#  (SELECT ca_county,
+#          d_qoy,
+#          d_year,
+#          sum(ws_ext_sales_price) AS web_sales
+#   FROM web_sales,
+#        date_dim,
+#        customer_address
+#   WHERE ws_sold_date_sk = d_date_sk
+% sys.ss1,	sys.ss1,	sys.,	sys.,	sys.,	sys. # table_name
 % ca_county,	d_year,	web_q1_q2_increase,	store_q1_q2_increase,	web_q2_q3_increase,	store_q2_q3_increase # name
 % varchar,	int,	decimal,	decimal,	decimal,	decimal # type
 % 21,	4,	20,	20,	20,	20 # length

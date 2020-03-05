@@ -11,7 +11,7 @@ stdout of test '71` in directory 'sql/benchmarks/tpcds` itself:
 # Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
 # Found 62.694 GiB available main-memory.
 # Copyright (c) 1993 - July 2008 CWI.
-# Copyright (c) August 2008 - 2019 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008 - 2020 MonetDB B.V., all rights reserved
 # Visit https://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://methuselah.da.cwi.nl:30709/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-16393/.s.monetdb.30709
@@ -35,7 +35,13 @@ stdout of test '71` in directory 'sql/benchmarks/tpcds` itself:
 #          ws_sold_time_sk AS time_sk
 #   FROM web_sales,
 #        date_dim
-% .L45,	.L47,	.time_dim,	.time_dim,	.L54 # table_name
+#   WHERE d_date_sk = ws_sold_date_sk
+#     AND d_moy=11
+#     AND d_year=1999
+#   UNION ALL SELECT cs_ext_sales_price AS ext_price,
+#                    cs_sold_date_sk AS sold_date_sk,
+#                    cs_item_sk AS sold_item_sk,
+% .,	.,	.time_dim,	.time_dim,	. # table_name
 % brand_id,	brand,	t_hour,	t_minute,	ext_price # name
 % int,	char,	int,	int,	decimal # type
 % 8,	50,	2,	2,	40 # length

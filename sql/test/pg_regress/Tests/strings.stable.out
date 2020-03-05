@@ -33,7 +33,7 @@ stdout of test 'strings` in directory 'sql/test/pg_regress` itself:
 #' - next line'
 #	' - third line'
 #	AS "Three lines to one";
-% .L2 # table_name
+% . # table_name
 % "Three lines to one" # name
 % char # type
 % 35 # length
@@ -42,7 +42,7 @@ stdout of test 'strings` in directory 'sql/test/pg_regress` itself:
 #' - next line' /* this comment is not allowed here */
 #' - third line'
 #	AS "Illegal comment within continuation";
-% .L2 # table_name
+% . # table_name
 % "Illegal comment within continuation" # name
 % char # type
 % 35 # length
@@ -61,7 +61,7 @@ stdout of test 'strings` in directory 'sql/test/pg_regress` itself:
 #INSERT INTO CHAR_TBL (f1) VALUES ('');
 [ 1	]
 #SELECT CAST(f1 AS text) AS "text(char)" FROM CHAR_TBL;
-% sys.L3 # table_name
+% sys. # table_name
 % text(char) # name
 % char # type
 % 1 # length
@@ -85,7 +85,7 @@ stdout of test 'strings` in directory 'sql/test/pg_regress` itself:
 #INSERT INTO VARCHAR_TBL (f1) VALUES ('');
 [ 1	]
 #SELECT CAST(f1 AS text) AS "text(varchar)" FROM VARCHAR_TBL;
-% sys.L3 # table_name
+% sys. # table_name
 % text(varchar) # name
 % varchar # type
 % 1 # length
@@ -96,7 +96,7 @@ stdout of test 'strings` in directory 'sql/test/pg_regress` itself:
 [ "3"	]
 [ ""	]
 #SELECT CAST('namefield' AS text) AS "text(name)";
-% .L3 # table_name
+% . # table_name
 % text(name) # name
 % char # type
 % 9 # length
@@ -107,21 +107,21 @@ stdout of test 'strings` in directory 'sql/test/pg_regress` itself:
 #INSERT INTO TEXT_TBL VALUES ('hi de ho neighbor');
 [ 1	]
 #SELECT CAST(f1 AS char(10)) AS "char(text)" FROM TEXT_TBL;
-% sys.L3 # table_name
+% sys. # table_name
 % char(text) # name
 % char # type
 % 10 # length
 [ "doh!"	]
 [ "hi de ho n"	]
 #SELECT CAST(f1 AS char(20)) AS "char(text)" FROM TEXT_TBL;
-% sys.L3 # table_name
+% sys. # table_name
 % char(text) # name
 % char # type
 % 20 # length
 [ "doh!"	]
 [ "hi de ho neighbor"	]
 #SELECT CAST(f1 AS char(10)) AS "char(varchar)" FROM VARCHAR_TBL;
-% sys.L3 # table_name
+% sys. # table_name
 % char(varchar) # name
 % char # type
 % 10 # length
@@ -132,20 +132,20 @@ stdout of test 'strings` in directory 'sql/test/pg_regress` itself:
 [ "3"	]
 [ ""	]
 #SELECT CAST('namefield' AS char(10)) AS "char(name)";
-% .L3 # table_name
+% . # table_name
 % char(name) # name
 % char # type
 % 10 # length
 [ "namefield"	]
 #SELECT CAST(f1 AS varchar(1)) AS "varchar(text)" FROM TEXT_TBL;
-% sys.L3 # table_name
+% sys. # table_name
 % varchar(text) # name
 % varchar # type
 % 1 # length
 [ "d"	]
 [ "h"	]
 #SELECT CAST(f1 AS varchar(1)) AS "varchar(char)" FROM CHAR_TBL;
-% sys.L3 # table_name
+% sys. # table_name
 % varchar(char) # name
 % varchar # type
 % 1 # length
@@ -156,7 +156,7 @@ stdout of test 'strings` in directory 'sql/test/pg_regress` itself:
 [ "3"	]
 [ ""	]
 #SELECT CAST('namefield' AS string) AS "varchar(name)";
-% .L3 # table_name
+% . # table_name
 % varchar(name) # name
 % char # type
 % 9 # length
@@ -165,391 +165,391 @@ stdout of test 'strings` in directory 'sql/test/pg_regress` itself:
 #DROP TABLE VARCHAR_TBL;
 #DROP TABLE TEXT_TBL;
 #SELECT TRIM('  bunch o blanks  ') = 'bunch o blanks' AS "bunch o blanks";
-% .L2 # table_name
+% . # table_name
 % "bunch o blanks" # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT LTRIM('  bunch o blanks  ') = 'bunch o blanks  ' AS "bunch o blanks  ";
-% .L2 # table_name
+% . # table_name
 % "bunch o blanks  " # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT RTRIM('  bunch o blanks  ') = '  bunch o blanks' AS "  bunch o blanks";
-% .L2 # table_name
+% . # table_name
 % "  bunch o blanks" # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT TRIM(replace('xxxxxsome Xsxxxxx', 'x', ' ')) = 'some Xs' AS "some Xs";
-% .L2 # table_name
+% . # table_name
 % "some Xs" # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT SUBSTRING('1234567890' FROM 3) = '34567890' AS "34567890";
-% .L2 # table_name
+% . # table_name
 % 34567890 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT SUBSTRING('1234567890' FROM 4 FOR 3) = '456' AS "456";
-% .L2 # table_name
+% . # table_name
 % 456 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT POSITION('4' IN '1234567890') = '4' AS "4";
-% .L2 # table_name
+% . # table_name
 % 4 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT POSITION(5 IN '1234567890') = '5' AS "5";
-% .L2 # table_name
+% . # table_name
 % 5 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT 'hawkeye' LIKE 'h%' AS "true";
-% .L2 # table_name
+% . # table_name
 % true # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT 'hawkeye' NOT LIKE 'h%' AS "false";
-% .L2 # table_name
+% . # table_name
 % false # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT 'hawkeye' LIKE 'H%' AS "false";
-% .L2 # table_name
+% . # table_name
 % false # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT 'hawkeye' NOT LIKE 'H%' AS "true";
-% .L2 # table_name
+% . # table_name
 % true # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT 'hawkeye' LIKE 'indio%' AS "false";
-% .L2 # table_name
+% . # table_name
 % false # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT 'hawkeye' NOT LIKE 'indio%' AS "true";
-% .L2 # table_name
+% . # table_name
 % true # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT 'hawkeye' LIKE 'h%eye' AS "true";
-% .L2 # table_name
+% . # table_name
 % true # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT 'hawkeye' NOT LIKE 'h%eye' AS "false";
-% .L2 # table_name
+% . # table_name
 % false # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT 'indio' LIKE '_ndio' AS "true";
-% .L2 # table_name
+% . # table_name
 % true # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT 'indio' NOT LIKE '_ndio' AS "false";
-% .L2 # table_name
+% . # table_name
 % false # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT 'indio' LIKE 'in__o' AS "true";
-% .L2 # table_name
+% . # table_name
 % true # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT 'indio' NOT LIKE 'in__o' AS "false";
-% .L2 # table_name
+% . # table_name
 % false # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT 'indio' LIKE 'in_o' AS "false";
-% .L2 # table_name
+% . # table_name
 % false # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT 'indio' NOT LIKE 'in_o' AS "true";
-% .L2 # table_name
+% . # table_name
 % true # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT 'hawkeye' LIKE 'h%' ESCAPE '#' AS "true";
-% .L2 # table_name
+% . # table_name
 % true # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT 'hawkeye' NOT LIKE 'h%' ESCAPE '#' AS "false";
-% .L2 # table_name
+% . # table_name
 % false # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT 'indio' LIKE 'ind_o' ESCAPE '$' AS "true";
-% .L2 # table_name
+% . # table_name
 % true # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT 'indio' NOT LIKE 'ind_o' ESCAPE '$' AS "false";
-% .L2 # table_name
+% . # table_name
 % false # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT 'h%' LIKE 'h#%' ESCAPE '#' AS "true";
-% .L2 # table_name
+% . # table_name
 % true # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT 'h%' NOT LIKE 'h#%' ESCAPE '#' AS "false";
-% .L2 # table_name
+% . # table_name
 % false # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT 'h%wkeye' LIKE 'h#%' ESCAPE '#' AS "false";
-% .L2 # table_name
+% . # table_name
 % false # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT 'h%wkeye' NOT LIKE 'h#%' ESCAPE '#' AS "true";
-% .L2 # table_name
+% . # table_name
 % true # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT 'h%wkeye' LIKE 'h#%%' ESCAPE '#' AS "true";
-% .L2 # table_name
+% . # table_name
 % true # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT 'h%wkeye' NOT LIKE 'h#%%' ESCAPE '#' AS "false";
-% .L2 # table_name
+% . # table_name
 % false # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT 'h%awkeye' LIKE 'h#%a%k%e' ESCAPE '#' AS "true";
-% .L2 # table_name
+% . # table_name
 % true # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT 'h%awkeye' NOT LIKE 'h#%a%k%e' ESCAPE '#' AS "false";
-% .L2 # table_name
+% . # table_name
 % false # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT 'indio' LIKE '_ndio' ESCAPE '$' AS "true";
-% .L2 # table_name
+% . # table_name
 % true # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT 'indio' NOT LIKE '_ndio' ESCAPE '$' AS "false";
-% .L2 # table_name
+% . # table_name
 % false # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT 'i_dio' LIKE 'i$_d_o' ESCAPE '$' AS "true";
-% .L2 # table_name
+% . # table_name
 % true # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT 'i_dio' NOT LIKE 'i$_d_o' ESCAPE '$' AS "false";
-% .L2 # table_name
+% . # table_name
 % false # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT 'i_dio' LIKE 'i$_nd_o' ESCAPE '$' AS "false";
-% .L2 # table_name
+% . # table_name
 % false # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT 'i_dio' NOT LIKE 'i$_nd_o' ESCAPE '$' AS "true";
-% .L2 # table_name
+% . # table_name
 % true # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT 'i_dio' LIKE 'i$_d%o' ESCAPE '$' AS "true";
-% .L2 # table_name
+% . # table_name
 % true # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT 'i_dio' NOT LIKE 'i$_d%o' ESCAPE '$' AS "false";
-% .L2 # table_name
+% . # table_name
 % false # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT 'maca' LIKE 'm%aca' ESCAPE '%' AS "true";
-% .L2 # table_name
+% . # table_name
 % true # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT 'maca' NOT LIKE 'm%aca' ESCAPE '%' AS "false";
-% .L2 # table_name
+% . # table_name
 % false # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT 'ma%a' LIKE 'm%a%%a' ESCAPE '%' AS "true";
-% .L2 # table_name
+% . # table_name
 % true # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT 'ma%a' NOT LIKE 'm%a%%a' ESCAPE '%' AS "false";
-% .L2 # table_name
+% . # table_name
 % false # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT 'bear' LIKE 'b_ear' ESCAPE '_' AS "true";
-% .L2 # table_name
+% . # table_name
 % true # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT 'bear' NOT LIKE 'b_ear' ESCAPE '_' AS "false";
-% .L2 # table_name
+% . # table_name
 % false # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT 'be_r' LIKE 'b_e__r' ESCAPE '_' AS "true";
-% .L2 # table_name
+% . # table_name
 % true # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT 'be_r' NOT LIKE 'b_e__r' ESCAPE '_' AS "false";
-% .L2 # table_name
+% . # table_name
 % false # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT 'be_r' LIKE '__e__r' ESCAPE '_' AS "false";
-% .L2 # table_name
+% . # table_name
 % false # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT 'be_r' NOT LIKE '__e__r' ESCAPE '_' AS "true";
-% .L2 # table_name
+% . # table_name
 % true # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT 'hawkeye' ILIKE 'h%' AS "true";
-% .L2 # table_name
+% . # table_name
 % true # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT 'hawkeye' NOT ILIKE 'h%' AS "false";
-% .L2 # table_name
+% . # table_name
 % false # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT 'hawkeye' ILIKE 'H%' AS "true";
-% .L2 # table_name
+% . # table_name
 % true # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT 'hawkeye' NOT ILIKE 'H%' AS "false";
-% .L2 # table_name
+% . # table_name
 % false # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT 'hawkeye' ILIKE 'H%Eye' AS "true";
-% .L2 # table_name
+% . # table_name
 % true # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT 'hawkeye' NOT ILIKE 'H%Eye' AS "false";
-% .L2 # table_name
+% . # table_name
 % false # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT 'Hawkeye' ILIKE 'h%' AS "true";
-% .L2 # table_name
+% . # table_name
 % true # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT 'Hawkeye' NOT ILIKE 'h%' AS "false";
-% .L2 # table_name
+% . # table_name
 % false # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT 'unknown' || ' and unknown' AS "Concat unknown types";
-% .L2 # table_name
+% . # table_name
 % "Concat unknown types" # name
 % varchar # type
 % 19 # length
 [ "unknown and unknown" ]
 #SELECT cast('text' as text) || ' and unknown' AS "Concat text to unknown type";
-% .L3 # table_name
+% . # table_name
 % "Concat text to unknown type" # name
 % varchar # type
 % 16 # length
 [ "text and unknown" ]
 #SELECT cast('characters' as char(20)) || ' and text' AS "Concat char to unknown type";
-% .L3 # table_name
+% . # table_name
 % "Concat char to unknown type" # name
 % varchar # type
 % 19 # length
 [ "characters and text" ]
 #SELECT cast('text' as text) || cast(' and characters' as char(20)) AS "Concat text to char";
-% .L4 # table_name
+% . # table_name
 % "Concat text to char" # name
 % varchar # type
 % 19 # length
 [ "text and characters" ]
 #SELECT cast('text' as text) || cast(' and varchar' as varchar(20)) AS "Concat text to varchar";
-% .L4 # table_name
+% . # table_name
 % "Concat text to varchar" # name
 % varchar # type
 % 16 # length
@@ -573,8 +573,8 @@ stdout of test 'strings` in directory 'sql/test/pg_regress` itself:
 #insert into toasttest values(repeat('1234567890',10000));
 [ 1 ]
 #SELECT substring(f1, -1, 5) from toasttest;
-% sys.L2 # table_name
-% L2 # name
+% sys. # table_name
+% %1 # name
 % clob # type
 % 5 # length
 [ "12345"	]
@@ -582,8 +582,8 @@ stdout of test 'strings` in directory 'sql/test/pg_regress` itself:
 [ "12345"	]
 [ "12345"	]
 #SELECT substring(f1, 5, -1) from toasttest;
-% sys.L2 # table_name
-% L2 # name
+% sys. # table_name
+% %1 # name
 % clob # type
 % 0 # length
 [ ""	]
@@ -591,8 +591,8 @@ stdout of test 'strings` in directory 'sql/test/pg_regress` itself:
 [ ""	]
 [ ""	]
 #SELECT substring(f1, 99995) from toasttest;
-% sys.L2 # table_name
-% L2 # name
+% sys. # table_name
+% %1 # name
 % varchar # type
 % 6 # length
 [ "567890"	]
@@ -600,8 +600,8 @@ stdout of test 'strings` in directory 'sql/test/pg_regress` itself:
 [ "567890"	]
 [ "567890"	]
 #SELECT substring(f1, 99995, 10) from toasttest;
-% sys.L2 # table_name
-% L2 # name
+% sys. # table_name
+% %1 # name
 % clob # type
 % 6 # length
 [ "567890"	]
@@ -615,29 +615,29 @@ stdout of test 'strings` in directory 'sql/test/pg_regress` itself:
 #insert into toasttest values(decode(repeat('1234567890',10000),'escape'));
 [ 1 ]
 #SELECT substring(f1, -1, 5) from toasttest;
-% sys.L2 # table_name
-% L2 # name
+% sys. # table_name
+% %1 # name
 % clob # type
 % 5 # length
 [ "12345"	]
 [ "12345"	]
 #SELECT substring(f1, 5, -1) from toasttest;
-% sys.L2 # table_name
-% L2 # name
+% sys. # table_name
+% %1 # name
 % clob # type
 % 0 # length
 [ ""	]
 [ ""	]
 #SELECT substring(f1, 99995) from toasttest;
-% sys.L2 # table_name
-% L2 # name
+% sys. # table_name
+% %1 # name
 % clob # type
 % 6 # length
 [ "567890"	]
 [ "567890"	]
 #SELECT substring(f1, 99995, 10) from toasttest;
-% sys.L2 # table_name
-% L2 # name
+% sys. # table_name
+% %1 # name
 % clob # type
 % 6 # length
 [ "567890"	]
@@ -647,19 +647,19 @@ stdout of test 'strings` in directory 'sql/test/pg_regress` itself:
 #-- test length
 #--
 #SELECT length('abcdef') AS "length_6";
-% .L2 # table_name
+% . # table_name
 % length_6 # name
 % int # type
 % 1 # length
 [ 6 ]
 #SELECT locate('cd', 'abcdef') AS "pos_3";
-% .L2 # table_name
+% . # table_name
 % pos_3 # name
 % int # type
 % 1 # length
 [ 3 ]
 #SELECT locate('xy', 'abcdef') AS "pos_0";
-% .L2 # table_name
+% . # table_name
 % pos_0 # name
 % int # type
 % 1 # length
@@ -669,89 +669,89 @@ stdout of test 'strings` in directory 'sql/test/pg_regress` itself:
 #-- test replace
 #--
 #SELECT replace('abcdef', 'de', '45') AS "abc45f";
-% .L2 # table_name
+% . # table_name
 % abc45f # name
 % varchar # type
 % 6 # length
 [ "abc45f" ]
 
 #SELECT replace('yabadabadoo', 'ba', '123') AS "ya123da123doo";
-% .L2 # table_name
+% . # table_name
 % ya123da123doo # name
 % varchar # type
 % 13 # length
 [ "ya123da123doo" ]
 
 #SELECT replace('yabadoo', 'bad', '') AS "yaoo";
-% .L2 # table_name
+% . # table_name
 % yaoo # name
 % varchar # type
 % 4 # length
 [ "yaoo" ]
 
 #select split_part('joeuser@mydatabase','@',1) AS "joeuser";
-% .L2 # table_name
+% . # table_name
 % joeuser # name
 % clob # type
 % 7 # length
 [ "joeuser"     ]
 #select split_part('joeuser@mydatabase','@',2) AS "mydatabase";
-% .L2 # table_name
+% . # table_name
 % mydatabase # name
 % clob # type
 % 10 # length
 [ "mydatabase"  ]
 #select split_part('joeuser@mydatabase','@',3) AS "empty string";
-% .L2 # table_name
+% . # table_name
 % "empty string" # name
 % clob # type
 % 0 # length
 [ ""    ]
 #select split_part('@joeuser@mydatabase@','@',2) AS "joeuser";
-% .L2 # table_name
+% . # table_name
 % joeuser # name
 % clob # type
 % 7 # length
 [ "joeuser"     ]
 
 #select md5('') = 'd41d8cd98f00b204e9800998ecf8427e' AS "TRUE";
-% .L2 # table_name
+% . # table_name
 % TRUE # name
 % boolean # type
 % 5 # length
 [ true	]
 #select md5('a') = '0cc175b9c0f1b6a831c399e269772661' AS "TRUE";
-% .L2 # table_name
+% . # table_name
 % TRUE # name
 % boolean # type
 % 5 # length
 [ true	]
 #select md5('abc') = '900150983cd24fb0d6963f7d28e17f72' AS "TRUE";
-% .L2 # table_name
+% . # table_name
 % TRUE # name
 % boolean # type
 % 5 # length
 [ true	]
 #select md5('message digest') = 'f96b697d7cb7938d525a2f31aaf161d0' AS "TRUE";
-% .L2 # table_name
+% . # table_name
 % TRUE # name
 % boolean # type
 % 5 # length
 [ true	]
 #select md5('abcdefghijklmnopqrstuvwxyz') = 'c3fcd3d76192e4007dfb496cca67e13b' AS "TRUE";
-% .L2 # table_name
+% . # table_name
 % TRUE # name
 % boolean # type
 % 5 # length
 [ true	]
 #select md5('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789') = 'd174ab98d277d9f5a5611c2c9f419d9f' AS "TRUE";
-% .L2 # table_name
+% . # table_name
 % TRUE # name
 % boolean # type
 % 5 # length
 [ true	]
 #select md5('12345678901234567890123456789012345678901234567890123456789012345678901234567890') = '57edf4a22be3c955ac49da2e2107b67a' AS "TRUE";
-% .L2 # table_name
+% . # table_name
 % TRUE # name
 % boolean # type
 % 5 # length

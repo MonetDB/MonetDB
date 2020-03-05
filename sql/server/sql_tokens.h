@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #ifndef SQL_TOKENS_H
@@ -30,6 +30,7 @@ typedef enum tokens {
 	SQL_CHECK,
 	SQL_COALESCE,
 	SQL_COLUMN,
+	SQL_COLUMN_GROUP,
 	SQL_COLUMN_OPTIONS,
 	SQL_COMMENT,
 	SQL_COMPARE,
@@ -49,6 +50,7 @@ typedef enum tokens {
 	SQL_CREATE_USER,
 	SQL_CREATE_VIEW,
 	SQL_CROSS,
+	SQL_CUBE,
 	SQL_CURRENT_ROW,
 	SQL_CYCLE,
 	SQL_DECLARE,
@@ -82,6 +84,7 @@ typedef enum tokens {
 	SQL_GRANT,
 	SQL_GRANT_ROLES,
 	SQL_GROUPBY,
+	SQL_GROUPING_SETS,
 	SQL_IDENT,
 	SQL_IF,
 	SQL_IN,
@@ -133,8 +136,8 @@ typedef enum tokens {
 	SQL_RETURN,
 	SQL_REVOKE,
 	SQL_REVOKE_ROLES,
+	SQL_ROLLUP,
 	SQL_ROUTINE,
-	SQL_SAMPLE,
 	SQL_SCHEMA,
 	SQL_SELECT,
 	SQL_SEQUENCE,
@@ -179,8 +182,7 @@ typedef enum jt {
 	jt_inner = 0,
 	jt_left = 1,
 	jt_right = 2,
-	jt_full = 3,
-	jt_union = 4
+	jt_full = 3
 } jt;
 
 #endif

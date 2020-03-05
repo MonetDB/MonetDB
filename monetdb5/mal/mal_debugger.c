@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -292,11 +292,7 @@ mdbInit(void)
 	 * space in each instruction.
 	 */
 	mdbTable = GDKzalloc(sizeof(mdbStateRecord) * MAL_MAXCLIENTS);
-	if (mdbTable == NULL) {
-		fprintf(stderr,"#mdbInit:" MAL_MALLOC_FAIL);
-		return false;
-	}
-	return true;
+	return mdbTable != NULL;
 }
 
 void
@@ -657,7 +653,7 @@ retryRead:
 		c = strchr(b, '\n');
 		if (c) {
 			*c = 0;
-			strncpy(oldcmd, b, 1023);
+			strcpy_len(oldcmd, b, sizeof(oldcmd));
 			cntxt->fdin->pos += (c - b) + 1;
 		} else
 			cntxt->fdin->pos = cntxt->fdin->len;
@@ -693,7 +689,11 @@ retryRead:
 					for(; fs; fs = fs->peer){ 
 						for(i=0; i< fs->def->stop; i++)
 							fs->def->stmt[i]->typechk = TYPE_UNKNOWN;
-						chkProgram(cntxt->usermodule, fs->def);
+						msg = chkProgram(cntxt->usermodule, fs->def);
+						if( msg != MAL_SUCCEED){
+							mnstr_printf(out, "#<modnme>.<fcnnme> contains errors: %s\n", msg);
+							freeException(msg);
+						}
 					}
 				} else
 					mnstr_printf(out, "#<modnme>.<fcnnme> expected\n");
@@ -944,7 +944,7 @@ retryRead:
 		case 'd':
 			if (strncmp(b, "debug", 5) == 0) {
 				skipWord(cntxt, b);
-				GDKdebug = atol(b);
+				GDKsetdebug(atoi(b));
 				mnstr_printf(out, "#Set debug mask to %d\n", GDKdebug);
 				break;
 			}

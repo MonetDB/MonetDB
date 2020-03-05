@@ -39,7 +39,7 @@ stdout of test 'LE_vs_GE_in_CASE.SF-2562264` in directory 'sql/test/BugTracker-2
 #select 13 as x
 #) sub
 #;
-% .sub,	.L32 # table_name
+% .sub,	. # table_name
 % x,	log # name
 % tinyint,	tinyint # type
 % 2,	1 # length
@@ -59,7 +59,7 @@ stdout of test 'LE_vs_GE_in_CASE.SF-2562264` in directory 'sql/test/BugTracker-2
 #select 13 as x
 #) sub
 #;
-% .sub,	.L32 # table_name
+% .sub,	. # table_name
 % x,	log # name
 % tinyint,	tinyint # type
 % 2,	1 # length
@@ -79,7 +79,7 @@ stdout of test 'LE_vs_GE_in_CASE.SF-2562264` in directory 'sql/test/BugTracker-2
 #select 13 as x
 #) sub
 #;
-% .sub,	.L32 # table_name
+% .sub,	. # table_name
 % x,	log # name
 % tinyint,	tinyint # type
 % 2,	1 # length
@@ -99,7 +99,7 @@ stdout of test 'LE_vs_GE_in_CASE.SF-2562264` in directory 'sql/test/BugTracker-2
 #select 13 as x
 #) sub
 #;
-% .sub,	.L32 # table_name
+% .sub,	. # table_name
 % x,	log # name
 % tinyint,	tinyint # type
 % 2,	1 # length
@@ -119,7 +119,7 @@ stdout of test 'LE_vs_GE_in_CASE.SF-2562264` in directory 'sql/test/BugTracker-2
 #select 13 as x
 #) sub
 #;
-% .sub,	.L32 # table_name
+% .sub,	. # table_name
 % x,	log # name
 % tinyint,	tinyint # type
 % 2,	1 # length

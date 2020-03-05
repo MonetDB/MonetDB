@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -37,7 +37,7 @@ MNDBTables(ODBCStmt *stmt,
 	   SQLCHAR *TableType, SQLSMALLINT NameLength4)
 {
 	RETCODE rc;
-	char *cat = NULL, *sch = NULL, *tab = NULL;
+	char *sch = NULL, *tab = NULL;
 
 	/* buffer for the constructed query to do meta data retrieval */
 	char *query = NULL;
@@ -55,14 +55,10 @@ MNDBTables(ODBCStmt *stmt,
 
 #ifdef ODBCDEBUG
 	ODBCLOG("\"%.*s\" \"%.*s\" \"%.*s\" \"%.*s\"\n",
-		(int) NameLength1,
-		CatalogName ? (char *) CatalogName : "",
-		(int) NameLength2,
-		SchemaName ? (char *) SchemaName : "",
-		(int) NameLength3,
-		TableName ? (char *) TableName : "",
-		(int) NameLength4,
-		TableType ? (char *) TableType : "");
+		(int) NameLength1, CatalogName ? (char *) CatalogName : "",
+		(int) NameLength2, SchemaName ? (char *) SchemaName : "",
+		(int) NameLength3, TableName ? (char *) TableName : "",
+		(int) NameLength4, TableType ? (char *) TableType : "");
 #endif
 
 	/* SQLTables returns a table with the following columns:
@@ -117,13 +113,6 @@ MNDBTables(ODBCStmt *stmt,
 		char *query_end;
 
 		if (stmt->Dbc->sql_attr_metadata_id == SQL_FALSE) {
-			if (NameLength1 > 0) {
-				cat = ODBCParsePV("e", "value",
-						  (const char *) CatalogName,
-						  (size_t) NameLength1);
-				if (cat == NULL)
-					goto nomem;
-			}
 			if (NameLength2 > 0) {
 				sch = ODBCParsePV("s", "name",
 						  (const char *) SchemaName,
@@ -139,13 +128,6 @@ MNDBTables(ODBCStmt *stmt,
 					goto nomem;
 			}
 		} else {
-			if (NameLength1 > 0) {
-				cat = ODBCParseID("e", "value",
-						  (const char *) CatalogName,
-						  (size_t) NameLength1);
-				if (cat == NULL)
-					goto nomem;
-			}
 			if (NameLength2 > 0) {
 				sch = ODBCParseID("s", "name",
 						  (const char *) SchemaName,
@@ -163,24 +145,25 @@ MNDBTables(ODBCStmt *stmt,
 		}
 
 		/* construct the query now */
-		query = (char *) malloc(2000 + (cat ? strlen(cat) : 0) + (sch ? strlen(sch) : 0) + (tab ? strlen(tab) : 0) + ((NameLength4 + 1) / 5) * 67);
+		query = (char *) malloc(2000 + strlen(stmt->Dbc->dbname) +
+					(sch ? strlen(sch) : 0) + (tab ? strlen(tab) : 0) +
+					((NameLength4 + 1) / 5) * 67);
 		if (query == NULL)
 			goto nomem;
 		query_end = query;
 
 		sprintf(query_end,
-		       "select e.value as table_cat, "
+		       "select '%s' as table_cat, "
 			      "s.name as table_schem, "
 			      "t.name as table_name, "
 		              "tt.table_type_name as table_type, "
 			      "%s as remarks "
 		       "from sys.schemas s, "
 			    "sys.tables t%s, "
-		            "sys.table_types tt, "
-			    "sys.env() e "
+		            "sys.table_types tt "
 		       "where s.id = t.schema_id and "
-		             "t.type = tt.table_type_id and "
-			     "e.name = 'gdk_dbname'",
+		             "t.type = tt.table_type_id",
+			stmt->Dbc->dbname,
 			stmt->Dbc->has_comment ? "c.remark" : "cast(null as varchar(1))",
 			stmt->Dbc->has_comment ? " left outer join sys.comments c on c.id = t.id" : "");
 		assert(strlen(query) < 1900);
@@ -190,11 +173,13 @@ MNDBTables(ODBCStmt *stmt,
 		   variable selection condition dynamically */
 
 		/* Construct the selection condition query part */
-		if (cat) {
+		if (NameLength1 > 0 && CatalogName != NULL) {
 			/* filtering requested on catalog name */
-			sprintf(query_end, " and %s", cat);
-			query_end += strlen(query_end);
-			free(cat);
+			if (strcmp((char *) CatalogName, stmt->Dbc->dbname) != 0) {
+				/* catalog name does not match the database name, so return no rows */
+				sprintf(query_end, " and 1=2");
+				query_end += strlen(query_end);
+			}
 		}
 		if (sch) {
 			/* filtering requested on schema name */
@@ -245,13 +230,11 @@ MNDBTables(ODBCStmt *stmt,
 		}
 
 		/* add the ordering */
-		strcpy(query_end,
-		       " order by table_type, table_schem, table_name");
+		strcpy(query_end, " order by table_type, table_schem, table_name");
 		query_end += strlen(query_end);
 	}
 
 	/* query the MonetDB data dictionary tables */
-
 	rc = MNDBExecDirect(stmt, (SQLCHAR *) query, SQL_NTS);
 
 	free(query);
@@ -259,8 +242,6 @@ MNDBTables(ODBCStmt *stmt,
 	return rc;
 
   nomem:
-	if (cat)
-		free(cat);
 	if (sch)
 		free(sch);
 	if (tab)

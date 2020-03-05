@@ -29,8 +29,8 @@ stdout of test 'decimal_cast_in_view.SF-2075223` in directory 'sql/test/BugTrack
 % 10 # length
 [ " 54."	]
 #select CAST (a as NUMERIC (5, 2)) from A;
-% sys.L2 # table_name
-% L2 # name
+% sys.a # table_name
+% a # name
 % decimal # type
 % 7 # length
 [ 54.00	]

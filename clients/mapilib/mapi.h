@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #ifndef _MAPI_H_INCLUDED
@@ -13,27 +13,7 @@
 #include <stdint.h>		/* for int64_t */
 #include <stdbool.h>		/* for bool */
 
-#define MAPI_AUTO	0	/* automatic type detection */
-#define MAPI_TINY	1
-#define MAPI_UTINY	2
-#define MAPI_SHORT	3
-#define MAPI_USHORT	4
-#define MAPI_INT	5
-#define MAPI_UINT	6
-#define MAPI_LONG	7
-#define MAPI_ULONG	8
-#define MAPI_LONGLONG	9
-#define MAPI_ULONGLONG	10
-#define MAPI_CHAR	11
-#define MAPI_VARCHAR	12
-#define MAPI_FLOAT	13
-#define MAPI_DOUBLE	14
-#define MAPI_DATE	15
-#define MAPI_TIME	16
-#define MAPI_DATETIME	17
-#define MAPI_NUMERIC	18
-
-#define PLACEHOLDER	'?'
+#include "mapi_querytype.h"
 
 #define MAPI_SEEK_SET	0
 #define MAPI_SEEK_CUR	1
@@ -47,12 +27,6 @@ typedef int MapiMsg;
 #define MMORE		(-3)
 #define MSERVER		(-4)
 
-/* prompts for MAPI protocol, also in monetdb_config.h.in */
-#define PROMPTBEG	'\001'	/* start prompt bracket */
-#define PROMPT1		"\001\001\n"	/* prompt: ready for new query */
-#define PROMPT2		"\001\002\n"	/* prompt: more data needed */
-#define PROMPT3		"\001\003\n"	/* prompt: get file content */
-
 /*
  * The table field information is extracted from the table headers
  * obtained from the server. This list may be extended in the future.
@@ -61,17 +35,6 @@ typedef int MapiMsg;
  * automatic type coercion between back-end and application.
  */
 typedef struct MapiStruct *Mapi;
-
-/* this definition is a straight copy from sql/include/sql_query.h */
-typedef enum sql_query_t {
-	Q_PARSE = 0,
-	Q_TABLE = 1,
-	Q_UPDATE = 2,
-	Q_SCHEMA = 3,
-	Q_TRANS = 4,
-	Q_PREPARE = 5,
-	Q_BLOCK = 6
-} sql_query_t;
 
 typedef struct MapiStatement *MapiHdl;
 
@@ -89,31 +52,6 @@ extern "C" {
 #else
 #define mapi_export extern
 #endif
-
-/* three structures used for communicating date/time information */
-/* these structs are deliberately compatible with the ODBC versions
-   SQL_DATE_STRUCT, SQL_TIME_STRUCT, and SQL_TIMESTAMP_STRUCT */
-typedef struct {		/* used by MAPI_DATE */
-	short year;
-	unsigned short month;
-	unsigned short day;
-} MapiDate;
-
-typedef struct {		/* used by MAPI_TIME */
-	unsigned short hour;
-	unsigned short minute;
-	unsigned short second;
-} MapiTime;
-
-typedef struct {		/* used by MAPI_DATETIME */
-	short year;
-	unsigned short month;
-	unsigned short day;
-	unsigned short hour;
-	unsigned short minute;
-	unsigned short second;
-	unsigned int fraction;	/* in 1000 millionths of a second (10e-9) */
-} MapiDateTime;
 
 /* connection-oriented functions */
 mapi_export Mapi mapi_mapi(const char *host, int port, const char *username, const char *password, const char *lang, const char *dbname);

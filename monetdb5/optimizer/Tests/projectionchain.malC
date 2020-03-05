@@ -75,5 +75,6 @@ end qry;
 
 mdb.list("user","qry");
 optimizer.projectionpath("user","qry");
+optimizer.garbageCollector("user","qry");
 mdb.list("user","qry");
 qry();

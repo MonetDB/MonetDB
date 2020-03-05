@@ -25,8 +25,8 @@ stdout of test 'operator-priority.Bug-3686` in directory 'sql/test/BugTracker-20
 # 14:43:25 >  
 
 #select 12*5/3;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% %1 # name
 % tinyint # type
 % 2 # length
 [ 20	]

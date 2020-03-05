@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -79,6 +79,8 @@ static BAT *QLOG_calls_result = 0;
 static BAT *QLOG_calls_cpuload = 0;
 static BAT *QLOG_calls_iowait = 0;
 
+static MT_Lock QLOGlock = MT_LOCK_INITIALIZER("QLOGlock");
+
 str
 QLOGcatalog(BAT **r)
 {
@@ -90,7 +92,7 @@ QLOGcatalog(BAT **r)
 	msg = initQlog();
 	if( msg)
 		return msg;
-	MT_lock_set(&mal_profileLock);
+	MT_lock_set(&QLOGlock);
 	r[0] = COLcopy(QLOG_cat_id, QLOG_cat_id->ttype, false, TRANSIENT);
 	r[1] = COLcopy(QLOG_cat_user, QLOG_cat_user->ttype,false, TRANSIENT);
 	r[2] = COLcopy(QLOG_cat_defined, QLOG_cat_defined->ttype,false, TRANSIENT);
@@ -99,7 +101,7 @@ QLOGcatalog(BAT **r)
 	r[5] = COLcopy(QLOG_cat_plan, QLOG_cat_plan->ttype,false, TRANSIENT);
 	r[6] = COLcopy(QLOG_cat_mal, QLOG_cat_mal->ttype,false, TRANSIENT);
 	r[7] = COLcopy(QLOG_cat_optimize, QLOG_cat_optimize->ttype,false, TRANSIENT);
-	MT_lock_unset(&mal_profileLock);
+	MT_lock_unset(&QLOGlock);
 	for ( i = 0; i< 8; i++)
 		cnt += r[i] != 0;
 	if( cnt != 8){
@@ -111,7 +113,7 @@ QLOGcatalog(BAT **r)
 	}
 	if( r[0])
 		return MAL_SUCCEED;
-	throw(MAL,"catalog_queries", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	throw(MAL,"catalog_queries", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
 
 str
@@ -125,7 +127,7 @@ QLOGcalls(BAT **r)
 	msg = initQlog();
 	if( msg)
 		return msg;
-	MT_lock_set(&mal_profileLock);
+	MT_lock_set(&QLOGlock);
 	r[0] = COLcopy(QLOG_calls_id, QLOG_calls_id->ttype, false, TRANSIENT);
 	r[1] = COLcopy(QLOG_calls_start, QLOG_calls_start->ttype,false, TRANSIENT);
 	r[2] = COLcopy(QLOG_calls_stop, QLOG_calls_stop->ttype,false, TRANSIENT);
@@ -135,7 +137,7 @@ QLOGcalls(BAT **r)
 	r[6] = COLcopy(QLOG_calls_result, QLOG_calls_result->ttype,false, TRANSIENT);
 	r[7] = COLcopy(QLOG_calls_cpuload, QLOG_calls_cpuload->ttype,false, TRANSIENT);
 	r[8] = COLcopy(QLOG_calls_iowait, QLOG_calls_iowait->ttype,false, TRANSIENT);
-	MT_lock_unset(&mal_profileLock);
+	MT_lock_unset(&QLOGlock);
 	for ( i = 0; i< 9; i++)
 		cnt += r[i] != 0;
 	if( cnt != 9){
@@ -147,7 +149,7 @@ QLOGcalls(BAT **r)
 	}
 	if( r[0])
 		return MAL_SUCCEED;
-	throw(MAL,"catalog_calls", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	throw(MAL,"catalog_calls", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
 
 #define MAXCOMMITLIST 32
@@ -233,7 +235,7 @@ _initQlog(void)
 		QLOG_calls_tuples == NULL || QLOG_calls_exec == NULL || QLOG_calls_result == NULL ||
 		QLOG_calls_cpuload == NULL || QLOG_calls_iowait == NULL){
 			_QLOGcleanup();
-			throw(MAL,"querylog.init", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL,"querylog.init", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	QLOG_init = true;
@@ -248,9 +250,9 @@ initQlog(void)
 
 	if (QLOG_init)
 		return MAL_SUCCEED;	   /* already initialized */
-	MT_lock_set(&mal_profileLock);
+	MT_lock_set(&QLOGlock);
 	msg = _initQlog();
-	MT_lock_unset(&mal_profileLock);
+	MT_lock_unset(&QLOGlock);
 	return msg;
 }
 
@@ -300,7 +302,7 @@ QLOGempty(void *ret)
 	msg = initQlog();
 	if( msg)
 		return msg;
-	MT_lock_set(&mal_profileLock);
+	MT_lock_set(&QLOGlock);
 	/* drop all querylog tables */
 
 	BATclear(QLOG_cat_id,true);
@@ -323,7 +325,7 @@ QLOGempty(void *ret)
 	BATclear(QLOG_calls_iowait,true);
 
 	TMsubcommit_list(commitlist, committop);
-	MT_lock_unset(&mal_profileLock);
+	MT_lock_unset(&QLOGlock);
 	return MAL_SUCCEED;
 }
 
@@ -345,7 +347,7 @@ QLOGappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( msg)
 		return msg;
 	snprintf(buf,128,"%s.%s", getModuleId(sig), getFunctionId(sig));
-	MT_lock_set(&mal_profileLock);
+	MT_lock_set(&QLOGlock);
 	o = BUNfnd(QLOG_cat_id, &mb->tag);
 	if ( o == BUN_NONE){
 		*ret = mb->tag;
@@ -357,11 +359,11 @@ QLOGappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			BUNappend(QLOG_cat_optimize,&mb->optimize,false) != GDK_SUCCEED ||
 			BUNappend(QLOG_cat_user,*usr,false) != GDK_SUCCEED ||
 			BUNappend(QLOG_cat_defined,tick,false) != GDK_SUCCEED) {
-			MT_lock_unset(&mal_profileLock);
-			throw(MAL, "querylog.append", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			MT_lock_unset(&QLOGlock);
+			throw(MAL, "querylog.append", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 	}
-	MT_lock_unset(&mal_profileLock);
+	MT_lock_unset(&QLOGlock);
 	TMsubcommit_list(commitlist, committop);
 	return MAL_SUCCEED;
 }
@@ -409,7 +411,7 @@ QLOGcall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	if ( *xtime + *rtime < QLOGthreshold)
 		return MAL_SUCCEED;
-	MT_lock_set(&mal_profileLock);
+	MT_lock_set(&QLOGlock);
 	if (BUNappend(QLOG_calls_id,&mb->tag,false) != GDK_SUCCEED ||
 		BUNappend(QLOG_calls_start,tick1,false) != GDK_SUCCEED ||
 		BUNappend(QLOG_calls_stop,tick2,false) != GDK_SUCCEED ||
@@ -419,10 +421,10 @@ QLOGcall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BUNappend(QLOG_calls_result,rtime,false) != GDK_SUCCEED ||
 		BUNappend(QLOG_calls_cpuload,cpu,false) != GDK_SUCCEED ||
 		BUNappend(QLOG_calls_iowait,iowait,false) != GDK_SUCCEED) {
-		MT_lock_unset(&mal_profileLock);
-		throw(MAL, "querylog.call", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		MT_lock_unset(&QLOGlock);
+		throw(MAL, "querylog.call", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	MT_lock_unset(&mal_profileLock);
+	MT_lock_unset(&QLOGlock);
 	TMsubcommit_list(commitlist, committop);
 	return MAL_SUCCEED;
 }

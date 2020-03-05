@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -135,7 +135,11 @@ MNDBPrepare(ODBCStmt *stmt,
 		int concise_type;
 		int length, scale;
 
-		mapi_fetch_row(hdl);
+		if (mapi_fetch_row(hdl) == 0) {
+			/* Memory allocation error (or maybe something else) */
+			addStmtError(stmt, "HY001", 0, 0);
+			return SQL_ERROR;
+		}
 		if (ncols == 3 ||
 		    (s = mapi_fetch_field(hdl, 5)) == NULL) {
 			/* either old prepare (i.e. old server) or no

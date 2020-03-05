@@ -31,7 +31,7 @@ stdout of test 'with-between.Bug-2732` in directory 'sql/test/BugTracker-2010` i
 # where t1.p = 1
 #   and t2.p between (t1.p + 1) and (t1.p + t1.s)
 #   and t3.p between (t2.p + 1) and (t2.p + t2.s);
-% .L12,	.L14,	.L16 # table_name
+% .,	.,	. # table_name
 % p1,	p2,	p3 # name
 % tinyint,	tinyint,	tinyint # type
 % 1,	1,	1 # length
@@ -45,7 +45,7 @@ stdout of test 'with-between.Bug-2732` in directory 'sql/test/BugTracker-2010` i
 # where t1.p = 1
 #   and t2.p >= (t1.p + 1) and t2.p <= (t1.p + t1.s)
 #   and t3.p >= (t2.p + 1) and t3.p <= (t2.p + t2.s);
-% .L12,	.L14,	.L16 # table_name
+% .,	.,	. # table_name
 % p1,	p2,	p3 # name
 % tinyint,	tinyint,	tinyint # type
 % 1,	1,	1 # length

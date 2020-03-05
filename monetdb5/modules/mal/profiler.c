@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -127,6 +127,22 @@ CMDgetTrace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	throw(MAL, "getTrace", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING  "%s", path);
 }
+
+str
+CMDgetprofilerlimit(int *res)
+{
+	*res = getprofilerlimit();
+	return MAL_SUCCEED;
+}
+
+str
+CMDsetprofilerlimit(void *res, int *lim)
+{
+	(void) res;
+	setprofilerlimit(*lim);
+	return MAL_SUCCEED;
+}
+
 /*
  * Tracing an active system.
  */

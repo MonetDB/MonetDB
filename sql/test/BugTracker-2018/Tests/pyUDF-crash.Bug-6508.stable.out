@@ -76,8 +76,8 @@ stdout of test 'pyUDF-crash.Bug-6508` in directory 'sql/test/BugTracker-2018` it
 #insert into example ("column1") values (NULL);
 [ 1	]
 #select test_timestamp_with_nulls("column1") from example;
-% sys.L2 # table_name
-% L2 # name
+% sys. # table_name
+% %1 # name
 % clob # type
 % 36 # length
 [ "[\"2017-01-01 00:00:01.000000\", null]"	]

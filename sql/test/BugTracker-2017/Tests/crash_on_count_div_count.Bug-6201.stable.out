@@ -27,14 +27,14 @@ stdout of test 'crash_on_count_div_count.Bug-6201` in directory 'sql/test/BugTra
 #insert into t1 values (1);
 [ 1	]
 #select count(*) / (select count(*) from t1) as c2 from t1;
-% .L7 # table_name
+% . # table_name
 % c2 # name
 % bigint # type
 % 1 # length
 [ 1	]
 #select sum(c2) from (select count(*) / (select count(*) from t1) as c2 from t1) as t;
-% .L12 # table_name
-% L12 # name
+% .%3 # table_name
+% %3 # name
 % bigint # type
 % 1 # length
 [ 1	]

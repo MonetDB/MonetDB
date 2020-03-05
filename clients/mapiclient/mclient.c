@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /* The Mapi Client Interface
@@ -94,7 +94,6 @@ enum formatters {
 	TESTformatter,		// for testing, escape characters
 	TRASHformatter,		// remove the result set
 	ROWCOUNTformatter,	// only print the number of rows returned
-	SAMformatter,		// render a SAM result set
 	EXPANDEDformatter	// render as multi-row single record
 };
 static enum formatters formatter = NOformatter;
@@ -124,6 +123,8 @@ static timertype t0, t1;	/* used for timing */
 
 #ifdef HAVE_POPEN
 static char *pager = 0;		/* use external pager */
+#endif
+#ifdef HAVE_SIGACTION
 #include <signal.h>		/* to block SIGPIPE */
 #endif
 static int rowsperpage = 0;	/* for SQL pagination */
@@ -1324,83 +1325,6 @@ RAWrenderer(MapiHdl hdl)
 }
 
 static void
-SAMrenderer(MapiHdl hdl)
-{
-	/* Variables keeping track of which result set fields map to
-	 * qname, flag etc. (-1 means that it does not occur in result
-	 * set) */
-	int field_qname = -1;
-	int field_flag = -1;
-	int field_rname = -1;
-	int field_pos = -1;
-	int field_mapq = -1;
-	int field_cigar = -1;
-	int field_rnext = -1;
-	int field_pnext = -1;
-	int field_tlen = -1;
-	int field_seq = -1;
-	int field_qual = -1;
-
-	int field_count = mapi_get_field_count(hdl);
-	int t_fields;
-
-	int i;
-
-	/* First, initialize field variables properly */
-	for (i = 0; i < field_count; i++) {
-		char *field_name = mapi_get_name(hdl, i);
-		if (strcmp(field_name, "qname") == 0)
-			field_qname = i;
-		else if (strcmp(field_name, "flag" ) == 0)
-			field_flag  = i;
-		else if (strcmp(field_name, "rname") == 0)
-			field_rname = i;
-		else if (strcmp(field_name, "pos"  ) == 0)
-			field_pos   = i;
-		else if (strcmp(field_name, "mapq" ) == 0)
-			field_mapq  = i;
-		else if (strcmp(field_name, "cigar") == 0)
-			field_cigar = i;
-		else if (strcmp(field_name, "rnext") == 0)
-			field_rnext = i;
-		else if (strcmp(field_name, "pnext") == 0)
-			field_pnext = i;
-		else if (strcmp(field_name, "tlen" ) == 0)
-			field_tlen  = i;
-		else if (strcmp(field_name, "seq"  ) == 0)
-			field_seq   = i;
-		else if (strcmp(field_name, "qual" ) == 0)
-			field_qual  = i;
-		else
-			mnstr_printf(stderr_stream, "Unexpected column name in result set: '%s'. Data in this column is not used.\n", field_name);
-	}
-
-	/* Write all alignments */
-	while (!mnstr_errnr(toConsole) && (t_fields = fetch_row(hdl)) != 0) {
-		if (t_fields != field_count) {
-			mnstr_printf(stderr_stream,
-				     "invalid tuple received from server, "
-				     "got %d columns, expected %d, ignoring\n", t_fields, field_count);
-			continue;
-		}
-
-		/* Write fields to SAM line */
-		mnstr_printf(toConsole, "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
-			     (field_qname == -1 ? "*"   : mapi_fetch_field(hdl, field_qname)),
-			     (field_flag  == -1 ? "0"   : mapi_fetch_field(hdl, field_flag )),
-			     (field_rname == -1 ? "*"   : mapi_fetch_field(hdl, field_rname)),
-			     (field_pos   == -1 ? "0"   : mapi_fetch_field(hdl, field_pos  )),
-			     (field_mapq  == -1 ? "255" : mapi_fetch_field(hdl, field_mapq )),
-			     (field_cigar == -1 ? "*"   : mapi_fetch_field(hdl, field_cigar)),
-			     (field_rnext == -1 ? "*"   : mapi_fetch_field(hdl, field_rnext)),
-			     (field_pnext == -1 ? "0"   : mapi_fetch_field(hdl, field_pnext)),
-			     (field_tlen  == -1 ? "0"   : mapi_fetch_field(hdl, field_tlen )),
-			     (field_seq   == -1 ? "*"   : mapi_fetch_field(hdl, field_seq  )),
-			     (field_qual  == -1 ? "*"   : mapi_fetch_field(hdl, field_qual)));
-	}
-}
-
-static void
 SQLheader(MapiHdl hdl, int *len, int fields, char more)
 {
 	SQLseparator(len, fields, '-');
@@ -1770,8 +1694,6 @@ setFormatter(const char *s)
 		formatter = TRASHformatter;
 	} else if (strcmp(s, "rowcount") == 0) {
 		formatter = ROWCOUNTformatter;
-	} else if (strcmp(s, "sam") == 0) {
-		formatter = SAMformatter;
 	} else if (strcmp(s, "x") == 0 || strcmp(s, "expanded") == 0) {
 		formatter = EXPANDEDformatter;
 	} else {
@@ -1808,36 +1730,27 @@ start_pager(stream **saveFD)
 
 	if (pager) {
 		FILE *p;
-		struct sigaction act;
 
-		/* ignore SIGPIPE so that we get an error instead of signal */
-		act.sa_handler = SIG_IGN;
-		(void) sigemptyset(&act.sa_mask);
-		act.sa_flags = 0;
-		if(sigaction(SIGPIPE, &act, NULL) == -1) {
+		p = popen(pager, "w");
+		if (p == NULL)
 			fprintf(stderr, "Starting '%s' failed\n", pager);
-		} else {
-			p = popen(pager, "w");
-			if (p == NULL)
+		else {
+			*saveFD = toConsole;
+			/* put | in name to indicate that file should be closed with pclose */
+			if ((toConsole = file_wastream(p, "|pager")) == NULL) {
+				toConsole = *saveFD;
+				*saveFD = NULL;
 				fprintf(stderr, "Starting '%s' failed\n", pager);
-			else {
-				*saveFD = toConsole;
-				/* put | in name to indicate that file should be closed with pclose */
-				if ((toConsole = file_wastream(p, "|pager")) == NULL) {
+			}
+#ifdef HAVE_ICONV
+			if (encoding != NULL) {
+				if ((toConsole = iconv_wstream(toConsole, encoding, "pager")) == NULL) {
 					toConsole = *saveFD;
 					*saveFD = NULL;
 					fprintf(stderr, "Starting '%s' failed\n", pager);
 				}
-#ifdef HAVE_ICONV
-				if (encoding != NULL) {
-					if ((toConsole = iconv_wstream(toConsole, encoding, "pager")) == NULL) {
-						toConsole = *saveFD;
-						*saveFD = NULL;
-						fprintf(stderr, "Starting '%s' failed\n", pager);
-					}
-				}
-#endif
 			}
+#endif
 		}
 	}
 }
@@ -1933,7 +1846,7 @@ format_result(Mapi mid, MapiHdl hdl, bool singleinstr)
 			SQLqueryEcho(hdl);
 			if (formatter == TABLEformatter ||
 			    formatter == ROWCOUNTformatter)
-				mnstr_printf(toConsole, "operation successful\n");
+				mnstr_printf(toConsole, "auto commit mode: %s\n", mapi_get_autocommit(mid) ? "on" : "off");
 			timerHuman(sqloptimizer, maloptimizer, querytime, singleinstr, false);
 			continue;
 		case Q_PREPARE:
@@ -2013,9 +1926,6 @@ format_result(Mapi mid, MapiHdl hdl, bool singleinstr)
 				rows = mapi_get_row_count(hdl);
 				mnstr_printf(toConsole,
 						"%" PRId64 " tuple%s\n", rows, rows != 1 ? "s" : "");
-				break;
-			case SAMformatter:
-				SAMrenderer(hdl);
 				break;
 			case EXPANDEDformatter:
 				EXPANDEDrenderer(hdl);
@@ -2238,7 +2148,7 @@ showCommands(void)
 	}
 	mnstr_printf(toConsole, "\\e       - echo the query in sql formatting mode\n");
 	mnstr_printf(toConsole, "\\t       - set the timer {none,clock,performance} (none is default)\n");
-	mnstr_printf(toConsole, "\\f       - format using renderer {csv,tab,raw,sql,xml,trash,rowcount,expanded,sam}\n");
+	mnstr_printf(toConsole, "\\f       - format using renderer {csv,tab,raw,sql,xml,trash,rowcount,expanded}\n");
 	mnstr_printf(toConsole, "\\w#      - set maximal page width (-1=unlimited, 0=terminal width, >0=limit to num)\n");
 	mnstr_printf(toConsole, "\\r#      - set maximum rows per page (-1=raw)\n");
 	mnstr_printf(toConsole, "\\L file  - save client-server interaction\n");
@@ -2451,22 +2361,36 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, int save_history
 			case '\0':
 				break;
 			case 'e':
-				/* a bit of a hack for prepare/exec
-				 * tests: replace "exec **" with the
-				 * ID of the last prepared
-				 * statement */
-				if (mode == SQL &&
-				    formatter == TESTformatter &&
-				    strncmp(line, "exec **", 7) == 0) {
-					line[5] = prepno < 10 ? ' ' : prepno / 10 + '0';
-					line[6] = prepno % 10 + '0';
+			case 'E':
+				/* a bit of a hack for prepare/exec/deallocate
+				 * tests: replace "exec[ute] **" with the
+				 * ID of the last prepared statement */
+				if (mode == SQL && formatter == TESTformatter) {
+					if (strncasecmp(line, "exec **", 7) == 0) {
+						line[5] = prepno < 10 ? ' ' : prepno / 10 + '0';
+						line[6] = prepno % 10 + '0';
+					} else if (strncasecmp(line, "execute **", 10) == 0) {
+						line[8] = prepno < 10 ? ' ' : prepno / 10 + '0';
+						line[9] = prepno % 10 + '0';
+					}
 				}
-				if (strcmp(line, "exit\n") == 0) {
+				if (strncasecmp(line, "exit\n", 5) == 0) {
 					goto bailout;
 				}
 				break;
+			case 'd':
+			case 'D':
+				/* a bit of a hack for prepare/exec/deallocate
+				 * tests: replace "deallocate **" with the
+				 * ID of the last prepared statement */
+				if (mode == SQL && formatter == TESTformatter && strncasecmp(line, "deallocate **", 13) == 0) {
+					line[11] = prepno < 10 ? ' ' : prepno / 10 + '0';
+					line[12] = prepno % 10 + '0';
+				}
+				break;
 			case 'q':
-				if (strcmp(line, "quit\n") == 0) {
+			case 'Q':
+				if (strncasecmp(line, "quit\n", 5) == 0) {
 					goto bailout;
 				}
 				break;
@@ -2894,9 +2818,6 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, int save_history
 						case EXPANDEDformatter:
 							mnstr_printf(toConsole, "expanded\n");
 							break;
-						case SAMformatter:
-							mnstr_printf(toConsole, "sam\n");
-							break;
 						default:
 							mnstr_printf(toConsole, "none\n");
 							break;
@@ -2969,7 +2890,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, int save_history
 
 		if (mapi_get_querytype(hdl) == Q_PREPARE) {
 			prepno = mapi_get_tableid(hdl);
-			assert(prepno < 100);
+			assert(mode != SQL || formatter != TESTformatter || prepno < 100); /* prepno is used only at the TestWeb */
 		}
 
 		rc = format_result(mid, hdl, interactive || echoquery);
@@ -3265,6 +3186,7 @@ main(int argc, char **argv)
 	char *command = NULL;
 	char *dbname = NULL;
 	char *output = NULL;	/* output format as string */
+	DotMonetdb dotfile = {0};
 	FILE *fp = NULL;
 	bool trace = false;
 	bool dump = false;
@@ -3322,6 +3244,16 @@ main(int argc, char **argv)
 		exit(2);
 	}
 #endif
+#ifdef HAVE_SIGACTION
+	struct sigaction act;
+	/* ignore SIGPIPE so that we get an error instead of signal */
+	act.sa_handler = SIG_IGN;
+	(void) sigemptyset(&act.sa_mask);
+	act.sa_flags = 0;
+	if (sigaction(SIGPIPE, &act, NULL) == -1)
+		perror("sigaction");
+#endif
+
 	toConsole = stdout_stream = file_wastream(stdout, "stdout");
 	stderr_stream = file_wastream(stderr, "stderr");
 	if(!stdout_stream || !stderr_stream) {
@@ -3334,7 +3266,17 @@ main(int argc, char **argv)
 	}
 
 	/* parse config file first, command line options override */
-	parse_dotmonetdb(&user, &passwd, &dbname, &language, &save_history, &output, &pagewidth);
+	// parse_dotmonetdb(&user, &passwd, &dbname, &language, &save_history, &output, &pagewidth);
+	parse_dotmonetdb(&dotfile);
+        user = dotfile.user;
+        passwd = dotfile.passwd;
+	dbname = dotfile.dbname;
+        language = dotfile.language;
+	host = dotfile.host;
+	save_history = (int)dotfile.save_history;
+        output = dotfile.output;
+        pagewidth = dotfile.pagewidth;
+	port = dotfile.port;
 	pagewidthset = pagewidth != 0;
 	if (language) {
 		if (strcmp(language, "sql") == 0) {

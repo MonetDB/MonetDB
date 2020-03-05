@@ -19,10 +19,13 @@ stdout of test 'limit.Bug-6322` in directory 'sql/test/BugTracker-2017` itself:
 # MonetDB/SQL module loaded
 
 
-# 12:52:04 >  
-# 12:52:04 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-19106" "--port=36358"
-# 12:52:04 >  
-
+#START TRANSACTION;
+#CREATE TABLE tab0(col0 INTEGER, col1 INTEGER, col2 INTEGER);
+#INSERT INTO tab0 VALUES (97,1,99), (15,81,47),(87,21,10);
+[ 3	]
+#CREATE TABLE tab1(col0 INTEGER, col1 INTEGER, col2 INTEGER);
+#INSERT INTO tab1 VALUES (51,14,96), (85,5,59), (91,47,68);
+[ 3	]
 #select
 #  subq_0.c3 as c2
 #from 
@@ -36,22 +39,14 @@ stdout of test 'limit.Bug-6322` in directory 'sql/test/BugTracker-2017` itself:
 #where (true)
 #  or ((select pc from sys.tracelog)
 #       is not NULL);
-% .L23 # table_name
+% sys. # table_name
 % c2 # name
-% varchar # type
-% 93 # length
-[ "+proj=longlat +ellps=bessel +towgs84=595.48,121.69,515.35,4.115,-2.9383,0.853,-3.408 +no_defs"	]
-[ "+proj=longlat +ellps=aust_SA +no_defs"	]
-[ "+proj=longlat +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +no_defs"	]
-[ "+proj=longlat +ellps=bessel +towgs84=682,-203,480,0,0,0,0 +no_defs"	]
-[ "+proj=longlat +ellps=airy +no_defs"	]
-[ "+proj=longlat +ellps=mod_airy +no_defs"	]
-[ "+proj=longlat +ellps=bessel +no_defs"	]
-[ "+proj=longlat +a=6377492.018 +b=6356173.508712696 +no_defs"	]
-[ "+proj=longlat +ellps=bess_nam +no_defs"	]
-[ "+proj=longlat +a=6378293.645208759 +b=6356617.987679838 +no_defs"	]
-[ "+proj=longlat +ellps=clrk66 +no_defs"	]
-[ "+proj=longlat +a=6378450.047548896 +b=6356826.621488444 +no_defs"	]
+% int # type
+% 2 # length
+[ 97	]
+[ 15	]
+[ 87	]
+#ROLLBACK;
 
 # 12:52:04 >  
 # 12:52:04 >  "Done."

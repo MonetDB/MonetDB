@@ -11,7 +11,7 @@ stdout of test 'groupby_with_alias.SF-1520575` in directory 'sql/test/BugTracker
 # Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
 # Found 15.385 GiB available main-memory.
 # Copyright (c) 1993 - July 2008 CWI.
-# Copyright (c) August 2008 - 2019 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008 - 2020 MonetDB B.V., all rights reserved
 # Visit https://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://xps13:34695/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-24719/.s.monetdb.34695
@@ -25,14 +25,14 @@ stdout of test 'groupby_with_alias.SF-1520575` in directory 'sql/test/BugTracker
 #START TRANSACTION;
 #create table test_grp(a int);
 #select a as b from test_grp group by b; 
-% sys.L1 # table_name
+% sys. # table_name
 % b # name
 % int # type
 % 1 # length
 #create table a(f1 varchar(20), f2 int);
 #select coalesce(f1,'EMPTY') as bug_alias, sum(f2) from a group by bug_alias;
-% sys.L1,	sys.L2 # table_name
-% bug_alias,	L2 # name
+% sys.,	sys.%1 # table_name
+% bug_alias,	%1 # name
 % varchar,	hugeint # type
 % 0,	1 # length
 

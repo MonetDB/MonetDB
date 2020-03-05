@@ -43,7 +43,7 @@ stdout of test 'assert-on-table-producing-function.Bug-6076` in directory 'sql/t
 #			      from 
 #			        sys.sequences as ref_139
 #				      where ref_139.cycle is NULL))
-% .L30,	.L32,	.L34 # table_name
+% .,	.,	. # table_name
 % c0,	c1,	c2 # name
 % bigint,	tinyint,	tinyint # type
 % 1,	1,	1 # length

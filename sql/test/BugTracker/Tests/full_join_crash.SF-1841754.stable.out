@@ -1,36 +1,42 @@
 stdout of test 'full_join_crash.SF-1841754` in directory 'sql/test/BugTracker` itself:
 
 
-# 15:12:40 >  
-# 15:12:40 >   mserver5 "--config=/ufs/niels/scratch/monetdb/Linux-x86_64/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=36556 --set xrpc_port=42728 --set monet_prompt= --trace "--dbname=mTests_src_test_BugTracker" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
-# 15:12:40 >  
+# 17:14:54 >  
+# 17:14:54 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=33945" "--set" "mapi_usock=/var/tmp/mtest-14741/.s.monetdb.33945" "--forcemito" "--dbpath=/home/niels/scratch/monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker" "--set" "embedded_c=true"
+# 17:14:54 >  
 
-# MonetDB server v5.3.0, based on kernel v1.21.0
-# Serving database 'mTests_src_test_BugTracker'
-# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
-# Copyright (c) 1993-2007 CWI, all rights reserved
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://koala.ins.cwi.nl:36556/
-# MonetDB/SQL module v2.21.0 loaded
+# MonetDB 5 server v11.36.0 (hg id: 1d18bd8860b4+)
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 15.384 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2020 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.localdomain:33945/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-14741/.s.monetdb.33945
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
 
-#function user.main():void;
-#    clients.quit();
-#end main;
+# 17:14:54 >  
+# 17:14:54 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-14741" "--port=33945"
+# 17:14:54 >  
 
-
-# 10:32:46 >  
-# 10:32:46 >  mclient -lsql -umonetdb -Pmonetdb --host=koala --port=30150 
-# 10:32:46 >  
-
+#CREATE TABLE t1841754a (name TEXT, n INTEGER);
+#CREATE TABLE t1841754b (name TEXT, n INTEGER);
+#CREATE TABLE t1841754c (name TEXT, n INTEGER);
+#INSERT INTO t1841754a VALUES ( 'aa', 11 );
 [ 1	]
+#INSERT INTO t1841754b VALUES ( 'aa', 12 );
 [ 1	]
+#INSERT INTO t1841754b VALUES ( 'bb', 22 );
 [ 1	]
 [ 1	]
 [ 1	]
 [ 1	]
 [ 1	]
 #SELECT * FROM t1841754a FULL JOIN t1841754b USING (name);
-% .L1,	.t1841754a,	.t1841754b # table_name
+% .%1,	.t1841754a,	.t1841754b # table_name
 % name,	n,	n # name
 % clob,	int,	int # type
 % 2,	2,	2 # length
@@ -38,7 +44,7 @@ stdout of test 'full_join_crash.SF-1841754` in directory 'sql/test/BugTracker` i
 [ "bb",	NULL,	22	]
 [ "dd",	NULL,	42	]
 #SELECT * FROM t1841754a FULL JOIN t1841754b USING (name) FULL JOIN t1841754c USING (name);
-% .L4,	.t1841754a,	.t1841754b,	.t1841754c # table_name
+% .%4,	.t1841754a,	.t1841754b,	.t1841754c # table_name
 % name,	n,	n,	n # name
 % clob,	int,	int,	int # type
 % 2,	2,	2,	2 # length
@@ -47,7 +53,7 @@ stdout of test 'full_join_crash.SF-1841754` in directory 'sql/test/BugTracker` i
 [ "dd",	NULL,	42,	NULL	]
 [ "cc",	NULL,	NULL,	33	]
 #SELECT * FROM t1841754a natural FULL JOIN t1841754b ;
-% .L1,	.L1 # table_name
+% .%1,	.%1 # table_name
 % name,	n # name
 % clob,	int # type
 % 2,	2 # length
@@ -56,7 +62,7 @@ stdout of test 'full_join_crash.SF-1841754` in directory 'sql/test/BugTracker` i
 [ "bb",	22	]
 [ "dd",	42	]
 #SELECT * FROM t1841754a natural FULL JOIN t1841754b natural FULL JOIN t1841754c;
-% .L4,	.L4 # table_name
+% .%4,	.%4 # table_name
 % name,	n # name
 % clob,	int # type
 % 2,	2 # length

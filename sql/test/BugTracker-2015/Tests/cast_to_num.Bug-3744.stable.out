@@ -29,14 +29,14 @@ stdout of test 'cast_to_num.Bug-3744` in directory 'sql/test/BugTracker-2015` it
 # 21:30:40 >  
 
 #select cast(cast(13.8 as decimal(10,7)) as int);
-% .L3 # table_name
-% L3 # name
+% . # table_name
+% %1 # name
 % int # type
 % 2 # length
 [ 14	]
 #select cast(cast(13.8 as double) as int);
-% .L3 # table_name
-% L3 # name
+% . # table_name
+% %1 # name
 % int # type
 % 2 # length
 [ 14	]

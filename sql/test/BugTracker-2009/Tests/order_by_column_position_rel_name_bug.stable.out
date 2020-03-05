@@ -94,7 +94,7 @@ stdout of test 'order_by_column_position_rel_name_bug` in directory 'sql/test/Bu
 #       "inventory_fact_1997"."time_id" = "time_by_day"."time_id" 
 #group by
 #       "warehouse"."warehouse_country", 
-% sys.L2,	sys.L4,	sys.L6,	sys.L10 # table_name
+% sys.,	sys.,	sys.,	sys. # table_name
 % c0,	c1,	c2,	c3 # name
 % varchar,	smallint,	varchar,	smallint # type
 % 0,	1,	0,	1 # length

@@ -49,7 +49,7 @@ stdout of test 'selectlist_subquery-sf-1208599` in directory 'sql/test/bugs` its
 #WHERE pid = 117097
 #GROUP BY lid
 #;
-% sys.o,	sys.L4,	sys.L12 # table_name
+% .o,	.,	. # table_name
 % lid,	avg_prijs,	current_prijs # name
 % int,	double,	double # type
 % 1,	24,	24 # length

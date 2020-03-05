@@ -11,7 +11,7 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 # Compiled for x86_64-pc-linux-gnu/64bit
 # Found 62.693 GiB available main-memory.
 # Copyright (c) 1993 - July 2008 CWI.
-# Copyright (c) August 2008 - 2019 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008 - 2020 MonetDB B.V., all rights reserved
 # Visit https://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://methuselah.da.cwi.nl:30838/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-26352/.s.monetdb.30838
@@ -75,8 +75,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ true	]
 [ true	]
 #SELECT v, convert(v, boolean) from T_BOOLEAN;
-% sys.t_boolean,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_boolean,	sys.t_boolean # table_name
+% v,	v # name
 % boolean,	boolean # type
 % 5,	5 # length
 [ true,	true	]
@@ -85,8 +85,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ false,	false	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, tinyint) from T_BOOLEAN;
-% sys.t_boolean,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_boolean,	sys.t_boolean # table_name
+% v,	v # name
 % boolean,	tinyint # type
 % 5,	1 # length
 [ true,	1	]
@@ -95,8 +95,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ false,	0	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, smallint) from T_BOOLEAN;
-% sys.t_boolean,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_boolean,	sys.t_boolean # table_name
+% v,	v # name
 % boolean,	smallint # type
 % 5,	1 # length
 [ true,	1	]
@@ -105,8 +105,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ false,	0	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, integer) from T_BOOLEAN;
-% sys.t_boolean,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_boolean,	sys.t_boolean # table_name
+% v,	v # name
 % boolean,	int # type
 % 5,	1 # length
 [ true,	1	]
@@ -115,8 +115,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ false,	0	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, bigint) from T_BOOLEAN;
-% sys.t_boolean,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_boolean,	sys.t_boolean # table_name
+% v,	v # name
 % boolean,	bigint # type
 % 5,	1 # length
 [ true,	1	]
@@ -125,8 +125,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ false,	0	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, char) from T_BOOLEAN;
-% sys.t_boolean,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_boolean,	sys.t_boolean # table_name
+% v,	v # name
 % boolean,	char # type
 % 5,	1 # length
 [ true,	"t"	]
@@ -135,8 +135,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ false,	"f"	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, varchar(6)) from T_BOOLEAN;
-% sys.t_boolean,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_boolean,	sys.t_boolean # table_name
+% v,	v # name
 % boolean,	varchar # type
 % 5,	5 # length
 [ true,	"true"	]
@@ -145,8 +145,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ false,	"false"	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, CHARACTER LARGE OBJECT) from T_BOOLEAN;
-% sys.t_boolean,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_boolean,	sys.t_boolean # table_name
+% v,	v # name
 % boolean,	clob # type
 % 5,	5 # length
 [ true,	"true"	]
@@ -155,8 +155,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ false,	"false"	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, Clob) from T_BOOLEAN;
-% sys.t_boolean,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_boolean,	sys.t_boolean # table_name
+% v,	v # name
 % boolean,	clob # type
 % 5,	5 # length
 [ true,	"true"	]
@@ -165,8 +165,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ false,	"false"	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as boolean) from T_BOOLEAN;
-% sys.t_boolean,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_boolean,	sys.t_boolean # table_name
+% v,	v # name
 % boolean,	boolean # type
 % 5,	5 # length
 [ true,	true	]
@@ -175,8 +175,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ false,	false	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as tinyint) from T_BOOLEAN;
-% sys.t_boolean,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_boolean,	sys.t_boolean # table_name
+% v,	v # name
 % boolean,	tinyint # type
 % 5,	1 # length
 [ true,	1	]
@@ -185,8 +185,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ false,	0	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as smallint) from T_BOOLEAN;
-% sys.t_boolean,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_boolean,	sys.t_boolean # table_name
+% v,	v # name
 % boolean,	smallint # type
 % 5,	1 # length
 [ true,	1	]
@@ -195,8 +195,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ false,	0	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as integer) from T_BOOLEAN;
-% sys.t_boolean,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_boolean,	sys.t_boolean # table_name
+% v,	v # name
 % boolean,	int # type
 % 5,	1 # length
 [ true,	1	]
@@ -205,8 +205,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ false,	0	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as bigint) from T_BOOLEAN;
-% sys.t_boolean,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_boolean,	sys.t_boolean # table_name
+% v,	v # name
 % boolean,	bigint # type
 % 5,	1 # length
 [ true,	1	]
@@ -215,8 +215,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ false,	0	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as char) from T_BOOLEAN;
-% sys.t_boolean,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_boolean,	sys.t_boolean # table_name
+% v,	v # name
 % boolean,	char # type
 % 5,	1 # length
 [ true,	"t"	]
@@ -225,8 +225,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ false,	"f"	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as varchar(6)) from T_BOOLEAN;
-% sys.t_boolean,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_boolean,	sys.t_boolean # table_name
+% v,	v # name
 % boolean,	varchar # type
 % 5,	5 # length
 [ true,	"true"	]
@@ -235,8 +235,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ false,	"false"	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as CHARACTER LARGE OBJECT) from T_BOOLEAN;
-% sys.t_boolean,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_boolean,	sys.t_boolean # table_name
+% v,	v # name
 % boolean,	clob # type
 % 5,	5 # length
 [ true,	"true"	]
@@ -245,8 +245,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ false,	"false"	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as Clob) from T_BOOLEAN;
-% sys.t_boolean,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_boolean,	sys.t_boolean # table_name
+% v,	v # name
 % boolean,	clob # type
 % 5,	5 # length
 [ true,	"true"	]
@@ -272,8 +272,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 11	]
 [ A0B2C3D4F5	]
 #SELECT v, convert(v, varchar(16)) from T_blob;
-% sys.t_blob,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_blob,	sys.t_blob # table_name
+% v,	v # name
 % blob,	varchar # type
 % 0,	10 # length
 [ 00,	"00"	]
@@ -283,8 +283,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ ,	""	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, CHARACTER LARGE OBJECT) from T_blob;
-% sys.t_blob,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_blob,	sys.t_blob # table_name
+% v,	v # name
 % blob,	clob # type
 % 0,	10 # length
 [ 00,	"00"	]
@@ -294,8 +294,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ ,	""	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, Clob) from T_blob;
-% sys.t_blob,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_blob,	sys.t_blob # table_name
+% v,	v # name
 % blob,	clob # type
 % 0,	10 # length
 [ 00,	"00"	]
@@ -305,8 +305,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ ,	""	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, Blob) from T_blob;
-% sys.t_blob,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_blob,	sys.t_blob # table_name
+% v,	v # name
 % blob,	blob # type
 % 0,	0 # length
 [ 00,	00	]
@@ -316,8 +316,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ ,		]
 [ NULL,	NULL	]
 #SELECT v, cast(v as varchar(16)) from T_blob;
-% sys.t_blob,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_blob,	sys.t_blob # table_name
+% v,	v # name
 % blob,	varchar # type
 % 0,	10 # length
 [ 00,	"00"	]
@@ -327,8 +327,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ ,	""	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as CHARACTER LARGE OBJECT) from T_blob;
-% sys.t_blob,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_blob,	sys.t_blob # table_name
+% v,	v # name
 % blob,	clob # type
 % 0,	10 # length
 [ 00,	"00"	]
@@ -338,8 +338,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ ,	""	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as Clob) from T_blob;
-% sys.t_blob,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_blob,	sys.t_blob # table_name
+% v,	v # name
 % blob,	clob # type
 % 0,	10 # length
 [ 00,	"00"	]
@@ -349,8 +349,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ ,	""	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as Blob) from T_blob;
-% sys.t_blob,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_blob,	sys.t_blob # table_name
+% v,	v # name
 % blob,	blob # type
 % 0,	0 # length
 [ 00,	00	]
@@ -377,8 +377,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 1	]
 [ 127	]
 #SELECT v, convert(v, boolean) from T_tinyint;
-% sys.t_tinyint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_tinyint,	sys.t_tinyint # table_name
+% v,	v # name
 % tinyint,	boolean # type
 % 4,	5 # length
 [ 1,	true	]
@@ -388,8 +388,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 127,	true	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, tinyint) from T_tinyint;
-% sys.t_tinyint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_tinyint,	sys.t_tinyint # table_name
+% v,	v # name
 % tinyint,	tinyint # type
 % 4,	4 # length
 [ 1,	1	]
@@ -399,8 +399,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 127,	127	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, smallint) from T_tinyint;
-% sys.t_tinyint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_tinyint,	sys.t_tinyint # table_name
+% v,	v # name
 % tinyint,	smallint # type
 % 4,	4 # length
 [ 1,	1	]
@@ -410,8 +410,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 127,	127	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, integer) from T_tinyint;
-% sys.t_tinyint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_tinyint,	sys.t_tinyint # table_name
+% v,	v # name
 % tinyint,	int # type
 % 4,	4 # length
 [ 1,	1	]
@@ -421,8 +421,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 127,	127	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, bigint) from T_tinyint;
-% sys.t_tinyint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_tinyint,	sys.t_tinyint # table_name
+% v,	v # name
 % tinyint,	bigint # type
 % 4,	4 # length
 [ 1,	1	]
@@ -432,8 +432,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 127,	127	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, float) from T_tinyint;
-% sys.t_tinyint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_tinyint,	sys.t_tinyint # table_name
+% v,	v # name
 % tinyint,	double # type
 % 4,	24 # length
 [ 1,	1	]
@@ -443,8 +443,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 127,	127	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, float(24)) from T_tinyint;
-% sys.t_tinyint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_tinyint,	sys.t_tinyint # table_name
+% v,	v # name
 % tinyint,	real # type
 % 4,	15 # length
 [ 1,	1	]
@@ -454,8 +454,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 127,	127	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, real) from T_tinyint;
-% sys.t_tinyint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_tinyint,	sys.t_tinyint # table_name
+% v,	v # name
 % tinyint,	real # type
 % 4,	15 # length
 [ 1,	1	]
@@ -465,8 +465,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 127,	127	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, double) from T_tinyint;
-% sys.t_tinyint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_tinyint,	sys.t_tinyint # table_name
+% v,	v # name
 % tinyint,	double # type
 % 4,	24 # length
 [ 1,	1	]
@@ -476,8 +476,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 127,	127	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, double precision) from T_tinyint;
-% sys.t_tinyint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_tinyint,	sys.t_tinyint # table_name
+% v,	v # name
 % tinyint,	double # type
 % 4,	24 # length
 [ 1,	1	]
@@ -487,8 +487,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 127,	127	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, numeric) from T_tinyint;
-% sys.t_tinyint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_tinyint,	sys.t_tinyint # table_name
+% v,	v # name
 % tinyint,	decimal # type
 % 4,	20 # length
 [ 1,	1.000	]
@@ -498,8 +498,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 127,	127.000	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, decimal) from T_tinyint;
-% sys.t_tinyint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_tinyint,	sys.t_tinyint # table_name
+% v,	v # name
 % tinyint,	decimal # type
 % 4,	20 # length
 [ 1,	1.000	]
@@ -509,8 +509,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 127,	127.000	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, numeric(7)) from T_tinyint;
-% sys.t_tinyint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_tinyint,	sys.t_tinyint # table_name
+% v,	v # name
 % tinyint,	decimal # type
 % 4,	8 # length
 [ 1,	1	]
@@ -520,8 +520,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 127,	127	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, decimal(9)) from T_tinyint;
-% sys.t_tinyint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_tinyint,	sys.t_tinyint # table_name
+% v,	v # name
 % tinyint,	decimal # type
 % 4,	10 # length
 [ 1,	1	]
@@ -531,8 +531,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 127,	127	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, numeric(12,0)) from T_tinyint;
-% sys.t_tinyint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_tinyint,	sys.t_tinyint # table_name
+% v,	v # name
 % tinyint,	decimal # type
 % 4,	13 # length
 [ 1,	1	]
@@ -542,8 +542,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 127,	127	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, decimal(15,3)) from T_tinyint;
-% sys.t_tinyint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_tinyint,	sys.t_tinyint # table_name
+% v,	v # name
 % tinyint,	decimal # type
 % 4,	17 # length
 [ 1,	1.000	]
@@ -553,15 +553,15 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 127,	127.000	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, char) from T_tinyint where v between 0 and 1;
-% sys.t_tinyint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_tinyint,	sys.t_tinyint # table_name
+% v,	v # name
 % tinyint,	char # type
 % 1,	1 # length
 [ 1,	"1"	]
 [ 0,	"0"	]
 #SELECT v, convert(v, varchar(6)) from T_tinyint;
-% sys.t_tinyint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_tinyint,	sys.t_tinyint # table_name
+% v,	v # name
 % tinyint,	varchar # type
 % 4,	4 # length
 [ 1,	"1"	]
@@ -571,8 +571,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 127,	"127"	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, CHARACTER LARGE OBJECT) from T_tinyint;
-% sys.t_tinyint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_tinyint,	sys.t_tinyint # table_name
+% v,	v # name
 % tinyint,	clob # type
 % 4,	4 # length
 [ 1,	"1"	]
@@ -582,8 +582,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 127,	"127"	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, Clob) from T_tinyint;
-% sys.t_tinyint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_tinyint,	sys.t_tinyint # table_name
+% v,	v # name
 % tinyint,	clob # type
 % 4,	4 # length
 [ 1,	"1"	]
@@ -593,8 +593,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 127,	"127"	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as boolean) from T_tinyint;
-% sys.t_tinyint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_tinyint,	sys.t_tinyint # table_name
+% v,	v # name
 % tinyint,	boolean # type
 % 4,	5 # length
 [ 1,	true	]
@@ -604,8 +604,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 127,	true	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as tinyint) from T_tinyint;
-% sys.t_tinyint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_tinyint,	sys.t_tinyint # table_name
+% v,	v # name
 % tinyint,	tinyint # type
 % 4,	4 # length
 [ 1,	1	]
@@ -615,8 +615,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 127,	127	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as smallint) from T_tinyint;
-% sys.t_tinyint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_tinyint,	sys.t_tinyint # table_name
+% v,	v # name
 % tinyint,	smallint # type
 % 4,	4 # length
 [ 1,	1	]
@@ -626,8 +626,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 127,	127	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as integer) from T_tinyint;
-% sys.t_tinyint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_tinyint,	sys.t_tinyint # table_name
+% v,	v # name
 % tinyint,	int # type
 % 4,	4 # length
 [ 1,	1	]
@@ -637,8 +637,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 127,	127	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as bigint) from T_tinyint;
-% sys.t_tinyint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_tinyint,	sys.t_tinyint # table_name
+% v,	v # name
 % tinyint,	bigint # type
 % 4,	4 # length
 [ 1,	1	]
@@ -648,8 +648,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 127,	127	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as float) from T_tinyint;
-% sys.t_tinyint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_tinyint,	sys.t_tinyint # table_name
+% v,	v # name
 % tinyint,	double # type
 % 4,	24 # length
 [ 1,	1	]
@@ -659,8 +659,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 127,	127	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as float(24)) from T_tinyint;
-% sys.t_tinyint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_tinyint,	sys.t_tinyint # table_name
+% v,	v # name
 % tinyint,	real # type
 % 4,	15 # length
 [ 1,	1	]
@@ -670,8 +670,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 127,	127	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as real) from T_tinyint;
-% sys.t_tinyint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_tinyint,	sys.t_tinyint # table_name
+% v,	v # name
 % tinyint,	real # type
 % 4,	15 # length
 [ 1,	1	]
@@ -681,8 +681,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 127,	127	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as double) from T_tinyint;
-% sys.t_tinyint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_tinyint,	sys.t_tinyint # table_name
+% v,	v # name
 % tinyint,	double # type
 % 4,	24 # length
 [ 1,	1	]
@@ -692,8 +692,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 127,	127	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as double precision) from T_tinyint;
-% sys.t_tinyint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_tinyint,	sys.t_tinyint # table_name
+% v,	v # name
 % tinyint,	double # type
 % 4,	24 # length
 [ 1,	1	]
@@ -703,8 +703,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 127,	127	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as numeric) from T_tinyint;
-% sys.t_tinyint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_tinyint,	sys.t_tinyint # table_name
+% v,	v # name
 % tinyint,	decimal # type
 % 4,	20 # length
 [ 1,	1.000	]
@@ -714,8 +714,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 127,	127.000	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as decimal) from T_tinyint;
-% sys.t_tinyint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_tinyint,	sys.t_tinyint # table_name
+% v,	v # name
 % tinyint,	decimal # type
 % 4,	20 # length
 [ 1,	1.000	]
@@ -725,8 +725,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 127,	127.000	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as numeric(7)) from T_tinyint;
-% sys.t_tinyint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_tinyint,	sys.t_tinyint # table_name
+% v,	v # name
 % tinyint,	decimal # type
 % 4,	8 # length
 [ 1,	1	]
@@ -736,8 +736,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 127,	127	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as decimal(9)) from T_tinyint;
-% sys.t_tinyint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_tinyint,	sys.t_tinyint # table_name
+% v,	v # name
 % tinyint,	decimal # type
 % 4,	10 # length
 [ 1,	1	]
@@ -747,8 +747,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 127,	127	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as numeric(12,0)) from T_tinyint;
-% sys.t_tinyint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_tinyint,	sys.t_tinyint # table_name
+% v,	v # name
 % tinyint,	decimal # type
 % 4,	13 # length
 [ 1,	1	]
@@ -758,8 +758,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 127,	127	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as decimal(15,3)) from T_tinyint;
-% sys.t_tinyint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_tinyint,	sys.t_tinyint # table_name
+% v,	v # name
 % tinyint,	decimal # type
 % 4,	17 # length
 [ 1,	1.000	]
@@ -769,15 +769,15 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 127,	127.000	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as char) from T_tinyint where v between 0 and 1;
-% sys.t_tinyint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_tinyint,	sys.t_tinyint # table_name
+% v,	v # name
 % tinyint,	char # type
 % 1,	1 # length
 [ 1,	"1"	]
 [ 0,	"0"	]
 #SELECT v, cast(v as varchar(6)) from T_tinyint;
-% sys.t_tinyint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_tinyint,	sys.t_tinyint # table_name
+% v,	v # name
 % tinyint,	varchar # type
 % 4,	4 # length
 [ 1,	"1"	]
@@ -787,8 +787,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 127,	"127"	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as CHARACTER LARGE OBJECT) from T_tinyint;
-% sys.t_tinyint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_tinyint,	sys.t_tinyint # table_name
+% v,	v # name
 % tinyint,	clob # type
 % 4,	4 # length
 [ 1,	"1"	]
@@ -798,8 +798,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 127,	"127"	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as Clob) from T_tinyint;
-% sys.t_tinyint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_tinyint,	sys.t_tinyint # table_name
+% v,	v # name
 % tinyint,	clob # type
 % 4,	4 # length
 [ 1,	"1"	]
@@ -828,8 +828,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 127	]
 [ 32767	]
 #SELECT v, convert(v, boolean) from T_smallint;
-% sys.t_smallint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_smallint,	sys.t_smallint # table_name
+% v,	v # name
 % smallint,	boolean # type
 % 6,	5 # length
 [ 1,	true	]
@@ -841,8 +841,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 32767,	true	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, tinyint) from T_smallint where v between -127 and 127;
-% sys.t_smallint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_smallint,	sys.t_smallint # table_name
+% v,	v # name
 % smallint,	tinyint # type
 % 4,	4 # length
 [ 1,	1	]
@@ -851,8 +851,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -127,	-127	]
 [ 127,	127	]
 #SELECT v, convert(v, smallint) from T_smallint;
-% sys.t_smallint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_smallint,	sys.t_smallint # table_name
+% v,	v # name
 % smallint,	smallint # type
 % 6,	6 # length
 [ 1,	1	]
@@ -864,8 +864,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 32767,	32767	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, integer) from T_smallint;
-% sys.t_smallint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_smallint,	sys.t_smallint # table_name
+% v,	v # name
 % smallint,	int # type
 % 6,	6 # length
 [ 1,	1	]
@@ -877,8 +877,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 32767,	32767	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, bigint) from T_smallint;
-% sys.t_smallint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_smallint,	sys.t_smallint # table_name
+% v,	v # name
 % smallint,	bigint # type
 % 6,	6 # length
 [ 1,	1	]
@@ -890,8 +890,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 32767,	32767	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, float) from T_smallint;
-% sys.t_smallint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_smallint,	sys.t_smallint # table_name
+% v,	v # name
 % smallint,	double # type
 % 6,	24 # length
 [ 1,	1	]
@@ -903,8 +903,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 32767,	32767	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, float(24)) from T_smallint;
-% sys.t_smallint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_smallint,	sys.t_smallint # table_name
+% v,	v # name
 % smallint,	real # type
 % 6,	15 # length
 [ 1,	1	]
@@ -916,8 +916,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 32767,	32767	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, real) from T_smallint;
-% sys.t_smallint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_smallint,	sys.t_smallint # table_name
+% v,	v # name
 % smallint,	real # type
 % 6,	15 # length
 [ 1,	1	]
@@ -929,8 +929,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 32767,	32767	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, double) from T_smallint;
-% sys.t_smallint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_smallint,	sys.t_smallint # table_name
+% v,	v # name
 % smallint,	double # type
 % 6,	24 # length
 [ 1,	1	]
@@ -942,8 +942,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 32767,	32767	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, double precision) from T_smallint;
-% sys.t_smallint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_smallint,	sys.t_smallint # table_name
+% v,	v # name
 % smallint,	double # type
 % 6,	24 # length
 [ 1,	1	]
@@ -955,8 +955,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 32767,	32767	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, numeric) from T_smallint;
-% sys.t_smallint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_smallint,	sys.t_smallint # table_name
+% v,	v # name
 % smallint,	decimal # type
 % 6,	20 # length
 [ 1,	1.000	]
@@ -968,8 +968,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 32767,	32767.000	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, decimal) from T_smallint;
-% sys.t_smallint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_smallint,	sys.t_smallint # table_name
+% v,	v # name
 % smallint,	decimal # type
 % 6,	20 # length
 [ 1,	1.000	]
@@ -981,8 +981,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 32767,	32767.000	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, numeric(7)) from T_smallint;
-% sys.t_smallint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_smallint,	sys.t_smallint # table_name
+% v,	v # name
 % smallint,	decimal # type
 % 6,	8 # length
 [ 1,	1	]
@@ -994,8 +994,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 32767,	32767	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, decimal(9)) from T_smallint;
-% sys.t_smallint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_smallint,	sys.t_smallint # table_name
+% v,	v # name
 % smallint,	decimal # type
 % 6,	10 # length
 [ 1,	1	]
@@ -1007,8 +1007,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 32767,	32767	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, numeric(12,0)) from T_smallint;
-% sys.t_smallint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_smallint,	sys.t_smallint # table_name
+% v,	v # name
 % smallint,	decimal # type
 % 6,	13 # length
 [ 1,	1	]
@@ -1020,8 +1020,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 32767,	32767	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, decimal(15,3)) from T_smallint;
-% sys.t_smallint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_smallint,	sys.t_smallint # table_name
+% v,	v # name
 % smallint,	decimal # type
 % 6,	17 # length
 [ 1,	1.000	]
@@ -1033,15 +1033,15 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 32767,	32767.000	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, char) from T_smallint where v between 0 and 1;
-% sys.t_smallint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_smallint,	sys.t_smallint # table_name
+% v,	v # name
 % smallint,	char # type
 % 1,	1 # length
 [ 1,	"1"	]
 [ 0,	"0"	]
 #SELECT v, convert(v, varchar(6)) from T_smallint;
-% sys.t_smallint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_smallint,	sys.t_smallint # table_name
+% v,	v # name
 % smallint,	varchar # type
 % 6,	6 # length
 [ 1,	"1"	]
@@ -1053,8 +1053,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 32767,	"32767"	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, CHARACTER LARGE OBJECT) from T_smallint;
-% sys.t_smallint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_smallint,	sys.t_smallint # table_name
+% v,	v # name
 % smallint,	clob # type
 % 6,	6 # length
 [ 1,	"1"	]
@@ -1066,8 +1066,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 32767,	"32767"	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, Clob) from T_smallint;
-% sys.t_smallint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_smallint,	sys.t_smallint # table_name
+% v,	v # name
 % smallint,	clob # type
 % 6,	6 # length
 [ 1,	"1"	]
@@ -1079,8 +1079,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 32767,	"32767"	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as boolean) from T_smallint;
-% sys.t_smallint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_smallint,	sys.t_smallint # table_name
+% v,	v # name
 % smallint,	boolean # type
 % 6,	5 # length
 [ 1,	true	]
@@ -1092,8 +1092,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 32767,	true	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as tinyint) from T_smallint where v between -127 and 127;
-% sys.t_smallint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_smallint,	sys.t_smallint # table_name
+% v,	v # name
 % smallint,	tinyint # type
 % 4,	4 # length
 [ 1,	1	]
@@ -1102,8 +1102,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -127,	-127	]
 [ 127,	127	]
 #SELECT v, cast(v as smallint) from T_smallint;
-% sys.t_smallint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_smallint,	sys.t_smallint # table_name
+% v,	v # name
 % smallint,	smallint # type
 % 6,	6 # length
 [ 1,	1	]
@@ -1115,8 +1115,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 32767,	32767	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as integer) from T_smallint;
-% sys.t_smallint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_smallint,	sys.t_smallint # table_name
+% v,	v # name
 % smallint,	int # type
 % 6,	6 # length
 [ 1,	1	]
@@ -1128,8 +1128,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 32767,	32767	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as bigint) from T_smallint;
-% sys.t_smallint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_smallint,	sys.t_smallint # table_name
+% v,	v # name
 % smallint,	bigint # type
 % 6,	6 # length
 [ 1,	1	]
@@ -1141,8 +1141,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 32767,	32767	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as float) from T_smallint;
-% sys.t_smallint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_smallint,	sys.t_smallint # table_name
+% v,	v # name
 % smallint,	double # type
 % 6,	24 # length
 [ 1,	1	]
@@ -1154,8 +1154,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 32767,	32767	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as float(24)) from T_smallint;
-% sys.t_smallint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_smallint,	sys.t_smallint # table_name
+% v,	v # name
 % smallint,	real # type
 % 6,	15 # length
 [ 1,	1	]
@@ -1167,8 +1167,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 32767,	32767	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as real) from T_smallint;
-% sys.t_smallint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_smallint,	sys.t_smallint # table_name
+% v,	v # name
 % smallint,	real # type
 % 6,	15 # length
 [ 1,	1	]
@@ -1180,8 +1180,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 32767,	32767	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as double) from T_smallint;
-% sys.t_smallint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_smallint,	sys.t_smallint # table_name
+% v,	v # name
 % smallint,	double # type
 % 6,	24 # length
 [ 1,	1	]
@@ -1193,8 +1193,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 32767,	32767	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as double precision) from T_smallint;
-% sys.t_smallint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_smallint,	sys.t_smallint # table_name
+% v,	v # name
 % smallint,	double # type
 % 6,	24 # length
 [ 1,	1	]
@@ -1206,8 +1206,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 32767,	32767	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as numeric) from T_smallint;
-% sys.t_smallint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_smallint,	sys.t_smallint # table_name
+% v,	v # name
 % smallint,	decimal # type
 % 6,	20 # length
 [ 1,	1.000	]
@@ -1219,8 +1219,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 32767,	32767.000	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as decimal) from T_smallint;
-% sys.t_smallint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_smallint,	sys.t_smallint # table_name
+% v,	v # name
 % smallint,	decimal # type
 % 6,	20 # length
 [ 1,	1.000	]
@@ -1232,8 +1232,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 32767,	32767.000	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as numeric(7)) from T_smallint;
-% sys.t_smallint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_smallint,	sys.t_smallint # table_name
+% v,	v # name
 % smallint,	decimal # type
 % 6,	8 # length
 [ 1,	1	]
@@ -1245,8 +1245,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 32767,	32767	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as decimal(9)) from T_smallint;
-% sys.t_smallint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_smallint,	sys.t_smallint # table_name
+% v,	v # name
 % smallint,	decimal # type
 % 6,	10 # length
 [ 1,	1	]
@@ -1258,8 +1258,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 32767,	32767	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as numeric(12,0)) from T_smallint;
-% sys.t_smallint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_smallint,	sys.t_smallint # table_name
+% v,	v # name
 % smallint,	decimal # type
 % 6,	13 # length
 [ 1,	1	]
@@ -1271,8 +1271,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 32767,	32767	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as decimal(15,3)) from T_smallint;
-% sys.t_smallint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_smallint,	sys.t_smallint # table_name
+% v,	v # name
 % smallint,	decimal # type
 % 6,	17 # length
 [ 1,	1.000	]
@@ -1284,15 +1284,15 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 32767,	32767.000	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as char) from T_smallint where v between 0 and 1;
-% sys.t_smallint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_smallint,	sys.t_smallint # table_name
+% v,	v # name
 % smallint,	char # type
 % 1,	1 # length
 [ 1,	"1"	]
 [ 0,	"0"	]
 #SELECT v, cast(v as varchar(6)) from T_smallint;
-% sys.t_smallint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_smallint,	sys.t_smallint # table_name
+% v,	v # name
 % smallint,	varchar # type
 % 6,	6 # length
 [ 1,	"1"	]
@@ -1304,8 +1304,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 32767,	"32767"	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as CHARACTER LARGE OBJECT) from T_smallint;
-% sys.t_smallint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_smallint,	sys.t_smallint # table_name
+% v,	v # name
 % smallint,	clob # type
 % 6,	6 # length
 [ 1,	"1"	]
@@ -1317,8 +1317,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 32767,	"32767"	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as Clob) from T_smallint;
-% sys.t_smallint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_smallint,	sys.t_smallint # table_name
+% v,	v # name
 % smallint,	clob # type
 % 6,	6 # length
 [ 1,	"1"	]
@@ -1351,8 +1351,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 32767	]
 [ 2147483647	]
 #SELECT v, convert(v, boolean) from T_int;
-% sys.t_int,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_int,	sys.t_int # table_name
+% v,	v # name
 % int,	boolean # type
 % 11,	5 # length
 [ 1,	true	]
@@ -1366,8 +1366,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	true	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, tinyint) from T_int where v between -127 and 127;
-% sys.t_int,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_int,	sys.t_int # table_name
+% v,	v # name
 % int,	tinyint # type
 % 4,	4 # length
 [ 1,	1	]
@@ -1376,8 +1376,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -127,	-127	]
 [ 127,	127	]
 #SELECT v, convert(v, smallint) from T_int where v between -32767 and 32767;
-% sys.t_int,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_int,	sys.t_int # table_name
+% v,	v # name
 % int,	smallint # type
 % 6,	6 # length
 [ 1,	1	]
@@ -1388,8 +1388,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -32767,	-32767	]
 [ 32767,	32767	]
 #SELECT v, convert(v, integer) from T_int;
-% sys.t_int,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_int,	sys.t_int # table_name
+% v,	v # name
 % int,	int # type
 % 11,	11 # length
 [ 1,	1	]
@@ -1403,8 +1403,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	2147483647	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, bigint) from T_int;
-% sys.t_int,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_int,	sys.t_int # table_name
+% v,	v # name
 % int,	bigint # type
 % 11,	11 # length
 [ 1,	1	]
@@ -1418,8 +1418,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	2147483647	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, float) from T_int;
-% sys.t_int,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_int,	sys.t_int # table_name
+% v,	v # name
 % int,	double # type
 % 11,	24 # length
 [ 1,	1	]
@@ -1433,8 +1433,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	2147483647	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, float(24)) from T_int;
-% sys.t_int,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_int,	sys.t_int # table_name
+% v,	v # name
 % int,	real # type
 % 11,	15 # length
 [ 1,	1	]
@@ -1448,8 +1448,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	2.1475e+09	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, real) from T_int;
-% sys.t_int,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_int,	sys.t_int # table_name
+% v,	v # name
 % int,	real # type
 % 11,	15 # length
 [ 1,	1	]
@@ -1463,8 +1463,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	2.1475e+09	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, double) from T_int;
-% sys.t_int,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_int,	sys.t_int # table_name
+% v,	v # name
 % int,	double # type
 % 11,	24 # length
 [ 1,	1	]
@@ -1478,8 +1478,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	2147483647	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, double precision) from T_int;
-% sys.t_int,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_int,	sys.t_int # table_name
+% v,	v # name
 % int,	double # type
 % 11,	24 # length
 [ 1,	1	]
@@ -1493,8 +1493,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	2147483647	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, numeric) from T_int;
-% sys.t_int,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_int,	sys.t_int # table_name
+% v,	v # name
 % int,	decimal # type
 % 11,	20 # length
 [ 1,	1.000	]
@@ -1508,8 +1508,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	2147483647.000	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, decimal) from T_int;
-% sys.t_int,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_int,	sys.t_int # table_name
+% v,	v # name
 % int,	decimal # type
 % 11,	20 # length
 [ 1,	1.000	]
@@ -1523,8 +1523,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	2147483647.000	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, numeric(10)) from T_int;
-% sys.t_int,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_int,	sys.t_int # table_name
+% v,	v # name
 % int,	decimal # type
 % 11,	11 # length
 [ 1,	1	]
@@ -1538,8 +1538,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	2147483647	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, decimal(11)) from T_int;
-% sys.t_int,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_int,	sys.t_int # table_name
+% v,	v # name
 % int,	decimal # type
 % 11,	12 # length
 [ 1,	1	]
@@ -1553,8 +1553,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	2147483647	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, numeric(12,0)) from T_int;
-% sys.t_int,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_int,	sys.t_int # table_name
+% v,	v # name
 % int,	decimal # type
 % 11,	13 # length
 [ 1,	1	]
@@ -1568,8 +1568,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	2147483647	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, decimal(15,3)) from T_int;
-% sys.t_int,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_int,	sys.t_int # table_name
+% v,	v # name
 % int,	decimal # type
 % 11,	17 # length
 [ 1,	1.000	]
@@ -1583,15 +1583,15 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	2147483647.000	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, char) from T_int where v between 0 and 1;
-% sys.t_int,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_int,	sys.t_int # table_name
+% v,	v # name
 % int,	char # type
 % 1,	1 # length
 [ 1,	"1"	]
 [ 0,	"0"	]
 #SELECT v, convert(v, varchar(16)) from T_int;
-% sys.t_int,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_int,	sys.t_int # table_name
+% v,	v # name
 % int,	varchar # type
 % 11,	11 # length
 [ 1,	"1"	]
@@ -1605,8 +1605,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	"2147483647"	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, CHARACTER LARGE OBJECT) from T_int;
-% sys.t_int,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_int,	sys.t_int # table_name
+% v,	v # name
 % int,	clob # type
 % 11,	11 # length
 [ 1,	"1"	]
@@ -1620,8 +1620,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	"2147483647"	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, Clob) from T_int;
-% sys.t_int,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_int,	sys.t_int # table_name
+% v,	v # name
 % int,	clob # type
 % 11,	11 # length
 [ 1,	"1"	]
@@ -1635,8 +1635,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	"2147483647"	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as boolean) from T_int;
-% sys.t_int,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_int,	sys.t_int # table_name
+% v,	v # name
 % int,	boolean # type
 % 11,	5 # length
 [ 1,	true	]
@@ -1650,8 +1650,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	true	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as tinyint) from T_int where v between -127 and 127;
-% sys.t_int,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_int,	sys.t_int # table_name
+% v,	v # name
 % int,	tinyint # type
 % 4,	4 # length
 [ 1,	1	]
@@ -1660,8 +1660,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -127,	-127	]
 [ 127,	127	]
 #SELECT v, cast(v as smallint) from T_int where v between -32767 and 32767;
-% sys.t_int,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_int,	sys.t_int # table_name
+% v,	v # name
 % int,	smallint # type
 % 6,	6 # length
 [ 1,	1	]
@@ -1672,8 +1672,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -32767,	-32767	]
 [ 32767,	32767	]
 #SELECT v, cast(v as integer) from T_int;
-% sys.t_int,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_int,	sys.t_int # table_name
+% v,	v # name
 % int,	int # type
 % 11,	11 # length
 [ 1,	1	]
@@ -1687,8 +1687,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	2147483647	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as bigint) from T_int;
-% sys.t_int,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_int,	sys.t_int # table_name
+% v,	v # name
 % int,	bigint # type
 % 11,	11 # length
 [ 1,	1	]
@@ -1702,8 +1702,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	2147483647	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as float) from T_int;
-% sys.t_int,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_int,	sys.t_int # table_name
+% v,	v # name
 % int,	double # type
 % 11,	24 # length
 [ 1,	1	]
@@ -1717,8 +1717,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	2147483647	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as float(24)) from T_int;
-% sys.t_int,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_int,	sys.t_int # table_name
+% v,	v # name
 % int,	real # type
 % 11,	15 # length
 [ 1,	1	]
@@ -1732,8 +1732,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	2.1475e+09	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as real) from T_int;
-% sys.t_int,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_int,	sys.t_int # table_name
+% v,	v # name
 % int,	real # type
 % 11,	15 # length
 [ 1,	1	]
@@ -1747,8 +1747,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	2.1475e+09	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as double) from T_int;
-% sys.t_int,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_int,	sys.t_int # table_name
+% v,	v # name
 % int,	double # type
 % 11,	24 # length
 [ 1,	1	]
@@ -1762,8 +1762,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	2147483647	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as double precision) from T_int;
-% sys.t_int,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_int,	sys.t_int # table_name
+% v,	v # name
 % int,	double # type
 % 11,	24 # length
 [ 1,	1	]
@@ -1777,8 +1777,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	2147483647	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as numeric) from T_int;
-% sys.t_int,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_int,	sys.t_int # table_name
+% v,	v # name
 % int,	decimal # type
 % 11,	20 # length
 [ 1,	1.000	]
@@ -1792,8 +1792,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	2147483647.000	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as decimal) from T_int;
-% sys.t_int,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_int,	sys.t_int # table_name
+% v,	v # name
 % int,	decimal # type
 % 11,	20 # length
 [ 1,	1.000	]
@@ -1807,8 +1807,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	2147483647.000	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as numeric(10)) from T_int;
-% sys.t_int,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_int,	sys.t_int # table_name
+% v,	v # name
 % int,	decimal # type
 % 11,	11 # length
 [ 1,	1	]
@@ -1822,8 +1822,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	2147483647	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as decimal(11)) from T_int;
-% sys.t_int,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_int,	sys.t_int # table_name
+% v,	v # name
 % int,	decimal # type
 % 11,	12 # length
 [ 1,	1	]
@@ -1837,8 +1837,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	2147483647	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as numeric(12,0)) from T_int;
-% sys.t_int,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_int,	sys.t_int # table_name
+% v,	v # name
 % int,	decimal # type
 % 11,	13 # length
 [ 1,	1	]
@@ -1852,8 +1852,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	2147483647	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as decimal(15,3)) from T_int;
-% sys.t_int,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_int,	sys.t_int # table_name
+% v,	v # name
 % int,	decimal # type
 % 11,	17 # length
 [ 1,	1.000	]
@@ -1867,15 +1867,15 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	2147483647.000	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as char) from T_int where v between 0 and 1;
-% sys.t_int,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_int,	sys.t_int # table_name
+% v,	v # name
 % int,	char # type
 % 1,	1 # length
 [ 1,	"1"	]
 [ 0,	"0"	]
 #SELECT v, cast(v as varchar(16)) from T_int;
-% sys.t_int,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_int,	sys.t_int # table_name
+% v,	v # name
 % int,	varchar # type
 % 11,	11 # length
 [ 1,	"1"	]
@@ -1889,8 +1889,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	"2147483647"	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as CHARACTER LARGE OBJECT) from T_int;
-% sys.t_int,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_int,	sys.t_int # table_name
+% v,	v # name
 % int,	clob # type
 % 11,	11 # length
 [ 1,	"1"	]
@@ -1904,8 +1904,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	"2147483647"	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as Clob) from T_int;
-% sys.t_int,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_int,	sys.t_int # table_name
+% v,	v # name
 % int,	clob # type
 % 11,	11 # length
 [ 1,	"1"	]
@@ -1940,8 +1940,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 32767	]
 [ 2147483647	]
 #SELECT v, convert(v, boolean) from T_bigint;
-% sys.t_bigint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_bigint,	sys.t_bigint # table_name
+% v,	v # name
 % bigint,	boolean # type
 % 11,	5 # length
 [ 1,	true	]
@@ -1955,8 +1955,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	true	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, tinyint) from T_bigint where v between -127 and 127;
-% sys.t_bigint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_bigint,	sys.t_bigint # table_name
+% v,	v # name
 % bigint,	tinyint # type
 % 4,	4 # length
 [ 1,	1	]
@@ -1965,8 +1965,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -127,	-127	]
 [ 127,	127	]
 #SELECT v, convert(v, smallint) from T_bigint where v between -32767 and 32767;
-% sys.t_bigint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_bigint,	sys.t_bigint # table_name
+% v,	v # name
 % bigint,	smallint # type
 % 6,	6 # length
 [ 1,	1	]
@@ -1977,8 +1977,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -32767,	-32767	]
 [ 32767,	32767	]
 #SELECT v, convert(v, integer) from T_bigint;
-% sys.t_bigint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_bigint,	sys.t_bigint # table_name
+% v,	v # name
 % bigint,	int # type
 % 11,	11 # length
 [ 1,	1	]
@@ -1992,8 +1992,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	2147483647	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, bigint) from T_bigint;
-% sys.t_bigint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_bigint,	sys.t_bigint # table_name
+% v,	v # name
 % bigint,	bigint # type
 % 11,	11 # length
 [ 1,	1	]
@@ -2007,8 +2007,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	2147483647	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, float) from T_bigint;
-% sys.t_bigint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_bigint,	sys.t_bigint # table_name
+% v,	v # name
 % bigint,	double # type
 % 11,	24 # length
 [ 1,	1	]
@@ -2022,8 +2022,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	2147483647	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, float(24)) from T_bigint;
-% sys.t_bigint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_bigint,	sys.t_bigint # table_name
+% v,	v # name
 % bigint,	real # type
 % 11,	15 # length
 [ 1,	1	]
@@ -2037,8 +2037,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	2.1475e+09	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, real) from T_bigint;
-% sys.t_bigint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_bigint,	sys.t_bigint # table_name
+% v,	v # name
 % bigint,	real # type
 % 11,	15 # length
 [ 1,	1	]
@@ -2052,8 +2052,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	2.1475e+09	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, double) from T_bigint;
-% sys.t_bigint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_bigint,	sys.t_bigint # table_name
+% v,	v # name
 % bigint,	double # type
 % 11,	24 # length
 [ 1,	1	]
@@ -2067,8 +2067,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	2147483647	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, double precision) from T_bigint;
-% sys.t_bigint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_bigint,	sys.t_bigint # table_name
+% v,	v # name
 % bigint,	double # type
 % 11,	24 # length
 [ 1,	1	]
@@ -2082,8 +2082,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	2147483647	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, numeric) from T_bigint;
-% sys.t_bigint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_bigint,	sys.t_bigint # table_name
+% v,	v # name
 % bigint,	decimal # type
 % 11,	20 # length
 [ 1,	1.000	]
@@ -2097,8 +2097,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	2147483647.000	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, decimal) from T_bigint;
-% sys.t_bigint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_bigint,	sys.t_bigint # table_name
+% v,	v # name
 % bigint,	decimal # type
 % 11,	20 # length
 [ 1,	1.000	]
@@ -2112,8 +2112,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	2147483647.000	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, numeric(10)) from T_bigint;
-% sys.t_bigint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_bigint,	sys.t_bigint # table_name
+% v,	v # name
 % bigint,	decimal # type
 % 11,	11 # length
 [ 1,	1	]
@@ -2127,8 +2127,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	2147483647	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, decimal(11)) from T_bigint;
-% sys.t_bigint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_bigint,	sys.t_bigint # table_name
+% v,	v # name
 % bigint,	decimal # type
 % 11,	12 # length
 [ 1,	1	]
@@ -2142,8 +2142,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	2147483647	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, numeric(12,0)) from T_bigint;
-% sys.t_bigint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_bigint,	sys.t_bigint # table_name
+% v,	v # name
 % bigint,	decimal # type
 % 11,	13 # length
 [ 1,	1	]
@@ -2157,8 +2157,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	2147483647	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, decimal(15,3)) from T_bigint;
-% sys.t_bigint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_bigint,	sys.t_bigint # table_name
+% v,	v # name
 % bigint,	decimal # type
 % 11,	17 # length
 [ 1,	1.000	]
@@ -2172,15 +2172,15 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	2147483647.000	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, char) from T_bigint where v between 0 and 1;
-% sys.t_bigint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_bigint,	sys.t_bigint # table_name
+% v,	v # name
 % bigint,	char # type
 % 1,	1 # length
 [ 1,	"1"	]
 [ 0,	"0"	]
 #SELECT v, convert(v, varchar(16)) from T_bigint;
-% sys.t_bigint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_bigint,	sys.t_bigint # table_name
+% v,	v # name
 % bigint,	varchar # type
 % 11,	11 # length
 [ 1,	"1"	]
@@ -2194,8 +2194,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	"2147483647"	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, CHARACTER LARGE OBJECT) from T_bigint;
-% sys.t_bigint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_bigint,	sys.t_bigint # table_name
+% v,	v # name
 % bigint,	clob # type
 % 11,	11 # length
 [ 1,	"1"	]
@@ -2209,8 +2209,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	"2147483647"	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, Clob) from T_bigint;
-% sys.t_bigint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_bigint,	sys.t_bigint # table_name
+% v,	v # name
 % bigint,	clob # type
 % 11,	11 # length
 [ 1,	"1"	]
@@ -2224,8 +2224,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	"2147483647"	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as boolean) from T_bigint;
-% sys.t_bigint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_bigint,	sys.t_bigint # table_name
+% v,	v # name
 % bigint,	boolean # type
 % 11,	5 # length
 [ 1,	true	]
@@ -2239,8 +2239,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	true	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as tinyint) from T_bigint where v between -127 and 127;
-% sys.t_bigint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_bigint,	sys.t_bigint # table_name
+% v,	v # name
 % bigint,	tinyint # type
 % 4,	4 # length
 [ 1,	1	]
@@ -2249,8 +2249,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -127,	-127	]
 [ 127,	127	]
 #SELECT v, cast(v as smallint) from T_bigint where v between -32767 and 32767;
-% sys.t_bigint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_bigint,	sys.t_bigint # table_name
+% v,	v # name
 % bigint,	smallint # type
 % 6,	6 # length
 [ 1,	1	]
@@ -2261,8 +2261,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -32767,	-32767	]
 [ 32767,	32767	]
 #SELECT v, cast(v as integer) from T_bigint;
-% sys.t_bigint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_bigint,	sys.t_bigint # table_name
+% v,	v # name
 % bigint,	int # type
 % 11,	11 # length
 [ 1,	1	]
@@ -2276,8 +2276,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	2147483647	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as bigint) from T_bigint;
-% sys.t_bigint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_bigint,	sys.t_bigint # table_name
+% v,	v # name
 % bigint,	bigint # type
 % 11,	11 # length
 [ 1,	1	]
@@ -2291,8 +2291,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	2147483647	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as float) from T_bigint;
-% sys.t_bigint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_bigint,	sys.t_bigint # table_name
+% v,	v # name
 % bigint,	double # type
 % 11,	24 # length
 [ 1,	1	]
@@ -2306,8 +2306,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	2147483647	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as float(24)) from T_bigint;
-% sys.t_bigint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_bigint,	sys.t_bigint # table_name
+% v,	v # name
 % bigint,	real # type
 % 11,	15 # length
 [ 1,	1	]
@@ -2321,8 +2321,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	2.1475e+09	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as real) from T_bigint;
-% sys.t_bigint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_bigint,	sys.t_bigint # table_name
+% v,	v # name
 % bigint,	real # type
 % 11,	15 # length
 [ 1,	1	]
@@ -2336,8 +2336,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	2.1475e+09	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as double) from T_bigint;
-% sys.t_bigint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_bigint,	sys.t_bigint # table_name
+% v,	v # name
 % bigint,	double # type
 % 11,	24 # length
 [ 1,	1	]
@@ -2351,8 +2351,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	2147483647	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as double precision) from T_bigint;
-% sys.t_bigint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_bigint,	sys.t_bigint # table_name
+% v,	v # name
 % bigint,	double # type
 % 11,	24 # length
 [ 1,	1	]
@@ -2366,8 +2366,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	2147483647	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as numeric) from T_bigint;
-% sys.t_bigint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_bigint,	sys.t_bigint # table_name
+% v,	v # name
 % bigint,	decimal # type
 % 11,	20 # length
 [ 1,	1.000	]
@@ -2381,8 +2381,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	2147483647.000	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as decimal) from T_bigint;
-% sys.t_bigint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_bigint,	sys.t_bigint # table_name
+% v,	v # name
 % bigint,	decimal # type
 % 11,	20 # length
 [ 1,	1.000	]
@@ -2396,8 +2396,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	2147483647.000	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as numeric(10)) from T_bigint;
-% sys.t_bigint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_bigint,	sys.t_bigint # table_name
+% v,	v # name
 % bigint,	decimal # type
 % 11,	11 # length
 [ 1,	1	]
@@ -2411,8 +2411,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	2147483647	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as decimal(11)) from T_bigint;
-% sys.t_bigint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_bigint,	sys.t_bigint # table_name
+% v,	v # name
 % bigint,	decimal # type
 % 11,	12 # length
 [ 1,	1	]
@@ -2426,8 +2426,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	2147483647	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as numeric(12,0)) from T_bigint;
-% sys.t_bigint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_bigint,	sys.t_bigint # table_name
+% v,	v # name
 % bigint,	decimal # type
 % 11,	13 # length
 [ 1,	1	]
@@ -2441,8 +2441,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	2147483647	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as decimal(15,3)) from T_bigint;
-% sys.t_bigint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_bigint,	sys.t_bigint # table_name
+% v,	v # name
 % bigint,	decimal # type
 % 11,	17 # length
 [ 1,	1.000	]
@@ -2456,15 +2456,15 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	2147483647.000	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as char) from T_bigint where v between 0 and 1;
-% sys.t_bigint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_bigint,	sys.t_bigint # table_name
+% v,	v # name
 % bigint,	char # type
 % 1,	1 # length
 [ 1,	"1"	]
 [ 0,	"0"	]
 #SELECT v, cast(v as varchar(16)) from T_bigint;
-% sys.t_bigint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_bigint,	sys.t_bigint # table_name
+% v,	v # name
 % bigint,	varchar # type
 % 11,	11 # length
 [ 1,	"1"	]
@@ -2478,8 +2478,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	"2147483647"	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as CHARACTER LARGE OBJECT) from T_bigint;
-% sys.t_bigint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_bigint,	sys.t_bigint # table_name
+% v,	v # name
 % bigint,	clob # type
 % 11,	11 # length
 [ 1,	"1"	]
@@ -2493,8 +2493,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	"2147483647"	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as Clob) from T_bigint;
-% sys.t_bigint,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_bigint,	sys.t_bigint # table_name
+% v,	v # name
 % bigint,	clob # type
 % 11,	11 # length
 [ 1,	"1"	]
@@ -2529,8 +2529,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 32767	]
 [ 2147483647	]
 #SELECT v, convert(v, tinyint) from T_float where v between -127 and 127;
-% sys.t_float,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_float,	sys.t_float # table_name
+% v,	v # name
 % double,	tinyint # type
 % 24,	4 # length
 [ 1,	1	]
@@ -2539,8 +2539,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -127,	-127	]
 [ 127,	127	]
 #SELECT v, convert(v, smallint) from T_float where v between -32767 and 32767;
-% sys.t_float,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_float,	sys.t_float # table_name
+% v,	v # name
 % double,	smallint # type
 % 24,	6 # length
 [ 1,	1	]
@@ -2551,8 +2551,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -32767,	-32767	]
 [ 32767,	32767	]
 #SELECT v, convert(v, integer) from T_float;
-% sys.t_float,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_float,	sys.t_float # table_name
+% v,	v # name
 % double,	int # type
 % 24,	11 # length
 [ 1,	1	]
@@ -2566,8 +2566,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	2147483647	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, bigint) from T_float;
-% sys.t_float,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_float,	sys.t_float # table_name
+% v,	v # name
 % double,	bigint # type
 % 24,	11 # length
 [ 1,	1	]
@@ -2581,8 +2581,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	2147483647	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, float) from T_float;
-% sys.t_float,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_float,	sys.t_float # table_name
+% v,	v # name
 % double,	double # type
 % 24,	24 # length
 [ 1,	1	]
@@ -2596,8 +2596,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	2147483647	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, float(24)) from T_float;
-% sys.t_float,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_float,	sys.t_float # table_name
+% v,	v # name
 % double,	real # type
 % 24,	15 # length
 [ 1,	1	]
@@ -2611,8 +2611,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	2.1475e+09	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, real) from T_float;
-% sys.t_float,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_float,	sys.t_float # table_name
+% v,	v # name
 % double,	real # type
 % 24,	15 # length
 [ 1,	1	]
@@ -2626,8 +2626,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	2.1475e+09	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, double) from T_float;
-% sys.t_float,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_float,	sys.t_float # table_name
+% v,	v # name
 % double,	double # type
 % 24,	24 # length
 [ 1,	1	]
@@ -2641,8 +2641,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	2147483647	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, double precision) from T_float;
-% sys.t_float,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_float,	sys.t_float # table_name
+% v,	v # name
 % double,	double # type
 % 24,	24 # length
 [ 1,	1	]
@@ -2656,8 +2656,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	2147483647	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, numeric) from T_float;
-% sys.t_float,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_float,	sys.t_float # table_name
+% v,	v # name
 % double,	decimal # type
 % 24,	20 # length
 [ 1,	1.000	]
@@ -2671,8 +2671,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	2147483647.000	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, decimal) from T_float;
-% sys.t_float,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_float,	sys.t_float # table_name
+% v,	v # name
 % double,	decimal # type
 % 24,	20 # length
 [ 1,	1.000	]
@@ -2686,8 +2686,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	2147483647.000	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, numeric(10)) from T_float;
-% sys.t_float,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_float,	sys.t_float # table_name
+% v,	v # name
 % double,	decimal # type
 % 24,	11 # length
 [ 1,	1	]
@@ -2701,8 +2701,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	2147483647	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, decimal(11)) from T_float;
-% sys.t_float,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_float,	sys.t_float # table_name
+% v,	v # name
 % double,	decimal # type
 % 24,	12 # length
 [ 1,	1	]
@@ -2716,8 +2716,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	2147483647	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, numeric(12,0)) from T_float;
-% sys.t_float,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_float,	sys.t_float # table_name
+% v,	v # name
 % double,	decimal # type
 % 24,	13 # length
 [ 1,	1	]
@@ -2731,8 +2731,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	2147483647	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, decimal(15,3)) from T_float;
-% sys.t_float,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_float,	sys.t_float # table_name
+% v,	v # name
 % double,	decimal # type
 % 24,	17 # length
 [ 1,	1.000	]
@@ -2746,15 +2746,15 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	2147483647.000	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, char) from T_float where v between 0 and 1;
-% sys.t_float,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_float,	sys.t_float # table_name
+% v,	v # name
 % double,	char # type
 % 24,	1 # length
 [ 1,	"1"	]
 [ 0,	"0"	]
 #SELECT v, convert(v, varchar(16)) from T_float;
-% sys.t_float,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_float,	sys.t_float # table_name
+% v,	v # name
 % double,	varchar # type
 % 24,	11 # length
 [ 1,	"1"	]
@@ -2768,8 +2768,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	"2147483647"	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, CHARACTER LARGE OBJECT) from T_float;
-% sys.t_float,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_float,	sys.t_float # table_name
+% v,	v # name
 % double,	clob # type
 % 24,	11 # length
 [ 1,	"1"	]
@@ -2783,8 +2783,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	"2147483647"	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, Clob) from T_float;
-% sys.t_float,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_float,	sys.t_float # table_name
+% v,	v # name
 % double,	clob # type
 % 24,	11 # length
 [ 1,	"1"	]
@@ -2798,8 +2798,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	"2147483647"	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as tinyint) from T_float where v between -127 and 127;
-% sys.t_float,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_float,	sys.t_float # table_name
+% v,	v # name
 % double,	tinyint # type
 % 24,	4 # length
 [ 1,	1	]
@@ -2808,8 +2808,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -127,	-127	]
 [ 127,	127	]
 #SELECT v, cast(v as smallint) from T_float where v between -32767 and 32767;
-% sys.t_float,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_float,	sys.t_float # table_name
+% v,	v # name
 % double,	smallint # type
 % 24,	6 # length
 [ 1,	1	]
@@ -2820,8 +2820,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -32767,	-32767	]
 [ 32767,	32767	]
 #SELECT v, cast(v as integer) from T_float;
-% sys.t_float,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_float,	sys.t_float # table_name
+% v,	v # name
 % double,	int # type
 % 24,	11 # length
 [ 1,	1	]
@@ -2835,8 +2835,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	2147483647	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as bigint) from T_float;
-% sys.t_float,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_float,	sys.t_float # table_name
+% v,	v # name
 % double,	bigint # type
 % 24,	11 # length
 [ 1,	1	]
@@ -2850,8 +2850,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	2147483647	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as float) from T_float;
-% sys.t_float,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_float,	sys.t_float # table_name
+% v,	v # name
 % double,	double # type
 % 24,	24 # length
 [ 1,	1	]
@@ -2865,8 +2865,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	2147483647	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as float(24)) from T_float;
-% sys.t_float,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_float,	sys.t_float # table_name
+% v,	v # name
 % double,	real # type
 % 24,	15 # length
 [ 1,	1	]
@@ -2880,8 +2880,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	2.1475e+09	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as real) from T_float;
-% sys.t_float,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_float,	sys.t_float # table_name
+% v,	v # name
 % double,	real # type
 % 24,	15 # length
 [ 1,	1	]
@@ -2895,8 +2895,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	2.1475e+09	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as double) from T_float;
-% sys.t_float,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_float,	sys.t_float # table_name
+% v,	v # name
 % double,	double # type
 % 24,	24 # length
 [ 1,	1	]
@@ -2910,8 +2910,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	2147483647	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as double precision) from T_float;
-% sys.t_float,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_float,	sys.t_float # table_name
+% v,	v # name
 % double,	double # type
 % 24,	24 # length
 [ 1,	1	]
@@ -2925,8 +2925,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	2147483647	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as numeric) from T_float;
-% sys.t_float,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_float,	sys.t_float # table_name
+% v,	v # name
 % double,	decimal # type
 % 24,	20 # length
 [ 1,	1.000	]
@@ -2940,8 +2940,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	2147483647.000	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as decimal) from T_float;
-% sys.t_float,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_float,	sys.t_float # table_name
+% v,	v # name
 % double,	decimal # type
 % 24,	20 # length
 [ 1,	1.000	]
@@ -2955,8 +2955,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	2147483647.000	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as numeric(10)) from T_float;
-% sys.t_float,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_float,	sys.t_float # table_name
+% v,	v # name
 % double,	decimal # type
 % 24,	11 # length
 [ 1,	1	]
@@ -2970,8 +2970,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	2147483647	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as decimal(11)) from T_float;
-% sys.t_float,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_float,	sys.t_float # table_name
+% v,	v # name
 % double,	decimal # type
 % 24,	12 # length
 [ 1,	1	]
@@ -2985,8 +2985,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	2147483647	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as numeric(12,0)) from T_float;
-% sys.t_float,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_float,	sys.t_float # table_name
+% v,	v # name
 % double,	decimal # type
 % 24,	13 # length
 [ 1,	1	]
@@ -3000,8 +3000,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	2147483647	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as decimal(15,3)) from T_float;
-% sys.t_float,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_float,	sys.t_float # table_name
+% v,	v # name
 % double,	decimal # type
 % 24,	17 # length
 [ 1,	1.000	]
@@ -3015,15 +3015,15 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	2147483647.000	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as char) from T_float where v between 0 and 1;
-% sys.t_float,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_float,	sys.t_float # table_name
+% v,	v # name
 % double,	char # type
 % 24,	1 # length
 [ 1,	"1"	]
 [ 0,	"0"	]
 #SELECT v, cast(v as varchar(16)) from T_float;
-% sys.t_float,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_float,	sys.t_float # table_name
+% v,	v # name
 % double,	varchar # type
 % 24,	11 # length
 [ 1,	"1"	]
@@ -3037,8 +3037,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	"2147483647"	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as CHARACTER LARGE OBJECT) from T_float;
-% sys.t_float,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_float,	sys.t_float # table_name
+% v,	v # name
 % double,	clob # type
 % 24,	11 # length
 [ 1,	"1"	]
@@ -3052,8 +3052,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2147483647,	"2147483647"	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as Clob) from T_float;
-% sys.t_float,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_float,	sys.t_float # table_name
+% v,	v # name
 % double,	clob # type
 % 24,	11 # length
 [ 1,	"1"	]
@@ -3090,8 +3090,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 32767	]
 [ 2.1475e+09	]
 #SELECT v, convert(v, tinyint) from T_real where v between -127 and 127;
-% sys.t_real,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_real,	sys.t_real # table_name
+% v,	v # name
 % real,	tinyint # type
 % 15,	4 # length
 [ 1,	1	]
@@ -3102,8 +3102,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 0.12,	0	]
 [ -3.1416,	-3	]
 #SELECT v, convert(v, smallint) from T_real where v between -32767 and 32767;
-% sys.t_real,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_real,	sys.t_real # table_name
+% v,	v # name
 % real,	smallint # type
 % 15,	6 # length
 [ 1,	1	]
@@ -3116,8 +3116,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 0.12,	0	]
 [ -3.1416,	-3	]
 #SELECT v, convert(v, bigint) from T_real;
-% sys.t_real,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_real,	sys.t_real # table_name
+% v,	v # name
 % real,	bigint # type
 % 15,	11 # length
 [ 1,	1	]
@@ -3133,8 +3133,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1416,	-3	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, float) from T_real;
-% sys.t_real,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_real,	sys.t_real # table_name
+% v,	v # name
 % real,	double # type
 % 15,	24 # length
 [ 1,	1	]
@@ -3150,8 +3150,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1416,	-3.1415627	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, float(24)) from T_real;
-% sys.t_real,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_real,	sys.t_real # table_name
+% v,	v # name
 % real,	real # type
 % 15,	15 # length
 [ 1,	1	]
@@ -3167,8 +3167,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1416,	-3.1416	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, real) from T_real;
-% sys.t_real,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_real,	sys.t_real # table_name
+% v,	v # name
 % real,	real # type
 % 15,	15 # length
 [ 1,	1	]
@@ -3184,8 +3184,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1416,	-3.1416	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, double) from T_real;
-% sys.t_real,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_real,	sys.t_real # table_name
+% v,	v # name
 % real,	double # type
 % 15,	24 # length
 [ 1,	1	]
@@ -3201,8 +3201,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1416,	-3.1415627	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, double precision) from T_real;
-% sys.t_real,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_real,	sys.t_real # table_name
+% v,	v # name
 % real,	double # type
 % 15,	24 # length
 [ 1,	1	]
@@ -3218,8 +3218,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1416,	-3.1415627	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, numeric) from T_real;
-% sys.t_real,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_real,	sys.t_real # table_name
+% v,	v # name
 % real,	decimal # type
 % 15,	20 # length
 [ 1,	1.000	]
@@ -3235,8 +3235,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1416,	-3.142	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, decimal) from T_real;
-% sys.t_real,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_real,	sys.t_real # table_name
+% v,	v # name
 % real,	decimal # type
 % 15,	20 # length
 [ 1,	1.000	]
@@ -3252,8 +3252,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1416,	-3.142	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, numeric(10)) from T_real;
-% sys.t_real,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_real,	sys.t_real # table_name
+% v,	v # name
 % real,	decimal # type
 % 15,	11 # length
 [ 1,	1	]
@@ -3269,8 +3269,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1416,	-3	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, decimal(11)) from T_real;
-% sys.t_real,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_real,	sys.t_real # table_name
+% v,	v # name
 % real,	decimal # type
 % 15,	12 # length
 [ 1,	1	]
@@ -3286,8 +3286,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1416,	-3	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, numeric(12,0)) from T_real;
-% sys.t_real,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_real,	sys.t_real # table_name
+% v,	v # name
 % real,	decimal # type
 % 15,	13 # length
 [ 1,	1	]
@@ -3303,8 +3303,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1416,	-3	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, decimal(15,3)) from T_real;
-% sys.t_real,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_real,	sys.t_real # table_name
+% v,	v # name
 % real,	decimal # type
 % 15,	17 # length
 [ 1,	1.000	]
@@ -3320,8 +3320,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1416,	-3.142	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, varchar(16)) from T_real;
-% sys.t_real,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_real,	sys.t_real # table_name
+% v,	v # name
 % real,	varchar # type
 % 15,	14 # length
 [ 1,	"1"	]
@@ -3337,8 +3337,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1416,	"-3.1415627"	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, CHARACTER LARGE OBJECT) from T_real;
-% sys.t_real,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_real,	sys.t_real # table_name
+% v,	v # name
 % real,	clob # type
 % 15,	14 # length
 [ 1,	"1"	]
@@ -3354,8 +3354,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1416,	"-3.1415627"	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, Clob) from T_real;
-% sys.t_real,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_real,	sys.t_real # table_name
+% v,	v # name
 % real,	clob # type
 % 15,	14 # length
 [ 1,	"1"	]
@@ -3371,8 +3371,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1416,	"-3.1415627"	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as tinyint) from T_real where v between -127 and 127;
-% sys.t_real,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_real,	sys.t_real # table_name
+% v,	v # name
 % real,	tinyint # type
 % 15,	4 # length
 [ 1,	1	]
@@ -3383,8 +3383,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 0.12,	0	]
 [ -3.1416,	-3	]
 #SELECT v, cast(v as smallint) from T_real where v between -32767 and 32767;
-% sys.t_real,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_real,	sys.t_real # table_name
+% v,	v # name
 % real,	smallint # type
 % 15,	6 # length
 [ 1,	1	]
@@ -3397,8 +3397,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 0.12,	0	]
 [ -3.1416,	-3	]
 #SELECT v, cast(v as bigint) from T_real;
-% sys.t_real,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_real,	sys.t_real # table_name
+% v,	v # name
 % real,	bigint # type
 % 15,	11 # length
 [ 1,	1	]
@@ -3414,8 +3414,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1416,	-3	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as float) from T_real;
-% sys.t_real,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_real,	sys.t_real # table_name
+% v,	v # name
 % real,	double # type
 % 15,	24 # length
 [ 1,	1	]
@@ -3431,8 +3431,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1416,	-3.1415627	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as float(24)) from T_real;
-% sys.t_real,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_real,	sys.t_real # table_name
+% v,	v # name
 % real,	real # type
 % 15,	15 # length
 [ 1,	1	]
@@ -3448,8 +3448,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1416,	-3.1416	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as real) from T_real;
-% sys.t_real,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_real,	sys.t_real # table_name
+% v,	v # name
 % real,	real # type
 % 15,	15 # length
 [ 1,	1	]
@@ -3465,8 +3465,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1416,	-3.1416	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as double) from T_real;
-% sys.t_real,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_real,	sys.t_real # table_name
+% v,	v # name
 % real,	double # type
 % 15,	24 # length
 [ 1,	1	]
@@ -3482,8 +3482,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1416,	-3.1415627	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as double precision) from T_real;
-% sys.t_real,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_real,	sys.t_real # table_name
+% v,	v # name
 % real,	double # type
 % 15,	24 # length
 [ 1,	1	]
@@ -3499,8 +3499,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1416,	-3.1415627	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as numeric) from T_real;
-% sys.t_real,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_real,	sys.t_real # table_name
+% v,	v # name
 % real,	decimal # type
 % 15,	20 # length
 [ 1,	1.000	]
@@ -3516,8 +3516,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1416,	-3.142	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as decimal) from T_real;
-% sys.t_real,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_real,	sys.t_real # table_name
+% v,	v # name
 % real,	decimal # type
 % 15,	20 # length
 [ 1,	1.000	]
@@ -3533,8 +3533,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1416,	-3.142	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as numeric(10)) from T_real;
-% sys.t_real,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_real,	sys.t_real # table_name
+% v,	v # name
 % real,	decimal # type
 % 15,	11 # length
 [ 1,	1	]
@@ -3550,8 +3550,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1416,	-3	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as decimal(11)) from T_real;
-% sys.t_real,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_real,	sys.t_real # table_name
+% v,	v # name
 % real,	decimal # type
 % 15,	12 # length
 [ 1,	1	]
@@ -3567,8 +3567,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1416,	-3	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as numeric(12,0)) from T_real;
-% sys.t_real,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_real,	sys.t_real # table_name
+% v,	v # name
 % real,	decimal # type
 % 15,	13 # length
 [ 1,	1	]
@@ -3584,8 +3584,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1416,	-3	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as decimal(15,3)) from T_real;
-% sys.t_real,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_real,	sys.t_real # table_name
+% v,	v # name
 % real,	decimal # type
 % 15,	17 # length
 [ 1,	1.000	]
@@ -3601,8 +3601,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1416,	-3.142	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as varchar(16)) from T_real;
-% sys.t_real,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_real,	sys.t_real # table_name
+% v,	v # name
 % real,	varchar # type
 % 15,	14 # length
 [ 1,	"1"	]
@@ -3618,8 +3618,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1416,	"-3.1415627"	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as CHARACTER LARGE OBJECT) from T_real;
-% sys.t_real,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_real,	sys.t_real # table_name
+% v,	v # name
 % real,	clob # type
 % 15,	14 # length
 [ 1,	"1"	]
@@ -3635,8 +3635,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1416,	"-3.1415627"	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as Clob) from T_real;
-% sys.t_real,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_real,	sys.t_real # table_name
+% v,	v # name
 % real,	clob # type
 % 15,	14 # length
 [ 1,	"1"	]
@@ -3675,8 +3675,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 32767	]
 [ 2147483647	]
 #SELECT v, convert(v, tinyint) from T_double where v between -127 and 127;
-% sys.t_double,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_double,	sys.t_double # table_name
+% v,	v # name
 % double,	tinyint # type
 % 24,	4 # length
 [ 1,	1	]
@@ -3687,8 +3687,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 0.12,	0	]
 [ -3.1415629,	-3	]
 #SELECT v, convert(v, smallint) from T_double where v between -32767 and 32767;
-% sys.t_double,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_double,	sys.t_double # table_name
+% v,	v # name
 % double,	smallint # type
 % 24,	6 # length
 [ 1,	1	]
@@ -3701,8 +3701,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 0.12,	0	]
 [ -3.1415629,	-3	]
 #SELECT v, convert(v, integer) from T_double;
-% sys.t_double,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_double,	sys.t_double # table_name
+% v,	v # name
 % double,	int # type
 % 24,	11 # length
 [ 1,	1	]
@@ -3718,8 +3718,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1415629,	-3	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, bigint) from T_double;
-% sys.t_double,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_double,	sys.t_double # table_name
+% v,	v # name
 % double,	bigint # type
 % 24,	11 # length
 [ 1,	1	]
@@ -3735,8 +3735,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1415629,	-3	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, float) from T_double;
-% sys.t_double,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_double,	sys.t_double # table_name
+% v,	v # name
 % double,	double # type
 % 24,	24 # length
 [ 1,	1	]
@@ -3752,8 +3752,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1415629,	-3.1415629	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, float(24)) from T_double;
-% sys.t_double,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_double,	sys.t_double # table_name
+% v,	v # name
 % double,	real # type
 % 24,	15 # length
 [ 1,	1	]
@@ -3769,8 +3769,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1415629,	-3.1416	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, real) from T_double;
-% sys.t_double,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_double,	sys.t_double # table_name
+% v,	v # name
 % double,	real # type
 % 24,	15 # length
 [ 1,	1	]
@@ -3786,8 +3786,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1415629,	-3.1416	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, double) from T_double;
-% sys.t_double,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_double,	sys.t_double # table_name
+% v,	v # name
 % double,	double # type
 % 24,	24 # length
 [ 1,	1	]
@@ -3803,8 +3803,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1415629,	-3.1415629	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, double precision) from T_double;
-% sys.t_double,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_double,	sys.t_double # table_name
+% v,	v # name
 % double,	double # type
 % 24,	24 # length
 [ 1,	1	]
@@ -3820,8 +3820,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1415629,	-3.1415629	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, numeric) from T_double;
-% sys.t_double,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_double,	sys.t_double # table_name
+% v,	v # name
 % double,	decimal # type
 % 24,	20 # length
 [ 1,	1.000	]
@@ -3837,8 +3837,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1415629,	-3.142	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, decimal) from T_double;
-% sys.t_double,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_double,	sys.t_double # table_name
+% v,	v # name
 % double,	decimal # type
 % 24,	20 # length
 [ 1,	1.000	]
@@ -3854,8 +3854,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1415629,	-3.142	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, numeric(10)) from T_double;
-% sys.t_double,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_double,	sys.t_double # table_name
+% v,	v # name
 % double,	decimal # type
 % 24,	11 # length
 [ 1,	1	]
@@ -3871,8 +3871,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1415629,	-3	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, decimal(11)) from T_double;
-% sys.t_double,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_double,	sys.t_double # table_name
+% v,	v # name
 % double,	decimal # type
 % 24,	12 # length
 [ 1,	1	]
@@ -3888,8 +3888,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1415629,	-3	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, numeric(12,0)) from T_double;
-% sys.t_double,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_double,	sys.t_double # table_name
+% v,	v # name
 % double,	decimal # type
 % 24,	13 # length
 [ 1,	1	]
@@ -3905,8 +3905,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1415629,	-3	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, decimal(15,3)) from T_double;
-% sys.t_double,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_double,	sys.t_double # table_name
+% v,	v # name
 % double,	decimal # type
 % 24,	17 # length
 [ 1,	1.000	]
@@ -3922,8 +3922,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1415629,	-3.142	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, varchar(16)) from T_double;
-% sys.t_double,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_double,	sys.t_double # table_name
+% v,	v # name
 % double,	varchar # type
 % 24,	11 # length
 [ 1,	"1"	]
@@ -3939,8 +3939,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1415629,	"-3.1415629"	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, CHARACTER LARGE OBJECT) from T_double;
-% sys.t_double,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_double,	sys.t_double # table_name
+% v,	v # name
 % double,	clob # type
 % 24,	11 # length
 [ 1,	"1"	]
@@ -3956,8 +3956,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1415629,	"-3.1415629"	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, Clob) from T_double;
-% sys.t_double,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_double,	sys.t_double # table_name
+% v,	v # name
 % double,	clob # type
 % 24,	11 # length
 [ 1,	"1"	]
@@ -3973,8 +3973,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1415629,	"-3.1415629"	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as tinyint) from T_double where v between -127 and 127;
-% sys.t_double,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_double,	sys.t_double # table_name
+% v,	v # name
 % double,	tinyint # type
 % 24,	4 # length
 [ 1,	1	]
@@ -3985,8 +3985,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 0.12,	0	]
 [ -3.1415629,	-3	]
 #SELECT v, cast(v as smallint) from T_double where v between -32767 and 32767;
-% sys.t_double,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_double,	sys.t_double # table_name
+% v,	v # name
 % double,	smallint # type
 % 24,	6 # length
 [ 1,	1	]
@@ -3999,8 +3999,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 0.12,	0	]
 [ -3.1415629,	-3	]
 #SELECT v, cast(v as integer) from T_double;
-% sys.t_double,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_double,	sys.t_double # table_name
+% v,	v # name
 % double,	int # type
 % 24,	11 # length
 [ 1,	1	]
@@ -4016,8 +4016,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1415629,	-3	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as bigint) from T_double;
-% sys.t_double,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_double,	sys.t_double # table_name
+% v,	v # name
 % double,	bigint # type
 % 24,	11 # length
 [ 1,	1	]
@@ -4033,8 +4033,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1415629,	-3	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as float) from T_double;
-% sys.t_double,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_double,	sys.t_double # table_name
+% v,	v # name
 % double,	double # type
 % 24,	24 # length
 [ 1,	1	]
@@ -4050,8 +4050,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1415629,	-3.1415629	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as float(24)) from T_double;
-% sys.t_double,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_double,	sys.t_double # table_name
+% v,	v # name
 % double,	real # type
 % 24,	15 # length
 [ 1,	1	]
@@ -4067,8 +4067,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1415629,	-3.1416	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as real) from T_double;
-% sys.t_double,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_double,	sys.t_double # table_name
+% v,	v # name
 % double,	real # type
 % 24,	15 # length
 [ 1,	1	]
@@ -4084,8 +4084,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1415629,	-3.1416	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as double) from T_double;
-% sys.t_double,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_double,	sys.t_double # table_name
+% v,	v # name
 % double,	double # type
 % 24,	24 # length
 [ 1,	1	]
@@ -4101,8 +4101,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1415629,	-3.1415629	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as double precision) from T_double;
-% sys.t_double,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_double,	sys.t_double # table_name
+% v,	v # name
 % double,	double # type
 % 24,	24 # length
 [ 1,	1	]
@@ -4118,8 +4118,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1415629,	-3.1415629	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as numeric) from T_double;
-% sys.t_double,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_double,	sys.t_double # table_name
+% v,	v # name
 % double,	decimal # type
 % 24,	20 # length
 [ 1,	1.000	]
@@ -4135,8 +4135,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1415629,	-3.142	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as decimal) from T_double;
-% sys.t_double,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_double,	sys.t_double # table_name
+% v,	v # name
 % double,	decimal # type
 % 24,	20 # length
 [ 1,	1.000	]
@@ -4152,8 +4152,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1415629,	-3.142	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as numeric(10)) from T_double;
-% sys.t_double,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_double,	sys.t_double # table_name
+% v,	v # name
 % double,	decimal # type
 % 24,	11 # length
 [ 1,	1	]
@@ -4169,8 +4169,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1415629,	-3	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as decimal(11)) from T_double;
-% sys.t_double,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_double,	sys.t_double # table_name
+% v,	v # name
 % double,	decimal # type
 % 24,	12 # length
 [ 1,	1	]
@@ -4186,8 +4186,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1415629,	-3	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as numeric(12,0)) from T_double;
-% sys.t_double,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_double,	sys.t_double # table_name
+% v,	v # name
 % double,	decimal # type
 % 24,	13 # length
 [ 1,	1	]
@@ -4203,8 +4203,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1415629,	-3	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as decimal(15,3)) from T_double;
-% sys.t_double,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_double,	sys.t_double # table_name
+% v,	v # name
 % double,	decimal # type
 % 24,	17 # length
 [ 1,	1.000	]
@@ -4220,8 +4220,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1415629,	-3.142	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as varchar(16)) from T_double;
-% sys.t_double,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_double,	sys.t_double # table_name
+% v,	v # name
 % double,	varchar # type
 % 24,	11 # length
 [ 1,	"1"	]
@@ -4237,8 +4237,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1415629,	"-3.1415629"	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as CHARACTER LARGE OBJECT) from T_double;
-% sys.t_double,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_double,	sys.t_double # table_name
+% v,	v # name
 % double,	clob # type
 % 24,	11 # length
 [ 1,	"1"	]
@@ -4254,8 +4254,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1415629,	"-3.1415629"	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as Clob) from T_double;
-% sys.t_double,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_double,	sys.t_double # table_name
+% v,	v # name
 % double,	clob # type
 % 24,	11 # length
 [ 1,	"1"	]
@@ -4294,8 +4294,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 32767	]
 [ 2147483647	]
 #SELECT v, convert(v, tinyint) from T_num where v between -127 and 127;
-% sys.t_num,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_num,	sys.t_num # table_name
+% v,	v # name
 % decimal,	tinyint # type
 % 11,	4 # length
 [ 1,	1	]
@@ -4306,8 +4306,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 0,	0	]
 [ -3,	-3	]
 #SELECT v, convert(v, smallint) from T_num where v between -32767 and 32767;
-% sys.t_num,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_num,	sys.t_num # table_name
+% v,	v # name
 % decimal,	smallint # type
 % 11,	6 # length
 [ 1,	1	]
@@ -4320,8 +4320,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 0,	0	]
 [ -3,	-3	]
 #SELECT v, convert(v, integer) from T_num;
-% sys.t_num,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_num,	sys.t_num # table_name
+% v,	v # name
 % decimal,	int # type
 % 11,	11 # length
 [ 1,	1	]
@@ -4337,8 +4337,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3,	-3	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, bigint) from T_num;
-% sys.t_num,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_num,	sys.t_num # table_name
+% v,	v # name
 % decimal,	bigint # type
 % 11,	11 # length
 [ 1,	1	]
@@ -4354,8 +4354,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3,	-3	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, float) from T_num;
-% sys.t_num,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_num,	sys.t_num # table_name
+% v,	v # name
 % decimal,	double # type
 % 11,	24 # length
 [ 1,	1	]
@@ -4371,8 +4371,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3,	-3	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, float(24)) from T_num;
-% sys.t_num,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_num,	sys.t_num # table_name
+% v,	v # name
 % decimal,	real # type
 % 11,	15 # length
 [ 1,	1	]
@@ -4388,8 +4388,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3,	-3	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, real) from T_num;
-% sys.t_num,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_num,	sys.t_num # table_name
+% v,	v # name
 % decimal,	real # type
 % 11,	15 # length
 [ 1,	1	]
@@ -4405,8 +4405,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3,	-3	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, double) from T_num;
-% sys.t_num,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_num,	sys.t_num # table_name
+% v,	v # name
 % decimal,	double # type
 % 11,	24 # length
 [ 1,	1	]
@@ -4422,8 +4422,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3,	-3	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, double precision) from T_num;
-% sys.t_num,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_num,	sys.t_num # table_name
+% v,	v # name
 % decimal,	double # type
 % 11,	24 # length
 [ 1,	1	]
@@ -4439,8 +4439,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3,	-3	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, numeric) from T_num;
-% sys.t_num,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_num,	sys.t_num # table_name
+% v,	v # name
 % decimal,	decimal # type
 % 11,	20 # length
 [ 1,	1.000	]
@@ -4456,8 +4456,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3,	-3.000	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, decimal) from T_num;
-% sys.t_num,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_num,	sys.t_num # table_name
+% v,	v # name
 % decimal,	decimal # type
 % 11,	20 # length
 [ 1,	1.000	]
@@ -4473,8 +4473,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3,	-3.000	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, numeric(10)) from T_num;
-% sys.t_num,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_num,	sys.t_num # table_name
+% v,	v # name
 % decimal,	decimal # type
 % 11,	11 # length
 [ 1,	1	]
@@ -4490,8 +4490,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3,	-3	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, decimal(11)) from T_num;
-% sys.t_num,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_num,	sys.t_num # table_name
+% v,	v # name
 % decimal,	decimal # type
 % 11,	12 # length
 [ 1,	1	]
@@ -4507,8 +4507,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3,	-3	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, numeric(12,0)) from T_num;
-% sys.t_num,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_num,	sys.t_num # table_name
+% v,	v # name
 % decimal,	decimal # type
 % 11,	13 # length
 [ 1,	1	]
@@ -4524,8 +4524,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3,	-3	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, decimal(15,3)) from T_num;
-% sys.t_num,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_num,	sys.t_num # table_name
+% v,	v # name
 % decimal,	decimal # type
 % 11,	17 # length
 [ 1,	1.000	]
@@ -4541,16 +4541,16 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3,	-3.000	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, char) from T_num where v between 0 and 1;
-% sys.t_num,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_num,	sys.t_num # table_name
+% v,	v # name
 % decimal,	char # type
 % 11,	1 # length
 [ 1,	"1"	]
 [ 0,	"0"	]
 [ 0,	"0"	]
 #SELECT v, convert(v, varchar(16)) from T_num;
-% sys.t_num,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_num,	sys.t_num # table_name
+% v,	v # name
 % decimal,	varchar # type
 % 11,	11 # length
 [ 1,	"1"	]
@@ -4566,8 +4566,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3,	"-3"	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, CHARACTER LARGE OBJECT) from T_num;
-% sys.t_num,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_num,	sys.t_num # table_name
+% v,	v # name
 % decimal,	clob # type
 % 11,	11 # length
 [ 1,	"1"	]
@@ -4583,8 +4583,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3,	"-3"	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, Clob) from T_num;
-% sys.t_num,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_num,	sys.t_num # table_name
+% v,	v # name
 % decimal,	clob # type
 % 11,	11 # length
 [ 1,	"1"	]
@@ -4600,8 +4600,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3,	"-3"	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as tinyint) from T_num where v between -127 and 127;
-% sys.t_num,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_num,	sys.t_num # table_name
+% v,	v # name
 % decimal,	tinyint # type
 % 11,	4 # length
 [ 1,	1	]
@@ -4612,8 +4612,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 0,	0	]
 [ -3,	-3	]
 #SELECT v, cast(v as smallint) from T_num where v between -32767 and 32767;
-% sys.t_num,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_num,	sys.t_num # table_name
+% v,	v # name
 % decimal,	smallint # type
 % 11,	6 # length
 [ 1,	1	]
@@ -4626,8 +4626,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 0,	0	]
 [ -3,	-3	]
 #SELECT v, cast(v as integer) from T_num;
-% sys.t_num,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_num,	sys.t_num # table_name
+% v,	v # name
 % decimal,	int # type
 % 11,	11 # length
 [ 1,	1	]
@@ -4643,8 +4643,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3,	-3	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as bigint) from T_num;
-% sys.t_num,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_num,	sys.t_num # table_name
+% v,	v # name
 % decimal,	bigint # type
 % 11,	11 # length
 [ 1,	1	]
@@ -4660,8 +4660,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3,	-3	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as float) from T_num;
-% sys.t_num,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_num,	sys.t_num # table_name
+% v,	v # name
 % decimal,	double # type
 % 11,	24 # length
 [ 1,	1	]
@@ -4677,8 +4677,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3,	-3	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as float(24)) from T_num;
-% sys.t_num,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_num,	sys.t_num # table_name
+% v,	v # name
 % decimal,	real # type
 % 11,	15 # length
 [ 1,	1	]
@@ -4694,8 +4694,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3,	-3	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as real) from T_num;
-% sys.t_num,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_num,	sys.t_num # table_name
+% v,	v # name
 % decimal,	real # type
 % 11,	15 # length
 [ 1,	1	]
@@ -4711,8 +4711,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3,	-3	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as double) from T_num;
-% sys.t_num,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_num,	sys.t_num # table_name
+% v,	v # name
 % decimal,	double # type
 % 11,	24 # length
 [ 1,	1	]
@@ -4728,8 +4728,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3,	-3	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as double precision) from T_num;
-% sys.t_num,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_num,	sys.t_num # table_name
+% v,	v # name
 % decimal,	double # type
 % 11,	24 # length
 [ 1,	1	]
@@ -4745,8 +4745,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3,	-3	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as numeric) from T_num;
-% sys.t_num,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_num,	sys.t_num # table_name
+% v,	v # name
 % decimal,	decimal # type
 % 11,	20 # length
 [ 1,	1.000	]
@@ -4762,8 +4762,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3,	-3.000	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as decimal) from T_num;
-% sys.t_num,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_num,	sys.t_num # table_name
+% v,	v # name
 % decimal,	decimal # type
 % 11,	20 # length
 [ 1,	1.000	]
@@ -4779,8 +4779,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3,	-3.000	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as numeric(10)) from T_num;
-% sys.t_num,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_num,	sys.t_num # table_name
+% v,	v # name
 % decimal,	decimal # type
 % 11,	11 # length
 [ 1,	1	]
@@ -4796,8 +4796,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3,	-3	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as decimal(11)) from T_num;
-% sys.t_num,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_num,	sys.t_num # table_name
+% v,	v # name
 % decimal,	decimal # type
 % 11,	12 # length
 [ 1,	1	]
@@ -4813,8 +4813,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3,	-3	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as numeric(12,0)) from T_num;
-% sys.t_num,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_num,	sys.t_num # table_name
+% v,	v # name
 % decimal,	decimal # type
 % 11,	13 # length
 [ 1,	1	]
@@ -4830,8 +4830,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3,	-3	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as decimal(15,3)) from T_num;
-% sys.t_num,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_num,	sys.t_num # table_name
+% v,	v # name
 % decimal,	decimal # type
 % 11,	17 # length
 [ 1,	1.000	]
@@ -4847,16 +4847,16 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3,	-3.000	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as char) from T_num where v between 0 and 1;
-% sys.t_num,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_num,	sys.t_num # table_name
+% v,	v # name
 % decimal,	char # type
 % 11,	1 # length
 [ 1,	"1"	]
 [ 0,	"0"	]
 [ 0,	"0"	]
 #SELECT v, cast(v as varchar(16)) from T_num;
-% sys.t_num,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_num,	sys.t_num # table_name
+% v,	v # name
 % decimal,	varchar # type
 % 11,	11 # length
 [ 1,	"1"	]
@@ -4872,8 +4872,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3,	"-3"	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as CHARACTER LARGE OBJECT) from T_num;
-% sys.t_num,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_num,	sys.t_num # table_name
+% v,	v # name
 % decimal,	clob # type
 % 11,	11 # length
 [ 1,	"1"	]
@@ -4889,8 +4889,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3,	"-3"	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as Clob) from T_num;
-% sys.t_num,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_num,	sys.t_num # table_name
+% v,	v # name
 % decimal,	clob # type
 % 11,	11 # length
 [ 1,	"1"	]
@@ -4929,8 +4929,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 32767.0000000	]
 [ 2147483647.0000000	]
 #SELECT v, convert(v, tinyint) from T_dec where v between -127 and 127;
-% sys.t_dec,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_dec,	sys.t_dec # table_name
+% v,	v # name
 % decimal,	tinyint # type
 % 19,	4 # length
 [ 1.0000000,	1	]
@@ -4941,8 +4941,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 0.1200000,	0	]
 [ -3.1415629,	-3	]
 #SELECT v, convert(v, smallint) from T_dec where v between -32767 and 32767;
-% sys.t_dec,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_dec,	sys.t_dec # table_name
+% v,	v # name
 % decimal,	smallint # type
 % 19,	6 # length
 [ 1.0000000,	1	]
@@ -4955,8 +4955,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 0.1200000,	0	]
 [ -3.1415629,	-3	]
 #SELECT v, convert(v, integer) from T_dec;
-% sys.t_dec,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_dec,	sys.t_dec # table_name
+% v,	v # name
 % decimal,	int # type
 % 19,	11 # length
 [ 1.0000000,	1	]
@@ -4972,8 +4972,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1415629,	-3	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, bigint) from T_dec;
-% sys.t_dec,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_dec,	sys.t_dec # table_name
+% v,	v # name
 % decimal,	bigint # type
 % 19,	11 # length
 [ 1.0000000,	1	]
@@ -4989,8 +4989,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1415629,	-3	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, float) from T_dec;
-% sys.t_dec,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_dec,	sys.t_dec # table_name
+% v,	v # name
 % decimal,	double # type
 % 19,	24 # length
 [ 1.0000000,	1	]
@@ -5006,8 +5006,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1415629,	-3.1415629	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, float(24)) from T_dec;
-% sys.t_dec,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_dec,	sys.t_dec # table_name
+% v,	v # name
 % decimal,	real # type
 % 19,	15 # length
 [ 1.0000000,	1	]
@@ -5023,8 +5023,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1415629,	-3.1416	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, real) from T_dec;
-% sys.t_dec,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_dec,	sys.t_dec # table_name
+% v,	v # name
 % decimal,	real # type
 % 19,	15 # length
 [ 1.0000000,	1	]
@@ -5040,8 +5040,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1415629,	-3.1416	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, double) from T_dec;
-% sys.t_dec,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_dec,	sys.t_dec # table_name
+% v,	v # name
 % decimal,	double # type
 % 19,	24 # length
 [ 1.0000000,	1	]
@@ -5057,8 +5057,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1415629,	-3.1415629	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, double precision) from T_dec;
-% sys.t_dec,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_dec,	sys.t_dec # table_name
+% v,	v # name
 % decimal,	double # type
 % 19,	24 # length
 [ 1.0000000,	1	]
@@ -5074,8 +5074,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1415629,	-3.1415629	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, numeric) from T_dec;
-% sys.t_dec,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_dec,	sys.t_dec # table_name
+% v,	v # name
 % decimal,	decimal # type
 % 19,	20 # length
 [ 1.0000000,	1.000	]
@@ -5091,8 +5091,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1415629,	-3.142	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, decimal) from T_dec;
-% sys.t_dec,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_dec,	sys.t_dec # table_name
+% v,	v # name
 % decimal,	decimal # type
 % 19,	20 # length
 [ 1.0000000,	1.000	]
@@ -5108,8 +5108,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1415629,	-3.142	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, numeric(10)) from T_dec;
-% sys.t_dec,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_dec,	sys.t_dec # table_name
+% v,	v # name
 % decimal,	decimal # type
 % 19,	11 # length
 [ 1.0000000,	1	]
@@ -5125,8 +5125,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1415629,	-3	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, decimal(11)) from T_dec;
-% sys.t_dec,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_dec,	sys.t_dec # table_name
+% v,	v # name
 % decimal,	decimal # type
 % 19,	12 # length
 [ 1.0000000,	1	]
@@ -5142,8 +5142,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1415629,	-3	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, numeric(12,0)) from T_dec;
-% sys.t_dec,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_dec,	sys.t_dec # table_name
+% v,	v # name
 % decimal,	decimal # type
 % 19,	13 # length
 [ 1.0000000,	1	]
@@ -5159,8 +5159,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1415629,	-3	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, decimal(15,3)) from T_dec;
-% sys.t_dec,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_dec,	sys.t_dec # table_name
+% v,	v # name
 % decimal,	decimal # type
 % 19,	17 # length
 [ 1.0000000,	1.000	]
@@ -5176,8 +5176,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1415629,	-3.142	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, varchar(20)) from T_dec;
-% sys.t_dec,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_dec,	sys.t_dec # table_name
+% v,	v # name
 % decimal,	varchar # type
 % 19,	19 # length
 [ 1.0000000,	"1.0000000"	]
@@ -5193,8 +5193,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1415629,	"-3.1415629"	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, CHARACTER LARGE OBJECT) from T_dec;
-% sys.t_dec,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_dec,	sys.t_dec # table_name
+% v,	v # name
 % decimal,	clob # type
 % 19,	19 # length
 [ 1.0000000,	"1.0000000"	]
@@ -5210,8 +5210,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1415629,	"-3.1415629"	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, Clob) from T_dec;
-% sys.t_dec,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_dec,	sys.t_dec # table_name
+% v,	v # name
 % decimal,	clob # type
 % 19,	19 # length
 [ 1.0000000,	"1.0000000"	]
@@ -5227,8 +5227,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1415629,	"-3.1415629"	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as tinyint) from T_dec where v between -127 and 127;
-% sys.t_dec,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_dec,	sys.t_dec # table_name
+% v,	v # name
 % decimal,	tinyint # type
 % 19,	4 # length
 [ 1.0000000,	1	]
@@ -5239,8 +5239,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 0.1200000,	0	]
 [ -3.1415629,	-3	]
 #SELECT v, cast(v as smallint) from T_dec where v between -32767 and 32767;
-% sys.t_dec,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_dec,	sys.t_dec # table_name
+% v,	v # name
 % decimal,	smallint # type
 % 19,	6 # length
 [ 1.0000000,	1	]
@@ -5253,8 +5253,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 0.1200000,	0	]
 [ -3.1415629,	-3	]
 #SELECT v, cast(v as integer) from T_dec;
-% sys.t_dec,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_dec,	sys.t_dec # table_name
+% v,	v # name
 % decimal,	int # type
 % 19,	11 # length
 [ 1.0000000,	1	]
@@ -5270,8 +5270,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1415629,	-3	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as bigint) from T_dec;
-% sys.t_dec,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_dec,	sys.t_dec # table_name
+% v,	v # name
 % decimal,	bigint # type
 % 19,	11 # length
 [ 1.0000000,	1	]
@@ -5287,8 +5287,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1415629,	-3	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as float) from T_dec;
-% sys.t_dec,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_dec,	sys.t_dec # table_name
+% v,	v # name
 % decimal,	double # type
 % 19,	24 # length
 [ 1.0000000,	1	]
@@ -5304,8 +5304,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1415629,	-3.1415629	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as float(24)) from T_dec;
-% sys.t_dec,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_dec,	sys.t_dec # table_name
+% v,	v # name
 % decimal,	real # type
 % 19,	15 # length
 [ 1.0000000,	1	]
@@ -5321,8 +5321,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1415629,	-3.1416	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as real) from T_dec;
-% sys.t_dec,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_dec,	sys.t_dec # table_name
+% v,	v # name
 % decimal,	real # type
 % 19,	15 # length
 [ 1.0000000,	1	]
@@ -5338,8 +5338,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1415629,	-3.1416	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as double) from T_dec;
-% sys.t_dec,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_dec,	sys.t_dec # table_name
+% v,	v # name
 % decimal,	double # type
 % 19,	24 # length
 [ 1.0000000,	1	]
@@ -5355,8 +5355,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1415629,	-3.1415629	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as double precision) from T_dec;
-% sys.t_dec,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_dec,	sys.t_dec # table_name
+% v,	v # name
 % decimal,	double # type
 % 19,	24 # length
 [ 1.0000000,	1	]
@@ -5372,8 +5372,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1415629,	-3.1415629	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as numeric) from T_dec;
-% sys.t_dec,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_dec,	sys.t_dec # table_name
+% v,	v # name
 % decimal,	decimal # type
 % 19,	20 # length
 [ 1.0000000,	1.000	]
@@ -5389,8 +5389,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1415629,	-3.142	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as decimal) from T_dec;
-% sys.t_dec,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_dec,	sys.t_dec # table_name
+% v,	v # name
 % decimal,	decimal # type
 % 19,	20 # length
 [ 1.0000000,	1.000	]
@@ -5406,8 +5406,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1415629,	-3.142	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as numeric(10)) from T_dec;
-% sys.t_dec,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_dec,	sys.t_dec # table_name
+% v,	v # name
 % decimal,	decimal # type
 % 19,	11 # length
 [ 1.0000000,	1	]
@@ -5423,8 +5423,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1415629,	-3	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as decimal(11)) from T_dec;
-% sys.t_dec,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_dec,	sys.t_dec # table_name
+% v,	v # name
 % decimal,	decimal # type
 % 19,	12 # length
 [ 1.0000000,	1	]
@@ -5440,8 +5440,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1415629,	-3	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as numeric(12,0)) from T_dec;
-% sys.t_dec,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_dec,	sys.t_dec # table_name
+% v,	v # name
 % decimal,	decimal # type
 % 19,	13 # length
 [ 1.0000000,	1	]
@@ -5457,8 +5457,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1415629,	-3	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as decimal(15,3)) from T_dec;
-% sys.t_dec,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_dec,	sys.t_dec # table_name
+% v,	v # name
 % decimal,	decimal # type
 % 19,	17 # length
 [ 1.0000000,	1.000	]
@@ -5474,8 +5474,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1415629,	-3.142	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as varchar(20)) from T_dec;
-% sys.t_dec,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_dec,	sys.t_dec # table_name
+% v,	v # name
 % decimal,	varchar # type
 % 19,	19 # length
 [ 1.0000000,	"1.0000000"	]
@@ -5491,8 +5491,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1415629,	"-3.1415629"	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as CHARACTER LARGE OBJECT) from T_dec;
-% sys.t_dec,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_dec,	sys.t_dec # table_name
+% v,	v # name
 % decimal,	clob # type
 % 19,	19 # length
 [ 1.0000000,	"1.0000000"	]
@@ -5508,8 +5508,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ -3.1415629,	"-3.1415629"	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as Clob) from T_dec;
-% sys.t_dec,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_dec,	sys.t_dec # table_name
+% v,	v # name
 % decimal,	clob # type
 % 19,	19 # length
 [ 1.0000000,	"1.0000000"	]
@@ -5543,127 +5543,127 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ "AaZz"	]
 [ "~!@#$%^&*(')_/-+=:;\"<.,.>?"	]
 #SELECT v, convert(v, boolean) from T_char where v in ('0', '1');
-% sys.t_char,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_char,	sys.t_char # table_name
+% v,	v # name
 % char,	boolean # type
 % 33,	5 # length
 [ "0",	false	]
 [ "1",	true	]
 #SELECT v, convert(v, tinyint) from T_char where v in ('0', '1');
-% sys.t_char,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_char,	sys.t_char # table_name
+% v,	v # name
 % char,	tinyint # type
 % 33,	1 # length
 [ "0",	0	]
 [ "1",	1	]
 #SELECT v, convert(v, smallint) from T_char where v in ('0', '1');
-% sys.t_char,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_char,	sys.t_char # table_name
+% v,	v # name
 % char,	smallint # type
 % 33,	1 # length
 [ "0",	0	]
 [ "1",	1	]
 #SELECT v, convert(v, integer) from T_char where v in ('0', '1');
-% sys.t_char,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_char,	sys.t_char # table_name
+% v,	v # name
 % char,	int # type
 % 33,	1 # length
 [ "0",	0	]
 [ "1",	1	]
 #SELECT v, convert(v, bigint) from T_char where v in ('0', '1');
-% sys.t_char,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_char,	sys.t_char # table_name
+% v,	v # name
 % char,	bigint # type
 % 33,	1 # length
 [ "0",	0	]
 [ "1",	1	]
 #SELECT v, convert(v, float) from T_char where v in ('0', '1');
-% sys.t_char,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_char,	sys.t_char # table_name
+% v,	v # name
 % char,	double # type
 % 33,	24 # length
 [ "0",	0	]
 [ "1",	1	]
 #SELECT v, convert(v, float(24)) from T_char where v in ('0', '1');
-% sys.t_char,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_char,	sys.t_char # table_name
+% v,	v # name
 % char,	real # type
 % 33,	15 # length
 [ "0",	0	]
 [ "1",	1	]
 #SELECT v, convert(v, real) from T_char where v in ('0', '1');
-% sys.t_char,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_char,	sys.t_char # table_name
+% v,	v # name
 % char,	real # type
 % 33,	15 # length
 [ "0",	0	]
 [ "1",	1	]
 #SELECT v, convert(v, double) from T_char where v in ('0', '1');
-% sys.t_char,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_char,	sys.t_char # table_name
+% v,	v # name
 % char,	double # type
 % 33,	24 # length
 [ "0",	0	]
 [ "1",	1	]
 #SELECT v, convert(v, double precision) from T_char where v in ('0', '1');
-% sys.t_char,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_char,	sys.t_char # table_name
+% v,	v # name
 % char,	double # type
 % 33,	24 # length
 [ "0",	0	]
 [ "1",	1	]
 #SELECT v, convert(v, numeric) from T_char where v in ('0', '1');
-% sys.t_char,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_char,	sys.t_char # table_name
+% v,	v # name
 % char,	decimal # type
 % 33,	20 # length
 [ "0",	0.000	]
 [ "1",	1.000	]
 #SELECT v, convert(v, decimal) from T_char where v in ('0', '1');
-% sys.t_char,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_char,	sys.t_char # table_name
+% v,	v # name
 % char,	decimal # type
 % 33,	20 # length
 [ "0",	0.000	]
 [ "1",	1.000	]
 #SELECT v, convert(v, numeric(10)) from T_char where v in ('0', '1');
-% sys.t_char,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_char,	sys.t_char # table_name
+% v,	v # name
 % char,	decimal # type
 % 33,	11 # length
 [ "0",	0	]
 [ "1",	1	]
 #SELECT v, convert(v, decimal(11)) from T_char where v in ('0', '1');
-% sys.t_char,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_char,	sys.t_char # table_name
+% v,	v # name
 % char,	decimal # type
 % 33,	12 # length
 [ "0",	0	]
 [ "1",	1	]
 #SELECT v, convert(v, numeric(12,0)) from T_char where v in ('0', '1');
-% sys.t_char,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_char,	sys.t_char # table_name
+% v,	v # name
 % char,	decimal # type
 % 33,	13 # length
 [ "0",	0	]
 [ "1",	1	]
 #SELECT v, convert(v, decimal(15,3)) from T_char where v in ('0', '1');
-% sys.t_char,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_char,	sys.t_char # table_name
+% v,	v # name
 % char,	decimal # type
 % 33,	17 # length
 [ "0",	0.000	]
 [ "1",	1.000	]
 #SELECT v, convert(v, char) from T_char where v in ('0', '1');
-% sys.t_char,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_char,	sys. # table_name
+% v,	%2 # name
 % char,	char # type
 % 33,	1 # length
 [ "0",	"0"	]
 [ "1",	"1"	]
 #SELECT v, convert(v, varchar(36)) from T_char;
-% sys.t_char,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_char,	sys. # table_name
+% v,	%2 # name
 % char,	varchar # type
 % 33,	26 # length
 [ "0",	"0"	]
@@ -5674,8 +5674,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ "",	""	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, CHARACTER LARGE OBJECT) from T_char;
-% sys.t_char,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_char,	sys.t_char # table_name
+% v,	v # name
 % char,	char # type
 % 33,	33 # length
 [ "0",	"0"	]
@@ -5686,8 +5686,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ "",	""	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, Clob) from T_char;
-% sys.t_char,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_char,	sys.t_char # table_name
+% v,	v # name
 % char,	char # type
 % 33,	33 # length
 [ "0",	"0"	]
@@ -5698,133 +5698,133 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ "",	""	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, Blob) from T_char where v in ('0123456789');
-% sys.t_char,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_char,	sys.t_char # table_name
+% v,	v # name
 % char,	blob # type
 % 33,	0 # length
 [ "0123456789",	0123456789	]
 #SELECT v, cast(v as boolean) from T_char where v in ('0', '1');
-% sys.t_char,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_char,	sys.t_char # table_name
+% v,	v # name
 % char,	boolean # type
 % 33,	5 # length
 [ "0",	false	]
 [ "1",	true	]
 #SELECT v, cast(v as tinyint) from T_char where v in ('0', '1');
-% sys.t_char,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_char,	sys.t_char # table_name
+% v,	v # name
 % char,	tinyint # type
 % 33,	1 # length
 [ "0",	0	]
 [ "1",	1	]
 #SELECT v, cast(v as smallint) from T_char where v in ('0', '1');
-% sys.t_char,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_char,	sys.t_char # table_name
+% v,	v # name
 % char,	smallint # type
 % 33,	1 # length
 [ "0",	0	]
 [ "1",	1	]
 #SELECT v, cast(v as integer) from T_char where v in ('0', '1');
-% sys.t_char,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_char,	sys.t_char # table_name
+% v,	v # name
 % char,	int # type
 % 33,	1 # length
 [ "0",	0	]
 [ "1",	1	]
 #SELECT v, cast(v as bigint) from T_char where v in ('0', '1');
-% sys.t_char,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_char,	sys.t_char # table_name
+% v,	v # name
 % char,	bigint # type
 % 33,	1 # length
 [ "0",	0	]
 [ "1",	1	]
 #SELECT v, cast(v as float) from T_char where v in ('0', '1');
-% sys.t_char,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_char,	sys.t_char # table_name
+% v,	v # name
 % char,	double # type
 % 33,	24 # length
 [ "0",	0	]
 [ "1",	1	]
 #SELECT v, cast(v as float(24)) from T_char where v in ('0', '1');
-% sys.t_char,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_char,	sys.t_char # table_name
+% v,	v # name
 % char,	real # type
 % 33,	15 # length
 [ "0",	0	]
 [ "1",	1	]
 #SELECT v, cast(v as real) from T_char where v in ('0', '1');
-% sys.t_char,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_char,	sys.t_char # table_name
+% v,	v # name
 % char,	real # type
 % 33,	15 # length
 [ "0",	0	]
 [ "1",	1	]
 #SELECT v, cast(v as double) from T_char where v in ('0', '1');
-% sys.t_char,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_char,	sys.t_char # table_name
+% v,	v # name
 % char,	double # type
 % 33,	24 # length
 [ "0",	0	]
 [ "1",	1	]
 #SELECT v, cast(v as double precision) from T_char where v in ('0', '1');
-% sys.t_char,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_char,	sys.t_char # table_name
+% v,	v # name
 % char,	double # type
 % 33,	24 # length
 [ "0",	0	]
 [ "1",	1	]
 #SELECT v, cast(v as numeric) from T_char where v in ('0', '1');
-% sys.t_char,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_char,	sys.t_char # table_name
+% v,	v # name
 % char,	decimal # type
 % 33,	20 # length
 [ "0",	0.000	]
 [ "1",	1.000	]
 #SELECT v, cast(v as decimal) from T_char where v in ('0', '1');
-% sys.t_char,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_char,	sys.t_char # table_name
+% v,	v # name
 % char,	decimal # type
 % 33,	20 # length
 [ "0",	0.000	]
 [ "1",	1.000	]
 #SELECT v, cast(v as numeric(10)) from T_char where v in ('0', '1');
-% sys.t_char,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_char,	sys.t_char # table_name
+% v,	v # name
 % char,	decimal # type
 % 33,	11 # length
 [ "0",	0	]
 [ "1",	1	]
 #SELECT v, cast(v as decimal(11)) from T_char where v in ('0', '1');
-% sys.t_char,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_char,	sys.t_char # table_name
+% v,	v # name
 % char,	decimal # type
 % 33,	12 # length
 [ "0",	0	]
 [ "1",	1	]
 #SELECT v, cast(v as numeric(12,0)) from T_char where v in ('0', '1');
-% sys.t_char,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_char,	sys.t_char # table_name
+% v,	v # name
 % char,	decimal # type
 % 33,	13 # length
 [ "0",	0	]
 [ "1",	1	]
 #SELECT v, cast(v as decimal(15,3)) from T_char where v in ('0', '1');
-% sys.t_char,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_char,	sys.t_char # table_name
+% v,	v # name
 % char,	decimal # type
 % 33,	17 # length
 [ "0",	0.000	]
 [ "1",	1.000	]
 #SELECT v, cast(v as char) from T_char where v in ('0', '1');
-% sys.t_char,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_char,	sys. # table_name
+% v,	%2 # name
 % char,	char # type
 % 33,	1 # length
 [ "0",	"0"	]
 [ "1",	"1"	]
 #SELECT v, cast(v as varchar(36)) from T_char;
-% sys.t_char,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_char,	sys. # table_name
+% v,	%2 # name
 % char,	varchar # type
 % 33,	26 # length
 [ "0",	"0"	]
@@ -5835,8 +5835,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ "",	""	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as CHARACTER LARGE OBJECT) from T_char;
-% sys.t_char,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_char,	sys.t_char # table_name
+% v,	v # name
 % char,	char # type
 % 33,	33 # length
 [ "0",	"0"	]
@@ -5847,8 +5847,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ "",	""	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as Clob) from T_char;
-% sys.t_char,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_char,	sys.t_char # table_name
+% v,	v # name
 % char,	char # type
 % 33,	33 # length
 [ "0",	"0"	]
@@ -5859,8 +5859,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ "",	""	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as Blob) from T_char where v in ('0123456789');
-% sys.t_char,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_char,	sys.t_char # table_name
+% v,	v # name
 % char,	blob # type
 % 33,	0 # length
 [ "0123456789",	0123456789	]
@@ -5883,127 +5883,127 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ "AaZz"	]
 [ "~!@#$%^&*(')_/-+=:;\"<.,.>?"	]
 #SELECT v, convert(v, boolean) from T_varchar where v in ('0', '1');
-% sys.t_varchar,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_varchar,	sys.t_varchar # table_name
+% v,	v # name
 % varchar,	boolean # type
 % 1,	5 # length
 [ "0",	false	]
 [ "1",	true	]
 #SELECT v, convert(v, tinyint) from T_varchar where v in ('0', '1');
-% sys.t_varchar,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_varchar,	sys.t_varchar # table_name
+% v,	v # name
 % varchar,	tinyint # type
 % 1,	1 # length
 [ "0",	0	]
 [ "1",	1	]
 #SELECT v, convert(v, smallint) from T_varchar where v in ('0', '1');
-% sys.t_varchar,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_varchar,	sys.t_varchar # table_name
+% v,	v # name
 % varchar,	smallint # type
 % 1,	1 # length
 [ "0",	0	]
 [ "1",	1	]
 #SELECT v, convert(v, integer) from T_varchar where v in ('0', '1');
-% sys.t_varchar,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_varchar,	sys.t_varchar # table_name
+% v,	v # name
 % varchar,	int # type
 % 1,	1 # length
 [ "0",	0	]
 [ "1",	1	]
 #SELECT v, convert(v, bigint) from T_varchar where v in ('0', '1');
-% sys.t_varchar,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_varchar,	sys.t_varchar # table_name
+% v,	v # name
 % varchar,	bigint # type
 % 1,	1 # length
 [ "0",	0	]
 [ "1",	1	]
 #SELECT v, convert(v, float) from T_varchar where v in ('0', '1');
-% sys.t_varchar,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_varchar,	sys.t_varchar # table_name
+% v,	v # name
 % varchar,	double # type
 % 1,	24 # length
 [ "0",	0	]
 [ "1",	1	]
 #SELECT v, convert(v, float(24)) from T_varchar where v in ('0', '1');
-% sys.t_varchar,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_varchar,	sys.t_varchar # table_name
+% v,	v # name
 % varchar,	real # type
 % 1,	15 # length
 [ "0",	0	]
 [ "1",	1	]
 #SELECT v, convert(v, real) from T_varchar where v in ('0', '1');
-% sys.t_varchar,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_varchar,	sys.t_varchar # table_name
+% v,	v # name
 % varchar,	real # type
 % 1,	15 # length
 [ "0",	0	]
 [ "1",	1	]
 #SELECT v, convert(v, double) from T_varchar where v in ('0', '1');
-% sys.t_varchar,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_varchar,	sys.t_varchar # table_name
+% v,	v # name
 % varchar,	double # type
 % 1,	24 # length
 [ "0",	0	]
 [ "1",	1	]
 #SELECT v, convert(v, double precision) from T_varchar where v in ('0', '1');
-% sys.t_varchar,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_varchar,	sys.t_varchar # table_name
+% v,	v # name
 % varchar,	double # type
 % 1,	24 # length
 [ "0",	0	]
 [ "1",	1	]
 #SELECT v, convert(v, numeric) from T_varchar where v in ('0', '1');
-% sys.t_varchar,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_varchar,	sys.t_varchar # table_name
+% v,	v # name
 % varchar,	decimal # type
 % 1,	20 # length
 [ "0",	0.000	]
 [ "1",	1.000	]
 #SELECT v, convert(v, decimal) from T_varchar where v in ('0', '1');
-% sys.t_varchar,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_varchar,	sys.t_varchar # table_name
+% v,	v # name
 % varchar,	decimal # type
 % 1,	20 # length
 [ "0",	0.000	]
 [ "1",	1.000	]
 #SELECT v, convert(v, numeric(10)) from T_varchar where v in ('0', '1');
-% sys.t_varchar,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_varchar,	sys.t_varchar # table_name
+% v,	v # name
 % varchar,	decimal # type
 % 1,	11 # length
 [ "0",	0	]
 [ "1",	1	]
 #SELECT v, convert(v, decimal(11)) from T_varchar where v in ('0', '1');
-% sys.t_varchar,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_varchar,	sys.t_varchar # table_name
+% v,	v # name
 % varchar,	decimal # type
 % 1,	12 # length
 [ "0",	0	]
 [ "1",	1	]
 #SELECT v, convert(v, numeric(12,0)) from T_varchar where v in ('0', '1');
-% sys.t_varchar,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_varchar,	sys.t_varchar # table_name
+% v,	v # name
 % varchar,	decimal # type
 % 1,	13 # length
 [ "0",	0	]
 [ "1",	1	]
 #SELECT v, convert(v, decimal(15,3)) from T_varchar where v in ('0', '1');
-% sys.t_varchar,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_varchar,	sys.t_varchar # table_name
+% v,	v # name
 % varchar,	decimal # type
 % 1,	17 # length
 [ "0",	0.000	]
 [ "1",	1.000	]
 #SELECT v, convert(v, char) from T_varchar where v in ('0', '1');
-% sys.t_varchar,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_varchar,	sys. # table_name
+% v,	%2 # name
 % varchar,	char # type
 % 1,	1 # length
 [ "0",	"0"	]
 [ "1",	"1"	]
 #SELECT v, convert(v, varchar(36)) from T_varchar;
-% sys.t_varchar,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_varchar,	sys. # table_name
+% v,	%2 # name
 % varchar,	varchar # type
 % 26,	26 # length
 [ "0",	"0"	]
@@ -6014,8 +6014,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ "",	""	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, CHARACTER LARGE OBJECT) from T_varchar;
-% sys.t_varchar,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_varchar,	sys.t_varchar # table_name
+% v,	v # name
 % varchar,	varchar # type
 % 26,	26 # length
 [ "0",	"0"	]
@@ -6026,8 +6026,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ "",	""	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, Clob) from T_varchar;
-% sys.t_varchar,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_varchar,	sys.t_varchar # table_name
+% v,	v # name
 % varchar,	varchar # type
 % 26,	26 # length
 [ "0",	"0"	]
@@ -6038,133 +6038,133 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ "",	""	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, Blob) from T_varchar where v in ('0123456789');
-% sys.t_varchar,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_varchar,	sys.t_varchar # table_name
+% v,	v # name
 % varchar,	blob # type
 % 10,	0 # length
 [ "0123456789",	0123456789	]
 #SELECT v, cast(v as boolean) from T_varchar where v in ('0', '1');
-% sys.t_varchar,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_varchar,	sys.t_varchar # table_name
+% v,	v # name
 % varchar,	boolean # type
 % 1,	5 # length
 [ "0",	false	]
 [ "1",	true	]
 #SELECT v, cast(v as tinyint) from T_varchar where v in ('0', '1');
-% sys.t_varchar,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_varchar,	sys.t_varchar # table_name
+% v,	v # name
 % varchar,	tinyint # type
 % 1,	1 # length
 [ "0",	0	]
 [ "1",	1	]
 #SELECT v, cast(v as smallint) from T_varchar where v in ('0', '1');
-% sys.t_varchar,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_varchar,	sys.t_varchar # table_name
+% v,	v # name
 % varchar,	smallint # type
 % 1,	1 # length
 [ "0",	0	]
 [ "1",	1	]
 #SELECT v, cast(v as integer) from T_varchar where v in ('0', '1');
-% sys.t_varchar,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_varchar,	sys.t_varchar # table_name
+% v,	v # name
 % varchar,	int # type
 % 1,	1 # length
 [ "0",	0	]
 [ "1",	1	]
 #SELECT v, cast(v as bigint) from T_varchar where v in ('0', '1');
-% sys.t_varchar,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_varchar,	sys.t_varchar # table_name
+% v,	v # name
 % varchar,	bigint # type
 % 1,	1 # length
 [ "0",	0	]
 [ "1",	1	]
 #SELECT v, cast(v as float) from T_varchar where v in ('0', '1');
-% sys.t_varchar,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_varchar,	sys.t_varchar # table_name
+% v,	v # name
 % varchar,	double # type
 % 1,	24 # length
 [ "0",	0	]
 [ "1",	1	]
 #SELECT v, cast(v as float(24)) from T_varchar where v in ('0', '1');
-% sys.t_varchar,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_varchar,	sys.t_varchar # table_name
+% v,	v # name
 % varchar,	real # type
 % 1,	15 # length
 [ "0",	0	]
 [ "1",	1	]
 #SELECT v, cast(v as real) from T_varchar where v in ('0', '1');
-% sys.t_varchar,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_varchar,	sys.t_varchar # table_name
+% v,	v # name
 % varchar,	real # type
 % 1,	15 # length
 [ "0",	0	]
 [ "1",	1	]
 #SELECT v, cast(v as double) from T_varchar where v in ('0', '1');
-% sys.t_varchar,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_varchar,	sys.t_varchar # table_name
+% v,	v # name
 % varchar,	double # type
 % 1,	24 # length
 [ "0",	0	]
 [ "1",	1	]
 #SELECT v, cast(v as double precision) from T_varchar where v in ('0', '1');
-% sys.t_varchar,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_varchar,	sys.t_varchar # table_name
+% v,	v # name
 % varchar,	double # type
 % 1,	24 # length
 [ "0",	0	]
 [ "1",	1	]
 #SELECT v, cast(v as numeric) from T_varchar where v in ('0', '1');
-% sys.t_varchar,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_varchar,	sys.t_varchar # table_name
+% v,	v # name
 % varchar,	decimal # type
 % 1,	20 # length
 [ "0",	0.000	]
 [ "1",	1.000	]
 #SELECT v, cast(v as decimal) from T_varchar where v in ('0', '1');
-% sys.t_varchar,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_varchar,	sys.t_varchar # table_name
+% v,	v # name
 % varchar,	decimal # type
 % 1,	20 # length
 [ "0",	0.000	]
 [ "1",	1.000	]
 #SELECT v, cast(v as numeric(10)) from T_varchar where v in ('0', '1');
-% sys.t_varchar,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_varchar,	sys.t_varchar # table_name
+% v,	v # name
 % varchar,	decimal # type
 % 1,	11 # length
 [ "0",	0	]
 [ "1",	1	]
 #SELECT v, cast(v as decimal(11)) from T_varchar where v in ('0', '1');
-% sys.t_varchar,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_varchar,	sys.t_varchar # table_name
+% v,	v # name
 % varchar,	decimal # type
 % 1,	12 # length
 [ "0",	0	]
 [ "1",	1	]
 #SELECT v, cast(v as numeric(12,0)) from T_varchar where v in ('0', '1');
-% sys.t_varchar,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_varchar,	sys.t_varchar # table_name
+% v,	v # name
 % varchar,	decimal # type
 % 1,	13 # length
 [ "0",	0	]
 [ "1",	1	]
 #SELECT v, cast(v as decimal(15,3)) from T_varchar where v in ('0', '1');
-% sys.t_varchar,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_varchar,	sys.t_varchar # table_name
+% v,	v # name
 % varchar,	decimal # type
 % 1,	17 # length
 [ "0",	0.000	]
 [ "1",	1.000	]
 #SELECT v, cast(v as char) from T_varchar where v in ('0', '1');
-% sys.t_varchar,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_varchar,	sys. # table_name
+% v,	%2 # name
 % varchar,	char # type
 % 1,	1 # length
 [ "0",	"0"	]
 [ "1",	"1"	]
 #SELECT v, cast(v as varchar(36)) from T_varchar;
-% sys.t_varchar,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_varchar,	sys. # table_name
+% v,	%2 # name
 % varchar,	varchar # type
 % 26,	26 # length
 [ "0",	"0"	]
@@ -6175,8 +6175,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ "",	""	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as CHARACTER LARGE OBJECT) from T_varchar;
-% sys.t_varchar,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_varchar,	sys.t_varchar # table_name
+% v,	v # name
 % varchar,	varchar # type
 % 26,	26 # length
 [ "0",	"0"	]
@@ -6187,8 +6187,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ "",	""	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as Clob) from T_varchar;
-% sys.t_varchar,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_varchar,	sys.t_varchar # table_name
+% v,	v # name
 % varchar,	varchar # type
 % 26,	26 # length
 [ "0",	"0"	]
@@ -6199,8 +6199,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ "",	""	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as Blob) from T_varchar where v in ('0123456789');
-% sys.t_varchar,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_varchar,	sys.t_varchar # table_name
+% v,	v # name
 % varchar,	blob # type
 % 10,	0 # length
 [ "0123456789",	0123456789	]
@@ -6223,127 +6223,127 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ "AaZz"	]
 [ "~!@#$%^&*(')_/-+=:;\"<.,.>?"	]
 #SELECT v, convert(v, boolean) from T_clob where v in ('0', '1');
-% sys.t_clob,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_clob,	sys.t_clob # table_name
+% v,	v # name
 % clob,	boolean # type
 % 1,	5 # length
 [ "0",	false	]
 [ "1",	true	]
 #SELECT v, convert(v, tinyint) from T_clob where v in ('0', '1');
-% sys.t_clob,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_clob,	sys.t_clob # table_name
+% v,	v # name
 % clob,	tinyint # type
 % 1,	1 # length
 [ "0",	0	]
 [ "1",	1	]
 #SELECT v, convert(v, smallint) from T_clob where v in ('0', '1');
-% sys.t_clob,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_clob,	sys.t_clob # table_name
+% v,	v # name
 % clob,	smallint # type
 % 1,	1 # length
 [ "0",	0	]
 [ "1",	1	]
 #SELECT v, convert(v, integer) from T_clob where v in ('0', '1');
-% sys.t_clob,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_clob,	sys.t_clob # table_name
+% v,	v # name
 % clob,	int # type
 % 1,	1 # length
 [ "0",	0	]
 [ "1",	1	]
 #SELECT v, convert(v, bigint) from T_clob where v in ('0', '1');
-% sys.t_clob,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_clob,	sys.t_clob # table_name
+% v,	v # name
 % clob,	bigint # type
 % 1,	1 # length
 [ "0",	0	]
 [ "1",	1	]
 #SELECT v, convert(v, float) from T_clob where v in ('0', '1');
-% sys.t_clob,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_clob,	sys.t_clob # table_name
+% v,	v # name
 % clob,	double # type
 % 1,	24 # length
 [ "0",	0	]
 [ "1",	1	]
 #SELECT v, convert(v, float(24)) from T_clob where v in ('0', '1');
-% sys.t_clob,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_clob,	sys.t_clob # table_name
+% v,	v # name
 % clob,	real # type
 % 1,	15 # length
 [ "0",	0	]
 [ "1",	1	]
 #SELECT v, convert(v, real) from T_clob where v in ('0', '1');
-% sys.t_clob,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_clob,	sys.t_clob # table_name
+% v,	v # name
 % clob,	real # type
 % 1,	15 # length
 [ "0",	0	]
 [ "1",	1	]
 #SELECT v, convert(v, double) from T_clob where v in ('0', '1');
-% sys.t_clob,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_clob,	sys.t_clob # table_name
+% v,	v # name
 % clob,	double # type
 % 1,	24 # length
 [ "0",	0	]
 [ "1",	1	]
 #SELECT v, convert(v, double precision) from T_clob where v in ('0', '1');
-% sys.t_clob,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_clob,	sys.t_clob # table_name
+% v,	v # name
 % clob,	double # type
 % 1,	24 # length
 [ "0",	0	]
 [ "1",	1	]
 #SELECT v, convert(v, numeric) from T_clob where v in ('0', '1');
-% sys.t_clob,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_clob,	sys.t_clob # table_name
+% v,	v # name
 % clob,	decimal # type
 % 1,	20 # length
 [ "0",	0.000	]
 [ "1",	1.000	]
 #SELECT v, convert(v, decimal) from T_clob where v in ('0', '1');
-% sys.t_clob,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_clob,	sys.t_clob # table_name
+% v,	v # name
 % clob,	decimal # type
 % 1,	20 # length
 [ "0",	0.000	]
 [ "1",	1.000	]
 #SELECT v, convert(v, numeric(10)) from T_clob where v in ('0', '1');
-% sys.t_clob,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_clob,	sys.t_clob # table_name
+% v,	v # name
 % clob,	decimal # type
 % 1,	11 # length
 [ "0",	0	]
 [ "1",	1	]
 #SELECT v, convert(v, decimal(11)) from T_clob where v in ('0', '1');
-% sys.t_clob,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_clob,	sys.t_clob # table_name
+% v,	v # name
 % clob,	decimal # type
 % 1,	12 # length
 [ "0",	0	]
 [ "1",	1	]
 #SELECT v, convert(v, numeric(12,0)) from T_clob where v in ('0', '1');
-% sys.t_clob,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_clob,	sys.t_clob # table_name
+% v,	v # name
 % clob,	decimal # type
 % 1,	13 # length
 [ "0",	0	]
 [ "1",	1	]
 #SELECT v, convert(v, decimal(15,3)) from T_clob where v in ('0', '1');
-% sys.t_clob,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_clob,	sys.t_clob # table_name
+% v,	v # name
 % clob,	decimal # type
 % 1,	17 # length
 [ "0",	0.000	]
 [ "1",	1.000	]
 #SELECT v, convert(v, char) from T_clob where v in ('0', '1');
-% sys.t_clob,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_clob,	sys. # table_name
+% v,	%2 # name
 % clob,	char # type
 % 1,	1 # length
 [ "0",	"0"	]
 [ "1",	"1"	]
 #SELECT v, convert(v, varchar(36)) from T_clob;
-% sys.t_clob,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_clob,	sys. # table_name
+% v,	%2 # name
 % clob,	varchar # type
 % 26,	26 # length
 [ "0",	"0"	]
@@ -6354,8 +6354,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ "",	""	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, CHARACTER LARGE OBJECT) from T_clob;
-% sys.t_clob,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_clob,	sys.t_clob # table_name
+% v,	v # name
 % clob,	clob # type
 % 26,	26 # length
 [ "0",	"0"	]
@@ -6366,8 +6366,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ "",	""	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, Clob) from T_clob;
-% sys.t_clob,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_clob,	sys.t_clob # table_name
+% v,	v # name
 % clob,	clob # type
 % 26,	26 # length
 [ "0",	"0"	]
@@ -6378,133 +6378,133 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ "",	""	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, Blob) from T_clob where v in ('0123456789');
-% sys.t_clob,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_clob,	sys.t_clob # table_name
+% v,	v # name
 % clob,	blob # type
 % 10,	0 # length
 [ "0123456789",	0123456789	]
 #SELECT v, cast(v as boolean) from T_clob where v in ('0', '1');
-% sys.t_clob,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_clob,	sys.t_clob # table_name
+% v,	v # name
 % clob,	boolean # type
 % 1,	5 # length
 [ "0",	false	]
 [ "1",	true	]
 #SELECT v, cast(v as tinyint) from T_clob where v in ('0', '1');
-% sys.t_clob,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_clob,	sys.t_clob # table_name
+% v,	v # name
 % clob,	tinyint # type
 % 1,	1 # length
 [ "0",	0	]
 [ "1",	1	]
 #SELECT v, cast(v as smallint) from T_clob where v in ('0', '1');
-% sys.t_clob,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_clob,	sys.t_clob # table_name
+% v,	v # name
 % clob,	smallint # type
 % 1,	1 # length
 [ "0",	0	]
 [ "1",	1	]
 #SELECT v, cast(v as integer) from T_clob where v in ('0', '1');
-% sys.t_clob,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_clob,	sys.t_clob # table_name
+% v,	v # name
 % clob,	int # type
 % 1,	1 # length
 [ "0",	0	]
 [ "1",	1	]
 #SELECT v, cast(v as bigint) from T_clob where v in ('0', '1');
-% sys.t_clob,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_clob,	sys.t_clob # table_name
+% v,	v # name
 % clob,	bigint # type
 % 1,	1 # length
 [ "0",	0	]
 [ "1",	1	]
 #SELECT v, cast(v as float) from T_clob where v in ('0', '1');
-% sys.t_clob,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_clob,	sys.t_clob # table_name
+% v,	v # name
 % clob,	double # type
 % 1,	24 # length
 [ "0",	0	]
 [ "1",	1	]
 #SELECT v, cast(v as float(24)) from T_clob where v in ('0', '1');
-% sys.t_clob,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_clob,	sys.t_clob # table_name
+% v,	v # name
 % clob,	real # type
 % 1,	15 # length
 [ "0",	0	]
 [ "1",	1	]
 #SELECT v, cast(v as real) from T_clob where v in ('0', '1');
-% sys.t_clob,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_clob,	sys.t_clob # table_name
+% v,	v # name
 % clob,	real # type
 % 1,	15 # length
 [ "0",	0	]
 [ "1",	1	]
 #SELECT v, cast(v as double) from T_clob where v in ('0', '1');
-% sys.t_clob,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_clob,	sys.t_clob # table_name
+% v,	v # name
 % clob,	double # type
 % 1,	24 # length
 [ "0",	0	]
 [ "1",	1	]
 #SELECT v, cast(v as double precision) from T_clob where v in ('0', '1');
-% sys.t_clob,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_clob,	sys.t_clob # table_name
+% v,	v # name
 % clob,	double # type
 % 1,	24 # length
 [ "0",	0	]
 [ "1",	1	]
 #SELECT v, cast(v as numeric) from T_clob where v in ('0', '1');
-% sys.t_clob,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_clob,	sys.t_clob # table_name
+% v,	v # name
 % clob,	decimal # type
 % 1,	20 # length
 [ "0",	0.000	]
 [ "1",	1.000	]
 #SELECT v, cast(v as decimal) from T_clob where v in ('0', '1');
-% sys.t_clob,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_clob,	sys.t_clob # table_name
+% v,	v # name
 % clob,	decimal # type
 % 1,	20 # length
 [ "0",	0.000	]
 [ "1",	1.000	]
 #SELECT v, cast(v as numeric(10)) from T_clob where v in ('0', '1');
-% sys.t_clob,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_clob,	sys.t_clob # table_name
+% v,	v # name
 % clob,	decimal # type
 % 1,	11 # length
 [ "0",	0	]
 [ "1",	1	]
 #SELECT v, cast(v as decimal(11)) from T_clob where v in ('0', '1');
-% sys.t_clob,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_clob,	sys.t_clob # table_name
+% v,	v # name
 % clob,	decimal # type
 % 1,	12 # length
 [ "0",	0	]
 [ "1",	1	]
 #SELECT v, cast(v as numeric(12,0)) from T_clob where v in ('0', '1');
-% sys.t_clob,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_clob,	sys.t_clob # table_name
+% v,	v # name
 % clob,	decimal # type
 % 1,	13 # length
 [ "0",	0	]
 [ "1",	1	]
 #SELECT v, cast(v as decimal(15,3)) from T_clob where v in ('0', '1');
-% sys.t_clob,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_clob,	sys.t_clob # table_name
+% v,	v # name
 % clob,	decimal # type
 % 1,	17 # length
 [ "0",	0.000	]
 [ "1",	1.000	]
 #SELECT v, cast(v as char) from T_clob where v in ('0', '1');
-% sys.t_clob,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_clob,	sys. # table_name
+% v,	%2 # name
 % clob,	char # type
 % 1,	1 # length
 [ "0",	"0"	]
 [ "1",	"1"	]
 #SELECT v, cast(v as varchar(36)) from T_clob;
-% sys.t_clob,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_clob,	sys. # table_name
+% v,	%2 # name
 % clob,	varchar # type
 % 26,	26 # length
 [ "0",	"0"	]
@@ -6515,8 +6515,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ "",	""	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as CHARACTER LARGE OBJECT) from T_clob;
-% sys.t_clob,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_clob,	sys.t_clob # table_name
+% v,	v # name
 % clob,	clob # type
 % 26,	26 # length
 [ "0",	"0"	]
@@ -6527,8 +6527,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ "",	""	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as Clob) from T_clob;
-% sys.t_clob,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_clob,	sys.t_clob # table_name
+% v,	v # name
 % clob,	clob # type
 % 26,	26 # length
 [ "0",	"0"	]
@@ -6539,8 +6539,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ "",	""	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as Blob) from T_clob where v in ('0123456789');
-% sys.t_clob,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_clob,	sys.t_clob # table_name
+% v,	v # name
 % clob,	blob # type
 % 10,	0 # length
 [ "0123456789",	0123456789	]
@@ -6561,8 +6561,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2016-02-29	]
 [ 2016-12-31	]
 #SELECT v, convert(v, varchar(36)) from T_date;
-% sys.t_date,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_date,	sys.t_date # table_name
+% v,	v # name
 % date,	varchar # type
 % 10,	10 # length
 [ 1999-12-31,	"1999-12-31"	]
@@ -6571,8 +6571,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2016-12-31,	"2016-12-31"	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, CHARACTER LARGE OBJECT) from T_date;
-% sys.t_date,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_date,	sys.t_date # table_name
+% v,	v # name
 % date,	clob # type
 % 10,	10 # length
 [ 1999-12-31,	"1999-12-31"	]
@@ -6581,8 +6581,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2016-12-31,	"2016-12-31"	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, Clob) from T_date;
-% sys.t_date,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_date,	sys.t_date # table_name
+% v,	v # name
 % date,	clob # type
 % 10,	10 # length
 [ 1999-12-31,	"1999-12-31"	]
@@ -6591,8 +6591,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2016-12-31,	"2016-12-31"	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, date) from T_date;
-% sys.t_date,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_date,	sys.t_date # table_name
+% v,	v # name
 % date,	date # type
 % 10,	10 # length
 [ 1999-12-31,	1999-12-31	]
@@ -6601,8 +6601,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2016-12-31,	2016-12-31	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, timestamp) from T_date;
-% sys.t_date,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_date,	sys.t_date # table_name
+% v,	v # name
 % date,	timestamp # type
 % 10,	26 # length
 [ 1999-12-31,	1999-12-31 00:00:00.000000	]
@@ -6611,8 +6611,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2016-12-31,	2016-12-31 00:00:00.000000	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, timestamp with time zone) from T_date;
-% sys.t_date,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_date,	sys.t_date # table_name
+% v,	v # name
 % date,	timestamptz # type
 % 10,	32 # length
 [ 1999-12-31,	1999-12-31 02:00:00.000000+02:00	]
@@ -6621,8 +6621,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2016-12-31,	2016-12-31 02:00:00.000000+02:00	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as varchar(36)) from T_date;
-% sys.t_date,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_date,	sys.t_date # table_name
+% v,	v # name
 % date,	varchar # type
 % 10,	10 # length
 [ 1999-12-31,	"1999-12-31"	]
@@ -6631,8 +6631,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2016-12-31,	"2016-12-31"	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as CHARACTER LARGE OBJECT) from T_date;
-% sys.t_date,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_date,	sys.t_date # table_name
+% v,	v # name
 % date,	clob # type
 % 10,	10 # length
 [ 1999-12-31,	"1999-12-31"	]
@@ -6641,8 +6641,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2016-12-31,	"2016-12-31"	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as Clob) from T_date;
-% sys.t_date,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_date,	sys.t_date # table_name
+% v,	v # name
 % date,	clob # type
 % 10,	10 # length
 [ 1999-12-31,	"1999-12-31"	]
@@ -6651,8 +6651,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2016-12-31,	"2016-12-31"	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as date) from T_date;
-% sys.t_date,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_date,	sys.t_date # table_name
+% v,	v # name
 % date,	date # type
 % 10,	10 # length
 [ 1999-12-31,	1999-12-31	]
@@ -6661,8 +6661,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2016-12-31,	2016-12-31	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as timestamp) from T_date;
-% sys.t_date,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_date,	sys.t_date # table_name
+% v,	v # name
 % date,	timestamp # type
 % 10,	26 # length
 [ 1999-12-31,	1999-12-31 00:00:00.000000	]
@@ -6671,8 +6671,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2016-12-31,	2016-12-31 00:00:00.000000	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as timestamp with time zone) from T_date;
-% sys.t_date,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_date,	sys.t_date # table_name
+% v,	v # name
 % date,	timestamptz # type
 % 10,	32 # length
 [ 1999-12-31,	1999-12-31 02:00:00.000000+02:00	]
@@ -6695,80 +6695,80 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 00:00:00	]
 [ 23:59:58	]
 #SELECT v, convert(v, varchar(36)) from T_time;
-% sys.t_time,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_time,	sys.t_time # table_name
+% v,	v # name
 % time,	varchar # type
 % 8,	8 # length
 [ 00:00:00,	"00:00:00"	]
 [ 23:59:58,	"23:59:58"	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, CHARACTER LARGE OBJECT) from T_time;
-% sys.t_time,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_time,	sys.t_time # table_name
+% v,	v # name
 % time,	clob # type
 % 8,	8 # length
 [ 00:00:00,	"00:00:00"	]
 [ 23:59:58,	"23:59:58"	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, Clob) from T_time;
-% sys.t_time,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_time,	sys.t_time # table_name
+% v,	v # name
 % time,	clob # type
 % 8,	8 # length
 [ 00:00:00,	"00:00:00"	]
 [ 23:59:58,	"23:59:58"	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, time) from T_time;
-% sys.t_time,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_time,	sys.t_time # table_name
+% v,	v # name
 % time,	time # type
 % 8,	8 # length
 [ 00:00:00,	00:00:00	]
 [ 23:59:58,	23:59:58	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, time with time zone) from T_time;
-% sys.t_time,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_time,	sys.t_time # table_name
+% v,	v # name
 % time,	timetz # type
 % 8,	14 # length
 [ 00:00:00,	02:00:00+02:00	]
 [ 23:59:58,	01:59:58+02:00	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as varchar(36)) from T_time;
-% sys.t_time,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_time,	sys.t_time # table_name
+% v,	v # name
 % time,	varchar # type
 % 8,	8 # length
 [ 00:00:00,	"00:00:00"	]
 [ 23:59:58,	"23:59:58"	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as CHARACTER LARGE OBJECT) from T_time;
-% sys.t_time,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_time,	sys.t_time # table_name
+% v,	v # name
 % time,	clob # type
 % 8,	8 # length
 [ 00:00:00,	"00:00:00"	]
 [ 23:59:58,	"23:59:58"	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as Clob) from T_time;
-% sys.t_time,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_time,	sys.t_time # table_name
+% v,	v # name
 % time,	clob # type
 % 8,	8 # length
 [ 00:00:00,	"00:00:00"	]
 [ 23:59:58,	"23:59:58"	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as time) from T_time;
-% sys.t_time,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_time,	sys.t_time # table_name
+% v,	v # name
 % time,	time # type
 % 8,	8 # length
 [ 00:00:00,	00:00:00	]
 [ 23:59:58,	23:59:58	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as time with time zone) from T_time;
-% sys.t_time,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_time,	sys.t_time # table_name
+% v,	v # name
 % time,	timetz # type
 % 8,	14 # length
 [ 00:00:00,	02:00:00+02:00	]
@@ -6791,8 +6791,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2016-02-29 00:00:00.000000	]
 [ 2016-12-31 23:59:58.000000	]
 #SELECT v, convert(v, varchar(36)) from T_timestamp;
-% sys.t_timestamp,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_timestamp,	sys.t_timestamp # table_name
+% v,	v # name
 % timestamp,	varchar # type
 % 26,	26 # length
 [ 1999-12-31 23:59:59.000000,	"1999-12-31 23:59:59.000000"	]
@@ -6801,8 +6801,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2016-12-31 23:59:58.000000,	"2016-12-31 23:59:58.000000"	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, CHARACTER LARGE OBJECT) from T_timestamp;
-% sys.t_timestamp,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_timestamp,	sys.t_timestamp # table_name
+% v,	v # name
 % timestamp,	clob # type
 % 26,	26 # length
 [ 1999-12-31 23:59:59.000000,	"1999-12-31 23:59:59.000000"	]
@@ -6811,8 +6811,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2016-12-31 23:59:58.000000,	"2016-12-31 23:59:58.000000"	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, Clob) from T_timestamp;
-% sys.t_timestamp,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_timestamp,	sys.t_timestamp # table_name
+% v,	v # name
 % timestamp,	clob # type
 % 26,	26 # length
 [ 1999-12-31 23:59:59.000000,	"1999-12-31 23:59:59.000000"	]
@@ -6821,8 +6821,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2016-12-31 23:59:58.000000,	"2016-12-31 23:59:58.000000"	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, date) from T_timestamp;
-% sys.t_timestamp,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_timestamp,	sys.t_timestamp # table_name
+% v,	v # name
 % timestamp,	date # type
 % 26,	10 # length
 [ 1999-12-31 23:59:59.000000,	1999-12-31	]
@@ -6831,8 +6831,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2016-12-31 23:59:58.000000,	2016-12-31	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, time) from T_timestamp;
-% sys.t_timestamp,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_timestamp,	sys.t_timestamp # table_name
+% v,	v # name
 % timestamp,	time # type
 % 26,	8 # length
 [ 1999-12-31 23:59:59.000000,	23:59:59	]
@@ -6841,8 +6841,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2016-12-31 23:59:58.000000,	23:59:58	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, timestamp) from T_timestamp;
-% sys.t_timestamp,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_timestamp,	sys.t_timestamp # table_name
+% v,	v # name
 % timestamp,	timestamp # type
 % 26,	26 # length
 [ 1999-12-31 23:59:59.000000,	1999-12-31 23:59:59.000000	]
@@ -6851,8 +6851,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2016-12-31 23:59:58.000000,	2016-12-31 23:59:58.000000	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, time with time zone) from T_timestamp;
-% sys.t_timestamp,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_timestamp,	sys.t_timestamp # table_name
+% v,	v # name
 % timestamp,	timetz # type
 % 26,	14 # length
 [ 1999-12-31 23:59:59.000000,	01:59:59+02:00	]
@@ -6861,8 +6861,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2016-12-31 23:59:58.000000,	01:59:58+02:00	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, timestamp with time zone) from T_timestamp;
-% sys.t_timestamp,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_timestamp,	sys.t_timestamp # table_name
+% v,	v # name
 % timestamp,	timestamptz # type
 % 26,	32 # length
 [ 1999-12-31 23:59:59.000000,	2000-01-01 01:59:59.000000+02:00	]
@@ -6871,8 +6871,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2016-12-31 23:59:58.000000,	2017-01-01 01:59:58.000000+02:00	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as varchar(36)) from T_timestamp;
-% sys.t_timestamp,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_timestamp,	sys.t_timestamp # table_name
+% v,	v # name
 % timestamp,	varchar # type
 % 26,	26 # length
 [ 1999-12-31 23:59:59.000000,	"1999-12-31 23:59:59.000000"	]
@@ -6881,8 +6881,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2016-12-31 23:59:58.000000,	"2016-12-31 23:59:58.000000"	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as CHARACTER LARGE OBJECT) from T_timestamp;
-% sys.t_timestamp,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_timestamp,	sys.t_timestamp # table_name
+% v,	v # name
 % timestamp,	clob # type
 % 26,	26 # length
 [ 1999-12-31 23:59:59.000000,	"1999-12-31 23:59:59.000000"	]
@@ -6891,8 +6891,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2016-12-31 23:59:58.000000,	"2016-12-31 23:59:58.000000"	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as Clob) from T_timestamp;
-% sys.t_timestamp,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_timestamp,	sys.t_timestamp # table_name
+% v,	v # name
 % timestamp,	clob # type
 % 26,	26 # length
 [ 1999-12-31 23:59:59.000000,	"1999-12-31 23:59:59.000000"	]
@@ -6901,8 +6901,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2016-12-31 23:59:58.000000,	"2016-12-31 23:59:58.000000"	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as date) from T_timestamp;
-% sys.t_timestamp,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_timestamp,	sys.t_timestamp # table_name
+% v,	v # name
 % timestamp,	date # type
 % 26,	10 # length
 [ 1999-12-31 23:59:59.000000,	1999-12-31	]
@@ -6911,8 +6911,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2016-12-31 23:59:58.000000,	2016-12-31	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as time) from T_timestamp;
-% sys.t_timestamp,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_timestamp,	sys.t_timestamp # table_name
+% v,	v # name
 % timestamp,	time # type
 % 26,	8 # length
 [ 1999-12-31 23:59:59.000000,	23:59:59	]
@@ -6921,8 +6921,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2016-12-31 23:59:58.000000,	23:59:58	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as timestamp) from T_timestamp;
-% sys.t_timestamp,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_timestamp,	sys.t_timestamp # table_name
+% v,	v # name
 % timestamp,	timestamp # type
 % 26,	26 # length
 [ 1999-12-31 23:59:59.000000,	1999-12-31 23:59:59.000000	]
@@ -6931,8 +6931,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2016-12-31 23:59:58.000000,	2016-12-31 23:59:58.000000	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as time with time zone) from T_timestamp;
-% sys.t_timestamp,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_timestamp,	sys.t_timestamp # table_name
+% v,	v # name
 % timestamp,	timetz # type
 % 26,	14 # length
 [ 1999-12-31 23:59:59.000000,	01:59:59+02:00	]
@@ -6941,8 +6941,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2016-12-31 23:59:58.000000,	01:59:58+02:00	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as timestamp with time zone) from T_timestamp;
-% sys.t_timestamp,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_timestamp,	sys.t_timestamp # table_name
+% v,	v # name
 % timestamp,	timestamptz # type
 % 26,	32 # length
 [ 1999-12-31 23:59:59.000000,	2000-01-01 01:59:59.000000+02:00	]
@@ -6965,80 +6965,80 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 02:00:00+02:00	]
 [ 01:59:58+02:00	]
 #SELECT v, convert(v, varchar(36)) from T_timetz;
-% sys.t_timetz,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_timetz,	sys.t_timetz # table_name
+% v,	v # name
 % timetz,	varchar # type
 % 14,	14 # length
 [ 02:00:00+02:00,	"02:00:00+02:00"	]
 [ 01:59:58+02:00,	"01:59:58+02:00"	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, CHARACTER LARGE OBJECT) from T_timetz;
-% sys.t_timetz,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_timetz,	sys.t_timetz # table_name
+% v,	v # name
 % timetz,	clob # type
 % 14,	14 # length
 [ 02:00:00+02:00,	"02:00:00+02:00"	]
 [ 01:59:58+02:00,	"01:59:58+02:00"	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, Clob) from T_timetz;
-% sys.t_timetz,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_timetz,	sys.t_timetz # table_name
+% v,	v # name
 % timetz,	clob # type
 % 14,	14 # length
 [ 02:00:00+02:00,	"02:00:00+02:00"	]
 [ 01:59:58+02:00,	"01:59:58+02:00"	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, time) from T_timetz;
-% sys.t_timetz,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_timetz,	sys.t_timetz # table_name
+% v,	v # name
 % timetz,	time # type
 % 14,	8 # length
 [ 02:00:00+02:00,	00:00:00	]
 [ 01:59:58+02:00,	23:59:58	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, time with time zone) from T_timetz;
-% sys.t_timetz,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_timetz,	sys.t_timetz # table_name
+% v,	v # name
 % timetz,	timetz # type
 % 14,	14 # length
 [ 02:00:00+02:00,	02:00:00+02:00	]
 [ 01:59:58+02:00,	01:59:58+02:00	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as varchar(36)) from T_timetz;
-% sys.t_timetz,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_timetz,	sys.t_timetz # table_name
+% v,	v # name
 % timetz,	varchar # type
 % 14,	14 # length
 [ 02:00:00+02:00,	"02:00:00+02:00"	]
 [ 01:59:58+02:00,	"01:59:58+02:00"	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as CHARACTER LARGE OBJECT) from T_timetz;
-% sys.t_timetz,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_timetz,	sys.t_timetz # table_name
+% v,	v # name
 % timetz,	clob # type
 % 14,	14 # length
 [ 02:00:00+02:00,	"02:00:00+02:00"	]
 [ 01:59:58+02:00,	"01:59:58+02:00"	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as Clob) from T_timetz;
-% sys.t_timetz,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_timetz,	sys.t_timetz # table_name
+% v,	v # name
 % timetz,	clob # type
 % 14,	14 # length
 [ 02:00:00+02:00,	"02:00:00+02:00"	]
 [ 01:59:58+02:00,	"01:59:58+02:00"	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as time) from T_timetz;
-% sys.t_timetz,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_timetz,	sys.t_timetz # table_name
+% v,	v # name
 % timetz,	time # type
 % 14,	8 # length
 [ 02:00:00+02:00,	00:00:00	]
 [ 01:59:58+02:00,	23:59:58	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as time with time zone) from T_timetz;
-% sys.t_timetz,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_timetz,	sys.t_timetz # table_name
+% v,	v # name
 % timetz,	timetz # type
 % 14,	14 # length
 [ 02:00:00+02:00,	02:00:00+02:00	]
@@ -7061,8 +7061,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2016-02-29 02:00:00.000000+02:00	]
 [ 2017-01-01 01:59:58.000000+02:00	]
 #SELECT v, convert(v, varchar(36)) from T_timestamptz;
-% sys.t_timestamptz,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_timestamptz,	sys.t_timestamptz # table_name
+% v,	v # name
 % timestamptz,	varchar # type
 % 32,	32 # length
 [ 2000-01-01 01:59:59.000000+02:00,	"2000-01-01 01:59:59.000000+02:00"	]
@@ -7071,8 +7071,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2017-01-01 01:59:58.000000+02:00,	"2017-01-01 01:59:58.000000+02:00"	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, CHARACTER LARGE OBJECT) from T_timestamptz;
-% sys.t_timestamptz,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_timestamptz,	sys.t_timestamptz # table_name
+% v,	v # name
 % timestamptz,	clob # type
 % 32,	32 # length
 [ 2000-01-01 01:59:59.000000+02:00,	"2000-01-01 01:59:59.000000+02:00"	]
@@ -7081,8 +7081,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2017-01-01 01:59:58.000000+02:00,	"2017-01-01 01:59:58.000000+02:00"	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, Clob) from T_timestamptz;
-% sys.t_timestamptz,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_timestamptz,	sys.t_timestamptz # table_name
+% v,	v # name
 % timestamptz,	clob # type
 % 32,	32 # length
 [ 2000-01-01 01:59:59.000000+02:00,	"2000-01-01 01:59:59.000000+02:00"	]
@@ -7091,8 +7091,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2017-01-01 01:59:58.000000+02:00,	"2017-01-01 01:59:58.000000+02:00"	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, date) from T_timestamptz;
-% sys.t_timestamptz,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_timestamptz,	sys.t_timestamptz # table_name
+% v,	v # name
 % timestamptz,	date # type
 % 32,	10 # length
 [ 2000-01-01 01:59:59.000000+02:00,	1999-12-31	]
@@ -7101,8 +7101,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2017-01-01 01:59:58.000000+02:00,	2016-12-31	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, time) from T_timestamptz;
-% sys.t_timestamptz,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_timestamptz,	sys.t_timestamptz # table_name
+% v,	v # name
 % timestamptz,	time # type
 % 32,	8 # length
 [ 2000-01-01 01:59:59.000000+02:00,	23:59:59	]
@@ -7111,8 +7111,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2017-01-01 01:59:58.000000+02:00,	23:59:58	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, timestamp) from T_timestamptz;
-% sys.t_timestamptz,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_timestamptz,	sys.t_timestamptz # table_name
+% v,	v # name
 % timestamptz,	timestamp # type
 % 32,	26 # length
 [ 2000-01-01 01:59:59.000000+02:00,	1999-12-31 23:59:59.000000	]
@@ -7121,8 +7121,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2017-01-01 01:59:58.000000+02:00,	2016-12-31 23:59:58.000000	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, time with time zone) from T_timestamptz;
-% sys.t_timestamptz,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_timestamptz,	sys.t_timestamptz # table_name
+% v,	v # name
 % timestamptz,	timetz # type
 % 32,	14 # length
 [ 2000-01-01 01:59:59.000000+02:00,	01:59:59+02:00	]
@@ -7131,8 +7131,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2017-01-01 01:59:58.000000+02:00,	01:59:58+02:00	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, timestamp with time zone) from T_timestamptz;
-% sys.t_timestamptz,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_timestamptz,	sys.t_timestamptz # table_name
+% v,	v # name
 % timestamptz,	timestamptz # type
 % 32,	32 # length
 [ 2000-01-01 01:59:59.000000+02:00,	2000-01-01 01:59:59.000000+02:00	]
@@ -7141,8 +7141,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2017-01-01 01:59:58.000000+02:00,	2017-01-01 01:59:58.000000+02:00	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as varchar(36)) from T_timestamptz;
-% sys.t_timestamptz,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_timestamptz,	sys.t_timestamptz # table_name
+% v,	v # name
 % timestamptz,	varchar # type
 % 32,	32 # length
 [ 2000-01-01 01:59:59.000000+02:00,	"2000-01-01 01:59:59.000000+02:00"	]
@@ -7151,8 +7151,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2017-01-01 01:59:58.000000+02:00,	"2017-01-01 01:59:58.000000+02:00"	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as CHARACTER LARGE OBJECT) from T_timestamptz;
-% sys.t_timestamptz,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_timestamptz,	sys.t_timestamptz # table_name
+% v,	v # name
 % timestamptz,	clob # type
 % 32,	32 # length
 [ 2000-01-01 01:59:59.000000+02:00,	"2000-01-01 01:59:59.000000+02:00"	]
@@ -7161,8 +7161,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2017-01-01 01:59:58.000000+02:00,	"2017-01-01 01:59:58.000000+02:00"	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as Clob) from T_timestamptz;
-% sys.t_timestamptz,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_timestamptz,	sys.t_timestamptz # table_name
+% v,	v # name
 % timestamptz,	clob # type
 % 32,	32 # length
 [ 2000-01-01 01:59:59.000000+02:00,	"2000-01-01 01:59:59.000000+02:00"	]
@@ -7171,8 +7171,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2017-01-01 01:59:58.000000+02:00,	"2017-01-01 01:59:58.000000+02:00"	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as date) from T_timestamptz;
-% sys.t_timestamptz,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_timestamptz,	sys.t_timestamptz # table_name
+% v,	v # name
 % timestamptz,	date # type
 % 32,	10 # length
 [ 2000-01-01 01:59:59.000000+02:00,	1999-12-31	]
@@ -7181,8 +7181,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2017-01-01 01:59:58.000000+02:00,	2016-12-31	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as time) from T_timestamptz;
-% sys.t_timestamptz,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_timestamptz,	sys.t_timestamptz # table_name
+% v,	v # name
 % timestamptz,	time # type
 % 32,	8 # length
 [ 2000-01-01 01:59:59.000000+02:00,	23:59:59	]
@@ -7191,8 +7191,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2017-01-01 01:59:58.000000+02:00,	23:59:58	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as timestamp) from T_timestamptz;
-% sys.t_timestamptz,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_timestamptz,	sys.t_timestamptz # table_name
+% v,	v # name
 % timestamptz,	timestamp # type
 % 32,	26 # length
 [ 2000-01-01 01:59:59.000000+02:00,	1999-12-31 23:59:59.000000	]
@@ -7201,8 +7201,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2017-01-01 01:59:58.000000+02:00,	2016-12-31 23:59:58.000000	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as time with time zone) from T_timestamptz;
-% sys.t_timestamptz,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_timestamptz,	sys.t_timestamptz # table_name
+% v,	v # name
 % timestamptz,	timetz # type
 % 32,	14 # length
 [ 2000-01-01 01:59:59.000000+02:00,	01:59:59+02:00	]
@@ -7211,8 +7211,8 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2017-01-01 01:59:58.000000+02:00,	01:59:58+02:00	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as timestamp with time zone) from T_timestamptz;
-% sys.t_timestamptz,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_timestamptz,	sys.t_timestamptz # table_name
+% v,	v # name
 % timestamptz,	timestamptz # type
 % 32,	32 # length
 [ 2000-01-01 01:59:59.000000+02:00,	2000-01-01 01:59:59.000000+02:00	]

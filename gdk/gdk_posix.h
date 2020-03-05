@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #ifndef GDK_POSIX_H
@@ -152,6 +152,7 @@ gdk_export bool MT_path_absolute(const char *path);
  */
 gdk_export void *mdlopen(const char *library, int mode);
 
+
 #ifdef NATIVE_WIN32
 
 #define RTLD_LAZY	1
@@ -179,5 +180,18 @@ gdk_export int win_mkdir(const char *, const int mode);
 #define remove		win_unlink
 
 #endif	/* NATIVE_WIN32 */
+
+#ifndef HAVE_LOCALTIME_R
+gdk_export struct tm *localtime_r(const time_t *restrict, struct tm *restrict);
+#endif
+#ifndef HAVE_GMTIME_R
+gdk_export struct tm *gmtime_r(const time_t *restrict, struct tm *restrict);
+#endif
+#ifndef HAVE_ASCTIME_R
+gdk_export char *asctime_r(const struct tm *restrict, char *restrict);
+#endif
+#ifndef HAVE_CTIME_R
+gdk_export char *ctime_r(const time_t *restrict, char *restrict);
+#endif
 
 #endif /* GDK_POSIX_H */

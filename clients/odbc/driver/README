@@ -25,7 +25,7 @@ ODBC is chosen to be implemented first because:
   ourselves to get this functionality now.
 Update 2016: the JDBC-ODBC bridge driver is no longer needed nor supported in JRE.
 We provide a 100% pure (type 4) JDBC driver implementation for MonetDB.
-See: https://www.monetdb.org/downloads/Java/Latest/
+See: https://www.monetdb.org/downloads/Java/
 
 Tip:
 =======================================================================
@@ -33,7 +33,6 @@ To do ODBC driver development/maintenance you need the Microsoft ODBC
  specification to learn what the ODBC API functions and behavior has to be.
 This specification is available as MS Windows help file (ODBC.HLP and ODBC.CNT).
 It is part of the MS ODBC SDK which has become part of the MS MDAC SDK.
-For convenience it is also available in /ufs/dinther/ODBC/
 
 For compilation you need the ODBC API include header files:
 	sqltypes.h	/* ODBC type defines */
@@ -51,7 +50,7 @@ All ODBC driver implementation files are located in clients/odbc/driver/
 Every ODBC API function which needs to be implemented by the driver
  has its own file with the same name as the function and suffix ".c".
 The ODBC API functions all start with SQL, so its easy to locate them.
-There are 73 SQL*.c files and thus 73 ODBC API functions implemented.
+There are 76 SQL*.c files and thus 76 ODBC API functions implemented.
 
 The ODBC API function prototypes and defines are defined in sqltypes.h,
  sql.h, sqlext.h and sqlucode.h so there are NO SQL*.h files.
@@ -61,7 +60,7 @@ the sql*.h files and other standard external include files.
 Every SQL*.c must include this ODBCGlobal.h file as first include.
 
 Besides the SQL*.c files there are the ODBC*.[ch] files.
-The files ODBCEnv.[ch] ODBCDbc.[ch], ODBCStmt.[ch], ODBCHostVar.[ch]
+The files ODBCEnv.[ch] ODBCDbc.[ch], ODBCStmt.[ch], ODBCDesc.[ch]
  and ODBCError.[ch] implement the structures needed to represent the
  handles (pointers to an object) and the internal state of the ODBC objects.
 In the implementation section below it is explained why these are necessary.
@@ -100,7 +99,7 @@ In ODBC multiple environments (each application uses its own environment),
  multiple input parameters per statement, multiple output columns per result
  set.
 The management and validity of these handles is all implemented in
-the ODBCEnv.[ch], ODBCDbc.{ch], ODBCStmt.[ch] and ODBCHostVar.[ch] files.
+the ODBCEnv.[ch], ODBCDbc.[ch], ODBCStmt.[ch] and ODBCDesc.[ch] files.
 
 Error handling in ODBC is done in a special way which is explained here.
 Every ODBC API function returns a code (integer) which can be:
@@ -126,7 +125,7 @@ specific handle (e.g. addDbcError()), to clear all errors on a handle
 
 Implementation of the ODBC API functions:
 ------------------------------------------------------------------------
-Although 73 SQL*() functions are implemented, some do not implement the
+Although 76 SQL*() functions are implemented, some do not implement the
  requested behavior or parameter option. They just set an error message code
 and return SQL_ERROR.
 

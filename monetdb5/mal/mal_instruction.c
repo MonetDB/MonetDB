@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -15,25 +15,29 @@
 #include "mal_function.h"		/* for getPC() */
 #include "mal_utils.h"
 #include "mal_exception.h"
+#include "mal_private.h"
 
+/* If we encounter an error it can be left behind in the MalBlk
+ * for the upper layers to abandon the track
+ */
 void
 addMalException(MalBlkPtr mb, str msg)
 {
 	str new;
 
+	if( msg == NULL)
+		return;
 	if( mb->errors){
-		new = GDKzalloc(strlen(mb->errors) + strlen(msg) + 4);
+		size_t len = strlen(mb->errors) + strlen(msg) + 1;
+		new = GDKzalloc(len);
 		if (new == NULL)
-			return ; // just stick to one error message, ignore rest
-		strcpy(new, mb->errors);
-		strcat(new, msg);
+			// just stick to one error message, ignore rest
+			return ;
+		strconcat_len(new, len, mb->errors, msg, NULL);
 		freeException(mb->errors);
 		mb->errors = new;
 	} else {
-		new = GDKstrdup(msg);
-		if( new == NULL)
-			return ; // just stick to one error message, ignore rest
-		mb->errors = new;
+		mb->errors = dupError(msg);
 	}
 }
 
@@ -176,7 +180,7 @@ resizeMalBlk(MalBlkPtr mb, int elements)
 			mb->ssize = elements;
 		} else {
 			mb->stmt = ostmt;	/* reinstate old pointer */
-			mb->errors = createMalException(mb,0, TYPE, "out of memory (requested: %"PRIu64" bytes)", (uint64_t) elements * sizeof(InstrPtr));
+			mb->errors = createMalException(mb,0, TYPE,  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			return -1;
 		}
 	}
@@ -190,7 +194,7 @@ resizeMalBlk(MalBlkPtr mb, int elements)
 			mb->vsize = elements;
 		} else{
 			mb->var = ovar;
-			mb->errors = createMalException(mb,0, TYPE, "out of memory (requested: %"PRIu64" bytes)", (uint64_t) elements * sizeof(InstrPtr));
+			mb->errors = createMalException(mb,0, TYPE,  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			return -1;
 		}
 	}
@@ -336,7 +340,7 @@ copyMalBlk(MalBlkPtr old)
 		GDKfree(mb);
 		return NULL;
 	}
-	strncpy(mb->binding,  old->binding, IDLENGTH);
+	strcpy_len(mb->binding,  old->binding, sizeof(mb->binding));
 	mb->errors = old->errors? GDKstrdup(old->errors):0;
 	mb->tag = old->tag;
 	mb->runtime = old->runtime;
@@ -444,28 +448,28 @@ prepareMalBlk(MalBlkPtr mb, str s)
  * Allocation of an instruction should always succeed.
  */
 InstrPtr
-newInstruction(MalBlkPtr mb, str modnme, str fcnnme)
+newInstructionArgs(MalBlkPtr mb, str modnme, str fcnnme, int args)
 {
 	InstrPtr p = NULL;
 
-	p = GDKzalloc(MAXARG * sizeof(p->argv[0]) + offsetof(InstrRecord, argv));
+	(void) mb;
+
+	p = GDKzalloc(args * sizeof(p->argv[0]) + offsetof(InstrRecord, argv));
 	if (p == NULL) {
 		/* We are facing an hard problem.
-		 * The hack is to re-use an already allocated instruction.
-		 * The marking of the block as containing errors should protect further actions.
+		 * The upper layers of the code base assume that this routine will always produce a structure.
+		 * Furthermore, failure to allocate such a small data structure indicates we are in serious trouble.
+		 * The only way out is declare it a fatal error, terminate the system to avoid crashes in all kind of places.
 		 */
-		if( mb){
-			mb->errors = createMalException(mb,0, TYPE, SQLSTATE(HY001) MAL_MALLOC_FAIL);
-		}
-		return NULL;
+		GDKerror("newInstruction:" SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		mal_exit(1);
 	}
-	p->maxarg = MAXARG;
+	p->maxarg = args;
 	p->typechk = TYPE_UNKNOWN;
 	setModuleId(p, modnme);
 	setFunctionId(p, fcnnme);
 	p->argc = 1;
 	p->retc = 1;
-	p->mitosis = -1;
 	p->argv[0] = -1;			/* watch out for direct use in variable table */
 	/* Flow of control instructions are always marked as an assignment
 	 * with modifier */
@@ -473,11 +477,17 @@ newInstruction(MalBlkPtr mb, str modnme, str fcnnme)
 	return p;
 }
 
+InstrPtr
+newInstruction(MalBlkPtr mb, str modnme, str fcnnme)
+{
+	return newInstructionArgs(mb, modnme, fcnnme, MAXARG);
+}
+
 /* Copying an instruction is space conservative. */
 InstrPtr
 copyInstruction(InstrPtr p)
 {
-	InstrPtr new = (InstrPtr) GDKmalloc(offsetof(InstrRecord, argv) + p->maxarg * sizeof(p->maxarg));
+	InstrPtr new = (InstrPtr) GDKmalloc(offsetof(InstrRecord, argv) + p->maxarg * sizeof(p->argv[0]));
 	if(new == NULL) 
 		return new;
 	oldmoveInstruction(new, p);
@@ -739,7 +749,7 @@ makeVarSpace(MalBlkPtr mb)
 		if (new == NULL) {
 			// the only place to return an error signal at this stage.
 			// The Client context should be passed around more deeply
-			mb->errors = createMalException(mb,0,TYPE, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			mb->errors = createMalException(mb,0,TYPE, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			return -1;
 		}
 		memset( ((char*) new) + mb->vsize * sizeof(VarRecord), 0, (s- mb->vsize) * sizeof(VarRecord));
@@ -750,26 +760,12 @@ makeVarSpace(MalBlkPtr mb)
 }
 
 /* create and initialize a variable record*/
-int
-newVariable(MalBlkPtr mb, const char *name, size_t len, malType type)
+void
+setVariableType(MalBlkPtr mb, const int n, malType type)
 {
-	int n;
-
-	if( len >= IDLENGTH)
-		return -1;
-	if (makeVarSpace(mb)) 
-		/* no space for a new variable */
-		return -1;
-	n = mb->vtop;
-	if( name == 0 || len == 0)
-		(void) snprintf(getVarName(mb,n), IDLENGTH,"%c%c%d", REFMARKER, TMPMARKER,mb->vid++);
-	else{
-		(void) strncpy( getVarName(mb,n), name,len);
-		getVarName(mb,n)[len]=0;
-	}
-
-	setRowCnt(mb,n,0);
+	assert( n >= 0 && n <mb->vtop);
 	setVarType(mb, n, type);
+	setRowCnt(mb,n,0);
 	clrVarFixed(mb, n);
 	clrVarUsed(mb, n);
 	clrVarInit(mb, n);
@@ -777,7 +773,34 @@ newVariable(MalBlkPtr mb, const char *name, size_t len, malType type)
 	clrVarUDFtype(mb, n);
 	clrVarConstant(mb, n);
 	clrVarCleanup(mb, n);
+}
+
+int
+newVariable(MalBlkPtr mb, const char *name, size_t len, malType type)
+{
+	int n;
+
+	if( len >= IDLENGTH){
+		mb->errors = createMalException(mb,0,TYPE, "newVariable: id too long");
+		return -1;
+	}
+	if (makeVarSpace(mb)) 
+		/* no space for a new variable */
+		return -1;
+	n = mb->vtop;
+	if( name == 0 || len == 0){
+		(void) snprintf(getVarName(mb,n), IDLENGTH,"%c%c%d", REFMARKER, TMPMARKER,mb->vid++);
+	} else {
+		/* avoid calling strcpy_len since we're not interested in the
+		 * source length, and that may be very large */
+		char *nme = getVarName(mb,n);
+		for (size_t i = 0; i < len; i++)
+			nme[i] = name[i];
+		nme[len] = 0;
+	}
+
 	mb->vtop++;
+	setVariableType(mb, n, type);
 	return n;
 }
 
@@ -874,11 +897,8 @@ trimMalVariables_(MalBlkPtr mb, MalStkPtr glb)
 
 	/* build the alias table */
 	for (i = 0; i < mb->vtop; i++) {
-#ifdef DEBUG_REDUCE
-		fprintf(stderr,"used %s %d\n", getVarName(mb,i), isVarUsed(mb,i));
-#endif
 		if ( isVarUsed(mb,i) == 0) {
-			if (glb && isVarConstant(mb, i))
+			if (glb && i < glb->stktop && isVarConstant(mb, i))
 				VALclear(&glb->stk[i]);
 			freeVariable(mb, i);
 			continue;
@@ -893,26 +913,18 @@ trimMalVariables_(MalBlkPtr mb, MalStkPtr glb)
 		/* valgrind finds a leak when we move these variable record
 		 * pointers around. */
 		alias[i] = cnt;
-		if (glb && i != cnt) {
+		if (glb && i < glb->stktop && i != cnt) {
 			glb->stk[cnt] = glb->stk[i];
 			VALempty(&glb->stk[i]);
 		}
 		cnt++;
 	}
-#ifdef DEBUG_REDUCE
-	fprintf(stderr, "Variable reduction %d -> %d\n", mb->vtop, cnt);
-	for (i = 0; i < mb->vtop; i++)
-		fprintf(stderr, "map %d->%d\n", i, alias[i]);
-#endif
 
 	/* remap all variable references to their new position. */
 	if (cnt < mb->vtop) {
 		for (i = 0; i < mb->stop; i++) {
 			q = getInstrPtr(mb, i);
 			for (j = 0; j < q->argc; j++){
-#ifdef DEBUG_REDUCE
-				fprintf(stderr, "map %d->%d\n", getArg(q,j), alias[getArg(q,j)]);
-#endif
 				getArg(q, j) = alias[getArg(q, j)];
 			}
 		}
@@ -923,10 +935,6 @@ trimMalVariables_(MalBlkPtr mb, MalStkPtr glb)
 	if( isTmpVar(mb,i))
         (void) snprintf(mb->var[i].id, IDLENGTH,"%c%c%d", REFMARKER, TMPMARKER,mb->vid++);
 	
-#ifdef DEBUG_REDUCE
-	fprintf(stderr, "After reduction \n");
-	fprintFunction(stderr, mb, 0, 0);
-#endif
 	GDKfree(alias);
 	mb->vtop = cnt;
 }
@@ -991,6 +999,8 @@ convertConstant(int type, ValPtr vr)
 		return MAL_SUCCEED;
 	if (type == TYPE_bat || isaBatType(type)) {
 		/* BAT variables can only be set to nil */
+		if( vr->vtype != TYPE_void)
+			throw(SYNTAX, "convertConstant", "BAT conversion error");
 		VALclear(vr);
 		vr->vtype = type;
 		vr->val.bval = bat_nil;
@@ -1001,7 +1011,7 @@ convertConstant(int type, ValPtr vr)
 		if (vr->vtype == TYPE_void) {
 			VALclear(vr);
 			vr->vtype = type;
-			vr->val.pval = 0;
+			vr->val.pval = NULL;
 			return MAL_SUCCEED;
 		}
 		if (vr->vtype != type)
@@ -1055,6 +1065,8 @@ cpyConstant(MalBlkPtr mb, VarPtr vr)
 		return -1;
 
 	i = defConstant(mb, vr->type, &cst);
+	if( i<0)
+		return -1;
 	return i;
 }
 
@@ -1064,13 +1076,18 @@ defConstant(MalBlkPtr mb, int type, ValPtr cst)
 	int k;
 	str msg;
 
-	if (isaBatType(type) && cst->vtype == TYPE_void) {
-		cst->vtype = TYPE_bat;
-		cst->val.bval = bat_nil;
-	} else if (cst->vtype != type && !isaBatType(type) && !isPolyType(type)) {
+	if (isaBatType(type)){
+		 if( cst->vtype == TYPE_void) {
+			cst->vtype = TYPE_bat;
+			cst->val.bval = bat_nil;
+		} else {
+			mb->errors = createMalException(mb, 0, TYPE, "BAT coercion error");
+			return -1;
+		}
+	} else if (cst->vtype != type && !isPolyType(type)) {
 		int otype = cst->vtype;
 		assert(type != TYPE_any);	/* help Coverity */
-		msg = convertConstant(type, cst);
+		msg = convertConstant(getBatType(type), cst);
 		if (msg) {
 			str ft, tt;
 
@@ -1081,6 +1098,7 @@ defConstant(MalBlkPtr mb, int type, ValPtr cst)
 			GDKfree(ft);
 			GDKfree(tt);
 			freeException(msg);
+			return -1;
 		} else {
 			assert(cst->vtype == type);
 		}
@@ -1111,9 +1129,78 @@ defConstant(MalBlkPtr mb, int type, ValPtr cst)
  * limited. Furthermore, we should assure that no variable is
  * referenced before being assigned. Failure to obey should mark the
  * instruction as type-error. */
+
+static InstrPtr 
+extendInstruction(MalBlkPtr mb, InstrPtr p)
+{
+	InstrPtr pn = p;
+
+	if (p->argc == p->maxarg) {
+		int space = p->maxarg * sizeof(p->argv[0]) + offsetof(InstrRecord, argv);
+		pn = (InstrPtr) GDKrealloc(p,space + MAXARG * sizeof(p->argv[0]));
+
+		if (pn == NULL) {
+			/* In the exceptional case we can not allocate more space
+			 * then we show an exception, mark the block as erroneous
+			 * and leave the instruction as is.
+			*/
+			mb->errors = createMalException(mb,0, TYPE, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			return p;
+		}
+		memset( ((char*)pn) + space, 0, MAXARG * sizeof(pn->argv[0]));
+		pn->maxarg += MAXARG;
+	}
+	return pn;
+}
+
 InstrPtr
 pushArgument(MalBlkPtr mb, InstrPtr p, int varid)
 {
+	InstrPtr pn;
+
+	if (p == NULL)
+		return NULL;
+	if (varid < 0) {
+		/* leave everything as is in this exceptional programming error */
+		mb->errors = createMalException(mb, 0, TYPE,"improper variable id");
+		return p;
+	}
+	if (p->argc == p->maxarg) {
+		pn = extendInstruction(mb, p);
+
+		/* if the instruction is already stored in the MAL block
+		 * it should be replaced by an extended version.
+		 */
+		if (p != pn) {
+			for (int i = mb->stop - 1; i >= 0; i--) {
+				if (mb->stmt[i] == p) {
+					mb->stmt[i] =  pn;
+					break;
+				}
+			}
+		}
+		p = pn;
+		if (mb->errors)
+			return p;
+	}
+	/* protect against the case that the instruction is malloced
+	 * in isolation */
+	if( mb->maxarg < p->maxarg)
+		mb->maxarg= p->maxarg;
+	p->argv[p->argc++] = varid;
+	return p;
+}
+
+
+/* the next version assumes that we have allocated an isolated instruction
+ * using newInstruction. As long as it is not stored in the MAL block
+ * we can simpy extend it with arguments
+ */
+InstrPtr
+addArgument(MalBlkPtr mb, InstrPtr p, int varid)
+{
+	InstrPtr pn = p;
+
 	if (p == NULL)
 		return NULL;
 	if (varid < 0) {
@@ -1122,40 +1209,19 @@ pushArgument(MalBlkPtr mb, InstrPtr p, int varid)
 		return p;
 	}
 
-	if (p->argc + 1 == p->maxarg) {
-		int i = 0;
-		int space = p->maxarg * sizeof(p->argv[0]) + offsetof(InstrRecord, argv);
-		InstrPtr pn = (InstrPtr) GDKrealloc(p,space + MAXARG * sizeof(p->argv[0]));
-
-		if (pn == NULL) {
-			/* In the exceptional case we can not allocate more space
-			 * then we show an exception, mark the block as erroneous
-			 * and leave the instruction as is.
-			*/
-			mb->errors = createMalException(mb,0, TYPE, SQLSTATE(HY001) MAL_MALLOC_FAIL);
-			return p;
-		}
-		memset( ((char*)pn) + space, 0, MAXARG * sizeof(pn->argv[0]));
-		pn->maxarg += MAXARG;
-
-		/* if the instruction is already stored in the MAL block
-		 * it should be replaced by an extended version.
-		 */
-		if( p != pn)
-			for (i = mb->stop - 1; i >= 0; i--)
-				if (mb->stmt[i] == p) {
-					mb->stmt[i] =  pn;
-					break;
-				}
-
+	if (p->argc == p->maxarg) {
+		pn = extendInstruction(mb, p);
+#ifndef NDEBUG
+               if (p != pn) {
+                       for (int i = mb->stop - 1; i >= 0; i--)
+                               assert(mb->stmt[i] != p);
+	       }
+#endif
 		p = pn;
-		/* we have to keep track on the maximal arguments/block
-		 * because it is needed by the interpreter */
-		if (mb->maxarg < pn->maxarg)
-			mb->maxarg = pn->maxarg;
+		if (mb->errors)
+			return p;
 	}
-	/* protect against the case that the instruction is malloced
-	 * in isolation */
+	/* protect against the case that the instruction is malloced in isolation */
 	if( mb->maxarg < p->maxarg)
 		mb->maxarg= p->maxarg;
 
@@ -1209,7 +1275,8 @@ pushArgumentId(MalBlkPtr mb, InstrPtr p, const char *name)
 	if (v < 0) {
 		size_t namelen = strlen(name);
 		if ((v = newVariable(mb, name, namelen, getAtomIndex(name, namelen, TYPE_any))) < 0) {
-			freeInstruction(p);
+			/* set the MAL block to erroneous and simply return without doing anything */
+			mb->errors = createMalException(mb,0, TYPE,  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			return NULL;
 		}
 	}
@@ -1317,5 +1384,6 @@ pushInstruction(MalBlkPtr mb, InstrPtr p)
 	}
 	if (mb->stmt[mb->stop])
 		freeInstruction(mb->stmt[mb->stop]);
+	p->pc = mb->stop;
 	mb->stmt[mb->stop++] = p;
 }

@@ -2,7 +2,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
 
 # get the right-most extension of a filename
 def rsplit_filename(f):
@@ -13,7 +13,7 @@ def rsplit_filename(f):
         return f[:s], f[s+1:]
     return base, ext
 
-automake_ext = ['', 'c', 'cpp', 'def', 'h', 'lo', 'o', 'pm.c', 'tab.c', 'tab.h', 'yy.c', 'pm.i']
+automake_ext = set(['', 'c', 'def', 'h', 'lo', 'o', 'tab.c', 'tab.h'])
 automake_extra_extensions = set([rsplit_filename(x)[1] for x in automake_ext if '.' in x])
 extra_extensions = ['in', 'bat', 'sed']
 

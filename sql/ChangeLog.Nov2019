@@ -1,29 +1,3 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
-* Mon Sep 23 2019 Sjoerd Mullender <sjoerd@acm.org>
-- There are new aggregate functions sys.median_avg and sys.quantile_avg
-  that return the interpolated value if the median/quantile doesn't fall
-  exactly on a partticular row.  These functions always return a value
-  of type DOUBLE and only work for numeric types (various width integers
-  and floating point).
-
-* Fri Jul 12 2019 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
-- Added sys.deltas ("schema" string, "table" string, "column" string)
-  returns table ("values" bigint) system function which returns a single
-  column with 6 values: a flag indicating if the column's upper table is
-  cleared or not, the count of the RDONLY, RD_INS and RD_UPD_ID deltas
-  of the column itself, the number of deleted values of the column's
-  table, as well as the level of the current transaction in the
-  transaction level tree. It should be used for debugging purposes only.
-
-* Mon May  6 2019 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
-- Added "VALUES row_list" statement as a top SQL projection statement.
-
-* Mon Feb 18 2019 Aris Koning <aris.koning@monetdbsolutions.com>
-- The implementation of in-expression now follows a join-based approach
-  instead of using iterative union/selects. This greatly improves
-  performance for large in-value-lists. Furthermore the old approach has
-  large in-value-lists generate large MAL plans. This is now no longer
-  the case.
-

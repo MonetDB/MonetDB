@@ -1,30 +1,33 @@
 stdout of test 'order_disjunctive_bug.SF-1338309` in directory 'sql/test/bugs` itself:
 
 
-# 19:40:41 >  
-# 19:40:41 >   mserver5 "--config=/ufs/niels/scratch/monetdb/Linux-x86_64/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=4 --set "monet_mod_path=/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=31946 --set xrpc_port=44499 --set monet_prompt= --trace  "--dbname=mTests_src_test_bugs" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
-# 19:40:41 >  
+# 19:53:53 >  
+# 19:53:53 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=33829" "--set" "mapi_usock=/var/tmp/mtest-3703/.s.monetdb.33829" "--forcemito" "--dbpath=/home/niels/scratch/monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_bugs" "--set" "embedded_c=true"
+# 19:53:53 >  
 
-# MonetDB server v5.9.0, based on kernel v1.27.0
-# Serving database 'mTests_src_test_bugs', using 4 threads
-# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
-# Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008- MonetDB B.V., all rights reserved
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:31946/
-# MonetDB/SQL module v2.27.0 loaded
+# MonetDB 5 server v11.36.0 (hg id: 1d18bd8860b4+)
+# This is an unreleased version
+# Serving database 'mTests_sql_test_bugs', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 15.384 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2020 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://xps13:33829/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-3703/.s.monetdb.33829
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
 
-#function user.main():void;
-#    clients.quit();
-#end main;
+# 19:53:54 >  
+# 19:53:54 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-3703" "--port=33829"
+# 19:53:54 >  
 
-
-# 12:59:12 >  
-# 12:59:12 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < order_disjunctive_bug.SF-1338309.sql
-# 12:59:12 >  
-
+#create table urlparts (urlid int);
+#insert into urlparts values (1);
 [ 1	]
+#insert into urlparts values (218);
 [ 1	]
+#insert into urlparts values (219);
 [ 1	]
 [ 1	]
 [ 1	]

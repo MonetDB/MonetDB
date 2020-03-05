@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #ifndef SQL_STORAGE_H
@@ -11,6 +11,7 @@
 
 #include "sql_catalog.h"
 #include "gdk_logger.h"
+#include "store_sequence.h"
 
 #define COLSIZE	1024
 
@@ -35,6 +36,9 @@ typedef enum store_type {
 } store_type;
 
 #define STORE_READONLY (store_readonly)
+
+/* builtin functions have ids less than this */
+#define FUNC_OIDS 2000
 
 extern sql_trans *gtrans;
 extern list *active_sessions;
@@ -354,7 +358,7 @@ sqlstore_export logger_functions logger_funcs;
 
 /* we need to add an interface for result_tables later */
 
-extern res_table *res_table_create(sql_trans *tr, int res_id, oid query_id, int nr_cols, sql_query_t querytype, res_table *next, void *order);
+extern res_table *res_table_create(sql_trans *tr, int res_id, oid query_id, int nr_cols, mapi_query_t querytype, res_table *next, void *order);
 extern res_col *res_col_create(sql_trans *tr, res_table *t, const char *tn, const char *name, const char *typename, int digits, int scale, int mtype, void *v);
 
 extern void res_table_destroy(res_table *t);
@@ -447,7 +451,8 @@ extern sql_sequence *create_sql_sequence(sql_allocator *sa, sql_schema *s, const
 extern sql_sequence * sql_trans_create_sequence(sql_trans *tr, sql_schema *s, const char *name, lng start, lng min, lng max, lng inc, lng cacheinc, bit cycle, bit bedropped);
 extern void sql_trans_drop_sequence(sql_trans *tr, sql_schema *s, sql_sequence *seq, int drop_action);
 extern sql_sequence *sql_trans_alter_sequence(sql_trans *tr, sql_sequence *seq, lng min, lng max, lng inc, lng cache, bit cycle);
-extern lng sql_trans_sequence_restart(sql_trans *tr, sql_sequence *seq, lng start);
+extern sql_sequence *sql_trans_sequence_restart(sql_trans *tr, sql_sequence *seq, lng start);
+extern sql_sequence *sql_trans_seqbulk_restart(sql_trans *tr, seqbulk *sb, lng start);
 
 extern sql_session * sql_session_create(backend_stack stk, int autocommit);
 extern void sql_session_destroy(sql_session *s);
@@ -465,7 +470,7 @@ extern int sql_trans_check_dependency(sql_trans *tr, sqlid id, sqlid depend_id, 
 extern list* sql_trans_owner_schema_dependencies(sql_trans *tr, sqlid id);
 
 extern sql_table *create_sql_table(sql_allocator *sa, const char *name, sht type, bit system, int persistence, int commit_action, bit properties);
-extern sql_column *create_sql_column(sql_allocator *sa, sql_table *t, const char *name, sql_subtype *tpe);
+extern sql_column *create_sql_column(sql_trans *tr, sql_table *t, const char *name, sql_subtype *tpe);
 extern sql_ukey *create_sql_ukey(sql_allocator *sa, sql_table *t, const char *nme, key_type kt);
 extern sql_fkey *create_sql_fkey(sql_allocator *sa, sql_table *t, const char *nme, key_type kt, sql_key *rkey, int on_delete, int on_update );
 extern sql_key *create_sql_kc(sql_allocator *sa, sql_key *k, sql_column *c);
@@ -488,5 +493,8 @@ extern sql_trigger *sql_trans_copy_trigger(sql_trans *tr, sql_table *t, sql_trig
 extern sql_part *sql_trans_copy_part(sql_trans *tr, sql_table *t, sql_part *pt);
 
 extern void sql_trans_drop_any_comment(sql_trans *tr, sqlid id);
+extern void sql_trans_drop_obj_priv(sql_trans *tr, sqlid obj_id);
+
+extern void dup_sql_type(sql_trans *tr, sql_schema *os, sql_subtype *oc, sql_subtype *nc);
 
 #endif /*SQL_STORAGE_H */

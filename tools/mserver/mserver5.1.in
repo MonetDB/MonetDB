@@ -74,15 +74,6 @@ This file can contain all options as can be set with the --set flag.
 See
 .IR "CONFIG FILE FORMAT" .
 .TP
-.B \-\-daemon=yes
-.PD 0
-.TP
-.B \-\-daemon=no
-.PD
-Disable the console prompt, do not read commands from standard input.
-Default:
-.BR no .
-.TP
 \fB\-\-set\fP \fIoption\fP\fB=\fP\fIvalue\fP
 Set individual configuration option.
 For possible options, see
@@ -124,26 +115,19 @@ The value is an integer, which can be (a bit-wise OR of):
 .EX
           \fB1\fP = THRDMASK     = thread-specific debug output
           \fB2\fP = CHECKMASK    = property enforcing on new BATs
-          \fB4\fP = MEMMASK      = memory allocation
           \fB8\fP = PROPMASK     = property checking on all values:
                              tells about wrongly set properties
          \fB16\fP = IOMASK       = major IO activity
          \fB32\fP = BATMASK      = BAT handling
-.\"         \fB64\fP = PARSEMASK    = parser debugging
         \fB128\fP = PARMASK      = Thread management
-.\"        \fB256\fP = HEADLESSMASK = Warn about BAT heads that are not "headless-ready"
         \fB512\fP = TMMASK       = Transaction management
        \fB1024\fP = TEMMASK      = Locks and Triggers
-.\"       \fB2048\fP = DLMASK       = Dynamic loading
        \fB4096\fP = PERFMASK     = BBP Performance (?)
        \fB8192\fP = DELTAMASK    = Delta debugging (?)
       \fB16384\fP = LOADMASK     = Module loading
-.\"      \fB32768\fP = YACCMASK     = Yacc specific error messages
     \fB2097152\fP = ALGOMASK     = show join/select algorithm chosen
     \fB4194304\fP = ESTIMASK     = show result size estimations
                              (for join, select)
-.\"    \fB8388608\fP = XPROPMASK    = extended property checking:
-.\"                             tells also about not set properties
    \fB16777216\fP = NOSYNCMASK   = disable forcefully synchronizing files
                              to disk.  If this flag is set, there is
                              no guarantee that the database remains
@@ -321,14 +305,11 @@ SQL.
 The value is
 .B true
 or
-.B 2
-for embedded Python 2, or
 .B 3
 for embedded Python 3.  Note that by enabling embedded Python, users
 of the server are allowed to execute arbitrary Python code, and are
 therefore able to read and modify all data that the server process has
-access to.  Also note that it is not possible to enable both Python 2
-and 3 at the same time.
+access to.
 .TP
 .B embedded_r=true
 Enable embedded R.  This means R code can be called from SQL.  Note
@@ -344,6 +325,19 @@ users of the server are allowed to execute arbitrary C code, and are
 therefore able to read and modify all data that the server process has
 access to.  In addition, if the C code causes a crash, all bets are
 off.
+.TP
+.B raw_strings=true
+The boolean option raw_strings controls how the sql scanner interprets string
+literals. If the value is
+.B false
+then strings are interpreted as if they were delimited with E-quotes, that is
+strings are interpreted as C strings and backslash characters are needed to
+escape special characters. If the value is
+.B true
+then strings are interpreted as if they were delimited with R-quotes, that is
+all characters are interpreted literally. Single quote characters need to be
+doubled inside strings. The default value is
+.BR false .
 .SH CONFIG FILE FORMAT
 The configuration file readable by
 .I mserver5

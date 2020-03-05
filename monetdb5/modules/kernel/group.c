@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -40,15 +40,17 @@ GRPsubgroup5(bat *ngid, bat *next, bat *nhis, const bat *bid, const bat *sid, co
 			BBPunfix(h->batCacheid);
 		throw(MAL, gid ? "group.subgroup" : "group.group", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
-	if ((r = BATgroup(&gn, &en, nhis ? &hn : NULL, b, s, g, e, h)) == GDK_SUCCEED) {
+	if ((r = BATgroup(&gn, next ? &en : NULL, nhis ? &hn : NULL, b, s, g, e, h)) == GDK_SUCCEED) {
 		*ngid = gn->batCacheid;
-		*next = en->batCacheid;
+		BBPkeepref(*ngid);
+		if (next) {
+			*next = en->batCacheid;
+			BBPkeepref(*next);
+		}
 		if (nhis){
 			*nhis = hn->batCacheid;
 			BBPkeepref(*nhis);
 		}
-		BBPkeepref(*ngid);
-		BBPkeepref(*next);
 	}
 	BBPunfix(b->batCacheid);
 	if (s)
@@ -126,4 +128,40 @@ str
 GRPgroup1(bat *ngid, bat *next, bat *nhis, const bat *bid)
 {
 	return GRPsubgroup5(ngid, next, nhis, bid, NULL, NULL, NULL, NULL);
+}
+
+str
+GRPgroup11(bat *ngid, const bat *bid)
+{
+	return GRPsubgroup5(ngid, NULL, NULL, bid, NULL, NULL, NULL, NULL);
+}
+
+str
+GRPgroup21(bat *ngid, const bat *bid, const bat *sid)
+{
+	return GRPsubgroup5(ngid, NULL, NULL, bid, sid, NULL, NULL, NULL);
+}
+
+str
+GRPsubgroup51(bat *ngid, const bat *bid, const bat *sid, const bat *gid, const bat *eid, const bat *hid)
+{
+	return GRPsubgroup5(ngid, NULL, NULL, bid, sid, gid, eid, hid);
+}
+
+str
+GRPsubgroup41(bat *ngid, const bat *bid, const bat *gid, const bat *eid, const bat *hid)
+{
+	return GRPsubgroup5(ngid, NULL, NULL, bid, NULL, gid, eid, hid);
+}
+
+str
+GRPsubgroup31(bat *ngid, const bat *bid, const bat *sid, const bat *gid)
+{
+	return GRPsubgroup5(ngid, NULL, NULL, bid, sid, gid, NULL, NULL);
+}
+
+str
+GRPsubgroup21(bat *ngid, const bat *bid, const bat *gid)
+{
+	return GRPsubgroup5(ngid, NULL, NULL, bid, NULL, gid, NULL, NULL);
 }

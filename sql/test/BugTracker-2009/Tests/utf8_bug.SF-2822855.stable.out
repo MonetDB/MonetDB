@@ -27,7 +27,7 @@ stdout of test 'utf8_bug.SF-2822855` in directory 'sql/test/BugTracker-2009` its
 [ 1	]
 [ 1	]
 #select a, length(a) AS len from utf8len;
-% sys.utf8len,	sys.L3 # table_name
+% sys.utf8len,	sys. # table_name
 % a,	len # name
 % varchar,	int # type
 % 1,	1 # length
@@ -35,7 +35,7 @@ stdout of test 'utf8_bug.SF-2822855` in directory 'sql/test/BugTracker-2009` its
 [ "€",	1	]
 [ "€",	1	]
 #select 'Liever €uro' as "Liever euro";
-% .L2 # table_name
+% . # table_name
 % "Liever euro" # name
 % char # type
 % 11 # length

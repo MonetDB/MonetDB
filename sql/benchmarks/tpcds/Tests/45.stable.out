@@ -11,7 +11,7 @@ stdout of test '45` in directory 'sql/benchmarks/tpcds` itself:
 # Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
 # Found 62.694 GiB available main-memory.
 # Copyright (c) 1993 - July 2008 CWI.
-# Copyright (c) August 2008 - 2019 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008 - 2020 MonetDB B.V., all rights reserved
 # Visit https://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://methuselah.da.cwi.nl:30709/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-16393/.s.monetdb.30709
@@ -35,8 +35,14 @@ stdout of test '45` in directory 'sql/benchmarks/tpcds` itself:
 #  AND c_current_addr_sk = ca_address_sk
 #  AND ws_item_sk = i_item_sk
 #  AND (SUBSTRING(ca_zip,1,5) IN ('85669',
-% .customer_address,	.customer_address,	.L24 # table_name
-% ca_zip,	ca_city,	L24 # name
+#                              '86197',
+#                              '88274',
+#                              '83405',
+#                              '86475',
+#                              '85392',
+#                              '85460',
+% .customer_address,	.customer_address,	.%2 # table_name
+% ca_zip,	ca_city,	%2 # name
 % char,	varchar,	decimal # type
 % 10,	15,	20 # length
 [ "10150",	"Bunker Hill",	20.25	]

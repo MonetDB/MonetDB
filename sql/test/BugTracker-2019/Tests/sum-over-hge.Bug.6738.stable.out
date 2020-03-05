@@ -11,7 +11,7 @@ stdout of test 'sum-over-hge.Bug.6738` in directory 'sql/test/BugTracker-2019` i
 # Compiled for x86_64-pc-linux-gnu/64bit
 # Found 62.693 GiB available main-memory.
 # Copyright (c) 1993 - July 2008 CWI.
-# Copyright (c) August 2008 - 2019 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008 - 2020 MonetDB B.V., all rights reserved
 # Visit https://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://methuselah.da.cwi.nl:30631/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-29714/.s.monetdb.30631
@@ -63,7 +63,7 @@ stdout of test 'sum-over-hge.Bug.6738` in directory 'sql/test/BugTracker-2019` i
 #       1.0 * sum(foo) over () as s2,
 #       1.0 * cast(sum(foo) over () as float) as s3
 #  from (select 7 as foo union all select 3 as foo) as t;
-% .t,	.L16,	.L22,	.L27 # table_name
+% .t,	.,	.,	. # table_name
 % foo,	s1,	s2,	s3 # name
 % tinyint,	bigint,	decimal,	double # type
 % 1,	2,	20,	24 # length
@@ -72,8 +72,8 @@ stdout of test 'sum-over-hge.Bug.6738` in directory 'sql/test/BugTracker-2019` i
 #select foo,
 #       sum(foo) over () / 2
 #  from (select 7 as foo union all select 3 as foo) as t;
-% .t,	.L16 # table_name
-% foo,	L16 # name
+% .t,	. # table_name
+% foo,	%10 # name
 % tinyint,	bigint # type
 % 1,	1 # length
 [ 7,	5	]
@@ -82,7 +82,7 @@ stdout of test 'sum-over-hge.Bug.6738` in directory 'sql/test/BugTracker-2019` i
 #       sum(foo) over (order by foo) as sumsum1,
 #       1.0 * sum(foo) over (order by foo) as cumsum2
 #  from (values (1),(2),(3),(4),(5),(6)) as t(foo);
-% .t,	.L5,	.L11 # table_name
+% .t,	.,	. # table_name
 % foo,	sumsum1,	cumsum2 # name
 % tinyint,	bigint,	decimal # type
 % 1,	2,	20 # length

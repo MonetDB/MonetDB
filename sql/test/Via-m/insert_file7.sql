@@ -11,5 +11,3 @@ set return_id = i_add_video_file('dummy description',
                                  125,
                                  'codec 1',
                                  2000);
-
-select return_id;

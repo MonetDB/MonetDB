@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -334,6 +334,7 @@
 #include "gdk_system.h"
 #include "gdk_posix.h"
 #include "stream.h"
+#include "mstring.h"
 
 #undef MIN
 #undef MAX
@@ -360,62 +361,21 @@
 */
 
 #define THRDMASK	(1)
-#define THRDDEBUG	if (GDKdebug & THRDMASK)
 #define CHECKMASK	(1<<1)
 #define CHECKDEBUG	if (GDKdebug & CHECKMASK)
-#define MEMMASK		(1<<2)
-#define MEMDEBUG	if (GDKdebug & MEMMASK)
 #define PROPMASK	(1<<3)
 #define PROPDEBUG	if (GDKdebug & PROPMASK)
 #define IOMASK		(1<<4)
-#define IODEBUG		if (GDKdebug & IOMASK)
 #define BATMASK		(1<<5)
-#define BATDEBUG	if (GDKdebug & BATMASK)
-/* PARSEMASK not used anymore
-#define PARSEMASK	(1<<6)
-#define PARSEDEBUG	if (GDKdebug & PARSEMASK)
-*/
 #define PARMASK		(1<<7)
-#define PARDEBUG	if (GDKdebug & PARMASK)
-/* HEADLESSMASK not used anymore
-#define HEADLESSMASK	(1<<8)
-#define HEADLESSDEBUG	if (GDKdebug & HEADLESSMASK)
-*/
 #define TMMASK		(1<<9)
-#define TMDEBUG		if (GDKdebug & TMMASK)
 #define TEMMASK		(1<<10)
-#define TEMDEBUG	if (GDKdebug & TEMMASK)
-/* DLMASK not used anymore
-#define DLMASK		(1<<11)
-#define DLDEBUG		if (GDKdebug & DLMASK)
-*/
 #define PERFMASK	(1<<12)
-#define PERFDEBUG	if (GDKdebug & PERFMASK)
 #define DELTAMASK	(1<<13)
-#define DELTADEBUG	if (GDKdebug & DELTAMASK)
 #define LOADMASK	(1<<14)
-#define LOADDEBUG	if (GDKdebug & LOADMASK)
-/* YACCMASK not used anymore
-#define YACCMASK	(1<<15)
-#define YACCDEBUG	if (GDKdebug & YACCMASK)
-*/
-/*
-#define ?tcpip?		if (GDKdebug&(1<<16))
-#define ?monet_multiplex?	if (GDKdebug&(1<<17))
-#define ?ddbench?	if (GDKdebug&(1<<18))
-#define ?ddbench?	if (GDKdebug&(1<<19))
-#define ?ddbench?	if (GDKdebug&(1<<20))
-*/
 #define ACCELMASK	(1<<20)
-#define ACCELDEBUG	if (GDKdebug & (ACCELMASK|ALGOMASK))
 #define ALGOMASK	(1<<21)
-#define ALGODEBUG	if (GDKdebug & ALGOMASK)
 #define ESTIMASK	(1<<22)
-#define ESTIDEBUG	if (GDKdebug & ESTIMASK)
-/* XPROPMASK not used anymore
-#define XPROPMASK	(1<<23)
-#define XPROPDEBUG	if (GDKdebug & XPROPMASK)
-*/
 
 #define NOSYNCMASK	(1<<24)
 
@@ -423,16 +383,13 @@
 #define DEADBEEFCHK	if (!(GDKdebug & DEADBEEFMASK))
 
 #define ALLOCMASK	(1<<26)
-#define ALLOCDEBUG	if (GDKdebug & ALLOCMASK)
 
 /* M5, only; cf.,
  * monetdb5/mal/mal.h
  */
 #define OPTMASK		(1<<27)
-#define OPTDEBUG	if (GDKdebug & OPTMASK)
 
 #define HEAPMASK	(1<<28)
-#define HEAPDEBUG	if (GDKdebug & HEAPMASK)
 
 #define FORCEMITOMASK	(1<<29)
 #define FORCEMITODEBUG	if (GDKdebug & FORCEMITOMASK)
@@ -462,7 +419,6 @@
 #define FALSE		false
 #endif
 
-#define IDLENGTH	64	/* maximum BAT id length */
 #define BATMARGIN	1.2	/* extra free margin for new heaps */
 #define BATTINY_BITS	8
 #define BATTINY		((BUN)1<<BATTINY_BITS)	/* minimum allocation buncnt for a BAT */
@@ -508,6 +464,8 @@ typedef char *str;
 #define LL_CONSTANT(val)	INT64_C(val)
 #define LLFMT			"%" PRId64
 #define ULLFMT			"%" PRIu64
+#define LLSCN			"%" SCNd64
+#define ULLSCN			"%" SCNu64
 
 typedef oid var_t;		/* type used for heap index of var-sized BAT */
 #define SIZEOF_VAR_T	SIZEOF_OID
@@ -533,24 +491,6 @@ typedef size_t BUN;
 #define BUN_NONE ((BUN) INT64_MAX)
 #endif
 #define BUN_MAX (BUN_NONE - 1)	/* maximum allowed size of a BAT */
-
-#define BUN2 2
-#define BUN4 4
-#if SIZEOF_BUN > 4
-#define BUN8 8
-#endif
-typedef uint16_t BUN2type;
-typedef uint32_t BUN4type;
-#if SIZEOF_BUN > 4
-typedef uint64_t BUN8type;
-#endif
-#define BUN2_NONE ((BUN2type) UINT16_C(0xFFFF))
-#define BUN4_NONE ((BUN4type) UINT32_C(0xFFFFFFFF))
-#if SIZEOF_BUN > 4
-#define BUN8_NONE ((BUN8type) UINT64_C(0xFFFFFFFFFFFFFFFF))
-#endif
-
-#include "gdk_atoms.h"
 
 /*
  * @- Checking and Error definitions:
@@ -592,17 +532,7 @@ typedef struct {
 	bat parentid;		/* cache id of VIEW parent bat */
 } Heap;
 
-typedef struct {
-	int type;		/* type of index entity */
-	int width;		/* width of hash entries */
-	BUN nil;		/* nil representation */
-	BUN lim;		/* collision list size */
-	BUN mask;		/* number of hash buckets-1 (power of 2) */
-	void *Hash;		/* hash table */
-	void *Link;		/* collision list */
-	Heap heap;		/* heap where the hash is stored */
-} Hash;
-
+typedef struct Hash Hash;
 typedef struct Imprints Imprints;
 
 /*
@@ -713,7 +643,6 @@ gdk_export int VALisnil(const ValRecord *v);
  *           int    ttype;            // Tail type number
  *           str    tident;           // name for tail column
  *           bool   tkey;             // tail values are unique
- *           bool   tunique;          // tail values must be kept unique
  *           bool   tnonil;           // tail has no nils
  *           bool   tsorted;          // are tail values currently ordered?
  *           bool   tvarsized;        // for speed: tail type is varsized?
@@ -752,7 +681,6 @@ typedef struct {
 	uint8_t shift;		/* log2 of bun width */
 	bool varsized:1,	/* varsized/void (true) or fixedsized (false) */
 		key:1,		/* no duplicate values present */
-		unique:1,	/* no duplicate values allowed */
 		nonil:1,	/* there are no nils in the column */
 		nil:1,		/* there is a nil in the column */
 		sorted:1,	/* column is sorted in ascending order */
@@ -819,7 +747,6 @@ typedef struct BATiter {
 /* macros to hide complexity of the BAT structure */
 #define ttype		T.type
 #define tkey		T.key
-#define tunique		T.unique
 #define tvarsized	T.varsized
 #define tseqbase	T.seq
 #define tsorted		T.sorted
@@ -861,7 +788,7 @@ typedef struct BATiter {
  *  HEAPload (Heap *h, str nme,ext, bool trunc);
  * @item int
  * @tab
- *  HEAPsave (Heap *h, str nme,ext);
+ *  HEAPsave (Heap *h, str nme,ext, bool dosync);
  * @item int
  * @tab
  *  HEAPcopy (Heap *dst,*src);
@@ -941,8 +868,6 @@ gdk_export void HEAP_free(Heap *heap, var_t block);
  * The routine BATclone creates an empty BAT storage area with the
  * properties inherited from its argument.
  */
-#define BATDELETE	(-9999)
-
 gdk_export BAT *COLnew(oid hseq, int tltype, BUN capacity, role_t role)
 	__attribute__((__warn_unused_result__));
 gdk_export BAT *BATdense(oid hseq, oid tseq, BUN cnt)
@@ -952,206 +877,6 @@ gdk_export gdk_return BATextend(BAT *b, BUN newcap)
 
 /* internal */
 gdk_export uint8_t ATOMelmshift(int sz);
-
-/*
- * @- BUN manipulation
- * @multitable @columnfractions 0.08 0.7
- * @item BAT*
- * @tab BATappend (BAT *b, BAT *n, BAT *s, bool force)
- * @item BAT*
- * @tab BUNappend (BAT *b, ptr right, bool force)
- * @item BAT*
- * @tab BUNreplace (BAT *b, oid left, ptr right, bool force)
- * @item int
- * @tab BUNfnd (BAT *b, ptr tail)
- * @item BUN
- * @tab BUNlocate (BAT *b, ptr head, ptr tail)
- * @item ptr
- * @tab BUNtail (BAT *b, BUN p)
- * @end multitable
- *
- * The BATs contain a number of fixed-sized slots to store the binary
- * associations.  These slots are called BUNs or BAT units. A BUN
- * variable is a pointer into the storage area of the BAT, but it has
- * limited validity. After a BAT modification, previously obtained
- * BUNs may no longer reside at the same location.
- *
- * The association list does not contain holes.  This density permits
- * users to quickly access successive elements without the need to
- * test the items for validity. Moreover, it simplifies transport to
- * disk and other systems. The negative effect is that the user should
- * be aware of the evolving nature of the sequence, which may require
- * copying the BAT first.
- *
- * The update operations come in two flavors: BUNappend and
- * BUNreplace.  The batch version of BUNappend is BATappend.
- *
- * The routine BUNfnd provides fast access to a single BUN providing a
- * value for the tail of the binary association.
- *
- * The routine BUNtail returns a pointer to the second value in an
- * association.  To guard against side effects on the BAT, one should
- * normally copy this value into a scratch variable for further
- * processing.
- *
- * Behind the interface we use several macros to access the BUN fixed
- * part and the variable part. The BUN operators always require a BAT
- * pointer and BUN identifier.
- * @itemize
- * @item
- * BATttype(b) finds out the type of a BAT.
- * @item
- * BUNlast(b) returns the BUN pointer directly after the last BUN
- * in the BAT.
- * @end itemize
- */
-/* NOTE: `p' is evaluated after a possible upgrade of the heap */
-#if SIZEOF_VAR_T == 8
-#define Tputvalue(b, p, v, copyall)					\
-	do {								\
-		if ((b)->tvarsized && (b)->ttype) {			\
-			var_t _d;					\
-			void *_ptr;					\
-			ATOMputVAR((b)->ttype, (b)->tvheap, &_d, v);	\
-			if ((b)->twidth < SIZEOF_VAR_T &&		\
-			    ((b)->twidth <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 * (b)->twidth))) { \
-				/* doesn't fit in current heap, upgrade it */ \
-				if (GDKupgradevarheap((b), _d, (copyall), (b)->batRestricted == BAT_READ) != GDK_SUCCEED) \
-					goto bunins_failed;		\
-			}						\
-			_ptr = (p);					\
-			switch ((b)->twidth) {				\
-			case 1:						\
-				* (uint8_t *) _ptr = (uint8_t) (_d - GDK_VAROFFSET); \
-				break;					\
-			case 2:						\
-				* (uint16_t *) _ptr = (uint16_t) (_d - GDK_VAROFFSET); \
-				break;					\
-			case 4:						\
-				* (uint32_t *) _ptr = (uint32_t) _d;	\
-				break;					\
-			case 8:						\
-				* (var_t *) _ptr = _d;			\
-				break;					\
-			}						\
-		} else {						\
-			ATOMputFIX((b)->ttype, (p), v);			\
-		}							\
-	} while (false)
-#else
-#define Tputvalue(b, p, v, copyall)					\
-	do {								\
-		if ((b)->tvarsized && (b)->ttype) {			\
-			var_t _d;					\
-			void *_ptr;					\
-			ATOMputVAR((b)->ttype, (b)->tvheap, &_d, v);	\
-			if ((b)->twidth < SIZEOF_VAR_T &&		\
-			    ((b)->twidth <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 * (b)->twidth))) { \
-				/* doesn't fit in current heap, upgrade it */ \
-				if (GDKupgradevarheap((b), _d, (copyall), (b)->batRestricted == BAT_READ) != GDK_SUCCEED) \
-					goto bunins_failed;		\
-			}						\
-			_ptr = (p);					\
-			switch ((b)->twidth) {				\
-			case 1:						\
-				* (uint8_t *) _ptr = (uint8_t) (_d - GDK_VAROFFSET); \
-				break;					\
-			case 2:						\
-				* (uint16_t *) _ptr = (uint16_t) (_d - GDK_VAROFFSET); \
-				break;					\
-			case 4:						\
-				* (var_t *) _ptr = _d;			\
-				break;					\
-			}						\
-		} else {						\
-			ATOMputFIX((b)->ttype, (p), v);			\
-		}							\
-	} while (false)
-#endif
-#define tfastins_nocheck(b, p, v, s)				\
-	do {							\
-		(b)->theap.free += (s);				\
-		Tputvalue((b), Tloc((b), (p)), (v), false);	\
-	} while (false)
-
-#define bunfastapp_nocheck(b, p, v, ts)		\
-	do {					\
-		tfastins_nocheck(b, p, v, ts);	\
-		(b)->batCount++;		\
-	} while (false)
-
-#define bunfastapp(b, v)						\
-	do {								\
-		if (BATcount(b) >= BATcapacity(b)) {				\
-			if (BATcount(b) == BUN_MAX) {			\
-				GDKerror("bunfastapp: too many elements to accomodate (" BUNFMT ")\n", BUN_MAX); \
-				goto bunins_failed;			\
-			}						\
-			if (BATextend((b), BATgrows(b)) != GDK_SUCCEED)	\
-				goto bunins_failed;			\
-		}							\
-		bunfastapp_nocheck(b, (b)->batCount, v, Tsize(b));	\
-	} while (false)
-
-#define bunfastappTYPE(TYPE, b, v)					\
-	do {								\
-		if (BATcount(b) >= BATcapacity(b)) {			\
-			if (BATcount(b) == BUN_MAX) {	\
-				GDKerror("bunfastapp: too many elements to accomodate (" BUNFMT ")\n", BUN_MAX); \
-				goto bunins_failed;			\
-			}						\
-			if (BATextend((b), BATgrows(b)) != GDK_SUCCEED)	\
-				goto bunins_failed;			\
-		}							\
-		(b)->theap.free += sizeof(TYPE);			\
-		((TYPE *) (b)->theap.base)[(b)->batCount++] = * (const TYPE *) (v); \
-	} while (false)
-
-#define tfastins_nocheckVAR(b, p, v, s)					\
-	do {								\
-		var_t _d;						\
-		(b)->theap.free += (s);					\
-		ATOMputVAR((b)->ttype, (b)->tvheap, &_d, v);		\
-		if ((b)->twidth < SIZEOF_VAR_T &&			\
-		    ((b)->twidth <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 * (b)->twidth))) { \
-			/* doesn't fit in current heap, upgrade it */	\
-			if (GDKupgradevarheap((b), _d, false, (b)->batRestricted == BAT_READ) != GDK_SUCCEED) \
-				goto bunins_failed;			\
-		}							\
-		switch ((b)->twidth) {					\
-		case 1:							\
-			((uint8_t *) (b)->theap.base)[p] = (uint8_t) (_d - GDK_VAROFFSET); \
-			break;						\
-		case 2:							\
-			((uint16_t *) (b)->theap.base)[p] = (uint16_t) (_d - GDK_VAROFFSET); \
-			break;						\
-		case 4:							\
-			((uint32_t *) (b)->theap.base)[p] = (uint32_t) _d; \
-			break;						\
-		case 8:		/* superfluous on 32-bit archs */	\
-			((uint64_t *) (b)->theap.base)[p] = (uint64_t) _d; \
-			break;						\
-		}							\
-	} while (false)
-
-#define bunfastapp_nocheckVAR(b, p, v, ts)		\
-	do {						\
-		tfastins_nocheckVAR(b, p, v, ts);	\
-		(b)->batCount++;			\
-	} while (false)
-
-#define bunfastappVAR(b, v)						\
-	do {								\
-		if ((b)->batCount >= BATcapacity(b)) {			\
-			if ((b)->batCount == BUN_MAX || BATcount(b) == BUN_MAX) { \
-				GDKerror("bunfastapp: too many elements to accomodate (" BUNFMT ")\n", BUN_MAX); \
-				goto bunins_failed;			\
-			}						\
-			if (BATextend((b), BATgrows(b)) != GDK_SUCCEED)	\
-				goto bunins_failed;			\
-		}							\
-		bunfastapp_nocheckVAR(b, (b)->batCount, v, Tsize(b));	\
-	} while (false)
 
 gdk_export gdk_return GDKupgradevarheap(BAT *b, var_t v, bool copyall, bool mayshare)
 	__attribute__((__warn_unused_result__));
@@ -1202,19 +927,6 @@ typedef var_t stridx_t;
 #define SIZEOF_STRIDX_T SIZEOF_VAR_T
 #define GDK_VARALIGN SIZEOF_STRIDX_T
 
-#if SIZEOF_VAR_T == 8
-#define VarHeapValRaw(b,p,w)						\
-	((w) == 1 ? (var_t) ((uint8_t *) (b))[p] + GDK_VAROFFSET :	\
-	 (w) == 2 ? (var_t) ((uint16_t *) (b))[p] + GDK_VAROFFSET :	\
-	 (w) == 4 ? (var_t) ((uint32_t *) (b))[p] :			\
-	 ((var_t *) (b))[p])
-#else
-#define VarHeapValRaw(b,p,w)						\
-	((w) == 1 ? (var_t) ((uint8_t *) (b))[p] + GDK_VAROFFSET :	\
-	 (w) == 2 ? (var_t) ((uint16_t *) (b))[p] + GDK_VAROFFSET :	\
-	 ((var_t *) (b))[p])
-#endif
-#define VarHeapVal(b,p,w) ((size_t) VarHeapValRaw(b,p,w))
 #define BUNtvaroff(bi,p) VarHeapVal((bi).b->theap.base, (p), (bi).b->twidth)
 
 #define BUNtloc(bi,p)	Tloc((bi).b,p)
@@ -1225,6 +937,8 @@ typedef var_t stridx_t;
 #define BUNlast(b)	(assert((b)->batCount <= BUN_MAX), (b)->batCount)
 
 #define BATcount(b)	((b)->batCount)
+
+#include "gdk_atoms.h"
 
 /* return the oid value at BUN position p from the (v)oid bat b
  * works with any TYPE_void or TYPE_oid bat */
@@ -1256,25 +970,18 @@ BUNtoid(BAT *b, BUN p)
 		return o;
 	}
 	const oid *exc = (oid *) b->tvheap->base;
-	BUN hi = 0;
-	if (nexc > 1024) {
-		BUN lo = 0;
-		hi = nexc - 1;
-		while (hi > lo + 1) {
-			BUN mid = (lo + hi) / 2;
-			if (exc[mid] == o) {
-				hi = mid;
-				break;
-			}
-			if (exc[mid] < o)
-				lo = mid;
-			else
-				hi = mid;
-		}
+	if (o < exc[0])
+		return o;
+	if (o + nexc > exc[nexc - 1])
+		return o + nexc;
+	BUN lo = 0, hi = nexc - 1;
+	while (hi - lo > 1) {
+		BUN mid = (hi + lo) / 2;
+		if (exc[mid] - mid > o)
+			hi = mid;
+		else
+			lo = mid;
 	}
-	for (; hi < nexc; hi++)
-		if (o + hi < exc[hi])
-			break;
 	return o + hi;
 }
 
@@ -1429,11 +1136,11 @@ gdk_export void OIDXdestroy(BAT *b);
  * The functions to convert BATs into ASCII. They are primarily meant for ease of
  * debugging and to a lesser extent for output processing.  Printing a
  * BAT is done essentially by looping through its components, printing
- * each association.  
+ * each association.
  *
  */
 gdk_export gdk_return BATprintcolumns(stream *s, int argc, BAT *argv[]);
-gdk_export gdk_return BATprint(BAT *b);
+gdk_export gdk_return BATprint(stream *s, BAT *b);
 
 /*
  * @- BAT clustering
@@ -1474,71 +1181,69 @@ gdk_export void GDKqsort(void *restrict h, void *restrict t, const void *restric
 #define BATtkey(b)	((b)->tkey || BATtdense(b))
 
 /* set some properties that are trivial to deduce */
-#define BATsettrivprop(b)						\
-	do {								\
-		assert(!is_oid_nil((b)->hseqbase));			\
-		(b)->batDirtydesc = true; /* likely already set */	\
-		assert(is_oid_nil((b)->tseqbase) ||			\
-		       ATOMtype((b)->ttype) == TYPE_oid);		\
-		if ((b)->ttype == TYPE_void) {				\
-			if (is_oid_nil((b)->tseqbase)) {		\
-				(b)->tnonil = (b)->batCount == 0;	\
-				(b)->tnil = !(b)->tnonil;		\
-				(b)->trevsorted = true;			\
-				(b)->tkey = (b)->batCount <= 1;		\
-			} else {					\
-				(b)->tnonil = true;			\
-				(b)->tnil = false;			\
-				(b)->tkey = true;			\
-				(b)->trevsorted = (b)->batCount <= 1;	\
-			}						\
-			(b)->tsorted = true;				\
-		} else if ((b)->batCount <= 1) {			\
-			if (ATOMlinear((b)->ttype)) {			\
-				(b)->tsorted = true;			\
-				(b)->trevsorted = true;			\
-			}						\
-			(b)->tkey = true;				\
-			if ((b)->batCount == 0) {			\
-				(b)->tnonil = true;			\
-				(b)->tnil = false;			\
-				if ((b)->ttype == TYPE_oid) {		\
-					(b)->tseqbase = 0;		\
-				}					\
-			} else if ((b)->ttype == TYPE_oid) {		\
-				/* b->batCount == 1 */			\
-				oid sqbs = ((const oid *) (b)->theap.base)[0]; \
-				if (is_oid_nil(sqbs)) {			\
-					(b)->tnonil = false;		\
-					(b)->tnil = true;		\
-				} else {				\
-					(b)->tnonil = true;		\
-					(b)->tnil = false;		\
-				}					\
-				(b)->tseqbase = sqbs;			\
-			}						\
-		} else if ((b)->batCount == 2 && ATOMlinear((b)->ttype)) { \
-			int _c_;					\
-			if ((b)->tvarsized)				\
-				_c_ = ATOMcmp((b)->ttype,		\
-					      Tbase(b) + VarHeapVal((b)->theap.base, 0, (b)->twidth), \
-					      Tbase(b) + VarHeapVal((b)->theap.base, 1, (b)->twidth)); \
-			else						\
-				_c_ = ATOMcmp((b)->ttype,		\
-					      Tloc((b), 0),		\
-					      Tloc((b), 1));		\
-			(b)->tsorted = _c_ <= 0;			\
-			(b)->tnosorted = !(b)->tsorted;			\
-			(b)->trevsorted = _c_ >= 0;			\
-			(b)->tnorevsorted = !(b)->trevsorted;		\
-			(b)->tkey = _c_ != 0;				\
-			(b)->tnokey[0] = 0;				\
-			(b)->tnokey[1] = !(b)->tkey;			\
-		} else if (!ATOMlinear((b)->ttype)) {			\
-			(b)->tsorted = false;				\
-			(b)->trevsorted = false;			\
-		}							\
-	} while (false)
+static inline void
+BATsettrivprop(BAT *b)
+{
+	assert(!is_oid_nil(b->hseqbase));
+	b->batDirtydesc = true; /* likely already set */
+	assert(is_oid_nil(b->tseqbase) || ATOMtype(b->ttype) == TYPE_oid);
+	if (b->ttype == TYPE_void) {
+		if (is_oid_nil(b->tseqbase)) {
+			b->tnonil = b->batCount == 0;
+			b->tnil = !b->tnonil;
+			b->trevsorted = true;
+			b->tkey = b->batCount <= 1;
+		} else {
+			b->tnonil = true;
+			b->tnil = false;
+			b->tkey = true;
+			b->trevsorted = b->batCount <= 1;
+		}
+		b->tsorted = true;
+	} else if (b->batCount <= 1) {
+		if (ATOMlinear(b->ttype)) {
+			b->tsorted = true;
+			b->trevsorted = true;
+		}
+		b->tkey = true;
+		if (b->batCount == 0) {
+			b->tnonil = true;
+			b->tnil = false;
+			if (b->ttype == TYPE_oid) {
+				b->tseqbase = 0;
+			}
+		} else if (b->ttype == TYPE_oid) {
+			/* b->batCount == 1 */
+			oid sqbs = ((const oid *) b->theap.base)[0];
+			if (is_oid_nil(sqbs)) {
+				b->tnonil = false;
+				b->tnil = true;
+			} else {
+				b->tnonil = true;
+				b->tnil = false;
+			}
+			b->tseqbase = sqbs;
+		}
+	} else if (b->batCount == 2 && ATOMlinear(b->ttype)) {
+		int c;
+		if (b->tvarsized)
+			c = ATOMcmp(b->ttype,
+				    Tbase(b) + VarHeapVal(b->theap.base, 0, b->twidth),
+				    Tbase(b) + VarHeapVal(b->theap.base, 1, b->twidth));
+		else
+			c = ATOMcmp(b->ttype, Tloc(b, 0), Tloc(b, 1));
+		b->tsorted = c <= 0;
+		b->tnosorted = !b->tsorted;
+		b->trevsorted = c >= 0;
+		b->tnorevsorted = !b->trevsorted;
+		b->tkey = c != 0;
+		b->tnokey[0] = 0;
+		b->tnokey[1] = !b->tkey;
+	} else if (!ATOMlinear(b->ttype)) {
+		b->tsorted = false;
+		b->trevsorted = false;
+	}
+}
 
 /*
  * @+ BAT Buffer Pool
@@ -1587,10 +1292,14 @@ typedef struct {
 	BAT *cache;		/* if loaded: BAT* handle */
 	char *logical;		/* logical name (may point at bak) */
 	char bak[16];		/* logical name backup (tmp_%o) */
-	bat next;		/* next BBP slot in linked list */
 	BAT *desc;		/* the BAT descriptor */
+	char *options;		/* A string list of options */
+#if SIZEOF_VOID_P == 4
 	char physical[20];	/* dir + basename for storage */
-	str options;		/* A string list of options */
+#else
+	char physical[24];	/* dir + basename for storage */
+#endif
+	bat next;		/* next BBP slot in linked list */
 	int refs;		/* in-memory references on which the loaded status of a BAT relies */
 	int lrefs;		/* logical references on which the existence of a BAT relies */
 	volatile unsigned status; /* status mask used for spin locking */
@@ -1598,19 +1307,20 @@ typedef struct {
 } BBPrec;
 
 gdk_export bat BBPlimit;
-#define N_BBPINIT	1000
 #if SIZEOF_VOID_P == 4
+#define N_BBPINIT	1000
 #define BBPINITLOG	11
 #else
+#define N_BBPINIT	10000
 #define BBPINITLOG	14
 #endif
 #define BBPINIT		(1 << BBPINITLOG)
 /* absolute maximum number of BATs is N_BBPINIT * BBPINIT
  * this also gives the longest possible "physical" name and "bak" name
- * of a BAT: the "bak" name is "tmp_%o", so at most 12 + \0 bytes on
+ * of a BAT: the "bak" name is "tmp_%o", so at most 14 + \0 bytes on
  * 64 bit architecture and 11 + \0 on 32 bit architecture; the
  * physical name is a bit more complicated, but the longest possible
- * name is 17 + \0 bytes (16 + \0 on 32 bits) */
+ * name is 22 + \0 bytes (16 + \0 on 32 bits) */
 gdk_export BBPrec *BBP[N_BBPINIT];
 
 /* fast defines without checks; internal use only  */
@@ -1625,17 +1335,14 @@ gdk_export BBPrec *BBP[N_BBPINIT];
 #define BBP_lrefs(i)	BBP[(i)>>BBPINITLOG][(i)&(BBPINIT-1)].lrefs
 #define BBP_status(i)	BBP[(i)>>BBPINITLOG][(i)&(BBPINIT-1)].status
 #define BBP_pid(i)	BBP[(i)>>BBPINITLOG][(i)&(BBPINIT-1)].pid
+#define BATgetId(b)	BBP_logical((b)->batCacheid)
+#define BBPvalid(i)	(BBP_logical(i) != NULL && *BBP_logical(i) != '.')
 
 /* macros that nicely check parameters */
 #define BBPstatus(i)	(BBPcheck((i),"BBPstatus")?BBP_status(i):0)
 #define BBPrefs(i)	(BBPcheck((i),"BBPrefs")?BBP_refs(i):-1)
 #define BBPcache(i)	(BBPcheck((i),"BBPcache")?BBP_cache(i):(BAT*) NULL)
-#define BBPname(i)						\
-	(BBPcheck((i), "BBPname") ?				\
-	 BBP[(i) >> BBPINITLOG][(i) & (BBPINIT - 1)].logical :	\
-	 "")
-#define BBPvalid(i)	(BBP_logical(i) != NULL && *BBP_logical(i) != '.')
-#define BATgetId(b)	BBPname((b)->batCacheid)
+#define BBPname(i)	(BBPcheck((i), "BBPname") ? BBP_logical(i) : "")
 
 #define BBPRENAME_ALREADY	(-1)
 #define BBPRENAME_ILLEGAL	(-2)
@@ -1646,576 +1353,6 @@ gdk_export void BBPlock(void);
 gdk_export void BBPunlock(void);
 
 gdk_export BAT *BBPquickdesc(bat b, bool delaccess);
-
-/*
- * @+ GDK Extensibility
- * GDK can be extended with new atoms, search accelerators and storage
- * modes.
- *
- * @- Atomic Type Descriptors
- * The atomic types over which the binary associations are maintained
- * are described by an atom descriptor.
- *  @multitable @columnfractions 0.08 0.7
- * @item void
- * @tab ATOMallocate    (str   nme);
- * @item int
- * @tab ATOMindex       (char *nme);
- * @item int
- * @tab ATOMdump        ();
- * @item void
- * @tab ATOMdelete      (int id);
- * @item str
- * @tab ATOMname        (int id);
- * @item unsigned int
- * @tab ATOMsize        (int id);
- * @item int
- * @tab ATOMvarsized    (int id);
- * @item ptr
- * @tab ATOMnilptr      (int id);
- * @item ssize_t
- * @tab ATOMfromstr     (int id, str s, size_t* len, ptr* v_dst);
- * @item ssize_t
- * @tab ATOMtostr       (int id, str s, size_t* len, ptr* v_dst);
- * @item hash_t
- * @tab ATOMhash        (int id, ptr val, in mask);
- * @item int
- * @tab ATOMcmp         (int id, ptr val_1, ptr val_2);
- * @item int
- * @tab ATOMfix         (int id, ptr v);
- * @item int
- * @tab ATOMunfix       (int id, ptr v);
- * @item int
- * @tab ATOMheap        (int id, Heap *hp, size_t cap);
- * @item int
- * @tab ATOMput         (int id, Heap *hp, BUN pos_dst, ptr val_src);
- * @item int
- * @tab ATOMdel         (int id, Heap *hp, BUN v_src);
- * @item size_t
- * @tab ATOMlen         (int id, ptr val);
- * @item ptr
- * @tab ATOMnil         (int id);
- * @item ssize_t
- * @tab ATOMformat      (int id, ptr val, char** buf);
- * @item int
- * @tab ATOMprint       (int id, ptr val, stream *fd);
- * @item ptr
- * @tab ATOMdup         (int id, ptr val );
- * @end multitable
- *
- * @- Atom Definition
- * User defined atomic types can be added to a running system with the
- * following interface:.
- *
- * @itemize
- * @item @emph{ATOMallocate()} registers a new atom definition if
- * there is no atom registered yet under that name.
- *
- * @item @emph{ATOMdelete()} unregisters an atom definition.
- *
- * @item @emph{ATOMindex()} looks up the atom descriptor with a certain name.
- * @end itemize
- *
- * @- Atom Manipulation
- *
- * @itemize
- * @item The @emph{ATOMname()} operation retrieves the name of an atom
- * using its id.
- *
- * @item The @emph{ATOMsize()} operation returns the atoms fixed size.
- *
- * @item The @emph{ATOMnilptr()} operation returns a pointer to the
- * nil-value of an atom. We usually take one dedicated value halfway
- * down the negative extreme of the atom range (if such a concept
- * fits), as the nil value.
- *
- * @item The @emph{ATOMnil()} operation returns a copy of the nil
- * value, allocated with GDKmalloc().
- *
- * @item The @emph{ATOMheap()} operation creates a new var-sized atom
- * heap in 'hp' with capacity 'cap'.
- *
- * @item The @emph{ATOMhash()} computes a hash index for a
- * value. `val' is a direct pointer to the atom value. Its return
- * value should be an hash_t between 0 and 'mask'.
- *
- * @item The @emph{ATOMcmp()} operation compares two atomic
- * values. Its parameters are pointers to atomic values.
- *
- * @item The @emph{ATOMlen()} operation computes the byte length for a
- * value.  `val' is a direct pointer to the atom value. Its return
- * value should be an integer between 0 and 'mask'.
- *
- * @item The @emph{ATOMdel()} operation deletes a var-sized atom from
- * its heap `hp'.  The integer byte-index of this value in the heap is
- * pointed to by `val_src'.
- *
- * @item The @emph{ATOMput()} operation inserts an atom `src_val' in a
- * BUN at `dst_pos'. This involves copying the fixed sized part in the
- * BUN. In case of a var-sized atom, this fixed sized part is an
- * integer byte-index into a heap of var-sized atoms. The atom is then
- * also copied into that heap `hp'.
- *
- * @item The @emph{ATOMfix()} and @emph{ATOMunfix()} operations do
- * bookkeeping on the number of references that a GDK application
- * maintains to the atom.  In MonetDB, we use this to count the number
- * of references directly, or through BATs that have columns of these
- * atoms. The only operator for which this is currently relevant is
- * BAT. The operators return the POST reference count to the
- * atom. BATs with fixable atoms may not be stored persistently.
- *
- * @item The @emph{ATOMfromstr()} parses an atom value from string
- * `s'. The memory allocation policy is the same as in
- * @emph{ATOMget()}. The return value is the number of parsed
- * characters or -1 on failure.  Also in case of failure, the output
- * parameter buf is a valid pointer or NULL.
- *
- * @item The @emph{ATOMprint()} prints an ASCII description of the
- * atom value pointed to by `val' on file descriptor `fd'. The return
- * value is the number of parsed characters.
- *
- * @item The @emph{ATOMformat()} is similar to @emph{ATOMprint()}. It
- * prints an atom on a newly allocated string. It must later be freed
- * with @strong{GDKfree}.  The number of characters written is
- * returned. This is minimally the size of the allocated buffer.
- *
- * @item The @emph{ATOMdup()} makes a copy of the given atom. The
- * storage needed for this is allocated and should be removed by the
- * user.
- * @end itemize
- *
- * These wrapper functions correspond closely to the interface
- * functions one has to provide for a user-defined atom. They
- * basically (with exception of @emph{ATOMput()}, @emph{ATOMprint()}
- * and @emph{ATOMformat()}) just have the atom id parameter prepended
- * to them.
- */
-
-/* atomFromStr returns the number of bytes of the input string that
- * were processed.  atomToStr returns the length of the string
- * produced.  Both functions return -1 on (any kind of) failure.  If
- * *dst is not NULL, *len specifies the available space.  If there is
- * not enough space, or if *dst is NULL, *dst will be freed (if not
- * NULL) and a new buffer will be allocated and returned in *dst.
- * *len will be set to reflect the actual size allocated.  If
- * allocation fails, *dst will be NULL on return and *len is
- * undefined.  In any case, if the function returns, *buf is either
- * NULL or a valid pointer and then *len is the size of the area *buf
- * points to. */
-
-typedef struct {
-	/* simple attributes */
-	char name[IDLENGTH];
-	uint8_t storage;	/* stored as another type? */
-	bool linear;		/* atom can be ordered linearly */
-	uint16_t size;		/* fixed size of atom */
-
-	/* automatically generated fields */
-	const void *atomNull;	/* global nil value */
-
-	/* generic (fixed + varsized atom) ADT functions */
-	ssize_t (*atomFromStr) (const char *src, size_t *len, void **dst, bool external);
-	ssize_t (*atomToStr) (char **dst, size_t *len, const void *src, bool external);
-	void *(*atomRead) (void *dst, stream *s, size_t cnt);
-	gdk_return (*atomWrite) (const void *src, stream *s, size_t cnt);
-	int (*atomCmp) (const void *v1, const void *v2);
-	BUN (*atomHash) (const void *v);
-	/* optional functions */
-	int (*atomFix) (const void *atom);
-	int (*atomUnfix) (const void *atom);
-
-	/* varsized atom-only ADT functions */
-	var_t (*atomPut) (Heap *, var_t *off, const void *src);
-	void (*atomDel) (Heap *, var_t *atom);
-	size_t (*atomLen) (const void *atom);
-	void (*atomHeap) (Heap *, size_t);
-} atomDesc;
-
-gdk_export atomDesc BATatoms[];
-gdk_export int GDKatomcnt;
-
-gdk_export int ATOMallocate(const char *nme);
-gdk_export int ATOMindex(const char *nme);
-
-gdk_export str ATOMname(int id);
-gdk_export size_t ATOMlen(int id, const void *v);
-gdk_export void *ATOMnil(int id);
-gdk_export int ATOMprint(int id, const void *val, stream *fd);
-gdk_export char *ATOMformat(int id, const void *val);
-
-gdk_export void *ATOMdup(int id, const void *val);
-
-/*
- * @- Built-in Accelerator Functions
- *
- * @multitable @columnfractions 0.08 0.7
- * @item BAT*
- * @tab
- *  BAThash (BAT *b)
- * @end multitable
- *
- * The current BAT implementation supports three search accelerators:
- * hashing, imprints, and ordered index.
- *
- * The routine BAThash makes sure that a hash accelerator on the tail of the
- * BAT exists. GDK_FAIL is returned upon failure to create the supportive
- * structures.
- */
-gdk_export gdk_return BAThash(BAT *b);
-
-/*
- * @- Column Imprints Functions
- *
- * @multitable @columnfractions 0.08 0.7
- * @item BAT*
- * @tab
- *  BATimprints (BAT *b)
- * @end multitable
- *
- * The column imprints index structure.
- *
- */
-
-gdk_export gdk_return BATimprints(BAT *b);
-gdk_export void IMPSdestroy(BAT *b);
-gdk_export lng IMPSimprintsize(BAT *b);
-
-/* The ordered index structure */
-
-gdk_export gdk_return BATorderidx(BAT *b, bool stable);
-gdk_export gdk_return GDKmergeidx(BAT *b, BAT**a, int n_ar);
-gdk_export bool BATcheckorderidx(BAT *b);
-
-/*
- * @- Multilevel Storage Modes
- *
- * We should bring in the compressed mode as the first, maybe
- * built-in, mode. We could then add for instance HTTP remote storage,
- * SQL storage, and READONLY (cd-rom) storage.
- *
- * @+ GDK Utilities
- * Interfaces for memory management, error handling, thread management
- * and system information.
- *
- * @- GDK memory management
- * @multitable @columnfractions 0.08 0.8
- * @item void*
- * @tab GDKmalloc (size_t size)
- * @item void*
- * @tab GDKzalloc (size_t size)
- * @item void*
- * @tab GDKmallocmax (size_t size, size_t *maxsize, int emergency)
- * @item void*
- * @tab GDKrealloc (void* pold, size_t size)
- * @item void*
- * @tab GDKreallocmax (void* pold, size_t size, size_t *maxsize, int emergency)
- * @item void
- * @tab GDKfree (void* blk)
- * @item str
- * @tab GDKstrdup (str s)
- * @item str
- * @tab GDKstrndup (str s, size_t n)
- * @end multitable
- *
- * These utilities are primarily used to maintain control over
- * critical interfaces to the C library.  Moreover, the statistic
- * routines help in identifying performance and bottlenecks in the
- * current implementation.
- *
- * Compiled with -DMEMLEAKS the GDK memory management log their
- * activities, and are checked on inconsistent frees and memory leaks.
- */
-
-/* we prefer to use vm_alloc routines on size > GDKmmap */
-gdk_export void *GDKmmap(const char *path, int mode, size_t len);
-
-gdk_export size_t GDK_mem_maxsize;	/* max allowed size of committed memory */
-gdk_export size_t GDK_vm_maxsize;	/* max allowed size of reserved vm */
-
-gdk_export size_t GDKmem_cursize(void);	/* RAM/swapmem that MonetDB has claimed from OS */
-gdk_export size_t GDKvm_cursize(void);	/* current MonetDB VM address space usage */
-
-gdk_export void *GDKmalloc(size_t size)
-	__attribute__((__malloc__))
-	__attribute__((__alloc_size__(1)))
-	__attribute__((__warn_unused_result__));
-gdk_export void *GDKzalloc(size_t size)
-	__attribute__((__malloc__))
-	__attribute__((__alloc_size__(1)))
-	__attribute__((__warn_unused_result__));
-gdk_export void *GDKrealloc(void *pold, size_t size)
-	__attribute__((__alloc_size__(2)))
-	__attribute__((__warn_unused_result__));
-gdk_export void GDKfree(void *blk);
-gdk_export str GDKstrdup(const char *s)
-	__attribute__((__warn_unused_result__));
-gdk_export str GDKstrndup(const char *s, size_t n)
-	__attribute__((__warn_unused_result__));
-
-#if !defined(NDEBUG) && !defined(STATIC_CODE_ANALYSIS)
-/* In debugging mode, replace GDKmalloc and other functions with a
- * version that optionally prints calling information.
- *
- * We have two versions of this code: one using a GNU C extension, and
- * one using traditional C.  The GNU C version also prints the name of
- * the calling function.
- */
-#ifdef __GNUC__
-#define GDKmalloc(s)						\
-	({							\
-		size_t _size = (s);				\
-		void *_res = GDKmalloc(_size);			\
-		ALLOCDEBUG					\
-			fprintf(stderr,				\
-				"#GDKmalloc(%zu) -> %p"		\
-				" %s[%s:%d]\n",			\
-				_size, _res,			\
-				__func__, __FILE__, __LINE__);	\
-		_res;						\
-	})
-#define GDKzalloc(s)						\
-	({							\
-		size_t _size = (s);				\
-		void *_res = GDKzalloc(_size);			\
-		ALLOCDEBUG					\
-			fprintf(stderr,				\
-				"#GDKzalloc(%zu) -> %p"		\
-				" %s[%s:%d]\n",			\
-				_size, _res,			\
-				__func__, __FILE__, __LINE__);	\
-		_res;						\
-	})
-#define GDKrealloc(p, s)					\
-	({							\
-		void *_ptr = (p);				\
-		size_t _size = (s);				\
-		void *_res = GDKrealloc(_ptr, _size);		\
-		ALLOCDEBUG					\
-			fprintf(stderr,				\
-				"#GDKrealloc(%p,%zu) -> %p"	\
-				" %s[%s:%d]\n",			\
-				_ptr, _size, _res,		\
-				__func__, __FILE__, __LINE__);	\
-		_res;						\
-	 })
-#define GDKfree(p)						\
-	({							\
-		void *_ptr = (p);				\
-		ALLOCDEBUG if (_ptr)				\
-			fprintf(stderr,				\
-				"#GDKfree(%p)"			\
-				" %s[%s:%d]\n",			\
-				_ptr,				\
-				__func__, __FILE__, __LINE__);	\
-		GDKfree(_ptr);					\
-	})
-#define GDKstrdup(s)						\
-	({							\
-		const char *_str = (s);				\
-		void *_res = GDKstrdup(_str);			\
-		ALLOCDEBUG					\
-			fprintf(stderr,				\
-				"#GDKstrdup(len=%zu) -> %p"	\
-				" %s[%s:%d]\n",			\
-				_str ? strlen(_str) : 0,	\
-				_res,				\
-				__func__, __FILE__, __LINE__);	\
-		_res;						\
-	})
-#define GDKstrndup(s, n)					\
-	({							\
-		const char *_str = (s);				\
-		size_t _n = (n);				\
-		void *_res = GDKstrndup(_str, _n);		\
-		ALLOCDEBUG					\
-			fprintf(stderr,				\
-				"#GDKstrndup(len=%zu) -> %p"	\
-				" %s[%s:%d]\n",			\
-				_n,				\
-				_res,				\
-				__func__, __FILE__, __LINE__);	\
-		_res;						\
-	})
-#define GDKmmap(p, m, l)						\
-	({								\
-		const char *_path = (p);				\
-		int _mode = (m);					\
-		size_t _len = (l);					\
-		void *_res = GDKmmap(_path, _mode, _len);		\
-		ALLOCDEBUG						\
-			fprintf(stderr,					\
-				"#GDKmmap(%s,0x%x,%zu) -> %p"		\
-				" %s[%s:%d]\n",				\
-				_path ? _path : "NULL",			\
-				(unsigned) _mode, _len,			\
-				_res,					\
-				__func__, __FILE__, __LINE__);		\
-		_res;							\
-	 })
-#define malloc(s)						\
-	({							\
-		size_t _size = (s);				\
-		void *_res = malloc(_size);			\
-		ALLOCDEBUG					\
-			fprintf(stderr,				\
-				"#malloc(%zu) -> %p"		\
-				" %s[%s:%d]\n",			\
-				_size, _res,			\
-				__func__, __FILE__, __LINE__);	\
-		_res;						\
-	})
-#define calloc(n, s)						\
-	({							\
-		size_t _nmemb = (n);				\
-		size_t _size = (s);				\
-		void *_res = calloc(_nmemb,_size);		\
-		ALLOCDEBUG					\
-			fprintf(stderr,				\
-				"#calloc(%zu,%zu) -> %p"	\
-				" %s[%s:%d]\n",			\
-				_nmemb, _size, _res,		\
-				__func__, __FILE__, __LINE__);	\
-		_res;						\
-	})
-#define realloc(p, s)						\
-	({							\
-		void *_ptr = (p);				\
-		size_t _size = (s);				\
-		void *_res = realloc(_ptr, _size);		\
-		ALLOCDEBUG					\
-			fprintf(stderr,				\
-				"#realloc(%p,%zu) -> %p"	\
-				" %s[%s:%d]\n",			\
-				_ptr, _size, _res,		\
-				__func__, __FILE__, __LINE__);	\
-		_res;						\
-	 })
-#define free(p)							\
-	({							\
-		void *_ptr = (p);				\
-		ALLOCDEBUG					\
-			fprintf(stderr,				\
-				"#free(%p)"			\
-				" %s[%s:%d]\n",			\
-				_ptr,				\
-				__func__, __FILE__, __LINE__);	\
-		free(_ptr);					\
-	})
-#else
-static inline void *
-GDKmalloc_debug(size_t size, const char *filename, int lineno)
-{
-	void *res = GDKmalloc(size);
-	ALLOCDEBUG fprintf(stderr,
-			   "#GDKmalloc(%zu) -> %p [%s:%d]\n",
-			   size, res, filename, lineno);
-	return res;
-}
-#define GDKmalloc(s)	GDKmalloc_debug((s), __FILE__, __LINE__)
-static inline void *
-GDKzalloc_debug(size_t size, const char *filename, int lineno)
-{
-	void *res = GDKzalloc(size);
-	ALLOCDEBUG fprintf(stderr,
-			   "#GDKzalloc(%zu) -> %p [%s:%d]\n",
-			   size, res, filename, lineno);
-	return res;
-}
-#define GDKzalloc(s)	GDKzalloc_debug((s), __FILE__, __LINE__)
-static inline void *
-GDKrealloc_debug(void *ptr, size_t size, const char *filename, int lineno)
-{
-	void *res = GDKrealloc(ptr, size);
-	ALLOCDEBUG fprintf(stderr,
-			   "#GDKrealloc(%p,%zu) -> "
-			   "%p [%s:%d]\n",
-			   ptr, size, res,
-			   filename, lineno);
-	return res;
-}
-#define GDKrealloc(p, s)	GDKrealloc_debug((p), (s), __FILE__, __LINE__)
-static inline void
-GDKfree_debug(void *ptr, const char *filename, int lineno)
-{
-	ALLOCDEBUG fprintf(stderr, "#GDKfree(%p) [%s:%d]\n",
-			   ptr, filename, lineno);
-	GDKfree(ptr);
-}
-#define GDKfree(p)	GDKfree_debug((p), __FILE__, __LINE__)
-static inline char *
-GDKstrdup_debug(const char *str, const char *filename, int lineno)
-{
-	void *res = GDKstrdup(str);
-	ALLOCDEBUG fprintf(stderr, "#GDKstrdup(len=%zu) -> "
-			   "%p [%s:%d]\n",
-			   str ? strlen(str) : 0, res, filename, lineno);
-	return res;
-}
-#define GDKstrdup(s)	GDKstrdup_debug((s), __FILE__, __LINE__)
-static inline char *
-GDKstrndup_debug(const char *str, size_t n, const char *filename, int lineno)
-{
-	void *res = GDKstrndup(str, n);
-	ALLOCDEBUG fprintf(stderr, "#GDKstrndup(len=%zu) -> "
-			   "%p [%s:%d]\n",
-			   n, res, filename, lineno);
-	return res;
-}
-#define GDKstrndup(s, n)	GDKstrndup_debug((s), (n), __FILE__, __LINE__)
-static inline void *
-GDKmmap_debug(const char *path, int mode, size_t len, const char *filename, int lineno)
-{
-	void *res = GDKmmap(path, mode, len);
-	ALLOCDEBUG fprintf(stderr,
-			   "#GDKmmap(%s,0x%x,%zu) -> "
-			   "%p [%s:%d]\n",
-			   path ? path : "NULL", mode, len,
-			   res, filename, lineno);
-	return res;
-}
-#define GDKmmap(p, m, l)	GDKmmap_debug((p), (m), (l), __FILE__, __LINE__)
-static inline void *
-malloc_debug(size_t size, const char *filename, int lineno)
-{
-	void *res = malloc(size);
-	ALLOCDEBUG fprintf(stderr,
-			   "#malloc(%zu) -> %p [%s:%d]\n",
-			   size, res, filename, lineno);
-	return res;
-}
-#define malloc(s)	malloc_debug((s), __FILE__, __LINE__)
-static inline void *
-calloc_debug(size_t nmemb, size_t size, const char *filename, int lineno)
-{
-	void *res = calloc(nmemb, size);
-	ALLOCDEBUG fprintf(stderr,
-			   "#calloc(%zu,%zu) -> "
-			   "%p [%s:%d]\n",
-			   nmemb, size, res, filename, lineno);
-	return res;
-}
-#define calloc(n, s)	calloc_debug((n), (s), __FILE__, __LINE__)
-static inline void *
-realloc_debug(void *ptr, size_t size, const char *filename, int lineno)
-{
-	void *res = realloc(ptr, size);
-	ALLOCDEBUG fprintf(stderr,
-			   "#realloc(%p,%zu) -> "
-			   "%p [%s:%d]\n",
-			   ptr, size, res,
-			   filename, lineno);
-	return res;
-}
-#define realloc(p, s)	realloc_debug((p), (s), __FILE__, __LINE__)
-static inline void
-free_debug(void *ptr, const char *filename, int lineno)
-{
-	ALLOCDEBUG fprintf(stderr, "#free(%p) [%s:%d]\n",
-			   ptr, filename, lineno);
-	free(ptr);
-}
-#define free(p)	free_debug((p), __FILE__, __LINE__)
-#endif
-#endif
 
 /*
  * @- GDK error handling
@@ -2282,14 +1419,231 @@ gdk_export void GDKfatal(_In_z_ _Printf_format_string_ const char *format, ...)
 #endif
 gdk_export void GDKclrerr(void);
 
+/*
+ * @- BUN manipulation
+ * @multitable @columnfractions 0.08 0.7
+ * @item BAT*
+ * @tab BATappend (BAT *b, BAT *n, BAT *s, bool force)
+ * @item BAT*
+ * @tab BUNappend (BAT *b, ptr right, bool force)
+ * @item BAT*
+ * @tab BUNreplace (BAT *b, oid left, ptr right, bool force)
+ * @item int
+ * @tab BUNfnd (BAT *b, ptr tail)
+ * @item BUN
+ * @tab BUNlocate (BAT *b, ptr head, ptr tail)
+ * @item ptr
+ * @tab BUNtail (BAT *b, BUN p)
+ * @end multitable
+ *
+ * The BATs contain a number of fixed-sized slots to store the binary
+ * associations.  These slots are called BUNs or BAT units. A BUN
+ * variable is a pointer into the storage area of the BAT, but it has
+ * limited validity. After a BAT modification, previously obtained
+ * BUNs may no longer reside at the same location.
+ *
+ * The association list does not contain holes.  This density permits
+ * users to quickly access successive elements without the need to
+ * test the items for validity. Moreover, it simplifies transport to
+ * disk and other systems. The negative effect is that the user should
+ * be aware of the evolving nature of the sequence, which may require
+ * copying the BAT first.
+ *
+ * The update operations come in two flavors: BUNappend and
+ * BUNreplace.  The batch version of BUNappend is BATappend.
+ *
+ * The routine BUNfnd provides fast access to a single BUN providing a
+ * value for the tail of the binary association.
+ *
+ * The routine BUNtail returns a pointer to the second value in an
+ * association.  To guard against side effects on the BAT, one should
+ * normally copy this value into a scratch variable for further
+ * processing.
+ *
+ * Behind the interface we use several macros to access the BUN fixed
+ * part and the variable part. The BUN operators always require a BAT
+ * pointer and BUN identifier.
+ * @itemize
+ * @item
+ * BATttype(b) finds out the type of a BAT.
+ * @item
+ * BUNlast(b) returns the BUN pointer directly after the last BUN
+ * in the BAT.
+ * @end itemize
+ */
+/* NOTE: `p' is evaluated after a possible upgrade of the heap */
+static inline gdk_return __attribute__((__warn_unused_result__))
+Tputvalue(BAT *b, BUN p, const void *v, bool copyall)
+{
+	if (b->tvarsized && b->ttype) {
+		var_t d;
+		gdk_return rc;
+
+		rc = ATOMputVAR(b->ttype, b->tvheap, &d, v);
+		if (rc != GDK_SUCCEED)
+			return rc;
+		if (b->twidth < SIZEOF_VAR_T &&
+		    (b->twidth <= 2 ? d - GDK_VAROFFSET : d) >= ((size_t) 1 << (8 * b->twidth))) {
+			/* doesn't fit in current heap, upgrade it */
+			rc = GDKupgradevarheap(b, d, copyall,
+					       b->batRestricted == BAT_READ);
+			if (rc != GDK_SUCCEED)
+				return rc;
+		}
+		switch (b->twidth) {
+		case 1:
+			((uint8_t *) b->theap.base)[p] = (uint8_t) (d - GDK_VAROFFSET);
+			break;
+		case 2:
+			((uint16_t *) b->theap.base)[p] = (uint16_t) (d - GDK_VAROFFSET);
+			break;
+		case 4:
+			((uint32_t *) b->theap.base)[p] = (uint32_t) d;
+			break;
+#if SIZEOF_VAR_T == 8
+		case 8:
+			((uint64_t *) b->theap.base)[p] = (uint64_t) d;
+			break;
+#endif
+		}
+	} else {
+		ATOMputFIX(b->ttype, Tloc(b, p), v);
+	}
+	return GDK_SUCCEED;
+}
+
+static inline gdk_return __attribute__((__warn_unused_result__))
+tfastins_nocheck(BAT *b, BUN p, const void *v, int s)
+{
+	b->theap.free += s;
+	return Tputvalue(b, p, v, false);
+}
+
+static inline gdk_return __attribute__((__warn_unused_result__))
+bunfastapp_nocheck(BAT *b, BUN p, const void *v, int ts)
+{
+	gdk_return rc;
+	rc = tfastins_nocheck(b, p, v, ts);
+	if (rc == GDK_SUCCEED)
+		b->batCount++;
+	return rc;
+}
+
+static inline gdk_return __attribute__((__warn_unused_result__))
+bunfastapp(BAT *b, const void *v)
+{
+	if (BATcount(b) >= BATcapacity(b)) {
+		if (BATcount(b) == BUN_MAX) {
+			GDKerror("bunfastapp: too many elements to accommodate (" BUNFMT ")\n", BUN_MAX);
+			return GDK_FAIL;
+		}
+		gdk_return rc = BATextend(b, BATgrows(b));
+		if (rc != GDK_SUCCEED)
+			return rc;
+	}
+	return bunfastapp_nocheck(b, b->batCount, v, Tsize(b));
+}
+
+#define bunfastappTYPE(TYPE, b, v)					\
+	(BATcount(b) >= BATcapacity(b) &&				\
+	 ((BATcount(b) == BUN_MAX &&					\
+	   (GDKerror("bunfastapp: too many elements to accommodate (" BUNFMT ")\n", BUN_MAX), \
+	    true)) ||							\
+	  BATextend((b), BATgrows(b)) != GDK_SUCCEED) ?			\
+	 GDK_FAIL :							\
+	 ((b)->theap.free += sizeof(TYPE),				\
+	  ((TYPE *) (b)->theap.base)[(b)->batCount++] = * (const TYPE *) (v), \
+	  GDK_SUCCEED))
+
+static inline gdk_return __attribute__((__warn_unused_result__))
+tfastins_nocheckVAR(BAT *b, BUN p, const void *v, int s)
+{
+	var_t d;
+	gdk_return rc;
+	b->theap.free += s;
+	if ((rc = ATOMputVAR(b->ttype, b->tvheap, &d, v)) != GDK_SUCCEED)
+		return rc;
+	if (b->twidth < SIZEOF_VAR_T &&
+	    (b->twidth <= 2 ? d - GDK_VAROFFSET : d) >= ((size_t) 1 << (8 * b->twidth))) {
+		/* doesn't fit in current heap, upgrade it */
+		rc = GDKupgradevarheap(b, d, false,
+				       b->batRestricted == BAT_READ);
+		if (rc != GDK_SUCCEED)
+			return rc;
+	}
+	switch (b->twidth) {
+	case 1:
+		((uint8_t *) b->theap.base)[p] = (uint8_t) (d - GDK_VAROFFSET);
+		break;
+	case 2:
+		((uint16_t *) b->theap.base)[p] = (uint16_t) (d - GDK_VAROFFSET);
+		break;
+	case 4:
+		((uint32_t *) b->theap.base)[p] = (uint32_t) d;
+		break;
+#if SIZEOF_VAR_T == 8
+	case 8:
+		((uint64_t *) b->theap.base)[p] = (uint64_t) d;
+		break;
+#endif
+	}
+	return GDK_SUCCEED;
+}
+
+static inline gdk_return __attribute__((__warn_unused_result__))
+bunfastapp_nocheckVAR(BAT *b, BUN p, const void *v, int ts)
+{
+	gdk_return rc;
+	rc = tfastins_nocheckVAR(b, p, v, ts);
+	if (rc == GDK_SUCCEED)
+		b->batCount++;
+	return rc;
+}
+
+static inline gdk_return __attribute__((__warn_unused_result__))
+bunfastappVAR(BAT *b, const void *v)
+{
+	if (BATcount(b) >= BATcapacity(b)) {
+		if (BATcount(b) == BUN_MAX) {
+			GDKerror("bunfastapp: too many elements to accommodate (" BUNFMT ")\n", BUN_MAX);
+			return GDK_FAIL;
+		}
+		gdk_return rc = BATextend(b, BATgrows(b));
+		if (rc != GDK_SUCCEED)
+			return rc;
+	}
+	return bunfastapp_nocheckVAR(b, b->batCount, v, Tsize(b));
+}
+
+/*
+ * @- Column Imprints Functions
+ *
+ * @multitable @columnfractions 0.08 0.7
+ * @item BAT*
+ * @tab
+ *  BATimprints (BAT *b)
+ * @end multitable
+ *
+ * The column imprints index structure.
+ *
+ */
+
+gdk_export gdk_return BATimprints(BAT *b);
+gdk_export void IMPSdestroy(BAT *b);
+gdk_export lng IMPSimprintsize(BAT *b);
+
+/* The ordered index structure */
+
+gdk_export gdk_return BATorderidx(BAT *b, bool stable);
+gdk_export gdk_return GDKmergeidx(BAT *b, BAT**a, int n_ar);
+gdk_export bool BATcheckorderidx(BAT *b);
+
 #include "gdk_delta.h"
 #include "gdk_hash.h"
 #include "gdk_bbp.h"
 #include "gdk_utils.h"
 
 /* functions defined in gdk_bat.c */
-gdk_export gdk_return void_replace_bat(BAT *b, BAT *p, BAT *u, bool force)
-	__attribute__((__warn_unused_result__));
 gdk_export gdk_return void_inplace(BAT *b, oid id, const void *val, bool force)
 	__attribute__((__warn_unused_result__));
 gdk_export BAT *BATattach(int tt, const char *heapfile, role_t role);
@@ -2318,6 +1672,7 @@ VALptr(const ValRecord *v)
 #ifdef HAVE_HGE
 	case TYPE_hge: return (const void *) &v->val.hval;
 #endif
+	case TYPE_ptr: return (const void *) &v->val.pval;
 	case TYPE_str: return (const void *) v->val.sval;
 	default:       return (const void *) v->val.pval;
 	}
@@ -2360,11 +1715,8 @@ gdk_export void *THRdata[THREADDATA];
 #define GDKstdout	((stream*)THRdata[0])
 #define GDKstdin	((stream*)THRdata[1])
 
-#define GDKout		((stream*)THRgetdata(0))
-#define GDKin		((stream*)THRgetdata(1))
 #define GDKerrbuf	((char*)THRgetdata(2))
 #define GDKsetbuf(x)	THRsetdata(2,(void *)(x))
-#define GDKerr		GDKout
 
 #define THRget_errbuf(t)	((char*)t->data[2])
 #define THRset_errbuf(t,b)	(t->data[2] = b)
@@ -2378,7 +1730,7 @@ BBPcheck(bat x, const char *y)
 		assert(x > 0);
 
 		if (x < 0 || x >= getBBPsize() || BBP_logical(x) == NULL) {
-			CHECKDEBUG fprintf(stderr,"#%s: range error %d\n", y, (int) x);
+			TRC_DEBUG(CHECK_, "%s: range error %d\n", y, (int) x);
 		} else {
 			return x;
 		}
@@ -2646,64 +1998,6 @@ gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
 	for (q = BUNlast(r), p = 0; p < q; p++)
 
 /*
- * @- hash-table supported loop over BUNs
- * The first parameter `b' is a BAT, the second (`h') should point to
- * `b->thash', and `v' a pointer to an atomic value (corresponding
- * to the head column of `b'). The 'hb' is an integer index, pointing
- * out the `hb'-th BUN.
- */
-#define GDK_STREQ(l,r) (*(char*) (l) == *(char*) (r) && !strcmp(l,r))
-
-#define HASHloop(bi, h, hb, v)					\
-	for (hb = HASHget(h, HASHprobe((h), v));		\
-	     hb != HASHnil(h);					\
-	     hb = HASHgetlink(h,hb))				\
-		if (ATOMcmp(h->type, v, BUNtail(bi, hb)) == 0)
-#define HASHloop_str_hv(bi, h, hb, v)				\
-	for (hb = HASHget((h),((BUN *) (v))[-1]&(h)->mask);	\
-	     hb != HASHnil(h);					\
-	     hb = HASHgetlink(h,hb))				\
-		if (GDK_STREQ(v, BUNtvar(bi, hb)))
-#define HASHloop_str(bi, h, hb, v)			\
-	for (hb = HASHget((h),strHash(v)&(h)->mask);	\
-	     hb != HASHnil(h);				\
-	     hb = HASHgetlink(h,hb))			\
-		if (GDK_STREQ(v, BUNtvar(bi, hb)))
-
-/*
- * HASHloops come in various flavors, from the general HASHloop, as
- * above, to specialized versions (for speed) where the type is known
- * (e.g. HASHloop_int), or the fact that the atom is fixed-sized
- * (HASHlooploc) or variable-sized (HASHloopvar).
- */
-#define HASHlooploc(bi, h, hb, v)				\
-	for (hb = HASHget(h, HASHprobe(h, v));			\
-	     hb != HASHnil(h);					\
-	     hb = HASHgetlink(h,hb))				\
-		if (ATOMcmp(h->type, v, BUNtloc(bi, hb)) == 0)
-#define HASHloopvar(bi, h, hb, v)				\
-	for (hb = HASHget(h,HASHprobe(h, v));			\
-	     hb != HASHnil(h);					\
-	     hb = HASHgetlink(h,hb))				\
-		if (ATOMcmp(h->type, v, BUNtvar(bi, hb)) == 0)
-
-#define HASHloop_TYPE(bi, h, hb, v, TYPE)			\
-	for (hb = HASHget(h, hash_##TYPE(h, v));		\
-	     hb != HASHnil(h);					\
-	     hb = HASHgetlink(h,hb))				\
-		if (* (const TYPE *) (v) == * (const TYPE *) BUNtloc(bi, hb))
-
-#define HASHloop_bte(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, bte)
-#define HASHloop_sht(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, sht)
-#define HASHloop_int(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, int)
-#define HASHloop_lng(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, lng)
-#ifdef HAVE_HGE
-#define HASHloop_hge(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, hge)
-#endif
-#define HASHloop_flt(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, flt)
-#define HASHloop_dbl(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, dbl)
-
-/*
  * @+ Common BAT Operations
  * Much used, but not necessarily kernel-operations on BATs.
  *
@@ -2714,13 +2008,9 @@ gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
 enum prop_t {
 	GDK_MIN_VALUE = 3,	/* smallest non-nil value in BAT */
 	GDK_MAX_VALUE,		/* largest non-nil value in BAT */
-	GDK_HASH_MASK,		/* last used hash mask */
+	GDK_HASH_BUCKETS,	/* last used hash bucket size */
+	GDK_NUNIQUE,		/* number of unique values */
 };
-
-gdk_export void PROPdestroy(BAT *b);
-gdk_export PROPrec *BATgetprop(BAT *b, enum prop_t idx);
-gdk_export void BATsetprop(BAT *b, enum prop_t idx, int type, const void *v);
-gdk_export void BATrmprop(BAT *b, enum prop_t idx);
 
 /*
  * @- BAT relational operators
@@ -2765,7 +2055,7 @@ gdk_export gdk_return BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT
 	__attribute__((__warn_unused_result__));
 gdk_export gdk_return BATbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, const void *c1, const void *c2, bool li, bool hi, BUN estimate)
 	__attribute__((__warn_unused_result__));
-gdk_export gdk_return BATrangejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, bool li, bool hi, BUN estimate)
+gdk_export gdk_return BATrangejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, bool li, bool hi, bool anti, bool symmetric, BUN estimate)
 	__attribute__((__warn_unused_result__));
 gdk_export BAT *BATproject(BAT *l, BAT *r);
 gdk_export BAT *BATprojectchain(BAT **bats);

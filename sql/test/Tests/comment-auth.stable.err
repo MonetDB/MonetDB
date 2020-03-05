@@ -23,8 +23,6 @@ stderr of test 'comment-auth` in directory 'sql/test` itself:
 # cmdline opt 	gdk_dbpath = /Users/joeri/monets/default/var/MonetDB/mTests_sql_test
 # cmdline opt 	embedded_r = yes
 # cmdline opt 	gdk_debug = 536870922
-#WARNING To speedup aggr.exist a bulk operator implementation is needed
-#    X_583:bat[:bit] := mal.multiplex("aggr":str, "exist":str, X_558:bat[:int]);
 
 # 14:17:01 >  
 # 14:17:01 >  "/usr/local/opt/python/bin/python2.7" "comment-auth.SQL.py" "comment-auth"

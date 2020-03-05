@@ -19,10 +19,13 @@ stdout of test 'sqlsmith-semijoin-constant.bug-6417` in directory 'sql/test/BugT
 # MonetDB/SQL module loaded
 
 
-# 19:24:14 >  
-# 19:24:14 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-31153" "--port=31056"
-# 19:24:14 >  
-
+#START TRANSACTION;
+#CREATE TABLE tab0(col0 INTEGER, col1 INTEGER, col2 INTEGER);
+#INSERT INTO tab0 VALUES (97,1,99), (15,81,47),(87,21,10);
+[ 3	]
+#CREATE TABLE tab1(col0 INTEGER, col1 INTEGER, col2 INTEGER);
+#INSERT INTO tab1 VALUES (51,14,96), (85,5,59), (91,47,68);
+[ 3	]
 #select  
 #  ref_0.active as c0
 #from 
@@ -32,10 +35,10 @@ stdout of test 'sqlsmith-semijoin-constant.bug-6417` in directory 'sql/test/BugT
 #        or (ref_0.active is NULL))
 #where ref_0.querytimeout is NULL
 #limit 106;
-% .L7 # table_name
+% . # table_name
 % c0 # name
-% boolean # type
-% 5 # length
+% int # type
+% 1 # length
 
 # 19:24:14 >  
 # 19:24:14 >  "Done."

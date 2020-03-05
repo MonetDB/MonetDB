@@ -71,7 +71,7 @@ stdout of test 'sqlitelogictest-group-by-having-in-count.Bug-6524` in directory 
 #INSERT INTO tab2 VALUES (15,61,87), (91,59,79), (92,41,58);
 [ 3	]
 #SELECT ALL - col0 AS col1 FROM tab2 AS cor0 GROUP BY col0 HAVING - COUNT ( * ) NOT IN ( - COUNT ( * ), 88, COUNT ( * ) );
-% sys.L2 # table_name
+% sys. # table_name
 % col1 # name
 % int # type
 % 1 # length

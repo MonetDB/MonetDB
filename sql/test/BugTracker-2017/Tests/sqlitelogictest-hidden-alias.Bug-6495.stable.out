@@ -25,22 +25,22 @@ stdout of test 'sqlitelogictest-hidden-alias.Bug-6495` in directory 'sql/test/Bu
 
 #CREATE TABLE tab0(pk INTEGER PRIMARY KEY, col0 INTEGER, col1 FLOAT, col2 TEXT, col3 INTEGER, col4 FLOAT, col5 TEXT);
 #SELECT - col4 col0 FROM tab0 WHERE NOT NULL IS NULL;
-% sys.L2 # table_name
+% sys. # table_name
 % col0 # name
 % double # type
 % 24 # length
 #SELECT - ( + 13 ) col0 FROM tab0 WHERE NOT NULL IS NULL;
-% .L2 # table_name
+% . # table_name
 % col0 # name
 % tinyint # type
 % 1 # length
 #SELECT + col3 * 82 col3 FROM tab0 AS cor0 WHERE NULL IS NULL;
-% sys.L2 # table_name
+% sys. # table_name
 % col3 # name
 % bigint # type
 % 1 # length
 #SELECT DISTINCT + MAX ( DISTINCT - col1 ) col2 FROM tab0 WHERE - col3 + + 72 IS NULL;
-% sys.L4 # table_name
+% . # table_name
 % col2 # name
 % double # type
 % 24 # length

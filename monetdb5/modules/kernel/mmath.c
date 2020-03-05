@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -117,11 +117,15 @@ MATHbinary##NAME##TYPE(TYPE *res, const TYPE *a, const TYPE *b)		\
 str																\
 MATHunary##NAME##dbl(dbl *res , const dbl *a)					\
 {																\
+	(void)res;	\
+	(void)a;	\
 	throw(MAL, "mmath." #FUNC, SQLSTATE(0A000) PROGRAM_NYI);	\
 }																\
 str																\
 MATHunary##NAME##flt(flt *res , const flt *a)					\
 {																\
+	(void)res;	\
+	(void)a;	\
 	throw(MAL, "mmath." #FUNC, SQLSTATE(0A000) PROGRAM_NYI);	\
 }
 
@@ -291,6 +295,7 @@ str
 MATHsqlrandint(int *res, const int *seed)
 {
 #ifdef STATIC_CODE_ANALYSIS
+	(void) seed;
 	*res = 0;
 #else
 	MT_lock_set(&mmath_rse_lock);
@@ -307,4 +312,3 @@ MATHpi(dbl *pi)
 	*pi = 3.14159265358979323846;
 	return MAL_SUCCEED;
 }
-

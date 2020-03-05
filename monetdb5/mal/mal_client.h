@@ -3,14 +3,13 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #ifndef _MAL_CLIENT_H_
 #define _MAL_CLIENT_H_
 
 #include "mal.h"
-/*#define MAL_CLIENT_DEBUG */
 
 #include "mal_resolve.h"
 
@@ -61,21 +60,30 @@ typedef struct CLIENT {
 	MALfcn  phase[SCENARIO_PROPERTIES], oldphase[SCENARIO_PROPERTIES];
 	char    itrace;    /* trace execution using interactive mdb */
 						/* if set to 'S' it will put the process to sleep */
+	bit		sqlprofiler;		/* control off-line sql performance monitoring */
 	/*
-	 * For program debugging and performance trace we need information on the timer and memory
-	 * usage patterns.
+	 * Each session comes with resource limitations and predefined settings.
 	 */
+	char	optimizer[IDLENGTH];/* The optimizer pipe preferred for this session */
+	int 	workerlimit;		/* maximum number of workthreads processing a query */
+	int		memorylimit;		/* Memory claim highwater mark, 0 = no limit */
+	lng 	querytimeout;		/* query abort after x usec, 0 = no limit*/
+	lng	    sessiontimeout;		/* session abort after x usec, 0 = no limit */
 
-	time_t      login;  
-	time_t      lastcmd;	/* set when input is received */
-	lng 		session;	/* usec since start of server */
-	lng 	    qtimeout;	/* query abort after x usec*/
-	lng	        stimeout;	/* session abort after x usec */
+	time_t  login;  	/* Time when this session started */
+	lng 	session;	/* usec since start of server */
+	time_t  idle;		/* Time when the session became idle */  
 
-	bit			malprofiler;	/* control MAL performance monitoring */
-	bit			sqlprofiler;	/* control off-line sql performance monitoring */
-	BAT *profticks;			/* The representation for the SQL TRACE */
-	BAT *profstmt;;
+	/*
+	 * For program debugging and performance trace we keep the actual resource claims.
+	 */
+	time_t  lastcmd;	/* set when query is received */
+
+	/* The user can request a TRACE SQL statement, calling for collecting the events locally */
+	BAT *profticks;				
+	BAT *profstmt;
+
+	ATOMIC_TYPE	lastprint;	/* when we last printed the query, to be depricated */
 	/*
 	 * Communication channels for the interconnect are stored here.
 	 * It is perfectly legal to have a client without input stream.
@@ -174,17 +182,13 @@ typedef struct CLIENT {
 	const char *(*getquery)(struct CLIENT *);
 } *Client, ClientRec;
 
-mal_export bool    MCinit(void);
-
 mal_export int MAL_MAXCLIENTS;
 mal_export ClientRec *mal_clients;
 
 mal_export Client  MCgetClient(int id);
 mal_export Client  MCinitClient(oid user, bstream *fin, stream *fout);
-mal_export int     MCinitClientThread(Client c);
 mal_export Client  MCforkClient(Client father);
 mal_export void	   MCstopClients(Client c);
-mal_export int     MCshutdowninprogress(void);
 mal_export int	   MCactiveClients(void);
 mal_export void    MCcloseClient(Client c);
 mal_export str     MCsuspendClient(int id);
@@ -192,6 +196,4 @@ mal_export str     MCawakeClient(int id);
 mal_export int     MCpushClientInput(Client c, bstream *new_input, int listing, char *prompt);
 mal_export int	   MCvalid(Client c);
 
-mal_export str PROFinitClient(Client c);
-mal_export str PROFexitClient(Client c);
 #endif /* _MAL_CLIENT_H_ */

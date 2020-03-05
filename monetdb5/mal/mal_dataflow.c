@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -187,7 +187,6 @@ q_enqueue(Queue *q, FlowEvent d)
  * that want to use a big recent result
  */
 
-#ifdef USE_MAL_ADMISSION
 static void
 q_requeue_(Queue *q, FlowEvent d)
 {
@@ -216,7 +215,6 @@ q_requeue(Queue *q, FlowEvent d)
 	MT_lock_unset(&q->l);
 	MT_sema_up(&q->s);
 }
-#endif
 
 static FlowEvent
 q_dequeue(Queue *q, Client cntxt)
@@ -325,10 +323,10 @@ DFLOWworker(void *T)
 	struct worker *t = (struct worker *) T;
 	DataFlow flow;
 	FlowEvent fe = 0, fnxt = 0;
-	int id = (int) (t - workers);
 	int tid = THRgettid();
 	str error = 0;
 	int i,last;
+	lng claim;
 	Client cntxt;
 	InstrPtr p;
 
@@ -336,10 +334,10 @@ DFLOWworker(void *T)
 	srand((unsigned int) GDKusec());
 #endif
 	GDKsetbuf(GDKmalloc(GDKMAXERRLEN)); /* where to leave errors */
-	if( GDKerrbuf == 0)
-		fprintf(stderr,"DFLOWworker:Could not allocate GDKerrbuf\n");
-	else
+	if( GDKerrbuf ) {
 		GDKclrerr();
+	}
+		
 	cntxt = ATOMIC_PTR_GET(&t->cntxt);
 	if (cntxt) {
 		/* wait until we are allowed to start working */
@@ -382,10 +380,10 @@ DFLOWworker(void *T)
 			continue;
 		}
 
-#ifdef USE_MAL_ADMISSION
-		if (MALrunningThreads() > 2 && MALadmission(fe->argclaim, fe->hotclaim)) {
+		p= getInstrPtr(flow->mb,fe->pc);
+		claim = fe->argclaim;
+		if (MALadmission_claim(flow->cntxt, flow->mb, flow->stk, p, claim)) {
 			// never block on deblockdataflow()
-			p= getInstrPtr(flow->mb,fe->pc);
 			if( p->fcn != (MALfcn) deblockdataflow){
 				fe->hotclaim = 0;   /* don't assume priority anymore */
 				fe->maxclaim = 0;
@@ -395,14 +393,9 @@ DFLOWworker(void *T)
 				continue;
 			}
 		}
-#endif
 		error = runMALsequence(flow->cntxt, flow->mb, fe->pc, fe->pc + 1, flow->stk, 0, 0);
-		PARDEBUG fprintf(stderr, "#executed pc= %d wrk= %d claim= " LLFMT "," LLFMT "," LLFMT " %s\n",
-						 fe->pc, id, fe->argclaim, fe->hotclaim, fe->maxclaim, error ? error : "");
-#ifdef USE_MAL_ADMISSION
 		/* release the memory claim */
-		MALadmission(-fe->argclaim, -fe->hotclaim);
-#endif
+		MALadmission_release(flow->cntxt, flow->mb, flow->stk, p,  claim);
 		/* update the numa information. keep the thread-id producing the value */
 		p= getInstrPtr(flow->mb,fe->pc);
 		for( i = 0; i < p->argc; i++)
@@ -415,7 +408,7 @@ DFLOWworker(void *T)
 			void *null = NULL;
 			/* only collect one error (from one thread, needed for stable testing) */
 			if (!ATOMIC_PTR_CAS(&flow->error, &null, error))
-				GDKfree(error);
+				freeException(error);
 			/* after an error we skip the rest of the block */
 			q_enqueue(flow->done, fe);
 			continue;
@@ -428,7 +421,6 @@ DFLOWworker(void *T)
 		 * because we hold the logical lock.
 		 * All eligible instructions are queued
 		 */
-#ifdef USE_MAL_ADMISSION
 	{
 		InstrPtr p = getInstrPtr(flow->mb, fe->pc);
 		assert(p);
@@ -442,7 +434,6 @@ DFLOWworker(void *T)
 			if( footprint > fe->maxclaim) fe->maxclaim = footprint;
 		}
 	}
-#endif
 		MT_lock_set(&flow->flowlock);
 
 		for (last = fe->pc - flow->start; last >= 0 && (i = flow->nodes[last]) > 0; last = flow->edges[last])
@@ -460,6 +451,14 @@ DFLOWworker(void *T)
 		MT_lock_unset(&flow->flowlock);
 
 		q_enqueue(flow->done, fe);
+        if ( fnxt == 0 && malProfileMode) {
+            int last;
+            MT_lock_set(&todo->l);
+            last = todo->last;
+            MT_lock_unset(&todo->l);
+            if (last == 0)
+                profilerHeartbeatEvent("wait");
+        }
 	}
 	GDKfree(GDKerrbuf);
 	GDKsetbuf(0);
@@ -545,10 +544,9 @@ DFLOWinitBlk(DataFlow flow, MalBlkPtr mb, int size)
 		throw(MAL, "dataflow", "DFLOWinitBlk(): Called with flow == NULL");
 	if (mb == NULL)
 		throw(MAL, "dataflow", "DFLOWinitBlk(): Called with mb == NULL");
-	PARDEBUG fprintf(stderr, "#Initialize dflow block\n");
 	assign = (int *) GDKzalloc(mb->vtop * sizeof(int));
 	if (assign == NULL)
-		throw(MAL, "dataflow", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "dataflow", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	etop = flow->stop - flow->start;
 	for (n = 0, pc = flow->start; pc < flow->stop; pc++, n++) {
 		p = getInstrPtr(mb, pc);
@@ -587,13 +585,13 @@ DFLOWinitBlk(DataFlow flow, MalBlkPtr mb, int size)
 						tmp = (int*) GDKrealloc(flow->nodes, sizeof(int) * 2 * size);
 						if (tmp == NULL) {
 							GDKfree(assign);
-							throw(MAL, "dataflow", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+							throw(MAL, "dataflow", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 						}
 						flow->nodes = tmp;
 						tmp = (int*) GDKrealloc(flow->edges, sizeof(int) * 2 * size);
 						if (tmp == NULL) {
 							GDKfree(assign);
-							throw(MAL, "dataflow", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+							throw(MAL, "dataflow", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 						}
 						flow->edges = tmp;
 						size *=2;
@@ -613,7 +611,6 @@ DFLOWinitBlk(DataFlow flow, MalBlkPtr mb, int size)
 				l = getEndScope(mb, getArg(p, j));
 				if (l != pc && l < flow->stop && l > flow->start) {
 					/* add edge to the target instruction for wakeup call */
-					PARDEBUG fprintf(stderr, "#endoflife for %s is %d -> %d\n", getVarName(mb, getArg(p, j)), n + flow->start, l);
 					assert(pc < l); /* only dependencies on earlier instructions */
 					l -= flow->start;
 					if (flow->nodes[n]) {
@@ -631,13 +628,13 @@ DFLOWinitBlk(DataFlow flow, MalBlkPtr mb, int size)
 							tmp = (int*) GDKrealloc(flow->nodes, sizeof(int) * 2 * size);
 							if (tmp == NULL) {
 								GDKfree(assign);
-								throw(MAL, "dataflow", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+								throw(MAL, "dataflow", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 							}
 							flow->nodes = tmp;
 							tmp = (int*) GDKrealloc(flow->edges, sizeof(int) * 2 * size);
 							if (tmp == NULL) {
 								GDKfree(assign);
-								throw(MAL, "dataflow", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+								throw(MAL, "dataflow", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 							}
 							flow->edges = tmp;
 							size *=2;
@@ -655,22 +652,7 @@ DFLOWinitBlk(DataFlow flow, MalBlkPtr mb, int size)
 			assign[getArg(p, j)] = pc;  /* ensure recognition of dependency on first instruction and constant */
 	}
 	GDKfree(assign);
-	PARDEBUG {
-		for (n = 0; n < flow->stop - flow->start; n++) {
-			fprintf(stderr, "#[%d] %d: ", flow->start + n, n);
-			fprintInstruction(stderr, mb, 0, getInstrPtr(mb, n + flow->start), LIST_MAL_ALL);
-			fprintf(stderr, "#[%d]Dependents block count %d wakeup", flow->start + n, flow->status[n].blocks);
-			for (j = n; flow->edges[j]; j = flow->edges[j]) {
-				fprintf(stderr, "%d ", flow->start + flow->nodes[j]);
-				if (flow->edges[j] == -1)
-					break;
-			}
-			fprintf(stderr, "\n");
-		}
-	}
-#ifdef USE_MAL_ADMISSION
-	memorypool = memoryclaims = 0;
-#endif
+
 	return MAL_SUCCEED;
 }
 
@@ -683,30 +665,13 @@ DFLOWinitBlk(DataFlow flow, MalBlkPtr mb, int size)
  * They take effect after we have ensured that the basic properties for
  * execution hold.
  */
-/*
-static void showFlowEvent(DataFlow flow, int pc)
-{
-	int i;
-	FlowEvent fe = flow->status;
-
-	fprintf(stderr, "#end of data flow %d done %d \n", pc, flow->stop - flow->start);
-	for (i = 0; i < flow->stop - flow->start; i++)
-		if (fe[i].state != DFLOWwrapup && fe[i].pc >= 0) {
-			fprintf(stderr, "#missed pc %d status %d %d  blocks %d", fe[i].state, i, fe[i].pc, fe[i].blocks);
-			printInstruction(GDKstdout, fe[i].flow->mb, 0, getInstrPtr(fe[i].flow->mb, fe[i].pc), LIST_MAL_MAPI);
-		}
-}
-*/
-
 static str
 DFLOWscheduler(DataFlow flow, struct worker *w)
 {
 	int last;
 	int i;
-#ifdef USE_MAL_ADMISSION
 	int j;
 	InstrPtr p;
-#endif
 	int tasks=0, actions;
 	str ret = MAL_SUCCEED;
 	FlowEvent fe, f = 0;
@@ -722,7 +687,6 @@ DFLOWscheduler(DataFlow flow, struct worker *w)
 	MT_lock_set(&flow->flowlock);
 	for (i = 0; i < actions; i++)
 		if (fe[i].blocks == 0) {
-#ifdef USE_MAL_ADMISSION
 			p = getInstrPtr(flow->mb,fe[i].pc);
 			if (p == NULL) {
 				MT_lock_unset(&flow->flowlock);
@@ -730,15 +694,11 @@ DFLOWscheduler(DataFlow flow, struct worker *w)
 			}
 			for (j = p->retc; j < p->argc; j++)
 				fe[i].argclaim = getMemoryClaim(fe[0].flow->mb, fe[0].flow->stk, p, j, FALSE);
-#endif
 			q_enqueue(todo, flow->status + i);
 			flow->status[i].state = DFLOWrunning;
-			PARDEBUG fprintf(stderr, "#enqueue pc=%d claim=" LLFMT "\n", flow->status[i].pc, flow->status[i].argclaim);
 		}
 	MT_lock_unset(&flow->flowlock);
 	MT_sema_up(&w->s);
-
-	PARDEBUG fprintf(stderr, "#run %d instructions in dataflow block\n", actions);
 
 	while (actions != tasks ) {
 		f = q_dequeue(flow->done, NULL);
@@ -762,7 +722,6 @@ DFLOWscheduler(DataFlow flow, struct worker *w)
 					flow->status[i].state = DFLOWrunning;
 					flow->status[i].blocks--;
 					q_enqueue(todo, flow->status + i);
-					PARDEBUG fprintf(stderr, "#enqueue pc=%d claim= " LLFMT "\n", flow->status[i].pc, flow->status[i].argclaim);
 				} else {
 					flow->status[i].blocks--;
 				}
@@ -775,7 +734,7 @@ DFLOWscheduler(DataFlow flow, struct worker *w)
 	/* wrap up errors */
 	assert(flow->done->last == 0);
 	if ((ret = ATOMIC_PTR_XCG(&flow->error, NULL)) != NULL ) {
-		PARDEBUG fprintf(stderr, "#errors encountered %s ", ret);
+		TRC_DEBUG(MAL_SERVER, "Errors encountered: %s\n", ret);
 	}
 	return ret;
 }
@@ -802,11 +761,6 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 	int size;
 	bit *ret;
 	int i;
-
-#ifdef DEBUG_FLOW
-	fprintf(stderr, "#runMALdataflow for block %d - %d\n", startpc, stoppc);
-	fprintFunction(stderr, mb, 0, LIST_ALL);
-#endif
 
 	/* in debugging mode we should not start multiple threads */
 	if (stk == NULL)
@@ -896,7 +850,7 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 
 	flow = (DataFlow)GDKzalloc(sizeof(DataFlowRec));
 	if (flow == NULL)
-		throw(MAL, "dataflow", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "dataflow", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	flow->cntxt = cntxt;
 	flow->mb = mb;
@@ -916,7 +870,7 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 	if (flow->status == NULL) {
 		q_destroy(flow->done);
 		GDKfree(flow);
-		throw(MAL, "dataflow", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "dataflow", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	size = DFLOWgraphSize(mb, startpc, stoppc);
 	size += stoppc - startpc;
@@ -925,7 +879,7 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 		GDKfree(flow->status);
 		q_destroy(flow->done);
 		GDKfree(flow);
-		throw(MAL, "dataflow", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "dataflow", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	flow->edges = (int*)GDKzalloc(sizeof(int) * size);
 	if (flow->edges == NULL) {
@@ -933,7 +887,7 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 		GDKfree(flow->status);
 		q_destroy(flow->done);
 		GDKfree(flow);
-		throw(MAL, "dataflow", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "dataflow", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	MT_lock_init(&flow->flowlock, "flow->flowlock");
 	ATOMIC_PTR_INIT(&flow->error, NULL);

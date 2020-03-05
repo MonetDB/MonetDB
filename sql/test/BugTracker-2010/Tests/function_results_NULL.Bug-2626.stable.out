@@ -25,8 +25,8 @@ stdout of test 'function_results_NULL.Bug-2626` in directory 'sql/test/BugTracke
 
 [ 17	]
 #select getBand(300000000.0);
-% .L2 # table_name
-% L2 # name
+% .%1 # table_name
+% %1 # name
 % int # type
 % 2 # length
 [ 11	]

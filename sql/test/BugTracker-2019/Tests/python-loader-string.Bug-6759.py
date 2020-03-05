@@ -5,9 +5,6 @@ try:
 except ImportError:
     import process
 
-
-s = process.server(args = ['--set', 'embedded_py=3'], stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
-
 c = process.client(lang = 'sql', stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
 out, err = c.communicate('''\
 CREATE LOADER json_loader() LANGUAGE PYTHON {\n\
@@ -30,9 +27,5 @@ out, err = c.communicate('''\
 DROP TABLE tbl;\
 DROP LOADER json_loader;
 ''')
-sys.stdout.write(out)
-sys.stderr.write(err)
-
-out, err = s.communicate()
 sys.stdout.write(out)
 sys.stderr.write(err)

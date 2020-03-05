@@ -64,14 +64,14 @@ stdout of test 'pyapi3_10` in directory 'sql/backends/monet5/UDF/pyapi3` itself:
 #    return(i*j 
 #};
 #SELECT AVG(pyapi10_mult(i,j)) FROM pyapi10_random_table(5000);
-% .L6 # table_name
-% L5 # name
+% .%3 # table_name
+% %3 # name
 % double # type
 % 24 # length
 [ 2487.9556	]
 #SELECT AVG(pyapi10_mult(i,j)) FROM pyapi10_random_table_nulls(5000);
-% .L6 # table_name
-% L5 # name
+% .%3 # table_name
+% %3 # name
 % double # type
 % 24 # length
 [ 5603.14638	]

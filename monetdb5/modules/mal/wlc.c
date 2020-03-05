@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -162,8 +162,7 @@
 #include <time.h>
 #include "mal_builder.h"
 #include "wlc.h"
-
-#undef _WLC_DEBUG_
+#include "mtime.h"
 
 MT_Lock     wlc_lock = MT_LOCK_INITIALIZER("wlc_lock");
 
@@ -295,7 +294,6 @@ WLCsetlogger(void)
 	wlc_fd = open_wastream(path);
 	if( wlc_fd == 0){
 		MT_lock_unset(&wlc_lock);
-		fprintf(stderr, "wlc.logger:Could not create %s\n",path);
 		throw(MAL,"wlc.logger","Could not create %s\n",path);
 	}
 
@@ -333,10 +331,13 @@ WLCflush(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return WLCsetConfig();
 }
 
-void
-WLCreset(void)
+str 
+WLCepilogue(void *ret)
 {
 	str msg = MAL_SUCCEED;
+
+	(void)ret;
+
 	MT_lock_set(&wlc_lock);
 	msg = WLCcloselogger();
 	wlc_snapshot[0]=0;
@@ -344,8 +345,8 @@ WLCreset(void)
 	wlc_name[0]= 0;
 	wlc_write[0] =0;
 	MT_lock_unset(&wlc_lock);
-	if(msg) //TODO we have to return a possible error message somehow
-		freeException(msg);
+       	//TODO we have to return a possible error message somehow
+	return(msg);
 }
 
 /*
@@ -366,7 +367,7 @@ WLClogger(void *arg)
 		if( wlc_dir[0] && wlc_fd ){
 			MT_lock_set(&wlc_lock);
 			if((msg = WLCcloselogger()) != MAL_SUCCEED) {
-				fprintf(stderr, "%s",msg);
+				TRC_ERROR(MAL_WLC, "%s\n", msg);
 				freeException(msg);
 			}
 			MT_lock_unset(&wlc_lock);
@@ -379,10 +380,18 @@ WLClogger(void *arg)
  * The existence of the master directory should be checked upon server restart.
  * Then the master record information should be set and the WLClogger started.
  */
+
+#ifndef F_OK
+#define F_OK 0
+#endif
+#ifdef _MSC_VER
+#define access(f, m)	_access(f, m)
+#endif
+
 str 
 WLCinit(void)
 {
-	str conf, msg= MAL_SUCCEED;
+	str conf, msg;
 	int len;
 
 	if( wlc_state == WLC_STARTUP){
@@ -390,7 +399,7 @@ WLCinit(void)
 		if((conf = GDKfilepath(0,0,"wlc.config",0)) == NULL)
 			throw(MAL,"wlc.init","Could not access wlc.config\n");
 
-		if( access(conf,F_OK) ){
+		if (access(conf, F_OK) ){
 			GDKfree(conf);
 			return MAL_SUCCEED;
 		}
@@ -400,12 +409,11 @@ WLCinit(void)
 		if (len == -1 || len >= IDLENGTH)
 			throw(MAL, "wlc.init", "gdk_dbname variable is too large");
 
-		msg =  WLCgetConfig();
-		if( msg)
-			fprintf(stderr, "%s",msg);
+		if ((msg = WLCgetConfig()) != MAL_SUCCEED)
+			return msg;
 		if (MT_create_thread(&wlc_logger, WLClogger , (void*) 0,
 							 MT_THR_DETACHED, "WLClogger") < 0) {
-			fprintf(stderr, "wlc.logger thread could not be spawned");
+			TRC_ERROR(MAL_WLC, "Thread could not be spawned\n");
 		}
 	}
 	return MAL_SUCCEED;
@@ -494,7 +502,7 @@ WLCmaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			throw(MAL, "wlc.master", "wlc master filename path is too large");
 	}
 	// set location for logs
-	if( GDKcreatedir(path) == GDK_FAIL)
+	if( GDKcreatedir(path) != GDK_SUCCEED)
 		throw(SQL,"wlc.master","Could not create %s\n", path);
 	len = snprintf(wlc_name, IDLENGTH, "%s", GDKgetenv("gdk_dbname"));
 	if (len == -1 || len >= IDLENGTH)
@@ -522,22 +530,18 @@ WLCstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 static str
 WLCsettime(Client cntxt, InstrPtr pci, InstrPtr p, str fcn)
 {
-	struct timeval clock;
-	time_t clk ;
-	struct tm ctm;
-	char wlc_time[26];
+	timestamp ts = timestamp_current();
+	str wlc_time = NULL;
+	size_t wlc_limit = 0;
+	InstrPtr ins;
 
 	(void) pci;
-	if(gettimeofday(&clock,NULL) == -1)
+	assert(!is_timestamp_nil(ts));
+	if (timestamp_tostr(&wlc_time, &wlc_limit, &ts, true) < 0)
 		throw(MAL, fcn, "Unable to retrieve current time");
-	clk = clock.tv_sec;
-#ifdef HAVE_LOCALTIME_R
-	(void) localtime_r(&clk, &ctm);
-#else
-	ctm = *localtime(&clk);
-#endif
-	strftime(wlc_time, sizeof(wlc_time), "%Y-%m-%dT%H:%M:%S.000",&ctm);
-	if (pushStr(cntxt->wlc, p, wlc_time) == NULL)
+	ins = pushStr(cntxt->wlc, p, wlc_time);
+	GDKfree(wlc_time);
+	if (ins == NULL)
 		throw(MAL, fcn, MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
@@ -552,19 +556,11 @@ static str
 WLCpreparewrite(Client cntxt)
 {	str msg = MAL_SUCCEED;
 	// save the wlc record on a file 
-#ifdef _WLC_DEBUG_
-	if( cntxt->wlc){
-		fprintf(stderr,"#WLCpreparewrite: %d %d\n", cntxt->wlc->stop , cntxt->wlc_kind);
-		fprintFunction(stderr, cntxt->wlc, 0, LIST_MAL_DEBUG );
-	}
-#endif
+
 	if( cntxt->wlc == 0 || cntxt->wlc->stop <= 1 ||  cntxt->wlc_kind == WLC_QUERY )
 		return MAL_SUCCEED;
 
 	if( wlc_state != WLC_RUN){
-#ifdef _WLC_DEBUG_
-		fprintf(stderr,"#WLCprepare: state %d\n", wlc_state);
-#endif
 		trimMalVariables(cntxt->wlc, NULL);
 		resetMalBlk(cntxt->wlc, 0);
 		cntxt->wlc_kind = WLC_QUERY;
@@ -574,15 +570,12 @@ WLCpreparewrite(Client cntxt)
 		if (wlc_fd == NULL){
 			msg = WLCsetlogger();
 			if( msg) {
-#ifdef _WLC_DEBUG_
-				fprintf(stderr,"#WLCprepare: setlogger %s \n", msg);
-#endif
 				return msg;
 			}
 		}
 		
 		MT_lock_set(&wlc_lock);
-		printFunction(wlc_fd, cntxt->wlc, 0, LIST_MAL_DEBUG );
+		printFunction(wlc_fd, cntxt->wlc, 0, LIST_MAL_CALL );
 		(void) mnstr_flush(wlc_fd);
 		// close file if no delay is allowed
 		if( wlc_beat == 0 )
@@ -593,11 +586,8 @@ WLCpreparewrite(Client cntxt)
 		resetMalBlk(cntxt->wlc, 0);
 		cntxt->wlc_kind = WLC_QUERY;
 	} else
-			throw(MAL,"wlc.write","WLC log path missing ");
+		throw(MAL,"wlc.write","WLC log path missing ");
 
-#ifdef _WLC_DEBUG_
-	fprintFunction(stderr, cntxt->wlc, 0, LIST_MAL_ALL );
-#endif
 	if( wlc_state == WLC_STOP)
 		throw(MAL,"wlc.write","Logging for this snapshot has been stopped. Use a new snapshot to continue logging.");
 	return msg;
@@ -619,7 +609,7 @@ WLCstart(Client cntxt, str fcn)
 	/* Find a single transaction sequence ending with COMMIT or ROLLBACK */
 	if( mb->stop > 1 ){
 		pci = getInstrPtr(mb, mb->stop -1 );
-		if (  ! (strcmp( getFunctionId(pci), "commit") == 0 || strcmp( getFunctionId(pci), "rollback") == 0))
+		if (!(strcmp( getFunctionId(pci), "commit") == 0 || strcmp( getFunctionId(pci), "rollback") == 0))
 			return MAL_SUCCEED;
 	}
 
@@ -676,7 +666,7 @@ WLCcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg = MAL_SUCCEED;
 
 	(void) stk;
-	msg =  WLCstart(cntxt, "wlr.catalog");
+	msg = WLCstart(cntxt, "wlr.catalog");
 	if(msg)
 		return msg;
 	cntxt->wlc_kind = WLC_CATALOG;
@@ -709,7 +699,7 @@ str
 WLCgeneric(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	InstrPtr p;
-	int i, tpe, varid;
+	int i, k,  tpe, varid;
 	str msg = MAL_SUCCEED;
 
 	(void) stk;
@@ -717,19 +707,26 @@ WLCgeneric(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if(msg)
 		return msg;
 	cntxt->wlc_kind = WLC_IGNORE;
-	p = newStmt(cntxt->wlc, "wlr",getFunctionId(pci));
+	p = newInstruction(cntxt->wlc, "wlr",getFunctionId(pci));
+	k = newTmpVariable(mb,TYPE_any);
+	if( k >= 0)
+		getArg(p,0) =  k;
 	for( i = pci->retc; i< pci->argc; i++){
 		tpe =getArgType(mb, pci, i);
 		switch(tpe){
 		case TYPE_str:
-			p = pushStr(cntxt->wlc, p, getVarConstant(mb, getArg(pci, i)).val.sval);
+			k = defConstant(mb,TYPE_str,&getVarConstant(mb, getArg(pci, i)));
+			if( k >= 0)
+				p = addArgument(cntxt->wlc, p, k);
 			break;
 		default:
 			varid = defConstant(cntxt->wlc, tpe, getArgReference(stk, pci, i));
-			p = pushArgument(cntxt->wlc, p, varid);
+			if( varid >= 0)
+				p = addArgument(cntxt->wlc, p, varid);
 		}
 	}
 	p->ticks = GDKms();
+	pushInstruction(mb,p);
 	cntxt->wlc_kind = WLC_CATALOG;
 	return 	msg;
 }
@@ -782,7 +779,7 @@ WLCdatashipping(Client cntxt, MalBlkPtr mb, InstrPtr pci, int bid)
 	tbl = GDKstrdup(getVarConstant(cntxt->wlc, getArg(pci,2)).val.sval);
 	col = GDKstrdup(getVarConstant(cntxt->wlc, getArg(pci,3)).val.sval);
 	if(!sch || !tbl || !col) {
-		msg = createException(MAL, "wlc.datashipping", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		msg = createException(MAL, "wlc.datashipping", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto finish;
 	}
 	if (cntxt->wlc_kind < WLC_UPDATE)
@@ -815,7 +812,7 @@ WLCdatashipping(Client cntxt, MalBlkPtr mb, InstrPtr pci, int bid)
 		} }
 		break;
 	default:
-		fprintf(stderr, "#wlc datashipping, non-supported type %d\n", ATOMstorage(b->ttype));
+		TRC_ERROR(MAL_WLC, "Non-supported type: %d\n", ATOMstorage(b->ttype));
 		cntxt->wlc_kind = WLC_CATALOG;
 	}
 finish:
@@ -857,7 +854,8 @@ WLCappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		ValRecord cst;
 		if (VALcopy(&cst, getArgReference(stk,pci,4)) != NULL){
 			varid = defConstant(cntxt->wlc, tpe, &cst);
-			p = pushArgument(cntxt->wlc, p, varid);
+			if( varid >=0)
+				p = pushArgument(cntxt->wlc, p, varid);
 		}
 	}
 	if( cntxt->wlc_kind < WLC_UPDATE)
@@ -900,7 +898,7 @@ WLCdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		last = o + BATcount(b);
 		if( b->ttype == TYPE_void){
 			for( ; o < last; o++, k++){
-				if( k%32 == 31){
+				if( k % 32 == 31){
 					p = newStmt(cntxt->wlc, "wlr","delete");
 					p = pushStr(cntxt->wlc, p, getVarConstant(mb, getArg(pci,1)).val.sval);
 					p = pushStr(cntxt->wlc, p, getVarConstant(mb, getArg(pci,2)).val.sval);
@@ -909,8 +907,8 @@ WLCdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		} else {
 			ol = (oid*) Tloc(b,0);
-			for( ; o < last; o++, k++){
-				if( k%32 == 31){
+			for( ; o < last; o++, k++, ol++){
+				if( k % 32 == 31){
 					p = newStmt(cntxt->wlc, "wlr","delete");
 					p = pushStr(cntxt->wlc, p, getVarConstant(mb, getArg(pci,1)).val.sval);
 					p = pushStr(cntxt->wlc, p, getVarConstant(mb, getArg(pci,2)).val.sval);
@@ -997,7 +995,8 @@ WLCupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		p = pushOid(cntxt->wlc,p, o);
 		if (VALcopy(&cst, getArgReference(stk,pci,5)) != NULL){
 			varid = defConstant(cntxt->wlc, tpe, &cst);
-			p = pushArgument(cntxt->wlc, p, varid);
+			if( varid >= 0)
+				p = pushArgument(cntxt->wlc, p, varid);
 		}
 	}
 
@@ -1024,7 +1023,6 @@ WLCclear_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	return msg;
 }
-
 
 str
 WLCcommit(int clientid)
@@ -1058,6 +1056,7 @@ WLCrollback(int clientid)
 	}
 	return MAL_SUCCEED;
 }
+
 str
 WLCrollbackCmd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	str msg = MAL_SUCCEED;

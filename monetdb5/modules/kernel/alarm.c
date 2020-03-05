@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -22,18 +22,15 @@
  */
 #include "monetdb_config.h"
 #include "mal.h"
-#include <signal.h>
+#include "mal_client.h"
+#include "mal_interpreter.h"
 #include <time.h>
 
 mal_export str ALARMusec(lng *ret);
-mal_export str ALARMsleep(void *res, int *secs);
+mal_export str ALARMsleep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str ALARMctime(str *res);
 mal_export str ALARMepoch(int *res);
 mal_export str ALARMtime(int *res);
-
-#include "mal.h"
-#include "mal_exception.h"
-
 
 str
 ALARMusec(lng *ret)
@@ -42,14 +39,96 @@ ALARMusec(lng *ret)
 	return MAL_SUCCEED;
 }
 
-str
-ALARMsleep(void *res, int *secs)
-{
-	(void) res;		/* fool compilers */
-	if (*secs < 0)
-		throw(MAL, "alarm.sleep", "negative delay");
+#define SLEEP_SINGLE(TPE) \
+	do { \
+		TPE *res = (TPE*) getArgReference(stk, pci, 0), *msecs = (TPE*) getArgReference(stk,pci,1); \
+		if (is_##TPE##_nil(*msecs)) \
+			throw(MAL, "alarm.sleepr", "NULL values not allowed for sleeping time"); \
+		if (*msecs < 0) \
+			throw(MAL, "alarm.sleepr", "Cannot sleep for a negative time"); \
+		MT_sleep_ms((unsigned int) *msecs); \
+		*res = *msecs; \
+	} while (0)
 
-	MT_sleep_ms(*secs * 1000);
+#define SLEEP_MULTI(TPE) \
+	do { \
+		for (i = 0; i < j ; i++) { \
+			if (is_##TPE##_nil(bb[i])) { \
+				BBPreclaim(r); \
+				BBPunfix(b->batCacheid); \
+				throw(MAL, "alarm.sleepr", "NULL values not allowed for sleeping time"); \
+			} \
+			if (bb[i] < 0) { \
+				BBPreclaim(r); \
+				BBPunfix(b->batCacheid); \
+				throw(MAL, "alarm.sleepr", "Cannot sleep for a negative time"); \
+			} \
+		} \
+		for (i = 0; i < j ; i++) { \
+			MT_sleep_ms((unsigned int) bb[i]); \
+			rb[i] = bb[i]; \
+		} \
+	} while (0)
+
+str
+ALARMsleep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	BAT *r = NULL, *b = NULL;
+	int *restrict rb, *restrict bb, tpe;
+	BUN i, j;
+
+	(void) cntxt;
+	if (getArgType(mb, pci, 0) != TYPE_void && isaBatType(getArgType(mb, pci, 1))) {
+		bat *res = getArgReference_bat(stk, pci, 0);
+		bat *bid = getArgReference_bat(stk, pci, 1);
+		tpe = getArgType(mb, pci, 1);
+
+		if (!(b = BATdescriptor(*bid)))
+			throw(MAL, "alarm.sleepr", SQLSTATE(HY005) "Cannot access column descriptor");
+
+		j = BATcount(b);
+		bb = Tloc(b, 0);
+
+		if (!(r = COLnew(0, tpe, j, TRANSIENT))) {
+			BBPunfix(b->batCacheid);
+			throw(MAL, "alarm.sleepr", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		}
+		rb = Tloc(r, 0);
+
+		switch (tpe) {
+			case TYPE_bte:
+				SLEEP_MULTI(bte);
+				break;
+			case TYPE_sht:
+				SLEEP_MULTI(sht);
+				break;
+			case TYPE_int:
+				SLEEP_MULTI(int);
+				break;
+			default: {
+				BBPreclaim(r);
+				BBPunfix(b->batCacheid);
+				throw(MAL, "alarm.sleepr", SQLSTATE(42000) "Sleep function not available for type %s", ATOMname(tpe));
+			}
+		}
+
+		BBPunfix(b->batCacheid);
+		BBPkeepref(*res = r->batCacheid);
+	} else {
+		switch (getArgType(mb, pci, 1)) {
+			case TYPE_bte:
+				SLEEP_SINGLE(bte);
+				break;
+			case TYPE_sht:
+				SLEEP_SINGLE(sht);
+				break;
+			case TYPE_int:
+				SLEEP_SINGLE(int);
+				break;
+			default:
+				throw(MAL, "alarm.sleepr", SQLSTATE(42000) "Sleep function not available for type %s", ATOMname(getArgType(mb, pci, 1)));
+		}
+	}
 	return MAL_SUCCEED;
 }
 
@@ -58,19 +137,12 @@ ALARMctime(str *res)
 {
 	time_t t = time(0);
 	char *base;
+	char buf[26];
 
 #ifdef HAVE_CTIME_R3
-	char buf[26];
-
 	base = ctime_r(&t, buf, sizeof(buf));
 #else
-#ifdef HAVE_CTIME_R
-	char buf[26];
-
 	base = ctime_r(&t, buf);
-#else
-	base = ctime(&t);
-#endif
 #endif
 	if (base == NULL)
 		/* very unlikely to happen... */
@@ -79,7 +151,7 @@ ALARMctime(str *res)
 	base[24] = 0;				/* squash final newline */
 	*res = GDKstrdup(base);
 	if (*res == NULL)
-		throw(MAL, "alarm.ctime", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "alarm.ctime", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 

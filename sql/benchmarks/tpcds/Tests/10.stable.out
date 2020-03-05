@@ -11,7 +11,7 @@ stdout of test '10` in directory 'sql/benchmarks/tpcds` itself:
 # Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
 # Found 62.694 GiB available main-memory.
 # Copyright (c) 1993 - July 2008 CWI.
-# Copyright (c) August 2008 - 2019 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008 - 2020 MonetDB B.V., all rights reserved
 # Visit https://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://methuselah.da.cwi.nl:30709/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-16393/.s.monetdb.30709
@@ -35,7 +35,15 @@ stdout of test '10` in directory 'sql/benchmarks/tpcds` itself:
 #       count(*) cnt4,
 #       cd_dep_employed_count,
 #       count(*) cnt5,
-% .customer_demographics,	.customer_demographics,	.customer_demographics,	.L42,	.customer_demographics,	.L46,	.customer_demographics,	.L52,	.customer_demographics,	.L56,	.customer_demographics,	.L62,	.customer_demographics,	.L66 # table_name
+#       cd_dep_college_count,
+#       count(*) cnt6
+#FROM customer c,
+#     customer_address ca,
+#     customer_demographics
+#WHERE c.c_current_addr_sk = ca.ca_address_sk
+#  AND ca_county IN ('Rush County',
+#                    'Toole County',
+% .customer_demographics,	.customer_demographics,	.customer_demographics,	.,	.customer_demographics,	.,	.customer_demographics,	.,	.customer_demographics,	.,	.customer_demographics,	.,	.customer_demographics,	. # table_name
 % cd_gender,	cd_marital_status,	cd_education_status,	cnt1,	cd_purchase_estimate,	cnt2,	cd_credit_rating,	cnt3,	cd_dep_count,	cnt4,	cd_dep_employed_count,	cnt5,	cd_dep_college_count,	cnt6 # name
 % char,	char,	char,	bigint,	int,	bigint,	char,	bigint,	int,	bigint,	int,	bigint,	int,	bigint # type
 % 1,	1,	20,	1,	4,	1,	10,	1,	1,	1,	1,	1,	1,	1 # length

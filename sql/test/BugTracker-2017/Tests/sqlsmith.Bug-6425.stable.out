@@ -19,10 +19,19 @@ stdout of test 'sqlsmith.Bug-6425` in directory 'sql/test/BugTracker-2017` itsel
 # MonetDB/SQL module loaded
 
 
-# 08:07:17 >  
-# 08:07:17 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-10220" "--port=37745"
-# 08:07:17 >  
-
+#START TRANSACTION;
+#CREATE TABLE another_T (col1 INT, col2 INT, col3 INT, col4 INT, col5 INT, col6 INT, col7 INT, col8 INT);
+#INSERT INTO another_T VALUES (1,2,3,4,5,6,7,8), (11,22,33,44,55,66,77,88), (111,222,333,444,555,666,777,888), (1111,2222,3333,4444,5555,6666,7777,8888);
+[ 4	]
+#CREATE TABLE tab0(col0 INTEGER, col1 INTEGER, col2 INTEGER);
+#INSERT INTO tab0 VALUES (97,1,99), (15,81,47),(87,21,10);
+[ 3	]
+#CREATE TABLE tab1(col0 INTEGER, col1 INTEGER, col2 INTEGER);
+#INSERT INTO tab1 VALUES (51,14,96), (85,5,59), (91,47,68);
+[ 3	]
+#CREATE TABLE tab2(col0 INTEGER, col1 INTEGER, col2 INTEGER);
+#INSERT INTO tab2 VALUES (64,77,40), (75,67,58),(46,51,23);
+[ 3	]
 #select  
 #  sample_2.keyword as c0
 #from 
@@ -37,10 +46,11 @@ stdout of test 'sqlsmith.Bug-6425` in directory 'sql/test/BugTracker-2017` itsel
 #    on (sample_1.var_id = sample_3.privilege_code_id )
 #where false
 #limit 106;
-% .L7 # table_name
+% . # table_name
 % c0 # name
-% varchar # type
-% 0 # length
+% int # type
+% 1 # length
+#ROLLBACK;
 
 # 08:07:17 >  
 # 08:07:17 >  "Done."

@@ -19,10 +19,19 @@ stdout of test 'sqlsmith.Bug-6449` in directory 'sql/test/BugTracker-2017` itsel
 # MonetDB/SQL module loaded
 
 
-# 11:12:49 >  
-# 11:12:49 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-20335" "--port=35290"
-# 11:12:49 >  
-
+#START TRANSACTION;
+#CREATE TABLE another_T (col1 INT, col2 INT, col3 INT, col4 INT, col5 INT, col6 INT, col7 INT, col8 INT);
+#INSERT INTO another_T VALUES (1,2,3,4,5,6,7,8), (11,22,33,44,55,66,77,88), (111,222,333,444,555,666,777,888), (1111,2222,3333,4444,5555,6666,7777,8888);
+[ 4	]
+#CREATE TABLE tab0(col0 INTEGER, col1 INTEGER, col2 INTEGER);
+#INSERT INTO tab0 VALUES (97,1,99), (15,81,47),(87,21,10);
+[ 3	]
+#CREATE TABLE tab1(col0 INTEGER, col1 INTEGER, col2 INTEGER);
+#INSERT INTO tab1 VALUES (51,14,96), (85,5,59), (91,47,68);
+[ 3	]
+#CREATE TABLE tab2(col0 INTEGER, col1 INTEGER, col2 INTEGER);
+#INSERT INTO tab2 VALUES (64,77,40), (75,67,58),(46,51,23);
+[ 3	]
 #select  
 #  ref_3.name as c0, 
 #  ref_4.index_type_name as c1, 
@@ -43,12 +52,14 @@ stdout of test 'sqlsmith.Bug-6449` in directory 'sql/test/BugTracker-2017` itsel
 #            ref_4.index_type_name as c3, 
 #            ref_4.index_type_id as c4
 #          from 
-#            tmp._columns as ref_5
-#              left join bam.rg as ref_6
-% .L44,	sys.L46,	.L50,	.L52 # table_name
+#            tab1 as ref_5
+#              left join tab2 as ref_6
+#              on (ref_5.col1 is not NULL)
+% sys.,	sys.,	sys.,	sys. # table_name
 % c0,	c1,	c2,	c3 # name
-% varchar,	varchar,	varchar,	varchar # type
-% 0,	0,	0,	0 # length
+% int,	int,	int,	int # type
+% 1,	1,	1,	1 # length
+#ROLLBACK;
 
 # 11:12:49 >  
 # 11:12:49 >  "Done."

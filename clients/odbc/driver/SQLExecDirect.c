@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -130,6 +130,8 @@ MNDBExecDirect(ODBCStmt *stmt,
 	fixODBCstring(StatementText, TextLength, SQLINTEGER,
 		      addStmtError, stmt, return SQL_ERROR);
 	for (i = 0; i < TextLength; i++)
+		/* TODO FIX: only when the statement starts with PREPARE the
+		   questions marks have a special meaning */
 		if (StatementText[i] == '?') {
 			/* query may have parameters, take the long route */
 			ret = MNDBPrepare(stmt, StatementText, TextLength);

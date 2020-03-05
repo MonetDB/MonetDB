@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -21,7 +21,6 @@
  * simple functional wrapper. It assumes that a single back-end is used
  * for the duration of a session.
  */
-
 
 #include "monetdb_config.h"
 #include "sql_backend.h"

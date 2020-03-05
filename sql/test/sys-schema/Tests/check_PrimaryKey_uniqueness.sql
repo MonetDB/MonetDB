@@ -49,14 +49,14 @@ SELECT COUNT(*) AS duplicates, obj_id, auth_id FROM sys.privileges GROUP BY obj_
 SELECT COUNT(*) AS duplicates, id FROM sys.querylog_catalog GROUP BY id HAVING COUNT(*) >1;
 SELECT COUNT(*) AS duplicates, id FROM sys.querylog_calls GROUP BY id HAVING COUNT(*) > 1;
 SELECT COUNT(*) AS duplicates, id FROM sys.querylog_history GROUP BY id HAVING COUNT(*) >1;
-SELECT COUNT(*) AS duplicates, qtag FROM sys.queue GROUP BY qtag HAVING COUNT(*) > 1;
+SELECT COUNT(*) AS duplicates, tag FROM sys.queue GROUP BY tag HAVING COUNT(*) > 1;
 
 SELECT COUNT(*) AS duplicates, name FROM sys.optimizers GROUP BY name HAVING COUNT(*) > 1;
 SELECT COUNT(*) AS duplicates, name FROM sys.environment GROUP BY name HAVING COUNT(*) > 1;
 SELECT COUNT(*) AS duplicates, keyword FROM sys.keywords GROUP BY keyword HAVING COUNT(*) > 1;
 
 SELECT COUNT(*) AS duplicates, name FROM sys.db_user_info GROUP BY name HAVING COUNT(*) > 1;
-SELECT COUNT(*) AS duplicates, "user", login, active FROM sys.sessions GROUP BY "user", login, active HAVING COUNT(*) > 1;  -- is this really always unique?
+SELECT COUNT(*) AS duplicates, "username", login FROM sys.sessions GROUP BY "username", login HAVING COUNT(*) > 1;  -- is this really always unique?
 
 SELECT COUNT(*) AS duplicates, column_id FROM sys.statistics GROUP BY column_id HAVING COUNT(*) > 1;
 SELECT COUNT(*) AS duplicates, rowid FROM sys.rejects GROUP BY rowid HAVING COUNT(*) > 1;

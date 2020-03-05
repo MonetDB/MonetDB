@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /* In this file we implement three new types with supporting code.
@@ -334,35 +334,20 @@ daytime_add_usec_modulo(daytime t, lng usec)
 	return t;
 }
 
-#if !defined(HAVE_GMTIME_R) || !defined(HAVE_LOCALTIME_R)
-static MT_Lock timelock = MT_LOCK_INITIALIZER("timelock");
-#endif
-
 /* convert a value returned by the system time() function to a timestamp */
 timestamp
 timestamp_fromtime(time_t timeval)
 {
-	struct tm tm, *tmp;
+	struct tm tm = (struct tm) {0};
 	date d;
 	daytime t;
 
-#ifdef HAVE_GMTIME_R
-	if ((tmp = gmtime_r(&timeval, &tm)) == NULL)
+	if (gmtime_r(&timeval, &tm) == NULL)
 		return timestamp_nil;
-#else
-	MT_lock_set(&timelock);
-	if ((tmp = gmtime(&timeval)) == NULL) {
-		MT_lock_unset(&timelock);
-		return timestamp_nil;
-	}
-	tm = *tmp;					/* copy as quickly as possible */
-	tmp = &tm;
-	MT_lock_unset(&timelock);
-#endif
-	if (tmp->tm_sec >= 60)
-		tmp->tm_sec = 59;			/* ignore leap seconds */
-	d = date_create(tmp->tm_year + 1900, tmp->tm_mon + 1, tmp->tm_mday);
-	t = daytime_create(tmp->tm_hour, tmp->tm_min, tmp->tm_sec, 0);
+	if (tm.tm_sec >= 60)
+		tm.tm_sec = 59;			/* ignore leap seconds */
+	d = date_create(tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday);
+	t = daytime_create(tm.tm_hour, tm.tm_min, tm.tm_sec, 0);
 	if (is_date_nil(d) || is_daytime_nil(t))
 		return timestamp_nil;
 	return mktimestamp(d, t);
@@ -539,7 +524,7 @@ parse_date(const char *buf, date *d, bool external)
 	int sep;
 
 	*d = date_nil;
-	if (strcmp(buf, str_nil) == 0)
+	if (strNil(buf))
 		return 1;
 	if (external && strncmp(buf, "nil", 3) == 0)
 		return 3;
@@ -673,7 +658,7 @@ parse_daytime(const char *buf, daytime *dt, bool external)
 	ssize_t pos = 0;
 
 	*dt = daytime_nil;
-	if (strcmp(buf, str_nil) == 0)
+	if (strNil(buf))
 		return 1;
 	if (external && strncmp(buf, "nil", 3) == 0)
 		return 3;
@@ -704,9 +689,8 @@ parse_daytime(const char *buf, daytime *dt, bool external)
 #endif
 				 buf[pos] == ':')) &&
 			GDKisdigit(buf[pos + 1])) {
-			int i;
 			pos++;
-			for (i = 0; i < 6; i++) {
+			for (int i = 0; i < 6; i++) {
 				usec *= 10;
 				if (GDKisdigit(buf[pos])) {
 					usec += buf[pos] - '0';
@@ -828,7 +812,7 @@ daytime_precision_tostr(str *buf, size_t *len, const daytime dt,
 	if (precision == 0)
 		return snprintf(*buf, *len, "%02d:%02d:%02d", hour, min, sec);
 	else if (precision < 6) {
-		for (int i = 0; i < precision; i++)
+		for (int i = 6; i > precision; i--)
 			usec /= 10;
 		return snprintf(*buf, *len, "%02d:%02d:%02d.%0*d", hour, min, sec, precision, usec);
 	} else {
@@ -1107,7 +1091,7 @@ NAMEBULK(bat *ret, const bat *bid)										\
 	n = BATcount(b);													\
 	if ((bn = COLnew(b->hseqbase, TYPE_##OUTYPE, n, TRANSIENT)) == NULL) { \
 		BBPunfix(b->batCacheid);										\
-		throw(MAL, "batmtime." MALFUNC, SQLSTATE(HY001) MAL_MALLOC_FAIL); \
+		throw(MAL, "batmtime." MALFUNC, SQLSTATE(HY013) MAL_MALLOC_FAIL); \
 	}																	\
 	src = Tloc(b, 0);													\
 	dst = Tloc(bn, 0);													\
@@ -1169,7 +1153,7 @@ NAMEBULK(bat *ret, const bat *bid1, const bat *bid2)					\
 	if ((bn = COLnew(b1->hseqbase, TYPE_##OUTTYPE, n, TRANSIENT)) == NULL) { \
 		BBPunfix(b1->batCacheid);										\
 		BBPunfix(b2->batCacheid);										\
-		throw(MAL, "batmtime." MALFUNC, SQLSTATE(HY001) MAL_MALLOC_FAIL); \
+		throw(MAL, "batmtime." MALFUNC, SQLSTATE(HY013) MAL_MALLOC_FAIL); \
 	}																	\
 	src1 = Tloc(b1, 0);													\
 	src2 = Tloc(b2, 0);													\
@@ -1241,7 +1225,7 @@ NAMEBULK(bat *ret, const bat *bid1, const bat *bid2)					\
 	if ((bn = COLnew(b1->hseqbase, TYPE_##OUTTYPE, n, TRANSIENT)) == NULL) { \
 		BBPunfix(b1->batCacheid);										\
 		BBPunfix(b2->batCacheid);										\
-		throw(MAL, "batmtime." MALFUNC, SQLSTATE(HY001) MAL_MALLOC_FAIL); \
+		throw(MAL, "batmtime." MALFUNC, SQLSTATE(HY013) MAL_MALLOC_FAIL); \
 	}																	\
 	src1 = Tloc(b1, 0);													\
 	src2 = Tloc(b2, 0);													\
@@ -1642,7 +1626,7 @@ MTIMEdaytime_fromseconds_bulk(bat *ret, bat *bid)
 	n = BATcount(b);
 	if ((bn = COLnew(b->hseqbase, TYPE_daytime, n, TRANSIENT)) == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(MAL, "batcalc.daytime", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "batcalc.daytime", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	s = Tloc(b, 0);
 	d = Tloc(bn, 0);
@@ -1674,7 +1658,7 @@ func1(MTIMEtimestamp_extract_daytime, MTIMEtimestamp_extract_daytime_bulk, "dayt
 str
 MTIMElocal_timezone_msec(lng *ret)
 {
-	int tzone;
+	int tzone = 0;
 
 #if defined(_MSC_VER)
 	DYNAMIC_TIME_ZONE_INFORMATION tzinf;
@@ -1698,50 +1682,36 @@ MTIMElocal_timezone_msec(lng *ret)
 	}
 #elif defined(HAVE_STRUCT_TM_TM_ZONE)
 	time_t t;
-	struct tm *tmp;
+	struct tm tm = (struct tm) {0};
 
 	t = time(NULL);
-	tmp = localtime(&t);
-	tzone = (int) tmp->tm_gmtoff;
+	if (localtime_r(&t, &tm))
+		tzone = (int) tm.tm_gmtoff;
 #else
 	time_t t;
 	timestamp lt, gt;
-	struct tm tm, *tmp;
+	struct tm tm = (struct tm) {0};
 
 	t = time(NULL);
-#ifdef HAVE_GMTIME_R
-	tmp = gmtime_r(&t, &tm);
-#else
-	MT_lock_set(&timelock);
-	tmp = gmtime(&t);
-	tm = *tmp;
-	tmp = &tm;
-	MT_lock_unset(&timelock);
-#endif
-	gt = mktimestamp(mkdate(tmp->tm_year + 1900,
-							tmp->tm_mon + 1,
-							tmp->tm_mday),
-					 mkdaytime(tmp->tm_hour,
-							   tmp->tm_min,
-							   tmp->tm_sec == 60 ? 59 : tmp->tm_sec,
-							   0));
-#ifdef HAVE_LOCALTIME_R
-	tmp = localtime_r(&t, &tm);
-#else
-	MT_lock_set(&timelock);
-	tmp = localtime(&t);
-	tm = *tmp;
-	tmp = &tm;
-	MT_lock_unset(&timelock);
-#endif
-	lt = mktimestamp(mkdate(tmp->tm_year + 1900,
-							tmp->tm_mon + 1,
-							tmp->tm_mday),
-					 mkdaytime(tmp->tm_hour,
-							   tmp->tm_min,
-							   tmp->tm_sec == 60 ? 59 : tmp->tm_sec,
-							   0));
-	tzone = (int) (timestamp_diff(lt, gt) / 1000000);
+	if (gmtime_r(&t, &tm)) {
+		gt = mktimestamp(mkdate(tm.tm_year + 1900,
+								tm.tm_mon + 1,
+								tm.tm_mday),
+						 mkdaytime(tm.tm_hour,
+								   tm.tm_min,
+								   tm.tm_sec == 60 ? 59 : tm.tm_sec,
+								   0));
+		if (localtime_r(&t, &tm)) {
+			lt = mktimestamp(mkdate(tm.tm_year + 1900,
+									tm.tm_mon + 1,
+									tm.tm_mday),
+							 mkdaytime(tm.tm_hour,
+									   tm.tm_min,
+									   tm.tm_sec == 60 ? 59 : tm.tm_sec,
+									   0));
+			tzone = (int) (timestamp_diff(lt, gt) / 1000000);
+		}
+	}
 #endif
 	*ret = tzone * 1000;
 	return MAL_SUCCEED;
@@ -1752,10 +1722,11 @@ MTIMEstr_to_date(date *ret, const char *const *s, const char *const *format)
 {
 	struct tm tm;
 
-	if (GDK_STRNIL(*s) || GDK_STRNIL(*format)) {
+	if (strNil(*s) || strNil(*format)) {
 		*ret = date_nil;
 		return MAL_SUCCEED;
 	}
+	tm = (struct tm) {0};
 	if (strptime(*s, *format, &tm) == NULL)
 		throw(MAL, "mtime.str_to_date", "format '%s', doesn't match date '%s'",
 			  *format, *s);
@@ -1771,10 +1742,10 @@ MTIMEdate_to_str(str *ret, const date *d, const char *const *format)
 	char buf[512];
 	struct tm tm;
 
-	if (is_date_nil(*d) || GDK_STRNIL(*format)) {
+	if (is_date_nil(*d) || strNil(*format)) {
 		*ret = GDKstrdup(str_nil);
 		if (*ret == NULL)
-			throw(MAL, "mtime.date_to_str", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "mtime.date_to_str", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 	tm = (struct tm) {
@@ -1789,7 +1760,7 @@ MTIMEdate_to_str(str *ret, const date *d, const char *const *format)
 		throw(MAL, "mtime.date_to_str", "cannot convert date");
 	*ret = GDKstrdup(buf);
 	if (*ret == NULL)
-		throw(MAL, "mtime.date_to_str", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "mtime.date_to_str", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -1798,10 +1769,11 @@ MTIMEstr_to_time(daytime *ret, const char *const *s, const char *const *format)
 {
 	struct tm tm;
 
-	if (GDK_STRNIL(*s) || GDK_STRNIL(*format)) {
+	if (strNil(*s) || strNil(*format)) {
 		*ret = daytime_nil;
 		return MAL_SUCCEED;
 	}
+	tm = (struct tm) {0};
 	if (strptime(*s, *format, &tm) == NULL)
 		throw(MAL, "mtime.str_to_time", "format '%s', doesn't match time '%s'",
 			  *format, *s);
@@ -1818,21 +1790,17 @@ MTIMEtime_to_str(str *ret, const daytime *d, const char *const *format)
 	daytime dt = *d;
 	struct tm tm;
 
-	if (is_daytime_nil(dt) || GDK_STRNIL(*format)) {
+	if (is_daytime_nil(dt) || strNil(*format)) {
 		*ret = GDKstrdup(str_nil);
 		if (*ret == NULL)
-			throw(MAL, "mtime.time_to_str", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "mtime.time_to_str", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 	time_t now = time(NULL);
+	tm = (struct tm) {0};
 	/* fill in current date in struct tm */
-#ifdef HAVE_LOCALTIME_R
-	localtime_r(&now, &tm);
-#else
-	MT_lock_set(&timelock);
-	tm = *localtime(&now);
-	MT_lock_unset(&timelock);
-#endif
+	if (localtime_r(&now, &tm) == NULL)
+		throw(MAL, "mtime.time_to_str", "internal error");
 	/* replace time with requested time */
 	dt /= 1000000;
 	tm.tm_sec = dt % 60;
@@ -1846,19 +1814,20 @@ MTIMEtime_to_str(str *ret, const daytime *d, const char *const *format)
 		throw(MAL, "mtime.time_to_str", "cannot convert time");
 	*ret = GDKstrdup(buf);
 	if (*ret == NULL)
-		throw(MAL, "mtime.time_to_str", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "mtime.time_to_str", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
 str
 MTIMEstr_to_timestamp(timestamp *ret, const char *const *s, const char *const *format)
 {
-	struct tm tm = (struct tm) {0};
+	struct tm tm;
 
-	if (GDK_STRNIL(*s) || GDK_STRNIL(*format)) {
+	if (strNil(*s) || strNil(*format)) {
 		*ret = timestamp_nil;
 		return MAL_SUCCEED;
 	}
+	tm = (struct tm) {0};
 	if (strptime(*s, *format, &tm) == NULL)
 		throw(MAL, "mtime.str_to_timestamp",
 			  "format '%s', doesn't match timestamp '%s'", *format, *s);
@@ -1882,10 +1851,10 @@ MTIMEtimestamp_to_str(str *ret, const timestamp *d, const char *const *format)
 	daytime t;
 	struct tm tm;
 
-	if (is_timestamp_nil(*d) || GDK_STRNIL(*format)) {
+	if (is_timestamp_nil(*d) || strNil(*format)) {
 		*ret = GDKstrdup(str_nil);
 		if (*ret == NULL)
-			throw(MAL, "mtime.timestamp_to_str", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "mtime.timestamp_to_str", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 	dt = ts_date(*d);
@@ -1908,6 +1877,6 @@ MTIMEtimestamp_to_str(str *ret, const timestamp *d, const char *const *format)
 		throw(MAL, "mtime.timestamp_to_str", "cannot convert timestamp");
 	*ret = GDKstrdup(buf);
 	if (*ret == NULL)
-		throw(MAL, "mtime.timestamp_to_str", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "mtime.timestamp_to_str", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }

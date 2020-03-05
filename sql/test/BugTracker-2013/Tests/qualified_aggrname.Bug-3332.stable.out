@@ -49,8 +49,8 @@ stdout of test 'qualified_aggrname.Bug-3332` in directory 'sql/test/BugTracker-2
 #2086	"idxs"	2000	NULL	0	true	0	false	0
 [ 40	]
 #select sys.median(cast (id as double)) from tbls;
-% sys.L5 # table_name
-% L4 # name
+% sys.%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ 5183	]

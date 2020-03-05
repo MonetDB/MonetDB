@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #ifndef _MAL_RESOURCE_H
@@ -19,17 +19,13 @@
 
 //#define heapinfo(X,Id)	(((X) && (X)->base && ((X)->parentid == 0 || (X)->parentid == Id)) ? (X)->free : 0)
 #define heapinfo(X,Id)	(((X) && (X)->base ) ? (X)->free : 0)
-#define hashinfo(X,Id) ((X) && (X) != (Hash *) 1 ? heapinfo(&(X)->heap, Id) : 0)
+#define hashinfo(X,Id) ((X) && (X) != (Hash *) 1 ? heapinfo(&(X)->heaplink, Id) + heapinfo(&(X)->heapbckt, Id) : 0)
 
-#define USE_MAL_ADMISSION
-#ifdef USE_MAL_ADMISSION
-mal_export int MALadmission(lng argclaim, lng hotclaim);
-#endif
+mal_export int MALadmission_claim(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, lng argclaim);
+mal_export void MALadmission_release(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, lng argclaim);
 
 #define FAIRNESS_THRESHOLD (MAX_DELAYS * DELAYUNIT)
 
 mal_export lng getMemoryClaim(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int i, int flag);
-mal_export void MALresourceFairness(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, lng usec);
-mal_export size_t MALrunningThreads(void);
 
 #endif /*  _MAL_RESOURCE_H*/

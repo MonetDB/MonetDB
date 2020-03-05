@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #ifndef _GROUP_H_
@@ -38,5 +38,14 @@ mal_export str GRPsubgroup8(bat *ngid, bat *next,
 mal_export str GRPsubgroup9(bat *ngid, bat *next,
 							const bat *bid, const bat *sid,
 							const bat *gid, const bat *eid, const bat *hid);
+mal_export str GRPgroup11(bat *ngid, const bat *bid);
+mal_export str GRPgroup21(bat *ngid, const bat *bid, const bat *sid);
+mal_export str GRPsubgroup51(bat *ngid, const bat *bid, const bat *sid,
+							 const bat *gid, const bat *eid, const bat *hid);
+mal_export str GRPsubgroup41(bat *ngid, const bat *bid, const bat *gid,
+							 const bat *eid, const bat *hid);
+mal_export str GRPsubgroup31(bat *ngid, const bat *bid, const bat *sid,
+							 const bat *gid);
+mal_export str GRPsubgroup21(bat *ngid, const bat *bid, const bat *gid);
 
 #endif /* _GROUP_H_ */

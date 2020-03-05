@@ -21,18 +21,15 @@ stdout of test 'json15` in directory 'monetdb5/modules/atoms` itself:
 # MonetDB/R   module loaded
 
 
-# 10:05:40 >  
-# 10:05:40 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-31201" "--port=32149"
-# 10:05:40 >  
-
+[ 3.14	]
 [ 3.14 ]
-[ 0	]
-[ 1	]
-[ 2	]
 [ 3.14 ]
 [ nil ]
+[ nil	]
 [ 314 ]
 [ 314 ]
+[ 314	]
+[ nil	]
 [ nil ]
 
 # 11:57:32 >  

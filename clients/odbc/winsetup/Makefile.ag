@@ -2,11 +2,12 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
 
 INCLUDES = \
 	../include \
 	../driver \
+	../../../common/utils \
 	-I$(MONETDB_INCLUDEDIR) \
 	$(ODBC_INCS)
 
@@ -15,12 +16,12 @@ ODBCLIBS = -lodbc32 -lodbccp32 -lversion -lshlwapi -luser32 $(LEGACY_STDIO_DEFIN
 
 lib_MonetODBCs = {
 	SOURCES = setup.c setup.rc setup.syms resource.h
-	LIBS = -lodbccp32 -luser32 $(LEGACY_STDIO_DEFINITIONS)
+	LIBS = ../../../common/utils/libmutils -lodbccp32 -luser32 $(LEGACY_STDIO_DEFINITIONS)
 }
 
 bin_odbcinstall = {
 	SOURCES = install.c
-	LIBS = -lodbc32 -lodbccp32 -lversion -lshlwapi -luser32 $(LEGACY_STDIO_DEFINITIONS)
+	LIBS = ../../../common/utils/libmutils -lodbc32 -lodbccp32 -lversion -lshlwapi -luser32 $(LEGACY_STDIO_DEFINITIONS)
 }
 
 EXTRA_DIST = banner.bmp

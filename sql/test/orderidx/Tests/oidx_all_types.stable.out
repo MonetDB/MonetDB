@@ -134,7 +134,7 @@ stdout of test 'oidx_all_types` in directory 'sql/test/orderidx` itself:
 % 9,	4,	1,	5,	1,	1,	0 # length
 [ "all_types",	2000,	0,	false,	0,	0,	NULL	]
 #select 'create ordered index "oidx_'||name||'" on all_types ("'||name||'");' as stmt from _columns where table_id in (select id from _tables where name = 'all_types') order by number;
-% .L5 # table_name
+% . # table_name
 % stmt # name
 % varchar # type
 % 75 # length
@@ -398,7 +398,7 @@ COMMIT;
 [ 5,	"oidx_uuid"	]
 [ 5,	"oidx_varchar100"	]
 #select 'select "'||name||'" from all_types order by "'||name||'" ASC;' as stmt from _columns where table_id in (select id from _tables where name = 'all_types') order by number;
-% .L5 # table_name
+% . # table_name
 % stmt # name
 % varchar # type
 % 69 # length
@@ -893,7 +893,7 @@ COMMIT;
 [ ae106ad4-81fd-4f1a-85e8-5efface60da4	]
 [ ae106ad4-81fd-4f1a-85e8-5efface60da4	]
 #select 'select "'||name||'" from all_types order by "'||name||'" DESC;' as stmt from _columns where table_id in (select id from _tables where name = 'all_types') order by number;
-% .L5 # table_name
+% . # table_name
 % stmt # name
 % varchar # type
 % 70 # length
@@ -1457,7 +1457,7 @@ COMMIT;
 [ 5,	"oidx_uuid"	]
 [ 5,	"oidx_varchar100"	]
 #select 'drop index "oidx_'||name||'";' as stmt from _columns where table_id in (select id from _tables where name = 'all_types') order by number;
-% .L5 # table_name
+% . # table_name
 % stmt # name
 % varchar # type
 % 33 # length

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -18,9 +18,6 @@
 #include "mal.h"
 #include "mal_stack.h"
 #include "mal_linker.h"
-#include "gdk_atoms.h"
-#include "gdk_utils.h"
-#include "gdk_posix.h"
 #include "gdk.h"
 #include "sql_catalog.h"
 #include "sql_scenario.h"

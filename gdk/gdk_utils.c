@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -24,7 +24,6 @@
 static BAT *GDKkey = NULL;
 static BAT *GDKval = NULL;
 int GDKdebug = 0;
-int GDKverbose = 0;
 
 #include <signal.h>
 
@@ -39,7 +38,7 @@ int GDKverbose = 0;
 #ifdef HAVE_SYS_PARAM_H
 # include <sys/param.h>  /* prerequisite of sys/sysctl on OpenBSD */
 #endif
-#ifdef HAVE_SYS_SYSCTL_H
+#ifdef BSD /* BSD macro is defined in sys/param.h */
 # include <sys/sysctl.h>
 #endif
 #if defined(HAVE_SYS_RESOURCE_H) && defined(HAVE_GETRLIMIT)
@@ -81,15 +80,15 @@ static bool
 GDKenvironment(const char *dbpath)
 {
 	if (dbpath == NULL) {
-		fprintf(stderr, "!GDKenvironment: database name missing.\n");
+		TRC_ERROR(GDK, "Database name missing.\n");
 		return false;
 	}
 	if (strlen(dbpath) >= FILENAME_MAX) {
-		fprintf(stderr, "!GDKenvironment: database name too long.\n");
+		TRC_ERROR(GDK, "Database name too long.\n");
 		return false;
 	}
 	if (!MT_path_absolute(dbpath)) {
-		fprintf(stderr, "!GDKenvironment: directory not an absolute path: %s.\n", dbpath);
+		TRC_ERROR(GDK, "Directory not an absolute path: %s.\n", dbpath);
 		return false;
 	}
 	return true;
@@ -227,11 +226,7 @@ GDKlog(FILE *lockFile, const char *format, ...)
 #ifdef HAVE_CTIME_R3
 	ctm = ctime_r(&tm, tbuf, sizeof(tbuf));
 #else
-#ifdef HAVE_CTIME_R
 	ctm = ctime_r(&tm, tbuf);
-#else
-	ctm = ctime(&tm);
-#endif
 #endif
 	fprintf(lockFile, "USR=%d PID=%d TIME=%.24s @ %s\n", (int) getuid(), (int) getpid(), ctm, buf);
 	fflush(lockFile);
@@ -317,7 +312,7 @@ MT_init(void)
 		GetSystemInfo(&sysInfo);
 		_MT_pagesize = sysInfo.dwPageSize;
 	}
-#elif defined(HAVE_SYS_SYSCTL_H) && defined(HW_PAGESIZE)
+#elif defined(BSD) && defined(HW_PAGESIZE)
 	{
 		int size;
 		size_t len = sizeof(int);
@@ -344,7 +339,7 @@ MT_init(void)
 		if (GlobalMemoryStatusEx(&memStatEx))
 			_MT_npages = (size_t) (memStatEx.ullTotalPhys / _MT_pagesize);
 	}
-#elif defined(HAVE_SYS_SYSCTL_H) && defined(HW_MEMSIZE) && SIZEOF_SIZE_T == SIZEOF_LNG
+#elif defined(BSD) && defined(HW_MEMSIZE) && SIZEOF_SIZE_T == SIZEOF_LNG
 	/* Darwin, 64-bits */
 	{
 		uint64_t size = 0;
@@ -358,7 +353,7 @@ MT_init(void)
 		sysctl(mib, 2, &size, &len, NULL, 0);
 		_MT_npages = size / _MT_pagesize;
 	}
-#elif defined(HAVE_SYS_SYSCTL_H) && defined (HW_PHYSMEM64) && SIZEOF_SIZE_T == SIZEOF_LNG
+#elif defined(BSD) && defined (HW_PHYSMEM64) && SIZEOF_SIZE_T == SIZEOF_LNG
 	/* OpenBSD, 64-bits */
 	{
 		int64_t size = 0;
@@ -372,7 +367,7 @@ MT_init(void)
 		sysctl(mib, 2, &size, &len, NULL, 0);
 		_MT_npages = size / _MT_pagesize;
 	}
-#elif defined(HAVE_SYS_SYSCTL_H) && defined(HW_PHYSMEM)
+#elif defined(BSD) && defined(HW_PHYSMEM)
 	/* NetBSD, OpenBSD, Darwin, 32-bits; FreeBSD 32 & 64-bits */
 	{
 # ifdef __FreeBSD__
@@ -405,71 +400,167 @@ MT_init(void)
 #ifdef __linux__
 	/* limit values to whatever cgroups gives us */
 	FILE *fc;
+	char buf[1024];
+	char cgr1[1024] = "/sys/fs/cgroup/memory";
+	char cgr2[1024] = "/sys/fs/cgroup";
+	fc = fopen("/proc/self/mountinfo", "r");
+	if (fc != NULL) {
+		while (fgets(buf, (int) sizeof(buf), fc) != NULL) {
+			char *p, *cgr;
+			if ((p = strstr(buf, " - cgroup ")) != NULL &&
+			    strstr(p, "memory") != NULL)
+				cgr = cgr1;
+			else if (strstr(buf, " - cgroup2 ") != NULL)
+				cgr = cgr2;
+			else
+				continue;
+			/* buf point at mount ID */
+			p = strchr(buf, ' ');
+			if (p++ == NULL)
+				break;
+			/* p points at parent ID */
+			p = strchr(p, ' ');
+			if (p++ == NULL)
+				break;
+			/* p points at major:minor */
+			p = strchr(p, ' ');
+			if (p++ == NULL)
+				break;
+			/* p points at root */
+			p = strchr(p, ' ');
+			if (p++ == NULL)
+				break;
+			/* p points at mount point */
+			char *dir = p;
+			p = strchr(p, ' ');
+			if (p == NULL)
+				break;
+			*p = 0;
+			strcpy(cgr, dir);
+		}
+		fclose(fc);
+	}
 	fc = fopen("/proc/self/cgroup", "r");
 	if (fc != NULL) {
-		char buf[1024];
+		/* each line is of the form:
+		 * hierarchy-ID:controller-list:cgroup-path
+		 *
+		 * For cgroup v1, the hierarchy-ID refers to the
+		 * second column in /proc/cgroups (which we ignore)
+		 * and the controller-list is a comma-separated list
+		 * of the controllers bound to the hierarchy.  We look
+		 * for the "memory" controller and use its
+		 * cgroup-path.  We ignore the other lines.
+		 *
+		 * For cgroup v2, the hierarchy-ID is 0 and the
+		 * controller-list is empty.  We just use the
+		 * cgroup-path.
+		 *
+		 * We use the first line that we can match (either v1
+		 * or v2) and for which we can open any of the files
+		 * that we are looking for.
+		 */
 		while (fgets(buf, (int) sizeof(buf), fc) != NULL) {
+			char pth[1024];
 			char *p, *q;
-			p = strchr(buf, ':');
+			bool success = false; /* true if we can open any file */
+			FILE *f;
+			uint64_t mem;
+			size_t l;
+
+			p = strchr(buf, '\n');
 			if (p == NULL)
 				break;
-			q = p + 1;
-			p = strchr(q, ':');
-			if (p == NULL)
-				break;
-			*p++ = 0;
-			if (strstr(q, "memory") != NULL) {
-				char pth[1024];
-				FILE *f;
-				q = strchr(p, '\n');
-				if (q == NULL)
-					break;
-				*q = 0;
-				q = stpconcat(pth, "/sys/fs/cgroup/memory",
-					      p, NULL);
-				/* sometimes the path in
-				 * /proc/self/cgroup ends in "/" (or
-				 * actually, is "/"); in all other
-				 * cases add one */
-				if (q[-1] != '/')
-					*q++ = '/';
-				/* limit of memory usage */
-				strcpy(q, "memory.limit_in_bytes");
+			*p = 0;
+			if (strncmp(buf, "0::", 3) == 0) {
+				/* cgroup v2 entry */
+				l = strconcat_len(pth, sizeof(pth),
+						  cgr2, buf + 3, "/", NULL);
+				/* hard limit */
+				strcpy(pth + l, "memory.max");
 				f = fopen(pth, "r");
 				if (f != NULL) {
-					uint64_t mem;
-					if (fscanf(f, "%" SCNu64, &mem) == 1
-					    && mem < (uint64_t) _MT_pagesize * _MT_npages) {
+					if (fscanf(f, "%" SCNu64, &mem) == 1 && mem < (uint64_t) _MT_pagesize * _MT_npages) {
 						_MT_npages = (size_t) (mem / _MT_pagesize);
 					}
+					success = true;
+					/* assume "max" if not a number */
 					fclose(f);
 				}
-				/* soft limit of memory usage */
-				strcpy(q, "memory.soft_limit_in_bytes");
+				/* soft limit */
+				strcpy(pth + l, "memory.high");
 				f = fopen(pth, "r");
 				if (f != NULL) {
-					uint64_t mem;
-					if (fscanf(f, "%" SCNu64, &mem) == 1
-					    && mem < (uint64_t) _MT_pagesize * _MT_npages) {
+					if (fscanf(f, "%" SCNu64, &mem) == 1 && mem < (uint64_t) _MT_pagesize * _MT_npages) {
 						_MT_npages = (size_t) (mem / _MT_pagesize);
 					}
+					success = true;
+					/* assume "max" if not a number */
 					fclose(f);
 				}
 				/* limit of memory+swap usage
 				 * we use this as maximum virtual memory size */
-				strcpy(q, "memory.memsw.limit_in_bytes");
+				strcpy(pth + l, "memory.swap.max");
 				f = fopen(pth, "r");
 				if (f != NULL) {
-					uint64_t mem;
 					if (fscanf(f, "%" SCNu64, &mem) == 1
 					    && mem < (uint64_t) GDK_vm_maxsize) {
 						GDK_vm_maxsize = (size_t) mem;
 					}
+					success = true;
 					fclose(f);
 				}
-				break;
-
+			} else {
+				/* cgroup v1 entry */
+				p = strchr(buf, ':');
+				if (p == NULL)
+					break;
+				q = p + 1;
+				p = strchr(q, ':');
+				if (p == NULL)
+					break;
+				*p++ = 0;
+				if (strstr(q, "memory") == NULL)
+					continue;
+				l = strconcat_len(pth, sizeof(pth),
+						  cgr1, p, "/", NULL);
+				/* limit of memory usage */
+				strcpy(pth + l, "memory.limit_in_bytes");
+				f = fopen(pth, "r");
+				if (f != NULL) {
+					if (fscanf(f, "%" SCNu64, &mem) == 1
+					    && mem < (uint64_t) _MT_pagesize * _MT_npages) {
+						_MT_npages = (size_t) (mem / _MT_pagesize);
+					}
+					success = true;
+					fclose(f);
+				}
+				/* soft limit of memory usage */
+				strcpy(pth + l, "memory.soft_limit_in_bytes");
+				f = fopen(pth, "r");
+				if (f != NULL) {
+					if (fscanf(f, "%" SCNu64, &mem) == 1
+					    && mem < (uint64_t) _MT_pagesize * _MT_npages) {
+						_MT_npages = (size_t) (mem / _MT_pagesize);
+					}
+					success = true;
+					fclose(f);
+				}
+				/* limit of memory+swap usage
+				 * we use this as maximum virtual memory size */
+				strcpy(pth + l, "memory.memsw.limit_in_bytes");
+				f = fopen(pth, "r");
+				if (f != NULL) {
+					if (fscanf(f, "%" SCNu64, &mem) == 1
+					    && mem < (uint64_t) GDK_vm_maxsize) {
+						GDK_vm_maxsize = (size_t) mem;
+					}
+					success = true;
+					fclose(f);
+				}
 			}
+			if (success)
+				break;
 		}
 		fclose(fc);
 	}
@@ -515,12 +606,54 @@ void
 GDKsetdebug(int debug)
 {
 	GDKdebug = debug;
-}
-
-void
-GDKsetverbose(int verbose)
-{
-	GDKverbose = verbose;
+	if (debug & ACCELMASK)
+		GDKtracer_set_component_level("accelerator", "debug");
+	else
+		GDKtracer_reset_component_level("accelerator");
+	if (debug & ALGOMASK)
+		GDKtracer_set_component_level("algo", "debug");
+	else
+		GDKtracer_reset_component_level("algo");
+	if (debug & ALLOCMASK)
+		GDKtracer_set_component_level("alloc", "debug");
+	else
+		GDKtracer_reset_component_level("alloc");
+	if (debug & BATMASK)
+		GDKtracer_set_component_level("bat", "debug");
+	else
+		GDKtracer_reset_component_level("bat");
+	if (debug & CHECKMASK)
+		GDKtracer_set_component_level("check", "debug");
+	else
+		GDKtracer_reset_component_level("check");
+	if (debug & DELTAMASK)
+		GDKtracer_set_component_level("delta", "debug");
+	else
+		GDKtracer_reset_component_level("delta");
+	if (debug & HEAPMASK)
+		GDKtracer_set_component_level("heap", "debug");
+	else
+		GDKtracer_reset_component_level("heap");
+	if (debug & IOMASK)
+		GDKtracer_set_component_level("io", "debug");
+	else
+		GDKtracer_reset_component_level("io");
+	if (debug & PARMASK)
+		GDKtracer_set_component_level("par", "debug");
+	else
+		GDKtracer_reset_component_level("par");
+	if (debug & PERFMASK)
+		GDKtracer_set_component_level("perf", "debug");
+	else
+		GDKtracer_reset_component_level("perf");
+	if (debug & TEMMASK)
+		GDKtracer_set_component_level("tem", "debug");
+	else
+		GDKtracer_reset_component_level("tem");
+	if (debug & THRDMASK)
+		GDKtracer_set_component_level("thrd", "debug");
+	else
+		GDKtracer_reset_component_level("thrd");
 }
 
 gdk_return
@@ -534,6 +667,8 @@ GDKinit(opt *set, int setlen)
 	char buf[16];
 
 	/* some sanity checks (should also find if symbols are not defined) */
+	static_assert(sizeof(int) == sizeof(int32_t),
+		      "int is not equal in size to int32_t");
 	static_assert(sizeof(char) == SIZEOF_CHAR,
 		      "error in configure: bad value for SIZEOF_CHAR");
 	static_assert(sizeof(short) == SIZEOF_SHORT,
@@ -620,6 +755,11 @@ GDKinit(opt *set, int setlen)
 	}
 
 	/* Mserver by default takes 80% of all memory as a default */
+#if SIZEOF_SIZE_T == 4
+	if ((double) MT_npages() * (double) MT_pagesize() * 0.815 >= (double) GDK_VM_MAXSIZE)
+		GDK_mem_maxsize = GDK_VM_MAXSIZE;
+	else
+#endif
 	GDK_mem_maxsize = (size_t) ((double) MT_npages() * (double) MT_pagesize() * 0.815);
 	if (BBPinit() != GDK_SUCCEED)
 		return GDK_FAIL;
@@ -797,7 +937,8 @@ GDKprepareExit(void)
 	if (ATOMIC_ADD(&GDKstopped, 1) > 0)
 		return;
 
-	THRDDEBUG dump_threads();
+	TRC_DEBUG_IF(THRD)
+		dump_threads();
 	join_detached_threads();
 }
 
@@ -831,7 +972,7 @@ GDKreset(int status)
 
 					killed = true;
 					e = MT_kill_thread(victim);
-					fprintf(stderr, "#GDKexit: killing thread %d\n", e);
+					TRC_INFO(GDK, "Killing thread: %d\n", e);
 					(void) ATOMIC_DEC(&GDKnrofthreads);
 				}
 				GDKfree(t->name);
@@ -863,7 +1004,7 @@ GDKreset(int status)
 		}
 
 #ifdef LOCK_STATS
-		TEMDEBUG GDKlockstatistics(1);
+		TRC_DEBUG_IF(TEM) GDKlockstatistics(1);
 #endif
 		GDKdebug = 0;
 		GDK_mmap_minsize_persistent = MMAP_MINSIZE_PERSISTENT;
@@ -892,6 +1033,9 @@ GDKreset(int status)
 		MT_lock_unset(&GDKthreadLock);
 	}
 	ATOMunknown_clean();
+
+	/* stop GDKtracer */
+	GDKtracer_stop();
 }
 
 /* coverity[+kill] */
@@ -902,6 +1046,9 @@ GDKexit(int status)
 #ifdef HAVE_EMBEDDED
 		return;
 #else
+		/* stop GDKtracer */
+		GDKtracer_stop();
+
 		/* no database lock, so no threads, so exit now */
 		exit(status);
 #endif
@@ -959,11 +1106,13 @@ GDKlockHome(int farmid)
 	    GDKcreatedir(gdklockpath) != GDK_SUCCEED) {
 		GDKerror("GDKlockHome: could not create %s\n",
 			 BBPfarms[farmid].dirname);
+		GDKfree(gdklockpath);
 		return GDK_FAIL;
 	}
-	if ((fd = MT_lockf(gdklockpath, F_TLOCK, 4, 1)) < 0) {
+	if ((fd = MT_lockf(gdklockpath, F_TLOCK)) < 0) {
 		GDKerror("GDKlockHome: Database lock '%s' denied\n",
 			 gdklockpath);
+		GDKfree(gdklockpath);
 		return GDK_FAIL;
 	}
 
@@ -973,6 +1122,7 @@ GDKlockHome(int farmid)
 	if ((GDKlockFile = fdopen(fd, "r+")) == NULL) {
 		close(fd);
 		GDKerror("GDKlockHome: Could not fdopen %s\n", gdklockpath);
+		GDKfree(gdklockpath);
 		return GDK_FAIL;
 	}
 
@@ -982,16 +1132,19 @@ GDKlockHome(int farmid)
 	if (fseek(GDKlockFile, 0, SEEK_SET) == -1) {
 		fclose(GDKlockFile);
 		GDKerror("GDKlockHome: Error while setting the file pointer on %s\n", gdklockpath);
+		GDKfree(gdklockpath);
 		return GDK_FAIL;
 	}
 	if (ftruncate(fileno(GDKlockFile), 0) < 0) {
 		fclose(GDKlockFile);
 		GDKerror("GDKlockHome: Could not truncate %s\n", gdklockpath);
+		GDKfree(gdklockpath);
 		return GDK_FAIL;
 	}
 	if (fflush(GDKlockFile) == EOF) {
 		fclose(GDKlockFile);
 		GDKerror("GDKlockHome: Could not flush %s\n", gdklockpath);
+		GDKfree(gdklockpath);
 		return GDK_FAIL;
 	}
 	GDKlog(GDKlockFile, GDKLOGON);
@@ -1006,7 +1159,8 @@ GDKunlockHome(int farmid)
 {
 	if (BBPfarms[farmid].lock_file) {
 		char *gdklockpath = GDKfilepath(farmid, NULL, GDKLOCK, NULL);
-		MT_lockf(gdklockpath, F_ULOCK, 4, 1);
+		if (gdklockpath)
+			MT_lockf(gdklockpath, F_ULOCK);
 		fclose(BBPfarms[farmid].lock_file);
 		BBPfarms[farmid].lock_file = NULL;
 		GDKfree(gdklockpath);
@@ -1063,14 +1217,13 @@ doGDKaddbuf(const char *prefix, const char *message, size_t messagelen, const ch
 			dst += sufflen;
 		}
 		*dst = '\0';
+		TRC_INFO(GDK, "%s%.*s%s\n",
+			 prefix[0] == '#' ? prefix + 1 : prefix,
+			 (int) messagelen, message, suffix);
 	} else {
-		mnstr_printf(GDKout, "%s%.*s%s", prefix,
-			     (int) messagelen, message, suffix);
+		TRC_ERROR(GDK, "%s%.*s%s",
+			  prefix, (int) messagelen, message, suffix);
 	}
-	fprintf(stderr, "#%s:%s%.*s%s",
-		MT_thread_getname(),
-		prefix[0] == '#' ? prefix + 1 : prefix,
-		(int) messagelen, message, suffix);
 }
 
 /* print an error or warning message, making sure the message ends in
@@ -1090,6 +1243,9 @@ GDKaddbuf(const char *message)
 	char prefix[16];
 
 	if (message == NULL || *message == '\0')	/* empty message, nothing to do */
+		return;
+	/* filter out duplicate messages */
+	if (GDKerrbuf && strstr(GDKerrbuf , message))
 		return;
 	p = message;
 	strcpy(prefix, "!");	/* default prefix */
@@ -1154,8 +1310,10 @@ GDKerror(const char *format, ...)
 		strcpy(message, GDKERROR);
 	}
 	va_start(ap, format);
-	if (vsnprintf(message + len, sizeof(message) - (len + 2), format, ap) < 0)
+	if (vsnprintf(message + len, sizeof(message) - (len + 2), format, ap) < 0){
+		TRC_ERROR(GDK, "an error occurred within GDKerror.\n");
 		strcpy(message, GDKERROR "an error occurred within GDKerror.\n");
+	}
 	va_end(ap);
 
 	GDKaddbuf(message);
@@ -1177,23 +1335,12 @@ GDKsyserror(const char *format, ...)
 	va_start(ap, format);
 	vsnprintf(message + len, sizeof(message) - (len + 2), format, ap);
 	va_end(ap);
-#ifndef NATIVE_WIN32
-	if (err > 0 && err < 1024)
-#endif
-	{
+	if (err > 0 && err < 1024) {
 		size_t len1;
 		size_t len2;
 		size_t len3;
 		char *osmsg;
-#ifdef NATIVE_WIN32
-		char osmsgbuf[256];
-		osmsg = osmsgbuf;
-		FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL, err,
-			      MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-			      (LPTSTR) osmsgbuf, sizeof(osmsgbuf), NULL);
-#else
 		osmsg = strerror(err);
-#endif
 		len1 = strlen(message);
 		len2 = len1 + strlen(GDKMESSAGE);
 		len3 = len2 + strlen(osmsg);
@@ -1211,6 +1358,51 @@ GDKsyserror(const char *format, ...)
 
 	errno = 0;
 }
+
+#ifdef NATIVE_WIN32
+void
+GDKwinerror(const char *format, ...)
+{
+	int err = GetLastError();
+	char message[GDKERRLEN];
+	size_t len = strlen(GDKERROR);
+	va_list ap;
+
+	if (strncmp(format, GDKERROR, len) == 0) {
+		len = 0;
+	} else {
+		strncpy(message, GDKERROR, sizeof(message));
+	}
+	va_start(ap, format);
+	vsnprintf(message + len, sizeof(message) - (len + 2), format, ap);
+	va_end(ap);
+
+	size_t len1;
+	size_t len2;
+	size_t len3;
+	char *osmsg;
+	char osmsgbuf[256];
+	osmsg = osmsgbuf;
+	FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL, err,
+		      MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+		      (LPTSTR) osmsgbuf, sizeof(osmsgbuf), NULL);
+	len1 = strlen(message);
+	len2 = len1 + strlen(GDKMESSAGE);
+	len3 = len2 + strlen(osmsg);
+
+	if (len3 + 2 < sizeof(message)) {
+		strcpy(message + len1, GDKMESSAGE);
+		strcpy(message + len2, osmsg);
+		if (len3 > 0 && message[len3 - 1] != '\n') {
+			message[len3] = '\n';
+			message[len3 + 1] = 0;
+		}
+	}
+	GDKaddbuf(message);
+
+	SetLastError(0);
+}
+#endif
 
 void
 GDKclrerr(void)
@@ -1234,7 +1426,7 @@ GDKfatal(const char *format, ...)
 	size_t len = strlen(GDKFATAL);
 	va_list ap;
 
-	GDKdebug |= IOMASK;
+	GDKtracer_set_component_level("io", "debug");
 #ifndef NATIVE_WIN32
 	BATSIGinit();
 #endif
@@ -1271,7 +1463,7 @@ GDKfatal(const char *format, ...)
 #ifdef COREDUMP
 			abort();
 #else
-			GDKexit(1);
+			exit(1);
 #endif
 		}
 	}
@@ -1372,7 +1564,7 @@ THRnew(const char *name, MT_Id pid)
 	char *nme = GDKstrdup(name);
 
 	if (nme == NULL) {
-		IODEBUG fprintf(stderr, "#THRnew: malloc failure\n");
+		TRC_DEBUG(IO_, "Malloc failure\n");
 		GDKerror("THRnew: malloc failure\n");
 		return NULL;
 	}
@@ -1384,17 +1576,17 @@ THRnew(const char *name, MT_Id pid)
 			s->data[1] = THRdata[1];
 			s->sp = THRsp();
 			s->name = nme;
-			PARDEBUG fprintf(stderr, "#%x %zu sp = %zu\n",
-					 (unsigned) s->tid,
-					 (size_t) ATOMIC_GET(&s->pid),
-					 (size_t) s->sp);
-			PARDEBUG fprintf(stderr, "#nrofthreads %d\n",
-					 (int) ATOMIC_GET(&GDKnrofthreads) + 1);
+			TRC_DEBUG(PAR, "%x %zu sp = %zu\n",
+				  (unsigned) s->tid,
+				  (size_t) ATOMIC_GET(&s->pid),
+				  (size_t) s->sp);
+			TRC_DEBUG(PAR, "Number of threads: %d\n",
+				  (int) ATOMIC_GET(&GDKnrofthreads) + 1);
 			return s;
 		}
 	}
 	GDKfree(nme);
-	IODEBUG fprintf(stderr, "#THRnew: too many threads\n");
+	TRC_DEBUG(IO_, "Too many threads\n");
 	GDKerror("THRnew: too many threads\n");
 	return NULL;
 }
@@ -1445,7 +1637,7 @@ THRcreate(void (*f) (void *), void *arg, enum MT_thr_detach d, const char *name)
 	};
 	len = snprintf(semname, sizeof(semname), "THRcreate%" PRIu64, (uint64_t) ATOMIC_INC(&ctr));
 	if (len == -1 || len > (int) sizeof(semname)) {
-		IODEBUG fprintf(stderr, "#THRcreate: semaphore name is too large\n");
+		TRC_DEBUG(IO_, "Semaphore name is too large\n");
 		GDKerror("THRcreate: semaphore name is too large\n");
 		GDKfree(t);
 		GDKfree(s->name);
@@ -1476,9 +1668,9 @@ THRdel(Thread t)
 {
 	assert(GDKthreads <= t && t < GDKthreads + THREADS);
 	MT_thread_setdata(NULL);
-	PARDEBUG fprintf(stderr, "#pid = %zu, disconnected, %d left\n",
-			 (size_t) ATOMIC_GET(&t->pid),
-			 (int) ATOMIC_GET(&GDKnrofthreads));
+	TRC_DEBUG(PAR, "pid = %zu, disconnected, %d left\n",
+		  (size_t) ATOMIC_GET(&t->pid),
+		  (int) ATOMIC_GET(&GDKnrofthreads));
 
 	GDKfree(t->name);
 	t->name = NULL;
@@ -1636,7 +1828,7 @@ GDKmemfail(const char *s, size_t len)
 	   }
 	 */
 
-	fprintf(stderr, "#%s(%zu) fails, try to free up space [memory in use=%zu,virtual memory in use=%zu]\n", s, len, GDKmem_cursize(), GDKvm_cursize());
+	TRC_ERROR(GDK, "%s(%zu) fails, try to free up space [memory in use=%zu,virtual memory in use=%zu]\n", s, len, GDKmem_cursize(), GDKvm_cursize());
 }
 
 /* Memory allocation
@@ -1685,7 +1877,8 @@ GDKmalloc_internal(size_t size)
 		return NULL;
 	}
 #endif
-	if (GDKvm_cursize() + size >= GDK_vm_maxsize) {
+	if (GDKvm_cursize() + size >= GDK_vm_maxsize &&
+	    !MT_thread_override_limits()) {
 		GDKerror("allocating too much memory\n");
 		return NULL;
 	}
@@ -1828,7 +2021,8 @@ GDKrealloc(void *s, size_t size)
 	asize = ((size_t *) s)[-1]; /* how much allocated last */
 
 	if (nsize > asize &&
-	    GDKvm_cursize() + nsize - asize >= GDK_vm_maxsize) {
+	    GDKvm_cursize() + nsize - asize >= GDK_vm_maxsize &&
+	    !MT_thread_override_limits()) {
 		GDKerror("allocating too much memory\n");
 		return NULL;
 	}
@@ -1958,7 +2152,9 @@ GDKmmap(const char *path, int mode, size_t len)
 {
 	void *ret;
 
-	if (GDKvm_cursize() + len >= GDK_vm_maxsize) {
+	if (GDKvm_cursize() + len >= GDK_vm_maxsize &&
+	    !MT_thread_override_limits()) {
+		GDKmemfail("GDKmmap", len);
 		GDKerror("allocating too much virtual address space\n");
 		return NULL;
 	}
@@ -1991,7 +2187,9 @@ GDKmremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 	void *ret;
 
 	if (*new_size > old_size &&
-	    GDKvm_cursize() + *new_size - old_size >= GDK_vm_maxsize) {
+	    GDKvm_cursize() + *new_size - old_size >= GDK_vm_maxsize &&
+	    !MT_thread_override_limits()) {
+		GDKmemfail("GDKmmap", *new_size);
 		GDKerror("allocating too much virtual address space\n");
 		return NULL;
 	}

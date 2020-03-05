@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /* Manual config.h. needed for win32 .  */
@@ -110,22 +110,7 @@
 /* Define if you have asctime_r(struct tm*,char *buf,size_t s) */
 #define HAVE_ASCTIME_R3 1
 /* there is something very similar to asctime_r on Windows: */
-#define asctime_r(t,b,s)	asctime_s(b,s,t)
-
-/* Define to 1 if you have the `backtrace' function. */
-/* #undef HAVE_BACKTRACE */
-
-/* Define to 1 if you have the <bam/bam.h> header file. */
-/* #undef HAVE_BAM_BAM_H */
-
-/* Define to 1 if you have the <bam/bgzf.h> header file. */
-/* #undef HAVE_BAM_BGZF_H */
-
-/* Define to 1 if you have the <bam/kstring.h> header file. */
-/* #undef HAVE_BAM_KSTRING_H */
-
-/* Define to 1 if you have the <bam/sam.h> header file. */
-/* #undef HAVE_BAM_SAM_H */
+#define asctime_r(t,b,s)	(asctime_s(b,s,t) == 0 ? (b) : NULL)
 
 /* Define to 1 if you have the `cbrt' function. */
 #define HAVE_CBRT 1
@@ -142,7 +127,7 @@
 /* Define if you have ctime_r(time_t*,char *buf,size_t s) */
 #define HAVE_CTIME_R3 1
 /* there is something very similar to ctime_r on Windows: */
-#define ctime_r(t,b,s)	(ctime_s(b,s,t) ? NULL : (b))
+#define ctime_r(t,b,s)	(ctime_s(b,s,t) == 0 ? (b) : NULL)
 
 /* Define if you have the cURL library */
 /* #undef HAVE_CURL */
@@ -162,9 +147,6 @@
 
 /* Support for MonetDB as a library for R */
 /* #undef HAVE_EMBEDDED_R */
-
-/* Define to 1 if you have the <execinfo.h> header file. */
-/* #undef HAVE_EXECINFO_H */
 
 /* Define to 1 if you have the `fallocate' function. */
 /* #undef HAVE_FALLOCATE */
@@ -225,6 +207,11 @@
 /* Define to 1 if you have the `getuid' function. */
 /* #undef HAVE_GETUID */
 
+/* Define to 1 if you have the `gmtime_r' function. */
+#define HAVE_GMTIME_R 1
+/* there is something very similar to gmtime_r on Windows: */
+#define gmtime_r(tp,tm)	(gmtime_s(tm,tp) == 0 ? (tm) : NULL)
+
 /* Define if you have the iconv() function and it works. */
 /* #undef HAVE_ICONV */		/* optionally defined in rules.msc */
 
@@ -264,9 +251,6 @@
 /* #undef HAVE_LIBPTHREAD */
 
 /* Define if we can link to python */
-/* #undef HAVE_LIBPY2 */
-
-/* Define if we can link to python */
 /* #undef HAVE_LIBPY3 */
 
 /* Define if you have libR installed */
@@ -287,7 +271,7 @@
 /* Define to 1 if you have the `localtime_r' function. */
 #define HAVE_LOCALTIME_R 1
 /* there is something very similar to localtime_r on Windows: */
-#define localtime_r(tp,tm)	localtime_s(tm,tp)
+#define localtime_r(tp,tm)	(localtime_s(tm,tp) == 0 ? (tm) : NULL)
 
 /* Define to 1 if you have the `lockf' function. */
 /* #undef HAVE_LOCKF */
@@ -369,22 +353,6 @@
 /* Define to 1 if you have the <pwd.h> header file. */
 /* #undef HAVE_PWD_H */
 
-/* Define if you have the samtools version 0.1.x (providing the bam library)
-   */
-/* #undef HAVE_SAMTOOLS */
-
-/* Define to 1 if you have the <samtools/bam.h> header file. */
-/* #undef HAVE_SAMTOOLS_BAM_H */
-
-/* Define to 1 if you have the <samtools/bgzf.h> header file. */
-/* #undef HAVE_SAMTOOLS_BGZF_H */
-
-/* Define to 1 if you have the <samtools/kstring.h> header file. */
-/* #undef HAVE_SAMTOOLS_KSTRING_H */
-
-/* Define to 1 if you have the <samtools/sam.h> header file. */
-/* #undef HAVE_SAMTOOLS_SAM_H */
-
 /* Define to 1 if you have the <sched.h> header file. */
 /* #undef HAVE_SCHED_H */
 
@@ -393,9 +361,6 @@
 
 /* Define if semtimedop exists */
 /* #undef HAVE_SEMTIMEDOP */
-
-/* Define to 1 if you have the `setenv' function. */
-/* #undef HAVE_SETENV */
 
 /* Define to 1 if you have the `setsid' function. */
 /* #undef HAVE_SETSID */
@@ -507,9 +472,6 @@
 
 /* Define to 1 if you have the <sys/stat.h> header file. */
 #define HAVE_SYS_STAT_H 1
-
-/* Define to 1 if you have the <sys/sysctl.h> header file. */
-/* #undef HAVE_SYS_SYSCTL_H */
 
 /* Define to 1 if you have the <sys/times.h> header file. */
 /* #undef HAVE_SYS_TIMES_H */
@@ -805,9 +767,6 @@
    we just define __attribute__(a) to nothing. */
 #define __attribute__(a)
 
-/* Does your compiler support the `__hidden' specifier? */
-#define __hidden
-
 /* function to close a socket */
 /* #undef closesocket */
 
@@ -915,9 +874,5 @@ typedef __uint128_t uhge;
 #else
 #define HAVE_MAPI 1
 #endif
-
-#define PROMPT1		"\001\001\n"	/* prompt: ready for new query */
-#define PROMPT2		"\001\002\n"	/* prompt: more data needed */
-#define PROMPT3		"\001\003\n"	/* prompt: get file content */
 
 #endif /* _SEEN_MONETDB_CONFIG_H */

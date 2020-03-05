@@ -75,7 +75,7 @@ stdout of test 'multiple-joins.Bug-2879` in directory 'sql/test/BugTracker-2011`
 #        ON ( T_2.p = '<http://example/q1>'
 #         AND T_3.p = '<http://example/q2>'
 #         AND T_2.s = T_3.s )
-% .L14,	.L16,	.L20,	.L22 # table_name
+% .,	.,	.,	. # table_name
 % v_1,	v_2,	v_3,	v_4 # name
 % varchar,	varchar,	varchar,	varchar # type
 % 18,	18,	20,	20 # length

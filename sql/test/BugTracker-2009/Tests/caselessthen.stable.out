@@ -39,7 +39,7 @@ stdout of test 'caselessthen` in directory 'sql/test/BugTracker-2009` itself:
 #  select 13 as x
 #) sub
 #;
-% .sub,	.L32 # table_name
+% .sub,	. # table_name
 % x,	log # name
 % tinyint,	tinyint # type
 % 2,	1 # length

@@ -11,7 +11,7 @@ stdout of test '94` in directory 'sql/benchmarks/tpcds` itself:
 # Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
 # Found 62.694 GiB available main-memory.
 # Copyright (c) 1993 - July 2008 CWI.
-# Copyright (c) August 2008 - 2019 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008 - 2020 MonetDB B.V., all rights reserved
 # Visit https://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://methuselah.da.cwi.nl:30709/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-16393/.s.monetdb.30709
@@ -34,7 +34,12 @@ stdout of test '94` in directory 'sql/benchmarks/tpcds` itself:
 #  AND ws1.ws_ship_date_sk = d_date_sk
 #  AND ws1.ws_ship_addr_sk = ca_address_sk
 #  AND ca_state = 'IL'
-% .L24,	.L27,	.L32 # table_name
+#  AND ws1.ws_web_site_sk = web_site_sk
+#  AND web_company_name = 'pri'
+#  AND EXISTS
+#    (SELECT *
+#     FROM web_sales ws2
+% .,	.,	. # table_name
 % "order count",	"total shipping cost",	"total net profit" # name
 % bigint,	decimal,	decimal # type
 % 2,	40,	40 # length

@@ -13,13 +13,13 @@ upgradecode = {'x64': '{95ACBC8C-BC4B-4901-AF70-48B54A5C20F7}',
 def comp(features, id, depth, files, fid=None, name=None, args=None, sid=None, vital=None):
     indent = ' ' * depth
     for f in files:
-        print('%s<Component Id="_%d" Guid="*">' % (indent, id))
-        print('%s  <File DiskId="1"%s KeyPath="yes" Name="%s" Source="%s"%s%s' % (indent, fid and (' Id="%s"' % fid) or '', f.split('\\')[-1], f, vital and (' Vital="%s"' % vital) or '', name and '>' or '/>'))
+        print('{}<Component Id="_{}" Guid="*">'.format(indent, id))
+        print('{}  <File DiskId="1"{} KeyPath="yes" Name="{}" Source="{}"{}{}'.format(indent, fid and (' Id="{}"'.format(fid)) or '', f.split('\\')[-1], f, vital and (' Vital="{}"'.format(vital)) or '', name and '>' or '/>'))
         if name:
-            print('%s    <Shortcut Id="%s" Advertise="yes"%s Directory="ProgramMenuDir" Icon="monetdb.ico" IconIndex="0" Name="%s" WorkingDirectory="INSTALLDIR"/>' % (indent, sid, args and (' Arguments="%s"' % args) or '', name))
-            print('%s  </File>' % indent)
-        print('%s</Component>' % indent)
-        features.append('_%d' % id)
+            print('{}    <Shortcut Id="{}" Advertise="yes"{} Directory="ProgramMenuDir" Icon="monetdb.ico" IconIndex="0" Name="{}" WorkingDirectory="INSTALLDIR"/>'.format(indent, sid, args and (' Arguments="{}"'.format(args)) or '', name))
+            print('{}  </File>'.format(indent))
+        print('{}</Component>'.format(indent))
+        features.append('_{}'.format(id))
         id += 1
     return id
 
@@ -43,8 +43,8 @@ def main():
     features = []
     print(r'<?xml version="1.0"?>')
     print(r'<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">')
-    print(r'  <Product Id="*" Language="1033" Manufacturer="MonetDB" Name="MonetDB ODBC Driver" UpgradeCode="%s" Version="%s">' % (upgradecode[arch], sys.argv[1]))
-    print(r'    <Package Id="*" Comments="MonetDB ODBC Driver" Compressed="yes" InstallerVersion="301" Keywords="MonetDB SQL ODBC" Languages="1033" Manufacturer="MonetDB BV" Platform="%s"/>' % arch)
+    print(r'  <Product Id="*" Language="1033" Manufacturer="MonetDB" Name="MonetDB ODBC Driver" UpgradeCode="{}" Version="{}">'.format(upgradecode[arch], sys.argv[1]))
+    print(r'    <Package Id="*" Comments="MonetDB ODBC Driver" Compressed="yes" InstallerVersion="301" Keywords="MonetDB SQL ODBC" Languages="1033" Manufacturer="MonetDB BV" Platform="{}"/>'.format(arch))
     print(r'    <MajorUpgrade AllowDowngrades="no" DowngradeErrorMessage="A later version of [ProductName] is already installed." AllowSameVersionUpgrades="no"/>')
     print(r'    <WixVariable Id="WixUILicenseRtf" Value="license.rtf"/>')
     print(r'    <WixVariable Id="WixUIBannerBmp" Value="banner.bmp"/>')
@@ -55,17 +55,14 @@ def main():
     print(r'    <CustomAction Id="driverinstall" FileKey="odbcinstall" ExeCommand="/Install" Execute="deferred" Impersonate="no"/>')
     print(r'    <CustomAction Id="driveruninstall" FileKey="odbcinstall" ExeCommand="/Uninstall" Execute="deferred" Impersonate="no"/>')
     print(r'    <Directory Id="TARGETDIR" Name="SourceDir">')
-    if vs in ('17', '19'):
-        msvc = r'C:\Program Files (x86)\Microsoft Visual Studio\20%s\Community\VC\Redist\MSVC' % vs
-        d = sorted(os.listdir(msvc))[-1]
-        msm = '_CRT_%s.msm' % arch
-        for f in sorted(os.listdir(os.path.join(msvc, d, 'MergeModules'))):
-            if msm in f:
-                fn = f
-        print(r'      <Merge Id="VCRedist" DiskId="1" Language="0" SourceFile="%s\%s\MergeModules\%s"/>' % (msvc, d, fn))
-    else:
-        print(r'      <Merge Id="VCRedist" DiskId="1" Language="0" SourceFile="C:\Program Files (x86)\Common Files\Merge Modules\Microsoft_VC%s0_CRT_%s.msm"/>' % (vs, arch))
-    print(r'      <Directory Id="%s">' % folder)
+    msvc = r'C:\Program Files (x86)\Microsoft Visual Studio\20{}\Community\VC\Redist\MSVC'.format(vs)
+    d = sorted(os.listdir(msvc))[-1]
+    msm = '_CRT_{}.msm'.format(arch)
+    for f in sorted(os.listdir(os.path.join(msvc, d, 'MergeModules'))):
+        if msm in f:
+            fn = f
+    print(r'      <Merge Id="VCRedist" DiskId="1" Language="0" SourceFile="{}\{}\MergeModules\{}"/>'.format(msvc, d, fn))
+    print(r'      <Directory Id="{}">'.format(folder))
     print(r'        <Directory Id="ProgramFilesMonetDB" Name="MonetDB">')
     print(r'          <Directory Id="INSTALLDIR" Name="MonetDB ODBC Driver">')
     id = 1
@@ -75,10 +72,10 @@ def main():
                r'lib\libMonetODBC.dll', r'lib\libMonetODBC.pdb',
                r'lib\libMonetODBCs.dll', r'lib\libMonetODBCs.pdb',
                r'lib\libstream.dll', r'lib\libstream.pdb',
-               r'%s\bin\iconv-2.dll' % makedefs['LIBICONV'],
-               r'%s\bin\libbz2.dll' % makedefs['LIBBZIP2'],
-               r'%s\bin\libcrypto-1_1%s.dll' % (makedefs['LIBOPENSSL'], libcrypto),
-               r'%s\bin\zlib1.dll' % makedefs['LIBZLIB']])
+               r'{}\bin\iconv-2.dll'.format(makedefs['LIBICONV']),
+               r'{}\bin\libbz2.dll'.format(makedefs['LIBBZIP2']),
+               r'{}\bin\libcrypto-1_1{}.dll'.format(makedefs['LIBOPENSSL'], libcrypto),
+               r'{}\bin\zlib1.dll'.format(makedefs['LIBZLIB'])])
     print(r'            </Directory>')
     id = comp(features, id, 12,
               [r'license.rtf'])
@@ -105,7 +102,7 @@ def main():
     print(r'    </Directory>')
     print(r'    <Feature Id="Complete" ConfigurableDirectory="INSTALLDIR" Title="MonetDB ODBC Driver">')
     for f in features:
-        print(r'      <ComponentRef Id="%s"/>' % f)
+        print(r'      <ComponentRef Id="{}"/>'.format(f))
     print(r'      <MergeRef Id="VCRedist"/>')
     print(r'    </Feature>')
     print(r'    <UIRef Id="WixUI_InstallDir"/>')

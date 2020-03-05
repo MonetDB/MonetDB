@@ -55,12 +55,12 @@ stdout of test 'sharp-alias.Bug-3467` in directory 'sql/test/BugTracker-2015` it
 
 #CREATE TABLE test3467 (a int);
 #SELECT a AS "#" FROM test3467;
-% sys.L2 # table_name
+% sys. # table_name
 % "#" # name
 % int # type
 % 1 # length
 #SELECT a AS "@" FROM test3467;
-% sys.L2 # table_name
+% sys. # table_name
 % @ # name
 % int # type
 % 1 # length

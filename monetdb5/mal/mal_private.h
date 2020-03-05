@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /* This file should not be included in any file outside of this directory */
@@ -14,87 +14,89 @@
 
 #ifdef _MAL_CLIENT_H_
 /* _MAL_CLIENT_H_ is defined in the same file as Client */
-__hidden void MCexitClient(Client c)
+void MCexitClient(Client c)
 	__attribute__((__visibility__("hidden")));
-__hidden void MCfreeClient(Client c)
+void MCfreeClient(Client c)
 	__attribute__((__visibility__("hidden")));
-__hidden int MCreadClient(Client c)
+bool MCinit(void)
 	__attribute__((__visibility__("hidden")));
-__hidden void MCpopClientInput(Client c)
+int MCinitClientThread(Client c)
 	__attribute__((__visibility__("hidden")));
-__hidden str defaultScenario(Client c)	/* used in src/mal/mal_session.c */
+void MCpopClientInput(Client c)
 	__attribute__((__visibility__("hidden")));
-__hidden void mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
+int MCreadClient(Client c)
+	__attribute__((__visibility__("hidden")));
+int MCshutdowninprogress(void)
+	__attribute__((__visibility__("hidden")));
+str defaultScenario(Client c)	/* used in src/mal/mal_session.c */
+	__attribute__((__visibility__("hidden")));
+void mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 	__attribute__((__visibility__("hidden")));
 
-__hidden str runFactory(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr stk, InstrPtr pci)
+str runFactory(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr stk, InstrPtr pci)
 	__attribute__((__visibility__("hidden")));
-__hidden int yieldResult(MalBlkPtr mb, InstrPtr p, int pc)
+int yieldResult(MalBlkPtr mb, InstrPtr p, int pc)
 	__attribute__((__visibility__("hidden")));
-__hidden str yieldFactory(MalBlkPtr mb, InstrPtr p, int pc)
+str yieldFactory(MalBlkPtr mb, InstrPtr p, int pc)
 	__attribute__((__visibility__("hidden")));
-__hidden str callFactory(Client cntxt, MalBlkPtr mb, ValPtr argv[],char flag)
+str callFactory(Client cntxt, MalBlkPtr mb, ValPtr argv[],char flag)
 	__attribute__((__visibility__("hidden")));
 #endif
 
-__hidden void initResource(void)
+str malAtomDefinition(str name,int tpe)
+	__attribute__((__visibility__("hidden")));
+str malAtomProperty(MalBlkPtr mb, InstrPtr pci)
 	__attribute__((__visibility__("hidden")));
 
-__hidden str malAtomDefinition(str name,int tpe)
-	__attribute__((__visibility__("hidden")));
-__hidden str malAtomProperty(MalBlkPtr mb, InstrPtr pci)
+void setqptimeout(lng usecs)
 	__attribute__((__visibility__("hidden")));
 
-__hidden void setqptimeout(lng usecs)
+bool mdbInit(void)
 	__attribute__((__visibility__("hidden")));
-
-__hidden bool mdbInit(void)
-	__attribute__((__visibility__("hidden")));
-__hidden void mdbExit(void)
+void mdbExit(void)
 	__attribute__((__visibility__("hidden")));
 
 #ifdef MAXSCOPE
 /* MAXSCOPE is defined in the same file as Module */
-__hidden Symbol cloneFunction(Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p)
+Symbol cloneFunction(Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p)
 	__attribute__((__visibility__("hidden")));
 #endif
-__hidden int getBarrierEnvelop(MalBlkPtr mb)
+int getBarrierEnvelop(MalBlkPtr mb)
 	__attribute__((__visibility__("hidden")));
-__hidden void malGarbageCollector(MalBlkPtr mb)
-	__attribute__((__visibility__("hidden")));
-__hidden void listFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg, int first, int step)
+void listFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg, int first, int step)
 	__attribute__((__visibility__("hidden")));
 
 /* mal_linker.h */
-__hidden char *MSP_locate_script(const char *mod_name)
+char *MSP_locate_script(const char *mod_name)
 	__attribute__((__visibility__("hidden")));
 
 /* Reset primitives */
-__hidden mal_export void AUTHreset(void)
+void AUTHreset(void)
 	__attribute__((__visibility__("hidden")));
 
-__hidden mal_export void mal_client_reset(void)
+void mal_client_reset(void)
 	__attribute__((__visibility__("hidden")));
 
-__hidden mal_export void mal_dataflow_reset(void)
+void mal_dataflow_reset(void)
 	__attribute__((__visibility__("hidden")));
 
-__hidden mal_export void mal_factory_reset(void)
+void mal_factory_reset(void)
 	__attribute__((__visibility__("hidden")));
 
-__hidden mal_export void mal_linker_reset(void)
+void mal_linker_reset(void)
 	__attribute__((__visibility__("hidden")));
 
-__hidden mal_export void mal_module_reset(void)
+void mal_module_reset(void)
 	__attribute__((__visibility__("hidden")));
 
-__hidden mal_export void mal_namespace_reset(void)
+void mal_namespace_reset(void)
 	__attribute__((__visibility__("hidden")));
 
-__hidden mal_export void mal_resource_reset(void)
+void mal_resource_reset(void)
 	__attribute__((__visibility__("hidden")));
 
-__hidden mal_export void mal_runtime_reset(void)
+void mal_runtime_reset(void)
 	__attribute__((__visibility__("hidden")));
 
-extern ATOMIC_TYPE mal_running;
+char *dupError(const char *err)
+	__attribute__((__visibility__("hidden"), __returns_nonnull__));

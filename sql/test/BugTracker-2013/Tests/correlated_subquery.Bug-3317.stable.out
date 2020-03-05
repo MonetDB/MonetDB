@@ -43,7 +43,7 @@ stdout of test 'correlated_subquery.Bug-3317` in directory 'sql/test/BugTracker-
 #		    and q.currency = v.cur)
 #	) as Preis 
 #  from vouchers v;
-% sys.v,	sys.v,	sys.v,	sys.v,	.L14 # table_name
+% .v,	.v,	.v,	.v,	. # table_name
 % vid,	date,	cur,	val,	preis # name
 % int,	char,	char,	decimal,	decimal # type
 % 1,	8,	3,	17,	17 # length

@@ -26,7 +26,7 @@ stdout of test 'sqlitelogictest-groupby-having-not-in.Bug-6553` in directory 'sq
 #INSERT INTO tab1 VALUES(22,6,8), (28,57,45), (82,44,71);
 [ 3	]
 #SELECT DISTINCT + cor0.col1 / cor0.col1 col2 FROM tab1 AS cor0 GROUP BY col1 HAVING NOT NULL IN ( - col1 * cor0.col1 );
-% sys.L2 # table_name
+% sys. # table_name
 % col2 # name
 % int # type
 % 1 # length

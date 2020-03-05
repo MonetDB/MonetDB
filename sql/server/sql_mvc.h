@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /* multi version catalog */
@@ -20,7 +20,7 @@
 #include "sql_relation.h"
 #include "sql_storage.h"
 #include "sql_keyword.h"
-#include "sql_querytype.h"
+#include "mapi_querytype.h"
 #include "sql_atom.h"
 #include "sql_tokens.h"
 #include "sql_symbol.h"
@@ -39,15 +39,17 @@
 #define card_row 	1 /* needed for subqueries on single value tables (select (select 1))*/
 #define card_column 	2
 #define card_set	3 /* some operators require only a set (IN/EXISTS) */
-#define card_relation 	4
-#define card_loader 	5
+#define card_exists	4
+#define card_relation 	5
+#define card_loader 	6
 
-#define CARD_VALUE(card) (card == card_value || card == card_row || card == card_column || card == card_set)
+#define CARD_VALUE(card) (card == card_value || card == card_row || card == card_column || card == card_set || card == card_exists)
 
 /* allowed to reduce (in the where and having parts we can reduce) */
 
 /* different query execution modes (emode) */
 #define m_normal 	0
+#define m_deallocate 1
 #define m_execute 	2
 #define m_prepare 	3
 #define m_plan 		4
@@ -127,7 +129,7 @@ typedef struct mvc {
 
 	sql_session *session;	
 
-	sql_query_t type;	/* query type */
+	mapi_query_t type;	/* query type */
 	int pushdown;		/* AND or OR query handling */
 	unsigned int label;	/* numbers for relational projection labels */
 	int remote;
@@ -140,13 +142,17 @@ typedef struct mvc {
 	char *query;		/* string, identify whatever we're working on */
 } mvc;
 
+/* NR_GLOBAL_VAR should match exactly the number of variables created in global_variables */
+#define NR_GLOBAL_VARS 9
+
+extern sql_table *mvc_init_create_view(mvc *sql, sql_schema *s, const char *name, const char *query);
 extern int mvc_init(int debug, store_type store, int ro, int su, backend_stack stk);
 extern void mvc_exit(void);
 extern void mvc_logmanager(void);
 extern void mvc_idlemanager(void);
 
 extern mvc *mvc_create(int clientid, backend_stack stk, int debug, bstream *rs, stream *ws);
-extern int mvc_reset(mvc *m, bstream *rs, stream *ws, int debug, int globalvars);
+extern int mvc_reset(mvc *m, bstream *rs, stream *ws, int debug);
 extern void mvc_destroy(mvc *c);
 
 extern int mvc_status(mvc *c);
@@ -278,6 +284,8 @@ extern sql_key *mvc_copy_key(mvc *m, sql_table *t, sql_key *k);
 extern sql_idx *mvc_copy_idx(mvc *m, sql_table *t, sql_idx *i);
 extern sql_trigger *mvc_copy_trigger(mvc *m, sql_table *t, sql_trigger *tr);
 extern sql_part *mvc_copy_part(mvc *m, sql_table *t, sql_part *pt);
+
+extern sql_rel *sql_processrelation(mvc *m, sql_rel* rel, int value_based_opt);
 
 extern void *sql_error(mvc *sql, int error_code, _In_z_ _Printf_format_string_ char *format, ...)
 	__attribute__((__format__(__printf__, 3, 4)));

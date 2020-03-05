@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #ifndef _GDK_CAND_H_
@@ -74,6 +74,7 @@ gdk_export oid canditer_idx(struct canditer *ci, BUN p);
 gdk_export void canditer_setidx(struct canditer *ci, BUN p);
 gdk_export void canditer_reset(struct canditer *ci);
 gdk_export BUN canditer_search(struct canditer *ci, oid o, bool next);
+#define canditer_contains(ci, o) (canditer_search(ci, o, false) != BUN_NONE)
 gdk_export BAT *canditer_slice(struct canditer *ci, BUN lo, BUN hi);
 gdk_export BAT *canditer_slice2(struct canditer *ci, BUN lo1, BUN hi1, BUN lo2, BUN hi2);
 gdk_export gdk_return BATnegcands( BAT *cands, BAT *odels);

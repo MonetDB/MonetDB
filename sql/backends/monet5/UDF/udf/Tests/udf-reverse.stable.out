@@ -48,9 +48,9 @@ stdout of test 'udf-reverse` in directory 'sql/backends/monet5/UDF/udf` itself:
 % clob # type
 % 108 # length
 function user.s4_0():void;
-    X_2:void := querylog.define("explain select reverse(\\'MonetDB\\');":str, "sequential_pipe":str, 7:int);
-    X_7:str := udf.reverse("MonetDB":str);
-    sql.resultSet(".L2":str, "L2":str, "clob":str, 0:int, 0:int, 4:int, X_7:str);
+    X_2:void := querylog.define("explain select reverse(\\'MonetDB\\');":str, "sequential_pipe":str, 8:int);
+    X_9:str := udf.reverse("MonetDB":str);
+    sql.resultSet(".":str, "%1":str, "clob":str, 0:int, 0:int, 4:int, X_9:str);
 end user.s4_0;
 #inline               actions= 0 time=1 usec 
 #remap                actions= 0 time=0 usec 
@@ -78,8 +78,8 @@ end user.s4_0;
 #garbagecollector     actions= 1 time=5 usec 
 #total                actions=27 time=91 usec 
 #select reverse('MonetDB');
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% %1 # name
 % clob # type
 % 7 # length
 [ "BDtenoM"	]
@@ -107,23 +107,17 @@ end user.s4_0;
 % clob # type
 % 114 # length
 function user.s16_0():void;
-    X_1:void := querylog.define("explain select reverse(x) from udf_reverse;":str, "sequential_pipe":str, 22:int);
-    X_22:bat[:str] := bat.new(nil:str);
-    X_28:bat[:int] := bat.new(nil:int);
-    X_26:bat[:int] := bat.new(nil:int);
-    X_25:bat[:str] := bat.new(nil:str);
-    X_24:bat[:str] := bat.new(nil:str);
+    X_1:void := querylog.define("explain select reverse(x) from udf_reverse;":str, "sequential_pipe":str, 17:int);
+    X_22:bat[:str] := bat.pack("sys.":str);
+    X_23:bat[:str] := bat.pack("%1":str);
+    X_24:bat[:str] := bat.pack("clob":str);
+    X_25:bat[:int] := bat.pack(0:int);
     X_4:int := sql.mvc();
     C_5:bat[:oid] := sql.tid(X_4:int, "sys":str, "udf_reverse":str);
     X_8:bat[:str] := sql.bind(X_4:int, "sys":str, "udf_reverse":str, "x":str, 0:int);
     X_17:bat[:str] := algebra.projection(C_5:bat[:oid], X_8:bat[:str]);
     X_18:bat[:str] := batudf.reverse(X_17:bat[:str]);
-    X_29:bat[:str] := bat.append(X_22:bat[:str], "sys.L1":str);
-    X_31:bat[:str] := bat.append(X_24:bat[:str], "L1":str);
-    X_33:bat[:str] := bat.append(X_25:bat[:str], "clob":str);
-    X_35:bat[:int] := bat.append(X_26:bat[:int], 0:int);
-    X_36:bat[:int] := bat.append(X_28:bat[:int], 0:int);
-    sql.resultSet(X_29:bat[:str], X_31:bat[:str], X_33:bat[:str], X_35:bat[:int], X_36:bat[:int], X_18:bat[:str]);
+    sql.resultSet(X_22:bat[:str], X_23:bat[:str], X_24:bat[:str], X_25:bat[:int], X_25:bat[:int], X_18:bat[:str]);
 end user.s16_0;
 #inline               actions= 0 time=1 usec 
 #remap                actions= 1 time=5 usec 
@@ -149,8 +143,8 @@ end user.s16_0;
 #garbagecollector     actions= 1 time=52 usec 
 #total                actions=23 time=362 usec 
 #select reverse(x) from udf_reverse;
-% sys.L1 # table_name
-% L1 # name
+% sys. # table_name
+% %1 # name
 % clob # type
 % 30 # length
 [ "BDtenoM"	]

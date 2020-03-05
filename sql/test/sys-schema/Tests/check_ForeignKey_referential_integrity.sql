@@ -96,10 +96,12 @@ SELECT * FROM sys.querylog_history WHERE id NOT IN (SELECT id FROM sys.querylog_
 SELECT * FROM sys.querylog_history WHERE owner NOT IN (SELECT name FROM sys.users);
 SELECT * FROM sys.querylog_history WHERE pipe NOT IN (SELECT name FROM sys.optimizers);
 
-SELECT * FROM sys.queue WHERE tag > cast(0 as oid) AND tag NOT IN (SELECT cast(qtag as oid) FROM sys.queue);
-SELECT * FROM sys.queue WHERE "user" NOT IN (SELECT name FROM sys.users);
+SELECT * FROM sys.queue WHERE tag > cast(0 as oid) AND tag NOT IN (SELECT tag FROM sys.queue);
+SELECT * FROM sys.queue WHERE tag > cast(0 as oid) AND tag NOT IN (SELECT cast(tag as oid) FROM sys.queue);
+SELECT * FROM sys.queue WHERE tag NOT IN (SELECT cast(tag as oid) FROM sys.queue);
+SELECT * FROM sys.queue WHERE "username" NOT IN (SELECT name FROM sys.users);
 
-SELECT * FROM sys.sessions WHERE "user" NOT IN (SELECT name FROM sys.users);
+SELECT * FROM sys.sessions WHERE "username" NOT IN (SELECT name FROM sys.users);
 
 SELECT * FROM sys.statistics WHERE column_id NOT IN (SELECT id FROM sys._columns UNION ALL SELECT id FROM tmp._columns);
 SELECT * FROM sys.statistics WHERE type NOT IN (SELECT sqlname FROM sys.types);

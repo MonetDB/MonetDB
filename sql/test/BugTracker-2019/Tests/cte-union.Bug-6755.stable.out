@@ -11,7 +11,7 @@ stdout of test 'cte-union.Bug-6755` in directory 'sql/test/BugTracker-2019` itse
 # Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
 # Found 15.384 GiB available main-memory.
 # Copyright (c) 1993 - July 2008 CWI.
-# Copyright (c) August 2008 - 2019 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008 - 2020 MonetDB B.V., all rights reserved
 # Visit https://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://xps13:38598/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-21682/.s.monetdb.38598
@@ -59,9 +59,8 @@ stdout of test 'cte-union.Bug-6755` in directory 'sql/test/BugTracker-2019` itse
 #SELECT "Carrier", "Hour", SUM("PredictedArrDelay")
 #FROM (SELECT * FROM t1 UNION SELECT * FROM t2) AS t
 #GROUP BY "Carrier", "Hour"
-#ORDER BY "Carrier", "Hour";
-% sys.t,	sys.t,	sys.L25 # table_name
-% Carrier,	Hour,	L25 # name
+% sys.t,	sys.t,	sys.%12 # table_name
+% Carrier,	Hour,	%12 # name
 % char,	int,	decimal # type
 % 2,	1,	20 # length
 #rollback;

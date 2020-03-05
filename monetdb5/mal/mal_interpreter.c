@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -25,7 +25,6 @@ void
 setqptimeout(lng usecs)
 {
 	qptimeout = usecs;
-	(void) qptimeout;
 }
 
 inline
@@ -258,14 +257,12 @@ prepareMALstack(MalBlkPtr mb, int size)
 	ValPtr lhs, rhs;
 
 	stk = newGlobalStack(size);
-	if (!stk) {
+	if (!stk)
 		return NULL;
-	}
-	//memset((char *)stk, 0, stackSize(size)); already set
-	//stk->stksize = size;
 	stk->stktop = mb->vtop;
 	stk->blk = mb;
-
+	stk->workers = 0;
+	stk->memory = 0;
 	initStack(0, res);
 	if(!res) {
 		freeStack(stk);
@@ -297,6 +294,7 @@ str runMAL(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr env)
 	 * enough
 	 */
 	cntxt->lastcmd= time(0);
+	ATOMIC_SET(&cntxt->lastprint, GDKusec());
 	if (env != NULL) {
 		int res = 1;
 		stk = env;
@@ -341,7 +339,7 @@ str runMAL(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr env)
 		garbageCollector(cntxt, mb, stk, env != stk);
 	if (stk && stk != env)
 		freeStack(stk);
-	if (ret == MAL_SUCCEED && cntxt->qtimeout && mb->starttime && GDKusec()- mb->starttime > cntxt->qtimeout)
+	if (ret == MAL_SUCCEED && cntxt->querytimeout && mb->starttime && GDKusec()- mb->starttime > cntxt->querytimeout)
 		throw(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_QRY_TIMEOUT);
 	return ret;
 }
@@ -389,10 +387,7 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug)
 	InstrPtr pci = getInstrPtr(mb, 0);
 
 	cntxt->lastcmd= time(0);
-#ifdef DEBUG_CALLMAL
-	fprintf(stderr, "callMAL\n");
-	fprintInstruction(stderr, mb, 0, pci, LIST_MAL_ALL);
-#endif
+
 	switch (pci->token) {
 	case FUNCTIONsymbol:
 	case FCNcall:
@@ -404,7 +399,7 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug)
 		if (*env == NULL) {
 			stk = prepareMALstack(mb, mb->vsize);
 			if (stk == NULL)
-				throw(MAL, "mal.interpreter", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				throw(MAL, "mal.interpreter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			stk->up = 0;
 			*env = stk;
 		} else {
@@ -414,13 +409,13 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug)
 			stk = *env;
 			initStack(0, res);
 			if(!res)
-				throw(MAL, "mal.interpreter", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				throw(MAL, "mal.interpreter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		assert(stk);
 		for (i = pci->retc; i < pci->argc; i++) {
 			lhs = &stk->stk[pci->argv[i]];
 			if (VALcopy(lhs, argv[i]) == NULL)
-				throw(MAL, "mal.interpreter", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				throw(MAL, "mal.interpreter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			if (lhs->vtype == TYPE_bat)
 				BBPretain(lhs->val.bval);
 		}
@@ -438,7 +433,7 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug)
 	}
 	if (stk) 
 		garbageCollector(cntxt, mb, stk, TRUE);
-	if ( ret == MAL_SUCCEED && cntxt->qtimeout && mb->starttime && GDKusec()- mb->starttime > cntxt->qtimeout)
+	if ( ret == MAL_SUCCEED && cntxt->querytimeout && mb->starttime && GDKusec()- mb->starttime > cntxt->querytimeout)
 		throw(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_QRY_TIMEOUT);
 	return ret;
 }
@@ -480,7 +475,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			if( backup == NULL || garbage == NULL) {
 				GDKfree(backup);
 				GDKfree(garbage);
-				throw(MAL, "mal.interpreter", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				throw(MAL, "mal.interpreter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 		} else {
 			backup = backups;
@@ -493,7 +488,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 		if( backup == NULL || garbage == NULL) {
 			GDKfree(backup);
 			GDKfree(garbage);
-			throw(MAL, "mal.interpreter", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "mal.interpreter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 	} else {
 		backup = backups;
@@ -507,7 +502,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 		runtimeProfileInit(cntxt, mb, stk);
 		runtimeProfileBegin(cntxt, mb, stk, getInstrPtr(mb,0), &runtimeProfileFunction);
 		mb->starttime = GDKusec();
-		if (cntxt->stimeout && mb->starttime - cntxt->session > cntxt->stimeout) {
+		if (cntxt->sessiontimeout && mb->starttime - cntxt->session > cntxt->sessiontimeout) {
 			if ( backup != backups) GDKfree(backup);
 			if ( garbage != garbages) GDKfree(garbage);
 			throw(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_SESSION_TIMEOUT);
@@ -560,11 +555,20 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			lastcheck = runtimeProfile.ticks;
 		}
 
-		// runtimeProfileBegin already sets the time in the instruction
-		if (cntxt->qtimeout && runtimeProfile.ticks - mb->starttime > cntxt->qtimeout) {
-			freeException(ret);	/* in case it's set */
-			ret = createException(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_QRY_TIMEOUT);
-			break;
+		if (qptimeout > 0) {
+			lng t = GDKusec();
+			ATOMIC_BASE_TYPE lp = ATOMIC_GET(&cntxt->lastprint);
+			if ((lng) lp + qptimeout < t) {
+				/* if still the same, replace lastprint with current
+				 * time and print the query */
+				if (ATOMIC_CAS(&cntxt->lastprint, &lp, t)) {
+					const char *q = cntxt->getquery ? cntxt->getquery(cntxt) : NULL;
+					TRC_INFO(MAL_SERVER, "%s: query already running "LLFMT"s: %.200s\n",
+							cntxt->mythread->name,
+							(lng) (time(0) - cntxt->lastcmd),
+							q ? q : "");
+				}
+			}
 		}
 
 		/* The interpreter loop
@@ -756,7 +760,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					} else if (lhs->vtype == TYPE_bat)
 						BBPretain(lhs->val.bval);
 				}
-				if(ret == MAL_SUCCEED) {
+				if (ret == MAL_SUCCEED && ii == pci->argc) {
 					ret = runMALsequence(cntxt, pci->blk, 1, pci->blk->stop, nstk, stk, pci);
 					for (ii = 0; ii < nstk->stktop; ii++)
 						if (ATOMextern(nstk->stk[ii].vtype))
@@ -775,7 +779,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			runtimeProfileExit(cntxt, mb, stk, getInstrPtr(mb,0), &runtimeProfileFunction);
 			if (pcicaller && garbageControl(getInstrPtr(mb, 0)))
 				garbageCollector(cntxt, mb, stk, TRUE);
-			if (cntxt->qtimeout && mb->starttime && GDKusec()- mb->starttime > cntxt->qtimeout){
+			if (cntxt->querytimeout && mb->starttime && GDKusec()- mb->starttime > cntxt->querytimeout){
 				freeException(ret); /* overrule exception */
 				ret= createException(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_QRY_TIMEOUT);
 				break;
@@ -795,6 +799,13 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			} else {
 				ret = createException(MAL,"interpreter", "failed instruction2str");
 			}
+			// runtimeProfileBegin already sets the time in the instruction
+			if (cntxt->querytimeout && mb->starttime && GDKusec()- mb->starttime > cntxt->querytimeout){
+				freeException(ret);	/* in case it's set */
+				ret = createException(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_QRY_TIMEOUT);
+				break;
+			}
+
 			stkpc= mb->stop;
 			continue;
 		}	}
@@ -851,7 +862,6 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 						bat bid = stk->stk[a].val.bval;
 
 						if (garbage[i] >= 0) {
-							PARDEBUG fprintf(stderr, "#GC pc=%d bid=%d %s done\n", stkpc, bid, getVarName(mb, garbage[i]));
 							bid = stk->stk[garbage[i]].val.bval;
 							stk->stk[garbage[i]].val.bval = bat_nil;
 							BBPrelease(bid);
@@ -911,6 +921,8 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 
 			/* unknown exceptions lead to propagation */
 			if (exceptionVar == -1) {
+                if (cntxt->querytimeout && mb->starttime && GDKusec()- mb->starttime > cntxt->querytimeout)
+                    ret= createException(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_QRY_TIMEOUT);
 				stkpc = mb->stop;
 				continue;
 			}
@@ -958,7 +970,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				}
 			}
 			if (stkpc == mb->stop) {
-				if (cntxt->qtimeout && mb->starttime && GDKusec()- mb->starttime > cntxt->qtimeout){
+				if (cntxt->querytimeout && mb->starttime && GDKusec()- mb->starttime > cntxt->querytimeout){
 					ret= createException(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_QRY_TIMEOUT);
 					stkpc = mb->stop;
 				}
@@ -1015,7 +1027,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					stkpc = pci->jump;
 				break;
 			case TYPE_str:
-				if (GDK_STRNIL(v->val.sval))
+				if (strNil(v->val.sval))
 					stkpc = pci->jump;
 				break;
 			default:
@@ -1035,7 +1047,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					stkpc++;
 				break;
 			case TYPE_str:
-				if (!GDK_STRNIL(v->val.sval))
+				if (!strNil(v->val.sval))
 					stkpc = pci->jump;
 				else
 					stkpc++;
@@ -1190,7 +1202,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 		default:
 			stkpc++;
 		}
-		if (cntxt->qtimeout && mb->starttime && GDKusec()- mb->starttime > cntxt->qtimeout){
+		if (cntxt->querytimeout && mb->starttime && GDKusec()- mb->starttime > cntxt->querytimeout){
 			if (ret == MAL_SUCCEED)
 				ret= createException(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_QRY_TIMEOUT);
 			stkpc= mb->stop;
@@ -1215,7 +1227,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					freeException(n);
 					freeException(ret);
 					ret = new;
-				}
+				} else ret = n;
 			}
 		} else {
 			ret = createException(MAL, nme, "Exception not caught");
@@ -1348,11 +1360,9 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 void garbageElement(Client cntxt, ValPtr v)
 {
 	(void) cntxt;
-	if (v->vtype == TYPE_str) {
-		if (v->val.sval) {
-			GDKfree(v->val.sval);
-			v->val.sval = NULL;
-		}
+	if (ATOMstorage(v->vtype) == TYPE_str) {
+		GDKfree(v->val.sval);
+		v->val.sval = NULL;
 		v->len = 0;
 	} else if (v->vtype == TYPE_bat) {
 		/*
@@ -1373,8 +1383,7 @@ void garbageElement(Client cntxt, ValPtr v)
 			return;
 		BBPrelease(bid);
 	} else if (0 < v->vtype && v->vtype < MAXATOMS && ATOMextern(v->vtype)) {
-		if (v->val.pval)
-			GDKfree(v->val.pval);
+		GDKfree(v->val.pval);
 		v->val.pval = 0;
 		v->len = 0;
 	}
@@ -1401,27 +1410,16 @@ void garbageCollector(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int flag)
 	int k;
 	ValPtr v;
 
-#ifdef STACKTRACE
-	if (cntxt) {
-		mnstr_printf(cntxt->fdout, "#--->stack before garbage collector\n");
-		printStack(cntxt->fdout, mb, stk, 0);
-	}
-#endif
 	assert(mb->vtop <= mb->vsize);
+	assert(stk->stktop <= stk->stksize);
 	(void) flag;
-	for (k = 0; k < mb->vtop; k++) {
+	(void)mb;
+	(void)cntxt;
+	for (k = 0; k < stk->stktop; k++) {
 	//	if (isVarCleanup(mb, k) ){
 			garbageElement(cntxt, v = &stk->stk[k]);
 			v->vtype = TYPE_int;
 			v->val.ival = int_nil;
 	//	}
 	}
-#ifdef STACKTRACE
-	if (cntxt) {
-		mnstr_printf(cntxt->fdout, "#-->stack after garbage collector\n");
-		printStack(cntxt->fdout, mb, stk, 0);
-	}
-#else
-	(void)cntxt;
-#endif
 }

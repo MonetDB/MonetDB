@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "capi.h"
@@ -562,8 +562,8 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	// begin the compilation phase
 	// first look up if we have already compiled this function
 	expression_hash = 0;
-	GDK_STRHASH(exprStr, expression_hash);
-	GDK_STRHASH(funcname, funcname_hash);
+	expression_hash = strHash(exprStr);
+	funcname_hash = strHash(funcname);
 	funcname_hash = funcname_hash % FUNCTION_CACHE_SIZE;
 	j = 0;
 	for (i = 0; i < (size_t)pci->argc; i++) {
@@ -1011,7 +1011,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			BATloop(input_bats[index], p, q)
 			{
 				char *t = (char *)BUNtvar(li, p);
-				if (strcmp(t, str_nil) == 0) {
+				if (strNil(t)) {
 					bat_data->data[j] = NULL;
 				} else {
 					if (can_mprotect_varheap) {
@@ -1451,7 +1451,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				for (j = 0; j < count; j++) {
 					const char *ptr = source_base[j];
 					const void *appended_element;
-					if (!ptr || strcmp(ptr, str_nil) == 0) {
+					if (strNil(ptr)) {
 						appended_element = (void *)BATatoms[bat_type].atomNull;
 					} else {
 						if (BATatoms[bat_type].atomFromStr(ptr, &len, &element, false) ==
@@ -1498,7 +1498,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			BATiter li = bat_iterator(b);
 			if (VALinit(&stk->stk[pci->argv[i]], bat_type,
 						BUNtail(li, 0)) == NULL) {
-				msg = createException(MAL, "cudf.eval", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				msg = createException(MAL, "cudf.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 			BBPunfix(b->batCacheid);
 		}

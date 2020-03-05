@@ -29,15 +29,15 @@ stdout of test 'alter_resets_readonly.Bug-3362` in directory 'sql/test/BugTracke
 [ 3	]
 #alter table x set read only;
 #select (access = 1) from sys.tables where name='x';
-% .L40 # table_name
-% L40 # name
+% . # table_name
+% %6 # name
 % boolean # type
 % 5 # length
 [ true	]
 #alter table x add primary key (a);
 #select (access = 1) from sys.tables where name='x';
-% .L40 # table_name
-% L40 # name
+% . # table_name
+% %6 # name
 % boolean # type
 % 5 # length
 [ true	]

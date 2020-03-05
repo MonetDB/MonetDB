@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -36,7 +36,7 @@
 	tpe *databuf; \
 	res = COLnew(0, TYPE_##tpe, sz, TRANSIENT); \
 	if ( res == NULL ) \
-		return createException(MAL, "netcdf.importvar", SQLSTATE(HY001) MAL_MALLOC_FAIL); \
+		return createException(MAL, "netcdf.importvar", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
 	databuf = (tpe *)Tloc(res, 0); \
 	if ( (retval = nc_get_var_##ncdftpe(ncid, varid, databuf)) ) \
 		return createException(MAL, "netcdf.importvar", \
@@ -187,21 +187,21 @@ NCDFARRAYseries(bat *bid, bte start, bte step, int stop, int group, int series)
 
 		bn = COLnew(0, TYPE_bte, cnt, TRANSIENT);
 		if ( bn == NULL)
-			throw(MAL, "ntcdf.loadvar", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "ntcdf.loadvar", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		array_series(sta, ste, sto, bte);
 	} else if (stop <= (int) GDK_sht_max) {
 		sht sta = (sht) start, ste = (sht) step, sto = (sht) stop;
 
 		bn = COLnew(0, TYPE_sht, cnt, TRANSIENT);
 		if ( bn == NULL)
-			throw(MAL, "netcdf.loadvar", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "netcdf.loadvar", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		array_series(sta, ste, sto, sht);
 	} else {
 		int sta = (int) start, ste = (int) step, sto = (int) stop;
 
 		bn = COLnew(0, TYPE_int, cnt, TRANSIENT);
 		if ( bn == NULL)
-			throw(MAL, "netcdf.loadvar", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "netcdf.loadvar", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		array_series(sta, ste, sto, int);
 	}
 
@@ -282,7 +282,7 @@ header: %s", nc_strerror(retval));
 
 	esc_str0 = SQLescapeString(fname);
 	if (!esc_str0) {
-		msg = createException(MAL, "netcdf.attach", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		msg = createException(MAL, "netcdf.attach", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto finish;
 	}
 	snprintf(buf, BUFSIZ, INSFILE, (int)fid, esc_str0);
@@ -295,7 +295,7 @@ header: %s", nc_strerror(retval));
 
 	dims = (char **)GDKzalloc(sizeof(char *) * ndims);
 	if (!dims) {
-		msg = createException(MAL, "netcdf.attach", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		msg = createException(MAL, "netcdf.attach", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto finish;
 	}
 	for (didx = 0; didx < ndims; didx++){
@@ -304,7 +304,7 @@ header: %s", nc_strerror(retval));
 
 		esc_str0 = SQLescapeString(dname);
 		if (!esc_str0) {
-			msg = createException(MAL, "netcdf.attach", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			msg = createException(MAL, "netcdf.attach", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto finish;
 		}
 
@@ -316,7 +316,7 @@ header: %s", nc_strerror(retval));
 
 	    dims[didx] = GDKstrdup(dname);
 		if (!dims[didx]) {
-			msg = createException(MAL, "netcdf.attach", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			msg = createException(MAL, "netcdf.attach", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto finish;
 		}
 	}
@@ -335,7 +335,7 @@ header: %s", nc_strerror(retval));
 
 		esc_str0 = SQLescapeString(vname);
 		if (!esc_str0) {
-			msg = createException(MAL, "netcdf.attach", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			msg = createException(MAL, "netcdf.attach", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto finish;
 		}
 
@@ -369,13 +369,13 @@ header: %s", nc_strerror(retval));
 
 				esc_str0 = SQLescapeString(vname);
 				if (!esc_str0) {
-					msg = createException(MAL, "netcdf.attach", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+					msg = createException(MAL, "netcdf.attach", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					goto finish;
 				}
 				esc_str1 = SQLescapeString(aname);
 				if (!esc_str1) {
 					GDKfree(esc_str0);
-					msg = createException(MAL, "netcdf.attach", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+					msg = createException(MAL, "netcdf.attach", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					goto finish;
 				}
 				switch ( atype ) {
@@ -384,7 +384,7 @@ header: %s", nc_strerror(retval));
 					if (!aval) {
 						GDKfree(esc_str0);
 						GDKfree(esc_str1);
-						msg = createException(MAL, "netcdf.attach", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+						msg = createException(MAL, "netcdf.attach", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 						goto finish;
 					}
 					if ((retval = nc_get_att_text(ncid,vidx,aname,aval)))
@@ -460,7 +460,7 @@ header: %s", nc_strerror(retval));
 
 		esc_str0 = SQLescapeString(aname);
 		if (!esc_str0) {
-			msg = createException(MAL, "netcdf.attach", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			msg = createException(MAL, "netcdf.attach", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto finish;
 		}
 
@@ -469,7 +469,7 @@ header: %s", nc_strerror(retval));
 			aval = (char *) GDKzalloc(alen + 1);
 			if (!aval) {
 				GDKfree(esc_str0);
-				msg = createException(MAL, "netcdf.attach", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				msg = createException(MAL, "netcdf.attach", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto finish;
 			}
 			if ((retval = nc_get_att_text(ncid,NC_GLOBAL,aname,aval))) {
@@ -606,7 +606,7 @@ NCDFimportVarStmt(str *sciqlstmt, str *fname, int *varid)
 
 	*sciqlstmt = GDKstrdup(buf);
 	if(*sciqlstmt == NULL)
-		return createException(MAL, "netcdf.importvar", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		return createException(MAL, "netcdf.importvar", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return msg;
 }
 
@@ -629,7 +629,7 @@ NCDFloadVar(bat **dim, bat *v, int ncid, int varid, nc_type vtype, int vndims, i
 
 	dlen = (size_t *)GDKzalloc(sizeof(size_t) * vndims);
 	if (!dlen)
-		return createException(MAL, "netcdf.attach", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		return createException(MAL, "netcdf.attach", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	for (i = 0; i < vndims; i++){
 		if ((retval = nc_inq_dimlen(ncid, vdims[i], &dlen[i])))
@@ -677,7 +677,7 @@ NCDFloadVar(bat **dim, bat *v, int ncid, int varid, nc_type vtype, int vndims, i
 		GDKfree(dlen);
 		GDKfree(val_rep);
 		GDKfree(grp_rep);
-		throw(MAL, "netcdf.loadvar", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "netcdf.loadvar", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
     	/* compute the repetition factor inside of the series (val_rep) and of series (grp_rep) */
@@ -781,14 +781,14 @@ NCDFimportVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* compose 'create table' statement in the buffer */
 	dname = (char **) GDKzalloc( sizeof(char *) * vndims);
 	if (dname == NULL)
-		throw(MAL, "netcdf.importvar", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "netcdf.importvar", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	for (i = 0; i < vndims; i++) {
 		dname[i] = (char *) GDKzalloc(NC_MAX_NAME + 1);
 		if(!dname[i]) {
 			for (j = 0; j < i; j++)
 				GDKfree(dname[j]);
 			GDKfree(dname);
-			throw(MAL, "netcdf.importvar", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "netcdf.importvar", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 	}
 
@@ -828,7 +828,7 @@ NCDFimportVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	dim_bids = (bat *)GDKmalloc(sizeof(bat) * vndims);
 	if (dim_bids == NULL){
 		GDKfree(dname);
-		throw(MAL, "netcdf.importvar", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "netcdf.importvar", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	msg = NCDFloadVar(&dim_bids, &vbatid, ncid, varid, vtype, vndims, vdims);

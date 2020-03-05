@@ -54,14 +54,14 @@ stdout of test 'BOM-in-string.Bug-3641` in directory 'sql/test/BugTracker-2014` 
 # 09:47:46 >  
 
 #select '  ';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % char # type
 % 2 # length
 [ "  "	]
 #select '  ﻿';
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% single_value # name
 % char # type
 % 3 # length
 [ "  ﻿"	]

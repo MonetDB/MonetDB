@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -57,6 +57,7 @@ main(int argc, char **argv)
 	char *passwd = NULL;
 	char *host = NULL;
 	char *dbname = NULL;
+	DotMonetdb dotfile = {0};
 	bool trace = false;
 	bool describe = false;
 	bool functions = false;
@@ -83,7 +84,12 @@ main(int argc, char **argv)
 		{0, 0, 0, 0}
 	};
 
-	parse_dotmonetdb(&user, &passwd, &dbname, NULL, NULL, NULL, NULL);
+	parse_dotmonetdb(&dotfile);
+        user = dotfile.user;
+        passwd = dotfile.passwd;
+        dbname = dotfile.dbname;
+	host = dotfile.host;
+	port = dotfile.port;
 
 	while ((c = getopt_long(argc, argv, "h:p:d:Dft:NXu:qv?", long_options, NULL)) != -1) {
 		switch (c) {
@@ -159,6 +165,10 @@ main(int argc, char **argv)
 	if (user_set_as_flag)
 		passwd = NULL;
 
+	if(dbname == NULL){
+		printf("msqldump, please specify a database\n");
+		usage(argv[0], -1);
+	}
 	if (user == NULL)
 		user = simple_prompt("user", BUFSIZ, 1, prompt_getlogin());
 	if (passwd == NULL)
@@ -186,7 +196,7 @@ main(int argc, char **argv)
 			fprintf(stderr, "%s", motd);
 	}
 	mapi_trace(mid, trace);
-	mapi_cache_limit(mid, 10000);
+	mapi_cache_limit(mid, -1);
 
 	out = file_wastream(stdout, "stdout");
 	if (out == NULL) {
@@ -204,7 +214,7 @@ main(int argc, char **argv)
 #ifdef HAVE_CTIME_R
 		ctime_r(&t, buf);
 #else
-		strncpy(buf, ctime(&t), sizeof(buf));
+		strcpy_len(buf, ctime(&t), sizeof(buf));
 #endif
 #endif
 		if ((p = strrchr(buf, '\n')) != NULL)
@@ -226,11 +236,15 @@ main(int argc, char **argv)
 		dump_version(mid, out, "-- server:");
 		mnstr_printf(out, "-- %s\n", buf);
 	}
-	if (functions)
+	if (functions) {
+		mnstr_printf(out, "START TRANSACTION;\n");
 		c = dump_functions(mid, out, true, NULL, NULL, NULL);
-	else if (table)
+		mnstr_printf(out, "COMMIT;\n");
+	} else if (table) {
+		mnstr_printf(out, "START TRANSACTION;\n");
 		c = dump_table(mid, NULL, table, out, describe, true, useinserts, false);
-	else
+		mnstr_printf(out, "COMMIT;\n");
+	} else
 		c = dump_database(mid, out, describe, useinserts);
 	mnstr_flush(out);
 

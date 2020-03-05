@@ -31,7 +31,7 @@ stderr of test 'mergepart01` in directory 'sql/test/merge-partitions` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-13251/.s.monetdb.37915
 QUERY = ALTER TABLE testme ADD TABLE subtable1 AS PARTITION FROM 5 TO 10; --error
-ERROR = !ALTER TABLE: table 'sys.subtable1' is already part of the RANGE PARTITION TABLE 'sys.testme'
+ERROR = !ALTER TABLE: table 'sys.subtable1' is already part of RANGE PARTITION TABLE 'sys.testme'
 CODE  = 42S02
 MAPI  = (monetdb) /var/tmp/mtest-13251/.s.monetdb.37915
 QUERY = ALTER TABLE testme ADD TABLE wrongtable AS PARTITION FROM 5 TO 6; --error

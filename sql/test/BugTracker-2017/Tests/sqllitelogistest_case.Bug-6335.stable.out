@@ -28,8 +28,8 @@ stdout of test 'sqllitelogistest_case.Bug-6335` in directory 'sql/test/BugTracke
 #- 38 / + - 64 * - - CASE - - 61 WHEN + - 84 + 83 + + 36 * NULLIF ( - 46, - 21 ) * 21 + - 18 + - 21 THEN + 8 * 45 WHEN
 #+ 40 THEN NULL END * 7 THEN NULL WHEN - 8 THEN SUM ( + 62 ) * 44 WHEN - ( - ( + ( 6 ) ) ) THEN + 91 + + 38 ELSE NULL END
 #END, + 57 ) WHEN - CAST ( NULL AS INTEGER ) THEN ( 46 ) ELSE NULL END * - 77;
-% .L7 # table_name
-% L7 # name
+% . # table_name
+% %10 # name
 % int # type
 % 1 # length
 [ NULL	]

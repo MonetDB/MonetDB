@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -38,7 +38,10 @@ sql_add_arg(mvc *sql, atom *v)
 {
 	atom** new_args;
 	int next_size = sql->argmax;
-	if (sql->argc == next_size) {
+
+	if (sql->argc == (1<<16)-1)
+		sql->caching = 0;
+	if (sql->caching && sql->argc == next_size) {
 		next_size *= 2;
 		new_args = RENEW_ARRAY(atom*,sql->args,next_size);
 		if(new_args) {
@@ -142,7 +145,6 @@ sql_destroy_args(mvc *sql)
 	sql->argc = 0;
 }
 
-
 sql_schema *
 cur_schema(mvc *sql)
 {
@@ -190,11 +192,9 @@ qname_catalog(dlist *qname)
 
 	if (dlist_length(qname) == 3) {
 		return qname->h->data.sval;
-	} 
-
+	}
 	return NULL;
 }
-
 
 int
 set_type_param(mvc *sql, sql_subtype *type, int nr)
@@ -245,6 +245,9 @@ supertype(sql_subtype *super, sql_subtype *r, sql_subtype *i)
 				rdigits = digits2bits(rdigits);
 		}
 	}
+	/* handle OID horror */
+	if (i->type->radix == r->type->radix && i->type->base.id < r->type->base.id && strcmp(i->type->sqlname, "oid") == 0)
+		tpe = i->type->sqlname;
 	if (scale == 0 && (idigits == 0 || rdigits == 0)) {
 		sql_find_subtype(&lsuper, tpe, 0, 0);
 	} else {
@@ -314,7 +317,7 @@ char *symbol2string(mvc *sql, symbol *se, int expression, char **err) /**/
 	switch (se->token) {
 	case SQL_NOP: {
 		dnode *lst = se->data.lval->h;
-		dnode *ops = lst->next->data.lval->h;
+		dnode *ops = lst->next->next->data.lval->h;
 		char *op = qname_fname(lst->data.lval);
 
 		len = snprintf( buf+len, BUFSIZ-len, "%s(", op); 
@@ -334,10 +337,10 @@ char *symbol2string(mvc *sql, symbol *se, int expression, char **err) /**/
 		char *op = qname_fname(lst->data.lval);
 		char *l;
 		char *r;
-		l = symbol2string(sql, lst->next->data.sym, expression, err);
+		l = symbol2string(sql, lst->next->next->data.sym, expression, err);
 		if (l == NULL)
 			return NULL;
-		r = symbol2string(sql, lst->next->next->data.sym, expression, err);
+		r = symbol2string(sql, lst->next->next->next->data.sym, expression, err);
 		if (r == NULL) {
 			_DELETE(l);
 			return NULL;
@@ -354,7 +357,7 @@ char *symbol2string(mvc *sql, symbol *se, int expression, char **err) /**/
 	case SQL_UNOP: {
 		dnode *lst = se->data.lval->h;
 		char *op = qname_fname(lst->data.lval);
-		char *l = symbol2string(sql, lst->next->data.sym, expression, err);
+		char *l = symbol2string(sql, lst->next->next->data.sym, expression, err);
 		if (l == NULL)
 			return NULL;
 		len = snprintf( buf+len, BUFSIZ-len, "%s(%s)", op, l); 

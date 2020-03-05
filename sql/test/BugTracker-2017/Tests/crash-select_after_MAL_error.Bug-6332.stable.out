@@ -60,22 +60,20 @@ stdout of test 'crash-select_after_MAL_error.Bug-6332` in directory 'sql/test/Bu
 # loading sql script: 90_generator.sql
 # loading sql script: 90_generator_hge.sql
 # loading sql script: 99_system.sql
-#WARNING To speedup calc./ a bulk operator implementation is needed
-#    X_24965:bat[:lng] := mal.multiplex("calc":str,"/":str,0:bte,X_24964:bat[:int]);
 
 # 14:22:38 >  
 # 14:22:38 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-11002" "--port=36959"
 # 14:22:38 >  
 
 #CREATE TABLE tab0(col0 INTEGER, col1 INTEGER, col2 INTEGER);
-#SELECT DISTINCT col1 * + + col1 + + col2 * 0 / + - CAST ( + - col0 AS INTEGER ) AS col1 FROM tab0 cor0;
-% sys.L3 # table_name
+#SELECT DISTINCT CAST(col1 * + + col1 + + col2 * 0 / + - CAST ( + - col0 AS INTEGER ) AS BIGINT) AS col1 FROM tab0 cor0;
+% sys. # table_name
 % col1 # name
 % bigint # type
 % 1 # length
 #SELECT ALL + 93 + col0 FROM tab0 AS cor0;
-% sys.L2 # table_name
-% L2 # name
+% sys. # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 #DROP TABLE tab0;

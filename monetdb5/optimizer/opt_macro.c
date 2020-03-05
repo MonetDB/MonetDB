@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -169,8 +169,11 @@ inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 
 		/* copy the instruction and fix variable references */
 		ns[k] = copyInstruction(q);
-		if( ns[k] == NULL)
+		if( ns[k] == NULL){
+			GDKfree(nv);
+			GDKfree(ns);
 			return -1;
+		}
 
 		for (n = 0; n < q->argc; n++)
 			getArg(ns[k], n) = nv[getArg(q, n)];
@@ -258,7 +261,7 @@ MACROprocessor(Client cntxt, MalBlkPtr mb, Symbol t)
 			last = i;
 			i = inlineMALblock(mb, i, t->def);
 			if( i < 0)
-				throw(MAL, "optimizer.MACROoptimizer", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				throw(MAL, "optimizer.MACROoptimizer", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				
 			cnt++;
 			if (cnt > MAXEXPANSION)
@@ -311,8 +314,11 @@ replaceMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 
 	p = getInstrPtr(mb, pc);
 	q = copyInstruction(getInstrPtr(mc, 0));	/* the signature */
-	if( q == NULL)
+	if( q == NULL){
+		GDKfree(cvar);
+		GDKfree(mvar);
 		return -1;
+	}
 	q->token = ASSIGNsymbol;
 	mb->stmt[pc] = q;
 
@@ -370,13 +376,16 @@ ORCAMprocessor(Client cntxt, MalBlkPtr mb, Symbol t)
 			msg = MACROvalidate(mc);
 			if (msg == MAL_SUCCEED){
 				if( replaceMALblock(mb, i, mc) < 0)
-					throw(MAL,"orcam", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+					throw(MAL,"orcam", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			} else
 				break;
 		}
-	chkTypes(cntxt->usermodule, mb, FALSE);
-	chkFlow(mb);
-	chkDeclarations(mb);
+	if (!msg)
+		msg = chkTypes(cntxt->usermodule, mb, FALSE);
+	if (!msg)
+		msg = chkFlow(mb);
+	if (!msg)
+		msg = chkDeclarations(mb);
 	return msg;
 }
 
@@ -422,10 +431,6 @@ OPTmacroImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				}
 			}
 	}
-    if( OPTdebug &  OPTmacros){
-        fprintf(stderr, "#MACRO optimizer exit\n");
-        fprintFunction(stderr, mb, 0,  LIST_MAL_ALL);
-    }
 	return MAL_SUCCEED;
 }
 /*
@@ -473,16 +478,12 @@ OPTorcamImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				}
 			}
 	}
-    if( OPTdebug &  OPTmacros){
-        fprintf(stderr, "#MACRO optimizer exit\n");
-        fprintFunction(stderr, mb, 0,  LIST_MAL_ALL);
-    }
 	return msg;
 }
 
 str OPTmacro(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	Symbol t;
-	str msg,mod,fcn;
+	str msg = MAL_SUCCEED, mod, fcn;
 	lng clk= GDKusec();
 	char buf[256];
 	lng usec = GDKusec();
@@ -513,9 +514,9 @@ str OPTmacro(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	}
 
     /* Defense line against incorrect plans */
-	chkTypes(cntxt->usermodule, mb, FALSE);
-	chkFlow(mb);
-	chkDeclarations(mb);
+	msg = chkTypes(cntxt->usermodule, mb, FALSE);
+	if( msg == MAL_SUCCEED) msg = chkFlow(mb);
+	if( msg == MAL_SUCCEED) msg = chkDeclarations(mb);
 	usec += GDKusec() - clk;
 	/* keep all actions taken as a post block comment */
 	snprintf(buf,256,"%-20s actions= 1 time=" LLFMT " usec","macro",usec);
@@ -523,10 +524,6 @@ str OPTmacro(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	addtoMalBlkHistory(mb);
 	if (mb->errors)
 		throw(MAL, "optimizer.macro", SQLSTATE(42000) PROGRAM_GENERAL);
-    if( OPTdebug &  OPTmacros){
-        fprintf(stderr, "#MACRO optimizer exit\n");
-        fprintFunction(stderr, mb, 0,  LIST_MAL_ALL);
-    }
 	return msg;
 }
 
@@ -559,9 +556,9 @@ str OPTorcam(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		msg= OPTorcamImplementation(cntxt,mb,stk,p);
 	if( msg) 
 		return msg;
-	chkTypes(cntxt->usermodule, mb, FALSE);
-	chkFlow(mb);
-	chkDeclarations(mb);
+	msg = chkTypes(cntxt->usermodule, mb, FALSE);
+	if( msg == MAL_SUCCEED) msg = chkFlow(mb);
+	if( msg == MAL_SUCCEED) msg = chkDeclarations(mb);
 	usec += GDKusec() - clk;
 	/* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;
@@ -570,9 +567,5 @@ str OPTorcam(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	addtoMalBlkHistory(mb);
 	if (mb->errors)
 		throw(MAL, "optimizer.orcam", SQLSTATE(42000) PROGRAM_GENERAL);
-    if( OPTdebug &  OPTmacros){
-        fprintf(stderr, "#MACRO optimizer exit\n");
-        fprintFunction(stderr, mb, 0,  LIST_MAL_ALL);
-    }
 	return msg;
 }

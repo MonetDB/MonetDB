@@ -23,8 +23,8 @@ stdout of test 'sqlitelogictest-complex-case.Bug-6552` in directory 'sql/test/Bu
 # 09:53:34 >  
 
 #SELECT CASE WHEN + - 44 <> 44 * - - 17 + 30 AND NOT NULL IS NOT NULL THEN COUNT ( * ) WHEN NULL NOT IN ( COUNT ( DISTINCT + 86 ) * - COUNT ( * ) ) THEN + 53 ELSE ( 66 ) * - CAST ( NULL AS INTEGER ) + 10 END;
-% .L6 # table_name
-% L6 # name
+% . # table_name
+% %4 # name
 % bigint # type
 % 1 # length
 [ 1	]

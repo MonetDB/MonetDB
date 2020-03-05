@@ -28,7 +28,7 @@ stdout of test 'xml` in directory 'sql/test/sql_xml` itself:
 
 #select c.CustId, c.Name as CustName 
 #from customers c;
-% sys.c,	sys.L3 # table_name
+% sys.c,	sys. # table_name
 % custid,	custname # name
 % int,	varchar # type
 % 1,	18 # length
@@ -42,8 +42,8 @@ stdout of test 'xml` in directory 'sql/test/sql_xml` itself:
 #       	xmlelement(name "CustName", c.Name),
 #        xmlelement(name "City", c.City))
 #from customers c;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% %1 # name
 % xml # type
 % 98 # length
 [ <Customer><CustId>1</CustId><CustName>WoodWorks</CustName><City>Baltimore</City></Customer>	]
@@ -54,8 +54,8 @@ stdout of test 'xml` in directory 'sql/test/sql_xml` itself:
 #select xmlelement(name "Customer",
 #	xmlforest(c.CustId, c.Name AS CustName, c.City))
 #from customers c;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% %1 # name
 % xml # type
 % 98 # length
 [ <Customer><custid>1</custid><custname>WoodWorks</custname><city>Baltimore</city></Customer>	]
@@ -76,8 +76,8 @@ stdout of test 'xml` in directory 'sql/test/sql_xml` itself:
 #from Customers c, Projects p
 #where c.CustId = p.CustId
 #order by c.CustId, p.ProjId;
-% .L2 # table_name
-% L2 # name
+% .%2 # table_name
+% %2 # name
 % xml # type
 % 128 # length
 [ <CustomerProj><custid>1</custid><custname>WoodWorks</custname><projid>1</projid><projname>Medusa</projname></CustomerProj>	]
@@ -90,8 +90,8 @@ stdout of test 'xml` in directory 'sql/test/sql_xml` itself:
 #from Customers c, Projects p
 #where c.CustId = p.CustId
 #order by c.CustId, p.ProjId;
-% .L2 # table_name
-% L2 # name
+% .%2 # table_name
+% %2 # name
 % xml # type
 % 127 # length
 [ <project id = "1"><custid>1</custid><custname>WoodWorks</custname><projid>1</projid><projname>Medusa</projname></project>	]
@@ -110,7 +110,7 @@ stdout of test 'xml` in directory 'sql/test/sql_xml` itself:
 #       where p.CustId = c.CustId) )) as "customer_projects"
 #from Customers c
 #order by c.CustId;
-% .L5 # table_name
+% . # table_name
 % customer_projects # name
 % xml # type
 % 196 # length
@@ -124,8 +124,8 @@ stdout of test 'xml` in directory 'sql/test/sql_xml` itself:
 #  xmlattributes(c.CustId as "id"), 
 #  xmlcomment('simple comment test'))
 #from Customers c;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% %1 # name
 % xml # type
 % 57 # length
 [ <Customer id = "1"><!--simple comment test--></Customer>	]

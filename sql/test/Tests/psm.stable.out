@@ -51,20 +51,20 @@ stdout of test 'psm` in directory 'sql/test` itself:
 #	return v;
 #end;
 #select my_abs(-1);
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% %1 # name
 % int # type
 % 1 # length
 [ 1	]
 #select my_abs(1);
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% %1 # name
 % int # type
 % 1 # length
 [ 1	]
 #select my_abs1(1);
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% %1 # name
 % int # type
 % 1 # length
 [ 1	]
@@ -76,8 +76,8 @@ stdout of test 'psm` in directory 'sql/test` itself:
 #	return v;
 #end;
 #select my_while(105);
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% %1 # name
 % int # type
 % 2 # length
 [ -5	]
@@ -88,8 +88,8 @@ stdout of test 'psm` in directory 'sql/test` itself:
 #	return x;
 #end;
 #select my_declare(105);
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% %1 # name
 % int # type
 % 3 # length
 [ 105	]
@@ -101,8 +101,8 @@ stdout of test 'psm` in directory 'sql/test` itself:
 #	return x;
 #end;
 #select my_complex_declare(1);
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% %1 # name
 % int # type
 % 1 # length
 [ 1	]
@@ -115,20 +115,20 @@ stdout of test 'psm` in directory 'sql/test` itself:
 #	end case;
 #end;
 #select my_case(1);
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% %1 # name
 % int # type
 % 3 # length
 [ 100	]
 #select my_case(2);
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% %1 # name
 % int # type
 % 3 # length
 [ 200	]
 #select my_case(3);
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% %1 # name
 % int # type
 % 2 # length
 [ -1	]
@@ -141,20 +141,20 @@ stdout of test 'psm` in directory 'sql/test` itself:
 #	end case;
 #end;
 #select my_searchcase(1);
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% %1 # name
 % int # type
 % 3 # length
 [ 100	]
 #select my_searchcase(2);
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% %1 # name
 % int # type
 % 3 # length
 [ 200	]
 #select my_searchcase(3);
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% %1 # name
 % int # type
 % 2 # length
 [ -1	]

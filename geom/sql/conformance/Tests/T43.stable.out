@@ -24,8 +24,8 @@ stdout of test 'T43` in directory 'geom/sql/conformance` itself:
 # 15:15:53 >  
 
 #SELECT ST_Intersects(road_segments.centerline, divided_routes.centerlines) FROM road_segments, divided_routes WHERE road_segments.fid = 102 AND divided_routes.name = 'Route 75';
-% sys.L1 # table_name
-% L1 # name
+% sys.%1 # table_name
+% %1 # name
 % boolean # type
 % 5 # length
 [ true	]

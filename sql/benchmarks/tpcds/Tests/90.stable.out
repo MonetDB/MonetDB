@@ -11,7 +11,7 @@ stdout of test '90` in directory 'sql/benchmarks/tpcds` itself:
 # Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
 # Found 62.694 GiB available main-memory.
 # Copyright (c) 1993 - July 2008 CWI.
-# Copyright (c) August 2008 - 2019 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008 - 2020 MonetDB B.V., all rights reserved
 # Visit https://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://methuselah.da.cwi.nl:30709/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-16393/.s.monetdb.30709
@@ -35,7 +35,9 @@ stdout of test '90` in directory 'sql/benchmarks/tpcds` itself:
 #     AND ws_web_page_sk = web_page.wp_web_page_sk
 #     AND time_dim.t_hour BETWEEN 8 AND 8+1
 #     AND household_demographics.hd_dep_count = 6
-% .L14 # table_name
+#     AND web_page.wp_char_count BETWEEN 5000 AND 5200) AT,
+#  (SELECT count(*) pmc
+% . # table_name
 % am_pm_ratio # name
 % decimal # type
 % 20 # length

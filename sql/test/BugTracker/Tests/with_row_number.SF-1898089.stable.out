@@ -24,7 +24,7 @@ stdout of test 'with_row_number.SF-1898089` in directory 'sql/test/BugTracker` i
 
 [ 32605	]
 #SELECT COUNT(*) AS cnt from tradeDate;
-% .L4 # table_name
+% . # table_name
 % cnt # name
 % bigint # type
 % 5 # length

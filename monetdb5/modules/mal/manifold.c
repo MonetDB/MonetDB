@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -13,8 +13,6 @@
 #include "manifold.h"
 #include "mal_resolve.h"
 #include "mal_builder.h"
-
-//#define _DEBUG_MANIFOLD_
 
 /* The default iterator over known scalar commands.
  * It can be less efficient then the vector based implementations,
@@ -109,7 +107,8 @@ typedef struct{
 				msg = (*mut->pci->fcn)(&y, __VA_ARGS__);				\
 				if (msg)												\
 					break;												\
-				bunfastapp(mut->args[0].b, (void*) y);					\
+				if (bunfastapp(mut->args[0].b, (void*) y) != GDK_SUCCEED) \
+					goto bunins_failed;									\
 				GDKfree(y); y = NULL;									\
 				if (++oo == olimit)										\
 					break;												\
@@ -153,7 +152,7 @@ MANIFOLDjob(MULTItask *mut)
 
 	args = (char**) GDKzalloc(sizeof(char*) * mut->pci->argc);
 	if( args == NULL)
-		throw(MAL,"mal.manifold", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL,"mal.manifold", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	
 	// the mod.fcn arguments are ignored from the call
 	for( i = mut->pci->retc+2; i< mut->pci->argc; i++) {
@@ -172,9 +171,8 @@ MANIFOLDjob(MULTItask *mut)
 		}
 	}
 
-#ifdef _DEBUG_MANIFOLD_
-	fprintf(stderr,mut->cntxt->fdout,"#MANIFOLDjob fvar %d lvar %d type %d\n",mut->fvar,mut->lvar, ATOMstorage(mut->args[mut->fvar].b->ttype));
-#endif
+	/* TRC_DEBUG(MAL_SERVER, "fvar %d lvar %d type %d\n", mut->fvar,mut->lvar, ATOMstorage(mut->args[mut->fvar].b->ttype));*/
+
 	// use limited argument list expansion.
 	switch(mut->pci->argc){
 	case 4: Manifoldbody(args[3]); break;
@@ -230,13 +228,13 @@ MANIFOLDtypecheck(Client cntxt, MalBlkPtr mb, InstrPtr pci, int checkprops){
 		setVarUDFtype(nmb,k);
 	}
 
-#ifdef _DEBUG_MANIFOLD_
-	fprintf(stderr,"#MANIFOLD operation\n");
-	fprintInstruction(stderr,mb,0,pci,LIST_MAL_ALL);
-	fprintInstruction(stderr,nmb,0,q,LIST_MAL_ALL);
-#endif
+/*
+	TRC_DEBUG(MAL_SERVER, "Manifold operation\n");
+	traceInstruction(MAL_SERVER, mb, 0, pci, LIST_MAL_ALL);
+	traceInstruction(MAL_SERVER, nmb, 0, q, LIST_MAL_ALL);
+*/
 	// Localize the underlying scalar operator
-	typeChecker(cntxt->usermodule, nmb, q, TRUE);
+	typeChecker(cntxt->usermodule, nmb, q, getPC(nmb, q), TRUE);
 	if (nmb->errors || q->fcn == NULL || q->token != CMDcall ||
 		(checkprops && q->blk && q->blk->unsafeProp) )
 		fcn = NULL;
@@ -246,10 +244,12 @@ MANIFOLDtypecheck(Client cntxt, MalBlkPtr mb, InstrPtr pci, int checkprops){
 		if ( !isVarFixed(mb, getArg(pci,0)))
 			setVarType( mb, getArg(pci,0), newBatType(getArgType(nmb,q,0)) );
 	}
-#ifdef _DEBUG_MANIFOLD_
-	fprintf(stderr,"success? %s\n",(fcn == NULL? "no":"yes"));
-	fprintInstruction(stderr,nmb,0,q,LIST_MAL_ALL);
-#endif
+
+/*
+	TRC_DEBUG(MAL_SERVER, "Success? %s\n", (fcn == NULL? "no":"yes"));
+	traceInstruction(MAL_SERVER, nmb, 0, q, LIST_MAL_ALL);
+*/
+
 	freeMalBlk(nmb);
 	return fcn;
 }
@@ -273,7 +273,7 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 
 	mat = (MULTIarg *) GDKzalloc(sizeof(MULTIarg) * pci->argc);
 	if( mat == NULL)
-		throw(MAL, "mal.manifold", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "mal.manifold", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	
 	// mr-job structure preparation
 	mut.fvar = mut.lvar = 0;
@@ -288,7 +288,7 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		if ( isaBatType(getArgType(mb,pci,i)) ){
 			mat[i].b = BATdescriptor( *getArgReference_bat(stk,pci,i));
 			if ( mat[i].b == NULL){
-				msg = createException(MAL,"mal.manifold", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				msg = createException(MAL,"mal.manifold", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto wrapup;
 			}
 			mat[i].type = tpe = getBatType(getArgType(mb,pci,i));
@@ -330,7 +330,7 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	// prepare result variable
 	mat[0].b =COLnew(mat[mut.fvar].b->hseqbase, getBatType(getArgType(mb,pci,0)), cnt, TRANSIENT);
 	if ( mat[0].b == NULL){
-		msg= createException(MAL,"mal.manifold", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		msg= createException(MAL,"mal.manifold", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto wrapup;
 	}
 	mat[0].b->tnonil=false;
@@ -342,7 +342,7 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 
 	mut.pci = copyInstruction(pci);
 	if ( mut.pci == NULL){
-		msg= createException(MAL,"mal.manifold", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		msg= createException(MAL,"mal.manifold", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto wrapup;
 	}
 	mut.pci->fcn = fcn;
@@ -370,7 +370,7 @@ MANIFOLDremapMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
     (void) mb;
     (void) cntxt;
-    throw(MAL, "opt.remap", "Function '%s.%s' not defined",
+    throw(MAL, "mal.multiplex", "Function '%s.%s' not defined",
 		  *getArgReference_str(stk, p, p->retc),
 		  *getArgReference_str(stk, p, p->retc + 1));
 }

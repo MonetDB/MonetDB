@@ -11,7 +11,7 @@ stdout of test 'scalar` in directory 'sql/test/subquery` itself:
 # Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
 # Found 15.385 GiB available main-memory.
 # Copyright (c) 1993 - July 2008 CWI.
-# Copyright (c) August 2008 - 2019 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008 - 2020 MonetDB B.V., all rights reserved
 # Visit https://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://xps13:32061/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-29985/.s.monetdb.32061
@@ -63,38 +63,38 @@ stdout of test 'scalar` in directory 'sql/test/subquery` itself:
 # 22:16:07 >  
 
 #SELECT 1+(SELECT 1); -- 2
-% .L2 # table_name
-% L2 # name
+% .%3 # table_name
+% %3 # name
 % tinyint # type
 % 1 # length
 [ 2	]
 #SELECT 1=(SELECT 1); -- true
-% .L5 # table_name
-% L5 # name
+% .%3 # table_name
+% %3 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT 1<>(SELECT 1); -- false
-% .L5 # table_name
-% L5 # name
+% .%3 # table_name
+% %3 # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT 1=(SELECT NULL); -- NULL
-% .L5 # table_name
-% L5 # name
+% .%3 # table_name
+% %3 # name
 % boolean # type
 % 5 # length
 [ NULL	]
 #SELECT NULL=(SELECT 1); -- NULL
-% .L5 # table_name
-% L5 # name
+% .%3 # table_name
+% %3 # name
 % boolean # type
 % 5 # length
 [ NULL	]
 #SELECT EXISTS(SELECT 1); -- true
-% .L2 # table_name
-% L2 # name
+% .%2 # table_name
+% %2 # name
 % boolean # type
 % 5 # length
 [ true	]
@@ -102,8 +102,8 @@ stdout of test 'scalar` in directory 'sql/test/subquery` itself:
 #INSERT INTO integers VALUES (1), (2), (3), (NULL);
 [ 4	]
 #SELECT EXISTS(SELECT 1) FROM integers; -- true, true, true, true
-% .L2 # table_name
-% L2 # name
+% .%2 # table_name
+% %2 # name
 % boolean # type
 % 5 # length
 [ true	]
@@ -111,39 +111,39 @@ stdout of test 'scalar` in directory 'sql/test/subquery` itself:
 [ true	]
 [ true	]
 #SELECT EXISTS(SELECT * FROM integers); -- true
-% .L4 # table_name
-% L4 # name
+% .%3 # table_name
+% %3 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT EXISTS(SELECT * FROM integers WHERE i IS NULL); -- true
-% .L4 # table_name
-% L4 # name
+% .%3 # table_name
+% %3 # name
 % boolean # type
 % 5 # length
 [ true	]
 #DROP TABLE integers;
 #SELECT 1 IN (SELECT 1); -- true
-% .L11 # table_name
-% L11 # name
+% .%12 # table_name
+% %12 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT NULL IN (SELECT 1); -- NULL
-% .L11 # table_name
-% L11 # name
+% .%12 # table_name
+% %12 # name
 % boolean # type
 % 5 # length
 [ NULL	]
 #SELECT 1 IN (SELECT NULL); -- NULL
-% .L11 # table_name
-% L11 # name
+% .%12 # table_name
+% %12 # name
 % boolean # type
 % 5 # length
 [ NULL	]
 #SELECT 1 IN (SELECT 2); -- false
-% .L11 # table_name
-% L11 # name
+% .%12 # table_name
+% %12 # name
 % boolean # type
 % 5 # length
 [ false	]
@@ -151,20 +151,20 @@ stdout of test 'scalar` in directory 'sql/test/subquery` itself:
 #INSERT INTO integers VALUES (1), (2), (3);
 [ 3	]
 #SELECT 4 IN (SELECT * FROM integers); -- false
-% .L14 # table_name
-% L14 # name
+% .%13 # table_name
+% %13 # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT 1 IN (SELECT * FROM integers); -- true
-% .L14 # table_name
-% L14 # name
+% .%13 # table_name
+% %13 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT 1 IN (SELECT * FROM integers) FROM integers; -- true, true, true
-% .L13 # table_name
-% L13 # name
+% .%12 # table_name
+% %12 # name
 % boolean # type
 % 5 # length
 [ true	]
@@ -173,14 +173,14 @@ stdout of test 'scalar` in directory 'sql/test/subquery` itself:
 #INSERT INTO integers VALUES (NULL); 
 [ 1	]
 #SELECT 4 IN (SELECT * FROM integers); -- NULL
-% .L14 # table_name
-% L14 # name
+% .%13 # table_name
+% %13 # name
 % boolean # type
 % 5 # length
 [ NULL	]
 #SELECT 1 IN (SELECT * FROM integers); -- true
-% .L14 # table_name
-% L14 # name
+% .%13 # table_name
+% %13 # name
 % boolean # type
 % 5 # length
 [ true	]

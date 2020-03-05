@@ -358,21 +358,31 @@ stdout of test 'check_ForeignKey_referential_integrity` in directory 'sql/test/s
 % id,	owner,	defined,	query,	pipe,	plan,	mal,	optimize,	start,	stop,	arguments,	tuples,	run,	ship,	cpu,	io # name
 % oid,	clob,	timestamp,	clob,	clob,	clob,	int,	bigint,	timestamp,	timestamp,	clob,	bigint,	bigint,	bigint,	int,	int # type
 % 3,	0,	26,	0,	0,	0,	1,	1,	26,	26,	0,	1,	1,	1,	1,	1 # length
-#SELECT * FROM sys.queue WHERE tag > cast(0 as oid) AND tag NOT IN (SELECT cast(qtag as oid) FROM sys.queue);
-% .queue,	.queue,	.queue,	.queue,	.queue,	.queue,	.queue,	.queue # table_name
-% qtag,	user,	started,	estimate,	progress,	status,	tag,	query # name
-% bigint,	clob,	timestamp,	timestamp,	int,	clob,	oid,	clob # type
-% 1,	0,	26,	26,	1,	0,	3,	0 # length
+#SELECT * FROM sys.queue WHERE tag > cast(0 as oid) AND tag NOT IN (SELECT tag FROM sys.queue);
+% .queue,	.queue,	.queue,	.queue,	.queue,	.queue,	.queue,	.queue,	.queue # table_name
+% tag,	sessionid,	username,	started,	status,	query,	progress,	workers,	memory # name
+% bigint,	int,	clob,	timestamp,	clob,	clob,	int,	int,	int # type
+% 1,	1,	0,	26,	0,	0,	1,	1,	1 # length
+#SELECT * FROM sys.queue WHERE tag > cast(0 as oid) AND tag NOT IN (SELECT cast(tag as oid) FROM sys.queue);
+% .queue,	.queue,	.queue,	.queue,	.queue,	.queue,	.queue,	.queue,	.queue # table_name
+% tag,	sessionid,	username,	started,	status,	query,	progress,	workers,	memory # name
+% bigint,	int,	clob,	timestamp,	clob,	clob,	int,	int,	int # type
+% 1,	1,	0,	26,	0,	0,	1,	1,	1 # length
+#SELECT * FROM sys.queue WHERE tag NOT IN (SELECT cast(tag as oid) FROM sys.queue); 
+% .queue,	.queue,	.queue,	.queue,	.queue,	.queue,	.queue,	.queue,	.queue # table_name
+% tag,	sessionid,	username,	started,	status,	query,	progress,	workers,	memory # name
+% bigint,	int,	clob,	timestamp,	clob,	clob,	int,	int,	int # type
+% 1,	1,	0,	26,	0,	0,	1,	1,	1 # length
 #SELECT * FROM sys.queue WHERE "user" NOT IN (SELECT name FROM sys.users);
-% .queue,	.queue,	.queue,	.queue,	.queue,	.queue,	.queue,	.queue # table_name
-% qtag,	user,	started,	estimate,	progress,	status,	tag,	query # name
-% bigint,	clob,	timestamp,	timestamp,	int,	clob,	oid,	clob # type
-% 1,	0,	26,	26,	1,	0,	3,	0 # length
+% .queue,	.queue,	.queue,	.queue,	.queue,	.queue,	.queue,	.queue,	.queue # table_name
+% tag,	sessionid,	username,	started,	status,	query,	progress,	workers,	memory # name
+% bigint,	int,	clob,	timestamp,	clob,	clob,	int,	int,	int # type
+% 1,	1,	0,	26,	0,	0,	1,	1,	1 # length
 #SELECT * FROM sys.sessions WHERE "user" NOT IN (SELECT name FROM sys.users);
-% .sessions,	.sessions,	.sessions,	.sessions,	.sessions,	.sessions # table_name
-% user,	login,	sessiontimeout,	lastcommand,	querytimeout,	active # name
-% clob,	timestamp,	bigint,	timestamp,	bigint,	boolean # type
-% 0,	26,	1,	26,	1,	5 # length
+% .sessions,	.sessions,	.sessions,	.sessions,	.sessions,	.sessions,	.sessions,	.sessions,	.sessions # table_name
+% sessionid,	username,	login,	idle,	optimizer,	sessiontimeout,	querytimeout,	workerlimit,	memorylimit # name
+% int,	clob,	timestamp,	timestamp,	clob,	int,	int,	int,	int # type
+% 1,	0,	26,	26,	0,	1,	1,	1,	1 # length
 #SELECT * FROM sys.statistics WHERE column_id NOT IN (SELECT id FROM sys._columns UNION ALL SELECT id FROM tmp._columns);
 % sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics # table_name
 % column_id,	type,	width,	stamp,	sample,	count,	unique,	nils,	minval,	maxval,	sorted,	revsorted # name
@@ -384,27 +394,27 @@ stdout of test 'check_ForeignKey_referential_integrity` in directory 'sql/test/s
 % int,	clob,	int,	timestamp,	bigint,	bigint,	bigint,	bigint,	clob,	clob,	boolean,	boolean # type
 % 1,	0,	1,	26,	1,	1,	1,	1,	0,	0,	5,	5 # length
 #SELECT * FROM sys.storage() WHERE schema NOT IN (SELECT name FROM sys.schemas);
-% .L1,	.L1,	.L1,	.L1,	.L1,	.L1,	.L1,	.L1,	.L1,	.L1,	.L1,	.L1,	.L1,	.L1,	.L1,	.L1,	.L1 # table_name
+% .%1,	.%1,	.%1,	.%1,	.%1,	.%1,	.%1,	.%1,	.%1,	.%1,	.%1,	.%1,	.%1,	.%1,	.%1,	.%1,	.%1 # table_name
 % schema,	table,	column,	type,	mode,	location,	count,	typewidth,	columnsize,	heapsize,	hashes,	phash,	imprints,	sorted,	revsorted,	unique,	orderidx # name
 % varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	bigint,	int,	bigint,	bigint,	bigint,	boolean,	bigint,	boolean,	boolean,	boolean,	bigint # type
 % 0,	0,	0,	0,	0,	0,	1,	1,	1,	1,	1,	5,	1,	5,	5,	5,	1 # length
 #SELECT * FROM sys.storage() WHERE table NOT IN (SELECT name FROM sys._tables UNION ALL SELECT name FROM tmp._tables);
-% .L1,	.L1,	.L1,	.L1,	.L1,	.L1,	.L1,	.L1,	.L1,	.L1,	.L1,	.L1,	.L1,	.L1,	.L1,	.L1,	.L1 # table_name
+% .%1,	.%1,	.%1,	.%1,	.%1,	.%1,	.%1,	.%1,	.%1,	.%1,	.%1,	.%1,	.%1,	.%1,	.%1,	.%1,	.%1 # table_name
 % schema,	table,	column,	type,	mode,	location,	count,	typewidth,	columnsize,	heapsize,	hashes,	phash,	imprints,	sorted,	revsorted,	unique,	orderidx # name
 % varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	bigint,	int,	bigint,	bigint,	bigint,	boolean,	bigint,	boolean,	boolean,	boolean,	bigint # type
 % 0,	0,	0,	0,	0,	0,	1,	1,	1,	1,	1,	5,	1,	5,	5,	5,	1 # length
 #SELECT * FROM sys.storage() WHERE (schema, table) NOT IN (SELECT sch.name, tbl.name FROM sys.schemas AS sch JOIN sys.tables AS tbl ON sch.id = tbl.schema_id);
-% .L1,	.L1,	.L1,	.L1,	.L1,	.L1,	.L1,	.L1,	.L1,	.L1,	.L1,	.L1,	.L1,	.L1,	.L1,	.L1,	.L1 # table_name
+% .%1,	.%1,	.%1,	.%1,	.%1,	.%1,	.%1,	.%1,	.%1,	.%1,	.%1,	.%1,	.%1,	.%1,	.%1,	.%1,	.%1 # table_name
 % schema,	table,	column,	type,	mode,	location,	count,	typewidth,	columnsize,	heapsize,	hashes,	phash,	imprints,	sorted,	revsorted,	unique,	orderidx # name
 % varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	bigint,	int,	bigint,	bigint,	bigint,	boolean,	bigint,	boolean,	boolean,	boolean,	bigint # type
 % 0,	0,	0,	0,	0,	0,	1,	1,	1,	1,	1,	5,	1,	5,	5,	5,	1 # length
 #SELECT * FROM sys.storage() WHERE column NOT IN (SELECT name FROM sys._columns UNION ALL SELECT name FROM tmp._columns UNION ALL SELECT name FROM sys.keys UNION ALL SELECT name FROM tmp.keys UNION ALL SELECT name FROM sys.idxs UNION ALL SELECT name FROM tmp.idxs);
-% .L1,	.L1,	.L1,	.L1,	.L1,	.L1,	.L1,	.L1,	.L1,	.L1,	.L1,	.L1,	.L1,	.L1,	.L1,	.L1,	.L1 # table_name
+% .%1,	.%1,	.%1,	.%1,	.%1,	.%1,	.%1,	.%1,	.%1,	.%1,	.%1,	.%1,	.%1,	.%1,	.%1,	.%1,	.%1 # table_name
 % schema,	table,	column,	type,	mode,	location,	count,	typewidth,	columnsize,	heapsize,	hashes,	phash,	imprints,	sorted,	revsorted,	unique,	orderidx # name
 % varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	bigint,	int,	bigint,	bigint,	bigint,	boolean,	bigint,	boolean,	boolean,	boolean,	bigint # type
 % 0,	0,	0,	0,	0,	0,	1,	1,	1,	1,	1,	5,	1,	5,	5,	5,	1 # length
 #SELECT * FROM sys.storage() WHERE type NOT IN (SELECT sqlname FROM sys.types);
-% .L1,	.L1,	.L1,	.L1,	.L1,	.L1,	.L1,	.L1,	.L1,	.L1,	.L1,	.L1,	.L1,	.L1,	.L1,	.L1,	.L1 # table_name
+% .%1,	.%1,	.%1,	.%1,	.%1,	.%1,	.%1,	.%1,	.%1,	.%1,	.%1,	.%1,	.%1,	.%1,	.%1,	.%1,	.%1 # table_name
 % schema,	table,	column,	type,	mode,	location,	count,	typewidth,	columnsize,	heapsize,	hashes,	phash,	imprints,	sorted,	revsorted,	unique,	orderidx # name
 % varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	bigint,	int,	bigint,	bigint,	bigint,	boolean,	bigint,	boolean,	boolean,	boolean,	bigint # type
 % 0,	0,	0,	0,	0,	0,	1,	1,	1,	1,	1,	5,	1,	5,	5,	5,	1 # length

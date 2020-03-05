@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -687,8 +687,10 @@
 #include "stream.h"		/* include before mapi.h */
 #include "stream_socket.h"
 #include "mapi.h"
+#include "mapi_prompt.h"
 #include "mcrypt.h"
 #include "matomic.h"
+#include "mstring.h"
 
 #ifdef HAVE_UNISTD_H
 # include <unistd.h>
@@ -734,8 +736,55 @@
 
 #define MAPIBLKSIZE	256	/* minimum buffer shipped */
 
+#define MAPI_AUTO	0	/* automatic type detection */
+#define MAPI_TINY	1
+#define MAPI_UTINY	2
+#define MAPI_SHORT	3
+#define MAPI_USHORT	4
+#define MAPI_INT	5
+#define MAPI_UINT	6
+#define MAPI_LONG	7
+#define MAPI_ULONG	8
+#define MAPI_LONGLONG	9
+#define MAPI_ULONGLONG	10
+#define MAPI_CHAR	11
+#define MAPI_VARCHAR	12
+#define MAPI_FLOAT	13
+#define MAPI_DOUBLE	14
+#define MAPI_DATE	15
+#define MAPI_TIME	16
+#define MAPI_DATETIME	17
+#define MAPI_NUMERIC	18
+
+#define PLACEHOLDER	'?'
+
 /* number of elements in an array */
 #define NELEM(arr)	(sizeof(arr) / sizeof(arr[0]))
+
+/* three structures used for communicating date/time information */
+/* these structs are deliberately compatible with the ODBC versions
+   SQL_DATE_STRUCT, SQL_TIME_STRUCT, and SQL_TIMESTAMP_STRUCT */
+typedef struct {		/* used by MAPI_DATE */
+	short year;
+	unsigned short month;
+	unsigned short day;
+} MapiDate;
+
+typedef struct {		/* used by MAPI_TIME */
+	unsigned short hour;
+	unsigned short minute;
+	unsigned short second;
+} MapiTime;
+
+typedef struct {		/* used by MAPI_DATETIME */
+	short year;
+	unsigned short month;
+	unsigned short day;
+	unsigned short hour;
+	unsigned short minute;
+	unsigned short second;
+	unsigned int fraction;	/* in 1000 millionths of a second (10e-9) */
+} MapiDateTime;
 
 /* information about the columns in a result set */
 struct MapiColumn {
@@ -887,10 +936,6 @@ struct MapiStatement {
 #define debugprint(fmt,arg)	printf(fmt,arg)
 #else
 #define debugprint(fmt,arg)	((void) 0)
-#endif
-
-#ifdef HAVE_EMBEDDED
-#define printf(...)	((void)0)
 #endif
 
 /*
@@ -1580,8 +1625,8 @@ add_error(struct MapiResultSet *result, char *error)
 	     (error[4] >= 'A' && error[4] <= 'Z'))) {
 		if (result->errorstr == NULL) {
 			/* remeber SQLSTATE for first error */
-			strncpy(result->sqlstate, error, 5);
-			result->sqlstate[5] = 0;
+			strcpy_len(result->sqlstate, error,
+				   sizeof(result->sqlstate));
 		}
 		/* skip SQLSTATE */
 		error += 6;
@@ -2333,8 +2378,7 @@ mapi_reconnect(Mapi mid)
 		userver = (struct sockaddr_un) {
 			.sun_family = AF_UNIX,
 		};
-		strncpy(userver.sun_path, mid->hostname, sizeof(userver.sun_path) - 1);
-		userver.sun_path[sizeof(userver.sun_path) - 1] = 0;
+		strcpy_len(userver.sun_path, mid->hostname, sizeof(userver.sun_path));
 
 		if (connect(s, serv, sizeof(struct sockaddr_un)) == SOCKET_ERROR) {
 			snprintf(errbuf, sizeof(errbuf),
@@ -2700,6 +2744,7 @@ mapi_reconnect(Mapi mid)
 				hash = malloc(len);
 				if (hash == NULL) {
 					close_connection(mid);
+					free(pwh);
 					return mapi_setError(mid, "malloc failure", "mapi_reconnect", MERROR);
 				}
 				snprintf(hash, len, "{%s}%s", *algs, pwh);
@@ -3372,7 +3417,7 @@ mapi_param_store(MapiHdl hdl)
 			if (hdl->query == NULL)
 				return;
 		}
-		strncpy(hdl->query + k, p, q - p);
+		memcpy(hdl->query + k, p, q - p);
 		k += q - p;
 		hdl->query[k] = 0;
 
@@ -4454,8 +4499,7 @@ mapi_query_part(MapiHdl hdl, const char *query, size_t size)
 	if (hdl->query == NULL) {
 		hdl->query = malloc(size + 1);
 		if (hdl->query) {
-			strncpy(hdl->query, query, size);
-			hdl->query[size] = 0;
+			strcpy_len(hdl->query, query, size + 1);
 		}
 	} else {
 		size_t sz = strlen(hdl->query);
@@ -4463,8 +4507,7 @@ mapi_query_part(MapiHdl hdl, const char *query, size_t size)
 
 		if (sz < 512 &&
 		    (q = realloc(hdl->query, sz + size + 1)) != NULL) {
-			strncpy(q + sz, query, size);
-			q[sz + size] = 0;
+			strcpy_len(q + sz, query, size + 1);
 			hdl->query = q;
 		}
 	}
@@ -4827,10 +4870,8 @@ unquote(const char *msg, char **str, const char **next, int endchar, size_t *len
 		}
 		len = s - msg;
 		*str = malloc(len + 1);
-		strncpy(*str, msg, len);
+		strcpy_len(*str, msg, len + 1);
 
-		/* make sure value is NULL terminated */
-		(*str)[len] = 0;
 		if (next)
 			*next = p;
 		if (lenp)

@@ -68,8 +68,8 @@ stdout of test 'date_calculation_and_comparison_wrong_results.Bug-3940` in direc
 #INSERT INTO foo VALUES ('2016-01-01', '2016-01-31');
 [ 1	]
 #SELECT (dat2-dat1), (dat2-dat1) < 10 FROM foo;
-% sys.L2,	sys.L4 # table_name
-% L2,	L4 # name
+% sys.,	sys. # table_name
+% %1,	%2 # name
 % int,	boolean # type
 % 2,	5 # length
 [ 1,	true	]

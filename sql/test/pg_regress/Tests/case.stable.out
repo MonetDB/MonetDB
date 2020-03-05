@@ -62,7 +62,7 @@ stdout of test 'case` in directory 'sql/test/pg_regress` itself:
 #  CASE
 #    WHEN 1 < 2 THEN 3
 #  END AS "Simple WHEN";
-% .L2,	.L4 # table_name
+% .,	. # table_name
 % One,	"Simple WHEN" # name
 % char,	tinyint # type
 % 1,	1 # length
@@ -71,7 +71,7 @@ stdout of test 'case` in directory 'sql/test/pg_regress` itself:
 #  CASE
 #    WHEN 1 > 2 THEN 3
 #  END AS "Simple default";
-% .L2,	.L4 # table_name
+% .,	. # table_name
 % One,	"Simple default" # name
 % char,	tinyint # type
 % 6,	1 # length
@@ -81,7 +81,7 @@ stdout of test 'case` in directory 'sql/test/pg_regress` itself:
 #    WHEN 1 < 2 THEN 3
 #    ELSE 4
 #  END AS "Simple ELSE";
-% .L2,	.L4 # table_name
+% .,	. # table_name
 % One,	"Simple ELSE" # name
 % char,	tinyint # type
 % 1,	1 # length
@@ -91,7 +91,7 @@ stdout of test 'case` in directory 'sql/test/pg_regress` itself:
 #    WHEN 1 > 2 THEN 3
 #    ELSE 4
 #  END AS "ELSE default";
-% .L2,	.L4 # table_name
+% .,	. # table_name
 % One,	"ELSE default" # name
 % char,	tinyint # type
 % 1,	1 # length
@@ -102,14 +102,14 @@ stdout of test 'case` in directory 'sql/test/pg_regress` itself:
 #    WHEN 4 < 5 THEN 6
 #    ELSE 7
 #  END AS "Two WHEN with default";
-% .L2,	.L4 # table_name
+% .,	. # table_name
 % One,	"Two WHEN with default" # name
 % char,	tinyint # type
 % 1,	1 # length
 [ "6",	6	]
 #SELECT CASE 'a' WHEN 'a' THEN 1 ELSE 2 END;
-% .L2 # table_name
-% L2 # name
+% . # table_name
+% %1 # name
 % tinyint # type
 % 1 # length
 [ 1	]
@@ -118,7 +118,7 @@ stdout of test 'case` in directory 'sql/test/pg_regress` itself:
 #    WHEN i >= 3 THEN i
 #  END AS ">= 3 or Null"
 #  FROM CASE_TBL;
-% .L2,	sys.L4 # table_name
+% .,	sys. # table_name
 % Five,	">= 3 or Null" # name
 % char,	int # type
 % 0,	1 # length
@@ -132,7 +132,7 @@ stdout of test 'case` in directory 'sql/test/pg_regress` itself:
 #       ELSE i
 #  END AS "Simplest Math"
 #  FROM CASE_TBL;
-% .L2,	sys.L4 # table_name
+% .,	sys. # table_name
 % Five,	"Simplest Math" # name
 % char,	bigint # type
 % 0,	1 # length
@@ -149,7 +149,7 @@ stdout of test 'case` in directory 'sql/test/pg_regress` itself:
 #       ELSE 'big'
 #  END AS "Category"
 #  FROM CASE_TBL;
-% .L2,	sys.L4,	sys.L6 # table_name
+% .,	sys.,	sys. # table_name
 % Five,	Value,	Category # name
 % char,	int,	char # type
 % 0,	1,	5 # length
@@ -166,7 +166,7 @@ stdout of test 'case` in directory 'sql/test/pg_regress` itself:
 #       ELSE 'big'
 #  END AS "Category"
 #  FROM CASE_TBL;
-% .L2,	sys.L4 # table_name
+% .,	sys. # table_name
 % Five,	Category # name
 % char,	char # type
 % 0,	5 # length
@@ -196,8 +196,8 @@ stdout of test 'case` in directory 'sql/test/pg_regress` itself:
 % 1,	24 # length
 #SELECT distinct COALESCE(a.f, b.i, b.j)
 #  FROM CASE_TBL a, CASE2_TBL b  Order By COALESCE(a.f, b.i, b.j);
-% sys.L2 # table_name
-% L2 # name
+% sys.%2 # table_name
+% %2 # name
 % double # type
 % 24 # length
 [ -30.3	]
@@ -219,7 +219,7 @@ stdout of test 'case` in directory 'sql/test/pg_regress` itself:
 #SELECT '' AS Five, NULLIF(a.i,b.i) AS "NULLIF(a.i,b.i)",
 #  NULLIF(b.i, 4) AS "NULLIF(b.i,4)"
 #  FROM CASE_TBL a, CASE2_TBL b  Order By 2,3;
-% .L2,	sys.L4,	sys.L6 # table_name
+% .,	sys.,	sys. # table_name
 % siksteen,	"NULLIF(a.i,b.i)",	"NULLIF(b.i,4)" # name
 % char,	int,	int # type
 % 0,	1,	1 # length
@@ -242,7 +242,7 @@ stdout of test 'case` in directory 'sql/test/pg_regress` itself:
 #SELECT '' AS "Two", *
 #  FROM CASE_TBL a, CASE2_TBL b
 #  WHERE COALESCE(f,b.i) = 2;
-% .L2,	sys.a,	sys.a,	sys.b,	sys.b # table_name
+% .,	sys.a,	sys.a,	sys.b,	sys.b # table_name
 % Two,	i,	f,	i,	j # name
 % char,	int,	double,	int,	int # type
 % 0,	1,	24,	1,	2 # length

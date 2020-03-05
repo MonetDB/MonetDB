@@ -11,7 +11,7 @@ stdout of test '66` in directory 'sql/benchmarks/tpcds` itself:
 # Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
 # Found 62.694 GiB available main-memory.
 # Copyright (c) 1993 - July 2008 CWI.
-# Copyright (c) August 2008 - 2019 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008 - 2020 MonetDB B.V., all rights reserved
 # Visit https://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://methuselah.da.cwi.nl:30709/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-16393/.s.monetdb.30709
@@ -35,7 +35,17 @@ stdout of test '66` in directory 'sql/benchmarks/tpcds` itself:
 #  ,sum(jan_sales) as jan_sales
 #  ,sum(feb_sales) as feb_sales
 #  ,sum(mar_sales) as mar_sales
-% .x,	.x,	.x,	.x,	.x,	.x,	.x,	.x,	.L265,	.L270,	.L273,	.L276,	.L301,	.L304,	.L307,	.L312,	.L315,	.L320,	.L323,	.L326,	.L332,	.L336,	.L342,	.L346,	.L352,	.L356,	.L362,	.L366,	.L372,	.L376,	.L402,	.L406,	.L411,	.L414,	.L417,	.L422,	.L425,	.L430,	.L433,	.L436,	.L441,	.L444,	.L447,	.L452 # table_name
+#  ,sum(apr_sales) as apr_sales
+#  ,sum(may_sales) as may_sales
+#  ,sum(jun_sales) as jun_sales
+#  ,sum(jul_sales) as jul_sales
+#  ,sum(aug_sales) as aug_sales
+#  ,sum(sep_sales) as sep_sales
+#  ,sum(oct_sales) as oct_sales
+#  ,sum(nov_sales) as nov_sales
+#  ,sum(dec_sales) as dec_sales
+#  ,sum(jan_sales/w_warehouse_sq_ft) as jan_sales_per_sq_foot
+% .x,	.x,	.x,	.x,	.x,	.x,	.x,	.x,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	. # table_name
 % w_warehouse_name,	w_warehouse_sq_ft,	w_city,	w_county,	w_state,	w_country,	ship_carriers,	year_,	jan_sales,	feb_sales,	mar_sales,	apr_sales,	may_sales,	jun_sales,	jul_sales,	aug_sales,	sep_sales,	oct_sales,	nov_sales,	dec_sales,	jan_sales_per_sq_foot,	feb_sales_per_sq_foot,	mar_sales_per_sq_foot,	apr_sales_per_sq_foot,	may_sales_per_sq_foot,	jun_sales_per_sq_foot,	jul_sales_per_sq_foot,	aug_sales_per_sq_foot,	sep_sales_per_sq_foot,	oct_sales_per_sq_foot,	nov_sales_per_sq_foot,	dec_sales_per_sq_foot,	jan_net,	feb_net,	mar_net,	apr_net,	may_net,	jun_net,	jul_net,	aug_net,	sep_net,	oct_net,	nov_net,	dec_net # name
 % varchar,	int,	varchar,	varchar,	char,	varchar,	char,	int,	decimal,	decimal,	decimal,	decimal,	decimal,	decimal,	decimal,	decimal,	decimal,	decimal,	decimal,	decimal,	decimal,	decimal,	decimal,	decimal,	decimal,	decimal,	decimal,	decimal,	decimal,	decimal,	decimal,	decimal,	decimal,	decimal,	decimal,	decimal,	decimal,	decimal,	decimal,	decimal,	decimal,	decimal,	decimal,	decimal # type
 % 20,	6,	8,	17,	2,	13,	10,	4,	40,	40,	40,	40,	40,	40,	40,	40,	40,	40,	40,	40,	40,	40,	40,	40,	40,	40,	40,	40,	40,	40,	40,	40,	40,	40,	40,	40,	40,	40,	40,	40,	40,	40,	40,	40 # length

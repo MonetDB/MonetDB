@@ -70,7 +70,7 @@ stdout of test 'crash_correlated_subqueries_not_in_select.Bug-6290` in directory
 #, (SELECT CAST(COUNT(*) as int) FROM sys.functions f WHERE f.schema_id = s.id AND f.type = 2 AND f.id NOT IN (SELECT function_id FROM sys.systemfunctions)) AS "# user defined procedures"
 # FROM sys.schemas AS s
 #WHERE s.name IN ('json', 'profiler', 'sys');
-% sys.L2,	sys.L4,	.L20,	.L34 # table_name
+% .,	.,	.,	. # table_name
 % schema_nm,	is_system_schema,	"# user defined functions",	"# user defined procedures" # name
 % varchar,	boolean,	int,	int # type
 % 8,	5,	1,	1 # length

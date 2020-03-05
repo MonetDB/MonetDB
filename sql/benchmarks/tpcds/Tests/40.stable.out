@@ -11,7 +11,7 @@ stdout of test '40` in directory 'sql/benchmarks/tpcds` itself:
 # Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
 # Found 62.694 GiB available main-memory.
 # Copyright (c) 1993 - July 2008 CWI.
-# Copyright (c) August 2008 - 2019 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008 - 2020 MonetDB B.V., all rights reserved
 # Visit https://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://methuselah.da.cwi.nl:30709/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-16393/.s.monetdb.30709
@@ -35,7 +35,7 @@ stdout of test '40` in directory 'sql/benchmarks/tpcds` itself:
 #           END) AS sales_after
 #FROM catalog_sales
 #LEFT OUTER JOIN catalog_returns ON (cs_order_number = cr_order_number
-% sys.warehouse,	sys.item,	sys.L11,	sys.L16 # table_name
+% sys.warehouse,	sys.item,	sys.,	sys. # table_name
 % w_state,	i_item_id,	sales_before,	sales_after # name
 % char,	char,	decimal,	decimal # type
 % 2,	16,	20,	20 # length

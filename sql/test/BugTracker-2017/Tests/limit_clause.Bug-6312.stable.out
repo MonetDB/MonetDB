@@ -19,10 +19,10 @@ stdout of test 'limit_clause.Bug-6312` in directory 'sql/test/BugTracker-2017` i
 # MonetDB/SQL module loaded
 
 
-# 16:32:27 >  
-# 16:32:27 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-27183" "--port=36678"
-# 16:32:27 >  
-
+#START TRANSACTION;
+#CREATE TABLE tab0(col0 INTEGER, col1 INTEGER, col2 INTEGER);
+#INSERT INTO tab0 VALUES (97,1,99), (15,81,47),(87,21,10);
+[ 3	]
 #select
 #          subq_0.c0 as c1
 #        from
@@ -32,8 +32,8 @@ stdout of test 'limit_clause.Bug-6312` in directory 'sql/test/BugTracker-2017` i
 #              from
 #                sys.auths as ref_0
 #              ) as subq_0
-#        where subq_0.c1 is NULL;
-% sys.L6 # table_name
+#        where subq_0.c1 is NULL; --empty
+% sys. # table_name
 % c1 # name
 % int # type
 % 1 # length

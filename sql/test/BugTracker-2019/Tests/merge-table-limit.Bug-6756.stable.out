@@ -11,7 +11,7 @@ stdout of test 'merge-table-limit.Bug-6756` in directory 'sql/test/BugTracker-20
 # Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
 # Found 15.527 GiB available main-memory.
 # Copyright (c) 1993 - July 2008 CWI.
-# Copyright (c) August 2008 - 2019 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008 - 2020 MonetDB B.V., all rights reserved
 # Visit https://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://localhost.localdomain:39515/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-7363/.s.monetdb.39515
@@ -123,7 +123,7 @@ stdout of test 'merge-table-limit.Bug-6756` in directory 'sql/test/BugTracker-20
 #WHERE processed_timestamp >= '2019-09-09 01:23:58.949' AND processed_timestamp <= '2019-09-09 17:38:58.949'
 #ORDER BY timestamp
 #LIMIT 2000;
-% .L1,	.L2,	.L3,	.L4 # table_name
+% .,	.,	.,	. # table_name
 % timestamp,	logentry_no,	logsource,	program # name
 % timestamp,	bigint,	clob,	clob # type
 % 26,	1,	0,	0 # length
@@ -132,7 +132,7 @@ stdout of test 'merge-table-limit.Bug-6756` in directory 'sql/test/BugTracker-20
 #WHERE processed_timestamp >= '2019-09-09 01:23:58.949' AND processed_timestamp <= '2019-09-09 17:38:58.949'
 #ORDER BY timestamp 
 #LIMIT 2000;
-% .L1,	.L2,	.L3 # table_name
+% .,	.,	. # table_name
 % timestamp,	logentry_no,	logsource # name
 % timestamp,	bigint,	clob # type
 % 26,	1,	0 # length

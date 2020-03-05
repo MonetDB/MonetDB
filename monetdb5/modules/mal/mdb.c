@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -131,6 +131,31 @@ MDBsetTrace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 }
 
 str
+MDBgetVMsize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	lng *ret = getArgReference_lng(stk, p, 0);
+
+	(void) cntxt;
+	(void) mb;		/* still unused */
+	*ret = (lng) GDK_vm_maxsize / 1024/1024;
+	return MAL_SUCCEED;
+}
+
+/* Set the max VM in MBs */
+str
+MDBsetVMsize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	lng *ret = getArgReference_lng(stk, p, 0);
+
+	(void) cntxt;
+	(void) mb;		/* still unused */
+	*ret = (lng) GDK_vm_maxsize;
+	if( *getArgReference_lng(stk, p, 1) > 1024 )
+		GDK_vm_maxsize = (size_t) (*getArgReference_lng(stk, p, 1) * 1024 * 1024);
+	return MAL_SUCCEED;
+}
+
+str
 MDBsetVarTrace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	str v;
@@ -152,8 +177,8 @@ MDBgetDebug(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	(void) mb;
 	(void) stk;
 	(void) p;
-    *ret = GDKdebug;
-    return MAL_SUCCEED;
+	*ret = GDKdebug;
+	return MAL_SUCCEED;
 }
 
 str
@@ -166,9 +191,9 @@ MDBsetDebug(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	(void) mb;
 	(void) stk;
 	(void) p;
-    GDKdebug = *flg;
+	GDKsetdebug(*flg);
 	*ret = GDKdebug;
-    return MAL_SUCCEED;
+	return MAL_SUCCEED;
 }
 
 #define addFlag(NME, FLG, DSET) \
@@ -180,7 +205,7 @@ str
 MDBgetDebugFlags(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	bat *f = getArgReference_bat(stk,p,0);
-    bat *v = getArgReference_bat(stk,p,1);
+	bat *v = getArgReference_bat(stk,p,1);
 	BAT *flg, *val;
 	bit state = 0;
 
@@ -193,7 +218,7 @@ MDBgetDebugFlags(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	if( flg == NULL || val == NULL){
 		BBPreclaim(flg);
 		BBPreclaim(val);
-		throw(MAL, "mdb.getDebugFlags",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "mdb.getDebugFlags",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	addFlag("threads", GRPthreads, GDKdebug);
 	addFlag("memory", GRPmemory, GDKdebug);
@@ -206,104 +231,47 @@ MDBgetDebugFlags(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	addFlag("performance", GRPperformance, GDKdebug);
 	addFlag("forcemito", GRPforcemito, GDKdebug);
 
-    addFlag("aliases", OPTaliases, OPTdebug);
-	addFlag("candidates", OPTcandidates, OPTdebug);
-	addFlag("coercion", OPTcoercion, OPTdebug);
-	addFlag("commonterms", OPTcommonterms, OPTdebug);
-	addFlag("constants", OPTconstants, OPTdebug);
-	addFlag("costmodel", OPTcostmodel, OPTdebug);
-	addFlag("dataflow", OPTdataflow, OPTdebug);
-	addFlag("deadcode", OPTdeadcode, OPTdebug);
-	addFlag("emptybind", OPTemptybind, OPTdebug);
-	addFlag("evaluate", OPTevaluate, OPTdebug);
-	addFlag("garbagecollector", OPTgarbagecollector, OPTdebug);
-	addFlag("generator", OPTgenerator, OPTdebug);
-	addFlag("inline", OPTinline, OPTdebug);
-	addFlag("jit", OPTjit, OPTdebug);
-	addFlag("json", OPTjson, OPTdebug);
-	addFlag("macros", OPTmacros, OPTdebug);
-	addFlag("matpack", OPTmatpack, OPTdebug);
-	addFlag("mergetable", OPTmergetable, OPTdebug);
-	addFlag("mitosis", OPTmitosis, OPTdebug);
-	addFlag("multiplex", OPTmultiplex, OPTdebug);
-	addFlag("oltp", OPToltp, OPTdebug);
-	addFlag("pipes", OPTpipes, OPTdebug);
-	addFlag("postfix", OPTpostfix, OPTdebug);
-	addFlag("prelude", OPTprelude, OPTdebug);
-	addFlag("profiler", OPTprofiler, OPTdebug);
-	addFlag("projectionpath", OPTprojectionpath, OPTdebug);
-	addFlag("pushselect", OPTpushselect, OPTdebug);
-	addFlag("querylog", OPTquerylog, OPTdebug);
-	addFlag("reduce", OPTreduce, OPTdebug);
-	addFlag("remap", OPTremap, OPTdebug);
-	addFlag("remotequeries", OPTremotequeries, OPTdebug);
-	addFlag("reorder", OPTreorder, OPTdebug);
-	addFlag("support", OPTsupport, OPTdebug);
-	addFlag("volcano", OPTvolcano, OPTdebug);
-	addFlag("wlc", OPTwlc, OPTdebug);
-
-    BBPkeepref( *f = flg->batCacheid);
-    BBPkeepref( *v = val->batCacheid);
+	BBPkeepref( *f = flg->batCacheid);
+	BBPkeepref( *v = val->batCacheid);
 	return MAL_SUCCEED;
 
 bailout:
 	BBPunfix(flg->batCacheid);
 	BBPunfix(val->batCacheid);
-	throw(MAL, "mdb.getDebugFlags",SQLSTATE(HY001) "Failed to append");
+	throw(MAL, "mdb.getDebugFlags",SQLSTATE(HY013) "Failed to append");
 }
 
 /* Toggle the debug flags on/off */
 static str
 MDBsetDebugStr_(int *ret, str *flg)
-{	
-	if( strcmp("threads",*flg)==0) GDKdebug ^= GRPthreads;
-	if( strcmp("memory",*flg)==0) GDKdebug ^= GRPmemory;
-	if( strcmp("properties",*flg)==0) GDKdebug ^= GRPproperties;
-	if( strcmp("io",*flg)==0) GDKdebug ^= GRPio;
-	if( strcmp("heaps",*flg)==0) GDKdebug ^= GRPheaps;
-	if( strcmp("transactions",*flg)==0) GDKdebug ^= GRPtransactions;
-	if( strcmp("modules",*flg)==0) GDKdebug ^= GRPmodules;
-	if( strcmp("algorithms",*flg)==0) GDKdebug ^= GRPalgorithms;
-	if( strcmp("performance",*flg)==0) GDKdebug ^= GRPperformance;
-	if( strcmp("forcemito",*flg)==0) GDKdebug ^= GRPforcemito;
+{
+	int debug = GDKdebug;
+	if( strcmp("threads",*flg)==0)
+		debug ^= GRPthreads;
+	else if( strcmp("memory",*flg)==0)
+		debug ^= GRPmemory;
+	else if( strcmp("properties",*flg)==0)
+		debug ^= GRPproperties;
+	else if( strcmp("io",*flg)==0)
+		debug ^= GRPio;
+	else if( strcmp("heaps",*flg)==0)
+		debug ^= GRPheaps;
+	else if( strcmp("transactions",*flg)==0)
+		debug ^= GRPtransactions;
+	else if( strcmp("modules",*flg)==0)
+		debug ^= GRPmodules;
+	else if( strcmp("algorithms",*flg)==0)
+		debug ^= GRPalgorithms;
+	else if( strcmp("performance",*flg)==0)
+		debug ^= GRPperformance;
+	else if( strcmp("forcemito",*flg)==0)
+		debug ^= GRPforcemito;
+	else
+		throw(MAL, "mdb.setDebugStr", ILLEGAL_ARGUMENT);
+	GDKsetdebug(debug);
 	*ret = GDKdebug;
 
-    if( strcmp("aliases",*flg)==0) OPTdebug ^= OPTaliases;
-	if( strcmp("candidates", *flg) == 0) OPTdebug ^= OPTcandidates;
-	if( strcmp("coercion", *flg) == 0) OPTdebug ^= OPTcoercion;
-	if( strcmp("commonterms", *flg) == 0) OPTdebug ^= OPTcommonterms;
-	if( strcmp("constants", *flg) == 0) OPTdebug ^= OPTconstants;
-	if( strcmp("costmodel", *flg) == 0) OPTdebug ^= OPTcostmodel;
-	if( strcmp("dataflow", *flg) == 0) OPTdebug ^= OPTdataflow;
-	if( strcmp("deadcode", *flg) == 0) OPTdebug ^= OPTdeadcode;
-	if( strcmp("emptybind", *flg) == 0) OPTdebug ^= OPTemptybind;
-	if( strcmp("evaluate", *flg) == 0) OPTdebug ^= OPTevaluate;
-	if( strcmp("garbagecollector", *flg) == 0) OPTdebug ^= OPTgarbagecollector;
-	if( strcmp("generator", *flg) == 0) OPTdebug ^= OPTgenerator;
-	if( strcmp("inline", *flg) == 0) OPTdebug ^= OPTinline;
-	if( strcmp("jit", *flg) == 0) OPTdebug ^= OPTjit;
-	if( strcmp("json", *flg) == 0) OPTdebug ^= OPTjson;
-	if( strcmp("macros", *flg) == 0) OPTdebug ^= OPTmacros;
-	if( strcmp("matpack", *flg) == 0) OPTdebug ^= OPTmatpack;
-	if( strcmp("mergetable", *flg) == 0) OPTdebug ^= OPTmergetable;
-	if( strcmp("mitosis", *flg) == 0) OPTdebug ^= OPTmitosis;
-	if( strcmp("multiplex", *flg) == 0) OPTdebug ^= OPTmultiplex;
-	if( strcmp("oltp", *flg) == 0) OPTdebug ^= OPToltp;
-	if( strcmp("pipes", *flg) == 0) OPTdebug ^= OPTpipes;
-	if( strcmp("postfix", *flg) == 0) OPTdebug ^= OPTpostfix;
-	if( strcmp("prelude", *flg) == 0) OPTdebug ^= OPTprelude;
-	if( strcmp("profiler", *flg) == 0) OPTdebug ^= OPTprofiler;
-	if( strcmp("projectionpath", *flg) == 0) OPTdebug ^= OPTprojectionpath;
-	if( strcmp("pushselect", *flg) == 0) OPTdebug ^= OPTpushselect;
-	if( strcmp("querylog", *flg) == 0) OPTdebug ^= OPTquerylog;
-	if( strcmp("reduce", *flg) == 0) OPTdebug ^= OPTreduce;
-	if( strcmp("remap", *flg) == 0) OPTdebug ^= OPTremap;
-	if( strcmp("remotequeries", *flg) == 0) OPTdebug ^= OPTremotequeries;
-	if( strcmp("reorder", *flg) == 0) OPTdebug ^= OPTreorder;
-	if( strcmp("support", *flg) == 0) OPTdebug ^= OPTsupport;
-	if( strcmp("volcano", *flg) == 0) OPTdebug ^= OPTvolcano;
-	if( strcmp("wlc", *flg) == 0) OPTdebug ^= OPTwlc;
-    return MAL_SUCCEED;
+	return MAL_SUCCEED;
 }
 
 str
@@ -399,7 +367,7 @@ MDBgetFrame(BAT *b, BAT *bn, MalBlkPtr mb, MalStkPtr s, int depth, const char *n
 				BBPunfix(b->batCacheid);
 				BBPunfix(bn->batCacheid);
 				GDKfree(buf);
-				throw(MAL, name, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				throw(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 			GDKfree(buf);
 			buf = NULL;
@@ -420,7 +388,7 @@ MDBgetStackFrame(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	if (b == 0 || bn == 0) {
 		BBPreclaim(b);
 		BBPreclaim(bn);
-		throw(MAL, "mdb.getStackFrame", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "mdb.getStackFrame", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	if ((err = MDBgetFrame(b, bn, m, s, 0, "mdb.getStackFrame")) != MAL_SUCCEED) {
 		BBPreclaim(b);
@@ -460,7 +428,7 @@ MDBgetStackFrameN(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	if (b == 0 || bn == 0) {
 		BBPreclaim(b);
 		BBPreclaim(bn);
-		throw(MAL, "mdb.getStackFrame", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "mdb.getStackFrame", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	if ((err = MDBgetFrame(b, bn, m, s, n, "mdb.getStackFrameN")) != MAL_SUCCEED) {
@@ -494,17 +462,17 @@ MDBStkTrace(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 
 	b = COLnew(0, TYPE_int, 256, TRANSIENT);
 	if ( b== NULL)
-		throw(MAL, "mdb.getStackTrace", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "mdb.getStackTrace", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	bn = COLnew(0, TYPE_str, 256, TRANSIENT);
 	if ( bn== NULL) {
 		BBPreclaim(b);
-		throw(MAL, "mdb.getStackTrace", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "mdb.getStackTrace", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	(void) cntxt;
 	if ((msg = instruction2str(s->blk, s, p, LIST_MAL_DEBUG)) == NULL) {
 		BBPreclaim(b);
 		BBPreclaim(bn);
-		throw(MAL, "mdb.getStackTrace", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "mdb.getStackTrace", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	len = strlen(msg);
 	buf = (char*) GDKmalloc(len +1024);
@@ -512,7 +480,7 @@ MDBStkTrace(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 		GDKfree(msg);
 		BBPreclaim(b);
 		BBPreclaim(bn);
-		throw(MAL,"mdb.setTrace", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL,"mdb.setTrace", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	snprintf(buf,len+1024,"%s at %s.%s[%d]", msg,
 		getModuleId(getInstrPtr(m,0)),
@@ -523,15 +491,15 @@ MDBStkTrace(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 		GDKfree(buf);
 		BBPreclaim(b);
 		BBPreclaim(bn);
-		throw(MAL,"mdb.setTrace", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL,"mdb.setTrace", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	GDKfree(msg);
 
 	for (s = s->up, k++; s != NULL; s = s->up, k++) {
-		if ((msg = instruction2str(s->blk, s, getInstrPtr(s->blk,s->pcup),LIST_MAL_DEBUG)) == NULL){
+		if ((msg = instruction2str(s->blk, s, getInstrPtr(s->blk, s->pcup), LIST_MAL_DEBUG)) == NULL){
 			BBPunfix(b->batCacheid);
 			BBPunfix(bn->batCacheid);
-			throw(MAL,"mdb.setTrace", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL,"mdb.setTrace", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		l = strlen(msg);
 		if (l>len){
@@ -542,7 +510,7 @@ MDBStkTrace(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 				GDKfree(msg);
 				BBPunfix(b->batCacheid);
 				BBPunfix(bn->batCacheid);
-				throw(MAL,"mdb.setTrace", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				throw(MAL,"mdb.setTrace", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 		}
 		snprintf(buf,len+1024,"%s at %s.%s[%d]", msg,
@@ -554,7 +522,7 @@ MDBStkTrace(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 			GDKfree(msg);
 			BBPunfix(b->batCacheid);
 			BBPunfix(bn->batCacheid);
-			throw(MAL, "mdb.setTrace", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "mdb.setTrace", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		GDKfree(msg);
 	}
@@ -613,7 +581,7 @@ MDBlistDetail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	(void) p;
 	(void) stk;
-	debugFunction(cntxt->fdout, mb, 0, LIST_MAL_NAME | LIST_MAL_VALUE | LIST_MAL_TYPE | LIST_MAL_PROPS, 0, mb->stop );
+	printFunction(cntxt->fdout, mb, 0, LIST_MAL_DEBUG);
 	return MAL_SUCCEED;
 }
 
@@ -627,7 +595,7 @@ MDBlist3Detail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	s = findSymbol(cntxt->usermodule, putName(modnme), putName(fcnnme));
 	if (s == NULL)
 		throw(MAL,"mdb.list","Could not find %s.%s", modnme, fcnnme);
-	debugFunction(cntxt->fdout, s->def, 0,  LIST_MAL_NAME | LIST_MAL_VALUE | LIST_MAL_TYPE | LIST_MAL_PROPS , 0, s->def->stop);
+	printFunction(cntxt->fdout, s->def, 0,  LIST_MAL_DEBUG);
 	(void) mb;		/* fool compiler */
 	return NULL;
 }
@@ -670,17 +638,17 @@ MDBgetDefinition(Client cntxt, MalBlkPtr m, MalStkPtr stk, InstrPtr p)
 
 	(void) cntxt;
 	if (b == 0)
-		throw(MAL, "mdb.getDefinition", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "mdb.getDefinition", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	for (i = 0; i < m->stop; i++) {
 		if((ps = instruction2str(m,0, getInstrPtr(m, i), 1)) == NULL) {
 			BBPreclaim(b);
-			throw(MAL, "mdb.getDefinition", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "mdb.getDefinition", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		if (BUNappend(b, ps, false) != GDK_SUCCEED) {
 			GDKfree(ps);
 			BBPreclaim(b);
-			throw(MAL, "mdb.getDefinition", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "mdb.getDefinition", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		GDKfree(ps);
 	}
@@ -704,7 +672,7 @@ MDBgetExceptionVariable(str *ret, str *msg)
 	*tail = 0;
 	*ret = GDKstrdup(*msg);
 	if (*ret == NULL)
-		throw(MAL, "mdb.getExceptionVariable", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "mdb.getExceptionVariable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	*tail = ':';
 	return MAL_SUCCEED;
 }
@@ -724,7 +692,7 @@ MDBgetExceptionContext(str *ret, str *msg)
 	*tail2 = 0;
 	*ret = GDKstrdup(tail + 1);
 	if (*ret == NULL)
-		throw(MAL, "mdb.getExceptionContext", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "mdb.getExceptionContext", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	*tail2 = ':';
 	return MAL_SUCCEED;
 }
@@ -743,7 +711,7 @@ MDBgetExceptionReason(str *ret, str *msg)
 
 	*ret = GDKstrdup(tail + 1);
 	if( *ret == NULL)
-		throw(MAL, "mdb.getExceptionReason", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "mdb.getExceptionReason", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -839,9 +807,8 @@ CMDmodules(bat *bid)
 	BAT *b = TBL_getdir();
 
 	if (b == NULL)
-		throw(MAL, "mdb.modules", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "mdb.modules", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	*bid = b->batCacheid;
 	BBPkeepref(*bid);
 	return MAL_SUCCEED;
 }
-

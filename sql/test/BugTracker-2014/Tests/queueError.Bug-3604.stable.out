@@ -52,24 +52,24 @@ stdout of test 'queueError.Bug-3604` in directory 'sql/test/BugTracker-2014` its
 # 11:43:52 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-3599" "--port=35114"
 # 11:43:52 >  
 
-#select user,status,query from sys.queue();
-% .L3,	.L1,	.L1 # table_name
-% L3,	status,	query # name
-% varchar,	clob,	clob # type
-% 7,	7,	42 # length
-[ "monetdb",	"running",	"select user,status,query from sys.queue();"	]
-#select user,status,query from sys.queue();
-% .L3,	.L1,	.L1 # table_name
-% L3,	status,	query # name
-% varchar,	clob,	clob # type
-% 7,	7,	42 # length
-[ "monetdb",	"running",	"select user,status,query from sys.queue();"	]
-#select user,status,query from sys.queue();
-% .L3,	.L1,	.L1 # table_name
-% L3,	status,	query # name
-% varchar,	clob,	clob # type
-% 7,	7,	42 # length
-[ "monetdb",	"running",	"select user,status,query from sys.queue();"	]
+#select username,status,query from sys.queue();
+% .%1,	.%1,	.%1 # table_name
+% username,	status,	query # name
+% clob,	clob,	clob # type
+% 7,	7,	46 # length
+[ "monetdb",	"running",	"select username,status,query from sys.queue();"	]
+#select username,status,query from sys.queue();
+% .%1,	.%1,	.%1 # table_name
+% username,	status,	query # name
+% clob,	clob,	clob # type
+% 7,	7,	46 # length
+[ "monetdb",	"running",	"select username,status,query from sys.queue();"	]
+#select username,status,query from sys.queue();
+% .%1,	.%1,	.%1 # table_name
+% username,	status,	query # name
+% clob,	clob,	clob # type
+% 7,	7,	46 # length
+[ "monetdb",	"running",	"select username,status,query from sys.queue();"	]
 
 # 11:43:52 >  
 # 11:43:52 >  "Done."

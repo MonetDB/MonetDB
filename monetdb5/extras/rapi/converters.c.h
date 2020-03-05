@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #define RSTR(somestr) mkCharCE(somestr, CE_UTF8)
@@ -181,7 +181,7 @@ bat_to_sexp(BAT* b, int type)
 				const char *t = (const char *) BUNtvar(li, p);
 				ptrdiff_t offset = t - b->tvheap->base;
 				if (!sexp_ptrs[offset]) {
-					if (strcmp(t, str_nil) == 0) {
+					if (strNil(t)) {
 						sexp_ptrs[offset] = NA_STRING;
 					} else {
 						sexp_ptrs[offset] = RSTR(t);
@@ -201,7 +201,7 @@ bat_to_sexp(BAT* b, int type)
 			else {
 				BATloop(b, p, q) {
 					const char *t = (const char *) BUNtvar(li, p);
-					if (strcmp(t, str_nil) == 0) {
+					if (strNil(t)) {
 						SET_STRING_ELT(varvalue, j++, NA_STRING);
 					} else {
 						SET_STRING_ELT(varvalue, j++, RSTR(t));
@@ -284,12 +284,12 @@ static BAT* sexp_to_bat(SEXP s, int type) {
 				b->tnonil = false;
 				if (BUNappend(b, str_nil, false) != GDK_SUCCEED) {
 					BBPreclaim(b);
-					b = NULL;
+					return NULL;
 				}
 			} else {
 				if (BUNappend(b, CHAR(rse), false) != GDK_SUCCEED) {
 					BBPreclaim(b);
-					b = NULL;
+					return NULL;
 				}
 			}
 		}

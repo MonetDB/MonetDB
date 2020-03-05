@@ -17,5 +17,3 @@ set id_file1 = add_file(id_media1,
                         'empty',
                         250,
                         250);
-
-select id_file1;

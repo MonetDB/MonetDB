@@ -11,7 +11,7 @@ stdout of test 'slow-inner-join.Bug-6737` in directory 'sql/test/BugTracker-2019
 # Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
 # Found 15.527 GiB available main-memory.
 # Copyright (c) 1993 - July 2008 CWI.
-# Copyright (c) August 2008 - 2019 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008 - 2020 MonetDB B.V., all rights reserved
 # Visit https://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://localhost.localdomain:30899/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-13172/.s.monetdb.30899
@@ -72,20 +72,20 @@ stdout of test 'slow-inner-join.Bug-6737` in directory 'sql/test/BugTracker-2019
 #insert into monet2_test select value "Id", value "key", value "value" from generate_series(1,200);
 [ 199	]
 #select count(1) from monet2_test t1 inner join monet1_test t2 on exists (select t1.key intersect select t2.key);
-% .L15 # table_name
-% L15 # name
+% .%11 # table_name
+% %11 # name
 % bigint # type
 % 3 # length
 [ 199	]
 #select count(1) from monet2_test where exists(select 1 from monet1_test t2 where (t2.key = monet2_test.key) or ((t2.key is null) and (monet2_test.key is null)));
-% .L3 # table_name
-% L3 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 3 # length
 [ 199	]
 #select count(1) from monet2_test t1 inner join monet1_test t2 on ((t1.key = t2.key) or ((t1.key is null) and (t2.key is null)));
-% .L4 # table_name
-% L4 # name
+% .%3 # table_name
+% %3 # name
 % bigint # type
 % 3 # length
 [ 199	]

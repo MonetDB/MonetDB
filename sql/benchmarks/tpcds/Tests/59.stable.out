@@ -11,7 +11,7 @@ stdout of test '59` in directory 'sql/benchmarks/tpcds` itself:
 # Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
 # Found 62.694 GiB available main-memory.
 # Copyright (c) 1993 - July 2008 CWI.
-# Copyright (c) August 2008 - 2019 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008 - 2020 MonetDB B.V., all rights reserved
 # Visit https://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://methuselah.da.cwi.nl:30709/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-16393/.s.monetdb.30709
@@ -35,8 +35,13 @@ stdout of test '59` in directory 'sql/benchmarks/tpcds` itself:
 #                  ELSE NULL
 #              END) mon_sales,
 #          sum(CASE
-% sys.y,	sys.y,	sys.y,	sys.L107,	sys.L111,	sys.L113,	sys.L115,	sys.L117,	sys.L121,	sys.L123 # table_name
-% s_store_name1,	s_store_id1,	d_week_seq1,	L107,	L111,	L113,	L115,	L117,	L121,	L123 # name
+#                  WHEN (d_day_name='Tuesday') THEN ss_sales_price
+#                  ELSE NULL
+#              END) tue_sales,
+#          sum(CASE
+#                  WHEN (d_day_name='Wednesday') THEN ss_sales_price
+% sys.y,	sys.y,	sys.y,	sys.%11,	sys.%12,	sys.%13,	sys.%14,	sys.%15,	sys.%16,	sys.%17 # table_name
+% s_store_name1,	s_store_id1,	d_week_seq1,	%11,	%12,	%13,	%14,	%15,	%16,	%17 # name
 % varchar,	char,	int,	decimal,	decimal,	decimal,	decimal,	decimal,	decimal,	decimal # type
 % 4,	16,	4,	20,	20,	20,	20,	20,	20,	20 # length
 [ "able",	"AAAAAAAACAAAAAAA",	5271,	1.362,	3.086,	0.322,	0.480,	1.141,	0.759,	1.845	]

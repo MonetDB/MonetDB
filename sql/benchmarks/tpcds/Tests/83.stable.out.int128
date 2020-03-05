@@ -11,7 +11,7 @@ stdout of test '83` in directory 'sql/benchmarks/tpcds` itself:
 # Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
 # Found 62.694 GiB available main-memory.
 # Copyright (c) 1993 - July 2008 CWI.
-# Copyright (c) August 2008 - 2019 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008 - 2020 MonetDB B.V., all rights reserved
 # Visit https://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://methuselah.da.cwi.nl:30709/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-16393/.s.monetdb.30709
@@ -35,7 +35,13 @@ stdout of test '83` in directory 'sql/benchmarks/tpcds` itself:
 #        FROM date_dim
 #        WHERE d_week_seq IN
 #            (SELECT d_week_seq
-% sys.sr_items,	sys.sr_items,	sys.L64,	sys.cr_items,	sys.L67,	sys.wr_items,	sys.L72,	sys.L74 # table_name
+#             FROM date_dim
+#             WHERE d_date IN ('2000-06-30',
+#                              '2000-09-27',
+#                              '2000-11-17')))
+#     AND sr_returned_date_sk = d_date_sk
+#   GROUP BY i_item_id),
+% sys.sr_items,	sys.sr_items,	sys.,	sys.cr_items,	sys.,	sys.wr_items,	sys.,	sys. # table_name
 % item_id,	sr_item_qty,	sr_dev,	cr_item_qty,	cr_dev,	wr_item_qty,	wr_dev,	average # name
 % char,	hugeint,	decimal,	hugeint,	decimal,	hugeint,	decimal,	decimal # type
 % 16,	2,	40,	2,	40,	2,	40,	40 # length

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -133,7 +133,7 @@ INETfromString(const char *src, size_t *len, inet **retval, bool external)
 		in_setnil(*retval);
 		return 3;
 	}
-	if (GDK_STRNIL(src)) {
+	if (strNil(src)) {
 		in_setnil(*retval);
 		return 1;
 	}
@@ -434,13 +434,13 @@ INET_comp_CW(bit *retval, const inet *val1, const inet *val2)
 
 		/* all operations here are done byte based, to avoid byte sex
 		 * problems */
-
-		/* if you want to see some bytes, remove this comment
-		   fprintf(stderr, "%x %x %x %x => %x %x %x %x  %x %x %x %x\n",
-		   m[0], m[1], m[2], m[3], val1->q1, val1->q2,
-		   val1->q3, val1->q4, val2->q1, val2->q2, val2->q3,
-		   val2->q4);
-		 */
+		/*
+		TRC_DEBUG(MAL_SERVER, 
+			"%x %x %x %x => %x %x %x %x  %x %x %x %x\n",
+		   	m[0], m[1], m[2], m[3], val1->q1, val1->q2,
+		   	val1->q3, val1->q4, val2->q1, val2->q2, val2->q3,
+		   	val2->q4);
+		*/
 
 		if ((val1->q1 & m[0]) == (val2->q1 & m[0]) &&
 			(val1->q2 & m[1]) == (val2->q2 & m[1]) &&
@@ -525,11 +525,12 @@ INETbroadcast(inet *retval, const inet *val)
 		m[2] = (msk >> 8) & 0xFF;
 		m[3] = msk & 0xFF;
 
-		/* if you want to see some bytes, remove this comment
-		   fprintf(stderr, "%x %x %x %x => %x %x %x %x\n",
-		   m[0], m[1], m[2], m[3], val->q1, val->q2,
-		   val->q3, val->q4);
-		 */
+	/*
+		TRC_DEBUG(MAL_SERVER, 
+			"%x %x %x %x => %x %x %x %x\n",
+			m[0], m[1], m[2], m[3], val->q1, val->q2,
+		   	val->q3, val->q4);
+	*/
 
 		/* apply the inverted mask, so we get the broadcast */
 		retval->q1 |= m[0];
@@ -559,11 +560,11 @@ INEThost(str *retval, const inet *val)
 	if (is_inet_nil(val)) {
 		*retval = GDKstrdup(str_nil);
 		if( *retval == NULL)
-			throw(MAL,"INEThost", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL,"INEThost", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	} else {
 		ip = GDKmalloc(sizeof(char) * 16);
 		if( ip == NULL)
-			throw(MAL,"INEThost", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL,"INEThost", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		sprintf(ip, "%d.%d.%d.%d", val->q1, val->q2, val->q3, val->q4);
 		*retval = ip;
 	}
@@ -706,11 +707,11 @@ INETtext(str *retval, const inet *val)
 	if (is_inet_nil(val)) {
 		*retval = GDKstrdup(str_nil);
 		if( *retval == NULL)
-			throw(MAL,"INETtext", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL,"INETtext", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	} else {
 		ip = GDKmalloc(sizeof(char) * 20);
 		if( ip == NULL)
-			throw(MAL,"INETtext", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL,"INETtext", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 		snprintf(ip, sizeof(char) * 20, "%d.%d.%d.%d/%d",
 				val->q1, val->q2, val->q3, val->q4, val->mask);
@@ -731,7 +732,7 @@ INETabbrev(str *retval, const inet *val)
 	if (is_inet_nil(val)) {
 		*retval = GDKstrdup(str_nil);
 		if (*retval == NULL)
-			throw(MAL, "inet.abbrev", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "inet.abbrev", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	} else {
 		unsigned int msk;
 		unsigned char m[4];
@@ -766,7 +767,7 @@ INETabbrev(str *retval, const inet *val)
 
 		ip = GDKmalloc(sizeof(char) * 20);
 		if (ip == NULL)
-			throw(MAL, "inet.abbrev", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "inet.abbrev", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 		if (msk > 24) {
 			snprintf(ip, sizeof(char) * 20, "%d.%d.%d.%d/%d",

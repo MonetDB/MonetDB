@@ -296,6 +296,22 @@ literal:
 				if (!(strptime_conv_num(&bp, &tm->tm_sec, 0, 61)))
 					return NULL;
 				break;
+			case 's': /* number of seconds since epoch */
+			LEGAL_ALT(ALT_O);
+				{
+					time_t secs = 0;
+					if (*bp < '0' || *bp > '9') /* at least one digit */
+						return NULL;
+
+					do {
+						secs *= 10;
+						secs += *bp++ - '0';
+					} while (*bp >= '0' && *bp <= '9');
+
+					/* convert the number of seconds to tm structure */
+					if (localtime_s(tm, &secs))
+						return NULL;
+				} break;
 			case 'U':	/* The week of year, beginning on sunday. */
 			case 'W':	/* The week of year, beginning on monday. */
 			LEGAL_ALT(ALT_O);

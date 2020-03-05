@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /* (author) M. Kersten */
@@ -11,13 +11,11 @@
 #include "mal.h"
 
 char 	monet_cwd[FILENAME_MAX] = { 0 };
-size_t 	monet_memory = 0;
 char 	monet_characteristics[4096];
 stream *maleventstream = 0;
 
 /* The compile time debugging flags are turned into bit masks, akin to GDK */
 lng MALdebug;
-lng OPTdebug;
 
 #ifdef HAVE_HGE
 int have_hge;
@@ -38,10 +36,7 @@ int have_hge;
 #include "mal_private.h"
 #include "mal_runtime.h"
 #include "mal_resource.h"
-#include "wlc.h"
 #include "mal_atom.h"
-#include "opt_pipes.h"
-#include "tablet.h"
 
 MT_Lock     mal_contextLock = MT_LOCK_INITIALIZER("mal_contextLock");
 MT_Lock     mal_remoteLock = MT_LOCK_INITIALIZER("mal_remoteLock");
@@ -66,20 +61,16 @@ int mal_init(void){
 		return -1;
 	}
 #endif
-	monet_memory = MT_npages() * MT_pagesize();
 	initNamespace();
 	initParser();
-#ifndef HAVE_EMBEDDED
 	initHeartbeat();
-#endif
-	initResource();
 	str err = malBootstrap();
 	if (err != MAL_SUCCEED) {
 		mal_client_reset();
 #ifndef NDEBUG
 		mdbExit();
 #endif
-		dumpExceptionsToStream(NULL, err);
+		TRC_ERROR(MAL_SERVER, "%s\n", err);
 		freeException(err);
 		return -1;
 	}
@@ -102,18 +93,17 @@ void mserver_reset(void)
 	str err = 0;
 
 	GDKprepareExit();
-	WLCreset();
 	MCstopClients(0);
 	setHeartbeat(-1);
 	stopProfiler(0);
 	AUTHreset();
 	if (!GDKinmemory()) {
 		if ((err = msab_wildRetreat()) != NULL) {
-			fprintf(stderr, "!%s", err);
+			TRC_ERROR(MAL_SERVER, "%s\n", err);
 			free(err);
 		}
 		if ((err = msab_registerStop()) != NULL) {
-			fprintf(stderr, "!%s", err);
+			TRC_ERROR(MAL_SERVER, "%s\n", err);
 			free(err);
 		}
 	}
@@ -125,13 +115,11 @@ void mserver_reset(void)
 	mal_runtime_reset();
 	mal_module_reset();
 	mal_atom_reset();
-	opt_pipes_reset();
 #ifndef NDEBUG
 	mdbExit();
 #endif
 
 	memset((char*)monet_cwd, 0, sizeof(monet_cwd));
-	monet_memory = 0;
 	memset((char*)monet_characteristics,0, sizeof(monet_characteristics));
 	mal_namespace_reset();
 	/* No need to clean up the namespace, it will simply be extended

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 /*
@@ -32,10 +32,10 @@ CMDraise(str *ret, str *msg)
 	str res;
 	*ret = GDKstrdup(*msg);
 	if( *ret == NULL)
-		throw(MAL, "mal.raise", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "mal.raise", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	res = GDKstrdup(*msg);
 	if( res == NULL)
-		throw(MAL, "mal.raise", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "mal.raise", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return res;
 }
 
@@ -198,7 +198,7 @@ CMDregisterFunction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if(fcnName == NULL || modName == NULL || ahelp == NULL) {
 			freeSymbol(sym);
 			GDKfree(ahelp);
-			throw(MAL, "language.register", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "language.register", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		mb->help= ahelp;
 		sig= getSignature(sym);
@@ -223,7 +223,7 @@ CMDevalFile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!MT_path_absolute(s)) {
 		char *buf = GDKmalloc(strlen(monet_cwd) + strlen(s) + 2);
 		if ( buf == NULL)
-			throw(MAL,"language.eval", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL,"language.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 		stpcpy(stpcpy(stpcpy(buf, monet_cwd), DIR_SEP_STR), s);
 		msg = evalFile(buf, 0);

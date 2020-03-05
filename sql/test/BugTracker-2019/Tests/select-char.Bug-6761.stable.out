@@ -11,7 +11,7 @@ stdout of test 'select-char.Bug-6761` in directory 'sql/test/BugTracker-2019` it
 # Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
 # Found 15.527 GiB available main-memory.
 # Copyright (c) 1993 - July 2008 CWI.
-# Copyright (c) August 2008 - 2019 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008 - 2020 MonetDB B.V., all rights reserved
 # Visit https://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://localhost.localdomain:39102/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-25170/.s.monetdb.39102
@@ -127,7 +127,7 @@ stdout of test 'select-char.Bug-6761` in directory 'sql/test/BugTracker-2019` it
 % int # type
 % 1 # length
 #select fundid, CAST(sum(fxcurdlttot) AS BIGINT) as fxcurdlttotfx from actual_positionmart_pfx_intraday_test where asofdate='2019-09-11' and fundid = 10 and currencyexposed <> 'TOTAL' group by fundid;
-% sys.actual_positionmart_pfx_intraday_test,	sys.L3 # table_name
+% sys.actual_positionmart_pfx_intraday_test,	sys. # table_name
 % fundid,	fxcurdlttotfx # name
 % int,	bigint # type
 % 1,	1 # length

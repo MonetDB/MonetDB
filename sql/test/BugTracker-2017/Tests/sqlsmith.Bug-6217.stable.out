@@ -19,10 +19,10 @@ stdout of test 'sqlsmith.Bug-6217` in directory 'sql/test/BugTracker-2017` itsel
 # MonetDB/SQL module loaded
 
 
-# 14:03:35 >  
-# 14:03:35 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-13980" "--port=30571"
-# 14:03:35 >  
-
+#START TRANSACTION;
+#CREATE TABLE another_T (col1 INT, col2 INT, col3 INT, col4 INT, col5 INT, col6 INT, col7 INT, col8 INT);
+#INSERT INTO another_T VALUES (1,2,3,4,5,6,7,8), (11,22,33,44,55,66,77,88), (111,222,333,444,555,666,777,888), (1111,2222,3333,4444,5555,6666,7777,8888);
+[ 4	]
 #select
 #  ref_2.name as c0,
 #  ref_2.name as c1,
@@ -31,12 +31,13 @@ stdout of test 'sqlsmith.Bug-6217` in directory 'sql/test/BugTracker-2017` itsel
 #  ref_2.condition as c4,
 #  ref_2.id as c5
 #from
-#  sys.triggers as ref_2
-#where 24 is NULL;
-% sys.L2,	sys.L4,	sys.L6,	.L10,	sys.L12,	sys.L14 # table_name
+#  another_T as ref_2
+#where 24 is NULL; --empty
+% sys.,	sys.,	sys.,	.,	sys.,	sys. # table_name
 % c0,	c1,	c2,	c3,	c4,	c5 # name
-% varchar,	varchar,	varchar,	tinyint,	varchar,	int # type
-% 0,	0,	0,	1,	0,	1 # length
+% int,	int,	int,	tinyint,	int,	int # type
+% 1,	1,	1,	1,	1,	1 # length
+#ROLLBACK;
 
 # 14:03:35 >  
 # 14:03:35 >  "Done."

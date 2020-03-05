@@ -33,56 +33,56 @@ stdout of test 'parallel_bulk-load.SF-2771052.test` in directory 'sql/test/BugTr
 [ 10000000	]
 [ 100000000	]
 #select count(*) from i0;
-% .L3 # table_name
-% L3 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 1	]
 #select count(*) from i1;
-% .L3 # table_name
-% L3 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 2 # length
 [ 10	]
 #select count(*) from i2;
-% .L3 # table_name
-% L3 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 3 # length
 [ 100	]
 #select count(*) from i3;
-% .L3 # table_name
-% L3 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 4 # length
 [ 1000	]
 #select count(*) from i4;
-% .L3 # table_name
-% L3 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 5 # length
 [ 10000	]
 #select count(*) from i5;
-% .L3 # table_name
-% L3 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 6 # length
 [ 100000	]
 #select count(*) from i6;
-% .L3 # table_name
-% L3 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 7 # length
 [ 1000000	]
 #select count(*) from i7;
-% .L3 # table_name
-% L3 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 8 # length
 [ 10000000	]
 #select count(*) from i8;
-% .L3 # table_name
-% L3 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 9 # length
 [ 100000000	]

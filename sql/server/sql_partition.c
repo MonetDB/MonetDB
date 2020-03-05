@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -88,7 +88,7 @@ static void
 rel_find_table_columns(mvc* sql, sql_rel* rel, sql_table *t, list *cols)
 {
 	if (THRhighwater()) {
-		(void) sql_error(sql, 10, SQLSTATE(42000) "query too complex: running out of stack space");
+		(void) sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 		return;
 	}
 
@@ -108,8 +108,6 @@ rel_find_table_columns(mvc* sql, sql_rel* rel, sql_table *t, list *cols)
 		case op_left:
 		case op_right:
 		case op_full:
-		case op_semi:
-		case op_anti:
 		case op_union:
 		case op_inter:
 		case op_except:
@@ -118,6 +116,8 @@ rel_find_table_columns(mvc* sql, sql_rel* rel, sql_table *t, list *cols)
 			if (rel->r)
 				rel_find_table_columns(sql, rel->r, t, cols);
 			break;
+		case op_semi:
+		case op_anti:
 		case op_groupby:
 		case op_project:
 		case op_select:
@@ -140,27 +140,27 @@ static void
 exp_find_table_columns(mvc *sql, sql_exp *e, sql_table *t, list *cols)
 {
 	if (THRhighwater()) {
-		(void) sql_error(sql, 10, SQLSTATE(42000) "query too complex: running out of stack space");
+		(void) sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 		return;
 	}
 
 	if (!e)
 		return;
-	switch(e->type) {
+	switch (e->type) {
 		case e_psm: {
 			if (e->flag & PSM_RETURN) {
-				for(node *n = ((list*)e->r)->h ; n ; n = n->next)
+				for (node *n = ((list*)e->r)->h ; n ; n = n->next)
 					exp_find_table_columns(sql, (sql_exp*) n->data, t, cols);
 			} else if (e->flag & PSM_WHILE) {
 				exp_find_table_columns(sql, e->l, t, cols);
-				for(node *n = ((list*)e->r)->h ; n ; n = n->next)
+				for (node *n = ((list*)e->r)->h ; n ; n = n->next)
 					exp_find_table_columns(sql, (sql_exp*) n->data, t, cols);
 			} else if (e->flag & PSM_IF) {
 				exp_find_table_columns(sql, e->l, t, cols);
-				for(node *n = ((list*)e->r)->h ; n ; n = n->next)
+				for (node *n = ((list*)e->r)->h ; n ; n = n->next)
 					exp_find_table_columns(sql, (sql_exp*) n->data, t, cols);
 				if (e->f)
-					for(node *n = ((list*)e->f)->h ; n ; n = n->next)
+					for (node *n = ((list*)e->f)->h ; n ; n = n->next)
 						exp_find_table_columns(sql, (sql_exp*) n->data, t, cols);
 			} else if (e->flag & PSM_REL) {
 				rel_find_table_columns(sql, e->l, t, cols);
@@ -174,21 +174,21 @@ exp_find_table_columns(mvc *sql, sql_exp *e, sql_table *t, list *cols)
 		case e_atom:
 			break;
 		case e_func: {
-			for(node *n = ((list*)e->l)->h ; n ; n = n->next)
+			for (node *n = ((list*)e->l)->h ; n ; n = n->next)
 				exp_find_table_columns(sql, (sql_exp*) n->data, t, cols);
 			if (e->r)
-				for(node *n = ((list*)e->r)->h ; n ; n = n->next)
+				for (node *n = ((list*)e->r)->h ; n ; n = n->next)
 					exp_find_table_columns(sql, (sql_exp*) n->data, t, cols);
 		} 	break;
 		case e_aggr: {
 			if (e->l)
-				for(node *n = ((list*)e->l)->h ; n ; n = n->next)
+				for (node *n = ((list*)e->l)->h ; n ; n = n->next)
 					exp_find_table_columns(sql, (sql_exp*) n->data, t, cols);
 		} 	break;
 		case e_column: {
-			if(!strcmp(e->l, t->base.name)) {
+			if (!strcmp(e->l, t->base.name)) {
 				sql_column *col = find_sql_column(t, e->r);
-				if(col) {
+				if (col) {
 					int *cnr = sa_alloc(cols->sa, sizeof(int));
 					*cnr = col->colnr;
 					list_append(cols, cnr);
@@ -198,19 +198,19 @@ exp_find_table_columns(mvc *sql, sql_exp *e, sql_table *t, list *cols)
 		case e_cmp: {
 			if (e->flag == cmp_in || e->flag == cmp_notin) {
 				exp_find_table_columns(sql, e->l, t, cols);
-				for(node *n = ((list*)e->r)->h ; n ; n = n->next)
+				for (node *n = ((list*)e->r)->h ; n ; n = n->next)
 					exp_find_table_columns(sql, (sql_exp*) n->data, t, cols);
-			} else if (get_cmp(e) == cmp_or || get_cmp(e) == cmp_filter) {
-				for(node *n = ((list*)e->l)->h ; n ; n = n->next)
+			} else if (e->flag == cmp_or || e->flag == cmp_filter) {
+				for (node *n = ((list*)e->l)->h ; n ; n = n->next)
 					exp_find_table_columns(sql, (sql_exp*) n->data, t, cols);
-				for(node *n = ((list*)e->r)->h ; n ; n = n->next)
+				for (node *n = ((list*)e->r)->h ; n ; n = n->next)
 					exp_find_table_columns(sql, (sql_exp*) n->data, t, cols);
 			} else {
-				if(e->l)
+				if (e->l)
 					exp_find_table_columns(sql, e->l, t, cols);
-				if(e->r)
+				if (e->r)
 					exp_find_table_columns(sql, e->r, t, cols);
-				if(e->f)
+				if (e->f)
 					exp_find_table_columns(sql, e->f, t, cols);
 			}
 		} break;
@@ -220,7 +220,7 @@ exp_find_table_columns(mvc *sql, sql_exp *e, sql_table *t, list *cols)
 static str
 find_expression_type(sql_exp *e, sql_subtype *tpe)
 {
-	switch(e->type) {
+	switch (e->type) {
 		case e_convert: {
 			assert(list_length(e->r) == 2);
 			*tpe = *(sql_subtype *)list_fetch(e->r, 1);
@@ -259,8 +259,6 @@ find_expression_type(sql_exp *e, sql_subtype *tpe)
 	return NULL;
 }
 
-extern list *rel_dependencies(mvc *sql, sql_rel *r);
-
 str
 bootstrap_partition_expression(mvc* sql, sql_allocator *rsa, sql_table *mt, int instantiate)
 {
@@ -276,8 +274,8 @@ bootstrap_partition_expression(mvc* sql, sql_allocator *rsa, sql_table *mt, int 
 
 	r = rel_basetable(sql, mt, mt->base.name);
 	query = mt->part.pexp->exp;
-	if((exp = rel_parse_val(sql, sa_message(sql->sa, "select %s;", query), sql->emode, r)) == NULL) {
-		if(*sql->errstr) {
+	if ((exp = rel_parse_val(sql, sa_message(sql->sa, "select %s;", query), sql->emode, r)) == NULL) {
+		if (*sql->errstr) {
 			if (strlen(sql->errstr) > 6 && sql->errstr[5] == '!')
 				throw(SQL, "sql.partition", "%s", sql->errstr);
 			else
@@ -286,19 +284,19 @@ bootstrap_partition_expression(mvc* sql, sql_allocator *rsa, sql_table *mt, int 
 		throw(SQL,"sql.partition", SQLSTATE(42000) "Incorrect expression '%s'", query);
 	}
 
-	if(!mt->part.pexp->cols)
+	if (!mt->part.pexp->cols)
 		mt->part.pexp->cols = sa_list(rsa);
 	exp_find_table_columns(sql, exp, mt, mt->part.pexp->cols);
 
-	if((msg = find_expression_type(exp, &(mt->part.pexp->type))) != NULL)
+	if ((msg = find_expression_type(exp, &(mt->part.pexp->type))) != NULL)
 		return msg;
 
 	sql_ec = mt->part.pexp->type.type->eclass;
-	if(!(sql_ec == EC_BIT || EC_VARCHAR(sql_ec) || EC_TEMP(sql_ec) || sql_ec == EC_POS || sql_ec == EC_NUM ||
+	if (!(sql_ec == EC_BIT || EC_VARCHAR(sql_ec) || EC_TEMP(sql_ec) || sql_ec == EC_POS || sql_ec == EC_NUM ||
 		 EC_INTERVAL(sql_ec)|| sql_ec == EC_DEC || sql_ec == EC_BLOB)) {
 		char *err = sql_subtype_string(&(mt->part.pexp->type));
 		if (!err) {
-			throw(SQL, "sql.partition", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(SQL, "sql.partition", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		} else {
 			msg = createException(SQL, "sql.partition",
 								  SQLSTATE(42000) "Column type %s not supported for the expression return value", err);
@@ -306,20 +304,18 @@ bootstrap_partition_expression(mvc* sql, sql_allocator *rsa, sql_table *mt, int 
 		}
 	}
 
-	if(instantiate) {
+	if (instantiate) {
 		r = rel_project(sql->sa, r, NULL);
 		r->exps = sa_list(sql->sa);
 		list_append(r->exps, exp);
 
 		if (r)
-			r = rel_unnest(sql, r);
-		if (r)
-			r = rel_optimizer(sql, r, 0);
+			r = sql_processrelation(sql, r, 0);
 		if (r) {
 			node *n, *found = NULL;
 			list *id_l = rel_dependencies(sql, r);
 			for (n = id_l->h ; n ; n = n->next) //remove the table itself from the list of dependencies
-				if(*(sqlid *) n->data == mt->base.id)
+				if (*(sqlid *) n->data == mt->base.id)
 					found = n;
 			assert(found);
 			list_remove_node(id_l, found);
@@ -333,9 +329,9 @@ bootstrap_partition_expression(mvc* sql, sql_allocator *rsa, sql_table *mt, int 
 void
 find_partition_type(sql_subtype *tpe, sql_table *mt)
 {
-	if(isPartitionedByColumnTable(mt)) {
+	if (isPartitionedByColumnTable(mt)) {
 		*tpe = mt->part.pcol->type;
-	} else if(isPartitionedByExpressionTable(mt)) {
+	} else if (isPartitionedByExpressionTable(mt)) {
 		*tpe = mt->part.pexp->type;
 	} else {
 		assert(0);
@@ -349,12 +345,12 @@ initialize_sql_parts(mvc* sql, sql_table *mt)
 	sql_subtype found;
 	int localtype;
 
-	if(isPartitionedByExpressionTable(mt) && (res = bootstrap_partition_expression(sql, sql->session->tr->sa, mt, 0)) != NULL)
+	if (isPartitionedByExpressionTable(mt) && (res = bootstrap_partition_expression(sql, sql->session->tr->sa, mt, 0)) != NULL)
 		return res;
 	find_partition_type(&found, mt);
 	localtype = found.type->localtype;
 
-	if(localtype != TYPE_str && mt->members.set && list_length(mt->members.set)) {
+	if (localtype != TYPE_str && mt->members.set && list_length(mt->members.set)) {
 		list *new = sa_list(sql->session->tr->sa), *old = sa_list(sql->session->tr->sa);
 
 		for (node *n = mt->members.set->h; n; n = n->next) {
@@ -362,11 +358,12 @@ initialize_sql_parts(mvc* sql, sql_table *mt)
 			sql_table* pt = find_sql_table(mt->s, next->base.name);
 
 			base_init(sql->session->tr->sa, &p->base, pt->base.id, TR_NEW, pt->base.name);
-			p->t = pt;
-			p->tpe = found;
+			p->t = mt;
+			assert(isMergeTable(mt) || isReplicaTable(mt));
+			dup_sql_type(sql->session->tr, mt->s, &found, &(p->tpe));
 			p->with_nills = next->with_nills;
 
-			if(isListPartitionTable(mt)) {
+			if (isListPartitionTable(mt)) {
 				p->part.values = sa_list(sql->session->tr->sa);
 
 				for (node *m = next->part.values->h; m; m = m->next) {
@@ -374,35 +371,35 @@ initialize_sql_parts(mvc* sql, sql_table *mt)
 					ValRecord vvalue;
 					ptr ok;
 
-					nv->tpe = found;
+					dup_sql_type(sql->session->tr, mt->s, &found, &(nv->tpe));
 					vvalue = (ValRecord) {.vtype = TYPE_void,};
 					ok = VALinit(&vvalue, TYPE_str, v->value);
-					if(ok)
+					if (ok)
 						ok = VALconvert(localtype, &vvalue);
-					if(ok) {
+					if (ok) {
 						nv->value = sa_alloc(sql->session->tr->sa, vvalue.len);
 						memcpy(nv->value, VALget(&vvalue), vvalue.len);
 						nv->length = vvalue.len;
 					}
 					list_append(p->part.values, nv);
 					VALclear(&vvalue);
-					if(!ok) {
+					if (!ok) {
 						res = createException(SQL, "sql.partition",
 											  SQLSTATE(42000) "Internal error while bootstrapping partitioned tables");
 						goto finish;
 					}
 				}
-			} else if(isRangePartitionTable(mt)) {
+			} else if (isRangePartitionTable(mt)) {
 				ValRecord vmin, vmax;
 				ptr ok;
 
 				vmin = vmax = (ValRecord) {.vtype = TYPE_void,};
 				ok = VALinit(&vmin, TYPE_str, next->part.range.minvalue);
-				if(ok)
+				if (ok)
 					ok = VALinit(&vmax, TYPE_str, next->part.range.maxvalue);
-				if(ok) {
-					if (strcmp((const char *)VALget(&vmin), str_nil) == 0 &&
-						strcmp((const char *)VALget(&vmax), str_nil) == 0) {
+				if (ok) {
+					if (strNil((const char *)VALget(&vmin)) &&
+						strNil((const char *)VALget(&vmax))) {
 						int tpe = found.type->localtype;
 						const void *nil_ptr = ATOMnilptr(tpe);
 						size_t nil_len = ATOMlen(tpe, nil_ptr);
@@ -416,9 +413,9 @@ initialize_sql_parts(mvc* sql, sql_table *mt)
 						p->part.range.maxlength = nil_len;
 					} else {
 						ok = VALconvert(localtype, &vmin);
-						if(ok)
+						if (ok)
 							ok = VALconvert(localtype, &vmax);
-						if(ok) {
+						if (ok) {
 							p->part.range.minvalue = sa_alloc(sql->session->tr->sa, vmin.len);
 							p->part.range.maxvalue = sa_alloc(sql->session->tr->sa, vmax.len);
 							memcpy(p->part.range.minvalue, VALget(&vmin), vmin.len);
@@ -430,7 +427,7 @@ initialize_sql_parts(mvc* sql, sql_table *mt)
 				}
 				VALclear(&vmin);
 				VALclear(&vmax);
-				if(!ok) {
+				if (!ok) {
 					res = createException(SQL, "sql.partition",
 										  SQLSTATE(42000) "Internal error while bootstrapping partitioned tables");
 					goto finish;
@@ -453,14 +450,15 @@ initialize_sql_parts(mvc* sql, sql_table *mt)
 			sql_part *err = NULL;
 
 			pt->p = mt;
-			if(isRangePartitionTable(mt) || isListPartitionTable(mt)) {
+			assert(isMergeTable(mt) || isReplicaTable(mt));
+			if (isRangePartitionTable(mt) || isListPartitionTable(mt)) {
 				err = cs_add_with_validate(&mt->members, next, TR_NEW,
 										   isRangePartitionTable(mt) ?
 										   sql_range_part_validate_and_insert : sql_values_part_validate_and_insert);
 			} else {
 				assert(0);
 			}
-			if(err) {
+			if (err) {
 				res = createException(SQL, "sql.partition",
 									  SQLSTATE(42000) "Internal error while bootstrapping partitioned tables");
 				goto finish;
