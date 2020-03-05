@@ -59,8 +59,8 @@ QUERY = SELECT i1.i FROM integers i1 WHERE i1.i >= (SELECT i1.i, i2.i FROM integ
 ERROR = !SELECT: subquery must return only one column
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-338558/.s.monetdb.33733
-QUERY = SELECT i1.i FROM integers i1 GROUP BY (SELECT SUM(i1.i) + i2.i FROM integers i2); --error, cannot use non GROUP BY column 'i2.i' in query results without an aggregate function
-ERROR = !SELECT: cannot use non GROUP BY column 'i1.i' in query results without an aggregate function
+QUERY = SELECT i1.i FROM integers i1 GROUP BY (SELECT SUM(i1.i) + i2.i FROM integers i2); --error, aggregate function not allowed in GROUP BY clause
+ERROR = !SELECT: aggregate function 'sum' not allowed in GROUP BY clause
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-379847/.s.monetdb.32523
 QUERY = SELECT i1.i FROM integers i1 GROUP BY (SELECT i2.i FROM integers i2); --error, column "i1.i" must appear in the GROUP BY clause or be used in an aggregate function

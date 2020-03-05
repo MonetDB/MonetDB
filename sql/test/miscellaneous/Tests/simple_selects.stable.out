@@ -182,12 +182,14 @@ stdout of test 'simple_selects` in directory 'sql/test/miscellaneous` itself:
 % int,	int,	int,	int,	int,	int,	int,	int,	int,	int,	int,	int,	double,	double,	double,	double,	int,	int,	int,	int # type
 % 1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	24,	24,	24,	24,	1,	1,	1,	1 # length
 [ 1,	NULL,	NULL,	NULL,	1,	NULL,	NULL,	NULL,	1,	NULL,	NULL,	NULL,	0.9090909091,	NULL,	NULL,	NULL,	1,	NULL,	NULL,	NULL	]
-#select avg(10), avg(NULL);
-% .%1,	.%2 # table_name
-% %1,	%2 # name
-% double,	double # type
-% 24,	24 # length
-[ 10,	NULL	]
+#select avg(10), avg(NULL),
+#       patindex('o', 'foo'), patindex(NULL, 'foo'), patindex('o', NULL), patindex('o', NULL), patindex(NULL, NULL),
+#       "hash"(null);
+% .%1,	.%2,	.,	.,	.,	.,	.,	. # table_name
+% %1,	%2,	%7,	%10,	%11,	%12,	%13,	%14 # name
+% double,	double,	int,	int,	int,	int,	int,	bigint # type
+% 24,	24,	1,	1,	1,	1,	1,	1 # length
+[ 10,	NULL,	2,	NULL,	NULL,	NULL,	NULL,	NULL	]
 #select substring('abc' from 1 for null);
 % . # table_name
 % %1 # name
