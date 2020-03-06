@@ -51,6 +51,8 @@ MKEYhash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	val= getArgReference(stk,p,1);
 	switch (ATOMstorage(tpe)) {
 	case TYPE_void:
+		*res = lng_nil; /* It can be called from SQL */
+		break;
 	case TYPE_bat:
 	case TYPE_ptr:
 		// illegal types, avoid falling into the default case.

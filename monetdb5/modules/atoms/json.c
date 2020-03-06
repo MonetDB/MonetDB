@@ -760,50 +760,86 @@ JSONstringParser(const char *j, const char **next)
 	throw(MAL, "json.parser", "Nonterminated string");
 }
 
+static bool
+JSONintegerParser(const char *j, const char **next) {
+  if (*j == '-')
+    j++;
+
+  // skipblancs(j);
+  if (!isdigit((unsigned char)*j)) {
+    *next = j;
+    return false;
+	}
+
+	if (*j == '0') {
+		*next = ++j;
+		return true;
+	}
+
+	for(; *j; j++)
+		if (!(isdigit((unsigned char) *j) && *j != '0'))
+			break;
+	*next = j;
+
+	return true;
+}
+
+static bool
+JSONfractionParser(const char *j, const char **next) {
+	if (*j != '.')
+		return false;
+
+	// skip the period character
+	j++;
+	for (; *j; j++)
+		if (!isdigit((unsigned char)*j))
+			break;
+	*next = j;
+
+	return true;
+}
+
+static bool
+JSONexponentParser(const char *j, const char **next) {
+	if (*j != 'e' && *j != 'E') {
+		return false;
+	}
+
+	j++;
+	if (*j == '-')
+		j++;
+
+	for (; *j; j++)
+		if (!isdigit((unsigned char)*j))
+			break;
+
+	*next = j;
+
+	return true;
+}
+
 static str
 JSONnumberParser(const char *j, const char **next)
 {
-	const char *backup = j;
-
-	if (*j == '-')
-		j++;
-	skipblancs(j);
-	if (!isdigit((unsigned char) *j)) {
-		*next = j;
+	if (!JSONintegerParser(j, next)) {
 		throw(MAL, "json.parser", "Number expected");
 	}
-	if (*j == '0') {
-		*next = j + 1;
+
+	j = *next;
+	// backup = j;
+	// skipblancs(j);
+
+	if (!JSONfractionParser(j, next)) {
+		*next = j;
 		return MAL_SUCCEED;
 	}
 
-	for (; *j; j++)
-		if (!isdigit((unsigned char) *j))
-			break;
-	backup = j;
-	skipblancs(j);
-	if (*j == '.') {
-		j++;
-		skipblancs(j);
-		for (; *j; j++)
-			if (!isdigit((unsigned char) *j))
-				break;
-		backup = j;
-	} else
-		j = backup;
-	skipblancs(j);
-	if (*j == 'e' || *j == 'E') {
-		j++;
-		skipblancs(j);
-		if (*j == '-')
-			j++;
-		skipblancs(j);
-		for (; *j; j++)
-			if (!isdigit((unsigned char) *j))
-				break;
-	} else
-		j = backup;
-	*next = j;
+	j = *next;
+
+	if (!JSONexponentParser(j, next)) {
+		*next = j;
+		return MAL_SUCCEED;
+	}
 	return MAL_SUCCEED;
 }
 
@@ -830,7 +866,7 @@ JSONtoken(JSON *jt, const char *j, const char **next)
 			if (jt->error)
 				return idx;
 			if (jt->elm[nxt].kind != JSON_ELEMENT) {
-				jt->error = createException(MAL, "json.parser", "JSON syntax error: element expected at offset %ld", j - string_start);
+				jt->error = createException(MAL, "json.parser", "JSON syntax error: element expected at offset %td", j - string_start);
 				return idx;
 			}
 			JSONappend(jt, idx, nxt);
@@ -841,13 +877,13 @@ JSONtoken(JSON *jt, const char *j, const char **next)
 			if (*j == '}')
 				break;
 			if (*j != '}' && *j != ',') {
-				jt->error = createException(MAL, "json.parser", "JSON syntax error: ',' or '}' expected at offset %ld", j - string_start);
+				jt->error = createException(MAL, "json.parser", "JSON syntax error: ',' or '}' expected at offset %td", j - string_start);
 				return idx;
 			}
 			j++;
 		}
 		if (*j != '}') {
-			jt->error = createException(MAL, "json.parser", "JSON syntax error: '}' expected at offset %ld", j - string_start);
+			jt->error = createException(MAL, "json.parser", "JSON syntax error: '}' expected at offset %td", j - string_start);
 			return idx;
 		} else
 			j++;
@@ -898,18 +934,18 @@ JSONtoken(JSON *jt, const char *j, const char **next)
 			if (*j == ']')
 				break;
 			if (jt->elm[nxt].kind == JSON_ELEMENT) {
-				jt->error = createException(MAL, "json.parser", "JSON syntax error: Array value expected at offset %ld", j - string_start);
+				jt->error = createException(MAL, "json.parser", "JSON syntax error: Array value expected at offset %td", j - string_start);
 				return idx;
 			}
 			if (*j != ']' && *j != ',') {
-				jt->error = createException(MAL, "json.parser", "JSON syntax error: ',' or ']' expected at offset %ld (context: %c%c%c)", j - string_start, *(j - 1), *j, *(j + 1));
+				jt->error = createException(MAL, "json.parser", "JSON syntax error: ',' or ']' expected at offset %td (context: %c%c%c)", j - string_start, *(j - 1), *j, *(j + 1));
 				return idx;
 			}
 			j++;
 			skipblancs(j);
 		}
 		if (*j != ']') {
-			jt->error = createException(MAL, "json.parser", "JSON syntax error: ']' expected at offset %ld", j - string_start);
+			jt->error = createException(MAL, "json.parser", "JSON syntax error: ']' expected at offset %td", j - string_start);
 		} else
 			j++;
 		*next = j;
@@ -946,7 +982,7 @@ JSONtoken(JSON *jt, const char *j, const char **next)
 			jt->elm[idx].valuelen = 4;
 			return idx;
 		}
-		jt->error = createException(MAL, "json.parser", "JSON syntax error: NULL expected at offset %ld", j - string_start);
+		jt->error = createException(MAL, "json.parser", "JSON syntax error: NULL expected at offset %td", j - string_start);
 		return idx;
 	case 't':
 		if (strncmp("true", j, 4) == 0) {
@@ -956,7 +992,7 @@ JSONtoken(JSON *jt, const char *j, const char **next)
 			jt->elm[idx].valuelen = 4;
 			return idx;
 		}
-		jt->error = createException(MAL, "json.parser", "JSON syntax error: True expected at offset %ld", j - string_start);
+		jt->error = createException(MAL, "json.parser", "JSON syntax error: True expected at offset %td", j - string_start);
 		return idx;
 	case 'f':
 		if (strncmp("false", j, 5) == 0) {
@@ -966,7 +1002,7 @@ JSONtoken(JSON *jt, const char *j, const char **next)
 			jt->elm[idx].valuelen = 5;
 			return idx;
 		}
-		jt->error = createException(MAL, "json.parser", "JSON syntax error: False expected at offset %ld", j - string_start);
+		jt->error = createException(MAL, "json.parser", "JSON syntax error: False expected at offset %td", j - string_start);
 		return idx;
 	default:
 		if (*j == '-' || isdigit((unsigned char) *j)) {
@@ -978,7 +1014,7 @@ JSONtoken(JSON *jt, const char *j, const char **next)
 			jt->elm[idx].valuelen = *next - jt->elm[idx].value;
 			return idx;
 		}
-		jt->error = createException(MAL, "json.parser", "JSON syntax error: value expected at offset %ld", j - string_start);
+		jt->error = createException(MAL, "json.parser", "JSON syntax error: value expected at offset %td", j - string_start);
 		return idx;
 	}
 }

@@ -15,6 +15,10 @@ pattern alter_seq( sname:str, seqname:str, seq:ptr, val:lng)
 address SQLalter_seq 
 comment "Catalog operation alter_seq";
 
+pattern alter_seq( sname:str, seqname:str, seq:ptr, val:bat[:lng]) 
+address SQLalter_seq 
+comment "Catalog operation alter_seq";
+
 pattern drop_seq( sname:str, nme:str, action:int) 
 address SQLdrop_seq 
 comment "Catalog operation drop_seq";

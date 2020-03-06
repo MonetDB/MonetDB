@@ -30,6 +30,108 @@ QUERY = PREPARE SELECT
         FROM another_T;
 ERROR = !Could not determine type for argument number 1
 CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-120241/.s.monetdb.31512
+QUERY = SELECT
+        	(SELECT i2.i FROM evilfunction(MIN(1)) as i2(i))
+        FROM integers i1; -- error, aggregate functions are not allowed in functions in FROM
+ERROR = !MIN: aggregate functions not allowed in functions in FROM
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-120241/.s.monetdb.31512
+QUERY = SELECT
+        	(SELECT i2.i FROM evilfunction(MAX(i1.i) OVER ()) as i2(i))
+        FROM integers i1; -- error, window functions are not allowed in functions in FROM
+ERROR = !MAX: window function 'max' not allowed in functions in FROM
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-448822/.s.monetdb.39899
+QUERY = SELECT 
+        	(SELECT 1 FROM evilfunction((SELECT MAX(1) OVER () UNION ALL SELECT 1)))
+        FROM integers i1; --error, more than one row returned by a subquery used as an expression
+ERROR = !Cardinality violation, scalar value expected
+CODE  = 21000
+MAPI  = (monetdb) /var/tmp/mtest-448822/.s.monetdb.39899
+QUERY = UPDATE another_T SET col1 = MIN(col1); --error, aggregates not allowed in update set clause
+ERROR = !MIN: aggregate functions not allowed in SET clause (use subquery)
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-228798/.s.monetdb.32449
+QUERY = UPDATE another_T SET col2 = 1 WHERE col1 = SUM(col2); --error, aggregates not allowed in update set clause
+ERROR = !SUM: aggregate functions not allowed in WHERE clause
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-228798/.s.monetdb.32449
+QUERY = UPDATE another_T SET col3 = (SELECT MAX(col5)); --error, aggregates not allowed in update set clause
+ERROR = !SELECT: aggregate functions not allowed in SET clause
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-228798/.s.monetdb.32449
+QUERY = UPDATE another_T SET col5 = 1 WHERE col5 = (SELECT AVG(col2)); --error, aggregates not allowed in where clause
+ERROR = !SELECT: aggregate functions not allowed in WHERE clause
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-399977/.s.monetdb.34656
+QUERY = UPDATE another_T SET col8 = (SELECT 1 FROM integers i2 WHERE AVG(i2.i)); --error, aggregates not allowed in update set clause
+ERROR = !AVG: aggregate functions not allowed in WHERE clause
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-399977/.s.monetdb.34656
+QUERY = UPDATE another_T SET col7 = 1 WHERE col5 = (SELECT 1 FROM integers i2 WHERE AVG(i2.i)); --error, aggregates not allowed in where clause
+ERROR = !AVG: aggregate functions not allowed in WHERE clause
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-399977/.s.monetdb.34656
+QUERY = DELETE FROM another_T WHERE col1 = COUNT(col2); --error, aggregates not allowed in where clause
+ERROR = !COUNT: aggregate functions not allowed in WHERE clause
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-229080/.s.monetdb.36783
+QUERY = DELETE FROM another_T WHERE col7 = (SELECT MIN(col3)); --error, aggregates not allowed in where clause
+ERROR = !SELECT: aggregate functions not allowed in WHERE clause
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-400794/.s.monetdb.37110
+QUERY = DELETE FROM another_T WHERE col2 = (SELECT 1 FROM integers i2 WHERE AVG(i2.i)); --error, aggregates not allowed in where clause
+ERROR = !AVG: aggregate functions not allowed in WHERE clause
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-400794/.s.monetdb.37110
+QUERY = UPDATE another_T SET col1 = AVG(col1) OVER (); --error, window functions not allowed in update set clause
+ERROR = !AVG: window function 'avg' not allowed in SET clause (use subquery)
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-234504/.s.monetdb.39561
+QUERY = UPDATE another_T SET col2 = 1 WHERE col1 = COUNT(col2) OVER (); --error, window functions not allowed in where clause
+ERROR = !COUNT: window function 'count' not allowed in WHERE clause
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-234504/.s.monetdb.39561
+QUERY = UPDATE another_T SET col4 = (SELECT MIN(col4 + ColID) OVER () FROM tbl_ProductSales); --error, more than one row returned by a subquery used as an expression
+ERROR = !zero_or_one: cardinality violation, scalar expression expected
+CODE  = M0M29
+MAPI  = (monetdb) /var/tmp/mtest-234504/.s.monetdb.39561
+QUERY = UPDATE another_T SET col6 = 1 WHERE col6 = (SELECT MIN(col3 + ColID) OVER () FROM tbl_ProductSales); --error, more than one row returned by a subquery used as an expression
+ERROR = !zero_or_one: cardinality violation, scalar expression expected
+CODE  = M0M29
+MAPI  = (monetdb) /var/tmp/mtest-234504/.s.monetdb.39561
+QUERY = DELETE FROM another_T WHERE col1 = AVG(col2) OVER (); --error, window functions not allowed in where clause
+ERROR = !AVG: window function 'avg' not allowed in WHERE clause
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-234504/.s.monetdb.39561
+QUERY = DELETE FROM another_T WHERE col8 = (SELECT MAX(col6 + ColID) OVER () FROM tbl_ProductSales); --error, more than one row returned by a subquery used as an expression
+ERROR = !zero_or_one: cardinality violation, scalar expression expected
+CODE  = M0M29
+MAPI  = (monetdb) /var/tmp/mtest-60261/.s.monetdb.38639
+QUERY = SET x = MAX(1) over (); --error, not allowed
+ERROR = !MAX: window function 'max' not allowed in SET clause (use subquery)
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-60261/.s.monetdb.38639
+QUERY = SET y = MIN(1); --error, not allowed
+ERROR = !MIN: missing group by
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-60261/.s.monetdb.38639
+QUERY = INSERT INTO another_T VALUES (SUM(1),2,3,4,5,6,7,8); --error, not allowed
+ERROR = !SUM: missing group by
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-60261/.s.monetdb.38639
+QUERY = INSERT INTO another_T VALUES (AVG(1) OVER (),2,3,4,5,6,7,8); --error, not allowed
+ERROR = !AVG: window function 'avg' not allowed inside a list of VALUES
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-60261/.s.monetdb.38639
+QUERY = CALL crashme(COUNT(1)); --error, not allowed
+ERROR = !COUNT: missing group by
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-60261/.s.monetdb.38639
+QUERY = CALL crashme(COUNT(1) OVER ()); --error, not allowed
+ERROR = !COUNT: window function 'count' not allowed in CALL
+CODE  = 42000
 
 # 15:41:18 >  
 # 15:41:18 >  "Done."

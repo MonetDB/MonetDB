@@ -153,22 +153,20 @@ gdk_export LOG_LEVEL LVL_PER_COMPONENT[];
 	 LOG_LEVEL == M_WARNING  ||		\
 	 LVL_PER_COMPONENT[COMP] >= LOG_LEVEL)
 
-#define IF_GDK_TRACER_LOG(LOG_LEVEL, COMP)	\
-	if (GDK_TRACER_TEST(LOG_LEVEL, COMP))
 
 #define GDK_TRACER_LOG_BODY(LOG_LEVEL, COMP, MSG, ...)			\
 	GDKtracer_log(LOG_LEVEL,					\
 		      "%s "						\
-		      "%-"MXW"s "					\
-		      "%"MXW"s:%d "					\
+		      "%-"MXW"s:%d "					\
+		      "%"MXW"s "					\
 		      "%"MXW"s "					\
 		      "%-"MXW"s "					\
 		      "%-"MXW"s # "MSG,					\
 		      GDKtracer_get_timestamp("%Y-%m-%d %H:%M:%S",	\
 					      (char[20]){0}, 20),	\
 		      __FILE__,						\
-		      __func__,						\
 		      __LINE__,						\
+		      __func__,						\
 		      LEVEL_STR[LOG_LEVEL],				\
 		      COMPONENT_STR[COMP],				\
 		      MT_thread_getname(),				\
@@ -176,7 +174,7 @@ gdk_export LOG_LEVEL LVL_PER_COMPONENT[];
 
 #define GDK_TRACER_LOG(LOG_LEVEL, COMP, MSG, ...)			\
 	do {								\
-		IF_GDK_TRACER_LOG(LOG_LEVEL, COMP) {			\
+		if (GDK_TRACER_TEST(LOG_LEVEL, COMP)) {			\
 			GDK_TRACER_LOG_BODY(LOG_LEVEL, COMP, MSG,	\
 					    ## __VA_ARGS__);		\
 		}							\
@@ -215,19 +213,19 @@ gdk_export LOG_LEVEL LVL_PER_COMPONENT[];
     }
 */
 #define TRC_CRITICAL_IF(COMP)			\
-	IF_GDK_TRACER_LOG(M_CRITICAL, COMP)
+	if (GDK_TRACER_TEST(M_CRITICAL, COMP))
 
 #define TRC_ERROR_IF(COMP)			\
-	IF_GDK_TRACER_LOG(M_ERROR, COMP)
+	if (GDK_TRACER_TEST(M_ERROR, COMP))
 
 #define TRC_WARNING_IF(COMP)			\
-	IF_GDK_TRACER_LOG(M_WARNING, COMP)
+	if (GDK_TRACER_TEST(M_WARNING, COMP))
 
 #define TRC_INFO_IF(COMP)			\
-	IF_GDK_TRACER_LOG(M_INFO, COMP)
+	if (GDK_TRACER_TEST(M_INFO, COMP))
 
 #define TRC_DEBUG_IF(COMP)			\
-	IF_GDK_TRACER_LOG(M_DEBUG, COMP)
+	if (GDK_TRACER_TEST(M_DEBUG, COMP))
 
 
 #define TRC_CRITICAL_ENDIF(COMP, MSG, ...)				\

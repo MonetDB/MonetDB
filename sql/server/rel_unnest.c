@@ -288,9 +288,9 @@ rel_freevar(mvc *sql, sql_rel *rel)
 		return NULL;
 	case op_table: {
 		sql_exp *call = rel->r;
-		if (rel->flag != 2 && rel->l)
+		if (rel->flag != TRIGGER_WRAPPER && rel->l)
 			lexps = rel_freevar(sql, rel->l);
-		exps = (rel->flag != 2 && call)?exps_freevar(sql, call->l):NULL;
+		exps = (rel->flag != TRIGGER_WRAPPER && call)?exps_freevar(sql, call->l):NULL;
 		return merge_freevar(exps, lexps);
 	}
 	case op_union:
