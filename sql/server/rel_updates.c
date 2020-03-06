@@ -42,7 +42,7 @@ insert_value(sql_query *query, sql_column *c, sql_rel **r, symbol *s, const char
 		}
 	} else {
 		exp_kind ek = {type_value, card_value, FALSE};
-		sql_exp *e = rel_value_exp2(query, r, s, sql_sel, ek);
+		sql_exp *e = rel_value_exp2(query, r, s, sql_sel | sql_values, ek);
 
 		if (!e)
 			return(NULL);
@@ -1157,11 +1157,11 @@ update_table(sql_query *query, dlist *qname, str alias, dlist *assignmentlist, s
 
 			if (!table_privs(sql, t, PRIV_SELECT)) 
 				return sql_error(sql, 02, SQLSTATE(42000) "UPDATE: insufficient privileges for user '%s' to update table '%s'", stack_get_string(sql, "current_user"), tname);
-			r = rel_logical_exp(query, NULL, opt_where, sql_where | sql_update_where);
+			r = rel_logical_exp(query, NULL, opt_where, sql_where);
 			if (!r) { 
 				sql->errstr[0] = 0;
 				sql->session->status = status;
-				r = rel_logical_exp(query, res, opt_where, sql_where | sql_update_where);
+				r = rel_logical_exp(query, res, opt_where, sql_where);
 				if (!r)
 					return NULL;
 				/* handle join */
@@ -1240,7 +1240,7 @@ delete_table(sql_query *query, dlist *qname, str alias, symbol *opt_where)
 			if (!table_privs(sql, t, PRIV_SELECT)) 
 				return sql_error(sql, 02, SQLSTATE(42000) "DELETE FROM: insufficient privileges for user '%s' to delete from table '%s'", stack_get_string(sql, "current_user"), tname);
 
-			r = rel_logical_exp(query, NULL, opt_where, sql_where | sql_update_where);
+			r = rel_logical_exp(query, NULL, opt_where, sql_where);
 			if (r) { /* simple predicate which is not using the to 
 					    be updated table. We add a select all */
 				sql_rel *l = rel_basetable(sql, t, t->base.name );
@@ -1253,7 +1253,7 @@ delete_table(sql_query *query, dlist *qname, str alias, symbol *opt_where)
 					for (node *nn = r->exps->h ; nn ; nn = nn->next)
 						exp_setname(sql->sa, (sql_exp*) nn->data, alias, NULL); //the last parameter is optional, hence NULL
 				}
-				r = rel_logical_exp(query, r, opt_where, sql_where | sql_update_where);
+				r = rel_logical_exp(query, r, opt_where, sql_where);
 			}
 			if (!r)
 				return NULL;
@@ -2073,7 +2073,7 @@ rel_parse_val(mvc *m, char *query, char emode, sql_rel *from)
 			sql_rel *r = from;
 			symbol* sq = sn->selection->h->data.sym->data.lval->h->data.sym;
 			sql_query *query = query_create(m);
-			e = rel_value_exp2(query, &r, sq, sql_sel, ek);
+			e = rel_value_exp2(query, &r, sq, sql_sel | sql_values, ek);
 		}
 	}
 	GDKfree(query);

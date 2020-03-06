@@ -58,6 +58,25 @@ stdout of test 'subquery4` in directory 'sql/test/subquery` itself:
 [ "tinyint",	8,	0,	"",	"%5",	"%5"	]
 [ "int",	32,	0,	NULL,	NULL,	NULL	]
 [ "int",	32,	0,	NULL,	NULL,	NULL	]
+#SELECT
+#	(SELECT i2.i FROM evilfunction(MIN(i1.i)) as i2(i))
+#FROM integers i1;
+% .%4 # table_name
+% %4 # name
+% int # type
+% 1 # length
+[ 1	]
+#SELECT
+#	(SELECT i2.i FROM evilfunction((SELECT MIN(1))) as i2(i))
+#FROM integers i1;
+% .%4 # table_name
+% %4 # name
+% int # type
+% 1 # length
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
 #UPDATE another_T SET col4 = (SELECT SUM(col4 + ColID) FROM tbl_ProductSales);
 [ 4	]
 #UPDATE another_T SET col6 = 1 WHERE col6 = (SELECT COUNT(col3 + ColID) FROM tbl_ProductSales);

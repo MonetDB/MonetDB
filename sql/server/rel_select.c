@@ -641,7 +641,7 @@ rel_named_table_function(sql_query *query, sql_rel *rel, symbol *ast, int latera
 					return NULL;
 			} else {
 				for ( ; n; n = n->next) {
-					sql_exp *e = rel_value_exp(query, &outer, n->data.sym, sql_sel, iek);
+					sql_exp *e = rel_value_exp(query, &outer, n->data.sym, sql_sel | sql_from, iek);
 
 					if (!e)
 						return NULL;
@@ -808,7 +808,7 @@ rel_values(sql_query *query, symbol *tableref)
 			for (n = values->h, m = exps->h; n && m; n = n->next, m = m->next) {
 				sql_exp *vals = m->data;
 				list *vals_list = vals->f;
-				sql_exp *e = rel_value_exp(query, NULL, n->data.sym, sql_sel, ek);
+				sql_exp *e = rel_value_exp(query, NULL, n->data.sym, sql_sel | sql_values, ek);
 				if (!e) 
 					return NULL;
 				list_append(vals_list, e);
@@ -3226,7 +3226,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 	sql_subfunc *a = NULL;
 	int no_nil = 0, group = 0, has_freevar = 0;
 	unsigned int all_freevar = 0;
-	sql_rel *groupby = *rel, *sel = NULL, *gr, *og = NULL, *res = groupby;
+	sql_rel *groupby = rel ? *rel : NULL, *sel = NULL, *gr, *og = NULL, *res = groupby;
 	sql_rel *subquery = NULL;
 	list *exps = NULL;
 	bool is_grouping = !strcmp(aname, "grouping"), has_args = false;
@@ -3246,9 +3246,9 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 			if (uaname)
 				GDKfree(uaname);
 			return e;
-		} else if (is_sql_update_where(f)) { /* the is_sql_update_where test must come before is_sql_where, because is_sql_update_where are handled with sql_where */
+		} else if (is_sql_values(f)) {
 			char *uaname = GDKmalloc(strlen(aname) + 1);
-			sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed in WHERE clauses inside UPDATE statements (use subquery)",
+			sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed inside a list of VALUES",
 						uaname ? toUpperCopy(uaname, aname) : aname);
 			if (uaname)
 				GDKfree(uaname);
@@ -3269,7 +3269,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 			return e;
 		} else if (is_sql_update_set(f)) {
 			char *uaname = GDKmalloc(strlen(aname) + 1);
-			sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed in UPDATE SET clause (use subquery)",
+			sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed in SET clause (use subquery)",
 						uaname ? toUpperCopy(uaname, aname) : aname);
 			if (uaname)
 				GDKfree(uaname);
@@ -3277,6 +3277,20 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 		} else if (is_sql_aggr(f)) {
 			char *uaname = GDKmalloc(strlen(aname) + 1);
 			sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions cannot be nested",
+						uaname ? toUpperCopy(uaname, aname) : aname);
+			if (uaname)
+				GDKfree(uaname);
+			return e;
+		} else if (is_psm_call(f)) {
+			char *uaname = GDKmalloc(strlen(aname) + 1);
+			sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed inside CALL",
+						uaname ? toUpperCopy(uaname, aname) : aname);
+			if (uaname)
+				GDKfree(uaname);
+			return e;
+		} else if (is_sql_from(f)) {
+			char *uaname = GDKmalloc(strlen(aname) + 1);
+			sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed in functions in FROM",
 						uaname ? toUpperCopy(uaname, aname) : aname);
 			if (uaname)
 				GDKfree(uaname);
@@ -3310,7 +3324,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 					GDKfree(uaname);
 				return e;
 			}
-			all_aggr &= (exp_card(e) <= CARD_AGGR && !exp_is_atom(e) && !is_func(e->type) && (!is_groupby(groupby->op) || !groupby->r || !exps_find_exp(groupby->r, e)));
+			all_aggr &= (exp_card(e) <= CARD_AGGR && !exp_is_atom(e) && !is_func(e->type) && (!groupby || !is_groupby(groupby->op) || !groupby->r || !exps_find_exp(groupby->r, e)));
 			has_freevar |= exp_has_freevar(sql, e);
 			all_freevar &= (is_freevar(e)>0);
 			list_append(exps, e);
@@ -3330,6 +3344,13 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 				if (uaname)
 					GDKfree(uaname);
 				return e;
+			} else if (is_sql_values(f)) {
+				char *uaname = GDKmalloc(strlen(aname) + 1);
+				sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed inside a list of VALUES",
+							uaname ? toUpperCopy(uaname, aname) : aname);
+				if (uaname)
+					GDKfree(uaname);
+				return e;
 			} else if (is_sql_join(f)) { /* the is_sql_join test must come before is_sql_where, because the join conditions are handled with sql_where */
 				char *uaname = GDKmalloc(strlen(aname) + 1);
 				sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed in JOIN conditions",
@@ -3340,6 +3361,13 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 			} else if (is_sql_where(f)) {
 				char *uaname = GDKmalloc(strlen(aname) + 1);
 				sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed in WHERE clause",
+							uaname ? toUpperCopy(uaname, aname) : aname);
+				if (uaname)
+					GDKfree(uaname);
+				return e;
+			} else if (is_sql_from(f)) {
+				char *uaname = GDKmalloc(strlen(aname) + 1);
+				sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed in functions in FROM",
 							uaname ? toUpperCopy(uaname, aname) : aname);
 				if (uaname)
 					GDKfree(uaname);
@@ -3365,14 +3393,18 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 				return sql_error(sql, 05, SQLSTATE(42000) "SELECT: aggregate function '%s' not allowed in GROUP BY clause", aname);
 			if (is_sql_aggr(sql_state))
 				return sql_error(sql, 05, SQLSTATE(42000) "SELECT: aggregate function calls cannot be nested");
-			if (is_sql_update_where(sql_state))
-				return sql_error(sql, 05, SQLSTATE(42000) "SELECT: aggregate functions not allowed in WHERE clauses inside UPDATE statements");
+			if (is_sql_values(sql_state))
+				return sql_error(sql, 05, SQLSTATE(42000) "SELECT: aggregate functions not allowed inside a list of VALUES");
 			if (is_sql_update_set(sql_state))
-				return sql_error(sql, 05, SQLSTATE(42000) "SELECT: aggregate functions not allowed in UPDATE SET clause");
+				return sql_error(sql, 05, SQLSTATE(42000) "SELECT: aggregate functions not allowed in SET clause");
 			if (is_sql_join(sql_state))
 				return sql_error(sql, 05, SQLSTATE(42000) "SELECT: aggregate functions not allowed in JOIN conditions");
 			if (is_sql_where(sql_state))
 				return sql_error(sql, 05, SQLSTATE(42000) "SELECT: aggregate functions not allowed in WHERE clause");
+			if (is_psm_call(sql_state))
+				return sql_error(sql, 05, SQLSTATE(42000) "CALL: aggregate functions not allowed inside CALL");
+			if (is_sql_from(sql_state))
+				return sql_error(sql, 05, SQLSTATE(42000) "SELECT: aggregate functions not allowed in functions in FROM");
 		}
 	}
 
@@ -3435,7 +3467,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 
 	if (all_freevar) {
 		query_update_outer(query, res, all_freevar-1);
-	} else {
+	} else if (rel) {
 		*rel = res;
 	}
 
@@ -4605,11 +4637,12 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 	is_nth_value = !strcmp(aname, "nth_value");
 	supports_frames = window_function->token != SQL_RANK || is_nth_value || !strcmp(aname, "first_value") || !strcmp(aname, "last_value");
 
-	if (is_sql_update_set(f) || is_sql_update_where(f) || is_sql_join(f) || is_sql_where(f) || is_sql_groupby(f) || is_sql_having(f)) {
+	if (is_sql_update_set(f) || is_sql_values(f) || is_sql_join(f) || is_sql_where(f) || is_sql_groupby(f) || is_sql_having(f) || is_psm_call(f) || is_sql_from(f)) {
 		char *uaname = GDKmalloc(strlen(aname) + 1);
-		const char *clause = is_sql_update_set(f)?"UPDATE SET clause (use subquery)":is_sql_update_where(f)?"WHERE clause inside updates (use subquery)":
-							 is_sql_join(f)?"JOIN conditions":is_sql_where(f)?"WHERE clause":is_sql_groupby(f)?"GROUP BY clause":"HAVING clause";
-		(void) sql_error(sql, 02, SQLSTATE(42000) "%s: window function '%s' not allowed in %s",
+		const char *clause = is_sql_update_set(f)?"in SET clause (use subquery)":is_sql_values(f)?"inside a list of VALUES":
+							 is_sql_join(f)?"in JOIN conditions":is_sql_where(f)?"in WHERE clause":is_sql_groupby(f)?"in GROUP BY clause":
+							 is_psm_call(f)?"in CALL":is_sql_from(f)?"in functions in FROM":"in HAVING clause";
+		(void) sql_error(sql, 02, SQLSTATE(42000) "%s: window function '%s' not allowed %s",
 						 uaname ? toUpperCopy(uaname, aname) : aname, aname, clause);
 		if (uaname)
 			GDKfree(uaname);
@@ -6015,7 +6048,7 @@ rel_loader_function(sql_query *query, symbol* fcall, list *fexps, sql_subfunc **
 					return NULL;
 			} else {
 				for ( ; n; n = n->next) {
-					sql_exp *e = rel_value_exp(query, NULL, n->data.sym, sql_sel, iek);
+					sql_exp *e = rel_value_exp(query, NULL, n->data.sym, sql_sel | sql_from, iek);
 
 					if (!e)
 						return NULL;
