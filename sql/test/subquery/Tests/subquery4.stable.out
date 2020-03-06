@@ -58,6 +58,18 @@ stdout of test 'subquery4` in directory 'sql/test/subquery` itself:
 [ "tinyint",	8,	0,	"",	"%5",	"%5"	]
 [ "int",	32,	0,	NULL,	NULL,	NULL	]
 [ "int",	32,	0,	NULL,	NULL,	NULL	]
+#UPDATE another_T SET col4 = (SELECT SUM(col4 + ColID) FROM tbl_ProductSales);
+[ 4	]
+#UPDATE another_T SET col6 = 1 WHERE col6 = (SELECT COUNT(col3 + ColID) FROM tbl_ProductSales);
+[ 0	]
+#DELETE FROM another_T WHERE col8 = (SELECT AVG(col6 + ColID) FROM tbl_ProductSales);
+[ 0	]
+#UPDATE another_T SET col3 = (SELECT SUM(col5) OVER ());
+[ 4	]
+#UPDATE another_T SET col5 = 1 WHERE col5 = (SELECT MAX(col2) OVER ());
+[ 0	]
+#DELETE FROM another_T WHERE col7 = (SELECT SUM(col3) OVER ());
+[ 0	]
 #DROP FUNCTION evilfunction(INT);
 #DROP FUNCTION evilfunction(INT, INT);
 #DROP TABLE tbl_ProductSales;

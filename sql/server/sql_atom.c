@@ -443,10 +443,17 @@ atom2sql(atom *a)
 			return _STRDUP("true");
 		return _STRDUP("false");
 	case EC_CHAR:
-	case EC_STRING:
+	case EC_STRING: {
+		char *val, *res;
 		assert(a->data.vtype == TYPE_str && a->data.val.sval);
-		sprintf(buf, "'%s'", a->data.val.sval);
-		break;
+
+		if (!(val = sql_escape_str(a->data.val.sval)))
+			return NULL;
+		if ((res = NEW_ARRAY(char, strlen(val) + 3)))
+			stpcpy(stpcpy(stpcpy(res, "'"), val), "'");
+		c_delete(val);
+		return res;
+	} break;
 	case EC_BLOB:
 		/* TODO atom to string */
 		break;
@@ -558,8 +565,21 @@ atom2sql(atom *a)
 	case EC_DATE:
 	case EC_TIMESTAMP:
 		if (a->data.vtype == TYPE_str) {
-			assert(a->data.val.sval);
-			sprintf(buf, "%s '%s'", a->tpe.type->sqlname, a->data.val.sval);
+			char *val1 = sql_escape_str(a->tpe.type->sqlname), *val2 = sql_escape_str(a->data.val.sval), *res;
+
+			if (!val1 || !val2) {
+				c_delete(val1);
+				c_delete(val2);
+				return NULL;
+			}
+				
+			if ((res = NEW_ARRAY(char, strlen(val1) + strlen(val2) + 4)))
+				stpcpy(stpcpy(stpcpy(stpcpy(res, val1)," '"), val2), "'");
+			c_delete(val1);
+			c_delete(val2);
+			return res;
+		} else {
+			snprintf(buf, BUFSIZ, "atom2sql(TYPE_%d) not implemented", a->data.vtype);
 		}
 		break;
 	default:
