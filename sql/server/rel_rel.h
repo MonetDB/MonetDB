@@ -13,7 +13,7 @@
 #include "sql_relation.h"
 #include "sql_semantic.h"
 
-#define sql_from         (1 << 0)
+#define sql_from         (1 << 0)  //ORed
 #define sql_where        (1 << 1)
 #define sql_sel          (1 << 2)
 #define sql_having       (1 << 3)

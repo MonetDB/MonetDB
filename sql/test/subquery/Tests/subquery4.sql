@@ -19,6 +19,46 @@ PREPARE SELECT
 	(SELECT 1 FROM evilfunction((SELECT ?, ?))) 
 FROM another_T;
 
+SELECT
+	(SELECT i2.i FROM evilfunction(MIN(i1.i)) as i2(i))
+FROM integers i1;
+	-- 1
+
+SELECT
+	(SELECT i2.i FROM evilfunction((SELECT MIN(1))) as i2(i))
+FROM integers i1;
+	-- 1
+	-- 1
+	-- 1
+	-- 1
+
+SELECT
+	(SELECT i2.i FROM evilfunction(MIN(1)) as i2(i))
+FROM integers i1; -- error, aggregate functions are not allowed in functions in FROM
+
+SELECT
+	(SELECT i2.i FROM evilfunction(MAX(i1.i) OVER ()) as i2(i))
+FROM integers i1; -- error, window functions are not allowed in functions in FROM
+
+SELECT
+	(SELECT i2.i FROM evilfunction((SELECT MIN(i1.i + i3.i) FROM integers i3)) as i2(i))
+FROM integers i1;
+	-- 2
+	-- 3
+	-- 4
+	-- NULL
+
+SELECT i2.i FROM evilfunction((SELECT MAX(1) OVER ())) as i2(i);
+	-- 1
+
+SELECT
+	(SELECT i2.i FROM evilfunction((SELECT MAX(i1.i) OVER ())) as i2(i))
+FROM integers i1;
+	-- 1
+	-- 2
+	-- 3
+	-- NULL
+
 UPDATE another_T SET col1 = MIN(col1); --error, aggregates not allowed in update set clause
 UPDATE another_T SET col2 = 1 WHERE col1 = SUM(col2); --error, aggregates not allowed in update set clause
 UPDATE another_T SET col3 = (SELECT MAX(col5)); --error, aggregates not allowed in update set clause
@@ -58,6 +98,8 @@ CALL crashme(COUNT(1)); --error, not allowed
 CALL crashme(COUNT(1) OVER ()); --error, not allowed
 
 CALL crashme((SELECT COUNT(1)));
+CALL crashme((SELECT COUNT(1) OVER ())); --should be allowed, it returns exactly one row
+CALL crashme((SELECT 1 UNION ALL SELECT 2)); --error, returns more than one row
 
 create sequence "debugme" as integer start with 1;
 alter sequence "debugme" restart with (select MAX(1));

@@ -509,6 +509,20 @@ SELECT
 	(SELECT outt FROM evilfunction((SELECT MIN(t2.col1) FROM another_T t2))) 
 FROM another_T; --error, more than one row returned by a subquery used as an expression
 
+SELECT
+	(SELECT i1.i FROM (VALUES (MIN(i1.i), MAX(i1.i))) as i2(i))
+FROM integers i1; --error, subquery uses ungrouped column "i1.i" from outer query
+
+SELECT
+	(SELECT i2.i FROM (VALUES (MIN(i1.i))) as i2(i))
+FROM integers i1;
+	-- 1
+
+SELECT
+	(SELECT i2.i FROM (VALUES (MIN(i1.i), MAX(i1.i))) as i2(i))
+FROM integers i1;
+	-- 1
+
 /* We shouldn't allow the following internal functions/procedures to be called from regular queries */
 --SELECT "identity"(col1) FROM another_T;
 --SELECT "rowid"(col1) FROM another_T;
