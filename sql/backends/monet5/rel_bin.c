@@ -562,6 +562,8 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			return stmt_table(be, r, 1);
 		} else if (e->flag & PSM_EXCEPTION) {
 			stmt *cond = exp_bin(be, e->l, left, right, grp, ext, cnt, sel);
+			if (!cond)
+				return NULL;
 			return stmt_exception(be, cond, (const char *) e->r, 0);
 		}
 		break;
@@ -2206,8 +2208,12 @@ rel2bin_antijoin(backend *be, sql_rel *rel, list *refs)
 		assert(list_length(mexps) == 1);
 		for( en = mexps->h; en; en = en->next ) {
 			sql_exp *e = en->data;
-			stmt *ls = exp_bin(be, e->l, left, right, NULL, NULL, NULL, NULL);
-			stmt *rs = exp_bin(be, e->r, left, right, NULL, NULL, NULL, NULL);
+			stmt *ls = exp_bin(be, e->l, left, right, NULL, NULL, NULL, NULL), *rs;
+			if (!ls)
+				return NULL;
+
+			if (!(rs = exp_bin(be, e->r, left, right, NULL, NULL, NULL, NULL)))
+				return NULL;
 
 			if (ls->nrcols == 0)
 				ls = stmt_const(be, bin_first_column(be, left), ls);
@@ -5315,7 +5321,7 @@ rel2bin_psm(backend *be, sql_rel *rel)
 	for (n = rel->exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
 		stmt *s = exp_bin(be, e, sub, NULL, NULL, NULL, NULL, NULL);
-		if(!s)
+		if (!s)
 			return NULL;
 
 		if (s && s->type == st_table) /* relational statement */
@@ -5337,6 +5343,8 @@ rel2bin_partition_limits(backend *be, sql_rel *rel, list *refs)
 		l = subrel_bin(be, rel->l, refs);
 	if (rel->r)  /* first construct the sub relation */
 		r = subrel_bin(be, rel->r, refs);
+	if (!l || !r)
+		return NULL;
 
 	assert(rel->exps);
 	assert(rel->flag == ddl_alter_table_add_range_partition || rel->flag == ddl_alter_table_add_list_partition);
@@ -5345,6 +5353,8 @@ rel2bin_partition_limits(backend *be, sql_rel *rel, list *refs)
 		for (n = rel->exps->h; n; n = n->next) {
 			sql_exp *e = n->data;
 			stmt *s = exp_bin(be, e, l, r, NULL, NULL, NULL, NULL);
+			if (!s)
+				return NULL;
 			append(slist, s);
 		}
 	}
@@ -5365,11 +5375,15 @@ rel2bin_exception(backend *be, sql_rel *rel, list *refs)
 		l = subrel_bin(be, rel->l, refs);
     if (rel->r)  /* first construct the sub relation */
 		r = subrel_bin(be, rel->r, refs);
+	if (!l || !r)
+		return NULL;
 
 	if (rel->exps) {
 		for (n = rel->exps->h; n; n = n->next) {
 			sql_exp *e = n->data;
 			stmt *s = exp_bin(be, e, l, r, NULL, NULL, NULL, NULL);
+			if (!s)
+				return NULL;
 			append(slist, s);
 		}
 	} else { /* if there is no exception condition, just generate a statement list */
@@ -5389,7 +5403,7 @@ rel2bin_seq(backend *be, sql_rel *rel, list *refs)
 
 	if (rel->l) { /* first construct the sub relation */
 		sl = subrel_bin(be, rel->l, refs);
-		if(!sl)
+		if (!sl)
 			return NULL;
 	}
 
