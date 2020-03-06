@@ -1898,7 +1898,13 @@ rel_exp_visitor(mvc *sql, sql_rel *rel, exp_rewrite_fptr exp_rewriter)
 
 	switch(rel->op){
 	case op_basetable:
+		return rel;
 	case op_table:
+		if (rel->flag == TABLE_PROD_FUNC || rel->flag == TABLE_FROM_RELATION) {
+			if (rel->l)
+				if ((rel->l = rel_exp_visitor(sql, rel->l, exp_rewriter)) == NULL)
+					return NULL;
+		}
 		return rel;
 	case op_ddl:
 		if (rel->flag == ddl_output) {
@@ -2055,7 +2061,13 @@ rel_visitor(mvc *sql, sql_rel *rel, rel_rewrite_fptr rel_rewriter)
 
 	switch(rel->op){
 	case op_basetable:
+		return rel;
 	case op_table:
+		if (rel->flag == TABLE_PROD_FUNC || rel->flag == TABLE_FROM_RELATION) {
+			if (rel->l)
+				if ((rel->l = rel_visitor(sql, rel->l, rel_rewriter)) == NULL)
+					return NULL;
+		}
 		return rel;
 	case op_ddl:
 		if (rel->flag == ddl_output) {
@@ -2078,7 +2090,6 @@ rel_visitor(mvc *sql, sql_rel *rel, rel_rewrite_fptr rel_rewriter)
 					return NULL;
 		}
 		return rel;
-
 	case op_insert:
 	case op_update:
 	case op_delete:
@@ -2109,8 +2120,6 @@ rel_visitor(mvc *sql, sql_rel *rel, rel_rewrite_fptr rel_rewriter)
 		if (rel->l)
 			if ((rel->l = rel_visitor(sql, rel->l, rel_rewriter)) == NULL)
 				return NULL;
-		if ((rel->exps = exps_rel_visitor(sql, rel->exps, rel_rewriter)) == NULL)
-			return NULL;
 		break;
 	}
 	return rel_rewriter(sql, rel);
