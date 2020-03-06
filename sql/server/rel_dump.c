@@ -411,7 +411,7 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int dec
 		if (rel->r)
 			exp_print(sql, fout, rel->r, depth, refs, 1, 0);
 		if (rel->l) {
-			if (rel->flag == 2) 
+			if (rel->flag == TRIGGER_WRAPPER) 
 		  		mnstr_printf(fout, "rel_dump not yet implemented for trigger input");
 			else
 				rel_print_(sql, fout, rel->l, depth+1, refs, decorate);

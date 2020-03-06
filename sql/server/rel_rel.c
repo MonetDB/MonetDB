@@ -945,6 +945,7 @@ rel_table_func(sql_allocator *sa, sql_rel *l, sql_exp *f, list *exps, int kind)
 	if(!rel)
 		return NULL;
 
+	assert(kind > 0);
 	rel->flag = kind;
 	rel->l = l; /* relation before call */
 	rel->r = f; /* expression (table func call) */
@@ -1705,7 +1706,7 @@ rel_deps(mvc *sql, sql_rel *r, list *refs, list *l)
 		}
 	} break;
 	case op_table: {
-		if ((r->flag == 0 || r->flag == 1) && r->r) { /* table producing function, excluding rel_relational_func cases */
+		if ((IS_TABLE_PROD_FUNC(r->flag) || r->flag == TABLE_FROM_RELATION) && r->r) { /* table producing function, excluding rel_relational_func cases */
 			sql_exp *op = r->r;
 			sql_subfunc *f = op->f;
 			cond_append(l, &f->func->base.id);
@@ -1900,7 +1901,7 @@ rel_exp_visitor(mvc *sql, sql_rel *rel, exp_rewrite_fptr exp_rewriter)
 	case op_basetable:
 		return rel;
 	case op_table:
-		if (rel->flag == TABLE_PROD_FUNC || rel->flag == TABLE_FROM_RELATION) {
+		if (IS_TABLE_PROD_FUNC(rel->flag) || rel->flag == TABLE_FROM_RELATION) {
 			if (rel->l)
 				if ((rel->l = rel_exp_visitor(sql, rel->l, exp_rewriter)) == NULL)
 					return NULL;
@@ -2063,7 +2064,7 @@ rel_visitor(mvc *sql, sql_rel *rel, rel_rewrite_fptr rel_rewriter)
 	case op_basetable:
 		return rel;
 	case op_table:
-		if (rel->flag == TABLE_PROD_FUNC || rel->flag == TABLE_FROM_RELATION) {
+		if (IS_TABLE_PROD_FUNC(rel->flag) || rel->flag == TABLE_FROM_RELATION) {
 			if (rel->l)
 				if ((rel->l = rel_visitor(sql, rel->l, rel_rewriter)) == NULL)
 					return NULL;
