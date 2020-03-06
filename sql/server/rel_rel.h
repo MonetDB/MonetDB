@@ -13,7 +13,7 @@
 #include "sql_relation.h"
 #include "sql_semantic.h"
 
-#define sql_from         (1 << 0)
+#define sql_from         (1 << 0)  //ORed
 #define sql_where        (1 << 1)
 #define sql_sel          (1 << 2)
 #define sql_having       (1 << 3)
@@ -26,7 +26,8 @@
 #define sql_outer        (1 << 10) //ORed
 #define sql_group_totals (1 << 11) //ORed
 #define sql_update_set   (1 << 12) //ORed
-#define sql_update_where (1 << 13) //ORed
+#define sql_values       (1 << 13) //ORed
+#define psm_call         (1 << 14) //ORed
 
 #define is_sql_from(X)         ((X & sql_from) == sql_from)
 #define is_sql_where(X)        ((X & sql_where) == sql_where)
@@ -41,7 +42,8 @@
 #define is_sql_outer(X)        ((X & sql_outer) == sql_outer)
 #define is_sql_group_totals(X) ((X & sql_group_totals) == sql_group_totals)
 #define is_sql_update_set(X)   ((X & sql_update_set) == sql_update_set)
-#define is_sql_update_where(X) ((X & sql_update_where) == sql_update_where)
+#define is_sql_values(X)       ((X & sql_values) == sql_values)
+#define is_psm_call(X)         ((X & psm_call) == psm_call)
 
 #define is_updateble(rel) \
 	(rel->op == op_basetable || \
