@@ -75,7 +75,7 @@ const char *LEVEL_STR[] = {
  */
 // Exception
 #define GDK_TRACER_EXCEPTION(MSG, ...)					\
-	mnstr_printf(GDKstdout,						\
+	fprintf(stderr,							\
 		     "%s "						\
 		     "%-"MXW"s "					\
 		     "%"MXW"s:%d "					\
