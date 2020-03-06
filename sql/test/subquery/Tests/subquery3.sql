@@ -347,6 +347,10 @@ SELECT
 FROM integers i1; --error, aggregate functions not allowed in WHERE clause
 
 SELECT
+	(SELECT 1 FROM (VALUES (MAX(2))) as i2)
+FROM integers i1; --error, aggregate functions are not allowed in VALUES
+
+SELECT
 	(SELECT 1 FROM integers i2 INNER JOIN integers i3 on MAX(i3.i) = MIN(i2.i))
 FROM integers i1; --error, aggregate functions not allowed in JOIN conditions
 

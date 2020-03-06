@@ -997,14 +997,31 @@ SQLalter_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str seqname = *getArgReference_str(stk, pci, 2); 
 	sql_sequence *s = *(sql_sequence **) getArgReference(stk, pci, 3);
 	lng *val = NULL;
+	BAT *b = NULL;
 
 	initcontext();
 	if (getArgType(mb, pci, 4) == TYPE_lng)
 		val = getArgReference_lng(stk, pci, 4);
+	else if (isaBatType(getArgType(mb, pci, 4))) {
+		bat *bid = getArgReference_bat(stk, pci, 4);
+
+		if (!(b = BATdescriptor(*bid)))
+			throw(SQL, "sql.alter_seq", SQLSTATE(HY005) "Cannot access column descriptor");
+		if (BATcount(b) != 1) {
+			BBPunfix(b->batCacheid);
+			throw(SQL, "sql.alter_seq", SQLSTATE(42000) "Only one value allowed to alter a sequence value");	
+		}
+		if (getBatType(getArgType(mb, pci, 4)) == TYPE_lng)
+			val = (lng*)Tloc(b, 0);
+	}
+
 	if (val == NULL || is_lng_nil(*val))
 		msg = createException(SQL,"sql.alter_seq", SQLSTATE(42M36) "ALTER SEQUENCE: cannot (re)start with NULL");
 	else
 		msg = alter_seq(sql, sname, seqname, s, val);
+
+	if (b)
+		BBPunfix(b->batCacheid);
 	return msg;
 }
 

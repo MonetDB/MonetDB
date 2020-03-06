@@ -44,8 +44,29 @@ DELETE FROM another_T WHERE col1 = AVG(col2) OVER (); --error, window functions 
 DELETE FROM another_T WHERE col7 = (SELECT SUM(col3) OVER ());
 DELETE FROM another_T WHERE col8 = (SELECT MAX(col6 + ColID) OVER () FROM tbl_ProductSales); --error, more than one row returned by a subquery used as an expression
 
+DECLARE x int;
+SET x = MAX(1) over (); --error, not allowed
+DECLARE y int;
+SET y = MIN(1); --error, not allowed
+
+INSERT INTO another_T VALUES (SUM(1),2,3,4,5,6,7,8); --error, not allowed
+INSERT INTO another_T VALUES (AVG(1) OVER (),2,3,4,5,6,7,8); --error, not allowed
+
+CREATE PROCEDURE crashme(a int) BEGIN DECLARE x INT; SET x = a; END;
+
+CALL crashme(COUNT(1)); --error, not allowed
+CALL crashme(COUNT(1) OVER ()); --error, not allowed
+
+CALL crashme((SELECT COUNT(1)));
+
+create sequence "debugme" as integer start with 1;
+alter sequence "debugme" restart with (select MAX(1));
+alter sequence "debugme" restart with (select MIN(1) OVER ());
+drop sequence "debugme";
+
 DROP FUNCTION evilfunction(INT);
 DROP FUNCTION evilfunction(INT, INT);
+DROP PROCEDURE crashme(INT);
 DROP TABLE tbl_ProductSales;
 DROP TABLE another_T;
 DROP TABLE integers;

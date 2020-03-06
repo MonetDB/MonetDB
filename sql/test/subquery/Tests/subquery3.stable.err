@@ -157,7 +157,13 @@ QUERY = SELECT
         FROM integers i1; --error, aggregate functions not allowed in WHERE clause
 ERROR = !AVG: aggregate functions not allowed in WHERE clause
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-387258/.s.monetdb.34565
+MAPI  = (monetdb) /var/tmp/mtest-60261/.s.monetdb.38639
+QUERY = SELECT
+        	(SELECT 1 FROM (VALUES (MAX(2))) as i2)
+        FROM integers i1; --error, aggregate functions are not allowed in VALUES
+ERROR = !MAX: aggregate functions not allowed inside a list of VALUES
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-60261/.s.monetdb.38639
 QUERY = SELECT
         	(SELECT 1 FROM integers i2 INNER JOIN integers i3 on MAX(i3.i) = MIN(i2.i))
         FROM integers i1; --error, aggregate functions not allowed in JOIN conditions

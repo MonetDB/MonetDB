@@ -99,6 +99,10 @@ pattern alter_seq( sname:str, seqname:str, val:lng)
 address WLRgeneric
 comment "Catalog operation alter_seq";
 
+pattern alter_seq( sname:str, seqname:str, seq:ptr, val:bat[:lng]) 
+address WLRgeneric 
+comment "Catalog operation alter_seq";
+
 pattern drop_seq( sname:str, nme:str, action:int)
 address WLRgeneric
 comment "Catalog operation drop_seq";

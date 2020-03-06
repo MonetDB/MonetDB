@@ -1297,7 +1297,7 @@ rel_parse_value(backend *be, char *query, char emode)
 			int is_last = 0;
 			sql_rel *rel = NULL;
 			sql_query *query = query_create(m);
-			sql_exp *e = rel_value_exp2(query, &rel, sn->selection->h->data.sym->data.lval->h->data.sym, sql_sel, ek, &is_last);
+			sql_exp *e = rel_value_exp2(query, &rel, sn->selection->h->data.sym->data.lval->h->data.sym, sql_sel | sql_values, ek, &is_last);
 
 			if (!rel)
 				s = exp_bin(be, e, NULL, NULL, NULL, NULL, NULL, NULL); 
