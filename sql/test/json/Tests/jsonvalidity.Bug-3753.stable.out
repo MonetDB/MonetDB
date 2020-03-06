@@ -196,6 +196,30 @@ stdout of test 'jsonvalidity.Bug-3753` in directory 'sql/test/json` itself:
 % boolean # type
 % 5 # length
 [ false	]
+#SELECT json.isValid(r'0.001');          -- true
+% . # table_name
+% %1 # name
+% boolean # type
+% 5 # length
+[ true	]
+#SELECT json.isValid(r'-0.001');         -- true
+% . # table_name
+% %1 # name
+% boolean # type
+% 5 # length
+[ true	]
+#SELECT json.isValid(r'0.001e12');        -- true
+% . # table_name
+% %1 # name
+% boolean # type
+% 5 # length
+[ true	]
+#SELECT json.isValid(r'-0.001e-12');      -- true
+% . # table_name
+% %1 # name
+% boolean # type
+% 5 # length
+[ true	]
 
 # 16:25:22 >  
 # 16:25:22 >  "Done."
