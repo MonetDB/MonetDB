@@ -59,8 +59,11 @@ typedef struct expression {
 	void *p;	/* properties for the optimizer */
 } sql_exp;
 
-#define TABLE_PROD_FUNC		0
-#define TABLE_FROM_RELATION	1
+#define TABLE_PROD_FUNC		1
+#define TABLE_FROM_RELATION	2
+#define TRIGGER_WRAPPER		4
+
+#define IS_TABLE_PROD_FUNC(X)  ((X & TABLE_PROD_FUNC) == TABLE_PROD_FUNC)
 
 /* or-ed with the above TABLE_PROD_FUNC */
 #define UPD_COMP		2

@@ -767,50 +767,86 @@ JSONstringParser(const char *j, const char **next)
 	throw(MAL, "json.parser", "Nonterminated string");
 }
 
+static bool
+JSONintegerParser(const char *j, const char **next) {
+  if (*j == '-')
+    j++;
+
+  // skipblancs(j);
+  if (!isdigit((unsigned char)*j)) {
+    *next = j;
+    return false;
+	}
+
+	if (*j == '0') {
+		*next = ++j;
+		return true;
+	}
+
+	for(; *j; j++)
+		if (!(isdigit((unsigned char) *j) && *j != '0'))
+			break;
+	*next = j;
+
+	return true;
+}
+
+static bool
+JSONfractionParser(const char *j, const char **next) {
+	if (*j != '.')
+		return false;
+
+	// skip the period character
+	j++;
+	for (; *j; j++)
+		if (!isdigit((unsigned char)*j))
+			break;
+	*next = j;
+
+	return true;
+}
+
+static bool
+JSONexponentParser(const char *j, const char **next) {
+	if (*j != 'e' && *j != 'E') {
+		return false;
+	}
+
+	j++;
+	if (*j == '-')
+		j++;
+
+	for (; *j; j++)
+		if (!isdigit((unsigned char)*j))
+			break;
+
+	*next = j;
+
+	return true;
+}
+
 static str
 JSONnumberParser(const char *j, const char **next)
 {
-	const char *backup = j;
-
-	if (*j == '-')
-		j++;
-	skipblancs(j);
-	if (!isdigit((unsigned char) *j)) {
-		*next = j;
+	if (!JSONintegerParser(j, next)) {
 		throw(MAL, "json.parser", "Number expected");
 	}
-	if (*j == '0') {
-		*next = j + 1;
+
+	j = *next;
+	// backup = j;
+	// skipblancs(j);
+
+	if (!JSONfractionParser(j, next)) {
+		*next = j;
 		return MAL_SUCCEED;
 	}
 
-	for (; *j; j++)
-		if (!isdigit((unsigned char) *j))
-			break;
-	backup = j;
-	skipblancs(j);
-	if (*j == '.') {
-		j++;
-		skipblancs(j);
-		for (; *j; j++)
-			if (!isdigit((unsigned char) *j))
-				break;
-		backup = j;
-	} else
-		j = backup;
-	skipblancs(j);
-	if (*j == 'e' || *j == 'E') {
-		j++;
-		skipblancs(j);
-		if (*j == '-')
-			j++;
-		skipblancs(j);
-		for (; *j; j++)
-			if (!isdigit((unsigned char) *j))
-				break;
-	} else
-		j = backup;
-	*next = j;
+	j = *next;
+
+	if (!JSONexponentParser(j, next)) {
+		*next = j;
+		return MAL_SUCCEED;
+	}
 	return MAL_SUCCEED;
 }
 

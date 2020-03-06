@@ -42,7 +42,13 @@ QUERY = SELECT
         FROM integers i1; -- error, window functions are not allowed in functions in FROM
 ERROR = !MAX: window function 'max' not allowed in functions in FROM
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-120241/.s.monetdb.31512
+MAPI  = (monetdb) /var/tmp/mtest-448822/.s.monetdb.39899
+QUERY = SELECT 
+        	(SELECT 1 FROM evilfunction((SELECT MAX(1) OVER () UNION ALL SELECT 1)))
+        FROM integers i1; --error, more than one row returned by a subquery used as an expression
+ERROR = !Cardinality violation, scalar value expected
+CODE  = 21000
+MAPI  = (monetdb) /var/tmp/mtest-448822/.s.monetdb.39899
 QUERY = UPDATE another_T SET col1 = MIN(col1); --error, aggregates not allowed in update set clause
 ERROR = !MIN: aggregate functions not allowed in SET clause (use subquery)
 CODE  = 42000

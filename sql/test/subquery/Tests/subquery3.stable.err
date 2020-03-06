@@ -327,6 +327,18 @@ QUERY = SELECT
         FROM integers i1; --error, subquery uses ungrouped column "i1.i" from outer query
 ERROR = !SELECT: cannot use non GROUP BY column 'i1.i' in query results without an aggregate function
 CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-596453/.s.monetdb.32132
+QUERY = SELECT
+        	(SELECT i2.i FROM (VALUES (i1.i), (i1.i)) as i2(i))
+        FROM integers i1; --error, more than one row returned by a subquery used as an expression
+ERROR = !Cardinality violation, scalar value expected
+CODE  = 21000
+MAPI  = (monetdb) /var/tmp/mtest-600940/.s.monetdb.32137
+QUERY = SELECT
+        	(SELECT i2.i FROM (VALUES (i1.i, i1.i), (i1.i, i1.i)) as i2(i))
+        FROM integers i1; --error, more than one row returned by a subquery used as an expression
+ERROR = !Cardinality violation, scalar value expected
+CODE  = 21000
 
 # 17:40:41 >  
 # 17:40:41 >  "Done."

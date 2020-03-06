@@ -214,10 +214,17 @@ MT_thread_init(void)
 {
 	if (threadslot == TLS_OUT_OF_INDEXES) {
 		threadslot = TlsAlloc();
-		if (threadslot == TLS_OUT_OF_INDEXES)
+		if (threadslot == TLS_OUT_OF_INDEXES) {
+			char errmsg[256];
+			FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL, GetLastError(), 0, errmsg, sizeof(errmsg), NULL);
+			TRC_CRITICAL(GDK, "Creating thread-local slot for thread failed: %s\n", errmsg);
 			return false;
+		}
 		mainthread.tid = GetCurrentThreadId();
 		if (TlsSetValue(threadslot, &mainthread) == 0) {
+			char errmsg[256];
+			FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL, GetLastError(), 0, errmsg, sizeof(errmsg), NULL);
+			TRC_CRITICAL(GDK, "Setting thread-local value failed: %s\n", errmsg);
 			TlsFree(threadslot);
 			threadslot = TLS_OUT_OF_INDEXES;
 			return false;
@@ -386,12 +393,24 @@ join_detached_threads(void)
 int
 MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d, const char *threadname)
 {
-	struct winthread *w = malloc(sizeof(*w));
-
-	if (w == NULL)
-		return -1;
+	struct winthread *w;
 
 	join_threads();
+	if (threadname == NULL) {
+		TRC_CRITICAL(GDK, "Thread must have a name\n");
+		return -1;
+	}
+	if (strlen(threadname) >= sizeof(w->threadname)) {
+		TRC_CRITICAL(GDK, "Thread's name is too large\n");
+		return -1;
+	}
+
+	w = malloc(sizeof(*w));
+	if (w == NULL) {
+		TRC_ERROR(GDK, "Cannot allocate memory\n");
+		return -1;
+	}
+
 	*w = (struct winthread) {
 		.func = f,
 		.data = arg,
@@ -405,13 +424,18 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d, 
 	w->hdl = CreateThread(NULL, THREAD_STACK_SIZE, thread_starter, w,
 			      0, &w->tid);
 	if (w->hdl == NULL) {
+		char errmsg[256];
+		FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL, GetLastError(),
+			      0, errmsg, sizeof(errmsg), NULL);
 		LeaveCriticalSection(&winthread_cs);
+		free(w);
+		TRC_ERROR(GDK, "Failed to create thread: %s\n", errmsg);
 		return -1;
 	}
+	/* must not fail after this: the thread has been started */
 	w->next = winthreads;
 	winthreads = w;
 	LeaveCriticalSection(&winthread_cs);
-	/* must not fail after this: the thread has been started */
 	*t = (MT_Id) w->tid;
 	return 0;
 }
@@ -534,12 +558,12 @@ MT_thread_init(void)
 	int ret;
 
 	if ((ret = pthread_key_create(&threadkey, NULL)) != 0) {
-		TRC_ERROR(GDK, "Creating specific key for thread failed: %s\n", strerror(ret));
+		TRC_CRITICAL(GDK, "Creating specific key for thread failed: %s\n", strerror(ret));
 		return false;
 	}
 	mainthread.tid = pthread_self();
 	if ((ret = pthread_setspecific(threadkey, &mainthread)) != 0) {
-		TRC_ERROR(GDK, "Setting specific value failed: %s\n", strerror(ret));
+		TRC_CRITICAL(GDK, "Setting specific value failed: %s\n", strerror(ret));
 	}
 	return true;
 }
@@ -723,16 +747,14 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d, 
 	pthread_attr_t attr;
 	int ret;
 	struct posthread *p;
-	size_t tlen;
 
 	join_threads();
 	if (threadname == NULL) {
-		TRC_ERROR(GDK, "Thread must have a name\n");
+		TRC_CRITICAL(GDK, "Thread must have a name\n");
 		return -1;
 	}
-	tlen = strlen(threadname);
-	if (tlen >= sizeof(p->threadname)) {
-		TRC_ERROR(GDK, "Thread's name is too large\n");
+	if (strlen(threadname) >= sizeof(p->threadname)) {
+		TRC_CRITICAL(GDK, "Thread's name is too large\n");
 		return -1;
 	}
 	if ((ret = pthread_attr_init(&attr)) != 0) {
@@ -746,7 +768,7 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d, 
 	}
 	p = malloc(sizeof(struct posthread));
 	if (p == NULL) {
-		TRC_ERROR(GDK, "Cannot allocate memory: %s\n", strerror(errno));
+		TRC_ERROR(GDK, "Cannot allocate memory\n");
 		pthread_attr_destroy(&attr);
 		return -1;
 	}
@@ -758,7 +780,7 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d, 
 	};
 	ATOMIC_INIT(&p->exited, 0);
 
-	memcpy(p->threadname, threadname, tlen + 1);
+	strcpy_len(p->threadname, threadname, sizeof(p->threadname));
 #ifdef HAVE_PTHREAD_SIGMASK
 	sigset_t new_mask, orig_mask;
 	(void) sigfillset(&new_mask);
@@ -772,6 +794,7 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d, 
 	ret = pthread_create(&p->tid, &attr, thread_starter, p);
 	if (ret != 0) {
 		TRC_ERROR(GDK, "Cannot start thread: %s\n", strerror(ret));
+		free(p);
 		ret = -1;
 	} else {
 		/* must not fail after this: the thread has been started */
@@ -779,6 +802,7 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d, 
 		posthreads = p;
 	}
 	pthread_mutex_unlock(&posthread_lock);
+	(void) pthread_attr_destroy(&attr); /* not interested in errors */
 #ifdef HAVE_PTHREAD_SIGMASK
 	MT_thread_sigmask(&orig_mask, NULL);
 #endif

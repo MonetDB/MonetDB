@@ -48,6 +48,15 @@ FROM integers i1;
 	-- 4
 	-- NULL
 
+SELECT 1 FROM evilfunction((SELECT MAX(1) OVER ()));
+	-- 1
+
+SELECT 1 FROM evilfunction((SELECT MAX(1) OVER () UNION ALL SELECT 1)); --error, more than one row returned by a subquery used as an expression
+
+SELECT 
+	(SELECT 1 FROM evilfunction((SELECT MAX(1) OVER () UNION ALL SELECT 1)))
+FROM integers i1; --error, more than one row returned by a subquery used as an expression
+
 SELECT i2.i FROM evilfunction((SELECT MAX(1) OVER ())) as i2(i);
 	-- 1
 

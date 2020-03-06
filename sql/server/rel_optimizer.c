@@ -258,7 +258,7 @@ rel_properties(mvc *sql, global_props *gp, sql_rel *rel)
 	switch (rel->op) {
 	case op_basetable:
 	case op_table:
-		if (rel->op == op_table && rel->l && rel->flag != 2) 
+		if (rel->op == op_table && rel->l && rel->flag != TRIGGER_WRAPPER) 
 			rel_properties(sql, gp, rel->l);
 		break;
 	case op_join: 
@@ -6606,7 +6606,7 @@ rel_mark_used(mvc *sql, sql_rel *rel, int proj)
 	case op_basetable:
 	case op_table:
 
-		if (rel->op == op_table && rel->l && rel->flag != 2) {
+		if (rel->op == op_table && rel->l && rel->flag != TRIGGER_WRAPPER) {
 			rel_used(rel);
 			if (rel->r)
 				exp_mark_used(rel->l, rel->r, 0);
@@ -6824,7 +6824,7 @@ rel_dce_refs(mvc *sql, sql_rel *rel, list *refs)
 	case op_groupby: 
 	case op_select: 
 
-		if (rel->l && (rel->op != op_table || rel->flag != 2))
+		if (rel->l && (rel->op != op_table || rel->flag != TRIGGER_WRAPPER))
 			rel_dce_refs(sql, rel->l, refs);
 		break;
 
@@ -6876,7 +6876,7 @@ rel_dce_down(mvc *sql, sql_rel *rel, int skip_proj)
 	case op_basetable:
 	case op_table:
 
-		if (skip_proj && rel->l && rel->op == op_table && rel->flag != 2)
+		if (skip_proj && rel->l && rel->op == op_table && rel->flag != TRIGGER_WRAPPER)
 			rel->l = rel_dce_down(sql, rel->l, 0);
 		if (!skip_proj)
 			rel_dce_sub(sql, rel);
