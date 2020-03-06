@@ -157,16 +157,16 @@ gdk_export LOG_LEVEL LVL_PER_COMPONENT[];
 #define GDK_TRACER_LOG_BODY(LOG_LEVEL, COMP, MSG, ...)			\
 	GDKtracer_log(LOG_LEVEL,					\
 		      "%s "						\
-		      "%-"MXW"s "					\
-		      "%"MXW"s:%d "					\
+		      "%-"MXW"s:%d "					\
+		      "%"MXW"s "					\
 		      "%"MXW"s "					\
 		      "%-"MXW"s "					\
 		      "%-"MXW"s # "MSG,					\
 		      GDKtracer_get_timestamp("%Y-%m-%d %H:%M:%S",	\
 					      (char[20]){0}, 20),	\
 		      __FILE__,						\
-		      __func__,						\
 		      __LINE__,						\
+		      __func__,						\
 		      LEVEL_STR[LOG_LEVEL],				\
 		      COMPONENT_STR[COMP],				\
 		      MT_thread_getname(),				\
