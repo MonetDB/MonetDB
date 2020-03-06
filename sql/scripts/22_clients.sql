@@ -26,15 +26,15 @@ returns table(
 )
 external name sql.sessions;
 create view sys.sessions as select * from sys.sessions();
-/* we won't grant sys.sessions to the public */
+-- we won't grant sys.sessions to the public
 
 -- routines to bring the system down quickly
-create procedure sys.shutdown("delay" tinyint)
+create procedure sys.shutdown(delay tinyint)
 	external name sql.shutdown;
-/* we won't grant sys.shutdown to the public */
-create procedure sys.shutdown("delay" tinyint, "force" bool)
+-- we won't grant sys.shutdown to the public
+create procedure sys.shutdown(delay tinyint, force bool)
 	external name sql.shutdown;
-/* we won't grant sys.shutdown to the public */
+-- we won't grant sys.shutdown to the public
 
 -- control the query and session time out. 
 -- As of December 2019, the procedures settimeout and setsession are deprecated.
