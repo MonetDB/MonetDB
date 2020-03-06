@@ -1613,7 +1613,7 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 	node *en, *n;
 	sql_exp *op = rel->r;
 
-	if (rel->flag == 2) {
+	if (rel->flag == TRIGGER_WRAPPER) {
 		trigger_input *ti = rel->l;
 		l = sa_list(sql->sa);
 
@@ -1693,11 +1693,7 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 				}
 			}
 		}
-		if (rel->flag == TABLE_PROD_FUNC && sub && sub->nrcols) { 
-			assert(0);
-			list_merge(l, sub->op4.lval, NULL);
-			osub = sub;
-		}
+		assert(rel->flag != TABLE_PROD_FUNC || !sub || !(sub->nrcols));
 		sub = stmt_list(be, l);
 	} else if (rel->l) { /* handle sub query via function */
 		int i;
@@ -3614,7 +3610,7 @@ sql_stack_add_inserted( mvc *sql, const char *name, sql_table *t, stmt **updates
 
 		append(exps, ne);
 	}
-	r = rel_table_func(sql->sa, NULL, NULL, exps, 2);
+	r = rel_table_func(sql->sa, NULL, NULL, exps, TRIGGER_WRAPPER);
 	r->l = ti;
 
 	return stack_push_rel_view(sql, name, r) ? 1 : 0;
@@ -4561,7 +4557,7 @@ sql_stack_add_updated(mvc *sql, const char *on, const char *nn, sql_table *t, st
 			append(exps, ne);
 		}
 	}
-	r = rel_table_func(sql->sa, NULL, NULL, exps, 2);
+	r = rel_table_func(sql->sa, NULL, NULL, exps, TRIGGER_WRAPPER);
 	r->l = ti;
 
 	/* put single table into the stack with 2 names, needed for the psm code */
@@ -4837,7 +4833,7 @@ sql_stack_add_deleted(mvc *sql, const char *name, sql_table *t, stmt *tids, int 
 
 		append(exps, ne);
 	}
-	r = rel_table_func(sql->sa, NULL, NULL, exps, 2);
+	r = rel_table_func(sql->sa, NULL, NULL, exps, TRIGGER_WRAPPER);
 	r->l = ti;
 
 	return stack_push_rel_view(sql, name, r) ? 1 : 0;

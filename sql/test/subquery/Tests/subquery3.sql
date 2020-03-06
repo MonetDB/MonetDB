@@ -523,6 +523,18 @@ SELECT
 FROM integers i1;
 	-- 1
 
+SELECT
+	(SELECT i2.i FROM (VALUES (i1.i)) as i2(i))
+FROM integers i1;
+	-- 1
+	-- 2
+	-- 3
+	-- NULL
+
+SELECT
+	(SELECT i2.i FROM (VALUES (i1.i), (i1.i)) as i2(i))
+FROM integers i1; --error, more than one row returned by a subquery used as an expression
+
 /* We shouldn't allow the following internal functions/procedures to be called from regular queries */
 --SELECT "identity"(col1) FROM another_T;
 --SELECT "rowid"(col1) FROM another_T;
