@@ -466,6 +466,44 @@ stdout of test 'subquery3` in directory 'sql/test/subquery` itself:
 % 1 # length
 [ 1	]
 [ 1	]
+#SELECT
+#	(SELECT i2.i FROM (VALUES (MIN(i1.i))) as i2(i))
+#FROM integers i1;
+% .%4 # table_name
+% %4 # name
+% int # type
+% 1 # length
+[ 1	]
+#SELECT
+#	(SELECT i2.i FROM (VALUES (MIN(i1.i), MAX(i1.i))) as i2(i))
+#FROM integers i1;
+% .%6 # table_name
+% %6 # name
+% int # type
+% 1 # length
+[ 1	]
+#SELECT
+#	(SELECT i2.i FROM (VALUES (i1.i)) as i2(i))
+#FROM integers i1;
+% .%3 # table_name
+% %3 # name
+% int # type
+% 1 # length
+[ 1	]
+[ 2	]
+[ 3	]
+[ NULL	]
+#SELECT
+#	(SELECT 1 FROM (VALUES (i1.i)) as i2(i))
+#FROM integers i1;
+% .%3 # table_name
+% %3 # name
+% tinyint # type
+% 1 # length
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
 #DROP FUNCTION evilfunction(INT);
 #DROP TABLE tbl_ProductSales;
 #DROP TABLE another_T;

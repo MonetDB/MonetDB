@@ -51,6 +51,9 @@ exp_set_freevar(mvc *sql, sql_exp *e, sql_rel *r)
 		set_freevar(e, 0);
 		break;
 	case e_atom: 
+		if (e->f)
+			exps_set_freevar(sql, e->f, r);
+		break;
 	case e_psm: 
 		break;
 	}
@@ -114,8 +117,11 @@ exp_has_freevar(mvc *sql, sql_exp *e)
 		if (exp_is_rel(e))
 			return rel_has_freevar(sql, e->l);
 		break;
-	case e_column: 
 	case e_atom: 
+		if (e->f)
+			return exps_have_freevar(sql, e->f);
+		break;
+	case e_column:
 	default:
 		return 0;
 	}
@@ -238,6 +244,9 @@ exp_freevar(mvc *sql, sql_exp *e)
 				return rel_freevar(sql, e->l);
 		return NULL;
 	case e_atom:
+		if (e->f)
+			return exps_freevar(sql, e->f);
+		return NULL;
 	default:
 		return NULL;
 	}
@@ -450,6 +459,9 @@ push_up_project_exp(mvc *sql, sql_rel *rel, sql_exp *e)
 			}
 		} break;	
 	case e_atom: 
+		if (e->f) 
+			e->f = push_up_project_exps(sql, rel, e->f);
+		break;
 	case e_psm: 
 		break;
 	}
@@ -754,7 +766,19 @@ push_up_project(mvc *sql, sql_rel *rel, list *ad)
 				}
 				if (r->l)
 					e = exp_rewrite(sql, r->l, e, ad);
-				append(n->exps, e);
+				if (e->type == e_atom && e->f) {
+					list *atoms = (list*)e->f;
+
+					if (list_length(atoms) > 1)
+						return sql_error(sql, 02, SQLSTATE(21000) "Cardinality violation, scalar value expected");
+					for (node *nn = atoms->h ; nn ; nn = nn->next) {
+						sql_exp *ee = (sql_exp *) nn->data;
+
+						 exp_setname(sql->sa, ee, exp_relname(e), exp_name(e));
+						append(n->exps, ee);
+					}
+				} else
+					append(n->exps, e);
 			}
 			if (r->r) {
 				list *exps = r->r, *oexps = n->r = sa_list(sql->sa);

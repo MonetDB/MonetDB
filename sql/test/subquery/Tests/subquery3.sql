@@ -532,7 +532,19 @@ FROM integers i1;
 	-- NULL
 
 SELECT
+	(SELECT 1 FROM (VALUES (i1.i)) as i2(i))
+FROM integers i1;
+	-- 1
+	-- 1
+	-- 1
+	-- 1
+
+SELECT
 	(SELECT i2.i FROM (VALUES (i1.i), (i1.i)) as i2(i))
+FROM integers i1; --error, more than one row returned by a subquery used as an expression
+
+SELECT
+	(SELECT i2.i FROM (VALUES (i1.i, i1.i), (i1.i, i1.i)) as i2(i))
 FROM integers i1; --error, more than one row returned by a subquery used as an expression
 
 /* We shouldn't allow the following internal functions/procedures to be called from regular queries */
