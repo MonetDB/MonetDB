@@ -5343,7 +5343,7 @@ rel2bin_partition_limits(backend *be, sql_rel *rel, list *refs)
 		l = subrel_bin(be, rel->l, refs);
 	if (rel->r)  /* first construct the sub relation */
 		r = subrel_bin(be, rel->r, refs);
-	if (!l || !r)
+	if ((rel->l && !l) || (rel->r && !r))
 		return NULL;
 
 	assert(rel->exps);
@@ -5373,9 +5373,9 @@ rel2bin_exception(backend *be, sql_rel *rel, list *refs)
 
 	if (rel->l)  /* first construct the sub relation */
 		l = subrel_bin(be, rel->l, refs);
-    if (rel->r)  /* first construct the sub relation */
+	if (rel->r)  /* first construct the sub relation */
 		r = subrel_bin(be, rel->r, refs);
-	if (!l || !r)
+	if ((rel->l && !l) || (rel->r && !r))
 		return NULL;
 
 	if (rel->exps) {
