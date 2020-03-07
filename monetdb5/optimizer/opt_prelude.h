@@ -35,6 +35,7 @@ mal_export  str alter_typeRef;
 mal_export  str alter_userRef;
 mal_export  str alter_viewRef;
 mal_export  str andRef;
+mal_export  str orRef;
 mal_export  str antijoinRef;
 mal_export  str appendidxRef;
 mal_export  str appendRef;

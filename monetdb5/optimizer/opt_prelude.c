@@ -39,6 +39,7 @@ str alter_typeRef;
 str alter_userRef;
 str alter_viewRef;
 str andRef;
+str orRef;
 str antijoinRef;
 str appendidxRef;
 str appendRef;
@@ -339,6 +340,7 @@ void optimizerInit(void)
 	alter_userRef = putName("alter_user");
 	alter_viewRef = putName("alter_view");
 	andRef = putName("and");
+	orRef = putName("or");
 	antijoinRef = putName("antijoin");
 	appendidxRef = putName("append_idxbat");
 	appendRef = putName("append");
