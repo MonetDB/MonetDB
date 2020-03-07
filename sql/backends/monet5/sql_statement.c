@@ -2943,7 +2943,7 @@ stmt_Nop(backend *be, stmt *ops, sql_subfunc *f)
 		return NULL;
 	mod = sql_func_mod(f->func);
 	fimp = sql_func_imp(f->func);
-	if (o && o->nrcols > 0 && f->func->type != F_LOADER) {
+	if (o && o->nrcols > 0 && f->func->type != F_LOADER && f->func->type != F_PROC) {
 		sql_subtype *res = f->res->h->data;
 		fimp = convertMultiplexFcn(fimp);
 		q = NULL;

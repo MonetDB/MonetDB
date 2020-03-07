@@ -80,7 +80,7 @@ psm_set_exp(sql_query *query, dnode *n)
 			tpe = stack_find_type(sql, name);
 		}
 
-		e = rel_value_exp2(query, &rel, val, sql_sel, ek);
+		e = rel_value_exp2(query, &rel, val, sql_sel | sql_update_set, ek);
 		if (!e)
 			return NULL;
 		if (e->card > CARD_AGGR) {
@@ -154,7 +154,7 @@ rel_psm_call(sql_query * query, symbol *se)
 	exp_kind ek = {type_value, card_none, FALSE};
 	sql_rel *rel = NULL;
 
-	res = rel_value_exp(query, &rel, se, sql_sel, ek);
+	res = rel_value_exp(query, &rel, se, sql_sel | psm_call, ek);
 	if (!res || rel || ((t=exp_subtype(res)) && t->type))  /* only procedures */
 		return sql_error(sql, 01, SQLSTATE(42000) "Function calls are ignored");
 	return res;

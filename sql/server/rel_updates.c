@@ -42,7 +42,7 @@ insert_value(sql_query *query, sql_column *c, sql_rel **r, symbol *s, const char
 		}
 	} else {
 		exp_kind ek = {type_value, card_value, FALSE};
-		sql_exp *e = rel_value_exp2(query, r, s, sql_sel, ek);
+		sql_exp *e = rel_value_exp2(query, r, s, sql_sel | sql_values, ek);
 
 		if (!e)
 			return(NULL);
@@ -964,12 +964,12 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 			int status = sql->session->status;
 			exp_kind ek = {type_value, (single)?card_column:card_relation, FALSE};
 
-			if(single && a->token == SQL_DEFAULT) {
+			if (single && a->token == SQL_DEFAULT) {
 				char *colname = assignment->h->next->data.sval;
 				sql_column *col = mvc_bind_column(sql, t, colname);
 				if (col->def) {
 					char *typestr = subtype2string2(&col->type);
-					if(!typestr)
+					if (!typestr)
 						return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					v = rel_parse_val(sql, sa_message(sql->sa, "select cast(%s as %s);", col->def, typestr), sql->emode, NULL);
 					_DELETE(typestr);
@@ -977,7 +977,7 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 					return sql_error(sql, 02, SQLSTATE(42000) "%s: column '%s' has no valid default value", action, col->base.name);
 				}
 			} else if (single) {
-				v = rel_value_exp(query, &rel_val, a, sql_sel, ek);
+				v = rel_value_exp(query, &rel_val, a, sql_sel | sql_update_set, ek);
 				outer = 1;
 			} else {
 				rel_val = rel_subquery(query, NULL, a, ek);
@@ -988,9 +988,9 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 				assert(!rel_val);
 				outer = 1;
 				if (single) {
-					v = rel_value_exp(query, &r, a, sql_sel, ek);
+					v = rel_value_exp(query, &r, a, sql_sel | sql_update_set, ek);
 				} else if (!rel_val && r) {
-					query_push_outer(query, r, sql_sel);
+					query_push_outer(query, r, sql_sel | sql_update_set);
 					rel_val = rel_subquery(query, NULL, a, ek);
 					r = query_pop_outer(query);
 					if (/* DISABLES CODE */ (0) && r) {
@@ -1412,7 +1412,7 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 					join_rel = rel_dup(join_rel);
 				} else {
 					join_rel = rel_crossproduct(sql->sa, joined, bt, op_left);
-					if (!(join_rel = rel_logical_exp(query, join_rel, search_cond, sql_where)))
+					if (!(join_rel = rel_logical_exp(query, join_rel, search_cond, sql_where | sql_join)))
 						return NULL;
 					set_processed(join_rel);
 				}
@@ -1442,7 +1442,7 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 					join_rel = rel_dup(join_rel);
 				} else {
 					join_rel = rel_crossproduct(sql->sa, joined, bt, op_left);
-					if (!(join_rel = rel_logical_exp(query, join_rel, search_cond, sql_where)))
+					if (!(join_rel = rel_logical_exp(query, join_rel, search_cond, sql_where | sql_join)))
 						return NULL;
 					set_processed(join_rel);
 				}
@@ -1479,7 +1479,7 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 				join_rel = rel_dup(join_rel);
 			} else {
 				join_rel = rel_crossproduct(sql->sa, joined, bt, op_left);
-				if (!(join_rel = rel_logical_exp(query, join_rel, search_cond, sql_where)))
+				if (!(join_rel = rel_logical_exp(query, join_rel, search_cond, sql_where | sql_join)))
 					return NULL;
 				set_processed(join_rel);
 			}
@@ -2073,7 +2073,7 @@ rel_parse_val(mvc *m, char *query, char emode, sql_rel *from)
 			sql_rel *r = from;
 			symbol* sq = sn->selection->h->data.sym->data.lval->h->data.sym;
 			sql_query *query = query_create(m);
-			e = rel_value_exp2(query, &r, sq, sql_sel, ek);
+			e = rel_value_exp2(query, &r, sq, sql_sel | sql_values, ek);
 		}
 	}
 	GDKfree(query);

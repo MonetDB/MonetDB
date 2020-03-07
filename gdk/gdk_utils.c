@@ -80,11 +80,11 @@ static bool
 GDKenvironment(const char *dbpath)
 {
 	if (dbpath == NULL) {
-		TRC_ERROR(GDK, "Database name missing.\n");
+		TRC_CRITICAL(GDK, "Database name missing.\n");
 		return false;
 	}
 	if (strlen(dbpath) >= FILENAME_MAX) {
-		TRC_ERROR(GDK, "Database name too long.\n");
+		TRC_CRITICAL(GDK, "Database name too long.\n");
 		return false;
 	}
 	if (!MT_path_absolute(dbpath)) {
@@ -1311,7 +1311,7 @@ GDKerror(const char *format, ...)
 	}
 	va_start(ap, format);
 	if (vsnprintf(message + len, sizeof(message) - (len + 2), format, ap) < 0){
-		TRC_ERROR(GDK, "an error occurred within GDKerror.\n");
+		TRC_CRITICAL(GDK, "an error occurred within GDKerror.\n");
 		strcpy(message, GDKERROR "an error occurred within GDKerror.\n");
 	}
 	va_end(ap);

@@ -520,7 +520,11 @@ typedef struct {
 	size_t free;		/* index where free area starts. */
 	size_t size;		/* size of the heap (bytes) */
 	char *base;		/* base pointer in memory. */
+#if SIZEOF_VOID_P == 4
 	char filename[32];	/* file containing image of the heap */
+#else
+	char filename[40];	/* file containing image of the heap */
+#endif
 
 	bte farmid;		/* id of farm where heap is located */
 	bool copied:1,		/* a copy of an existing map. */

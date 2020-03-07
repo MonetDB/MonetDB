@@ -19,8 +19,105 @@ PREPARE SELECT
 	(SELECT 1 FROM evilfunction((SELECT ?, ?))) 
 FROM another_T;
 
+SELECT
+	(SELECT i2.i FROM evilfunction(MIN(i1.i)) as i2(i))
+FROM integers i1;
+	-- 1
+
+SELECT
+	(SELECT i2.i FROM evilfunction((SELECT MIN(1))) as i2(i))
+FROM integers i1;
+	-- 1
+	-- 1
+	-- 1
+	-- 1
+
+SELECT
+	(SELECT i2.i FROM evilfunction(MIN(1)) as i2(i))
+FROM integers i1; -- error, aggregate functions are not allowed in functions in FROM
+
+SELECT
+	(SELECT i2.i FROM evilfunction(MAX(i1.i) OVER ()) as i2(i))
+FROM integers i1; -- error, window functions are not allowed in functions in FROM
+
+SELECT
+	(SELECT i2.i FROM evilfunction((SELECT MIN(i1.i + i3.i) FROM integers i3)) as i2(i))
+FROM integers i1;
+	-- 2
+	-- 3
+	-- 4
+	-- NULL
+
+SELECT 1 FROM evilfunction((SELECT MAX(1) OVER ()));
+	-- 1
+
+SELECT 1 FROM evilfunction((SELECT MAX(1) OVER () UNION ALL SELECT 1)); --error, more than one row returned by a subquery used as an expression
+
+SELECT 
+	(SELECT 1 FROM evilfunction((SELECT MAX(1) OVER () UNION ALL SELECT 1)))
+FROM integers i1; --error, more than one row returned by a subquery used as an expression
+
+SELECT i2.i FROM evilfunction((SELECT MAX(1) OVER ())) as i2(i);
+	-- 1
+
+SELECT
+	(SELECT i2.i FROM evilfunction((SELECT MAX(i1.i) OVER ())) as i2(i))
+FROM integers i1;
+	-- 1
+	-- 2
+	-- 3
+	-- NULL
+
+UPDATE another_T SET col1 = MIN(col1); --error, aggregates not allowed in update set clause
+UPDATE another_T SET col2 = 1 WHERE col1 = SUM(col2); --error, aggregates not allowed in update set clause
+UPDATE another_T SET col3 = (SELECT MAX(col5)); --error, aggregates not allowed in update set clause
+UPDATE another_T SET col4 = (SELECT SUM(col4 + ColID) FROM tbl_ProductSales);
+UPDATE another_T SET col5 = 1 WHERE col5 = (SELECT AVG(col2)); --error, aggregates not allowed in where clause
+UPDATE another_T SET col6 = 1 WHERE col6 = (SELECT COUNT(col3 + ColID) FROM tbl_ProductSales);
+UPDATE another_T SET col8 = (SELECT 1 FROM integers i2 WHERE AVG(i2.i)); --error, aggregates not allowed in update set clause
+UPDATE another_T SET col7 = 1 WHERE col5 = (SELECT 1 FROM integers i2 WHERE AVG(i2.i)); --error, aggregates not allowed in where clause
+
+DELETE FROM another_T WHERE col1 = COUNT(col2); --error, aggregates not allowed in where clause
+DELETE FROM another_T WHERE col7 = (SELECT MIN(col3)); --error, aggregates not allowed in where clause
+DELETE FROM another_T WHERE col8 = (SELECT AVG(col6 + ColID) FROM tbl_ProductSales);
+DELETE FROM another_T WHERE col2 = (SELECT 1 FROM integers i2 WHERE AVG(i2.i)); --error, aggregates not allowed in where clause
+
+UPDATE another_T SET col1 = AVG(col1) OVER (); --error, window functions not allowed in update set clause
+UPDATE another_T SET col2 = 1 WHERE col1 = COUNT(col2) OVER (); --error, window functions not allowed in where clause
+UPDATE another_T SET col3 = (SELECT SUM(col5) OVER ());
+UPDATE another_T SET col4 = (SELECT MIN(col4 + ColID) OVER () FROM tbl_ProductSales); --error, more than one row returned by a subquery used as an expression
+UPDATE another_T SET col5 = 1 WHERE col5 = (SELECT MAX(col2) OVER ());
+UPDATE another_T SET col6 = 1 WHERE col6 = (SELECT MIN(col3 + ColID) OVER () FROM tbl_ProductSales); --error, more than one row returned by a subquery used as an expression
+
+DELETE FROM another_T WHERE col1 = AVG(col2) OVER (); --error, window functions not allowed in where clause
+DELETE FROM another_T WHERE col7 = (SELECT SUM(col3) OVER ());
+DELETE FROM another_T WHERE col8 = (SELECT MAX(col6 + ColID) OVER () FROM tbl_ProductSales); --error, more than one row returned by a subquery used as an expression
+
+DECLARE x int;
+SET x = MAX(1) over (); --error, not allowed
+DECLARE y int;
+SET y = MIN(1); --error, not allowed
+
+INSERT INTO another_T VALUES (SUM(1),2,3,4,5,6,7,8); --error, not allowed
+INSERT INTO another_T VALUES (AVG(1) OVER (),2,3,4,5,6,7,8); --error, not allowed
+
+CREATE PROCEDURE crashme(a int) BEGIN DECLARE x INT; SET x = a; END;
+
+CALL crashme(COUNT(1)); --error, not allowed
+CALL crashme(COUNT(1) OVER ()); --error, not allowed
+
+CALL crashme((SELECT COUNT(1)));
+CALL crashme((SELECT COUNT(1) OVER ())); --should be allowed, it returns exactly one row
+CALL crashme((SELECT 1 UNION ALL SELECT 2)); --error, returns more than one row
+
+create sequence "debugme" as integer start with 1;
+alter sequence "debugme" restart with (select MAX(1));
+alter sequence "debugme" restart with (select MIN(1) OVER ());
+drop sequence "debugme";
+
 DROP FUNCTION evilfunction(INT);
 DROP FUNCTION evilfunction(INT, INT);
+DROP PROCEDURE crashme(INT);
 DROP TABLE tbl_ProductSales;
 DROP TABLE another_T;
 DROP TABLE integers;

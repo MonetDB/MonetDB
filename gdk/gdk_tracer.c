@@ -75,7 +75,7 @@ const char *LEVEL_STR[] = {
  */
 // Exception
 #define GDK_TRACER_EXCEPTION(MSG, ...)					\
-	mnstr_printf(GDKstdout,						\
+	fprintf(stderr,							\
 		     "%s "						\
 		     "%-"MXW"s "					\
 		     "%"MXW"s:%d "					\
@@ -119,31 +119,6 @@ _GDKtracer_init_basic_adptr(void)
 	}
 
 	return GDK_SUCCEED;
-}
-
-
-// Candidate for 'gnu_printf' format attribute [-Werror=suggest-attribute=format]
-static int _GDKtracer_fill_tracer(gdk_tracer *sel_tracer, const char *fmt, va_list va)
-	__attribute__((__format__(__printf__, 2, 0)));
-
-static int
-_GDKtracer_fill_tracer(gdk_tracer *sel_tracer, const char *fmt, va_list va)
-{
-	size_t fmt_len = strlen(fmt);
-	int bytes_written = 0;
-
-	// vsnprintf(char *str, size_t count, ...) -> including null terminating character
-	bytes_written = vsnprintf(sel_tracer->buffer +sel_tracer->allocated_size, BUFFER_SIZE - sel_tracer->allocated_size, fmt, va);
-	// Add \n if it doesn't exist
-	if (bytes_written && fmt[fmt_len - 1] != '\n')
-		bytes_written += snprintf(sel_tracer->buffer +sel_tracer->allocated_size, BUFFER_SIZE - sel_tracer->allocated_size, "\n");
-
-	// Let GDKtracer_log to know about the failure
-	if (bytes_written < 0)
-		return -1;
-
-	// vsnprintf returned value -> does not include the null terminating character
-	return bytes_written++;
 }
 
 
@@ -468,51 +443,35 @@ GDKtracer_reset_adapter(void)
 gdk_return
 GDKtracer_log(LOG_LEVEL level, const char *fmt, ...)
 {
-	int bytes_written = 0;
-
-	MT_lock_set(&lock);
+	int bytes_written;
+	char buffer[512];	/* should be plenty big enough for a message */
 
 	va_list va;
 	va_start(va, fmt);
-	bytes_written = _GDKtracer_fill_tracer(active_tracer, fmt, va);
+	bytes_written = vsnprintf(buffer, sizeof(buffer), fmt, va);
 	va_end(va);
-
-	if (bytes_written >= 0) {
-		// The message fits the buffer OR the buffer is empty but the message does not fit (we cut it off)
-		if (bytes_written < (BUFFER_SIZE - active_tracer->allocated_size) || active_tracer->allocated_size == 0) {
-			active_tracer->allocated_size += bytes_written;
-		} else {
-			_GDKtracer_flush_buffer_locked();
-
-			va_list va;
-			va_start(va, fmt);
-			bytes_written = _GDKtracer_fill_tracer(active_tracer, fmt, va);
-			va_end(va);
-
-			if (bytes_written >= 0) {
-				// The second buffer will always be empty at start
-				// So if the message does not fit we cut it off
-				// message might be > BUFFER_SIZE
-				active_tracer->allocated_size += bytes_written;
-			} else {
-
-				// Failed to write to the buffer - bytes_written < 0
-				if(!LOG_EXC_REP)
-				{
-					GDK_TRACER_EXCEPTION(GDKTRACER_FAILED "\n");
-					LOG_EXC_REP = true;
-				}
-			}
-		}
-	} else {
-
-		// Failed to write to the buffer - bytes_written < 0
-		if(!LOG_EXC_REP)
-		{
-			GDK_TRACER_EXCEPTION(GDKTRACER_FAILED "\n");
-			LOG_EXC_REP = true;
-		}
+	if (bytes_written < 0) {
+		GDK_TRACER_EXCEPTION(GDKTRACER_FAILED "\n");
+		return GDK_FAIL;
 	}
+	if (bytes_written >= (int) sizeof(buffer) - 1) {
+		/* message is truncated */
+		bytes_written = (int) sizeof(buffer) - 2;
+	}
+	/* make sure message ends with a newline */
+	if (buffer[bytes_written - 1] != '\n') {
+		buffer[bytes_written++] = '\n';
+		buffer[bytes_written] = '\0';
+	}
+
+	MT_lock_set(&lock);
+	if (active_tracer->allocated_size + bytes_written >= BUFFER_SIZE) {
+		_GDKtracer_flush_buffer_locked();
+	}
+	memcpy(active_tracer->buffer + active_tracer->allocated_size,
+	       buffer, bytes_written);
+	active_tracer->allocated_size += bytes_written;
+	active_tracer->buffer[active_tracer->allocated_size] = '\0';
 
 	// Flush the current buffer in case the event is
 	// important depending on the flush-level

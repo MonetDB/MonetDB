@@ -83,15 +83,48 @@ bailout:
 	return t;
 }
 
-#define MVC_INIT_DROP_TABLE(SQLID, TNAME)				\
-	t = mvc_bind_table(m, s, TNAME);				\
-	SQLID = t->base.id;						\
-	if((output = mvc_drop_table(m, s, t, 0)) != MAL_SUCCEED) {	\
-		mvc_destroy(m);						\
-		TRC_INFO(SQL_TRANS, "Initialization: %s\n", output);      \
-		freeException(output);					\
-		return -1;						\
+#define MVC_INIT_DROP_TABLE(SQLID, TNAME, VIEW, NCOL)			\
+	do {								\
+		str output;						\
+		t = mvc_bind_table(m, s, TNAME);			\
+		SQLID = t->base.id;					\
+		for (int i = 0; i < NCOL; i++) {			\
+			sql_column *col = mvc_bind_column(m, t, VIEW[i].name); \
+			VIEW[i].oldid = col->base.id;			\
+		}							\
+		if((output = mvc_drop_table(m, s, t, 0)) != MAL_SUCCEED) { \
+			mvc_destroy(m);					\
+			TRC_CRITICAL(SQL_TRANS,				\
+				     "Initialization: %s\n", output);	\
+			freeException(output);				\
+			return -1;					\
+		}							\
+	} while (0)
+
+struct view_t {
+	const char *name;
+	const char *type;
+	int digits;
+	sqlid oldid;
+	sqlid newid;
+};
+
+static void
+mvc_fix_depend(mvc *m, sql_column *depids, struct view_t *v, int n)
+{
+	oid rid;
+	rids *rs;
+
+	for (int i = 0; i < n; i++) {
+		rs = table_funcs.rids_select(m->session->tr, depids,
+					     &v[i].oldid, &v[i].oldid, NULL);
+		while ((rid = table_funcs.rids_next(rs)), !is_oid_nil(rid)) {
+			table_funcs.column_update_value(m->session->tr, depids,
+							rid, &v[i].newid);
+		}
+		table_funcs.rids_destroy(rs);
 	}
+}
 
 int
 mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
@@ -99,7 +132,6 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 	int first = 0;
 	sql_schema *s;
 	sql_table *t;
-	sqlid tid = 0, ntid, cid = 0, ncid;
 	mvc *m;
 	str msg;
 
@@ -134,6 +166,111 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 	m->sizeheader = false;
 
 	if (first || catalog_version) {
+		sqlid tid = 0, cid = 0;
+		struct view_t tview[10] = {
+			{
+				.name = "id",
+				.type = "int",
+				.digits = 32,
+			},
+			{
+				.name = "name",
+				.type = "varchar",
+				.digits = 1024,
+			},
+			{
+				.name = "schema_id",
+				.type = "int",
+				.digits = 32,
+			},
+			{
+				.name = "query",
+				.type = "varchar",
+				.digits = 1 << 20,
+			},
+			{
+				.name = "type",
+				.type = "smallint",
+				.digits = 16,
+			},
+			{
+				.name = "system",
+				.type = "boolean",
+				.digits = 1,
+			},
+			{
+				.name = "commit_action",
+				.type = "smallint",
+				.digits = 16,
+			},
+			{
+				.name = "access",
+				.type = "smallint",
+				.digits = 16,
+			},
+			{
+				.name = "temporary",
+				.type = "smallint",
+				.digits = 16,
+			},
+			{
+				0
+			},
+		}, cview[11] = {
+			{
+				.name = "id",
+				.type = "int",
+				.digits = 32,
+			},
+			{
+				.name = "name",
+				.type = "varchar",
+				.digits = 1024,
+			},
+			{
+				.name = "type",
+				.type = "varchar",
+				.digits = 1024,
+			},
+			{
+				.name = "type_digits",
+				.type = "int",
+				.digits = 32,
+			},
+			{
+				.name = "type_scale",
+				.type = "int",
+				.digits = 32,
+			},
+			{
+				.name = "table_id",
+				.type = "int",
+				.digits = 32,
+			},
+			{
+				.name = "default",
+				.type = "varchar",
+				.digits = STORAGE_MAX_VALUE_LENGTH,
+			},
+			{
+				.name = "null",
+				.type = "boolean",
+				.digits = 1,
+			},
+			{
+				.name = "number",
+				.type = "int",
+				.digits = 32,
+			},
+			{
+				.name = "storage",
+				.type = "varchar",
+				.digits = 2048,
+			},
+			{
+				0
+			},
+		};
 		if (mvc_trans(m) < 0) {
 			mvc_destroy(m);
 			TRC_CRITICAL(SQL_TRANS, "Failed to start transaction\n");
@@ -144,9 +281,8 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 		assert(m->session->schema != NULL);
 
 		if (!first) {
-			str output;
-			MVC_INIT_DROP_TABLE(tid,  "tables")
-			MVC_INIT_DROP_TABLE(cid,  "columns")
+			MVC_INIT_DROP_TABLE(tid,  "tables", tview, 9);
+			MVC_INIT_DROP_TABLE(cid,  "columns", cview, 10);
 		}
 
 		t = mvc_init_create_view(m, s, "tables", "SELECT \"id\", \"name\", \"schema_id\", \"query\", CAST(CASE WHEN \"system\" THEN \"type\" + 10 /* system table/view */ ELSE (CASE WHEN \"commit_action\" = 0 THEN \"type\" /* table/view */ ELSE \"type\" + 20 /* global temp table */ END) END AS SMALLINT) AS \"type\", \"system\", \"commit_action\", \"access\", CASE WHEN (NOT \"system\" AND \"commit_action\" > 0) THEN 1 ELSE 0 END AS \"temporary\" FROM \"sys\".\"_tables\" WHERE \"type\" <> 2 UNION ALL SELECT \"id\", \"name\", \"schema_id\", \"query\", CAST(\"type\" + 30 /* local temp table */ AS SMALLINT) AS \"type\", \"system\", \"commit_action\", \"access\", 1 AS \"temporary\" FROM \"tmp\".\"_tables\";");
@@ -156,16 +292,19 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 			return -1;
 		}
 
-		ntid = t->base.id;
-		mvc_create_column_(m, t, "id", "int", 32);
-		mvc_create_column_(m, t, "name", "varchar", 1024);
-		mvc_create_column_(m, t, "schema_id", "int", 32);
-		mvc_create_column_(m, t, "query", "varchar", 1 << 20);
-		mvc_create_column_(m, t, "type", "smallint", 16);
-		mvc_create_column_(m, t, "system", "boolean", 1);
-		mvc_create_column_(m, t, "commit_action", "smallint", 16);
-		mvc_create_column_(m, t, "access", "smallint", 16);
-		mvc_create_column_(m, t, "temporary", "smallint", 16);
+		for (int i = 0; i < 9; i++) {
+			sql_column *col = mvc_create_column_(m, t,
+							     tview[i].name,
+							     tview[i].type,
+							     tview[i].digits);
+			if (col == NULL) {
+				mvc_destroy(m);
+				TRC_CRITICAL(SQL_TRANS,
+					     "Initialization: creation of sys.tables column %s failed\n", tview[i].name);
+				return -1;
+			}
+			tview[i].newid = col->base.id;
+		}
 
 		if (!first) {
 			int pub = ROLE_PUBLIC;
@@ -173,16 +312,12 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 			int zero = 0;
 			sql_table *privs = find_sql_table(s, "privileges");
 			sql_table *deps = find_sql_table(s, "dependencies");
-			sql_column *depids = find_sql_column(deps, "id");
-			oid rid;
-			rids *rs;
-
 			table_funcs.table_insert(m->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
-			rs = table_funcs.rids_select(m->session->tr, depids, &tid, &tid, NULL);
-			while ((rid = table_funcs.rids_next(rs)), !is_oid_nil(rid)) {
-				table_funcs.column_update_value(m->session->tr, depids, rid, &ntid);
-			}
-			table_funcs.rids_destroy(rs);
+			assert(tview[9].name == NULL);
+			tview[9].oldid = tid;
+			tview[9].newid = t->base.id;
+			mvc_fix_depend(m, find_sql_column(deps, "id"), tview, 10);
+			mvc_fix_depend(m, find_sql_column(deps, "depend_id"), tview, 10);
 		}
 
 		t = mvc_init_create_view(m, s, "columns", "SELECT * FROM (SELECT p.* FROM \"sys\".\"_columns\" AS p UNION ALL SELECT t.* FROM \"tmp\".\"_columns\" AS t) AS columns;");
@@ -191,17 +326,19 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 			TRC_CRITICAL(SQL_TRANS, "Failed to create 'columns' view\n");
 			return -1;
 		}
-		ncid = t->base.id;
-		mvc_create_column_(m, t, "id", "int", 32);
-		mvc_create_column_(m, t, "name", "varchar", 1024);
-		mvc_create_column_(m, t, "type", "varchar", 1024);
-		mvc_create_column_(m, t, "type_digits", "int", 32);
-		mvc_create_column_(m, t, "type_scale", "int", 32);
-		mvc_create_column_(m, t, "table_id", "int", 32);
-		mvc_create_column_(m, t, "default", "varchar", STORAGE_MAX_VALUE_LENGTH);
-		mvc_create_column_(m, t, "null", "boolean", 1);
-		mvc_create_column_(m, t, "number", "int", 32);
-		mvc_create_column_(m, t, "storage", "varchar", 2048);
+		for (int i = 0; i < 10; i++) {
+			sql_column *col = mvc_create_column_(m, t,
+							     cview[i].name,
+							     cview[i].type,
+							     cview[i].digits);
+			if (col == NULL) {
+				mvc_destroy(m);
+				TRC_CRITICAL(SQL_TRANS,
+					     "Initialization: creation of sys.tables column %s failed\n", cview[i].name);
+				return -1;
+			}
+			cview[i].newid = col->base.id;
+		}
 
 		if (!first) {
 			int pub = ROLE_PUBLIC;
@@ -209,16 +346,12 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 			int zero = 0;
 			sql_table *privs = find_sql_table(s, "privileges");
 			sql_table *deps = find_sql_table(s, "dependencies");
-			sql_column *depids = find_sql_column(deps, "id");
-			oid rid;
-			rids *rs;
-
 			table_funcs.table_insert(m->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
-			rs = table_funcs.rids_select(m->session->tr, depids, &cid, &cid, NULL);
-			while ((rid = table_funcs.rids_next(rs)), !is_oid_nil(rid)) {
-				table_funcs.column_update_value(m->session->tr, depids, rid, &ncid);
-			}
-			table_funcs.rids_destroy(rs);
+			assert(cview[10].name == NULL);
+			cview[10].oldid = cid;
+			cview[10].newid = t->base.id;
+			mvc_fix_depend(m, find_sql_column(deps, "id"), cview, 11);
+			mvc_fix_depend(m, find_sql_column(deps, "depend_id"), cview, 11);
 		} else {
 			sql_create_env(m, s);
 			sql_create_comments(m, s);
@@ -928,7 +1061,7 @@ mvc_bind_table(mvc *m, sql_schema *s, const char *tname)
 		if (tpe) {
 			t = tpe;
 		} else { /* during exection they are in the declared table schema */
-				s = mvc_bind_schema(m, dt_schema);
+			s = mvc_bind_schema(m, dt_schema);
 			return mvc_bind_table(m, s, tname);
 		}
 	} else {
