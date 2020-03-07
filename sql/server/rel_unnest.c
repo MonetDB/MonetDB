@@ -1381,7 +1381,10 @@ _rel_unnest(mvc *sql, sql_rel *rel)
 
 	switch (rel->op) {
 	case op_basetable:
+		break;
 	case op_table:
+		if (IS_TABLE_PROD_FUNC(rel->flag) || rel->flag == TABLE_FROM_RELATION)
+			rel->l = _rel_unnest(sql, rel->l);
 		break;
 	case op_join: 
 	case op_left: 
@@ -1431,7 +1434,10 @@ rel_reset_subquery(sql_rel *rel)
 	rel->subquery = 0;
 	switch(rel->op){
 	case op_basetable:
+		break;
 	case op_table:
+		if ((IS_TABLE_PROD_FUNC(rel->flag) || rel->flag == TABLE_FROM_RELATION) && rel->l)
+			rel_reset_subquery(rel->l);
 		break;
 	case op_ddl:
 		rel_reset_subquery(rel->l);
