@@ -166,7 +166,7 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 	m->sizeheader = false;
 
 	if (first || catalog_version) {
-		sqlid tid, cid;
+		sqlid tid = 0, cid = 0;
 		struct view_t tview[10] = {
 			{
 				.name = "id",
