@@ -154,9 +154,9 @@ end user.s12_0;
 % compressed # name
 % bigint # type
 % 3 # length
-[ 232	]
+[ 228	]
 [ NULL	]
-[ 268	]
+[ 264	]
 [ NULL	]
 #select count(*) from dtmp3;
 % .%1 # table_name
@@ -277,9 +277,9 @@ end user.s38_0;
 % compressed # name
 % bigint # type
 % 3 # length
-[ 232	]
+[ 228	]
 [ NULL	]
-[ 268	]
+[ 264	]
 [ NULL	]
 #select cast(sum(i) as bigint) from dtmp3;
 % sys.%1 # table_name

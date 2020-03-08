@@ -22,16 +22,8 @@ void MOSunsetLock(BAT* b) {
 	MT_lock_unset(&b->batIdxLock);
 }
 
-static inline void
-MOSsync(int fd) {
-#if defined(NATIVE_WIN32)
-        _commit(fd);
-#elif defined(HAVE_FDATASYNC)
-        fdatasync(fd);
-#elif defined(HAVE_FSYNC)
-        fsync(fd);
-#endif
-}
+
+#define EXT(HEAP) ("t" STRINGIFY(HEAP))
 
 #define HEAP mosaic
 #include "gdk_mosaic_templates.h"
@@ -42,28 +34,52 @@ MOSsync(int fd) {
 
 void
 MOSdestroy(BAT *bn) {
+	MT_lock_set(&bn->batIdxLock);
 	MOSdestroy_mosaic(bn);
 	MOSdestroy_vmosaic(bn);
+	MT_lock_unset(&bn->batIdxLock);
+}
+
+void
+MOSfree(BAT *bn) {
+	MT_lock_set(&bn->batIdxLock);
+	MOSfree_mosaic(bn);
+	MOSfree_vmosaic(bn);
+	MT_lock_unset(&bn->batIdxLock);
 }
 
 
 int
 BATcheckmosaic(BAT *bn) {
-	return MOScheck_mosaic(bn) && MOScheck_vmosaic(bn);
+	MT_lock_set(&bn->batIdxLock);
+	bool r1 = MOScheck_mosaic(bn);
+	bool r2 = MOScheck_vmosaic(bn);
+	MT_lock_unset(&bn->batIdxLock);
+	return r1 && r2;
 }
 
 gdk_return
 BATmosaic(BAT *b, BUN cap) {
-	if (BATmosaic_mosaic(b, cap) != GDK_SUCCEED) {
+	MT_lock_set(&b->batIdxLock);
+	if (b->tmosaic != NULL || ( (b->tmosaic = create_mosaic_heap(b, cap)) == NULL) ) {
+		MT_lock_unset(&b->batIdxLock);
 		return GDK_FAIL;
 	}
-
-	if (BATmosaic_vmosaic(b, 128 /*start with a small dictionary*/) != GDK_SUCCEED) {
+	b->tmosaic->parentid = b->batCacheid;
+	if (b->tvmosaic != NULL || ( (b->tvmosaic = create_vmosaic_heap(b, 128)) == NULL) ) {
 		MOSdestroy_mosaic(b);
+		MT_lock_unset(&b->batIdxLock);
 		return GDK_FAIL;
 	}
-
+	b->tvmosaic->parentid = b->batCacheid;
+	MT_lock_unset(&b->batIdxLock);
 	return GDK_SUCCEED;
+}
+
+void 
+MOSpersist(BAT *b) {
+	persist_mosaic(b);
+	persist_vmosaic(b);
 }
 
 void

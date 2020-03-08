@@ -34,6 +34,8 @@ ALIGNMENT_HELPER_TPE(METHOD, TPE)\
 #define MOSadvance_SIGNATURE(METHOD, TPE) void CONCAT4(MOSadvance_, METHOD, _, TPE)(MOStask* task)
 #define MOSprepareDictionaryContext_ID(METHOD) MOSprepareDictionaryContext_##METHOD
 #define MOSprepareDictionaryContext_SIGNATURE(METHOD) str MOSprepareDictionaryContext_ID(METHOD)(MOStask* task)
+#define MOScleanUpInfo_ID(METHOD) CONCAT2(clean_up_info_, METHOD)
+#define MOScleanUpInfo_SIGNATURE(METHOD) void MOScleanUpInfo_ID(METHOD)(MOStask* task)
 #define MOSestimate_SIGNATURE(METHOD, TPE) str CONCAT4(MOSestimate_, METHOD, _, TPE)(MOStask* task, MosaicEstimation* current, const MosaicEstimation* previous)
 #define MOSpostEstimate_SIGNATURE(METHOD, TPE) void CONCAT4(MOSpostEstimate_, METHOD, _, TPE)(MOStask* task)
 #define MOSfinalizeDictionary_ID(METHOD, TPE) MOSfinalizeDictionary_##METHOD##_##TPE
@@ -100,6 +102,7 @@ ALGEBRA_INTERFACE(METHOD, dbl);
 #define ALGEBRA_INTERFACES_ALL_TYPES_WITH_DICTIONARY(METHOD) \
 ALGEBRA_INTERFACES_ALL_TYPES(METHOD);\
 MOSprepareDictionaryContext_SIGNATURE(METHOD);\
+MOScleanUpInfo_SIGNATURE(METHOD);\
 MOSfinalizeDictionary_SIGNATURE(METHOD, bte);\
 MOSfinalizeDictionary_SIGNATURE(METHOD, sht);\
 MOSfinalizeDictionary_SIGNATURE(METHOD, int);\
@@ -112,6 +115,7 @@ MOSlayoutDictionary_SIGNATURE(METHOD)
 #define ALGEBRA_INTERFACES_ALL_TYPES_WITH_DICTIONARY(METHOD) \
 ALGEBRA_INTERFACES_ALL_TYPES(METHOD);\
 MOSprepareDictionaryContext_SIGNATURE(METHOD);\
+MOScleanUpInfo_SIGNATURE(METHOD);\
 MOSfinalizeDictionary_SIGNATURE(METHOD, bte);\
 MOSfinalizeDictionary_SIGNATURE(METHOD, sht);\
 MOSfinalizeDictionary_SIGNATURE(METHOD, int);\

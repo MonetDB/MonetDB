@@ -119,13 +119,13 @@ stdout of test 'layout_delta` in directory 'sql/test/mosaic` itself:
 % compressed # name
 % bigint # type
 % 3 # length
-[ 268	]
+[ 264	]
 #select * from mosaic.layout('sys','tmp3rle','i') limit 25;
 % .%4,	.%4,	.%4,	.%4,	.%4,	.%4 # table_name
 % technique,	count,	inputsize,	outputsize,	properties,	bsn # name
 % clob,	bigint,	bigint,	bigint,	json,	bigint # type
 % 6,	2,	4,	3,	62,	1 # length
-[ "header",	86,	2752,	268,	"{\"blks\":[{\"delta\":1}],\"elms\":[{\"delta\":86}],\"ratio\":1.2835821}",	0	]
+[ "header",	86,	2752,	264,	"{\"blks\":[{\"delta\":1}],\"elms\":[{\"delta\":86}],\"ratio\":1.2285714}",	0	]
 [ "delta",	86,	344,	72,	"{\"init\" : 1,\"bits per delta\" : 5}",	1	]
 #ROLLBACK;
 

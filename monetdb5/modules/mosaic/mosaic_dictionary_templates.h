@@ -1,9 +1,8 @@
 #ifdef COMPRESSION_DEFINITION
 
 #ifndef TPE
-#define clean_up_info_ID(METHOD) CONCAT2(clean_up_info_, METHOD)
 
-static inline void clean_up_info_ID(METHOD)(MOStask* task) {
+MOScleanUpInfo_SIGNATURE(METHOD) {
 	GlobalDictionaryInfo* info = task->CONCAT2(METHOD, _info);
 
 	BBPreclaim(info->dict);
@@ -115,7 +114,7 @@ finalize:
 		BBPreclaim(unsorted_dict);
 		BBPreclaim(cand_capped_dict);
 
-		if (msg != MAL_SUCCEED) clean_up_info_ID(METHOD)(task);
+		if (msg != MAL_SUCCEED) MOScleanUpInfo_ID(METHOD)(task);
 
 		return msg;
 }
@@ -199,7 +198,7 @@ MOSestimate_SIGNATURE(METHOD, TPE) {
 
 	BAT* pos_slice;
 	if ((pos_slice = BATslice(task->bsrc, pos_start, pos_start + pos_limit)) == NULL) {
-		clean_up_info_ID(METHOD)(task);
+		MOScleanUpInfo_ID(METHOD)(task);
 		throw(MAL, "BATslice.pos_slice", MAL_MALLOC_FAIL);
 	}
 
@@ -249,7 +248,7 @@ MOSestimate_SIGNATURE(METHOD, TPE) {
 	else /*incremental build*/ {
 		BAT* neg_slice;
 		if ((neg_slice = BATslice(task->bsrc, neg_start, neg_start + neg_limit)) == NULL){
-			clean_up_info_ID(METHOD)(task);
+			MOScleanUpInfo_ID(METHOD)(task);
 			throw(MAL, "BATslice.neg_slice", MAL_MALLOC_FAIL);
 		}
 
@@ -371,7 +370,7 @@ MOSfinalizeDictionary_SIGNATURE(METHOD, TPE) {
 	BUN size_in_bytes = vmh->free + GetSizeInBytes(info);
 
 	if (HEAPextend(vmh, size_in_bytes, true) != GDK_SUCCEED) {
-		clean_up_info_ID(METHOD)(task);
+		MOScleanUpInfo_ID(METHOD)(task);
 		throw(MAL, "HEAPextend", GDK_EXCEPTION);
 	}
 
@@ -393,7 +392,7 @@ MOSfinalizeDictionary_SIGNATURE(METHOD, TPE) {
 
 	GET_FINAL_DICT_COUNT(task, METHOD) = *length_dict;
 
-	clean_up_info_ID(METHOD)(task);
+	MOScleanUpInfo_ID(METHOD)(task);
 
 	return MAL_SUCCEED;
 }

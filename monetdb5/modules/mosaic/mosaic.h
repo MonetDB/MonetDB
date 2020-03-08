@@ -98,7 +98,8 @@ typedef Heap *mosaic;	// compressed data is stored on a heap.
 
 #define METHOD_NOT_AVAILABLE -1
 typedef struct MOSAICHEADER{
-	int version;		// to recognize the underlying implementation used.
+	oid version;		// to recognize the underlying implementation used.
+	oid free;			// the size of the heap.
 	int top; 			// TODO: rename to e.g. nblocks because it is the number of blocks
 	flt ratio;			// Compresion ratio achieved
 	/* Collect compression statistics for the particular task
@@ -109,13 +110,19 @@ typedef struct MOSAICHEADER{
 	/* The variable sized 'dict' and capped 'dict256' dictionary compression methods are the only
 	 * compression methods that have global properties which are stored in mosaic global header.
 	 */
-	bte bits_dict;
 	BUN pos_dict;
 	BUN length_dict;
-	bte bits_dict256;
 	BUN pos_dict256;
 	BUN length_dict256;
+	bte bits_dict256;
+	bte bits_dict;
+	bte padding;
 } * MosaicHdr;
+
+typedef struct VMOSAICHEADER{
+	oid version;		// to recognize the underlying implementation used.
+	oid free;			// the size of the heap.
+} VMosaicHdr;
 
 /* Each compressed block comes with a small header.
  * It contains the compression type and the number of elements it covers
@@ -142,8 +149,12 @@ typedef struct MOSAICBLK {
 /* Memory word alignement is type and platform dependent.
  * We use an encoding that fits the column type requirements
  */
+
+#define wordaligned_width(SZ, width) \
+	 ((SZ) +  ((SZ) % ((width))? (width) - ((SZ)%(width)) : 0))
+
 #define wordaligned(SZ,TYPE) \
-	 ((SZ) +  ((SZ) % sizeof(TYPE)? sizeof(TYPE) - ((SZ)%sizeof(TYPE)) : 0))
+	 wordaligned_width(SZ, sizeof(TYPE))
 
 // alignment is focused on mosaichdr size
 #define MosaicHdrSize  wordaligned(sizeof(struct MOSAICHEADER),sizeof(struct MOSAICBLK))
@@ -217,16 +228,14 @@ typedef struct _MosaicLayout {
 
 #define ALIGN_BLOCK_HEADER(task, METHOD, TPE)\
 {\
-	if (task->padding) {\
-		ALIGNMENT_HELPER_TPE(METHOD, TPE) dummy;\
-		uintptr_t alignment = (BUN) ((uintptr_t) (void*) &dummy.b - (uintptr_t) (void*) &dummy.a);\
-		uintptr_t SZ = (uintptr_t) (char*)((task)->blk);\
-		BUN padding = (BUN) ( ( (SZ) % alignment ) ? ( alignment - ((SZ)%alignment) ) : 0 );\
-		assert (padding < CHAR_MAX);\
-		(task)->blk = (MosaicBlk) ((char*)((task)->blk) + padding);\
-		*task->padding = (char) padding;\
-		/*printf("padding: %ld\n", padding);*/\
-	}\
+	ALIGNMENT_HELPER_TPE(METHOD, TPE) dummy;\
+	uintptr_t alignment = (BUN) ((uintptr_t) (void*) &dummy.b - (uintptr_t) (void*) &dummy.a);\
+	uintptr_t SZ = (uintptr_t) (char*)((task)->blk);\
+	BUN padding = (BUN) ( ( (SZ) % alignment ) ? ( alignment - ((SZ)%alignment) ) : 0 );\
+	assert (padding < CHAR_MAX);\
+	(task)->blk = (MosaicBlk) ((char*)((task)->blk) + padding);\
+	*task->padding = (char) padding;\
+	/*printf("padding: %ld\n", padding);*/\
 	task->padding = &GET_PADDING(task->blk, METHOD, TPE);\
 	*task->padding = 0;\
 }
@@ -277,7 +286,7 @@ mal_export const Method MOSmethods[];
 mal_export bit MOSisTypeAllowed(char compression, BAT* b);
 mal_export str MOScompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str MOSdecompress(bat* ret, const bat* bid);
-mal_export str MOScompressInternal(BAT* bsrc, const char* compressions);
+mal_export str MOScompressInternal(BAT* bsrc, const char* compressions, bool persist);
 mal_export str MOSselect1	(bat *ret, const bat *bid					, const void *low, const void *high, const bit *li, const bit *hi, const bit *anti);
 mal_export str MOSselect2	(bat *ret, const bat *bid, const bat *cid	, const void *low, const void *high, const bit *li, const bit *hi, const bit *anti);
 mal_export str MOSselect1nil(bat *ret, const bat *bid					, const void *low, const void *high, const bit *li, const bit *hi, const bit *anti, const bit *unknown);
@@ -289,7 +298,6 @@ mal_export str MOSlayout(BAT *b, BAT *bbsn, BAT *btech, BAT *bcount, BAT *binput
 mal_export str MOSAnalysis(BAT *b, BAT *btech, BAT *blayout, BAT *output, BAT *factor, BAT *compress, BAT *decompress, str compressions, str common_compressions);
 
 void MOSupdateHeader(MOStask* task);
-void MOSinitHeader(MOStask* task);
 void MOSinitializeScan(MOStask* task, BAT* b);
 
 #endif /* _MOSLIST_H */

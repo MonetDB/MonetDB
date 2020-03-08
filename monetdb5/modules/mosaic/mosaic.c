@@ -128,8 +128,9 @@ construct_compression_mask(MOStask* task, const char* compressions) {
 static void
 MOSinit(MOStask* task, BAT *b) {
 	char *base;
-	if( VIEWmosaictparent(b) != 0)
-		b= BATdescriptor(VIEWmosaictparent(b));
+	if (VIEWtparent(b) != 0) {
+		b= BATdescriptor(VIEWtparent(b));
+	}
 	assert(b);
 	assert( b->tmosaic);
 	base = b->tmosaic->base;
@@ -137,12 +138,12 @@ MOSinit(MOStask* task, BAT *b) {
 	task->type = b->ttype;
 	task->bsrc = b;
 	task->hdr = (MosaicHdr) base;
-	base += MosaicHdrSize;
+	base += MosaicHdrSize + task->hdr->padding;
 	task->blk = (MosaicBlk)  base;
 	task->dst = MOScodevector(task);
 	task->dict256_info = NULL;
 	task->dict_info = NULL;
-	task->padding = NULL;
+	task->padding = (char*) &task->hdr->padding;
 }
 
 /*
@@ -166,6 +167,11 @@ static inline BUN get_normalized_compression(MosaicEstimation* current, const Mo
 
 #define getFactor(ESTIMATION) ((flt) (ESTIMATION).uncompressed_size / (ESTIMATION).compressed_size)
 
+static void
+cleanUpDictionaryContext(MOStask* task) {
+	if (METHOD_IS_SET(task->mask, MOSAIC_DICT256)) MOScleanUpInfo_ID(dict256)(task);
+	if (METHOD_IS_SET(task->mask, MOSAIC_DICT)) MOScleanUpInfo_ID(dict)(task);
+}
 
 static str
 MOSprepareDictionaryContext(MOStask* task) {
@@ -373,25 +379,30 @@ MOSupdateHeader(MOStask* task)
 	}
 }
 
-void
-MOSinitHeader(MOStask* task)
+static void
+MOSinitHeader(BAT* bsrc)
 {
-	MosaicHdr hdr = (MosaicHdr) task->hdr;
-	int i;
-	for(i=0; i < MOSAIC_METHODS; i++){
+	MosaicHdr hdr = (MosaicHdr) bsrc->tmosaic->base;
+	hdr->version	= MOSAIC_VERSION;
+	for(int i =0; i < MOSAIC_METHODS; i++){
 		hdr->elms[i] = hdr->blks[i] = METHOD_NOT_AVAILABLE;
 	}
-	hdr->ratio = 0;
-	hdr->version = MOSAIC_VERSION;
-	hdr->top = 0;
-	hdr->bits_dict = 0;
-	hdr->pos_dict = 0;
-	hdr->length_dict = 0;
-	hdr->bits_dict256 = 0;
-	hdr->pos_dict256 = 0;
+	hdr->ratio			= 0;
+	hdr->top			= 0;
+	hdr->bits_dict		= 0;
+	hdr->pos_dict		= 0;
+	hdr->length_dict	= 0;
+	hdr->bits_dict256	= 0;
+	hdr->pos_dict256	= 0;
 	hdr->length_dict256 = 0;
+	bsrc->tmosaic->free	= MosaicHdrSize;
+	hdr->free			= bsrc->tmosaic->free;
+	hdr->padding		= 0;
 
-	task->bsrc->tmosaic->free = MosaicHdrSize;
+	VMosaicHdr* vhdr		= (VMosaicHdr*) bsrc->tvmosaic->base;
+	vhdr->version			= MOSAIC_VERSION;
+	bsrc->tvmosaic->free	= wordaligned_width(sizeof(VMosaicHdr), bsrc->twidth);
+	vhdr->free				= bsrc->tvmosaic->free;
 }
 
 // position the task on the mosaic blk to be scanned
@@ -443,9 +454,6 @@ str MOSestimate(MOStask* task, BAT* estimates, size_t* compressed_size) {
 
 static str
 MOSfinalizeDictionary(MOStask* task) {
-
-	task->bsrc->tvmosaic->free = 0;
-
 	switch(ATOMbasetype(task->type)) {
 	case TYPE_bte: finalize_dictionary(bte);
 	case TYPE_sht: finalize_dictionary(sht);
@@ -466,7 +474,7 @@ MOSfinalizeDictionary(MOStask* task) {
 
 /* the source is extended with a BAT mosaic heap */
 str
-MOScompressInternal(BAT* bsrc, const char* compressions)
+MOScompressInternal(BAT* bsrc, const char* compressions, bool persist)
 {
 	MOStask task = {0};
 	str msg = MAL_SUCCEED;
@@ -484,16 +492,13 @@ MOScompressInternal(BAT* bsrc, const char* compressions)
 		return MAL_SUCCEED;
 	}
 
-  t0 = GDKusec();
+	t0 = GDKusec();
 
-	if(BATmosaic(bsrc,  BATcapacity(bsrc) + (MosaicHdrSize + 2 * MosaicBlkSize)/Tsize(bsrc)+ BATTINY) == GDK_FAIL){
-		// create the mosaic heap if not available.
-		// The final size should be smaller then the original
-		// It may, however, be the case that we mix a lot of RAW and, say, DELTA small blocks
-		// Then we total size may go beyond the original size and we should terminate the process.
-		// This should be detected before we compress a block, in the estimate functions
-		// or when we extend the non-compressed collector block
-		throw(MAL,"mosaic.compress", "heap construction failes");
+	const BUN cap = BATcapacity(bsrc) + (MosaicHdrSize + 2 * MosaicBlkSize)/Tsize(bsrc)+ BATTINY;
+	if(BATmosaic(bsrc, cap) == GDK_FAIL) {
+		throw(MAL,
+			"mosaic.compress",
+			"heap construction failed or another thread might have created a mosaic heap.");
 	}
 	assert(bsrc->tmosaic->parentid == bsrc->batCacheid);
 
@@ -503,9 +508,10 @@ MOScompressInternal(BAT* bsrc, const char* compressions)
 	task.stop = BATcount(bsrc);
 	task.timer = GDKusec();
 
+	MOSinitHeader(bsrc);
+
 	MOSinit(&task,bsrc);
 	task.blk->cnt= 0;
-	MOSinitHeader(&task);
 
 	if ( (msg = construct_compression_mask(&task, compressions)) != MAL_SUCCEED) {
 			MOSdestroy(bsrc);
@@ -522,6 +528,7 @@ MOScompressInternal(BAT* bsrc, const char* compressions)
 	if (!(estimates = COLnew(0, TYPE_int, BATcount(bsrc), TRANSIENT)) ) {
 		msg = createException(MAL, "mosaic.compress", "Could not allocate temporary estimates BAT.\n");
 		MOSdestroy(bsrc);
+		cleanUpDictionaryContext(&task);
 		goto finalize;
 	}
 
@@ -530,6 +537,7 @@ MOScompressInternal(BAT* bsrc, const char* compressions)
 	if ( ( msg = MOSestimate(&task, estimates, &compressed_size_bytes) )) {
 		BBPreclaim(estimates);
 		MOSdestroy(bsrc);
+		cleanUpDictionaryContext(&task);
 		goto finalize;
 	}
 
@@ -543,6 +551,7 @@ MOScompressInternal(BAT* bsrc, const char* compressions)
 	if (HEAPextend(bsrc->tmosaic, compressed_size_bytes, true) != GDK_SUCCEED) {
 		BBPreclaim(estimates);
 		MOSdestroy(bsrc);
+		msg = createException(MAL, "mosaic.compress", "Could not extend mosaic heap.\n");
 		goto finalize;
 	}
 
@@ -564,7 +573,9 @@ MOScompressInternal(BAT* bsrc, const char* compressions)
 		assert(0);
 	}
 
-	task.bsrc->tmosaic->free = (task.dst - (char*)task.hdr);
+	task.bsrc->tmosaic->free = (size_t) ((uintptr_t) (char*) task.blk - (uintptr_t) (char*) task.bsrc->tmosaic->base);
+	task.hdr->free = task.bsrc->tmosaic->free;
+	((VMosaicHdr*) task.bsrc->tvmosaic->base)->free = task.bsrc->tvmosaic->free;
 	task.timer = GDKusec() - task.timer;
 
 	// TODO: if we couldnt compress well enough, ignore the result
@@ -574,6 +585,10 @@ MOScompressInternal(BAT* bsrc, const char* compressions)
 		(flt)task.bsrc->theap.free /
 		(task.bsrc->tmosaic->free + (task.bsrc->tvmosaic? task.bsrc->tvmosaic->free : 0));
 	BBPreclaim(estimates);
+
+	if (msg == MAL_SUCCEED && persist) {
+		MOSpersist(task.bsrc);
+	}
 finalize:
 
 	t1 = GDKusec();
@@ -609,9 +624,8 @@ MOScompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		compressions = *getArgReference_str(stk,pci,2);
 	}
 
-	MOSsetLock(b);
-	msg= MOScompressInternal(b, compressions);
-	MOSunsetLock(b);
+	bool persist = true;
+	msg = MOScompressInternal(b, compressions, persist);
 
 	BBPunfix(*ret = b->batCacheid);
 	return msg;
@@ -619,45 +633,21 @@ MOScompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 // recreate the uncompressed heap from its mosaic version
 static str
-MOSdecompressInternal(BAT** res, BAT* bsrc)
-{	
-	MOStask task = {0};
-
-	if (BATcheckmosaic(bsrc) == 0 ){
-		*res = bsrc;
-		BBPfix(bsrc->batCacheid); // We are just returning a reference to bsrc.
-		return MAL_SUCCEED;
-	}
-
+MOSdecompressInternal(BAT* bsrc)
+{
 	if (VIEWtparent(bsrc)) {
 		throw(MAL, "mosaic.decompress", "cannot decompress tail-VIEW");
 	}
 
-	BBPshare(bsrc->tmosaic->parentid);
-
-	*res = COLnew(0, bsrc->ttype, bsrc->batCapacity, TRANSIENT);
-	BATsetcount(*res, bsrc->batCount);
-	(*res)->tmosaic = bsrc->tmosaic;
-	(*res)->tvmosaic = bsrc->tvmosaic;
-
- 	// TODO: We should also compress the string heap itself somehow.
-	// For now we just share the string heap of the original compressed bat.
-	if (bsrc->tvheap) {
-		BBPshare(bsrc->tvheap->parentid);
-		(*res)->tvheap = bsrc->tvheap;
+	if (BATcheckmosaic(bsrc) == 0 ){
+		return MAL_SUCCEED;
 	}
 
-	(*res)->tkey = bsrc->tkey;
-	(*res)->tsorted = bsrc->tsorted;
-	(*res)->trevsorted = bsrc->trevsorted;
-	(*res)->tseqbase = oid_nil;
-	(*res)->tnonil = bsrc->tnonil;
-	(*res)->tnil = bsrc->tnil;
-
+	MOStask task = {0};
 	MOSinit(&task,bsrc);
 
-	task.bsrc = *res;
-	task.src = Tloc(*res, 0);
+	task.bsrc = bsrc;
+	task.src = Tloc(bsrc, 0);
 
 	task.timer = GDKusec();
 
@@ -693,21 +683,13 @@ MOSdecompress(bat* ret, const bat* bid)
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "mosaic.decompress", INTERNAL_BAT_ACCESS);
 
-	BAT* res;
+	str result = MOSdecompressInternal( b);
 
-	MOSsetLock(b);
-
-	str result = MOSdecompressInternal( &res, b);
-
-	MOSunsetLock(b);
-
-	BBPunfix(b->batCacheid);
-
-	BBPkeepref(res->batCacheid);
-
-	*ret = res->batCacheid;
-
-	// TODO: handle errors
+	if (result != MAL_SUCCEED) {
+		BBPunfix(b->batCacheid);
+	}
+	*ret = *bid;
+	BBPkeepref(*ret);
 
 	return result;
 }
@@ -723,9 +705,7 @@ isCompressed(bat bid)
 		return 0;
 	b = BATdescriptor(bid);
 
-	MOSsetLock(b);
 	r = BATcheckmosaic(b);
-	MOSunsetLock(b);
 	BBPunfix(bid);
 	return r;
 }
@@ -1324,8 +1304,11 @@ MOSAnalysis(BAT *b, BAT *btech, BAT *blayout, BAT *boutput, BAT *bratio, BAT *bc
 	sht common_mask = 0;
 	_construct_compression_mask(&common_mask, common_compressions);
 
+	BAT* bc = COLcopy(b, BATttype(b), true, TRANSIENT);
+	bc->batRestricted = BAT_READ;
+
 	// create the list of all possible 2^6 compression patterns 
-	cases = makepatterns(pattern,CANDIDATES, compressions, common_mask, b);
+	cases = makepatterns(pattern,CANDIDATES, compressions, common_mask, bc);
 
 	memset(antipattern,0, sizeof(antipattern));
 	antipatternSize++; // the first pattern aka 0 is always an antipattern.
@@ -1360,20 +1343,18 @@ MOSAnalysis(BAT *b, BAT *btech, BAT *blayout, BAT *boutput, BAT *bratio, BAT *bc
 		pat[i].technique= GDKstrdup(buf);
 		pat[i].clk1 = GDKms();
 
-		MOSsetLock(b);
-
 		Heap* original = NULL;
 		Heap* voriginal = NULL;
 
-		if (BATcheckmosaic(b)){
-			original = b->tmosaic;
-			b->tmosaic = NULL;
-			voriginal = b->tvmosaic;
-			b->tvmosaic = NULL;
+		if (BATcheckmosaic(bc)){
+			original = bc->tmosaic;
+			bc->tmosaic = NULL;
+			voriginal = bc->tvmosaic;
+			bc->tvmosaic = NULL;
 		}
 
 		const char* compressions = buf;
-		msg = MOScompressInternal( b, compressions);
+		msg = MOScompressInternal( bc, compressions, false);
 
 		pat[i].clk1 = GDKms()- pat[i].clk1;
 
@@ -1381,14 +1362,14 @@ MOSAnalysis(BAT *b, BAT *btech, BAT *blayout, BAT *boutput, BAT *bratio, BAT *bc
 
 			char buffer1[LAYOUT_BUFFER_SIZE] = {0};
 
-			get_hdr_properties(buffer1, (MosaicHdr) b->tmosaic->base);
+			get_hdr_properties(buffer1, (MosaicHdr) bc->tmosaic->base);
 		
 			if ( (pat[i].layout = GDKstrdup( buffer1)) == NULL) {
 				msg = createException(SQL,__func__, MAL_MALLOC_FAIL);
 			}
 		}
 
-		if(msg != MAL_SUCCEED || b->tmosaic == NULL){
+		if(msg != MAL_SUCCEED || bc->tmosaic == NULL){
 			if (msg != MAL_SUCCEED) {
 				freeException(msg);
 				msg = MAL_SUCCEED;
@@ -1397,18 +1378,17 @@ MOSAnalysis(BAT *b, BAT *btech, BAT *blayout, BAT *boutput, BAT *bratio, BAT *bc
 			MOSdestroy(BBPdescriptor(bid));
 
 			if (original) {
-				b->tmosaic = original;
+				bc->tmosaic = original;
 			}
 			if (voriginal) {
-				b->tvmosaic = voriginal;
+				bc->tvmosaic = voriginal;
 			}
 			pat[i].include = false;
-			MOSunsetLock(b);
 			continue;
 		}
 
-		pat[i].xsize = (BUN) b->tmosaic->free + (BUN) b->tvmosaic->free;
-		pat[i].xf= ((MosaicHdr)  b->tmosaic->base)->ratio;
+		pat[i].xsize = (BUN) bc->tmosaic->free + (BUN) bc->tvmosaic->free;
+		pat[i].xf= ((MosaicHdr)  bc->tmosaic->base)->ratio;
 
 		/* analyse result block distribution to exclude complicated compression combination that
 		 * (probably) won't improve compression rate.
@@ -1429,32 +1409,29 @@ MOSAnalysis(BAT *b, BAT *btech, BAT *blayout, BAT *boutput, BAT *bratio, BAT *bc
 		}
 
 		for(j=0; j < MOSAIC_METHODS; j++){
-			if ( ((MosaicHdr)  b->tmosaic->base)->blks[j] == 0 && (!(MOSmethods[j].bit & common_mask))) {
+			if ( ((MosaicHdr)  bc->tmosaic->base)->blks[j] == 0 && (!(MOSmethods[j].bit & common_mask))) {
 				antipattern[antipatternSize++] = pattern[i];
 			}
 		}
 
-		BAT* decompressed;
 		pat[i].clk2 = GDKms();
-		msg = MOSdecompressInternal( &decompressed, b);
+		msg = MOSdecompressInternal( bc);
 		pat[i].clk2 = GDKms()- pat[i].clk2;
-		MOSdestroy(decompressed);
-		BBPreclaim(decompressed);
-
 		// get rid of mosaic heap
-		MOSdestroy(b);
+		MOSdestroy(bc);
 
 		if (original) {
-			b->tmosaic = original;
+			bc->tmosaic = original;
 		}
 
 		if (voriginal) {
-			b->tvmosaic = voriginal;
+			bc->tvmosaic = voriginal;
 		}
 
-		MOSunsetLock(b);
-
-		if(msg != MAL_SUCCEED) return msg; // Probably a malloc failure.
+		if(msg != MAL_SUCCEED) {
+			BBPreclaim(bc);
+			return msg; // Probably a malloc failure.
+		}
 	}
 
 	// Collect the results in a table
@@ -1476,5 +1453,6 @@ MOSAnalysis(BAT *b, BAT *btech, BAT *blayout, BAT *boutput, BAT *bratio, BAT *bc
 		GDKfree(pat[i].layout);
 	}
 
+	BBPreclaim(bc);
 	return msg;
 }

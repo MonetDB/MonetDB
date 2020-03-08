@@ -1616,7 +1616,6 @@ BBPexit(void)
 						 * to locks) do it */
 						bat tp = VIEWtparent(b);
 						bat vtp = VIEWvtparent(b);
-						bat mosaictp = VIEWmosaictparent(b);
 						if (tp) {
 							BBP_desc(tp)->batSharecnt--;
 							--BBP_lrefs(tp);
@@ -1624,10 +1623,6 @@ BBPexit(void)
 						if (vtp) {
 							BBP_desc(vtp)->batSharecnt--;
 							--BBP_lrefs(vtp);
-						}
-						if (mosaictp) {
-							BBP_desc(mosaictp)->batSharecnt--;
-							--BBP_lrefs(mosaictp);
 						}
 						VIEWdestroy(b);
 					} else {
@@ -2494,7 +2489,7 @@ static inline int
 incref(bat i, bool logical, bool lock)
 {
 	int refs;
-	bat tp, tvp, tmp;
+	bat tp, tvp;
 	BAT *b, *pb = NULL, *pvb = NULL, *pmb = NULL;
 	bool load = false;
 
@@ -2518,16 +2513,6 @@ incref(bat i, bool logical, bool lock)
 			if (pvb == NULL) {
 				if (pb)
 					BBPunfix(pb->batCacheid);
-				return 0;
-			}
-		} // there could be a parent because of a shared mosaic
-		if (b->tmosaic && b->tmosaic->parentid != i) {
-			pmb = BATdescriptor(b->tmosaic->parentid);
-			if (pmb == NULL) {
-				if (pb)
-					BBPunfix(pb->batCacheid);
-				if (pvb)
-					BBPunfix(pvb->batCacheid);
 				return 0;
 			}
 		}
@@ -2563,9 +2548,8 @@ incref(bat i, bool logical, bool lock)
 		tp = b->theap.parentid;
 		assert(tp >= 0);
 		tvp = b->tvheap == 0 || b->tvheap->parentid == i ? 0 : b->tvheap->parentid;
-		tmp = b->tmosaic == 0 || b->tmosaic->parentid == i ? 0 : b->tmosaic->parentid;
 		refs = ++BBP_refs(i);
-		if (refs == 1 && (tp || tvp || tmp)) {
+		if (refs == 1 && (tp || tvp)) {
 			/* If this is a view, we must load the parent
 			 * BATs, but we must do that outside of the
 			 * lock.  Set the BBPLOADING flag so that
@@ -2639,7 +2623,7 @@ decref(bat i, bool logical, bool releaseShare, bool lock, const char *func)
 {
 	int refs = 0;
 	bool swap = false;
-	bat tp = 0, tvp = 0, tmp = 0;
+	bat tp = 0, tvp = 0;
 	BAT *b;
 
 	assert(i > 0);
@@ -2677,13 +2661,11 @@ decref(bat i, bool logical, bool releaseShare, bool lock, const char *func)
 		} else {
 			assert(b == NULL || b->theap.parentid == 0 || BBP_refs(b->theap.parentid) > 0);
 			assert(b == NULL || b->tvheap == NULL || b->tvheap->parentid == 0 || BBP_refs(b->tvheap->parentid) > 0);
-			assert(b == NULL || b->tmosaic == NULL || b->tmosaic->parentid == 0 || BBP_refs(b->tmosaic->parentid) > 0);
 			refs = --BBP_refs(i);
 			if (b && refs == 0) {
 				if ((tp = b->theap.parentid) != 0)
 					b->theap.base = (char *) (b->theap.base - BBP_cache(tp)->theap.base);
 				tvp = VIEWvtparent(b);
-				tmp = VIEWmosaictparent(b);
 			}
 		}
 	}
@@ -2725,8 +2707,6 @@ decref(bat i, bool logical, bool releaseShare, bool lock, const char *func)
 		decref(tp, false, false, lock, func);
 	if (tvp)
 		decref(tvp, false, false, lock, func);
-	if (tmp)
-		decref(tmp, false, false, lock, func);
 	return refs;
 }
 
@@ -2937,7 +2917,6 @@ BBPdestroy(BAT *b)
 {
 	bat tp = b->theap.parentid;
 	bat vtp = VIEWvtparent(b);
-	bat mtp = VIEWmosaictparent(b);
 
 	if (isVIEW(b)) {	/* a physical view */
 		VIEWdestroy(b);
@@ -2962,14 +2941,12 @@ BBPdestroy(BAT *b)
 		GDKunshare(tp);
 	if (vtp)
 		GDKunshare(vtp);
-	if (mtp)
-		GDKunshare(mtp);
 }
 
 static gdk_return
 BBPfree(BAT *b, const char *calledFrom)
 {
-	bat bid = b->batCacheid, tp = VIEWtparent(b), vtp = VIEWvtparent(b), mtp = VIEWmosaictparent(b);
+	bat bid = b->batCacheid, tp = VIEWtparent(b), vtp = VIEWvtparent(b);
 	gdk_return ret;
 
 	assert(bid > 0);
@@ -2998,8 +2975,6 @@ BBPfree(BAT *b, const char *calledFrom)
 		GDKunshare(tp);
 	if (ret == GDK_SUCCEED && vtp)
 		GDKunshare(vtp);
-	if (ret == GDK_SUCCEED && mtp)
-		GDKunshare(mtp);
 	return ret;
 }
 
@@ -3848,12 +3823,6 @@ BBPdiskscan(const char *parent, size_t baseoff)
 			} else if (strncmp(p + 1, "theap", 5) == 0) {
 				BAT *b = getdesc(bid);
 				delete = (b == NULL || !b->tvheap || !b->batCopiedtodisk);
-			} else if (strncmp(p + 1, "mosaic", 6) == 0) {
-				BAT *b = getdesc(bid);
-				delete = (b == NULL || !b->tmosaic || !b->batCopiedtodisk);
-			} else if (strncmp(p + 1, "vmosaic", 7) == 0) {
-				BAT *b = getdesc(bid);
-				delete = (b == NULL || !b->tmosaic || !b->batCopiedtodisk);
 			} else if (strncmp(p + 1, "thashl", 6) == 0 ||
 				   strncmp(p + 1, "thashb", 6) == 0) {
 #ifdef PERSISTENTHASH
@@ -3864,16 +3833,16 @@ BBPdiskscan(const char *parent, size_t baseoff)
 #else
 				delete = true;
 #endif
-			} else if (strncmp(p + 1, "tmosaic", 9) == 0) {
+			} else if (strncmp(p + 1, "tmosaic", 7) == 0) {
 				BAT *b = getdesc(bid);
 				delete = b == NULL;
 				if (!delete)
 					b->tmosaic = (Heap *) 1;
-			} else if (strncmp(p + 1, "tvmosaic", 10) == 0) {
+			} else if (strncmp(p + 1, "tvmosaic", 8) == 0) {
 				BAT *b = getdesc(bid);
 				delete = b == NULL;
 				if (!delete)
-					b->tmosaic = (Heap *) 1;
+					b->tvmosaic = (Heap *) 1;
 			} else if (strncmp(p + 1, "thash", 5) == 0) {
 				/* older versions used .thash which we
 				 * can simply ignore */

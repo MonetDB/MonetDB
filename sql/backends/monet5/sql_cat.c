@@ -905,7 +905,11 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 					compressions = NULL;
 				}
 
-				msg = MOScompressInternal(b, compressions);
+				bool persist = true;
+				msg = MOScompressInternal(b, compressions, persist);
+				if (msg == MAL_SUCCEED) {
+					MOSpersist(b);
+				}
 			}
 
 			BBPunfix(b->batCacheid);

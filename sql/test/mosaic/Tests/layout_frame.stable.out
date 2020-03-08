@@ -119,13 +119,13 @@ stdout of test 'layout_frame` in directory 'sql/test/mosaic` itself:
 % compressed # name
 % bigint # type
 % 3 # length
-[ 256	]
+[ 252	]
 #select * from mosaic.layout('sys','tmp3rle','i');
 % .%4,	.%4,	.%4,	.%4,	.%4,	.%4 # table_name
 % technique,	count,	inputsize,	outputsize,	properties,	bsn # name
 % clob,	bigint,	bigint,	bigint,	json,	bigint # type
-% 6,	2,	4,	3,	60,	1 # length
-[ "header",	86,	2752,	256,	"{\"blks\":[{\"frame\":1}],\"elms\":[{\"frame\":86}],\"ratio\":1.34375}",	0	]
+% 6,	2,	4,	3,	62,	1 # length
+[ "header",	86,	2752,	252,	"{\"blks\":[{\"frame\":1}],\"elms\":[{\"frame\":86}],\"ratio\":1.2835821}",	0	]
 [ "frame",	86,	344,	60,	"{\"min\" : 0,\"offset size in bits\" : 4}",	1	]
 #ROLLBACK;
 

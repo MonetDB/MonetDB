@@ -63,7 +63,7 @@ stdout of test 'join` in directory 'sql/test/mosaic` itself:
 % 3 # length
 [ NULL	]
 [ NULL	]
-[ 224	]
+[ 220	]
 [ NULL	]
 #create table tmp4( i int, b boolean, f real,t timestamp);
 #insert into tmp4 values

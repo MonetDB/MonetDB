@@ -553,7 +553,7 @@ BATfree(BAT *b)
 	HASHfree(b);
 	IMPSfree(b);
 	OIDXfree(b);
-	MOSdestroy(b);
+	MOSfree(b);
 	if (b->ttype)
 		HEAPfree(&b->theap, false);
 	else

@@ -155,9 +155,9 @@ end user.s16_0;
 % compressed # name
 % bigint # type
 % 3 # length
-[ 324	]
-[ 268	]
-[ 556	]
+[ 320	]
+[ 264	]
+[ 552	]
 [ NULL	]
 #select cast(sum(i) as bigint) from xtmp3;
 % sys.%1 # table_name
@@ -275,9 +275,9 @@ end user.s36_0;
 % compressed # name
 % bigint # type
 % 3 # length
-[ 324	]
-[ 268	]
-[ 556	]
+[ 320	]
+[ 264	]
+[ 552	]
 [ NULL	]
 #select cast(sum(i) as bigint) from xtmp3;
 % sys.%1 # table_name
