@@ -1813,7 +1813,7 @@ snapshot_list(int nglobs, char *globs[]) {
 				continue;
 			if (db_glob(glob, snap->dbname)) {
 				struct snapshot *w = push_snapshot(&wanted, &nwanted);
-				*w = *snap;
+				copy_snapshot(w, snap);
 				break;
 			}
 		}
@@ -1859,7 +1859,7 @@ snapshot_list(int nglobs, char *globs[]) {
 	}
 
 	free(name_buf);
-	free(wanted); // not free_snapshots, because it shared pointers with 'snapshots'
+	free_snapshots(wanted, nwanted);
 	free_snapshots(snapshots, nsnapshots);
 }
 

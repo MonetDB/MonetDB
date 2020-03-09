@@ -566,4 +566,16 @@ push_snapshot(struct snapshot **snapshots, int *nsnapshots)
 	return snap;
 }
 
+void
+copy_snapshot(struct snapshot *dest, struct snapshot *src)
+{
+
+	dest->dbname = strdup(src->dbname);
+	dest->time = src->time;
+	dest->size = src->size;
+	dest->name = strdup(src->name);
+	dest->path = strdup(src->path);
+}
+
+
 /* vim:set ts=4 sw=4 noexpandtab: */

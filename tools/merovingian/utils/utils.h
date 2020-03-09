@@ -55,6 +55,7 @@ struct snapshot {
 };
 
 struct snapshot *push_snapshot(struct snapshot **snapshots, int *nsnapshots);
+void copy_snapshot(struct snapshot *dest, struct snapshot *src);
 void free_snapshots(struct snapshot *snapshots, int nsnapshots);
 
 
