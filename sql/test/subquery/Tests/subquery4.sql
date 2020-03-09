@@ -115,6 +115,12 @@ alter sequence "debugme" restart with (select MAX(1));
 alter sequence "debugme" restart with (select MIN(1) OVER ());
 drop sequence "debugme";
 
+CREATE FUNCTION upsme(input INT) RETURNS INT BEGIN RETURN SELECT MIN(input) OVER (); END;
+
+SELECT upsme(1);
+SELECT upsme(1);
+
+DROP FUNCTION upsme(INT);
 DROP FUNCTION evilfunction(INT);
 DROP FUNCTION evilfunction(INT, INT);
 DROP PROCEDURE crashme(INT);
