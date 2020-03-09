@@ -18,10 +18,11 @@
 #include <sys/types.h>
 #include <time.h>
 
-#include "stream.h"
 #include "msabaoth.h"
 #include "mapi.h"
 #include "snapshot.h"
+#include "stream.h"
+#include "utils/database.h"
 
 static bool parse_snapshot_name(const char *filename, char **dbname, time_t *timestamp);
 static err validate_location(const char *path);
@@ -103,7 +104,7 @@ snapshot_restore_from(char *dbname, char *source)
 	err e;
 	(void)dbname;
 	(void)source;
-	sabdb *stats = NULL;
+	sabdb *existing = NULL;
 	char *dbfarm = NULL;
 	char *tmppath = NULL;
 	char *destpath = NULL;
@@ -115,13 +116,18 @@ snapshot_restore_from(char *dbname, char *source)
 		goto bailout;
 	}
 
-	/* For the time being, do not restore existing databases */
-	e = msab_getStatus(&stats, dbname);
+	/* Check if the target db already exists */
+	e = msab_getStatus(&existing, dbname);
 	if (e != NO_ERR)
 		goto bailout;
-	if (stats != NULL) {
-		e = newErr("database '%s' already exists", dbname);
-		goto bailout;
+
+	/* If the database already exists it will be destroyed.
+	 * We will lock it before unpacking the tar file and stop it after.
+	 */
+	if (existing != NULL && !existing->locked) {
+		e = db_lock(dbname);
+		if (e != NO_ERR)
+			goto bailout;
 	}
 
 	/* Figure out the directory to create */
@@ -156,6 +162,29 @@ snapshot_restore_from(char *dbname, char *source)
 	if (e != NO_ERR)
 		goto bailout;
 
+	/* Stop the existing database, if any */
+	if (existing != NULL) {
+		/* search connection list for pid to kill */
+		pid_t pid = 0;
+		pthread_mutex_lock(&_mero_topdp_lock);
+		for (dpair dp = _mero_topdp->next; dp != NULL; dp = dp->next) {
+			if (dp->type != MERODB)
+				continue;
+			if (strcmp(dp->dbname, dbname) != 0)
+				continue;
+			// hah!
+			pid = dp->pid;
+			break;
+		}
+		pthread_mutex_unlock(&_mero_topdp_lock);
+		/* kill kill */
+		if (pid != 0) {
+			kill(pid, SIGKILL);
+			sleep(1); // not sure if this is needed
+		}
+		db_destroy(existing->dbname);
+	}
+
 	/* remove whatever's laying around in the destination directory */
 	e = deletedir(destpath);
 	if (e != NO_ERR)
@@ -169,8 +198,8 @@ snapshot_restore_from(char *dbname, char *source)
 	}
 
 bailout:
-	if (stats != NULL)
-		msab_freeStatus(&stats);
+	if (existing != NULL)
+		msab_freeStatus(&existing);
 	if (instream != NULL)
 		close_stream(instream);
 	free(dbfarm);

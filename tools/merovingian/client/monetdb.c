@@ -183,10 +183,11 @@ command_help(int argc, char *argv[])
 			printf("Options:\n");
 			printf("  -t <targetfile>  File on the server to write the snapshot to.\n");
 		} else if (argc > 2 && strcmp(argv[2], "restore") == 0) {
-			printf("Usage: monetdb snapshot restore <snapid> [dbname]\n");
+			printf("Usage: monetdb snapshot restore [-f] <snapid> [dbname]\n");
 			printf("  Create a database from the given snapshot, where  <snapid> is either\n");
 			printf("  a path on the server or <dbname>@<num> as produced\n");
-			printf("  by 'monetdb snapshot list'. If using a path, dbname is mandatory.\n");
+			printf("Options:\n");
+			printf("  -f  do not ask for confirmation\n");
 		} else {
 			printf("Usage: monetdb <create|list|restore|destroy> [arguments]\n");
 			printf("  Manage database snapshots\n");
@@ -1982,7 +1983,9 @@ command_snapshot_list(int argc, char *argv[])
 static void
 command_snapshot_restore(int argc, char *argv[])
 {
+	int force = 0;
 	char *snapid = NULL;
+	char *snapfile;
 	char *dbname = NULL;
 
 	/* walk through the arguments and hunt for "options" */
@@ -1992,18 +1995,9 @@ command_snapshot_restore(int argc, char *argv[])
 			break;
 		}
 		if (argv[i][0] == '-') {
-			if (0 /* we'll be adding options later */) {
-				// if (argv[i][2] != '\0') {
-				// 	sourcefile = &argv[i][2];
-				// 	argv[i] = NULL;
-				// } else if (i + 1 < argc && argv[i+1][0] != '-') {
-				// 	sourcefile = argv[i+1];
-				// 	argv[i] = NULL;
-				// 	argv[i+1] = NULL;
-				// 	i++;
-				// } else {
-				// 	fprintf(stderr, "snapshot: -s needs an argument\n");
-				// }
+			if (argv[i][1] == 'f') {
+				force = 1;
+				argv[i] = 0;
 			} else {
 				fprintf(stderr, "snapshot restore: unknown option: %s\n", argv[i]);
 				command_help(argc + 2, &argv[-2]);  // ewww
@@ -2040,7 +2034,7 @@ command_snapshot_restore(int argc, char *argv[])
 			fprintf(stderr, "snapshot restore: dbname is mandatory\n");
 			exit(1);
 		}
-		snapshot_restore_file(snapid, dbname);
+		snapfile = snapid;
 	} else {
 		// it must be <dbname>@<seqno> then.
 		if (strchr(snapid, '@') == NULL) {
@@ -2070,8 +2064,28 @@ command_snapshot_restore(int argc, char *argv[])
 		}
 		if (dbname == NULL)
 			dbname = snap->dbname;
-		snapshot_restore_file(snap->path, dbname);
+		snapfile = snap->path;
 	}
+
+	// check if the database exists
+	sabdb *db = NULL;
+	char *err = MEROgetStatus(&db, dbname);
+	if (err != NULL) {
+		fprintf(stderr, "snapshot restore: could not look up database '%s': %s", dbname, err);
+		exit(2);
+	}
+	if (db != NULL && !force) {
+		char answ;
+		printf("you are about to overwrite database '%s'.\n", db->dbname);
+		printf("ALL data in this database will be lost, are you sure? [y/N] ");
+		if (scanf("%c", &answ) < 1 || (answ != 'y' && answ != 'Y')) {
+			printf("aborted\n");
+			exit(1);
+		}
+		msab_freeStatus(&db);
+	}
+
+	snapshot_restore_file(snapfile, dbname);
 }
 
 static void
