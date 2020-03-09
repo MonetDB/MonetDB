@@ -76,13 +76,24 @@ FROM integers i1;
 	-- 3
 	-- NULL
 
-SELECT i FROM integers WHERE (SELECT 1 UNION ALL SELECT 2);
+SELECT i FROM integers WHERE (SELECT 1 UNION ALL SELECT 2); --error, more than one row returned by a subquery used as an expression
 
-SELECT i FROM integers WHERE (SELECT true UNION ALL SELECT false);
+SELECT i FROM integers WHERE (SELECT true UNION ALL SELECT false); --error, more than one row returned by a subquery used as an expression
 
-SELECT i FROM integers WHERE (SELECT true, false);
+SELECT i FROM integers WHERE (SELECT true, false); --error, subquery must return only one column
 
-SELECT i FROM integers WHERE (SELECT true, false UNION ALL SELECT false, true);
+SELECT i FROM integers WHERE (SELECT true, false UNION ALL SELECT false, true); --error, subquery must return only one column
+
+SELECT i FROM integers WHERE (SELECT COUNT(1) OVER ()) = 1;
+	-- 1
+	-- 2
+	-- 3
+	-- NULL
+
+SELECT i FROM integers WHERE (SELECT COUNT(i) OVER ()) = 1;
+	-- 1
+	-- 2
+	-- 3
 
 UPDATE another_T SET col1 = MIN(col1); --error, aggregates not allowed in update set clause
 UPDATE another_T SET col2 = 1 WHERE col1 = SUM(col2); --error, aggregates not allowed in update set clause
@@ -122,9 +133,9 @@ CREATE PROCEDURE crashme(a int) BEGIN DECLARE x INT; SET x = a; END;
 CALL crashme(COUNT(1)); --error, not allowed
 CALL crashme(COUNT(1) OVER ()); --error, not allowed
 
-CALL crashme((SELECT COUNT(1)));
-CALL crashme((SELECT COUNT(1) OVER ())); --should be allowed, it returns exactly one row
-CALL crashme((SELECT 1 UNION ALL SELECT 2)); --error, returns more than one row
+CALL crashme((SELECT COUNT(1))); --error, subquery at CALL
+CALL crashme((SELECT COUNT(1) OVER ())); --error, subquery at CALL
+CALL crashme((SELECT 1 UNION ALL SELECT 2)); --error, subquery at CALL
 
 create sequence "debugme" as integer start with 1;
 alter sequence "debugme" restart with (select MAX(1));
