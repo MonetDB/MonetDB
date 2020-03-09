@@ -83,7 +83,7 @@ stdout of test 'subquery4` in directory 'sql/test/subquery` itself:
 % tinyint # type
 % 1 # length
 [ 1	]
-#SELECT 1 FROM evilfunction((SELECT MAX(1) OVER () UNION ALL SELECT 1)); --error, more than one row returned by a subquery used as an expression
+#SELECT 1 FROM evilfunction((SELECT MAX(1) OVER () UNION ALL SELECT 1));
 % . # table_name
 % single_value # name
 % tinyint # type

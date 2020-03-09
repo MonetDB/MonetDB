@@ -33,6 +33,14 @@ FROM integers i1;
 	-- 1
 
 SELECT
+	(SELECT 1,1 UNION ALL SELECT 2,2)
+FROM integers i1; --error, subquery must return only one column
+
+SELECT
+	(SELECT 1 UNION ALL SELECT 2)
+FROM integers i1; --error, more than one row returned by a subquery used as an expression
+
+SELECT
 	(SELECT i2.i FROM evilfunction(MIN(1)) as i2(i))
 FROM integers i1; -- error, aggregate functions are not allowed in functions in FROM
 
@@ -51,7 +59,7 @@ FROM integers i1;
 SELECT 1 FROM evilfunction((SELECT MAX(1) OVER ()));
 	-- 1
 
-SELECT 1 FROM evilfunction((SELECT MAX(1) OVER () UNION ALL SELECT 1)); --error, more than one row returned by a subquery used as an expression
+SELECT 1 FROM evilfunction((SELECT MAX(1) OVER () UNION ALL SELECT 1));
 
 SELECT 
 	(SELECT 1 FROM evilfunction((SELECT MAX(1) OVER () UNION ALL SELECT 1)))

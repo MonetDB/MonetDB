@@ -2358,16 +2358,20 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 	case SQL_UNION:
 	case SQL_EXCEPT:
 	case SQL_INTERSECT: {
+		sql_rel *sq;
+
 		if (is_psm_call(f))
 			return sql_error(sql, 02, SQLSTATE(42000) "CALL: subqueries not allowed inside CALL statements");
 		if (rel && *rel)
 			query_push_outer(query, *rel, f);
-		sql_rel *sq = rel_setquery(query, sc);
+		sq = rel_setquery(query, sc);
 		if (rel && *rel)
 			*rel = query_pop_outer(query);
-		if (sq)
-			return exp_rel(sql, sq);
-		return NULL;
+		if (!sq)
+			return NULL;
+		if (ek.card <= card_set && is_project(sq->op) && list_length(sq->exps) > 1)
+			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: subquery must return only one column");
+		return exp_rel(sql, sq);
 	}
 	case SQL_DEFAULT:
 		return sql_error(sql, 02, SQLSTATE(42000) "DEFAULT keyword not allowed outside insert and update statements");
