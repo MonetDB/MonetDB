@@ -51,6 +51,9 @@ exp_set_freevar(mvc *sql, sql_exp *e, sql_rel *r)
 		set_freevar(e, 0);
 		break;
 	case e_atom: 
+		if (e->f)
+			exps_set_freevar(sql, e->f, r);
+		break;
 	case e_psm: 
 		break;
 	}
@@ -114,8 +117,11 @@ exp_has_freevar(mvc *sql, sql_exp *e)
 		if (exp_is_rel(e))
 			return rel_has_freevar(sql, e->l);
 		break;
-	case e_column: 
 	case e_atom: 
+		if (e->f)
+			return exps_have_freevar(sql, e->f);
+		break;
+	case e_column:
 	default:
 		return 0;
 	}
@@ -238,6 +244,9 @@ exp_freevar(mvc *sql, sql_exp *e)
 				return rel_freevar(sql, e->l);
 		return NULL;
 	case e_atom:
+		if (e->f)
+			return exps_freevar(sql, e->f);
+		return NULL;
 	default:
 		return NULL;
 	}
@@ -288,9 +297,9 @@ rel_freevar(mvc *sql, sql_rel *rel)
 		return NULL;
 	case op_table: {
 		sql_exp *call = rel->r;
-		if (rel->flag != 2 && rel->l)
+		if (rel->flag != TRIGGER_WRAPPER && rel->l)
 			lexps = rel_freevar(sql, rel->l);
-		exps = (rel->flag != 2 && call)?exps_freevar(sql, call->l):NULL;
+		exps = (rel->flag != TRIGGER_WRAPPER && call)?exps_freevar(sql, call->l):NULL;
 		return merge_freevar(exps, lexps);
 	}
 	case op_union:
@@ -450,6 +459,9 @@ push_up_project_exp(mvc *sql, sql_rel *rel, sql_exp *e)
 			}
 		} break;	
 	case e_atom: 
+		if (e->f) 
+			e->f = push_up_project_exps(sql, rel, e->f);
+		break;
 	case e_psm: 
 		break;
 	}
@@ -754,7 +766,19 @@ push_up_project(mvc *sql, sql_rel *rel, list *ad)
 				}
 				if (r->l)
 					e = exp_rewrite(sql, r->l, e, ad);
-				append(n->exps, e);
+				if (e->type == e_atom && e->f) {
+					list *atoms = (list*)e->f;
+
+					if (list_length(atoms) > 1)
+						return sql_error(sql, 02, SQLSTATE(21000) "Cardinality violation, scalar value expected");
+					for (node *nn = atoms->h ; nn ; nn = nn->next) {
+						sql_exp *ee = (sql_exp *) nn->data;
+
+						 exp_setname(sql->sa, ee, exp_relname(e), exp_name(e));
+						append(n->exps, ee);
+					}
+				} else
+					append(n->exps, e);
 			}
 			if (r->r) {
 				list *exps = r->r, *oexps = n->r = sa_list(sql->sa);
@@ -1358,7 +1382,10 @@ _rel_unnest(mvc *sql, sql_rel *rel)
 
 	switch (rel->op) {
 	case op_basetable:
+		break;
 	case op_table:
+		if (IS_TABLE_PROD_FUNC(rel->flag) || rel->flag == TABLE_FROM_RELATION)
+			rel->l = _rel_unnest(sql, rel->l);
 		break;
 	case op_join: 
 	case op_left: 
@@ -1408,7 +1435,10 @@ rel_reset_subquery(sql_rel *rel)
 	rel->subquery = 0;
 	switch(rel->op){
 	case op_basetable:
+		break;
 	case op_table:
+		if ((IS_TABLE_PROD_FUNC(rel->flag) || rel->flag == TABLE_FROM_RELATION) && rel->l)
+			rel_reset_subquery(rel->l);
 		break;
 	case op_ddl:
 		rel_reset_subquery(rel->l);
