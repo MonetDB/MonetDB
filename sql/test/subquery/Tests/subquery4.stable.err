@@ -132,6 +132,18 @@ MAPI  = (monetdb) /var/tmp/mtest-60261/.s.monetdb.38639
 QUERY = CALL crashme(COUNT(1) OVER ()); --error, not allowed
 ERROR = !COUNT: window function 'count' not allowed in CALL
 CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-92133/.s.monetdb.34612
+QUERY = CALL crashme((SELECT COUNT(1)));
+ERROR = !CALL: subqueries not allowed inside CALL statements
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-92133/.s.monetdb.34612
+QUERY = CALL crashme((SELECT COUNT(1) OVER ())); --should be allowed, it returns exactly one row
+ERROR = !CALL: subqueries not allowed inside CALL statements
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-92133/.s.monetdb.34612
+QUERY = CALL crashme((SELECT 1 UNION ALL SELECT 2)); --error, returns more than one row
+ERROR = !CALL: subqueries not allowed inside CALL statements
+CODE  = 42000
 
 # 15:41:18 >  
 # 15:41:18 >  "Done."
