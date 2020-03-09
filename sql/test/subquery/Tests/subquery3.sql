@@ -452,7 +452,11 @@ FROM another_T; --error, col0 doesn't exist
 
 SELECT
 	(SELECT outt FROM evilfunction((SELECT col1))) 
-FROM another_T; --error, more than one row returned by a subquery used as an expression
+FROM another_T;
+	-- 1
+	-- 11
+	-- 111
+	-- 1111
 
 SELECT
 	(SELECT outt FROM evilfunction((SELECT col1 FROM tbl_ProductSales))) 
