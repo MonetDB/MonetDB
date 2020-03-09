@@ -99,6 +99,7 @@ norm_in  = re.compile('(?:'+')|(?:'.join([
     r'^(ERROR = !MALException:geom.wkbGetCoordinate:Geometry ")(.*)(" not a Point)\n',                                                          # 11: 3
     r"^(QUERY = COPY\b.* INTO .* FROM  *(?:\( *)?)(E?'.*')(.*)\n",                                                                              # 12: 3
     r'^(.*)(0x[0-9a-fA-F]*:ptr)(.*)\n',                                                                                                         # 13: 3
+    r'^(\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d [^:]*:\d+)(.*)\n',                                                                                    # 14: 2
 ])+')',  re.MULTILINE)
 norm_hint = '# the original non-normalized output was: '
 norm_out = (
@@ -115,6 +116,7 @@ norm_out = (
     None, '...', None,                                                                                  # 11: 3
     None, '...', None,                                                                                  # 12: 3
     None, '0xXXXXXX:ptr', None,                                                                         # 13: 3
+    'date+time filename:lineno', None,                                                                  # 14: 2
 )
 
 # match "table_name" SQL table header line to normalize "(sys)?.%[0-9]*" to "(sys)?."
