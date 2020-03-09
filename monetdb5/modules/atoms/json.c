@@ -777,7 +777,7 @@ JSONintegerParser(const char *j, const char **next) {
 	}
 
 	for(; *j; j++)
-		if (!(isdigit((unsigned char) *j) && *j != '0'))
+		if (!isdigit((unsigned char) *j))
 			break;
 	*next = j;
 
