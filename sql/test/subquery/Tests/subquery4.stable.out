@@ -83,6 +83,13 @@ stdout of test 'subquery4` in directory 'sql/test/subquery` itself:
 % tinyint # type
 % 1 # length
 [ 1	]
+#SELECT 1 FROM evilfunction((SELECT MAX(1) OVER () UNION ALL SELECT 1));
+% . # table_name
+% single_value # name
+% tinyint # type
+% 1 # length
+[ 1	]
+[ 1	]
 #SELECT i2.i FROM evilfunction((SELECT MAX(1) OVER ())) as i2(i);
 % .i2 # table_name
 % i # name
