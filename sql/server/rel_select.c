@@ -2339,7 +2339,6 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 		return rel_unop_(sql, rel ? *rel : NULL, le, NULL, "not", card_value);
 	}
 	case SQL_ATOM: {
-		/* TRUE or FALSE */
 		AtomNode *an = (AtomNode *) sc;
 
 		if (!an || !an->a) {
@@ -5043,9 +5042,6 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 		return rel_aggr(query, rel, se, f);
 	case SQL_WINDOW:
 		return rel_rankop(query, rel, se, f);
-	case SQL_IDENT:
-	case SQL_COLUMN:
-		return rel_column_ref(query, rel, se, f );
 	case SQL_NAME:
 		return rel_var_ref(sql, se->data.sval, 1);
 	case SQL_VALUES:
@@ -5092,7 +5088,7 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 			return lastexp(*rel);
 		return NULL;
 	}
-	case SQL_PARAMETER:{
+	case SQL_PARAMETER: {
 		if (sql->emode != m_prepare)
 			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: parameters ('?') not allowed in normal queries, use PREPARE");
 		assert(se->type == type_int);
@@ -5100,15 +5096,6 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 	}
 	case SQL_NULL:
 		return exp_null(sql->sa, sql_bind_localtype("void"));
-	case SQL_ATOM:{
-		AtomNode *an = (AtomNode *) se;
-
-		if (!an || !an->a) {
-			return exp_null(sql->sa, sql_bind_localtype("void"));
-		} else {
-			return exp_atom(sql->sa, atom_dup(sql->sa, an->a));
-		}
-	}
 	case SQL_NEXT:
 		return rel_next_value_for(sql, se);
 	case SQL_CAST:
@@ -5119,8 +5106,6 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 		return rel_case_exp(query, rel, se, f);
 	case SQL_RANK:
 		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: window function %s requires an OVER clause", qname_fname(se->data.lval->h->data.lval));
-	case SQL_DEFAULT:
-		return sql_error(sql, 02, SQLSTATE(42000) "DEFAULT keyword not allowed outside insert and update statements");
 	case SQL_XMLELEMENT:
 	case SQL_XMLFOREST:
 	case SQL_XMLCOMMENT:
