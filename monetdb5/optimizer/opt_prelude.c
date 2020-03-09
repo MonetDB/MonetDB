@@ -203,6 +203,7 @@ str oidRef;
 str oltpRef;
 str openRef;
 str optimizerRef;
+str orRef;
 str pack2Ref;
 str packIncrementRef;
 str packRef;
@@ -503,6 +504,7 @@ void optimizerInit(void)
 	oltpRef = putName("oltp");
 	openRef = putName("open");
 	optimizerRef = putName("optimizer");
+	orRef = putName("or");
 	pack2Ref = putName("pack2");
 	packIncrementRef = putName("packIncrement");
 	packRef = putName("pack");
