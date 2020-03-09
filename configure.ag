@@ -2193,6 +2193,7 @@ AS_VAR_IF([ac_cv_func_fdatasync], [yes],
 	[AC_DEFINE([HAVE_FDATASYNC], 1, [If the system has a working fdatasync])])
 
 AC_FUNC_FSEEKO
+AC_FUNC_STRERROR_R
 # NOTE: these functions are in alphabetical order to ease maintenance
 save_LIBS="$LIBS"
 LIBS="$LIBS $MATH_LIBS"

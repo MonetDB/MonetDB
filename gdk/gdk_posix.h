@@ -193,5 +193,21 @@ gdk_export char *asctime_r(const struct tm *restrict, char *restrict);
 #ifndef HAVE_CTIME_R
 gdk_export char *ctime_r(const time_t *restrict, char *restrict);
 #endif
+#ifndef HAVE_STRERROR_R
+gdk_export int strerror_r(int errnum, char *buf, size_t buflen);
+#endif
+
+static inline const char *
+GDKstrerror(int errnum, char *buf, size_t buflen)
+{
+#ifdef STRERROR_R_CHAR_P
+	return strerror_r(errnum, buf, buflen);
+#else
+	if (strerror_r(errnum, buf, buflen) == 0)
+		return buf;
+	snprintf(buf, buflen, "Unknown error %d", errnum);
+	return buf;
+#endif
+}
 
 #endif /* GDK_POSIX_H */

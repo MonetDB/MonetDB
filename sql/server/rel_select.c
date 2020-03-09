@@ -2339,7 +2339,6 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 		return rel_unop_(sql, rel ? *rel : NULL, le, NULL, "not", card_value);
 	}
 	case SQL_ATOM: {
-		/* TRUE or FALSE */
 		AtomNode *an = (AtomNode *) sc;
 
 		if (!an || !an->a) {
@@ -2355,14 +2354,20 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 	case SQL_UNION:
 	case SQL_EXCEPT:
 	case SQL_INTERSECT: {
+		sql_rel *sq;
+
+		if (is_psm_call(f))
+			return sql_error(sql, 02, SQLSTATE(42000) "CALL: subqueries not allowed inside CALL statements");
 		if (rel && *rel)
 			query_push_outer(query, *rel, f);
-		sql_rel *sq = rel_setquery(query, sc);
+		sq = rel_setquery(query, sc);
 		if (rel && *rel)
 			*rel = query_pop_outer(query);
-		if (sq)
-			return exp_rel(sql, sq);
-		return NULL;
+		if (!sq)
+			return NULL;
+		if (ek.card <= card_set && is_project(sq->op) && list_length(sq->exps) > 1)
+			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: subquery must return only one column");
+		return exp_rel(sql, sq);
 	}
 	case SQL_DEFAULT:
 		return sql_error(sql, 02, SQLSTATE(42000) "DEFAULT keyword not allowed outside insert and update statements");
@@ -5052,9 +5057,6 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 		return rel_aggr(query, rel, se, f);
 	case SQL_WINDOW:
 		return rel_rankop(query, rel, se, f);
-	case SQL_IDENT:
-	case SQL_COLUMN:
-		return rel_column_ref(query, rel, se, f );
 	case SQL_NAME:
 		return rel_var_ref(sql, se->data.sval, 1);
 	case SQL_VALUES:
@@ -5062,6 +5064,8 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 	case SQL_SELECT: {
 		sql_rel *r = NULL;
 
+		if (is_psm_call(f))
+			return sql_error(sql, 02, SQLSTATE(42000) "CALL: subqueries not allowed inside CALL statements");
 		if (se->token == SQL_WITH) {
 			r = rel_with_query(query, se);
 		} else if (se->token == SQL_VALUES) {
@@ -5101,7 +5105,7 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 			return lastexp(*rel);
 		return NULL;
 	}
-	case SQL_PARAMETER:{
+	case SQL_PARAMETER: {
 		if (sql->emode != m_prepare)
 			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: parameters ('?') not allowed in normal queries, use PREPARE");
 		assert(se->type == type_int);
@@ -5109,15 +5113,6 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 	}
 	case SQL_NULL:
 		return exp_null(sql->sa, sql_bind_localtype("void"));
-	case SQL_ATOM:{
-		AtomNode *an = (AtomNode *) se;
-
-		if (!an || !an->a) {
-			return exp_null(sql->sa, sql_bind_localtype("void"));
-		} else {
-			return exp_atom(sql->sa, atom_dup(sql->sa, an->a));
-		}
-	}
 	case SQL_NEXT:
 		return rel_next_value_for(sql, se);
 	case SQL_CAST:
@@ -5128,8 +5123,6 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 		return rel_case_exp(query, rel, se, f);
 	case SQL_RANK:
 		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: window function %s requires an OVER clause", qname_fname(se->data.lval->h->data.lval));
-	case SQL_DEFAULT:
-		return sql_error(sql, 02, SQLSTATE(42000) "DEFAULT keyword not allowed outside insert and update statements");
 	case SQL_XMLELEMENT:
 	case SQL_XMLFOREST:
 	case SQL_XMLCOMMENT:
