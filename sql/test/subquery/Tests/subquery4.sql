@@ -76,6 +76,14 @@ FROM integers i1;
 	-- 3
 	-- NULL
 
+SELECT i FROM integers WHERE (SELECT 1 UNION ALL SELECT 2);
+
+SELECT i FROM integers WHERE (SELECT true UNION ALL SELECT false);
+
+SELECT i FROM integers WHERE (SELECT true, false);
+
+SELECT i FROM integers WHERE (SELECT true, false UNION ALL SELECT false, true);
+
 UPDATE another_T SET col1 = MIN(col1); --error, aggregates not allowed in update set clause
 UPDATE another_T SET col2 = 1 WHERE col1 = SUM(col2); --error, aggregates not allowed in update set clause
 UPDATE another_T SET col3 = (SELECT MAX(col5)); --error, aggregates not allowed in update set clause
