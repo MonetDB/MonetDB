@@ -41,6 +41,7 @@ mal_export int isDelta(InstrPtr q);
 mal_export int isMatJoinOp(InstrPtr q);
 mal_export int isMatLeftJoinOp(InstrPtr q);
 mal_export int isMapOp(InstrPtr q);
+mal_export int isMap2Op(InstrPtr q);
 mal_export int isLikeOp(InstrPtr q);
 mal_export int isTopn(InstrPtr q);
 mal_export int isSlice(InstrPtr q);
