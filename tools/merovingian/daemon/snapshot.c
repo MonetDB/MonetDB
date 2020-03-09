@@ -209,6 +209,23 @@ bailout:
 }
 
 err
+snapshot_destroy_file(char *path)
+{
+	char *e = validate_location(path);
+	if (e != NULL)
+		return e;
+
+	struct stat dummy;
+	if (stat(path, &dummy) < 0)
+		return newErr("Could not drop snapshot '%s': %s", path, strerror(errno));
+
+	if (remove(path) < 0)
+		return newErr("Could not remove '%s': %s", path, strerror(errno));
+
+	return NO_ERR;
+}
+
+err
 snapshot_list(int *nsnapshots, struct snapshot **snapshots)
 {
 	err e = NO_ERR;

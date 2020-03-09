@@ -188,6 +188,17 @@ command_help(int argc, char *argv[])
 			printf("  a path on the server or <dbname>@<num> as produced\n");
 			printf("Options:\n");
 			printf("  -f  do not ask for confirmation\n");
+		} else if (argc > 2 && strcmp(argv[2], "destroy") == 0) {
+			printf("Usage: monetdb snapshot destroy [-f] <snapid>...\n");
+			printf("       monetdb snapshot destroy [-f] -r <N> <dbname>...\n");
+			printf("  Destroy one or more database snapshots, identified by a database name\n");
+			printf("  and a sequence number as given by 'monetdb snapshot list'.\n");
+			printf("  In the first form, the sequence numbers are part of the <snapid>.\n");
+			printf("  In the second form. <dbname> is a database name or pattern such as 'staging*'\n");
+			printf("  and N is the number of snapshots to retain.\n");
+			printf("Options:\n");
+			printf("  -f  Do not ask for confirmation\n");
+			printf("  -r  Number of snapshots to retain.\n");
 		} else {
 			printf("Usage: monetdb <create|list|restore|destroy> [arguments]\n");
 			printf("  Manage database snapshots\n");
@@ -1895,6 +1906,31 @@ snapshot_restore_file(char *sourcefile, char *dbname)
 }
 
 static void
+snapshot_destroy_file(char *path)
+{
+	char *ret;
+	char *out;
+	char *merocmd = malloc(100 + strlen(path));
+
+	sprintf(merocmd, "snapshot destroy %s", path);
+	ret = control_send(&out, mero_host, mero_port, "", merocmd, 0, mero_pass);
+	if (ret != NULL) {
+		fprintf(stderr, "snapshot destroy %s failed: %s", path, ret);
+		exit(2);
+	}
+
+	if (strcmp(out, "OK") != 0) {
+		fprintf(stderr, "snapshot destroy %s: %s\n", path, out);
+		exit(2);
+	}
+
+	if (!monetdb_quiet)
+		printf("Destroyed %s\n", path);
+
+	free(merocmd);
+}
+
+static void
 command_snapshot_create(int argc, char *argv[])
 {
 	char *targetfile = NULL;
@@ -1918,10 +1954,12 @@ command_snapshot_create(int argc, char *argv[])
 					i++;
 				} else {
 					fprintf(stderr, "snapshot: -t needs an argument\n");
+					command_help(argc + 2, &argv[-2]);
+					exit(1);
 				}
 			} else {
 				fprintf(stderr, "snapshot create: unknown option: %s\n", argv[i]);
-				command_help(argc + 2, &argv[-2]);  // ewww
+				command_help(argc + 2, &argv[-2]);
 				exit(1);
 			}
 		}
@@ -1966,7 +2004,7 @@ command_snapshot_list(int argc, char *argv[])
 		}
 		if (argv[i][0] == '-') {
 			fprintf(stderr, "snapshot create: unknown option: %s\n", argv[i]);
-			command_help(argc + 2, &argv[-2]);  // ewww
+			command_help(argc + 2, &argv[-2]);
 			exit(1);
 		}
 	}
@@ -2000,7 +2038,7 @@ command_snapshot_restore(int argc, char *argv[])
 				argv[i] = 0;
 			} else {
 				fprintf(stderr, "snapshot restore: unknown option: %s\n", argv[i]);
-				command_help(argc + 2, &argv[-2]);  // ewww
+				command_help(argc + 2, &argv[-2]);
 				exit(1);
 			}
 		}
@@ -2088,6 +2126,134 @@ command_snapshot_restore(int argc, char *argv[])
 	snapshot_restore_file(snapfile, dbname);
 }
 
+
+static void
+command_snapshot_destroy(int argc, char *argv[])
+{
+	int force = 0;
+	long retain = -1;
+	struct snapshot *snapshots = NULL;
+	int nsnapshots = 0;
+	char *hitlist = NULL;
+
+
+	/* walk through the arguments and hunt for "options" */
+	for (int i = 1; i < argc; i++) {
+		if (strcmp(argv[i], "--") == 0) {
+			argv[i] = NULL;
+			break;
+		}
+		if (argv[i][0] == '-') {
+			if (argv[i][1] == 'f') {
+				force = 1;
+				argv[i] = 0;
+			} else if (argv[i][1] == 'r') {
+				char *n_str;
+				if (argv[i][2] != '\0') {
+					n_str = &argv[i][2];
+					argv[i] = NULL;
+				} else if (i + 1 < argc && argv[i+1][0] != '-') {
+					n_str = argv[i+1];
+					argv[i] = NULL;
+					argv[i+1] = NULL;
+					i++;
+				} else {
+					fprintf(stderr, "snapshot: -t needs an argument\n");
+					command_help(argc + 2, &argv[-2]);
+					exit(1);
+				}
+				char *end = NULL;
+				retain = strtol(n_str, &end, 10);
+				if (*end != '\0' || retain < 0) {
+					fprintf(stderr, "snapshot: -r takes a nonnegative integer\n");
+					command_help(argc + 2, &argv[-2]);
+					exit(1);
+				}
+			} else {
+				fprintf(stderr, "snapshot destroy: unknown option: %s\n", argv[i]);
+				command_help(argc + 2, &argv[-2]);
+				exit(1);
+			}
+		}
+	}
+
+	char *err = snapshot_enumerate(&snapshots, &nsnapshots);
+	if (err != NULL) {
+		fprintf(stderr, "snapshot: %s\n", err);
+		exit(2);
+	}
+
+	/* this is where we will mark the snapshots to be destroyed */
+	hitlist = calloc(nsnapshots, 1);
+
+	/* Go over the arguments and mark the snapshots to be destroyed.
+	 * Relies on the snapshots array to be sorted correctly
+	 */
+	for (int a = 1; a< argc; a++) {
+		char *arg = argv[a];
+		if (arg == NULL)
+			continue;
+		bool matched_something = false;
+		for (int s = 0; s < nsnapshots; s++) {
+			struct snapshot *snap = &snapshots[s];
+			if (retain < 0) {
+				// args are snapshot id's
+				if (strcmp(arg, snap->name) != 0)
+					continue;
+				matched_something = true; // only on full match
+			} else {
+				// args are database names.
+				if (!db_glob(arg, snap->dbname))
+					continue;
+				matched_something = true; // already on db name match
+				int seqno = atoi(strrchr(snap->name, '@') + 1);
+				if (seqno <= retain)
+					continue;
+			}
+			// if we get here it must be destroyed
+			hitlist[s] = 1;
+		}
+		if (!matched_something) {
+			fprintf(stderr, "snapshot destroy: no matching snapshots: %s\n", arg);
+			exit(1);
+		}
+	}
+
+	int nhits = 0;
+	for (int i = 0; i < nsnapshots; i++)
+		nhits += (hitlist[i] != 0);
+	if (nhits == 0)
+		goto end;
+
+	if (nhits > 0 && !force) {
+		printf("About to destroy %d snapshots:\n", nhits);
+		for (int i = 0; i < nsnapshots; i++)
+			if (hitlist[i]) {
+				char buf[100];
+				struct snapshot *snap = &snapshots[i];
+				struct tm tm = {0};
+				localtime_r(&snap->time, &tm);
+				strftime(buf, sizeof(buf),"%a %Y-%m-%d %H:%M:%S", &tm);
+				printf("    %-25s %s\n", snap->name, buf);
+			}
+		char answ;
+		printf("ALL data in %s will be lost, are you sure? [y/N] ",
+			nhits > 1 ? "these snapshots": "this snapshot");
+		if (scanf("%c", &answ) < 1 || (answ != 'y' && answ != 'Y')) {
+			printf("aborted\n");
+			exit(1);
+		}
+	}
+
+	for (int i = 0; i < nsnapshots; i++)
+		if (hitlist[i] != 0)
+			snapshot_destroy_file(snapshots[i].path);
+
+end:
+	free_snapshots(snapshots, nsnapshots);
+	free(hitlist);
+}
+
 static void
 command_snapshot(int argc, char *argv[])
 {
@@ -2109,6 +2275,8 @@ command_snapshot(int argc, char *argv[])
 		command_snapshot_list(argc - 1, &argv[1]);
 	} else if (strcmp(argv[1], "restore") == 0) {
 		command_snapshot_restore(argc - 1, &argv[1]);
+	} else if (strcmp(argv[1], "destroy") == 0) {
+		command_snapshot_destroy(argc - 1, &argv[1]);
 	} else {
 		/* print help message for this command */
 		command_help(argc - 1, &argv[1]);

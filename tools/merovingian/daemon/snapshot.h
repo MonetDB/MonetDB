@@ -13,6 +13,7 @@
 
 err snapshot_database_to(char *dname, char *dest);
 err snapshot_restore_from(char *dname, char *source);
+err snapshot_destroy_file(char *path);
 err snapshot_default_filename(char **filename_buf, const char *dbname);
 err snapshot_list(int *nsnapshots, struct snapshot **snapshots);
 

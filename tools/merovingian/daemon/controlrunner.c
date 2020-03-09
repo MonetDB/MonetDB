@@ -749,6 +749,19 @@ static void ctl_handle_client(
 					Mfprintf(_mero_ctlout, "%s: restored database '%s' from snapshot '%s'\n",
 						origin, q, source);
 				}
+			} else if (strncmp(p, "snapshot destroy ", strlen("snapshot destroy ")) == 0) {
+				char *path = p + strlen("snapshot destroy ");
+				Mfprintf(_mero_ctlout, "%s: drop snapshot '%s'\n", origin, path);
+				char *e = snapshot_destroy_file(path);
+				if (e != NULL) {
+					Mfprintf(_mero_ctlerr, "%s: drop snapshot '%s' failed: %s\n", origin, path, e);
+					len = snprintf(buf2, sizeof(buf2), "%s\n", e);
+					send_client("!");
+					freeErr(e);
+				} else {
+					len = snprintf(buf2, sizeof(buf2), "OK\n");
+					send_client("=");
+				}
 			} else if (strcmp(p, "snapshot list") == 0) {
 				Mfprintf(_mero_ctlout, "Start snapshot list\n");
 				int nsnaps = 0;
