@@ -104,7 +104,7 @@ str CMDscience_bat_##TYPE##_##FUNC##_cand(bat *ret, const bat *bid, const bat *s
 		const char *err;												\
 		BBPunfix(bn->batCacheid);										\
 		if (e)															\
-			err = strerror(e);											\
+			err = GDKstrerror(e, (char[128]){0}, 128);					\
 		else if (ex & FE_DIVBYZERO)										\
 			err = "Divide by zero";										\
 		else if (ex & FE_OVERFLOW)										\
@@ -191,7 +191,7 @@ str CMDscience_bat_cst_##FUNC##_##TYPE##_cand(bat *ret, const bat *bid, \
 		const char *err;												\
 		BBPunfix(bn->batCacheid);										\
 		if (e)															\
-			err = strerror(e);											\
+			err = GDKstrerror(e, (char[128]){0}, 128);					\
 		else if (ex & FE_DIVBYZERO)										\
 			err = "Divide by zero";										\
 		else if (ex & FE_OVERFLOW)										\
@@ -278,7 +278,7 @@ str CMDscience_cst_bat_##FUNC##_##TYPE##_cand(bat *ret, const TYPE *d,	\
 		const char *err;												\
 		BBPunfix(bn->batCacheid);										\
 		if (e)															\
-			err = strerror(e);											\
+			err = GDKstrerror(e, (char[128]){0}, 128);					\
 		else if (ex & FE_DIVBYZERO)										\
 			err = "Divide by zero";										\
 		else if (ex & FE_OVERFLOW)										\

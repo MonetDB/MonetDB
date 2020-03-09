@@ -908,7 +908,7 @@ snapshot_immediate_copy_file(stream *plan, const char *path, const char *name)
 	size_t to_copy;
 
 	if (stat(path, &statbuf) < 0) {
-		GDKerror("stat failed on %s: %s", path, strerror(errno));
+		GDKsyserror("stat failed on %s", path);
 		goto end;
 	}
 	to_copy = (size_t) statbuf.st_size;
@@ -1005,7 +1005,7 @@ snapshot_heap(stream *plan, const char *db_dir, uint64_t batid, const char *file
 		return GDK_SUCCEED;
 	}
 	if (errno != ENOENT) {
-		GDKerror("Error stat'ing %s: %s", path1, strerror(errno));
+		GDKsyserror("Error stat'ing %s", path1);
 		return GDK_FAIL;
 	}
 
@@ -1021,7 +1021,7 @@ snapshot_heap(stream *plan, const char *db_dir, uint64_t batid, const char *file
 		return GDK_SUCCEED;
 	}
 	if (errno != ENOENT) {
-		GDKerror("Error stat'ing %s: %s", path2, strerror(errno));
+		GDKsyserror("Error stat'ing %s", path2);
 		return GDK_FAIL;
 	}
 
@@ -1191,7 +1191,7 @@ snapshot_vaultkey(stream *plan, const char *db_dir)
 		return GDK_SUCCEED;
 	}
 
-	GDKerror("Error stat'ing %s: %s", path, strerror(errno));
+	GDKsyserror("Error stat'ing %s", path);
 	return GDK_FAIL;
 }
 static gdk_return
