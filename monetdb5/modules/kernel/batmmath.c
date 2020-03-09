@@ -130,7 +130,7 @@ CMDscienceUNARY(MalStkPtr stk, InstrPtr pci,
 		const char *err;
 		BBPunfix(bn->batCacheid);
 		if (e)
-			err = strerror(e);
+			err = GDKstrerror(e, (char[128]){0}, 128);
 		else if (ex & FE_DIVBYZERO)
 			err = "Divide by zero";
 		else if (ex & FE_OVERFLOW)
@@ -388,7 +388,7 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 		const char *err;
 		BBPunfix(bn->batCacheid);
 		if (e)
-			err = strerror(e);
+			err = GDKstrerror(e, (char[128]){0}, 128);
 		else if (ex & FE_DIVBYZERO)
 			err = "Divide by zero";
 		else if (ex & FE_OVERFLOW)

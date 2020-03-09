@@ -33,6 +33,14 @@ FROM integers i1;
 	-- 1
 
 SELECT
+	(SELECT 1,1 UNION ALL SELECT 2,2)
+FROM integers i1; --error, subquery must return only one column
+
+SELECT
+	(SELECT 1 UNION ALL SELECT 2)
+FROM integers i1; --error, more than one row returned by a subquery used as an expression
+
+SELECT
 	(SELECT i2.i FROM evilfunction(MIN(1)) as i2(i))
 FROM integers i1; -- error, aggregate functions are not allowed in functions in FROM
 
@@ -51,7 +59,7 @@ FROM integers i1;
 SELECT 1 FROM evilfunction((SELECT MAX(1) OVER ()));
 	-- 1
 
-SELECT 1 FROM evilfunction((SELECT MAX(1) OVER () UNION ALL SELECT 1)); --error, more than one row returned by a subquery used as an expression
+SELECT 1 FROM evilfunction((SELECT MAX(1) OVER () UNION ALL SELECT 1));
 
 SELECT 
 	(SELECT 1 FROM evilfunction((SELECT MAX(1) OVER () UNION ALL SELECT 1)))
@@ -67,6 +75,25 @@ FROM integers i1;
 	-- 2
 	-- 3
 	-- NULL
+
+SELECT i FROM integers WHERE (SELECT 1 UNION ALL SELECT 2); --error, more than one row returned by a subquery used as an expression
+
+SELECT i FROM integers WHERE (SELECT true UNION ALL SELECT false); --error, more than one row returned by a subquery used as an expression
+
+SELECT i FROM integers WHERE (SELECT true, false); --error, subquery must return only one column
+
+SELECT i FROM integers WHERE (SELECT true, false UNION ALL SELECT false, true); --error, subquery must return only one column
+
+SELECT i FROM integers WHERE (SELECT COUNT(1) OVER ()) = 1;
+	-- 1
+	-- 2
+	-- 3
+	-- NULL
+
+SELECT i FROM integers WHERE (SELECT COUNT(i) OVER ()) = 1;
+	-- 1
+	-- 2
+	-- 3
 
 UPDATE another_T SET col1 = MIN(col1); --error, aggregates not allowed in update set clause
 UPDATE another_T SET col2 = 1 WHERE col1 = SUM(col2); --error, aggregates not allowed in update set clause
@@ -106,15 +133,21 @@ CREATE PROCEDURE crashme(a int) BEGIN DECLARE x INT; SET x = a; END;
 CALL crashme(COUNT(1)); --error, not allowed
 CALL crashme(COUNT(1) OVER ()); --error, not allowed
 
-CALL crashme((SELECT COUNT(1)));
-CALL crashme((SELECT COUNT(1) OVER ())); --should be allowed, it returns exactly one row
-CALL crashme((SELECT 1 UNION ALL SELECT 2)); --error, returns more than one row
+CALL crashme((SELECT COUNT(1))); --error, subquery at CALL
+CALL crashme((SELECT COUNT(1) OVER ())); --error, subquery at CALL
+CALL crashme((SELECT 1 UNION ALL SELECT 2)); --error, subquery at CALL
 
 create sequence "debugme" as integer start with 1;
 alter sequence "debugme" restart with (select MAX(1));
 alter sequence "debugme" restart with (select MIN(1) OVER ());
 drop sequence "debugme";
 
+CREATE FUNCTION upsme(input INT) RETURNS INT BEGIN RETURN SELECT MIN(input) OVER (); END;
+
+SELECT upsme(1);
+SELECT upsme(1);
+
+DROP FUNCTION upsme(INT);
 DROP FUNCTION evilfunction(INT);
 DROP FUNCTION evilfunction(INT, INT);
 DROP PROCEDURE crashme(INT);

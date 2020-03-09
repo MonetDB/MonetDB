@@ -30,7 +30,13 @@ QUERY = PREPARE SELECT
         FROM another_T;
 ERROR = !Could not determine type for argument number 1
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-120241/.s.monetdb.31512
+MAPI  = (monetdb) /var/tmp/mtest-99553/.s.monetdb.37320
+QUERY = SELECT
+        	(SELECT 1,1 UNION ALL SELECT 2,2)
+        FROM integers i1; --error, subquery must return only one column
+ERROR = !SELECT: subquery must return only one column
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-99553/.s.monetdb.37320
 QUERY = SELECT
         	(SELECT i2.i FROM evilfunction(MIN(1)) as i2(i))
         FROM integers i1; -- error, aggregate functions are not allowed in functions in FROM
@@ -131,6 +137,18 @@ CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-60261/.s.monetdb.38639
 QUERY = CALL crashme(COUNT(1) OVER ()); --error, not allowed
 ERROR = !COUNT: window function 'count' not allowed in CALL
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-92133/.s.monetdb.34612
+QUERY = CALL crashme((SELECT COUNT(1))); --error, subquery at CALL
+ERROR = !CALL: subqueries not allowed inside CALL statements
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-92133/.s.monetdb.34612
+QUERY = CALL crashme((SELECT COUNT(1) OVER ())); --error, subquery at CALL
+ERROR = !CALL: subqueries not allowed inside CALL statements
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-92133/.s.monetdb.34612
+QUERY = CALL crashme((SELECT 1 UNION ALL SELECT 2)); --error, subquery at CALL
+ERROR = !CALL: subqueries not allowed inside CALL statements
 CODE  = 42000
 
 # 15:41:18 >  

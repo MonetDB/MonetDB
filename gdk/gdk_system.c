@@ -558,12 +558,12 @@ MT_thread_init(void)
 	int ret;
 
 	if ((ret = pthread_key_create(&threadkey, NULL)) != 0) {
-		TRC_CRITICAL(GDK, "Creating specific key for thread failed: %s\n", strerror(ret));
+		TRC_CRITICAL(GDK, "Creating specific key for thread failed: %s\n", GDKstrerror(ret, (char[128]){0}, 128));
 		return false;
 	}
 	mainthread.tid = pthread_self();
 	if ((ret = pthread_setspecific(threadkey, &mainthread)) != 0) {
-		TRC_CRITICAL(GDK, "Setting specific value failed: %s\n", strerror(ret));
+		TRC_CRITICAL(GDK, "Setting specific value failed: %s\n", GDKstrerror(ret, (char[128]){0}, 128));
 	}
 	return true;
 }
@@ -758,11 +758,11 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d, 
 		return -1;
 	}
 	if ((ret = pthread_attr_init(&attr)) != 0) {
-		TRC_ERROR(GDK, "Cannot init pthread attr: %s\n", strerror(ret));
+		TRC_ERROR(GDK, "Cannot init pthread attr: %s\n", GDKstrerror(ret, (char[128]){0}, 128));
 		return -1;
 	}
 	if ((ret = pthread_attr_setstacksize(&attr, THREAD_STACK_SIZE)) != 0) {
-		TRC_ERROR(GDK, "Cannot set stack size: %s\n", strerror(ret));
+		TRC_ERROR(GDK, "Cannot set stack size: %s\n", GDKstrerror(ret, (char[128]){0}, 128));
 		pthread_attr_destroy(&attr);
 		return -1;
 	}
@@ -793,7 +793,7 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d, 
 	*t = p->mtid = ++MT_thread_id;
 	ret = pthread_create(&p->tid, &attr, thread_starter, p);
 	if (ret != 0) {
-		TRC_ERROR(GDK, "Cannot start thread: %s\n", strerror(ret));
+		TRC_ERROR(GDK, "Cannot start thread: %s\n", GDKstrerror(ret, (char[128]){0}, 128));
 		free(p);
 		ret = -1;
 	} else {
@@ -847,7 +847,7 @@ MT_join_thread(MT_Id t)
 	ret = pthread_join(p->tid, NULL);
 	self->joinwait = NULL;
 	if (ret != 0) {
-		TRC_DEBUG(THRD, "Joining thread failed: %s\n", strerror(ret));
+		TRC_DEBUG(THRD, "Joining thread failed: %s\n", GDKstrerror(ret, (char[128]){0}, 128));
 		return -1;
 	}
 	rm_posthread(p);
