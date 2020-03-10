@@ -513,6 +513,14 @@ stdout of test 'subquery3` in directory 'sql/test/subquery` itself:
 [ 2	]
 [ 3	]
 [ NULL	]
+#SELECT i FROM integers GROUP BY i HAVING (SELECT i);
+% .integers # table_name
+% i # name
+% int # type
+% 1 # length
+[ 1	]
+[ 2	]
+[ 3	]
 #DROP FUNCTION evilfunction(INT);
 #DROP TABLE tbl_ProductSales;
 #DROP TABLE another_T;

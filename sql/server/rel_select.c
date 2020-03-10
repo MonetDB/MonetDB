@@ -2340,13 +2340,8 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 	}
 	case SQL_ATOM: {
 		AtomNode *an = (AtomNode *) sc;
-
-		if (!an || !an->a) {
-			assert(0);
-			return exp_null(sql->sa, sql_bind_localtype("void"));
-		} else {
-			return exp_atom(sql->sa, atom_dup(sql->sa, an->a));
-		}
+		assert(an && an->a);
+		return exp_atom(sql->sa, atom_dup(sql->sa, an->a));
 	}
 	case SQL_IDENT:
 	case SQL_COLUMN:
@@ -2372,18 +2367,18 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 	case SQL_DEFAULT:
 		return sql_error(sql, 02, SQLSTATE(42000) "DEFAULT keyword not allowed outside insert and update statements");
 	default: {
-		sql_exp *re, *le = rel_value_exp(query, rel, sc, f, ek);
+		sql_exp *le = rel_value_exp(query, rel, sc, f, ek);
 		sql_subtype bt;
 
 		if (!le)
 			return NULL;
-		re = exp_atom_bool(sql->sa, 1);
 		sql_find_subtype(&bt, "boolean", 0, 0);
 		if ((le = rel_check_type(sql, &bt, rel ? *rel : NULL, le, type_equal)) == NULL)
 			return NULL;
-		return rel_binop_(sql, rel ? *rel : NULL, le, re, NULL, "=", 0);
+		return rel_binop_(sql, rel ? *rel : NULL, le, exp_atom_bool(sql->sa, 1), NULL, "=", 0);
 	}
 	}
+	/* never reached, as all switch cases have a `return` */
 }
 
 sql_rel *
@@ -2637,7 +2632,7 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 		return rel_select(sql->sa, rel, le);
 	}
 	case SQL_NOT: {
-		sql_exp *re, *le;
+		sql_exp *le;
 		switch (sc->data.sym->token) {
 		case SQL_IN:
 			sc->data.sym->token = SQL_NOT_IN;
@@ -2655,8 +2650,7 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 		le = rel_unop_(sql, rel, le, NULL, "not", card_value);
 		if (le == NULL)
 			return NULL;
-		re = exp_atom_bool(sql->sa, 1);
-		le = exp_compare(sql->sa, le, re, cmp_equal);
+		le = exp_compare(sql->sa, le, exp_atom_bool(sql->sa, 1), cmp_equal);
 		return rel_select(sql->sa, rel, le);
 	}
 	case SQL_ATOM: {
@@ -2688,14 +2682,15 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 	case SQL_DEFAULT:
 		return sql_error(sql, 02, SQLSTATE(42000) "DEFAULT keyword not allowed outside insert and update statements");
 	default: {
-		sql_exp *re, *le = rel_value_exp(query, &rel, sc, f, ek);
+		sql_exp *le = rel_value_exp(query, &rel, sc, f, ek);
+		sql_subtype bt;
 
 		if (!le)
 			return NULL;
-		re = exp_atom_bool(sql->sa, 1);
-		if (rel_convert_types(sql, rel, NULL, &le, &re, 1, type_equal) < 0)
+		sql_find_subtype(&bt, "boolean", 0, 0);
+		if (!(le = rel_check_type(sql, &bt, rel, le, type_equal)))
 			return NULL;
-		le = exp_compare(sql->sa, le, re, cmp_equal);
+		le = exp_compare(sql->sa, le, exp_atom_bool(sql->sa, 1), cmp_equal);
 		return rel_select(sql->sa, rel, le);
 	}
 	}

@@ -565,6 +565,11 @@ SELECT i FROM integers ORDER BY (SELECT true);
 --CALL sys_update_schemas();
 --CALL sys_update_tables();
 
+SELECT i FROM integers GROUP BY i HAVING (SELECT i);
+	-- 1
+	-- 2
+	-- 3
+
 DROP FUNCTION evilfunction(INT);
 DROP TABLE tbl_ProductSales;
 DROP TABLE another_T;
