@@ -343,8 +343,6 @@ Heap *MOScreate_vmosaic_heap(BAT *b, BUN cap);
 void MOSdestroy(BAT *b);
 void MOSfree(BAT *bn);
 void MOSpersist(BAT *b);
-void MOSsetLock(BAT *b);
-void MOSunsetLock(BAT *b);
 void MOSvirtualize(BAT *bn);
 int MT_check_nr_cores(void);
 int MT_create_thread(MT_Id *t, void (*function)(void *), void *arg, enum MT_thr_detach d, const char *threadname);

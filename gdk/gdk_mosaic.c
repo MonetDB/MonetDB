@@ -14,15 +14,6 @@
 #include "gdk.h"
 #include "gdk_private.h"
 
-void MOSsetLock(BAT* b) {
-	MT_lock_set(&b->batIdxLock);
-}
-
-void MOSunsetLock(BAT* b) {
-	MT_lock_unset(&b->batIdxLock);
-}
-
-
 #define EXT(HEAP) ("t" STRINGIFY(HEAP))
 
 #define HEAP mosaic
