@@ -336,7 +336,7 @@ column_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sq
 			return res;
 		}
 		if (name && mvc_bind_key(sql, ss, name)) {
-			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT PRIMARY KEY: key %s already exists", name);
+			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT %s: key %s already exists", (kt == pkey) ? "PRIMARY KEY" : "UNIQUE", name);
 			return res;
 		}
 		k = (sql_key*)mvc_create_ukey(sql, t, name, kt);
