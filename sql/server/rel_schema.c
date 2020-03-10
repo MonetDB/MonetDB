@@ -204,15 +204,13 @@ mvc_create_table_as_subquery( mvc *sql, sql_rel *sq, sql_schema *s, const char *
 }
 
 static char *
-table_constraint_name(symbol *s, sql_table *t)
+table_constraint_name(mvc *sql, symbol *s, sql_table *t)
 {
 	/* create a descriptive name like table_col_pkey */
 	char *suffix;		/* stores the type of this constraint */
 	dnode *nms = NULL;
 	char *buf;
-	size_t buflen;
-	size_t len;
-	size_t slen;
+	size_t buflen, len, slen;
 
 	switch (s->token) {
 		case SQL_UNIQUE:
@@ -244,6 +242,7 @@ table_constraint_name(symbol *s, sql_table *t)
 		buflen += BUFSIZ;
 	buf = GDKmalloc(buflen);
 	if (!buf) {
+		sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return NULL;
 	}
 	strcpy(buf, t->base.name);
@@ -257,6 +256,7 @@ table_constraint_name(symbol *s, sql_table *t)
 			nbuf = GDKrealloc(buf, buflen);
 			if (!nbuf) {
 				GDKfree(buf);
+				sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				return NULL;
 			}
 			buf = nbuf;
@@ -273,20 +273,21 @@ table_constraint_name(symbol *s, sql_table *t)
 		nbuf = GDKrealloc(buf, buflen);
 		if (!nbuf) {
 			GDKfree(buf);
+			sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			return NULL;
 		}
 		buf = nbuf;
 	}
 	snprintf(buf + len, buflen - len, "%s", suffix);
-
 	return buf;
 }
 
 static char *
-column_constraint_name(symbol *s, sql_column *sc, sql_table *t, char *buf, size_t bufsiz)
+column_constraint_name(mvc *sql, symbol *s, sql_column *sc, sql_table *t)
 {
 	/* create a descriptive name like table_col_pkey */
-	char *suffix;		/* stores the type of this constraint */
+	char *suffix /* stores the type of this constraint */, *buf;
+	size_t buflen;
 
 	switch (s->token) {
 		case SQL_UNIQUE:
@@ -305,8 +306,13 @@ column_constraint_name(symbol *s, sql_column *sc, sql_table *t, char *buf, size_
 			suffix = "?";
 	}
 
-	snprintf(buf, bufsiz, "%s_%s_%s", t->base.name, sc->base.name, suffix);
-
+	buflen = strlen(t->base.name) + strlen(sc->base.name) + strlen(suffix) + 3;
+	buf = GDKmalloc(buflen);
+	if (!buf){
+		sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return NULL;
+	}
+	snprintf(buf, buflen, "%s_%s_%s", t->base.name, sc->base.name, suffix);
 	return buf;
 }
 
@@ -429,13 +435,14 @@ column_option(
 	switch (s->token) {
 	case SQL_CONSTRAINT: {
 		dlist *l = s->data.lval;
-		char *opt_name = l->h->data.sval;
+		char *opt_name = l->h->data.sval, *default_name = NULL;
 		symbol *sym = l->h->next->data.sym;
-		char buf[512] = {0};
 
-		if (!opt_name)
-			opt_name = column_constraint_name(sym, cs, t, buf, sizeof(buf));
-		res = column_constraint_type(sql, opt_name, sym, ss, t, cs);
+		if (!opt_name && !(default_name = column_constraint_name(sql, sym, cs, t)))
+			return SQL_ERR;
+
+		res = column_constraint_type(sql, opt_name ? opt_name : default_name, sym, ss, t, cs);
+		GDKfree(default_name);
 	} 	break;
 	case SQL_DEFAULT: {
 		symbol *sym = s->data.sym;
@@ -659,7 +666,7 @@ table_constraint(mvc *sql, symbol *s, sql_schema *ss, sql_table *t)
 		symbol *sym = l->h->next->data.sym;
 
 		if (!opt_name)
-			opt_name = table_constraint_name(sym, t);
+			opt_name = table_constraint_name(sql, sym, t);
 		if (opt_name == NULL)
 			return SQL_ERR;
 		res = table_constraint_type(sql, opt_name, sym, ss, t);
