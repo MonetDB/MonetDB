@@ -1519,14 +1519,10 @@ rel2bin_basetable(backend *be, sql_rel *rel)
 			if ((hash_index(i->type) && list_length(i->columns) <= 1) || !idx_has_column(i->type))
 				continue;
 			s = stmt_idx(be, i, NULL/*dels*/, dels->partition);
-			if (!col)
-				col = s;
 		} else {
 			sql_column *c = find_sql_column(t, oname);
 
 			s = stmt_col(be, c, NULL/*dels*/, dels->partition);
-			if (!col)
-				col = s;
 		}
 		s->tname = rname;
 		s->cname = exp_name(exp);
