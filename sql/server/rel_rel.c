@@ -1565,7 +1565,7 @@ exps_deps(mvc *sql, list *exps, list *refs, list *l)
 }
 
 static int
-id_cmp(int *id1, int *id2)
+id_cmp(sqlid *id1, sqlid *id2)
 {
 	if (*id1 == *id2)
 		return 0;
@@ -1573,7 +1573,7 @@ id_cmp(int *id1, int *id2)
 }
 
 static list *
-cond_append(list *l, int *id)
+cond_append(list *l, sqlid *id)
 {
 	if (*id >= FUNC_OIDS && !list_find(l, id, (fcmp) &id_cmp))
 		 list_append(l, id);
