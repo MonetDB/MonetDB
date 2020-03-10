@@ -1064,15 +1064,15 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 }
 
 static stmt *
-stmt_col( backend *be, sql_column *c, stmt *del) 
+stmt_col( backend *be, sql_column *c, stmt *del, int part) 
 { 
-	stmt *sc = stmt_bat(be, c, RDONLY, del?del->partition:0);
+	stmt *sc = stmt_bat(be, c, RDONLY, part);
 
 	if (isTable(c->t) && c->t->access != TABLE_READONLY &&
 	   (!isNew(c) || !isNew(c->t) /* alter */) &&
 	   (c->t->persistence == SQL_PERSIST || c->t->persistence == SQL_DECLARED_TABLE) && !c->t->commit_action) {
 		stmt *i = stmt_bat(be, c, RD_INS, 0);
-		stmt *u = stmt_bat(be, c, RD_UPD_ID, del?del->partition:0);
+		stmt *u = stmt_bat(be, c, RD_UPD_ID, part);
 		sc = stmt_project_delta(be, sc, u, i);
 		if (del)
 			sc = stmt_project(be, del, sc);
@@ -1083,15 +1083,15 @@ stmt_col( backend *be, sql_column *c, stmt *del)
 }
 
 static stmt *
-stmt_idx( backend *be, sql_idx *i, stmt *del) 
+stmt_idx( backend *be, sql_idx *i, stmt *del, int part) 
 { 
-	stmt *sc = stmt_idxbat(be, i, RDONLY, del?del->partition:0);
+	stmt *sc = stmt_idxbat(be, i, RDONLY, part);
 
 	if (isTable(i->t) && i->t->access != TABLE_READONLY &&
 	   (!isNew(i) || !isNew(i->t) /* alter */) &&
 	   (i->t->persistence == SQL_PERSIST || i->t->persistence == SQL_DECLARED_TABLE) && !i->t->commit_action) {
 		stmt *ic = stmt_idxbat(be, i, RD_INS, 0);
-		stmt *u = stmt_idxbat(be, i, RD_UPD_ID, del?del->partition:0);
+		stmt *u = stmt_idxbat(be, i, RD_UPD_ID, part);
 		sc = stmt_project_delta(be, sc, u, ic);
 		if (del)
 			sc = stmt_project(be, del, sc);
@@ -1130,7 +1130,7 @@ check_table_types(backend *be, list *types, stmt *s, check_type tpe)
 		{
 			sql_subtype *ct = n->data;
 			sql_column *dtc = m->data;
-			stmt *dtcs = stmt_col(be, dtc, dels);
+			stmt *dtcs = stmt_col(be, dtc, dels, dels->partition);
 			stmt *r = check_types(be, ct, dtcs, tpe);
 			if (!r) 
 				return NULL;
@@ -1415,7 +1415,7 @@ rel2bin_sql_table(backend *be, sql_table *t)
 
 	for (n = t->columns.set->h; n; n = n->next) {
 		sql_column *c = n->data;
-		stmt *sc = stmt_col(be, c, dels);
+		stmt *sc = stmt_col(be, c, dels, dels->partition);
 
 		list_append(l, sc);
 	}
@@ -1431,7 +1431,7 @@ rel2bin_sql_table(backend *be, sql_table *t)
 	if (t->idxs.set) {
 		for (n = t->idxs.set->h; n; n = n->next) {
 			sql_idx *i = n->data;
-			stmt *sc = stmt_idx(be, i, dels);
+			stmt *sc = stmt_idx(be, i, dels, dels->partition);
 			const char *rnme = t->base.name;
 
 			/* index names are prefixed, to make them independent */
@@ -1471,11 +1471,11 @@ rel2bin_basetable(backend *be, sql_rel *rel)
 			/* do not include empty indices in the plan */
 			if ((hash_index(i->type) && list_length(i->columns) <= 1) || !idx_has_column(i->type))
 				continue;
-			col = stmt_idx(be, i, NULL/*dels*/);
+			col = stmt_idx(be, i, NULL/*dels*/, dels->partition);
 		} else {
 			sql_column *c = find_sql_column(t, oname);
 
-			col = stmt_col(be, c, NULL/*dels*/);
+			col = stmt_col(be, c, NULL/*dels*/, dels->partition);
 		}
 	}
 	for( en = rel->exps->h; en; en = en->next ) {
@@ -1492,7 +1492,7 @@ rel2bin_basetable(backend *be, sql_rel *rel)
 			list *l = sa_list(sql->sa);
 
 			c = find_sql_column(t, cname);
-			s = stmt_col(be, c, NULL/*dels*/);
+			s = stmt_col(be, c, NULL/*dels*/, dels->partition);
 			append(l, s);
 			if (exps->h->next) {
 				sql_exp *at = exps->h->next->data;
@@ -1518,13 +1518,13 @@ rel2bin_basetable(backend *be, sql_rel *rel)
 			/* do not include empty indices in the plan */
 			if ((hash_index(i->type) && list_length(i->columns) <= 1) || !idx_has_column(i->type))
 				continue;
-			s = stmt_idx(be, i, NULL/*dels*/);
+			s = stmt_idx(be, i, NULL/*dels*/, dels->partition);
 			if (!col)
 				col = s;
 		} else {
 			sql_column *c = find_sql_column(t, oname);
 
-			s = stmt_col(be, c, NULL/*dels*/);
+			s = stmt_col(be, c, NULL/*dels*/, dels->partition);
 			if (!col)
 				col = s;
 		}
@@ -1705,13 +1705,13 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 			sql_column *c = n->data;
 
 			if (ti->type == 2) { /* updates */
-				stmt *s = stmt_col(be, c, ti->tids);
+				stmt *s = stmt_col(be, c, ti->tids, ti->tids->partition);
 				append(l, stmt_alias(be, s, ti->on, c->base.name));
 			}
 			if (ti->updates[c->colnr]) {
 				append(l, stmt_alias(be, ti->updates[c->colnr], ti->nn, c->base.name));
 			} else {
-				stmt *s = stmt_col(be, c, ti->tids);
+				stmt *s = stmt_col(be, c, ti->tids, ti->tids->partition);
 				append(l, stmt_alias(be, s, ti->nn, c->base.name));
 				assert(ti->type != 1);
 			}
@@ -3529,12 +3529,12 @@ insert_check_ukey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts)
 		if (s->key && s->nrcols == 0) {
 			s = NULL;
 			if (k->idx && hash_index(k->idx->type))
-				s = stmt_uselect(be, stmt_idx(be, k->idx, dels), idx_inserts, cmp_equal, s, 0, 1 /* is_semantics*/);
+				s = stmt_uselect(be, stmt_idx(be, k->idx, dels, dels->partition), idx_inserts, cmp_equal, s, 0, 1 /* is_semantics*/);
 			for (m = k->columns->h; m; m = m->next) {
 				sql_kc *c = m->data;
 				stmt *cs = list_fetch(inserts, c->c->colnr); 
 
-				col = stmt_col(be, c->c, dels);
+				col = stmt_col(be, c->c, dels, dels->partition);
 				if ((k->type == ukey) && stmt_has_null(col)) {
 					stmt *nn = stmt_selectnonil(be, col, s);
 					s = stmt_uselect( be, col, cs, cmp_equal, nn, 0, 0);
@@ -3546,14 +3546,14 @@ insert_check_ukey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts)
 			list *lje = sa_list(sql->sa);
 			list *rje = sa_list(sql->sa);
 			if (k->idx && hash_index(k->idx->type)) {
-				list_append(lje, stmt_idx(be, k->idx, dels));
+				list_append(lje, stmt_idx(be, k->idx, dels, dels->partition));
 				list_append(rje, idx_inserts);
 			}
 			for (m = k->columns->h; m; m = m->next) {
 				sql_kc *c = m->data;
 				stmt *cs = list_fetch(inserts, c->c->colnr); 
 
-				col = stmt_col(be, c->c, dels);
+				col = stmt_col(be, c->c, dels, dels->partition);
 				list_append(lje, col);
 				list_append(rje, cs);
 			}
@@ -3600,7 +3600,7 @@ insert_check_ukey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts)
 		sql_kc *c = k->columns->h->data;
 		stmt *s = list_fetch(inserts, c->c->colnr), *h = s;
 
-		s = stmt_col(be, c->c, dels);
+		s = stmt_col(be, c->c, dels, dels->partition);
 		if ((k->type == ukey) && stmt_has_null(s)) {
 			stmt *nn = stmt_selectnonil(be, s, NULL);
 			s = stmt_project(be, nn, s);
@@ -3981,7 +3981,7 @@ update_check_ukey(backend *be, stmt **updates, sql_key *k, stmt *tids, stmt *idx
 			list *rje = sa_list(sql->sa);
 
 			if (k->idx && hash_index(k->idx->type)) {
-				list_append(lje, stmt_idx(be, k->idx, nu_tids));
+				list_append(lje, stmt_idx(be, k->idx, nu_tids, nu_tids->partition));
 				list_append(rje, idx_updates);
 			}
 			for (m = k->columns->h; m; m = m->next) {
@@ -3992,9 +3992,9 @@ update_check_ukey(backend *be, stmt **updates, sql_key *k, stmt *tids, stmt *idx
 				if (updates[c->c->colnr]) {
 					upd = updates[c->c->colnr];
 				} else {
-					upd = stmt_project(be, tids, stmt_col(be, c->c, dels));
+					upd = stmt_project(be, tids, stmt_col(be, c->c, dels, dels->partition));
 				}
-				list_append(lje, stmt_col(be, c->c, nu_tids));
+				list_append(lje, stmt_col(be, c->c, nu_tids, nu_tids->partition));
 				list_append(rje, upd);
 			}
 			s = releqjoin(be, lje, rje, NULL, 1 /* hash used */, cmp_equal, 0, 0);
@@ -4041,11 +4041,11 @@ update_check_ukey(backend *be, stmt **updates, sql_key *k, stmt *tids, stmt *idx
 					/*
 				} else if (updates) {
 					//upd = updates[updcol]->op1;
-					//upd = stmt_project(be, upd, stmt_col(be, c->c, dels));
-					upd = stmt_project(be, tids, stmt_col(be, c->c, dels));
+					//upd = stmt_project(be, upd, stmt_col(be, c->c, dels, dels->partition));
+					upd = stmt_project(be, tids, stmt_col(be, c->c, dels, dels->partition));
 					*/
 				} else {
-					upd = stmt_project(be, tids, stmt_col(be, c->c, dels));
+					upd = stmt_project(be, tids, stmt_col(be, c->c, dels, dels->partition));
 				}
 
 				/* apply cand list first */
@@ -4099,7 +4099,7 @@ update_check_ukey(backend *be, stmt **updates, sql_key *k, stmt *tids, stmt *idx
 			assert (updates);
 
 			h = updates[c->c->colnr];
-			o = stmt_col(be, c->c, nu_tids);
+			o = stmt_col(be, c->c, nu_tids, nu_tids->partition);
 			s = stmt_join(be, o, h, 0, cmp_equal, 0);
 			s = stmt_result(be, s, 0);
 			s = stmt_binop(be, stmt_aggr(be, s, NULL, NULL, cnt, 1, 0, 1), stmt_atom_lng(be, 0), ne);
@@ -4117,7 +4117,7 @@ update_check_ukey(backend *be, stmt **updates, sql_key *k, stmt *tids, stmt *idx
 			if (updates) {
  				upd = updates[c->c->colnr];
 			} else {
- 				upd = stmt_col(be, c->c, dels);
+ 				upd = stmt_col(be, c->c, dels, dels->partition);
 			}
 
 			/* remove nulls */
@@ -4202,7 +4202,7 @@ update_check_fkey(backend *be, stmt **updates, sql_key *k, stmt *tids, stmt *idx
 		sql_kc *c = k->columns->h->data;
 		stmt *dels = stmt_tid(be, k->t, 0);
 		assert(0);
-		cur = stmt_col(be, c->c, dels);
+		cur = stmt_col(be, c->c, dels, dels->partition);
 	}
 	s = stmt_binop(be, stmt_aggr(be, idx_updates, NULL, NULL, cnt, 1, 0, 1), stmt_aggr(be, cur, NULL, NULL, cnt, 1, 0, 1), ne);
 
@@ -4219,10 +4219,10 @@ update_check_fkey(backend *be, stmt **updates, sql_key *k, stmt *tids, stmt *idx
 			} else if (updates && updcol >= 0) {
 				assert(0);
 				//upd = updates[updcol]->op1;
-				//upd = stmt_project(be, upd, stmt_col(be, c->c, tids));
-				upd = stmt_col(be, c->c, tids);
+				//upd = stmt_project(be, upd, stmt_col(be, c->c, tids, tids->partition));
+				upd = stmt_col(be, c->c, tids, tids->partition);
 			} else { /* created idx/key using alter */ 
-				upd = stmt_col(be, c->c, tids);
+				upd = stmt_col(be, c->c, tids, tids->partition);
 			}
 			nn = stmt_selectnil(be, upd);
 			if (null)
@@ -4262,7 +4262,7 @@ join_updated_pkey(backend *be, sql_key * k, stmt *tids, stmt **updates)
 	list *rje = sa_list(sql->sa);
 
 	fdels = stmt_tid(be, k->idx->t, 0);
-	rows = stmt_idx(be, k->idx, fdels);
+	rows = stmt_idx(be, k->idx, fdels, fdels->partition);
 
 	rows = stmt_join(be, rows, tids, 0, cmp_equal, 0); /* join over the join index */
 	rows = stmt_result(be, rows, 0);
@@ -4277,7 +4277,7 @@ join_updated_pkey(backend *be, sql_key * k, stmt *tids, stmt **updates)
 		} else {
 			assert(0);
 			//upd = updates[updcol]->op1;
-			upd = stmt_project(be, tids, stmt_col(be, c->c, dels));
+			upd = stmt_project(be, tids, stmt_col(be, c->c, dels, dels->partition));
 		}
 		if (c->c->null) {	/* new nulls (MATCH SIMPLE) */
 			stmt *nn = stmt_selectnil(be, upd);
@@ -4287,7 +4287,7 @@ join_updated_pkey(backend *be, sql_key * k, stmt *tids, stmt **updates)
 				null = nn;
 			nulls = 1;
 		}
-		col = stmt_col(be, fc->c, rows);
+		col = stmt_col(be, fc->c, rows, rows->partition);
 		list_append(lje, upd);
 		list_append(rje, col);
 	}
@@ -4373,7 +4373,7 @@ sql_update_cascade_Fkeys(backend *be, sql_key *k, stmt *utids, stmt **updates, i
 	stmt *ftids, *upd_ids;
 
 	ftids = stmt_tid(be, k->idx->t, 0);
-	rows = stmt_idx(be, k->idx, ftids);
+	rows = stmt_idx(be, k->idx, ftids, ftids->partition);
 
 	rows = stmt_join(be, rows, utids, 0, cmp_equal, 0); /* join over the join index */
 	upd_ids = stmt_result(be, rows, 1);
@@ -4497,10 +4497,10 @@ hash_update(backend *be, sql_idx * i, stmt *rows, stmt **updates, int updcol)
 			assert(0);
 			//upd = updates[updcol]->op1;
 			//upd = rows;
-			//upd = stmt_project(be, upd, stmt_col(be, c->c, tids));
-			upd = stmt_col(be, c->c, rows);
+			//upd = stmt_project(be, upd, stmt_col(be, c->c, tids, tids->partition));
+			upd = stmt_col(be, c->c, rows, rows->partition);
 		} else { /* created idx/key using alter */ 
-			upd = stmt_col(be, c->c, tids);
+			upd = stmt_col(be, c->c, tids, tids->partition);
 		}
 
 		if (h && i->type == hash_idx)  { 
@@ -4549,14 +4549,14 @@ join_idx_update(backend *be, sql_idx * i, stmt *ftids, stmt **updates, int updco
 		} else if (updates && updcol >= 0) {
 			assert(0);
 			//upd = updates[updcol]->op1;
-			//upd = stmt_project(be, upd, stmt_col(be, c->c, ftids));
-			upd = stmt_col(be, c->c, ftids);
+			//upd = stmt_project(be, upd, stmt_col(be, c->c, ftids, ftids->partition));
+			upd = stmt_col(be, c->c, ftids, ftids->partition);
 		} else { /* created idx/key using alter */ 
-			upd = stmt_col(be, c->c, ftids);
+			upd = stmt_col(be, c->c, ftids, ftids->partition);
 		}
 
 		list_append(lje, check_types(be, &rc->c->type, upd, type_equal));
-		list_append(rje, stmt_col(be, rc->c, ptids));
+		list_append(rje, stmt_col(be, rc->c, ptids, ptids->partition));
 	}
 	s = releqjoin(be, lje, rje, NULL, 0 /* use hash */, cmp_equal, 0, 0);
 	l = stmt_result(be, s, 0);
@@ -5017,7 +5017,7 @@ sql_delete_ukey(backend *be, stmt *utids /* deleted tids from ukey table */, sql
 			stmt *s, *tids;
 
 			tids = stmt_tid(be, fk->idx->t, 0);
-			s = stmt_idx(be, fk->idx, tids);
+			s = stmt_idx(be, fk->idx, tids, tids->partition);
 			s = stmt_join(be, s, utids, 0, cmp_equal, 0); /* join over the join index */
 			s = stmt_result(be, s, 0);
 			tids = stmt_project(be, s, tids);
