@@ -31,7 +31,7 @@
 
 static SQLRETURN
 MNDBNativeSql(ODBCDbc *dbc,
-	      SQLCHAR *InStatementText,
+	      const SQLCHAR *InStatementText,
 	      SQLINTEGER TextLength1,
 	      SQLCHAR *OutStatementText,
 	      SQLINTEGER BufferLength,
