@@ -4316,8 +4316,6 @@ rel_order_by(sql_query *query, sql_rel **R, symbol *orderby, int f)
 						/* do not cache this query */
 						if (e)
 							scanner_reset_key(&sql->scanner);
-					} else if (e->type == e_atom) {
-						return sql_error(sql, 02, SQLSTATE(42000) "order not of type SQL_COLUMN");
 					}
 				} else if (e && exp_card(e) > rel->card) {
 					if (exp_name(e))
@@ -4325,6 +4323,8 @@ rel_order_by(sql_query *query, sql_rel **R, symbol *orderby, int f)
 					else
 						return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column in query results without an aggregate function");
 				}
+				if (e && !exp_name(e))
+					exp_label(sql->sa, e, ++sql->label);
 				if (e && rel && is_project(rel->op)) {
 					sql_exp *found = exps_find_exp(rel->exps, e);
 
@@ -4352,7 +4352,7 @@ rel_order_by(sql_query *query, sql_rel **R, symbol *orderby, int f)
 			set_direction(e, direction);
 			append(exps, e);
 		} else {
-			return sql_error(sql, 02, SQLSTATE(42000) "order not of type SQL_COLUMN");
+			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: order not of type SQL_COLUMN");
 		}
 	}
 	if (is_sql_orderby(f) && or != rel)

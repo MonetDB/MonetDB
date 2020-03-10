@@ -36,6 +36,8 @@ SELECT
 	(SELECT 1,1 UNION ALL SELECT 2,2)
 FROM integers i1; --error, subquery must return only one column
 
+SELECT i FROM integers i1 ORDER BY (SELECT 1 UNION ALL SELECT 2); --error, more than one row returned by a subquery used as an expression
+
 SELECT
 	(SELECT 1 UNION ALL SELECT 2)
 FROM integers i1; --error, more than one row returned by a subquery used as an expression
