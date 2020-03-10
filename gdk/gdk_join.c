@@ -3533,7 +3533,7 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		/* no hash table, so cost includes time to build the
 		 * hash table (single scan) plus the time to do the
 		 * lookups (also single scan, we assume some chains) */
-		rcost = (double) rci.ncand + lci.ncand * 1.1;
+		rcost = (double) rci.ncand * 2 + lci.ncand * 1.1;
 	} else {
 		if (rci.noids > 0) {
 			/* if we need to do binary search on candidate
@@ -3544,17 +3544,17 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		 * rci.ncand */
 		rcost *= lci.ncand;
 		if (rci.ncand < BATcount(r) &&
-		    rci.ncand + lci.ncand * 1.1 < rcost) {
+		    rci.ncand * 2 + lci.ncand * 1.1 < rcost) {
 			/* it's cheaper to rebuild the hash table for
 			 * just the candidates (this saves on the
 			 * binary searches), again, assume some
 			 * chains */
 			rhash = prhash = false;
-			rcost = rci.ncand + lci.ncand * 1.1;
+			rcost = rci.ncand * 2 + lci.ncand * 1.1;
 		}
 	}
 
-	if (!nil_on_miss && !only_misses && !not_in && r2p == NULL) {
+	if (!nil_on_miss && !only_misses && !not_in) {
 		/* maybe do a hash join on the swapped operands; if we
 		 * do, we need to sort the output, so we take that into
 		 * account as well */
@@ -3576,7 +3576,7 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			/* no hash table, so cost includes time to build the
 			 * hash table (single scan) plus the time to do the
 			 * lookups (also single scan, we assume some chains) */
-			lcost = (double) lci.ncand + rci.ncand * 1.1;
+			lcost = (double) lci.ncand * 2 + rci.ncand * 1.1;
 		} else {
 			if (lci.noids > 0) {
 				/* if we need to do binary search on candidate
@@ -3587,13 +3587,13 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			 * rci.ncand */
 			lcost *= rci.ncand;
 			if (lci.ncand < BATcount(l) &&
-			    lci.ncand + rci.ncand * 1.1 < lcost) {
+			    lci.ncand * 2 + rci.ncand * 1.1 < lcost) {
 				/* it's cheaper to rebuild the hash table for
 				 * just the candidates (this saves on the
 				 * binary searches), again, assume some
 				 * chains */
 				lhash = plhash = false;
-				lcost = lci.ncand + rci.ncand * 1.1;
+				lcost = lci.ncand * 2 + rci.ncand * 1.1;
 			}
 		}
 		if (semi)
@@ -3614,12 +3614,12 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			rc = hashjoin(&r2, &r1, r, l, &rci, &lci, nil_matches,
 				      false, false, false, false, estimate,
 				      t0, true, lhash, plhash, func);
-			if (semi) {
+			if (semi)
 				BBPunfix(sr->batCacheid);
-				r1->tkey = true;
-			}
 			if (rc != GDK_SUCCEED)
 				return rc;
+			if (semi)
+				r1->tkey = true;
 			BAT *ob;
 			rc = BATsort(&tmp, r2p ? &ob : NULL, NULL,
 				     r1, NULL, NULL, false, false, false);
@@ -3629,7 +3629,6 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				return rc;
 			}
 			*r1p = r1 = tmp;
-#if 0
 			if (r2p) {
 				tmp = BATproject(ob, r2);
 				BBPunfix(r2->batCacheid);
@@ -3640,7 +3639,8 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				}
 				*r2p = tmp;
 			}
-#endif
+#if 0
+#ifndef NDEBUG
 			BAT *x1;
 			canditer_reset(&lci);
 			canditer_reset(&rci);
@@ -3649,6 +3649,8 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			for (BUN x = 0; x < x1->batCount; x++)
 				assert(BUNtoid(r1, x) == BUNtoid(x1, x));
 			BBPunfix(x1->batCacheid);
+#endif
+#endif
 			return GDK_SUCCEED;
 		}
 	}
@@ -3866,7 +3868,9 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 		/* no hash table, so cost includes time to build the
 		 * hash table (single scan) plus the time to do the
 		 * lookups (also single scan, we assume some chains) */
-		lcost = (double) lci.ncand + rci.ncand * 1.1;
+		lcost = (double) lci.ncand * 2 + rci.ncand * 1.1;
+		if (lci.ncand == BATcount(l) && !l->batTransient)
+			lcost *= 0.8;
 	} else {
 		if (lci.noids > 0) {
 			/* if we need to do binary search on candidate
@@ -3877,13 +3881,15 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 		 * rci.ncand */
 		lcost *= rci.ncand;
 		if (lci.ncand < BATcount(l) &&
-		    lci.ncand + rci.ncand * 1.1 < lcost) {
+		    lci.noids > 0 &&
+		    lci.ncand * 2 + rci.ncand * 1.1 < lcost) {
 			/* it's cheaper to rebuild the hash table for
 			 * just the candidates (this saves on the
 			 * binary searches), again, assume some
 			 * chains */
 			lhash = plhash = false;
 			lcost = lci.ncand + rci.ncand * 1.1;
+			lcost *= 2;
 		}
 	}
 	rhash = BATcheckhash(r);
@@ -3903,7 +3909,9 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 		/* no hash table, so cost includes time to build the
 		 * hash table (single scan) plus the time to do the
 		 * lookups (also single scan, we assume some chains) */
-		rcost = (double) rci.ncand + lci.ncand * 1.1;
+		rcost = (double) rci.ncand * 2 + lci.ncand * 1.1;
+		if (rci.ncand == BATcount(r) && !r->batTransient)
+			rcost *= 0.8;
 	} else {
 		if (rci.noids > 0) {
 			/* if we need to do binary search on candidate
@@ -3914,20 +3922,22 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 		 * rci.ncand */
 		rcost *= lci.ncand;
 		if (rci.ncand < BATcount(r) &&
-		    rci.ncand + lci.ncand * 1.1 < rcost) {
+		    rci.noids > 0 &&
+		    2 * (rci.ncand + lci.ncand * 1.1) < rcost) {
 			/* it's cheaper to rebuild the hash table for
 			 * just the candidates (this saves on the
 			 * binary searches), again, assume some
 			 * chains */
 			rhash = prhash = false;
 			rcost = rci.ncand + lci.ncand * 1.1;
+			rcost *= 2;
 		}
 	}
 
 	/* if the cost of doing searches on l is lower than the cost
 	 * to do searches on r, we swap (i.e., lookups on right), but
 	 * add a cost */
-	swap = (1.2 * lcost < rcost);
+	swap = (lcost < rcost);
 
 	if ((BATordered(r) || BATordered_rev(r)) &&
 	    (lci.ncand * (log2(rci.ncand) + 1) < (swap ? lcost : rcost))) {
