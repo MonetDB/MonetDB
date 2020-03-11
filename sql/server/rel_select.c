@@ -2380,7 +2380,7 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 			return NULL;
 		if (ek.card <= card_set && is_project(sq->op) && list_length(sq->exps) > 1)
 			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: subquery must return only one column");
-		if (ek.card < card_set && sq->card >= CARD_MULTI && is_sql_sel(f) && (*rel && is_basetable((*rel)->op)))
+		if (ek.card < card_set && sq->card >= CARD_MULTI && is_sql_sel(f) && (rel && *rel && is_basetable((*rel)->op)))
 			sq = rel_zero_or_one(sql, sq, ek);
 		return exp_rel(sql, sq);
 	}

@@ -990,7 +990,7 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 				if (single) {
 					v = rel_value_exp(query, &r, a, sql_sel | sql_update_set, ek);
 				} else if (!rel_val && r) {
-					query_push_outer(query, r, sql_sel | sql_update_set);
+					query_push_outer(query, r, sql_sel);
 					rel_val = rel_subquery(query, NULL, a, ek);
 					r = query_pop_outer(query);
 					if (/* DISABLES CODE */ (0) && r) {

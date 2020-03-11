@@ -141,6 +141,11 @@ DELETE FROM another_T WHERE col1 = AVG(col2) OVER (); --error, window functions 
 DELETE FROM another_T WHERE col7 = (SELECT SUM(col3) OVER ()); --0 rows affected
 DELETE FROM another_T WHERE col8 = (SELECT MAX(col6 + ColID) OVER () FROM tbl_ProductSales); --error, more than one row returned by a subquery used as an expression
 
+UPDATE another_T SET col5 = (SELECT 1 UNION ALL SELECT 2); --error, more than one row returned by a subquery used as an expression
+UPDATE another_T SET col5 = 1 WHERE col5 = (SELECT 1 UNION ALL SELECT 2); --error, more than one row returned by a subquery used as an expression
+DELETE FROM another_T WHERE col1 = (SELECT 1 UNION ALL SELECT 2); --error, more than one row returned by a subquery used as an expression
+INSERT INTO another_T VALUES ((SELECT 1 UNION ALL SELECT 2),2,3,4,5,6,7,8); --error, more than one row returned by a subquery used as an expression
+
 DECLARE x int;
 SET x = MAX(1) over (); --error, not allowed
 DECLARE y int;
@@ -149,7 +154,7 @@ SET y = MIN(1); --error, not allowed
 INSERT INTO another_T VALUES (SUM(1),2,3,4,5,6,7,8); --error, not allowed
 INSERT INTO another_T VALUES (AVG(1) OVER (),2,3,4,5,6,7,8); --error, not allowed
 INSERT INTO another_T VALUES ((SELECT SUM(1)),(SELECT SUM(2) OVER ()),3,4,5,6,7,8); --allowed
-	
+
 SELECT * FROM another_T;
 
 CREATE PROCEDURE crashme(a int) BEGIN DECLARE x INT; SET x = a; END;
