@@ -1020,10 +1020,13 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 
 			if (!rel_val)
 				rel_val = r;
-			if (!rel_val || !is_project(rel_val->op) ||
-				dlist_length(cols) > list_length(rel_val->exps)) {
+			if (!rel_val || !is_project(rel_val->op)) {
 				rel_destroy(r);
-				return sql_error(sql, 02, SQLSTATE(42000) "%s: too many columns specified", action);
+				return sql_error(sql, 02, SQLSTATE(42000) "%s: Invalid right side of the SET clause", action);
+			}
+			if (dlist_length(cols) != list_length(rel_val->exps)) {
+				rel_destroy(r);
+				return sql_error(sql, 02, SQLSTATE(42000) "%s: The number of specified columns between the SET clause and the right side don't match (%d != %d)", action, dlist_length(cols), list_length(rel_val->exps));
 			}
 			nr = (list_length(rel_val->exps)-dlist_length(cols));
 			for (n=rel_val->exps->h; nr; nr--, n = n->next)
