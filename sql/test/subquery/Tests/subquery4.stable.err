@@ -156,7 +156,11 @@ MAPI  = (monetdb) /var/tmp/mtest-204362/.s.monetdb.35709
 QUERY = INSERT INTO another_T VALUES ((SELECT 1 UNION ALL SELECT 2),2,3,4,5,6,7,8); --error, more than one row returned by a subquery used as an expression
 ERROR = !Cardinality violation, scalar value expected
 CODE  = 21000
-MAPI  = (monetdb) /var/tmp/mtest-450395/.s.monetdb.35919
+MAPI  = (monetdb) /var/tmp/mtest-657770/.s.monetdb.37553
+QUERY = UPDATE another_T SET (col7, col8) = (SELECT 1,2 UNION ALL SELECT 1,2); --error, more than one row returned by a subquery used as an expression
+ERROR = !Cardinality violation, scalar value expected
+CODE  = 21000
+MAPI  = (monetdb) /var/tmp/mtest-657770/.s.monetdb.37553
 QUERY = UPDATE another_T SET (col7, col8) = (SELECT 1 UNION ALL SELECT 2); --error, number of columns does not match number of values
 ERROR = !UPDATE: The number of specified columns between the SET clause and the right side don't match (2 != 1)
 CODE  = 42000
@@ -164,7 +168,15 @@ MAPI  = (monetdb) /var/tmp/mtest-450395/.s.monetdb.35919
 QUERY = UPDATE another_T SET (col7, col8) = (SELECT 1,2,3); --error, number of columns does not match number of values
 ERROR = !UPDATE: The number of specified columns between the SET clause and the right side don't match (2 != 3)
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-450395/.s.monetdb.35919
+MAPI  = (monetdb) /var/tmp/mtest-548551/.s.monetdb.35009
+QUERY = UPDATE another_T SET col5 = 1, col5 = 6; --error, multiple assignments to same column "col5"
+ERROR = !UPDATE: Multiple assignments to same column 'col5'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-548551/.s.monetdb.35009
+QUERY = UPDATE another_T SET (col5, col6) = ((select 1,2)), col5 = 6; --error, multiple assignments to same column "col5"
+ERROR = !UPDATE: Multiple assignments to same column 'col5'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-548551/.s.monetdb.35009
 QUERY = SET x = MAX(1) over (); --error, not allowed
 ERROR = !MAX: window function 'max' not allowed in SET clause (use subquery)
 CODE  = 42000
