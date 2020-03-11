@@ -5590,7 +5590,7 @@ SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (npci) {
 		BAT **res = NULL, **input = NULL;
-		BATiter *bi;
+		BATiter *bi = NULL;
 		BUN cnt = 0;
 		int nrinput = pci->argc - 2 - pci->retc;
 		MalBlkPtr nmb = NULL;
