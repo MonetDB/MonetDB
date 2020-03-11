@@ -5583,93 +5583,139 @@ SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		npci = pushNil(mb, npci, type);
 	}
 	/* check program to get the proper malblk */
-	if (chkInstruction(cntxt->usermodule, mb, npci))
-		return "ERORROR";
+	if (chkInstruction(cntxt->usermodule, mb, npci)) {
+		freeInstruction(npci);
+		return createException(MAL, "sql.unionfunc", SQLSTATE(42000) PROGRAM_GENERAL);
+	}
 
 	if (npci) {
-		BAT **res; 
-		BAT **input; 
+		BAT **res = NULL, **input = NULL;
 		BATiter *bi;
 		BUN cnt = 0;
 		int nrinput = pci->argc - 2 - pci->retc;
+		MalBlkPtr nmb = NULL;
+		MalStkPtr env = NULL;
+		InstrPtr q = NULL;
 
-		input = GDKmalloc(sizeof(BAT*) * nrinput);
-		bi = GDKmalloc(sizeof(BATiter) * nrinput);
+		if (!(input = GDKzalloc(sizeof(BAT*) * nrinput))) {
+			ret = createException(MAL, "sql.unionfunc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto finalize;
+		}
+		if (!(bi = GDKmalloc(sizeof(BATiter) * nrinput))) {
+			ret = createException(MAL, "sql.unionfunc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto finalize;
+		}
 		assert(nrinput == pci->retc);
 		for (int i = 0, j = pci->retc+2; j < pci->argc; i++, j++) {
 			bat *b = getArgReference_bat(stk, pci, j);
-			input[i] = BATdescriptor(*b); 
+			if (!(input[i] = BATdescriptor(*b))) {
+				ret = createException(MAL, "sql.unionfunc", SQLSTATE(HY005) "Cannot access column descriptor");
+				goto finalize;
+			}
 			bi[i] = bat_iterator(input[i]);
 			cnt = BATcount(input[i]); 
 		}
 
 		/* create result bats */
-		res = GDKmalloc(sizeof(BAT*) * pci->retc);
+		if (!(res = GDKzalloc(sizeof(BAT*) * pci->retc))) {
+			ret = createException(MAL, "sql.unionfunc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto finalize;
+		}
 		for (int i = 0; i<pci->retc; i++) {
 			int type = getArgType(mb, pci, i);
 
-			res[i] = COLnew(0, getBatType(type), cnt, TRANSIENT);
+			if (!(res[i] = COLnew(0, getBatType(type), cnt, TRANSIENT))) {
+				ret = createException(MAL, "sql.unionfunc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto finalize;
+			}
 		}
 
-		MalBlkPtr nmb = copyMalBlk(npci->blk);
-		MalStkPtr env = prepareMALstack(nmb, nmb->vsize); /* needed for result */
-		
-		InstrPtr q = getInstrPtr(nmb, 0);
+		if (!(nmb = copyMalBlk(npci->blk))) {
+			ret = createException(MAL, "sql.unionfunc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto finalize;
+		}
+		if (!(env = prepareMALstack(nmb, nmb->vsize))) { /* needed for result */
+			ret = createException(MAL, "sql.unionfunc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto finalize;
+		}
 
-		for(BUN cur = 0; cur<cnt && !ret; cur++ ) {
+		q = getInstrPtr(nmb, 0);
+
+		for (BUN cur = 0; cur<cnt && !ret; cur++ ) {
 			MalStkPtr nstk = prepareMALstack(nmb, nmb->vsize);
 			int i,ii;
 
-			/* copy (input) arguments onto destination stack, skipping rowid col */
-			for (i = 1, ii = q->retc; ii < q->argc; ii++) {
-				ValPtr lhs = &nstk->stk[q->argv[ii]];
-				ptr rhs = (ptr)BUNtail(bi[i], cur);
+			if (!nstk) { /* needed for result */
+				ret = createException(MAL, "sql.unionfunc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			} else {
+				/* copy (input) arguments onto destination stack, skipping rowid col */
+				for (i = 1, ii = q->retc; ii < q->argc && !ret; ii++) {
+					ValPtr lhs = &nstk->stk[q->argv[ii]];
+					ptr rhs = (ptr)BUNtail(bi[i], cur);
 
-				assert(lhs->vtype != TYPE_bat);
-				if (VALset(lhs, input[i]->ttype, rhs) == NULL) {
-					ret = createException(MAL, "mal.interpreter", MAL_MALLOC_FAIL);
-					break;
+					assert(lhs->vtype != TYPE_bat);
+					if (VALset(lhs, input[i]->ttype, rhs) == NULL)
+						ret = createException(MAL, "sql.unionfunc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				}
-			}
-			if (ret == MAL_SUCCEED && ii == q->argc) {
-				BAT *fres = NULL;
-				BUN ccnt = 0;
-				ret = runMALsequence(cntxt, nmb, 1, nmb->stop, nstk, env /* copy result in nstk first instruction*/, q); 
+				if (!ret && ii == q->argc) {
+					BAT *fres = NULL;
+					BUN ccnt = 0;
+					ret = runMALsequence(cntxt, nmb, 1, nmb->stop, nstk, env /* copy result in nstk first instruction*/, q); 
 
-				/* insert into result */
-				fres = BATdescriptor(env->stk[q->argv[0]].val.bval);
-				ccnt = BATcount(fres);
-				BAT *p = NULL;
+					if (!ret) {
+						/* insert into result */
+						if (!(fres = BATdescriptor(env->stk[q->argv[0]].val.bval)))
+							ret = createException(MAL, "sql.unionfunc", SQLSTATE(HY005) "Cannot access column descriptor");
+						else {
+							ccnt = BATcount(fres);
+							BAT *p = NULL;
 
-				if (BATappend(res[0], p = BATconstant(fres->hseqbase, res[0]->ttype, (ptr)BUNtail(bi[0], cur), ccnt, 0), NULL, FALSE) != GDK_SUCCEED)
-					ret = createException(MAL, "mal.interpreter", MAL_MALLOC_FAIL);
-				BBPunfix(p->batCacheid);
-				BBPunfix(fres->batCacheid);
+							if (BATappend(res[0], p = BATconstant(fres->hseqbase, res[0]->ttype, (ptr)BUNtail(bi[0], cur), ccnt, 0), NULL, FALSE) != GDK_SUCCEED)
+								ret = createException(MAL, "sql.unionfunc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+							BBPunfix(p->batCacheid);
+							BBPunfix(fres->batCacheid);
+						}
+						i=1;
+						for (ii = 0; i < pci->retc && !ret; i++) {
+							BAT *b;
 
-				i=1;
-				for (ii = 0; i < pci->retc && !ret; i++) {
-					BAT *b = BATdescriptor(env->stk[q->argv[ii]].val.bval);
-					if (BATappend(res[i], b, NULL, FALSE) != GDK_SUCCEED)
-						ret = createException(MAL, "mal.interpreter", MAL_MALLOC_FAIL);
-					BBPrelease(b->batCacheid); /* release ref from env stack */
-					BBPunfix(b->batCacheid);   /* free pointer */
+							if (!(b = BATdescriptor(env->stk[q->argv[ii]].val.bval)))
+								ret = createException(MAL, "sql.unionfunc", SQLSTATE(HY005) "Cannot access column descriptor");
+							else if (BATappend(res[i], b, NULL, FALSE) != GDK_SUCCEED)
+								ret = createException(MAL, "sql.unionfunc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+							if (b) {
+								BBPrelease(b->batCacheid); /* release ref from env stack */
+								BBPunfix(b->batCacheid);   /* free pointer */
+							}
+						}
+					}
 				}
+				GDKfree(nstk);
 			}
-			GDKfree(nstk);
 		}
+finalize:
 		GDKfree(env);
-		freeMalBlk(nmb);
-		for (int i = 0; i<pci->retc; i++) {
-			bat *b = getArgReference_bat(stk, pci, i);
-			*b = res[i]->batCacheid;
-			BBPkeepref(*b);
-		}
+		if (nmb)
+			freeMalBlk(nmb);
+		if (res)
+			for (int i = 0; i<pci->retc; i++) {
+				bat *b = getArgReference_bat(stk, pci, i);
+				if (res[i]) {
+					*b = res[i]->batCacheid;
+					if (ret)
+						BBPunfix(*b);
+					else
+						BBPkeepref(*b);
+				}
+			}
 		GDKfree(res);
-		for (int i = 0; i<nrinput; i++)
-			BBPunfix(input[i]->batCacheid);
+		if (input)
+			for (int i = 0; i<nrinput; i++) {
+				if (input[i])
+					BBPunfix(input[i]->batCacheid);
+			}
 		GDKfree(input);
 		GDKfree(bi);
 	}
 	return ret;
 }
-
