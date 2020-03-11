@@ -2542,6 +2542,7 @@ rel_rename(backend *be, sql_rel *rel, stmt *sub)
 {
 	mvc *sql = be->mvc;
 
+	(void) sql;
 	if (rel->exps) {
 		node *en, *n;
 		list *l = sa_list(be->mvc->sa);
