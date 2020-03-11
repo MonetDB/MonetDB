@@ -5668,11 +5668,15 @@ SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							ret = createException(MAL, "sql.unionfunc", SQLSTATE(HY005) "Cannot access column descriptor");
 						else {
 							ccnt = BATcount(fres);
-							BAT *p = NULL;
+							BAT *p = BATconstant(fres->hseqbase, res[0]->ttype, (ptr)BUNtail(bi[0], cur), ccnt, 0);
 
-							if (BATappend(res[0], p = BATconstant(fres->hseqbase, res[0]->ttype, (ptr)BUNtail(bi[0], cur), ccnt, 0), NULL, FALSE) != GDK_SUCCEED)
-								ret = createException(MAL, "sql.unionfunc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-							BBPunfix(p->batCacheid);
+							if (p) {
+								if (BATappend(res[0], p, NULL, FALSE) != GDK_SUCCEED)
+									ret = createException(MAL, "sql.unionfunc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+								BBPunfix(p->batCacheid);
+							} else {
+								ret = createException(MAL, "sql.unionfunc", OPERATION_FAILED);
+							}
 							BBPunfix(fres->batCacheid);
 						}
 						i=1;

@@ -267,6 +267,7 @@ typedef struct relation {
 	 dependent:1, 	/* dependent join */
 	 distinct:1,	
 	 processed:1,   /* fully processed or still in the process of building */
+	 grouped:1,	/* groupby processed all the group by exps */
 	 subquery:1;	/* is this part a subquery, this is needed for proper name binding */
 	void *p;	/* properties for the optimizer, distribution */
 } sql_rel;

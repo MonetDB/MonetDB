@@ -105,7 +105,14 @@ FROM integers i1;
 UPDATE another_T SET col1 = MIN(col1); --error, aggregates not allowed in update set clause
 UPDATE another_T SET col2 = 1 WHERE col1 = SUM(col2); --error, aggregates not allowed in update set clause
 UPDATE another_T SET col3 = (SELECT MAX(col5)); --error, aggregates not allowed in update set clause
-UPDATE another_T SET col4 = (SELECT SUM(col4 + ColID) FROM tbl_ProductSales);
+UPDATE another_T SET col4 = (SELECT SUM(col4 + ColID) FROM tbl_ProductSales); --4 rows affected
+
+SELECT col4 FROM another_T;
+	-- 26
+	-- 186
+	-- 1786
+	-- 17786
+
 UPDATE another_T SET col5 = 1 WHERE col5 = (SELECT AVG(col2)); --error, aggregates not allowed in where clause
 UPDATE another_T SET col6 = 1 WHERE col6 = (SELECT COUNT(col3 + ColID) FROM tbl_ProductSales);
 UPDATE another_T SET col8 = (SELECT 1 FROM integers i2 WHERE AVG(i2.i)); --error, aggregates not allowed in update set clause
@@ -113,18 +120,25 @@ UPDATE another_T SET col7 = 1 WHERE col5 = (SELECT 1 FROM integers i2 WHERE AVG(
 
 DELETE FROM another_T WHERE col1 = COUNT(col2); --error, aggregates not allowed in where clause
 DELETE FROM another_T WHERE col7 = (SELECT MIN(col3)); --error, aggregates not allowed in where clause
-DELETE FROM another_T WHERE col8 = (SELECT AVG(col6 + ColID) FROM tbl_ProductSales);
+DELETE FROM another_T WHERE col8 = (SELECT AVG(col6 + ColID) FROM tbl_ProductSales); --0 rows affected
 DELETE FROM another_T WHERE col2 = (SELECT 1 FROM integers i2 WHERE AVG(i2.i)); --error, aggregates not allowed in where clause
 
 UPDATE another_T SET col1 = AVG(col1) OVER (); --error, window functions not allowed in update set clause
 UPDATE another_T SET col2 = 1 WHERE col1 = COUNT(col2) OVER (); --error, window functions not allowed in where clause
-UPDATE another_T SET col3 = (SELECT SUM(col5) OVER ());
+UPDATE another_T SET col3 = (SELECT SUM(col5) OVER ()); --4 rows affected
+
+SELECT col3 FROM another_T;
+	-- 5
+	-- 55
+	-- 555
+	-- 5555
+
 UPDATE another_T SET col4 = (SELECT MIN(col4 + ColID) OVER () FROM tbl_ProductSales); --error, more than one row returned by a subquery used as an expression
-UPDATE another_T SET col5 = 1 WHERE col5 = (SELECT MAX(col2) OVER ());
+UPDATE another_T SET col5 = 1 WHERE col5 = (SELECT MAX(col2) OVER ()); --0 rows affected
 UPDATE another_T SET col6 = 1 WHERE col6 = (SELECT MIN(col3 + ColID) OVER () FROM tbl_ProductSales); --error, more than one row returned by a subquery used as an expression
 
 DELETE FROM another_T WHERE col1 = AVG(col2) OVER (); --error, window functions not allowed in where clause
-DELETE FROM another_T WHERE col7 = (SELECT SUM(col3) OVER ());
+DELETE FROM another_T WHERE col7 = (SELECT SUM(col3) OVER ()); --0 rows affected
 DELETE FROM another_T WHERE col8 = (SELECT MAX(col6 + ColID) OVER () FROM tbl_ProductSales); --error, more than one row returned by a subquery used as an expression
 
 DECLARE x int;
@@ -134,6 +148,9 @@ SET y = MIN(1); --error, not allowed
 
 INSERT INTO another_T VALUES (SUM(1),2,3,4,5,6,7,8); --error, not allowed
 INSERT INTO another_T VALUES (AVG(1) OVER (),2,3,4,5,6,7,8); --error, not allowed
+INSERT INTO another_T VALUES ((SELECT SUM(1)),(SELECT SUM(2) OVER ()),3,4,5,6,7,8); --allowed
+	
+SELECT * FROM another_T;
 
 CREATE PROCEDURE crashme(a int) BEGIN DECLARE x INT; SET x = a; END;
 

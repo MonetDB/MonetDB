@@ -900,6 +900,7 @@ rel_groupby(mvc *sql, sql_rel *l, list *groupbyexps )
 	rel->exps = aggrs;
 	rel->nrcols = l->nrcols;
 	rel->op = op_groupby;
+	rel->grouped = 1;
 	return rel;
 }
 

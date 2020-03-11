@@ -2858,39 +2858,15 @@ rel_unop(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 	exp_kind iek = {type_value, card_column, FALSE};
 	sql_exp *e = NULL;
 	sql_subfunc *sf = NULL;
-	sql_ftype type = (ek.card == card_loader)?F_LOADER:((ek.card == card_none)?F_PROC:F_FUNC);
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_error(sql, 02, SQLSTATE(3F000) "SELECT: no such schema '%s'", sname);
 
-	e = rel_value_exp(query, rel, l->next->next->data.sym, f|sql_farg, iek);
-	if (!e)
-		sf = find_func(sql, s, fname, 1, F_AGGR, NULL);
-
-	if (!sf && !e && *rel && (*rel)->card == CARD_AGGR) {
-		if (is_sql_having(f) || is_sql_orderby(f))
-			return NULL;
-		/* reset error */
-		sql->session->status = 0;
-		sql->errstr[0] = '\0';
-		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: no such aggregate '%s'", fname);
-	}
-	if (!e && sf) { /* possibly we cannot resolve the argument as the function maybe an aggregate */
-		/* reset error */
-		sql->session->status = 0;
-		sql->errstr[0] = '\0';
+	sf = find_func(sql, s, fname, 1, F_AGGR, NULL);
+	if (sf)
 		return rel_aggr(query, rel, se, f);
-	}
-	if (type == F_FUNC) {
-		sf = find_func(sql, s, fname, 1, F_AGGR, NULL);
-		if (sf) {
-			if (!e) { /* reset error */
-				sql->session->status = 0;
-				sql->errstr[0] = '\0';
-			}
-			return _rel_aggr(query, rel, l->next->data.i_val, s, fname, l->next->next, f);
-		}
-	}
+
+	e = rel_value_exp(query, rel, l->next->next->data.sym, f|sql_farg, iek);
 	if (!e)
 		return NULL;
 	return rel_unop_(sql, rel ? *rel : NULL, e, s, fname, ek.card);
@@ -3137,42 +3113,17 @@ rel_binop(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 	char *sname = qname_schema(dl->data.lval);
 	sql_schema *s = cur_schema(sql);
 	exp_kind iek = {type_value, card_column, FALSE};
-	sql_ftype type = (ek.card == card_loader)?F_LOADER:((ek.card == card_none)?F_PROC:F_FUNC);
 	sql_subfunc *sf = NULL;
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_error(sql, 02, SQLSTATE(3F000) "SELECT: no such schema '%s'", sname);
 
+	sf = find_func(sql, s, fname, 2, F_AGGR, NULL);
+	if (sf)
+		return rel_aggr(query, rel, se, f);
+
 	l = rel_value_exp(query, rel, dl->next->next->data.sym, f|sql_farg, iek);
 	r = rel_value_exp(query, rel, dl->next->next->next->data.sym, f|sql_farg, iek);
-
-	if (!l || !r)
-		sf = find_func(sql, s, fname, 2, F_AGGR, NULL);
-	if (!sf && (!l || !r) && *rel && (*rel)->card == CARD_AGGR) {
-		if (mvc_status(sql) || is_sql_having(f) || is_sql_orderby(f))
-			return NULL;
-		/* reset error */
-		sql->session->status = 0;
-		sql->errstr[0] = '\0';
-		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: no such aggregate '%s'", fname);
-	}
-	if (!l && !r && sf) { /* possibly we cannot resolve the argument as the function maybe an aggregate */
-		/* reset error */
-		sql->session->status = 0;
-		sql->errstr[0] = '\0';
-		return rel_aggr(query, rel, se, f);
-	}
-	if (type == F_FUNC) {
-		sf = find_func(sql, s, fname, 2, F_AGGR, NULL);
-		if (sf) {
-			if (!l || !r) { /* reset error */
-				sql->session->status = 0;
-				sql->errstr[0] = '\0';
-			}
-			return _rel_aggr(query, rel, dl->next->data.i_val, s, fname, dl->next->next, f);
-		}
-	}
-
 	if (!l || !r)
 		return NULL;
 	return rel_binop_(sql, rel ? *rel : NULL, l, r, s, fname, ek.card);
@@ -3204,15 +3155,15 @@ rel_nop_(mvc *sql, sql_rel *rel, sql_exp *a1, sql_exp *a2, sql_exp *a3, sql_exp 
 }
 
 static sql_exp *
-rel_nop(sql_query *query, sql_rel **rel, symbol *se, int fs, exp_kind ek)
+rel_nop(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 {
 	mvc *sql = query->sql;
-	int nr_args = 0;
 	dnode *l = se->data.lval->h;
+	int nr_args = dlist_length(l->next->next->data.lval);
 	dnode *ops = l->next->next->data.lval->h;
 	list *exps = new_exp_list(sql->sa);
 	list *tl = sa_list(sql->sa);
-	sql_subfunc *f = NULL;
+	sql_subfunc *sf = NULL;
 	sql_subtype *obj_type = NULL;
 	char *fname = qname_fname(l->data.lval);
 	char *sname = qname_schema(l->data.lval);
@@ -3223,8 +3174,12 @@ rel_nop(sql_query *query, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_error(sql, 02, SQLSTATE(3F000) "SELECT: no such schema '%s'", sname);
 
-	for (; ops; ops = ops->next, nr_args++) {
-		sql_exp *e = rel_value_exp(query, rel, ops->data.sym, fs|sql_farg, iek);
+	sf = find_func(sql, s, fname, nr_args, F_AGGR, NULL);
+	if (sf) /* We have to pas the arguments properly, so skip call to rel_aggr */
+		return _rel_aggr(query, rel, l->next->data.i_val, s, fname, l->next->next->data.lval->h, f);
+
+	for (nr_args = 0; ops; ops = ops->next, nr_args++) {
+		sql_exp *e = rel_value_exp(query, rel, ops->data.sym, f|sql_farg, iek);
 		sql_subtype *tpe;
 
 		if (!e) 
@@ -3236,25 +3191,6 @@ rel_nop(sql_query *query, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 				obj_type = tpe;
 			append(tl, tpe);
 		}
-	}
-
-	/* first try aggregate */
-	f = find_func(sql, s, fname, nr_args, F_AGGR, NULL);
-	if (!f && err && *rel && (*rel)->card == CARD_AGGR) {
-		if (is_sql_having(fs) || is_sql_orderby(fs))
-			return NULL;
-		/* reset error */
-		sql->session->status = 0;
-		sql->errstr[0] = '\0';
-		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: no such aggregate '%s'", fname);
-	}
-	if (f) {
-		if (err) {
-			/* reset error */
-			sql->session->status = 0;
-			sql->errstr[0] = '\0';
-		}
-		return _rel_aggr(query, rel, l->next->data.i_val, s, fname, l->next->next->data.lval->h, fs);
 	}
 	if (err)
 		return NULL;
@@ -3352,6 +3288,14 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 
 			has_args = true;
 			if (gl && gl != ogl) {
+				if (groupby->grouped) {
+					char *uaname = GDKmalloc(strlen(aname) + 1);
+					sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions cannot be nested",
+						uaname ? toUpperCopy(uaname, aname) : aname);
+					if (uaname)
+						GDKfree(uaname);
+					return e;
+				}
 				if (!base)
 					groupby->l = subquery = gl;
 				else
@@ -3367,7 +3311,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 					GDKfree(uaname);
 				return e;
 			}
-			all_aggr &= (exp_card(e) <= CARD_AGGR && !exp_is_atom(e) && !is_func(e->type) && (!groupby || !is_groupby(groupby->op) || !groupby->r || !exps_find_exp(groupby->r, e)));
+			all_aggr &= (exp_card(e) <= CARD_AGGR && !exp_is_atom(e) && is_aggr(e->type) && !is_func(e->type) && (!groupby || !is_groupby(groupby->op) || !groupby->r || !exps_find_exp(groupby->r, e)));
 			has_freevar |= exp_has_freevar(sql, e);
 			all_freevar &= (is_freevar(e)>0);
 			list_append(exps, e);
@@ -3709,7 +3653,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 			type = exp_subtype(e)->type->sqlname;
 		}
 
-		e = sql_error(sql, 02, SQLSTATE(42000) "%s: no such operator '%s(%s)'",
+		e = sql_error(sql, 02, SQLSTATE(42000) "%s: no such aggregate '%s(%s)'",
 			      uaname ? toUpperCopy(uaname, aname) : aname, aname, type);
 
 		if (uaname)
@@ -5291,7 +5235,6 @@ rel_where_groupby_nodes(sql_query *query, sql_rel *rel, SelectNode *sn, int *gro
 		if (rel->op != op_groupby)
 			rel = rel_groupby(sql, rel, NULL);
 	}
-
 	return rel;
 }
 
