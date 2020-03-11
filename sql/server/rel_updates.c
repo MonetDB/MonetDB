@@ -928,7 +928,7 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 {
 	mvc *sql = query->sql;
 	sql_table *mt = NULL;
-	sql_exp *e = NULL, **updates = SA_ZNEW_ARRAY(sql->sa, sql_exp*, list_length(t->columns.set));
+	sql_exp **updates = SA_ZNEW_ARRAY(sql->sa, sql_exp*, list_length(t->columns.set));
 	list *exps, *pcols = NULL;
 	dnode *n;
 	const char *rname = NULL;
@@ -947,9 +947,7 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 		pcols = mt->part.pexp->cols;
 	}
 	/* first create the project */
-	e = exp_column(sql->sa, rname = rel_name(r), TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
-	exps = new_exp_list(sql->sa);
-	append(exps, e);
+	exps = list_append(new_exp_list(sql->sa), exp_column(sql->sa, rname = rel_name(r), TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1));
 
 	for (n = assignmentlist->h; n; n = n->next) {
 		symbol *a = NULL;
@@ -991,10 +989,8 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 				rel_val = rel_subquery(query, NULL, a, ek);
 				r = query_pop_outer(query);
 			}
-			if ((single && !v) || (!single && !rel_val)) {
-				rel_destroy(r);
+			if ((single && !v) || (!single && !rel_val))
 				return NULL;
-			}
 			if (rel_val && outer) {
 				if (single) {
 					if (!exp_name(v))
@@ -1016,22 +1012,14 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 			dlist *cols = assignment->h->next->data.lval;
 			dnode *m;
 			node *n;
-			int nr;
 
 			if (!rel_val)
 				rel_val = r;
-			if (!rel_val || !is_project(rel_val->op)) {
-				rel_destroy(r);
+			if (!rel_val || !is_project(rel_val->op))
 				return sql_error(sql, 02, SQLSTATE(42000) "%s: Invalid right side of the SET clause", action);
-			}
-			if (dlist_length(cols) != list_length(rel_val->exps)) {
-				rel_destroy(r);
+			if (dlist_length(cols) != list_length(rel_val->exps))
 				return sql_error(sql, 02, SQLSTATE(42000) "%s: The number of specified columns between the SET clause and the right side don't match (%d != %d)", action, dlist_length(cols), list_length(rel_val->exps));
-			}
-			nr = (list_length(rel_val->exps)-dlist_length(cols));
-			for (n=rel_val->exps->h; nr; nr--, n = n->next)
-				;
-			for (m = cols->h; n && m; n = n->next, m = m->next) {
+			for (n = rel_val->exps->h, m = cols->h; n && m; n = n->next, m = m->next) {
 				char *cname = m->data.sval;
 				sql_column *c = mvc_bind_column(sql, t, cname);
 				sql_exp *v = n->data;
@@ -1088,8 +1076,7 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 			updates[c->colnr] = v;
 		}
 	}
-	e = exp_column(sql->sa, rname, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
-	r = rel_project(sql->sa, r, append(new_exp_list(sql->sa),e));
+	r = rel_project(sql->sa, r, list_append(new_exp_list(sql->sa), exp_column(sql->sa, rname, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1)));
 	r = rel_update(sql, bt, r, updates, exps);
 	return r;
 }
