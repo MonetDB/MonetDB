@@ -28,7 +28,6 @@
 #define sql_update_set   (1 << 12) //ORed
 #define sql_values       (1 << 13) //ORed
 #define psm_call         (1 << 14) //ORed
-#define sql_rel_update   (1 << 15) //ORed
 
 #define is_sql_from(X)         ((X & sql_from) == sql_from)
 #define is_sql_where(X)        ((X & sql_where) == sql_where)
@@ -45,7 +44,6 @@
 #define is_sql_update_set(X)   ((X & sql_update_set) == sql_update_set)
 #define is_sql_values(X)       ((X & sql_values) == sql_values)
 #define is_psm_call(X)         ((X & psm_call) == psm_call)
-#define is_sql_rel_update(X)   ((X & sql_rel_update) == sql_rel_update)
 
 #define is_updateble(rel) \
 	(rel->op == op_basetable || \
