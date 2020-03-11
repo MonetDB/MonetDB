@@ -146,8 +146,8 @@ UPDATE another_T SET col5 = 1 WHERE col5 = (SELECT 1 UNION ALL SELECT 2); --erro
 DELETE FROM another_T WHERE col1 = (SELECT 1 UNION ALL SELECT 2); --error, more than one row returned by a subquery used as an expression
 INSERT INTO another_T VALUES ((SELECT 1 UNION ALL SELECT 2),2,3,4,5,6,7,8); --error, more than one row returned by a subquery used as an expression
 
---UPDATE another_T SET (col5, col6) = (SELECT MIN(1), MAX(2) OVER ()); --4 rows affected
---UPDATE another_T SET (col7, col8) = (SELECT 1,2 UNION ALL SELECT 1,2); --error, more than one row returned by a subquery used as an expression
+UPDATE another_T SET (col5, col6) = (SELECT MIN(10), MAX(21) OVER ()); --4 rows affected
+UPDATE another_T SET (col7, col8) = (SELECT 1,2 UNION ALL SELECT 1,2); --error, more than one row returned by a subquery used as an expression
 UPDATE another_T SET (col7, col8) = (SELECT 1 UNION ALL SELECT 2); --error, number of columns does not match number of values
 UPDATE another_T SET (col7, col8) = (SELECT 1,2,3); --error, number of columns does not match number of values
 UPDATE another_T SET col5 = 1, col5 = 6; --error, multiple assignments to same column "col5"
