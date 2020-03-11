@@ -637,7 +637,7 @@ rel_named_table_function(sql_query *query, sql_rel *rel, symbol *ast, int latera
 		l = l->next; /* skip distinct */
 	if (l->next) { /* table call with subquery */
 		if (l->next->type == type_symbol || l->next->type == type_list) {
-			exp_kind iek = {type_value, card_column, TRUE};
+			exp_kind iek = {type_value, card_set, TRUE};
 			list *exps = sa_list(sql->sa);
 			int count = 0;
 
@@ -2101,10 +2101,9 @@ rel_in_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 }
 
 sql_exp *
-rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
+rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_kind ek)
 {
 	mvc *sql = query->sql;
-	exp_kind ek = {type_value, card_column, FALSE};
 
 	if (!sc)
 		return NULL;
@@ -2119,8 +2118,8 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 		symbol *lo = sc->data.lval->h->data.sym;
 		symbol *ro = sc->data.lval->h->next->data.sym;
 
-		sql_exp *ls = rel_logical_value_exp(query, rel, lo, f);
-		sql_exp *rs = rel_logical_value_exp(query, rel, ro, f);
+		sql_exp *ls = rel_logical_value_exp(query, rel, lo, f, ek);
+		sql_exp *rs = rel_logical_value_exp(query, rel, ro, f, ek);
 
 		if (!ls || !rs)
 			return NULL;
@@ -2201,7 +2200,7 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 			n->next->next->next = NULL; /* remove quantifier */
 			dl->h = n->next->next;
 			n->next->next = NULL; /* (remove comparison) moved righthand side */ 
-			return rel_logical_value_exp(query, rel, sc, f);
+			return rel_logical_value_exp(query, rel, sc, f, ek);
 		}	
 		/* <> ANY -> NOT (= ALL) */
 		if (quantifier == 1 && cmp_type == cmp_notequal) {
@@ -2350,7 +2349,7 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 		return le;
 	}
 	case SQL_NOT: {
-		sql_exp *le = rel_logical_value_exp(query, rel, sc->data.sym, f);
+		sql_exp *le = rel_logical_value_exp(query, rel, sc->data.sym, f, ek);
 
 		if (!le)
 			return le;
@@ -2380,7 +2379,7 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 			return NULL;
 		if (ek.card <= card_set && is_project(sq->op) && list_length(sq->exps) > 1)
 			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: subquery must return only one column");
-		if (ek.card < card_set && sq->card >= CARD_MULTI && is_sql_sel(f) && (rel && *rel && is_basetable((*rel)->op)))
+		if (ek.card < card_set && sq->card >= CARD_MULTI && (is_sql_sel(f) | is_sql_where(f)) && rel && (!*rel || is_basetable((*rel)->op)))
 			sq = rel_zero_or_one(sql, sq, ek);
 		return exp_rel(sql, sq);
 	}
@@ -3730,7 +3729,7 @@ rel_case(sql_query *query, sql_rel **rel, tokens token, symbol *opt_cond, dlist 
 					return NULL;
 				cond = rel_binop_(sql, rel ? *rel : NULL, l, r, NULL, "=", card_value);
 			} else {
-				cond = rel_logical_value_exp(query, rel, when->h->data.sym, f);
+				cond = rel_logical_value_exp(query, rel, when->h->data.sym, f, ek);
 			}
 			result = rel_value_exp(query, rel, when->h->next->data.sym, f, ek);
 		}
@@ -3772,7 +3771,7 @@ rel_case(sql_query *query, sql_rel **rel, tokens token, symbol *opt_cond, dlist 
 					return NULL;
 				cond = rel_binop_(sql, rel ? *rel : NULL, l, r, NULL, "=", card_value);
 			} else {
-				cond = rel_logical_value_exp(query, rel, when->h->data.sym, f);
+				cond = rel_logical_value_exp(query, rel, when->h->data.sym, f, ek);
 			}
 			result = rel_value_exp(query, rel, when->h->next->data.sym, f, ek);
 		}
@@ -5094,7 +5093,7 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 	case SQL_XMLTEXT:
 		return rel_xml(query, rel, se, f, ek);
 	default:
-		return rel_logical_value_exp(query, rel, se, f);
+		return rel_logical_value_exp(query, rel, se, f, ek);
 	}
 }
 
