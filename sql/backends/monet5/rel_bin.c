@@ -1503,7 +1503,7 @@ exp2bin_args(backend *be, sql_exp *e, list *args)
 	if (THRhighwater())
 		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
-	if (!e)
+	if (!e || !args)
 		return args;
 	switch(e->type){
 	case e_column:
@@ -1540,7 +1540,7 @@ exp2bin_args(backend *be, sql_exp *e, list *args)
 		} else if (e->r) {
 			char nme[64];
 
-			snprintf(nme, 64, "A%s", (char*)e->r);
+			snprintf(nme, sizeof(nme), "A%s", (char*)e->r);
 			if (!list_find(args, nme, (fcmp)&alias_cmp)) {
 				stmt *s = stmt_var(be, e->r, &e->tpe, 0, 0);
 
@@ -1550,7 +1550,7 @@ exp2bin_args(backend *be, sql_exp *e, list *args)
 		} else {
 			char nme[16];
 
-			snprintf(nme, 16, "A%u", e->flag);
+			snprintf(nme, sizeof(nme), "A%u", e->flag);
 			if (!list_find(args, nme, (fcmp)&alias_cmp)) {
 				atom *a = sql->args[e->flag];
 				stmt *s = stmt_varnr(be, e->flag, &a->tpe);
@@ -1581,7 +1581,7 @@ rel2bin_args(backend *be, sql_rel *rel, list *args)
 	if (THRhighwater())
 		return sql_error(be->mvc, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
-	if (!rel)
+	if (!rel || !args)
 		return args;
 	switch(rel->op) {
 	case op_basetable:
