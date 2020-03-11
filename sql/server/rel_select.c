@@ -161,6 +161,24 @@ rel_lastexp(mvc *sql, sql_rel *rel )
 }
 
 static sql_rel *
+rel_zero_or_one(mvc *sql, sql_rel *rel, exp_kind ek)
+{
+	sql_exp *e = lastexp(rel);
+	if (!has_label(e)) 
+		exp_label(sql->sa, e, ++sql->label);
+	if (ek.card < card_set && rel->card > CARD_ATOM) {
+		sql_subtype *t = exp_subtype(e); /* parameters don't have a type defined, for those use 'void' one */
+		sql_subfunc *zero_or_one = sql_bind_func(sql->sa, sql->session->schema, "zero_or_one", t ? t : sql_bind_localtype("void"), NULL, F_AGGR);
+
+		e = exp_ref(sql->sa, e);
+		e = exp_aggr1(sql->sa, e, zero_or_one, 0, 0, CARD_ATOM, has_nil(e));
+		rel = rel_groupby(sql, rel, NULL);
+		(void)rel_groupby_add_aggr(sql, rel, e);
+	}
+	return rel;
+}
+
+static sql_rel *
 rel_orderby(mvc *sql, sql_rel *l)
 {
 	sql_rel *rel = rel_create(sql->sa);
@@ -2362,6 +2380,8 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 			return NULL;
 		if (ek.card <= card_set && is_project(sq->op) && list_length(sq->exps) > 1)
 			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: subquery must return only one column");
+		if (ek.card < card_set && sq->card >= CARD_MULTI && is_sql_sel(f) && (*rel && is_basetable((*rel)->op)))
+			sq = rel_zero_or_one(sql, sq, ek);
 		return exp_rel(sql, sq);
 	}
 	case SQL_DEFAULT:
@@ -2676,9 +2696,30 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 	}
 	case SQL_UNION:
 	case SQL_EXCEPT:
-	case SQL_INTERSECT:
-		assert(!rel);
-		return rel_setquery(query, sc);
+	case SQL_INTERSECT: {
+		sql_rel *sq = rel_setquery(query, sc);
+		if (!sq)
+			return NULL;
+		if (!rel)
+			return sq;
+		if (is_sql_where(f)) {
+			sq = rel_zero_or_one(sql, sq, ek);
+			sql_exp *le = exp_rel(sql, sq), *re;
+			sql_subtype bt;
+
+			/* todo add zero or one */
+			sql_find_subtype(&bt, "boolean", 0, 0);
+			le = rel_check_type(sql, &bt, rel, le, type_equal);
+			if (!le)
+				return NULL;
+			re = exp_atom_bool(sql->sa, 1);
+			le = exp_compare(sql->sa, le, re, cmp_equal);
+			return rel_select(sql->sa, rel, le);
+		} else {
+			sq = rel_crossproduct(sql->sa, rel, sq, (f==sql_sel)?op_left:op_join);
+		}
+		return sq;
+	}
 	case SQL_DEFAULT:
 		return sql_error(sql, 02, SQLSTATE(42000) "DEFAULT keyword not allowed outside insert and update statements");
 	default: {
@@ -5068,20 +5109,8 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 			return NULL;
 		if (ek.card <= card_set && is_project(r->op) && list_length(r->exps) > 1) 
 			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: subquery must return only one column");
-		if (list_length(r->exps) == 1) { /* for now don't rename multi attribute results */
-			sql_exp *e = lastexp(r);
-			if (!has_label(e))
-				exp_label(sql->sa, e, ++sql->label);
-			if (ek.card < card_set && r->card > CARD_ATOM) {
-				sql_subtype *t = exp_subtype(e); /* parameters don't have a type defined, for those use 'void' one */
-				sql_subfunc *zero_or_one = sql_bind_func(sql->sa, sql->session->schema, "zero_or_one", t ? t : sql_bind_localtype("void"), NULL, F_AGGR);
-
-				e = exp_ref(sql->sa, e);
-				e = exp_aggr1(sql->sa, e, zero_or_one, 0, 0, CARD_ATOM, has_nil(e));
-				r = rel_groupby(sql, r, NULL);
-				(void)rel_groupby_add_aggr(sql, r, e);
-			}
-		}
+		if (list_length(r->exps) == 1) /* for now don't rename multi attribute results */
+			r = rel_zero_or_one(sql, r, ek);
 		return exp_rel(sql, r);
 	}
 	case SQL_TABLE: {

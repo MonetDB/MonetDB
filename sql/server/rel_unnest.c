@@ -1222,6 +1222,7 @@ push_up_table(mvc *sql, sql_rel *rel, list *ad)
 	(void)sql;
 	if (rel && (is_join(rel->op) || is_semi(rel->op)) && is_dependent(rel)) {
 		sql_rel *d = rel->l, *tf = rel->r;
+		sql_exp *id = NULL;
 
 		/* push d into function */
 		if (d && is_distinct_set(sql, d, ad) && tf && is_base(tf->op)) {
@@ -1230,14 +1231,35 @@ push_up_table(mvc *sql, sql_rel *rel, list *ad)
 
 				assert(tf->flag == TABLE_FROM_RELATION || !l->l);
 				if (l->l) {
+					sql_exp *tfe = tf->r;
+					list *ops = tfe->l;
+					rel->l = d = rel_add_identity(sql, d, &id);
+					id = exp_ref(sql->sa, id);
 					l = tf->l = rel_crossproduct(sql->sa, rel_dup(d), l, op_join);
 					set_dependent(l);
 					tf->l = rel_unnest_dependent(sql, l);
+					list_append(ops, id);
+					id = exp_ref(sql->sa, id);
 				} else {
 					l->l = rel_dup(d);
 				}
 			} else {
 				tf->l = rel_dup(d);
+			}
+			/* we should add the identity in the resulting projection list */
+			if (id) {
+				sql_exp *ne = exp_copy(sql, id);
+
+				ne = exp_label(sql->sa, ne, ++sql->label);
+				ne = exp_ref(sql->sa, ne);
+				list_prepend(tf->exps, ne);
+				ne = exp_ref(sql->sa, ne);
+
+				ne = exp_compare(sql->sa, id, ne, cmp_equal);
+				//set_semantics(e);
+				if (!rel->exps)
+					rel->exps = sa_list(sql->sa);
+				list_append(rel->exps, ne);
 			}
 			reset_dependent(rel);
 			return rel;
@@ -2473,7 +2495,7 @@ rewrite_remove_xp_project(mvc *sql, sql_rel *rel, int* changes)
 	if (rel->op == op_join && list_empty(rel->exps)) {
 		sql_rel *r = rel->r;
 
-		if (is_simple_project(r->op) && r->l) {
+		if (is_simple_project(r->op) && r->l && !project_unsafe(r, 1)) {
 			sql_rel *rl = r->l;
 
 			if (is_simple_project(rl->op) && !rl->l && list_length(rl->exps) == 1) {

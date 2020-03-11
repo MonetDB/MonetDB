@@ -5553,3 +5553,123 @@ bailout:
 	}
 	return msg;
 }
+
+/* input id,row-input-values 
+ * for each id call function(with row-input-values) return table
+ * return for each id the table, ie id (*length of table) and table results
+ */
+str
+SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int arg = pci->retc;
+	str mod, fcn, ret = MAL_SUCCEED;
+	InstrPtr npci;
+
+	mod = *getArgReference_str(stk, pci, arg++);
+	fcn = *getArgReference_str(stk, pci, arg++);
+	npci = newStmt(mb, mod, fcn);
+
+	for (int i = 1; i < pci->retc; i++) {
+		int type = getArgType(mb, pci, i);
+
+		if (i==1)
+			getArg(npci, 0) = newTmpVariable(mb, type);
+		else
+			npci = pushReturn(mb, npci, newTmpVariable(mb, type));
+	}
+	for (int i = pci->retc+2+1; i < pci->argc; i++) {
+		int type = getBatType(getArgType(mb, pci, i));
+
+		npci = pushNil(mb, npci, type);
+	}
+	/* check program to get the proper malblk */
+	if (chkInstruction(cntxt->usermodule, mb, npci))
+		return "ERORROR";
+
+	if (npci) {
+		BAT **res; 
+		BAT **input; 
+		BATiter *bi;
+		BUN cnt = 0;
+		int nrinput = pci->argc - 2 - pci->retc;
+
+		input = GDKmalloc(sizeof(BAT*) * nrinput);
+		bi = GDKmalloc(sizeof(BATiter) * nrinput);
+		assert(nrinput == pci->retc);
+		for (int i = 0, j = pci->retc+2; j < pci->argc; i++, j++) {
+			bat *b = getArgReference_bat(stk, pci, j);
+			input[i] = BATdescriptor(*b); 
+			bi[i] = bat_iterator(input[i]);
+			cnt = BATcount(input[i]); 
+		}
+
+		/* create result bats */
+		res = GDKmalloc(sizeof(BAT*) * pci->retc);
+		for (int i = 0; i<pci->retc; i++) {
+			int type = getArgType(mb, pci, i);
+
+			res[i] = COLnew(0, getBatType(type), cnt, TRANSIENT);
+		}
+
+		MalBlkPtr nmb = copyMalBlk(npci->blk);
+		MalStkPtr env = prepareMALstack(nmb, nmb->vsize); /* needed for result */
+		
+		InstrPtr q = getInstrPtr(nmb, 0);
+
+		for(BUN cur = 0; cur<cnt && !ret; cur++ ) {
+			MalStkPtr nstk = prepareMALstack(nmb, nmb->vsize);
+			int i,ii;
+
+			/* copy (input) arguments onto destination stack, skipping rowid col */
+			for (i = 1, ii = q->retc; ii < q->argc; ii++) {
+				ValPtr lhs = &nstk->stk[q->argv[ii]];
+				ptr rhs = (ptr)BUNtail(bi[i], cur);
+
+				assert(lhs->vtype != TYPE_bat);
+				if (VALset(lhs, input[i]->ttype, rhs) == NULL) {
+					ret = createException(MAL, "mal.interpreter", MAL_MALLOC_FAIL);
+					break;
+				}
+			}
+			if (ret == MAL_SUCCEED && ii == q->argc) {
+				BAT *fres = NULL;
+				BUN ccnt = 0;
+				ret = runMALsequence(cntxt, nmb, 1, nmb->stop, nstk, env /* copy result in nstk first instruction*/, q); 
+
+				/* insert into result */
+				fres = BATdescriptor(env->stk[q->argv[0]].val.bval);
+				ccnt = BATcount(fres);
+				BAT *p = NULL;
+
+				if (BATappend(res[0], p = BATconstant(fres->hseqbase, res[0]->ttype, (ptr)BUNtail(bi[0], cur), ccnt, 0), NULL, FALSE) != GDK_SUCCEED)
+					ret = createException(MAL, "mal.interpreter", MAL_MALLOC_FAIL);
+				BBPunfix(p->batCacheid);
+				BBPunfix(fres->batCacheid);
+
+				i=1;
+				for (ii = 0; i < pci->retc && !ret; i++) {
+					BAT *b = BATdescriptor(env->stk[q->argv[ii]].val.bval);
+					if (BATappend(res[i], b, NULL, FALSE) != GDK_SUCCEED)
+						ret = createException(MAL, "mal.interpreter", MAL_MALLOC_FAIL);
+					BBPrelease(b->batCacheid); /* release ref from env stack */
+					BBPunfix(b->batCacheid);   /* free pointer */
+				}
+			}
+			GDKfree(nstk);
+		}
+		GDKfree(env);
+		freeMalBlk(nmb);
+		for (int i = 0; i<pci->retc; i++) {
+			bat *b = getArgReference_bat(stk, pci, i);
+			*b = res[i]->batCacheid;
+			BBPkeepref(*b);
+		}
+		GDKfree(res);
+		for (int i = 0; i<nrinput; i++)
+			BBPunfix(input[i]->batCacheid);
+		GDKfree(input);
+		GDKfree(bi);
+	}
+	return ret;
+}
+
