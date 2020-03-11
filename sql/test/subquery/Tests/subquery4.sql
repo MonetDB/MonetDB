@@ -97,6 +97,11 @@ SELECT i FROM integers WHERE (SELECT COUNT(i) OVER ()) = 1;
 	-- 2
 	-- 3
 
+SELECT
+	(SELECT MAX(i2.i) FROM (SELECT MIN(i1.i)) AS i2(i))
+FROM integers i1;
+	-- 1
+
 UPDATE another_T SET col1 = MIN(col1); --error, aggregates not allowed in update set clause
 UPDATE another_T SET col2 = 1 WHERE col1 = SUM(col2); --error, aggregates not allowed in update set clause
 UPDATE another_T SET col3 = (SELECT MAX(col5)); --error, aggregates not allowed in update set clause
