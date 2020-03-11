@@ -3036,6 +3036,24 @@ stmt_Nop(backend *be, stmt *ops, sql_subfunc *f)
 }
 
 stmt *
+stmt_direct_func(backend *be, InstrPtr q)
+{
+	if (q) {
+		stmt *s = stmt_create(be->mvc->sa, st_func);
+		if(!s) {
+			freeInstruction(q);
+			return NULL;
+		}
+		s->flag = op_union;
+		s->nrcols = 3;
+		s->nr = getDestVar(q);
+		s->q = q;
+		return s;
+	}
+	return NULL;
+}
+
+stmt *
 stmt_func(backend *be, stmt *ops, const char *name, sql_rel *rel, int f_union)
 {
 	MalBlkPtr mb = be->mb;

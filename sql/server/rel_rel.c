@@ -16,6 +16,30 @@
 #include "sql_mvc.h"
 
 
+/* some projections results are order dependend (row_number etc) */
+int 
+project_unsafe(sql_rel *rel, int allow_identity)
+{
+	sql_rel *sub = rel->l;
+	node *n;
+
+	if (need_distinct(rel) || rel->r /* order by */)
+		return 1;
+	if (!rel->exps)
+		return 0;
+	/* projects without sub and projects around ddl's cannot be changed */
+	if (!sub || (sub && sub->op == op_ddl))
+		return 1;
+	for(n = rel->exps->h; n; n = n->next) {
+		sql_exp *e = n->data;
+
+		/* aggr func in project ! */
+		if (exp_unsafe(e, allow_identity))
+			return 1;
+	}
+	return 0;
+}
+
 /* we don't name relations directly, but sometimes we need the relation
    name. So we look it up in the first expression
 
@@ -876,6 +900,7 @@ rel_groupby(mvc *sql, sql_rel *l, list *groupbyexps )
 	rel->exps = aggrs;
 	rel->nrcols = l->nrcols;
 	rel->op = op_groupby;
+	rel->grouped = 1;
 	return rel;
 }
 
@@ -1565,7 +1590,7 @@ exps_deps(mvc *sql, list *exps, list *refs, list *l)
 }
 
 static int
-id_cmp(int *id1, int *id2)
+id_cmp(sqlid *id1, sqlid *id2)
 {
 	if (*id1 == *id2)
 		return 0;
@@ -1573,7 +1598,7 @@ id_cmp(int *id1, int *id2)
 }
 
 static list *
-cond_append(list *l, int *id)
+cond_append(list *l, sqlid *id)
 {
 	if (*id >= FUNC_OIDS && !list_find(l, id, (fcmp) &id_cmp))
 		 list_append(l, id);

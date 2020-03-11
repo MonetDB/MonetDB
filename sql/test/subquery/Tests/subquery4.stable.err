@@ -36,7 +36,17 @@ QUERY = SELECT
         FROM integers i1; --error, subquery must return only one column
 ERROR = !SELECT: subquery must return only one column
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-99553/.s.monetdb.37320
+MAPI  = (monetdb) /var/tmp/mtest-675878/.s.monetdb.32460
+QUERY = SELECT i FROM integers i1 ORDER BY (SELECT 1 UNION ALL SELECT 2); --error, more than one row returned by a subquery used as an expression
+ERROR = !Cardinality violation, scalar value expected
+CODE  = 21000
+MAPI  = (monetdb) /var/tmp/mtest-675878/.s.monetdb.32460
+QUERY = SELECT
+        	(SELECT 1 UNION ALL SELECT 2)
+        FROM integers i1; --error, more than one row returned by a subquery used as an expression
+ERROR = !Cardinality violation, scalar value expected
+CODE  = 21000
+MAPI  = (monetdb) /var/tmp/mtest-217129/.s.monetdb.37090
 QUERY = SELECT
         	(SELECT i2.i FROM evilfunction(MIN(1)) as i2(i))
         FROM integers i1; -- error, aggregate functions are not allowed in functions in FROM
@@ -54,7 +64,23 @@ QUERY = SELECT
         FROM integers i1; --error, more than one row returned by a subquery used as an expression
 ERROR = !Cardinality violation, scalar value expected
 CODE  = 21000
-MAPI  = (monetdb) /var/tmp/mtest-448822/.s.monetdb.39899
+MAPI  = (monetdb) /var/tmp/mtest-675878/.s.monetdb.32460
+QUERY = SELECT i FROM integers WHERE (SELECT 1 UNION ALL SELECT 2); --error, more than one row returned by a subquery used as an expression
+ERROR = !Cardinality violation, scalar value expected
+CODE  = 21000
+MAPI  = (monetdb) /var/tmp/mtest-675878/.s.monetdb.32460
+QUERY = SELECT i FROM integers WHERE (SELECT true UNION ALL SELECT false); --error, more than one row returned by a subquery used as an expression
+ERROR = !Cardinality violation, scalar value expected
+CODE  = 21000
+MAPI  = (monetdb) /var/tmp/mtest-675878/.s.monetdb.32460
+QUERY = SELECT i FROM integers WHERE (SELECT true, false); --error, subquery must return only one column
+ERROR = !SELECT: subquery must return only one column
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-675878/.s.monetdb.32460
+QUERY = SELECT i FROM integers WHERE (SELECT true, false UNION ALL SELECT false, true); --error, subquery must return only one column
+ERROR = !SELECT: subquery must return only one column
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-6744/.s.monetdb.35025
 QUERY = UPDATE another_T SET col1 = MIN(col1); --error, aggregates not allowed in update set clause
 ERROR = !MIN: aggregate functions not allowed in SET clause (use subquery)
 CODE  = 42000
@@ -114,7 +140,31 @@ MAPI  = (monetdb) /var/tmp/mtest-234504/.s.monetdb.39561
 QUERY = DELETE FROM another_T WHERE col8 = (SELECT MAX(col6 + ColID) OVER () FROM tbl_ProductSales); --error, more than one row returned by a subquery used as an expression
 ERROR = !zero_or_one: cardinality violation, scalar expression expected
 CODE  = M0M29
-MAPI  = (monetdb) /var/tmp/mtest-60261/.s.monetdb.38639
+MAPI  = (monetdb) /var/tmp/mtest-204362/.s.monetdb.35709
+QUERY = UPDATE another_T SET col5 = (SELECT 1 UNION ALL SELECT 2); --error, more than one row returned by a subquery used as an expression
+ERROR = !Cardinality violation, scalar value expected
+CODE  = 21000
+MAPI  = (monetdb) /var/tmp/mtest-204362/.s.monetdb.35709
+QUERY = UPDATE another_T SET col5 = 1 WHERE col5 = (SELECT 1 UNION ALL SELECT 2); --error, more than one row returned by a subquery used as an expression
+ERROR = !Cardinality violation, scalar value expected
+CODE  = 21000
+MAPI  = (monetdb) /var/tmp/mtest-204362/.s.monetdb.35709
+QUERY = DELETE FROM another_T WHERE col1 = (SELECT 1 UNION ALL SELECT 2); --error, more than one row returned by a subquery used as an expression
+ERROR = !Cardinality violation, scalar value expected
+CODE  = 21000
+MAPI  = (monetdb) /var/tmp/mtest-204362/.s.monetdb.35709
+QUERY = INSERT INTO another_T VALUES ((SELECT 1 UNION ALL SELECT 2),2,3,4,5,6,7,8); --error, more than one row returned by a subquery used as an expression
+ERROR = !Cardinality violation, scalar value expected
+CODE  = 21000
+MAPI  = (monetdb) /var/tmp/mtest-450395/.s.monetdb.35919
+QUERY = UPDATE another_T SET (col7, col8) = (SELECT 1 UNION ALL SELECT 2); --error, number of columns does not match number of values
+ERROR = !UPDATE: The number of specified columns between the SET clause and the right side don't match (2 != 1)
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-450395/.s.monetdb.35919
+QUERY = UPDATE another_T SET (col7, col8) = (SELECT 1,2,3); --error, number of columns does not match number of values
+ERROR = !UPDATE: The number of specified columns between the SET clause and the right side don't match (2 != 3)
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-450395/.s.monetdb.35919
 QUERY = SET x = MAX(1) over (); --error, not allowed
 ERROR = !MAX: window function 'max' not allowed in SET clause (use subquery)
 CODE  = 42000
