@@ -150,6 +150,8 @@ INSERT INTO another_T VALUES ((SELECT 1 UNION ALL SELECT 2),2,3,4,5,6,7,8); --er
 --UPDATE another_T SET (col7, col8) = (SELECT 1,2 UNION ALL SELECT 1,2); --error, more than one row returned by a subquery used as an expression
 UPDATE another_T SET (col7, col8) = (SELECT 1 UNION ALL SELECT 2); --error, number of columns does not match number of values
 UPDATE another_T SET (col7, col8) = (SELECT 1,2,3); --error, number of columns does not match number of values
+UPDATE another_T SET col5 = 1, col5 = 6; --error, multiple assignments to same column "col5"
+UPDATE another_T SET (col5, col6) = ((select 1,2)), col5 = 6; --error, multiple assignments to same column "col5"
 
 DECLARE x int;
 SET x = MAX(1) over (); --error, not allowed
