@@ -17,7 +17,7 @@ extern sql_rel *rel_selects(sql_query *query, symbol *sym);
 extern sql_rel *schema_selects(sql_query *query, sql_schema *s, symbol *sym);
 extern sql_rel * rel_subquery(sql_query *query, sql_rel *rel, symbol *sq, exp_kind ek);
 extern sql_rel * rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f);
-extern sql_exp * rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f);
+extern sql_exp * rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_kind ek);
 
 extern sql_exp *rel_column_exp(sql_query *query, sql_rel **rel, symbol *column_e, int f);
 extern sql_exp * rel_value_exp(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek);

@@ -449,7 +449,8 @@ column_option(
 		char *err = NULL, *r;
 
 		if (sym->token == SQL_COLUMN || sym->token == SQL_IDENT) {
-			sql_exp *e = rel_logical_value_exp(query, NULL, sym, sql_sel);
+		        exp_kind ek = {type_value, card_value, FALSE};
+			sql_exp *e = rel_logical_value_exp(query, NULL, sym, sql_sel, ek);
 
 			if (e && is_atom(e->type)) {
 				atom *a = exp_value(sql, e, sql->args, sql->argc);

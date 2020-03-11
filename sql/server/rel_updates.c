@@ -977,31 +977,19 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 					return sql_error(sql, 02, SQLSTATE(42000) "%s: column '%s' has no valid default value", action, col->base.name);
 				}
 			} else if (single) {
-				v = rel_value_exp(query, &rel_val, a, sql_sel | sql_update_set, ek);
+				v = rel_value_exp(query, &r, a, sql_sel | sql_update_set, ek);
 				outer = 1;
 			} else {
 				rel_val = rel_subquery(query, NULL, a, ek);
 			}
-			if ((single && !v) || (!single && !rel_val)) {
+			if (!single && !rel_val && r) {
+				outer = 1;
 				sql->errstr[0] = 0;
 				sql->session->status = status;
-				assert(!rel_val);
-				outer = 1;
-				if (single) {
-					v = rel_value_exp(query, &r, a, sql_sel | sql_update_set, ek);
-				} else if (!rel_val && r) {
-					query_push_outer(query, r, sql_sel | sql_update_set);
-					rel_val = rel_subquery(query, NULL, a, ek);
-					r = query_pop_outer(query);
-					if (/* DISABLES CODE */ (0) && r) {
-						list *val_exps = rel_projections(sql, r->r, NULL, 0, 1);
-
-						r = rel_project(sql->sa, r, rel_projections(sql, r, NULL, 1, 1));
-						if (r)
-							list_merge(r->exps, val_exps, (fdup)NULL);
-						reset_processed(r);
-					}
-				}
+				/* TODO put in else above */
+				query_push_outer(query, r, sql_sel);
+				rel_val = rel_subquery(query, NULL, a, ek);
+				r = query_pop_outer(query);
 			}
 			if ((single && !v) || (!single && !rel_val)) {
 				rel_destroy(r);

@@ -242,8 +242,9 @@ rel_psm_while_do( sql_query *query, sql_subtype *res, list *restypelist, dnode *
 		list *whilestmts;
 		dnode *n = w;
 		sql_rel *rel = NULL;
+	        exp_kind ek = {type_value, card_value, FALSE};
 
-		cond = rel_logical_value_exp(query, &rel, n->data.sym, sql_sel); 
+		cond = rel_logical_value_exp(query, &rel, n->data.sym, sql_sel, ek); 
 		n = n->next;
 		whilestmts = sequential_block(query, res, restypelist, n->data.lval, n->next->data.sval, is_func);
 
@@ -280,8 +281,9 @@ psm_if_then_else( sql_query *query, sql_subtype *res, list *restypelist, dnode *
 		list *ifstmts, *elsestmts;
 		dnode *n = elseif->data.sym->data.lval->h;
 		sql_rel *rel = NULL;
+	        exp_kind ek = {type_value, card_value, FALSE};
 
-		cond = rel_logical_value_exp(query, &rel, n->data.sym, sql_sel); 
+		cond = rel_logical_value_exp(query, &rel, n->data.sym, sql_sel, ek); 
 		n = n->next;
 		ifstmts = sequential_block(query, res, restypelist, n->data.lval, NULL, is_func);
 		n = n->next;
@@ -319,8 +321,9 @@ rel_psm_if_then_else( sql_query *query, sql_subtype *res, list *restypelist, dno
 		list *ifstmts, *elsestmts;
 		dnode *n = elseif;
 		sql_rel *rel = NULL;
+	        exp_kind ek = {type_value, card_value, FALSE};
 
-		cond = rel_logical_value_exp(query, &rel, n->data.sym, sql_sel); 
+		cond = rel_logical_value_exp(query, &rel, n->data.sym, sql_sel, ek); 
 		n = n->next;
 		ifstmts = sequential_block(query, res, restypelist, n->data.lval, NULL, is_func);
 		n = n->next;
@@ -421,7 +424,8 @@ rel_psm_case( sql_query *query, sql_subtype *res, list *restypelist, dnode *case
 		while(n) {
 			dnode *m = n->data.sym->data.lval->h;
 			sql_rel *rel = NULL;
-			sql_exp *cond = rel_logical_value_exp(query, &rel, m->data.sym, sql_sel);
+	        	exp_kind ek = {type_value, card_value, FALSE};
+			sql_exp *cond = rel_logical_value_exp(query, &rel, m->data.sym, sql_sel, ek);
 			list *if_stmts = NULL;
 			sql_exp *case_stmt = NULL;
 
@@ -820,6 +824,9 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 		return sql_error(sql, 02, SQLSTATE(3F000) "CREATE %s: no such schema '%s'", F, sname);
 
 	type_list = create_type_list(sql, params, 1);
+	if ((type == F_FUNC || type == F_AGGR) && sql_bind_func_(sql->sa, s, fname, type_list, (type == F_FUNC) ? F_AGGR : F_FUNC))
+		return sql_error(sql, 02, SQLSTATE(42000) "CREATE %s: there's %s with the name '%s' and the same parameters, which causes ambiguous calls", F, (type == F_FUNC) ? "an aggregate" : "a function", fname);
+
 	if ((sf = sql_bind_func_(sql->sa, s, fname, type_list, type)) != NULL && create) {
 		if (replace) {
 			sql_func *func = sf->func;

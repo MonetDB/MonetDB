@@ -70,6 +70,9 @@ select substring('abc' from 1 for null);
 select substring('abc' from null for 2);
 select substring('abc' from null for null);
 
+CREATE FUNCTION count(input INT) RETURNS INT BEGIN RETURN SELECT 1; END; --error, ambiguous, there's an aggregate named count with the same parameters
+CREATE AGGREGATE sin(input REAL) RETURNS REAL EXTERNAL NAME "mmath"."sin"; --error, ambiguous, there's a function named sin with the same parameters
+
 select length(myblob), octet_length(myblob), length(mystr), octet_length(mystr) 
 from (values (cast(null as blob), cast(null as char(32)))) as my(myblob, mystr);
 select md5(null);
