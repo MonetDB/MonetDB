@@ -14,7 +14,7 @@
 #include "gdk.h"
 #include "gdk_private.h"
 
-#define EXT(HEAP) ("t" STRINGIFY(HEAP))
+#define EXT(HEAP) "t" STRINGIFY(HEAP)
 
 #define HEAP mosaic
 #include "gdk_mosaic_templates.h"

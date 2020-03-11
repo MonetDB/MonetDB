@@ -46,7 +46,7 @@ CONCAT3(MOS_, HEAP, _sync)(void *arg)
 					failed = ""; /* not failed */
 				}
 			}
-			TRC_DEBUG(ACCELERATOR,   STRINGIFY(CONCAT3(MOS_, HEAP, _sync)) "(%s): " STRINGIFY(HEAP) " index persisted"
+			TRC_DEBUG(ACCELERATOR, "#" STRINGIFY(CONCAT3(MOS_, HEAP, _sync)) "(%s): " STRINGIFY(HEAP) " index persisted"
 				  " (" LLFMT " usec)%s\n",
 				  BATgetId(b), GDKusec() - t0, failed);
 		}
@@ -65,10 +65,12 @@ CONCAT3(create_, HEAP, _heap)(BAT *b, BUN cap)
 	Heap *m;
 	const char *nme;
 
+
+	const char* ext = "." EXT(HEAP);
 	nme = GDKinmemory() ? ":inmemory" : BBP_physical(b->batCacheid);
 	if ((m = GDKzalloc(sizeof(Heap))) == NULL ||
 	    (m->farmid = BBPselectfarm(b->batRole, b->ttype, mosaicheap)) < 0 ||
-		sprintf(m->filename, "%s.%s", nme, EXT(HEAP)) >= (int) sizeof(m->filename) ||
+		strconcat_len(m->filename, sizeof(m->filename), nme, ext, NULL) >= sizeof(m->filename) ||
 	    HEAPalloc(m, cap, Tsize(b)) != GDK_SUCCEED) {
 		GDKfree(m);
 		return NULL;
@@ -93,7 +95,7 @@ CONCAT2(persist_, HEAP)(BAT *b)
 				     MT_THR_DETACHED, name) < 0)
 			BBPunfix(b->batCacheid);
 	} else
-		TRC_DEBUG(ACCELERATOR, STRINGIFY(CONCAT2(persist, HEAP)) "(" ALGOBATFMT "): NOT persisting " STRINGIFY(HEAP) " index\n", ALGOBATPAR(b));
+		TRC_DEBUG(ACCELERATOR, "#" STRINGIFY(CONCAT2(persist, HEAP)) "(" ALGOBATFMT "): NOT persisting " STRINGIFY(HEAP) " index\n", ALGOBATPAR(b));
 #else
 	(void) b;
 #endif
@@ -170,15 +172,14 @@ CONCAT2(MOScheck_, HEAP)(BAT *b)
 	if (b->CONCAT2(t, HEAP) == (Heap *) 1) {
 		Heap *hp;
 		const char *nme = BBP_physical(b->batCacheid);
-		const char *ext = EXT(HEAP);
 		int fd;
 
 		b->CONCAT2(t, HEAP) = NULL;
 		if ((hp = GDKzalloc(sizeof(*hp))) != NULL &&
 		    (hp->farmid = BBPselectfarm(b->batRole, b->ttype, mosaicheap)) >= 0 ){
-			
 
-			sprintf(hp->filename, "%s.%s", nme, ext);
+			const char* ext = "." EXT(HEAP);
+			strconcat_len(hp->filename, sizeof(hp->filename), nme, ext, NULL);
 
 			/* check whether a persisted mosaic-specific heap can be found */
 			if ((fd = GDKfdlocate(hp->farmid, nme, "rb+", ext)) >= 0) {
@@ -195,7 +196,7 @@ CONCAT2(MOScheck_, HEAP)(BAT *b)
 				{
 					close(fd);
 					hp->parentid = b->batCacheid;
-					TRC_DEBUG(ALGO, "#BATcheckmosaic %s: reusing persisted heap %d\n", ext, b->batCacheid);
+					TRC_DEBUG(ALGO, "#" STRINGIFY(CONCAT2(MOScheck_, HEAP)) " %s: reusing persisted heap %d\n", ext, b->batCacheid);
 					b->CONCAT2(t, HEAP) = hp;
 					return 1;
 				}
