@@ -2700,6 +2700,8 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 		sql_rel *sq = rel_setquery(query, sc);
 		if (!sq)
 			return NULL;
+		if (ek.card <= card_set && is_project(sq->op) && list_length(sq->exps) > 1)
+ 			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: subquery must return only one column");
 		if (!rel)
 			return sq;
 		if (is_sql_where(f)) {
