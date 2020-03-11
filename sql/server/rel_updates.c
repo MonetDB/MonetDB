@@ -959,8 +959,7 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 
 		a = assignment->h->data.sym;
 		if (a) {
-			int status = sql->session->status;
-			exp_kind ek = {type_value, (single)?card_column:card_relation, FALSE};
+			exp_kind ek = { (single)?type_value:type_relation, card_column, FALSE};
 
 			if (single && a->token == SQL_DEFAULT) {
 				char *colname = assignment->h->next->data.sval;
@@ -978,16 +977,12 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 				v = rel_value_exp(query, &r, a, sql_sel | sql_update_set, ek);
 				outer = 1;
 			} else {
+				if (r)
+					query_push_outer(query, r, sql_sel);
 				rel_val = rel_subquery(query, NULL, a, ek);
-			}
-			if (!single && !rel_val && r) {
+				if (r)
+					r = query_pop_outer(query);
 				outer = 1;
-				sql->errstr[0] = 0;
-				sql->session->status = status;
-				/* TODO put in else above */
-				query_push_outer(query, r, sql_sel);
-				rel_val = rel_subquery(query, NULL, a, ek);
-				r = query_pop_outer(query);
 			}
 			if ((single && !v) || (!single && !rel_val))
 				return NULL;

@@ -163,17 +163,27 @@ rel_lastexp(mvc *sql, sql_rel *rel )
 static sql_rel *
 rel_zero_or_one(mvc *sql, sql_rel *rel, exp_kind ek)
 {
-	sql_exp *e = lastexp(rel);
-	if (!has_label(e)) 
-		exp_label(sql->sa, e, ++sql->label);
+	if (is_topn(rel->op))
+		rel = rel_project(sql->sa, rel, rel_projections(sql, rel, NULL, 1, 0));
 	if (ek.card < card_set && rel->card > CARD_ATOM) {
-		sql_subtype *t = exp_subtype(e); /* parameters don't have a type defined, for those use 'void' one */
-		sql_subfunc *zero_or_one = sql_bind_func(sql->sa, sql->session->schema, "zero_or_one", t ? t : sql_bind_localtype("void"), NULL, F_AGGR);
-
-		e = exp_ref(sql->sa, e);
-		e = exp_aggr1(sql->sa, e, zero_or_one, 0, 0, CARD_ATOM, has_nil(e));
+		assert (is_simple_project(rel->op) || is_set(rel->op));
+		list *exps = rel->exps;
 		rel = rel_groupby(sql, rel, NULL);
-		(void)rel_groupby_add_aggr(sql, rel, e);
+		for(node *n = exps->h; n; n=n->next) {
+			sql_exp *e = n->data;
+			if (!has_label(e))
+				exp_label(sql->sa, e, ++sql->label);
+			sql_subtype *t = exp_subtype(e); /* parameters don't have a type defined, for those use 'void' one */
+			sql_subfunc *zero_or_one = sql_bind_func(sql->sa, sql->session->schema, "zero_or_one", t ? t : sql_bind_localtype("void"), NULL, F_AGGR);
+
+			e = exp_ref(sql->sa, e);
+			e = exp_aggr1(sql->sa, e, zero_or_one, 0, 0, CARD_ATOM, has_nil(e));
+			(void)rel_groupby_add_aggr(sql, rel, e);
+		}
+	} else {
+		sql_exp *e = lastexp(rel);
+		if (!has_label(e))
+			exp_label(sql->sa, e, ++sql->label);
 	}
 	return rel;
 }
@@ -5897,6 +5907,9 @@ rel_subquery(sql_query *query, sql_rel *rel, symbol *sq, exp_kind ek)
 
 	rel = rel_query(query, rel, sq, toplevel, ek);
 	stack_pop_frame(sql);
+
+	if (rel && ek.type == type_relation && ek.card < card_set && rel->card >= CARD_MULTI)
+		return rel_zero_or_one(sql, rel, ek);
 	return rel;
 }
 
