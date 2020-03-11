@@ -1688,6 +1688,7 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 				return NULL;
 		}
 
+		assert(f);
 		if (f->func->res && list_length(f->func->res) + 1 == list_length(rel->exps) && !f->func->varres) {
 			/* add inputs in correct order ie loop through args of f and pass column */
 			list *exps = op->l;
@@ -1698,6 +1699,8 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 
 					/* find column */
 					stmt *s = exp_bin(be, e, sub, NULL, NULL, NULL, NULL, NULL);
+					if (!s)
+						return NULL;
 					if (en->next)
 						append(ops, s);
 					else /* last added exp is the ids (todo use name base lookup !!) */
@@ -1706,7 +1709,7 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 			}
 		} else {
 			psub = exp_bin(be, op, sub, NULL, NULL, NULL, NULL, NULL); /* table function */
-			if (!f || !psub) { 
+			if (!psub) { 
 				assert(sql->session->status == -10); /* Stack overflow errors shouldn't terminate the server */
 				return NULL;
 			}
