@@ -2596,7 +2596,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 			     rb != HASHnil(hsh);
 			     rb = HASHgetlink(hsh, rb)) {
 				ro = canditer_idx(rci, rb);
-				if ((*cmp)(nil, BUNtail(ri, ro - r->hseqbase)) != 0) {
+				if ((*cmp)(nil, BUNtail(ri, ro - r->hseqbase)) == 0) {
 					HEAPfree(&hsh->heaplink, true);
 					HEAPfree(&hsh->heapbckt, true);
 					GDKfree(hsh);
