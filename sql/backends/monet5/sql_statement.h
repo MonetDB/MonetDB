@@ -116,8 +116,9 @@ typedef struct stmt {
 	char aggr;		/* aggregated */
 	char partition;		/* selected as mitosis candidate */
 
-	int flag;
+	struct stmt *cand;	/* optional candidate list */
 
+	int flag;
 	int nr;			/* variable assignment */
 
 	const char *tname;
@@ -167,7 +168,7 @@ extern stmt *stmt_atom_lng(backend *be, lng i);
 extern stmt *stmt_atom_lng_nil(backend *be);
 extern stmt *stmt_bool(backend *be, int b);
 
-extern stmt *stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, int anti);
+extern stmt *stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, int anti, int is_semantics);
 /* cmp
        0 ==   l <  x <  h
        1 ==   l <  x <= h
@@ -182,11 +183,11 @@ extern stmt *stmt_tdiff(backend *be, stmt *op1, stmt *op2);
 extern stmt *stmt_tdiff2(backend *be, stmt *op1, stmt *op2);
 extern stmt *stmt_tinter(backend *be, stmt *op1, stmt *op2);
 
-extern stmt *stmt_join(backend *be, stmt *op1, stmt *op2, int anti, comp_type cmptype);
+extern stmt *stmt_join(backend *be, stmt *op1, stmt *op2, int anti, comp_type cmptype, int is_semantics);
 extern stmt *stmt_join2(backend *be, stmt *l, stmt *ra, stmt *rb, int cmp, int anti, int swapped);
 /* generic join operator, with a left and right statement list */
 extern stmt *stmt_genjoin(backend *be, stmt *l, stmt *r, sql_subfunc *op, int anti, int swapped);
-extern stmt *stmt_semijoin(backend *be, stmt *op1, stmt *op2);
+extern stmt *stmt_semijoin(backend *be, stmt *op1, stmt *op2, int is_semantics);
 
 extern stmt *stmt_project(backend *be, stmt *op1, stmt *op2);
 extern stmt *stmt_project_delta(backend *be, stmt *col, stmt *upd, stmt *ins);
@@ -222,6 +223,7 @@ extern stmt *stmt_unop(backend *be, stmt *op1, sql_subfunc *op);
 extern stmt *stmt_binop(backend *be, stmt *op1, stmt *op2, sql_subfunc *op);
 extern stmt *stmt_Nop(backend *be, stmt *ops, sql_subfunc *op);
 extern stmt *stmt_func(backend *be, stmt *ops, const char *name, sql_rel *imp, int f_union);
+extern stmt *stmt_direct_func(backend *be, InstrPtr q);
 extern stmt *stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int reduce, int no_nil, int nil_if_empty);
 
 extern stmt *stmt_alias(backend *be, stmt *op1, const char *tname, const char *name);

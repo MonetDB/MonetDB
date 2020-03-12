@@ -44,12 +44,12 @@ stdout of test 'caching_stats_bug.6374` in directory 'sql/test/BugTracker-2017` 
 % .plan # table_name
 % rel # name
 % clob # type
-% 46 # length
+% 50 # length
 project (
 | group by (
 | | select (
 | | | table(sys.sub2) [ "mt"."i" ] COUNT 
-| | ) [ int "5" <= "mt"."i" < int "100" ]
+| | ) [ int "5" <= "mt"."i" < int "100" BETWEEN  ]
 | ) [  ] [ sys.count() NOT NULL as "%1"."%1" ]
 ) [ "%1"."%1" NOT NULL ]
 #alter table sub1 set read write;
@@ -74,14 +74,14 @@ project (
 | | | | project (
 | | | | | select (
 | | | | | | table(sys.sub1) [ "sub1"."i" as "mt"."i" ] COUNT 
-| | | | | ) [ int "5" <= "mt"."i" < int "100" ]
+| | | | | ) [ int "5" <= "mt"."i" < int "100" BETWEEN  ]
 | | | | ) [ "mt"."i" ]
 | | | ) [  ] [ sys.count() NOT NULL as "%1"."%1" ],
 | | | group by (
 | | | | project (
 | | | | | select (
 | | | | | | table(sys.sub2) [ "sub2"."i" as "mt"."i" ] COUNT 
-| | | | | ) [ int "5" <= "mt"."i" < int "100" ]
+| | | | | ) [ int "5" <= "mt"."i" < int "100" BETWEEN  ]
 | | | | ) [ "mt"."i" ]
 | | | ) [  ] [ sys.count() NOT NULL as "%1"."%1" ]
 | | ) [ "%1"."%1" ]

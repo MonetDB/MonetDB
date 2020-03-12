@@ -346,6 +346,7 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 		*ci = (struct canditer) {
 			.tpe = cand_dense,
 			.seq = b->hseqbase,
+			.hseq = b->hseqbase,
 			.ncand = BATcount(b),
 		};
 		return ci->ncand;
@@ -370,6 +371,7 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 
 	*ci = (struct canditer) {
 		.seq = s->tseqbase,
+		.hseq = s->hseqbase,
 		.s = s,
 	};
 
@@ -517,6 +519,7 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 		break;
 	}
 	ci->ncand = cnt;
+	ci->hseq += ci->offset;
 	return cnt;
 }
 
@@ -895,8 +898,8 @@ BATnegcands(BAT *dense_cands, BAT *odels)
 	dense_cands->tvheap = dels;
 	BATsetcount(dense_cands, dense_cands->batCount - (hi - lo));
 	TRC_DEBUG(ALGO, "BATnegcands(cands=" ALGOBATFMT ","
-			  	"dels=" ALGOBATFMT ")\n",
-			  	ALGOBATPAR(dense_cands),
-			  	ALGOBATPAR(odels));
+		  "dels=" ALGOBATFMT ")\n",
+		  ALGOBATPAR(dense_cands),
+		  ALGOBATPAR(odels));
     	return GDK_SUCCEED;
 }

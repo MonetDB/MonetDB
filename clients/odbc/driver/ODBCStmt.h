@@ -180,7 +180,7 @@ SQLRETURN ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type,
 		    SQLULEN row);
 SQLRETURN ODBCStore(ODBCStmt *stmt, SQLUSMALLINT param, SQLLEN offset,
 		    SQLULEN row, char **bufp, size_t *bufposp, size_t *buflenp,
-		    char *sep);
+		    const char *sep);
 SQLRETURN ODBCFreeStmt_(ODBCStmt *stmt);
 SQLRETURN ODBCInitResult(ODBCStmt *stmt);
 const char *ODBCGetTypeInfo(int concise_type, int *data_type,
@@ -198,7 +198,7 @@ SQLRETURN MNDBColAttribute(ODBCStmt *stmt,
 			   SQLUSMALLINT nFieldIdentifier,
 			   SQLPOINTER pszValue, SQLSMALLINT nValueLengthMax,
 			   SQLSMALLINT *pnValueLength, LENP_OR_POINTER_T pnValue);
-SQLRETURN MNDBExecDirect(ODBCStmt *stmt, SQLCHAR *szSqlStr,
+SQLRETURN MNDBExecDirect(ODBCStmt *stmt, const SQLCHAR *szSqlStr,
 			 SQLINTEGER nSqlStr);
 SQLRETURN MNDBExecute(ODBCStmt *stmt);
 SQLRETURN MNDBFetch(ODBCStmt *stmt, SQLUSMALLINT *RowStatusArray);
@@ -208,7 +208,7 @@ SQLRETURN MNDBFreeStmt(ODBCStmt *stmt, SQLUSMALLINT option);
 SQLRETURN MNDBGetStmtAttr(ODBCStmt *stmt, SQLINTEGER Attribute,
 			  SQLPOINTER Value, SQLINTEGER BufferLength,
 			  SQLINTEGER *StringLength);
-SQLRETURN MNDBPrepare(ODBCStmt *stmt, SQLCHAR *szSqlStr,
+SQLRETURN MNDBPrepare(ODBCStmt *stmt, const SQLCHAR *szSqlStr,
 		      SQLINTEGER nSqlStrLength);
 SQLRETURN MNDBSetStmtAttr(ODBCStmt *stmt, SQLINTEGER Attribute,
 			  SQLPOINTER Value, SQLINTEGER StringLength);

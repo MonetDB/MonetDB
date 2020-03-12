@@ -258,7 +258,7 @@ rel_properties(mvc *sql, global_props *gp, sql_rel *rel)
 	switch (rel->op) {
 	case op_basetable:
 	case op_table:
-		if (rel->op == op_table && rel->l && rel->flag != 2) 
+		if (rel->op == op_table && rel->l && rel->flag != TRIGGER_WRAPPER) 
 			rel_properties(sql, gp, rel->l);
 		break;
 	case op_join: 
@@ -1422,30 +1422,6 @@ static sql_exp *
 exp_push_down(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t) 
 {
 	return _exp_push_down(sql, e, f, t);
-}
-
-/* some projections results are order dependend (row_number etc) */
-static int 
-project_unsafe(sql_rel *rel, int allow_identity)
-{
-	sql_rel *sub = rel->l;
-	node *n;
-
-	if (need_distinct(rel) || rel->r /* order by */)
-		return 1;
-	if (!rel->exps)
-		return 0;
-	/* projects without sub and projects around ddl's cannot be changed */
-	if (!sub || (sub && sub->op == op_ddl))
-		return 1;
-	for(n = rel->exps->h; n; n = n->next) {
-		sql_exp *e = n->data;
-
-		/* aggr func in project ! */
-		if (exp_unsafe(e, allow_identity))
-			return 1;
-	}
-	return 0;
 }
 
 static int 
@@ -3931,7 +3907,7 @@ exps_merge_select_rse( mvc *sql, list *l, list *r )
 					continue;
 				mine = exp_binop(sql->sa, le->r, re->r, min);
 				maxe = exp_binop(sql->sa, le->f, re->f, max);
-				fnd = exp_compare2(sql->sa, le->l, mine, maxe, le->flag);
+				fnd = exp_compare2(sql->sa, le->l, mine, maxe, CMP_BETWEEN|le->flag);
 			}
 			if (fnd)
 				append(nexps, fnd);
@@ -6606,7 +6582,7 @@ rel_mark_used(mvc *sql, sql_rel *rel, int proj)
 	case op_basetable:
 	case op_table:
 
-		if (rel->op == op_table && rel->l && rel->flag != 2) {
+		if (rel->op == op_table && rel->l && rel->flag != TRIGGER_WRAPPER) {
 			rel_used(rel);
 			if (rel->r)
 				exp_mark_used(rel->l, rel->r, 0);
@@ -6824,7 +6800,7 @@ rel_dce_refs(mvc *sql, sql_rel *rel, list *refs)
 	case op_groupby: 
 	case op_select: 
 
-		if (rel->l && (rel->op != op_table || rel->flag != 2))
+		if (rel->l && (rel->op != op_table || rel->flag != TRIGGER_WRAPPER))
 			rel_dce_refs(sql, rel->l, refs);
 		break;
 
@@ -6876,7 +6852,7 @@ rel_dce_down(mvc *sql, sql_rel *rel, int skip_proj)
 	case op_basetable:
 	case op_table:
 
-		if (skip_proj && rel->l && rel->op == op_table && rel->flag != 2)
+		if (skip_proj && rel->l && rel->op == op_table && rel->flag != TRIGGER_WRAPPER)
 			rel->l = rel_dce_down(sql, rel->l, 0);
 		if (!skip_proj)
 			rel_dce_sub(sql, rel);
@@ -7366,9 +7342,11 @@ rel_simplify_predicates(mvc *sql, sql_rel *rel, int *changes)
 						l = args->h->data;
 						if (exp_subtype(l)) {
 							r = exp_atom(sql->sa, atom_general(sql->sa, exp_subtype(l), NULL));
-							e = exp_compare2(sql->sa, l, r, r, 3);
+							e = exp_compare(sql->sa, l, r, cmp_equal);
 							if (e && !flag)
 								set_anti(e);
+							if (e)
+								set_semantics(e);
 						}
 					} else if (!f->func->s && !strcmp(f->func->base.name, "not")) {
 						if (is_atom(r->type) && r->l) { /* direct literal */
@@ -7743,9 +7721,9 @@ exp_merge_range(sql_allocator *sa, list *exps)
 					    f->flag == cmp_lte)) 
 						continue;
 					if (!swap) 
-						ne = exp_compare2(sa, le, re, rf, compare2range(e->flag, f->flag));
+						ne = exp_compare2(sa, le, re, rf, CMP_BETWEEN|compare2range(e->flag, f->flag));
 					else
-						ne = exp_compare2(sa, le, rf, re, compare2range(f->flag, e->flag));
+						ne = exp_compare2(sa, le, rf, re, CMP_BETWEEN|compare2range(f->flag, e->flag));
 
 					list_remove_data(exps, e);
 					list_remove_data(exps, f);
@@ -7768,7 +7746,7 @@ exp_merge_range(sql_allocator *sa, list *exps)
 					comp_type ef = (comp_type) e->flag, ff = (comp_type) f->flag;
 				
 					/* both swapped ? */
-				     	if (exp_match_exp(re, rf)) {
+					if (exp_match_exp(re, rf)) {
 						t = re; 
 						re = le;
 						le = t;
@@ -7780,7 +7758,7 @@ exp_merge_range(sql_allocator *sa, list *exps)
 					}
 
 					/* is left swapped ? */
-				     	if (exp_match_exp(re, lf)) {
+					if (exp_match_exp(re, lf)) {
 						t = re; 
 						re = le;
 						le = t;
@@ -7788,14 +7766,14 @@ exp_merge_range(sql_allocator *sa, list *exps)
 					}
 
 					/* is right swapped ? */
-				     	if (exp_match_exp(le, rf)) {
+					if (exp_match_exp(le, rf)) {
 						t = rf; 
 						rf = lf;
 						lf = t;
 						ff = swap_compare(ff);
 					}
 
-				    	if (!exp_match_exp(le, lf))
+					if (!exp_match_exp(le, lf))
 						continue;
 
 					/* for now only   c1 <[=] x <[=] c2 */ 
@@ -7807,9 +7785,9 @@ exp_merge_range(sql_allocator *sa, list *exps)
 					if (lt && (ff == cmp_lt || ff == cmp_lte)) 
 						continue;
 					if (!swap) 
-						ne = exp_compare2(sa, le, re, rf, compare2range(ef, ff));
+						ne = exp_compare2(sa, le, re, rf, CMP_BETWEEN|compare2range(ef, ff));
 					else
-						ne = exp_compare2(sa, le, rf, re, compare2range(ff, ef));
+						ne = exp_compare2(sa, le, rf, re, CMP_BETWEEN|compare2range(ff, ef));
 
 					list_remove_data(exps, e);
 					list_remove_data(exps, f);
@@ -8859,11 +8837,11 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, int value_based_
 	gp = (global_props) {.cnt = {0},};
 	rel_properties(sql, &gp, rel);
 
-	TRC_DEBUG_IF(SQL_OPTIMIZER) {
+	TRC_DEBUG_IF(SQL_REWRITER) {
 		int i;
 		for (i = 0; i < ddl_maxops; i++) {
 			if (gp.cnt[i]> 0)
-				TRC_DEBUG_ENDIF(SQL_OPTIMIZER, "%s %d\n", op2string((operator_type)i), gp.cnt[i]);
+				TRC_DEBUG_ENDIF(SQL_REWRITER, "%s %d\n", op2string((operator_type)i), gp.cnt[i]);
 		}
 	}
 

@@ -271,7 +271,7 @@ SQLshutdown_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if ((msg = CLTshutdown(cntxt, mb, stk, pci)) == MAL_SUCCEED) {
 		/* administer the shutdown in the system log */
-		TRC_INFO(SQL_MVC, "Shutdown: %s\n", *getArgReference_str(stk, pci, 0));
+		TRC_INFO(SQL_TRANS, "Shutdown: %s\n", *getArgReference_str(stk, pci, 0));
 	}
 	return msg;
 }
@@ -1274,7 +1274,7 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		return MAL_SUCCEED;
 	}
-	if (sname && !strNil(sname))
+	if (!strNil(sname))
 		throw(SQL, "sql.bind", SQLSTATE(42000) "unable to find %s.%s(%s)", sname, tname, cname);
 	throw(SQL, "sql.bind", SQLSTATE(42000) "unable to find %s(%s)", tname, cname);
 }
@@ -2571,7 +2571,7 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	} else if (!onclient) {
 		if ((s = open_wastream(filename)) == NULL || mnstr_errnr(s)) {
 			msg=  createException(IO, "streams.open", SQLSTATE(42000) "could not open file '%s': %s",
-					      filename?filename:"stdout", strerror(errno));
+					      filename?filename:"stdout", GDKstrerror(errno, (char[128]){0}, 128));
 			close_stream(s);
 			goto wrapup_result_set1;
 		}
@@ -2770,7 +2770,7 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	} else if (!onclient) {
 		if ((s = open_wastream(filename)) == NULL || mnstr_errnr(s)) {
 			msg=  createException(IO, "streams.open", SQLSTATE(42000) "could not open file '%s': %s",
-					      filename?filename:"stdout", strerror(errno));
+					      filename?filename:"stdout", GDKstrerror(errno, (char[128]){0}, 128));
 			close_stream(s);
 			goto wrapup_result_set;
 		}
@@ -3069,7 +3069,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (*ssep == 0 || strNil(ssep))
 		ssep = NULL;
 
-	if (fname != NULL && strNil(fname))
+	if (strNil(fname))
 		fname = NULL;
 	if (fname == NULL) {
 		msg = mvc_import_table(cntxt, &b, be->mvc, be->mvc->scanner.rs, t, tsep, rsep, ssep, ns, sz, offset, locked, besteffort, true);
@@ -3106,13 +3106,13 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		} else {
 			ss = open_rastream(fname);
 			if (ss == NULL || mnstr_errnr(ss)) {
-				msg = createException(IO, "sql.copy_from", SQLSTATE(42000) "Cannot open file '%s': %s", fname, strerror(errno));
+				msg = createException(IO, "sql.copy_from", SQLSTATE(42000) "Cannot open file '%s': %s", fname, GDKstrerror(errno, (char[128]){0}, 128));
 				close_stream(ss);
 				return msg;
 			}
 		}
 
-		if (fixed_widths && !strNil(fixed_widths)) {
+		if (!strNil(fixed_widths)) {
 			size_t ncol = 0, current_width_entry = 0, i;
 			size_t *widths;
 			char* val_start = fixed_widths;
@@ -3546,6 +3546,10 @@ str
 second_interval_2_daytime(daytime *res, const lng *s, const int *digits)
 {
 	daytime d;
+	if (is_lng_nil(*s)) {
+		*res = daytime_nil;
+		return MAL_SUCCEED;
+	}
 	d = daytime_add_usec(daytime_create(0, 0, 0, 0), *s * 1000);
 	return daytime_2time_daytime(res, &d, digits);
 }
@@ -3565,7 +3569,7 @@ str_2time_daytimetz(daytime *res, const str *v, const int *digits, int *tz)
 	size_t len = sizeof(daytime);
 	ssize_t pos;
 
-	if (!*v || strNil(*v)) {
+	if (strNil(*v)) {
 		*res = daytime_nil;
 		return MAL_SUCCEED;
 	}
@@ -3652,7 +3656,7 @@ str_2time_timestamptz(timestamp *res, const str *v, const int *digits, int *tz)
 	size_t len = sizeof(timestamp);
 	ssize_t pos;
 
-	if (!*v || strNil(*v)) {
+	if (strNil(*v)) {
 		*res = timestamp_nil;
 		return MAL_SUCCEED;
 	}
@@ -3804,32 +3808,38 @@ str
 month_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int *ret = getArgReference_int(stk, pci, 0);
-	int k = digits2ek(*getArgReference_int(stk, pci, 2));
-	int r;
+	int k = digits2ek(*getArgReference_int(stk, pci, 2)), r = 0, isnil = 0;
 
 	(void) cntxt;
-	(void) mb;
+	*ret = int_nil;
 	switch (getArgType(mb, pci, 1)) {
 	case TYPE_bte:
 		r = stk->stk[getArg(pci, 1)].val.btval;
+		isnil = (stk->stk[getArg(pci, 1)].val.btval == bte_nil);
 		break;
 	case TYPE_sht:
 		r = stk->stk[getArg(pci, 1)].val.shval;
+		isnil = (stk->stk[getArg(pci, 1)].val.shval == sht_nil);
 		break;
 	case TYPE_int:
 		r = stk->stk[getArg(pci, 1)].val.ival;
+		isnil = (stk->stk[getArg(pci, 1)].val.ival == int_nil);
 		break;
 	case TYPE_lng:
 		r = (int) stk->stk[getArg(pci, 1)].val.lval;
+		isnil = (stk->stk[getArg(pci, 1)].val.lval == lng_nil);
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
 		r = (int) stk->stk[getArg(pci, 1)].val.hval;
+		isnil = (stk->stk[getArg(pci, 1)].val.hval == hge_nil);
 		break;
 #endif
 	default:
 		throw(ILLARG, "calc.month_interval", SQLSTATE(42000) "Illegal argument");
 	}
+	if (isnil) 
+		return MAL_SUCCEED;
 	switch (k) {
 	case iyear:
 		r *= 12;
@@ -4132,7 +4142,6 @@ sql_rt_credentials_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (hashb) BBPunfix(hashb->batCacheid);
 	return msg;
 }
-
 
 str
 sql_querylog_catalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -4445,7 +4454,6 @@ vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, str (*func) (bat
 		return MAL_SUCCEED;
 	}
 
-
 	i = 0;
 	bids[i] = 0;
 	for (o = t->columns.set->h; o; o = o->next, i++) {
@@ -4615,7 +4623,6 @@ SQLdrop_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-
 /* after an update on the optimizer catalog, we have to change
  * the internal optimizer pipe line administration
  * The minimal and default pipelines may not be changed.
@@ -4779,7 +4786,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 										cnt1 = cnt2 = 512;
 									BATloop(bn, p, q) {
 										str s = BUNtvar(bi, p);
-										if (s != NULL && !strNil(s))
+										if (!strNil(s))
 											sum += strlen(s);
 										if (--cnt1 <= 0)
 											break;
@@ -4897,7 +4904,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 											cnt1 = cnt2 = 512;
 										BATloop(bn, p, q) {
 											str s = BUNtvar(bi, p);
-											if (s != NULL && !strNil(s))
+											if (!strNil(s))
 												sum += strlen(s);
 											if (--cnt1 <= 0)
 												break;
@@ -5547,4 +5554,172 @@ bailout:
 		BBPkeepref(*col = column->batCacheid);
 	}
 	return msg;
+}
+
+/* input id,row-input-values 
+ * for each id call function(with row-input-values) return table
+ * return for each id the table, ie id (*length of table) and table results
+ */
+str
+SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int arg = pci->retc;
+	str mod, fcn, ret = MAL_SUCCEED;
+	InstrPtr npci;
+
+	mod = *getArgReference_str(stk, pci, arg++);
+	fcn = *getArgReference_str(stk, pci, arg++);
+	npci = newStmt(mb, mod, fcn);
+
+	for (int i = 1; i < pci->retc; i++) {
+		int type = getArgType(mb, pci, i);
+
+		if (i==1)
+			getArg(npci, 0) = newTmpVariable(mb, type);
+		else
+			npci = pushReturn(mb, npci, newTmpVariable(mb, type));
+	}
+	for (int i = pci->retc+2+1; i < pci->argc; i++) {
+		int type = getBatType(getArgType(mb, pci, i));
+
+		npci = pushNil(mb, npci, type);
+	}
+	/* check program to get the proper malblk */
+	if (chkInstruction(cntxt->usermodule, mb, npci)) {
+		freeInstruction(npci);
+		return createException(MAL, "sql.unionfunc", SQLSTATE(42000) PROGRAM_GENERAL);
+	}
+
+	if (npci) {
+		BAT **res = NULL, **input = NULL;
+		BATiter *bi = NULL;
+		BUN cnt = 0;
+		int nrinput = pci->argc - 2 - pci->retc;
+		MalBlkPtr nmb = NULL;
+		MalStkPtr env = NULL;
+		InstrPtr q = NULL;
+
+		if (!(input = GDKzalloc(sizeof(BAT*) * nrinput))) {
+			ret = createException(MAL, "sql.unionfunc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto finalize;
+		}
+		if (!(bi = GDKmalloc(sizeof(BATiter) * nrinput))) {
+			ret = createException(MAL, "sql.unionfunc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto finalize;
+		}
+		assert(nrinput == pci->retc);
+		for (int i = 0, j = pci->retc+2; j < pci->argc; i++, j++) {
+			bat *b = getArgReference_bat(stk, pci, j);
+			if (!(input[i] = BATdescriptor(*b))) {
+				ret = createException(MAL, "sql.unionfunc", SQLSTATE(HY005) "Cannot access column descriptor");
+				goto finalize;
+			}
+			bi[i] = bat_iterator(input[i]);
+			cnt = BATcount(input[i]); 
+		}
+
+		/* create result bats */
+		if (!(res = GDKzalloc(sizeof(BAT*) * pci->retc))) {
+			ret = createException(MAL, "sql.unionfunc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto finalize;
+		}
+		for (int i = 0; i<pci->retc; i++) {
+			int type = getArgType(mb, pci, i);
+
+			if (!(res[i] = COLnew(0, getBatType(type), cnt, TRANSIENT))) {
+				ret = createException(MAL, "sql.unionfunc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto finalize;
+			}
+		}
+
+		if (!(nmb = copyMalBlk(npci->blk))) {
+			ret = createException(MAL, "sql.unionfunc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto finalize;
+		}
+		if (!(env = prepareMALstack(nmb, nmb->vsize))) { /* needed for result */
+			ret = createException(MAL, "sql.unionfunc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto finalize;
+		}
+
+		q = getInstrPtr(nmb, 0);
+
+		for (BUN cur = 0; cur<cnt && !ret; cur++ ) {
+			MalStkPtr nstk = prepareMALstack(nmb, nmb->vsize);
+			int i,ii;
+
+			if (!nstk) { /* needed for result */
+				ret = createException(MAL, "sql.unionfunc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			} else {
+				/* copy (input) arguments onto destination stack, skipping rowid col */
+				for (i = 1, ii = q->retc; ii < q->argc && !ret; ii++) {
+					ValPtr lhs = &nstk->stk[q->argv[ii]];
+					ptr rhs = (ptr)BUNtail(bi[i], cur);
+
+					assert(lhs->vtype != TYPE_bat);
+					if (VALset(lhs, input[i]->ttype, rhs) == NULL)
+						ret = createException(MAL, "sql.unionfunc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				}
+				if (!ret && ii == q->argc) {
+					BAT *fres = NULL;
+					ret = runMALsequence(cntxt, nmb, 1, nmb->stop, nstk, env /* copy result in nstk first instruction*/, q); 
+
+					if (!ret) {
+						/* insert into result */
+						if (!(fres = BATdescriptor(env->stk[q->argv[0]].val.bval)))
+							ret = createException(MAL, "sql.unionfunc", SQLSTATE(HY005) "Cannot access column descriptor");
+						else {
+							BAT *p = BATconstant(fres->hseqbase, res[0]->ttype, (ptr)BUNtail(bi[0], cur), BATcount(fres), TRANSIENT);
+
+							if (p) {
+								if (BATappend(res[0], p, NULL, FALSE) != GDK_SUCCEED)
+									ret = createException(MAL, "sql.unionfunc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+								BBPunfix(p->batCacheid);
+							} else {
+								ret = createException(MAL, "sql.unionfunc", OPERATION_FAILED);
+							}
+							BBPunfix(fres->batCacheid);
+						}
+						i=1;
+						for (ii = 0; i < pci->retc && !ret; i++) {
+							BAT *b;
+
+							if (!(b = BATdescriptor(env->stk[q->argv[ii]].val.bval)))
+								ret = createException(MAL, "sql.unionfunc", SQLSTATE(HY005) "Cannot access column descriptor");
+							else if (BATappend(res[i], b, NULL, FALSE) != GDK_SUCCEED)
+								ret = createException(MAL, "sql.unionfunc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+							if (b) {
+								BBPrelease(b->batCacheid); /* release ref from env stack */
+								BBPunfix(b->batCacheid);   /* free pointer */
+							}
+						}
+					}
+				}
+				GDKfree(nstk);
+			}
+		}
+finalize:
+		GDKfree(env);
+		if (nmb)
+			freeMalBlk(nmb);
+		if (res)
+			for (int i = 0; i<pci->retc; i++) {
+				bat *b = getArgReference_bat(stk, pci, i);
+				if (res[i]) {
+					*b = res[i]->batCacheid;
+					if (ret)
+						BBPunfix(*b);
+					else
+						BBPkeepref(*b);
+				}
+			}
+		GDKfree(res);
+		if (input)
+			for (int i = 0; i<nrinput; i++) {
+				if (input[i])
+					BBPunfix(input[i]->batCacheid);
+			}
+		GDKfree(input);
+		GDKfree(bi);
+	}
+	return ret;
 }

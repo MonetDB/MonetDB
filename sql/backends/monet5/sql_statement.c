@@ -230,6 +230,7 @@ stmt_create(sql_allocator *sa, st_type type)
 	s->nr = 0;
 	s->partition = 0;
 	s->tname = s->cname = NULL;
+	s->cand = NULL;
 	return s;
 }
 
@@ -1396,17 +1397,19 @@ stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f, stmt *sub, i
 		s->nrcols = (lops->nrcols == 2) ? 2 : 1;
 		s->nr = getDestVar(q);
 		s->q = q;
+		s->cand = sub;
 		return s;
 	}
 	return NULL;
 }
 
 stmt *
-stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, int anti)
+stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, int anti, int is_semantics)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
 	int l, r;
+	stmt *sel = sub;
 
 	if (op1->nr < 0 || op2->nr < 0 || (sub && sub->nr < 0))
 		return NULL;
@@ -1423,7 +1426,6 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 		case mark_in:
 		case mark_notin:
 		case cmp_equal:
-		case cmp_equal_nil:
 			op = "=";
 			break;
 		case cmp_notequal:
@@ -1442,12 +1444,22 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 			op = ">=";
 			break;
 		default:
-			TRC_ERROR(SQL_STATEMENT, "Unknown operator\n");
+			TRC_ERROR(SQL_EXECUTION, "Unknown operator\n");
 		}
 
 		if ((q = multiplex2(mb, mod, convertOperator(op), l, r, TYPE_bit)) == NULL) 
 			return NULL;
-		if (cmptype == cmp_equal_nil)
+		if (sub && (op1->cand || op2->cand)) {
+			if (op1->cand && !op2->cand) {
+				q = pushNil(mb, q, TYPE_bat);
+				q = pushArgument(mb, q, sub->nr);
+			} else if (!op1->cand && op2->cand) {
+				q = pushArgument(mb, q, sub->nr);
+				q = pushNil(mb, q, TYPE_bat);
+			}
+			sub = NULL;
+		}
+		if (is_semantics)
 			q = pushBit(mb, q, TRUE); 
 		k = getDestVar(q);
 
@@ -1465,10 +1477,10 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 		k = getDestVar(q);
 	} else {
 		assert (cmptype != cmp_filter);
-		if (cmptype == cmp_equal_nil) {
+		if (is_semantics) {
 			q = newStmt(mb, algebraRef, selectRef);
 			q = pushArgument(mb, q, l);
-			if (sub)
+			if (sub && !op1->cand)
 				q = pushArgument(mb, q, sub->nr);
 			q = pushArgument(mb, q, r);
 			q = pushArgument(mb, q, r);
@@ -1478,8 +1490,10 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 		} else {
 			q = newStmt(mb, algebraRef, thetaselectRef);
 			q = pushArgument(mb, q, l);
-			if (sub)
+			if (sub && !op1->cand)
 				q = pushArgument(mb, q, sub->nr);
+			else
+				sub = NULL;
 			q = pushArgument(mb, q, r);
 			switch (cmptype) {
 			case mark_in:
@@ -1503,7 +1517,7 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 				q = pushStr(mb, q, anti?"<":">=");
 				break;
 			default:
-				TRC_ERROR(SQL_STATEMENT, "Impossible select compare\n");
+				TRC_ERROR(SQL_EXECUTION, "Impossible select compare\n");
 				if (q)
 					freeInstruction(q);
 				q = NULL;
@@ -1526,6 +1540,9 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 		s->nrcols = (op1->nrcols == 2) ? 2 : 1;
 		s->nr = getDestVar(q);
 		s->q = q;
+		s->cand = sub;
+		if (!sub && sel) /* project back the old ids */
+			return stmt_project(be, s, sel);
 		return s;
 	}
 	return NULL;
@@ -1734,6 +1751,7 @@ stmt_uselect2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sub, 
 		s->nrcols = (op1->nrcols == 2) ? 2 : 1;
 		s->nr = getDestVar(q);
 		s->q = q;
+		s->cand = sub;
 		return s;
 	}
 	return NULL;
@@ -1869,7 +1887,7 @@ stmt_tinter(backend *be, stmt *op1, stmt *op2)
 }
 
 stmt *
-stmt_join(backend *be, stmt *op1, stmt *op2, int anti, comp_type cmptype)
+stmt_join(backend *be, stmt *op1, stmt *op2, int anti, comp_type cmptype, int is_semantics)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
@@ -1895,19 +1913,7 @@ stmt_join(backend *be, stmt *op1, stmt *op2, int anti, comp_type cmptype)
 		q = pushArgument(mb, q, op2->nr);
 		q = pushNil(mb, q, TYPE_bat);
 		q = pushNil(mb, q, TYPE_bat);
-		q = pushBit(mb, q, FALSE);
-		q = pushNil(mb, q, TYPE_lng);
-		if (q == NULL)
-			return NULL;
-		break;
-	case cmp_equal_nil: /* nil == nil */
-		q = newStmt(mb, algebraRef, sjt);
-		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-		q = pushArgument(mb, q, op1->nr);
-		q = pushArgument(mb, q, op2->nr);
-		q = pushNil(mb, q, TYPE_bat);
-		q = pushNil(mb, q, TYPE_bat);
-		q = pushBit(mb, q, TRUE);
+		q = pushBit(mb, q, is_semantics?TRUE:FALSE);
 		q = pushNil(mb, q, TYPE_lng);
 		if (q == NULL)
 			return NULL;
@@ -1959,7 +1965,7 @@ stmt_join(backend *be, stmt *op1, stmt *op2, int anti, comp_type cmptype)
 		q = op1->q;
 		break;
 	default:
-		TRC_ERROR(SQL_STATEMENT, "Impossible action\n");
+		TRC_ERROR(SQL_EXECUTION, "Impossible action\n");
 	}
 	if (q) {
 		stmt *s = stmt_create(be->mvc->sa, st_join);
@@ -1977,7 +1983,7 @@ stmt_join(backend *be, stmt *op1, stmt *op2, int anti, comp_type cmptype)
 }
 
 stmt *
-stmt_semijoin(backend *be, stmt *op1, stmt *op2)
+stmt_semijoin(backend *be, stmt *op1, stmt *op2, int is_semantics)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
@@ -1991,7 +1997,7 @@ stmt_semijoin(backend *be, stmt *op1, stmt *op2)
 	q = pushArgument(mb, q, op2->nr);
 	q = pushNil(mb, q, TYPE_bat);
 	q = pushNil(mb, q, TYPE_bat);
-	q = pushBit(mb, q, FALSE);
+	q = pushBit(mb, q, is_semantics?TRUE:FALSE);
 	q = pushNil(mb, q, TYPE_lng);
 	if (q == NULL)
 		return NULL;
@@ -2378,7 +2384,7 @@ stmt_trans(backend *be, int type, stmt *chain, stmt *name)
 		q = newStmt(mb, sqlRef, transaction_beginRef);
 		break;
 	default:
-		TRC_ERROR(SQL_STATEMENT, "Unknown transaction type\n");
+		TRC_ERROR(SQL_EXECUTION, "Unknown transaction type\n");
 	}
 	q = pushArgument(mb, q, chain->nr);
 	if (name)
@@ -2457,7 +2463,7 @@ stmt_catalog(backend *be, int type, stmt *args)
 	case ddl_change_all_cp: q = newStmt(mb, sqlcatalogRef, change_all_cpRef); break;
 	case ddl_alter_stream_table: q = newStmt(mb, sqlcatalogRef, alter_stream_tableRef); break;
 	default:
-		TRC_ERROR(SQL_STATEMENT, "Unknown catalog operation\n");
+		TRC_ERROR(SQL_EXECUTION, "Unknown catalog operation\n");
 	}
 	// pass all arguments as before
 	for (n = args->op4.lval->h; n; n = n->next) {
@@ -2893,6 +2899,7 @@ stmt_convert(backend *be, stmt *v, sql_subtype *f, sql_subtype *t, stmt *sel)
 		s->op4.typeval = *t;
 		s->nr = getDestVar(q);
 		s->q = q;
+		s->cand = sel;
 		return s;
 	}
 	return NULL;
@@ -2931,7 +2938,7 @@ stmt_Nop(backend *be, stmt *ops, sql_subfunc *f)
 		for (n = ops->op4.lval->h, o = n->data; n; n = n->next) {
 			stmt *c = n->data;
 
-			if (o->nrcols < c->nrcols)
+			if (c && o->nrcols < c->nrcols)
 				o = c;
 		}
 	}
@@ -2940,7 +2947,7 @@ stmt_Nop(backend *be, stmt *ops, sql_subfunc *f)
 		return NULL;
 	mod = sql_func_mod(f->func);
 	fimp = sql_func_imp(f->func);
-	if (o && o->nrcols > 0 && f->func->type != F_LOADER) {
+	if (o && o->nrcols > 0 && f->func->type != F_LOADER && f->func->type != F_PROC) {
 		sql_subtype *res = f->res->h->data;
 		fimp = convertMultiplexFcn(fimp);
 		q = NULL;
@@ -2996,8 +3003,11 @@ stmt_Nop(backend *be, stmt *ops, sql_subfunc *f)
 	for (n = ops->op4.lval->h; n; n = n->next) {
 		stmt *op = n->data;
 
-		q = pushArgument(mb, q, op->nr);
-		if (special) {
+		if (!op)
+			q = pushNil(mb, q, TYPE_bat); 
+		else
+			q = pushArgument(mb, q, op->nr);
+		if (op && special) {
 			q = pushInt(mb, q, tpe->digits);
 			setVarUDFtype(mb, getArg(q, q->argc-1));
 			q = pushInt(mb, q, tpe->scale);
@@ -3022,6 +3032,24 @@ stmt_Nop(backend *be, stmt *ops, sql_subfunc *f)
 			s->key = 1;
 		}
 		s->op4.funcval = f;
+		s->nr = getDestVar(q);
+		s->q = q;
+		return s;
+	}
+	return NULL;
+}
+
+stmt *
+stmt_direct_func(backend *be, InstrPtr q)
+{
+	if (q) {
+		stmt *s = stmt_create(be->mvc->sa, st_func);
+		if(!s) {
+			freeInstruction(q);
+			return NULL;
+		}
+		s->flag = op_union;
+		s->nrcols = 3;
 		s->nr = getDestVar(q);
 		s->q = q;
 		return s;

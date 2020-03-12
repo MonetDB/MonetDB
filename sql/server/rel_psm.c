@@ -17,40 +17,6 @@
 #include "sql_privileges.h"
 #include "sql_timestamps.h"
 
-#define FUNC_TYPE_STR \
-	switch (type) { \
-		case F_FUNC: \
-			F = "FUNCTION"; \
-			fn = "function"; \
-			break; \
-		case F_PROC: \
-			F = "PROCEDURE"; \
-			fn = "procedure"; \
-			break; \
-		case F_AGGR: \
-			F = "AGGREGATE"; \
-			fn = "aggregate"; \
-			break; \
-		case F_FILT: \
-			F = "FILTER FUNCTION"; \
-			fn = "filter function"; \
-			break; \
-		case F_UNION: \
-			F = "UNION FUNCTION"; \
-			fn = "union function"; \
-			break; \
-		case F_ANALYTIC: \
-			F = "WINDOW FUNCTION"; \
-			fn = "window function"; \
-			break; \
-		case F_LOADER: \
-			F = "LOADER FUNCTION"; \
-			fn = "loader function"; \
-			break; \
-		default: \
-			assert(0); \
-	}
-
 static list *sequential_block(sql_query *query, sql_subtype *restype, list *restypelist, dlist *blk, char *opt_name, int is_func);
 
 sql_rel *
@@ -115,9 +81,14 @@ psm_set_exp(sql_query *query, dnode *n)
 			tpe = stack_find_type(sql, name);
 		}
 
-		e = rel_value_exp2(query, &rel, val, sql_sel, ek);
-		if (!e || (rel && e->card > CARD_AGGR))
+		e = rel_value_exp2(query, &rel, val, sql_sel | sql_update_set, ek);
+		if (!e)
 			return NULL;
+		if (e->card > CARD_AGGR) {
+			sql_subfunc *zero_or_one = sql_bind_func(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(e), NULL, F_AGGR);
+			assert(zero_or_one);
+			e = exp_aggr1(sql->sa, e, zero_or_one, 0, 0, CARD_ATOM, has_nil(e));
+		}
 
 		level = stack_find_frame(sql, name);
 		e = rel_check_type(sql, tpe, rel, e, type_cast);
@@ -184,10 +155,8 @@ rel_psm_call(sql_query * query, symbol *se)
 	exp_kind ek = {type_value, card_none, FALSE};
 	sql_rel *rel = NULL;
 
-	res = rel_value_exp(query, &rel, se, sql_sel, ek);
-
-	/* only procedures or continuous queries */
-	if ((!res || rel || ((t=exp_subtype(res)) && t->type)))
+	res = rel_value_exp(query, &rel, se, sql_sel | psm_call, ek);
+	if (!res || rel || ((t=exp_subtype(res)) && t->type))  /* only procedures or continuous queries */
 		return sql_error(sql, 01, SQLSTATE(42000) "Function calls are ignored");
 	return res;
 }
@@ -274,8 +243,9 @@ rel_psm_while_do( sql_query *query, sql_subtype *res, list *restypelist, dnode *
 		list *whilestmts;
 		dnode *n = w;
 		sql_rel *rel = NULL;
+	        exp_kind ek = {type_value, card_value, FALSE};
 
-		cond = rel_logical_value_exp(query, &rel, n->data.sym, sql_sel); 
+		cond = rel_logical_value_exp(query, &rel, n->data.sym, sql_sel, ek); 
 		n = n->next;
 		whilestmts = sequential_block(query, res, restypelist, n->data.lval, n->next->data.sval, is_func);
 
@@ -312,8 +282,9 @@ psm_if_then_else( sql_query *query, sql_subtype *res, list *restypelist, dnode *
 		list *ifstmts, *elsestmts;
 		dnode *n = elseif->data.sym->data.lval->h;
 		sql_rel *rel = NULL;
+	        exp_kind ek = {type_value, card_value, FALSE};
 
-		cond = rel_logical_value_exp(query, &rel, n->data.sym, sql_sel); 
+		cond = rel_logical_value_exp(query, &rel, n->data.sym, sql_sel, ek); 
 		n = n->next;
 		ifstmts = sequential_block(query, res, restypelist, n->data.lval, NULL, is_func);
 		n = n->next;
@@ -351,8 +322,9 @@ rel_psm_if_then_else( sql_query *query, sql_subtype *res, list *restypelist, dno
 		list *ifstmts, *elsestmts;
 		dnode *n = elseif;
 		sql_rel *rel = NULL;
+	        exp_kind ek = {type_value, card_value, FALSE};
 
-		cond = rel_logical_value_exp(query, &rel, n->data.sym, sql_sel); 
+		cond = rel_logical_value_exp(query, &rel, n->data.sym, sql_sel, ek); 
 		n = n->next;
 		ifstmts = sequential_block(query, res, restypelist, n->data.lval, NULL, is_func);
 		n = n->next;
@@ -453,7 +425,8 @@ rel_psm_case( sql_query *query, sql_subtype *res, list *restypelist, dnode *case
 		while(n) {
 			dnode *m = n->data.sym->data.lval->h;
 			sql_rel *rel = NULL;
-			sql_exp *cond = rel_logical_value_exp(query, &rel, m->data.sym, sql_sel);
+	        	exp_kind ek = {type_value, card_value, FALSE};
+			sql_exp *cond = rel_logical_value_exp(query, &rel, m->data.sym, sql_sel, ek);
 			list *if_stmts = NULL;
 			sql_exp *case_stmt = NULL;
 
@@ -921,7 +894,7 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 	mvc *sql = query->sql;
 	const char *fname = qname_table(qname);
 	const char *sname = qname_schema(qname);
-	sql_schema *s = NULL;
+	sql_schema *s = cur_schema(sql);
 	sql_func *f = NULL;
 	sql_subfunc *sf;
 	dnode *n;
@@ -935,7 +908,7 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 	if (res && res->token == SQL_TABLE)
 		type = F_UNION;
 
-	FUNC_TYPE_STR
+	FUNC_TYPE_STR(type)
 
 	is_func = (type != F_PROC && type != F_LOADER);
 	sql->is_factory = 0;
@@ -959,10 +932,11 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_error(sql, 02, SQLSTATE(3F000) "CREATE %s: no such schema '%s'", F, sname);
-	if (s == NULL)
-		s = cur_schema(sql);
 
 	type_list = create_type_list(sql, params, 1);
+	if ((type == F_FUNC || type == F_AGGR) && sql_bind_func_(sql->sa, s, fname, type_list, (type == F_FUNC) ? F_AGGR : F_FUNC))
+		return sql_error(sql, 02, SQLSTATE(42000) "CREATE %s: there's %s with the name '%s' and the same parameters, which causes ambiguous calls", F, (type == F_FUNC) ? "an aggregate" : "a function", fname);
+
 	if ((sf = sql_bind_func_(sql->sa, s, fname, type_list, type)) != NULL && create) {
 		if (replace) {
 			sql_func *func = sf->func;
@@ -1175,7 +1149,7 @@ resolve_func( mvc *sql, sql_schema *s, const char *name, dlist *typelist, sql_ft
 	list *list_func = NULL, *type_list = NULL;
 	char is_func = (type != F_PROC && type != F_LOADER), *F = NULL, *fn = NULL;
 
-	FUNC_TYPE_STR
+	FUNC_TYPE_STR(type)
 
 	if (typelist) {
 		sql_subfunc *sub_func;
@@ -1252,29 +1226,26 @@ rel_drop_func(mvc *sql, dlist *qname, dlist *typelist, int drop_action, sql_ftyp
 {
 	const char *name = qname_table(qname);
 	const char *sname = qname_schema(qname);
-	sql_schema *s = NULL;
+	sql_schema *s = cur_schema(sql);
 	sql_func *func = NULL;
 	char *F = NULL, *fn = NULL;
 
-	FUNC_TYPE_STR
-	(void) fn;
+	FUNC_TYPE_STR(type)
 
-	if (sname && !(s = mvc_bind_schema(sql, sname)))
+	if (sname && !(s = mvc_bind_schema(sql, sname)) && !if_exists)
 		return sql_error(sql, 02, SQLSTATE(3F000) "DROP %s: no such schema '%s'", F, sname);
 
-	if (s == NULL) 
-		s = cur_schema(sql);
-
-	func = resolve_func(sql, s, name, typelist, type, "DROP", if_exists);
+	if (s)
+		func = resolve_func(sql, s, name, typelist, type, "DROP", if_exists);
 	if (!func && !sname) {
 		s = tmp_schema(sql);
 		func = resolve_func(sql, s, name, typelist, type, "DROP", if_exists);
 	}
-	if (func)
+	if (func && s)
 		return rel_drop_function(sql->sa, s->base.name, name, func->base.id, type, drop_action);
-	else if (if_exists && !sql->session->status)
-		return rel_drop_function(sql->sa, s->base.name, name, -2, type, drop_action);
-	return NULL;
+	if (if_exists)
+		return rel_drop_function(sql->sa, sname, name, -2, type, drop_action);
+	return sql_error(sql, 02, SQLSTATE(42000) "DROP %s: %s %s not found", F, fn, name);
 }
 
 static sql_rel* 
@@ -1282,16 +1253,14 @@ rel_drop_all_func(mvc *sql, dlist *qname, int drop_action, sql_ftype type)
 {
 	const char *name = qname_table(qname);
 	const char *sname = qname_schema(qname);
-	sql_schema *s = NULL;
+	sql_schema *s = cur_schema(sql);
 	list * list_func = NULL;
 	char *F = NULL, *fn = NULL;
 
-	FUNC_TYPE_STR
+	FUNC_TYPE_STR(type)
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_error(sql, 02, SQLSTATE(3F000) "DROP %s: no such schema '%s'", F, sname);
-	if (s == NULL) 
-		s =  cur_schema(sql);
 
 	list_func = schema_bind_func(sql, s, name, type);
 	if (!list_func) 
@@ -1358,9 +1327,6 @@ create_trigger(sql_query *query, dlist *qname, int time, symbol *trigger_event, 
 	dlist *stmts = triggered_action->h->next->next->data.lval;
 	symbol *condition = triggered_action->h->next->data.sym;
 
-	if (!sname)
-		sname = ss->base.name;
-
 	if (sname && !(ss = mvc_bind_schema(sql, sname)))
 		return sql_error(sql, 02, SQLSTATE(3F000) "%s TRIGGER: no such schema '%s'", base, sname);
 
@@ -1384,11 +1350,11 @@ create_trigger(sql_query *query, dlist *qname, int time, symbol *trigger_event, 
 		return sql_error(sql, 02, SQLSTATE(42000) "%s TRIGGER: unknown table '%s'", base, tname);
 	if (create && isView(t))
 		return sql_error(sql, 02, SQLSTATE(42000) "%s TRIGGER: cannot create trigger on view '%s'", base, tname);
-	if (triggerschema && strcmp(triggerschema, sname) != 0)
+	if (triggerschema && strcmp(triggerschema, ss->base.name) != 0)
 		return sql_error(sql, 02, SQLSTATE(42000) "%s TRIGGER: trigger and respective table must belong to the same schema", base);
 	if (create && (st = mvc_bind_trigger(sql, ss, triggername)) != NULL) {
 		if (replace) {
-			if(mvc_drop_trigger(sql, ss, st))
+			if (mvc_drop_trigger(sql, ss, st))
 				return sql_error(sql, 02, SQLSTATE(HY013) "%s TRIGGER: %s", base, MAL_MALLOC_FAIL);
 		} else {
 			return sql_error(sql, 02, SQLSTATE(42000) "%s TRIGGER: name '%s' already in use", base, triggername);
@@ -1498,11 +1464,11 @@ drop_trigger(mvc *sql, dlist *qname, int if_exists)
 	const char *tname = qname_table(qname);
 	sql_schema *ss = cur_schema(sql);
 
-	if (!sname)
-		sname = ss->base.name;
-
-	if (sname && !(ss = mvc_bind_schema(sql, sname)))
+	if (sname && !(ss = mvc_bind_schema(sql, sname))) {
+		if (if_exists)
+			return rel_drop_trigger(sql, sname, tname, if_exists);
 		return sql_error(sql, 02, SQLSTATE(3F000) "DROP TRIGGER: no such schema '%s'", sname);
+	}
 
 	if (!mvc_schema_privs(sql, ss)) 
 		return sql_error(sql, 02, SQLSTATE(3F000) "DROP TRIGGER: access denied for %s to schema '%s'", stack_get_string(sql, "current_user"), ss->base.name);
@@ -1591,7 +1557,7 @@ static sql_rel*
 create_table_from_loader(sql_query *query, dlist *qname, symbol *fcall)
 {
 	mvc *sql = query->sql;
-	sql_schema *s = NULL;
+	sql_schema *s = cur_schema(sql);
 	char *sname = qname_schema(qname);
 	char *tname = qname_table(qname);
 	sql_subfunc *loader = NULL;
@@ -1599,12 +1565,10 @@ create_table_from_loader(sql_query *query, dlist *qname, symbol *fcall)
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_error(sql, 02, SQLSTATE(3F000) "CREATE TABLE FROM LOADER: no such schema '%s'", sname);
-	if (s == NULL) 
-		s = cur_schema(sql);
-	if (!strcmp(s->base.name, "cquery"))
-		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: tables not allowed in cquery schema");
 	if (!mvc_schema_privs(sql, s))
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE TABLE FROM LOADER: insufficient privileges for user '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
+	if (!strcmp(s->base.name, "cquery"))
+		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: tables not allowed in cquery schema");
 	if (mvc_bind_table(sql, s, tname))
 		return sql_error(sql, 02, SQLSTATE(42S01) "CREATE TABLE FROM LOADER: name '%s' already in use", tname);
 

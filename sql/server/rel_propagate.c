@@ -160,7 +160,7 @@ generate_partition_limits(sql_query *query, sql_rel **r, symbol *s, sql_subtype 
 		return exp_atom(sql->sa, amax);
 	} else {
 		exp_kind ek = {type_value, card_value, FALSE};
-		sql_exp *e = rel_value_exp2(query, r, s, sql_sel, ek);
+		sql_exp *e = rel_value_exp2(query, r, s, sql_sel | sql_values, ek);
 
 		if (!e)
 			return NULL;
@@ -669,7 +669,7 @@ rel_generate_subinserts(sql_query *query, sql_rel *rel, sql_rel **anti_rel, sql_
 				sql_exp *e1, *e2;
 				e1 = create_table_part_atom_exp(sql, pt->tpe, pt->part.range.minvalue);
 				e2 = create_table_part_atom_exp(sql, pt->tpe, pt->part.range.maxvalue);
-				range = exp_compare2(sql->sa, le, e1, e2, 1);
+				range = exp_compare2(sql->sa, le, e1, e2, cmp_gte|CMP_BETWEEN);
 				full_range = range;
 			} else {
 				assert(pt->with_nills);

@@ -103,7 +103,6 @@ GROUP BY col1;
 	-- True False
 	-- True False
 
--- TODO incorrect empty result
 SELECT NOT col2 <> ANY (SELECT 20 FROM tbl_ProductSales GROUP BY ColID HAVING NOT MAX(col1) <> col1 * AVG(col1 + ColID) * ColID) FROM another_T GROUP BY col1, col2, col5, col8;
 
 SELECT

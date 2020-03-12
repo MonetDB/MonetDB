@@ -123,13 +123,10 @@ atom_int( sql_allocator *sa, sql_subtype *tpe,
 			break;
 #endif
 		default:
-			TRC_INFO(SQL_ATOM_TR, "%d\n", a->data.vtype);
 			assert(0);
 		}
 		a->d = (dbl) val;
 		a->data.len = 0;
-
-		TRC_DEBUG(SQL_ATOM_TR, "(%s, %.40g)\n", tpe->type->sqlname, (dbl)val);
 		return a;
 	}
 }
@@ -207,8 +204,6 @@ atom_string(sql_allocator *sa, sql_subtype *tpe, const char *val)
 		a->data.val.sval = (char*)val;
 		a->data.len = strlen(a->data.val.sval);
 	}
-
-	TRC_DEBUG(SQL_ATOM_TR, "(%s, %s)\n", tpe->type->sqlname, val);
 	return a;
 }
 
@@ -229,7 +224,6 @@ atom_float(sql_allocator *sa, sql_subtype *tpe, double val)
 	}
 	a->data.vtype = tpe->type->localtype;
 	a->data.len = 0;
-	TRC_DEBUG(SQL_ATOM_TR, "(%s, %f)\n", tpe->type->sqlname, val);
 	return a;
 }
 
@@ -304,8 +298,6 @@ atom_general(sql_allocator *sa, sql_subtype *tpe, const char *val)
 {
 	atom *a;
 	ptr p = NULL;
-
-	TRC_DEBUG(SQL_ATOM_TR, "(%s, %s)\n", tpe->type->sqlname, val);
 
 	if (tpe->type->localtype == TYPE_str)
 		return atom_string(sa, tpe, val);
@@ -451,10 +443,17 @@ atom2sql(atom *a)
 			return _STRDUP("true");
 		return _STRDUP("false");
 	case EC_CHAR:
-	case EC_STRING:
+	case EC_STRING: {
+		char *val, *res;
 		assert(a->data.vtype == TYPE_str && a->data.val.sval);
-		sprintf(buf, "'%s'", a->data.val.sval);
-		break;
+
+		if (!(val = sql_escape_str(a->data.val.sval)))
+			return NULL;
+		if ((res = NEW_ARRAY(char, strlen(val) + 3)))
+			stpcpy(stpcpy(stpcpy(res, "'"), val), "'");
+		c_delete(val);
+		return res;
+	} break;
 	case EC_BLOB:
 		/* TODO atom to string */
 		break;
@@ -566,8 +565,21 @@ atom2sql(atom *a)
 	case EC_DATE:
 	case EC_TIMESTAMP:
 		if (a->data.vtype == TYPE_str) {
-			assert(a->data.val.sval);
-			sprintf(buf, "%s '%s'", a->tpe.type->sqlname, a->data.val.sval);
+			char *val1 = sql_escape_str(a->tpe.type->sqlname), *val2 = sql_escape_str(a->data.val.sval), *res;
+
+			if (!val1 || !val2) {
+				c_delete(val1);
+				c_delete(val2);
+				return NULL;
+			}
+				
+			if ((res = NEW_ARRAY(char, strlen(val1) + strlen(val2) + 4)))
+				stpcpy(stpcpy(stpcpy(stpcpy(res, val1)," '"), val2), "'");
+			c_delete(val1);
+			c_delete(val2);
+			return res;
+		} else {
+			snprintf(buf, BUFSIZ, "atom2sql(TYPE_%d) not implemented", a->data.vtype);
 		}
 		break;
 	default:
@@ -606,7 +618,7 @@ atom_num_digits( atom *a )
 #endif
 	unsigned int inlen = 1;
 
-	switch(a->tpe.type->localtype) {
+	switch (a->tpe.type->localtype) {
 	case TYPE_bte:
 		v = a->data.val.btval;
 		break;
@@ -654,7 +666,7 @@ atom_cast(sql_allocator *sa, atom *a, sql_subtype *tp)
 		if (at->type->eclass == EC_NUM && tp->type->eclass == EC_NUM &&
 	    	    at->type->localtype <= tp->type->localtype) {
 			/* cast numerics */
-			switch( tp->type->localtype) {
+			switch ( tp->type->localtype) {
 			case TYPE_bte:
 				if (at->type->localtype != TYPE_bte) 
 					return 0;
@@ -720,7 +732,7 @@ atom_cast(sql_allocator *sa, atom *a, sql_subtype *tp)
 			lng mul = 1, div = 0, rnd = 0;
 #endif
 			/* cast numerics */
-			switch( tp->type->localtype) {
+			switch (tp->type->localtype) {
 			case TYPE_bte:
 				if (at->type->localtype != TYPE_bte) 
 					return 0;
@@ -978,7 +990,7 @@ atom_cast(sql_allocator *sa, atom *a, sql_subtype *tp)
 			lng mul = 1;
 #endif
 			/* cast numerics */
-			switch( tp->type->localtype) {
+			switch (tp->type->localtype) {
 			case TYPE_bte:
 				if (at->type->localtype != TYPE_bte) 
 					return 0;
@@ -1094,7 +1106,7 @@ atom_cast(sql_allocator *sa, atom *a, sql_subtype *tp)
 				size_t len = 0;
 				ssize_t res = 0;
 				/* cast decimals to doubles */
-				switch( at->type->localtype) {
+				switch (at->type->localtype) {
 				case TYPE_bte:
 					dec = a->data.val.btval;
 					break;
@@ -1163,9 +1175,11 @@ atom_cast(sql_allocator *sa, atom *a, sql_subtype *tp)
 }
 
 int 
-atom_neg( atom *a )
+atom_neg(atom *a)
 {
 	ValRecord dst;
+	if (a->isnull)
+		return 0;
 	VALempty(&dst);
 	dst.vtype = a->data.vtype;
 	if (VARcalcnegate(&dst, &a->data) != GDK_SUCCEED)
@@ -1196,9 +1210,8 @@ atom_add(atom *a1, atom *a2)
 {
 	ValRecord dst;
 
-	if ((!EC_COMPUTE(a1->tpe.type->eclass) && (a1->tpe.type->eclass != EC_DEC || a1->tpe.digits != a2->tpe.digits || a1->tpe.scale != a2->tpe.scale)) || a1->tpe.digits < a2->tpe.digits || a1->tpe.type->localtype != a2->tpe.type->localtype) {
+	if ((!EC_COMPUTE(a1->tpe.type->eclass) && (a1->tpe.type->eclass != EC_DEC || a1->tpe.digits != a2->tpe.digits || a1->tpe.scale != a2->tpe.scale)) || a1->tpe.digits < a2->tpe.digits || a1->tpe.type->localtype != a2->tpe.type->localtype)
 		return NULL;
-	}
 	if (a1->tpe.type->localtype < a2->tpe.type->localtype ||
 	    (a1->tpe.type->localtype == a2->tpe.type->localtype &&
 	     a1->tpe.digits < a2->tpe.digits)) {
@@ -1223,9 +1236,8 @@ atom_sub(atom *a1, atom *a2)
 {
 	ValRecord dst;
 
-	if ((!EC_COMPUTE(a1->tpe.type->eclass) && (a1->tpe.type->eclass != EC_DEC || a1->tpe.digits != a2->tpe.digits || a1->tpe.scale != a2->tpe.scale)) || a1->tpe.digits < a2->tpe.digits || a1->tpe.type->localtype != a2->tpe.type->localtype) {
+	if ((!EC_COMPUTE(a1->tpe.type->eclass) && (a1->tpe.type->eclass != EC_DEC || a1->tpe.digits != a2->tpe.digits || a1->tpe.scale != a2->tpe.scale)) || a1->tpe.digits < a2->tpe.digits || a1->tpe.type->localtype != a2->tpe.type->localtype)
 		return NULL;
-	}
 	if (a1->tpe.type->localtype < a2->tpe.type->localtype ||
 	    (a1->tpe.type->localtype == a2->tpe.type->localtype &&
 	     a1->tpe.digits < a2->tpe.digits))
@@ -1293,7 +1305,7 @@ atom_mul(atom *a1, atom *a2)
 }
 
 int
-atom_inc( atom *a )
+atom_inc(atom *a)
 {
 	ValRecord dst;
 
@@ -1310,11 +1322,11 @@ atom_inc( atom *a )
 }
 
 int
-atom_is_zero( atom *a )
+atom_is_zero(atom *a)
 {
 	if (a->isnull)
 		return 0;
-	switch(a->tpe.type->localtype) {
+	switch (a->tpe.type->localtype) {
 	case TYPE_bte:
 		return a->data.val.btval == 0;
 	case TYPE_sht:
@@ -1338,11 +1350,11 @@ atom_is_zero( atom *a )
 }
 
 int
-atom_is_true( atom *a )
+atom_is_true(atom *a)
 {
 	if (a->isnull)
 		return 0;
-	switch(a->tpe.type->localtype) {
+	switch (a->tpe.type->localtype) {
 	case TYPE_bit:
 		return a->data.val.btval != 0;
 	case TYPE_bte:
@@ -1477,7 +1489,7 @@ atom_zero_value(sql_allocator *sa, sql_subtype* tpe)
 			break;
 	} //no support for strings and blobs zero value
 
-	if(ret != NULL) {
+	if (ret != NULL) {
 		res = atom_create(sa);
 		res->tpe = *tpe;
 		res->isnull = 0;

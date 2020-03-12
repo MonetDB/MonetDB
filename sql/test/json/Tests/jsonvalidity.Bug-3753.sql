@@ -26,3 +26,14 @@ SELECT json.isValid('{"test":"""}'); 	-- false
 SELECT json.isValid(E'{"test":"\\""}');	-- true
 SELECT json.isValid('{"test":""""}'); 	-- false
 SELECT json.isValid(E'{"test":"\\"\\""}'); -- true
+
+SELECT json.isValid(R'"\u003c\""');	-- true
+
+SELECT json.isValid(R'01');             -- false
+SELECT json.isValid(R'[01]');           -- false
+
+SELECT json.isValid(r'0.001');          -- true
+SELECT json.isValid(r'-0.001');         -- true
+
+SELECT json.isValid(r'0.001e12');        -- true
+SELECT json.isValid(r'-0.001e-12');      -- true

@@ -18,9 +18,15 @@ void MCexitClient(Client c)
 	__attribute__((__visibility__("hidden")));
 void MCfreeClient(Client c)
 	__attribute__((__visibility__("hidden")));
-int MCreadClient(Client c)
+bool MCinit(void)
+	__attribute__((__visibility__("hidden")));
+int MCinitClientThread(Client c)
 	__attribute__((__visibility__("hidden")));
 void MCpopClientInput(Client c)
+	__attribute__((__visibility__("hidden")));
+int MCreadClient(Client c)
+	__attribute__((__visibility__("hidden")));
+int MCshutdowninprogress(void)
 	__attribute__((__visibility__("hidden")));
 str defaultScenario(Client c)	/* used in src/mal/mal_session.c */
 	__attribute__((__visibility__("hidden")));
@@ -35,7 +41,7 @@ str yieldFactory(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc)
 	__attribute__((__visibility__("hidden")));
 str callFactory(Client cntxt, MalBlkPtr mb, ValPtr argv[],char flag)
 	__attribute__((__visibility__("hidden")));
-mal_export void mal_factory_reset(Client c)
+void mal_factory_reset(Client cntxt)
 	__attribute__((__visibility__("hidden")));
 #endif
 
@@ -67,26 +73,29 @@ char *MSP_locate_script(const char *mod_name)
 	__attribute__((__visibility__("hidden")));
 
 /* Reset primitives */
-mal_export void AUTHreset(void)
+void AUTHreset(void)
 	__attribute__((__visibility__("hidden")));
 
-mal_export void mal_client_reset(void)
+void mal_client_reset(void)
 	__attribute__((__visibility__("hidden")));
 
-mal_export void mal_dataflow_reset(void)
+void mal_dataflow_reset(void)
 	__attribute__((__visibility__("hidden")));
 
-mal_export void mal_linker_reset(void)
+void mal_linker_reset(void)
 	__attribute__((__visibility__("hidden")));
 
-mal_export void mal_module_reset(void)
+void mal_module_reset(void)
 	__attribute__((__visibility__("hidden")));
 
-mal_export void mal_namespace_reset(void)
+void mal_namespace_reset(void)
 	__attribute__((__visibility__("hidden")));
 
-mal_export void mal_resource_reset(void)
+void mal_resource_reset(void)
 	__attribute__((__visibility__("hidden")));
 
-mal_export void mal_runtime_reset(void)
+void mal_runtime_reset(void)
 	__attribute__((__visibility__("hidden")));
+
+char *dupError(const char *err)
+	__attribute__((__visibility__("hidden"), __returns_nonnull__));

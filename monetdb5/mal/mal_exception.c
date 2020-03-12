@@ -45,6 +45,14 @@ isExceptionVariable(str nme){
 
 static char *M5OutOfMemory = MAL_MALLOC_FAIL;
 
+char *
+dupError(const char *err)
+{
+	char *msg = GDKstrdup(err);
+
+	return msg ? msg : M5OutOfMemory;
+}
+
 /**
  * Internal helper function for createException and
  * showException such that they share the same code, because reuse
@@ -64,7 +72,7 @@ createExceptionInternal(enum malexception type, const char *fcn, const char *for
 		/* Leave a message behind in the logging system */
 		len = snprintf(local, GDKMAXERRLEN - 1, "%s:%s:", exceptionNames[type], fcn);
 		len = vsnprintf(local + len, GDKMAXERRLEN -1, format, ap);
-		TRC_ERROR(MAL_EXCEPTION, "%s\n", local);
+		TRC_ERROR(MAL_SERVER, "%s\n", local);
 		return M5OutOfMemory;	/* last resort */
 	}
 	len = snprintf(message, GDKMAXERRLEN, "%s:%s:", exceptionNames[type], fcn);
@@ -83,9 +91,9 @@ createExceptionInternal(enum malexception type, const char *fcn, const char *for
 	}
 	char *q = message;
 	for (char *p = strchr(q, '\n'); p; q = p + 1, p = strchr(q, '\n'))
-		TRC_ERROR(MAL_EXCEPTION, "%.*s\n", (int) (p - q), q);
+		TRC_ERROR(MAL_SERVER, "%.*s\n", (int) (p - q), q);
 	if (*q)
-		TRC_ERROR(MAL_EXCEPTION, "%s\n", q);
+		TRC_ERROR(MAL_SERVER, "%s\n", q);
 	return message;
 }
 

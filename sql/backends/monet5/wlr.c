@@ -361,7 +361,7 @@ WLRprocessBatch(Client cntxt)
 					sql->session->ac_on_commit = 1;
 					sql->session->level = 0;
 					if(mvc_trans(sql) < 0) {
-						TRC_ERROR(SQL_WLR, "Allocation failure while starting the transaction\n");
+						TRC_ERROR(SQL_TRANS, "Allocation failure while starting the transaction\n");
 					} else {
 						msg= runMAL(c,mb,0,0);
 						if( msg == MAL_SUCCEED){
@@ -1048,7 +1048,7 @@ WLRupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		break;
 	default:
-		TRC_ERROR(SQL_WLR, "Missing type in WLRupdate\n");
+		TRC_ERROR(SQL_TRANS, "Missing type in WLRupdate\n");
 	}
 
 	BATmsync(tids);

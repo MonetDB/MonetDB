@@ -11,8 +11,10 @@
 static BUN
 op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		  const void *rgt, int tp2, int incr2, const char *hp2, int wd2,
-		  TPE *restrict dst, BUN cnt,
-		  struct canditer *restrict ci, oid candoff,
+		  TPE *restrict dst,
+		  struct canditer *restrict ci1, struct canditer *restrict ci2,
+		  const bit *restrict rv,
+		  oid candoff1, oid candoff2,
 		  bool nonil,
 #ifdef NIL_MATCHES_FLAG
 		  bool nil_matches,
@@ -20,23 +22,22 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		  const char *func)
 {
 	BUN nils = 0;
-	BUN i, j, k = 0;
+	BUN i, j, k;
 	const void *restrict nil;
 	int (*atomcmp)(const void *, const void *);
-	oid x = canditer_next(ci) - candoff;
+	oid x1, x2;
 
 	switch (tp1) {
 	case TYPE_void: {
 		assert(incr1 == 1);
 		assert(tp2 == TYPE_oid || incr2 == 1); /* if void, incr2==1 */
 		oid v = lft ? * (const oid *) lft : oid_nil;
-		do {
+		for (k = 0; k < ci1->ncand; k++) {
 			TPE res;
-			while (k < x) {
-				dst[k++] = TPE_nil;
-				nils++;
-			}
-			if (is_oid_nil(v) || tp2 == TYPE_void) {
+			x1 = canditer_next(ci1) - candoff1;
+			x2 = canditer_next(ci2) - candoff2;
+			if ((rv != NULL && !rv[k]) ||
+			    is_oid_nil(v) || tp2 == TYPE_void) {
 				res = is_oid_nil(v) || is_oid_nil(* (const oid *) rgt) ?
 #ifdef NIL_MATCHES_FLAG
 					nil_matches ? OP(is_oid_nil(v), is_oid_nil(* (const oid *) rgt)) :
@@ -46,7 +47,7 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				dst[k] = res;
 				nils += is_TPE_nil(res);
 			} else {
-				j = x * incr2;
+				j = x2 * incr2;
 				if (is_oid_nil(((const oid *) rgt)[j])) {
 #ifdef NIL_MATCHES_FLAG
 					if (nil_matches) {
@@ -58,18 +59,9 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 						dst[k] = TPE_nil;
 					}
 				} else {
-					dst[k] = OP(v + k, ((const oid *) rgt)[j]);
+					dst[k] = OP(v + x1, ((const oid *) rgt)[j]);
 				}
 			}
-			k++;
-			x = canditer_next(ci);
-			if (is_oid_nil(x))
-				break;
-			x -= candoff;
-		} while (k < cnt);
-		while (k < cnt) {
-			dst[k++] = TPE_nil;
-			nils++;
 		}
 		break;
 	}
@@ -641,13 +633,11 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 	case TYPE_oid:
 		if (tp2 == TYPE_void) {
 			oid v = * (const oid *) rgt;
-			do {
-				while (k < x) {
-					dst[k++] = TPE_nil;
-					nils++;
-				}
-				i = x * incr1;
-				if (is_oid_nil(v)) {
+			for (k = 0; k < ci1->ncand; k++) {
+				x1 = canditer_next(ci1) - candoff1;
+				x2 = canditer_next(ci2) - candoff2;
+				i = x1 * incr1;
+				if ((rv != NULL && !rv[k]) || is_oid_nil(v)) {
 #ifdef NIL_MATCHES_FLAG
 					if (nil_matches) {
 						dst[k] = OP(is_oid_nil(((const oid *) lft)[i]), true);
@@ -669,18 +659,9 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 							dst[k] = TPE_nil;
 						}
 					} else {
-						dst[k] = OP(((const oid *) lft)[i], v);
+						dst[k] = OP(((const oid *) lft)[i], v + x2);
 					}
 				}
-				k++;
-				x = canditer_next(ci);
-				if (is_oid_nil(x))
-					break;
-				x -= candoff;
-			} while (k < cnt);
-			while (k < cnt) {
-				dst[k++] = TPE_nil;
-				nils++;
 			}
 		} else if (tp2 == TYPE_oid) {
 			if (nonil)
@@ -698,41 +679,33 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 	case TYPE_str:
 		if (tp1 != tp2)
 			goto unsupported;
-		do {
-			while (k < x) {
-				dst[k++] = TPE_nil;
+		for (k = 0; k < ci1->ncand; k++) {
+			x1 = canditer_next(ci1) - candoff1;
+			x2 = canditer_next(ci2) - candoff2;
+			if (rv != NULL && !rv[k]) {
+				dst[k] = TPE_nil;
 				nils++;
-			}
-			i = x * incr1;
-			j = x * incr2;
-			const char *s1, *s2;
-			s1 = hp1 ? hp1 + VarHeapVal(lft, i, wd1) : (const char *) lft;
-			s2 = hp2 ? hp2 + VarHeapVal(rgt, j, wd2) : (const char *) rgt;
-			if (s1 == NULL || strNil(s1) ||
-			    s2 == NULL || strNil(s2)) {
-#ifdef NIL_MATCHES_FLAG
-				if (nil_matches) {
-					dst[k] = OP(s1 == NULL || strNil(s1),
-						    s2 == NULL || strNil(s2));
-				} else
-#endif
-				{
-					nils++;
-					dst[k] = TPE_nil;
-				}
 			} else {
-				int x = strcmp(s1, s2);
-				dst[k] = OP(x, 0);
+				i = x1 * incr1;
+				j = x2 * incr2;
+				const char *s1, *s2;
+				s1 = hp1 ? hp1 + VarHeapVal(lft, i, wd1) : (const char *) lft;
+				s2 = hp2 ? hp2 + VarHeapVal(rgt, j, wd2) : (const char *) rgt;
+				if (strNil(s1) || strNil(s2)) {
+#ifdef NIL_MATCHES_FLAG
+					if (nil_matches) {
+						dst[k] = OP(strNil(s1), strNil(s2));
+					} else
+#endif
+					{
+						nils++;
+						dst[k] = TPE_nil;
+					}
+				} else {
+					int x = strcmp(s1, s2);
+					dst[k] = OP(x, 0);
+				}
 			}
-			k++;
-			x = canditer_next(ci);
-			if (is_oid_nil(x))
-				break;
-			x -= candoff;
-		} while (k < cnt);
-		while (k < cnt) {
-			dst[k++] = TPE_nil;
-			nils++;
 		}
 		break;
 	default:
@@ -762,46 +735,40 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		if (atomcmp == ATOMcompare(TYPE_dbl))
 			goto dbldbl;
 		nil = ATOMnilptr(tp1);
-		do {
-			while (k < x) {
-				dst[k++] = TPE_nil;
+		for (k = 0; k < ci1->ncand; k++) {
+			x1 = canditer_next(ci1) - candoff1;
+			x2 = canditer_next(ci2) - candoff2;
+			if (rv != NULL && !rv[k]) {
+				dst[k] = TPE_nil;
 				nils++;
-			}
-			i = x * incr1;
-			j = x * incr2;
-			const void *p1, *p2;
-			p1 = hp1
-				? (const void *) (hp1 + VarHeapVal(lft, i, wd1))
-				: (const void *) ((const char *) lft + i * wd1);
-			p2 = hp2
-				? (const void *) (hp2 + VarHeapVal(rgt, j, wd2))
-				: (const void *) ((const char *) rgt + j * wd2);
-			if (p1 == NULL || p2 == NULL ||
-			    (*atomcmp)(p1, nil) == 0 ||
-			    (*atomcmp)(p2, nil) == 0) {
-#ifdef NIL_MATCHES_FLAG
-				if (nil_matches) {
-					dst[k] = OP(p1 == NULL || (*atomcmp)(p1, nil) == 0,
-						    p2 == NULL || (*atomcmp)(p2, nil) == 0);
-				} else
-#endif
-				{
-					nils++;
-					dst[k] = TPE_nil;
-				}
 			} else {
-				int x = (*atomcmp)(p1, p2);
-				dst[k] = OP(x, 0);
+				i = x1 * incr1;
+				j = x2 * incr2;
+				const void *p1, *p2;
+				p1 = hp1
+					? (const void *) (hp1 + VarHeapVal(lft, i, wd1))
+					: (const void *) ((const char *) lft + i * wd1);
+				p2 = hp2
+					? (const void *) (hp2 + VarHeapVal(rgt, j, wd2))
+					: (const void *) ((const char *) rgt + j * wd2);
+				if (p1 == NULL || p2 == NULL ||
+				    (*atomcmp)(p1, nil) == 0 ||
+				    (*atomcmp)(p2, nil) == 0) {
+#ifdef NIL_MATCHES_FLAG
+					if (nil_matches) {
+						dst[k] = OP(p1 == NULL || (*atomcmp)(p1, nil) == 0,
+							    p2 == NULL || (*atomcmp)(p2, nil) == 0);
+					} else
+#endif
+					{
+						nils++;
+						dst[k] = TPE_nil;
+					}
+				} else {
+					int x = (*atomcmp)(p1, p2);
+					dst[k] = OP(x, 0);
+				}
 			}
-			k++;
-			x = canditer_next(ci);
-			if (is_oid_nil(x))
-				break;
-			x -= candoff;
-		} while (k < cnt);
-		while (k < cnt) {
-			dst[k++] = TPE_nil;
-			nils++;
 		}
 		break;
 	}
@@ -817,8 +784,9 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 static BAT *
 BATcalcop_intern(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		 const void *rgt, int tp2, int incr2, const char *hp2, int wd2,
-		 BUN cnt, struct canditer *restrict ci,
-		 oid candoff, bool nonil, oid seqbase,
+		 struct canditer *restrict ci1, struct canditer *restrict ci2,
+		 const bit *restrict rv,
+		 oid candoff1, oid candoff2, bool nonil, oid seqbase,
 #ifdef NIL_MATCHES_FLAG
 		 bool nil_matches,
 #endif
@@ -828,7 +796,7 @@ BATcalcop_intern(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 	BUN nils = 0;
 	TPE *restrict dst;
 
-	bn = COLnew(seqbase, TYPE_TPE, cnt, TRANSIENT);
+	bn = COLnew(seqbase, TYPE_TPE, ci1->ncand, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 
@@ -836,7 +804,7 @@ BATcalcop_intern(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 
 	nils = op_typeswitchloop(lft, tp1, incr1, hp1, wd1,
 				 rgt, tp2, incr2, hp2, wd2,
-				 dst, cnt, ci, candoff,
+				 dst, ci1, ci2, rv, candoff1, candoff2,
 				 nonil,
 #ifdef NIL_MATCHES_FLAG
 				 nil_matches,
@@ -848,11 +816,11 @@ BATcalcop_intern(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		return NULL;
 	}
 
-	BATsetcount(bn, cnt);
+	BATsetcount(bn, ci1->ncand);
 
-	bn->tsorted = cnt <= 1 || nils == cnt;
-	bn->trevsorted = cnt <= 1 || nils == cnt;
-	bn->tkey = cnt <= 1;
+	bn->tsorted = ci1->ncand <= 1 || nils == ci1->ncand;
+	bn->trevsorted = ci1->ncand <= 1 || nils == ci1->ncand;
+	bn->tkey = ci1->ncand <= 1;
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
@@ -860,144 +828,135 @@ BATcalcop_intern(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 }
 
 BAT *
-BATcalcop(BAT *b1, BAT *b2, BAT *s
+BATcalcop(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r
 #ifdef NIL_MATCHES_FLAG
 	  , bool nil_matches
 #endif
 	)
 {
-	BAT *bn;
-	struct canditer ci;
-	BUN cnt, ncand;
+	struct canditer ci1, ci2;
+	BUN ncand;
+	const bit *rv = r ? Tloc(r, 0) : NULL;
 
 	BATcheck(b1, __func__, NULL);
 	BATcheck(b2, __func__, NULL);
 
-	if (checkbats(b1, b2, __func__) != GDK_SUCCEED)
+	ncand = canditer_init(&ci1, b1, s1);
+	if (canditer_init(&ci2, b2, s2) != ncand ||
+	    ci1.hseq != ci2.hseq) {
+		GDKerror("%s: inputs not the same size.\n", __func__);
 		return NULL;
-
-	cnt = BATcount(b1);
-	ncand = canditer_init(&ci, b1, s);
+	}
 	if (ncand == 0)
-		return BATconstant(b1->hseqbase, TYPE_TPE,
-				   ATOMnilptr(TYPE_TPE), cnt, TRANSIENT);
+		return COLnew(b1->hseqbase, TYPE_TPE, 0, TRANSIENT);
 
-	if (BATtvoid(b1) && BATtvoid(b2) && cnt == ncand) {
+	if (BATtvoid(b1) && BATtvoid(b2) && ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
 		TPE res;
 
 		if (is_oid_nil(b1->tseqbase) || is_oid_nil(b2->tseqbase))
 			res = TPE_nil;
 		else
-			res = OP(b1->tseqbase, b2->tseqbase);
+			res = OP(b1->tseqbase + ci1.seq, b2->tseqbase + ci2.seq);
 
-		return BATconstant(b1->hseqbase, TYPE_TPE, &res, cnt, TRANSIENT);
+		return BATconstant(b1->hseqbase, TYPE_TPE, &res, ncand, TRANSIENT);
 	}
 
-	bn = BATcalcop_intern(b1->ttype == TYPE_void ? (const void *) &b1->tseqbase : (const void *) Tloc(b1, 0),
-			      ATOMtype(b1->ttype) == TYPE_oid ? b1->ttype : ATOMbasetype(b1->ttype),
-			      1,
-			      b1->tvheap ? b1->tvheap->base : NULL,
-			      b1->twidth,
-			      b2->ttype == TYPE_void ? (const void *) &b2->tseqbase : (const void *) Tloc(b2, 0),
-			      ATOMtype(b2->ttype) == TYPE_oid ? b2->ttype : ATOMbasetype(b2->ttype),
-			      1,
-			      b2->tvheap ? b2->tvheap->base : NULL,
-			      b2->twidth,
-			      cnt,
-			      &ci,
-			      b1->hseqbase,
-			      cnt == ncand && b1->tnonil && b2->tnonil,
-			      b1->hseqbase,
+	return BATcalcop_intern(b1->ttype == TYPE_void ? (const void *) &b1->tseqbase : (const void *) Tloc(b1, 0),
+				ATOMtype(b1->ttype) == TYPE_oid ? b1->ttype : ATOMbasetype(b1->ttype),
+				1,
+				b1->tvheap ? b1->tvheap->base : NULL,
+				b1->twidth,
+				b2->ttype == TYPE_void ? (const void *) &b2->tseqbase : (const void *) Tloc(b2, 0),
+				ATOMtype(b2->ttype) == TYPE_oid ? b2->ttype : ATOMbasetype(b2->ttype),
+				1,
+				b2->tvheap ? b2->tvheap->base : NULL,
+				b2->twidth,
+				&ci1, &ci2, rv,
+				b1->hseqbase, b2->hseqbase,
+				b1->tnonil && b2->tnonil,
+				ci1.hseq,
 #ifdef NIL_MATCHES_FLAG
-			      nil_matches,
+				nil_matches,
 #endif
-			      __func__);
-
-	return bn;
+				__func__);
 }
 
 BAT *
-BATcalcopcst(BAT *b, const ValRecord *v, BAT *s
+BATcalcopcst(BAT *b, const ValRecord *v, BAT *s, BAT *r
 #ifdef NIL_MATCHES_FLAG
 	  , bool nil_matches
 #endif
 	)
 {
-	BAT *bn;
 	struct canditer ci;
-	BUN cnt, ncand;
+	BUN ncand;
+	const bit *rv = r ? Tloc(r, 0) : NULL;
 
 	BATcheck(b, __func__, NULL);
 
-	cnt = BATcount(b);
 	ncand = canditer_init(&ci, b, s);
 	if (ncand == 0)
-		return BATconstant(b->hseqbase, TYPE_TPE,
-				   ATOMnilptr(TYPE_TPE), cnt, TRANSIENT);
+		return COLnew(b->hseqbase, TYPE_TPE, 0, TRANSIENT);
 
-	bn = BATcalcop_intern(b->ttype == TYPE_void ? (const void *) &b->tseqbase : (const void *) Tloc(b, 0),
-			      ATOMtype(b->ttype) == TYPE_oid ? b->ttype : ATOMbasetype(b->ttype),
-			      1,
-			      b->tvheap ? b->tvheap->base : NULL,
-			      b->twidth,
-			      VALptr(v),
-			      ATOMtype(v->vtype) == TYPE_oid ? v->vtype : ATOMbasetype(v->vtype),
-			      0,
-			      NULL,
-			      0,
-			      cnt,
-			      &ci,
-			      b->hseqbase,
-			      cnt == ncand && b->tnonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
-			      b->hseqbase,
+	return BATcalcop_intern(b->ttype == TYPE_void ? (const void *) &b->tseqbase : (const void *) Tloc(b, 0),
+				ATOMtype(b->ttype) == TYPE_oid ? b->ttype : ATOMbasetype(b->ttype),
+				1,
+				b->tvheap ? b->tvheap->base : NULL,
+				b->twidth,
+				VALptr(v),
+				ATOMtype(v->vtype) == TYPE_oid ? v->vtype : ATOMbasetype(v->vtype),
+				0,
+				NULL,
+				0,
+				&ci,
+				&(struct canditer){.tpe=cand_dense, .ncand=ncand},
+				rv,
+				b->hseqbase, 0,
+				b->tnonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
+				ci.hseq,
 #ifdef NIL_MATCHES_FLAG
-			      nil_matches,
+				nil_matches,
 #endif
-			      __func__);
-
-	return bn;
+				__func__);
 }
 
 BAT *
-BATcalccstop(const ValRecord *v, BAT *b, BAT *s
+BATcalccstop(const ValRecord *v, BAT *b, BAT *s, BAT *r
 #ifdef NIL_MATCHES_FLAG
 	  , bool nil_matches
 #endif
 	)
 {
-	BAT *bn;
 	struct canditer ci;
-	BUN cnt, ncand;
+	BUN ncand;
+	const bit *rv = r ? Tloc(r, 0) : NULL;
 
 	BATcheck(b, __func__, NULL);
 
-	cnt = BATcount(b);
 	ncand = canditer_init(&ci, b, s);
 	if (ncand == 0)
-		return BATconstant(b->hseqbase, TYPE_TPE,
-				   ATOMnilptr(TYPE_TPE), cnt, TRANSIENT);
+		return COLnew(b->hseqbase, TYPE_TPE, 0, TRANSIENT);
 
-	bn = BATcalcop_intern(VALptr(v),
-			      ATOMtype(v->vtype) == TYPE_oid ? v->vtype : ATOMbasetype(v->vtype),
-			      0,
-			      NULL,
-			      0,
-			      b->ttype == TYPE_void ? (const void *) &b->tseqbase : (const void *) Tloc(b, 0),
-			      ATOMtype(b->ttype) == TYPE_oid ? b->ttype : ATOMbasetype(b->ttype),
-			      1,
-			      b->tvheap ? b->tvheap->base : NULL,
-			      b->twidth,
-			      cnt,
-			      &ci,
-			      b->hseqbase,
-			      cnt == ncand && b->tnonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
-			      b->hseqbase,
+	return BATcalcop_intern(VALptr(v),
+				ATOMtype(v->vtype) == TYPE_oid ? v->vtype : ATOMbasetype(v->vtype),
+				0,
+				NULL,
+				0,
+				b->ttype == TYPE_void ? (const void *) &b->tseqbase : (const void *) Tloc(b, 0),
+				ATOMtype(b->ttype) == TYPE_oid ? b->ttype : ATOMbasetype(b->ttype),
+				1,
+				b->tvheap ? b->tvheap->base : NULL,
+				b->twidth,
+				&(struct canditer){.tpe=cand_dense, .ncand=ncand},
+				&ci,
+				rv,
+				0, b->hseqbase,
+				b->tnonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
+				ci.hseq,
 #ifdef NIL_MATCHES_FLAG
-			      nil_matches,
+				nil_matches,
 #endif
-			      __func__);
-
-	return bn;
+				__func__);
 }
 
 gdk_return
@@ -1019,9 +978,10 @@ VARcalcop(ValPtr ret, const ValRecord *lft, const ValRecord *rgt
 			      NULL,
 			      0,
 			      VALget(ret),
-			      1,
 			      &(struct canditer){.tpe=cand_dense, .ncand=1},
-			      0,
+			      &(struct canditer){.tpe=cand_dense, .ncand=1},
+			      NULL,
+			      0, 0,
 			      false,
 #ifdef NIL_MATCHES_FLAG
 			      nil_matches,

@@ -16,6 +16,30 @@
 #include "sql_mvc.h"
 
 
+/* some projections results are order dependend (row_number etc) */
+int 
+project_unsafe(sql_rel *rel, int allow_identity)
+{
+	sql_rel *sub = rel->l;
+	node *n;
+
+	if (need_distinct(rel) || rel->r /* order by */)
+		return 1;
+	if (!rel->exps)
+		return 0;
+	/* projects without sub and projects around ddl's cannot be changed */
+	if (!sub || (sub && sub->op == op_ddl))
+		return 1;
+	for(n = rel->exps->h; n; n = n->next) {
+		sql_exp *e = n->data;
+
+		/* aggr func in project ! */
+		if (exp_unsafe(e, allow_identity))
+			return 1;
+	}
+	return 0;
+}
+
 /* we don't name relations directly, but sometimes we need the relation
    name. So we look it up in the first expression
 
@@ -876,6 +900,7 @@ rel_groupby(mvc *sql, sql_rel *l, list *groupbyexps )
 	rel->exps = aggrs;
 	rel->nrcols = l->nrcols;
 	rel->op = op_groupby;
+	rel->grouped = 1;
 	return rel;
 }
 
@@ -945,6 +970,7 @@ rel_table_func(sql_allocator *sa, sql_rel *l, sql_exp *f, list *exps, int kind)
 	if(!rel)
 		return NULL;
 
+	assert(kind > 0);
 	rel->flag = kind;
 	rel->l = l; /* relation before call */
 	rel->r = f; /* expression (table func call) */
@@ -1564,7 +1590,7 @@ exps_deps(mvc *sql, list *exps, list *refs, list *l)
 }
 
 static int
-id_cmp(int *id1, int *id2)
+id_cmp(sqlid *id1, sqlid *id2)
 {
 	if (*id1 == *id2)
 		return 0;
@@ -1572,7 +1598,7 @@ id_cmp(int *id1, int *id2)
 }
 
 static list *
-cond_append(list *l, int *id)
+cond_append(list *l, sqlid *id)
 {
 	if (*id >= FUNC_OIDS && !list_find(l, id, (fcmp) &id_cmp))
 		 list_append(l, id);
@@ -1704,7 +1730,7 @@ rel_deps(mvc *sql, sql_rel *r, list *refs, list *l)
 		}
 	} break;
 	case op_table: {
-		if ((r->flag == 0 || r->flag == 1) && r->r) { /* table producing function, excluding rel_relational_func cases */
+		if ((IS_TABLE_PROD_FUNC(r->flag) || r->flag == TABLE_FROM_RELATION) && r->r) { /* table producing function, excluding rel_relational_func cases */
 			sql_exp *op = r->r;
 			sql_subfunc *f = op->f;
 			cond_append(l, &f->func->base.id);
@@ -1899,8 +1925,14 @@ rel_exp_visitor(mvc *sql, sql_rel *rel, exp_rewrite_fptr exp_rewriter)
 
 	switch(rel->op){
 	case op_basetable:
+		break;
 	case op_table:
-		return rel;
+		if (IS_TABLE_PROD_FUNC(rel->flag) || rel->flag == TABLE_FROM_RELATION) {
+			if (rel->l)
+				if ((rel->l = rel_exp_visitor(sql, rel->l, exp_rewriter)) == NULL)
+					return NULL;
+		}
+		break;
 	case op_ddl:
 		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq) {
 			if (rel->l)
@@ -1916,8 +1948,7 @@ rel_exp_visitor(mvc *sql, sql_rel *rel, exp_rewrite_fptr exp_rewriter)
 		} else if (rel->flag == ddl_psm) {
 			break;
 		}
-		return rel;
-
+		break;
 	case op_insert:
 	case op_update:
 	case op_delete:
@@ -2057,21 +2088,22 @@ rel_visitor(mvc *sql, sql_rel *rel, rel_rewrite_fptr rel_rewriter, int *changes,
 		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
 	if (!rel)
-		return rel;
+		return NULL;
 
-	if (topdown) {
-		if (!(rel = do_rel_visitor(sql, rel, rel_rewriter, changes, true)))
-			return rel;
-	}
+	if (topdown && !(rel = do_rel_visitor(sql, rel, rel_rewriter, changes, true)))
+		return NULL;
 
 	sql_rel *(*func)(mvc *, sql_rel *, rel_rewrite_fptr, int*) = topdown ? rel_visitor_topdown : rel_visitor_bottomup;
 
 	switch(rel->op){
 	case op_basetable:
+		break;
 	case op_table:
-		if (rel->op == op_table && rel->l && rel->flag != 2) 
-			if ((rel->l = func(sql, rel->l, rel_rewriter, changes)) == NULL)
-				return NULL;
+		if (IS_TABLE_PROD_FUNC(rel->flag) || rel->flag == TABLE_FROM_RELATION) {
+			if (rel->l)
+				if ((rel->l = func(sql, rel->l, rel_rewriter, changes)) == NULL)
+					return NULL;
+		}
 		break;
 	case op_ddl:
 		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq) {
@@ -2089,8 +2121,7 @@ rel_visitor(mvc *sql, sql_rel *rel, rel_rewrite_fptr rel_rewriter, int *changes,
 			if ((rel->exps = exps_rel_visitor(sql, rel->exps, rel_rewriter, changes, topdown)) == NULL)
 				return NULL;
 		}
-		return rel;
-
+		break;
 	case op_insert:
 	case op_update:
 	case op_delete:

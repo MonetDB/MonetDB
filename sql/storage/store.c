@@ -2658,7 +2658,7 @@ store_hot_snapshot(str tarfile)
 	// one DIR_SEP in it. Realpath requires the file to exist so
 	// we feed it tmppath rather than tarfile.
 	if (realpath(tmppath, dirpath) == NULL) { // ERROR no realpath
-		GDKerror("couldn't resolve path %s: %s", tarfile, strerror(errno));
+		GDKsyserror("couldn't resolve path %s", tarfile);
 		goto end;
 	}
 	*strrchr(dirpath, DIR_SEP) = '\0';
@@ -2668,13 +2668,13 @@ store_hot_snapshot(str tarfile)
 	// and I'm not quite sure what a generic streams-api should look like.
 	dir_fd = open(dirpath, O_RDONLY); // ERROR no o_rdonly
 	if (dir_fd < 0) {
-		GDKerror("couldn't open directory %s: %s", dirpath, strerror(errno));
+		GDKsyserror("couldn't open directory %s", dirpath);
 		goto end;
 	}
 
 	// Fsync the directory. Postgres believes this is necessary for durability.
 	if (fsync(dir_fd) < 0) { // ERROR no fsync
-		GDKerror("First fsync on %s failed: %s", dirpath, strerror(errno));
+		GDKsyserror("First fsync on %s failed", dirpath);
 		goto end;
 	}
 #else
@@ -2714,14 +2714,14 @@ store_hot_snapshot(str tarfile)
 	close_stream(tar_stream);
 	tar_stream = NULL;
 	if (rename(tmppath, tarfile) < 0) {
-		GDKerror("rename %s to %s failed: %s", tmppath, tarfile, strerror(errno));
+		GDKsyserror("rename %s to %s failed", tmppath, tarfile);
 		goto end;
 	}
 	do_remove = 0;
 #ifdef HAVE_FSYNC
 	// More POSIX fsync-the-parent-dir ceremony
 	if (fsync(dir_fd) < 0) {
-		GDKerror("fsync on dir %s failed: %s", dirpath, strerror(errno));
+		GDKsyserror("fsync on dir %s failed", dirpath);
 		goto end;
 	}
 #endif
@@ -5738,7 +5738,7 @@ sql_trans_rename_schema(sql_trans *tr, sqlid id, const char *new_name)
 	sql_schema *s = n->data;
 	oid rid;
 
-	assert(new_name && !strNil(new_name));
+	assert(!strNil(new_name));
 
 	list_hash_delete(tr->schemas.set, s, NULL); /* has to re-hash the entry in the changeset */
 	s->base.name = sa_strdup(tr->sa, new_name);
@@ -6041,7 +6041,7 @@ sql_trans_rename_table(sql_trans *tr, sql_schema *s, sqlid id, const char *new_n
 	sql_table *t = n->data;
 	oid rid;
 
-	assert(new_name && !strNil(new_name));
+	assert(!strNil(new_name));
 
 	list_hash_delete(s->tables.set, t, NULL); /* has to re-hash the entry in the changeset */
 	t->base.name = sa_strdup(tr->sa, new_name);
@@ -6519,7 +6519,7 @@ sql_trans_rename_column(sql_trans *tr, sql_table *t, const char *old_name, const
 	sql_column *c = find_sql_column(t, old_name);
 	oid rid;
 
-	assert(new_name && !strNil(new_name));
+	assert(!strNil(new_name));
 
 	list_hash_delete(t->columns.set, c, NULL); /* has to re-hash the entry in the changeset */
 	c->base.name = sa_strdup(tr->sa, new_name);

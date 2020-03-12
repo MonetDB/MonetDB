@@ -42,7 +42,7 @@ insert_value(sql_query *query, sql_column *c, sql_rel **r, symbol *s, const char
 		}
 	} else {
 		exp_kind ek = {type_value, card_value, FALSE};
-		sql_exp *e = rel_value_exp2(query, r, s, sql_sel, ek);
+		sql_exp *e = rel_value_exp2(query, r, s, sql_sel | sql_values, ek);
 
 		if (!e)
 			return(NULL);
@@ -315,7 +315,9 @@ rel_inserts(mvc *sql, sql_table *t, sql_rel *r, list *collist, size_t rowcount, 
 			for (n = r->exps->h, m = collist->h; n && m; n = n->next, m = m->next) {
 				sql_column *c = m->data;
 				sql_exp *e = n->data;
-		
+
+				if (inserts[c->colnr])
+					return sql_error(sql, 02, SQLSTATE(42000) "%s: column '%s' specified more than once", action, c->base.name);
 				inserts[c->colnr] = rel_check_type(sql, &c->type, r, e, type_equal);
 			}
 		} else {
@@ -324,8 +326,11 @@ rel_inserts(mvc *sql, sql_table *t, sql_rel *r, list *collist, size_t rowcount, 
 				sql_exp *e;
 
 				e = exps_bind_column2( r->exps, c->t->base.name, c->base.name);
-				if (e)
+				if (e) {
+					if (inserts[c->colnr])
+						return sql_error(sql, 02, SQLSTATE(42000) "%s: column '%s' specified more than once", action, c->base.name);
 					inserts[c->colnr] = exp_ref(sql->sa, e);
+				}
 			}
 		}
 	}
@@ -609,16 +614,12 @@ insert_into(sql_query *query, dlist *qname, dlist *columns, symbol *val_or_q)
 	mvc *sql = query->sql;
 	char *sname = qname_schema(qname);
 	char *tname = qname_table(qname);
-	sql_schema *s = NULL;
+	sql_schema *s = cur_schema(sql);
 	sql_table *t = NULL;
 	sql_rel *r = NULL;
 
-	if (sname && !(s=mvc_bind_schema(sql, sname))) {
-		(void) sql_error(sql, 02, SQLSTATE(3F000) "INSERT INTO: no such schema '%s'", sname);
-		return NULL;
-	}
-	if (!s)
-		s = cur_schema(sql);
+	if (sname && !(s = mvc_bind_schema(sql, sname)))
+		return sql_error(sql, 02, SQLSTATE(3F000) "INSERT INTO: no such schema '%s'", sname);
 	t = mvc_bind_table(sql, s, tname);
 	if (!t && !sname) {
 		s = tmp_schema(sql);
@@ -910,16 +911,10 @@ rel_update(mvc *sql, sql_rel *t, sql_rel *uprel, sql_exp **updates, list *exps)
 static sql_exp *
 update_check_column(mvc *sql, sql_table *t, sql_column *c, sql_exp *v, sql_rel *r, char *cname, const char *action)
 {
-	if (!c) {
-		rel_destroy(r);
-		return sql_error(sql, 02, SQLSTATE(42S22) "%s: no such column '%s.%s'", action, t->base.name, cname);
-	}
 	if (!table_privs(sql, t, PRIV_UPDATE) && !sql_privilege(sql, sql->user_id, c->base.id, PRIV_UPDATE)) 
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: insufficient privileges for user '%s' to update table '%s' on column '%s'", action, stack_get_string(sql, "current_user"), t->base.name, cname);
-	if (!v || (v = rel_check_type(sql, &c->type, r, v, type_equal)) == NULL) {
-		rel_destroy(r);
+	if (!v || (v = rel_check_type(sql, &c->type, r, v, type_equal)) == NULL)
 		return NULL;
-	}
 	return v;
 }
 
@@ -928,7 +923,7 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 {
 	mvc *sql = query->sql;
 	sql_table *mt = NULL;
-	sql_exp *e = NULL, **updates = SA_ZNEW_ARRAY(sql->sa, sql_exp*, list_length(t->columns.set));
+	sql_exp **updates = SA_ZNEW_ARRAY(sql->sa, sql_exp*, list_length(t->columns.set));
 	list *exps, *pcols = NULL;
 	dnode *n;
 	const char *rname = NULL;
@@ -947,9 +942,7 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 		pcols = mt->part.pexp->cols;
 	}
 	/* first create the project */
-	e = exp_column(sql->sa, rname = rel_name(r), TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
-	exps = new_exp_list(sql->sa);
-	append(exps, e);
+	exps = list_append(new_exp_list(sql->sa), exp_column(sql->sa, rname = rel_name(r), TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1));
 
 	for (n = assignmentlist->h; n; n = n->next) {
 		symbol *a = NULL;
@@ -961,15 +954,17 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 
 		a = assignment->h->data.sym;
 		if (a) {
-			int status = sql->session->status;
-			exp_kind ek = {type_value, (single)?card_column:card_relation, FALSE};
+			exp_kind ek = { (single)?type_value:type_relation, card_column, FALSE};
 
-			if(single && a->token == SQL_DEFAULT) {
+			if (single && a->token == SQL_DEFAULT) {
 				char *colname = assignment->h->next->data.sval;
 				sql_column *col = mvc_bind_column(sql, t, colname);
+
+				if (!col)
+					return sql_error(sql, 02, SQLSTATE(42S22) "%s: no such column '%s.%s'", action, t->base.name, colname);
 				if (col->def) {
 					char *typestr = subtype2string2(&col->type);
-					if(!typestr)
+					if (!typestr)
 						return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					v = rel_parse_val(sql, sa_message(sql->sa, "select cast(%s as %s);", col->def, typestr), sql->emode, NULL);
 					_DELETE(typestr);
@@ -977,36 +972,18 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 					return sql_error(sql, 02, SQLSTATE(42000) "%s: column '%s' has no valid default value", action, col->base.name);
 				}
 			} else if (single) {
-				v = rel_value_exp(query, &rel_val, a, sql_sel, ek);
+				v = rel_value_exp(query, &r, a, sql_sel | sql_update_set, ek);
 				outer = 1;
 			} else {
+				if (r)
+					query_push_outer(query, r, sql_sel | sql_update_set);
 				rel_val = rel_subquery(query, NULL, a, ek);
-			}
-			if ((single && !v) || (!single && !rel_val)) {
-				sql->errstr[0] = 0;
-				sql->session->status = status;
-				assert(!rel_val);
-				outer = 1;
-				if (single) {
-					v = rel_value_exp(query, &r, a, sql_sel, ek);
-				} else if (!rel_val && r) {
-					query_push_outer(query, r, sql_sel);
-					rel_val = rel_subquery(query, NULL, a, ek);
+				if (r)
 					r = query_pop_outer(query);
-					if (/* DISABLES CODE */ (0) && r) {
-						list *val_exps = rel_projections(sql, r->r, NULL, 0, 1);
-
-						r = rel_project(sql->sa, r, rel_projections(sql, r, NULL, 1, 1));
-						if (r)
-							list_merge(r->exps, val_exps, (fdup)NULL);
-						reset_processed(r);
-					}
-				}
+				outer = 1;
 			}
-			if ((single && !v) || (!single && !rel_val)) {
-				rel_destroy(r);
+			if ((single && !v) || (!single && !rel_val))
 				return NULL;
-			}
 			if (rel_val && outer) {
 				if (single) {
 					if (!exp_name(v))
@@ -1028,23 +1005,22 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 			dlist *cols = assignment->h->next->data.lval;
 			dnode *m;
 			node *n;
-			int nr;
 
 			if (!rel_val)
 				rel_val = r;
-			if (!rel_val || !is_project(rel_val->op) ||
-				dlist_length(cols) > list_length(rel_val->exps)) {
-				rel_destroy(r);
-				return sql_error(sql, 02, SQLSTATE(42000) "%s: too many columns specified", action);
-			}
-			nr = (list_length(rel_val->exps)-dlist_length(cols));
-			for (n=rel_val->exps->h; nr; nr--, n = n->next)
-				;
-			for (m = cols->h; n && m; n = n->next, m = m->next) {
+			if (!rel_val || !is_project(rel_val->op))
+				return sql_error(sql, 02, SQLSTATE(42000) "%s: Invalid right side of the SET clause", action);
+			if (dlist_length(cols) != list_length(rel_val->exps))
+				return sql_error(sql, 02, SQLSTATE(42000) "%s: The number of specified columns between the SET clause and the right side don't match (%d != %d)", action, dlist_length(cols), list_length(rel_val->exps));
+			for (n = rel_val->exps->h, m = cols->h; n && m; n = n->next, m = m->next) {
 				char *cname = m->data.sval;
 				sql_column *c = mvc_bind_column(sql, t, cname);
 				sql_exp *v = n->data;
 
+				if (!c)
+					return sql_error(sql, 02, SQLSTATE(42S22) "%s: no such column '%s.%s'", action, t->base.name, cname);
+				if (updates[c->colnr])
+					return sql_error(sql, 02, SQLSTATE(42000) "%s: Multiple assignments to same column '%s'", action, c->base.name);
 				if (mt && pcols) {
 					for (node *nn = pcols->h; nn; nn = n->next) {
 						int next = *(int*) nn->data;
@@ -1061,13 +1037,11 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 					exp_label(sql->sa, v, ++sql->label);
 				if (!exp_is_atom(v) || outer)
 					v = exp_ref(sql->sa, v);
-				if (!v) { /* check for NULL */
+				if (!v) /* check for NULL */
 					v = exp_atom(sql->sa, atom_general(sql->sa, &c->type, NULL));
-				} else if ((v = update_check_column(sql, t, c, v, r, cname, action)) == NULL) {
+				if (!(v = update_check_column(sql, t, c, v, r, cname, action)))
 					return NULL;
-				}
 				list_append(exps, exp_column(sql->sa, t->base.name, cname, &c->type, CARD_MULTI, 0, 0));
-				assert(!updates[c->colnr]);
 				exp_setname(sql->sa, v, c->t->base.name, c->base.name);
 				updates[c->colnr] = v;
 			}
@@ -1075,6 +1049,10 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 			char *cname = assignment->h->next->data.sval;
 			sql_column *c = mvc_bind_column(sql, t, cname);
 
+			if (!c)
+				return sql_error(sql, 02, SQLSTATE(42S22) "%s: no such column '%s.%s'", action, t->base.name, cname);
+			if (updates[c->colnr])
+				return sql_error(sql, 02, SQLSTATE(42000) "%s: Multiple assignments to same column '%s'", action, c->base.name);
 			if (mt && pcols) {
 				for (node *nn = pcols->h; nn; nn = nn->next) {
 					int next = *(int*) nn->data;
@@ -1087,18 +1065,16 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 					}
 				}
 			}
-			if (!v) {
+			if (!v)
 				v = exp_atom(sql->sa, atom_general(sql->sa, &c->type, NULL));
-			} else if ((v = update_check_column(sql, t, c, v, r, cname, action)) == NULL) {
+			if (!(v = update_check_column(sql, t, c, v, r, cname, action)))
 				return NULL;
-			}
 			list_append(exps, exp_column(sql->sa, t->base.name, cname, &c->type, CARD_MULTI, 0, 0));
 			exp_setname(sql->sa, v, c->t->base.name, c->base.name);
 			updates[c->colnr] = v;
 		}
 	}
-	e = exp_column(sql->sa, rname, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
-	r = rel_project(sql->sa, r, append(new_exp_list(sql->sa),e));
+	r = rel_project(sql->sa, r, list_append(new_exp_list(sql->sa), exp_column(sql->sa, rname, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1)));
 	r = rel_update(sql, bt, r, updates, exps);
 	return r;
 }
@@ -1109,15 +1085,11 @@ update_table(sql_query *query, dlist *qname, str alias, dlist *assignmentlist, s
 	mvc *sql = query->sql;
 	char *sname = qname_schema(qname);
 	char *tname = qname_table(qname);
-	sql_schema *s = NULL;
+	sql_schema *s = cur_schema(sql);
 	sql_table *t = NULL;
 
-	if (sname && !(s=mvc_bind_schema(sql,sname))) {
-		(void) sql_error(sql, 02, SQLSTATE(3F000) "UPDATE: no such schema '%s'", sname);
-		return NULL;
-	}
-	if (!s)
-		s = cur_schema(sql);
+	if (sname && !(s = mvc_bind_schema(sql,sname)))
+		return sql_error(sql, 02, SQLSTATE(3F000) "UPDATE: no such schema '%s'", sname);
 	t = mvc_bind_table(sql, s, tname);
 	if (!t && !sname) {
 		s = tmp_schema(sql);
@@ -1220,15 +1192,11 @@ delete_table(sql_query *query, dlist *qname, str alias, symbol *opt_where)
 	mvc *sql = query->sql;
 	char *sname = qname_schema(qname);
 	char *tname = qname_table(qname);
-	sql_schema *schema = NULL;
+	sql_schema *schema = cur_schema(sql);
 	sql_table *t = NULL;
 
-	if (sname && !(schema=mvc_bind_schema(sql, sname))) {
-		(void) sql_error(sql, 02, SQLSTATE(3F000) "DELETE FROM: no such schema '%s'", sname);
-		return NULL;
-	}
-	if (!schema)
-		schema = cur_schema(sql);
+	if (sname && !(schema = mvc_bind_schema(sql, sname)))
+		return sql_error(sql, 02, SQLSTATE(3F000) "DELETE FROM: no such schema '%s'", sname);
 	t = mvc_bind_table(sql, schema, tname);
 	if (!t && !sname) {
 		schema = tmp_schema(sql);
@@ -1281,15 +1249,11 @@ truncate_table(mvc *sql, dlist *qname, int restart_sequences, int drop_action)
 {
 	char *sname = qname_schema(qname);
 	char *tname = qname_table(qname);
-	sql_schema *schema = NULL;
+	sql_schema *schema = cur_schema(sql);
 	sql_table *t = NULL;
 
-	if (sname && !(schema=mvc_bind_schema(sql, sname))) {
-		(void) sql_error(sql, 02, SQLSTATE(3F000) "TRUNCATE: no such schema '%s'", sname);
-		return NULL;
-	}
-	if (!schema)
-		schema = cur_schema(sql);
+	if (sname && !(schema = mvc_bind_schema(sql, sname)))
+		return sql_error(sql, 02, SQLSTATE(3F000) "TRUNCATE: no such schema '%s'", sname);
 	t = mvc_bind_table(sql, schema, tname);
 	if (!t && !sname) {
 		schema = tmp_schema(sql);
@@ -1360,7 +1324,7 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 {
 	mvc *sql = query->sql;
 	char *sname = qname_schema(qname), *tname = qname_table(qname), *alias_name;
-	sql_schema *s = NULL;
+	sql_schema *s = cur_schema(sql);
 	sql_table *t = NULL;
 	sql_rel *bt, *joined, *join_rel = NULL, *extra_project, *insert = NULL, *upd_del = NULL, *res = NULL, *extra_select;
 	sql_exp *nils, *project_first;
@@ -1368,10 +1332,8 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 
 	assert(tref && search_cond && merge_list);
 
-	if (sname && !(s=mvc_bind_schema(sql, sname)))
+	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_error(sql, 02, SQLSTATE(3F000) "MERGE: no such schema '%s'", sname);
-	if (!s)
-		s = cur_schema(sql);
 	t = mvc_bind_table(sql, s, tname);
 	if (!t && !sname) {
 		s = tmp_schema(sql);
@@ -1426,7 +1388,7 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 					join_rel = rel_dup(join_rel);
 				} else {
 					join_rel = rel_crossproduct(sql->sa, joined, bt, op_left);
-					if (!(join_rel = rel_logical_exp(query, join_rel, search_cond, sql_where)))
+					if (!(join_rel = rel_logical_exp(query, join_rel, search_cond, sql_where | sql_join)))
 						return NULL;
 					set_processed(join_rel);
 				}
@@ -1456,7 +1418,7 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 					join_rel = rel_dup(join_rel);
 				} else {
 					join_rel = rel_crossproduct(sql->sa, joined, bt, op_left);
-					if (!(join_rel = rel_logical_exp(query, join_rel, search_cond, sql_where)))
+					if (!(join_rel = rel_logical_exp(query, join_rel, search_cond, sql_where | sql_join)))
 						return NULL;
 					set_processed(join_rel);
 				}
@@ -1493,7 +1455,7 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 				join_rel = rel_dup(join_rel);
 			} else {
 				join_rel = rel_crossproduct(sql->sa, joined, bt, op_left);
-				if (!(join_rel = rel_logical_exp(query, join_rel, search_cond, sql_where)))
+				if (!(join_rel = rel_logical_exp(query, join_rel, search_cond, sql_where | sql_join)))
 					return NULL;
 				set_processed(join_rel);
 			}
@@ -1596,10 +1558,8 @@ rel_import(mvc *sql, sql_table *t, const char *tsep, const char *rsep, const cha
 			fwf_string_cur += sprintf(fwf_string_cur, LLFMT"%c", dn->data.l_val, STREAM_FWF_FIELD_SEP);
 			ncol++;
 		}
-		if(list_length(f->res) != ncol) {
-			(void) sql_error(sql, 02, SQLSTATE(3F000) "COPY INTO: fixed width import for %d columns but %d widths given.", list_length(f->res), ncol);
-			return NULL;
-		}
+		if (list_length(f->res) != ncol)
+			return sql_error(sql, 02, SQLSTATE(3F000) "COPY INTO: fixed width import for %d columns but %d widths given.", list_length(f->res), ncol);
 		*fwf_string_cur = '\0';
 	}
 
@@ -1635,7 +1595,7 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 	sql_rel *rel = NULL;
 	char *sname = qname_schema(qname);
 	char *tname = qname_table(qname);
-	sql_schema *s = NULL;
+	sql_schema *s = cur_schema(sql);
 	sql_table *t = NULL, *nt = NULL;
 	const char *tsep = seps->h->data.sval;
 	const char *rsep = seps->h->next->data.sval;
@@ -1647,12 +1607,9 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 	int reorder = 0;
 	assert(!nr_offset || nr_offset->h->type == type_lng);
 	assert(!nr_offset || nr_offset->h->next->type == type_lng);
-	if (sname && !(s=mvc_bind_schema(sql, sname))) {
-		(void) sql_error(sql, 02, SQLSTATE(3F000) "COPY INTO: no such schema '%s'", sname);
-		return NULL;
-	}
-	if (!s)
-		s = cur_schema(sql);
+
+	if (sname && !(s = mvc_bind_schema(sql, sname)))
+		return sql_error(sql, 02, SQLSTATE(3F000) "COPY INTO: no such schema '%s'", sname);
 	t = mvc_bind_table(sql, s, tname);
 	if (!t && !sname) {
 		s = tmp_schema(sql);
@@ -1845,9 +1802,8 @@ bincopyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, int co
 	mvc *sql = query->sql;
 	char *sname = qname_schema(qname);
 	char *tname = qname_table(qname);
-	sql_schema *s = NULL;
+	sql_schema *s = cur_schema(sql);
 	sql_table *t = NULL;
-
 	dnode *dn;
 	node *n;
 	sql_rel *res;
@@ -1860,18 +1816,12 @@ bincopyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, int co
 	int i;
 
 	assert(f);
-	if (!copy_allowed(sql, 1)) {
-		(void) sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: insufficient privileges: "
+	if (!copy_allowed(sql, 1))
+		return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: insufficient privileges: "
 				"binary COPY INTO requires database administrator rights");
-		return NULL;
-	}
 
-	if (sname && !(s=mvc_bind_schema(sql, sname))) {
-		(void) sql_error(sql, 02, SQLSTATE(3F000) "COPY INTO: no such schema '%s'", sname);
-		return NULL;
-	}
-	if (!s)
-		s = cur_schema(sql);
+	if (sname && !(s = mvc_bind_schema(sql, sname)))
+		return sql_error(sql, 02, SQLSTATE(3F000) "COPY INTO: no such schema '%s'", sname);
 	t = mvc_bind_table(sql, s, tname);
 	if (!t && !sname) {
 		s = tmp_schema(sql);
@@ -1934,24 +1884,18 @@ static sql_rel *
 copyfromloader(sql_query *query, dlist *qname, symbol *fcall)
 {
 	mvc *sql = query->sql;
-	sql_schema *s = NULL;
+	sql_schema *s = cur_schema(sql);
 	char *sname = qname_schema(qname);
 	char *tname = qname_table(qname);
 	sql_subfunc *loader = NULL;
 	sql_rel* rel = NULL;
 	sql_table* t;
 
-	if (!copy_allowed(sql, 1)) {
-		(void) sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: insufficient privileges: "
+	if (!copy_allowed(sql, 1))
+		return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: insufficient privileges: "
 				"binary COPY INTO requires database administrator rights");
-		return NULL;
-	}
-	if (sname && !(s = mvc_bind_schema(sql, sname))) {
-		(void) sql_error(sql, 02, SQLSTATE(3F000) "COPY INTO: no such schema '%s'", sname);
-		return NULL;
-	}
-	if (!s)
-		s = cur_schema(sql);
+	if (sname && !(s = mvc_bind_schema(sql, sname)))
+		return sql_error(sql, 02, SQLSTATE(3F000) "COPY INTO: no such schema '%s'", sname);
 	t = mvc_bind_table(sql, s, tname);
 	if (!t && !sname) {
 		s = tmp_schema(sql);
@@ -1960,20 +1904,16 @@ copyfromloader(sql_query *query, dlist *qname, symbol *fcall)
 			t = stack_find_table(sql, tname);
 	}
 	//TODO the COPY LOADER INTO should return an insert relation (instead of ddl) to handle partitioned tables properly
-	if (insert_allowed(sql, t, tname, "COPY INTO", "copy into") == NULL) {
+	if (insert_allowed(sql, t, tname, "COPY INTO", "copy into") == NULL)
 		return NULL;
-	} else if (isPartitionedByColumnTable(t) || isPartitionedByExpressionTable(t)) {
-		(void) sql_error(sql, 02, SQLSTATE(3F000) "COPY LOADER INTO: not possible for partitioned tables at the moment");
-		return NULL;
-	} else if (t->p && (isPartitionedByColumnTable(t->p) || isPartitionedByExpressionTable(t->p))) {
-		(void) sql_error(sql, 02, SQLSTATE(3F000) "COPY LOADER INTO: not possible for tables child of partitioned tables at the moment");
-		return NULL;
-	}
+	else if (isPartitionedByColumnTable(t) || isPartitionedByExpressionTable(t))
+		return sql_error(sql, 02, SQLSTATE(42000) "COPY LOADER INTO: not possible for partitioned tables at the moment");
+	else if (t->p && (isPartitionedByColumnTable(t->p) || isPartitionedByExpressionTable(t->p)))
+		return sql_error(sql, 02, SQLSTATE(42000) "COPY LOADER INTO: not possible for tables child of partitioned tables at the moment");
 
 	rel = rel_loader_function(query, fcall, new_exp_list(sql->sa), &loader);
-	if (!rel || !loader) {
+	if (!rel || !loader)
 		return NULL;
-	}
 
 	loader->sname = sname ? sa_zalloc(sql->sa, strlen(sname) + 1) : NULL;
 	loader->tname = tname ? sa_zalloc(sql->sa, strlen(tname) + 1) : NULL;
@@ -2109,7 +2049,7 @@ rel_parse_val(mvc *m, char *query, char emode, sql_rel *from)
 			sql_rel *r = from;
 			symbol* sq = sn->selection->h->data.sym->data.lval->h->data.sym;
 			sql_query *query = query_create(m);
-			e = rel_value_exp2(query, &r, sq, sql_sel, ek);
+			e = rel_value_exp2(query, &r, sq, sql_sel | sql_values, ek);
 		}
 	}
 	GDKfree(query);

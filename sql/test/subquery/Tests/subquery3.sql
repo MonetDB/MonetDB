@@ -327,6 +327,33 @@ SELECT
     (SELECT 1 FROM integers i2 GROUP BY SUM(i2.i))
 FROM integers i1; --error, aggregates not allowed in group by clause
 
+SELECT
+    1
+FROM another_T
+WHERE col5 = (SELECT AVG(col2)); --error, aggregate functions are not allowed in WHERE
+
+SELECT
+    1
+FROM another_T
+INNER JOIN tbl_ProductSales ON (SELECT MIN(col1)) = (SELECT MAX(col3)); --error, aggregate functions are not allowed in JOIN conditions
+
+SELECT
+    1
+FROM another_T
+GROUP BY (SELECT AVG(col2)); --error, aggregate function not allowed in GROUP BY clause
+
+SELECT
+	(SELECT 1 FROM integers i2 WHERE AVG(i2.i))
+FROM integers i1; --error, aggregate functions not allowed in WHERE clause
+
+SELECT
+	(SELECT 1 FROM (VALUES (MAX(2))) as i2)
+FROM integers i1; --error, aggregate functions are not allowed in VALUES
+
+SELECT
+	(SELECT 1 FROM integers i2 INNER JOIN integers i3 on MAX(i3.i) = MIN(i2.i))
+FROM integers i1; --error, aggregate functions not allowed in JOIN conditions
+
 SELECT 
     (SELECT SUM(SUM(i1.i) + i2.i) FROM integers i2 GROUP BY i2.i)
 FROM integers i1; --SUM(i1.i) is a correlation from the outer query, so the sum aggregates can be nested at this case
@@ -409,6 +436,14 @@ SELECT col1 FROM another_T WHERE (col2, col3) IN (SELECT 1,2,3); -- error, too m
 
 SELECT col1 FROM another_T WHERE (col2, col3) IN (VALUES(1,2,3)); -- error, too many columns in the subquery
 
+SELECT * FROM integers i1 ORDER BY SUM(i); --column "i1.i" must appear in the GROUP BY clause or be used in an aggregate function
+
+SELECT i FROM integers i1 ORDER BY SUM(i); --column "i1.i" must appear in the GROUP BY clause or be used in an aggregate function
+
+SELECT * FROM integers i1 ORDER BY (SELECT SUM(i1.i) FROM integers i2); --column "i1.i" must appear in the GROUP BY clause or be used in an aggregate function
+
+SELECT i FROM integers i1 ORDER BY (SELECT SUM(i1.i) FROM integers i2); --column "i1.i" must appear in the GROUP BY clause or be used in an aggregate function
+
 CREATE FUNCTION evilfunction(input INT) RETURNS TABLE (outt INT) BEGIN RETURN TABLE(SELECT input); END;
 
 SELECT
@@ -417,7 +452,11 @@ FROM another_T; --error, col0 doesn't exist
 
 SELECT
 	(SELECT outt FROM evilfunction((SELECT col1))) 
-FROM another_T; --error, more than one row returned by a subquery used as an expression
+FROM another_T;
+	-- 1
+	-- 11
+	-- 111
+	-- 1111
 
 SELECT
 	(SELECT outt FROM evilfunction((SELECT col1 FROM tbl_ProductSales))) 
@@ -452,6 +491,72 @@ FROM another_T;
 	-- 1
 	-- 1
 
+CREATE OR REPLACE FUNCTION evilfunction(input INT) RETURNS TABLE (outt INT) BEGIN RETURN TABLE(VALUES (input), (input)); END;
+
+SELECT * FROM evilfunction(1);
+	-- 1
+	-- 1
+
+SELECT
+	(SELECT outt FROM evilfunction((SELECT MIN(col1)))) 
+FROM another_T; --error, more than one row returned by a subquery used as an expression
+
+SELECT
+	(SELECT outt FROM evilfunction((SELECT MAX(ColID) FROM tbl_ProductSales))) 
+FROM another_T; --error, more than one row returned by a subquery used as an expression
+
+SELECT
+	(SELECT outt FROM evilfunction((SELECT MAX(t1.col1) FROM tbl_ProductSales))) 
+FROM another_T t1; --error, more than one row returned by a subquery used as an expression
+
+SELECT
+	(SELECT outt FROM evilfunction((SELECT MIN(t2.col1) FROM another_T t2))) 
+FROM another_T; --error, more than one row returned by a subquery used as an expression
+
+SELECT
+	(SELECT i1.i FROM (VALUES (MIN(i1.i), MAX(i1.i))) as i2(i))
+FROM integers i1; --error, subquery uses ungrouped column "i1.i" from outer query
+
+SELECT
+	(SELECT i2.i FROM (VALUES (MIN(i1.i))) as i2(i))
+FROM integers i1;
+	-- 1
+
+SELECT
+	(SELECT i2.i FROM (VALUES (MIN(i1.i), MAX(i1.i))) as i2(i))
+FROM integers i1;
+	-- 1
+
+SELECT
+	(SELECT i2.i FROM (VALUES (i1.i)) as i2(i))
+FROM integers i1;
+	-- 1
+	-- 2
+	-- 3
+	-- NULL
+
+SELECT
+	(SELECT 1 FROM (VALUES (i1.i)) as i2(i))
+FROM integers i1;
+	-- 1
+	-- 1
+	-- 1
+	-- 1
+
+SELECT
+	(SELECT i2.i FROM (VALUES (i1.i), (i1.i)) as i2(i))
+FROM integers i1; --error, more than one row returned by a subquery used as an expression
+
+SELECT
+	(SELECT i2.i FROM (VALUES (i1.i, i1.i), (i1.i, i1.i)) as i2(i))
+FROM integers i1; --error, more than one row returned by a subquery used as an expression
+
+SELECT i FROM integers ORDER BY (SELECT true);
+	-- 1
+	-- 2
+	-- 3
+	-- NULL
+
 /* We shouldn't allow the following internal functions/procedures to be called from regular queries */
 --SELECT "identity"(col1) FROM another_T;
 --SELECT "rowid"(col1) FROM another_T;
@@ -459,6 +564,11 @@ FROM another_T;
 --SELECT "rotate_xor_hash"(1, 1, 1) FROM another_T;
 --CALL sys_update_schemas();
 --CALL sys_update_tables();
+
+SELECT i FROM integers GROUP BY i HAVING (SELECT i);
+	-- 1
+	-- 2
+	-- 3
 
 DROP FUNCTION evilfunction(INT);
 DROP TABLE tbl_ProductSales;

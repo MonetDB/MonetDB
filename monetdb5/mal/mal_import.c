@@ -136,7 +136,7 @@ malLoadScript(str name, bstream **fdin)
 	assert(c->glb == 0 || c->glb == oldglb); /* detect leak */ \
 	c->glb = oldglb; \
 	c->usermodule = oldusermodule; \
-	c->curmodule = oldcurmodule;; \
+	c->curmodule = oldcurmodule; \
 	c->curprg = oldprg;
 #define restoreClient \
 	restoreClient1 \
@@ -167,7 +167,7 @@ malInclude(Client c, str name, int listing)
 
 	MalStkPtr oldglb = c->glb;
 	Module oldusermodule = c->usermodule;
-	Module oldcurmodule = c->curmodule; 
+	Module oldcurmodule = c->curmodule;
 	Symbol oldprg = c->curprg;
 
 	c->prompt = GDKstrdup("");	/* do not produce visible prompts */
@@ -253,14 +253,14 @@ malInclude(Client c, str name, int listing)
  */
 str
 evalFile(str fname, int listing)
-{	
+{
 	Client c;
 	stream *fd;
 	str filename;
 	str msg = MAL_SUCCEED;
 
 	filename = malResolveFile(fname);
-	if (filename == NULL) 
+	if (filename == NULL)
 		throw(MAL, "mal.eval","could not open file: %s\n", fname);
 	fd = malOpenSource(filename);
 	GDKfree(filename);
@@ -475,7 +475,7 @@ callString(Client cntxt, str s, int listing)
 		if(msg == MAL_SUCCEED && cntxt->phase[0] != c->phase[0]){
 			cntxt->phase[0] = c->phase[0];
 			cntxt->state[0] = c->state[0];
-			msg = (str) (*cntxt->phase[0])(cntxt); 	// force re-initialize client context
+			msg = (str) (*cntxt->phase[0])(cntxt);	// force re-initialize client context
 		}
 	//}
 	c->usermodule = 0; // keep it around

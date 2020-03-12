@@ -204,6 +204,7 @@ mal_export  str oidRef;
 mal_export  str oltpRef;
 mal_export  str openRef;
 mal_export  str optimizerRef;
+mal_export  str orRef;
 mal_export  str outputRef;
 mal_export  str pack2Ref;
 mal_export  str packIncrementRef;

@@ -36,7 +36,7 @@ mal_export str CLTsetmemorylimit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Inst
 mal_export str CLTstopSession(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str CLTgetProfile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str CLTsetPrintTimeout(void *ret, int *secs);
-mal_export str CLTwakeup(void *ret, int *id);
+mal_export str CLTwakeup(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 mal_export str CLTshutdown(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str CLTmd5sum(str *ret, str *pw);

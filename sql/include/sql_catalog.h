@@ -170,19 +170,18 @@ typedef enum comp_type {
 	cmp_or = 7,
 	cmp_in = 8,			/* in value list */
 	cmp_notin = 9,			/* not in value list */
-	cmp_equal_nil = 10, 		/* case equi join, with nil = nil */
 
-	mark_in = 11,			/* mark joins */
-	mark_notin = 12,
-	mark_exists = 13,
-	mark_notexists = 14,
+	mark_in = 10,			/* mark joins */
+	mark_notin = 11,
+	mark_exists = 12,
+	mark_notexists = 13,
 
 	/* The followin cmp_* are only used within stmt (not sql_exp) */
-	cmp_all = 15,			/* special case for crossproducts */
-	cmp_project = 16,		/* special case for projection joins */
-	cmp_joined = 17, 		/* special case already joined */
-	cmp_left = 18,			/* special case equi join, keep left order */
-	cmp_left_project = 19		/* last step of outer join */
+	cmp_all = 14,			/* special case for crossproducts */
+	cmp_project = 15,		/* special case for projection joins */
+	cmp_joined = 16, 		/* special case already joined */
+	cmp_left = 17,			/* special case equi join, keep left order */
+	cmp_left_project = 18		/* last step of outer join */
 } comp_type;
 
 /* for ranges we keep the requirment for symmetric */
@@ -376,6 +375,40 @@ typedef enum sql_ftype {
 #define IS_UNION(f)    ((f)->type == F_UNION)
 #define IS_ANALYTIC(f) ((f)->type == F_ANALYTIC)
 #define IS_LOADER(f)   ((f)->type == F_LOADER)
+
+#define FUNC_TYPE_STR(type) \
+	switch (type) { \
+		case F_FUNC: \
+			F = "FUNCTION"; \
+			fn = "function"; \
+			break; \
+		case F_PROC: \
+			F = "PROCEDURE"; \
+			fn = "procedure"; \
+			break; \
+		case F_AGGR: \
+			F = "AGGREGATE"; \
+			fn = "aggregate"; \
+			break; \
+		case F_FILT: \
+			F = "FILTER FUNCTION"; \
+			fn = "filter function"; \
+			break; \
+		case F_UNION: \
+			F = "UNION FUNCTION"; \
+			fn = "union function"; \
+			break; \
+		case F_ANALYTIC: \
+			F = "WINDOW FUNCTION"; \
+			fn = "window function"; \
+			break; \
+		case F_LOADER: \
+			F = "LOADER FUNCTION"; \
+			fn = "loader function"; \
+			break; \
+		default: \
+			assert(0); \
+	}
 
 typedef enum sql_flang {
 	FUNC_LANG_INT = 0, /* internal */

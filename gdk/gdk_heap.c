@@ -303,9 +303,9 @@ HEAPshrink(Heap *h, size_t size)
 	if (h->storage == STORE_MEM) {
 		p = GDKrealloc(h->base, size);
 		TRC_DEBUG(HEAP, "Shrinking malloced "
-				"heap %zu %zu %p "
-				"%p\n", h->size, size,
-				h->base, p);
+			  "heap %zu %zu %p "
+			  "%p\n", h->size, size,
+			  h->base, p);
 	} else {
 		char *path;
 
@@ -328,11 +328,9 @@ HEAPshrink(Heap *h, size_t size)
 			      h->base, h->size, &size);
 		GDKfree(path);
 		TRC_DEBUG(HEAP, "Shrinking %s mmapped "
-				"heap (%s) %zu %zu %p "
-				"%p\n",
-				h->storage == STORE_MMAP ? "shared" : "privately",
-				h->filename, h->size, size,
-				h->base, p);
+			  "heap (%s) %zu %zu %p %p\n",
+			  h->storage == STORE_MMAP ? "shared" : "privately",
+			  h->filename, h->size, size, h->base, p);
 	}
 	if (p) {
 		h->size = size;
@@ -554,9 +552,7 @@ HEAPfree(Heap *h, bool rmheap)
 {
 	if (h->base) {
 		if (h->storage == STORE_MEM) {	/* plain memory */
-			TRC_DEBUG(HEAP, "HEAPfree %zu"
-					" %p\n",
-					h->size, h->base);
+			TRC_DEBUG(HEAP, "HEAPfree %zu %p\n", h->size, h->base);
 			GDKfree(h->base);
 		} else if (h->storage == STORE_CMEM) {
 			//heap is stored in regular C memory rather than GDK memory,so we call free()
@@ -569,10 +565,8 @@ HEAPfree(Heap *h, bool rmheap)
 					    h->filename);
 				assert(0);
 			}
-			TRC_DEBUG(HEAP, "munmap(base=%p, "
-					"size=%zu) = %d\n",
-					(void *)h->base,
-					h->size, (int) ret);
+			TRC_DEBUG(HEAP, "munmap(base=%p, size=%zu) = %d\n",
+				  (void *)h->base, h->size, (int) ret);
 		}
 	}
 	h->base = NULL;
@@ -630,8 +624,8 @@ HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, b
 		    (fd = GDKfdlocate(h->farmid, nme, "mrb+", ext)) >= 0) {
 			ret = ftruncate(fd, truncsize);
 			TRC_DEBUG(HEAP,
-					"ftruncate(file=%s.%s, size=%zu"
-					  ") = %d\n", nme, ext, truncsize, ret);
+				  "ftruncate(file=%s.%s, size=%zu) = %d\n",
+				  nme, ext, truncsize, ret);
 			close(fd);
 			if (ret == 0) {
 				h->size = truncsize;
@@ -639,9 +633,8 @@ HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, b
 		}
 	}
 
-	TRC_DEBUG(HEAP, "HEAPload(%s.%s,storage=%d,free=%zu"
-			",size=%zu)\n", nme, ext,
-			(int) h->storage, h->free, h->size);
+	TRC_DEBUG(HEAP, "HEAPload(%s.%s,storage=%d,free=%zu,size=%zu)\n",
+		  nme, ext, (int) h->storage, h->free, h->size);
 
 	/* On some OSs (WIN32,Solaris), it is prohibited to write to a
 	 * file that is open in MAP_PRIVATE (FILE_MAP_COPY) solution:
@@ -662,8 +655,8 @@ HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, b
 	t0 = GDKms();
 	ret = rename(srcpath, dstpath);
 	TRC_DEBUG(HEAP, "rename %s %s = %d %s (%dms)\n",
-			  srcpath, dstpath, ret, ret < 0 ? strerror(errno) : "",
-			  GDKms() - t0);
+		  srcpath, dstpath, ret, ret < 0 ? GDKstrerror(errno, (char[128]){0}, 128) : "",
+		  GDKms() - t0);
 	GDKfree(srcpath);
 	GDKfree(dstpath);
 
@@ -715,9 +708,9 @@ HEAPsave_intern(Heap *h, const char *nme, const char *ext, const char *suffix, b
 		store = h->storage;
 	}
 	TRC_DEBUG(HEAP,
-			"(%s.%s,storage=%d,free=%zu,size=%zu,dosync=%s)\n",
-			  nme, ext, (int) h->newstorage, h->free, h->size,
-			  dosync?"true":"false");
+		  "(%s.%s,storage=%d,free=%zu,size=%zu,dosync=%s)\n",
+		  nme, ext, (int) h->newstorage, h->free, h->size,
+		  dosync?"true":"false");
 	return GDKsave(h->farmid, nme, ext, h->base, h->free, store, dosync);
 }
 
@@ -866,8 +859,8 @@ HEAP_printstatus(Heap *heap)
 	CHUNK *blockp;
 
 	TRC_DEBUG(TRACE,
-		"HEAP has head %zu and alignment %d and size %zu\n",
-		hheader->head, hheader->alignment, heap->free);
+		  "HEAP has head %zu and alignment %d and size %zu\n",
+		  hheader->head, hheader->alignment, heap->free);
 
 	/* Walk the blocklist */
 	block = hheader->firstblock;
@@ -877,9 +870,9 @@ HEAP_printstatus(Heap *heap)
 
 		if (block == cur_free) {
 			TRC_DEBUG(TRACE,
-				"Free block at %p has size %zu and next %zu\n",
-				(void *)block,
-				blockp->size, blockp->next);
+				  "Free block at %p has size %zu and next %zu\n",
+				  (void *)block,
+				  blockp->size, blockp->next);
 
 			cur_free = blockp->next;
 			block += blockp->size;
@@ -887,8 +880,8 @@ HEAP_printstatus(Heap *heap)
 			size_t size = blocksize(hheader, blockp);
 
 			TRC_DEBUG(TRACE,
-				"Block at %zu with size %zu\n",
-				block, size);
+				  "Block at %zu with size %zu\n",
+				  block, size);
 			block += size;
 		}
 	}

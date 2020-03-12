@@ -521,7 +521,7 @@ BATappend(BAT *b, BAT *n, BAT *s, bool force)
 	if (BATttype(b) != BATttype(n) &&
 		ATOMtype(b->ttype) != ATOMtype(n->ttype)) {
 			TRC_DEBUG(CHECK_, "Interpreting %s as %s.\n",
-									ATOMname(BATttype(n)), ATOMname(BATttype(b)));
+				  ATOMname(BATttype(n)), ATOMname(BATttype(b)));
 		}
 
 	cnt = canditer_init(&ci, n, s);
@@ -1297,8 +1297,8 @@ BATslice(BAT *b, BUN l, BUN h)
 		BATkey(bn, BATtkey(b));
 	}
 	TRC_DEBUG(ALGO, "BATslice(" ALGOBATFMT "," BUNFMT "," BUNFMT ")"
-			  	"=" ALGOBATFMT "\n",
-			  	ALGOBATPAR(b), l, h, ALGOBATPAR(bn));
+		  "=" ALGOBATFMT "\n",
+		  ALGOBATPAR(b), l, h, ALGOBATPAR(bn));
 	return bn;
 }
 
@@ -1741,15 +1741,15 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 			*groups = gn;
 		}
 		TRC_DEBUG(ALGO, "BATsort(b=" ALGOBATFMT ",o="
-					ALGOOPTBATFMT ",g=" ALGOOPTBATFMT
-					",reverse=%d,nilslast=%d,stable=%d) = ("
-					ALGOOPTBATFMT "," ALGOOPTBATFMT ","
-					ALGOOPTBATFMT ") -- trivial (" LLFMT
-					" usec)\n",
-					ALGOBATPAR(b), ALGOOPTBATPAR(o),
-					ALGOOPTBATPAR(g), reverse, nilslast, stable,
-					ALGOOPTBATPAR(bn), ALGOOPTBATPAR(gn),
-					ALGOOPTBATPAR(on), GDKusec() - t0);
+			  ALGOOPTBATFMT ",g=" ALGOOPTBATFMT
+			  ",reverse=%d,nilslast=%d,stable=%d) = ("
+			  ALGOOPTBATFMT "," ALGOOPTBATFMT ","
+			  ALGOOPTBATFMT ") -- trivial (" LLFMT
+			  " usec)\n",
+			  ALGOBATPAR(b), ALGOOPTBATPAR(o),
+			  ALGOOPTBATPAR(g), reverse, nilslast, stable,
+			  ALGOOPTBATPAR(bn), ALGOOPTBATPAR(gn),
+			  ALGOOPTBATPAR(on), GDKusec() - t0);
 		return GDK_SUCCEED;
 	}
 	if (VIEWtparent(b)) {
@@ -1828,15 +1828,15 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 			on = NULL;
 		}
 		TRC_DEBUG(ALGO, "BATsort(b=" ALGOBATFMT ",o="
-					ALGOOPTBATFMT ",g=" ALGOOPTBATFMT
-					",reverse=%d,nilslast=%d,stable=%d) = ("
-					ALGOOPTBATFMT "," ALGOOPTBATFMT ","
-					ALGOOPTBATFMT ") -- orderidx (" LLFMT
-					" usec)\n",
-					ALGOBATPAR(b), ALGOOPTBATPAR(o),
-					ALGOOPTBATPAR(g), reverse, nilslast, stable,
-					ALGOOPTBATPAR(bn), ALGOOPTBATPAR(gn),
-					ALGOOPTBATPAR(on), GDKusec() - t0);
+			  ALGOOPTBATFMT ",g=" ALGOOPTBATFMT
+			  ",reverse=%d,nilslast=%d,stable=%d) = ("
+			  ALGOOPTBATFMT "," ALGOOPTBATFMT ","
+			  ALGOOPTBATFMT ") -- orderidx (" LLFMT
+			  " usec)\n",
+			  ALGOBATPAR(b), ALGOOPTBATPAR(o),
+			  ALGOOPTBATPAR(g), reverse, nilslast, stable,
+			  ALGOOPTBATPAR(bn), ALGOOPTBATPAR(gn),
+			  ALGOOPTBATPAR(on), GDKusec() - t0);
 		return GDK_SUCCEED;
 	}
 	if (o) {
@@ -1930,16 +1930,16 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 				*groups = gn;
 			}
 			TRC_DEBUG(ALGO, "BATsort(b=" ALGOBATFMT
-						",o=" ALGOOPTBATFMT ",g=" ALGOBATFMT
-						",reverse=%d,nilslast=%d,stable=%d"
-						") = (" ALGOOPTBATFMT ","
-						ALGOOPTBATFMT "," ALGOOPTBATFMT
-						") -- key group (" LLFMT " usec)\n",
-						ALGOBATPAR(b), ALGOOPTBATPAR(o),
-						ALGOBATPAR(g), reverse, nilslast,
-						stable, ALGOOPTBATPAR(bn),
-						ALGOOPTBATPAR(gn), ALGOOPTBATPAR(on),
-						GDKusec() - t0);
+				  ",o=" ALGOOPTBATFMT ",g=" ALGOBATFMT
+				  ",reverse=%d,nilslast=%d,stable=%d"
+				  ") = (" ALGOOPTBATFMT ","
+				  ALGOOPTBATFMT "," ALGOOPTBATFMT
+				  ") -- key group (" LLFMT " usec)\n",
+				  ALGOBATPAR(b), ALGOOPTBATPAR(o),
+				  ALGOBATPAR(g), reverse, nilslast,
+				  stable, ALGOOPTBATPAR(bn),
+				  ALGOOPTBATPAR(gn), ALGOOPTBATPAR(on),
+				  GDKusec() - t0);
 			return GDK_SUCCEED;
 		}
 		assert(g->ttype == TYPE_oid);
@@ -2052,13 +2052,13 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 	}
 
 	TRC_DEBUG(ALGO, "BATsort(b=" ALGOBATFMT ",o=" ALGOOPTBATFMT
-				",g=" ALGOOPTBATFMT ",reverse=%d,nilslast=%d,"
-				"stable=%d) = (" ALGOOPTBATFMT "," ALGOOPTBATFMT ","
-				ALGOOPTBATFMT ") -- %ssort (" LLFMT " usec)\n",
-				ALGOBATPAR(b), ALGOOPTBATPAR(o), ALGOOPTBATPAR(g),
-				reverse, nilslast, stable, ALGOOPTBATPAR(bn),
-				ALGOOPTBATPAR(gn), ALGOOPTBATPAR(on),
-				g ? "grouped " : "", GDKusec() - t0);
+		  ",g=" ALGOOPTBATFMT ",reverse=%d,nilslast=%d,"
+		  "stable=%d) = (" ALGOOPTBATFMT "," ALGOOPTBATFMT ","
+		  ALGOOPTBATFMT ") -- %ssort (" LLFMT " usec)\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(o), ALGOOPTBATPAR(g),
+		  reverse, nilslast, stable, ALGOOPTBATPAR(bn),
+		  ALGOOPTBATPAR(gn), ALGOOPTBATPAR(on),
+		  g ? "grouped " : "", GDKusec() - t0);
 	return GDK_SUCCEED;
 
   error:
@@ -2137,9 +2137,9 @@ BATconstant(oid hseq, int tailtype, const void *v, BUN n, role_t role)
 		bn->tkey = BATcount(bn) <= 1;
 	}
 	TRC_DEBUG(ALGO, "%s()=" ALGOOPTBATFMT
-				" (" LLFMT "usec)\n",
-				__func__,
-				ALGOOPTBATPAR(bn), GDKusec() - t0);
+		  " (" LLFMT "usec)\n",
+		  __func__,
+		  ALGOOPTBATPAR(bn), GDKusec() - t0);
 	return bn;
 }
 
