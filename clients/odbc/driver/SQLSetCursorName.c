@@ -32,7 +32,7 @@
 
 static SQLRETURN
 MNDBSetCursorName(ODBCStmt *stmt,
-		  SQLCHAR *CursorName,
+		  const SQLCHAR *CursorName,
 		  SQLSMALLINT NameLength)
 {
 	fixODBCstring(CursorName, NameLength, SQLSMALLINT,

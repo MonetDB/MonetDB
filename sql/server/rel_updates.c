@@ -910,16 +910,10 @@ rel_update(mvc *sql, sql_rel *t, sql_rel *uprel, sql_exp **updates, list *exps)
 static sql_exp *
 update_check_column(mvc *sql, sql_table *t, sql_column *c, sql_exp *v, sql_rel *r, char *cname, const char *action)
 {
-	if (!c) {
-		rel_destroy(r);
-		return sql_error(sql, 02, SQLSTATE(42S22) "%s: no such column '%s.%s'", action, t->base.name, cname);
-	}
 	if (!table_privs(sql, t, PRIV_UPDATE) && !sql_privilege(sql, sql->user_id, c->base.id, PRIV_UPDATE)) 
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: insufficient privileges for user '%s' to update table '%s' on column '%s'", action, stack_get_string(sql, "current_user"), t->base.name, cname);
-	if (!v || (v = rel_check_type(sql, &c->type, r, v, type_equal)) == NULL) {
-		rel_destroy(r);
+	if (!v || (v = rel_check_type(sql, &c->type, r, v, type_equal)) == NULL)
 		return NULL;
-	}
 	return v;
 }
 
@@ -928,7 +922,7 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 {
 	mvc *sql = query->sql;
 	sql_table *mt = NULL;
-	sql_exp *e = NULL, **updates = SA_ZNEW_ARRAY(sql->sa, sql_exp*, list_length(t->columns.set));
+	sql_exp **updates = SA_ZNEW_ARRAY(sql->sa, sql_exp*, list_length(t->columns.set));
 	list *exps, *pcols = NULL;
 	dnode *n;
 	const char *rname = NULL;
@@ -947,9 +941,7 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 		pcols = mt->part.pexp->cols;
 	}
 	/* first create the project */
-	e = exp_column(sql->sa, rname = rel_name(r), TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
-	exps = new_exp_list(sql->sa);
-	append(exps, e);
+	exps = list_append(new_exp_list(sql->sa), exp_column(sql->sa, rname = rel_name(r), TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1));
 
 	for (n = assignmentlist->h; n; n = n->next) {
 		symbol *a = NULL;
@@ -961,12 +953,14 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 
 		a = assignment->h->data.sym;
 		if (a) {
-			int status = sql->session->status;
-			exp_kind ek = {type_value, (single)?card_column:card_relation, FALSE};
+			exp_kind ek = { (single)?type_value:type_relation, card_column, FALSE};
 
 			if (single && a->token == SQL_DEFAULT) {
 				char *colname = assignment->h->next->data.sval;
 				sql_column *col = mvc_bind_column(sql, t, colname);
+
+				if (!col)
+					return sql_error(sql, 02, SQLSTATE(42S22) "%s: no such column '%s.%s'", action, t->base.name, colname);
 				if (col->def) {
 					char *typestr = subtype2string2(&col->type);
 					if (!typestr)
@@ -977,36 +971,18 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 					return sql_error(sql, 02, SQLSTATE(42000) "%s: column '%s' has no valid default value", action, col->base.name);
 				}
 			} else if (single) {
-				v = rel_value_exp(query, &rel_val, a, sql_sel | sql_update_set, ek);
+				v = rel_value_exp(query, &r, a, sql_sel | sql_update_set, ek);
 				outer = 1;
 			} else {
-				rel_val = rel_subquery(query, NULL, a, ek);
-			}
-			if ((single && !v) || (!single && !rel_val)) {
-				sql->errstr[0] = 0;
-				sql->session->status = status;
-				assert(!rel_val);
-				outer = 1;
-				if (single) {
-					v = rel_value_exp(query, &r, a, sql_sel | sql_update_set, ek);
-				} else if (!rel_val && r) {
+				if (r)
 					query_push_outer(query, r, sql_sel | sql_update_set);
-					rel_val = rel_subquery(query, NULL, a, ek);
+				rel_val = rel_subquery(query, NULL, a, ek);
+				if (r)
 					r = query_pop_outer(query);
-					if (/* DISABLES CODE */ (0) && r) {
-						list *val_exps = rel_projections(sql, r->r, NULL, 0, 1);
-
-						r = rel_project(sql->sa, r, rel_projections(sql, r, NULL, 1, 1));
-						if (r)
-							list_merge(r->exps, val_exps, (fdup)NULL);
-						reset_processed(r);
-					}
-				}
+				outer = 1;
 			}
-			if ((single && !v) || (!single && !rel_val)) {
-				rel_destroy(r);
+			if ((single && !v) || (!single && !rel_val))
 				return NULL;
-			}
 			if (rel_val && outer) {
 				if (single) {
 					if (!exp_name(v))
@@ -1028,23 +1004,22 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 			dlist *cols = assignment->h->next->data.lval;
 			dnode *m;
 			node *n;
-			int nr;
 
 			if (!rel_val)
 				rel_val = r;
-			if (!rel_val || !is_project(rel_val->op) ||
-				dlist_length(cols) > list_length(rel_val->exps)) {
-				rel_destroy(r);
-				return sql_error(sql, 02, SQLSTATE(42000) "%s: too many columns specified", action);
-			}
-			nr = (list_length(rel_val->exps)-dlist_length(cols));
-			for (n=rel_val->exps->h; nr; nr--, n = n->next)
-				;
-			for (m = cols->h; n && m; n = n->next, m = m->next) {
+			if (!rel_val || !is_project(rel_val->op))
+				return sql_error(sql, 02, SQLSTATE(42000) "%s: Invalid right side of the SET clause", action);
+			if (dlist_length(cols) != list_length(rel_val->exps))
+				return sql_error(sql, 02, SQLSTATE(42000) "%s: The number of specified columns between the SET clause and the right side don't match (%d != %d)", action, dlist_length(cols), list_length(rel_val->exps));
+			for (n = rel_val->exps->h, m = cols->h; n && m; n = n->next, m = m->next) {
 				char *cname = m->data.sval;
 				sql_column *c = mvc_bind_column(sql, t, cname);
 				sql_exp *v = n->data;
 
+				if (!c)
+					return sql_error(sql, 02, SQLSTATE(42S22) "%s: no such column '%s.%s'", action, t->base.name, cname);
+				if (updates[c->colnr])
+					return sql_error(sql, 02, SQLSTATE(42000) "%s: Multiple assignments to same column '%s'", action, c->base.name);
 				if (mt && pcols) {
 					for (node *nn = pcols->h; nn; nn = n->next) {
 						int next = *(int*) nn->data;
@@ -1061,13 +1036,11 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 					exp_label(sql->sa, v, ++sql->label);
 				if (!exp_is_atom(v) || outer)
 					v = exp_ref(sql->sa, v);
-				if (!v) { /* check for NULL */
+				if (!v) /* check for NULL */
 					v = exp_atom(sql->sa, atom_general(sql->sa, &c->type, NULL));
-				} else if ((v = update_check_column(sql, t, c, v, r, cname, action)) == NULL) {
+				if (!(v = update_check_column(sql, t, c, v, r, cname, action)))
 					return NULL;
-				}
 				list_append(exps, exp_column(sql->sa, t->base.name, cname, &c->type, CARD_MULTI, 0, 0));
-				assert(!updates[c->colnr]);
 				exp_setname(sql->sa, v, c->t->base.name, c->base.name);
 				updates[c->colnr] = v;
 			}
@@ -1075,6 +1048,10 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 			char *cname = assignment->h->next->data.sval;
 			sql_column *c = mvc_bind_column(sql, t, cname);
 
+			if (!c)
+				return sql_error(sql, 02, SQLSTATE(42S22) "%s: no such column '%s.%s'", action, t->base.name, cname);
+			if (updates[c->colnr])
+				return sql_error(sql, 02, SQLSTATE(42000) "%s: Multiple assignments to same column '%s'", action, c->base.name);
 			if (mt && pcols) {
 				for (node *nn = pcols->h; nn; nn = nn->next) {
 					int next = *(int*) nn->data;
@@ -1087,18 +1064,16 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 					}
 				}
 			}
-			if (!v) {
+			if (!v)
 				v = exp_atom(sql->sa, atom_general(sql->sa, &c->type, NULL));
-			} else if ((v = update_check_column(sql, t, c, v, r, cname, action)) == NULL) {
+			if (!(v = update_check_column(sql, t, c, v, r, cname, action)))
 				return NULL;
-			}
 			list_append(exps, exp_column(sql->sa, t->base.name, cname, &c->type, CARD_MULTI, 0, 0));
 			exp_setname(sql->sa, v, c->t->base.name, c->base.name);
 			updates[c->colnr] = v;
 		}
 	}
-	e = exp_column(sql->sa, rname, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
-	r = rel_project(sql->sa, r, append(new_exp_list(sql->sa),e));
+	r = rel_project(sql->sa, r, list_append(new_exp_list(sql->sa), exp_column(sql->sa, rname, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1)));
 	r = rel_update(sql, bt, r, updates, exps);
 	return r;
 }

@@ -1424,30 +1424,6 @@ exp_push_down(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 	return _exp_push_down(sql, e, f, t);
 }
 
-/* some projections results are order dependend (row_number etc) */
-static int 
-project_unsafe(sql_rel *rel, int allow_identity)
-{
-	sql_rel *sub = rel->l;
-	node *n;
-
-	if (need_distinct(rel) || rel->r /* order by */)
-		return 1;
-	if (!rel->exps)
-		return 0;
-	/* projects without sub and projects around ddl's cannot be changed */
-	if (!sub || (sub && sub->op == op_ddl))
-		return 1;
-	for(n = rel->exps->h; n; n = n->next) {
-		sql_exp *e = n->data;
-
-		/* aggr func in project ! */
-		if (exp_unsafe(e, allow_identity))
-			return 1;
-	}
-	return 0;
-}
-
 static int 
 math_unsafe(sql_subfunc *f)
 {

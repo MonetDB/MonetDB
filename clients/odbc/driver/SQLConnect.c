@@ -102,11 +102,11 @@ get_serverinfo(ODBCDbc *dbc)
 
 SQLRETURN
 MNDBConnect(ODBCDbc *dbc,
-	    SQLCHAR *ServerName,
+	    const SQLCHAR *ServerName,
 	    SQLSMALLINT NameLength1,
-	    SQLCHAR *UserName,
+	    const SQLCHAR *UserName,
 	    SQLSMALLINT NameLength2,
-	    SQLCHAR *Authentication,
+	    const SQLCHAR *Authentication,
 	    SQLSMALLINT NameLength3,
 	    const char *host,
 	    int port,
