@@ -505,7 +505,8 @@ exp_rewrite(mvc *sql, sql_rel *rel, sql_exp *e, list *ad)
 		list *rankopargs = e->l;
 		/* window_bound has partition/orderby as first argument (before normal expressions), others as second (and have a boolean placeholder) */
 		int is_wb = (strcmp(sf->func->base.name, "window_bound") == 0);
-		node *n = (is_wb)?rankopargs->h:rankopargs->h->next;
+		int is_ntile = (strcmp(sf->func->base.name, "ntile") == 0);
+		node *n = (is_wb)?rankopargs->h:(is_ntile)?rankopargs->h->next->next:rankopargs->h->next;
 		sql_exp *pe = n->data;
 
 		/* if pe is window_bound function skip */

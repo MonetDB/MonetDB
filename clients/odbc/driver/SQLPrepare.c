@@ -45,7 +45,7 @@ ODBCResetStmt(ODBCStmt *stmt)
 
 SQLRETURN
 MNDBPrepare(ODBCStmt *stmt,
-	    SQLCHAR *StatementText,
+	    const SQLCHAR *StatementText,
 	    SQLINTEGER TextLength)
 {
 	char *query, *s;
