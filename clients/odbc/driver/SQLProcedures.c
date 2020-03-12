@@ -32,11 +32,11 @@
 
 static SQLRETURN
 MNDBProcedures(ODBCStmt *stmt,
-	       SQLCHAR *CatalogName,
+	       const SQLCHAR *CatalogName,
 	       SQLSMALLINT NameLength1,
-	       SQLCHAR *SchemaName,
+	       const SQLCHAR *SchemaName,
 	       SQLSMALLINT NameLength2,
-	       SQLCHAR *ProcName,
+	       const SQLCHAR *ProcName,
 	       SQLSMALLINT NameLength3)
 {
 	RETCODE rc;

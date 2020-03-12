@@ -975,7 +975,7 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 				outer = 1;
 			} else {
 				if (r)
-					query_push_outer(query, r, sql_sel);
+					query_push_outer(query, r, sql_sel | sql_update_set);
 				rel_val = rel_subquery(query, NULL, a, ek);
 				if (r)
 					r = query_pop_outer(query);

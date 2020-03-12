@@ -5659,7 +5659,6 @@ SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				}
 				if (!ret && ii == q->argc) {
 					BAT *fres = NULL;
-					BUN ccnt = 0;
 					ret = runMALsequence(cntxt, nmb, 1, nmb->stop, nstk, env /* copy result in nstk first instruction*/, q); 
 
 					if (!ret) {
@@ -5667,8 +5666,7 @@ SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						if (!(fres = BATdescriptor(env->stk[q->argv[0]].val.bval)))
 							ret = createException(MAL, "sql.unionfunc", SQLSTATE(HY005) "Cannot access column descriptor");
 						else {
-							ccnt = BATcount(fres);
-							BAT *p = BATconstant(fres->hseqbase, res[0]->ttype, (ptr)BUNtail(bi[0], cur), ccnt, 0);
+							BAT *p = BATconstant(fres->hseqbase, res[0]->ttype, (ptr)BUNtail(bi[0], cur), BATcount(fres), TRANSIENT);
 
 							if (p) {
 								if (BATappend(res[0], p, NULL, FALSE) != GDK_SUCCEED)

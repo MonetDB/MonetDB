@@ -176,7 +176,11 @@ MAPI  = (monetdb) /var/tmp/mtest-548551/.s.monetdb.35009
 QUERY = UPDATE another_T SET (col5, col6) = ((select 1,2)), col5 = 6; --error, multiple assignments to same column "col5"
 ERROR = !UPDATE: Multiple assignments to same column 'col5'
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-548551/.s.monetdb.35009
+MAPI  = (monetdb) /var/tmp/mtest-48210/.s.monetdb.36376
+QUERY = UPDATE another_T SET (col5, col6) = (SELECT MIN(col1), MAX(col2)); --error, aggregate functions are not allowed in UPDATE
+ERROR = !SELECT: aggregate functions not allowed in SET clause
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-48210/.s.monetdb.36376
 QUERY = SET x = MAX(1) over (); --error, not allowed
 ERROR = !MAX: window function 'max' not allowed in SET clause (use subquery)
 CODE  = 42000

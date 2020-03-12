@@ -223,9 +223,9 @@ maybeextend(BAT *restrict r1, BAT *restrict r2,
 	if (BATcount(r1) + cnt > BATcapacity(r1)) {
 		/* make some extra space by extrapolating how much
 		 * more we need (fraction of l we've seen so far is
-		 * used as the fraction of the expected result size
-		 * we've produced so far) */
-		BUN newcap = (BUN) ((double) lcnt / lcur * (BATcount(r1) + cnt) * 1.5);
+		 * used to estimate a new size but with a shallow
+		 * slope so that a skewed join doesn't overwhelm) */
+		BUN newcap = (BUN) (lcnt / (lcnt / 4.0 + lcur * .75) * (BATcount(r1) + cnt));
 		if (newcap < cnt + BATcount(r1))
 			newcap = cnt + BATcount(r1) + 1024;
 		if (newcap > maxsize)
@@ -2597,7 +2597,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 			     rb != HASHnil(hsh);
 			     rb = HASHgetlink(hsh, rb)) {
 				ro = canditer_idx(rci, rb);
-				if ((*cmp)(v, BUNtail(ri, ro - r->hseqbase)) != 0) {
+				if ((*cmp)(nil, BUNtail(ri, ro - r->hseqbase)) == 0) {
 					HEAPfree(&hsh->heaplink, true);
 					HEAPfree(&hsh->heapbckt, true);
 					GDKfree(hsh);
@@ -2611,7 +2611,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 			     rb = HASHgetlink(hsh, rb)) {
 				if (rb >= rl && rb < rh &&
 				    (cmp == NULL ||
-				     (*cmp)(v, BUNtail(ri, rb)) == 0)) {
+				     (*cmp)(nil, BUNtail(ri, rb)) == 0)) {
 					return nomatch(r1p, r2p, l, r, lci,
 						       false, false,
 						       __func__, t0);
