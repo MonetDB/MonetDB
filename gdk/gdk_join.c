@@ -2575,7 +2575,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			     rb != HASHnil(hsh);
 			     rb = HASHgetlink(hsh, rb)) {
 				ro = BUNtoid(sr, rb);
-				if ((*cmp)(v, BUNtail(ri, ro - r->hseqbase)) != 0) {
+				if ((*cmp)(nil, BUNtail(ri, ro - r->hseqbase)) == 0) {
 					HEAPfree(&hsh->heap, true);
 					GDKfree(hsh);
 					return nomatch(r1p, r2p, l, r, 0, 0, NULL, NULL,
