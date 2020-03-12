@@ -192,6 +192,7 @@ SET x = MAX(1) over (); --error, not allowed
 DECLARE y int;
 SET y = MIN(1); --error, not allowed
 
+INSERT INTO another_T (col1,col1) VALUES (1,1); --error, multiple assignments to same column "col1"
 INSERT INTO another_T VALUES (SUM(1),2,3,4,5,6,7,8); --error, not allowed
 INSERT INTO another_T VALUES (AVG(1) OVER (),2,3,4,5,6,7,8); --error, not allowed
 INSERT INTO another_T VALUES ((SELECT SUM(1)),(SELECT SUM(2) OVER ()),3,4,5,6,7,8); --allowed
