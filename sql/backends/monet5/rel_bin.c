@@ -314,12 +314,12 @@ subrel_project( backend *be, stmt *s)
 		stmt *c = n->data;
 
 		assert(c->type == st_alias || (c->type == st_join && c->flag == cmp_project) || c->type == st_bat || c->type == st_idxbat);
-		//if (c->op1 != cand) { /* skip tid */
-			if (c->type == st_join || c->type == st_bat || c->type == st_idxbat)
-				c = stmt_project(be, cand, c);
-			else
-				c->op1 = stmt_project(be, cand, c->op1);
-		//}
+		if (c->type != st_alias) {
+			c = stmt_project(be, cand, c);
+		} else {
+			stmt *s = stmt_project(be, cand, c->op1);
+			c = stmt_alias(be, s, c->tname, c->cname); 
+		}
 		append(l, c);
 	}
 	return stmt_list(be, l);
