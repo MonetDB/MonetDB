@@ -2868,7 +2868,7 @@ ODBCStore(ODBCStmt *stmt,
 	  char **bufp,
 	  size_t *bufposp,
 	  size_t *buflenp,
-	  char *sep)
+	  const char *sep)
 {
 	ODBCDescRec *ipdrec, *apdrec;
 	SQLPOINTER ptr;
