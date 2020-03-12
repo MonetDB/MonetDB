@@ -48,6 +48,7 @@ cast_str2num
 big-example
 count
 
+mediumint
 decimal
 decimal2
 null

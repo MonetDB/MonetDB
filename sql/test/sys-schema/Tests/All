@@ -11,3 +11,5 @@ HAVE_NETCDF?netcdf_tables_checks
 HAVE_SAMTOOLS?bam_tables_checks
 
 HAVE_FITS&HAVE_GEOM&HAVE_LIDAR&HAVE_SHP&HAVE_NETCDF&HAVE_SAMTOOLS?systemfunctions
+
+utilities
