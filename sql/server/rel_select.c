@@ -4687,10 +4687,11 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 	fargs = sa_list(sql->sa);
 	if (window_function->token == SQL_RANK) { /* rank function call */
 		dlist *dl = dn->next->next->data.lval;
-		bool is_ntile = !strcmp(aname, "ntile"), is_lag = !strcmp(aname, "lag"), is_lead = !strcmp(aname, "lead");
+		bool is_lag = !strcmp(aname, "lag"), is_lead = !strcmp(aname, "lead"),
+			 extra_input = !strcmp(aname, "ntile") || !strcmp(aname, "rank") || !strcmp(aname, "dense_rank") || !strcmp(aname, "row_number") || !strcmp(aname, "percent_rank") || !strcmp(aname, "cume_dist");
 
 		distinct = dn->next->data.i_val;
-		if (!dl || is_ntile) { /* pass an input column for analytic functions that don't require it */
+		if (extra_input) { /* pass an input column for analytic functions that don't require it */
 			in = rel_first_column(sql, p);
 			if (!in)
 				return NULL;
@@ -4699,7 +4700,6 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 			in = exp_ref(sql->sa, in);
 			append(fargs, in);
 			in = exp_ref_save(sql, in);
-			nfargs++;
 		}
 		if (dl)
 			for (dargs = dl->h ; dargs ; dargs = dargs->next) {

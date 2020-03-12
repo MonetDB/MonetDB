@@ -207,6 +207,9 @@ CALL crashme((SELECT COUNT(1))); --error, subquery at CALL
 CALL crashme((SELECT COUNT(1) OVER ())); --error, subquery at CALL
 CALL crashme((SELECT 1 UNION ALL SELECT 2)); --error, subquery at CALL
 
+SELECT row_number(1) OVER () FROM integers i1; --error, row_number(int) doesn't exist
+SELECT ntile(1,1) OVER () FROM integers i1; --error, ntile(int,int) doesn't exist
+
 create sequence "debugme" as integer start with 1;
 alter sequence "debugme" restart with (select MAX(1));
 alter sequence "debugme" restart with (select MIN(1) OVER ());
