@@ -143,7 +143,25 @@ stdout of test 'subquery4` in directory 'sql/test/subquery` itself:
 % int # type
 % 1 # length
 [ 1	]
-#UPDATE another_T SET col4 = (SELECT SUM(col4 + ColID) FROM tbl_ProductSales);
+#SELECT (SELECT NTILE(i1.i) OVER ()) FROM integers i1;
+% .%4 # table_name
+% %4 # name
+% int # type
+% 1 # length
+[ 1	]
+[ 1	]
+[ 1	]
+[ NULL	]
+#SELECT (SELECT NTILE(i1.i) OVER (PARTITION BY i1.i)) FROM integers i1;
+% .%4 # table_name
+% %4 # name
+% int # type
+% 1 # length
+[ 1	]
+[ 1	]
+[ 1	]
+[ NULL	]
+#UPDATE another_T SET col4 = (SELECT SUM(col4 + ColID) FROM tbl_ProductSales); --4 rows affected
 [ 4	]
 #SELECT col4 FROM another_T;
 % sys.another_t # table_name
@@ -184,6 +202,32 @@ stdout of test 'subquery4` in directory 'sql/test/subquery` itself:
 [ 10,	55	]
 [ 10,	555	]
 [ 10,	5555	]
+#UPDATE another_T SET col7 = (SELECT NTILE(col1) OVER ()); --4 rows affected
+[ 4	]
+#SELECT col7 FROM another_T;
+% sys.another_t # table_name
+% col7 # name
+% int # type
+% 1 # length
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+#UPDATE another_T SET (col5, col6) = (SELECT NTILE(col1) OVER (), MAX(col3) OVER (PARTITION BY col4)); --4 rows affected
+[ 4	]
+#UPDATE another_T t1 SET (col1, col2) = (SELECT MIN(t1.col3 + tb.ColID), MAX(tb.ColID) FROM tbl_ProductSales tb); --4 rows affected
+[ 4	]
+#UPDATE another_T t1 SET (col3, col4) = (SELECT COUNT(tb.ColID), SUM(tb.ColID) FROM tbl_ProductSales tb); --4 rows affected
+[ 4	]
+#SELECT col1, col2, col3, col4, col5, col6 FROM another_T;
+% sys.another_t,	sys.another_t,	sys.another_t,	sys.another_t,	sys.another_t,	sys.another_t # table_name
+% col1,	col2,	col3,	col4,	col5,	col6 # name
+% int,	int,	int,	int,	int,	int # type
+% 4,	1,	1,	2,	1,	4 # length
+[ 6,	4,	4,	10,	1,	5	]
+[ 56,	4,	4,	10,	1,	55	]
+[ 556,	4,	4,	10,	1,	555	]
+[ 5556,	4,	4,	10,	1,	5555	]
 #DECLARE x int;
 #DECLARE y int;
 #INSERT INTO another_T VALUES ((SELECT SUM(1)),(SELECT SUM(2) OVER ()),3,4,5,6,7,8); --allowed
@@ -192,11 +236,11 @@ stdout of test 'subquery4` in directory 'sql/test/subquery` itself:
 % sys.another_t,	sys.another_t,	sys.another_t,	sys.another_t,	sys.another_t,	sys.another_t,	sys.another_t,	sys.another_t # table_name
 % col1,	col2,	col3,	col4,	col5,	col6,	col7,	col8 # name
 % int,	int,	int,	int,	int,	int,	int,	int # type
-% 4,	4,	4,	5,	2,	4,	4,	4 # length
-[ 1,	2,	5,	26,	10,	5,	7,	8	]
-[ 11,	22,	55,	186,	10,	55,	77,	88	]
-[ 111,	222,	555,	1786,	10,	555,	777,	888	]
-[ 1111,	2222,	5555,	17786,	10,	5555,	7777,	8888	]
+% 4,	1,	1,	2,	1,	4,	1,	4 # length
+[ 6,	4,	4,	10,	1,	5,	1,	8	]
+[ 56,	4,	4,	10,	1,	55,	1,	88	]
+[ 556,	4,	4,	10,	1,	555,	1,	888	]
+[ 5556,	4,	4,	10,	1,	5555,	1,	8888	]
 [ 1,	2,	3,	4,	5,	6,	7,	8	]
 #CREATE PROCEDURE crashme(a int) BEGIN DECLARE x INT; SET x = a; END;
 #create sequence "debugme" as integer start with 1;

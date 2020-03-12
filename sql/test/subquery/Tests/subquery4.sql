@@ -102,6 +102,18 @@ SELECT
 FROM integers i1;
 	-- 1
 
+SELECT (SELECT NTILE(i1.i) OVER ()) FROM integers i1;
+	-- 1
+	-- 1
+	-- 1
+	-- NULL
+
+SELECT (SELECT NTILE(i1.i) OVER (PARTITION BY i1.i)) FROM integers i1;
+	-- 1
+	-- 1
+	-- 1
+	-- NULL
+
 UPDATE another_T SET col1 = MIN(col1); --error, aggregates not allowed in update set clause
 UPDATE another_T SET col2 = 1 WHERE col1 = SUM(col2); --error, aggregates not allowed in update set clause
 UPDATE another_T SET col3 = (SELECT MAX(col5)); --error, aggregates not allowed in update set clause
@@ -161,11 +173,19 @@ UPDATE another_T SET col5 = 1, col5 = 6; --error, multiple assignments to same c
 UPDATE another_T SET (col5, col6) = ((select 1,2)), col5 = 6; --error, multiple assignments to same column "col5"
 UPDATE another_T SET (col5, col6) = (SELECT MIN(col1), MAX(col2)); --error, aggregate functions are not allowed in UPDATE
 
-UPDATE another_T SET (col7, col8) = (SELECT NTILE(col1) OVER (), MAX(col3) OVER (PARTITION BY col4)); --4 rows affected
+UPDATE another_T SET col7 = (SELECT NTILE(col1) OVER ()); --4 rows affected
+
+SELECT col7 FROM another_T;
+	-- 1
+	-- 1
+	-- 1
+	-- 1
+
+UPDATE another_T SET (col5, col6) = (SELECT NTILE(col1) OVER (), MAX(col3) OVER (PARTITION BY col4)); --4 rows affected
 UPDATE another_T t1 SET (col1, col2) = (SELECT MIN(t1.col3 + tb.ColID), MAX(tb.ColID) FROM tbl_ProductSales tb); --4 rows affected
 UPDATE another_T t1 SET (col3, col4) = (SELECT COUNT(tb.ColID), SUM(tb.ColID) FROM tbl_ProductSales tb); --4 rows affected
 
-SELECT col1, col2, col3, col4, col7, col8 FROM another_T;
+SELECT col1, col2, col3, col4, col5, col6 FROM another_T;
 
 DECLARE x int;
 SET x = MAX(1) over (); --error, not allowed
