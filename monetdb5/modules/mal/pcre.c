@@ -1737,8 +1737,12 @@ BATPCRElike3(bat *ret, const bat *bid, const str *pat, const str *esc, const bit
 		strsi = bat_iterator(strs);
 
 		if (strNil(*pat)) {
-			BATloop(strs, p, q) 
+			BATloop(strs, p, q) {
 				br[i] = bit_nil;
+				i++;
+			}
+			r->tnonil = false;
+			r->tnil = true;
 		} else if (strNil(ppat)) {
 			BATloop(strs, p, q) {
 				const char *s = (str)BUNtvar(strsi, p);

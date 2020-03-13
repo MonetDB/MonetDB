@@ -321,6 +321,8 @@ stdout of test 'simple_selects` in directory 'sql/test/miscellaneous` itself:
 % %1,	%2,	%3,	%4,	%5,	%6,	%7,	%10,	%11,	%12,	%13,	%14 # name
 % boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean # type
 % 5,	5,	5,	5,	5,	5,	5,	5,	5,	5,	5,	5 # length
+[ NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 #select x like x, x ilike x, x not like x, x not ilike x from x;
 % sys.,	sys.,	sys.,	sys. # table_name
 % %1,	%2,	%3,	%4 # name
