@@ -315,7 +315,9 @@ rel_inserts(mvc *sql, sql_table *t, sql_rel *r, list *collist, size_t rowcount, 
 			for (n = r->exps->h, m = collist->h; n && m; n = n->next, m = m->next) {
 				sql_column *c = m->data;
 				sql_exp *e = n->data;
-		
+
+				if (inserts[c->colnr])
+					return sql_error(sql, 02, SQLSTATE(42000) "%s: column '%s' specified more than once", action, c->base.name);
 				inserts[c->colnr] = rel_check_type(sql, &c->type, r, e, type_equal);
 			}
 		} else {
@@ -324,8 +326,11 @@ rel_inserts(mvc *sql, sql_table *t, sql_rel *r, list *collist, size_t rowcount, 
 				sql_exp *e;
 
 				e = exps_bind_column2( r->exps, c->t->base.name, c->base.name);
-				if (e)
+				if (e) {
+					if (inserts[c->colnr])
+						return sql_error(sql, 02, SQLSTATE(42000) "%s: column '%s' specified more than once", action, c->base.name);
 					inserts[c->colnr] = exp_ref(sql->sa, e);
+				}
 			}
 		}
 	}
