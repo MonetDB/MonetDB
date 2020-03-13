@@ -1064,6 +1064,7 @@ ODBCFetch(ODBCStmt *stmt,
 	/* see SQLExecute.c for possible types */
 	switch (sql_type) {
 	case SQL_DECIMAL:
+	case SQL_NUMERIC:
 	case SQL_TINYINT:
 	case SQL_SMALLINT:
 	case SQL_INTEGER:
@@ -1122,6 +1123,7 @@ ODBCFetch(ODBCStmt *stmt,
 		}
 		break;
 	case SQL_DOUBLE:
+	case SQL_FLOAT:
 	case SQL_REAL:
 		if (!parsedouble(data, &fval)) {
 			/* Invalid character value for cast specification */
@@ -1299,6 +1301,7 @@ ODBCFetch(ODBCStmt *stmt,
 				*lenp = sz;
 			break;
 		case SQL_DECIMAL:
+		case SQL_NUMERIC:
 		case SQL_BIT: {
 			uint64_t f;
 			int n;
@@ -1350,6 +1353,7 @@ ODBCFetch(ODBCStmt *stmt,
 			break;
 		}
 		case SQL_DOUBLE:
+		case SQL_FLOAT:
 		case SQL_REAL: {
 			data = (char *) ptr;
 
@@ -1867,6 +1871,7 @@ ODBCFetch(ODBCStmt *stmt,
 		case SQL_WCHAR:
 		case SQL_WVARCHAR:
 		case SQL_DECIMAL:
+		case SQL_NUMERIC:
 		case SQL_TINYINT:
 		case SQL_SMALLINT:
 		case SQL_INTEGER:
@@ -1874,6 +1879,7 @@ ODBCFetch(ODBCStmt *stmt,
 		case SQL_HUGEINT:
 		case SQL_REAL:
 		case SQL_DOUBLE:
+		case SQL_FLOAT:
 		case SQL_BIT:
 		case SQL_TYPE_DATE:
 		case SQL_TYPE_TIME:
@@ -1974,6 +1980,7 @@ ODBCFetch(ODBCStmt *stmt,
 			/* fall through */
 		case SQL_REAL:
 		case SQL_DOUBLE:
+		case SQL_FLOAT:
 			if (fval < 0 || fval >= 2) {
 				/* Numeric value out of range */
 				addStmtError(stmt, "22003", NULL, 0);
@@ -1987,6 +1994,7 @@ ODBCFetch(ODBCStmt *stmt,
 			}
 			break;
 		case SQL_DECIMAL:
+		case SQL_NUMERIC:
 		case SQL_TINYINT:
 		case SQL_SMALLINT:
 		case SQL_INTEGER:
@@ -2067,6 +2075,7 @@ ODBCFetch(ODBCStmt *stmt,
 		case SQL_WCHAR:
 		case SQL_WVARCHAR:
 		case SQL_DOUBLE:
+		case SQL_FLOAT:
 		case SQL_REAL:
 			/* reparse double and float, parse char */
 			if (!parseint(data, &nval)) {
@@ -2077,6 +2086,7 @@ ODBCFetch(ODBCStmt *stmt,
 			}
 			/* fall through */
 		case SQL_DECIMAL:
+		case SQL_NUMERIC:
 		case SQL_TINYINT:
 		case SQL_SMALLINT:
 		case SQL_INTEGER:
@@ -2169,6 +2179,7 @@ ODBCFetch(ODBCStmt *stmt,
 		case SQL_WCHAR:
 		case SQL_WVARCHAR:
 		case SQL_DOUBLE:
+		case SQL_FLOAT:
 		case SQL_REAL:
 			/* reparse double and float, parse char */
 			if (!parseint(data, &nval)) {
@@ -2179,6 +2190,7 @@ ODBCFetch(ODBCStmt *stmt,
 			}
 			/* fall through */
 		case SQL_DECIMAL:
+		case SQL_NUMERIC:
 		case SQL_TINYINT:
 		case SQL_SMALLINT:
 		case SQL_INTEGER:
@@ -2236,6 +2248,7 @@ ODBCFetch(ODBCStmt *stmt,
 		case SQL_WCHAR:
 		case SQL_WVARCHAR:
 		case SQL_DOUBLE:
+		case SQL_FLOAT:
 		case SQL_REAL:
 			/* reparse double and float, parse char */
 			if (!(i = parseint(data, &nval))) {
@@ -2251,6 +2264,7 @@ ODBCFetch(ODBCStmt *stmt,
 
 			/* fall through */
 		case SQL_DECIMAL:
+		case SQL_NUMERIC:
 		case SQL_TINYINT:
 		case SQL_SMALLINT:
 		case SQL_INTEGER:
@@ -2305,9 +2319,11 @@ ODBCFetch(ODBCStmt *stmt,
 			}
 			break;
 		case SQL_DOUBLE:
+		case SQL_FLOAT:
 		case SQL_REAL:
 			break;
 		case SQL_DECIMAL:
+		case SQL_NUMERIC:
 		case SQL_TINYINT:
 		case SQL_SMALLINT:
 		case SQL_INTEGER:
@@ -2516,6 +2532,7 @@ ODBCFetch(ODBCStmt *stmt,
 			}
 			break;
 		case SQL_DECIMAL:
+		case SQL_NUMERIC:
 		case SQL_TINYINT:
 		case SQL_SMALLINT:
 		case SQL_INTEGER:
@@ -2598,6 +2615,7 @@ ODBCFetch(ODBCStmt *stmt,
 			}
 			break;
 		case SQL_DECIMAL:
+		case SQL_NUMERIC:
 		case SQL_TINYINT:
 		case SQL_SMALLINT:
 		case SQL_INTEGER:
@@ -3646,6 +3664,7 @@ ODBCStore(ODBCStmt *stmt,
 		assigns(buf, bufpos, buflen, "' DAY TO SECOND", stmt);
 		break;
 	case SQL_DECIMAL:
+	case SQL_NUMERIC:
 	case SQL_SMALLINT:
 	case SQL_INTEGER:
 	case SQL_BIGINT:
@@ -3763,12 +3782,16 @@ ODBCStore(ODBCStmt *stmt,
 				snprintf(data, sizeof(data), "%s%" PRIu64, nval.sign ? "" : "-", (uint64_t) (nval.val / f));
 				assigns(buf, bufpos, buflen, data, stmt);
 				if (nval.scale > 0) {
-					if (sqltype == SQL_DECIMAL) {
+					switch (sqltype) {
+					case SQL_DECIMAL:
+					case SQL_NUMERIC:
 						snprintf(data, sizeof(data), ".%0*" PRIu64, nval.scale, (uint64_t) (nval.val % f));
 						assigns(buf, bufpos, buflen, data, stmt);
-					} else {
+						break;
+					default:
 						/* Fractional truncation */
 						addStmtError(stmt, "01S07", NULL, 0);
+						break;
 					}
 				} else {
 					for (i = nval.scale; i < 0; i++)
@@ -3779,6 +3802,7 @@ ODBCStore(ODBCStmt *stmt,
 		break;
 	case SQL_REAL:
 	case SQL_DOUBLE:
+	case SQL_FLOAT:
 		switch (ctype) {
 		case SQL_C_CHAR:
 		case SQL_C_WCHAR:
