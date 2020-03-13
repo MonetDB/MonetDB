@@ -158,6 +158,42 @@ stdout of test 'simple_selects` in directory 'sql/test/miscellaneous` itself:
 % time # type
 % 8 # length
 [ 00:00:01	]
+#select cast(x as real) from x;
+% sys.x # table_name
+% x # name
+% real # type
+% 15 # length
+[ 1	]
+#select cast(x as double) from x;
+% sys.x # table_name
+% x # name
+% double # type
+% 24 # length
+[ 1	]
+#select cast(x as decimal) from x;
+% sys.x # table_name
+% x # name
+% decimal # type
+% 20 # length
+[ 1.000	]
+#select cast(y as real) from x;
+% sys.x # table_name
+% y # name
+% real # type
+% 15 # length
+[ 1	]
+#select cast(y as double) from x;
+% sys.x # table_name
+% y # name
+% double # type
+% 24 # length
+[ 1	]
+#select cast(y as decimal) from x;
+% sys.x # table_name
+% y # name
+% decimal # type
+% 20 # length
+[ 1.000	]
 #insert into x values (null, null);
 [ 1	]
 #select cast(x as time) from x;
@@ -167,10 +203,58 @@ stdout of test 'simple_selects` in directory 'sql/test/miscellaneous` itself:
 % 8 # length
 [ 00:00:01	]
 [ NULL	]
+#select cast(x as real) from x;
+% sys.x # table_name
+% x # name
+% real # type
+% 15 # length
+[ 1	]
+[ NULL	]
+#select cast(x as double) from x;
+% sys.x # table_name
+% x # name
+% double # type
+% 24 # length
+[ 1	]
+[ NULL	]
+#select cast(x as decimal) from x;
+% sys.x # table_name
+% x # name
+% decimal # type
+% 20 # length
+[ 1.000	]
+[ NULL	]
+#select cast(y as real) from x;
+% sys.x # table_name
+% y # name
+% real # type
+% 15 # length
+[ 1	]
+[ NULL	]
+#select cast(y as double) from x;
+% sys.x # table_name
+% y # name
+% double # type
+% 24 # length
+[ 1	]
+[ NULL	]
+#select cast(y as decimal) from x;
+% sys.x # table_name
+% y # name
+% decimal # type
+% 20 # length
+[ 1.000	]
+[ NULL	]
 #drop table x;
 #create table x (x time, y date, z timestamp);
 #insert into x values (null, null, null);
 [ 1	]
+#select cast(b as interval second) from x;
+% sys.x # table_name
+% b # name
+% sec_interval # type
+% 5 # length
+[ NULL	]
 #drop table x;
 #select difference('foobar', 'oobar'), difference(NULL, 'oobar'), difference('foobar', NULL), difference(NULL, NULL),
 #       editdistance('foobar', 'oobar'), editdistance(NULL, 'oobar'), editdistance('foobar', NULL), editdistance(NULL, NULL), 
