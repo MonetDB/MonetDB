@@ -21,26 +21,45 @@ insert into x values (1, 1);
 select cast(x as date) from x; --error, cannot cast
 select cast(x as time) from x;
 select cast(x as timestamp) from x; --error, cannot cast
+select cast(x as real) from x;
+select cast(x as double) from x;
+select cast(x as decimal) from x;
 select cast(y as date) from x; --error, cannot cast
 select cast(y as time) from x; --We throw error, but PostgreSQL doesn't
 select cast(y as timestamp) from x; --error, cannot cast
+select cast(y as real) from x;
+select cast(y as double) from x;
+select cast(y as decimal) from x;
+
 insert into x values (null, null);
 select cast(x as date) from x; --error, cannot cast
 select cast(x as time) from x;
 select cast(x as timestamp) from x; --error, cannot cast
+select cast(x as real) from x;
+select cast(x as double) from x;
+select cast(x as decimal) from x;
 select cast(y as date) from x; --error, cannot cast
 select cast(y as time) from x; --We throw error, but PostgreSQL doesn't
 select cast(y as timestamp) from x; --error, cannot cast
+select cast(y as real) from x;
+select cast(y as double) from x;
+select cast(y as decimal) from x;
 drop table x;
 
-create table x (x time, y date, z timestamp);
-insert into x values (null, null, null);
+create table x (x time, y date, z timestamp, w real, a double, b decimal);
+insert into x values (null, null, null, null, null, null);
 select cast(x as interval second) from x; --We throw error, but PostgreSQL doesn't
 select cast(x as interval month) from x; --We throw error, but PostgreSQL doesn't
 select cast(y as interval second) from x; --error, cannot cast
 select cast(y as interval month) from x; --error, cannot cast
 select cast(z as interval second) from x; --error, cannot cast
 select cast(z as interval month) from x; --error, cannot cast
+select cast(w as interval second) from x;
+select cast(w as interval month) from x;
+select cast(a as interval second) from x;
+select cast(a as interval month) from x;
+select cast(b as interval second) from x;
+select cast(b as interval month) from x;
 drop table x;
 
 select difference('foobar', 'oobar'), difference(NULL, 'oobar'), difference('foobar', NULL), difference(NULL, NULL),
@@ -65,6 +84,8 @@ select "idontexist"."idontexist"(1) over (); --error, it doesn't exist
 
 select cast(true as interval second); --error, not possible
 select cast(true as interval month); --error, not possible
+select cast(cast(1 as interval second) as boolean); --error, not possible
+select cast(cast(1 as interval month) as boolean); --error, not possible
 
 select substring('abc' from 1 for null);
 select substring('abc' from null for 2);

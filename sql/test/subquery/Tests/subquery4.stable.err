@@ -188,7 +188,11 @@ MAPI  = (monetdb) /var/tmp/mtest-60261/.s.monetdb.38639
 QUERY = SET y = MIN(1); --error, not allowed
 ERROR = !MIN: missing group by
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-60261/.s.monetdb.38639
+MAPI  = (monetdb) /var/tmp/mtest-64327/.s.monetdb.34611
+QUERY = INSERT INTO another_T (col1,col1) VALUES (1,1); --error, multiple assignments to same column "col1"
+ERROR = !INSERT INTO: column 'col1' specified more than once
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-64327/.s.monetdb.34611
 QUERY = INSERT INTO another_T VALUES (SUM(1),2,3,4,5,6,7,8); --error, not allowed
 ERROR = !SUM: missing group by
 CODE  = 42000
@@ -196,7 +200,7 @@ MAPI  = (monetdb) /var/tmp/mtest-60261/.s.monetdb.38639
 QUERY = INSERT INTO another_T VALUES (AVG(1) OVER (),2,3,4,5,6,7,8); --error, not allowed
 ERROR = !AVG: window function 'avg' not allowed inside a list of VALUES
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-60261/.s.monetdb.38639
+MAPI  = (monetdb) /var/tmp/mtest-64327/.s.monetdb.34611
 QUERY = CALL crashme(COUNT(1)); --error, not allowed
 ERROR = !COUNT: missing group by
 CODE  = 42000
@@ -215,6 +219,14 @@ CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-92133/.s.monetdb.34612
 QUERY = CALL crashme((SELECT 1 UNION ALL SELECT 2)); --error, subquery at CALL
 ERROR = !CALL: subqueries not allowed inside CALL statements
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-17674/.s.monetdb.33889
+QUERY = SELECT row_number(1) OVER () FROM integers i1; --error, row_number(int) doesn't exist
+ERROR = !SELECT: window function 'row_number(int(32))' not found
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-17674/.s.monetdb.33889
+QUERY = SELECT ntile(1,1) OVER () FROM integers i1; --error, ntile(int,int) doesn't exist
+ERROR = !SELECT: window function 'ntile(int(32), tinyint(1))' not found
 CODE  = 42000
 
 # 15:41:18 >  
