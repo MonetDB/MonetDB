@@ -313,10 +313,10 @@ subrel_project( backend *be, stmt *s)
 	for(node *n = s->op4.lval->h; n; n = n->next) {
 		stmt *c = n->data;
 
-		assert(c->type == st_alias || (c->type == st_join && c->flag == cmp_project) || c->type == st_bat || c->type == st_idxbat);
+		assert(c->type == st_alias || (c->type == st_join && c->flag == cmp_project) || c->type == st_bat || c->type == st_idxbat || c->type == st_single);
 		if (c->type != st_alias) {
 			c = stmt_project(be, cand, c);
-		} else {
+		} else { /* st_alias */
 			stmt *s = stmt_project(be, cand, c->op1);
 			c = stmt_alias(be, s, c->tname, c->cname); 
 		}
@@ -3170,8 +3170,7 @@ static stmt *
 rel2bin_select(backend *be, sql_rel *rel, list *refs)
 {
 	mvc *sql = be->mvc;
-	list *l; 
-	node *en, *n;
+	node *en;
 	stmt *sub = NULL, *sel = NULL;
 	stmt *predicate = NULL;
 
@@ -3237,10 +3236,17 @@ rel2bin_select(backend *be, sql_rel *rel, list *refs)
 		}
 	}
 
-	/* construct relation */
-	l = sa_list(sql->sa);
 	if (sub && sel) {
-		for( n = sub->op4.lval->h; n; n = n->next ) {
+		assert(!sub->cand);
+		sub = stmt_list(be, sub->op4.lval); /* protect against references */
+		sub->cand = sel;
+	}
+	return sub;
+#if 0
+	/* construct relation */
+	list *l = sa_list(sql->sa);
+	if (sub && sel) {
+		for(node * n = sub->op4.lval->h; n; n = n->next ) {
 			stmt *col = n->data;
 
 			if (col->nrcols == 0) /* constant */
@@ -3251,6 +3257,7 @@ rel2bin_select(backend *be, sql_rel *rel, list *refs)
 		}
 	}
 	return stmt_list(be, l);
+#endif
 }
 
 static stmt *
