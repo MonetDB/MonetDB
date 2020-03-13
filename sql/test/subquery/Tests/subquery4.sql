@@ -102,13 +102,19 @@ SELECT
 FROM integers i1;
 	-- 1
 
-SELECT (SELECT NTILE(i1.i) OVER ()) FROM integers i1;
+SELECT (SELECT NTILE(i1.i) OVER ()) mycalc FROM integers i1 ORDER BY mycalc NULLS LAST;
 	-- 1
 	-- 1
 	-- 1
 	-- NULL
 
-SELECT (SELECT NTILE(i1.i) OVER (PARTITION BY i1.i)) FROM integers i1;
+SELECT (SELECT NTILE(i1.i) OVER (PARTITION BY i1.i)) mycalc FROM integers i1 ORDER BY mycalc NULLS LAST;
+	-- 1
+	-- 1
+	-- 1
+	-- NULL
+
+SELECT (SELECT NTILE(i1.i) OVER (PARTITION BY i1.i ORDER BY i1.i)) FROM integers i1 ORDER BY 1 NULLS LAST;
 	-- 1
 	-- 1
 	-- 1
