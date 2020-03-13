@@ -112,4 +112,8 @@ select x like x, x ilike x, x not like x, x not ilike x from x;
 	-- NULL NULL NULL NULL
 	-- True True False False
 
+select x1.x from x x1 inner join x x2 on x1.x not like x2.x; --empty
+
+select i from (values (1),(2),(3),(NULL)) as integers(i) where not cast(i as varchar(32)) like null; --empty
+
 drop table x;
