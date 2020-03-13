@@ -3544,6 +3544,11 @@ str
 second_interval_2_daytime(daytime *res, const lng *s, const int *digits)
 {
 	daytime d;
+
+	if (*s == lng_nil) {
+		*res = daytime_nil;
+		return MAL_SUCCEED;
+	}
 	d = daytime_add_usec(daytime_create(0, 0, 0, 0), *s * 1000);
 	return daytime_2time_daytime(res, &d, digits);
 }
