@@ -95,6 +95,8 @@ ODBCwchar2utf8(const SQLWCHAR *src, SQLLEN length, const char **errmsg)
 			*errmsg = "Invalid length parameter";
 		return NULL;
 	}
+	if (src[j] == 0xFEFF)
+		j++;
 	while (j < length && src[j]) {
 		if (src[j] <= 0x7F) {
 			i += 1;
@@ -140,6 +142,8 @@ ODBCwchar2utf8(const SQLWCHAR *src, SQLLEN length, const char **errmsg)
 		return NULL;
 	i = 0;
 	j = 0;
+	if (src[j] == 0xFEFF)
+		j++;
 	while (j < length) {
 		if (src[j] <= 0x7F) {
 			dest[i++] = (SQLCHAR) src[j];
