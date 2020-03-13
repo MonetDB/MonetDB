@@ -75,8 +75,11 @@ rel_no_mitosis(sql_rel *rel)
 		return 1;
 	if (is_topn(rel->op) || rel->op == op_project)
 		return rel_no_mitosis(rel->l);
-	if (is_modify(rel->op) && rel->card <= CARD_AGGR)
+	if (is_modify(rel->op) && rel->card <= CARD_AGGR) {
+		if (is_delete(rel->op))
+			return 1;
 		return rel_no_mitosis(rel->r);
+	}
 	if (is_select(rel->op) && rel_is_table(rel->l) && rel->exps) {
 		is_point = 0;
 		/* just one point expression makes this a point query */
