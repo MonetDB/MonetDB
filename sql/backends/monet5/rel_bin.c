@@ -91,6 +91,22 @@ refs_find_rel(list *refs, sql_rel *rel)
 	return NULL;
 }
 
+static void
+refs_update_stmt(list *refs, sql_rel *rel, stmt *s)
+{
+	node *n;
+
+	for(n=refs->h; n; n = n->next->next) {
+		sql_rel *ref = n->data;
+
+		if (rel == ref) {
+			n->next->data = s;
+			break;
+		}
+	}
+}
+
+
 static void 
 print_stmtlist(sql_allocator *sa, stmt *l)
 {
@@ -301,7 +317,7 @@ stmt_selectnonil( backend *be, stmt *col, stmt *s )
 }
 
 static stmt *
-subrel_project( backend *be, stmt *s)
+subrel_project( backend *be, stmt *s, list *refs, sql_rel *rel)
 {
 	if (!s || s->type != st_list || !s->cand)
 		return s;
@@ -316,6 +332,8 @@ subrel_project( backend *be, stmt *s)
 		assert(c->type == st_alias || (c->type == st_join && c->flag == cmp_project) || c->type == st_bat || c->type == st_idxbat || c->type == st_single);
 		if (c->type != st_alias) {
 			c = stmt_project(be, cand, c);
+		} else if (c->op1->type == st_mirror) { /* alias with mirror (ie full row ids) */
+			c = stmt_alias(be, cand, c->tname, c->cname); 
 		} else { /* st_alias */
 			stmt *s = c->op1;
 			if (s->nrcols == 0)
@@ -326,7 +344,10 @@ subrel_project( backend *be, stmt *s)
 		}
 		append(l, c);
 	}
-	return stmt_list(be, l);
+	s = stmt_list(be, l);
+	if (rel && rel_is_ref(rel))
+		refs_update_stmt(refs, rel, s);
+	return s;
 }
 
 static stmt *
@@ -1741,7 +1762,7 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 			} else {
 				sub = subrel_bin(be, rel->l, refs);
 			}
-			sub = subrel_project(be, sub);
+			sub = subrel_project(be, sub, refs, rel->l);
 			if (!sub) 
 				return NULL;
 		}
@@ -2095,8 +2116,8 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 		left = subrel_bin(be, rel->l, refs);
 	if (rel->r) /* first construct the right sub relation */
 		right = subrel_bin(be, rel->r, refs);
-	left = subrel_project(be, left);
-	right = subrel_project(be, right);
+	left = subrel_project(be, left, refs, rel->l);
+	right = subrel_project(be, right, refs, rel->r);
 	if (!left || !right) 
 		return NULL;
 	left = row2cols(be, left);
@@ -2356,8 +2377,8 @@ rel2bin_antijoin(backend *be, sql_rel *rel, list *refs)
 		left = subrel_bin(be, rel->l, refs);
 	if (rel->r) /* first construct the right sub relation */
 		right = subrel_bin(be, rel->r, refs);
-	left = subrel_project(be, left);
-	right = subrel_project(be, right);
+	left = subrel_project(be, left, refs, rel->l);
+	right = subrel_project(be, right, refs, rel->r);
 	if (!left || !right) 
 		return NULL;
 	left = row2cols(be, left);
@@ -2475,8 +2496,8 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 	}
 
 	if (!semi_used) {
-		left = subrel_project(be, left);
-		right = subrel_project(be, right);
+		left = subrel_project(be, left, refs, rel->l);
+		right = subrel_project(be, right, refs, rel->r);
 	}
 		
 	if (!semi_used && rel->exps) {
@@ -2722,8 +2743,8 @@ rel2bin_union(backend *be, sql_rel *rel, list *refs)
 		left = subrel_bin(be, rel->l, refs);
 	if (rel->r) /* first construct the right sub relation */
 		right = subrel_bin(be, rel->r, refs);
-	left = subrel_project(be, left);
-	right = subrel_project(be, right);
+	left = subrel_project(be, left, refs, rel->l);
+	right = subrel_project(be, right, refs, rel->r);
 	if (!left || !right) 
 		return NULL;
 
@@ -2773,8 +2794,8 @@ rel2bin_except(backend *be, sql_rel *rel, list *refs)
 		right = subrel_bin(be, rel->r, refs);
 	if (!left || !right) 
 		return NULL;
-	left = subrel_project(be, left);
-	right = subrel_project(be, right);
+	left = subrel_project(be, left, refs, rel->l);
+	right = subrel_project(be, right, refs, rel->r);
 	left = row2cols(be, left);
 	right = row2cols(be, right);
 
@@ -2883,8 +2904,8 @@ rel2bin_inter(backend *be, sql_rel *rel, list *refs)
 		left = subrel_bin(be, rel->l, refs);
 	if (rel->r) /* first construct the right sub relation */
 		right = subrel_bin(be, rel->r, refs);
-	left = subrel_project(be, left);
-	right = subrel_project(be, right);
+	left = subrel_project(be, left, refs, rel->l);
+	right = subrel_project(be, right, refs, rel->r);
 	if (!left || !right) 
 		return NULL;
 	left = row2cols(be, left);
@@ -3043,7 +3064,7 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 		} else {
 			sub = subrel_bin(be, rel->l, refs);
 		}
-		sub = subrel_project(be, sub);
+		sub = subrel_project(be, sub, refs, rel->l);
 		if (!sub) 
 			return NULL;
 	}
@@ -3180,7 +3201,7 @@ rel2bin_select(backend *be, sql_rel *rel, list *refs)
 
 	if (rel->l) { /* first construct the sub relation */
 		sub = subrel_bin(be, rel->l, refs);
-		sub = subrel_project(be, sub);
+		sub = subrel_project(be, sub, refs, rel->l);
 		if (!sub) 
 			return NULL;
 		sub = row2cols(be, sub);
@@ -3275,7 +3296,7 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 
 	if (rel->l) { /* first construct the sub relation */
 		sub = subrel_bin(be, rel->l, refs);
-		sub = subrel_project(be, sub);
+		sub = subrel_project(be, sub, refs, rel->l);
 		if (!sub)
 			return NULL;
 	}
@@ -3375,7 +3396,7 @@ rel2bin_topn(backend *be, sql_rel *rel, list *refs)
 		} else {
 			sub = subrel_bin(be, rl, refs);
 		}
-		sub = subrel_project(be, sub);
+		sub = subrel_project(be, sub, refs, rl);
 	}
 	if (!sub) 
 		return NULL;
@@ -3429,7 +3450,7 @@ rel2bin_sample(backend *be, sql_rel *rel, list *refs)
 
 	if (rel->l) /* first construct the sub relation */
 		sub = subrel_bin(be, rel->l, refs);
-	sub = subrel_project(be, sub);
+	sub = subrel_project(be, sub, refs, rel->l);
 	if (!sub)
 		return NULL;
 
@@ -3911,7 +3932,7 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 		t = tr->l;
 	} else {
 		ddl = subrel_bin(be, tr, refs);
-		ddl = subrel_project(be, ddl);
+		ddl = subrel_project(be, ddl, refs, NULL);
 		if (!ddl)
 			return NULL;
 		t = rel_ddl_table_get(tr);
@@ -3919,7 +3940,7 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 
 	if (rel->r) /* first construct the inserts relation */
 		inserts = subrel_bin(be, rel->r, refs);
-	inserts = subrel_project(be, inserts);
+	inserts = subrel_project(be, inserts, refs, rel->r);
 
 	if (!inserts)
 		return NULL;
@@ -4909,7 +4930,7 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 		t = tr->l;
 	} else {
 		ddl = subrel_bin(be, tr, refs);
-		ddl = subrel_project(be, ddl);
+		ddl = subrel_project(be, ddl, refs, NULL);
 		if (!ddl)
 			return NULL;
 		t = rel_ddl_table_get(tr);
@@ -4921,7 +4942,7 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 
 	if (rel->r) /* first construct the update relation */
 		update = subrel_bin(be, rel->r, refs);
-	update = subrel_project(be, update);
+	update = subrel_project(be, update, refs, rel->r);
 
 	if (!update)
 		return NULL;
@@ -5233,7 +5254,7 @@ rel2bin_delete(backend *be, sql_rel *rel, list *refs)
 
 	if (rel->r) { /* first construct the deletes relation */
 		rows = subrel_bin(be, rel->r, refs);
-		rows = subrel_project(be, rows);
+		rows = subrel_project(be, rows, refs, rel->r);
 		if (!rows)
 			return NULL;
 	}
@@ -5479,7 +5500,7 @@ rel2bin_output(backend *be, sql_rel *rel, list *refs)
 
 	if (rel->l)  /* first construct the sub relation */
 		s = subrel_bin(be, rel->l, refs);
-	s = subrel_project(be, s);
+	s = subrel_project(be, s, refs, rel->l);
 	if (!s) 
 		return NULL;
 
@@ -5521,8 +5542,8 @@ rel2bin_list(backend *be, sql_rel *rel, list *refs)
 		l = subrel_bin(be, rel->l, refs);
 	if (rel->r)  /* first construct the sub relation */
 		r = subrel_bin(be, rel->r, refs);
-	l = subrel_project(be, l);
-	r = subrel_project(be, r);
+	l = subrel_project(be, l, refs, rel->l);
+	r = subrel_project(be, r, refs, rel->r);
 	if (!l || !r)
 		return NULL;
 	list_append(slist, l);
@@ -5563,8 +5584,8 @@ rel2bin_partition_limits(backend *be, sql_rel *rel, list *refs)
 		l = subrel_bin(be, rel->l, refs);
 	if (rel->r)  /* first construct the sub relation */
 		r = subrel_bin(be, rel->r, refs);
-	l = subrel_project(be, l);
-	r = subrel_project(be, r);
+	l = subrel_project(be, l, refs, rel->l);
+	r = subrel_project(be, r, refs, rel->r);
 	if ((rel->l && !l) || (rel->r && !r))
 		return NULL;
 
@@ -5597,8 +5618,8 @@ rel2bin_exception(backend *be, sql_rel *rel, list *refs)
 		l = subrel_bin(be, rel->l, refs);
 	if (rel->r)  /* first construct the sub relation */
 		r = subrel_bin(be, rel->r, refs);
-	l = subrel_project(be, l);
-	r = subrel_project(be, r);
+	l = subrel_project(be, l, refs, rel->l);
+	r = subrel_project(be, r, refs, rel->r);
 	if ((rel->l && !l) || (rel->r && !r))
 		return NULL;
 
@@ -5627,7 +5648,7 @@ rel2bin_seq(backend *be, sql_rel *rel, list *refs)
 
 	if (rel->l) { /* first construct the sub relation */
 		sl = subrel_bin(be, rel->l, refs);
-		sl = subrel_project(be, sl);
+		sl = subrel_project(be, sl, refs, rel->l);
 		if (!sl)
 			return NULL;
 	}
@@ -5972,7 +5993,7 @@ rel_bin(backend *be, sql_rel *rel)
 	mapi_query_t sqltype = sql->type;
 	stmt *s = subrel_bin(be, rel, refs);
 
-	s = subrel_project(be, s);
+	s = subrel_project(be, s, refs, rel);
 	if (sqltype == Q_SCHEMA)
 		sql->type = sqltype;  /* reset */
 
@@ -5990,7 +6011,7 @@ output_rel_bin(backend *be, sql_rel *rel )
 	if (refs == NULL)
 		return NULL;
 	s = subrel_bin(be, rel, refs);
-	s = subrel_project(be, s);
+	s = subrel_project(be, s, refs, rel);
 	if (sqltype == Q_SCHEMA)
 		sql->type = sqltype;  /* reset */
 
