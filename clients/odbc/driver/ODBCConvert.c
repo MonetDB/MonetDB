@@ -39,6 +39,15 @@ typedef struct {
 #endif
 } bignum_t;
 
+typedef union {
+	SQLGUID g;
+	struct {
+		uint32_t d1;
+		uint16_t d2, d3;
+		uint8_t d4[8];
+	} d;
+} uuid_t;
+
 /* Parse a number and store in a bignum_t.
  * 1 is returned if all is well;
  * 2 is returned if there is loss of precision (i.e. overflow of the value);
@@ -2795,44 +2804,22 @@ ODBCFetch(ODBCStmt *stmt,
 #ifdef ODBCDEBUG
 		ODBCLOG("Writing 16 bytes to %p\n", ptr);
 #endif
-		for (i = 0; i < 16; i++) {
-			if (i == 8 || i == 12 || i == 16 || i == 20) {
-				if (*data != '-') {
-					/* Restricted data type
-					 * attribute violation */
-					addStmtError(stmt, "07006", NULL, 0);
-					return SQL_ERROR;
-				}
-				data++;
-			}
-			if (isdigit((unsigned char) *data))
-				((unsigned char *) ptr)[i] = *data - '0';
-			else if ('a' <= *data && *data <= 'f')
-				((unsigned char *) ptr)[i] = *data - 'a' + 10;
-			else if ('A' <= *data && *data <= 'F')
-				((unsigned char *) ptr)[i] = *data - 'A' + 10;
-			else {
-				/* Restricted data type attribute
-				 * violation */
-				addStmtError(stmt, "07006", NULL, 0);
-				return SQL_ERROR;
-			}
-			((unsigned char *) ptr)[i] <<= 4;
-			data++;
-			if (isdigit((unsigned char) *data))
-				((unsigned char *) ptr)[i] |= *data - '0';
-			else if ('a' <= *data && *data <= 'f')
-				((unsigned char *) ptr)[i] |= *data - 'a' + 10;
-			else if ('A' <= *data && *data <= 'F')
-				((unsigned char *) ptr)[i] |= *data - 'A' + 10;
-			else {
-				/* Restricted data type attribute
-				 * violation */
-				addStmtError(stmt, "07006", NULL, 0);
-				return SQL_ERROR;
-			}
-			data++;
+		uuid_t u;
+		if (sscanf(data, "%8"SCNx32"-%4"SCNx16"-%4"SCNx16
+			   "-%2"SCNx8"%2"SCNx8"-%2"SCNx8"%2"SCNx8
+			   "%2"SCNx8"%2"SCNx8"%2"SCNx8"%2"SCNx8,
+			   &u.d.d1, &u.d.d2, &u.d.d3, &u.d.d4[0],
+			   &u.d.d4[1], &u.d.d4[2], &u.d.d4[3],
+			   &u.d.d4[4], &u.d.d4[5], &u.d.d4[6],
+			   &u.d.d4[7]) != 11) {
+			/* Restricted data type attribute
+			 * violation */
+			addStmtError(stmt, "07006", NULL, 0);
+			return SQL_ERROR;
 		}
+		WriteData(ptr, u.g, SQLGUID);
+		if (lenp)
+			*lenp = sizeof(SQLGUID);
 		break;
 	default:
 		/* Invalid application buffer type */
@@ -2902,6 +2889,7 @@ ODBCStore(ODBCStmt *stmt,
 	TIMESTAMP_STRUCT tsval;
 	int ivalprec = 0;	/* interval second precision */
 	SQL_INTERVAL_STRUCT ival;
+	uuid_t u;
 	char *buf = *bufp;
 	size_t bufpos = *bufposp;
 	size_t buflen = *buflenp;
@@ -3365,25 +3353,16 @@ ODBCStore(ODBCStmt *stmt,
 			}
 			break;
 		case SQL_C_GUID:
+			u.g = *(SQLGUID *)ptr;
 			snprintf(data, sizeof(data),
-				 "%02x%02x%02x%02x-%02x%02x-%02x%02x-"
-				 "%02x%02x-%02x%02x%02x%02x%02x%02x",
-				 ((unsigned char *) ptr)[0],
-				 ((unsigned char *) ptr)[1],
-				 ((unsigned char *) ptr)[2],
-				 ((unsigned char *) ptr)[3],
-				 ((unsigned char *) ptr)[4],
-				 ((unsigned char *) ptr)[5],
-				 ((unsigned char *) ptr)[6],
-				 ((unsigned char *) ptr)[7],
-				 ((unsigned char *) ptr)[8],
-				 ((unsigned char *) ptr)[9],
-				 ((unsigned char *) ptr)[10],
-				 ((unsigned char *) ptr)[11],
-				 ((unsigned char *) ptr)[12],
-				 ((unsigned char *) ptr)[13],
-				 ((unsigned char *) ptr)[14],
-				 ((unsigned char *) ptr)[15]);
+				 "%08"PRIx32"-%04"PRIx16"-%04"PRIx16
+				 "-%02"PRIx8"%02"PRIx8
+				 "-%02"PRIx8"%02"PRIx8"%02"PRIx8
+				 "%02"PRIx8"%02"PRIx8"%02"PRIx8,
+				 u.d.d1, u.d.d2, u.d.d3, u.d.d4[0],
+				 u.d.d4[1], u.d.d4[2], u.d.d4[3],
+				 u.d.d4[4], u.d.d4[5], u.d.d4[6],
+				 u.d.d4[7]);
 			break;
 		}
 		assign(buf, bufpos, buflen, '\'', stmt);
@@ -3919,19 +3898,18 @@ ODBCStore(ODBCStmt *stmt,
 			snprintf(data, sizeof(data), "%.36s", sval);
 			break;
 		case SQL_C_GUID:
-			snprintf(data, sizeof(data), "%08lx-%04x-%04x-%02x%02x-"
-				 "%02x%02x%02x%02x%02x%02x",
-				 (unsigned long) ((SQLGUID *) ptr)->Data1,
-				 (unsigned int) ((SQLGUID *) ptr)->Data2,
-				 (unsigned int) ((SQLGUID *) ptr)->Data3,
-				 (unsigned int) ((SQLGUID *) ptr)->Data4[0],
-				 (unsigned int) ((SQLGUID *) ptr)->Data4[1],
-				 (unsigned int) ((SQLGUID *) ptr)->Data4[2],
-				 (unsigned int) ((SQLGUID *) ptr)->Data4[3],
-				 (unsigned int) ((SQLGUID *) ptr)->Data4[4],
-				 (unsigned int) ((SQLGUID *) ptr)->Data4[5],
-				 (unsigned int) ((SQLGUID *) ptr)->Data4[6],
-				 (unsigned int) ((SQLGUID *) ptr)->Data4[7]);
+			u.g = *(SQLGUID *)ptr;
+			snprintf(data, sizeof(data),
+				 "UUID '"
+				 "%08"PRIx32"-%04"PRIx16"-%04"PRIx16
+				 "-%02"PRIx8"%02"PRIx8
+				 "-%02"PRIx8"%02"PRIx8"%02"PRIx8
+				 "%02"PRIx8"%02"PRIx8"%02"PRIx8
+				 "'",
+				 u.d.d1, u.d.d2, u.d.d3, u.d.d4[0],
+				 u.d.d4[1], u.d.d4[2], u.d.d4[3],
+				 u.d.d4[4], u.d.d4[5], u.d.d4[6],
+				 u.d.d4[7]);
 			break;
 		default:
 			/* Restricted data type attribute violation */
