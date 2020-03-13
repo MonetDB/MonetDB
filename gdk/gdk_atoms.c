@@ -22,6 +22,7 @@
  */
 #include "monetdb_config.h"
 #include "gdk.h"
+#include "gdk_time.h"
 #include "gdk_private.h"
 #include <math.h>
 
@@ -311,7 +312,7 @@ ATOMprint(int t, const void *p, stream *s)
 	if (p && t >= 0 && t < GDKatomcnt && (tostr = BATatoms[t].atomToStr)) {
 		size_t sz;
 
-		if (t != TYPE_bat && t < TYPE_str) {
+		if (t != TYPE_bat && t < TYPE_date) {
 			char buf[dblStrlen], *addr = buf;	/* use memory from stack */
 
 			sz = dblStrlen;
@@ -1341,6 +1342,45 @@ atomDesc BATatoms[MAXATOMS] = {
 		.atomHash = (BUN (*)(const void *)) hgeHash,
 	},
 #endif
+	[TYPE_date] = {
+		.name = "date",
+		.storage = TYPE_int,
+		.linear = true,
+		.size = sizeof(int),
+		.atomNull = (void *) &int_nil,
+		.atomFromStr = (ssize_t (*)(const char *, size_t *, void **, bool)) date_fromstr,
+		.atomToStr = (ssize_t (*)(char **, size_t *, const void *, bool)) date_tostr,
+		.atomRead = (void *(*)(void *, stream *, size_t)) intRead,
+		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) intWrite,
+		.atomCmp = (int (*)(const void *, const void *)) intCmp,
+		.atomHash = (BUN (*)(const void *)) intHash,
+	},
+	[TYPE_daytime] = {
+		.name = "daytime",
+		.storage = TYPE_lng,
+		.linear = true,
+		.size = sizeof(lng),
+		.atomNull = (void *) &lng_nil,
+		.atomFromStr = (ssize_t (*)(const char *, size_t *, void **, bool)) daytime_tz_fromstr,
+		.atomToStr = (ssize_t (*)(char **, size_t *, const void *, bool)) daytime_tostr,
+		.atomRead = (void *(*)(void *, stream *, size_t)) lngRead,
+		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) lngWrite,
+		.atomCmp = (int (*)(const void *, const void *)) lngCmp,
+		.atomHash = (BUN (*)(const void *)) lngHash,
+	},
+	[TYPE_timestamp] = {
+		.name = "timestamp",
+		.storage = TYPE_lng,
+		.linear = true,
+		.size = sizeof(lng),
+		.atomNull = (void *) &lng_nil,
+		.atomFromStr = (ssize_t (*)(const char *, size_t *, void **, bool)) timestamp_fromstr,
+		.atomToStr = (ssize_t (*)(char **, size_t *, const void *, bool)) timestamp_tostr,
+		.atomRead = (void *(*)(void *, stream *, size_t)) lngRead,
+		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) lngWrite,
+		.atomCmp = (int (*)(const void *, const void *)) lngCmp,
+		.atomHash = (BUN (*)(const void *)) lngHash,
+	},
 	[TYPE_str] = {
 		.name = "str",
 		.storage = TYPE_str,

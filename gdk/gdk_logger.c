@@ -547,7 +547,7 @@ log_read_updates(logger *lg, trans *tr, logformat *l, char *name, int tpe, oid i
 		}
 #endif
 #ifdef GDKLIBRARY_OLDDATE
-		if (lg->convert_date && tt > TYPE_str) {
+		if (lg->convert_date && tt >= TYPE_date) {
 			if (strcmp(BATatoms[tt].name, "date") == 0)
 				rt = dateRead;
 			else if (strcmp(BATatoms[tt].name, "daytime") == 0)

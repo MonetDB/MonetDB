@@ -14,6 +14,7 @@
 
 #define CATALOG_MAR2018 52201
 #define CATALOG_AUG2018 52202
+#define CATALOG_NOV2019 52203
 
 logger *bat_logger = NULL;
 
@@ -34,6 +35,14 @@ bl_preversion(int oldversion, int newversion)
 
 #ifdef CATALOG_AUG2018
 	if (oldversion == CATALOG_AUG2018) {
+		/* upgrade to default releases */
+		catalog_version = oldversion;
+		return GDK_SUCCEED;
+	}
+#endif
+
+#ifdef CATALOG_NOV2019
+	if (oldversion == CATALOG_NOV2019) {
 		/* upgrade to default releases */
 		catalog_version = oldversion;
 		return GDK_SUCCEED;
@@ -739,6 +748,58 @@ bl_postversion(void *lg)
 			   NULL) != GDK_SUCCEED)
 			return GDK_FAIL;
 		//log_sequence(lg, OBJ_SID, id);
+	}
+#endif
+
+#ifdef CATALOG_NOV2019
+	if (catalog_version <= CATALOG_NOV2019) {
+		BAT *te, *tne;
+		const int *ocl;	/* old eclass */
+		int *ncl;	/* new eclass */
+
+		te = temp_descriptor(logger_find_bat(lg, N("sys", "types", "eclass"), 0, 0));
+		if (te == NULL)
+			return GDK_FAIL;
+		tne = COLnew(te->hseqbase, TYPE_int, BATcount(te), PERSISTENT);
+		if (tne == NULL) {
+			bat_destroy(te);
+			return GDK_FAIL;
+		}
+		ocl = Tloc(te, 0);
+		ncl = Tloc(tne, 0);
+		for (BUN p = 0, q = BUNlast(te); p < q; p++) {
+			switch (ocl[p]) {
+			case EC_TIME_TZ:		/* old EC_DATE */
+				ncl[p] = EC_DATE;
+				break;
+			case EC_DATE:			/* old EC_TIMESTAMP */
+				ncl[p] = EC_TIMESTAMP;
+				break;
+			case EC_TIMESTAMP:		/* old EC_GEOM */
+				ncl[p] = EC_GEOM;
+				break;
+			case EC_TIMESTAMP_TZ:		/* old EC_EXTERNAL */
+				ncl[p] = EC_EXTERNAL;
+				break;
+			default:
+				/* others stay unchanged */
+				ncl[p] = ocl[p];
+				break;
+			}
+		}
+		BATsetcount(tne, BATcount(te));
+		bat_destroy(te);
+		tne->tnil = false;
+		tne->tnonil = true;
+		tne->tsorted = false;
+		tne->trevsorted = false;
+		tne->tkey = false;
+		if (BATsetaccess(tne, BAT_READ) != GDK_SUCCEED ||
+		    logger_add_bat(lg, tne, N("sys", "types", "eclass"), 0, 0) != GDK_SUCCEED) {
+			bat_destroy(tne);
+			return GDK_FAIL;
+		}
+		bat_destroy(tne);
 	}
 #endif
 

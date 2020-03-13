@@ -3544,7 +3544,8 @@ str
 second_interval_2_daytime(daytime *res, const lng *s, const int *digits)
 {
 	daytime d;
-	if (is_lng_nil(*s)) {
+
+	if (*s == lng_nil) {
 		*res = daytime_nil;
 		return MAL_SUCCEED;
 	}
@@ -3806,38 +3807,41 @@ str
 month_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int *ret = getArgReference_int(stk, pci, 0);
-	int k = digits2ek(*getArgReference_int(stk, pci, 2)), r = 0, isnil = 0;
+	int k = digits2ek(*getArgReference_int(stk, pci, 2)), r = 0;
 
 	(void) cntxt;
 	*ret = int_nil;
 	switch (getArgType(mb, pci, 1)) {
 	case TYPE_bte:
+		if (is_bte_nil(stk->stk[getArg(pci, 1)].val.btval))
+			return MAL_SUCCEED;
 		r = stk->stk[getArg(pci, 1)].val.btval;
-		isnil = (stk->stk[getArg(pci, 1)].val.btval == bte_nil);
 		break;
 	case TYPE_sht:
+		if (is_sht_nil(stk->stk[getArg(pci, 1)].val.shval))
+			return MAL_SUCCEED;
 		r = stk->stk[getArg(pci, 1)].val.shval;
-		isnil = (stk->stk[getArg(pci, 1)].val.shval == sht_nil);
 		break;
 	case TYPE_int:
+		if (is_int_nil(stk->stk[getArg(pci, 1)].val.ival))
+			return MAL_SUCCEED;
 		r = stk->stk[getArg(pci, 1)].val.ival;
-		isnil = (stk->stk[getArg(pci, 1)].val.ival == int_nil);
 		break;
 	case TYPE_lng:
+		if (is_lng_nil(stk->stk[getArg(pci, 1)].val.lval))
+			return MAL_SUCCEED;
 		r = (int) stk->stk[getArg(pci, 1)].val.lval;
-		isnil = (stk->stk[getArg(pci, 1)].val.lval == lng_nil);
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
+		if (is_hge_nil(stk->stk[getArg(pci, 1)].val.hval))
+			return MAL_SUCCEED;
 		r = (int) stk->stk[getArg(pci, 1)].val.hval;
-		isnil = (stk->stk[getArg(pci, 1)].val.hval == hge_nil);
 		break;
 #endif
 	default:
 		throw(ILLARG, "calc.month_interval", SQLSTATE(42000) "Illegal argument");
 	}
-	if (isnil) 
-		return MAL_SUCCEED;
 	switch (k) {
 	case iyear:
 		r *= 12;
@@ -3855,7 +3859,7 @@ str
 second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	lng *ret = getArgReference_lng(stk, pci, 0), r;
-	int k = digits2ek(*getArgReference_int(stk, pci, 2)), scale = 0, isnil = 0;
+	int k = digits2ek(*getArgReference_int(stk, pci, 2)), scale = 0;
 
 	(void) cntxt;
 	if (pci->argc > 3)
@@ -3863,32 +3867,35 @@ second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	*ret = lng_nil;
 	switch (getArgType(mb, pci, 1)) {
 	case TYPE_bte:
+		if (is_bte_nil(stk->stk[getArg(pci, 1)].val.btval))
+			return MAL_SUCCEED;
 		r = stk->stk[getArg(pci, 1)].val.btval;
-		isnil = (stk->stk[getArg(pci, 1)].val.btval == bte_nil);
 		break;
 	case TYPE_sht:
+		if (is_sht_nil(stk->stk[getArg(pci, 1)].val.shval))
+			return MAL_SUCCEED;
 		r = stk->stk[getArg(pci, 1)].val.shval;
-		isnil = (stk->stk[getArg(pci, 1)].val.shval == sht_nil);
 		break;
 	case TYPE_int:
+		if (is_int_nil(stk->stk[getArg(pci, 1)].val.ival))
+			return MAL_SUCCEED;
 		r = stk->stk[getArg(pci, 1)].val.ival;
-		isnil = (stk->stk[getArg(pci, 1)].val.ival == int_nil);
 		break;
 	case TYPE_lng:
+		if (is_lng_nil(stk->stk[getArg(pci, 1)].val.lval))
+			return MAL_SUCCEED;
 		r = stk->stk[getArg(pci, 1)].val.lval;
-		isnil = (stk->stk[getArg(pci, 1)].val.lval == lng_nil);
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
+		if (is_hge_nil(stk->stk[getArg(pci, 1)].val.hval))
+			return MAL_SUCCEED;
 		r = (lng) stk->stk[getArg(pci, 1)].val.hval;
-		isnil = (stk->stk[getArg(pci, 1)].val.hval == hge_nil);
 		break;
 #endif
 	default:
 		throw(ILLARG, "calc.sec_interval", SQLSTATE(42000) "Illegal argument in second interval");
 	}
-	if (isnil) 
-		return MAL_SUCCEED;
 	switch (k) {
 	case iday:
 		r *= 24;

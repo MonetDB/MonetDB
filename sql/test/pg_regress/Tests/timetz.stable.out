@@ -97,8 +97,8 @@ stdout of test 'timetz` in directory 'sql/test/pg_regress` itself:
 #SELECT f1, sql_add(f1, 12*60*60.0 + 66) FROM TIMETZ_TBL;
 % sys.timetz_tbl,	sys. # table_name
 % f1,	%2 # name
-% timetz,	time # type
-% 17,	15 # length
+% timetz,	timetz # type
+% 17,	21 # length
 [ NULL,	NULL	]
 #SELECT f1, sql_add(f1, cast(2*60*60 as interval second)) FROM TIMETZ_TBL;
 % sys.timetz_tbl,	sys. # table_name
@@ -109,8 +109,8 @@ stdout of test 'timetz` in directory 'sql/test/pg_regress` itself:
 #SELECT f1, sql_sub(f1, 12*60*60.0 + 66) FROM TIMETZ_TBL;
 % sys.timetz_tbl,	sys. # table_name
 % f1,	%2 # name
-% timetz,	time # type
-% 17,	15 # length
+% timetz,	timetz # type
+% 17,	21 # length
 [ NULL,	NULL	]
 #SELECT f1, sql_sub(f1, cast(2*60*60 as interval second)) FROM TIMETZ_TBL;
 % sys.timetz_tbl,	sys. # table_name
