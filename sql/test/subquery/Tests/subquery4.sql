@@ -120,6 +120,15 @@ SELECT (SELECT NTILE(i1.i) OVER (PARTITION BY i1.i ORDER BY i1.i)) FROM integers
 	-- 1
 	-- NULL
 
+/* On joined tables, the correlation happens in the outer query */
+SELECT CAST((SELECT SUM(i2.i + i1.i)) AS BIGINT) FROM integers i1, integers i2;
+
+SELECT CAST((SELECT SUM(i2.i + i1.i)) AS BIGINT) FROM integers i1 INNER JOIN integers i2 ON i1.i = i2.i;
+
+SELECT i1.i, i2.i FROM integers i1, integers i2 WHERE (SELECT SUM(i2.i + i1.i)) > 0;
+
+SELECT i1.i, i2.i FROM integers i1, integers i2 HAVING (SELECT SUM(i2.i + i1.i)) > 0; --error, cannot use non GROUP BY column 'i1.i' in query results without an aggregate function
+
 UPDATE another_T SET col1 = MIN(col1); --error, aggregates not allowed in update set clause
 UPDATE another_T SET col2 = 1 WHERE col1 = SUM(col2); --error, aggregates not allowed in update set clause
 UPDATE another_T SET col3 = (SELECT MAX(col5)); --error, aggregates not allowed in update set clause
