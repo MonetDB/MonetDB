@@ -117,3 +117,6 @@ select x1.x from x x1 inner join x x2 on x1.x not like x2.x; --empty
 select i from (values (1),(2),(3),(NULL)) as integers(i) where not cast(i as varchar(32)) like null; --empty
 
 drop table x;
+
+create table x (x int null not null); --error, multiple null constraints
+create table x (a int default '1' GENERATED ALWAYS AS IDENTITY); --error, multiple default values

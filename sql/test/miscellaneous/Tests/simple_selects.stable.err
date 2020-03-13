@@ -153,6 +153,14 @@ MAPI  = (monetdb) /var/tmp/mtest-416559/.s.monetdb.32222
 QUERY = CREATE AGGREGATE sin(input REAL) RETURNS REAL EXTERNAL NAME "mmath"."sin"; --error, ambiguous, there's a function named sin with the same parameters
 ERROR = !CREATE AGGREGATE: there's a function with the name 'sin' and the same parameters, which causes ambiguous calls
 CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-374801/.s.monetdb.38729
+QUERY = create table x (x int null not null); --error, multiple null constraints
+ERROR = !The NULL constraint for a column should be passed as most once
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-374801/.s.monetdb.38729
+QUERY = create table x (a int default '1' GENERATED ALWAYS AS IDENTITY); --error, multiple default values
+ERROR = !The default value for a column should be passed as most once
+CODE  = 42000
 
 # 17:31:38 >  
 # 17:31:38 >  "Done."
