@@ -317,7 +317,11 @@ subrel_project( backend *be, stmt *s)
 		if (c->type != st_alias) {
 			c = stmt_project(be, cand, c);
 		} else { /* st_alias */
-			stmt *s = stmt_project(be, cand, c->op1);
+			stmt *s = c->op1;
+			if (s->nrcols == 0)
+				s = stmt_const(be, cand, s);
+			else
+				s = stmt_project(be, cand, s);
 			c = stmt_alias(be, s, c->tname, c->cname); 
 		}
 		append(l, c);
