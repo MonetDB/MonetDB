@@ -655,8 +655,15 @@ GDKsetdebug(int debug)
 		GDKtracer_reset_component_level("thrd");
 }
 
+static bool Mbedded = 1;
+bool
+GDKembedded(void)
+{
+	return Mbedded;
+}
+
 gdk_return
-GDKinit(opt *set, int setlen)
+GDKinit(opt *set, int setlen, int embedded)
 {
 	static bool first = true;
 	char *dbpath = mo_find_option(set, setlen, "gdk_dbpath");
@@ -665,6 +672,7 @@ GDKinit(opt *set, int setlen)
 	int i, nlen = 0;
 	char buf[16];
 
+	Mbedded = embedded;
 	/* some sanity checks (should also find if symbols are not defined) */
 	static_assert(sizeof(int) == sizeof(int32_t),
 		      "int is not equal in size to int32_t");
@@ -711,7 +719,7 @@ GDKinit(opt *set, int setlen)
 			MT_lock_init(&GDKbbpLock[i].trim, name);
 			GDKbbpLock[i].free = 0;
 		}
-		if (mnstr_init() < 0) {
+		if (mnstr_init(embedded) < 0) {
 			TRC_CRITICAL(GDK, "mnstr_init failed\n");
 			return GDK_FAIL;
 		}
@@ -1047,21 +1055,17 @@ void
 GDKexit(int status)
 {
 	if (!GDKinmemory() && GET_GDKLOCK(PERSISTENT) == NULL) {
-#ifdef HAVE_EMBEDDED
-		return;
-#else
 		/* stop GDKtracer */
 		GDKtracer_stop();
 
 		/* no database lock, so no threads, so exit now */
-		exit(status);
-#endif
+		if (!GDKembedded())
+			exit(status);
 	}
 	GDKprepareExit();
 	GDKreset(status);
-#ifndef HAVE_EMBEDDED
-	exit(status);
-#endif
+	if (!GDKembedded())
+		exit(status);
 }
 
 /*

@@ -49,7 +49,7 @@ MT_Lock     mal_oltpLock = MT_LOCK_INITIALIZER("mal_oltpLock");
  * Initialization of the MAL context
  */
 
-int mal_init(void){
+int mal_init(char *modules[], int embedded){
 /* Any error encountered here terminates the process
  * with a message sent to stderr
  */
@@ -64,7 +64,7 @@ int mal_init(void){
 	initNamespace();
 	initParser();
 	initHeartbeat();
-	str err = malBootstrap();
+	str err = malBootstrap(modules, embedded);
 	if (err != MAL_SUCCEED) {
 		mal_client_reset();
 #ifndef NDEBUG

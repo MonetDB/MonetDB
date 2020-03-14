@@ -13,9 +13,7 @@
 #include "type_conversion.h"
 #include "unicode.h"
 #include "blob.h"
-#ifndef HAVE_EMBEDDED
 #include "gdk_interprocess.h"
-#endif
 
 CREATE_SQL_FUNCTION_PTR(str, batbte_dec2_dbl);
 CREATE_SQL_FUNCTION_PTR(str, batsht_dec2_dbl);
@@ -1244,7 +1242,6 @@ str _conversion_init(void)
 	str msg = MAL_SUCCEED;
 	conversion_import_array();
 
-#ifndef HAVE_EMBEDDED
 	LOAD_SQL_FUNCTION_PTR(batbte_dec2_dbl);
 	LOAD_SQL_FUNCTION_PTR(batsht_dec2_dbl);
 	LOAD_SQL_FUNCTION_PTR(batint_dec2_dbl);
@@ -1256,6 +1253,5 @@ str _conversion_init(void)
 	LOAD_SQL_FUNCTION_PTR(batstr_2time_daytime);
 	LOAD_SQL_FUNCTION_PTR(batstr_2_date);
 	LOAD_SQL_FUNCTION_PTR(batdbl_num2dec_lng);
-#endif
 	return msg;
 }

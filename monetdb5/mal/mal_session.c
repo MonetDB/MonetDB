@@ -27,11 +27,10 @@
  * The startup script is run as user Admin.
  */
 str
-malBootstrap(void)
+malBootstrap(char *modules[], int embedded)
 {
 	Client c;
 	str msg = MAL_SUCCEED;
-	str bootfile = "mal_init";
 
 	c = MCinitClient((oid) 0, NULL, NULL);
 	if(c == NULL) {
@@ -55,7 +54,13 @@ malBootstrap(void)
 		MCfreeClient(c);
 		throw(MAL, "malBootstrap", "Failed to create client thread");
 	}
-	if ((msg = malInclude(c, bootfile, 0)) != MAL_SUCCEED) {
+	/* default modules, todo include 01_*mal files from the autoload part */
+	if ((msg = malIncludeDefault(c, 0, embedded)) != MAL_SUCCEED) {
+		MCfreeClient(c);
+		return msg;
+	}
+	/* here we use a array of module names, initialized by the outer part (embedded or mserver5) */
+	if ((msg = malIncludeModules(c, modules, 0, embedded)) != MAL_SUCCEED) {
 		MCfreeClient(c);
 		return msg;
 	}

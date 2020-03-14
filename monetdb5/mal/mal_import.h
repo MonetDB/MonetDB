@@ -14,6 +14,11 @@
 #include "mal_session.h"
 #include "mal_utils.h"
 
+mal_export void mal_register(str name, unsigned char *code);
+mal_export str malIncludeDefault(Client c, int listing, int embedded);
+mal_export str malIncludeModules(Client c, char *modules[], int listing, int embedded);
+mal_export str malIncludeString(Client c, const str name, const str mal, int listing);
+
 mal_export str malInclude(Client c, str name, int listing);
 mal_export void slash_2_dir_sep(str fname);
 mal_export str evalFile(str fname, int listing);

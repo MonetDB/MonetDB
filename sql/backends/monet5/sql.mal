@@ -1135,4 +1135,4 @@ include sql_rank;
 include sql_inspect;
 include sql_subquery;
 
-sql.prelude();
+#sql.prelude();

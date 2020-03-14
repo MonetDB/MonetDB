@@ -33,6 +33,29 @@
 #define MODULE_HASH_SIZE 1024
 Module moduleIndex[MODULE_HASH_SIZE] = { NULL };
 
+BAT *
+getModules(void)
+{
+	BAT *b = COLnew(0, TYPE_str, 100, TRANSIENT);
+        int i;
+        Module s,n;
+
+        for( i = 0; i< MODULE_HASH_SIZE; i++){
+                s = moduleIndex[i];
+                while(s){
+			if (BUNappend(b, s->name, FALSE) != GDK_SUCCEED) {
+				BBPreclaim(b);
+				return NULL;
+			}
+                        n = s->link;
+                        while(n)
+                                n = n->link;
+                        s = s->link;
+                }
+        }
+	return b;
+}
+
 void
 listModules(stream *out, Module s)
 {

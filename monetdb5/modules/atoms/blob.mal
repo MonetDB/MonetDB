@@ -42,8 +42,6 @@ comment "get the number of bytes in this blob.";
 command prelude() :void
 address BLOBprelude;
 
-blob.prelude();
-
 module calc;
 
 command blob(b:blob):blob address BLOBblob_blob;

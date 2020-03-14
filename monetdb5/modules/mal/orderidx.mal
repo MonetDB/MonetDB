@@ -24,6 +24,8 @@ pattern bat.getorderidx(bv:bat[:any_1]):bat[:oid]
 address OIDXgetorderidx
 comment "Return the order index if it exists";
 
+module algebra;
+
 command algebra.orderidx(bv:bat[:any_1], stable:bit):bat[:any_1]
 address OIDXorderidx
 comment "Create an order index";

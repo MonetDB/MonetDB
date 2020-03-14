@@ -32,6 +32,91 @@
 #include "mal_parser.h"
 #include "mal_private.h"
 
+#define MAX_MAL_MODULES 128
+static int mal_modules = 0;
+static str mal_module_name[MAX_MAL_MODULES] = {0};
+static unsigned char *mal_module_code[MAX_MAL_MODULES] = {0};
+
+
+static void 
+initModule(Client c, char *name) 
+{
+	if (!getName(name))
+		return;
+	Module m = getModule(getName(name));
+	if (m) { /* run prelude */
+		Symbol s = findSymbolInModule(m, getName("prelude"));
+
+		if (s) {
+			InstrPtr pci = getInstrPtr(s->def, 0);
+
+               		if (pci && pci->token == COMMANDsymbol && pci->argc == 1) {
+                       		int ret = 0;
+
+                       		assert(pci->fcn != NULL);
+                       		(*pci->fcn)(&ret);
+                       		(void)ret;
+               		} else if (pci && pci->token == PATTERNsymbol) {
+                       		assert(pci->fcn != NULL);
+                       		(*pci->fcn)(c, NULL, NULL, NULL);
+               		}
+		}
+	}
+}
+
+void
+mal_register(str name, unsigned char *code)
+{
+	assert (mal_modules < MAX_MAL_MODULES);
+	mal_module_name[mal_modules] = name;
+	mal_module_code[mal_modules] = code;
+	mal_modules++;
+}
+
+str
+malIncludeDefault(Client c, int listing, int embedded)
+{
+	int i;
+
+	for(i = 0; i<mal_modules; i++) {
+		if (embedded && strcmp(mal_module_name[i], "mal_mapi") == 0) /* skip mapi in the embedded version */
+			continue;
+		str msg = malIncludeString(c, mal_module_name[i], (str)mal_module_code[i], listing);
+		if (msg)
+			return msg;
+	}
+	/* execute preludes */
+	for(i = 0; i<mal_modules; i++) {
+		if (strcmp(mal_module_name[i], "sql") == 0) /* skip sql should be last to startup */
+			continue;
+		initModule(c, mal_module_name[i]);
+	}
+	mal_modules = 0; /* reset for next set of modules */
+	return MAL_SUCCEED;
+}
+
+str
+malIncludeModules(Client c, char *modules[], int listing, int embedded)
+{
+	str msg;
+
+	for(int i = 0; modules[i]; i++) {
+		/* load library */
+		if ((msg = loadLibrary(modules[i], listing)) != NULL)
+			return msg;
+	}
+	/* load the mal code for these modules and execute preludes */
+	if ((msg = malIncludeDefault(c, listing, embedded)) != NULL)
+		return msg;
+	for(int i = 0; modules[i]; i++) {
+		if (strcmp(modules[i], "sql") == 0) { /* start now */
+			initModule(c, modules[i]);
+			break;
+		}
+	}
+	return MAL_SUCCEED;
+}
+
 void
 slash_2_dir_sep(str fname)
 {
@@ -73,7 +158,6 @@ malOpenSource(str file)
 	return fd;
 }
 
-#ifndef HAVE_EMBEDDED
 /*
  * The malLoadScript routine merely reads the contents of a file into
  * the input buffer of the client. It is typically used in situations
@@ -109,7 +193,6 @@ malLoadScript(str name, bstream **fdin)
 	}
 	return MAL_SUCCEED;
 }
-#endif
 
 /*
  * Beware that we have to isolate the execution of the source file
@@ -142,9 +225,59 @@ malLoadScript(str name, bstream **fdin)
 	restoreClient1 \
 	restoreClient2
 
-#ifdef HAVE_EMBEDDED
-extern char* mal_init_inline;
-#endif
+str
+malIncludeString(Client c, const str name, const str mal, int listing) 
+{
+	str msg = MAL_SUCCEED;
+
+	bstream *oldfdin = c->fdin;
+	size_t oldyycur = c->yycur;
+	int oldlisting = c->listing;
+	enum clientmode oldmode = c->mode;
+	int oldblkmode = c->blkmode;
+	ClientInput *oldbak = c->bak;
+	str oldprompt = c->prompt;
+	str oldsrcFile = c->srcFile;
+
+	MalStkPtr oldglb = c->glb;
+	Module oldusermodule = c->usermodule;
+	Module oldcurmodule = c->curmodule;
+	Symbol oldprg = c->curprg;
+
+	c->prompt = GDKstrdup("");	/* do not produce visible prompts */
+	c->promptlength = 0;
+	c->listing = listing;
+	c->fdin = NULL;
+
+	size_t mal_len = strlen(mal);
+	buffer* mal_buf;
+	stream* mal_stream;
+
+	if ((mal_buf = GDKmalloc(sizeof(buffer))) == NULL)
+		throw(MAL, "malIncludeString", MAL_MALLOC_FAIL);
+	if ((mal_stream = buffer_rastream(mal_buf, name)) == NULL) {
+		GDKfree(mal_buf);
+		throw(MAL, "malIncludeString", MAL_MALLOC_FAIL);
+	}
+	buffer_init(mal_buf, mal, mal_len);
+	c->srcFile = name;
+	c->yycur = 0;
+	c->bak = NULL;
+	if ((c->fdin = bstream_create(mal_stream, mal_len)) == NULL) {
+		mnstr_destroy(mal_stream);
+		GDKfree(mal_buf);
+		throw(MAL, "malIncludeString", MAL_MALLOC_FAIL);
+	}
+	bstream_next(c->fdin);
+	parseMAL(c, c->curprg, 1, INT_MAX);
+	bstream_destroy(c->fdin);
+	c->fdin = NULL;
+	GDKfree(mal_buf);
+
+	restoreClient;
+	return msg;
+}
+
 /*
  * The include operation parses the file indentified and
  * leaves the MAL code behind in the 'main' function.
@@ -175,36 +308,6 @@ malInclude(Client c, str name, int listing)
 	c->listing = listing;
 	c->fdin = NULL;
 
-#ifdef HAVE_EMBEDDED
-	(void) filename;
-	(void) p;
-	{
-		size_t mal_init_len = strlen(mal_init_inline);
-		buffer* mal_init_buf;
-		stream* mal_init_stream;
-
-		if ((mal_init_buf = GDKmalloc(sizeof(buffer))) == NULL)
-			throw(MAL, "malInclude", MAL_MALLOC_FAIL);
-		if ((mal_init_stream = buffer_rastream(mal_init_buf, name)) == NULL) {
-			GDKfree(mal_init_buf);
-			throw(MAL, "malInclude", MAL_MALLOC_FAIL);
-		}
-		buffer_init(mal_init_buf, mal_init_inline, mal_init_len);
-		c->srcFile = name;
-		c->yycur = 0;
-		c->bak = NULL;
-		if ((c->fdin = bstream_create(mal_init_stream, mal_init_len)) == NULL) {
-			mnstr_destroy(mal_init_stream);
-			GDKfree(mal_init_buf);
-			throw(MAL, "malInclude", MAL_MALLOC_FAIL);
-		}
-		bstream_next(c->fdin);
-		parseMAL(c, c->curprg, 1, INT_MAX);
-		bstream_destroy(c->fdin);
-		c->fdin = NULL;
-		GDKfree(mal_init_buf);
-	}
-#else
 	if ((filename = malResolveFile(name)) != NULL) {
 		name = filename;
 		do {
@@ -228,7 +331,6 @@ malInclude(Client c, str name, int listing)
 		GDKfree(name);
 		c->fdin = NULL;
 	}
-#endif
 	restoreClient;
 	return msg;
 }

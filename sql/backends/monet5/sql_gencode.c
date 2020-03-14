@@ -740,7 +740,7 @@ backend_dumpstmt(backend *be, MalBlkPtr mb, sql_rel *r, int top, int add_end, co
 
 	be->mvc_var = old_mv;
 	be->mb = old_mb;
-	if (top && !be->depth && (m->type == Q_SCHEMA || m->type == Q_TRANS)) {
+	if (top && !be->depth && (m->type == Q_SCHEMA || m->type == Q_TRANS) && !GDKembedded()) {
 		q = newStmt(mb, sqlRef, exportOperationRef);
 		if (q == NULL) {
 			sql_error(m, 001, SQLSTATE(HY013) MAL_MALLOC_FAIL);

@@ -284,6 +284,3 @@ address OPTwrapper;
 pattern optimizer.postfix(mod:str, fcn:str):str
 address OPTwrapper
 comment "Postfix the plan,e.g. pushing projections";
-
-optimizer.prelude();
-

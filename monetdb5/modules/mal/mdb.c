@@ -733,6 +733,7 @@ MDBdummy(int *ret)
  * Obtains a list of modules by looking at what files are present in the
  * module directory.
  */
+#if 0
 static BAT *
 TBL_getdir(void)
 {
@@ -800,11 +801,13 @@ TBL_getdir(void)
 	}
 	return b;
 }
+#endif
 
 str
 CMDmodules(bat *bid)
 {
-	BAT *b = TBL_getdir();
+//	BAT *b = TBL_getdir();
+	BAT *b = getModules();
 
 	if (b == NULL)
 		throw(MAL, "mdb.modules", SQLSTATE(HY013) MAL_MALLOC_FAIL);

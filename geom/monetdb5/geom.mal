@@ -520,8 +520,6 @@ end YMaxFromMBR;
 command prelude():void	address geom_prelude;
 command epilogue():void address geom_epilogue;
 
-geom.prelude();
-
 module batgeom;
 
 command FromText(wkt:bat[:str], srid:int, type:int) :bat[ :wkb]	address wkbFromText_bat;

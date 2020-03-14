@@ -17,7 +17,6 @@ command write() address UUIDwrite;
 
 # fix up the rest of the atom definition
 command prelude():void address UUIDprelude;
-uuid.prelude();
 
 # unsafe is to prevent optimizers to reuse common expressions
 unsafe command new() :uuid

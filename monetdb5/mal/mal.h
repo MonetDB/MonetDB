@@ -77,7 +77,7 @@ mal_export MT_Lock  mal_copyLock ;
 mal_export MT_Lock  mal_delayLock ;
 mal_export MT_Lock  mal_oltpLock ;
 
-mal_export int mal_init(void);
+mal_export int mal_init(char *modules[], int embedded);
 mal_export _Noreturn void mal_exit(int status);
 mal_export void mserver_reset(void);
 
