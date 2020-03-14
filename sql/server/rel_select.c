@@ -2822,15 +2822,24 @@ rel_unop_(mvc *sql, sql_rel *rel, sql_exp *e, sql_schema *s, char *fname, int ca
 	/* try to find the function without a type, and convert
 	 * the value to the type needed by this function!
 	 */
-	if (!f && (f = find_func(sql, s, fname, 1, type, NULL)) != NULL && check_card(card, f)) {
+	if (!f) {
+		while ((f = find_func(sql, s, fname, 1, type, f)) != NULL && check_card(card, f)) {
+			sql_exp *oe = e;
 
-		if (!f->func->vararg) {
-			sql_arg *a = f->func->ops->h->data;
+			if (!f->func->vararg) {
+				sql_arg *a = f->func->ops->h->data;
+	
+				e = rel_check_type(sql, &a->type, rel, e, type_equal);
+			}
+			if (e)
+				break;
+			e = oe;
 
-			e = rel_check_type(sql, &a->type, rel, e, type_equal);
+			/* reset error */
+			sql->session->status = 0;
+			sql->errstr[0] = '\0';
+				//f = NULL;
 		}
-		if (!e) 
-			f = NULL;
 	}
 	if (f && check_card(card, f)) {
 		if (f->func->fix_scale == INOUT) {

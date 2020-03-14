@@ -11,13 +11,13 @@ INSERT INTO CITIES
 	SELECT NULL;
 
 SELECT 'Found Montreal' WHERE 'Montreal' IN (SELECT city from CITIES);
-SELECT 'Found Sidney' WHERE 'Sidney' IN (SELECT city from CITIES);
-SELECT 'Sidney Not Found' WHERE 'Sidney' NOT IN (SELECT city from CITIES);
-SELECT 'Sidney Not Found' WHERE 'Sidney' NOT IN ('Paris','Montreal','New York');
-SELECT 'Sidney Not Found' WHERE 'Sidney' NOT IN ('Paris','Montreal','New York', NULL);
-SELECT 'Sidney Not Found' WHERE 'Sidney'<>'Paris' AND 'Sidney'<>'Montreal';
-SELECT 'Sidney Not Found' WHERE 'Sidney'<>'Paris' AND 'Sidney'<>'Montreal' AND 'Sidney'<>null;
+SELECT 'Found Sydney' WHERE 'Sydney' IN (SELECT city from CITIES);
+SELECT 'Sydney Not Found' WHERE 'Sydney' NOT IN (SELECT city from CITIES);
+SELECT 'Sydney Not Found' WHERE 'Sydney' NOT IN ('Paris','Montreal','New York');
+SELECT 'Sydney Not Found' WHERE 'Sydney' NOT IN ('Paris','Montreal','New York', NULL);
+SELECT 'Sydney Not Found' WHERE 'Sydney'<>'Paris' AND 'Sydney'<>'Montreal';
+SELECT 'Sydney Not Found' WHERE 'Sydney'<>'Paris' AND 'Sydney'<>'Montreal' AND 'Sydney'<>null;
 
 SELECT city from CITIES WHERE city in (select city from CITIES);
---SELECT 'Sidney Not Found' WHERE NOT EXISTS (SELECT 1/0 FROM CITIES WHERE CITY = 'Sidney');
+--SELECT 'Sydney Not Found' WHERE NOT EXISTS (SELECT 1/0 FROM CITIES WHERE CITY = 'Sydney');
 drop table CITIES;

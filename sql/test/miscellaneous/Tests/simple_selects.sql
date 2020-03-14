@@ -97,3 +97,26 @@ CREATE AGGREGATE sin(input REAL) RETURNS REAL EXTERNAL NAME "mmath"."sin"; --err
 select length(myblob), octet_length(myblob), length(mystr), octet_length(mystr) 
 from (values (cast(null as blob), cast(null as char(32)))) as my(myblob, mystr);
 select md5(null);
+
+select 'a' like null, null like 'a', null like null, 'a' ilike null, null ilike 'a', null ilike null,
+       'a' not like null, null not like 'a', null not like null, 'a' not ilike null, null not ilike 'a', null not ilike null; --all NULL
+
+create table x (x varchar(32));
+insert into x values (null), ('a');
+
+select x like null, null like x, null like null, x ilike null, null ilike x, null ilike null,
+       x not like null, null not like x, null not like null, x not ilike null, null not ilike x, null not ilike null from x;
+	-- all NULL
+
+select x like x, x ilike x, x not like x, x not ilike x from x;
+	-- NULL NULL NULL NULL
+	-- True True False False
+
+select x1.x from x x1 inner join x x2 on x1.x not like x2.x; --empty
+
+select i from (values (1),(2),(3),(NULL)) as integers(i) where not cast(i as varchar(32)) like null; --empty
+
+drop table x;
+
+create table x (x int null not null); --error, multiple null constraints
+create table x (a int default '1' GENERATED ALWAYS AS IDENTITY); --error, multiple default values

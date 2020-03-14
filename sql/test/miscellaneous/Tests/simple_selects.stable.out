@@ -305,6 +305,42 @@ stdout of test 'simple_selects` in directory 'sql/test/miscellaneous` itself:
 % clob # type
 % 0 # length
 [ NULL	]
+#select 'a' like null, null like 'a', null like null, 'a' ilike null, null ilike 'a', null ilike null,
+#       'a' not like null, null not like 'a', null not like null, 'a' not ilike null, null not ilike 'a', null not ilike null; --all NULL
+% .,	.,	.,	.,	.,	.,	.,	.,	.,	.,	.,	. # table_name
+% %1,	%2,	%3,	%4,	%5,	%6,	%7,	%10,	%11,	%12,	%13,	%14 # name
+% boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean # type
+% 5,	5,	5,	5,	5,	5,	5,	5,	5,	5,	5,	5 # length
+[ NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+#create table x (x varchar(32));
+#insert into x values (null), ('a');
+[ 2	]
+#select x like null, null like x, null like null, x ilike null, null ilike x, null ilike null,
+#       x not like null, null not like x, null not like null, x not ilike null, null not ilike x, null not ilike null from x;
+% sys.,	.,	.,	sys.,	.,	.,	sys.,	.,	.,	sys.,	.,	. # table_name
+% %1,	%2,	%3,	%4,	%5,	%6,	%7,	%10,	%11,	%12,	%13,	%14 # name
+% boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean # type
+% 5,	5,	5,	5,	5,	5,	5,	5,	5,	5,	5,	5 # length
+[ NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+#select x like x, x ilike x, x not like x, x not ilike x from x;
+% sys.,	sys.,	sys.,	sys. # table_name
+% %1,	%2,	%3,	%4 # name
+% boolean,	boolean,	boolean,	boolean # type
+% 5,	5,	5,	5 # length
+[ NULL,	NULL,	NULL,	NULL	]
+[ true,	true,	false,	false	]
+#select x1.x from x x1 inner join x x2 on x1.x not like x2.x; --empty
+% sys.x1 # table_name
+% x # name
+% varchar # type
+% 0 # length
+#select i from (values (1),(2),(3),(NULL)) as integers(i) where not cast(i as varchar(32)) like null; --empty
+% .integers # table_name
+% i # name
+% tinyint # type
+% 1 # length
+#drop table x;
 
 # 17:31:38 >  
 # 17:31:38 >  "Done."

@@ -290,24 +290,25 @@ typedef enum sql_class {
 	EC_DEC,
 	EC_FLT,
 	EC_TIME,
+	EC_TIME_TZ,
 	EC_DATE,
 	EC_TIMESTAMP,
+	EC_TIMESTAMP_TZ,
 	EC_GEOM,
 	EC_EXTERNAL,
 	EC_MAX /* evaluated to the max value, should be always kept at the bottom */
 } sql_class;
 
-#define has_tz(e,n)	(EC_TEMP(e) && \
-			((e == EC_TIME && strcmp(n, "timetz") == 0) || \
-			(e == EC_TIMESTAMP && strcmp(n, "timestamptz") == 0)) )
-#define type_has_tz(t)	has_tz((t)->type->eclass, (t)->type->sqlname)
-#define EC_VARCHAR(e)	(e==EC_CHAR||e==EC_STRING)
-#define EC_INTERVAL(e)	(e==EC_MONTH||e==EC_SEC)
-#define EC_NUMBER(e)	(e==EC_POS||e==EC_NUM||EC_INTERVAL(e)||e==EC_DEC||e==EC_FLT)
-#define EC_COMPUTE(e)	(e==EC_NUM||e==EC_FLT)
-#define EC_BOOLEAN(e)	(e==EC_BIT||e==EC_NUM||e==EC_FLT)
-#define EC_TEMP(e)		(e==EC_TIME||e==EC_DATE||e==EC_TIMESTAMP)
-#define EC_TEMP_FRAC(e)	(e==EC_TIME||e==EC_TIMESTAMP)
+#define has_tz(e,n)		(EC_TEMP_TZ(e)) 
+#define type_has_tz(t)		has_tz((t)->type->eclass, (t)->type->sqlname)
+#define EC_VARCHAR(e)		(e==EC_CHAR||e==EC_STRING)
+#define EC_INTERVAL(e)		(e==EC_MONTH||e==EC_SEC)
+#define EC_NUMBER(e)		(e==EC_POS||e==EC_NUM||EC_INTERVAL(e)||e==EC_DEC||e==EC_FLT)
+#define EC_COMPUTE(e)		(e==EC_NUM||e==EC_FLT)
+#define EC_BOOLEAN(e)		(e==EC_BIT||e==EC_NUM||e==EC_FLT)
+#define EC_TEMP_TZ(e)		(e==EC_TIME_TZ||e==EC_TIMESTAMP_TZ)
+#define EC_TEMP(e)		(e==EC_TIME||e==EC_DATE||e==EC_TIMESTAMP||EC_TEMP_TZ(e))
+#define EC_TEMP_FRAC(e)		(e==EC_TIME||e==EC_TIMESTAMP||EC_TEMP_TZ(e))
 #define EC_FIXED(e)		(e==EC_BIT||e==EC_CHAR||e==EC_POS||e==EC_NUM||EC_INTERVAL(e)||e==EC_DEC||EC_TEMP(e))
 
 typedef struct sql_type {

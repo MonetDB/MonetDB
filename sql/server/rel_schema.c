@@ -316,8 +316,11 @@ column_constraint_name(mvc *sql, symbol *s, sql_column *sc, sql_table *t)
 	return buf;
 }
 
+#define COL_NULL	0
+#define COL_DEFAULT 1
+
 static int
-column_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sql_table *t, sql_column *cs)
+column_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sql_table *t, sql_column *cs, int *used)
 {
 	int res = SQL_ERR;
 
@@ -403,6 +406,12 @@ column_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sq
 	case SQL_NULL: {
 		int null = (s->token != SQL_NOT_NULL);
 
+		if (((*used)&(1<<COL_NULL))) {
+			(void) sql_error(sql, 02, SQLSTATE(42000) "The NULL constraint for a column should be passed as most once");
+			return SQL_ERR;
+		}
+		*used |= (1<<COL_NULL);
+
 		mvc_null(sql, cs, null);
 		res = SQL_OK;
 	} 	break;
@@ -421,113 +430,84 @@ column_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sq
 }
 
 static int
-column_option(
-		sql_query *query,
-		symbol *s,
-		sql_schema *ss,
-		sql_table *t,
-		sql_column *cs)
-{
-	mvc *sql = query->sql;
-	int res = SQL_ERR;
-
-	assert(cs);
-	switch (s->token) {
-	case SQL_CONSTRAINT: {
-		dlist *l = s->data.lval;
-		char *opt_name = l->h->data.sval, *default_name = NULL;
-		symbol *sym = l->h->next->data.sym;
-
-		if (!opt_name && !(default_name = column_constraint_name(sql, sym, cs, t)))
-			return SQL_ERR;
-
-		res = column_constraint_type(sql, opt_name ? opt_name : default_name, sym, ss, t, cs);
-		GDKfree(default_name);
-	} 	break;
-	case SQL_DEFAULT: {
-		symbol *sym = s->data.sym;
-		char *err = NULL, *r;
-
-		if (sym->token == SQL_COLUMN || sym->token == SQL_IDENT) {
-		        exp_kind ek = {type_value, card_value, FALSE};
-			sql_exp *e = rel_logical_value_exp(query, NULL, sym, sql_sel, ek);
-
-			if (e && is_atom(e->type)) {
-				atom *a = exp_value(sql, e, sql->args, sql->argc);
-
-				if (atom_null(a)) {
-					mvc_default(sql, cs, NULL);
-					res = SQL_OK;
-					break;
-				}
-			}
-			/* reset error */
-			sql->session->status = 0;
-			sql->errstr[0] = '\0';
-		}
-		r = symbol2string(sql, s->data.sym, 0, &err);
-		if (!r) {
-			(void) sql_error(sql, 02, SQLSTATE(42000) "Incorrect default value '%s'\n", err?err:"");
-			if (err) _DELETE(err);
-			return SQL_ERR;
-		} else {
-			mvc_default(sql, cs, r);
-			_DELETE(r);
-			res = SQL_OK;
-		}
-	} 	break;
-	case SQL_ATOM: {
-		AtomNode *an = (AtomNode *) s;
-
-		assert(0);
-		if (!an || !an->a) {
-			mvc_default(sql, cs, NULL);
-		} else {
-			atom *a = an->a;
-
-			if (a->data.vtype == TYPE_str) {
-				mvc_default(sql, cs, a->data.val.sval);
-			} else {
-				char *r = atom2string(sql->sa, a);
-
-				mvc_default(sql, cs, r);
-			}
-		}
-		res = SQL_OK;
-	} 	break;
-	case SQL_NOT_NULL:
-	case SQL_NULL: {
-		int null = (s->token != SQL_NOT_NULL);
-
-		mvc_null(sql, cs, null);
-		res = SQL_OK;
-	} 	break;
-	default:{
-		res = SQL_ERR;
-	}
-	}
-	if (res == SQL_ERR) {
-		(void) sql_error(sql, 02, SQLSTATE(M0M03) "Unknown column option (%p)->token = %s\n", s, token2string(s->token));
-	}
-	return res;
-}
-
-static int
 column_options(sql_query *query, dlist *opt_list, sql_schema *ss, sql_table *t, sql_column *cs)
 {
+	mvc *sql = query->sql;
+	int res = SQL_OK, used = 0;
 	assert(cs);
 
 	if (opt_list) {
-		dnode *n = NULL;
+		for (dnode *n = opt_list->h; n && res == SQL_OK; n = n->next) {
+			symbol *s = n->data.sym;
 
-		for (n = opt_list->h; n; n = n->next) {
-			int res = column_option(query, n->data.sym, ss, t, cs);
+			switch (s->token) {
+				case SQL_CONSTRAINT: {
+					dlist *l = s->data.lval;
+					char *opt_name = l->h->data.sval, *default_name = NULL;
+					symbol *sym = l->h->next->data.sym;
 
-			if (res == SQL_ERR)
-				return SQL_ERR;
+					if (!opt_name && !(default_name = column_constraint_name(sql, sym, cs, t)))
+						return SQL_ERR;
+
+					res = column_constraint_type(sql, opt_name ? opt_name : default_name, sym, ss, t, cs, &used);
+					GDKfree(default_name);
+				} 	break;
+				case SQL_DEFAULT: {
+					symbol *sym = s->data.sym;
+					char *err = NULL, *r;
+
+					if ((used&(1<<COL_DEFAULT))) {
+						(void) sql_error(sql, 02, SQLSTATE(42000) "The default value for a column should be passed as most once");
+						return SQL_ERR;
+					}
+					used |= (1<<COL_DEFAULT);
+
+					if (sym->token == SQL_COLUMN || sym->token == SQL_IDENT) {
+						exp_kind ek = {type_value, card_value, FALSE};
+						sql_exp *e = rel_logical_value_exp(query, NULL, sym, sql_sel, ek);
+
+						if (e && is_atom(e->type)) {
+							atom *a = exp_value(sql, e, sql->args, sql->argc);
+
+							if (atom_null(a)) {
+								mvc_default(sql, cs, NULL);
+								break;
+							}
+						}
+						/* reset error */
+						sql->session->status = 0;
+						sql->errstr[0] = '\0';
+					}
+					r = symbol2string(sql, s->data.sym, 0, &err);
+					if (!r) {
+						(void) sql_error(sql, 02, SQLSTATE(42000) "Incorrect default value '%s'\n", err?err:"");
+						if (err) _DELETE(err);
+						return SQL_ERR;
+					} else {
+						mvc_default(sql, cs, r);
+						_DELETE(r);
+					}
+				} 	break;
+				case SQL_NOT_NULL:
+				case SQL_NULL: {
+					int null = (s->token != SQL_NOT_NULL);
+
+					if ((used&(1<<COL_NULL))) {
+						(void) sql_error(sql, 02, SQLSTATE(42000) "The NULL constraint for a column should be passed as most once");
+						return SQL_ERR;
+					}
+					used |= (1<<COL_NULL);
+
+					mvc_null(sql, cs, null);
+				} 	break;
+				default: {
+					(void) sql_error(sql, 02, SQLSTATE(M0M03) "Unknown column option (%p)->token = %s\n", s, token2string(s->token));
+					return SQL_ERR;
+				}
+			}
 		}
 	}
-	return SQL_OK;
+	return res;
 }
 
 static int

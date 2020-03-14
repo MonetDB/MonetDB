@@ -14,7 +14,7 @@
 #include "sql_list.h"
 #include "sql_symbol.h"
 #include "sql_backend.h"
-#include "mtime.h"
+#include "gdk_time.h"
 
 #define DEFAULT_CACHESIZE 100
 typedef struct cq {

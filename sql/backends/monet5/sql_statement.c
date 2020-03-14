@@ -2863,7 +2863,7 @@ stmt_convert(backend *be, stmt *v, sql_subtype *f, sql_subtype *t, stmt *sel)
 	if (EC_VARCHAR(t->type->eclass) && !(f->type->eclass == EC_STRING && t->digits == 0))
 		q = pushInt(mb, q, t->digits);
 	/* convert a string to a time(stamp) with time zone */
-	if (EC_VARCHAR(f->type->eclass) && EC_TEMP_FRAC(t->type->eclass) && type_has_tz(t))
+	if (EC_VARCHAR(f->type->eclass) && EC_TEMP_TZ(t->type->eclass))
 		q = pushInt(mb, q, type_has_tz(t));
 	if (t->type->eclass == EC_GEOM) {
 		/* push the type and coordinates of the column */

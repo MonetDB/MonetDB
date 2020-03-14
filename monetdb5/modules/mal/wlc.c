@@ -162,7 +162,7 @@
 #include <time.h>
 #include "mal_builder.h"
 #include "wlc.h"
-#include "mtime.h"
+#include "gdk_time.h"
 
 MT_Lock     wlc_lock = MT_LOCK_INITIALIZER("wlc_lock");
 

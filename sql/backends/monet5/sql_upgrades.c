@@ -14,7 +14,7 @@
 #include "mal_backend.h"
 #include "sql_execute.h"
 #include "sql_mvc.h"
-#include "mtime.h"
+#include "gdk_time.h"
 #include <unistd.h>
 #include "sql_upgrades.h"
 #include "rel_rel.h"
@@ -2535,6 +2535,51 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 
 	pos += snprintf(buf + pos, bufsize - pos,
 			"set schema \"sys\";\n");
+
+	/* 13_date.sql */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"drop function str_to_time(string, string);\n"
+			"drop function time_to_str(time, string);\n"
+			"drop function str_to_timestamp(string, string);\n"
+			"drop function timestamp_to_str(timestamp, string);\n"
+			"create function str_to_time(s string, format string) returns time with time zone\n"
+			" external name mtime.\"str_to_time\";\n"
+			"create function time_to_str(d time with time zone, format string) returns string\n"
+			" external name mtime.\"time_to_str\";\n"
+			"create function str_to_timestamp(s string, format string) returns timestamp with time zone\n"
+			" external name mtime.\"str_to_timestamp\";\n"
+			"create function timestamp_to_str(d timestamp with time zone, format string) returns string\n"
+			" external name mtime.\"timestamp_to_str\";\n"
+			"grant execute on function str_to_time to public;\n"
+			"grant execute on function time_to_str to public;\n"
+			"grant execute on function str_to_timestamp to public;\n"
+			"grant execute on function timestamp_to_str to public;\n"
+			"update sys.functions set system = true where name in"
+			" ('str_to_time', 'str_to_timestamp', 'time_to_str', 'timestamp_to_str')"
+			" and schema_id = (select id from sys.schemas where name = 'sys');\n");
+
+	/* 17_temporal.sql */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"drop function sys.epoch(bigint);\n"
+			"drop function sys.epoch(int);\n"
+			"drop function sys.epoch(timestamp);\n"
+			"drop function sys.epoch(timestamp with time zone);\n"
+			"create function sys.epoch(sec BIGINT) returns TIMESTAMP WITH TIME ZONE\n"
+			" external name mtime.epoch;\n"
+			"create function sys.epoch(sec INT) returns TIMESTAMP WITH TIME ZONE\n"
+			" external name mtime.epoch;\n"
+			"create function sys.epoch(ts TIMESTAMP WITH TIME ZONE) returns INT\n"
+			" external name mtime.epoch;\n"
+			"create function sys.date_trunc(txt string, t timestamp with time zone)\n"
+			"returns timestamp with time zone\n"
+			"external name sql.date_trunc;\n"
+			"grant execute on function sys.date_trunc(string, timestamp with time zone) to public;\n"
+			"grant execute on function sys.epoch (BIGINT) to public;\n"
+			"grant execute on function sys.epoch (INT) to public;\n"
+			"grant execute on function sys.epoch (TIMESTAMP WITH TIME ZONE) to public;\n"
+			"update sys.functions set system = true where name in"
+			" ('epoch', 'date_trunc')"
+			" and schema_id = (select id from sys.schemas where name = 'sys');\n");
 
 	/* 39_analytics.sql */
 	pos += snprintf(buf + pos, bufsize - pos,

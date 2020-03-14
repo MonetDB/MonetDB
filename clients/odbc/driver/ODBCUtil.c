@@ -95,6 +95,8 @@ ODBCwchar2utf8(const SQLWCHAR *src, SQLLEN length, const char **errmsg)
 			*errmsg = "Invalid length parameter";
 		return NULL;
 	}
+	if (src[j] == 0xFEFF)
+		j++;
 	while (j < length && src[j]) {
 		if (src[j] <= 0x7F) {
 			i += 1;
@@ -140,6 +142,8 @@ ODBCwchar2utf8(const SQLWCHAR *src, SQLLEN length, const char **errmsg)
 		return NULL;
 	i = 0;
 	j = 0;
+	if (src[j] == 0xFEFF)
+		j++;
 	while (j < length) {
 		if (src[j] <= 0x7F) {
 			dest[i++] = (SQLCHAR) src[j];
@@ -464,6 +468,11 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN nosc
 	unsigned yr, mt, dy, hr, mn, sc;
 	unsigned long fr = 0;
 	int n, pr;
+	struct {
+		uint32_t d1;
+		uint16_t d2, d3;
+		uint8_t d4[8];
+	} u;
 
 	nquery = dupODBCstring(query, length);
 	if (nquery == NULL)
@@ -600,6 +609,35 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN nosc
 				return NULL;
 			}
 			length = (size_t) sprintf(q, "%.*s%.*s%s", n, nquery, (int) intvl, intv, p);
+			free(nquery);
+			nquery = q;
+			q += n;
+		} else if (sscanf(p, "guid '%8"SCNx32"-%4"SCNx16"-%4"SCNx16
+				  "-%2"SCNx8"%2"SCNx8"-%2"SCNx8"%2"SCNx8
+				  "%2"SCNx8"%2"SCNx8"%2"SCNx8"%2"SCNx8"'%n",
+				  &u.d1, &u.d2, &u.d3, &u.d4[0], &u.d4[1],
+				  &u.d4[2], &u.d4[3], &u.d4[4], &u.d4[5],
+				  &u.d4[6], &u.d4[7], &n) >= 11) {
+			p += n;
+			while (*p == ' ')
+				p++;
+			if (*p != '}')
+				continue;
+			p++;
+			snprintf(buf, sizeof(buf),
+				 "UUID '%08"PRIx32"-%04"PRIx16"-%04"PRIx16
+				 "-%02"PRIx8"%02"PRIx8"-%02"PRIx8"%02"PRIx8
+				 "%02"PRIx8"%02"PRIx8"%02"PRIx8"%02"PRIx8"'",
+				 u.d1, u.d2, u.d3, u.d4[0], u.d4[1], u.d4[2],
+				 u.d4[3], u.d4[4], u.d4[5], u.d4[6], u.d4[7]);
+			n = (int) (q - nquery);
+			pr = (int) (p - q);
+			q = malloc(length - pr + strlen(buf) + 1);
+			if (q == NULL) {
+				free(nquery);
+				return NULL;
+			}
+			length = (size_t) sprintf(q, "%.*s%s%s", n, nquery, buf, p);
 			free(nquery);
 			nquery = q;
 			q += n;
