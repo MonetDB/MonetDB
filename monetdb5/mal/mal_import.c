@@ -30,6 +30,7 @@
 #include "mal_linker.h"		/* for loadModuleLibrary() */
 #include "mal_scenario.h"
 #include "mal_parser.h"
+#include "mal_authorize.h"
 #include "mal_private.h"
 
 void
