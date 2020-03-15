@@ -270,7 +270,7 @@ evalFile(str fname, int listing)
 		throw(MAL,"mal.eval", "WARNING: could not open file '%s'\n", fname);
 	}
 
-	c= MCinitClient((oid)0, bstream_create(fd, 128 * BLOCK),0);
+	c= MCinitClient(MAL_ADMIN, bstream_create(fd, 128 * BLOCK),0);
 	if( c == NULL){
 		throw(MAL,"mal.eval","Can not create user context");
 	}
@@ -356,7 +356,7 @@ compileString(Symbol *fcn, Client cntxt, str s)
 	strncpy(fdin->buf, qry, len+1);
 
 	// compile in context of called for
-	c= MCinitClient((oid)0, fdin, 0);
+	c= MCinitClient(MAL_ADMIN, fdin, 0);
 	if( c == NULL){
 		GDKfree(qry);
 		GDKfree(b);
@@ -423,7 +423,7 @@ callString(Client cntxt, str s, int listing)
 		GDKfree(qry);
 		throw(MAL,"callstring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	c= MCinitClient((oid)0, bs, cntxt->fdout);
+	c= MCinitClient(MAL_ADMIN, bs, cntxt->fdout);
 	if( c == NULL){
 		GDKfree(b);
 		GDKfree(qry);
