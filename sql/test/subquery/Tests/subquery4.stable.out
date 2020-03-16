@@ -186,6 +186,14 @@ stdout of test 'subquery4` in directory 'sql/test/subquery` itself:
 [ 2	]
 [ 3	]
 [ NULL	]
+#SELECT i FROM integers WHERE i IN ((SELECT 1), (SELECT i FROM another_t));
+% sys.integers # table_name
+% i # name
+% int # type
+% 1 # length
+[ 1	]
+[ 2	]
+[ 3	]
 #SELECT CAST((SELECT SUM(i2.i + i1.i)) AS BIGINT) FROM integers i1, integers i2;
 % .%1 # table_name
 % %1 # name
