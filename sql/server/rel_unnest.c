@@ -1592,15 +1592,15 @@ exp_reset_card(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 		return e;
 	if (!is_simple_project(rel->op)) /* only need to fix projections */
 		return e;
-	sql_rel *l = rel->l;
-	int card = l->card;
+	sql_rel *l;
 	/* need card of lower relation */
 	switch(e->type) {
 	case e_func:
 	case e_column:
 	case e_convert:
-		if (e->card < card)
-			e->card = card;
+		l = rel->l;
+		if (e->card < l->card)
+			e->card = l->card;
 		break;
 	case e_aggr: /* should have been corrected by rewrites already */
 	case e_cmp:  
