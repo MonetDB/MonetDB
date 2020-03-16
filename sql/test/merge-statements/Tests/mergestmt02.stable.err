@@ -32,12 +32,12 @@ MAPI  = (monetdb) /var/tmp/mtest-17715/.s.monetdb.30560
 QUERY = merge into predata using (select * from merging) other on predata.bb = other.bb
               when not matched then insert; --error, null constraint violation
 ERROR = !INSERT INTO: NOT NULL constraint violated for column predata.bb
-CODE  = M0M29
-MAPI  = (monetdb) /var/tmp/mtest-17715/.s.monetdb.30560
+CODE  = 40002
+MAPI  = (monetdb) /var/tmp/mtest-225531/.s.monetdb.33874
 QUERY = merge into predata using (select * from merging) other on predata.aa = other.aa
               when not matched then insert values (other.aa, other.bb); --error, unique index violation
 ERROR = !INSERT INTO: UNIQUE constraint 'predata.uniquebb' violated
-CODE  = M0M29
+CODE  = 40002
 
 # 17:14:24 >  
 # 17:14:24 >  "Done."
