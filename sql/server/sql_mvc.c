@@ -75,6 +75,7 @@ mvc_init_create_view(mvc *m, sql_schema *s, const char *name, const char *query)
 			list *id_l = rel_dependencies(m, r);
 			mvc_create_dependencies(m, id_l, t->base.id, VIEW_DEPENDENCY);
 		}
+		assert(r);
 bailout:
 		if (m->sa)
 			sa_destroy(m->sa);

@@ -1657,7 +1657,7 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 				stmt *s = stmt_col(be, c, ti->tids);
 				append(l, stmt_alias(be, s, ti->on, c->base.name));
 			}
-			if (ti->updates[c->colnr]) {
+			if (ti->updates && ti->updates[c->colnr]) {
 				append(l, stmt_alias(be, ti->updates[c->colnr], ti->nn, c->base.name));
 			} else {
 				stmt *s = stmt_col(be, c, ti->tids);
@@ -4425,7 +4425,6 @@ sql_update_cascade_Fkeys(backend *be, sql_key *k, stmt *utids, stmt **updates, i
 		return NULL;
 	return stmt_list(be, l);
 }
-
 
 static int
 cascade_ukey(backend *be, stmt **updates, sql_key *k, stmt *tids) 
