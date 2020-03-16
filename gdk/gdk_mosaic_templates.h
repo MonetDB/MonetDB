@@ -178,8 +178,9 @@ CONCAT2(MOScheck_, HEAP)(BAT *b)
 		if ((hp = GDKzalloc(sizeof(*hp))) != NULL &&
 		    (hp->farmid = BBPselectfarm(b->batRole, b->ttype, mosaicheap)) >= 0 ){
 
-			const char* ext = "." EXT(HEAP);
-			strconcat_len(hp->filename, sizeof(hp->filename), nme, ext, NULL);
+			const char* ext = EXT(HEAP);
+			const char* ext_wih_dot = "." EXT(HEAP);
+			strconcat_len(hp->filename, sizeof(hp->filename), nme, ext_wih_dot, NULL);
 
 			/* check whether a persisted mosaic-specific heap can be found */
 			if ((fd = GDKfdlocate(hp->farmid, nme, "rb+", ext)) >= 0) {
