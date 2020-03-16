@@ -1556,7 +1556,8 @@ rewrite_exp_rel(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 		}
 	}
 	if (exp_is_rel(e) && is_ddl(rel->op))
-		e->l = rel_exp_visitor(sql, e->l, &rewrite_exp_rel);
+		if (!(e->l = rel_exp_visitor_bottomup(sql, e->l, &rewrite_exp_rel)))
+			return NULL;
 	return e;
 }
 
@@ -1741,7 +1742,6 @@ rewrite_rank(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 	/* ranks/window functions only exist in the projection */
 	assert(is_simple_project(rel->op));
 	list *l = e->l, *r = e->r, *gbe = r->h->data, *obe = r->h->next->data;
-	e->card = (rel->card == CARD_AGGR) ? CARD_AGGR : CARD_MULTI; /* After the unnesting, the cardinality of the window function becomes larger */
 
 	needed = (gbe || obe);
 	for (node *n = l->h; n && !needed; n = n->next) {
@@ -2403,7 +2403,8 @@ rewrite_exists(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 					ne = le;
 
 				if (exp_has_rel(ie)) 
-					(void)rewrite_exp_rel(sql, rel, ie, depth);
+					if (!rewrite_exp_rel(sql, rel, ie, depth))
+						return NULL;
 
 				if (is_project(rel->op) && rel_has_freevar(sql, sq))
 					le = exp_exist(sql, le, ne, is_exists(sf));
@@ -2712,18 +2713,18 @@ rel_unnest(mvc *sql, sql_rel *rel)
 	int changes = 0;
 
 	rel_reset_subquery(rel);
-	rel = rel_exp_visitor(sql, rel, &rewrite_simplify_exp);
+	rel = rel_exp_visitor_bottomup(sql, rel, &rewrite_simplify_exp);
 	rel = rel_visitor_bottomup(sql, rel, &rewrite_simplify, &changes);
 	rel = rel_visitor_bottomup(sql, rel, &rewrite_or_exp, &changes);
 	if (changes > 0)
 		rel = rel_visitor_bottomup(sql, rel, &rel_remove_empty_select, &changes);
 	rel = rel_visitor_bottomup(sql, rel, &rewrite_aggregates, &changes);
-	rel = rel_exp_visitor(sql, rel, &rewrite_rank);
-	rel = rel_exp_visitor(sql, rel, &rewrite_anyequal);
-	rel = rel_exp_visitor(sql, rel, &rewrite_exists);
-	rel = rel_exp_visitor(sql, rel, &rewrite_compare);
-	rel = rel_exp_visitor(sql, rel, &rewrite_ifthenelse);	/* add isnull handling */
-	rel = rel_exp_visitor(sql, rel, &rewrite_exp_rel);
+	rel = rel_exp_visitor_bottomup(sql, rel, &rewrite_rank);
+	rel = rel_exp_visitor_bottomup(sql, rel, &rewrite_anyequal);
+	rel = rel_exp_visitor_bottomup(sql, rel, &rewrite_exists);
+	rel = rel_exp_visitor_bottomup(sql, rel, &rewrite_compare);
+	rel = rel_exp_visitor_bottomup(sql, rel, &rewrite_ifthenelse);	/* add isnull handling */
+	rel = rel_exp_visitor_bottomup(sql, rel, &rewrite_exp_rel);
 	rel = rel_visitor_bottomup(sql, rel, &rewrite_join2semi, &changes);	/* where possible convert anyequal functions into marks */
 	rel = rel_visitor_bottomup(sql, rel, &rewrite_compare_exp, &changes);	/* only allow for e_cmp in selects and  handling */
 	rel = rel_visitor_bottomup(sql, rel, &rewrite_remove_xp_project, &changes);	/* remove crossproducts with project ( project [ atom ] ) [ etc ] */
