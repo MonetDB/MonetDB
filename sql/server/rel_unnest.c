@@ -1740,7 +1740,8 @@ rewrite_rank(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 	(void)depth;
 	/* ranks/window functions only exist in the projection */
 	assert(is_simple_project(rel->op));
-	list *l = e->l, *r = e->r, *gbe = r->h->data, *obe = r->h->next->data; 
+	list *l = e->l, *r = e->r, *gbe = r->h->data, *obe = r->h->next->data;
+	e->card = (rel->card == CARD_AGGR) ? CARD_AGGR : CARD_MULTI; /* After the unnesting, the cardinality of the window function becomes larger */
 
 	needed = (gbe || obe);
 	for (node *n = l->h; n && !needed; n = n->next) {

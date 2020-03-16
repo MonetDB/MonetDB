@@ -124,7 +124,7 @@ SELECT DISTINCT (SELECT NTILE(i1.i) OVER ()) mycalc FROM integers i1 ORDER BY my
 	-- 1
 	-- NULL
 
-SELECT DISTINCT (SELECT SUM(i1.i) OVER ()) mycalc FROM integers i1 ORDER BY mycalc NULLS LAST;
+SELECT DISTINCT CAST((SELECT SUM(i1.i) OVER ()) AS BIGINT) mycalc FROM integers i1 ORDER BY mycalc NULLS LAST;
 	-- 1
 	-- 2
 	-- 3

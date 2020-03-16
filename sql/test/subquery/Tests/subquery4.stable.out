@@ -170,7 +170,23 @@ stdout of test 'subquery4` in directory 'sql/test/subquery` itself:
 [ 1	]
 [ 1	]
 [ NULL	]
-#SELECT (SELECT SUM(i2.i + i1.i)) FROM integers i1, integers i2;
+#SELECT DISTINCT (SELECT NTILE(i1.i) OVER ()) mycalc FROM integers i1 ORDER BY mycalc NULLS LAST;
+% . # table_name
+% mycalc # name
+% int # type
+% 1 # length
+[ 1	]
+[ NULL	]
+#SELECT DISTINCT CAST((SELECT SUM(i1.i) OVER ()) AS BIGINT) mycalc FROM integers i1 ORDER BY mycalc NULLS LAST;
+% . # table_name
+% mycalc # name
+% bigint # type
+% 1 # length
+[ 1	]
+[ 2	]
+[ 3	]
+[ NULL	]
+#SELECT CAST((SELECT SUM(i2.i + i1.i)) AS BIGINT) FROM integers i1, integers i2;
 % .%1 # table_name
 % %1 # name
 % bigint # type
