@@ -992,6 +992,13 @@ push_up_groupby(mvc *sql, sql_rel *rel, list *ad)
 					r->r = list_append(sa_list(sql->sa), exp_ref(sql->sa, id));
 				else
 					r->r = exps_copy(sql, a);
+				r->card = CARD_AGGR;
+				/* After the unnesting, the cardinality of the aggregate function becomes larger */
+				for(node *n = r->exps->h; n; n = n->next) {
+					sql_exp *e = n->data;
+					
+					e->card = CARD_AGGR; 
+				}
 			} else {
 				if (id)
 					list_append(r->r, exp_ref(sql->sa, id));
@@ -1575,6 +1582,35 @@ rewrite_empty_project(mvc *sql, sql_rel *rel, int *changes)
 	return rel;
 }
 
+static sql_exp *
+exp_reset_card(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
+{
+	(void)sql;
+	(void)depth;
+
+	if (!e || !rel || !rel->l)
+		return e;
+	if (!is_simple_project(rel->op)) /* only need to fix projections */
+		return e;
+	sql_rel *l = rel->l;
+	int card = l->card;
+	/* need card of lower relation */
+	switch(e->type) {
+	case e_func:
+	case e_column:
+	case e_convert:
+		if (e->card < card)
+			e->card = card;
+		break;
+	case e_aggr: /* should have been corrected by rewrites already */
+	case e_cmp:  
+	case e_atom:
+	default:
+		break;
+	}
+	return e;
+}
+
 static list*
 aggrs_split_args(mvc *sql, list *aggrs, list *exps, int is_groupby_list) 
 {
@@ -1742,6 +1778,7 @@ rewrite_rank(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 	/* ranks/window functions only exist in the projection */
 	assert(is_simple_project(rel->op));
 	list *l = e->l, *r = e->r, *gbe = r->h->data, *obe = r->h->next->data;
+	e->card = (rel->card == CARD_AGGR) ? CARD_AGGR : CARD_MULTI; /* After the unnesting, the cardinality of the window function becomes larger */
 
 	needed = (gbe || obe);
 	for (node *n = l->h; n && !needed; n = n->next) {
@@ -2737,5 +2774,6 @@ rel_unnest(mvc *sql, sql_rel *rel)
 	rel = rel_visitor_bottomup(sql, rel, &rewrite_remove_xp, &changes);	/* remove crossproducts with project [ atom ] */
 	rel = rel_visitor_bottomup(sql, rel, &rewrite_groupings, &changes);	/* transform group combinations into union of group relations */
 	rel = rel_visitor_bottomup(sql, rel, &rewrite_empty_project, &changes);
+	rel = rel_exp_visitor_bottomup(sql, rel, &exp_reset_card);
 	return rel;
 }
