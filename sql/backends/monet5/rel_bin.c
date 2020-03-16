@@ -3565,7 +3565,7 @@ insert_check_ukey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts)
 		}
 		s = stmt_binop(be, stmt_aggr(be, s, NULL, NULL, cnt, 1, 0, 1), stmt_atom_lng(be, 0), ne);
 
-		/* 2e stage: find out if inserted are unique */
+		/* 2nd stage: find out if inserted are unique */
 		if ((!idx_inserts && ins->nrcols) || (idx_inserts && idx_inserts->nrcols)) {	/* insert columns not atoms */
 			sql_subfunc *or = sql_bind_func_result(sql->sa, sql->session->schema, "or", F_FUNC, bt, 2, bt, bt);
 			stmt *orderby_ids = NULL, *orderby_grp = NULL;

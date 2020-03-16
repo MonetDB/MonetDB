@@ -30,7 +30,7 @@
 #include "sql_scenario.h"
 /*
  * Assertion errors detected during the execution of a code block
- * raises an exception. An debugger dump is generated upon request
+ * raise an exception. A debugger dump is generated upon request
  * to ease debugging.
  */
 str
