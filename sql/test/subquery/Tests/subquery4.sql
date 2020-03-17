@@ -135,7 +135,7 @@ SELECT i FROM integers WHERE i IN ((SELECT 1), (SELECT i FROM another_t));
 	-- 2
 	-- 3
 
-SELECT i FROM integers WHERE (i,i) IN ((SELECT 1,2), (SELECT i UNION ALL SELECT 2)); --error, subquery must return only one column
+SELECT i FROM integers WHERE (i,i) IN ((SELECT 1,2), (SELECT i UNION ALL SELECT 2)); --error, number of columns don't match between subqueries
 
 /* On joined tables, the correlation happens in the outer query */
 SELECT CAST((SELECT SUM(i2.i + i1.i)) AS BIGINT) FROM integers i1, integers i2;
