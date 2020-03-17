@@ -854,7 +854,7 @@ SQLsubexist(bat *ret, const bat *bp, const bat *gp, const bat *gpe, bit *no_nil)
 {
 	BAT *b, *g, *e, *res;
 	bit T = TRUE;
-	BUN offset = 0;
+	//BUN offset = 0;
 
 	(void)no_nil;
 	if ((b = BATdescriptor(*bp)) == NULL) {
@@ -876,6 +876,7 @@ SQLsubexist(bat *ret, const bat *bp, const bat *gp, const bat *gpe, bit *no_nil)
 		throw(SQL, "aggr.subexist", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	BAThseqbase(res, e->hseqbase);
+#if 0
 	offset = g->hseqbase - b->hseqbase;
 	if (BATcount(g) > 0) {
 		BUN q, o, s;
@@ -900,6 +901,7 @@ SQLsubexist(bat *ret, const bat *bp, const bat *gp, const bat *gpe, bit *no_nil)
 			}
 		}
 	}
+#endif
 	res->hseqbase = g->hseqbase;
 	res->tnil = 0;
 	res->tnonil = 1;
@@ -949,7 +951,7 @@ SQLsubnot_exist(bat *ret, const bat *bp, const bat *gp, const bat *gpe, bit *no_
 {
 	BAT *b, *g, *e, *res;
 	bit F = FALSE;
-	BUN offset = 0;
+	//BUN offset = 0;
 
 	(void)no_nil;
 	if ((b = BATdescriptor(*bp)) == NULL) {
@@ -971,6 +973,7 @@ SQLsubnot_exist(bat *ret, const bat *bp, const bat *gp, const bat *gpe, bit *no_
 		throw(SQL, "aggr.subnot_exist", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	BAThseqbase(res, e->hseqbase);
+#if 0
 	offset = g->hseqbase - b->hseqbase;
 	if (BATcount(g) > 0) {
 		BUN q, o, s;
@@ -995,6 +998,7 @@ SQLsubnot_exist(bat *ret, const bat *bp, const bat *gp, const bat *gpe, bit *no_
 			}
 		}
 	}
+#endif
 	res->hseqbase = g->hseqbase;
 	res->tnil = 0;
 	res->tnonil = 1;
