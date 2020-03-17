@@ -332,7 +332,7 @@ subrel_project( backend *be, stmt *s, list *refs, sql_rel *rel)
 		assert(c->type == st_alias || (c->type == st_join && c->flag == cmp_project) || c->type == st_bat || c->type == st_idxbat || c->type == st_single);
 		if (c->type != st_alias) {
 			c = stmt_project(be, cand, c);
-		} else if (c->op1->type == st_mirror) { /* alias with mirror (ie full row ids) */
+		} else if (c->op1->type == st_mirror && cand->type == st_tid) { /* alias with mirror (ie full row ids) */
 			c = stmt_alias(be, cand, c->tname, c->cname); 
 		} else { /* st_alias */
 			stmt *s = c->op1;
@@ -1050,9 +1050,11 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 						sql_subfunc *a = sql_bind_func(sql->sa, sql->session->schema, "not", bt, NULL, F_FUNC);
 						s = stmt_unop(be, s, a);
 					}
+#if 0
 				} else if (((e->flag&3) != 3) /* both sides closed use between implementation */ && l->nrcols > 0 && r->nrcols > 0 && r2->nrcols > 0) {
 					s = stmt_uselect(be, l, r, range2lcompare(e->flag),
 					    stmt_uselect(be, l, r2, range2rcompare(e->flag), sel, is_anti(e), 0), is_anti(e), 0);
+#endif
 				} else {
 					s = stmt_uselect2(be, l, r, r2, (comp_type)e->flag, sel, is_anti(e));
 				}
@@ -3201,22 +3203,20 @@ rel2bin_select(backend *be, sql_rel *rel, list *refs)
 
 	if (rel->l) { /* first construct the sub relation */
 		sub = subrel_bin(be, rel->l, refs);
-		sub = subrel_project(be, sub, refs, rel->l);
+		sel = sub->cand;
+		//sub = subrel_project(be, sub, refs, rel->l);
 		if (!sub) 
 			return NULL;
 		sub = row2cols(be, sub);
 	}
 	if (!sub && !predicate) 
 		predicate = rel2bin_predicate(be);
-	/*
-	else if (!predicate)
-		predicate = stmt_const(be, bin_first_column(be, sub), stmt_bool(be, 1));
-		*/
 	if (!rel->exps || !rel->exps->h) {
 		if (sub)
 			return sub;
 		if (predicate)
 			return predicate;
+		assert(0);
 		return stmt_const(be, bin_first_column(be, sub), stmt_bool(be, 1));
 	}
 	if (!sub && predicate) {
@@ -3234,9 +3234,10 @@ rel2bin_select(backend *be, sql_rel *rel, list *refs)
 		if ((p=find_prop(e->p, PROP_HASHCOL)) != NULL) {
 			sql_idx *i = p->value;
 
+			assert(0);
 			sel = rel2bin_hash_lookup(be, rel, sub, NULL, i, en);
 		}
-	} 
+	}
 	for( en = rel->exps->h; en; en = en->next ) {
 		sql_exp *e = en->data;
 		stmt *s = exp_bin(be, e, sub, NULL, NULL, NULL, NULL, sel);
@@ -3262,27 +3263,10 @@ rel2bin_select(backend *be, sql_rel *rel, list *refs)
 	}
 
 	if (sub && sel) {
-		assert(!sub->cand);
 		sub = stmt_list(be, sub->op4.lval); /* protect against references */
 		sub->cand = sel;
 	}
 	return sub;
-#if 0
-	/* construct relation */
-	list *l = sa_list(sql->sa);
-	if (sub && sel) {
-		for(node * n = sub->op4.lval->h; n; n = n->next ) {
-			stmt *col = n->data;
-
-			if (col->nrcols == 0) /* constant */
-				col = stmt_const(be, sel, col);
-			else
-				col = stmt_project(be, sel, col);
-			list_append(l, col);
-		}
-	}
-	return stmt_list(be, l);
-#endif
 }
 
 static stmt *
