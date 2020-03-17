@@ -2050,7 +2050,8 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 	} else {
 		le = exp_values(sql->sa, ll);
 		exp_label(sql->sa, le, ++sql->label);
-		ek.card = card_relation;
+		ek.card = card_column;
+		ek.type = list_length(ll);
 		is_tuple = 1;
 	}
 	/* list of values or subqueries */
@@ -2067,8 +2068,15 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 				return NULL;
 			if (is_tuple && !exp_is_rel(re)) 
 				return sql_error(sql, 02, SQLSTATE(42000) "Cannot match a tuple to a single value");
-			if (is_tuple)
+			if (is_tuple) {
+				sql_rel *r = exp_rel_get_rel(sql->sa, re);
+
+				if (!r)
+					return sql_error(sql, 02, SQLSTATE(42000) "Subquery missing");
+				if (r->nrcols != ek.type)
+					return sql_error(sql, 02, SQLSTATE(42000) "Subquery has too %s columns", (r->nrcols < ek.type) ? "few" : "many");
 				re = exp_rel_label(sql, re);
+			}
 			append(vals, re);
 		}
 
@@ -5071,7 +5079,7 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 		}
 		if (!r)
 			return NULL;
-		if (ek.card <= card_set && is_project(r->op) && list_length(r->exps) > 1) 
+		if (ek.type == type_value && ek.card <= card_set && is_project(r->op) && list_length(r->exps) > 1) 
 			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: subquery must return only one column");
 		if (list_length(r->exps) == 1) /* for now don't rename multi attribute results */
 			r = rel_zero_or_one(sql, r, ek);
@@ -5615,6 +5623,7 @@ rel_setquery_(sql_query *query, sql_rel *l, sql_rel *r, dlist *cols, int op )
 	}
 	if (rel) {
 		rel->exps = rel_projections(sql, rel, NULL, 0, 1);
+		rel->nrcols = list_length(rel->exps);
 		set_processed(rel);
 	}
 	return rel;
@@ -5895,6 +5904,7 @@ rel_unionjoinquery(sql_query *query, sql_rel *rel, symbol *q)
 	rv = rel_project(sql->sa, rv, rexps);
 	rel = rel_setop(sql->sa, lv, rv, op_union);
 	rel->exps = rel_projections(sql, rel, NULL, 0, 1);
+	rel->nrcols = list_length(rel->exps);
 	set_processed(rel);
 	if (!all)
 		rel = rel_distinct(rel);
