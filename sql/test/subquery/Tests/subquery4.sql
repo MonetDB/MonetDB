@@ -148,6 +148,33 @@ SELECT i1.i, i2.i FROM integers i1, integers i2 HAVING (SELECT SUM(i2.i + i1.i))
 
 SELECT DISTINCT CAST((SELECT SUM(i2.i + i1.i)) AS BIGINT) FROM integers i1, integers i2;
 
+SELECT NOT EXISTS(SELECT i1.i) from integers i1;
+	-- False
+	-- False
+	-- False
+	-- False
+
+SELECT i1.i, i2.i FROM integers i1 INNER JOIN integers i2 ON EXISTS (SELECT i1.i) = NOT EXISTS (SELECT i2.i);
+	-- empty
+
+SELECT i1.i, i2.i FROM integers i1 INNER JOIN integers i2 ON EXISTS (SELECT i1.i) = EXISTS (SELECT i2.i);
+	-- 1    1
+	-- 1    2
+	-- 1    3
+	-- 1    NULL
+	-- 2    1
+	-- 2    2
+	-- 2    3
+	-- 2    NULL
+	-- 3    1
+	-- 3    2
+	-- 3    3
+	-- 3    NULL
+	-- NULL 1
+	-- NULL 2
+	-- NULL 3
+	-- NULL NULL
+
 UPDATE another_T SET col1 = MIN(col1); --error, aggregates not allowed in update set clause
 UPDATE another_T SET col2 = 1 WHERE col1 = SUM(col2); --error, aggregates not allowed in update set clause
 UPDATE another_T SET col3 = (SELECT MAX(col5)); --error, aggregates not allowed in update set clause
