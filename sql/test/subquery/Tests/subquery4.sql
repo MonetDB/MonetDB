@@ -120,6 +120,23 @@ SELECT (SELECT NTILE(i1.i) OVER (PARTITION BY i1.i ORDER BY i1.i)) FROM integers
 	-- 1
 	-- NULL
 
+SELECT DISTINCT (SELECT NTILE(i1.i) OVER ()) mycalc FROM integers i1 ORDER BY mycalc NULLS LAST;
+	-- 1
+	-- NULL
+
+SELECT DISTINCT CAST((SELECT SUM(i1.i) OVER ()) AS BIGINT) mycalc FROM integers i1 ORDER BY mycalc NULLS LAST;
+	-- 1
+	-- 2
+	-- 3
+	-- NULL
+
+SELECT i FROM integers WHERE i IN ((SELECT 1), (SELECT i FROM another_t));
+	-- 1
+	-- 2
+	-- 3
+
+SELECT i FROM integers WHERE (i,i) IN ((SELECT 1,2), (SELECT i UNION ALL SELECT 2)); --error, subquery must return only one column
+
 /* On joined tables, the correlation happens in the outer query */
 SELECT CAST((SELECT SUM(i2.i + i1.i)) AS BIGINT) FROM integers i1, integers i2;
 
@@ -128,6 +145,8 @@ SELECT CAST((SELECT SUM(i2.i + i1.i)) AS BIGINT) FROM integers i1 INNER JOIN int
 SELECT i1.i, i2.i FROM integers i1, integers i2 WHERE (SELECT SUM(i2.i + i1.i)) > 0;
 
 SELECT i1.i, i2.i FROM integers i1, integers i2 HAVING (SELECT SUM(i2.i + i1.i)) > 0; --error, cannot use non GROUP BY column 'i1.i' in query results without an aggregate function
+
+SELECT DISTINCT CAST((SELECT SUM(i2.i + i1.i)) AS BIGINT) FROM integers i1, integers i2;
 
 UPDATE another_T SET col1 = MIN(col1); --error, aggregates not allowed in update set clause
 UPDATE another_T SET col2 = 1 WHERE col1 = SUM(col2); --error, aggregates not allowed in update set clause

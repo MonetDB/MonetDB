@@ -450,6 +450,12 @@ create_table_or_view(mvc *sql, char* sname, char *tname, sql_table *t, int temp)
 			mvc_create_dependencies(sql, id_l, nt->base.id, VIEW_DEPENDENCY);
 		}
 		sa_destroy(sql->sa);
+		if (!r) {
+			if (strlen(sql->errstr) > 6 && sql->errstr[5] == '!')
+				throw(SQL, "sql.catalog", "%s", sql->errstr);
+			else 
+				throw(SQL, "sql.catalog", SQLSTATE(42000) "%s", sql->errstr);
+		}
 	}
 	sql->sa = osa;
 	return MAL_SUCCEED;
