@@ -1754,7 +1754,7 @@ rewrite_or_exp(mvc *sql, sql_rel *rel, int *changes)
 					list *rs = rel_projections(sql, rel, NULL, 1, 1);
 					rel = rel_setop_check_types(sql, l, r, ls, rs, op_union);
 					rel = rel_distinct(rel);
-					rel->exps = exps;
+					rel_set_exps(rel, exps);
 					(*changes)++;
 					return rel;
 				}
@@ -1892,13 +1892,14 @@ rel_union_exps(mvc *sql, sql_exp **l, list *vals, int is_tuple)
 			if (rel_convert_types(sql, NULL, NULL, l, &r, 1, type_equal) < 0)
 				return NULL;
 			sq->exps->t->data = r;
+			sq->nrcols = list_length(sq->exps);
 		}
 		if (!u) {
 			u = sq;
 			exps = rel_projections(sql, sq, NULL, 1/*keep names */, 1);
 		} else {
 			u = rel_setop(sql->sa, u, sq, op_union);
-			u->exps = exps;
+			rel_set_exps(u, exps);
 			exps = rel_projections(sql, sq, NULL, 1/*keep names */, 1);
 		}
 	}
@@ -2697,7 +2698,7 @@ rewrite_groupings(mvc *sql, sql_rel *rel, int *changes)
 					unions = nrel;
 				else {
 					unions = rel_setop(sql->sa, unions, nrel, op_union);
-					unions->exps = rel_projections(sql, rel, NULL, 1, 1);
+					rel_set_exps(unions, rel_projections(sql, rel, NULL, 1, 1));
 					set_processed(unions);
 				}
 				if (!unions)

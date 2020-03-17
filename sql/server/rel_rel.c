@@ -16,6 +16,13 @@
 #include "sql_mvc.h"
 
 
+void
+rel_set_exps(sql_rel *rel, list *exps)
+{
+	rel->exps = exps;
+	rel->nrcols = list_length(exps);
+}
+
 /* some projections results are order dependend (row_number etc) */
 int 
 project_unsafe(sql_rel *rel, int allow_identity)
@@ -451,7 +458,6 @@ rel_setop(sql_allocator *sa, sql_rel *l, sql_rel *r, operator_type setop)
 	sql_rel *rel = rel_create(sa);
 	if(!rel)
 		return NULL;
-
 	rel->l = l;
 	rel->r = r;
 	rel->op = setop;
@@ -461,8 +467,10 @@ rel_setop(sql_allocator *sa, sql_rel *l, sql_rel *r, operator_type setop)
 	} else {
 		rel->card = l->card;
 	}
-	if (l && r)
-		rel->nrcols = l->nrcols + r->nrcols;
+	if (l && r) {
+		assert(l->nrcols == r->nrcols);
+		rel->nrcols = l->nrcols;
+	}
 	return rel;
 }
 
@@ -898,7 +906,7 @@ rel_groupby(mvc *sql, sql_rel *l, list *groupbyexps )
 	rel->l = l;
 	rel->r = groupbyexps;
 	rel->exps = aggrs;
-	rel->nrcols = l->nrcols;
+	rel->nrcols = aggrs?list_length(aggrs):0;
 	rel->op = op_groupby;
 	rel->grouped = 1;
 	return rel;
@@ -918,7 +926,10 @@ rel_project(sql_allocator *sa, sql_rel *l, list *e)
 	rel->card = exps_card(e);
 	if (l) {
 		rel->card = l->card;
-		rel->nrcols = l->nrcols;
+		if (e)
+			rel->nrcols = list_length(e);
+		else
+			rel->nrcols = l->nrcols;
 	}
 	if (e && !list_empty(e))
 		set_processed(rel);
@@ -1419,6 +1430,7 @@ rel_or(mvc *sql, sql_rel *rel, sql_rel *l, sql_rel *r, list *oexps, list *lexps,
 		return NULL;
 	rel->exps = rel_projections(sql, rel, NULL, 1, 1);
 	set_processed(rel);
+	rel->nrcols = list_length(rel->exps);
 	rel = rel_distinct(rel);
 	if (!rel)
 		return NULL;
