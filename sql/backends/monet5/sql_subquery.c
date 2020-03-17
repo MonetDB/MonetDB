@@ -948,7 +948,7 @@ str
 SQLsubnot_exist(bat *ret, const bat *bp, const bat *gp, const bat *gpe, bit *no_nil)
 {
 	BAT *b, *g, *e, *res;
-	bit F = FALSE, hasnil = 0;
+	bit F = FALSE;
 	BUN offset = 0;
 
 	(void)no_nil;
@@ -988,17 +988,16 @@ SQLsubnot_exist(bat *ret, const bat *bp, const bat *gp, const bat *gpe, bit *no_
 			const void *bv = BUNtail(bi, q);
 			oid id = *(oid*)BUNtail(gi, s);
 
-			if (ret[id] != TRUE) {
+			if (ret[id] == FALSE) {
 				if (ocmp(bv, nilp) == 0) {
-					ret[id] = bit_nil;
-					hasnil = 1;
+					ret[id] = TRUE;
 				}
 			}
 		}
 	}
 	res->hseqbase = g->hseqbase;
-	res->tnil = hasnil != 0;
-	res->tnonil = hasnil == 0;
+	res->tnil = 0;
+	res->tnonil = 1;
 	res->tsorted = res->trevsorted = 0;
 	res->tkey = 0;
 	BBPunfix(b->batCacheid);

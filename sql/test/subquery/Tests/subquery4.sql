@@ -148,6 +148,12 @@ SELECT i1.i, i2.i FROM integers i1, integers i2 HAVING (SELECT SUM(i2.i + i1.i))
 
 SELECT DISTINCT CAST((SELECT SUM(i2.i + i1.i)) AS BIGINT) FROM integers i1, integers i2;
 
+SELECT NOT EXISTS(SELECT i1.i) from integers i1;
+	-- False
+	-- False
+	-- False
+	-- False
+
 SELECT i1.i, i2.i FROM integers i1 INNER JOIN integers i2 ON EXISTS (SELECT i1.i) = NOT EXISTS (SELECT i2.i);
 	-- empty
 
