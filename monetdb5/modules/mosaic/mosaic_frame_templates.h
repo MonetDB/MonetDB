@@ -219,3 +219,26 @@ MOSprojectionloop_SIGNATURE(METHOD, TPE, CAND_ITER)
 	task->src = (char*) bt;
 }
 #endif
+
+#ifdef INNER_COMPRESSED_JOIN_LOOP
+
+MOSjoin_inner_loop_SIGNATURE(frame, TPE, NIL, RIGHT_CI_NEXT)
+{
+    MOSBlockHeaderTpe(frame, TPE)* parameters = (MOSBlockHeaderTpe(frame, TPE)*) ((task))->blk;
+	const TPE min =  parameters->min;
+	const BitVector base = MOScodevectorFrame(task, TPE);
+	const bte bits = parameters->bits;
+    BUN first = task->start;
+    BUN last = first + MOSgetCnt(task->blk);
+    for (oid ro = canditer_peekprev(task->ci); !is_oid_nil(ro) && ro < last; ro = RIGHT_CI_NEXT(task->ci)) {
+        BUN i = (BUN) (ro - first);
+		TPE rval = ADD_DELTA(TPE, min, getBitVector(base, i, bits));
+		#ifdef HAS_NIL
+        IF_EQUAL_APPEND_RESULT(true, TPE);
+		#else
+		IF_EQUAL_APPEND_RESULT(false, TPE);
+		#endif
+	}
+	return MAL_SUCCEED;
+}
+#endif // #ifdef INNER_COMPRESSED_JOIN_LOOP

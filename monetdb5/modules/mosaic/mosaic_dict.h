@@ -28,9 +28,8 @@ mal_export void MOScreatevar(MOStask* task);
 #define MosaicBlkHeader_DEF_dict(TPE) MosaicBlkHeader_DEF_dictionary(dict, TPE)
 
 ALGEBRA_INTERFACES_ALL_TYPES_WITH_DICTIONARY(dict);
+#define TYPE_IS_SUPPORTED_dict(TPE) ALL_TYPES_SUPPORTED(TPE)
 
 #define DO_OPERATION_ON_dict(OPERATION, TPE, ...) DO_OPERATION_ON_ALL_TYPES(OPERATION, dict, TPE, __VA_ARGS__)
-
-#define join_inner_loop_dict(TPE, HAS_NIL, RIGHT_CI_NEXT) join_inner_loop_dictionary(dict, TPE, HAS_NIL, RIGHT_CI_NEXT)
 
 #endif /* _MOSAIC_VAR_ */

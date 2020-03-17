@@ -29,21 +29,12 @@ typedef struct {\
 } MOSBlockHeader_linear_##TPE;
 
 ALGEBRA_INTERFACES_INTEGERS_ONLY(linear);
+#define TYPE_IS_SUPPORTED_linear(TPE) INTEGERS_ONLY(TPE)
 #define DO_OPERATION_ON_linear(OPERATION, TPE, ...) DO_OPERATION_ON_INTEGERS_ONLY(OPERATION, linear, TPE, __VA_ARGS__)
 
 #define linear_offset(TPE, task)	(((MOSBlockHeaderTpe(linear, TPE)*) (task)->blk)->offset)
 #define linear_step(TPE, task)		(((MOSBlockHeaderTpe(linear, TPE)*) (task)->blk)->step)
 
 #define MOScodevectorFrame(task, TPE) ((BitVector) &((MOSBlockHeaderTpe(frame, TPE)*) (task)->blk)->bitvector)
-#define join_inner_loop_linear(TPE, HAS_NIL, RIGHT_CI_NEXT)\
-{\
-	DeltaTpe(TPE) offset	= linear_offset(TPE, task) ;\
-	DeltaTpe(TPE) step		= linear_step(TPE, task);\
-    for (oid ro = canditer_peekprev(task->ci); !is_oid_nil(ro) && ro < last; ro = RIGHT_CI_NEXT(task->ci)) {\
-        BUN i = (BUN) (ro - first);\
-		TPE rval =  (TPE) (offset + (i * step));\
-        IF_EQUAL_APPEND_RESULT(HAS_NIL, TPE);\
-	}\
-}
 
 #endif /* _MOSAIC_LINEAR_ */

@@ -28,19 +28,10 @@ typedef struct {\
 } MOSBlockHeader_runlength_##TPE;
 
 ALGEBRA_INTERFACES_ALL_TYPES(runlength);
+#define TYPE_IS_SUPPORTED_runlength(TPE) ALL_TYPES_SUPPORTED(TPE)
 
 #define DO_OPERATION_ON_runlength(OPERATION, TPE, ...) DO_OPERATION_ON_ALL_TYPES(OPERATION, runlength, TPE, __VA_ARGS__)
 
 #define GET_VAL_runlength(task, TPE) (((MOSBlockHeaderTpe(runlength, TPE)*) (task)->blk)->val)
-
-#define join_inner_loop_runlength(TPE, HAS_NIL, RIGHT_CI_NEXT)\
-{\
-    BUN first = task->start;\
-    BUN last = first + MOSgetCnt(task->blk);\
-    const TPE rval = GET_VAL_runlength(task, TPE);\
-    for (oid ro = canditer_peekprev(task->ci); !is_oid_nil(ro) && ro < last; ro = RIGHT_CI_NEXT(task->ci)) {\
-        IF_EQUAL_APPEND_RESULT(HAS_NIL, TPE);\
-	}\
-}
 
 #endif /* _MOSAIC_RLE_ */

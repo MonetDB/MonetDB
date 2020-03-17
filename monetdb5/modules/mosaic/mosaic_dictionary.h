@@ -92,17 +92,4 @@ typedef struct {\
 	}\
 }
 
-#define join_inner_loop_dictionary(METHOD, TPE, HAS_NIL, RIGHT_CI_NEXT)\
-{\
-	bte bits		= GET_FINAL_BITS(task, METHOD);\
-	TPE* dict		= GET_FINAL_DICT(task, METHOD, TPE);\
-	BitVector base	= MOScodevectorDict(task, METHOD, TPE);\
-    for (oid ro = canditer_peekprev(task->ci); !is_oid_nil(ro) && ro < last; ro = RIGHT_CI_NEXT(task->ci)) {\
-        BUN i = (BUN) (ro - first);\
-		BitVectorChunk j= getBitVector(base,i,bits);\
-        TPE rval = dict[j];\
-        IF_EQUAL_APPEND_RESULT(HAS_NIL, TPE);\
-	}\
-}
-
 #endif /* _MOSAIC_DICTIONARY_  */

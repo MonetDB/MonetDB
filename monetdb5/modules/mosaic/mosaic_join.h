@@ -171,108 +171,12 @@ static str MOSjoin_COUI_##TPE(MOStask* task, BAT* r, struct canditer* rci, bool 
 	return MAL_SUCCEED;\
 }
 
-/* Nested loop join with the left uncompressed side in the outer loop
- * and the right compressed side in the inner loop.
- */
-
-#define join_inner_loop(METHOD, TPE, HAS_NIL, RIGHT_CI_NEXT)\
-{\
-	join_inner_loop_##METHOD(TPE, HAS_NIL, RIGHT_CI_NEXT);\
-	MOSadvance_##METHOD##_##TPE(task);\
-}
-
 #define IF_EQUAL_APPEND_RESULT(HAS_NIL, TPE)\
 {\
 	if (ARE_EQUAL(lval, rval, HAS_NIL, TPE)){\
 		if( BUNappend(r1p, &ro, false)!= GDK_SUCCEED || BUNappend(r2p, &lo, false) != GDK_SUCCEED)\
 		throw(MAL,"mosaic.raw",MAL_MALLOC_FAIL);\
 	}\
-}
-
-#define OUTER_LOOP_UNCOMPRESSED(HAS_NIL, NIL_MATCHES, TPE, LEFT_CI_NEXT, RIGHT_CI_NEXT) \
-{\
-	str msg = MAL_SUCCEED;\
-\
-	TPE* vl = (TPE*) Tloc(l, 0);\
-	for (BUN li = 0; li < lci->ncand; li++, MOSinitializeScan(task, task->bsrc), canditer_reset(rci)) {\
-		oid lo = LEFT_CI_NEXT(lci);\
-		TPE lval = vl[lo-l->hseqbase];\
-		if (HAS_NIL && !NIL_MATCHES) {\
-			if ((IS_NIL(TPE, lval))) {continue;};\
-		}\
-\
-		while(task->start < task->stop ){\
-			BUN first = task->start;\
-			BUN last = first + MOSgetCnt(task->blk);\
-\
-			oid c = canditer_next(rci);\
-			while (!is_oid_nil(c) && c < first ) {\
-				c = canditer_next(rci);\
-			}\
-			switch(MOSgetTag(task->blk)){\
-			case MOSAIC_RLE:\
-				TRC_DEBUG(ALGO, "#MOSjoin_runlength\n");\
-				DO_OPERATION_IF_ALLOWED_VARIADIC(join_inner_loop, runlength, TPE, HAS_NIL, RIGHT_CI_NEXT);\
-				break;\
-			case MOSAIC_DICT256:\
-				TRC_DEBUG(ALGO, "#MOSjoin_dict256\n");\
-				DO_OPERATION_IF_ALLOWED_VARIADIC(join_inner_loop, dict256, TPE, HAS_NIL, RIGHT_CI_NEXT);\
-				break;\
-			case MOSAIC_DICT:\
-				TRC_DEBUG(ALGO, "#MOSjoin_dict\n");\
-				DO_OPERATION_IF_ALLOWED_VARIADIC(join_inner_loop, dict, TPE, HAS_NIL, RIGHT_CI_NEXT);\
-				break;\
-			case MOSAIC_FRAME:\
-				TRC_DEBUG(ALGO, "#MOSjoin_frame\n");\
-				DO_OPERATION_IF_ALLOWED_VARIADIC(join_inner_loop, frame, TPE, HAS_NIL, RIGHT_CI_NEXT);\
-				break;\
-			case MOSAIC_DELTA:\
-				TRC_DEBUG(ALGO, "#MOSjoin_delta\n");\
-				DO_OPERATION_IF_ALLOWED_VARIADIC(join_inner_loop, delta, TPE, HAS_NIL, RIGHT_CI_NEXT);\
-				break;\
-			case MOSAIC_PREFIX:\
-				TRC_DEBUG(ALGO, "#MOSjoin_prefix\n");\
-				DO_OPERATION_IF_ALLOWED_VARIADIC(join_inner_loop, prefix, TPE, HAS_NIL, RIGHT_CI_NEXT);\
-				break;\
-			case MOSAIC_LINEAR:\
-				TRC_DEBUG(ALGO, "#MOSjoin_linear\n");\
-				DO_OPERATION_IF_ALLOWED_VARIADIC(join_inner_loop, linear, TPE, HAS_NIL, RIGHT_CI_NEXT);\
-				break;\
-			case MOSAIC_RAW:\
-				TRC_DEBUG(ALGO, "#MOSjoin_raw\n");\
-				DO_OPERATION_IF_ALLOWED_VARIADIC(join_inner_loop, raw, TPE, HAS_NIL, RIGHT_CI_NEXT);\
-				break;\
-			}\
-	\
-			if (msg != MAL_SUCCEED) return msg;\
-\
-		if (canditer_peekprev(task->ci) >= last) {\
-			/*Restore iterator if it went pass the end*/\
-			(void) canditer_prev(task->ci);\
-		}\
-\
-			if (rci->next == rci->ncand) {\
-				/* We are at the end of the candidate list.
-				* So we can stop now.
-				*/\
-				break;\
-			}\
-		}\
-	}\
-}
-
-#define MOSjoin_generic_DEF(TPE) \
-static str MOSjoin_##TPE(MOStask* task, BAT* l, struct canditer* lci, bool nil_matches)\
-{\
-    BAT* r1p = task->lbat;\
-    BAT* r2p = task->rbat;\
-\
-	struct canditer* rci = task->ci;\
-	bool nil = !l->tnonil;\
-\
-	NESTED_LOOP_JOIN(TPE, OUTER_LOOP_UNCOMPRESSED);\
-\
-	return MAL_SUCCEED;\
 }
 
 #endif /* _MOSAIC_JOIN_ */

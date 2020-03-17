@@ -46,21 +46,9 @@ typedef struct {\
 } MOSBlockHeader_prefix_##TPE;
 
 ALGEBRA_INTERFACES_INTEGERS_ONLY(prefix);
+#define TYPE_IS_SUPPORTED_prefix(TPE) INTEGERS_ONLY(TPE)
 #define DO_OPERATION_ON_prefix(OPERATION, TPE, ...) DO_OPERATION_ON_INTEGERS_ONLY(OPERATION, prefix, TPE, __VA_ARGS__)
 
 #define MOScodevectorPrefix(task, TPE) ((BitVector) &((MOSBlockHeaderTpe(prefix, TPE)*) (task)->blk)->bitvector)
-
-#define join_inner_loop_prefix(TPE, HAS_NIL, RIGHT_CI_NEXT)\
-{\
-    MOSBlockHeaderTpe(prefix, TPE)* parameters = (MOSBlockHeaderTpe(prefix, TPE)*) task->blk;\
-	BitVector base = (BitVector) MOScodevectorPrefix(task, TPE);\
-	PrefixTpe(TPE) prefix = parameters->prefix;\
-	bte suffix_bits = parameters->suffix_bits;\
-    for (oid ro = canditer_peekprev(task->ci); !is_oid_nil(ro) && ro < last; ro = RIGHT_CI_NEXT(task->ci)) {\
-		BUN i = (BUN) (ro - first);\
-		TPE rval =  (TPE) (prefix | getBitVector(base,i,suffix_bits));\
-        IF_EQUAL_APPEND_RESULT(HAS_NIL, TPE);\
-	}\
-}
 
 #endif /* _MOSAIC_PREFIX_ */

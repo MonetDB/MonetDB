@@ -1049,6 +1049,30 @@ str MOSprojection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return msg;
 }
 
+#define TPE bte
+#include "mosaic_join_templates.h"
+#undef TPE
+#define TPE sht
+#include "mosaic_join_templates.h"
+#undef TPE
+#define TPE int
+#include "mosaic_join_templates.h"
+#undef TPE
+#define TPE lng
+#include "mosaic_join_templates.h"
+#undef TPE
+#define TPE flt
+#include "mosaic_join_templates.h"
+#undef TPE
+#define TPE dbl
+#include "mosaic_join_templates.h"
+#undef TPE
+#ifdef HAVE_HGE
+#define TPE hge
+#include "mosaic_join_templates.h"
+#undef TPE
+#endif
+
 MOSjoin_generic_COUI_DEF(bte)
 MOSjoin_generic_COUI_DEF(sht)
 MOSjoin_generic_COUI_DEF(int)
@@ -1057,16 +1081,6 @@ MOSjoin_generic_COUI_DEF(flt)
 MOSjoin_generic_COUI_DEF(dbl)
 #ifdef HAVE_HGE
 MOSjoin_generic_COUI_DEF(hge)
-#endif
-
-MOSjoin_generic_DEF(bte)
-MOSjoin_generic_DEF(sht)
-MOSjoin_generic_DEF(int)
-MOSjoin_generic_DEF(lng)
-MOSjoin_generic_DEF(flt)
-MOSjoin_generic_DEF(dbl)
-#ifdef HAVE_HGE
-MOSjoin_generic_DEF(hge)
 #endif
 
 /* A mosaic join operator that works when either the left or the right side is compressed.

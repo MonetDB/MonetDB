@@ -65,6 +65,11 @@ ALIGNMENT_HELPER_TPE(METHOD, TPE)\
 #define MOSprojection_FUNC(METHOD, TPE) CONCAT4(MOSprojection_, METHOD, _, TPE)
 #define MOSprojection_SIGNATURE(METHOD, TPE)  str MOSprojection_FUNC(METHOD, TPE) (MOStask* task)
 
+#define MOSjoin_generic_ID(TPE) CONCAT2(MOSjoin_, TPE)
+#define MOSjoin_generic_SIGNATURE static str MOSjoin_generic_ID(TPE) (MOStask* task, BAT* l, struct canditer* lci, bool nil_matches)
+#define MOSjoin_inner_loop_ID(METHOD, TPE, NIL, RIGHT_CI_NEXT) CONCAT2(CONCAT4(MOSjoin_inner_loop_, METHOD, _, TPE), CONCAT4(_, NIL, _, RIGHT_CI_NEXT)) 
+#define MOSjoin_inner_loop_SIGNATURE(METHOD, TPE, NIL, RIGHT_CI_NEXT) str MOSjoin_inner_loop_ID(METHOD, TPE, NIL, RIGHT_CI_NEXT) (MOStask* task, BAT* r1p, BAT* r2p, oid lo, TPE lval)
+
 #define ALGEBRA_INTERFACE(METHOD, TPE) \
 MOSadvance_SIGNATURE(METHOD, TPE);\
 MOSestimate_SIGNATURE(METHOD, TPE);\
@@ -76,6 +81,10 @@ MOSselect_SIGNATURE(METHOD, TPE);\
 MOSprojection_SIGNATURE(METHOD, TPE);\
 MOSjoin_COUI_SIGNATURE(METHOD, TPE);\
 MOSBlockHeader_DEF(METHOD, TPE);\
+MOSjoin_inner_loop_SIGNATURE(METHOD, TPE, _HAS_NIL		, canditer_next);\
+MOSjoin_inner_loop_SIGNATURE(METHOD, TPE, _HAS_NO_NIL	, canditer_next);\
+MOSjoin_inner_loop_SIGNATURE(METHOD, TPE, _HAS_NIL		, canditer_next_dense);\
+MOSjoin_inner_loop_SIGNATURE(METHOD, TPE, _HAS_NO_NIL	, canditer_next_dense);\
 ALIGNMENT_HELPER__DEF(METHOD, TPE);
 
 #ifdef HAVE_HGE
@@ -144,6 +153,20 @@ MOSlayoutDictionary_SIGNATURE(METHOD)
 /*DUMMY_PARAM is just an ugly workaround for the fact that a variadic macro must have at least one variadic parameter*/
 #define DO_OPERATION_IF_ALLOWED(OPERATION, METHOD, TPE)               DO_OPERATION_ON_##METHOD(OPERATION, TPE, 0 /*DUMMY_PARAM*/)
 #define DO_OPERATION_IF_ALLOWED_VARIADIC(OPERATION, METHOD, TPE, ...) DO_OPERATION_ON_##METHOD(OPERATION, TPE, __VA_ARGS__)
+
+#define INTEGERS_ONLY_bte	!0
+#define INTEGERS_ONLY_sht	!0
+#define INTEGERS_ONLY_int	!0
+#define INTEGERS_ONLY_lng	!0
+#define INTEGERS_ONLY_flt	 0
+#define INTEGERS_ONLY_dbl	 0
+#ifdef HAVE_HGE
+#define INTEGERS_ONLY_hge	!0
+#endif
+#define ALL_TYPES			!0
+#define INTEGERS_ONLY(TPE)				INTEGERS_ONLY_##TPE
+#define ALL_TYPES_SUPPORTED(TPE)		ALL_TYPES
+#define TYPE_IS_SUPPORTED(METHOD, TPE)	TYPE_IS_SUPPORTED_##METHOD(TPE)
 
 #define LAYOUT_BUFFER_SIZE 10000
 

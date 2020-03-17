@@ -31,21 +31,9 @@ typedef struct {\
 } MOSBlockHeader_frame_##TPE;
 
 ALGEBRA_INTERFACES_INTEGERS_ONLY(frame);
+#define TYPE_IS_SUPPORTED_frame(TPE) INTEGERS_ONLY(TPE)
 #define DO_OPERATION_ON_frame(OPERATION, TPE, ...) DO_OPERATION_ON_INTEGERS_ONLY(OPERATION, frame, TPE, __VA_ARGS__)
 
 #define MOScodevectorFrame(task, TPE) ((BitVector) &((MOSBlockHeaderTpe(frame, TPE)*) (task)->blk)->bitvector)
-
-#define join_inner_loop_frame(TPE, HAS_NIL, RIGHT_CI_NEXT)\
-{\
-    MOSBlockHeaderTpe(frame, TPE)* parameters = (MOSBlockHeaderTpe(frame, TPE)*) ((task))->blk;\
-	const TPE min =  parameters->min;\
-	const BitVector base = MOScodevectorFrame(task, TPE);\
-	const bte bits = parameters->bits;\
-    for (oid ro = canditer_peekprev(task->ci); !is_oid_nil(ro) && ro < last; ro = RIGHT_CI_NEXT(task->ci)) {\
-        BUN i = (BUN) (ro - first);\
-		TPE rval = ADD_DELTA(TPE, min, getBitVector(base, i, bits));\
-        IF_EQUAL_APPEND_RESULT(HAS_NIL, TPE);\
-	}\
-}
 
 #endif /* _MOSAIC_FRAME_ */
