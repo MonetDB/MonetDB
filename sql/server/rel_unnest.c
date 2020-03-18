@@ -2012,6 +2012,8 @@ rewrite_anyequal(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 				sql_rel *sq = lsq;
 				sql_subfunc *ea = sql_bind_func(sql->sa, sql->session->schema, is_anyequal(sf)?"anyequal":"allnotequal", exp_subtype(re), NULL, F_AGGR);
 
+				/* we introduced extra selects */
+				assert(is_project(rel->op) || is_select(rel->op));
 				rsq = rel_add_identity2(sql, rsq, &rid);
 				rid = exp_ref(sql->sa, rid);
 
