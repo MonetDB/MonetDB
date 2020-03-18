@@ -1,0 +1,39 @@
+# ChangeLog file for devel
+# This file is updated with Maddlog
+
+* Tue Feb 18 2020 Thodoris Zois <thodoris.zois@monetdbsolutions.com>
+- Added mserver5 option (--dbtrace=<path>) in order to be able to
+  specify the output directory of the produced traces.
+
+* Thu Feb  6 2020 Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com>
+- Add port and host as fields in the .monetdb file.
+
+* Thu Jan 30 2020 Sjoerd Mullender <sjoerd@acm.org>
+- Removed support for bam and sam files.
+
+* Fri Dec  6 2019 Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com>
+- Added mserver5 option (--set raw_strings=true|false) and monetdb
+  database property (raw_strings=yes|no) to control interpretation
+  of strings.
+
+* Fri Nov 29 2019 Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com>
+- Added support for raw strings using the syntax r'' or R''. This means
+  that C-like escapes will remain uninterpreted within those strings. For
+  instance SELECT r'\"' returns a string of length two. The user needs
+  to escape single quotes by doubling them: SELECT r''''.
+
+* Fri Oct 25 2019 Joeri van Ruth <joeri.van.ruth@monetdbsolutions.com>
+- Added SQL function sys.hot_snapshot() which can be used to write
+  a snapshot of the database to a tar file. For example,
+  sys.hot_snapshot('/tmp/snapshot.tar'). If compression support is
+  compiled in, snapshots can also be compressed ('/tmp/snapshot.tar.gz').
+  The tar file expands to a single directory with the same name as the
+  database that was snapshotted. This directory can be passed directly
+  as the --dbpath argument of mserver5 or it can be copied into an
+  existing dbfarm and started from monetdbd.
+
+* Sat Oct 12 2019 Martin Kersten <mk@cwi.nl>
+- The MAL profiler now assigns the SQL TRACE output to the client record
+  thereby avoiding the interaction with other queries, but loosing
+  insight of competing queries. The stethoscope should be used for that.
+
