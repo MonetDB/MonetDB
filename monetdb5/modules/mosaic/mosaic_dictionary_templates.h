@@ -541,22 +541,63 @@ MOSprojectionloop_SIGNATURE(METHOD, TPE, CAND_ITER)
 #endif
 
 #ifdef INNER_COMPRESSED_JOIN_LOOP
+
 MOSjoin_inner_loop_SIGNATURE(METHOD, TPE, NIL, RIGHT_CI_NEXT)
 {
 	bte bits		= GET_FINAL_BITS(task, METHOD);
 	TPE* dict		= GET_FINAL_DICT(task, METHOD, TPE);
+	BUN dict_size	= GET_FINAL_DICT_COUNT(task, METHOD);
+	BUN key;
+	bool key_found = false;
+
+	BUN kfirst	= 0;
+	BUN klast	= dict_size - 1;
+
+	BUN offset = 0;
+
+	#ifdef HAS_NIL
+	if (IS_NIL(TPE, dict[0]) && ((--klast) && (++dict) && (++offset)) && IS_NIL(TPE, lval)) {
+		key_found = true;
+		key = 0;
+	}
+	#endif
+	if (!IS_NIL(TPE, lval))
+	while (kfirst <= klast) {
+		BUN kmiddle	= (klast + kfirst) / 2;
+		if (dict[kmiddle] < lval) {
+			kfirst = kmiddle + 1;
+			kmiddle	= (klast + kfirst) / 2;
+		}
+		else if(dict[kmiddle] == lval) {
+			key_found = true;
+			key = kmiddle + offset;
+			break;
+		}
+		else {
+			klast = kmiddle -1;
+			kmiddle	= (klast + kfirst) / 2;
+		}
+	}
+
+	if (!key_found) {
+		return MAL_SUCCEED;
+	}
+
 	BitVector base	= MOScodevectorDict(task, METHOD, TPE);
     BUN first = task->start;
     BUN last = first + MOSgetCnt(task->blk);
     for (oid ro = canditer_peekprev(task->ci); !is_oid_nil(ro) && ro < last; ro = RIGHT_CI_NEXT(task->ci)) {
         BUN i = (BUN) (ro - first);
 		BitVectorChunk j= getBitVector(base,i,bits);
-        TPE rval = dict[j];
-		#ifdef HAS_NIL
-        IF_EQUAL_APPEND_RESULT(true, TPE);
-		#else
-		IF_EQUAL_APPEND_RESULT(false, TPE);
-		#endif
+		{
+			oid lval = (oid) key;
+			oid rval = (oid) j;
+			#ifdef HAS_NIL
+			IF_EQUAL_APPEND_RESULT(true, oid);
+			#else
+			IF_EQUAL_APPEND_RESULT(false, oid);
+			#endif
+		}
 	}
 	return MAL_SUCCEED;
 }
