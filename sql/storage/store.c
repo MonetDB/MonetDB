@@ -2645,7 +2645,11 @@ hot_snapshot_write_tar(stream *out, const char *prefix, char *plan)
 				goto end;
 		}
 	}
-	ret = GDK_SUCCEED;
+
+	// write a trailing block of zeros. If it succeeds, this function succeeds.
+	char a;
+	a = '\0';
+	ret = tar_write(out, &a, 1);
 
 end:
 	free(plan);
