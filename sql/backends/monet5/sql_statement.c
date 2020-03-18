@@ -1983,7 +1983,7 @@ stmt_join(backend *be, stmt *op1, stmt *op2, int anti, comp_type cmptype, int is
 }
 
 stmt *
-stmt_semijoin(backend *be, stmt *op1, stmt *op2, int is_semantics)
+stmt_semijoin(backend *be, stmt *op1, stmt *op2, stmt *lcand, stmt *rcand, int is_semantics)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
@@ -1995,8 +1995,14 @@ stmt_semijoin(backend *be, stmt *op1, stmt *op2, int is_semantics)
 	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 	q = pushArgument(mb, q, op1->nr);
 	q = pushArgument(mb, q, op2->nr);
-	q = pushNil(mb, q, TYPE_bat);
-	q = pushNil(mb, q, TYPE_bat);
+	if (lcand)
+		q = pushArgument(mb, q, lcand->nr);
+	else
+		q = pushNil(mb, q, TYPE_bat);
+	if (rcand)
+		q = pushArgument(mb, q, rcand->nr);
+	else
+		q = pushNil(mb, q, TYPE_bat);
 	q = pushBit(mb, q, is_semantics?TRUE:FALSE);
 	q = pushNil(mb, q, TYPE_lng);
 	if (q == NULL)

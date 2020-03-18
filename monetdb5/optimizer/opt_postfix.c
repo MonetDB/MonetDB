@@ -44,6 +44,14 @@ OPTpostfixImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			actions++;
 			continue;
 		}
+		if ( getModuleId(p) == algebraRef && getFunctionId(p) == semijoinRef && getVarEolife(mb, getArg(p, p->retc -1)) == i){
+			delArgument(p, p->retc -1);
+			/* semijoin with a single output is called intersect */
+			setFunctionId(p,intersectRef);
+			typeChecker(cntxt->usermodule, mb, p, i, TRUE);
+			actions++;
+			continue;
+		}
 /* POSTFIX ACTION FOR THE EXTENT CASE  */
 		if ( getModuleId(p) == groupRef && getFunctionId(p) == groupRef && getVarEolife(mb, getArg(p, p->retc -1)) == i){
 			delArgument(p, p->retc -1);
