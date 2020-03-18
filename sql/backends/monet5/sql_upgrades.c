@@ -2520,7 +2520,7 @@ sql_update_linear_hashing(Client c, mvc *sql, const char *prev_schema, bool *sys
 }
 
 static str
-sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixed)
+sql_update_jun2020(Client c, mvc *sql, const char *prev_schema, bool *systabfixed)
 {
 	size_t bufsize = 32768, pos = 0;
 	char *err = NULL, *buf = GDKmalloc(bufsize);
@@ -2925,7 +2925,7 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 }
 
 static str
-sql_update_default_bam(Client c, mvc *m, const char *prev_schema)
+sql_update_jun2020_bam(Client c, mvc *m, const char *prev_schema)
 {
 	size_t bufsize = 10240, pos = 0;
 	char *err = NULL, *buf;
@@ -3291,14 +3291,14 @@ SQLupgrades(Client c, mvc *m)
 
 	sql_find_subtype(&tp, "tinyint", 0, 0);
 	if (!sql_bind_func(m->sa, s, "stddev_samp", &tp, NULL, F_ANALYTIC)) {
-		if ((err = sql_update_default(c, m, prev_schema, &systabfixed)) != NULL) {
+		if ((err = sql_update_jun2020(c, m, prev_schema, &systabfixed)) != NULL) {
 			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 			freeException(err);
 			return -1;
 		}
 	}
 
-	if ((err = sql_update_default_bam(c, m, prev_schema)) != NULL) {
+	if ((err = sql_update_jun2020_bam(c, m, prev_schema)) != NULL) {
 		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		freeException(err);
 		return -1;
