@@ -175,6 +175,20 @@ SELECT i1.i, i2.i FROM integers i1 INNER JOIN integers i2 ON EXISTS (SELECT i1.i
 	-- NULL 3
 	-- NULL NULL
 
+SELECT i1.i, i2.i FROM integers i1, integers i2 WHERE (i1.i <= ANY (SELECT i1.i)) = (i1.i) IN (SELECT i1.i);
+	-- 1    1
+	-- 1    2
+	-- 1    3
+	-- 1    NULL
+	-- 2    1
+	-- 2    2
+	-- 2    3
+	-- 2    NULL
+	-- 3    1
+	-- 3    2
+	-- 3    3
+	-- 3    NULL
+
 UPDATE another_T SET col1 = MIN(col1); --error, aggregates not allowed in update set clause
 UPDATE another_T SET col2 = 1 WHERE col1 = SUM(col2); --error, aggregates not allowed in update set clause
 UPDATE another_T SET col3 = (SELECT MAX(col5)); --error, aggregates not allowed in update set clause
