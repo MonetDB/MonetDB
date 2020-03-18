@@ -20,7 +20,7 @@
 #undef CAND_ITER
 #undef PROJECTION_LOOP_DEFINITION
 
-#define PROJECTION_LOOP(CAND_ITER) MOSprojectionloop_ID(METHOD, TPE, CAND_ITER)(task, first, last)
+#define PROJECTION_LOOP(CAND_ITER) MOSprojectionLoop_ID(METHOD, TPE, CAND_ITER)(task, first, last)
 
 MOSprojection_SIGNATURE(METHOD, TPE)
 {

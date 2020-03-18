@@ -1,4 +1,4 @@
-#ifdef INNER_COMPRESSED_JOIN_LOOP
+#ifdef INNER_COMPRESSED_JOIN_LOOP_DEFINITION
 
 #if (defined DO_DEFINE_INNER_JOIN_1 && defined DO_DEFINE_INNER_JOIN_2)
 
@@ -33,20 +33,20 @@
 
 #endif // #if (defined DO_DEFINE_INNER_JOIN_1 && defined DO_DEFINE_INNER_JOIN_2)
 
-#elif defined DEFINE_OUTER_LOOP_UNCOMPRESSED
+#elif defined OUTER_LOOP_UNCOMPRESSED_DEFINITION
 
 #ifndef DO_JOIN_INNER_LOOP
 #define DO_JOIN_INNER_LOOP(METHOD, TPE, NIL, RIGHT_CI_NEXT)\
 {\
 	TRC_DEBUG(ALGO, "#MOSjoin_" STRINGIFY(METHOD) "\n");\
-	str msg =  MOSjoin_inner_loop_ID(METHOD, TPE, NIL, RIGHT_CI_NEXT)(task, r1p, r2p, lo, lval);\
+	str msg =  MOSjoinInnerLoop_ID(METHOD, TPE, NIL, RIGHT_CI_NEXT)(task, r1p, r2p, lo, lval);\
 	if (msg != MAL_SUCCEED) return msg;\
 	CONCAT4(MOSadvance_, METHOD, _, TPE)(task);\
 }
 #endif
 
-#define OUTER_LOOP_UNCOMPRESSED_ID(TPE, NIL, NIL_SEMANTICS, LEFT_CI_NEXT, RIGHT_CI_NEXT) CONCAT6(OUTER_LOOP_UNCOMPRESSED, NIL, NIL_SEMANTICS, CONCAT2(_, TPE), CONCAT2(_, LEFT_CI_NEXT), CONCAT2(_, RIGHT_CI_NEXT) )
-static inline str OUTER_LOOP_UNCOMPRESSED_ID(TPE, NIL, NIL_SEMANTICS, LEFT_CI_NEXT, RIGHT_CI_NEXT)
+#define MOSouterloopUncompressed_ID(TPE, NIL, NIL_SEMANTICS, LEFT_CI_NEXT, RIGHT_CI_NEXT) CONCAT6(OUTER_LOOP_UNCOMPRESSED, NIL, NIL_SEMANTICS, CONCAT2(_, TPE), CONCAT2(_, LEFT_CI_NEXT), CONCAT2(_, RIGHT_CI_NEXT) )
+static inline str MOSouterloopUncompressed_ID(TPE, NIL, NIL_SEMANTICS, LEFT_CI_NEXT, RIGHT_CI_NEXT)
 (MOStask* task, BAT* l, struct canditer* lci, struct canditer* rci)
 {
 	str msg = MAL_SUCCEED;
@@ -118,52 +118,46 @@ static inline str OUTER_LOOP_UNCOMPRESSED_ID(TPE, NIL, NIL_SEMANTICS, LEFT_CI_NE
 	return MAL_SUCCEED;
 }
 
-#elif defined DEFINE_JOIN_WITH_NIL_INFO
+#elif defined JOIN_WITH_NIL_INFO_DEFINITION
 
-#ifndef DO_OUTER_LOOP
-#define DO_OUTER_LOOP(TPE, NIL, NIL_SEMANTICS, LEFT_CI_NEXT, RIGHT_CI_NEXT) return OUTER_LOOP_UNCOMPRESSED_ID(TPE, NIL, NIL_SEMANTICS, LEFT_CI_NEXT, RIGHT_CI_NEXT)(task, l, lci, rci);
-#define JOIN_WITH_NIL_INFO_ID(TPE, NIL, NIL_SEMANTICS) CONCAT4(JOIN_WITH_NIL_INFO_, TPE, NIL, NIL_SEMANTICS)
-#endif
-static inline str JOIN_WITH_NIL_INFO_ID(TPE, NIL, NIL_SEMANTICS) (MOStask* task, BAT* l, struct canditer* lci)
+#define MOSjoinWithNilInfo_ID(TPE, NIL, NIL_SEMANTICS) CONCAT4(JOIN_WITH_NIL_INFO_, TPE, NIL, NIL_SEMANTICS)
+static inline str MOSjoinWithNilInfo_ID(TPE, NIL, NIL_SEMANTICS) (MOStask* task, BAT* l, struct canditer* lci)
 {
 	struct canditer* rci = task->ci;
 
 	if( (lci->tpe == cand_dense) && (rci->tpe == cand_dense)){
-        DO_OUTER_LOOP(TPE, NIL, NIL_SEMANTICS, canditer_next_dense, canditer_next_dense)
+		return MOSouterloopUncompressed_ID(TPE, NIL, NIL_SEMANTICS, canditer_next_dense, canditer_next_dense)(task, l, lci, rci);
 	}
 	if( (lci->tpe != cand_dense) && (rci->tpe == cand_dense)){
-        DO_OUTER_LOOP(TPE, NIL, NIL_SEMANTICS, canditer_next, canditer_next_dense)
+		return MOSouterloopUncompressed_ID(TPE, NIL, NIL_SEMANTICS, canditer_next, canditer_next_dense)(task, l, lci, rci);
 	}
 	if( (lci->tpe == cand_dense) && (rci->tpe != cand_dense)){
-        DO_OUTER_LOOP(TPE, NIL, NIL_SEMANTICS, canditer_next_dense, canditer_next)
+		return MOSouterloopUncompressed_ID(TPE, NIL, NIL_SEMANTICS, canditer_next_dense, canditer_next)(task, l, lci, rci);
 	}
 	if( (lci->tpe != cand_dense) && (rci->tpe != cand_dense)){
-        DO_OUTER_LOOP(TPE, NIL, NIL_SEMANTICS, canditer_next, canditer_next)
+		return MOSouterloopUncompressed_ID(TPE, NIL, NIL_SEMANTICS, canditer_next, canditer_next)(task, l, lci, rci);
 	}
 
 	assert(0);
 }
 
-#elif defined DEFINE_MOSjoin_generic
+#elif defined MOSjoin_DEFINITION
 
-#ifndef DO_JOIN_WITH_NIL_INFO
-#define DO_JOIN_WITH_NIL_INFO(TPE, NIL, NIL_SEMANTICS) return JOIN_WITH_NIL_INFO_ID(TPE, NIL, NIL_SEMANTICS) (task, l, lci);
-#endif
-static str MOSjoin_generic_ID(TPE) (MOStask* task, BAT* l, struct canditer* lci, bool nil_matches)
+static str MOSjoin_ID(TPE) (MOStask* task, BAT* l, struct canditer* lci, bool nil_matches)
 {
-	bool nil = !l->tnonil;
+	bool maybe_nil = !l->tnonil;
 
-	if( nil && nil_matches){
-        DO_JOIN_WITH_NIL_INFO(TPE, _MAYBE_HAS_NIL, _NILS_MATCH);
+	if( maybe_nil && nil_matches){
+		return MOSjoinWithNilInfo_ID(TPE, _maybeHasNil, _nilsMatch) (task, l, lci);
 	}
-	if( !nil && nil_matches){
-        DO_JOIN_WITH_NIL_INFO(TPE, _HAS_NO_NIL, _NILS_MATCH);
+	if( !maybe_nil && nil_matches){
+		return MOSjoinWithNilInfo_ID(TPE, _hasNoNil, _nilsMatch) (task, l, lci);
 	}
-	if( nil && !nil_matches){
-        DO_JOIN_WITH_NIL_INFO(TPE, _MAYBE_HAS_NIL, _NILS_DO_NOT_MATCH);
+	if( maybe_nil && !nil_matches){
+		return MOSjoinWithNilInfo_ID(TPE, _maybeHasNil, _nilsDoNotMatch) (task, l, lci);
 	}
-	if( !nil && !nil_matches){
-        DO_JOIN_WITH_NIL_INFO(TPE, _HAS_NO_NIL, _NILS_DO_NOT_MATCH);
+	if( !maybe_nil && !nil_matches){
+		return MOSjoinWithNilInfo_ID(TPE, _hasNoNil, _nilsDoNotMatch) (task, l, lci);
 	}
 
 	return MAL_SUCCEED;
@@ -171,24 +165,24 @@ static str MOSjoin_generic_ID(TPE) (MOStask* task, BAT* l, struct canditer* lci,
 
 // macro adiministration
 #elif ! defined NIL
-#define NIL _MAYBE_HAS_NIL
+#define NIL _maybeHasNil
 #include "mosaic_join_templates.h"
 #undef NIL
-#define NIL _HAS_NO_NIL
+#define NIL _hasNoNil
 #define HAS_NO_NIL
 #include "mosaic_join_templates.h"
 #undef HAS_NO_NIL
 #undef NIL
-#define DEFINE_MOSjoin_generic
+#define MOSjoin_DEFINITION
 #include "mosaic_join_templates.h"
-#undef DEFINE_MOSjoin_generic
+#undef MOSjoin_DEFINITION
 #elif ! defined NIL_SEMANTICS
-#define NIL_SEMANTICS _NILS_MATCH
+#define NIL_SEMANTICS _nilsMatch
 #define DO_DEFINE_INNER_JOIN_1
 #include "mosaic_join_templates.h"
 #undef DO_DEFINE_INNER_JOIN_1
 #undef NIL_SEMANTICS
-#define NIL_SEMANTICS _NILS_DO_NOT_MATCH
+#define NIL_SEMANTICS _nilsDoNotMatch
 #define NILS_DO_NOT_MATCH
 #include "mosaic_join_templates.h"
 #undef NILS_DO_NOT_MATCH
@@ -202,24 +196,24 @@ static str MOSjoin_generic_ID(TPE) (MOStask* task, BAT* l, struct canditer* lci,
 #define LEFT_CI_NEXT canditer_next_dense
 #include "mosaic_join_templates.h"
 #undef LEFT_CI_NEXT
-#define DEFINE_JOIN_WITH_NIL_INFO
+#define JOIN_WITH_NIL_INFO_DEFINITION
 #include "mosaic_join_templates.h"
-#undef DEFINE_JOIN_WITH_NIL_INFO
+#undef JOIN_WITH_NIL_INFO_DEFINITION
 #elif ! defined RIGHT_CI_NEXT
 #define RIGHT_CI_NEXT canditer_next
-#define INNER_COMPRESSED_JOIN_LOOP
+#define INNER_COMPRESSED_JOIN_LOOP_DEFINITION
 #include "mosaic_join_templates.h"
-#undef INNER_COMPRESSED_JOIN_LOOP
-#define DEFINE_OUTER_LOOP_UNCOMPRESSED
+#undef INNER_COMPRESSED_JOIN_LOOP_DEFINITION
+#define OUTER_LOOP_UNCOMPRESSED_DEFINITION
 #include "mosaic_join_templates.h"
-#undef DEFINE_OUTER_LOOP_UNCOMPRESSED
+#undef OUTER_LOOP_UNCOMPRESSED_DEFINITION
 #undef RIGHT_CI_NEXT
 #define RIGHT_CI_NEXT canditer_next_dense
-#define INNER_COMPRESSED_JOIN_LOOP
+#define INNER_COMPRESSED_JOIN_LOOP_DEFINITION
 #include "mosaic_join_templates.h"
-#undef INNER_COMPRESSED_JOIN_LOOP
-#define DEFINE_OUTER_LOOP_UNCOMPRESSED
+#undef INNER_COMPRESSED_JOIN_LOOP_DEFINITION
+#define OUTER_LOOP_UNCOMPRESSED_DEFINITION
 #include "mosaic_join_templates.h"
-#undef DEFINE_OUTER_LOOP_UNCOMPRESSED
+#undef OUTER_LOOP_UNCOMPRESSED_DEFINITION
 #undef RIGHT_CI_NEXT
 #endif

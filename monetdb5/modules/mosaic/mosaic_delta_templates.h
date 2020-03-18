@@ -179,7 +179,7 @@ MOSlayout_SIGNATURE(METHOD, TPE)
 #endif /*def COMPRESSION_DEFINITION*/
 
 #ifdef SCAN_LOOP_DEFINITION
-MOSscanloop_SIGNATURE(METHOD, TPE, CAND_ITER, TEST)
+MOSscanLoop_SIGNATURE(METHOD, TPE, CAND_ITER, TEST)
 {
     (void) has_nil;
     (void) anti;
@@ -213,7 +213,7 @@ MOSscanloop_SIGNATURE(METHOD, TPE, CAND_ITER, TEST)
 #endif
 
 #ifdef PROJECTION_LOOP_DEFINITION
-MOSprojectionloop_SIGNATURE(METHOD, TPE, CAND_ITER)
+MOSprojectionLoop_SIGNATURE(METHOD, TPE, CAND_ITER)
 {
     (void) first;
     (void) last;
@@ -241,9 +241,9 @@ MOSprojectionloop_SIGNATURE(METHOD, TPE, CAND_ITER)
 }
 #endif
 
-#ifdef INNER_COMPRESSED_JOIN_LOOP
+#ifdef INNER_COMPRESSED_JOIN_LOOP_DEFINITION
 
-MOSjoin_inner_loop_SIGNATURE(delta, TPE, NIL, RIGHT_CI_NEXT)
+MOSjoinInnerLoop_SIGNATURE(delta, TPE, NIL, RIGHT_CI_NEXT)
 {
 	MOSBlockHeaderTpe(delta, TPE)* parameters = (MOSBlockHeaderTpe(delta, TPE)*) task->blk;
 	BitVector base = MOScodevectorDelta(task, TPE);
@@ -268,4 +268,4 @@ MOSjoin_inner_loop_SIGNATURE(delta, TPE, NIL, RIGHT_CI_NEXT)
 	}
 	return MAL_SUCCEED;
 }
-#endif // #ifdef INNER_COMPRESSED_JOIN_LOOP
+#endif // #ifdef INNER_COMPRESSED_JOIN_LOOP_DEFINITION

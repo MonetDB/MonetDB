@@ -121,7 +121,7 @@ MOSselect_SIGNATURE(METHOD, TPE) {
 #undef TEST
 #undef SCAN_LOOP_DEFINITION
 
-#define SCAN_LOOP(TEST) MOSscanloop_ID(METHOD, TPE, CAND_ITER, TEST)(has_nil, anti, task, first, last, tl, th, li, hi)
+#define SCAN_LOOP(TEST) MOSscanLoop_ID(METHOD, TPE, CAND_ITER, TEST)(has_nil, anti, task, first, last, tl, th, li, hi)
 /* generic range select
  *
  * This macro is based on the combined behavior of ALGselect2 and BATselect.

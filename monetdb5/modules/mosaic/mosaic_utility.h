@@ -51,24 +51,25 @@ ALIGNMENT_HELPER_TPE(METHOD, TPE)\
 #define MOSdecompress_SIGNATURE(METHOD, TPE) void CONCAT4(MOSdecompress_, METHOD, _, TPE)(MOStask* task)
 #define MOSBlockHeader_DEF(METHOD, TPE) MosaicBlkHeader_DEF_##METHOD(TPE)
 
-#define MOSscanloop_ID(METHOD, TPE, CAND_ITER, TEST) CONCAT2(CONCAT4(scan_loop_, METHOD, _, TPE), CONCAT4(_, CAND_ITER, _, TEST))
-#define MOSscanloop_ARGS(TPE) (const bool has_nil, const bool anti, MOStask* task, BUN first, BUN last, TPE tl, TPE th, bool li, bool hi)
-#define MOSscanloop_SIGNATURE(METHOD, TPE, CAND_ITER, TEST) static inline void MOSscanloop_ID(METHOD, TPE, CAND_ITER, TEST) MOSscanloop_ARGS(TPE)
+#define MOSscanLoop_ID(METHOD, TPE, CAND_ITER, TEST) CONCAT2(CONCAT4(scan_loop_, METHOD, _, TPE), CONCAT4(_, CAND_ITER, _, TEST))
+#define MOSscanLoop_ARGS(TPE) (const bool has_nil, const bool anti, MOStask* task, BUN first, BUN last, TPE tl, TPE th, bool li, bool hi)
+#define MOSscanLoop_SIGNATURE(METHOD, TPE, CAND_ITER, TEST) static inline void MOSscanLoop_ID(METHOD, TPE, CAND_ITER, TEST) MOSscanLoop_ARGS(TPE)
 
 #define MOSselect_FUNC(METHOD, TPE) CONCAT4(MOSselect_, METHOD, _, TPE)
 #define MOSselect_SIGNATURE(METHOD, TPE) str MOSselect_FUNC(METHOD, TPE)(MOStask* task, TPE tl, TPE th, bool li, bool hi, bool anti)
 
-#define MOSprojectionloop_ID(METHOD, TPE, CAND_ITER) CONCAT6(projection_loop_, METHOD, _, TPE, _, CAND_ITER)
-#define MOSprojectionloop_ARGS (MOStask* task, BUN first, BUN last)
-#define MOSprojectionloop_SIGNATURE(METHOD, TPE, CAND_ITER) static inline void MOSprojectionloop_ID(METHOD, TPE, CAND_ITER) MOSprojectionloop_ARGS
+#define MOSprojectionLoop_ID(METHOD, TPE, CAND_ITER) CONCAT6(projection_loop_, METHOD, _, TPE, _, CAND_ITER)
+#define MOSprojectionLoop_ARGS (MOStask* task, BUN first, BUN last)
+#define MOSprojectionLoop_SIGNATURE(METHOD, TPE, CAND_ITER) static inline void MOSprojectionLoop_ID(METHOD, TPE, CAND_ITER) MOSprojectionLoop_ARGS
 
 #define MOSprojection_FUNC(METHOD, TPE) CONCAT4(MOSprojection_, METHOD, _, TPE)
 #define MOSprojection_SIGNATURE(METHOD, TPE)  str MOSprojection_FUNC(METHOD, TPE) (MOStask* task)
 
-#define MOSjoin_generic_ID(TPE) CONCAT2(MOSjoin_, TPE)
-#define MOSjoin_generic_SIGNATURE static str MOSjoin_generic_ID(TPE) (MOStask* task, BAT* l, struct canditer* lci, bool nil_matches)
-#define MOSjoin_inner_loop_ID(METHOD, TPE, NIL, RIGHT_CI_NEXT) CONCAT2(CONCAT4(MOSjoin_inner_loop_, METHOD, _, TPE), CONCAT4(_, NIL, _, RIGHT_CI_NEXT)) 
-#define MOSjoin_inner_loop_SIGNATURE(METHOD, TPE, NIL, RIGHT_CI_NEXT) str MOSjoin_inner_loop_ID(METHOD, TPE, NIL, RIGHT_CI_NEXT) (MOStask* task, BAT* r1p, BAT* r2p, oid lo, TPE lval)
+#define MOSjoinInnerLoop_ID(METHOD, TPE, NIL, RIGHT_CI_NEXT) CONCAT2(CONCAT4(MOSjoin_inner_loop_, METHOD, _, TPE), CONCAT4(_, NIL, _, RIGHT_CI_NEXT)) 
+#define MOSjoinInnerLoop_SIGNATURE(METHOD, TPE, NIL, RIGHT_CI_NEXT) static inline str MOSjoinInnerLoop_ID(METHOD, TPE, NIL, RIGHT_CI_NEXT) (MOStask* task, BAT* r1p, BAT* r2p, oid lo, TPE lval)
+
+#define MOSjoin_ID(TPE) CONCAT2(MOSjoin_, TPE)
+#define MOSjoin_SIGNATURE static str MOSjoin_ID(TPE) (MOStask* task, BAT* l, struct canditer* lci, bool nil_matches)
 
 #define ALGEBRA_INTERFACE(METHOD, TPE) \
 MOSadvance_SIGNATURE(METHOD, TPE);\
@@ -81,10 +82,6 @@ MOSselect_SIGNATURE(METHOD, TPE);\
 MOSprojection_SIGNATURE(METHOD, TPE);\
 MOSjoin_COUI_SIGNATURE(METHOD, TPE);\
 MOSBlockHeader_DEF(METHOD, TPE);\
-MOSjoin_inner_loop_SIGNATURE(METHOD, TPE, _MAYBE_HAS_NIL,	canditer_next);\
-MOSjoin_inner_loop_SIGNATURE(METHOD, TPE, _HAS_NO_NIL, 		canditer_next);\
-MOSjoin_inner_loop_SIGNATURE(METHOD, TPE, _MAYBE_HAS_NIL,	canditer_next_dense);\
-MOSjoin_inner_loop_SIGNATURE(METHOD, TPE, _HAS_NO_NIL,		canditer_next_dense);\
 ALIGNMENT_HELPER__DEF(METHOD, TPE);
 
 #ifdef HAVE_HGE
