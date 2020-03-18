@@ -14,6 +14,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/fcntl.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <time.h>
@@ -24,6 +25,12 @@
 #include "stream.h"
 #include "utils/database.h"
 
+struct dir_helper {
+	char *dir;
+	int fd;
+};
+
+static err prepare_directory(struct dir_helper *state, char *prefix_dir, char *dir);
 static bool parse_snapshot_name(const char *filename, char **dbname, time_t *timestamp);
 static err validate_location(const char *path);
 static err unpack_tarstream(stream *tarstream, char *destdir, int skipcomponents);
@@ -408,6 +415,106 @@ bailout:
 	return e;
 }
 
+/* Create the directory 'filename' is in, if necessary, and take care
+ * of fsync'ing it first when called with a different `dir`. Wrap up if
+ * filename is set to NULL.
+ */
+static err
+prepare_directory(struct dir_helper *state, char *prefix_dir, char *filename)
+{
+	char *e = NO_ERR;
+	size_t file_len;
+	size_t prefix_len;
+	int ret;
+	int fd;
+	char *dir_buf = NULL;
+	char *dir = NULL;
+
+	if (filename != NULL) {
+		dir_buf = strdup(filename);
+		dir = dirname(dir_buf);
+	}
+
+	// If we are already tracking a directory and this one is the same,
+	// there's no need to do anything.
+	if (dir != NULL && state->dir != NULL && strcmp(state->dir, dir) == 0) {
+		free(dir_buf);
+		return NULL;
+	}
+
+	// Before switching to the new directory, first fsync the old one, if any.
+	if (state->dir != NULL) {
+		if (fsync(state->fd) < 0) {
+			e = newErr("fsync %s: %s", state->dir, strerror(errno));
+			goto bailout;
+		}
+		if (close(state->fd) < 0) {
+			e = newErr("close %s: %s", state->dir, strerror(errno));
+			state->fd = 0;
+			goto bailout;
+		}
+		state->fd = -1;
+		free(state->dir);
+		state->dir = NULL;
+	}
+
+	if (dir == NULL) {
+		// no new directory to set up, we just had to sync the current one
+		return NO_ERR;
+	}
+
+	// Error checking on the new file.
+	file_len = strlen(filename);
+	prefix_len = strlen(prefix_dir);
+	if (prefix_len > file_len || strncmp(filename, prefix_dir, prefix_len) != 0) {
+		e = newErr("File '%s' is not inside prefix '%s'", filename, prefix_dir);
+		goto bailout;
+	}
+
+	// Create any missing directories beyond the prefix.
+	for (char *p = dir + prefix_len + 1; *p != '\0'; p++) {
+		if (*p == '/') {
+			*p = '\0';
+			ret = mkdir(dir, 0755);
+			if (ret < 0 && errno != EEXIST) {
+				e = newErr("Could not create directory %s: %s", dir, strerror(errno));
+				*p = '/';
+				goto bailout;
+			}
+			*p = '/';
+		}
+	}
+	// The final part of the directory is not covered by the loop above
+	ret = mkdir(dir, 0755);
+	if (ret < 0 && errno != EEXIST) {
+		e = newErr("Could not create directory %s: %s", dir, strerror(errno));
+		goto bailout;
+	}
+
+	// Open the directory so we can fsync it later
+	fd = open(dir, O_RDONLY);
+	if (fd < 0) {
+		e = newErr("couldn't open directory %s: %s", dir, strerror(errno));
+		goto bailout;
+	}
+
+	state->fd = fd;
+	state->dir = strdup(dir);
+
+	free(dir_buf);
+	return NULL;
+bailout:
+	free(dir_buf);
+	if (state->fd > 0) {
+		close(state->fd);
+		state->fd = -1;
+	}
+	free(state->dir);
+	state->dir = NULL;
+	return e;
+}
+
+
 #define TAR_BLOCK_SIZE (512)
 
 /* Read a full block from the stream.
@@ -488,6 +595,7 @@ unpack_tarstream(stream *tarstream, char *destdir, int skipfirstcomponent)
 	char *whole_filename = NULL;
 	char *destfile = NULL;
 	FILE *outfile = NULL;
+	struct dir_helper dirhelper = {NULL};
 
 	while (read_tar_block(tarstream, block, &e) >= 0) {
 		if (e != NO_ERR)
@@ -513,18 +621,8 @@ unpack_tarstream(stream *tarstream, char *destdir, int skipfirstcomponent)
 		destfile = realloc(destfile, strlen(destdir) + 1 + strlen(useful_part) + 1);
 		sprintf(destfile, "%s/%s", destdir, useful_part);
 
-		// Create any missing directories
-		for (char *p = destfile + strlen(destdir) + 1; *p != '\0'; p++) {
-			if (*p == '/') {
-				*p = '\0';
-				int ret = mkdir(destfile, 0755);
-				if (ret < 0 && errno != EEXIST) {
-					e = newErr("Could not create directory %s: %s", destfile, strerror(errno));
-					goto bailout;
-				}
-				*p = '/';
-			}
-		}
+		// Create any missing directories and take care of fsync'ing them
+		prepare_directory(&dirhelper, destdir, destfile);
 
 		// Copy the data
 		outfile = fopen(destfile, "w");
@@ -550,9 +648,15 @@ unpack_tarstream(stream *tarstream, char *destdir, int skipfirstcomponent)
 			}
 			size -= TAR_BLOCK_SIZE;
 		}
+
+		if (fsync(fileno(outfile)) < 0) {
+			e = newErr("fsync %s: %s", destfile, strerror(errno));
+			goto bailout;
+		}
 		fclose(outfile);
 		outfile = NULL;
 	}
+	prepare_directory(&dirhelper, NULL, NULL);
 
 bailout:
 	if (outfile != NULL)
