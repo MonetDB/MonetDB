@@ -45,7 +45,7 @@ wkbNULLcopy(void)
 #ifdef HAVE_PROJ
 
 /** convert degrees to radians */
-static void
+static inline void
 degrees2radians(double *x, double *y, double *z)
 {
 	*x *= M_PI / 180.0;
@@ -54,7 +54,7 @@ degrees2radians(double *x, double *y, double *z)
 }
 
 /** convert radians to degrees */
-static void
+static inline void
 radians2degrees(double *x, double *y, double *z)
 {
 	*x *= 180.0 / M_PI;
