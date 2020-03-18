@@ -6,6 +6,7 @@ SELECT NULL=(SELECT 1); -- NULL
 
 SELECT EXISTS(SELECT 1); -- true
 
+DROP TABLE IF EXISTS integers;
 CREATE TABLE integers(i INTEGER);
 INSERT INTO integers VALUES (1), (2), (3), (NULL);
 
