@@ -297,7 +297,7 @@ create_table_or_view(mvc *sql, char* sname, char *tname, sql_table *t, int temp)
 		char *cd = (temp == SQL_DECLARED_TABLE) ? "DECLARE" : "CREATE";
 		return sql_message(SQLSTATE(42S01) "%s TABLE: name '%s' already in use", cd, t->base.name);
 	} else if (temp != SQL_DECLARED_TABLE && (!mvc_schema_privs(sql, s) && !(isTempSchema(s) && temp == SQL_LOCAL_TEMP))) {
-		return sql_message(SQLSTATE(42000) "CREATE TABLE: insufficient privileges for user '%s' in schema '%s'", stack_get_string(sql, mvc_bind_schema(sql, "tmp"), "current_user"), s->base.name);
+		return sql_message(SQLSTATE(42000) "CREATE TABLE: insufficient privileges for user '%s' in schema '%s'", stack_get_string(sql, mvc_bind_schema(sql, "sys"), "current_user"), s->base.name);
 	} else if (temp == SQL_DECLARED_TABLE && !list_empty(t->keys.set)) {
 		return sql_message(SQLSTATE(42000) "DECLARE TABLE: '%s' cannot have constraints", t->base.name);
 	}
@@ -650,7 +650,7 @@ setVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	*res = 0;
 	if (mtype < 0 || mtype >= 255)
 		throw(SQL, "sql.setVariable", SQLSTATE(42100) "Variable type error");
-	if (!strcmp("tmp", s->base.name) && !strcmp("optimizer", varname)) {
+	if (!strcmp("sys", s->base.name) && !strcmp("optimizer", varname)) {
 		const char *newopt = *getArgReference_str(stk, pci, 3);
 		if (newopt) {
 			char buf[BUFSIZ];
@@ -796,7 +796,7 @@ mvc_next_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (seq_next_value(seq, res)) {
 		m->last_id = *res;
-		stack_set_number(m, mvc_bind_schema(m, "tmp"), "last_id", m->last_id);
+		stack_set_number(m, mvc_bind_schema(m, "sys"), "last_id", m->last_id);
 		return MAL_SUCCEED;
 	}
 	throw(SQL, "sql.next_value", SQLSTATE(42000) "Error in fetching next value for sequence %s.%s", sname, seqname);

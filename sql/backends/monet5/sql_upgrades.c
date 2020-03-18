@@ -3008,7 +3008,7 @@ SQLupgrades(Client c, mvc *m)
 {
 	sql_subtype tp;
 	sql_subfunc *f;
-	char *err, *prev_schema = GDKstrdup(stack_get_string(m, mvc_bind_schema(m, "tmp"), "current_schema"));
+	char *err, *prev_schema = GDKstrdup(stack_get_string(m, mvc_bind_schema(m, "sys"), "current_schema"));
 	sql_schema *s = mvc_bind_schema(m, "sys");
 	sql_table *t;
 	sql_column *col;

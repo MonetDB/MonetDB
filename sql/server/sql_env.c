@@ -47,7 +47,7 @@ sql_update_var(mvc *m, sql_schema *s, const char *name, char *sval, hge sgn)
 sql_update_var(mvc *m, sql_schema *s, const char *name, char *sval, lng sgn)
 #endif
 {
-	if (strcmp(s->base.name, "tmp") == 0) {
+	if (strcmp(s->base.name, "sys") == 0) {
 		if (strcmp(name, "debug") == 0) {
 #ifdef HAVE_HGE
 			assert((hge) GDK_int_min <= sgn && sgn <= (hge) GDK_int_max);

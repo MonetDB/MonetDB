@@ -1048,7 +1048,7 @@ rel_create_table(sql_query *query, sql_schema *ss, int temp, const char *sname, 
 			return rel_psm_block(sql->sa, new_exp_list(sql->sa));
 		return sql_error(sql, 02, SQLSTATE(42S01) "%s TABLE: name '%s' already in use", cd, name);
 	} else if (temp != SQL_DECLARED_TABLE && (!mvc_schema_privs(sql, s) && !(isTempSchema(s) && temp == SQL_LOCAL_TEMP))){
-		return sql_error(sql, 02, SQLSTATE(42000) "CREATE TABLE: insufficient privileges for user '%s' in schema '%s'", stack_get_string(sql, mvc_bind_schema(sql, "tmp"), "current_user"), s->base.name);
+		return sql_error(sql, 02, SQLSTATE(42000) "CREATE TABLE: insufficient privileges for user '%s' in schema '%s'", stack_get_string(sql, mvc_bind_schema(sql, "sys"), "current_user"), s->base.name);
 	} else if (table_elements_or_subquery->token == SQL_CREATE_TABLE) {
 		/* table element list */
 		dnode *n;
@@ -1056,7 +1056,7 @@ rel_create_table(sql_query *query, sql_schema *ss, int temp, const char *sname, 
 		sql_table *t;
 
 		if (tt == tt_remote) {
-			char *local_user = stack_get_string(sql, mvc_bind_schema(sql, "tmp"), "current_user");
+			char *local_user = stack_get_string(sql, mvc_bind_schema(sql, "sys"), "current_user");
 			char *local_table = sa_strconcat(sql->sa, sa_strconcat(sql->sa, sname, "."), name);
 			if (!local_table) {
 				return sql_error(sql, 02, SQLSTATE(HY013) "%s TABLE: " MAL_MALLOC_FAIL, action);
@@ -1147,7 +1147,7 @@ rel_create_view(sql_query *query, sql_schema *ss, dlist *qname, dlist *column_sp
 		return sql_error(sql, 02, SQLSTATE(3F000) "CREATE VIEW: no such schema '%s'", sname);
 
 	if (create && (!mvc_schema_privs(sql, s) && !(isTempSchema(s) && persistent == SQL_LOCAL_TEMP)))
-		return sql_error(sql, 02, SQLSTATE(42000) "%s VIEW: access denied for %s to schema '%s'", base, stack_get_string(sql, mvc_bind_schema(sql, "tmp"), "current_user"), s->base.name);
+		return sql_error(sql, 02, SQLSTATE(42000) "%s VIEW: access denied for %s to schema '%s'", base, stack_get_string(sql, mvc_bind_schema(sql, "sys"), "current_user"), s->base.name);
 
 	if (create && (t = mvc_bind_table(sql, s, name)) != NULL) {
 		if (replace) {
@@ -1276,7 +1276,7 @@ rel_drop_type(mvc *sql, dlist *qname, int drop_action)
 	if (schema_bind_type(sql, s, name) == NULL) {
 		return sql_error(sql, 02, SQLSTATE(42S01) "DROP TYPE: type '%s' does not exist", name);
 	} else if (!mvc_schema_privs(sql, s)) {
-		return sql_error(sql, 02, SQLSTATE(42000) "DROP TYPE: access denied for %s to schema '%s'", stack_get_string(sql, mvc_bind_schema(sql, "tmp"), "current_user"), s->base.name);
+		return sql_error(sql, 02, SQLSTATE(42000) "DROP TYPE: access denied for %s to schema '%s'", stack_get_string(sql, mvc_bind_schema(sql, "sys"), "current_user"), s->base.name);
 	}
 	return rel_schema2(sql->sa, ddl_drop_type, s->base.name, name, drop_action);
 }
@@ -1294,7 +1294,7 @@ rel_create_type(mvc *sql, dlist *qname, char *impl)
 	if (schema_bind_type(sql, s, name) != NULL) {
 		return sql_error(sql, 02, SQLSTATE(42S01) "CREATE TYPE: name '%s' already in use", name);
 	} else if (!mvc_schema_privs(sql, s)) {
-		return sql_error(sql, 02, SQLSTATE(42000) "CREATE TYPE: access denied for %s to schema '%s'", stack_get_string(sql, mvc_bind_schema(sql, "tmp"), "current_user"), s->base.name);
+		return sql_error(sql, 02, SQLSTATE(42000) "CREATE TYPE: access denied for %s to schema '%s'", stack_get_string(sql, mvc_bind_schema(sql, "sys"), "current_user"), s->base.name);
 	}
 	return rel_schema3(sql->sa, ddl_create_type, s->base.name, name, impl);
 }
@@ -1366,7 +1366,7 @@ rel_create_schema(sql_query *query, dlist *auth_name, dlist *schema_elements, in
 	if (auth && (auth_id = sql_find_auth(sql, auth)) < 0)
 		return sql_error(sql, 02, SQLSTATE(28000) "CREATE SCHEMA: no such authorization '%s'", auth);
 	if (sql->user_id != USER_MONETDB && sql->role_id != ROLE_SYSADMIN)
-		return sql_error(sql, 02, SQLSTATE(42000) "CREATE SCHEMA: insufficient privileges for user '%s'", stack_get_string(sql, mvc_bind_schema(sql, "tmp"), "current_user"));
+		return sql_error(sql, 02, SQLSTATE(42000) "CREATE SCHEMA: insufficient privileges for user '%s'", stack_get_string(sql, mvc_bind_schema(sql, "sys"), "current_user"));
 	if (!name) 
 		name = auth;
 	assert(name);
@@ -2452,7 +2452,7 @@ rel_rename_schema(mvc *sql, char *old_name, char *new_name, int if_exists)
 		return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SCHEMA: no such schema '%s'", old_name);
 	}
 	if (!mvc_schema_privs(sql, s))
-		return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SCHEMA: access denied for %s to schema '%s'", stack_get_string(sql, mvc_bind_schema(sql, "tmp"), "current_user"), old_name);
+		return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SCHEMA: access denied for %s to schema '%s'", stack_get_string(sql, mvc_bind_schema(sql, "sys"), "current_user"), old_name);
 	if (s->system)
 		return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SCHEMA: cannot rename a system schema");
 	if (!list_empty(s->tables.set) || !list_empty(s->types.set) || !list_empty(s->funcs.set) || !list_empty(s->seqs.set))
@@ -2488,7 +2488,7 @@ rel_rename_table(mvc *sql, char* schema_name, char *old_name, char *new_name, in
 		return sql_error(sql, 02, SQLSTATE(42S02) "ALTER TABLE: no such schema '%s'", schema_name);
 	}
 	if (!mvc_schema_privs(sql, s))
-		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: access denied for %s to schema '%s'", stack_get_string(sql, mvc_bind_schema(sql, "tmp"), "current_user"), schema_name);
+		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: access denied for %s to schema '%s'", stack_get_string(sql, mvc_bind_schema(sql, "sys"), "current_user"), schema_name);
 	if (!(t = mvc_bind_table(sql, s, old_name))) {
 		if (if_exists)
 			return rel_psm_block(sql->sa, new_exp_list(sql->sa));
@@ -2532,7 +2532,7 @@ rel_rename_column(mvc *sql, char* schema_name, char *table_name, char *old_name,
 		return sql_error(sql, 02, SQLSTATE(42S02) "ALTER TABLE: no such schema '%s'", schema_name);
 	}
 	if (!mvc_schema_privs(sql, s))
-		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: access denied for %s to schema '%s'", stack_get_string(sql, mvc_bind_schema(sql, "tmp"), "current_user"), schema_name);
+		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: access denied for %s to schema '%s'", stack_get_string(sql, mvc_bind_schema(sql, "sys"), "current_user"), schema_name);
 	if (!(t = mvc_bind_table(sql, s, table_name))) {
 		if (if_exists)
 			return rel_psm_block(sql->sa, new_exp_list(sql->sa));
@@ -2580,7 +2580,7 @@ rel_set_table_schema(sql_query *query, char* old_schema, char *tname, char *new_
 		return sql_error(sql, 02, SQLSTATE(42S02) "ALTER TABLE: no such schema '%s'", old_schema);
 	}
 	if (!mvc_schema_privs(sql, os))
-		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: access denied for %s to schema '%s'", stack_get_string(sql, mvc_bind_schema(sql, "tmp"), "current_user"), old_schema);
+		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: access denied for %s to schema '%s'", stack_get_string(sql, mvc_bind_schema(sql, "sys"), "current_user"), old_schema);
 	if (!(ot = mvc_bind_table(sql, os, tname))) {
 		if (if_exists)
 			return rel_psm_block(sql->sa, new_exp_list(sql->sa));
@@ -2599,7 +2599,7 @@ rel_set_table_schema(sql_query *query, char* old_schema, char *tname, char *new_
 	if (!(ns = mvc_bind_schema(sql, new_schema)))
 		return sql_error(sql, 02, SQLSTATE(42S02) "ALTER TABLE: no such schema '%s'", new_schema);
 	if (!mvc_schema_privs(sql, ns))
-		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: access denied for '%s' to schema '%s'", stack_get_string(sql, mvc_bind_schema(sql, "tmp"), "current_user"), new_schema);
+		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: access denied for '%s' to schema '%s'", stack_get_string(sql, mvc_bind_schema(sql, "sys"), "current_user"), new_schema);
 	if (isTempSchema(ns))
 		return sql_error(sql, 02, SQLSTATE(3F000) "ALTER TABLE: not possible to change table's schema to temporary");
 	if (mvc_bind_table(sql, ns, tname))
@@ -2661,7 +2661,7 @@ rel_schemas(sql_query *query, symbol *s)
 		bool pw_encrypted = credentials == NULL || credentials->h->next->data.i_val == SQL_PW_ENCRYPTED;
 		if (username == NULL) {
 			// No username specified, get the current username
-			username = stack_get_string(sql, mvc_bind_schema(sql, "tmp"), "current_user");
+			username = stack_get_string(sql, mvc_bind_schema(sql, "sys"), "current_user");
 		}
 
 		assert(l->h->type == type_int);
@@ -2879,7 +2879,7 @@ rel_schemas(sql_query *query, symbol *s)
 
 		// Check authorization
 		if (!mvc_schema_privs(sql, s)) {
-			return sql_error(sql, 02, SQLSTATE(42000) "COMMENT ON: insufficient privileges for user '%s' in schema '%s'", stack_get_string(sql, mvc_bind_schema(sql, "tmp"), "current_user"), s->base.name);
+			return sql_error(sql, 02, SQLSTATE(42000) "COMMENT ON: insufficient privileges for user '%s' in schema '%s'", stack_get_string(sql, mvc_bind_schema(sql, "sys"), "current_user"), s->base.name);
 		}
 
 		return rel_comment_on(sql->sa, id, remark);

@@ -901,7 +901,7 @@ set_statement:
 		{ dlist *l = L();
 		  sql_subtype t;
 		sql_find_subtype(&t, "char", UTF8_strlen($4), 0 );
-		append_list(l, append_string(append_string(L(), sa_strdup(SA, "tmp")), sa_strdup(SA, "current_user")));
+		append_list(l, append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "current_user")));
 		append_symbol(l,
 			_newAtomNode( _atom_string(&t, $4)) );
 		$$ = _symbol_create_list( SQL_SET, l); }
@@ -909,7 +909,7 @@ set_statement:
 		{ dlist *l = L();
 		  sql_subtype t;
 		sql_find_subtype(&t, "char", UTF8_strlen($3), 0 );
-		append_list(l, append_string(append_string(L(), sa_strdup(SA, "tmp")), sa_strdup(SA, "current_schema")));
+		append_list(l, append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "current_schema")));
 		append_symbol(l,
 			_newAtomNode( _atom_string(&t, $3)) );
 		$$ = _symbol_create_list( SQL_SET, l); }
@@ -917,7 +917,7 @@ set_statement:
 		{ dlist *l = L();
 		  sql_subtype t;
 		sql_find_subtype(&t, "char", UTF8_strlen($4), 0 );
-		append_list(l, append_string(append_string(L(), sa_strdup(SA, "tmp")), sa_strdup(SA, "current_user")));
+		append_list(l, append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "current_user")));
 		append_symbol(l,
 			_newAtomNode( _atom_string(&t, $4)) );
 		$$ = _symbol_create_list( SQL_SET, l); }
@@ -925,7 +925,7 @@ set_statement:
 		{ dlist *l = L();
 		  sql_subtype t;
 		sql_find_subtype(&t, "char", UTF8_strlen($3), 0);
-		append_list(l, append_string(append_string(L(), sa_strdup(SA, "tmp")), sa_strdup(SA, "current_role")));
+		append_list(l, append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "current_role")));
 		append_symbol(l,
 			_newAtomNode( _atom_string(&t, $3)) );
 		$$ = _symbol_create_list( SQL_SET, l); }
@@ -933,12 +933,12 @@ set_statement:
 		{ dlist *l = L();
 		  sql_subtype t;
 		sql_find_subtype(&t, "sec_interval", inttype2digits(ihour, isec), 0);
-		append_list(l, append_string(append_string(L(), sa_strdup(SA, "tmp")), sa_strdup(SA, "current_timezone")));
+		append_list(l, append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "current_timezone")));
 		append_symbol(l, _newAtomNode(atom_int(SA, &t, 0)));
 		$$ = _symbol_create_list( SQL_SET, l); }
   |	set TIME ZONE interval_expression
 		{ dlist *l = L();
-		append_list(l, append_string(append_string(L(), sa_strdup(SA, "tmp")), sa_strdup(SA, "current_timezone")));
+		append_list(l, append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "current_timezone")));
 		append_symbol(l, $4 );
 		$$ = _symbol_create_list( SQL_SET, l); }
  ;
@@ -4076,7 +4076,7 @@ value_exp:
  |  case_exp
  |  cast_exp
  |  column_ref                            { $$ = _symbol_create_list(SQL_COLUMN, $1); }
- |  CURRENT_ROLE   { $$ = _symbol_create_list(SQL_NAME, append_string(append_string(L(), sa_strdup(SA, "tmp")), sa_strdup(SA, "current_role"))); }
+ |  CURRENT_ROLE   { $$ = _symbol_create_list(SQL_NAME, append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "current_role"))); }
  |  datetime_funcs
  |  GROUPING '(' column_ref_commalist ')' { dlist *l = L();
 										    append_list(l, append_string(L(), "grouping"));
@@ -4090,7 +4090,7 @@ value_exp:
  |  null
  |  param
  |  string_funcs
- |  user            { $$ = _symbol_create_list(SQL_NAME, append_string(append_string(L(), sa_strdup(SA, "tmp")), sa_strdup(SA, "current_user"))); }
+ |  user            { $$ = _symbol_create_list(SQL_NAME, append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "current_user"))); }
  |  var_ref
  |  XML_value_function
  ;

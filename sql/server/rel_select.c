@@ -309,7 +309,7 @@ rel_with_query(sql_query *query, symbol *q )
 		char *name = qname_schema_object(dn->data.lval);
 		sql_rel *nrel;
 
-		if (frame_find_var(sql, NULL, name)) { /* may conflict with any */
+		if (frame_find_var(sql, NULL, name)) { /* may conflict with any, TODO change this, we should have rel_find_cte */
 			stack_pop_frame(sql);
 			return sql_error(sql, 01, SQLSTATE(42000) "Variable '%s' already declared", name);
 		}
@@ -953,7 +953,7 @@ table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral)
 			}
 			if (allowed)
 				return temp_table;
-			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: access denied for %s to table '%s.%s'", stack_get_string(sql, mvc_bind_schema(sql, "tmp"), "current_user"), s->base.name, tname);
+			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: access denied for %s to table '%s.%s'", stack_get_string(sql, mvc_bind_schema(sql, "sys"), "current_user"), s->base.name, tname);
 		} else if (isView(t)) {
 			/* instantiate base view */
 			node *n,*m;
@@ -984,7 +984,7 @@ table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral)
 				rel = rel_reduce_on_column_privileges(sql, rel, t);
 			if (allowed && rel)
 				return rel;
-			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: access denied for %s to table '%s.%s'", stack_get_string(sql, mvc_bind_schema(sql, "tmp"), "current_user"), s->base.name, tname);
+			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: access denied for %s to table '%s.%s'", stack_get_string(sql, mvc_bind_schema(sql, "sys"), "current_user"), s->base.name, tname);
 		}
 		if ((isMergeTable(t) || isReplicaTable(t)) && list_empty(t->members.set))
 			return sql_error(sql, 02, SQLSTATE(42000) "MERGE or REPLICA TABLE should have at least one table associated");
@@ -992,7 +992,7 @@ table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral)
 		if (!allowed) {
 			res = rel_reduce_on_column_privileges(sql, res, t);
 			if (!res)
-				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: access denied for %s to table '%s.%s'", stack_get_string(sql, mvc_bind_schema(sql, "tmp"), "current_user"), s->base.name, tname);
+				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: access denied for %s to table '%s.%s'", stack_get_string(sql, mvc_bind_schema(sql, "sys"), "current_user"), s->base.name, tname);
 		}
 		if (tableref->data.lval->h->next->data.sym && tableref->data.lval->h->next->data.sym->data.lval->h->next->data.lval) /* AS with column aliases */
 			res = rel_table_optname(sql, res, tableref->data.lval->h->next->data.sym);

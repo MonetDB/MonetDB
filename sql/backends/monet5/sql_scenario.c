@@ -220,7 +220,7 @@ global_variables(mvc *sql, const char *user, const char *schema)
 	ValRecord src;
 	const char *opt;
 	int failure = 0;
-	sql_schema *s = mvc_bind_schema(sql, "tmp");
+	sql_schema *s = mvc_bind_schema(sql, "sys");
 
 	sql_find_subtype(&ctype, "int", 0, 0);
 	SQLglobal("debug", s, &sql->debug);

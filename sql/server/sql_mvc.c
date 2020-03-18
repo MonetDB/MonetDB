@@ -927,16 +927,16 @@ mvc_reset(mvc *m, bstream *rs, stream *ws, int debug)
 	m->emode = m_normal;
 	m->emod = mod_none;
 	if (m->reply_size != 100)
-		stack_set_number(m, mvc_bind_schema(m, "tmp"), "reply_size", 100);
+		stack_set_number(m, mvc_bind_schema(m, "sys"), "reply_size", 100);
 	m->reply_size = 100;
 	if (m->timezone != 0)
-		stack_set_number(m, mvc_bind_schema(m, "tmp"), "current_timezone", 0);
+		stack_set_number(m, mvc_bind_schema(m, "sys"), "current_timezone", 0);
 	m->timezone = 0;
 	if (m->debug != debug)
-		stack_set_number(m, mvc_bind_schema(m, "tmp"), "debug", debug);
+		stack_set_number(m, mvc_bind_schema(m, "sys"), "debug", debug);
 	m->debug = debug;
 	if (m->cache != DEFAULT_CACHESIZE)
-		stack_set_number(m, mvc_bind_schema(m, "tmp"), "cache", DEFAULT_CACHESIZE);
+		stack_set_number(m, mvc_bind_schema(m, "sys"), "cache", DEFAULT_CACHESIZE);
 	m->cache = DEFAULT_CACHESIZE;
 	m->caching = m->cache;
 
