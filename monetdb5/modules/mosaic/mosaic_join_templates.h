@@ -11,12 +11,12 @@
 #if TYPE_IS_SUPPORTED(dict256, TPE)
 #define METHOD dict256
 #include "mosaic_dictionary_templates.h"
-#undef METHOD dict256
+#undef METHOD
 #endif
 #if TYPE_IS_SUPPORTED(dict, TPE)
 #define METHOD dict
 #include "mosaic_dictionary_templates.h"
-#undef METHOD dict
+#undef METHOD
 #endif
 #if TYPE_IS_SUPPORTED(delta, TPE)
 #include "mosaic_delta_templates.h"
