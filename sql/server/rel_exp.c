@@ -18,7 +18,7 @@
 #ifdef HAVE_HGE
 #include "mal.h"		/* for have_hge */
 #endif
-#include "mtime.h"
+#include "gdk_time.h"
 #include "blob.h"
 
 comp_type
@@ -2179,7 +2179,7 @@ exps_card( list *l )
 	if (l) for(n = l->h; n; n = n->next) {
 		sql_exp *e = n->data;
 
-		if (card < e->card)
+		if (e && card < e->card)
 			card = e->card;
 	}
 	return card;
@@ -2193,7 +2193,7 @@ exps_fix_card( list *exps, unsigned int card)
 	for (n = exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
 
-		if (e->card > card)
+		if (e && e->card > card)
 			e->card = card;
 	}
 }
@@ -2206,7 +2206,7 @@ exps_setcard( list *exps, unsigned int card)
 	for (n = exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
 
-		if (e->card != CARD_ATOM)
+		if (e && e->card != CARD_ATOM)
 			e->card = card;
 	}
 }

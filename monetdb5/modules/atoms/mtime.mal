@@ -35,46 +35,9 @@
 # Other print formats can be achieved by writing a customized procedure
 # that extracts year, month and day from a date as integers and formats those
 # in a string.
-atom date :int;
-command date(s:date):date
-address MTIMEdate_date
-comment "Noop routine.";
-
-command fromstr()
-address date_fromstr;
-command tostr()
-address date_tostr;
-
-
-pattern ==(v:date,w:date):bit
-address CMDvarEQ
-comment "Equality of two dates";
-pattern ==(v:date,w:date,nil_matches:bit):bit
-address CMDvarEQ
-comment "Equality of two dates";
-pattern !=(v:date,w:date):bit
-address CMDvarNE
-comment "Equality of two dates";
-pattern !=(v:date,w:date,nil_matches:bit):bit
-address CMDvarNE
-comment "Equality of two dates";
-pattern <(v:date,w:date):bit
-address CMDvarLT
-comment "Equality of two dates";
-pattern <=(v:date,w:date):bit
-address CMDvarLE
-comment "Equality of two dates";
-pattern >(v:date,w:date):bit
-address CMDvarGT
-comment "Equality of two dates";
-pattern >=(v:date,w:date):bit
-address CMDvarGE
-comment "Equality of two dates";
-pattern isnil(v:date):bit
-address CMDvarISNIL
-comment "Nil test for date value";
 
 module mtime;
+module calc;
 pattern calc.==(v:date,w:date):bit
 address CMDvarEQ
 comment "Equality of two dates";
@@ -117,42 +80,9 @@ comment "Equality of two dates";
 #       MSEC = integer between 0 and 999 (default = 0)
 #        SEP = '.' or ':'
 # @end verbatim
-atom daytime :lng;
-command fromstr()
-address daytime_tz_fromstr;
-command tostr()
-address daytime_tostr;
-
-
-pattern ==(v:daytime,w:daytime):bit
-address CMDvarEQ
-comment "Equality of two daytimes";
-pattern ==(v:daytime,w:daytime,nil_matches:bit):bit
-address CMDvarEQ
-comment "Equality of two daytimes";
-pattern !=(v:daytime,w:daytime):bit
-address CMDvarNE
-comment "Equality of two daytimes";
-pattern !=(v:daytime,w:daytime,nil_matches:bit):bit
-address CMDvarNE
-comment "Equality of two daytimes";
-pattern <(v:daytime,w:daytime):bit
-address CMDvarLT
-comment "Equality of two daytimes";
-pattern <=(v:daytime,w:daytime):bit
-address CMDvarLE
-comment "Equality of two daytimes";
-pattern >(v:daytime,w:daytime):bit
-address CMDvarGT
-comment "Equality of two daytimes";
-pattern >=(v:daytime,w:daytime):bit
-address CMDvarGE
-comment "Equality of two daytimes";
-pattern isnil(v:daytime):bit
-address CMDvarISNIL
-comment "Nil test for daytime value";
 
 module mtime;
+module calc;
 pattern calc.==(v:daytime,w:daytime):bit
 address CMDvarEQ
 comment "Equality of two daytimes";
@@ -196,12 +126,6 @@ comment "Equality of two daytimes";
 # 	ZONE = ('+'|'-') HOUR ':' MIN [ 'DST' ]
 # @end verbatim
 #
-atom timestamp :lng;
-command fromstr()
-address timestamp_fromstr;
-
-command tostr()
-address timestamp_tostr;
 
 # unsafe command unix_epoch():timestamp
 # address MTIMEunix_epoch
@@ -209,6 +133,8 @@ address timestamp_tostr;
 # unsafe command epoch():timestamp
 # address MTIMEcurrent_timestamp
 # comment "unix-time (epoch) support: seconds since the Unix epoch";
+
+module mtime;
 
 command epoch(t:timestamp):int
 address MTIMEseconds_since_epoch
@@ -221,36 +147,7 @@ command epoch(t:lng):timestamp
 address MTIMEtimestamp_frommsec
 comment "convert milli seconds since epoch into a timestamp";
 
-
-pattern ==(v:timestamp,w:timestamp):bit
-address CMDvarEQ
-comment "Equality of two timestamps";
-pattern ==(v:timestamp,w:timestamp,nil_matches:bit):bit
-address CMDvarEQ
-comment "Equality of two timestamps";
-pattern !=(v:timestamp,w:timestamp):bit
-address CMDvarNE
-comment "Equality of two timestamps";
-pattern !=(v:timestamp,w:timestamp,nil_matches:bit):bit
-address CMDvarNE
-comment "Equality of two timestamps";
-pattern <(v:timestamp,w:timestamp):bit
-address CMDvarLT
-comment "Equality of two timestamps";
-pattern <=(v:timestamp,w:timestamp):bit
-address CMDvarLE
-comment "Equality of two timestamps";
-pattern >(v:timestamp,w:timestamp):bit
-address CMDvarGT
-comment "Equality of two timestamps";
-pattern >=(v:timestamp,w:timestamp):bit
-address CMDvarGE
-comment "Equality of two timestamps";
-pattern isnil(v:timestamp):bit
-address CMDvarISNIL
-comment "Nil test for timestamp value";
-
-module mtime;
+module calc;
 pattern calc.==(v:timestamp,w:timestamp):bit
 address CMDvarEQ
 comment "Equality of two timestamps";
@@ -482,7 +379,7 @@ comment "returns the date after a number of
 # address MTIMEdate_adddays
 # comment "returns the date after a number
 # 	of days (possibly negative).";
-command diff(val1:date, val2:date) :int
+command diff(val1:date, val2:date) :lng
 address MTIMEdate_diff
 comment "returns the number of days
 	between 'val1' and 'val2'.";
@@ -624,20 +521,6 @@ address MTIMEsql_seconds;
 # unsafe command msec():lng
 # address MTIMEmsec
 # comment "get time of day in msec since 1-1-1970.";
-
-# @+ Prelude section
-# Upon intialization of the time module, we have to
-# initialize some variables, e.g. nils and the box with predefined
-# constants.
-# These actions are captured in a single function activated directly after
-# parsing of the signatures.
-command prelude() :void
-address MTIMEprelude;
-
-# command epilogue() :void
-# address MTIMEepilogue;
-
-mtime.prelude();
 
 module calc;
 

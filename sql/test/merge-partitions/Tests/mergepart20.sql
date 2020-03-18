@@ -52,3 +52,9 @@ DROP TABLE subtable2;
 DROP TABLE subtable3;
 DROP TABLE testme;
 DROP FUNCTION iamdummy;
+
+CREATE FUNCTION iamdummy(a int, b int, c int) RETURNS INT BEGIN RETURN a + b + c; END;
+CREATE MERGE TABLE testme(d int, e int, f int) PARTITION BY RANGE USING (iamdummy(d, e, f));
+SELECT column_id, expression FROM table_partitions;
+DROP TABLE testme;
+DROP FUNCTION iamdummy;

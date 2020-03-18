@@ -430,7 +430,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 					break; // we have successfully waited for the child to exit
 				if (retcode < 0) {
 					// error message
-					char *err = strerror(errno);
+					const char *err = GDKstrerror(errno, (char[128]){0}, 128);
 					sem_success = 0;
 					errno = 0;
 					msg = createException(

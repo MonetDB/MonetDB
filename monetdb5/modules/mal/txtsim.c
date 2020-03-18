@@ -107,6 +107,11 @@ levenshtein_impl(int *result, str *S, str *T, int *insdel_cost, int *replace_cos
 	int sz;			/* number of cells in matrix */
 	int diag2 = 0, cost2 = 0;
 
+	if (strNil(*S) || strNil(*T)) {
+		*result = int_nil;
+		return MAL_SUCCEED;
+	}
+
 	/* Step 1 */
 	n = (int) strlen(s);	/* 64bit: assume strings are less than 2 GB */
 	m = (int) strlen(t);
@@ -811,6 +816,11 @@ fstrcmp_impl(dbl *ret, str *S1, str *S2, dbl *minimum)
 	size_t fdiag_len;
 	static int *fdiag_buf;
 	static size_t fdiag_max;
+
+	if (strNil(*S1) || strNil(*S2) || is_dbl_nil(*minimum)) {
+		*ret = dbl_nil;
+		return MAL_SUCCEED;
+	}
 
 	/* set the info for each string.  */
 	string[0].data = string1;

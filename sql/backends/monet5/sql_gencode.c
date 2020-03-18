@@ -1177,7 +1177,10 @@ mal_function_find_implementation_address(mvc *m, sql_func *f)
 	m->type = Q_PARSE;
 	m->user_id = m->role_id = USER_MONETDB;
 
-	if (!(m->session = sql_session_create(0, 0))) {
+	store_lock();
+	m->session = sql_session_create(0, 0);
+	store_unlock();
+	if (!m->session) {
 		(void) sql_error(o, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
@@ -1220,8 +1223,11 @@ mal_function_find_implementation_address(mvc *m, sql_func *f)
 bailout:
 	if (m) {
 		bstream_destroy(m->scanner.rs);
-		if (m->session)
-			sql_session_destroy(m->session); 
+		if (m->session) {
+			store_lock();
+			sql_session_destroy(m->session);
+			store_unlock();
+		}
 		if (m->sa)
 			sa_destroy(m->sa);
 		_DELETE(m);

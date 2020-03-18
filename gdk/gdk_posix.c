@@ -1123,3 +1123,18 @@ ctime_r(const time_t *restrict t, char *restrict buf)
 	return tmp ? buf : NULL;
 }
 #endif
+
+#ifndef HAVE_STRERROR_R
+static MT_Lock strerrlock = MT_LOCK_INITIALIZER("strerrlock");
+
+int
+strerror_r(int errnum, char *buf, size_t buflen)
+{
+	char *msg;
+	MT_lock_set(&strerrlock);
+	msg = strerror(errnum);
+	strcpy_len(buf, msg, buflen);
+	MT_lock_unset(&strerrlock);
+	return 0;
+}
+#endif

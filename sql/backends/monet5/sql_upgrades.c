@@ -14,7 +14,7 @@
 #include "mal_backend.h"
 #include "sql_execute.h"
 #include "sql_mvc.h"
-#include "mtime.h"
+#include "gdk_time.h"
 #include <unistd.h>
 #include "sql_upgrades.h"
 #include "rel_rel.h"
@@ -2520,7 +2520,7 @@ sql_update_linear_hashing(Client c, mvc *sql, const char *prev_schema, bool *sys
 }
 
 static str
-sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixed)
+sql_update_jun2020(Client c, mvc *sql, const char *prev_schema, bool *systabfixed)
 {
 	size_t bufsize = 32768, pos = 0;
 	char *err = NULL, *buf = GDKmalloc(bufsize);
@@ -2535,6 +2535,51 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 
 	pos += snprintf(buf + pos, bufsize - pos,
 			"set schema \"sys\";\n");
+
+	/* 13_date.sql */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"drop function str_to_time(string, string);\n"
+			"drop function time_to_str(time, string);\n"
+			"drop function str_to_timestamp(string, string);\n"
+			"drop function timestamp_to_str(timestamp, string);\n"
+			"create function str_to_time(s string, format string) returns time with time zone\n"
+			" external name mtime.\"str_to_time\";\n"
+			"create function time_to_str(d time with time zone, format string) returns string\n"
+			" external name mtime.\"time_to_str\";\n"
+			"create function str_to_timestamp(s string, format string) returns timestamp with time zone\n"
+			" external name mtime.\"str_to_timestamp\";\n"
+			"create function timestamp_to_str(d timestamp with time zone, format string) returns string\n"
+			" external name mtime.\"timestamp_to_str\";\n"
+			"grant execute on function str_to_time to public;\n"
+			"grant execute on function time_to_str to public;\n"
+			"grant execute on function str_to_timestamp to public;\n"
+			"grant execute on function timestamp_to_str to public;\n"
+			"update sys.functions set system = true where name in"
+			" ('str_to_time', 'str_to_timestamp', 'time_to_str', 'timestamp_to_str')"
+			" and schema_id = (select id from sys.schemas where name = 'sys');\n");
+
+	/* 17_temporal.sql */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"drop function sys.epoch(bigint);\n"
+			"drop function sys.epoch(int);\n"
+			"drop function sys.epoch(timestamp);\n"
+			"drop function sys.epoch(timestamp with time zone);\n"
+			"create function sys.epoch(sec BIGINT) returns TIMESTAMP WITH TIME ZONE\n"
+			" external name mtime.epoch;\n"
+			"create function sys.epoch(sec INT) returns TIMESTAMP WITH TIME ZONE\n"
+			" external name mtime.epoch;\n"
+			"create function sys.epoch(ts TIMESTAMP WITH TIME ZONE) returns INT\n"
+			" external name mtime.epoch;\n"
+			"create function sys.date_trunc(txt string, t timestamp with time zone)\n"
+			"returns timestamp with time zone\n"
+			"external name sql.date_trunc;\n"
+			"grant execute on function sys.date_trunc(string, timestamp with time zone) to public;\n"
+			"grant execute on function sys.epoch (BIGINT) to public;\n"
+			"grant execute on function sys.epoch (INT) to public;\n"
+			"grant execute on function sys.epoch (TIMESTAMP WITH TIME ZONE) to public;\n"
+			"update sys.functions set system = true where name in"
+			" ('epoch', 'date_trunc')"
+			" and schema_id = (select id from sys.schemas where name = 'sys');\n");
 
 	/* 39_analytics.sql */
 	pos += snprintf(buf + pos, bufsize - pos,
@@ -2880,7 +2925,7 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 }
 
 static str
-sql_update_default_bam(Client c, mvc *m, const char *prev_schema)
+sql_update_jun2020_bam(Client c, mvc *m, const char *prev_schema)
 {
 	size_t bufsize = 10240, pos = 0;
 	char *err = NULL, *buf;
@@ -2968,28 +3013,27 @@ SQLupgrades(Client c, mvc *m)
 	sql_table *t;
 	sql_column *col;
 	bool systabfixed = false;
-	int res = 0;
 
 	if (!prev_schema) {
 		TRC_CRITICAL(SQL_PARSER, "Allocation failure while running SQL upgrades\n");
-		res = -1;
+		return -1;
 	}
 
 #ifdef HAVE_HGE
-	if (!res && have_hge) {
+	if (have_hge) {
 		sql_find_subtype(&tp, "hugeint", 0, 0);
 		if (!sql_bind_func(m->sa, s, "var_pop", &tp, NULL, F_AGGR)) {
 			if ((err = sql_update_hugeint(c, m, prev_schema, &systabfixed)) != NULL) {
-				TRC_ERROR(SQL_PARSER, "%s\n", err);
+				TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 				freeException(err);
-				res = -1;
+				return -1;
 			}
 		}
 	}
 #endif
 
 	f = sql_bind_func_(m->sa, s, "env", NULL, F_UNION);
-	if (!res && f && sql_privilege(m, ROLE_PUBLIC, f->func->base.id, PRIV_EXECUTE) != PRIV_EXECUTE) {
+	if (f && sql_privilege(m, ROLE_PUBLIC, f->func->base.id, PRIV_EXECUTE) != PRIV_EXECUTE) {
 		sql_table *privs = find_sql_table(s, "privileges");
 		int pub = ROLE_PUBLIC, p = PRIV_EXECUTE, zero = 0;
 
@@ -3000,101 +3044,102 @@ SQLupgrades(Client c, mvc *m)
 	 * exist any more at the "sys" schema (i.e., the first part of
 	 * the upgrade has been completed succesfully), then move on
 	 * to the second part */
-	if (!res && find_sql_type(s, "point") != NULL) {
+	if (find_sql_type(s, "point") != NULL) {
 		/* type sys.point exists: this is an old geom-enabled
 		 * database */
 		if ((err = sql_update_geom(c, m, 1, prev_schema)) != NULL) {
-			TRC_ERROR(SQL_PARSER, "%s\n", err);
+			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 			freeException(err);
-			res = -1;
+			return -1;
 		}
-	} else if (!res && geomsqlfix_get() != NULL) {
+	} else if (geomsqlfix_get() != NULL) {
 		/* the geom module is loaded... */
 		sql_find_subtype(&tp, "clob", 0, 0);
 		if (!sql_bind_func(m->sa, s, "st_wkttosql",
 				   &tp, NULL, F_FUNC)) {
 			/* ... but the database is not geom-enabled */
 			if ((err = sql_update_geom(c, m, 0, prev_schema)) != NULL) {
-				TRC_ERROR(SQL_PARSER, "%s\n", err);
+				TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 				freeException(err);
-				res = -1;
+				return -1;
 			}
 		}
 	}
 
-	if (!res && mvc_bind_table(m, s, "function_languages") == NULL) {
+	if (mvc_bind_table(m, s, "function_languages") == NULL) {
 		if ((err = sql_update_jul2017(c, prev_schema)) != NULL) {
-			TRC_ERROR(SQL_PARSER, "%s\n", err);
+			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 			freeException(err);
-			res = -1;
+			return -1;
 		}
 	}
 
-	if (!res && (err = sql_update_jul2017_sp2(c)) != NULL) {
-		TRC_ERROR(SQL_PARSER, "%s\n", err);
+	if ((err = sql_update_jul2017_sp2(c)) != NULL) {
+		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		freeException(err);
-		res = -1;
+		return -1;
 	}
 
-	if (!res && (err = sql_update_jul2017_sp3(c, m, prev_schema, &systabfixed)) != NULL) {
-		TRC_ERROR(SQL_PARSER, "%s\n", err);
+	if ((err = sql_update_jul2017_sp3(c, m, prev_schema, &systabfixed)) != NULL) {
+		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		freeException(err);
-		res = -1;
+		return -1;
 	}
 
-	if (!res && (t = mvc_bind_table(m, s, "geometry_columns")) != NULL &&
+	if ((t = mvc_bind_table(m, s, "geometry_columns")) != NULL &&
 	    (col = mvc_bind_column(m, t, "coord_dimension")) != NULL &&
 	    strcmp(col->type.type->sqlname, "int") != 0) {
 		if ((err = sql_update_mar2018_geom(c, t, prev_schema)) != NULL) {
-			TRC_ERROR(SQL_PARSER, "%s\n", err);
+			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 			freeException(err);
-			res = -1;
+			return -1;
 		}
 	}
 
-	if (!res && mvc_bind_schema(m, "wlc") == NULL &&
+	if (mvc_bind_schema(m, "wlc") == NULL &&
 	    !sql_bind_func(m->sa, s, "master", NULL, NULL, F_PROC)) {
 		if ((err = sql_update_mar2018(c, m, prev_schema, &systabfixed)) != NULL) {
-			TRC_ERROR(SQL_PARSER, "%s\n", err);
+			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 			freeException(err);
-			res = -1;
+			return -1;
 		}
 #ifdef HAVE_NETCDF
 		if (mvc_bind_table(m, s, "netcdf_files") != NULL &&
 		    (err = sql_update_mar2018_netcdf(c, prev_schema)) != NULL) {
-			TRC_ERROR(SQL_PARSER, "%s\n", err);
+			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 			freeException(err);
-			res = -1;
+			return -1;
 		}
 #endif
 	}
 
-	if (!res && sql_bind_func(m->sa, s, "dependencies_functions_os_triggers", NULL, NULL, F_UNION)) {
+	if (sql_bind_func(m->sa, s, "dependencies_functions_os_triggers", NULL, NULL, F_UNION)) {
 		if ((err = sql_update_mar2018_sp1(c, prev_schema)) != NULL) {
-			TRC_ERROR(SQL_PARSER, "%s\n", err);
+			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 			freeException(err);
-			res = -1;
+			return -1;
 		}
 	}
 
-	if (!res && mvc_bind_table(m, s, "ids") != NULL) {
+	if (mvc_bind_table(m, s, "ids") != NULL) {
 		/* determine if sys.ids needs to be updated (only the version of Mar2018) */
 		char * qry = "select id from sys._tables where name = 'ids' and query like '% tmp.keys k join sys._tables% tmp.idxs i join sys._tables% tmp.triggers g join sys._tables% ';";
 		res_table *output = NULL;
 		err = SQLstatementIntern(c, &qry, "update", true, false, &output);
 		if (err) {
-			TRC_ERROR(SQL_PARSER, "%s\n", err);
+			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 			freeException(err);
-			res = -1;
+			return -1;
 		} else {
 			BAT *b = BATdescriptor(output->cols[0].b);
 			if (b) {
 				if (BATcount(b) > 0) {
 					/* yes old view definition exists, it needs to be replaced */
 					if ((err = sql_replace_Mar2018_ids_view(c, m, prev_schema)) != NULL) {
-						TRC_ERROR(SQL_PARSER, "%s\n", err);
+						TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 						freeException(err);
-						res = -1;
+						BBPunfix(b->batCacheid);
+						return -1;
 					}
 				}
 				BBPunfix(b->batCacheid);
@@ -3106,30 +3151,30 @@ SQLupgrades(Client c, mvc *m)
 
 	/* temporarily use variable `err' to check existence of MAL
 	 * module gsl */
-	if (!res && (((err = getName("gsl")) == NULL || getModule(err) == NULL))) {
+	if ((((err = getName("gsl")) == NULL || getModule(err) == NULL))) {
 		/* no MAL module gsl, check for SQL function sys.chi2prob */
 		sql_find_subtype(&tp, "double", 0, 0);
 		if (sql_bind_func(m->sa, s, "chi2prob", &tp, &tp, F_FUNC)) {
 			/* sys.chi2prob exists, but there is no
 			 * implementation */
 			if ((err = sql_update_gsl(c, prev_schema)) != NULL) {
-				TRC_ERROR(SQL_PARSER, "%s\n", err);
+				TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 				freeException(err);
-				res = -1;
+				return -1;
 			}
 		}
 	}
 
 	sql_find_subtype(&tp, "clob", 0, 0);
-	if (!res && sql_bind_func(m->sa, s, "group_concat", &tp, NULL, F_AGGR) == NULL) {
+	if (sql_bind_func(m->sa, s, "group_concat", &tp, NULL, F_AGGR) == NULL) {
 		if ((err = sql_update_aug2018(c, m, prev_schema)) != NULL) {
-			TRC_ERROR(SQL_PARSER, "%s\n", err);
+			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 			freeException(err);
-			res = -1;
+			return -1;
 		}
 	}
 
-	if (!res && sql_bind_func(m->sa, s, "dependencies_schemas_on_users", NULL, NULL, F_UNION)
+	if (sql_bind_func(m->sa, s, "dependencies_schemas_on_users", NULL, NULL, F_UNION)
 	 && sql_bind_func(m->sa, s, "dependencies_owners_on_schemas", NULL, NULL, F_UNION)
 	 && sql_bind_func(m->sa, s, "dependencies_tables_on_views", NULL, NULL, F_UNION)
 	 && sql_bind_func(m->sa, s, "dependencies_tables_on_indexes", NULL, NULL, F_UNION)
@@ -3147,119 +3192,118 @@ SQLupgrades(Client c, mvc *m)
 	 && sql_bind_func(m->sa, s, "dependencies_functions_on_triggers", NULL, NULL, F_UNION)
 	 && sql_bind_func(m->sa, s, "dependencies_keys_on_foreignkeys", NULL, NULL, F_UNION)	) {
 		if ((err = sql_drop_functions_dependencies_Xs_on_Ys(c, prev_schema)) != NULL) {
-			TRC_ERROR(SQL_PARSER, "%s\n", err);
+			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 			freeException(err);
-			res = -1;
+			return -1;
 		}
 	}
 
-	if (!res && (err = sql_update_aug2018_sp2(c, prev_schema)) != NULL) {
-		TRC_ERROR(SQL_PARSER, "%s\n", err);
+	if ((err = sql_update_aug2018_sp2(c, prev_schema)) != NULL) {
+		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		freeException(err);
-		res = -1;
+		return -1;
 	}
 
-	if (!res && (t = mvc_bind_table(m, s, "systemfunctions")) != NULL &&
+	if ((t = mvc_bind_table(m, s, "systemfunctions")) != NULL &&
 	    t->type == tt_table) {
 		if (!systabfixed &&
 		    (err = sql_fix_system_tables(c, m, prev_schema)) != NULL) {
-			TRC_ERROR(SQL_PARSER, "%s\n", err);
+			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 			freeException(err);
-			res = -1;
+			return -1;
 		}
 		systabfixed = true;
 		if ((err = sql_update_apr2019(c, m, prev_schema)) != NULL) {
-			TRC_ERROR(SQL_PARSER, "%s\n", err);
+			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 			freeException(err);
-			res = -1;
+			return -1;
 		}
 	}
 
 	/* when function storagemodel() exists and views tablestorage
 	 * and schemastorage don't, then upgrade storagemodel to match
 	 * 75_storagemodel.sql */
-	if (!res && sql_bind_func(m->sa, s, "storagemodel", NULL, NULL, F_UNION)
+	if (sql_bind_func(m->sa, s, "storagemodel", NULL, NULL, F_UNION)
 	 && (t = mvc_bind_table(m, s, "tablestorage")) == NULL
 	 && (t = mvc_bind_table(m, s, "schemastorage")) == NULL ) {
 		if ((err = sql_update_storagemodel(c, m, prev_schema)) != NULL) {
-			TRC_ERROR(SQL_PARSER, "%s\n", err);
+			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 			freeException(err);
-			res = -1;
+			return -1;
 		}
 	}
 
-	if (!res && (err = sql_update_apr2019_sp1(c)) != NULL) {
-		TRC_ERROR(SQL_PARSER, "%s\n", err);
+	if ((err = sql_update_apr2019_sp1(c)) != NULL) {
+		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		freeException(err);
-		res = -1;
+		return -1;
 	}
 
-	if (!res && sql_bind_func(m->sa, s, "times", NULL, NULL, F_PROC)) {
-		if (!res && (err = sql_update_apr2019_sp2(c, m, prev_schema, &systabfixed)) != NULL) {
-			TRC_ERROR(SQL_PARSER, "%s\n", err);
+	if (sql_bind_func(m->sa, s, "times", NULL, NULL, F_PROC)) {
+		if ((err = sql_update_apr2019_sp2(c, m, prev_schema, &systabfixed)) != NULL) {
+			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 			freeException(err);
-			res = -1;
+			return -1;
 		}
 	}
 
 	sql_find_subtype(&tp, "string", 0, 0);
-	if (!res && !sql_bind_func3(m->sa, s, "deltas", &tp, &tp, &tp, F_UNION)) {
+	if (!sql_bind_func3(m->sa, s, "deltas", &tp, &tp, &tp, F_UNION)) {
 		if ((err = sql_update_nov2019_missing_dependencies(c, m)) != NULL) {
-			TRC_ERROR(SQL_PARSER, "%s\n", err);
+			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 			freeException(err);
-			res = -1;
+			return -1;
 		}
 		if (!systabfixed &&
 		    (err = sql_fix_system_tables(c, m, prev_schema)) != NULL) {
-			TRC_ERROR(SQL_PARSER, "%s\n", err);
+			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 			freeException(err);
-			res = -1;
+			return -1;
 		}
 		systabfixed = true;
 		if ((err = sql_update_nov2019(c, m, prev_schema, &systabfixed)) != NULL) {
-			TRC_ERROR(SQL_PARSER, "%s\n", err);
+			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 			freeException(err);
-			res = -1;
+			return -1;
 		}
 	}
 
 #ifdef HAVE_HGE
-	if (!res && have_hge) {
+	if (have_hge) {
 		sql_find_subtype(&tp, "hugeint", 0, 0);
 		if (!sql_bind_func(m->sa, s, "median_avg", &tp, NULL, F_AGGR)) {
 			if ((err = sql_update_nov2019_sp1_hugeint(c, m, prev_schema, &systabfixed)) != NULL) {
-				TRC_ERROR(SQL_PARSER, "%s\n", err);
+				TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 				freeException(err);
-				res = -1;
+				return -1;
 			}
 		}
 	}
 #endif
 
-	if (!res && !sql_bind_func(m->sa, s, "suspend_log_flushing", NULL, NULL, F_PROC)) {
+	if (!sql_bind_func(m->sa, s, "suspend_log_flushing", NULL, NULL, F_PROC)) {
 		if ((err = sql_update_linear_hashing(c, m, prev_schema, &systabfixed)) != NULL) {
-			TRC_ERROR(SQL_PARSER, "%s\n", err);
+			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 			freeException(err);
-			res = -1;
+			return -1;
 		}
 	}
 
 	sql_find_subtype(&tp, "tinyint", 0, 0);
 	if (!sql_bind_func(m->sa, s, "stddev_samp", &tp, NULL, F_ANALYTIC)) {
-		if ((err = sql_update_default(c, m, prev_schema, &systabfixed)) != NULL) {
-			TRC_ERROR(SQL_PARSER, "%s\n", err);
+		if ((err = sql_update_jun2020(c, m, prev_schema, &systabfixed)) != NULL) {
+			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 			freeException(err);
-			res = -1;
+			return -1;
 		}
 	}
 
-	if (!res &&
-	    (err = sql_update_default_bam(c, m, prev_schema)) != NULL) {
-		TRC_ERROR(SQL_PARSER, "%s\n", err);
+	if ((err = sql_update_jun2020_bam(c, m, prev_schema)) != NULL) {
+		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		freeException(err);
-		res = -1;
+		return -1;
 	}
 
 	GDKfree(prev_schema);
-	return res;
+	return 0;
 }

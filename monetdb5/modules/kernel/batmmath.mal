@@ -6,245 +6,461 @@
 
 module batmmath;
 
-	command asin(x:bat[:dbl]) :bat[:dbl]
-	address CMDscience_bat_dbl_asin;
-	command asin(x:bat[:dbl],s:bat[:oid]) :bat[:dbl]
-	address CMDscience_bat_dbl_asin_cand;
-	command asin(x:bat[:flt]) :bat[:flt]
-	address CMDscience_bat_flt_asin;
-	command asin(x:bat[:flt],s:bat[:oid]) :bat[:flt]
-	address CMDscience_bat_flt_asin_cand;
+pattern asin(x:bat[:dbl]) :bat[:dbl]
+address CMDscience_bat_asin;
+pattern asin(x:bat[:dbl],r:bat[:bit]) :bat[:dbl]
+address CMDscience_bat_asin;
+pattern asin(x:bat[:dbl],s:bat[:oid]) :bat[:dbl]
+address CMDscience_bat_asin;
+pattern asin(x:bat[:dbl],s:bat[:oid],r:bat[:bit]) :bat[:dbl]
+address CMDscience_bat_asin;
+pattern asin(x:bat[:flt]) :bat[:flt]
+address CMDscience_bat_asin;
+pattern asin(x:bat[:flt],r:bat[:bit]) :bat[:flt]
+address CMDscience_bat_asin;
+pattern asin(x:bat[:flt],s:bat[:oid]) :bat[:flt]
+address CMDscience_bat_asin;
+pattern asin(x:bat[:flt],s:bat[:oid],r:bat[:bit]) :bat[:flt]
+address CMDscience_bat_asin;
 
-	command acos(x:bat[:dbl]) :bat[:dbl]
-	address CMDscience_bat_dbl_acos;
-	command acos(x:bat[:dbl],s:bat[:oid]) :bat[:dbl]
-	address CMDscience_bat_dbl_acos_cand;
-	command acos(x:bat[:flt]) :bat[:flt]
-	address CMDscience_bat_flt_acos;
-	command acos(x:bat[:flt],s:bat[:oid]) :bat[:flt]
-	address CMDscience_bat_flt_acos_cand;
+pattern acos(x:bat[:dbl]) :bat[:dbl]
+address CMDscience_bat_acos;
+pattern acos(x:bat[:dbl],r:bat[:bit]) :bat[:dbl]
+address CMDscience_bat_acos;
+pattern acos(x:bat[:dbl],s:bat[:oid]) :bat[:dbl]
+address CMDscience_bat_acos;
+pattern acos(x:bat[:dbl],s:bat[:oid],r:bat[:bit]) :bat[:dbl]
+address CMDscience_bat_acos;
+pattern acos(x:bat[:flt]) :bat[:flt]
+address CMDscience_bat_acos;
+pattern acos(x:bat[:flt],r:bat[:bit]) :bat[:flt]
+address CMDscience_bat_acos;
+pattern acos(x:bat[:flt],s:bat[:oid]) :bat[:flt]
+address CMDscience_bat_acos;
+pattern acos(x:bat[:flt],s:bat[:oid],r:bat[:bit]) :bat[:flt]
+address CMDscience_bat_acos;
 
-	command atan(x:bat[:dbl]) :bat[:dbl]
-	address CMDscience_bat_dbl_atan;
-	command atan(x:bat[:dbl],s:bat[:oid]) :bat[:dbl]
-	address CMDscience_bat_dbl_atan_cand;
-	command atan(x:bat[:flt]) :bat[:flt]
-	address CMDscience_bat_flt_atan;
-	command atan(x:bat[:flt],s:bat[:oid]) :bat[:flt]
-	address CMDscience_bat_flt_atan_cand;
+pattern atan(x:bat[:dbl]) :bat[:dbl]
+address CMDscience_bat_atan;
+pattern atan(x:bat[:dbl],r:bat[:bit]) :bat[:dbl]
+address CMDscience_bat_atan;
+pattern atan(x:bat[:dbl],s:bat[:oid]) :bat[:dbl]
+address CMDscience_bat_atan;
+pattern atan(x:bat[:dbl],s:bat[:oid],r:bat[:bit]) :bat[:dbl]
+address CMDscience_bat_atan;
+pattern atan(x:bat[:flt]) :bat[:flt]
+address CMDscience_bat_atan;
+pattern atan(x:bat[:flt],r:bat[:bit]) :bat[:flt]
+address CMDscience_bat_atan;
+pattern atan(x:bat[:flt],s:bat[:oid]) :bat[:flt]
+address CMDscience_bat_atan;
+pattern atan(x:bat[:flt],s:bat[:oid],r:bat[:bit]) :bat[:flt]
+address CMDscience_bat_atan;
 
-	command cos(x:bat[:dbl]) :bat[:dbl]
-	address CMDscience_bat_dbl_cos;
-	command cos(x:bat[:dbl],s:bat[:oid]) :bat[:dbl]
-	address CMDscience_bat_dbl_cos_cand;
-	command cos(x:bat[:flt]) :bat[:flt]
-	address CMDscience_bat_flt_cos;
-	command cos(x:bat[:flt],s:bat[:oid]) :bat[:flt]
-	address CMDscience_bat_flt_cos_cand;
+pattern cos(x:bat[:dbl]) :bat[:dbl]
+address CMDscience_bat_cos;
+pattern cos(x:bat[:dbl],r:bat[:bit]) :bat[:dbl]
+address CMDscience_bat_cos;
+pattern cos(x:bat[:dbl],s:bat[:oid]) :bat[:dbl]
+address CMDscience_bat_cos;
+pattern cos(x:bat[:dbl],s:bat[:oid],r:bat[:bit]) :bat[:dbl]
+address CMDscience_bat_cos;
+pattern cos(x:bat[:flt]) :bat[:flt]
+address CMDscience_bat_cos;
+pattern cos(x:bat[:flt],r:bat[:bit]) :bat[:flt]
+address CMDscience_bat_cos;
+pattern cos(x:bat[:flt],s:bat[:oid]) :bat[:flt]
+address CMDscience_bat_cos;
+pattern cos(x:bat[:flt],s:bat[:oid],r:bat[:bit]) :bat[:flt]
+address CMDscience_bat_cos;
 
-	command sin(x:bat[:dbl]) :bat[:dbl]
-	address CMDscience_bat_dbl_sin;
-	command sin(x:bat[:dbl],s:bat[:oid]) :bat[:dbl]
-	address CMDscience_bat_dbl_sin_cand;
-	command sin(x:bat[:flt]) :bat[:flt]
-	address CMDscience_bat_flt_sin;
-	command sin(x:bat[:flt],s:bat[:oid]) :bat[:flt]
-	address CMDscience_bat_flt_sin_cand;
+pattern sin(x:bat[:dbl]) :bat[:dbl]
+address CMDscience_bat_sin;
+pattern sin(x:bat[:dbl],r:bat[:bit]) :bat[:dbl]
+address CMDscience_bat_sin;
+pattern sin(x:bat[:dbl],s:bat[:oid]) :bat[:dbl]
+address CMDscience_bat_sin;
+pattern sin(x:bat[:dbl],s:bat[:oid],r:bat[:bit]) :bat[:dbl]
+address CMDscience_bat_sin;
+pattern sin(x:bat[:flt]) :bat[:flt]
+address CMDscience_bat_sin;
+pattern sin(x:bat[:flt],r:bat[:bit]) :bat[:flt]
+address CMDscience_bat_sin;
+pattern sin(x:bat[:flt],s:bat[:oid]) :bat[:flt]
+address CMDscience_bat_sin;
+pattern sin(x:bat[:flt],s:bat[:oid],r:bat[:bit]) :bat[:flt]
+address CMDscience_bat_sin;
 
-	command tan(x:bat[:dbl]) :bat[:dbl]
-	address CMDscience_bat_dbl_tan;
-	command tan(x:bat[:dbl],s:bat[:oid]) :bat[:dbl]
-	address CMDscience_bat_dbl_tan_cand;
-	command tan(x:bat[:flt]) :bat[:flt]
-	address CMDscience_bat_flt_tan;
-	command tan(x:bat[:flt],s:bat[:oid]) :bat[:flt]
-	address CMDscience_bat_flt_tan_cand;
+pattern tan(x:bat[:dbl]) :bat[:dbl]
+address CMDscience_bat_tan;
+pattern tan(x:bat[:dbl],r:bat[:bit]) :bat[:dbl]
+address CMDscience_bat_tan;
+pattern tan(x:bat[:dbl],s:bat[:oid]) :bat[:dbl]
+address CMDscience_bat_tan;
+pattern tan(x:bat[:dbl],s:bat[:oid],r:bat[:bit]) :bat[:dbl]
+address CMDscience_bat_tan;
+pattern tan(x:bat[:flt]) :bat[:flt]
+address CMDscience_bat_tan;
+pattern tan(x:bat[:flt],r:bat[:bit]) :bat[:flt]
+address CMDscience_bat_tan;
+pattern tan(x:bat[:flt],s:bat[:oid]) :bat[:flt]
+address CMDscience_bat_tan;
+pattern tan(x:bat[:flt],s:bat[:oid],r:bat[:bit]) :bat[:flt]
+address CMDscience_bat_tan;
 
-	command cosh(x:bat[:dbl]) :bat[:dbl]
-	address CMDscience_bat_dbl_cosh;
-	command cosh(x:bat[:dbl],s:bat[:oid]) :bat[:dbl]
-	address CMDscience_bat_dbl_cosh_cand;
-	command cosh(x:bat[:flt]) :bat[:flt]
-	address CMDscience_bat_flt_cosh;
-	command cosh(x:bat[:flt],s:bat[:oid]) :bat[:flt]
-	address CMDscience_bat_flt_cosh_cand;
+pattern cosh(x:bat[:dbl]) :bat[:dbl]
+address CMDscience_bat_cosh;
+pattern cosh(x:bat[:dbl],r:bat[:bit]) :bat[:dbl]
+address CMDscience_bat_cosh;
+pattern cosh(x:bat[:dbl],s:bat[:oid]) :bat[:dbl]
+address CMDscience_bat_cosh;
+pattern cosh(x:bat[:dbl],s:bat[:oid],r:bat[:bit]) :bat[:dbl]
+address CMDscience_bat_cosh;
+pattern cosh(x:bat[:flt]) :bat[:flt]
+address CMDscience_bat_cosh;
+pattern cosh(x:bat[:flt],r:bat[:bit]) :bat[:flt]
+address CMDscience_bat_cosh;
+pattern cosh(x:bat[:flt],s:bat[:oid]) :bat[:flt]
+address CMDscience_bat_cosh;
+pattern cosh(x:bat[:flt],s:bat[:oid],r:bat[:bit]) :bat[:flt]
+address CMDscience_bat_cosh;
 
-	command sinh(x:bat[:dbl]) :bat[:dbl]
-	address CMDscience_bat_dbl_sinh;
-	command sinh(x:bat[:dbl],s:bat[:oid]) :bat[:dbl]
-	address CMDscience_bat_dbl_sinh_cand;
-	command sinh(x:bat[:flt]) :bat[:flt]
-	address CMDscience_bat_flt_sinh;
-	command sinh(x:bat[:flt],s:bat[:oid]) :bat[:flt]
-	address CMDscience_bat_flt_sinh_cand;
+pattern sinh(x:bat[:dbl]) :bat[:dbl]
+address CMDscience_bat_sinh;
+pattern sinh(x:bat[:dbl],r:bat[:bit]) :bat[:dbl]
+address CMDscience_bat_sinh;
+pattern sinh(x:bat[:dbl],s:bat[:oid]) :bat[:dbl]
+address CMDscience_bat_sinh;
+pattern sinh(x:bat[:dbl],s:bat[:oid],r:bat[:bit]) :bat[:dbl]
+address CMDscience_bat_sinh;
+pattern sinh(x:bat[:flt]) :bat[:flt]
+address CMDscience_bat_sinh;
+pattern sinh(x:bat[:flt],r:bat[:bit]) :bat[:flt]
+address CMDscience_bat_sinh;
+pattern sinh(x:bat[:flt],s:bat[:oid]) :bat[:flt]
+address CMDscience_bat_sinh;
+pattern sinh(x:bat[:flt],s:bat[:oid],r:bat[:bit]) :bat[:flt]
+address CMDscience_bat_sinh;
 
-	command tanh(x:bat[:dbl]) :bat[:dbl]
-	address CMDscience_bat_dbl_tanh;
-	command tanh(x:bat[:dbl],s:bat[:oid]) :bat[:dbl]
-	address CMDscience_bat_dbl_tanh_cand;
-	command tanh(x:bat[:flt]) :bat[:flt]
-	address CMDscience_bat_flt_tanh;
-	command tanh(x:bat[:flt],s:bat[:oid]) :bat[:flt]
-	address CMDscience_bat_flt_tanh_cand;
+pattern tanh(x:bat[:dbl]) :bat[:dbl]
+address CMDscience_bat_tanh;
+pattern tanh(x:bat[:dbl],r:bat[:bit]) :bat[:dbl]
+address CMDscience_bat_tanh;
+pattern tanh(x:bat[:dbl],s:bat[:oid]) :bat[:dbl]
+address CMDscience_bat_tanh;
+pattern tanh(x:bat[:dbl],s:bat[:oid],r:bat[:bit]) :bat[:dbl]
+address CMDscience_bat_tanh;
+pattern tanh(x:bat[:flt]) :bat[:flt]
+address CMDscience_bat_tanh;
+pattern tanh(x:bat[:flt],r:bat[:bit]) :bat[:flt]
+address CMDscience_bat_tanh;
+pattern tanh(x:bat[:flt],s:bat[:oid]) :bat[:flt]
+address CMDscience_bat_tanh;
+pattern tanh(x:bat[:flt],s:bat[:oid],r:bat[:bit]) :bat[:flt]
+address CMDscience_bat_tanh;
 
-	command radians(x:bat[:dbl]) :bat[:dbl]
-	address CMDscience_bat_dbl_radians;
-	command radians(x:bat[:dbl],s:bat[:oid]) :bat[:dbl]
-	address CMDscience_bat_dbl_radians_cand;
-	command radians(x:bat[:flt]) :bat[:flt]
-	address CMDscience_bat_flt_radians;
-	command radians(x:bat[:flt],s:bat[:oid]) :bat[:flt]
-	address CMDscience_bat_flt_radians_cand;
+pattern radians(x:bat[:dbl]) :bat[:dbl]
+address CMDscience_bat_radians;
+pattern radians(x:bat[:dbl],r:bat[:bit]) :bat[:dbl]
+address CMDscience_bat_radians;
+pattern radians(x:bat[:dbl],s:bat[:oid]) :bat[:dbl]
+address CMDscience_bat_radians;
+pattern radians(x:bat[:dbl],s:bat[:oid],r:bat[:bit]) :bat[:dbl]
+address CMDscience_bat_radians;
+pattern radians(x:bat[:flt]) :bat[:flt]
+address CMDscience_bat_radians;
+pattern radians(x:bat[:flt],r:bat[:bit]) :bat[:flt]
+address CMDscience_bat_radians;
+pattern radians(x:bat[:flt],s:bat[:oid]) :bat[:flt]
+address CMDscience_bat_radians;
+pattern radians(x:bat[:flt],s:bat[:oid],r:bat[:bit]) :bat[:flt]
+address CMDscience_bat_radians;
 
-	command degrees(x:bat[:dbl]) :bat[:dbl]
-	address CMDscience_bat_dbl_degrees;
-	command degrees(x:bat[:dbl],s:bat[:oid]) :bat[:dbl]
-	address CMDscience_bat_dbl_degrees_cand;
-	command degrees(x:bat[:flt]) :bat[:flt]
-	address CMDscience_bat_flt_degrees;
-	command degrees(x:bat[:flt],s:bat[:oid]) :bat[:flt]
-	address CMDscience_bat_flt_degrees_cand;
+pattern degrees(x:bat[:dbl]) :bat[:dbl]
+address CMDscience_bat_degrees;
+pattern degrees(x:bat[:dbl],r:bat[:bit]) :bat[:dbl]
+address CMDscience_bat_degrees;
+pattern degrees(x:bat[:dbl],s:bat[:oid]) :bat[:dbl]
+address CMDscience_bat_degrees;
+pattern degrees(x:bat[:dbl],s:bat[:oid],r:bat[:bit]) :bat[:dbl]
+address CMDscience_bat_degrees;
+pattern degrees(x:bat[:flt]) :bat[:flt]
+address CMDscience_bat_degrees;
+pattern degrees(x:bat[:flt],r:bat[:bit]) :bat[:flt]
+address CMDscience_bat_degrees;
+pattern degrees(x:bat[:flt],s:bat[:oid]) :bat[:flt]
+address CMDscience_bat_degrees;
+pattern degrees(x:bat[:flt],s:bat[:oid],r:bat[:bit]) :bat[:flt]
+address CMDscience_bat_degrees;
 
-	command exp(x:bat[:dbl]) :bat[:dbl]
-	address CMDscience_bat_dbl_exp;
-	command exp(x:bat[:dbl],s:bat[:oid]) :bat[:dbl]
-	address CMDscience_bat_dbl_exp_cand;
-	command exp(x:bat[:flt]) :bat[:flt]
-	address CMDscience_bat_flt_exp;
-	command exp(x:bat[:flt],s:bat[:oid]) :bat[:flt]
-	address CMDscience_bat_flt_exp_cand;
+pattern exp(x:bat[:dbl]) :bat[:dbl]
+address CMDscience_bat_exp;
+pattern exp(x:bat[:dbl],r:bat[:bit]) :bat[:dbl]
+address CMDscience_bat_exp;
+pattern exp(x:bat[:dbl],s:bat[:oid]) :bat[:dbl]
+address CMDscience_bat_exp;
+pattern exp(x:bat[:dbl],s:bat[:oid],r:bat[:bit]) :bat[:dbl]
+address CMDscience_bat_exp;
+pattern exp(x:bat[:flt]) :bat[:flt]
+address CMDscience_bat_exp;
+pattern exp(x:bat[:flt],r:bat[:bit]) :bat[:flt]
+address CMDscience_bat_exp;
+pattern exp(x:bat[:flt],s:bat[:oid]) :bat[:flt]
+address CMDscience_bat_exp;
+pattern exp(x:bat[:flt],s:bat[:oid],r:bat[:bit]) :bat[:flt]
+address CMDscience_bat_exp;
 
-	command log(x:bat[:dbl]) :bat[:dbl]
-	address CMDscience_bat_dbl_log;
-	command log(x:bat[:dbl],s:bat[:oid]) :bat[:dbl]
-	address CMDscience_bat_dbl_log_cand;
-	command log(x:bat[:flt]) :bat[:flt]
-	address CMDscience_bat_flt_log;
-	command log(x:bat[:flt],s:bat[:oid]) :bat[:flt]
-	address CMDscience_bat_flt_log_cand;
+pattern log(x:bat[:dbl]) :bat[:dbl]
+address CMDscience_bat_log;
+pattern log(x:bat[:dbl],r:bat[:bit]) :bat[:dbl]
+address CMDscience_bat_log;
+pattern log(x:bat[:dbl],s:bat[:oid]) :bat[:dbl]
+address CMDscience_bat_log;
+pattern log(x:bat[:dbl],s:bat[:oid],r:bat[:bit]) :bat[:dbl]
+address CMDscience_bat_log;
+pattern log(x:bat[:flt]) :bat[:flt]
+address CMDscience_bat_log;
+pattern log(x:bat[:flt],r:bat[:bit]) :bat[:flt]
+address CMDscience_bat_log;
+pattern log(x:bat[:flt],s:bat[:oid]) :bat[:flt]
+address CMDscience_bat_log;
+pattern log(x:bat[:flt],s:bat[:oid],r:bat[:bit]) :bat[:flt]
+address CMDscience_bat_log;
 
-	command log10(x:bat[:dbl]) :bat[:dbl]
-	address CMDscience_bat_dbl_log10;
-	command log10(x:bat[:dbl],s:bat[:oid]) :bat[:dbl]
-	address CMDscience_bat_dbl_log10_cand;
-	command log10(x:bat[:flt]) :bat[:flt]
-	address CMDscience_bat_flt_log10;
-	command log10(x:bat[:flt],s:bat[:oid]) :bat[:flt]
-	address CMDscience_bat_flt_log10_cand;
+pattern log10(x:bat[:dbl]) :bat[:dbl]
+address CMDscience_bat_log10;
+pattern log10(x:bat[:dbl],r:bat[:bit]) :bat[:dbl]
+address CMDscience_bat_log10;
+pattern log10(x:bat[:dbl],s:bat[:oid]) :bat[:dbl]
+address CMDscience_bat_log10;
+pattern log10(x:bat[:dbl],s:bat[:oid],r:bat[:bit]) :bat[:dbl]
+address CMDscience_bat_log10;
+pattern log10(x:bat[:flt]) :bat[:flt]
+address CMDscience_bat_log10;
+pattern log10(x:bat[:flt],r:bat[:bit]) :bat[:flt]
+address CMDscience_bat_log10;
+pattern log10(x:bat[:flt],s:bat[:oid]) :bat[:flt]
+address CMDscience_bat_log10;
+pattern log10(x:bat[:flt],s:bat[:oid],r:bat[:bit]) :bat[:flt]
+address CMDscience_bat_log10;
 
-	command log2(x:bat[:dbl]) :bat[:dbl]
-	address CMDscience_bat_dbl_log2;
-	command log2(x:bat[:dbl],s:bat[:oid]) :bat[:dbl]
-	address CMDscience_bat_dbl_log2_cand;
-	command log2(x:bat[:flt]) :bat[:flt]
-	address CMDscience_bat_flt_log2;
-	command log2(x:bat[:flt],s:bat[:oid]) :bat[:flt]
-	address CMDscience_bat_flt_log2_cand;
+pattern log2(x:bat[:dbl]) :bat[:dbl]
+address CMDscience_bat_log2;
+pattern log2(x:bat[:dbl],r:bat[:bit]) :bat[:dbl]
+address CMDscience_bat_log2;
+pattern log2(x:bat[:dbl],s:bat[:oid]) :bat[:dbl]
+address CMDscience_bat_log2;
+pattern log2(x:bat[:dbl],s:bat[:oid],r:bat[:bit]) :bat[:dbl]
+address CMDscience_bat_log2;
+pattern log2(x:bat[:flt]) :bat[:flt]
+address CMDscience_bat_log2;
+pattern log2(x:bat[:flt],r:bat[:bit]) :bat[:flt]
+address CMDscience_bat_log2;
+pattern log2(x:bat[:flt],s:bat[:oid]) :bat[:flt]
+address CMDscience_bat_log2;
+pattern log2(x:bat[:flt],s:bat[:oid],r:bat[:bit]) :bat[:flt]
+address CMDscience_bat_log2;
 
-	command log(x:bat[:dbl],y:dbl):bat[:dbl]
-	address CMDscience_bat_cst_log_dbl;
-	command log(x:bat[:dbl],y:dbl,s:bat[:oid]):bat[:dbl]
-	address CMDscience_bat_cst_log_dbl_cand;
-	command log(x:bat[:flt],y:flt):bat[:flt]
-	address CMDscience_bat_cst_log_flt;
-	command log(x:bat[:flt],y:flt,s:bat[:oid]):bat[:flt]
-	address CMDscience_bat_cst_log_flt_cand;
+pattern log(x:bat[:dbl],y:dbl):bat[:dbl]
+address CMDscience_bat_logbs;
+pattern log(x:bat[:dbl],y:dbl,r:bat[:bit]):bat[:dbl]
+address CMDscience_bat_logbs;
+pattern log(x:bat[:dbl],y:dbl,s:bat[:oid]):bat[:dbl]
+address CMDscience_bat_logbs;
+pattern log(x:bat[:dbl],y:dbl,s:bat[:oid],r:bat[:bit]):bat[:dbl]
+address CMDscience_bat_logbs;
+pattern log(x:bat[:flt],y:flt):bat[:flt]
+address CMDscience_bat_logbs;
+pattern log(x:bat[:flt],y:flt,r:bat[:bit]):bat[:flt]
+address CMDscience_bat_logbs;
+pattern log(x:bat[:flt],y:flt,s:bat[:oid]):bat[:flt]
+address CMDscience_bat_logbs;
+pattern log(x:bat[:flt],y:flt,s:bat[:oid],r:bat[:bit]):bat[:flt]
+address CMDscience_bat_logbs;
 
-	command log(x:dbl,y:bat[:dbl]):bat[:dbl]
-	address CMDscience_cst_bat_log_dbl;
-	command log(x:dbl,y:bat[:dbl],s:bat[:oid]):bat[:dbl]
-	address CMDscience_cst_bat_log_dbl_cand;
-	command log(x:flt,y:bat[:flt]):bat[:flt]
-	address CMDscience_cst_bat_log_flt;
-	command log(x:flt,y:bat[:flt],s:bat[:oid]):bat[:flt]
-	address CMDscience_cst_bat_log_flt_cand;
+pattern log(x:dbl,y:bat[:dbl]):bat[:dbl]
+address CMDscience_bat_logbs;
+pattern log(x:dbl,y:bat[:dbl],r:bat[:bit]):bat[:dbl]
+address CMDscience_bat_logbs;
+pattern log(x:dbl,y:bat[:dbl],s:bat[:oid]):bat[:dbl]
+address CMDscience_bat_logbs;
+pattern log(x:dbl,y:bat[:dbl],s:bat[:oid],r:bat[:bit]):bat[:dbl]
+address CMDscience_bat_logbs;
+pattern log(x:flt,y:bat[:flt]):bat[:flt]
+address CMDscience_bat_logbs;
+pattern log(x:flt,y:bat[:flt],r:bat[:bit]):bat[:flt]
+address CMDscience_bat_logbs;
+pattern log(x:flt,y:bat[:flt],s:bat[:oid]):bat[:flt]
+address CMDscience_bat_logbs;
+pattern log(x:flt,y:bat[:flt],s:bat[:oid],r:bat[:bit]):bat[:flt]
+address CMDscience_bat_logbs;
 
-	command sqrt(x:bat[:dbl]) :bat[:dbl]
-	address CMDscience_bat_dbl_sqrt;
-	command sqrt(x:bat[:dbl],s:bat[:oid]) :bat[:dbl]
-	address CMDscience_bat_dbl_sqrt_cand;
-	command sqrt(x:bat[:flt]) :bat[:flt]
-	address CMDscience_bat_flt_sqrt;
-	command sqrt(x:bat[:flt],s:bat[:oid]) :bat[:flt]
-	address CMDscience_bat_flt_sqrt_cand;
+pattern sqrt(x:bat[:dbl]) :bat[:dbl]
+address CMDscience_bat_sqrt;
+pattern sqrt(x:bat[:dbl],r:bat[:bit]) :bat[:dbl]
+address CMDscience_bat_sqrt;
+pattern sqrt(x:bat[:dbl],s:bat[:oid]) :bat[:dbl]
+address CMDscience_bat_sqrt;
+pattern sqrt(x:bat[:dbl],s:bat[:oid],r:bat[:bit]) :bat[:dbl]
+address CMDscience_bat_sqrt;
+pattern sqrt(x:bat[:flt]) :bat[:flt]
+address CMDscience_bat_sqrt;
+pattern sqrt(x:bat[:flt],r:bat[:bit]) :bat[:flt]
+address CMDscience_bat_sqrt;
+pattern sqrt(x:bat[:flt],s:bat[:oid]) :bat[:flt]
+address CMDscience_bat_sqrt;
+pattern sqrt(x:bat[:flt],s:bat[:oid],r:bat[:bit]) :bat[:flt]
+address CMDscience_bat_sqrt;
 
-	command cbrt(x:bat[:dbl]) :bat[:dbl]
-	address CMDscience_bat_dbl_cbrt;
-	command cbrt(x:bat[:dbl],s:bat[:oid]) :bat[:dbl]
-	address CMDscience_bat_dbl_cbrt_cand;
-	command cbrt(x:bat[:flt]) :bat[:flt]
-	address CMDscience_bat_flt_cbrt;
-	command cbrt(x:bat[:flt],s:bat[:oid]) :bat[:flt]
-	address CMDscience_bat_flt_cbrt_cand;
+pattern cbrt(x:bat[:dbl]) :bat[:dbl]
+address CMDscience_bat_cbrt;
+pattern cbrt(x:bat[:dbl],r:bat[:bit]) :bat[:dbl]
+address CMDscience_bat_cbrt;
+pattern cbrt(x:bat[:dbl],s:bat[:oid]) :bat[:dbl]
+address CMDscience_bat_cbrt;
+pattern cbrt(x:bat[:dbl],s:bat[:oid],r:bat[:bit]) :bat[:dbl]
+address CMDscience_bat_cbrt;
+pattern cbrt(x:bat[:flt]) :bat[:flt]
+address CMDscience_bat_cbrt;
+pattern cbrt(x:bat[:flt],r:bat[:bit]) :bat[:flt]
+address CMDscience_bat_cbrt;
+pattern cbrt(x:bat[:flt],s:bat[:oid]) :bat[:flt]
+address CMDscience_bat_cbrt;
+pattern cbrt(x:bat[:flt],s:bat[:oid],r:bat[:bit]) :bat[:flt]
+address CMDscience_bat_cbrt;
 
-	command ceil(x:bat[:dbl]) :bat[:dbl]
-	address CMDscience_bat_dbl_ceil;
-	command ceil(x:bat[:dbl],s:bat[:oid]) :bat[:dbl]
-	address CMDscience_bat_dbl_ceil_cand;
-	command ceil(x:bat[:flt]) :bat[:flt]
-	address CMDscience_bat_flt_ceil;
-	command ceil(x:bat[:flt],s:bat[:oid]) :bat[:flt]
-	address CMDscience_bat_flt_ceil_cand;
+pattern ceil(x:bat[:dbl]) :bat[:dbl]
+address CMDscience_bat_ceil;
+pattern ceil(x:bat[:dbl],r:bat[:bit]) :bat[:dbl]
+address CMDscience_bat_ceil;
+pattern ceil(x:bat[:dbl],s:bat[:oid]) :bat[:dbl]
+address CMDscience_bat_ceil;
+pattern ceil(x:bat[:dbl],s:bat[:oid],r:bat[:bit]) :bat[:dbl]
+address CMDscience_bat_ceil;
+pattern ceil(x:bat[:flt]) :bat[:flt]
+address CMDscience_bat_ceil;
+pattern ceil(x:bat[:flt],r:bat[:bit]) :bat[:flt]
+address CMDscience_bat_ceil;
+pattern ceil(x:bat[:flt],s:bat[:oid]) :bat[:flt]
+address CMDscience_bat_ceil;
+pattern ceil(x:bat[:flt],s:bat[:oid],r:bat[:bit]) :bat[:flt]
+address CMDscience_bat_ceil;
 
-	command fabs(x:bat[:dbl]) :bat[:dbl]
-	address CMDscience_bat_dbl_fabs;
-	command fabs(x:bat[:dbl],s:bat[:oid]) :bat[:dbl]
-	address CMDscience_bat_dbl_fabs_cand;
-	command fabs(x:bat[:flt]) :bat[:flt]
-	address CMDscience_bat_flt_fabs;
-	command fabs(x:bat[:flt],s:bat[:oid]) :bat[:flt]
-	address CMDscience_bat_flt_fabs_cand;
+pattern fabs(x:bat[:dbl]) :bat[:dbl]
+address CMDscience_bat_fabs;
+pattern fabs(x:bat[:dbl],r:bat[:bit]) :bat[:dbl]
+address CMDscience_bat_fabs;
+pattern fabs(x:bat[:dbl],s:bat[:oid]) :bat[:dbl]
+address CMDscience_bat_fabs;
+pattern fabs(x:bat[:dbl],s:bat[:oid],r:bat[:bit]) :bat[:dbl]
+address CMDscience_bat_fabs;
+pattern fabs(x:bat[:flt]) :bat[:flt]
+address CMDscience_bat_fabs;
+pattern fabs(x:bat[:flt],r:bat[:bit]) :bat[:flt]
+address CMDscience_bat_fabs;
+pattern fabs(x:bat[:flt],s:bat[:oid]) :bat[:flt]
+address CMDscience_bat_fabs;
+pattern fabs(x:bat[:flt],s:bat[:oid],r:bat[:bit]) :bat[:flt]
+address CMDscience_bat_fabs;
 
-	command floor(x:bat[:dbl]) :bat[:dbl]
-	address CMDscience_bat_dbl_floor;
-	command floor(x:bat[:dbl],s:bat[:oid]) :bat[:dbl]
-	address CMDscience_bat_dbl_floor_cand;
-	command floor(x:bat[:flt]) :bat[:flt]
-	address CMDscience_bat_flt_floor;
-	command floor(x:bat[:flt],s:bat[:oid]) :bat[:flt]
-	address CMDscience_bat_flt_floor_cand;
+pattern floor(x:bat[:dbl]) :bat[:dbl]
+address CMDscience_bat_floor;
+pattern floor(x:bat[:dbl],r:bat[:bit]) :bat[:dbl]
+address CMDscience_bat_floor;
+pattern floor(x:bat[:dbl],s:bat[:oid]) :bat[:dbl]
+address CMDscience_bat_floor;
+pattern floor(x:bat[:dbl],s:bat[:oid],r:bat[:bit]) :bat[:dbl]
+address CMDscience_bat_floor;
+pattern floor(x:bat[:flt]) :bat[:flt]
+address CMDscience_bat_floor;
+pattern floor(x:bat[:flt],r:bat[:bit]) :bat[:flt]
+address CMDscience_bat_floor;
+pattern floor(x:bat[:flt],s:bat[:oid]) :bat[:flt]
+address CMDscience_bat_floor;
+pattern floor(x:bat[:flt],s:bat[:oid],r:bat[:bit]) :bat[:flt]
+address CMDscience_bat_floor;
 
-	pattern fmod(x:bat[:dbl],y:dbl):bat[:dbl]
-	address CMDbatMODsignal;
-	pattern fmod(x:bat[:dbl],y:dbl,s:bat[:oid]):bat[:dbl]
-	address CMDbatMODsignal;
-	pattern fmod(x:bat[:flt],y:flt):bat[:flt]
-	address CMDbatMODsignal;
-	pattern fmod(x:bat[:flt],y:flt,s:bat[:oid]):bat[:flt]
-	address CMDbatMODsignal;
+pattern fmod(x:bat[:dbl],y:dbl):bat[:dbl]
+address CMDbatMODsignal;
+pattern fmod(x:bat[:dbl],y:dbl,r:bat[:bit]):bat[:dbl]
+address CMDbatMODsignal;
+pattern fmod(x:bat[:dbl],y:dbl,s:bat[:oid]):bat[:dbl]
+address CMDbatMODsignal;
+pattern fmod(x:bat[:dbl],y:dbl,s:bat[:oid],r:bat[:bit]):bat[:dbl]
+address CMDbatMODsignal;
+pattern fmod(x:bat[:flt],y:flt):bat[:flt]
+address CMDbatMODsignal;
+pattern fmod(x:bat[:flt],y:flt,r:bat[:bit]):bat[:flt]
+address CMDbatMODsignal;
+pattern fmod(x:bat[:flt],y:flt,s:bat[:oid]):bat[:flt]
+address CMDbatMODsignal;
+pattern fmod(x:bat[:flt],y:flt,s:bat[:oid],r:bat[:bit]):bat[:flt]
+address CMDbatMODsignal;
 
-	command atan2(x:bat[:dbl],y:dbl):bat[:dbl]
-	address CMDscience_bat_cst_atan2_dbl;
-	command atan2(x:bat[:dbl],y:dbl,s:bat[:oid]):bat[:dbl]
-	address CMDscience_bat_cst_atan2_dbl_cand;
-	command atan2(x:bat[:flt],y:flt):bat[:flt]
-	address CMDscience_bat_cst_atan2_flt;
-	command atan2(x:bat[:flt],y:flt,s:bat[:oid]):bat[:flt]
-	address CMDscience_bat_cst_atan2_flt_cand;
+pattern atan2(x:bat[:dbl],y:dbl):bat[:dbl]
+address CMDscience_bat_atan2;
+pattern atan2(x:bat[:dbl],y:dbl,r:bat[:bit]):bat[:dbl]
+address CMDscience_bat_atan2;
+pattern atan2(x:bat[:dbl],y:dbl,s:bat[:oid]):bat[:dbl]
+address CMDscience_bat_atan2;
+pattern atan2(x:bat[:dbl],y:dbl,s:bat[:oid],r:bat[:bit]):bat[:dbl]
+address CMDscience_bat_atan2;
+pattern atan2(x:bat[:flt],y:flt):bat[:flt]
+address CMDscience_bat_atan2;
+pattern atan2(x:bat[:flt],y:flt,r:bat[:bit]):bat[:flt]
+address CMDscience_bat_atan2;
+pattern atan2(x:bat[:flt],y:flt,s:bat[:oid]):bat[:flt]
+address CMDscience_bat_atan2;
+pattern atan2(x:bat[:flt],y:flt,s:bat[:oid],r:bat[:bit]):bat[:flt]
+address CMDscience_bat_atan2;
 
-	command atan2(x:dbl,y:bat[:dbl]):bat[:dbl]
-	address CMDscience_cst_bat_atan2_dbl;
-	command atan2(x:dbl,y:bat[:dbl],s:bat[:oid]):bat[:dbl]
-	address CMDscience_cst_bat_atan2_dbl_cand;
-	command atan2(x:flt,y:bat[:flt]):bat[:flt]
-	address CMDscience_cst_bat_atan2_flt;
-	command atan2(x:flt,y:bat[:flt],s:bat[:oid]):bat[:flt]
-	address CMDscience_cst_bat_atan2_flt_cand;
+pattern atan2(x:dbl,y:bat[:dbl]):bat[:dbl]
+address CMDscience_bat_atan2;
+pattern atan2(x:dbl,y:bat[:dbl],r:bat[:bit]):bat[:dbl]
+address CMDscience_bat_atan2;
+pattern atan2(x:dbl,y:bat[:dbl],s:bat[:oid]):bat[:dbl]
+address CMDscience_bat_atan2;
+pattern atan2(x:dbl,y:bat[:dbl],s:bat[:oid],r:bat[:bit]):bat[:dbl]
+address CMDscience_bat_atan2;
+pattern atan2(x:flt,y:bat[:flt]):bat[:flt]
+address CMDscience_bat_atan2;
+pattern atan2(x:flt,y:bat[:flt],r:bat[:bit]):bat[:flt]
+address CMDscience_bat_atan2;
+pattern atan2(x:flt,y:bat[:flt],s:bat[:oid]):bat[:flt]
+address CMDscience_bat_atan2;
+pattern atan2(x:flt,y:bat[:flt],s:bat[:oid],r:bat[:bit]):bat[:flt]
+address CMDscience_bat_atan2;
 
-	command pow(x:bat[:dbl],y:dbl):bat[:dbl]
-	address CMDscience_bat_cst_pow_dbl;
-	command pow(x:bat[:dbl],y:dbl,s:bat[:oid]):bat[:dbl]
-	address CMDscience_bat_cst_pow_dbl_cand;
-	command pow(x:bat[:flt],y:flt):bat[:flt]
-	address CMDscience_bat_cst_pow_flt;
-	command pow(x:bat[:flt],y:flt,s:bat[:oid]):bat[:flt]
-	address CMDscience_bat_cst_pow_flt_cand;
+pattern pow(x:bat[:dbl],y:dbl):bat[:dbl]
+address CMDscience_bat_pow;
+pattern pow(x:bat[:dbl],y:dbl,r:bat[:bit]):bat[:dbl]
+address CMDscience_bat_pow;
+pattern pow(x:bat[:dbl],y:dbl,s:bat[:oid]):bat[:dbl]
+address CMDscience_bat_pow;
+pattern pow(x:bat[:dbl],y:dbl,s:bat[:oid],r:bat[:bit]):bat[:dbl]
+address CMDscience_bat_pow;
+pattern pow(x:bat[:flt],y:flt):bat[:flt]
+address CMDscience_bat_pow;
+pattern pow(x:bat[:flt],y:flt,r:bat[:bit]):bat[:flt]
+address CMDscience_bat_pow;
+pattern pow(x:bat[:flt],y:flt,s:bat[:oid]):bat[:flt]
+address CMDscience_bat_pow;
+pattern pow(x:bat[:flt],y:flt,s:bat[:oid],r:bat[:bit]):bat[:flt]
+address CMDscience_bat_pow;
 
-	command pow(x:dbl,y:bat[:dbl]):bat[:dbl]
-	address CMDscience_cst_bat_pow_dbl;
-	command pow(x:dbl,y:bat[:dbl],s:bat[:oid]):bat[:dbl]
-	address CMDscience_cst_bat_pow_dbl_cand;
-	command pow(x:flt,y:bat[:flt]):bat[:flt]
-	address CMDscience_cst_bat_pow_flt;
-	command pow(x:flt,y:bat[:flt],s:bat[:oid]):bat[:flt]
-	address CMDscience_cst_bat_pow_flt_cand;
+pattern pow(x:dbl,y:bat[:dbl]):bat[:dbl]
+address CMDscience_bat_pow;
+pattern pow(x:dbl,y:bat[:dbl],r:bat[:bit]):bat[:dbl]
+address CMDscience_bat_pow;
+pattern pow(x:dbl,y:bat[:dbl],s:bat[:oid]):bat[:dbl]
+address CMDscience_bat_pow;
+pattern pow(x:dbl,y:bat[:dbl],s:bat[:oid],r:bat[:bit]):bat[:dbl]
+address CMDscience_bat_pow;
+pattern pow(x:flt,y:bat[:flt]):bat[:flt]
+address CMDscience_bat_pow;
+pattern pow(x:flt,y:bat[:flt],r:bat[:bit]):bat[:flt]
+address CMDscience_bat_pow;
+pattern pow(x:flt,y:bat[:flt],s:bat[:oid]):bat[:flt]
+address CMDscience_bat_pow;
+pattern pow(x:flt,y:bat[:flt],s:bat[:oid],r:bat[:bit]):bat[:flt]
+address CMDscience_bat_pow;

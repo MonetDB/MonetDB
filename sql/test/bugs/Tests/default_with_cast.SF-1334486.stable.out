@@ -21,11 +21,11 @@ stdout of test 'default_with_cast.SF-1334486` in directory 'sql/test/bugs` itsel
 #select cast(now() as date) - d from t;
 % . # table_name
 % %1 # name
-% int # type
-% 1 # length
-[ 0	]
+% sec_interval # type
+% 5 # length
+[ 0.000	]
 
-# 12:59:30 >  
-# 12:59:30 >  Done.
-# 12:59:30 >  
+# 14:45:09 >  
+# 14:45:09 >  "Done."
+# 14:45:09 >  
 

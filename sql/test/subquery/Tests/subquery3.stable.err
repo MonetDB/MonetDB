@@ -130,7 +130,46 @@ QUERY = SELECT
         FROM integers i1; --error, aggregates not allowed in group by clause
 ERROR = !SUM: aggregate function 'sum' not allowed in GROUP BY clause
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-22911/.s.monetdb.35494
+MAPI  = (monetdb) /var/tmp/mtest-325234/.s.monetdb.39928
+QUERY = SELECT 
+            1
+        FROM another_T
+        WHERE col5 = (SELECT AVG(col2)); --error, aggregate functions are not allowed in WHERE
+ERROR = !SELECT: aggregate functions not allowed in WHERE clause
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-326129/.s.monetdb.32376
+QUERY = SELECT
+            1
+        FROM another_T
+        INNER JOIN tbl_ProductSales ON (SELECT MIN(col1)) = (SELECT MAX(col3)); --error, aggregate functions are not allowed in JOIN conditions
+ERROR = !SELECT: aggregate functions not allowed in JOIN conditions
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-330709/.s.monetdb.34123
+QUERY = SELECT
+            1
+        FROM another_T
+        GROUP BY (SELECT AVG(col2)); --error, aggregate function not allowed in GROUP BY clause
+ERROR = !SELECT: aggregate function 'avg' not allowed in GROUP BY clause
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-387258/.s.monetdb.34565
+QUERY = SELECT
+        	(SELECT 1 FROM integers i2 WHERE AVG(i2.i))
+        FROM integers i1; --error, aggregate functions not allowed in WHERE clause
+ERROR = !AVG: aggregate functions not allowed in WHERE clause
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-60261/.s.monetdb.38639
+QUERY = SELECT
+        	(SELECT 1 FROM (VALUES (MAX(2))) as i2)
+        FROM integers i1; --error, aggregate functions are not allowed in VALUES
+ERROR = !MAX: aggregate functions not allowed inside a list of VALUES
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-60261/.s.monetdb.38639
+QUERY = SELECT
+        	(SELECT 1 FROM integers i2 INNER JOIN integers i3 on MAX(i3.i) = MIN(i2.i))
+        FROM integers i1; --error, aggregate functions not allowed in JOIN conditions
+ERROR = !MAX: aggregate functions not allowed in JOIN conditions
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-387258/.s.monetdb.34565
 QUERY = SELECT 
             (SELECT SUM(SUM(i1.i) + i2.i) FROM integers i2 GROUP BY i2.i)
         FROM integers i1; --SUM(i1.i) is a correlation from the outer query, so the sum aggregates can be nested at this case
@@ -212,19 +251,29 @@ MAPI  = (monetdb) /var/tmp/mtest-54567/.s.monetdb.37260
 QUERY = SELECT col1 FROM another_T WHERE (col2, col3) IN (VALUES(1,2,3)); -- error, too many columns in the subquery
 ERROR = !Subquery has too many columns
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-135307/.s.monetdb.36213
+MAPI  = (monetdb) /var/tmp/mtest-116419/.s.monetdb.38396
+QUERY = SELECT * FROM integers i1 ORDER BY SUM(i); --column "i1.i" must appear in the GROUP BY clause or be used in an aggregate function
+ERROR = !SELECT: cannot use non GROUP BY column 'i' in query results without an aggregate function
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-116419/.s.monetdb.38396
+QUERY = SELECT i FROM integers i1 ORDER BY SUM(i); --column "i1.i" must appear in the GROUP BY clause or be used in an aggregate function
+ERROR = !SELECT: cannot use non GROUP BY column 'i' in query results without an aggregate function
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-116419/.s.monetdb.38396
+QUERY = SELECT * FROM integers i1 ORDER BY (SELECT SUM(i1.i) FROM integers i2); --column "i1.i" must appear in the GROUP BY clause or be used in an aggregate function
+ERROR = !SELECT: cannot use non GROUP BY column 'i' in query results without an aggregate function
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-116419/.s.monetdb.38396
+QUERY = SELECT i FROM integers i1 ORDER BY (SELECT SUM(i1.i) FROM integers i2); --column "i1.i" must appear in the GROUP BY clause or be used in an aggregate function
+ERROR = !SELECT: cannot use non GROUP BY column 'i' in query results without an aggregate function
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-116419/.s.monetdb.38396
 QUERY = SELECT
         	(SELECT outt FROM evilfunction((SELECT col0))) 
         FROM another_T; --error, col0 doesn't exist
 ERROR = !SELECT: identifier 'col0' unknown
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-139585/.s.monetdb.31629
-QUERY = SELECT
-        	(SELECT outt FROM evilfunction((SELECT col1))) 
-        FROM another_T; --error, more than one row returned by a subquery used as an expression
-ERROR = !zero_or_one: cardinality violation, scalar expression expected
-CODE  = M0M29
-MAPI  = (monetdb) /var/tmp/mtest-139585/.s.monetdb.31629
+MAPI  = (monetdb) /var/tmp/mtest-461161/.s.monetdb.32526
 QUERY = SELECT
         	(SELECT outt FROM evilfunction((SELECT col1 FROM tbl_ProductSales))) 
         FROM another_T; --error, more than one row returned by a subquery used as an expression
@@ -264,6 +313,24 @@ MAPI  = (monetdb) /var/tmp/mtest-123694/.s.monetdb.33701
 QUERY = SELECT
         	(SELECT outt FROM evilfunction((SELECT MIN(t2.col1) FROM another_T t2))) 
         FROM another_T; --error, more than one row returned by a subquery used as an expression
+ERROR = !Cardinality violation, scalar value expected
+CODE  = 21000
+MAPI  = (monetdb) /var/tmp/mtest-114297/.s.monetdb.33062
+QUERY = SELECT
+        	(SELECT i1.i FROM (VALUES (MIN(i1.i), MAX(i1.i))) as i2(i))
+        FROM integers i1; --error, subquery uses ungrouped column "i1.i" from outer query
+ERROR = !SELECT: cannot use non GROUP BY column 'i1.i' in query results without an aggregate function
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-596453/.s.monetdb.32132
+QUERY = SELECT
+        	(SELECT i2.i FROM (VALUES (i1.i), (i1.i)) as i2(i))
+        FROM integers i1; --error, more than one row returned by a subquery used as an expression
+ERROR = !Cardinality violation, scalar value expected
+CODE  = 21000
+MAPI  = (monetdb) /var/tmp/mtest-600940/.s.monetdb.32137
+QUERY = SELECT
+        	(SELECT i2.i FROM (VALUES (i1.i, i1.i), (i1.i, i1.i)) as i2(i))
+        FROM integers i1; --error, more than one row returned by a subquery used as an expression
 ERROR = !Cardinality violation, scalar value expected
 CODE  = 21000
 

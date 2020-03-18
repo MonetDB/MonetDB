@@ -426,6 +426,13 @@
 /* Define to 1 if you have the `strcpy_s' function. */
 #define HAVE_STRCPY_S 1
 
+/* Define to 1 if you have the `strerror_r' function. */
+#define HAVE_STRERROR_R 1
+#define HAVE_DECL_STRERROR_R 1
+#ifndef strerror_r
+#define strerror_r(e, b, s)	strerror_s(b, s, e)
+#endif
+
 /* Define to 1 if you have the <strings.h> header file. */
 /* #undef HAVE_STRINGS_H */
 
@@ -624,7 +631,7 @@
 #define PACKAGE_URL "https://www.monetdb.org/"
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION "11.36.0"
+#define PACKAGE_VERSION "11.38.0"
 
 /* Path separator */
 #define PATH_SEP ';'

@@ -150,7 +150,7 @@ doChallenge(void *data)
 	memcpy(challenge, ((struct challengedata *) data)->challenge, sizeof(challenge));
 	GDKfree(data);
 	if (buf == NULL) {
-		TRC_CRITICAL(MAL_SERVER, MAL_MALLOC_FAIL "\n");
+		TRC_ERROR(MAL_SERVER, MAL_MALLOC_FAIL "\n");
 		close_stream(fdin);
 		close_stream(fdout);
 		return;
@@ -442,7 +442,7 @@ SERVERlistenThread(SOCKET *Sock)
 					(void) shutdown(msgsock, SHUT_WR);
 					closesocket(msgsock);
 					if (!cmsg || cmsg->cmsg_type != SCM_RIGHTS) {
-						TRC_ERROR(MAL_SERVER, "Expected file descriptor, but received something else\n");
+						TRC_CRITICAL(MAL_SERVER, "Expected file descriptor, but received something else\n");
 						continue;
 					}
 					/* HACK to avoid
@@ -456,7 +456,7 @@ SERVERlistenThread(SOCKET *Sock)
 				default:
 					/* some unknown state */
 					closesocket(msgsock);
-					TRC_ERROR(MAL_SERVER, "Unknown command type in first byte\n");
+					TRC_CRITICAL(MAL_SERVER, "Unknown command type in first byte\n");
 					continue;
 			}
 #endif
@@ -467,7 +467,7 @@ SERVERlistenThread(SOCKET *Sock)
 		data = GDKmalloc(sizeof(*data));
 		if( data == NULL){
 			closesocket(msgsock);
-			TRC_CRITICAL(MAL_SERVER, SQLSTATE(HY013) MAL_MALLOC_FAIL "\n");
+			TRC_ERROR(MAL_SERVER, SQLSTATE(HY013) MAL_MALLOC_FAIL "\n");
 			continue;
 		}
 		data->in = socket_rstream(msgsock, "Server read");
@@ -478,7 +478,7 @@ SERVERlistenThread(SOCKET *Sock)
 			mnstr_destroy(data->out);
 			GDKfree(data);
 			closesocket(msgsock);
-			TRC_CRITICAL(MAL_SERVER, "Cannot allocate stream\n");
+			TRC_ERROR(MAL_SERVER, "Cannot allocate stream\n");
 			continue;
 		}
 		s = block_stream(data->in);
@@ -503,7 +503,7 @@ SERVERlistenThread(SOCKET *Sock)
 			mnstr_destroy(data->out);
 			GDKfree(data);
 			closesocket(msgsock);
-			TRC_CRITICAL(MAL_SERVER, "Cannot fork new client thread\n");
+			TRC_ERROR(MAL_SERVER, "Cannot fork new client thread\n");
 			continue;
 		}
 	} while (!ATOMIC_GET(&serverexiting) && !GDKexiting());
@@ -514,7 +514,7 @@ SERVERlistenThread(SOCKET *Sock)
 		closesocket(usock);
 	return;
 error:
-	TRC_ERROR(MAL_SERVER, "Terminating listener: %s\n", msg);
+	TRC_CRITICAL(MAL_SERVER, "Terminating listener: %s\n", msg);
 	if (sock != INVALID_SOCKET)
 		closesocket(sock);
 	if (usock != INVALID_SOCKET)
@@ -664,7 +664,7 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 #ifdef _MSC_VER
 					  wsaerror(WSAGetLastError())
 #else
-					  strerror(errno)
+					  GDKstrerror(errno, (char[128]){0}, 128)
 #endif
 				);
 			} while (1);
@@ -684,7 +684,7 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 #ifdef _MSC_VER
 					  wsaerror(WSAGetLastError())
 #else
-					  strerror(errno)
+					  GDKstrerror(errno, (char[128]){0}, 128)
 #endif
 				);
 			}
@@ -697,7 +697,7 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 #ifdef _MSC_VER
 				const char *err = wsaerror(WSAGetLastError());
 #else
-				const char *err = strerror(errno);
+				const char *err = GDKstrerror(errno, (char[128]){0}, 128);
 #endif
 				GDKfree(psock);
 				closesocket(sock);
@@ -755,7 +755,7 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 #ifdef _MSC_VER
 						  wsaerror(WSAGetLastError())
 #else
-						  strerror(errno)
+						  GDKstrerror(errno, (char[128]){0}, 128)
 #endif
 					);
 				} else {
@@ -772,7 +772,7 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 #ifdef _MSC_VER
 					  wsaerror(WSAGetLastError())
 #else
-					  strerror(errno)
+					  GDKstrerror(errno, (char[128]){0}, 128)
 #endif
 				);
 			}
@@ -789,7 +789,7 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 #ifdef _MSC_VER
 				  wsaerror(WSAGetLastError())
 #else
-				  strerror(errno)
+				  GDKstrerror(errno, (char[128]){0}, 128)
 #endif
 				);
 		}
@@ -826,7 +826,7 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 #ifdef _MSC_VER
 				  wsaerror(WSAGetLastError())
 #else
-				  strerror(errno)
+				  GDKstrerror(errno, (char[128]){0}, 128)
 #endif
 				);
 		}
@@ -869,7 +869,7 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 #ifdef _MSC_VER
 								wsaerror(WSAGetLastError())
 #else
-								strerror(errno)
+								GDKstrerror(errno, (char[128]){0}, 128)
 #endif
 				);
 			return e;
@@ -890,7 +890,7 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 #ifdef _MSC_VER
 								wsaerror(WSAGetLastError())
 #else
-								strerror(errno)
+								GDKstrerror(errno, (char[128]){0}, 128)
 #endif
 				);
 			return e;

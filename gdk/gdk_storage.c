@@ -1003,13 +1003,12 @@ BATprint(stream *fdout, BAT *b)
 	gdk_return ret = GDK_FAIL;
 
 	argv[0] = BATdense(b->hseqbase, b->hseqbase, BATcount(b));
-	argv[1] = b;
-	if (argv[0] && argv[1]) {
+	if (argv[0]) {
+		argv[1] = b;
 		ret = BATroles(argv[0], "h");
 		if (ret == GDK_SUCCEED)
 			ret = BATprintcolumns(fdout, 2, argv);
-	}
-	if (argv[0])
 		BBPunfix(argv[0]->batCacheid);
+	}
 	return ret;
 }

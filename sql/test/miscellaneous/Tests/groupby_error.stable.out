@@ -117,6 +117,14 @@ stdout of test 'groupby_error` in directory 'sql/test/miscellaneous` itself:
 [ 11	]
 [ 11	]
 [ 11	]
+#SELECT col0 FROM tab0 ORDER BY tab0.col0;
+% sys.tab0 # table_name
+% col0 # name
+% int # type
+% 2 # length
+[ 15	]
+[ 87	]
+[ 97	]
 #prepare select col0 from tab0 where (?) in (select col0 from tab0);
 #prepare select col0 from tab0 where (?) in (select col0 from tab0);
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name

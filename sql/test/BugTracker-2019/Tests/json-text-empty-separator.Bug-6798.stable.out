@@ -59,6 +59,12 @@ stdout of test 'json-text-empty-separator.Bug-6798` in directory 'sql/test/BugTr
 # 17:34:10 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-30991" "--port=36486"
 # 17:34:10 >  
 
+#select json.text('"abc"', '');   -- Error in branch Nov2019, fixed in branch json
+% . # table_name
+% %1 # name
+% clob # type
+% 3 # length
+[ "abc"	]
 #select json.text('["abc", "def"]', '');
 % . # table_name
 % %1 # name

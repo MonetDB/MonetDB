@@ -111,10 +111,14 @@ end user.s6_0;
 % 121 # length
 function user.s8_0():void;
     X_2:void := querylog.define("explain select count(*) from tmp where i = 201602221;":str, "default_pipe":str, 14:int);
-    X_12:bat[:int] := bat.new(nil:int);
+barrier X_81:bit := language.dataflow();
+    X_5:int := sql.mvc();
+    X_12:bat[:int] := sql.bind(X_5:int, "sys":str, "tmp":str, "i":str, 0:int);
     X_13:bat[:int] := batcalc.int(0:int, X_12:bat[:int], 9:int, 0:int);
-    C_19:bat[:oid] := algebra.thetaselect(X_13:bat[:int], 201602221:int, "==":str);
+    C_6:bat[:oid] := sql.tid(X_5:int, "sys":str, "tmp":str);
+    C_19:bat[:oid] := algebra.thetaselect(X_13:bat[:int], C_6:bat[:oid], 201602221:int, "==":str);
     X_22:lng := aggr.count(C_19:bat[:oid]);
+exit X_81:bit;
     sql.resultSet("sys.%1":str, "%1":str, "bigint":str, 64:int, 0:int, 7:int, X_22:lng);
 end user.s8_0;
 #inline               actions= 0 time=1 usec 

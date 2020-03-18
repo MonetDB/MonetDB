@@ -16,10 +16,19 @@ UPDATE foo SET test5 = ROW_NUMBER() OVER (
       test6 DESC,      
       test8 DESC,      
       test7 ASC,      
-      test3 ASC);
+      test3 ASC); --error
+
+UPDATE foo SET test5 = (SELECT ROW_NUMBER() OVER (  
+   PARTITION BY test1   
+   ORDER BY test4  ASC,      
+      test6 DESC,      
+      test8 DESC,      
+      test7 ASC,      
+      test3 ASC));
 
 DROP TABLE foo;
 
 CREATE TABLE foo (col INTEGER);
-UPDATE foo SET col = ROW_NUMBER() OVER (ORDER BY col);
+UPDATE foo SET col = ROW_NUMBER() OVER (ORDER BY col); --error
+UPDATE foo SET col = (SELECT ROW_NUMBER() OVER (ORDER BY col));
 DROP TABLE foo;

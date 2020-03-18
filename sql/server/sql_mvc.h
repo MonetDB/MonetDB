@@ -31,7 +31,7 @@
 
 /* value vs predicate (boolean) */
 #define type_value	0
-#define type_predicate	1
+#define type_relation	1
 
 /* cardinality expected by enclosing operator */
 #define card_none	-1	/* psm call doesn't return anything */
@@ -40,6 +40,7 @@
 #define card_column 	2
 #define card_set	3 /* some operators require only a set (IN/EXISTS) */
 #define card_exists	4
+/* to be removed ie are in type (aka dimention) */
 #define card_relation 	5
 #define card_loader 	6
 

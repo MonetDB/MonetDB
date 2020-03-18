@@ -39,6 +39,16 @@ typedef struct {
 #endif
 } bignum_t;
 
+typedef union {
+	SQLGUID g;
+	struct {
+		uint32_t d1;
+		uint16_t d2, d3;
+		uint8_t d4[8];
+	} d;
+	uint8_t u[16];
+} uuid_t;
+
 /* Parse a number and store in a bignum_t.
  * 1 is returned if all is well;
  * 2 is returned if there is loss of precision (i.e. overflow of the value);
@@ -1064,6 +1074,7 @@ ODBCFetch(ODBCStmt *stmt,
 	/* see SQLExecute.c for possible types */
 	switch (sql_type) {
 	case SQL_DECIMAL:
+	case SQL_NUMERIC:
 	case SQL_TINYINT:
 	case SQL_SMALLINT:
 	case SQL_INTEGER:
@@ -1122,6 +1133,7 @@ ODBCFetch(ODBCStmt *stmt,
 		}
 		break;
 	case SQL_DOUBLE:
+	case SQL_FLOAT:
 	case SQL_REAL:
 		if (!parsedouble(data, &fval)) {
 			/* Invalid character value for cast specification */
@@ -1299,6 +1311,7 @@ ODBCFetch(ODBCStmt *stmt,
 				*lenp = sz;
 			break;
 		case SQL_DECIMAL:
+		case SQL_NUMERIC:
 		case SQL_BIT: {
 			uint64_t f;
 			int n;
@@ -1350,6 +1363,7 @@ ODBCFetch(ODBCStmt *stmt,
 			break;
 		}
 		case SQL_DOUBLE:
+		case SQL_FLOAT:
 		case SQL_REAL: {
 			data = (char *) ptr;
 
@@ -1867,6 +1881,7 @@ ODBCFetch(ODBCStmt *stmt,
 		case SQL_WCHAR:
 		case SQL_WVARCHAR:
 		case SQL_DECIMAL:
+		case SQL_NUMERIC:
 		case SQL_TINYINT:
 		case SQL_SMALLINT:
 		case SQL_INTEGER:
@@ -1874,6 +1889,7 @@ ODBCFetch(ODBCStmt *stmt,
 		case SQL_HUGEINT:
 		case SQL_REAL:
 		case SQL_DOUBLE:
+		case SQL_FLOAT:
 		case SQL_BIT:
 		case SQL_TYPE_DATE:
 		case SQL_TYPE_TIME:
@@ -1974,6 +1990,7 @@ ODBCFetch(ODBCStmt *stmt,
 			/* fall through */
 		case SQL_REAL:
 		case SQL_DOUBLE:
+		case SQL_FLOAT:
 			if (fval < 0 || fval >= 2) {
 				/* Numeric value out of range */
 				addStmtError(stmt, "22003", NULL, 0);
@@ -1987,6 +2004,7 @@ ODBCFetch(ODBCStmt *stmt,
 			}
 			break;
 		case SQL_DECIMAL:
+		case SQL_NUMERIC:
 		case SQL_TINYINT:
 		case SQL_SMALLINT:
 		case SQL_INTEGER:
@@ -2067,6 +2085,7 @@ ODBCFetch(ODBCStmt *stmt,
 		case SQL_WCHAR:
 		case SQL_WVARCHAR:
 		case SQL_DOUBLE:
+		case SQL_FLOAT:
 		case SQL_REAL:
 			/* reparse double and float, parse char */
 			if (!parseint(data, &nval)) {
@@ -2077,6 +2096,7 @@ ODBCFetch(ODBCStmt *stmt,
 			}
 			/* fall through */
 		case SQL_DECIMAL:
+		case SQL_NUMERIC:
 		case SQL_TINYINT:
 		case SQL_SMALLINT:
 		case SQL_INTEGER:
@@ -2169,6 +2189,7 @@ ODBCFetch(ODBCStmt *stmt,
 		case SQL_WCHAR:
 		case SQL_WVARCHAR:
 		case SQL_DOUBLE:
+		case SQL_FLOAT:
 		case SQL_REAL:
 			/* reparse double and float, parse char */
 			if (!parseint(data, &nval)) {
@@ -2179,6 +2200,7 @@ ODBCFetch(ODBCStmt *stmt,
 			}
 			/* fall through */
 		case SQL_DECIMAL:
+		case SQL_NUMERIC:
 		case SQL_TINYINT:
 		case SQL_SMALLINT:
 		case SQL_INTEGER:
@@ -2236,6 +2258,7 @@ ODBCFetch(ODBCStmt *stmt,
 		case SQL_WCHAR:
 		case SQL_WVARCHAR:
 		case SQL_DOUBLE:
+		case SQL_FLOAT:
 		case SQL_REAL:
 			/* reparse double and float, parse char */
 			if (!(i = parseint(data, &nval))) {
@@ -2251,6 +2274,7 @@ ODBCFetch(ODBCStmt *stmt,
 
 			/* fall through */
 		case SQL_DECIMAL:
+		case SQL_NUMERIC:
 		case SQL_TINYINT:
 		case SQL_SMALLINT:
 		case SQL_INTEGER:
@@ -2305,9 +2329,11 @@ ODBCFetch(ODBCStmt *stmt,
 			}
 			break;
 		case SQL_DOUBLE:
+		case SQL_FLOAT:
 		case SQL_REAL:
 			break;
 		case SQL_DECIMAL:
+		case SQL_NUMERIC:
 		case SQL_TINYINT:
 		case SQL_SMALLINT:
 		case SQL_INTEGER:
@@ -2516,6 +2542,7 @@ ODBCFetch(ODBCStmt *stmt,
 			}
 			break;
 		case SQL_DECIMAL:
+		case SQL_NUMERIC:
 		case SQL_TINYINT:
 		case SQL_SMALLINT:
 		case SQL_INTEGER:
@@ -2598,6 +2625,7 @@ ODBCFetch(ODBCStmt *stmt,
 			}
 			break;
 		case SQL_DECIMAL:
+		case SQL_NUMERIC:
 		case SQL_TINYINT:
 		case SQL_SMALLINT:
 		case SQL_INTEGER:
@@ -2777,44 +2805,27 @@ ODBCFetch(ODBCStmt *stmt,
 #ifdef ODBCDEBUG
 		ODBCLOG("Writing 16 bytes to %p\n", ptr);
 #endif
-		for (i = 0; i < 16; i++) {
-			if (i == 8 || i == 12 || i == 16 || i == 20) {
-				if (*data != '-') {
-					/* Restricted data type
-					 * attribute violation */
-					addStmtError(stmt, "07006", NULL, 0);
-					return SQL_ERROR;
-				}
-				data++;
-			}
-			if (isdigit((unsigned char) *data))
-				((unsigned char *) ptr)[i] = *data - '0';
-			else if ('a' <= *data && *data <= 'f')
-				((unsigned char *) ptr)[i] = *data - 'a' + 10;
-			else if ('A' <= *data && *data <= 'F')
-				((unsigned char *) ptr)[i] = *data - 'A' + 10;
-			else {
-				/* Restricted data type attribute
-				 * violation */
-				addStmtError(stmt, "07006", NULL, 0);
-				return SQL_ERROR;
-			}
-			((unsigned char *) ptr)[i] <<= 4;
-			data++;
-			if (isdigit((unsigned char) *data))
-				((unsigned char *) ptr)[i] |= *data - '0';
-			else if ('a' <= *data && *data <= 'f')
-				((unsigned char *) ptr)[i] |= *data - 'a' + 10;
-			else if ('A' <= *data && *data <= 'F')
-				((unsigned char *) ptr)[i] |= *data - 'A' + 10;
-			else {
-				/* Restricted data type attribute
-				 * violation */
-				addStmtError(stmt, "07006", NULL, 0);
-				return SQL_ERROR;
-			}
-			data++;
+		uuid_t u;
+		if (sscanf(data, "%2"SCNx8"%2"SCNx8"%2"SCNx8"%2"SCNx8
+			   "-%2"SCNx8"%2"SCNx8
+			   "-%2"SCNx8"%2"SCNx8
+			   "-%2"SCNx8"%2"SCNx8
+			   "-%2"SCNx8"%2"SCNx8"%2"SCNx8"%2"
+			   SCNx8"%2"SCNx8"%2"SCNx8,
+			   &u.u[3], &u.u[2], &u.u[1], &u.u[0],
+			   &u.u[5], &u.u[4],
+			   &u.u[7], &u.u[6],
+			   &u.u[8], &u.u[9],
+			   &u.u[10], &u.u[11], &u.u[12],
+			   &u.u[13], &u.u[14], &u.u[15]) != 16) {
+			/* Restricted data type attribute
+			 * violation */
+			addStmtError(stmt, "07006", NULL, 0);
+			return SQL_ERROR;
 		}
+		WriteData(ptr, u.g, SQLGUID);
+		if (lenp)
+			*lenp = sizeof(SQLGUID);
 		break;
 	default:
 		/* Invalid application buffer type */
@@ -2868,7 +2879,7 @@ ODBCStore(ODBCStmt *stmt,
 	  char **bufp,
 	  size_t *bufposp,
 	  size_t *buflenp,
-	  char *sep)
+	  const char *sep)
 {
 	ODBCDescRec *ipdrec, *apdrec;
 	SQLPOINTER ptr;
@@ -2884,6 +2895,7 @@ ODBCStore(ODBCStmt *stmt,
 	TIMESTAMP_STRUCT tsval;
 	int ivalprec = 0;	/* interval second precision */
 	SQL_INTERVAL_STRUCT ival;
+	uuid_t u;
 	char *buf = *bufp;
 	size_t bufpos = *bufposp;
 	size_t buflen = *buflenp;
@@ -2952,6 +2964,8 @@ ODBCStore(ODBCStmt *stmt,
 		break;
 	case SQL_C_WCHAR:
 		slen = strlen_or_ind_ptr ? *strlen_or_ind_ptr : SQL_NTS;
+		if (slen > 0)
+			slen /= 2;	/* convert from bytes to characters */
 		fixWcharIn((SQLWCHAR *) ptr, slen, char, sval, addStmtError, stmt, return SQL_ERROR);
 		if (sval == NULL) {
 			sval = strdup("");
@@ -3347,25 +3361,20 @@ ODBCStore(ODBCStmt *stmt,
 			}
 			break;
 		case SQL_C_GUID:
+			u.g = *(SQLGUID *)ptr;
 			snprintf(data, sizeof(data),
-				 "%02x%02x%02x%02x-%02x%02x-%02x%02x-"
-				 "%02x%02x-%02x%02x%02x%02x%02x%02x",
-				 ((unsigned char *) ptr)[0],
-				 ((unsigned char *) ptr)[1],
-				 ((unsigned char *) ptr)[2],
-				 ((unsigned char *) ptr)[3],
-				 ((unsigned char *) ptr)[4],
-				 ((unsigned char *) ptr)[5],
-				 ((unsigned char *) ptr)[6],
-				 ((unsigned char *) ptr)[7],
-				 ((unsigned char *) ptr)[8],
-				 ((unsigned char *) ptr)[9],
-				 ((unsigned char *) ptr)[10],
-				 ((unsigned char *) ptr)[11],
-				 ((unsigned char *) ptr)[12],
-				 ((unsigned char *) ptr)[13],
-				 ((unsigned char *) ptr)[14],
-				 ((unsigned char *) ptr)[15]);
+				 "%02"PRIx8"%02"PRIx8"%02"PRIx8"%02"PRIx8
+				 "-%02"PRIx8"%02"PRIx8
+				 "-%02"PRIx8"%02"PRIx8
+				 "-%02"PRIx8"%02"PRIx8
+				 "-%02"PRIx8"%02"PRIx8"%02"PRIx8
+				 "%02"PRIx8"%02"PRIx8"%02"PRIx8,
+				 u.u[3], u.u[2], u.u[1], u.u[0],
+				 u.u[5], u.u[4],
+				 u.u[7], u.u[6],
+				 u.u[8], u.u[9],
+				 u.u[10], u.u[11], u.u[12],
+				 u.u[13], u.u[14], u.u[15]);
 			break;
 		}
 		assign(buf, bufpos, buflen, '\'', stmt);
@@ -3646,6 +3655,7 @@ ODBCStore(ODBCStmt *stmt,
 		assigns(buf, bufpos, buflen, "' DAY TO SECOND", stmt);
 		break;
 	case SQL_DECIMAL:
+	case SQL_NUMERIC:
 	case SQL_SMALLINT:
 	case SQL_INTEGER:
 	case SQL_BIGINT:
@@ -3763,12 +3773,16 @@ ODBCStore(ODBCStmt *stmt,
 				snprintf(data, sizeof(data), "%s%" PRIu64, nval.sign ? "" : "-", (uint64_t) (nval.val / f));
 				assigns(buf, bufpos, buflen, data, stmt);
 				if (nval.scale > 0) {
-					if (sqltype == SQL_DECIMAL) {
+					switch (sqltype) {
+					case SQL_DECIMAL:
+					case SQL_NUMERIC:
 						snprintf(data, sizeof(data), ".%0*" PRIu64, nval.scale, (uint64_t) (nval.val % f));
 						assigns(buf, bufpos, buflen, data, stmt);
-					} else {
+						break;
+					default:
 						/* Fractional truncation */
 						addStmtError(stmt, "01S07", NULL, 0);
+						break;
 					}
 				} else {
 					for (i = nval.scale; i < 0; i++)
@@ -3779,6 +3793,7 @@ ODBCStore(ODBCStmt *stmt,
 		break;
 	case SQL_REAL:
 	case SQL_DOUBLE:
+	case SQL_FLOAT:
 		switch (ctype) {
 		case SQL_C_CHAR:
 		case SQL_C_WCHAR:
@@ -3895,19 +3910,22 @@ ODBCStore(ODBCStmt *stmt,
 			snprintf(data, sizeof(data), "%.36s", sval);
 			break;
 		case SQL_C_GUID:
-			snprintf(data, sizeof(data), "%08lx-%04x-%04x-%02x%02x-"
-				 "%02x%02x%02x%02x%02x%02x",
-				 (unsigned long) ((SQLGUID *) ptr)->Data1,
-				 (unsigned int) ((SQLGUID *) ptr)->Data2,
-				 (unsigned int) ((SQLGUID *) ptr)->Data3,
-				 (unsigned int) ((SQLGUID *) ptr)->Data4[0],
-				 (unsigned int) ((SQLGUID *) ptr)->Data4[1],
-				 (unsigned int) ((SQLGUID *) ptr)->Data4[2],
-				 (unsigned int) ((SQLGUID *) ptr)->Data4[3],
-				 (unsigned int) ((SQLGUID *) ptr)->Data4[4],
-				 (unsigned int) ((SQLGUID *) ptr)->Data4[5],
-				 (unsigned int) ((SQLGUID *) ptr)->Data4[6],
-				 (unsigned int) ((SQLGUID *) ptr)->Data4[7]);
+			u.g = *(SQLGUID *)ptr;
+			snprintf(data, sizeof(data),
+				 "UUID '"
+				 "%02"PRIx8"%02"PRIx8"%02"PRIx8"%02"PRIx8
+				 "-%02"PRIx8"%02"PRIx8
+				 "-%02"PRIx8"%02"PRIx8
+				 "-%02"PRIx8"%02"PRIx8
+				 "-%02"PRIx8"%02"PRIx8"%02"PRIx8
+				 "%02"PRIx8"%02"PRIx8"%02"PRIx8
+				 "'",
+				 u.u[3], u.u[2], u.u[1], u.u[0],
+				 u.u[5], u.u[4],
+				 u.u[7], u.u[6],
+				 u.u[8], u.u[9],
+				 u.u[10], u.u[11], u.u[12],
+				 u.u[13], u.u[14], u.u[15]);
 			break;
 		default:
 			/* Restricted data type attribute violation */

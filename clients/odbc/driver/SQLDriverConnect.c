@@ -35,9 +35,9 @@
 #endif
 
 int
-ODBCGetKeyAttr(SQLCHAR **conn, SQLSMALLINT *nconn, char **key, char **attr)
+ODBCGetKeyAttr(const SQLCHAR **conn, SQLSMALLINT *nconn, char **key, char **attr)
 {
-	SQLCHAR *p;
+	const SQLCHAR *p;
 	size_t len;
 
 	*key = *attr = NULL;
@@ -261,7 +261,7 @@ translateDriverCompletion(SQLUSMALLINT DriverCompletion)
 static SQLRETURN
 MNDBDriverConnect(ODBCDbc *dbc,
 		  SQLHWND WindowHandle,
-		  SQLCHAR *InConnectionString,
+		  const SQLCHAR *InConnectionString,
 		  SQLSMALLINT StringLength1,
 		  SQLCHAR *OutConnectionString,
 		  SQLSMALLINT BufferLength,

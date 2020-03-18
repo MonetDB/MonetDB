@@ -30,7 +30,7 @@ stdout of test 'unsafe_project_push_down.Bug-3523` in directory 'sql/test/BugTra
 [ 1	]
 #select id-row_number() over (order by id) from (select id from foo union all select id from foo) as z;
 % . # table_name
-% %12 # name
+% %14 # name
 % bigint # type
 % 2 # length
 [ 41	]

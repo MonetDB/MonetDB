@@ -429,6 +429,17 @@ stdout of test 'subquery3` in directory 'sql/test/subquery` itself:
 % 1 # length
 #CREATE FUNCTION evilfunction(input INT) RETURNS TABLE (outt INT) BEGIN RETURN TABLE(SELECT input); END;
 #SELECT
+#	(SELECT outt FROM evilfunction((SELECT col1))) 
+#FROM another_T;
+% .%3 # table_name
+% %3 # name
+% int # type
+% 4 # length
+[ 1	]
+[ 11	]
+[ 111	]
+[ 1111	]
+#SELECT
 #	(SELECT outt FROM evilfunction((SELECT MIN(col1)))) 
 #FROM another_T;
 % .%4 # table_name
@@ -466,6 +477,61 @@ stdout of test 'subquery3` in directory 'sql/test/subquery` itself:
 % 1 # length
 [ 1	]
 [ 1	]
+#SELECT
+#	(SELECT i2.i FROM (VALUES (MIN(i1.i))) as i2(i))
+#FROM integers i1;
+% .%4 # table_name
+% %4 # name
+% int # type
+% 1 # length
+[ 1	]
+#SELECT
+#	(SELECT i2.i FROM (VALUES (MIN(i1.i), MAX(i1.i))) as i2(i))
+#FROM integers i1;
+% .%6 # table_name
+% %6 # name
+% int # type
+% 1 # length
+[ 1	]
+#SELECT
+#	(SELECT i2.i FROM (VALUES (i1.i)) as i2(i))
+#FROM integers i1;
+% .%3 # table_name
+% %3 # name
+% int # type
+% 1 # length
+[ 1	]
+[ 2	]
+[ 3	]
+[ NULL	]
+#SELECT
+#	(SELECT 1 FROM (VALUES (i1.i)) as i2(i))
+#FROM integers i1;
+% .%3 # table_name
+% %3 # name
+% tinyint # type
+% 1 # length
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+#SELECT i FROM integers ORDER BY (SELECT true);
+% sys.integers # table_name
+% i # name
+% int # type
+% 1 # length
+[ 1	]
+[ 2	]
+[ 3	]
+[ NULL	]
+#SELECT i FROM integers GROUP BY i HAVING (SELECT i);
+% .integers # table_name
+% i # name
+% int # type
+% 1 # length
+[ 1	]
+[ 2	]
+[ 3	]
 #DROP FUNCTION evilfunction(INT);
 #DROP TABLE tbl_ProductSales;
 #DROP TABLE another_T;

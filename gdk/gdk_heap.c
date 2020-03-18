@@ -655,7 +655,7 @@ HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, b
 	t0 = GDKms();
 	ret = rename(srcpath, dstpath);
 	TRC_DEBUG(HEAP, "rename %s %s = %d %s (%dms)\n",
-		  srcpath, dstpath, ret, ret < 0 ? strerror(errno) : "",
+		  srcpath, dstpath, ret, ret < 0 ? GDKstrerror(errno, (char[128]){0}, 128) : "",
 		  GDKms() - t0);
 	GDKfree(srcpath);
 	GDKfree(dstpath);

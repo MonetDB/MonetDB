@@ -76,7 +76,7 @@ stdout of test 'lowcardinality` in directory 'sql/benchmarks/tpch` itself:
 #SELECT count(*) FROM sys.partsupp as I, sys.supplier as S, sys.part as P 
 #WHERE I.ps_partkey = P.p_partkey AND I.ps_suppkey = S.s_suppkey
 #AND  p_retailprice BETWEEN 1214.0 AND 1215.0;
-% .%1 # table_name
+% sys.%1 # table_name
 % %1 # name
 % bigint # type
 % 1 # length
@@ -84,7 +84,7 @@ stdout of test 'lowcardinality` in directory 'sql/benchmarks/tpch` itself:
 #SELECT count(*) FROM sys.partsupp as I, sys.supplier as S, sys.part as P 
 #WHERE I.ps_partkey = P.p_partkey AND I.ps_suppkey = S.s_suppkey
 #AND  s_acctbal BETWEEN 1432.0 AND 1433.0;
-% .%1 # table_name
+% sys.%1 # table_name
 % %1 # name
 % bigint # type
 % 2 # length

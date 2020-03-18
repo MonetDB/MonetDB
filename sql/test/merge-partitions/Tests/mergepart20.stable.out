@@ -71,8 +71,8 @@ stdout of test 'mergepart20` in directory 'sql/test/merge-partitions` itself:
 % sys.table_partitions,	sys.table_partitions # table_name
 % column_id,	expression # name
 % int,	varchar # type
-% 1,	6 # length
-[ NULL,	"md5(a)"	]
+% 1,	16 # length
+[ NULL,	"\"sys\".\"md5\"(\"a\")"	]
 #ALTER TABLE testme ADD TABLE subtable1 AS PARTITION FROM '00000000000000000000000000000000' TO '7fffffffffffffffffffffffffffffff';
 #ALTER TABLE testme ADD TABLE subtable2 AS PARTITION FROM '80000000000000000000000000000000' TO 'ffffffffffffffffffffffffffffffff';
 #INSERT INTO testme VALUES (1, 'first'), (2000, 'second'), (3, 'third'), (4000, 'fourth');
@@ -150,6 +150,17 @@ stdout of test 'mergepart20` in directory 'sql/test/merge-partitions` itself:
 #ALTER TABLE testme DROP TABLE subtable2;
 #DROP TABLE subtable1;
 #DROP TABLE subtable2;
+#DROP TABLE subtable3;
+#DROP TABLE testme;
+#DROP FUNCTION iamdummy;
+#CREATE FUNCTION iamdummy(a int, b int, c int) RETURNS INT BEGIN RETURN a + b + c; END;
+#CREATE MERGE TABLE testme(d int, e int, f int) PARTITION BY RANGE USING (iamdummy(d, e, f));
+#SELECT column_id, expression FROM table_partitions;
+% sys.table_partitions,	sys.table_partitions # table_name
+% column_id,	expression # name
+% int,	varchar # type
+% 1,	29 # length
+[ NULL,	"\"sys\".\"iamdummy\"(\"d\",\"e\",\"f\")"	]
 #DROP TABLE testme;
 #DROP FUNCTION iamdummy;
 

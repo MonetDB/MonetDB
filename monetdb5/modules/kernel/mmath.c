@@ -64,7 +64,7 @@ MATHunary##NAME##TYPE(TYPE *res , const TYPE *a)					\
 							   FE_OVERFLOW)) != 0) {				\
 			const char *err;										\
 			if (e) {												\
-				err = strerror(e);									\
+				err = GDKstrerror(e, (char[128]){0}, 128);			\
 			} else if (ex & FE_DIVBYZERO)							\
 				err = "Divide by zero";								\
 			else if (ex & FE_OVERFLOW)								\
@@ -99,7 +99,7 @@ MATHbinary##NAME##TYPE(TYPE *res, const TYPE *a, const TYPE *b)		\
 							   FE_OVERFLOW)) != 0) {				\
 			const char *err;										\
 			if (e) {												\
-				err = strerror(e);									\
+				err = GDKstrerror(e, (char[128]){0}, 128);			\
 			} else if (ex & FE_DIVBYZERO)							\
 				err = "Divide by zero";								\
 			else if (ex & FE_OVERFLOW)								\
@@ -312,4 +312,3 @@ MATHpi(dbl *pi)
 	*pi = 3.14159265358979323846;
 	return MAL_SUCCEED;
 }
-

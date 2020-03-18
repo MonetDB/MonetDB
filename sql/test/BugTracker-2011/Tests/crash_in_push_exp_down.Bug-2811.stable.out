@@ -69,7 +69,7 @@ stdout of test 'crash_in_push_exp_down.Bug-2811` in directory 'sql/test/BugTrack
 #INNER JOIN triples h3 ON (h3.pred = 20 AND h3.subj = t0.subj)     
 #INNER JOIN triples i4 ON (i4.pred = 28 AND i4.subj = h2.obj)     
 % .h3,	. # table_name
-% obj,	%1615 # name
+% obj,	%177 # name
 % int,	clob # type
 % 1,	0 # length
 #rollback;

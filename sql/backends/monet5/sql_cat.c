@@ -457,6 +457,12 @@ create_trigger(mvc *sql, char *sname, char *tname, char *triggername, int time, 
 		}
 		sa_destroy(sql->sa);
 		sql->sa = sa;
+		if (!r) {
+			if (strlen(sql->errstr) > 6 && sql->errstr[5] == '!')
+				throw(SQL, "sql.create_trigger", "%s", sql->errstr);
+			else 
+				throw(SQL, "sql.create_trigger", SQLSTATE(42000) "%s", sql->errstr);
+		}
 	}
 	return MAL_SUCCEED;
 }
@@ -775,9 +781,9 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f)
 
 		assert(nf->query);
 		if (!(sql->sa = sa_create()))
-			throw(SQL, "sql.catalog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			throw(SQL, "sql.create_func", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		if (!(buf = sa_strdup(sql->sa, nf->query)))
-			throw(SQL, "sql.catalog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			throw(SQL, "sql.create_func", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		r = rel_parse(sql, s, buf, m_deps);
 		if (r)
 			r = sql_processrelation(sql, r, 0);
@@ -805,6 +811,12 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f)
 		}
 		sa_destroy(sql->sa);
 		sql->sa = sa;
+		if (!r) {
+			if (strlen(sql->errstr) > 6 && sql->errstr[5] == '!')
+				throw(SQL, "sql.create_func", "%s", sql->errstr);
+			else 
+				throw(SQL, "sql.create_func", SQLSTATE(42000) "%s", sql->errstr);
+		}
 	}
 	default:
 		break;
@@ -975,14 +987,31 @@ SQLalter_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str seqname = *getArgReference_str(stk, pci, 2); 
 	sql_sequence *s = *(sql_sequence **) getArgReference(stk, pci, 3);
 	lng *val = NULL;
+	BAT *b = NULL;
 
 	initcontext();
 	if (getArgType(mb, pci, 4) == TYPE_lng)
 		val = getArgReference_lng(stk, pci, 4);
+	else if (isaBatType(getArgType(mb, pci, 4))) {
+		bat *bid = getArgReference_bat(stk, pci, 4);
+
+		if (!(b = BATdescriptor(*bid)))
+			throw(SQL, "sql.alter_seq", SQLSTATE(HY005) "Cannot access column descriptor");
+		if (BATcount(b) != 1) {
+			BBPunfix(b->batCacheid);
+			throw(SQL, "sql.alter_seq", SQLSTATE(42000) "Only one value allowed to alter a sequence value");	
+		}
+		if (getBatType(getArgType(mb, pci, 4)) == TYPE_lng)
+			val = (lng*)Tloc(b, 0);
+	}
+
 	if (val == NULL || is_lng_nil(*val))
 		msg = createException(SQL,"sql.alter_seq", SQLSTATE(42M36) "ALTER SEQUENCE: cannot (re)start with NULL");
 	else
 		msg = alter_seq(sql, sname, seqname, s, val);
+
+	if (b)
+		BBPunfix(b->batCacheid);
 	return msg;
 }
 

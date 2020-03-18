@@ -42,7 +42,7 @@ stdout of test 'cur_date_crash-JIRA-42` in directory 'sql/test/bugs` itself:
 % 10 # length
 #SELECT CURDATE() FROM foo WHERE bar NOT IN (SELECT bar FROM foo1);
 % . # table_name
-% %4 # name
+% %5 # name
 % date # type
 % 10 # length
 #drop table foo1;
