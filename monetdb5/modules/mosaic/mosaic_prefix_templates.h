@@ -259,7 +259,7 @@ MOSjoin_inner_loop_SIGNATURE(prefix, TPE, NIL, RIGHT_CI_NEXT)
     for (oid ro = canditer_peekprev(task->ci); !is_oid_nil(ro) && ro < last; ro = RIGHT_CI_NEXT(task->ci)) {
 		BUN i = (BUN) (ro - first);
 		TPE rval =  (TPE) (prefix | getBitVector(base,i,suffix_bits));
-		#ifdef HAS_NIL
+		#ifndef HAS_NO_NIL
         IF_EQUAL_APPEND_RESULT(true, TPE);
 		#else
 		IF_EQUAL_APPEND_RESULT(false, TPE);

@@ -260,7 +260,7 @@ MOSjoin_inner_loop_SIGNATURE(delta, TPE, NIL, RIGHT_CI_NEXT)
             TPE delta = getBitVector(base, j, bits);
 			rval = ACCUMULATE(acc, delta, sign_mask, TPE);
         }
-		#ifdef HAS_NIL
+		#ifndef HAS_NO_NIL
         IF_EQUAL_APPEND_RESULT(true, TPE);
 		#else
 		IF_EQUAL_APPEND_RESULT(false, TPE);

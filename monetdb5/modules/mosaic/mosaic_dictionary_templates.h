@@ -555,7 +555,7 @@ MOSjoin_inner_loop_SIGNATURE(METHOD, TPE, NIL, RIGHT_CI_NEXT)
 
 	BUN offset = 0;
 
-	#ifdef HAS_NIL
+	#ifndef HAS_NO_NIL
 	if (IS_NIL(TPE, dict[0]) && ((--klast) && (++dict) && (++offset)) && IS_NIL(TPE, lval)) {
 		key_found = true;
 		key = 0;
@@ -592,7 +592,7 @@ MOSjoin_inner_loop_SIGNATURE(METHOD, TPE, NIL, RIGHT_CI_NEXT)
 		{
 			oid lval = (oid) key;
 			oid rval = (oid) j;
-			#ifdef HAS_NIL
+			#ifndef HAS_NO_NIL
 			IF_EQUAL_APPEND_RESULT(true, oid);
 			#else
 			IF_EQUAL_APPEND_RESULT(false, oid);

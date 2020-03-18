@@ -58,7 +58,7 @@ static inline str OUTER_LOOP_UNCOMPRESSED_ID(TPE, NIL, NIL_SEMANTICS, LEFT_CI_NE
 	for (BUN li = 0; li < lci->ncand; li++, MOSinitializeScan(task, task->bsrc), canditer_reset(rci)) {
 		oid lo = LEFT_CI_NEXT(lci);
 		TPE lval = vl[lo-l->hseqbase];
-#if defined HAS_NIL && defined NILS_DO_NOT_MATCH
+#if !defined HAS_NO_NIL && defined NILS_DO_NOT_MATCH
 			if ((IS_NIL(TPE, lval))) {continue;};
 #endif
 
@@ -154,13 +154,13 @@ static str MOSjoin_generic_ID(TPE) (MOStask* task, BAT* l, struct canditer* lci,
 	bool nil = !l->tnonil;
 
 	if( nil && nil_matches){
-        DO_JOIN_WITH_NIL_INFO(TPE, _HAS_NIL, _NILS_MATCH);
+        DO_JOIN_WITH_NIL_INFO(TPE, _MAYBE_HAS_NIL, _NILS_MATCH);
 	}
 	if( !nil && nil_matches){
         DO_JOIN_WITH_NIL_INFO(TPE, _HAS_NO_NIL, _NILS_MATCH);
 	}
 	if( nil && !nil_matches){
-        DO_JOIN_WITH_NIL_INFO(TPE, _HAS_NIL, _NILS_DO_NOT_MATCH);
+        DO_JOIN_WITH_NIL_INFO(TPE, _MAYBE_HAS_NIL, _NILS_DO_NOT_MATCH);
 	}
 	if( !nil && !nil_matches){
         DO_JOIN_WITH_NIL_INFO(TPE, _HAS_NO_NIL, _NILS_DO_NOT_MATCH);
@@ -171,13 +171,13 @@ static str MOSjoin_generic_ID(TPE) (MOStask* task, BAT* l, struct canditer* lci,
 
 // macro adiministration
 #elif ! defined NIL
-#define NIL _HAS_NIL
-#define HAS_NIL
+#define NIL _MAYBE_HAS_NIL
 #include "mosaic_join_templates.h"
-#undef HAS_NIL
 #undef NIL
 #define NIL _HAS_NO_NIL
+#define HAS_NO_NIL
 #include "mosaic_join_templates.h"
+#undef HAS_NO_NIL
 #undef NIL
 #define DEFINE_MOSjoin_generic
 #include "mosaic_join_templates.h"

@@ -81,10 +81,10 @@ MOSselect_SIGNATURE(METHOD, TPE);\
 MOSprojection_SIGNATURE(METHOD, TPE);\
 MOSjoin_COUI_SIGNATURE(METHOD, TPE);\
 MOSBlockHeader_DEF(METHOD, TPE);\
-MOSjoin_inner_loop_SIGNATURE(METHOD, TPE, _HAS_NIL		, canditer_next);\
-MOSjoin_inner_loop_SIGNATURE(METHOD, TPE, _HAS_NO_NIL	, canditer_next);\
-MOSjoin_inner_loop_SIGNATURE(METHOD, TPE, _HAS_NIL		, canditer_next_dense);\
-MOSjoin_inner_loop_SIGNATURE(METHOD, TPE, _HAS_NO_NIL	, canditer_next_dense);\
+MOSjoin_inner_loop_SIGNATURE(METHOD, TPE, _MAYBE_HAS_NIL,	canditer_next);\
+MOSjoin_inner_loop_SIGNATURE(METHOD, TPE, _HAS_NO_NIL, 		canditer_next);\
+MOSjoin_inner_loop_SIGNATURE(METHOD, TPE, _MAYBE_HAS_NIL,	canditer_next_dense);\
+MOSjoin_inner_loop_SIGNATURE(METHOD, TPE, _HAS_NO_NIL,		canditer_next_dense);\
 ALIGNMENT_HELPER__DEF(METHOD, TPE);
 
 #ifdef HAVE_HGE

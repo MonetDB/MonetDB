@@ -154,7 +154,7 @@ MOSjoin_inner_loop_SIGNATURE(runlength, TPE, NIL, RIGHT_CI_NEXT)
     BUN last = first + MOSgetCnt(task->blk);
     const TPE rval = GET_VAL_runlength(task, TPE);
     for (oid ro = canditer_peekprev(task->ci); !is_oid_nil(ro) && ro < last; ro = RIGHT_CI_NEXT(task->ci)) {
-		#ifdef HAS_NIL
+		#ifndef HAS_NO_NIL
         IF_EQUAL_APPEND_RESULT(true, TPE);
 		#else
 		IF_EQUAL_APPEND_RESULT(false, TPE);
