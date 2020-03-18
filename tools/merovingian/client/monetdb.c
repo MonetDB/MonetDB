@@ -2107,11 +2107,8 @@ command_snapshot_restore(int argc, char *argv[])
 
 	// check if the database exists
 	sabdb *db = NULL;
-	char *err = MEROgetStatus(&db, dbname);
-	if (err != NULL) {
-		fprintf(stderr, "snapshot restore: could not look up database '%s': %s", dbname, err);
-		exit(2);
-	}
+	MEROgetStatus(&db, dbname); // ignore errors
+
 	if (db != NULL && !force) {
 		char answ;
 		printf("you are about to overwrite database '%s'.\n", db->dbname);
