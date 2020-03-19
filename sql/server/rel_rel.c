@@ -1786,8 +1786,6 @@ rel_deps(mvc *sql, sql_rel *r, list *refs, list *l)
 				return rel_deps(sql, r->l, refs, l);
 			if (r->r)
 				return rel_deps(sql, r->r, refs, l);
-		} else if (r->flag == ddl_psm) {
-			break;
 		} else if (r->flag == ddl_create_seq || r->flag == ddl_alter_seq) {
 			if (r->l)
 				return rel_deps(sql, r->l, refs, l);
@@ -1962,8 +1960,6 @@ rel_exp_visitor(mvc *sql, sql_rel *rel, exp_rewrite_fptr exp_rewriter, bool topd
 			if (rel->r)
 				if ((rel->r = rel_exp_visitor(sql, rel->r, exp_rewriter, topdown)) == NULL)
 					return NULL;
-		} else if (rel->flag == ddl_psm) {
-			break;
 		}
 		break;
 	case op_insert:
