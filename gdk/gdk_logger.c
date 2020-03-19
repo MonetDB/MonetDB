@@ -126,10 +126,12 @@ typedef struct logformat_t {
 
 typedef enum {LOG_OK, LOG_EOF, LOG_ERR} log_return;
 
+#include "gdk_geomlogger.h"
+
 /* When reading an old format database, we may need to read the geom
  * Well-known Binary (WKB) type differently.  This variable is used to
  * indicate that to the function wkbREAD during reading of the log. */
-static int geomisoldversion;
+static bool geomisoldversion;
 
 static gdk_return bm_commit(logger *lg);
 static gdk_return tr_grow(trans *tr);
@@ -2239,7 +2241,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 			goto error;
 
 		/* done reading the log, revert to "normal" behavior */
-		geomisoldversion = 0;
+		geomisoldversion = false;
 	}
 
 	return GDK_SUCCEED;
@@ -3314,9 +3316,11 @@ geomsqlfix_get(void)
 void
 geomversion_set(void)
 {
-	geomisoldversion = 1;
+	geomisoldversion = true;
 }
-int geomversion_get(void)
+
+bool
+geomversion_get(void)
 {
 	return geomisoldversion;
 }

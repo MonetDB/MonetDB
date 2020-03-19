@@ -21,6 +21,7 @@
 #include "rel_semantic.h"
 #include "rel_unnest.h"
 #include "rel_optimizer.h"
+#include "gdk_geomlogger.h"
 
 #include "rel_remote.h"
 #include "mal_authorize.h"

@@ -132,15 +132,4 @@ gdk_export log_bid logger_find_bat(logger *lg, const char *name, char tpe, oid i
 gdk_export gdk_return logger_upgrade_bat(logger *lg, const char *name, char tpe, oid id)
 	__attribute__ ((__warn_unused_result__));
 
-typedef int (*geomcatalogfix_fptr)(void *, int);
-gdk_export void geomcatalogfix_set(geomcatalogfix_fptr);
-gdk_export geomcatalogfix_fptr geomcatalogfix_get(void);
-
-typedef str (*geomsqlfix_fptr)(int);
-gdk_export void geomsqlfix_set(geomsqlfix_fptr);
-gdk_export geomsqlfix_fptr geomsqlfix_get(void);
-
-gdk_export void geomversion_set(void);
-gdk_export int geomversion_get(void);
-
 #endif /*_LOGGER_H_*/

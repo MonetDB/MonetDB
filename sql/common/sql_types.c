@@ -23,6 +23,7 @@
 #ifdef HAVE_HGE
 #include "mal.h"		/* for have_hge */
 #endif
+#include "gdk_geomlogger.h"	/* for geomcatalogfix_get */
 
 list *aliases = NULL;
 list *types = NULL;
