@@ -134,11 +134,10 @@ static inline str MOSjoinWithNilInfo_ID(TPE, NIL, NIL_SEMANTICS) (MOStask* task,
 	if( (lci->tpe == cand_dense) && (rci->tpe != cand_dense)){
 		return MOSouterloopUncompressed_ID(TPE, NIL, NIL_SEMANTICS, canditer_next_dense, canditer_next)(task, l, lci, rci);
 	}
-	if( (lci->tpe != cand_dense) && (rci->tpe != cand_dense)){
+	else {
+		assert((lci->tpe != cand_dense) && (rci->tpe != cand_dense));
 		return MOSouterloopUncompressed_ID(TPE, NIL, NIL_SEMANTICS, canditer_next, canditer_next)(task, l, lci, rci);
 	}
-
-	assert(0);
 }
 
 #elif defined MOSjoin_DEFINITION
@@ -156,11 +155,10 @@ static str MOSjoin_ID(TPE) (MOStask* task, BAT* l, struct canditer* lci, bool ni
 	if( maybe_nil && !nil_matches){
 		return MOSjoinWithNilInfo_ID(TPE, _maybeHasNil, _nilsDoNotMatch) (task, l, lci);
 	}
-	if( !maybe_nil && !nil_matches){
+	else {
+		assert (!maybe_nil && !nil_matches);
 		return MOSjoinWithNilInfo_ID(TPE, _hasNoNil, _nilsDoNotMatch) (task, l, lci);
 	}
-
-	return MAL_SUCCEED;
 }
 
 // macro adiministration
