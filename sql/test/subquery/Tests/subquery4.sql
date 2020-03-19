@@ -197,6 +197,10 @@ SELECT (SELECT i) INTO myvar FROM integers; --error, one row max
 DECLARE ovar INT;
 SET ovar = (SELECT (SELECT i) FROM integers); --error, one row max
 
+DECLARE abc,def INT;
+SET (abc, def) = (SELECT 1, 2);
+SELECT abc, def;
+
 UPDATE another_T SET col1 = MIN(col1); --error, aggregates not allowed in update set clause
 UPDATE another_T SET col2 = 1 WHERE col1 = SUM(col2); --error, aggregates not allowed in update set clause
 UPDATE another_T SET col3 = (SELECT MAX(col5)); --error, aggregates not allowed in update set clause

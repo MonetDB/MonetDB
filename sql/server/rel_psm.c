@@ -129,6 +129,8 @@ psm_set_exp(sql_query *query, dnode *n)
 			}
 
 			level = stack_find_frame(sql, vname);
+			if (!exp_name(v)) 
+				exp_label(sql->sa, v, ++sql->label);
 			v = exp_ref(sql->sa, v);
 			if (!(v = rel_check_type(sql, tpe, rel_val, v, type_cast)))
 				return NULL;
@@ -531,6 +533,8 @@ rel_select_into( sql_query *query, symbol *sq, exp_kind ek)
 			return sql_error(sql, 02, SQLSTATE(42000) "SELECT INTO: variable '%s' unknown", nme);
 		tpe = stack_find_type(sql, nme);
 		level = stack_find_frame(sql, nme);
+		if (!exp_name(v)) 
+			exp_label(sql->sa, v, ++sql->label);
 		v = exp_ref(sql->sa, v);
 		if (!(v = rel_check_type(sql, tpe, r, v, type_equal)))
 			return NULL;
