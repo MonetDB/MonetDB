@@ -340,7 +340,17 @@ struct qsort_t {
 #undef SUFF
 #undef TPE
 
-/* the interface functions */
+/* Sort the array `h' of `n' elements with size `hs' each and type
+ * `ts' in ascending or descending (if `reverse' is true) order.  If
+ * the type `tpe' indicates a variable-sized type, `h' contains
+ * offsets into the `base' array which should be NULL otherwise.  The
+ * array `t', if not NULL, contains `n' values of size `ts' each which
+ * will be moved around together with the corresponding elements in
+ * `h' (i.e. `t' is the payload).  If `nilslast' is true, nils sort at
+ * the end, otherwise at the beginning of the result.
+ *
+ * This function uses a variant of quicksort and is thus not a stable
+ * sort. */
 void
 GDKqsort(void *restrict h, void *restrict t, const void *restrict base,
 	 size_t n, int hs, int ts, int tpe, bool reverse, bool nilslast)
