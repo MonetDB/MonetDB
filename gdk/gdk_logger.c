@@ -57,6 +57,7 @@
 #include "gdk.h"
 #include "gdk_private.h"
 #include "gdk_logger.h"
+#include "gdk_logger_internals.h"
 #include <string.h>
 
 /*
@@ -92,6 +93,8 @@
 #endif
 #endif
 
+#define BATSIZE 0
+
 #define NAME(name,tpe,id) (name?name:"tpe id")
 
 #define LOG_DISABLED(lg) ((lg)->debug&128)
@@ -117,6 +120,30 @@ static const char *log_commands[] = {
 	"LOG_CLEAR_ID",
 	"LOG_UPDATE_PAX",
 };
+
+typedef struct logaction {
+	int type;		/* type of change */
+	lng nr;
+	int ht;			/* vid(-1),void etc */
+	int tt;
+	lng id;
+	char *name;		/* optional */
+	char tpe;		/* tpe of column */
+	oid cid;		/* id of object */
+	BAT *b;			/* temporary bat with changes */
+	BAT *uid;		/* temporary bat with bun positions to update */
+} logaction;
+
+/* during the recover process a number of transactions could be active */
+typedef struct trans {
+	int tid;		/* transaction id */
+	int sz;			/* sz of the changes array */
+	int nr;			/* nr of changes */
+
+	logaction *changes;
+
+	struct trans *tr;
+} trans;
 
 typedef struct logformat_t {
 	char flag;
