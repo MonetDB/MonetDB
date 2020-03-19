@@ -321,7 +321,7 @@ dump_table(sql_allocator *sa, MalBlkPtr mb, sql_table *t)
 }
 
 stmt *
-stmt_var(backend *be, const char *varname, sql_subtype *t, int declare, int level)
+stmt_var(backend *be, const char *sname, const char *varname, sql_subtype *t, int declare, int level)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
@@ -330,8 +330,10 @@ stmt_var(backend *be, const char *varname, sql_subtype *t, int declare, int leve
 	if (level == 1 ) { /* global */
 		int tt = t->type->localtype;
 
+		assert(sname);
 		q = newStmt(mb, sqlRef, putName("getVariable"));
 		q = pushArgument(mb, q, be->mvc_var);
+		q = pushStr(mb, q, sname);
 		q = pushStr(mb, q, varname);
 		if (q == NULL)
 			return NULL;
@@ -342,9 +344,8 @@ stmt_var(backend *be, const char *varname, sql_subtype *t, int declare, int leve
 		q = newAssignment(mb);
 		q = pushArgumentId(mb, q, buf);
 	} else {
-		int tt;
+		int tt = t->type->localtype;
 
-		tt = t->type->localtype;
 		(void) snprintf(buf, sizeof(buf), "A%s", varname);
 		q = newInstruction(mb, NULL, NULL);
 		if (q == NULL) {
@@ -379,12 +380,13 @@ stmt_var(backend *be, const char *varname, sql_subtype *t, int declare, int leve
 }
 
 stmt *
-stmt_vars(backend *be, const char *varname, sql_table *t, int declare, int level)
+stmt_vars(backend *be, const char *sname, const char *varname, sql_table *t, int declare, int level)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
 	int *l;
 
+	(void)sname;
 	(void)varname;
 	/* declared table */
 	if ((l = dump_table(be->mvc->sa, mb, t)) != NULL) {
@@ -3724,7 +3726,7 @@ stmt_return(backend *be, stmt *val, int nr_declared_tables)
 }
 
 stmt *
-stmt_assign(backend *be, const char *varname, stmt *val, int level)
+stmt_assign(backend *be, const char *sname, const char *varname, stmt *val, int level)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
@@ -3754,6 +3756,7 @@ stmt_assign(backend *be, const char *varname, stmt *val, int level)
 	} else {
 		q = newStmt(mb, sqlRef, setVariableRef);
 		q = pushArgument(mb, q, be->mvc_var);
+		q = pushStr(mb, q, sname ? sname : ATOMnil(TYPE_str));
 		q = pushStr(mb, q, varname);
 		if (q == NULL)
 			return NULL;

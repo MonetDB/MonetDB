@@ -56,7 +56,7 @@ psm_set_exp(sql_query *query, dnode *n)
 	dlist *qname = n->data.lval;
 	symbol *val = n->next->data.sym;
 	sql_exp *res = NULL, *e = NULL;
-	int level = 0, single = (dlist_length(qname) == 1);
+	int level = 0, single = (qname->h->type == type_string);
 	sql_subtype *tpe = NULL;
 	sql_rel *rel = NULL;
 

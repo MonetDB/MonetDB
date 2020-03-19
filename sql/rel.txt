@@ -96,7 +96,7 @@ Expressions
 e_atom 	(card ATOM)
 	-> l	literal (-> l = atom)
 	or
-	-> r	parameter ( ->r = varname, ->type = subtype, ->flag = level)
+	-> r	parameter ( ->r = varname, ->type = subtype, ->flag = level, ->alias rname contains the schema of the variable if it's the case (function parameters don't have schema) )
 	or
 	-> f	list of atom expressions
 	or

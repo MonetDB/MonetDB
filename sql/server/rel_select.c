@@ -1019,7 +1019,7 @@ rel_var_ref(mvc *sql, const char *sname, const char *name)
 	if (stack_find_var(sql, s, name)) {
 		sql_subtype *tpe = stack_find_type(sql, name);
 		int frame = stack_find_frame(sql, s, name);
-		return exp_param(sql->sa, name, tpe, frame);
+		return exp_param(sql->sa, s->base.name, name, tpe, frame);
 	} else {
 		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: identifier '%s%s%s' unknown", sname ? sname : "", sname ? "." : "", name);
 	}
@@ -1106,8 +1106,6 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 		return NULL;
 	} else if (dlist_length(l) == 1) {
 		const char *name = l->h->data.sval;
-		sql_arg *a = sql_bind_param(sql, name);
-		int var = stack_find_var(sql, NULL, name); /* find one */
 
 		if (!exp && inner)
 			exp = rel_bind_column(sql, inner, name, f, 0);
@@ -1146,23 +1144,28 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 			if (exp && outer && is_join(outer->op))
 				set_dependent(outer);
 		}
-		if (exp) {
-			if (var || a)
-				return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s' ambiguous", name);
-		} else if (a) {
-			if (var)
-				return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s' ambiguous", name);
-			exp = exp_param(sql->sa, a->name, &a->type, 0);
-		}
-		if (!exp && var) {
-			sql_rel *r = stack_find_rel_var(sql, name);
+		if (!exp) { /* Try a CTE */
+			sql_rel *r = stack_find_rel_var(sql, name); /* find one */
 			if (r) {
 				*rel = r;
 				return exp_rel(sql, r);
 			}
-			return rel_var_ref(sql, NULL, name);
 		}
-		if (!exp && !var)
+		if (!exp) { /* Try a parameter */
+			sql_arg *a = sql_bind_param(sql, name);
+			if (a)
+				exp = exp_param(sql->sa, NULL, a->name, &a->type, 0);
+		}
+		if (!exp) { /* If no column was found, try a variable */
+			sql_schema *s = cur_schema(sql);
+			if (s) {
+				int var = stack_find_var(sql, s, name); /* find one */
+				if (var)
+					return rel_var_ref(sql, s->base.name, name);
+			}
+		}
+
+		if (!exp)
 			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: identifier '%s' unknown", name);
 		if (exp && inner && inner->card <= CARD_AGGR && exp->card > CARD_AGGR && (is_sql_sel(f) || is_sql_having(f)) && !is_sql_aggr(f))
 			return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s' in query results without an aggregate function", name);
@@ -1221,6 +1224,15 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 				exp = rel_bind_column2(sql, *rel, tname, cname, f);
 			}
 		}
+		if (!exp) { /* If no column was found, try a variable */
+			sql_schema *s = mvc_bind_schema(sql, tname);
+			if (s) {
+				int var = stack_find_var(sql, s, cname); /* find one */
+				if (var)
+					return rel_var_ref(sql, tname, cname);
+			}
+		}
+
 		if (!exp)
 			return sql_error(sql, 02, SQLSTATE(42S22) "SELECT: no such column '%s.%s'", tname, cname);
 		if (exp && inner && inner->card <= CARD_AGGR && exp->card > CARD_AGGR && (is_sql_sel(f) || is_sql_having(f)) && !is_sql_aggr(f))

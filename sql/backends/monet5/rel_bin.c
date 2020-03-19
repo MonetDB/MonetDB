@@ -543,12 +543,12 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				return NULL;
 			if (e->card <= CARD_ATOM && r->nrcols > 0) /* single value, get result from bat */
 				r = stmt_fetch(be, r);
-			return stmt_assign(be, exp_name(e), r, GET_PSM_LEVEL(e->flag));
+			return stmt_assign(be, exp_relname(e), exp_name(e), r, GET_PSM_LEVEL(e->flag));
 		} else if (e->flag & PSM_VAR) {
 			if (e->f)
-				return stmt_vars(be, exp_name(e), e->f, 1, GET_PSM_LEVEL(e->flag));
+				return stmt_vars(be, exp_relname(e), exp_name(e), e->f, 1, GET_PSM_LEVEL(e->flag));
 			else
-				return stmt_var(be, exp_name(e), &e->tpe, 1, GET_PSM_LEVEL(e->flag));
+				return stmt_var(be, exp_relname(e), exp_name(e), &e->tpe, 1, GET_PSM_LEVEL(e->flag));
 		} else if (e->flag & PSM_RETURN) {
 			sql_exp *l = e->l;
 			stmt *r = exp_bin(be, l, left, right, grp, ext, cnt, sel);
@@ -628,7 +628,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			atom *a = e->l;
 			s = stmt_atom(be, atom_dup(sql->sa, a));
 		} else if (e->r) { 		/* parameters */
-			s = stmt_var(be, sa_strdup(sql->sa, e->r), e->tpe.type?&e->tpe:NULL, 0, e->flag);
+			s = stmt_var(be, e->alias.rname ? sa_strdup(sql->sa, e->alias.rname) : NULL, sa_strdup(sql->sa, e->alias.name), e->tpe.type?&e->tpe:NULL, 0, e->flag);
 		} else if (e->f) { 		/* values */
 			s = value_list(be, e->f, left, sel);
 		} else { 			/* arguments */
@@ -674,7 +674,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		if (exps) {
 			int nrcols = 0;
 
-                        if (sel && strcmp(sql_func_mod(f->func), "calc") == 0 && strcmp(sql_func_imp(f->func), "ifthenelse") != 0) 
+			if (sel && strcmp(sql_func_mod(f->func), "calc") == 0 && strcmp(sql_func_imp(f->func), "ifthenelse") != 0) 
 				push_cands = 1;
 
 			for (en = exps->h; en; en = en->next) {
@@ -741,7 +741,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		if (cond_execution) {
 			/* var_x = nil; */
 			nme = number2name(name, sizeof(name), ++sql->label);
-			(void)stmt_var(be, nme, exp_subtype(e), 1, 2);
+			(void)stmt_var(be, NULL, nme, exp_subtype(e), 1, 2);
 			/* if_barrier ... */
 			cond_execution = stmt_cond(be, cond_execution, NULL, 0, 0);
 		}
@@ -755,10 +755,10 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			s->cand = sel;
 		if (cond_execution) {
 			/* var_x = s */
-			(void)stmt_assign(be, nme, s, 2);
+			(void)stmt_assign(be, NULL, nme, s, 2);
 			/* endif_barrier */
 			(void)stmt_control_end(be, cond_execution);
-			s = stmt_var(be, nme, exp_subtype(e), 0, 2);
+			s = stmt_var(be, NULL, nme, exp_subtype(e), 0, 2);
 		}
 	} 	break;
 	case e_aggr: {
@@ -1622,7 +1622,7 @@ exp2bin_args(backend *be, sql_exp *e, list *args)
 
 			snprintf(nme, sizeof(nme), "A%s", (char*)e->r);
 			if (!list_find(args, nme, (fcmp)&alias_cmp)) {
-				stmt *s = stmt_var(be, e->r, &e->tpe, 0, 0);
+				stmt *s = stmt_var(be, NULL, e->r, &e->tpe, 0, 0);
 
 				s = stmt_alias(be, s, NULL, sa_strdup(sql->sa, nme));
 				list_append(args, s);

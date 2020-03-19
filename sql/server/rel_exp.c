@@ -518,11 +518,13 @@ exp_value(mvc *sql, sql_exp *e, atom **args, int maxarg)
 }
 
 sql_exp * 
-exp_param(sql_allocator *sa, const char *name, sql_subtype *tpe, int frame) 
+exp_param(sql_allocator *sa, const char *sname, const char *name, sql_subtype *tpe, int frame) 
 {
 	sql_exp *e = exp_create(sa, e_atom);
 	if (e == NULL)
 		return NULL;
+	e->alias.name = (char*)name;
+	e->alias.rname = (char*)sname;
 	e->r = (char*)name;
 	e->card = CARD_ATOM;
 	e->flag = frame;
@@ -2376,7 +2378,7 @@ exp_copy( mvc *sql, sql_exp * e)
 		else if (!e->r)
 			ne = exp_atom_ref(sql->sa, e->flag, &e->tpe);
 		else 
-			ne = exp_param(sql->sa, e->r, &e->tpe, e->flag);
+			ne = exp_param(sql->sa, e->alias.rname, e->alias.name, &e->tpe, e->flag);
 		break;
 	case e_psm:
 		if (e->flag & PSM_SET) 

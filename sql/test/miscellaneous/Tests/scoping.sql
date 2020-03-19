@@ -11,6 +11,8 @@ select sys.i, i from tmp1; --we declare variables in a schema, so to reference t
 
 DROP TABLE tmp1;
 ------------------------------------------------------------------------------
+with a(a) as (select 1), a(a) as (select 2) select 1; --error, variable a already declared
+------------------------------------------------------------------------------x<
 CREATE OR REPLACE FUNCTION scoping(input INT) RETURNS INT 
 BEGIN
 	DECLARE x int;

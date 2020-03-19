@@ -645,19 +645,18 @@ setVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 
 	if (!(s = mvc_bind_schema(m, sname)))
-		throw(SQL, "sql.setVariable", SQLSTATE(3F000) "Cannot find the schema %s", sname);
+		throw(SQL, "sql.setVariable", SQLSTATE(3F000) "Cannot find the schema '%s'", sname);
 
 	*res = 0;
 	if (mtype < 0 || mtype >= 255)
 		throw(SQL, "sql.setVariable", SQLSTATE(42100) "Variable type error");
 	if (!strcmp("sys", s->base.name) && !strcmp("optimizer", varname)) {
-		const char *newopt = *getArgReference_str(stk, pci, 3);
+		const char *newopt = *getArgReference_str(stk, pci, 4);
 		if (newopt) {
 			char buf[BUFSIZ];
-			if (!isOptimizerPipe(newopt) && strchr(newopt, (int) ';') == 0) {
+			if (!isOptimizerPipe(newopt) && strchr(newopt, (int) ';') == 0)
 				throw(SQL, "sql.setVariable", SQLSTATE(42100) "optimizer '%s' unknown", newopt);
-			}
-			snprintf(buf, BUFSIZ, "user_%d", cntxt->idx);
+			(void) snprintf(buf, BUFSIZ, "user_%d", cntxt->idx);
 			if (!isOptimizerPipe(newopt) || strcmp(buf, newopt) == 0) {
 				msg = addPipeDefinition(cntxt, buf, newopt);
 				if (msg)
@@ -673,7 +672,7 @@ setVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		return MAL_SUCCEED;
 	}
-	src = &stk->stk[getArg(pci, 3)];
+	src = &stk->stk[getArg(pci, 4)];
 	if (stack_find_var(m, s, varname)) {
 #ifdef HAVE_HGE
 		hge sgn = val_get_number(src);
@@ -709,11 +708,11 @@ getVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 
 	if (!(s = mvc_bind_schema(m, sname)))
-		throw(SQL, "sql.getVariable", SQLSTATE(3F000) "Cannot find the schema %s", sname);
+		throw(SQL, "sql.getVariable", SQLSTATE(3F000) "Cannot find the schema '%s'", sname);
 	if (mtype < 0 || mtype >= 255)
 		throw(SQL, "sql.getVariable", SQLSTATE(42100) "Variable type error");
 	if (!(a = stack_get_var(m, s, varname)))
-		throw(SQL, "sql.getVariable", SQLSTATE(42100) "Variable'%s.%s' unknown", sname, varname);
+		throw(SQL, "sql.getVariable", SQLSTATE(42100) "Variable '%s.%s' unknown", sname, varname);
 	src = &a->data;
 	dst = &stk->stk[getArg(pci, 0)];
 	if (VALcopy(dst, src) == NULL)
