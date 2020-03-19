@@ -1572,6 +1572,55 @@ rel_in_rel(sql_rel *super, sql_rel *sub)
 	return 0;
 }
 
+sql_rel*
+rel_parent(sql_rel *rel)
+{
+	if (rel->l && (is_project(rel->op) || rel->op == op_topn || rel->op == op_sample)) {
+		sql_rel *l = rel->l;
+		if (is_project(l->op))
+			return l;
+	}
+	return rel;
+}
+
+sql_exp *
+lastexp(sql_rel *rel) 
+{
+	if (!is_processed(rel) || is_topn(rel->op) || is_sample(rel->op))
+		rel = rel_parent(rel);
+	assert(list_length(rel->exps));
+	assert(is_project(rel->op));
+	return rel->exps->t->data;
+}
+
+sql_rel *
+rel_zero_or_one(mvc *sql, sql_rel *rel, exp_kind ek)
+{
+	if (is_topn(rel->op))
+		rel = rel_project(sql->sa, rel, rel_projections(sql, rel, NULL, 1, 0));
+	if (ek.card < card_set && rel->card > CARD_ATOM) {
+		assert (is_simple_project(rel->op) || is_set(rel->op));
+		list *exps = rel->exps;
+		rel = rel_groupby(sql, rel, NULL);
+		for(node *n = exps->h; n; n=n->next) {
+			sql_exp *e = n->data;
+			if (!has_label(e))
+				exp_label(sql->sa, e, ++sql->label);
+			sql_subtype *t = exp_subtype(e); /* parameters don't have a type defined, for those use 'void' one */
+			sql_subfunc *zero_or_one = sql_bind_func(sql->sa, sql->session->schema, "zero_or_one", t ? t : sql_bind_localtype("void"), NULL, F_AGGR);
+
+			e = exp_ref(sql->sa, e);
+			e = exp_aggr1(sql->sa, e, zero_or_one, 0, 0, CARD_ATOM, has_nil(e));
+			(void)rel_groupby_add_aggr(sql, rel, e);
+		}
+	} else {
+		sql_exp *e = lastexp(rel);
+		if (!has_label(e))
+			exp_label(sql->sa, e, ++sql->label);
+	}
+	return rel;
+}
+
 static sql_rel *
 refs_find_rel(list *refs, sql_rel *rel)
 {
