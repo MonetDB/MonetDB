@@ -745,7 +745,8 @@ exp_values_set_supertype(mvc *sql, sql_exp *values)
 			e = rel_check_type(sql, &values->tpe, NULL, e, type_equal);
 			if (!e)
 				return NULL;
-			append(nexps, e); 
+			exp_label(sql->sa, e, ++sql->label);
+			append(nexps, e);
 		}
 		values->f = nexps;
 	}
@@ -2045,7 +2046,6 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 			}
 		} else { /* if it's not a tuple, enforce coersion on the type for every element on the list */
 			values = exp_values_set_supertype(sql, values);
-
 			if (rel_binop_check_types(sql, rel ? *rel : NULL, le, values, 0) < 0)
 				return NULL;
 		}
