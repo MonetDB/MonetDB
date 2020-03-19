@@ -617,7 +617,7 @@ msab_getSingleStatus(const char *pathbuf, const char *dbname, sabdb *next)
 	 */
 	snprintf(buf, sizeof(buf), "%s/%s/%s", pathbuf, dbname,
 			 _sabaoth_internal_uuid);
-	if (stat(buf, &statbuf) != -1) {
+	if (stat(buf, &statbuf) == 0) {
 		/* database has the same process signature as ours, which
 		 * means, it must be us, rely on the uplog state */
 		snprintf(log, sizeof(log), "%s/%s/%s", pathbuf, dbname, UPLOGFILE);
@@ -641,7 +641,7 @@ msab_getSingleStatus(const char *pathbuf, const char *dbname, sabdb *next)
 			(void)fclose(f);
 		}
 	} else if (snprintf(buf, sizeof(buf), "%s/%s/%s", pathbuf, dbname, ".gdk_lock"),
-			   ((fd = MT_lockf(buf, F_TEST)) == -2)) {
+			   ((fd = MT_lockf(buf, F_TLOCK)) == -2)) {
 		/* Locking failed; this can be because the lockfile couldn't
 		 * be created.  Probably there is no Mserver running for
 		 * that case also.
@@ -650,15 +650,18 @@ msab_getSingleStatus(const char *pathbuf, const char *dbname, sabdb *next)
 	} else if (fd == -1) {
 		/* file is locked, so mserver is running, see if the database
 		 * has finished starting */
-		snprintf(buf, sizeof(buf), "%s/%s/%s",
-				 pathbuf, dbname, STARTEDFILE);
+		snprintf(buf, sizeof(buf), "%s/%s/%s", pathbuf, dbname, STARTEDFILE);
 		if (stat(buf, &statbuf) == -1) {
 			sdb->state = SABdbStarting;
 		} else {
 			sdb->state = SABdbRunning;
 		}
 	} else {
-		/* file is not locked, check for a crash in the uplog */
+		/* file was not locked (we just locked it), check for a crash
+		 * in the uplog */
+		snprintf(log, sizeof(log), "%s/%s/%s", pathbuf, dbname, STARTEDFILE);
+		/* just to be sure, remove the .started file */
+		(void) remove(log);		/* may fail, that's fine */
 		snprintf(log, sizeof(log), "%s/%s/%s", pathbuf, dbname, UPLOGFILE);
 		if ((f = fopen(log, "r")) != NULL) {
 			(void)fseek(f, -1, SEEK_END);
@@ -675,28 +678,27 @@ msab_getSingleStatus(const char *pathbuf, const char *dbname, sabdb *next)
 			/* no uplog, so presumably never started */
 			sdb->state = SABdbInactive;
 		}
+		MT_lockf(buf, F_ULOCK);
+		close(fd);
 	}
 	snprintf(buf, sizeof(buf), "%s/%s/%s", pathbuf, dbname, MAINTENANCEFILE);
-	sdb->locked = stat(buf, &statbuf) != -1;
+	sdb->locked = stat(buf, &statbuf) == 0;
 
 	/* add scenarios that are supported */
 	sdb->scens = NULL;
 	snprintf(buf, sizeof(buf), "%s/%s/%s", pathbuf, dbname, SCENARIOFILE);
 	if ((f = fopen(buf, "r")) != NULL) {
 		sablist* np = NULL;
-		while (fgets(data, 8095, f) != NULL) {
+		while (fgets(data, (int) sizeof(data), f) != NULL) {
 			if (*data != '\0' && data[strlen(data) - 1] == '\n')
 				data[strlen(data) - 1] = '\0';
 			if (sdb->scens == NULL) {
-				sdb->scens = malloc(sizeof(sablist));
-				sdb->scens->val = strdup(data);
-				sdb->scens->next = NULL;
-				np = sdb->scens;
+				np = sdb->scens = malloc(sizeof(sablist));
 			} else {
 				np = np->next = malloc(sizeof(sablist));
-				np->val = strdup(data);
-				np->next = NULL;
 			}
+			np->val = strdup(data);
+			np->next = NULL;
 		}
 		(void)fclose(f);
 	}
@@ -706,19 +708,16 @@ msab_getSingleStatus(const char *pathbuf, const char *dbname, sabdb *next)
 	snprintf(buf, sizeof(buf), "%s/%s/%s", pathbuf, dbname, CONNECTIONFILE);
 	if ((f = fopen(buf, "r")) != NULL) {
 		sablist* np = NULL;
-		while (fgets(data, 8095, f) != NULL) {
+		while (fgets(data, (int) sizeof(data), f) != NULL) {
 			if (*data != '\0' && data[strlen(data) - 1] == '\n')
 				data[strlen(data) - 1] = '\0';
 			if (sdb->conns == NULL) {
-				sdb->conns = malloc(sizeof(sablist));
-				sdb->conns->val = strdup(data);
-				sdb->conns->next = NULL;
-				np = sdb->conns;
+				np = sdb->conns = malloc(sizeof(sablist));
 			} else {
 				np = np->next = malloc(sizeof(sablist));
-				np->val = strdup(data);
-				np->next = NULL;
 			}
+			np->val = strdup(data);
+			np->next = NULL;
 		}
 		(void)fclose(f);
 	}
