@@ -1158,11 +1158,9 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 		}
 		if (!exp) { /* If no column was found, try a variable */
 			sql_schema *s = cur_schema(sql);
-			if (s) {
-				int var = stack_find_var(sql, s, name); /* find one */
-				if (var)
-					return rel_var_ref(sql, s->base.name, name);
-			}
+			int var = stack_find_var(sql, s, name); /* find one */
+			if (var)
+				return rel_var_ref(sql, s->base.name, name);
 		}
 
 		if (!exp)
