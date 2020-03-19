@@ -192,6 +192,15 @@ SELECT i1.i, i2.i FROM integers i1, integers i2 WHERE (i1.i <= ANY (SELECT i1.i)
 SELECT 1 IN ((SELECT MIN(col2)), (SELECT SUM(col4))) FROM another_t;
 	-- False
 
+DECLARE myvar INT;
+SELECT (SELECT i) INTO myvar FROM integers; --error, one row max
+DECLARE ovar INT;
+SET ovar = (SELECT (SELECT i) FROM integers); --error, one row max
+
+DECLARE abc,def INT;
+SET (abc, def) = (SELECT 1, 2);
+SELECT abc, def;
+
 UPDATE another_T SET col1 = MIN(col1); --error, aggregates not allowed in update set clause
 UPDATE another_T SET col2 = 1 WHERE col1 = SUM(col2); --error, aggregates not allowed in update set clause
 UPDATE another_T SET col3 = (SELECT MAX(col5)); --error, aggregates not allowed in update set clause

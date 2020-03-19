@@ -724,7 +724,7 @@ static void ctl_handle_client(
 				}
 			} else if (strchr(p, '=') != NULL) { /* set */
 				char *val;
-				char doshare = 0;
+				bool doshare = false;
 
 				if ((e = msab_getStatus(&stats, q)) != NULL) {
 					len = snprintf(buf2, sizeof(buf2),
@@ -750,7 +750,7 @@ static void ctl_handle_client(
 				if (*val == '\0')
 					val = NULL;
 
-				if ((doshare = !strcmp(p, "shared"))) {
+				if ((doshare = strcmp(p, "shared") == 0)) {
 					/* bail out if we don't do discovery at all */
 					if (getConfNum(_mero_props, "discovery") == 0) {
 						len = snprintf(buf2, sizeof(buf2),
