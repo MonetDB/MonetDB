@@ -874,6 +874,7 @@ multiplexThread(void *d)
 			close(p->err);
 			Mfprintf(stdout, "mfunnel '%s' has stopped\n", p->dbname);
 			free(p->dbname);
+			pthread_mutex_destroy(&p->fork_lock);
 			free(p);
 			break;
 		}
