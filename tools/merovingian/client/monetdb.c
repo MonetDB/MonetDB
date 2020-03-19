@@ -2107,7 +2107,8 @@ command_snapshot_restore(int argc, char *argv[])
 
 	// check if the database exists
 	sabdb *db = NULL;
-	MEROgetStatus(&db, dbname); // ignore errors
+	char *e = MEROgetStatus(&db, dbname); // ignore errors
+	free(e);
 
 	if (db != NULL && !force) {
 		char answ;
