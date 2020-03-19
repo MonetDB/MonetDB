@@ -1875,7 +1875,7 @@ rel_union_exps(mvc *sql, sql_exp **l, list *vals, int is_tuple)
 		sql_exp *ve = n->data, *r, *s;
 		sql_rel *sq = NULL;
 
-		if (exp_has_rel(ve)) 
+		if (exp_has_rel(ve))
 			sq = exp_rel_get_rel(sql->sa, ve); /* get subquery */
 		else
 			sq = rel_project(sql->sa, NULL, append(sa_list(sql->sa), ve));
@@ -1888,20 +1888,21 @@ rel_union_exps(mvc *sql, sql_exp **l, list *vals, int is_tuple)
 				m->data = r;
 			}
 		} else {
-			r = sq->exps->t->data;
-			if (rel_convert_types(sql, NULL, NULL, l, &r, 1, type_equal) < 0)
-				return NULL;
-			sq->exps->t->data = r;
 			sq->nrcols = list_length(sq->exps);
+			if (rel_convert_types(sql, NULL, NULL, l, &ve, 1, type_equal) < 0)
+				return NULL;
+			/* flatten expressions */
+			if (exp_has_rel(ve))
+				ve = exp_rel_update_exp(sql->sa, ve);
+			sq = rel_project(sql->sa, sq, append(sa_list(sql->sa), ve));
 		}
 		if (!u) {
 			u = sq;
-			exps = rel_projections(sql, sq, NULL, 1/*keep names */, 1);
 		} else {
 			u = rel_setop(sql->sa, u, sq, op_union);
 			rel_set_exps(u, exps);
-			exps = rel_projections(sql, sq, NULL, 1/*keep names */, 1);
 		}
+		exps = rel_projections(sql, sq, NULL, 1/*keep names */, 1);
 	}
 	return u;
 }
@@ -1995,6 +1996,8 @@ rewrite_anyequal(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 			if (is_atom(re->type) && re->f) { /* exp_values */
 				/* flatten using unions */
 				rsq = rel_union_exps(sql, &le, re->f, is_tuple);
+				if (!rsq)
+					return NULL;
 				re = rsq->exps->t->data;
 
 				if (!is_tuple && !is_freevar(re)) {
@@ -2183,6 +2186,8 @@ rewrite_compare(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 			if (is_values(re)) { /* exp_values */
 				/* flatten using unions */
 				rsq = rel_union_exps(sql, &le, re->f, is_tuple);
+				if (!rsq)
+					return NULL;
 				re = rsq->exps->t->data;
 
 				if (!is_tuple) {
