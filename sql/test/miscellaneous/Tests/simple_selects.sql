@@ -133,3 +133,5 @@ create table x (a int GENERATED ALWAYS AS IDENTITY);
 alter table x alter a drop default; --ok, remove sequence
 SELECT CAST(COUNT(*) - myvar AS BIGINT) FROM sequences; --the total count, cannot change
 drop table x;
+
+SELECT 1, 2 INTO myvar; --error, number of variables don't match

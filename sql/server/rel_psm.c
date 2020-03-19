@@ -520,6 +520,8 @@ rel_select_into( sql_query *query, symbol *sq, exp_kind ek)
 	r = rel_subquery(query, NULL, sq, ek);
 	if (!r) 
 		return NULL;
+	if (list_length(r->exps) != dlist_length(into))
+		return sql_error(sql, 02, SQLSTATE(21S01) "SELECT INTO: number of values doesn't match number of variables to set");
 	nl = sa_list(sql->sa);
 	append(nl, exp_rel(sql, r));
 	for (m = r->exps->h, n = into->h; m && n; m = m->next, n = n->next) {
