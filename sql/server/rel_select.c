@@ -763,12 +763,17 @@ exp_tuples_set_supertype(mvc *sql, list *tuple_values, sql_exp *tuples)
 		return NULL;
 
 	int tuple_width = list_length(tuple_values), i;
-	sql_subtype **types = SA_NEW_ARRAY(sql->sa, sql_subtype*, tuple_width);
+	sql_subtype *types = SA_NEW_ARRAY(sql->sa, sql_subtype, tuple_width);
+	bool *has_type = SA_NEW_ARRAY(sql->sa, bool, tuple_width);
 	node *n;
 
+	memset(has_type, 0, sizeof(bool)*tuple_width);
 	for(n = tuple_values->h, i = 0; n; n = n->next, i++) {
 		sql_exp *e = n->data;
-		types[i] = exp_subtype(e);
+		if (exp_subtype(e)) {
+			types[i] = *exp_subtype(e);
+			has_type[i] = 1;
+		}
 	}
 
 	for (node *m = vals->h; m; m = m->next) {
@@ -779,20 +784,20 @@ exp_tuples_set_supertype(mvc *sql, list *tuple_values, sql_exp *tuples)
 			sql_subtype *tpe;
 			sql_exp *e = n->data;
 
-			/* if the expression is a parameter set its type */
-			/* check for param 
-			if (types[i] && e->type == e_atom && !e->l && !e->r && !e->f && !e->tpe.type) {
-				if (set_type_param(sql, types[i], e->flag) == 0)
-					e->tpe = *types[i];
+			if (has_type[i] && e->type == e_atom && !e->l && !e->r && !e->f && !e->tpe.type) {
+				if (set_type_param(sql, types+i, e->flag) == 0)
+					e->tpe = types[i];
 				else
 					return NULL;
 			}
-			 * */
 			tpe = exp_subtype(e);
-			if (types[i] && tpe) {
-				supertype(types[i], types[i], tpe);
+			if (!tpe)
+				return NULL;
+			if (has_type[i] && tpe) {
+				supertype(types+i, types+i, tpe);
 			} else {
-				types[i] = tpe;
+				has_type[i] = 1;
+				types[i] = *tpe;
 			}
 		}
 	}
@@ -805,16 +810,7 @@ exp_tuples_set_supertype(mvc *sql, list *tuple_values, sql_exp *tuples)
 		for(n = tuple_relation->exps->h, i = 0; n; n = n->next, i++) {
 			sql_exp *e = n->data;
 
-			/* if the expression is a parameter set its type 
-			sql_exp *e = m->data;
-			if (e->type == e_atom && !e->l && !e->r && !e->f && !e->tpe.type) {
-				if (set_type_param(sql, tpe, e->flag) == 0)
-					e->tpe = *tpe;
-				else
-					return NULL;
-			}
-			 * */
-			e = rel_check_type(sql, types[i], NULL, e, type_equal);
+			e = rel_check_type(sql, types+i, NULL, e, type_equal);
 			if (!e)
 				return NULL;
 			exp_label(sql->sa, e, ++sql->label);
@@ -857,7 +853,7 @@ tuples_check_types(mvc *sql, list *tuple_values, sql_exp *tuples)
 
 		if (rel_binop_check_types(sql, NULL, le, re, 0) < 0)
 			return NULL;
-		if ((le = rel_check_type(sql, exp_subtype(re), NULL, le, type_cast)) == NULL)
+		if ((le = rel_check_type(sql, exp_subtype(re), NULL, le, type_equal)) == NULL)
 			return NULL;
 		append(nvalues, le);
 	}

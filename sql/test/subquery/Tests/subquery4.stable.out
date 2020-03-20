@@ -306,6 +306,11 @@ stdout of test 'subquery4` in directory 'sql/test/subquery` itself:
 % boolean # type
 % 5 # length
 [ false	]
+#SELECT 1 FROM another_t WHERE (1,col1) IN ((SELECT MIN(i1.i), SUM(i1.i) FROM integers i1));
+% . # table_name
+% single_value # name
+% tinyint # type
+% 1 # length
 #DECLARE myvar INT;
 #DECLARE ovar INT;
 #DECLARE abc,def INT;
