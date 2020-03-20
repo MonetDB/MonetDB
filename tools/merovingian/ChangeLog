@@ -1,7 +1,3 @@
 # ChangeLog file for sql/src/backends/monet5/merovingian
 # This file is updated with mchangelog
 
-* Tue Feb 18 2020 Thodoris Zois <thodoris.zois@monetdbsolutions.com>
-- Added dbtrace mserver5 option to the daemon in order to set
-  mserver5's output directory for the produced traces.
-

@@ -14,7 +14,7 @@
 #include "mal_instruction.h"
 #include "mal_client.h"
 
-#define MAL_ADMIN 0
+#define MAL_ADMIN (oid) 0
 
 mal_export str AUTHcheckCredentials(oid *ret, Client c, const char *user, const char *passwd, const char *challenge, const char *algo);
 mal_export str AUTHaddUser(oid *ret, Client c, const char *user, const char *pass);

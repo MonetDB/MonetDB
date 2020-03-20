@@ -37,15 +37,15 @@ QUERY = copy 4 records into cik1 from stdin USING DELIMITERS ',',E'\n','"' NULL 
         5
         9
 ERROR = !INSERT INTO: PRIMARY KEY constraint 'cik1.cik1_i_pkey' violated
-CODE  = M0M29
-MAPI  = (monetdb) /var/tmp/mtest-10958/.s.monetdb.35734
+CODE  = 40002
+MAPI  = (monetdb) /var/tmp/mtest-225531/.s.monetdb.33874
 QUERY = copy 4 records into cik2 from stdin USING DELIMITERS ',',E'\n','"' NULL AS '';
         0,1
         5,1
         5,1
         9,1
 ERROR = !INSERT INTO: PRIMARY KEY constraint 'cik2.cik2_i_j_pkey' violated
-CODE  = M0M29
+CODE  = 40002
 
 # 18:36:17 >  
 # 18:36:17 >  "Done."

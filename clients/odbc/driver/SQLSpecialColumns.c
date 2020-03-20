@@ -79,11 +79,11 @@ translateNullable(SQLUSMALLINT Nullable)
 static SQLRETURN
 MNDBSpecialColumns(ODBCStmt *stmt,
 		   SQLUSMALLINT IdentifierType,
-		   SQLCHAR *CatalogName,
+		   const SQLCHAR *CatalogName,
 		   SQLSMALLINT NameLength1,
-		   SQLCHAR *SchemaName,
+		   const SQLCHAR *SchemaName,
 		   SQLSMALLINT NameLength2,
-		   SQLCHAR *TableName,
+		   const SQLCHAR *TableName,
 		   SQLSMALLINT NameLength3,
 		   SQLUSMALLINT Scope,
 		   SQLUSMALLINT Nullable)

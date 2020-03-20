@@ -10,7 +10,7 @@
 #include "cheader.h"
 #include "cheader.text.h"
 
-#include "mtime.h"
+#include "gdk_time.h"
 #include "blob.h"
 
 #include <setjmp.h>
@@ -43,8 +43,6 @@ typedef struct _mprotected_region {
 
 static char *mprotect_region(void *addr, size_t len,
 							 mprotected_region **regions);
-static char *clear_mprotect(void *addr, size_t len);
-
 static allocated_region *allocated_regions[THREADS];
 static jmp_buf jump_buffer[THREADS];
 
@@ -139,15 +137,10 @@ static char *mprotect_region(void *addr, size_t len,
 	return NULL;
 }
 
-static char *clear_mprotect(void *addr, size_t len)
+static void clear_mprotect(void *addr, size_t len)
 {
-	if (!addr)
-		return NULL;
-
-	if (mprotect(addr, len, PROT_READ | PROT_WRITE) < 0) {
-		return strerror(errno);
-	}
-	return NULL;
+	if (addr)
+		mprotect(addr, len, PROT_READ | PROT_WRITE);
 }
 
 #define ATTEMPT_TO_WRITE_TO_FILE(f, data)                                      \
@@ -685,7 +678,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		if (!f) {
 			msg = createException(MAL, "cudf.eval",
 								  "Failed to open file for JIT compilation: %s",
-								  strerror(errno));
+								  GDKstrerror(errno, (char[128]){0}, 128));
 			errno = 0;
 			goto wrapup;
 		}
@@ -1253,7 +1246,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		if (ret < 0) {
 			// error value
 			msg = createException(MAL, "cudf.eval", "Failed setjmp: %s",
-								  strerror(errno));
+								  GDKstrerror(errno, (char[128]){0}, 128));
 			errno = 0;
 			goto wrapup;
 		} else if (ret > 0) {
@@ -1285,7 +1278,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			sigaction(SIGBUS, &sa, &oldsb) == -1) {
 			msg = createException(MAL, "cudf.eval",
 					      "Failed to set signal handler: %s",
-					      strerror(errno));
+					      GDKstrerror(errno, (char[128]){0}, 128));
 			errno = 0;
 			goto wrapup;
 		}
@@ -1315,7 +1308,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			sigaction(SIGBUS, &oldsb, NULL) == -1) {
 			msg = createException(MAL, "cudf.eval",
 								  "Failed to unset signal handler: %s",
-								  strerror(errno));
+								  GDKstrerror(errno, (char[128]){0}, 128));
 			errno = 0;
 			goto wrapup;
 		}

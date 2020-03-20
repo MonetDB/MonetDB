@@ -275,7 +275,7 @@ exp_getrange_sel( mvc *sql, sql_rel *r, sql_exp *e, char *min, char *max)
 	/* 4 case, dbl and lng, date, timestamp */
 	else if (t->type->eclass == EC_DATE) {
 		sel = (emax->data.val.ival-emin->data.val.ival)/(dbl)(amax->data.val.ival-amin->data.val.ival);
-	} else if (t->type->eclass == EC_TIMESTAMP) {
+	} else if (t->type->eclass == EC_TIMESTAMP || t->type->eclass == EC_TIMESTAMP_TZ) {
 		sel = (emax->data.val.lval-emin->data.val.lval)/(dbl)(amax->data.val.lval-amin->data.val.lval);
 	} else if (t->type->eclass == EC_FLT) {
 		sel = (emax->data.val.dval-emin->data.val.dval)/(amax->data.val.dval-amin->data.val.dval);

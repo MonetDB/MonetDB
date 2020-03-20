@@ -27,7 +27,7 @@ create trigger test_4_4
 create trigger test_4_5
 	after update on t_4_1
 	for each statement 
-	when ("id">0) insert into t_4_1 values(4, 'update_when_statement_true');
+	when ("id">0) insert into t_4_1 values(4, 'update_when_statement_true'); --error, id variable unknown
 
 --test WHEN clause
 
@@ -39,7 +39,7 @@ create trigger test_4_6
 create trigger test_4_7
 	after update on t_4_1
 	for each statement 
-	when ("id" >1000) insert into t_4_1 values(6, 'update_when_statement_false');
+	when ("id" >1000) insert into t_4_1 values(6, 'update_when_statement_false'); --error, id variable unknown
 
 create trigger test_4_8
 	after update on t_4_1 referencing new row as new_row
@@ -56,9 +56,7 @@ drop trigger test_4_1;
 drop trigger test_4_2;
 drop trigger test_4_3;
 drop trigger test_4_4;
-drop trigger test_4_5;
 drop trigger test_4_6;
-drop trigger test_4_7;
 drop trigger test_4_8;
 
 --Test ACTION BODY

@@ -19,7 +19,7 @@
 #ifdef HAVE_HGE
 #include "mal.h"		/* for have_hge */
 #endif
-#include "mtime.h"
+#include "gdk_time.h"
 
 typedef struct global_props {
 	int cnt[ddl_maxops];
@@ -1424,30 +1424,6 @@ exp_push_down(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 	return _exp_push_down(sql, e, f, t);
 }
 
-/* some projections results are order dependend (row_number etc) */
-static int 
-project_unsafe(sql_rel *rel, int allow_identity)
-{
-	sql_rel *sub = rel->l;
-	node *n;
-
-	if (need_distinct(rel) || rel->r /* order by */)
-		return 1;
-	if (!rel->exps)
-		return 0;
-	/* projects without sub and projects around ddl's cannot be changed */
-	if (!sub || (sub && sub->op == op_ddl))
-		return 1;
-	for(n = rel->exps->h; n; n = n->next) {
-		sql_exp *e = n->data;
-
-		/* aggr func in project ! */
-		if (exp_unsafe(e, allow_identity))
-			return 1;
-	}
-	return 0;
-}
-
 static int 
 math_unsafe(sql_subfunc *f)
 {
@@ -2134,17 +2110,22 @@ rel_push_topn_down(mvc *sql, sql_rel *rel, int *changes)
 			/* possibly add order by column */
 			if (add_r)
 				ul->exps = list_merge(ul->exps, exps_copy(sql, r->r), NULL);
+			ul->nrcols = list_length(ul->exps);
 			ul->r = exps_copy(sql, r->r);
 			ul = rel_topn(sql->sa, ul, sum_limit_offset(sql, rel->exps));
+
 			ur = rel_project(sql->sa, ur, NULL);
 			ur->exps = exps_copy(sql, r->exps);
 			/* possibly add order by column */
 			if (add_r)
 				ur->exps = list_merge(ur->exps, exps_copy(sql, r->r), NULL);
+			ur->nrcols = list_length(ur->exps);
 			ur->r = exps_copy(sql, r->r);
 			ur = rel_topn(sql->sa, ur, sum_limit_offset(sql, rel->exps));
+
 			u = rel_setop(sql->sa, ul, ur, op_union);
 			u->exps = exps_alias(sql->sa, r->exps); 
+			u->nrcols = list_length(u->exps);
 			set_processed(u);
 			/* possibly add order by column */
 			if (add_r)
@@ -4146,12 +4127,14 @@ rel_push_aggr_down(mvc *sql, sql_rel *rel, int *changes)
 		ul->nrcols = g->nrcols;
 		ul->card = g->card;
 		ul->exps = list_merge(exps_copy(sql, g->exps), exps_copy(sql, ul->r), (fdup)NULL);
+		ul->nrcols = list_length(ul->exps);
 
 		ur = rel_groupby(sql, ur, NULL);
 		ur->r = rgbe;
 		ur->nrcols = g->nrcols;
 		ur->card = g->card;
 		ur->exps = list_merge(exps_copy(sql, g->exps), exps_copy(sql, ur->r), (fdup)NULL);
+		ur->nrcols = list_length(ur->exps);
 
 		/* group by on primary keys which define the partioning scheme 
 		 * don't need a finalizing group by */
@@ -4179,6 +4162,7 @@ rel_push_aggr_down(mvc *sql, sql_rel *rel, int *changes)
 
 		u = rel_setop(sql->sa, ul, ur, op_union);
 		u->exps = rel_projections(sql, ul, NULL, 1, 1);
+		u->nrcols = list_length(u->exps);
 		set_processed(u);
 
 		if (rel->r) {
@@ -8287,6 +8271,7 @@ rel_split_outerjoin(mvc *sql, sql_rel *rel, int *changes)
 			exps = rel_projections(sql, nl, NULL, 1, 1);
 			nl = rel_setop(sql->sa, nl, nr, op_union);
 			nl->exps = exps;
+			nr->nrcols = list_length(exps);
 			set_processed(nl);
 		}
 		if (rel->op == op_right || rel->op == op_full) {
@@ -8306,6 +8291,7 @@ rel_split_outerjoin(mvc *sql, sql_rel *rel, int *changes)
 			exps = rel_projections(sql, nl, NULL, 1, 1);
 			nl = rel_setop(sql->sa, nl, nr, op_union);
 			nl->exps = exps;
+			nl->nrcols = list_length(exps);
 			set_processed(nl);
 		}
 
@@ -8419,7 +8405,7 @@ rel_add_dicts(mvc *sql, sql_rel *rel, int *changes)
 			if (!ne)
 				list_append(pexps, e);
 		}
-		rel->exps = l;
+		rel_set_exps(rel, l);
 
 		/* add joins for double_eliminated (large) columns */
 		if (vcols) {
@@ -8705,7 +8691,7 @@ rel_merge_table_rewrite(mvc *sql, sql_rel *rel, int *changes)
 							exp_setname(sql->sa, ne, e->l, e->r);
 							append(exps, ne);
 						}
-						prel->exps = exps;
+						rel_set_exps(prel, exps);
 						first = 0;
 						if (!skip) {
 							append(tables, prel);
@@ -8722,7 +8708,7 @@ rel_merge_table_rewrite(mvc *sql, sql_rel *rel, int *changes)
 							sql_rel *l = n->data;
 							sql_rel *r = n->next->data;
 							nrel = rel_setop(sql->sa, l, r, op_union);
-							nrel->exps = rel_projections(sql, rel, NULL, 1, 1);
+							rel_set_exps(nrel, rel_projections(sql, rel, NULL, 1, 1));
 							set_processed(nrel);
 							append(ntables, nrel);
 						}
@@ -8733,8 +8719,8 @@ rel_merge_table_rewrite(mvc *sql, sql_rel *rel, int *changes)
 				}
 				if (nrel && list_length(t->members.set) == 1) {
 					nrel = rel_project(sql->sa, nrel, rel->exps);
-				} else if (nrel)
-					nrel->exps = rel->exps;
+				} else if (nrel) 
+					rel_set_exps(nrel, rel->exps);
 				rel_destroy(rel);
 				if (sel) {
 					int ochanges = 0;

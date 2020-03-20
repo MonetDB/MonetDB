@@ -187,7 +187,7 @@ MFconnectionManager(void *d)
 										m->dbcv[i]->database);
 								/* schedule to drop connection */
 								m->dbcv[i]->newconn = NULL;
-								m->dbcv[i]->connupdate = 1;
+								m->dbcv[i]->connupdate = true;
 								continue;
 							}
 							/* walk all connections, in an attempt to
@@ -216,7 +216,7 @@ MFconnectionManager(void *d)
 									mapi_destroy(tm);
 									/* schedule connection for removal */
 									m->dbcv[i]->newconn = NULL;
-									m->dbcv[i]->connupdate = 1;
+									m->dbcv[i]->connupdate = true;
 									msab_freeStatus(&stats);
 									continue;
 								}
@@ -224,7 +224,7 @@ MFconnectionManager(void *d)
 
 								/* let the new connection go live */
 								m->dbcv[i]->newconn = tm;
-								m->dbcv[i]->connupdate = 1;
+								m->dbcv[i]->connupdate = true;
 							}
 							msab_freeStatus(&stats);
 						}
@@ -292,7 +292,7 @@ multiplexInit(char *name, char *pattern, FILE *sout, FILE *serr)
 
 	m->tid = 0;
 	m->gdklock = -1;
-	m->shutdown = 0;
+	m->shutdown = false;
 	m->name = strdup(name);
 	m->pool = strdup(pattern);
 	m->sout = sout;
@@ -340,7 +340,7 @@ multiplexInit(char *name, char *pattern, FILE *sout, FILE *serr)
 		m->dbcv[i]->database = p + 1;
 		m->dbcv[i]->conn = NULL;
 		m->dbcv[i]->newconn = NULL;
-		m->dbcv[i]->connupdate = 0;
+		m->dbcv[i]->connupdate = false;
 
 		i++;
 		p = q + 1;
@@ -376,7 +376,7 @@ multiplexInit(char *name, char *pattern, FILE *sout, FILE *serr)
 			m->dbcv[i]->database = p + 1;
 			m->dbcv[i]->conn = NULL;
 			m->dbcv[i]->newconn = NULL;
-			m->dbcv[i]->connupdate = 0;
+			m->dbcv[i]->connupdate = false;
 		}
 	}
 
@@ -512,7 +512,7 @@ multiplexDestroy(char *mp)
 	msab_dbnameinit(NULL);
 
 	/* signal the thread to stop and cleanup */
-	m->shutdown = 1;
+	m->shutdown = true;
 	pthread_join(m->tid, NULL);
 }
 
@@ -707,7 +707,7 @@ multiplexThread(void *d)
 	/* select on upstream clients, on new data, read query, forward,
 	 * union all results, send back, and restart cycle. */
 	
-	while (m->shutdown == 0) {
+	while (!m->shutdown) {
 #ifdef HAVE_POLL
 		msock = 0;
 		for (c = m->clients; c != NULL; c = c->next) {
@@ -749,7 +749,7 @@ multiplexThread(void *d)
 					mapi_destroy(m->dbcv[i]->conn);
 					m->dbcv[i]->conn = m->dbcv[i]->newconn;
 					m->dbcv[i]->newconn = NULL;
-					m->dbcv[i]->connupdate = 0;
+					m->dbcv[i]->connupdate = false;
 				} else {
 					/* put new connection live */
 					Mfprintf(m->sout, "performing deferred connection drop "
@@ -761,7 +761,7 @@ multiplexThread(void *d)
 					mapi_disconnect(m->dbcv[i]->conn);
 					mapi_destroy(m->dbcv[i]->conn);
 					m->dbcv[i]->conn = NULL;
-					m->dbcv[i]->connupdate = 0;
+					m->dbcv[i]->connupdate = false;
 				}
 			}
 		}
@@ -866,6 +866,7 @@ multiplexThread(void *d)
 			close(p->err);
 			Mfprintf(stdout, "mfunnel '%s' has stopped\n", p->dbname);
 			free(p->dbname);
+			pthread_mutex_destroy(&p->fork_lock);
 			free(p);
 			break;
 		}

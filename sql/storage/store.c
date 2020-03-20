@@ -17,8 +17,8 @@
 #include "bat/bat_table.h"
 #include "bat/bat_logger.h"
 
-/* version 05.22.03 of catalog */
-#define CATALOG_VERSION 52203
+/* version 05.22.04 of catalog */
+#define CATALOG_VERSION 52204
 int catalog_version = 0;
 
 static MT_Lock bs_lock = MT_LOCK_INITIALIZER("bs_lock");
@@ -2646,11 +2646,11 @@ store_hot_snapshot(str tarfile)
 	// we feed it tmppath rather than tarfile.
 	dirpath = GDKmalloc(PATH_MAX);
 	if (dirpath == NULL) {
-		GDKerror("malloc failed");
+		GDKsyserror("malloc failed");
 		goto end;
 	}
 	if (realpath(tmppath, dirpath) == NULL) {
-		GDKerror("couldn't resolve path %s: %s", tarfile, strerror(errno));
+		GDKsyserror("couldn't resolve path %s: %s", tarfile, strerror(errno));
 		goto end;
 	}
 	*strrchr(dirpath, DIR_SEP) = '\0';
@@ -2660,13 +2660,13 @@ store_hot_snapshot(str tarfile)
 	// and I'm not quite sure what a generic streams-api should look like.
 	dir_fd = open(dirpath, O_RDONLY); // ERROR no o_rdonly
 	if (dir_fd < 0) {
-		GDKerror("couldn't open directory %s: %s", dirpath, strerror(errno));
+		GDKsyserror("couldn't open directory %s", dirpath);
 		goto end;
 	}
 
 	// Fsync the directory. Postgres believes this is necessary for durability.
-	if (fsync(dir_fd) < 0) { // ERROR no fsync
-		GDKerror("First fsync on %s failed: %s", dirpath, strerror(errno));
+	if (fsync(dir_fd) < 0) {
+		GDKsyserror("First fsync on %s failed", dirpath);
 		goto end;
 	}
 #else
@@ -2706,14 +2706,14 @@ store_hot_snapshot(str tarfile)
 	close_stream(tar_stream);
 	tar_stream = NULL;
 	if (rename(tmppath, tarfile) < 0) {
-		GDKerror("rename %s to %s failed: %s", tmppath, tarfile, strerror(errno));
+		GDKsyserror("rename %s to %s failed", tmppath, tarfile);
 		goto end;
 	}
 	do_remove = 0;
 #ifdef HAVE_FSYNC
 	// More POSIX fsync-the-parent-dir ceremony
 	if (fsync(dir_fd) < 0) {
-		GDKerror("fsync on dir %s failed: %s", dirpath, strerror(errno));
+		GDKsyserror("fsync on dir %s failed", dirpath);
 		goto end;
 	}
 #endif
@@ -5182,24 +5182,15 @@ sys_drop_statistics(sql_trans *tr, sql_column *col)
 }
 
 static int
-sys_drop_column(sql_trans *tr, sql_column *col, int drop_action)
+sys_drop_default_object(sql_trans *tr, sql_column *col, int drop_action)
 {
-	str seq_pos = NULL;
+	char *seq_pos = NULL;
 	const char *next_value_for = "next value for \"sys\".\"seq_";
 	sql_schema *syss = find_sql_schema(tr, isGlobal(col->t)?"sys":"tmp"); 
-	sql_table *syscolumn = find_sql_table(syss, "_columns");
-	oid rid = table_funcs.column_find_row(tr, find_sql_column(syscolumn, "id"),
-				  &col->base.id, NULL);
 
-	if (is_oid_nil(rid))
-		return 0;
-	table_funcs.table_delete(tr, syscolumn, rid);
-	sql_trans_drop_dependencies(tr, col->base.id);
-	sql_trans_drop_any_comment(tr, col->base.id);
-	sql_trans_drop_obj_priv(tr, col->base.id);
-
+	/* Drop sequence for generated column if it's the case */
 	if (col->def && (seq_pos = strstr(col->def, next_value_for))) {
-		sql_sequence * seq = NULL;
+		sql_sequence *seq = NULL;
 		char *seq_name = _STRDUP(seq_pos + (strlen(next_value_for) - strlen("seq_")));
 		node *n = NULL;
 
@@ -5215,6 +5206,25 @@ sys_drop_column(sql_trans *tr, sql_column *col, int drop_action)
 		}
 		_DELETE(seq_name);
 	}
+	return 0;
+}
+
+static int
+sys_drop_column(sql_trans *tr, sql_column *col, int drop_action)
+{
+	sql_schema *syss = find_sql_schema(tr, isGlobal(col->t)?"sys":"tmp"); 
+	sql_table *syscolumn = find_sql_table(syss, "_columns");
+	oid rid = table_funcs.column_find_row(tr, find_sql_column(syscolumn, "id"),
+				  &col->base.id, NULL);
+
+	if (is_oid_nil(rid))
+		return 0;
+	table_funcs.table_delete(tr, syscolumn, rid);
+	sql_trans_drop_dependencies(tr, col->base.id);
+	sql_trans_drop_any_comment(tr, col->base.id);
+	sql_trans_drop_obj_priv(tr, col->base.id);
+	if (sys_drop_default_object(tr, col, drop_action) == -1)
+		return -1;
 
 	if (isGlobal(col->t)) 
 		tr->schema_updates ++;
@@ -6545,6 +6555,8 @@ sql_trans_alter_default(sql_trans *tr, sql_column *col, char *val)
 		oid rid = table_funcs.column_find_row(tr, col_ids, &col->base.id, NULL);
 
 		if (is_oid_nil(rid))
+			return NULL;
+		if (sys_drop_default_object(tr, col, 0) == -1)
 			return NULL;
 		table_funcs.column_update_value(tr, col_dfs, rid, p);
 		col->def = NULL;

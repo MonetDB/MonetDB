@@ -452,7 +452,11 @@ FROM another_T; --error, col0 doesn't exist
 
 SELECT
 	(SELECT outt FROM evilfunction((SELECT col1))) 
-FROM another_T; --error, more than one row returned by a subquery used as an expression
+FROM another_T;
+	-- 1
+	-- 11
+	-- 111
+	-- 1111
 
 SELECT
 	(SELECT outt FROM evilfunction((SELECT col1 FROM tbl_ProductSales))) 
@@ -547,6 +551,12 @@ SELECT
 	(SELECT i2.i FROM (VALUES (i1.i, i1.i), (i1.i, i1.i)) as i2(i))
 FROM integers i1; --error, more than one row returned by a subquery used as an expression
 
+SELECT i FROM integers ORDER BY (SELECT true);
+	-- 1
+	-- 2
+	-- 3
+	-- NULL
+
 /* We shouldn't allow the following internal functions/procedures to be called from regular queries */
 --SELECT "identity"(col1) FROM another_T;
 --SELECT "rowid"(col1) FROM another_T;
@@ -554,6 +564,11 @@ FROM integers i1; --error, more than one row returned by a subquery used as an e
 --SELECT "rotate_xor_hash"(1, 1, 1) FROM another_T;
 --CALL sys_update_schemas();
 --CALL sys_update_tables();
+
+SELECT i FROM integers GROUP BY i HAVING (SELECT i);
+	-- 1
+	-- 2
+	-- 3
 
 DROP FUNCTION evilfunction(INT);
 DROP TABLE tbl_ProductSales;

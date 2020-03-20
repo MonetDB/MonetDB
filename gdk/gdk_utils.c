@@ -1343,8 +1343,8 @@ GDKsyserror(const char *format, ...)
 		size_t len1;
 		size_t len2;
 		size_t len3;
-		char *osmsg;
-		osmsg = strerror(err);
+		const char *osmsg;
+		osmsg = GDKstrerror(err, (char[128]){0}, 128);
 		len1 = strlen(message);
 		len2 = len1 + strlen(GDKMESSAGE);
 		len3 = len2 + strlen(osmsg);

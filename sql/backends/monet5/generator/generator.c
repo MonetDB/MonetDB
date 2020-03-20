@@ -15,7 +15,7 @@
 #include "opt_prelude.h"
 #include "algebra.h"
 #include "generator.h"
-#include "mtime.h"
+#include "gdk_time.h"
 #include <math.h>
 
 

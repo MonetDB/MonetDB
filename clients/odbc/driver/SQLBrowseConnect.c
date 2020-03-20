@@ -43,7 +43,7 @@
 
 static SQLRETURN
 MNDBBrowseConnect(ODBCDbc *dbc,
-		  SQLCHAR *InConnectionString,
+		  const SQLCHAR *InConnectionString,
 		  SQLSMALLINT StringLength1,
 		  SQLCHAR *OutConnectionString,
 		  SQLSMALLINT BufferLength,

@@ -31,17 +31,17 @@
 
 static SQLRETURN
 MNDBForeignKeys(ODBCStmt *stmt,
-		SQLCHAR *PKCatalogName,
+		const SQLCHAR *PKCatalogName,
 		SQLSMALLINT NameLength1,
-		SQLCHAR *PKSchemaName,
+		const SQLCHAR *PKSchemaName,
 		SQLSMALLINT NameLength2,
-		SQLCHAR *PKTableName,
+		const SQLCHAR *PKTableName,
 		SQLSMALLINT NameLength3,
-		SQLCHAR *FKCatalogName,
+		const SQLCHAR *FKCatalogName,
 		SQLSMALLINT NameLength4,
-		SQLCHAR *FKSchemaName,
+		const SQLCHAR *FKSchemaName,
 		SQLSMALLINT NameLength5,
-		SQLCHAR *FKTableName,
+		const SQLCHAR *FKTableName,
 		SQLSMALLINT NameLength6)
 {
 	RETCODE rc;

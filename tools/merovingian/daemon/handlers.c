@@ -186,11 +186,13 @@ childhandler(void)
 			if (p->pid == pid) {
 				/* log everything that's still in the pipes */
 				logFD(p->out, "MSG", p->dbname, (long long int)p->pid, _mero_logfile, 1);
-				/* remove from the list */
-				q->next = p->next;
+				p->pid = -1;	/* indicate the process is dead */
+
 				/* close the descriptors */
 				close(p->out);
 				close(p->err);
+				p->out = -1;
+				p->err = -1;
 				if (WIFEXITED(wstatus)) {
 					Mfprintf(stdout, "database '%s' (%lld) has exited with "
 							 "exit status %d\n", p->dbname,
@@ -212,9 +214,6 @@ childhandler(void)
 								 (long long int)p->pid, sigstr);
 					}
 				}
-				if (p->dbname)
-					free(p->dbname);
-				free(p);
 				break;
 			}
 			q = p;

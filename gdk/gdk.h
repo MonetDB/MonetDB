@@ -438,6 +438,9 @@ enum {
 #ifdef HAVE_HGE
 	TYPE_hge,
 #endif
+	TYPE_date,
+	TYPE_daytime,
+	TYPE_timestamp,
 	TYPE_str,
 	TYPE_any = 255,		/* limit types to <255! */
 };
@@ -708,10 +711,8 @@ typedef struct {
 /* assert that atom width is power of 2, i.e., width == 1<<shift */
 #define assert_shift_width(shift,width) assert(((shift) == 0 && (width) == 0) || ((unsigned)1<<(shift)) == (unsigned)(width))
 
-#define GDKLIBRARY_TALIGN	061036U	/* talign field in BBP.dir */
-#define GDKLIBRARY_NIL_NAN	061037U	/* flt/dbl NIL not represented by NaN */
 #define GDKLIBRARY_BLOB_SORT	061040U /* blob compare changed */
-#define GDKLIBRARY_OLDDATE	061041U
+#define GDKLIBRARY_OLDDATE	061041U /* the representation of times changed */
 #define GDKLIBRARY		061042U
 
 typedef struct BAT {

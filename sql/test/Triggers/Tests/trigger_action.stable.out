@@ -56,15 +56,22 @@ stdout of test 'trigger_action` in directory 'sql/test/Triggers` itself:
 #	after update on t_4_1 referencing new row as new_row
 #	for each row 
 #	when (new_row."id">1000) insert into t_4_1 values(7, 'update_when_row_false');
+#update t_4_1 set "name" = 'mo' where "id" = 10;
+[ 1	]
 #select * from t_4_1;
 % sys.t_4_1,	sys.t_4_1 # table_name
 % id,	name # name
 % int,	varchar # type
-% 2,	7 # length
-[ 10,	"monetdb"	]
+% 2,	24 # length
+[ 10,	"mo"	]
 [ 20,	"monet"	]
+[ 0,	"update_old_row_statement"	]
+[ 1,	"update_new_row_statement"	]
+[ 2,	"update_statement"	]
+[ 3,	"update_row"	]
+[ 5,	"update_when_row_true"	]
 #delete from t_4_1 where "id" >-1;
-[ 2	]
+[ 7	]
 #drop trigger test_4_1;
 #drop trigger test_4_2;
 #drop trigger test_4_3;

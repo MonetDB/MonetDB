@@ -10,16 +10,16 @@ create function str_to_date(s string, format string) returns date
 create function date_to_str(d date, format string) returns string
 	external name mtime."date_to_str";
 
-create function str_to_time(s string, format string) returns time
+create function str_to_time(s string, format string) returns time with time zone
 	external name mtime."str_to_time";
 
-create function time_to_str(d time, format string) returns string
+create function time_to_str(d time with time zone, format string) returns string
 	external name mtime."time_to_str";
 
-create function str_to_timestamp(s string, format string) returns timestamp
+create function str_to_timestamp(s string, format string) returns timestamp with time zone
 	external name mtime."str_to_timestamp";
 
-create function timestamp_to_str(d timestamp, format string) returns string
+create function timestamp_to_str(d timestamp with time zone, format string) returns string
 	external name mtime."timestamp_to_str";
 
 grant execute on function str_to_date to public;

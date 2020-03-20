@@ -30,7 +30,7 @@
 #include "ODBCUtil.h"
 
 static SQLRETURN
-ODBCExecDirect(ODBCStmt *stmt, SQLCHAR *StatementText, SQLINTEGER TextLength)
+ODBCExecDirect(ODBCStmt *stmt, const SQLCHAR *StatementText, SQLINTEGER TextLength)
 {
 	char *query;
 	const char *err;
@@ -114,7 +114,7 @@ ODBCExecDirect(ODBCStmt *stmt, SQLCHAR *StatementText, SQLINTEGER TextLength)
 
 SQLRETURN
 MNDBExecDirect(ODBCStmt *stmt,
-	       SQLCHAR *StatementText,
+	       const SQLCHAR *StatementText,
 	       SQLINTEGER TextLength)
 {
 	SQLRETURN ret;

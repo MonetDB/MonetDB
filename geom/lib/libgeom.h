@@ -29,6 +29,7 @@
 #include <geos_c.h>
 
 #ifdef HAVE_PROJ
+#define ACCEPT_USE_OF_DEPRECATED_PROJ_API_H
 #include <proj_api.h> //it is needed to transform from one srid to another
 #endif
 

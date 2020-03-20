@@ -65,17 +65,7 @@ stderr of test 'assert_in_update.SF-2807336` in directory 'sql/test/BugTracker-2
 #warning: please don't forget to set your vault key!
 #(see /ufs/niels/scratch/rc/Linux-x86_64/etc/monetdb5.conf)
 
-# 10:38:04 >  
-# 10:38:04 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=36216 
-# 10:38:04 >  
-
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
-QUERY = update anbi set kvk = (select kvk from kvk,anbi where lower(naam)
-        = lower(bedrijfsnaam) and lower(plaats) = lower(vestigingsplaats));
-ERROR = !SELECT: identifier 'kvk' ambiguous
-CODE  = 42000
-
-# 10:38:04 >  
-# 10:38:04 >  Done.
-# 10:38:04 >  
+# 13:17:20 >  
+# 13:17:20 >  "Done."
+# 13:17:20 >  
 

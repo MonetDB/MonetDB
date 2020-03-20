@@ -11,9 +11,11 @@
 #include "bat_utils.h"
 #include "sql_types.h" /* EC_POS */
 #include "wlc.h"
+#include "gdk_logger_internals.h"
 
 #define CATALOG_MAR2018 52201
 #define CATALOG_AUG2018 52202
+#define CATALOG_NOV2019 52203
 
 logger *bat_logger = NULL;
 
@@ -34,6 +36,14 @@ bl_preversion(int oldversion, int newversion)
 
 #ifdef CATALOG_AUG2018
 	if (oldversion == CATALOG_AUG2018) {
+		/* upgrade to default releases */
+		catalog_version = oldversion;
+		return GDK_SUCCEED;
+	}
+#endif
+
+#ifdef CATALOG_NOV2019
+	if (oldversion == CATALOG_NOV2019) {
 		/* upgrade to default releases */
 		catalog_version = oldversion;
 		return GDK_SUCCEED;
@@ -742,6 +752,58 @@ bl_postversion(void *lg)
 	}
 #endif
 
+#ifdef CATALOG_NOV2019
+	if (catalog_version <= CATALOG_NOV2019) {
+		BAT *te, *tne;
+		const int *ocl;	/* old eclass */
+		int *ncl;	/* new eclass */
+
+		te = temp_descriptor(logger_find_bat(lg, N("sys", "types", "eclass"), 0, 0));
+		if (te == NULL)
+			return GDK_FAIL;
+		tne = COLnew(te->hseqbase, TYPE_int, BATcount(te), PERSISTENT);
+		if (tne == NULL) {
+			bat_destroy(te);
+			return GDK_FAIL;
+		}
+		ocl = Tloc(te, 0);
+		ncl = Tloc(tne, 0);
+		for (BUN p = 0, q = BUNlast(te); p < q; p++) {
+			switch (ocl[p]) {
+			case EC_TIME_TZ:		/* old EC_DATE */
+				ncl[p] = EC_DATE;
+				break;
+			case EC_DATE:			/* old EC_TIMESTAMP */
+				ncl[p] = EC_TIMESTAMP;
+				break;
+			case EC_TIMESTAMP:		/* old EC_GEOM */
+				ncl[p] = EC_GEOM;
+				break;
+			case EC_TIMESTAMP_TZ:		/* old EC_EXTERNAL */
+				ncl[p] = EC_EXTERNAL;
+				break;
+			default:
+				/* others stay unchanged */
+				ncl[p] = ocl[p];
+				break;
+			}
+		}
+		BATsetcount(tne, BATcount(te));
+		bat_destroy(te);
+		tne->tnil = false;
+		tne->tnonil = true;
+		tne->tsorted = false;
+		tne->trevsorted = false;
+		tne->tkey = false;
+		if (BATsetaccess(tne, BAT_READ) != GDK_SUCCEED ||
+		    logger_add_bat(lg, tne, N("sys", "types", "eclass"), 0, 0) != GDK_SUCCEED) {
+			bat_destroy(tne);
+			return GDK_FAIL;
+		}
+		bat_destroy(tne);
+	}
+#endif
+
 	return GDK_SUCCEED;
 }
 
@@ -908,7 +970,7 @@ snapshot_immediate_copy_file(stream *plan, const char *path, const char *name)
 	size_t to_copy;
 
 	if (stat(path, &statbuf) < 0) {
-		GDKerror("stat failed on %s: %s", path, strerror(errno));
+		GDKsyserror("stat failed on %s", path);
 		goto end;
 	}
 	to_copy = (size_t) statbuf.st_size;
@@ -1005,7 +1067,7 @@ snapshot_heap(stream *plan, const char *db_dir, uint64_t batid, const char *file
 		return GDK_SUCCEED;
 	}
 	if (errno != ENOENT) {
-		GDKerror("Error stat'ing %s: %s", path1, strerror(errno));
+		GDKsyserror("Error stat'ing %s", path1);
 		return GDK_FAIL;
 	}
 
@@ -1021,7 +1083,7 @@ snapshot_heap(stream *plan, const char *db_dir, uint64_t batid, const char *file
 		return GDK_SUCCEED;
 	}
 	if (errno != ENOENT) {
-		GDKerror("Error stat'ing %s: %s", path2, strerror(errno));
+		GDKsyserror("Error stat'ing %s", path2);
 		return GDK_FAIL;
 	}
 
@@ -1191,7 +1253,7 @@ snapshot_vaultkey(stream *plan, const char *db_dir)
 		return GDK_SUCCEED;
 	}
 
-	GDKerror("Error stat'ing %s: %s", path, strerror(errno));
+	GDKsyserror("Error stat'ing %s", path);
 	return GDK_FAIL;
 }
 static gdk_return

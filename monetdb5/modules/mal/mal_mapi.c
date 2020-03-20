@@ -664,7 +664,7 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 #ifdef _MSC_VER
 					  wsaerror(WSAGetLastError())
 #else
-					  strerror(errno)
+					  GDKstrerror(errno, (char[128]){0}, 128)
 #endif
 				);
 			} while (1);
@@ -684,7 +684,7 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 #ifdef _MSC_VER
 					  wsaerror(WSAGetLastError())
 #else
-					  strerror(errno)
+					  GDKstrerror(errno, (char[128]){0}, 128)
 #endif
 				);
 			}
@@ -697,7 +697,7 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 #ifdef _MSC_VER
 				const char *err = wsaerror(WSAGetLastError());
 #else
-				const char *err = strerror(errno);
+				const char *err = GDKstrerror(errno, (char[128]){0}, 128);
 #endif
 				GDKfree(psock);
 				closesocket(sock);
@@ -755,7 +755,7 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 #ifdef _MSC_VER
 						  wsaerror(WSAGetLastError())
 #else
-						  strerror(errno)
+						  GDKstrerror(errno, (char[128]){0}, 128)
 #endif
 					);
 				} else {
@@ -772,7 +772,7 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 #ifdef _MSC_VER
 					  wsaerror(WSAGetLastError())
 #else
-					  strerror(errno)
+					  GDKstrerror(errno, (char[128]){0}, 128)
 #endif
 				);
 			}
@@ -789,7 +789,7 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 #ifdef _MSC_VER
 				  wsaerror(WSAGetLastError())
 #else
-				  strerror(errno)
+				  GDKstrerror(errno, (char[128]){0}, 128)
 #endif
 				);
 		}
@@ -826,7 +826,7 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 #ifdef _MSC_VER
 				  wsaerror(WSAGetLastError())
 #else
-				  strerror(errno)
+				  GDKstrerror(errno, (char[128]){0}, 128)
 #endif
 				);
 		}
@@ -869,7 +869,7 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 #ifdef _MSC_VER
 								wsaerror(WSAGetLastError())
 #else
-								strerror(errno)
+								GDKstrerror(errno, (char[128]){0}, 128)
 #endif
 				);
 			return e;
@@ -890,7 +890,7 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 #ifdef _MSC_VER
 								wsaerror(WSAGetLastError())
 #else
-								strerror(errno)
+								GDKstrerror(errno, (char[128]){0}, 128)
 #endif
 				);
 			return e;

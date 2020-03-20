@@ -27,6 +27,11 @@ stdout of test 'assert_in_update.SF-2807336` in directory 'sql/test/BugTracker-2
 % kvk # name
 % bigint # type
 % 1 # length
+#update anbi set kvk = (select kvk.kvk from kvk,anbi where lower(naam)
+#= lower(bedrijfsnaam) and lower(plaats) = lower(vestigingsplaats));
+[ 0	]
+#update anbi set kvk = (select kvk from kvk,anbi where lower(naam)
+#= lower(bedrijfsnaam) and lower(plaats) = lower(vestigingsplaats));
 [ 0	]
 
 # 10:38:04 >  

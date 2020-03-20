@@ -60,11 +60,11 @@ translateReserved(SQLUSMALLINT Reserved)
 
 static SQLRETURN
 MNDBStatistics(ODBCStmt *stmt,
-	       SQLCHAR *CatalogName,
+	       const SQLCHAR *CatalogName,
 	       SQLSMALLINT NameLength1,
-	       SQLCHAR *SchemaName,
+	       const SQLCHAR *SchemaName,
 	       SQLSMALLINT NameLength2,
-	       SQLCHAR *TableName,
+	       const SQLCHAR *TableName,
 	       SQLSMALLINT NameLength3,
 	       SQLUSMALLINT Unique,
 	       SQLUSMALLINT Reserved)

@@ -25,7 +25,7 @@
 
 #include "monetdb_config.h"
 #include "querylog.h"
-#include "mtime.h"
+#include "gdk_time.h"
 
 /* (c) M.L. Kersten
  * The query logger facility is hardwired to avoid interference 

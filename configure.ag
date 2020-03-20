@@ -52,7 +52,7 @@ dnl  configure file, whereas comments starting with dnl are elided
 dnl  (including their trailing newline).
 
 AC_PREREQ([2.63b])
-AC_INIT([MonetDB], [11.36.0], [https://bugs.monetdb.org/], [MonetDB], [https://www.monetdb.org/])
+AC_INIT([MonetDB], [11.38.0], [https://bugs.monetdb.org/], [MonetDB], [https://www.monetdb.org/])
 AC_COPYRIGHT([Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.])
 AC_CONFIG_AUX_DIR([buildtools/conf])
 AC_CONFIG_MACRO_DIR([buildtools/conf])
@@ -2489,13 +2489,12 @@ stpcpy(char *restrict dst, const char *restrict src)
 }
 @%:@endif
 
-@%:@ifndef HAVE_STPCPY
-#ifndef HAVE_STRNCASECMP
-#ifdef WIN32
-#ifndef strncasecmp
-#define strncasecmp _strnicmp
-#endif
-#else
+@%:@ifndef HAVE_STRNCASECMP
+@%:@ifdef WIN32
+@%:@ifndef strncasecmp
+@%:@define strncasecmp _strnicmp
+@%:@endif
+@%:@else
 static inline int
 strncasecmp(const char *s1, const char *s2, size_t n)
 {
@@ -2514,8 +2513,7 @@ strncasecmp(const char *s1, const char *s2, size_t n)
 	}
 	return 0;
 }
-#endif
-#endif
+@%:@endif
 @%:@endif
 
 @%:@if defined(HAVE___INT128)

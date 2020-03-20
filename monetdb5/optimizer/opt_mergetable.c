@@ -582,6 +582,64 @@ mat_apply3(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n, int o, int mva
 }
 
 static int
+mat_apply4(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n, int o, int e, int mvar, int nvar, int ovar, int evar)
+{
+	int k, l;
+	InstrPtr *r = NULL;
+	r = (InstrPtr*) GDKmalloc(sizeof(InstrPtr)* p->retc);
+	if(!r)
+		return -1;
+	for(k=0; k < p->retc; k++) {
+		if((r[k] = newInstruction(mb, matRef, packRef)) == NULL) {
+			for(l=0; l < k; l++)
+				freeInstruction(r[l]);
+			GDKfree(r);
+			return -1;
+		}
+		getArg(r[k],0) = getArg(p,k);
+	}
+
+	for(k = 1; k < ml->v[m].mi->argc; k++) {
+		int tpe;
+		InstrPtr q = copyInstruction(p);
+		if(!q) {
+			GDKfree(r);
+			return -1;
+		}
+
+		for(l=0; l < p->retc; l++) {
+			tpe = getArgType(mb,p,l);
+			getArg(q, l) = newTmpVariable(mb, tpe);
+		}
+		getArg(q, mvar) = getArg(ml->v[m].mi, k);
+		getArg(q, nvar) = getArg(ml->v[n].mi, k);
+		getArg(q, ovar) = getArg(ml->v[o].mi, k);
+		getArg(q, evar) = getArg(ml->v[e].mi, k);
+		pushInstruction(mb, q);
+		for(l=0; l < p->retc; l++) {
+			if(setPartnr(ml, -1, getArg(q,l), k)) {
+				for(l=0; l < k; l++)
+					freeInstruction(r[l]);
+				GDKfree(r);
+				return -1;
+			}
+			r[l] = addArgument(mb, r[l], getArg(q, l));
+		}
+	}
+	for(k=0; k < p->retc; k++) {
+		if(mat_add_var(ml, r[k], NULL, getArg(r[k], 0), mat_type(ml->v, m),  -1, -1, 1)) {
+			for(l=0; l < k; l++)
+				freeInstruction(r[l]);
+			GDKfree(r);
+			return -1;
+		}
+		pushInstruction(mb, r[k]);
+	}
+	GDKfree(r);
+	return 0;
+}
+
+static int
 mat_setop(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n)
 {
 	int tpe = getArgType(mb,p, 0), k, j;
@@ -2192,6 +2250,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		}
 
 		/* select on insert, should use last tid only */
+		if (/* DISABLES CODE */ (0))
 		if (match == 1 && fm == 2 && isSelect(p) && p->retc == 1 &&
 		   (m=is_a_mat(getArg(p,fm), &ml)) >= 0 && 
 		   !ml.v[m].packed && /* not packed yet */ 
@@ -2224,6 +2283,19 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			continue;
 		}
 
+		if (match == 4 && bats == 4 && isMap2Op(p) &&  p->retc == 1 &&
+		   (m=is_a_mat(getArg(p,fm), &ml)) >= 0 &&
+		   (n=is_a_mat(getArg(p,fn), &ml)) >= 0 &&
+		   (o=is_a_mat(getArg(p,fo), &ml)) >= 0 &&
+		   (e=is_a_mat(getArg(p,fe), &ml)) >= 0){
+			assert(ml.v[m].mi->argc == ml.v[n].mi->argc); 
+			if(mat_apply4(mb, p, &ml, m, n, o, e, fm, fn, fo, fe)) {
+				msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto cleanup;
+			}
+			actions++;
+			continue;
+		}
 
 		if (match == 3 && bats == 3 && (isFragmentGroup(p) || isFragmentGroup2(p) || isMapOp(p)) &&  p->retc != 2 &&
 		   (m=is_a_mat(getArg(p,fm), &ml)) >= 0 &&

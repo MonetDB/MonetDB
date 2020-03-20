@@ -35,7 +35,7 @@
 #include "rel_exp.h"
 #include "rel_dump.h"
 #include "mal_debugger.h"
-#include "mtime.h"
+#include "gdk_time.h"
 #include "optimizer.h"
 #include "opt_inline.h"
 #include <unistd.h>

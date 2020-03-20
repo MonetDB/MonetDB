@@ -10,7 +10,6 @@
 #define SQL_STORAGE_H
 
 #include "sql_catalog.h"
-#include "gdk_logger.h"
 #include "store_sequence.h"
 
 #define COLSIZE	1024

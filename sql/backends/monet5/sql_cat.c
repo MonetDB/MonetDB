@@ -457,6 +457,12 @@ create_trigger(mvc *sql, char *sname, char *tname, char *triggername, int time, 
 		}
 		sa_destroy(sql->sa);
 		sql->sa = sa;
+		if (!r) {
+			if (strlen(sql->errstr) > 6 && sql->errstr[5] == '!')
+				throw(SQL, "sql.create_trigger", "%s", sql->errstr);
+			else 
+				throw(SQL, "sql.create_trigger", SQLSTATE(42000) "%s", sql->errstr);
+		}
 	}
 	return MAL_SUCCEED;
 }
@@ -775,9 +781,9 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f)
 
 		assert(nf->query);
 		if (!(sql->sa = sa_create()))
-			throw(SQL, "sql.catalog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			throw(SQL, "sql.create_func", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		if (!(buf = sa_strdup(sql->sa, nf->query)))
-			throw(SQL, "sql.catalog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			throw(SQL, "sql.create_func", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		r = rel_parse(sql, s, buf, m_deps);
 		if (r)
 			r = sql_processrelation(sql, r, 0);
@@ -805,6 +811,12 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f)
 		}
 		sa_destroy(sql->sa);
 		sql->sa = sa;
+		if (!r) {
+			if (strlen(sql->errstr) > 6 && sql->errstr[5] == '!')
+				throw(SQL, "sql.create_func", "%s", sql->errstr);
+			else 
+				throw(SQL, "sql.create_func", SQLSTATE(42000) "%s", sql->errstr);
+		}
 	}
 	default:
 		break;
