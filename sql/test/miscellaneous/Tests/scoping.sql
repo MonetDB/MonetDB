@@ -1,3 +1,5 @@
+--TODO update rel_dump for schemas on variables
+
 declare i integer;
 set i = 1234;
 
@@ -9,10 +11,41 @@ select sys.i, i from tmp1; --we declare variables in a schema, so to reference t
 	-- 1234 1
 	-- 1234 2
 
+declare table tmp2(i integer, s string); --the same for declared tables
+insert into tmp2 values(3,'another'),(4,'test');
+
+select tmp1.i, tmp2.i from sys.tmp1, sys.tmp2;
+	-- 1 3
+	-- 1 4
+	-- 2 3
+	-- 2 4
+
+SELECT MAX(i) FROM tmp1; --Table columns have precedence over global variables
+	-- 2
+
+-- Create a function to test scoping order
+CREATE OR REPLACE FUNCTION tests_scopes(i INT) RETURNS INT 
+BEGIN
+	DECLARE i int;
+	SET i = 1;
+	IF i = 0 THEN
+		RETURN i;
+	ELSE
+		RETURN sys.i;
+	END IF;
+END;
+
+SELECT tests_scopes(vals) FROM (VALUES (0),(2),(3)) AS vals(vals);
+	-- 0 --Function parameters have precedence over declared variables, either local or global
+	-- 1 --Local variables have precedence over global ones
+	-- 1
+
 DROP TABLE tmp1;
+DROP TABLE tmp2;
+DROP FUNCTION tests_scopes(INT);
 ------------------------------------------------------------------------------
 with a(a) as (select 1), a(a) as (select 2) select 1; --error, variable a already declared
-------------------------------------------------------------------------------x<
+------------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION scoping(input INT) RETURNS INT 
 BEGIN
 	DECLARE x int;
