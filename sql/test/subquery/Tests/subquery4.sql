@@ -203,6 +203,9 @@ SET ovar = (SELECT (SELECT i) FROM integers); --error, one row max
 DECLARE abc,def INT;
 SET (abc, def) = (SELECT 1, 2);
 SELECT abc, def;
+SET (abc, def) = (SELECT i, i from integers); --error, one row max
+DECLARE aa,bb INT;
+SELECT i, i INTO aa, bb FROM integers; --error, one row max
 
 UPDATE another_T SET col1 = MIN(col1); --error, aggregates not allowed in update set clause
 UPDATE another_T SET col2 = 1 WHERE col1 = SUM(col2); --error, aggregates not allowed in update set clause
