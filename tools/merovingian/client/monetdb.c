@@ -1692,6 +1692,7 @@ command_profilerstop(int argc, char *argv[])
 	simple_command(argc, argv, "profilerstop", "stopped profiler", 1);
 }
 
+/* Snapshot this single database to the given file */
 static void
 snapshot_create_adhoc(sabdb *databases, char *filename) {
 	/* databases is supposed to only hold a single database */
@@ -1706,11 +1707,13 @@ snapshot_create_adhoc(sabdb *databases, char *filename) {
 	free(merocmd);
 }
 
+/* Create automatic snapshots of the given databases */
 static void
 snapshot_create_automatic(sabdb *databases) {
 	simple_argv_cmd("snapshot", databases, "snapshot create automatic", NULL, "snapshotting database");
 }
 
+/* Comparison function used for qsort */
 static int
 snapshot_enumerate_helper(const void *left, const void *right)
 {
@@ -1732,6 +1735,7 @@ snapshot_enumerate_helper(const void *left, const void *right)
 	return 0;
 }
 
+/* Retrieve a list of all snapshots and Store it in the array. */
 static char*
 snapshot_enumerate(struct snapshot **snapshots, int *nsnapshots)
 {
@@ -1782,7 +1786,7 @@ snapshot_enumerate(struct snapshot **snapshots, int *nsnapshots)
 		return out;
 	}
 
-	// Sort them and give names
+	// Sort them and give names of the form dbname@seqno
 	if (*nsnapshots > ninitial) {
 		int sort_len = *nsnapshots - ninitial;
 		struct snapshot *sort_start = *snapshots + ninitial;

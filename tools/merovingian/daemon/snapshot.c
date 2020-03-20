@@ -53,6 +53,7 @@ snapshot_database_to(char *dbname, char *dest)
 	if (e != NO_ERR) {
 		goto bailout;
 	}
+
 	if (!stats) {
 		e = newErr("No such database: '%s'", dbname);
 		goto bailout;
@@ -116,6 +117,10 @@ snapshot_restore_from(char *dbname, char *source)
 	char *tmppath = NULL;
 	char *destpath = NULL;
 	stream *instream = NULL;
+
+	e = db_validname(dbname);
+	if (e != NO_ERR)
+		goto bailout;
 
 	/* Do not read random files on the system. */
 	e = validate_location(source);
