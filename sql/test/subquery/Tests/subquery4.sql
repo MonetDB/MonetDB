@@ -192,6 +192,9 @@ SELECT i1.i, i2.i FROM integers i1, integers i2 WHERE (i1.i <= ANY (SELECT i1.i)
 SELECT 1 IN ((SELECT MIN(col2)), (SELECT SUM(col4))) FROM another_t;
 	-- False
 
+SELECT 1 FROM another_t WHERE (1,col1) IN ((SELECT MIN(i1.i), SUM(i1.i) FROM integers i1));
+	-- empty
+
 DECLARE myvar INT;
 SELECT (SELECT i) INTO myvar FROM integers; --error, one row max
 DECLARE ovar INT;
@@ -200,6 +203,9 @@ SET ovar = (SELECT (SELECT i) FROM integers); --error, one row max
 DECLARE abc,def INT;
 SET (abc, def) = (SELECT 1, 2);
 SELECT abc, def;
+SET (abc, def) = (SELECT i, i from integers); --error, one row max
+DECLARE aa,bb INT;
+SELECT i, i INTO aa, bb FROM integers; --error, one row max
 
 UPDATE another_T SET col1 = MIN(col1); --error, aggregates not allowed in update set clause
 UPDATE another_T SET col2 = 1 WHERE col1 = SUM(col2); --error, aggregates not allowed in update set clause
@@ -304,6 +310,11 @@ alter sequence "debugme" restart with (select MIN(1) OVER ());
 drop sequence "debugme";
 
 CREATE FUNCTION upsme(input INT) RETURNS INT BEGIN RETURN SELECT MIN(input) OVER (); END;
+
+SELECT upsme(1);
+SELECT upsme(1);
+
+CREATE OR REPLACE FUNCTION upsme(input INT) RETURNS INT BEGIN RETURN (SELECT input); END;
 
 SELECT upsme(1);
 SELECT upsme(1);

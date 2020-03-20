@@ -96,7 +96,7 @@ psm_set_exp(sql_query *query, dnode *n)
 
 		res = exp_set(sql->sa, name, e, level);
 	} else { /* multi assignment */
-		exp_kind ek = {type_value, card_relation, FALSE};
+		exp_kind ek = {type_relation, card_value, FALSE};
 		sql_rel *rel_val = rel_subquery(query, NULL, val, ek);
 		dlist *vars = n->data.lval;
 		dnode *m;
@@ -547,7 +547,7 @@ rel_select_into( sql_query *query, symbol *sq, exp_kind ek)
 extern sql_rel *
 rel_select_with_into(sql_query *query, symbol *sq)
 {
-	exp_kind ek = {type_value, card_row, TRUE};
+	exp_kind ek = {type_relation, card_value, TRUE};
 	list *reslist = rel_select_into(query, sq, ek);
 	if (!reslist)
 		return NULL;
