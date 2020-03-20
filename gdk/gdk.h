@@ -1514,7 +1514,7 @@ Tputvalue(BAT *b, BUN p, const void *v, bool copyall)
 #endif
 		}
 	} else {
-		ATOMputFIX(b->ttype, Tloc(b, p), v);
+		return ATOMputFIX(b->ttype, Tloc(b, p), v);
 	}
 	return GDK_SUCCEED;
 }

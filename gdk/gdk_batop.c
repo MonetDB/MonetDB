@@ -721,7 +721,7 @@ BATappend(BAT *b, BAT *n, BAT *s, bool force)
 gdk_return
 BATdel(BAT *b, BAT *d)
 {
-	int (*unfix) (const void *) = BATatoms[b->ttype].atomUnfix;
+	gdk_return (*unfix) (const void *) = BATatoms[b->ttype].atomUnfix;
 	void (*atmdel) (Heap *, var_t *) = BATatoms[b->ttype].atomDel;
 	BATiter bi = bat_iterator(b);
 
@@ -752,8 +752,8 @@ BATdel(BAT *b, BAT *d)
 			BUN p = o - b->hseqbase;
 			BUN q = p + c;
 			while (p < q) {
-				if (unfix)
-					(*unfix)(BUNtail(bi, p));
+				if (unfix && (*unfix)(BUNtail(bi, p)) != GDK_SUCCEED)
+					return GDK_FAIL;
 				if (atmdel)
 					(*atmdel)(b->tvheap, (var_t *) BUNtloc(bi, p));
 				p++;

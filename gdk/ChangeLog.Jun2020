@@ -1,6 +1,10 @@
 # ChangeLog file for GDK
 # This file is updated with Maddlog
 
+* Fri Mar 20 2020 Sjoerd Mullender <sjoerd@acm.org>
+- Changed the interface of the atom "fix" and "unfix" functions.
+  They now return a value of type gdk_return to indicater success/failure.
+
 * Tue Dec  3 2019 Sjoerd Mullender <sjoerd@acm.org>
 - Removed the tunique property.  The tunique property indicated that
   all values in the column had to be distinct.  It was removed because
