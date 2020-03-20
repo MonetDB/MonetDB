@@ -1403,112 +1403,23 @@ rel_unnest_dependent(mvc *sql, sql_rel *rel)
 }
 
 static sql_rel *
-_rel_unnest(mvc *sql, sql_rel *rel)
+_rel_unnest(mvc *sql, sql_rel *rel, int *changes)
 {
-	if (THRhighwater())
-		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
-	if (!rel)
-		return rel;
-
-	switch (rel->op) {
-	case op_basetable:
-		break;
-	case op_table:
-		if (IS_TABLE_PROD_FUNC(rel->flag) || rel->flag == TABLE_FROM_RELATION)
-			rel->l = _rel_unnest(sql, rel->l);
-		break;
-	case op_join: 
-	case op_left: 
-	case op_right: 
-	case op_full: 
-
-	case op_semi: 
-	case op_anti: 
-
-	case op_union: 
-	case op_inter: 
-	case op_except: 
-		rel->l = _rel_unnest(sql, rel->l);
-		rel->r = _rel_unnest(sql, rel->r);
-		break;
-	case op_project:
-	case op_select: 
-	case op_groupby: 
-	case op_topn: 
-	case op_sample: 
-		rel->l = _rel_unnest(sql, rel->l);
-		break;
-	case op_ddl:
-		rel->l = _rel_unnest(sql, rel->l);
-		if (rel->r)
-			rel->r = _rel_unnest(sql, rel->r);
-		break;
-	case op_insert:
-	case op_update:
-	case op_delete:
-	case op_truncate:
-		rel->l = _rel_unnest(sql, rel->l);
-		rel->r = _rel_unnest(sql, rel->r);
-		break;
-	}
-	if (is_dependent(rel)) 
+	if (is_dependent(rel)) {
 		rel = rel_unnest_dependent(sql, rel);
+		(*changes)++;
+	}
 	return rel;
 }
 
-static void
-rel_reset_subquery(sql_rel *rel)
+static sql_rel *
+rel_reset_subquery(mvc *sql, sql_rel *rel, int *changes)
 {
-	if (!rel)
-		return;
-
+	(void) sql;
+	if (rel->subquery)
+		(*changes)++;
 	rel->subquery = 0;
-	switch(rel->op){
-	case op_basetable:
-		break;
-	case op_table:
-		if ((IS_TABLE_PROD_FUNC(rel->flag) || rel->flag == TABLE_FROM_RELATION) && rel->l)
-			rel_reset_subquery(rel->l);
-		break;
-	case op_ddl:
-		rel_reset_subquery(rel->l);
-		if (rel->r)
-			rel_reset_subquery(rel->r);
-		break;
-	case op_insert:
-	case op_update:
-	case op_delete:
-	case op_truncate:
-		if (rel->l)
-			rel_reset_subquery(rel->l);
-		if (rel->r)
-			rel_reset_subquery(rel->r);
-		break;
-	case op_select:
-	case op_topn:
-	case op_sample:
-
-	case op_project:
-	case op_groupby:
-		if (rel->l)
-			rel_reset_subquery(rel->l);
-		break;
-	case op_join:
-	case op_left:
-	case op_right:
-	case op_full:
-	case op_semi:
-	case op_anti:
-
-	case op_union:
-	case op_inter:
-	case op_except:
-		if (rel->l)
-			rel_reset_subquery(rel->l);
-		if (rel->r)
-			rel_reset_subquery(rel->r);
-	}
-
+	return rel;
 }
 
 static sql_exp *
@@ -1875,7 +1786,7 @@ rel_union_exps(mvc *sql, sql_exp **l, list *vals, int is_tuple)
 		sql_exp *ve = n->data, *r, *s;
 		sql_rel *sq = NULL;
 
-		if (exp_has_rel(ve)) 
+		if (exp_has_rel(ve))
 			sq = exp_rel_get_rel(sql->sa, ve); /* get subquery */
 		else
 			sq = rel_project(sql->sa, NULL, append(sa_list(sql->sa), ve));
@@ -1888,20 +1799,21 @@ rel_union_exps(mvc *sql, sql_exp **l, list *vals, int is_tuple)
 				m->data = r;
 			}
 		} else {
-			r = sq->exps->t->data;
-			if (rel_convert_types(sql, NULL, NULL, l, &r, 1, type_equal) < 0)
-				return NULL;
-			sq->exps->t->data = r;
 			sq->nrcols = list_length(sq->exps);
+			if (rel_convert_types(sql, NULL, NULL, l, &ve, 1, type_equal) < 0)
+				return NULL;
+			/* flatten expressions */
+			if (exp_has_rel(ve))
+				ve = exp_rel_update_exp(sql->sa, ve);
+			sq = rel_project(sql->sa, sq, append(sa_list(sql->sa), ve));
 		}
 		if (!u) {
 			u = sq;
-			exps = rel_projections(sql, sq, NULL, 1/*keep names */, 1);
 		} else {
 			u = rel_setop(sql->sa, u, sq, op_union);
 			rel_set_exps(u, exps);
-			exps = rel_projections(sql, sq, NULL, 1/*keep names */, 1);
 		}
+		exps = rel_projections(sql, sq, NULL, 1/*keep names */, 1);
 	}
 	return u;
 }
@@ -1995,6 +1907,8 @@ rewrite_anyequal(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 			if (is_atom(re->type) && re->f) { /* exp_values */
 				/* flatten using unions */
 				rsq = rel_union_exps(sql, &le, re->f, is_tuple);
+				if (!rsq)
+					return NULL;
 				re = rsq->exps->t->data;
 
 				if (!is_tuple && !is_freevar(re)) {
@@ -2012,6 +1926,8 @@ rewrite_anyequal(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 				sql_rel *sq = lsq;
 				sql_subfunc *ea = sql_bind_func(sql->sa, sql->session->schema, is_anyequal(sf)?"anyequal":"allnotequal", exp_subtype(re), NULL, F_AGGR);
 
+				/* we introduced extra selects */
+				assert(is_project(rel->op) || is_select(rel->op));
 				rsq = rel_add_identity2(sql, rsq, &rid);
 				rid = exp_ref(sql->sa, rid);
 
@@ -2181,6 +2097,8 @@ rewrite_compare(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 			if (is_values(re)) { /* exp_values */
 				/* flatten using unions */
 				rsq = rel_union_exps(sql, &le, re->f, is_tuple);
+				if (!rsq)
+					return NULL;
 				re = rsq->exps->t->data;
 
 				if (!is_tuple) {
@@ -2750,7 +2668,8 @@ rel_unnest(mvc *sql, sql_rel *rel)
 {
 	int changes = 0;
 
-	rel_reset_subquery(rel);
+	rel = rel_visitor_topdown(sql, rel, &rel_reset_subquery, &changes);
+	changes = 0;
 	rel = rel_exp_visitor_bottomup(sql, rel, &rewrite_simplify_exp);
 	rel = rel_visitor_bottomup(sql, rel, &rewrite_simplify, &changes);
 	rel = rel_visitor_bottomup(sql, rel, &rewrite_or_exp, &changes);
@@ -2770,7 +2689,7 @@ rel_unnest(mvc *sql, sql_rel *rel)
 	rel = rel_visitor_bottomup(sql, rel, &rewrite_simplify, &changes);		/* as expressions got merged before, lets try to simplify again */
 	if (changes > 0)
 		rel = rel_visitor_bottomup(sql, rel, &rel_remove_empty_select, &changes);
-	rel = _rel_unnest(sql, rel);
+	rel = rel_visitor_bottomup(sql, rel, &_rel_unnest, &changes);
 	rel = rel_visitor_bottomup(sql, rel, &rewrite_fix_count, &changes);	/* fix count inside a left join (adds a project (if (cnt IS null) then (0) else (cnt)) */
 	rel = rel_visitor_bottomup(sql, rel, &rewrite_remove_xp, &changes);	/* remove crossproducts with project [ atom ] */
 	rel = rel_visitor_bottomup(sql, rel, &rewrite_groupings, &changes);	/* transform group combinations into union of group relations */

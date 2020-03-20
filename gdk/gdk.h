@@ -711,10 +711,8 @@ typedef struct {
 /* assert that atom width is power of 2, i.e., width == 1<<shift */
 #define assert_shift_width(shift,width) assert(((shift) == 0 && (width) == 0) || ((unsigned)1<<(shift)) == (unsigned)(width))
 
-#define GDKLIBRARY_TALIGN	061036U	/* talign field in BBP.dir */
-#define GDKLIBRARY_NIL_NAN	061037U	/* flt/dbl NIL not represented by NaN */
 #define GDKLIBRARY_BLOB_SORT	061040U /* blob compare changed */
-#define GDKLIBRARY_OLDDATE	061041U
+#define GDKLIBRARY_OLDDATE	061041U /* the representation of times changed */
 #define GDKLIBRARY		061042U
 
 typedef struct BAT {

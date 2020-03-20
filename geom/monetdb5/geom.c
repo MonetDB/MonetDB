@@ -12,6 +12,7 @@
  */
 
 #include "geom.h"
+#include "gdk_logger.h"
 #include "mal_exception.h"
 
 int TYPE_mbr;
@@ -2063,6 +2064,8 @@ geoGetType(char **res, int *info, int *flag)
 /* NULL: generic nil mbr. */
 /* returns a pointer to a nil-mbr. */
 static mbr mbrNIL;		/* to be filled in */
+
+#include "gdk_geomlogger.h"
 
 str
 geom_prelude(void *ret)

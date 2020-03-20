@@ -355,9 +355,12 @@ static void ctl_handle_client(
 				dp = _mero_topdp->next; /* don't need the console/log */
 				while (dp != NULL) {
 					if (dp->type == MERODB && strcmp(dp->dbname, q) == 0) {
+						if (dp->pid <= 0) {
+							dp = NULL;
+							/* unlock happens below */
+							break;
+						}
 						if (strcmp(p, "stop") == 0) {
-							pid_t pid = dp->pid;
-							char *dbname = strdup(dp->dbname);
 							mtype type = dp->type;
 							pthread_mutex_unlock(&_mero_topdp_lock);
 							/* Try to shutdown the profiler before the DB.
@@ -366,10 +369,12 @@ static void ctl_handle_client(
 							 * other words: ignore any errors that shutdown_profiler
 							 * may have encountered.
 							 */
-							shutdown_profiler(dbname, &stats);
+							shutdown_profiler(dp->dbname, &stats);
 							if (stats != NULL)
 								msab_freeStatus(&stats);
-							terminateProcess(pid, dbname, type, 1);
+							pthread_mutex_lock(&dp->fork_lock);
+							terminateProcess(dp, type);
+							pthread_mutex_unlock(&dp->fork_lock);
 							Mfprintf(_mero_ctlout, "%s: stopped "
 									"database '%s'\n", origin, q);
 						} else {
@@ -719,7 +724,7 @@ static void ctl_handle_client(
 				}
 			} else if (strchr(p, '=') != NULL) { /* set */
 				char *val;
-				char doshare = 0;
+				bool doshare = false;
 
 				if ((e = msab_getStatus(&stats, q)) != NULL) {
 					len = snprintf(buf2, sizeof(buf2),
@@ -745,7 +750,7 @@ static void ctl_handle_client(
 				if (*val == '\0')
 					val = NULL;
 
-				if ((doshare = !strcmp(p, "shared"))) {
+				if ((doshare = strcmp(p, "shared") == 0)) {
 					/* bail out if we don't do discovery at all */
 					if (getConfNum(_mero_props, "discovery") == 0) {
 						len = snprintf(buf2, sizeof(buf2),

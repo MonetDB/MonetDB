@@ -485,7 +485,7 @@ geomcatalogfix_fptr geomcatalogfix_get(void);
 void geomcatalogfix_set(geomcatalogfix_fptr);
 geomsqlfix_fptr geomsqlfix_get(void);
 void geomsqlfix_set(geomsqlfix_fptr);
-int geomversion_get(void);
+bool geomversion_get(void);
 void geomversion_set(void);
 bat getBBPsize(void);
 char *get_bin_path(void);

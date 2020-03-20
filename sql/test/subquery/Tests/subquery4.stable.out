@@ -283,6 +283,39 @@ stdout of test 'subquery4` in directory 'sql/test/subquery` itself:
 [ NULL,	2	]
 [ NULL,	3	]
 [ NULL,	NULL	]
+#SELECT i1.i, i2.i FROM integers i1, integers i2 WHERE (i1.i <= ANY (SELECT i1.i)) = (i1.i) IN (SELECT i1.i);
+% sys.i1,	sys.i2 # table_name
+% i,	i # name
+% int,	int # type
+% 1,	1 # length
+[ 1,	1	]
+[ 1,	2	]
+[ 1,	3	]
+[ 1,	NULL	]
+[ 2,	1	]
+[ 2,	2	]
+[ 2,	3	]
+[ 2,	NULL	]
+[ 3,	1	]
+[ 3,	2	]
+[ 3,	3	]
+[ 3,	NULL	]
+#SELECT 1 IN ((SELECT MIN(col2)), (SELECT SUM(col4))) FROM another_t;
+% .%20 # table_name
+% %20 # name
+% boolean # type
+% 5 # length
+[ false	]
+#DECLARE myvar INT;
+#DECLARE ovar INT;
+#DECLARE abc,def INT;
+#SET (abc, def) = (SELECT 1, 2);
+#SELECT abc, def;
+% .,	. # table_name
+% single_value,	single_value # name
+% int,	int # type
+% 1,	1 # length
+[ 1,	2	]
 #UPDATE another_T SET col4 = (SELECT SUM(col4 + ColID) FROM tbl_ProductSales); --4 rows affected
 [ 4	]
 #SELECT col4 FROM another_T;

@@ -24,7 +24,6 @@
 #include "rel_semantic.h"
 #include "rel_unnest.h"
 #include "rel_optimizer.h"
-#include "gdk_logger.h"
 #include "wlc.h"
 
 #include "mal_authorize.h"

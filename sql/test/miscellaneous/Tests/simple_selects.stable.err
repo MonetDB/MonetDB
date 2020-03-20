@@ -155,12 +155,16 @@ ERROR = !CREATE AGGREGATE: there's a function with the name 'sin' and the same p
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-374801/.s.monetdb.38729
 QUERY = create table x (x int null not null); --error, multiple null constraints
-ERROR = !The NULL constraint for a column should be passed as most once
+ERROR = !NULL constraint for a column may be specified at most once
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-374801/.s.monetdb.38729
 QUERY = create table x (a int default '1' GENERATED ALWAYS AS IDENTITY); --error, multiple default values
-ERROR = !The default value for a column should be passed as most once
+ERROR = !A default value for a column may be specified at most once
 CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-106925/.s.monetdb.39578
+QUERY = SELECT 1, 2 INTO myvar; --error, number of variables don't match
+ERROR = !SELECT INTO: number of values doesn't match number of variables to set
+CODE  = 21S01
 
 # 17:31:38 >  
 # 17:31:38 >  "Done."

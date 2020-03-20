@@ -64,12 +64,10 @@ psm_set_exp(sql_query *query, dnode *n)
 		exp_kind ek = {type_value, card_value, FALSE};
 		const char *sname = qname_schema(qname);
 		const char *vname = qname_schema_object(qname);
-		sql_schema *s = NULL;
+		sql_schema *s = cur_schema(sql);
 
 		if (sname && !(s = mvc_bind_schema(sql, sname)))
 			return sql_error(sql, 02, SQLSTATE(3F000) "SET: No such schema '%s'", sname);
-		if (s == NULL)
-			s = cur_schema(sql);
 
 		/* vname can be 
 			'parameter of the function' (ie in the param list)
@@ -112,8 +110,11 @@ psm_set_exp(sql_query *query, dnode *n)
 
 		if (!rel_val)
 			return NULL;
-		if (!is_project(rel_val->op) || dlist_length(vars) != list_length(rel_val->exps))
+		if (!is_project(rel_val->op))
+			return sql_error(sql, 02, SQLSTATE(42000) "SET: The subquery is not a projection");
+		if (dlist_length(vars) != list_length(rel_val->exps))
 			return sql_error(sql, 02, SQLSTATE(42000) "SET: Number of variables not equal to number of supplied values");
+		rel_val = rel_zero_or_one(sql, rel_val, ek);
 
 		b = sa_list(sql->sa);
 		append(b, exp_rel(sql, rel_val));
@@ -123,12 +124,10 @@ psm_set_exp(sql_query *query, dnode *n)
 			const char *sname = qname_schema(nqname);
 			const char *vname = qname_schema_object(nqname);
 			sql_exp *v = n->data;
-			sql_schema *s = NULL;
+			sql_schema *s = cur_schema(sql);
 
 			if (sname && !(s = mvc_bind_schema(sql, sname)))
 				return sql_error(sql, 02, SQLSTATE(3F000) "SET: No such schema '%s'", sname);
-			if (s == NULL)
-				s = cur_schema(sql);
 
 			if (!stack_find_var(sql, s, vname)) {
 				sql_arg *a = sql_bind_param(sql, vname);
@@ -140,19 +139,12 @@ psm_set_exp(sql_query *query, dnode *n)
 				tpe = stack_find_type(sql, vname);
 			}
 
-			if (!exp_name(v))
+			level = stack_find_frame(sql, s, vname);
+			if (!exp_name(v)) 
 				exp_label(sql->sa, v, ++sql->label);
 			v = exp_ref(sql->sa, v);
-
-			level = stack_find_frame(sql, s, vname);
-			v = rel_check_type(sql, tpe, rel_val, v, type_cast);
-			if (!v)
+			if (!(v = rel_check_type(sql, tpe, rel_val, v, type_cast)))
 				return NULL;
-			if (v->card > CARD_AGGR) {
-				sql_subfunc *zero_or_one = sql_bind_func(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(v), NULL, F_AGGR);
-				assert(zero_or_one);
-				v = exp_aggr1(sql->sa, v, zero_or_one, 0, 0, CARD_ATOM, has_nil(v));
-			}
 			append(b, exp_set(sql->sa, s->base.name, vname, v, level));
 		}
 		res = exp_rel(sql, rel_psm_block(sql->sa, b));
@@ -225,7 +217,7 @@ rel_psm_declare_table(sql_query *query, dnode *n)
 		return sql_error(sql, 01, SQLSTATE(42000) "DECLARE: Variable '%s' already declared", name);
 
 	assert(n->next->next->next->type == type_int);
-	rel = rel_create_table(query, cur_schema(sql), SQL_DECLARED_TABLE, s->base.name, name, n->next->next->data.sym,
+	rel = rel_create_table(query, s, SQL_DECLARED_TABLE, s->base.name, name, n->next->next->data.sym,
 						   n->next->next->next->data.i_val, NULL, NULL, NULL, false, NULL, 0);
 
 	if (!rel)
@@ -542,6 +534,11 @@ rel_select_into( sql_query *query, symbol *sq, exp_kind ek)
 	r = rel_subquery(query, NULL, sq, ek);
 	if (!r) 
 		return NULL;
+	if (!is_project(r->op))
+		return sql_error(sql, 02, SQLSTATE(42000) "SELECT INTO: The subquery is not a projection");
+	if (list_length(r->exps) != dlist_length(into))
+		return sql_error(sql, 02, SQLSTATE(21S01) "SELECT INTO: number of values doesn't match number of variables to set");
+	r = rel_zero_or_one(sql, r, ek);
 	nl = sa_list(sql->sa);
 	append(nl, exp_rel(sql, r));
 	for (m = r->exps->h, n = into->h; m && n; m = m->next, n = n->next) {
@@ -555,18 +552,14 @@ rel_select_into( sql_query *query, symbol *sq, exp_kind ek)
 
 		if (sname && !(s = mvc_bind_schema(sql, sname)))
 			return sql_error(sql, 02, SQLSTATE(3F000) "SELECT INTO: No such schema '%s'", sname);
-
 		if (!stack_find_var(sql, s, name)) 
 			return sql_error(sql, 02, SQLSTATE(42000) "SELECT INTO: Variable '%s%s%s' unknown", sname ? sname : "", sname ? "." : "", name);
-		/* dynamic check for single values */
-		if (v->card > CARD_AGGR) {
-			sql_subfunc *zero_or_one = sql_bind_func(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(v), NULL, F_AGGR);
-			assert(zero_or_one);
-			v = exp_aggr1(sql->sa, v, zero_or_one, 0, 0, CARD_ATOM, has_nil(v));
-		}
 		tpe = stack_find_type(sql, name);
 		level = stack_find_frame(sql, s, name);
-		if (!v || !(v = rel_check_type(sql, tpe, r, v, type_equal)))
+		if (!exp_name(v)) 
+			exp_label(sql->sa, v, ++sql->label);
+		v = exp_ref(sql->sa, v);
+		if (!(v = rel_check_type(sql, tpe, r, v, type_equal)))
 			return NULL;
 		v = exp_set(sql->sa, s->base.name, name, v, level);
 		list_append(nl, v);
