@@ -192,6 +192,9 @@ SELECT i1.i, i2.i FROM integers i1, integers i2 WHERE (i1.i <= ANY (SELECT i1.i)
 SELECT 1 IN ((SELECT MIN(col2)), (SELECT SUM(col4))) FROM another_t;
 	-- False
 
+SELECT 1 FROM another_t WHERE (1,col1) IN ((SELECT MIN(i1.i), SUM(i1.i) FROM integers i1));
+	-- empty
+
 DECLARE myvar INT;
 SELECT (SELECT i) INTO myvar FROM integers; --error, one row max
 DECLARE ovar INT;
