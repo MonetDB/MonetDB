@@ -700,7 +700,8 @@ rel_op_(mvc *sql, sql_schema *s, char *fname, exp_kind ek)
 static sql_exp*
 exp_values_set_supertype(mvc *sql, sql_exp *values)
 {
-	list *vals = values->f, *nexps;
+	assert(is_values(values));
+	list *vals = exp_get_values(values), *nexps;
 	sql_subtype *tpe = exp_subtype(vals->h->data);
 
 	if (tpe)
@@ -751,6 +752,116 @@ exp_values_set_supertype(mvc *sql, sql_exp *values)
 		values->f = nexps;
 	}
 	return values;
+}
+
+static sql_exp*
+exp_tuples_set_supertype(mvc *sql, list *tuple_values, sql_exp *tuples)
+{
+	assert(is_values(tuples));
+	list *vals = exp_get_values(tuples);
+	if (!vals || !vals->h)
+		return NULL;
+
+	int tuple_width = list_length(tuple_values), i;
+	sql_subtype **types = SA_NEW_ARRAY(sql->sa, sql_subtype*, tuple_width);
+	node *n;
+
+	for(n = tuple_values->h, i = 0; n; n = n->next, i++) {
+		sql_exp *e = n->data;
+		types[i] = exp_subtype(e);
+	}
+
+	for (node *m = vals->h; m; m = m->next) {
+		sql_exp *tuple = m->data;
+		sql_rel *tuple_relation = exp_rel_get_rel(sql->sa, tuple);
+
+		for(n = tuple_relation->exps->h, i = 0; n; n = n->next, i++) {
+			sql_subtype *tpe;
+			sql_exp *e = n->data;
+
+			/* if the expression is a parameter set its type */
+			/* check for param 
+			if (types[i] && e->type == e_atom && !e->l && !e->r && !e->f && !e->tpe.type) {
+				if (set_type_param(sql, types[i], e->flag) == 0)
+					e->tpe = *types[i];
+				else
+					return NULL;
+			}
+			 * */
+			tpe = exp_subtype(e);
+			if (types[i] && tpe) {
+				supertype(types[i], types[i], tpe);
+			} else {
+				types[i] = tpe;
+			}
+		}
+	}
+
+	for (node *m = vals->h; m; m = m->next) {
+		sql_exp *tuple = m->data;
+		sql_rel *tuple_relation = exp_rel_get_rel(sql->sa, tuple);
+
+		list *nexps = sa_list(sql->sa);
+		for(n = tuple_relation->exps->h, i = 0; n; n = n->next, i++) {
+			sql_exp *e = n->data;
+
+			/* if the expression is a parameter set its type 
+			sql_exp *e = m->data;
+			if (e->type == e_atom && !e->l && !e->r && !e->f && !e->tpe.type) {
+				if (set_type_param(sql, tpe, e->flag) == 0)
+					e->tpe = *tpe;
+				else
+					return NULL;
+			}
+			 * */
+			e = rel_check_type(sql, types[i], NULL, e, type_equal);
+			if (!e)
+				return NULL;
+			exp_label(sql->sa, e, ++sql->label);
+			append(nexps, e);
+		}
+		tuple_relation->exps = nexps;
+	}
+	return tuples;
+}
+
+static int
+rel_binop_check_types(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, int upcast)
+{
+	sql_subtype *t1 = exp_subtype(ls), *t2 = exp_subtype(rs);
+	
+	if (!t1 || !t2) {
+		if (t2 && !t1 && rel_set_type_param(sql, t2, rel, ls, upcast) < 0)
+			return -1;
+		if (t1 && !t2 && rel_set_type_param(sql, t1, rel, rs, upcast) < 0)
+			return -1;
+	}
+	if (!exp_subtype(ls) && !exp_subtype(rs)) {
+		(void) sql_error(sql, 01, SQLSTATE(42000) "Cannot have a parameter (?) on both sides of an expression");
+		return -1;
+	}
+	return 0;
+}
+
+static list *
+tuples_check_types(mvc *sql, list *tuple_values, sql_exp *tuples) 
+{
+	list *tuples_list = exp_get_values(tuples);
+	sql_exp *first_tuple = tuples_list->h->data;
+	sql_rel *tuple_relation = exp_rel_get_rel(sql->sa, first_tuple);
+
+	assert(list_length(tuple_values) == list_length(tuple_relation->exps));
+	list *nvalues = sa_list(sql->sa);
+	for (node *n = tuple_values->h, *m = tuple_relation->exps->h; n && m; n = n->next, m = m->next) {
+		sql_exp *le = n->data, *re = m->data;
+
+		if (rel_binop_check_types(sql, NULL, le, re, 0) < 0)
+			return NULL;
+		if ((le = rel_check_type(sql, exp_subtype(re), NULL, le, type_cast)) == NULL)
+			return NULL;
+		append(nvalues, le);
+	}
+	return nvalues;
 }
 
 static sql_rel *
@@ -1262,24 +1373,6 @@ exp_fix_scale(mvc *sql, sql_subtype *ct, sql_exp *e, int both, int always)
 		}
 	}
 	return e;
-}
-
-static int
-rel_binop_check_types(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, int upcast)
-{
-	sql_subtype *t1 = exp_subtype(ls), *t2 = exp_subtype(rs);
-	
-	if (!t1 || !t2) {
-		if (t2 && !t1 && rel_set_type_param(sql, t2, rel, ls, upcast) < 0)
-			return -1;
-		if (t1 && !t2 && rel_set_type_param(sql, t1, rel, rs, upcast) < 0)
-			return -1;
-	}
-	if (!exp_subtype(ls) && !exp_subtype(rs)) {
-		(void) sql_error(sql, 01, SQLSTATE(42000) "Cannot have a parameter (?) on both sides of an expression");
-		return -1;
-	}
-	return 0;
 }
 
 /* try to do an in-place conversion
@@ -2035,15 +2128,11 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 		values = exp_values(sql->sa, vals);
 		exp_label(sql->sa, values, ++sql->label);
 		if (is_tuple) { 
-			sql_exp *e_rel = (sql_exp *) vals->h->data;
-			list *le_vals = le->f, *rel_vals = ((sql_rel*)e_rel->l)->exps;
-
-			for (node *m = le_vals->h, *o = rel_vals->h ; m && o ; m = m->next, o = o->next) {
-				sql_exp *e = m->data, *f = o->data;
-
-				if (rel_binop_check_types(sql, rel ? *rel : NULL, e, f, 0) < 0)
-					return NULL;
-			}
+			values = exp_tuples_set_supertype(sql, exp_get_values(le), values);
+			list *nvalues = tuples_check_types(sql, exp_get_values(le), values);
+			if (!nvalues)
+				return NULL;
+			le->f = nvalues;
 		} else { /* if it's not a tuple, enforce coersion on the type for every element on the list */
 			values = exp_values_set_supertype(sql, values);
 			if (rel_binop_check_types(sql, rel ? *rel : NULL, le, values, 0) < 0)
