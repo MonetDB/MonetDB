@@ -628,7 +628,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			atom *a = e->l;
 			s = stmt_atom(be, atom_dup(sql->sa, a));
 		} else if (e->r) { 		/* parameters */
-			s = stmt_var(be, e->alias.rname ? sa_strdup(sql->sa, e->alias.rname) : NULL, sa_strdup(sql->sa, e->alias.name), e->tpe.type?&e->tpe:NULL, 0, e->flag);
+			s = stmt_var(be, (e->flag > 0 && e->alias.rname) ? sa_strdup(sql->sa, e->alias.rname) : NULL, sa_strdup(sql->sa, (e->flag > 0) ? e->alias.name : e->r), e->tpe.type?&e->tpe:NULL, 0, e->flag);
 		} else if (e->f) { 		/* values */
 			s = value_list(be, e->f, left, sel);
 		} else { 			/* arguments */
