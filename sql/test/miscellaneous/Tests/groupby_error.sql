@@ -25,6 +25,16 @@ SELECT ALL * FROM tab0 WHERE 68 = - + 83; --empty
 SELECT * FROM tab2 AS cor0 WHERE NOT - ( - + 57 ) + - ( ( - - col2 ) ) BETWEEN + - col2 AND + col2;
 	-- 46 51 23
 
+SELECT col0 FROM tab2 WHERE - - col2;
+	-- 64
+	-- 75
+	-- 46
+
+PLAN SELECT col0 FROM tab2 WHERE CAST(col2 AS BIGINT) = 40;
+
+SELECT col0 FROM tab2 WHERE CAST(col2 AS BIGINT) = 40;
+	-- 64
+
 SELECT 11 FROM tab1 AS cor0 LEFT JOIN tab0 ON 80 = 70;
 	-- 11
 	-- 11
