@@ -1211,8 +1211,8 @@ BBPcheckbats(void)
 		if (path == NULL)
 			return GDK_FAIL;
 		if (stat(path, &statb) < 0) {
-			GDKsyserror("BBPcheckbats: cannot stat file %s\n",
-				    path);
+			GDKsyserror("BBPcheckbats: cannot stat file %s (expected size %zu)\n",
+				    path, b->theap.free);
 			GDKfree(path);
 			return GDK_FAIL;
 		}
@@ -1694,7 +1694,7 @@ vheap_entry(FILE *fp, Heap *h)
 }
 
 static gdk_return
-new_bbpentry(FILE *fp, bat i, const char *prefix)
+new_bbpentry(FILE *fp, bat i)
 {
 #ifndef NDEBUG
 	assert(i > 0);
@@ -1710,10 +1710,9 @@ new_bbpentry(FILE *fp, bat i, const char *prefix)
 	}
 #endif
 
-	if (fprintf(fp, "%s%zd %u %s %s %d " BUNFMT " "
-		    BUNFMT " " OIDFMT, prefix,
+	if (fprintf(fp, "%d %u %s %s %d " BUNFMT " " BUNFMT " " OIDFMT,
 		    /* BAT info */
-		    (ssize_t) i,
+		    (int) i,
 		    BBP_status(i) & BBPPERSISTENT,
 		    BBP_logical(i),
 		    BBP_physical(i),
@@ -1723,24 +1722,11 @@ new_bbpentry(FILE *fp, bat i, const char *prefix)
 		    BBP_desc(i)->hseqbase) < 0 ||
 	    heap_entry(fp, BBP_desc(i)) < 0 ||
 	    vheap_entry(fp, BBP_desc(i)->tvheap) < 0 ||
-	    (BBP_options(i) &&
-	     fprintf(fp, " %s", BBP_options(i)) < 0) ||
+	    (BBP_options(i) && fprintf(fp, " %s", BBP_options(i)) < 0) ||
 	    fprintf(fp, "\n") < 0) {
 		GDKsyserror("new_bbpentry: Writing BBP.dir entry failed\n");
 		return GDK_FAIL;
 	}
-	TRC_DEBUG(IO_, "%s%zd %u %s %s %d " BUNFMT " "
-		  BUNFMT " " OIDFMT " %s\n", prefix,
-		  /* BAT info */
-		  (ssize_t) i,
-		  BBP_status(i) & BBPPERSISTENT,
-		  BBP_logical(i),
-		  BBP_physical(i),
-		  BBP_desc(i)->batRestricted << 1,
-		  BBP_desc(i)->batCount,
-		  BBP_desc(i)->batCapacity,
-		  BBP_desc(i)->hseqbase,
-		  BBP_options(i) ? BBP_options(i) : "");
 
 	return GDK_SUCCEED;
 }
@@ -1826,7 +1812,7 @@ BBPdir_subcommit(int cnt, bat *subcommit)
 			bat i = subcommit[j];
 			/* BBP.dir consists of all persistent bats only */
 			if (BBP_status(i) & BBPPERSISTENT) {
-				if (new_bbpentry(nbbpf, i, "") != GDK_SUCCEED) {
+				if (new_bbpentry(nbbpf, i) != GDK_SUCCEED) {
 					goto bailout;
 				}
 			}
@@ -1898,7 +1884,7 @@ BBPdir(int cnt, bat *subcommit)
 		/* write the entry
 		 * BBP.dir consists of all persistent bats */
 		if (BBP_status(i) & BBPPERSISTENT) {
-			if (new_bbpentry(fp, i, "") != GDK_SUCCEED) {
+			if (new_bbpentry(fp, i) != GDK_SUCCEED) {
 				goto bailout;
 			}
 		}
