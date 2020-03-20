@@ -648,7 +648,8 @@ BATprojectchain(BAT **bats)
 			}
 			if (bunfastappTYPE(oid, bn, &o) != GDK_SUCCEED)
 				goto bunins_failed;
-			ATOMputFIX(bn->ttype, d, &o);
+			if (ATOMputFIX(bn->ttype, d, &o) != GDK_SUCCEED)
+				goto bunins_failed;
 			d++;
 		}
 	} else if (!ATOMvarsized(tpe)) {
@@ -685,7 +686,8 @@ BATprojectchain(BAT **bats)
 				o -= ba[n].hlo;
 				v = Tloc(b, o);
 			}
-			ATOMputFIX(tpe, d, v);
+			if (ATOMputFIX(tpe, d, v) != GDK_SUCCEED)
+				goto bunins_failed;
 			d += b->twidth;
 		}
 		if (stringtrick) {

@@ -118,16 +118,24 @@ hgeHash(const hge *v)
 /*
  * @+ Standard Atoms
  */
-static int
+static gdk_return
 batFix(const bat *b)
 {
-	return BBPretain(*b);
+	if (!is_bat_nil(*b) && BBPretain(*b) == 0) {
+		GDKerror("batFix failed\n");
+		return GDK_FAIL;
+	}
+	return GDK_SUCCEED;
 }
 
-static int
+static gdk_return
 batUnfix(const bat *b)
 {
-	return BBPrelease(*b);
+	if (!is_bat_nil(*b) && BBPrelease(*b) < 0) {
+		GDKerror("batUnfix failed\n");
+		return GDK_FAIL;
+	}
+	return GDK_SUCCEED;
 }
 
 /*
@@ -1232,8 +1240,8 @@ atomDesc BATatoms[MAXATOMS] = {
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) batWrite,
 		.atomCmp = (int (*)(const void *, const void *)) intCmp,
 		.atomHash = (BUN (*)(const void *)) intHash,
-		.atomFix = (int (*)(const void *)) batFix,
-		.atomUnfix = (int (*)(const void *)) batUnfix,
+		.atomFix = (gdk_return (*)(const void *)) batFix,
+		.atomUnfix = (gdk_return (*)(const void *)) batUnfix,
 	},
 	[TYPE_int] = {
 		.name = "int",

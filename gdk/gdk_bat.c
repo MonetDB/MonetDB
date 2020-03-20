@@ -1129,7 +1129,8 @@ BUNdelete(BAT *b, oid o)
 		    && ATOMcmp(b->ttype, VALptr(&prop->v), val) <= 0)
 			BATrmprop(b, GDK_MIN_VALUE);
 	}
-	ATOMunfix(b->ttype, val);
+	if (ATOMunfix(b->ttype, val) != GDK_SUCCEED)
+		return GDK_FAIL;
 	ATOMdel(b->ttype, b->tvheap, (var_t *) BUNtloc(bi, p));
 	if (p != BUNlast(b) - 1 &&
 	    (b->ttype != TYPE_void || BATtdense(b))) {
@@ -1314,8 +1315,10 @@ BUNinplace(BAT *b, BUN p, const void *t, bool force)
 		}
 	} else {
 		assert(BATatoms[b->ttype].atomPut == NULL);
-		ATOMfix(b->ttype, t);
-		ATOMunfix(b->ttype, BUNtloc(bi, p));
+		if (ATOMfix(b->ttype, t) != GDK_SUCCEED)
+			return GDK_FAIL;
+		if (ATOMunfix(b->ttype, BUNtloc(bi, p)) != GDK_SUCCEED)
+			return GDK_FAIL;
 		switch (ATOMsize(b->ttype)) {
 		case 0:	     /* void */
 			break;

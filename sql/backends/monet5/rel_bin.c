@@ -566,8 +566,9 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 						list_append(l, const_column(be, (stmt*)n->data));
 					r = stmt_list(be, l);
 				} else if (r->type == st_table && e->card == CARD_ATOM) { /* fetch value */
+					sql_rel *ll = (sql_rel*) l->l;
 					r = lst->op4.lval->h->data;
-					if (!r->aggr)
+					if (!r->aggr && lastexp(ll)->card > CARD_ATOM) /* if the cardinality is atom, no fetch call needed */
 						r = stmt_fetch(be, r);
 				}
 				if (r->type == st_list)
