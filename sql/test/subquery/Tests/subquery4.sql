@@ -199,6 +199,8 @@ SELECT (SELECT 1 UNION ALL SELECT 2); --error, more than one row returned by a s
 
 SELECT (SELECT 1 UNION ALL SELECT 2), (SELECT 1 UNION ALL SELECT 2); --error, more than one row returned by a subquery used as an expression
 
+SELECT 1 HAVING (SELECT 1 UNION SELECT 2); --error, more than one row returned by a subquery used as an expression
+
 DECLARE myvar INT;
 SELECT (SELECT i) INTO myvar FROM integers; --error, one row max
 DECLARE ovar INT;
