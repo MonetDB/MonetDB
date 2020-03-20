@@ -195,6 +195,10 @@ SELECT 1 IN ((SELECT MIN(col2)), (SELECT SUM(col4))) FROM another_t;
 SELECT 1 FROM another_t WHERE (1,col1) IN ((SELECT MIN(i1.i), SUM(i1.i) FROM integers i1));
 	-- empty
 
+SELECT (SELECT 1 UNION ALL SELECT 2); --error, more than one row returned by a subquery used as an expression
+
+SELECT (SELECT 1 UNION ALL SELECT 2), (SELECT 1 UNION ALL SELECT 2); --error, more than one row returned by a subquery used as an expression
+
 DECLARE myvar INT;
 SELECT (SELECT i) INTO myvar FROM integers; --error, one row max
 DECLARE ovar INT;

@@ -74,6 +74,9 @@ stdout of test 'groupby_error` in directory 'sql/test/miscellaneous` itself:
 #CREATE TABLE tab1(col0 INTEGER, col1 INTEGER, col2 INTEGER);
 #INSERT INTO tab1 VALUES (51,14,96), (85,5,59), (91,47,68);
 [ 3	]
+#CREATE TABLE tab2(col0 INTEGER, col1 INTEGER, col2 INTEGER);
+#INSERT INTO tab2 VALUES(64,77,40), (75,67,58), (46,51,23);
+[ 3	]
 #SELECT CAST(+ col1 * - col1 AS BIGINT) AS col2 FROM tab0 GROUP BY col2, col0, col1 HAVING + - col0 / - AVG ( ALL + col2 ) - - - AVG ( DISTINCT + col0 ) + col0 IS NULL;
 % sys. # table_name
 % col2 # name
@@ -109,6 +112,22 @@ stdout of test 'groupby_error` in directory 'sql/test/miscellaneous` itself:
 % col0,	col1,	col2 # name
 % int,	int,	int # type
 % 1,	1,	1 # length
+#PLAN SELECT col0 FROM tab2 WHERE CAST(col2 AS BIGINT) = 40;
+% .plan # table_name
+% rel # name
+% clob # type
+% 59 # length
+project (
+| select (
+| | table(sys.tab2) [ "tab2"."col0", "tab2"."col2" ] COUNT 
+| ) [ bigint["tab2"."col2"] = bigint "40" ]
+) [ "tab2"."col0" ]
+#SELECT col0 FROM tab2 WHERE CAST(col2 AS BIGINT) = 40;
+% sys.tab2 # table_name
+% col0 # name
+% int # type
+% 2 # length
+[ 64	]
 #SELECT 11 FROM tab1 AS cor0 LEFT JOIN tab0 ON 80 = 70;
 % . # table_name
 % single_value # name

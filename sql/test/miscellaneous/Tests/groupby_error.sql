@@ -10,6 +10,8 @@ CREATE TABLE tab0(col0 INTEGER, col1 INTEGER, col2 INTEGER);
 INSERT INTO tab0 VALUES(97,1,99), (15,81,47), (87,21,10);
 CREATE TABLE tab1(col0 INTEGER, col1 INTEGER, col2 INTEGER);
 INSERT INTO tab1 VALUES (51,14,96), (85,5,59), (91,47,68);
+CREATE TABLE tab2(col0 INTEGER, col1 INTEGER, col2 INTEGER);
+INSERT INTO tab2 VALUES(64,77,40), (75,67,58), (46,51,23);
 
 SELECT CAST(+ col1 * - col1 AS BIGINT) AS col2 FROM tab0 GROUP BY col2, col0, col1 HAVING + - col0 / - AVG ( ALL + col2 ) - - - AVG ( DISTINCT + col0 ) + col0 IS NULL;
 SELECT DISTINCT + 40 / + + col0 AS col2 FROM tab0 GROUP BY col0, col0, col2 HAVING NOT ( NOT + - 80 BETWEEN NULL AND + - 73 ) OR NOT ( + col0 >= - COUNT ( * ) + - COUNT ( DISTINCT - col0 ) );
@@ -19,6 +21,19 @@ SELECT * FROM tab0 AS cor0 WHERE NOT - 39 <> 11; --empty
 SELECT DISTINCT * FROM tab0 WHERE NOT - - 12 <> + + 96; --empty
 SELECT * FROM tab0 AS cor0 WHERE - 52 = + 32; --empty
 SELECT ALL * FROM tab0 WHERE 68 = - + 83; --empty
+
+SELECT * FROM tab2 AS cor0 WHERE NOT - ( - + 57 ) + - ( ( - - col2 ) ) BETWEEN + - col2 AND + col2;
+	-- 46 51 23
+
+SELECT col0 FROM tab2 WHERE - - col2;
+	-- 64
+	-- 75
+	-- 46
+
+PLAN SELECT col0 FROM tab2 WHERE CAST(col2 AS BIGINT) = 40;
+
+SELECT col0 FROM tab2 WHERE CAST(col2 AS BIGINT) = 40;
+	-- 64
 
 SELECT 11 FROM tab1 AS cor0 LEFT JOIN tab0 ON 80 = 70;
 	-- 11
@@ -70,3 +85,4 @@ prepare select 1 from tab1 where (col0,col1) in (select ?,? from tab1);
 
 drop table tab0;
 drop table tab1;
+drop table tab2;

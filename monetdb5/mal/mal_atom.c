@@ -67,7 +67,7 @@ malAtomProperty(MalBlkPtr mb, InstrPtr pci)
 			return MAL_SUCCEED;
 		}
 		if (idcmp("fix", name) == 0 && pci->argc == 1) {
-			BATatoms[tpe].atomFix = (int (*)(const void *))pci->fcn;
+			BATatoms[tpe].atomFix = (gdk_return (*)(const void *))pci->fcn;
 			setAtomName(pci);
 			return MAL_SUCCEED;
 		}
@@ -131,7 +131,7 @@ malAtomProperty(MalBlkPtr mb, InstrPtr pci)
 		break;
 	case 'u':
 		if (idcmp("unfix", name) == 0 && pci->argc == 1) {
-			BATatoms[tpe].atomUnfix = (int (*)(const void *))pci->fcn;
+			BATatoms[tpe].atomUnfix = (gdk_return (*)(const void *))pci->fcn;
 			setAtomName(pci);
 			return MAL_SUCCEED;
 		}

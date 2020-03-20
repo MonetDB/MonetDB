@@ -2679,14 +2679,15 @@ BBPdestroy(BAT *b)
 		VIEWdestroy(b);
 	} else {
 		/* bats that get destroyed must unfix their atoms */
-		int (*tunfix) (const void *) = BATatoms[b->ttype].atomUnfix;
+		gdk_return (*tunfix) (const void *) = BATatoms[b->ttype].atomUnfix;
 		BUN p, q;
 		BATiter bi = bat_iterator(b);
 
 		assert(b->batSharecnt == 0);
 		if (tunfix) {
 			BATloop(b, p, q) {
-				(*tunfix) (BUNtail(bi, p));
+				/* ignore errors */
+				(void) (*tunfix)(BUNtail(bi, p));
 			}
 		}
 		BATdelete(b);	/* handles persistent case also (file deletes) */
