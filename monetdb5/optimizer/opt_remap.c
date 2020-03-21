@@ -50,6 +50,19 @@ OPTremapDirect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int idx,
 	p->retc= p->argc= pci->retc;
 	for(i= pci->retc+2; i<pci->argc; i++)
 		p= addArgument(mb,p,getArg(pci,i));
+	if (p->retc == 1 &&
+		p->argc == 3 &&
+		bufName == batcalcRef &&
+		(fcnName == mulRef || fcnName == divRef || fcnName == plusRef || fcnName == minusRef || fcnName == modRef) &&
+		/* these two filter out unary batcalc.- with a candidate list */
+		getBatType(getArgType(mb, p, 1)) != TYPE_oid &&
+		getBatType(getArgType(mb, p, 2)) != TYPE_oid) {
+		/* add candidate lists */
+		if (isaBatType(getArgType(mb, p, 1)))
+			pushNil(mb, p, TYPE_bat);
+		if (isaBatType(getArgType(mb, p, 2)))
+			pushNil(mb, p, TYPE_bat);
+	}
 
 	/* now see if we can resolve the instruction */
 	typeChecker(scope,mb,p,idx,TRUE);
@@ -219,6 +232,19 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 					snprintf(buf,1024,"bat%s",getModuleId(q));
 					setModuleId(q,putName(buf));
 					q->typechk = TYPE_UNKNOWN;
+					if (q->retc == 1 &&
+						q->argc == 3 &&
+						getModuleId(q) == batcalcRef &&
+						(getFunctionId(q) == mulRef || getFunctionId(q) == divRef || getFunctionId(q) == plusRef || getFunctionId(q) == minusRef || getFunctionId(q) == modRef) &&
+						/* these two filter out unary batcalc.- with a candidate list */
+						getBatType(getArgType(mq, q, 1)) != TYPE_oid &&
+						getBatType(getArgType(mq, q, 2)) != TYPE_oid) {
+						/* add candidate lists */
+						if (isaBatType(getArgType(mq, q, 1)))
+							pushNil(mq, q, TYPE_bat);
+						if (isaBatType(getArgType(mq, q, 2)))
+							pushNil(mq, q, TYPE_bat);
+					}
 
 					/* now see if we can resolve the instruction */
 					typeChecker(cntxt->usermodule,mq,q,i,TRUE);
@@ -421,6 +447,8 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			getArg(avg, 0) = getArg(p, 0);
 			avg = addArgument(mb, avg, getDestVar(sum));
 			avg = addArgument(mb, avg, getDestVar(cnt));
+			avg = pushNil(mb, avg, TYPE_bat);
+			avg = pushNil(mb, avg, TYPE_bat);
 			freeInstruction(p);
 			pushInstruction(mb, avg);
 		} else {
