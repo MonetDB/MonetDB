@@ -79,7 +79,7 @@ temp_copy(log_bid b, int temp)
 		if (!c)
 			return BID_NIL;
 		bat_set_access(c, BAT_READ);
-		BATcommit(c);
+		BATcommit(c, BUN_NONE);
 	} else {
 		c = bat_new(o->ttype, COLSIZE, PERSISTENT);
 		if (!c)
@@ -164,7 +164,7 @@ ebat_copy(log_bid b, oid ibase, int temp)
 		if (!c)
 			return BID_NIL;
 		BAThseqbase(c, ibase );
-		BATcommit(c);
+		BATcommit(c, BUN_NONE);
 		bat_set_access(c, BAT_READ);
 		r = temp_create(c);
 		bat_destroy(c);

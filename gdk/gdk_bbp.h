@@ -69,7 +69,7 @@ gdk_export bat BBPindex(const char *nme);
 gdk_export BAT *BBPdescriptor(bat b);
 
 /* swapping interface */
-gdk_export gdk_return BBPsync(int cnt, bat *subcommit);
+gdk_export gdk_return BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes);
 gdk_export int BBPfix(bat b);
 gdk_export int BBPunfix(bat b);
 gdk_export int BBPretain(bat b);

@@ -1408,9 +1408,9 @@ logger_commit(logger *lg)
 		    BATclear(lg->snapshots_tid, true) != GDK_SUCCEED ||
 		    BATclear(lg->dsnapshots, true) != GDK_SUCCEED)
 			return GDK_FAIL;
-		BATcommit(lg->snapshots_bid);
-		BATcommit(lg->snapshots_tid);
-		BATcommit(lg->dsnapshots);
+		BATcommit(lg->snapshots_bid, BUN_NONE);
+		BATcommit(lg->snapshots_tid, BUN_NONE);
+		BATcommit(lg->dsnapshots, BUN_NONE);
 	}
 	return bm_commit(lg);
 }
@@ -1660,14 +1660,14 @@ bm_subcommit(logger *lg, BAT *list_bid, BAT *list_nme, BAT *catalog_bid, BAT *ca
 	}
 
 	assert((BUN) i <= nn);
-	BATcommit(catalog_bid);
-	BATcommit(catalog_nme);
+	BATcommit(catalog_bid, BUN_NONE);
+	BATcommit(catalog_nme, BUN_NONE);
 	if (catalog_tpe) {
-		BATcommit(catalog_tpe);
-		BATcommit(catalog_oid);
+		BATcommit(catalog_tpe, BUN_NONE);
+		BATcommit(catalog_oid, BUN_NONE);
 	}
-	BATcommit(dcatalog);
-	res = TMsubcommit_list(n, i);
+	BATcommit(dcatalog, BUN_NONE);
+	res = TMsubcommit_list(n, NULL, i);
 	GDKfree(n);
 	if (res != GDK_SUCCEED)
 		fprintf(stderr, "!ERROR: bm_subcommit: commit failed\n");
@@ -3164,7 +3164,7 @@ bm_commit(logger *lg)
 	BBPreclaim(n);
 	if (res == GDK_SUCCEED) {
 		BATclear(lg->freed, false);
-		BATcommit(lg->freed);
+		BATcommit(lg->freed, BUN_NONE);
 		return GDK_SUCCEED;
 	}
 	return GDK_FAIL;

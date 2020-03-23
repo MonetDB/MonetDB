@@ -1832,7 +1832,7 @@ Tpos(BATiter *bi, BUN p)
 gdk_export gdk_return TMcommit(void);
 gdk_export void TMabort(void);
 gdk_export gdk_return TMsubcommit(BAT *bl);
-gdk_export gdk_return TMsubcommit_list(bat *subcommit, int cnt);
+gdk_export gdk_return TMsubcommit_list(bat *restrict subcommit, BUN *restrict sizes, int cnt);
 
 /*
  * @- Delta Management
@@ -1870,7 +1870,7 @@ gdk_export gdk_return TMsubcommit_list(bat *subcommit, int cnt);
  * TMcommit does the BATcommits @emph{before} attempting to sync to
  * disk instead of @sc{after} doing this.
  */
-gdk_export void BATcommit(BAT *b);
+gdk_export void BATcommit(BAT *b, BUN size);
 gdk_export void BATfakeCommit(BAT *b);
 gdk_export void BATundo(BAT *b);
 

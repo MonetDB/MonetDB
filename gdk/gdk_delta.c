@@ -31,7 +31,7 @@
  * need to free their heap space (only if necessary).
  */
 void
-BATcommit(BAT *b)
+BATcommit(BAT *b, BUN size)
 {
 	if (b == NULL)
 		return;
@@ -43,7 +43,7 @@ BATcommit(BAT *b)
 	if (DELTAdirty(b)) {
 		b->batDirtydesc = true;
 	}
-	b->batInserted = BUNlast(b);
+	b->batInserted = size < BUNlast(b) ? size : BUNlast(b);
 	TRC_DEBUG(DELTA, "BATcommit2 %s free %zu ins " BUNFMT " base %p\n",
 		  BATgetId(b), b->theap.free, b->batInserted, b->theap.base);
 }
@@ -56,7 +56,7 @@ void
 BATfakeCommit(BAT *b)
 {
 	if (b) {
-		BATcommit(b);
+		BATcommit(b, BUN_NONE);
 		b->batDirtydesc = b->theap.dirty = false;
 		if (b->tvheap)
 			b->tvheap->dirty = false;

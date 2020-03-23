@@ -1984,7 +1984,7 @@ clear_delta(sql_trans *tr, sql_delta *bat)
 		if (b && !isEbat(b)) {
 			sz += BATcount(b);
 			bat_clear(b);
-			BATcommit(b);
+			BATcommit(b, BUN_NONE);
 		}
 		if (b)
 			bat_destroy(b);
@@ -2000,7 +2000,7 @@ clear_delta(sql_trans *tr, sql_delta *bat)
 				bat->bid = 0;
 			} else {
 				bat_clear(b);
-				BATcommit(b);
+				BATcommit(b, BUN_NONE);
 			}
 			bat_destroy(b);
 		}
@@ -2009,7 +2009,7 @@ clear_delta(sql_trans *tr, sql_delta *bat)
 		b = temp_descriptor(bat->uibid);
 		if (b && !isEbat(b)) {
 			bat_clear(b);
-			BATcommit(b);
+			BATcommit(b, BUN_NONE);
 		}
 		if (b)
 			bat_destroy(b);
@@ -2018,7 +2018,7 @@ clear_delta(sql_trans *tr, sql_delta *bat)
 		b = temp_descriptor(bat->uvbid);
 		if(b && !isEbat(b)) {
 			bat_clear(b);
-			BATcommit(b);
+			BATcommit(b, BUN_NONE);
 		}
 		if (b)
 			bat_destroy(b);
@@ -2091,7 +2091,7 @@ clear_dbat(sql_trans *tr, sql_dbat *bat)
 		if (b && !isEbat(b)) {
 			sz += BATcount(b);
 			bat_clear(b);
-			BATcommit(b);
+			BATcommit(b, BUN_NONE);
 			bat_destroy(b);
 		}
 	}
@@ -2237,7 +2237,7 @@ gtr_update_dbat(sql_trans *tr, sql_dbat *d, int *changes, char tpe, oid id)
 		if (append_inserted(cdb, idb) == BUN_NONE)
 			ok = LOG_ERR;
 		else
-			BATcommit(cdb);
+			BATcommit(cdb, BUN_NONE);
 		d->cnt = BATcount(cdb);
 		bat_destroy(cdb);
 	} else {
@@ -2679,7 +2679,7 @@ tr_update_dbat(sql_trans *tr, sql_dbat *tdb, sql_dbat *fdb)
 			if (append_inserted(odb, db) == BUN_NONE)
 				ok = LOG_ERR;
 			else
-				BATcommit(odb);
+				BATcommit(odb, BUN_NONE);
 			assert(BATcount(odb) == fdb->cnt);
 			temp_destroy(fdb->dbid);
 

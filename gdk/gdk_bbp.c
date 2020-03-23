@@ -114,7 +114,7 @@ static void BBPuncacheit(bat bid, bool unloaddesc);
 static gdk_return BBPprepare(bool subcommit);
 static BAT *getBBPdescriptor(bat i, bool lock);
 static gdk_return BBPbackup(BAT *b, bool subcommit);
-static gdk_return BBPdir(int cnt, bat *subcommit);
+static gdk_return BBPdir(int cnt, bat *restrict subcommit, BUN *restrict sizes);
 
 #ifdef HAVE_HGE
 /* start out by saying we have no hge, but as soon as we've seen one,
@@ -1257,7 +1257,7 @@ BBPinit(void)
 				/* no BBP.bak (nor BBP.dir or BACKUP/BBP.dir):
 				 * create a new one */
 				TRC_DEBUG(IO_, "initializing BBP.\n");	/* BBPdir instead of BBPinit for backward compatibility of error messages */
-				if (BBPdir(0, NULL) != GDK_SUCCEED) {
+				if (BBPdir(0, NULL, NULL) != GDK_SUCCEED) {
 					GDKfree(bbpdirstr);
 					GDKfree(backupbbpdirstr);
 					goto bailout;
@@ -1427,8 +1427,11 @@ BBPexit(void)
  * reclaimed as well.
  */
 static inline int
-heap_entry(FILE *fp, BAT *b)
+heap_entry(FILE *fp, BAT *b, BUN size)
 {
+	size_t free = b->theap.free;
+	if (b->twidth > 0 && free / b->twidth > size)
+		free = size * b->twidth;
 	return fprintf(fp, " %s %d %d %d " BUNFMT " " BUNFMT " " BUNFMT " "
 		       BUNFMT " " OIDFMT " %zu %zu %d",
 		       b->ttype >= 0 ? BATatoms[b->ttype].name : ATOMunknown_name(b->ttype),
@@ -1445,7 +1448,7 @@ heap_entry(FILE *fp, BAT *b)
 		       b->tnosorted,
 		       b->tnorevsorted,
 		       b->tseqbase,
-		       b->theap.free,
+		       free,
 		       b->theap.size,
 		       (int) b->theap.newstorage);
 }
@@ -1460,7 +1463,7 @@ vheap_entry(FILE *fp, Heap *h)
 }
 
 static gdk_return
-new_bbpentry(FILE *fp, bat i)
+new_bbpentry(FILE *fp, bat i, BUN size)
 {
 #ifndef NDEBUG
 	assert(i > 0);
@@ -1476,6 +1479,8 @@ new_bbpentry(FILE *fp, bat i)
 	}
 #endif
 
+	if (size > BBP_desc(i)->batCount)
+		size = BBP_desc(i)->batCount;
 	if (fprintf(fp, "%d %u %s %s %d " BUNFMT " " BUNFMT " " OIDFMT,
 		    /* BAT info */
 		    (int) i,
@@ -1483,10 +1488,10 @@ new_bbpentry(FILE *fp, bat i)
 		    BBP_logical(i),
 		    BBP_physical(i),
 		    BBP_desc(i)->batRestricted << 1,
-		    BBP_desc(i)->batCount,
+		    size,
 		    BBP_desc(i)->batCapacity,
 		    BBP_desc(i)->hseqbase) < 0 ||
-	    heap_entry(fp, BBP_desc(i)) < 0 ||
+	    heap_entry(fp, BBP_desc(i), size) < 0 ||
 	    vheap_entry(fp, BBP_desc(i)->tvheap) < 0 ||
 	    (BBP_options(i) && fprintf(fp, " %s", BBP_options(i)) < 0) ||
 	    fprintf(fp, "\n") < 0) {
@@ -1514,7 +1519,7 @@ BBPdir_header(FILE *f, int n)
 }
 
 static gdk_return
-BBPdir_subcommit(int cnt, bat *subcommit)
+BBPdir_subcommit(int cnt, bat *restrict subcommit, BUN *restrict sizes)
 {
 	FILE *obbpf, *nbbpf;
 	bat j = 1;
@@ -1529,8 +1534,6 @@ BBPdir_subcommit(int cnt, bat *subcommit)
 
 	if ((nbbpf = GDKfilelocate(0, "BBP", "w", "dir")) == NULL)
 		return GDK_FAIL;
-
-	n = (bat) ATOMIC_GET(&BBPsize);
 
 	/* we need to copy the backup BBP.dir to the new, but
 	 * replacing the entries for the subcommitted bats */
@@ -1547,7 +1550,10 @@ BBPdir_subcommit(int cnt, bat *subcommit)
 		goto bailout;
 	}
 	/* third line contains BBPsize */
-	sscanf(buf, "BBPsize=%d", &n);
+	if (sscanf(buf, "BBPsize=%d", &n) != 1) {
+		GDKerror("BBPdir: cannot read BBPsize in backup BBP.dir.");
+		goto bailout;
+	}
 	if (n < (bat) ATOMIC_GET(&BBPsize))
 		n = (bat) ATOMIC_GET(&BBPsize);
 
@@ -1578,7 +1584,7 @@ BBPdir_subcommit(int cnt, bat *subcommit)
 			bat i = subcommit[j];
 			/* BBP.dir consists of all persistent bats only */
 			if (BBP_status(i) & BBPPERSISTENT) {
-				if (new_bbpentry(nbbpf, i) != GDK_SUCCEED) {
+				if (new_bbpentry(nbbpf, i, sizes ? sizes[j] : BUN_NONE) != GDK_SUCCEED) {
 					goto bailout;
 				}
 			}
@@ -1629,13 +1635,13 @@ BBPdir_subcommit(int cnt, bat *subcommit)
 }
 
 gdk_return
-BBPdir(int cnt, bat *subcommit)
+BBPdir(int cnt, bat *restrict subcommit, BUN *restrict sizes)
 {
 	FILE *fp;
 	bat i;
 
 	if (subcommit)
-		return BBPdir_subcommit(cnt, subcommit);
+		return BBPdir_subcommit(cnt, subcommit, sizes);
 
 	TRC_DEBUG(IO_, "writing BBP.dir (%d bats).\n", (int) (bat) ATOMIC_GET(&BBPsize));
 	if ((fp = GDKfilelocate(0, "BBP", "w", "dir")) == NULL) {
@@ -1650,7 +1656,7 @@ BBPdir(int cnt, bat *subcommit)
 		/* write the entry
 		 * BBP.dir consists of all persistent bats */
 		if (BBP_status(i) & BBPPERSISTENT) {
-			if (new_bbpentry(fp, i) != GDK_SUCCEED) {
+			if (new_bbpentry(fp, i, BUN_NONE) != GDK_SUCCEED) {
 				goto bailout;
 			}
 		}
@@ -3112,7 +3118,7 @@ fail:
  * The BBP.dir is also moved into the BAKDIR.
  */
 gdk_return
-BBPsync(int cnt, bat *subcommit)
+BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes)
 {
 	gdk_return ret = GDK_SUCCEED;
 	int t0 = 0, t1 = 0;
@@ -3190,7 +3196,7 @@ BBPsync(int cnt, bat *subcommit)
 	TRC_DEBUG(PERF, "write time %d\n", (t0 = GDKms()) - t1);
 
 	if (ret == GDK_SUCCEED) {
-		ret = BBPdir(cnt, subcommit);
+		ret = BBPdir(cnt, subcommit, sizes);
 	}
 
 	TRC_DEBUG(PERF, "dir time %d, %d bats\n", (t1 = GDKms()) - t0, (bat) ATOMIC_GET(&BBPsize));
