@@ -1411,7 +1411,11 @@ get_schema_name( mvc *sql, char *sname, char *tname)
 		sql_schema *ss = cur_schema(sql);
 		sql_table *t = mvc_bind_table(sql, ss, tname);
 		if (!t)
+			t = mvc_bind_table(sql, mvc_bind_schema(sql, dt_schema), tname);
+		if (!t)
 			ss = tmp_schema(sql);
+		else
+			ss = t->s;
 		sname = ss->base.name;
 	}
 	return sname;

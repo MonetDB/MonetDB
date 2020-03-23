@@ -93,14 +93,14 @@ ddl [ declare b  as "b" ]
 % mal # name
 % clob # type
 % 89 # length
-function user.s14_0():void;
+function user.s20_0():void;
     X_1:void := querylog.define("explain declare b int;":str, "default_pipe":str, 6:int);
     X_4:int := sql.mvc();
     X_5:int := sql.getVariable(X_4:int, "b":str);
     sql.exportOperation();
-end user.s14_0;
-#inline               actions= 0 time=0 usec 
-#remap                actions= 0 time=1 usec 
+end user.s20_0;
+#inline               actions= 0 time=1 usec 
+#remap                actions= 0 time=2 usec 
 #costmodel            actions= 1 time=1 usec 
 #coercion             actions= 0 time=1 usec 
 #aliases              actions= 0 time=0 usec 

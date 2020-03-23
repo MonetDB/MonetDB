@@ -1462,8 +1462,6 @@ mvc_drop_table(mvc *m, sql_schema *s, sql_table *t, int drop_action)
 		if(AUTHres != MAL_SUCCEED)
 			return AUTHres;
 	}
-	if (isDeclaredTable(t))
-		return MAL_SUCCEED;
 	if (sql_trans_drop_table(m->session->tr, s, t->base.id, drop_action ? DROP_CASCADE_START : DROP_RESTRICT))
 		throw(SQL, "sql.mvc_drop_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
