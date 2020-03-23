@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -250,3 +252,28 @@ class SQLLogic:
                     nresult = len(expected)
                 if not skipping:
                     self.exec_query('\n'.join(query), columns, sorting, hashlabel, nresult, hash, expected)
+
+if __name__ == '__main__':
+    import argparse
+    parser = argparse.ArgumentParser(description='Run a Sqllogictest')
+    parser.add_argument('--host', action='store', default='localhost',
+                        help='hostname where the server runs')
+    parser.add_argument('--port', action='store', type=int, default=50000,
+                        help='port the server listens on')
+    parser.add_argument('--database', action='store', default='demo',
+                        help='name of the database')
+    parser.add_argument('tests', nargs='*', help='tests to be run')
+    opts = parser.parse_args()
+    args = opts.tests
+    sql = SQLLogic()
+    sql.connect(hostname=opts.host, port=opts.port, database=opts.database)
+    for test in args:
+        try:
+            sql.drop()
+            try:
+                sql.parse(test)
+            except SQLLogicSyntaxError:
+                pass
+        except BrokenPipeError:
+            break
+    sql.close()
