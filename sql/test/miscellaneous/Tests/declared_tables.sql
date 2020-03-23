@@ -5,6 +5,11 @@ select a, b from iamdeclared;
 drop table iamdeclared;
 rollback;
 
+declare table x (a int);
+declare table x (b int); --error table x is already declared
+drop table x;
+drop table x; --error, not table x exists
+
 declare a int;
 select a;
 plan declare b int;
