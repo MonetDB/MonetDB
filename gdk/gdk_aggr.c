@@ -896,11 +896,11 @@ BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_o
 	lng t0 = GDKusec();
 
 	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &ci, &ncand)) != NULL) {
-		GDKerror("BATgroupsum: %s\n", err);
+		GDKerror("%s: %s\n", __func__, err);
 		return NULL;
 	}
 	if (g == NULL) {
-		GDKerror("BATgroupsum: b and g must be aligned\n");
+		GDKerror("%s: b and g must be aligned\n", __func__);
 		return NULL;
 	}
 
@@ -930,7 +930,7 @@ BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_o
 
 	nils = dosum(Tloc(b, 0), b->tnonil, b->hseqbase, &ci, ncand,
 		     Tloc(bn, 0), ngrp, b->ttype, tp, gids, min, max,
-		     skip_nils, abort_on_error, true, "BATgroupsum", &algo);
+		     skip_nils, abort_on_error, true, __func__, &algo);
 
 	if (nils < BUN_NONE) {
 		BATsetcount(bn, ngrp);
@@ -968,7 +968,7 @@ BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, b
 	lng t0 = GDKusec();
 
 	if ((err = BATgroupaggrinit(b, NULL, NULL, s, &min, &max, &ngrp, &ci, &ncand)) != NULL) {
-		GDKerror("BATsum: %s\n", err);
+		GDKerror("%s: %s\n", __func__, err);
 		return GDK_FAIL;
 	}
 	switch (tp) {
@@ -1058,15 +1058,15 @@ BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, b
 			* (flt *) res = nil_if_empty ? flt_nil : 0;
 		break;
 	default:
-		GDKerror("BATsum: type combination (sum(%s)->%s) not supported.\n",
-			 ATOMname(b->ttype), ATOMname(tp));
+		GDKerror("%s: type combination (sum(%s)->%s) not supported.\n",
+			 __func__, ATOMname(b->ttype), ATOMname(tp));
 		return GDK_FAIL;
 	}
 	if (BATcount(b) == 0)
 		return GDK_SUCCEED;
 	nils = dosum(Tloc(b, 0), b->tnonil, b->hseqbase, &ci, ncand,
 		     res, true, b->ttype, tp, &min, min, max,
-		     skip_nils, abort_on_error, nil_if_empty, "BATsum", &algo);
+		     skip_nils, abort_on_error, nil_if_empty, __func__, &algo);
 	TRC_DEBUG(ALGO, "%s(b="ALGOBATFMT",s="ALGOOPTBATFMT"): %s; "
 		  "start " OIDFMT ", count " BUNFMT " (" LLFMT " usec)\n",
 		  __func__,
@@ -1472,11 +1472,11 @@ BATgroupprod(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_
 	const char *err;
 
 	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &ci, &ncand)) != NULL) {
-		GDKerror("BATgroupprod: %s\n", err);
+		GDKerror("%s: %s\n", __func__, err);
 		return NULL;
 	}
 	if (g == NULL) {
-		GDKerror("BATgroupprod: b and g must be aligned\n");
+		GDKerror("%s: b and g must be aligned\n", __func__);
 		return NULL;
 	}
 
@@ -1506,7 +1506,7 @@ BATgroupprod(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_
 
 	nils = doprod(Tloc(b, 0), b->hseqbase, &ci, ncand, Tloc(bn, 0), ngrp,
 		      b->ttype, tp, gids, true, min, max, skip_nils,
-		      abort_on_error, true, "BATgroupprod");
+		      abort_on_error, true, __func__);
 
 	if (nils < BUN_NONE) {
 		BATsetcount(bn, ngrp);
@@ -1534,7 +1534,7 @@ BATprod(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, 
 	const char *err;
 
 	if ((err = BATgroupaggrinit(b, NULL, NULL, s, &min, &max, &ngrp, &ci, &ncand)) != NULL) {
-		GDKerror("BATprod: %s\n", err);
+		GDKerror("%s: %s\n", __func__, err);
 		return GDK_FAIL;
 	}
 	switch (tp) {
@@ -1562,15 +1562,15 @@ BATprod(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, 
 		* (dbl *) res = nil_if_empty ? dbl_nil : (dbl) 1;
 		break;
 	default:
-		GDKerror("BATprod: type combination (prod(%s)->%s) not supported.\n",
-			 ATOMname(b->ttype), ATOMname(tp));
+		GDKerror("%s: type combination (prod(%s)->%s) not supported.\n",
+			 __func__, ATOMname(b->ttype), ATOMname(tp));
 		return GDK_FAIL;
 	}
 	if (BATcount(b) == 0)
 		return GDK_SUCCEED;
 	nils = doprod(Tloc(b, 0), b->hseqbase, &ci, ncand, res, true,
 		      b->ttype, tp, &min, false, min, max,
-		      skip_nils, abort_on_error, nil_if_empty, "BATprod");
+		      skip_nils, abort_on_error, nil_if_empty, __func__);
 	return nils < BUN_NONE ? GDK_SUCCEED : GDK_FAIL;
 }
 
@@ -1670,11 +1670,11 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool
 				 * functions) argument */
 
 	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &ci, &ncand)) != NULL) {
-		GDKerror("BATgroupavg: %s\n", err);
+		GDKerror("%s: %s\n", __func__, err);
 		return GDK_FAIL;
 	}
 	if (g == NULL) {
-		GDKerror("BATgroupavg: b and g must be aligned\n");
+		GDKerror("%s: b and g must be aligned\n", __func__);
 		return GDK_FAIL;
 	}
 
@@ -1683,13 +1683,14 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool
 		 * with nil in the tail */
 		bn = BATconstant(ngrp == 0 ? 0 : min, TYPE_dbl, &dbl_nil, ngrp, TRANSIENT);
 		if (bn == NULL) {
-			GDKerror("BATgroupavg: failed to create BAT\n");
+			GDKerror("%s: failed to create BAT\n", __func__);
 			return GDK_FAIL;
 		}
 		if (cntsp) {
 			lng zero = 0;
 			if ((cn = BATconstant(ngrp == 0 ? 0 : min, TYPE_lng, &zero, ngrp, TRANSIENT)) == NULL) {
-				GDKerror("BATgroupavg: failed to create BAT\n");
+				GDKerror("%s: failed to create BAT\n",
+					 __func__);
 				BBPreclaim(bn);
 				return GDK_FAIL;
 			}
@@ -1787,7 +1788,7 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool
 		else
 			GDKfree(cnts);
 		BBPunfix(bn->batCacheid);
-		GDKerror("BATgroupavg: type (%s) not supported.\n",
+		GDKerror("%s: type (%s) not supported.\n", __func__,
 			 ATOMname(b->ttype));
 		return GDK_FAIL;
 	}
@@ -1829,7 +1830,7 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool
 	} else if (cnts) {
 		GDKfree(cnts);
 	}
-	GDKerror("BATgroupavg: cannot allocate enough memory.\n");
+	GDKerror("%s: cannot allocate enough memory.\n", __func__);
 	return GDK_FAIL;
 }
 
@@ -1958,7 +1959,7 @@ BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals, int scale)
 		AVERAGE_FLOATTYPE(dbl);
 		break;
 	default:
-		GDKerror("BATcalcavg: average of type %s unsupported.\n",
+		GDKerror("%s: average of type %s unsupported.\n", __func__,
 			 ATOMname(b->ttype));
 		return GDK_FAIL;
 	}
@@ -2014,11 +2015,11 @@ BATgroupcount(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort
 	(void) abort_on_error;	/* functions) argument */
 
 	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &ci, &ncand)) != NULL) {
-		GDKerror("BATgroupcount: %s\n", err);
+		GDKerror("%s: %s\n", __func__, err);
 		return NULL;
 	}
 	if (g == NULL) {
-		GDKerror("BATgroupcount: b and g must be aligned\n");
+		GDKerror("%s: b and g must be aligned\n", __func__);
 		return NULL;
 	}
 
@@ -2139,11 +2140,11 @@ BATgroupsize(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_
 	(void) skip_nils;
 
 	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &ci, &ncand)) != NULL) {
-		GDKerror("BATgroupsize: %s\n", err);
+		GDKerror("%s: %s\n", __func__, err);
 		return NULL;
 	}
 	if (g == NULL) {
-		GDKerror("BATgroupsize: b and g must be aligned\n");
+		GDKerror("%s: b and g must be aligned\n", __func__);
 		return NULL;
 	}
 
@@ -2500,7 +2501,7 @@ BATgroupmin(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 	    bool skip_nils, bool abort_on_error)
 {
 	return BATgroupminmax(b, g, e, s, tp, skip_nils, abort_on_error,
-			      do_groupmin, "BATgroupmin");
+			      do_groupmin, __func__);
 }
 
 void *
@@ -2522,7 +2523,7 @@ BATmin_skipnil(BAT *b, void *aggr, bit skipnil)
 	if (!ATOMlinear(b->ttype)) {
 		/* there is no such thing as a smallest value if you
 		 * can't compare values */
-		GDKerror("BATmin: non-linear type");
+		GDKerror("%s: non-linear type", __func__);
 		return NULL;
 	}
 	if (BATcount(b) == 0) {
@@ -2604,7 +2605,7 @@ BATgroupmax(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 	    bool skip_nils, bool abort_on_error)
 {
 	return BATgroupminmax(b, g, e, s, tp, skip_nils, abort_on_error,
-			      do_groupmax, "BATgroupmax");
+			      do_groupmax, __func__);
 }
 
 void *
@@ -2622,7 +2623,7 @@ BATmax_skipnil(BAT *b, void *aggr, bit skipnil)
 	BATiter bi;
 
 	if (!ATOMlinear(b->ttype)) {
-		GDKerror("BATmax: non-linear type");
+		GDKerror("%s: non-linear type", __func__);
 		return NULL;
 	}
 	if (BATcount(b) == 0) {
@@ -2750,24 +2751,24 @@ doBATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 		case TYPE_dbl:
 			break;
 		default:
-			GDKerror("BATgroupquantile: incompatible type\n");
+			GDKerror("%s: incompatible type\n", __func__);
 			return NULL;
 		}
 		dnil = &dbl_nil;
 	}
 	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &ci, &ncand)) != NULL) {
-		GDKerror("BATgroupquantile: %s\n", err);
+		GDKerror("%s: %s\n", __func__, err);
 		return NULL;
 	}
 	assert(tp == b->ttype);
 	if (!ATOMlinear(tp)) {
-		GDKerror("BATgroupquantile: cannot determine quantile on "
-			 "non-linear type %s\n", ATOMname(tp));
+		GDKerror("%s: cannot determine quantile on "
+			 "non-linear type %s\n", __func__, ATOMname(tp));
 		return NULL;
 	}
 	if (quantile < 0 || quantile > 1) {
-		GDKerror("BATgroupquantile: cannot determine quantile for "
-			 "p=%f (p has to be in [0,1])\n", quantile);
+		GDKerror("%s: cannot determine quantile for "
+			 "p=%f (p has to be in [0,1])\n", __func__, quantile);
 		return NULL;
 	}
 
@@ -3122,8 +3123,7 @@ dbl
 BATcalcstdev_population(dbl *avgp, BAT *b)
 {
 	dbl v = calcvariance(avgp, (const void *) Tloc(b, 0),
-			     BATcount(b), b->ttype, false,
-			     "BATcalcstdev_population");
+			     BATcount(b), b->ttype, false, __func__);
 	return is_dbl_nil(v) ? dbl_nil : sqrt(v);
 }
 
@@ -3131,8 +3131,7 @@ dbl
 BATcalcstdev_sample(dbl *avgp, BAT *b)
 {
 	dbl v = calcvariance(avgp, (const void *) Tloc(b, 0),
-			     BATcount(b), b->ttype, true,
-			     "BATcalcstdev_sample");
+			     BATcount(b), b->ttype, true, __func__);
 	return is_dbl_nil(v) ? dbl_nil : sqrt(v);
 }
 
@@ -3140,16 +3139,14 @@ dbl
 BATcalcvariance_population(dbl *avgp, BAT *b)
 {
 	return calcvariance(avgp, (const void *) Tloc(b, 0),
-			    BATcount(b), b->ttype, false,
-			    "BATcalcvariance_population");
+			    BATcount(b), b->ttype, false, __func__);
 }
 
 dbl
 BATcalcvariance_sample(dbl *avgp, BAT *b)
 {
 	return calcvariance(avgp, (const void *) Tloc(b, 0),
-			    BATcount(b), b->ttype, true,
-			    "BATcalcvariance_sample");
+			    BATcount(b), b->ttype, true, __func__);
 }
 
 #define AGGR_COVARIANCE_SINGLE(TYPE)					\
@@ -3212,14 +3209,14 @@ dbl
 BATcalccovariance_population(BAT *b1, BAT *b2)
 {
 	return calccovariance((const void *) Tloc(b1, 0), (const void *) Tloc(b2, 0),
-			      BATcount(b1), b1->ttype, false, "BATcalccovariance_population");
+			      BATcount(b1), b1->ttype, false, __func__);
 }
 
 dbl
 BATcalccovariance_sample(BAT *b1, BAT *b2)
 {
 	return calccovariance((const void *) Tloc(b1, 0), (const void *) Tloc(b2, 0),
-			      BATcount(b1), b1->ttype, true, "BATcalccovariance_sample");
+			      BATcount(b1), b1->ttype, true, __func__);
 }
 
 #define AGGR_CORRELATION_SINGLE(TYPE)					\
@@ -3275,7 +3272,8 @@ BATcalccorrelation(BAT *b1, BAT *b2)
 		AGGR_CORRELATION_SINGLE(dbl);
 		break;
 	default:
-		GDKerror("%s: type (%s) not supported.\n", __func__, ATOMname(tp));
+		GDKerror("%s: type (%s) not supported.\n",
+			 __func__, ATOMname(tp));
 		return dbl_nil;
 	}
 	if (n > 0 && up > 0 && down1 > 0 && down2 > 0)
@@ -3486,7 +3484,7 @@ BATgroupstdev_sample(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 {
 	(void) abort_on_error;
 	return dogroupstdev(NULL, b, g, e, s, tp, skip_nils, true, false,
-			    "BATgroupstdev_sample");
+			    __func__);
 }
 
 BAT *
@@ -3495,7 +3493,7 @@ BATgroupstdev_population(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 {
 	(void) abort_on_error;
 	return dogroupstdev(NULL, b, g, e, s, tp, skip_nils, false, false,
-			    "BATgroupstdev_population");
+			    __func__);
 }
 
 BAT *
@@ -3504,7 +3502,7 @@ BATgroupvariance_sample(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 {
 	(void) abort_on_error;
 	return dogroupstdev(NULL, b, g, e, s, tp, skip_nils, true, true,
-			    "BATgroupvariance_sample");
+			    __func__);
 }
 
 BAT *
@@ -3513,7 +3511,7 @@ BATgroupvariance_population(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 {
 	(void) abort_on_error;
 	return dogroupstdev(NULL, b, g, e, s, tp, skip_nils, false, true,
-			    "BATgroupvariance_population");
+			    __func__);
 }
 
 #define AGGR_COVARIANCE(TYPE)						\
@@ -3686,14 +3684,16 @@ BAT *
 BATgroupcovariance_sample(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_on_error)
 {
 	(void) abort_on_error;
-	return dogroupcovariance(b1, b2, g, e, s, tp, skip_nils, true, "BATgroupcovariance_sample");
+	return dogroupcovariance(b1, b2, g, e, s, tp, skip_nils, true,
+				 __func__);
 }
 
 BAT *
 BATgroupcovariance_population(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_on_error)
 {
 	(void) abort_on_error;
-	return dogroupcovariance(b1, b2, g, e, s, tp, skip_nils, false, "BATgroupcovariance_population");
+	return dogroupcovariance(b1, b2, g, e, s, tp, skip_nils, false,
+				 __func__);
 }
 
 #define AGGR_CORRELATION(TYPE)						\
@@ -3835,7 +3835,8 @@ BATgroupcorrelation(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp, bool skip_
 		GDKfree(down1);
 		GDKfree(down2);
 		GDKfree(cnts);
-		GDKerror("%s: type (%s) not supported.\n", __func__, ATOMname(b1->ttype));
+		GDKerror("%s: type (%s) not supported.\n",
+			 __func__, ATOMname(b1->ttype));
 		return NULL;
 	}
 	GDKfree(mean1);
