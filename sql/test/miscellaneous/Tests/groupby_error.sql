@@ -59,6 +59,9 @@ SELECT + 2 FROM tab0 AS cor0 WHERE NOT - 29 IS NULL OR NOT NULL IS NULL AND NOT 
 	-- 2
 	-- 2
 
+SELECT * FROM tab0 WHERE NOT - col0 - col1 * col2 <= ( + col0 ) AND NOT ( + col2 + col1 - col1 ) NOT BETWEEN - col0 AND - col1 + - col2 / col1;
+	-- empty
+
 SELECT DISTINCT * FROM tab2 WHERE NOT ( - + 50 + ( 70 ) ) = + col2;
 	-- 64 77 40
 	-- 46 51 23
