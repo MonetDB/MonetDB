@@ -1228,7 +1228,7 @@ BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, b
 							if (abort_on_error) \
 								goto overflow; \
 							prods[gid] = TYPE2##_nil; \
-								nils++;	\
+							nils++;		\
 						} else {		\
 							prods[gid] *= vals[i]; \
 						}			\
@@ -2842,8 +2842,8 @@ doBATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 		bi = bat_iterator(b);
 
 		grps = (const oid *) Tloc(g, 0);
-		 /* for each group (r and p are the beginning and end
-		  * of the current group, respectively) */
+		/* for each group (r and p are the beginning and end
+		 * of the current group, respectively) */
 		for (r = 0, q = BATcount(g); r < q; r = p) {
 			BUN qindex;
 			prev = grps[r];
@@ -3152,21 +3152,21 @@ BATcalcvariance_sample(dbl *avgp, BAT *b)
 			    "BATcalcvariance_sample");
 }
 
-#define AGGR_COVARIANCE_SINGLE(TYPE)	\
-	do {	\
-		TYPE x, y;	\
-		for (i = 0; i < cnt; i++) {		\
-			x = ((const TYPE *) v1)[i];	\
-			y = ((const TYPE *) v2)[i];	\
+#define AGGR_COVARIANCE_SINGLE(TYPE)					\
+	do {								\
+		TYPE x, y;						\
+		for (i = 0; i < cnt; i++) {				\
+			x = ((const TYPE *) v1)[i];			\
+			y = ((const TYPE *) v2)[i];			\
 			if (is_##TYPE##_nil(x) || is_##TYPE##_nil(y))	\
-				continue;		\
-			n++;				\
-			delta1 = (dbl) x - mean1;		\
-			mean1 += delta1 / n;		\
-			delta2 = (dbl) y - mean2;		\
-			mean2 += delta2 / n;		\
-			m2 += delta1 * ((dbl) y - mean2);	\
-		}	\
+				continue;				\
+			n++;						\
+			delta1 = (dbl) x - mean1;			\
+			mean1 += delta1 / n;				\
+			delta2 = (dbl) y - mean2;			\
+			mean2 += delta2 / n;				\
+			m2 += delta1 * ((dbl) y - mean2);		\
+		}							\
 	} while (0)
 
 static dbl
@@ -3212,34 +3212,34 @@ dbl
 BATcalccovariance_population(BAT *b1, BAT *b2)
 {
 	return calccovariance((const void *) Tloc(b1, 0), (const void *) Tloc(b2, 0),
-						  BATcount(b1), b1->ttype, false, "BATcalccovariance_population");
+			      BATcount(b1), b1->ttype, false, "BATcalccovariance_population");
 }
 
 dbl
 BATcalccovariance_sample(BAT *b1, BAT *b2)
 {
 	return calccovariance((const void *) Tloc(b1, 0), (const void *) Tloc(b2, 0),
-						  BATcount(b1), b1->ttype, true, "BATcalccovariance_sample");
+			      BATcount(b1), b1->ttype, true, "BATcalccovariance_sample");
 }
 
-#define AGGR_CORRELATION_SINGLE(TYPE)	\
-	do {	\
-		TYPE x, y;	\
-		for (i = 0; i < cnt; i++) {		\
-			x = ((const TYPE *) v1)[i];	\
-			y = ((const TYPE *) v2)[i];	\
+#define AGGR_CORRELATION_SINGLE(TYPE)					\
+	do {								\
+		TYPE x, y;						\
+		for (i = 0; i < cnt; i++) {				\
+			x = ((const TYPE *) v1)[i];			\
+			y = ((const TYPE *) v2)[i];			\
 			if (is_##TYPE##_nil(x) || is_##TYPE##_nil(y))	\
-				continue;		\
-			n++;				\
-			delta1 = (dbl) x - mean1;	\
-			mean1 += delta1 / n;	\
-			delta2 = (dbl) y - mean2;	\
-			mean2 += delta2 / n;	\
-			aux = (dbl) y - mean2; \
-			up += delta1 * aux;	\
-			down1 += delta1 * ((dbl) x - mean1);	\
-			down2 += delta2 * aux;	\
-		}	\
+				continue;				\
+			n++;						\
+			delta1 = (dbl) x - mean1;			\
+			mean1 += delta1 / n;				\
+			delta2 = (dbl) y - mean2;			\
+			mean2 += delta2 / n;				\
+			aux = (dbl) y - mean2;				\
+			up += delta1 * aux;				\
+			down1 += delta1 * ((dbl) x - mean1);		\
+			down2 += delta2 * aux;				\
+		}							\
 	} while (0)
 
 dbl
@@ -3500,7 +3500,7 @@ BATgroupstdev_population(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 
 BAT *
 BATgroupvariance_sample(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
-		     bool skip_nils, bool abort_on_error)
+			bool skip_nils, bool abort_on_error)
 {
 	(void) abort_on_error;
 	return dogroupstdev(NULL, b, g, e, s, tp, skip_nils, true, true,
@@ -3509,7 +3509,7 @@ BATgroupvariance_sample(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 
 BAT *
 BATgroupvariance_population(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
-			 bool skip_nils, bool abort_on_error)
+			    bool skip_nils, bool abort_on_error)
 {
 	(void) abort_on_error;
 	return dogroupstdev(NULL, b, g, e, s, tp, skip_nils, false, true,
@@ -3518,8 +3518,8 @@ BATgroupvariance_population(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 
 #define AGGR_COVARIANCE(TYPE)						\
 	do {								\
-		const TYPE *vals1 = (const TYPE *) Tloc(b1, 0);	\
-		const TYPE *vals2 = (const TYPE *) Tloc(b2, 0);	\
+		const TYPE *vals1 = (const TYPE *) Tloc(b1, 0);		\
+		const TYPE *vals2 = (const TYPE *) Tloc(b2, 0);		\
 		while (ncand > 0) {					\
 			ncand--;					\
 			i = canditer_next(&ci) - b1->hseqbase;		\
@@ -3529,7 +3529,7 @@ BATgroupvariance_population(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 					gid = gids[i] - min;		\
 				else					\
 					gid = (oid) i;			\
-				if (is_##TYPE##_nil(vals1[i]) || is_##TYPE##_nil(vals2[i])) {		\
+				if (is_##TYPE##_nil(vals1[i]) || is_##TYPE##_nil(vals2[i])) { \
 					if (!skip_nils)			\
 						cnts[gid] = BUN_NONE;	\
 				} else if (cnts[gid] != BUN_NONE) {	\
@@ -3557,7 +3557,7 @@ BATgroupvariance_population(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 
 static BAT *
 dogroupcovariance(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp,
-				  bool skip_nils, bool issample, const char *func)
+		  bool skip_nils, bool issample, const char *func)
 {
 	const oid *restrict gids;
 	oid gid, min, max;
@@ -3670,7 +3670,7 @@ dogroupcovariance(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp,
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 	return bn;
-alloc_fail:
+  alloc_fail:
 	BBPreclaim(bn);
 	GDKfree(mean1);
 	GDKfree(mean2);
@@ -3698,8 +3698,8 @@ BATgroupcovariance_population(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp, 
 
 #define AGGR_CORRELATION(TYPE)						\
 	do {								\
-		const TYPE *vals1 = (const TYPE *) Tloc(b1, 0);	\
-		const TYPE *vals2 = (const TYPE *) Tloc(b2, 0);	\
+		const TYPE *vals1 = (const TYPE *) Tloc(b1, 0);		\
+		const TYPE *vals2 = (const TYPE *) Tloc(b2, 0);		\
 		while (ncand > 0) {					\
 			ncand--;					\
 			i = canditer_next(&ci) - b1->hseqbase;		\
@@ -3709,7 +3709,7 @@ BATgroupcovariance_population(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp, 
 					gid = gids[i] - min;		\
 				else					\
 					gid = (oid) i;			\
-				if (is_##TYPE##_nil(vals1[i]) || is_##TYPE##_nil(vals2[i])) {		\
+				if (is_##TYPE##_nil(vals1[i]) || is_##TYPE##_nil(vals2[i])) { \
 					if (!skip_nils)			\
 						cnts[gid] = BUN_NONE;	\
 				} else if (cnts[gid] != BUN_NONE) {	\
@@ -3719,19 +3719,19 @@ BATgroupcovariance_population(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp, 
 					delta2[gid] = (dbl) vals2[i] - mean2[gid]; \
 					mean2[gid] += delta2[gid] / cnts[gid]; \
 					aux = (dbl) vals2[i] - mean2[gid]; \
-					up[gid] += delta1[gid] * aux; \
+					up[gid] += delta1[gid] * aux;	\
 					down1[gid] += delta1[gid] * ((dbl) vals1[i] - mean1[gid]); \
 					down2[gid] += delta2[gid] * aux; \
 				}					\
 			}						\
 		}							\
 		for (i = 0; i < ngrp; i++) {				\
-			if (cnts[i] <= 1 || cnts[i] == BUN_NONE || up[i] <= 0 || down1[i] <= 0 || down2[i] <= 0) {	\
+			if (cnts[i] <= 1 || cnts[i] == BUN_NONE || up[i] <= 0 || down1[i] <= 0 || down2[i] <= 0) { \
 				dbls[i] = dbl_nil;			\
 				nils++;					\
 			} else {					\
-				dbls[i] = (up[i] / cnts[i]) / (sqrt(down1[i] / cnts[i]) * sqrt(down2[i] / cnts[i]));	\
-				assert(!is_dbl_nil(dbls[i])); \
+				dbls[i] = (up[i] / cnts[i]) / (sqrt(down1[i] / cnts[i]) * sqrt(down2[i] / cnts[i])); \
+				assert(!is_dbl_nil(dbls[i]));		\
 			}						\
 		}							\
 	} while (0)
@@ -3853,7 +3853,7 @@ BATgroupcorrelation(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp, bool skip_
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 	return bn;
-alloc_fail:
+  alloc_fail:
 	BBPreclaim(bn);
 	GDKfree(mean1);
 	GDKfree(mean2);
