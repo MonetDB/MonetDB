@@ -37,11 +37,11 @@ class SQLLogic:
     def connect(self, username='monetdb', password='monetdb',
                 hostname='localhost', port=None, database='demo'):
         self.dbh = pymonetdb.connect(username=username,
-                                       password=password,
-                                       hostname=hostname,
-                                       port=port,
-                                       database=database,
-                                       autocommit=True)
+                                     password=password,
+                                     hostname=hostname,
+                                     port=port,
+                                     database=database,
+                                     autocommit=True)
         self.crs = self.dbh.cursor()
 
     def close(self):
@@ -53,19 +53,16 @@ class SQLLogic:
             self.dbh = None
 
     def drop(self):
-        self.command('select name from tables where not system')
+        self.crs.execute('select name from tables where not system')
         for row in self.crs.fetchall():
-            self.command('drop table %s cascade' % row[0])
-
-    def command(self, cmd):
-        return self.crs.execute(cmd)
+            self.crs.execute('drop table %s cascade' % row[0])
 
     def exec_statement(self, statement, expectok):
         if skipidx.search(statement) is not None:
             # skip creation of ascending or descending index
             return
         try:
-            self.command(statement)
+            self.crs.execute(statement)
         except pymonetdb.DatabaseError:
             if not expectok:
                 return
@@ -122,15 +119,15 @@ class SQLLogic:
     def exec_query(self, query, columns, sorting, hashlabel, nresult, hash, expected):
         err = False
         try:
-            rows = self.command(query)
+            self.crs.execute(query)
         except pymonetdb.DatabaseError as e:
             self.query_error(query, 'query failed', e.args[0])
             return
         if len(self.crs.description) != len(columns):
             self.query_error(query, 'received {} columns, expected {} columns'.format(len(self.crs.description), len(columns)))
             return
-        if rows * len(columns) != nresult:
-            self.query_error(query, 'received {} rows, expected {} rows'.format(rows, nresult // len(columns)))
+        if self.crs.rowcount * len(columns) != nresult:
+            self.query_error(query, 'received {} rows, expected {} rows'.format(self.crs.rowcount, nresult // len(columns)))
             return
         data = self.crs.fetchall()
         data = self.convertresult(query, columns, data)
@@ -262,6 +259,8 @@ if __name__ == '__main__':
                         help='port the server listens on')
     parser.add_argument('--database', action='store', default='demo',
                         help='name of the database')
+    parser.add_argument('--verbose', action='store_true',
+                        help='be a bit more verbose')
     parser.add_argument('tests', nargs='*', help='tests to be run')
     opts = parser.parse_args()
     args = opts.tests
@@ -270,6 +269,8 @@ if __name__ == '__main__':
     for test in args:
         try:
             sql.drop()
+            if opts.verbose:
+                print('now testing {}'. format(test))
             try:
                 sql.parse(test)
             except SQLLogicSyntaxError:
