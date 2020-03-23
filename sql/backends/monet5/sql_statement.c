@@ -1451,11 +1451,13 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 			return NULL;
 		if (sub && (op1->cand || op2->cand)) {
 			if (op1->cand && !op2->cand) {
-				q = pushNil(mb, q, TYPE_bat);
+				if (op1->nrcols > 0)
+					q = pushNil(mb, q, TYPE_bat);
 				q = pushArgument(mb, q, sub->nr);
 			} else if (!op1->cand && op2->cand) {
 				q = pushArgument(mb, q, sub->nr);
-				q = pushNil(mb, q, TYPE_bat);
+				if (op2->nrcols > 0)
+					q = pushNil(mb, q, TYPE_bat);
 			}
 			sub = NULL;
 		}

@@ -158,6 +158,30 @@ project (
 [ 15	]
 [ 87	]
 [ 97	]
+#SELECT DISTINCT 99 col2 FROM tab1 WHERE NOT - ( 43 ) + + 98 = + col2;
+% . # table_name
+% col2 # name
+% tinyint # type
+% 2 # length
+[ 99	]
+#SELECT * FROM tab2 AS cor0 WHERE NOT - 59 + + 47 <> + ( + col0 );
+% sys.cor0,	sys.cor0,	sys.cor0 # table_name
+% col0,	col1,	col2 # name
+% int,	int,	int # type
+% 1,	1,	1 # length
+#SELECT + col2 * col2 FROM tab2 AS cor0 WHERE NOT - CAST ( NULL AS INTEGER ) <> - - col1 AND NOT NULL NOT BETWEEN ( NULL ) AND - 91 - - + 27 * + col2;
+% sys. # table_name
+% %2 # name
+% hugeint # type
+% 1 # length
+#SELECT DISTINCT * FROM tab2 WHERE NOT ( - + 50 + ( 70 ) ) = + col2;
+% sys.tab2,	sys.tab2,	sys.tab2 # table_name
+% col0,	col1,	col2 # name
+% int,	int,	int # type
+% 2,	2,	2 # length
+[ 64,	77,	40	]
+[ 75,	67,	58	]
+[ 46,	51,	23	]
 #prepare select col0 from tab0 where (?) in (select col0 from tab0);
 #prepare select col0 from tab0 where (?) in (select col0 from tab0);
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
