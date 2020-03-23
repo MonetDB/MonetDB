@@ -2656,7 +2656,7 @@ rel_schemas(sql_query *query, symbol *s)
 		dlist *qname = l->h->next->data.lval;
 		char *sname = qname_schema(qname);
 		char *name = qname_table(qname);
-		int temp = l->h->data.i_val;
+		int temp = (s->token == SQL_DECLARE_TABLE) ? SQL_DECLARED_TABLE : l->h->data.i_val;
 		dlist *credentials = l->h->next->next->next->next->next->data.lval;
 		char *username = credentials_username(credentials);
 		char *password = credentials_password(credentials);

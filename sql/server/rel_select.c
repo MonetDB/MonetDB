@@ -971,10 +971,10 @@ table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral)
 
 		if (sname && !(s = mvc_bind_schema(sql, sname)))
 			return sql_error(sql, 02, SQLSTATE(3F000) "SELECT: no such schema '%s'", sname);
-		if (!t && !sname) {
-			t = stack_find_table(sql, tname);
-			if (!t) 
-				temp_table = stack_find_rel_view(sql, tname);
+		if (!sname) {
+			temp_table = stack_find_rel_view(sql, tname);
+			if (!temp_table)
+				t = mvc_bind_table(sql, NULL, tname);
 		}
 		if (!t && !temp_table) {
 			t = mvc_bind_table(sql, s, tname);

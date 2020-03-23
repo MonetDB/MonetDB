@@ -68,7 +68,7 @@ stdout of test 'declared_tables` in directory 'sql/test/miscellaneous` itself:
 #insert into iamdeclared values (1, 'one');
 [ 1	]
 #select a, b from iamdeclared;
-% sys.iamdeclared,	sys.iamdeclared # table_name
+% %dt%.iamdeclared,	%dt%.iamdeclared # table_name
 % a,	b # name
 % int,	varchar # type
 % 1,	3 # length

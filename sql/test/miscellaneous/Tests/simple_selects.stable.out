@@ -295,7 +295,7 @@ stdout of test 'simple_selects` in directory 'sql/test/miscellaneous` itself:
 #select length(myblob), octet_length(myblob), length(mystr), octet_length(mystr) 
 #from (values (cast(null as blob), cast(null as char(32)))) as my(myblob, mystr);
 % .,	.,	.,	. # table_name
-% %3,	%4,	%5,	%6 # name
+% %5,	%6,	%7,	%10 # name
 % int,	int,	int,	int # type
 % 1,	1,	1,	1 # length
 [ NULL,	NULL,	NULL,	NULL	]

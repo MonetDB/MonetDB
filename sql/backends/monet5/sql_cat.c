@@ -507,7 +507,9 @@ drop_table(mvc *sql, char *sname, char *tname, int drop_action, int if_exists)
 	if (!t && !sname) {
 		s = tmp_schema(sql);
 		t = mvc_bind_table(sql, s, tname);
-	}
+	} 
+	if (!t) /* Find declared table */
+		t = mvc_bind_table(sql, NULL, tname);
 	if (!t) {
 		if (if_exists)
 			return MAL_SUCCEED;

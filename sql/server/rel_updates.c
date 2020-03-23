@@ -1100,8 +1100,6 @@ update_table(sql_query *query, dlist *qname, str alias, dlist *assignmentlist, s
 		t = mvc_bind_table(sql, s, tname);
 		if (!t) 
 			t = mvc_bind_table(sql, NULL, tname);
-		if (!t) 
-			t = stack_find_table(sql, tname);
 	}
 	if (update_allowed(sql, t, tname, "UPDATE", "update", 0) != NULL) {
 		sql_rel *r = NULL, *bt = rel_basetable(sql, t, t->base.name), *res = bt;
@@ -1207,8 +1205,6 @@ delete_table(sql_query *query, dlist *qname, str alias, symbol *opt_where)
 		t = mvc_bind_table(sql, schema, tname);
 		if (!t) 
 			t = mvc_bind_table(sql, NULL, tname);
-		if (!t) 
-			t = stack_find_table(sql, tname);
 	}
 	if (update_allowed(sql, t, tname, "DELETE FROM", "delete from", 1) != NULL) {
 		sql_rel *r = NULL;
@@ -1264,8 +1260,6 @@ truncate_table(mvc *sql, dlist *qname, int restart_sequences, int drop_action)
 		t = mvc_bind_table(sql, schema, tname);
 		if (!t)
 			t = mvc_bind_table(sql, NULL, tname);
-		if (!t)
-			t = stack_find_table(sql, tname);
 	}
 	if (update_allowed(sql, t, tname, "TRUNCATE", "truncate", 2) != NULL)
 		return rel_truncate(sql->sa, rel_basetable(sql, t, tname), restart_sequences, drop_action);
@@ -1344,8 +1338,6 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 		t = mvc_bind_table(sql, s, tname);
 		if (!t)
 			t = mvc_bind_table(sql, NULL, tname);
-		if (!t)
-			t = stack_find_table(sql, tname);
 	}
 	if (!t)
 		return sql_error(sql, 02, SQLSTATE(42S02) "MERGE: no such table '%s'", tname);
@@ -1618,8 +1610,8 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 	if (!t && !sname) {
 		s = tmp_schema(sql);
 		t = mvc_bind_table(sql, s, tname);
-		if (!t)
-			t = stack_find_table(sql, tname);
+		if (!t) 
+			t = mvc_bind_table(sql, NULL, tname);
 	}
 	if (insert_allowed(sql, t, tname, "COPY INTO", "copy into") == NULL)
 		return NULL;
@@ -1831,7 +1823,7 @@ bincopyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, int co
 		s = tmp_schema(sql);
 		t = mvc_bind_table(sql, s, tname);
 		if (!t) 
-			t = stack_find_table(sql, tname);
+			t = mvc_bind_table(sql, NULL, tname);
 	}
 	if (insert_allowed(sql, t, tname, "COPY INTO", "copy into") == NULL) 
 		return NULL;
@@ -1904,8 +1896,8 @@ copyfromloader(sql_query *query, dlist *qname, symbol *fcall)
 	if (!t && !sname) {
 		s = tmp_schema(sql);
 		t = mvc_bind_table(sql, s, tname);
-		if (!t)
-			t = stack_find_table(sql, tname);
+		if (!t) 
+			t = mvc_bind_table(sql, NULL, tname);
 	}
 	//TODO the COPY LOADER INTO should return an insert relation (instead of ddl) to handle partitioned tables properly
 	if (insert_allowed(sql, t, tname, "COPY INTO", "copy into") == NULL)
