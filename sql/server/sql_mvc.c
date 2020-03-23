@@ -1054,9 +1054,7 @@ mvc_bind_table(mvc *m, sql_schema *s, const char *tname)
 	sql_table *t = stack_find_table(m, s, tname);
 
 	if (!t)
- 		t = find_sql_table(s, tname);
-	if (!t)
-		return NULL;
+		t = find_sql_table(s, tname);
 	TRC_DEBUG(SQL_TRANS, "Bind table: %s.%s\n", s ? s->base.name : "<noschema>", tname);
 	return t;
 }
@@ -1476,7 +1474,7 @@ sql_column *
 mvc_create_column(mvc *m, sql_table *t, const char *name, sql_subtype *tpe)
 {
 	TRC_DEBUG(SQL_TRANS, "Create column: %s %s %s\n", t->base.name, name, tpe->type->sqlname);
-	if (t->persistence == SQL_DECLARED_TABLE && (!t->s || strcmp(t->s->base.name, dt_schema))) 
+	if (t->persistence == SQL_DECLARED_TABLE) 
 		/* declared tables should not end up in the catalog */
 		return create_sql_column(m->session->tr, t, name, tpe);
 	else

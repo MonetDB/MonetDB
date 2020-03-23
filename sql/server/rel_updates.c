@@ -628,8 +628,6 @@ insert_into(sql_query *query, dlist *qname, dlist *columns, symbol *val_or_q)
 	if (!t && !sname) {
 		s = tmp_schema(sql);
 		t = mvc_bind_table(sql, s, tname);
-		if (!t) 
-			t = mvc_bind_table(sql, NULL, tname);
 	}
 	if (insert_allowed(sql, t, tname, "INSERT INTO", "insert into") == NULL) 
 		return NULL;

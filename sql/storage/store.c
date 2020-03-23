@@ -1933,8 +1933,6 @@ store_load(void) {
 		}
 	}
 
-	(void) bootstrap_create_schema(tr, dt_schema, ROLE_SYSADMIN, USER_MONETDB);
-
 	if (first) {
 		insert_types(tr, types);
 		insert_functions(tr, funcs, args);
