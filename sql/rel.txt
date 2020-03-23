@@ -96,7 +96,7 @@ Expressions
 e_atom 	(card ATOM)
 	-> l	literal (-> l = atom)
 	or
-	-> r	parameter ( ->r = varname, ->type = subtype, ->flag = level, ->alias rname contains the schema of the variable if it's the case (function parameters don't have schema) )
+	-> r	parameter ( ->r = sql_var_name -> { ->name variable name, ->sname schema of the variable }, ->type = subtype, ->flag = level)
 	or
 	-> f	list of atom expressions
 	or

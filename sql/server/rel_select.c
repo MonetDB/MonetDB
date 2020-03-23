@@ -1078,7 +1078,7 @@ rel_var_ref(mvc *sql, const char *sname, const char *name)
 	if (stack_find_var(sql, s, name)) {
 		sql_subtype *tpe = stack_find_type(sql, name);
 		int frame = stack_find_frame(sql, s, name);
-		return exp_param(sql->sa, s->base.name, name, tpe, frame);
+		return exp_param_or_declared(sql->sa, s->base.name, name, tpe, frame);
 	} else {
 		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: identifier '%s%s%s' unknown", sname ? sname : "", sname ? "." : "", name);
 	}
@@ -1210,10 +1210,10 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 				return exp_rel(sql, r);
 			}
 		}
-		if (!exp) { /* Try a parameter */
+		if (!exp) { /* Try a parameter - TODO this will be cleaned out */
 			sql_arg *a = sql_bind_param(sql, name);
 			if (a)
-				exp = exp_param(sql->sa, NULL, a->name, &a->type, 0);
+				exp = exp_param_or_declared(sql->sa, NULL, a->name, &a->type, 0);
 		}
 		if (!exp) { /* If no column was found, try a variable */
 			sql_schema *s = cur_schema(sql);

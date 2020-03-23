@@ -149,9 +149,11 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 				_DELETE(t);
 			}
 		} else { /* variables */
-			if (e->r) { /* named parameters */
-				char *name = e->r;
-				mnstr_printf(fout, "%s", name);
+			if (e->r) { /* named parameters and declared variables */
+				sql_var_name *vname = (sql_var_name*) e->r;
+				if (vname->sname)
+					mnstr_printf(fout, "\"%s\".", vname->sname);
+				mnstr_printf(fout, "\"%s\"", vname->name);
 			} else if (e->f) {	/* values list */
 				list *l = e->f;
 				exps_print(sql, fout, l, depth, refs, 0, 0);

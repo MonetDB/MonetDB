@@ -31,6 +31,11 @@ typedef struct sql_exp_name {
 	const char *rname;
 } sql_exp_name;
 
+typedef struct sql_var_name {
+	const char *name;
+	const char *sname;
+} sql_var_name;
+
 typedef struct expression {
 	expression_type type;	/* atom, cmp, func/aggr */
 	sql_exp_name alias;

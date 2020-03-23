@@ -628,8 +628,10 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		if (e->l) { 			/* literals */
 			atom *a = e->l;
 			s = stmt_atom(be, atom_dup(sql->sa, a));
-		} else if (e->r) { 		/* parameters */
-			s = stmt_var(be, (e->flag > 0 && e->alias.rname) ? sa_strdup(sql->sa, e->alias.rname) : NULL, sa_strdup(sql->sa, (e->flag > 0) ? e->alias.name : e->r), e->tpe.type?&e->tpe:NULL, 0, e->flag);
+		} else if (e->r) { 		/* parameters and declared variables */
+			sql_var_name *vname = (sql_var_name*) e->r;
+			assert(vname->name);
+			s = stmt_var(be, vname->sname ? sa_strdup(sql->sa, vname->sname) : NULL, sa_strdup(sql->sa, vname->name), e->tpe.type?&e->tpe:NULL, 0, e->flag);
 		} else if (e->f) { 		/* values */
 			s = value_list(be, e->f, left, sel);
 		} else { 			/* arguments */
@@ -1619,11 +1621,12 @@ exp2bin_args(backend *be, sql_exp *e, list *args)
 		} else if (e->f) {
 			return exps2bin_args(be, e->f, args);
 		} else if (e->r) {
-			char nme[64];
+			sql_var_name *vname = (sql_var_name*) e->r;
+			char nme[BUFSIZ];
 
-			snprintf(nme, sizeof(nme), "A%s", (char*)e->r);
+			snprintf(nme, sizeof(nme), "A%s%s%s", vname->sname ? vname->sname : "", vname->sname ? "%%" : "", vname->name);
 			if (!list_find(args, nme, (fcmp)&alias_cmp)) {
-				stmt *s = stmt_var(be, NULL, e->r, &e->tpe, 0, 0);
+				stmt *s = stmt_var(be, vname->sname, vname->name, &e->tpe, 0, 0);
 
 				s = stmt_alias(be, s, NULL, sa_strdup(sql->sa, nme));
 				list_append(args, s);

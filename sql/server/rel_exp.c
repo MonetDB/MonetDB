@@ -508,9 +508,9 @@ exp_value(mvc *sql, sql_exp *e, atom **args, int maxarg)
 	if (e->l) {	   /* literal */
 		return e->l;
 	} else if (e->r) { /* param (ie not set) */
-		if (e->flag <= 1) /* global variable */
-			return stack_get_var(sql, mvc_bind_schema(sql, "sys"), e->r); 
-		return NULL; 
+		sql_var_name *vname = (sql_var_name*) e->r;
+		sql_schema *s = vname->sname ? mvc_bind_schema(sql, vname->sname) : NULL;
+		return stack_get_var(sql, s, vname->name);
 	} else if (sql->emode == m_normal && e->flag < (unsigned) maxarg) { /* do not get the value in the prepared case */
 		return args[e->flag]; 
 	}
@@ -518,14 +518,17 @@ exp_value(mvc *sql, sql_exp *e, atom **args, int maxarg)
 }
 
 sql_exp * 
-exp_param(sql_allocator *sa, const char *sname, const char *name, sql_subtype *tpe, int frame) 
+exp_param_or_declared(sql_allocator *sa, const char *sname, const char *name, sql_subtype *tpe, int frame) 
 {
+	sql_var_name *vname;
 	sql_exp *e = exp_create(sa, e_atom);
 	if (e == NULL)
 		return NULL;
-	e->alias.name = (char*)name;
-	e->alias.rname = (char*)sname;
-	e->r = (char*)name;
+
+	e->r = sa_alloc(sa, sizeof(sql_var_name));
+	vname = (sql_var_name*) e->r;
+	vname->sname = sname;
+	vname->name = name;
 	e->card = CARD_ATOM;
 	e->flag = frame;
 	if (tpe)
@@ -2377,9 +2380,10 @@ exp_copy( mvc *sql, sql_exp * e)
 			ne = exp_atom(sql->sa, e->l);
 		else if (!e->r)
 			ne = exp_atom_ref(sql->sa, e->flag, &e->tpe);
-		else 
-			ne = exp_param(sql->sa, e->alias.rname, e->alias.name, &e->tpe, e->flag);
-		break;
+		else {
+			sql_var_name *vname = (sql_var_name*) e->r;
+			ne = exp_param_or_declared(sql->sa, vname->sname, vname->name, &e->tpe, e->flag);
+		} break;
 	case e_psm:
 		if (e->flag & PSM_SET) 
 			ne = exp_set(sql->sa, e->alias.rname, e->alias.name, exp_copy(sql, e->l), GET_PSM_LEVEL(e->flag));
