@@ -135,3 +135,7 @@ SELECT CAST(COUNT(*) - myvar AS BIGINT) FROM sequences; --the total count, canno
 drop table x;
 
 SELECT 1, 2 INTO myvar; --error, number of variables don't match
+
+declare table x (a int);
+declare table x (c int); --error table x already declared
+drop table if exists x;

@@ -45,6 +45,31 @@ SELECT col0 FROM tab0 ORDER BY tab0.col0;
 	-- 87
 	-- 97
 
+SELECT DISTINCT 99 col2 FROM tab1 WHERE NOT - ( 43 ) + + 98 = + col2;
+	-- 99
+
+SELECT * FROM tab2 AS cor0 WHERE NOT - 59 + + 47 <> + ( + col0 );
+	-- empty
+
+SELECT CAST(+ col2 * col2 AS BIGINT) FROM tab2 AS cor0 WHERE NOT - CAST ( NULL AS INTEGER ) <> - - col1 AND NOT NULL NOT BETWEEN ( NULL ) AND - 91 - - + 27 * + col2;
+	-- empty
+
+SELECT + 2 FROM tab0 AS cor0 WHERE NOT - 29 IS NULL OR NOT NULL IS NULL AND NOT NULL BETWEEN + col1 - + 60 AND + 37 * + col1 + + col0;
+	-- 2
+	-- 2
+	-- 2
+
+SELECT * FROM tab0 WHERE NOT - col0 - col1 * col2 <= ( + col0 ) AND NOT ( + col2 + col1 - col1 ) NOT BETWEEN - col0 AND - col1 + - col2 / col1;
+	-- empty
+
+SELECT * FROM tab0 AS cor0 WHERE NOT col1 BETWEEN - col0 AND col0 + col1 * col1 AND - col1 BETWEEN col0 AND ( NULL ) OR NOT col0 * col0 + col0 <= NULL;
+	-- empty
+
+SELECT DISTINCT * FROM tab2 WHERE NOT ( - + 50 + ( 70 ) ) = + col2;
+	-- 64 77 40
+	-- 46 51 23
+	-- 75 67 58
+
 SELECT col0 FROM tab0 ORDER BY sys.tab0.col0; --error, TODO
 
 prepare select col0 from tab0 where (?) in (select col0 from tab0);

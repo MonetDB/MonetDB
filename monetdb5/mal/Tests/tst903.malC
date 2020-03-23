@@ -130,7 +130,7 @@ mdb.setDebug(dbgmsk_restore);
 d0:= t1-t0;
 io.printf("#mal.multiplex(+) %d\n",d0);
 t0:= alarm.usec();
-x:= batcalc.+(b,c);
+x:= batcalc.+(b,c,nil:bat,nil:bat);
 t1:= alarm.usec();
 d0:= t1-t0;
 io.printf("#batcalc.+() %d\n",d0);

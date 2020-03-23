@@ -39,7 +39,7 @@ coercionOptimizerCalcStep(Client cntxt, MalBlkPtr mb, int i, Coercion *coerce)
 		return;
 #endif
 	if( getModuleId(p) != batcalcRef || getFunctionId(p) == 0) return;
-	if( ! (getFunctionId(p) == plusRef || getFunctionId(p) == minusRef || getFunctionId(p) == mulRef || getFunctionId(p) == divRef || *getFunctionId(p) =='%') || p->argc !=3)
+	if( ! (getFunctionId(p) == plusRef || getFunctionId(p) == minusRef || getFunctionId(p) == mulRef || getFunctionId(p) == divRef || getFunctionId(p) == modRef) || p->argc !=3)
 		return;
 
 	a = getBatType(getVarType(mb, getArg(p,1)));

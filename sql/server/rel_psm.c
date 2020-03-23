@@ -1520,15 +1520,15 @@ rel_psm(sql_query *query, symbol *s)
 		break;
 	case SQL_CREATE_TABLE_LOADER:
 	{
-	    dlist *l = s->data.lval;
-	    dlist *qname = l->h->data.lval;
-	    symbol *sym = l->h->next->data.sym;
+		dlist *l = s->data.lval;
+		dlist *qname = l->h->data.lval;
+		symbol *sym = l->h->next->data.sym;
 
-	    ret = create_table_from_loader(query, qname, sym);
-	    if (ret == NULL)
-		    return NULL;
-	    ret = rel_psm_stmt(sql->sa, exp_rel(sql, ret));
-	    sql->type = Q_SCHEMA;
+		ret = create_table_from_loader(query, qname, sym);
+		if (ret == NULL)
+			return NULL;
+		ret = rel_psm_stmt(sql->sa, exp_rel(sql, ret));
+		sql->type = Q_SCHEMA;
 	}	break;
 	case SQL_CREATE_TRIGGER:
 	{
@@ -1537,9 +1537,7 @@ rel_psm(sql_query *query, symbol *s)
 		assert(l->h->next->type == type_int);
 		ret = create_trigger(query, l->h->data.lval, l->h->next->data.i_val, l->h->next->next->data.sym, l->h->next->next->next->data.lval, l->h->next->next->next->next->data.lval, l->h->next->next->next->next->next->data.lval, l->h->next->next->next->next->next->next->data.i_val);
 		sql->type = Q_SCHEMA;
-	}
-		break;
-
+	} break;
 	case SQL_DROP_TRIGGER:
 	{
 		dlist *l = s->data.lval;
@@ -1548,9 +1546,7 @@ rel_psm(sql_query *query, symbol *s)
 
 		ret = drop_trigger(sql, qname, if_exists);
 		sql->type = Q_SCHEMA;
-	}
-		break;
-
+	} break;
 	case SQL_ANALYZE: {
 		dlist *l = s->data.lval;
 

@@ -257,7 +257,7 @@ io.print("date_seq,sf_a,vf_a,ag_a,cg_a");
 	oi_a := calc.*(60,1000);
 	pi_a := calc.*(60,oi_a);
 	qi_a := calc.lng(pi_a);
-	ri_a := batcalc./(ni_a,qi_a);
+	ri_a := batcalc./(ni_a,qi_a,nil:bat);
 	si_a := bat.setColumn(ri_a,"diff");
 	io.print("print(timestamp_bat,timestamp_plus,timestamp_minus,ri_a)");
 	ti_a := io.print(timestamp_bat,timestamp_plus,timestamp_minus,ri_a);

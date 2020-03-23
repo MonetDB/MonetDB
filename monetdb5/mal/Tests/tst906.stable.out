@@ -36,20 +36,20 @@ barrier i:lng := 0:lng;                 	#[2] (0)  3 <- 4
 exit i:lng;                             	#[5] (0)  3 
     c:bat[:lng] := algebra.copy(b:bat[:lng]);	#[6] (0) ALGcopy 8 <- 1 
     io.print(c:bat[:lng]);              	#[7] (0) IOprint_val 9 <- 8 
-    x:bat[:lng] := batcalc.+(b:bat[:lng], c:bat[:lng]);	#[8] (0) CMDbatADDsignal 10 <- 1 8 
-    io.print(x:bat[:lng]);              	#[9] (0) IOprint_val 11 <- 10 
-    x:bat[:lng] := batcalc.+(b:bat[:lng], 1:lng);	#[10] (0) CMDbatADDsignal 10 <- 1 6 
-    io.print(x:bat[:lng]);              	#[11] (0) IOprint_val 12 <- 10 
-    x:bat[:lng] := batcalc./(b:bat[:lng], 1:lng);	#[12] (0) CMDbatDIVsignal 10 <- 1 6 
-    io.print(x:bat[:lng]);              	#[13] (0) IOprint_val 13 <- 10 
-    x:bat[:lng] := batcalc.*(b:bat[:lng], c:bat[:lng]);	#[14] (0) CMDbatMULsignal 10 <- 1 8 
-    io.print(x:bat[:lng]);              	#[15] (0) IOprint_val 14 <- 10 
-    y:bat[:bit] := batcalc.==(b:bat[:lng], b:bat[:lng]);	#[16] (0) CMDbatEQ 15 <- 1 1 
-    io.print(y:bat[:bit]);              	#[17] (0) IOprint_val 16 <- 15 
-    y:bat[:bit] := batcalc.==(b:bat[:lng], x:bat[:lng]);	#[18] (0) CMDbatEQ 15 <- 1 10 
-    io.print(y:bat[:bit]);              	#[19] (0) IOprint_val 17 <- 15 
-    z:bat[:bit] := batcalc.not(y:bat[:bit]);	#[20] (0) CMDbatNOT 18 <- 15 
-    io.print(z:bat[:bit]);              	#[21] (0) IOprint_val 19 <- 18 
+    x:bat[:lng] := batcalc.+(b:bat[:lng], c:bat[:lng], nil:BAT, nil:BAT);	#[8] (0) CMDbatADDsignal 10 <- 1 8 11 12 
+    io.print(x:bat[:lng]);	#[9] (0) IOprint_val 13 <- 10 
+    x:bat[:lng] := batcalc.+(b:bat[:lng], 1:lng, nil:BAT);	#[10] (0) CMDbatADDsignal 10 <- 1 6 11 
+    io.print(x:bat[:lng]);	#[11] (0) IOprint_val 14 <- 10 
+    x:bat[:lng] := batcalc./(b:bat[:lng], 1:lng, nil:BAT);	#[12] (0) CMDbatDIVsignal 10 <- 1 6 11 
+    io.print(x:bat[:lng]);	#[13] (0) IOprint_val 15 <- 10 
+    x:bat[:lng] := batcalc.*(b:bat[:lng], c:bat[:lng], nil:BAT, nil:BAT);	#[14] (0) CMDbatMULsignal 10 <- 1 8 11 11 
+    io.print(x:bat[:lng]);	#[15] (0) IOprint_val 16 <- 10 
+    y:bat[:bit] := batcalc.==(b:bat[:lng], b:bat[:lng], nil:BAT, nil:BAT);	#[16] (0) CMDbatEQ 17 <- 1 1 11 11 
+    io.print(y:bat[:bit]);	#[17] (0) IOprint_val 18 <- 17 
+    y:bat[:bit] := batcalc.==(b:bat[:lng], x:bat[:lng], nil:BAT, nil:BAT);	#[18] (0) CMDbatEQ 17 <- 1 10 11 11 
+    io.print(y:bat[:bit]);	#[19] (0) IOprint_val 19 <- 17 
+    z:bat[:bit] := batcalc.not(y:bat[:bit], nil:BAT);	#[20] (0) CMDbatNOT 20 <- 17 11 
+    io.print(z:bat[:bit]);	#[21] (0) IOprint_val 21 <- 20 
 end user.foo;                           	#[22] (0)  
 #--------------------------#
 # h	t	  # name

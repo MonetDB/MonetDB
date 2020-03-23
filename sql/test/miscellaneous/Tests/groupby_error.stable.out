@@ -112,6 +112,20 @@ stdout of test 'groupby_error` in directory 'sql/test/miscellaneous` itself:
 % col0,	col1,	col2 # name
 % int,	int,	int # type
 % 1,	1,	1 # length
+#SELECT * FROM tab2 AS cor0 WHERE NOT - ( - + 57 ) + - ( ( - - col2 ) ) BETWEEN + - col2 AND + col2;
+% sys.cor0,	sys.cor0,	sys.cor0 # table_name
+% col0,	col1,	col2 # name
+% int,	int,	int # type
+% 2,	2,	2 # length
+[ 46,	51,	23	]
+#SELECT col0 FROM tab2 WHERE - - col2;
+% sys.tab2 # table_name
+% col0 # name
+% int # type
+% 2 # length
+[ 64	]
+[ 75	]
+[ 46	]
 #PLAN SELECT col0 FROM tab2 WHERE CAST(col2 AS BIGINT) = 40;
 % .plan # table_name
 % rel # name
@@ -144,6 +158,38 @@ project (
 [ 15	]
 [ 87	]
 [ 97	]
+#SELECT DISTINCT 99 col2 FROM tab1 WHERE NOT - ( 43 ) + + 98 = + col2;
+% . # table_name
+% col2 # name
+% tinyint # type
+% 2 # length
+[ 99	]
+#SELECT * FROM tab2 AS cor0 WHERE NOT - 59 + + 47 <> + ( + col0 );
+% sys.cor0,	sys.cor0,	sys.cor0 # table_name
+% col0,	col1,	col2 # name
+% int,	int,	int # type
+% 1,	1,	1 # length
+#SELECT + col2 * col2 FROM tab2 AS cor0 WHERE NOT - CAST ( NULL AS INTEGER ) <> - - col1 AND NOT NULL NOT BETWEEN ( NULL ) AND - 91 - - + 27 * + col2;
+% sys. # table_name
+% %2 # name
+% bigint # type
+% 1 # length
+#SELECT + 2 FROM tab0 AS cor0 WHERE NOT - 29 IS NULL OR NOT NULL IS NULL AND NOT NULL BETWEEN + col1 - + 60 AND + 37 * + col1 + + col0;
+% . # table_name
+% single_value # name
+% tinyint # type
+% 1 # length
+[ 2	]
+[ 2	]
+[ 2	]
+#SELECT DISTINCT * FROM tab2 WHERE NOT ( - + 50 + ( 70 ) ) = + col2;
+% sys.tab2,	sys.tab2,	sys.tab2 # table_name
+% col0,	col1,	col2 # name
+% int,	int,	int # type
+% 2,	2,	2 # length
+[ 64,	77,	40	]
+[ 75,	67,	58	]
+[ 46,	51,	23	]
 #prepare select col0 from tab0 where (?) in (select col0 from tab0);
 #prepare select col0 from tab0 where (?) in (select col0 from tab0);
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
