@@ -1369,8 +1369,9 @@ mvc_create_table(mvc *m, sql_schema *s, const char *name, int tt, bit system, in
 	char *err = NULL;
 	int check = 0;
 
+	assert(s);
 	TRC_DEBUG(SQL_TRANS, "Create table: %s %s %d %d %d %d %d\n", s->base.name, name, tt, system, persistence, commit_action, (int)properties);
-	if (persistence == SQL_DECLARED_TABLE && (!s || strcmp(s->base.name, dt_schema))) {
+	if (persistence == SQL_DECLARED_TABLE) {
 		t = create_sql_table(m->sa, name, tt, system, persistence, commit_action, properties);
 		t->s = s;
 	} else {

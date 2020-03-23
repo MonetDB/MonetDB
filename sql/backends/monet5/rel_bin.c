@@ -1107,7 +1107,7 @@ stmt_col( backend *be, sql_column *c, stmt *del, int part)
 
 	if (isTable(c->t) && c->t->access != TABLE_READONLY &&
 	   (!isNew(c) || !isNew(c->t) /* alter */) &&
-	   (c->t->persistence == SQL_PERSIST || c->t->persistence == SQL_DECLARED_TABLE) && !c->t->commit_action) {
+	   (c->t->persistence == SQL_PERSIST || isDeclaredTable(c->t)) && !c->t->commit_action) {
 		stmt *i = stmt_bat(be, c, RD_INS, 0);
 		stmt *u = stmt_bat(be, c, RD_UPD_ID, part);
 		sc = stmt_project_delta(be, sc, u, i);
@@ -1126,7 +1126,7 @@ stmt_idx( backend *be, sql_idx *i, stmt *del, int part)
 
 	if (isTable(i->t) && i->t->access != TABLE_READONLY &&
 	   (!isNew(i) || !isNew(i->t) /* alter */) &&
-	   (i->t->persistence == SQL_PERSIST || i->t->persistence == SQL_DECLARED_TABLE) && !i->t->commit_action) {
+	   (i->t->persistence == SQL_PERSIST || isDeclaredTable(i->t)) && !i->t->commit_action) {
 		stmt *ic = stmt_idxbat(be, i, RD_INS, 0);
 		stmt *u = stmt_idxbat(be, i, RD_UPD_ID, part);
 		sc = stmt_project_delta(be, sc, u, ic);

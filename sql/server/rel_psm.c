@@ -234,7 +234,7 @@ rel_psm_declare_table(sql_query *query, dnode *n)
 	t = (sql_table*)((atom*)((sql_exp*)baset->exps->t->data)->l)->data.val.pval;
 	if (!stack_push_table(sql, s, name, baset, t))
 		return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	return exp_table(sql->sa, sa_strdup(sql->sa, sname), sa_strdup(sql->sa, name), t, sql->frame);
+	return exp_table(sql->sa, sa_strdup(sql->sa, s->base.name), sa_strdup(sql->sa, name), t, sql->frame);
 }
 
 /* [ label: ]

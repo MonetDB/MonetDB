@@ -316,11 +316,11 @@ column_constraint_name(mvc *sql, symbol *s, sql_column *sc, sql_table *t)
 #define COL_DEFAULT 1
 
 static int
-column_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sql_table *t, sql_column *cs, int *used)
+column_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sql_table *t, sql_column *cs, bool isDeclared, int *used)
 {
 	int res = SQL_ERR;
 
-	if (!ss && (s->token != SQL_NULL && s->token != SQL_NOT_NULL)) {
+	if (isDeclared && (s->token != SQL_NULL && s->token != SQL_NOT_NULL)) {
 		(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT: constraints on declared tables are not supported\n");
 		return res;
 	}
@@ -426,7 +426,7 @@ column_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sq
 }
 
 static int
-column_options(sql_query *query, dlist *opt_list, sql_schema *ss, sql_table *t, sql_column *cs)
+column_options(sql_query *query, dlist *opt_list, sql_schema *ss, sql_table *t, sql_column *cs, bool isDeclared)
 {
 	mvc *sql = query->sql;
 	int res = SQL_OK, used = 0;
@@ -445,7 +445,7 @@ column_options(sql_query *query, dlist *opt_list, sql_schema *ss, sql_table *t, 
 					if (!opt_name && !(default_name = column_constraint_name(sql, sym, cs, t)))
 						return SQL_ERR;
 
-					res = column_constraint_type(sql, opt_name ? opt_name : default_name, sym, ss, t, cs, &used);
+					res = column_constraint_type(sql, opt_name ? opt_name : default_name, sym, ss, t, cs, isDeclared, &used);
 					GDKfree(default_name);
 				} 	break;
 				case SQL_DEFAULT: {
@@ -659,7 +659,7 @@ table_constraint(mvc *sql, symbol *s, sql_schema *ss, sql_table *t)
 }
 
 static int
-create_column(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alter)
+create_column(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alter, bool isDeclared)
 {
 	mvc *sql = query->sql;
 	dlist *l = s->data.lval;
@@ -692,14 +692,14 @@ create_column(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 			return SQL_ERR;
 		}
 		cs = mvc_create_column(sql, t, cname, ctype);
-		if (column_options(query, opt_list, ss, t, cs) == SQL_ERR)
+		if (column_options(query, opt_list, ss, t, cs, isDeclared) == SQL_ERR)
 			return SQL_ERR;
 	}
 	return res;
 }
 
 static int
-table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alter, const char *action)
+table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alter, bool isDeclared, const char *action)
 {
 	mvc *sql = query->sql;
 	int res = SQL_OK;
@@ -763,7 +763,7 @@ table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 
 	switch (s->token) {
 	case SQL_COLUMN:
-		res = create_column(query, s, ss, t, alter);
+		res = create_column(query, s, ss, t, alter, isDeclared);
 		break;
 	case SQL_CONSTRAINT:
 		res = table_constraint(sql, s, ss, t);
@@ -779,7 +779,7 @@ table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 			sql_error(sql, 02, SQLSTATE(42S22) "%s: no such column '%s'\n", action, cname);
 			return SQL_ERR;
 		} else {
-			return column_options(query, olist, ss, t, c);
+			return column_options(query, olist, ss, t, c, isDeclared);
 		}
 	} 	break;
 	case SQL_DEFAULT:
@@ -1081,7 +1081,7 @@ rel_create_table(sql_query *query, sql_schema *ss, int temp, const char *sname, 
 
 		for (n = columns->h; n; n = n->next) {
 			symbol *sym = n->data.sym;
-			int res = table_element(query, sym, s, t, 0, (temp == SQL_DECLARED_TABLE)?"DECLARE TABLE":"CREATE TABLE");
+			int res = table_element(query, sym, s, t, 0, (temp == SQL_DECLARED_TABLE), (temp == SQL_DECLARED_TABLE)?"DECLARE TABLE":"CREATE TABLE");
 
 			if (res == SQL_ERR)
 				return NULL;
@@ -1535,7 +1535,7 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 		}
 
 		nt = dup_sql_table(sql->sa, t);
-		if (!nt || (te && table_element(query, te, s, nt, 1, "ALTER TABLE") == SQL_ERR)) 
+		if (!nt || (te && table_element(query, te, s, nt, 1, t->persistence == SQL_DECLARED_TABLE, "ALTER TABLE") == SQL_ERR)) 
 			return NULL;
 
 		if (te->token == SQL_DROP_CONSTRAINT) {
@@ -2654,7 +2654,7 @@ rel_schemas(sql_query *query, symbol *s)
 		dlist *qname = l->h->next->data.lval;
 		char *sname = qname_schema(qname);
 		char *name = qname_schema_object(qname);
-		int temp = (s->token == SQL_DECLARE_TABLE) ? SQL_DECLARED_TABLE : l->h->data.i_val;
+		int temp = s->token == SQL_DECLARE_TABLE ? SQL_DECLARED_TABLE : l->h->data.i_val;
 		dlist *credentials = l->h->next->next->next->next->next->data.lval;
 		char *username = credentials_username(credentials);
 		char *password = credentials_password(credentials);
