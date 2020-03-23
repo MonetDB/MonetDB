@@ -112,6 +112,20 @@ stdout of test 'groupby_error` in directory 'sql/test/miscellaneous` itself:
 % col0,	col1,	col2 # name
 % int,	int,	int # type
 % 1,	1,	1 # length
+#SELECT * FROM tab2 AS cor0 WHERE NOT - ( - + 57 ) + - ( ( - - col2 ) ) BETWEEN + - col2 AND + col2;
+% sys.cor0,	sys.cor0,	sys.cor0 # table_name
+% col0,	col1,	col2 # name
+% int,	int,	int # type
+% 2,	2,	2 # length
+[ 46,	51,	23	]
+#SELECT col0 FROM tab2 WHERE - - col2;
+% sys.tab2 # table_name
+% col0 # name
+% int # type
+% 2 # length
+[ 64	]
+[ 75	]
+[ 46	]
 #PLAN SELECT col0 FROM tab2 WHERE CAST(col2 AS BIGINT) = 40;
 % .plan # table_name
 % rel # name
