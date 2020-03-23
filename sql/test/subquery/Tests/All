@@ -1,10 +1,11 @@
-subquery
 any
 all
-subquery2
-subquery3
-subquery4
 scalar
 any_all
 exists
 correlated
+subquery
+subquery2
+subquery3
+subquery4
+subquery5

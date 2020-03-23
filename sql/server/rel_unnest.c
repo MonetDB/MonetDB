@@ -1000,6 +1000,12 @@ push_up_groupby(mvc *sql, sql_rel *rel, list *ad)
 					e->card = CARD_AGGR; 
 				}
 			} else {
+				for (n = ((list*)r->r)->h; n; n = n->next ) {
+					sql_exp *e = n->data;
+
+					if (exp_has_freevar(sql, e)) 
+						rel_bind_var(sql, rel->l, e);
+				}
 				if (id)
 					list_append(r->r, exp_ref(sql->sa, id));
 				else

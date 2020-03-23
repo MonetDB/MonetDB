@@ -31,22 +31,22 @@ stdout of test 'inline04` in directory 'monetdb5/optimizer` itself:
 function user.qry():void;               	#[0] (0)  0 
     b:bat[:int] := bat.new(:int);       	#[1] (0) CMDBATnew 1 <- 2 
     bat.append(b:bat[:int], 1:int);     	#[2] (0) BKCappend_val_wrap 3 <- 1 4 
-    X_11:bat[:int] := batcalc.+(b:bat[:int], b:bat[:int]);	#[1] (0) CMDbatADDsignal 14 <- 1 1 
+    X_11:bat[:int] := batcalc.+(b:bat[:int], b:bat[:int], nil:BAT, nil:BAT);	#[1] (0) CMDbatADDsignal 14 <- 1 1 21 22 
     X_12:int := 1:int;	#[2] (0)  15 <- 4 
 barrier X_13:bit := true:bit;	#[3] (0)  16 <- 17 
-    X_11:bat[:int] := batcalc.*(X_11:bat[:int], X_11:bat[:int]);	#[4] (0) CMDbatMULsignal 14 <- 14 14 
+    X_11:bat[:int] := batcalc.*(X_11:bat[:int], X_11:bat[:int], nil:BAT, nil:BAT);	#[4] (0) CMDbatMULsignal 14 <- 14 14 21 21 
     X_12:int := calc.+(X_12:int, 1:int);	#[5] (0) CMDvarADDsignal 15 <- 15 4 
     redo X_13:bit := calc.<(X_12:int, 3:int);	#[6] (0) CMDvarLT 16 <- 15 18 
 exit X_13:bit;	#[7] (0)  16 
     z:bat[:int] := X_11:bat[:int];	#[8] (0)  5 <- 14 
-    X_21:bat[:int] := batcalc.+(b:bat[:int], 2:int);	#[1] (0) CMDbatADDsignal 24 <- 1 9 
-    X_22:int := 1:int;	#[2] (0)  25 <- 4 
-barrier X_23:bit := true:bit;	#[3] (0)  26 <- 17 
-    X_21:bat[:int] := batcalc.*(X_21:bat[:int], X_21:bat[:int]);	#[4] (0) CMDbatMULsignal 24 <- 24 24 
-    X_22:int := calc.+(X_22:int, 1:int);	#[5] (0) CMDvarADDsignal 25 <- 25 4 
-    redo X_23:bit := calc.<(X_22:int, 3:int);	#[6] (0) CMDvarLT 26 <- 25 18 
-exit X_23:bit;	#[7] (0)  26 
-    z:bat[:int] := X_21:bat[:int];	#[8] (0)  5 <- 24 
+    X_23:bat[:int] := batcalc.+(b:bat[:int], 2:int, nil:BAT);	#[1] (0) CMDbatADDsignal 26 <- 1 9 21 
+    X_24:int := 1:int;	#[2] (0)  27 <- 4 
+barrier X_25:bit := true:bit;	#[3] (0)  28 <- 17 
+    X_23:bat[:int] := batcalc.*(X_23:bat[:int], X_23:bat[:int], nil:BAT, nil:BAT);	#[4] (0) CMDbatMULsignal 26 <- 26 26 21 21 
+    X_24:int := calc.+(X_24:int, 1:int);	#[5] (0) CMDvarADDsignal 27 <- 27 4 
+    redo X_25:bit := calc.<(X_24:int, 3:int);	#[6] (0) CMDvarLT 28 <- 27 18 
+exit X_25:bit;	#[7] (0)  28 
+    z:bat[:int] := X_23:bat[:int];	#[8] (0)  5 <- 26 
 end user.qry;                           	#[19] (0)  
 
 # 18:00:43 >  

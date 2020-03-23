@@ -1067,9 +1067,10 @@ mat_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m)
 	}
 	for(k=1; k< mat[m].mi->argc; k++) {
 		q = newInstruction(mb, NULL, NULL);
-		setModuleId(q,getModuleId(p));
 		if (isAvg)
 			setModuleId(q,batcalcRef);
+		else
+			setModuleId(q,getModuleId(p));
 		setFunctionId(q,getFunctionId(p));
 		getArg(q,0) = newTmpVariable(mb, tp);
 		if (isAvg) 
@@ -1131,6 +1132,8 @@ mat_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m)
 		getArg(x,0) = newTmpVariable(mb, newBatType(TYPE_dbl));
 		x = addArgument(mb, x, getArg(v, 0));
 		x = addArgument(mb, x, getArg(y, 0));
+		x = pushNil(mb, x, TYPE_bat);
+		x = pushNil(mb, x, TYPE_bat);
 		pushInstruction(mb, x);
 
 		/* dbl w = avg * x */
@@ -1138,6 +1141,8 @@ mat_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m)
 		getArg(w,0) = newTmpVariable(mb, battp);
 		w = addArgument(mb, w, getArg(r, 0));
 		w = addArgument(mb, w, getArg(x, 0));
+		w = pushNil(mb, w, TYPE_bat);
+		w = pushNil(mb, w, TYPE_bat);
 		pushInstruction(mb, w);
 
 		r = w;
@@ -1338,6 +1343,8 @@ mat_group_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int b, int g, int e)
 		getArg(r,0) = newTmpVariable(mb, newBatType(TYPE_dbl));
 		r = addArgument(mb, r, getArg(v, 0));
 		r = addArgument(mb, r, getArg(s, 0));
+		r = pushNil(mb, r, TYPE_bat);
+		r = pushNil(mb, r, TYPE_bat);
 		pushInstruction(mb,r);
 
 		/* dbl s = avg * r */
@@ -1345,6 +1352,8 @@ mat_group_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int b, int g, int e)
 		getArg(s,0) = newTmpVariable(mb, tp);
 		s = addArgument(mb, s, getArg(ai1, 0));
 		s = addArgument(mb, s, getArg(r, 0));
+		s = pushNil(mb, s, TYPE_bat);
+		s = pushNil(mb, s, TYPE_bat);
 		pushInstruction(mb,s);
 
 		ai1 = s;

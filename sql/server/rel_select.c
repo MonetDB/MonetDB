@@ -2757,12 +2757,11 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
  			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: subquery must return only one column");
 		if (!rel)
 			return sq;
+		sq = rel_zero_or_one(sql, sq, ek);
 		if (is_sql_where(f)) {
-			sq = rel_zero_or_one(sql, sq, ek);
 			sql_exp *le = exp_rel(sql, sq), *re;
 			sql_subtype bt;
 
-			/* todo add zero or one */
 			sql_find_subtype(&bt, "boolean", 0, 0);
 			le = rel_check_type(sql, &bt, rel, le, type_equal);
 			if (!le)

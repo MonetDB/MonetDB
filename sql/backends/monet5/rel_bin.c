@@ -726,10 +726,11 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			if (push_cands) {
 				if (strcmp(sql_func_imp(f->func), "and") != 0 && strcmp(sql_func_imp(f->func), "or") != 0) {
 					int i;
-					for (i=0, en = l->h; i<nrcands && en; i++, en = en->next) {
+					for (i=0, en = l->h; i<nrcands && en; en = en->next) {
 						stmt *s = en->data;
 						/* if handled use bat nil */
 						if (s->nrcols) { /* only for cols not values */
+							i++;
 							if (s->cand)
 								list_append(l, NULL);
 							else

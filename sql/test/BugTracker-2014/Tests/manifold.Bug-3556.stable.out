@@ -140,7 +140,7 @@ function user.s6_0():void;
     X_36:bat[:str] := algebra.project(X_31:bat[:int], "A":str);
     X_43:bat[:str] := mal.manifold("str":str, "replace":str, X_32:bat[:str], X_34:bat[:str], X_36:bat[:str]);
     X_37:bat[:lng] := batcalc.lng(X_31:bat[:int]);
-    X_40:bat[:lng] := batcalc.+(X_37:bat[:lng], 1:lng);
+    X_40:bat[:lng] := batcalc.+(X_37:bat[:lng], 1:lng, nil:BAT);
     sql.resultSet(X_47:bat[:str], X_48:bat[:str], X_49:bat[:str], X_50:bat[:int], X_51:bat[:int], X_43:bat[:str], X_40:bat[:lng]);
 end user.s6_0;
 #inline               actions= 0 time=1 usec 
