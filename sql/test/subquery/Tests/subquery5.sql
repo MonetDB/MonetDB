@@ -9,6 +9,12 @@ SELECT
     (SELECT MIN(col1) GROUP BY col2)
 FROM another_T; --error, subquery uses ungrouped column "another_T.col2" from outer query
 
+
+SELECT
+    (SELECT MIN(col1) WHERE SUM(col2) > 1),
+    CAST(SUM((SELECT col1 FROM tbl_ProductSales GROUP BY col2)) AS BIGINT)
+FROM another_T GROUP BY col2;
+
 SELECT
     (SELECT MIN(col1) WHERE SUM(SUM(col2)) > 1),
     CAST(SUM((SELECT col1 FROM tbl_ProductSales GROUP BY col2)) AS BIGINT)
