@@ -23,26 +23,31 @@ select tmp1.i, tmp2.i from sys.tmp1, sys.tmp2;
 SELECT MAX(i) FROM tmp1; --Table columns have precedence over global variables
 	-- 2
 
--- Create a function to test scoping order
-CREATE OR REPLACE FUNCTION tests_scopes(i INT) RETURNS INT 
+CREATE OR REPLACE FUNCTION tests_scopes1(i INT) RETURNS INT 
 BEGIN
-	DECLARE i int;
-	SET i = 1;
-	IF i = 0 THEN
-		RETURN i;
-	ELSE
-		RETURN sys.i;
-	END IF;
+	DECLARE i int; --error, variable redeclaration;
+	RETURN i;
 END;
 
-SELECT tests_scopes(vals) FROM (VALUES (0),(2),(3)) AS vals(vals);
-	-- 0 --Function parameters have precedence over declared variables, either local or global
+SELECT tests_scopes1(vals) FROM (VALUES (1),(2),(3)) AS vals(vals); --will trigger error
+
+-- Create a function to test scoping order
+CREATE OR REPLACE FUNCTION tests_scopes2(i INT) RETURNS INT 
+BEGIN
+	DECLARE j int;
+	SET j = i;
+	RETURN j;
+END;
+
+SELECT tests_scopes2(vals) FROM (VALUES (1),(2),(3)) AS vals(vals);
 	-- 1 --Local variables have precedence over global ones
-	-- 1
+	-- 2 
+	-- 3
 
 DROP TABLE tmp1;
 DROP TABLE tmp2;
-DROP FUNCTION tests_scopes(INT);
+DROP FUNCTION tests_scopes1(INT);
+DROP FUNCTION tests_scopes2(INT);
 ------------------------------------------------------------------------------
 with a(a) as (select 1), a(a) as (select 2) select 1; --error, variable a already declared
 ------------------------------------------------------------------------------

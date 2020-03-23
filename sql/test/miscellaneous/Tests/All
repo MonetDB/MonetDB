@@ -13,4 +13,3 @@ select_groupby
 groupings
 HAVE_PYMONETDB?pk_fk_stress
 deallocate
-scoping
