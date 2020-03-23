@@ -51,17 +51,32 @@ OPTremapDirect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int idx,
 	for(i= pci->retc+2; i<pci->argc; i++)
 		p= addArgument(mb,p,getArg(pci,i));
 	if (p->retc == 1 &&
-		p->argc == 3 &&
 		bufName == batcalcRef &&
-		(fcnName == mulRef || fcnName == divRef || fcnName == plusRef || fcnName == minusRef || fcnName == modRef) &&
-		/* these two filter out unary batcalc.- with a candidate list */
-		getBatType(getArgType(mb, p, 1)) != TYPE_oid &&
-		getBatType(getArgType(mb, p, 2)) != TYPE_oid) {
-		/* add candidate lists */
-		if (isaBatType(getArgType(mb, p, 1)))
-			pushNil(mb, p, TYPE_bat);
-		if (isaBatType(getArgType(mb, p, 2)))
-			pushNil(mb, p, TYPE_bat);
+		(fcnName == mulRef || fcnName == divRef || fcnName == plusRef || fcnName == minusRef || fcnName == modRef)) {
+		if (p->argc == 3 &&
+			/* these two filter out unary batcalc.- with a candidate list */
+			getBatType(getArgType(mb, p, 1)) != TYPE_oid &&
+			getBatType(getArgType(mb, p, 2)) != TYPE_oid) {
+			/* add candidate lists */
+			if (isaBatType(getArgType(mb, p, 1)))
+				p = pushNil(mb, p, TYPE_bat);
+			if (isaBatType(getArgType(mb, p, 2)))
+				p = pushNil(mb, p, TYPE_bat);
+		} else if (p->argc == 4 &&
+				   getBatType(getArgType(mb, p, 3)) == TYPE_bit &&
+				   /* these two filter out unary batcalc.- with a
+					* candidate list */
+				   getBatType(getArgType(mb, p, 1)) != TYPE_oid &&
+				   getBatType(getArgType(mb, p, 2)) != TYPE_oid) {
+			int a = getArg(p, 3);
+			p->argc--;
+			/* add candidate lists */
+			if (isaBatType(getArgType(mb, p, 1)))
+				p = pushNil(mb, p, TYPE_bat);
+			if (isaBatType(getArgType(mb, p, 2)))
+				p = pushNil(mb, p, TYPE_bat);
+			p = pushArgument(mb, p, a);
+		}
 	}
 
 	/* now see if we can resolve the instruction */
@@ -233,17 +248,33 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 					setModuleId(q,putName(buf));
 					q->typechk = TYPE_UNKNOWN;
 					if (q->retc == 1 &&
-						q->argc == 3 &&
 						getModuleId(q) == batcalcRef &&
-						(getFunctionId(q) == mulRef || getFunctionId(q) == divRef || getFunctionId(q) == plusRef || getFunctionId(q) == minusRef || getFunctionId(q) == modRef) &&
-						/* these two filter out unary batcalc.- with a candidate list */
-						getBatType(getArgType(mq, q, 1)) != TYPE_oid &&
-						getBatType(getArgType(mq, q, 2)) != TYPE_oid) {
-						/* add candidate lists */
-						if (isaBatType(getArgType(mq, q, 1)))
-							pushNil(mq, q, TYPE_bat);
-						if (isaBatType(getArgType(mq, q, 2)))
-							pushNil(mq, q, TYPE_bat);
+						(getFunctionId(q) == mulRef || getFunctionId(q) == divRef || getFunctionId(q) == plusRef || getFunctionId(q) == minusRef || getFunctionId(q) == modRef)) {
+						if (q->argc == 3 &&
+							/* these two filter out unary batcalc.- with a candidate list */
+							getBatType(getArgType(mq, q, 1)) != TYPE_oid &&
+							getBatType(getArgType(mq, q, 2)) != TYPE_oid) {
+							/* add candidate lists */
+							if (isaBatType(getArgType(mq, q, 1)))
+								q = pushNil(mq, q, TYPE_bat);
+							if (isaBatType(getArgType(mq, q, 2)))
+								q = pushNil(mq, q, TYPE_bat);
+						} else if (q->argc == 4 &&
+								   getBatType(getArgType(mq, q, 3)) == TYPE_bit &&
+								   /* these two filter out unary
+									* batcalc.- with a candidate
+									* list */
+								   getBatType(getArgType(mq, q, 1)) != TYPE_oid &&
+								   getBatType(getArgType(mq, q, 2)) != TYPE_oid) {
+							int a = getArg(q, 3);
+							q->argc--;
+							/* add candidate lists */
+							if (isaBatType(getArgType(mq, q, 1)))
+								q = pushNil(mq, q, TYPE_bat);
+							if (isaBatType(getArgType(mq, q, 2)))
+								q = pushNil(mq, q, TYPE_bat);
+							q = pushArgument(mq, q, a);
+						}
 					}
 
 					/* now see if we can resolve the instruction */

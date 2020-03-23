@@ -200,39 +200,21 @@ comment "Return V $op B with candidates list, signal error on overflow";
 pattern ${name,,}_noerror(v:$tp1,b:bat[:$tp2],s:bat[:oid]) :bat[:$tp3]
 address CMDbat${name}
 comment "Return V $op B with candidates list, overflow causes NIL value";
-pattern $op(b1:bat[:$tp1],b2:bat[:$tp2],r:bat[:bit]) :bat[:$tp3]
-address CMDbat${name}signal
-comment "Return B1 $op B2, signal error on overflow";
 pattern $op(b1:bat[:$tp1],b2:bat[:$tp2],s1:bat[:oid],s2:bat[:oid],r:bat[:bit]) :bat[:$tp3]
 address CMDbat${name}signal
 comment "Return B1 $op B2 with candidates list, signal error on overflow";
-pattern ${name,,}_noerror(b1:bat[:$tp1],b2:bat[:$tp2],r:bat[:bit]) :bat[:$tp3]
-address CMDbat${name}
-comment "Return B1 $op B2, overflow causes NIL value";
 pattern ${name,,}_noerror(b1:bat[:$tp1],b2:bat[:$tp2],s1:bat[:oid],s2:bat[:oid],r:bat[:bit]) :bat[:$tp3]
 address CMDbat${name}
 comment "Return B1 $op B2 with candidates list, overflow causes NIL value";
-pattern $op(b:bat[:$tp1],v:$tp2,r:bat[:bit]) :bat[:$tp3]
-address CMDbat${name}signal
-comment "Return B $op V, signal error on overflow";
 pattern $op(b:bat[:$tp1],v:$tp2,s:bat[:oid],r:bat[:bit]) :bat[:$tp3]
 address CMDbat${name}signal
 comment "Return B $op V with candidates list, signal error on overflow";
-pattern ${name,,}_noerror(b:bat[:$tp1],v:$tp2,r:bat[:bit]) :bat[:$tp3]
-address CMDbat${name}
-comment "Return B $op V, overflow causes NIL value";
 pattern ${name,,}_noerror(b:bat[:$tp1],v:$tp2,s:bat[:oid],r:bat[:bit]) :bat[:$tp3]
 address CMDbat${name}
 comment "Return B $op V with candidates list, overflow causes NIL value";
-pattern $op(v:$tp1,b:bat[:$tp2],r:bat[:bit]) :bat[:$tp3]
-address CMDbat${name}signal
-comment "Return V $op B, signal error on overflow";
 pattern $op(v:$tp1,b:bat[:$tp2],s:bat[:oid],r:bat[:bit]) :bat[:$tp3]
 address CMDbat${name}signal
 comment "Return V $op B with candidates list, signal error on overflow";
-pattern ${name,,}_noerror(v:$tp1,b:bat[:$tp2],r:bat[:bit]) :bat[:$tp3]
-address CMDbat${name}
-comment "Return V $op B, overflow causes NIL value";
 pattern ${name,,}_noerror(v:$tp1,b:bat[:$tp2],s:bat[:oid],r:bat[:bit]) :bat[:$tp3]
 address CMDbat${name}
 comment "Return V $op B with candidates list, overflow causes NIL value";
@@ -249,21 +231,12 @@ comment "Return B $op V with candidates list, guarantee no overflow by returning
 pattern $op(v:$tp1,b:bat[:$tp2],s:bat[:oid]) :bat[:$tp3]
 address CMDbat${name}enlarge
 comment "Return V $op B with candidates list, guarantee no overflow by returning larger type";
-pattern $op(b1:bat[:$tp1],b2:bat[:$tp2],r:bat[:bit]) :bat[:$tp3]
-address CMDbat${name}enlarge
-comment "Return B1 $op B2, guarantee no overflow by returning larger type";
 pattern $op(b1:bat[:$tp1],b2:bat[:$tp2],s1:bat[:oid],s2:bat[:oid],r:bat[:bit]) :bat[:$tp3]
 address CMDbat${name}enlarge
 comment "Return B1 $op B2 with candidates list, guarantee no overflow by returning larger type";
-pattern $op(b:bat[:$tp1],v:$tp2,r:bat[:bit]) :bat[:$tp3]
-address CMDbat${name}enlarge
-comment "Return B $op V, guarantee no overflow by returning larger type";
 pattern $op(b:bat[:$tp1],v:$tp2,s:bat[:oid],r:bat[:bit]) :bat[:$tp3]
 address CMDbat${name}enlarge
 comment "Return B $op V with candidates list, guarantee no overflow by returning larger type";
-pattern $op(v:$tp1,b:bat[:$tp2],r:bat[:bit]) :bat[:$tp3]
-address CMDbat${name}enlarge
-comment "Return V $op B, guarantee no overflow by returning larger type";
 pattern $op(v:$tp1,b:bat[:$tp2],s:bat[:oid],r:bat[:bit]) :bat[:$tp3]
 address CMDbat${name}enlarge
 comment "Return V $op B with candidates list, guarantee no overflow by returning larger type";
@@ -285,21 +258,12 @@ comment "Return concatenation of B and V with candidates list";
 pattern +(v:str,b:bat[:str],s:bat[:oid]) :bat[:str]
 address CMDbatADD
 comment "Return concatenation of V and B with candidates list";
-pattern +(b1:bat[:str],b2:bat[:str],r:bat[:bit]) :bat[:str]
-address CMDbatADD
-comment "Return concatenation of B1 and B2";
 pattern +(b1:bat[:str],b2:bat[:str],s1:bat[:oid],s2:bat[:oid],r:bat[:bit]) :bat[:str]
 address CMDbatADD
 comment "Return concatenation of B1 and B2 with candidates list";
-pattern +(b:bat[:str],v:str,r:bat[:bit]) :bat[:str]
-address CMDbatADD
-comment "Return concatenation of B and V";
 pattern +(b:bat[:str],v:str,s:bat[:oid],r:bat[:bit]) :bat[:str]
 address CMDbatADD
 comment "Return concatenation of B and V with candidates list";
-pattern +(v:str,b:bat[:str],r:bat[:bit]) :bat[:str]
-address CMDbatADD
-comment "Return concatenation of V and B";
 pattern +(v:str,b:bat[:str],s:bat[:oid],r:bat[:bit]) :bat[:str]
 address CMDbatADD
 comment "Return concatenation of V and B with candidates list";
@@ -331,39 +295,21 @@ comment "Return V / B with candidates list, signal error on overflow";
 pattern div_noerror(v:$tp1,b:bat[:$tp2],s:bat[:oid]) :bat[:$tp3]
 address CMDbatDIV
 comment "Return V / B with candidates list, overflow causes NIL value";
-pattern /(b1:bat[:$tp1],b2:bat[:$tp2],r:bat[:bit]) :bat[:$tp3]
-address CMDbatDIVsignal
-comment "Return B1 / B2, signal error on overflow";
 pattern /(b1:bat[:$tp1],b2:bat[:$tp2],s1:bat[:oid],s2:bat[:oid],r:bat[:bit]) :bat[:$tp3]
 address CMDbatDIVsignal
 comment "Return B1 / B2 with candidates list, signal error on overflow";
-pattern div_noerror(b1:bat[:$tp1],b2:bat[:$tp2],r:bat[:bit]) :bat[:$tp3]
-address CMDbatDIV
-comment "Return B1 / B2, overflow causes NIL value";
 pattern div_noerror(b1:bat[:$tp1],b2:bat[:$tp2],s1:bat[:oid],s2:bat[:oid],r:bat[:bit]) :bat[:$tp3]
 address CMDbatDIV
 comment "Return B1 / B2 with candidates list, overflow causes NIL value";
-pattern /(b:bat[:$tp1],v:$tp2,r:bat[:bit]) :bat[:$tp3]
-address CMDbatDIVsignal
-comment "Return B / V, signal error on overflow";
 pattern /(b:bat[:$tp1],v:$tp2,s:bat[:oid],r:bat[:bit]) :bat[:$tp3]
 address CMDbatDIVsignal
 comment "Return B / V with candidates list, signal error on overflow";
-pattern div_noerror(b:bat[:$tp1],v:$tp2,r:bat[:bit]) :bat[:$tp3]
-address CMDbatDIV
-comment "Return B / V, overflow causes NIL value";
 pattern div_noerror(b:bat[:$tp1],v:$tp2,s:bat[:oid],r:bat[:bit]) :bat[:$tp3]
 address CMDbatDIV
 comment "Return B / V with candidates list, overflow causes NIL value";
-pattern /(v:$tp1,b:bat[:$tp2],r:bat[:bit]) :bat[:$tp3]
-address CMDbatDIVsignal
-comment "Return V / B, signal error on overflow";
 pattern /(v:$tp1,b:bat[:$tp2],s:bat[:oid],r:bat[:bit]) :bat[:$tp3]
 address CMDbatDIVsignal
 comment "Return V / B with candidates list, signal error on overflow";
-pattern div_noerror(v:$tp1,b:bat[:$tp2],r:bat[:bit]) :bat[:$tp3]
-address CMDbatDIV
-comment "Return V / B, overflow causes NIL value";
 pattern div_noerror(v:$tp1,b:bat[:$tp2],s:bat[:oid],r:bat[:bit]) :bat[:$tp3]
 address CMDbatDIV
 comment "Return V / B with candidates list, overflow causes NIL value";
@@ -423,39 +369,21 @@ comment "Return V % B with candidates list, signal error on divide by zero";
 pattern mod_noerror(v:$tp1,b:bat[:$tp2],s:bat[:oid]) :bat[:$tp3]
 address CMDbatMOD
 comment "Return V % B with candidates list, divide by zero causes NIL value";
-pattern %(b1:bat[:$tp1],b2:bat[:$tp2],r:bat[:bit]) :bat[:$tp3]
-address CMDbatMODsignal
-comment "Return B1 % B2, signal error on divide by zero";
 pattern %(b1:bat[:$tp1],b2:bat[:$tp2],s1:bat[:oid],s2:bat[:oid],r:bat[:bit]) :bat[:$tp3]
 address CMDbatMODsignal
 comment "Return B1 % B2 with candidates list, signal error on divide by zero";
-pattern mod_noerror(b1:bat[:$tp1],b2:bat[:$tp2],r:bat[:bit]) :bat[:$tp3]
-address CMDbatMOD
-comment "Return B1 % B2, divide by zero causes NIL value";
 pattern mod_noerror(b1:bat[:$tp1],b2:bat[:$tp2],s1:bat[:oid],s2:bat[:oid],r:bat[:bit]) :bat[:$tp3]
 address CMDbatMOD
 comment "Return B1 % B2 with candidates list, divide by zero causes NIL value";
-pattern %(b:bat[:$tp1],v:$tp2,r:bat[:bit]) :bat[:$tp3]
-address CMDbatMODsignal
-comment "Return B % V, signal error on divide by zero";
 pattern %(b:bat[:$tp1],v:$tp2,s:bat[:oid],r:bat[:bit]) :bat[:$tp3]
 address CMDbatMODsignal
 comment "Return B % V with candidates list, signal error on divide by zero";
-pattern mod_noerror(b:bat[:$tp1],v:$tp2,r:bat[:bit]) :bat[:$tp3]
-address CMDbatMOD
-comment "Return B % V, divide by zero causes NIL value";
 pattern mod_noerror(b:bat[:$tp1],v:$tp2,s:bat[:oid],r:bat[:bit]) :bat[:$tp3]
 address CMDbatMOD
 comment "Return B % V with candidates list, divide by zero causes NIL value";
-pattern %(v:$tp1,b:bat[:$tp2],r:bat[:bit]) :bat[:$tp3]
-address CMDbatMODsignal
-comment "Return V % B, signal error on divide by zero";
 pattern %(v:$tp1,b:bat[:$tp2],s:bat[:oid],r:bat[:bit]) :bat[:$tp3]
 address CMDbatMODsignal
 comment "Return V % B with candidates list, signal error on divide by zero";
-pattern mod_noerror(v:$tp1,b:bat[:$tp2],r:bat[:bit]) :bat[:$tp3]
-address CMDbatMOD
-comment "Return V % B, divide by zero causes NIL value";
 pattern mod_noerror(v:$tp1,b:bat[:$tp2],s:bat[:oid],r:bat[:bit]) :bat[:$tp3]
 address CMDbatMOD
 comment "Return V % B with candidates list, divide by zero causes NIL value";
