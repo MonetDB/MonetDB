@@ -51,7 +51,7 @@ SELECT DISTINCT 99 col2 FROM tab1 WHERE NOT - ( 43 ) + + 98 = + col2;
 SELECT * FROM tab2 AS cor0 WHERE NOT - 59 + + 47 <> + ( + col0 );
 	-- empty
 
-SELECT + col2 * col2 FROM tab2 AS cor0 WHERE NOT - CAST ( NULL AS INTEGER ) <> - - col1 AND NOT NULL NOT BETWEEN ( NULL ) AND - 91 - - + 27 * + col2;
+SELECT CAST(+ col2 * col2 AS BIGINT) FROM tab2 AS cor0 WHERE NOT - CAST ( NULL AS INTEGER ) <> - - col1 AND NOT NULL NOT BETWEEN ( NULL ) AND - 91 - - + 27 * + col2;
 	-- empty
 
 SELECT + 2 FROM tab0 AS cor0 WHERE NOT - 29 IS NULL OR NOT NULL IS NULL AND NOT NULL BETWEEN + col1 - + 60 AND + 37 * + col1 + + col0;
