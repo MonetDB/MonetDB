@@ -262,7 +262,7 @@ JSONdumpInternal(stream *fd, JSON *jt, int depth)
 			mnstr_printf(fd, "null ");
 			break;
 		default:
-			mnstr_printf(fd, "unknown %d ", je->kind);
+			mnstr_printf(fd, "unknown %d ", (int) je->kind);
 		}
 		mnstr_printf(fd, "child %d list ", je->child);
 		for (i = je->next; i; i = jt->elm[i].next)

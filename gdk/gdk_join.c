@@ -2570,7 +2570,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 			  r->thash ? " ignoring existing hash" : "",
 			  swapped ? " (swapped)" : "");
 		if (snprintf(ext, sizeof(ext), "thshjn%x",
-			     rci->s->batCacheid) >= (int) sizeof(ext))
+			     (unsigned) rci->s->batCacheid) >= (int) sizeof(ext))
 			goto bailout;
 		if ((hsh = BAThash_impl(r, rci, ext)) == NULL) {
 			goto bailout;

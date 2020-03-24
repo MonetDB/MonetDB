@@ -544,7 +544,7 @@ AS_VAR_IF([enable_strict], [yes], [
 		MCHECK_ADD_FLAG([-Wformat-overflow=1])
 		MCHECK_ADD_FLAG([-Wno-format-truncation])
 		MCHECK_ADD_FLAG([-Wno-format-nonliteral])
-dnl		MCHECK_ADD_FLAG([-Wformat-signedness]) -- numpy messes this up
+		MCHECK_ADD_FLAG([-Wformat-signedness])
 		AS_VAR_IF([target_os], [cygwin],
 			[MCHECK_ADD_FLAG([-Wno-error=suggest-attribute=format])],
 			[MCHECK_ADD_FLAG([-Wno-cast-function-type])])
