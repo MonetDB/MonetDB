@@ -1001,16 +1001,11 @@ create_partition_definition(mvc *sql, sql_table *t, symbol *partition_def)
 }
 
 sql_rel *
-rel_create_table(sql_query *query, sql_schema *ss, int temp, const char *sname, const char *name, symbol *table_elements_or_subquery,
+rel_create_table(sql_query *query, sql_schema *s, int temp, const char *sname, const char *name, symbol *table_elements_or_subquery,
 				 int commit_action, const char *loc, const char *username, const char *password, bool pw_encrypted,
 				 symbol* partition_def, int if_not_exists)
 {
 	mvc *sql = query->sql;
-	sql_schema *s = NULL;
-
-	int instantiate = (sql->emode == m_instantiate);
-	int deps = (sql->emode == m_deps);
-	int create = (!instantiate && !deps);
 	int tt = (temp == SQL_REMOTE)?tt_remote:
 		 (temp == SQL_STREAM)?tt_stream:
 		 (temp == SQL_MERGE_TABLE)?tt_merge_table:
@@ -1018,12 +1013,10 @@ rel_create_table(sql_query *query, sql_schema *ss, int temp, const char *sname, 
 	bit properties = partition_def ? (bit) partition_def->data.lval->h->next->next->data.i_val : 0;
 	const char *action = (temp == SQL_DECLARED_TABLE)?"DECLARE":"CREATE";
 
-	(void)create;
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_error(sql, 02, SQLSTATE(3F000) "%s TABLE: no such schema '%s'", action, sname);
 
-	if (temp != SQL_PERSIST && tt == tt_table &&
-			commit_action == CA_COMMIT)
+	if (temp != SQL_PERSIST && tt == tt_table && commit_action == CA_COMMIT)
 		commit_action = CA_DELETE;
 
 	if (temp != SQL_DECLARED_TABLE) {
@@ -1034,13 +1027,8 @@ rel_create_table(sql_query *query, sql_schema *ss, int temp, const char *sname, 
 									 action, (temp == SQL_LOCAL_TEMP) ? "local" : "global");
 				s = mvc_bind_schema(sql, "tmp");
 			}
-		} else if (s == NULL) {
-			s = ss;
 		}
 	}
-
-	if (s)
-		sname = s->base.name;
 
 	if (mvc_bind_table(sql, s, name)) {
 		char *cd = (temp == SQL_DECLARED_TABLE)?"DECLARE":"CREATE";
@@ -1057,7 +1045,7 @@ rel_create_table(sql_query *query, sql_schema *ss, int temp, const char *sname, 
 
 		if (tt == tt_remote) {
 			char *local_user = stack_get_string(sql, mvc_bind_schema(sql, "sys"), "current_user");
-			char *local_table = sa_strconcat(sql->sa, sa_strconcat(sql->sa, sname, "."), name);
+			char *local_table = sa_strconcat(sql->sa, sa_strconcat(sql->sa, s->base.name, "."), name);
 			if (!local_table) {
 				return sql_error(sql, 02, SQLSTATE(HY013) "%s TABLE: " MAL_MALLOC_FAIL, action);
 			}
@@ -1091,7 +1079,7 @@ rel_create_table(sql_query *query, sql_schema *ss, int temp, const char *sname, 
 			return NULL;
 
 		temp = (tt == tt_table)?temp:SQL_PERSIST;
-		return rel_table(sql, ddl_create_table, sname, t, temp);
+		return rel_table(sql, ddl_create_table, s->base.name, t, temp);
 	} else { /* [col name list] as subquery with or without data */
 		sql_rel *sq = NULL, *res = NULL;
 		dlist *as_sq = table_elements_or_subquery->data.lval;
@@ -1117,7 +1105,7 @@ rel_create_table(sql_query *query, sql_schema *ss, int temp, const char *sname, 
 
 		/* insert query result into this table */
 		temp = (tt == tt_table)?temp:SQL_PERSIST;
-		res = rel_table(sql, ddl_create_table, sname, t, temp);
+		res = rel_table(sql, ddl_create_table, s->base.name, t, temp);
 		if (with_data) {
 			res = rel_insert(query->sql, res, sq);
 		} else {
