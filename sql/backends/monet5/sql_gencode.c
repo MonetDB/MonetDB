@@ -652,9 +652,10 @@ backend_dumpstmt(backend *be, MalBlkPtr mb, sql_rel *r, int top, int add_end, co
 	MalBlkPtr old_mb = be->mb;
 	stmt *s;
 
-	// Always keep the SQL query around for monitoring
-
+	/* Always keep the SQL query around for monitoring */
 	if (query) {
+		char *escaped_q;
+
 		while (*query && isspace((unsigned char) *query))
 			query++;
 
@@ -665,25 +666,21 @@ backend_dumpstmt(backend *be, MalBlkPtr mb, sql_rel *r, int top, int add_end, co
 		}
 		setVarType(mb, getArg(q, 0), TYPE_void);
 		setVarUDFtype(mb, getArg(q, 0));
-		q = pushStr(mb, q, query);
+		if (!(escaped_q = sql_escape_str((char*) query))) {
+			sql_error(m, 001, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			return -1;
+		}
+		q = pushStr(mb, q, escaped_q);
+		GDKfree(escaped_q);
+		if (q == NULL) {
+			sql_error(m, 001, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			return -1;
+		}
 		q = pushStr(mb, q, getSQLoptimizer(be->mvc));
 		if (q == NULL) {
 			sql_error(m, 001, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			return -1;
 		}
-
-/* Crashes
-		q = newStmt(mb, querylogRef, contextRef);
-		if (q == NULL) {
-			return -1;
-		}
-		setVarType(mb, getArg(q, 0), TYPE_void);
-		setVarUDFtype(mb, getArg(q, 0));
-		q = pushStr(mb, q, GDKgetenv("monet_release"));
-		q = pushStr(mb, q, GDKgetenv("monet_version"));
-		q = pushStr(mb, q, GDKgetenv("revision"));
-		q = pushStr(mb, q, GDKgetenv("merovingian_uri"));
-*/
 	}
 
 	/* announce the transaction mode */
@@ -783,7 +780,7 @@ backend_dumpproc(backend *be, Client c, cq *cq, sql_rel *r)
 	Symbol curPrg = 0, backup = NULL;
 	InstrPtr curInstr = 0;
 	int argc = 0, res;
-	char arg[IDLENGTH], *escaped_q = NULL;
+	char arg[IDLENGTH];
 	node *n;
 
 	backup = c->curprg;
@@ -858,15 +855,7 @@ backend_dumpproc(backend *be, Client c, cq *cq, sql_rel *r)
 		}
 	}
 
-	if (be->q) {
-		if (!(escaped_q = sql_escape_str(be->q->codestring))) {
-			sql_error(m, 001, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto cleanup;
-		}
-	}
-	res = backend_dumpstmt(be, mb, r, 1, 1, escaped_q);
-	GDKfree(escaped_q);
-	if (res < 0)
+	if ((res = backend_dumpstmt(be, mb, r, 1, 1, be->q ? be->q->codestring : NULL)) < 0)
 		goto cleanup;
 
 	if (cq) {
