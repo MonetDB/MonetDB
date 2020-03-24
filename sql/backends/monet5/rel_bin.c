@@ -1058,6 +1058,15 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 					    stmt_uselect(be, l, r2, range2rcompare(e->flag), sel, is_anti(e), 0), is_anti(e), 0);
 #endif
 				} else {
+					if (sel && ((l->cand && l->nrcols) || (r->cand && r->nrcols) || (r2->cand && r->nrcols))) {
+						if (!l->cand && l->nrcols)
+							l = stmt_project(be, sel, l);
+						if (!r->cand && r->nrcols)
+							r = stmt_project(be, sel, r);
+						if (!r2->cand && r2->nrcols)
+							r2 = stmt_project(be, sel, r2);
+						sel = NULL;
+					}
 					s = stmt_uselect2(be, l, r, r2, (comp_type)e->flag, sel, is_anti(e));
 				}
 			} else {

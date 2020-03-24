@@ -2366,8 +2366,8 @@ BATassertProps(BAT *b)
 				TRC_ERROR(BAT_, "Cannot allocate hash table\n");
 				goto abort_check;
 			}
-			if (snprintf(hs->heaplink.filename, sizeof(hs->heaplink.filename), "%s.thshprpl%x", nme, THRgettid()) >= (int) sizeof(hs->heaplink.filename) ||
-			    snprintf(hs->heapbckt.filename, sizeof(hs->heapbckt.filename), "%s.thshprpb%x", nme, THRgettid()) >= (int) sizeof(hs->heapbckt.filename)) {
+			if (snprintf(hs->heaplink.filename, sizeof(hs->heaplink.filename), "%s.thshprpl%x", nme, (unsigned) THRgettid()) >= (int) sizeof(hs->heaplink.filename) ||
+			    snprintf(hs->heapbckt.filename, sizeof(hs->heapbckt.filename), "%s.thshprpb%x", nme, (unsigned) THRgettid()) >= (int) sizeof(hs->heapbckt.filename)) {
 				GDKfree(hs);
 				TRC_ERROR(BAT_, "Heap filename is too large\n");
 				goto abort_check;

@@ -1,0 +1,25 @@
+stderr of test 'subquery5` in directory 'sql/test/subquery` itself:
+
+
+# 08:41:39 >  
+# 08:41:39 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-11456" "--port=33245"
+# 08:41:39 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-11456/.s.monetdb.33245
+QUERY = SELECT
+            (SELECT MIN(col1) GROUP BY col2)
+        FROM another_T; --error, subquery uses ungrouped column "another_T.col2" from outer query
+ERROR = !SELECT: subquery uses ungrouped column "another_t.col2" from outer query
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-11456/.s.monetdb.33245
+QUERY = SELECT
+            (SELECT MIN(col1) WHERE SUM(SUM(col2)) > 1),
+            CAST(SUM((SELECT col1 FROM tbl_ProductSales GROUP BY col2)) AS BIGINT)
+        FROM another_T GROUP BY col2; --error, aggregate function calls cannot be nested
+ERROR = !SELECT: aggregate function calls cannot be nested
+CODE  = 42000
+
+# 08:41:39 >  
+# 08:41:39 >  "Done."
+# 08:41:39 >  
+

@@ -1411,10 +1411,9 @@ rel_unnest_dependent(mvc *sql, sql_rel *rel)
 static sql_rel *
 _rel_unnest(mvc *sql, sql_rel *rel, int *changes)
 {
-	if (is_dependent(rel)) {
+	(void) changes;
+	if (is_dependent(rel))
 		rel = rel_unnest_dependent(sql, rel);
-		(*changes)++;
-	}
 	return rel;
 }
 
@@ -1422,8 +1421,7 @@ static sql_rel *
 rel_reset_subquery(mvc *sql, sql_rel *rel, int *changes)
 {
 	(void) sql;
-	if (rel->subquery)
-		(*changes)++;
+	(void) changes;
 	rel->subquery = 0;
 	return rel;
 }

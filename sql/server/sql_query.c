@@ -17,6 +17,9 @@ sq_create( sql_allocator *sa, sql_rel *rel, int sql_state)
 	assert(rel);
 	q->rel = rel;
 	q->sql_state = sql_state;
+	q->last_used = NULL;
+	q->used_card = 0;
+	q->groupby = 0;
 	return q;
 }
 
@@ -69,10 +72,42 @@ query_update_outer(sql_query *q, sql_rel *r, int i)
 {
 	stacked_query *sq = sql_stack_fetch(q->outer, i);
 	sq->rel = r;
+	sq->last_used = NULL;
+	sq->used_card = 0;
 }
 
 int 
 query_has_outer(sql_query *q)
 {
 	return sql_stack_top(q->outer);
+}
+
+int
+query_outer_used_exp(sql_query *q, int i, sql_exp *e, bool aggr)
+{
+	stacked_query *sq = sql_stack_fetch(q->outer, i);
+
+	if (aggr && sq->groupby)
+		return -1;
+	sq->last_used = e;
+	sq->used_card = sq->rel->card;
+	if (!aggr)
+		sq->groupby = 1;
+	return 0;
+}
+
+int
+query_outer_used_card(sql_query *q, int i)
+{
+	stacked_query *sq = sql_stack_fetch(q->outer, i);
+
+	return sq->used_card;
+}
+
+sql_exp *
+query_outer_last_used(sql_query *q, int i)
+{
+	stacked_query *sq = sql_stack_fetch(q->outer, i);
+
+	return sq->last_used;
 }
