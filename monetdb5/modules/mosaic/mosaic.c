@@ -12,6 +12,7 @@
  * The permissible compression MOSmethods can be controlled thru an argument list
 */
 
+
 #include "monetdb_config.h"
 #include "mosaic.h"
 #include "mosaic_hdr.h"
@@ -300,11 +301,27 @@ MOSlayout_hdr(MOStask* task, MosaicLayout* layout) {
 	return MAL_SUCCEED;
 }
 
+// The remainders is cloned from the generator code base
+// overload the algebra functions to check for compressed heaps.
+static int // TODO make boolean
+isCompressed(bat bid)
+{
+	BAT *b;
+	int r=0;
+	if( bid == 0)
+		return 0;
+	b = BATdescriptor(bid);
+
+	r = BATcheckmosaic(b);
+	BBPunfix(bid);
+	return r;
+}
+
 str
 MOSlayout(BAT *b, BAT *bbsn, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput, BAT *bproperties) {
 	str msg = MAL_SUCCEED;
 
-	if( b->tmosaic == NULL)
+	if( !isCompressed(b->batCacheid))
 		throw(MAL,"mosaic.layout","Compression heap missing");
 
 	MOStask task = {0};
@@ -692,22 +709,6 @@ MOSdecompress(bat* ret, const bat* bid)
 	BBPkeepref(*ret);
 
 	return result;
-}
-
-// The remainders is cloned from the generator code base
-// overload the algebra functions to check for compressed heaps.
-static int // TODO make boolean
-isCompressed(bat bid)
-{
-	BAT *b;
-	int r=0;
-	if( bid == 0)
-		return 0;
-	b = BATdescriptor(bid);
-
-	r = BATcheckmosaic(b);
-	BBPunfix(bid);
-	return r;
 }
 
 /* The algebra operators should fall back to their default
