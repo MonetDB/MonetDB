@@ -715,7 +715,7 @@ stdout of test 'date` in directory 'sql/test/pg_regress` itself:
 #SELECT f1, sql_sub(f1, cast('2001-12-12' as date)) FROM DATE_TBL;
 % sys.date_tbl,	sys. # table_name
 % f1,	%2 # name
-% date,	sec_interval # type
+% date,	day_interval # type
 % 10,	15 # length
 [ 1957-04-09,	-1409875200.000	]
 [ 1957-06-13,	-1404259200.000	]
@@ -736,7 +736,7 @@ stdout of test 'date` in directory 'sql/test/pg_regress` itself:
 #SELECT f1, sql_sub(cast('2001-12-12' as date), f1) FROM DATE_TBL;
 % sys.date_tbl,	. # table_name
 % f1,	%2 # name
-% date,	sec_interval # type
+% date,	day_interval # type
 % 10,	15 # length
 [ 1957-04-09,	1409875200.000	]
 [ 1957-06-13,	1404259200.000	]
@@ -1099,7 +1099,7 @@ stdout of test 'date` in directory 'sql/test/pg_regress` itself:
 #SELECT f1 - date '2000-01-01' AS "Days From 2K" FROM DATE_TBL;
 % sys. # table_name
 % "Days From 2K" # name
-% sec_interval # type
+% day_interval # type
 % 15 # length
 [ -1348444800.000	]
 [ -1342828800.000	]
@@ -1120,37 +1120,37 @@ stdout of test 'date` in directory 'sql/test/pg_regress` itself:
 #SELECT sql_sub(current_date, 24*60*60.0) - current_date AS "One day";
 % . # table_name
 % "One day" # name
-% sec_interval # type
+% day_interval # type
 % 10 # length
 [ -86400.000	]
 #SELECT current_date - sql_add(current_date, 24*60*60.0) AS "One day";
 % . # table_name
 % "One day" # name
-% sec_interval # type
+% day_interval # type
 % 10 # length
 [ -86400.000	]
 #SELECT sql_sub(current_date, 24*60*60.0) - sql_add(current_date, 24*60*60.0) AS "Two days";
 % . # table_name
 % "Two days" # name
-% sec_interval # type
+% day_interval # type
 % 11 # length
 [ -172800.000	]
 #SELECT sql_add(current_date, 24*60*60.0) - current_date AS "One day";
 % . # table_name
 % "One day" # name
-% sec_interval # type
+% day_interval # type
 % 9 # length
 [ 86400.000	]
 #SELECT current_date - sql_sub(current_date, 24*60*60.0) AS "One day";
 % . # table_name
 % "One day" # name
-% sec_interval # type
+% day_interval # type
 % 9 # length
 [ 86400.000	]
 #SELECT sql_add(current_date, 24*60*60.0) - sql_sub(current_date, 24*60*60.0) AS "Two days";
 % . # table_name
 % "Two days" # name
-% sec_interval # type
+% day_interval # type
 % 10 # length
 [ 172800.000	]
 #SELECT EXTRACT(CENTURY FROM DATE '0101-12-31 BC'); -- -2

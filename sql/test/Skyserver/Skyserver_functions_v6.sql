@@ -2067,8 +2067,8 @@ BEGIN
 	    FROM Field WHERE fieldId=fiel;
 	SELECT cast(field as varchar(8)) into fieldd
 	    FROM Field WHERE fieldId=fiel;
-	SET run6   = substring('000000',1,6-length(runn)) + runn;
-	SET fieldd = substring('0000',1,4-length(fieldd)) + fieldd;
+	SET run6   = substring('000000',1,6-length(runn)) || runn;
+	SET fieldd = substring('0000',1,4-length(fieldd)) || fieldd;
 	RETURN 	 link || runn || '/' || rerunn || '/corr/' || camcoll || '/fpC-' || run6 || '-' || filter || camcoll || '-' || fieldd ||'.fit.gz';
 END;
 
@@ -2115,7 +2115,7 @@ begin
                 from PhotoObjAll
                 where objID = objIdd;
 
-        return WebServerURL +'tools/explore/obj.asp?id='+ cast(objIdd as varchar(32));
+        return WebServerURL || 'tools/explore/obj.asp?id=' || cast(objIdd as varchar(32));
 end;  
 
 CREATE FUNCTION fGetUrlFrameImg(frameId bigint, zoom int)
@@ -2126,9 +2126,9 @@ begin
         select cast(value as varchar(500)) into WebServerURL 
                 from SiteConstants
                 where name ='WebServerURL';
-        return WebServerURL + 'get/frameById.asp?id=' 
-                + cast(frameId as varchar(32))
-                + '&zoom=' + cast(zoom as varchar(6)) ;
+        return WebServerURL || 'get/frameById.asp?id=' 
+                || cast(frameId as varchar(32))
+                || '&zoom=' || cast(zoom as varchar(6)) ;
 end;
 
 CREATE FUNCTION fGetUrlFitsField(fieldIdd bigint)
@@ -2138,14 +2138,14 @@ BEGIN
 		run6 varchar(10), stripe varchar(8), camcol varchar(8), 
 		field varchar(8), startMu varchar(10), skyVersion varchar(8);
 	SET link = (select value from SiteConstants where name='DataServerURL');
-	SET link = link + 'imaging/';
+	SET link = link || 'imaging/';
 	SELECT cast(fSkyVersion(fieldIdd) as varchar(8)) into skyVersion;
 	IF (skyVersion = '0')
-		THEN SET link = link + 'inchunk_target/';
+		THEN SET link = link || 'inchunk_target/';
 	ELSE 	IF (skyVersion = '1')
-			THEN SET link = link + 'inchunk_best/';
+			THEN SET link = link || 'inchunk_best/';
 		ELSE
-			SET link = link + 'inchunk_runs/';
+			SET link = link || 'inchunk_runs/';
 		END IF;
 	END IF;
 	SELECT  cast(f.run as varchar(8)) into run
@@ -2171,11 +2171,11 @@ BEGIN
 		cast(f.field as varchar(8)) into field
 	    FROM Field f, Segment s
 	    WHERE f.fieldID=fieldIdd and s.segmentID = f.segmentID; 
-	SET run6   = substring('000000',1,6-length(run)) + run;
-	SET field = substring('0000',1,4-length(field)) + field;
-	RETURN 	 link + 'stripe' + stripe + '_mu' + startMu + '_' 
-		+ skyVersion + '/'+camcol+'/tsField-'+run6+'-'
-		+camcol+'-'+rerun+'-'+field+'.fit';
+	SET run6   = substring('000000',1,6-length(run)) || run;
+	SET field = substring('0000',1,4-length(field)) || field;
+	RETURN 	 link || 'stripe' || stripe || '_mu' || startMu || '_' 
+		|| skyVersion || '/' || camcol || '/tsField-' || run6 || '-'
+		|| camcol || '-' || rerun || '-' || field || '.fit';
 END;
 
 CREATE FUNCTION fGetNearbyObjAllXYZ (nx float, ny float, nz float, rr float)
@@ -2266,8 +2266,8 @@ begin
 	select cast(value as varchar(500)) into WebServerURL 
 	from SiteConstants
 		where name ='WebServerURL';
-	return WebServerURL + 'get/specById.asp?id=' 
-		+ cast(coalesce(specObjId,0) as varchar(32));
+	return WebServerURL || 'get/specById.asp?id=' 
+		|| cast(coalesce(specObjId,0) as varchar(32));
 end;
 
 CREATE FUNCTION fGetUrlFitsSpectrum(specObjIdd bigint)
@@ -2276,7 +2276,7 @@ BEGIN
         DECLARE link varchar(128), plate varchar(16), mjd varchar(16), fiber varchar(16), rerun int;
         SET link = (select value from SiteConstants where name='DataServerURL');        
 	SET rerun=(select p.spRerun from specobjall s, platex p where s.plateid=p.plateid and s.specobjid=specObjIdd);
-        SET link = link + 'spectro/1d_' + cast(rerun as varchar(4)) + '/';
+        SET link = link || 'spectro/1d_' || cast(rerun as varchar(4)) || '/';
         SELECT cast(p.mjd as varchar(8)) into mjd
             FROM PlateX p, specObjAll s 
             WHERE p.plateId=s.plateId AND s.specObjID=specObjIdd;
@@ -2286,9 +2286,9 @@ BEGIN
 	SELECT cast(s.fiberID as varchar(8)) into fiber  
             FROM PlateX p, specObjAll s 
             WHERE p.plateId=s.plateId AND s.specObjID=specObjIdd;
-        SET plate = substring('0000',1,4-length(plate)) + plate;
-        SET fiber = substring( '000',1,3-length(fiber)) + fiber;
-        RETURN   link + plate + '/1d/spSpec-'+mjd+'-'+plate+'-'+fiber+'.fit';
+        SET plate = substring('0000',1,4-length(plate)) || plate;
+        SET fiber = substring( '000',1,3-length(fiber)) || fiber;
+        RETURN   link || plate || '/1d/spSpec-' || mjd || '-' || plate || '-' || fiber || '.fit';
 END;
 
 CREATE FUNCTION fGetNearestObjAllEq (ra float, "dec" float, r float)
@@ -2325,7 +2325,7 @@ begin
         select cast(value as varchar(500)) into WebServerURL 
                 from SiteConstants
                 where name ='WebServerURL';
-        return WebServerURL + 'tools/explore/obj.asp?ra='
-                + ltrim(cast (round(ra,6) as varchar(10))) + '&"dec"=' + ltrim(cast(round("dec",6)  as varchar(10)));
+        return WebServerURL || 'tools/explore/obj.asp?ra='
+                || ltrim(cast (round(ra,6) as varchar(10))) || '&"dec"=' || ltrim(cast(round("dec",6)  as varchar(10)));
 end;
 

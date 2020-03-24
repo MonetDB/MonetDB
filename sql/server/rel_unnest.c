@@ -9,6 +9,7 @@
 /*#define DEBUG*/
 
 #include "monetdb_config.h"
+#include "sql_decimal.h"
 #include "rel_unnest.h"
 #include "rel_optimizer.h"
 #include "rel_prop.h"
@@ -1528,6 +1529,69 @@ exp_reset_card(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 	return e;
 }
 
+/*
+ * For decimals and intervals we need to adjust the scale for some operations.  
+ *
+ * TODO move the decimal scale handling to this function.
+ */ 
+#define is_division(sf) (strcmp(sf->func->base.name, "sql_div") == 0)
+static sql_exp *
+exp_physical_types(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
+{
+	(void)sql;
+	(void)rel;
+	(void)depth;
+	if (!e || (e->type != e_func && e->type != e_convert) || !e->l)
+		return e;
+
+	if (e->type == e_convert) {
+		sql_subtype *ft = exp_fromtype(e);
+		sql_subtype *tt = exp_totype(e);
+
+		/* complex conversion matrix */
+		if (ft->type->eclass == EC_SEC && tt->type->eclass == EC_SEC && ft->type->digits > tt->type->digits) {
+			/* no conversion needed, just time adjustment */
+			e = e->l;
+			e->tpe = *tt; // ugh
+		}
+	} else { 
+		list *args = e->l;
+		sql_subfunc *f = e->f;
+
+		/* multiplication and division on decimals */
+
+		/* multiplication and division on intervals */
+		if (is_division(f) && list_length(args) == 2) {
+			sql_exp *le = args->h->data;
+			sql_subtype *lt = exp_subtype(le);
+
+			/* first arg INTERVAL */
+			if (lt->type->eclass == EC_SEC) { /* shift with scale */
+				sql_exp *re = args->h->next->data;
+				sql_subtype *rt = exp_subtype(re);
+
+				if (rt->type->eclass == EC_DEC) {
+					if (rt->scale) {
+						int scale = rt->scale;
+						sql_subfunc *c = sql_bind_func(sql->sa, sql->session->schema, "scale_up", lt, lt, F_FUNC);
+
+						if (!c) 
+							return NULL;
+#ifdef HAVE_HGE
+						hge val = scale2value(scale);
+#else
+						lng val = scale2value(scale);
+#endif
+						atom *a = atom_int(sql->sa, lt, val);
+						return exp_binop(sql->sa, e, exp_atom(sql->sa, a), c);
+					}
+				}
+			}
+		}
+	}
+	return e;
+}
+
 static list*
 aggrs_split_args(mvc *sql, list *aggrs, list *exps, int is_groupby_list) 
 {
@@ -2701,5 +2765,6 @@ rel_unnest(mvc *sql, sql_rel *rel)
 	rel = rel_visitor_bottomup(sql, rel, &rewrite_groupings, &changes);	/* transform group combinations into union of group relations */
 	rel = rel_visitor_bottomup(sql, rel, &rewrite_empty_project, &changes);
 	rel = rel_exp_visitor_bottomup(sql, rel, &exp_reset_card);
+	rel = rel_exp_visitor_bottomup(sql, rel, &exp_physical_types);
 	return rel;
 }

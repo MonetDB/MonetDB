@@ -85,3 +85,23 @@ decimal_to_str(lng v, sql_subtype *t)
 	return _STRDUP(buf+cur+1);
 }
 
+#ifdef HAVE_HGE
+extern hge
+#else
+extern lng
+#endif
+scale2value(int scale)
+{
+#ifdef HAVE_HGE
+	hge val = 1;
+#else
+	lng val = 1;
+#endif
+
+	if (scale < 0)
+		scale = -scale;
+	for (; scale; scale--) {
+		val = val * 10;
+	}
+	return val;
+}

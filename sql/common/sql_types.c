@@ -349,6 +349,10 @@ subtype_cmp(sql_subtype *t1, sql_subtype *t2)
 	if (!t1->type || !t2->type)
 		return -1;
 
+	if (t1->type->eclass == t2->type->eclass && t1->type->eclass == EC_SEC)
+		return 0;
+	if (t1->type->eclass == t2->type->eclass && t1->type->eclass == EC_MONTH)
+		return 0;
 	if ( !(t1->type->eclass == t2->type->eclass && 
 	      (EC_INTERVAL(t1->type->eclass) || t1->type->eclass == EC_NUM)) &&
 	      (t1->digits != t2->digits || 
@@ -1144,7 +1148,7 @@ sqltypeinit( sql_allocator *sa)
 #ifdef HAVE_HGE
 	sql_type *HGE = NULL;
 #endif
-	sql_type *SECINT, *MONINT, *DTE;
+	sql_type *SECINT, *DAYINT, *MONINT, *DTE;
 	sql_type *TME, *TMETZ, *TMESTAMP, *TMESTAMPTZ;
 	sql_type *BLOB;
 	sql_type *ANY, *TABLE, *PTR;
@@ -1213,7 +1217,8 @@ sqltypeinit( sql_allocator *sa)
 	DBL = *t++ = sql_create_type(sa, "DOUBLE", 53, SCALE_NOFIX, 2, EC_FLT, "dbl");
 
 	dates = t;
-	MONINT = *t++ = sql_create_type(sa, "MONTH_INTERVAL", 32, 0, 2, EC_MONTH, "int");
+	MONINT = *t++ = sql_create_type(sa, "MONTH_INTERVAL", 3, 0, 10, EC_MONTH, "int"); /* 1 .. 13 enumerates the 13 different interval types */
+	DAYINT = *t++ = sql_create_type(sa, "DAY_INTERVAL", 4, 0, 10, EC_SEC, "lng");
 	SECINT = *t++ = sql_create_type(sa, "SEC_INTERVAL", 13, SCALE_FIX, 10, EC_SEC, "lng");
 	TME = *t++ = sql_create_type(sa, "TIME", 7, 0, 0, EC_TIME, "daytime");
 	TMETZ = *t++ = sql_create_type(sa, "TIMETZ", 7, SCALE_FIX, 0, EC_TIME_TZ, "daytime");
@@ -1383,6 +1388,7 @@ sqltypeinit( sql_allocator *sa)
 		sql_create_aggr(sa, "prod", "aggr", "prod", *t, 1, *t);
 	}
 	sql_create_aggr(sa, "sum", "aggr", "sum", MONINT, 1, MONINT);
+	sql_create_aggr(sa, "sum", "aggr", "sum", DAYINT, 1, DAYINT);
 	sql_create_aggr(sa, "sum", "aggr", "sum", SECINT, 1, SECINT);
 	/* do DBL first so that it is chosen as cast destination for
 	 * unknown types */
@@ -1580,6 +1586,7 @@ sqltypeinit( sql_allocator *sa)
 		sql_create_analytic(sa, "prod", "sql", "prod", SCALE_NONE, *t, 1, *t);
 	}
 	sql_create_analytic(sa, "sum", "sql", "sum", SCALE_NONE, MONINT, 1, MONINT);
+	sql_create_analytic(sa, "sum", "sql", "sum", SCALE_NONE, DAYINT, 1, DAYINT);
 	sql_create_analytic(sa, "sum", "sql", "sum", SCALE_NONE, SECINT, 1, SECINT);
 
 	//analytical average for numerical types
@@ -1622,6 +1629,11 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_func(sa, "xor", "calc", "xor", FALSE, SCALE_FIX, 0, BIT, 2, BIT, BIT);
 	sql_create_func(sa, "not", "calc", "not", FALSE, SCALE_FIX, 0, BIT, 1, BIT);
 
+	for (t = dates; *t != TME; t++) {
+		sql_create_func(sa, "sql_sub", "calc", "-", FALSE, SCALE_FIX, 0, *t, 2, *t, *t);
+		sql_create_func(sa, "sql_add", "calc", "+", FALSE, SCALE_FIX, 0, *t, 2, *t, *t);
+	}
+
 	/* allow smaller types for arguments of mul/div */
 	for (t = numerical, t++; t != decimals; t++) {
 		sql_type **u;
@@ -1645,7 +1657,7 @@ sqltypeinit( sql_allocator *sa)
 	}
 
 	/* all numericals */
-	for (t = numerical; *t != TME; t++) {
+	for (t = numerical; t < dates; t++) {
 		sql_subtype *lt;
 
 		lt = sql_bind_localtype((*t)->base.name);
@@ -1668,17 +1680,14 @@ sqltypeinit( sql_allocator *sa)
 		/* scale fixing for all numbers */
 		sql_create_func(sa, "scale_up", "calc", "*", FALSE, SCALE_NONE, 0, *t, 2, *t, lt->type);
 		sql_create_func(sa, "scale_down", "sql", "dec_round", FALSE, SCALE_NONE, 0, *t, 2, *t, lt->type);
-		/* numeric function on INTERVALS */
-		if (*t != MONINT && *t != SECINT){
-			sql_create_func(sa, "sql_sub", "calc", "-", FALSE, SCALE_FIX, 0, MONINT, 2, MONINT, *t);
-			sql_create_func(sa, "sql_add", "calc", "+", FALSE, SCALE_FIX, 0, MONINT, 2, MONINT, *t);
-			sql_create_func(sa, "sql_mul", "calc", "*", FALSE, SCALE_MUL, 0, MONINT, 2, MONINT, *t);
-			sql_create_func(sa, "sql_div", "calc", "/", FALSE, SCALE_DIV, 0, MONINT, 2, MONINT, *t);
-			sql_create_func(sa, "sql_sub", "calc", "-", FALSE, SCALE_FIX, 0, SECINT, 2, SECINT, *t);
-			sql_create_func(sa, "sql_add", "calc", "+", FALSE, SCALE_FIX, 0, SECINT, 2, SECINT, *t);
-			sql_create_func(sa, "sql_mul", "calc", "*", FALSE, SCALE_MUL, 0, SECINT, 2, SECINT, *t);
-			sql_create_func(sa, "sql_div", "calc", "/", FALSE, SCALE_DIV, 0, SECINT, 2, SECINT, *t);
-		}
+
+		/* only multiply / divide intervals using numerics */
+		sql_create_func(sa, "sql_mul", "calc", "*", FALSE, SCALE_MUL, 0, MONINT, 2, MONINT, *t);
+		sql_create_func(sa, "sql_div", "calc", "/", FALSE, SCALE_DIV, 0, MONINT, 2, MONINT, *t);
+		sql_create_func(sa, "sql_mul", "calc", "*", FALSE, SCALE_MUL, 0, DAYINT, 2, DAYINT, *t);
+		sql_create_func(sa, "sql_div", "calc", "/", FALSE, SCALE_DIV, 0, DAYINT, 2, DAYINT, *t);
+		sql_create_func(sa, "sql_mul", "calc", "*", FALSE, SCALE_MUL, 0, SECINT, 2, SECINT, *t);
+		sql_create_func(sa, "sql_div", "calc", "/", FALSE, SCALE_DIV, 0, SECINT, 2, SECINT, *t);
 	}
 	for (t = decimals, t++; t != floats; t++) {
 		sql_type **u;
@@ -1741,13 +1750,13 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_func(sa, "localtime", "sql", "current_time", FALSE, SCALE_NONE, 0, TME, 0);
 	sql_create_func(sa, "localtimestamp", "sql", "current_timestamp", FALSE, SCALE_NONE, 0, TMESTAMP, 0);
 
-	sql_create_func(sa, "sql_sub", "mtime", "diff", FALSE, SCALE_FIX, 0, SECINT, 2, DTE, DTE);
+	sql_create_func(sa, "sql_sub", "mtime", "diff", FALSE, SCALE_FIX, 0, DAYINT, 2, DTE, DTE);
 	sql_create_func(sa, "sql_sub", "mtime", "diff", FALSE, SCALE_NONE, 0, SECINT, 2, TMETZ, TMETZ);
 	sql_create_func(sa, "sql_sub", "mtime", "diff", FALSE, SCALE_FIX, 0, SECINT, 2, TME, TME);
 	sql_create_func(sa, "sql_sub", "mtime", "diff", FALSE, SCALE_NONE, 0, SECINT, 2, TMESTAMPTZ, TMESTAMPTZ);
 	sql_create_func(sa, "sql_sub", "mtime", "diff", FALSE, SCALE_FIX, 0, SECINT, 2, TMESTAMP, TMESTAMP);
 
-	sql_create_func(sa, "sql_sub", "mtime", "date_sub_msec_interval", FALSE, SCALE_NONE, 0, DTE, 2, DTE, SECINT);
+	sql_create_func(sa, "sql_sub", "mtime", "date_sub_msec_interval", FALSE, SCALE_NONE, 0, DTE, 2, DTE, DAYINT);
 	sql_create_func(sa, "sql_sub", "mtime", "date_sub_month_interval", FALSE, SCALE_NONE, 0, DTE, 2, DTE, MONINT);
 	sql_create_func(sa, "sql_sub", "mtime", "time_sub_msec_interval", FALSE, SCALE_NONE, 0, TME, 2, TME, SECINT);
 	sql_create_func(sa, "sql_sub", "mtime", "time_sub_msec_interval", FALSE, SCALE_NONE, 0, TMETZ, 2, TMETZ, SECINT);
@@ -1756,7 +1765,7 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_func(sa, "sql_sub", "mtime", "timestamp_sub_msec_interval", FALSE, SCALE_NONE, 0, TMESTAMPTZ, 2, TMESTAMPTZ, SECINT);
 	sql_create_func(sa, "sql_sub", "mtime", "timestamp_sub_month_interval", FALSE, SCALE_NONE, 0, TMESTAMPTZ, 2, TMESTAMPTZ, MONINT);
 
-	sql_create_func(sa, "sql_add", "mtime", "date_add_msec_interval", FALSE, SCALE_NONE, 0, DTE, 2, DTE, SECINT);
+	sql_create_func(sa, "sql_add", "mtime", "date_add_msec_interval", FALSE, SCALE_NONE, 0, DTE, 2, DTE, DAYINT);
 	sql_create_func(sa, "sql_add", "mtime", "addmonths", FALSE, SCALE_NONE, 0, DTE, 2, DTE, MONINT);
 	sql_create_func(sa, "sql_add", "mtime", "timestamp_add_msec_interval", FALSE, SCALE_NONE, 0, TMESTAMP, 2, TMESTAMP, SECINT);
 	sql_create_func(sa, "sql_add", "mtime", "timestamp_add_month_interval", FALSE, SCALE_NONE, 0, TMESTAMP, 2, TMESTAMP, MONINT);
@@ -1808,6 +1817,7 @@ sqltypeinit( sql_allocator *sa)
 
 	sql_create_func(sa, "year", "mtime", "year", FALSE, SCALE_NONE, 0, INT, 1, MONINT);
 	sql_create_func(sa, "month", "mtime", "month", FALSE, SCALE_NONE, 0, INT, 1, MONINT);
+	sql_create_func(sa, "day", "mtime", "day", FALSE, SCALE_NONE, 0, LNG, 1, DAYINT);
 	sql_create_func(sa, "day", "mtime", "day", FALSE, SCALE_NONE, 0, LNG, 1, SECINT);
 	sql_create_func(sa, "hour", "mtime", "hours", FALSE, SCALE_NONE, 0, INT, 1, SECINT);
 	sql_create_func(sa, "minute", "mtime", "minutes", FALSE, SCALE_NONE, 0, INT, 1, SECINT);
