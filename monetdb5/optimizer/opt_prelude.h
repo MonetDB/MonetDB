@@ -185,6 +185,7 @@ mal_export  str mirrorRef;
 mal_export  str mitosisRef;
 mal_export  str mkeyRef;
 mal_export  str mmathRef;
+mal_export  str modRef;
 mal_export  str mtimeRef;
 mal_export  str mulRef;
 mal_export  str multicolumnRef;

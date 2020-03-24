@@ -96,7 +96,7 @@ psm_set_exp(sql_query *query, dnode *n)
 
 		res = exp_set(sql->sa, name, e, level);
 	} else { /* multi assignment */
-		exp_kind ek = {type_value, card_relation, FALSE};
+		exp_kind ek = {type_relation, card_value, FALSE};
 		sql_rel *rel_val = rel_subquery(query, NULL, val, ek);
 		dlist *vars = n->data.lval;
 		dnode *m;
@@ -547,7 +547,7 @@ rel_select_into( sql_query *query, symbol *sq, exp_kind ek)
 extern sql_rel *
 rel_select_with_into(sql_query *query, symbol *sq)
 {
-	exp_kind ek = {type_value, card_row, TRUE};
+	exp_kind ek = {type_relation, card_value, TRUE};
 	list *reslist = rel_select_into(query, sq, ek);
 	if (!reslist)
 		return NULL;
@@ -1497,15 +1497,15 @@ rel_psm(sql_query *query, symbol *s)
 		break;
 	case SQL_CREATE_TABLE_LOADER:
 	{
-	    dlist *l = s->data.lval;
-	    dlist *qname = l->h->data.lval;
-	    symbol *sym = l->h->next->data.sym;
+		dlist *l = s->data.lval;
+		dlist *qname = l->h->data.lval;
+		symbol *sym = l->h->next->data.sym;
 
-	    ret = create_table_from_loader(query, qname, sym);
-	    if (ret == NULL)
-		    return NULL;
-	    ret = rel_psm_stmt(sql->sa, exp_rel(sql, ret));
-	    sql->type = Q_SCHEMA;
+		ret = create_table_from_loader(query, qname, sym);
+		if (ret == NULL)
+			return NULL;
+		ret = rel_psm_stmt(sql->sa, exp_rel(sql, ret));
+		sql->type = Q_SCHEMA;
 	}	break;
 	case SQL_CREATE_TRIGGER:
 	{
@@ -1514,9 +1514,7 @@ rel_psm(sql_query *query, symbol *s)
 		assert(l->h->next->type == type_int);
 		ret = create_trigger(query, l->h->data.lval, l->h->next->data.i_val, l->h->next->next->data.sym, l->h->next->next->next->data.lval, l->h->next->next->next->next->data.lval, l->h->next->next->next->next->next->data.lval, l->h->next->next->next->next->next->next->data.i_val);
 		sql->type = Q_SCHEMA;
-	}
-		break;
-
+	} break;
 	case SQL_DROP_TRIGGER:
 	{
 		dlist *l = s->data.lval;
@@ -1525,9 +1523,7 @@ rel_psm(sql_query *query, symbol *s)
 
 		ret = drop_trigger(sql, qname, if_exists);
 		sql->type = Q_SCHEMA;
-	}
-		break;
-
+	} break;
 	case SQL_ANALYZE: {
 		dlist *l = s->data.lval;
 

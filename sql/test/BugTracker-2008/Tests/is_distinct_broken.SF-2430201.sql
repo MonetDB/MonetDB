@@ -12,6 +12,8 @@ select distinct way from way_tags_2430201 group by way, k having count(*) > 1;
 
 drop table way_tags_2430201;
 
-select distinct (select 10 union all select 10);
+select distinct (select 10 union all select 10); --error. more than one row returned
+
+select distinct myval from (values (10),(10)) as myval(myval);
 
 select distinct a from (select 10 as a union all select 10 as a) as b;

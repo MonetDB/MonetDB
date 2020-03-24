@@ -1411,7 +1411,11 @@ get_schema_name( mvc *sql, char *sname, char *tname)
 		sql_schema *ss = cur_schema(sql);
 		sql_table *t = mvc_bind_table(sql, ss, tname);
 		if (!t)
+			t = mvc_bind_table(sql, mvc_bind_schema(sql, dt_schema), tname);
+		if (!t)
 			ss = tmp_schema(sql);
+		else
+			ss = t->s;
 		sname = ss->base.name;
 	}
 	return sname;
@@ -2656,7 +2660,7 @@ rel_schemas(sql_query *query, symbol *s)
 		dlist *qname = l->h->next->data.lval;
 		char *sname = qname_schema(qname);
 		char *name = qname_table(qname);
-		int temp = l->h->data.i_val;
+		int temp = (s->token == SQL_DECLARE_TABLE) ? SQL_DECLARED_TABLE : l->h->data.i_val;
 		dlist *credentials = l->h->next->next->next->next->next->data.lval;
 		char *username = credentials_username(credentials);
 		char *password = credentials_password(credentials);
