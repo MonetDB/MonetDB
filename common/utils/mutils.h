@@ -79,6 +79,7 @@ mutils_export void print_trace(void);
 mutils_export char *get_bin_path(void);
 
 /* Returns the Mercurial changeset of the current checkout, if available */
-mutils_export const char *mercurial_revision(void);
+mutils_export const char *mercurial_revision(void)
+	__attribute__((__const__));
 
 #endif	/* _MUTILS_H_ */

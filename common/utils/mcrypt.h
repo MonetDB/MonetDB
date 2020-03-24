@@ -19,7 +19,8 @@
 #define mcrypt_export extern
 #endif
 
-mcrypt_export const char *mcrypt_getHashAlgorithms(void);
+mcrypt_export const char *mcrypt_getHashAlgorithms(void)
+	__attribute__((__const__));
 mcrypt_export char *mcrypt_MD5Sum(const char *string, size_t len);
 mcrypt_export char *mcrypt_SHA1Sum(const char *string, size_t len);
 mcrypt_export char *mcrypt_SHA224Sum(const char *string, size_t len);
