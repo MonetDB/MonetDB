@@ -333,7 +333,6 @@ int yydebug=1;
 	value
 	value_exp
 	values_or_query_spec
-	var_ref
 	view_def
 	when_search
 	when_search_statement
@@ -4091,7 +4090,6 @@ value_exp:
  |  param
  |  string_funcs
  |  user            { $$ = _symbol_create_list(SQL_NAME, append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "current_user"))); }
- |  var_ref
  |  XML_value_function
  ;
 
@@ -4188,10 +4186,6 @@ window_frame_exclusion:
   |	EXCLUDE TIES		{ $$ = EXCLUDE_TIES; }
   |	EXCLUDE NO OTHERS	{ $$ = EXCLUDE_NONE; }
   ;
-
-var_ref:
-	AT variable_ref { $$ = _symbol_create_list( SQL_NAME, $2 ); }
- ;
 
 func_ref:
     qfunc '(' ')'
