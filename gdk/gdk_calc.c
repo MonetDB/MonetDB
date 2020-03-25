@@ -183,12 +183,15 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 BAT *
 BATcalcnot(BAT *b, BAT *s, BAT *r)
 {
+	lng t0 = 0;
 	BAT *bn;
 	BUN nils = 0;
 	BUN i, ncand;
 	oid x;
 	struct canditer ci;
 	const bit *rv = r ? Tloc(r, 0) : NULL;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b, __func__, NULL);
 	ncand = canditer_init(&ci, b, s);
@@ -248,6 +251,11 @@ BATcalcnot(BAT *b, BAT *s, BAT *r)
 		b->batDirtydesc = true;
 	}
 
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " s=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
+
 	return bn;
 }
 
@@ -306,12 +314,15 @@ VARcalcnot(ValPtr ret, const ValRecord *v)
 BAT *
 BATcalcnegate(BAT *b, BAT *s, BAT *r)
 {
+	lng t0 = 0;
 	BAT *bn;
 	BUN nils = 0;
 	BUN i, ncand;
 	oid x;
 	struct canditer ci;
 	const bit *rv = r ? Tloc(r, 0) : NULL;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b, __func__, NULL);
 	ncand = canditer_init(&ci, b, s);
@@ -372,6 +383,11 @@ BATcalcnegate(BAT *b, BAT *s, BAT *r)
 		b->tnil = true;
 		b->batDirtydesc = true;
 	}
+
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " s=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
 	return bn;
 }
@@ -439,12 +455,15 @@ VARcalcnegate(ValPtr ret, const ValRecord *v)
 BAT *
 BATcalcabsolute(BAT *b, BAT *s, BAT *r)
 {
+	lng t0 = 0;
 	BAT *bn;
 	BUN nils= 0;
 	BUN i, ncand;
 	oid x;
 	struct canditer ci;
 	const bit *rv = r ? Tloc(r, 0) : NULL;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b, __func__, NULL);
 	ncand = canditer_init(&ci, b, s);
@@ -507,6 +526,11 @@ BATcalcabsolute(BAT *b, BAT *s, BAT *r)
 		b->tnil = true;
 		b->batDirtydesc = true;
 	}
+
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " s=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
 	return bn;
 }
@@ -576,12 +600,15 @@ VARcalcabsolute(ValPtr ret, const ValRecord *v)
 BAT *
 BATcalciszero(BAT *b, BAT *s, BAT *r)
 {
+	lng t0 = 0;
 	BAT *bn;
 	BUN nils = 0;
 	BUN i, ncand;
 	oid x;
 	struct canditer ci;
 	const bit *rv = r ? Tloc(r, 0) : NULL;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b, __func__, NULL);
 	ncand = canditer_init(&ci, b, s);
@@ -641,6 +668,11 @@ BATcalciszero(BAT *b, BAT *s, BAT *r)
 		b->tnil = true;
 		b->batDirtydesc = true;
 	}
+
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " s=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
 	return bn;
 }
@@ -711,12 +743,15 @@ VARcalciszero(ValPtr ret, const ValRecord *v)
 BAT *
 BATcalcsign(BAT *b, BAT *s, BAT *r)
 {
+	lng t0 = 0;
 	BAT *bn;
 	BUN nils = 0;
 	BUN i, ncand;
 	oid x;
 	struct canditer ci;
 	const bit *rv = r ? Tloc(r, 0) : NULL;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b, __func__, NULL);
 	ncand = canditer_init(&ci, b, s);
@@ -779,6 +814,11 @@ BATcalcsign(BAT *b, BAT *s, BAT *r)
 		b->tnil = true;
 		b->batDirtydesc = true;
 	}
+
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " s=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
 	return bn;
 }
@@ -860,6 +900,7 @@ VARcalcsign(ValPtr ret, const ValRecord *v)
 static BAT *
 BATcalcisnil_implementation(BAT *b, BAT *s, BAT *r, bool notnil)
 {
+	lng t0 = 0;
 	BAT *bn;
 	BUN i, ncand;
 	oid x;
@@ -867,6 +908,8 @@ BATcalcisnil_implementation(BAT *b, BAT *s, BAT *r, bool notnil)
 	bit *restrict dst;
 	BUN nils = 0;
 	const bit *rv = r ? Tloc(r, 0) : NULL;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b, __func__, NULL);
 
@@ -942,6 +985,11 @@ BATcalcisnil_implementation(BAT *b, BAT *s, BAT *r, bool notnil)
 	bn->tnonil = nils == 0;
 	bn->tkey = ncand <= 1;
 
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " s=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " notnil=%s -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(s), ALGOOPTBATPAR(r),
+		  notnil ? "true" : "false", ALGOOPTBATPAR(bn), GDKusec() - t0);
+
 	return bn;
 }
 
@@ -976,6 +1024,7 @@ VARcalcisnotnil(ValPtr ret, const ValRecord *v)
 BAT *
 BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r)
 {
+	lng t0 = 0;
 	BAT *bn;
 	BUN nils = 0;
 	BUN ncand;
@@ -984,6 +1033,8 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r)
 	BATiter b1i, b2i;
 	int (*cmp)(const void *, const void *);
 	const bit *rv = r ? Tloc(r, 0) : NULL;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b1, __func__, NULL);
 	BATcheck(b2, __func__, NULL);
@@ -1042,6 +1093,14 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r)
 		bn->tkey = false;
 		bn->tseqbase = oid_nil;
 	}
+
+	TRC_DEBUG(ALGO, "b1=" ALGOBATFMT "b2=" ALGOBATFMT
+		  " s1=" ALGOOPTBATFMT " s2=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b1), ALGOBATPAR(b2),
+		  ALGOOPTBATPAR(s1), ALGOOPTBATPAR(s2),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
+
 	return bn;
   bunins_failed:
 	BBPreclaim(bn);
@@ -1051,6 +1110,7 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r)
 BAT *
 BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r)
 {
+	lng t0 = 0;
 	BAT *bn;
 	BUN nils = 0;
 	BUN ncand;
@@ -1059,6 +1119,8 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r)
 	BATiter b1i, b2i;
 	int (*cmp)(const void *, const void *);
 	const bit *rv = r ? Tloc(r, 0) : NULL;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b1, __func__, NULL);
 	BATcheck(b2, __func__, NULL);
@@ -1121,6 +1183,14 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r)
 		bn->tkey = false;
 		bn->tseqbase = oid_nil;
 	}
+
+	TRC_DEBUG(ALGO, "b1=" ALGOBATFMT "b2=" ALGOBATFMT
+		  " s1=" ALGOOPTBATFMT " s2=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b1), ALGOBATPAR(b2),
+		  ALGOOPTBATPAR(s1), ALGOOPTBATPAR(s2),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
+
 	return bn;
   bunins_failed:
 	BBPreclaim(bn);
@@ -1130,6 +1200,7 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r)
 BAT *
 BATcalcmincst(BAT *b, const ValRecord *v, BAT *s, BAT *r)
 {
+	lng t0 = 0;
 	BAT *bn;
 	BUN nils = 0;
 	BUN ncand;
@@ -1141,6 +1212,8 @@ BATcalcmincst(BAT *b, const ValRecord *v, BAT *s, BAT *r)
 	BATiter bi;
 	int (*cmp)(const void *, const void *);
 	const bit *rv = r ? Tloc(r, 0) : NULL;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b, __func__, NULL);
 	if (ATOMtype(b->ttype) != v->vtype) {
@@ -1196,6 +1269,12 @@ BATcalcmincst(BAT *b, const ValRecord *v, BAT *s, BAT *r)
 		bn->tkey = false;
 		bn->tseqbase = oid_nil;
 	}
+
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " s=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
+
 	return bn;
   bunins_failed:
 	BBPreclaim(bn);
@@ -1211,6 +1290,7 @@ BATcalccstmin(const ValRecord *v, BAT *b, BAT *s, BAT *r)
 BAT *
 BATcalcmincst_no_nil(BAT *b, const ValRecord *v, BAT *s, BAT *r)
 {
+	lng t0 = 0;
 	BAT *bn;
 	BUN nils = 0;
 	BUN ncand;
@@ -1222,6 +1302,8 @@ BATcalcmincst_no_nil(BAT *b, const ValRecord *v, BAT *s, BAT *r)
 	BATiter bi;
 	int (*cmp)(const void *, const void *);
 	const bit *rv = r ? Tloc(r, 0) : NULL;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b, __func__, NULL);
 	if (ATOMtype(b->ttype) != v->vtype) {
@@ -1290,6 +1372,12 @@ BATcalcmincst_no_nil(BAT *b, const ValRecord *v, BAT *s, BAT *r)
 		bn->tkey = false;
 		bn->tseqbase = oid_nil;
 	}
+
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " s=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
+
 	return bn;
   bunins_failed:
 	BBPreclaim(bn);
@@ -1305,6 +1393,7 @@ BATcalccstmin_no_nil(const ValRecord *v, BAT *b, BAT *s, BAT *r)
 BAT *
 BATcalcmax(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r)
 {
+	lng t0 = 0;
 	BAT *bn;
 	BUN nils = 0;
 	BUN ncand;
@@ -1313,6 +1402,8 @@ BATcalcmax(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r)
 	BATiter b1i, b2i;
 	int (*cmp)(const void *, const void *);
 	const bit *rv = r ? Tloc(r, 0) : NULL;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b1, __func__, NULL);
 	BATcheck(b2, __func__, NULL);
@@ -1371,6 +1462,14 @@ BATcalcmax(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r)
 		bn->tkey = false;
 		bn->tseqbase = oid_nil;
 	}
+
+	TRC_DEBUG(ALGO, "b1=" ALGOBATFMT "b2=" ALGOBATFMT
+		  " s1=" ALGOOPTBATFMT " s2=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b1), ALGOBATPAR(b2),
+		  ALGOOPTBATPAR(s1), ALGOOPTBATPAR(s2),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
+
 	return bn;
   bunins_failed:
 	BBPreclaim(bn);
@@ -1380,6 +1479,7 @@ BATcalcmax(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r)
 BAT *
 BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r)
 {
+	lng t0 = 0;
 	BAT *bn;
 	BUN nils = 0;
 	BUN ncand;
@@ -1388,6 +1488,8 @@ BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r)
 	BATiter b1i, b2i;
 	int (*cmp)(const void *, const void *);
 	const bit *rv = r ? Tloc(r, 0) : NULL;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b1, __func__, NULL);
 	BATcheck(b2, __func__, NULL);
@@ -1455,6 +1557,14 @@ BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r)
 		bn->tkey = false;
 		bn->tseqbase = oid_nil;
 	}
+
+	TRC_DEBUG(ALGO, "b1=" ALGOBATFMT "b2=" ALGOBATFMT
+		  " s1=" ALGOOPTBATFMT " s2=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b1), ALGOBATPAR(b2),
+		  ALGOOPTBATPAR(s1), ALGOOPTBATPAR(s2),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
+
 	return bn;
   bunins_failed:
 	BBPreclaim(bn);
@@ -1464,6 +1574,7 @@ BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r)
 BAT *
 BATcalcmaxcst(BAT *b, const ValRecord *v, BAT *s, BAT *r)
 {
+	lng t0 = 0;
 	BAT *bn;
 	BUN nils = 0;
 	BUN ncand;
@@ -1475,6 +1586,8 @@ BATcalcmaxcst(BAT *b, const ValRecord *v, BAT *s, BAT *r)
 	BATiter bi;
 	int (*cmp)(const void *, const void *);
 	const bit *rv = r ? Tloc(r, 0) : NULL;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b, __func__, NULL);
 	if (ATOMtype(b->ttype) != v->vtype) {
@@ -1530,6 +1643,12 @@ BATcalcmaxcst(BAT *b, const ValRecord *v, BAT *s, BAT *r)
 		bn->tkey = false;
 		bn->tseqbase = oid_nil;
 	}
+
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " s=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
+
 	return bn;
   bunins_failed:
 	BBPreclaim(bn);
@@ -1545,6 +1664,7 @@ BATcalccstmax(const ValRecord *v, BAT *b, BAT *s, BAT *r)
 BAT *
 BATcalcmaxcst_no_nil(BAT *b, const ValRecord *v, BAT *s, BAT *r)
 {
+	lng t0 = 0;
 	BAT *bn;
 	BUN nils = 0;
 	BUN ncand;
@@ -1556,6 +1676,8 @@ BATcalcmaxcst_no_nil(BAT *b, const ValRecord *v, BAT *s, BAT *r)
 	BATiter bi;
 	int (*cmp)(const void *, const void *);
 	const bit *rv = r ? Tloc(r, 0) : NULL;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b, __func__, NULL);
 	if (ATOMtype(b->ttype) != v->vtype) {
@@ -1624,6 +1746,12 @@ BATcalcmaxcst_no_nil(BAT *b, const ValRecord *v, BAT *s, BAT *r)
 		bn->tkey = false;
 		bn->tseqbase = oid_nil;
 	}
+
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " s=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
+
 	return bn;
   bunins_failed:
 	BBPreclaim(bn);
@@ -3308,11 +3436,14 @@ addstr_loop(BAT *b1, const char *l, BAT *b2, const char *r, BAT *bn,
 BAT *
 BATcalcadd(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r, int tp, bool abort_on_error)
 {
+	lng t0 = 0;
 	BAT *bn;
 	BUN nils;
 	BUN ncand;
 	struct canditer ci1, ci2;
 	const bit *rv = r ? Tloc(r, 0) : NULL;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b1, __func__, NULL);
 	BATcheck(b2, __func__, NULL);
@@ -3366,17 +3497,27 @@ BATcalcadd(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r, int tp, bool abort_on_err
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
+	TRC_DEBUG(ALGO, "b1=" ALGOBATFMT "b2=" ALGOBATFMT
+		  " s1=" ALGOOPTBATFMT " s2=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b1), ALGOBATPAR(b2),
+		  ALGOOPTBATPAR(s1), ALGOOPTBATPAR(s2),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
+
 	return bn;
 }
 
 BAT *
 BATcalcaddcst(BAT *b, const ValRecord *v, BAT *s, BAT *r, int tp, bool abort_on_error)
 {
+	lng t0 = 0;
 	BAT *bn;
 	BUN nils;
 	BUN ncand;
 	struct canditer ci;
 	const bit *rv = r ? Tloc(r, 0) : NULL;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b, __func__, NULL);
 
@@ -3424,17 +3565,25 @@ BATcalcaddcst(BAT *b, const ValRecord *v, BAT *s, BAT *r, int tp, bool abort_on_
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " s=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
+
 	return bn;
 }
 
 BAT *
 BATcalccstadd(const ValRecord *v, BAT *b, BAT *s, BAT *r, int tp, bool abort_on_error)
 {
+	lng t0 = 0;
 	BAT *bn;
 	BUN nils;
 	BUN ncand;
 	struct canditer ci;
 	const bit *rv = r ? Tloc(r, 0) : NULL;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b, __func__, NULL);
 
@@ -3482,6 +3631,11 @@ BATcalccstadd(const ValRecord *v, BAT *b, BAT *s, BAT *r, int tp, bool abort_on_
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " s=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
+
 	return bn;
 }
 
@@ -3511,11 +3665,14 @@ BATcalcincrdecr(BAT *b, BAT *s, BAT *r, bool abort_on_error,
 				      oid, oid, bool, const char *),
 		const char *func)
 {
+	lng t0 = 0;
 	BAT *bn;
 	BUN nils= 0;
 	BUN ncand;
 	struct canditer ci;
 	const bit *rv = r ? Tloc(r, 0) : NULL;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b, func, NULL);
 
@@ -3567,6 +3724,11 @@ BATcalcincrdecr(BAT *b, BAT *s, BAT *r, bool abort_on_error,
 		b->tnonil = true;
 		b->batDirtydesc = true;
 	}
+
+	TRC_DEBUG(ALGO, "%s: b=" ALGOBATFMT " s=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  func, ALGOBATPAR(b), ALGOOPTBATPAR(s),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
 	return bn;
 }
@@ -5201,11 +5363,14 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 BAT *
 BATcalcsub(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r, int tp, bool abort_on_error)
 {
+	lng t0 = 0;
 	BAT *bn;
 	BUN nils;
 	BUN ncand;
 	struct canditer ci1, ci2;
 	const bit *rv = r ? Tloc(r, 0) : NULL;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b1, __func__, NULL);
 	BATcheck(b2, __func__, NULL);
@@ -5248,17 +5413,27 @@ BATcalcsub(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r, int tp, bool abort_on_err
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
+	TRC_DEBUG(ALGO, "b1=" ALGOBATFMT "b2=" ALGOBATFMT
+		  " s1=" ALGOOPTBATFMT " s2=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b1), ALGOBATPAR(b2),
+		  ALGOOPTBATPAR(s1), ALGOOPTBATPAR(s2),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
+
 	return bn;
 }
 
 BAT *
 BATcalcsubcst(BAT *b, const ValRecord *v, BAT *s, BAT *r, int tp, bool abort_on_error)
 {
+	lng t0 = 0;
 	BAT *bn;
 	BUN nils;
 	BUN ncand;
 	struct canditer ci;
 	const bit *rv = r ? Tloc(r, 0) : NULL;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b, __func__, NULL);
 
@@ -5302,17 +5477,25 @@ BATcalcsubcst(BAT *b, const ValRecord *v, BAT *s, BAT *r, int tp, bool abort_on_
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " s=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
+
 	return bn;
 }
 
 BAT *
 BATcalccstsub(const ValRecord *v, BAT *b, BAT *s, BAT *r, int tp, bool abort_on_error)
 {
+	lng t0 = 0;
 	BAT *bn;
 	BUN nils;
 	BUN ncand;
 	struct canditer ci;
 	const bit *rv = r ? Tloc(r, 0) : NULL;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b, __func__, NULL);
 
@@ -5356,6 +5539,11 @@ BATcalccstsub(const ValRecord *v, BAT *b, BAT *s, BAT *r, int tp, bool abort_on_
 	bn->tkey = ncand <= 1;
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
+
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " s=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
 	return bn;
 }
@@ -7129,11 +7317,14 @@ BATcalcmuldivmod(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r, int tp,
 				       oid, oid, bool, const char *),
 		 const char *func)
 {
+	lng t0 = 0;
 	BAT *bn;
 	BUN nils;
 	BUN ncand;
 	struct canditer ci1, ci2;
 	const bit *rv = r ? Tloc(r, 0) : NULL;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b1, func, NULL);
 	BATcheck(b2, func, NULL);
@@ -7175,6 +7366,13 @@ BATcalcmuldivmod(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r, int tp,
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
+	TRC_DEBUG(ALGO, "%s: b1=" ALGOBATFMT "b2=" ALGOBATFMT
+		  " s1=" ALGOOPTBATFMT " s2=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  func, ALGOBATPAR(b1), ALGOBATPAR(b2),
+		  ALGOOPTBATPAR(s1), ALGOOPTBATPAR(s2),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
+
 	return bn;
 }
 
@@ -7188,11 +7386,14 @@ BATcalcmul(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r, int tp, bool abort_on_err
 BAT *
 BATcalcmulcst(BAT *b, const ValRecord *v, BAT *s, BAT *r, int tp, bool abort_on_error)
 {
+	lng t0 = 0;
 	BAT *bn;
 	BUN nils;
 	BUN ncand;
 	struct canditer ci;
 	const bit *rv = r ? Tloc(r, 0) : NULL;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b, __func__, NULL);
 
@@ -7246,17 +7447,25 @@ BATcalcmulcst(BAT *b, const ValRecord *v, BAT *s, BAT *r, int tp, bool abort_on_
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " s=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
+
 	return bn;
 }
 
 BAT *
 BATcalccstmul(const ValRecord *v, BAT *b, BAT *s, BAT *r, int tp, bool abort_on_error)
 {
+	lng t0 = 0;
 	BAT *bn;
 	BUN nils;
 	BUN ncand;
 	struct canditer ci;
 	const bit *rv = r ? Tloc(r, 0) : NULL;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b, __func__, NULL);
 
@@ -7309,6 +7518,11 @@ BATcalccstmul(const ValRecord *v, BAT *b, BAT *s, BAT *r, int tp, bool abort_on_
 	bn->tkey = ncand <= 1;
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
+
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " s=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
 	return bn;
 }
@@ -9086,11 +9300,14 @@ BATcalcdiv(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r, int tp, bool abort_on_err
 BAT *
 BATcalcdivcst(BAT *b, const ValRecord *v, BAT *s, BAT *r, int tp, bool abort_on_error)
 {
+	lng t0 = 0;
 	BAT *bn;
 	BUN nils;
 	BUN ncand;
 	struct canditer ci;
 	const bit *rv = r ? Tloc(r, 0) : NULL;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b, __func__, NULL);
 
@@ -9147,17 +9364,25 @@ BATcalcdivcst(BAT *b, const ValRecord *v, BAT *s, BAT *r, int tp, bool abort_on_
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " s=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
+
 	return bn;
 }
 
 BAT *
 BATcalccstdiv(const ValRecord *v, BAT *b, BAT *s, BAT *r, int tp, bool abort_on_error)
 {
+	lng t0 = 0;
 	BAT *bn;
 	BUN nils;
 	BUN ncand;
 	struct canditer ci;
 	const bit *rv = r ? Tloc(r, 0) : NULL;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b, __func__, NULL);
 
@@ -9198,6 +9423,11 @@ BATcalccstdiv(const ValRecord *v, BAT *b, BAT *s, BAT *r, int tp, bool abort_on_
 	bn->tkey = ncand <= 1;
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
+
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " s=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
 	return bn;
 }
@@ -10573,11 +10803,14 @@ BATcalcmod(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r, int tp, bool abort_on_err
 BAT *
 BATcalcmodcst(BAT *b, const ValRecord *v, BAT *s, BAT *r, int tp, bool abort_on_error)
 {
+	lng t0 = 0;
 	BAT *bn;
 	BUN nils;
 	BUN ncand;
 	struct canditer ci;
 	const bit *rv = r ? Tloc(r, 0) : NULL;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b, __func__, NULL);
 
@@ -10616,17 +10849,25 @@ BATcalcmodcst(BAT *b, const ValRecord *v, BAT *s, BAT *r, int tp, bool abort_on_
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " s=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
+
 	return bn;
 }
 
 BAT *
 BATcalccstmod(const ValRecord *v, BAT *b, BAT *s, BAT *r, int tp, bool abort_on_error)
 {
+	lng t0 = 0;
 	BAT *bn;
 	BUN nils;
 	BUN ncand;
 	struct canditer ci;
 	const bit *rv = r ? Tloc(r, 0) : NULL;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b, __func__, NULL);
 
@@ -10663,6 +10904,11 @@ BATcalccstmod(const ValRecord *v, BAT *b, BAT *s, BAT *r, int tp, bool abort_on_
 	bn->tkey = ncand <= 1;
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
+
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " s=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
 	return bn;
 }
@@ -10753,11 +10999,14 @@ xor_typeswitchloop(const void *lft, int incr1,
 BAT *
 BATcalcxor(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r)
 {
+	lng t0 = 0;
 	BAT *bn;
 	BUN nils;
 	BUN ncand;
 	struct canditer ci1, ci2;
 	const bit *rv = r ? Tloc(r, 0) : NULL;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b1, __func__, NULL);
 	BATcheck(b2, __func__, NULL);
@@ -10808,17 +11057,27 @@ BATcalcxor(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r)
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
+	TRC_DEBUG(ALGO, "b1=" ALGOBATFMT "b2=" ALGOBATFMT
+		  " s1=" ALGOOPTBATFMT " s2=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b1), ALGOBATPAR(b2),
+		  ALGOOPTBATPAR(s1), ALGOOPTBATPAR(s2),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
+
 	return bn;
 }
 
 BAT *
 BATcalcxorcst(BAT *b, const ValRecord *v, BAT *s, BAT *r)
 {
+	lng t0 = 0;
 	BAT *bn;
 	BUN nils;
 	BUN ncand;
 	struct canditer ci;
 	const bit *rv = r ? Tloc(r, 0) : NULL;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b, __func__, NULL);
 
@@ -10862,6 +11121,11 @@ BATcalcxorcst(BAT *b, const ValRecord *v, BAT *s, BAT *r)
 	bn->tkey = ncand <= 1;
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
+
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " s=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
 	return bn;
 }
@@ -10970,11 +11234,14 @@ or_typeswitchloop(const void *lft, int incr1,
 BAT *
 BATcalcor(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r)
 {
+	lng t0 = 0;
 	BAT *bn;
 	BUN nils;
 	BUN ncand;
 	struct canditer ci1, ci2;
 	const bit *rv = r ? Tloc(r, 0) : NULL;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b1, __func__, NULL);
 	BATcheck(b2, __func__, NULL);
@@ -11023,17 +11290,27 @@ BATcalcor(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r)
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
+	TRC_DEBUG(ALGO, "b1=" ALGOBATFMT "b2=" ALGOBATFMT
+		  " s1=" ALGOOPTBATFMT " s2=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b1), ALGOBATPAR(b2),
+		  ALGOOPTBATPAR(s1), ALGOOPTBATPAR(s2),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
+
 	return bn;
 }
 
 BAT *
 BATcalcorcst(BAT *b, const ValRecord *v, BAT *s, BAT *r)
 {
+	lng t0 = 0;
 	BAT *bn;
 	BUN nils;
 	BUN ncand;
 	struct canditer ci;
 	const bit *rv = r ? Tloc(r, 0) : NULL;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b, __func__, NULL);
 
@@ -11077,6 +11354,11 @@ BATcalcorcst(BAT *b, const ValRecord *v, BAT *s, BAT *r)
 	bn->tkey = ncand <= 1;
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
+
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " s=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
 	return bn;
 }
@@ -11185,11 +11467,14 @@ and_typeswitchloop(const void *lft, int incr1,
 BAT *
 BATcalcand(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r)
 {
+	lng t0 = 0;
 	BAT *bn;
 	BUN nils;
 	BUN ncand;
 	struct canditer ci1, ci2;
 	const bit *rv = r ? Tloc(r, 0) : NULL;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b1, __func__, NULL);
 	BATcheck(b2, __func__, NULL);
@@ -11238,17 +11523,27 @@ BATcalcand(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r)
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
+	TRC_DEBUG(ALGO, "b1=" ALGOBATFMT "b2=" ALGOBATFMT
+		  " s1=" ALGOOPTBATFMT " s2=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b1), ALGOBATPAR(b2),
+		  ALGOOPTBATPAR(s1), ALGOOPTBATPAR(s2),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
+
 	return bn;
 }
 
 BAT *
 BATcalcandcst(BAT *b, const ValRecord *v, BAT *s, BAT *r)
 {
+	lng t0 = 0;
 	BAT *bn;
 	BUN nils;
 	BUN ncand;
 	struct canditer ci;
 	const bit *rv = r ? Tloc(r, 0) : NULL;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b, __func__, NULL);
 
@@ -11292,6 +11587,11 @@ BATcalcandcst(BAT *b, const ValRecord *v, BAT *s, BAT *r)
 	bn->tkey = ncand <= 1;
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
+
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " s=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
 	return bn;
 }
@@ -11515,11 +11815,14 @@ lsh_typeswitchloop(const void *lft, int tp1, int incr1,
 BAT *
 BATcalclsh(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r, bool abort_on_error)
 {
+	lng t0 = 0;
 	BAT *bn;
 	BUN nils;
 	BUN ncand;
 	struct canditer ci1, ci2;
 	const bit *rv = r ? Tloc(r, 0) : NULL;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b1, __func__, NULL);
 	BATcheck(b2, __func__, NULL);
@@ -11561,17 +11864,27 @@ BATcalclsh(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r, bool abort_on_error)
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
+	TRC_DEBUG(ALGO, "b1=" ALGOBATFMT "b2=" ALGOBATFMT
+		  " s1=" ALGOOPTBATFMT " s2=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b1), ALGOBATPAR(b2),
+		  ALGOOPTBATPAR(s1), ALGOOPTBATPAR(s2),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
+
 	return bn;
 }
 
 BAT *
 BATcalclshcst(BAT *b, const ValRecord *v, BAT *s, BAT *r, bool abort_on_error)
 {
+	lng t0 = 0;
 	BAT *bn;
 	BUN nils;
 	BUN ncand;
 	struct canditer ci;
 	const bit *rv = r ? Tloc(r, 0) : NULL;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b, __func__, NULL);
 
@@ -11610,17 +11923,25 @@ BATcalclshcst(BAT *b, const ValRecord *v, BAT *s, BAT *r, bool abort_on_error)
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " s=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
+
 	return bn;
 }
 
 BAT *
 BATcalccstlsh(const ValRecord *v, BAT *b, BAT *s, BAT *r, bool abort_on_error)
 {
+	lng t0 = 0;
 	BAT *bn;
 	BUN nils;
 	BUN ncand;
 	struct canditer ci;
 	const bit *rv = r ? Tloc(r, 0) : NULL;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b, __func__, NULL);
 
@@ -11658,6 +11979,11 @@ BATcalccstlsh(const ValRecord *v, BAT *b, BAT *s, BAT *r, bool abort_on_error)
 	bn->tkey = ncand <= 1;
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
+
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " s=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
 	return bn;
 }
@@ -11856,11 +12182,14 @@ rsh_typeswitchloop(const void *lft, int tp1, int incr1,
 BAT *
 BATcalcrsh(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r, bool abort_on_error)
 {
+	lng t0 = 0;
 	BAT *bn;
 	BUN nils;
 	BUN ncand;
 	struct canditer ci1, ci2;
 	const bit *rv = r ? Tloc(r, 0) : NULL;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b1, __func__, NULL);
 	BATcheck(b2, __func__, NULL);
@@ -11902,17 +12231,27 @@ BATcalcrsh(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r, bool abort_on_error)
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
+	TRC_DEBUG(ALGO, "b1=" ALGOBATFMT "b2=" ALGOBATFMT
+		  " s1=" ALGOOPTBATFMT " s2=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b1), ALGOBATPAR(b2),
+		  ALGOOPTBATPAR(s1), ALGOOPTBATPAR(s2),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
+
 	return bn;
 }
 
 BAT *
 BATcalcrshcst(BAT *b, const ValRecord *v, BAT *s, BAT *r, bool abort_on_error)
 {
+	lng t0 = 0;
 	BAT *bn;
 	BUN nils;
 	BUN ncand;
 	struct canditer ci;
 	const bit *rv = r ? Tloc(r, 0) : NULL;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b, __func__, NULL);
 
@@ -11951,17 +12290,25 @@ BATcalcrshcst(BAT *b, const ValRecord *v, BAT *s, BAT *r, bool abort_on_error)
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " s=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
+
 	return bn;
 }
 
 BAT *
 BATcalccstrsh(const ValRecord *v, BAT *b, BAT *s, BAT *r, bool abort_on_error)
 {
+	lng t0 = 0;
 	BAT *bn;
 	BUN nils;
 	BUN ncand;
 	struct canditer ci;
 	const bit *rv = r ? Tloc(r, 0) : NULL;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b, __func__, NULL);
 
@@ -11999,6 +12346,11 @@ BATcalccstrsh(const ValRecord *v, BAT *b, BAT *s, BAT *r, bool abort_on_error)
 	bn->tkey = ncand <= 1;
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
+
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " s=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
 	return bn;
 }
@@ -12397,10 +12749,13 @@ BAT *
 BATcalcbetween(BAT *b, BAT *lo, BAT *hi, BAT *s, BAT *slo, BAT *shi, BAT *r,
 	       bool symmetric, bool linc, bool hinc, bool nils_false, bool anti)
 {
+	lng t0 = 0;
 	BAT *bn;
 	BUN ncand;
 	struct canditer ci, cilo, cihi;
 	const bit *rv = r ? Tloc(r, 0) : NULL;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b, __func__, NULL);
 	BATcheck(lo, __func__, NULL);
@@ -12448,6 +12803,13 @@ BATcalcbetween(BAT *b, BAT *lo, BAT *hi, BAT *s, BAT *slo, BAT *shi, BAT *r,
 				   symmetric, anti, linc, hinc,
 				   nils_false, __func__);
 
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT "lo=" ALGOBATFMT "hi=" ALGOBATFMT
+		  " s=" ALGOOPTBATFMT "slo=" ALGOOPTBATFMT "shi=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b), ALGOBATPAR(lo), ALGOBATPAR(hi),
+		  ALGOOPTBATPAR(s), ALGOOPTBATPAR(slo), ALGOOPTBATPAR(shi),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
+
 	return bn;
 }
 
@@ -12457,8 +12819,12 @@ BATcalcbetweencstcst(BAT *b, const ValRecord *lo, const ValRecord *hi,
 		     bool symmetric, bool linc, bool hinc, bool nils_false,
 		     bool anti)
 {
+	lng t0 = 0;
+	BAT *bn;
 	struct canditer ci;
 	const bit *rv = r ? Tloc(r, 0) : NULL;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b, __func__, NULL);
 
@@ -12475,19 +12841,26 @@ BATcalcbetweencstcst(BAT *b, const ValRecord *lo, const ValRecord *hi,
 		return NULL;
 	}
 
-	return BATcalcbetween_intern(Tloc(b, 0), 1,
-				     b->tvheap ? b->tvheap->base : NULL,
-				     b->twidth,
-				     VALptr(lo), 0, NULL, 0,
-				     VALptr(hi), 0, NULL, 0,
-				     b->ttype,
-				     &ci,
-				     &(struct canditer){.tpe=cand_dense, .ncand=ci.ncand},
-				     &(struct canditer){.tpe=cand_dense, .ncand=ci.ncand},
-				     rv,
-				     b->hseqbase, 0, 0, symmetric, anti,
-				     linc, hinc, nils_false,
-				     __func__);
+	bn = BATcalcbetween_intern(Tloc(b, 0), 1,
+				   b->tvheap ? b->tvheap->base : NULL,
+				   b->twidth,
+				   VALptr(lo), 0, NULL, 0,
+				   VALptr(hi), 0, NULL, 0,
+				   b->ttype,
+				   &ci,
+				   &(struct canditer){.tpe=cand_dense, .ncand=ci.ncand},
+				   &(struct canditer){.tpe=cand_dense, .ncand=ci.ncand},
+				   rv,
+				   b->hseqbase, 0, 0, symmetric, anti,
+				   linc, hinc, nils_false,
+				   __func__);
+
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " s=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
+
+	return bn;
 }
 
 BAT *
@@ -12495,9 +12868,13 @@ BATcalcbetweenbatcst(BAT *b, BAT *lo, const ValRecord *hi, BAT *s, BAT *slo, BAT
 		     bool symmetric, bool linc, bool hinc, bool nils_false,
 		     bool anti)
 {
+	lng t0 = 0;
+	BAT *bn;
 	struct canditer ci, cilo;
 	BUN ncand;
 	const bit *rv = r ? Tloc(r, 0) : NULL;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b, __func__, NULL);
 	BATcheck(lo, __func__, NULL);
@@ -12522,22 +12899,31 @@ BATcalcbetweenbatcst(BAT *b, BAT *lo, const ValRecord *hi, BAT *s, BAT *slo, BAT
 		return NULL;
 	}
 
-	return BATcalcbetween_intern(Tloc(b, 0), 1,
-				     b->tvheap ? b->tvheap->base : NULL,
-				     b->twidth,
-				     Tloc(lo, 0), 1,
-				     lo->tvheap ? lo->tvheap->base : NULL,
-				     lo->twidth,
-				     VALptr(hi), 0, NULL, 0,
-				     b->ttype,
-				     &ci,
-				     &cilo,
-				     &(struct canditer){.tpe=cand_dense, .ncand=ncand},
-				     rv,
-				     b->hseqbase, lo->hseqbase, 0,
-				     symmetric, anti,
-				     linc, hinc, nils_false,
-				     __func__);
+	bn = BATcalcbetween_intern(Tloc(b, 0), 1,
+				   b->tvheap ? b->tvheap->base : NULL,
+				   b->twidth,
+				   Tloc(lo, 0), 1,
+				   lo->tvheap ? lo->tvheap->base : NULL,
+				   lo->twidth,
+				   VALptr(hi), 0, NULL, 0,
+				   b->ttype,
+				   &ci,
+				   &cilo,
+				   &(struct canditer){.tpe=cand_dense, .ncand=ncand},
+				   rv,
+				   b->hseqbase, lo->hseqbase, 0,
+				   symmetric, anti,
+				   linc, hinc, nils_false,
+				   __func__);
+
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT "lo=" ALGOBATFMT
+		  " s=" ALGOOPTBATFMT "slo=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b), ALGOBATPAR(lo),
+		  ALGOOPTBATPAR(s), ALGOOPTBATPAR(slo),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
+
+	return bn;
 }
 
 BAT *
@@ -12545,9 +12931,13 @@ BATcalcbetweencstbat(BAT *b, const ValRecord *lo, BAT *hi, BAT *s, BAT *shi, BAT
 		     bool symmetric, bool linc, bool hinc, bool nils_false,
 		     bool anti)
 {
+	lng t0 = 0;
+	BAT *bn;
 	struct canditer ci, cihi;
 	BUN ncand;
 	const bit *rv = r ? Tloc(r, 0) : NULL;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b, __func__, NULL);
 	BATcheck(hi, __func__, NULL);
@@ -12569,22 +12959,31 @@ BATcalcbetweencstbat(BAT *b, const ValRecord *lo, BAT *hi, BAT *s, BAT *shi, BAT
 		return NULL;
 	}
 
-	return BATcalcbetween_intern(Tloc(b, 0), 1,
-				     b->tvheap ? b->tvheap->base : NULL,
-				     b->twidth,
-				     VALptr(lo), 0, NULL, 0,
-				     Tloc(hi, 0), 1,
-				     hi->tvheap ? hi->tvheap->base : NULL,
-				     hi->twidth,
-				     b->ttype,
-				     &ci,
-				     &(struct canditer){.tpe=cand_dense, .ncand=ncand},
-				     &cihi,
-				     rv,
-				     b->hseqbase, 0, hi->hseqbase,
-				     symmetric, anti,
-				     linc, hinc, nils_false,
-				     __func__);
+	bn = BATcalcbetween_intern(Tloc(b, 0), 1,
+				   b->tvheap ? b->tvheap->base : NULL,
+				   b->twidth,
+				   VALptr(lo), 0, NULL, 0,
+				   Tloc(hi, 0), 1,
+				   hi->tvheap ? hi->tvheap->base : NULL,
+				   hi->twidth,
+				   b->ttype,
+				   &ci,
+				   &(struct canditer){.tpe=cand_dense, .ncand=ncand},
+				   &cihi,
+				   rv,
+				   b->hseqbase, 0, hi->hseqbase,
+				   symmetric, anti,
+				   linc, hinc, nils_false,
+				   __func__);
+
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT "hi=" ALGOBATFMT
+		  " s=" ALGOOPTBATFMT "shi=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b), ALGOBATPAR(hi),
+		  ALGOOPTBATPAR(s), ALGOOPTBATPAR(shi),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
+
+	return bn;
 }
 
 gdk_return
@@ -12797,6 +13196,11 @@ BATcalcifthenelse_intern(BAT *b,
 BAT *
 BATcalcifthenelse(BAT *b, BAT *b1, BAT *b2)
 {
+	lng t0 = 0;
+	BAT *bn;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+
 	BATcheck(b, __func__, NULL);
 	BATcheck(b1, __func__, NULL);
 	BATcheck(b2, __func__, NULL);
@@ -12809,15 +13213,27 @@ BATcalcifthenelse(BAT *b, BAT *b1, BAT *b2)
 		GDKerror("%s: \"then\" and \"else\" BATs have different types.\n", __func__);
 		return NULL;
 	}
-	return BATcalcifthenelse_intern(b,
-					Tloc(b1, 0), 1, b1->tvheap ? b1->tvheap->base : NULL, b1->twidth, b1->tnonil, b1->tseqbase,
-					Tloc(b2, 0), 1, b2->tvheap ? b2->tvheap->base : NULL, b2->twidth, b2->tnonil, b2->tseqbase,
-					b1->ttype);
+	bn = BATcalcifthenelse_intern(b,
+				      Tloc(b1, 0), 1, b1->tvheap ? b1->tvheap->base : NULL, b1->twidth, b1->tnonil, b1->tseqbase,
+				      Tloc(b2, 0), 1, b2->tvheap ? b2->tvheap->base : NULL, b2->twidth, b2->tnonil, b2->tseqbase,
+				      b1->ttype);
+
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " b1=" ALGOBATFMT " b2=" ALGOBATFMT
+		  " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b), ALGOBATPAR(b1), ALGOBATPAR(b2),
+		  ALGOOPTBATPAR(bn), GDKusec() - t0);
+
+	return bn;
 }
 
 BAT *
 BATcalcifthenelsecst(BAT *b, BAT *b1, const ValRecord *c2)
 {
+	lng t0 = 0;
+	BAT *bn;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+
 	BATcheck(b, __func__, NULL);
 	BATcheck(b1, __func__, NULL);
 	BATcheck(c2, __func__, NULL);
@@ -12828,15 +13244,27 @@ BATcalcifthenelsecst(BAT *b, BAT *b1, const ValRecord *c2)
 		GDKerror("%s: \"then\" and \"else\" BATs have different types.\n", __func__);
 		return NULL;
 	}
-	return BATcalcifthenelse_intern(b,
-					Tloc(b1, 0), 1, b1->tvheap ? b1->tvheap->base : NULL, b1->twidth, b1->tnonil, b1->tseqbase,
-					VALptr(c2), 0, NULL, 0, !VALisnil(c2), 0,
-					b1->ttype);
+	bn = BATcalcifthenelse_intern(b,
+				      Tloc(b1, 0), 1, b1->tvheap ? b1->tvheap->base : NULL, b1->twidth, b1->tnonil, b1->tseqbase,
+				      VALptr(c2), 0, NULL, 0, !VALisnil(c2), 0,
+				      b1->ttype);
+
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " b1=" ALGOBATFMT
+		  " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b), ALGOBATPAR(b1),
+		  ALGOOPTBATPAR(bn), GDKusec() - t0);
+
+	return bn;
 }
 
 BAT *
 BATcalcifthencstelse(BAT *b, const ValRecord *c1, BAT *b2)
 {
+	lng t0 = 0;
+	BAT *bn;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+
 	BATcheck(b, __func__, NULL);
 	BATcheck(c1, __func__, NULL);
 	BATcheck(b2, __func__, NULL);
@@ -12847,15 +13275,27 @@ BATcalcifthencstelse(BAT *b, const ValRecord *c1, BAT *b2)
 		GDKerror("%s: \"then\" and \"else\" BATs have different types.\n", __func__);
 		return NULL;
 	}
-	return BATcalcifthenelse_intern(b,
-					VALptr(c1), 0, NULL, 0, !VALisnil(c1), 0,
-					Tloc(b2, 0), 1, b2->tvheap ? b2->tvheap->base : NULL, b2->twidth, b2->tnonil, b2->tseqbase,
-					c1->vtype);
+	bn = BATcalcifthenelse_intern(b,
+				      VALptr(c1), 0, NULL, 0, !VALisnil(c1), 0,
+				      Tloc(b2, 0), 1, b2->tvheap ? b2->tvheap->base : NULL, b2->twidth, b2->tnonil, b2->tseqbase,
+				      c1->vtype);
+
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " b2=" ALGOBATFMT
+		  " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b), ALGOBATPAR(b2),
+		  ALGOOPTBATPAR(bn), GDKusec() - t0);
+
+	return bn;
 }
 
 BAT *
 BATcalcifthencstelsecst(BAT *b, const ValRecord *c1, const ValRecord *c2)
 {
+	lng t0 = 0;
+	BAT *bn;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+
 	BATcheck(b, __func__, NULL);
 	BATcheck(c1, __func__, NULL);
 	BATcheck(c2, __func__, NULL);
@@ -12864,10 +13304,17 @@ BATcalcifthencstelsecst(BAT *b, const ValRecord *c1, const ValRecord *c2)
 		GDKerror("%s: \"then\" and \"else\" BATs have different types.\n", __func__);
 		return NULL;
 	}
-	return BATcalcifthenelse_intern(b,
-					VALptr(c1), 0, NULL, 0, !VALisnil(c1), 0,
-					VALptr(c2), 0, NULL, 0, !VALisnil(c2), 0,
-					c1->vtype);
+	bn = BATcalcifthenelse_intern(b,
+				      VALptr(c1), 0, NULL, 0, !VALisnil(c1), 0,
+				      VALptr(c2), 0, NULL, 0, !VALisnil(c2), 0,
+				      c1->vtype);
+
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT
+		  " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b),
+		  ALGOOPTBATPAR(bn), GDKusec() - t0);
+
+	return bn;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -13888,6 +14335,7 @@ convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 BAT *
 BATconvert(BAT *b, BAT *s, BAT *r, int tp, bool abort_on_error)
 {
+	lng t0 = 0;
 	BAT *bn;
 	BUN nils = 0;	/* in case no conversion defined */
 	struct canditer ci;
@@ -13897,6 +14345,8 @@ BATconvert(BAT *b, BAT *s, BAT *r, int tp, bool abort_on_error)
 	 * (different) source values that map to the same destination
 	 * value */
 	bool reduce = false;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b, __func__, NULL);
 	if (tp == TYPE_void)
@@ -13976,6 +14426,11 @@ BATconvert(BAT *b, BAT *s, BAT *r, int tp, bool abort_on_error)
 		bn->tkey = b->tkey && nils <= 1;
 	else
 		bn->tkey = false;
+
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " s=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
 	return bn;
 }
