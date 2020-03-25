@@ -277,7 +277,7 @@ SQLhelp sqlhelp1[] = {
 	 NULL,
 	 NULL},
 	{"CURRENT_TIMEZONE",
-	 "Pseudo column to get the current timezone offset in second intervals",
+	 "Pseudo column to get the current timezone offset as a second interval",
 	 "CURRENT_TIMEZONE",
 	 NULL,
 	 NULL},
