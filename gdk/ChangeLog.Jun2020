@@ -1,6 +1,10 @@
 # ChangeLog file for GDK
 # This file is updated with Maddlog
 
+* Wed Mar 25 2020 Sjoerd Mullender <sjoerd@acm.org>
+- Removed MT_mmap and MT_munmap from the list of exported functions.
+  Use GDKmmap and GDKmunmap with the same parameters instead.
+
 * Fri Mar 20 2020 Sjoerd Mullender <sjoerd@acm.org>
 - Changed the interface of the atom "fix" and "unfix" functions.
   They now return a value of type gdk_return to indicater success/failure.
