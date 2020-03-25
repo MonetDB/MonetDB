@@ -88,8 +88,8 @@ rel_parse(mvc *m, sql_schema *s, char *query, char emode)
 	bstream_destroy(m->scanner.rs);
 
 	m->sym = NULL;
-	o.vars = m->vars;	/* may have been realloc'ed */
-	o.sizevars = m->sizevars;
+	o.frames = m->frames;	/* may have been realloc'ed */
+	o.sizeframes = m->sizeframes;
 	o.query = m->query;
 	if (m->session->status || m->errstr[0]) {
 		int status = m->session->status;
@@ -100,9 +100,8 @@ rel_parse(mvc *m, sql_schema *s, char *query, char emode)
 	} else {
 		int label = m->label;
 
-		while (m->topvars > o.topvars) {
-			if (m->vars[--m->topvars].name)
-				c_delete(m->vars[m->topvars].name);
+		while (m->topframes > o.topframes) {
+			clear_frame(m, m->frames[--m->topframes]);
 		}
 		*m = o;
 		m->label = label;

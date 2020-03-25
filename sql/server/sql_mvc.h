@@ -74,17 +74,36 @@ typedef struct sql_groupby_expression {
 	sql_exp *exp;
 } sql_groupby_expression;
 
-typedef struct sql_var {
-	const char *name;
-	atom a;
-	sql_table *t;
-	sql_rel *rel;
+typedef struct sql_window_definition {
+	char *name;
 	dlist *wdef;
-	sql_groupby_expression *exp;
-	char view;
-	char frame;
-	char visited; //used for window definitions lookup
+	bool visited; /* used for window definitions lookup */
+} sql_window_definition;
+
+typedef struct sql_local_table {
+	char *name;
+	sql_table *table;
+} sql_local_table;
+
+typedef struct sql_rel_view {
+	char *name;
+	sql_rel *rel_view;
+} sql_rel_view;
+
+typedef struct sql_var {
+	char *name;
+	atom var;
 } sql_var;
+
+typedef struct sql_frame {
+	char *name; /* frame name */
+	list *group_expressions;
+	list *windows;
+	list *tables;
+	list *rel_views;
+	list *vars;
+	int frame_number;
+} sql_frame;
 
 #define MAXSTATS 8
 
@@ -98,11 +117,9 @@ typedef struct mvc {
 
 	list *params;
 	sql_func *forward;	/* forward definitions for recursive functions */
-	sql_var *vars; 		/* stack of variables, frames are simply a
-				   NULL in the var stack 
-					(sometimes with name (label) ) */
-	int topvars;
-	int sizevars;
+	sql_frame **frames;	/* stack of frames with variables */
+	int topframes;
+	int sizeframes;
 	int frame;
 	int use_views;
 	atom **args;
@@ -142,9 +159,6 @@ typedef struct mvc {
 	res_table *results;
 	char *query;		/* string, identify whatever we're working on */
 } mvc;
-
-/* NR_GLOBAL_VAR should match exactly the number of variables created in global_variables */
-#define NR_GLOBAL_VARS 9
 
 extern sql_table *mvc_init_create_view(mvc *sql, sql_schema *s, const char *name, const char *query);
 extern int mvc_init(int debug, store_type store, int ro, int su, backend_stack stk);
@@ -236,27 +250,26 @@ extern int mvc_check_dependency(mvc *m, sqlid id, sql_dependency type, list *ign
 
 /* variable management */
 extern sql_var* stack_push_var(mvc *sql, sql_schema *s, const char *name, sql_subtype *type);
-extern sql_var* stack_push_rel_var(mvc *sql, const char *name, sql_rel *var, sql_subtype *type);
-extern sql_var* stack_push_table(mvc *sql, sql_schema *s, const char *name, sql_rel *var, sql_table *t);
-extern sql_var* stack_push_rel_view(mvc *sql, const char *name, sql_rel *view);
-extern sql_var* stack_push_window_def(mvc *sql, const char *name, dlist *sym);
+extern sql_local_table* stack_push_table(mvc *sql, sql_schema *s, const char *name, sql_table *t);
+extern sql_rel_view* stack_push_rel_view(mvc *sql, const char *name, sql_rel *var);
+extern sql_window_definition* stack_push_window_def(mvc *sql, const char *name, dlist *wdef);
 extern dlist* stack_get_window_def(mvc *sql, const char *name, int *pos);
-extern sql_var* stack_push_groupby_expression(mvc *sql, symbol *def, sql_exp *exp);
+extern sql_groupby_expression* stack_push_groupby_expression(mvc *sql, symbol *def, sql_exp *exp);
 extern sql_exp* stack_get_groupby_expression(mvc *sql, symbol *def);
 extern void stack_update_rel_view(mvc *sql, const char *name, sql_rel *view);
 
-extern char stack_check_var_visited(mvc *sql, int i);
+extern bool stack_check_var_visited(mvc *sql, int i);
 extern void stack_set_var_visited(mvc *sql, int i);
 extern void stack_clear_frame_visited_flag(mvc *sql);
 
-extern sql_var* stack_push_frame(mvc *sql, const char *name);
+extern sql_frame* stack_push_frame(mvc *sql, const char *name);
 extern void stack_pop_frame(mvc *sql);
-extern void stack_pop_until(mvc *sql, int top);
+extern void clear_frame(mvc *sql, sql_frame *frame);
+extern void stack_pop_until(mvc *sql, int frame);
 extern sql_subtype *stack_find_type(mvc *sql, const char *name);
 extern sql_table *stack_find_table(mvc *sql, sql_schema *s, const char *name);
 extern sql_rel *stack_find_rel_view(mvc *sql, const char *name);
 extern int stack_find_var(mvc *sql, sql_schema *s, const char *name);
-extern sql_rel *stack_find_rel_var(mvc *sql, const char *name);
 /* find var in current frame */
 extern int frame_find_var(mvc *sql, sql_schema *s, const char *name);
 /* find frame holding variable 'name' */

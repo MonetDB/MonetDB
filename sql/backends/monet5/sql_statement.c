@@ -327,7 +327,7 @@ stmt_var(backend *be, const char *sname, const char *varname, sql_subtype *t, in
 	InstrPtr q = NULL;
 	char buf[IDLENGTH];
 
-	if (level == 1 ) { /* global */
+	if (level == 0) { /* global */
 		int tt = t->type->localtype;
 
 		assert(sname);
@@ -3744,7 +3744,7 @@ stmt_assign(backend *be, const char *sname, const char *varname, stmt *val, int 
 
 	if (val && val->nr < 0)
 		return NULL;
-	if (level != 1) {	
+	if (level != 0) {
 		char buf[IDLENGTH];
 
 		if (!val) {

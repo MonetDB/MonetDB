@@ -232,7 +232,7 @@ rel_psm_declare_table(sql_query *query, dnode *n)
 	if (baset->flag != ddl_create_table)
 		return NULL;
 	t = (sql_table*)((atom*)((sql_exp*)baset->exps->t->data)->l)->data.val.pval;
-	if (!stack_push_table(sql, s, name, baset, t))
+	if (!stack_push_table(sql, s, name, t))
 		return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return exp_table(sql->sa, sa_strdup(sql->sa, s->base.name), sa_strdup(sql->sa, name), t, sql->frame);
 }
@@ -617,7 +617,7 @@ sequential_block (sql_query *query, sql_subtype *restype, list *restypelist, dli
 
 	if (blk->h)
  		l = sa_list(sql->sa);
-	if(!stack_push_frame(sql, opt_label))
+	if (!stack_push_frame(sql, opt_label))
 		return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	for (n = blk->h; n; n = n->next ) {
 		sql_exp *res = NULL;
@@ -959,7 +959,7 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 			sql->params = NULL;
 			if (!b)
 				return NULL;
-		
+
 			/* check if we have a return statement */
 			if (is_func && restype && !has_return(b))
 				return sql_error(sql, 01, SQLSTATE(42000) "CREATE %s: missing return statement", F);
@@ -1185,7 +1185,7 @@ rel_create_trigger(mvc *sql, const char *sname, const char *tname, const char *t
 	return rel;
 }
 
-static sql_var*
+static sql_rel_view*
 _stack_push_table(mvc *sql, const char *tname, sql_table *t)
 {
 	sql_rel *r = rel_basetable(sql, t, tname );

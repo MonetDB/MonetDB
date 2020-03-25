@@ -122,7 +122,7 @@ sql_symbol2relation(mvc *sql, symbol *sym)
 {
 	sql_rel *rel;
 	sql_query *query = query_create(sql);
-	int top = sql->topvars;
+	int top = sql->topframes;
 
 	rel = rel_semantic(query, sym);
 	if (rel)
@@ -723,24 +723,29 @@ getVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 sql_variables(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i;
 	mvc *m = NULL;
 	BAT *vars;
 	str msg;
 	bat *res = getArgReference_bat(stk, pci, 0);
+	sql_frame *f;
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
 
-	vars = COLnew(0, TYPE_str, m->topvars, TRANSIENT);
+	f = m->frames[m->topframes - 1];
+	vars = COLnew(0, TYPE_str, list_length(f->vars), TRANSIENT);
 	if (vars == NULL)
 		throw(SQL, "sql.variables", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	for (i = 0; i < m->topvars && !m->vars[i].frame; i++) {
-		if (BUNappend(vars, m->vars[i].name, false) != GDK_SUCCEED) {
-			BBPreclaim(vars);
-			throw(SQL, "sql.variables", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+
+	if (f->vars) {
+		for (node *n = f->vars->h; n ; n = n->next) {
+			sql_var *var = (sql_var*) n->data;
+			if (BUNappend(vars, var->name, false) != GDK_SUCCEED) {
+				BBPreclaim(vars);
+				throw(SQL, "sql.variables", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			}
 		}
 	}
 	*res = vars->batCacheid;

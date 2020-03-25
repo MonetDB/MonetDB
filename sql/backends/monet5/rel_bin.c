@@ -1411,8 +1411,8 @@ rel_parse_value(backend *be, char *query, char emode)
 	bstream_destroy(m->scanner.rs);
 
 	m->sym = NULL;
-	o.vars = m->vars;	/* may have been realloc'ed */
-	o.sizevars = m->sizevars;
+	o.frames = m->frames;	/* may have been realloc'ed */
+	o.sizeframes = m->sizeframes;
 	o.query = m->query;
 	if (m->session->status || m->errstr[0]) {
 		int status = m->session->status;
@@ -3582,16 +3582,16 @@ sql_parse(backend *be, sql_allocator *sa, const char *query, char mode)
 	m->sym = NULL;
 	{
 		int status = m->session->status;
-		int sizevars = m->sizevars, topvars = m->topvars;
-		sql_var *vars = m->vars;
+		int sizeframes = m->sizeframes, topframes = m->topframes;
+		sql_frame **frames = m->frames;
 		/* cascade list maybe removed */
 		list *cascade_action = m->cascade_action;
 
 		strcpy(o->errstr, m->errstr);
 		*m = *o;
-		m->sizevars = sizevars;
-		m->topvars = topvars;
-		m->vars = vars;
+		m->sizeframes = sizeframes;
+		m->topframes = topframes;
+		m->frames = frames;
 		m->session->status = status;
 		m->cascade_action = cascade_action;
 	}

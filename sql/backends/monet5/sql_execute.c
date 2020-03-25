@@ -451,8 +451,8 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 	int status = 0;
 	int err = 0;
 	mvc *o, *m;
-	int ac, sizevars, topvars;
-	sql_var *vars;
+	int ac, sizeframes, topframes;
+	sql_frame **frames;
 	int oldvtop, oldstop = 1;
 	buffer *b;
 	char *n;
@@ -701,14 +701,14 @@ endofcompile:
 	m->sym = NULL;
 	/* variable stack maybe resized, ie we need to keep the new stack */
 	status = m->session->status;
-	sizevars = m->sizevars;
-	topvars = m->topvars;
-	vars = m->vars;
+	sizeframes = m->sizeframes;
+	topframes = m->topframes;
+	frames = m->frames;
 	*m = *o;
 	_DELETE(o);
-	m->sizevars = sizevars;
-	m->topvars = topvars;
-	m->vars = vars;
+	m->sizeframes = sizeframes;
+	m->topframes = topframes;
+	m->frames = frames;
 	m->session->status = status;
 	m->session->auto_commit = ac;
 	if (inited)

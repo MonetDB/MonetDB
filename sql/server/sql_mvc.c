@@ -488,7 +488,7 @@ mvc_trans(mvc *m)
 			}
 		} else { /* clean all but the prepared statements */
 			qc_clean(m->qc, false);
-			stack_pop_until(m, NR_GLOBAL_VARS);
+			stack_pop_until(m, 1);
 		}
 	}
 	store_unlock();
@@ -611,7 +611,7 @@ mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 		if (m->qc) /* clean query cache, protect against concurrent access on the hash tables (when functions already exists, concurrent mal will
 build up the hash (not copied in the trans dup)) */
 			qc_clean(m->qc, false);
-		stack_pop_until(m, NR_GLOBAL_VARS);
+		stack_pop_until(m, 1);
 		m->session->schema = find_sql_schema(m->session->tr, m->session->schema_name);
 		TRC_INFO(SQL_TRANS, "Savepoint commit '%s' done\n", name);
 		return msg;
@@ -709,7 +709,7 @@ mvc_rollback(mvc *m, int chain, const char *name, bool disabling_auto_commit)
 	store_lock();
 	if (m->qc) 
 		qc_clean(m->qc, false);
-	stack_pop_until(m, NR_GLOBAL_VARS);
+	stack_pop_until(m, 1);
 	if (name && name[0] != '\0') {
 		while (tr && (!tr->name || strcmp(tr->name, name) != 0))
 			tr = tr->parent;
@@ -829,17 +829,17 @@ mvc_create(int clientid, backend_stack stk, int debug, bstream *rs, stream *ws)
 	m->sa = NULL;
 
 	m->params = NULL;
-	m->sizevars = MAXPARAMS;
-	m->vars = NEW_ARRAY(sql_var, m->sizevars);
+	m->sizeframes = MAXPARAMS;
+	m->frames = NEW_ARRAY(sql_frame*, m->sizeframes);
+	m->topframes = 0;
+	m->frame = 0;
 
-	m->topvars = 0;
-	m->frame = 1;
 	m->use_views = 0;
 	m->argmax = MAXPARAMS;
-	m->args = NEW_ARRAY(atom*,m->argmax);
-	if(!m->vars || !m->args) {
+	m->args = NEW_ARRAY(atom*, m->argmax);
+	if (!m->frames || !m->args) {
 		qc_destroy(m->qc);
-		_DELETE(m->vars);
+		_DELETE(m->frames);
 		_DELETE(m->args);
 		_DELETE(m);
 		return NULL;
@@ -870,7 +870,7 @@ mvc_create(int clientid, backend_stack stk, int debug, bstream *rs, stream *ws)
 	store_unlock();
 	if(!m->session) {
 		qc_destroy(m->qc);
-		_DELETE(m->vars);
+		_DELETE(m->frames);
 		_DELETE(m->args);
 		_DELETE(m);
 		return NULL;
@@ -915,9 +915,9 @@ mvc_reset(mvc *m, bstream *rs, stream *ws, int debug)
 	m->errstr[0] = '\0';
 
 	m->params = NULL;
-	/* reset topvars to the set of global variables */
-	stack_pop_until(m, NR_GLOBAL_VARS);
-	m->frame = 1;
+	/* reset frames to the set of global variables */
+	stack_pop_until(m, 1);
+	m->frame = 0;
 	m->argc = 0;
 	m->sym = NULL;
 
@@ -974,7 +974,7 @@ mvc_destroy(mvc *m)
 	store_unlock();
 
 	stack_pop_until(m, 0);
-	_DELETE(m->vars);
+	_DELETE(m->frames);
 
 	if (m->scanner.log) /* close and destroy stream */
 		close_stream(m->scanner.log);
@@ -1055,7 +1055,7 @@ mvc_bind_table(mvc *m, sql_schema *s, const char *tname)
 
 	if (!t)
 		t = find_sql_table(s, tname);
-	TRC_DEBUG(SQL_TRANS, "Bind table: %s.%s\n", s ? s->base.name : "<noschema>", tname);
+	TRC_DEBUG(SQL_TRANS, "Bind table: %s.%s\n", s->base.name, tname);
 	return t;
 }
 

@@ -208,9 +208,8 @@ SQLepilogue(void *ret)
 
 #define SQLglobal(name, s, val) \
 	if (!stack_push_var(sql, s, name, &ctype) || !stack_set_var(sql, s, name, VALset(&src, ctype.type->localtype, (char*)(val)))) \
-		failure--;
+		return -1;
 
-/* NR_GLOBAL_VAR should match exactly the number of variables created in global_variables */
 /* initialize the global variable, ie make mvc point to these */
 static int
 global_variables(mvc *sql, const char *user, const char *schema)
@@ -219,9 +218,10 @@ global_variables(mvc *sql, const char *user, const char *schema)
 	lng sec = 0;
 	ValRecord src;
 	const char *opt;
-	int failure = 0;
 	sql_schema *s = mvc_bind_schema(sql, "sys");
 
+	if (!stack_push_frame(sql, NULL)) /* Global variables stay on the first frame */
+		return -1;
 	sql_find_subtype(&ctype, "int", 0, 0);
 	SQLglobal("debug", s, &sql->debug);
 	SQLglobal("cache", s, &sql->cache);
@@ -243,7 +243,10 @@ global_variables(mvc *sql, const char *user, const char *schema)
 	sql_find_subtype(&ctype, "bigint", 0, 0);
 	SQLglobal("last_id", s, &sql->last_id);
 	SQLglobal("rowcnt", s, &sql->rowcnt);
-	return failure;
+
+	if (!stack_push_frame(sql, NULL)) /* Push another frame for the user declared globals */
+		return -1;
+	return 0;
 }
 
 static const char *
