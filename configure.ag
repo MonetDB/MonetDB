@@ -810,7 +810,7 @@ AC_MSG_CHECKING([for --enable-optimize])
 AS_CASE([$enable_optimize], [yes], [
 	# if optimizing *and* enable-strict, use FORTIFY_SOURCE
 	AS_VAR_IF([enable_strict], [yes], [
-		CFLAGS="-D_FORTIFY_SOURCE=2 $CFLAGS"])
+		MCHECK_ADD_FLAG([-D_FORTIFY_SOURCE=2])])
 	origCFLAGS="$CFLAGS"
 	# remove "-O2" as we add "-Ox" and some compilers don't like "-Oy -Ox" combinations
 	CFLAGS=`AS_ECHO([" $CFLAGS "]) | sed -e 's| -O2 | |g' -e 's|^ ||' -e 's| $||'`
