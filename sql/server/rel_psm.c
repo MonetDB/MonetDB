@@ -16,7 +16,7 @@
 #include "rel_updates.h"
 #include "sql_privileges.h"
 
-static list *sequential_block(sql_query *query, sql_subtype *restype, list *restypelist, dlist *blk, char *opt_name, int is_func);
+static list *sequential_block(sql_query *query, sql_subtype *restype, list *restypelist, dlist *blk, char *opt_name, int is_func, bool pushframe);
 
 sql_rel *
 rel_psm_block(sql_allocator *sa, list *l)
@@ -76,11 +76,7 @@ psm_set_exp(sql_query *query, dnode *n)
 
 		/* check if variable is known from the stack */
 		if (!stack_find_var(sql, s, vname)) {
-			sql_arg *a = sql_bind_param(sql, vname);
-
-			if (!a) /* not parameter, ie local var ? */
-				return sql_error(sql, 01, SQLSTATE(42000) "SET: Variable '%s%s%s' unknown", sname ? sname : "", sname ? "." : "", vname);
-			tpe = &a->type;
+			return sql_error(sql, 01, SQLSTATE(42000) "SET: Variable '%s%s%s' unknown", sname ? sname : "", sname ? "." : "", vname);
 		} else { 
 			tpe = stack_find_type(sql, vname);
 		}
@@ -130,11 +126,7 @@ psm_set_exp(sql_query *query, dnode *n)
 				return sql_error(sql, 02, SQLSTATE(3F000) "SET: No such schema '%s'", sname);
 
 			if (!stack_find_var(sql, s, vname)) {
-				sql_arg *a = sql_bind_param(sql, vname);
-
-				if (!a) /* not parameter, ie local var ? */
-					return sql_error(sql, 01, SQLSTATE(42000) "SET: Variable '%s%s%s' unknown", sname ? sname : "", sname ? "." : "", vname);
-				tpe = &a->type;
+				return sql_error(sql, 01, SQLSTATE(42000) "SET: Variable '%s%s%s' unknown", sname ? sname : "", sname ? "." : "", vname);
 			} else { 
 				tpe = stack_find_type(sql, vname);
 			}
@@ -260,7 +252,7 @@ rel_psm_while_do( sql_query *query, sql_subtype *res, list *restypelist, dnode *
 
 		cond = rel_logical_value_exp(query, &rel, n->data.sym, sql_sel, ek); 
 		n = n->next;
-		whilestmts = sequential_block(query, res, restypelist, n->data.lval, n->next->data.sval, is_func);
+		whilestmts = sequential_block(query, res, restypelist, n->data.lval, n->next->data.sval, is_func, true);
 
 		if (sql->session->status || !cond || !whilestmts) 
 			return NULL;
@@ -292,7 +284,7 @@ psm_if_then_else( sql_query *query, sql_subtype *res, list *restypelist, dnode *
 
 		cond = rel_logical_value_exp(query, &rel, n->data.sym, sql_sel, ek); 
 		n = n->next;
-		ifstmts = sequential_block(query, res, restypelist, n->data.lval, NULL, is_func);
+		ifstmts = sequential_block(query, res, restypelist, n->data.lval, NULL, is_func, true);
 		n = n->next;
 		elsestmts = psm_if_then_else( query, res, restypelist, n, is_func);
 
@@ -306,7 +298,7 @@ psm_if_then_else( sql_query *query, sql_subtype *res, list *restypelist, dnode *
 
 		if (e==NULL || (e->token != SQL_ELSE))
 			return NULL;
-		return sequential_block( query, res, restypelist, e->data.lval, NULL, is_func);
+		return sequential_block(query, res, restypelist, e->data.lval, NULL, is_func, true);
 	}
 }
 
@@ -325,7 +317,7 @@ rel_psm_if_then_else( sql_query *query, sql_subtype *res, list *restypelist, dno
 
 		cond = rel_logical_value_exp(query, &rel, n->data.sym, sql_sel, ek); 
 		n = n->next;
-		ifstmts = sequential_block(query, res, restypelist, n->data.lval, NULL, is_func);
+		ifstmts = sequential_block(query, res, restypelist, n->data.lval, NULL, is_func, true);
 		n = n->next;
 		elsestmts = psm_if_then_else( query, res, restypelist, n, is_func);
 		if (sql->session->status || !cond || !ifstmts) 
@@ -376,7 +368,7 @@ rel_psm_case( sql_query *query, sql_subtype *res, list *restypelist, dnode *case
 		if (rel)
 			return sql_error(sql, 02, SQLSTATE(42000) "CASE: No SELECT statements allowed within the CASE condition");
 		if (else_statements) {
-			if (!(else_stmt = sequential_block(query, res, restypelist, else_statements, NULL, is_func)))
+			if (!(else_stmt = sequential_block(query, res, restypelist, else_statements, NULL, is_func, true)))
 				return NULL;
 		}
 		n = when_statements->h;
@@ -388,7 +380,7 @@ rel_psm_case( sql_query *query, sql_subtype *res, list *restypelist, dnode *case
 
 			if (!when_value || rel ||
 			   (cond = rel_binop_(sql, rel, v, when_value, NULL, "=", card_value)) == NULL ||
-			   (if_stmts = sequential_block(query, res, restypelist, m->next->data.lval, NULL, is_func)) == NULL ) {
+			   (if_stmts = sequential_block(query, res, restypelist, m->next->data.lval, NULL, is_func, true)) == NULL ) {
 				if (rel)
 					return sql_error(sql, 02, SQLSTATE(42000) "CASE: No SELECT statements allowed within the CASE condition");
 				return NULL;
@@ -408,7 +400,7 @@ rel_psm_case( sql_query *query, sql_subtype *res, list *restypelist, dnode *case
 		list *else_stmt = NULL;
 
 		if (else_statements) {
-			if (!(else_stmt = sequential_block(query, res, restypelist, else_statements, NULL, is_func)))
+			if (!(else_stmt = sequential_block(query, res, restypelist, else_statements, NULL, is_func, true)))
 				return NULL;
 		}
 		n = whenlist->h;
@@ -421,7 +413,7 @@ rel_psm_case( sql_query *query, sql_subtype *res, list *restypelist, dnode *case
 			sql_exp *case_stmt = NULL;
 
 			if (!cond || rel ||
-			   (if_stmts = sequential_block(query, res, restypelist, m->next->data.lval, NULL, is_func)) == NULL ) {
+			   (if_stmts = sequential_block(query, res, restypelist, m->next->data.lval, NULL, is_func, true)) == NULL ) {
 				if (rel)
 					return sql_error(sql, 02, SQLSTATE(42000) "CASE: No SELECT statements allowed within the CASE condition");
 				return NULL;
@@ -604,7 +596,7 @@ has_return( list *l )
 }
 
 static list *
-sequential_block (sql_query *query, sql_subtype *restype, list *restypelist, dlist *blk, char *opt_label, int is_func) 
+sequential_block(sql_query *query, sql_subtype *restype, list *restypelist, dlist *blk, char *opt_label, int is_func, bool push_frame)
 {
 	mvc *sql = query->sql;
 	list *l=0;
@@ -617,7 +609,7 @@ sequential_block (sql_query *query, sql_subtype *restype, list *restypelist, dli
 
 	if (blk->h)
  		l = sa_list(sql->sa);
-	if (!stack_push_frame(sql, opt_label))
+	if (push_frame && !stack_push_frame(sql, opt_label))
 		return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	for (n = blk->h; n; n = n->next ) {
 		sql_exp *res = NULL;
@@ -870,25 +862,30 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 						 stack_get_string(sql, mvc_bind_schema(sql, "sys"), "current_user"), s->base.name);
 	} else {
 		char *q = QUERY(sql->scanner);
-		list *l = NULL;
+		list *l = sa_list(sql->sa);
 
 	 	if (params) {
-			for (n = params->h; n; n = n->next) {
-				dnode *an = n->data.lval->h;
-				sql_add_param(sql, an->data.sval, &an->next->data.typeval);
-			}
-			l = sql->params;
-			if (l && list_length(l) == 1) {
-				sql_arg *a = l->h->data;
-
-				if (strcmp(a->name, "*") == 0) {
-					l = NULL;
+			if (dlist_length(params) == 1) {
+				dnode *an = params->h->data.lval->h;
+				assert(an->data.sval);
+				if (strcmp(an->data.sval, "*") == 0)
 					vararg = TRUE;
-				}
 			}
+			if (!vararg)
+				for (n = params->h; n; n = n->next) {
+					dnode *an = n->data.lval->h;
+					sql_arg *a = SA_ZNEW(sql->sa, sql_arg);
+
+					assert(an->data.sval);
+					a->name = sa_strdup(sql->sa, an->data.sval);
+					a->type = an->next->data.typeval;
+					a->inout = ARG_IN;
+					if (strcmp(a->name, "*") == 0) 
+						a->type = *sql_bind_localtype("int");
+
+					list_append(l, a);
+				}
 		}
-		if (!l)
-			l = sa_list(sql->sa);
 		if (res) {
 			restype = result_type(sql, res);
 			if (!restype)
@@ -953,7 +950,16 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 				GDKfree(q);
 			}
 			sql->session->schema = s;
-			b = sequential_block(query, (ra)?&ra->type:NULL, ra?NULL:restype, body, NULL, is_func);
+
+			if (!stack_push_frame(sql, NULL))
+				return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			for (node *n = l->h ; n ; n = n->next) { /* Push SQL UDF parameters into the stack */
+				sql_arg *a = (sql_arg*) n->data;
+				if (!stack_push_var(sql, NULL, a->name, &(a->type)))
+					return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			}
+
+			b = sequential_block(query, (ra)?&ra->type:NULL, ra?NULL:restype, body, NULL, is_func, false);
 			sql->forward = NULL;
 			sql->session->schema = old_schema;
 			sql->params = NULL;
@@ -1311,7 +1317,7 @@ create_trigger(sql_query *query, dlist *qname, int time, symbol *trigger_event, 
 		if (old_name)
 			stack_update_rel_view(sql, old_name, new_name?rel_dup(rel):rel);
 	}
-	if (!(sq = sequential_block(query, NULL, NULL, stmts, NULL, 1)))
+	if (!(sq = sequential_block(query, NULL, NULL, stmts, NULL, 1, true)))
 		return NULL;
 	r = rel_psm_block(sql->sa, sq);
 

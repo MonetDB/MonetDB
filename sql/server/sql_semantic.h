@@ -43,11 +43,9 @@ extern atom *sql_set_arg(mvc *sql, int nr, atom *v);
 extern atom *sql_bind_arg(mvc *sql, int nr);
 extern void sql_destroy_args(mvc *sql);		/* used in backend */
 
-/* SQL's parameters '?' (in prepare statements) and parameters of sql
+/* SQL's parameters '?' (in prepare statements)
  * functions and procedures are kept in the param list.  */
-
-extern void sql_add_param(mvc *sql, const char *name, sql_subtype *st);	
-extern sql_arg *sql_bind_param(mvc *sql, const char *name);
+extern void sql_add_param(mvc *sql);	
 /* once the type of the '?' parameters is known it's set using the set_type
  * function */
 extern int set_type_param(mvc *sql, sql_subtype *type, int nr);

@@ -1209,12 +1209,7 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 				return exp_rel(sql, r);
 			}
 		}
-		if (!exp) { /* Try a parameter - TODO this will be cleaned out */
-			sql_arg *a = sql_bind_param(sql, name);
-			if (a)
-				exp = exp_param_or_declared(sql->sa, NULL, a->name, &a->type, 1);
-		}
-		if (!exp) { /* If no column was found, try a variable */
+		if (!exp) { /* If no column was found, try a variable or parameter */
 			sql_schema *s = cur_schema(sql);
 			int var = stack_find_var(sql, s, name); /* find one */
 			if (var)

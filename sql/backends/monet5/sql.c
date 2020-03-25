@@ -124,6 +124,10 @@ sql_symbol2relation(mvc *sql, symbol *sym)
 	sql_query *query = query_create(sql);
 	int top = sql->topframes;
 
+	/* On explain and plan modes, drop declared variables after generating the AST */
+	if (((sql->emod & mod_explain) || (sql->emode != m_normal && sql->emode != m_execute)) && !stack_push_frame(sql, NULL))
+		return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+
 	rel = rel_semantic(query, sym);
 	if (rel)
 		rel = sql_processrelation(sql, rel, 1);
