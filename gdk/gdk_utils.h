@@ -116,7 +116,8 @@ gdk_export bool GDKexiting(void);
 
 gdk_export void GDKprepareExit(void);
 gdk_export void GDKreset(int status);
-gdk_export const char *GDKversion(void);
+gdk_export const char *GDKversion(void)
+	__attribute__((__const__));
 
 // these are used in embedded mode to jump out of GDKfatal
 gdk_export jmp_buf GDKfataljump;

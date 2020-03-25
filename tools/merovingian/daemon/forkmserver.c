@@ -203,8 +203,8 @@ forkMserver(char *database, sabdb** stats, bool force)
 			dp = dp->next = malloc(sizeof(struct _dpair));
 			*dp = (struct _dpair) {
 				.dbname = strdup(database),
+				.fork_lock = PTHREAD_MUTEX_INITIALIZER,
 			};
-			pthread_mutex_init(&dp->fork_lock, NULL);
 			break;
 		}
 		dp = dp->next;

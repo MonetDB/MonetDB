@@ -1882,6 +1882,7 @@ GDKmalloc_internal(size_t size)
 		MT_lock_unset(&mallocsuccesslock);
 	}
 	if (GDK_malloc_success_count == 0) {
+		GDKerror("allocation failed because of testing limit\n");
 		return NULL;
 	}
 #endif

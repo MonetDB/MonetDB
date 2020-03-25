@@ -10,14 +10,18 @@ SELECT
 FROM another_T; --error, subquery uses ungrouped column "another_T.col2" from outer query
 
 SELECT
-    (SELECT MIN(col1) WHERE SUM(SUM(col2)) > 1),
+    (SELECT MIN(col1) WHERE SUM(col2) > 1),
     CAST(SUM((SELECT col1 FROM tbl_ProductSales GROUP BY col2)) AS BIGINT)
 FROM another_T GROUP BY col2;
 	-- 1    1
 	-- 11   11
 	-- 111  111
 	-- 1111 1111
--- The crash happens because of the nested aggregates
+
+SELECT
+    (SELECT MIN(col1) WHERE SUM(SUM(col2)) > 1),
+    CAST(SUM((SELECT col1 FROM tbl_ProductSales GROUP BY col2)) AS BIGINT)
+FROM another_T GROUP BY col2; --error, aggregate function calls cannot be nested
 
 SELECT 
     CAST(SUM((SELECT col1 FROM tbl_ProductSales GROUP BY col2)) OVER () AS BIGINT), 

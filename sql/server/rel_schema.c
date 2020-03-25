@@ -1879,7 +1879,7 @@ rel_grant_privs(mvc *sql, sql_schema *cur, dlist *privs, dlist *grantees, int gr
 		return rel_grant_func(sql, cur, obj_privs, qname, typelist, type, grantees, grant, grantor);
 	}
 	default:
-		return sql_error(sql, 02, SQLSTATE(M0M03) "Grant: unknown token %d", token);
+		return sql_error(sql, 02, SQLSTATE(M0M03) "Grant: unknown token %d", (int) token);
 	}
 }
 
@@ -2061,7 +2061,7 @@ rel_revoke_privs(mvc *sql, sql_schema *cur, dlist *privs, dlist *grantees, int g
 		return rel_revoke_func(sql, cur, obj_privs, qname, typelist, type, grantees, grant, grantor);
 	}
 	default:
-		return sql_error(sql, 02, SQLSTATE(M0M03) "Grant: unknown token %d", token);
+		return sql_error(sql, 02, SQLSTATE(M0M03) "Grant: unknown token %d", (int) token);
 	}
 }
 
