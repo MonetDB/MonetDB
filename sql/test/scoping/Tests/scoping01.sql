@@ -1,6 +1,7 @@
 --TODO rename schemas with variables and transaction management
 -- Test variables with different schemas
 -- Update rel_read and RAstatemet
+-- Check what must be persisted
 
 declare i integer;
 set i = 1234;
@@ -76,6 +77,22 @@ SELECT scoping(vals) FROM (VALUES (1),(2),(3)) AS vals(vals);
 	-- 3
 
 DROP FUNCTION scoping(INT);
+
+CREATE OR REPLACE FUNCTION scoping2(input INT) RETURNS INT 
+BEGIN
+	DECLARE TABLE x (a int);
+	INSERT INTO x VALUES (1);
+	IF input = 2 THEN
+		DECLARE TABLE x (a int);
+		INSERT INTO x VALUES (2);
+	ELSE
+		IF input = 3 THEN
+			TRUNCATE x;
+			INSERT INTO x VALUES (3);
+		END IF;
+	END IF;
+	RETURN SELECT a FROM x;
+END; --error, multiple declarations of table x;
 ------------------------------------------------------------------------------
 -- A table returning function or view to list the session's variables
 select "name", schemaname, "type", currentvalue, accessmode from sys.vars();

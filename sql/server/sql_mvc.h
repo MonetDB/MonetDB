@@ -276,7 +276,6 @@ extern sql_rel *stack_find_rel_view(mvc *sql, const char *name);
 
 /* find variable in the current frame */
 extern int frame_find_var(mvc *sql, sql_schema *s, const char *name);
-extern sql_table *frame_find_table(mvc *sql, sql_schema *s, const char *name);
 extern sql_rel *frame_find_rel_view(mvc *sql, const char *name);
 
 extern int stack_has_frame(mvc *sql, const char *name);
