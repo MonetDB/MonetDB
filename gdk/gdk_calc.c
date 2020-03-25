@@ -12246,7 +12246,7 @@ VARcalcrsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
 			   between3(v, hi, hinc, lo, linc, TYPE))	\
 		     : between3(v, lo, linc, hi, hinc, TYPE))))
 
-#define BETWEEN_LOOP_TYPE(TYPE)						\
+#define BETWEEN_LOOP_TYPE(TYPE, canditer_next)				\
 	do {								\
 		for (l = 0; l < ci->ncand; l++) {			\
 			x1 = canditer_next(ci) - seqbase1;		\
@@ -12301,27 +12301,48 @@ BATcalcbetween_intern(const void *src, int incr1, const char *hp1, int wd1,
 
 	switch (tp) {
 	case TYPE_bte:
-		BETWEEN_LOOP_TYPE(bte);
+		if (ci->tpe == cand_dense && cilo->tpe == cand_dense && cihi->tpe == cand_dense)
+			BETWEEN_LOOP_TYPE(bte, canditer_next_dense);
+		else
+			BETWEEN_LOOP_TYPE(bte, canditer_next);
 		break;
 	case TYPE_sht:
-		BETWEEN_LOOP_TYPE(sht);
+		if (ci->tpe == cand_dense && cilo->tpe == cand_dense && cihi->tpe == cand_dense)
+			BETWEEN_LOOP_TYPE(sht, canditer_next_dense);
+		else
+			BETWEEN_LOOP_TYPE(sht, canditer_next);
 		break;
 	case TYPE_int:
-		BETWEEN_LOOP_TYPE(int);
+		if (ci->tpe == cand_dense && cilo->tpe == cand_dense && cihi->tpe == cand_dense)
+			BETWEEN_LOOP_TYPE(int, canditer_next_dense);
+		else
+			BETWEEN_LOOP_TYPE(int, canditer_next);
 		break;
 	case TYPE_lng:
-		BETWEEN_LOOP_TYPE(lng);
+		if (ci->tpe == cand_dense && cilo->tpe == cand_dense && cihi->tpe == cand_dense)
+			BETWEEN_LOOP_TYPE(lng, canditer_next_dense);
+		else
+			BETWEEN_LOOP_TYPE(lng, canditer_next);
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
-		BETWEEN_LOOP_TYPE(hge);
+		if (ci->tpe == cand_dense && cilo->tpe == cand_dense && cihi->tpe == cand_dense)
+			BETWEEN_LOOP_TYPE(hge, canditer_next_dense);
+		else
+			BETWEEN_LOOP_TYPE(hge, canditer_next);
 		break;
 #endif
 	case TYPE_flt:
-		BETWEEN_LOOP_TYPE(flt);
+		if (ci->tpe == cand_dense && cilo->tpe == cand_dense && cihi->tpe == cand_dense)
+			BETWEEN_LOOP_TYPE(flt, canditer_next_dense);
+		else
+			BETWEEN_LOOP_TYPE(flt, canditer_next);
 		break;
 	case TYPE_dbl:
-		BETWEEN_LOOP_TYPE(dbl);
+		if (ci->tpe == cand_dense && cilo->tpe == cand_dense && cihi->tpe == cand_dense)
+			BETWEEN_LOOP_TYPE(dbl, canditer_next_dense);
+		else
+			BETWEEN_LOOP_TYPE(dbl, canditer_next);
 		break;
 	default:
 		assert(tp != TYPE_oid);
