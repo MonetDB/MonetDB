@@ -260,9 +260,9 @@ rel_with_query(sql_query *query, symbol *q )
 		char *name = qname_schema_object(dn->data.lval);
 		sql_rel *nrel;
 
-		if (frame_find_var(sql, NULL, name)) { /* may conflict with any, TODO change this, we should have rel_find_cte */
+		if (frame_find_rel_view(sql, name)) {
 			stack_pop_frame(sql);
-			return sql_error(sql, 01, SQLSTATE(42000) "Variable '%s' already declared", name);
+			return sql_error(sql, 01, SQLSTATE(42000) "View '%s' already declared", name);
 		}
 		nrel = rel_semantic(query, sym);
 		if (!nrel) {  

@@ -205,8 +205,8 @@ rel_psm_declare_table(sql_query *query, dnode *n)
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_error(sql, 02, SQLSTATE(3F000) "DECLARE: No such schema '%s'", sname);
-	if (frame_find_var(sql, s, name))
-		return sql_error(sql, 01, SQLSTATE(42000) "DECLARE: Variable '%s' already declared", name);
+	if (frame_find_table(sql, s, name))
+		return sql_error(sql, 01, SQLSTATE(42000) "DECLARE: Table '%s' already declared", name);
 
 	assert(n->next->next->next->type == type_int);
 	rel = rel_create_table(query, s, SQL_DECLARED_TABLE, s->base.name, name, n->next->next->data.sym,

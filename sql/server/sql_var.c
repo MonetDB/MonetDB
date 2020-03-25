@@ -61,7 +61,7 @@ static void
 destroy_sql_local_table(void *data)
 {
 	sql_local_table *slt = (sql_local_table*) data;
-	table_destroy(slt->table);
+	table_destroy(slt->table); /* TODO check if this is needed */
 	_DELETE(slt->name);
 	_DELETE(slt);
 }
@@ -395,6 +395,21 @@ stack_find_table(mvc *sql, sql_schema *s, const char *name)
 	return NULL;
 }
 
+sql_table *
+frame_find_table(mvc *sql, sql_schema *s, const char *name)
+{
+	(void) s; /* for now ignore sname */
+	sql_frame *f = sql->frames[sql->topframes - 1];
+	if (f->tables) {
+		for (node *n = f->tables->h; n ; n = n->next) {
+			sql_local_table *var = (sql_local_table*) n->data;
+			if (var->name && !strcmp(var->name, name))
+				return var->table;
+		}
+	}
+	return NULL;
+}
+
 sql_rel *
 stack_find_rel_view(mvc *sql, const char *name)
 {
@@ -406,6 +421,20 @@ stack_find_rel_view(mvc *sql, const char *name)
 				if (var->name && !strcmp(var->name, name))
 					return rel_dup(var->rel_view);
 			}
+		}
+	}
+	return NULL;
+}
+
+sql_rel *
+frame_find_rel_view(mvc *sql, const char *name)
+{
+	sql_frame *f = sql->frames[sql->topframes - 1];
+	if (f->rel_views) {
+		for (node *n = f->rel_views->h; n ; n = n->next) {
+			sql_rel_view *var = (sql_rel_view*) n->data;
+			if (var->name && !strcmp(var->name, name))
+				return var->rel_view;
 		}
 	}
 	return NULL;

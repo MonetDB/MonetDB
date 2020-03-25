@@ -1,4 +1,5 @@
---TODO update rel_dump for schemas on variables
+--TODO rename schemas with variables and transaction management
+-- variables with different schemas
 
 declare i integer;
 set i = 1234;
@@ -49,7 +50,9 @@ DROP TABLE tmp2;
 DROP FUNCTION tests_scopes1(INT);
 DROP FUNCTION tests_scopes2(INT);
 ------------------------------------------------------------------------------
-with a(a) as (select 1), a(a) as (select 2) select 1; --error, variable a already declared
+declare "current_schema" string; --error, "current_schema" already declared
+declare "sys"."current_schema" string; --error, "current_schema" already declared
+with a(a) as (select 1), a(a) as (select 2) select 1; --error, CTE a already declared
 ------------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION scoping(input INT) RETURNS INT 
 BEGIN

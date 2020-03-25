@@ -1082,7 +1082,6 @@ first_column(sql_table *t)
 	return NULL;
 }
 
-
 sql_column *
 mvc_first_column(mvc *m, sql_table *t)
 {

@@ -80,17 +80,18 @@ typedef struct sql_window_definition {
 	bool visited; /* used for window definitions lookup */
 } sql_window_definition;
 
-typedef struct sql_local_table {
+typedef struct sql_local_table { /* declared tables during session */
 	char *name;
 	sql_table *table;
 } sql_local_table;
 
-typedef struct sql_rel_view {
+typedef struct sql_rel_view { /* CTEs */
 	char *name;
 	sql_rel *rel_view;
 } sql_rel_view;
 
-typedef struct sql_var {
+typedef struct sql_var { /* Declared variables and parameters */
+	char *sname; /* Declared variables may have a schema */
 	char *name;
 	atom var;
 } sql_var;
@@ -266,15 +267,19 @@ extern sql_frame* stack_push_frame(mvc *sql, const char *name);
 extern void stack_pop_frame(mvc *sql);
 extern void clear_frame(mvc *sql, sql_frame *frame);
 extern void stack_pop_until(mvc *sql, int frame);
+
+/* find variable in the stack */
+extern int stack_find_frame(mvc *sql, sql_schema *s, const char *name);
+extern int stack_find_var(mvc *sql, sql_schema *s, const char *name);
 extern sql_subtype *stack_find_type(mvc *sql, const char *name);
 extern sql_table *stack_find_table(mvc *sql, sql_schema *s, const char *name);
 extern sql_rel *stack_find_rel_view(mvc *sql, const char *name);
-extern int stack_find_var(mvc *sql, sql_schema *s, const char *name);
-/* find var in current frame */
+
+/* find variable in the current frame */
 extern int frame_find_var(mvc *sql, sql_schema *s, const char *name);
-/* find frame holding variable 'name' */
-extern int stack_find_frame(mvc *sql, sql_schema *s, const char *name);
-/* find frame with given name */
+extern sql_table *frame_find_table(mvc *sql, sql_schema *s, const char *name);
+extern sql_rel *frame_find_rel_view(mvc *sql, const char *name);
+
 extern int stack_has_frame(mvc *sql, const char *name);
 extern int stack_nr_of_declared_tables(mvc *sql);
 
