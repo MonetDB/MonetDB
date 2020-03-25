@@ -1248,6 +1248,8 @@ void
 mapi_noexplain(Mapi mid, const char *errorprefix)
 {
 	assert(mid);
+	if (mid->noexplain)
+		free(mid->noexplain);
 	mid->noexplain = errorprefix ? strdup(errorprefix) : NULL;
 }
 
