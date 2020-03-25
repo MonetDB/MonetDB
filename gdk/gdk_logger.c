@@ -1667,7 +1667,7 @@ bm_subcommit(logger *lg, BAT *list_bid, BAT *list_nme, BAT *catalog_bid, BAT *ca
 		BATcommit(catalog_oid, BUN_NONE);
 	}
 	BATcommit(dcatalog, BUN_NONE);
-	res = TMsubcommit_list(n, NULL, i);
+	res = TMsubcommit_list(n, NULL, i, getBBPinfo());
 	GDKfree(n);
 	if (res != GDK_SUCCEED)
 		fprintf(stderr, "!ERROR: bm_subcommit: commit failed\n");

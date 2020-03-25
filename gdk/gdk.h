@@ -713,7 +713,8 @@ typedef struct {
 
 #define GDKLIBRARY_BLOB_SORT	061040U /* blob compare changed */
 #define GDKLIBRARY_OLDDATE	061041U /* the representation of times changed */
-#define GDKLIBRARY		061042U
+#define GDKLIBRARY_NOINFO	061042U /* no extra info in header */
+#define GDKLIBRARY		061043U
 
 typedef struct BAT {
 	/* static bat properties */
@@ -1832,7 +1833,7 @@ Tpos(BATiter *bi, BUN p)
 gdk_export gdk_return TMcommit(void);
 gdk_export void TMabort(void);
 gdk_export gdk_return TMsubcommit(BAT *bl);
-gdk_export gdk_return TMsubcommit_list(bat *restrict subcommit, BUN *restrict sizes, int cnt);
+gdk_export gdk_return TMsubcommit_list(bat *restrict subcommit, BUN *restrict sizes, int cnt, int info);
 
 /*
  * @- Delta Management
