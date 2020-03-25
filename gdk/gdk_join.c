@@ -2578,7 +2578,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		hash_cand = true;
 	} else {
 		/* we need to create a hash on r */
-		TRC_DEBUG(ALGO, ALGOBATFMT "): creating hash%s\n",
+		TRC_DEBUG(ALGO, ALGOBATFMT ": creating hash%s\n",
 			  ALGOBATPAR(r),
 			  swapped ? " (swapped)" : "");
 		if (BAThash(r) != GDK_SUCCEED)

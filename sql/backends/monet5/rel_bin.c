@@ -316,6 +316,17 @@ stmt_selectnonil( backend *be, stmt *col, stmt *s )
 	return nn;
 }
 
+static int
+is_tid_chain(stmt *cand) 
+{
+	while(cand && cand->type != st_tid && cand->cand) {
+		cand = cand->cand;
+	}
+	if (cand && cand->type == st_tid)
+		return 1;
+	return 0;
+}
+
 static stmt *
 subrel_project( backend *be, stmt *s, list *refs, sql_rel *rel)
 {
@@ -332,7 +343,7 @@ subrel_project( backend *be, stmt *s, list *refs, sql_rel *rel)
 		assert(c->type == st_alias || (c->type == st_join && c->flag == cmp_project) || c->type == st_bat || c->type == st_idxbat || c->type == st_single);
 		if (c->type != st_alias) {
 			c = stmt_project(be, cand, c);
-		} else if (c->op1->type == st_mirror && cand->type == st_tid) { /* alias with mirror (ie full row ids) */
+		} else if (c->op1->type == st_mirror && is_tid_chain(cand)) { /* alias with mirror (ie full row ids) */
 			c = stmt_alias(be, cand, c->tname, c->cname); 
 		} else { /* st_alias */
 			stmt *s = c->op1;
@@ -1801,10 +1812,8 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 			}
 		} else {
 			psub = exp_bin(be, op, sub, NULL, NULL, NULL, NULL, NULL); /* table function */
-			if (!psub) { 
-				assert(sql->session->status == -10); /* Stack overflow errors shouldn't terminate the server */
+			if (!psub)
 				return NULL;
-			}
 		}
 		l = sa_list(sql->sa);
 		if (f->func->res) {
