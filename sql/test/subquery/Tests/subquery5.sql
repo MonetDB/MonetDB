@@ -32,6 +32,31 @@ FROM another_T;
 	-- 1234 40
 	-- 1234 40
 
+CREATE FUNCTION evilfunction(input INT) RETURNS INT 
+BEGIN
+	RETURN SELECT input WHERE FALSE;
+END;
+
+SELECT evilfunction(1);
+	-- NULL
+SELECT evilfunction(1);
+	-- NULL
+SELECT evilfunction(1), 1;
+	-- NULL, 1
+
+CREATE OR REPLACE FUNCTION evilfunction(input INT) RETURNS INT 
+BEGIN
+	RETURN SELECT input UNION ALL SELECT input;
+END;
+
+SELECT evilfunction(1);
+ 	--error, more than one row returned by a subquery used as an expression
+SELECT evilfunction(1);
+ 	--error, more than one row returned by a subquery used as an expression
+SELECT evilfunction(1), 1;
+	--error, more than one row returned by a subquery used as an expression
+
+DROP FUNCTION evilfunction(input INT)
 DROP TABLE tbl_ProductSales;
 DROP TABLE another_T;
 DROP TABLE integers;
