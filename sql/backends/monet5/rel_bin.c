@@ -1812,10 +1812,8 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 			}
 		} else {
 			psub = exp_bin(be, op, sub, NULL, NULL, NULL, NULL, NULL); /* table function */
-			if (!psub) { 
-				assert(sql->session->status == -10); /* Stack overflow errors shouldn't terminate the server */
+			if (!psub)
 				return NULL;
-			}
 		}
 		l = sa_list(sql->sa);
 		if (f->func->res) {
