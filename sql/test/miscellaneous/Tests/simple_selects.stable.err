@@ -165,6 +165,10 @@ MAPI  = (monetdb) /var/tmp/mtest-106925/.s.monetdb.39578
 QUERY = SELECT 1, 2 INTO myvar; --error, number of variables don't match
 ERROR = !SELECT INTO: number of values doesn't match number of variables to set
 CODE  = 21S01
+MAPI  = (monetdb) /var/tmp/mtest-881990/.s.monetdb.34703
+QUERY = declare table x (c int); --error table x already declared
+ERROR = !DECLARE TABLE: name 'x' already in use
+CODE  = 42S01
 
 # 17:31:38 >  
 # 17:31:38 >  "Done."

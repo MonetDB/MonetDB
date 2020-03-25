@@ -132,19 +132,19 @@ stream_export ssize_t mnstr_readline(stream *restrict s, void *restrict buf, siz
 stream_export ssize_t mnstr_write(stream *restrict s, const void *restrict buf, size_t elmsize, size_t cnt);
 stream_export void mnstr_close(stream *s);
 stream_export void mnstr_destroy(stream *s);
-stream_export char *mnstr_error(stream *s);
+stream_export char *mnstr_error(const stream *s);
 stream_export int mnstr_flush(stream *s);
 stream_export int mnstr_fsync(stream *s);
 stream_export int mnstr_fgetpos(stream *restrict s, fpos_t *restrict p);
 stream_export int mnstr_fsetpos(stream *restrict s, fpos_t *restrict p);
-stream_export char *mnstr_name(stream *s);
-stream_export int mnstr_errnr(stream *s);
+stream_export char *mnstr_name(const stream *s);
+stream_export int mnstr_errnr(const stream *s);
 stream_export void mnstr_clearerr(stream *s);
-stream_export bool mnstr_isbinary(stream *s);
-stream_export bool mnstr_get_swapbytes(stream *s);
+stream_export bool mnstr_isbinary(const stream *s);
+stream_export bool mnstr_get_swapbytes(const stream *s);
 stream_export void mnstr_set_bigendian(stream *s, bool bigendian);
 stream_export void mnstr_settimeout(stream *s, unsigned int ms, bool (*func)(void));
-stream_export int mnstr_isalive(stream *s);
+stream_export int mnstr_isalive(const stream *s);
 
 stream_export stream *open_rstream(const char *filename);
 stream_export stream *open_wstream(const char *filename);
@@ -207,7 +207,7 @@ stream_export buffer *mnstr_get_buffer(stream *s);
  * found. The next read will then start with a new major block.
  */
 stream_export stream *block_stream(stream *s);
-stream_export bool isa_block_stream(stream *s);
+stream_export bool isa_block_stream(const stream *s);
 stream_export stream *bs_stream(stream *s);
 
 

@@ -3315,6 +3315,7 @@ tail_type(stmt *st)
 		case st_tunion:
 		case st_tdiff:
 		case st_tinter:
+			return sql_bind_localtype("oid");
 		case st_append:
 		case st_alias:
 		case st_gen_group:

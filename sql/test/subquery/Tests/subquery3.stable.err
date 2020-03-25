@@ -178,10 +178,10 @@ CODE  = M0M29
 MAPI  = (monetdb) /var/tmp/mtest-224250/.s.monetdb.30823
 QUERY = SELECT 
             (SELECT SUM(SUM(i1.i)) FROM integers i2 GROUP BY i2.i)
-        FROM integers i1; --error, more than one row returned by a subquery used as an expression
-ERROR = !zero_or_one: cardinality violation, scalar expression expected
-CODE  = M0M29
-MAPI  = (monetdb) /var/tmp/mtest-22911/.s.monetdb.35494
+        FROM integers i1; --error, aggregation functions cannot be nested
+ERROR = !SELECT: aggregate function calls cannot be nested
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-766253/.s.monetdb.34755
 QUERY = SELECT 
             (SELECT SUM(SUM(i2.i)) FROM integers i2 GROUP BY i2.i)
         FROM integers i1; --error, aggregation functions cannot be nested

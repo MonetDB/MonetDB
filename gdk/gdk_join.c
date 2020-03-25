@@ -2570,7 +2570,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 			  r->thash ? " ignoring existing hash" : "",
 			  swapped ? " (swapped)" : "");
 		if (snprintf(ext, sizeof(ext), "thshjn%x",
-			     rci->s->batCacheid) >= (int) sizeof(ext))
+			     (unsigned) rci->s->batCacheid) >= (int) sizeof(ext))
 			goto bailout;
 		if ((hsh = BAThash_impl(r, rci, ext)) == NULL) {
 			goto bailout;
@@ -2578,7 +2578,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		hash_cand = true;
 	} else {
 		/* we need to create a hash on r */
-		TRC_DEBUG(ALGO, ALGOBATFMT "): creating hash%s\n",
+		TRC_DEBUG(ALGO, ALGOBATFMT ": creating hash%s\n",
 			  ALGOBATPAR(r),
 			  swapped ? " (swapped)" : "");
 		if (BAThash(r) != GDK_SUCCEED)

@@ -367,6 +367,7 @@ get_inner_relations(mvc *sql, sql_rel *rel, list *rels)
 static int
 exp_count(int *cnt, sql_exp *e) 
 {
+	int flag;
 	if (!e)
 		return 0;
 	if (find_prop(e->p, PROP_JOINIDX))
@@ -383,7 +384,8 @@ exp_count(int *cnt, sql_exp *e)
 			if (e->f)
 				exp_count(cnt, e->f);
 		}	
-		switch (e->flag) {
+       		flag = e->flag & (~CMP_BETWEEN);
+		switch (flag) {
 		case cmp_equal:
 			*cnt += 90;
 			return 90;
@@ -8940,8 +8942,10 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, int value_based_
 	/* Important -> Re-write semijoins after rel_join_order */
 	if ((gp.cnt[op_join] || gp.cnt[op_semi] || gp.cnt[op_anti]) && gp.cnt[op_groupby]) {
 		rel = rel_visitor_topdown(sql, rel, &rel_push_count_down, &changes);
-		if (level <= 0)
+		if (level <= 0) {
+			rel = rel_visitor_topdown(sql, rel, &rel_push_select_down, &changes); 
 			rel = rel_visitor_topdown(sql, rel, &rel_push_join_down, &changes); 
+		}
 
 		/* push_join_down introduces semijoins */
 		/* rewrite semijoin (A, join(A,B)) into semijoin (A,B) */
