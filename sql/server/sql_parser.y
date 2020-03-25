@@ -624,7 +624,7 @@ int yydebug=1;
 %token <sval> GEOMETRY GEOMETRYSUBTYPE GEOMETRYA 
 
 %token	USER CURRENT_USER SESSION_USER LOCAL LOCKED BEST EFFORT
-%token  CURRENT_ROLE sqlSESSION
+%token  CURRENT_ROLE sqlSESSION CURRENT_SCHEMA CURRENT_TIMEZONE
 %token <sval> sqlDELETE UPDATE SELECT INSERT MATCHED
 %token <sval> LATERAL LEFT RIGHT FULL OUTER NATURAL CROSS JOIN INNER
 %token <sval> COMMIT ROLLBACK SAVEPOINT RELEASE WORK CHAIN NO PRESERVE ROWS
@@ -4075,7 +4075,9 @@ value_exp:
  |  case_exp
  |  cast_exp
  |  column_ref                            { $$ = _symbol_create_list(SQL_COLUMN, $1); }
- |  CURRENT_ROLE   { $$ = _symbol_create_list(SQL_NAME, append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "current_role"))); }
+ |  CURRENT_SCHEMA   { $$ = _symbol_create_list(SQL_NAME, append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "current_schema"))); }
+ |  CURRENT_ROLE     { $$ = _symbol_create_list(SQL_NAME, append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "current_role"))); }
+ |  CURRENT_TIMEZONE { $$ = _symbol_create_list(SQL_NAME, append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "current_timezone"))); }
  |  datetime_funcs
  |  GROUPING '(' column_ref_commalist ')' { dlist *l = L();
 										    append_list(l, append_string(L(), "grouping"));
