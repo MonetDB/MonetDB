@@ -1076,7 +1076,7 @@ rel_var_ref(mvc *sql, const char *sname, const char *name)
 
 	if (stack_find_var(sql, s, name)) {
 		sql_subtype *tpe = stack_find_type(sql, name);
-		int frame = stack_find_frame(sql, s, name);
+		int frame = stack_find_var_frame(sql, s, name);
 		return exp_param_or_declared(sql->sa, s->base.name, name, tpe, frame);
 	} else {
 		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: identifier '%s%s%s' unknown", sname ? sname : "", sname ? "." : "", name);

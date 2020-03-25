@@ -90,7 +90,7 @@ psm_set_exp(sql_query *query, dnode *n)
 			e = exp_aggr1(sql->sa, e, zero_or_one, 0, 0, CARD_ATOM, has_nil(e));
 		}
 
-		level = stack_find_frame(sql, s, vname);
+		level = stack_find_var_frame(sql, s, vname);
 		e = rel_check_type(sql, tpe, rel, e, type_cast);
 		if (!e)
 			return NULL;
@@ -131,7 +131,7 @@ psm_set_exp(sql_query *query, dnode *n)
 				tpe = stack_find_type(sql, vname);
 			}
 
-			level = stack_find_frame(sql, s, vname);
+			level = stack_find_var_frame(sql, s, vname);
 			if (!exp_name(v)) 
 				exp_label(sql->sa, v, ++sql->label);
 			v = exp_ref(sql->sa, v);
@@ -224,7 +224,7 @@ rel_psm_declare_table(sql_query *query, dnode *n)
 	if (baset->flag != ddl_create_table)
 		return NULL;
 	t = (sql_table*)((atom*)((sql_exp*)baset->exps->t->data)->l)->data.val.pval;
-	if (!stack_push_table(sql, s, name, t))
+	if (!stack_push_table(sql, t))
 		return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return exp_table(sql->sa, sa_strdup(sql->sa, s->base.name), sa_strdup(sql->sa, name), t, sql->frame);
 }
@@ -547,7 +547,7 @@ rel_select_into( sql_query *query, symbol *sq, exp_kind ek)
 		if (!stack_find_var(sql, s, name)) 
 			return sql_error(sql, 02, SQLSTATE(42000) "SELECT INTO: Variable '%s%s%s' unknown", sname ? sname : "", sname ? "." : "", name);
 		tpe = stack_find_type(sql, name);
-		level = stack_find_frame(sql, s, name);
+		level = stack_find_var_frame(sql, s, name);
 		if (!exp_name(v)) 
 			exp_label(sql->sa, v, ++sql->label);
 		v = exp_ref(sql->sa, v);

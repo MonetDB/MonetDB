@@ -81,7 +81,6 @@ typedef struct sql_window_definition {
 } sql_window_definition;
 
 typedef struct sql_local_table { /* declared tables during session */
-	char *name;
 	sql_table *table;
 } sql_local_table;
 
@@ -91,7 +90,7 @@ typedef struct sql_rel_view { /* CTEs */
 } sql_rel_view;
 
 typedef struct sql_var { /* Declared variables and parameters */
-	char *sname; /* Declared variables may have a schema */
+	char *sname; /* Declared variables have a schema */
 	char *name;
 	atom var;
 } sql_var;
@@ -251,7 +250,7 @@ extern int mvc_check_dependency(mvc *m, sqlid id, sql_dependency type, list *ign
 
 /* variable management */
 extern sql_var* stack_push_var(mvc *sql, sql_schema *s, const char *name, sql_subtype *type);
-extern sql_local_table* stack_push_table(mvc *sql, sql_schema *s, const char *name, sql_table *t);
+extern sql_local_table* stack_push_table(mvc *sql, sql_table *t);
 extern sql_rel_view* stack_push_rel_view(mvc *sql, const char *name, sql_rel *var);
 extern sql_window_definition* stack_push_window_def(mvc *sql, const char *name, dlist *wdef);
 extern dlist* stack_get_window_def(mvc *sql, const char *name, int *pos);
@@ -269,7 +268,7 @@ extern void clear_frame(mvc *sql, sql_frame *frame);
 extern void stack_pop_until(mvc *sql, int frame);
 
 /* find variable in the stack */
-extern int stack_find_frame(mvc *sql, sql_schema *s, const char *name);
+extern int stack_find_var_frame(mvc *sql, sql_schema *s, const char *name);
 extern int stack_find_var(mvc *sql, sql_schema *s, const char *name);
 extern sql_subtype *stack_find_type(mvc *sql, const char *name);
 extern sql_table *stack_find_table(mvc *sql, sql_schema *s, const char *name);

@@ -1,5 +1,6 @@
 --TODO rename schemas with variables and transaction management
--- variables with different schemas
+-- Test variables with different schemas
+-- Update rel_read and RAstatemet
 
 declare i integer;
 set i = 1234;
