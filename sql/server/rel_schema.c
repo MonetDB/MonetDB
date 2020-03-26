@@ -1479,12 +1479,22 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 				if (isView(pt))
 					return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: can't add a view into a %s",
 									 TABLE_TYPE_DESCRIPTION(t->type, t->properties));
+				if (isDeclaredTable(pt))
+					return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: can't add a declared table into a %s",
+									 TABLE_TYPE_DESCRIPTION(t->type, t->properties));
 				if (strcmp(sname, nsname) != 0)
 					return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: all children tables of '%s.%s' must be "
 									 "part of schema '%s'", sname, tname, sname);
-				if (!extra)
+				if (!extra) {
+					if (isRangePartitionTable(t)) {
+						return sql_error(sql, 02,SQLSTATE(42000) "ALTER TABLE: a range partition is required while adding under a %s",
+										 TABLE_TYPE_DESCRIPTION(t->type, t->properties));
+					} else if (isListPartitionTable(t)) {
+						return sql_error(sql, 02,SQLSTATE(42000) "ALTER TABLE: a value partition is required while adding under a %s",
+										 TABLE_TYPE_DESCRIPTION(t->type, t->properties));
+					}
 					return rel_alter_table(sql->sa, ddl_alter_table_add_table, sname, tname, nsname, ntname, 0);
-
+				}
 				if ((isMergeTable(pt) || isReplicaTable(pt)) && list_empty(pt->members.set))
 					return sql_error(sql, 02, SQLSTATE(42000) "The %s %s.%s should have at least one table associated",
 									 TABLE_TYPE_DESCRIPTION(pt->type, pt->properties), spt->base.name, pt->base.name);
