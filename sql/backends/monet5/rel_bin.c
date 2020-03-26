@@ -2558,7 +2558,7 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 
 				if (!l || !r)
 					return NULL;
-				s = stmt_join_cand(be, column(be, l), column(be, r), left->cand, NULL/*right->cand*/, e->anti, e->flag, is_semantics(e)); 
+				s = stmt_join_cand(be, column(be, l), column(be, r), left->cand, NULL/*right->cand*/, e->anti, (comp_type) e->flag, is_semantics(e)); 
 				lcand = left->cand;
 			} else {
 				s = exp_bin(be, e, left, right, NULL, NULL, NULL, NULL);
