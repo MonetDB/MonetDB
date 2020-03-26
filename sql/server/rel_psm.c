@@ -431,6 +431,8 @@ rel_psm_return( sql_query *query, sql_subtype *restype, list *restypelist, symbo
 
 	if (restypelist)
 		ek.card = card_relation;
+	else if (return_sym->token == SQL_TABLE)
+		return sql_error(sql, 02, SQLSTATE(42000) "RETURN: TABLE return not allowed for non table returning functions");
 	res = rel_value_exp2(query, &rel, return_sym, sql_sel, ek);
 	if (!res)
 		return NULL;
@@ -451,6 +453,8 @@ rel_psm_return( sql_query *query, sql_subtype *restype, list *restypelist, symbo
 			oexps_rel = l;
 			oexps = l->exps;
 		}
+		if (list_length(oexps) != list_length(restypelist))
+			return sql_error(sql, 02, SQLSTATE(42000) "RETURN: number of columns do not match");
 		for (n = oexps->h, m = restypelist->h; n && m; n = n->next, m = m->next) {
 			sql_exp *e = n->data;
 			sql_arg *ce = m->data;
@@ -467,11 +471,11 @@ rel_psm_return( sql_query *query, sql_subtype *restype, list *restypelist, symbo
 			append(exps, e);
 		}
 		if (isproject)
-			rel -> exps = exps;
+			rel->exps = exps;
 		else
 			rel = rel_project(sql->sa, rel, exps);
 		res = exp_rel(sql, rel);
-	} else if (rel && restypelist){ /* handle return table-var */
+	} else if (rel && restypelist) { /* handle return table-var */
 		list *exps = sa_list(sql->sa);
 		sql_table *t = rel_ddl_table_get(rel);
 		node *n, *m;
