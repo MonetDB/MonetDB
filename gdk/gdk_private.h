@@ -403,7 +403,7 @@ GDKmremap_debug(const char *path, int mode, void *old_address, size_t old_size, 
 	size_t orig_new_size = *new_size;
 	void *res = GDKmremap(path, mode, old_address, old_size, new_size);
 	TRC_DEBUG(ALLOC, "GDKmremap(%s,0x%x,%p,%zu,%zu > %zu) -> %p\n",
-		  path ? path : "NULL", mode,
+		  path ? path : "NULL", (unsigned) mode,
 		  old_address, old_size, orig_new_size, *new_size, res);
 	return res;
 }

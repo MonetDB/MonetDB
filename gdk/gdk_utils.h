@@ -300,7 +300,7 @@ GDKmmap_debug(const char *path, int mode, size_t len)
 {
 	void *res = GDKmmap(path, mode, len);
 	TRC_DEBUG(ALLOC, "GDKmmap(%s,0x%x,%zu) -> %p\n",
-		  path ? path : "NULL", mode, len, res);
+		  path ? path : "NULL", (unsigned) mode, len, res);
 	return res;
 }
 #define GDKmmap(p, m, l)	GDKmmap_debug((p), (m), (l))

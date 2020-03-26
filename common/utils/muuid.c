@@ -86,10 +86,10 @@ generateUUID(void)
 		 * ("%08x-%04x-%04x-%04x-%012x") */
 		snprintf(out, sizeof(out),
 			 "%04x%04x-%04x-4%03x-8%03x-%04x%04x%04x",
-			 (unsigned) rand() % 65536U, (unsigned) rand() % 65536U,
-			 (unsigned) rand() % 65536U, (unsigned) rand() % 4096,
-			 (unsigned) rand() % 4096, (unsigned) rand() % 65536U,
-			 (unsigned) rand() % 65536U, (unsigned) rand() % 65536U);
+			 (unsigned) rand() & 0xFFFF, (unsigned) rand() & 0xFFFF,
+			 (unsigned) rand() & 0xFFFF, (unsigned) rand() & 0x0FFF,
+			 (unsigned) rand() & 0x0FFF, (unsigned) rand() & 0xFFFF,
+			 (unsigned) rand() & 0xFFFF, (unsigned) rand() & 0xFFFF);
 	}
 #endif
 	return strdup(out);
