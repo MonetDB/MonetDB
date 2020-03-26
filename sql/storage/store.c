@@ -161,13 +161,13 @@ table_destroy(sql_table *t)
 {
 	if (--(t->base.refcnt) > 0)
 		return;
-	if (t->po)
-		table_destroy(t->po);
 	cs_destroy(&t->keys);
 	cs_destroy(&t->idxs);
 	cs_destroy(&t->triggers);
 	cs_destroy(&t->columns);
 	cs_destroy(&t->members);
+	if (t->po)
+		table_destroy(t->po);
 	if (isTable(t))
 		store_funcs.destroy_del(NULL, t);
 }
@@ -225,7 +225,9 @@ sql_trans_destroy(sql_trans *t, bool try_spare)
 	fprintf(stderr, "#destroy trans (%p)\n", t);
 #endif
 
-	if (res == gtrans && spares < MAX_SPARES && !t->name && try_spare) {
+	if (t->sa->nr > 12)
+		try_spare = 0;
+	if (res == gtrans && spares < ((GDKdebug & FORCEMITOMASK) ? 2 : MAX_SPARES) && !t->name && try_spare) {
 #ifdef STORE_DEBUG
 		fprintf(stderr, "#spared (%d) trans (%p)\n", spares, t);
 #endif
@@ -1798,7 +1800,7 @@ store_load(void) {
 		return -1;
 
 	transactions = 0;
-	active_sessions = sa_list(sa);
+	active_sessions = list_create(NULL);//sa_list(sa);
 
 	if (first) {
 		/* cannot initialize database in readonly mode */
@@ -2213,6 +2215,8 @@ store_exit(void)
 		sql_trans_destroy(gtrans, false);
 		gtrans = NULL;
 	}
+	list_destroy(active_sessions);
+
 #ifdef STORE_DEBUG
 	fprintf(stderr, "#store exit unlocked\n");
 #endif
@@ -2229,6 +2233,33 @@ store_apply_deltas(bool not_locked)
 	flusher.working = true;
 	/* make sure we reset all transactions on re-activation */
 	gtrans->wstime = timestamp();
+	/* cleanup drop tables, columns and idxs first */
+	for (node *m = gtrans->schemas.set->h; m; m = m->next) { 
+		sql_schema *s = m->data;
+
+		if (s->tables.set)
+		for (node *n = s->tables.set->h; n; n = n->next) { 
+			sql_table *t = n->data; 
+
+			if (t->columns.dset) {
+				list_destroy(t->columns.dset);
+				t->columns.dset = NULL;
+			}
+			if (t->idxs.dset) {
+				list_destroy(t->idxs.dset);
+				t->idxs.dset = NULL;
+			}
+		}
+		if (s->tables.dset) {
+			list_destroy(s->tables.dset);
+			s->tables.dset = NULL;
+		}
+	}
+	if (gtrans->schemas.dset) {
+		list_destroy(gtrans->schemas.dset);
+		gtrans->schemas.dset = NULL;
+	}
+
 	if (store_funcs.gtrans_update)
 		store_funcs.gtrans_update(gtrans);
 	res = logger_funcs.restart();
@@ -3334,6 +3365,26 @@ typedef sql_base *(*rfcfunc) (sql_trans *tr, sql_base * b, int mode);
 typedef int (*rfdfunc) (sql_trans *tr, sql_base * b, int mode);
 typedef sql_base *(*dupfunc) (sql_trans *tr, int flags, sql_base * b, sql_base * p);
 
+static sql_table *
+conditional_table_dup(sql_trans *tr, int flags, sql_table *ot, sql_schema *s)
+{
+	int p = (tr->parent == gtrans);
+
+	/* persistent columns need to be dupped */
+	if ((p && isGlobal(ot)) ||
+	    /* allways dup in recursive mode */
+	    tr->parent != gtrans)
+		return table_dup(tr, flags, ot, s);
+	else if (!isGlobal(ot)){/* is local temp, may need to be cleared */
+		if (ot->commit_action == CA_DELETE) {
+			sql_trans_clear_table(tr, ot);
+		} else if (ot->commit_action == CA_DROP) {
+			(void) sql_trans_drop_table(tr, ot->s, ot->base.id, DROP_RESTRICT);
+		}
+	}
+	return NULL;
+}
+
 static int
 rollforward_changeset_updates(sql_trans *tr, changeset * fs, changeset * ts, sql_base * b, rfufunc rollforward_updates, rfcfunc rollforward_creates, rfdfunc rollforward_deletes, dupfunc fd, int mode)
 {
@@ -3355,13 +3406,9 @@ rollforward_changeset_updates(sql_trans *tr, changeset * fs, changeset * ts, sql
 				if (apply) {
 					if (ts->nelm == tbn)
 						ts->nelm = tbn->next;
-					//if (tr->parent != gtrans) {
-						if (!ts->dset)
-							ts->dset = list_new(tr->parent->sa, ts->destroy);
-						list_move_data(ts->set, ts->dset, tb);
-					//} else {
-						//cs_remove_node(ts, tbn);
-					//}
+					if (!ts->dset)
+						ts->dset = list_new(tr->parent->sa, ts->destroy);
+					list_move_data(ts->set, ts->dset, tb);
 				}
 			}
 		}
@@ -3877,26 +3924,6 @@ rollforward_update_seq(sql_trans *tr, sql_sequence *ft, sql_sequence *tt, int mo
 	tt->cacheinc = ft->cacheinc;
 	tt->cycle = ft->cycle;
 	return LOG_OK;
-}
-
-static sql_table *
-conditional_table_dup(sql_trans *tr, int flags, sql_table *ot, sql_schema *s)
-{
-	int p = (tr->parent == gtrans);
-
-	/* persistent columns need to be dupped */
-	if ((p && isGlobal(ot)) ||
-	    /* allways dup in recursive mode */
-	    tr->parent != gtrans)
-		return table_dup(tr, flags, ot, s);
-	else if (!isGlobal(ot)){/* is local temp, may need to be cleared */
-		if (ot->commit_action == CA_DELETE) {
-			sql_trans_clear_table(tr, ot);
-		} else if (ot->commit_action == CA_DROP) {
-			(void) sql_trans_drop_table(tr, ot->s, ot->base.id, DROP_RESTRICT);
-		}
-	}
-	return NULL;
 }
 
 static int
