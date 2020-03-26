@@ -324,12 +324,10 @@ BATproject(BAT *l, BAT *r)
 	bool nilcheck = true, stringtrick = false;
 	BUN lcount = BATcount(l), rcount = BATcount(r);
 	struct canditer ci, *lci = NULL;
-	lng t0 = GDKusec();
+	const char *msg = "";
+	lng t0 = 0;
 
-	TRC_DEBUG(ALGO, "%s(l=" ALGOBATFMT ","
-		  "r=" ALGOBATFMT ")\n",
-		  __func__,
-		  ALGOBATPAR(l), ALGOBATPAR(r));
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	assert(ATOMtype(l->ttype) == TYPE_oid);
 
@@ -342,10 +340,8 @@ BATproject(BAT *l, BAT *r)
 		}
 		bn = BATslice(r, lo - r->hseqbase, hi - r->hseqbase);
 		BAThseqbase(bn, l->hseqbase);
-		TRC_DEBUG(ALGO, "%s(l=%s,r=%s)=" ALGOOPTBATFMT " (slice)\n",
-			  __func__,
-			  BATgetId(l), BATgetId(r),  ALGOOPTBATPAR(bn));
-		return bn;
+		msg = " (slice)";
+		goto doreturn;
 	}
 	if (l->ttype == TYPE_void && l->tvheap != NULL) {
 		/* l is candidate list with exceptions */
@@ -365,10 +361,8 @@ BATproject(BAT *l, BAT *r)
 		    BATcount(bn) == 0) {
 			BATtseqbase(bn, 0);
 		}
-		TRC_DEBUG(ALGO, "%s(l=%s,r=%s)=" ALGOOPTBATFMT " (constant)\n",
-			  __func__,
-			  BATgetId(l), BATgetId(r), ALGOOPTBATPAR(bn));
-		return bn;
+		msg = " (constant)";
+		goto doreturn;
 	}
 
 	if (ATOMstorage(tpe) == TYPE_str &&
@@ -390,10 +384,7 @@ BATproject(BAT *l, BAT *r)
 	}
 	bn = COLnew(l->hseqbase, tpe, lcount, TRANSIENT);
 	if (bn == NULL) {
-		TRC_DEBUG(ALGO, "%s(l=%s,r=%s)=0\n",
-			  __func__,
-			  BATgetId(l), BATgetId(r));
-		return NULL;
+		goto doreturn;
 	}
 	if (stringtrick) {
 		/* "string type" */
@@ -518,16 +509,18 @@ BATproject(BAT *l, BAT *r)
 
 	if (!BATtdense(r))
 		BATtseqbase(bn, oid_nil);
-	TRC_DEBUG(ALGO, "%s(l=%s,r=%s)=" ALGOBATFMT "%s " LLFMT "us\n",
-		  __func__,
-		  BATgetId(l), BATgetId(r), ALGOBATPAR(bn),
-		  bn->ttype == TYPE_str && bn->tvheap == r->tvheap ? " shared string heap" : "",
-		  GDKusec() - t0);
+
+  doreturn:
+	TRC_DEBUG(ALGO, "l=" ALGOBATFMT " r=" ALGOBATFMT " -> " ALGOOPTBATFMT "%s%s " LLFMT "us\n",
+		  ALGOBATPAR(l), ALGOBATPAR(r), ALGOOPTBATPAR(bn),
+		  bn && bn->ttype == TYPE_str && bn->tvheap == r->tvheap ? " sharing string heap" : "",
+		  msg, GDKusec() - t0);
 	return bn;
 
   bailout:
 	BBPreclaim(bn);
-	return NULL;
+	bn = NULL;
+	goto doreturn;
 }
 
 /* Calculate a chain of BATproject calls.
@@ -560,14 +553,15 @@ BATprojectchain(BAT **bats)
 	bool stringtrick = false;
 	const void *nil;
 	int tpe;
-	lng t0 = GDKusec();
+	lng t0 = 0;
 
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 	/* count number of participating BATs and allocate some
 	 * temporary work space */
 	for (n = 0; bats[n]; n++) {
 		b = bats[n];
-		TRC_DEBUG(ALGO, "%s arg %d: " ALGOBATFMT "\n",
-			  __func__, n + 1, ALGOBATPAR(b));
+		TRC_DEBUG(ALGO, "arg %d: " ALGOBATFMT "\n",
+			  n + 1, ALGOBATPAR(b));
 	}
 	if (n == 0) {
 		GDKerror("%s: must have BAT arguments\n", __func__);
@@ -575,9 +569,8 @@ BATprojectchain(BAT **bats)
 	}
 	if (n == 1) {
 		bn = COLcopy(b, b->ttype, true, TRANSIENT);
-		TRC_DEBUG(ALGO, "%s with 1 bat: copy: "
-			  ALGOOPTBATFMT " (" LLFMT " usec)\n",
-			  __func__,
+		TRC_DEBUG(ALGO, "single bat: copy -> " ALGOOPTBATFMT
+			  " " LLFMT " usec\n",
 			  ALGOOPTBATPAR(bn), GDKusec() - t0);
 		return bn;
 	}
@@ -609,10 +602,9 @@ BATprojectchain(BAT **bats)
 		bn = BATconstant(ba[0].hlo, tpe == TYPE_oid ? TYPE_void : tpe,
 				 nil, ba[0].cnt, TRANSIENT);
 		GDKfree(ba);
-		TRC_DEBUG(ALGO, "%s with %d bats: nil/empty: "
-			  ALGOOPTBATFMT " (" LLFMT " usec)\n",
-			  __func__, n,
-			  ALGOOPTBATPAR(bn), GDKusec() - t0);
+		TRC_DEBUG(ALGO, "with %d bats: nil/empty -> " ALGOOPTBATFMT
+			  " " LLFMT " usec\n",
+			  n, ALGOOPTBATPAR(bn), GDKusec() - t0);
 		return bn;
 	}
 
@@ -746,15 +738,13 @@ BATprojectchain(BAT **bats)
 	bn->tnonil = nonil;
 	bn->tseqbase = oid_nil;
 	GDKfree(ba);
-	TRC_DEBUG(ALGO, "%s with %d bats: "
-		  ALGOOPTBATFMT " (" LLFMT " usec)\n",
-		  __func__, n,
-		  ALGOOPTBATPAR(bn), GDKusec() - t0);
+	TRC_DEBUG(ALGO, "with %d bats: " ALGOOPTBATFMT " " LLFMT " usec\n",
+		  n, ALGOOPTBATPAR(bn), GDKusec() - t0);
 	return bn;
 
   bunins_failed:
 	GDKfree(ba);
 	BBPreclaim(bn);
-	TRC_DEBUG(ALGO, "%s failed\n", __func__);
+	TRC_DEBUG(ALGO, "failed " LLFMT "usec\n", GDKusec() - t0);
 	return NULL;
 }
