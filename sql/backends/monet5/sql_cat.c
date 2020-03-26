@@ -162,6 +162,8 @@ validate_alter_table_add_table(mvc *sql, char* call, char *msname, char *mtname,
 	node *n = cs_find_id(&rmt->members, rpt->base.id);
 	if (isView(rpt))
 		throw(SQL,call,SQLSTATE(42000) "ALTER TABLE: can't add a view into a %s", errtable);
+	if (isDeclaredTable(rpt))
+		throw(SQL,call,SQLSTATE(42000) "ALTER TABLE: can't add a declared table into a %s", errtable);
 	if (ms->base.id != ps->base.id)
 		throw(SQL,call,SQLSTATE(42000) "ALTER TABLE: all children tables of '%s.%s' must be part of schema '%s'", msname, mtname, msname);
 	if (n && !update)
@@ -182,9 +184,13 @@ alter_table_add_table(mvc *sql, char *msname, char *mtname, char *psname, char *
 	sql_table *mt = NULL, *pt = NULL;
 	str msg = validate_alter_table_add_table(sql, "sql.alter_table_add_table", msname, mtname, psname, ptname, &mt, &pt, 0);
 
-	if (msg == MAL_SUCCEED)
+	if (msg == MAL_SUCCEED) {
+		if (isRangePartitionTable(mt))
+			return createException(SQL, "sql.alter_table_add_table",SQLSTATE(42000) "ALTER TABLE: a range partition is required while adding under a range partition table");
+		if (isListPartitionTable(mt))
+			return createException(SQL, "sql.alter_table_add_table",SQLSTATE(42000) "ALTER TABLE: a value partition is required while adding under a list partition table");
 		sql_trans_add_table(sql->session->tr, mt, pt);
-
+	}
 	return msg;
 }
 
@@ -206,11 +212,11 @@ alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psna
 	} else if (!isRangePartitionTable(mt)) {
 		msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000)
 									"ALTER TABLE: cannot add range partition into a %s table",
-									(mt->type == tt_merge_table)?"merge":"list partition");
+									(isListPartitionTable(mt))?"list partition":"merge");
 		goto finish;
 	} else if (!update && pt->p) {
 		msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000)
-							  "ALTER TABLE: table %s.%s is already part of another range partition table",
+							  "ALTER TABLE: table '%s.%s' is already part of another table",
 							  psname, ptname);
 		goto finish;
 	}
@@ -302,11 +308,11 @@ alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msn
 	} else if (!isListPartitionTable(mt)) {
 		msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(42000)
 									"ALTER TABLE: cannot add value partition into a %s table",
-									(mt->type == tt_merge_table)?"merge":"range partition");
+									(isRangePartitionTable(mt))?"range partition":"merge");
 		goto finish;
 	} else if (!update && pt->p) {
 		msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(42000)
-							  "ALTER TABLE: table %s.%s is already part of another list partition table",
+							  "ALTER TABLE: table '%s.%s' is already part of another table",
 							  psname, ptname);
 		goto finish;
 	}
