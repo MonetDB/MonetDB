@@ -204,7 +204,6 @@ _create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *
 	}
 	if (curBlk->errors) {
 		sql_error(m, 003, SQLSTATE(42000) "Internal error while compiling statement: %s", curBlk->errors);
-		freeSymbol(curPrg);
 		return -1;
 	}
 
@@ -214,7 +213,6 @@ _create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *
 	e->card = CARD_MULTI;
 	be->mvc->argc = 0;
 	if (backend_dumpstmt(be, curBlk, r, 0, 1, NULL) < 0) {
-		freeSymbol(curPrg);
 		if (backup)
 			c->curprg = backup;
 		return -1;
@@ -241,7 +239,6 @@ _create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *
 	}
 	if (c->curprg->def->errors) {
 		sql_error(m, 003, SQLSTATE(42000) "Internal error while compiling statement: %s", c->curprg->def->errors);
-		freeSymbol(curPrg);
 		res = -1;
 	}
 	if (backup)
@@ -913,7 +910,6 @@ backend_dumpproc(backend *be, Client c, cq *cq, sql_rel *r)
 	return curPrg;
 
 cleanup:
-	freeSymbol(curPrg);
 	if (backup)
 		c->curprg = backup;
 	return NULL;
@@ -1380,7 +1376,6 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 		c->curprg = backup;
 	return 0;
 cleanup:
-	freeSymbol(curPrg);
 	if (backup)
 		c->curprg = backup;
 	return -1;
