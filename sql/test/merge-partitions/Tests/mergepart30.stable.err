@@ -11,7 +11,7 @@ ERROR = !ALTER TABLE: a range partition is required while adding under a RANGE P
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-32190/.s.monetdb.38020
 QUERY = ALTER TABLE table2 ADD TABLE another; --error, a paritioning clause is required
-ERROR = !ALTER TABLE: a value partition is required while adding for a under a LIST PARTITION TABLE
+ERROR = !ALTER TABLE: a value partition is required while adding under a LIST PARTITION TABLE
 CODE  = 42000
 
 # 09:24:49 >  
