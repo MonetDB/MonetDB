@@ -266,13 +266,13 @@ stack_clear_frame_visited_flag(mvc *sql)
 atom *
 stack_set_var(mvc *sql, sql_schema *s, const char *name, ValRecord *v)
 {
-	const char *sname = s->base.name;
+	const char *sname = s ? s->base.name : NULL;
 	for (int i = sql->topframes-1; i >= 0; i--) {
 		sql_frame *f = sql->frames[i];
 		if (f->vars) {
 			for (node *n = f->vars->h; n ; n = n->next) {
 				sql_var *var = (sql_var*) n->data;
-				if ((!var->sname || !strcmp(var->sname, sname)) && !strcmp(var->name, name)) { /* Function parameters don't have a schema */
+				if ((!var->sname || (sname && !strcmp(var->sname, sname))) && !strcmp(var->name, name)) { /* Function parameters don't have a schema */
 					VALclear(&(var->var.data));
 					if (VALcopy(&(var->var.data), v) == NULL)
 						return NULL;
@@ -292,13 +292,13 @@ stack_set_var(mvc *sql, sql_schema *s, const char *name, ValRecord *v)
 atom *
 stack_get_var(mvc *sql, sql_schema *s, const char *name)
 {
-	const char *sname = s->base.name;
+	const char *sname = s ? s->base.name : NULL;
 	for (int i = sql->topframes-1; i >= 0; i--) {
 		sql_frame *f = sql->frames[i];
 		if (f->vars) {
 			for (node *n = f->vars->h; n ; n = n->next) {
 				sql_var *var = (sql_var*) n->data;
-				if ((!var->sname || !strcmp(var->sname, sname)) && !strcmp(var->name, name)) /* Function parameters don't have a schema */
+				if ((!var->sname || (sname && !strcmp(var->sname, sname))) && !strcmp(var->name, name)) /* Function parameters don't have a schema */
 					return &(var->var);
 			}
 		}
@@ -359,22 +359,6 @@ stack_pop_frame(mvc *sql)
 	sql_frame *f = sql->frames[--sql->topframes];
 	assert(sql->topframes >= 0);
 	clear_frame(sql, f);
-}
-
-sql_subtype *
-stack_find_type(mvc *sql, const char *name)
-{
-	for (int i = sql->topframes-1; i >= 0; i--) {
-		sql_frame *f = sql->frames[i];
-		if (f->vars) {
-			for (node *n = f->vars->h; n ; n = n->next) {
-				sql_var *var = (sql_var*) n->data;
-				if (var->name && !strcmp(var->name, name))
-					return &(var->var.tpe);
-			}
-		}
-	}
-	return NULL;
 }
 
 sql_table *
@@ -479,22 +463,26 @@ frame_find_var(mvc *sql, sql_schema *s, const char *name)
 	return 0;
 }
 
-int
-stack_find_var_frame(mvc *sql, sql_schema *s, const char *name)
+sql_var*
+stack_find_var_frame(mvc *sql, sql_schema *s, const char *name, int *level)
 {
 	const char *sname = s->base.name;
+
+	*level = 0;
 	for (int i = sql->topframes-1; i >= 0; i--) {
 		sql_frame *f = sql->frames[i];
 		if (f->vars) {
 			for (node *n = f->vars->h; n ; n = n->next) {
 				sql_var *var = (sql_var*) n->data;
 				assert(var->name);
-				if ((!var->sname || !strcmp(var->sname, sname)) && !strcmp(var->name, name)) /* Function parameters don't have a schema */
-					return f->frame_number;
+				if ((!var->sname || !strcmp(var->sname, sname)) && !strcmp(var->name, name)) {/* Function parameters don't have a schema */
+					*level = f->frame_number;
+					return var;
+				}
 			}
 		}
 	}
-	return 0;
+	return NULL;
 }
 
 int

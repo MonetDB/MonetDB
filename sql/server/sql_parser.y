@@ -5706,9 +5706,12 @@ intval:
 		}
  |	ident_or_uident	{
 		  char *name = $1;
+		  sql_var *var;
 		  sql_subtype *tpe;
+		  int level = 0;
 
-		  if (!stack_find_var(m, cur_schema(m), name)) {
+		  (void) level;
+		  if (!(var = stack_find_var_frame(m, cur_schema(m), name, &level))) {
 			char *msg = sql_message(SQLSTATE(22000) "Constant (%s) unknown", $1);
 
 			yyerror(m, msg);
@@ -5716,7 +5719,7 @@ intval:
 			$$ = 0;
 			YYABORT;
 		  }
-		  tpe = stack_find_type(m, name);
+		  tpe = &(var->var.tpe);
 		  if (tpe->type->localtype == TYPE_lng ||
 		      tpe->type->localtype == TYPE_int ||
 		      tpe->type->localtype == TYPE_sht ||

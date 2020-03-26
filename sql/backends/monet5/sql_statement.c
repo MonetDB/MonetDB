@@ -333,20 +333,20 @@ stmt_var(backend *be, const char *sname, const char *varname, sql_subtype *t, in
 		assert(sname);
 		q = newStmt(mb, sqlRef, putName("getVariable"));
 		q = pushArgument(mb, q, be->mvc_var);
-		q = pushStr(mb, q, sname);
+		q = pushStr(mb, q, sname); /* all global variables have a schema */
 		q = pushStr(mb, q, varname);
 		if (q == NULL)
 			return NULL;
 		setVarType(mb, getArg(q, 0), tt);
 		setVarUDFtype(mb, getArg(q, 0));
 	} else if (!declare) {
-		(void) snprintf(buf, sizeof(buf), "A%s", varname);
+		(void) snprintf(buf, sizeof(buf), "A%d%%%s%s%s", level, sname ? sname : "", sname ? "%%" : "", varname); /* mangle variable name */
 		q = newAssignment(mb);
 		q = pushArgumentId(mb, q, buf);
 	} else {
 		int tt = t->type->localtype;
 
-		(void) snprintf(buf, sizeof(buf), "A%s", varname);
+		(void) snprintf(buf, sizeof(buf), "A%d%%%s%s%s", level, sname ? sname : "", sname ? "%%" : "", varname); /* mangle variable name */
 		q = newInstruction(mb, NULL, NULL);
 		if (q == NULL) {
 			return NULL;
@@ -3752,7 +3752,7 @@ stmt_assign(backend *be, const char *sname, const char *varname, stmt *val, int 
 			/* drop declared table */
 			assert(0);
 		}
-		(void) snprintf(buf, sizeof(buf), "A%s", varname);
+		(void) snprintf(buf, sizeof(buf), "A%d%%%s%s%s", level, sname ? sname : "", sname ? "%%" : "", varname); /* mangle variable name */
 		q = newInstruction(mb, NULL, NULL);
 		if (q == NULL) {
 			return NULL;
@@ -3766,9 +3766,10 @@ stmt_assign(backend *be, const char *sname, const char *varname, stmt *val, int 
 			return NULL;
 		q->retc++;
 	} else {
+		assert(sname); /* all global variables have a schema */
 		q = newStmt(mb, sqlRef, setVariableRef);
 		q = pushArgument(mb, q, be->mvc_var);
-		q = pushStr(mb, q, sname ? sname : ATOMnil(TYPE_str));
+		q = pushStr(mb, q, sname);
 		q = pushStr(mb, q, varname);
 		if (q == NULL)
 			return NULL;

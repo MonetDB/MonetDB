@@ -57,7 +57,6 @@ psm_set_exp(sql_query *query, dnode *n)
 	symbol *val = n->next->data.sym;
 	sql_exp *res = NULL, *e = NULL;
 	int level = 0, single = (qname->h->type == type_string);
-	sql_subtype *tpe = NULL;
 	sql_rel *rel = NULL;
 
 	if (single) {
@@ -65,6 +64,7 @@ psm_set_exp(sql_query *query, dnode *n)
 		const char *sname = qname_schema(qname);
 		const char *vname = qname_schema_object(qname);
 		sql_schema *s = cur_schema(sql);
+		sql_var *var;
 
 		if (sname && !(s = mvc_bind_schema(sql, sname)))
 			return sql_error(sql, 02, SQLSTATE(3F000) "SET: No such schema '%s'", sname);
@@ -75,11 +75,8 @@ psm_set_exp(sql_query *query, dnode *n)
 		*/
 
 		/* check if variable is known from the stack */
-		if (!stack_find_var(sql, s, vname)) {
+		if (!(var = stack_find_var_frame(sql, s, vname, &level)))
 			return sql_error(sql, 01, SQLSTATE(42000) "SET: Variable '%s%s%s' unknown", sname ? sname : "", sname ? "." : "", vname);
-		} else { 
-			tpe = stack_find_type(sql, vname);
-		}
 
 		e = rel_value_exp2(query, &rel, val, sql_sel | sql_update_set, ek);
 		if (!e)
@@ -90,12 +87,11 @@ psm_set_exp(sql_query *query, dnode *n)
 			e = exp_aggr1(sql->sa, e, zero_or_one, 0, 0, CARD_ATOM, has_nil(e));
 		}
 
-		level = stack_find_var_frame(sql, s, vname);
-		e = rel_check_type(sql, tpe, rel, e, type_cast);
+		e = rel_check_type(sql, &(var->var.tpe), rel, e, type_cast);
 		if (!e)
 			return NULL;
 
-		res = exp_set(sql->sa, s->base.name, vname, e, level);
+		res = exp_set(sql->sa, var->sname ? sa_strdup(sql->sa, var->sname) : NULL, sa_strdup(sql->sa, var->name), e, level);
 	} else { /* multi assignment */
 		exp_kind ek = {type_relation, card_value, FALSE};
 		sql_rel *rel_val = rel_subquery(query, NULL, val, ek);
@@ -121,23 +117,19 @@ psm_set_exp(sql_query *query, dnode *n)
 			const char *vname = qname_schema_object(nqname);
 			sql_exp *v = n->data;
 			sql_schema *s = cur_schema(sql);
+			sql_var *var;
 
 			if (sname && !(s = mvc_bind_schema(sql, sname)))
 				return sql_error(sql, 02, SQLSTATE(3F000) "SET: No such schema '%s'", sname);
 
-			if (!stack_find_var(sql, s, vname)) {
+			if (!(var = stack_find_var_frame(sql, s, vname, &level)))
 				return sql_error(sql, 01, SQLSTATE(42000) "SET: Variable '%s%s%s' unknown", sname ? sname : "", sname ? "." : "", vname);
-			} else { 
-				tpe = stack_find_type(sql, vname);
-			}
-
-			level = stack_find_var_frame(sql, s, vname);
 			if (!exp_name(v)) 
 				exp_label(sql->sa, v, ++sql->label);
 			v = exp_ref(sql->sa, v);
-			if (!(v = rel_check_type(sql, tpe, rel_val, v, type_cast)))
+			if (!(v = rel_check_type(sql, &(var->var.tpe), rel_val, v, type_cast)))
 				return NULL;
-			append(b, exp_set(sql->sa, s->base.name, vname, v, level));
+			append(b, exp_set(sql->sa, var->sname ? sa_strdup(sql->sa, var->sname) : NULL, sa_strdup(sql->sa, var->name), v, level));
 		}
 		res = exp_rel(sql, rel_psm_block(sql->sa, b));
 	}
@@ -537,23 +529,21 @@ rel_select_into( sql_query *query, symbol *sq, exp_kind ek)
 		dlist *qname = n->data.lval;
 		const char *sname = qname_schema(qname);
 		const char *name = qname_schema_object(qname);
-		sql_subtype *tpe = NULL;
 		sql_schema *s = cur_schema(sql);
 		sql_exp *v = m->data;
 		int level;
+		sql_var *var;
 
 		if (sname && !(s = mvc_bind_schema(sql, sname)))
 			return sql_error(sql, 02, SQLSTATE(3F000) "SELECT INTO: No such schema '%s'", sname);
-		if (!stack_find_var(sql, s, name)) 
+		if (!(var = stack_find_var_frame(sql, s, name, &level)))
 			return sql_error(sql, 02, SQLSTATE(42000) "SELECT INTO: Variable '%s%s%s' unknown", sname ? sname : "", sname ? "." : "", name);
-		tpe = stack_find_type(sql, name);
-		level = stack_find_var_frame(sql, s, name);
 		if (!exp_name(v)) 
 			exp_label(sql->sa, v, ++sql->label);
 		v = exp_ref(sql->sa, v);
-		if (!(v = rel_check_type(sql, tpe, r, v, type_equal)))
+		if (!(v = rel_check_type(sql, &(var->var.tpe), r, v, type_equal)))
 			return NULL;
-		v = exp_set(sql->sa, s->base.name, name, v, level);
+		v = exp_set(sql->sa, var->sname ? sa_strdup(sql->sa, var->sname) : NULL, sa_strdup(sql->sa, var->name), v, level);
 		list_append(nl, v);
 	}
 	return nl;

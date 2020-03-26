@@ -1326,7 +1326,7 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 			char buf[IDLENGTH];
 
 			if (a->name)
-				(void) snprintf(buf, IDLENGTH, "A%s", a->name);
+				(void) snprintf(buf, IDLENGTH, "A1%%%s", a->name); /* mangle variable name */
 			else
 				(void) snprintf(buf, IDLENGTH, "A%d", argc);
 			varid = newVariable(curBlk, buf, strlen(buf), type);

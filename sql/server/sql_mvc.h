@@ -268,9 +268,8 @@ extern void clear_frame(mvc *sql, sql_frame *frame);
 extern void stack_pop_until(mvc *sql, int frame);
 
 /* find variable in the stack */
-extern int stack_find_var_frame(mvc *sql, sql_schema *s, const char *name);
+extern sql_var* stack_find_var_frame(mvc *sql, sql_schema *s, const char *name, int *level);
 extern int stack_find_var(mvc *sql, sql_schema *s, const char *name);
-extern sql_subtype *stack_find_type(mvc *sql, const char *name);
 extern sql_table *stack_find_table(mvc *sql, sql_schema *s, const char *name);
 extern sql_rel *stack_find_rel_view(mvc *sql, const char *name);
 

@@ -1070,17 +1070,15 @@ static sql_exp *
 rel_var_ref(mvc *sql, const char *sname, const char *name)
 {
 	sql_schema *s = cur_schema(sql);
+	sql_var *var;
+	int level = 0;
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_error(sql, 02, SQLSTATE(3F000) "SELECT: no such schema '%s'", sname);
 
-	if (stack_find_var(sql, s, name)) {
-		sql_subtype *tpe = stack_find_type(sql, name);
-		int frame = stack_find_var_frame(sql, s, name);
-		return exp_param_or_declared(sql->sa, s->base.name, name, tpe, frame);
-	} else {
-		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: identifier '%s%s%s' unknown", sname ? sname : "", sname ? "." : "", name);
-	}
+	if ((var = stack_find_var_frame(sql, s, name, &level)))
+		return exp_param_or_declared(sql->sa, var->sname ? sa_strdup(sql->sa, var->sname) : NULL, sa_strdup(sql->sa, var->name), &(var->var.tpe), level);
+	return sql_error(sql, 02, SQLSTATE(42000) "SELECT: identifier '%s%s%s' unknown", sname ? sname : "", sname ? "." : "", name);
 }
 
 static sql_exp *
