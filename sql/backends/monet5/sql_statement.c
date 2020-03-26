@@ -132,7 +132,7 @@ add_to_merge_partitions_accumulator(backend *be, int nr)
 {
 	MalBlkPtr mb = be->mb;
 	int help = be->cur_append;
-	InstrPtr q = newStmt(mb, calcRef, "+");
+	InstrPtr q = newStmt(mb, calcRef, plusRef);
 
 	getArg(q, 0) = be->cur_append = newTmpVariable(mb, TYPE_lng);
 	q = pushArgument(mb, q, help);
@@ -1064,7 +1064,7 @@ stmt_limit(backend *be, stmt *col, stmt *piv, stmt *gid, stmt *offset, stmt *lim
 	if (order) {
 		int topn = 0;
 
-		q = newStmt(mb, calcRef, "+");
+		q = newStmt(mb, calcRef, plusRef);
 		q = pushArgument(mb, q, offset->nr);
 		q = pushArgument(mb, q, limit->nr);
 		if (q == NULL)
@@ -1091,7 +1091,7 @@ stmt_limit(backend *be, stmt *col, stmt *piv, stmt *gid, stmt *offset, stmt *lim
 	} else {
 		int len;
 
-		q = newStmt(mb, calcRef, "+");
+		q = newStmt(mb, calcRef, plusRef);
 		q = pushArgument(mb, q, offset->nr);
 		q = pushArgument(mb, q, limit->nr);
 		if (q == NULL)
@@ -1101,7 +1101,7 @@ stmt_limit(backend *be, stmt *col, stmt *piv, stmt *gid, stmt *offset, stmt *lim
 		/* since both arguments of algebra.subslice are
 		   inclusive correct the LIMIT value by
 		   subtracting 1 */
-		q = newStmt(mb, calcRef, "-");
+		q = newStmt(mb, calcRef, minusRef);
 		q = pushArgument(mb, q, len);
 		q = pushInt(mb, q, 1);
 		if (q == NULL)

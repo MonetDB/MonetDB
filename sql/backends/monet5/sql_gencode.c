@@ -718,7 +718,7 @@ backend_dumpstmt(backend *be, MalBlkPtr mb, sql_rel *r, int top, int add_end, co
 	}
 
 	/* announce the transaction mode */
-	q = newStmt(mb, sqlRef, "mvc");
+	q = newStmt(mb, sqlRef, mvcRef);
 	if (q == NULL) {
 		sql_error(m, 001, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return -1;
