@@ -108,7 +108,9 @@ psm_set_exp(sql_query *query, dnode *n)
 
 		if (!rel_val)
 			return NULL;
-		if (!is_project(rel_val->op) || dlist_length(vars) != list_length(rel_val->exps))
+		if (!is_project(rel_val->op))
+			return sql_error(sql, 02, SQLSTATE(42000) "SET: The subquery is not a projection");
+		if (dlist_length(vars) != list_length(rel_val->exps))
 			return sql_error(sql, 02, SQLSTATE(42000) "SET: Number of variables not equal to number of supplied values");
 
 		b = sa_list(sql->sa);
@@ -480,6 +482,8 @@ rel_psm_return( sql_query *query, sql_subtype *restype, list *restypelist, symbo
 			oexps_rel = l;
 			oexps = l->exps;
 		}
+		if (list_length(oexps) != list_length(restypelist))
+			return sql_error(sql, 02, SQLSTATE(42000) "RETURN: number of columns do not match");
 		for (n = oexps->h, m = restypelist->h; n && m; n = n->next, m = m->next) {
 			sql_exp *e = n->data;
 			sql_arg *ce = m->data;
@@ -541,6 +545,10 @@ rel_select_into( sql_query *query, symbol *sq, exp_kind ek)
 	r = rel_subquery(query, NULL, sq, ek);
 	if (!r) 
 		return NULL;
+	if (!is_project(r->op))
+		return sql_error(sql, 02, SQLSTATE(42000) "SELECT INTO: The subquery is not a projection");
+	if (list_length(r->exps) != dlist_length(into))
+		return sql_error(sql, 02, SQLSTATE(21S01) "SELECT INTO: number of values doesn't match number of variables to set");
 	nl = sa_list(sql->sa);
 	append(nl, exp_rel(sql, r));
 	for (m = r->exps->h, n = into->h; m && n; m = m->next, n = n->next) {
@@ -1323,7 +1331,8 @@ create_trigger(sql_query *query, dlist *qname, int time, symbol *trigger_event, 
 		if (old_name)
 			stack_update_rel_view(sql, old_name, new_name?rel_dup(rel):rel);
 	}
-	sq = sequential_block(query, NULL, NULL, stmts, NULL, 1);
+	if (!(sq = sequential_block(query, NULL, NULL, stmts, NULL, 1)))
+		return NULL;
 	r = rel_psm_block(sql->sa, sq);
 
 	if (!instantiate)
