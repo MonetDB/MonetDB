@@ -4385,6 +4385,8 @@ rel_order_by(sql_query *query, sql_rel **R, symbol *orderby, int f)
 						e = exps_get_exp(rel->exps, nr);
 						if (!e)
 							return sql_error(sql, 02, SQLSTATE(42000) "SELECT: the order by column number (%d) is not in the number of projections range (%d)", nr, list_length(rel->exps));
+						if (!exp_name(e))
+							exp_label(sql->sa, e, ++sql->label);
 						e = exp_ref(sql->sa, e);
 						/* do not cache this query */
 						if (e)
@@ -5094,7 +5096,7 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 
 			if (!exp_name(exp))
 				exp_label(sql->sa, exp, ++sql->label);
-			res  = exp_ref(sql->sa, exp);
+			res = exp_ref(sql->sa, exp);
 			res->card = (*rel)->card;
 			if (se->token == SQL_AGGR) {
 				dlist *l = se->data.lval;

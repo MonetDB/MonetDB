@@ -34,11 +34,12 @@ rel_generate_anti_expression(mvc *sql, sql_rel **anti_rel, sql_table *mt, sql_ta
 		*anti_rel = rel_project(sql->sa, *anti_rel, NULL);
 		if (!(res = rel_parse_val(sql, sa_message(sql->sa, "select %s;", mt->part.pexp->exp), sql->emode, (*anti_rel)->l)))
 			return NULL;
-		exp_label(sql->sa, res, ++sql->label);
 	} else {
 		assert(0);
 	}
 	(*anti_rel)->exps = new_exp_list(sql->sa);
+	if (!exp_name(res))
+		exp_label(sql->sa, res, ++sql->label);
 	append((*anti_rel)->exps, res);
 	res = exp_ref(sql->sa, res);
 	return res;
@@ -58,9 +59,11 @@ rel_create_common_relation(mvc *sql, sql_rel *rel, sql_table *t)
 		inserts = ((sql_rel*)(rel->r))->l;
 		for (node *n = t->columns.set->h, *m = inserts->exps->h; n && m; n = n->next, m = m->next) {
 			sql_column *col = n->data;
-			sql_exp *before = m->data;
-			sql_exp *help = exp_ref(sql->sa, before);
+			sql_exp *before = m->data, *help;
 
+			if (!exp_name(before))
+				exp_label(sql->sa, before, ++sql->label);
+			help = exp_ref(sql->sa, before);
 			exp_setname(sql->sa, help, t->base.name, col->base.name);
 			list_append(l, help);
 		}
@@ -86,9 +89,11 @@ rel_generate_anti_insert_expression(mvc *sql, sql_rel **anti_rel, sql_table *t)
 			inserts = inserts->l;
 		for (node *n = t->columns.set->h, *m = inserts->exps->h; n && m; n = n->next, m = m->next) {
 			sql_column *col = n->data;
-			sql_exp *before = m->data;
-			sql_exp *help = exp_ref(sql->sa, before);
+			sql_exp *before = m->data, *help;
 
+			if (!exp_name(before))
+				exp_label(sql->sa, before, ++sql->label);
+			help = exp_ref(sql->sa, before);
 			exp_setname(sql->sa, help, t->base.name, col->base.name);
 			list_append(l, help);
 		}
@@ -106,6 +111,8 @@ rel_generate_anti_insert_expression(mvc *sql, sql_rel **anti_rel, sql_table *t)
 	} else {
 		assert(0);
 	}
+	if (!exp_name(res))
+		exp_label(sql->sa, res, ++sql->label);
 	res = exp_ref(sql->sa, res);
 	return res;
 }
