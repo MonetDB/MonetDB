@@ -648,7 +648,7 @@ load_range_partition(sql_trans *tr, sql_schema *syss, sql_part *pt)
 		_DELETE(v2);
 		if (ok) {
 			v3 = table_funcs.column_find_value(tr, find_sql_column(ranges, "with_nulls"), rid);
-			pt->with_nills = (int)*((bit*)v3);
+			pt->with_nills = *((bit*)v3);
 			_DELETE(v3);
 
 			pt->part.range.minvalue = sa_alloc(tr->sa, vmin.len);
@@ -699,7 +699,7 @@ load_value_partition(sql_trans *tr, sql_schema *syss, sql_part *pt)
 
 		if (ok) {
 			if (VALisnil(&vvalue)) { /* check for null value */
-				pt->with_nills = 1;
+				pt->with_nills = true;
 			} else {
 				nextv = SA_ZNEW(tr->sa, sql_part_value);
 				nextv->tpe = *empty;
@@ -4259,6 +4259,7 @@ rollforward_update_part(sql_trans *tr, sql_base *fpt, sql_base *tpt, int mode)
 		sql_part *pt = (sql_part *) tpt;
 		sql_part *opt = (sql_part *) fpt;
 
+		pt->with_nills = opt->with_nills;
 		if (isRangePartitionTable(opt->t)) {
 			pt->part.range.minvalue = sa_alloc(tr->sa, opt->part.range.minlength);
 			pt->part.range.maxvalue = sa_alloc(tr->sa, opt->part.range.maxlength);
@@ -5793,7 +5794,7 @@ sql_trans_add_table(sql_trans *tr, sql_table *mt, sql_table *pt)
 
 int
 sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_subtype tpe, ptr min, ptr max,
-							  int with_nills, int update, sql_part **err)
+							  bit with_nills, int update, sql_part **err)
 {
 	sql_schema *syss = find_sql_schema(tr, "sys");
 	sql_table *sysobj = find_sql_table(syss, "objects");
@@ -5803,7 +5804,7 @@ sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 	int localtype = tpe.type->localtype, res = 0;
 	ValRecord vmin, vmax;
 	size_t smin, smax;
-	bit to_insert = (bit) with_nills;
+	bit to_insert = with_nills;
 	oid rid;
 	ptr ok;
 	sqlid *v;
@@ -5910,7 +5911,7 @@ finish:
 }
 
 int
-sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_subtype tpe, list* vals, int with_nills,
+sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_subtype tpe, list* vals, bit with_nills,
 							  int update, sql_part **err)
 {
 	sql_schema *syss = find_sql_schema(tr, "sys");

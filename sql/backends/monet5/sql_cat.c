@@ -196,14 +196,13 @@ alter_table_add_table(mvc *sql, char *msname, char *mtname, char *psname, char *
 
 static char *
 alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psname, char *ptname, ptr min, ptr max,
-								int with_nills, int update)
+								bit with_nills, int update)
 {
 	sql_table *mt = NULL, *pt = NULL;
 	sql_part *err = NULL;
 	str msg = MAL_SUCCEED, err_min = NULL, err_max = NULL, conflict_err_min = NULL, conflict_err_max = NULL;
 	int tp1 = 0, errcode = 0, min_null = 0, max_null = 0;
 	size_t length = 0;
-	ssize_t (*atomtostr)(str *, size_t *, const void *, bool);
 	sql_subtype tpe;
 
 	if ((msg = validate_alter_table_add_table(sql, "sql.alter_table_add_range_partition", msname, mtname, psname, ptname,
@@ -226,10 +225,7 @@ alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psna
 	min_null = ATOMcmp(tp1, min, ATOMnilptr(tp1)) == 0;
 	max_null = ATOMcmp(tp1, max, ATOMnilptr(tp1)) == 0;
 
-	if (max_null && min_null && !with_nills) {
-		msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000) "ALTER TABLE: range bound cannot be null");
-		goto finish;
-	} else if (!min_null && !max_null && ATOMcmp(tp1, min, max) > 0) {
+	if (!min_null && !max_null && ATOMcmp(tp1, min, max) > 0) {
 		msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000) "ALTER TABLE: minimum value is higher than maximum value");
 		goto finish;
 	}
@@ -251,26 +247,57 @@ alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psna
 			break;
 		case -4:
 			assert(err);
-			if (with_nills && err->with_nills) {
+			if (is_bit_nil(err->with_nills)) {
+				msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000)
+										"ALTER TABLE: conflicting partitions: table %s.%s stores every possible value", err->t->s->base.name, err->base.name);
+			} else if (with_nills && err->with_nills) {
 				msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000)
 										"ALTER TABLE: conflicting partitions: table %s.%s stores null values and only "
 										"one partition can store null values at the time", err->t->s->base.name, err->base.name);
 			} else {
-				atomtostr = BATatoms[tp1].atomToStr;
-				if (atomtostr(&conflict_err_min, &length, err->part.range.minvalue, true) < 0) {
+				ssize_t (*atomtostr)(str *, size_t *, const void *, bool) = BATatoms[tp1].atomToStr;
+				ptr nil = ATOMnil(tp1);
+				sql_table *errt = mvc_bind_table(sql, mt->s, err->base.name);
+
+				if (!ATOMcmp(tp1, nil, err->part.range.minvalue)) {
+					if (!(conflict_err_min = GDKstrdup("absolute min value")))
+						msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				} else if (atomtostr(&conflict_err_min, &length, err->part.range.minvalue, true) < 0) {
 					msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				} 
+				if (msg)
+					goto finish;
+
+				if (!ATOMcmp(tp1, nil, err->part.range.maxvalue)) {
+					if (!(conflict_err_max = GDKstrdup("absolute max value")))
+						msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				} else if (atomtostr(&conflict_err_max, &length, err->part.range.maxvalue, true) < 0) {
 					msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				}
+				if (msg)
+					goto finish;
+
+				if (!ATOMcmp(tp1, nil, min)) {
+					if (!(err_min = GDKstrdup("absolute min value")))
+						msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				} else if (atomtostr(&err_min, &length, min, true) < 0) {
 					msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				}
+				if (msg)
+					goto finish;
+
+				if (!ATOMcmp(tp1, nil, max)) {
+					if (!(err_max = GDKstrdup("absolute max value")))
+						msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				} else if (atomtostr(&err_max, &length, max, true) < 0) {
 					msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				} else {
-					sql_table *errt = mvc_bind_table(sql, mt->s, err->base.name);
-					msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000)
+				}
+				if (msg)
+					goto finish;
+
+				msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000)
 									  "ALTER TABLE: conflicting partitions: %s to %s and %s to %s from table %s.%s",
 									  err_min, err_max, conflict_err_min, conflict_err_max, errt->s->base.name, errt->base.name);
-				}
 			}
 			break;
 		default:
@@ -293,7 +320,7 @@ finish:
 
 static char *
 alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msname, char *mtname, char *psname,
-								char *ptname, int with_nills, int update)
+								char *ptname, bit with_nills, int update)
 {
 	sql_table *mt = NULL, *pt = NULL;
 	str msg = MAL_SUCCEED;
@@ -302,6 +329,7 @@ alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msn
 	list *values = list_new(sql->session->tr->sa, (fdestroy) NULL);
 	sql_subtype tpe;
 
+	assert(with_nills == false || with_nills == true); /* No nills allowed here */
 	if ((msg = validate_alter_table_add_table(sql, "sql.alter_table_add_value_partition", msname, mtname, psname, ptname,
 											 &mt, &pt, update))) {
 		return msg;
@@ -1500,7 +1528,7 @@ SQLalter_add_range_partition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	char *ptname = SaveArgReference(stk, pci, 4);
 	ValRecord *min = &(stk)->stk[(pci)->argv[5]];
 	ValRecord *max = &(stk)->stk[(pci)->argv[6]];
-	int with_nills = *getArgReference_int(stk, pci, 7);
+	bit with_nills = *getArgReference_bit(stk, pci, 7);
 	int update = *getArgReference_int(stk, pci, 8);
 
 	initcontext();
@@ -1516,7 +1544,7 @@ SQLalter_add_value_partition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	char *mtname = SaveArgReference(stk, pci, 2);
 	char *psname = SaveArgReference(stk, pci, 3);
 	char *ptname = SaveArgReference(stk, pci, 4);
-	int with_nills = *getArgReference_int(stk, pci, 5);
+	bit with_nills = *getArgReference_bit(stk, pci, 5);
 	int update = *getArgReference_int(stk, pci, 6);
 
 	initcontext();

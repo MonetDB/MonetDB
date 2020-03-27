@@ -1500,9 +1500,9 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 					int update = ll->h->next->next->next->data.i_val;
 
 					if (isRangePartitionTable(t)) {
-						return rel_alter_table_add_partition_range(query, t, pt, sname, tname, nsname, ntname, NULL, NULL, 1, update);
+						return rel_alter_table_add_partition_range(query, t, pt, sname, tname, nsname, ntname, NULL, NULL, true, update);
 					} else if (isListPartitionTable(t)) {
-						return rel_alter_table_add_partition_list(query, t, pt, sname, tname, nsname, ntname, NULL, 1, update);
+						return rel_alter_table_add_partition_list(query, t, pt, sname, tname, nsname, ntname, NULL, true, update);
 					} else {
 						return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: cannot add a partition into a %s",
 										 TABLE_TYPE_DESCRIPTION(t->type, t->properties));
@@ -1517,7 +1517,8 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 										 TABLE_TYPE_DESCRIPTION(t->type, t->properties));
 					}
 
-					return rel_alter_table_add_partition_range(query, t, pt, sname, tname, nsname, ntname, min, max, nills, update);
+					assert(nills == 0 || nills == 1);
+					return rel_alter_table_add_partition_range(query, t, pt, sname, tname, nsname, ntname, min, max, (bit) nills, update);
 				} else if (extra->token == SQL_PARTITION_LIST) {
 					dlist* ll = extra->data.lval, *values = ll->h->data.lval;
 					int nills = ll->h->next->data.i_val, update = ll->h->next->next->data.i_val;
@@ -1527,7 +1528,8 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 										 TABLE_TYPE_DESCRIPTION(t->type, t->properties));
 					}
 
-					return rel_alter_table_add_partition_list(query, t, pt, sname, tname, nsname, ntname, values, nills, update);
+					assert(nills == 0 || nills == 1);
+					return rel_alter_table_add_partition_list(query, t, pt, sname, tname, nsname, ntname, values, (bit) nills, update);
 				}
 				assert(0);
 			} else {
