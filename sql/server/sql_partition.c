@@ -404,7 +404,6 @@ initialize_sql_parts(mvc* sql, sql_table *mt)
 						const void *nil_ptr = ATOMnilptr(tpe);
 						size_t nil_len = ATOMlen(tpe, nil_ptr);
 
-						assert(p->with_nills && next->with_nills);
 						p->part.range.minvalue = sa_alloc(sql->session->tr->sa, nil_len);
 						p->part.range.maxvalue = sa_alloc(sql->session->tr->sa, nil_len);
 						memcpy(p->part.range.minvalue, nil_ptr, nil_len);
