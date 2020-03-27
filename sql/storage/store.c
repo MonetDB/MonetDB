@@ -172,6 +172,31 @@ table_destroy(sql_table *t)
 		store_funcs.destroy_del(NULL, t);
 }
 
+static void
+table_cleanup(sql_table *t)
+{
+	if (t->keys.dset) {
+		list_destroy(t->keys.dset);
+		t->keys.dset = NULL;
+	}
+	if (t->idxs.dset) {
+		list_destroy(t->idxs.dset);
+		t->idxs.dset = NULL;
+	}
+	if (t->triggers.dset) {
+		list_destroy(t->triggers.dset);
+		t->triggers.dset = NULL;
+	}
+	if (t->columns.dset) {
+		list_destroy(t->columns.dset);
+		t->columns.dset = NULL;
+	}
+	if (t->members.dset) {
+		list_destroy(t->members.dset);
+		t->members.dset = NULL;
+	}
+}
+
 void
 schema_destroy(sql_schema *s)
 {
@@ -184,6 +209,26 @@ schema_destroy(sql_schema *s)
 	s->keys = NULL;
 	s->idxs = NULL;
 	s->triggers = NULL;
+}
+
+static void
+schema_cleanup(sql_schema *s)
+{
+	if (s->tables.set)
+		for (node *n = s->tables.set->h; n; n = n->next)
+			table_cleanup(n->data);
+	if (s->tables.dset) {
+		list_destroy(s->tables.dset);
+		s->tables.dset = NULL;
+	}
+	if (s->funcs.dset) {
+		list_destroy(s->funcs.dset);
+		s->funcs.dset = NULL;
+	}
+	if (s->types.dset) {
+		list_destroy(s->types.dset);
+		s->types.dset = NULL;
+	}
 }
 
 static void
@@ -244,6 +289,17 @@ sql_trans_destroy(sql_trans *t, bool try_spare)
 	_DELETE(t);
 	transactions--;
 	return res;
+}
+
+static void
+trans_cleanup(sql_trans *t)
+{
+	for (node *m = t->schemas.set->h; m; m = m->next)
+		schema_cleanup(m->data);
+	if (t->schemas.dset) {
+		list_destroy(t->schemas.dset);
+		t->schemas.dset = NULL;
+	}
 }
 
 static void
@@ -2234,31 +2290,7 @@ store_apply_deltas(bool not_locked)
 	/* make sure we reset all transactions on re-activation */
 	gtrans->wstime = timestamp();
 	/* cleanup drop tables, columns and idxs first */
-	for (node *m = gtrans->schemas.set->h; m; m = m->next) { 
-		sql_schema *s = m->data;
-
-		if (s->tables.set)
-		for (node *n = s->tables.set->h; n; n = n->next) { 
-			sql_table *t = n->data; 
-
-			if (t->columns.dset) {
-				list_destroy(t->columns.dset);
-				t->columns.dset = NULL;
-			}
-			if (t->idxs.dset) {
-				list_destroy(t->idxs.dset);
-				t->idxs.dset = NULL;
-			}
-		}
-		if (s->tables.dset) {
-			list_destroy(s->tables.dset);
-			s->tables.dset = NULL;
-		}
-	}
-	if (gtrans->schemas.dset) {
-		list_destroy(gtrans->schemas.dset);
-		gtrans->schemas.dset = NULL;
-	}
+	trans_cleanup(gtrans);
 
 	if (store_funcs.gtrans_update)
 		store_funcs.gtrans_update(gtrans);
