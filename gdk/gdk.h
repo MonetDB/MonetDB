@@ -1646,6 +1646,7 @@ gdk_export gdk_return BATorderidx(BAT *b, bool stable);
 gdk_export gdk_return GDKmergeidx(BAT *b, BAT**a, int n_ar);
 gdk_export bool BATcheckorderidx(BAT *b);
 
+#include "gdk_tracer.h"
 #include "gdk_delta.h"
 #include "gdk_hash.h"
 #include "gdk_bbp.h"

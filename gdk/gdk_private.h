@@ -19,7 +19,6 @@
 #define PERSISTENTIDX 1
 
 #include "gdk_system_private.h"
-#include "gdk_tracer.h"
 
 enum heaptype {
 	offheap,
