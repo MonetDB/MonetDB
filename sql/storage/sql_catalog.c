@@ -461,7 +461,7 @@ sql_range_part_validate_and_insert(void *v1, void *v2)
 {
 	sql_part* pt = (sql_part*) v1, *newp = (sql_part*) v2;
 	int res1, res2, tpe = pt->tpe.type->localtype;
-	ptr nil = ATOMnil(tpe);
+	const void *nil = ATOMnilptr(tpe);
 	bool pt_down_all = false, pt_upper_all = false;
 
 	if (pt == newp) /* same pointer, skip (used in updates) */
