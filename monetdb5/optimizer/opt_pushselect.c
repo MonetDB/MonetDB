@@ -680,10 +680,9 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	for (j=1; j<i; j++)
 		if (old[j] && oclean[j])
 			freeInstruction(old[j]);
-	for (; i<limit; i++)
+	for (; i<slimit; i++)
 		if (old[i])
 			freeInstruction(old[i]);
-			//pushInstruction(mb,old[i]);
 	GDKfree(vars);
 	GDKfree(nvars);
 	GDKfree(slices);
@@ -691,19 +690,19 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	GDKfree(oclean);
 	GDKfree(old);
 
-    /* Defense line against incorrect plans */
-    if( actions > 0){
-        msg = chkTypes(cntxt->usermodule, mb, FALSE);
-        if (msg == MAL_SUCCEED) 
-        	msg = chkFlow(mb);
-        if( msg == MAL_SUCCEED) 
-		msg = chkDeclarations(mb);
-    }
+	/* Defense line against incorrect plans */
+	if (actions > 0) {
+		msg = chkTypes(cntxt->usermodule, mb, FALSE);
+		if (msg == MAL_SUCCEED) 
+			msg = chkFlow(mb);
+		if( msg == MAL_SUCCEED) 
+			msg = chkDeclarations(mb);
+    	}
 wrapup:
-    /* keep all actions taken as a post block comment */
+	/* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;
-    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","pushselect",actions, usec);
-    newComment(mb,buf);
+	snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","pushselect",actions, usec);
+	newComment(mb,buf);
 	if( actions > 0)
 		addtoMalBlkHistory(mb);
 	return msg;
