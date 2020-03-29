@@ -24,12 +24,13 @@ int catalog_version = 0;
 static MT_Lock bs_lock = MT_LOCK_INITIALIZER("bs_lock");
 static sqlid store_oid = 0;
 static sqlid prev_oid = 0;
-static int nr_sessions = 0;
 static int transactions = 0;
 static sqlid *store_oids = NULL;
 static int nstore_oids = 0;
 sql_trans *gtrans = NULL;
 list *active_sessions = NULL;
+sql_allocator *store_sa = NULL;
+ATOMIC_TYPE nr_sessions = ATOMIC_VAR_INIT(0);
 ATOMIC_TYPE store_nr_active = ATOMIC_VAR_INIT(0);
 store_type active_store_type = store_bat;
 int store_readonly = 0;
@@ -195,6 +196,45 @@ table_cleanup(sql_table *t)
 	}
 }
 
+static void
+table_reset_parent(sql_table *t, sql_trans *tr)
+{
+	sql_table *p = t->po;
+	int istmp = isTempSchema(t->s) && t->base.allocated;
+
+	if (isTable(t) && !istmp)
+		store_funcs.bind_del_data(tr, t);
+	t->po = NULL;
+	if (t->idxs.set) {
+		for(node *n = t->idxs.set->h; n; n = n->next) {
+			sql_idx *i = n->data;
+
+			if (isTable(i->t) && idx_has_column(i->type) && !istmp)
+				store_funcs.bind_idx_data(tr, i);
+			if (i->po)
+				idx_destroy(i->po);
+			i->po = NULL;
+		}
+	}
+	assert(t->idxs.dset == NULL);
+	if (t->columns.set) {
+		for(node *n = t->columns.set->h; n; n = n->next) {
+			sql_column *c = n->data;
+
+			if (isTable(c->t) && !istmp)
+				store_funcs.bind_col_data(tr, c);
+			if (c->po)
+				column_destroy(c->po);
+			c->po = NULL;
+		}
+	}
+	assert(t->columns.dset == NULL);
+	if (p)
+		table_destroy(p);
+	if (isTable(t))
+		assert(t->base.allocated);
+}
+
 void
 schema_destroy(sql_schema *s)
 {
@@ -227,6 +267,15 @@ schema_cleanup(sql_schema *s)
 		list_destroy(s->types.dset);
 		s->types.dset = NULL;
 	}
+}
+
+static void
+schema_reset_parent(sql_schema *s, sql_trans *tr)
+{
+	if (s->tables.set)
+		for (node *n = s->tables.set->h; n; n = n->next)
+			table_reset_parent(n->data, tr);
+	assert(s->tables.dset == NULL);
 }
 
 static void
@@ -288,6 +337,15 @@ trans_cleanup(sql_trans *t)
 		t->schemas.dset = NULL;
 	}
 }
+
+static void
+trans_reset_parent(sql_trans *t)
+{
+	for (node *m = t->schemas.set->h; m; m = m->next)
+		schema_reset_parent(m->data, t);
+	t->parent = NULL;
+}
+
 
 static void
 destroy_spare_transactions(void) 
@@ -1807,13 +1865,14 @@ store_load(void) {
 	lng lng_store_oid;
 	sqlid id = 0;
 
+	store_sa = sa_create();
 	sa = sa_create();
-	if (!sa)
+	if (!sa || !store_sa)
 		return -1;
 
 	first = logger_funcs.log_isnew();
 
-	types_init(sa);
+	types_init(store_sa);
 
 	// TODO: Niels: Are we fine running this twice?
 
@@ -1827,7 +1886,7 @@ store_load(void) {
 		return -1;
 
 	transactions = 0;
-	active_sessions = list_create(NULL);//sa_list(sa);
+	active_sessions = list_create(NULL);
 
 	if (first) {
 		/* cannot initialize database in readonly mode */
@@ -2240,11 +2299,17 @@ store_exit(void)
 		gtrans = NULL;
 	}
 	list_destroy(active_sessions);
+	if (store_sa)
+		sa_destroy(store_sa);
 
 	TRC_DEBUG(SQL_STORE, "Store unlocked\n");
 	MT_lock_unset(&bs_lock);
 	store_initialized=0;
 }
+
+
+static sql_trans * trans_dup(backend_stack stk, sql_trans *ot, const char *newname);
+static sql_trans * trans_init(sql_trans *tr, backend_stack stk, sql_trans *otr);
 
 /* call locked! */
 int
@@ -2267,6 +2332,18 @@ store_apply_deltas(bool not_locked)
 		res = logger_funcs.cleanup();
 		if (!not_locked)
 			MT_lock_set(&bs_lock);
+	}
+
+	if (/*gtrans->sa->nr > 40 &&*/ !(ATOMIC_GET(&nr_sessions)) /* only save when there are no dependencies on the gtrans */) { /* TODO need better estimate */
+		sql_trans *ntrans = trans_dup(gtrans->stk, gtrans, NULL);
+
+		trans_init(ntrans, ntrans->stk, gtrans);
+		if (spares > 0)
+			destroy_spare_transactions();
+		trans_reset_parent(ntrans);
+
+		sql_trans_destroy(gtrans, false);
+		gtrans = ntrans;
 	}
 	flusher.working = false;
 
@@ -3638,9 +3715,12 @@ trans_init(sql_trans *tr, backend_stack stk, sql_trans *otr)
 			s->base.stime = ps->base.wtime;
 
 			if (ps->tables.set && s->tables.set)
-			for (k = ps->tables.set->h, l = s->tables.set->h; k && l; k = k->next, l = l->next ) { 
+			for (k = ps->tables.set->h, l = s->tables.set->h; k && l; l = l->next ) { 
 				sql_table *pt = k->data; /* parent transactions table */
 				sql_table *t = l->data; 
+
+				if (t->persistence == SQL_LOCAL_TEMP) /* skip local tables */
+					continue;
 
 				t->base.rtime = t->base.wtime = 0;
 				t->base.stime = pt->base.wtime;
@@ -3700,6 +3780,7 @@ trans_init(sql_trans *tr, backend_stack stk, sql_trans *otr)
 					/* for now assert */
 					assert(0);
 				}
+				k = k->next;
 			}
 			if (ps->seqs.set && s->seqs.set)
 			for (k = ps->seqs.set->h, l = s->seqs.set->h; k && l; k = k->next, l = l->next ) { 
@@ -3887,9 +3968,9 @@ rollforward_changeset_updates(sql_trans *tr, changeset * fs, changeset * ts, sql
 						else
 							ok = LOG_ERR;
 						fb->flags = 0;
+						tb->flags = 0;
+						fb->stime = tb->stime = tb->wtime;
 					}
-					tb->flags = 0;
-					fb->stime = tb->stime = tb->wtime;
 				} else if (!rollforward_creates(tr, fb, mode)) {
 					ok = LOG_ERR;
 				}
@@ -4365,7 +4446,6 @@ rollforward_update_schema(sql_trans *tr, sql_schema *fs, sql_schema *ts, int mod
 	int ok = LOG_OK;
 
 	if (apply && isTempSchema(fs)) {
-		fs->tables.nelm = NULL;
 		if (fs->tables.set) {
 			node *n;
 			for (n = fs->tables.set->h; n; ) {
@@ -4383,7 +4463,6 @@ rollforward_update_schema(sql_trans *tr, sql_schema *fs, sql_schema *ts, int mod
 				n = nxt;
 			}
 		}
-		return ok;
 	}
 
 	if (ok == LOG_OK)
@@ -7316,7 +7395,7 @@ sql_session_create(backend_stack stk, int ac )
 {
 	sql_session *s;
 
-	if (store_singleuser && nr_sessions)
+	if (store_singleuser && ATOMIC_GET(&nr_sessions))
 		return NULL;
 
 	s = ZNEW(sql_session);
@@ -7335,7 +7414,7 @@ sql_session_create(backend_stack stk, int ac )
 		_DELETE(s);
 		return NULL;
 	}
-	nr_sessions++;
+	(void) ATOMIC_INC(&nr_sessions);
 	return s;
 }
 
@@ -7347,8 +7426,8 @@ sql_session_destroy(sql_session *s)
 		sql_trans_destroy(s->tr, true);
 	if (s->schema_name)
 		_DELETE(s->schema_name);
+	(void) ATOMIC_DEC(&nr_sessions);
 	_DELETE(s);
-	nr_sessions--;
 }
 
 int
