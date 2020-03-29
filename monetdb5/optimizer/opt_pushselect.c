@@ -674,6 +674,28 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				oclean[i] = 1;
 				continue;
 			}
+		} else if (getModuleId(p) == algebraRef && getFunctionId(p) == projectionRef) {
+			int var = getArg(p, 2);
+			InstrPtr q = old[vars[var]];
+			
+			if (getModuleId(q) == sqlRef && getFunctionId(q) == deltaRef && q->argc == 5) {
+				q = copyInstruction(q);
+				if( q == NULL){
+					GDKfree(vars);
+					GDKfree(nvars);
+					GDKfree(slices);
+					GDKfree(rslices);
+					GDKfree(oclean);
+					GDKfree(old);
+					throw(MAL,"optimizer.pushselect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				}
+				setFunctionId(q, projectdeltaRef);
+				getArg(q, 0) = getArg(p, 0); 
+				q = PushArgument(mb, q, getArg(p, 1), 1);
+				p = q;
+				oclean[i] = 1;
+				actions++;
+			}
 		}
 		pushInstruction(mb,p);
 	}
