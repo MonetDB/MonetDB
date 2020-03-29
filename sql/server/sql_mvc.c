@@ -699,15 +699,14 @@ build up the hash (not copied in the trans dup)) */
 str
 mvc_rollback(mvc *m, int chain, const char *name, bool disabling_auto_commit)
 {
-	sql_trans *tr = m->session->tr;
 	str msg;
 
 	TRC_DEBUG(SQL_TRANS, "Rollback: %s\n", (name) ? name : "");
-	assert(tr);
-	assert(m->session->tr->active);	/* only abort an active transaction */
 	(void) disabling_auto_commit;
 
 	store_lock();
+	sql_trans *tr = m->session->tr;
+	assert(m->session->tr && m->session->tr->active);	/* only abort an active transaction */
 	if (m->qc) 
 		qc_clean(m->qc, false);
 	stack_pop_until(m, NR_GLOBAL_VARS);
