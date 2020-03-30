@@ -15,10 +15,13 @@ farm_dir = tempfile.mkdtemp()
 os.mkdir(os.path.join(farm_dir, 'db1'))
 myport = freeport()
 
-s = process.server(args = ['--readonly'], mapiport=myport, dbname='db1', dbfarm=os.path.join(farm_dir, 'db1'), stdin = process.PIPE,
-                   stdout = process.PIPE, stderr = process.PIPE)
-out, err = s.communicate()
-sys.stdout.write(out)
-sys.stderr.write(err)
-
-shutil.rmtree(farm_dir)
+s = None
+try:
+    s = process.server(args = ['--readonly'], mapiport=myport, dbname='db1', dbfarm=os.path.join(farm_dir, 'db1'), stdin = process.PIPE,
+                       stdout = process.PIPE, stderr = process.PIPE)
+    out, err = s.communicate()
+    sys.stdout.write(out)
+    sys.stderr.write(err)
+finally:
+    s.terminate()
+    shutil.rmtree(farm_dir)

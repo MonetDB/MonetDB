@@ -15,16 +15,20 @@ farm_dir = tempfile.mkdtemp()
 os.mkdir(os.path.join(farm_dir, 'db1'))
 myport = freeport()
 
-srv = process.server(mapiport=myport, dbname='db1', dbfarm=os.path.join(farm_dir, 'db1'), stdin = process.PIPE,
-                     stdout = process.PIPE, stderr = process.PIPE)
+srv = None
+try:
+    srv = process.server(mapiport=myport, dbname='db1', dbfarm=os.path.join(farm_dir, 'db1'), stdin = process.PIPE,
+                         stdout = process.PIPE, stderr = process.PIPE)
 
-c = process.client('sql', port=myport, dbname='db1', stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
-out, err = c.communicate('call sys.shutdown(10);')
-sys.stdout.write(out)
-sys.stderr.write(err)
+    c = process.client('sql', port=myport, dbname='db1', stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
+    out, err = c.communicate('call sys.shutdown(10);')
+    sys.stdout.write(out)
+    sys.stderr.write(err)
 
-out, err = srv.communicate()
-sys.stdout.write(out)
-sys.stderr.write(err)
-
-shutil.rmtree(farm_dir)
+    out, err = srv.communicate()
+    sys.stdout.write(out)
+    sys.stderr.write(err)
+finally:
+    if srv is not None:
+        srv.terminate()
+    shutil.rmtree(farm_dir)

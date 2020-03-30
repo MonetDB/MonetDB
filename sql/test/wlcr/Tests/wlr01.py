@@ -25,22 +25,27 @@ cloneport = freeport()
 dbname = tstdb
 dbnameclone = tstdb + 'clone'
 
-#master = process.server(dbname = dbname, stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
-slave = process.server(dbname = dbnameclone, mapiport = cloneport, stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
+slave = None
+try:
+    #master = process.server(dbname = dbname, stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
+    slave = process.server(dbname = dbnameclone, mapiport = cloneport, stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
 
-c = process.client('sql', server = slave, stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
+    c = process.client('sql', server = slave, stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
 
-cout, cerr = c.communicate( f" select 'hello';")
+    cout, cerr = c.communicate( f" select 'hello';")
 
-sout, serr = slave.communicate()
-#mout, merr = master.communicate()
+    sout, serr = slave.communicate()
+    #mout, merr = master.communicate()
 
-#sys.stdout.write(mout)
-sys.stdout.write(sout)
-sys.stdout.write(cout)
-#sys.stderr.write(merr)
-sys.stderr.write(serr)
-sys.stderr.write(cerr)
+    #sys.stdout.write(mout)
+    sys.stdout.write(sout)
+    sys.stdout.write(cout)
+    #sys.stderr.write(merr)
+    sys.stderr.write(serr)
+    sys.stderr.write(cerr)
+finally:
+    if slave is not None:
+        slave.terminate()
 
 def listfiles(path):
     sys.stdout.write("#LISTING OF THE LOG FILES\n")

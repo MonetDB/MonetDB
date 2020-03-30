@@ -15,22 +15,27 @@ if not tstdb or not dbfarm:
 
 dbname = tstdb
 
-s = process.server(dbname = dbname, stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
+s = None
+try:
+    s = process.server(dbname = dbname, stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
 
-c = process.client('sql', server = s, stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
+    c = process.client('sql', server = s, stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
 
-cout, cerr = c.communicate('''\
+    cout, cerr = c.communicate('''\
 call wlc.stop();
 insert into tmp values(40,'after being stopped');
 select * from tmp;
 ''')
 
-sout, serr = s.communicate()
+    sout, serr = s.communicate()
 
-sys.stdout.write(sout)
-sys.stdout.write(cout)
-sys.stderr.write(serr)
-sys.stderr.write(cerr)
+    sys.stdout.write(sout)
+    sys.stdout.write(cout)
+    sys.stderr.write(serr)
+    sys.stderr.write(cerr)
+finally:
+    if s is not None:
+        s.terminate()
 
 def listfiles(path):
     sys.stdout.write("#LISTING OF THE LOG FILES\n")
