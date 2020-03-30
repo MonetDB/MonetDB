@@ -60,25 +60,34 @@ drop table lost_update_t1;
 drop table lost_update_t2;
 '''
 
-def main():
-    s = server()
-    client(script1)
-    server_stop(s)
+try:
+    try:
+        s = server()
+        client(script1)
+        server_stop(s)
+    finally:
+        s.terminate()
 
-    s = server()
-    client(script2)
-    time.sleep(20)                      # wait until log is flushed originally 60 sec
-    server_stop(s)
+    try:
+        s = server()
+        client(script2)
+        time.sleep(20)   # wait until log is flushed originally 60 sec
+        server_stop(s)
+    finally:
+        s.terminate()
 
-    s = server()
-    client(script3)
-    server_stop(s)
+    try:
+        s = server()
+        client(script3)
+        server_stop(s)
+    finally:
+        s.terminate()
 
-    s = server()
-    client(cleanup)
-    server_stop(s)
-
+    try:
+        s = server()
+        client(cleanup)
+        server_stop(s)
+    finally:
+        s.terminate()
+finally:
     shutil.rmtree(farm_dir)
-
-if __name__ == '__main__':
-    main()

@@ -37,6 +37,7 @@ os.mkdir(os.path.join(farm_dir, 'node2'))
 
 # node1 is the worker
 prt1 = freeport()
+prc1 = None
 try:
     prc1 = process.server(mapiport=prt1, dbname='node1', dbfarm=os.path.join(farm_dir, 'node1'), stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE)
     conn1 = pymonetdb.connect(database='node1', port=prt1, autocommit=True)
@@ -52,6 +53,7 @@ try:
 
     # node2 is the master
     prt2 = freeport()
+    prc2 = None
     try:
         prc2 = process.server(mapiport=prt2, dbname='node2', dbfarm=os.path.join(farm_dir, 'node2'), stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE)
         conn2 = pymonetdb.connect(database='node2', port=prt2, autocommit=True)
@@ -90,13 +92,17 @@ try:
         res = query(conn2, "plan select * from repS, mrgT")
         for r in res:
             print('\n'.join(r))
-    finally:
         out, err = prc2.communicate()
         sys.stdout.write(out)
         sys.stderr.write(err)
-finally:
+    finally:
+        if prc2 is not None:
+            prc2.terminate()
     # cleanup: shutdown the monetdb servers and remove tempdir
     out, err = prc1.communicate()
     sys.stdout.write(out)
     sys.stderr.write(err)
+finally:
+    if prc1 is not None:
+        prc1.terminate()
     shutil.rmtree(farm_dir)
