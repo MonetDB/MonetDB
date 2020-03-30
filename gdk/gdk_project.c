@@ -58,20 +58,34 @@ project_##TYPE(BAT *restrict bn, BAT *restrict l,			\
 				v = r2t[o - r2seq];			\
 			bt[lo] = v;					\
 		}							\
-	} else {							\
-		const oid *restrict o = (const oid *) Tloc(l, 0);	\
+	} else if (BATtdense(l)) {					\
 		for (lo = 0, hi = BATcount(l); lo < hi; lo++) {		\
-			if (is_oid_nil(o[lo])) {			\
-				bt[lo] = v = TYPE##_nil;		\
-				bn->tnil = true;			\
-			} else if (o[lo] < r1seq || o[lo] >= r2end) {	\
+			oid o = l->tseqbase + lo;			\
+			if (o < r1seq || o >= r2end) {			\
 				GDKerror("BATproject: does not match always\n"); \
 				return GDK_FAIL;			\
-			} else if (o[lo] < r1end) {			\
-				v = r1t[o[lo] - r1seq];			\
+			}						\
+			if (o < r1end)					\
+				v = r1t[o - r1seq];			\
+			else						\
+				v = r2t[o - r2seq];			\
+			bt[lo] = v;					\
+		}							\
+	} else {							\
+		const oid *restrict ot = (const oid *) Tloc(l, 0);	\
+		for (lo = 0, hi = BATcount(l); lo < hi; lo++) {		\
+			oid o = ot[lo];					\
+			if (is_oid_nil(o)) {				\
+				bt[lo] = v = TYPE##_nil;		\
+				bn->tnil = true;			\
+			} else if (o < r1seq || o >= r2end) {		\
+				GDKerror("BATproject: does not match always\n"); \
+				return GDK_FAIL;			\
+			} else if (o < r1end) {				\
+				v = r1t[o - r1seq];			\
 				bt[lo] = v;				\
 			} else {					\
-				v = r2t[o[lo] - r2seq];			\
+				v = r2t[o - r2seq];			\
 				bt[lo] = v;				\
 			}						\
 		}							\
@@ -124,6 +138,29 @@ project_oid(BAT *restrict bn, BAT *restrict l, struct canditer *restrict lci,
 	if (lci) {
 		for (lo = 0, hi = lci->ncand; lo < hi; lo++) {
 			oid o = canditer_next(lci);
+			if (o < r1seq || o >= r2end) {
+				GDKerror("BATproject: does not match always\n");
+				return GDK_FAIL;
+			}
+			if (o < r1end) {
+				if (r1ci.s)
+					bt[lo] = canditer_idx(&r1ci, o - r1seq);
+				else if (r1t)
+					bt[lo] = r1t[o - r1seq];
+				else
+					bt[lo] = o - r1seq + r1->tseqbase;
+			} else {
+				if (r2ci.s)
+					bt[lo] = canditer_idx(&r2ci, o - r2seq);
+				else if (r2t)
+					bt[lo] = r2t[o - r2seq];
+				else
+					bt[lo] = o - r2seq + r2->tseqbase;
+			}
+		}
+	} else if (BATtdense(l)) {
+		for (lo = 0, hi = BATcount(l); lo < hi; lo++) {
+			oid o = l->tseqbase + lo;
 			if (o < r1seq || o >= r2end) {
 				GDKerror("BATproject: does not match always\n");
 				return GDK_FAIL;
@@ -211,20 +248,35 @@ project_any(BAT *restrict bn, BAT *restrict l, struct canditer *restrict ci,
 			if (tfastins_nocheck(bn, lo, v, Tsize(bn)) != GDK_SUCCEED)
 				return GDK_FAIL;
 		}
-	} else {
-		const oid *restrict o = (const oid *) Tloc(l, 0);
-
+	} else if (BATtdense(l)) {
 		for (lo = 0, hi = BATcount(l); lo < hi; lo++) {
-			if (is_oid_nil(o[lo])) {
-				v = nil;
-				bn->tnil = true;
-			} else if (o[lo] < r1seq || o[lo] >= r2end) {
+			oid o = l->tseqbase + lo;
+			if (o < r1seq || o >= r2end) {
 				GDKerror("BATproject: does not match always\n");
 				return GDK_FAIL;
-			} else if (o[lo] < r1end) {
-				v = BUNtail(r1i, o[lo] - r1seq);
+			}
+			if (o < r1end)
+				v = BUNtail(r1i, o - r1seq);
+			else
+				v = BUNtail(r2i, o - r2seq);
+			if (tfastins_nocheck(bn, lo, v, Tsize(bn)) != GDK_SUCCEED)
+				return GDK_FAIL;
+		}
+	} else {
+		const oid *restrict ot = (const oid *) Tloc(l, 0);
+
+		for (lo = 0, hi = BATcount(l); lo < hi; lo++) {
+			oid o = ot[lo];
+			if (is_oid_nil(o)) {
+				v = nil;
+				bn->tnil = true;
+			} else if (o < r1seq || o >= r2end) {
+				GDKerror("BATproject: does not match always\n");
+				return GDK_FAIL;
+			} else if (o < r1end) {
+				v = BUNtail(r1i, o - r1seq);
 			} else {
-				v = BUNtail(r2i, o[lo] - r2seq);
+				v = BUNtail(r2i, o - r2seq);
 			}
 			if (tfastins_nocheck(bn, lo, v, Tsize(bn)) != GDK_SUCCEED)
 				return GDK_FAIL;
