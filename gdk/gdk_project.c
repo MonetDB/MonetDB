@@ -375,7 +375,7 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 		bn->tnonil = l->tnonil & r1->tnonil & r2->tnonil;
 		bn->tsorted = l->batCount <= 1;
 		bn->trevsorted = l->batCount <= 1;
-		bn->tkey = l->batCount <= 1 || (l->tkey & r1->tkey & r2->tkey);
+		bn->tkey = l->batCount <= 1;
 	} else {
 		bn->tnonil = l->tnonil & r1->tnonil;
 		bn->tsorted = l->batCount <= 1
