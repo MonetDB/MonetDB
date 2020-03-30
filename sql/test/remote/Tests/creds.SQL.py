@@ -60,8 +60,7 @@ def worker_load(in_filename, workerrec, cmovies, ratings_table_def_fk):
     c.execute(load_data)
 
 # Setup and start workers
-def create_workers(fn_template, nworkers, cmovies, ratings_table_def_fk):
-    workers = []
+def create_workers(workers, fn_template, nworkers, cmovies, ratings_table_def_fk):
     for i in range(nworkers):
         workerport = freeport()
         workerdbname = 'worker_{}'.format(i)
@@ -72,6 +71,7 @@ def create_workers(fn_template, nworkers, cmovies, ratings_table_def_fk):
             'dbfarm': os.path.join(TMPDIR, workerdbname),
             'mapi': 'mapi:monetdb://localhost:{}/{}/sys/ratings'.format(workerport, workerdbname),
         }
+        workers.append(workerrec)
         os.mkdir(workerrec['dbfarm'])
         workerrec['proc'] = process.server(mapiport=workerrec['port'], dbname=workerrec['dbname'], dbfarm=workerrec['dbfarm'], stdin=process.PIPE, stdout=process.PIPE)
         workerrec['conn'] = pymonetdb.connect(database=workerrec['dbname'], port=workerport, autocommit=True)
@@ -79,17 +79,16 @@ def create_workers(fn_template, nworkers, cmovies, ratings_table_def_fk):
         t = threading.Thread(target=worker_load, args=[filename, workerrec, cmovies, ratings_table_def_fk])
         t.start()
         workerrec['loadthread'] = t
-        workers.append(workerrec)
 
     for wrec in workers:
         wrec['loadthread'].join()
 
-    return workers
-
 # Start supervisor database
 supervisorport = freeport()
-os.mkdir(os.path.join(TMPDIR, "supervisor"))
+supervisorproc = None
+workers = []
 try:
+    os.mkdir(os.path.join(TMPDIR, "supervisor"))
     supervisorproc = process.server(mapiport=supervisorport, dbname="supervisor", dbfarm=os.path.join(TMPDIR, "supervisor"), stdin=process.PIPE, stdout=process.PIPE)
     supervisorconn = pymonetdb.connect(database='supervisor', port=supervisorport, autocommit=True)
     supervisor_uri = "mapi:monetdb://localhost:{}/supervisor".format(supervisorport)
@@ -109,25 +108,29 @@ try:
     # Create the workers and load the ratings data
     fn_template=os.getenv("TSTDATAPATH")+"/netflix_data/ratings_sample_{}.csv"
     cmovies = "CREATE REMOTE TABLE movies {} ON '{}' WITH USER 'monetdb' PASSWORD 'monetdb'".format(MOVIES_TABLE_DEF, supervisor_uri)
-    try:
-        workers = create_workers(fn_template, NWORKERS, cmovies, RATINGS_TABLE_DEF_FK)
+    create_workers(workers, fn_template, NWORKERS, cmovies, RATINGS_TABLE_DEF_FK)
 
-        # Create the remote tables on supervisor
-        for wrec in workers:
-            rtable = "CREATE REMOTE TABLE ratings{} {} on '{}' WITH USER 'monetdb' PASSWORD 'monetdb'".format(wrec['num'], RATINGS_TABLE_DEF, wrec['mapi'])
-            c.execute(rtable)
+    # Create the remote tables on supervisor
+    for wrec in workers:
+        rtable = "CREATE REMOTE TABLE ratings{} {} on '{}' WITH USER 'monetdb' PASSWORD 'monetdb'".format(wrec['num'], RATINGS_TABLE_DEF, wrec['mapi'])
+        c.execute(rtable)
 
-            atable = "ALTER TABLE ratings add table ratings{}".format(wrec['num'])
-            c.execute(atable)
+        atable = "ALTER TABLE ratings add table ratings{}".format(wrec['num'])
+        c.execute(atable)
 
-        # Run the queries
-        c.execute("SELECT COUNT(*) FROM ratings0")
-        print("{} rows in remote table".format(c.fetchall()[0][0]))
+    # Run the queries
+    c.execute("SELECT COUNT(*) FROM ratings0")
+    print("{} rows in remote table".format(c.fetchall()[0][0]))
 
-        c.execute("SELECT COUNT(*) FROM ratings")
-        print("{} rows in merge table".format(c.fetchall()[0][0]))
-    finally:
-        for wrec in workers:
-            wrec['proc'].communicate()
-finally:
+    c.execute("SELECT COUNT(*) FROM ratings")
+    print("{} rows in merge table".format(c.fetchall()[0][0]))
+    for wrec in workers:
+        wrec['proc'].communicate()
     supervisorproc.communicate()
+finally:
+    if supervisorproc is not None:
+        supervisorproc.terminate()
+    for wrec in workers:
+        p = wrec.get('proc')
+        if p is not None:
+            p.terminate()
