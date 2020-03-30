@@ -17,6 +17,7 @@
 #ifdef HAVE_POLL_H
 #include <poll.h>
 #endif
+#include <inttypes.h>
 #include <time.h>
 #include <string.h>  /* strerror */
 #include <unistd.h>  /* select */
@@ -783,9 +784,9 @@ static void ctl_handle_client(
 				send_client("=");
 				for (int i = 0; i < nsnaps; i++) {
 					struct snapshot *snap = &snaps[i];
-					len = snprintf(buf2, sizeof(buf2), "%jd %jd %s %s\n",
-						(intmax_t)snap->time,
-						(intmax_t)snap->size,
+					len = snprintf(buf2, sizeof(buf2), "%" PRIi64 " %" PRIu64 " %s %s\n",
+						(int64_t)snap->time,
+						(uint64_t)snap->size,
 						snap->dbname,
 						snap->path != NULL ? snap->path : "");
 					send_client("=");

@@ -1755,10 +1755,10 @@ snapshot_enumerate(struct snapshot **snapshots, int *nsnapshots)
 		while (p < end) {
 			char *eol = strchr(p, '\n');
 			eol = (eol != NULL) ? eol : end;
-			intmax_t time;
-			intmax_t size;
+			int64_t time;
+			uint64_t size;
 			int len;
-			if (sscanf(p, "%jd %jd %n", &time, &size, &len) != 2) {
+			if (sscanf(p, "%" SCNd64 " %" SCNu64 " %n", &time, &size, &len) != 2) {
 				free(out);
 				return strdup("internal parse error");
 			}
