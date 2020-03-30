@@ -687,7 +687,7 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim, char wm)
 								mnstr_printf(toConsole, "\\%03o", (unsigned char) *p);
 							else if (*p == '\302' &&
 								 (p[1] & 0xE0) == 0x80) {
-								mnstr_printf(toConsole, "\\u%04x", (p[1] & 0x3F) | 0x80);
+								mnstr_printf(toConsole, "\\u%04x", (unsigned) ((p[1] & 0x3F) | 0x80));
 								p++;
 							} else
 								mnstr_write(toConsole, p, 1, 1);
@@ -705,7 +705,7 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim, char wm)
 								mnstr_printf(toConsole, "\\%03o", (unsigned char) *p);
 							else if (*p == '\302' &&
 								 (p[1] & 0xE0) == 0x80) {
-								mnstr_printf(toConsole, "\\u%04x", (p[1] & 0x3F) | 0x80);
+								mnstr_printf(toConsole, "\\u%04x", (unsigned) ((p[1] & 0x3F) | 0x80));
 								p++;
 							} else
 								mnstr_write(toConsole, p, 1, 1);
@@ -753,7 +753,7 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim, char wm)
 								mnstr_printf(toConsole, "\\%03o", (unsigned char) *p);
 							else if (*p == '\302' &&
 								 (p[1] & 0xE0) == 0x80) {
-								mnstr_printf(toConsole, "\\u%04x", (p[1] & 0x3F) | 0x80);
+								mnstr_printf(toConsole, "\\u%04x", (unsigned) ((p[1] & 0x3F) | 0x80));
 								p++;
 							} else
 								mnstr_write(toConsole, p, 1, 1);

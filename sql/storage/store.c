@@ -2378,27 +2378,27 @@ tar_write_header(stream *tarfile, const char *path, time_t mtime, size_t size)
 	// in /usr/include/tar.h on a Linux system.
 	tar_write_header_field(&cursor, 100, "%s", path);   // name[100]
 	tar_write_header_field(&cursor, 8, "0000644");      // mode[8]
-	tar_write_header_field(&cursor, 8, "%07o", 0);      // uid[8]
-	tar_write_header_field(&cursor, 8, "%07o", 0);      // gid[8]
+	tar_write_header_field(&cursor, 8, "%07o", 0U);      // uid[8]
+	tar_write_header_field(&cursor, 8, "%07o", 0U);      // gid[8]
 	tar_write_header_field(&cursor, 12, "%011zo", size);      // size[12]
-	tar_write_header_field(&cursor, 12, "%011lo", (long)mtime); // mtime[12]
+	tar_write_header_field(&cursor, 12, "%011lo", (unsigned long)mtime); // mtime[12]
 	chksum = cursor; // use this later to set the computed checksum
 	tar_write_header_field(&cursor, 8, "%8s", ""); // chksum[8]
 	*cursor++ = '0'; // typeflag REGTYPE
 	tar_write_header_field(&cursor, 100, "%s", "");  // linkname[100]
 	tar_write_header_field(&cursor, 6, "%s", "ustar"); // magic[6]
-	tar_write_header_field(&cursor, 2, "%02o", 0); // version, not null terminated
+	tar_write_header_field(&cursor, 2, "%02o", 0U); // version, not null terminated
 	tar_write_header_field(&cursor, 32, "%s", ""); // uname[32]
 	tar_write_header_field(&cursor, 32, "%s", ""); // gname[32]
-	tar_write_header_field(&cursor, 8, "%07o", 0); // devmajor[8]
-	tar_write_header_field(&cursor, 8, "%07o", 0); // devminor[8]
+	tar_write_header_field(&cursor, 8, "%07o", 0U); // devmajor[8]
+	tar_write_header_field(&cursor, 8, "%07o", 0U); // devminor[8]
 	tar_write_header_field(&cursor, 155, "%s", ""); // prefix[155]
 
 	assert(cursor - buf == 500);
 
-	int sum = 0;
+	unsigned sum = 0;
 	for (int i = 0; i < TAR_BLOCK_SIZE; i++)
-		sum += buf[i];
+		sum += (unsigned char) buf[i];
 
 	tar_write_header_field(&chksum, 8, "%06o", sum);
 

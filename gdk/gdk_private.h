@@ -31,6 +31,7 @@ enum heaptype {
 
 #ifdef GDKLIBRARY_OLDDATE
 int cvtdate(int n)
+	__attribute__((__const__))
 	__attribute__((__visibility__("hidden")));
 #endif
 
@@ -183,6 +184,7 @@ bool HASHgonebad(BAT *b, const void *v)
 void HASHins(BAT *b, BUN i, const void *v)
 	__attribute__((__visibility__("hidden")));
 BUN HASHmask(BUN cnt)
+	__attribute__((__const__))
 	__attribute__((__visibility__("hidden")));
 gdk_return HASHnew(Hash *h, int tpe, BUN size, BUN mask, BUN count, bool bcktonly)
 	__attribute__((__visibility__("hidden")));

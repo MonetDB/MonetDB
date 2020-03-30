@@ -881,7 +881,8 @@ gdk_export gdk_return BATextend(BAT *b, BUN newcap)
 	__attribute__((__warn_unused_result__));
 
 /* internal */
-gdk_export uint8_t ATOMelmshift(int sz);
+gdk_export uint8_t ATOMelmshift(int sz)
+	__attribute__((__const__));
 
 gdk_export gdk_return GDKupgradevarheap(BAT *b, var_t v, bool copyall, bool mayshare)
 	__attribute__((__warn_unused_result__));
