@@ -38,6 +38,33 @@ stdout of test 'subquery5` in directory 'sql/test/subquery` itself:
 [ 1234,	40	]
 [ 1234,	40	]
 [ 1234,	40	]
+#CREATE OR REPLACE FUNCTION evilfunction(input INT) RETURNS INT 
+#BEGIN
+#	RETURN SELECT input WHERE FALSE;
+#END;
+#SELECT evilfunction(1);
+% . # table_name
+% %1 # name
+% int # type
+% 1 # length
+[ NULL	]
+#SELECT evilfunction(1);
+% . # table_name
+% %1 # name
+% int # type
+% 1 # length
+[ NULL	]
+#SELECT evilfunction(1), 1;
+% .,	. # table_name
+% %1,	%2 # name
+% int,	tinyint # type
+% 1,	1 # length
+[ NULL,	1	]
+#CREATE OR REPLACE FUNCTION evilfunction(input INT) RETURNS INT 
+#BEGIN
+#	RETURN SELECT input UNION ALL SELECT input;
+#END;
+#DROP FUNCTION evilfunction(INT);
 #DROP TABLE tbl_ProductSales;
 #DROP TABLE another_T;
 #DROP TABLE integers;

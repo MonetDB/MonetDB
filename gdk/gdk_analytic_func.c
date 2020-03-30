@@ -335,7 +335,7 @@ GDKanalyticalfirst(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
 		for (; i < cnt; i++) {
 			curval = (end[i] > start[i]) ? BUNtail(bpi, (BUN) start[i]) : (void *) nil;
 			if (BUNappend(r, curval, false) != GDK_SUCCEED)
-				goto allocation_error;
+				return GDK_FAIL;
 			has_nils |= atomcmp(curval, nil) == 0;
 		}
 	}
@@ -344,9 +344,6 @@ GDKanalyticalfirst(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
 	r->tnonil = !has_nils;
 	r->tnil = has_nils;
 	return GDK_SUCCEED;
-      allocation_error:
-	GDKerror("GDKanalyticalfirst: malloc failure\n");
-	return GDK_FAIL;
 }
 
 #define ANALYTICAL_LAST_IMP(TPE)					\
@@ -410,7 +407,7 @@ GDKanalyticallast(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
 		for (; i < cnt; i++) {
 			curval = (end[i] > start[i]) ? BUNtail(bpi, (BUN) (end[i] - 1)) : (void *) nil;
 			if (BUNappend(r, curval, false) != GDK_SUCCEED)
-				goto allocation_error;
+				return GDK_FAIL;
 			has_nils |= atomcmp(curval, nil) == 0;
 		}
 	}
@@ -419,9 +416,6 @@ GDKanalyticallast(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
 	r->tnonil = !has_nils;
 	r->tnil = has_nils;
 	return GDK_SUCCEED;
-      allocation_error:
-	GDKerror("GDKanalyticallast: malloc failure\n");
-	return GDK_FAIL;
 }
 
 #define ANALYTICAL_NTHVALUE_IMP_SINGLE_FIXED(TPE1)			\
@@ -505,7 +499,7 @@ GDKanalyticallast(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
 				has_nils |= atomcmp(curval, nil) == 0;	\
 			}	\
 			if (BUNappend(r, curval, false) != GDK_SUCCEED) \
-				goto allocation_error;			\
+				return GDK_FAIL;			\
 		}							\
 	} while (0)
 
@@ -582,13 +576,13 @@ GDKanalyticalnthvalue(BAT *r, BAT *b, BAT *s, BAT *e, BAT *l, const void *restri
 				has_nils = true;
 				for (; i < cnt; i++)
 					if (BUNappend(r, nil, false) != GDK_SUCCEED)
-						goto allocation_error;
+						return GDK_FAIL;
 			} else {
 				nth--;
 				for (; i < cnt; i++) {
 					curval = (end[i] > start[i] && nth < (end[i] - start[i])) ? BUNtail(bpi, (BUN) (start[i] + nth)) : (void *) nil;
 					if (BUNappend(r, curval, false) != GDK_SUCCEED)
-						goto allocation_error;
+						return GDK_FAIL;
 					has_nils |= atomcmp(curval, nil) == 0;
 				}
 			}
@@ -652,9 +646,6 @@ GDKanalyticalnthvalue(BAT *r, BAT *b, BAT *s, BAT *e, BAT *l, const void *restri
 	r->tnonil = !has_nils;
 	r->tnil = has_nils;
 	return GDK_SUCCEED;
-      allocation_error:
-	GDKerror("GDKanalyticalnthvalue: malloc failure\n");
-	return GDK_FAIL;
       nosupport:
 	GDKerror("GDKanalyticalnthvalue: type %s not supported for the nth_value.\n", ATOMname(tp2));
 	return GDK_FAIL;
@@ -708,13 +699,13 @@ GDKanalyticalnthvalue(BAT *r, BAT *b, BAT *s, BAT *e, BAT *l, const void *restri
 	do {								\
 		for (i = 0; i < lag && k < j; i++, k++) {		\
 			if (BUNappend(r, default_value, false) != GDK_SUCCEED) \
-				goto allocation_error;			\
+				return GDK_FAIL;			\
 		}							\
 		has_nils |= (lag > 0 && atomcmp(default_value, nil) == 0);	\
 		for (l = k - lag; k < j; k++, l++) {			\
 			curval = BUNtail(bpi, l);			\
 			if (BUNappend(r, curval, false) != GDK_SUCCEED)	\
-				goto allocation_error;			\
+				return GDK_FAIL;			\
 			has_nils |= atomcmp(curval, nil) == 0;			\
 		}	\
 	} while (0)
@@ -766,7 +757,7 @@ GDKanalyticallag(BAT *r, BAT *b, BAT *p, BUN lag, const void *restrict default_v
 			has_nils = true;
 			for (j = 0; j < cnt; j++) {
 				if (BUNappend(r, nil, false) != GDK_SUCCEED)
-					goto allocation_error;
+					return GDK_FAIL;
 			}
 		} else if (p) {
 			pnp = np = (bit *) Tloc(p, 0);
@@ -790,9 +781,6 @@ GDKanalyticallag(BAT *r, BAT *b, BAT *p, BUN lag, const void *restrict default_v
 	r->tnonil = !has_nils;
 	r->tnil = has_nils;
 	return GDK_SUCCEED;
-      allocation_error:
-	GDKerror("GDKanalyticallag: malloc failure\n");
-	return GDK_FAIL;
 }
 
 #define LEAD_CALC(TPE)						\
@@ -853,14 +841,14 @@ GDKanalyticallag(BAT *r, BAT *b, BAT *p, BUN lag, const void *restrict default_v
 			for (i = 0,n = k + lead; i < m; i++, n++) {	\
 				curval = BUNtail(bpi, n);		\
 				if (BUNappend(r, curval, false) != GDK_SUCCEED)	\
-					goto allocation_error;		\
+					return GDK_FAIL;		\
 				has_nils |= atomcmp(curval, nil) == 0;		\
 			}						\
 			k += i;						\
 		}							\
 		for (; k < j; k++) {					\
 			if (BUNappend(r, default_value, false) != GDK_SUCCEED) \
-				goto allocation_error;			\
+				return GDK_FAIL;			\
 		}							\
 		has_nils |= (lead > 0 && atomcmp(default_value, nil) == 0);	\
 	} while (0)
@@ -913,7 +901,7 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 			has_nils = true;
 			for (j = 0; j < cnt; j++) {
 				if (BUNappend(r, nil, false) != GDK_SUCCEED)
-					goto allocation_error;
+					return GDK_FAIL;
 			}
 		} else if (p) {
 			pnp = np = (bit *) Tloc(p, 0);
@@ -937,9 +925,6 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 	r->tnonil = !has_nils;
 	r->tnil = has_nils;
 	return GDK_SUCCEED;
-      allocation_error:
-	GDKerror("GDKanalyticallead: malloc failure\n");
-	return GDK_FAIL;
 }
 
 #define ANALYTICAL_MIN_MAX_CALC(TPE, OP)				\
@@ -1029,8 +1014,8 @@ GDKanalytical##OP(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)		\
 				}					\
 			}						\
 			if (BUNappend(r, curval, false) != GDK_SUCCEED) \
-				goto allocation_error;			\
-			has_nils |= atomcmp(curval, nil) == 0;	\
+				return GDK_FAIL;			\
+			has_nils |= atomcmp(curval, nil) == 0;		\
 		}							\
 	}								\
 	}								\
@@ -1038,9 +1023,6 @@ GDKanalytical##OP(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)		\
 	r->tnonil = !has_nils;						\
 	r->tnil = has_nils;						\
 	return GDK_SUCCEED;						\
-  allocation_error:							\
-	GDKerror("GDKanalytical""OP"": malloc failure\n");		\
-	return GDK_FAIL;						\
 }
 
 ANALYTICAL_MIN_MAX(min, MIN, >)

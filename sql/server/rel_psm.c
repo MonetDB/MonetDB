@@ -428,18 +428,35 @@ rel_psm_return( sql_query *query, sql_subtype *restype, list *restypelist, symbo
 	sql_exp *res;
 	sql_rel *rel = NULL;
 	list *l = sa_list(sql->sa);
+	bool requires_proj = false;
 
 	if (restypelist)
 		ek.card = card_relation;
+	else if (return_sym->token == SQL_TABLE)
+		return sql_error(sql, 02, SQLSTATE(42000) "RETURN: TABLE return not allowed for non table returning functions");
 	res = rel_value_exp2(query, &rel, return_sym, sql_sel, ek);
 	if (!res)
 		return NULL;
-	if (!rel && exp_is_rel(res))
+	if (!rel && exp_is_rel(res)) {
 		rel = exp_rel_get_rel(sql->sa, res);
+		if (rel && !restypelist && !is_groupby(rel->op)) { /* On regular functions return zero or 1 rows for every row */
+			rel->card = CARD_MULTI; 
+			rel = rel_zero_or_one(sql, rel, ek);
+			if (list_length(rel->exps) != 1)
+				return sql_error(sql, 02, SQLSTATE(42000) "RETURN: must return a single column");
+			res = exp_ref(sql->sa, (sql_exp*) rel->exps->t->data);
+			requires_proj = true;
+		}
+	}
 	if (ek.card != card_relation && (!restype || (res = rel_check_type(sql, restype, rel, res, type_equal)) == NULL))
 		return (!restype)?sql_error(sql, 02, SQLSTATE(42000) "RETURN: return type does not match"):NULL;
 	else if (ek.card == card_relation && !rel)
 		return NULL;
+
+	if (requires_proj) {
+		rel = rel_project(sql->sa, rel, list_append(sa_list(sql->sa), res));
+		res = exp_rel(sql, rel);
+	}
 
 	if (rel && !is_ddl(rel->op) && ek.card == card_relation) {
 		list *exps = sa_list(sql->sa), *oexps = rel->exps;
@@ -451,6 +468,8 @@ rel_psm_return( sql_query *query, sql_subtype *restype, list *restypelist, symbo
 			oexps_rel = l;
 			oexps = l->exps;
 		}
+		if (list_length(oexps) != list_length(restypelist))
+			return sql_error(sql, 02, SQLSTATE(42000) "RETURN: number of columns do not match");
 		for (n = oexps->h, m = restypelist->h; n && m; n = n->next, m = m->next) {
 			sql_exp *e = n->data;
 			sql_arg *ce = m->data;
@@ -459,19 +478,22 @@ rel_psm_return( sql_query *query, sql_subtype *restype, list *restypelist, symbo
 
 			if (!cname)
 				cname = sa_strdup(sql->sa, number2name(name, sizeof(name), ++sql->label));
-			if (!isproject) 
+			if (!isproject) {
+				if (!exp_name(e))
+					exp_label(sql->sa, e, ++sql->label);
 				e = exp_ref(sql->sa, e);
+			}
 			e = rel_check_type(sql, &ce->type, oexps_rel, e, type_equal);
 			if (!e)
 				return NULL;
 			append(exps, e);
 		}
 		if (isproject)
-			rel -> exps = exps;
+			rel->exps = exps;
 		else
 			rel = rel_project(sql->sa, rel, exps);
 		res = exp_rel(sql, rel);
-	} else if (rel && restypelist){ /* handle return table-var */
+	} else if (rel && restypelist) { /* handle return table-var */
 		list *exps = sa_list(sql->sa);
 		sql_table *t = rel_ddl_table_get(rel);
 		node *n, *m;

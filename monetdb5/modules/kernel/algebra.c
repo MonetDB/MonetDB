@@ -786,6 +786,35 @@ ALGprojection(bat *result, const bat *lid, const bat *rid)
 }
 
 str
+ALGprojection2(bat *result, const bat *lid, const bat *r1id, const bat *r2id)
+{
+	BAT *l, *r1, *r2 = NULL, *bn;
+
+	if ((l = BATdescriptor(*lid)) == NULL) {
+		throw(MAL, "algebra.projection2", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
+	if ((r1 = BATdescriptor(*r1id)) == NULL) {
+		BBPunfix(l->batCacheid);
+		throw(MAL, "algebra.projection2", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
+	if (r2id && !is_bat_nil(*r2id) && (r2 = BATdescriptor(*r2id)) == NULL) {
+		BBPunfix(l->batCacheid);
+		BBPunfix(r1->batCacheid);
+		throw(MAL, "algebra.projection2", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
+	bn = BATproject2(l, r1, r2);
+	BBPunfix(l->batCacheid);
+	BBPunfix(r1->batCacheid);
+	if (r2)
+		BBPunfix(r2->batCacheid);
+	if (bn == NULL)
+		throw(MAL, "algegra.projection2", GDK_EXCEPTION);
+	*result = bn->batCacheid;
+	BBPkeepref(*result);
+	return MAL_SUCCEED;
+}
+
+str
 ALGsort33(bat *result, bat *norder, bat *ngroup, const bat *bid, const bat *order, const bat *group, const bit *reverse, const bit *nilslast, const bit *stable)
 {
 	BAT *bn = NULL, *on = NULL, *gn = NULL;

@@ -40,6 +40,7 @@ def freeport():
 tmpdir = tempfile.mkdtemp()
 os.mkdir(os.path.join(tmpdir, 'master'))
 
+masterproc = None
 try:
     masterport = freeport()
     masterproc = process.server(mapiport=masterport, dbname="master", dbfarm=os.path.join(tmpdir, 'master'), stdin = process.PIPE, stdout = process.PIPE)
@@ -68,13 +69,13 @@ try:
             'mapi'     : 'mapi:monetdb://localhost:'+str(workerport)+'/' + workerdbname,
             'tpf'      : '_' + str(i)
         }
+        workers.append(workerrec)
         os.mkdir(workerrec['dbfarm'])
         workerrec['proc'] = process.server(mapiport=workerrec['port'], dbname=workerrec['dbname'], dbfarm=workerrec['dbfarm'], stdin = process.PIPE, stdout = process.PIPE)
         workerrec['conn'] = pymonetdb.connect(database=workerrec['dbname'], port=workerrec['port'], autocommit=True)
         t = threading.Thread(target=worker_load, args = [workerrec])
         t.start()
         workerrec['loadthread'] = t
-        workers.append(workerrec)
 
 
 
@@ -99,9 +100,15 @@ try:
     else:
         print(str(c.fetchall()))
 
-finally:
     masterproc.communicate()
     for worker in workers:
         workerrec['proc'].communicate()
+finally:
+    if masterproc is not None:
+        masterproc.terminate()
+    for worker in workers:
+        p = workerrec.get('proc')
+        if p is not None:
+            p.terminate()
     if os.path.exists(tmpdir):
         shutil.rmtree(tmpdir)

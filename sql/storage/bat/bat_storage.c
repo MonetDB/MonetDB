@@ -592,14 +592,8 @@ dup_bat(sql_trans *tr, sql_table *t, sql_delta *obat, sql_delta *bat, int type, 
 }
 
 static int
-update_col(sql_trans *tr, sql_column *c, void *tids, void *upd, int tpe)
+bind_col_data(sql_trans *tr, sql_column *c) 
 {
-	BAT *b = tids;
-	sql_delta *bat;
-
-	if (tpe == TYPE_bat && !BATcount(b)) 
-		return LOG_OK;
-
 	if (!c->data || !c->base.allocated) {
 		int type = c->type.type->localtype;
 		sql_column *oc = tr_find_column(tr->parent, c);
@@ -612,6 +606,21 @@ update_col(sql_trans *tr, sql_column *c, void *tids, void *upd, int tpe)
 			return LOG_ERR;
 		c->base.allocated = 1;
 	}
+	return LOG_OK;
+}
+
+static int
+update_col(sql_trans *tr, sql_column *c, void *tids, void *upd, int tpe)
+{
+	BAT *b = tids;
+	sql_delta *bat;
+
+	if (tpe == TYPE_bat && !BATcount(b)) 
+		return LOG_OK;
+
+	if (bind_col_data(tr, c) == LOG_ERR)
+		return LOG_ERR;
+
 	bat = c->data;
 	bat->wtime = c->base.wtime = c->t->base.wtime = c->t->s->base.wtime = tr->wtime = tr->wstime;
 	assert(tr != gtrans);
@@ -622,15 +631,9 @@ update_col(sql_trans *tr, sql_column *c, void *tids, void *upd, int tpe)
 		return delta_update_val(bat, *(oid*)tids, upd);
 }
 
-static int 
-update_idx(sql_trans *tr, sql_idx * i, void *tids, void *upd, int tpe)
+static int
+bind_idx_data(sql_trans *tr, sql_idx *i) 
 {
-	BAT *b = tids;
-	sql_delta *bat;
-
-	if (tpe == TYPE_bat && !BATcount(b)) 
-		return LOG_OK;
-
 	if (!i->data || !i->base.allocated) {
 		int type = (oid_index(i->type))?TYPE_oid:TYPE_lng;
 		sql_idx *oi = tr_find_idx(tr->parent, i);
@@ -643,6 +646,21 @@ update_idx(sql_trans *tr, sql_idx * i, void *tids, void *upd, int tpe)
 			return LOG_ERR;
 		i->base.allocated = 1;
 	}
+	return LOG_OK;
+}
+
+static int 
+update_idx(sql_trans *tr, sql_idx * i, void *tids, void *upd, int tpe)
+{
+	BAT *b = tids;
+	sql_delta *bat;
+
+	if (tpe == TYPE_bat && !BATcount(b)) 
+		return LOG_OK;
+
+	if (bind_idx_data(tr, i) == LOG_ERR)
+		return LOG_ERR;
+
 	bat = i->data;
 	bat->wtime = i->base.wtime = i->t->base.wtime = i->t->s->base.wtime = tr->wtime = tr->wstime;
 	assert(tr != gtrans);
@@ -839,23 +857,8 @@ append_col(sql_trans *tr, sql_column *c, void *i, int tpe)
 	if (tpe == TYPE_bat && !BATcount(b)) 
 		return ok;
 
-	if (!c->data || !c->base.allocated) {
-		int type = c->type.type->localtype;
-		sql_column *oc = tr_find_column(tr->parent, c);
-		sql_delta *bat = ZNEW(sql_delta), *obat;
-		if (!bat)
-			ok = LOG_ERR;
-		else {
-			c->data = bat;
-			obat = timestamp_delta(oc->data, c->base.stime);
-			ok = dup_bat(tr, c->t, obat, bat, type, isNew(oc), isNew(c));
-			if(ok == LOG_OK)
-				c->base.allocated = 1;
-		}
-	}
-
-	if(ok == LOG_ERR)
-		return ok;
+	if (bind_col_data(tr, c) == LOG_ERR)
+		return LOG_ERR;
 
 	bat = c->data;
 	/* appends only write */
@@ -868,24 +871,6 @@ append_col(sql_trans *tr, sql_column *c, void *i, int tpe)
 		ok = delta_append_bat(bat, i);
 	else
 		ok = delta_append_val(bat, i);
-	/*
-	if (!c->t->data || !c->t->base.allocated) {
-		sql_table *ot = tr_find_table(tr->parent, c->t);
-		sql_dbat *bat = ZNEW(sql_dbat), *obat;
-		if (!bat)
-			return LOG_ERR;
-		c->t->data = bat;
-		obat = timestamp_dbat(ot->data, c->t->base.stime);
-		dup_dbat(tr, obat, bat, isNew(ot), isTempTable(c->t));
-		c->t->base.allocated = 1;
-	}
-	if (c->t && c->t->data && ((sql_dbat*)c->t->data)->cached) {
-		sql_dbat *bat = c->t->data;
-
-		bat_destroy(bat->cached);
-		bat->cached = NULL;
-	}
-	*/
 	return ok;
 }
 
@@ -899,23 +884,8 @@ append_idx(sql_trans *tr, sql_idx * i, void *ib, int tpe)
 	if (tpe == TYPE_bat && !BATcount(b)) 
 		return ok;
 
-	if (!i->data || !i->base.allocated) {
-		int type = (oid_index(i->type))?TYPE_oid:TYPE_lng;
-		sql_idx *oi = tr_find_idx(tr->parent, i);
-		sql_delta *bat = ZNEW(sql_delta), *obat;
-		if(!bat)
-			ok = LOG_ERR;
-		else {
-			i->data = bat;
-			obat = timestamp_delta(oi->data, i->base.stime);
-			ok = dup_bat(tr, i->t, obat, bat, type, isNew(oi), isNew(i));
-			if(ok == LOG_OK)
-				i->base.allocated = 1;
-		}
-	}
-
-	if(ok == LOG_ERR)
-		return ok;
+	if (bind_idx_data(tr, i) == LOG_ERR)
+		return LOG_ERR;
 
 	bat = i->data;
 	/* appends only write */
@@ -924,25 +894,6 @@ append_idx(sql_trans *tr, sql_idx * i, void *ib, int tpe)
 		ok = delta_append_bat(bat, ib);
 	else
 		ok = delta_append_val(bat, ib);
-	/*
-	if (!i->t->data || !i->t->base.allocated) {
-		sql_table *ot = tr_find_table(tr->parent, i->t);
-		sql_dbat *bat = ZNEW(sql_dbat), *obat;
-		if(!bat)
-			return LOG_ERR;
-		i->t->data = bat;
-		obat = timestamp_dbat(ot->data, i->t->base.stime);
-		dup_dbat(tr, obat, bat, isNew(ot), isTempTable(i->t));
-		i->t->base.allocated = 1;
-	}
-
-	if (i->t && i->t->data && ((sql_dbat*)i->t->data)->cached) {
-		sql_dbat *bat = i->t->data;
-
-		bat_destroy(bat->cached);
-		bat->cached = NULL;
-	}
-	*/
 	return ok;
 }
 
@@ -1007,16 +958,8 @@ delta_delete_val( sql_dbat *bat, oid rid )
 }
 
 static int
-delete_tab(sql_trans *tr, sql_table * t, void *ib, int tpe)
+bind_del_data(sql_trans *tr, sql_table *t)
 {
-	BAT *b = ib;
-	sql_dbat *bat;
-	node *n;
-	int ok = LOG_OK;
-
-	if (tpe == TYPE_bat && !BATcount(b)) 
-		return ok;
-
 	if (!t->data || !t->base.allocated) {
 		sql_table *ot = tr_find_table(tr->parent, t);
 		sql_dbat *bat = ZNEW(sql_dbat), *obat;
@@ -1027,6 +970,23 @@ delete_tab(sql_trans *tr, sql_table * t, void *ib, int tpe)
 		dup_dbat(tr, obat, bat, isNew(ot), isTempTable(t));
 		t->base.allocated = 1;
 	}
+	return LOG_OK;
+}
+
+static int
+delete_tab(sql_trans *tr, sql_table * t, void *ib, int tpe)
+{
+	BAT *b = ib;
+	sql_dbat *bat;
+	node *n;
+	int ok = LOG_OK;
+
+	if (tpe == TYPE_bat && !BATcount(b)) 
+		return ok;
+
+	if (bind_del_data(tr, t) == LOG_ERR)
+		return LOG_ERR;
+
 	bat = t->data;
 	/* delete all cached copies */
 
@@ -2034,18 +1994,8 @@ clear_delta(sql_trans *tr, sql_delta *bat)
 static BUN 
 clear_col(sql_trans *tr, sql_column *c)
 {
-	if (!c->data || !c->base.allocated) {
-		int type = c->type.type->localtype;
-		sql_column *oc = tr_find_column(tr->parent, c);
-		sql_delta *bat = c->data = ZNEW(sql_delta), *obat;
-		if(!bat)
-			return 0;
-		obat = timestamp_delta(oc->data, c->base.stime);
-		assert(tr != gtrans);
-		if(dup_bat(tr, c->t, obat, bat, type, isNew(oc), isNew(c)) == LOG_ERR)
-			return 0;
-		c->base.allocated = 1;
-	}
+	if (bind_col_data(tr, c) == LOG_ERR)
+		return 0;
 	c->t->s->base.wtime = c->t->base.wtime = c->base.wtime = tr->wstime;
 	if (c->data)
 		return clear_delta(tr, c->data);
@@ -2057,17 +2007,8 @@ clear_idx(sql_trans *tr, sql_idx *i)
 {
 	if (!isTable(i->t) || (hash_index(i->type) && list_length(i->columns) <= 1) || !idx_has_column(i->type))
 		return 0;
-	if (!i->data || !i->base.allocated) {
-		int type = (oid_index(i->type))?TYPE_oid:TYPE_lng;
-		sql_idx *oi = tr_find_idx(tr->parent, i);
-		sql_delta *bat = i->data = ZNEW(sql_delta), *obat;
-		if(!bat)
-			return 0;
-		obat = timestamp_delta(oi->data, i->base.stime);
-		if(dup_bat(tr, i->t, obat, bat, type, isNew(oi), isNew(i)))
-			return 0;
-		i->base.allocated = 1;
-	}
+	if (bind_idx_data(tr, i) == LOG_ERR)
+		return 0;
 	i->t->s->base.wtime = i->t->base.wtime = i->base.wtime = tr->wstime;
 	if (i->data)
 		return clear_delta(tr, i->data);
@@ -2104,15 +2045,9 @@ clear_dbat(sql_trans *tr, sql_dbat *bat)
 static BUN
 clear_del(sql_trans *tr, sql_table *t)
 {
-	if (!t->data || !t->base.allocated) {
-		sql_table *ot = tr_find_table(tr->parent, t);
-		sql_dbat *bat = t->data = ZNEW(sql_dbat), *obat;
-		if(!bat)
-			return 0;
-		obat = timestamp_dbat(ot->data, t->base.stime);
-		dup_dbat(tr, obat, bat, isNew(ot), isTempTable(t)); 
-		t->base.allocated = 1;
-	}
+
+	if (bind_del_data(tr, t) == LOG_ERR)
+		return 0;
 	t->s->base.wtime = t->base.wtime = tr->wstime;
 	return clear_dbat(tr, t->data);
 }
@@ -3140,6 +3075,10 @@ bat_storage_init( store_functions *sf)
 	sf->bind_idx = (bind_idx_fptr)&bind_idx;
 	sf->bind_del = (bind_del_fptr)&bind_del;
 
+	sf->bind_col_data = (bind_col_data_fptr)&bind_col_data;
+	sf->bind_idx_data = (bind_idx_data_fptr)&bind_idx_data;
+	sf->bind_del_data = (bind_del_data_fptr)&bind_del_data;
+	
 	sf->append_col = (append_col_fptr)&append_col;
 	sf->append_idx = (append_idx_fptr)&append_idx;
 	sf->update_col = (update_col_fptr)&update_col;

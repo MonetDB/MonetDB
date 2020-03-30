@@ -25,20 +25,22 @@ script1 = '''\
 create table t2 (a int);
 '''
 
-def main():
+s = None
+try:
     s = process.server(mapiport=myport, dbname='db1', dbfarm=os.path.join(farm_dir, 'db1'), stdin = process.PIPE,
                        stdout = process.PIPE, stderr = process.PIPE) # Start the server without readonly one time to initialize catalog
     out, err = s.communicate()
+    s = None
     sys.stdout.write(out)
     sys.stderr.write(err)
     s = process.server(args = ["--set", "gdk_readonly=yes"], mapiport=myport, dbname='db1', dbfarm=os.path.join(farm_dir, 'db1'), stdin = process.PIPE,
                        stdout = process.PIPE, stderr = process.PIPE)
     client(script1)
     out, err = s.communicate()
+    s = None
     sys.stdout.write(out)
     sys.stderr.write(err)
-
+finally:
+    if s is not None:
+        s.terminate()
     shutil.rmtree(farm_dir)
-
-if __name__ == '__main__':
-    main()

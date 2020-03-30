@@ -114,17 +114,10 @@
 #define MMAP_ASYNC		8192	/* asynchronous writes (default if ommitted) */
 #define MMAP_SYNC		16384	/* writing is done synchronously */
 
-#define MT_MMAP_LOG 27
-#define MT_MMAP_TILE (1<<MT_MMAP_LOG)
-#define MT_MMAP_BUFSIZE 4096
-
 /* in order to be sure of madvise and msync modes, pass them to mmap()
  * call as well */
 
 gdk_export size_t MT_getrss(void);
-
-gdk_export void *MT_mmap(const char *path, int mode, size_t len);
-gdk_export int MT_munmap(void *p, size_t len);
 
 gdk_export bool MT_path_absolute(const char *path);
 

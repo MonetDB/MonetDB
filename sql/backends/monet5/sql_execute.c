@@ -176,12 +176,12 @@ SQLsetTrace(Client cntxt, MalBlkPtr mb)
 
 	/* add the ticks column */
 
-	q = newStmt(mb, profilerRef, "getTrace");
+	q = newStmt(mb, profilerRef, getTraceRef);
 	q = pushStr(mb, q, putName("usec"));
 	resultset= addArgument(mb,resultset, getArg(q,0));
 
 	/* add the stmt column */
-	q = newStmt(mb, profilerRef, "getTrace");
+	q = newStmt(mb, profilerRef, getTraceRef);
 	q = pushStr(mb, q, putName("stmt"));
 	resultset= addArgument(mb,resultset, getArg(q,0));
 
