@@ -895,10 +895,9 @@ load_table(sql_trans *tr, sql_schema *s, sqlid tid, subrids *nrs)
 
 	assert((!isRangePartitionTable(t) && !isListPartitionTable(t)) || (!exp && !is_int_nil(pcolid)) || (exp && is_int_nil(pcolid)));
 	if (isPartitionedByExpressionTable(t)) {
-		sql_subtype *empty = sql_bind_localtype("void");
 		t->part.pexp = SA_ZNEW(tr->sa, sql_expression);
 		t->part.pexp->exp = exp;
-		t->part.pexp->type = *empty;
+		t->part.pexp->type = *sql_bind_localtype("void"); /* initialized at initialize_sql_parts */
 		t->part.pexp->cols = sa_list(tr->sa);
 	}
 	for (rid = table_funcs.subrids_next(nrs); !is_oid_nil(rid); rid = table_funcs.subrids_next(nrs)) {
@@ -3472,10 +3471,9 @@ table_dup(sql_trans *tr, int flags, sql_table *ot, sql_schema *s)
 	t->cleared = 0;
 
 	if (isPartitionedByExpressionTable(ot)) {
-		sql_subtype *empty = sql_bind_localtype("void");
 		t->part.pexp = SA_ZNEW(sa, sql_expression);
 		t->part.pexp->exp = sa_strdup(sa, ot->part.pexp->exp);
-		t->part.pexp->type = *empty;
+		dup_sql_type((newFlagSet(flags))?tr->parent:tr, t->s, &(ot->part.pexp->type), &(t->part.pexp->type));
 		t->part.pexp->cols = sa_list(sa);
 		for (n = ot->part.pexp->cols->h; n; n = n->next) {
 			int *nid = sa_alloc(sa, sizeof(int));
@@ -6214,9 +6212,8 @@ sql_trans_create_table(sql_trans *tr, sql_schema *s, const char *name, const cha
 		}
 	}
 	if (isPartitionedByExpressionTable(t)) {
-		sql_subtype *empty = sql_bind_localtype("void");
 		t->part.pexp = SA_ZNEW(tr->sa, sql_expression);
-		t->part.pexp->type = *empty;
+		t->part.pexp->type = *sql_bind_localtype("void"); /* leave it non-initialized, at the backend the copy of this table will get the type */
 	}
 
 	ca = t->commit_action;

@@ -369,7 +369,7 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 		}
 	}
 
-	if(mvc_trans(m) < 0) {
+	if (mvc_trans(m) < 0) {
 		mvc_destroy(m);
 		TRC_CRITICAL(SQL_TRANS, "Failed to start transaction\n");
 		return -1;
@@ -378,12 +378,12 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 	//as the sql_parser is not yet initialized in the storage, we determine the sql type of the sql_parts here
 	for (node *n = m->session->tr->schemas.set->h; n; n = n->next) {
 		sql_schema *ss = (sql_schema*) n->data;
-		if(ss->tables.set) {
+		if (ss->tables.set) {
 			for (node *nn = ss->tables.set->h; nn; nn = nn->next) {
 				sql_table *tt = (sql_table*) nn->data;
-				if(isPartitionedByColumnTable(tt) || isPartitionedByExpressionTable(tt)) {
+				if (isPartitionedByColumnTable(tt) || isPartitionedByExpressionTable(tt)) {
 					char *err;
-					if((err = initialize_sql_parts(m, tt)) != NULL) {
+					if ((err = initialize_sql_parts(m, tt)) != NULL) {
 						TRC_CRITICAL(SQL_TRANS, "Unable to start partitioned table: %s.%s: %s\n", ss->base.name, tt->base.name, err);
 						freeException(err);
 						return -1;

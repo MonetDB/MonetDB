@@ -955,27 +955,27 @@ create_partition_definition(mvc *sql, sql_table *t, symbol *partition_def)
 {
 	char *err = NULL;
 
-	if(partition_def) {
+	if (partition_def) {
 		dlist *list = partition_def->data.lval;
 		symbol *type = list->h->next->data.sym;
 		dlist *list2 = type->data.lval;
-		if(isPartitionedByColumnTable(t)) {
+		if (isPartitionedByColumnTable(t)) {
 			str colname = list2->h->data.sval;
 			node *n;
 			sql_class sql_ec;
 			for (n = t->columns.set->h; n ; n = n->next) {
 				sql_column *col = n->data;
-				if(!strcmp(col->base.name, colname)) {
+				if (!strcmp(col->base.name, colname)) {
 					t->part.pcol = col;
 					break;
 				}
 			}
-			if(!t->part.pcol) {
+			if (!t->part.pcol) {
 				sql_error(sql, 02, SQLSTATE(42000) "CREATE MERGE TABLE: the partition column '%s' is not part of the table", colname);
 				return SQL_ERR;
 			}
 			sql_ec = t->part.pcol->type.type->eclass;
-			if(!(sql_ec == EC_BIT || EC_VARCHAR(sql_ec) || EC_TEMP(sql_ec) || sql_ec == EC_POS || sql_ec == EC_NUM ||
+			if (!(sql_ec == EC_BIT || EC_VARCHAR(sql_ec) || EC_TEMP(sql_ec) || sql_ec == EC_POS || sql_ec == EC_NUM ||
 				 EC_INTERVAL(sql_ec)|| sql_ec == EC_DEC || sql_ec == EC_BLOB)) {
 				err = sql_subtype_string(&(t->part.pcol->type));
 				if (!err) {
@@ -986,8 +986,7 @@ create_partition_definition(mvc *sql, sql_table *t, symbol *partition_def)
 				}
 				return SQL_ERR;
 			}
-		} else if(isPartitionedByExpressionTable(t)) {
-			sql_subtype *empty = sql_bind_localtype("void");
+		} else if (isPartitionedByExpressionTable(t)) {
 			char *query = symbol2string(sql, list2->h->data.sym, 1, &err);
 			if (!query) {
 				(void) sql_error(sql, 02, SQLSTATE(42000) "CREATE MERGE TABLE: error compiling expression '%s'", err?err:"");
@@ -996,7 +995,7 @@ create_partition_definition(mvc *sql, sql_table *t, symbol *partition_def)
 			}
 			t->part.pexp = SA_ZNEW(sql->sa, sql_expression);
 			t->part.pexp->exp = sa_strdup(sql->sa, query);
-			t->part.pexp->type = *empty;
+			t->part.pexp->type = *sql_bind_localtype("void");
 			_DELETE(query);
 		}
 	}
@@ -1091,7 +1090,7 @@ rel_create_table(sql_query *query, sql_schema *ss, int temp, const char *sname, 
 				return NULL;
 		}
 
-		if(create_partition_definition(sql, t, partition_def) != SQL_OK)
+		if (create_partition_definition(sql, t, partition_def) != SQL_OK)
 			return NULL;
 
 		temp = (tt == tt_table)?temp:SQL_PERSIST;
