@@ -2066,7 +2066,8 @@ gdk_export gdk_return BATbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl,
 	__attribute__((__warn_unused_result__));
 gdk_export gdk_return BATrangejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, bool li, bool hi, bool anti, bool symmetric, BUN estimate)
 	__attribute__((__warn_unused_result__));
-gdk_export BAT *BATproject(BAT *l, BAT *r);
+gdk_export BAT *BATproject(BAT *restrict l, BAT *restrict r);
+gdk_export BAT *BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2);
 gdk_export BAT *BATprojectchain(BAT **bats);
 
 gdk_export BAT *BATslice(BAT *b, BUN low, BUN high);

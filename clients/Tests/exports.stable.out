@@ -169,7 +169,8 @@ gdk_return BATouterjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, 
 gdk_return BATprint(stream *s, BAT *b);
 gdk_return BATprintcolumns(stream *s, int argc, BAT *argv[]);
 gdk_return BATprod(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, bool nil_if_empty);
-BAT *BATproject(BAT *l, BAT *r);
+BAT *BATproject(BAT *restrict l, BAT *restrict r);
+BAT *BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2);
 BAT *BATprojectchain(BAT **bats);
 gdk_return BATrangejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, bool li, bool hi, bool anti, bool symmetric, BUN estimate) __attribute__((__warn_unused_result__));
 gdk_return BATreplace(BAT *b, BAT *p, BAT *n, bool force) __attribute__((__warn_unused_result__));
@@ -820,6 +821,7 @@ str ALGminany(ptr result, const bat *bid);
 str ALGminany_skipnil(ptr result, const bat *bid, const bit *skipnil);
 str ALGouterjoin(bat *r1, bat *r2, const bat *l, const bat *r, const bat *sl, const bat *sr, const bit *nil_matches, const lng *estimate);
 str ALGprojection(bat *result, const bat *lid, const bat *rid);
+str ALGprojection2(bat *result, const bat *lid, const bat *r1id, const bat *r2id);
 str ALGprojectionpath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str ALGprojecttail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str ALGrangejoin(bat *r1, bat *r2, const bat *lid, const bat *rlid, const bat *rhid, const bat *slid, const bat *srid, const bit *li, const bit *hi, const bit *anti, const bit *symmetric, const lng *estimate);

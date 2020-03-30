@@ -720,6 +720,7 @@ stdout of test 'MAL-signatures` in directory 'clients` itself:
 [ "algebra",	"outerjoin",	"command algebra.outerjoin(l:bat[:any_1], r:bat[:any_1], sl:bat[:oid], sr:bat[:oid], nil_matches:bit, estimate:lng) (X_0:bat[:oid], X_1:bat[:oid]) ",	"ALGouterjoin;",	"Left outer join with candidate lists"	]
 [ "algebra",	"project",	"pattern algebra.project(b:bat[:any_1], v:any_3):bat[:any_3] ",	"ALGprojecttail;",	"Fill the tail with a constant"	]
 [ "algebra",	"projection",	"command algebra.projection(left:bat[:oid], right:bat[:any_3]):bat[:any_3] ",	"ALGprojection;",	"Project left input onto right input."	]
+[ "algebra",	"projection2",	"command algebra.projection2(left:bat[:oid], right1:bat[:any_3], right2:bat[:any_3]):bat[:any_3] ",	"ALGprojection2;",	"Project left input onto right inputs which should be consecutive."	]
 [ "algebra",	"projectionpath",	"pattern algebra.projectionpath(l:bat[:any]...):bat[:any] ",	"ALGprojectionpath;",	"Routine to handle join paths.  The type analysis is rather tricky."	]
 [ "algebra",	"rangejoin",	"command algebra.rangejoin(l:bat[:any_1], r1:bat[:any_1], r2:bat[:any_1], sl:bat[:oid], sr:bat[:oid], li:bit, hi:bit, anti:bit, symmetric:bit, estimate:lng) (X_0:bat[:oid], X_1:bat[:oid]) ",	"ALGrangejoin;",	"Range join: values in l and r1/r2 match if r1 <[=] l <[=] r2"	]
 [ "algebra",	"reuse",	"command algebra.reuse(b:bat[:any_1]):bat[:any_1] ",	"ALGreuse;",	"Reuse a temporary BAT if you can. Otherwise,\n\tallocate enough storage to accept result of an\n \toperation (not involving the heap)"	]

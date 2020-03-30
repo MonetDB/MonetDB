@@ -1,6 +1,10 @@
 # ChangeLog file for GDK
 # This file is updated with Maddlog
 
+* Mon Mar 30 2020 Sjoerd Mullender <sjoerd@acm.org>
+- Implemented a version of BATproject, called BATproject2, with two
+  "right" arguments which conceptually follow each other.
+
 * Wed Mar 25 2020 Sjoerd Mullender <sjoerd@acm.org>
 - Removed MT_mmap and MT_munmap from the list of exported functions.
   Use GDKmmap and GDKmunmap with the same parameters instead.
