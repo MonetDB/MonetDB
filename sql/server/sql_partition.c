@@ -10,6 +10,7 @@
 
 #include "sql_partition.h"
 #include "rel_rel.h"
+#include "rel_exp.h"
 #include "sql_mvc.h"
 #include "sql_catalog.h"
 #include "sql_relation.h"
@@ -217,48 +218,6 @@ exp_find_table_columns(mvc *sql, sql_exp *e, sql_table *t, list *cols)
 	}
 }
 
-static str
-find_expression_type(sql_exp *e, sql_subtype *tpe)
-{
-	switch (e->type) {
-		case e_convert: {
-			assert(list_length(e->r) == 2);
-			*tpe = *(sql_subtype *)list_fetch(e->r, 1);
-		} break;
-		case e_atom: {
-			if (e->l) {
-				atom *a = e->l;
-				*tpe = a->tpe;
-			} else if (e->r) {
-				*tpe = e->tpe;
-			} else if (e->f) {
-				throw(SQL,"sql.partition", SQLSTATE(42000) "List of values not allowed in expressions");
-			} else {
-				throw(SQL,"sql.partition", SQLSTATE(42000) "Variables/parameters are not allowed in expressions");
-			}
-		} break;
-		case e_func: {
-			sql_subfunc *f = e->f;
-			sql_func *func = f->func;
-			if (list_length(func->res) != 1)
-				throw(SQL,"sql.partition", SQLSTATE(42000) "An expression should return a single value");
-			*tpe = *(sql_subtype *)f->res->h->data;
-		} 	break;
-		case e_cmp: {
-			sql_subtype *other = sql_bind_localtype("bit");
-			*tpe = *other;
-		} break;
-		case e_column: {
-			*tpe = e->tpe;
-		} break;
-		case e_psm:
-			throw(SQL,"sql.partition", SQLSTATE(42000) "PSM calls are not allowed in expressions");
-		case e_aggr:
-			throw(SQL,"sql.partition", SQLSTATE(42000) "Aggregation functions are not allowed in expressions");
-	}
-	return NULL;
-}
-
 str
 bootstrap_partition_expression(mvc* sql, sql_allocator *rsa, sql_table *mt, int instantiate)
 {
@@ -288,9 +247,7 @@ bootstrap_partition_expression(mvc* sql, sql_allocator *rsa, sql_table *mt, int 
 		mt->part.pexp->cols = sa_list(rsa);
 	exp_find_table_columns(sql, exp, mt, mt->part.pexp->cols);
 
-	if ((msg = find_expression_type(exp, &(mt->part.pexp->type))) != NULL)
-		return msg;
-
+	mt->part.pexp->type = *exp_subtype(exp);
 	sql_ec = mt->part.pexp->type.type->eclass;
 	if (!(sql_ec == EC_BIT || EC_VARCHAR(sql_ec) || EC_TEMP(sql_ec) || sql_ec == EC_POS || sql_ec == EC_NUM ||
 		 EC_INTERVAL(sql_ec)|| sql_ec == EC_DEC || sql_ec == EC_BLOB)) {
@@ -306,8 +263,7 @@ bootstrap_partition_expression(mvc* sql, sql_allocator *rsa, sql_table *mt, int 
 
 	if (instantiate) {
 		r = rel_project(sql->sa, r, NULL);
-		r->exps = sa_list(sql->sa);
-		list_append(r->exps, exp);
+		exp = rel_project_add_exp(sql, r, exp);
 
 		if (r)
 			r = sql_processrelation(sql, r, 0);

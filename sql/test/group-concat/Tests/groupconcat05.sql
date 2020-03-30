@@ -28,6 +28,8 @@ select group_concat(a, 8) from testmore;
 select group_concat(a, b) from testmore;
 select group_concat(b, a) from testmore;
 
+select group_concat('😀', '😁') over () as "😃" from (values (1),(2),(3), (NULL)) v;
+
 /* listagg is the SQL standard name of group_concat */
 select listagg(a) from testmore;
 select listagg(b) from testmore;

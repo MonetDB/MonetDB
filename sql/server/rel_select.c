@@ -3300,7 +3300,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 			return e;
 		} else if (is_sql_values(f)) {
 			char *uaname = GDKmalloc(strlen(aname) + 1);
-			sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed inside a list of VALUES",
+			sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed on an unique value",
 						uaname ? toUpperCopy(uaname, aname) : aname);
 			if (uaname)
 				GDKfree(uaname);
@@ -3412,7 +3412,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 				return e;
 			} else if (is_sql_values(f)) {
 				char *uaname = GDKmalloc(strlen(aname) + 1);
-				sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed inside a list of VALUES",
+				sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed on an unique value",
 							uaname ? toUpperCopy(uaname, aname) : aname);
 				if (uaname)
 					GDKfree(uaname);
@@ -3462,7 +3462,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 			if (is_sql_aggr(sql_state))
 				return sql_error(sql, 05, SQLSTATE(42000) "SELECT: aggregate function calls cannot be nested");
 			if (is_sql_values(sql_state))
-				return sql_error(sql, 05, SQLSTATE(42000) "SELECT: aggregate functions not allowed inside a list of VALUES");
+				return sql_error(sql, 05, SQLSTATE(42000) "SELECT: aggregate functions not allowed on an unique value");
 			if (is_sql_update_set(sql_state))
 				return sql_error(sql, 05, SQLSTATE(42000) "SELECT: aggregate functions not allowed in SET clause");
 			if (is_sql_join(sql_state))
@@ -4719,7 +4719,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 
 	if (is_sql_update_set(f) || is_sql_values(f) || is_sql_join(f) || is_sql_where(f) || is_sql_groupby(f) || is_sql_having(f) || is_psm_call(f) || is_sql_from(f)) {
 		char *uaname = GDKmalloc(strlen(aname) + 1);
-		const char *clause = is_sql_update_set(f)?"in SET clause (use subquery)":is_sql_values(f)?"inside a list of VALUES":
+		const char *clause = is_sql_update_set(f)?"in SET clause (use subquery)":is_sql_values(f)?"on an unique value":
 							 is_sql_join(f)?"in JOIN conditions":is_sql_where(f)?"in WHERE clause":is_sql_groupby(f)?"in GROUP BY clause":
 							 is_psm_call(f)?"in CALL":is_sql_from(f)?"in functions in FROM":"in HAVING clause";
 		(void) sql_error(sql, 02, SQLSTATE(42000) "%s: window function '%s' not allowed %s",

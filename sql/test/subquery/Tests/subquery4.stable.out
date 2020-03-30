@@ -161,8 +161,8 @@ stdout of test 'subquery4` in directory 'sql/test/subquery` itself:
 [ 1	]
 [ 1	]
 [ NULL	]
-#SELECT (SELECT NTILE(i1.i) OVER (PARTITION BY i1.i ORDER BY i1.i)) mycalc FROM integers i1 ORDER BY mycalc NULLS LAST;
-% . # table_name
+#SELECT (SELECT NTILE(i1.i) OVER (PARTITION BY i1.i ORDER BY i1.i)) FROM integers i1 ORDER BY 1 NULLS LAST;
+% .%4 # table_name
 % %4 # name
 % int # type
 % 1 # length

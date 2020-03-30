@@ -161,7 +161,7 @@ MAPI  = (monetdb) /var/tmp/mtest-60261/.s.monetdb.38639
 QUERY = SELECT
         	(SELECT 1 FROM (VALUES (MAX(2))) as i2)
         FROM integers i1; --error, aggregate functions are not allowed in VALUES
-ERROR = !MAX: aggregate functions not allowed inside a list of VALUES
+ERROR = !MAX: aggregate functions not allowed on an unique value
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-60261/.s.monetdb.38639
 QUERY = SELECT
