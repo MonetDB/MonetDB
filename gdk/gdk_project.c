@@ -373,12 +373,8 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 	bn->tnil = false;
 	if (r2) {
 		bn->tnonil = l->tnonil & r1->tnonil & r2->tnonil;
-		bn->tsorted = l->batCount <= 1
-			|| (l->tsorted & r1->tsorted & r2->tsorted)
-			|| (l->trevsorted & r1->trevsorted & r2->trevsorted);
-		bn->trevsorted = l->batCount <= 1
-			|| (l->tsorted & r1->trevsorted & r2->trevsorted)
-			|| (l->trevsorted & r1->tsorted & r2->tsorted);
+		bn->tsorted = l->batCount <= 1;
+		bn->trevsorted = l->batCount <= 1;
 		bn->tkey = l->batCount <= 1 || (l->tkey & r1->tkey & r2->tkey);
 	} else {
 		bn->tnonil = l->tnonil & r1->tnonil;
