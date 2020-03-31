@@ -42,6 +42,14 @@ MAPI  = (monetdb) /var/tmp/mtest-232134/.s.monetdb.30965
 QUERY = SELECT evilfunction(1), 1;
 ERROR = !Cardinality violation, scalar value expected
 CODE  = 21000
+MAPI  = (monetdb) /var/tmp/mtest-488866/.s.monetdb.39586
+QUERY = SELECT 1 FROM another_t t1 HAVING 1 = ANY (SELECT col1); --error, subquery uses ungrouped column "col1" from outer query
+ERROR = !SELECT: cannot use non GROUP BY column 'col1' in query results without an aggregate function
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-488866/.s.monetdb.39586
+QUERY = SELECT 1 FROM another_t t1 HAVING 1 = ANY (SELECT 1 WHERE col1); --error, subquery uses ungrouped column "col1" from outer query
+ERROR = !SELECT: cannot use non GROUP BY column 'col1' in query results without an aggregate function
+CODE  = 42000
 
 # 08:41:39 >  
 # 08:41:39 >  "Done."
