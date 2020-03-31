@@ -2363,13 +2363,16 @@ BATassertProps(BAT *b)
 			BUN mask;
 
 			if ((hs = GDKzalloc(sizeof(Hash))) == NULL) {
-				TRC_ERROR(BAT_, "Cannot allocate hash table\n");
+				TRC_WARNING(BAT_, "Cannot allocate hash table\n");
 				goto abort_check;
 			}
 			if (snprintf(hs->heaplink.filename, sizeof(hs->heaplink.filename), "%s.thshprpl%x", nme, (unsigned) THRgettid()) >= (int) sizeof(hs->heaplink.filename) ||
 			    snprintf(hs->heapbckt.filename, sizeof(hs->heapbckt.filename), "%s.thshprpb%x", nme, (unsigned) THRgettid()) >= (int) sizeof(hs->heapbckt.filename)) {
+				/* cannot happen, see comment in gdk.h
+				 * about sizes near definition of
+				 * BBPINIT */
 				GDKfree(hs);
-				TRC_ERROR(BAT_, "Heap filename is too large\n");
+				TRC_CRITICAL(BAT_, "Heap filename is too large\n");
 				goto abort_check;
 			}
 			if (ATOMsize(b->ttype) == 1)
@@ -2385,7 +2388,7 @@ BATassertProps(BAT *b)
 			    HASHnew(hs, b->ttype, BUNlast(b),
 				    mask, BUN_NONE, false) != GDK_SUCCEED) {
 				GDKfree(hs);
-				TRC_ERROR(BAT_, "Cannot allocate hash table\n");
+				TRC_WARNING(BAT_, "Cannot allocate hash table\n");
 				goto abort_check;
 			}
 			BATloop(b, p, q) {
