@@ -760,11 +760,10 @@ load_value_partition(sql_trans *tr, sql_schema *syss, sql_part *pt)
 				pt->with_nills = true;
 			} else {
 				nextv = SA_ZNEW(tr->sa, sql_part_value);
-				nextv->tpe = *empty;
 				nextv->value = sa_alloc(tr->sa, vvalue.len);
 				memcpy(nextv->value, VALget(&vvalue), vvalue.len);
 				nextv->length = vvalue.len;
-				if (list_append_sorted(vals, nextv, sql_values_list_element_validate_and_insert) != NULL) {
+				if (list_append_sorted(vals, nextv, empty, sql_values_list_element_validate_and_insert) != NULL) {
 					VALclear(&vvalue);
 					table_funcs.rids_destroy(rs);
 					list_destroy(vals);
@@ -1726,7 +1725,6 @@ dup_sql_part(sql_allocator *sa, sql_table *mt, sql_part *op)
 		p->part.values = list_new(sa, (fdestroy) NULL);
 		for (node *n = op->part.values->h ; n ; n = n->next) {
 			sql_part_value *prev = (sql_part_value*) n->data, *nextv = SA_ZNEW(sa, sql_part_value);
-			nextv->tpe = prev->tpe; /* No dup_sql_type call I think */
 			nextv->value = sa_alloc(sa, prev->length);
 			memcpy(nextv->value, prev->value, prev->length);
 			nextv->length = prev->length;
@@ -3223,7 +3221,6 @@ sql_trans_copy_part( sql_trans *tr, sql_table *t, sql_part *pt)
 		npt->part.values = list_new(tr->sa, (fdestroy) NULL);
 		for (node *n = pt->part.values->h ; n ; n = n->next) {
 			sql_part_value *prev = (sql_part_value*) n->data, *nextv = SA_ZNEW(tr->sa, sql_part_value);
-			dup_sql_type(tr, t->s, &(prev->tpe), &(nextv->tpe));
 			nextv->value = sa_alloc(tr->sa, prev->length);
 			memcpy(nextv->value, prev->value, prev->length);
 			nextv->length = prev->length;
@@ -3346,7 +3343,6 @@ part_dup(sql_trans *tr, int flags, sql_part *op, sql_table *mt)
 		p->part.values = list_new(sa, (fdestroy) NULL);
 		for (node *n = op->part.values->h ; n ; n = n->next) {
 			sql_part_value *prev = (sql_part_value*) n->data, *nextv = SA_ZNEW(sa, sql_part_value);
-			dup_sql_type(tr, mt->s, &(prev->tpe), &(nextv->tpe));
 			nextv->value = sa_alloc(sa, prev->length);
 			memcpy(nextv->value, prev->value, prev->length);
 			nextv->length = prev->length;
@@ -4401,7 +4397,6 @@ rollforward_update_part(sql_trans *tr, sql_base *fpt, sql_base *tpt, int mode)
 			pt->part.values = list_new(tr->sa, (fdestroy) NULL);
 			for (node *n = opt->part.values->h ; n ; n = n->next) {
 				sql_part_value *prev = (sql_part_value*) n->data, *nextv = SA_ZNEW(tr->sa, sql_part_value);
-				dup_sql_type(tr, opt->t->s, &(prev->tpe), &(nextv->tpe));
 				nextv->value = sa_alloc(tr->sa, prev->length);
 				memcpy(nextv->value, prev->value, prev->length);
 				nextv->length = prev->length;

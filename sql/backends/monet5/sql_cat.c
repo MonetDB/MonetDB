@@ -256,7 +256,7 @@ alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psna
 										"one partition can store null values at the time", err->t->s->base.name, err->base.name);
 			} else {
 				ssize_t (*atomtostr)(str *, size_t *, const void *, bool) = BATatoms[tp1].atomToStr;
-				ptr nil = ATOMnil(tp1);
+				const void *nil = ATOMnilptr(tp1);
 				sql_table *errt = mvc_bind_table(sql, mt->s, err->base.name);
 
 				if (!ATOMcmp(tp1, nil, err->part.range.minvalue)) {
@@ -364,12 +364,11 @@ alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msn
 		}
 
 		nextv = SA_ZNEW(sql->session->tr->sa, sql_part_value); /* instantiate the part value */
-		nextv->tpe = tpe;
 		nextv->value = sa_alloc(sql->session->tr->sa, len);
 		memcpy(nextv->value, pnext, len);
 		nextv->length = len;
 
-		if (list_append_sorted(values, nextv, sql_values_list_element_validate_and_insert) != NULL) {
+		if (list_append_sorted(values, nextv, &tpe, sql_values_list_element_validate_and_insert) != NULL) {
 			msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(42000)
 									"ALTER TABLE: there are duplicated values in the list");
 			goto finish;

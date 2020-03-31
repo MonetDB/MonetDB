@@ -331,7 +331,6 @@ initialize_sql_parts(mvc *sql, sql_table *mt)
 					ValRecord vvalue;
 					ptr ok;
 
-					dup_sql_type(tr, mt->s, &found, &(nv->tpe));
 					vvalue = (ValRecord) {.vtype = TYPE_void,};
 					ok = VALinit(&vvalue, TYPE_str, v->value);
 					if (ok)
