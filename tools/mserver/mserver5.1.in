@@ -70,6 +70,16 @@ value of the
 .B \-\-dbpath
 option.
 .TP
+\fB\-\-dbtrace=\fP\fIpath\fP
+File name for the trace log file for
+.IR mserver5 .
+Default value is the
+file
+.B mdbtrace.log
+inside the directory specified with the
+.B \-\-dbpath
+option.
+.TP
 \fB\-\-config=\fP\fIfile\fP
 Config file to read options from.
 This file can contain all options as can be set with the --set flag.

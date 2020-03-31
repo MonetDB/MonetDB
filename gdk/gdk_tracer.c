@@ -104,14 +104,24 @@ _GDKtracer_init_basic_adptr(void)
 	const char *trace_path;
 
 	trace_path = GDKgetenv("gdk_dbtrace");
-	if (trace_path == NULL)
-		trace_path = GDKgetenv("gdk_dbpath");
 	if (trace_path == NULL) {
-		active_tracer = stderr;
-		return GDK_SUCCEED;
+		trace_path = GDKgetenv("gdk_dbpath");
+		if (trace_path == NULL) {
+			active_tracer = stderr;
+			return GDK_SUCCEED;
+		}
+		if (strconcat_len(file_name, sizeof(file_name),
+				  trace_path, DIR_SEP_STR, FILE_NAME, NULL)
+		    >= sizeof(file_name)) {
+			goto too_long;
+		}
+	} else {
+		if (strcpy_len(file_name, trace_path, sizeof(file_name))
+		    >= sizeof(file_name)) {
+			goto too_long;
+		}
 	}
 
-	snprintf(file_name, sizeof(file_name), "%s%c%s", trace_path, DIR_SEP, FILE_NAME);
 	active_tracer = fopen(file_name, "a");
 	
 	if (active_tracer == NULL) {
@@ -122,6 +132,12 @@ _GDKtracer_init_basic_adptr(void)
 	}
 
 	return GDK_SUCCEED;
+
+  too_long:
+	GDK_TRACER_EXCEPTION("path name for dbtrace file too long");
+	file_name[0] = 0; /* uninitialize */
+	active_tracer = stderr;
+	return GDK_FAIL;
 }
 
 
