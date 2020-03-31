@@ -613,7 +613,7 @@ typedef struct sql_part {
 	sql_base base;
 	struct sql_table *t; /* cached value of the merge table */
 	sql_subtype tpe;     /* the column/expression type */
-	int with_nills;
+	bit with_nills;      /* 0 no nills, 1 holds nills, NULL holds all values -> range FROM MINVALUE TO MAXVALUE WITH NULL */
 	union {
 		list *values;         /* partition by values/list */
 		struct sql_range {    /* partition by range */

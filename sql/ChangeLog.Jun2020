@@ -1,6 +1,11 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Fri Mar 27 2020 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
+- Added support for FROM RANGE MINVALUE TO RANGE MAXVALUE and FROM RANGE
+  MINVALUE TO RANGE MAXVALUE WITH NULL VALUES cases in partioned tables
+  by range (before they weren't).
+
 * Wed Jan 29 2020 Sjoerd Mullender <sjoerd@acm.org>
 - Removed support for Python 2.  Python 2 itself is no longer supported.
   Use Python 3 instead.

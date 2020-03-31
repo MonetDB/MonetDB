@@ -66,7 +66,8 @@ script12 = '''\
 delete from v1 where a = 3;
 '''
 
-def main():
+s = None
+try:
     s = process.server(args = [],
                        stdin = process.PIPE,
                        stdout = process.PIPE,
@@ -91,6 +92,6 @@ def main():
     client(script8)
     client(script9)
     server_stop(s)
-
-if __name__ == '__main__':
-    main()
+finally:
+    if s is not None:
+        s.terminate()

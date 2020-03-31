@@ -600,7 +600,7 @@ unpack_tarstream(stream *tarstream, char *destdir, int skipfirstcomponent)
 	char *whole_filename = NULL;
 	char *destfile = NULL;
 	FILE *outfile = NULL;
-	struct dir_helper dirhelper = {NULL};
+	struct dir_helper dirhelper = {0};
 
 	while (read_tar_block(tarstream, block, &e) >= 0) {
 		if (e != NO_ERR)

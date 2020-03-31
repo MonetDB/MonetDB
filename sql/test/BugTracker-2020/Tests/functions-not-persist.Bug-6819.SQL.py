@@ -54,12 +54,16 @@ DROP FUNCTION myfunc7;
 
 server_args = ['--set', 'embedded_py=3', '--set', 'embedded_r=true', '--set', 'embedded_c=true']
 
-s = process.server(args = server_args, mapiport=myport, dbname='db1', dbfarm=os.path.join(farm_dir, 'db1'), stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
-client(create + run)
-server_stop(s)
+s = None
+try:
+    s = process.server(args = server_args, mapiport=myport, dbname='db1', dbfarm=os.path.join(farm_dir, 'db1'), stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
+    client(create + run)
+    server_stop(s)
 
-s = process.server(args = server_args, mapiport=myport, dbname='db1', dbfarm=os.path.join(farm_dir, 'db1'), stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
-client(run + drop)
-server_stop(s)
-
-shutil.rmtree(farm_dir)
+    s = process.server(args = server_args, mapiport=myport, dbname='db1', dbfarm=os.path.join(farm_dir, 'db1'), stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
+    client(run + drop)
+    server_stop(s)
+finally:
+    if s is not None:
+        s.terminate()
+    shutil.rmtree(farm_dir)

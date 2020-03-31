@@ -1269,7 +1269,7 @@ TESTrenderer(MapiHdl hdl)
 						if ((unsigned char) *s < ' ')
 							mnstr_printf(toConsole,
 								     "\\%03o",
-								     (int) (unsigned char) *s);
+								     (unsigned char) *s);
 						else
 							mnstr_write(toConsole, s, 1, 1);
 						break;

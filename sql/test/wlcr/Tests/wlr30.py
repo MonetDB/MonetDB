@@ -25,12 +25,14 @@ cloneport = freeport()
 dbname = tstdb
 dbnameclone = tstdb + 'clone'
 
-#master = process.server(dbname = dbname, stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
-slave = process.server(dbname = dbnameclone, mapiport = cloneport, stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
+slave = None
+try:
+    #master = process.server(dbname = dbname, stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
+    slave = process.server(dbname = dbnameclone, mapiport = cloneport, stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
 
-c = process.client('sql', server = slave, stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
+    c = process.client('sql', server = slave, stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
 
-cout, cerr = c.communicate('''\
+    cout, cerr = c.communicate('''\
 select * from tmp;
 call wlr.master('%s');
 call wlr.replicate(-1);
@@ -38,15 +40,18 @@ call wlr.replicate(8);
 select * from tmp;
 '''  % dbname)
 
-sout, serr = slave.communicate()
-#mout, merr = master.communicate()
+    sout, serr = slave.communicate()
+    #mout, merr = master.communicate()
 
-#sys.stdout.write(mout)
-sys.stdout.write(sout)
-sys.stdout.write(cout)
-#sys.stderr.write(merr)
-sys.stderr.write(serr)
-sys.stderr.write(cerr)
+    #sys.stdout.write(mout)
+    sys.stdout.write(sout)
+    sys.stdout.write(cout)
+    #sys.stderr.write(merr)
+    sys.stderr.write(serr)
+    sys.stderr.write(cerr)
+finally:
+    if slave is not None:
+        slave.terminate()
 
 def listfiles(path):
     sys.stdout.write("#LISTING OF THE WLR LOG FILE\n")

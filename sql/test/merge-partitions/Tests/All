@@ -28,3 +28,4 @@ mergepart26
 mergepart27
 HAVE_DATA_PATH&HAVE_LIBPY3?mergepart28
 HAVE_PYMONETDB?mergepart29
+mergepart30
