@@ -439,9 +439,9 @@ MSP_locate_sqlscript(const char *filename, bit recurse)
 	return locate_file(filename, SQL_EXT, recurse);
 }
 
-
 int
-malLibraryEnabled(str name) {
+malLibraryEnabled(str name)
+{
 	if (strcmp(name, "pyapi3") == 0) {
 		const char *val = GDKgetenv("embedded_py");
 		return val && (strcmp(val, "3") == 0 ||
@@ -451,9 +451,12 @@ malLibraryEnabled(str name) {
 	return true;
 }
 
-char*
-malLibraryHowToEnable(str name) {
+char *
+malLibraryHowToEnable(str name)
+{
 	if (strcmp(name, "pyapi3") == 0) {
+		if (malLibraryEnabled(name))
+			return "Embedded Python 3 has not been installed. Please install it first, then start server with --set embedded_py=3";
 		return "Embedded Python 3 has not been enabled. Start server with --set embedded_py=3";
 	}
 	return "";
