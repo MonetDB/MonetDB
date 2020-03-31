@@ -693,28 +693,6 @@ ALGunary(bat *result, const bat *bid, BAT *(*func)(BAT *), const char *name)
 	return MAL_SUCCEED;
 }
 
-static str
-ALGbinary(bat *result, const bat *lid, const bat *rid, BAT *(*func)(BAT *, BAT *), const char *name)
-{
-	BAT *left, *right,*bn= NULL;
-
-	if ((left = BATdescriptor(*lid)) == NULL) {
-		throw(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	}
-	if ((right = BATdescriptor(*rid)) == NULL) {
-		BBPunfix(left->batCacheid);
-		throw(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	}
-	bn = (*func)(left, right);
-	BBPunfix(left->batCacheid);
-	BBPunfix(right->batCacheid);
-	if (bn == NULL)
-		throw(MAL, name, GDK_EXCEPTION);
-	*result = bn->batCacheid;
-	BBPkeepref(*result);
-	return MAL_SUCCEED;
-}
-
 static BAT *
 BATwcopy(BAT *b)
 {
@@ -782,7 +760,52 @@ ALGcrossproduct2( bat *l, bat *r, const bat *left, const bat *right)
 str
 ALGprojection(bat *result, const bat *lid, const bat *rid)
 {
-	return ALGbinary(result, lid, rid, BATproject, "algebra.projection");
+	BAT *left, *right,*bn= NULL;
+
+	if ((left = BATdescriptor(*lid)) == NULL) {
+		throw(MAL, "algebra.projection", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
+	if ((right = BATdescriptor(*rid)) == NULL) {
+		BBPunfix(left->batCacheid);
+		throw(MAL, "algebra.projection", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
+	bn = BATproject(left, right);
+	BBPunfix(left->batCacheid);
+	BBPunfix(right->batCacheid);
+	if (bn == NULL)
+		throw(MAL, "algebra.projection", GDK_EXCEPTION);
+	*result = bn->batCacheid;
+	BBPkeepref(*result);
+	return MAL_SUCCEED;
+}
+
+str
+ALGprojection2(bat *result, const bat *lid, const bat *r1id, const bat *r2id)
+{
+	BAT *l, *r1, *r2 = NULL, *bn;
+
+	if ((l = BATdescriptor(*lid)) == NULL) {
+		throw(MAL, "algebra.projection2", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
+	if ((r1 = BATdescriptor(*r1id)) == NULL) {
+		BBPunfix(l->batCacheid);
+		throw(MAL, "algebra.projection2", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
+	if (r2id && !is_bat_nil(*r2id) && (r2 = BATdescriptor(*r2id)) == NULL) {
+		BBPunfix(l->batCacheid);
+		BBPunfix(r1->batCacheid);
+		throw(MAL, "algebra.projection2", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
+	bn = BATproject2(l, r1, r2);
+	BBPunfix(l->batCacheid);
+	BBPunfix(r1->batCacheid);
+	if (r2)
+		BBPunfix(r2->batCacheid);
+	if (bn == NULL)
+		throw(MAL, "algegra.projection2", GDK_EXCEPTION);
+	*result = bn->batCacheid;
+	BBPkeepref(*result);
+	return MAL_SUCCEED;
 }
 
 str

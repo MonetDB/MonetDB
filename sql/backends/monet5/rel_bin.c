@@ -1437,11 +1437,16 @@ rel_parse_value(backend *be, char *query, char emode)
 	if (m->session->status || m->errstr[0]) {
 		int status = m->session->status;
 
-		memcpy(o.errstr, m->errstr, sizeof(o.errstr));
+		strcpy(o.errstr, m->errstr);
 		*m = o;
 		m->session->status = status;
 	} else {
+		int label = m->label;
+
+		while (m->topframes > o.topframes)
+			clear_frame(m, m->frames[--m->topframes]);
 		*m = o;
+		m->label = label;
 	}
 	return s;
 }
@@ -2470,9 +2475,7 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 	mvc *sql = be->mvc;
 	list *l; 
 	node *en = NULL, *n;
-	stmt *left = NULL, *right = NULL, *join = NULL, *jl, *jr, *c;
-	int semi_used = 0;
-	int semi_disabled = mvc_debug_on(sql, 2048);
+	stmt *left = NULL, *right = NULL, *join = NULL, *jl, *jr, *c, *lcand = NULL;
 
 	if (rel->op == op_anti && !list_empty(rel->exps) && list_length(rel->exps) == 1 && ((sql_exp*)rel->exps->h->data)->flag == mark_notin)
 		return rel2bin_antijoin(be, rel, refs);
@@ -2490,62 +2493,41 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
  	 * 	first cheap join(s) (equality or idx) 
  	 * 	second selects/filters 
 	 */
-	if (!semi_disabled && rel->op != op_anti && rel->exps && list_length(rel->exps) == 1) {
-		sql_exp *e = rel->exps->h->data;
-
-		if (e->type == e_cmp && (e->flag == cmp_equal || e->flag == mark_in) && !e->anti && !e->f) {
-			stmt *r, *l = exp_bin(be, e->l, left, NULL, NULL, NULL, NULL, NULL);
-			int swap = 0;
-
-			if (!l) {
-				swap = 1;
-				l = exp_bin(be, e->l, right, NULL, NULL, NULL, NULL, NULL);
-			}
-			r = exp_bin(be, e->r, left, right, NULL, NULL, NULL, NULL);
-
-			if (swap) {
-				stmt *t = l;
-				l = r;
-				r = t;
-			}
-
-			if (!l || !r)
-				return NULL;
-			join = stmt_semijoin(be, column(be, l), column(be, r), left->cand, right->cand, is_semantics(e)); 
-			if (join)
-				join = stmt_result(be, join, 0);
-			if (!join)
-				return NULL;
-			semi_used = 1;
-		}
-	}
-
-	if (!semi_used) {
-		left = subrel_project(be, left, refs, rel->l);
-		right = subrel_project(be, right, refs, rel->r);
-	}
-		
-	if (!semi_used && rel->exps) {
+	if (!list_empty(rel->exps)) {
 		int idx = 0;
 		list *jexps = sa_list(sql->sa);
 		list *lje = sa_list(sql->sa);
 		list *rje = sa_list(sql->sa);
 		list *exps = sa_list(sql->sa);
+		int equality_only = 1;
 
 		/* get equi-joins/filters first */
 		if (list_length(rel->exps) > 1) {
 			for( en = rel->exps->h; en; en = en->next ) {
 				sql_exp *e = en->data;
-				if (e->type == e_cmp && (e->flag == cmp_equal || e->flag == cmp_filter))
+				if (e->type == e_cmp && (e->flag == cmp_equal || e->flag == cmp_filter)) {
 					list_append(jexps, e);
+					equality_only &= (e->flag == cmp_equal);
+				}
 			}
 			for( en = rel->exps->h; en; en = en->next ) {
 				sql_exp *e = en->data;
-				if (e->type != e_cmp || (e->flag != cmp_equal && e->flag != cmp_filter))
+				if (e->type != e_cmp || (e->flag != cmp_equal && e->flag != cmp_filter)) {
 					list_append(jexps, e);
+					equality_only &= (e->flag == mark_in || e->flag == mark_notin);
+				}
 			}
 			rel->exps = jexps;
+		} else {
+			sql_exp *e = rel->exps->h->data;
+			equality_only &= (e->type == e_cmp && (e->flag == cmp_equal || e->flag == mark_in || e->flag == mark_notin));
 		}
+
+		if (!equality_only || list_length(rel->exps) > 1) {
+			left = subrel_project(be, left, refs, rel->l);
+			equality_only = 0;
+		}
+		right = subrel_project(be, right, refs, rel->r);
 
 		for( en = rel->exps->h; en; en = en->next ) {
 			int join_idx = sql->opt_stats[0];
@@ -2566,7 +2548,29 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 			   (join && e->flag == cmp_filter)))
 				break;
 
-			s = exp_bin(be, en->data, left, right, NULL, NULL, NULL, NULL);
+			if (equality_only) {
+				stmt *r, *l = exp_bin(be, e->l, left, NULL, NULL, NULL, NULL, NULL);
+				int swap = 0;
+
+				if (!l) {
+					swap = 1;
+					l = exp_bin(be, e->l, right, NULL, NULL, NULL, NULL, NULL);
+				}
+				r = exp_bin(be, e->r, left, right, NULL, NULL, NULL, NULL);
+	
+				if (swap) {
+					stmt *t = l;
+					l = r;
+					r = t;
+				}
+
+				if (!l || !r)
+					return NULL;
+				s = stmt_join_cand(be, column(be, l), column(be, r), left->cand, NULL/*right->cand*/, e->anti, (comp_type) e->flag, is_semantics(e)); 
+				lcand = left->cand;
+			} else {
+				s = exp_bin(be, e, left, right, NULL, NULL, NULL, NULL);
+			}
 			if (!s) {
 				assert(sql->session->status == -10); /* Stack overflow errors shouldn't terminate the server */
 				return NULL;
@@ -2602,14 +2606,13 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 			stmt *r = bin_first_column(be, right);
 			join = stmt_join(be, l, r, 0, cmp_all, 0); 
 		}
-	} else if (!semi_used) {
+	} else {
 		stmt *l = bin_first_column(be, left);
 		stmt *r = bin_first_column(be, right);
 		join = stmt_join(be, l, r, 0, cmp_all, 0); 
 	}
-	if (!semi_used)
-		jl = stmt_result(be, join, 0);
-	if (!semi_used && en) {
+	jl = stmt_result(be, join, 0);
+	if (en) {
 		stmt *sub, *sel = NULL;
 		list *nl;
 
@@ -2659,15 +2662,16 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 	/* construct relation */
 	l = sa_list(sql->sa);
 
-	if (!semi_used) {
-		/* We did a full join, thats too much. 
-	   	Reduce this using difference and intersect */
-		c = stmt_mirror(be, left->op4.lval->h->data);
-		if (rel->op == op_anti) {
-			join = stmt_tdiff(be, c, jl);
-		} else {
+	/* We did a full join, thats too much. 
+	   Reduce this using difference and intersect */
+	c = stmt_mirror(be, left->op4.lval->h->data);
+	if (rel->op == op_anti) {
+		join = stmt_tdiff(be, c, jl);
+	} else {
+		if (lcand)
+			join = stmt_semijoin(be, c, jl, lcand, NULL/*right->cand*/, 0); 
+		else
 			join = stmt_tinter(be, c, jl);
-		}
 	}
 
 	/* project all the left columns */
@@ -3599,19 +3603,23 @@ sql_parse(backend *be, sql_allocator *sa, const char *query, char mode)
 		sa_destroy(m->sa);
 	m->sym = NULL;
 	{
+		int label = m->label;
 		int status = m->session->status;
 		int sizeframes = m->sizeframes, topframes = m->topframes;
 		sql_frame **frames = m->frames;
 		/* cascade list maybe removed */
 		list *cascade_action = m->cascade_action;
+		char *mquery = m->query;
 
 		strcpy(o->errstr, m->errstr);
 		*m = *o;
+		m->label = label;
 		m->sizeframes = sizeframes;
 		m->topframes = topframes;
 		m->frames = frames;
 		m->session->status = status;
 		m->cascade_action = cascade_action;
+		m->query = mquery;
 	}
 	_DELETE(o);
 	return sq;

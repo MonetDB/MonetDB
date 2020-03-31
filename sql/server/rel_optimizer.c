@@ -8861,9 +8861,9 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, int value_based_
 	}
 
 	if ((gp.cnt[op_select] || gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full] || 
-		 gp.cnt[op_join] || gp.cnt[op_semi] || gp.cnt[op_anti]) && level <= 0)
+		 gp.cnt[op_join] || gp.cnt[op_semi] || gp.cnt[op_anti] || gp.cnt[op_ddl]) && level <= 0)
 		if (value_based_opt)
-			rel = rel_visitor_bottomup(sql, rel, &rel_simplify_predicates, &changes); 
+			rel = rel_visitor_bottomup(sql, rel, &rel_simplify_predicates, &changes);
 
 	/* join's/crossproducts between a relation and a constant (row).
 	 * could be rewritten 

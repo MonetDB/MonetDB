@@ -724,7 +724,6 @@ dosum(const void *restrict values, bool nonil, oid seqb,
 	/* allocate bitmap for seen group ids */
 	seen = GDKzalloc(((ngrp + 31) / 32) * sizeof(int));
 	if (seen == NULL) {
-		GDKerror("%s: cannot allocate enough memory\n", func);
 		return BUN_NONE;
 	}
 
@@ -1252,7 +1251,6 @@ doprod(const void *restrict values, oid seqb, struct canditer *restrict ci, BUN 
 	/* allocate bitmap for seen group ids */
 	seen = GDKzalloc(((ngrp + 31) / 32) * sizeof(int));
 	if (seen == NULL) {
-		GDKerror("%s: cannot allocate enough memory\n", func);
 		return BUN_NONE;
 	}
 
@@ -1683,14 +1681,11 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool
 		 * with nil in the tail */
 		bn = BATconstant(ngrp == 0 ? 0 : min, TYPE_dbl, &dbl_nil, ngrp, TRANSIENT);
 		if (bn == NULL) {
-			GDKerror("%s: failed to create BAT\n", __func__);
 			return GDK_FAIL;
 		}
 		if (cntsp) {
 			lng zero = 0;
 			if ((cn = BATconstant(ngrp == 0 ? 0 : min, TYPE_lng, &zero, ngrp, TRANSIENT)) == NULL) {
-				GDKerror("%s: failed to create BAT\n",
-					 __func__);
 				BBPreclaim(bn);
 				return GDK_FAIL;
 			}
@@ -1830,7 +1825,6 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool
 	} else if (cnts) {
 		GDKfree(cnts);
 	}
-	GDKerror("%s: cannot allocate enough memory.\n", __func__);
 	return GDK_FAIL;
 }
 
@@ -3474,7 +3468,6 @@ dogroupstdev(BAT **avgb, BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 	GDKfree(delta);
 	GDKfree(m2);
 	GDKfree(cnts);
-	GDKerror("%s: cannot allocate enough memory.\n", func);
 	return NULL;
 }
 
@@ -3676,7 +3669,6 @@ dogroupcovariance(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp,
 	GDKfree(delta2);
 	GDKfree(m2);
 	GDKfree(cnts);
-	GDKerror("%s: cannot allocate enough memory.\n", func);
 	return NULL;
 }
 
@@ -3864,6 +3856,5 @@ BATgroupcorrelation(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp, bool skip_
 	GDKfree(down1);
 	GDKfree(down2);
 	GDKfree(cnts);
-	GDKerror("%s: cannot allocate enough memory.\n", __func__);
 	return NULL;
 }

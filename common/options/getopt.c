@@ -912,7 +912,7 @@ char **argv;
 			break;
 
 		default:
-			printf("?? getopt returned character code 0%o ??\n", c);
+			printf("?? getopt returned character code 0%o ??\n", (unsigned) c);
 		}
 	}
 

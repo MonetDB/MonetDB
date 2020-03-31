@@ -19,12 +19,10 @@
 #include "utils.h"
 #include <unistd.h> /* unlink */
 #include <string.h> /* memcpy */
-#include <strings.h> /* strcasecmp */
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
 #include <time.h>
 #include <ctype.h>
+#include <dirent.h> /* readdir */
+#include <fcntl.h>
 #ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>
 #endif
@@ -487,5 +485,97 @@ sleep_ms(size_t ms)
 	tv.tv_usec = 1000 * (ms % 1000);
 	(void) select(0, NULL, NULL, NULL, &tv);
 }
+
+
+/* recursive helper function to delete a directory */
+char*
+deletedir(const char *dir)
+{
+	DIR *d;
+	struct dirent *e;
+	char buf[8192];
+	char path[4096];
+
+	d = opendir(dir);
+	if (d == NULL) {
+		/* silently return if we cannot find the directory; it's
+		 * probably already deleted */
+		if (errno == ENOENT)
+			return(NULL);
+		if (errno == ENOTDIR) {
+			if (remove(dir) != 0 && errno != ENOENT) {
+				snprintf(buf, sizeof(buf),
+					 "unable to remove file %s: %s",
+					 dir, strerror(errno));
+				return(strdup(buf));
+			}
+			return NULL;
+		}
+		snprintf(buf, sizeof(buf), "unable to open dir %s: %s",
+				dir, strerror(errno));
+		return(strdup(buf));
+	}
+	while ((e = readdir(d)) != NULL) {
+		/* ignore . and .. */
+		if (strcmp(e->d_name, ".") != 0 &&
+		    strcmp(e->d_name, "..") != 0) {
+			char* er;
+			snprintf(path, sizeof(path), "%s/%s", dir, e->d_name);
+			if ((er = deletedir(path)) != NULL) {
+				closedir(d);
+				return(er);
+			}
+		}
+	}
+	closedir(d);
+	if (rmdir(dir) == -1 && errno != ENOENT) {
+		snprintf(buf, sizeof(buf), "unable to remove directory %s: %s",
+				dir, strerror(errno));
+		return(strdup(buf));
+	}
+
+	return(NULL);
+}
+
+void
+free_snapshots(struct snapshot *snapshots, int nsnapshots)
+{
+	for (struct snapshot *snap = snapshots; snap < &snapshots[nsnapshots]; snap++) {
+		free(snap->dbname);
+		free(snap->name);
+		free(snap->path);
+	}
+	free(snapshots);
+}
+
+/* Increment *nsnapsnots by 1 and call realloc() on *snapshots to make it
+ * accomodate one more snapshot. Return a pointer to the newly allocated
+ * snapshot, which has been initialized with 0's and NULL's.
+ */
+struct snapshot *
+push_snapshot(struct snapshot **snapshots, int *nsnapshots)
+{
+	*nsnapshots += 1;
+	*snapshots = realloc(*snapshots, *nsnapshots * sizeof(struct snapshot));
+	struct snapshot *snap = *snapshots + *nsnapshots - 1;
+	snap->dbname = NULL;
+	snap->time = 0;
+	snap->size = 0;
+	snap->name = NULL;
+	snap->path = NULL;
+	return snap;
+}
+
+void
+copy_snapshot(struct snapshot *dest, struct snapshot *src)
+{
+
+	dest->dbname = strdup(src->dbname);
+	dest->time = src->time;
+	dest->size = src->size;
+	dest->name = strdup(src->name);
+	dest->path = strdup(src->path);
+}
+
 
 /* vim:set ts=4 sw=4 noexpandtab: */

@@ -569,7 +569,7 @@ printInstruction(stream *fd, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int flg)
 }
 
 void
-traceInstruction(COMPONENT comp, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int flg)
+traceInstruction(component_t comp, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int flg)
 {
 	str ps;
 	TRC_DEBUG_IF(comp){

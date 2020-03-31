@@ -24,12 +24,13 @@ int catalog_version = 0;
 static MT_Lock bs_lock = MT_LOCK_INITIALIZER("bs_lock");
 static sqlid store_oid = 0;
 static sqlid prev_oid = 0;
-static int nr_sessions = 0;
 static int transactions = 0;
 static sqlid *store_oids = NULL;
 static int nstore_oids = 0;
 sql_trans *gtrans = NULL;
 list *active_sessions = NULL;
+sql_allocator *store_sa = NULL;
+ATOMIC_TYPE nr_sessions = ATOMIC_VAR_INIT(0);
 ATOMIC_TYPE store_nr_active = ATOMIC_VAR_INIT(0);
 store_type active_store_type = store_bat;
 int store_readonly = 0;
@@ -159,15 +160,79 @@ table_destroy(sql_table *t)
 {
 	if (--(t->base.refcnt) > 0)
 		return;
-	if (t->po)
-		table_destroy(t->po);
 	cs_destroy(&t->keys);
 	cs_destroy(&t->idxs);
 	cs_destroy(&t->triggers);
 	cs_destroy(&t->columns);
 	cs_destroy(&t->members);
+	if (t->po)
+		table_destroy(t->po);
 	if (isTable(t))
 		store_funcs.destroy_del(NULL, t);
+}
+
+static void
+table_cleanup(sql_table *t)
+{
+	if (t->keys.dset) {
+		list_destroy(t->keys.dset);
+		t->keys.dset = NULL;
+	}
+	if (t->idxs.dset) {
+		list_destroy(t->idxs.dset);
+		t->idxs.dset = NULL;
+	}
+	if (t->triggers.dset) {
+		list_destroy(t->triggers.dset);
+		t->triggers.dset = NULL;
+	}
+	if (t->columns.dset) {
+		list_destroy(t->columns.dset);
+		t->columns.dset = NULL;
+	}
+	if (t->members.dset) {
+		list_destroy(t->members.dset);
+		t->members.dset = NULL;
+	}
+}
+
+static void
+table_reset_parent(sql_table *t, sql_trans *tr)
+{
+	sql_table *p = t->po;
+	int istmp = isTempSchema(t->s) && t->base.allocated;
+
+	if (isTable(t) && !istmp)
+		store_funcs.bind_del_data(tr, t);
+	t->po = NULL;
+	if (t->idxs.set) {
+		for(node *n = t->idxs.set->h; n; n = n->next) {
+			sql_idx *i = n->data;
+
+			if (isTable(i->t) && idx_has_column(i->type) && !istmp)
+				store_funcs.bind_idx_data(tr, i);
+			if (i->po)
+				idx_destroy(i->po);
+			i->po = NULL;
+		}
+	}
+	assert(t->idxs.dset == NULL);
+	if (t->columns.set) {
+		for(node *n = t->columns.set->h; n; n = n->next) {
+			sql_column *c = n->data;
+
+			if (isTable(c->t) && !istmp)
+				store_funcs.bind_col_data(tr, c);
+			if (c->po)
+				column_destroy(c->po);
+			c->po = NULL;
+		}
+	}
+	assert(t->columns.dset == NULL);
+	if (p)
+		table_destroy(p);
+	if (isTable(t))
+		assert(t->base.allocated);
 }
 
 void
@@ -182,6 +247,35 @@ schema_destroy(sql_schema *s)
 	s->keys = NULL;
 	s->idxs = NULL;
 	s->triggers = NULL;
+}
+
+static void
+schema_cleanup(sql_schema *s)
+{
+	if (s->tables.set)
+		for (node *n = s->tables.set->h; n; n = n->next)
+			table_cleanup(n->data);
+	if (s->tables.dset) {
+		list_destroy(s->tables.dset);
+		s->tables.dset = NULL;
+	}
+	if (s->funcs.dset) {
+		list_destroy(s->funcs.dset);
+		s->funcs.dset = NULL;
+	}
+	if (s->types.dset) {
+		list_destroy(s->types.dset);
+		s->types.dset = NULL;
+	}
+}
+
+static void
+schema_reset_parent(sql_schema *s, sql_trans *tr)
+{
+	if (s->tables.set)
+		for (node *n = s->tables.set->h; n; n = n->next)
+			table_reset_parent(n->data, tr);
+	assert(s->tables.dset == NULL);
 }
 
 static void
@@ -214,6 +308,8 @@ sql_trans_destroy(sql_trans *t, bool try_spare)
 
 	TRC_DEBUG(SQL_STORE, "Destroy transaction: %p\n", t);
 
+	if (t->sa->nr > 12)
+		try_spare = 0;
 	if (res == gtrans && spares < ((GDKdebug & FORCEMITOMASK) ? 2 : MAX_SPARES) && !t->name && try_spare) {
 		TRC_DEBUG(SQL_STORE, "Spared '%d' transactions '%p'\n", spares, t);
 		trans_drop_tmp(t);
@@ -230,6 +326,26 @@ sql_trans_destroy(sql_trans *t, bool try_spare)
 	transactions--;
 	return res;
 }
+
+static void
+trans_cleanup(sql_trans *t)
+{
+	for (node *m = t->schemas.set->h; m; m = m->next)
+		schema_cleanup(m->data);
+	if (t->schemas.dset) {
+		list_destroy(t->schemas.dset);
+		t->schemas.dset = NULL;
+	}
+}
+
+static void
+trans_reset_parent(sql_trans *t)
+{
+	for (node *m = t->schemas.set->h; m; m = m->next)
+		schema_reset_parent(m->data, t);
+	t->parent = NULL;
+}
+
 
 static void
 destroy_spare_transactions(void) 
@@ -590,7 +706,7 @@ load_range_partition(sql_trans *tr, sql_schema *syss, sql_part *pt)
 		_DELETE(v2);
 		if (ok) {
 			v3 = table_funcs.column_find_value(tr, find_sql_column(ranges, "with_nulls"), rid);
-			pt->with_nills = (int)*((bit*)v3);
+			pt->with_nills = *((bit*)v3);
 			_DELETE(v3);
 
 			pt->part.range.minvalue = sa_alloc(tr->sa, vmin.len);
@@ -641,14 +757,13 @@ load_value_partition(sql_trans *tr, sql_schema *syss, sql_part *pt)
 
 		if (ok) {
 			if (VALisnil(&vvalue)) { /* check for null value */
-				pt->with_nills = 1;
+				pt->with_nills = true;
 			} else {
 				nextv = SA_ZNEW(tr->sa, sql_part_value);
-				nextv->tpe = *empty;
 				nextv->value = sa_alloc(tr->sa, vvalue.len);
 				memcpy(nextv->value, VALget(&vvalue), vvalue.len);
 				nextv->length = vvalue.len;
-				if (list_append_sorted(vals, nextv, sql_values_list_element_validate_and_insert) != NULL) {
+				if (list_append_sorted(vals, nextv, empty, sql_values_list_element_validate_and_insert) != NULL) {
 					VALclear(&vvalue);
 					table_funcs.rids_destroy(rs);
 					list_destroy(vals);
@@ -779,10 +894,9 @@ load_table(sql_trans *tr, sql_schema *s, sqlid tid, subrids *nrs)
 
 	assert((!isRangePartitionTable(t) && !isListPartitionTable(t)) || (!exp && !is_int_nil(pcolid)) || (exp && is_int_nil(pcolid)));
 	if (isPartitionedByExpressionTable(t)) {
-		sql_subtype *empty = sql_bind_localtype("void");
 		t->part.pexp = SA_ZNEW(tr->sa, sql_expression);
 		t->part.pexp->exp = exp;
-		t->part.pexp->type = *empty;
+		t->part.pexp->type = *sql_bind_localtype("void"); /* initialized at initialize_sql_parts */
 		t->part.pexp->cols = sa_list(tr->sa);
 	}
 	for (rid = table_funcs.subrids_next(nrs); !is_oid_nil(rid); rid = table_funcs.subrids_next(nrs)) {
@@ -1611,7 +1725,6 @@ dup_sql_part(sql_allocator *sa, sql_table *mt, sql_part *op)
 		p->part.values = list_new(sa, (fdestroy) NULL);
 		for (node *n = op->part.values->h ; n ; n = n->next) {
 			sql_part_value *prev = (sql_part_value*) n->data, *nextv = SA_ZNEW(sa, sql_part_value);
-			nextv->tpe = prev->tpe; /* No dup_sql_type call I think */
 			nextv->value = sa_alloc(sa, prev->length);
 			memcpy(nextv->value, prev->value, prev->length);
 			nextv->length = prev->length;
@@ -1749,13 +1862,14 @@ store_load(void) {
 	lng lng_store_oid;
 	sqlid id = 0;
 
+	store_sa = sa_create();
 	sa = sa_create();
-	if (!sa)
+	if (!sa || !store_sa)
 		return -1;
 
 	first = logger_funcs.log_isnew();
 
-	types_init(sa);
+	types_init(store_sa);
 
 	// TODO: Niels: Are we fine running this twice?
 
@@ -1769,7 +1883,7 @@ store_load(void) {
 		return -1;
 
 	transactions = 0;
-	active_sessions = sa_list(sa);
+	active_sessions = list_create(NULL);
 
 	if (first) {
 		/* cannot initialize database in readonly mode */
@@ -2179,11 +2293,18 @@ store_exit(void)
 		sql_trans_destroy(gtrans, false);
 		gtrans = NULL;
 	}
+	list_destroy(active_sessions);
+	if (store_sa)
+		sa_destroy(store_sa);
 
 	TRC_DEBUG(SQL_STORE, "Store unlocked\n");
 	MT_lock_unset(&bs_lock);
 	store_initialized=0;
 }
+
+
+static sql_trans * trans_dup(backend_stack stk, sql_trans *ot, const char *newname);
+static sql_trans * trans_init(sql_trans *tr, backend_stack stk, sql_trans *otr);
 
 /* call locked! */
 int
@@ -2194,6 +2315,9 @@ store_apply_deltas(bool not_locked)
 	flusher.working = true;
 	/* make sure we reset all transactions on re-activation */
 	gtrans->wstime = timestamp();
+	/* cleanup drop tables, columns and idxs first */
+	trans_cleanup(gtrans);
+
 	if (store_funcs.gtrans_update)
 		store_funcs.gtrans_update(gtrans);
 	res = logger_funcs.restart();
@@ -2203,6 +2327,18 @@ store_apply_deltas(bool not_locked)
 		res = logger_funcs.cleanup();
 		if (!not_locked)
 			MT_lock_set(&bs_lock);
+	}
+
+	if (/*gtrans->sa->nr > 40 &&*/ !(ATOMIC_GET(&nr_sessions)) /* only save when there are no dependencies on the gtrans */) { /* TODO need better estimate */
+		sql_trans *ntrans = trans_dup(gtrans->stk, gtrans, NULL);
+
+		trans_init(ntrans, ntrans->stk, gtrans);
+		if (spares > 0)
+			destroy_spare_transactions();
+		trans_reset_parent(ntrans);
+
+		sql_trans_destroy(gtrans, false);
+		gtrans = ntrans;
 	}
 	flusher.working = false;
 
@@ -2552,7 +2688,11 @@ hot_snapshot_write_tar(stream *out, const char *prefix, char *plan)
 				goto end;
 		}
 	}
-	ret = GDK_SUCCEED;
+
+	// write a trailing block of zeros. If it succeeds, this function succeeds.
+	char a;
+	a = '\0';
+	ret = tar_write(out, &a, 1);
 
 end:
 	free(plan);
@@ -2561,13 +2701,50 @@ end:
 	return ret;
 }
 
+/* Pick a name for the temporary tar file. Make sure it has the same extension
+ * so as not to confuse the streams library.
+ *
+ * This function is not entirely safe as compare to for example mkstemp.
+ */
+static str pick_tmp_name(str filename)
+{
+	str name = GDKmalloc(strlen(filename) + 10);
+	if (name == NULL) {
+		GDKerror("malloc failed");
+		return NULL;
+	}
+	strcpy(name, filename);
+
+	// Look for an extension.
+	// Make sure it's part of the basename
+
+	char *ext = strrchr(name, '.');
+	char *sep = strrchr(name, DIR_SEP);
+	char *slash = strrchr(name, '/'); // on Windows, / and \ both work
+	if (ext != NULL && sep != NULL && sep > ext)
+		ext = NULL;
+	else if (ext != NULL && slash != NULL && slash > ext)
+		ext = NULL;
+
+	if (ext == NULL) {
+		return strcat(name, "..tmp");
+	} else {
+		char *tmp = "..tmp.";
+		size_t tmplen = strlen(tmp);
+		memmove(ext + tmplen, ext, strlen(ext) + 1);
+		memmove(ext, tmp, tmplen);
+	}
+
+	return name;
+}
+
 extern lng
 store_hot_snapshot(str tarfile)
 {
 	int locked = 0;
 	lng result = 0;
-	char tmppath[FILENAME_MAX];
-	char dirpath[FILENAME_MAX];
+	char *tmppath = NULL;
+	char *dirpath = NULL;
 	int do_remove = 0;
 	int dir_fd = -1;
 	stream *tar_stream = NULL;
@@ -2580,7 +2757,10 @@ store_hot_snapshot(str tarfile)
 		goto end;
 	}
 
-	snprintf(tmppath, sizeof(tmppath), "%s.tmp", tarfile);
+	tmppath = pick_tmp_name(tarfile);
+	if (tmppath == NULL) {
+		goto end;
+	}
 	tar_stream = open_wstream(tmppath);
 	if (!tar_stream) {
 		GDKerror("Failed to open %s for writing", tmppath);
@@ -2598,8 +2778,13 @@ store_hot_snapshot(str tarfile)
 	// Call realpath(2) to make the path absolute so it has at least
 	// one DIR_SEP in it. Realpath requires the file to exist so
 	// we feed it tmppath rather than tarfile.
-	if (realpath(tmppath, dirpath) == NULL) { // ERROR no realpath
-		GDKsyserror("couldn't resolve path %s", tarfile);
+	dirpath = GDKmalloc(PATH_MAX);
+	if (dirpath == NULL) {
+		GDKsyserror("malloc failed");
+		goto end;
+	}
+	if (realpath(tmppath, dirpath) == NULL) {
+		GDKsyserror("couldn't resolve path %s: %s", tarfile, strerror(errno));
 		goto end;
 	}
 	*strrchr(dirpath, DIR_SEP) = '\0';
@@ -2614,7 +2799,7 @@ store_hot_snapshot(str tarfile)
 	}
 
 	// Fsync the directory. Postgres believes this is necessary for durability.
-	if (fsync(dir_fd) < 0) { // ERROR no fsync
+	if (fsync(dir_fd) < 0) {
 		GDKsyserror("First fsync on %s failed", dirpath);
 		goto end;
 	}
@@ -2676,6 +2861,8 @@ store_hot_snapshot(str tarfile)
 	result = 42;
 
 end:
+	GDKfree(tmppath);
+	GDKfree(dirpath);
 	if (dir_fd >= 0)
 		close(dir_fd);
 	if (locked)
@@ -3032,7 +3219,6 @@ sql_trans_copy_part( sql_trans *tr, sql_table *t, sql_part *pt)
 		npt->part.values = list_new(tr->sa, (fdestroy) NULL);
 		for (node *n = pt->part.values->h ; n ; n = n->next) {
 			sql_part_value *prev = (sql_part_value*) n->data, *nextv = SA_ZNEW(tr->sa, sql_part_value);
-			dup_sql_type(tr, t->s, &(prev->tpe), &(nextv->tpe));
 			nextv->value = sa_alloc(tr->sa, prev->length);
 			memcpy(nextv->value, prev->value, prev->length);
 			nextv->length = prev->length;
@@ -3155,7 +3341,6 @@ part_dup(sql_trans *tr, int flags, sql_part *op, sql_table *mt)
 		p->part.values = list_new(sa, (fdestroy) NULL);
 		for (node *n = op->part.values->h ; n ; n = n->next) {
 			sql_part_value *prev = (sql_part_value*) n->data, *nextv = SA_ZNEW(sa, sql_part_value);
-			dup_sql_type(tr, mt->s, &(prev->tpe), &(nextv->tpe));
 			nextv->value = sa_alloc(sa, prev->length);
 			memcpy(nextv->value, prev->value, prev->length);
 			nextv->length = prev->length;
@@ -3331,10 +3516,9 @@ table_dup(sql_trans *tr, int flags, sql_table *ot, sql_schema *s)
 	t->cleared = 0;
 
 	if (isPartitionedByExpressionTable(ot)) {
-		sql_subtype *empty = sql_bind_localtype("void");
 		t->part.pexp = SA_ZNEW(sa, sql_expression);
 		t->part.pexp->exp = sa_strdup(sa, ot->part.pexp->exp);
-		t->part.pexp->type = *empty;
+		dup_sql_type((newFlagSet(flags))?tr->parent:tr, t->s, &(ot->part.pexp->type), &(t->part.pexp->type));
 		t->part.pexp->cols = sa_list(sa);
 		for (n = ot->part.pexp->cols->h; n; n = n->next) {
 			int *nid = sa_alloc(sa, sizeof(int));
@@ -3574,9 +3758,12 @@ trans_init(sql_trans *tr, backend_stack stk, sql_trans *otr)
 			s->base.stime = ps->base.wtime;
 
 			if (ps->tables.set && s->tables.set)
-			for (k = ps->tables.set->h, l = s->tables.set->h; k && l; k = k->next, l = l->next ) { 
+			for (k = ps->tables.set->h, l = s->tables.set->h; k && l; l = l->next ) { 
 				sql_table *pt = k->data; /* parent transactions table */
 				sql_table *t = l->data; 
+
+				if (t->persistence == SQL_LOCAL_TEMP) /* skip local tables */
+					continue;
 
 				t->base.rtime = t->base.wtime = 0;
 				t->base.stime = pt->base.wtime;
@@ -3636,6 +3823,7 @@ trans_init(sql_trans *tr, backend_stack stk, sql_trans *otr)
 					/* for now assert */
 					assert(0);
 				}
+				k = k->next;
 			}
 			if (ps->seqs.set && s->seqs.set)
 			for (k = ps->seqs.set->h, l = s->seqs.set->h; k && l; k = k->next, l = l->next ) { 
@@ -3714,6 +3902,26 @@ typedef sql_base *(*rfcfunc) (sql_trans *tr, sql_base * b, int mode);
 typedef int (*rfdfunc) (sql_trans *tr, sql_base * b, int mode);
 typedef sql_base *(*dupfunc) (sql_trans *tr, int flags, sql_base * b, sql_base * p);
 
+static sql_table *
+conditional_table_dup(sql_trans *tr, int flags, sql_table *ot, sql_schema *s)
+{
+	int p = (tr->parent == gtrans);
+
+	/* persistent columns need to be dupped */
+	if ((p && isGlobal(ot)) ||
+	    /* allways dup in recursive mode */
+	    tr->parent != gtrans)
+		return table_dup(tr, flags, ot, s);
+	else if (!isGlobal(ot)){/* is local temp, may need to be cleared */
+		if (ot->commit_action == CA_DELETE) {
+			sql_trans_clear_table(tr, ot);
+		} else if (ot->commit_action == CA_DROP) {
+			(void) sql_trans_drop_table(tr, ot->s, ot->base.id, DROP_RESTRICT);
+		}
+	}
+	return NULL;
+}
+
 static int
 rollforward_changeset_updates(sql_trans *tr, changeset * fs, changeset * ts, sql_base * b, rfufunc rollforward_updates, rfcfunc rollforward_creates, rfdfunc rollforward_deletes, dupfunc fd, int mode)
 {
@@ -3735,13 +3943,9 @@ rollforward_changeset_updates(sql_trans *tr, changeset * fs, changeset * ts, sql
 				if (apply) {
 					if (ts->nelm == tbn)
 						ts->nelm = tbn->next;
-					//if (tr->parent != gtrans) {
-						if (!ts->dset)
-							ts->dset = list_new(tr->parent->sa, ts->destroy);
-						list_move_data(ts->set, ts->dset, tb);
-					//} else {
-						//cs_remove_node(ts, tbn);
-					//}
+					if (!ts->dset)
+						ts->dset = list_new(tr->parent->sa, ts->destroy);
+					list_move_data(ts->set, ts->dset, tb);
 				}
 			}
 		}
@@ -3807,9 +4011,9 @@ rollforward_changeset_updates(sql_trans *tr, changeset * fs, changeset * ts, sql
 						else
 							ok = LOG_ERR;
 						fb->flags = 0;
+						tb->flags = 0;
+						fb->stime = tb->stime = tb->wtime;
 					}
-					tb->flags = 0;
-					fb->stime = tb->stime = tb->wtime;
 				} else if (!rollforward_creates(tr, fb, mode)) {
 					ok = LOG_ERR;
 				}
@@ -4179,6 +4383,7 @@ rollforward_update_part(sql_trans *tr, sql_base *fpt, sql_base *tpt, int mode)
 		sql_part *pt = (sql_part *) tpt;
 		sql_part *opt = (sql_part *) fpt;
 
+		pt->with_nills = opt->with_nills;
 		if (isRangePartitionTable(opt->t)) {
 			pt->part.range.minvalue = sa_alloc(tr->sa, opt->part.range.minlength);
 			pt->part.range.maxvalue = sa_alloc(tr->sa, opt->part.range.maxlength);
@@ -4190,7 +4395,6 @@ rollforward_update_part(sql_trans *tr, sql_base *fpt, sql_base *tpt, int mode)
 			pt->part.values = list_new(tr->sa, (fdestroy) NULL);
 			for (node *n = opt->part.values->h ; n ; n = n->next) {
 				sql_part_value *prev = (sql_part_value*) n->data, *nextv = SA_ZNEW(tr->sa, sql_part_value);
-				dup_sql_type(tr, opt->t->s, &(prev->tpe), &(nextv->tpe));
 				nextv->value = sa_alloc(tr->sa, prev->length);
 				memcpy(nextv->value, prev->value, prev->length);
 				nextv->length = prev->length;
@@ -4277,26 +4481,6 @@ rollforward_update_seq(sql_trans *tr, sql_sequence *ft, sql_sequence *tt, int mo
 	return LOG_OK;
 }
 
-static sql_table *
-conditional_table_dup(sql_trans *tr, int flags, sql_table *ot, sql_schema *s)
-{
-	int p = (tr->parent == gtrans);
-
-	/* persistent columns need to be dupped */
-	if ((p && isGlobal(ot)) ||
-	    /* allways dup in recursive mode */
-	    tr->parent != gtrans)
-		return table_dup(tr, flags, ot, s);
-	else if (!isGlobal(ot)){/* is local temp, may need to be cleared */
-		if (ot->commit_action == CA_DELETE) {
-			sql_trans_clear_table(tr, ot);
-		} else if (ot->commit_action == CA_DROP) {
-			(void) sql_trans_drop_table(tr, ot->s, ot->base.id, DROP_RESTRICT);
-		}
-	}
-	return NULL;
-}
-
 static int
 rollforward_update_schema(sql_trans *tr, sql_schema *fs, sql_schema *ts, int mode)
 {
@@ -4304,7 +4488,6 @@ rollforward_update_schema(sql_trans *tr, sql_schema *fs, sql_schema *ts, int mod
 	int ok = LOG_OK;
 
 	if (apply && isTempSchema(fs)) {
-		fs->tables.nelm = NULL;
 		if (fs->tables.set) {
 			node *n;
 			for (n = fs->tables.set->h; n; ) {
@@ -4322,7 +4505,6 @@ rollforward_update_schema(sql_trans *tr, sql_schema *fs, sql_schema *ts, int mod
 				n = nxt;
 			}
 		}
-		return ok;
 	}
 
 	if (ok == LOG_OK)
@@ -5733,7 +5915,7 @@ sql_trans_add_table(sql_trans *tr, sql_table *mt, sql_table *pt)
 
 int
 sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_subtype tpe, ptr min, ptr max,
-							  int with_nills, int update, sql_part **err)
+							  bit with_nills, int update, sql_part **err)
 {
 	sql_schema *syss = find_sql_schema(tr, "sys");
 	sql_table *sysobj = find_sql_table(syss, "objects");
@@ -5743,7 +5925,7 @@ sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 	int localtype = tpe.type->localtype, res = 0;
 	ValRecord vmin, vmax;
 	size_t smin, smax;
-	bit to_insert = (bit) with_nills;
+	bit to_insert = with_nills;
 	oid rid;
 	ptr ok;
 	sqlid *v;
@@ -5850,7 +6032,7 @@ finish:
 }
 
 int
-sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_subtype tpe, list* vals, int with_nills,
+sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_subtype tpe, list* vals, bit with_nills,
 							  int update, sql_part **err)
 {
 	sql_schema *syss = find_sql_schema(tr, "sys");
@@ -6074,9 +6256,8 @@ sql_trans_create_table(sql_trans *tr, sql_schema *s, const char *name, const cha
 		}
 	}
 	if (isPartitionedByExpressionTable(t)) {
-		sql_subtype *empty = sql_bind_localtype("void");
 		t->part.pexp = SA_ZNEW(tr->sa, sql_expression);
-		t->part.pexp->type = *empty;
+		t->part.pexp->type = *sql_bind_localtype("void"); /* leave it non-initialized, at the backend the copy of this table will get the type */
 	}
 
 	ca = t->commit_action;
@@ -7255,7 +7436,7 @@ sql_session_create(backend_stack stk, int ac )
 {
 	sql_session *s;
 
-	if (store_singleuser && nr_sessions)
+	if (store_singleuser && ATOMIC_GET(&nr_sessions))
 		return NULL;
 
 	s = ZNEW(sql_session);
@@ -7274,7 +7455,7 @@ sql_session_create(backend_stack stk, int ac )
 		_DELETE(s);
 		return NULL;
 	}
-	nr_sessions++;
+	(void) ATOMIC_INC(&nr_sessions);
 	return s;
 }
 
@@ -7286,8 +7467,8 @@ sql_session_destroy(sql_session *s)
 		sql_trans_destroy(s->tr, true);
 	if (s->schema_name)
 		_DELETE(s->schema_name);
+	(void) ATOMIC_DEC(&nr_sessions);
 	_DELETE(s);
-	nr_sessions--;
 }
 
 int

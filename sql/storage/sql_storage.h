@@ -121,6 +121,13 @@ typedef void *(*bind_col_fptr) (sql_trans *tr, sql_column *c, int access);
 typedef void *(*bind_idx_fptr) (sql_trans *tr, sql_idx *i, int access);
 typedef void *(*bind_del_fptr) (sql_trans *tr, sql_table *t, int access);
 
+/* 
+-- binds data for column, idx and delets (from the parent transaction)
+*/
+typedef void *(*bind_col_data_fptr) (sql_trans *tr, sql_column *c);
+typedef void *(*bind_idx_data_fptr) (sql_trans *tr, sql_idx *i);
+typedef void *(*bind_del_data_fptr) (sql_trans *tr, sql_table *t);
+
 /*
 -- append/update to columns and indices 
 */
@@ -219,6 +226,10 @@ typedef struct store_functions {
 	bind_col_fptr bind_col;
 	bind_idx_fptr bind_idx;
 	bind_del_fptr bind_del;
+
+	bind_col_data_fptr bind_col_data;
+	bind_idx_data_fptr bind_idx_data;
+	bind_del_data_fptr bind_del_data;
 
 	append_col_fptr append_col;
 	append_idx_fptr append_idx;
@@ -407,8 +418,8 @@ extern sql_table *sql_trans_create_table(sql_trans *tr, sql_schema *s, const cha
 
 extern int sql_trans_set_partition_table(sql_trans *tr, sql_table *t);
 extern sql_table *sql_trans_add_table(sql_trans *tr, sql_table *mt, sql_table *pt);
-extern int sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_subtype tpe, ptr min, ptr max, int with_nills, int update, sql_part** err);
-extern int sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_subtype tpe, list* vals, int with_nills, int update, sql_part **err);
+extern int sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_subtype tpe, ptr min, ptr max, bit with_nills, int update, sql_part** err);
+extern int sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_subtype tpe, list* vals, bit with_nills, int update, sql_part **err);
 
 extern sql_table *sql_trans_rename_table(sql_trans *tr, sql_schema *s, sqlid id, const char *new_name);
 extern sql_table *sql_trans_set_table_schema(sql_trans *tr, sqlid id, sql_schema *os, sql_schema *ns);

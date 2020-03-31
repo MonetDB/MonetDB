@@ -35,8 +35,6 @@
 #ifndef _GDK_TRACER_H_
 #define _GDK_TRACER_H_
 
-#define MXW "20"
-
 #define GENERATE_ENUM(ENUM) ENUM,
 
 
@@ -49,7 +47,7 @@
 
 typedef enum {
 	FOREACH_ADPTR(GENERATE_ENUM)
-} ADAPTER;
+} adapter_t;
 
 
 
@@ -65,10 +63,7 @@ typedef enum {
 
 typedef enum {
 	FOREACH_LEVEL(GENERATE_ENUM)
-} LOG_LEVEL;
-
-gdk_export const char *LEVEL_STR[];
-
+} log_level_t;
 
 
 // LAYERS
@@ -82,7 +77,7 @@ gdk_export const char *LEVEL_STR[];
 
 typedef enum {
 	FOREACH_LAYER(GENERATE_ENUM)
-} LAYER;
+} layer_t;
 
 
 
@@ -133,16 +128,14 @@ typedef enum {
 
 typedef enum {
 	FOREACH_COMP(GENERATE_ENUM)
-} COMPONENT;
-
-gdk_export const char *COMPONENT_STR[];
+} component_t;
 
 
 
 /*
  * Logging macros
  */
-gdk_export LOG_LEVEL LVL_PER_COMPONENT[];
+gdk_export log_level_t lvl_per_component[];
 
 // If the LOG_LEVEL of the message is one of the following: CRITICAL,
 // ERROR or WARNING it is logged no matter the component. In any other
@@ -151,26 +144,12 @@ gdk_export LOG_LEVEL LVL_PER_COMPONENT[];
 	(LOG_LEVEL == M_CRITICAL ||		\
 	 LOG_LEVEL == M_ERROR    ||		\
 	 LOG_LEVEL == M_WARNING  ||		\
-	 LVL_PER_COMPONENT[COMP] >= LOG_LEVEL)
+	 lvl_per_component[COMP] >= LOG_LEVEL)
 
 
 #define GDK_TRACER_LOG_BODY(LOG_LEVEL, COMP, MSG, ...)			\
-	GDKtracer_log(LOG_LEVEL,					\
-		      "%s "						\
-		      "%-"MXW"s:%d "					\
-		      "%"MXW"s "					\
-		      "%"MXW"s "					\
-		      "%-"MXW"s "					\
-		      "%-"MXW"s # "MSG,					\
-		      GDKtracer_get_timestamp("%Y-%m-%d %H:%M:%S",	\
-					      (char[20]){0}, 20),	\
-		      __FILE__,						\
-		      __LINE__,						\
-		      __func__,						\
-		      LEVEL_STR[LOG_LEVEL],				\
-		      COMPONENT_STR[COMP],				\
-		      MT_thread_getname(),				\
-		      ## __VA_ARGS__)
+	GDKtracer_log(__FILE__, __func__, __LINE__,			\
+		      LOG_LEVEL, COMP, MSG, ##__VA_ARGS__)
 
 #define GDK_TRACER_LOG(LOG_LEVEL, COMP, MSG, ...)			\
 	do {								\
@@ -250,10 +229,6 @@ gdk_export LOG_LEVEL LVL_PER_COMPONENT[];
  * For the allowed log_levels, components and layers see the
  * LOG_LEVEL, COMPONENT and LAYER enum respectively.
  */
-// Returns the timestamp in the form of datetime
-gdk_export char *GDKtracer_get_timestamp(const char *fmt, char *buf, size_t sz);
-
-
 // Used for logrotate
 gdk_export void GDKtracer_reinit_basic(int sig);
 
@@ -285,8 +260,11 @@ gdk_export gdk_return GDKtracer_set_adapter(const char *adapter);
 gdk_export gdk_return GDKtracer_reset_adapter(void);
 
 
-gdk_export gdk_return GDKtracer_log(LOG_LEVEL level, const char *fmt, ...)
-	__attribute__((__format__(__printf__, 2, 3)));
+gdk_export gdk_return GDKtracer_log(const char *file, const char *func,
+				    int lineno, log_level_t lvl,
+				    component_t comp,
+				    const char *format, ...)
+	__attribute__((__format__(__printf__, 6, 7)));
 
 
 gdk_export gdk_return GDKtracer_flush_buffer(void);

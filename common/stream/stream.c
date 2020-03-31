@@ -3907,7 +3907,7 @@ bs_write(stream *restrict ss, const void *restrict buf, size_t elmsize, size_t c
 					if (' ' <= s->buf[i] && s->buf[i] < 127)
 						putc(s->buf[i], stderr);
 					else
-						fprintf(stderr, "\\%03o", s->buf[i]);
+						fprintf(stderr, "\\%03o", (unsigned char) s->buf[i]);
 				fprintf(stderr, "\"\n");
 			}
 #endif
@@ -3960,7 +3960,7 @@ bs_flush(stream *ss)
 				if (' ' <= s->buf[i] && s->buf[i] < 127)
 					putc(s->buf[i], stderr);
 				else
-					fprintf(stderr, "\\%03o", s->buf[i]);
+					fprintf(stderr, "\\%03o", (unsigned char) s->buf[i]);
 			fprintf(stderr, "\"\n");
 			fprintf(stderr, "W %s 0\n", ss->name);
 		}
@@ -4070,7 +4070,7 @@ bs_read(stream *restrict ss, void *restrict buf, size_t elmsize, size_t cnt)
 					    ((char *) buf)[i] < 127)
 						putc(((char *) buf)[i], stderr);
 					else
-						fprintf(stderr, "\\%03o", ((char *) buf)[i]);
+						fprintf(stderr, "\\%03o", ((unsigned char *) buf)[i]);
 				fprintf(stderr, "\"\n");
 			}
 #endif
@@ -4407,12 +4407,12 @@ bs2_write(stream *restrict ss, const void *restrict buf, size_t elmsize, size_t 
 			{
 				size_t i;
 
-				fprintf(stderr, "W %s %lu \"", ss->name, s->nr);
+				fprintf(stderr, "W %s %zu \"", ss->name, s->nr);
 				for (i = 0; i < s->nr; i++)
 					if (' ' <= s->buf[i] && s->buf[i] < 127)
 						putc(s->buf[i], stderr);
 					else
-						fprintf(stderr, "\\%03o", s->buf[i]);
+						fprintf(stderr, "\\%03o", (unsigned char) s->buf[i]);
 				fprintf(stderr, "\"\n");
 			}
 #endif
@@ -4471,12 +4471,12 @@ bs2_flush(stream *ss)
 		if (s->nr > 0) {
 			size_t i;
 
-			fprintf(stderr, "W %s %lu \"", ss->name, s->nr);
+			fprintf(stderr, "W %s %zu \"", ss->name, s->nr);
 			for (i = 0; i < s->nr; i++)
 				if (' ' <= s->buf[i] && s->buf[i] < 127)
 					putc(s->buf[i], stderr);
 				else
-					fprintf(stderr, "\\%03o", s->buf[i]);
+					fprintf(stderr, "\\%03o", (unsigned char) s->buf[i]);
 			fprintf(stderr, "\"\n");
 			fprintf(stderr, "W %s 0\n", ss->name);
 		}

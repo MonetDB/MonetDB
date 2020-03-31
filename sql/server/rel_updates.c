@@ -1386,6 +1386,8 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 
 				//select bt values which are not null (they had a match in the join)
 				project_first = extra_project->exps->h->next->data; // this expression must come from bt!!
+				if (!exp_name(project_first))
+					exp_label(sql->sa, project_first, ++sql->label);
 				project_first = exp_ref(sql->sa, project_first);
 				nils = rel_unop_(sql, extra_project, project_first, NULL, "isnull", card_value);
 				set_has_no_nil(nils);
@@ -1415,6 +1417,8 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 
 				//select bt values which are not null (they had a match in the join)
 				project_first = extra_project->exps->h->next->data; // this expression must come from bt!!
+				if (!exp_name(project_first))
+					exp_label(sql->sa, project_first, ++sql->label);
 				project_first = exp_ref(sql->sa, project_first);
 				nils = rel_unop_(sql, extra_project, project_first, NULL, "isnull", card_value);
 				set_has_no_nil(nils);
@@ -1452,6 +1456,8 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 
 			//select bt values which are null (they didn't have match in the join)
 			project_first = extra_project->exps->h->next->data; // this expression must come from bt!!
+			if (!exp_name(project_first))
+				exp_label(sql->sa, project_first, ++sql->label);
 			project_first = exp_ref(sql->sa, project_first);
 			nils = rel_unop_(sql, extra_project, project_first, NULL, "isnull", card_value);
 			set_has_no_nil(nils);
@@ -2021,7 +2027,7 @@ rel_parse_val(mvc *m, char *query, char emode, sql_rel *from)
 	m->user_id = USER_MONETDB;
 
 	(void) sqlparse(m);	
-	
+
 	/* get out the single value as we don't want an enclosing projection! */
 	if (m->sym && m->sym->token == SQL_SELECT) {
 		SelectNode *sn = (SelectNode *)m->sym;
@@ -2039,18 +2045,19 @@ rel_parse_val(mvc *m, char *query, char emode, sql_rel *from)
 	m->sym = NULL;
 	o.frames = m->frames;	/* may have been realloc'ed */
 	o.sizeframes = m->sizeframes;
+	o.query = m->query;
 	if (m->session->status || m->errstr[0]) {
 		int status = m->session->status;
-		char errstr[ERRSIZE];
 
-		strcpy(errstr, m->errstr);
+		strcpy(o.errstr, m->errstr);
 		*m = o;
 		m->session->status = status;
-		strcpy(m->errstr, errstr);
 	} else {
 		int label = m->label;
-		*m = o;
 
+		while (m->topframes > o.topframes)
+			clear_frame(m, m->frames[--m->topframes]);
+		*m = o;
 		m->label = label;
 	}
 	return e;

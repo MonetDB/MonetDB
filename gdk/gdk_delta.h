@@ -9,8 +9,6 @@
 #ifndef _GDK_DELTA_H_
 #define _GDK_DELTA_H_
 
-#include "gdk_tracer.h"
-
 /*
  * We make sure here that the BUNs section of a BAT at least starts 4
  * bytes from the BUN start.  This ensures that the first data item of

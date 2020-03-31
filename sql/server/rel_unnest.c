@@ -775,7 +775,7 @@ push_up_project(mvc *sql, sql_rel *rel, list *ad)
 					for (node *nn = atoms->h ; nn ; nn = nn->next) {
 						sql_exp *ee = (sql_exp *) nn->data;
 
-						 exp_setname(sql->sa, ee, exp_relname(e), exp_name(e));
+						exp_setname(sql->sa, ee, exp_relname(e), exp_name(e));
 						append(n->exps, ee);
 					}
 				} else
@@ -797,7 +797,7 @@ push_up_project(mvc *sql, sql_rel *rel, list *ad)
 			/* remove old project */
 			rel->r = r->l;
 			r->l = NULL;
-                        rel_destroy(r);
+			rel_destroy(r);
 			return n;
 		}
 	}

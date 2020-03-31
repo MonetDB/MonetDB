@@ -755,7 +755,7 @@ MT_mmap(const char *path, int mode, size_t len)
 		h1 = CreateFile(path, mode0, mode1, &sa, OPEN_ALWAYS, mode2, NULL);
 		if (h1 == INVALID_HANDLE_VALUE) {
 			GDKwinerror("MT_mmap: CreateFile('%s', %lu, %lu, &sa, %lu, %lu, NULL) failed\n",
-				    path, mode0, mode1, (DWORD) OPEN_ALWAYS, mode2);
+				    path, (unsigned long) mode0, (unsigned long) mode1, (unsigned long) OPEN_ALWAYS, (unsigned long) mode2);
 			return NULL;
 		}
 	}
@@ -763,9 +763,9 @@ MT_mmap(const char *path, int mode, size_t len)
 	h2 = CreateFileMapping(h1, &sa, mode3, (DWORD) (((__int64) len >> 32) & LL_CONSTANT(0xFFFFFFFF)), (DWORD) (len & LL_CONSTANT(0xFFFFFFFF)), NULL);
 	if (h2 == NULL) {
 		GDKwinerror("MT_mmap: CreateFileMapping(%p, &sa, %lu, %lu, %lu, NULL) failed\n",
-			    h1, mode3,
-			    (DWORD) (((__int64) len >> 32) & LL_CONSTANT(0xFFFFFFFF)),
-			    (DWORD) (len & LL_CONSTANT(0xFFFFFFFF)));
+			    h1, (unsigned long) mode3,
+			    (unsigned long) (((unsigned __int64) len >> 32) & LL_CONSTANT(0xFFFFFFFF)),
+			    (unsigned long) (len & LL_CONSTANT(0xFFFFFFFF)));
 		CloseHandle(h1);
 		return NULL;
 	}

@@ -144,7 +144,7 @@ SELECT
     CAST((SELECT MAX(ColID + col2) FROM tbl_ProductSales) * DENSE_RANK() OVER (PARTITION BY AVG(DISTINCT col5)) AS BIGINT) a9,
     GROUPING(col1, col5, col8) * MIN(col8) OVER (PARTITION BY col5 ORDER BY col1 NULLS LAST ROWS UNBOUNDED PRECEDING) a10,
     MAX(col3) / 10 + GROUPING(col1, col5, col2) * 10 a11,
-    GROUP_CONCAT(CAST(col4 AS VARCHAR(32)), '-sep-') || ' plus ' || GROUPING(col1) a12,
+    GROUP_CONCAT(CAST(col4 AS VARCHAR(32)), '-sep-') || ' plus ' || GROUPING(col1) a12, -- string_agg
     FIRST_VALUE(col1) OVER (ORDER BY col8 DESC NULLS FIRST) a13,
     CAST(col2 * NULL AS BIGINT) a14
 FROM another_T

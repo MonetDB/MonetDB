@@ -30,7 +30,8 @@ def client(lang, file, user = 'monetdb', passwd = 'monetdb'):
                          stdout = process.PIPE, stderr = process.PIPE)
     return clt.communicate()
 
-def main():
+srv = None
+try:
     srv = server_start()
     out, err = client('sql',
                       os.path.join(os.getenv('RELSRCDIR'),
@@ -61,7 +62,7 @@ def main():
     out, err = srv.communicate()
     sys.stdout.write(out)
     sys.stderr.write(err)
-
+finally:
+    if srv is not None:
+        srv.terminate()
     shutil.rmtree(farm_dir)
-
-main()

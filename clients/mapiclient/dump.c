@@ -2916,7 +2916,7 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts)
 					maxv = mapi_fetch_field(shdl, 1);
 					wnulls = mapi_fetch_field(shdl, 2);
 				}
-				if (minv || maxv) {
+				if (minv || maxv || !wnulls || (!minv && !maxv && wnulls && strcmp(wnulls, "false") == 0)) {
 					mnstr_printf(toConsole, " FROM ");
 					if (minv)
 						squoted_print(toConsole, minv, '\'');
@@ -2928,9 +2928,8 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts)
 					else
 						mnstr_printf(toConsole, "RANGE MAXVALUE");
 				}
-				if (strcmp(wnulls, "true") == 0) {
-					mnstr_printf(toConsole, " %s NULL VALUES", (minv || maxv) ? "WITH" : "FOR");
-				}
+				if (!wnulls || strcmp(wnulls, "true") == 0)
+					mnstr_printf(toConsole, " %s NULL VALUES", (minv || maxv || !wnulls) ? "WITH" : "FOR");
 				mapi_close_handle(shdl);
 			}
 			free(s2);

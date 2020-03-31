@@ -17,6 +17,7 @@
 #ifdef HAVE_POLL_H
 #include <poll.h>
 #endif
+#include <inttypes.h>
 #include <time.h>
 #include <string.h>  /* strerror */
 #include <unistd.h>  /* select */
@@ -38,6 +39,7 @@
 #include "discoveryrunner.h" /* broadcast, remotedb */
 #include "forkmserver.h"
 #include "controlrunner.h"
+#include "snapshot.h"
 #include "multiplex-funnel.h"
 
 #if !defined(HAVE_ACCEPT4) || !defined(SOCK_CLOEXEC)
@@ -695,6 +697,103 @@ static void ctl_handle_client(
 							 origin, q);
 				}
 				msab_freeStatus(&stats);
+			} else if (strncmp(p, "snapshot create adhoc ", strlen("snapshot create adhoc ")) == 0) {
+				char *dest = p + strlen("snapshot create adhoc ");
+				Mfprintf(_mero_ctlout, "Start snapshot of database '%s' to file '%s'\n", q, dest);
+				char *e = snapshot_database_to(q, dest);
+				if (e != NULL) {
+					Mfprintf(_mero_ctlerr, "%s: snapshot database '%s' to %s failed: %s",
+						origin, q, dest, getErrMsg(e));
+					len = snprintf(buf2, sizeof(buf2), "%s\n", getErrMsg(e));
+					send_client("!");
+					freeErr(e);
+				} else {
+					len = snprintf(buf2, sizeof(buf2), "OK\n");
+					send_client("=");
+					Mfprintf(_mero_ctlout, "%s: completed snapshot of database '%s' to '%s'\n",
+						origin, q, dest);
+				}
+			} else if (strcmp(p, "snapshot create automatic") == 0) {
+				char *dest = NULL;
+				char *e = snapshot_default_filename(&dest, q);
+				if (e != NULL) {
+					Mfprintf(_mero_ctlerr, "%s: snapshot database '%s': %s",
+						origin, q, getErrMsg(e));
+					len = snprintf(buf2, sizeof(buf2), "%s\n", getErrMsg(e));
+					send_client("!");
+					freeErr(e);
+				} else {
+					Mfprintf(_mero_ctlout, "Start snapshot of database '%s' to file '%s'\n", q, dest);
+					e = snapshot_database_to(q, dest);
+					if (e != NULL) {
+						Mfprintf(_mero_ctlerr, "%s: snapshot database '%s' to %s failed: %s",
+							origin, q, dest, getErrMsg(e));
+						len = snprintf(buf2, sizeof(buf2), "%s\n", getErrMsg(e));
+						send_client("!");
+						freeErr(e);
+					} else {
+						len = snprintf(buf2, sizeof(buf2), "OK\n");
+						send_client("=");
+						Mfprintf(_mero_ctlout, "%s: completed snapshot of database '%s' to '%s'\n",
+							origin, q, dest);
+					}
+					free(dest);
+				}
+			} else if (strncmp(p, "snapshot restore adhoc ", strlen("snapshot restore adhoc ")) == 0) {
+				char *source = p + strlen("snapshot restore adhoc ");
+				Mfprintf(_mero_ctlout, "Start restore snapshot of database '%s' from file '%s'\n", q, source);
+				char *e = snapshot_restore_from(q, source);
+				if (e != NULL) {
+					Mfprintf(_mero_ctlerr, "%s: restore  database '%s' from snapshot %s failed: %s",
+						origin, q, source, getErrMsg(e));
+					len = snprintf(buf2, sizeof(buf2), "%s\n", getErrMsg(e));
+					send_client("!");
+					freeErr(e);
+				} else {
+					len = snprintf(buf2, sizeof(buf2), "OK\n");
+					send_client("=");
+					Mfprintf(_mero_ctlout, "%s: restored database '%s' from snapshot '%s'\n",
+						origin, q, source);
+				}
+			} else if (strncmp(p, "snapshot destroy ", strlen("snapshot destroy ")) == 0) {
+				char *path = p + strlen("snapshot destroy ");
+				Mfprintf(_mero_ctlout, "%s: drop snapshot '%s'\n", origin, path);
+				char *e = snapshot_destroy_file(path);
+				if (e != NULL) {
+					Mfprintf(_mero_ctlerr, "%s: drop snapshot '%s' failed: %s\n", origin, path, e);
+					len = snprintf(buf2, sizeof(buf2), "%s\n", e);
+					send_client("!");
+					freeErr(e);
+				} else {
+					len = snprintf(buf2, sizeof(buf2), "OK\n");
+					send_client("=");
+				}
+			} else if (strcmp(p, "snapshot list") == 0) {
+				Mfprintf(_mero_ctlout, "Start snapshot list\n");
+				int nsnaps = 0;
+				struct snapshot *snaps = NULL;
+				char *e = snapshot_list(&nsnaps, &snaps);
+				if (e != NULL) {
+					Mfprintf(_mero_ctlerr, "%s: snapshot list failed: %s", origin, getErrMsg(e));
+					len = snprintf(buf2, sizeof(buf2), "%s\n", getErrMsg(e));
+					send_client("!");
+					freeErr(e);
+					break; // <================== DISCONNECT!!!!
+				}
+				len = snprintf(buf2, sizeof(buf2), "OK1\n");
+				send_client("=");
+				for (int i = 0; i < nsnaps; i++) {
+					struct snapshot *snap = &snaps[i];
+					len = snprintf(buf2, sizeof(buf2), "%" PRIi64 " %" PRIu64 " %s %s\n",
+						(int64_t)snap->time,
+						(uint64_t)snap->size,
+						snap->dbname,
+						snap->path != NULL ? snap->path : "");
+					send_client("=");
+				}
+				free_snapshots(snaps, nsnaps);
+				Mfprintf(_mero_ctlout, "Returned %d snapshots\n", nsnaps);
+				break; // <==================== DISCONNECT!!!!
 			} else if (strncmp(p, "name=", strlen("name=")) == 0) {
 				char *e;
 

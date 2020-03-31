@@ -2171,26 +2171,17 @@ DELTAproject(bat *result, const bat *sub, const bat *col, const bat *uid, const 
 		if (BATcount(c) == 0) {
 			res = i;
 			i = c;
+			tres = BATproject(s, res);
 		} else {
-			if ((res = COLcopy(c, c->ttype, true, TRANSIENT)) == NULL) {
-				BBPunfix(s->batCacheid);
-				BBPunfix(i->batCacheid);
-				BBPunfix(c->batCacheid);
-				throw(MAL, "sql.projectdelta", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			}
-			BBPunfix(c->batCacheid);
-			if (BATappend(res, i, NULL, false) != GDK_SUCCEED) {
-				BBPunfix(s->batCacheid);
-				BBPunfix(i->batCacheid);
-				throw(MAL, "sql.projectdelta", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			}
+			tres = BATproject2(s, c, i);
 		}
+	} else {
+		tres = BATproject(s, res);
 	}
 	if (i)
 		BBPunfix(i->batCacheid);
-
-	tres = BATproject(s, res);
 	BBPunfix(res->batCacheid);
+
 	if (tres == NULL) {
 		BBPunfix(s->batCacheid);
 		throw(MAL, "sql.projectdelta", SQLSTATE(HY013) MAL_MALLOC_FAIL);

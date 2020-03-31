@@ -32,6 +32,47 @@ FROM another_T;
 	-- 1234 40
 	-- 1234 40
 
+CREATE OR REPLACE FUNCTION evilfunction(input INT) RETURNS TABLE (outt INT) BEGIN RETURN SELECT 1,2; END; --error, number of projections don't match
+
+CREATE OR REPLACE FUNCTION evilfunction(input INT) RETURNS INT BEGIN RETURN TABLE(SELECT input, 2); END; --error, TABLE return not allowed for non table returning functions
+
+CREATE OR REPLACE FUNCTION evilfunction(input INT) RETURNS INT BEGIN RETURN SELECT input, 2; END; --error, more than 1 return
+
+CREATE OR REPLACE FUNCTION evilfunction(input INT) RETURNS INT BEGIN RETURN SELECT input WHERE FALSE; END;
+
+SELECT evilfunction(1);
+	-- NULL
+SELECT evilfunction(1);
+	-- NULL
+SELECT evilfunction(1), 1;
+	-- NULL, 1
+
+CREATE OR REPLACE FUNCTION evilfunction(input INT) RETURNS INT 
+BEGIN
+	RETURN SELECT input UNION ALL SELECT input;
+END;
+
+SELECT evilfunction(1);
+ 	--error, more than one row returned by a subquery used as an expression
+SELECT evilfunction(1);
+ 	--error, more than one row returned by a subquery used as an expression
+SELECT evilfunction(1), 1;
+	--error, more than one row returned by a subquery used as an expression
+
+SELECT 1 FROM another_t t1 HAVING 1 = ANY (SELECT col1); --error, subquery uses ungrouped column "col1" from outer query
+
+SELECT 1 FROM another_t t1 HAVING 1 = ANY (SELECT 1 WHERE col1); --error, subquery uses ungrouped column "col1" from outer query
+
+SELECT col1 FROM another_t t1 GROUP BY col1 HAVING 1 = ANY (SELECT col1);
+	-- 1
+
+SELECT (SELECT i = ANY(VALUES(1), (i))) FROM integers;
+	-- True
+	-- True
+	-- True
+	-- NULL
+
+DROP FUNCTION evilfunction(INT);
 DROP TABLE tbl_ProductSales;
 DROP TABLE another_T;
 DROP TABLE integers;

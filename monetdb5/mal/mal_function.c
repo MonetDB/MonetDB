@@ -482,7 +482,7 @@ void printFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg)
 	listFunction(fd,mb,stk,flg,0,mb->stop);
 }
 
-void traceFunction(COMPONENT comp, MalBlkPtr mb, MalStkPtr stk, int flg)
+void traceFunction(component_t comp, MalBlkPtr mb, MalStkPtr stk, int flg)
 {
 	int i,j;
 	InstrPtr p;

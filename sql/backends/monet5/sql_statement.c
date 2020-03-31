@@ -132,7 +132,7 @@ add_to_merge_partitions_accumulator(backend *be, int nr)
 {
 	MalBlkPtr mb = be->mb;
 	int help = be->cur_append;
-	InstrPtr q = newStmt(mb, calcRef, "+");
+	InstrPtr q = newStmt(mb, calcRef, plusRef);
 
 	getArg(q, 0) = be->cur_append = newTmpVariable(mb, TYPE_lng);
 	q = pushArgument(mb, q, help);
@@ -1066,7 +1066,7 @@ stmt_limit(backend *be, stmt *col, stmt *piv, stmt *gid, stmt *offset, stmt *lim
 	if (order) {
 		int topn = 0;
 
-		q = newStmt(mb, calcRef, "+");
+		q = newStmt(mb, calcRef, plusRef);
 		q = pushArgument(mb, q, offset->nr);
 		q = pushArgument(mb, q, limit->nr);
 		if (q == NULL)
@@ -1093,7 +1093,7 @@ stmt_limit(backend *be, stmt *col, stmt *piv, stmt *gid, stmt *offset, stmt *lim
 	} else {
 		int len;
 
-		q = newStmt(mb, calcRef, "+");
+		q = newStmt(mb, calcRef, plusRef);
 		q = pushArgument(mb, q, offset->nr);
 		q = pushArgument(mb, q, limit->nr);
 		if (q == NULL)
@@ -1103,7 +1103,7 @@ stmt_limit(backend *be, stmt *col, stmt *piv, stmt *gid, stmt *offset, stmt *lim
 		/* since both arguments of algebra.subslice are
 		   inclusive correct the LIMIT value by
 		   subtracting 1 */
-		q = newStmt(mb, calcRef, "-");
+		q = newStmt(mb, calcRef, minusRef);
 		q = pushArgument(mb, q, len);
 		q = pushInt(mb, q, 1);
 		if (q == NULL)
@@ -1900,7 +1900,7 @@ stmt_tinter(backend *be, stmt *op1, stmt *op2)
 }
 
 stmt *
-stmt_join(backend *be, stmt *op1, stmt *op2, int anti, comp_type cmptype, int is_semantics)
+stmt_join_cand(backend *be, stmt *op1, stmt *op2, stmt *lcand, stmt *rcand, int anti, comp_type cmptype, int is_semantics)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
@@ -1924,8 +1924,14 @@ stmt_join(backend *be, stmt *op1, stmt *op2, int anti, comp_type cmptype, int is
 		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 		q = pushArgument(mb, q, op1->nr);
 		q = pushArgument(mb, q, op2->nr);
-		q = pushNil(mb, q, TYPE_bat);
-		q = pushNil(mb, q, TYPE_bat);
+		if (!lcand)
+			q = pushNil(mb, q, TYPE_bat);
+		else
+			q = pushArgument(mb, q, lcand->nr);
+		if (!rcand)
+			q = pushNil(mb, q, TYPE_bat);
+		else
+			q = pushArgument(mb, q, rcand->nr);
 		q = pushBit(mb, q, is_semantics?TRUE:FALSE);
 		q = pushNil(mb, q, TYPE_lng);
 		if (q == NULL)
@@ -1936,8 +1942,14 @@ stmt_join(backend *be, stmt *op1, stmt *op2, int anti, comp_type cmptype, int is
 		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 		q = pushArgument(mb, q, op1->nr);
 		q = pushArgument(mb, q, op2->nr);
-		q = pushNil(mb, q, TYPE_bat);
-		q = pushNil(mb, q, TYPE_bat);
+		if (!lcand)
+			q = pushNil(mb, q, TYPE_bat);
+		else
+			q = pushArgument(mb, q, lcand->nr);
+		if (!rcand)
+			q = pushNil(mb, q, TYPE_bat);
+		else
+			q = pushArgument(mb, q, rcand->nr);
 		q = pushBit(mb, q, FALSE);
 		q = pushNil(mb, q, TYPE_lng);
 		if (q == NULL)
@@ -1951,8 +1963,14 @@ stmt_join(backend *be, stmt *op1, stmt *op2, int anti, comp_type cmptype, int is
 		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 		q = pushArgument(mb, q, op1->nr);
 		q = pushArgument(mb, q, op2->nr);
-		q = pushNil(mb, q, TYPE_bat);
-		q = pushNil(mb, q, TYPE_bat);
+		if (!lcand)
+			q = pushNil(mb, q, TYPE_bat);
+		else
+			q = pushArgument(mb, q, lcand->nr);
+		if (!rcand)
+			q = pushNil(mb, q, TYPE_bat);
+		else
+			q = pushArgument(mb, q, rcand->nr);
 		if (cmptype == cmp_lt)
 			q = pushInt(mb, q, -1);
 		else if (cmptype == cmp_lte)
@@ -1971,6 +1989,7 @@ stmt_join(backend *be, stmt *op1, stmt *op2, int anti, comp_type cmptype, int is
 		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 		q = pushArgument(mb, q, op1->nr);
 		q = pushArgument(mb, q, op2->nr);
+		assert(!lcand && !rcand);
 		if (q == NULL)
 			return NULL;
 		break;
@@ -1993,6 +2012,12 @@ stmt_join(backend *be, stmt *op1, stmt *op2, int anti, comp_type cmptype, int is
 		return s;
 	}
 	return NULL;
+}
+
+stmt *
+stmt_join(backend *be, stmt *l, stmt *r, int anti, comp_type cmptype, int is_semantics)
+{
+	return stmt_join_cand(be, l, r, NULL, NULL, anti, cmptype, is_semantics); 
 }
 
 stmt *

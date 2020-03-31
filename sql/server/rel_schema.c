@@ -984,7 +984,6 @@ create_partition_definition(mvc *sql, sql_table *t, symbol *partition_def)
 				return SQL_ERR;
 			}
 		} else if (isPartitionedByExpressionTable(t)) {
-			sql_subtype *empty = sql_bind_localtype("void");
 			char *query = symbol2string(sql, list2->h->data.sym, 1, &err);
 			if (!query) {
 				(void) sql_error(sql, 02, SQLSTATE(42000) "CREATE MERGE TABLE: error compiling expression '%s'", err?err:"");
@@ -993,7 +992,7 @@ create_partition_definition(mvc *sql, sql_table *t, symbol *partition_def)
 			}
 			t->part.pexp = SA_ZNEW(sql->sa, sql_expression);
 			t->part.pexp->exp = sa_strdup(sql->sa, query);
-			t->part.pexp->type = *empty;
+			t->part.pexp->type = *sql_bind_localtype("void");
 			_DELETE(query);
 		}
 	}
@@ -1037,6 +1036,8 @@ rel_create_table(sql_query *query, sql_schema *s, int temp, const char *sname, c
 		return sql_error(sql, 02, SQLSTATE(42S01) "%s TABLE: name '%s' already in use", cd, name);
 	} else if (temp != SQL_DECLARED_TABLE && (!mvc_schema_privs(sql, s) && !(isTempSchema(s) && temp == SQL_LOCAL_TEMP))){
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE TABLE: insufficient privileges for user '%s' in schema '%s'", stack_get_string(sql, mvc_bind_schema(sql, "sys"), "current_user"), s->base.name);
+	} else if (temp == SQL_PERSIST && isTempSchema(s)){
+		return sql_error(sql, 02, SQLSTATE(42000) "CREATE TABLE: cannot create persistent table '%s' in the schema '%s'", name, s->base.name);
 	} else if (table_elements_or_subquery->token == SQL_CREATE_TABLE) {
 		/* table element list */
 		dnode *n;
@@ -1457,12 +1458,22 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 				if (isView(pt))
 					return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: can't add a view into a %s",
 									 TABLE_TYPE_DESCRIPTION(t->type, t->properties));
+				if (isDeclaredTable(pt))
+					return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: can't add a declared table into a %s",
+									 TABLE_TYPE_DESCRIPTION(t->type, t->properties));
 				if (strcmp(sname, nsname) != 0)
 					return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: all children tables of '%s.%s' must be "
 									 "part of schema '%s'", sname, tname, sname);
-				if (!extra)
+				if (!extra) {
+					if (isRangePartitionTable(t)) {
+						return sql_error(sql, 02,SQLSTATE(42000) "ALTER TABLE: a range partition is required while adding under a %s",
+										 TABLE_TYPE_DESCRIPTION(t->type, t->properties));
+					} else if (isListPartitionTable(t)) {
+						return sql_error(sql, 02,SQLSTATE(42000) "ALTER TABLE: a value partition is required while adding under a %s",
+										 TABLE_TYPE_DESCRIPTION(t->type, t->properties));
+					}
 					return rel_alter_table(sql->sa, ddl_alter_table_add_table, sname, tname, nsname, ntname, 0);
-
+				}
 				if ((isMergeTable(pt) || isReplicaTable(pt)) && list_empty(pt->members.set))
 					return sql_error(sql, 02, SQLSTATE(42000) "The %s %s.%s should have at least one table associated",
 									 TABLE_TYPE_DESCRIPTION(pt->type, pt->properties), spt->base.name, pt->base.name);
@@ -1472,9 +1483,9 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 					int update = ll->h->next->next->next->data.i_val;
 
 					if (isRangePartitionTable(t)) {
-						return rel_alter_table_add_partition_range(query, t, pt, sname, tname, nsname, ntname, NULL, NULL, 1, update);
+						return rel_alter_table_add_partition_range(query, t, pt, sname, tname, nsname, ntname, NULL, NULL, true, update);
 					} else if (isListPartitionTable(t)) {
-						return rel_alter_table_add_partition_list(query, t, pt, sname, tname, nsname, ntname, NULL, 1, update);
+						return rel_alter_table_add_partition_list(query, t, pt, sname, tname, nsname, ntname, NULL, true, update);
 					} else {
 						return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: cannot add a partition into a %s",
 										 TABLE_TYPE_DESCRIPTION(t->type, t->properties));
@@ -1489,7 +1500,8 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 										 TABLE_TYPE_DESCRIPTION(t->type, t->properties));
 					}
 
-					return rel_alter_table_add_partition_range(query, t, pt, sname, tname, nsname, ntname, min, max, nills, update);
+					assert(nills == 0 || nills == 1);
+					return rel_alter_table_add_partition_range(query, t, pt, sname, tname, nsname, ntname, min, max, (bit) nills, update);
 				} else if (extra->token == SQL_PARTITION_LIST) {
 					dlist* ll = extra->data.lval, *values = ll->h->data.lval;
 					int nills = ll->h->next->data.i_val, update = ll->h->next->next->data.i_val;
@@ -1499,7 +1511,8 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 										 TABLE_TYPE_DESCRIPTION(t->type, t->properties));
 					}
 
-					return rel_alter_table_add_partition_list(query, t, pt, sname, tname, nsname, ntname, values, nills, update);
+					assert(nills == 0 || nills == 1);
+					return rel_alter_table_add_partition_list(query, t, pt, sname, tname, nsname, ntname, values, (bit) nills, update);
 				}
 				assert(0);
 			} else {

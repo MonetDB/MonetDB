@@ -2082,8 +2082,9 @@ BATconstant(oid hseq, int tailtype, const void *v, BUN n, role_t role)
 	BAT *bn;
 	void *restrict p;
 	BUN i;
-	lng t0 = GDKusec();
+	lng t0 = 0;
 
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 	if (v == NULL)
 		return NULL;
 	bn = COLnew(hseq, tailtype, n, role);
@@ -2136,9 +2137,7 @@ BATconstant(oid hseq, int tailtype, const void *v, BUN n, role_t role)
 		bn->tnonil = !bn->tnil;
 		bn->tkey = BATcount(bn) <= 1;
 	}
-	TRC_DEBUG(ALGO, "%s()=" ALGOOPTBATFMT
-		  " (" LLFMT "usec)\n",
-		  __func__,
+	TRC_DEBUG(ALGO, "-> " ALGOOPTBATFMT " " LLFMT "usec\n",
 		  ALGOOPTBATPAR(bn), GDKusec() - t0);
 	return bn;
 }
