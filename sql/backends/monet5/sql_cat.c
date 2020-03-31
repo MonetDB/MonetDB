@@ -256,7 +256,7 @@ alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psna
 										"one partition can store null values at the time", err->t->s->base.name, err->base.name);
 			} else {
 				ssize_t (*atomtostr)(str *, size_t *, const void *, bool) = BATatoms[tp1].atomToStr;
-				ptr nil = ATOMnil(tp1);
+				const void *nil = ATOMnilptr(tp1);
 				sql_table *errt = mvc_bind_table(sql, mt->s, err->base.name);
 
 				if (!ATOMcmp(tp1, nil, err->part.range.minvalue)) {
