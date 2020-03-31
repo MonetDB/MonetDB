@@ -364,12 +364,11 @@ alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msn
 		}
 
 		nextv = SA_ZNEW(sql->session->tr->sa, sql_part_value); /* instantiate the part value */
-		nextv->tpe = tpe;
 		nextv->value = sa_alloc(sql->session->tr->sa, len);
 		memcpy(nextv->value, pnext, len);
 		nextv->length = len;
 
-		if (list_append_sorted(values, nextv, sql_values_list_element_validate_and_insert) != NULL) {
+		if (list_append_sorted(values, nextv, &tpe, sql_values_list_element_validate_and_insert) != NULL) {
 			msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(42000)
 									"ALTER TABLE: there are duplicated values in the list");
 			goto finish;

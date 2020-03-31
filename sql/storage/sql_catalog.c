@@ -447,12 +447,12 @@ sql_trans_find_trigger(sql_trans *tr, sqlid id)
 }
 
 void*
-sql_values_list_element_validate_and_insert(void *v1, void *v2, int* res)
+sql_values_list_element_validate_and_insert(void *v1, void *v2, void *tpe, int* res)
 {
 	sql_part_value* pt = (sql_part_value*) v1, *newp = (sql_part_value*) v2;
+	sql_subtype *tp = (sql_subtype *) tpe;
 
-	assert(pt->tpe.type->localtype == newp->tpe.type->localtype);
-	*res = ATOMcmp(pt->tpe.type->localtype, newp->value, pt->value);
+	*res = ATOMcmp(tp->type->localtype, newp->value, pt->value);
 	return *res == 0 ? pt : NULL;
 }
 

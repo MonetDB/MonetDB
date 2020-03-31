@@ -604,7 +604,6 @@ typedef enum table_types {
 #define TABLE_APPENDONLY	2
 
 typedef struct sql_part_value {
-	sql_subtype tpe;
 	ptr value;
 	size_t length;
 } sql_part_value;
@@ -755,7 +754,7 @@ extern node *find_sql_func_node(sql_schema *s, sqlid id);
 extern node *find_sql_trigger_node(sql_schema *s, sqlid id);
 extern sql_trigger *sql_trans_find_trigger(sql_trans *tr, sqlid id);
 
-extern void *sql_values_list_element_validate_and_insert(void *v1, void *v2, int* res);
+extern void *sql_values_list_element_validate_and_insert(void *v1, void *v2, void *tpe, int* res);
 extern void *sql_range_part_validate_and_insert(void *v1, void *v2);
 extern void *sql_values_part_validate_and_insert(void *v1, void *v2);
 
