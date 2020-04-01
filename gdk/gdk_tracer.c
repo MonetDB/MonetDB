@@ -64,24 +64,22 @@ static const char *level_str[] = {
  * GDKtracer Stream Macros
  */
 // Exception
-#define GDK_TRACER_EXCEPTION(MSG, ...)					\
-	fprintf(stderr,							\
-		     "%s "						\
-		     "%-"MXW"s "					\
-		     "%"MXW"s:%d "					\
-		     "%"MXW"s "						\
-		     "%-"MXW"s "					\
-		     "%-"MXW"s # "MSG,					\
-		     GDKtracer_get_timestamp((char[TS_SIZE]){0}, TS_SIZE), \
-		     __FILE__,						\
-		     __func__,						\
-		     __LINE__,						\
-		     STR(M_CRITICAL),					\
-		     STR(GDK_TRACER),					\
-		     MT_thread_getname(),				\
-		     ## __VA_ARGS__);
-
-
+#define GDK_TRACER_EXCEPTION(MSG, ...)				\
+	fprintf(stderr,						\
+		"%s "						\
+		"%-"MXW"s "					\
+		"%"MXW"s:%d "					\
+		"%"MXW"s "					\
+		"%-"MXW"s "					\
+		"%-"MXW"s # "MSG,				\
+		get_timestamp((char[TS_SIZE]){0}, TS_SIZE),	\
+		__FILE__,					\
+		__func__,					\
+		__LINE__,					\
+		STR(M_CRITICAL),				\
+		STR(GDK_TRACER),				\
+		MT_thread_getname(),				\
+		## __VA_ARGS__);
 
 
 static inline char *

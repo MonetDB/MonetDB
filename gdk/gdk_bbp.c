@@ -552,12 +552,12 @@ fixfloatbats(void)
 			 * conversion.  That is done by creating a
 			 * file here based on the name of this BAT. */
 			written = snprintf(filename, sizeof(filename),
-				 "%s/%.*s_nil-nan-convert",
-				 BBPfarms[0].dirname,
-				 (int) (len - 12), BBP_logical(bid));
+					   "%s/%.*s_nil-nan-convert",
+					   BBPfarms[0].dirname,
+					   (int) (len - 12), BBP_logical(bid));
 			if (written == -1 || written >= FILENAME_MAX) {
 				TRC_CRITICAL(GDK, "cannot create file %s has a very large pathname\n",
-						 filename);
+					     filename);
 				return GDK_FAIL;
 			}
 			fp = fopen(filename, "w");
@@ -844,9 +844,9 @@ fixdatebats(void)
 			 * conversion.  That is done by creating a
 			 * file here based on the name of this BAT. */
 			written = snprintf(filename, sizeof(filename),
-				 "%s/%.*s_date-convert",
-				 BBPfarms[0].dirname,
-				 (int) (len - 12), BBP_logical(bid));
+					   "%s/%.*s_date-convert",
+					   BBPfarms[0].dirname,
+					   (int) (len - 12), BBP_logical(bid));
 			if (written == -1 || written >= FILENAME_MAX) {
 				TRC_CRITICAL(GDK, "cannot create file %s has a very large pathname\n",
 					     filename);
@@ -1103,7 +1103,7 @@ BBPreadEntries(FILE *fp, unsigned bbpversion)
 		}
 		if (BBP_desc(bid) != NULL) {
 			TRC_CRITICAL(GDK, "duplicate entry in BBP.dir (ID = "
-				 "%" PRIu64 ").", batid);
+				     "%" PRIu64 ").", batid);
 			return GDK_FAIL;
 		}
 		bn = GDKzalloc(sizeof(BAT));
@@ -1272,9 +1272,9 @@ BBPheader(FILE *fp)
 	    bbpversion != GDKLIBRARY_NIL_NAN &&
 	    bbpversion != GDKLIBRARY_TALIGN) {
 		TRC_CRITICAL(GDK, "incompatible BBP version: expected 0%o, got 0%o.\n"
-			 "This database was probably created by %s version of MonetDB.",
-			 GDKLIBRARY, bbpversion,
-			 bbpversion > GDKLIBRARY ? "a newer" : "a too old");
+			     "This database was probably created by a %s version of MonetDB.",
+			     GDKLIBRARY, bbpversion,
+			     bbpversion > GDKLIBRARY ? "newer" : "too old");
 		return 0;
 	}
 	if (fgets(buf, sizeof(buf), fp) == NULL) {
@@ -1287,14 +1287,14 @@ BBPheader(FILE *fp)
 	}
 	if (ptrsize != SIZEOF_SIZE_T || oidsize != SIZEOF_OID) {
 		TRC_CRITICAL(GDK, "database created with incompatible server:\n"
-			 "expected pointer size %d, got %d, expected OID size %d, got %d.",
-			 SIZEOF_SIZE_T, ptrsize, SIZEOF_OID, oidsize);
+			     "expected pointer size %d, got %d, expected OID size %d, got %d.",
+			     SIZEOF_SIZE_T, ptrsize, SIZEOF_OID, oidsize);
 		return 0;
 	}
 	if (intsize > SIZEOF_MAX_INT) {
 		TRC_CRITICAL(GDK, "database created with incompatible server:\n"
-			 "expected max. integer size %d, got %d.",
-			 SIZEOF_MAX_INT, intsize);
+			     "expected max. integer size %d, got %d.",
+			     SIZEOF_MAX_INT, intsize);
 		return 0;
 	}
 	if (fgets(buf, sizeof(buf), fp) == NULL) {
@@ -1578,7 +1578,7 @@ BBPinit(void)
 	}
 	return GDK_SUCCEED;
 
-      bailout:
+  bailout:
 	/* now it is time for real panic */
 	TRC_CRITICAL(GDK, "could not write %s%cBBP.dir. Please check whether your disk is full or write-protected", BATDIR, DIR_SEP);
 	return GDK_FAIL;
@@ -1854,7 +1854,7 @@ BBPdir_subcommit(int cnt, bat *subcommit)
 
 	return GDK_SUCCEED;
 
-      bailout:
+  bailout:
 	if (obbpf != NULL)
 		fclose(obbpf);
 	if (nbbpf != NULL)
@@ -1915,7 +1915,7 @@ BBPdir(int cnt, bat *subcommit)
 
 	return GDK_SUCCEED;
 
-      bailout:
+  bailout:
 	if (fp != NULL)
 		fclose(fp);
 	return GDK_FAIL;
@@ -1976,7 +1976,7 @@ BBPdump(void)
 					" Tvheap=[%zu,%zu]%s",
 					HEAPmemsize(b->tvheap),
 					HEAPvmsize(b->tvheap),
-				b->tvheap->dirty ? "(Dirty)" : "");
+					b->tvheap->dirty ? "(Dirty)" : "");
 				if (BBP_logical(i) && BBP_logical(i)[0] == '.') {
 					cmem += HEAPmemsize(b->tvheap);
 					cvm += HEAPvmsize(b->tvheap);
@@ -2243,10 +2243,10 @@ BBPinsert(BAT *bn)
 
 		if (*dirname)	/* i.e., i >= 0100 */
 			len = snprintf(BBP_physical(i), sizeof(BBP_physical(i)),
-				 "%s%c%o", dirname, DIR_SEP, (unsigned) i);
+				       "%s%c%o", dirname, DIR_SEP, (unsigned) i);
 		else
 			len = snprintf(BBP_physical(i), sizeof(BBP_physical(i)),
-				 "%o", (unsigned) i);
+				       "%o", (unsigned) i);
 		if (len == -1 || len >= FILENAME_MAX)
 			return 0;
 
@@ -3218,10 +3218,10 @@ do_backup(const char *srcdir, const char *nme, const char *ext,
 {
 	gdk_return ret = GDK_SUCCEED;
 
-	 /* direct mmap is unprotected (readonly usage, or has WAL
-	  * protection); however, if we're backing up for subcommit
-	  * and a backup already exists in the main backup directory
-	  * (see GDKupgradevarheap), move the file */
+	/* direct mmap is unprotected (readonly usage, or has WAL
+	 * protection); however, if we're backing up for subcommit
+	 * and a backup already exists in the main backup directory
+	 * (see GDKupgradevarheap), move the file */
 	if (subcommit && file_exists(h->farmid, BAKDIR, nme, ext)) {
 		if (file_move(h->farmid, BAKDIR, SUBDIR, nme, ext) != GDK_SUCCEED)
 			return GDK_FAIL;
@@ -3328,7 +3328,7 @@ BBPbackup(BAT *b, bool subcommit)
 		goto fail;
 	GDKfree(srcdir);
 	return GDK_SUCCEED;
-fail:
+  fail:
 	if(srcdir)
 		GDKfree(srcdir);
 	return GDK_FAIL;
@@ -3599,7 +3599,7 @@ BBPrecover(int farmid)
 			if (fn) {
 				int uret = remove(fn);
 				TRC_DEBUG(IO_, "remove %s = %d\n",
-						fn, uret);
+					  fn, uret);
 				GDKfree(fn);
 			}
 			continue;
