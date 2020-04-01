@@ -119,12 +119,10 @@ GDKcreatedir(const char *dir)
 			mkdir(path, MONETDB_DIRMODE) < 0) {
 			if (errno != EEXIST) {
 				GDKsyserror("GDKcreatedir: cannot create directory %s\n", path);
-				TRC_DEBUG(IO_, "mkdir(%s) failed\n", path);
 				return GDK_FAIL;
 			}
 			if ((dirp = opendir(path)) == NULL) {
 				GDKsyserror("GDKcreatedir: %s not a directory\n", path);
-				TRC_DEBUG(IO_, "opendir(%s) failed\n", path);
 				return GDK_FAIL;
 			}
 			/* it's a directory, we can continue */
@@ -290,7 +288,6 @@ GDKunlink(int farmid, const char *dir, const char *nme, const char *ext)
 		/* if file already doesn't exist, we don't care */
 		if (remove(path) != 0 && errno != ENOENT) {
 			GDKsyserror("GDKunlink(%s)\n", path);
-			TRC_DEBUG(IO_, "Remove %s = -1\n", path);
 			GDKfree(path);
 			return GDK_FAIL;
 		}

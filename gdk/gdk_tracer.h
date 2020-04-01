@@ -149,7 +149,7 @@ gdk_export log_level_t lvl_per_component[];
 
 #define GDK_TRACER_LOG_BODY(LOG_LEVEL, COMP, MSG, ...)			\
 	GDKtracer_log(__FILE__, __func__, __LINE__,			\
-		      LOG_LEVEL, COMP, MSG, ##__VA_ARGS__)
+		      LOG_LEVEL, COMP, NULL, MSG, ##__VA_ARGS__)
 
 #define GDK_TRACER_LOG(LOG_LEVEL, COMP, MSG, ...)			\
 	do {								\
@@ -174,7 +174,6 @@ gdk_export log_level_t lvl_per_component[];
 
 #define TRC_DEBUG(COMP, MSG, ...)				\
 	GDK_TRACER_LOG(M_DEBUG, COMP, MSG, ## __VA_ARGS__)
-
 
 
 
@@ -263,8 +262,9 @@ gdk_export gdk_return GDKtracer_reset_adapter(void);
 gdk_export gdk_return GDKtracer_log(const char *file, const char *func,
 				    int lineno, log_level_t lvl,
 				    component_t comp,
+				    const char *syserr,
 				    const char *format, ...)
-	__attribute__((__format__(__printf__, 6, 7)));
+	__attribute__((__format__(__printf__, 7, 8)));
 
 
 gdk_export gdk_return GDKtracer_flush_buffer(void);

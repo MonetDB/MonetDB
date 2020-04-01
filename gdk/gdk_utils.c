@@ -1323,46 +1323,6 @@ GDKerror(const char *format, ...)
 	GDKaddbuf(message);
 }
 
-void
-GDKsyserror(const char *format, ...)
-{
-	int err = errno;
-	char message[GDKERRLEN];
-	size_t len = strlen(GDKERROR);
-	va_list ap;
-
-	if (strncmp(format, GDKERROR, len) == 0) {
-		len = 0;
-	} else {
-		strncpy(message, GDKERROR, sizeof(message));
-	}
-	va_start(ap, format);
-	vsnprintf(message + len, sizeof(message) - (len + 2), format, ap);
-	va_end(ap);
-	if (err > 0 && err < 1024) {
-		size_t len1;
-		size_t len2;
-		size_t len3;
-		const char *osmsg;
-		osmsg = GDKstrerror(err, (char[128]){0}, 128);
-		len1 = strlen(message);
-		len2 = len1 + strlen(GDKMESSAGE);
-		len3 = len2 + strlen(osmsg);
-
-		if (len3 + 2 < sizeof(message)) {
-			strcpy(message + len1, GDKMESSAGE);
-			strcpy(message + len2, osmsg);
-			if (len3 > 0 && message[len3 - 1] != '\n') {
-				message[len3] = '\n';
-				message[len3 + 1] = 0;
-			}
-		}
-	}
-	GDKaddbuf(message);
-
-	errno = 0;
-}
-
 #ifdef NATIVE_WIN32
 void
 GDKwinerror(const char *format, ...)

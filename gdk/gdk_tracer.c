@@ -400,12 +400,14 @@ GDKtracer_reset_adapter(void)
 gdk_return
 GDKtracer_log(const char *file, const char *func, int lineno,
 	      log_level_t level, component_t comp,
+	      const char *syserr,
 	      const char *fmt, ...)
 {
 	int bytes_written;
 	char buffer[512];	/* should be plenty big enough for a message */
 	va_list va;
 	char ts[TS_SIZE];
+	char *msg = NULL;
 
 	va_start(va, fmt);
 	bytes_written = snprintf(buffer, sizeof(buffer),
@@ -423,7 +425,8 @@ GDKtracer_log(const char *file, const char *func, int lineno,
 				 component_str[comp],
 				 MT_thread_getname());
 	if (bytes_written > 0 && bytes_written < (int) sizeof(buffer)) {
-		bytes_written += vsnprintf(buffer + bytes_written,
+		msg = buffer + bytes_written;
+		bytes_written += vsnprintf(msg,
 					   sizeof(buffer) - bytes_written,
 					   fmt, va);
 	}
@@ -441,7 +444,8 @@ GDKtracer_log(const char *file, const char *func, int lineno,
 		_GDKtracer_init_basic_adptr();
 	}
 	MT_lock_unset(&lock);
-	fprintf(active_tracer, "%s\n", buffer);
+	fprintf(active_tracer, "%s%s%s\n", buffer,
+		syserr ? ": " : "", syserr ? syserr : "");
 
 	// Flush the current buffer in case the event is
 	// important depending on the flush-level
@@ -452,7 +456,8 @@ GDKtracer_log(const char *file, const char *func, int lineno,
 	if (level == cur_flush_level || level == M_CRITICAL || level == M_ERROR) {
 		fflush(active_tracer);
 		if (level == M_CRITICAL && active_tracer != stderr)
-			fprintf(stderr, "%s\n", buffer);
+			fprintf(stderr, "%s: %s%s%s\n", func, msg,
+				syserr ? ": " : "", syserr ? syserr : "");
 	}
 	return GDK_SUCCEED;
 }

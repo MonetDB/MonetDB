@@ -380,10 +380,7 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 		VALGRIND_RESIZEINPLACE_BLOCK(old_address, old_size, *new_size, 0);
 		if (munmap((char *) old_address + *new_size,
 			   old_size - *new_size) < 0) {
-			GDKsyserror("MT_mremap: munmap(%p,%zu) failed\n",
-				    ((char *) old_address + *new_size),
-				    old_size - *new_size);
-			TRC_ERROR(GDK, "MT_mremap(%s,%p,%zu,%zu): munmap() failed\n", path?path:"NULL", old_address, old_size, *new_size);
+			GDKsyserror("MT_mremap(%s,%p,%zu,%zu): munmap() failed\n", path?path:"NULL", old_address, old_size, *new_size);
 			/* even though the system call failed, we
 			 * don't need to propagate the error up: the
 			 * address should still work in the same way
@@ -406,8 +403,8 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 		/* "normal" memory map */
 
 		if ((fd = open(path, O_RDWR | O_CLOEXEC)) < 0) {
-			GDKsyserror("MT_mremap: open(%s) failed\n", path);
-			TRC_ERROR(GDK, "MT_mremap(%s,%p,%zu,%zu): open() failed\n", path, old_address, old_size, *new_size);
+			GDKsyserror("MT_mremap(%s,%p,%zu,%zu): open failed\n",
+				    path, old_address, old_size, *new_size);
 			return NULL;
 		}
 		if (GDKextendf(fd, *new_size, path) != GDK_SUCCEED) {
@@ -418,16 +415,14 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 #ifdef HAVE_MREMAP
 		/* on Linux it's easy */
 		p = mremap(old_address, old_size, *new_size, MREMAP_MAYMOVE);
-		if (p == MAP_FAILED)
-			GDKsyserror("MT_mremap: mremap(%p,%zu,%zu) failed\n",
-				    old_address, old_size,
-				    *new_size);
 #ifdef HAVE_VALGRIND
-		if (p == old_address) {
-			VALGRIND_RESIZEINPLACE_BLOCK(old_address, old_size, *new_size, 0);
-		} else {
-			VALGRIND_FREELIKE_BLOCK(old_address, 0);
-			VALGRIND_MALLOCLIKE_BLOCK(p, *new_size, 0, 1);
+		if (p != MAP_FAILED) {
+			if (p == old_address) {
+				VALGRIND_RESIZEINPLACE_BLOCK(old_address, old_size, *new_size, 0);
+			} else {
+				VALGRIND_FREELIKE_BLOCK(old_address, 0);
+				VALGRIND_MALLOCLIKE_BLOCK(p, *new_size, 0, 1);
+			}
 		}
 #endif
 #else
@@ -446,7 +441,8 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 			} else {
 				/* we got some other address: discard
 				 * it and make full mmap */
-				munmap(p, *new_size - old_size);
+				if (munmap(p, *new_size - old_size) < 0)
+					GDKsyserror("munmap");
 #ifdef NO_MMAP_ALIASING
 				msync(old_address, old_size, MS_SYNC);
 #endif
@@ -455,23 +451,23 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 				p = mmap(NULL, *new_size, prot, flags, fd, 0);
 				if (p != MAP_FAILED) {
 					VALGRIND_MALLOCLIKE_BLOCK(p, *new_size, 0, 1);
-					munmap(old_address, old_size);
+					if (munmap(old_address, old_size) < 0)
+						GDKsyserror("munmap");
 					VALGRIND_FREELIKE_BLOCK(old_address, 0);
 				}
 			}
 		}
-		if (p == MAP_FAILED)
-			GDKsyserror("MT_mremap: mmap failed\n");
 #endif	/* HAVE_MREMAP */
-		close(fd);
 	} else {
 		/* "copy-on-write" or "anonymous" memory map */
 #ifdef MAP_ANONYMOUS
 		flags |= MAP_ANONYMOUS;
 #else
 		if ((fd = open("/dev/zero", O_RDWR | O_CLOEXEC)) < 0) {
-			GDKsyserror("MT_mremap: open(/dev/zero) failed\n");
-			TRC_ERROR(GDK, "MT_mremap(%s,%p,%zu,%zu): open('/dev/zero') failed\n", path?path:"NULL", old_address, old_size, *new_size);
+			GDKsyserror("MT_mremap(%s,%p,%zu,%zu): "
+				    "open('/dev/zero') failed\n",
+				    path ? path : "NULL", old_address,
+				    old_size, *new_size);
 			return NULL;
 		}
 #endif
@@ -491,7 +487,8 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 			} else {
 				/* we got some other address: discard
 				 * it and make full mmap */
-				munmap(p, *new_size - old_size);
+				if (munmap(p, *new_size - old_size) < 0)
+					GDKsyserror("munmap");
 #ifdef HAVE_MREMAP
 				/* first get an area large enough for
 				 * *new_size */
@@ -506,9 +503,12 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 						   p);
 					assert(q == p || q == MAP_FAILED);
 					if (q == MAP_FAILED) {
+						int e = errno;
 						/* we didn't expect this... */
-						munmap(p, *new_size);
+						if (munmap(p, *new_size) < 0)
+							GDKsyserror("munmap");
 						p = MAP_FAILED;
+						errno = e;
 					}
 #ifdef HAVE_VALGRIND
 					else {
@@ -544,10 +544,10 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 					 * mmap it to new address */
 					if (fd >= 0)
 						close(fd);
+					fd = -1;
 					p = malloc(strlen(path) + 5);
 					if (p == NULL){
-						GDKsyserror("MT_mremap: malloc() failed\n");
-						TRC_ERROR(GDK, "MT_mremap(%s,%p,%zu,%zu): fd < 0\n", path, old_address, old_size, *new_size);
+						GDKsyserror("MT_mremap(%s,%p,%zu,%zu): fd < 0\n", path, old_address, old_size, *new_size);
 						return NULL;
 					}
 
@@ -555,9 +555,8 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 					fd = open(p, O_RDWR | O_CREAT | O_CLOEXEC,
 						  MONETDB_MODE);
 					if (fd < 0) {
-						GDKsyserror("MT_mremap: open(%s) failed\n", (char *) p);
+						GDKsyserror("MT_mremap(%s,%p,%zu,%zu): fd < 0\n", path, old_address, old_size, *new_size);
 						free(p);
-						TRC_ERROR(GDK, "MT_mremap(%s,%p,%zu,%zu): fd < 0\n", path, old_address, old_size, *new_size);
 						return NULL;
 					}
 					free(p);
@@ -600,9 +599,7 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 						other = ftruncate(fd, (off_t) old_size);
 						(void) other; /* silence compiler warning for ignoring result of ftruncate */
 						errno = err; /* restore for error message */
-						GDKsyserror("MT_mremap: growing file failed\n");
-						close(fd);
-						TRC_ERROR(GDK,
+						GDKsyserror(
 							  "MT_mremap(%s,%p,%zu,%zu): write() or "
 #ifdef HAVE_FALLOCATE
 							  "fallocate()"
@@ -614,6 +611,7 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 #endif
 #endif
 							  " failed\n", path, old_address, old_size, *new_size);
+						close(fd);
 						return NULL;
 					}
 					p = mmap(NULL, *new_size, prot, flags,
@@ -627,14 +625,12 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 #endif	/* HAVE_MREMAP */
 			}
 		}
-		if (p == MAP_FAILED)
-			GDKsyserror("MT_mremap: mmap failed\n");
-		if (fd >= 0)
-			close(fd);
 	}
-	TRC_DEBUG(ALLOC, "MT_mremap(%s,%p,%zu,%zu) -> %p%s\n", path?path:"NULL", old_address, old_size, *new_size, p, path && mode & MMAP_COPY ? " private" : "");
 	if (p == MAP_FAILED)
-		TRC_ERROR(GDK, "MT_mremap(%s,%p,%zu,%zu): p == MAP_FAILED\n", path?path:"NULL", old_address, old_size, *new_size);
+		GDKsyserror("MT_mremap(%s,%p,%zu,%zu): p == MAP_FAILED\n", path?path:"NULL", old_address, old_size, *new_size);
+	if (fd >= 0)
+		close(fd);
+	TRC_DEBUG(ALLOC, "MT_mremap(%s,%p,%zu,%zu) -> %p%s\n", path?path:"NULL", old_address, old_size, *new_size, p, path && mode & MMAP_COPY ? " private" : "");
 	return p == MAP_FAILED ? NULL : p;
 }
 
