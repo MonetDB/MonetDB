@@ -5856,7 +5856,8 @@ sql_trans_add_table(sql_trans *tr, sql_table *mt, sql_table *pt)
 	cs_add(&mt->members, p, TR_NEW);
 	mt->s->base.wtime = mt->base.wtime = pt->s->base.wtime = pt->base.wtime = p->base.wtime = tr->wtime = tr->wstime;
 	table_funcs.table_insert(tr, sysobj, &mt->base.id, p->base.name, &p->base.id);
-	tr->schema_updates ++;
+	if (isGlobal(mt))
+		tr->schema_updates ++;
 	return mt;
 }
 
@@ -5864,7 +5865,7 @@ int
 sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_subtype tpe, ptr min, ptr max,
 							  bit with_nills, int update, sql_part **err)
 {
-	sql_schema *syss = find_sql_schema(tr, "sys");
+	sql_schema *syss = find_sql_schema(tr, isGlobal(mt)?"sys":"tmp");
 	sql_table *sysobj = find_sql_table(syss, "objects");
 	sql_table *partitions = find_sql_table(syss, "table_partitions");
 	sql_table *ranges = find_sql_table(syss, "range_partitions");
@@ -5877,7 +5878,6 @@ sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 	ptr ok;
 	sqlid *v;
 
-	assert(isGlobal(mt));
 	vmin = vmax = (ValRecord) {.vtype = TYPE_void,};
 
 	if (min) {
@@ -5982,7 +5982,7 @@ int
 sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_subtype tpe, list* vals, bit with_nills,
 							  int update, sql_part **err)
 {
-	sql_schema *syss = find_sql_schema(tr, "sys");
+	sql_schema *syss = find_sql_schema(tr, isGlobal(mt)?"sys":"tmp");
 	sql_table *sysobj = find_sql_table(syss, "objects");
 	sql_table *partitions = find_sql_table(syss, "table_partitions");
 	sql_table *values = find_sql_table(syss, "value_partitions");
@@ -5991,7 +5991,6 @@ sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 	int localtype = tpe.type->localtype, i = 0;
 	sqlid *v;
 
-	assert(isGlobal(mt));
 	if (!update) {
 		p = SA_ZNEW(tr->sa, sql_part);
 		base_init(tr->sa, &p->base, pt->base.id, TR_NEW, pt->base.name);
@@ -6063,9 +6062,8 @@ sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 		/* add merge table dependency */
 		sql_trans_create_dependency(tr, pt->base.id, mt->base.id, TABLE_DEPENDENCY);
 		table_funcs.table_insert(tr, sysobj, &mt->base.id, p->base.name, &p->base.id);
-	} else {
-		if (isGlobal(mt))
-			tr->schema_updates ++;
+	} else if (isGlobal(mt)) {
+		tr->schema_updates ++;
 	}
 
 	mt->s->base.wtime = mt->base.wtime = pt->s->base.wtime = pt->base.wtime = p->base.wtime = tr->wtime = tr->wstime;
@@ -6076,7 +6074,7 @@ sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 sql_table*
 sql_trans_rename_table(sql_trans *tr, sql_schema *s, sqlid id, const char *new_name)
 {
-	sql_table *systable = find_sql_table(find_sql_schema(tr, "sys"), "_tables");
+	sql_table *systable = find_sql_table(find_sql_schema(tr, isTempSchema(s) ? "tmp":"sys"), "_tables");
 	node *n = find_sql_table_node(s, id);
 	sql_table *t = n->data;
 	oid rid;
@@ -6093,14 +6091,15 @@ sql_trans_rename_table(sql_trans *tr, sql_schema *s, sqlid id, const char *new_n
 	table_funcs.column_update_value(tr, find_sql_column(systable, "name"), rid, (void*) new_name);
 
 	t->base.wtime = s->base.wtime = tr->wtime = tr->wstime;
-	tr->schema_updates ++;
+	if (isGlobal(t))
+		tr->schema_updates ++;
 	return t;
 }
 
 sql_table*
 sql_trans_set_table_schema(sql_trans *tr, sqlid id, sql_schema *os, sql_schema *ns)
 {
-	sql_table *systable = find_sql_table(find_sql_schema(tr, "sys"), "_tables");
+	sql_table *systable = find_sql_table(find_sql_schema(tr, isTempSchema(os) ? "tmp":"sys"), "_tables");
 	node *n = find_sql_table_node(os, id);
 	sql_table *t = n->data;
 	oid rid;
@@ -6126,7 +6125,8 @@ sql_trans_set_table_schema(sql_trans *tr, sqlid id, sql_schema *os, sql_schema *
 		sql_column *col = (sql_column*) n->data;
 		col->base.wtime = tr->wstime; /* the table's columns types have to be set again */
 	}
-	tr->schema_updates ++;
+	if (isGlobal(t))
+		tr->schema_updates ++;
 	return t;
 }
 
@@ -6143,12 +6143,10 @@ sql_trans_del_table(sql_trans *tr, sql_table *mt, sql_table *pt, int drop_action
 		return NULL;
 
 	if (isRangePartitionTable(mt)) {
-		assert(isGlobal(mt));
 		sql_table *ranges = find_sql_table(syss, "range_partitions");
 		rid = table_funcs.column_find_row(tr, find_sql_column(ranges, "table_id"), &pt->base.id, NULL);
 		table_funcs.table_delete(tr, ranges, rid);
 	} else if (isListPartitionTable(mt)) {
-		assert(isGlobal(mt));
 		sql_table *values = find_sql_table(syss, "value_partitions");
 		rids *rs = table_funcs.rids_select(tr, find_sql_column(values, "table_id"), &pt->base.id, &pt->base.id, NULL);
 		for (rid = table_funcs.rids_next(rs); !is_oid_nil(rid); rid = table_funcs.rids_next(rs)) {
@@ -6167,7 +6165,8 @@ sql_trans_del_table(sql_trans *tr, sql_table *mt, sql_table *pt, int drop_action
 
 	if (drop_action == DROP_CASCADE)
 		sql_trans_drop_table(tr, mt->s, pt->base.id, drop_action);
-	tr->schema_updates ++;
+	if (isGlobal(mt))
+		tr->schema_updates ++;
 	return mt;
 }
 
@@ -6496,7 +6495,7 @@ drop_sql_key(sql_table *t, sqlid id, int drop_action)
 sql_column*
 sql_trans_rename_column(sql_trans *tr, sql_table *t, const char *old_name, const char *new_name)
 {
-	sql_table *syscolumn = find_sql_table(find_sql_schema(tr, "sys"), "_columns");
+	sql_table *syscolumn = find_sql_table(find_sql_schema(tr, isGlobal(t)?"sys":"tmp"), "_columns");
 	sql_column *c = find_sql_column(t, old_name);
 	oid rid;
 
@@ -6512,7 +6511,8 @@ sql_trans_rename_column(sql_trans *tr, sql_table *t, const char *old_name, const
 	table_funcs.column_update_value(tr, find_sql_column(syscolumn, "name"), rid, (void*) new_name);
 
 	c->base.wtime = t->base.wtime = t->s->base.wtime = tr->wtime = tr->wstime;
-	tr->schema_updates ++;
+	if (isGlobal(t))
+		tr->schema_updates ++;
 	return c;
 }
 
@@ -6520,7 +6520,7 @@ int
 sql_trans_drop_column(sql_trans *tr, sql_table *t, sqlid id, int drop_action)
 {
 	node *n = NULL;
-	sql_table *syscolumn = find_sql_table(find_sql_schema(tr, "sys"), "_columns");
+	sql_table *syscolumn = find_sql_table(find_sql_schema(tr, isGlobal(t)?"sys":"tmp"), "_columns");
 	sql_column *col = NULL, *cid = find_sql_column(syscolumn, "id"), *cnr = find_sql_column(syscolumn, "number");
 
 	for (node *nn = t->columns.set->h ; nn ; nn = nn->next) {

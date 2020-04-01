@@ -416,11 +416,13 @@ initialize_sql_parts(mvc *sql, sql_table *mt)
 				goto finish;
 			}
 			pt->s->base.wtime = pt->base.wtime = tr->wtime = tr->wstime;
-			tr->schema_updates++;
+			if (isGlobal(pt))
+				tr->schema_updates++;
 		}
 	}
 	mt->s->base.wtime = mt->base.wtime = tr->wtime = tr->wstime;
-	tr->schema_updates++;
+	if (isGlobal(mt))
+		tr->schema_updates++;
 finish:
 	return res;
 }
