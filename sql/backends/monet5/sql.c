@@ -156,7 +156,7 @@ sqlcleanup(mvc *c, int err)
 		if (!err) {
 			sql_trans_commit(c->session->tr);
 			/* write changes to disk */
-			sql_trans_end(c->session);
+			sql_trans_end(c->session, 1);
 			store_apply_deltas(true);
 			sql_trans_begin(c->session);
 		}

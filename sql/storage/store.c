@@ -306,7 +306,7 @@ sql_trans_destroy(sql_trans *t, bool try_spare)
 
 	TRC_DEBUG(SQL_STORE, "Destroy transaction: %p\n", t);
 
-	if (t->sa->nr > 12)
+	if (t->sa->nr > 2*gtrans->sa->nr)
 		try_spare = 0;
 	if (res == gtrans && spares < ((GDKdebug & FORCEMITOMASK) ? 2 : MAX_SPARES) && !t->name && try_spare) {
 		TRC_DEBUG(SQL_STORE, "Spared '%d' transactions '%p'\n", spares, t);
@@ -2448,7 +2448,7 @@ idle_manager(void)
 		sql_trans_begin(s);
 		if (store_vacuum( s->tr ) == 0)
 			sql_trans_commit(s->tr);
-		sql_trans_end(s);
+		sql_trans_end(s, 1);
 		sql_session_destroy(s);
 
 		MT_lock_unset(&bs_lock);
@@ -4827,29 +4827,50 @@ reset_schema(sql_trans *tr, sql_schema *fs, sql_schema *pfs)
 {
 	int ok = LOG_OK;
 
-	if (isTempSchema(fs)) {
+	if (isTempSchema(fs)) { /* only add new globaly created temps and remove globaly removed temps */
 		if (fs->tables.set) {
-			node *n;
-			for (n = fs->tables.nelm; n; ) {
-				node *nxt = n->next;
+			node *n = NULL, *m = NULL;
+			if (pfs->tables.set)
+				m = pfs->tables.set->h;
+			for (n = fs->tables.set->h; ok == LOG_OK && m && n; ) { 
+				sql_table *ftt = n->data;
+				sql_table *pftt = m->data;
 
-				cs_remove_node(&fs->tables, n);
-				n = nxt;
-			}
-			fs->tables.nelm = NULL;
-			for (n = fs->tables.set->h; n; ) {
-				node *nxt = n->next;
-				sql_table *t = n->data;
+				/* lists ordered on id */
+				/* changes to the existing bases */
+				if (ftt->base.id == pftt->base.id) { /* global temp */
+					n = n->next;
+					m = m->next;
+				} else if (ftt->base.id < pftt->base.id) { /* local temp or old global ? */
+					node *t = n->next;
 	
-				if ((isTable(t) && isGlobal(t) &&
-				    t->commit_action != CA_PRESERVE) || 
-				    t->commit_action == CA_DELETE) {
-					sql_trans_clear_table(tr, t);
-				} else if (t->commit_action == CA_DROP) {
-					if (sql_trans_drop_table(tr, t->s, t->base.id, DROP_RESTRICT))
-						ok = LOG_ERR;
+					if (isGlobal(ftt)) /* remove old global */
+						cs_remove_node(&fs->tables, n);
+					n = t;
+				} else { /* a new global */
+					sql_table *ntt = table_dup(tr, 0, pftt, fs);
+
+					/* cs_add_before add ntt to fs before node n */
+					cs_add_before(&fs->tables, n, ntt);
+					m = m->next;
 				}
-				n = nxt;
+			}
+			/* add new globals */
+			for (; ok == LOG_OK && m; m = m->next ) {
+				sql_table *pftt = m->data;
+				sql_table *ntt = table_dup(tr, 0, pftt, fs);
+
+				assert(isGlobal(ntt));
+				/* cs_add_before add ntt to fs before node n */
+				cs_add_before(&fs->tables, n, ntt);
+			}
+			while ( ok == LOG_OK && n) { /* remove remaining old stuff */
+				sql_table *ftt = n->data;
+				node *t = n->next;
+
+				if (isGlobal(ftt)) /* remove old global */
+					cs_remove_node(&fs->tables, n);
+				n = t;
 			}
 		}
 		return ok;
@@ -7398,6 +7419,36 @@ sql_session_destroy(sql_session *s)
 	_DELETE(s);
 }
 
+static void
+sql_trans_reset_tmp(sql_trans *tr, int commit)
+{
+	sql_schema *tmp = find_sql_schema(tr, "tmp");
+
+	if (commit == 0 && tmp->tables.nelm) {
+		for (node *n = tmp->tables.nelm; n; ) {
+			node *nxt = n->next;
+
+			cs_remove_node(&tmp->tables, n);
+			n = nxt;
+		}
+	}
+	tmp->tables.nelm = NULL;
+	if (tmp->tables.set) {
+		node *n;
+		for (n = tmp->tables.set->h; n; ) {
+			node *nxt = n->next;
+			sql_table *tt = n->data;
+
+			if ((isGlobal(tt) && tt->commit_action != CA_PRESERVE) || tt->commit_action == CA_DELETE) {
+				sql_trans_clear_table(tr, tt);
+			} else if (tt->commit_action == CA_DROP) {
+				(void) sql_trans_drop_table(tr, tt->s, tt->base.id, DROP_RESTRICT);
+			}
+			n = nxt;
+		}
+	}
+}
+
 int
 sql_session_reset(sql_session *s, int ac) 
 {
@@ -7443,9 +7494,9 @@ sql_trans_begin(sql_session *s)
 	snr = tr->schema_number;
 	TRC_DEBUG(SQL_STORE, "Enter sql_trans_begin for transaction: %d\n", snr);
 	if (tr->parent && tr->parent == gtrans && 
-	    (tr->stime < gtrans->wstime || tr->wtime || tr->sa->nr > (2*gtrans->sa->nr) ||
+	    (tr->stime < gtrans->wstime || tr->wtime ||
 			store_schema_number() != snr)) {
-		if (!list_empty(tr->moved_tables) || tr->sa->nr > (2*gtrans->sa->nr)) {
+		if (!list_empty(tr->moved_tables)) {
 			sql_trans_destroy(tr, false);
 			s->tr = tr = sql_trans_create(s->stk, NULL, NULL, false);
 		} else {
@@ -7467,11 +7518,12 @@ sql_trans_begin(sql_session *s)
 }
 
 void
-sql_trans_end(sql_session *s)
+sql_trans_end(sql_session *s, int commit)
 {
 	TRC_DEBUG(SQL_STORE, "End of transaction: %d\n", s->tr->schema_number);
 	s->tr->active = 0;
 	s->auto_commit = s->ac_on_commit;
+	sql_trans_reset_tmp(s->tr, commit); /* reset temp schema */
 	if (s->tr->parent == gtrans) {
 		list_remove_data(active_sessions, s);
 		(void) ATOMIC_DEC(&store_nr_active);
