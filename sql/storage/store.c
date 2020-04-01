@@ -4969,26 +4969,6 @@ sql_save_snapshots(sql_trans *tr)
 	return SQL_OK;
 }
 
-#ifdef CAT_DEBUG
-void
-catalog_corrupt( sql_trans *tr )
-{
-	node *k,*l;
-	if (cs_size(&tr->schemas)) 
-	for (k = tr->schemas.set->h; k; k = k->next) {
-		sql_schema *s = k->data;
-
-		if (cs_size(&s->tables))
-		for (l = s->tables.set->h; l; l = l->next) {
-			sql_table *t = l->data;
-
-			if (!t->query && !isTempTable(t))
-				table_check(tr, t);
-		}
-	}
-}
-#endif /*CAT_DEBUG*/
-
 int
 sql_trans_commit(sql_trans *tr)
 {
