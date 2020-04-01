@@ -83,7 +83,7 @@ static const char *level_str[] = {
 
 
 static inline char *
-GDKtracer_get_timestamp(char *datetime, size_t dtsz)
+get_timestamp(char *datetime, size_t dtsz)
 {
 	time_t now = time(NULL);
 	struct tm tmp;
@@ -140,33 +140,29 @@ _GDKtracer_init_basic_adptr(void)
 
 
 static void
-_GDKtracer_layer_level_helper(int layer, int lvl)
+set_level_for_layer(int layer, int lvl)
 {
 	const char *tok = NULL;
 	log_level_t level = (log_level_t) lvl;
 
 	for (int i = 0; i < COMPONENTS_COUNT; i++) {
 		if (layer == MDB_ALL) {
-			if (lvl_per_component[i] != level)
-				lvl_per_component[i] = level;
+			lvl_per_component[i] = level;
 		} else {
 			tok = component_str[i];
 
 			switch (layer) {
 			case SQL_ALL:
 				if (strncmp(tok, "SQL_", 4) == 0)
-					if (lvl_per_component[i] != level)
-						lvl_per_component[i] = level;
+					lvl_per_component[i] = level;
 				break;
 			case MAL_ALL:
 				if (strncmp(tok, "MAL_", 4) == 0)
-					if (lvl_per_component[i] != level)
-						lvl_per_component[i] = level;
+					lvl_per_component[i] = level;
 				break;
 			case GDK_ALL:
 				if (strncmp(tok, "GDK", 3) == 0)
-					if (lvl_per_component[i] != level)
-						lvl_per_component[i] = level;
+					lvl_per_component[i] = level;
 				break;
 			default:
 				break;
@@ -273,7 +269,7 @@ GDKtracer_reinit_basic(int sig)
 gdk_return
 GDKtracer_stop(void)
 {
-	_GDKtracer_layer_level_helper(MDB_ALL, DEFAULT_LOG_LEVEL);
+	set_level_for_layer(MDB_ALL, DEFAULT_LOG_LEVEL);
 	return GDKtracer_flush_buffer();
 }
 
@@ -326,7 +322,7 @@ GDKtracer_set_layer_level(const char *layer, const char *lvl)
 		return GDK_FAIL;
 	}
 
-	_GDKtracer_layer_level_helper(lyr, level);
+	set_level_for_layer(lyr, level);
 	return GDK_SUCCEED;
 }
 
@@ -340,7 +336,7 @@ GDKtracer_reset_layer_level(const char *layer)
 		return GDK_FAIL;
 	}
 
-	_GDKtracer_layer_level_helper(lyr, DEFAULT_LOG_LEVEL);
+	set_level_for_layer(lyr, DEFAULT_LOG_LEVEL);
 	return GDK_SUCCEED;
 }
 
@@ -415,7 +411,7 @@ GDKtracer_log(const char *file, const char *func, int lineno,
 				 "%"MXW"s "
 				 "%-"MXW"s "
 				 "%-"MXW"s # ",
-				 GDKtracer_get_timestamp(ts, sizeof(ts)),
+				 get_timestamp(ts, sizeof(ts)),
 				 file,
 				 lineno,
 				 func,
