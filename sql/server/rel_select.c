@@ -1011,7 +1011,7 @@ table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral)
 			}
 			if (allowed)
 				return temp_table;
-			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: access denied for %s to table '%s.%s'", stack_get_string(sql, mvc_bind_schema(sql, "sys"), "current_user"), s->base.name, tname);
+			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: access denied for %s to table '%s.%s'", sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")), s->base.name, tname);
 		} else if (isView(t)) {
 			/* instantiate base view */
 			node *n,*m;
@@ -1042,7 +1042,7 @@ table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral)
 				rel = rel_reduce_on_column_privileges(sql, rel, t);
 			if (allowed && rel)
 				return rel;
-			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: access denied for %s to table '%s.%s'", stack_get_string(sql, mvc_bind_schema(sql, "sys"), "current_user"), s->base.name, tname);
+			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: access denied for %s to table '%s.%s'", sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")), s->base.name, tname);
 		}
 		if ((isMergeTable(t) || isReplicaTable(t)) && list_empty(t->members.set))
 			return sql_error(sql, 02, SQLSTATE(42000) "MERGE or REPLICA TABLE should have at least one table associated");
@@ -1050,7 +1050,7 @@ table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral)
 		if (!allowed) {
 			res = rel_reduce_on_column_privileges(sql, res, t);
 			if (!res)
-				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: access denied for %s to table '%s.%s'", stack_get_string(sql, mvc_bind_schema(sql, "sys"), "current_user"), s->base.name, tname);
+				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: access denied for %s to table '%s.%s'", sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")), s->base.name, tname);
 		}
 		if (tableref->data.lval->h->next->data.sym && tableref->data.lval->h->next->data.sym->data.lval->h->next->data.lval) /* AS with column aliases */
 			res = rel_table_optname(sql, res, tableref->data.lval->h->next->data.sym);
@@ -1211,10 +1211,11 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 			}
 		}
 		if (!exp) { /* If no column was found, try a variable or parameter */
-			sql_schema *s = cur_schema(sql);
-			int var = stack_find_var(sql, s, name); /* find one */
-			if (var)
-				return rel_var_ref(sql, s->base.name, name);
+			sql_var *var;
+			int level = 0;
+			(void) level;
+			if ((var = stack_find_var_frame(sql, cur_schema(sql), name, &level))) /* find one */
+				return exp_param_or_declared(sql->sa, var->sname ? sa_strdup(sql->sa, var->sname) : NULL, sa_strdup(sql->sa, var->name), &(var->var.tpe), level);
 		}
 
 		if (!exp)
@@ -1283,12 +1284,12 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 			}
 		}
 		if (!exp) { /* If no column was found, try a variable */
-			sql_schema *s = mvc_bind_schema(sql, tname);
-			if (s) {
-				int var = stack_find_var(sql, s, cname); /* find one */
-				if (var)
-					return rel_var_ref(sql, tname, cname);
-			}
+			sql_schema *s = mvc_bind_schema(sql, tname); /* search schema with table name, ugh */
+			sql_var *var;
+			int level = 0;
+			(void) level;
+			if (s && (var = stack_find_var_frame(sql, s, cname, &level))) /* find one */
+				return exp_param_or_declared(sql->sa, var->sname ? sa_strdup(sql->sa, var->sname) : NULL, sa_strdup(sql->sa, var->name), &(var->var.tpe), level);
 		}
 
 		if (!exp)

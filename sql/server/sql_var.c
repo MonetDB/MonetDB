@@ -264,46 +264,17 @@ stack_clear_frame_visited_flag(mvc *sql)
 }
 
 atom *
-stack_set_var(mvc *sql, sql_schema *s, const char *name, ValRecord *v)
+sqlvar_set(sql_var *var, ValRecord *v)
 {
-	const char *sname = s ? s->base.name : NULL;
-	for (int i = sql->topframes-1; i >= 0; i--) {
-		sql_frame *f = sql->frames[i];
-		if (f->vars) {
-			for (node *n = f->vars->h; n ; n = n->next) {
-				sql_var *var = (sql_var*) n->data;
-				if ((!var->sname || (sname && !strcmp(var->sname, sname))) && !strcmp(var->name, name)) { /* Function parameters don't have a schema */
-					VALclear(&(var->var.data));
-					if (VALcopy(&(var->var.data), v) == NULL)
-						return NULL;
-					var->var.isnull = VALisnil(v);
-					if (v->vtype == TYPE_flt)
-						var->var.d = v->val.fval;
-					else if (v->vtype == TYPE_dbl)
-						var->var.d = v->val.dval;
-					return &(var->var);
-				}
-			}
-		}
-	}
-	return NULL;
-}
-
-atom *
-stack_get_var(mvc *sql, sql_schema *s, const char *name)
-{
-	const char *sname = s ? s->base.name : NULL;
-	for (int i = sql->topframes-1; i >= 0; i--) {
-		sql_frame *f = sql->frames[i];
-		if (f->vars) {
-			for (node *n = f->vars->h; n ; n = n->next) {
-				sql_var *var = (sql_var*) n->data;
-				if ((!var->sname || (sname && !strcmp(var->sname, sname))) && !strcmp(var->name, name)) /* Function parameters don't have a schema */
-					return &(var->var);
-			}
-		}
-	}
-	return NULL;
+	VALclear(&(var->var.data));
+	if (VALcopy(&(var->var.data), v) == NULL)
+		return NULL;
+	var->var.isnull = VALisnil(v);
+	if (v->vtype == TYPE_flt)
+		var->var.d = v->val.fval;
+	else if (v->vtype == TYPE_dbl)
+		var->var.d = v->val.dval;
+	return &(var->var);
 }
 
 sql_frame*
@@ -429,22 +400,20 @@ stack_update_rel_view(mvc *sql, const char *name, sql_rel *view)
 	}
 }
 
-int 
-stack_find_var(mvc *sql, sql_schema *s, const char *name)
+sql_var*
+find_global_var(mvc *sql, sql_schema *s, const char *name)
 {
 	const char *sname = s->base.name;
-	for (int i = sql->topframes-1; i >= 0; i--) {
-		sql_frame *f = sql->frames[i];
-		if (f->vars) {
-			for (node *n = f->vars->h; n ; n = n->next) {
-				sql_var *var = (sql_var*) n->data;
-				assert(var->name);
-				if ((!var->sname || !strcmp(var->sname, sname)) && !strcmp(var->name, name)) /* Function parameters don't have a schema */
-					return 1;
-			}
+	sql_frame *f = sql->frames[0]; /* SQL global variables are set on the very first frame */
+	if (f->vars) {
+		for (node *n = f->vars->h; n ; n = n->next) {
+			sql_var *var = (sql_var*) n->data;
+			assert(var->name);
+			if ((!var->sname || !strcmp(var->sname, sname)) && !strcmp(var->name, name)) /* Function parameters don't have a schema */
+				return var;
 		}
 	}
-	return 0;
+	return NULL;
 }
 
 int 
@@ -475,7 +444,7 @@ stack_find_var_frame(mvc *sql, sql_schema *s, const char *name, int *level)
 			for (node *n = f->vars->h; n ; n = n->next) {
 				sql_var *var = (sql_var*) n->data;
 				assert(var->name);
-				if ((!var->sname || !strcmp(var->sname, sname)) && !strcmp(var->name, name)) {/* Function parameters don't have a schema */
+				if ((!var->sname || !strcmp(var->sname, sname)) && !strcmp(var->name, name)) { /* Function parameters don't have a schema */
 					*level = f->frame_number;
 					return var;
 				}
@@ -509,9 +478,9 @@ stack_nr_of_declared_tables(mvc *sql)
 }
 
 str
-stack_set_string(mvc *sql, sql_schema *s, const char *name, const char *val)
+sqlvar_set_string(sql_var *var, const char *val)
 {
-	atom *a = stack_get_var(sql, s, name);
+	atom *a = &var->var;
 	str new_val = _STRDUP(val);
 
 	if (a != NULL && new_val != NULL) {
@@ -528,9 +497,9 @@ stack_set_string(mvc *sql, sql_schema *s, const char *name, const char *val)
 }
 
 str
-stack_get_string(mvc *sql, sql_schema *s, const char *name)
+sqlvar_get_string(sql_var *var)
 {
-	atom *a = stack_get_var(sql, s, name);
+	atom *a = &var->var;
 
 	if (!a || a->data.vtype != TYPE_str)
 		return NULL;
@@ -539,12 +508,12 @@ stack_get_string(mvc *sql, sql_schema *s, const char *name)
 
 void
 #ifdef HAVE_HGE
-stack_set_number(mvc *sql, sql_schema *s, const char *name, hge val)
+sqlvar_set_number(sql_var *var, hge val)
 #else
-stack_set_number(mvc *sql, sql_schema *s, const char *name, lng val)
+sqlvar_set_number(sql_var *var, lng val)
 #endif
 {
-	atom *a = stack_get_var(sql, s, name);
+	atom *a = &var->var;
 
 	if (a != NULL) {
 		ValRecord *v = &a->data;
@@ -595,15 +564,4 @@ val_get_number(ValRecord *v)
 		return 0;
 	}
 	return 0;
-}
-
-#ifdef HAVE_HGE
-hge
-#else
-lng
-#endif
-stack_get_number(mvc *sql, sql_schema *s, const char *name)
-{
-	atom *a = stack_get_var(sql, s, name);
-	return val_get_number(a?&a->data:NULL);
 }

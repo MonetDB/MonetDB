@@ -97,7 +97,7 @@ rel_create_seq(
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE SEQUENCE: name '%s' already in use", name);
 	} else if (!mvc_schema_privs(sql, s)) {
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE SEQUENCE: insufficient privileges "
-				"for '%s' in schema '%s'", stack_get_string(sql, mvc_bind_schema(sql, "sys"), "current_user"), s->base.name);
+				"for '%s' in schema '%s'", sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")), s->base.name);
 	}
 
 	/* generate defaults */
@@ -262,7 +262,7 @@ rel_alter_seq(
 	}
 	if (!mvc_schema_privs(sql, s)) {
 		return sql_error(sql, 02, SQLSTATE(42000) "ALTER SEQUENCE: insufficient privileges "
-				"for '%s' in schema '%s'", stack_get_string(sql, mvc_bind_schema(sql, "sys"), "current_user"), s->base.name);
+				"for '%s' in schema '%s'", sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")), s->base.name);
 	}
 
 	/* first alter the known values */

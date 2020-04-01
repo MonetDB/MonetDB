@@ -262,14 +262,13 @@ extern bool stack_check_var_visited(mvc *sql, int i);
 extern void stack_set_var_visited(mvc *sql, int i);
 extern void stack_clear_frame_visited_flag(mvc *sql);
 
-extern sql_frame* stack_push_frame(mvc *sql, const char *name);
+extern sql_frame *stack_push_frame(mvc *sql, const char *name);
 extern void stack_pop_frame(mvc *sql);
 extern void clear_frame(mvc *sql, sql_frame *frame);
 extern void stack_pop_until(mvc *sql, int frame);
 
 /* find variable in the stack */
-extern sql_var* stack_find_var_frame(mvc *sql, sql_schema *s, const char *name, int *level);
-extern int stack_find_var(mvc *sql, sql_schema *s, const char *name);
+extern sql_var *stack_find_var_frame(mvc *sql, sql_schema *s, const char *name, int *level);
 extern sql_table *stack_find_table(mvc *sql, sql_schema *s, const char *name);
 extern sql_rel *stack_find_rel_view(mvc *sql, const char *name);
 
@@ -277,22 +276,19 @@ extern sql_rel *stack_find_rel_view(mvc *sql, const char *name);
 extern int frame_find_var(mvc *sql, sql_schema *s, const char *name);
 extern sql_rel *frame_find_rel_view(mvc *sql, const char *name);
 
+extern sql_var *find_global_var(mvc *sql, sql_schema *s, const char *name);
 extern int stack_has_frame(mvc *sql, const char *name);
 extern int stack_nr_of_declared_tables(mvc *sql);
 
-extern atom* stack_get_var(mvc *sql, sql_schema *s, const char *name);
-extern atom* stack_set_var(mvc *sql, sql_schema *s, const char *name, ValRecord *v);
-
-extern str stack_get_string(mvc *sql, sql_schema *s, const char *name);
-extern str stack_set_string(mvc *sql, sql_schema *s, const char *name, const char *v);
+extern atom* sqlvar_set(sql_var *var, ValRecord *v);
+extern str sqlvar_get_string(sql_var *var);
+extern str sqlvar_set_string(sql_var *var, const char *v);
 #ifdef HAVE_HGE
 extern hge val_get_number(ValRecord *val);
-extern hge stack_get_number(mvc *sql, sql_schema *s, const char *name);
-extern void stack_set_number(mvc *sql, sql_schema *s, const char *name, hge v);
+extern void sqlvar_set_number(sql_var *var, hge v);
 #else
 extern lng val_get_number(ValRecord *val);
-extern lng stack_get_number(mvc *sql, sql_schema *s, const char *name);
-extern void stack_set_number(mvc *sql, sql_schema *s, const char *name, lng v);
+extern void sqlvar_set_number(sql_var *var, lng v);
 #endif
 
 extern sql_column *mvc_copy_column(mvc *m, sql_table *t, sql_column *c);

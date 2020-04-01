@@ -56,13 +56,11 @@ sql_update_var(mvc *m, sql_schema *s, const char *name, char *sval, lng sgn)
 #endif
 			m->debug = (int) sgn;
 		} else if (strcmp(name, "current_schema") == 0) {
-			if (!mvc_set_schema(m, sval)) {
+			if (!mvc_set_schema(m, sval))
 				throw(SQL,"sql.update_var", SQLSTATE(3F000) "Schema (%s) missing\n", sval);
-			}
 		} else if (strcmp(name, "current_role") == 0) {
-			if (!mvc_set_role(m, sval)) {
+			if (!mvc_set_role(m, sval))
 				throw(SQL,"sql.update_var", SQLSTATE(42000) "Role (%s) missing\n", sval);
-			}
 		} else if (strcmp(name, "current_timezone") == 0) {
 #ifdef HAVE_HGE
 			assert((hge) GDK_int_min <= sgn && sgn <= (hge) GDK_int_max);

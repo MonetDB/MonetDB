@@ -207,7 +207,7 @@ SQLepilogue(void *ret)
 }
 
 #define SQLglobal(name, s, val) \
-	if (!stack_push_var(sql, s, name, &ctype) || !stack_set_var(sql, s, name, VALset(&src, ctype.type->localtype, (char*)(val)))) \
+	if (!(var = stack_push_var(sql, s, name, &ctype)) || !sqlvar_set(var, VALset(&src, ctype.type->localtype, (char*)(val)))) \
 		return -1;
 
 /* initialize the global variable, ie make mvc point to these */
@@ -219,6 +219,7 @@ global_variables(mvc *sql, const char *user, const char *schema)
 	ValRecord src;
 	const char *opt;
 	sql_schema *s = mvc_bind_schema(sql, "sys");
+	sql_var *var;
 
 	if (!stack_push_frame(sql, NULL)) /* Global variables stay on the first frame */
 		return -1;

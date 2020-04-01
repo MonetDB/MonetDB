@@ -148,7 +148,7 @@ SQLgetSpace(mvc *m, MalBlkPtr mb, int prepare)
 str
 getSQLoptimizer(mvc *m)
 {
-	char *opt = stack_get_string(m, mvc_bind_schema(m, "sys"), "optimizer");
+	char *opt = sqlvar_get_string(find_global_var(m, mvc_bind_schema(m, "sys"), "optimizer"));
 	char *pipe = "default_pipe";
 
 	if (opt)

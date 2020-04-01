@@ -5704,43 +5704,6 @@ intval:
 			YYABORT;
 		  }
 		}
- |	ident_or_uident	{
-		  char *name = $1;
-		  sql_var *var;
-		  sql_subtype *tpe;
-		  int level = 0;
-
-		  (void) level;
-		  if (!(var = stack_find_var_frame(m, cur_schema(m), name, &level))) {
-			char *msg = sql_message(SQLSTATE(22000) "Constant (%s) unknown", $1);
-
-			yyerror(m, msg);
-			_DELETE(msg);
-			$$ = 0;
-			YYABORT;
-		  }
-		  tpe = &(var->var.tpe);
-		  if (tpe->type->localtype == TYPE_lng ||
-		      tpe->type->localtype == TYPE_int ||
-		      tpe->type->localtype == TYPE_sht ||
-		      tpe->type->localtype == TYPE_bte ) {
-#ifdef HAVE_HGE
-			hge sgn = stack_get_number(m, cur_schema(m), name);
-			assert((hge) GDK_int_min <= sgn && sgn <= (hge) GDK_int_max);
-#else
-			lng sgn = stack_get_number(m, cur_schema(m), name);
-			assert((lng) GDK_int_min <= sgn && sgn <= (lng) GDK_int_max);
-#endif
-			$$ = (int) sgn;
-		  } else {
-			char *msg = sql_message(SQLSTATE(22000) "Constant (%s) has wrong type (number expected)", $1);
-
-			yyerror(m, msg);
-			_DELETE(msg);
-			$$ = 0;
-			YYABORT;
-		  }
-		}
  ;
 
 opt_uescape:
