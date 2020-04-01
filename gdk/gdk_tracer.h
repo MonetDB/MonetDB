@@ -161,13 +161,13 @@ gdk_export log_level_t lvl_per_component[];
 
 
 #define TRC_CRITICAL(COMP, MSG, ...)				\
-	GDK_TRACER_LOG(M_CRITICAL, COMP, MSG, ## __VA_ARGS__)
+	GDK_TRACER_LOG_BODY(M_CRITICAL, COMP, MSG, ## __VA_ARGS__)
 
 #define TRC_ERROR(COMP, MSG, ...)				\
-	GDK_TRACER_LOG(M_ERROR, COMP, MSG, ## __VA_ARGS__)
+	GDK_TRACER_LOG_BODY(M_ERROR, COMP, MSG, ## __VA_ARGS__)
 
 #define TRC_WARNING(COMP, MSG, ...)				\
-	GDK_TRACER_LOG(M_WARNING, COMP, MSG, ## __VA_ARGS__)
+	GDK_TRACER_LOG_BODY(M_WARNING, COMP, MSG, ## __VA_ARGS__)
 
 #define TRC_INFO(COMP, MSG, ...)				\
 	GDK_TRACER_LOG(M_INFO, COMP, MSG, ## __VA_ARGS__)
@@ -191,13 +191,13 @@ gdk_export log_level_t lvl_per_component[];
     }
 */
 #define TRC_CRITICAL_IF(COMP)			\
-	if (GDK_TRACER_TEST(M_CRITICAL, COMP))
+	/* if (GDK_TRACER_TEST(M_CRITICAL, COMP)) */
 
 #define TRC_ERROR_IF(COMP)			\
-	if (GDK_TRACER_TEST(M_ERROR, COMP))
+	/* if (GDK_TRACER_TEST(M_ERROR, COMP)) */
 
 #define TRC_WARNING_IF(COMP)			\
-	if (GDK_TRACER_TEST(M_WARNING, COMP))
+	/* if (GDK_TRACER_TEST(M_WARNING, COMP)) */
 
 #define TRC_INFO_IF(COMP)			\
 	if (GDK_TRACER_TEST(M_INFO, COMP))
