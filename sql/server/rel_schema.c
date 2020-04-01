@@ -1479,6 +1479,9 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 				if (isDeclaredTable(pt))
 					return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: can't add a declared table into a %s",
 									 TABLE_TYPE_DESCRIPTION(t->type, t->properties));
+				if (isTempSchema(pt->s))
+					return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: can't add a temporary table into a %s",
+									 TABLE_TYPE_DESCRIPTION(t->type, t->properties));
 				if (strcmp(sname, nsname) != 0)
 					return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: all children tables of '%s.%s' must be "
 									 "part of schema '%s'", sname, tname, sname);
@@ -2607,7 +2610,7 @@ rel_set_table_schema(sql_query *query, char* old_schema, char *tname, char *new_
 	}
 	if (ot->system)
 		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: cannot set schema of a system table");
-	if (isTempSchema(os) || isTempTable(ot))
+	if (isTempSchema(os))
 		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: not possible to change a temporary table schema");
 	if (isView(ot))
 		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: not possible to change schema of a view");

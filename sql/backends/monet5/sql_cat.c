@@ -164,6 +164,8 @@ validate_alter_table_add_table(mvc *sql, char* call, char *msname, char *mtname,
 		throw(SQL,call,SQLSTATE(42000) "ALTER TABLE: can't add a view into a %s", errtable);
 	if (isDeclaredTable(rpt))
 		throw(SQL,call,SQLSTATE(42000) "ALTER TABLE: can't add a declared table into a %s", errtable);
+	if (isTempSchema(rpt->s))
+		throw(SQL,call,SQLSTATE(42000) "ALTER TABLE: can't add a temporary table into a %s", errtable);
 	if (ms->base.id != ps->base.id)
 		throw(SQL,call,SQLSTATE(42000) "ALTER TABLE: all children tables of '%s.%s' must be part of schema '%s'", msname, mtname, msname);
 	if (n && !update)
@@ -1705,7 +1707,7 @@ SQLrename_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			throw(SQL, "sql.rename_table", SQLSTATE(42S02) "ALTER TABLE: no such table '%s' in schema '%s'", otable_name, oschema_name);
 		if (t->system)
 			throw(SQL, "sql.rename_table", SQLSTATE(42000) "ALTER TABLE: cannot set schema of a system table");
-		if (isTempSchema(o) || isTempTable(t))
+		if (isTempSchema(o))
 			throw(SQL, "sql.rename_table", SQLSTATE(42000) "ALTER TABLE: not possible to change a temporary table schema");
 		if (isView(t))
 			throw(SQL, "sql.rename_table", SQLSTATE(42000) "ALTER TABLE: not possible to change schema of a view");
