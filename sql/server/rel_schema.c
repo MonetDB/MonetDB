@@ -2518,6 +2518,10 @@ rel_rename_table(mvc *sql, char* schema_name, char *old_name, char *new_name, in
 	}
 	if (t->system)
 		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: cannot rename a system table");
+	if (isView(t))
+		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: cannot rename a view");
+	if (isDeclaredTable(t))
+		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: cannot rename a declared table");
 	if (mvc_check_dependency(sql, t->base.id, TABLE_DEPENDENCY, NULL))
 		return sql_error(sql, 02, SQLSTATE(2BM37) "ALTER TABLE: unable to rename table '%s' (there are database objects which depend on it)", old_name);
 	if (strNil(new_name) || *new_name == '\0')
@@ -2564,6 +2568,8 @@ rel_rename_column(mvc *sql, char* schema_name, char *table_name, char *old_name,
 		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: cannot rename a column in a system table");
 	if (isView(t))
 		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: cannot rename column '%s': '%s' is a view", old_name, table_name);
+	if (isDeclaredTable(t))
+		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: cannot rename a column in a declared table");
 	if (!(col = mvc_bind_column(sql, t, old_name)))
 		return sql_error(sql, 02, SQLSTATE(42S22) "ALTER TABLE: no such column '%s' in table '%s'", old_name, table_name);
 	if (mvc_check_dependency(sql, col->base.id, COLUMN_DEPENDENCY, NULL))
@@ -2614,6 +2620,8 @@ rel_set_table_schema(sql_query *query, char* old_schema, char *tname, char *new_
 		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: not possible to change a temporary table schema");
 	if (isView(ot))
 		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: not possible to change schema of a view");
+	if (isDeclaredTable(ot))
+		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: not possible to change schema of a declared table");
 	if (mvc_check_dependency(sql, ot->base.id, TABLE_DEPENDENCY, NULL))
 		return sql_error(sql, 02, SQLSTATE(2BM37) "ALTER TABLE: unable to set schema of table '%s' (there are database objects which depend on it)", tname);
 	if (ot->members.set || ot->triggers.set)

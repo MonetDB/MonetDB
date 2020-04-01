@@ -1687,6 +1687,10 @@ SQLrename_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			throw(SQL, "sql.rename_table", SQLSTATE(42S02) "ALTER TABLE: no such table '%s' in schema '%s'", otable_name, oschema_name);
 		if (t->system)
 			throw(SQL, "sql.rename_table", SQLSTATE(42000) "ALTER TABLE: cannot rename a system table");
+		if (isView(t))
+			throw(SQL, "sql.rename_table", SQLSTATE(42000) "ALTER TABLE: cannot rename a view");
+		if (isDeclaredTable(t))
+			throw(SQL, "sql.rename_table", SQLSTATE(42000) "ALTER TABLE: cannot rename a declared table");
 		if (mvc_check_dependency(sql, t->base.id, TABLE_DEPENDENCY, NULL))
 			throw (SQL,"sql.rename_table", SQLSTATE(2BM37) "ALTER TABLE: unable to rename table '%s' (there are database objects which depend on it)", otable_name);
 		if (strNil(ntable_name) || *ntable_name == '\0')
@@ -1711,6 +1715,8 @@ SQLrename_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			throw(SQL, "sql.rename_table", SQLSTATE(42000) "ALTER TABLE: not possible to change a temporary table schema");
 		if (isView(t))
 			throw(SQL, "sql.rename_table", SQLSTATE(42000) "ALTER TABLE: not possible to change schema of a view");
+		if (isDeclaredTable(t))
+			throw(SQL, "sql.rename_table", SQLSTATE(42000) "ALTER TABLE: not possible to change schema of a declared table");
 		if (mvc_check_dependency(sql, t->base.id, TABLE_DEPENDENCY, NULL))
 			throw(SQL, "sql.rename_table", SQLSTATE(2BM37) "ALTER TABLE: unable to set schema of table '%s' (there are database objects which depend on it)", otable_name);
 		if (t->members.set || t->triggers.set)
@@ -1755,6 +1761,8 @@ SQLrename_column(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "sql.rename_column", SQLSTATE(42000) "ALTER TABLE: cannot rename a column in a system table");
 	if (isView(t))
 		throw(SQL, "sql.rename_column", SQLSTATE(42000) "ALTER TABLE: cannot rename column '%s': '%s' is a view", old_name, table_name);
+	if (isDeclaredTable(t))
+		throw(SQL, "sql.rename_column", SQLSTATE(42000) "ALTER TABLE: cannot rename column in a declared table");
 	if (!(col = mvc_bind_column(sql, t, old_name)))
 		throw(SQL, "sql.rename_column", SQLSTATE(42S22) "ALTER TABLE: no such column '%s' in table '%s'", old_name, table_name);
 	if (mvc_check_dependency(sql, col->base.id, COLUMN_DEPENDENCY, NULL))
