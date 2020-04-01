@@ -37,8 +37,6 @@ int store_readonly = 0;
 int store_singleuser = 0;
 int store_initialized = 0;
 
-backend_stack backend_stk;
-
 store_functions store_funcs;
 table_functions table_funcs;
 logger_functions logger_funcs;
@@ -1660,18 +1658,18 @@ create_sql_table(sql_allocator *sa, const char *name, sht type, bit system, int 
 	return create_sql_table_with_id(sa, next_oid(), name, type, system, persistence, commit_action, properties);
 }
 
-void
-dup_sql_type(sql_trans *tr, sql_schema *os, sql_subtype *oc, sql_subtype *nc)
+static void
+dup_sql_type(sql_trans *tr, sql_schema *s, sql_subtype *oc, sql_subtype *nc)
 {
 	nc->digits = oc->digits;
 	nc->scale = oc->scale;
 	nc->type = oc->type;
-	if (os && nc->type->s) { /* user type */
+	if (s && nc->type->s) { /* user type */
 		sql_type *lt = NULL;
 
-		if (os->base.id == nc->type->s->base.id) {
+		if (s->base.id == nc->type->s->base.id) {
 			/* Current user type belongs to current schema. So search there for current user type. */
-			lt = find_sql_type(os, nc->type->base.name);
+			lt = find_sql_type(s, nc->type->base.name);
 		} else {
 			/* Current user type belongs to another schema in the current transaction. Search there for current user type. */
 			lt = sql_trans_bind_type(tr, NULL, nc->type->base.name);
@@ -1851,7 +1849,7 @@ store_schema_number(void)
 }
 
 static int
-store_load(void) {
+store_load(backend_stack stk) {
 	int first;
 
 	sql_allocator *sa;
@@ -1878,7 +1876,7 @@ store_load(void) {
 
 	if (!sequences_init())
 		return -1;
-	gtrans = tr = create_trans(sa, backend_stk);
+	gtrans = tr = create_trans(sa, stk);
 	if (!gtrans)
 		return -1;
 
@@ -1889,7 +1887,7 @@ store_load(void) {
 		/* cannot initialize database in readonly mode */
 		if (store_readonly)
 			return -1;
-		tr = sql_trans_create(backend_stk, NULL, NULL, true);
+		tr = sql_trans_create(stk, NULL, NULL, true);
 		if (!tr) {
 			TRC_CRITICAL(SQL_STORE, "Failed to start a transaction while loading the storage\n");
 			return -1;
@@ -2091,7 +2089,6 @@ store_init(int debug, store_type store, int readonly, int singleuser, backend_st
 {
 	int v = 1;
 
-	backend_stk = stk;
 	store_readonly = readonly;
 	store_singleuser = singleuser;
 
@@ -2121,7 +2118,7 @@ store_init(int debug, store_type store, int readonly, int singleuser, backend_st
 
 	/* create the initial store structure or re-load previous data */
 	MT_lock_unset(&bs_lock);
-	return store_load();
+	return store_load(stk);
 }
 
 static int
@@ -4717,7 +4714,6 @@ reset_column(sql_trans *tr, sql_column *fc, sql_column *pfc)
 				return LOG_ERR;
 		}
 
-		dup_sql_type(tr, pfc->t->s, &(pfc->type), &(fc->type));
 		fc->null = pfc->null;
 		fc->unique = pfc->unique;
 		fc->colnr = pfc->colnr;
@@ -6355,7 +6351,7 @@ create_sql_column(sql_trans *tr, sql_table *t, const char *name, sql_subtype *tp
 	sql_column *col = SA_ZNEW(tr->sa, sql_column);
 
 	base_init(tr->sa, &col->base, next_oid(), TR_NEW, name);
-	dup_sql_type(tr, t->s, tpe, &(col->type));
+	col->type = *tpe;
 	col->def = NULL;
 	col->null = 1;
 	col->colnr = table_next_column_nr(t);
@@ -7467,9 +7463,9 @@ sql_trans_begin(sql_session *s)
 	snr = tr->schema_number;
 	TRC_DEBUG(SQL_STORE, "Enter sql_trans_begin for transaction: %d\n", snr);
 	if (tr->parent && tr->parent == gtrans && 
-	    (tr->stime < gtrans->wstime || tr->wtime || 
+	    (tr->stime < gtrans->wstime || tr->wtime || tr->sa->nr > (2*gtrans->sa->nr) ||
 			store_schema_number() != snr)) {
-		if (!list_empty(tr->moved_tables)) {
+		if (!list_empty(tr->moved_tables) || tr->sa->nr > (2*gtrans->sa->nr)) {
 			sql_trans_destroy(tr, false);
 			s->tr = tr = sql_trans_create(s->stk, NULL, NULL, false);
 		} else {

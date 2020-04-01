@@ -697,6 +697,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				actions++;
 			}
 		}
+		assert (p == old[i] || oclean[i]);
 		pushInstruction(mb,p);
 	}
 	for (j=1; j<i; j++)
