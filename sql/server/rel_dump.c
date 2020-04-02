@@ -88,15 +88,31 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 	switch(e->type) {
 	case e_psm: {
 		if (e->flag & PSM_SET) {
-			mnstr_printf(fout, "%s = ", exp_name(e));
+			const char *rname = exp_relname(e);
+			int level = GET_PSM_LEVEL(e->flag);
+			if (rname)
+				mnstr_printf(fout, "\"%s\".", rname);
+			mnstr_printf(fout, "\"%s\" = ", exp_name(e));
 			exp_print(sql, fout, e->l, depth, refs, 0, 0);
+			mnstr_printf(fout, " FRAME %d ", level);
+			alias = 0;
 		} else if (e->flag & PSM_VAR) {
 			// todo output table def (from e->f)
-			// or type if e-f == NULL
-			mnstr_printf(fout, "declare %s ", exp_name(e));
+			const char *rname = exp_relname(e);
+			char *type_str = e->f ? NULL : sql_subtype_string(exp_subtype(e));
+			int level = GET_PSM_LEVEL(e->flag);
+			mnstr_printf(fout, "declare ");
+			if (rname)
+				mnstr_printf(fout, "\"%s\".", rname);
+			mnstr_printf(fout, "\"%s\" %s FRAME %d ", exp_name(e), type_str ? type_str : "", level);
+			_DELETE(type_str);
+			alias = 0;
 		} else if (e->flag & PSM_RETURN) {
+			int level = GET_PSM_LEVEL(e->flag);
 			mnstr_printf(fout, "return ");
 			exp_print(sql, fout, e->l, depth, refs, 0, 0);
+			mnstr_printf(fout, " FRAME %d ", level);
+			alias = 0;
 		} else if (e->flag & PSM_WHILE) {
 			mnstr_printf(fout, "while ");
 			exp_print(sql, fout, e->l, depth, refs, 0, 0);
