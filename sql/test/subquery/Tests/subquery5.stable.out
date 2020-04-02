@@ -64,6 +64,21 @@ stdout of test 'subquery5` in directory 'sql/test/subquery` itself:
 #BEGIN
 #	RETURN SELECT input UNION ALL SELECT input;
 #END;
+#SELECT col1 FROM another_t t1 GROUP BY col1 HAVING 1 = ANY (SELECT col1);
+% sys.t1 # table_name
+% col1 # name
+% int # type
+% 1 # length
+[ 1	]
+#SELECT (SELECT i = ANY(VALUES(1), (i))) FROM integers;
+% .%6 # table_name
+% %6 # name
+% boolean # type
+% 5 # length
+[ true	]
+[ true	]
+[ true	]
+[ NULL	]
 #DROP FUNCTION evilfunction(INT);
 #DROP TABLE tbl_ProductSales;
 #DROP TABLE another_T;

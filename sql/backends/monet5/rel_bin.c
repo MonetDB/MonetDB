@@ -2609,6 +2609,7 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 		stmt *l = bin_first_column(be, left);
 		stmt *r = bin_first_column(be, right);
 		join = stmt_join(be, l, r, 0, cmp_all, 0); 
+		lcand = left->cand;
 	}
 	jl = stmt_result(be, join, 0);
 	if (en) {
