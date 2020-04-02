@@ -2374,6 +2374,41 @@ sql_update_jun2020(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 			" ('epoch', 'date_trunc')"
 			" and schema_id = (select id from sys.schemas where name = 'sys');\n");
 
+	/* 26_sysmon */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"drop view sys.queue;\n"
+			"drop function sys.queue;\n"
+			"create function sys.queue()\n"
+			"returns table(\n"
+			"\"tag\" bigint,\n"
+			"\"sessionid\" int,\n"
+			"\"username\" string,\n"
+			"\"started\" timestamp,\n"
+			"\"status\" string,\n"
+			"\"query\" string,\n"
+			"\"finished\" timestamp,\n"
+			"\"workers\" int,\n"
+			"\"memory\" int)\n"
+			" external name sql.sysmon_queue;\n"
+			"grant execute on function sys.queue to public;\n"
+			"create view sys.queue as select * from sys.queue();\n"
+			"grant select on sys.queue to public;\n"
+
+			"drop procedure sys.pause(int);\n"
+			"drop procedure sys.resume(int);\n"
+			"drop procedure sys.stop(int);\n"
+
+			"grant execute on procedure sys.pause(bigint) to public;\n"
+			"grant execute on procedure sys.resume(bigint) to public;\n"
+			"grant execute on procedure sys.stop(bigint) to public;\n");
+
+	pos += snprintf(buf + pos, bufsize - pos,
+			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
+			" and name = 'queue' and type = %d;\n", (int) F_UNION);
+	pos += snprintf(buf + pos, bufsize - pos,
+			"update sys._tables set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
+			" and name = 'queue';\n");
+
 	/* 39_analytics.sql */
 	pos += snprintf(buf + pos, bufsize - pos,
 			"create window stddev_samp(val TINYINT) returns DOUBLE\n"
