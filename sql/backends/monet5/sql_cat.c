@@ -422,7 +422,7 @@ alter_table_del_table(mvc *sql, char *msname, char *mtname, char *psname, char *
 	if (!isMergeTable(mt) && !isReplicaTable(mt))
 		throw(SQL,"sql.alter_table_del_table",SQLSTATE(42S02) "ALTER TABLE: cannot drop table '%s.%s' to %s '%s.%s'", psname, ptname, errtable, msname, mtname);
 	if (!(n = cs_find_id(&mt->members, pt->base.id)))
-		throw(SQL,"sql.alter_table_del_table",SQLSTATE(42S02) "ALTER TABLE: table '%s.%s' isn't part of the MERGE TABLE '%s.%s'", ps->base.name, ptname, ms->base.name, mtname);
+		throw(SQL,"sql.alter_table_del_table",SQLSTATE(42S02) "ALTER TABLE: table '%s.%s' isn't part of %s '%s.%s'", ps->base.name, ptname, errtable, ms->base.name, mtname);
 
 	sql_trans_del_table(sql->session->tr, mt, pt, drop_action);
 	return MAL_SUCCEED;
