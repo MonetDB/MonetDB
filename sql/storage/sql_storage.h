@@ -466,7 +466,7 @@ extern sql_session * sql_session_create(backend_stack stk, int autocommit);
 extern void sql_session_destroy(sql_session *s);
 extern int sql_session_reset(sql_session *s, int autocommit);
 extern int sql_trans_begin(sql_session *s);
-extern void sql_trans_end(sql_session *s);
+extern void sql_trans_end(sql_session *s, int commit /* rollback=0, or commit=1 temporaries */);
 
 extern list* sql_trans_schema_user_dependencies(sql_trans *tr, sqlid schema_id);
 extern void sql_trans_create_dependency(sql_trans *tr, sqlid id, sqlid depend_id, sql_dependency depend_type);
@@ -502,7 +502,5 @@ extern sql_part *sql_trans_copy_part(sql_trans *tr, sql_table *t, sql_part *pt);
 
 extern void sql_trans_drop_any_comment(sql_trans *tr, sqlid id);
 extern void sql_trans_drop_obj_priv(sql_trans *tr, sqlid obj_id);
-
-extern void dup_sql_type(sql_trans *tr, sql_schema *os, sql_subtype *oc, sql_subtype *nc);
 
 #endif /*SQL_STORAGE_H */

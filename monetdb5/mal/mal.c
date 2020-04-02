@@ -70,7 +70,7 @@ int mal_init(void){
 #ifndef NDEBUG
 		mdbExit();
 #endif
-		TRC_ERROR(MAL_SERVER, "%s\n", err);
+		TRC_CRITICAL(MAL_SERVER, "%s\n", err);
 		freeException(err);
 		return -1;
 	}

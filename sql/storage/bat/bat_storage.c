@@ -2757,7 +2757,6 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 			}
 		}
 
-		dup_sql_type(tr->parent, ft->s, &(cc->type), &(oc->type));
 		oc->colnr = cc->colnr;
 		oc->null = cc->null;
 		oc->unique = cc->unique;
