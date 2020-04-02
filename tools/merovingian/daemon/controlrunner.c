@@ -783,9 +783,13 @@ static void ctl_handle_client(
 				len = snprintf(buf2, sizeof(buf2), "OK1\n");
 				send_client("=");
 				for (int i = 0; i < nsnaps; i++) {
+					struct tm tm = { 0 };
+					char datebuf[100];
 					struct snapshot *snap = &snaps[i];
-					len = snprintf(buf2, sizeof(buf2), "%" PRIi64 " %" PRIu64 " %s %s\n",
-						(int64_t)snap->time,
+					gmtime_r(&snap->time, &tm);
+					strftime(datebuf, sizeof(datebuf), "%Y%m%dT%H%M%S", &tm);
+					len = snprintf(buf2, sizeof(buf2), "%s %" PRIu64 " %s %s\n",
+						datebuf,
 						(uint64_t)snap->size,
 						snap->dbname,
 						snap->path != NULL ? snap->path : "");

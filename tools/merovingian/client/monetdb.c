@@ -1754,20 +1754,35 @@ snapshot_enumerate(struct snapshot **snapshots, int *nsnapshots)
 		char *p = out + 4;
 		char *end = p + strlen(p);
 		while (p < end) {
+			char datebuf[100];
+			char *parse_result;
+			struct tm tm = {0};
 			char *eol = strchr(p, '\n');
 			eol = (eol != NULL) ? eol : end;
-			int64_t time;
+			time_t timestamp, pre, post;
 			uint64_t size;
 			int len;
-			if (sscanf(p, "%" SCNd64 " %" SCNu64 " %n", &time, &size, &len) != 2) {
+			if (sscanf(p, "%99s %" SCNu64 " %n", datebuf, &size, &len) != 2) {
 				free(out);
 				return strdup("internal parse error");
 			}
+			parse_result = strptime(datebuf, "%Y%m%dT%H%M%S", &tm);
+			if (parse_result == NULL || *parse_result != '\0') {
+				free(out);
+				return strdup("internal timestamp parse error");
+			}
+			// Unfortunately mktime interprets tm as local time, we have
+			// to correct for that.
+			timestamp = mktime(&tm);
+			pre = time(NULL);
+			gmtime_r(&pre, &tm);
+			post = mktime(&tm);
+			timestamp += pre - post;
 			p += len;
 			char *dbend = strchr(p, ' ');
 			if (dbend == NULL) {
 				free(out);
-				return strdup("internal parse error");
+				return strdup("Internal parse error");
 			}
 			int dblen = dbend - p;
 			char *path = dbend + 1;
@@ -1776,7 +1791,7 @@ snapshot_enumerate(struct snapshot **snapshots, int *nsnapshots)
 			snap->dbname = malloc(dblen + 1);
 			memmove(snap->dbname, p, dblen);
 			snap->dbname[dblen] = '\0';
-			snap->time = time;
+			snap->time = timestamp;
 			snap->size = size;
 			snap->path = malloc(pathlen + 1);
 			memmove(snap->path, path, pathlen);
