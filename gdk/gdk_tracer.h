@@ -263,7 +263,7 @@ gdk_export gdk_return GDKtracer_log(const char *file, const char *func,
 				    int lineno, log_level_t lvl,
 				    component_t comp,
 				    const char *syserr,
-				    const char *format, ...)
+				    _In_z_ _Printf_format_string_ const char *format, ...)
 	__attribute__((__format__(__printf__, 7, 8)));
 
 

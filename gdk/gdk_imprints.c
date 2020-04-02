@@ -354,11 +354,11 @@ BATimprints(BAT *b)
 		break;
 	default:		/* type not supported */
 		/* doesn't look enough like base type: do nothing */
-		GDKerror("BATimprints: unsupported type\n");
+		GDKerror("unsupported type\n");
 		return GDK_FAIL;
 	}
 
-	BATcheck(b, "BATimprints", GDK_FAIL);
+	BATcheck(b, GDK_FAIL);
 
 	if (BATcheckimprints(b))
 		return GDK_SUCCEED;
@@ -471,7 +471,7 @@ BATimprints(BAT *b)
 			BBPunfix(s4->batCacheid);
 			if (b->timprints != NULL)
 				return GDK_SUCCEED; /* we were beaten to it */
-			GDKerror("#BATimprints: memory allocation error");
+			GDKerror("memory allocation error");
 			return GDK_FAIL;
 		}
 		imprints->bins = imprints->imprints.base + IMPRINTS_HEADER_SIZE * SIZEOF_SIZE_T;

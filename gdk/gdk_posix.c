@@ -388,7 +388,7 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 			return old_address;
 		}
 		if (path && truncate(path, *new_size) < 0)
-			TRC_ERROR(GDK, "MT_mremap(%s): truncate failed\n", path);
+			TRC_WARNING(GDK, "MT_mremap(%s): truncate failed\n", path);
 		TRC_DEBUG(ALLOC, "MT_mremap(%s,%p,%zu,%zu) -> shrinking\n", path?path:"NULL", old_address, old_size, *new_size);
 #endif	/* !STATIC_CODE_ANALYSIS */
 		return old_address;
@@ -750,7 +750,7 @@ MT_mmap(const char *path, int mode, size_t len)
 		(void) SetFileAttributes(path, FILE_ATTRIBUTE_NORMAL);
 		h1 = CreateFile(path, mode0, mode1, &sa, OPEN_ALWAYS, mode2, NULL);
 		if (h1 == INVALID_HANDLE_VALUE) {
-			GDKwinerror("MT_mmap: CreateFile('%s', %lu, %lu, &sa, %lu, %lu, NULL) failed\n",
+			GDKwinerror("CreateFile('%s', %lu, %lu, &sa, %lu, %lu, NULL) failed\n",
 				    path, (unsigned long) mode0, (unsigned long) mode1, (unsigned long) OPEN_ALWAYS, (unsigned long) mode2);
 			return NULL;
 		}
@@ -758,7 +758,7 @@ MT_mmap(const char *path, int mode, size_t len)
 
 	h2 = CreateFileMapping(h1, &sa, mode3, (DWORD) (((__int64) len >> 32) & LL_CONSTANT(0xFFFFFFFF)), (DWORD) (len & LL_CONSTANT(0xFFFFFFFF)), NULL);
 	if (h2 == NULL) {
-		GDKwinerror("MT_mmap: CreateFileMapping(%p, &sa, %lu, %lu, %lu, NULL) failed\n",
+		GDKwinerror("CreateFileMapping(%p, &sa, %lu, %lu, %lu, NULL) failed\n",
 			    h1, (unsigned long) mode3,
 			    (unsigned long) (((unsigned __int64) len >> 32) & LL_CONSTANT(0xFFFFFFFF)),
 			    (unsigned long) (len & LL_CONSTANT(0xFFFFFFFF)));
@@ -785,7 +785,7 @@ MT_munmap(void *p, size_t dummy)
 	 * while Unix's   munmap          returns success==0, error==-1. */
 	ret = UnmapViewOfFile(p);
 	if (ret == 0) {
-		GDKwinerror("MT_munmap failed\n");
+		GDKwinerror("UnmapViewOfFile failed\n");
 		return -1;
 	}
 	return 0;
@@ -834,7 +834,7 @@ MT_msync(void *p, size_t len)
 	 * while Unix's   munmap          returns success==0, error==-1. */
 	ret = FlushViewOfFile(p, len);
 	if (ret == 0) {
-		GDKwinerror("MT_msync: FlushViewOfFile failed\n");
+		GDKwinerror("FlushViewOfFile failed\n");
 		return -1;
 	}
 	return 0;

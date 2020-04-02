@@ -106,7 +106,7 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 
 	/* check for overflow */
 	if (itemsize && nitems > (h->size / itemsize)) {
-		GDKerror("HEAPalloc: allocating more than heap can accomodate\n");
+		GDKerror("allocating more than heap can accomodate\n");
 		return GDK_FAIL;
 	}
 	if (GDKinmemory() ||
@@ -127,7 +127,7 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 		GDKfree(nme);
 	}
 	if (h->base == NULL) {
-		GDKerror("HEAPalloc: Insufficient space for HEAP of %zu bytes.", h->size);
+		GDKerror("Insufficient space for HEAP of %zu bytes.", h->size);
 		return GDK_FAIL;
 	}
 	h->newstorage = h->storage;
@@ -288,7 +288,7 @@ HEAPextend(Heap *h, size_t size, bool mayshare)
 	  failed:
 		*h = bak;
 	}
-	GDKerror("HEAPextend: failed to extend to %zu for %s%s%s: %s\n",
+	GDKerror("failed to extend to %zu for %s%s%s: %s\n",
 		 size, nme, ext ? "." : "", ext ? ext : "", failure);
 	return GDK_FAIL;
 }
@@ -695,7 +695,7 @@ HEAPsave_intern(Heap *h, const char *nme, const char *ext, const char *suffix, b
 	long_str extension;
 
 	if (h->base == NULL) {
-		GDKerror("HEAPsave_intern: no heap to save\n");
+		GDKerror("no heap to save\n");
 		return GDK_FAIL;
 	}
 	if (h->storage != STORE_MEM && store == STORE_PRIV) {
@@ -971,7 +971,7 @@ HEAP_malloc(Heap *heap, size_t nbytes)
 		
 		assert(trail == 0 || block > trail);
 		if (trail != 0 && block <= trail) {
-			GDKerror("HEAP_malloc: Free list is not orderered\n");
+			GDKerror("Free list is not orderered\n");
 			return 0;
 		}
 
@@ -1065,7 +1065,7 @@ HEAP_free(Heap *heap, var_t mem)
 
 	assert(hheader->alignment == 8 || hheader->alignment == 4);
 	if (hheader->alignment != 8 && hheader->alignment != 4) {
-		GDKerror("HEAP_free: Heap structure corrupt\n");
+		GDKerror("Heap structure corrupt\n");
 		return;
 	}
 

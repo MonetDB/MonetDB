@@ -280,11 +280,11 @@ GDKtracer_set_component_level(const char *comp, const char *lvl)
 	component_t component = find_component(comp);
 
 	if (level == LOG_LEVELS_COUNT) {
-		GDKerror("%s: unknown level\n", __func__);
+		GDKerror("unknown level\n");
 		return GDK_FAIL;
 	}
 	if (component == COMPONENTS_COUNT) {
-		GDKerror("%s: unknown component\n", __func__);
+		GDKerror("unknown component\n");
 		return GDK_FAIL;
 	}
 
@@ -300,7 +300,7 @@ GDKtracer_reset_component_level(const char *comp)
 	component_t component = find_component(comp);
 
 	if (component == COMPONENTS_COUNT) {
-		GDKerror("%s: unknown component\n", __func__);
+		GDKerror("unknown component\n");
 		return GDK_FAIL;
 	}
 	lvl_per_component[component] = DEFAULT_LOG_LEVEL;
@@ -314,11 +314,11 @@ GDKtracer_set_layer_level(const char *layer, const char *lvl)
 	layer_t lyr = find_layer(layer);
 	log_level_t level = find_level(lvl);
 	if (level == LOG_LEVELS_COUNT) {
-		GDKerror("%s: unknown level\n", __func__);
+		GDKerror("unknown level\n");
 		return GDK_FAIL;
 	}
 	if (lyr == LAYERS_COUNT) {
-		GDKerror("%s: unknown layer\n", __func__);
+		GDKerror("unknown layer\n");
 		return GDK_FAIL;
 	}
 
@@ -332,7 +332,7 @@ GDKtracer_reset_layer_level(const char *layer)
 {
 	layer_t lyr = find_layer(layer);
 	if (lyr == LAYERS_COUNT) {
-		GDKerror("%s: unknown layer\n", __func__);
+		GDKerror("unknown layer\n");
 		return GDK_FAIL;
 	}
 
@@ -346,7 +346,7 @@ GDKtracer_set_flush_level(const char *lvl)
 {
 	log_level_t level = find_level(lvl);
 	if (level == LOG_LEVELS_COUNT) {
-		GDKerror("%s: unknown level\n", __func__);
+		GDKerror("unknown level\n");
 		return GDK_FAIL;
 	}
 
@@ -368,7 +368,7 @@ GDKtracer_set_adapter(const char *adapter)
 {
 	adapter_t adptr = find_adapter(adapter);
 	if (adptr == ADAPTERS_COUNT) {
-		GDKerror("%s: unknown adapter\n", __func__);
+		GDKerror("unknown adapter\n");
 		return GDK_FAIL;
 	}
 
@@ -438,8 +438,10 @@ GDKtracer_log(const char *file, const char *func, int lineno,
 		_GDKtracer_init_basic_adptr();
 	}
 	MT_lock_unset(&lock);
-	fprintf(active_tracer, "%s%s%s\n", buffer,
-		syserr ? ": " : "", syserr ? syserr : "");
+	if (syserr)
+		fprintf(active_tracer, "%s: %s\n", buffer, syserr);
+	else
+		fprintf(active_tracer, "%s\n", buffer);
 
 	// Flush the current buffer in case the event is
 	// important depending on the flush-level
@@ -447,12 +449,27 @@ GDKtracer_log(const char *file, const char *func, int lineno,
 	// like mserver5 refusing to start due to allocated port
 	// and the error is never reported to the user because it
 	// is still in the buffer which it never gets flushed.
-	if (level == cur_flush_level || level == M_CRITICAL || level == M_ERROR) {
+	if (level == cur_flush_level || level == M_CRITICAL || level == M_ERROR)
 		fflush(active_tracer);
-		if (level == M_CRITICAL && active_tracer != stderr)
-			fprintf(stderr, "%s: %s%s%s\n", func, msg,
-				syserr ? ": " : "", syserr ? syserr : "");
+	if (level == M_CRITICAL && active_tracer != stderr) {
+		fprintf(stderr, "#%s: %s: %s%s%s%s\n",
+			MT_thread_getname(), func, GDKERROR,
+			msg, syserr ? ": " : "",
+			syserr ? syserr : "");
 	}
+	if (comp == GDK && (level == M_CRITICAL || level == M_ERROR)) {
+		/* append message to GDKerrbuf (if set) */
+		char *buf = GDKerrbuf;
+		if (buf) {
+			size_t n = strlen(buf);
+			snprintf(buf + n, GDKMAXERRLEN - n,
+				 "%s%s: %s%s%s\n",
+				 GDKERROR, func, msg,
+				 syserr ? ": " : "",
+				 syserr ? syserr : "");
+		}
+	}
+
 	return GDK_SUCCEED;
 }
 

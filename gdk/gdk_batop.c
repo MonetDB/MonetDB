@@ -273,7 +273,7 @@ insert_string_bat(BAT *b, BAT *n, BAT *s, bool force)
 			assert((size_t) v < b->tvheap->free);
 			if (BUNlast(b) >= BATcapacity(b)) {
 				if (BATcount(b) == BUN_MAX) {
-					GDKerror("bunfastapp: too many elements to accomodate (" BUNFMT ")\n", BUN_MAX);
+					GDKerror("too many elements to accomodate (" BUNFMT ")\n", BUN_MAX);
 					goto bunins_failed;
 				}
 				if (BATextend(b, BATgrows(b)) != GDK_SUCCEED)
@@ -511,7 +511,7 @@ BATappend(BAT *b, BAT *n, BAT *s, bool force)
 	assert(b->batCacheid > 0);
 	assert(b->theap.parentid == 0);
 
-	ALIGNapp(b, "BATappend", force, GDK_FAIL);
+	ALIGNapp(b, force, GDK_FAIL);
 
 	if (ATOMstorage(ATOMtype(b->ttype)) != ATOMstorage(ATOMtype(n->ttype))) {
 		GDKerror("Incompatible operands.\n");
@@ -530,12 +530,12 @@ BATappend(BAT *b, BAT *n, BAT *s, bool force)
 	}
 
 	if (BUNlast(b) + cnt > BUN_MAX) {
-		GDKerror("BATappend: combined BATs too large\n");
+		GDKerror("combined BATs too large\n");
 		return GDK_FAIL;
 	}
 
 	if (b->hseqbase + BATcount(b) + cnt >= GDK_oid_max) {
-		GDKerror("BATappend: overflow of head value\n");
+		GDKerror("overflow of head value\n");
 		return GDK_FAIL;
 	}
 
@@ -741,7 +741,7 @@ BATdel(BAT *b, BAT *d)
 			o = b->hseqbase;
 		}
 		if (o - b->hseqbase < b->batInserted) {
-			GDKerror("BATdelete: cannot delete committed values\n");
+			GDKerror("cannot delete committed values\n");
 			return GDK_FAIL;
 		}
 		if (o + c > b->hseqbase + BATcount(b))
@@ -781,7 +781,7 @@ BATdel(BAT *b, BAT *d)
 			c--;
 		}
 		if (*o - b->hseqbase < b->batInserted) {
-			GDKerror("BATdelete: cannot delete committed values\n");
+			GDKerror("cannot delete committed values\n");
 			return GDK_FAIL;
 		}
 		if (BATtdense(b) && BATmaterialize(b) != GDK_SUCCEED)
@@ -844,19 +844,18 @@ BATreplace(BAT *b, BAT *p, BAT *n, bool force)
 		return GDK_SUCCEED;
 	}
 	if (BATcount(p) != BATcount(n)) {
-		GDKerror("BATreplace: update BATs not the same size\n");
+		GDKerror("update BATs not the same size\n");
 		return GDK_FAIL;
 	}
 	if (ATOMtype(p->ttype) != TYPE_oid) {
-		GDKerror("BATreplace: positions BAT not type OID\n");
+		GDKerror("positions BAT not type OID\n");
 		return GDK_FAIL;
 	}
 	if (BATcount(n) == 0) {
 		return GDK_SUCCEED;
 	}
 	if (!force && (b->batRestricted != BAT_WRITE || b->batSharecnt > 0)) {
-		GDKerror("BATreplace: access denied to %s, aborting.\n",
-			 BATgetId(b));
+		GDKerror("access denied to %s, aborting.\n", BATgetId(b));
 		return GDK_FAIL;
 	}
 
@@ -887,12 +886,12 @@ BATreplace(BAT *b, BAT *p, BAT *n, bool force)
 			oid updid = BUNtoid(p, i);
 
 			if (updid < b->hseqbase || updid >= hseqend) {
-				GDKerror("BATreplace: id out of range\n");
+				GDKerror("id out of range\n");
 				return GDK_FAIL;
 			}
 			updid -= b->hseqbase;
 			if (!force && updid < b->batInserted) {
-				GDKerror("BATreplace: updating committed value\n");
+				GDKerror("updating committed value\n");
 				return GDK_FAIL;
 			}
 
@@ -994,12 +993,12 @@ BATreplace(BAT *b, BAT *p, BAT *n, bool force)
 		oid updid = BUNtoid(p, 0);
 
 		if (updid < b->hseqbase || updid + BATcount(p) > hseqend) {
-			GDKerror("BATreplace: id out of range\n");
+			GDKerror("id out of range\n");
 			return GDK_FAIL;
 		}
 		updid -= b->hseqbase;
 		if (!force && updid < b->batInserted) {
-			GDKerror("BATreplace: updating committed value\n");
+			GDKerror("updating committed value\n");
 			return GDK_FAIL;
 		}
 
@@ -1076,12 +1075,12 @@ BATreplace(BAT *b, BAT *p, BAT *n, bool force)
 			oid updid = BUNtoid(p, i);
 
 			if (updid < b->hseqbase || updid >= hseqend) {
-				GDKerror("BATreplace: id out of range\n");
+				GDKerror("id out of range\n");
 				return GDK_FAIL;
 			}
 			updid -= b->hseqbase;
 			if (!force && updid < b->batInserted) {
-				GDKerror("BATreplace: updating committed value\n");
+				GDKerror("updating committed value\n");
 				return GDK_FAIL;
 			}
 
@@ -1194,14 +1193,14 @@ BATslice(BAT *b, BUN l, BUN h)
 	BATiter bni, bi = bat_iterator(b);
 	oid foid;		/* first oid value if oid column */
 
-	BATcheck(b, "BATslice", NULL);
+	BATcheck(b, NULL);
 	if (h > BATcount(b))
 		h = BATcount(b);
 	if (h < l)
 		h = l;
 
 	if (l > BUN_MAX || h > BUN_MAX) {
-		GDKerror("BATslice: boundary out of range\n");
+		GDKerror("boundary out of range\n");
 		return NULL;
 	}
 
@@ -1634,17 +1633,15 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 	assert(!stable || reverse == nilslast);
 
 	if (b == NULL) {
-		GDKerror("BATsort: b must exist\n");
+		GDKerror("b must exist\n");
 		return GDK_FAIL;
 	}
 	if (stable && reverse != nilslast) {
-		GDKerror("BATsort: stable sort cannot have "
-			 "reverse != nilslast\n");
+		GDKerror("stable sort cannot have reverse != nilslast\n");
 		return GDK_FAIL;
 	}
 	if (!ATOMlinear(b->ttype)) {
-		GDKerror("BATsort: type %s cannot be sorted\n",
-			 ATOMname(b->ttype));
+		GDKerror("type %s cannot be sorted\n", ATOMname(b->ttype));
 		return GDK_FAIL;
 	}
 	if (b->ttype == TYPE_void) {
@@ -1672,7 +1669,7 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 	     (o->ttype == TYPE_void &&	       /* no nil tail */
 	      BATcount(o) != 0 &&
 	      is_oid_nil(o->tseqbase)))) {
-		GDKerror("BATsort: o must have type oid and same size as b\n");
+		GDKerror("o must have type oid and same size as b\n");
 		return GDK_FAIL;
 	}
 	if (g != NULL &&
@@ -1682,13 +1679,13 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 	     (g->ttype == TYPE_void &&	       /* no nil tail */
 	      BATcount(g) != 0 &&
 	      is_oid_nil(g->tseqbase)))) {
-		GDKerror("BATsort: g must have type oid, sorted on the tail, "
+		GDKerror("g must have type oid, sorted on the tail, "
 			 "and same size as b\n");
 		return GDK_FAIL;
 	}
 	if (sorted == NULL && order == NULL) {
 		/* no place to put result, so we're done quickly */
-		GDKerror("BATsort: no place to put the result.\n");
+		GDKerror("no place to put the result.\n");
 		return GDK_FAIL;
 	}
 	if (g == NULL && !stable) {
@@ -2287,7 +2284,7 @@ BATcount_no_nil(BAT *b)
 	int t;
 	int (*cmp)(const void *, const void *);
 
-	BATcheck(b, "BATcnt", 0);
+	BATcheck(b, 0);
 	n = BATcount(b);
 	if (b->tnonil)
 		return n;

@@ -283,7 +283,7 @@ BBPinithash(int j)
 		;
 	BBP_hash = (bat *) GDKzalloc(BBP_mask * sizeof(bat));
 	if (BBP_hash == NULL) {
-		GDKerror("BBPinithash: cannot allocate memory\n");
+		GDKerror("cannot allocate memory\n");
 		return GDK_FAIL;
 	}
 	BBP_mask--;
@@ -340,7 +340,7 @@ static gdk_return
 BBPextend(int idx, bool buildhash)
 {
 	if ((bat) ATOMIC_GET(&BBPsize) >= N_BBPINIT * BBPINIT) {
-		GDKerror("BBPextend: trying to extend BAT pool beyond the "
+		GDKerror("trying to extend BAT pool beyond the "
 			 "limit (%d)\n", N_BBPINIT * BBPINIT);
 		return GDK_FAIL;
 	}
@@ -350,7 +350,7 @@ BBPextend(int idx, bool buildhash)
 		assert(BBP[BBPlimit >> BBPINITLOG] == NULL);
 		BBP[BBPlimit >> BBPINITLOG] = GDKzalloc(BBPINIT * sizeof(BBPrec));
 		if (BBP[BBPlimit >> BBPINITLOG] == NULL) {
-			GDKerror("BBPextend: failed to extend BAT pool\n");
+			GDKerror("failed to extend BAT pool\n");
 			return GDK_FAIL;
 		}
 		BBPlimit += BBPINIT;
@@ -375,9 +375,9 @@ recover_dir(int farmid, bool direxists)
 	if (direxists) {
 		/* just try; don't care about these non-vital files */
 		if (GDKunlink(farmid, BATDIR, "BBP", "bak") != GDK_SUCCEED)
-			TRC_WARNING(GDK, "unlink of BBP.bak failed\n");
+			TRC_CRITICAL(GDK, "unlink of BBP.bak failed\n");
 		if (GDKmove(farmid, BATDIR, "BBP", "dir", BATDIR, "BBP", "bak") != GDK_SUCCEED)
-			TRC_WARNING(GDK, "rename of BBP.dir to BBP.bak failed\n");
+			TRC_CRITICAL(GDK, "rename of BBP.dir to BBP.bak failed\n");
 	}
 	return GDKmove(farmid, BAKDIR, "BBP", "dir", BATDIR, "BBP", "dir");
 }
@@ -1217,7 +1217,7 @@ BBPcheckbats(void)
 			return GDK_FAIL;
 		}
 		if ((size_t) statb.st_size < b->theap.free) {
-			GDKerror("BBPcheckbats: file %s too small (expected %zu, actual %zu)\n", path, b->theap.free, (size_t) statb.st_size);
+			GDKerror("file %s too small (expected %zu, actual %zu)\n", path, b->theap.free, (size_t) statb.st_size);
 			GDKfree(path);
 			return GDK_FAIL;
 		}
@@ -1233,7 +1233,7 @@ BBPcheckbats(void)
 				return GDK_FAIL;
 			}
 			if ((size_t) statb.st_size < b->tvheap->free) {
-				GDKerror("BBPcheckbats: file %s too small (expected %zu, actual %zu)\n", path, b->tvheap->free, (size_t) statb.st_size);
+				GDKerror("file %s too small (expected %zu, actual %zu)\n", path, b->tvheap->free, (size_t) statb.st_size);
 				GDKfree(path);
 				return GDK_FAIL;
 			}
@@ -1261,9 +1261,9 @@ BBPheader(FILE *fp)
 		return 0;
 	}
 	if (sscanf(buf, "BBP.dir, GDKversion %u\n", &bbpversion) != 1) {
-		TRC_CRITICAL(GDK, "old BBP without version number");
-		GDKerror("dump the database using a compatible version,");
-		GDKerror("then restore into new database using this version.\n");
+		GDKerror("old BBP without version number; "
+			 "dump the database using a compatible version, "
+			 "then restore into new database using this version.\n");
 		return 0;
 	}
 	if (bbpversion != GDKLIBRARY &&
@@ -1346,21 +1346,21 @@ BBPaddfarm(const char *dirname, int rolemask)
 		return GDK_SUCCEED;
 	}
 	if (strchr(dirname, '\n') != NULL) {
-		GDKerror("BBPaddfarm: no newline allowed in directory name\n");
+		GDKerror("no newline allowed in directory name\n");
 		return GDK_FAIL;
 	}
 	if (rolemask == 0 || (rolemask & 1 && BBPfarms[0].dirname != NULL)) {
-		GDKerror("BBPaddfarm: bad rolemask\n");
+		GDKerror("bad rolemask\n");
 		return GDK_FAIL;
 	}
 	if (mkdir(dirname, MONETDB_DIRMODE) < 0) {
 		if (errno == EEXIST) {
 			if (stat(dirname, &st) == -1 || !S_ISDIR(st.st_mode)) {
-				GDKerror("BBPaddfarm: %s: not a directory\n", dirname);
+				GDKerror("%s: not a directory\n", dirname);
 				return GDK_FAIL;
 			}
 		} else {
-			GDKerror("BBPaddfarm: %s: cannot create directory\n", dirname);
+			GDKerror("%s: cannot create directory\n", dirname);
 			return GDK_FAIL;
 		}
 	}
@@ -1384,23 +1384,23 @@ BBPaddfarm(const char *dirname, int rolemask)
 				 * database */
 				bbpdir = GDKfilepath(i, BATDIR, "BBP", "dir");
 				if (bbpdir == NULL) {
-					GDKerror("BBPaddfarm: malloc failed\n");
+					GDKerror("malloc failed\n");
 					return GDK_FAIL;
 				}
 				if (stat(bbpdir, &st) != -1 || errno != ENOENT) {
 					GDKfree(bbpdir);
-					GDKerror("BBPaddfarm: %s is a database\n", dirname);
+					GDKerror("%s is a database\n", dirname);
 					return GDK_FAIL;
 				}
 				GDKfree(bbpdir);
 				bbpdir = GDKfilepath(i, BAKDIR, "BBP", "dir");
 				if (bbpdir == NULL) {
-					GDKerror("BBPaddfarm: malloc failed\n");
+					GDKerror("malloc failed\n");
 					return GDK_FAIL;
 				}
 				if (stat(bbpdir, &st) != -1 || errno != ENOENT) {
 					GDKfree(bbpdir);
-					GDKerror("BBPaddfarm: %s is a database\n", dirname);
+					GDKerror("%s is a database\n", dirname);
 					return GDK_FAIL;
 				}
 				GDKfree(bbpdir);
@@ -1408,7 +1408,7 @@ BBPaddfarm(const char *dirname, int rolemask)
 			return GDK_SUCCEED;
 		}
 	}
-	GDKerror("BBPaddfarm: too many farms\n");
+	GDKerror("too many farms\n");
 	return GDK_FAIL;
 }
 
@@ -1770,14 +1770,14 @@ BBPdir_subcommit(int cnt, bat *subcommit)
 	 * replacing the entries for the subcommitted bats */
 	if ((obbpf = GDKfileopen(0, SUBDIR, "BBP", "dir", "r")) == NULL &&
 	    (obbpf = GDKfileopen(0, BAKDIR, "BBP", "dir", "r")) == NULL) {
-		GDKerror("BBPdir: subcommit attempted without backup BBP.dir.");
+		GDKerror("subcommit attempted without backup BBP.dir.");
 		goto bailout;
 	}
 	/* read first three lines */
 	if (fgets(buf, sizeof(buf), obbpf) == NULL || /* BBP.dir, GDKversion %d */
 	    fgets(buf, sizeof(buf), obbpf) == NULL || /* SIZEOF_SIZE_T SIZEOF_OID SIZEOF_MAX_INT */
 	    fgets(buf, sizeof(buf), obbpf) == NULL) { /* BBPsize=%d */
-		GDKerror("BBPdir: subcommit attempted with invalid backup BBP.dir.");
+		GDKerror("subcommit attempted with invalid backup BBP.dir.");
 		goto bailout;
 	}
 	/* third line contains BBPsize */
@@ -1799,7 +1799,7 @@ BBPdir_subcommit(int cnt, bat *subcommit)
 				fclose(obbpf);
 				obbpf = NULL;
 			} else if (sscanf(buf, "%d", &n) != 1 || n <= 0) {
-				GDKerror("BBPdir: subcommit attempted with invalid backup BBP.dir.");
+				GDKerror("subcommit attempted with invalid backup BBP.dir.");
 				goto bailout;
 			}
 			/* at this point, obbpf == NULL, or n > 0 */
@@ -2403,11 +2403,11 @@ BBPrename(bat bid, const char *nme)
 	BBPgetsubdir(dirname, bid);
 
 	if ((tmpid = BBPnamecheck(nme)) && tmpid != bid) {
-		GDKerror("BBPrename: illegal temporary name: '%s'\n", nme);
+		GDKerror("illegal temporary name: '%s'\n", nme);
 		return BBPRENAME_ILLEGAL;
 	}
 	if (strlen(dirname) + strLen(nme) + 1 >= IDLENGTH) {
-		GDKerror("BBPrename: illegal temporary name: '%s'\n", nme);
+		GDKerror("illegal temporary name: '%s'\n", nme);
 		return BBPRENAME_LONG;
 	}
 	idx = threadmask(MT_getpid());
@@ -2417,7 +2417,7 @@ BBPrename(bat bid, const char *nme)
 	if (i != 0) {
 		MT_lock_unset(&GDKnameLock);
 		MT_lock_unset(&GDKtrimLock(idx));
-		GDKerror("BBPrename: name is in use: '%s'.\n", nme);
+		GDKerror("name is in use: '%s'.\n", nme);
 		return BBPRENAME_ALREADY;
 	}
 
@@ -3002,7 +3002,7 @@ BBPquickdesc(bat bid, bool delaccess)
 	if (is_bat_nil(bid))
 		return NULL;
 	if (bid < 0) {
-		GDKerror("BBPquickdesc: called with negative batid.\n");
+		GDKerror("called with negative batid.\n");
 		assert(0);
 		return NULL;
 	}
@@ -3652,7 +3652,7 @@ BBPrecover(int farmid)
 		TRC_DEBUG(IO_, "rmdir %s = %d\n", bakdirpath, (int) ret);
 	}
 	if (ret != GDK_SUCCEED)
-		GDKerror("BBPrecover: recovery failed. Please check whether your disk is full or write-protected.\n");
+		GDKerror("recovery failed. Please check whether your disk is full or write-protected.\n");
 
 	TRC_DEBUG(IO_, "end\n");
 	GDKfree(bakdirpath);
@@ -3706,7 +3706,7 @@ BBPrecover_subdir(void)
 	TRC_DEBUG(IO_, "end = %d\n", (int) ret);
 
 	if (ret != GDK_SUCCEED)
-		GDKerror("BBPrecover_subdir: recovery failed. Please check whether your disk is full or write-protected.\n");
+		GDKerror("recovery failed. Please check whether your disk is full or write-protected.\n");
 	return ret;
 }
 

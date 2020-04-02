@@ -169,9 +169,18 @@ gdk_return GDKssort(void *restrict h, void *restrict t, const void *restrict bas
 gdk_return GDKunlink(int farmid, const char *dir, const char *nme, const char *extension)
 	__attribute__((__visibility__("hidden")));
 #ifdef NATIVE_WIN32
-void GDKwinerror(_In_z_ _Printf_format_string_ const char *format, ...)
-	__attribute__((__format__(__printf__, 1, 2)))
-	__attribute__((__visibility__("hidden")));
+#define GDKwinerror(format, ...)					\
+	do {								\
+		char _osmsgbuf[128];					\
+		FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL,		\
+			      GetLastError(),				\
+			      MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), \
+			      (LPTSTR) _osmsgbuf, sizeof(_osmsgbuf),	\
+			      NULL);					\
+		GDKtracer_log(__FILE__, __func__, __LINE__, M_CRITICAL,	\
+			      GDK, _osmsgbuf, format, ##__VA_ARGS__);	\
+		SetLastError(0);					\
+	} while (0)
 #endif
 void HASHfree(BAT *b)
 	__attribute__((__visibility__("hidden")));
@@ -344,15 +353,12 @@ extern MT_Lock GDKnameLock;
 extern MT_Lock GDKthreadLock;
 extern MT_Lock GDKtmLock;
 
-#define BATcheck(tst, msg, err)						\
-	do {								\
-		if ((tst) == NULL) {					\
-			if (strchr((msg), ':'))				\
-				GDKerror("%s.\n", (msg));		\
-			else						\
-				GDKerror("%s: BAT required.\n", (msg));	\
-			return (err);					\
-		}							\
+#define BATcheck(tst, err)				\
+	do {						\
+		if ((tst) == NULL) {			\
+			GDKerror("BAT required.\n");	\
+			return (err);			\
+		}					\
 	} while (0)
 #define ERRORcheck(tst,	msg, err)		\
 	do {					\

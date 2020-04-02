@@ -712,7 +712,7 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 		if (is_oid_nil(b->tseqbase)) {
 			TRC_DEBUG(ACCELERATOR,
 				  "cannot create hash-table on void-NIL column.\n");
-			GDKerror("BAThash: no hash on void/nil column\n");
+			GDKerror("no hash on void/nil column\n");
 			return NULL;
 		}
 		TRC_DEBUG(ACCELERATOR,
