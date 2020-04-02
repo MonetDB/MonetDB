@@ -185,7 +185,8 @@ command_help(int argc, char *argv[])
 		} else if (argc > 2 && strcmp(argv[2], "restore") == 0) {
 			printf("Usage: monetdb snapshot restore [-f] <snapid> [dbname]\n");
 			printf("  Create a database from the given snapshot, where  <snapid> is either\n");
-			printf("  a path on the server or <dbname>@<num> as produced\n");
+			printf("  a path on the server or <dbname>@<num> as produced by\n");
+			printf("  'monetdb snapshot list'\n");
 			printf("Options:\n");
 			printf("  -f  do not ask for confirmation\n");
 		} else if (argc > 2 && strcmp(argv[2], "destroy") == 0) {
