@@ -1,6 +1,12 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Wed Apr  1 2020 Sjoerd Mullender <sjoerd@acm.org>
+- The OFFSET value in the COPY INTO query now counts uninterpreted
+  newlines.  Before it counted "unquoted record separators" which meant
+  that if you had a single quote on a line that you want to skip, you
+  could not use the feature.
+
 * Fri Mar 27 2020 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
 - Added support for FROM RANGE MINVALUE TO RANGE MAXVALUE and FROM RANGE
   MINVALUE TO RANGE MAXVALUE WITH NULL VALUES cases in partioned tables

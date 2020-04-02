@@ -68,7 +68,7 @@ stdout of test 'MAL-signatures` in directory 'clients` itself:
 % .%1,	.%1,	.%1,	.%1,	.%1 # table_name
 % module,	function,	signature,	address,	comment # name
 % clob,	clob,	clob,	clob,	clob # type
-% 10,	28,	364,	38,	874 # length
+% 12,	28,	364,	38,	874 # length
 [ "aggr",	"allnotequal",	"command aggr.allnotequal(l:bat[:any_1], r:bat[:any_1]):bit ",	"SQLallnotequal;",	"if all values in r are not equal to l return true, else if r has nil nil else false"	]
 [ "aggr",	"anyequal",	"pattern aggr.anyequal(l:any_1, r:any_1):bit ",	"CMDvarEQ;",	""	]
 [ "aggr",	"anyequal",	"command aggr.anyequal(l:bat[:any_1], r:bat[:any_1]):bit ",	"SQLanyequal;",	"if any value in r is equal to l return true, else if r has nil nil else false"	]
@@ -15997,6 +15997,14 @@ stdout of test 'MAL-signatures` in directory 'clients` itself:
 [ "batmtime",	"year",	"command batmtime.year(d:bat[:date]):bat[:int] ",	"MTIMEdate_extract_year_bulk;",	""	]
 [ "batpcre",	"replace",	"command batpcre.replace(orig:bat[:str], pat:str, repl:str, flag:str):bat[:str] ",	"PCREreplace_bat_wrap;",	""	]
 [ "batpcre",	"replace_first",	"command batpcre.replace_first(orig:bat[:str], pat:str, repl:str, flag:str):bat[:str] ",	"PCREreplacefirst_bat_wrap;",	""	]
+[ "batpyapi3",	"eval",	"unsafe pattern batpyapi3.eval(fptr:ptr, expr:str, arg:any...):any... ",	"PYAPI3PyAPIevalStd;",	"Execute a simple Python script value"	]
+[ "batpyapi3",	"eval_aggr",	"unsafe pattern batpyapi3.eval_aggr(fptr:ptr, expr:str, arg:any...):any... ",	"PYAPI3PyAPIevalAggr;",	"grouped aggregates through Python"	]
+[ "batpyapi3",	"eval_loader",	"unsafe pattern batpyapi3.eval_loader(fptr:ptr, expr:str):any... ",	"PYAPI3PyAPIevalLoader;",	"loader functions through Python"	]
+[ "batpyapi3",	"eval_loader",	"unsafe pattern batpyapi3.eval_loader(fptr:ptr, expr:str, arg:any...):any... ",	"PYAPI3PyAPIevalLoader;",	"loader functions through Python"	]
+[ "batpyapi3",	"subeval_aggr",	"unsafe pattern batpyapi3.subeval_aggr(fptr:ptr, expr:str, arg:any...):any... ",	"PYAPI3PyAPIevalAggr;",	"grouped aggregates through Python"	]
+[ "batpyapi3map",	"eval",	"pattern batpyapi3map.eval(fptr:ptr, expr:str, arg:any...):any... ",	"PYAPI3PyAPIevalStdMap;",	"Execute a simple Python script value"	]
+[ "batpyapi3map",	"eval_aggr",	"pattern batpyapi3map.eval_aggr(fptr:ptr, expr:str, arg:any...):any... ",	"PYAPI3PyAPIevalAggrMap;",	"grouped aggregates through Python"	]
+[ "batpyapi3map",	"subeval_aggr",	"pattern batpyapi3map.subeval_aggr(fptr:ptr, expr:str, arg:any...):any... ",	"PYAPI3PyAPIevalAggrMap;",	"grouped aggregates through Python"	]
 [ "batrapi",	"eval",	"pattern batrapi.eval(fptr:ptr, expr:str, arg:any...):any... ",	"RAPIevalStd;",	"Execute a simple R script value"	]
 [ "batrapi",	"eval_aggr",	"pattern batrapi.eval_aggr(fptr:ptr, expr:str, arg:any...):any... ",	"RAPIevalAggr;",	"grouped aggregates through R"	]
 [ "batrapi",	"subeval_aggr",	"pattern batrapi.subeval_aggr(fptr:ptr, expr:str, arg:any...):any... ",	"RAPIevalAggr;",	"grouped aggregates through R"	]
@@ -19401,6 +19409,17 @@ stdout of test 'MAL-signatures` in directory 'clients` itself:
 [ "profiler",	"starttrace",	"pattern profiler.starttrace():void ",	"CMDstartTrace;",	"Start collecting trace information"	]
 [ "profiler",	"stop",	"pattern profiler.stop():void ",	"CMDstopProfiler;",	"Stop offline performance profiling"	]
 [ "profiler",	"stoptrace",	"pattern profiler.stoptrace():void ",	"CMDstopTrace;",	"Stop collecting trace information"	]
+[ "pyapi3",	"eval",	"unsafe pattern pyapi3.eval(fptr:ptr, expr:str):any ",	"PYAPI3PyAPIevalStd;",	"Execute a simple Python script returning a single value"	]
+[ "pyapi3",	"eval",	"unsafe pattern pyapi3.eval(fptr:ptr, expr:str, arg:any...):any... ",	"PYAPI3PyAPIevalStd;",	"Execute a simple Python script value"	]
+[ "pyapi3",	"eval_aggr",	"unsafe pattern pyapi3.eval_aggr(fptr:ptr, expr:str, arg:any...):any... ",	"PYAPI3PyAPIevalAggr;",	"grouped aggregates through Python"	]
+[ "pyapi3",	"eval_loader",	"unsafe pattern pyapi3.eval_loader(fptr:ptr, expr:str):any... ",	"PYAPI3PyAPIevalLoader;",	"loader functions through Python"	]
+[ "pyapi3",	"eval_loader",	"unsafe pattern pyapi3.eval_loader(fptr:ptr, expr:str, arg:any...):any... ",	"PYAPI3PyAPIevalLoader;",	"loader functions through Python"	]
+[ "pyapi3",	"prelude",	"command pyapi3.prelude():void ",	"PYAPI3PyAPIprelude;",	""	]
+[ "pyapi3",	"subeval_aggr",	"unsafe pattern pyapi3.subeval_aggr(fptr:ptr, expr:str, arg:any...):any... ",	"PYAPI3PyAPIevalAggr;",	"grouped aggregates through Python"	]
+[ "pyapi3map",	"eval",	"pattern pyapi3map.eval(fptr:ptr, expr:str):any ",	"PYAPI3PyAPIevalStdMap;",	"Execute a simple Python script returning a single value"	]
+[ "pyapi3map",	"eval",	"pattern pyapi3map.eval(fptr:ptr, expr:str, arg:any...):any... ",	"PYAPI3PyAPIevalStdMap;",	"Execute a simple Python script value"	]
+[ "pyapi3map",	"eval_aggr",	"pattern pyapi3map.eval_aggr(fptr:ptr, expr:str, arg:any...):any... ",	"PYAPI3PyAPIevalAggrMap;",	"grouped aggregates through Python"	]
+[ "pyapi3map",	"subeval_aggr",	"pattern pyapi3map.subeval_aggr(fptr:ptr, expr:str, arg:any...):any... ",	"PYAPI3PyAPIevalAggrMap;",	"grouped aggregates through Python"	]
 [ "querylog",	"append",	"pattern querylog.append(q:str, pipe:str, usr:str, tick:timestamp):void ",	"QLOGappend;",	"Add a new query call to the query log"	]
 [ "querylog",	"call",	"pattern querylog.call(tick1:timestamp, tick2:timestamp, arg:str, tuples:lng, xtime:lng, rtime:lng, cpu:int, iowait:int):void ",	"QLOGcall;",	"Add a new query call to the query log"	]
 [ "querylog",	"context",	"command querylog.context(release:str, version:str, revision:str, uri:str):void ",	"QLOGcontextNaive;",	"Noop operation, just marking the query"	]

@@ -308,7 +308,7 @@ initialize_sql_parts(mvc *sql, sql_table *mt)
 	find_partition_type(&found, mt);
 	localtype = found.type->localtype;
 	if (isPartitionedByExpressionTable(mt)) /* Propagate type to outer transaction table */
-		dup_sql_type(tr, mt->s, &(mt->part.pexp->type), &(mt->po->part.pexp->type));
+		mt->po->part.pexp->type = mt->part.pexp->type;
 
 	if (localtype != TYPE_str && mt->members.set && list_length(mt->members.set)) {
 		list *new = sa_list(tr->sa), *old = sa_list(tr->sa);
@@ -320,7 +320,7 @@ initialize_sql_parts(mvc *sql, sql_table *mt)
 			base_init(tr->sa, &p->base, pt->base.id, TR_NEW, pt->base.name);
 			p->t = mt;
 			assert(isMergeTable(mt) || isReplicaTable(mt));
-			dup_sql_type(tr, mt->s, &found, &(p->tpe));
+			p->tpe = found;
 			p->with_nills = next->with_nills;
 
 			if (isListPartitionTable(mt)) {
@@ -416,11 +416,13 @@ initialize_sql_parts(mvc *sql, sql_table *mt)
 				goto finish;
 			}
 			pt->s->base.wtime = pt->base.wtime = tr->wtime = tr->wstime;
-			tr->schema_updates++;
+			if (isGlobal(pt))
+				tr->schema_updates++;
 		}
 	}
 	mt->s->base.wtime = mt->base.wtime = tr->wtime = tr->wstime;
-	tr->schema_updates++;
+	if (isGlobal(mt))
+		tr->schema_updates++;
 finish:
 	return res;
 }
