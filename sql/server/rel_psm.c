@@ -201,8 +201,9 @@ rel_psm_declare_table(sql_query *query, dnode *n)
 		return sql_error(sql, 01, SQLSTATE(42000) "DECLARE: Table '%s' already declared", name);
 
 	assert(n->next->next->next->type == type_int);
-	rel = rel_create_table(query, s, SQL_DECLARED_TABLE, s->base.name, name, n->next->next->data.sym,
-						   n->next->next->next->data.i_val, NULL, NULL, NULL, false, NULL, 0);
+	rel = rel_create_table(query, SQL_DECLARED_TABLE, s->base.name, name, n->next->next->data.sym,
+						   n->next->next->next->data.i_val, NULL, NULL, NULL, false, NULL, 
+						   n->next->next->next->next->next->next->data.i_val);
 
 	if (!rel)
 		return NULL;
@@ -211,10 +212,9 @@ rel_psm_declare_table(sql_query *query, dnode *n)
 	} else if (rel->op == op_insert) {
 		baset = rel->l;
 	} else {
-		return NULL;
+		assert(0);
 	}
-	if (baset->flag != ddl_create_table)
-		return NULL;
+	assert(baset->flag == ddl_create_table);
 	t = (sql_table*)((atom*)((sql_exp*)baset->exps->t->data)->l)->data.val.pval;
 	if (!stack_push_table(sql, t))
 		return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);

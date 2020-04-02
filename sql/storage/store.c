@@ -3905,11 +3905,11 @@ conditional_table_dup(sql_trans *tr, int flags, sql_table *ot, sql_schema *s)
 	int p = (tr->parent == gtrans);
 
 	/* persistent columns need to be dupped */
-	if ((p && isGlobal(ot)) ||
+	if ((p && ot->persistence != SQL_LOCAL_TEMP) ||
 	    /* allways dup in recursive mode */
 	    tr->parent != gtrans)
 		return table_dup(tr, flags, ot, s);
-	else if (!isGlobal(ot)){/* is local temp, may need to be cleared */
+	else if (ot->persistence == SQL_LOCAL_TEMP){/* is local temp, may need to be cleared */
 		if (ot->commit_action == CA_DELETE) {
 			sql_trans_clear_table(tr, ot);
 		} else if (ot->commit_action == CA_DROP) {
@@ -4580,7 +4580,7 @@ validate_tables(sql_schema *s, sql_schema *os)
 				continue;
 
  			ot = find_sql_table(os, t->base.name);
-			if (ot && isKindOfTable(ot) && isKindOfTable(t)) {
+			if (ot && isKindOfTable(ot) && isKindOfTable(t) && !isDeclaredTable(ot) && !isDeclaredTable(t)) {
 				if ((t->base.wtime && (t->base.wtime < ot->base.rtime || t->base.wtime < ot->base.wtime)) ||
 				    (t->base.rtime && (t->base.rtime < ot->base.wtime))) 
 					return 0;
@@ -5011,7 +5011,7 @@ save_tables_snapshots(sql_schema *s)
 			if (!t->base.wtime)
 				continue;
 
-			if (isKindOfTable(t)) {
+			if (isKindOfTable(t) && !isDeclaredTable(t)) {
 				if (store_funcs.save_snapshot(t) != LOG_OK)
 					return SQL_ERR;
 			}

@@ -68,7 +68,6 @@ static void
 destroy_sql_local_table(void *data)
 {
 	sql_local_table *slt = (sql_local_table*) data;
-	table_destroy(slt->table); /* TODO check if this is needed */
 	_DELETE(slt);
 }
 

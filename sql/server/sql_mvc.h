@@ -280,7 +280,7 @@ extern sql_var *find_global_var(mvc *sql, sql_schema *s, const char *name);
 extern int stack_has_frame(mvc *sql, const char *name);
 extern int stack_nr_of_declared_tables(mvc *sql);
 
-extern atom* sqlvar_set(sql_var *var, ValRecord *v);
+extern atom *sqlvar_set(sql_var *var, ValRecord *v);
 extern str sqlvar_get_string(sql_var *var);
 extern str sqlvar_set_string(sql_var *var, const char *v);
 #ifdef HAVE_HGE

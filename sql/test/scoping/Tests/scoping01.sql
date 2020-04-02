@@ -1,7 +1,8 @@
---TODO rename schemas with variables and transaction management
+--TODO transaction management
 -- Test variables with different schemas
 -- Update rel_read and RAstatemet
 -- Check what must be persisted
+-- upgrade drop dt_schema
 
 declare i integer;
 set i = 1234;
