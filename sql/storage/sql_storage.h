@@ -252,10 +252,6 @@ typedef struct store_functions {
 	create_idx_fptr create_idx;
 	create_del_fptr create_del;
 
-	upgrade_col_fptr upgrade_col;
-	upgrade_idx_fptr upgrade_idx;
-	upgrade_del_fptr upgrade_del;
-
 	dup_col_fptr dup_col;
 	dup_idx_fptr dup_idx;
 	dup_del_fptr dup_del;
@@ -292,7 +288,6 @@ typedef struct store_functions {
 	update_table_fptr snapshot_table;
 	update_table_fptr log_table;
 	update_table_fptr update_table;
-	gtrans_update_fptr gtrans_update;
 	gtrans_update_fptr gtrans_minmax;
 
 	col_ins_fptr col_ins;
@@ -309,19 +304,14 @@ typedef struct store_functions {
 sqlstore_export store_functions store_funcs;
 
 typedef int (*logger_create_fptr) (int debug, const char *logdir, int catalog_version);
-
 typedef void (*logger_destroy_fptr) (void);
-typedef int (*logger_restart_fptr) (void);
+typedef int (*logger_flush_fptr) (void);
 typedef int (*logger_cleanup_fptr) (void);
-typedef void (*logger_with_ids_fptr) (void);
 
 typedef int (*logger_changes_fptr)(void);
 typedef int (*logger_get_sequence_fptr) (int seq, lng *id);
-typedef lng (*logger_read_last_transaction_id_fptr)(void);
-typedef lng (*logger_get_transaction_drift_fptr)(void);
 
 typedef int (*log_isnew_fptr)(void);
-typedef bool (*log_needs_update_fptr)(void);
 typedef int (*log_tstart_fptr) (void);
 typedef int (*log_tend_fptr) (void);
 typedef int (*log_sequence_fptr) (int seq, lng id);
@@ -342,22 +332,19 @@ typedef int (*log_sequence_fptr) (int seq, lng id);
 typedef gdk_return (*logger_get_snapshot_files_fptr)(stream *plan);
 
 typedef void *(*log_find_table_value_fptr)(const char *, const char *, const void *, ...);
+
 typedef struct logger_functions {
 	logger_create_fptr create;
 	logger_destroy_fptr destroy;
-	logger_restart_fptr restart;
+	logger_flush_fptr flush;
 	logger_cleanup_fptr cleanup;
-	logger_with_ids_fptr with_ids;
 
 	logger_changes_fptr changes;
 	logger_get_sequence_fptr get_sequence;
-	logger_read_last_transaction_id_fptr read_last_transaction_id;
-	logger_get_transaction_drift_fptr get_transaction_drift;
 
 	logger_get_snapshot_files_fptr get_snapshot_files;
 
 	log_isnew_fptr log_isnew;
-	log_needs_update_fptr log_needs_update;
 	log_tstart_fptr log_tstart;
 	log_tend_fptr log_tend;
 	log_sequence_fptr log_sequence;
@@ -380,8 +367,6 @@ extern res_table *res_tables_find(res_table *results, int res_id);
 extern int store_init(int debug, store_type store, int readonly, int singleuser, backend_stack stk);
 extern void store_exit(void);
 
-extern int store_apply_deltas(bool locked);
-extern void store_flush_log(void);
 extern void store_suspend_log(void);
 extern void store_resume_log(void);
 extern lng store_hot_snapshot(str tarfile);

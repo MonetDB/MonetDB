@@ -1400,45 +1400,6 @@ load_trans(sql_trans* tr, sqlid id)
 	return true;
 }
 
-static int
-store_upgrade_ids(sql_trans* tr)
-{
-	node *n, *m, *o;
-	for (n = tr->schemas.set->h; n; n = n->next) {
-		sql_schema *s = n->data;
-
-		if (isDeclaredSchema(s))
-			continue;
-		if (s->tables.set == NULL)
-			continue;
-		for (m = s->tables.set->h; m; m = m->next) {
-			sql_table *t = m->data;
-
-			if (!isTable(t))
-				continue;
-			if (store_funcs.upgrade_del(t) != LOG_OK)
-				return SQL_ERR;
-			for (o = t->columns.set->h; o; o = o->next) {
-				sql_column *c = o->data;
-
-				if (store_funcs.upgrade_col(c) != LOG_OK)
-					return SQL_ERR;
-			}
-			if (t->idxs.set == NULL)
-				continue;
-			for (o = t->idxs.set->h; o; o = o->next) {
-				sql_idx *i = o->data;
-
-				if (store_funcs.upgrade_idx(i) != LOG_OK)
-					return SQL_ERR;
-			}
-		}
-	}
-	store_apply_deltas(true);
-	logger_funcs.with_ids();
-	return SQL_OK;
-}
-
 static sqlid
 next_oid(void)
 {
@@ -2082,9 +2043,6 @@ store_load(void) {
 	GDKfree(store_oids);
 	store_oids = NULL;
 	nstore_oids = 0;
-	if (logger_funcs.log_needs_update())
-		if (store_upgrade_ids(gtrans) != SQL_OK)
-			TRC_CRITICAL(SQL_STORE, "Cannot commit upgrade transaction\n");
 	return first;
 }
 
@@ -2311,28 +2269,22 @@ static sql_trans * trans_dup(backend_stack stk, sql_trans *ot, const char *newna
 static sql_trans * trans_init(sql_trans *tr, backend_stack stk, sql_trans *otr);
 
 /* call locked! */
-int
-store_apply_deltas(bool not_locked)
+static int
+store_apply_deltas(void)
 {
 	int res = LOG_OK;
 
 	flusher.working = true;
 	/* make sure we reset all transactions on re-activation */
-	gtrans->wstime = timestamp();
+	//gtrans->wstime = timestamp();
 	/* cleanup drop tables, columns and idxs first */
 	trans_cleanup(gtrans);
 
-	if (store_funcs.gtrans_update)
-		store_funcs.gtrans_update(gtrans);
-	res = logger_funcs.restart();
-	if (res == LOG_OK) {
-		if (!not_locked)
-			MT_lock_unset(&bs_lock);
+	res = logger_funcs.flush();
+	/*
+	if (res == LOG_OK)
 		res = logger_funcs.cleanup();
-		if (!not_locked)
-			MT_lock_set(&bs_lock);
-	}
-
+	*/
 	if (/*gtrans->sa->nr > 40 &&*/ !(ATOMIC_GET(&nr_sessions)) /* only save when there are no dependencies on the gtrans */) { /* TODO need better estimate */
 		sql_trans *ntrans = trans_dup(gtrans->stk, gtrans, NULL);
 
@@ -2345,14 +2297,7 @@ store_apply_deltas(bool not_locked)
 		gtrans = ntrans;
 	}
 	flusher.working = false;
-
 	return res;
-}
-
-void
-store_flush_log(void)
-{
-	ATOMIC_SET(&flusher.flush_now, 1);
 }
 
 /* Call while holding bs_lock */
@@ -2404,7 +2349,7 @@ store_manager(void)
 		}
 
 		MT_thread_setworking("flushing");
-		res = store_apply_deltas(false);
+		res = store_apply_deltas();
 
 		if (res != LOG_OK) {
 			MT_lock_unset(&bs_lock);

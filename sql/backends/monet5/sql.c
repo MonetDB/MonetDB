@@ -151,18 +151,6 @@ sqlcleanup(mvc *c, int err)
 	sql_destroy_params(c);
 	sql_destroy_args(c);
 
-	if ((c->emod & mod_locked) == mod_locked) {
-		/* here we should commit the transaction */
-		if (!err) {
-			sql_trans_commit(c->session->tr);
-			/* write changes to disk */
-			sql_trans_end(c->session);
-			store_apply_deltas(true);
-			sql_trans_begin(c->session);
-		}
-		store_unlock();
-		c->emod = 0;
-	}
 	/* some statements dynamically disable caching */
 	c->sym = NULL;
 	if (c->sa)
@@ -3030,7 +3018,7 @@ fix_windows_newline(unsigned char *s)
 static char fwftsep[2] = {STREAM_FWF_FIELD_SEP, '\0'};
 static char fwfrsep[2] = {STREAM_FWF_RECORD_SEP, '\0'};
 
-/* str mvc_import_table_wrap(int *res, str *sname, str *tname, unsigned char* *T, unsigned char* *R, unsigned char* *S, unsigned char* *N, str *fname, lng *sz, lng *offset, int *locked, int *besteffort, str *fixed_width, int *onclient); */
+/* str mvc_import_table_wrap(int *res, sql_table **t, unsigned char* *T, unsigned char* *R, unsigned char* *S, unsigned char* *N, str *fname, lng *sz, lng *offset, int *besteffort, str *fixed_width, int *onclient); */
 str
 mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -3045,10 +3033,9 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	const char *fname = *getArgReference_str(stk, pci, pci->retc + 5);
 	lng sz = *getArgReference_lng(stk, pci, pci->retc + 6);
 	lng offset = *getArgReference_lng(stk, pci, pci->retc + 7);
-	int locked = *getArgReference_int(stk, pci, pci->retc + 8);
-	int besteffort = *getArgReference_int(stk, pci, pci->retc + 9);
-	char *fixed_widths = *getArgReference_str(stk, pci, pci->retc + 10);
-	int onclient = *getArgReference_int(stk, pci, pci->retc + 11);
+	int besteffort = *getArgReference_int(stk, pci, pci->retc + 8);
+	char *fixed_widths = *getArgReference_str(stk, pci, pci->retc + 9);
+	int onclient = *getArgReference_int(stk, pci, pci->retc + 10);
 	str msg = MAL_SUCCEED;
 	bstream *s = NULL;
 	stream *ss;
@@ -3070,7 +3057,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (strNil(fname))
 		fname = NULL;
 	if (fname == NULL) {
-		msg = mvc_import_table(cntxt, &b, be->mvc, be->mvc->scanner.rs, t, tsep, rsep, ssep, ns, sz, offset, locked, besteffort, true);
+		msg = mvc_import_table(cntxt, &b, be->mvc, be->mvc->scanner.rs, t, tsep, rsep, ssep, ns, sz, offset, besteffort, true);
 	} else {
 		if (onclient) {
 			mnstr_write(be->mvc->scanner.ws, PROMPT3, sizeof(PROMPT3)-1, 1);
@@ -3144,7 +3131,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		s = bstream_create(ss, 0x200000);
 #endif
 		if (s != NULL) {
-			msg = mvc_import_table(cntxt, &b, be->mvc, s, t, tsep, rsep, ssep, ns, sz, offset, locked, besteffort, false);
+			msg = mvc_import_table(cntxt, &b, be->mvc, s, t, tsep, rsep, ssep, ns, sz, offset, besteffort, false);
 			if (onclient) {
 				mnstr_write(be->mvc->scanner.ws, PROMPT3, sizeof(PROMPT3)-1, 1);
 				mnstr_flush(be->mvc->scanner.ws);
@@ -5266,14 +5253,6 @@ BATSTRstrings(bat *res, const bat *src)
 	}
 	BBPunfix(s->batCacheid);
 	BBPkeepref((*res = r->batCacheid));
-	return MAL_SUCCEED;
-}
-
-str 
-SQLflush_log(void *ret)
-{
-	(void)ret;
-	store_flush_log();
 	return MAL_SUCCEED;
 }
 

@@ -3999,7 +3999,7 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 		stmt *ins = m->data;
 		sql_column *c = n->data;
 
-		insert = stmt_append_col(be, c, ins, rel->flag&UPD_LOCKED);
+		insert = stmt_append_col(be, c, ins, rel->flag);
 		append(l,insert);
 	}
 	if (!insert)
