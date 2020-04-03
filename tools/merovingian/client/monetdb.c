@@ -1795,6 +1795,7 @@ snapshot_enumerate(struct snapshot **snapshots, int *nsnapshots)
 			snap->size = size;
 			snap->path = malloc(pathlen + 1);
 			memmove(snap->path, path, pathlen);
+			snap->path[pathlen] = '\0';
 			p = eol + 1;
 		};
 		free(out);
