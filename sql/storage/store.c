@@ -2553,16 +2553,18 @@ tar_write(stream *outfile, const char *data, size_t size)
 	const size_t tail = size % TAR_BLOCK_SIZE;
 	const size_t bulk = size - tail;
 
-	size_t written = mnstr_write(outfile, data, 1, bulk);
-	if (written != bulk) {
-		GDKerror("Wrote only %zu bytes instead of first %zu", written, bulk);
-		return GDK_FAIL;
+	if (bulk) {
+		size_t written = mnstr_write(outfile, data, 1, bulk);
+		if (written != bulk) {
+			GDKerror("Wrote only %zu bytes instead of first %zu", written, bulk);
+			return GDK_FAIL;
+		}
 	}
 
 	if (tail) {
 		char buf[TAR_BLOCK_SIZE] = {0};
 		memcpy(buf, data + bulk, tail);
-		written = mnstr_write(outfile, buf, 1, TAR_BLOCK_SIZE);
+		size_t written = mnstr_write(outfile, buf, 1, TAR_BLOCK_SIZE);
 		if (written != TAR_BLOCK_SIZE) {
 			GDKerror("Wrote only %zu tail bytes instead of %d", written, TAR_BLOCK_SIZE);
 			return GDK_FAIL;
@@ -2580,7 +2582,7 @@ tar_write_data(stream *tarfile, const char *path, time_t mtime, const char *data
 	res = tar_write_header(tarfile, path, mtime, size);
 	if (res != GDK_SUCCEED)
 		return res;
-	
+
 	return tar_write(tarfile, data, size);
 }
 
