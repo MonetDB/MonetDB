@@ -852,42 +852,6 @@ roundup_num(size_t number, int alignment)
 
 
 static void
-HEAP_printstatus(Heap *heap)
-{
-	HEADER *hheader = HEAP_index(heap, 0, HEADER);
-	size_t block, cur_free = hheader->head;
-	CHUNK *blockp;
-
-	TRC_DEBUG(TRACE,
-		  "HEAP has head %zu and alignment %d and size %zu\n",
-		  hheader->head, hheader->alignment, heap->free);
-
-	/* Walk the blocklist */
-	block = hheader->firstblock;
-
-	while (block < heap->free) {
-		blockp = HEAP_index(heap, block, CHUNK);
-
-		if (block == cur_free) {
-			TRC_DEBUG(TRACE,
-				  "Free block at %p has size %zu and next %zu\n",
-				  (void *)block,
-				  blockp->size, blockp->next);
-
-			cur_free = blockp->next;
-			block += blockp->size;
-		} else {
-			size_t size = blocksize(hheader, blockp);
-
-			TRC_DEBUG(TRACE,
-				  "Block at %zu with size %zu\n",
-				  block, size);
-			block += size;
-		}
-	}
-}
-
-static void
 HEAP_empty(Heap *heap, size_t nprivate, int alignment)
 {
 	/* Find position of header block. */
@@ -910,11 +874,6 @@ HEAP_empty(Heap *heap, size_t nprivate, int alignment)
 	assert(heap->size - head <= VAR_MAX);
 	headp->size = (size_t) (heap->size - head);
 	headp->next = 0;
-	TRC_DEBUG_IF(TRACE)
-	{
-		TRC_DEBUG(TRACE, "We created the following heap\n");
-		HEAP_printstatus(heap);
-	}
 }
 
 void
@@ -950,8 +909,6 @@ HEAP_malloc(Heap *heap, size_t nbytes)
 	CHUNK *trailp;
 	HEADER *hheader = HEAP_index(heap, 0, HEADER);
 
-	TRC_DEBUG(TRACE, "Enter malloc with %zu bytes\n", nbytes);
-
 	/* add space for size field */
 	nbytes += hheader->alignment;
 	nbytes = roundup_8(nbytes);
@@ -967,8 +924,6 @@ HEAP_malloc(Heap *heap, size_t nbytes)
 	for (block = hheader->head; block != 0; block = blockp->next) {
 		blockp = HEAP_index(heap, block, CHUNK);
 
-		TRC_DEBUG(TRACE, "Block %zu is %zu bytes\n", block, blockp->size);
-		
 		assert(trail == 0 || block > trail);
 		if (trail != 0 && block <= trail) {
 			GDKerror("Free list is not orderered\n");
@@ -992,8 +947,6 @@ HEAP_malloc(Heap *heap, size_t nbytes)
 		assert(heap->free <= VAR_MAX);
 		block = (size_t) heap->free;	/* current end-of-heap */
 
-		TRC_DEBUG(TRACE, "No block found\n");
-
 		/* Increase the size of the heap. */
 		TRC_DEBUG(HEAP, "HEAPextend in HEAP_malloc %s %zu %zu\n", heap->filename, heap->size, newsize);
 		if (HEAPextend(heap, newsize, false) != GDK_SUCCEED)
@@ -1004,8 +957,6 @@ HEAP_malloc(Heap *heap, size_t nbytes)
 		blockp = HEAP_index(heap, block, CHUNK);
 		trailp = HEAP_index(heap, trail, CHUNK);
 
-		TRC_DEBUG(TRACE, "New block made at pos %zu with size %zu\n", block, heap->size - block);
-
 		blockp->next = 0;
 		assert(heap->free - block <= VAR_MAX);
 		blockp->size = (size_t) (heap->free - block);	/* determine size of allocated block */
@@ -1013,8 +964,6 @@ HEAP_malloc(Heap *heap, size_t nbytes)
 		/* Try to join the last block in the freelist and the
 		 * newly allocated memory */
 		if ((trail != 0) && (trail + trailp->size == block)) {
-			TRC_DEBUG(TRACE, "Glue newly generated block to adjacent last\n");
-
 			trailp->size += blockp->size;
 			trailp->next = blockp->next;
 

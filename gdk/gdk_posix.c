@@ -352,7 +352,6 @@ MT_munmap(void *p, size_t len)
 		GDKsyserror("MT_munmap: munmap(%p,%zu) failed\n",
 			    p, len);
 	VALGRIND_FREELIKE_BLOCK(p, 0);
-	TRC_DEBUG(ALLOC, "munmap(%p,%zu) = %d\n", p, len, ret);
 	return ret;
 }
 
@@ -389,13 +388,11 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 		}
 		if (path && truncate(path, *new_size) < 0)
 			TRC_WARNING(GDK, "MT_mremap(%s): truncate failed\n", path);
-		TRC_DEBUG(ALLOC, "MT_mremap(%s,%p,%zu,%zu) -> shrinking\n", path?path:"NULL", old_address, old_size, *new_size);
 #endif	/* !STATIC_CODE_ANALYSIS */
 		return old_address;
 	}
 	if (*new_size == old_size) {
 		/* do nothing */
-		TRC_DEBUG(ALLOC, "MT_mremap(%s,%p,%zu,%zu) -> unchanged\n", path?path:"NULL", old_address, old_size, *new_size);
 		return old_address;
 	}
 
@@ -630,7 +627,6 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 		GDKsyserror("MT_mremap(%s,%p,%zu,%zu): p == MAP_FAILED\n", path?path:"NULL", old_address, old_size, *new_size);
 	if (fd >= 0)
 		close(fd);
-	TRC_DEBUG(ALLOC, "MT_mremap(%s,%p,%zu,%zu) -> %p%s\n", path?path:"NULL", old_address, old_size, *new_size, p, path && mode & MMAP_COPY ? " private" : "");
 	return p == MAP_FAILED ? NULL : p;
 }
 
@@ -641,8 +637,6 @@ MT_msync(void *p, size_t len)
 
 	if (ret < 0)
 		GDKsyserror("MT_msync: msync failed\n");
-	
-	TRC_DEBUG(ALLOC, "msync(%p,%zu,MS_SYNC) = %d\n", p, len, ret);
 	return ret;
 }
 
@@ -817,8 +811,6 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 		memcpy(p, old_address, old_size);
 		MT_munmap(old_address, old_size);
 	}
-
-	TRC_DEBUG(ALLOC, "MT_mremap(%s,%p,%zu,%zu) -> %p\n", path?path:"NULL", old_address, old_size, *new_size, p);
 
 	if (p == NULL)
 		TRC_ERROR(GDK, "MT_mremap(%s,%p,%zu,%zu): p == NULL\n", path?path:"NULL", old_address, old_size, *new_size);

@@ -102,7 +102,6 @@ typedef enum {
 	COMP( PERF )				\
 	COMP( TEM )				\
 	COMP( THRD )				\
-	COMP( TRACE )				\
 						\
 	COMP( GEOM )				\
 	COMP( LIDAR )				\
