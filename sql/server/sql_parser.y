@@ -4100,7 +4100,7 @@ param:
 	{ 
 	  int nr = (m->params)?list_length(m->params):0;
 
-	  sql_add_param(m);
+	  sql_add_param(m, NULL, NULL);
 	  $$ = _symbol_create_int( SQL_PARAMETER, nr ); 
 	}
 

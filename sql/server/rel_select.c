@@ -1067,18 +1067,27 @@ table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral)
 }
 
 static sql_exp *
-rel_var_ref(mvc *sql, const char *sname, const char *name)
+rel_var_ref(mvc *sql, const char *sname, const char *vname)
 {
 	sql_schema *s = cur_schema(sql);
-	sql_var *var;
-	int level = 0;
+	sql_var *var = NULL;
+	sql_arg *a = NULL;
+	int level = 1;
+	sql_exp *res = NULL;
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_error(sql, 02, SQLSTATE(3F000) "SELECT: no such schema '%s'", sname);
 
-	if ((var = stack_find_var_frame(sql, s, name, &level)))
-		return exp_param_or_declared(sql->sa, var->sname ? sa_strdup(sql->sa, var->sname) : NULL, sa_strdup(sql->sa, var->name), &(var->var.tpe), level);
-	return sql_error(sql, 02, SQLSTATE(42000) "SELECT: identifier '%s%s%s' unknown", sname ? sname : "", sname ? "." : "", name);
+	if ((var = stack_find_var_frame(sql, s, vname, &level))) /* check if variable is known from the stack */
+		res = exp_param_or_declared(sql->sa, sa_strdup(sql->sa, var->sname), sa_strdup(sql->sa, var->name), &(var->var.tpe), level);
+	else if (!sname && (a = sql_bind_param(sql, vname))) /* then if it is a parameter */
+		res = exp_param_or_declared(sql->sa, NULL, sa_strdup(sql->sa, vname), &(a->type), 1);
+	else if ((var = find_global_var(sql, s, vname))) /* then if it is a global var */
+		res = exp_param_or_declared(sql->sa, sa_strdup(sql->sa, var->sname), sa_strdup(sql->sa, var->name), &(var->var.tpe), 0);
+
+	if (!res)
+		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: identifier '%s%s%s' unknown", sname ? sname : "", sname ? "." : "", vname);
+	return res;
 }
 
 static sql_exp *
@@ -1211,11 +1220,17 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 			}
 		}
 		if (!exp) { /* If no column was found, try a variable or parameter */
-			sql_var *var;
-			int level = 0;
-			(void) level;
-			if ((var = stack_find_var_frame(sql, cur_schema(sql), name, &level))) /* find one */
-				return exp_param_or_declared(sql->sa, var->sname ? sa_strdup(sql->sa, var->sname) : NULL, sa_strdup(sql->sa, var->name), &(var->var.tpe), level);
+			sql_arg *a = NULL;
+			sql_var *var = NULL;
+			int level = 1;
+			sql_schema *s = cur_schema(sql);
+
+			if ((var = stack_find_var_frame(sql, s, name, &level))) /* check if variable is known from the stack */
+				exp = exp_param_or_declared(sql->sa, sa_strdup(sql->sa, var->sname), sa_strdup(sql->sa, var->name), &(var->var.tpe), level);
+			else if ((a = sql_bind_param(sql, name))) /* then if it is a parameter */
+				exp = exp_param_or_declared(sql->sa, NULL, sa_strdup(sql->sa, name), &(a->type), 1);
+			else if ((var = find_global_var(sql, s, name))) /* then if it is a global var */
+				exp = exp_param_or_declared(sql->sa, sa_strdup(sql->sa, var->sname), sa_strdup(sql->sa, var->name), &(var->var.tpe), 0);
 		}
 
 		if (!exp)
@@ -1285,11 +1300,15 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 		}
 		if (!exp) { /* If no column was found, try a variable */
 			sql_schema *s = mvc_bind_schema(sql, tname); /* search schema with table name, ugh */
-			sql_var *var;
-			int level = 0;
-			(void) level;
-			if (s && (var = stack_find_var_frame(sql, s, cname, &level))) /* find one */
-				return exp_param_or_declared(sql->sa, var->sname ? sa_strdup(sql->sa, var->sname) : NULL, sa_strdup(sql->sa, var->name), &(var->var.tpe), level);
+			sql_var *var = NULL;
+			int level = 1;
+
+			if (s) { /* cannot bound to UDF parameters on this case */
+				if ((var = stack_find_var_frame(sql, s, cname, &level))) /* check if variable is known from the stack */
+					exp = exp_param_or_declared(sql->sa, sa_strdup(sql->sa, var->sname), sa_strdup(sql->sa, var->name), &(var->var.tpe), level);
+				else if ((var = find_global_var(sql, s, cname))) /* then if it is a global var */
+					exp = exp_param_or_declared(sql->sa, sa_strdup(sql->sa, var->sname), sa_strdup(sql->sa, var->name), &(var->var.tpe), 0);
+			}
 		}
 
 		if (!exp)
@@ -4196,7 +4215,7 @@ rel_groupings(sql_query *query, sql_rel **rel, symbol *groupby, dlist *selection
 						if (e->type != e_column) { /* store group by expressions in the stack */
 							if (is_sql_group_totals(f))
 								return sql_error(sql, 02, SQLSTATE(42000) "GROUP BY: grouping expressions not possible with ROLLUP, CUBE and GROUPING SETS");
-							if (!stack_push_groupby_expression(sql, grp, e))
+							if (!frame_push_groupby_expression(sql, grp, e))
 								return NULL;
 						}
 						list_append(next_tuple, e);
@@ -4259,7 +4278,7 @@ rel_partition_groupings(sql_query *query, sql_rel **rel, symbol *partitionby, dl
 		if (exp_is_rel(e))
 			return sql_error(sql, 02, SQLSTATE(42000) "PARTITION BY: subqueries not allowed in PARTITION BY clause");
 		if (e->type != e_column) { /* store group by expressions in the stack */
-			if (!stack_push_groupby_expression(sql, grp, e))
+			if (!frame_push_groupby_expression(sql, grp, e))
 				return NULL;
 		}
 		if (e->card > CARD_AGGR)
@@ -4598,13 +4617,13 @@ get_window_clauses(mvc *sql, char* ident, symbol **partition_by_clause, symbol *
 	if (THRhighwater())
 		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
-	if ((window_specification = stack_get_window_def(sql, ident, &pos)) == NULL)
+	if ((window_specification = frame_get_window_def(sql, ident, &pos)) == NULL)
 		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: window '%s' not found", ident);
 
 	/* avoid infinite lookups */
-	if (stack_check_var_visited(sql, pos))
+	if (frame_check_var_visited(sql, pos))
 		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: cyclic references to window '%s' found", ident);
-	stack_set_var_visited(sql, pos);
+	frame_set_var_visited(sql, pos);
 
 	if (window_specification->h->next->data.sym) {
 		if (*partition_by_clause)
@@ -4683,15 +4702,15 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 	int distinct = 0, frame_type, pos, nf = f, nfargs = 0;
 	bool is_nth_value, supports_frames;
 
-	stack_clear_frame_visited_flag(sql); /* clear visited flags before iterating */
+	frame_clear_frame_visited_flag(sql); /* clear visited flags before iterating */
 
 	if (l->h->next->type == type_list) {
 		window_specification = l->h->next->data.lval;
 	} else if (l->h->next->type == type_string) {
 		const char* window_alias = l->h->next->data.sval;
-		if ((window_specification = stack_get_window_def(sql, window_alias, &pos)) == NULL)
+		if ((window_specification = frame_get_window_def(sql, window_alias, &pos)) == NULL)
 			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: window '%s' not found", window_alias);
-		stack_set_var_visited(sql, pos);
+		frame_set_var_visited(sql, pos);
 	} else {
 		assert(0);
 	}
@@ -5085,7 +5104,7 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
 	if (rel && *rel && (*rel)->card == CARD_AGGR) { /* group by expression case, handle it before */
-		sql_exp *exp = stack_get_groupby_expression(sql, se);
+		sql_exp *exp = frame_get_groupby_expression(sql, se);
 		if (sql->errstr[0] != '\0')
 			return NULL;
 		if (exp) {
@@ -5623,9 +5642,9 @@ rel_query(sql_query *query, sql_rel *rel, symbol *sq, int toplevel, exp_kind ek)
 			dlist *wd = n->data.sym->data.lval;
 			const char *name = wd->h->data.sval;
 			dlist *wdef = wd->h->next->data.lval;
-			if (stack_get_window_def(sql, name, NULL)) {
+			if (frame_get_window_def(sql, name, NULL)) {
 				return sql_error(sql, 01, SQLSTATE(42000) "SELECT: Redefinition of window '%s'", name);
-			} else if (!stack_push_window_def(sql, name, wdef)) {
+			} else if (!frame_push_window_def(sql, name, wdef)) {
 				return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 		}

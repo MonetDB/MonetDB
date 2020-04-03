@@ -451,6 +451,7 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 	int status = 0, err = 0, oldvtop, oldstop = 1, inited = 0, label, ac, sizeframes, topframes;
 	mvc *o, *m;
 	sql_frame **frames;
+	list *global_vars;
 	buffer *b;
 	char *n, *mquery;
 	bstream *bs;
@@ -698,6 +699,7 @@ endofcompile:
 	/* variable stack maybe resized, ie we need to keep the new stack */
 	label = m->label;
 	status = m->session->status;
+	global_vars = m->global_vars;
 	sizeframes = m->sizeframes;
 	topframes = m->topframes;
 	frames = m->frames;
@@ -705,6 +707,7 @@ endofcompile:
 	*m = *o;
 	_DELETE(o);
 	m->label = label;
+	m->global_vars = global_vars;
 	m->sizeframes = sizeframes;
 	m->topframes = topframes;
 	m->frames = frames;
@@ -942,11 +945,11 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				return createException(SQL,"RAstatement2",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 		} else {
-			if (!stack_push_var(m, NULL, vnme+1, &t)) {
+			if (!push_global_var(m, "sys", vnme+1, &t)) {
 				sqlcleanup(m, 0);
 				return createException(SQL,"RAstatement2",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
-			append(ops, exp_var(m->sa, NULL, sa_strdup(m->sa, vnme+1), &t, m->frame));
+			append(ops, exp_var(m->sa, sa_strdup(m->sa, "sys"), sa_strdup(m->sa, vnme+1), &t, 0));
 		}
 		sig = strchr(p, (int)',');
 		if (sig)

@@ -511,13 +511,10 @@ exp_value(mvc *sql, sql_exp *e, atom **args, int maxarg)
 		sql_var_name *vname = (sql_var_name*) e->r;
 		sql_schema *s = cur_schema(sql);
 		sql_var *var;
-		int level = 0;
-		
-		(void) level;
+
 		if (vname->sname && !(s = mvc_bind_schema(sql, vname->sname)))
 			return NULL;
-		var = stack_find_var_frame(sql, s, vname->name, &level);
-		if (var)
+		if (e->flag == 0 && (var = find_global_var(sql, s, vname->name))) /* global variable */
 			return &(var->var);
 		return NULL;
 	} else if (sql->emode == m_normal && e->flag < (unsigned) maxarg) { /* do not get the value in the prepared case */

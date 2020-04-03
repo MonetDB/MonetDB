@@ -12,6 +12,7 @@
 #include "sql_list.h"
 #include "sql_types.h"
 #include "sql_catalog.h"
+#include "sql_datetime.h"
 #include "sql_atom.h"
 #include "rel_rel.h"
 
@@ -26,9 +27,82 @@ destroy_sql_var(void *data)
 	_DELETE(svar);
 }
 
-sql_var*
-stack_push_var(mvc *sql, sql_schema *s, const char *name, sql_subtype *type)
+#define SQLglobal(sname, name, val) \
+	if (!(var = push_global_var(sql, sname, name, &ctype)) || !sqlvar_set(var, VALset(&src, ctype.type->localtype, (char*)(val)))) \
+		return -1;
+
+int
+init_global_variables(mvc *sql)
 {
+	sql_subtype ctype;
+	lng sec = 0;
+	ValRecord src;
+	const char *opt, *sname = "sys";
+	sql_var *var;
+
+	if (!(sql->global_vars = list_create(destroy_sql_var)))
+		return -1;
+
+	sql_find_subtype(&ctype, "int", 0, 0);
+	SQLglobal(sname, "debug", &sql->debug);
+	SQLglobal(sname, "cache", &sql->cache);
+
+	sql_find_subtype(&ctype,  "varchar", 1024, 0);
+	SQLglobal(sname, "current_schema", sname);
+	SQLglobal(sname, "current_user", "monetdb");
+	SQLglobal(sname, "current_role", "monetdb");
+
+	/* inherit the optimizer from the server */
+	opt = GDKgetenv("sql_optimizer");
+	if (!opt)
+		opt = "default_pipe";
+	SQLglobal(sname, "optimizer", opt);
+
+	sql_find_subtype(&ctype, "sec_interval", inttype2digits(ihour, isec), 0);
+	SQLglobal(sname, "current_timezone", &sec);
+
+	sql_find_subtype(&ctype, "bigint", 0, 0);
+	SQLglobal(sname, "last_id", &sql->last_id);
+	SQLglobal(sname, "rowcnt", &sql->rowcnt);
+
+	return 0;
+}
+
+sql_var*
+push_global_var(mvc *sql, const char *sname, const char *name, sql_subtype *type)
+{
+	sql_var *svar = ZNEW(sql_var);
+
+	if (!svar)
+		return NULL;
+	if (!(svar->name = _STRDUP(name))) {
+		_DELETE(svar);
+		return NULL;
+	}
+	if (!(svar->sname = _STRDUP(sname))) {
+		_DELETE(svar->name);
+		_DELETE(svar);
+		return NULL;
+	}
+	atom_init(&(svar->var));
+	if (type) {
+		int tpe = type->type->localtype;
+		VALset(&(svar->var.data), tpe, (ptr) ATOMnilptr(tpe));
+		svar->var.tpe = *type;
+	}
+	if (!list_append(sql->global_vars, svar)) {
+		_DELETE(svar->name);
+		_DELETE(svar->sname);
+		_DELETE(svar);
+		return NULL;
+	}
+	return svar;
+}
+
+sql_var*
+frame_push_var(mvc *sql, const char *sname, const char *name, sql_subtype *type)
+{
+	assert(sql->topframes > 0);
 	sql_frame *f = sql->frames[sql->topframes - 1];
 	sql_var *svar = ZNEW(sql_var);
 
@@ -38,7 +112,7 @@ stack_push_var(mvc *sql, sql_schema *s, const char *name, sql_subtype *type)
 		_DELETE(svar);
 		return NULL;
 	}
-	if (s && !(svar->sname = _STRDUP(s->base.name))) {
+	if (!(svar->sname = _STRDUP(sname))) {
 		_DELETE(svar->name);
 		_DELETE(svar);
 		return NULL;
@@ -72,8 +146,9 @@ destroy_sql_local_table(void *data)
 }
 
 sql_local_table*
-stack_push_table(mvc *sql, sql_table *t)
+frame_push_table(mvc *sql, sql_table *t)
 {
+	assert(sql->topframes > 0);
 	sql_frame *f = sql->frames[sql->topframes - 1];
 	sql_local_table *slt = ZNEW(sql_local_table);
 
@@ -103,6 +178,7 @@ destroy_sql_rel_view(void *data)
 sql_rel_view*
 stack_push_rel_view(mvc *sql, const char *name, sql_rel *var)
 {
+	assert(sql->topframes > 0);
 	sql_frame *f = sql->frames[sql->topframes - 1];
 	sql_rel_view *srv = ZNEW(sql_rel_view);
 
@@ -135,8 +211,9 @@ destroy_sql_window_definition(void *data)
 }
 
 sql_window_definition*
-stack_push_window_def(mvc *sql, const char *name, dlist *wdef)
+frame_push_window_def(mvc *sql, const char *name, dlist *wdef)
 {
+	assert(sql->topframes > 0);
 	sql_frame *f = sql->frames[sql->topframes - 1];
 	sql_window_definition *swd = ZNEW(sql_window_definition);
 
@@ -169,8 +246,9 @@ destroy_sql_groupby_expression(void *data)
 }
 
 sql_groupby_expression*
-stack_push_groupby_expression(mvc *sql, symbol *def, sql_exp *exp)
+frame_push_groupby_expression(mvc *sql, symbol *def, sql_exp *exp)
 {
+	assert(sql->topframes > 0);
 	sql_frame *f = sql->frames[sql->topframes - 1];
 	sql_groupby_expression *sge = ZNEW(sql_groupby_expression);
 
@@ -191,8 +269,9 @@ stack_push_groupby_expression(mvc *sql, symbol *def, sql_exp *exp)
 }
 
 dlist *
-stack_get_window_def(mvc *sql, const char *name, int *pos)
+frame_get_window_def(mvc *sql, const char *name, int *pos)
 {
+	assert(sql->topframes > 0);
 	sql_frame *f = sql->frames[sql->topframes - 1];
 	if (f->windows) {
 		int i = 0;
@@ -209,8 +288,9 @@ stack_get_window_def(mvc *sql, const char *name, int *pos)
 }
 
 sql_exp*
-stack_get_groupby_expression(mvc *sql, symbol *def)
+frame_get_groupby_expression(mvc *sql, symbol *def)
 {
+	assert(sql->topframes > 0);
 	sql_frame *f = sql->frames[sql->topframes - 1];
 	if (f->group_expressions) {
 		for (node *n = f->group_expressions->h; n ; n = n->next) {
@@ -225,8 +305,9 @@ stack_get_groupby_expression(mvc *sql, symbol *def)
 /* There could a possibility that this is vulnerable to a time-of-check, time-of-use race condition.
  * However this should never happen in the SQL compiler */
 bool
-stack_check_var_visited(mvc *sql, int i)
+frame_check_var_visited(mvc *sql, int i)
 {
+	assert(sql->topframes > 0);
 	sql_frame *f = sql->frames[sql->topframes - 1];
 	sql_window_definition *win;
 
@@ -238,8 +319,9 @@ stack_check_var_visited(mvc *sql, int i)
 }
 
 void
-stack_set_var_visited(mvc *sql, int i)
+frame_set_var_visited(mvc *sql, int i)
 {
+	assert(sql->topframes > 0);
 	sql_frame *f = sql->frames[sql->topframes - 1];
 	sql_window_definition *win;
 
@@ -251,8 +333,9 @@ stack_set_var_visited(mvc *sql, int i)
 }
 
 void
-stack_clear_frame_visited_flag(mvc *sql)
+frame_clear_frame_visited_flag(mvc *sql)
 {
+	assert(sql->topframes > 0);
 	sql_frame *f = sql->frames[sql->topframes - 1];
 	if (f->windows) {
 		for (node *n = f->windows->h; n ; n = n->next) {
@@ -295,7 +378,7 @@ stack_push_frame(mvc *sql, const char *name)
 		_DELETE(v);
 		return NULL;
 	}
-	v->frame_number = sql->frame++;
+	v->frame_number = ++sql->frame; /* The frame number for varialbes on the stack start on level 1 */
 	sql->frames[sql->topframes++] = v;
 	return v;
 }
@@ -368,6 +451,7 @@ stack_find_rel_view(mvc *sql, const char *name)
 sql_rel *
 frame_find_rel_view(mvc *sql, const char *name)
 {
+	assert(sql->topframes > 0);
 	sql_frame *f = sql->frames[sql->topframes - 1];
 	if (f->rel_views) {
 		for (node *n = f->rel_views->h; n ; n = n->next) {
@@ -403,14 +487,11 @@ sql_var*
 find_global_var(mvc *sql, sql_schema *s, const char *name)
 {
 	const char *sname = s->base.name;
-	sql_frame *f = sql->frames[0]; /* SQL global variables are set on the very first frame */
-	if (f->vars) {
-		for (node *n = f->vars->h; n ; n = n->next) {
-			sql_var *var = (sql_var*) n->data;
-			assert(var->name);
-			if ((!var->sname || !strcmp(var->sname, sname)) && !strcmp(var->name, name)) /* Function parameters don't have a schema */
-				return var;
-		}
+	for (node *n = sql->global_vars->h; n ; n = n->next) {
+		sql_var *var = (sql_var*) n->data;
+		assert(var->sname && var->name);
+		if (!strcmp(var->sname, sname) && !strcmp(var->name, name))
+			return var;
 	}
 	return NULL;
 }
@@ -418,13 +499,14 @@ find_global_var(mvc *sql, sql_schema *s, const char *name)
 int 
 frame_find_var(mvc *sql, sql_schema *s, const char *name)
 {
+	assert(sql->topframes > 0);
 	const char *sname = s->base.name;
 	sql_frame *f = sql->frames[sql->topframes - 1];
 	if (f->vars) {
 		for (node *n = f->vars->h; n ; n = n->next) {
 			sql_var *var = (sql_var*) n->data;
-			assert(var->name);
-			if ((!var->sname || !strcmp(var->sname, sname)) && !strcmp(var->name, name)) /* Function parameters don't have a schema */
+			assert(var->sname && var->name);
+			if (!strcmp(var->sname, sname) && !strcmp(var->name, name))
 				return 1;
 		}
 	}
@@ -436,14 +518,14 @@ stack_find_var_frame(mvc *sql, sql_schema *s, const char *name, int *level)
 {
 	const char *sname = s->base.name;
 
-	*level = 0;
+	*level = 1; /* Level 0 is for globals */
 	for (int i = sql->topframes-1; i >= 0; i--) {
 		sql_frame *f = sql->frames[i];
 		if (f->vars) {
 			for (node *n = f->vars->h; n ; n = n->next) {
 				sql_var *var = (sql_var*) n->data;
-				assert(var->name);
-				if ((!var->sname || !strcmp(var->sname, sname)) && !strcmp(var->name, name)) { /* Function parameters don't have a schema */
+				assert(var->sname && var->name);
+				if (!strcmp(var->sname, sname) && !strcmp(var->name, name)) {
 					*level = f->frame_number;
 					return var;
 				}

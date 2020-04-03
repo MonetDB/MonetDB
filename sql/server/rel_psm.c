@@ -16,7 +16,7 @@
 #include "rel_updates.h"
 #include "sql_privileges.h"
 
-static list *sequential_block(sql_query *query, sql_subtype *restype, list *restypelist, dlist *blk, char *opt_name, int is_func, bool pushframe);
+static list *sequential_block(sql_query *query, sql_subtype *restype, list *restypelist, dlist *blk, char *opt_name, int is_func);
 
 sql_rel *
 rel_psm_block(sql_allocator *sa, list *l)
@@ -58,13 +58,14 @@ psm_set_exp(sql_query *query, dnode *n)
 	sql_exp *res = NULL, *e = NULL;
 	int level = 0, single = (qname->h->type == type_string);
 	sql_rel *rel = NULL;
+	sql_subtype *tpe;
 
 	if (single) {
 		exp_kind ek = {type_value, card_value, FALSE};
 		const char *sname = qname_schema(qname);
 		const char *vname = qname_schema_object(qname);
 		sql_schema *s = cur_schema(sql);
-		sql_var *var;
+		sql_var *var = NULL;
 
 		if (sname && !(s = mvc_bind_schema(sql, sname)))
 			return sql_error(sql, 02, SQLSTATE(3F000) "SET: No such schema '%s'", sname);
@@ -75,8 +76,25 @@ psm_set_exp(sql_query *query, dnode *n)
 		*/
 
 		/* check if variable is known from the stack */
-		if (!(var = stack_find_var_frame(sql, s, vname, &level)))
-			return sql_error(sql, 01, SQLSTATE(42000) "SET: Variable '%s%s%s' unknown", sname ? sname : "", sname ? "." : "", vname);
+		if (!(var = stack_find_var_frame(sql, s, vname, &level))) {
+			sql_arg *a = NULL;
+			/* then if it is a parameter */
+			if (!sname)
+				a = sql_bind_param(sql, vname);
+			if (!a) { 
+				/* then if it is a global var */
+				if (!(var = find_global_var(sql, s, vname)))
+					return sql_error(sql, 01, SQLSTATE(42000) "SET: Variable '%s%s%s' unknown", sname ? sname : "", sname ? "." : "", vname);
+				else {
+					tpe = &var->var.tpe;
+					level = 0;
+				}
+			} else {
+				tpe = &a->type;
+				level = 1;
+			}
+		} else
+			tpe = &var->var.tpe;
 
 		e = rel_value_exp2(query, &rel, val, sql_sel | sql_update_set, ek);
 		if (!e)
@@ -87,11 +105,9 @@ psm_set_exp(sql_query *query, dnode *n)
 			e = exp_aggr1(sql->sa, e, zero_or_one, 0, 0, CARD_ATOM, has_nil(e));
 		}
 
-		e = rel_check_type(sql, &(var->var.tpe), rel, e, type_cast);
-		if (!e)
+		if (!(e = rel_check_type(sql, tpe, rel, e, type_cast)))
 			return NULL;
-
-		res = exp_set(sql->sa, var->sname ? sa_strdup(sql->sa, var->sname) : NULL, sa_strdup(sql->sa, var->name), e, level);
+		res = exp_set(sql->sa, var ? sa_strdup(sql->sa, var->sname) : NULL, sa_strdup(sql->sa, vname), e, level);
 	} else { /* multi assignment */
 		exp_kind ek = {type_relation, card_value, FALSE};
 		sql_rel *rel_val = rel_subquery(query, NULL, val, ek);
@@ -117,19 +133,38 @@ psm_set_exp(sql_query *query, dnode *n)
 			const char *vname = qname_schema_object(nqname);
 			sql_exp *v = n->data;
 			sql_schema *s = cur_schema(sql);
-			sql_var *var;
+			sql_var *var = NULL;
 
 			if (sname && !(s = mvc_bind_schema(sql, sname)))
 				return sql_error(sql, 02, SQLSTATE(3F000) "SET: No such schema '%s'", sname);
 
-			if (!(var = stack_find_var_frame(sql, s, vname, &level)))
-				return sql_error(sql, 01, SQLSTATE(42000) "SET: Variable '%s%s%s' unknown", sname ? sname : "", sname ? "." : "", vname);
+			/* check if variable is known from the stack */
+			if (!(var = stack_find_var_frame(sql, s, vname, &level))) {
+				sql_arg *a = NULL;
+				/* then if it is a parameter */
+				if (!sname)
+					a = sql_bind_param(sql, vname);
+				if (!a) { 
+					/* then if it is a global var */
+					if (!(var = find_global_var(sql, s, vname)))
+						return sql_error(sql, 01, SQLSTATE(42000) "SET: Variable '%s%s%s' unknown", sname ? sname : "", sname ? "." : "", vname);
+					else {
+						tpe = &var->var.tpe;
+						level = 0;
+					}
+				} else {
+					tpe = &a->type;
+					level = 1;
+				}
+			} else
+				tpe = &var->var.tpe;
+
 			if (!exp_name(v)) 
 				exp_label(sql->sa, v, ++sql->label);
 			v = exp_ref(sql->sa, v);
-			if (!(v = rel_check_type(sql, &(var->var.tpe), rel_val, v, type_cast)))
+			if (!(v = rel_check_type(sql, tpe, rel_val, v, type_cast)))
 				return NULL;
-			append(b, exp_set(sql->sa, var->sname ? sa_strdup(sql->sa, var->sname) : NULL, sa_strdup(sql->sa, var->name), v, level));
+			append(b, exp_set(sql->sa, var ? sa_strdup(sql->sa, var->sname) : NULL, sa_strdup(sql->sa, vname), v, level));
 		}
 		res = exp_rel(sql, rel_psm_block(sql->sa, b));
 	}
@@ -152,7 +187,7 @@ rel_psm_call(sql_query * query, symbol *se)
 }
 
 static list *
-rel_psm_declare(mvc *sql, dnode *n)
+rel_psm_declare(mvc *sql, dnode *n, bool global)
 {
 	list *l = sa_list(sql->sa);
 
@@ -165,17 +200,22 @@ rel_psm_declare(mvc *sql, dnode *n)
 			const char *tname = qname_schema_object(qname);
 			sql_schema *s = cur_schema(sql);
 			sql_exp *r = NULL;
+			sql_arg *a;
+			sql_var *(*where_to_push)(mvc *, const char *, const char *, sql_subtype *) = global ? push_global_var : frame_push_var;
 
 			if (sname && !(s = mvc_bind_schema(sql, sname)))
 				return sql_error(sql, 02, SQLSTATE(3F000) "DECLARE: No such schema '%s'", sname);
-
+			if (global && find_global_var(sql, s, tname))
+				return sql_error(sql, 01, SQLSTATE(42000) "DECLARE: Variable '%s.%s' already declared on the global scope", s->base.name, tname);
+			if (!global && (a = sql_bind_param(sql, tname))) /* find if there's a parameter with the same name */
+				return sql_error(sql, 01, SQLSTATE(42000) "DECLARE: Variable '%s' declared as a parameter", tname);
 			/* check if we overwrite a scope local variable declare x; declare x; */
-			if (frame_find_var(sql, s, tname))
-				return sql_error(sql, 01, SQLSTATE(42000) "DECLARE: Variable '%s%s%s' already declared", sname ? sname : "", sname ? "." : "", tname);
-			/* variables are put on stack */
-			if (!stack_push_var(sql, s, tname, ctype))
+			if (!global && frame_find_var(sql, s, tname))
+				return sql_error(sql, 01, SQLSTATE(42000) "DECLARE: Variable '%s.%s' already declared", s->base.name, tname);
+			/* variables are put on stack, globals on a separate list */
+			if (!where_to_push(sql, s->base.name, tname, ctype))
 				return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			r = exp_var(sql->sa, sa_strdup(sql->sa, s->base.name), sa_strdup(sql->sa, tname), ctype, sql->frame);
+			r = exp_var(sql->sa, sa_strdup(sql->sa, s->base.name), sa_strdup(sql->sa, tname), ctype, global ? 0 : sql->frame);
 			append(l, r);
 			ids = ids->next;
 		}
@@ -216,7 +256,7 @@ rel_psm_declare_table(sql_query *query, dnode *n)
 	}
 	assert(baset->flag == ddl_create_table);
 	t = (sql_table*)((atom*)((sql_exp*)baset->exps->t->data)->l)->data.val.pval;
-	if (!stack_push_table(sql, t))
+	if (!frame_push_table(sql, t))
 		return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return exp_table(sql->sa, sa_strdup(sql->sa, s->base.name), sa_strdup(sql->sa, name), t, sql->frame);
 }
@@ -244,7 +284,7 @@ rel_psm_while_do( sql_query *query, sql_subtype *res, list *restypelist, dnode *
 
 		cond = rel_logical_value_exp(query, &rel, n->data.sym, sql_sel, ek); 
 		n = n->next;
-		whilestmts = sequential_block(query, res, restypelist, n->data.lval, n->next->data.sval, is_func, true);
+		whilestmts = sequential_block(query, res, restypelist, n->data.lval, n->next->data.sval, is_func);
 
 		if (sql->session->status || !cond || !whilestmts) 
 			return NULL;
@@ -276,7 +316,7 @@ psm_if_then_else( sql_query *query, sql_subtype *res, list *restypelist, dnode *
 
 		cond = rel_logical_value_exp(query, &rel, n->data.sym, sql_sel, ek); 
 		n = n->next;
-		ifstmts = sequential_block(query, res, restypelist, n->data.lval, NULL, is_func, true);
+		ifstmts = sequential_block(query, res, restypelist, n->data.lval, NULL, is_func);
 		n = n->next;
 		elsestmts = psm_if_then_else( query, res, restypelist, n, is_func);
 
@@ -290,7 +330,7 @@ psm_if_then_else( sql_query *query, sql_subtype *res, list *restypelist, dnode *
 
 		if (e==NULL || (e->token != SQL_ELSE))
 			return NULL;
-		return sequential_block(query, res, restypelist, e->data.lval, NULL, is_func, true);
+		return sequential_block(query, res, restypelist, e->data.lval, NULL, is_func);
 	}
 }
 
@@ -309,7 +349,7 @@ rel_psm_if_then_else( sql_query *query, sql_subtype *res, list *restypelist, dno
 
 		cond = rel_logical_value_exp(query, &rel, n->data.sym, sql_sel, ek); 
 		n = n->next;
-		ifstmts = sequential_block(query, res, restypelist, n->data.lval, NULL, is_func, true);
+		ifstmts = sequential_block(query, res, restypelist, n->data.lval, NULL, is_func);
 		n = n->next;
 		elsestmts = psm_if_then_else( query, res, restypelist, n, is_func);
 		if (sql->session->status || !cond || !ifstmts) 
@@ -360,7 +400,7 @@ rel_psm_case( sql_query *query, sql_subtype *res, list *restypelist, dnode *case
 		if (rel)
 			return sql_error(sql, 02, SQLSTATE(42000) "CASE: No SELECT statements allowed within the CASE condition");
 		if (else_statements) {
-			if (!(else_stmt = sequential_block(query, res, restypelist, else_statements, NULL, is_func, true)))
+			if (!(else_stmt = sequential_block(query, res, restypelist, else_statements, NULL, is_func)))
 				return NULL;
 		}
 		n = when_statements->h;
@@ -372,7 +412,7 @@ rel_psm_case( sql_query *query, sql_subtype *res, list *restypelist, dnode *case
 
 			if (!when_value || rel ||
 			   (cond = rel_binop_(sql, rel, v, when_value, NULL, "=", card_value)) == NULL ||
-			   (if_stmts = sequential_block(query, res, restypelist, m->next->data.lval, NULL, is_func, true)) == NULL ) {
+			   (if_stmts = sequential_block(query, res, restypelist, m->next->data.lval, NULL, is_func)) == NULL ) {
 				if (rel)
 					return sql_error(sql, 02, SQLSTATE(42000) "CASE: No SELECT statements allowed within the CASE condition");
 				return NULL;
@@ -392,7 +432,7 @@ rel_psm_case( sql_query *query, sql_subtype *res, list *restypelist, dnode *case
 		list *else_stmt = NULL;
 
 		if (else_statements) {
-			if (!(else_stmt = sequential_block(query, res, restypelist, else_statements, NULL, is_func, true)))
+			if (!(else_stmt = sequential_block(query, res, restypelist, else_statements, NULL, is_func)))
 				return NULL;
 		}
 		n = whenlist->h;
@@ -405,7 +445,7 @@ rel_psm_case( sql_query *query, sql_subtype *res, list *restypelist, dnode *case
 			sql_exp *case_stmt = NULL;
 
 			if (!cond || rel ||
-			   (if_stmts = sequential_block(query, res, restypelist, m->next->data.lval, NULL, is_func, true)) == NULL ) {
+			   (if_stmts = sequential_block(query, res, restypelist, m->next->data.lval, NULL, is_func)) == NULL ) {
 				if (rel)
 					return sql_error(sql, 02, SQLSTATE(42000) "CASE: No SELECT statements allowed within the CASE condition");
 				return NULL;
@@ -550,20 +590,41 @@ rel_select_into( sql_query *query, symbol *sq, exp_kind ek)
 	for (m = r->exps->h, n = into->h; m && n; m = m->next, n = n->next) {
 		dlist *qname = n->data.lval;
 		const char *sname = qname_schema(qname);
-		const char *name = qname_schema_object(qname);
+		const char *vname = qname_schema_object(qname);
 		sql_schema *s = cur_schema(sql);
 		sql_exp *v = m->data;
 		int level;
 		sql_var *var;
+		sql_subtype *tpe;
 
 		if (sname && !(s = mvc_bind_schema(sql, sname)))
 			return sql_error(sql, 02, SQLSTATE(3F000) "SELECT INTO: No such schema '%s'", sname);
-		if (!(var = stack_find_var_frame(sql, s, name, &level)))
-			return sql_error(sql, 02, SQLSTATE(42000) "SELECT INTO: Variable '%s%s%s' unknown", sname ? sname : "", sname ? "." : "", name);
-		if (!exp_name(v)) 
+
+		/* check if variable is known from the stack */
+		if (!(var = stack_find_var_frame(sql, s, vname, &level))) {
+			sql_arg *a = NULL;
+			/* then if it is a parameter */
+			if (!sname)
+				a = sql_bind_param(sql, vname);
+			if (!a) { 
+				/* then if it is a global var */
+				if (!(var = find_global_var(sql, s, vname)))
+					return sql_error(sql, 01, SQLSTATE(42000) "SELECT INTO: Variable '%s%s%s' unknown", sname ? sname : "", sname ? "." : "", vname);
+				else {
+					tpe = &var->var.tpe;
+					level = 0;
+				}
+			} else {
+				tpe = &a->type;
+				level = 1;
+			}
+		} else
+			tpe = &var->var.tpe;
+
+		if (!exp_name(v))
 			exp_label(sql->sa, v, ++sql->label);
 		v = exp_ref(sql->sa, v);
-		if (!(v = rel_check_type(sql, &(var->var.tpe), r, v, type_equal)))
+		if (!(v = rel_check_type(sql, tpe, r, v, type_equal)))
 			return NULL;
 		v = exp_set(sql->sa, var->sname ? sa_strdup(sql->sa, var->sname) : NULL, sa_strdup(sql->sa, var->name), v, level);
 		list_append(nl, v);
@@ -608,7 +669,7 @@ has_return( list *l )
 }
 
 static list *
-sequential_block(sql_query *query, sql_subtype *restype, list *restypelist, dlist *blk, char *opt_label, int is_func, bool push_frame)
+sequential_block(sql_query *query, sql_subtype *restype, list *restypelist, dlist *blk, char *opt_label, int is_func)
 {
 	mvc *sql = query->sql;
 	list *l=0;
@@ -621,7 +682,7 @@ sequential_block(sql_query *query, sql_subtype *restype, list *restypelist, dlis
 
 	if (blk->h)
  		l = sa_list(sql->sa);
-	if (push_frame && !stack_push_frame(sql, opt_label))
+	if (!stack_push_frame(sql, opt_label))
 		return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	for (n = blk->h; n; n = n->next ) {
 		sql_exp *res = NULL;
@@ -633,7 +694,7 @@ sequential_block(sql_query *query, sql_subtype *restype, list *restypelist, dlis
 			res = psm_set_exp(query, s->data.lval->h);
 			break;
 		case SQL_DECLARE:
-			reslist = rel_psm_declare(sql, s->data.lval->h);
+			reslist = rel_psm_declare(sql, s->data.lval->h, false);
 			break;
 		case SQL_DECLARE_TABLE:
 		case SQL_CREATE_TABLE: 
@@ -874,30 +935,25 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 						 sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")), s->base.name);
 	} else {
 		char *q = QUERY(sql->scanner);
-		list *l = sa_list(sql->sa);
+		list *l = NULL;
 
 	 	if (params) {
-			if (dlist_length(params) == 1) {
-				dnode *an = params->h->data.lval->h;
-				assert(an->data.sval);
-				if (strcmp(an->data.sval, "*") == 0)
-					vararg = TRUE;
+			for (n = params->h; n; n = n->next) {
+				dnode *an = n->data.lval->h;
+				sql_add_param(sql, an->data.sval, &an->next->data.typeval);
 			}
-			if (!vararg)
-				for (n = params->h; n; n = n->next) {
-					dnode *an = n->data.lval->h;
-					sql_arg *a = SA_ZNEW(sql->sa, sql_arg);
+			l = sql->params;
+			if (l && list_length(l) == 1) {
+				sql_arg *a = l->h->data;
 
-					assert(an->data.sval);
-					a->name = sa_strdup(sql->sa, an->data.sval);
-					a->type = an->next->data.typeval;
-					a->inout = ARG_IN;
-					if (strcmp(a->name, "*") == 0) 
-						a->type = *sql_bind_localtype("int");
-
-					list_append(l, a);
+				if (strcmp(a->name, "*") == 0) {
+					l = NULL;
+					vararg = TRUE;
 				}
+			}
 		}
+		if (!l)
+			l = sa_list(sql->sa);
 		if (res) {
 			restype = result_type(sql, res);
 			if (!restype)
@@ -962,16 +1018,7 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 				GDKfree(q);
 			}
 			sql->session->schema = s;
-
-			if (!stack_push_frame(sql, NULL))
-				return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			for (node *n = l->h ; n ; n = n->next) { /* Push SQL UDF parameters into the stack */
-				sql_arg *a = (sql_arg*) n->data;
-				if (!stack_push_var(sql, NULL, a->name, &(a->type)))
-					return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			}
-
-			b = sequential_block(query, (ra)?&ra->type:NULL, ra?NULL:restype, body, NULL, is_func, false);
+			b = sequential_block(query, (ra)?&ra->type:NULL, ra?NULL:restype, body, NULL, is_func);
 			sql->forward = NULL;
 			sql->session->schema = old_schema;
 			sql->params = NULL;
@@ -1329,7 +1376,7 @@ create_trigger(sql_query *query, dlist *qname, int time, symbol *trigger_event, 
 		if (old_name)
 			stack_update_rel_view(sql, old_name, new_name?rel_dup(rel):rel);
 	}
-	if (!(sq = sequential_block(query, NULL, NULL, stmts, NULL, 1, true)))
+	if (!(sq = sequential_block(query, NULL, NULL, stmts, NULL, 1)))
 		return NULL;
 	r = rel_psm_block(sql->sa, sq);
 
@@ -1529,7 +1576,7 @@ rel_psm(sql_query *query, symbol *s)
 		sql->type = Q_SCHEMA;
 		break;
 	case SQL_DECLARE:
-		ret = rel_psm_block(sql->sa, rel_psm_declare(sql, s->data.lval->h));
+		ret = rel_psm_block(sql->sa, rel_psm_declare(sql, s->data.lval->h, true));
 		sql->type = Q_SCHEMA;
 		break;
 	case SQL_CALL:

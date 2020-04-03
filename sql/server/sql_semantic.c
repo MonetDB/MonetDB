@@ -77,13 +77,36 @@ sql_set_arg(mvc *sql, int nr, atom *v)
 }
 
 void
-sql_add_param(mvc *sql)
+sql_add_param(mvc *sql, const char *name, sql_subtype *st)
 {
 	sql_arg *a = SA_ZNEW(sql->sa, sql_arg);
+
+	if (name)
+		a->name = sa_strdup(sql->sa, name);
+	if (st && st->type)
+		a->type = *st;
 	a->inout = ARG_IN;
+	if (name && strcmp(name, "*") == 0) 
+		a->type = *sql_bind_localtype("int");
 	if (!sql->params)
 		sql->params = sa_list(sql->sa);
 	list_append(sql->params, a);
+}
+
+sql_arg *
+sql_bind_param(mvc *sql, const char *name)
+{
+	node *n;
+
+	if (sql->params) {
+		for (n = sql->params->h; n; n = n->next) {
+			sql_arg *a = n->data;
+
+			if (a->name && strcmp(a->name, name) == 0) 
+				return a;
+		}
+	}
+	return NULL;
 }
 
 static sql_arg *

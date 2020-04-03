@@ -115,7 +115,8 @@ typedef struct mvc {
 	int clientid;		/* id of the owner */
 	struct scanner scanner;
 
-	list *params;
+	list *params; /* Parameters for SQL functions and prepared statements */
+	list *global_vars; /* SQL declared variables on the global scope */
 	sql_func *forward;	/* forward definitions for recursive functions */
 	sql_frame **frames;	/* stack of frames with variables */
 	int topframes;
@@ -249,18 +250,22 @@ extern void mvc_create_dependencies(mvc *m, list *id_l, sqlid depend_id, sql_dep
 extern int mvc_check_dependency(mvc *m, sqlid id, sql_dependency type, list *ignore_ids);
 
 /* variable management */
-extern sql_var* stack_push_var(mvc *sql, sql_schema *s, const char *name, sql_subtype *type);
-extern sql_local_table* stack_push_table(mvc *sql, sql_table *t);
+extern int init_global_variables(mvc *sql);
+extern sql_var *find_global_var(mvc *sql, sql_schema *s, const char *name);
+extern sql_var *push_global_var(mvc *sql, const char *sname, const char *name, sql_subtype *type);
+
+extern sql_var* frame_push_var(mvc *sql, const char *sname, const char *name, sql_subtype *type);
+extern sql_local_table* frame_push_table(mvc *sql, sql_table *t);
 extern sql_rel_view* stack_push_rel_view(mvc *sql, const char *name, sql_rel *var);
-extern sql_window_definition* stack_push_window_def(mvc *sql, const char *name, dlist *wdef);
-extern dlist* stack_get_window_def(mvc *sql, const char *name, int *pos);
-extern sql_groupby_expression* stack_push_groupby_expression(mvc *sql, symbol *def, sql_exp *exp);
-extern sql_exp* stack_get_groupby_expression(mvc *sql, symbol *def);
+extern sql_window_definition* frame_push_window_def(mvc *sql, const char *name, dlist *wdef);
+extern dlist* frame_get_window_def(mvc *sql, const char *name, int *pos);
+extern sql_groupby_expression* frame_push_groupby_expression(mvc *sql, symbol *def, sql_exp *exp);
+extern sql_exp* frame_get_groupby_expression(mvc *sql, symbol *def);
 extern void stack_update_rel_view(mvc *sql, const char *name, sql_rel *view);
 
-extern bool stack_check_var_visited(mvc *sql, int i);
-extern void stack_set_var_visited(mvc *sql, int i);
-extern void stack_clear_frame_visited_flag(mvc *sql);
+extern bool frame_check_var_visited(mvc *sql, int i);
+extern void frame_set_var_visited(mvc *sql, int i);
+extern void frame_clear_frame_visited_flag(mvc *sql);
 
 extern sql_frame *stack_push_frame(mvc *sql, const char *name);
 extern void stack_pop_frame(mvc *sql);
@@ -276,7 +281,6 @@ extern sql_rel *stack_find_rel_view(mvc *sql, const char *name);
 extern int frame_find_var(mvc *sql, sql_schema *s, const char *name);
 extern sql_rel *frame_find_rel_view(mvc *sql, const char *name);
 
-extern sql_var *find_global_var(mvc *sql, sql_schema *s, const char *name);
 extern int stack_has_frame(mvc *sql, const char *name);
 extern int stack_nr_of_declared_tables(mvc *sql);
 

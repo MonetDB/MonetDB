@@ -488,7 +488,7 @@ mvc_trans(mvc *m)
 			}
 		} else { /* clean all but the prepared statements */
 			qc_clean(m->qc, false);
-			stack_pop_until(m, 1);
+			stack_pop_until(m, 0);
 		}
 	}
 	store_unlock();
@@ -611,7 +611,7 @@ mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 		if (m->qc) /* clean query cache, protect against concurrent access on the hash tables (when functions already exists, concurrent mal will
 build up the hash (not copied in the trans dup)) */
 			qc_clean(m->qc, false);
-		stack_pop_until(m, 1);
+		stack_pop_until(m, 0);
 		m->session->schema = find_sql_schema(m->session->tr, m->session->schema_name);
 		TRC_INFO(SQL_TRANS, "Savepoint commit '%s' done\n", name);
 		return msg;
@@ -708,7 +708,7 @@ mvc_rollback(mvc *m, int chain, const char *name, bool disabling_auto_commit)
 	assert(m->session->tr && m->session->tr->active);	/* only abort an active transaction */
 	if (m->qc) 
 		qc_clean(m->qc, false);
-	stack_pop_until(m, 1);
+	stack_pop_until(m, 0);
 	if (name && name[0] != '\0') {
 		while (tr && (!tr->name || strcmp(tr->name, name) != 0))
 			tr = tr->parent;
@@ -810,9 +810,8 @@ mvc_create(int clientid, backend_stack stk, int debug, bstream *rs, stream *ws)
 	mvc *m;
 
  	m = ZNEW(mvc);
-	if(!m) {
+	if (!m)
 		return NULL;
-	}
 
 	TRC_DEBUG(SQL_TRANS, "MVC create\n");
 
@@ -821,7 +820,7 @@ mvc_create(int clientid, backend_stack stk, int debug, bstream *rs, stream *ws)
 	m->errstr[ERRSIZE-1] = '\0';
 
 	m->qc = qc_create(clientid, 0);
-	if(!m->qc) {
+	if (!m->qc) {
 		_DELETE(m);
 		return NULL;
 	}
@@ -838,6 +837,14 @@ mvc_create(int clientid, backend_stack stk, int debug, bstream *rs, stream *ws)
 	m->args = NEW_ARRAY(atom*, m->argmax);
 	if (!m->frames || !m->args) {
 		qc_destroy(m->qc);
+		_DELETE(m->frames);
+		_DELETE(m->args);
+		_DELETE(m);
+		return NULL;
+	}
+	if (init_global_variables(m) < 0) {
+		qc_destroy(m->qc);
+		list_destroy(m->global_vars);
 		_DELETE(m->frames);
 		_DELETE(m->args);
 		_DELETE(m);
@@ -867,8 +874,9 @@ mvc_create(int clientid, backend_stack stk, int debug, bstream *rs, stream *ws)
 	store_lock();
 	m->session = sql_session_create(stk, 1 /*autocommit on*/);
 	store_unlock();
-	if(!m->session) {
+	if (!m->session) {
 		qc_destroy(m->qc);
+		list_destroy(m->global_vars);
 		_DELETE(m->frames);
 		_DELETE(m->args);
 		_DELETE(m);
@@ -915,7 +923,7 @@ mvc_reset(mvc *m, bstream *rs, stream *ws, int debug)
 
 	m->params = NULL;
 	/* reset frames to the set of global variables */
-	stack_pop_until(m, 1);
+	stack_pop_until(m, 0);
 	m->frame = 0;
 	m->argc = 0;
 	m->sym = NULL;
@@ -972,6 +980,7 @@ mvc_destroy(mvc *m)
 	sql_session_destroy(m->session);
 	store_unlock();
 
+	list_destroy(m->global_vars);
 	stack_pop_until(m, 0);
 	_DELETE(m->frames);
 

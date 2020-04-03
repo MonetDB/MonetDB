@@ -3605,6 +3605,7 @@ sql_parse(backend *be, sql_allocator *sa, const char *query, char mode)
 	{
 		int label = m->label;
 		int status = m->session->status;
+		list *global_vars = m->global_vars;
 		int sizeframes = m->sizeframes, topframes = m->topframes;
 		sql_frame **frames = m->frames;
 		/* cascade list maybe removed */
@@ -3614,6 +3615,7 @@ sql_parse(backend *be, sql_allocator *sa, const char *query, char mode)
 		strcpy(o->errstr, m->errstr);
 		*m = *o;
 		m->label = label;
+		m->global_vars = global_vars;
 		m->sizeframes = sizeframes;
 		m->topframes = topframes;
 		m->frames = frames;

@@ -206,50 +206,6 @@ SQLepilogue(void *ret)
 	return MAL_SUCCEED;
 }
 
-#define SQLglobal(name, s, val) \
-	if (!(var = stack_push_var(sql, s, name, &ctype)) || !sqlvar_set(var, VALset(&src, ctype.type->localtype, (char*)(val)))) \
-		return -1;
-
-/* initialize the global variable, ie make mvc point to these */
-static int
-global_variables(mvc *sql, const char *user, const char *schema)
-{
-	sql_subtype ctype;
-	lng sec = 0;
-	ValRecord src;
-	const char *opt;
-	sql_schema *s = mvc_bind_schema(sql, "sys");
-	sql_var *var;
-
-	if (!stack_push_frame(sql, NULL)) /* Global variables stay on the first frame */
-		return -1;
-	sql_find_subtype(&ctype, "int", 0, 0);
-	SQLglobal("debug", s, &sql->debug);
-	SQLglobal("cache", s, &sql->cache);
-
-	sql_find_subtype(&ctype,  "varchar", 1024, 0);
-	SQLglobal("current_schema", s, schema);
-	SQLglobal("current_user", s, user);
-	SQLglobal("current_role", s, user);
-
-	/* inherit the optimizer from the server */
-	opt = GDKgetenv("sql_optimizer");
-	if (!opt)
-		opt = "default_pipe";
-	SQLglobal("optimizer", s, opt);
-
-	sql_find_subtype(&ctype, "sec_interval", inttype2digits(ihour, isec), 0);
-	SQLglobal("current_timezone", s, &sec);
-
-	sql_find_subtype(&ctype, "bigint", 0, 0);
-	SQLglobal("last_id", s, &sql->last_id);
-	SQLglobal("rowcnt", s, &sql->rowcnt);
-
-	if (!stack_push_frame(sql, NULL)) /* Push another frame for the user declared globals */
-		return -1;
-	return 0;
-}
-
 static const char *
 SQLgetquery(Client c)
 {
@@ -276,10 +232,6 @@ SQLprepareClient(Client c, int login)
 		m = mvc_create(c->idx, 0, SQLdebug, c->fdin, c->fdout);
 		if (m == NULL)
 			throw(SQL,"sql.initClient",SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		if (global_variables(m, "monetdb", "sys") < 0) {
-			mvc_destroy(m);
-			throw(SQL,"sql.initClient",SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		}
 		if (c->scenario && strcmp(c->scenario, "msql") == 0)
 			m->reply_size = -1;
 		be = (void *) backend_create(m, c);

@@ -10,6 +10,8 @@ set i = 1234;
 create table tmp1(i integer, s string);
 insert into tmp1 values(1,'hello'),(2,'world');
 select i from tmp1;
+	-- 1
+	-- 2
 
 select sys.i, i from tmp1; --we declare variables in a schema, so to reference them we add the schema
 	-- 1234 1
@@ -53,9 +55,30 @@ DROP TABLE tmp2;
 DROP FUNCTION tests_scopes1(INT);
 DROP FUNCTION tests_scopes2(INT);
 ------------------------------------------------------------------------------
-declare "current_schema" string; --error, "current_schema" already declared
-declare "sys"."current_schema" string; --error, "current_schema" already declared
+DECLARE "current_schema" string; --error, "current_schema" already declared
+DECLARE "sys"."current_schema" string; --error, "current_schema" already declared
 with a(a) as (select 1), a(a) as (select 2) select 1; --error, CTE a already declared
+with a(a) as (with a(a) as (select 1) select 2) select a from a; --allowed
+	-- 2
+
+DECLARE "aux" string;
+SET "aux" = (SELECT "optimizer");
+SET "optimizer" = 'default_pipe';
+
+CREATE OR REPLACE FUNCTION tests_scopes3(input INT) RETURNS STRING 
+BEGIN
+	IF input = 1 THEN
+		DECLARE "optimizer" string; --allowed
+		SET "optimizer" = 'anything';
+	END IF;
+	RETURN SELECT "optimizer";
+END;
+
+SELECT tests_scopes3(0), tests_scopes3(1);
+	-- default_pipe default_pipe
+
+SET "optimizer" = (SELECT "aux");
+DROP FUNCTION tests_scopes3(INT);
 ------------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION scoping(input INT) RETURNS INT 
 BEGIN
