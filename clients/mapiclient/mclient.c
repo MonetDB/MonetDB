@@ -1957,7 +1957,7 @@ format_result(Mapi mid, MapiHdl hdl, bool singleinstr)
 	return rc;
 }
 
-static int
+static bool
 doRequest(Mapi mid, const char *buf)
 {
 	MapiHdl hdl;
@@ -1974,17 +1974,17 @@ doRequest(Mapi mid, const char *buf)
 		}
 		mapi_explain(mid, stderr);
 		errseen = true;
-		return 1;
+		return true;
 	}
 
 	if (mapi_needmore(hdl) == MMORE)
-		return 0;
+		return false;
 
 	format_result(mid, hdl, false);
 
 	if (mapi_get_active(mid) == NULL)
 		mapi_close_handle(hdl);
-	return 0;
+	return errseen;
 }
 
 #define CHECK_RESULT(mid, hdl, break_or_continue, buf, fp)	\
