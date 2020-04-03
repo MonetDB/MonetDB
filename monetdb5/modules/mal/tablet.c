@@ -464,8 +464,8 @@ output_file_default(Tablet *as, BAT *order, stream *fd)
 {
 	size_t len = BUFSIZ, locallen = BUFSIZ;
 	int res = 0;
-	char *buf = GDKzalloc(len);
-	char *localbuf = GDKzalloc(len);
+	char *buf = GDKmalloc(len);
+	char *localbuf = GDKmalloc(len);
 	BUN p, q;
 	oid id;
 	BUN i = 0;
@@ -494,8 +494,8 @@ output_file_dense(Tablet *as, stream *fd)
 {
 	size_t len = BUFSIZ, locallen = BUFSIZ;
 	int res = 0;
-	char *buf = GDKzalloc(len);
-	char *localbuf = GDKzalloc(len);
+	char *buf = GDKmalloc(len);
+	char *localbuf = GDKmalloc(len);
 	BUN i = 0;
 
 	if (buf == NULL || localbuf == NULL) {
@@ -520,7 +520,7 @@ output_file_ordered(Tablet *as, BAT *order, stream *fd)
 {
 	size_t len = BUFSIZ;
 	int res = 0;
-	char *buf = GDKzalloc(len);
+	char *buf = GDKmalloc(len);
 	BUN p, q;
 	BUN i = 0;
 	BUN offset = as->offset;
@@ -1067,7 +1067,7 @@ SQLworker(void *arg)
 	int j, piece;
 	lng t0;
 
-	GDKsetbuf(GDKzalloc(GDKMAXERRLEN));	/* where to leave errors */
+	GDKsetbuf(GDKmalloc(GDKMAXERRLEN));	/* where to leave errors */
 	GDKclrerr();
 	task->errbuf = GDKerrbuf;
 
@@ -1534,7 +1534,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 	assert(rsep);
 	assert(csep);
 	assert(maxrow < 0 || maxrow <= (lng) BUN_MAX);
-	task.fields = (char ***) GDKzalloc(as->nr_attrs * sizeof(char **));
+	task.fields = (char ***) GDKmalloc(as->nr_attrs * sizeof(char **));
 	task.cols = (int *) GDKzalloc(as->nr_attrs * sizeof(int));
 	task.time = (lng *) GDKzalloc(as->nr_attrs * sizeof(lng));
 	if (task.fields == NULL || task.cols == NULL || task.time == NULL) {
@@ -1543,13 +1543,13 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 	}
 	task.cur = 0;
 	for (i = 0; i < MAXBUFFERS; i++) {
-		task.base[i] = GDKzalloc(MAXROWSIZE(2 * b->size) + 2);
+		task.base[i] = GDKmalloc(MAXROWSIZE(2 * b->size) + 2);
 		task.rowlimit[i] = MAXROWSIZE(2 * b->size);
 		if (task.base[i] == 0) {
 			tablet_error(&task, lng_nil, int_nil, SQLSTATE(HY013) MAL_MALLOC_FAIL, "SQLload_file");
 			goto bailout;
 		}
-		task.base[i][b->size + 1] = 0;
+		task.base[i][0] = task.base[i][b->size + 1] = 0;
 		task.input[i] = task.base[i] + 1;	/* wrap the buffer with null bytes */
 	}
 	task.besteffort = best;
@@ -1595,7 +1595,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 	/* the record separator is considered a column */
 	task.limit = (int) (b->size / as->nr_attrs + as->nr_attrs);
 	for (i = 0; i < as->nr_attrs; i++) {
-		task.fields[i] = GDKzalloc(sizeof(char *) * task.limit);
+		task.fields[i] = GDKmalloc(sizeof(char *) * task.limit);
 		if (task.fields[i] == 0) {
 			if (task.as->error == NULL)
 				as->error = createException(MAL, "sql.copy_from", SQLSTATE(HY013) MAL_MALLOC_FAIL);
