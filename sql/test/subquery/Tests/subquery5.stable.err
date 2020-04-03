@@ -46,9 +46,17 @@ MAPI  = (monetdb) /var/tmp/mtest-488866/.s.monetdb.39586
 QUERY = SELECT 1 FROM another_t t1 HAVING 1 = ANY (SELECT col1); --error, subquery uses ungrouped column "col1" from outer query
 ERROR = !SELECT: cannot use non GROUP BY column 'col1' in query results without an aggregate function
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-488866/.s.monetdb.39586
+MAPI  = (monetdb) /var/tmp/mtest-8981/.s.monetdb.31008
+QUERY = SELECT 1 FROM another_t t1 HAVING 1 = ANY (SELECT t1.col1); --error, subquery uses ungrouped column "t1.col1" from outer query
+ERROR = !SELECT: cannot use non GROUP BY column 't1.col1' in query results without an aggregate function
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-12029/.s.monetdb.36790
 QUERY = SELECT 1 FROM another_t t1 HAVING 1 = ANY (SELECT 1 WHERE col1); --error, subquery uses ungrouped column "col1" from outer query
 ERROR = !SELECT: cannot use non GROUP BY column 'col1' in query results without an aggregate function
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-8981/.s.monetdb.31008
+QUERY = SELECT 1 FROM another_t t1 HAVING 1 = ANY (SELECT 1 WHERE t1.col1); --error, subquery uses ungrouped column "t1.col1" from outer query
+ERROR = !SELECT: cannot use non GROUP BY column 't1.col1' in query results without an aggregate function
 CODE  = 42000
 
 # 08:41:39 >  

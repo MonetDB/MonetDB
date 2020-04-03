@@ -1239,21 +1239,18 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 			exp = rel_bind_column2(sql, inner, tname, cname, f);
 		if (!exp && inner && is_sql_having(f) && inner->op == op_select)
 			inner = inner->l;
-		if (!exp && inner && (is_sql_having(f) || is_sql_aggr(f)) && is_groupby(inner->op)) {
+		if (!exp && inner && (is_sql_having(f) || is_sql_aggr(f)) && is_groupby(inner->op))
 			exp = rel_bind_column2(sql, inner->l, tname, cname, f);
-		}
 		if (!exp && query && query_has_outer(query)) {
 			int i;
 			sql_rel *outer;
 
 			for (i=query_has_outer(query)-1; i>= 0 && !exp && (outer = query_fetch_outer(query,i)); i--) {
 				exp = rel_bind_column2(sql, outer, tname, cname, f | sql_outer);
-				if (!exp && (is_sql_having(f) || is_sql_aggr(f)) && is_groupby(outer->op)) {
+				if (!exp && is_groupby(outer->op))
 					exp = rel_bind_column2(sql, outer->l, tname, cname, f);
-				}
-				if (exp && is_simple_project(outer->op) && !rel_find_exp(outer, exp)) {
+				if (exp && is_simple_project(outer->op) && !rel_find_exp(outer, exp))
 					exp = rel_project_add_exp(sql, outer, exp);
-				}
 				if (exp)
 					break;
 			}
@@ -1262,7 +1259,7 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 			if (exp && outer && (is_sql_groupby(f) || is_sql_aggr(f))) {
 				if (query_outer_used_exp( query, i, exp, is_sql_aggr(f) && !is_sql_farg(f))) {
 					sql_exp *lu = query_outer_last_used(query, i);
-					return sql_error(sql, 05, SQLSTATE(42000) "SELECT: subquery uses ungrouped column \"%s.%s\" from outer query", exp_relname(lu), exp_name(lu));
+					return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: subquery uses ungrouped column \"%s.%s\" from outer query", exp_relname(lu), exp_name(lu));
 				}
 			}
 			if (exp) {
