@@ -179,7 +179,7 @@ command_help(int argc, char *argv[])
 			printf("Usage: monetdb snapshot create [-t <targetfile>] <dbname> [<dbname>..]\n");
 			printf("  Take a snapshot of the listed databases. Unless -t is given, the snapshots\n");
 			printf("  are written to files named\n");
-			printf("  <snapshotdir>/<dbname>_<YYYY><MM><DD>T<HH><MM>UTC.tar.gz.\n");
+			printf("  <snapshotdir>/<dbname>_<YYYY><MM><DD>T<HH><MM>UTC<snapshotcompression>.\n");
 			printf("Options:\n");
 			printf("  -t <targetfile>  File on the server to write the snapshot to.\n");
 		} else if (argc > 2 && strcmp(argv[2], "restore") == 0) {
