@@ -95,6 +95,7 @@ void *sa_alloc( sql_allocator *sa, size_t sz )
 			tmp = RENEW_ARRAY(char*,sa->blks,sa->size);
 			if (tmp == NULL) {
 				sa->size /= 2; /* undo */
+				GDKfree(r);
 				return NULL;
 			}
 			sa->blks = tmp;

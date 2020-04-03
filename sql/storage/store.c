@@ -24,12 +24,12 @@ int catalog_version = 0;
 static MT_Lock bs_lock = MT_LOCK_INITIALIZER("bs_lock");
 static sqlid store_oid = 0;
 static sqlid prev_oid = 0;
-static int transactions = 0;
 static sqlid *store_oids = NULL;
 static int nstore_oids = 0;
 sql_trans *gtrans = NULL;
 list *active_sessions = NULL;
 sql_allocator *store_sa = NULL;
+ATOMIC_TYPE transactions = ATOMIC_VAR_INIT(0);
 ATOMIC_TYPE nr_sessions = ATOMIC_VAR_INIT(0);
 ATOMIC_TYPE store_nr_active = ATOMIC_VAR_INIT(0);
 store_type active_store_type = store_bat;
@@ -321,7 +321,7 @@ sql_trans_destroy(sql_trans *t, bool try_spare)
 	cs_destroy(&t->schemas);
 	sa_destroy(t->sa);
 	_DELETE(t);
-	transactions--;
+	(void) ATOMIC_DEC(&transactions);
 	return res;
 }
 
@@ -1880,7 +1880,6 @@ store_load(backend_stack stk) {
 	if (!gtrans)
 		return -1;
 
-	transactions = 0;
 	active_sessions = list_create(NULL);
 
 	if (first) {
@@ -2288,7 +2287,7 @@ store_exit(void)
 	   (current implementation) simply keep the gtrans alive and simply
 	   exit (but leak memory).
 	 */
-	if (!transactions) {
+	if (!ATOMIC_GET(&transactions)) {
 		sql_trans_destroy(gtrans, false);
 		gtrans = NULL;
 	}
@@ -2302,7 +2301,7 @@ store_exit(void)
 }
 
 
-static sql_trans * trans_dup(backend_stack stk, sql_trans *ot, const char *newname);
+sql_trans *sql_trans_create(backend_stack stk, sql_trans *parent, const char *name, bool try_spare);
 static sql_trans * trans_init(sql_trans *tr, backend_stack stk, sql_trans *otr);
 
 /* call locked! */
@@ -2329,7 +2328,7 @@ store_apply_deltas(bool not_locked)
 	}
 
 	if (/*gtrans->sa->nr > 40 &&*/ !(ATOMIC_GET(&nr_sessions)) /* only save when there are no dependencies on the gtrans */) { /* TODO need better estimate */
-		sql_trans *ntrans = trans_dup(gtrans->stk, gtrans, NULL);
+		sql_trans *ntrans = sql_trans_create(gtrans->stk, gtrans, NULL, false);
 
 		trans_init(ntrans, ntrans->stk, gtrans);
 		if (spares > 0)
@@ -3901,14 +3900,16 @@ rollforward_changeset_updates(sql_trans *tr, changeset * fs, changeset * ts, sql
 			list_destroy(fs->dset);
 			fs->dset = NULL;
 		}
-		/* only cleanup when alone */
-		if (apply && ts->dset && ATOMIC_GET(&store_nr_active) == 1) {
+		if (!apply && ts->dset) {
 			for (n = ts->dset->h; ok == LOG_OK && n; n = n->next) {
 				sql_base *tb = n->data;
 
 				if (rollforward_deletes)
 					ok = rollforward_deletes(tr, tb, mode);
 			}
+		}
+		/* only cleanup when alone */
+		if (apply && ts->dset && ATOMIC_GET(&store_nr_active) == 1) {
 			list_destroy(ts->dset);
 			ts->dset = NULL;
 		}
@@ -4916,7 +4917,7 @@ sql_trans_create(backend_stack stk, sql_trans *parent, const char *name, bool tr
 			tr = trans_dup(stk, (parent) ? parent : gtrans, name);
 			TRC_DEBUG(SQL_STORE, "New transaction: %p\n", tr);
 			if (tr)
-				transactions++;
+				(void) ATOMIC_INC(&transactions);
 		}
 	}
 	return tr;
