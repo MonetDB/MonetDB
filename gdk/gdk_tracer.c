@@ -391,7 +391,7 @@ GDKtracer_reset_adapter(void)
 }
 
 
-gdk_return
+void
 GDKtracer_log(const char *file, const char *func, int lineno,
 	      log_level_t level, component_t comp,
 	      const char *syserr,
@@ -427,7 +427,7 @@ GDKtracer_log(const char *file, const char *func, int lineno,
 	va_end(va);
 	if (bytes_written < 0) {
 		GDK_TRACER_EXCEPTION(GDKTRACER_FAILED "\n");
-		return GDK_FAIL;
+		return;
 	}
 	char *p;
 	if ((p = strchr(buffer, '\n')) != NULL)
@@ -469,8 +469,6 @@ GDKtracer_log(const char *file, const char *func, int lineno,
 				 syserr ? syserr : "");
 		}
 	}
-
-	return GDK_SUCCEED;
 }
 
 

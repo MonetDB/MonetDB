@@ -302,7 +302,7 @@ str GDKstrdup(const char *s) __attribute__((__warn_unused_result__));
 str GDKstrndup(const char *s, size_t n) __attribute__((__warn_unused_result__));
 gdk_return GDKtracer_fill_comp_info(BAT *id, BAT *component, BAT *log_level);
 gdk_return GDKtracer_flush_buffer(void);
-gdk_return GDKtracer_log(const char *file, const char *func, int lineno, log_level_t lvl, component_t comp, const char *syserr, _In_z_ _Printf_format_string_ const char *format, ...) __attribute__((__format__(__printf__, 7, 8)));
+void GDKtracer_log(const char *file, const char *func, int lineno, log_level_t lvl, component_t comp, const char *syserr, _In_z_ _Printf_format_string_ const char *format, ...) __attribute__((__format__(__printf__, 7, 8)));
 void GDKtracer_reinit_basic(int sig);
 gdk_return GDKtracer_reset_adapter(void);
 gdk_return GDKtracer_reset_component_level(const char *comp);
