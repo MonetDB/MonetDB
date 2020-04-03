@@ -19,10 +19,6 @@
 #include <sql.h>
 #include <sqlext.h>
 
-#ifdef _MSC_VER
-#define snprintf _snprintf
-#endif
-
 static void
 prerr(SQLSMALLINT tpe, SQLHANDLE hnd, const char *func, const char *pref)
 {
