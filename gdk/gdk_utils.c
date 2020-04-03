@@ -1616,7 +1616,7 @@ GDKmemfail(const char *s, size_t len)
 	   }
 	 */
 
-	TRC_ERROR(GDK, "%s(%zu) fails, try to free up space [memory in use=%zu,virtual memory in use=%zu]\n", s, len, GDKmem_cursize(), GDKvm_cursize());
+	TRC_WARNING(GDK, "%s(%zu) fails, try to free up space [memory in use=%zu,virtual memory in use=%zu]\n", s, len, GDKmem_cursize(), GDKvm_cursize());
 }
 
 /* Memory allocation
@@ -1836,7 +1836,7 @@ GDKrealloc(void *s, size_t size)
 #ifndef NDEBUG
 		os[-1] &= ~2;	/* not freed after all */
 #endif
-		GDKmemfail("GDKrealloc", size);
+		GDKmemfail(__func__, size);
 		GDKerror("failed for %zu bytes", size);
 		return NULL;
 	}
@@ -1943,13 +1943,13 @@ GDKmmap(const char *path, int mode, size_t len)
 
 	if (GDKvm_cursize() + len >= GDK_vm_maxsize &&
 	    !MT_thread_override_limits()) {
-		GDKmemfail("GDKmmap", len);
+		GDKmemfail(__func__, len);
 		GDKerror("allocating too much virtual address space\n");
 		return NULL;
 	}
 	ret = MT_mmap(path, mode, len);
 	if (ret == NULL) {
-		GDKmemfail("GDKmmap", len);
+		GDKmemfail(__func__, len);
 	}
 	if (ret != NULL) {
 		meminc(len);
@@ -1978,13 +1978,13 @@ GDKmremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 	if (*new_size > old_size &&
 	    GDKvm_cursize() + *new_size - old_size >= GDK_vm_maxsize &&
 	    !MT_thread_override_limits()) {
-		GDKmemfail("GDKmmap", *new_size);
+		GDKmemfail(__func__, *new_size);
 		GDKerror("allocating too much virtual address space\n");
 		return NULL;
 	}
 	ret = MT_mremap(path, mode, old_address, old_size, new_size);
 	if (ret == NULL) {
-		GDKmemfail("GDKmremap", *new_size);
+		GDKmemfail(__func__, *new_size);
 	}
 	if (ret != NULL) {
 		memdec(old_size);

@@ -375,9 +375,9 @@ recover_dir(int farmid, bool direxists)
 	if (direxists) {
 		/* just try; don't care about these non-vital files */
 		if (GDKunlink(farmid, BATDIR, "BBP", "bak") != GDK_SUCCEED)
-			TRC_CRITICAL(GDK, "unlink of BBP.bak failed\n");
+			TRC_WARNING(GDK, "unlink of BBP.bak failed\n");
 		if (GDKmove(farmid, BATDIR, "BBP", "dir", BATDIR, "BBP", "bak") != GDK_SUCCEED)
-			TRC_CRITICAL(GDK, "rename of BBP.dir to BBP.bak failed\n");
+			TRC_WARNING(GDK, "rename of BBP.dir to BBP.bak failed\n");
 	}
 	return GDKmove(farmid, BAKDIR, "BBP", "dir", BATDIR, "BBP", "dir");
 }

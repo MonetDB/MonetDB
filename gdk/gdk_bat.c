@@ -2425,6 +2425,7 @@ BATassertProps(BAT *b)
 			GDKfree(hs);
 		}
 	  abort_check:
+		GDKclrerr();
 		assert(maxval == NULL || seenmax);
 		assert(minval == NULL || seenmin);
 		assert(!b->tnil || seennil);

@@ -1419,10 +1419,11 @@ gdk_export BAT *BBPquickdesc(bat b, bool delaccess);
 #define GDKerror(format, ...)					\
 	GDKtracer_log(__FILE__, __func__, __LINE__, M_ERROR,	\
 		      GDK, NULL, format, ##__VA_ARGS__)
-#define GDKsyserror(format, ...)					\
+#define GDKsyserr(errno, format, ...)					\
 	GDKtracer_log(__FILE__, __func__, __LINE__, M_CRITICAL,		\
 		      GDK, GDKstrerror(errno, (char[64]){0}, 64),	\
 		      format, ##__VA_ARGS__)
+#define GDKsyserror(format, ...)	GDKsyserr(errno, format, ##__VA_ARGS__)
 
 #ifndef HAVE_EMBEDDED
 gdk_export _Noreturn void GDKfatal(_In_z_ _Printf_format_string_ const char *format, ...)

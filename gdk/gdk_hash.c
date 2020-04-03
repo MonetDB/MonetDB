@@ -199,13 +199,13 @@ HASHcollisions(BAT *b, Hash *h, const char *func)
 				max = cnt;
 			total += cnt;
 		}
-	TRC_DEBUG(ACCELERATOR,
-		"%s(" ALGOBATFMT "): statistics " BUNFMT ", "
-		"entries " LLFMT ", nunique " BUNFMT ", nbucket " BUNFMT ", "
-		"max " LLFMT ", avg %2.6f;\n",
-		func, ALGOBATPAR(b), BATcount(b), entries,
-		h->nunique, h->nbucket, max,
-		entries == 0 ? 0 : total / entries);
+	TRC_DEBUG_ENDIF(ACCELERATOR,
+			"%s(" ALGOBATFMT "): statistics " BUNFMT ", "
+			"entries " LLFMT ", nunique " BUNFMT ", "
+			"nbucket " BUNFMT ", max " LLFMT ", avg %2.6f;\n",
+			func, ALGOBATPAR(b), BATcount(b), entries,
+			h->nunique, h->nbucket, max,
+			entries == 0 ? 0 : total / entries);
 }
 
 static gdk_return

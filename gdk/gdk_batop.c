@@ -519,10 +519,10 @@ BATappend(BAT *b, BAT *n, BAT *s, bool force)
 	}
 
 	if (BATttype(b) != BATttype(n) &&
-		ATOMtype(b->ttype) != ATOMtype(n->ttype)) {
-			TRC_DEBUG(CHECK_, "Interpreting %s as %s.\n",
-				  ATOMname(BATttype(n)), ATOMname(BATttype(b)));
-		}
+	    ATOMtype(b->ttype) != ATOMtype(n->ttype)) {
+		TRC_DEBUG(CHECK_, "Interpreting %s as %s.\n",
+			  ATOMname(BATttype(n)), ATOMname(BATttype(b)));
+	}
 
 	cnt = canditer_init(&ci, n, s);
 	if (cnt == 0) {

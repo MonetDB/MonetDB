@@ -582,32 +582,29 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 					     * operation, so we then
 					     * need to try
 					     * ftruncate */
-					    ((rt = posix_fallocate(fd, (off_t) old_size, (off_t) *new_size - (off_t) old_size)) == EINVAL ? ftruncate(fd, (off_t) *new_size) < 0 : rt != 0)
+					    ((errno = posix_fallocate(fd, (off_t) old_size, (off_t) *new_size - (off_t) old_size)) == EINVAL ? ftruncate(fd, (off_t) *new_size) < 0 : errno != 0)
 #else
 					    ftruncate(fd, (off_t) *new_size) < 0
 #endif
 #endif
 						) {
-						int err = errno, other;
+						GDKsyserror("MT_mremap(%s,%p,%zu,%zu): write() or "
+#ifdef HAVE_FALLOCATE
+							    "fallocate()"
+#else
+#ifdef HAVE_POSIX_FALLOCATE
+							    "posix_fallocate()"
+#else
+							    "ftruncate()"
+#endif
+#endif
+							    " failed\n", path, old_address, old_size, *new_size);
 						/* extending failed:
 						 * free any disk space
 						 * allocated in the
 						 * process */
-						other = ftruncate(fd, (off_t) old_size);
-						(void) other; /* silence compiler warning for ignoring result of ftruncate */
-						errno = err; /* restore for error message */
-						GDKsyserror(
-							  "MT_mremap(%s,%p,%zu,%zu): write() or "
-#ifdef HAVE_FALLOCATE
-							  "fallocate()"
-#else
-#ifdef HAVE_POSIX_FALLOCATE
-							  "posix_fallocate()"
-#else
-							  "ftruncate()"
-#endif
-#endif
-							  " failed\n", path, old_address, old_size, *new_size);
+						if (ftruncate(fd, (off_t) old_size) < 0)
+							GDKsyserror("MT_mremap(%s,%p,%zu,%zu): ftruncate() failed\n", path, old_address, old_size, *new_size);
 						close(fd);
 						return NULL;
 					}
