@@ -387,7 +387,7 @@ locate_file(const char *basename, const char *ext, bit recurse)
 				close(fd);
 				tmp = GDKrealloc(fullname, strlen(fullname) + 1);
 				if (tmp == NULL)
-					GDKfree(fullname);
+					return fullname;
 				return tmp;
 			}
 		}
