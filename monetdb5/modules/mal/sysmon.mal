@@ -37,5 +37,5 @@ address SYSMONstop
 comment "Stop a single query a.s.a.p.";
 
 pattern queue()(tag:bat[:lng], sessionid:bat[:int], user:bat[:str], started:bat[:timestamp],
-status:bat[:str], query:bat[:str], progress:bat[:int], workers:bat[:int], memory:bat[:int])
+status:bat[:str], query:bat[:str], finished:bat[:timestamp], workers:bat[:int], memory:bat[:int])
 address SYSMONqueue;

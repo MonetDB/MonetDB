@@ -179,13 +179,14 @@ command_help(int argc, char *argv[])
 			printf("Usage: monetdb snapshot create [-t <targetfile>] <dbname> [<dbname>..]\n");
 			printf("  Take a snapshot of the listed databases. Unless -t is given, the snapshots\n");
 			printf("  are written to files named\n");
-			printf("  <snapshotdir>/<dbname>_<YYYY><MM><DD>T<HH><MM>UTC.tar.gz.\n");
+			printf("  <snapshotdir>/<dbname>_<YYYY><MM><DD>T<HH><MM>UTC<snapshotcompression>.\n");
 			printf("Options:\n");
 			printf("  -t <targetfile>  File on the server to write the snapshot to.\n");
 		} else if (argc > 2 && strcmp(argv[2], "restore") == 0) {
 			printf("Usage: monetdb snapshot restore [-f] <snapid> [dbname]\n");
 			printf("  Create a database from the given snapshot, where  <snapid> is either\n");
-			printf("  a path on the server or <dbname>@<num> as produced\n");
+			printf("  a path on the server or <dbname>@<num> as produced by\n");
+			printf("  'monetdb snapshot list'\n");
 			printf("Options:\n");
 			printf("  -f  do not ask for confirmation\n");
 		} else if (argc > 2 && strcmp(argv[2], "destroy") == 0) {
@@ -1753,20 +1754,35 @@ snapshot_enumerate(struct snapshot **snapshots, int *nsnapshots)
 		char *p = out + 4;
 		char *end = p + strlen(p);
 		while (p < end) {
+			char datebuf[100];
+			char *parse_result;
+			struct tm tm = {0};
 			char *eol = strchr(p, '\n');
 			eol = (eol != NULL) ? eol : end;
-			int64_t time;
+			time_t timestamp, pre, post;
 			uint64_t size;
 			int len;
-			if (sscanf(p, "%" SCNd64 " %" SCNu64 " %n", &time, &size, &len) != 2) {
+			if (sscanf(p, "%99s %" SCNu64 " %n", datebuf, &size, &len) != 2) {
 				free(out);
 				return strdup("internal parse error");
 			}
+			parse_result = strptime(datebuf, "%Y%m%dT%H%M%S", &tm);
+			if (parse_result == NULL || *parse_result != '\0') {
+				free(out);
+				return strdup("internal timestamp parse error");
+			}
+			// Unfortunately mktime interprets tm as local time, we have
+			// to correct for that.
+			timestamp = mktime(&tm);
+			pre = time(NULL);
+			gmtime_r(&pre, &tm);
+			post = mktime(&tm);
+			timestamp += pre - post;
 			p += len;
 			char *dbend = strchr(p, ' ');
 			if (dbend == NULL) {
 				free(out);
-				return strdup("internal parse error");
+				return strdup("Internal parse error");
 			}
 			int dblen = dbend - p;
 			char *path = dbend + 1;
@@ -1775,10 +1791,11 @@ snapshot_enumerate(struct snapshot **snapshots, int *nsnapshots)
 			snap->dbname = malloc(dblen + 1);
 			memmove(snap->dbname, p, dblen);
 			snap->dbname[dblen] = '\0';
-			snap->time = time;
+			snap->time = timestamp;
 			snap->size = size;
 			snap->path = malloc(pathlen + 1);
 			memmove(snap->path, path, pathlen);
+			snap->path[pathlen] = '\0';
 			p = eol + 1;
 		};
 		free(out);

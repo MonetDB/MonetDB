@@ -102,13 +102,13 @@ slice(BAT **retval, BAT *b, lng start, lng end)
 {
 	/* the internal BATslice requires exclusive end */
 	if (start < 0) {
-		GDKerror("CMDslice: start position of slice should >= 0\n");
+		GDKerror("start position of slice should >= 0\n");
 		return GDK_FAIL;
 	}
 	if (is_lng_nil(end))
 		end = BATcount(b);
 	if (start > (lng) BUN_MAX || end >= (lng) BUN_MAX) {
-		GDKerror("CMDslice: argument out of range\n");
+		GDKerror("argument out of range\n");
 		return GDK_FAIL;
 	}
 
