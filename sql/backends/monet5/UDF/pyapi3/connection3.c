@@ -119,11 +119,6 @@ static PyMethodDef _connectionObject_methods[] = {
 };
 
 PyTypeObject Py_ConnectionType = {
-	_PyObject_EXTRA_INIT
-// in python3 they use structs within structs to represent this information, and
-// many compilers throw warnings if you don't use separate braces
-// to initialize these separate structs. However, in Python2, they use #defines
-// to put this information in, so we have these nice #ifdefs
 	.ob_base.ob_base.ob_refcnt = 1,
 	.tp_name = "monetdb._connection",
 	.tp_basicsize = sizeof(Py_ConnectionObject),
