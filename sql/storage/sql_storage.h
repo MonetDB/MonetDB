@@ -23,6 +23,7 @@
 #define isGlobalTemp(x)  ((x)->persistence==SQL_GLOBAL_TEMP)
 #define isTempSchema(x)  (strcmp((x)->base.name, "tmp") == 0)
 #define isDeclaredTable(x)  ((x)->persistence==SQL_DECLARED_TABLE)
+#define isDeclaredTableOnStack(x)  (isDeclaredTable(x) && ((x)->properties & DECLARED_TABLE_ON_STACK) == DECLARED_TABLE_ON_STACK)
 
 extern int catalog_version;
 

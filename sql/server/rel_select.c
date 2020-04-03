@@ -1212,13 +1212,6 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 			if (exp && outer && is_join(outer->op))
 				set_dependent(outer);
 		}
-		if (!exp) { /* Try a CTE */
-			sql_rel *r = stack_find_rel_view(sql, name); /* find one */
-			if (r) {
-				*rel = r;
-				return exp_rel(sql, r);
-			}
-		}
 		if (!exp) { /* If no column was found, try a variable or parameter */
 			sql_arg *a = NULL;
 			sql_var *var = NULL;

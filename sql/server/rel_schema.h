@@ -14,6 +14,8 @@
 
 extern sql_rel *rel_schemas(sql_query *query, symbol *sym);
 
+extern sql_rel *rel_table(mvc *sql, int cat_type, const char *sname, sql_table *t, int nr);
+
 extern sql_rel *rel_create_table(sql_query *query, int temp,
 				 const char *sname, const char *name,
 				 symbol *table_elements_or_subquery,

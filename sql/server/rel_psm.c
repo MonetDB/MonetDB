@@ -476,20 +476,48 @@ rel_psm_return( sql_query *query, sql_subtype *restype, list *restypelist, symbo
 		ek.card = card_relation;
 	else if (return_sym->token == SQL_TABLE)
 		return sql_error(sql, 02, SQLSTATE(42000) "RETURN: TABLE return not allowed for non table returning functions");
-	res = rel_value_exp2(query, &rel, return_sym, sql_sel, ek);
-	if (!res)
-		return NULL;
-	if (!rel && exp_is_rel(res)) {
-		rel = exp_rel_get_rel(sql->sa, res);
-		if (rel && !restypelist && !is_groupby(rel->op)) { /* On regular functions return zero or 1 rows for every row */
-			rel->card = CARD_MULTI; 
-			rel = rel_zero_or_one(sql, rel, ek);
-			if (list_length(rel->exps) != 1)
-				return sql_error(sql, 02, SQLSTATE(42000) "RETURN: must return a single column");
-			res = exp_ref(sql->sa, (sql_exp*) rel->exps->t->data);
-			requires_proj = true;
+	if (return_sym->token == SQL_COLUMN && restypelist) { /* RETURN x; where x is a reference to a table */
+		dlist *l = return_sym->data.lval;
+		const char *sname = qname_schema(l);
+		const char *tname = qname_schema_object(l);
+		sql_schema *s = cur_schema(sql);
+		sql_table *t;
+
+		if (sname && !(s = mvc_bind_schema(sql, sname)))
+			return sql_error(sql, 02, SQLSTATE(3F000) "RETURN: no such schema '%s'", sname);
+
+		if ((t = stack_find_table(sql, s, tname))) {
+			rel = rel_table(sql, ddl_create_table, s->base.name, t, SQL_DECLARED_TABLE);
+		} else if ((t = find_sql_table(s, tname))) {
+			rel = rel_basetable(sql, t, t->base.name);
+			for (node *n = rel->exps->h ; n ; n = n->next) {
+				sql_exp *e = (sql_exp *) n->data;	
+				const char *oname = e->r;
+
+				if (!strcmp(oname, TID)) {
+					list_remove_node(rel->exps, n);
+					break;
+				}
+			}
+		} else
+			return sql_error(sql, 02, SQLSTATE(42S02) "RETURN: no such table '%s'", tname);
+	} else { /* other cases */
+		res = rel_value_exp2(query, &rel, return_sym, sql_sel, ek);
+		if (!res)
+			return NULL;
+		if (!rel && exp_is_rel(res)) {
+			rel = exp_rel_get_rel(sql->sa, res);
+			if (rel && !restypelist && !is_groupby(rel->op)) { /* On regular functions return zero or 1 rows for every row */
+				rel->card = CARD_MULTI;
+				rel = rel_zero_or_one(sql, rel, ek);
+				if (list_length(rel->exps) != 1)
+					return sql_error(sql, 02, SQLSTATE(42000) "RETURN: must return a single column");
+				res = exp_ref(sql->sa, (sql_exp*) rel->exps->t->data);
+				requires_proj = true;
+			}
 		}
 	}
+
 	if (ek.card != card_relation && (!restype || (res = rel_check_type(sql, restype, rel, res, type_equal)) == NULL))
 		return (!restype)?sql_error(sql, 02, SQLSTATE(42000) "RETURN: return type does not match"):NULL;
 	else if (ek.card == card_relation && !rel)

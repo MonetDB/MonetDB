@@ -513,7 +513,7 @@ stmt_tid(backend *be, sql_table *t, int partition)
 	MalBlkPtr mb = be->mb;
 	InstrPtr q;
 
-	if (isDeclaredTable(t) && stack_find_table(be->mvc, t->s, t->base.name) && t->data) { /* declared table */
+	if (isDeclaredTableOnStack(t) && t->data) { /* declared table */
 		stmt *s = stmt_create(be->mvc->sa, st_tid);
 		int *l = t->data;
 
@@ -564,7 +564,7 @@ stmt_bat(backend *be, sql_column *c, int access, int partition)
 	InstrPtr q;
 
 	/* for read access tid.project(col) */
-	if (isDeclaredTable(c->t) && stack_find_table(be->mvc, c->t->s, c->t->base.name) && c->t->data) { /* declared table */
+	if (isDeclaredTableOnStack(c->t) && c->t->data) { /* declared table */
 		stmt *s = stmt_create(be->mvc->sa, st_bat);
 		int *l = c->t->data;
 
@@ -693,7 +693,7 @@ stmt_append_col(backend *be, sql_column *c, stmt *b, int fake)
 	if (b->nr < 0)
 		return NULL;
 
-	if (isDeclaredTable(c->t) && stack_find_table(be->mvc, c->t->s, c->t->base.name) && c->t->data) { /* declared table */
+	if (isDeclaredTableOnStack(c->t) && c->t->data) { /* declared table */
 		int *l = c->t->data;
 
 		if (c->colnr == 0) { /* append to tid column */
@@ -784,7 +784,7 @@ stmt_update_col(backend *be, sql_column *c, stmt *tids, stmt *upd)
 	if (tids->nr < 0 || upd->nr < 0)
 		return NULL;
 
-	if (isDeclaredTable(c->t) && stack_find_table(be->mvc, c->t->s, c->t->base.name) && c->t->data) { /* declared table */
+	if (isDeclaredTableOnStack(c->t) && c->t->data) { /* declared table */
 		int *l = c->t->data;
 
 		q = newStmt(mb, batRef, updateRef);
@@ -872,7 +872,7 @@ stmt_delete(backend *be, sql_table *t, stmt *tids)
 	if (tids->nr < 0)
 		return NULL;
 
-	if (isDeclaredTable(t) && stack_find_table(be->mvc, t->s, t->base.name) && t->data) { /* declared table */
+	if (isDeclaredTableOnStack(t) && t->data) { /* declared table */
 		int *l = t->data;
 
 		q = newStmt(mb, batRef, deleteRef);
@@ -2763,7 +2763,7 @@ stmt_table_clear(backend *be, sql_table *t)
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
 
-	if (isDeclaredTable(t) && stack_find_table(be->mvc, t->s, t->base.name) && t->data) { /* declared table */
+	if (isDeclaredTableOnStack(t) && t->data) { /* declared table */
 		int *l = t->data; 
 		int cnt = list_length(t->columns.set)+1, i;
 

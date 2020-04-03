@@ -155,6 +155,7 @@ frame_push_table(mvc *sql, sql_table *t)
 	if (!slt)
 		return NULL;
 	slt->table = t;
+	t->properties |= DECLARED_TABLE_ON_STACK;
 	if (!f->tables && !(f->tables = list_create(destroy_sql_local_table))) {
 		_DELETE(slt);
 		return NULL;

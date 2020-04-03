@@ -80,6 +80,14 @@ SELECT tests_scopes3(0), tests_scopes3(1);
 SET "optimizer" = (SELECT "aux");
 DROP FUNCTION tests_scopes3(INT);
 ------------------------------------------------------------------------------
+create function tests_scopes4() returns int begin declare table y (a int, b int); return select y; end; --error
+create function tests_scopes4() returns table (i integer, s string) begin return select tmp2; end; --error
+
+create function tests_scopes4() returns table (i integer, s string) begin return tmp2; end; --possible, return the contents of tmp2
+select * from tests_scopes4();
+
+DROP FUNCTION tests_scopes4;
+------------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION scoping(input INT) RETURNS INT 
 BEGIN
 	DECLARE x int;

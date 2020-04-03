@@ -36,7 +36,7 @@ _bind_table(sql_table *t, sql_schema *ss, sql_schema *s, char *name)
 	return tt;
 }
 
-static sql_rel *
+sql_rel *
 rel_table(mvc *sql, int cat_type, const char *sname, sql_table *t, int nr)
 {
 	sql_rel *rel = rel_create(sql->sa);
