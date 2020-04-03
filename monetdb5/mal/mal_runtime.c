@@ -100,10 +100,11 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 	str q;
 	QueryQueue tmp;
 
+	return;
 	MT_lock_set(&mal_delayLock);
 	tmp = QRYqueue;
 	if ( QRYqueue == 0)
-		QRYqueue = (QueryQueue) GDKzalloc( sizeof (struct QRYQUEUE) * (size_t) (qsize= MAL_MAXCLIENTS)); /* for testing */
+		QRYqueue = (QueryQueue) GDKzalloc( sizeof (struct QRYQUEUE) * (size_t) (qsize= 5)); /* for testing */
 
 	if ( QRYqueue == NULL){
 		addMalException(mb,"runtimeProfileInit" MAL_MALLOC_FAIL);
@@ -167,6 +168,7 @@ runtimeProfileFinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 	(void) cntxt;
 	(void) mb;
 
+	return;
 	MT_lock_set(&mal_delayLock);
 	for( i=qtail; i != qhead; i++){
 		if ( i >= qsize){
