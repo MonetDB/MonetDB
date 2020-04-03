@@ -433,6 +433,27 @@ GDKtracer_log(const char *file, const char *func, int lineno,
 	if ((p = strchr(buffer, '\n')) != NULL)
 		*p = '\0';
 
+	if (comp == GDK && (level == M_CRITICAL || level == M_ERROR)) {
+		/* append message to GDKerrbuf (if set) */
+		char *buf = GDKerrbuf;
+		if (buf) {
+			size_t n = strlen(buf);
+			snprintf(buf + n, GDKMAXERRLEN - n,
+				 "%s%s: %s%s%s\n",
+				 GDKERROR, func, msg,
+				 syserr ? ": " : "",
+				 syserr ? syserr : "");
+		}
+	}
+
+	if (level == M_CRITICAL || level == M_ERROR || level == M_WARNING) {
+		fprintf(stderr, "#%s: %s: %s%s%s%s\n",
+			MT_thread_getname(), func, GDKERROR,
+			msg, syserr ? ": " : "",
+			syserr ? syserr : "");
+		if (active_tracer == NULL || active_tracer == stderr)
+			return;
+	}
 	MT_lock_set(&lock);
 	if (file_name[0] == 0) {
 		_GDKtracer_init_basic_adptr();
@@ -451,24 +472,6 @@ GDKtracer_log(const char *file, const char *func, int lineno,
 	// is still in the buffer which it never gets flushed.
 	if (level == cur_flush_level || level == M_CRITICAL || level == M_ERROR)
 		fflush(active_tracer);
-	if (level == M_CRITICAL && active_tracer != stderr) {
-		fprintf(stderr, "#%s: %s: %s%s%s%s\n",
-			MT_thread_getname(), func, GDKERROR,
-			msg, syserr ? ": " : "",
-			syserr ? syserr : "");
-	}
-	if (comp == GDK && (level == M_CRITICAL || level == M_ERROR)) {
-		/* append message to GDKerrbuf (if set) */
-		char *buf = GDKerrbuf;
-		if (buf) {
-			size_t n = strlen(buf);
-			snprintf(buf + n, GDKMAXERRLEN - n,
-				 "%s%s: %s%s%s\n",
-				 GDKERROR, func, msg,
-				 syserr ? ": " : "",
-				 syserr ? syserr : "");
-		}
-	}
 }
 
 
