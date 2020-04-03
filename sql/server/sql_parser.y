@@ -702,7 +702,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 
 %token CASE WHEN THEN ELSE NULLIF COALESCE IF ELSEIF WHILE DO
 %token ATOMIC BEGIN END
-%token COPY RECORDS DELIMITERS STDIN STDOUT FWF CLIENT SERVER
+%token COPY sqlFILE RECORDS DELIMITERS STDIN STDOUT FWF CLIENT SERVER
 %token INDEX REPLACE
 
 %token AS TRIGGER OF BEFORE AFTER ROW STATEMENT sqlNEW OLD EACH REFERENCING
@@ -1092,8 +1092,11 @@ global_privileges:
  ;
 
 global_privilege:
-	COPY FROM 	{ $$ = PRIV_COPYFROMFILE; }
- |	COPY INTO 	{ $$ = PRIV_COPYINTOFILE; }
+	COPY FROM 		{ $$ = PRIV_COPYFROMFILE; }
+ |	COPY FROM sqlFILE	{ $$ = PRIV_COPYFROMFILE; }
+ |	COPY FROM REMOTE	{ $$ = PRIV_COPYFROMURL; }
+ |	COPY INTO 		{ $$ = PRIV_COPYINTOFILE; }
+ |	COPY INTO sqlFILE	{ $$ = PRIV_COPYINTOFILE; }
  ;
 
 object_name:
@@ -5596,6 +5599,7 @@ non_reserved_word:
 | DIAGNOSTICS 	{ $$ = sa_strdup(SA, "diagnostics"); }
 | SQL_EXPLAIN	{ $$ = sa_strdup(SA, "explain"); }
 | FIRST		{ $$ = sa_strdup(SA, "first"); }
+| sqlFILE		{ $$ = sa_strdup(SA, "file"); }
 | GEOMETRY	{ $$ = sa_strdup(SA, "geometry"); }
 | IMPRINTS	{ $$ = sa_strdup(SA, "imprints"); }
 | INCREMENT	{ $$ = sa_strdup(SA, "increment"); }

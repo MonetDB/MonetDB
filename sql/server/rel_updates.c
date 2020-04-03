@@ -416,12 +416,55 @@ insert_allowed(mvc *sql, sql_table *t, char *tname, char *op, char *opname)
 	return t;
 }
 
-static int 
-copy_allowed(mvc *sql, int from)
+static int
+copy_from_file_allowed(mvc *sql)
 {
-	if (!global_privs(sql, (from)?PRIV_COPYFROMFILE:PRIV_COPYINTOFILE)) 
+	return global_privs(sql, PRIV_COPYFROMFILE);
+}
+
+static int
+copy_into_file_allowed(mvc *sql)
+{
+	return global_privs(sql, PRIV_COPYINTOFILE);
+}
+
+static int
+copy_from_src_allowed(mvc *sql, int locked, int onclient, const char *src)
+{
+	// LOCKED requires admin privileges so it has to go through the decision
+	// procedure below. Apart from that, ON CLIENT is checked by the client so
+	// it is always ok.
+	if (onclient && !locked)
+		return 1; // let the client figure it out.
+
+	int is_url; // Intentionally left uninitialized.
+	if (src == NULL)
+		is_url = 0;
+	else if (strncmp("http:", src, 5) == 0)
+		is_url = 1;
+	else if (strncmp("https:", src, 6) == 0)
+		is_url = 1;
+	else if (MT_path_absolute(src))
+		is_url = 0;
+	else {
+		char *escaped = ATOMformat(TYPE_str, src);
+		sql_error(
+			sql, 02,
+			SQLSTATE(42000) "COPY INTO: filename must be absolute: %s",
+			escaped);
+		GDKfree(escaped);
 		return 0;
-	return 1;
+	}
+
+	int allowed = global_privs(sql, is_url ? PRIV_COPYFROMURL : PRIV_COPYFROMFILE);
+	if (!allowed) {
+		sql_error(sql, 02, SQLSTATE(42000)
+					 "COPY INTO: insufficient privileges: "
+					 "COPY INTO from file or url requires database administrator rights, "
+					 "use 'COPY INTO ... FROM ... ON CLIENT' instead");
+	}
+
+	return allowed;
 }
 
 sql_table *
@@ -1623,10 +1666,6 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 		return NULL;
 	/* Only the MONETDB user is allowed copy into with
 	   a lock and only on tables without idx */
-	if (locked && !copy_allowed(sql, 1)) {
-		return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: insufficient privileges: "
-		    "COPY INTO from .. LOCKED requires database administrator rights");
-	}
 	if (locked && (!list_empty(t->idxs.set) || !list_empty(t->keys.set))) {
 		return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: insufficient privileges: "
 		    "COPY INTO from .. LOCKED requires tables without indices");
@@ -1698,24 +1737,12 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 	if (files) {
 		dnode *n = files->h;
 
-		if (!onclient && !copy_allowed(sql, 1)) {
-			return sql_error(sql, 02, SQLSTATE(42000)
-					 "COPY INTO: insufficient privileges: "
-					 "COPY INTO from file(s) requires database administrator rights, "
-					 "use 'COPY INTO \"%s\" FROM file ON CLIENT' instead", tname);
-		}
-
 		for (; n; n = n->next) {
 			const char *fname = n->data.sval;
 			sql_rel *nrel;
 
-			if (!onclient && fname && !MT_path_absolute(fname)) {
-				char *fn = ATOMformat(TYPE_str, fname);
-				sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: filename must "
-					  "have absolute path: %s", fn);
-				GDKfree(fn);
+			if (!copy_from_src_allowed(sql, locked, onclient, fname))
 				return NULL;
-			}
 
 			nrel = rel_import(sql, nt, tsep, rsep, ssep, ns, fname, nr, offset, locked, best_effort, fwf_widths, onclient);
 
@@ -1730,6 +1757,8 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 		}
 	} else {
 		assert(onclient == 0);
+		if (!copy_from_src_allowed(sql, locked, onclient, NULL))
+			return NULL;
 		rel = rel_import(sql, nt, tsep, rsep, ssep, ns, NULL, nr, offset, locked, best_effort, NULL, onclient);
 	}
 	if (headers) {
@@ -1818,7 +1847,7 @@ bincopyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, int co
 	int i;
 
 	assert(f);
-	if (!copy_allowed(sql, 1))
+	if (!copy_from_file_allowed(sql))
 		return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: insufficient privileges: "
 				"binary COPY INTO requires database administrator rights");
 
@@ -1893,7 +1922,7 @@ copyfromloader(sql_query *query, dlist *qname, symbol *fcall)
 	sql_rel* rel = NULL;
 	sql_table* t;
 
-	if (!copy_allowed(sql, 1))
+	if (!copy_from_file_allowed(sql))
 		return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: insufficient privileges: "
 				"binary COPY INTO requires database administrator rights");
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
@@ -1978,7 +2007,7 @@ copyto(sql_query *query, symbol *sq, const char *filename, dlist *seps, const ch
 
 	if (!onclient && filename) {
 		struct stat fs;
-		if (!copy_allowed(sql, 0))
+		if (!copy_into_file_allowed(sql))
 			return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: insufficient privileges: "
 					 "COPY INTO file requires database administrator rights, "
 					 "use 'COPY ... INTO file ON CLIENT' instead");

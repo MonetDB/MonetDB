@@ -3102,9 +3102,12 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				return msg;
 			}
 		} else {
-			ss = open_rastream(fname);
+			if (strncmp("http:", fname, 5) == 0 || strncmp("https:", fname, 6) == 0)
+				ss = open_urlstream(fname);
+			else
+				ss = open_rastream(fname);
 			if (ss == NULL || mnstr_errnr(ss)) {
-				msg = createException(IO, "sql.copy_from", SQLSTATE(42000) "Cannot open file '%s': %s", fname, GDKstrerror(errno, (char[128]){0}, 128));
+				msg = createException(IO, "sql.copy_from", SQLSTATE(42000) "Cannot open '%s': %s", fname, GDKstrerror(errno, (char[128]){0}, 128));
 				close_stream(ss);
 				return msg;
 			}

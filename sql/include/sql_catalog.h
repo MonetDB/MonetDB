@@ -40,6 +40,7 @@
 /* global privs */
 #define PRIV_COPYFROMFILE 1
 #define PRIV_COPYINTOFILE 2
+#define PRIV_COPYFROMURL 3
 
 typedef enum sql_dependency { 
 	SCHEMA_DEPENDENCY = 1,

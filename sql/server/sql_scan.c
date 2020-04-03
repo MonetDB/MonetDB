@@ -143,6 +143,7 @@ scanner_init_keywords(void)
 	failed += keywords_insert("CREATE", CREATE);
 	failed += keywords_insert("CROSS", CROSS);
 	failed += keywords_insert("COPY", COPY);
+	failed += keywords_insert("FILE", sqlFILE);
 	failed += keywords_insert("RECORDS", RECORDS);
 	failed += keywords_insert("DELIMITERS", DELIMITERS);
 	failed += keywords_insert("STDIN", STDIN);
