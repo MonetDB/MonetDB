@@ -168,20 +168,6 @@ gdk_return GDKssort(void *restrict h, void *restrict t, const void *restrict bas
 	__attribute__((__visibility__("hidden")));
 gdk_return GDKunlink(int farmid, const char *dir, const char *nme, const char *extension)
 	__attribute__((__visibility__("hidden")));
-#ifdef NATIVE_WIN32
-#define GDKwinerror(format, ...)					\
-	do {								\
-		char _osmsgbuf[128];					\
-		FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL,		\
-			      GetLastError(),				\
-			      MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), \
-			      (LPTSTR) _osmsgbuf, sizeof(_osmsgbuf),	\
-			      NULL);					\
-		GDKtracer_log(__FILE__, __func__, __LINE__, M_CRITICAL,	\
-			      GDK, _osmsgbuf, format, ##__VA_ARGS__);	\
-		SetLastError(0);					\
-	} while (0)
-#endif
 void HASHfree(BAT *b)
 	__attribute__((__visibility__("hidden")));
 bool HASHgonebad(BAT *b, const void *v)
