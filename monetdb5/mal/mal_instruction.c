@@ -1117,10 +1117,10 @@ defConstant(MalBlkPtr mb, int type, ValPtr cst)
 		setVarCleanup(mb, k);
 	else
 		clrVarCleanup(mb, k);
-	if(VALcopy( &getVarConstant(mb, k),cst) == NULL)
-		return -1;
-	if (ATOMextern(cst->vtype) && cst->val.pval)
-		VALclear(cst);
+	/* if cst is external, we give its allocated buffer away, so clear
+	 * it to avoid confusion */
+	getVarConstant(mb, k) = *cst;
+	VALempty(cst);
 	return k;
 }
 
