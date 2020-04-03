@@ -1917,13 +1917,10 @@ copyfromloader(sql_query *query, dlist *qname, symbol *fcall)
 	if (!rel || !loader)
 		return NULL;
 
-	loader->sname = sname ? sa_zalloc(sql->sa, strlen(sname) + 1) : NULL;
-	loader->tname = tname ? sa_zalloc(sql->sa, strlen(tname) + 1) : NULL;
+	loader->sname = sname ? sa_strdup(sql->sa, sname) : NULL;
+	loader->tname = tname ? sa_strdup(sql->sa, tname) : NULL;
 	loader->coltypes = table_column_types(sql->sa, t);
 	loader->colnames = table_column_names_and_defaults(sql->sa, t);
-
-	if (sname) strcpy(loader->sname, sname);
-	if (tname) strcpy(loader->tname, tname);
 
 	return rel;
 }
