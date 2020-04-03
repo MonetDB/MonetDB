@@ -122,6 +122,7 @@ lock_isset(MT_Lock *l)
 	return true;
 }
 
+/* function used for debugging */
 void
 GDKlockstatistics(int what)
 {
@@ -129,7 +130,7 @@ GDKlockstatistics(int what)
 	int n = 0;
 
 	if (ATOMIC_TAS(&GDKlocklistlock) != 0) {
-		TRC_DEBUG(TEM, "GDKlocklistlock is set, so cannot access lock list\n");
+		fprintf(stderr, "GDKlocklistlock is set, so cannot access lock list\n");
 		return;
 	}
 	if (what == -1) {
@@ -142,25 +143,25 @@ GDKlockstatistics(int what)
 		return;
 	}
 	GDKlocklist = sortlocklist(GDKlocklist);
-	TRC_DEBUG(TEM, "lock name\tcount\tcontention\tsleep\tlocked\t(un)locker\tthread\n");
+	fprintf(stderr, "lock name\tcount\tcontention\tsleep\tlocked\t(un)locker\tthread\n");
 	for (l = GDKlocklist; l; l = l->next) {
 		n++;
 		if (what == 0 ||
 		    (what == 1 && l->count) ||
 		    (what == 2 && ATOMIC_GET(&l->contention)) ||
 		    (what == 3 && lock_isset(l)))
-			TRC_DEBUG(TEM, "%-18s\t%zu\t%zu\t%zu\t%s\t%s\t%s\n",
-				  l->name, l->count,
-				  (size_t) ATOMIC_GET(&l->contention),
-				  (size_t) ATOMIC_GET(&l->sleep),
-				  lock_isset(l) ? "locked" : "",
-				  l->locker ? l->locker : "",
-				  l->thread ? l->thread : "");
+			fprintf(stderr, "%-18s\t%zu\t%zu\t%zu\t%s\t%s\t%s\n",
+				l->name, l->count,
+				(size_t) ATOMIC_GET(&l->contention),
+				(size_t) ATOMIC_GET(&l->sleep),
+				lock_isset(l) ? "locked" : "",
+				l->locker ? l->locker : "",
+				l->thread ? l->thread : "");
 	}
-	TRC_DEBUG(TEM, "Number of locks: %d\n", n);
-	TRC_DEBUG(TEM, "Total lock count: %zu\n", (size_t) ATOMIC_GET(&GDKlockcnt));
-	TRC_DEBUG(TEM, "Lock contention:  %zu\n", (size_t) ATOMIC_GET(&GDKlockcontentioncnt));
-	TRC_DEBUG(TEM, "Lock sleep count: %zu\n", (size_t) ATOMIC_GET(&GDKlocksleepcnt));
+	fprintf(stderr, "Number of locks: %d\n", n);
+	fprintf(stderr, "Total lock count: %zu\n", (size_t) ATOMIC_GET(&GDKlockcnt));
+	fprintf(stderr, "Lock contention:  %zu\n", (size_t) ATOMIC_GET(&GDKlockcontentioncnt));
+	fprintf(stderr, "Lock sleep count: %zu\n", (size_t) ATOMIC_GET(&GDKlocksleepcnt));
 	ATOMIC_CLEAR(&GDKlocklistlock);
 }
 

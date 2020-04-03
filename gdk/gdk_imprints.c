@@ -713,6 +713,7 @@ IMPSfree(BAT *b)
 		s[j] = '\0';						\
 	} while (0)
 
+/* function used for debugging */
 void
 IMPSprint(BAT *b)
 {
@@ -726,7 +727,7 @@ IMPSprint(BAT *b)
 	int i;
 
 	if (!BATcheckimprints(b)) {
-		TRC_DEBUG(ACCELERATOR, "No imprint\n");
+		fprintf(stderr, "No imprint\n");
 		return;
 	}
 	imprints = b->timprints;
@@ -735,33 +736,33 @@ IMPSprint(BAT *b)
 	max_bins = min_bins + 64;
 	cnt_bins = max_bins + 64;
 
-	TRC_DEBUG(ACCELERATOR,
-		  "bits = %d, impcnt = " BUNFMT ", dictcnt = " BUNFMT "\n",
-		  imprints->bits, imprints->impcnt, imprints->dictcnt);
-	TRC_DEBUG(ACCELERATOR, "MIN\n");
+	fprintf(stderr,
+		"bits = %d, impcnt = " BUNFMT ", dictcnt = " BUNFMT "\n",
+		imprints->bits, imprints->impcnt, imprints->dictcnt);
+	fprintf(stderr, "MIN\n");
 	for (i = 0; i < imprints->bits; i++) {
-		TRC_DEBUG(ACCELERATOR, "[ " BUNFMT " ]\n", min_bins[i]);
+		fprintf(stderr, "[ " BUNFMT " ]\n", min_bins[i]);
 	}
 	
-	TRC_DEBUG(ACCELERATOR, "MAX\n");
+	fprintf(stderr, "MAX\n");
 	for (i = 0; i < imprints->bits; i++) {
-		TRC_DEBUG(ACCELERATOR, "[ " BUNFMT " ]\n", max_bins[i]);
+		fprintf(stderr, "[ " BUNFMT " ]\n", max_bins[i]);
 	}
-	TRC_DEBUG(ACCELERATOR, "COUNT\n");
+	fprintf(stderr, "COUNT\n");
 	for (i = 0; i < imprints->bits; i++) {
-		TRC_DEBUG(ACCELERATOR, "[ " BUNFMT " ]\n", cnt_bins[i]);
+		fprintf(stderr, "[ " BUNFMT " ]\n", cnt_bins[i]);
 	}
 	for (dcnt = 0, icnt = 0, pages = 1; dcnt < imprints->dictcnt; dcnt++) {
 		if (d[dcnt].repeat) {
 			BINSIZE(imprints->bits, IMPSPRNTMASK, " ");
 			pages += d[dcnt].cnt;
-			TRC_DEBUG(ACCELERATOR, "[ " BUNFMT " ]r %s\n", pages, s);
+			fprintf(stderr, "[ " BUNFMT " ]r %s\n", pages, s);
 			icnt++;
 		} else {
 			l = icnt + d[dcnt].cnt;
 			for (; icnt < l; icnt++) {
 				BINSIZE(imprints->bits, IMPSPRNTMASK, " ");
-				TRC_DEBUG(ACCELERATOR, "[ " BUNFMT " ]  %s\n", pages++, s);
+				fprintf(stderr, "[ " BUNFMT " ]  %s\n", pages++, s);
 			}
 		}
 	}
