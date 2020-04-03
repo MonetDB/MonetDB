@@ -272,12 +272,12 @@ BLOBfromstr(const char *instr, size_t *l, blob **val, bool external)
 		if (isxdigit((unsigned char) instr[i]))
 			nitems++;
 		else if (!isspace((unsigned char) instr[i])) {
-			GDKerror("blob_fromstr: Illegal char in blob\n");
+			GDKerror("Illegal char in blob\n");
 			return -1;
 		}
 	}
 	if (nitems % 2 != 0) {
-		GDKerror("blob_fromstr: Illegal blob length '%zu' (should be even)\n", nitems);
+		GDKerror("Illegal blob length '%zu' (should be even)\n", nitems);
 		return -1;
 	}
 	nitems /= 2;

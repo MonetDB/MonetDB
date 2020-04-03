@@ -1804,12 +1804,20 @@ rel_union_exps(mvc *sql, sql_exp **l, list *vals, int is_tuple)
 			}
 		} else {
 			sq->nrcols = list_length(sq->exps);
-			if (rel_convert_types(sql, NULL, NULL, l, &ve, 1, type_equal) < 0)
-				return NULL;
-			/* flatten expressions */
-			if (exp_has_rel(ve))
-				ve = exp_rel_update_exp(sql->sa, ve);
-			sq = rel_project(sql->sa, sq, append(sa_list(sql->sa), ve));
+			/* union a project[(values(a),..,(b),(c)]  with freevars */
+			if (sq->card > CARD_ATOM && rel_has_freevar(sql, sq) && is_project(sq->op) && !sq->l && sq->nrcols==1) {
+				/* needs check on projection */
+				sql_exp *vals = sq->exps->h->data;
+				sq = rel_union_exps(sql, l, exp_get_values(vals), is_tuple);
+			} else {
+				if (rel_convert_types(sql, NULL, NULL, l, &ve, 1, type_equal) < 0)
+					return NULL;
+				/* flatten expressions */
+				if (exp_has_rel(ve)) {
+					ve = exp_rel_update_exp(sql->sa, ve);
+					sq = rel_project(sql->sa, sq, append(sa_list(sql->sa), ve));
+				}
+			}
 		}
 		if (!u) {
 			u = sq;

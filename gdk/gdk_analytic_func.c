@@ -270,7 +270,7 @@ GDKanalyticalntile(BAT *r, BAT *b, BAT *p, BAT *n, int tpe, const void *restrict
 	r->tnil = has_nils;
 	return GDK_SUCCEED;
 nosupport:
-	GDKerror("GDKanalyticalntile: type %s not supported for the ntile type.\n", ATOMname(tpe));
+	GDKerror("type %s not supported for the ntile type.\n", ATOMname(tpe));
 	return GDK_FAIL;
 }
 
@@ -647,7 +647,7 @@ GDKanalyticalnthvalue(BAT *r, BAT *b, BAT *s, BAT *e, BAT *l, const void *restri
 	r->tnil = has_nils;
 	return GDK_SUCCEED;
       nosupport:
-	GDKerror("GDKanalyticalnthvalue: type %s not supported for the nth_value.\n", ATOMname(tp2));
+	GDKerror("type %s not supported for the nth_value.\n", ATOMname(tp2));
 	return GDK_FAIL;
 }
 
@@ -1330,10 +1330,10 @@ GDKanalyticalsum(BAT *r, BAT *b, BAT *s, BAT *e, int tp1, int tp2)
 	r->tnil = has_nils;
 	return GDK_SUCCEED;
       bailout:
-	GDKerror("GDKanalyticalsum: error while calculating floating-point sum\n");
+	GDKerror("error while calculating floating-point sum\n");
 	return GDK_FAIL;
       nosupport:
-	GDKerror("GDKanalyticalsum: type combination (sum(%s)->%s) not supported.\n", ATOMname(tp1), ATOMname(tp2));
+	GDKerror("type combination (sum(%s)->%s) not supported.\n", ATOMname(tp1), ATOMname(tp2));
 	return GDK_FAIL;
       calc_overflow:
 	GDKerror("22003!overflow in calculation.\n");
@@ -1568,7 +1568,7 @@ GDKanalyticalprod(BAT *r, BAT *b, BAT *s, BAT *e, int tp1, int tp2)
 	r->tnil = has_nils;
 	return GDK_SUCCEED;
       nosupport:
-	GDKerror("GDKanalyticalprod: type combination (prod(%s)->%s) not supported.\n", ATOMname(tp1), ATOMname(tp2));
+	GDKerror("type combination (prod(%s)->%s) not supported.\n", ATOMname(tp1), ATOMname(tp2));
 	return GDK_FAIL;
       calc_overflow:
 	GDKerror("22003!overflow in calculation.\n");
@@ -1691,7 +1691,7 @@ GDKanalyticalavg(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
 		ANALYTICAL_AVERAGE_CALC_FP(dbl);
 		break;
 	default:
-		GDKerror("GDKanalyticalavg: average of type %s unsupported.\n", ATOMname(tpe));
+		GDKerror("average of type %s unsupported.\n", ATOMname(tpe));
 		return GDK_FAIL;
 	}
 	BATsetcount(r, cnt);
@@ -1773,7 +1773,7 @@ GDKanalytical_##NAME(BAT *r, BAT *b, BAT *s, BAT *e, int tpe) \
 		ANALYTICAL_STDEV_VARIANCE_CALC(dbl, SAMPLE, OP); \
 		break; \
 	default: \
-		GDKerror("%s: %s of type %s unsupported.\n", __func__, DESC, ATOMname(tpe)); \
+		GDKerror("%s of type %s unsupported.\n", DESC, ATOMname(tpe)); \
 		return GDK_FAIL; \
 	} \
 	BATsetcount(r, cnt); \
@@ -1864,7 +1864,7 @@ GDKanalytical_##NAME(BAT *r, BAT *b1, BAT *b2, BAT *s, BAT *e, int tpe) \
 		ANALYTICAL_COVARIANCE_CALC(dbl, SAMPLE, OP); \
 		break; \
 	default: \
-		GDKerror("%s: covariance of type %s unsupported.\n", __func__, ATOMname(tpe)); \
+		GDKerror("covariance of type %s unsupported.\n", ATOMname(tpe)); \
 		return GDK_FAIL; \
 	} \
 	BATsetcount(r, cnt); \
@@ -1950,7 +1950,7 @@ GDKanalytical_correlation(BAT *r, BAT *b1, BAT *b2, BAT *s, BAT *e, int tpe)
 		ANALYTICAL_CORRELATION_CALC(dbl);
 		break;
 	default:
-		GDKerror("%s: correlation of type %s unsupported.\n", __func__, ATOMname(tpe));
+		GDKerror("correlation of type %s unsupported.\n", ATOMname(tpe));
 		return GDK_FAIL;
 	}
 	BATsetcount(r, cnt);

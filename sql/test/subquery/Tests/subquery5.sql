@@ -61,7 +61,11 @@ SELECT evilfunction(1), 1;
 
 SELECT 1 FROM another_t t1 HAVING 1 = ANY (SELECT col1); --error, subquery uses ungrouped column "col1" from outer query
 
+SELECT 1 FROM another_t t1 HAVING 1 = ANY (SELECT t1.col1); --error, subquery uses ungrouped column "t1.col1" from outer query
+
 SELECT 1 FROM another_t t1 HAVING 1 = ANY (SELECT 1 WHERE col1); --error, subquery uses ungrouped column "col1" from outer query
+
+SELECT 1 FROM another_t t1 HAVING 1 = ANY (SELECT 1 WHERE t1.col1); --error, subquery uses ungrouped column "t1.col1" from outer query
 
 SELECT col1 FROM another_t t1 GROUP BY col1 HAVING 1 = ANY (SELECT col1);
 	-- 1
@@ -71,6 +75,8 @@ SELECT (SELECT i = ANY(VALUES(1), (i))) FROM integers;
 	-- True
 	-- True
 	-- NULL
+
+SELECT (SELECT i1.i IN (SELECT SUM(i1.i))) FROM integers i1; --error, subquery uses ungrouped column "i1.i" from outer query
 
 DROP FUNCTION evilfunction(INT);
 DROP TABLE tbl_ProductSales;

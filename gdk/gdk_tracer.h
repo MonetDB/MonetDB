@@ -102,7 +102,6 @@ typedef enum {
 	COMP( PERF )				\
 	COMP( TEM )				\
 	COMP( THRD )				\
-	COMP( TRACE )				\
 						\
 	COMP( GEOM )				\
 	COMP( LIDAR )				\
@@ -149,7 +148,7 @@ gdk_export log_level_t lvl_per_component[];
 
 #define GDK_TRACER_LOG_BODY(LOG_LEVEL, COMP, MSG, ...)			\
 	GDKtracer_log(__FILE__, __func__, __LINE__,			\
-		      LOG_LEVEL, COMP, MSG, ##__VA_ARGS__)
+		      LOG_LEVEL, COMP, NULL, MSG, ##__VA_ARGS__)
 
 #define GDK_TRACER_LOG(LOG_LEVEL, COMP, MSG, ...)			\
 	do {								\
@@ -161,20 +160,19 @@ gdk_export log_level_t lvl_per_component[];
 
 
 #define TRC_CRITICAL(COMP, MSG, ...)				\
-	GDK_TRACER_LOG(M_CRITICAL, COMP, MSG, ## __VA_ARGS__)
+	GDK_TRACER_LOG_BODY(M_CRITICAL, COMP, MSG, ## __VA_ARGS__)
 
 #define TRC_ERROR(COMP, MSG, ...)				\
-	GDK_TRACER_LOG(M_ERROR, COMP, MSG, ## __VA_ARGS__)
+	GDK_TRACER_LOG_BODY(M_ERROR, COMP, MSG, ## __VA_ARGS__)
 
 #define TRC_WARNING(COMP, MSG, ...)				\
-	GDK_TRACER_LOG(M_WARNING, COMP, MSG, ## __VA_ARGS__)
+	GDK_TRACER_LOG_BODY(M_WARNING, COMP, MSG, ## __VA_ARGS__)
 
 #define TRC_INFO(COMP, MSG, ...)				\
 	GDK_TRACER_LOG(M_INFO, COMP, MSG, ## __VA_ARGS__)
 
 #define TRC_DEBUG(COMP, MSG, ...)				\
 	GDK_TRACER_LOG(M_DEBUG, COMP, MSG, ## __VA_ARGS__)
-
 
 
 
@@ -192,13 +190,13 @@ gdk_export log_level_t lvl_per_component[];
     }
 */
 #define TRC_CRITICAL_IF(COMP)			\
-	if (GDK_TRACER_TEST(M_CRITICAL, COMP))
+	/* if (GDK_TRACER_TEST(M_CRITICAL, COMP)) */
 
 #define TRC_ERROR_IF(COMP)			\
-	if (GDK_TRACER_TEST(M_ERROR, COMP))
+	/* if (GDK_TRACER_TEST(M_ERROR, COMP)) */
 
 #define TRC_WARNING_IF(COMP)			\
-	if (GDK_TRACER_TEST(M_WARNING, COMP))
+	/* if (GDK_TRACER_TEST(M_WARNING, COMP)) */
 
 #define TRC_INFO_IF(COMP)			\
 	if (GDK_TRACER_TEST(M_INFO, COMP))
@@ -260,11 +258,12 @@ gdk_export gdk_return GDKtracer_set_adapter(const char *adapter);
 gdk_export gdk_return GDKtracer_reset_adapter(void);
 
 
-gdk_export gdk_return GDKtracer_log(const char *file, const char *func,
-				    int lineno, log_level_t lvl,
-				    component_t comp,
-				    const char *format, ...)
-	__attribute__((__format__(__printf__, 6, 7)));
+gdk_export void GDKtracer_log(const char *file, const char *func,
+			      int lineno, log_level_t lvl,
+			      component_t comp,
+			      const char *syserr,
+			      _In_z_ _Printf_format_string_ const char *format, ...)
+	__attribute__((__format__(__printf__, 7, 8)));
 
 
 gdk_export gdk_return GDKtracer_flush_buffer(void);

@@ -808,6 +808,10 @@
 /* #undef size_t */
 
 #if defined(_MSC_VER) && _MSC_VER < 1900
+/* the Visual Studio 2015 version of snprintf is C99 standard
+ * compliant and different from _snprintf, in older versions, the
+ * functions are the same and return -1 when the buffer is too
+ * small */
 #define snprintf c99_snprintf
 #define vsnprintf c99_vsnprintf
 

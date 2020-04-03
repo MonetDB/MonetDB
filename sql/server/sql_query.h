@@ -18,6 +18,7 @@ typedef struct stacked_query {
 	int sql_state;
 	sql_exp *last_used;
 	int used_card;
+	int grouped;
 	int groupby;
 } stacked_query;
 
@@ -34,7 +35,8 @@ extern int query_fetch_outer_state(sql_query *q, int i);
 extern void query_update_outer(sql_query *q, sql_rel *r, int i);
 extern int query_has_outer(sql_query *q); /* returns number of outer relations */
 
-extern int query_outer_used_exp(sql_query *q, int i, sql_exp *e, bool aggr);
+extern int query_outer_used_exp(sql_query *q, int i, sql_exp *e, int f);
+extern int query_outer_aggregated(sql_query *q, int i, sql_exp *e);
 extern int query_outer_used_card(sql_query *q, int i);
 extern sql_exp *query_outer_last_used(sql_query *q, int i);
 

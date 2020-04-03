@@ -838,13 +838,13 @@ BATcalcop(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r
 	BUN ncand;
 	const bit *rv = r ? Tloc(r, 0) : NULL;
 
-	BATcheck(b1, __func__, NULL);
-	BATcheck(b2, __func__, NULL);
+	BATcheck(b1, NULL);
+	BATcheck(b2, NULL);
 
 	ncand = canditer_init(&ci1, b1, s1);
 	if (canditer_init(&ci2, b2, s2) != ncand ||
 	    ci1.hseq != ci2.hseq) {
-		GDKerror("%s: inputs not the same size.\n", __func__);
+		GDKerror("inputs not the same size.\n");
 		return NULL;
 	}
 	if (ncand == 0)
@@ -892,7 +892,7 @@ BATcalcopcst(BAT *b, const ValRecord *v, BAT *s, BAT *r
 	BUN ncand;
 	const bit *rv = r ? Tloc(r, 0) : NULL;
 
-	BATcheck(b, __func__, NULL);
+	BATcheck(b, NULL);
 
 	ncand = canditer_init(&ci, b, s);
 	if (ncand == 0)
@@ -931,7 +931,7 @@ BATcalccstop(const ValRecord *v, BAT *b, BAT *s, BAT *r
 	BUN ncand;
 	const bit *rv = r ? Tloc(r, 0) : NULL;
 
-	BATcheck(b, __func__, NULL);
+	BATcheck(b, NULL);
 
 	ncand = canditer_init(&ci, b, s);
 	if (ncand == 0)

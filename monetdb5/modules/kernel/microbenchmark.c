@@ -34,12 +34,12 @@ BATrandom(BAT **bn, oid *base, lng *size, int *domain, int seed)
 	int *restrict val;
 
 	if (*size > (lng)BUN_MAX) {
-		GDKerror("BATrandom: size must not exceed BUN_MAX");
+		GDKerror("size must not exceed BUN_MAX");
 		return GDK_FAIL;
 	}
 
 	if (*size < 0) {
-		GDKerror("BATrandom: size must not be negative");
+		GDKerror("size must not be negative");
 		return GDK_FAIL;
 	}
 
@@ -94,12 +94,12 @@ BATuniform(BAT **bn, oid *base, lng *size, int *domain)
 	int v;
 
 	if (*size > (lng)BUN_MAX) {
-		GDKerror("BATuniform: size must not exceed BUN_MAX");
+		GDKerror("size must not exceed BUN_MAX");
 		return GDK_FAIL;
 	}
 
 	if (*size < 0) {
-		GDKerror("BATuniform: size must not be negative");
+		GDKerror("size must not be negative");
 		return GDK_FAIL;
 	}
 
@@ -152,17 +152,17 @@ BATskewed(BAT **bn, oid *base, lng *size, int *domain, int *skew)
 	const int skewedDomain = ((100 - (*skew)) * (*domain)) / 100;
 
 	if (*size > (lng)BUN_MAX) {
-		GDKerror("BATskewed: size must not exceed BUN_MAX = " BUNFMT, BUN_MAX);
+		GDKerror("size must not exceed BUN_MAX = " BUNFMT, BUN_MAX);
 		return GDK_FAIL;
 	}
 
 	if (*size < 0) {
-		GDKerror("BATskewed: size must not be negative");
+		GDKerror("size must not be negative");
 		return GDK_FAIL;
 	}
 
 	if (*skew > 100 || *skew < 0) {
-		GDKerror("BATskewed: skew must be between 0 and 100");
+		GDKerror("skew must be between 0 and 100");
 		return GDK_FAIL;
 	}
 
@@ -232,17 +232,17 @@ BATnormal(BAT **bn, oid *base, lng *size, int *domain, int *stddev, int *mean)
 
 #if SIZEOF_BUN > 4
 	if (n >= ((ulng) 1 << 32)) {
-		GDKerror("BATnormal: size must be less than 2^32 = "LLFMT, (lng) 1 << 32);
+		GDKerror("size must be less than 2^32 = "LLFMT, (lng) 1 << 32);
 		return GDK_FAIL;
 	}
 #endif
 	if (*size > (lng)BUN_MAX) {
-		GDKerror("BATnormal: size must not exceed BUN_MAX");
+		GDKerror("size must not exceed BUN_MAX");
 		return GDK_FAIL;
 	}
 
 	if (*size < 0) {
-		GDKerror("BATnormal: size must not be negative");
+		GDKerror("size must not be negative");
 		return GDK_FAIL;
 	}
 
