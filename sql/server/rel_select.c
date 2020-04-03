@@ -1190,8 +1190,8 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 			}
 			if (exp && outer && outer->card <= CARD_AGGR && exp->card > CARD_AGGR && (!is_sql_aggr(f) || is_sql_farg(f)))
 				return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s' in query results without an aggregate function", name);
-			if (exp && outer && (is_sql_groupby(f) || is_sql_aggr(f))) {
-				if (query_outer_used_exp( query, i, exp, is_sql_aggr(f) && !is_sql_farg(f))) {
+			if (exp && outer && !is_sql_aggr(f)) {
+				if (query_outer_used_exp( query, i, exp, f)) {
 					sql_exp *lu = query_outer_last_used(query, i);
 					return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: subquery uses ungrouped column \"%s.%s\" from outer query", exp_relname(lu), exp_name(lu));
 				}
@@ -1256,8 +1256,8 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 			}
 			if (exp && outer && outer->card <= CARD_AGGR && exp->card > CARD_AGGR && (!is_sql_aggr(f) || is_sql_farg(f)))
 				return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s.%s' in query results without an aggregate function", tname, cname);
-			if (exp && outer && (is_sql_groupby(f) || is_sql_aggr(f))) {
-				if (query_outer_used_exp( query, i, exp, is_sql_aggr(f) && !is_sql_farg(f))) {
+			if (exp && outer && !is_sql_aggr(f)) {
+				if (query_outer_used_exp( query, i, exp, f)) {
 					sql_exp *lu = query_outer_last_used(query, i);
 					return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: subquery uses ungrouped column \"%s.%s\" from outer query", exp_relname(lu), exp_name(lu));
 				}
@@ -3351,7 +3351,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 		for (	; args && args->data.sym; args = args->next ) {
 			int base = (!groupby || !is_project(groupby->op) || is_base(groupby->op) || is_processed(groupby));
 			sql_rel *gl = base?groupby:groupby->l, *ogl = gl; /* handle case of subqueries without correlation */
-			sql_exp *e = rel_value_exp(query, &gl, args->data.sym, (f | sql_aggr)& ~sql_farg, ek), *lu;
+			sql_exp *e = rel_value_exp(query, &gl, args->data.sym, (f | sql_aggr)& ~sql_farg, ek);//, *lu;
 
 			has_args = true;
 			if (gl && gl != ogl) {
@@ -3378,8 +3378,16 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 					GDKfree(uaname);
 				return e;
 			}
-			if (all_aggr && is_freevar(e) && (lu=query_outer_last_used(query, is_freevar(e)-1)) != NULL) {
-				all_aggr &= is_aggr(lu->type);
+			if (all_aggr && is_freevar(e) && e->type == e_column) {
+				/* get expression from outer */
+				int aggr = 0;
+				sql_rel *outer = query_fetch_outer(query, is_freevar(e)-1);
+				if (outer) {
+					sql_exp *a = rel_find_exp(outer, e);
+					if (a)
+						aggr = is_aggr(a->type);
+				}
+				all_aggr &= aggr;
 			} else {
 				all_aggr &= (exp_card(e) <= CARD_AGGR && !exp_is_atom(e) && is_aggr(e->type) && !is_func(e->type) && (!groupby || !is_groupby(groupby->op) || !groupby->r || !exps_find_exp(groupby->r, e)));
 			}
@@ -3437,7 +3445,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 	}
 
 	if (all_freevar) { /* case 2, ie use outer */
-		//int card;
+		int card;
 		sql_exp *exp = NULL;
 		/* find proper relation, base on freevar (stack hight) */
 		for (node *n = exps->h; n; n = n->next) {
@@ -3449,7 +3457,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 		}
 		int sql_state = query_fetch_outer_state(query,all_freevar-1);
 		res = groupby = query_fetch_outer(query, all_freevar-1);
-		//card = query_outer_used_card(query, all_freevar-1);
+		card = query_outer_used_card(query, all_freevar-1);
 		if (exp && !is_groupby_col(res, exp)) {
 			if (is_sql_groupby(sql_state))
 				return sql_error(sql, 05, SQLSTATE(42000) "SELECT: aggregate function '%s' not allowed in GROUP BY clause", aname);
@@ -3467,12 +3475,10 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 				return sql_error(sql, 05, SQLSTATE(42000) "CALL: aggregate functions not allowed inside CALL");
 			if (is_sql_from(sql_state))
 				return sql_error(sql, 05, SQLSTATE(42000) "SELECT: aggregate functions not allowed in functions in FROM");
-#if 0
-			if (card > CARD_AGGR) { /* used a expression before on the non grouped relation */
+			if (card > CARD_AGGR) { /* used an expression before on the non grouped relation */
 				sql_exp *lu = query_outer_last_used(query, all_freevar-1);
 				return sql_error(sql, 05, SQLSTATE(42000) "SELECT: subquery uses ungrouped column \"%s.%s\" from outer query", exp_relname(lu), exp_name(lu));
 			}
-#endif
 		}
 	}
 
@@ -3556,7 +3562,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 		if (!groupby)
 			return e;
 		if (all_freevar)
-			query_outer_used_exp(query, all_freevar-1, e, 1);
+			query_outer_used_exp(query, all_freevar-1, e, sql_aggr);
 		e = rel_groupby_add_aggr(sql, groupby, e);
 		if (!group && !all_freevar)
 			return e;
@@ -3712,7 +3718,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 		if (!groupby)
 			return e;
 		if (all_freevar)
-			query_outer_used_exp(query, all_freevar-1, e, 1);
+			query_outer_aggregated(query, all_freevar-1, e);
 		e = rel_groupby_add_aggr(sql, groupby, e);
 		if (!group && !all_freevar)
 			return e;
