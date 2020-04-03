@@ -349,11 +349,11 @@ parse_snapshot_name_selftest(void)
 	if (errmsg != NULL)
 		return newErr(
 			"parse_snapshot_name selftest failure for '%s':"
-			" %s (%s, '%s', %" PRId64 ")\n",
+			" %s (%s, '%s', %" PRIu64 ")\n",
 			tc->filename, errmsg,
 			result ? "true" : "false",
 			dbname,
-			timestamp);
+			(uint64_t)timestamp);
 
 	return NO_ERR;
 }
