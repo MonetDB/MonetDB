@@ -885,6 +885,11 @@ variable_list:
 		$$ = append_symbol($1, _symbol_create_list( SQL_DECLARE, l)); }
  ;
 
+opt_equal:
+    '='
+  |
+  ;
+
 set_statement:
 	set variable_ref '=' search_condition
 		{ dlist *l = L();
@@ -896,46 +901,42 @@ set_statement:
 	  	append_list(l, $2);
 	  	append_symbol(l, $4);
 	  	$$ = _symbol_create_list( SQL_SET, l ); }
-  |	set sqlSESSION AUTHORIZATION ident
+  |	set sqlSESSION AUTHORIZATION opt_equal ident
+		{ dlist *l = L();
+		  sql_subtype t;
+		sql_find_subtype(&t, "char", UTF8_strlen($5), 0 );
+		append_list(l, append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "current_user")));
+		append_symbol(l, _newAtomNode( _atom_string(&t, $5)) );
+		$$ = _symbol_create_list( SQL_SET, l); }
+  |	set session_schema opt_equal ident
 		{ dlist *l = L();
 		  sql_subtype t;
 		sql_find_subtype(&t, "char", UTF8_strlen($4), 0 );
-		append_list(l, append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "current_user")));
-		append_symbol(l,
-			_newAtomNode( _atom_string(&t, $4)) );
-		$$ = _symbol_create_list( SQL_SET, l); }
-  |	set SCHEMA ident
-		{ dlist *l = L();
-		  sql_subtype t;
-		sql_find_subtype(&t, "char", UTF8_strlen($3), 0 );
 		append_list(l, append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "current_schema")));
-		append_symbol(l,
-			_newAtomNode( _atom_string(&t, $3)) );
+		append_symbol(l, _newAtomNode( _atom_string(&t, $4)) );
 		$$ = _symbol_create_list( SQL_SET, l); }
-  |	set user '=' ident
+  |	set session_user opt_equal ident
 		{ dlist *l = L();
 		  sql_subtype t;
 		sql_find_subtype(&t, "char", UTF8_strlen($4), 0 );
 		append_list(l, append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "current_user")));
-		append_symbol(l,
-			_newAtomNode( _atom_string(&t, $4)) );
+		append_symbol(l, _newAtomNode( _atom_string(&t, $4)) );
 		$$ = _symbol_create_list( SQL_SET, l); }
-  |	set ROLE ident
+  |	set session_role opt_equal ident
 		{ dlist *l = L();
 		  sql_subtype t;
-		sql_find_subtype(&t, "char", UTF8_strlen($3), 0);
+		sql_find_subtype(&t, "char", UTF8_strlen($4), 0);
 		append_list(l, append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "current_role")));
-		append_symbol(l,
-			_newAtomNode( _atom_string(&t, $3)) );
+		append_symbol(l, _newAtomNode( _atom_string(&t, $4)) );
 		$$ = _symbol_create_list( SQL_SET, l); }
-  |	set TIME ZONE LOCAL
+  |	set session_timezone opt_equal LOCAL
 		{ dlist *l = L();
 		  sql_subtype t;
 		sql_find_subtype(&t, "sec_interval", inttype2digits(ihour, isec), 0);
 		append_list(l, append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "current_timezone")));
 		append_symbol(l, _newAtomNode(atom_int(SA, &t, 0)));
 		$$ = _symbol_create_list( SQL_SET, l); }
-  |	set TIME ZONE interval_expression
+  |	set session_timezone opt_equal literal
 		{ dlist *l = L();
 		append_list(l, append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "current_timezone")));
 		append_symbol(l, $4 );
@@ -4074,7 +4075,8 @@ value_exp:
  								}
  |  case_exp
  |  cast_exp
- |  column_ref                            { $$ = _symbol_create_list(SQL_COLUMN, $1); }
+ |  column_ref       { $$ = _symbol_create_list(SQL_COLUMN, $1); }
+ |  session_user     { $$ = _symbol_create_list(SQL_NAME, append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "current_user"))); }
  |  CURRENT_SCHEMA   { $$ = _symbol_create_list(SQL_NAME, append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "current_schema"))); }
  |  CURRENT_ROLE     { $$ = _symbol_create_list(SQL_NAME, append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "current_role"))); }
  |  CURRENT_TIMEZONE { $$ = _symbol_create_list(SQL_NAME, append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "current_timezone"))); }
@@ -4091,7 +4093,6 @@ value_exp:
  |  null
  |  param
  |  string_funcs
- |  user            { $$ = _symbol_create_list(SQL_NAME, append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "current_user"))); }
  |  XML_value_function
  ;
 
@@ -4623,10 +4624,25 @@ interval_type:
 	}
  ;
 
-user:
+session_user:
     USER 
  |  SESSION_USER
  |  CURRENT_USER 
+ ;
+
+session_timezone:
+    TIME ZONE
+ |  CURRENT_TIMEZONE
+ ;
+
+session_schema:
+    SCHEMA
+ |  CURRENT_SCHEMA
+ ;
+
+session_role:
+    ROLE
+ |  CURRENT_ROLE
  ;
 
 literal:
