@@ -35,6 +35,7 @@ struct logger {
 	BAT *catalog_nme;	/* str name column */
 	BAT *catalog_tpe;	/* type of column */
 	BAT *catalog_oid;	/* object identifier of column (the pair type,oid is unique) */
+	BAT *catalog_cnt;	/* count of ondisk buns (this bat isn't persistent, ie recreated on startup) */
 	BAT *dcatalog;		/* deleted from catalog table */
 	BAT *seqs_id;		/* int id column */
 	BAT *seqs_val;		/* lng value column */

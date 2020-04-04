@@ -1537,6 +1537,26 @@ logger_switch_bat(BAT *old, BAT *new, const char *fn, const char *name)
 }
 
 static gdk_return
+bm_get_counts(logger *lg)
+{
+	BUN p, q;
+	const log_bid *bids = (const log_bid *) Tloc(lg->catalog_bid, 0);
+
+	BATloop(lg->catalog_bid, p, q) {
+		oid pos = p;
+		lng cnt = 0;
+
+		if (BUNfnd(lg->dcatalog, &pos) != BUN_NONE) {
+			BAT *b = BBPquickdesc(bids[p], 1);
+			cnt = BATcount(b);
+		}
+		if (BUNappend(lg->catalog_cnt, &cnt, false) != GDK_SUCCEED)
+			return GDK_FAIL;
+	}
+	return GDK_SUCCEED;
+}
+
+static gdk_return
 bm_subcommit(logger *lg, BAT *list_bid, BAT *list_nme, BAT *catalog_bid, BAT *catalog_nme, BAT *catalog_tpe, BAT *catalog_oid, BAT *dcatalog, BAT *extra, int debug)
 {
 	BUN p, q;
@@ -1997,6 +2017,16 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 				goto error;
 		}
 	}
+	lg->catalog_cnt = logbat_new(TYPE_lng, 1, TRANSIENT);
+	if (lg->catalog_cnt == NULL) {
+		GDKerror("Logger_new: failed to create catalog_cnt bat");
+		goto error;
+	}
+	strconcat_len(bak, sizeof(bak), fn, "_catalog_cnt", NULL);
+	if (BBPrename(lg->catalog_cnt->batCacheid, bak) < 0) {
+		goto error;
+	}
+
 	lg->freed = logbat_new(TYPE_int, 1, TRANSIENT);
 	if (lg->freed == NULL) {
 		GDKerror("Logger_new: failed to create freed bat");
@@ -2006,6 +2036,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 	if (BBPrename(lg->freed->batCacheid, bak) < 0) {
 		goto error;
 	}
+
 	snapshots_bid = logger_find_bat(lg, "snapshots_bid", 0, 0);
 	if (snapshots_bid == 0) {
 		lg->snapshots_bid = logbat_new(TYPE_int, 1, PERSISTENT);
@@ -2130,8 +2161,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 		/* done reading the log, revert to "normal" behavior */
 		geomisoldversion = false;
 	}
-
-	return GDK_SUCCEED;
+	return bm_get_counts(lg);
   error:
 	if (fp)
 		fclose(fp);
@@ -2445,7 +2475,7 @@ logger_flush(logger *lg)
 			GDKfree(filename);
 			return GDK_FAIL;
 		}
-		printf("log file %s\n", filename);
+		//printf("log file %s\n", filename);
 
 		bool filemissing = false;
 		if (logger_open_input(lg, filename, &filemissing) == GDK_FAIL) {
@@ -2569,6 +2599,9 @@ log_bat_persists(logger *lg, BAT *b, const char *name, char tpe, oid id)
 	int flag = b->batTransient ? LOG_CREATE : LOG_USE;
 	BUN p;
 
+	if (logger_add_bat(lg, b, name, tpe, id) != GDK_SUCCEED)
+		return GDK_FAIL;
+
 	l.nr = 0;
 	if (flag == LOG_USE) {
 #ifndef NDEBUG
@@ -2690,7 +2723,8 @@ log_bat_transient(logger *lg, const char *name, char tpe, oid id)
 
 	if (lg->debug & 1)
 		fprintf(stderr, "#Logged destroyed bat %s\n", NAME(name, tpe, id));
-	return GDK_SUCCEED;
+
+	return logger_del_bat(lg, bid);
 }
 
 gdk_return
