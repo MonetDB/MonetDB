@@ -454,7 +454,7 @@ handle_in_exps(backend *be, sql_exp *ce, list *nl, stmt *left, stmt *right, stmt
 				   Make sure that null values are never returned. */
 				stmt* non_nulls;
 				non_nulls = stmt_selectnonil(be, c, NULL);
-				s = stmt_tdiff(be, non_nulls, s);
+				s = stmt_tdiff(be, non_nulls, s, NULL);
 				s = stmt_project(be, s, non_nulls);
 			}
 		}
@@ -1435,11 +1435,18 @@ rel_parse_value(backend *be, char *query, char emode)
 	if (m->session->status || m->errstr[0]) {
 		int status = m->session->status;
 
-		memcpy(o.errstr, m->errstr, sizeof(o.errstr));
+		strcpy(o.errstr, m->errstr);
 		*m = o;
 		m->session->status = status;
 	} else {
+		int label = m->label;
+
+		while (m->topvars > o.topvars) {
+			if (m->vars[--m->topvars].name)
+				c_delete(m->vars[m->topvars].name);
+		}
 		*m = o;
+		m->label = label;
 	}
 	return s;
 }
@@ -2332,12 +2339,12 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 	if (rel->op == op_left || rel->op == op_full) {
 		/* we need to add the missing oid's */
 		ld = stmt_mirror(be, bin_first_column(be, left));
-		ld = stmt_tdiff(be, ld, jl);
+		ld = stmt_tdiff(be, ld, jl, NULL);
 	}
 	if (rel->op == op_right || rel->op == op_full) {
 		/* we need to add the missing oid's */
 		rd = stmt_mirror(be, bin_first_column(be, right));
-		rd = stmt_tdiff(be, rd, jr);
+		rd = stmt_tdiff(be, rd, jr, NULL);
 	}
 
 	for( n = left->op4.lval->h; n; n = n->next ) {
@@ -2441,7 +2448,7 @@ rel2bin_antijoin(backend *be, sql_rel *rel, list *refs)
 				ls = stmt_const(be, bin_first_column(be, left), ls);
 			if (rs->nrcols == 0)
 				rs = stmt_const(be, bin_first_column(be, right), rs);
-			join = stmt_tdiff2(be, ls, rs);
+			join = stmt_tdiff2(be, ls, rs, NULL);
 		}
 	}
 
@@ -2602,6 +2609,7 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 		stmt *l = bin_first_column(be, left);
 		stmt *r = bin_first_column(be, right);
 		join = stmt_join(be, l, r, 0, cmp_all, 0); 
+		lcand = left->cand;
 	}
 	jl = stmt_result(be, join, 0);
 	if (en) {
@@ -2658,7 +2666,7 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 	   Reduce this using difference and intersect */
 	c = stmt_mirror(be, left->op4.lval->h->data);
 	if (rel->op == op_anti) {
-		join = stmt_tdiff(be, c, jl);
+		join = stmt_tdiff(be, c, jl, lcand);
 	} else {
 		if (lcand)
 			join = stmt_semijoin(be, c, jl, lcand, NULL/*right->cand*/, 0); 
@@ -2862,7 +2870,7 @@ rel2bin_except(backend *be, sql_rel *rel, list *refs)
 	rm = stmt_result(be, s, 1);
 
 	s = stmt_mirror(be, lext);
-	s = stmt_tdiff(be, s, lm);
+	s = stmt_tdiff(be, s, lm, NULL);
 
 	/* first we find those missing in R */
 	next = stmt_project(be, s, lext);
@@ -3595,19 +3603,23 @@ sql_parse(backend *be, sql_allocator *sa, const char *query, char mode)
 		sa_destroy(m->sa);
 	m->sym = NULL;
 	{
+		int label = m->label;
 		int status = m->session->status;
 		int sizevars = m->sizevars, topvars = m->topvars;
 		sql_var *vars = m->vars;
 		/* cascade list maybe removed */
 		list *cascade_action = m->cascade_action;
+		char *mquery = m->query;
 
 		strcpy(o->errstr, m->errstr);
 		*m = *o;
+		m->label = label;
 		m->sizevars = sizevars;
 		m->topvars = topvars;
 		m->vars = vars;
 		m->session->status = status;
 		m->cascade_action = cascade_action;
+		m->query = mquery;
 	}
 	_DELETE(o);
 	return sq;
@@ -4088,7 +4100,7 @@ update_check_ukey(backend *be, stmt **updates, sql_key *k, stmt *tids, stmt *idx
 			should be zero)
 	 	*/
 		if (!isNew(k)) {
-			stmt *nu_tids = stmt_tdiff(be, dels, tids); /* not updated ids */
+			stmt *nu_tids = stmt_tdiff(be, dels, tids, NULL); /* not updated ids */
 			list *lje = sa_list(sql->sa);
 			list *rje = sa_list(sql->sa);
 
@@ -4207,7 +4219,7 @@ update_check_ukey(backend *be, stmt **updates, sql_key *k, stmt *tids, stmt *idx
 
 		/* s should be empty */
 		if (!isNew(k)) {
-			stmt *nu_tids = stmt_tdiff(be, dels, tids); /* not updated ids */
+			stmt *nu_tids = stmt_tdiff(be, dels, tids, NULL); /* not updated ids */
 			assert (updates);
 
 			h = updates[c->c->colnr];

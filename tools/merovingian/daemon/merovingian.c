@@ -375,6 +375,11 @@ main(int argc, char *argv[])
 		{"passphrase",    NULL,                    0,                  STR},
 
 		{"snapshotdir",   NULL,                    0,                  STR},
+#ifdef HAVE_LIBLZ4
+		{"snapshotcompression", strdup(".tar.lz4"), 0,                 STR},
+#else
+		{"snapshotcompression", strdup(".tar"),     0,                 STR},
+#endif
 
 		{ NULL,           NULL,                    0,                  INVALID}
 	};

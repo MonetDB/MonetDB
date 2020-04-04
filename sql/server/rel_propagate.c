@@ -305,7 +305,7 @@ propagate_validation_to_upper_tables(sql_query* query, sql_table *mt, sql_table 
 				list *exps = new_exp_list(sql->sa);
 				for (node *n = spt->part.values->h ; n ; n = n->next) {
 					sql_part_value *next = (sql_part_value*) n->data;
-					sql_exp *e1 = create_table_part_atom_exp(sql, next->tpe, next->value);
+					sql_exp *e1 = create_table_part_atom_exp(sql, spt->tpe, next->value);
 					list_append(exps, e1);
 				}
 				rel = rel_list(sql->sa, rel, create_list_partition_anti_rel(query, it, pt, spt->with_nills, exps));
@@ -734,7 +734,7 @@ rel_generate_subinserts(sql_query *query, sql_rel *rel, sql_table *t, int *chang
 				list *exps = new_exp_list(sql->sa);
 				for (node *nn = pt->part.values->h ; nn ; nn = nn->next) {
 					sql_part_value *next = (sql_part_value*) nn->data;
-					sql_exp *e1 = create_table_part_atom_exp(sql, next->tpe, next->value);
+					sql_exp *e1 = create_table_part_atom_exp(sql, pt->tpe, next->value);
 					list_append(exps, e1);
 					list_append(anti_exps, exp_copy(sql, e1));
 				}
@@ -951,7 +951,7 @@ rel_subtable_insert(sql_query *query, sql_rel *rel, sql_table *t, int *changes)
 		if (list_length(pt->part.values)) { /* if the partition holds non-null values */
 			for (node *n = pt->part.values->h ; n ; n = n->next) {
 				sql_part_value *next = (sql_part_value*) n->data;
-				sql_exp *e1 = create_table_part_atom_exp(sql, next->tpe, next->value);
+				sql_exp *e1 = create_table_part_atom_exp(sql, pt->tpe, next->value);
 				list_append(anti_exps, exp_copy(sql, e1));
 			}
 			anti_exp = exp_in(sql->sa, exp_copy(sql, anti_le), anti_exps, cmp_notin);

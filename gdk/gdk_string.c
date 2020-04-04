@@ -231,7 +231,7 @@ strPut(Heap *h, var_t *dst, const char *v)
 				if ((v[i] & 0xC0) != 0x80 ||
 				    (m != 0 && (v[i] & m) == 0)) {
 				  badutf8:
-					GDKerror("strPut: incorrectly encoded UTF-8");
+					GDKerror("incorrectly encoded UTF-8");
 					return 0;
 				}
 				m = 0;
@@ -286,7 +286,7 @@ strPut(Heap *h, var_t *dst, const char *v)
 		assert(newsize);
 
 		if (h->free + pad + len + extralen >= (size_t) VAR_MAX) {
-			GDKerror("strPut: string heaps gets larger than %zuGiB.\n", (size_t) VAR_MAX >> 30);
+			GDKerror("string heaps gets larger than %zuGiB.\n", (size_t) VAR_MAX >> 30);
 			return 0;
 		}
 		TRC_DEBUG(HEAP, "HEAPextend in strPut %s %zu %zu\n", h->filename, h->size, newsize);
@@ -1136,11 +1136,11 @@ BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, BAT *sep, bool skip_nil
 
 	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp,
 				    &ci, &ncand)) !=NULL) {
-		GDKerror("BATgroupstr_group_concat: %s\n", err);
+		GDKerror("%s\n", err);
 		return NULL;
 	}
 	if (g == NULL) {
-		GDKerror("BATgroupstr_group_concat: b and g must be aligned\n");
+		GDKerror("b and g must be aligned\n");
 		return NULL;
 	}
 
@@ -1186,7 +1186,7 @@ GDKanalytical_str_group_concat(BAT *r, BAT *b, BAT *sep, BAT *s, BAT *e, const c
 	end = (lng *) Tloc(e, 0);
 
 	if (b->ttype != TYPE_str || r->ttype != TYPE_str || (sep && sep->ttype != TYPE_str)) {
-		GDKerror("BATgroupstr_group_concat: only string type is supported\n");
+		GDKerror("only string type is supported\n");
 		return GDK_FAIL;
 	}
 
@@ -1286,6 +1286,6 @@ GDKanalytical_str_group_concat(BAT *r, BAT *b, BAT *sep, BAT *s, BAT *e, const c
 	return GDK_SUCCEED;
  allocation_error:
 	GDKfree(single_str);
-	GDKerror("%s: malloc failure\n", __func__);
+	GDKerror("malloc failure\n");
 	return GDK_FAIL;
 }

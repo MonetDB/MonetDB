@@ -895,11 +895,11 @@ BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_o
 	lng t0 = GDKusec();
 
 	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &ci, &ncand)) != NULL) {
-		GDKerror("%s: %s\n", __func__, err);
+		GDKerror("%s\n", err);
 		return NULL;
 	}
 	if (g == NULL) {
-		GDKerror("%s: b and g must be aligned\n", __func__);
+		GDKerror("b and g must be aligned\n");
 		return NULL;
 	}
 
@@ -967,7 +967,7 @@ BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, b
 	lng t0 = GDKusec();
 
 	if ((err = BATgroupaggrinit(b, NULL, NULL, s, &min, &max, &ngrp, &ci, &ncand)) != NULL) {
-		GDKerror("%s: %s\n", __func__, err);
+		GDKerror("%s\n", err);
 		return GDK_FAIL;
 	}
 	switch (tp) {
@@ -1057,8 +1057,8 @@ BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, b
 			* (flt *) res = nil_if_empty ? flt_nil : 0;
 		break;
 	default:
-		GDKerror("%s: type combination (sum(%s)->%s) not supported.\n",
-			 __func__, ATOMname(b->ttype), ATOMname(tp));
+		GDKerror("type combination (sum(%s)->%s) not supported.\n",
+			 ATOMname(b->ttype), ATOMname(tp));
 		return GDK_FAIL;
 	}
 	if (BATcount(b) == 0)
@@ -1470,11 +1470,11 @@ BATgroupprod(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_
 	const char *err;
 
 	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &ci, &ncand)) != NULL) {
-		GDKerror("%s: %s\n", __func__, err);
+		GDKerror("%s\n", err);
 		return NULL;
 	}
 	if (g == NULL) {
-		GDKerror("%s: b and g must be aligned\n", __func__);
+		GDKerror("b and g must be aligned\n");
 		return NULL;
 	}
 
@@ -1532,7 +1532,7 @@ BATprod(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, 
 	const char *err;
 
 	if ((err = BATgroupaggrinit(b, NULL, NULL, s, &min, &max, &ngrp, &ci, &ncand)) != NULL) {
-		GDKerror("%s: %s\n", __func__, err);
+		GDKerror("%s\n", err);
 		return GDK_FAIL;
 	}
 	switch (tp) {
@@ -1560,8 +1560,8 @@ BATprod(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, 
 		* (dbl *) res = nil_if_empty ? dbl_nil : (dbl) 1;
 		break;
 	default:
-		GDKerror("%s: type combination (prod(%s)->%s) not supported.\n",
-			 __func__, ATOMname(b->ttype), ATOMname(tp));
+		GDKerror("type combination (prod(%s)->%s) not supported.\n",
+			 ATOMname(b->ttype), ATOMname(tp));
 		return GDK_FAIL;
 	}
 	if (BATcount(b) == 0)
@@ -1668,11 +1668,11 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool
 				 * functions) argument */
 
 	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &ci, &ncand)) != NULL) {
-		GDKerror("%s: %s\n", __func__, err);
+		GDKerror("%s\n", err);
 		return GDK_FAIL;
 	}
 	if (g == NULL) {
-		GDKerror("%s: b and g must be aligned\n", __func__);
+		GDKerror("b and g must be aligned\n");
 		return GDK_FAIL;
 	}
 
@@ -1783,8 +1783,7 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool
 		else
 			GDKfree(cnts);
 		BBPunfix(bn->batCacheid);
-		GDKerror("%s: type (%s) not supported.\n", __func__,
-			 ATOMname(b->ttype));
+		GDKerror("type (%s) not supported.\n", ATOMname(b->ttype));
 		return GDK_FAIL;
 	}
 	GDKfree(rems);
@@ -1953,7 +1952,7 @@ BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals, int scale)
 		AVERAGE_FLOATTYPE(dbl);
 		break;
 	default:
-		GDKerror("%s: average of type %s unsupported.\n", __func__,
+		GDKerror("average of type %s unsupported.\n",
 			 ATOMname(b->ttype));
 		return GDK_FAIL;
 	}
@@ -2009,11 +2008,11 @@ BATgroupcount(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort
 	(void) abort_on_error;	/* functions) argument */
 
 	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &ci, &ncand)) != NULL) {
-		GDKerror("%s: %s\n", __func__, err);
+		GDKerror("%s\n", err);
 		return NULL;
 	}
 	if (g == NULL) {
-		GDKerror("%s: b and g must be aligned\n", __func__);
+		GDKerror("b and g must be aligned\n");
 		return NULL;
 	}
 
@@ -2134,11 +2133,11 @@ BATgroupsize(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_
 	(void) skip_nils;
 
 	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &ci, &ncand)) != NULL) {
-		GDKerror("%s: %s\n", __func__, err);
+		GDKerror("%s\n", err);
 		return NULL;
 	}
 	if (g == NULL) {
-		GDKerror("%s: b and g must be aligned\n", __func__);
+		GDKerror("b and g must be aligned\n");
 		return NULL;
 	}
 
@@ -2517,7 +2516,7 @@ BATmin_skipnil(BAT *b, void *aggr, bit skipnil)
 	if (!ATOMlinear(b->ttype)) {
 		/* there is no such thing as a smallest value if you
 		 * can't compare values */
-		GDKerror("%s: non-linear type", __func__);
+		GDKerror("non-linear type");
 		return NULL;
 	}
 	if (BATcount(b) == 0) {
@@ -2617,7 +2616,7 @@ BATmax_skipnil(BAT *b, void *aggr, bit skipnil)
 	BATiter bi;
 
 	if (!ATOMlinear(b->ttype)) {
-		GDKerror("%s: non-linear type", __func__);
+		GDKerror("non-linear type");
 		return NULL;
 	}
 	if (BATcount(b) == 0) {
@@ -2745,24 +2744,24 @@ doBATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 		case TYPE_dbl:
 			break;
 		default:
-			GDKerror("%s: incompatible type\n", __func__);
+			GDKerror("incompatible type\n");
 			return NULL;
 		}
 		dnil = &dbl_nil;
 	}
 	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &ci, &ncand)) != NULL) {
-		GDKerror("%s: %s\n", __func__, err);
+		GDKerror("%s\n", err);
 		return NULL;
 	}
 	assert(tp == b->ttype);
 	if (!ATOMlinear(tp)) {
-		GDKerror("%s: cannot determine quantile on "
-			 "non-linear type %s\n", __func__, ATOMname(tp));
+		GDKerror("cannot determine quantile on "
+			 "non-linear type %s\n", ATOMname(tp));
 		return NULL;
 	}
 	if (quantile < 0 || quantile > 1) {
-		GDKerror("%s: cannot determine quantile for "
-			 "p=%f (p has to be in [0,1])\n", __func__, quantile);
+		GDKerror("cannot determine quantile for "
+			 "p=%f (p has to be in [0,1])\n", quantile);
 		return NULL;
 	}
 
@@ -3266,8 +3265,8 @@ BATcalccorrelation(BAT *b1, BAT *b2)
 		AGGR_CORRELATION_SINGLE(dbl);
 		break;
 	default:
-		GDKerror("%s: type (%s) not supported.\n",
-			 __func__, ATOMname(tp));
+		GDKerror("type (%s) not supported.\n",
+			 ATOMname(tp));
 		return dbl_nil;
 	}
 	if (n > 0 && up > 0 && down1 > 0 && down2 > 0)
@@ -3745,11 +3744,11 @@ BATgroupcorrelation(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp, bool skip_
 	(void) abort_on_error;
 
 	if ((err = BATgroupaggrinit(b1, g, e, s, &min, &max, &ngrp, &ci, &ncand)) != NULL) {
-		GDKerror("%s: %s\n", __func__, err);
+		GDKerror("%s\n", err);
 		return NULL;
 	}
 	if (g == NULL) {
-		GDKerror("%s: b1, b2 and g must be aligned\n", __func__);
+		GDKerror("b1, b2 and g must be aligned\n");
 		return NULL;
 	}
 
@@ -3827,8 +3826,7 @@ BATgroupcorrelation(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp, bool skip_
 		GDKfree(down1);
 		GDKfree(down2);
 		GDKfree(cnts);
-		GDKerror("%s: type (%s) not supported.\n",
-			 __func__, ATOMname(b1->ttype));
+		GDKerror("type (%s) not supported.\n", ATOMname(b1->ttype));
 		return NULL;
 	}
 	GDKfree(mean1);

@@ -35,6 +35,18 @@ static bool parse_snapshot_name(const char *filename, char **dbname, time_t *tim
 static err validate_location(const char *path);
 static err unpack_tarstream(stream *tarstream, char *destdir, int skipcomponents);
 
+static err parse_snapshot_name_selftest(void);
+
+const char *VALID_EXTENSIONS[] = {
+		".tar.lz4",
+		".tar",
+		".tar.gz",
+		".tar.xz",
+		".tar.bz2",
+		NULL
+};
+
+
 /* Create a snapshot of database dbname to file dest.
  * TODO: Make it work for databases without monetdb/monetdb root account.
  */
@@ -243,9 +255,14 @@ snapshot_list(int *nsnapshots, struct snapshot **snapshots)
 	err e = NO_ERR;
 	DIR *dir = NULL;
 	struct dirent *ent;
+	char *snapdir;
+
+	e = parse_snapshot_name_selftest();
+	if (e != NO_ERR)
+		goto bailout;
 
 	/* get the snapdir */
-	char *snapdir = getConfVal(_mero_props, "snapshotdir");
+	snapdir = getConfVal(_mero_props, "snapshotdir");
 	if (snapdir == NULL || snapdir[0] == '\0') {
 		e = newErr("Snapshot target file not allowed because no 'snapshotdir' has been configured");
 		goto bailout;
@@ -283,6 +300,64 @@ bailout:
 	return e;
 }
 
+
+static err
+parse_snapshot_name_selftest(void)
+{
+	struct {
+		char *filename;
+		bool expected_result;
+		char *expected_dbname;
+		time_t expected_time;
+	} *tc, testcases[] = {
+		{ "banana", false, NULL, 0 },
+		{ "", false, NULL, 0 },
+		{ "banana.tar.gz", false, NULL, 0 },
+		{ "_20200402T114224UTC.tar.gz", false, NULL, 0 },
+		{ "foo_20200402T114224UTC.tar.gz", true, "foo", 1585827744L },
+		{ "foo_20200402T114224.tar.gz", false, NULL, 0},
+		// terminator:
+		{ NULL, false, NULL, 0},
+	};
+
+	char *errmsg = NULL;
+	char *dbname = "<uninit>";
+	time_t timestamp = 0;
+	bool result;
+	for (tc = &testcases[0]; tc->filename != NULL; tc++) {
+		dbname = "<uninit>";
+		timestamp = 0;
+		result = parse_snapshot_name(tc->filename, &dbname, &timestamp);
+		if (result != tc->expected_result) {
+			errmsg = "didn't parse as expected";
+			break;
+		}
+		if (result == false)
+			continue;
+		assert(tc->expected_dbname != NULL);
+		if (dbname == NULL || strcmp(dbname, tc->expected_dbname) != 0) {
+			errmsg = "dbname mismatch";
+			break;
+		}
+		assert(tc->expected_time != 0);
+		if (timestamp != tc->expected_time) {
+			errmsg = "timestamp mismatch";
+			break;
+		}
+	}
+
+	if (errmsg != NULL)
+		return newErr(
+			"parse_snapshot_name selftest failure for '%s':"
+			" %s (%s, '%s', %" PRIu64 ")\n",
+			tc->filename, errmsg,
+			result ? "true" : "false",
+			dbname,
+			(uint64_t)timestamp);
+
+	return NO_ERR;
+}
+
 /* Return 0 if the filename is not a valid snapshot name for the
  * given datase. Otherwise, return the timestamp encoded in
  * the filename.
@@ -290,19 +365,46 @@ bailout:
 static bool
 parse_snapshot_name(const char *filename, char **dbname, time_t *timestamp)
 {
-	// dbname_YYYYMMMDDTHHMMUTC.tar.gz
-	//       ^^^^^^^^^^^^^^^^^^^^^^^^^ 26 chars from underscore to end
+	// Copy the whole filename to 'name'.  We will then chop bits off,
+	// starting with the extension.
+	char *name = strdup(filename);
+	char *end = name + strlen(name);
+	char *extension = NULL;
 
-	if (strlen(filename) <= 26)
+	// Look for a known extension
+	for (const char **ext = &VALID_EXTENSIONS[0]; *ext != NULL; ext++) {
+		if (strlen(*ext) >= strlen(name))
+			continue;
+		char *candidate = end - strlen(*ext);
+		if (strcmp(*ext, candidate) == 0) {
+			extension = candidate; // important that it points into 'name'
+			break;
+		}
+	}
+	if (extension == NULL) {
+		free(name);
 		return false;
-	size_t namelen = strlen(filename) - 26;
+	}
+	*extension = '\0'; // chop!
+
+	// Find the timestamp:
+	// dbname_20200402T114224UTC.tar.gz
+	//       ^^^^^^^^^^^^^^^^^^^ 19 chars back
+	if (strlen(name) <= 19) {
+		free(name);
+		return false;
+	}
 
 	struct tm tm = {0};
-	char *end = strptime(filename + namelen, "_%Y%m%dT%H%M%SUTC.tar.gz", &tm);
-	if (end != NULL && *end != '\0')
+	char *ts = extension - 19;
+	char *ts_end = strptime(ts, "_%Y%m%dT%H%M%SUTC", &tm);
+	if (ts_end != extension) {
+		free(name);
 		return false;
+	}
+	*ts = '\0'; // chop!
 
-        // We want to interpret this as UTC.
+        // We want to interpret the timestamp as UTC.
         // Unfortunately, mktime interprets it as Localtime.
         time_t wrong = mktime(&tm);
 
@@ -316,9 +418,7 @@ parse_snapshot_name(const char *filename, char **dbname, time_t *timestamp)
 
 	// Return the results
 	*timestamp = correct;
-	*dbname = malloc(namelen + 1);
-	memcpy(*dbname, filename, namelen);
-	(*dbname)[namelen] = '\0';
+	*dbname = name;
 	return true;
 }
 
@@ -330,12 +430,30 @@ snapshot_default_filename(char **ret, const char *dbname)
 	size_t len;
 	char *name_buf = NULL;
 	char *p;
+	char *snapext_conf;
+	char *snapext = NULL;
 
 	/* get the snapdir */
 	char *snapdir = getConfVal(_mero_props, "snapshotdir");
 	if (snapdir == NULL || snapdir[0] == '\0') {
 		e = newErr("Snapshot target file not allowed because no 'snapshotdir' has been configured");
 		goto bailout;
+	}
+
+	/* get and verify the extension */
+	snapext_conf = getConfVal(_mero_props, "snapshotcompression");
+	if (snapext_conf != NULL) {
+		for (const char **ext = &VALID_EXTENSIONS[0]; *ext != NULL; ext++) {
+			if (strcmp(*ext, snapext_conf) == 0) {
+				snapext = snapext_conf;
+				break;
+			}
+		}
+	}
+	if (snapext == NULL) {
+		e = newErr("Unsupported file format: '%s'",
+			snapext_conf != NULL ? snapext_conf : "");
+			goto bailout;
 	}
 
 	/* get the current time, in UTC */
@@ -346,8 +464,10 @@ snapshot_default_filename(char **ret, const char *dbname)
 	/* allocate and write the filename buffer */
 	len = strlen(dbname) + strlen(snapdir) + 100;
 	name_buf = malloc(len + 1);
-	p = name_buf + sprintf(name_buf, "%s%c%s_", snapdir, DIR_SEP, dbname);
-	strftime(p, len - (p - name_buf), "%Y%m%dT%H%M%SUTC.tar.gz", &time_parts);
+	p = name_buf;
+	p += sprintf(p, "%s%c%s_", snapdir, DIR_SEP, dbname);
+	p += strftime(p, name_buf + len - p, "%Y%m%dT%H%M%SUTC", &time_parts);
+	strcpy(p, snapext);
 
 	/* return it */
 	*ret = name_buf;

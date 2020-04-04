@@ -1795,7 +1795,7 @@ stmt_tunion(backend *be, stmt *op1, stmt *op2)
 }
 
 stmt *
-stmt_tdiff(backend *be, stmt *op1, stmt *op2)
+stmt_tdiff(backend *be, stmt *op1, stmt *op2, stmt *lcand)
 {
 	InstrPtr q = NULL;
 	MalBlkPtr mb = be->mb;
@@ -1805,7 +1805,10 @@ stmt_tdiff(backend *be, stmt *op1, stmt *op2)
 	q = newStmt(mb, algebraRef, differenceRef);
 	q = pushArgument(mb, q, op1->nr); /* left */
 	q = pushArgument(mb, q, op2->nr); /* right */
-	q = pushNil(mb, q, TYPE_bat); /* left candidate */
+	if (lcand)
+		q = pushArgument(mb, q, lcand->nr); /* left */
+	else
+		q = pushNil(mb, q, TYPE_bat); /* left candidate */
 	q = pushNil(mb, q, TYPE_bat); /* right candidate */
 	q = pushBit(mb, q, FALSE);    /* nil matches */
 	q = pushBit(mb, q, FALSE);    /* do not clear nils */    
@@ -1831,7 +1834,7 @@ stmt_tdiff(backend *be, stmt *op1, stmt *op2)
 }
 
 stmt *
-stmt_tdiff2(backend *be, stmt *op1, stmt *op2)
+stmt_tdiff2(backend *be, stmt *op1, stmt *op2, stmt *lcand)
 {
 	InstrPtr q = NULL;
 	MalBlkPtr mb = be->mb;
@@ -1841,7 +1844,10 @@ stmt_tdiff2(backend *be, stmt *op1, stmt *op2)
 	q = newStmt(mb, algebraRef, differenceRef);
 	q = pushArgument(mb, q, op1->nr); /* left */
 	q = pushArgument(mb, q, op2->nr); /* right */
-	q = pushNil(mb, q, TYPE_bat); /* left candidate */
+	if (lcand)
+		q = pushArgument(mb, q, lcand->nr); /* left */
+	else
+		q = pushNil(mb, q, TYPE_bat); /* left candidate */
 	q = pushNil(mb, q, TYPE_bat); /* right candidate */
 	q = pushBit(mb, q, FALSE);    /* nil matches */
 	q = pushBit(mb, q, TRUE);     /* clear nils */

@@ -297,7 +297,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	}
 
 	if (subselects.nr) {
-		if ((!nr_topn && !nr_likes) || newMalBlkStmt(mb, mb->ssize) <0 ) {
+		if (newMalBlkStmt(mb, mb->ssize) <0 ) {
 			GDKfree(vars);
 			goto wrapup;
 		}
@@ -429,8 +429,6 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 							for (; i<limit; i++) 
 								if (old[i])
 									pushInstruction(mb,old[i]);
-							GDKfree(slices);
-							GDKfree(rslices);
 							GDKfree(old);
 							GDKfree(vars);
 							throw(MAL,"optimizer.pushselect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -469,7 +467,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	slices = (int*) GDKzalloc(sizeof(int)* mb->vtop);
 	rslices = (char*) GDKzalloc(sizeof(char)* mb->vtop);
 	oclean = (char*) GDKzalloc(sizeof(char)* mb->vtop);
-	if (!nvars || !slices || !rslices || !oclean || newMalBlkStmt(mb, mb->stop+(5*push_down_delta)) <0 ) {
+	if (!nvars || !slices || !rslices || !oclean || newMalBlkStmt(mb, mb->stop+(5*push_down_delta)+(2*nr_topn)) <0 ) {
 		mb->stmt = old;
 		GDKfree(vars);
 		GDKfree(nvars);
@@ -697,6 +695,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				actions++;
 			}
 		}
+		assert (p == old[i] || oclean[i]);
 		pushInstruction(mb,p);
 	}
 	for (j=1; j<i; j++)

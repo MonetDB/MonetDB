@@ -739,7 +739,7 @@ GDKanalyticalrowbounds(BAT *r, BAT *b, BAT *p, BAT *l, const void *restrict boun
 	r->tnil = (nils > 0);
 	return GDK_SUCCEED;
       bound_not_supported:
-	GDKerror("GDKanalyticalrowbounds: rows frame bound type %s not supported.\n", ATOMname(tp2));
+	GDKerror("rows frame bound type %s not supported.\n", ATOMname(tp2));
 	return GDK_FAIL;
       calc_overflow:
 	GDKerror("22003!overflow in calculation.\n");
@@ -921,10 +921,10 @@ GDKanalyticalrangebounds(BAT *r, BAT *b, BAT *p, BAT *l, const void *restrict bo
 	r->tnil = (nils > 0);
 	return GDK_SUCCEED;
       bound_not_supported:
-	GDKerror("GDKanalyticalrangebounds: range frame bound type %s not supported.\n", ATOMname(tp2));
+	GDKerror("range frame bound type %s not supported.\n", ATOMname(tp2));
 	return GDK_FAIL;
       type_not_supported:
-	GDKerror("GDKanalyticalrangebounds: type %s not supported for %s frame bound type.\n", ATOMname(tp1), ATOMname(tp2));
+	GDKerror("type %s not supported for %s frame bound type.\n", ATOMname(tp1), ATOMname(tp2));
 	return GDK_FAIL;
       calc_overflow:
 	GDKerror("22003!overflow in calculation.\n");
@@ -1031,7 +1031,7 @@ GDKanalyticalgroupsbounds(BAT *r, BAT *b, BAT *p, BAT *l, const void *restrict b
 	r->tnil = (nils > 0);
 	return GDK_SUCCEED;
       bound_not_supported:
-	GDKerror("GDKanalyticalgroupsbounds: groups frame bound type %s not supported.\n", ATOMname(tp2));
+	GDKerror("groups frame bound type %s not supported.\n", ATOMname(tp2));
 	return GDK_FAIL;
 }
 
@@ -1052,6 +1052,6 @@ GDKanalyticalwindowbounds(BAT *r, BAT *b, BAT *p, BAT *l, const void *restrict b
 	default:
 		assert(0);
 	}
-	GDKerror("GDKanalyticalwindowbounds: unit type %d not supported (this is a bug).\n", unit);
+	GDKerror("unit type %d not supported (this is a bug).\n", unit);
 	return GDK_FAIL;
 }

@@ -269,11 +269,10 @@ BATcalcnot(BAT *b, BAT *s, BAT *r)
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
-	BATcheck(b, __func__, NULL);
+	BATcheck(b, NULL);
 	ncand = canditer_init(&ci, b, s);
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 	if (ncand == 0)
@@ -308,8 +307,7 @@ BATcalcnot(BAT *b, BAT *s, BAT *r)
 #endif
 	default:
 		BBPunfix(bn->batCacheid);
-		GDKerror("%s: type %s not supported.\n",
-			 __func__, ATOMname(b->ttype));
+		GDKerror("type %s not supported.\n", ATOMname(b->ttype));
 		return NULL;
 	}
 
@@ -375,8 +373,7 @@ VARcalcnot(ValPtr ret, const ValRecord *v)
 		break;
 #endif
 	default:
-		GDKerror("VARcalcnot: bad input type %s.\n",
-			 ATOMname(v->vtype));
+		GDKerror("bad input type %s.\n", ATOMname(v->vtype));
 		return GDK_FAIL;
 	}
 	return GDK_SUCCEED;
@@ -400,11 +397,10 @@ BATcalcnegate(BAT *b, BAT *s, BAT *r)
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
-	BATcheck(b, __func__, NULL);
+	BATcheck(b, NULL);
 	ncand = canditer_init(&ci, b, s);
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 	if (ncand == 0)
@@ -441,8 +437,7 @@ BATcalcnegate(BAT *b, BAT *s, BAT *r)
 		break;
 	default:
 		BBPunfix(bn->batCacheid);
-		GDKerror("%s: type %s not supported.\n", __func__,
-			 ATOMname(b->ttype));
+		GDKerror("type %s not supported.\n", ATOMname(b->ttype));
 		return NULL;
 	}
 
@@ -518,8 +513,7 @@ VARcalcnegate(ValPtr ret, const ValRecord *v)
 			ret->val.dval = -v->val.dval;
 		break;
 	default:
-		GDKerror("VARcalcnegate: bad input type %s.\n",
-			 ATOMname(v->vtype));
+		GDKerror("bad input type %s.\n", ATOMname(v->vtype));
 		return GDK_FAIL;
 	}
 	return GDK_SUCCEED;
@@ -541,11 +535,10 @@ BATcalcabsolute(BAT *b, BAT *s, BAT *r)
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
-	BATcheck(b, __func__, NULL);
+	BATcheck(b, NULL);
 	ncand = canditer_init(&ci, b, s);
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 	if (ncand == 0)
@@ -582,8 +575,7 @@ BATcalcabsolute(BAT *b, BAT *s, BAT *r)
 		break;
 	default:
 		BBPunfix(bn->batCacheid);
-		GDKerror("%s: bad input type %s.\n", __func__,
-			 ATOMname(b->ttype));
+		GDKerror("bad input type %s.\n", ATOMname(b->ttype));
 		return NULL;
 	}
 
@@ -661,8 +653,7 @@ VARcalcabsolute(ValPtr ret, const ValRecord *v)
 			ret->val.dval = fabs(v->val.dval);
 		break;
 	default:
-		GDKerror("VARcalcabsolute: bad input type %s.\n",
-			 ATOMname(v->vtype));
+		GDKerror("bad input type %s.\n", ATOMname(v->vtype));
 		return GDK_FAIL;
 	}
 	return GDK_SUCCEED;
@@ -686,11 +677,10 @@ BATcalciszero(BAT *b, BAT *s, BAT *r)
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
-	BATcheck(b, __func__, NULL);
+	BATcheck(b, NULL);
 	ncand = canditer_init(&ci, b, s);
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 	if (ncand == 0)
@@ -727,8 +717,7 @@ BATcalciszero(BAT *b, BAT *s, BAT *r)
 		break;
 	default:
 		BBPunfix(bn->batCacheid);
-		GDKerror("%s: bad input type %s.\n", __func__,
-			 ATOMname(b->ttype));
+		GDKerror("bad input type %s.\n", ATOMname(b->ttype));
 		return NULL;
 	}
 
@@ -803,8 +792,7 @@ VARcalciszero(ValPtr ret, const ValRecord *v)
 			ret->val.btval = ISZERO(v->val.dval);
 		break;
 	default:
-		GDKerror("VARcalciszero: bad input type %s.\n",
-			 ATOMname(v->vtype));
+		GDKerror("bad input type %s.\n", ATOMname(v->vtype));
 		return GDK_FAIL;
 	}
 	return GDK_SUCCEED;
@@ -829,11 +817,10 @@ BATcalcsign(BAT *b, BAT *s, BAT *r)
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
-	BATcheck(b, __func__, NULL);
+	BATcheck(b, NULL);
 	ncand = canditer_init(&ci, b, s);
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 	if (ncand == 0)
@@ -870,8 +857,7 @@ BATcalcsign(BAT *b, BAT *s, BAT *r)
 		break;
 	default:
 		BBPunfix(bn->batCacheid);
-		GDKerror("%s: bad input type %s.\n", __func__,
-			 ATOMname(b->ttype));
+		GDKerror("bad input type %s.\n", ATOMname(b->ttype));
 		return NULL;
 	}
 
@@ -949,7 +935,7 @@ VARcalcsign(ValPtr ret, const ValRecord *v)
 			ret->val.btval = SIGN(v->val.dval);
 		break;
 	default:
-		GDKerror("VARcalcsign: bad input type %s.\n",
+		GDKerror("bad input type %s.\n",
 			 ATOMname(v->vtype));
 		return GDK_FAIL;
 	}
@@ -987,12 +973,11 @@ BATcalcisnil_implementation(BAT *b, BAT *s, BAT *r, bool notnil)
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
-	BATcheck(b, __func__, NULL);
+	BATcheck(b, NULL);
 
 	ncand = canditer_init(&ci, b, s);
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 
@@ -1112,23 +1097,22 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r)
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
-	BATcheck(b1, __func__, NULL);
-	BATcheck(b2, __func__, NULL);
+	BATcheck(b1, NULL);
+	BATcheck(b2, NULL);
 
 	if (ATOMtype(b1->ttype) != ATOMtype(b2->ttype)) {
-		GDKerror("%s: inputs have incompatible types\n", __func__);
+		GDKerror("inputs have incompatible types\n");
 		return NULL;
 	}
 
 	ncand = canditer_init(&ci1, b1, s1);
 	if (canditer_init(&ci2, b2, s2) != ncand ||
 	    ci1.hseq != ci2.hseq) {
-		GDKerror("%s: inputs not the same size.\n", __func__);
+		GDKerror("inputs not the same size.\n");
 		return NULL;
 	}
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 
@@ -1198,23 +1182,22 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r)
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
-	BATcheck(b1, __func__, NULL);
-	BATcheck(b2, __func__, NULL);
+	BATcheck(b1, NULL);
+	BATcheck(b2, NULL);
 
 	if (ATOMtype(b1->ttype) != ATOMtype(b2->ttype)) {
-		GDKerror("%s: inputs have incompatible types\n", __func__);
+		GDKerror("inputs have incompatible types\n");
 		return NULL;
 	}
 
 	ncand = canditer_init(&ci1, b1, s1);
 	if (canditer_init(&ci2, b2, s2) != ncand ||
 	    ci1.hseq != ci2.hseq) {
-		GDKerror("%s: inputs not the same size.\n", __func__);
+		GDKerror("inputs not the same size.\n");
 		return NULL;
 	}
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 
@@ -1291,17 +1274,16 @@ BATcalcmincst(BAT *b, const ValRecord *v, BAT *s, BAT *r)
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
-	BATcheck(b, __func__, NULL);
+	BATcheck(b, NULL);
 	if (ATOMtype(b->ttype) != v->vtype) {
-		GDKerror("%s: inputs have incompatible types\n", __func__);
+		GDKerror("inputs have incompatible types\n");
 		return NULL;
 	}
 
 	nil = ATOMnilptr(b->ttype);
 	ncand = canditer_init(&ci, b, s);
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 
@@ -1381,17 +1363,16 @@ BATcalcmincst_no_nil(BAT *b, const ValRecord *v, BAT *s, BAT *r)
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
-	BATcheck(b, __func__, NULL);
+	BATcheck(b, NULL);
 	if (ATOMtype(b->ttype) != v->vtype) {
-		GDKerror("%s: inputs have incompatible types\n", __func__);
+		GDKerror("inputs have incompatible types\n");
 		return NULL;
 	}
 
 	nil = ATOMnilptr(b->ttype);
 	ncand = canditer_init(&ci, b, s);
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 	if (ncand == 0)
@@ -1481,23 +1462,22 @@ BATcalcmax(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r)
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
-	BATcheck(b1, __func__, NULL);
-	BATcheck(b2, __func__, NULL);
+	BATcheck(b1, NULL);
+	BATcheck(b2, NULL);
 
 	if (ATOMtype(b1->ttype) != ATOMtype(b2->ttype)) {
-		GDKerror("%s: inputs have incompatible types\n", __func__);
+		GDKerror("inputs have incompatible types\n");
 		return NULL;
 	}
 
 	ncand = canditer_init(&ci1, b1, s1);
 	if (canditer_init(&ci2, b2, s2) != ncand ||
 	    ci1.hseq != ci2.hseq) {
-		GDKerror("%s: inputs not the same size.\n", __func__);
+		GDKerror("inputs not the same size.\n");
 		return NULL;
 	}
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 
@@ -1567,23 +1547,22 @@ BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r)
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
-	BATcheck(b1, __func__, NULL);
-	BATcheck(b2, __func__, NULL);
+	BATcheck(b1, NULL);
+	BATcheck(b2, NULL);
 
 	if (ATOMtype(b1->ttype) != ATOMtype(b2->ttype)) {
-		GDKerror("%s: inputs have incompatible types\n", __func__);
+		GDKerror("inputs have incompatible types\n");
 		return NULL;
 	}
 
 	ncand = canditer_init(&ci1, b1, s1);
 	if (canditer_init(&ci2, b2, s2) != ncand ||
 	    ci1.hseq != ci2.hseq) {
-		GDKerror("%s: inputs not the same size.\n", __func__);
+		GDKerror("inputs not the same size.\n");
 		return NULL;
 	}
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 
@@ -1665,17 +1644,16 @@ BATcalcmaxcst(BAT *b, const ValRecord *v, BAT *s, BAT *r)
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
-	BATcheck(b, __func__, NULL);
+	BATcheck(b, NULL);
 	if (ATOMtype(b->ttype) != v->vtype) {
-		GDKerror("%s: inputs have incompatible types\n", __func__);
+		GDKerror("inputs have incompatible types\n");
 		return NULL;
 	}
 
 	nil = ATOMnilptr(b->ttype);
 	ncand = canditer_init(&ci, b, s);
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 
@@ -1755,17 +1733,16 @@ BATcalcmaxcst_no_nil(BAT *b, const ValRecord *v, BAT *s, BAT *r)
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
-	BATcheck(b, __func__, NULL);
+	BATcheck(b, NULL);
 	if (ATOMtype(b->ttype) != v->vtype) {
-		GDKerror("%s: inputs have incompatible types\n", __func__);
+		GDKerror("inputs have incompatible types\n");
 		return NULL;
 	}
 
 	nil = ATOMnilptr(b->ttype);
 	ncand = canditer_init(&ci, b, s);
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 	if (ncand == 0)
@@ -3561,18 +3538,17 @@ BATcalcadd(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r, int tp, bool abort_on_err
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
-	BATcheck(b1, __func__, NULL);
-	BATcheck(b2, __func__, NULL);
+	BATcheck(b1, NULL);
+	BATcheck(b2, NULL);
 
 	ncand = canditer_init(&ci1, b1, s1);
 	if (canditer_init(&ci2, b2, s2) != ncand ||
 	    ci1.hseq != ci2.hseq) {
-		GDKerror("%s: inputs not the same size.\n", __func__);
+		GDKerror("inputs not the same size.\n");
 		return NULL;
 	}
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 
@@ -3635,12 +3611,11 @@ BATcalcaddcst(BAT *b, const ValRecord *v, BAT *s, BAT *r, int tp, bool abort_on_
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
-	BATcheck(b, __func__, NULL);
+	BATcheck(b, NULL);
 
 	ncand = canditer_init(&ci, b, s);
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 
@@ -3701,12 +3676,11 @@ BATcalccstadd(const ValRecord *v, BAT *b, BAT *s, BAT *r, int tp, bool abort_on_
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
-	BATcheck(b, __func__, NULL);
+	BATcheck(b, NULL);
 
 	ncand = canditer_init(&ci, b, s);
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 
@@ -3790,12 +3764,11 @@ BATcalcincrdecr(BAT *b, BAT *s, BAT *r, bool abort_on_error,
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
-	BATcheck(b, func, NULL);
+	BATcheck(b, NULL);
 
 	ncand = canditer_init(&ci, b, s);
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 
@@ -5528,18 +5501,17 @@ BATcalcsub(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r, int tp, bool abort_on_err
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
-	BATcheck(b1, __func__, NULL);
-	BATcheck(b2, __func__, NULL);
+	BATcheck(b1, NULL);
+	BATcheck(b2, NULL);
 
 	ncand = canditer_init(&ci1, b1, s1);
 	if (canditer_init(&ci2, b2, s2) != ncand ||
 	    ci1.hseq != ci2.hseq) {
-		GDKerror("%s: inputs not the same size.\n", __func__);
+		GDKerror("inputs not the same size.\n");
 		return NULL;
 	}
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 
@@ -5591,12 +5563,11 @@ BATcalcsubcst(BAT *b, const ValRecord *v, BAT *s, BAT *r, int tp, bool abort_on_
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
-	BATcheck(b, __func__, NULL);
+	BATcheck(b, NULL);
 
 	ncand = canditer_init(&ci, b, s);
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 
@@ -5653,12 +5624,11 @@ BATcalccstsub(const ValRecord *v, BAT *b, BAT *s, BAT *r, int tp, bool abort_on_
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
-	BATcheck(b, __func__, NULL);
+	BATcheck(b, NULL);
 
 	ncand = canditer_init(&ci, b, s);
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 
@@ -7585,8 +7555,8 @@ BATcalcmuldivmod(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r, int tp,
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
-	BATcheck(b1, func, NULL);
-	BATcheck(b2, func, NULL);
+	BATcheck(b1, NULL);
+	BATcheck(b2, NULL);
 
 	ncand = canditer_init(&ci1, b1, s1);
 	if (canditer_init(&ci2, b2, s2) != ncand ||
@@ -7595,8 +7565,7 @@ BATcalcmuldivmod(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r, int tp,
 		return NULL;
 	}
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 
@@ -7654,12 +7623,11 @@ BATcalcmulcst(BAT *b, const ValRecord *v, BAT *s, BAT *r, int tp, bool abort_on_
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
-	BATcheck(b, __func__, NULL);
+	BATcheck(b, NULL);
 
 	ncand = canditer_init(&ci, b, s);
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 
@@ -7726,12 +7694,11 @@ BATcalccstmul(const ValRecord *v, BAT *b, BAT *s, BAT *r, int tp, bool abort_on_
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
-	BATcheck(b, __func__, NULL);
+	BATcheck(b, NULL);
 
 	ncand = canditer_init(&ci, b, s);
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 
@@ -9628,12 +9595,11 @@ BATcalcdivcst(BAT *b, const ValRecord *v, BAT *s, BAT *r, int tp, bool abort_on_
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
-	BATcheck(b, __func__, NULL);
+	BATcheck(b, NULL);
 
 	ncand = canditer_init(&ci, b, s);
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 
@@ -9703,12 +9669,11 @@ BATcalccstdiv(const ValRecord *v, BAT *b, BAT *s, BAT *r, int tp, bool abort_on_
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
-	BATcheck(b, __func__, NULL);
+	BATcheck(b, NULL);
 
 	ncand = canditer_init(&ci, b, s);
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 	if (ncand == 0)
@@ -11174,12 +11139,11 @@ BATcalcmodcst(BAT *b, const ValRecord *v, BAT *s, BAT *r, int tp, bool abort_on_
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
-	BATcheck(b, __func__, NULL);
+	BATcheck(b, NULL);
 
 	ncand = canditer_init(&ci, b, s);
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 
@@ -11231,12 +11195,11 @@ BATcalccstmod(const ValRecord *v, BAT *b, BAT *s, BAT *r, int tp, bool abort_on_
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
-	BATcheck(b, __func__, NULL);
+	BATcheck(b, NULL);
 
 	ncand = canditer_init(&ci, b, s);
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 	bn = COLnew(ci.hseq, tp, ncand, TRANSIENT);
@@ -11370,23 +11333,22 @@ BATcalcxor(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r)
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
-	BATcheck(b1, __func__, NULL);
-	BATcheck(b2, __func__, NULL);
+	BATcheck(b1, NULL);
+	BATcheck(b2, NULL);
 
 	if (ATOMbasetype(b1->ttype) != ATOMbasetype(b2->ttype)) {
-		GDKerror("%s: incompatible input types.\n", __func__);
+		GDKerror("incompatible input types.\n");
 		return NULL;
 	}
 
 	ncand = canditer_init(&ci1, b1, s1);
 	if (canditer_init(&ci2, b2, s2) != ncand ||
 	    ci1.hseq != ci2.hseq) {
-		GDKerror("%s: inputs not the same size.\n", __func__);
+		GDKerror("inputs not the same size.\n");
 		return NULL;
 	}
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 
@@ -11441,17 +11403,16 @@ BATcalcxorcst(BAT *b, const ValRecord *v, BAT *s, BAT *r)
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
-	BATcheck(b, __func__, NULL);
+	BATcheck(b, NULL);
 
 	if (ATOMbasetype(b->ttype) != ATOMbasetype(v->vtype)) {
-		GDKerror("%s: incompatible input types.\n", __func__);
+		GDKerror("incompatible input types.\n");
 		return NULL;
 	}
 
 	ncand = canditer_init(&ci, b, s);
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 
@@ -11502,7 +11463,7 @@ gdk_return
 VARcalcxor(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 {
 	if (ATOMbasetype(lft->vtype) != ATOMbasetype(rgt->vtype)) {
-		GDKerror("VARcalccstxor: incompatible input types.\n");
+		GDKerror("incompatible input types.\n");
 		return GDK_FAIL;
 	}
 
@@ -11605,23 +11566,22 @@ BATcalcor(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r)
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
-	BATcheck(b1, __func__, NULL);
-	BATcheck(b2, __func__, NULL);
+	BATcheck(b1, NULL);
+	BATcheck(b2, NULL);
 
 	if (ATOMbasetype(b1->ttype) != ATOMbasetype(b2->ttype)) {
-		GDKerror("%s: incompatible input types.\n", __func__);
+		GDKerror("incompatible input types.\n");
 		return NULL;
 	}
 
 	ncand = canditer_init(&ci1, b1, s1);
 	if (canditer_init(&ci2, b2, s2) != ncand ||
 	    ci1.hseq != ci2.hseq) {
-		GDKerror("%s: inputs not the same size.\n", __func__);
+		GDKerror("inputs not the same size.\n");
 		return NULL;
 	}
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 
@@ -11674,17 +11634,16 @@ BATcalcorcst(BAT *b, const ValRecord *v, BAT *s, BAT *r)
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
-	BATcheck(b, __func__, NULL);
+	BATcheck(b, NULL);
 
 	if (ATOMbasetype(b->ttype) != ATOMbasetype(v->vtype)) {
-		GDKerror("%s: incompatible input types.\n", __func__);
+		GDKerror("incompatible input types.\n");
 		return NULL;
 	}
 
 	ncand = canditer_init(&ci, b, s);
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 
@@ -11735,7 +11694,7 @@ gdk_return
 VARcalcor(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 {
 	if (ATOMbasetype(lft->vtype) != ATOMbasetype(rgt->vtype)) {
-		GDKerror("VARcalccstor: incompatible input types.\n");
+		GDKerror("incompatible input types.\n");
 		return GDK_FAIL;
 	}
 
@@ -11838,23 +11797,22 @@ BATcalcand(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r)
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
-	BATcheck(b1, __func__, NULL);
-	BATcheck(b2, __func__, NULL);
+	BATcheck(b1, NULL);
+	BATcheck(b2, NULL);
 
 	if (ATOMbasetype(b1->ttype) != ATOMbasetype(b2->ttype)) {
-		GDKerror("%s: incompatible input types.\n", __func__);
+		GDKerror("incompatible input types.\n");
 		return NULL;
 	}
 
 	ncand = canditer_init(&ci1, b1, s1);
 	if (canditer_init(&ci2, b2, s2) != ncand ||
 	    ci1.hseq != ci2.hseq) {
-		GDKerror("%s: inputs not the same size.\n", __func__);
+		GDKerror("inputs not the same size.\n");
 		return NULL;
 	}
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 
@@ -11907,17 +11865,16 @@ BATcalcandcst(BAT *b, const ValRecord *v, BAT *s, BAT *r)
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
-	BATcheck(b, __func__, NULL);
+	BATcheck(b, NULL);
 
 	if (ATOMbasetype(b->ttype) != ATOMbasetype(v->vtype)) {
-		GDKerror("%s: incompatible input types.\n", __func__);
+		GDKerror("incompatible input types.\n");
 		return NULL;
 	}
 
 	ncand = canditer_init(&ci, b, s);
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 
@@ -11968,7 +11925,7 @@ gdk_return
 VARcalcand(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 {
 	if (ATOMbasetype(lft->vtype) != ATOMbasetype(rgt->vtype)) {
-		GDKerror("VARcalccstand: incompatible input types.\n");
+		GDKerror("incompatible input types.\n");
 		return GDK_FAIL;
 	}
 
@@ -12186,18 +12143,17 @@ BATcalclsh(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r, bool abort_on_error)
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
-	BATcheck(b1, __func__, NULL);
-	BATcheck(b2, __func__, NULL);
+	BATcheck(b1, NULL);
+	BATcheck(b2, NULL);
 
 	ncand = canditer_init(&ci1, b1, s1);
 	if (canditer_init(&ci2, b2, s2) != ncand ||
 	    ci1.hseq != ci2.hseq) {
-		GDKerror("%s: inputs not the same size.\n", __func__);
+		GDKerror("inputs not the same size.\n");
 		return NULL;
 	}
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 
@@ -12248,12 +12204,11 @@ BATcalclshcst(BAT *b, const ValRecord *v, BAT *s, BAT *r, bool abort_on_error)
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
-	BATcheck(b, __func__, NULL);
+	BATcheck(b, NULL);
 
 	ncand = canditer_init(&ci, b, s);
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 
@@ -12305,12 +12260,11 @@ BATcalccstlsh(const ValRecord *v, BAT *b, BAT *s, BAT *r, bool abort_on_error)
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
-	BATcheck(b, __func__, NULL);
+	BATcheck(b, NULL);
 
 	ncand = canditer_init(&ci, b, s);
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 
@@ -12553,18 +12507,17 @@ BATcalcrsh(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r, bool abort_on_error)
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
-	BATcheck(b1, __func__, NULL);
-	BATcheck(b2, __func__, NULL);
+	BATcheck(b1, NULL);
+	BATcheck(b2, NULL);
 
 	ncand = canditer_init(&ci1, b1, s1);
 	if (canditer_init(&ci2, b2, s2) != ncand ||
 	    ci1.hseq != ci2.hseq) {
-		GDKerror("%s: inputs not the same size.\n", __func__);
+		GDKerror("inputs not the same size.\n");
 		return NULL;
 	}
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 
@@ -12615,12 +12568,11 @@ BATcalcrshcst(BAT *b, const ValRecord *v, BAT *s, BAT *r, bool abort_on_error)
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
-	BATcheck(b, __func__, NULL);
+	BATcheck(b, NULL);
 
 	ncand = canditer_init(&ci, b, s);
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 
@@ -12672,12 +12624,11 @@ BATcalccstrsh(const ValRecord *v, BAT *b, BAT *s, BAT *r, bool abort_on_error)
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
-	BATcheck(b, __func__, NULL);
+	BATcheck(b, NULL);
 
 	ncand = canditer_init(&ci, b, s);
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 
@@ -13119,24 +13070,23 @@ BATcalcbetween(BAT *b, BAT *lo, BAT *hi, BAT *s, BAT *slo, BAT *shi, BAT *r,
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
-	BATcheck(b, __func__, NULL);
-	BATcheck(lo, __func__, NULL);
-	BATcheck(hi, __func__, NULL);
+	BATcheck(b, NULL);
+	BATcheck(lo, NULL);
+	BATcheck(hi, NULL);
 
 	ncand = canditer_init(&ci, b, s);
 	if (canditer_init(&cilo, lo, slo) != ncand ||
 	    ci.hseq != cilo.hseq) {
-		GDKerror("%s: inputs not the same size.\n", __func__);
+		GDKerror("inputs not the same size.\n");
 		return NULL;
 	}
 	if (canditer_init(&cihi, hi, shi) != ncand ||
 	    ci.hseq != cihi.hseq) {
-		GDKerror("%s: inputs not the same size.\n", __func__);
+		GDKerror("inputs not the same size.\n");
 		return NULL;
 	}
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 
@@ -13188,18 +13138,17 @@ BATcalcbetweencstcst(BAT *b, const ValRecord *lo, const ValRecord *hi,
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
-	BATcheck(b, __func__, NULL);
+	BATcheck(b, NULL);
 
 	if (ATOMbasetype(b->ttype) != ATOMbasetype(lo->vtype) ||
 	    ATOMbasetype(b->ttype) != ATOMbasetype(hi->vtype)) {
-		GDKerror("%s: incompatible input types.\n", __func__);
+		GDKerror("incompatible input types.\n");
 		return NULL;
 	}
 
 	canditer_init(&ci, b, s);
 	if (r && (BATcount(r) != ci.ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 
@@ -13238,26 +13187,25 @@ BATcalcbetweenbatcst(BAT *b, BAT *lo, const ValRecord *hi, BAT *s, BAT *slo, BAT
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
-	BATcheck(b, __func__, NULL);
-	BATcheck(lo, __func__, NULL);
+	BATcheck(b, NULL);
+	BATcheck(lo, NULL);
 
 	if (checkbats(b, lo, __func__) != GDK_SUCCEED)
 		return NULL;
 
 	if (ATOMbasetype(b->ttype) != ATOMbasetype(hi->vtype)) {
-		GDKerror("%s: incompatible input types.\n", __func__);
+		GDKerror("incompatible input types.\n");
 		return NULL;
 	}
 
 	ncand = canditer_init(&ci, b, s);
 	if (canditer_init(&cilo, lo, slo) != ncand ||
 	    ci.hseq != cilo.hseq) {
-		GDKerror("%s: inputs not the same size.\n", __func__);
+		GDKerror("inputs not the same size.\n");
 		return NULL;
 	}
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 
@@ -13301,23 +13249,22 @@ BATcalcbetweencstbat(BAT *b, const ValRecord *lo, BAT *hi, BAT *s, BAT *shi, BAT
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
-	BATcheck(b, __func__, NULL);
-	BATcheck(hi, __func__, NULL);
+	BATcheck(b, NULL);
+	BATcheck(hi, NULL);
 
 	if (ATOMbasetype(b->ttype) != ATOMbasetype(lo->vtype)) {
-		GDKerror("%s: incompatible input types.\n", __func__);
+		GDKerror("incompatible input types.\n");
 		return NULL;
 	}
 
 	ncand = canditer_init(&ci, b, s);
 	if (canditer_init(&cihi, hi, shi) != ncand ||
 	    ci.hseq != cihi.hseq) {
-		GDKerror("%s: inputs not the same size.\n", __func__);
+		GDKerror("inputs not the same size.\n");
 		return NULL;
 	}
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 
@@ -13359,11 +13306,11 @@ VARcalcbetween(ValPtr ret, const ValRecord *v, const ValRecord *lo,
 
 	t = v->vtype;
 	if (t != lo->vtype || t != hi->vtype) {
-		GDKerror("VARcalcbetween: incompatible input types.\n");
+		GDKerror("incompatible input types.\n");
 		return GDK_FAIL;
 	}
 	if (!ATOMlinear(t)) {
-		GDKerror("VARcalcbetween: non-linear input type.\n");
+		GDKerror("non-linear input type.\n");
 		return GDK_FAIL;
 	}
 
@@ -13563,16 +13510,16 @@ BATcalcifthenelse(BAT *b, BAT *b1, BAT *b2)
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
-	BATcheck(b, __func__, NULL);
-	BATcheck(b1, __func__, NULL);
-	BATcheck(b2, __func__, NULL);
+	BATcheck(b, NULL);
+	BATcheck(b1, NULL);
+	BATcheck(b2, NULL);
 
 	if (checkbats(b, b1, __func__) != GDK_SUCCEED)
 		return NULL;
 	if (checkbats(b, b2, __func__) != GDK_SUCCEED)
 		return NULL;
 	if (b->ttype != TYPE_bit || ATOMtype(b1->ttype) != ATOMtype(b2->ttype)) {
-		GDKerror("%s: \"then\" and \"else\" BATs have different types.\n", __func__);
+		GDKerror("\"then\" and \"else\" BATs have different types.\n");
 		return NULL;
 	}
 	bn = BATcalcifthenelse_intern(b,
@@ -13596,14 +13543,14 @@ BATcalcifthenelsecst(BAT *b, BAT *b1, const ValRecord *c2)
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
-	BATcheck(b, __func__, NULL);
-	BATcheck(b1, __func__, NULL);
-	BATcheck(c2, __func__, NULL);
+	BATcheck(b, NULL);
+	BATcheck(b1, NULL);
+	BATcheck(c2, NULL);
 
 	if (checkbats(b, b1, __func__) != GDK_SUCCEED)
 		return NULL;
 	if (b->ttype != TYPE_bit || ATOMtype(b1->ttype) != ATOMtype(c2->vtype)) {
-		GDKerror("%s: \"then\" and \"else\" BATs have different types.\n", __func__);
+		GDKerror("\"then\" and \"else\" BATs have different types.\n");
 		return NULL;
 	}
 	bn = BATcalcifthenelse_intern(b,
@@ -13627,14 +13574,14 @@ BATcalcifthencstelse(BAT *b, const ValRecord *c1, BAT *b2)
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
-	BATcheck(b, __func__, NULL);
-	BATcheck(c1, __func__, NULL);
-	BATcheck(b2, __func__, NULL);
+	BATcheck(b, NULL);
+	BATcheck(c1, NULL);
+	BATcheck(b2, NULL);
 
 	if (checkbats(b, b2, __func__) != GDK_SUCCEED)
 		return NULL;
 	if (b->ttype != TYPE_bit || ATOMtype(b2->ttype) != ATOMtype(c1->vtype)) {
-		GDKerror("%s: \"then\" and \"else\" BATs have different types.\n", __func__);
+		GDKerror("\"then\" and \"else\" BATs have different types.\n");
 		return NULL;
 	}
 	bn = BATcalcifthenelse_intern(b,
@@ -13658,12 +13605,12 @@ BATcalcifthencstelsecst(BAT *b, const ValRecord *c1, const ValRecord *c2)
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
-	BATcheck(b, __func__, NULL);
-	BATcheck(c1, __func__, NULL);
-	BATcheck(c2, __func__, NULL);
+	BATcheck(b, NULL);
+	BATcheck(c1, NULL);
+	BATcheck(c2, NULL);
 
 	if (b->ttype != TYPE_bit || ATOMtype(c1->vtype) != ATOMtype(c2->vtype)) {
-		GDKerror("%s: \"then\" and \"else\" BATs have different types.\n", __func__);
+		GDKerror("\"then\" and \"else\" BATs have different types.\n");
 		return NULL;
 	}
 	bn = BATcalcifthenelse_intern(b,
@@ -14245,9 +14192,19 @@ convert_str_any(BAT *b, int tp, void *restrict dst,
 			    l < (ssize_t) strlen(s)) {
 				if (abort_on_error) {
 					GDKclrerr();
-					GDKerror("22018!conversion of string "
-						 "'%s' to type %s failed.\n",
-						 s, ATOMname(tp));
+					size_t sz = escapedStrlen(s, NULL, NULL, '\'');
+					char *bf = GDKmalloc(sz + 1);
+					if (bf) {
+						escapedStr(bf, s, sz + 1, NULL, NULL, '\'');
+						GDKerror("22018!conversion of string "
+							 "'%s' to type %s failed.\n",
+							 bf, ATOMname(tp));
+						GDKfree(bf);
+					} else {
+						GDKerror("22018!conversion of string "
+							 "to type %s failed.\n",
+							 ATOMname(tp));
+					}
 					return BUN_NONE;
 				}
 				memcpy(dst, nil, len);
@@ -14710,15 +14667,14 @@ BATconvert(BAT *b, BAT *s, BAT *r, int tp, bool abort_on_error)
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
-	BATcheck(b, __func__, NULL);
+	BATcheck(b, NULL);
 	if (tp == TYPE_void)
 		tp = TYPE_oid;
 
 	cnt = BATcount(b);
 	ncand = canditer_init(&ci, b, s);
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 	if (ncand == 0 || (b->ttype == TYPE_void && is_oid_nil(b->tseqbase)))
@@ -14733,7 +14689,7 @@ BATconvert(BAT *b, BAT *s, BAT *r, int tp, bool abort_on_error)
 		return COLcopy(b, tp, false, TRANSIENT);
 	}
 	if (ATOMstorage(tp) == TYPE_ptr) {
-		GDKerror("BATconvert: type combination (convert(%s)->%s) "
+		GDKerror("type combination (convert(%s)->%s) "
 			 "not supported.\n",
 			 ATOMname(b->ttype), ATOMname(tp));
 		return NULL;
@@ -14763,11 +14719,11 @@ BATconvert(BAT *b, BAT *s, BAT *r, int tp, bool abort_on_error)
 	if (nils >= BUN_NONE) {
 		BBPunfix(bn->batCacheid);
 		if (nils == BUN_NONE + 1) {
-			GDKerror("%s: type combination (convert(%s)->%s) "
-				 "not supported.\n", __func__,
+			GDKerror("type combination (convert(%s)->%s) "
+				 "not supported.\n",
 				 ATOMname(b->ttype), ATOMname(tp));
 		} else if (nils == BUN_NONE + 2) {
-			GDKerror("%s: could not insert value into BAT.\n", __func__);
+			GDKerror("could not insert value into BAT.\n");
 		}
 		return NULL;
 	}
@@ -14862,9 +14818,19 @@ VARconvert(ValPtr ret, const ValRecord *v, bool abort_on_error)
 				if (ATOMextern(ret->vtype))
 					GDKfree(p);
 				GDKclrerr();
-				GDKerror("22018!conversion of string "
-					 "'%s' to type %s failed.\n",
-					 v->val.sval, ATOMname(ret->vtype));
+				size_t sz = escapedStrlen(v->val.sval, NULL, NULL, '\'');
+				char *bf = GDKmalloc(sz + 1);
+				if (bf) {
+					escapedStr(bf, v->val.sval, sz + 1, NULL, NULL, '\'');
+					GDKerror("22018!conversion of string "
+						 "'%s' to type %s failed.\n",
+						 bf, ATOMname(ret->vtype));
+					GDKfree(bf);
+				} else {
+					GDKerror("22018!conversion of string "
+						 "to type %s failed.\n",
+						 ATOMname(ret->vtype));
+				}
 				nils = BUN_NONE;
 			} else {
 				/* now give value obtained to ret */
@@ -14883,7 +14849,7 @@ VARconvert(ValPtr ret, const ValRecord *v, bool abort_on_error)
 					      0, abort_on_error, &reduce);
 	}
 	if (nils == BUN_NONE + 1) {
-		GDKerror("VARconvert: conversion from type %s to type %s "
+		GDKerror("conversion from type %s to type %s "
 			 "unsupported.\n",
 			 ATOMname(v->vtype), ATOMname(ret->vtype));
 		return GDK_FAIL;

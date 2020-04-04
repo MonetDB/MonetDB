@@ -170,7 +170,9 @@ This property specifies which TCP port
 should listen to for connection requests.  Defaults to 50000.
 .TP
 .B ipv6
-This property forces monetdbd to bind connections on IPv6 addresses only.
+This property forces
+.I monetdbd
+to bind connections on IPv6 addresses only.
 Defaults to false.
 .TP
 .B listenaddr

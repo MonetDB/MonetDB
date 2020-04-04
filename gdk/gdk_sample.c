@@ -98,8 +98,8 @@ do_batsample(BAT *b, BUN n, random_state_engine rse, MT_Lock *lock)
 	BUN rescnt;
 	struct oidtreenode *tree = NULL;
 
-	BATcheck(b, "BATsample", NULL);
-	ERRORcheck(n > BUN_MAX, "BATsample: sample size larger than BUN_MAX\n", NULL);
+	BATcheck(b, NULL);
+	ERRORcheck(n > BUN_MAX, "sample size larger than BUN_MAX\n", NULL);
 	cnt = BATcount(b);
 	/* empty sample size */
 	if (n == 0) {

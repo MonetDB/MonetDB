@@ -1008,12 +1008,14 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	} vl, vh;
 	lng t0 = GDKusec();
 
-	BATcheck(b, "BATselect", NULL);
-	BATcheck(tl, "BATselect: tl value required", NULL);
+	BATcheck(b, NULL);
+	if (tl == NULL) {
+		GDKerror("tl value required");
+		return NULL;
+	}
 
 	if (s && !BATtordered(s)) {
-		GDKerror("BATselect: invalid argument: "
-			 "s must be sorted.\n");
+		GDKerror("invalid argument: s must be sorted.\n");
 		return NULL;
 	}
 
@@ -1652,9 +1654,9 @@ BATthetaselect(BAT *b, BAT *s, const void *val, const char *op)
 {
 	const void *nil;
 
-	BATcheck(b, "BATthetaselect", NULL);
-	BATcheck(val, "BATthetaselect", NULL);
-	BATcheck(op, "BATthetaselect", NULL);
+	BATcheck(b, NULL);
+	BATcheck(val, NULL);
+	BATcheck(op, NULL);
 
 	nil = ATOMnilptr(b->ttype);
 	if (ATOMcmp(b->ttype, val, nil) == 0)
@@ -1691,7 +1693,7 @@ BATthetaselect(BAT *b, BAT *s, const void *val, const char *op)
 			return BATselect(b, s, val, nil, true, false, false);
 		}
 	}
-	GDKerror("BATthetaselect: unknown operator.\n");
+	GDKerror("unknown operator.\n");
 	return NULL;
 }
 
@@ -2180,7 +2182,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 			}
 			default:
 				ncnt = BUN_NONE;
-				GDKerror("BATrangejoin: unsupported type\n");
+				GDKerror("unsupported type\n");
 				assert(0);
 			}
 			if (ncnt == BUN_NONE)

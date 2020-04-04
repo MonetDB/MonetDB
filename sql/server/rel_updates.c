@@ -2007,7 +2007,7 @@ rel_parse_val(mvc *m, char *query, char emode, sql_rel *from)
 	m->user_id = USER_MONETDB;
 
 	(void) sqlparse(m);	
-	
+
 	/* get out the single value as we don't want an enclosing projection! */
 	if (m->sym && m->sym->token == SQL_SELECT) {
 		SelectNode *sn = (SelectNode *)m->sym;
@@ -2025,18 +2025,21 @@ rel_parse_val(mvc *m, char *query, char emode, sql_rel *from)
 	m->sym = NULL;
 	o.vars = m->vars;	/* may have been realloc'ed */
 	o.sizevars = m->sizevars;
+	o.query = m->query;
 	if (m->session->status || m->errstr[0]) {
 		int status = m->session->status;
-		char errstr[ERRSIZE];
 
-		strcpy(errstr, m->errstr);
+		strcpy(o.errstr, m->errstr);
 		*m = o;
 		m->session->status = status;
-		strcpy(m->errstr, errstr);
 	} else {
 		int label = m->label;
-		*m = o;
 
+		while (m->topvars > o.topvars) {
+			if (m->vars[--m->topvars].name)
+				c_delete(m->vars[m->topvars].name);
+		}
+		*m = o;
 		m->label = label;
 	}
 	return e;

@@ -20,3 +20,17 @@ int MT_kill_thread(MT_Id t)
 	__attribute__((__visibility__("hidden")));
 bool MT_thread_override_limits(void)
 	__attribute__((__visibility__("hidden")));
+#ifdef NATIVE_WIN32
+#define GDKwinerror(format, ...)					\
+	do {								\
+		char _osmsgbuf[128];					\
+		FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL,		\
+			      GetLastError(),				\
+			      MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), \
+			      (LPTSTR) _osmsgbuf, sizeof(_osmsgbuf),	\
+			      NULL);					\
+		GDKtracer_log(__FILE__, __func__, __LINE__, M_CRITICAL,	\
+			      GDK, _osmsgbuf, format, ##__VA_ARGS__);	\
+		SetLastError(0);					\
+	} while (0)
+#endif

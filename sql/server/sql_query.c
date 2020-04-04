@@ -8,6 +8,7 @@
 
 #include "monetdb_config.h"
 #include "sql_query.h"
+#include "rel_rel.h"
 
 static stacked_query *
 sq_create( sql_allocator *sa, sql_rel *rel, int sql_state)
@@ -19,7 +20,8 @@ sq_create( sql_allocator *sa, sql_rel *rel, int sql_state)
 	q->sql_state = sql_state;
 	q->last_used = NULL;
 	q->used_card = 0;
-	q->groupby = 0;
+	q->grouped = is_groupby(rel->op);
+	q->groupby = 0; /* not used for groupby of inner */
 	return q;
 }
 
@@ -74,6 +76,7 @@ query_update_outer(sql_query *q, sql_rel *r, int i)
 	sq->rel = r;
 	sq->last_used = NULL;
 	sq->used_card = 0;
+	sq->grouped = is_groupby(r->op);
 }
 
 int 
@@ -83,18 +86,42 @@ query_has_outer(sql_query *q)
 }
 
 int
-query_outer_used_exp(sql_query *q, int i, sql_exp *e, bool aggr)
+query_outer_used_exp(sql_query *q, int i, sql_exp *e, int f)
 {
 	stacked_query *sq = sql_stack_fetch(q->outer, i);
 
-	if (aggr && sq->groupby)
+	if (is_sql_aggr(f) && !is_sql_farg(f) && sq->groupby) /* cannot user outer both for inner groupby and aggregation */
 		return -1;
+	if (is_sql_groupby(f))
+		sq->groupby = 1;
+
+	if (is_sql_aggr(f) && !is_sql_farg(f) && sq->groupby && sq->last_used && sq->used_card > CARD_AGGR) /* used full relation */
+		return -1;
+	if (!is_sql_aggr(f) && sq->grouped && e->card > CARD_AGGR)
+		return -1;
+
 	sq->last_used = e;
 	sq->used_card = sq->rel->card;
-	if (!aggr)
-		sq->groupby = 1;
+	assert( (!is_sql_aggr(f) && sq->grouped == 0 && e->card > CARD_AGGR) || /* outer is a none grouped relation */
+		(!is_sql_aggr(f) && sq->grouped == 1 && e->card <= CARD_AGGR) || /* outer is groupbed, ie only return aggregations or groupby cols */
+		(is_sql_aggr(f) && !is_sql_farg(f) && !sq->grouped && e->card > CARD_AGGR) || /* a column to be aggregated */
+		(is_sql_aggr(f) && !is_sql_farg(f) && sq->grouped && e->card > CARD_AGGR) || /* a column to be aggregated */
+		(is_sql_aggr(f) && is_sql_farg(f) && sq->grouped && e->card <= CARD_AGGR) ||  /* groupby ( function (group by col)) */
+		(is_sql_aggr(f) && sq->grouped && e->card <= CARD_AGGR) ); /* nested aggregations is handled later */
 	return 0;
 }
+
+int
+query_outer_aggregated(sql_query *q, int i, sql_exp *e)
+{
+	stacked_query *sq = sql_stack_fetch(q->outer, i);
+
+	assert(sq->grouped);
+	sq->last_used = e;
+	sq->used_card = sq->rel->card;
+	return 0;
+}
+
 
 int
 query_outer_used_card(sql_query *q, int i)

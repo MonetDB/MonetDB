@@ -3079,7 +3079,7 @@ bandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				       false, false, __func__, t0);
 		break;
 	default:
-		GDKerror("BATbandjoin: unsupported type\n");
+		GDKerror("unsupported type\n");
 		return GDK_FAIL;
 	}
 
@@ -3751,7 +3751,7 @@ BATthetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int op, boo
 		opcode = MASK_GE;
 		break;
 	default:
-		GDKerror("BATthetajoin: unknown operator %d.\n", op);
+		GDKerror("unknown operator %d.\n", op);
 		return GDK_FAIL;
 	}
 

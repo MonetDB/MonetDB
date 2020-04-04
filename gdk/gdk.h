@@ -1413,10 +1413,17 @@ gdk_export BAT *BBPquickdesc(bat b, bool delaccess);
 
 /* Data Distilleries uses ICU for internationalization of some MonetDB error messages */
 
-gdk_export void GDKerror(_In_z_ _Printf_format_string_ const char *format, ...)
-	__attribute__((__format__(__printf__, 1, 2)));
-gdk_export void GDKsyserror(_In_z_ _Printf_format_string_ const char *format, ...)
-	__attribute__((__format__(__printf__, 1, 2)));
+#include "gdk_tracer.h"
+
+#define GDKerror(format, ...)					\
+	GDKtracer_log(__FILE__, __func__, __LINE__, M_ERROR,	\
+		      GDK, NULL, format, ##__VA_ARGS__)
+#define GDKsyserr(errno, format, ...)					\
+	GDKtracer_log(__FILE__, __func__, __LINE__, M_CRITICAL,		\
+		      GDK, GDKstrerror(errno, (char[64]){0}, 64),	\
+		      format, ##__VA_ARGS__)
+#define GDKsyserror(format, ...)	GDKsyserr(errno, format, ##__VA_ARGS__)
+
 #ifndef HAVE_EMBEDDED
 gdk_export _Noreturn void GDKfatal(_In_z_ _Printf_format_string_ const char *format, ...)
 	__attribute__((__format__(__printf__, 1, 2)));
@@ -1612,7 +1619,7 @@ bunfastappVAR(BAT *b, const void *v)
 {
 	if (BATcount(b) >= BATcapacity(b)) {
 		if (BATcount(b) == BUN_MAX) {
-			GDKerror("bunfastapp: too many elements to accommodate (" BUNFMT ")\n", BUN_MAX);
+			GDKerror("too many elements to accommodate (" BUNFMT ")\n", BUN_MAX);
 			return GDK_FAIL;
 		}
 		gdk_return rc = BATextend(b, BATgrows(b));
@@ -1645,7 +1652,6 @@ gdk_export gdk_return BATorderidx(BAT *b, bool stable);
 gdk_export gdk_return GDKmergeidx(BAT *b, BAT**a, int n_ar);
 gdk_export bool BATcheckorderidx(BAT *b);
 
-#include "gdk_tracer.h"
 #include "gdk_delta.h"
 #include "gdk_hash.h"
 #include "gdk_bbp.h"
@@ -1930,12 +1936,12 @@ gdk_export void BATassertProps(BAT *b);
 gdk_export BAT *VIEWcreate(oid seq, BAT *b);
 gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
 
-#define ALIGNapp(x, y, f, e)						\
+#define ALIGNapp(x, f, e)						\
 	do {								\
 		if (!(f) && ((x)->batRestricted == BAT_READ ||		\
 			     (x)->batSharecnt > 0)) {			\
-			GDKerror("%s: access denied to %s, aborting.\n", \
-				 (y), BATgetId(x));			\
+			GDKerror("access denied to %s, aborting.\n",	\
+				 BATgetId(x));				\
 			return (e);					\
 		}							\
 	} while (false)

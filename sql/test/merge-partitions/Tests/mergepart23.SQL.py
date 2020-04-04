@@ -45,6 +45,8 @@ SELECT "minimum", "maximum" FROM range_partitions;
 
 script2 = '''
 SELECT "minimum", "maximum" FROM range_partitions;
+DROP TABLE subtable1; --error, subtable1 is a child of testme
+DROP TABLE subtable3; --error, subtable3 is a child of anothertest
 ALTER TABLE anothertest ADD TABLE subtable1 AS PARTITION FROM 11 TO 20; --error, subtable1 is part of another table
 SELECT "minimum", "maximum" FROM range_partitions;
 '''
@@ -64,6 +66,8 @@ ALTER TABLE testme DROP TABLE subtable5;
 ALTER TABLE anothertest DROP TABLE subtable3;
 ALTER TABLE anothertest DROP TABLE subtable4;
 SELECT "minimum", "maximum" FROM range_partitions;
+ALTER TABLE testme DROP COLUMN "a"; --error, a is a partition column
+ALTER TABLE anothertest DROP COLUMN "a"; --error, a is used on partition expression
 DROP TABLE testme;
 DROP TABLE subtable1;
 DROP TABLE subtable2;

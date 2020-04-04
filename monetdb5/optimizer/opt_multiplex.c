@@ -60,7 +60,13 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if(mod == NULL || fcn == NULL)
 		throw(MAL, "optimizer.multiplex", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
-	TRC_WARNING(MAL_OPTIMIZER, "To speedup %s.%s a bulk operator implementation is needed\n", mod, fcn);
+#ifndef NDEBUG
+	TRC_WARNING_IF(MAL_OPTIMIZER) {
+		char *ps = instruction2str(mb, stk, pci, LIST_MAL_DEBUG);
+		TRC_WARNING_ENDIF(MAL_OPTIMIZER, "To speedup %s.%s a bulk operator implementation is needed%s%s\n", mod, fcn, ps ? " for " : "", ps ? ps : "");
+		GDKfree(ps);
+	}
+#endif
 
 	/* search the iterator bat */
 	for (i = pci->retc+2; i < pci->argc; i++)

@@ -168,11 +168,6 @@ gdk_return GDKssort(void *restrict h, void *restrict t, const void *restrict bas
 	__attribute__((__visibility__("hidden")));
 gdk_return GDKunlink(int farmid, const char *dir, const char *nme, const char *extension)
 	__attribute__((__visibility__("hidden")));
-#ifdef NATIVE_WIN32
-void GDKwinerror(_In_z_ _Printf_format_string_ const char *format, ...)
-	__attribute__((__format__(__printf__, 1, 2)))
-	__attribute__((__visibility__("hidden")));
-#endif
 void HASHfree(BAT *b)
 	__attribute__((__visibility__("hidden")));
 bool HASHgonebad(BAT *b, const void *v)
@@ -344,15 +339,12 @@ extern MT_Lock GDKnameLock;
 extern MT_Lock GDKthreadLock;
 extern MT_Lock GDKtmLock;
 
-#define BATcheck(tst, msg, err)						\
-	do {								\
-		if ((tst) == NULL) {					\
-			if (strchr((msg), ':'))				\
-				GDKerror("%s.\n", (msg));		\
-			else						\
-				GDKerror("%s: BAT required.\n", (msg));	\
-			return (err);					\
-		}							\
+#define BATcheck(tst, err)				\
+	do {						\
+		if ((tst) == NULL) {			\
+			GDKerror("BAT required.\n");	\
+			return (err);			\
+		}					\
 	} while (0)
 #define ERRORcheck(tst,	msg, err)		\
 	do {					\

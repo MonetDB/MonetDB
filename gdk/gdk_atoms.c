@@ -178,7 +178,7 @@ ATOMallocate(const char *id)
 	int t;
 
 	if (strlen(id) >= IDLENGTH) {
-		GDKerror("ATOMallocate: name too long");
+		GDKerror("name too long");
 		return int_nil;
 	}
 
@@ -189,7 +189,7 @@ ATOMallocate(const char *id)
 		if (t == GDKatomcnt) {
 			if (GDKatomcnt == MAXATOMS) {
 				MT_lock_unset(&GDKthreadLock);
-				GDKerror("ATOMallocate: too many types");
+				GDKerror("too many types");
 				return int_nil;
 			}
 			GDKatomcnt++;
