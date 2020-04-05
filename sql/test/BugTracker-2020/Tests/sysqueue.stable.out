@@ -9,32 +9,32 @@ stdout of test 'sysqueue` in directory 'sql/test/BugTracker-2020` itself:
 % .%2 # table_name
 % %2 # name
 % bigint # type
-% 1 # length
-[ 4	]
+% 2 # length
+[ 68	]
 #select count(*) from sys.queue();
 % .%2 # table_name
 % %2 # name
 % bigint # type
-% 1 # length
-[ 4	]
+% 2 # length
+[ 69	]
 #select count(*) from sys.queue();
 % .%2 # table_name
 % %2 # name
 % bigint # type
-% 1 # length
-[ 4	]
+% 2 # length
+[ 70	]
 #select count(*) from sys.queue();
 % .%2 # table_name
 % %2 # name
 % bigint # type
-% 1 # length
-[ 4	]
+% 2 # length
+[ 71	]
 #select count(*) from sys.queue() where query = 'select count(*) from sys.queue();';
 % .%2 # table_name
 % %2 # name
 % bigint # type
 % 1 # length
-[ 3	]
+[ 4	]
 
 # 16:51:46 >  
 # 16:51:46 >  "Done."
