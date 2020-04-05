@@ -153,13 +153,6 @@ typedef struct logformat_t {
 
 typedef enum {LOG_OK, LOG_EOF, LOG_ERR} log_return;
 
-#include "gdk_geomlogger.h"
-
-/* When reading an old format database, we may need to read the geom
- * Well-known Binary (WKB) type differently.  This variable is used to
- * indicate that to the function wkbREAD during reading of the log. */
-static bool geomisoldversion;
-
 static gdk_return bm_commit(logger *lg);
 static gdk_return tr_grow(trans *tr);
 
@@ -404,68 +397,6 @@ log_read_id(logger *lg, char *tpe, oid *id)
 	return LOG_OK;
 }
 
-#ifdef GDKLIBRARY_OLDDATE
-static void *
-dateRead(void *dst, stream *s, size_t cnt)
-{
-	int *ptr;
-
-	if ((ptr = BATatoms[TYPE_int].atomRead(dst, s, cnt)) == NULL)
-		return NULL;
-	for (size_t i = 0; i < cnt; i++) {
-		if (!is_int_nil(ptr[i]))
-			ptr[i] = cvtdate(ptr[i]);
-	}
-	return ptr;
-}
-
-static void *
-daytimeRead(void *dst, stream *s, size_t cnt)
-{
-	int *ptr;
-	lng *lptr;
-
-	if ((dst = BATatoms[TYPE_int].atomRead(dst, s, cnt)) == NULL)
-		return NULL;
-	ptr = dst;
-	lptr = dst;
-	/* work backwards so that we do this in place */
-	for (size_t i = cnt; i > 0; ) {
-		i--;
-		if (is_int_nil(ptr[i]))
-			lptr[i] = lng_nil;
-		else
-			lptr[i] = ptr[i] * LL_CONSTANT(1000);
-	}
-	return dst;
-}
-
-static void *
-timestampRead(void *dst, stream *s, size_t cnt)
-{
-	union timestamp {
-		lng l;
-		struct {
-#ifndef WORDS_BIGENDIAN
-			int p_msecs;
-			int p_days;
-#else
-			int p_days;
-			int p_msecs;
-#endif
-		} t;
-	} *ptr;
-
-	if ((ptr = BATatoms[TYPE_lng].atomRead(dst, s, cnt)) == NULL)
-		return NULL;
-	for (size_t i = 0; i < cnt; i++) {
-		if (!is_lng_nil(ptr[i].l))
-			ptr[i].t.p_days = cvtdate(ptr[i].t.p_days);
-	}
-	return ptr;
-}
-#endif
-
 static log_return
 log_read_updates(logger *lg, trans *tr, logformat *l, char *name, int tpe, oid id, int pax)
 {
@@ -530,16 +461,6 @@ log_read_updates(logger *lg, trans *tr, logformat *l, char *name, int tpe, oid i
 
 		if (ATOMstorage(tt) < TYPE_str)
 			tv = lg->buf;
-#ifdef GDKLIBRARY_OLDDATE
-		if (lg->convert_date && tt >= TYPE_date) {
-			if (strcmp(BATatoms[tt].name, "date") == 0)
-				rt = dateRead;
-			else if (strcmp(BATatoms[tt].name, "daytime") == 0)
-				rt = daytimeRead;
-			else if (strcmp(BATatoms[tt].name, "timestamp") == 0)
-				rt = timestampRead;
-		}
-#endif
 
 		assert(l->nr <= (lng) BUN_MAX);
 		if (tr->tid > lg->saved_tid) { 
@@ -1163,7 +1084,7 @@ logger_open_input(logger *lg, char *filename, bool *filemissing)
 	return GDK_SUCCEED;
 }
 
-static gdk_return
+static log_return
 logger_read_transaction(logger *lg)
 {
 	logformat l;
@@ -2160,9 +2081,6 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 		fp = NULL;
 		if (lg->postfuncp && (*lg->postfuncp)(lg) != GDK_SUCCEED)
 			goto error;
-
-		/* done reading the log, revert to "normal" behavior */
-		geomisoldversion = false;
 	}
 	return bm_get_counts(lg);
   error:
@@ -2209,6 +2127,7 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 	}
 
 	lg->inmemory = GDKinmemory();
+	lg->flushing = false;
 	lg->debug = debug;
 
 	lg->changes = 0;
@@ -2220,9 +2139,6 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 	lg->saved_tid = getBBPinfo();
 	lg->input_log = NULL;
 	lg->flush_id = 0; /* after normal restart set to current id */
-#ifdef GDKLIBRARY_OLDDATE
-	lg->convert_date = false;
-#endif
 
 	len = snprintf(filename, sizeof(filename), "%s%c%s%c", logdir, DIR_SEP, fn, DIR_SEP);
 	if (len == -1 || len >= FILENAME_MAX) {
@@ -2487,7 +2403,9 @@ logger_flush(logger *lg)
 		}
 		GDKfree(filename);
 	}
+	lg->flushing = true;
 	log_return res = logger_read_transaction(lg);
+	lg->flushing = false;
 	if (res == LOG_EOF) {
 		logger_close_input(lg);
 		lg->flush_id++;
@@ -2871,6 +2789,31 @@ log_bat_clear(logger *lg, const char *name, char tpe, oid id)
 	if (lg->debug & 1)
 		fprintf(stderr, "#Logged clear %s\n", NAME(name, tpe, id));
 
+	return GDK_SUCCEED;
+}
+
+gdk_return 
+log_batgroup_insert(logger *lg, oid id, lng nr)
+{
+	(void)lg;
+	(void)id;
+	(void)nr;
+	return GDK_SUCCEED;
+}
+
+gdk_return 
+log_batgroup_clear(logger *lg, oid id)
+{
+	(void)lg;
+	(void)id;
+	return GDK_SUCCEED;
+}
+
+gdk_return 
+log_batgroup_end(logger *lg, oid id)
+{
+	(void)lg;
+	(void)id;
 	return GDK_SUCCEED;
 }
 
@@ -3264,43 +3207,4 @@ logger_find_bat(logger *lg, const char *name, char tpe, oid id)
 		}
 	}
 	return 0;
-}
-
-static geomcatalogfix_fptr geomcatalogfix = NULL;
-static geomsqlfix_fptr geomsqlfix = NULL;
-
-void
-geomcatalogfix_set(geomcatalogfix_fptr f)
-{
-	geomcatalogfix = f;
-}
-
-geomcatalogfix_fptr
-geomcatalogfix_get(void)
-{
-	return geomcatalogfix;
-}
-
-void
-geomsqlfix_set(geomsqlfix_fptr f)
-{
-	geomsqlfix = f;
-}
-
-geomsqlfix_fptr
-geomsqlfix_get(void)
-{
-	return geomsqlfix;
-}
-
-void
-geomversion_set(void)
-{
-	geomisoldversion = true;
-}
-
-bool
-geomversion_get(void)
-{
-	return geomisoldversion;
 }

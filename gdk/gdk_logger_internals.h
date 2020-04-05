@@ -14,21 +14,18 @@ struct logger {
 	int version;
 	lng changes;		/* TODO change in atomic */
 	lng id;
-	int saved_tid;		/* tid flushed too bats */
 	lng flush_id;		/* current tobe flushed file id */
-	stream *input_log;	/* current stream too flush */
 	int tid;
+	int saved_tid;		/* tid flushed too bats */
+	bool flushing;		/* currently flushing changes */
 	bool inmemory;
-#ifdef GDKLIBRARY_OLDDATE
-	/* convert old date values to new */
-	bool convert_date;
-#endif
 	char *fn;
 	char *dir;
 	char *local_dir; /* the directory in which the log is written */
 	preversionfix_fptr prefuncp;
 	postversionfix_fptr postfuncp;
 	stream *output_log;
+	stream *input_log;	/* current stream too flush */
 	lng end;		/* end of pre-allocated blocks for faster f(data)sync */
 	/* Store log_bids (int) to circumvent trouble with reference counting */
 	BAT *catalog_bid;	/* int bid column */

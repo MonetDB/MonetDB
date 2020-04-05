@@ -2684,8 +2684,10 @@ log_table(sql_trans *tr, sql_table *ft)
 	int ok = LOG_OK;
 	node *n;
 
+	//if (log_batgroup(bat_logger, ft->base.id, ft->cleared, inserted, deleted) != GDK_SUCCEED) 
+	//	ok = LOG_ERR;
 	assert(tr->parent == gtrans);
-	if (ft->base.wtime && ft->base.allocated)
+	if (ok == LOG_OK && ft->base.wtime && ft->base.allocated)
 		ok = tr_log_dbat(tr, ft->data, ft->cleared, ft->bootstrap?0:LOG_TAB, ft->base.id);
 	for (n = ft->columns.set->h; ok == LOG_OK && n; n = n->next) {
 		sql_column *cc = n->data;
@@ -2705,6 +2707,8 @@ log_table(sql_trans *tr, sql_table *ft)
 			ok = tr_log_delta(tr, ci->data, ft->cleared, ft->bootstrap?0:LOG_IDX, ci->base.id);
 		}
 	}
+	//if (log_batgroup_end(bat_logger, ft->base.id) != GDK_SUCCEED) 
+	//	ok = LOG_ERR;
 	return ok;
 }
 
