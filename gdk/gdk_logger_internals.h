@@ -9,6 +9,14 @@
 #ifndef _LOGGER_INTERNALS_H_
 #define _LOGGER_INTERNALS_H_
 
+struct batgroup {
+	oid id;
+	lng nr_inserted;
+	lng offset;
+	lng nr_deleted;
+	bool with_id;
+};
+
 struct logger {
 	int debug;
 	int version;
@@ -17,6 +25,7 @@ struct logger {
 	lng flush_id;		/* current tobe flushed file id */
 	int tid;
 	int saved_tid;		/* tid flushed too bats */
+	struct batgroup bg;		/* current ongoing batgroup to be writing to the log */
 	bool flushing;		/* currently flushing changes */
 	bool inmemory;
 	char *fn;

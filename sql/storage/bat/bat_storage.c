@@ -2628,7 +2628,7 @@ tr_log_delta( sql_trans *tr, sql_delta *cbat, int cleared, char tpe, oid id)
 		assert(ATOMIC_GET(&store_nr_active)>0);
 		if (BUNlast(ins) > ins->batInserted &&
 		    (cbat->ibase || BATcount(ins) <= SNAPSHOT_MINSIZE))
-			ok = log_bat(bat_logger, ins, cbat->name, tpe, id);
+			ok = log_bat(bat_logger, ins, cbat->name, tpe, id, cbat->ibase);
 		if (ok == GDK_SUCCEED &&
 		    !cbat->ibase && BATcount(ins) > SNAPSHOT_MINSIZE) {
 			/* log new snapshot */
@@ -2671,11 +2671,51 @@ tr_log_dbat(sql_trans *tr, sql_dbat *fdb, int cleared, char tpe, oid id)
 		return LOG_ERR;
 	if (BUNlast(db) > 0) {
 		assert(ATOMIC_GET(&store_nr_active)>0);
-		if (BUNlast(db) > db->batInserted) 
-			ok = log_bat(bat_logger, db, fdb->dname, tpe, id);
+		if (BUNlast(db) > db->batInserted) /* TODO keep count at start !! */
+			ok = log_bat(bat_logger, db, fdb->dname, tpe, id, db->batInserted);
 	}
 	bat_destroy(db);
 	return ok == GDK_SUCCEED ? LOG_OK : LOG_ERR;
+}
+
+static lng
+log_get_nr_inserted(sql_column *fc, lng *offset)
+{
+	lng cnt = 0;
+
+	if (!fc || GDKinmemory())
+		return 0;
+
+	if (fc->base.wtime && fc->base.allocated) {
+		sql_delta *fb = fc->data;
+		BAT *ins = temp_descriptor(fb->ibid);
+
+		if (ins && BUNlast(ins) > 0 && BUNlast(ins) > ins->batInserted) {
+			cnt = BUNlast(ins) - ins->batInserted;
+			*offset = fb->ibase;
+		}
+		bat_destroy(ins);
+	}
+	return cnt;
+}
+
+static lng
+log_get_nr_deleted(sql_table *ft)
+{
+	lng cnt = 0;
+
+	if (!ft || GDKinmemory())
+		return 0;
+
+	if (ft->base.wtime && ft->base.allocated) {
+		sql_dbat *fdb = ft->data;
+		BAT *db = temp_descriptor(fdb->dbid);
+
+		if (db && BUNlast(db) > 0 && BUNlast(db) > db->batInserted) 
+			cnt = BUNlast(db) - db->batInserted;
+		bat_destroy(db);
+	}
+	return cnt;
 }
 
 static int
@@ -2683,9 +2723,11 @@ log_table(sql_trans *tr, sql_table *ft)
 {
 	int ok = LOG_OK;
 	node *n;
+	lng offset = 0;
+	sql_column *fc = ft->columns.set->h->data;
 
-	//if (log_batgroup(bat_logger, ft->base.id, ft->cleared, inserted, deleted) != GDK_SUCCEED) 
-	//	ok = LOG_ERR;
+	if (log_batgroup(bat_logger, ft->bootstrap?0:LOG_TAB, ft->base.id, ft->cleared, log_get_nr_inserted(fc, &offset), offset, log_get_nr_deleted(ft)) != GDK_SUCCEED) 
+		ok = LOG_ERR;
 	assert(tr->parent == gtrans);
 	if (ok == LOG_OK && ft->base.wtime && ft->base.allocated)
 		ok = tr_log_dbat(tr, ft->data, ft->cleared, ft->bootstrap?0:LOG_TAB, ft->base.id);
@@ -2707,8 +2749,8 @@ log_table(sql_trans *tr, sql_table *ft)
 			ok = tr_log_delta(tr, ci->data, ft->cleared, ft->bootstrap?0:LOG_IDX, ci->base.id);
 		}
 	}
-	//if (log_batgroup_end(bat_logger, ft->base.id) != GDK_SUCCEED) 
-	//	ok = LOG_ERR;
+	if (log_batgroup_end(bat_logger, ft->base.id) != GDK_SUCCEED) 
+		ok = LOG_ERR;
 	return ok;
 }
 

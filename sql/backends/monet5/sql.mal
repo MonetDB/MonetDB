@@ -60,9 +60,9 @@ pattern register(mod:str, fname:str, rel_stmt:str, sig:str, typ:str):int
 address RAstatement2
 comment "Compile the relational statement (rel_smt) and register it as mal function, mod.fname(signature)";
 
-command flush_log( ) :void
-address SQLflush_log
-comment "start flushing the write ahead log";
+#command flush_log( ) :void
+#address SQLflush_log
+#comment "start flushing the write ahead log";
 
 command hot_snapshot(tarfile:str) :void
 address SQLhot_snapshot

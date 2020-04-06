@@ -1830,13 +1830,12 @@ store_load(backend_stack stk) {
 
 	types_init(store_sa);
 
-	// TODO: Niels: Are we fine running this twice?
-
 	/* we store some spare oids */
 	store_oid = FUNC_OIDS;
 
 	if (!sequences_init())
 		return -1;
+	transactions = ATOMIC_VAR_INIT(0);
 	gtrans = tr = create_trans(sa, stk);
 	if (!gtrans)
 		return -1;

@@ -2078,7 +2078,6 @@ geom_prelude(void *ret)
 	libgeom_init();
 	TYPE_mbr = malAtomSize(sizeof(mbr), "mbr");
 	geomcatalogfix_set(geom_catalog_upgrade);
-	geomsqlfix_set(geom_sql_upgrade);
 
 	return MAL_SUCCEED;
 }
@@ -5171,9 +5170,7 @@ wkbREAD(wkb *a, stream *s, size_t cnt)
 	assert(cnt == 1);
 	if (mnstr_readInt(s, &len) != 1)
 		return NULL;
-	if (geomversion_get())
-		srid = 0;
-	else if (mnstr_readInt(s, &srid) != 1)
+	if (mnstr_readInt(s, &srid) != 1)
 		return NULL;
 	if ((a = GDKmalloc(wkb_size(len))) == NULL)
 		return NULL;
