@@ -126,6 +126,24 @@ stdout of test 'groupby_error` in directory 'sql/test/miscellaneous` itself:
 [ 64	]
 [ 75	]
 [ 46	]
+#PLAN SELECT DISTINCT col0, col1, col2, col0 FROM tab0;
+% .plan # table_name
+% rel # name
+% clob # type
+% 112 # length
+group by (
+| project (
+| | table(sys.tab0) [ "tab0"."col0", "tab0"."col1", "tab0"."col2" ] COUNT 
+| ) [ "tab0"."col0", "tab0"."col1", "tab0"."col2" ]
+) [ "tab0"."col0", "tab0"."col1", "tab0"."col2" ] [ "tab0"."col0", "tab0"."col1", "tab0"."col2", "tab0"."col0" ]
+#SELECT DISTINCT col0, col1, col2, col0 FROM tab0;
+% sys.tab0,	sys.tab0,	sys.tab0,	sys.tab0 # table_name
+% col0,	col1,	col2,	col0 # name
+% int,	int,	int,	int # type
+% 2,	2,	2,	2 # length
+[ 97,	1,	99,	97	]
+[ 15,	81,	47,	15	]
+[ 87,	21,	10,	87	]
 #PLAN SELECT col0 FROM tab2 WHERE CAST(col2 AS BIGINT) = 40;
 % .plan # table_name
 % rel # name
