@@ -61,7 +61,7 @@ stdout of test 'sql_int128` in directory 'sql/test/mapi` itself:
 function user.s4_0():void;
     X_2:void := querylog.define("explain set a = 1234567890987654321;":str, "default_pipe":str, 8:int);
     X_5:int := sql.mvc();
-    sql.setVariable(X_5:int, "a":str, 1234567890987654321:hge);
+    sql.setVariable(X_5:int, "sys":str, "a":str, 1234567890987654321:hge);
     sql.exportOperation();
 end user.s4_0;
 #inline               actions= 0 time=0 usec 
@@ -98,7 +98,7 @@ end user.s4_0;
 function user.s6_0():void;
     X_2:void := querylog.define("explain set b = 10000000000;":str, "default_pipe":str, 8:int);
     X_5:int := sql.mvc();
-    sql.setVariable(X_5:int, "b":str, 10000000000:hge);
+    sql.setVariable(X_5:int, "sys":str, "b":str, 10000000000:hge);
     sql.exportOperation();
 end user.s6_0;
 #inline               actions= 0 time=1 usec 
@@ -135,10 +135,10 @@ end user.s6_0;
 function user.s8_0():void;
     X_1:void := querylog.define("explain set c = a * b;":str, "default_pipe":str, 9:int);
     X_4:int := sql.mvc();
-    X_5:hge := sql.getVariable(X_4:int, "a":str);
-    X_7:hge := sql.getVariable(X_4:int, "b":str);
-    X_9:hge := calc.*(X_5:hge, X_7:hge);
-    sql.setVariable(X_4:int, "c":str, X_9:hge);
+    X_5:hge := sql.getVariable(X_4:int, "sys":str, "a":str);
+    X_8:hge := sql.getVariable(X_4:int, "sys":str, "b":str);
+    X_10:hge := calc.*(X_5:hge, X_8:hge);
+    sql.setVariable(X_4:int, "sys":str, "c":str, X_10:hge);
     sql.exportOperation();
 end user.s8_0;
 #inline               actions= 0 time=0 usec 
@@ -175,10 +175,10 @@ end user.s8_0;
 function user.s10_0():void;
     X_1:void := querylog.define("explain set d = c * b;":str, "default_pipe":str, 9:int);
     X_4:int := sql.mvc();
-    X_5:hge := sql.getVariable(X_4:int, "c":str);
-    X_7:hge := sql.getVariable(X_4:int, "b":str);
-    X_9:hge := calc.*(X_5:hge, X_7:hge);
-    sql.setVariable(X_4:int, "d":str, X_9:hge);
+    X_5:hge := sql.getVariable(X_4:int, "sys":str, "c":str);
+    X_8:hge := sql.getVariable(X_4:int, "sys":str, "b":str);
+    X_10:hge := calc.*(X_5:hge, X_8:hge);
+    sql.setVariable(X_4:int, "sys":str, "d":str, X_10:hge);
     sql.exportOperation();
 end user.s10_0;
 #inline               actions= 0 time=1 usec 
@@ -215,10 +215,10 @@ end user.s10_0;
 function user.s12_0():void;
     X_1:void := querylog.define("explain set e = d + a;":str, "default_pipe":str, 9:int);
     X_4:int := sql.mvc();
-    X_5:hge := sql.getVariable(X_4:int, "d":str);
-    X_7:hge := sql.getVariable(X_4:int, "a":str);
-    X_9:hge := calc.+(X_5:hge, X_7:hge);
-    sql.setVariable(X_4:int, "e":str, X_9:hge);
+    X_5:hge := sql.getVariable(X_4:int, "sys":str, "d":str);
+    X_8:hge := sql.getVariable(X_4:int, "sys":str, "a":str);
+    X_10:hge := calc.+(X_5:hge, X_8:hge);
+    sql.setVariable(X_4:int, "sys":str, "e":str, X_10:hge);
     sql.exportOperation();
 end user.s12_0;
 #inline               actions= 0 time=0 usec 
