@@ -125,6 +125,30 @@ BEGIN
 	END IF;
 	RETURN SELECT a FROM x;
 END; --error, multiple declarations of table x;
+-----------------------------------------------------------------------------
+DECLARE TABLE atest (a int);
+INSERT INTO atest VALUES (1);
+
+CREATE OR REPLACE FUNCTION scoping3() RETURNS TABLE(a int) 
+BEGIN
+	DECLARE TABLE atest (a int); -- allowed, the table atest from scoping3 is unrelated to "atest" from the global scope
+	INSERT INTO x VALUES (2);
+	RETURN x;
+END;
+
+SELECT a FROM atest;
+	-- 1
+SELECT a FROM scoping3();
+	-- 2
+
+CREATE OR REPLACE FUNCTION scoping4() RETURNS TABLE(a int)
+BEGIN
+	DECLARE tableydoesntexist int;
+	RETURN tableydoesntexist; --error, no table named "tableydoesntexist" exists
+END;
+
+DROP TABLE atest;
+DROP FUNCTION scoping3;
 ------------------------------------------------------------------------------
 -- A table returning function or view to list the session's variables
 select "name", schemaname, "type", currentvalue, accessmode from sys.vars();

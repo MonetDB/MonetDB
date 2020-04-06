@@ -233,15 +233,9 @@ rel_psm_declare_table(sql_query *query, dnode *n)
 	const char *sname = qname_schema(qname);
 	const char *name = qname_schema_object(qname);
 	sql_table *t;
-	sql_schema *s = cur_schema(sql);
-
-	if (sname && !(s = mvc_bind_schema(sql, sname)))
-		return sql_error(sql, 02, SQLSTATE(3F000) "DECLARE: No such schema '%s'", sname);
-	if (stack_find_table(sql, s, name))
-		return sql_error(sql, 01, SQLSTATE(42000) "DECLARE: Table '%s' already declared", name);
 
 	assert(n->next->next->next->type == type_int);
-	rel = rel_create_table(query, SQL_DECLARED_TABLE, s->base.name, name, n->next->next->data.sym,
+	rel = rel_create_table(query, SQL_DECLARED_TABLE, sname, name, false, n->next->next->data.sym,
 						   n->next->next->next->data.i_val, NULL, NULL, NULL, false, NULL, 
 						   n->next->next->next->next->next->next->data.i_val);
 
@@ -258,7 +252,7 @@ rel_psm_declare_table(sql_query *query, dnode *n)
 	t = (sql_table*)((atom*)((sql_exp*)baset->exps->t->data)->l)->data.val.pval;
 	if (!frame_push_table(sql, t))
 		return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	return exp_table(sql->sa, sa_strdup(sql->sa, s->base.name), sa_strdup(sql->sa, name), t, sql->frame);
+	return exp_table(sql->sa, sa_strdup(sql->sa, t->s->base.name), sa_strdup(sql->sa, name), t, sql->frame);
 }
 
 /* [ label: ]

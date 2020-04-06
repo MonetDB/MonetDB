@@ -1000,7 +1000,7 @@ create_partition_definition(mvc *sql, sql_table *t, symbol *partition_def)
 }
 
 sql_rel *
-rel_create_table(sql_query *query, int temp, const char *sname, const char *name, symbol *table_elements_or_subquery,
+rel_create_table(sql_query *query, int temp, const char *sname, const char *name, bool global, symbol *table_elements_or_subquery,
 				 int commit_action, const char *loc, const char *username, const char *password, bool pw_encrypted,
 				 symbol* partition_def, int if_not_exists)
 {
@@ -1031,10 +1031,15 @@ rel_create_table(sql_query *query, int temp, const char *sname, const char *name
 		}
 	}
 
-	if (mvc_bind_table(sql, s, name)) {
+	if (global && find_sql_table(s, name)) {
 		if (if_not_exists)
 			return rel_psm_block(sql->sa, new_exp_list(sql->sa));
 		return sql_error(sql, 02, SQLSTATE(42S01) "%s TABLE: name '%s' already in use", action, name);
+	} else if (!global && stack_find_table(sql, s, name)) {
+		assert(temp == SQL_DECLARED_TABLE);
+		if (if_not_exists)
+			return rel_psm_block(sql->sa, new_exp_list(sql->sa));
+		return sql_error(sql, 02, SQLSTATE(42S01) "%s TABLE: name '%s' already declared", action, name);
 	} else if (temp != SQL_DECLARED_TABLE && (!mvc_schema_privs(sql, s) && !(isTempSchema(s) && temp == SQL_LOCAL_TEMP))){
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE TABLE: insufficient privileges for user '%s' in schema '%s'", sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")), s->base.name);
 	} else if (temp == SQL_PERSIST && isTempSchema(s)){
@@ -2677,7 +2682,7 @@ rel_schemas(sql_query *query, symbol *s)
 
 		assert(l->h->type == type_int);
 		assert(l->h->next->next->next->type == type_int);
-		ret = rel_create_table(query, temp, sname, name,
+		ret = rel_create_table(query, temp, sname, name, true,
 				       l->h->next->next->data.sym,                   /* elements or subquery */
 				       l->h->next->next->next->data.i_val,           /* commit action */
 				       l->h->next->next->next->next->data.sval,      /* location */
