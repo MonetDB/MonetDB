@@ -152,7 +152,6 @@ str ifthenelseRef;
 str ilikeRef;
 str ilikeselectRef;
 str ilikethetaselectRef;
-str inplaceRef;
 str intersectcandRef;
 str intersectRef;
 str intRef;
@@ -457,7 +456,6 @@ void optimizerInit(void)
 	ilikeRef = putName("ilike");
 	ilikeselectRef = putName("ilikeselect");
 	ilikethetaselectRef = putName("ilikethetaselect");
-	inplaceRef = putName("inplace");
 	intersectcandRef= putName("intersectcand");
 	intersectRef = putName("intersect");
 	intRef = putName("int");

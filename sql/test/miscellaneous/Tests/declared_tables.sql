@@ -33,15 +33,3 @@ SELECT testtruncate();
 SELECT testtruncate();
 
 DROP FUNCTION testtruncate;
-
-
-CREATE OR REPLACE FUNCTION testtruncate() RETURNS INT 
-BEGIN
-    DECLARE TABLE z (a int);
-    INSERT INTO z VALUES (1);
-    UPDATE z SET a = 2 WHERE a = 1;
-    TRUNCATE z;
-    INSERT INTO z VALUES (3);
-    DELETE FROM z WHERE a = 3;
-    RETURN SELECT a FROM z;
-END;

@@ -2246,7 +2246,6 @@ void initParser(void);
 void initProfiler(void);
 str initQlog(void);
 int inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc);
-str inplaceRef;
 void insertSymbol(Module scope, Symbol prg);
 str instruction2str(MalBlkPtr mb, MalStkPtr stl, InstrPtr p, int hidden);
 str intRef;

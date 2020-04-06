@@ -133,6 +133,29 @@ end user.s20_0;
 % int # type
 % 1 # length
 [ NULL	]
+#CREATE OR REPLACE FUNCTION testtruncate() RETURNS INT 
+#BEGIN
+#    DECLARE TABLE z (a int);
+#    INSERT INTO z VALUES (1);
+#    UPDATE z SET a = 2 WHERE a = 1;
+#    TRUNCATE z;
+#    INSERT INTO z VALUES (3);
+#    DELETE FROM z WHERE a = 3;
+#    RETURN SELECT a FROM z;
+#END;
+#SELECT testtruncate();
+% . # table_name
+% %1 # name
+% int # type
+% 1 # length
+[ NULL	]
+#SELECT testtruncate();
+% . # table_name
+% %1 # name
+% int # type
+% 1 # length
+[ NULL	]
+#DROP FUNCTION testtruncate;
 
 # 14:29:33 >  
 # 14:29:33 >  "Done."
