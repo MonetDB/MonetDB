@@ -94,6 +94,7 @@ void mserver_reset(void)
 
 	GDKprepareExit();
 	MCstopClients(0);
+	dropQRYqueue();
 	setHeartbeat(-1);
 	stopProfiler(0);
 	AUTHreset();
