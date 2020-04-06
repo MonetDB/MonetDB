@@ -78,6 +78,14 @@ SELECT (SELECT i = ANY(VALUES(1), (i))) FROM integers;
 
 SELECT (SELECT i1.i IN (SELECT SUM(i1.i))) FROM integers i1; --error, subquery uses ungrouped column "i1.i" from outer query
 
+SELECT corr(i1.i, i2.i) FROM integers i1, integers i2;
+	-- 0
+
+SELECT corr(i1.i, i2.i) OVER () FROM integers i1, integers i2;
+	-- 16 rows with 0
+
+SELECT (SELECT SUM(i1.i) IN (SELECT CORR(i1.i, i2.i) FROM integers i2)) FROM integers i1; --error, subquery uses ungrouped column "i1.i" from outer query
+
 DROP FUNCTION evilfunction(INT);
 DROP TABLE tbl_ProductSales;
 DROP TABLE another_T;
