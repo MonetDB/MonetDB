@@ -3346,9 +3346,10 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 
 	exps = sa_list(sql->sa);
 	if (args && args->data.sym) {
+		int ungrouped_col = -1, i;
 		int all_aggr = query_has_outer(query);
 		all_freevar = 1;
-		for (	; args && args->data.sym; args = args->next ) {
+		for (i = 0; args && args->data.sym; args = args->next, i++) {
 			int base = (!groupby || !is_project(groupby->op) || is_base(groupby->op) || is_processed(groupby));
 			sql_rel *gl = base?groupby:groupby->l, *ogl = gl; /* handle case of subqueries without correlation */
 			sql_exp *e = rel_value_exp(query, &gl, args->data.sym, (f | sql_aggr)& ~sql_farg, ek);//, *lu;
@@ -3386,6 +3387,8 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 					sql_exp *a = rel_find_exp(outer, e);
 					if (a)
 						aggr = is_aggr(a->type);
+					else if (outer->grouped)
+						ungrouped_col = i;
 				}
 				all_aggr &= aggr;
 			} else {
@@ -3440,6 +3443,9 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 				if (uaname)
 					GDKfree(uaname);
 				return e;
+			} else if (!all_aggr && ungrouped_col >= 0) {
+				sql_exp *u = list_fetch(exps, ungrouped_col);
+				return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: subquery uses ungrouped column \"%s.%s\" from outer query", exp_relname(u), exp_name(u));
 			}
 		}
 	}
