@@ -283,6 +283,10 @@ pattern grow(tid:bat[:oid], :any_1):int
 address mvc_grow_wrap
 comment "Resize the tid column of a declared table.";
 
+unsafe command clear(b:bat[:any_1]):lng
+address mvc_clear_wrap
+comment "Clear input BAT.";
+
 pattern append(mvc:int, sname:str, tname:str, cname:str, ins:any):int
 address mvc_append_wrap
 comment "Append to the column tname.cname (possibly optimized to replace the insert bat of tname.cname. Returns sequence number for order dependence.";
@@ -304,7 +308,7 @@ comment "Return the tables tid column.";
 
 unsafe pattern delete(mvc:int, sname:str, tname:str, b:any):int
 address mvc_delete_wrap
-comment "Delete a row from a table. Returns sequence number for order dependece.";
+comment "Delete a row from a table. Returns sequence number for order dependency.";
 
 unsafe pattern resultSet(tbl:str, attr:str, tpe:str, len:int, scale:int, eclass:int, val:any) :int 
 address mvc_scalar_value_wrap
