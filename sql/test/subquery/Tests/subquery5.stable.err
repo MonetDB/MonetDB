@@ -62,6 +62,10 @@ MAPI  = (monetdb) /var/tmp/mtest-2392594/.s.monetdb.38758
 QUERY = SELECT (SELECT i1.i IN (SELECT SUM(i1.i))) FROM integers i1; --error, subquery uses ungrouped column "i1.i" from outer query
 ERROR = !SELECT: subquery uses ungrouped column "i1.i" from outer query
 CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-3324560/.s.monetdb.33622
+QUERY = SELECT (SELECT SUM(i1.i) IN (SELECT CORR(i1.i, i2.i) FROM integers i2)) FROM integers i1; --error, subquery uses ungrouped column "i1.i" from outer query
+ERROR = !SELECT: subquery uses ungrouped column "i1.i" from outer query
+CODE  = 42000
 
 # 08:41:39 >  
 # 08:41:39 >  "Done."

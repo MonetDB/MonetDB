@@ -3269,7 +3269,7 @@ BATcalccorrelation(BAT *b1, BAT *b2)
 			 ATOMname(tp));
 		return dbl_nil;
 	}
-	if (n > 0 && up > 0 && down1 > 0 && down2 > 0)
+	if (n != 0 && down1 != 0 && down2 != 0)
 		return (up / n) / (sqrt(down1 / n) * sqrt(down2 / n));
 	else 
 		return dbl_nil;
@@ -3717,7 +3717,7 @@ BATgroupcovariance_population(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp, 
 			}						\
 		}							\
 		for (i = 0; i < ngrp; i++) {				\
-			if (cnts[i] <= 1 || cnts[i] == BUN_NONE || up[i] <= 0 || down1[i] <= 0 || down2[i] <= 0) { \
+			if (cnts[i] <= 1 || cnts[i] == BUN_NONE || down1[i] == 0 || down2[i] == 0) { \
 				dbls[i] = dbl_nil;			\
 				nils++;					\
 			} else {					\

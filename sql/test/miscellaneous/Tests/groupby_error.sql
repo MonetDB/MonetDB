@@ -30,6 +30,13 @@ SELECT col0 FROM tab2 WHERE - - col2;
 	-- 75
 	-- 46
 
+PLAN SELECT DISTINCT col0, col1, col2, col0 FROM tab0;
+
+SELECT DISTINCT col0, col1, col2, col0 FROM tab0;
+	-- 97  1 99 97
+	-- 15 81 47 15
+	-- 87 21 10 87
+
 PLAN SELECT col0 FROM tab2 WHERE CAST(col2 AS BIGINT) = 40;
 
 SELECT col0 FROM tab2 WHERE CAST(col2 AS BIGINT) = 40;
