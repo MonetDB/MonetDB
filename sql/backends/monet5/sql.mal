@@ -304,7 +304,7 @@ comment "Return the tables tid column.";
 
 unsafe pattern delete(mvc:int, sname:str, tname:str, b:any):int
 address mvc_delete_wrap
-comment "Delete a row from a table. Returns sequence number for order dependece.";
+comment "Delete a row from a table. Returns sequence number for order dependence.";
 
 unsafe pattern resultSet(tbl:str, attr:str, tpe:str, len:int, scale:int, eclass:int, val:any) :int 
 address mvc_scalar_value_wrap
