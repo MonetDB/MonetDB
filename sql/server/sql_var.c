@@ -272,16 +272,17 @@ frame_push_groupby_expression(mvc *sql, symbol *def, sql_exp *exp)
 dlist *
 frame_get_window_def(mvc *sql, const char *name, int *pos)
 {
-	assert(sql->topframes > 0);
-	sql_frame *f = sql->frames[sql->topframes - 1];
-	if (f->windows) {
-		int i = 0;
-		for (node *n = f->windows->h; n ; n = n->next, i++) {
-			sql_window_definition *var = (sql_window_definition*) n->data;
-			if (var->name && !strcmp(var->name, name)) {
-				if (pos)
-					*pos = i;
-				return var->wdef;
+	if (sql->topframes > 0) {
+		sql_frame *f = sql->frames[sql->topframes - 1];
+		if (f->windows) {
+			int i = 0;
+			for (node *n = f->windows->h; n ; n = n->next, i++) {
+				sql_window_definition *var = (sql_window_definition*) n->data;
+				if (var->name && !strcmp(var->name, name)) {
+					if (pos)
+						*pos = i;
+					return var->wdef;
+				}
 			}
 		}
 	}
@@ -291,13 +292,14 @@ frame_get_window_def(mvc *sql, const char *name, int *pos)
 sql_exp*
 frame_get_groupby_expression(mvc *sql, symbol *def)
 {
-	assert(sql->topframes > 0);
-	sql_frame *f = sql->frames[sql->topframes - 1];
-	if (f->group_expressions) {
-		for (node *n = f->group_expressions->h; n ; n = n->next) {
-			sql_groupby_expression *var = (sql_groupby_expression*) n->data;
-			if (var->token == def->token && !symbol_cmp(sql, var->sdef, def))
-				return var->exp;
+	if (sql->topframes > 0) {
+		sql_frame *f = sql->frames[sql->topframes - 1];
+		if (f->group_expressions) {
+			for (node *n = f->group_expressions->h; n ; n = n->next) {
+				sql_groupby_expression *var = (sql_groupby_expression*) n->data;
+				if (var->token == def->token && !symbol_cmp(sql, var->sdef, def))
+					return var->exp;
+			}
 		}
 	}
 	return NULL;
@@ -308,40 +310,44 @@ frame_get_groupby_expression(mvc *sql, symbol *def)
 bool
 frame_check_var_visited(mvc *sql, int i)
 {
-	assert(sql->topframes > 0);
-	sql_frame *f = sql->frames[sql->topframes - 1];
-	sql_window_definition *win;
+	if (sql->topframes > 0) {
+		sql_frame *f = sql->frames[sql->topframes - 1];
+		sql_window_definition *win;
 
-	if (i < 0 || i >= list_length(f->windows))
-		return false;
+		if (i < 0 || i >= list_length(f->windows))
+			return false;
 
-	win = (sql_window_definition*) list_fetch(f->windows, i);
-	return win->visited;
+		win = (sql_window_definition*) list_fetch(f->windows, i);
+		return win->visited;
+	}
+	return false;
 }
 
 void
 frame_set_var_visited(mvc *sql, int i)
 {
-	assert(sql->topframes > 0);
-	sql_frame *f = sql->frames[sql->topframes - 1];
-	sql_window_definition *win;
+	if (sql->topframes > 0) {
+		sql_frame *f = sql->frames[sql->topframes - 1];
+		sql_window_definition *win;
 
-	if (i < 0 || i >= list_length(f->windows))
-		return;
+		if (i < 0 || i >= list_length(f->windows))
+			return;
 
-	win = (sql_window_definition*) list_fetch(f->windows, i);
-	win->visited = true;
+		win = (sql_window_definition*) list_fetch(f->windows, i);
+		win->visited = true;
+	}
 }
 
 void
-frame_clear_frame_visited_flag(mvc *sql)
+frame_clear_visited_flag(mvc *sql)
 {
-	assert(sql->topframes > 0);
-	sql_frame *f = sql->frames[sql->topframes - 1];
-	if (f->windows) {
-		for (node *n = f->windows->h; n ; n = n->next) {
-			sql_window_definition *var = (sql_window_definition*) n->data;
-			var->visited = false;
+	if (sql->topframes > 0) {
+		sql_frame *f = sql->frames[sql->topframes - 1];
+		if (f->windows) {
+			for (node *n = f->windows->h; n ; n = n->next) {
+				sql_window_definition *var = (sql_window_definition*) n->data;
+				var->visited = false;
+			}
 		}
 	}
 }

@@ -4700,7 +4700,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 	int distinct = 0, frame_type, pos, nf = f, nfargs = 0;
 	bool is_nth_value, supports_frames;
 
-	frame_clear_frame_visited_flag(sql); /* clear visited flags before iterating */
+	frame_clear_visited_flag(sql); /* clear visited flags before iterating */
 
 	if (l->h->next->type == type_list) {
 		window_specification = l->h->next->data.lval;

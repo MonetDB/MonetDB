@@ -265,7 +265,7 @@ extern void stack_update_rel_view(mvc *sql, const char *name, sql_rel *view);
 
 extern bool frame_check_var_visited(mvc *sql, int i);
 extern void frame_set_var_visited(mvc *sql, int i);
-extern void frame_clear_frame_visited_flag(mvc *sql);
+extern void frame_clear_visited_flag(mvc *sql);
 
 extern sql_frame *stack_push_frame(mvc *sql, const char *name);
 extern void stack_pop_frame(mvc *sql);
