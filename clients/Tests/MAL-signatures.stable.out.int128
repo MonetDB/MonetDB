@@ -19534,7 +19534,7 @@ stdout of test 'MAL-signatures` in directory 'clients` itself:
 [ "sql",	"dec_round",	"command sql.dec_round(v:int, r:int):int ",	"int_dec_round_wrap;",	"round off the value v to nearests multiple of r"	]
 [ "sql",	"dec_round",	"command sql.dec_round(v:lng, r:lng):lng ",	"lng_dec_round_wrap;",	"round off the value v to nearests multiple of r"	]
 [ "sql",	"dec_round",	"command sql.dec_round(v:sht, r:sht):sht ",	"sht_dec_round_wrap;",	"round off the value v to nearests multiple of r"	]
-[ "sql",	"delete",	"unsafe pattern sql.delete(mvc:int, sname:str, tname:str, b:any):int ",	"mvc_delete_wrap;",	"Delete a row from a table. Returns sequence number for order dependece."	]
+[ "sql",	"delete",	"unsafe pattern sql.delete(mvc:int, sname:str, tname:str, b:any):int ",	"mvc_delete_wrap;",	"Delete a row from a table. Returns sequence number for order dependence."	]
 [ "sql",	"delta",	"command sql.delta(col:bat[:any_3], uid:bat[:oid], uval:bat[:any_3]):bat[:any_3] ",	"DELTAbat2;",	"Return column bat with delta's applied."	]
 [ "sql",	"delta",	"command sql.delta(col:bat[:any_3], uid:bat[:oid], uval:bat[:any_3], ins:bat[:any_3]):bat[:any_3] ",	"DELTAbat;",	"Return column bat with delta's applied."	]
 [ "sql",	"deltas",	"pattern sql.deltas(schema:str) (ids:bat[:int], cleared:bat[:bit], readonly:bat[:lng], inserted:bat[:lng], updated:bat[:lng], deleted:bat[:lng], tr_level:bat[:int]) ",	"mvc_delta_values;",	"Return the delta values sizes of all columns of the schema's tables, plus the current transaction level"	]

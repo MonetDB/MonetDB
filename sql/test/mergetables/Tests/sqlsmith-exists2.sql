@@ -214,4 +214,20 @@ select
  on (ref_1.bb is null);
  -- empty result set
 
+select
+  subq_0.c2 as c0, 
+  subq_0.c2 as c1, 
+  subq_0.c3 as c2, 
+  subq_0.c1 as c3 from 
+  (select distinct 
+      ref_0.col1 as c0, 
+      ref_0.col1 as c1, 
+      ref_0.col0 as c2, 
+      ref_0.col2 as c3
+      from 
+        tab1 as ref_0
+      where ref_0.col1 is null
+      limit 140) as subq_0 where false limit 61;
+ -- empty result set
+
 ROLLBACK;

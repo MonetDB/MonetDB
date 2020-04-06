@@ -1459,10 +1459,8 @@ create_table_from_loader(sql_query *query, dlist *qname, symbol *fcall)
 	if (!rel || !loader)
 		return NULL;
 
-	loader->sname = sname ? sa_zalloc(sql->sa, strlen(sname) + 1) : NULL;
-	loader->tname = tname ? sa_zalloc(sql->sa, strlen(tname) + 1) : NULL;
-	if (sname) strcpy(loader->sname, sname);
-	if (tname) strcpy(loader->tname, tname);
+	loader->sname = sname ? sa_strdup(sql->sa, sname) : NULL;
+	loader->tname = tname ? sa_strdup(sql->sa, tname) : NULL;
 
 	return rel;
 }

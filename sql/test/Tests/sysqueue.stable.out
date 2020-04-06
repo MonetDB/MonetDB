@@ -1,4 +1,4 @@
-stdout of test 'sysqueue` in directory 'sql/test/BugTracker-2020` itself:
+stdout of test 'sysqueue` in directory 'sql/test` itself:
 
 
 # 16:51:46 >  
@@ -10,19 +10,19 @@ stdout of test 'sysqueue` in directory 'sql/test/BugTracker-2020` itself:
 % %2 # name
 % bigint # type
 % 2 # length
-[ 68	]
+[ 71	]
 #select count(*) from sys.queue();
 % .%2 # table_name
 % %2 # name
 % bigint # type
 % 2 # length
-[ 69	]
+[ 71	]
 #select count(*) from sys.queue();
 % .%2 # table_name
 % %2 # name
 % bigint # type
 % 2 # length
-[ 70	]
+[ 71	]
 #select count(*) from sys.queue();
 % .%2 # table_name
 % %2 # name
@@ -34,7 +34,7 @@ stdout of test 'sysqueue` in directory 'sql/test/BugTracker-2020` itself:
 % %2 # name
 % bigint # type
 % 1 # length
-[ 4	]
+[ 0	]
 
 # 16:51:46 >  
 # 16:51:46 >  "Done."
