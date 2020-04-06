@@ -63,7 +63,7 @@ isaSQLquery(MalBlkPtr mb){
 
 /* clear the next entry for a new call unless it is a running query */
 static void
-clearQRYqueue(int idx)
+clearQRYqueue(lng idx)
 {
 		QRYqueue[idx].query = 0;
 		QRYqueue[idx].cntxt = 0;
@@ -106,7 +106,7 @@ advanceQRYqueue(void)
 void
 dropQRYqueue(void)
 {
-	int i;
+	lng i;
 	MT_lock_set(&mal_delayLock);
 	for(i = 0; i < qsize; i++){
 		if( QRYqueue[i].query)
