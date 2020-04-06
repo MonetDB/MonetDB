@@ -7,17 +7,17 @@ except ImportError:
 
 NITER = 1000
 
-c = process.client('sql', stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
-out, err = c.communicate('create table test3848 (col1 bigint, col2 varchar(1024));')
-sys.stdout.write(out)
-sys.stderr.write(err)
-c = process.client('sql', stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
-c.stdin.write("copy 1000000 records into test3848 from stdin using delimiters ',', '\\n', '\"';")
-for i in range(1000000):
-    c.stdin.write('%d,"something old"\n' % i)
-out, err = c.communicate()
-sys.stdout.write(out)
-sys.stderr.write(err)
+with process.client('sql', stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE) as c:
+    out, err = c.communicate('create table test3848 (col1 bigint, col2 varchar(1024));')
+    sys.stdout.write(out)
+    sys.stderr.write(err)
+with process.client('sql', stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE) as c:
+    c.stdin.write("copy 1000000 records into test3848 from stdin using delimiters ',', '\\n', '\"';")
+    for i in range(1000000):
+        c.stdin.write('%d,"something old"\n' % i)
+    out, err = c.communicate()
+    sys.stdout.write(out)
+    sys.stderr.write(err)
 
 class Client(threading.Thread):
     def __init__(self, query):
@@ -28,10 +28,10 @@ class Client(threading.Thread):
 
     def run(self):
         for i in range(NITER):
-            c = process.client('sql', stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
-            out, err = c.communicate(self.query)
-            # self.out.append(out)
-            # self.err.append(err)
+            with process.client('sql', stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE) as c:
+                out, err = c.communicate(self.query)
+                # self.out.append(out)
+                # self.err.append(err)
 
     def output(self):
         sys.stdout.write(''.join(self.out))
@@ -47,7 +47,7 @@ wtr.join()
 rdr.output()
 wtr.output()
 
-c = process.client('sql', stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
-out, err = c.communicate('drop table test3848;')
-sys.stdout.write(out)
-sys.stderr.write(err)
+with process.client('sql', stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE) as c:
+    out, err = c.communicate('drop table test3848;')
+    sys.stdout.write(out)
+    sys.stderr.write(err)

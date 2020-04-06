@@ -8,10 +8,10 @@ except ImportError:
 
 
 def client(next_user, next_passwd, input):
-    c = process.client('sql', user=next_user, passwd=next_passwd, stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE)
-    out, err = c.communicate(input)
-    sys.stdout.write(out)
-    sys.stderr.write(err)
+    with process.client('sql', user=next_user, passwd=next_passwd, stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE) as c:
+        out, err = c.communicate(input)
+        sys.stdout.write(out)
+        sys.stderr.write(err)
 
 client('monetdb', 'monetdb', '''
 CREATE schema  "myschema";

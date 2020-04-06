@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 try:
     from MonetDBtesting import process
 except ImportError:
@@ -25,12 +23,9 @@ cloneport = freeport()
 dbname = tstdb
 dbnameclone = tstdb + 'clone'
 
-slave = None
-try:
-    #master = process.server(dbname = dbname, stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
-    slave = process.server(dbname = dbnameclone, mapiport = cloneport, stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
-
-    c = process.client('sql', server = slave, stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
+#master = process.server(dbname = dbname, stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
+with process.server(dbname=dbnameclone, mapiport=cloneport, stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE) as slave, \
+     process.client('sql', server = slave, stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE) as c:
 
     # Generate a wrong master record
     cout, cerr = c.communicate('''\
@@ -48,9 +43,6 @@ select * from tmp;
     #sys.stderr.write(merr)
     sys.stderr.write(serr)
     sys.stderr.write(cerr)
-finally:
-    if slave is not None:
-        slave.terminate()
 
 def listfiles(path):
     sys.stdout.write("#LISTING OF THE WLR LOG FILE\n")
