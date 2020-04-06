@@ -1651,21 +1651,6 @@ mvc_grow_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-str
-mvc_clear_wrap(lng *res, const bat *col)
-{
-	BAT *tid = 0;
-
-	*res = 0;
-	if ((tid = BATdescriptor(*col)) == NULL)
-		throw(SQL, "sql.clear", SQLSTATE(HY005) "Cannot access descriptor");
-
-	*res = (lng) BATcount(tid);
-	BATclear(tid, true);
-	BBPunfix(tid->batCacheid);
-	return MAL_SUCCEED;
-}
-
 /*mvc_append_wrap(int *bid, str *sname, str *tname, str *cname, ptr d) */
 str
 mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)

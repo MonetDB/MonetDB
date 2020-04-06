@@ -283,10 +283,6 @@ pattern grow(tid:bat[:oid], :any_1):int
 address mvc_grow_wrap
 comment "Resize the tid column of a declared table.";
 
-unsafe command clear(b:bat[:any_1]):lng
-address mvc_clear_wrap
-comment "Clear input BAT.";
-
 pattern append(mvc:int, sname:str, tname:str, cname:str, ins:any):int
 address mvc_append_wrap
 comment "Append to the column tname.cname (possibly optimized to replace the insert bat of tname.cname. Returns sequence number for order dependence.";

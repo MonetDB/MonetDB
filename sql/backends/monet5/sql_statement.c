@@ -785,7 +785,7 @@ stmt_update_col(backend *be, sql_column *c, stmt *tids, stmt *upd)
 	if (!c->t->s && c->t->data) { /* declared table */
 		int *l = c->t->data;
 
-		q = newStmt(mb, batRef, updateRef);
+		q = newStmt(mb, batRef, replaceRef);
 		q = pushArgument(mb, q, l[c->colnr+1]);
 		q = pushArgument(mb, q, tids->nr);
 		q = pushArgument(mb, q, upd->nr);
@@ -2771,7 +2771,7 @@ stmt_table_clear(backend *be, sql_table *t)
 		int *l = t->data, cnt = list_length(t->columns.set)+1;
 
 		for (int i = 0; i < cnt; i++) {
-			q = newStmt(mb, sqlRef, clearRef);
+			q = newStmt(mb, batRef, deleteRef);
 			q = pushArgument(mb, q, l[i]);
 		}
 	} else {

@@ -72,7 +72,6 @@ str bulk_rotate_xor_hashRef;
 str calcRef;
 str capiRef;
 str catalogRef;
-str clearRef;
 str clear_tableRef;
 str closeRef;
 str columnBindRef;
@@ -378,7 +377,6 @@ void optimizerInit(void)
 	calcRef = putName("calc");
 	capiRef = putName("capi");
 	catalogRef = putName("catalog");
-	clearRef = putName("clear");
 	clear_tableRef = putName("clear_table");
 	closeRef = putName("close");
 	columnBindRef = putName("columnBind");
