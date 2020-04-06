@@ -10,9 +10,6 @@
 # The committed data should exist in the snapshot.
 # The uncommitted data should not.
 
-
-from __future__ import print_function
-
 try:
     from MonetDBtesting import process
 except ImportError:

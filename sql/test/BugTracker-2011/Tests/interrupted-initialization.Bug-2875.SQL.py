@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 import os, socket, sys, tempfile, shutil
 try:
     from MonetDBtesting import process
