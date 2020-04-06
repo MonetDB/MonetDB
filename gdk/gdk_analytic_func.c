@@ -1898,7 +1898,7 @@ GDK_ANALYTICAL_COVARIANCE(covariance_pop, 0, m2 / n)
 				down1 += delta1 * ((dbl) v1 - mean1);	\
 				down2 += delta2 * aux;	\
 			}	\
-			if (n > 0 && up > 0 && down1 > 0 && down2 > 0) { \
+			if (n != 0 && down1 != 0 && down2 != 0) { \
 				*rb = (up / n) / (sqrt(down1 / n) * sqrt(down2 / n)); \
 				assert(!is_dbl_nil(*rb)); \
 			} else { \

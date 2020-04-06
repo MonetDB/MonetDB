@@ -2576,9 +2576,8 @@ rel_distinct_project2groupby(mvc *sql, sql_rel *rel, int *changes)
 			if (!exp_name(e))
 				exp_label(sql->sa, e, ++sql->label);
 			ne = exp_ref(sql->sa, e);
-			if (e->card > CARD_ATOM) { /* no need to group by on constants */
+			if (e->card > CARD_ATOM && !list_find_exp(gbe, ne)) /* no need to group by on constants, or the same column multiple times */
 				append(gbe, ne);
-			}
 			append(exps, ne);
 		}
 		rel->op = op_groupby;

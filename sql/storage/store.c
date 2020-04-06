@@ -1876,6 +1876,7 @@ store_load(backend_stack stk) {
 
 	if (!sequences_init())
 		return -1;
+	transactions = ATOMIC_VAR_INIT(0);
 	gtrans = tr = create_trans(sa, stk);
 	if (!gtrans)
 		return -1;
