@@ -5,11 +5,11 @@ except ImportError:
     import process
 
 def client(infile, user = 'monetdb', passwd = 'monetdb'):
-    clt = process.client('sql', user=user, passwd=passwd, stdin=open(infile),
-                         stdout=process.PIPE, stderr=process.PIPE)
-    out, err = clt.communicate()
-    sys.stdout.write(out)
-    sys.stderr.write(err)
+    with process.client('sql', user=user, passwd=passwd, stdin=open(infile),
+                        stdout=process.PIPE, stderr=process.PIPE) as clt:
+        out, err = clt.communicate()
+        sys.stdout.write(out)
+        sys.stderr.write(err)
 
 relsrcdir = os.getenv('RELSRCDIR')
 sys.stdout.write('trigger owner\n')

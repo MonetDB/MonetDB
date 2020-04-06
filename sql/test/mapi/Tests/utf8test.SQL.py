@@ -6,10 +6,10 @@ except ImportError:
     import process
 
 def client(args, universal_newlines = True):
-    clt = process.client('sql', args = args,
-                         stdout = process.PIPE, stderr = process.PIPE,
-                         universal_newlines = universal_newlines)
-    return clt.communicate()
+    with process.client('sql', args=args,
+                         stdout=process.PIPE, stderr=process.PIPE,
+                         universal_newlines=universal_newlines) as clt:
+        return clt.communicate()
 
 def printit(file, string):
     string = string.replace('\r', '')

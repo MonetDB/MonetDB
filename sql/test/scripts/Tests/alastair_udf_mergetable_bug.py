@@ -6,13 +6,13 @@ except ImportError:
     import process
 
 def client(input):
-    c = process.client('sql',
-                         stdin = process.PIPE,
-                         stdout = process.PIPE,
-                         stderr = process.PIPE)
-    out, err = c.communicate(input)
-    sys.stdout.write(out)
-    sys.stderr.write(err)
+    with process.client('sql',
+                        stdin=process.PIPE,
+                        stdout=process.PIPE,
+                        stderr=process.PIPE) as c:
+        out, err = c.communicate(input)
+        sys.stdout.write(out)
+        sys.stderr.write(err)
 
 script1 = '''\
 create table tab1 (group_by_col int, index_col int, f float);
@@ -30,16 +30,11 @@ drop table tab2;
 
 '''
 
-s = None
-try:
-    s = process.server(args = ["--set", "gdk_nr_threads=2", "--forcemito"],
-                       stdin = process.PIPE,
-                       stdout = process.PIPE,
-                       stderr = process.PIPE)
+with process.server(args=["--set", "gdk_nr_threads=2", "--forcemito"],
+                    stdin=process.PIPE,
+                    stdout=process.PIPE,
+                    stderr=process.PIPE) as s:
     client(script1)
     out, err = s.communicate()
     sys.stdout.write(out)
     sys.stderr.write(err)
-finally:
-    if s is not None:
-        s.terminate()

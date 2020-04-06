@@ -5,10 +5,10 @@ except ImportError:
     import process
 
 def client(input):
-    c = process.client('sql', stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
-    out, err = c.communicate(input)
-    sys.stdout.write(out)
-    sys.stderr.write(err)
+    with process.client('sql', stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE) as c:
+        out, err = c.communicate(input)
+        sys.stdout.write(out)
+        sys.stderr.write(err)
 
 client('''
 declare myvar int;

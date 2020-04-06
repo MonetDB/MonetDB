@@ -11,13 +11,13 @@ def server_stop(s):
     sys.stderr.write(err)
 
 def client(input):
-    c = process.client('sql',
-                         stdin = process.PIPE,
-                         stdout = process.PIPE,
-                         stderr = process.PIPE)
-    out, err = c.communicate(input)
-    sys.stdout.write(out)
-    sys.stderr.write(err)
+    with process.client('sql',
+                        stdin=process.PIPE,
+                        stdout=process.PIPE,
+                        stderr=process.PIPE) as c:
+        out, err = c.communicate(input)
+        sys.stdout.write(out)
+        sys.stderr.write(err)
 
 script1 = '''\
 create table t1 (a int);
@@ -74,22 +74,20 @@ script14 = '''\
 delete from t1 where a = 1;
 '''
 
-s = None
-try:
-    s = process.server(args = [],
-                       stdin = process.PIPE,
-                       stdout = process.PIPE,
-                       stderr = process.PIPE)
+with process.server(args=[],
+                    stdin=process.PIPE,
+                    stdout=process.PIPE,
+                    stderr=process.PIPE) as s:
     client(script1)
     client(script3)
     client(script4)
     client(script2)
     client(script5)
     server_stop(s)
-    s = process.server(args = ["--readonly"],
-                       stdin = process.PIPE,
-                       stdout = process.PIPE,
-                       stderr = process.PIPE)
+with process.server(args=["--readonly"],
+                    stdin=process.PIPE,
+                    stdout=process.PIPE,
+                    stderr=process.PIPE) as s:
     client(script8)
     client(script4)
     client(script2)
@@ -103,6 +101,3 @@ try:
     client(script13)
     client(script14)
     server_stop(s)
-finally:
-    if s is not None:
-        s.terminate()

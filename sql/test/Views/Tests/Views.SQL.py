@@ -5,10 +5,10 @@ except ImportError:
     import process
 
 def client(lang, infile):
-    clt = process.client(lang, stdin=open(infile), stdout=process.PIPE, stderr=process.PIPE)
-    out, err = clt.communicate()
-    sys.stdout.write(out)
-    sys.stderr.write(err)
+    with process.client(lang, stdin=open(infile), stdout=process.PIPE, stderr=process.PIPE) as clt:
+        out, err = clt.communicate()
+        sys.stdout.write(out)
+        sys.stderr.write(err)
 
 def main():
     sys.stdout.write('Views Restrictions\n')

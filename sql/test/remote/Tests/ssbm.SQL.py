@@ -1,6 +1,4 @@
-from __future__ import print_function
-
-import os, sys, socket, glob, pymonetdb, threading, time, codecs, shutil, tempfile
+import os, sys, socket, glob, pymonetdb, threading, time, codecs, tempfile
 try:
     from MonetDBtesting import process
 except ImportError:
@@ -106,123 +104,121 @@ def worker_load(workerrec):
 
 ssbmpath = os.path.join(os.environ['TSTSRCBASE'], 'sql', 'benchmarks', 'ssbm', 'Tests')
 ssbmdatapath = os.path.join(ssbmpath, 'SF-0.01')
-tmpdir = tempfile.mkdtemp()
 
 masterport = freeport()
 masterproc = None
 workers = []
-try:
+with tempfile.TemporaryDirectory() as tmpdir:
     os.mkdir(os.path.join(tmpdir, 'master'))
-    masterproc = process.server(mapiport=masterport, dbname="master", dbfarm=os.path.join(tmpdir, 'master'), stdin = process.PIPE, stdout = process.PIPE)
-    masterconn = pymonetdb.connect(database='', port=masterport, autocommit=True)
+    with process.server(mapiport=masterport, dbname="master", dbfarm=os.path.join(tmpdir, 'master'), stdin = process.PIPE, stdout = process.PIPE) as masterproc:
+        masterconn = pymonetdb.connect(database='', port=masterport, autocommit=True)
 
-    # split lineorder table into one file for each worker
-    # this is as portable as an anvil
-    lineordertbl = os.path.join(ssbmdatapath, 'lineorder.tbl')
-    lineorderdir = os.path.join(tmpdir, 'lineorder')
-    if os.path.exists(lineorderdir):
-        shutil.rmtree(lineorderdir)
-    if not os.path.exists(lineorderdir):
-        os.makedirs(lineorderdir)
-    inputData = open(lineordertbl, 'r').read().split('\n')
-    linesperslice = len(inputData) // nworkers + 1
-    i = 0
-    for lines in range(0, len(inputData), linesperslice):
-        outputData = inputData[lines:lines+linesperslice]
-        outputStr = '\n'.join(outputData)
-        if outputStr[-1] != '\n':
-            outputStr += '\n'
-        outputFile = open(os.path.join(lineorderdir, 'split-%d' % i), 'w')
-        outputFile.write(outputStr)
-        outputFile.close()
-        i += 1
-    loadsplits =  glob.glob(os.path.join(lineorderdir, 'split-*'))
-    loadsplits.sort()
+        # split lineorder table into one file for each worker
+        # this is as portable as an anvil
+        lineordertbl = os.path.join(ssbmdatapath, 'lineorder.tbl')
+        lineorderdir = os.path.join(tmpdir, 'lineorder')
+        if os.path.exists(lineorderdir):
+            import shutil
+            shutil.rmtree(lineorderdir)
+        if not os.path.exists(lineorderdir):
+            os.makedirs(lineorderdir)
+        inputData = open(lineordertbl, 'r').read().split('\n')
+        linesperslice = len(inputData) // nworkers + 1
+        i = 0
+        for lines in range(0, len(inputData), linesperslice):
+            outputData = inputData[lines:lines+linesperslice]
+            outputStr = '\n'.join(outputData)
+            if outputStr[-1] != '\n':
+                outputStr += '\n'
+            outputFile = open(os.path.join(lineorderdir, 'split-%d' % i), 'w')
+            outputFile.write(outputStr)
+            outputFile.close()
+            i += 1
+        loadsplits =  glob.glob(os.path.join(lineorderdir, 'split-*'))
+        loadsplits.sort()
 
-    # setup and start workers
-    for i in range(nworkers):
-        workerport = freeport()
-        workerdbname = 'worker_%d' % i
-        workerrec = {
-            'no'       : i,
-            'port'     : workerport,
-            'dbname'   : workerdbname,
-            'dbfarm'   : os.path.join(tmpdir, workerdbname),
-            'mapi'     : 'mapi:monetdb://localhost:%d/%s' % (workerport, workerdbname),
-            'split'    : loadsplits[i],
-            'repldata' : os.path.join(ssbmdatapath, 'date.tbl'),
-            'tpf'      : '_%d' % i
-        }
-        workers.append(workerrec)
-        os.mkdir(workerrec['dbfarm'])
-        workerrec['proc'] = process.server(mapiport=workerrec['port'], dbname=workerrec['dbname'], dbfarm=workerrec['dbfarm'], stdin = process.PIPE, stdout = process.PIPE)
-        workerrec['conn'] = pymonetdb.connect(database=workerrec['dbname'], port=workerrec['port'], autocommit=True)
-        t = threading.Thread(target=worker_load, args = [workerrec])
-        t.start()
-        workerrec['loadthread'] = t
+        # setup and start workers
+        try:
+            for i in range(nworkers):
+                workerport = freeport()
+                workerdbname = 'worker_%d' % i
+                workerrec = {
+                    'no'       : i,
+                    'port'     : workerport,
+                    'dbname'   : workerdbname,
+                    'dbfarm'   : os.path.join(tmpdir, workerdbname),
+                    'mapi'     : 'mapi:monetdb://localhost:%d/%s' % (workerport, workerdbname),
+                    'split'    : loadsplits[i],
+                    'repldata' : os.path.join(ssbmdatapath, 'date.tbl'),
+                    'tpf'      : '_%d' % i
+                }
+                workers.append(workerrec)
+                os.mkdir(workerrec['dbfarm'])
+                workerrec['proc'] = process.server(mapiport=workerrec['port'], dbname=workerrec['dbname'], dbfarm=workerrec['dbfarm'], stdin = process.PIPE, stdout = process.PIPE)
+                workerrec['conn'] = pymonetdb.connect(database=workerrec['dbname'], port=workerrec['port'], autocommit=True)
+                t = threading.Thread(target=worker_load, args = [workerrec])
+                t.start()
+                workerrec['loadthread'] = t
 
-    # load dimension tables into master
-    c = masterconn.cursor()
-    c.execute(dimensiontabledef)
-    c.execute("""
-    COPY INTO SUPPLIER  FROM 'PWD/supplier.tbl';
-    COPY INTO CUSTOMER  FROM 'PWD/customer.tbl';
-    COPY INTO PART      FROM 'PWD/part.tbl';
-    """.replace('PWD', ssbmdatapath.replace('\\', '\\\\')))
+            # load dimension tables into master
+            c = masterconn.cursor()
+            c.execute(dimensiontabledef)
+            c.execute("""
+            COPY INTO SUPPLIER  FROM 'PWD/supplier.tbl';
+            COPY INTO CUSTOMER  FROM 'PWD/customer.tbl';
+            COPY INTO PART      FROM 'PWD/part.tbl';
+            """.replace('PWD', ssbmdatapath.replace('\\', '\\\\')))
 
-    # wait until they are finished loading
-    for workerrec in workers:
-        workerrec['loadthread'].join()
+            # wait until they are finished loading
+            for workerrec in workers:
+                workerrec['loadthread'].join()
 
-    # glue everything together on the master
-    mtable = 'create merge table %s %s' % (shardtable, shardedtabledef)
-    c.execute(mtable)
-    rptable = 'create replica table %s %s' % (repltable, replicatedtabledef)
-    c.execute(rptable)
-    for workerrec in workers:
-        rtable = "create remote table %s%s %s on '%s'" % (shardtable, workerrec['tpf'], shardedtabledef, workerrec['mapi'])
-        atable = 'alter table %s add table %s%s' % (shardtable, shardtable, workerrec['tpf'])
-        c.execute(rtable)
-        c.execute(atable)
-        rtable = "create remote table %s%s %s on '%s'" % (repltable, workerrec['tpf'], replicatedtabledef, workerrec['mapi'])
-        atable = 'alter table %s add table %s%s' % (repltable, repltable, workerrec['tpf'])
-        c.execute(rtable)
-        c.execute(atable)
+            # glue everything together on the master
+            mtable = 'create merge table %s %s' % (shardtable, shardedtabledef)
+            c.execute(mtable)
+            rptable = 'create replica table %s %s' % (repltable, replicatedtabledef)
+            c.execute(rptable)
+            for workerrec in workers:
+                rtable = "create remote table %s%s %s on '%s'" % (shardtable, workerrec['tpf'], shardedtabledef, workerrec['mapi'])
+                atable = 'alter table %s add table %s%s' % (shardtable, shardtable, workerrec['tpf'])
+                c.execute(rtable)
+                c.execute(atable)
+                rtable = "create remote table %s%s %s on '%s'" % (repltable, workerrec['tpf'], replicatedtabledef, workerrec['mapi'])
+                atable = 'alter table %s add table %s%s' % (repltable, repltable, workerrec['tpf'])
+                c.execute(rtable)
+                c.execute(atable)
 
-    # sanity check
-    c.execute("select count(*) from lineorder_0")
-    print(str(c.fetchall()[0][0]) + ' rows in remote table')
+            # sanity check
+            c.execute("select count(*) from lineorder_0")
+            print(str(c.fetchall()[0][0]) + ' rows in remote table')
 
-    c.execute("select count(*) from lineorder")
-    print(str(c.fetchall()[0][0]) + ' rows in mergetable')
+            c.execute("select count(*) from lineorder")
+            print(str(c.fetchall()[0][0]) + ' rows in mergetable')
 
-    c.execute("select * from lineorder where lo_orderkey=356")
-    print(str(c.fetchall()[0][0]))
+            c.execute("select * from lineorder where lo_orderkey=356")
+            print(str(c.fetchall()[0][0]))
 
-    c.execute("select * from " + shardtable + workers[0]['tpf'] + " where lo_orderkey=356")
-    print(str(c.fetchall()[0][0]))
+            c.execute("select * from " + shardtable + workers[0]['tpf'] + " where lo_orderkey=356")
+            print(str(c.fetchall()[0][0]))
 
-    # run queries, use mclient so output is comparable
-    queries = glob.glob(os.path.join(ssbmpath, '[0-1][0-9].sql'))
-    queries.sort()
-    for q in queries:
-        print('# Running Q %s' % os.path.basename(q).replace('.sql',''))
-        mc = process.client('sql', server=masterproc, stdin=open(q), stdout=process.PIPE, stderr=process.PIPE, log=1)
-        out, err = mc.communicate()
-        sys.stdout.write(out)
-        sys.stderr.write(err)
-        # old way
-        # c.execute(codecs.open(q, 'r', encoding='utf8').read())
-        # print(c.fetchall())
+            # run queries, use mclient so output is comparable
+            queries = glob.glob(os.path.join(ssbmpath, '[0-1][0-9].sql'))
+            queries.sort()
+            for q in queries:
+                print('# Running Q %s' % os.path.basename(q).replace('.sql',''))
+                mc = process.client('sql', server=masterproc, stdin=open(q), stdout=process.PIPE, stderr=process.PIPE, log=1)
+                out, err = mc.communicate()
+                sys.stdout.write(out)
+                sys.stderr.write(err)
+                # old way
+                # c.execute(codecs.open(q, 'r', encoding='utf8').read())
+                # print(c.fetchall())
 
-    for workerrec in workers:
-        workerrec['proc'].communicate()
-    masterproc.communicate()
-finally:
-    if masterproc is not None:
-        masterproc.terminate()
-    for wrec in workers:
-        p = wrec.get('proc')
-        if p is not None:
-            p.terminate()
-    shutil.rmtree(tmpdir)
+            for workerrec in workers:
+                workerrec['proc'].communicate()
+            masterproc.communicate()
+        finally:
+            for wrec in workers:
+                p = wrec.get('proc')
+                if p is not None:
+                    p.terminate()

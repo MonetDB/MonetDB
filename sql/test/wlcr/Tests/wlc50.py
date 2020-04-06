@@ -13,11 +13,8 @@ if not tstdb or not dbfarm:
 
 dbname = tstdb
 
-s = None
-try:
-    s = process.server(dbname = dbname, stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
-
-    c = process.client('sql', server = s, stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
+with process.server(dbname=dbname, stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE) as s, \
+     process.client('sql', server = s, stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE) as c:
 
     cout, cerr = c.communicate('''\
 delete from tmp;
@@ -30,9 +27,6 @@ select * from tmp;
     sys.stdout.write(cout)
     sys.stderr.write(serr)
     sys.stderr.write(cerr)
-finally:
-    if s is not None:
-        s.terminate()
 
 def listfiles(path):
     sys.stdout.write("#LISTING OF THE LOG FILES\n")
