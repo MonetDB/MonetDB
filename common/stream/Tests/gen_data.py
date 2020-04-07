@@ -4,6 +4,7 @@ import bz2
 import gzip
 import hashlib
 import json
+import lz4.frame
 import lzma
 import os
 
@@ -35,6 +36,9 @@ def write(name, compression, content):
     elif compression == 'xz':
         filename += '.xz'
         f = lzma.LZMAFile(filename, 'wb', preset=9)
+    elif compression == 'lz4':
+        filename += '.lz4'
+        f = lz4.frame.LZ4FrameFile(filename, 'wb', compression_level=9)
     else:
         raise Exception("Unknown compression scheme: " + compression)
 
@@ -63,6 +67,7 @@ def write_all_compressions(name, content):
     write(name, 'gz', content)
     write(name, 'bz2', content)
     write(name, 'xz', content)
+    write(name, 'lz4', content)
 
 def write_all(name, content):
     write_all_compressions(name, content)
