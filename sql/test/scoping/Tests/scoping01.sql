@@ -147,6 +147,12 @@ BEGIN
 	RETURN tableydoesntexist; --error, no table named "tableydoesntexist" exists
 END;
 
+CREATE OR REPLACE FUNCTION scoping4() RETURNS INT
+BEGIN
+	DECLARE TABLE z (a int); 
+	RETURN VALUES (z); --error, there's no variable z on the scope
+END;
+
 DROP TABLE atest;
 DROP FUNCTION scoping3;
 ------------------------------------------------------------------------------

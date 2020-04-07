@@ -1,4 +1,4 @@
- qcreate table foo (i int);
+create table foo (i int);
 insert into foo values (null), (10), (null), (20), (10), (30), (30), (30), (50), (40), (50);
 
 select * from foo where i in (10, 20, 20, 30, 30) order by i;
