@@ -1408,8 +1408,9 @@ MOSAnalysis(BAT *b, BAT *btech, BAT *blayout, BAT *boutput, BAT *bratio, BAT *bc
 		/* analyse result block distribution to exclude complicated compression combination that
 		 * (probably) won't improve compression rate.
 		 */
+		bool keep = true;
 		if (pat[i].xf >= 0 && pat[i].xf < 1.0) {;
-			bool keep = false;
+			keep = false;
 			for(j=0; j < MOSAIC_METHODS; j++){
 				if (pattern[i] == MOSmethods[j].bit ) {
 					/* We'll keep it if is a singleton compression strategy.
@@ -1420,12 +1421,15 @@ MOSAnalysis(BAT *b, BAT *btech, BAT *blayout, BAT *boutput, BAT *bratio, BAT *bc
 			}
 			if (!keep) {
 				antipattern[antipatternSize++] = pattern[i];
+				pat[i].include = false;
 			}
 		}
-
-		for(j=0; j < MOSAIC_METHODS; j++){
-			if ( ((MosaicHdr)  bc->tmosaic->base)->blks[j] == 0 && (!(MOSmethods[j].bit & common_mask))) {
-				antipattern[antipatternSize++] = pattern[i];
+		if (keep) /*Now check if the compression contains regarded but eventually  unused compression method*/ {
+			for(j=0; j < MOSAIC_METHODS; j++){
+				if ( ((MosaicHdr)  bc->tmosaic->base)->blks[j] == 0 && (!(MOSmethods[j].bit & common_mask))) {
+					antipattern[antipatternSize++] = pattern[i];
+					pat[i].include = false;
+				}
 			}
 		}
 
