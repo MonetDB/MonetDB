@@ -512,7 +512,7 @@ log_read_updates(logger *lg, trans *tr, logformat *l, char *name, int tpe, oid i
 						res = LOG_ERR;
 					break;
 				}
-				if (BUNappend(r, t, true) != GDK_SUCCEED)
+				if (r && BUNappend(r, t, true) != GDK_SUCCEED)
 					res = LOG_ERR;
 				if (t != tv)
 					GDKfree(t);
@@ -666,6 +666,42 @@ log_read_batgroup(logger *lg, trans *tr, logformat *l, char bg_tpe, oid id)
 }
 
 static gdk_return
+la_bat_update_count(logger *lg, const char *name, char tpe, oid id, lng cnt)
+{
+	if (!tpe) {
+		BATiter cni = bat_iterator(lg->catalog_nme);
+		BUN p;
+
+		if (BAThash(lg->catalog_nme) == GDK_SUCCEED) {
+			HASHloop_str(cni, cni.b->thash, p, name) {
+				oid pos = p;
+				if (BUNfnd(lg->dcatalog, &pos) == BUN_NONE) {
+					lng ocnt = *(lng*) Tloc(lg->catalog_cnt, p);
+					if (ocnt < cnt && BUNinplace(lg->catalog_cnt, p, &cnt, false) != GDK_SUCCEED)
+						return GDK_FAIL;
+				}
+			}
+		}
+	} else {
+		BATiter cni = bat_iterator(lg->catalog_oid);
+		BUN p;
+
+		if (BAThash(lg->catalog_oid) == GDK_SUCCEED) {
+			lng lid = (lng) id;
+			HASHloop_lng(cni, cni.b->thash, p, &lid) {
+				if (*(char*)Tloc(lg->catalog_tpe, p) == tpe) {
+					lng ocnt = *(lng*) Tloc(lg->catalog_cnt, p);
+					if (ocnt < cnt && BUNinplace(lg->catalog_cnt, p, &cnt, false) != GDK_SUCCEED)
+						return GDK_FAIL;
+				}
+			}
+		}
+	}
+	return GDK_SUCCEED;
+	
+}
+
+static gdk_return
 la_bat_updates(logger *lg, logaction *la)
 {
 	log_bid bid = logger_find_bat(lg, la->name, la->tpe, la->cid);
@@ -723,6 +759,9 @@ la_bat_updates(logger *lg, logaction *la)
 				}
 			}
 		}
+		cnt = la->offset + la->nr;
+		if (la_bat_update_count(lg, la->name, la->tpe, la->cid, cnt) != GDK_SUCCEED) 
+			return GDK_FAIL;
 	} else if (la->type == LOG_UPDATE) {
 		BATiter vi = bat_iterator(la->b);
 		BUN p, q;
@@ -1565,7 +1604,7 @@ bm_get_counts(logger *lg)
 		oid pos = p;
 		lng cnt = 0;
 
-		if (BUNfnd(lg->dcatalog, &pos) != BUN_NONE) {
+		if (BUNfnd(lg->dcatalog, &pos) == BUN_NONE) {
 			BAT *b = BBPquickdesc(bids[p], 1);
 			cnt = BATcount(b);
 		}
@@ -3144,16 +3183,17 @@ log_sequence(logger *lg, int seq, lng val)
 static gdk_return
 bm_commit(logger *lg)
 {
-	BUN p, q;
+	BUN p;//, q;
 	BAT *b = lg->catalog_bid;
-	BAT *n = logbat_new(TYPE_str, BATcount(lg->freed), TRANSIENT);
 	gdk_return res;
 	const log_bid *bids;
 
+#if 0
 	if (n == NULL)
 		return GDK_FAIL;
 
 	/* subcommit the freed bats */
+	BAT *n = logbat_new(TYPE_str, BATcount(lg->freed), TRANSIENT);
 	bids = (const log_bid *) Tloc(lg->freed, 0);
 	BATloop(lg->freed, p, q) {
 		bat bid = bids[p];
@@ -3178,6 +3218,7 @@ bm_commit(logger *lg)
 		}
 		BBPrelease(bid);
 	}
+#endif
 
 	bids = (log_bid *) Tloc(b, 0);
 	for (p = b->batInserted; p < BUNlast(b); p++) {
@@ -3194,7 +3235,7 @@ bm_commit(logger *lg)
 		if ((lb = BATdescriptor(bid)) == NULL ||
 		    BATmode(lb, false) != GDK_SUCCEED) {
 			logbat_destroy(lb);
-			logbat_destroy(n);
+			//logbat_destroy(n);
 			return GDK_FAIL;
 		}
 
@@ -3205,11 +3246,11 @@ bm_commit(logger *lg)
 			fprintf(stderr, "#bm_commit: create %d (%d)\n",
 				bid, BBP_lrefs(bid));
 	}
-	res = bm_subcommit(lg, lg->catalog_bid, lg->catalog_nme, lg->catalog_bid, lg->catalog_nme, lg->catalog_tpe, lg->catalog_oid, lg->dcatalog, n, lg->debug);
-	BBPreclaim(n);
+	res = bm_subcommit(lg, lg->catalog_bid, lg->catalog_nme, lg->catalog_bid, lg->catalog_nme, lg->catalog_tpe, lg->catalog_oid, lg->dcatalog, /*n*/NULL, lg->debug);
+	//BBPreclaim(n);
 	if (res == GDK_SUCCEED) {
-		BATclear(lg->freed, false);
-		BATcommit(lg->freed, BUN_NONE);
+		//BATclear(lg->freed, false);
+		//BATcommit(lg->freed, BUN_NONE);
 		return GDK_SUCCEED;
 	}
 	return GDK_FAIL;
