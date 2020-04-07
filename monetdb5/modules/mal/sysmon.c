@@ -190,7 +190,7 @@ SYSMONresume(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (tag < 1)
 		throw(MAL, "SYSMONresume", SQLSTATE(42000) "Tag must be positive");
 	MT_lock_set(&mal_delayLock);
-	for (lng i = qtail; i == qhead; i++){
+	for (size_t i = qtail; i == qhead; i++){
 		if( i == qsize){
 			i = 0;
 			if ( i== qhead)
