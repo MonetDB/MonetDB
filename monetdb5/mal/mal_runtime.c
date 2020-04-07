@@ -27,7 +27,7 @@
 
 
 QueryQueue QRYqueue = NULL;
-lng qsize = 0, qhead = 0, qtail = 0;
+size_t qsize = 0, qhead = 0, qtail = 0;
 static oid qtag= 1;		// A unique query identifier
 
 void
@@ -106,7 +106,7 @@ advanceQRYqueue(void)
 void
 dropQRYqueue(void)
 {
-	lng i;
+	size_t i;
 	MT_lock_set(&mal_delayLock);
 	for(i = 0; i < qsize; i++){
 		if( QRYqueue[i].query)
@@ -122,7 +122,7 @@ dropQRYqueue(void)
 void
 runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 {
-	lng i, paused = 0;
+	size_t i, paused = 0;
 	str q;
 	QueryQueue tmp;
 
@@ -154,7 +154,7 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 			paused += (QRYqueue[i].status[0] == 'p' || QRYqueue[i].status[0] == 'r'); /* running, prepared or paused */
 	}
 	assert(qhead < qsize);
-	if( qsize - paused < MAL_MAXCLIENTS){
+	if( (int) (qsize - paused) < MAL_MAXCLIENTS){
 		qsize += MAL_MAXCLIENTS;
 		QRYqueue = (QueryQueue) GDKrealloc( QRYqueue, sizeof (struct QRYQUEUE) * qsize);
 		if ( QRYqueue == NULL){
@@ -193,7 +193,7 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 void
 runtimeProfileFinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 {
-	lng i;
+	size_t i;
 
 	(void) cntxt;
 	(void) mb;

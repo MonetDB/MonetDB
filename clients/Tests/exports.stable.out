@@ -2489,7 +2489,7 @@ str putNameLen(const char *nme, size_t len);
 str putRef;
 str pyapi3Ref;
 str pyapi3mapRef;
-lng qhead, qtail, qsize;
+size_t qhead, qtail, qsize;
 str queryRef;
 str querylogRef;
 str raiseRef;

@@ -38,7 +38,7 @@ typedef struct QRYQUEUE{
 	time_t start;
 	time_t finished;
 } *QueryQueue;
-mal_export lng qhead, qtail, qsize;
+mal_export size_t qhead, qtail, qsize;
 
 typedef struct WORKINGSET{
 	Client		cntxt;
