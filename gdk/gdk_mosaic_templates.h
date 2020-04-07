@@ -162,10 +162,17 @@ CONCAT2(MOScheck_, HEAP)(BAT *b)
 	int ret;
 	lng t;
 
-    if (VIEWtparent(b)) { /* TODO: does this make sense?*/
+	/*
+	 * TODO: This approach of checking the parent in the check is similar to imprints.
+	 * But this requires work on every call site that uses BATcheckmosaic to somehow
+	 * use the parent for the mosaic index. This additional logic is not there yet so this code
+	 * has to be committed out or it triggers a fatal bug when this branch is actually entered.
+
+    if (VIEWtparent(b)) {
         assert(b->CONCAT2(t, HEAP) == NULL);
         b = BBPdescriptor(VIEWtparent(b));
     }
+	*/
 
 	assert(b->batCacheid > 0);
 	t = GDKusec();
