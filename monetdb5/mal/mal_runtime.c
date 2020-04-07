@@ -63,7 +63,7 @@ isaSQLquery(MalBlkPtr mb){
 
 /* clear the next entry for a new call unless it is a running query */
 static void
-clearQRYqueue(lng idx)
+clearQRYqueue(size_t idx)
 {
 		QRYqueue[idx].query = 0;
 		QRYqueue[idx].cntxt = 0;
@@ -113,6 +113,7 @@ dropQRYqueue(void)
 			GDKfree(QRYqueue[i].query);
 		if(QRYqueue[i].username)
 			GDKfree(QRYqueue[i].username);
+		clearQRYqueue(i);
 	}
 	GDKfree(QRYqueue);
 	QRYqueue = NULL;
@@ -175,6 +176,7 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 	QRYqueue[qhead].start = time(0);
 	q = isaSQLquery(mb);
 	QRYqueue[qhead].query = q? GDKstrdup(q):0;
+	GDKfree(QRYqueue[qhead].username);
 	AUTHgetUsername(&QRYqueue[qhead].username, cntxt);
 	QRYqueue[qhead].idx = cntxt->idx;
 	QRYqueue[qhead].memory = (int) (stk->memory / LL_CONSTANT(1048576)); /* Convert to MB */
