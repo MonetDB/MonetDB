@@ -404,8 +404,9 @@ fixfltheap(BAT *b)
 		TRC_CRITICAL(GDK, "GDKfilepath failed\n");
 		return GDK_FAIL;
 	}
-	/* coverity[null_returns] */
-	*strrchr(srcdir, DIR_SEP) = 0;
+	char *s;
+	if ((s = strrchr(srcdir, DIR_SEP)) != NULL)
+		*s = 0;
 
 	if ((bnme = strrchr(nme, DIR_SEP)) != NULL)
 		bnme++;
@@ -694,8 +695,9 @@ fixdateheap(BAT *b, const char *anme)
 		TRC_CRITICAL(GDK, "GDKfilepath failed\n");
 		return GDK_FAIL;
 	}
-	/* coverity[null_returns] */
-	*strrchr(srcdir, DIR_SEP) = 0;
+	char *s;
+	if ((s = strrchr(srcdir, DIR_SEP)) != NULL)
+		*s = 0;
 
 	if ((bnme = strrchr(nme, DIR_SEP)) != NULL)
 		bnme++;
