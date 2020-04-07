@@ -322,7 +322,7 @@ MOSlayout(BAT *b, BAT *bbsn, BAT *btech, BAT *bcount, BAT *binput, BAT *boutput,
 	str msg = MAL_SUCCEED;
 
 	if( !isCompressed(b->batCacheid))
-		throw(MAL,"mosaic.layout","Compression heap missing");
+		return MAL_SUCCEED;
 
 	MOStask task = {0};
 	MOSinit(&task,b);
