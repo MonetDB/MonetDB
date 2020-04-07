@@ -1,4 +1,4 @@
-import sys, os, socket, sys, tempfile, shutil
+import sys, os, socket, sys, tempfile
 
 try:
     from MonetDBtesting import process
@@ -12,24 +12,24 @@ def freeport():
     sock.close()
     return port
 
-farm_dir = tempfile.mkdtemp()
-os.mkdir(os.path.join(farm_dir, 'db1'))
-myport = freeport()
+class server(process.server):
+    def __init__(self):
+        super().__init__(mapiport=myport, dbname='db1',
+                         dbfarm=os.path.join(farm_dir, 'db1'),
+                         stdin=process.PIPE,
+                         stdout=process.PIPE, stderr=process.PIPE)
 
-def server():
-    return process.server(mapiport=myport, dbname='db1', dbfarm=os.path.join(farm_dir, 'db1'), stdin = process.PIPE,
-                   stdout = process.PIPE, stderr = process.PIPE)
-
-def server_stop(s):
-    out, err = s.communicate()
-    sys.stdout.write(out)
-    sys.stderr.write(err)
+    def server_stop(self):
+        out, err = self.communicate()
+        sys.stdout.write(out)
+        sys.stderr.write(err)
 
 def client(input):
-    c = process.client('sql', port = myport, dbname='db1', stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
-    out, err = c.communicate(input)
-    sys.stdout.write(out)
-    sys.stderr.write(err)
+    with process.client('sql', port=myport, dbname='db1', stdin=process.PIPE,
+                        stdout=process.PIPE, stderr=process.PIPE) as c:
+        out, err = c.communicate(input)
+        sys.stdout.write(out)
+        sys.stderr.write(err)
 
 script1 = '''\
 create table lost_update_t2 (a int);
@@ -62,33 +62,19 @@ drop table lost_update_t1;
 drop table lost_update_t2;
 '''
 
-try:
-    try:
-        s = server()
+myport = freeport()
+
+with tempfile.TemporaryDirectory() as farm_dir:
+    os.mkdir(os.path.join(farm_dir, 'db1'))
+    with server() as s:
         client(script1)
-        server_stop(s)
-    finally:
-        s.terminate()
-
-    try:
-        s = server()
+        s.server_stop()
+    with server() as s:
         client(script2)
-        server_stop(s)
-    finally:
-        s.terminate()
-
-    try:
-        s = server()
+        s.server_stop()
+    with server() as s:
         client(script3)
-        server_stop(s)
-    finally:
-        s.terminate()
-
-    try:
-        s = server()
+        s.server_stop()
+    with server() as s:
         client(cleanup)
-        server_stop(s)
-    finally:
-        s.terminate()
-finally:
-    shutil.rmtree(farm_dir)
+        s.server_stop()

@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 import pymonetdb, sys, threading, os
 
 client1 = pymonetdb.connect(port = int(os.getenv('MAPIPORT', '50000')), database = os.getenv('TSTDB', 'demo'), hostname = os.getenv('MAPIHOST', 'localhost'), autocommit=True)

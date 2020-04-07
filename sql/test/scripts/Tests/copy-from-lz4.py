@@ -6,27 +6,22 @@ except ImportError:
     import process
 
 (fd, tmpf) = tempfile.mkstemp(suffix='.lz4', text=True)
-os.close(fd)
-os.unlink(tmpf)
-
-s = None
 try:
-    s = process.server(args=[], stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE)
+    os.close(fd)
+    os.unlink(tmpf)
 
-    data = open(os.path.join(os.getenv('TSTSRCDIR'), 'lz4-dump.sql')).read()
+    with process.server(args=[], stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE) as s:
+        data = open(os.path.join(os.getenv('TSTSRCDIR'), 'lz4-dump.sql')).read()
+        with process.client('sql', stdin=process.PIPE, log=True,
+                            stdout=process.PIPE, stderr=process.PIPE) as c:
+            out, err = c.communicate(data.replace('/tmp/testing-dump.lz4', tmpf))
+            sys.stdout.write(out)
+            sys.stderr.write(err)
 
-    c = process.client('sql', stdin=process.PIPE,
-                       stdout=process.PIPE, stderr=process.PIPE, log=True)
-    out, err = c.communicate(data.replace('/tmp/testing-dump.lz4', tmpf))
-    sys.stdout.write(out)
-    sys.stderr.write(err)
-
-    out, err = s.communicate()
-    sys.stdout.write(out)
-    sys.stderr.write(err)
+        out, err = s.communicate()
+        sys.stdout.write(out)
+        sys.stderr.write(err)
 finally:
-    if s is not None:
-        s.terminate()
     try:
         os.unlink(tmpf)
     except:

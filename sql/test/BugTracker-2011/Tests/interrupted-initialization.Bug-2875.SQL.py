@@ -1,6 +1,4 @@
-from __future__ import print_function
-
-import os, socket, sys, tempfile, shutil
+import os, socket, sys, tempfile
 try:
     from MonetDBtesting import process
 except ImportError:
@@ -13,33 +11,31 @@ def freeport():
     sock.close()
     return port
 
-farm_dir = tempfile.mkdtemp()
-os.mkdir(os.path.join(farm_dir, 'db1'))
 myport = freeport()
 
-s = None
-try:
-    s = process.server(mapiport=myport, dbname='db1', dbfarm=os.path.join(farm_dir, 'db1'), stdin = process.PIPE,
-                       stdout = process.PIPE, stderr = process.PIPE)
-    out, err = s.communicate()
-    sys.stdout.write(out)
-    sys.stderr.write(err)
-    s = process.server(mapiport=myport, dbname='db1', dbfarm=os.path.join(farm_dir, 'db1'), stdin = process.PIPE,
-                       stdout = process.PIPE, stderr = process.PIPE)
-    c = process.client(lang = 'sqldump',
-                       port=myport,
-                       dbname='db1',
-                       stdin = process.PIPE,
-                       stdout = process.PIPE,
-                       stderr = process.PIPE,
-                       server = s)
-    out, err = c.communicate()
-    sys.stdout.write(out)
-    sys.stderr.write(err)
-    out, err = s.communicate()
-    sys.stdout.write(out)
-    sys.stderr.write(err)
-finally:
-    if s is not None:
-        s.terminate()
-    shutil.rmtree(farm_dir)
+with tempfile.TemporaryDirectory() as farm_dir:
+    os.mkdir(os.path.join(farm_dir, 'db1'))
+    with process.server(mapiport=myport, dbname='db1',
+                        dbfarm=os.path.join(farm_dir, 'db1'),
+                        stdin=process.PIPE,
+                        stdout=process.PIPE, stderr=process.PIPE) as s:
+        out, err = s.communicate()
+        sys.stdout.write(out)
+        sys.stderr.write(err)
+    with process.server(mapiport=myport, dbname='db1',
+                        dbfarm=os.path.join(farm_dir, 'db1'),
+                        stdin=process.PIPE,
+                        stdout=process.PIPE, stderr=process.PIPE) as s:
+        with process.client(lang = 'sqldump',
+                            port=myport,
+                            dbname='db1',
+                            stdin = process.PIPE,
+                            stdout = process.PIPE,
+                            stderr = process.PIPE,
+                            server = s) as c:
+            out, err = c.communicate()
+            sys.stdout.write(out)
+            sys.stderr.write(err)
+        out, err = s.communicate()
+        sys.stdout.write(out)
+        sys.stderr.write(err)

@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 try:
     from MonetDBtesting import process
 except ImportError:
@@ -16,23 +14,20 @@ if not tstdb or not dbfarm:
 #clean up first
 dbname = tstdb
 
-s = None
-try:
-    s = process.server(dbname = dbname, stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
-
-    c = process.client('sql', server = s, stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
+with process.server(dbname=dbname, stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE) as s, \
+     process.client('sql', server=s, stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE) as c:
 
     cout, cerr = c.communicate('''\
-    call wlc.beat(0);
-    call wlc.master();
+call wlc.beat(0);
+call wlc.master();
 
-    create table tmp0(i int, s string);
-    insert into tmp0 values(1,'gaap'), (2,'sleep');
-    drop table tmp0;
-    create table tmp(i int, s string);
-    insert into tmp values(1,'hello'), (2,'world');
-    select * from tmp;
-    ''')
+create table tmp0(i int, s string);
+insert into tmp0 values(1,'gaap'), (2,'sleep');
+drop table tmp0;
+create table tmp(i int, s string);
+insert into tmp values(1,'hello'), (2,'world');
+select * from tmp;
+''')
 
     sout, serr = s.communicate()
 
@@ -40,9 +35,6 @@ try:
     sys.stdout.write(cout)
     sys.stderr.write(serr)
     sys.stderr.write(cerr)
-finally:
-    if s is not None:
-        s.terminate()
 
 def listfiles(path):
     sys.stdout.write("#LISTING OF THE LOG FILES\n")

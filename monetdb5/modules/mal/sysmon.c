@@ -30,7 +30,7 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat *f = getArgReference_bat(stk,pci,6);
 	bat *w = getArgReference_bat(stk,pci,7);
 	bat *m = getArgReference_bat(stk,pci,8);
-	lng i, qtag;
+	lng qtag;
 	int wrk, mem, sz;
 	timestamp tsn;
 	str msg = MAL_SUCCEED;
@@ -61,52 +61,53 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	MT_lock_set(&mal_delayLock);
-	for ( i = qtail; i != qhead; i++){
+	for (size_t i = qtail; i != qhead; i++){
 		if ( i == qsize){
 			i = 0;
 			if( i == qhead)
 				break;
 		}
-	if( QRYqueue[i].query && (cntxt->user == MAL_ADMIN || cntxt->idx == QRYqueue[i].idx) ){
-		qtag = (lng) QRYqueue[i].tag;
-		if (BUNappend(tag, &qtag, false) != GDK_SUCCEED)
-			goto bailout;
+		if( QRYqueue[i].query && (cntxt->user == MAL_ADMIN || cntxt->idx == QRYqueue[i].idx) ){
+			qtag = (lng) QRYqueue[i].tag;
+			if (BUNappend(tag, &qtag, false) != GDK_SUCCEED)
+				goto bailout;
 
-		if (BUNappend(user, QRYqueue[i].username, false) != GDK_SUCCEED) {
-			goto bailout;
+			if (BUNappend(user, QRYqueue[i].username, false) != GDK_SUCCEED) {
+				goto bailout;
+			}
+
+			if (BUNappend(sessionid, &(QRYqueue[i].idx), false) != GDK_SUCCEED) {
+				goto bailout;
+			}
+
+			if (BUNappend(query, QRYqueue[i].query, false) != GDK_SUCCEED ||
+				BUNappend(status, QRYqueue[i].status, false) != GDK_SUCCEED)
+				goto bailout;
+
+			/* convert number of seconds into a timestamp */
+			tsn = timestamp_fromtime(QRYqueue[i].start);
+			if (is_timestamp_nil(tsn)) {
+				msg = createException(MAL, "SYSMONqueue", SQLSTATE(22003) "cannot convert time");
+				goto bailout;
+			}
+			if (BUNappend(started, &tsn, false) != GDK_SUCCEED)
+				goto bailout;
+
+			tsn = timestamp_fromtime(QRYqueue[i].finished);
+			if (is_timestamp_nil(tsn)) {
+				msg = createException(MAL, "SYSMONqueue", SQLSTATE(22003) "cannot convert time");
+				goto bailout;
+			}
+			if (BUNappend(finished, &tsn, false) != GDK_SUCCEED)
+				goto bailout;
+
+			wrk = QRYqueue[i].workers;
+			mem = QRYqueue[i].memory;
+			if ( BUNappend(workers, &wrk, false) != GDK_SUCCEED ||
+				 BUNappend(memory, &mem, false) != GDK_SUCCEED)
+				goto bailout;
 		}
-
-		if (BUNappend(sessionid, &(QRYqueue[i].idx), false) != GDK_SUCCEED) {
-			goto bailout;
-		}
-
-		if (BUNappend(query, QRYqueue[i].query, false) != GDK_SUCCEED ||
-			BUNappend(status, QRYqueue[i].status, false) != GDK_SUCCEED)
-			goto bailout;
-
-		/* convert number of seconds into a timestamp */
-		tsn = timestamp_fromtime(QRYqueue[i].start);
-		if (is_timestamp_nil(tsn)) {
-			msg = createException(MAL, "SYSMONqueue", SQLSTATE(22003) "cannot convert time");
-			goto bailout;
-		}
-		if (BUNappend(started, &tsn, false) != GDK_SUCCEED)
-			goto bailout;
-
-		tsn = timestamp_fromtime(QRYqueue[i].finished);
-		if (is_timestamp_nil(tsn)) {
-			msg = createException(MAL, "SYSMONqueue", SQLSTATE(22003) "cannot convert time");
-			goto bailout;
-		}
-		if (BUNappend(finished, &tsn, false) != GDK_SUCCEED)
-			goto bailout;
-
-		wrk = QRYqueue[i].workers;
-		mem = QRYqueue[i].memory;
-		if ( BUNappend(workers, &wrk, false) != GDK_SUCCEED ||
-			BUNappend(memory, &mem, false) != GDK_SUCCEED)
-			goto bailout;
-	}}
+	}
 	MT_lock_unset(&mal_delayLock);
 	BBPkeepref( *t =tag->batCacheid);
 	BBPkeepref( *s =sessionid->batCacheid);
@@ -153,7 +154,7 @@ SYSMONpause(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (tag < 1)
 		throw(MAL, "SYSMONpause", SQLSTATE(42000) "Tag must be positive");
 	MT_lock_set(&mal_delayLock);
-	for (lng i = qtail; i != qhead; i++){
+	for (size_t i = qtail; i != qhead; i++){
 		if( i == qsize){
 			i = 0;
 			if( i == qhead)
@@ -189,7 +190,7 @@ SYSMONresume(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (tag < 1)
 		throw(MAL, "SYSMONresume", SQLSTATE(42000) "Tag must be positive");
 	MT_lock_set(&mal_delayLock);
-	for (lng i = qtail; i == qhead; i++){
+	for (size_t i = qtail; i == qhead; i++){
 		if( i == qsize){
 			i = 0;
 			if ( i== qhead)
@@ -225,7 +226,7 @@ SYSMONstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (tag < 1)
 		throw(MAL, "SYSMONstop", SQLSTATE(42000) "Tag must be positive");
 	MT_lock_set(&mal_delayLock);
-	for (lng i = qtail; i != qhead; i++){
+	for (size_t i = qtail; i != qhead; i++){
 		if( i == qsize){
 			i = 0;
 			if( i == qhead)

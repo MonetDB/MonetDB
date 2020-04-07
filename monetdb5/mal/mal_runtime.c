@@ -27,7 +27,7 @@
 
 
 QueryQueue QRYqueue = NULL;
-lng qsize = 0, qhead = 0, qtail = 0;
+size_t qsize = 0, qhead = 0, qtail = 0;
 static oid qtag= 1;		// A unique query identifier
 
 void
@@ -63,7 +63,7 @@ isaSQLquery(MalBlkPtr mb){
 
 /* clear the next entry for a new call unless it is a running query */
 static void
-clearQRYqueue(int idx)
+clearQRYqueue(lng idx)
 {
 		QRYqueue[idx].query = 0;
 		QRYqueue[idx].cntxt = 0;
@@ -93,8 +93,10 @@ advanceQRYqueue(void)
 	if( s){
 		/* don;t wipe them when they are still running, prepared, or paused */
 		/* The upper layer has assured there is at least one slot available */
-		if(QRYqueue[qhead].status == 0 || (QRYqueue[qhead].status[0] != 'r' && QRYqueue[qhead].status[0] != 'p'))
-			return advanceQRYqueue();
+		if(QRYqueue[qhead].status == 0 || (QRYqueue[qhead].status[0] != 'r' && QRYqueue[qhead].status[0] != 'p')){
+			advanceQRYqueue();
+			return;
+		}
 		GDKfree(s);
 		GDKfree(QRYqueue[qhead].username);
 		clearQRYqueue(qhead);
@@ -104,7 +106,7 @@ advanceQRYqueue(void)
 void
 dropQRYqueue(void)
 {
-	int i;
+	size_t i;
 	MT_lock_set(&mal_delayLock);
 	for(i = 0; i < qsize; i++){
 		if( QRYqueue[i].query)
@@ -120,7 +122,7 @@ dropQRYqueue(void)
 void
 runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 {
-	lng i, paused = 0;
+	size_t i, paused = 0;
 	str q;
 	QueryQueue tmp;
 
@@ -152,7 +154,7 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 			paused += (QRYqueue[i].status[0] == 'p' || QRYqueue[i].status[0] == 'r'); /* running, prepared or paused */
 	}
 	assert(qhead < qsize);
-	if( qsize - paused < MAL_MAXCLIENTS){
+	if( (int) (qsize - paused) < MAL_MAXCLIENTS){
 		qsize += MAL_MAXCLIENTS;
 		QRYqueue = (QueryQueue) GDKrealloc( QRYqueue, sizeof (struct QRYQUEUE) * qsize);
 		if ( QRYqueue == NULL){
@@ -191,7 +193,7 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 void
 runtimeProfileFinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 {
-	lng i;
+	size_t i;
 
 	(void) cntxt;
 	(void) mb;

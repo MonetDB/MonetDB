@@ -534,9 +534,6 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 					/* if it failed, try alternative */
 				}
 				if (p == MAP_FAILED && path != NULL) {
-#ifdef HAVE_POSIX_FALLOCATE
-					int rt;
-#endif
 					/* write data to disk, then
 					 * mmap it to new address */
 					if (fd >= 0)

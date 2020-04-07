@@ -86,6 +86,14 @@ SELECT corr(i1.i, i2.i) OVER () FROM integers i1, integers i2;
 
 SELECT (SELECT SUM(i1.i) IN (SELECT CORR(i1.i, i2.i) FROM integers i2)) FROM integers i1; --error, subquery uses ungrouped column "i1.i" from outer query
 
+SELECT (SELECT corr(col1, SUM(col2))) FROM another_t; --error, aggregate function calls cannot be nested
+
+SELECT (SELECT corr(col1, col2) WHERE corr(col3, SUM(col4)) > 0) FROM another_t GROUP BY col5; --error, aggregate function calls cannot be nested
+
+SELECT (SELECT 1 GROUP BY SUM(col2 + 1)) FROM another_t; --should we allow this?
+
+SELECT (SELECT 1 WHERE SUM(col2 + 1) > 0) FROM another_t; --allow this?
+
 DROP FUNCTION evilfunction(INT);
 DROP TABLE tbl_ProductSales;
 DROP TABLE another_T;

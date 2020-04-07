@@ -17,29 +17,30 @@ except ImportError:
     import process
 
 def sql_test_client(user, passwd, input):
-    process.client(lang = "sql", user = user, passwd = passwd, communicate = True,
-                   stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE,
-                   input = input, port = int(os.getenv("MAPIPORT")))
+    with process.client(lang="sql", user=user, passwd=passwd, communicate=True,
+                        stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE,
+                        input=input, port=int(os.getenv("MAPIPORT"))) as c:
+        c.communicate()
 
-sql_test_client('monetdb', 'monetdb', input = """\
+sql_test_client('monetdb', 'monetdb', input="""\
 ALTER USER "april" RENAME TO "april2"; --succeed
 CREATE USER april with password 'april' name 'second' schema bank;
 """)
 
 # This is the new april, so these operations should fail.
-sql_test_client('april', 'april', input = """\
+sql_test_client('april', 'april', input="""\
 DELETE from bank.accounts; -- not enough privelges
 SET role bankAdmin; -- no such role
 ALTER USER "april2" RENAME TO "april3"; --not enough privileges
 """)
 
 # This is the initial april, so these operations should succeed.
-sql_test_client('april2', 'april', input = """\
+sql_test_client('april2', 'april', input="""\
 SELECT * from bank.accounts;
 SET role bankAdmin;
 """)
 
-sql_test_client('monetdb', 'monetdb', input = """\
+sql_test_client('monetdb', 'monetdb', input="""\
 ALTER USER "april2" RENAME TO "april";
 drop user april;
 ALTER USER "april2" RENAME TO "april";
