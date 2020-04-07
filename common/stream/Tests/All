@@ -1,1 +1,5 @@
 read_uncompressed
+read_bz2
+read_gz
+read_lz4
+read_xz
