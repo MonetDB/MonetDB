@@ -27,10 +27,10 @@ def write(name, compression, content):
         f = open(filename, 'wb')
     elif compression == 'gz':
         filename += '.gz'
-        f = gzip.GzipFile(filename, 'wb', mtime=131875200)
+        f = gzip.GzipFile(filename, 'wb', mtime=131875200, compresslevel=9)
     elif compression == 'bz2':
         filename += '.bz2'
-        f = bz2.BZ2File(filename, 'wb')
+        f = bz2.BZ2File(filename, 'wb', compresslevel=9)
     else:
         raise Exception("Unknown compression scheme: " + compression)
 
