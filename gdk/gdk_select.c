@@ -165,8 +165,8 @@ hashselect(BAT *b, struct canditer *restrict ci, BAT *bn,
 
 /* Imprints select code */
 
-/* inner check */
-#define impscheck(canditer_next,TEST,ADD)				\
+/* inner check, non-dense canditer */
+#define impscheck(TEST,ADD)						\
 	do {								\
 		const oid e = (oid) (i+limit-pr_off+hseq);		\
 		if (im[icnt] & mask) {					\
@@ -195,13 +195,43 @@ hashselect(BAT *b, struct canditer *restrict ci, BAT *bn,
 		}							\
 	} while (false)
 
+/* inner check, dense canditer */
+#define impscheck_dense(TEST,ADD)					\
+	do {								\
+		const oid e = (oid) (i+limit-pr_off+hseq);		\
+		if (im[icnt] & mask) {					\
+			if ((im[icnt] & ~innermask) == 0) {		\
+				while (p < ci->ncand && o < e) {	\
+					v = src[o-hseq];		\
+					ADD;				\
+					cnt++;				\
+					p++;				\
+					o = canditer_next_dense(ci);	\
+				}					\
+			} else {					\
+				while (p < ci->ncand && o < e) {	\
+					v = src[o-hseq];		\
+					ADD;				\
+					cnt += (TEST) != 0;		\
+					p++;				\
+					o = canditer_next_dense(ci);	\
+				}					\
+			}						\
+		} else {						\
+			BUN skip_sz = MIN(ci->ncand - p, e - o);	\
+			p += skip_sz;					\
+			o += skip_sz;					\
+			ci->next += skip_sz;				\
+		}							\
+	} while (false)
+
 /* main loop for imprints */
 /*
  * icnt is the iterator for imprints
  * dcnt is the iterator for dictionary entries
  * i    is the iterator for the values in imprints
  */
-#define impsloop(canditer_next,TEST,ADD)				\
+#define impsloop(ISDENSE,TEST,ADD)					\
 	do {								\
 		BUN dcnt, icnt, limit, i;				\
 		const cchdc_t *restrict d = (cchdc_t *) imprints->dict;	\
@@ -227,12 +257,12 @@ hashselect(BAT *b, struct canditer *restrict ci, BAT *bn,
 				for (;					\
 				     icnt < l && i <= w - hseq + pr_off; \
 				     icnt++) {				\
-					impscheck(canditer_next,TEST,ADD); \
+					impscheck##ISDENSE(TEST,ADD);	\
 					i += limit;			\
 				}					\
 			}						\
 			else {						\
-				impscheck(canditer_next,TEST,ADD);	\
+				impscheck##ISDENSE(TEST,ADD);		\
 				i += limit;				\
 				icnt++;					\
 			}						\
@@ -246,7 +276,7 @@ hashselect(BAT *b, struct canditer *restrict ci, BAT *bn,
 	} while (false)
 
 /* construct the mask */
-#define impsmask(canditer_next,TEST,B)					\
+#define impsmask(ISDENSE,TEST,B)					\
 	do {								\
 		const uint##B##_t *restrict im = (uint##B##_t *) imprints->imps; \
 		uint##B##_t mask = 0, innermask;			\
@@ -275,13 +305,13 @@ hashselect(BAT *b, struct canditer *restrict ci, BAT *bn,
 			innermask = IMPSunsetBit(B, innermask, 0);	\
 									\
 		if (BATcapacity(bn) < maximum) {			\
-			impsloop(canditer_next, TEST,			\
+			impsloop(ISDENSE, TEST,				\
 				 buninsfix(bn, dst, cnt, o,		\
 					   (BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p) \
 						  * (dbl) (ci->ncand-p) * 1.1 + 1024), \
 					   BATcapacity(bn) + ci->ncand - p, BUN_NONE)); \
 		} else {						\
-			impsloop(canditer_next, TEST, quickins(dst, cnt, o, bn)); \
+			impsloop(ISDENSE, TEST, quickins(dst, cnt, o, bn)); \
 		}							\
 	} while (false)
 
@@ -307,15 +337,15 @@ hashselect(BAT *b, struct canditer *restrict ci, BAT *bn,
 	} while (false)
 
 /* choose number of bits */
-#define bitswitch(canditer_next, TEST, TYPE)				\
+#define bitswitch(ISDENSE, TEST, TYPE)					\
 	do {								\
 		assert(imprints);					\
-		*algo = "imprints select " #TEST " (" #canditer_next ")"; \
+		*algo = "imprints select " #TEST " (canditer_next" #ISDENSE ")"; \
 		switch (imprints->bits) {				\
-		case 8:  checkMINMAX(8, TYPE); impsmask(canditer_next,TEST,8); break; \
-		case 16: checkMINMAX(16, TYPE); impsmask(canditer_next,TEST,16); break; \
-		case 32: checkMINMAX(32, TYPE); impsmask(canditer_next,TEST,32); break; \
-		case 64: checkMINMAX(64, TYPE); impsmask(canditer_next,TEST,64); break; \
+		case 8:  checkMINMAX(8, TYPE); impsmask(ISDENSE,TEST,8); break; \
+		case 16: checkMINMAX(16, TYPE); impsmask(ISDENSE,TEST,16); break; \
+		case 32: checkMINMAX(32, TYPE); impsmask(ISDENSE,TEST,32); break; \
+		case 64: checkMINMAX(64, TYPE); impsmask(ISDENSE,TEST,64); break; \
 		default: assert(0); break;				\
 		}							\
 	} while (false)
@@ -398,17 +428,17 @@ hashselect(BAT *b, struct canditer *restrict ci, BAT *bn,
 #define MAXVALUEflt	GDK_flt_max
 #define MAXVALUEdbl	GDK_dbl_max
 
-#define choose(NAME, canditer_next, TEST, TYPE)			\
-	do {							\
-		if (use_imprints) {				\
-			bitswitch(canditer_next, TEST, TYPE);	\
-		} else {					\
-			scanloop(NAME, canditer_next, TEST);	\
-		}						\
+#define choose(NAME, ISDENSE, TEST, TYPE)				\
+	do {								\
+		if (use_imprints) {					\
+			bitswitch(ISDENSE, TEST, TYPE);			\
+		} else {						\
+			scanloop(NAME, canditer_next##ISDENSE, TEST);	\
+		}							\
 	} while (false)
 
 /* definition of type-specific core scan select function */
-#define scanfunc(NAME, TYPE, canditer_next)				\
+#define scanfunc(NAME, TYPE, ISDENSE)					\
 static BUN								\
 NAME##_##TYPE(BAT *b, struct canditer *restrict ci, BAT *bn,		\
 	      const TYPE *tl, const TYPE *th, bool li, bool hi,		\
@@ -452,21 +482,21 @@ NAME##_##TYPE(BAT *b, struct canditer *restrict ci, BAT *bn,		\
 	if (equi) {							\
 		assert(!use_imprints);					\
 		if (lnil)						\
-			scanloop(NAME, canditer_next, is_##TYPE##_nil(v)); \
+			scanloop(NAME, canditer_next##ISDENSE, is_##TYPE##_nil(v)); \
 		else							\
-			scanloop(NAME, canditer_next, v == vl);		\
+			scanloop(NAME, canditer_next##ISDENSE, v == vl); \
 	} else if (anti) {						\
 		if (b->tnonil) {					\
-			choose(NAME, canditer_next, (v <= vl || v >= vh), TYPE); \
+			choose(NAME, ISDENSE, (v <= vl || v >= vh), TYPE); \
 		} else {						\
-			choose(NAME, canditer_next, !is_##TYPE##_nil(v) && (v <= vl || v >= vh), TYPE); \
+			choose(NAME, ISDENSE, !is_##TYPE##_nil(v) && (v <= vl || v >= vh), TYPE); \
 		}							\
 	} else if (b->tnonil && vl == minval) {				\
-		choose(NAME, canditer_next, v <= vh, TYPE);		\
+		choose(NAME, ISDENSE, v <= vh, TYPE);			\
 	} else if (vh == maxval) {					\
-		choose(NAME, canditer_next, v >= vl, TYPE);		\
+		choose(NAME, ISDENSE, v >= vl, TYPE);			\
 	} else {							\
-		choose(NAME, canditer_next, v >= vl && v <= vh, TYPE);	\
+		choose(NAME, ISDENSE, v >= vl && v <= vh, TYPE);	\
 	}								\
 	return cnt;							\
 }
@@ -633,23 +663,23 @@ fullscan_str(BAT *b, struct canditer *restrict ci, BAT *bn,
 
 /* scan select type switch */
 #ifdef HAVE_HGE
-#define scanfunc_hge(NAME, canditer_next)	\
-	scanfunc(NAME, hge, canditer_next)
+#define scanfunc_hge(NAME, ISDENSE)		\
+	scanfunc(NAME, hge, ISDENSE)
 #else
-#define scanfunc_hge(NAME, canditer_next)
+#define scanfunc_hge(NAME, ISDENSE)
 #endif
-#define scan_sel(NAME, canditer_next)		\
-	scanfunc(NAME, bte, canditer_next)	\
-	scanfunc(NAME, sht, canditer_next)	\
-	scanfunc(NAME, int, canditer_next)	\
-	scanfunc(NAME, flt, canditer_next)	\
-	scanfunc(NAME, dbl, canditer_next)	\
-	scanfunc(NAME, lng, canditer_next)	\
-	scanfunc_hge(NAME, canditer_next)
+#define scan_sel(NAME, ISDENSE)			\
+	scanfunc(NAME, bte, ISDENSE)		\
+	scanfunc(NAME, sht, ISDENSE)		\
+	scanfunc(NAME, int, ISDENSE)		\
+	scanfunc(NAME, flt, ISDENSE)		\
+	scanfunc(NAME, dbl, ISDENSE)		\
+	scanfunc(NAME, lng, ISDENSE)		\
+	scanfunc_hge(NAME, ISDENSE)
 
 /* scan/imprints select */
-scan_sel(fullscan, canditer_next)
-scan_sel(densescan, canditer_next_dense)
+scan_sel(fullscan, )
+scan_sel(densescan, _dense)
 
 
 static BAT *
@@ -1008,12 +1038,14 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	} vl, vh;
 	lng t0 = GDKusec();
 
-	BATcheck(b, "BATselect", NULL);
-	BATcheck(tl, "BATselect: tl value required", NULL);
+	BATcheck(b, NULL);
+	if (tl == NULL) {
+		GDKerror("tl value required");
+		return NULL;
+	}
 
 	if (s && !BATtordered(s)) {
-		GDKerror("BATselect: invalid argument: "
-			 "s must be sorted.\n");
+		GDKerror("invalid argument: s must be sorted.\n");
 		return NULL;
 	}
 
@@ -1652,9 +1684,9 @@ BATthetaselect(BAT *b, BAT *s, const void *val, const char *op)
 {
 	const void *nil;
 
-	BATcheck(b, "BATthetaselect", NULL);
-	BATcheck(val, "BATthetaselect", NULL);
-	BATcheck(op, "BATthetaselect", NULL);
+	BATcheck(b, NULL);
+	BATcheck(val, NULL);
+	BATcheck(op, NULL);
 
 	nil = ATOMnilptr(b->ttype);
 	if (ATOMcmp(b->ttype, val, nil) == 0)
@@ -1691,7 +1723,7 @@ BATthetaselect(BAT *b, BAT *s, const void *val, const char *op)
 			return BATselect(b, s, val, nil, true, false, false);
 		}
 	}
-	GDKerror("BATthetaselect: unknown operator.\n");
+	GDKerror("unknown operator.\n");
 	return NULL;
 }
 
@@ -2180,7 +2212,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 			}
 			default:
 				ncnt = BUN_NONE;
-				GDKerror("BATrangejoin: unsupported type\n");
+				GDKerror("unsupported type\n");
 				assert(0);
 			}
 			if (ncnt == BUN_NONE)

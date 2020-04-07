@@ -153,7 +153,7 @@ GDKcopyenv(BAT **key, BAT **val, bool writable)
 	BAT *k, *v;
 
 	if (key == NULL || val == NULL) {
-		GDKerror("GDKcopyenv: called incorrectly.\n");
+		GDKerror("called incorrectly.\n");
 		return GDK_FAIL;
 	}
 	k = COLcopy(GDKkey, GDKkey->ttype, writable, TRANSIENT);
@@ -1190,227 +1190,7 @@ GDKunlockHome(int farmid)
  * error buffer.
  */
 
-/* do the real work for GDKaddbuf below. */
-static void
-doGDKaddbuf(const char *prefix, const char *message, size_t messagelen, const char *suffix)
-{
-	char *buf;
-
-	buf = GDKerrbuf;
-	if (buf) {
-		char *dst = buf + strlen(buf);
-		size_t maxlen = GDKMAXERRLEN - (dst - buf) - 1;
-
-		if (*prefix && dst < buf + GDKMAXERRLEN) {
-			size_t preflen;
-
-			strncpy(dst, prefix, maxlen);
-			dst[maxlen] = '\0';
-			preflen = strlen(dst);
-			maxlen -= preflen;
-			dst += preflen;
-		}
-		if (maxlen > messagelen)
-			maxlen = messagelen;
-		strncpy(dst, message, maxlen);
-		dst += maxlen;
-		if (*suffix && dst < buf + GDKMAXERRLEN) {
-			size_t sufflen;
-
-			maxlen = buf + GDKMAXERRLEN - dst - 1;
-			strncpy(dst, suffix, maxlen);
-			dst[maxlen] = '\0';
-			sufflen = strlen(dst);
-			maxlen -= sufflen;
-			dst += sufflen;
-		}
-		*dst = '\0';
-		TRC_INFO(GDK, "%s%.*s%s\n",
-			 prefix[0] == '#' ? prefix + 1 : prefix,
-			 (int) messagelen, message, suffix);
-	} else {
-		TRC_ERROR(GDK, "%s%.*s%s",
-			  prefix, (int) messagelen, message, suffix);
-	}
-}
-
-/* print an error or warning message, making sure the message ends in
- * a newline, and also that every line in the message (if there are
- * multiple), starts with an exclamation point.
- * One of the problems complicating this whole issue is that each line
- * should be printed using a single call to mnstr_printf, and moreover,
- * the format string should start with a "!".
- * Another problem is that we're religious about bounds checking. It
- * would probably also not be quite as bad if we could write in the
- * message buffer.
- */
-static void
-GDKaddbuf(const char *message)
-{
-	const char *p, *q;
-	char prefix[16];
-
-	if (message == NULL || *message == '\0')	/* empty message, nothing to do */
-		return;
-	/* filter out duplicate messages */
-	if (GDKerrbuf && strstr(GDKerrbuf , message))
-		return;
-	p = message;
-	strcpy(prefix, "!");	/* default prefix */
-	while (p && *p) {
-		if (*p == '!') {
-			size_t preflen;
-
-			/* remember last ! prefix (e.g. "!ERROR: ")
-			 * for any subsequent lines that start without
-			 * ! */
-			message = p;
-			/* A prefix consists of a ! immediately
-			 * followed by some text, followed by a : and
-			 * a space.  Anything else results in no
-			 * prefix being remembered */
-			while (*++p && *p != ':' && *p != '\n' && *p != ' ')
-				;
-			if (*p == ':' && *++p == ' ') {
-				/* found prefix, now remember it */
-				preflen = (size_t) (p - message) + 1;
-				if (preflen > sizeof(prefix) - 1)
-					preflen = sizeof(prefix) - 1;
-				strncpy(prefix, message, preflen);
-				prefix[preflen] = 0;
-			} else {
-				/* there is a ! but no proper prefix */
-				strcpy(prefix, "!");
-				preflen = 1;
-			}
-			p = message + preflen;
-		}
-
-		/* find end of line */
-		q = strchr(p, '\n');
-		if (q) {
-			/* print line including newline */
-			q++;
-			doGDKaddbuf(prefix, p, (size_t) (q - p), "");
-		} else {
-			/* no newline at end of buffer: print all the
-			 * rest and add a newline */
-			doGDKaddbuf(prefix, p, strlen(p), "\n");
-			/* we're done since there were no more newlines */
-			break;
-		}
-		p = q;
-	}
-}
-
 #define GDKERRLEN	(1024+512)
-
-void
-GDKerror(const char *format, ...)
-{
-	char message[GDKERRLEN];
-	size_t len = strlen(GDKERROR);
-	va_list ap;
-
-	if (!strncmp(format, GDKERROR, len)) {
-		len = 0;
-	} else {
-		strcpy(message, GDKERROR);
-	}
-	va_start(ap, format);
-	if (vsnprintf(message + len, sizeof(message) - (len + 2), format, ap) < 0){
-		TRC_CRITICAL(GDK, "an error occurred within GDKerror.\n");
-		strcpy(message, GDKERROR "an error occurred within GDKerror.\n");
-	}
-	va_end(ap);
-
-	GDKaddbuf(message);
-}
-
-void
-GDKsyserror(const char *format, ...)
-{
-	int err = errno;
-	char message[GDKERRLEN];
-	size_t len = strlen(GDKERROR);
-	va_list ap;
-
-	if (strncmp(format, GDKERROR, len) == 0) {
-		len = 0;
-	} else {
-		strncpy(message, GDKERROR, sizeof(message));
-	}
-	va_start(ap, format);
-	vsnprintf(message + len, sizeof(message) - (len + 2), format, ap);
-	va_end(ap);
-	if (err > 0 && err < 1024) {
-		size_t len1;
-		size_t len2;
-		size_t len3;
-		const char *osmsg;
-		osmsg = GDKstrerror(err, (char[128]){0}, 128);
-		len1 = strlen(message);
-		len2 = len1 + strlen(GDKMESSAGE);
-		len3 = len2 + strlen(osmsg);
-
-		if (len3 + 2 < sizeof(message)) {
-			strcpy(message + len1, GDKMESSAGE);
-			strcpy(message + len2, osmsg);
-			if (len3 > 0 && message[len3 - 1] != '\n') {
-				message[len3] = '\n';
-				message[len3 + 1] = 0;
-			}
-		}
-	}
-	GDKaddbuf(message);
-
-	errno = 0;
-}
-
-#ifdef NATIVE_WIN32
-void
-GDKwinerror(const char *format, ...)
-{
-	int err = GetLastError();
-	char message[GDKERRLEN];
-	size_t len = strlen(GDKERROR);
-	va_list ap;
-
-	if (strncmp(format, GDKERROR, len) == 0) {
-		len = 0;
-	} else {
-		strncpy(message, GDKERROR, sizeof(message));
-	}
-	va_start(ap, format);
-	vsnprintf(message + len, sizeof(message) - (len + 2), format, ap);
-	va_end(ap);
-
-	size_t len1;
-	size_t len2;
-	size_t len3;
-	char *osmsg;
-	char osmsgbuf[256];
-	osmsg = osmsgbuf;
-	FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL, err,
-		      MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-		      (LPTSTR) osmsgbuf, sizeof(osmsgbuf), NULL);
-	len1 = strlen(message);
-	len2 = len1 + strlen(GDKMESSAGE);
-	len3 = len2 + strlen(osmsg);
-
-	if (len3 + 2 < sizeof(message)) {
-		strcpy(message + len1, GDKMESSAGE);
-		strcpy(message + len2, osmsg);
-		if (len3 > 0 && message[len3 - 1] != '\n') {
-			message[len3] = '\n';
-			message[len3 + 1] = 0;
-		}
-	}
-	GDKaddbuf(message);
-
-	SetLastError(0);
-}
-#endif
 
 void
 GDKclrerr(void)
@@ -1573,7 +1353,7 @@ THRnew(const char *name, MT_Id pid)
 
 	if (nme == NULL) {
 		TRC_DEBUG(IO_, "Malloc failure\n");
-		GDKerror("THRnew: malloc failure\n");
+		GDKerror("malloc failure\n");
 		return NULL;
 	}
 	for (Thread s = GDKthreads; s < GDKthreads + THREADS; s++) {
@@ -1595,7 +1375,7 @@ THRnew(const char *name, MT_Id pid)
 	}
 	GDKfree(nme);
 	TRC_DEBUG(IO_, "Too many threads\n");
-	GDKerror("THRnew: too many threads\n");
+	GDKerror("too many threads\n");
 	return NULL;
 }
 
@@ -1646,7 +1426,7 @@ THRcreate(void (*f) (void *), void *arg, enum MT_thr_detach d, const char *name)
 	len = snprintf(semname, sizeof(semname), "THRcreate%" PRIu64, (uint64_t) ATOMIC_INC(&ctr));
 	if (len == -1 || len > (int) sizeof(semname)) {
 		TRC_DEBUG(IO_, "Semaphore name is too large\n");
-		GDKerror("THRcreate: semaphore name is too large\n");
+		GDKerror("semaphore name is too large\n");
 		GDKfree(t);
 		GDKfree(s->name);
 		s->name = NULL;
@@ -1655,7 +1435,7 @@ THRcreate(void (*f) (void *), void *arg, enum MT_thr_detach d, const char *name)
 	}
 	MT_sema_init(&t->sem, 0, semname);
 	if (MT_create_thread(&pid, THRstarter, t, d, name) != 0) {
-		GDKerror("THRcreate: could not start thread\n");
+		GDKerror("could not start thread\n");
 		MT_sema_destroy(&t->sem);
 		GDKfree(t);
 		GDKfree(s->name);
@@ -1840,7 +1620,7 @@ GDKmemfail(const char *s, size_t len)
 	   }
 	 */
 
-	TRC_ERROR(GDK, "%s(%zu) fails, try to free up space [memory in use=%zu,virtual memory in use=%zu]\n", s, len, GDKmem_cursize(), GDKvm_cursize());
+	TRC_WARNING(GDK, "%s(%zu) fails, try to free up space [memory in use=%zu,virtual memory in use=%zu]\n", s, len, GDKmem_cursize(), GDKvm_cursize());
 }
 
 /* Memory allocation
@@ -1886,6 +1666,7 @@ GDKmalloc_internal(size_t size)
 		MT_lock_unset(&mallocsuccesslock);
 	}
 	if (GDK_malloc_success_count == 0) {
+		GDKerror("allocation failed because of testing limit\n");
 		return NULL;
 	}
 #endif
@@ -1901,7 +1682,7 @@ GDKmalloc_internal(size_t size)
 	nsize = (size + 7) & ~7;
 	if ((s = malloc(nsize + MALLOC_EXTRA_SPACE + DEBUG_SPACE)) == NULL) {
 		GDKmemfail("GDKmalloc", size);
-		GDKerror("GDKmalloc_internal: failed for %zu bytes", size);
+		GDKerror("failed for %zu bytes", size);
 		return NULL;
 	}
 	s = (void *) ((char *) s + MALLOC_EXTRA_SPACE);
@@ -2059,8 +1840,8 @@ GDKrealloc(void *s, size_t size)
 #ifndef NDEBUG
 		os[-1] &= ~2;	/* not freed after all */
 #endif
-		GDKmemfail("GDKrealloc", size);
-		GDKerror("GDKrealloc: failed for %zu bytes", size);
+		GDKmemfail(__func__, size);
+		GDKerror("failed for %zu bytes", size);
 		return NULL;
 	}
 	s = (void *) ((char *) s + MALLOC_EXTRA_SPACE);
@@ -2092,7 +1873,7 @@ GDKmalloc(size_t size)
 {
 	void *p = malloc(size);
 	if (p == NULL)
-		GDKerror("GDKmalloc: failed for %zu bytes", size);
+		GDKerror("failed for %zu bytes", size);
 	return p;
 }
 
@@ -2108,7 +1889,7 @@ GDKzalloc(size_t size)
 {
 	void *ptr = calloc(size, 1);
 	if (ptr == NULL)
-		GDKerror("GDKzalloc: failed for %zu bytes", size);
+		GDKerror("failed for %zu bytes", size);
 	return ptr;
 }
 
@@ -2117,7 +1898,7 @@ GDKrealloc(void *ptr, size_t size)
 {
 	void *p = realloc(ptr, size);
 	if (p == NULL)
-		GDKerror("GDKrealloc: failed for %zu bytes", size);
+		GDKerror("failed for %zu bytes", size);
 	return p;
 }
 
@@ -2126,7 +1907,7 @@ GDKstrdup(const char *s)
 {
 	char *p = strdup(s);
 	if (p == NULL)
-		GDKerror("GDKstrdup failed for %s\n", s);
+		GDKerror("failed for %s\n", s);
 	return p;
 }
 
@@ -2135,7 +1916,7 @@ GDKstrndup(const char *s, size_t size)
 {
 	char *p = malloc(size + 1);
 	if (p == NULL) {
-		GDKerror("GDKstrdup failed for %s\n", s);
+		GDKerror("failed for %s\n", s);
 		return NULL;
 	}
 	memcpy(p, s, size);
@@ -2166,13 +1947,13 @@ GDKmmap(const char *path, int mode, size_t len)
 
 	if (GDKvm_cursize() + len >= GDK_vm_maxsize &&
 	    !MT_thread_override_limits()) {
-		GDKmemfail("GDKmmap", len);
+		GDKmemfail(__func__, len);
 		GDKerror("allocating too much virtual address space\n");
 		return NULL;
 	}
 	ret = MT_mmap(path, mode, len);
 	if (ret == NULL) {
-		GDKmemfail("GDKmmap", len);
+		GDKmemfail(__func__, len);
 	}
 	if (ret != NULL) {
 		meminc(len);
@@ -2201,13 +1982,13 @@ GDKmremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 	if (*new_size > old_size &&
 	    GDKvm_cursize() + *new_size - old_size >= GDK_vm_maxsize &&
 	    !MT_thread_override_limits()) {
-		GDKmemfail("GDKmmap", *new_size);
+		GDKmemfail(__func__, *new_size);
 		GDKerror("allocating too much virtual address space\n");
 		return NULL;
 	}
 	ret = MT_mremap(path, mode, old_address, old_size, new_size);
 	if (ret == NULL) {
-		GDKmemfail("GDKmremap", *new_size);
+		GDKmemfail(__func__, *new_size);
 	}
 	if (ret != NULL) {
 		memdec(old_size);

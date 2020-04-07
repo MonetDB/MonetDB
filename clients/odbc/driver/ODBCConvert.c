@@ -46,6 +46,7 @@ typedef union {
 		uint16_t d2, d3;
 		uint8_t d4[8];
 	} d;
+	uint8_t u[16];
 } uuid_t;
 
 /* Parse a number and store in a bignum_t.
@@ -2805,13 +2806,18 @@ ODBCFetch(ODBCStmt *stmt,
 		ODBCLOG("Writing 16 bytes to %p\n", ptr);
 #endif
 		uuid_t u;
-		if (sscanf(data, "%8"SCNx32"-%4"SCNx16"-%4"SCNx16
-			   "-%2"SCNx8"%2"SCNx8"-%2"SCNx8"%2"SCNx8
-			   "%2"SCNx8"%2"SCNx8"%2"SCNx8"%2"SCNx8,
-			   &u.d.d1, &u.d.d2, &u.d.d3, &u.d.d4[0],
-			   &u.d.d4[1], &u.d.d4[2], &u.d.d4[3],
-			   &u.d.d4[4], &u.d.d4[5], &u.d.d4[6],
-			   &u.d.d4[7]) != 11) {
+		if (sscanf(data, "%2"SCNx8"%2"SCNx8"%2"SCNx8"%2"SCNx8
+			   "-%2"SCNx8"%2"SCNx8
+			   "-%2"SCNx8"%2"SCNx8
+			   "-%2"SCNx8"%2"SCNx8
+			   "-%2"SCNx8"%2"SCNx8"%2"SCNx8"%2"
+			   SCNx8"%2"SCNx8"%2"SCNx8,
+			   &u.u[3], &u.u[2], &u.u[1], &u.u[0],
+			   &u.u[5], &u.u[4],
+			   &u.u[7], &u.u[6],
+			   &u.u[8], &u.u[9],
+			   &u.u[10], &u.u[11], &u.u[12],
+			   &u.u[13], &u.u[14], &u.u[15]) != 16) {
 			/* Restricted data type attribute
 			 * violation */
 			addStmtError(stmt, "07006", NULL, 0);
@@ -3357,14 +3363,18 @@ ODBCStore(ODBCStmt *stmt,
 		case SQL_C_GUID:
 			u.g = *(SQLGUID *)ptr;
 			snprintf(data, sizeof(data),
-				 "%08"PRIx32"-%04"PRIx16"-%04"PRIx16
+				 "%02"PRIx8"%02"PRIx8"%02"PRIx8"%02"PRIx8
+				 "-%02"PRIx8"%02"PRIx8
+				 "-%02"PRIx8"%02"PRIx8
 				 "-%02"PRIx8"%02"PRIx8
 				 "-%02"PRIx8"%02"PRIx8"%02"PRIx8
 				 "%02"PRIx8"%02"PRIx8"%02"PRIx8,
-				 u.d.d1, u.d.d2, u.d.d3, u.d.d4[0],
-				 u.d.d4[1], u.d.d4[2], u.d.d4[3],
-				 u.d.d4[4], u.d.d4[5], u.d.d4[6],
-				 u.d.d4[7]);
+				 u.u[3], u.u[2], u.u[1], u.u[0],
+				 u.u[5], u.u[4],
+				 u.u[7], u.u[6],
+				 u.u[8], u.u[9],
+				 u.u[10], u.u[11], u.u[12],
+				 u.u[13], u.u[14], u.u[15]);
 			break;
 		}
 		assign(buf, bufpos, buflen, '\'', stmt);
@@ -3903,15 +3913,19 @@ ODBCStore(ODBCStmt *stmt,
 			u.g = *(SQLGUID *)ptr;
 			snprintf(data, sizeof(data),
 				 "UUID '"
-				 "%08"PRIx32"-%04"PRIx16"-%04"PRIx16
+				 "%02"PRIx8"%02"PRIx8"%02"PRIx8"%02"PRIx8
+				 "-%02"PRIx8"%02"PRIx8
+				 "-%02"PRIx8"%02"PRIx8
 				 "-%02"PRIx8"%02"PRIx8
 				 "-%02"PRIx8"%02"PRIx8"%02"PRIx8
 				 "%02"PRIx8"%02"PRIx8"%02"PRIx8
 				 "'",
-				 u.d.d1, u.d.d2, u.d.d3, u.d.d4[0],
-				 u.d.d4[1], u.d.d4[2], u.d.d4[3],
-				 u.d.d4[4], u.d.d4[5], u.d.d4[6],
-				 u.d.d4[7]);
+				 u.u[3], u.u[2], u.u[1], u.u[0],
+				 u.u[5], u.u[4],
+				 u.u[7], u.u[6],
+				 u.u[8], u.u[9],
+				 u.u[10], u.u[11], u.u[12],
+				 u.u[13], u.u[14], u.u[15]);
 			break;
 		default:
 			/* Restricted data type attribute violation */

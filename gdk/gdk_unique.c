@@ -42,7 +42,7 @@ BATunique(BAT *b, BAT *s)
 	struct canditer ci;
 	PROPrec *prop;
 
-	BATcheck(b, "BATunique", NULL);
+	BATcheck(b, NULL);
 	cnt = canditer_init(&ci, b, s);
 
 	if (b->tkey || cnt <= 1 || BATtdense(b)) {
@@ -221,15 +221,15 @@ BATunique(BAT *b, BAT *s)
 				mask = (BUN) 1 << 16;
 		}
 		if ((hs = GDKzalloc(sizeof(Hash))) == NULL) {
-			GDKerror("BATunique: cannot allocate hash table\n");
+			GDKerror("cannot allocate hash table\n");
 			goto bunins_failed;
 		}
-		if (snprintf(hs->heaplink.filename, sizeof(hs->heaplink.filename), "%s.thshunil%x", nme, THRgettid()) >= (int) sizeof(hs->heaplink.filename) ||
-		    snprintf(hs->heapbckt.filename, sizeof(hs->heapbckt.filename), "%s.thshunib%x", nme, THRgettid()) >= (int) sizeof(hs->heapbckt.filename) ||
+		if (snprintf(hs->heaplink.filename, sizeof(hs->heaplink.filename), "%s.thshunil%x", nme, (unsigned) THRgettid()) >= (int) sizeof(hs->heaplink.filename) ||
+		    snprintf(hs->heapbckt.filename, sizeof(hs->heapbckt.filename), "%s.thshunib%x", nme, (unsigned) THRgettid()) >= (int) sizeof(hs->heapbckt.filename) ||
 		    HASHnew(hs, b->ttype, BUNlast(b), mask, BUN_NONE, false) != GDK_SUCCEED) {
 			GDKfree(hs);
 			hs = NULL;
-			GDKerror("BATunique: cannot allocate hash table\n");
+			GDKerror("cannot allocate hash table\n");
 			goto bunins_failed;
 		}
 		for (i = 0; i < ci.ncand; i++) {

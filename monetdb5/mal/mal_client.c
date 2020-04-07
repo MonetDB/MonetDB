@@ -185,7 +185,6 @@ MCresetProfiler(stream *fdout)
 void
 MCexitClient(Client c)
 {
-	finishSessionProfiler(c);
 	MCresetProfiler(c->fdout);
 	if (c->father == NULL) { /* normal client */
 		if (c->fdout && c->fdout != GDKstdout)

@@ -9844,7 +9844,7 @@ stdout of test 'VOC` in directory 'sql/test/VOC` itself:
 % 4 # length
 [ 2349	]
 #select count(*) from craftsmen c where exists (select 1) ;
-% voc.%2 # table_name
+% .%2 # table_name
 % %2 # name
 % bigint # type
 % 4 # length

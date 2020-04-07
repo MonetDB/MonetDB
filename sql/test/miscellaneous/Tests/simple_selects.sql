@@ -120,3 +120,22 @@ drop table x;
 
 create table x (x int null not null); --error, multiple null constraints
 create table x (a int default '1' GENERATED ALWAYS AS IDENTITY); --error, multiple default values
+
+DECLARE myvar bigint;
+SET myvar = (SELECT COUNT(*) FROM sequences);
+create table x (a int GENERATED ALWAYS AS IDENTITY);
+alter table x alter a set default 1; --ok, remove sequence
+SELECT CAST(COUNT(*) - myvar AS BIGINT) FROM sequences; --the total count, cannot change
+drop table x;
+
+SET myvar = (SELECT COUNT(*) FROM sequences);
+create table x (a int GENERATED ALWAYS AS IDENTITY);
+alter table x alter a drop default; --ok, remove sequence
+SELECT CAST(COUNT(*) - myvar AS BIGINT) FROM sequences; --the total count, cannot change
+drop table x;
+
+SELECT 1, 2 INTO myvar; --error, number of variables don't match
+
+declare table x (a int);
+declare table x (c int); --error table x already declared
+drop table if exists x;

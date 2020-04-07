@@ -122,4 +122,6 @@ unicode
 
 window_functions
 
+sysqueue
+
 HAVE_PYMONETDB?hot-snapshot

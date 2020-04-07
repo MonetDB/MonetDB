@@ -1100,8 +1100,6 @@ update_table(sql_query *query, dlist *qname, str alias, dlist *assignmentlist, s
 		t = mvc_bind_table(sql, s, tname);
 		if (!t) 
 			t = mvc_bind_table(sql, NULL, tname);
-		if (!t) 
-			t = stack_find_table(sql, tname);
 	}
 	if (update_allowed(sql, t, tname, "UPDATE", "update", 0) != NULL) {
 		sql_rel *r = NULL, *bt = rel_basetable(sql, t, t->base.name), *res = bt;
@@ -1207,8 +1205,6 @@ delete_table(sql_query *query, dlist *qname, str alias, symbol *opt_where)
 		t = mvc_bind_table(sql, schema, tname);
 		if (!t) 
 			t = mvc_bind_table(sql, NULL, tname);
-		if (!t) 
-			t = stack_find_table(sql, tname);
 	}
 	if (update_allowed(sql, t, tname, "DELETE FROM", "delete from", 1) != NULL) {
 		sql_rel *r = NULL;
@@ -1264,8 +1260,6 @@ truncate_table(mvc *sql, dlist *qname, int restart_sequences, int drop_action)
 		t = mvc_bind_table(sql, schema, tname);
 		if (!t)
 			t = mvc_bind_table(sql, NULL, tname);
-		if (!t)
-			t = stack_find_table(sql, tname);
 	}
 	if (update_allowed(sql, t, tname, "TRUNCATE", "truncate", 2) != NULL)
 		return rel_truncate(sql->sa, rel_basetable(sql, t, tname), restart_sequences, drop_action);
@@ -1344,8 +1338,6 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 		t = mvc_bind_table(sql, s, tname);
 		if (!t)
 			t = mvc_bind_table(sql, NULL, tname);
-		if (!t)
-			t = stack_find_table(sql, tname);
 	}
 	if (!t)
 		return sql_error(sql, 02, SQLSTATE(42S02) "MERGE: no such table '%s'", tname);
@@ -1404,6 +1396,8 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 
 				//select bt values which are not null (they had a match in the join)
 				project_first = extra_project->exps->h->next->data; // this expression must come from bt!!
+				if (!exp_name(project_first))
+					exp_label(sql->sa, project_first, ++sql->label);
 				project_first = exp_ref(sql->sa, project_first);
 				nils = rel_unop_(sql, extra_project, project_first, NULL, "isnull", card_value);
 				set_has_no_nil(nils);
@@ -1433,6 +1427,8 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 
 				//select bt values which are not null (they had a match in the join)
 				project_first = extra_project->exps->h->next->data; // this expression must come from bt!!
+				if (!exp_name(project_first))
+					exp_label(sql->sa, project_first, ++sql->label);
 				project_first = exp_ref(sql->sa, project_first);
 				nils = rel_unop_(sql, extra_project, project_first, NULL, "isnull", card_value);
 				set_has_no_nil(nils);
@@ -1470,6 +1466,8 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 
 			//select bt values which are null (they didn't have match in the join)
 			project_first = extra_project->exps->h->next->data; // this expression must come from bt!!
+			if (!exp_name(project_first))
+				exp_label(sql->sa, project_first, ++sql->label);
 			project_first = exp_ref(sql->sa, project_first);
 			nils = rel_unop_(sql, extra_project, project_first, NULL, "isnull", card_value);
 			set_has_no_nil(nils);
@@ -1618,8 +1616,8 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 	if (!t && !sname) {
 		s = tmp_schema(sql);
 		t = mvc_bind_table(sql, s, tname);
-		if (!t)
-			t = stack_find_table(sql, tname);
+		if (!t) 
+			t = mvc_bind_table(sql, NULL, tname);
 	}
 	if (insert_allowed(sql, t, tname, "COPY INTO", "copy into") == NULL)
 		return NULL;
@@ -1831,7 +1829,7 @@ bincopyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, int co
 		s = tmp_schema(sql);
 		t = mvc_bind_table(sql, s, tname);
 		if (!t) 
-			t = stack_find_table(sql, tname);
+			t = mvc_bind_table(sql, NULL, tname);
 	}
 	if (insert_allowed(sql, t, tname, "COPY INTO", "copy into") == NULL) 
 		return NULL;
@@ -1904,8 +1902,8 @@ copyfromloader(sql_query *query, dlist *qname, symbol *fcall)
 	if (!t && !sname) {
 		s = tmp_schema(sql);
 		t = mvc_bind_table(sql, s, tname);
-		if (!t)
-			t = stack_find_table(sql, tname);
+		if (!t) 
+			t = mvc_bind_table(sql, NULL, tname);
 	}
 	//TODO the COPY LOADER INTO should return an insert relation (instead of ddl) to handle partitioned tables properly
 	if (insert_allowed(sql, t, tname, "COPY INTO", "copy into") == NULL)
@@ -1919,13 +1917,10 @@ copyfromloader(sql_query *query, dlist *qname, symbol *fcall)
 	if (!rel || !loader)
 		return NULL;
 
-	loader->sname = sname ? sa_zalloc(sql->sa, strlen(sname) + 1) : NULL;
-	loader->tname = tname ? sa_zalloc(sql->sa, strlen(tname) + 1) : NULL;
+	loader->sname = sname ? sa_strdup(sql->sa, sname) : NULL;
+	loader->tname = tname ? sa_strdup(sql->sa, tname) : NULL;
 	loader->coltypes = table_column_types(sql->sa, t);
 	loader->colnames = table_column_names_and_defaults(sql->sa, t);
-
-	if (sname) strcpy(loader->sname, sname);
-	if (tname) strcpy(loader->tname, tname);
 
 	return rel;
 }
@@ -2045,7 +2040,7 @@ rel_parse_val(mvc *m, char *query, char emode, sql_rel *from)
 	m->user_id = USER_MONETDB;
 
 	(void) sqlparse(m);	
-	
+
 	/* get out the single value as we don't want an enclosing projection! */
 	if (m->sym && m->sym->token == SQL_SELECT) {
 		SelectNode *sn = (SelectNode *)m->sym;
@@ -2063,18 +2058,21 @@ rel_parse_val(mvc *m, char *query, char emode, sql_rel *from)
 	m->sym = NULL;
 	o.vars = m->vars;	/* may have been realloc'ed */
 	o.sizevars = m->sizevars;
+	o.query = m->query;
 	if (m->session->status || m->errstr[0]) {
 		int status = m->session->status;
-		char errstr[ERRSIZE];
 
-		strcpy(errstr, m->errstr);
+		strcpy(o.errstr, m->errstr);
 		*m = o;
 		m->session->status = status;
-		strcpy(m->errstr, errstr);
 	} else {
 		int label = m->label;
-		*m = o;
 
+		while (m->topvars > o.topvars) {
+			if (m->vars[--m->topvars].name)
+				c_delete(m->vars[m->topvars].name);
+		}
+		*m = o;
 		m->label = label;
 	}
 	return e;

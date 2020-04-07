@@ -75,8 +75,11 @@ rel_no_mitosis(sql_rel *rel)
 		return 1;
 	if (is_topn(rel->op) || rel->op == op_project)
 		return rel_no_mitosis(rel->l);
-	if (is_modify(rel->op) && rel->card <= CARD_AGGR)
+	if (is_modify(rel->op) && rel->card <= CARD_AGGR) {
+		if (is_delete(rel->op))
+			return 1;
 		return rel_no_mitosis(rel->r);
+	}
 	if (is_select(rel->op) && rel_is_table(rel->l) && rel->exps) {
 		is_point = 0;
 		/* just one point expression makes this a point query */
@@ -153,7 +156,7 @@ sqlcleanup(mvc *c, int err)
 		if (!err) {
 			sql_trans_commit(c->session->tr);
 			/* write changes to disk */
-			sql_trans_end(c->session);
+			sql_trans_end(c->session, 1);
 			store_apply_deltas(true);
 			sql_trans_begin(c->session);
 		}
@@ -447,6 +450,12 @@ create_table_or_view(mvc *sql, char* sname, char *tname, sql_table *t, int temp)
 			mvc_create_dependencies(sql, id_l, nt->base.id, VIEW_DEPENDENCY);
 		}
 		sa_destroy(sql->sa);
+		if (!r) {
+			if (strlen(sql->errstr) > 6 && sql->errstr[5] == '!')
+				throw(SQL, "sql.catalog", "%s", sql->errstr);
+			else 
+				throw(SQL, "sql.catalog", SQLSTATE(42000) "%s", sql->errstr);
+		}
 	}
 	sql->sa = osa;
 	return MAL_SUCCEED;
@@ -1635,7 +1644,7 @@ mvc_grow_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	for(;cnt>0; cnt--, v++) {
 		if (BUNappend(tid, &v, false) != GDK_SUCCEED) {
 			BBPunfix(Tid);
-			throw(SQL, "sql", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			throw(SQL, "sql.grow", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 	}
 	BBPunfix(Tid);
@@ -2144,26 +2153,17 @@ DELTAproject(bat *result, const bat *sub, const bat *col, const bat *uid, const 
 		if (BATcount(c) == 0) {
 			res = i;
 			i = c;
+			tres = BATproject(s, res);
 		} else {
-			if ((res = COLcopy(c, c->ttype, true, TRANSIENT)) == NULL) {
-				BBPunfix(s->batCacheid);
-				BBPunfix(i->batCacheid);
-				BBPunfix(c->batCacheid);
-				throw(MAL, "sql.projectdelta", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			}
-			BBPunfix(c->batCacheid);
-			if (BATappend(res, i, NULL, false) != GDK_SUCCEED) {
-				BBPunfix(s->batCacheid);
-				BBPunfix(i->batCacheid);
-				throw(MAL, "sql.projectdelta", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			}
+			tres = BATproject2(s, c, i);
 		}
+	} else {
+		tres = BATproject(s, res);
 	}
 	if (i)
 		BBPunfix(i->batCacheid);
-
-	tres = BATproject(s, res);
 	BBPunfix(res->batCacheid);
+
 	if (tres == NULL) {
 		BBPunfix(s->batCacheid);
 		throw(MAL, "sql.projectdelta", SQLSTATE(HY013) MAL_MALLOC_FAIL);

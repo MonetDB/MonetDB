@@ -118,27 +118,6 @@ rel_table_projections( mvc *sql, sql_rel *rel, char *tname, int level )
 	}
 }
 
-static sql_rel*
-rel_parent( sql_rel *rel )
-{
-	if (rel->l && (is_project(rel->op) || rel->op == op_topn || rel->op == op_sample)) {
-		sql_rel *l = rel->l;
-		if (is_project(l->op))
-			return l;
-	}
-	return rel;
-}
-
-static sql_exp *
-lastexp(sql_rel *rel) 
-{
-	if (!is_processed(rel) || is_topn(rel->op) || is_sample(rel->op))
-		rel = rel_parent(rel);
-	assert(list_length(rel->exps));
-	assert(is_project(rel->op));
-	return rel->exps->t->data;
-}
-
 static sql_exp *
 rel_lastexp(mvc *sql, sql_rel *rel )
 {
@@ -158,34 +137,6 @@ rel_lastexp(mvc *sql, sql_rel *rel )
 	if (!exp_name(e)) 
 		exp_label(sql->sa, e, ++sql->label);
 	return exp_ref(sql->sa, e);
-}
-
-static sql_rel *
-rel_zero_or_one(mvc *sql, sql_rel *rel, exp_kind ek)
-{
-	if (is_topn(rel->op))
-		rel = rel_project(sql->sa, rel, rel_projections(sql, rel, NULL, 1, 0));
-	if (ek.card < card_set && rel->card > CARD_ATOM) {
-		assert (is_simple_project(rel->op) || is_set(rel->op));
-		list *exps = rel->exps;
-		rel = rel_groupby(sql, rel, NULL);
-		for(node *n = exps->h; n; n=n->next) {
-			sql_exp *e = n->data;
-			if (!has_label(e))
-				exp_label(sql->sa, e, ++sql->label);
-			sql_subtype *t = exp_subtype(e); /* parameters don't have a type defined, for those use 'void' one */
-			sql_subfunc *zero_or_one = sql_bind_func(sql->sa, sql->session->schema, "zero_or_one", t ? t : sql_bind_localtype("void"), NULL, F_AGGR);
-
-			e = exp_ref(sql->sa, e);
-			e = exp_aggr1(sql->sa, e, zero_or_one, 0, 0, CARD_ATOM, has_nil(e));
-			(void)rel_groupby_add_aggr(sql, rel, e);
-		}
-	} else {
-		sql_exp *e = lastexp(rel);
-		if (!has_label(e))
-			exp_label(sql->sa, e, ++sql->label);
-	}
-	return rel;
 }
 
 static sql_rel *
@@ -398,7 +349,7 @@ query_exp_optname(sql_query *query, sql_rel *r, symbol *q)
 		return rel_table_optname(sql, tq, q->data.lval->t->data.sym);
 	}
 	default:
-		(void) sql_error(sql, 02, SQLSTATE(42000) "case %d %s", q->token, token2string(q->token));
+		(void) sql_error(sql, 02, SQLSTATE(42000) "case %d %s", (int) q->token, token2string(q->token));
 	}
 	return NULL;
 }
@@ -749,7 +700,8 @@ rel_op_(mvc *sql, sql_schema *s, char *fname, exp_kind ek)
 static sql_exp*
 exp_values_set_supertype(mvc *sql, sql_exp *values)
 {
-	list *vals = values->f, *nexps;
+	assert(is_values(values));
+	list *vals = exp_get_values(values), *nexps;
 	sql_subtype *tpe = exp_subtype(vals->h->data);
 
 	if (tpe)
@@ -794,11 +746,118 @@ exp_values_set_supertype(mvc *sql, sql_exp *values)
 			e = rel_check_type(sql, &values->tpe, NULL, e, type_equal);
 			if (!e)
 				return NULL;
-			append(nexps, e); 
+			exp_label(sql->sa, e, ++sql->label);
+			append(nexps, e);
 		}
 		values->f = nexps;
 	}
 	return values;
+}
+
+static sql_exp*
+exp_tuples_set_supertype(mvc *sql, list *tuple_values, sql_exp *tuples)
+{
+	assert(is_values(tuples));
+	list *vals = exp_get_values(tuples);
+	if (!vals || !vals->h)
+		return NULL;
+
+	int tuple_width = list_length(tuple_values), i;
+	sql_subtype *types = SA_NEW_ARRAY(sql->sa, sql_subtype, tuple_width);
+	bool *has_type = SA_NEW_ARRAY(sql->sa, bool, tuple_width);
+	node *n;
+
+	memset(has_type, 0, sizeof(bool)*tuple_width);
+	for(n = tuple_values->h, i = 0; n; n = n->next, i++) {
+		sql_exp *e = n->data;
+		if (exp_subtype(e)) {
+			types[i] = *exp_subtype(e);
+			has_type[i] = 1;
+		}
+	}
+
+	for (node *m = vals->h; m; m = m->next) {
+		sql_exp *tuple = m->data;
+		sql_rel *tuple_relation = exp_rel_get_rel(sql->sa, tuple);
+
+		for(n = tuple_relation->exps->h, i = 0; n; n = n->next, i++) {
+			sql_subtype *tpe;
+			sql_exp *e = n->data;
+
+			if (has_type[i] && e->type == e_atom && !e->l && !e->r && !e->f && !e->tpe.type) {
+				if (set_type_param(sql, types+i, e->flag) == 0)
+					e->tpe = types[i];
+				else
+					return NULL;
+			}
+			tpe = exp_subtype(e);
+			if (!tpe)
+				return NULL;
+			if (has_type[i] && tpe) {
+				supertype(types+i, types+i, tpe);
+			} else {
+				has_type[i] = 1;
+				types[i] = *tpe;
+			}
+		}
+	}
+
+	for (node *m = vals->h; m; m = m->next) {
+		sql_exp *tuple = m->data;
+		sql_rel *tuple_relation = exp_rel_get_rel(sql->sa, tuple);
+
+		list *nexps = sa_list(sql->sa);
+		for(n = tuple_relation->exps->h, i = 0; n; n = n->next, i++) {
+			sql_exp *e = n->data;
+
+			e = rel_check_type(sql, types+i, NULL, e, type_equal);
+			if (!e)
+				return NULL;
+			exp_label(sql->sa, e, ++sql->label);
+			append(nexps, e);
+		}
+		tuple_relation->exps = nexps;
+	}
+	return tuples;
+}
+
+static int
+rel_binop_check_types(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, int upcast)
+{
+	sql_subtype *t1 = exp_subtype(ls), *t2 = exp_subtype(rs);
+	
+	if (!t1 || !t2) {
+		if (t2 && !t1 && rel_set_type_param(sql, t2, rel, ls, upcast) < 0)
+			return -1;
+		if (t1 && !t2 && rel_set_type_param(sql, t1, rel, rs, upcast) < 0)
+			return -1;
+	}
+	if (!exp_subtype(ls) && !exp_subtype(rs)) {
+		(void) sql_error(sql, 01, SQLSTATE(42000) "Cannot have a parameter (?) on both sides of an expression");
+		return -1;
+	}
+	return 0;
+}
+
+static list *
+tuples_check_types(mvc *sql, list *tuple_values, sql_exp *tuples) 
+{
+	list *tuples_list = exp_get_values(tuples);
+	sql_exp *first_tuple = tuples_list->h->data;
+	sql_rel *tuple_relation = exp_rel_get_rel(sql->sa, first_tuple);
+
+	assert(list_length(tuple_values) == list_length(tuple_relation->exps));
+	list *nvalues = sa_list(sql->sa);
+	for (node *n = tuple_values->h, *m = tuple_relation->exps->h; n && m; n = n->next, m = m->next) {
+		sql_exp *le = n->data, *re = m->data;
+
+		if (rel_binop_check_types(sql, NULL, le, re, 0) < 0)
+			return NULL;
+		if ((le = rel_check_type(sql, exp_subtype(re), NULL, le, type_equal)) == NULL)
+			return NULL;
+		append(nvalues, le);
+	}
+	return nvalues;
 }
 
 static sql_rel *
@@ -912,10 +971,10 @@ table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral)
 
 		if (sname && !(s = mvc_bind_schema(sql, sname)))
 			return sql_error(sql, 02, SQLSTATE(3F000) "SELECT: no such schema '%s'", sname);
-		if (!t && !sname) {
-			t = stack_find_table(sql, tname);
-			if (!t) 
-				temp_table = stack_find_rel_view(sql, tname);
+		if (!sname) {
+			temp_table = stack_find_rel_view(sql, tname);
+			if (!temp_table)
+				t = mvc_bind_table(sql, NULL, tname);
 		}
 		if (!t && !temp_table) {
 			t = mvc_bind_table(sql, s, tname);
@@ -1114,26 +1173,29 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 			exp = rel_bind_column(sql, inner, name, f, 0);
 		if (!exp && inner && is_sql_having(f) && inner->op == op_select)
 			inner = inner->l;
-		if (!exp && inner && (is_sql_having(f) || is_sql_aggr(f)) && is_groupby(inner->op)) {
+		if (!exp && inner && (is_sql_having(f) || is_sql_aggr(f)) && is_groupby(inner->op))
 			exp = rel_bind_column(sql, inner->l, name, f, 0);
-		}
 		if (!exp && query && query_has_outer(query)) {
 			int i;
 			sql_rel *outer;
 
 			for (i=query_has_outer(query)-1; i>= 0 && !exp && (outer = query_fetch_outer(query,i)); i--) {
 				exp = rel_bind_column(sql, outer, name, f, 0);
-				if (!exp && (is_sql_having(f) || is_sql_aggr(f)) && is_groupby(outer->op)) {
+				if (!exp && is_groupby(outer->op))
 					exp = rel_bind_column(sql, outer->l, name, f, 0);
-				}
-				if (exp && is_simple_project(outer->op) && !rel_find_exp(outer, exp)) {
+				if (exp && is_simple_project(outer->op) && !rel_find_exp(outer, exp))
 					exp = rel_project_add_exp(sql, outer, exp);
-				}
 				if (exp)
 					break;
 			}
 			if (exp && outer && outer->card <= CARD_AGGR && exp->card > CARD_AGGR && (!is_sql_aggr(f) || is_sql_farg(f)))
 				return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s' in query results without an aggregate function", name);
+			if (exp && outer && !is_sql_aggr(f)) {
+				if (query_outer_used_exp( query, i, exp, f)) {
+					sql_exp *lu = query_outer_last_used(query, i);
+					return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: subquery uses ungrouped column \"%s.%s\" from outer query", exp_relname(lu), exp_name(lu));
+				}
+			}
 			if (exp) { 
 				if (is_groupby(outer->op) && !is_sql_aggr(f)) {
 					exp = rel_groupby_add_aggr(sql, outer, exp);
@@ -1177,26 +1239,29 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 			exp = rel_bind_column2(sql, inner, tname, cname, f);
 		if (!exp && inner && is_sql_having(f) && inner->op == op_select)
 			inner = inner->l;
-		if (!exp && inner && (is_sql_having(f) || is_sql_aggr(f)) && is_groupby(inner->op)) {
+		if (!exp && inner && (is_sql_having(f) || is_sql_aggr(f)) && is_groupby(inner->op))
 			exp = rel_bind_column2(sql, inner->l, tname, cname, f);
-		}
 		if (!exp && query && query_has_outer(query)) {
 			int i;
 			sql_rel *outer;
 
 			for (i=query_has_outer(query)-1; i>= 0 && !exp && (outer = query_fetch_outer(query,i)); i--) {
 				exp = rel_bind_column2(sql, outer, tname, cname, f | sql_outer);
-				if (!exp && (is_sql_having(f) || is_sql_aggr(f)) && is_groupby(outer->op)) {
+				if (!exp && is_groupby(outer->op))
 					exp = rel_bind_column2(sql, outer->l, tname, cname, f);
-				}
-				if (exp && is_simple_project(outer->op) && !rel_find_exp(outer, exp)) {
+				if (exp && is_simple_project(outer->op) && !rel_find_exp(outer, exp))
 					exp = rel_project_add_exp(sql, outer, exp);
-				}
 				if (exp)
 					break;
 			}
 			if (exp && outer && outer->card <= CARD_AGGR && exp->card > CARD_AGGR && (!is_sql_aggr(f) || is_sql_farg(f)))
 				return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s.%s' in query results without an aggregate function", tname, cname);
+			if (exp && outer && !is_sql_aggr(f)) {
+				if (query_outer_used_exp( query, i, exp, f)) {
+					sql_exp *lu = query_outer_last_used(query, i);
+					return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: subquery uses ungrouped column \"%s.%s\" from outer query", exp_relname(lu), exp_name(lu));
+				}
+			}
 			if (exp) {
 				if (is_groupby(outer->op) && !is_sql_aggr(f)) {
 					exp = rel_groupby_add_aggr(sql, outer, exp);
@@ -1310,24 +1375,6 @@ exp_fix_scale(mvc *sql, sql_subtype *ct, sql_exp *e, int both, int always)
 		}
 	}
 	return e;
-}
-
-static int
-rel_binop_check_types(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, int upcast)
-{
-	sql_subtype *t1 = exp_subtype(ls), *t2 = exp_subtype(rs);
-	
-	if (!t1 || !t2) {
-		if (t2 && !t1 && rel_set_type_param(sql, t2, rel, ls, upcast) < 0)
-			return -1;
-		if (t1 && !t2 && rel_set_type_param(sql, t1, rel, rs, upcast) < 0)
-			return -1;
-	}
-	if (!exp_subtype(ls) && !exp_subtype(rs)) {
-		(void) sql_error(sql, 01, SQLSTATE(42000) "Cannot have a parameter (?) on both sides of an expression");
-		return -1;
-	}
-	return 0;
 }
 
 /* try to do an in-place conversion
@@ -2050,7 +2097,8 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 	} else {
 		le = exp_values(sql->sa, ll);
 		exp_label(sql->sa, le, ++sql->label);
-		ek.card = card_relation;
+		ek.card = card_column;
+		ek.type = list_length(ll);
 		is_tuple = 1;
 	}
 	/* list of values or subqueries */
@@ -2067,26 +2115,28 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 				return NULL;
 			if (is_tuple && !exp_is_rel(re)) 
 				return sql_error(sql, 02, SQLSTATE(42000) "Cannot match a tuple to a single value");
-			if (is_tuple)
+			if (is_tuple) {
+				sql_rel *r = exp_rel_get_rel(sql->sa, re);
+
+				if (!r)
+					return sql_error(sql, 02, SQLSTATE(42000) "Subquery missing");
+				if (r->nrcols != ek.type)
+					return sql_error(sql, 02, SQLSTATE(42000) "Subquery has too %s columns", (r->nrcols < ek.type) ? "few" : "many");
 				re = exp_rel_label(sql, re);
+			}
 			append(vals, re);
 		}
 
 		values = exp_values(sql->sa, vals);
 		exp_label(sql->sa, values, ++sql->label);
 		if (is_tuple) { 
-			sql_exp *e_rel = (sql_exp *) vals->h->data;
-			list *le_vals = le->f, *rel_vals = ((sql_rel*)e_rel->l)->exps;
-
-			for (node *m = le_vals->h, *o = rel_vals->h ; m && o ; m = m->next, o = o->next) {
-				sql_exp *e = m->data, *f = o->data;
-
-				if (rel_binop_check_types(sql, rel ? *rel : NULL, e, f, 0) < 0)
-					return NULL;
-			}
+			values = exp_tuples_set_supertype(sql, exp_get_values(le), values);
+			list *nvalues = tuples_check_types(sql, exp_get_values(le), values);
+			if (!nvalues)
+				return NULL;
+			le->f = nvalues;
 		} else { /* if it's not a tuple, enforce coersion on the type for every element on the list */
 			values = exp_values_set_supertype(sql, values);
-
 			if (rel_binop_check_types(sql, rel ? *rel : NULL, le, values, 0) < 0)
 				return NULL;
 		}
@@ -2389,7 +2439,7 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 			return NULL;
 		if (ek.card <= card_set && is_project(sq->op) && list_length(sq->exps) > 1)
 			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: subquery must return only one column");
-		if (ek.card < card_set && sq->card >= CARD_MULTI && (is_sql_sel(f) | is_sql_where(f)) && rel && (!*rel || is_basetable((*rel)->op)))
+		if (ek.card < card_set && sq->card >= CARD_MULTI && (is_sql_sel(f) | is_sql_where(f)) && rel && (!*rel || is_basetable((*rel)->op) || is_simple_project((*rel)->op)))
 			sq = rel_zero_or_one(sql, sq, ek);
 		return exp_rel(sql, sq);
 	}
@@ -2713,12 +2763,11 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
  			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: subquery must return only one column");
 		if (!rel)
 			return sq;
+		sq = rel_zero_or_one(sql, sq, ek);
 		if (is_sql_where(f)) {
-			sq = rel_zero_or_one(sql, sq, ek);
 			sql_exp *le = exp_rel(sql, sq), *re;
 			sql_subtype bt;
 
-			/* todo add zero or one */
 			sql_find_subtype(&bt, "boolean", 0, 0);
 			le = rel_check_type(sql, &bt, rel, le, type_equal);
 			if (!le)
@@ -3245,7 +3294,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 			return e;
 		} else if (is_sql_values(f)) {
 			char *uaname = GDKmalloc(strlen(aname) + 1);
-			sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed inside a list of VALUES",
+			sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed on an unique value",
 						uaname ? toUpperCopy(uaname, aname) : aname);
 			if (uaname)
 				GDKfree(uaname);
@@ -3297,12 +3346,13 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 
 	exps = sa_list(sql->sa);
 	if (args && args->data.sym) {
+		int ungrouped_col = -1, i;
 		int all_aggr = query_has_outer(query);
 		all_freevar = 1;
-		for (	; args && args->data.sym; args = args->next ) {
+		for (i = 0; args && args->data.sym; args = args->next, i++) {
 			int base = (!groupby || !is_project(groupby->op) || is_base(groupby->op) || is_processed(groupby));
 			sql_rel *gl = base?groupby:groupby->l, *ogl = gl; /* handle case of subqueries without correlation */
-			sql_exp *e = rel_value_exp(query, &gl, args->data.sym, (f | sql_aggr)& ~sql_farg, ek);
+			sql_exp *e = rel_value_exp(query, &gl, args->data.sym, (f | sql_aggr)& ~sql_farg, ek);//, *lu;
 
 			has_args = true;
 			if (gl && gl != ogl) {
@@ -3329,11 +3379,27 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 					GDKfree(uaname);
 				return e;
 			}
-			all_aggr &= (exp_card(e) <= CARD_AGGR && !exp_is_atom(e) && is_aggr(e->type) && !is_func(e->type) && (!groupby || !is_groupby(groupby->op) || !groupby->r || !exps_find_exp(groupby->r, e)));
+			if (all_aggr && is_freevar(e) && e->type == e_column) {
+				/* get expression from outer */
+				int aggr = 0;
+				sql_rel *outer = query_fetch_outer(query, is_freevar(e)-1);
+				if (outer) {
+					sql_exp *a = rel_find_exp(outer, e);
+					if (a)
+						aggr = is_aggr(a->type);
+					else if (outer->grouped)
+						ungrouped_col = i;
+				}
+				all_aggr &= aggr;
+			} else {
+				all_aggr &= (exp_card(e) <= CARD_AGGR && !exp_is_atom(e) && is_aggr(e->type) && !is_func(e->type) && (!groupby || !is_groupby(groupby->op) || !groupby->r || !exps_find_exp(groupby->r, e)));
+			}
 			has_freevar |= exp_has_freevar(sql, e);
 			all_freevar &= (is_freevar(e)>0);
 			list_append(exps, e);
 		}
+		if (all_freevar && all_aggr)
+			return sql_error(sql, 05, SQLSTATE(42000) "SELECT: aggregate function calls cannot be nested");
 		if (!all_freevar) {
 			if (all_aggr) {
 				char *uaname = GDKmalloc(strlen(aname) + 1);
@@ -3351,7 +3417,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 				return e;
 			} else if (is_sql_values(f)) {
 				char *uaname = GDKmalloc(strlen(aname) + 1);
-				sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed inside a list of VALUES",
+				sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed on an unique value",
 							uaname ? toUpperCopy(uaname, aname) : aname);
 				if (uaname)
 					GDKfree(uaname);
@@ -3377,11 +3443,15 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 				if (uaname)
 					GDKfree(uaname);
 				return e;
+			} else if (!all_aggr && ungrouped_col >= 0) {
+				sql_exp *u = list_fetch(exps, ungrouped_col);
+				return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: subquery uses ungrouped column \"%s.%s\" from outer query", exp_relname(u), exp_name(u));
 			}
 		}
 	}
 
 	if (all_freevar) { /* case 2, ie use outer */
+		int card;
 		sql_exp *exp = NULL;
 		/* find proper relation, base on freevar (stack hight) */
 		for (node *n = exps->h; n; n = n->next) {
@@ -3393,13 +3463,14 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 		}
 		int sql_state = query_fetch_outer_state(query,all_freevar-1);
 		res = groupby = query_fetch_outer(query, all_freevar-1);
+		card = query_outer_used_card(query, all_freevar-1);
 		if (exp && !is_groupby_col(res, exp)) {
 			if (is_sql_groupby(sql_state))
 				return sql_error(sql, 05, SQLSTATE(42000) "SELECT: aggregate function '%s' not allowed in GROUP BY clause", aname);
 			if (is_sql_aggr(sql_state))
 				return sql_error(sql, 05, SQLSTATE(42000) "SELECT: aggregate function calls cannot be nested");
 			if (is_sql_values(sql_state))
-				return sql_error(sql, 05, SQLSTATE(42000) "SELECT: aggregate functions not allowed inside a list of VALUES");
+				return sql_error(sql, 05, SQLSTATE(42000) "SELECT: aggregate functions not allowed on an unique value");
 			if (is_sql_update_set(sql_state))
 				return sql_error(sql, 05, SQLSTATE(42000) "SELECT: aggregate functions not allowed in SET clause");
 			if (is_sql_join(sql_state))
@@ -3410,6 +3481,10 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 				return sql_error(sql, 05, SQLSTATE(42000) "CALL: aggregate functions not allowed inside CALL");
 			if (is_sql_from(sql_state))
 				return sql_error(sql, 05, SQLSTATE(42000) "SELECT: aggregate functions not allowed in functions in FROM");
+			if (card > CARD_AGGR) { /* used an expression before on the non grouped relation */
+				sql_exp *lu = query_outer_last_used(query, all_freevar-1);
+				return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: subquery uses ungrouped column \"%s.%s\" from outer query", exp_relname(lu), exp_name(lu));
+			}
 		}
 	}
 
@@ -3492,6 +3567,8 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 
 		if (!groupby)
 			return e;
+		if (all_freevar)
+			query_outer_used_exp(query, all_freevar-1, e, sql_aggr);
 		e = rel_groupby_add_aggr(sql, groupby, e);
 		if (!group && !all_freevar)
 			return e;
@@ -3646,6 +3723,8 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 
 		if (!groupby)
 			return e;
+		if (all_freevar)
+			query_outer_aggregated(query, all_freevar-1, e);
 		e = rel_groupby_add_aggr(sql, groupby, e);
 		if (!group && !all_freevar)
 			return e;
@@ -4312,6 +4391,8 @@ rel_order_by(sql_query *query, sql_rel **R, symbol *orderby, int f)
 						e = exps_get_exp(rel->exps, nr);
 						if (!e)
 							return sql_error(sql, 02, SQLSTATE(42000) "SELECT: the order by column number (%d) is not in the number of projections range (%d)", nr, list_length(rel->exps));
+						if (!exp_name(e))
+							exp_label(sql->sa, e, ++sql->label);
 						e = exp_ref(sql->sa, e);
 						/* do not cache this query */
 						if (e)
@@ -4644,7 +4725,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 
 	if (is_sql_update_set(f) || is_sql_values(f) || is_sql_join(f) || is_sql_where(f) || is_sql_groupby(f) || is_sql_having(f) || is_psm_call(f) || is_sql_from(f)) {
 		char *uaname = GDKmalloc(strlen(aname) + 1);
-		const char *clause = is_sql_update_set(f)?"in SET clause (use subquery)":is_sql_values(f)?"inside a list of VALUES":
+		const char *clause = is_sql_update_set(f)?"in SET clause (use subquery)":is_sql_values(f)?"on an unique value":
 							 is_sql_join(f)?"in JOIN conditions":is_sql_where(f)?"in WHERE clause":is_sql_groupby(f)?"in GROUP BY clause":
 							 is_psm_call(f)?"in CALL":is_sql_from(f)?"in functions in FROM":"in HAVING clause";
 		(void) sql_error(sql, 02, SQLSTATE(42000) "%s: window function '%s' not allowed %s",
@@ -5012,7 +5093,7 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 	if (THRhighwater())
 		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
-	if (rel && *rel && (*rel)->card <= CARD_AGGR) { /* group by expression case, handle it before */
+	if (rel && *rel && (*rel)->card == CARD_AGGR) { /* group by expression case, handle it before */
 		sql_exp *exp = stack_get_groupby_expression(sql, se);
 		if (sql->errstr[0] != '\0')
 			return NULL;
@@ -5021,7 +5102,7 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 
 			if (!exp_name(exp))
 				exp_label(sql->sa, exp, ++sql->label);
-			res  = exp_ref(sql->sa, exp);
+			res = exp_ref(sql->sa, exp);
 			res->card = (*rel)->card;
 			if (se->token == SQL_AGGR) {
 				dlist *l = se->data.lval;
@@ -5071,7 +5152,7 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 		}
 		if (!r)
 			return NULL;
-		if (ek.card <= card_set && is_project(r->op) && list_length(r->exps) > 1) 
+		if (ek.type == type_value && ek.card <= card_set && is_project(r->op) && list_length(r->exps) > 1) 
 			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: subquery must return only one column");
 		if (list_length(r->exps) == 1) /* for now don't rename multi attribute results */
 			r = rel_zero_or_one(sql, r, ek);
@@ -5577,6 +5658,7 @@ rel_query(sql_query *query, sql_rel *rel, symbol *sq, int toplevel, exp_kind ek)
 				res = rel_crossproduct(sql->sa, res, fnd, op_join);
 				if (lateral)
 					set_dependent(res);
+				res = rel_select(sql->sa, res, NULL);
 			} else {
 				res = fnd;
 			}
@@ -5615,6 +5697,7 @@ rel_setquery_(sql_query *query, sql_rel *l, sql_rel *r, dlist *cols, int op )
 	}
 	if (rel) {
 		rel->exps = rel_projections(sql, rel, NULL, 0, 1);
+		rel->nrcols = list_length(rel->exps);
 		set_processed(rel);
 	}
 	return rel;
@@ -5895,6 +5978,7 @@ rel_unionjoinquery(sql_query *query, sql_rel *rel, symbol *q)
 	rv = rel_project(sql->sa, rv, rexps);
 	rel = rel_setop(sql->sa, lv, rv, op_union);
 	rel->exps = rel_projections(sql, rel, NULL, 0, 1);
+	rel->nrcols = list_length(rel->exps);
 	set_processed(rel);
 	if (!all)
 		rel = rel_distinct(rel);

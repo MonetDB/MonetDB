@@ -44,6 +44,7 @@ crash.Bug-3736
 div_zero.Bug-3742
 cast_to_num.Bug-3744
 null_is_null.Bug-3739
+trigger-old-row.Bug-3741
 mergejoin_NULL.Bug-3747
 epoch_now.Bug-3740
 schema_view2.Bug-3766
@@ -73,7 +74,7 @@ fractional_precision_limitation.Bug-3808
 not-like-without-wildcard.Bug-3811
 HAVE_LIBZ?copy_into.Bug-3813
 select-tilde-arg.Bug-3814
-timestamp_convert.Bug-3815
+KNOWNFAIL?timestamp_convert.Bug-3815
 crash_timestamp_convert.Bug-3816
 crash_in_reduce_groupby.Bug-3818
 duplicate-constraint.Bug-3820

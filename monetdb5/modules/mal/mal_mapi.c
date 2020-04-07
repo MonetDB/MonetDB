@@ -467,7 +467,7 @@ SERVERlistenThread(SOCKET *Sock)
 		data = GDKmalloc(sizeof(*data));
 		if( data == NULL){
 			closesocket(msgsock);
-			TRC_ERROR(MAL_SERVER, SQLSTATE(HY013) MAL_MALLOC_FAIL "\n");
+			TRC_ERROR(MAL_SERVER, MAL_MALLOC_FAIL "\n");
 			continue;
 		}
 		data->in = socket_rstream(msgsock, "Server read");
@@ -933,14 +933,14 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 				host[sizeof(host) - 1] = '\0';
 			} else {
 				snprintf(host, sizeof(host),"[%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x]",
-						(int)server_ipv6.sin6_addr.s6_addr[0],  (int)server_ipv6.sin6_addr.s6_addr[1],
-						(int)server_ipv6.sin6_addr.s6_addr[2],  (int)server_ipv6.sin6_addr.s6_addr[3],
-						(int)server_ipv6.sin6_addr.s6_addr[4],  (int)server_ipv6.sin6_addr.s6_addr[5],
-						(int)server_ipv6.sin6_addr.s6_addr[6],  (int)server_ipv6.sin6_addr.s6_addr[7],
-						(int)server_ipv6.sin6_addr.s6_addr[8],  (int)server_ipv6.sin6_addr.s6_addr[9],
-						(int)server_ipv6.sin6_addr.s6_addr[10], (int)server_ipv6.sin6_addr.s6_addr[11],
-						(int)server_ipv6.sin6_addr.s6_addr[12], (int)server_ipv6.sin6_addr.s6_addr[13],
-						(int)server_ipv6.sin6_addr.s6_addr[14], (int)server_ipv6.sin6_addr.s6_addr[15]);
+						(uint8_t)server_ipv6.sin6_addr.s6_addr[0],  (uint8_t)server_ipv6.sin6_addr.s6_addr[1],
+						(uint8_t)server_ipv6.sin6_addr.s6_addr[2],  (uint8_t)server_ipv6.sin6_addr.s6_addr[3],
+						(uint8_t)server_ipv6.sin6_addr.s6_addr[4],  (uint8_t)server_ipv6.sin6_addr.s6_addr[5],
+						(uint8_t)server_ipv6.sin6_addr.s6_addr[6],  (uint8_t)server_ipv6.sin6_addr.s6_addr[7],
+						(uint8_t)server_ipv6.sin6_addr.s6_addr[8],  (uint8_t)server_ipv6.sin6_addr.s6_addr[9],
+						(uint8_t)server_ipv6.sin6_addr.s6_addr[10], (uint8_t)server_ipv6.sin6_addr.s6_addr[11],
+						(uint8_t)server_ipv6.sin6_addr.s6_addr[12], (uint8_t)server_ipv6.sin6_addr.s6_addr[13],
+						(uint8_t)server_ipv6.sin6_addr.s6_addr[14], (uint8_t)server_ipv6.sin6_addr.s6_addr[15]);
 			}
 		} else {
 			if (server_ipv4.sin_addr.s_addr == INADDR_ANY) {

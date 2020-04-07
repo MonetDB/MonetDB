@@ -354,8 +354,7 @@ GDKmergeidx(BAT *b, BAT**a, int n_ar)
 	case TYPE_dbl:
 		break;
 	default:
-		GDKerror("GDKmergeidx: type %s not supported.\n",
-			 ATOMname(b->ttype));
+		GDKerror("type %s not supported.\n", ATOMname(b->ttype));
 		return GDK_FAIL;
 	}
 	TRC_DEBUG(ACCELERATOR, "GDKmergeidx(" ALGOBATFMT ") create index\n", ALGOBATPAR(b));

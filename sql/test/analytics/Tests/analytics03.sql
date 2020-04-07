@@ -113,4 +113,6 @@ select count(*) over (range between unbounded preceding and 1 following) from ro
 select count(*) over (groups between 1 preceding and 1 following) from rowsvsrangevsgroups; --error
 select count(*) over (groups between current row and unbounded following) from rowsvsrangevsgroups; --error
 
+select min(1) over (partition by 1 order by 1 range between 1 preceding and 1 following);
+
 drop table rowsvsrangevsgroups;

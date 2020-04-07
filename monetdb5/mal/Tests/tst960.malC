@@ -37,7 +37,7 @@ srch:= batstr.search(S,"hello");
 io.print(srch);
 srch:= batstr.search(S,S); 
 io.print(srch);
-plus:= batcalc.+(S,S); 
+plus:= batcalc.+(S,S,nil:bat,nil:bat); 
 io.print(plus);
 end;
 mdb.List("user","foo");

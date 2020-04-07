@@ -11,6 +11,7 @@
 #include "bat_utils.h"
 #include "sql_types.h" /* EC_POS */
 #include "wlc.h"
+#include "gdk_logger_internals.h"
 
 #define CATALOG_MAR2018 52201
 #define CATALOG_AUG2018 52202

@@ -73,7 +73,9 @@ gdk_export size_t _MT_pagesize;
 gdk_export size_t GDK_mem_maxsize;	/* max allowed size of committed memory */
 gdk_export size_t GDK_vm_maxsize;	/* max allowed size of reserved vm */
 
-gdk_export void *GDKmmap(const char *path, int mode, size_t len);
+gdk_export void *GDKmmap(const char *path, int mode, size_t len)
+	__attribute__((__warn_unused_result__));
+gdk_export gdk_return GDKmunmap(void *addr, size_t len);
 
 gdk_export size_t GDKmem_cursize(void);	/* RAM/swapmem that MonetDB has claimed from OS */
 gdk_export size_t GDKvm_cursize(void);	/* current MonetDB VM address space usage */
@@ -112,7 +114,8 @@ gdk_export bool GDKexiting(void);
 
 gdk_export void GDKprepareExit(void);
 gdk_export void GDKreset(int status);
-gdk_export const char *GDKversion(void);
+gdk_export const char *GDKversion(void)
+	__attribute__((__const__));
 
 // these are used in embedded mode to jump out of GDKfatal
 gdk_export jmp_buf GDKfataljump;
@@ -198,6 +201,15 @@ gdk_export int GDKms(void);
 			  _res);					\
 		_res;							\
 	 })
+#define GDKmunmap(p, l)						\
+	({	void *_ptr = (p);				\
+		size_t _len = (l);				\
+		gdk_return _res = GDKmunmap(_ptr, _len);	\
+		TRC_DEBUG(ALLOC,				\
+			  "GDKmunmap(%p,%zu) -> %u\n",		\
+			  _ptr, _len, _res);			\
+		_res;						\
+	})
 #define malloc(s)					\
 	({						\
 		size_t _size = (s);			\
@@ -284,10 +296,19 @@ GDKmmap_debug(const char *path, int mode, size_t len)
 {
 	void *res = GDKmmap(path, mode, len);
 	TRC_DEBUG(ALLOC, "GDKmmap(%s,0x%x,%zu) -> %p\n",
-		  path ? path : "NULL", mode, len, res);
+		  path ? path : "NULL", (unsigned) mode, len, res);
 	return res;
 }
 #define GDKmmap(p, m, l)	GDKmmap_debug((p), (m), (l))
+static inline gdk_return
+GDKmunmap_debug(void *ptr, size_t len)
+{
+	gdk_return res = GDKmunmap(ptr, len);
+	TRC_DEBUG(ALLOC, "GDKmunmap(%p,%zu) -> %d\n",
+			   	  ptr, len, (int) res);
+	return res;
+}
+#define GDKmunmap(p, l)		GDKmunmap_debug((p), (l))
 static inline void *
 malloc_debug(size_t size)
 {

@@ -74,6 +74,9 @@ stdout of test 'groupby_error` in directory 'sql/test/miscellaneous` itself:
 #CREATE TABLE tab1(col0 INTEGER, col1 INTEGER, col2 INTEGER);
 #INSERT INTO tab1 VALUES (51,14,96), (85,5,59), (91,47,68);
 [ 3	]
+#CREATE TABLE tab2(col0 INTEGER, col1 INTEGER, col2 INTEGER);
+#INSERT INTO tab2 VALUES(64,77,40), (75,67,58), (46,51,23);
+[ 3	]
 #SELECT CAST(+ col1 * - col1 AS BIGINT) AS col2 FROM tab0 GROUP BY col2, col0, col1 HAVING + - col0 / - AVG ( ALL + col2 ) - - - AVG ( DISTINCT + col0 ) + col0 IS NULL;
 % sys. # table_name
 % col2 # name
@@ -109,6 +112,54 @@ stdout of test 'groupby_error` in directory 'sql/test/miscellaneous` itself:
 % col0,	col1,	col2 # name
 % int,	int,	int # type
 % 1,	1,	1 # length
+#SELECT * FROM tab2 AS cor0 WHERE NOT - ( - + 57 ) + - ( ( - - col2 ) ) BETWEEN + - col2 AND + col2;
+% sys.cor0,	sys.cor0,	sys.cor0 # table_name
+% col0,	col1,	col2 # name
+% int,	int,	int # type
+% 2,	2,	2 # length
+[ 46,	51,	23	]
+#SELECT col0 FROM tab2 WHERE - - col2;
+% sys.tab2 # table_name
+% col0 # name
+% int # type
+% 2 # length
+[ 64	]
+[ 75	]
+[ 46	]
+#PLAN SELECT DISTINCT col0, col1, col2, col0 FROM tab0;
+% .plan # table_name
+% rel # name
+% clob # type
+% 112 # length
+group by (
+| project (
+| | table(sys.tab0) [ "tab0"."col0", "tab0"."col1", "tab0"."col2" ] COUNT 
+| ) [ "tab0"."col0", "tab0"."col1", "tab0"."col2" ]
+) [ "tab0"."col0", "tab0"."col1", "tab0"."col2" ] [ "tab0"."col0", "tab0"."col1", "tab0"."col2", "tab0"."col0" ]
+#SELECT DISTINCT col0, col1, col2, col0 FROM tab0;
+% sys.tab0,	sys.tab0,	sys.tab0,	sys.tab0 # table_name
+% col0,	col1,	col2,	col0 # name
+% int,	int,	int,	int # type
+% 2,	2,	2,	2 # length
+[ 97,	1,	99,	97	]
+[ 15,	81,	47,	15	]
+[ 87,	21,	10,	87	]
+#PLAN SELECT col0 FROM tab2 WHERE CAST(col2 AS BIGINT) = 40;
+% .plan # table_name
+% rel # name
+% clob # type
+% 59 # length
+project (
+| select (
+| | table(sys.tab2) [ "tab2"."col0", "tab2"."col2" ] COUNT 
+| ) [ bigint["tab2"."col2"] = bigint "40" ]
+) [ "tab2"."col0" ]
+#SELECT col0 FROM tab2 WHERE CAST(col2 AS BIGINT) = 40;
+% sys.tab2 # table_name
+% col0 # name
+% int # type
+% 2 # length
+[ 64	]
 #SELECT 11 FROM tab1 AS cor0 LEFT JOIN tab0 ON 80 = 70;
 % . # table_name
 % single_value # name
@@ -125,6 +176,48 @@ stdout of test 'groupby_error` in directory 'sql/test/miscellaneous` itself:
 [ 15	]
 [ 87	]
 [ 97	]
+#SELECT DISTINCT 99 col2 FROM tab1 WHERE NOT - ( 43 ) + + 98 = + col2;
+% . # table_name
+% col2 # name
+% tinyint # type
+% 2 # length
+[ 99	]
+#SELECT * FROM tab2 AS cor0 WHERE NOT - 59 + + 47 <> + ( + col0 );
+% sys.cor0,	sys.cor0,	sys.cor0 # table_name
+% col0,	col1,	col2 # name
+% int,	int,	int # type
+% 1,	1,	1 # length
+#SELECT + col2 * col2 FROM tab2 AS cor0 WHERE NOT - CAST ( NULL AS INTEGER ) <> - - col1 AND NOT NULL NOT BETWEEN ( NULL ) AND - 91 - - + 27 * + col2;
+% sys. # table_name
+% %2 # name
+% bigint # type
+% 1 # length
+#SELECT + 2 FROM tab0 AS cor0 WHERE NOT - 29 IS NULL OR NOT NULL IS NULL AND NOT NULL BETWEEN + col1 - + 60 AND + 37 * + col1 + + col0;
+% . # table_name
+% single_value # name
+% tinyint # type
+% 1 # length
+[ 2	]
+[ 2	]
+[ 2	]
+#SELECT * FROM tab0 WHERE NOT - col0 - col1 * col2 <= ( + col0 ) AND NOT ( + col2 + col1 - col1 ) NOT BETWEEN - col0 AND - col1 + - col2 / col1;
+% sys.tab0,	sys.tab0,	sys.tab0 # table_name
+% col0,	col1,	col2 # name
+% int,	int,	int # type
+% 1,	1,	1 # length
+#SELECT * FROM tab0 AS cor0 WHERE NOT col1 BETWEEN - col0 AND col0 + col1 * col1 AND - col1 BETWEEN col0 AND ( NULL ) OR NOT col0 * col0 + col0 <= NULL;
+% sys.cor0,	sys.cor0,	sys.cor0 # table_name
+% col0,	col1,	col2 # name
+% int,	int,	int # type
+% 1,	1,	1 # length
+#SELECT DISTINCT * FROM tab2 WHERE NOT ( - + 50 + ( 70 ) ) = + col2;
+% sys.tab2,	sys.tab2,	sys.tab2 # table_name
+% col0,	col1,	col2 # name
+% int,	int,	int # type
+% 2,	2,	2 # length
+[ 64,	77,	40	]
+[ 75,	67,	58	]
+[ 46,	51,	23	]
 #prepare select col0 from tab0 where (?) in (select col0 from tab0);
 #prepare select col0 from tab0 where (?) in (select col0 from tab0);
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name

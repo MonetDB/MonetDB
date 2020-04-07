@@ -30,117 +30,64 @@
 #include "sql_scenario.h"
 /*
  * Assertion errors detected during the execution of a code block
- * raises an exception. An debugger dump is generated upon request
+ * raise an exception. A debugger dump is generated upon request
  * to ease debugging.
  */
+static inline str
+do_assert(bool flg, const char *msg)
+{
+	if (flg) {
+		if (strlen(msg) > 6 &&
+		    msg[5] == '!' &&
+		    (isdigit((unsigned char) msg[0]) ||
+		     isupper((unsigned char) msg[0])) &&
+		    (isdigit((unsigned char) msg[1]) ||
+		     isupper((unsigned char) msg[1])) &&
+		    (isdigit((unsigned char) msg[2]) ||
+		     isupper((unsigned char) msg[2])) &&
+		    (isdigit((unsigned char) msg[3]) ||
+		     isupper((unsigned char) msg[3])) &&
+		    (isdigit((unsigned char) msg[4]) ||
+		     isupper((unsigned char) msg[4])))
+			throw(SQL, "assert", "%s", msg); /* includes state */
+		throw(SQL, "assert", SQLSTATE(M0M29) "%s", msg);
+	}
+	return MAL_SUCCEED;
+}
 str
 SQLassert(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	bit *flg = getArgReference_bit(stk, pci, 1);
-	str *msg = getArgReference_str(stk, pci, 2);
-	const char *sqlstate = SQLSTATE(M0M29) ;
-	(void) sqlstate;
 	(void) cntxt;
 	(void) mb;
-	if (*flg) {
-		if (strlen(*msg) > 6 &&
-		    (*msg)[5] == '!' &&
-		    (isdigit((unsigned char) (*msg)[0]) ||
-		     ('A' <= (*msg)[0] && (*msg)[0] <= 'Z')) &&
-		    (isdigit((unsigned char) (*msg)[1]) ||
-		     ('A' <= (*msg)[1] && (*msg)[1] <= 'Z')) &&
-		    (isdigit((unsigned char) (*msg)[2]) ||
-		     ('A' <= (*msg)[2] && (*msg)[2] <= 'Z')) &&
-		    (isdigit((unsigned char) (*msg)[3]) ||
-		     ('A' <= (*msg)[3] && (*msg)[3] <= 'Z')) &&
-		    (isdigit((unsigned char) (*msg)[4]) ||
-		     ('A' <= (*msg)[4] && (*msg)[4] <= 'Z')))
-			sqlstate = "";
-		throw(SQL, "assert", SQLSTATE(M0M29) "%s", *msg);
-	}
-	return MAL_SUCCEED;
+	return do_assert((bool) *getArgReference_bit(stk, pci, 1),
+			 *getArgReference_str(stk, pci, 2));
 }
 
 str
 SQLassertInt(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int *flg = getArgReference_int(stk, pci, 1);
-	str *msg = getArgReference_str(stk, pci, 2);
-	const char *sqlstate = SQLSTATE(M0M29) ;
-	(void) sqlstate;
 	(void) cntxt;
 	(void) mb;
-	if (*flg) {
-		if (strlen(*msg) > 6 &&
-		    (*msg)[5] == '!' &&
-		    (isdigit((unsigned char) (*msg)[0]) ||
-		     ('A' <= (*msg)[0] && (*msg)[0] <= 'Z')) &&
-		    (isdigit((unsigned char) (*msg)[1]) ||
-		     ('A' <= (*msg)[1] && (*msg)[1] <= 'Z')) &&
-		    (isdigit((unsigned char) (*msg)[2]) ||
-		     ('A' <= (*msg)[2] && (*msg)[2] <= 'Z')) &&
-		    (isdigit((unsigned char) (*msg)[3]) ||
-		     ('A' <= (*msg)[3] && (*msg)[3] <= 'Z')) &&
-		    (isdigit((unsigned char) (*msg)[4]) ||
-		     ('A' <= (*msg)[4] && (*msg)[4] <= 'Z')))
-			sqlstate = "";
-		throw(SQL, "assert", SQLSTATE(M0M29) "%s", *msg);
-	}
-	return MAL_SUCCEED;
+	return do_assert((bool) *getArgReference_int(stk, pci, 1),
+			 *getArgReference_str(stk, pci, 2));
 }
 
 str
 SQLassertLng(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	lng *flg = getArgReference_lng(stk, pci, 1);
-	str *msg = getArgReference_str(stk, pci, 2);
-	const char *sqlstate = SQLSTATE(M0M29) ;
-	(void) sqlstate;
 	(void) cntxt;
 	(void) mb;
-	if (*flg) {
-		if (strlen(*msg) > 6 &&
-		    (*msg)[5] == '!' &&
-		    (isdigit((unsigned char) (*msg)[0]) ||
-		     ('A' <= (*msg)[0] && (*msg)[0] <= 'Z')) &&
-		    (isdigit((unsigned char) (*msg)[1]) ||
-		     ('A' <= (*msg)[1] && (*msg)[1] <= 'Z')) &&
-		    (isdigit((unsigned char) (*msg)[2]) ||
-		     ('A' <= (*msg)[2] && (*msg)[2] <= 'Z')) &&
-		    (isdigit((unsigned char) (*msg)[3]) ||
-		     ('A' <= (*msg)[3] && (*msg)[3] <= 'Z')) &&
-		    (isdigit((unsigned char) (*msg)[4]) ||
-		     ('A' <= (*msg)[4] && (*msg)[4] <= 'Z')))
-			sqlstate = "";
-		throw(SQL, "assert", SQLSTATE(M0M29) "%s", *msg);
-	}
-	return MAL_SUCCEED;
+	return do_assert((bool) *getArgReference_lng(stk, pci, 1),
+			 *getArgReference_str(stk, pci, 2));
 }
 
 #ifdef HAVE_HGE
 str
-SQLassertHge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	hge *flg = getArgReference_hge(stk,pci, 1);
-	str *msg = getArgReference_str(stk,pci, 2);
+SQLassertHge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
 	(void) cntxt;
-	(void)mb;
-	if (*flg){
-		const char *sqlstate = SQLSTATE(M0M29) ;
-		(void) sqlstate;
-		if (strlen(*msg) > 6 && (*msg)[5] == '!' &&
-		    (isdigit((unsigned char) (*msg)[0]) ||
-		     ('A' <= (*msg)[0] && (*msg)[0] <= 'Z')) &&
-		    (isdigit((unsigned char) (*msg)[1]) ||
-		     ('A' <= (*msg)[1] && (*msg)[1] <= 'Z')) &&
-		    (isdigit((unsigned char) (*msg)[2]) ||
-		     ('A' <= (*msg)[2] && (*msg)[2] <= 'Z')) &&
-		    (isdigit((unsigned char) (*msg)[3]) ||
-		     ('A' <= (*msg)[3] && (*msg)[3] <= 'Z')) &&
-		    (isdigit((unsigned char) (*msg)[4]) ||
-		     ('A' <= (*msg)[4] && (*msg)[4] <= 'Z')))
-			sqlstate = "";
-		throw(SQL, "assert", SQLSTATE(M0M29) "%s", *msg);
-	}
-	return MAL_SUCCEED;
+	(void) mb;
+	return do_assert((bool) *getArgReference_hge(stk, pci, 1),
+			 *getArgReference_str(stk, pci, 2));
 }
 #endif

@@ -304,7 +304,7 @@ comment "Return the tables tid column.";
 
 unsafe pattern delete(mvc:int, sname:str, tname:str, b:any):int
 address mvc_delete_wrap
-comment "Delete a row from a table. Returns sequence number for order dependece.";
+comment "Delete a row from a table. Returns sequence number for order dependence.";
 
 unsafe pattern resultSet(tbl:str, attr:str, tpe:str, len:int, scale:int, eclass:int, val:any) :int 
 address mvc_scalar_value_wrap
@@ -575,7 +575,7 @@ address QLOGdisable;
 
 
 pattern sysmon_queue()(tag:bat[:lng], sessionid:bat[:int], user:bat[:str], started:bat[:timestamp], 
-status:bat[:str], query:bat[:str], progress:bat[:int], workers:bat[:int], memory:bat[:int])
+status:bat[:str], query:bat[:str], finished:bat[:timestamp], workers:bat[:int], memory:bat[:int])
 address SYSMONqueue;
 
 pattern sysmon_pause(tag:bte)

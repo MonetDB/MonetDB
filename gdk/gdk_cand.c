@@ -33,8 +33,8 @@ BATmergecand(BAT *a, BAT *b)
 	oid *restrict p, i;
 	struct canditer cia, cib;
 
-	BATcheck(a, "BATmergecand", NULL);
-	BATcheck(b, "BATmergecand", NULL);
+	BATcheck(a, NULL);
+	BATcheck(b, NULL);
 
 	canditer_init(&cia, NULL, a);
 	canditer_init(&cib, NULL, b);
@@ -161,8 +161,8 @@ BATintersectcand(BAT *a, BAT *b)
 	oid *restrict p;
 	struct canditer cia, cib;
 
-	BATcheck(a, "BATintersectcand", NULL);
-	BATcheck(b, "BATintersectcand", NULL);
+	BATcheck(a, NULL);
+	BATcheck(b, NULL);
 
 	canditer_init(&cia, NULL, a);
 	canditer_init(&cib, NULL, b);
@@ -230,8 +230,8 @@ BATdiffcand(BAT *a, BAT *b)
 	oid *restrict p;
 	struct canditer cia, cib;
 
-	BATcheck(a, "BATdiffcand", NULL);
-	BATcheck(b, "BATdiffcand", NULL);
+	BATcheck(a, NULL);
+	BATcheck(b, NULL);
 
 	canditer_init(&cia, NULL, a);
 	canditer_init(&cib, NULL, b);

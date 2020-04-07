@@ -295,7 +295,7 @@ stdout of test 'simple_selects` in directory 'sql/test/miscellaneous` itself:
 #select length(myblob), octet_length(myblob), length(mystr), octet_length(mystr) 
 #from (values (cast(null as blob), cast(null as char(32)))) as my(myblob, mystr);
 % .,	.,	.,	. # table_name
-% %3,	%4,	%5,	%6 # name
+% %5,	%6,	%7,	%10 # name
 % int,	int,	int,	int # type
 % 1,	1,	1,	1 # length
 [ NULL,	NULL,	NULL,	NULL	]
@@ -340,6 +340,27 @@ stdout of test 'simple_selects` in directory 'sql/test/miscellaneous` itself:
 % i # name
 % tinyint # type
 % 1 # length
+#drop table x;
+#DECLARE myvar bigint;
+#SET myvar = (SELECT COUNT(*) FROM sequences);
+#create table x (a int GENERATED ALWAYS AS IDENTITY);
+#alter table x alter a set default 1; --ok, remove sequence
+#SELECT CAST(COUNT(*) - myvar AS BIGINT) FROM sequences; --the total count, cannot change
+% . # table_name
+% %2 # name
+% bigint # type
+% 1 # length
+[ 0	]
+#drop table x;
+#SET myvar = (SELECT COUNT(*) FROM sequences);
+#create table x (a int GENERATED ALWAYS AS IDENTITY);
+#alter table x alter a drop default; --ok, remove sequence
+#SELECT CAST(COUNT(*) - myvar AS BIGINT) FROM sequences; --the total count, cannot change
+% . # table_name
+% %2 # name
+% bigint # type
+% 1 # length
+[ 0	]
 #drop table x;
 
 # 17:31:38 >  

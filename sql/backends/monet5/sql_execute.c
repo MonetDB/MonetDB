@@ -176,12 +176,12 @@ SQLsetTrace(Client cntxt, MalBlkPtr mb)
 
 	/* add the ticks column */
 
-	q = newStmt(mb, profilerRef, "getTrace");
+	q = newStmt(mb, profilerRef, getTraceRef);
 	q = pushStr(mb, q, putName("usec"));
 	resultset= addArgument(mb,resultset, getArg(q,0));
 
 	/* add the stmt column */
-	q = newStmt(mb, profilerRef, "getTrace");
+	q = newStmt(mb, profilerRef, getTraceRef);
 	q = pushStr(mb, q, putName("stmt"));
 	resultset= addArgument(mb,resultset, getArg(q,0));
 
@@ -448,20 +448,16 @@ SQLescapeString(str s)
 str
 SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_table **result)
 {
-	int status = 0;
-	int err = 0;
+	int status = 0, err = 0, oldvtop, oldstop = 1, inited = 0, label, ac, sizevars, topvars;
 	mvc *o, *m;
-	int ac, sizevars, topvars;
 	sql_var *vars;
-	int oldvtop, oldstop = 1;
 	buffer *b;
-	char *n;
+	char *n, *mquery;
 	bstream *bs;
 	stream *buf;
 	str msg = MAL_SUCCEED;
 	backend *be, *sql = (backend *) c->sqlcontext;
 	size_t len = strlen(*expr);
-	int inited = 0;
 
 #ifdef _SQL_COMPILE
 	mnstr_printf(c->fdout, "#SQLstatement:%s\n", *expr);
@@ -700,17 +696,21 @@ endofcompile:
 	m->sa = NULL;
 	m->sym = NULL;
 	/* variable stack maybe resized, ie we need to keep the new stack */
+	label = m->label;
 	status = m->session->status;
 	sizevars = m->sizevars;
 	topvars = m->topvars;
 	vars = m->vars;
+	mquery = m->query;
 	*m = *o;
 	_DELETE(o);
+	m->label = label;
 	m->sizevars = sizevars;
 	m->topvars = topvars;
 	m->vars = vars;
 	m->session->status = status;
 	m->session->auto_commit = ac;
+	m->query = mquery;
 	if (inited)
 		SQLresetClient(c);
 	return msg;

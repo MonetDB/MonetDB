@@ -63,8 +63,20 @@ Default value:
 .BR @localstatedir@/monetdb5/dbfarm/demo .
 .TP
 \fB\-\-dbextra=\fP\fIpath\fP
-Path where mserver5 should store transient data.  Default value is the
+Path where
+.I mserver5
+should store transient data.  Default value is the
 value of the
+.B \-\-dbpath
+option.
+.TP
+\fB\-\-dbtrace=\fP\fIpath\fP
+File name for the trace log file for
+.IR mserver5 .
+Default value is the
+file
+.B mdbtrace.log
+inside the directory specified with the
 .B \-\-dbpath
 option.
 .TP
@@ -87,7 +99,9 @@ Print list of options.
 Print version and compile configuration.
 .TP
 .B \-\-in\-memory
-Run mserver5 in-memory.
+Run
+.I mserver5
+in-memory.
 .B No
 data will be persisted.
 .TP

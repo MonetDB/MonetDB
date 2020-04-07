@@ -660,7 +660,7 @@ exp_alias_or_copy( mvc *sql, const char *tname, const char *cname, sql_rel *orel
 	sql_exp *ne = NULL;
 
 	if (!tname)
-		tname = old->alias.rname;
+		tname = exp_relname(old);
 
 	if (!cname && exp_name(old) && has_label(old)) {
 		ne = exp_column(sql->sa, exp_relname(old), exp_name(old), exp_subtype(old), orel?orel->card:CARD_ATOM, has_nil(old), is_intern(old));
@@ -2176,7 +2176,7 @@ exps_card( list *l )
 	if (l) for(n = l->h; n; n = n->next) {
 		sql_exp *e = n->data;
 
-		if (card < e->card)
+		if (e && card < e->card)
 			card = e->card;
 	}
 	return card;
@@ -2190,7 +2190,7 @@ exps_fix_card( list *exps, unsigned int card)
 	for (n = exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
 
-		if (e->card > card)
+		if (e && e->card > card)
 			e->card = card;
 	}
 }
@@ -2203,7 +2203,7 @@ exps_setcard( list *exps, unsigned int card)
 	for (n = exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
 
-		if (e->card != CARD_ATOM)
+		if (e && e->card != CARD_ATOM)
 			e->card = card;
 	}
 }

@@ -26,41 +26,30 @@
 #include "multiplex-funnel.h" /* multiplexInit */
 #include "forkmserver.h"
 
-static pthread_mutex_t fork_lock = PTHREAD_MUTEX_INITIALIZER;
-
 /**
  * The terminateProcess function tries to let the given mserver process
  * shut down gracefully within a given time-out.  If that fails, it
  * sends the deadly SIGKILL signal to the mserver process and returns.
  */
 void
-terminateProcess(pid_t pid, char *dbname, mtype type, int lock)
+terminateProcess(dpair dp, mtype type)
 {
 	sabdb *stats;
 	char *er;
 	int i;
 	confkeyval *kv;
 
-	if (lock)
-		pthread_mutex_lock(&fork_lock);
-
-	er = msab_getStatus(&stats, dbname);
+	er = msab_getStatus(&stats, dp->dbname);
 	if (er != NULL) {
-		if (lock)
-			pthread_mutex_unlock(&fork_lock);
 		Mfprintf(stderr, "cannot terminate process %lld: %s\n",
-				 (long long int)pid, er);
+				 (long long int)dp->pid, er);
 		free(er);
-		free(dbname);
 		return;
 	}
 
 	if (stats == NULL) {
-		if (lock)
-			pthread_mutex_unlock(&fork_lock);
 		Mfprintf(stderr, "strange, process %lld serves database '%s' "
-				 "which does not exist\n", (long long int)pid, dbname);
-		free(dbname);
+				 "which does not exist\n", (long long int)dp->pid, dp->dbname);
 		return;
 	}
 
@@ -69,71 +58,57 @@ terminateProcess(pid_t pid, char *dbname, mtype type, int lock)
 		/* ok, what we expect */
 		break;
 	case SABdbCrashed:
-		if (lock)
-			pthread_mutex_unlock(&fork_lock);
 		Mfprintf(stderr, "cannot shut down database '%s', mserver "
 				 "(pid %lld) has crashed\n",
-				 dbname, (long long int)pid);
+				 dp->dbname, (long long int)dp->pid);
 		msab_freeStatus(&stats);
-		free(dbname);
 		return;
 	case SABdbInactive:
-		if (lock)
-			pthread_mutex_unlock(&fork_lock);
 		Mfprintf(stdout, "database '%s' appears to have shut down already\n",
-				 dbname);
+				 dp->dbname);
 		fflush(stdout);
 		msab_freeStatus(&stats);
-		free(dbname);
 		return;
 	case SABdbStarting:
 		Mfprintf(stderr, "database '%s' appears to be starting up\n",
-				 dbname);
+				 dp->dbname);
 		/* starting up, so we'll go to the shut down phase */
 		break;
 	default:
-		if (lock)
-			pthread_mutex_unlock(&fork_lock);
 		Mfprintf(stderr, "unknown state: %d\n", (int)stats->state);
 		msab_freeStatus(&stats);
-		free(dbname);
 		return;
 	}
 
 	if (type == MEROFUN) {
-		if (lock)
-			pthread_mutex_unlock(&fork_lock);
-		multiplexDestroy(dbname);
+		multiplexDestroy(dp->dbname);
 		msab_freeStatus(&stats);
-		free(dbname);
 		return;
 	} else if (type != MERODB) {
 		/* barf */
-		if (lock)
-			pthread_mutex_unlock(&fork_lock);
-		Mfprintf(stderr, "cannot stop merovingian process role: %s\n", dbname);
+		Mfprintf(stderr, "cannot stop merovingian process role: %s\n",
+				 dp->dbname);
 		msab_freeStatus(&stats);
-		free(dbname);
 		return;
 	}
 
 	/* ok, once we get here, we'll be shutting down the server */
 	Mfprintf(stdout, "sending process %lld (database '%s') the "
-			 "TERM signal\n", (long long int)pid, dbname);
-	kill(pid, SIGTERM);
+			 "TERM signal\n", (long long int)dp->pid, dp->dbname);
+	kill(dp->pid, SIGTERM);
 	kv = findConfKey(_mero_props, "exittimeout");
 	for (i = 0; i < atoi(kv->val) * 2; i++) {
 		if (stats != NULL)
 			msab_freeStatus(&stats);
 		sleep_ms(500);
-		er = msab_getStatus(&stats, dbname);
+		er = msab_getStatus(&stats, dp->dbname);
 		if (er != NULL) {
 			Mfprintf(stderr, "unexpected problem: %s\n", er);
 			free(er);
 			/* don't die, just continue, so we KILL in the end */
 		} else if (stats == NULL) {
 			Mfprintf(stderr, "hmmmm, database '%s' suddenly doesn't exist "
-					 "any more\n", dbname);
+					 "any more\n", dp->dbname);
 		} else {
 			switch (stats->state) {
 			case SABdbRunning:
@@ -141,20 +116,14 @@ terminateProcess(pid_t pid, char *dbname, mtype type, int lock)
 				/* ok, try again */
 				break;
 			case SABdbCrashed:
-				if (lock)
-					pthread_mutex_unlock(&fork_lock);
 				Mfprintf (stderr, "database '%s' crashed after SIGTERM\n",
-						  dbname);
+						  dp->dbname);
 				msab_freeStatus(&stats);
-				free(dbname);
 				return;
 			case SABdbInactive:
-				if (lock)
-					pthread_mutex_unlock(&fork_lock);
-				Mfprintf(stdout, "database '%s' has shut down\n", dbname);
+				Mfprintf(stdout, "database '%s' has shut down\n", dp->dbname);
 				fflush(stdout);
 				msab_freeStatus(&stats);
-				free(dbname);
 				return;
 			default:
 				Mfprintf(stderr, "unknown state: %d\n", (int)stats->state);
@@ -164,12 +133,9 @@ terminateProcess(pid_t pid, char *dbname, mtype type, int lock)
 	}
 	Mfprintf(stderr, "timeout of %s seconds expired, sending process %lld"
 			 " (database '%s') the KILL signal\n",
-			 kv->val, (long long int)pid, dbname);
-	kill(pid, SIGKILL);
+			 kv->val, (long long int)dp->pid, dp->dbname);
+	kill(dp->pid, SIGKILL);
 	msab_freeStatus(&stats);
-	free(dbname);
-	if (lock)
-		pthread_mutex_unlock(&fork_lock);
 }
 
 /**
@@ -229,8 +195,28 @@ forkMserver(char *database, sabdb** stats, bool force)
 	unsigned int mport;
 	char *set = "--set";
 
+	/* Find or allocate a dpair entry for this database */
+	pthread_mutex_lock(&_mero_topdp_lock);
+	dp = _mero_topdp->next;
+	while (strcmp(dp->dbname, database) != 0) {
+		if (dp->next == NULL) {
+			dp = dp->next = malloc(sizeof(struct _dpair));
+			*dp = (struct _dpair) {
+				.dbname = strdup(database),
+				.fork_lock = PTHREAD_MUTEX_INITIALIZER,
+			};
+			break;
+		}
+		dp = dp->next;
+	}
+	pthread_mutex_unlock(&_mero_topdp_lock);
+
+	/* Make sure we only start one mserver5 at the same time. */
+	pthread_mutex_lock(&dp->fork_lock);
+
 	er = msab_getStatus(stats, database);
 	if (er != NULL) {
+		pthread_mutex_unlock(&dp->fork_lock);
 		err e = newErr("%s", er);
 		free(er);
 		return(e);
@@ -239,6 +225,7 @@ forkMserver(char *database, sabdb** stats, bool force)
 	/* NOTE: remotes also include locals through self announcement */
 	if (*stats == NULL) {
 		*stats = getRemoteDB(database);
+		pthread_mutex_unlock(&dp->fork_lock);
 
 		if (*stats != NULL)
 			return(NO_ERR);
@@ -252,27 +239,11 @@ forkMserver(char *database, sabdb** stats, bool force)
 	 * more than one entry in the list, so we assume we have the right
 	 * one here. */
 
-	if ((*stats)->state == SABdbRunning)
+	if ((*stats)->state == SABdbRunning) {
 		/* return before doing expensive stuff, when this db just seems
 		 * to be running */
+		pthread_mutex_unlock(&dp->fork_lock);
 		return(NO_ERR);
-
-	/* Make sure we only start one mserver5 at the same time, this is a
-	 * horsedrug for preventing race-conditions where two or more
-	 * clients start the same database at the same time, because they
-	 * were all identified as being SABdbInactive.  If this "global"
-	 * lock ever becomes a problem, we can reduce it to a per-database
-	 * lock instead. */
-	pthread_mutex_lock(&fork_lock);
-
-	/* refetch the status, as it may have changed */
-	msab_freeStatus(stats);
-	er = msab_getStatus(stats, database);
-	if (er != NULL) {
-		err e = newErr("%s", er);
-		free(er);
-		pthread_mutex_unlock(&fork_lock);
-		return(e);
 	}
 
 	ckv = getDefaultProps();
@@ -287,7 +258,7 @@ forkMserver(char *database, sabdb** stats, bool force)
 					 kv->val, database);
 			freeConfFile(ckv);
 			free(ckv);
-			pthread_mutex_unlock(&fork_lock);
+			pthread_mutex_unlock(&dp->fork_lock);
 			return(NO_ERR);
 		} else {
 			Mfprintf(stdout, "startup of %s under maintenance "
@@ -303,7 +274,7 @@ forkMserver(char *database, sabdb** stats, bool force)
 		msab_freeStatus(stats);
 		freeConfFile(ckv);
 		free(ckv);
-		pthread_mutex_unlock(&fork_lock);
+		pthread_mutex_unlock(&dp->fork_lock);
 		return(e);
 	}
 
@@ -311,7 +282,7 @@ forkMserver(char *database, sabdb** stats, bool force)
 	case SABdbRunning:
 		freeConfFile(ckv);
 		free(ckv);
-		pthread_mutex_unlock(&fork_lock);
+		pthread_mutex_unlock(&dp->fork_lock);
 		return(NO_ERR);
 	case SABdbCrashed:
 		t = localtime(&info.lastcrash);
@@ -347,7 +318,7 @@ forkMserver(char *database, sabdb** stats, bool force)
 		msab_freeStatus(stats);
 		freeConfFile(ckv);
 		free(ckv);
-		pthread_mutex_unlock(&fork_lock);
+		pthread_mutex_unlock(&dp->fork_lock);
 		return(newErr("unknown or impossible state: %d",
 					  (int)state));
 	}
@@ -359,7 +330,7 @@ forkMserver(char *database, sabdb** stats, bool force)
 		msab_freeStatus(stats);
 		freeConfFile(ckv);
 		free(ckv);
-		pthread_mutex_unlock(&fork_lock);
+		pthread_mutex_unlock(&dp->fork_lock);
 		return(newErr("unable to create pipe: %s", strerror(e)));
 	}
 	if (pipe(pfde) == -1) {
@@ -369,26 +340,20 @@ forkMserver(char *database, sabdb** stats, bool force)
 		msab_freeStatus(stats);
 		freeConfFile(ckv);
 		free(ckv);
-		pthread_mutex_unlock(&fork_lock);
+		pthread_mutex_unlock(&dp->fork_lock);
 		return(newErr("unable to create pipe: %s", strerror(e)));
 	}
 
 	/* a multiplex-funnel means starting a separate thread */
 	if (strcmp(kv->val, "mfunnel") == 0) {
 		FILE *f1, *f2;
-		/* create a dpair entry */
+		/* fill in the rest of the dpair entry */
 		pthread_mutex_lock(&_mero_topdp_lock);
 
-		dp = _mero_topdp;
-		while (dp->next != NULL)
-			dp = dp->next;
-		dp = dp->next = malloc(sizeof(struct _dpair));
 		dp->out = pfdo[0];
 		dp->err = pfde[0];
-		dp->next = NULL;
 		dp->type = MEROFUN;
 		dp->pid = getpid();
-		dp->dbname = strdup(database);
 		dp->flag = 0;
 
 		pthread_mutex_unlock(&_mero_topdp_lock);
@@ -397,14 +362,14 @@ forkMserver(char *database, sabdb** stats, bool force)
 		if(!(f1 = fdopen(pfdo[1], "a"))) {
 			freeConfFile(ckv);
 			free(ckv);
-			pthread_mutex_unlock(&fork_lock);
+			pthread_mutex_unlock(&dp->fork_lock);
 			return newErr("Failed to open file descriptor\n");
 		}
 		if(!(f2 = fdopen(pfde[1], "a"))) {
 			fclose(f1);
 			freeConfFile(ckv);
 			free(ckv);
-			pthread_mutex_unlock(&fork_lock);
+			pthread_mutex_unlock(&dp->fork_lock);
 			return newErr("Failed to open file descriptor\n");
 		}
 		if ((er = multiplexInit(database, kv->val, f1, f2)) != NO_ERR) {
@@ -412,7 +377,7 @@ forkMserver(char *database, sabdb** stats, bool force)
 					 getErrMsg(er));
 			freeConfFile(ckv);
 			free(ckv);
-			pthread_mutex_unlock(&fork_lock);
+			pthread_mutex_unlock(&dp->fork_lock);
 			return(er);
 		}
 		freeConfFile(ckv);
@@ -421,7 +386,7 @@ forkMserver(char *database, sabdb** stats, bool force)
 		/* refresh stats, now we will have a connection registered */
 		msab_freeStatus(stats);
 		er = msab_getStatus(stats, database);
-		pthread_mutex_unlock(&fork_lock);
+		pthread_mutex_unlock(&dp->fork_lock);
 		if (er != NULL) {
 			/* since the client mserver lives its own life anyway,
 			 * it's not really a problem we exit here */
@@ -439,7 +404,7 @@ forkMserver(char *database, sabdb** stats, bool force)
 		msab_freeStatus(stats);
 		freeConfFile(ckv);
 		free(ckv);
-		pthread_mutex_unlock(&fork_lock);
+		pthread_mutex_unlock(&dp->fork_lock);
 		return(newErr("cannot start database '%s': no .vaultkey found "
 					  "(did you create the database with `monetdb create %s`?)",
 					  database, database));
@@ -449,7 +414,7 @@ forkMserver(char *database, sabdb** stats, bool force)
 	if (er != NULL) {
 		freeConfFile(ckv);
 		free(ckv);
-		pthread_mutex_unlock(&fork_lock);
+		pthread_mutex_unlock(&dp->fork_lock);
 		return(er);
 	}
 
@@ -510,7 +475,7 @@ forkMserver(char *database, sabdb** stats, bool force)
 			// only one python version can be active at a time
 			freeConfFile(ckv);
 			free(ckv);
-			pthread_mutex_unlock(&fork_lock);
+			pthread_mutex_unlock(&dp->fork_lock);
 			free(sabdbfarm);
 			return newErr("attempting to start mserver with both embedded python2 and embedded python3; only one python version can be active at a time\n");
 		}
@@ -534,7 +499,7 @@ forkMserver(char *database, sabdb** stats, bool force)
 			// listenaddr is only available on forwarding method
 			freeConfFile(ckv);
 			free(ckv);
-			pthread_mutex_unlock(&fork_lock);
+			pthread_mutex_unlock(&dp->fork_lock);
 			free(sabdbfarm);
 			return newErr("attempting to start mserver with listening address while being proxied by monetdbd; this option is only possible on forward method\n");
 		}
@@ -674,8 +639,8 @@ forkMserver(char *database, sabdb** stats, bool force)
 	freeConfFile(ckv);
 	free(ckv); /* can make ckv static and reuse it all the time */
 
-	/* make sure no entries are shot while adding and that we
-	 * deliver a consistent state */
+	/* make sure we're not inside childhandler() fiddling with our
+	 * dpair instance */
 	pthread_mutex_lock(&_mero_topdp_lock);
 
 	pid = fork();
@@ -716,27 +681,20 @@ forkMserver(char *database, sabdb** stats, bool force)
 		exit(1);
 	} else if (pid > 0) {
 		/* parent: fine, let's add the pipes for this child */
-		dp = _mero_topdp;
-		while (dp->next != NULL)
-			dp = dp->next;
-		dp = dp->next = malloc(sizeof(struct _dpair));
 		dp->out = pfdo[0];
 		close(pfdo[1]);
 		dp->err = pfde[0];
 		close(pfde[1]);
-		dp->next = NULL;
 		dp->type = MERODB;
 		dp->pid = pid;
-		dp->dbname = strdup(database);
 		dp->flag = 0;
+		pthread_mutex_unlock(&_mero_topdp_lock);
 
 		while (argv[freec] != NULL) {
 			if (argv[freec] != set)
 				free(argv[freec]);
 			freec++;
 		}
-
-		pthread_mutex_unlock(&_mero_topdp_lock);
 
 		/* wait for the child to finish starting, at some point we
 		 * decided that we should wait indefinitely here because if the
@@ -746,15 +704,6 @@ forkMserver(char *database, sabdb** stats, bool force)
 		do {
 			/* give the database a break */
 			sleep_ms(500);
-
-			/* in the meanwhile, if the server has stopped, it will
-			 * have been removed from the dpair list, so check if
-			 * it's still there. */
-			pthread_mutex_lock(&_mero_topdp_lock);
-			dp = _mero_topdp;
-			while (dp != NULL && dp->pid != pid)
-				dp = dp->next;
-			pthread_mutex_unlock(&_mero_topdp_lock);
 
 			/* stats cannot be NULL, as we don't allow starting non
 			 * existing databases, note that we need to run this loop at
@@ -766,17 +715,23 @@ forkMserver(char *database, sabdb** stats, bool force)
 				 * it's not really a problem we exit here */
 				err e = newErr("%s", er);
 				free(er);
-				pthread_mutex_unlock(&fork_lock);
+				pthread_mutex_unlock(&dp->fork_lock);
 				return(e);
 			}
 
-			/* server doesn't run, no need to wait any longer */
-			if (dp == NULL)
+			/* in the meanwhile, if the server has stopped (and been
+			 * waited for), the pid will have been set to -1, so check
+			 * that. */
+			pthread_mutex_lock(&_mero_topdp_lock);
+			if (dp->pid == -1) {
+				pthread_mutex_unlock(&_mero_topdp_lock);
 				break;
+			}
+			pthread_mutex_unlock(&_mero_topdp_lock);
 		} while ((*stats)->state != SABdbRunning);
 
 		/* check if the SQL scenario was loaded */
-		if (dp != NULL && (*stats)->state == SABdbRunning &&
+		if (dp->pid != -1 && (*stats)->state == SABdbRunning &&
 			(*stats)->conns != NULL &&
 			(*stats)->conns->val != NULL &&
 			(*stats)->scens != NULL &&
@@ -789,26 +744,26 @@ forkMserver(char *database, sabdb** stats, bool force)
 			if (scen == NULL) {
 				/* we don't know what it's doing, but we don't like it
 				 * any case, so kill it */
-				terminateProcess(pid, strdup(database), MERODB, 0);
+				terminateProcess(dp, MERODB);
 				msab_freeStatus(stats);
-				pthread_mutex_unlock(&fork_lock);
+				pthread_mutex_unlock(&dp->fork_lock);
 				return(newErr("database '%s' did not initialise the sql "
 							  "scenario", database));
 			}
-		} else if (dp != NULL) {
-			terminateProcess(pid, strdup(database), MERODB, 0);
+		} else if (dp->pid != -1) {
+			terminateProcess(dp, MERODB);
 			msab_freeStatus(stats);
-			pthread_mutex_unlock(&fork_lock);
+			pthread_mutex_unlock(&dp->fork_lock);
 			return(newErr(
 					   "database '%s' started up, but failed to open up "
 					   "a communication channel", database));
 		}
 
-		pthread_mutex_unlock(&fork_lock);
-
 		/* try to be clear on why starting the database failed */
-		if (dp == NULL) {
+		if (dp->pid == -1) {
 			state = (*stats)->state;
+
+			pthread_mutex_unlock(&dp->fork_lock);
 
 			/* starting failed */
 			msab_freeStatus(stats);
@@ -849,6 +804,8 @@ forkMserver(char *database, sabdb** stats, bool force)
 			}
 		}
 
+		pthread_mutex_unlock(&dp->fork_lock);
+
 		if ((*stats)->locked) {
 			Mfprintf(stdout, "database '%s' has been put into maintenance "
 					 "mode during startup\n", database);
@@ -856,15 +813,15 @@ forkMserver(char *database, sabdb** stats, bool force)
 
 		return(NO_ERR);
 	}
+	/* pid < 0: fork failed */
 	int e = errno;
-	pthread_mutex_unlock(&_mero_topdp_lock);
 
 	/* forking failed somehow, cleanup the pipes */
 	close(pfdo[0]);
 	close(pfdo[1]);
 	close(pfde[0]);
 	close(pfde[1]);
-	pthread_mutex_unlock(&fork_lock);
+	pthread_mutex_unlock(&dp->fork_lock);
 	return(newErr("%s", strerror(e)));
 }
 
@@ -889,17 +846,29 @@ fork_profiler(char *dbname, sabdb **stats, char **log_path)
 	char *tmp_exe;
 	struct stat path_info;
 	int error_code;
+	dpair dp;
+
+	pthread_mutex_lock(&_mero_topdp_lock);
+	dp = _mero_topdp->next;
+	while (dp != NULL && strcmp(dp->dbname, dbname) != 0) {
+		dp = dp->next;
+	}
+	pthread_mutex_unlock(&_mero_topdp_lock);
+	if (dp == NULL)
+		return newErr("Unknown database %s", dbname);
+	pthread_mutex_lock(&dp->fork_lock);
 
 	*log_path = NULL;
 	error = msab_getStatus(stats, dbname);
 	if (error != NULL) {
+		pthread_mutex_unlock(&dp->fork_lock);
 		return error;
 	}
 
 	if (*stats == NULL) {
 		/* TODO: What now? */
-		error = newErr("Null stats for db %s", dbname);
-		return error;
+		pthread_mutex_unlock(&dp->fork_lock);
+		return newErr("Null stats for db %s", dbname);
 	}
 
 	/* Find the profiler executable. The mserver is running as
@@ -909,8 +878,8 @@ fork_profiler(char *dbname, sabdb **stats, char **log_path)
 	 */
 	tmp_exe = strdup(_mero_mserver);
 	if (tmp_exe == NULL) {
-		error = newErr("Cannot find the profiler executable");
-		return error;
+		pthread_mutex_unlock(&dp->fork_lock);
+		return newErr("Cannot find the profiler executable");
 	} else {
 		char *server_filename = "mserver5";
 		char *profiler_filename = "stethoscope";
@@ -918,6 +887,7 @@ fork_profiler(char *dbname, sabdb **stats, char **log_path)
 		size_t executable_len = 0;
 
 		if (s == NULL || strncmp(s, server_filename, strlen(server_filename)) != 0) {
+			pthread_mutex_unlock(&dp->fork_lock);
 			error = newErr("Unexpected executable (missing the string \"%s\")", server_filename);
 			free(tmp_exe);
 			return error;
@@ -935,8 +905,6 @@ fork_profiler(char *dbname, sabdb **stats, char **log_path)
 		}
 		/* free(tmp_exe); */
 	}
-
-	pthread_mutex_lock(&fork_lock);
 
 	/* Verify that the requested db is running */
 	if ((*stats)->state != SABdbRunning) {
@@ -1152,7 +1120,7 @@ fork_profiler(char *dbname, sabdb **stats, char **log_path)
 	free(ckv);
 	free(profiler_executable);
 	free(pidfilename);
-	pthread_mutex_unlock(&fork_lock);
+	pthread_mutex_unlock(&dp->fork_lock);
 	return error;
 }
 

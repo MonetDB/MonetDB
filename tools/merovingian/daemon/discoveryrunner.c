@@ -45,12 +45,12 @@ broadcast(char *msg)
 				"message: %s\n", strerror(errno));
 }
 
-static int
+static bool
 removeRemoteDB(const char *dbname, const char *conn)
 {
 	remotedb rdb;
 	remotedb prv;
-	char hadmatch = 0;
+	bool hadmatch = false;
 
 	pthread_mutex_lock(&_mero_remotedb_lock);
 
@@ -80,7 +80,7 @@ removeRemoteDB(const char *dbname, const char *conn)
 			free(rdb->fullname);
 			free(rdb);
 			rdb = prv;
-			hadmatch = 1;
+			hadmatch = true;
 			/* in the future, there may be more, so keep looking */
 		}
 		prv = rdb;
@@ -475,7 +475,7 @@ discoveryRunner(void *d)
 			if (dbname == NULL || conn == NULL)
 				continue;
 
-			if (removeRemoteDB(dbname, conn) == 0)
+			if (!removeRemoteDB(dbname, conn))
 				Mfprintf(_mero_discout,
 						"received leave request for unknown database "
 						"%s%s from %s\n", conn, dbname, host);

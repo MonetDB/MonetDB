@@ -49,6 +49,7 @@
 	(rel->op == op_basetable || \
 	(rel->op == op_ddl && (rel->flag == ddl_create_table || rel->flag == ddl_alter_table)))
 
+extern void rel_set_exps(sql_rel *rel, list *exps);
 extern int project_unsafe(sql_rel *rel, int allow_identity);
 extern const char *rel_name( sql_rel *r );
 extern sql_rel *rel_distinct(sql_rel *l);
@@ -109,12 +110,16 @@ extern sql_rel *rel_add_identity2(mvc *sql, sql_rel *rel, sql_exp **exp);
 extern sql_exp * rel_find_column( sql_allocator *sa, sql_rel *rel, const char *tname, const char *cname );
 
 extern int rel_in_rel(sql_rel *super, sql_rel *sub);
+extern sql_rel *rel_parent(sql_rel *rel);
+extern sql_exp *lastexp(sql_rel *rel);
+extern sql_rel *rel_zero_or_one(mvc *sql, sql_rel *rel, exp_kind ek);
 
 extern list *rel_dependencies(mvc *sql, sql_rel *r);
 extern sql_exp * exps_find_match_exp(list *l, sql_exp *e);
 
 typedef sql_exp *(*exp_rewrite_fptr)(mvc *sql, sql_rel *rel, sql_exp *e, int depth /* depth of the nested expression */ );
-extern sql_rel *rel_exp_visitor(mvc *sql, sql_rel *rel, exp_rewrite_fptr exp_rewriter);
+extern sql_rel *rel_exp_visitor_topdown(mvc *sql, sql_rel *rel, exp_rewrite_fptr exp_rewriter);
+extern sql_rel *rel_exp_visitor_bottomup(mvc *sql, sql_rel *rel, exp_rewrite_fptr exp_rewriter);
 
 typedef sql_rel *(*rel_rewrite_fptr)(mvc *sql, sql_rel *rel, int *changes);
 extern sql_rel *rel_visitor_topdown(mvc *sql, sql_rel *rel, rel_rewrite_fptr rel_rewriter, int *changes);

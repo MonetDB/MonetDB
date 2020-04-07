@@ -1052,13 +1052,13 @@ parseInclude(Client cntxt)
 	s = loadLibrary(modnme, FALSE);
 	if (s) {
 		parseError(cntxt, s);
-		GDKfree(s);
+		freeException(s);
 		return 0;
 	}
 	*/
 	if ((s = malInclude(cntxt, modnme, 0))) {
 		parseError(cntxt, s);
-		GDKfree(s);
+		freeException(s);
 		return 0;
 	}
 	return 0;

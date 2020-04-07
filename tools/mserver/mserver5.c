@@ -89,7 +89,7 @@ usage(char *prog, int xit)
 	fprintf(stderr, "Usage: %s [options]\n", prog);
 	fprintf(stderr, "    --dbpath=<directory>      Specify database location\n");
 	fprintf(stderr, "    --dbextra=<directory>     Directory for transient BATs\n");
-	fprintf(stderr, "    --dbtrace=<directory>     Directory for produced traces\n");
+	fprintf(stderr, "    --dbtrace=<file>          File for produced traces\n");
 	fprintf(stderr, "    --in-memory               Run database in-memory only\n");
 	fprintf(stderr, "    --config=<config_file>    Use config_file to read options from\n");
 	fprintf(stderr, "    --single-user             Allow only one user at a time\n");
@@ -259,7 +259,6 @@ handler(int sig)
 int
 main(int argc, char **av)
 {
-	DIR *dirp;
 	char *prog = *av;
 	opt *set = NULL;
 	int grpdebug = 0, debug = 0, setlen = 0;
@@ -275,7 +274,7 @@ main(int argc, char **av)
 		{ "config", required_argument, NULL, 'c' },
 		{ "dbpath", required_argument, NULL, 0 },
 		{ "dbextra", required_argument, NULL, 0 },
-		{ "dbtrace", optional_argument, NULL, 0 },
+		{ "dbtrace", required_argument, NULL, 0 },
 		{ "debug", optional_argument, NULL, 'd' },
 		{ "help", no_argument, NULL, '?' },
 		{ "version", no_argument, NULL, 0 },
@@ -468,7 +467,7 @@ main(int argc, char **av)
 			usage(prog, strcmp(av[optind - 1], "-?") == 0 || strcmp(av[optind - 1], "--help") == 0 ? 0 : -1);
 		default:
 			fprintf(stderr, "ERROR: getopt returned character "
-				"code '%c' 0%o\n", c, (uint8_t) c);
+				"code '%c' 0%o\n", c, (unsigned) (uint8_t) c);
 			usage(prog, -1);
 		}
 	}
@@ -518,18 +517,6 @@ main(int argc, char **av)
 		if (GDKcreatedir(dbtrace) != GDK_SUCCEED) {
 			fprintf(stderr, "!ERROR: cannot create directory for %s\n", dbtrace);
 			exit(1);
-		}
-		/* create the actual dir for db-trace */
-		if (mkdir(dbtrace, MONETDB_DIRMODE) < 0) {
-			if (errno != EEXIST) {
-				fprintf(stderr, "!ERROR: cannot create directory for %s\n", dbtrace);
-				exit(1);
-			}
-			if ((dirp = opendir(dbtrace)) == NULL) {
-				fprintf(stderr, "!ERROR: cannot create directory for %s\n", dbtrace);
-				exit(1);
-			}
-			closedir(dirp);
 		}
 		GDKfree(dbtrace);
 	}

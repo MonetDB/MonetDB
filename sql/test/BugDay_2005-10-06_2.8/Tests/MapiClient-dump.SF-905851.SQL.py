@@ -9,14 +9,14 @@ def client(cmd, infile = None):
         f = open(infile)
     else:
         f = None
-    clt = process.client(cmd, stdin = f,
-                         stdout = process.PIPE, stderr = process.PIPE,
-                         log = True)
-    if f is not None:
-        f.close()
-    out, err = clt.communicate()
-    sys.stdout.write(out)
-    sys.stderr.write(err)
+    with process.client(cmd, stdin = f,
+                        stdout = process.PIPE, stderr = process.PIPE,
+                        log = True) as clt:
+        if f is not None:
+            f.close()
+        out, err = clt.communicate()
+        sys.stdout.write(out)
+        sys.stderr.write(err)
 
 def main():
     client('sql',

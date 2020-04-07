@@ -7,3 +7,4 @@ NOT_WIN32&HAVE_LIBR&HAVE_LIBPY3?functions-not-persist.Bug-6819
 cume-dist-wrong-results.Bug-6827
 window-order-by-extract.Bug-6828
 ntile-wrong-results.Bug-6829
+HAVE_PYMONETDB?global_table_propagation.Bug-6846
