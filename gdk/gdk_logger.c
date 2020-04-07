@@ -625,13 +625,14 @@ log_read_updates(logger *lg, trans *tr, logformat *l, char *name, int tpe, oid i
 static log_return
 log_read_batgroup(logger *lg, trans *tr, logformat *l, char bg_tpe, oid id)
 {
-	lng offset = 0, nr_deleted = 0, nr_inserted = l->nr;
-	oid rid;
+	lng nr_inserted = l->nr, offset_inserted = 0, nr_deleted = 0, offset_deleted = 0;
+	oid rid = 0;
 	log_return res = LOG_OK;
 	char tpe = 0, *name = NULL;
 
-	if (mnstr_readLng(lg->input_log, &offset) != 1 ||
-	    mnstr_readLng(lg->input_log, &nr_deleted) != 1) {
+	if (mnstr_readLng(lg->input_log, &offset_inserted) != 1 ||
+	    mnstr_readLng(lg->input_log, &nr_deleted) != 1 ||
+	    mnstr_readLng(lg->input_log, &offset_deleted) != 1) {
 		fprintf(stderr, "!ERROR: log_read_batgroup: read failed\n");
 		return LOG_EOF;
 	}
@@ -640,7 +641,7 @@ log_read_batgroup(logger *lg, trans *tr, logformat *l, char bg_tpe, oid id)
 	if (nr_deleted) {
 		l->nr = nr_deleted;
 		if (bg_tpe == LOG_BATGROUP_ID && log_read_id(lg, &tpe, &rid) == LOG_OK) {
-			res = log_read_updates(lg, tr, l, name, tpe, rid, bg_tpe == LOG_BATGROUP_ID, 0);
+			res = log_read_updates(lg, tr, l, name, tpe, rid, bg_tpe == LOG_BATGROUP_ID, offset_deleted);
 		} else {
 			res = LOG_ERR;
 		} 
@@ -651,7 +652,7 @@ log_read_batgroup(logger *lg, trans *tr, logformat *l, char bg_tpe, oid id)
 			if (bg_tpe == LOG_BATGROUP_ID && log_read_id(lg, &tpe, &rid) == LOG_OK) { 
 				if (tpe == LOG_BATGROUP_END)
 					break;
-				res = log_read_updates(lg, tr, l, name, tpe, rid, bg_tpe == LOG_BATGROUP_ID, offset);
+				res = log_read_updates(lg, tr, l, name, tpe, rid, bg_tpe == LOG_BATGROUP_ID, offset_inserted);
 			} else {
 				res = LOG_ERR;
 			}
@@ -2044,6 +2045,8 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 	if (BBPrename(lg->catalog_cnt->batCacheid, bak) < 0) {
 		goto error;
 	}
+	if (bm_get_counts(lg) == GDK_FAIL)
+		goto error;
 
 	lg->freed = logbat_new(TYPE_int, 1, TRANSIENT);
 	if (lg->freed == NULL) {
@@ -2175,7 +2178,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 		if (lg->postfuncp && (*lg->postfuncp)(lg) != GDK_SUCCEED)
 			goto error;
 	}
-	return bm_get_counts(lg);
+	return GDK_SUCCEED;
   error:
 	if (fp)
 		fclose(fp);
@@ -2471,7 +2474,6 @@ logger_flush(logger *lg)
 		lg->changes -= 1000;
 		return GDK_SUCCEED;
 	}
-	// get lock 
 	if (!lg->input_log) {
 		char *filename;
 		char id[BUFSIZ];
@@ -2505,11 +2507,11 @@ logger_flush(logger *lg)
 		lg->flush_id++;
 	}
 	if (res != LOG_ERR) {
-		/* probably done in read_trans already */
-		// commit changes
-		lg->saved_tid++;
+		if (logger_commit(lg) != GDK_SUCCEED) {
+			fprintf(stderr, "!ERROR: logger_flush: logger_commit failed\n");
+			res = LOG_ERR;
+		}
 	}
-	// release lock 
 	return res == LOG_ERR ? GDK_FAIL : GDK_SUCCEED;
 }
 
@@ -2836,7 +2838,7 @@ log_bat(logger *lg, BAT *b, const char *name, char tpe, oid id, lng offset)
 
 		l.flag = tpe?LOG_INSERT_ID:LOG_INSERT;
 		assert(!offset || is_bg || name);
-		assert(!is_bg || l.nr == lg->bg.nr_inserted); /* or these are the deleted !*/
+		assert(!is_bg || l.nr == lg->bg.nr_inserted || l.nr == lg->bg.nr_deleted);
 		if (name && offset && !tpe)
 			l.flag = LOG_INSERT_OFFSET;
 		if ((!is_bg && log_write_format(lg, &l) != GDK_SUCCEED) ||
@@ -2897,7 +2899,7 @@ log_bat_clear(logger *lg, const char *name, char tpe, oid id)
 }
 
 gdk_return 
-log_batgroup(logger *lg, char tpe_id, oid id, bool cleared, lng nr_inserted, lng offset, lng nr_deleted)
+log_batgroup(logger *lg, char tpe_id, oid id, bool cleared, lng nr_inserted, lng offset_inserted, lng nr_deleted, lng offset_deleted)
 {
 	logformat l;
 	char tpe = (tpe_id)?LOG_BATGROUP_ID:LOG_BATGROUP; 
@@ -2923,14 +2925,17 @@ log_batgroup(logger *lg, char tpe_id, oid id, bool cleared, lng nr_inserted, lng
 	    log_write_id(lg, tpe, id) != GDK_SUCCEED)
 		return GDK_FAIL;
 	
-	assert(offset == 0 || !cleared);
+	assert(offset_inserted == 0 || !cleared);
 	/* cleared is redundant, ie if offset == 0 and we have content we need to clear */
-	if (mnstr_writeLng(lg->output_log, offset) && mnstr_writeLng(lg->output_log, nr_deleted)) {
+	if (mnstr_writeLng(lg->output_log, offset_inserted) && 
+	    mnstr_writeLng(lg->output_log, nr_deleted) &&
+	    mnstr_writeLng(lg->output_log, offset_deleted)) {
 		assert(!lg->bg.id);
 		lg->bg.id = id;
 		lg->bg.nr_inserted = nr_inserted;
-		lg->bg.offset = offset;
+		lg->bg.offset_inserted = offset_inserted;
 		lg->bg.nr_deleted = nr_deleted;
+		lg->bg.offset_deleted = offset_deleted;
 		lg->bg.with_id = tpe_id?1:0;
 		return GDK_SUCCEED;
 	}
@@ -3005,6 +3010,12 @@ pre_allocate(logger *lg)
 	(void) lg;
 #endif
 	return GDK_SUCCEED;
+}
+
+lng
+log_tid(logger *lg)
+{
+	return lg->tid;
 }
 
 gdk_return

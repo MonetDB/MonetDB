@@ -12,8 +12,9 @@
 struct batgroup {
 	oid id;
 	lng nr_inserted;
-	lng offset;
+	lng offset_inserted;
 	lng nr_deleted;
+	lng offset_deleted;
 	bool with_id;
 };
 

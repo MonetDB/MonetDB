@@ -2700,7 +2700,7 @@ log_get_nr_inserted(sql_column *fc, lng *offset)
 }
 
 static lng
-log_get_nr_deleted(sql_table *ft)
+log_get_nr_deleted(sql_table *ft, lng *offset)
 {
 	lng cnt = 0;
 
@@ -2711,8 +2711,10 @@ log_get_nr_deleted(sql_table *ft)
 		sql_dbat *fdb = ft->data;
 		BAT *db = temp_descriptor(fdb->dbid);
 
-		if (db && BUNlast(db) > 0 && BUNlast(db) > db->batInserted) 
+		if (db && BUNlast(db) > 0 && BUNlast(db) > db->batInserted) {
 			cnt = BUNlast(db) - db->batInserted;
+			*offset = db->batInserted;
+		}
 		bat_destroy(db);
 	}
 	return cnt;
@@ -2723,10 +2725,12 @@ log_table(sql_trans *tr, sql_table *ft)
 {
 	int ok = LOG_OK;
 	node *n;
-	lng offset = 0;
+	lng offset_inserted = 0, offset_deleted = 0;
 	sql_column *fc = ft->columns.set->h->data;
 
-	if (log_batgroup(bat_logger, ft->bootstrap?0:LOG_TAB, ft->base.id, ft->cleared, log_get_nr_inserted(fc, &offset), offset, log_get_nr_deleted(ft)) != GDK_SUCCEED) 
+	if (log_batgroup(bat_logger, ft->bootstrap?0:LOG_TAB, ft->base.id, ft->cleared, 
+				log_get_nr_inserted(fc, &offset_inserted), offset_inserted, 
+				log_get_nr_deleted(ft, &offset_deleted), offset_deleted) != GDK_SUCCEED) 
 		ok = LOG_ERR;
 	assert(tr->parent == gtrans);
 	if (ok == LOG_OK && ft->base.wtime && ft->base.allocated)

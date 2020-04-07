@@ -59,12 +59,13 @@ gdk_export gdk_return log_bat_transient(logger *lg, const char *n, char tpe, oid
 gdk_export gdk_return log_delta(logger *lg, BAT *uid, BAT *uval, const char *n, char tpe, oid id);
 
 /* insert/clear groups of bats */
-gdk_export gdk_return log_batgroup(logger *lg, char tpe, oid id, bool cleared, lng nr_inserted, lng offset, lng nr_deleted);
+gdk_export gdk_return log_batgroup(logger *lg, char tpe, oid id, bool cleared, lng nr_inserted, lng offset_inserted, lng nr_deleted, lng offset_deleted);
 /* mark end of batgroup insert or clear */
 gdk_export gdk_return log_batgroup_end(logger *lg, oid id);
 
-gdk_export gdk_return log_tstart(logger *lg);	/* TODO return transaction id */
+gdk_export gdk_return log_tstart(logger *lg);
 gdk_export gdk_return log_tend(logger *lg);
+gdk_export lng log_tid(logger *lg);	/* return the active transaction id */
 gdk_export gdk_return log_abort(logger *lg);
 
 gdk_export gdk_return log_sequence(logger *lg, int seq, lng id);
