@@ -49,8 +49,7 @@ class Doc:
 			text = text[len(BOM):]
 
 		if len(text) != self.size_without_bom:
-			return "Size mismatch"
-			# return f"Size mismatch: found {len(text)} bytes, expected {self.size_without_bom}"
+			return f"Size mismatch: found {len(text)} bytes, expected {self.size_without_bom}"
 
 		digest = hashlib.md5(text).hexdigest()
 		if digest != self.md5_without_bom:
