@@ -422,6 +422,23 @@ stack_pop_frame(mvc *sql)
 }
 
 sql_table *
+frame_find_table(mvc *sql, sql_schema *s, const char *name)
+{
+	if (sql->topframes > 0) {
+		const char *sname = s->base.name;
+		sql_frame *f = sql->frames[sql->topframes - 1];
+		if (f->tables) {
+			for (node *n = f->tables->h; n ; n = n->next) {
+				sql_local_table *var = (sql_local_table*) n->data;
+				if (!strcmp(var->table->s->base.name, sname) && !strcmp(var->table->base.name, name))
+					return var->table;
+			}
+		}
+	}
+	return NULL;
+}
+
+sql_table *
 stack_find_table(mvc *sql, sql_schema *s, const char *name)
 {
 	const char *sname = s->base.name;

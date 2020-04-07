@@ -275,6 +275,7 @@ extern void stack_pop_until(mvc *sql, int frame);
 /* find variable in the stack */
 extern sql_var *stack_find_var_frame(mvc *sql, sql_schema *s, const char *name, int *level);
 extern sql_table *stack_find_table(mvc *sql, sql_schema *s, const char *name);
+extern sql_table *frame_find_table(mvc *sql, sql_schema *s, const char *name);
 extern sql_rel *stack_find_rel_view(mvc *sql, const char *name);
 
 /* find variable in the current frame */

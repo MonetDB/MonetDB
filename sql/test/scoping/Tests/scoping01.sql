@@ -1,5 +1,5 @@
 --TODO transaction management
--- Test variables with different schemas
+-- Test variables with different schemas and scoping levels
 -- Update rel_read and RAstatemet
 -- Check what must be persisted
 -- upgrade drop dt_schema
@@ -105,26 +105,43 @@ END;
 
 SELECT scoping(vals) FROM (VALUES (1),(2),(3)) AS vals(vals);
 	-- 1
-	-- 1 MonetDB outputs this one as 2, but the inner x shouldn't override the value of outer x variable
+	-- 1
 	-- 3
 
 DROP FUNCTION scoping(INT);
 
 CREATE OR REPLACE FUNCTION scoping2(input INT) RETURNS INT 
 BEGIN
-	DECLARE TABLE x (a int);
-	INSERT INTO x VALUES (1);
+	DECLARE TABLE z (a int);
+	INSERT INTO z VALUES (1);
 	IF input = 2 THEN
-		DECLARE TABLE x (a int);
-		INSERT INTO x VALUES (2);
+		DECLARE TABLE z (a int);
+		INSERT INTO z VALUES (2);
 	ELSE
 		IF input = 3 THEN
-			TRUNCATE x;
-			INSERT INTO x VALUES (3);
+			TRUNCATE z;
+			INSERT INTO z VALUES (3);
 		END IF;
 	END IF;
-	RETURN SELECT a FROM x;
-END; --error, multiple declarations of table x;
+	RETURN SELECT a FROM z;
+END; 
+
+SELECT scoping2(vals) FROM (VALUES (1),(2),(3),(4)) AS vals(vals);
+	-- 1
+	-- 1
+	-- 3
+	-- 1
+
+CREATE OR REPLACE FUNCTION scoping2(input INT) RETURNS INT 
+BEGIN
+	IF input = 2 THEN
+		DECLARE TABLE z (a int);
+		DECLARE TABLE z (a int); --error, redifinition on the same scope level
+	END IF;
+	RETURN SELECT a FROM z;
+END; 
+
+DROP FUNCTION scoping2(INT);
 -----------------------------------------------------------------------------
 DECLARE TABLE atest (a int);
 INSERT INTO atest VALUES (1);
@@ -145,6 +162,11 @@ CREATE OR REPLACE FUNCTION scoping4() RETURNS TABLE(a int)
 BEGIN
 	DECLARE tableydoesntexist int;
 	RETURN tableydoesntexist; --error, no table named "tableydoesntexist" exists
+END;
+
+CREATE OR REPLACE FUNCTION scoping4() RETURNS INT
+BEGIN
+	RETURN idontexist; --error, no variable named "idontexist" exists
 END;
 
 CREATE OR REPLACE FUNCTION scoping4() RETURNS INT
