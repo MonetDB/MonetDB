@@ -3346,8 +3346,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 
 	exps = sa_list(sql->sa);
 	if (args && args->data.sym) {
-		int ungrouped_col = -1, i;
-		int all_aggr = query_has_outer(query);
+		int ungrouped_col = -1, i, all_aggr = query_has_outer(query), any_aggr = 0;
 		all_freevar = 1;
 		for (i = 0; args && args->data.sym; args = args->next, i++) {
 			int base = (!groupby || !is_project(groupby->op) || is_base(groupby->op) || is_processed(groupby));
@@ -3379,7 +3378,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 					GDKfree(uaname);
 				return e;
 			}
-			if (all_aggr && is_freevar(e) && e->type == e_column) {
+			if (is_freevar(e) && e->type == e_column) {
 				/* get expression from outer */
 				int aggr = 0;
 				sql_rel *outer = query_fetch_outer(query, is_freevar(e)-1);
@@ -3387,18 +3386,20 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 					sql_exp *a = rel_find_exp(outer, e);
 					if (a)
 						aggr = is_aggr(a->type);
-					else if (outer->grouped)
+					if (outer->grouped)
 						ungrouped_col = i;
 				}
 				all_aggr &= aggr;
+				any_aggr |= aggr;
 			} else {
 				all_aggr &= (exp_card(e) <= CARD_AGGR && !exp_is_atom(e) && is_aggr(e->type) && !is_func(e->type) && (!groupby || !is_groupby(groupby->op) || !groupby->r || !exps_find_exp(groupby->r, e)));
+				any_aggr |= all_aggr;
 			}
 			has_freevar |= exp_has_freevar(sql, e);
 			all_freevar &= (is_freevar(e)>0);
 			list_append(exps, e);
 		}
-		if (all_freevar && all_aggr)
+		if (all_freevar && (all_aggr || (ungrouped_col >= 0 && any_aggr)))
 			return sql_error(sql, 05, SQLSTATE(42000) "SELECT: aggregate function calls cannot be nested");
 		if (!all_freevar) {
 			if (all_aggr) {
