@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import bz2
 import gzip
 import hashlib
 import json
@@ -27,6 +28,9 @@ def write(name, compression, content):
     elif compression == 'gz':
         filename += '.gz'
         f = gzip.GzipFile(filename, 'wb', mtime=131875200)
+    elif compression == 'bz2':
+        filename += '.bz2'
+        f = bz2.BZ2File(filename, 'wb')
     else:
         raise Exception("Unknown compression scheme: " + compression)
 
@@ -53,6 +57,7 @@ def write(name, compression, content):
 def write_all_compressions(name, content):
     write(name, None, content)
     write(name, 'gz', content)
+    write(name, 'bz2', content)
 
 
 def write_all(name, content):
