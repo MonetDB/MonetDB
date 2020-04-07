@@ -12,24 +12,25 @@ except ImportError:
     import process
 
 def sql_test_client(user, passwd, input):
-    process.client(lang = "sql", user = user, passwd = passwd, communicate = True,
-                   stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE,
-                   input = input, port = int(os.getenv("MAPIPORT")))
+    with process.client(lang="sql", user=user, passwd=passwd, communicate=True,
+                        stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE,
+                        input=input, port=int(os.getenv("MAPIPORT"))) as c:
+        c.communicate()
 
-sql_test_client('monetdb', 'monetdb', input = """\
+sql_test_client('monetdb', 'monetdb', input="""\
 ALTER USER "april" SET SCHEMA library;
 ALTER USER "april2" SET SCHEMA library; --no such user
 ALTER USER "april" SET SCHEMA library2; --no such schema
 """)
 
 # This is the new april, so these operations should fail.
-sql_test_client('april', 'april', input = """\
+sql_test_client('april', 'april', input="""\
 SELECT * from bank.accounts; --no such table.
 SELECT * from library.orders; --not enough privileges.
 """)
 
 
-sql_test_client('monetdb', 'monetdb', input = """\
+sql_test_client('monetdb', 'monetdb', input="""\
 ALTER USER "april" SET SCHEMA bank;
 CREATE SCHEMA forAlice AUTHORIZATION april;
 DROP user april;

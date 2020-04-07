@@ -1662,7 +1662,7 @@ mvc_grow_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	for(;cnt>0; cnt--, v++) {
 		if (BUNappend(tid, &v, false) != GDK_SUCCEED) {
 			BBPunfix(Tid);
-			throw(SQL, "sql", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			throw(SQL, "sql.grow", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 	}
 	BBPunfix(Tid);

@@ -1,4 +1,4 @@
-import os, socket, sys, tempfile, shutil
+import os, socket, sys, tempfile
 try:
     from MonetDBtesting import process
 except ImportError:
@@ -11,58 +11,55 @@ def freeport():
     sock.close()
     return port
 
-farm_dir = tempfile.mkdtemp()
-os.mkdir(os.path.join(farm_dir, 'db1'))
-myport = freeport()
+class server_start(process.server):
+    def __init__(self):
+        sys.stderr.write('#mserver\n')
+        sys.stderr.flush()
+        super().__init__(mapiport=myport, dbname='db1',
+                         dbfarm=os.path.join(farm_dir, 'db1'),
+                         stdin=process.PIPE, stdout=process.PIPE,
+                         stderr=process.PIPE)
 
-def server_start():
-    sys.stderr.write('#mserver\n')
-    sys.stderr.flush()
-    srv = process.server(mapiport=myport, dbname='db1', dbfarm=os.path.join(farm_dir, 'db1'), stdin = process.PIPE,
-                         stdout = process.PIPE, stderr = process.PIPE)
-    return srv
-
-def client(lang, file, user = 'monetdb', passwd = 'monetdb'):
+def client(lang, file, user='monetdb', passwd='monetdb'):
     sys.stderr.write('#client\n')
     sys.stderr.flush()
-    clt = process.client(lang, port = myport, dbname='db1', user = user, passwd = passwd,
-                         stdin = open(file),
-                         stdout = process.PIPE, stderr = process.PIPE)
+    clt = process.client(lang, port=myport, dbname='db1',
+                         user=user, passwd=passwd,
+                         stdin=open(file),
+                         stdout=process.PIPE, stderr=process.PIPE)
     return clt.communicate()
 
-srv = None
-try:
-    srv = server_start()
-    out, err = client('sql',
-                      os.path.join(os.getenv('RELSRCDIR'),
-                                   'set_a_new_user_password.SF-1844050_create_user.sql'))
-    sys.stdout.write(out)
-    sys.stderr.write(err)
-    out, err = srv.communicate()
-    sys.stdout.write(out)
-    sys.stderr.write(err)
+with tempfile.TemporaryDirectory() as farm_dir:
+    os.mkdir(os.path.join(farm_dir, 'db1'))
+    myport = freeport()
 
-    srv = server_start()
-    out, err = client('sql',
-                      os.path.join(os.getenv('RELSRCDIR'),
-                                   'set_a_new_user_password.SF-1844050_select.sql'),
-                      "voc2", "new")
-    sys.stdout.write(out)
-    sys.stderr.write(err)
-    out, err = srv.communicate()
-    sys.stdout.write(out)
-    sys.stderr.write(err)
+    with server_start() as srv:
+        out, err = client('sql',
+                          os.path.join(os.getenv('RELSRCDIR'),
+                                       'set_a_new_user_password.SF-1844050_create_user.sql'))
+        sys.stdout.write(out)
+        sys.stderr.write(err)
+        out, err = srv.communicate()
+        sys.stdout.write(out)
+        sys.stderr.write(err)
 
-    srv = server_start()
-    out, err = client('sql',
-                      os.path.join(os.getenv('RELSRCDIR'),
-                                   'set_a_new_user_password.SF-1844050_drop_user.sql'))
-    sys.stdout.write(out)
-    sys.stderr.write(err)
-    out, err = srv.communicate()
-    sys.stdout.write(out)
-    sys.stderr.write(err)
-finally:
-    if srv is not None:
-        srv.terminate()
-    shutil.rmtree(farm_dir)
+    with server_start() as srv:
+        out, err = client('sql',
+                          os.path.join(os.getenv('RELSRCDIR'),
+                                       'set_a_new_user_password.SF-1844050_select.sql'),
+                          "voc2", "new")
+        sys.stdout.write(out)
+        sys.stderr.write(err)
+        out, err = srv.communicate()
+        sys.stdout.write(out)
+        sys.stderr.write(err)
+
+    with server_start() as srv:
+        out, err = client('sql',
+                          os.path.join(os.getenv('RELSRCDIR'),
+                                       'set_a_new_user_password.SF-1844050_drop_user.sql'))
+        sys.stdout.write(out)
+        sys.stderr.write(err)
+        out, err = srv.communicate()
+        sys.stdout.write(out)
+        sys.stderr.write(err)

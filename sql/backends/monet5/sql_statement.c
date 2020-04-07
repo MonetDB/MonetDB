@@ -331,7 +331,7 @@ stmt_var(backend *be, const char *sname, const char *varname, sql_subtype *t, in
 		int tt = t->type->localtype;
 
 		assert(sname);
-		q = newStmt(mb, sqlRef, putName("getVariable"));
+		q = newStmt(mb, sqlRef, getVariableRef);
 		q = pushArgument(mb, q, be->mvc_var);
 		q = pushStr(mb, q, sname); /* all global variables have a schema */
 		q = pushStr(mb, q, varname);
@@ -697,7 +697,7 @@ stmt_append_col(backend *be, sql_column *c, stmt *b, int fake)
 		int *l = c->t->data;
 
 		if (c->colnr == 0) { /* append to tid column */
-			q = newStmt(mb, sqlRef, "grow");
+			q = newStmt(mb, sqlRef, growRef);
 			q = pushArgument(mb, q, l[0]);
 			q = pushArgument(mb, q, b->nr);
 		} 
@@ -787,7 +787,7 @@ stmt_update_col(backend *be, sql_column *c, stmt *tids, stmt *upd)
 	if (isDeclaredTableOnStack(c->t) && c->t->data) { /* declared table */
 		int *l = c->t->data;
 
-		q = newStmt(mb, batRef, updateRef);
+		q = newStmt(mb, batRef, replaceRef);
 		q = pushArgument(mb, q, l[c->colnr+1]);
 		q = pushArgument(mb, q, tids->nr);
 		q = pushArgument(mb, q, upd->nr);
@@ -2770,13 +2770,11 @@ stmt_table_clear(backend *be, sql_table *t)
 	InstrPtr q = NULL;
 
 	if (isDeclaredTableOnStack(t) && t->data) { /* declared table */
-		int *l = t->data; 
-		int cnt = list_length(t->columns.set)+1, i;
+		int *l = t->data, cnt = list_length(t->columns.set)+1;
 
-		for (i = 0; i < cnt; i++) {
-			q = newStmt(mb, batRef, "clear");
+		for (int i = 0; i < cnt; i++) {
+			q = newStmt(mb, batRef, deleteRef);
 			q = pushArgument(mb, q, l[i]);
-			l[i] = getDestVar(q);
 		}
 	} else {
 		q = newStmt(mb, sqlRef, clear_tableRef);
@@ -2999,7 +2997,7 @@ stmt_Nop(backend *be, stmt *ops, sql_subfunc *f)
 		q = NULL;
 		if (strcmp(fimp, "rotate_xor_hash") == 0 &&
 		    strcmp(mod, calcRef) == 0 &&
-		    (q = newStmt(mb, mkeyRef, putName("bulk_rotate_xor_hash"))) == NULL)
+		    (q = newStmt(mb, mkeyRef, bulk_rotate_xor_hashRef)) == NULL)
 			return NULL;
 		if (!q) {
 			if (f->func->type == F_UNION)

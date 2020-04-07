@@ -63,7 +63,7 @@ isaSQLquery(MalBlkPtr mb){
 
 /* clear the next entry for a new call unless it is a running query */
 static void
-clearQRYqueue(int idx)
+clearQRYqueue(lng idx)
 {
 		QRYqueue[idx].query = 0;
 		QRYqueue[idx].cntxt = 0;
@@ -93,8 +93,10 @@ advanceQRYqueue(void)
 	if( s){
 		/* don;t wipe them when they are still running, prepared, or paused */
 		/* The upper layer has assured there is at least one slot available */
-		if(QRYqueue[qhead].status == 0 || (QRYqueue[qhead].status[0] != 'r' && QRYqueue[qhead].status[0] != 'p'))
-			return advanceQRYqueue();
+		if(QRYqueue[qhead].status == 0 || (QRYqueue[qhead].status[0] != 'r' && QRYqueue[qhead].status[0] != 'p')){
+			advanceQRYqueue();
+			return;
+		}
 		GDKfree(s);
 		GDKfree(QRYqueue[qhead].username);
 		clearQRYqueue(qhead);
@@ -104,7 +106,7 @@ advanceQRYqueue(void)
 void
 dropQRYqueue(void)
 {
-	int i;
+	lng i;
 	MT_lock_set(&mal_delayLock);
 	for(i = 0; i < qsize; i++){
 		if( QRYqueue[i].query)

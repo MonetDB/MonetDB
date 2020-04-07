@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 try:
     from MonetDBtesting import process
 except ImportError:
@@ -22,11 +20,8 @@ def query(conn, sql):
     cur.close()
     return r
 
-s = None
-try:
-    # no timeout since we need to kill mserver5, not the inbetween Mtimeout
-    s = process.server(stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
-
+# no timeout since we need to kill mserver5, not the inbetween Mtimeout
+with process.server(stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE) as s:
     # boring setup and schema creation stuff:
     c1 = connect(True)
     c1.execute('create table foo (a int)')
@@ -60,14 +55,8 @@ try:
     print(query(c1, 'select * from foo'))
 
     s.communicate()
-finally:
-    if s is not None:
-        s.terminate()
 
-t = None
-try:
-    t = process.server(stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
-
+with process.server(stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE) as t:
     c3 = connect(True)
     # This prints the wrong data. It should print exactly the same as the
     # previous line: "[(4,), (5,), (6,)]" , but actually prints "[(1,),
@@ -79,6 +68,3 @@ try:
     c3.execute('drop table bar')
 
     t.communicate()
-finally:
-    if t is not None:
-        t.terminate()

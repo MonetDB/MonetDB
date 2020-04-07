@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 import os
 import tempfile
 import threading
@@ -13,7 +11,6 @@ except ImportError:
     import process
 
 NWORKERS = 2
-TMPDIR = tempfile.mkdtemp()
 
 MOVIES_TABLE_DEF = ''' (
     movie_id BIGINT PRIMARY KEY,
@@ -60,7 +57,7 @@ def worker_load(in_filename, workerrec, cmovies, ratings_table_def_fk):
     c.execute(load_data)
 
 # Setup and start workers
-def create_workers(workers, fn_template, nworkers, cmovies, ratings_table_def_fk):
+def create_workers(tmpdir, workers, fn_template, nworkers, cmovies, ratings_table_def_fk):
     for i in range(nworkers):
         workerport = freeport()
         workerdbname = 'worker_{}'.format(i)
@@ -68,7 +65,7 @@ def create_workers(workers, fn_template, nworkers, cmovies, ratings_table_def_fk
             'num': i,
             'port': workerport,
             'dbname': workerdbname,
-            'dbfarm': os.path.join(TMPDIR, workerdbname),
+            'dbfarm': os.path.join(tmpdir, workerdbname),
             'mapi': 'mapi:monetdb://localhost:{}/{}/sys/ratings'.format(workerport, workerdbname),
         }
         workers.append(workerrec)
@@ -87,50 +84,52 @@ def create_workers(workers, fn_template, nworkers, cmovies, ratings_table_def_fk
 supervisorport = freeport()
 supervisorproc = None
 workers = []
-try:
-    os.mkdir(os.path.join(TMPDIR, "supervisor"))
-    supervisorproc = process.server(mapiport=supervisorport, dbname="supervisor", dbfarm=os.path.join(TMPDIR, "supervisor"), stdin=process.PIPE, stdout=process.PIPE)
-    supervisorconn = pymonetdb.connect(database='supervisor', port=supervisorport, autocommit=True)
-    supervisor_uri = "mapi:monetdb://localhost:{}/supervisor".format(supervisorport)
-    c = supervisorconn.cursor()
+with tempfile.TemporaryDirectory() as tmpdir:
+    os.mkdir(os.path.join(tmpdir, "supervisor"))
+    with process.server(mapiport=supervisorport, dbname="supervisor",
+                        dbfarm=os.path.join(tmpdir, "supervisor"),
+                        stdin=process.PIPE,
+                        stdout=process.PIPE) as supervisorproc:
+        supervisorconn = pymonetdb.connect(database='supervisor', port=supervisorport, autocommit=True)
+        supervisor_uri = "mapi:monetdb://localhost:{}/supervisor".format(supervisorport)
+        c = supervisorconn.cursor()
 
-    # Create the movies table and load the data
-    movies_filename=os.getenv("TSTDATAPATH")+"/netflix_data/movies.csv"
-    movies_create = "CREATE TABLE movies {}".format(MOVIES_TABLE_DEF)
-    c.execute(movies_create)
-    load_movies = "COPY INTO movies FROM '{}' USING DELIMITERS ',','\n','\"'".format(movies_filename)
-    c.execute(load_movies)
+        # Create the movies table and load the data
+        movies_filename=os.getenv("TSTDATAPATH")+"/netflix_data/movies.csv"
+        movies_create = "CREATE TABLE movies {}".format(MOVIES_TABLE_DEF)
+        c.execute(movies_create)
+        load_movies = "COPY INTO movies FROM '{}' USING DELIMITERS ',','\n','\"'".format(movies_filename)
+        c.execute(load_movies)
 
-    # Declare the ratings merge table on supervisor
-    mtable = "CREATE MERGE TABLE ratings {}".format(RATINGS_TABLE_DEF)
-    c.execute(mtable)
+        # Declare the ratings merge table on supervisor
+        mtable = "CREATE MERGE TABLE ratings {}".format(RATINGS_TABLE_DEF)
+        c.execute(mtable)
 
-    # Create the workers and load the ratings data
-    fn_template=os.getenv("TSTDATAPATH")+"/netflix_data/ratings_sample_{}.csv"
-    cmovies = "CREATE REMOTE TABLE movies {} ON '{}' WITH USER 'monetdb' PASSWORD 'monetdb'".format(MOVIES_TABLE_DEF, supervisor_uri)
-    create_workers(workers, fn_template, NWORKERS, cmovies, RATINGS_TABLE_DEF_FK)
+        # Create the workers and load the ratings data
+        fn_template=os.getenv("TSTDATAPATH")+"/netflix_data/ratings_sample_{}.csv"
+        cmovies = "CREATE REMOTE TABLE movies {} ON '{}' WITH USER 'monetdb' PASSWORD 'monetdb'".format(MOVIES_TABLE_DEF, supervisor_uri)
+        try:
+            create_workers(tmpdir, workers, fn_template, NWORKERS, cmovies, RATINGS_TABLE_DEF_FK)
 
-    # Create the remote tables on supervisor
-    for wrec in workers:
-        rtable = "CREATE REMOTE TABLE ratings{} {} on '{}' WITH USER 'monetdb' PASSWORD 'monetdb'".format(wrec['num'], RATINGS_TABLE_DEF, wrec['mapi'])
-        c.execute(rtable)
+            # Create the remote tables on supervisor
+            for wrec in workers:
+                rtable = "CREATE REMOTE TABLE ratings{} {} on '{}' WITH USER 'monetdb' PASSWORD 'monetdb'".format(wrec['num'], RATINGS_TABLE_DEF, wrec['mapi'])
+                c.execute(rtable)
 
-        atable = "ALTER TABLE ratings add table ratings{}".format(wrec['num'])
-        c.execute(atable)
+                atable = "ALTER TABLE ratings add table ratings{}".format(wrec['num'])
+                c.execute(atable)
 
-    # Run the queries
-    c.execute("SELECT COUNT(*) FROM ratings0")
-    print("{} rows in remote table".format(c.fetchall()[0][0]))
+            # Run the queries
+            c.execute("SELECT COUNT(*) FROM ratings0")
+            print("{} rows in remote table".format(c.fetchall()[0][0]))
 
-    c.execute("SELECT COUNT(*) FROM ratings")
-    print("{} rows in merge table".format(c.fetchall()[0][0]))
-    for wrec in workers:
-        wrec['proc'].communicate()
-    supervisorproc.communicate()
-finally:
-    if supervisorproc is not None:
-        supervisorproc.terminate()
-    for wrec in workers:
-        p = wrec.get('proc')
-        if p is not None:
-            p.terminate()
+            c.execute("SELECT COUNT(*) FROM ratings")
+            print("{} rows in merge table".format(c.fetchall()[0][0]))
+            for wrec in workers:
+                wrec['proc'].communicate()
+            supervisorproc.communicate()
+        finally:
+            for wrec in workers:
+                p = wrec.get('proc')
+                if p is not None:
+                    p.terminate()

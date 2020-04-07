@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 import os, sys, zipfile
 
 dbfarm = os.environ['GDK_DBFARM']
