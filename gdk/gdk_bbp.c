@@ -1159,6 +1159,7 @@ BBPreadEntries(FILE *fp, unsigned bbpversion)
 		if ((s = strchr(headname, '~')) != NULL && s == headname) {
 			int len = snprintf(logical, sizeof(logical), "tmp_%o", (unsigned) bid);
 			if (len == -1 || len >= (int) sizeof(logical)) {
+				BATdestroy(bn);
 				TRC_CRITICAL(GDK, "BBP logical filename directory is too large\n");
 				return GDK_FAIL;
 			}
