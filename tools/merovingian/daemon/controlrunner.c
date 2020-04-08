@@ -369,8 +369,9 @@ static void ctl_handle_client(
 							 * other words: ignore any errors that shutdown_profiler
 							 * may have encountered.
 							 */
-							shutdown_profiler(dp->dbname, &stats);
-							if (stats != NULL)
+							if ((e = shutdown_profiler(dp->dbname, &stats)) != NULL) {
+								free(e);
+							} else if (stats != NULL)
 								msab_freeStatus(&stats);
 							pthread_mutex_lock(&dp->fork_lock);
 							terminateProcess(dp, type);
@@ -1074,8 +1075,10 @@ controlRunner(void *d)
 		}
 
 #ifdef HAVE_POLL
-		if ((pfd.revents & POLLIN) == 0)
+		if ((pfd.revents & POLLIN) == 0) {
+			free(p);
 			continue;
+		}
 #else
 		if (!FD_ISSET(usock, &fds)) {
 			free(p);
