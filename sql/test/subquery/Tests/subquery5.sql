@@ -104,6 +104,20 @@ SELECT (SELECT 1 WHERE SUM(col2 + 1) > 0) FROM another_t;
 
 SELECT (SELECT col1 HAVING SUM(col2 + col1) > 0) FROM another_t; --error, subquery uses ungrouped column "another_t.col1" from outer query
 
+SELECT (SELECT col1 FROM another_t t1, another_t t2) FROM another_t t3; --error, col1 is ambiguous
+
+SELECT (SELECT SUM(col2 - 1) GROUP BY SUM(col2 + 1)) FROM another_t;
+	-- 2464
+
+SELECT (SELECT SUM(col1 + 1) GROUP BY SUM(col2 + 1)) FROM another_t;
+	-- 1238
+
+SELECT (SELECT SUM(SUM(col2) + 1)) FROM another_t; --error, aggregate function calls cannot be nested
+
+SELECT (SELECT SUM(SUM(1))) FROM another_t; --error, aggregate function calls cannot be nested
+
+SELECT (SELECT MIN(t1.col5 - t2.col2) FROM another_T t2) FROM another_T t1 GROUP BY col6; --error, subquery uses ungrouped column "t1.col5" from outer query
+
 DROP FUNCTION evilfunction(INT);
 DROP TABLE tbl_ProductSales;
 DROP TABLE another_T;

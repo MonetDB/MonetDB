@@ -931,7 +931,7 @@ GDKinit(opt *set, int setlen)
 
 int GDKnr_threads = 0;
 static ATOMIC_TYPE GDKnrofthreads = ATOMIC_VAR_INIT(0);
-static ThreadRec GDKthreads[THREADS];
+static struct threadStruct GDKthreads[THREADS];
 
 bool
 GDKexiting(void)
@@ -983,8 +983,6 @@ GDKreset(int status)
 					TRC_INFO(GDK, "Killing thread: %d\n", e);
 					(void) ATOMIC_DEC(&GDKnrofthreads);
 				}
-				GDKfree(t->name);
-				t->name = NULL;
 				ATOMIC_SET(&t->pid, 0);
 			}
 		}
@@ -1349,13 +1347,6 @@ GDK_find_self(void)
 static Thread
 THRnew(const char *name, MT_Id pid)
 {
-	char *nme = GDKstrdup(name);
-
-	if (nme == NULL) {
-		TRC_DEBUG(IO_, "Malloc failure\n");
-		GDKerror("malloc failure\n");
-		return NULL;
-	}
 	for (Thread s = GDKthreads; s < GDKthreads + THREADS; s++) {
 		ATOMIC_BASE_TYPE npid = 0;
 		if (ATOMIC_CAS(&s->pid, &npid, pid)) {
@@ -1363,7 +1354,7 @@ THRnew(const char *name, MT_Id pid)
 			s->data[0] = THRdata[0];
 			s->data[1] = THRdata[1];
 			s->sp = THRsp();
-			s->name = nme;
+			strcpy_len(s->name, name, sizeof(s->name));
 			TRC_DEBUG(PAR, "%x %zu sp = %zu\n",
 				  (unsigned) s->tid,
 				  (size_t) ATOMIC_GET(&s->pid),
@@ -1373,7 +1364,6 @@ THRnew(const char *name, MT_Id pid)
 			return s;
 		}
 	}
-	GDKfree(nme);
 	TRC_DEBUG(IO_, "Too many threads\n");
 	GDKerror("too many threads\n");
 	return NULL;
@@ -1428,8 +1418,6 @@ THRcreate(void (*f) (void *), void *arg, enum MT_thr_detach d, const char *name)
 		TRC_DEBUG(IO_, "Semaphore name is too large\n");
 		GDKerror("semaphore name is too large\n");
 		GDKfree(t);
-		GDKfree(s->name);
-		s->name = NULL;
 		ATOMIC_SET(&s->pid, 0); /* deallocate */
 		return 0;
 	}
@@ -1438,8 +1426,6 @@ THRcreate(void (*f) (void *), void *arg, enum MT_thr_detach d, const char *name)
 		GDKerror("could not start thread\n");
 		MT_sema_destroy(&t->sem);
 		GDKfree(t);
-		GDKfree(s->name);
-		s->name = NULL;
 		ATOMIC_SET(&s->pid, 0); /* deallocate */
 		return 0;
 	}
@@ -1460,8 +1446,7 @@ THRdel(Thread t)
 		  (size_t) ATOMIC_GET(&t->pid),
 		  (int) ATOMIC_GET(&GDKnrofthreads));
 
-	GDKfree(t->name);
-	t->name = NULL;
+	t->name[0] = 0;
 	for (int i = 0; i < THREADDATA; i++)
 		t->data[i] = NULL;
 	t->sp = 0;

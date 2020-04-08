@@ -1170,19 +1170,22 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 		int var = stack_find_var(sql, name);
 
 		if (!exp && inner)
-			exp = rel_bind_column(sql, inner, name, f, 0);
+			if (!(exp = rel_bind_column(sql, inner, name, f, 0)) && sql->session->status == -ERR_AMBIGUOUS)
+				return NULL;
 		if (!exp && inner && is_sql_having(f) && inner->op == op_select)
 			inner = inner->l;
 		if (!exp && inner && (is_sql_having(f) || is_sql_aggr(f)) && is_groupby(inner->op))
-			exp = rel_bind_column(sql, inner->l, name, f, 0);
+			if (!(exp = rel_bind_column(sql, inner->l, name, f, 0)) && sql->session->status == -ERR_AMBIGUOUS)
+				return NULL;
 		if (!exp && query && query_has_outer(query)) {
 			int i;
 			sql_rel *outer;
 
 			for (i=query_has_outer(query)-1; i>= 0 && !exp && (outer = query_fetch_outer(query,i)); i--) {
-				exp = rel_bind_column(sql, outer, name, f, 0);
-				if (!exp && is_groupby(outer->op))
-					exp = rel_bind_column(sql, outer->l, name, f, 0);
+				if (!(exp = rel_bind_column(sql, outer, name, f, 0)) && sql->session->status == -ERR_AMBIGUOUS)
+					return NULL;
+				if (!exp && is_groupby(outer->op) && !(exp = rel_bind_column(sql, outer->l, name, f, 0)) && sql->session->status == -ERR_AMBIGUOUS)
+					return NULL;
 				if (exp && is_simple_project(outer->op) && !rel_find_exp(outer, exp))
 					exp = rel_project_add_exp(sql, outer, exp);
 				if (exp)

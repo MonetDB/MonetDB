@@ -1709,10 +1709,10 @@ typedef struct threadStruct {
 				 * into this array + 1 (0 is
 				 * invalid) */
 	ATOMIC_TYPE pid;	/* thread id, 0 = unallocated */
-	str name;
+	char name[16];
 	void *data[THREADDATA];
 	uintptr_t sp;
-} ThreadRec, *Thread;
+} *Thread;
 
 
 gdk_export int THRgettid(void);
