@@ -415,27 +415,31 @@ MT_init(void)
 				continue;
 			/* buf point at mount ID */
 			p = strchr(buf, ' ');
-			if (p++ == NULL)
+			if (p == NULL)
 				break;
+			p++;
 			/* p points at parent ID */
 			p = strchr(p, ' ');
-			if (p++ == NULL)
+			if (p == NULL)
 				break;
+			p++;
 			/* p points at major:minor */
 			p = strchr(p, ' ');
-			if (p++ == NULL)
+			if (p == NULL)
 				break;
+			p++;
 			/* p points at root */
 			p = strchr(p, ' ');
-			if (p++ == NULL)
+			if (p == NULL)
 				break;
+			p++;
 			/* p points at mount point */
 			char *dir = p;
 			p = strchr(p, ' ');
 			if (p == NULL)
 				break;
 			*p = 0;
-			strcpy(cgr, dir);
+			strcpy_len(cgr, dir, 1024);
 		}
 		fclose(fc);
 	}

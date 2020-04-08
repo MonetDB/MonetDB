@@ -570,7 +570,7 @@ main(int argc, char *argv[])
 #define MERO_EXIT(status)												\
 	do {																\
 		if (!merodontfork) {											\
-			int s = status;												\
+			char s = (char) status;										\
 			if (write(retfd, &s, 1) != 1 || close(retfd) != 0) {		\
 				Mfprintf(stderr, "could not write to parent\n");		\
 			}															\
@@ -592,7 +592,7 @@ main(int argc, char *argv[])
 #define MERO_EXIT_CLEAN(status)										\
 	do {															\
 		if (!merodontfork) {										\
-			int s = status;											\
+			char s = (char) status;									\
 			if (write(retfd, &s, 1) != 1 || close(retfd) != 0) {	\
 				Mfprintf(stderr, "could not write to parent\n");	\
 			}														\
