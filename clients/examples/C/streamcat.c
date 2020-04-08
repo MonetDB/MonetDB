@@ -22,7 +22,7 @@ typedef stream *(*opener_fun)(char *filename);
 static stream *opener_rstream(char *filename);
 static stream *opener_rastream(char *filename);
 
-static void copyout(stream *s, FILE *out);
+static void copyout(stream *in);
 
 _Noreturn static void croak(int status, const char *msg, ...)
 	__attribute__((__format__(__printf__, 2, 3)));
@@ -86,24 +86,29 @@ int cmd_read(char *argv[])
 
 	s = opener(filename);
 
-	copyout(s, stdout);
+	copyout(s);
 
 	return 0;
 }
 
 
-static void copyout(stream *s, FILE *out)
+static void copyout(stream *in)
 {
+	FILE *out;
 	char buf[1024];
 	ssize_t nread;
 	size_t nwritten;
 	unsigned long total = 0;
 
+	// Try to get binary stdout on Windows
+	fflush(stdout);
+	out = fdopen(fileno(stdout), "wb");
+
 	bool done_looping = false;
 	while (!done_looping) {
-		nread = mnstr_read(s, buf, 1, sizeof(buf));
+		nread = mnstr_read(in, buf, 1, sizeof(buf));
 		if (nread < 0)
-			croak(2, "Error reading from stream after %lu bytes: %s", total, mnstr_error(s));
+			croak(2, "Error reading from stream after %lu bytes: %s", total, mnstr_error(in));
 		if (nread < (ssize_t)sizeof(buf))
 			done_looping = true;
 
@@ -112,7 +117,9 @@ static void copyout(stream *s, FILE *out)
 			croak(2, "Write error after %lu bytes: %s", total + nwritten, strerror(errno));
 		total += nwritten;
 	}
+
 	fflush(out);
+	// DO NOT CLOSE out!  It's an alias for stdout.
 }
 
 
