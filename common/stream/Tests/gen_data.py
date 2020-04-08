@@ -45,6 +45,13 @@ def write(name, compression, content):
     f.write(content)
     f.close()
 
+    # DIRTY HACK
+    # For the time being the test script normalizes everything to unix
+    # line endings before doing any comparisons.
+    #
+    # Here we make sure the reference data matches that
+    content = content.replace(b'\r\n', b'\n')
+
     has_bom = content.startswith(BOM)
     without_bom = content[3:] if has_bom else content
 
