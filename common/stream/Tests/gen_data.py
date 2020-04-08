@@ -55,7 +55,7 @@ def write(name, compression, content):
     has_bom = content.startswith(BOM)
     without_bom = content[3:] if has_bom else content
 
-    n = 8
+    n = 5
     descr = dict(
         filename=os.path.basename(filename),
         has_bom = has_bom,
@@ -69,16 +69,18 @@ def write(name, compression, content):
     DESCRIPTORS.append(descr)
 
 
-def write_all_compressions(name, content):
+def write_all_compressions(name, content, limit):
+    if limit:
+        content = content[:limit]
     write(name, None, content)
     write(name, 'gz', content)
     write(name, 'bz2', content)
     write(name, 'xz', content)
     write(name, 'lz4', content)
 
-def write_all(name, content):
-    write_all_compressions(name, content)
-    write_all_compressions(name + '_bom', BOM + content)
+def write_all(name, content, limit=None):
+    write_all_compressions(name, content, limit)
+    write_all_compressions(name + '_bom', BOM + content, limit)
 
 
 # Whole file
@@ -95,7 +97,7 @@ write_all('small', head)
 for base_size in [1024, 2048, 4096, 8192, 16384]:
     for delta in [-1, 0, 1]:
         size = base_size + delta
-        write_all(f'block{size}', INPUT[:size])
+        write_all(f'block{size}', INPUT, size)
 
 # Write the descriptor
 json.dump(DESCRIPTORS, open('data/testcases.json', 'w'), indent=4)

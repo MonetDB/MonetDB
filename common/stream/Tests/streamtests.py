@@ -66,9 +66,8 @@ class Doc:
 		if digest != self.md5_without_bom:
 			return "MD5 digest mismatch: generated output differs."
 
-		n = 8
-		start = text[:n]
-		end = text[-n:]
+		start = text[:len(self.start_without_bom)]
+		end = text[-len(self.end_without_bom):]
 		if start != self.start_without_bom:
 			return f"Expected text to start with {repr(self.start_without_bom)}, found {repr(start)}"
 		if end != self.end_without_bom:
