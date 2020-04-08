@@ -284,7 +284,6 @@ log_read_clear(logger *lg, trans *tr, char *name, char tpe, oid id)
 {
 	if (lg->debug & 1)
 		fprintf(stderr, "#logger found log_read_clear %s\n", NAME(name, tpe, id));
-
 	if (tr_grow(tr) != GDK_SUCCEED)
 		return LOG_ERR;
 	tr->changes[tr->nr].type = LOG_CLEAR;
@@ -337,13 +336,12 @@ la_bat_clear(logger *lg, logaction *la)
 }
 
 static log_return
-log_read_seq(logger *lg, trans *tr, logformat *l)
+log_read_seq(logger *lg, logformat *l)
 {
 	int seq = (int) l->nr;
 	lng val;
 	BUN p;
 
-	(void)tr;
 	assert(!lg->inmemory);
 	assert(l->nr <= (lng) INT_MAX);
 	if (mnstr_readLng(lg->input_log, &val) != 1) {
@@ -478,13 +476,13 @@ log_read_updates(logger *lg, trans *tr, logformat *l, char *name, int tpe, oid i
 		} else {
 			assert(ht == TYPE_void);
 		}
-
 		r = COLnew(0, tt, (BUN) l->nr, PERSISTENT);
 		if (r == NULL) {
 			BBPreclaim(uid);
 			logbat_destroy(b);
 			return LOG_ERR;
 		}
+
 		if (tseq)
 			BATtseqbase(r, 0);
 
@@ -797,6 +795,7 @@ la_bat_updates(logger *lg, logaction *la)
 static log_return
 log_read_destroy(logger *lg, trans *tr, char *name, char tpe, oid id)
 {
+	(void) lg;
 	assert(!lg->inmemory);
 	if (tr_grow(tr) == GDK_SUCCEED) {
 		tr->changes[tr->nr].type = LOG_DESTROY;
@@ -910,6 +909,8 @@ la_bat_create(logger *lg, logaction *la)
 static log_return
 log_read_use(logger *lg, trans *tr, logformat *l, char *name, char tpe, oid id)
 {
+	(void) lg;
+
 	assert(!lg->inmemory);
 	if (tr_grow(tr) != GDK_SUCCEED)
 		return LOG_ERR;
@@ -1270,7 +1271,7 @@ logger_read_transaction(logger *lg)
 				tr = tr_commit(lg, tr);
 			break;
 		case LOG_SEQ:
-			err = log_read_seq(lg, tr, &l);
+			err = log_read_seq(lg, &l);
 			break;
 		case LOG_INSERT:
 		case LOG_INSERT_OFFSET:

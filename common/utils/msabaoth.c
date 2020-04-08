@@ -750,6 +750,11 @@ msab_getStatus(sabdb** ret, char *dbname)
 	sabdb *sdb;
 	sdb = *ret = NULL;
 
+	if (dbname && strpbrk(dbname, "/\\") != NULL) {
+		snprintf(data, sizeof(data),
+				 "database name contains disallowed characters");
+		return strdup(data);
+	}
 	/* scan the parent for directories */
 	if ((p = getFarmPath(pathbuf, sizeof(pathbuf), NULL)) != NULL)
 		return(p);

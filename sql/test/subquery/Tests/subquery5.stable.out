@@ -106,6 +106,18 @@ stdout of test 'subquery5` in directory 'sql/test/subquery` itself:
 [ 0	]
 [ 0	]
 [ 0	]
+#SELECT (SELECT 1 GROUP BY SUM(col2 + 1)) FROM another_t;
+% .%3 # table_name
+% %3 # name
+% tinyint # type
+% 1 # length
+[ 1	]
+#SELECT (SELECT 1 WHERE SUM(col2 + 1) > 0) FROM another_t;
+% .%2 # table_name
+% %2 # name
+% tinyint # type
+% 1 # length
+[ 1	]
 #DROP FUNCTION evilfunction(INT);
 #DROP TABLE tbl_ProductSales;
 #DROP TABLE another_T;

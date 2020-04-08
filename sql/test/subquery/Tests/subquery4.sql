@@ -139,14 +139,17 @@ SELECT i FROM integers WHERE (i,i) IN ((SELECT 1,2), (SELECT i UNION ALL SELECT 
 
 /* On joined tables, the correlation happens in the outer query */
 SELECT CAST((SELECT SUM(i2.i + i1.i)) AS BIGINT) FROM integers i1, integers i2;
+	-- 36
 
 SELECT CAST((SELECT SUM(i2.i + i1.i)) AS BIGINT) FROM integers i1 INNER JOIN integers i2 ON i1.i = i2.i;
+	-- 12
 
-SELECT i1.i, i2.i FROM integers i1, integers i2 WHERE (SELECT SUM(i2.i + i1.i)) > 0;
+SELECT i1.i, i2.i FROM integers i1, integers i2 WHERE (SELECT SUM(i2.i + i1.i)) > 0; --error, aggregate functions are not allowed in WHERE
 
 SELECT i1.i, i2.i FROM integers i1, integers i2 HAVING (SELECT SUM(i2.i + i1.i)) > 0; --error, cannot use non GROUP BY column 'i1.i' in query results without an aggregate function
 
 SELECT DISTINCT CAST((SELECT SUM(i2.i + i1.i)) AS BIGINT) FROM integers i1, integers i2;
+	-- 36
 
 SELECT NOT EXISTS(SELECT i1.i) from integers i1;
 	-- False

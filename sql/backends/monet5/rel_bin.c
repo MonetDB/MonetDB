@@ -1647,9 +1647,11 @@ exp2bin_args(backend *be, sql_exp *e, list *args)
 		} else if (e->f) {
 			return exps2bin_args(be, e->f, args);
 		} else if (e->r) {
-			char nme[64];
+			char *nme = SA_NEW_ARRAY(sql->sa, char, strlen((char*)e->r) + 2);
 
-			snprintf(nme, sizeof(nme), "A%s", (char*)e->r);
+			if (!nme)
+				return NULL;
+			stpcpy(stpcpy(nme, "A"), (char*)e->r);
 			if (!list_find(args, nme, (fcmp)&alias_cmp)) {
 				stmt *s = stmt_var(be, e->r, &e->tpe, 0, 0);
 

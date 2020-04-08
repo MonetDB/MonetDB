@@ -3252,7 +3252,6 @@ main(int argc, char **argv)
 	}
 
 	/* parse config file first, command line options override */
-	// parse_dotmonetdb(&user, &passwd, &dbname, &language, &save_history, &output, &pagewidth);
 	parse_dotmonetdb(&dotfile);
         user = dotfile.user;
         passwd = dotfile.passwd;
