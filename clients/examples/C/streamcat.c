@@ -104,14 +104,14 @@ static void copyout(stream *in)
 	fflush(stdout);
 	out = fdopen(fileno(stdout), "wb");
 
-	bool done_looping = false;
-	while (!done_looping) {
+	while (1) {
 		nread = mnstr_read(in, buf, 1, sizeof(buf));
 		if (nread < 0)
 			croak(2, "Error reading from stream after %lu bytes: %s", total, mnstr_error(in));
-		if (nread < (ssize_t)sizeof(buf))
-			done_looping = true;
-
+		if (nread == 0) {
+			// eof
+			break;
+		}
 		nwritten = fwrite(buf, 1, nread, out);
 		if (nwritten != (size_t)nread)
 			croak(2, "Write error after %lu bytes: %s", total + nwritten, strerror(errno));
