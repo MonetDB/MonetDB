@@ -4169,7 +4169,7 @@ static int
 rollforward_drop_column(sql_trans *tr, sql_column *c, int mode)
 {
 	if (isTable(c->t)) {
-		int p = (tr->parent == gtrans);
+		int p = (tr->parent == gtrans && !isTempTable(c->t));
 
 		if (p && mode == R_LOG)
 			return store_funcs.log_destroy_col(tr, c);
@@ -4185,7 +4185,7 @@ rollforward_drop_idx(sql_trans *tr, sql_idx * i, int mode)
 	int ok = LOG_OK;
 
 	if (isTable(i->t)) {
-		int p = (tr->parent == gtrans);
+		int p = (tr->parent == gtrans && !isTempTable(i->t));
 
 		if (p && mode == R_LOG)
 			ok = store_funcs.log_destroy_idx(tr, i);
@@ -4275,7 +4275,7 @@ rollforward_drop_table(sql_trans *tr, sql_table *t, int mode)
 	int ok = LOG_OK;
 
 	if (isTable(t)) {
-		int p = (tr->parent == gtrans);
+		int p = (tr->parent == gtrans && !isTempTable(t));
 
 		if (p && mode == R_LOG)
 			ok = store_funcs.log_destroy_del(tr, t);
