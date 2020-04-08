@@ -3062,8 +3062,7 @@ log_sequence_(logger *lg, int seq, lng val, int flush)
 	if (log_write_format(lg, &l) != GDK_SUCCEED ||
 	    !mnstr_writeLng(lg->log, val) ||
 	    (flush && mnstr_flush(lg->log)) ||
-	    (flush && !(GDKdebug & NOSYNCMASK) && mnstr_fsync(lg->log)) ||
-	    pre_allocate(lg) != GDK_SUCCEED) {
+	    (flush && !(GDKdebug & NOSYNCMASK) && mnstr_fsync(lg->log))) {
 		fprintf(stderr, "!ERROR: log_sequence_: write failed\n");
 		return GDK_FAIL;
 	}

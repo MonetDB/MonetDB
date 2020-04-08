@@ -3055,7 +3055,7 @@ SQLupgrades(Client c, mvc *m)
 		}
 	}
 
-	sql_find_subtype(&tp, "string", 0, 0);
+	sql_find_subtype(&tp, "varchar", 0, 0);
 	if (!sql_bind_func3(m->sa, s, "deltas", &tp, &tp, &tp, F_UNION)) {
 		if ((err = sql_update_nov2019_missing_dependencies(c, m)) != NULL) {
 			TRC_CRITICAL(SQL_PARSER, "%s\n", err);

@@ -325,7 +325,6 @@ stmt_var(backend *be, const char *sname, const char *varname, sql_subtype *t, in
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
-	char buf[IDLENGTH];
 
 	if (level == 0) { /* global */
 		int tt = t->type->localtype;
@@ -340,13 +339,28 @@ stmt_var(backend *be, const char *sname, const char *varname, sql_subtype *t, in
 		setVarType(mb, getArg(q, 0), tt);
 		setVarUDFtype(mb, getArg(q, 0));
 	} else if (!declare) {
-		(void) snprintf(buf, sizeof(buf), "A%d%%%s%s%s", level, sname ? sname : "", sname ? "%%" : "", varname); /* mangle variable name */
+		const char *msname = sname ? sname : "%%";
+		char levelstr[16], *buf;
+
+		snprintf(levelstr, sizeof(levelstr), "%d", level);
+		buf = SA_NEW_ARRAY(be->mvc->sa, char, strlen(levelstr) + strlen(msname) + strlen(varname) + 4);
+		if (!buf)
+			return NULL;
+		stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(buf, "A"), levelstr), "%%"), msname), "%%"), varname); /* mangle variable name */
+
 		q = newAssignment(mb);
 		q = pushArgumentId(mb, q, buf);
 	} else {
 		int tt = t->type->localtype;
+		const char *msname = sname ? sname : "%%";
+		char levelstr[16], *buf;
 
-		(void) snprintf(buf, sizeof(buf), "A%d%%%s%s%s", level, sname ? sname : "", sname ? "%%" : "", varname); /* mangle variable name */
+		snprintf(levelstr, sizeof(levelstr), "%d", level);
+		buf = SA_NEW_ARRAY(be->mvc->sa, char, strlen(levelstr) + strlen(msname) + strlen(varname) + 4);
+		if (!buf)
+			return NULL;
+		stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(buf, "A"), levelstr), "%%"), msname), "%%"), varname); /* mangle variable name */
+
 		q = newInstruction(mb, NULL, NULL);
 		if (q == NULL) {
 			return NULL;
@@ -3185,7 +3199,6 @@ stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int red
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
 	const char *mod, *aggrfunc;
-	char aggrF[64];
 	sql_subtype *res = op->res->h->data;
 	int restype = res->type->localtype;
 	bool complex_aggr = false;
@@ -3207,7 +3220,10 @@ stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int red
 					strncmp(aggrfunc, "covariance", 10) == 0 || strncmp(aggrfunc, "corr", 4) == 0;
 
 	if (ext) {
-		snprintf(aggrF, 64, "sub%s", aggrfunc);
+		char *aggrF = SA_NEW_ARRAY(be->mvc->sa, char, strlen(aggrfunc) + 4);
+		if (!aggrF)
+			return NULL;
+		stpcpy(stpcpy(aggrF, "sub"), aggrfunc);
 		aggrfunc = aggrF;
 		if (grp->nr < 0 || ext->nr < 0)
 			return NULL;
@@ -3775,13 +3791,18 @@ stmt_assign(backend *be, const char *sname, const char *varname, stmt *val, int 
 	if (val && val->nr < 0)
 		return NULL;
 	if (level != 0) {
-		char buf[IDLENGTH];
+		const char *msname = sname ? sname : "%%";
+		char levelstr[16], *buf;
 
 		if (!val) {
 			/* drop declared table */
 			assert(0);
 		}
-		(void) snprintf(buf, sizeof(buf), "A%d%%%s%s%s", level, sname ? sname : "", sname ? "%%" : "", varname); /* mangle variable name */
+		snprintf(levelstr, sizeof(levelstr), "%d", level);
+		buf = SA_NEW_ARRAY(be->mvc->sa, char, strlen(levelstr) + strlen(msname) + strlen(varname) + 4);
+		if (!buf)
+			return NULL;
+		stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(buf, "A"), levelstr), "%%"), msname), "%%"), varname); /* mangle variable name */
 		q = newInstruction(mb, NULL, NULL);
 		if (q == NULL) {
 			return NULL;

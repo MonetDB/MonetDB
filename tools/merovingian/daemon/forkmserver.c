@@ -360,6 +360,7 @@ forkMserver(char *database, sabdb** stats, bool force)
 
 		kv = findConfKey(ckv, "mfunnel");
 		if(!(f1 = fdopen(pfdo[1], "a"))) {
+			msab_freeStatus(stats);
 			freeConfFile(ckv);
 			free(ckv);
 			pthread_mutex_unlock(&dp->fork_lock);
@@ -367,6 +368,7 @@ forkMserver(char *database, sabdb** stats, bool force)
 		}
 		if(!(f2 = fdopen(pfde[1], "a"))) {
 			fclose(f1);
+			msab_freeStatus(stats);
 			freeConfFile(ckv);
 			free(ckv);
 			pthread_mutex_unlock(&dp->fork_lock);
@@ -375,6 +377,7 @@ forkMserver(char *database, sabdb** stats, bool force)
 		if ((er = multiplexInit(database, kv->val, f1, f2)) != NO_ERR) {
 			Mfprintf(stderr, "failed to create multiplex-funnel: %s\n",
 					 getErrMsg(er));
+			msab_freeStatus(stats);
 			freeConfFile(ckv);
 			free(ckv);
 			pthread_mutex_unlock(&dp->fork_lock);
@@ -412,6 +415,7 @@ forkMserver(char *database, sabdb** stats, bool force)
 
 	er = msab_getDBfarm(&sabdbfarm);
 	if (er != NULL) {
+		msab_freeStatus(stats);
 		freeConfFile(ckv);
 		free(ckv);
 		pthread_mutex_unlock(&dp->fork_lock);
@@ -473,6 +477,7 @@ forkMserver(char *database, sabdb** stats, bool force)
 	if (kv->val != NULL && strcmp(kv->val, "no") != 0) {
 		if (embeddedpy) {
 			// only one python version can be active at a time
+			msab_freeStatus(stats);
 			freeConfFile(ckv);
 			free(ckv);
 			pthread_mutex_unlock(&dp->fork_lock);
@@ -497,6 +502,7 @@ forkMserver(char *database, sabdb** stats, bool force)
 	if (kv->val != NULL) {
 		if (mydoproxy) {
 			// listenaddr is only available on forwarding method
+			msab_freeStatus(stats);
 			freeConfFile(ckv);
 			free(ckv);
 			pthread_mutex_unlock(&dp->fork_lock);
@@ -821,7 +827,9 @@ forkMserver(char *database, sabdb** stats, bool force)
 	close(pfdo[1]);
 	close(pfde[0]);
 	close(pfde[1]);
+	msab_freeStatus(stats);
 	pthread_mutex_unlock(&dp->fork_lock);
+	pthread_mutex_unlock(&_mero_topdp_lock);
 	return(newErr("%s", strerror(e)));
 }
 
@@ -972,22 +980,13 @@ fork_profiler(char *dbname, sabdb **stats, char **log_path)
 	snprintf(pidfilename, pidfnlen, "%s/profiler.pid", *log_path);
 
 	/* Make sure another instance of stethoscope is not running. */
-	error_code = stat(pidfilename, &path_info);
-	if (error_code != -1) {
+	errno = 0;
+	if ((pidfile = fopen(pidfilename, "r")) != NULL) {
 		char buf[8];
 		long pid;
 		/* The pid file exists. See if a process with this pid exists,
 		 * and if yes, if it is stethoscope.
 		 */
-
-		/* We cannot open the pidfile, bail out */
-		if ((pidfile = fopen(pidfilename, "r")) == NULL) {
-			error = newErr("pid file %s already exists, but is not accessible. Is the profiler already running?",
-						   pidfilename);
-			free(*log_path);
-			*log_path = NULL;
-			goto cleanup;
-		}
 
 		if (fgets(buf, sizeof(buf), pidfile) == NULL) {
 			error = newErr("cannot read from pid file %s: %s\n",
@@ -1059,6 +1058,13 @@ fork_profiler(char *dbname, sabdb **stats, char **log_path)
 
 		fclose(comm);
 		free(filename);
+	} else if (errno == EACCES || errno == EPERM) {
+		/* We cannot open the pidfile, bail out */
+		error = newErr("pid file %s already exists, but is not accessible. Is the profiler already running?",
+					   pidfilename);
+		free(*log_path);
+		*log_path = NULL;
+		goto cleanup;
 	}
 
   startup:
@@ -1216,6 +1222,10 @@ shutdown_profiler(char *dbname, sabdb **stats)
 	freeConfFile(ckv);
 	free(ckv);
 	free(pidfilename);
+	if (error) {
+		msab_freeStatus(stats);
+		*stats = NULL;
+	}
 	return error;
 }
 

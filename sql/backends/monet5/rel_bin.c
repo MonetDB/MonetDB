@@ -1648,9 +1648,12 @@ exp2bin_args(backend *be, sql_exp *e, list *args)
 			return exps2bin_args(be, e->f, args);
 		} else if (e->r) {
 			sql_var_name *vname = (sql_var_name*) e->r;
-			char nme[BUFSIZ];
+			const char *mname = vname->sname ? vname->sname : "%%";
+			char *nme = SA_NEW_ARRAY(sql->sa, char, strlen(mname) + strlen(vname->name) + 3);
 
-			snprintf(nme, sizeof(nme), "A%s%s%s", vname->sname ? vname->sname : "", vname->sname ? "%%" : "", vname->name);
+			if (!nme)
+				return NULL;
+			stpcpy(stpcpy(stpcpy(stpcpy(nme, "A"), mname), "%%"), vname->name);
 			if (!list_find(args, nme, (fcmp)&alias_cmp)) {
 				stmt *s = stmt_var(be, vname->sname, vname->name, &e->tpe, 0, 0);
 
