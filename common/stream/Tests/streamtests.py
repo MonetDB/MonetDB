@@ -6,7 +6,7 @@ import os
 import subprocess
 import sys
 
-BASE = os.environ.get('TSTSRCDIR', os.getcwd())
+BASE = os.environ.get('TSTSRCDIR', os.path.dirname(os.path.abspath(sys.argv[0])))
 DATA = os.path.join(BASE, 'data')
 
 BOM = b'\xEF\xBB\xBF'
@@ -95,48 +95,42 @@ def test_read(opener, strips_bom, doc):
 	return True
 
 
+def test_reads(doc):
+	failures = 0
+
+	# rstream does not strip BOM
+	failures += not test_read('rstream', False, doc)
+
+	# rastream does strip the BOM
+	failures += not test_read('rastream', True, doc)
+
+	return failures
+
+
 def all_read_tests(filename_filter):
-	ok = True
+	failures = 0
 	for d in get_docs():
 		if not filename_filter(d.filename):
 			continue
 
 		# rstream does not strip BOM
-		ok = ok & test_read('rstream', False, d)
+		failures += test_reads(d)
 
-		# rastream does strip the BOM
-		ok = ok & test_read('rastream', True, d)
-
-	return ok
-
-# import os
-# import subprocess
-# import sys
-
-# # Used by InputFile.path()
-
-# class InputFile:
-# 	__slots__ = ['filename', 'has_bom', 'size', 'md5sum', 'first100bytes', 'last100bytes']
-
-# 	def __init__(self, filename, has_bom, size, md5sum, first100bytes, last100bytes):
-# 		self.filename = filename
-# 		self.has_bom = has_bom
-# 		self.size = size
-# 		self.md5sum = md5sum
-# 		self.first100bytes = first100bytes
-# 		self.last100bytes = last100bytes
-
-# 	def path(self, compression):
-# 		extension = '.' + compression if compression else ''
-# 		return os.path.join(BASE, 'data', self.filename + extension)
-
-# 	def verify(self, result_bytes, ):
-# 		pass
+	return failures
 
 
-# def main():
-# 	pass
+def main(kind, file):
+	failures = 0
+	if kind == "read":
+		docs = [d for d in get_docs() if d.filename == file]
+		print(f"Found {len(docs)} matches.")
+		print()
+		for d in docs:
+			failures += test_reads(d)
 
+	return failures == 0
 
-# if __name__ == "__main__":
-#     sys.exit(main() or 0)
+if __name__ == "__main__":
+	docname = "small.txt.gz"
+	doc = [d for d in get_docs() if d.filename == docname][0]
+	test_read('rastream', True, doc)
