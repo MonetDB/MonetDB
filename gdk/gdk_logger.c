@@ -2280,6 +2280,8 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 	lg->tid = 0;
 	/* get saved_id from bbp */
 	lg->saved_id = getBBPinfo();
+	if (lg->saved_id == 0)
+		lg->saved_id = 1;
 	lg->input_log = NULL;
 	lg->bg.id = 0;
 
@@ -2435,8 +2437,9 @@ logger_exit(logger *lg)
 				filename);
 			return GDK_FAIL;
 		}
-		lg->id ++;
 
+		lg->saved_id = lg->id;
+		lg->id ++;
 		if (logger_commit(lg) != GDK_SUCCEED) {
 			(void) fclose(fp);
 			fprintf(stderr, "!ERROR: logger_exit: logger_commit failed\n");
@@ -2494,7 +2497,6 @@ logger_exit(logger *lg)
 		return GDK_FAIL;
 	}
 	assert(!lg->input_log);
-	lg->saved_id = lg->id;
 	return GDK_SUCCEED;
 }
 
@@ -2515,7 +2517,7 @@ logger_flush(logger *lg)
 		lg->changes = 0;
 		return GDK_SUCCEED;
 	}
-	if (lg->saved_id >= lg->id) { /* logger should first release the file */
+	if (lg->saved_id+1 >= lg->id) { /* logger should first release the file */
 		lg->changes -= 1000;
 		return GDK_SUCCEED;
 	}
@@ -2549,7 +2551,6 @@ logger_flush(logger *lg)
 	if (res == LOG_EOF)
 		logger_close_input(lg);
 
-	lng lid = lg->saved_id;
 	if (res != LOG_ERR) {
 		lg->saved_id++;
 		if (logger_commit(lg) != GDK_SUCCEED) {
@@ -2561,7 +2562,7 @@ logger_flush(logger *lg)
 		char log_id[FILENAME_MAX];
 		int farmid = BBPselectfarm(PERSISTENT, 0, offheap);
 
-		int len = snprintf(log_id, sizeof(log_id), LLFMT, lid);
+		int len = snprintf(log_id, sizeof(log_id), LLFMT, lg->saved_id);
 		if (len == -1 || len >= FILENAME_MAX) {
 			fprintf(stderr, "#logger_cleanup: log_id filename is too large\n");
 			return GDK_FAIL;
