@@ -106,6 +106,12 @@ SELECT (SELECT col1 HAVING SUM(col2 + col1) > 0) FROM another_t; --error, subque
 
 SELECT (SELECT col1 FROM another_t t1, another_t t2) FROM another_t t3; --error, col1 is ambiguous
 
+SELECT (SELECT SUM(col2 - 1) GROUP BY SUM(col2 + 1)) FROM another_t;
+	-- 2464
+
+SELECT (SELECT SUM(col1 + 1) GROUP BY SUM(col2 + 1)) FROM another_t;
+	-- 1238
+
 DROP FUNCTION evilfunction(INT);
 DROP TABLE tbl_ProductSales;
 DROP TABLE another_T;
