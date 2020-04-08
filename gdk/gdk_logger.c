@@ -285,9 +285,6 @@ log_read_clear(logger *lg, trans *tr, char *name, char tpe, oid id)
 	if (lg->debug & 1)
 		fprintf(stderr, "#logger found log_read_clear %s\n", NAME(name, tpe, id));
 
-	if (tr->tid <= lg->saved_tid) /* skipping */
-		return LOG_OK;
-
 	if (tr_grow(tr) != GDK_SUCCEED)
 		return LOG_ERR;
 	tr->changes[tr->nr].type = LOG_CLEAR;
@@ -346,15 +343,13 @@ log_read_seq(logger *lg, trans *tr, logformat *l)
 	lng val;
 	BUN p;
 
+	(void)tr;
 	assert(!lg->inmemory);
 	assert(l->nr <= (lng) INT_MAX);
 	if (mnstr_readLng(lg->input_log, &val) != 1) {
 		fprintf(stderr, "!ERROR: log_read_seq: read failed\n");
 		return LOG_EOF;
 	}
-
-	if (tr->tid <= lg->saved_tid) /* skipping */
-		return LOG_OK;
 
 	if ((p = log_find(lg->seqs_id, lg->dseqs, seq)) != BUN_NONE &&
 	    p >= lg->seqs_id->batInserted) {
@@ -407,6 +402,7 @@ log_read_updates(logger *lg, trans *tr, logformat *l, char *name, int tpe, oid i
 {
 	if (tpe == LOG_BATGROUP || tpe == LOG_BATGROUP_ID)
 		return log_read_batgroup(lg, tr, l, tpe, id);
+
 	log_bid bid = logger_find_bat(lg, name, tpe, id);
 	BAT *b = BATdescriptor(bid);
 	log_return res = LOG_OK;
@@ -473,26 +469,24 @@ log_read_updates(logger *lg, trans *tr, logformat *l, char *name, int tpe, oid i
 			tv = lg->buf;
 
 		assert(l->nr <= (lng) BUN_MAX);
-		if (tr->tid > lg->saved_tid) { 
-			if (l->flag == LOG_UPDATE) {
-				uid = COLnew(0, ht, (BUN) l->nr, PERSISTENT);
-				if (uid == NULL) {
-					logbat_destroy(b);
-					return LOG_ERR;
-				}
-			} else {
-				assert(ht == TYPE_void);
-			}
-
-			r = COLnew(0, tt, (BUN) l->nr, PERSISTENT);
-			if (r == NULL) {
-				BBPreclaim(uid);
+		if (l->flag == LOG_UPDATE) {
+			uid = COLnew(0, ht, (BUN) l->nr, PERSISTENT);
+			if (uid == NULL) {
 				logbat_destroy(b);
 				return LOG_ERR;
 			}
-			if (tseq)
-				BATtseqbase(r, 0);
+		} else {
+			assert(ht == TYPE_void);
 		}
+
+		r = COLnew(0, tt, (BUN) l->nr, PERSISTENT);
+		if (r == NULL) {
+			BBPreclaim(uid);
+			logbat_destroy(b);
+			return LOG_ERR;
+		}
+		if (tseq)
+			BATtseqbase(r, 0);
 
 		if (ht == TYPE_void && l->flag == LOG_INSERT) {
 			lng nr = l->nr;
@@ -590,10 +584,6 @@ log_read_updates(logger *lg, trans *tr, logformat *l, char *name, int tpe, oid i
 		if (tv != lg->buf)
 			GDKfree(tv);
 
-		if (tr->tid <= lg->saved_tid) { /* skipping */
-			logbat_destroy(b);
-			return res;
-		}
 		if (res == LOG_OK) {
 			if (tr_grow(tr) == GDK_SUCCEED) {
 				tr->changes[tr->nr].type = l->flag;
@@ -807,9 +797,6 @@ la_bat_updates(logger *lg, logaction *la)
 static log_return
 log_read_destroy(logger *lg, trans *tr, char *name, char tpe, oid id)
 {
-	if (tr->tid <= lg->saved_tid) /* skipping */
-		return LOG_OK;
-
 	assert(!lg->inmemory);
 	if (tr_grow(tr) == GDK_SUCCEED) {
 		tr->changes[tr->nr].type = LOG_DESTROY;
@@ -857,9 +844,6 @@ log_read_create(logger *lg, trans *tr, char *name, char tpe, oid id)
 	char *buf = log_read_string(lg);
 	int ht, tt;
 	char *ha, *ta;
-
-	if (tr->tid <= lg->saved_tid) /* skipping */
-		return LOG_OK;
 
 	assert(!lg->inmemory);
 	if (lg->debug & 1)
@@ -926,9 +910,6 @@ la_bat_create(logger *lg, logaction *la)
 static log_return
 log_read_use(logger *lg, trans *tr, logformat *l, char *name, char tpe, oid id)
 {
-	if (tr->tid <= lg->saved_tid) /* skipping */
-		return LOG_OK;
-
 	assert(!lg->inmemory);
 	if (tr_grow(tr) != GDK_SUCCEED)
 		return LOG_ERR;
@@ -1127,8 +1108,6 @@ tr_commit(logger *lg, trans *tr)
 		}
 		la_destroy(&tr->changes[i]);
 	}
-	if (lg->saved_tid < tr->tid)
-		lg->saved_tid = tr->tid;
 	return tr_destroy(tr);
 }
 
@@ -1819,7 +1798,7 @@ bm_subcommit(logger *lg, BAT *list_bid, BAT *list_nme, BAT *catalog_bid, BAT *ca
 		BATcommit(catalog_oid, BUN_NONE);
 	}
 	BATcommit(dcatalog, BUN_NONE);
-	res = TMsubcommit_list(n, cnts?sizes:NULL, i, lg->saved_tid);
+	res = TMsubcommit_list(n, cnts?sizes:NULL, i, lg->saved_id);
 	GDKfree(n);
 	GDKfree(sizes);
 	if (res != GDK_SUCCEED)
@@ -2292,7 +2271,6 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 	}
 
 	lg->inmemory = GDKinmemory();
-	lg->flushing = false;
 	lg->debug = debug;
 
 	lg->changes = 0;
@@ -2300,10 +2278,9 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 	lg->id = 1;
 
 	lg->tid = 0;
-	/* get saved_tid from bbp */
-	lg->saved_tid = getBBPinfo();
+	/* get saved_id from bbp */
+	lg->saved_id = getBBPinfo();
 	lg->input_log = NULL;
-	lg->flush_id = 0; /* after normal restart set to current id */
 	lg->bg.id = 0;
 
 	len = snprintf(filename, sizeof(filename), "%s%c%s%c", logdir, DIR_SEP, fn, DIR_SEP);
@@ -2466,6 +2443,7 @@ logger_exit(logger *lg)
 			return GDK_FAIL;
 		}
 
+		/* here we need to keep the now current log files */
 		if (fprintf(fp, LLFMT "\n", lg->id) < 0) {
 			(void) fclose(fp);
 			fprintf(stderr, "!ERROR: logger_exit: write to %s failed\n",
@@ -2516,9 +2494,7 @@ logger_exit(logger *lg)
 		return GDK_FAIL;
 	}
 	assert(!lg->input_log);
-	lg->saved_tid = lg->tid;
-	lg->flush_id = lg->id;
-
+	lg->saved_id = lg->id;
 	return GDK_SUCCEED;
 }
 
@@ -2535,18 +2511,18 @@ gdk_return
 logger_flush(logger *lg)
 {
 	if (lg->inmemory || LOG_DISABLED(lg)) {
-		lg->saved_tid = lg->tid;
+		lg->saved_id = lg->id;
 		lg->changes = 0;
 		return GDK_SUCCEED;
 	}
-	if (lg->flush_id >= lg->id) { /* logger should first release the file */
+	if (lg->saved_id >= lg->id) { /* logger should first release the file */
 		lg->changes -= 1000;
 		return GDK_SUCCEED;
 	}
 	if (!lg->input_log) {
 		char *filename;
 		char id[BUFSIZ];
-		int len = snprintf(id, sizeof(id), LLFMT, lg->flush_id);
+		int len = snprintf(id, sizeof(id), LLFMT, lg->saved_id+1);
 
 		if (len == -1 || len >= BUFSIZ) {
 			fprintf(stderr, "!ERROR: logger_open: filename is too large\n");
@@ -2568,17 +2544,31 @@ logger_flush(logger *lg)
 		}
 		GDKfree(filename);
 	}
-	lg->flushing = true;
+	/* we read the full file because skipping is impossible with current log format */
 	log_return res = logger_read_transaction(lg);
-	lg->flushing = false;
-	if (res == LOG_EOF) {
+	if (res == LOG_EOF)
 		logger_close_input(lg);
-		lg->flush_id++;
-	}
+
+	lng lid = lg->saved_id;
 	if (res != LOG_ERR) {
+		lg->saved_id++;
 		if (logger_commit(lg) != GDK_SUCCEED) {
 			fprintf(stderr, "!ERROR: logger_flush: logger_commit failed\n");
 			res = LOG_ERR;
+		}
+
+		/* remove old log file */
+		char log_id[FILENAME_MAX];
+		int farmid = BBPselectfarm(PERSISTENT, 0, offheap);
+
+		int len = snprintf(log_id, sizeof(log_id), LLFMT, lid);
+		if (len == -1 || len >= FILENAME_MAX) {
+			fprintf(stderr, "#logger_cleanup: log_id filename is too large\n");
+			return GDK_FAIL;
+		}
+		if (GDKunlink(farmid, lg->dir, LOGFILE, log_id) != GDK_SUCCEED) {
+			fprintf(stderr, "#logger_cleanup: failed to remove old WAL %s.%s\n", LOGFILE, log_id);
+			GDKclrerr();
 		}
 	}
 	return res == LOG_ERR ? GDK_FAIL : GDK_SUCCEED;

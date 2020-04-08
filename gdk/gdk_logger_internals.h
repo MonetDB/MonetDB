@@ -23,11 +23,9 @@ struct logger {
 	int version;
 	lng changes;		/* TODO change in atomic */
 	lng id;
-	lng flush_id;		/* current tobe flushed file id */
+	lng saved_id;		/* id flushed to BBP, higher log files still need processing */
 	int tid;
-	int saved_tid;		/* tid flushed too bats */
-	struct batgroup bg;		/* current ongoing batgroup to be writing to the log */
-	bool flushing;		/* currently flushing changes */
+	struct batgroup bg;	/* current ongoing batgroup to be writing to the log */
 	bool inmemory;
 	char *fn;
 	char *dir;
