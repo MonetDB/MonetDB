@@ -96,10 +96,10 @@ SELECT (SELECT corr(col1, SUM(col2))) FROM another_t GROUP BY col2; --error, agg
 
 SELECT (SELECT corr(col1, col2) WHERE corr(col3, SUM(col4)) > 0) FROM another_t GROUP BY col5; --error, aggregate function calls cannot be nested
 
-SELECT (SELECT 1 GROUP BY SUM(col2 + 1)) FROM another_t; --TODO?
+SELECT (SELECT 1 GROUP BY SUM(col2 + 1)) FROM another_t;
 	-- 1
 
-SELECT (SELECT 1 WHERE SUM(col2 + 1) > 0) FROM another_t; --TODO?
+SELECT (SELECT 1 WHERE SUM(col2 + 1) > 0) FROM another_t;
 	-- 1
 
 SELECT (SELECT col1 HAVING SUM(col2 + col1) > 0) FROM another_t; --error, subquery uses ungrouped column "another_t.col1" from outer query

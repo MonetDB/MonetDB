@@ -86,6 +86,10 @@ MAPI  = (monetdb) /var/tmp/mtest-417474/.s.monetdb.36445
 QUERY = SELECT (SELECT corr(col1, col2) WHERE corr(col3, SUM(col4)) > 0) FROM another_t GROUP BY col5; --error, aggregate function calls cannot be nested
 ERROR = !SELECT: aggregate function calls cannot be nested
 CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-98994/.s.monetdb.33939
+QUERY = SELECT (SELECT col1 HAVING SUM(col2 + col1) > 0) FROM another_t; --error, subquery uses ungrouped column "another_t.col1" from outer query
+ERROR = !SELECT: subquery uses ungrouped column "another_t.col1" from outer query
+CODE  = 42000
 
 # 08:41:39 >  
 # 08:41:39 >  "Done."
