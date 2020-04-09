@@ -5,40 +5,40 @@ stderr of test 'session_vars` in directory 'sql/test` itself:
 # 20:30:42 >   mserver5 "--config=/ufs/niels/scratch/monetdb/Linux-x86_64/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=4 --set "monet_mod_path=/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=39627 --set xrpc_port=43642 --set monet_prompt= --trace  "--dbname=mTests_src_test" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
 # 20:30:42 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-272580/.s.monetdb.34031
-QUERY = select @debug;
+MAPI  = (monetdb) /var/tmp/mtest-143962/.s.monetdb.35511
+QUERY = select @debug; --error, @ annotation no longer exists
 ERROR = !syntax error, unexpected AT in: "select @"
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-272580/.s.monetdb.34031
-QUERY = select @current_schema;
+MAPI  = (monetdb) /var/tmp/mtest-143962/.s.monetdb.35511
+QUERY = select @"current_schema"; --error, @ annotation no longer exists
 ERROR = !syntax error, unexpected AT in: "select @"
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-272580/.s.monetdb.34031
-QUERY = select @"current_user";
+MAPI  = (monetdb) /var/tmp/mtest-143962/.s.monetdb.35511
+QUERY = select @"current_user"; --error, @ annotation no longer exists
 ERROR = !syntax error, unexpected AT in: "select @"
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-272580/.s.monetdb.34031
-QUERY = select @"current_role";
+MAPI  = (monetdb) /var/tmp/mtest-143962/.s.monetdb.35511
+QUERY = select @"current_role"; --error, @ annotation no longer exists
 ERROR = !syntax error, unexpected AT in: "select @"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-272580/.s.monetdb.34031
 QUERY = set test_nr = 'help'; --error, conversion failed
 ERROR = !conversion of string 'help' to type int failed.
 CODE  = 22018
-MAPI  = (monetdb) /var/tmp/mtest-272580/.s.monetdb.34031
-QUERY = set test_boolean = 'help'; --error, variable no longer in cache
+MAPI  = (monetdb) /var/tmp/mtest-469178/.s.monetdb.34731
+QUERY = set test_boolean = 'help';
 ERROR = !conversion of string 'help' to type bit failed.
 CODE  = 22018
-MAPI  = (monetdb) /var/tmp/mtest-272580/.s.monetdb.34031
-QUERY = select @test_nr; --error, variable no longer in cache
+MAPI  = (monetdb) /var/tmp/mtest-143962/.s.monetdb.35511
+QUERY = select @test_nr; --error, @ annotation no longer exists
 ERROR = !syntax error, unexpected AT in: "select @"
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-222303/.s.monetdb.38750
-QUERY = select @test_str; --error, variable no longer in cache
+MAPI  = (monetdb) /var/tmp/mtest-143962/.s.monetdb.35511
+QUERY = select @test_str; --error, @ annotation no longer exists
 ERROR = !syntax error, unexpected AT in: "select @"
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-222303/.s.monetdb.38750
-QUERY = select @test_boolean; --error, variable no longer in cache
+MAPI  = (monetdb) /var/tmp/mtest-143962/.s.monetdb.35511
+QUERY = select @test_boolean; --error, @ annotation no longer exists
 ERROR = !syntax error, unexpected AT in: "select @"
 CODE  = 42000
 

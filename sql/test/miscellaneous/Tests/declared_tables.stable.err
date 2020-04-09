@@ -17,6 +17,19 @@ MAPI  = (monetdb) /var/tmp/mtest-1000805/.s.monetdb.34597
 QUERY = select b; --error, b was never declared
 ERROR = !SELECT: identifier 'b' unknown
 CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-522051/.s.monetdb.31503
+QUERY = CREATE OR REPLACE FUNCTION testtruncate() RETURNS INT 
+        BEGIN
+            DECLARE TABLE z (a int);
+            INSERT INTO z VALUES (1);
+            UPDATE z SET a = 2 WHERE a = 1;
+            TRUNCATE z;
+            INSERT INTO z VALUES (3);
+            DELETE FROM z WHERE a = 3;
+            RETURN SELECT a FROM z;
+        END;
+ERROR = !SELECT: identifier 'a' ambiguous
+CODE  = 42000
 
 # 14:29:33 >  
 # 14:29:33 >  "Done."

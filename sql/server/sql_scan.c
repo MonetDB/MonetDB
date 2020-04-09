@@ -1159,25 +1159,36 @@ tokenize(mvc * c, int cur)
 		} else if (iswdigit(cur)) {
 			return number(c, cur);
 		} else if (iswalpha(cur) || cur == '_') {
-			if ((cur == 'E' || cur == 'e') &&
-			    lc->rs->buf[lc->rs->pos + lc->yycur] == '\'') {
-				return scanner_string(c, scanner_getc(lc), true);
-			}
-			if ((cur == 'X' || cur == 'x') &&
-			    lc->rs->buf[lc->rs->pos + lc->yycur] == '\'') {
-				return scanner_string(c, scanner_getc(lc), true);
-			}
-			if ((cur == 'R' || cur == 'r') &&
-			    lc->rs->buf[lc->rs->pos + lc->yycur] == '\'') {
-				return scanner_string(c, scanner_getc(lc), false);
-			}
-
-			if ((cur == 'U' || cur == 'u') &&
-			    lc->rs->buf[lc->rs->pos + lc->yycur] == '&' &&
-			    (lc->rs->buf[lc->rs->pos + lc->yycur + 1] == '\'' ||
-			     lc->rs->buf[lc->rs->pos + lc->yycur + 1] == '"')) {
-				cur = scanner_getc(lc); /* '&' */
-				return scanner_string(c, scanner_getc(lc), false);
+			switch (cur) {
+			case 'e': /* string with escapes */
+			case 'E':
+				if (scanner_read_more(lc, 1) != EOF &&
+				    lc->rs->buf[lc->rs->pos + lc->yycur] == '\'') {
+					return scanner_string(c, scanner_getc(lc), true);
+				}
+				break;
+			case 'x': /* blob */
+			case 'X':
+			case 'r': /* raw string */
+			case 'R':
+				if (scanner_read_more(lc, 1) != EOF &&
+				    lc->rs->buf[lc->rs->pos + lc->yycur] == '\'') {
+					return scanner_string(c, scanner_getc(lc), false);
+				}
+				break;
+			case 'u': /* unicode string */
+			case 'U':
+				if (scanner_read_more(lc, 1) != EOF &&
+				    lc->rs->buf[lc->rs->pos + lc->yycur] == '&' &&
+				    scanner_read_more(lc, 2) != EOF &&
+				    (lc->rs->buf[lc->rs->pos + lc->yycur + 1] == '\'' ||
+				     lc->rs->buf[lc->rs->pos + lc->yycur + 1] == '"')) {
+					cur = scanner_getc(lc); /* '&' */
+					return scanner_string(c, scanner_getc(lc), false);
+				}
+				break;
+			default:
+				break;
 			}
 			return keyword_or_ident(c, cur);
 		} else if (iswpunct(cur)) {
