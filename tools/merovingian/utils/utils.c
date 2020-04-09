@@ -35,6 +35,13 @@
 #endif
 #endif
 
+#ifdef HAVE_SYS_PARAM_H
+# include <sys/param.h>
+#endif
+#ifdef BSD /* BSD macro is defined in sys/param.h */
+# include <sys/stat.h>  /* Needed for S_IRUSR, S_IWUSR */
+#endif
+
 #ifndef O_CLOEXEC
 #define O_CLOEXEC 0
 #endif
