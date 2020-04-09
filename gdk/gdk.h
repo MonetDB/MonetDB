@@ -1930,10 +1930,6 @@ gdk_export int ALIGNsynced(BAT *b1, BAT *b2);
 
 gdk_export void BATassertProps(BAT *b);
 
-#define BATPROPS_QUICK  0	/* only derive easy (non-resource consuming) properties */
-#define BATPROPS_ALL	1	/* derive all possible properties; no matter what cost (key=hash) */
-#define BATPROPS_CHECK  3	/* BATPROPS_ALL, but start from scratch and report illegally set properties */
-
 gdk_export BAT *VIEWcreate(oid seq, BAT *b);
 gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
 
