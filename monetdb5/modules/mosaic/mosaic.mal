@@ -12,17 +12,17 @@ command decompress(b:bat[:any_1]) :bat[:any_1]
 address MOSdecompress
 comment "Apply dynamic decompression over chunks producing a temporary version";
 
-command select(b:bat[:any_1], low:any_1, high:any_1, li:bit, hi:bit, anti:bit) :bat[:oid]
-address MOSselect1;
+pattern select(b:bat[:any_1], low:any_1, high:any_1, li:bit, hi:bit, anti:bit) :bat[:oid]
+address MOSselect;
 
-command select(b:bat[:any_1], low:any_1, high:any_1, li:bit, hi:bit, anti:bit, unknown:bit) :bat[:oid]
-address MOSselect1nil;
+pattern select(b:bat[:any_1], low:any_1, high:any_1, li:bit, hi:bit, anti:bit, unknown:bit) :bat[:oid]
+address MOSselect;
 
-command select(b:bat[:any_1], cand:bat[:oid], low:any_1, high:any_1, li:bit, hi:bit, anti:bit) :bat[:oid]
-address MOSselect2;
+pattern select(b:bat[:any_1], cand:bat[:oid], low:any_1, high:any_1, li:bit, hi:bit, anti:bit) :bat[:oid]
+address MOSselect;
 
-command select(b:bat[:any_1], cand:bat[:oid], low:any_1, high:any_1, li:bit, hi:bit, anti:bit, unknown:bit) :bat[:oid]
-address MOSselect2nil;
+pattern select(b:bat[:any_1], cand:bat[:oid], low:any_1, high:any_1, li:bit, hi:bit, anti:bit, unknown:bit) :bat[:oid]
+address MOSselect;
 
 pattern thetaselect(b:bat[:any_1], low:any_1, oper:str) :bat[:oid]
 address MOSthetaselect;

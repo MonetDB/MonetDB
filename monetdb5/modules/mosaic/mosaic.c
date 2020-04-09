@@ -25,6 +25,11 @@
 #include "mosaic_frame.h"
 #include "mosaic_prefix.h"
 
+#define MOS_TRACE(B) \
+TRC_DEBUG(MAL_MOSAIC, \
+	"{\"operator\": \" %s \", \"tag\":" OIDFMT ", \"pc\":%d, \"location\": \"%s\"}\n", \
+	pci->fcnname, stk->tag, getPC(mb,pci), BBP_physical((B)->batCacheid));
+
 #define DEFINE_METHOD(METHOD) \
 {\
 	.bit	= (1 << METHOD),\
@@ -719,7 +724,7 @@ MOSdecompress(bat* ret, const bat* bid)
  * The oid-range can be reduced due to partitioning.
  */
 
-str
+static str
 MOSselect2(bat *ret, const bat *bid, const bat *cid	, const void *low, const void *high, const bit *li, const bit *hi, const bit *anti) {
 	BAT *b, *bn, *cand = NULL;
 	str msg = MAL_SUCCEED;
@@ -802,7 +807,7 @@ MOSselect2(bat *ret, const bat *bid, const bat *cid	, const void *low, const voi
 	return msg;
 }
 
-str
+static str
 MOSselect2nil(bat *ret, const bat *bid, const bat *cid, const void *low, const void *high, const bit *li, const bit *hi, const bit *anti, const bit *unknown) {
 	str msg;
 
@@ -838,14 +843,50 @@ MOSselect2nil(bat *ret, const bat *bid, const bat *cid, const void *low, const v
 	return msg;
 }
 
-str
-MOSselect1(bat *ret, const bat *bid, const void *low, const void *high, const bit *li, const bit *hi, const bit *anti) {
-	return MOSselect2(ret, bid, NULL, low, high, li, hi, anti);
-}
+#include "mal_stack.h"
 
 str
-MOSselect1nil(bat *ret, const bat *bid, const void *low, const void *high, const bit *li, const bit *hi, const bit *anti, const bit *unknown) {
-	return MOSselect2nil(ret, bid, NULL, low, high, li, hi, anti, unknown);
+MOSselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+	str result;
+
+	(void) cntxt;
+	(void) mb;
+	int i = 0;
+	bat* ret= getArgReference_bat(stk,pci, i++);
+	bat* bid= getArgReference_bat(stk,pci, i++);
+
+	BAT* b;
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		throw(MAL,"mosaic.MOSselect",RUNTIME_OBJECT_MISSING);
+	}
+
+	MOS_TRACE(b);
+
+	bat* cid = getStkType(stk, pci, i) == TYPE_bat?
+		getArgReference_bat(stk,pci, i++):
+		NULL;
+
+	void* low = (void*) getArgReference(stk,pci, i++);
+	void* high = (void*) getArgReference(stk,pci, i++);
+
+	bit* li		= (bit*) getArgReference(stk,pci, i++);
+	bit* hi		= (bit*) getArgReference(stk,pci, i++);
+
+	bit* anti	= (bit*) getArgReference(stk,pci, i++);
+
+	if (i < pci->argc) {
+		bit* unknown = (bit*) getArgReference(stk,pci, i++);
+		assert((i == pci->argc) && (pci->argc == 9 - (cid == NULL?1:0)));
+		result = MOSselect2nil(ret, bid, cid, low, high, li, hi, anti, unknown);
+
+	}
+	else {
+		assert(pci->argc == 8 - (cid == NULL?1:0));
+		result = MOSselect2(ret, bid, cid, low, high, li, hi, anti);
+	}
+
+	BBPreclaim(b);
+	return result;
 }
 
 str MOSthetaselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -877,6 +918,8 @@ str MOSthetaselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ((b = BBPquickdesc(*bid, false)) == NULL) {
 		throw(MAL, "mosaic.MOSthetaselect", RUNTIME_OBJECT_MISSING);
 	}
+
+	MOS_TRACE(b);
 
 	const char* op = *oper;
 	const void *nil = ATOMnilptr(b->ttype);
@@ -1000,6 +1043,8 @@ str MOSprojection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	}
 
+	MOS_TRACE(br);
+
 	cnt = BATcount(bl);
 	bn = COLnew((oid)0,br->ttype, cnt, TRANSIENT);
 	if ( bn == NULL){
@@ -1091,6 +1136,7 @@ MOSjoin_generic_COUI_DEF(hge)
 
 #define PREPARE_JOIN_CONTEXT(COMPRESSED_BAT, COMPRESSED_BAT_CL, UNCOMPRESSED_BAT, UNCOMPRESSED_BAT_CL) \
 {\
+	MOS_TRACE(COMPRESSED_BAT);\
 	MOSinit(&task,COMPRESSED_BAT);\
 	MOSinitializeScan(&task, COMPRESSED_BAT);\
 	task.stop = BATcount(COMPRESSED_BAT);\
@@ -1167,6 +1213,7 @@ MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		PREPARE_JOIN_CONTEXT(br, sr, bl, sl);
 		swapped=1;
 	}
+
 	task.lbat = bln;
 	task.rbat = brn;
 

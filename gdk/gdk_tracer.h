@@ -122,6 +122,7 @@ typedef enum {
 						\
 	COMP( MAL_WLC )				\
 	COMP( MAL_REMOTE )			\
+	COMP( MAL_MOSAIC )			\
 	COMP( MAL_MAPI )			\
 	COMP( MAL_SERVER )			\
 						\
