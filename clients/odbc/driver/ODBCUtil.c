@@ -679,7 +679,7 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN nosc
 				length = (size_t) sprintf(q, "%.*s ESCAPE '''' %s", n, nquery, p);
 				break;
 			case '\\':
-				length = (size_t) sprintf(q, "%.*s ESCAPE '\\\\' %s", n, nquery, p);
+				length = (size_t) sprintf(q, "%.*s ESCAPE r'\\' %s", n, nquery, p);
 				break;
 			default:
 				length = (size_t) sprintf(q, "%.*s ESCAPE '%c' %s", n, nquery, esc, p);
@@ -784,9 +784,7 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN nosc
 							p++;
 					} else if (*p == '\'') {
 						while (*++p && *p != '\'')
-							if (*p == '\\' &&
-							    *++p == 0)
-								break;
+							;
 						if (*p)
 							p++;
 					} else {
@@ -820,7 +818,7 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN nosc
 				if (strncasecmp(func->name, scalarfunc, scalarfunclen) == 0 && func->name[scalarfunclen] == 0 && func->nargs == nargs) {
 					if (func->repl) {
 						const char *r;
-						q = malloc(length - pr + strlen(func->repl) - nargs + (nargs > 0 ? args[0].arglen : 0) + (nargs > 1 ? args[1].arglen : 0) + (nargs > 2 ? args[2].arglen : 0) + 1);
+						q = malloc(length - pr + strlen(func->repl) - nargs + (nargs > 0 ? args[0].arglen + 1 : 0) + (nargs > 1 ? args[1].arglen + 1 : 0) + (nargs > 2 ? args[2].arglen + 1 : 0) + 1);
 						if (q == NULL) {
 							free(nquery);
 							return NULL;
@@ -829,6 +827,8 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN nosc
 						strncpy(q, nquery, pr);
 						for (r = func->repl; *r; r++) {
 							if (*r == '\1' || *r == '\2' || *r == '\3' || *r == '\4') {
+								if (args[*r - 1].argstart[0] == '\'')
+									q[pr++] = 'r';
 								strncpy(q + pr, args[*r - 1].argstart, args[*r - 1].arglen);
 								pr += (int) args[*r - 1].arglen;
 							} else {
@@ -865,12 +865,17 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN nosc
 						for (c = convert; c->odbc; c++) {
 							if (strncasecmp(c->odbc, args[1].argstart, args[1].arglen) == 0 &&
 							    c->odbc[args[1].arglen] == 0) {
-								q = malloc(length - pr + 11 + args[0].arglen + strlen(c->server));
+								const char *raw;
+								q = malloc(length - pr + 11 + args[0].arglen + 1 + strlen(c->server));
 								if (q == NULL) {
 									free(nquery);
 									return NULL;
 								}
-								length = (size_t) sprintf(q, "%.*scast(%.*s as %s)%s", n, nquery, (int) args[0].arglen, args[0].argstart, c->server, p);
+								if (args[0].argstart[0] == '\'')
+									raw = "r";
+								else
+									raw = "";
+								length = (size_t) sprintf(q, "%.*scast(%s%.*s as %s)%s", n, nquery, raw, (int) args[0].arglen, args[0].argstart, c->server, p);
 								free(nquery);
 								nquery = q;
 								break;
@@ -924,7 +929,7 @@ ODBCParsePV(const char *tab, const char *col, const char *arg, size_t len)
 		if (*s == '\'' || *s == '\\')
 			i++;
 	}
-	i += strlen(tab) + strlen(col) + 25; /* ""."" like '' escape '\\' */
+	i += strlen(tab) + strlen(col) + 25; /* ""."" like '' escape r'\' */
 	res = malloc(i + 1);
 	if (res == NULL)
 		return NULL;
@@ -934,7 +939,7 @@ ODBCParsePV(const char *tab, const char *col, const char *arg, size_t len)
 			res[i++] = *s;
 		res[i++] = *s;
 	}
-	for (s = "' escape '\\\\'"; *s; s++)
+	for (s = "' escape r'\\'"; *s; s++)
 		res[i++] = *s;
 	res[i] = 0;
 	return res;
