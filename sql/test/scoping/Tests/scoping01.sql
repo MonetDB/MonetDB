@@ -80,13 +80,20 @@ SELECT tests_scopes3(0), tests_scopes3(1);
 SET "optimizer" = (SELECT "aux");
 DROP FUNCTION tests_scopes3(INT);
 ------------------------------------------------------------------------------
-create function tests_scopes4() returns int begin declare table y (a int, b int); return select y; end; --error
-create function tests_scopes4() returns table (i integer, s string) begin return select tmp2; end; --error
+create function tests_scopes4() returns int begin declare table y (a int, b int); return select y; end; --error, cannot project a declared table
+create function tests_scopes4() returns table (i integer, s string) begin return select tmp2; end; --error, cannot project a declared table
+
+declare table tmp2(i integer, s string); --the same for declared tables
+insert into tmp2 values(3,'another'),(4,'test');
 
 create function tests_scopes4() returns table (i integer, s string) begin return tmp2; end; --possible, return the contents of tmp2
 select * from tests_scopes4();
+	-- 3 another
+	-- 4 test
 
+DROP TABLE tmp2; --error dependency on tmp2
 DROP FUNCTION tests_scopes4;
+DROP TABLE tmp2;
 ------------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION scoping(input INT) RETURNS INT 
 BEGIN
@@ -149,8 +156,8 @@ INSERT INTO atest VALUES (1);
 CREATE OR REPLACE FUNCTION scoping3() RETURNS TABLE(a int) 
 BEGIN
 	DECLARE TABLE atest (a int); -- allowed, the table atest from scoping3 is unrelated to "atest" from the global scope
-	INSERT INTO x VALUES (2);
-	RETURN x;
+	INSERT INTO atest VALUES (2);
+	RETURN atest;
 END;
 
 SELECT a FROM atest;
@@ -164,6 +171,12 @@ BEGIN
 	RETURN tableydoesntexist; --error, no table named "tableydoesntexist" exists
 END;
 
+CREATE OR REPLACE FUNCTION scoping4() RETURNS TABLE(a int)
+BEGIN
+	DECLARE TABLE mytable (a int);
+	RETURN mytable, mytable; --error, cannot return two tables (we get an parser error which is also fine)
+END;
+
 CREATE OR REPLACE FUNCTION scoping4() RETURNS INT
 BEGIN
 	RETURN idontexist; --error, no variable named "idontexist" exists
@@ -171,15 +184,21 @@ END;
 
 CREATE OR REPLACE FUNCTION scoping4() RETURNS INT
 BEGIN
+	DECLARE idoexist int;
+	RETURN idoexist, idoexist; --error, cannot return two variables  (we get an parser error which is also fine)
+END;
+
+CREATE OR REPLACE FUNCTION scoping4() RETURNS INT
+BEGIN
 	DECLARE TABLE z (a int); 
-	RETURN VALUES (z); --error, there's no variable z on the scope
+	RETURN VALUES (z); --error, there's no declared variable z on the scope
 END;
 
 DROP TABLE atest;
 DROP FUNCTION scoping3;
 ------------------------------------------------------------------------------
 -- A table returning function or view to list the session's variables
-select "name", schemaname, "type", currentvalue, accessmode from sys.vars();
+--select "name", schemaname, "type", currentvalue, accessmode from sys.vars();
 ------------------------------------------------------------------------------
 -- Some syntax to allow users to view GDK variables (we will discuss this later)...
 --GRANT WRITE ACCESS to gdk_debug TO PUBLIC;
