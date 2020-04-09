@@ -5839,7 +5839,7 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ "0123456789"	]
 [ "1"	]
 [ "AaZz"	]
-[ "~!@#$%^&*(')_/-+=:;\"<.,.>?"	]
+[ "~!@#$%^&*(')\\_/-+=:;\"<.,.>?"	]
 #SELECT v, convert(v, boolean) from T_char where v in ('0', '1');
 % sys.t_char,	sys.t_char # table_name
 % v,	v # name
@@ -5961,7 +5961,7 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ "1",	1.000	]
 #SELECT v, convert(v, char) from T_char where v in ('0', '1');
 % sys.t_char,	sys. # table_name
-% v,	%3 # name
+% v,	%5 # name
 % char,	char # type
 % 33,	1 # length
 [ "0",	"0"	]
@@ -5970,12 +5970,12 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 % sys.t_char,	sys. # table_name
 % v,	%2 # name
 % char,	varchar # type
-% 33,	26 # length
+% 33,	27 # length
 [ "0",	"0"	]
 [ "1",	"1"	]
 [ "0123456789",	"0123456789"	]
 [ "AaZz",	"AaZz"	]
-[ "~!@#$%^&*(')_/-+=:;\"<.,.>?",	"~!@#$%^&*(')_/-+=:;\"<.,.>?"	]
+[ "~!@#$%^&*(')\\_/-+=:;\"<.,.>?",	"~!@#$%^&*(')\\_/-+=:;\"<.,.>?"	]
 [ "",	""	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, CHARACTER LARGE OBJECT) from T_char;
@@ -5987,7 +5987,7 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ "1",	"1"	]
 [ "0123456789",	"0123456789"	]
 [ "AaZz",	"AaZz"	]
-[ "~!@#$%^&*(')_/-+=:;\"<.,.>?",	"~!@#$%^&*(')_/-+=:;\"<.,.>?"	]
+[ "~!@#$%^&*(')\\_/-+=:;\"<.,.>?",	"~!@#$%^&*(')\\_/-+=:;\"<.,.>?"	]
 [ "",	""	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, Clob) from T_char;
@@ -5999,7 +5999,7 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ "1",	"1"	]
 [ "0123456789",	"0123456789"	]
 [ "AaZz",	"AaZz"	]
-[ "~!@#$%^&*(')_/-+=:;\"<.,.>?",	"~!@#$%^&*(')_/-+=:;\"<.,.>?"	]
+[ "~!@#$%^&*(')\\_/-+=:;\"<.,.>?",	"~!@#$%^&*(')\\_/-+=:;\"<.,.>?"	]
 [ "",	""	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, Blob) from T_char where v in ('0123456789');
@@ -6129,7 +6129,7 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ "1",	1.000	]
 #SELECT v, cast(v as char) from T_char where v in ('0', '1');
 % sys.t_char,	sys. # table_name
-% v,	%3 # name
+% v,	%5 # name
 % char,	char # type
 % 33,	1 # length
 [ "0",	"0"	]
@@ -6138,12 +6138,12 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 % sys.t_char,	sys. # table_name
 % v,	%2 # name
 % char,	varchar # type
-% 33,	26 # length
+% 33,	27 # length
 [ "0",	"0"	]
 [ "1",	"1"	]
 [ "0123456789",	"0123456789"	]
 [ "AaZz",	"AaZz"	]
-[ "~!@#$%^&*(')_/-+=:;\"<.,.>?",	"~!@#$%^&*(')_/-+=:;\"<.,.>?"	]
+[ "~!@#$%^&*(')\\_/-+=:;\"<.,.>?",	"~!@#$%^&*(')\\_/-+=:;\"<.,.>?"	]
 [ "",	""	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as CHARACTER LARGE OBJECT) from T_char;
@@ -6155,7 +6155,7 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ "1",	"1"	]
 [ "0123456789",	"0123456789"	]
 [ "AaZz",	"AaZz"	]
-[ "~!@#$%^&*(')_/-+=:;\"<.,.>?",	"~!@#$%^&*(')_/-+=:;\"<.,.>?"	]
+[ "~!@#$%^&*(')\\_/-+=:;\"<.,.>?",	"~!@#$%^&*(')\\_/-+=:;\"<.,.>?"	]
 [ "",	""	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as Clob) from T_char;
@@ -6167,7 +6167,7 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ "1",	"1"	]
 [ "0123456789",	"0123456789"	]
 [ "AaZz",	"AaZz"	]
-[ "~!@#$%^&*(')_/-+=:;\"<.,.>?",	"~!@#$%^&*(')_/-+=:;\"<.,.>?"	]
+[ "~!@#$%^&*(')\\_/-+=:;\"<.,.>?",	"~!@#$%^&*(')\\_/-+=:;\"<.,.>?"	]
 [ "",	""	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as Blob) from T_char where v in ('0123456789');
@@ -6186,14 +6186,14 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 % sys.t_varchar # table_name
 % v # name
 % varchar # type
-% 26 # length
+% 27 # length
 [ NULL	]
 [ ""	]
 [ "0"	]
 [ "0123456789"	]
 [ "1"	]
 [ "AaZz"	]
-[ "~!@#$%^&*(')_/-+=:;\"<.,.>?"	]
+[ "~!@#$%^&*(')\\_/-+=:;\"<.,.>?"	]
 #SELECT v, convert(v, boolean) from T_varchar where v in ('0', '1');
 % sys.t_varchar,	sys.t_varchar # table_name
 % v,	v # name
@@ -6315,7 +6315,7 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ "1",	1.000	]
 #SELECT v, convert(v, char) from T_varchar where v in ('0', '1');
 % sys.t_varchar,	sys. # table_name
-% v,	%3 # name
+% v,	%5 # name
 % varchar,	char # type
 % 1,	1 # length
 [ "0",	"0"	]
@@ -6324,36 +6324,36 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 % sys.t_varchar,	sys. # table_name
 % v,	%2 # name
 % varchar,	varchar # type
-% 26,	26 # length
+% 27,	27 # length
 [ "0",	"0"	]
 [ "1",	"1"	]
 [ "0123456789",	"0123456789"	]
 [ "AaZz",	"AaZz"	]
-[ "~!@#$%^&*(')_/-+=:;\"<.,.>?",	"~!@#$%^&*(')_/-+=:;\"<.,.>?"	]
+[ "~!@#$%^&*(')\\_/-+=:;\"<.,.>?",	"~!@#$%^&*(')\\_/-+=:;\"<.,.>?"	]
 [ "",	""	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, CHARACTER LARGE OBJECT) from T_varchar;
 % sys.t_varchar,	sys.t_varchar # table_name
 % v,	v # name
 % varchar,	varchar # type
-% 26,	26 # length
+% 27,	27 # length
 [ "0",	"0"	]
 [ "1",	"1"	]
 [ "0123456789",	"0123456789"	]
 [ "AaZz",	"AaZz"	]
-[ "~!@#$%^&*(')_/-+=:;\"<.,.>?",	"~!@#$%^&*(')_/-+=:;\"<.,.>?"	]
+[ "~!@#$%^&*(')\\_/-+=:;\"<.,.>?",	"~!@#$%^&*(')\\_/-+=:;\"<.,.>?"	]
 [ "",	""	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, Clob) from T_varchar;
 % sys.t_varchar,	sys.t_varchar # table_name
 % v,	v # name
 % varchar,	varchar # type
-% 26,	26 # length
+% 27,	27 # length
 [ "0",	"0"	]
 [ "1",	"1"	]
 [ "0123456789",	"0123456789"	]
 [ "AaZz",	"AaZz"	]
-[ "~!@#$%^&*(')_/-+=:;\"<.,.>?",	"~!@#$%^&*(')_/-+=:;\"<.,.>?"	]
+[ "~!@#$%^&*(')\\_/-+=:;\"<.,.>?",	"~!@#$%^&*(')\\_/-+=:;\"<.,.>?"	]
 [ "",	""	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, Blob) from T_varchar where v in ('0123456789');
@@ -6483,7 +6483,7 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ "1",	1.000	]
 #SELECT v, cast(v as char) from T_varchar where v in ('0', '1');
 % sys.t_varchar,	sys. # table_name
-% v,	%3 # name
+% v,	%5 # name
 % varchar,	char # type
 % 1,	1 # length
 [ "0",	"0"	]
@@ -6492,36 +6492,36 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 % sys.t_varchar,	sys. # table_name
 % v,	%2 # name
 % varchar,	varchar # type
-% 26,	26 # length
+% 27,	27 # length
 [ "0",	"0"	]
 [ "1",	"1"	]
 [ "0123456789",	"0123456789"	]
 [ "AaZz",	"AaZz"	]
-[ "~!@#$%^&*(')_/-+=:;\"<.,.>?",	"~!@#$%^&*(')_/-+=:;\"<.,.>?"	]
+[ "~!@#$%^&*(')\\_/-+=:;\"<.,.>?",	"~!@#$%^&*(')\\_/-+=:;\"<.,.>?"	]
 [ "",	""	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as CHARACTER LARGE OBJECT) from T_varchar;
 % sys.t_varchar,	sys.t_varchar # table_name
 % v,	v # name
 % varchar,	varchar # type
-% 26,	26 # length
+% 27,	27 # length
 [ "0",	"0"	]
 [ "1",	"1"	]
 [ "0123456789",	"0123456789"	]
 [ "AaZz",	"AaZz"	]
-[ "~!@#$%^&*(')_/-+=:;\"<.,.>?",	"~!@#$%^&*(')_/-+=:;\"<.,.>?"	]
+[ "~!@#$%^&*(')\\_/-+=:;\"<.,.>?",	"~!@#$%^&*(')\\_/-+=:;\"<.,.>?"	]
 [ "",	""	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as Clob) from T_varchar;
 % sys.t_varchar,	sys.t_varchar # table_name
 % v,	v # name
 % varchar,	varchar # type
-% 26,	26 # length
+% 27,	27 # length
 [ "0",	"0"	]
 [ "1",	"1"	]
 [ "0123456789",	"0123456789"	]
 [ "AaZz",	"AaZz"	]
-[ "~!@#$%^&*(')_/-+=:;\"<.,.>?",	"~!@#$%^&*(')_/-+=:;\"<.,.>?"	]
+[ "~!@#$%^&*(')\\_/-+=:;\"<.,.>?",	"~!@#$%^&*(')\\_/-+=:;\"<.,.>?"	]
 [ "",	""	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as Blob) from T_varchar where v in ('0123456789');
@@ -6540,14 +6540,14 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 % sys.t_clob # table_name
 % v # name
 % clob # type
-% 26 # length
+% 27 # length
 [ NULL	]
 [ ""	]
 [ "0"	]
 [ "0123456789"	]
 [ "1"	]
 [ "AaZz"	]
-[ "~!@#$%^&*(')_/-+=:;\"<.,.>?"	]
+[ "~!@#$%^&*(')\\_/-+=:;\"<.,.>?"	]
 #SELECT v, convert(v, boolean) from T_clob where v in ('0', '1');
 % sys.t_clob,	sys.t_clob # table_name
 % v,	v # name
@@ -6669,7 +6669,7 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ "1",	1.000	]
 #SELECT v, convert(v, char) from T_clob where v in ('0', '1');
 % sys.t_clob,	sys. # table_name
-% v,	%3 # name
+% v,	%5 # name
 % clob,	char # type
 % 1,	1 # length
 [ "0",	"0"	]
@@ -6678,36 +6678,36 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 % sys.t_clob,	sys. # table_name
 % v,	%2 # name
 % clob,	varchar # type
-% 26,	26 # length
+% 27,	27 # length
 [ "0",	"0"	]
 [ "1",	"1"	]
 [ "0123456789",	"0123456789"	]
 [ "AaZz",	"AaZz"	]
-[ "~!@#$%^&*(')_/-+=:;\"<.,.>?",	"~!@#$%^&*(')_/-+=:;\"<.,.>?"	]
+[ "~!@#$%^&*(')\\_/-+=:;\"<.,.>?",	"~!@#$%^&*(')\\_/-+=:;\"<.,.>?"	]
 [ "",	""	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, CHARACTER LARGE OBJECT) from T_clob;
 % sys.t_clob,	sys.t_clob # table_name
 % v,	v # name
 % clob,	clob # type
-% 26,	26 # length
+% 27,	27 # length
 [ "0",	"0"	]
 [ "1",	"1"	]
 [ "0123456789",	"0123456789"	]
 [ "AaZz",	"AaZz"	]
-[ "~!@#$%^&*(')_/-+=:;\"<.,.>?",	"~!@#$%^&*(')_/-+=:;\"<.,.>?"	]
+[ "~!@#$%^&*(')\\_/-+=:;\"<.,.>?",	"~!@#$%^&*(')\\_/-+=:;\"<.,.>?"	]
 [ "",	""	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, Clob) from T_clob;
 % sys.t_clob,	sys.t_clob # table_name
 % v,	v # name
 % clob,	clob # type
-% 26,	26 # length
+% 27,	27 # length
 [ "0",	"0"	]
 [ "1",	"1"	]
 [ "0123456789",	"0123456789"	]
 [ "AaZz",	"AaZz"	]
-[ "~!@#$%^&*(')_/-+=:;\"<.,.>?",	"~!@#$%^&*(')_/-+=:;\"<.,.>?"	]
+[ "~!@#$%^&*(')\\_/-+=:;\"<.,.>?",	"~!@#$%^&*(')\\_/-+=:;\"<.,.>?"	]
 [ "",	""	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, Blob) from T_clob where v in ('0123456789');
@@ -6837,7 +6837,7 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ "1",	1.000	]
 #SELECT v, cast(v as char) from T_clob where v in ('0', '1');
 % sys.t_clob,	sys. # table_name
-% v,	%3 # name
+% v,	%5 # name
 % clob,	char # type
 % 1,	1 # length
 [ "0",	"0"	]
@@ -6846,36 +6846,36 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 % sys.t_clob,	sys. # table_name
 % v,	%2 # name
 % clob,	varchar # type
-% 26,	26 # length
+% 27,	27 # length
 [ "0",	"0"	]
 [ "1",	"1"	]
 [ "0123456789",	"0123456789"	]
 [ "AaZz",	"AaZz"	]
-[ "~!@#$%^&*(')_/-+=:;\"<.,.>?",	"~!@#$%^&*(')_/-+=:;\"<.,.>?"	]
+[ "~!@#$%^&*(')\\_/-+=:;\"<.,.>?",	"~!@#$%^&*(')\\_/-+=:;\"<.,.>?"	]
 [ "",	""	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as CHARACTER LARGE OBJECT) from T_clob;
 % sys.t_clob,	sys.t_clob # table_name
 % v,	v # name
 % clob,	clob # type
-% 26,	26 # length
+% 27,	27 # length
 [ "0",	"0"	]
 [ "1",	"1"	]
 [ "0123456789",	"0123456789"	]
 [ "AaZz",	"AaZz"	]
-[ "~!@#$%^&*(')_/-+=:;\"<.,.>?",	"~!@#$%^&*(')_/-+=:;\"<.,.>?"	]
+[ "~!@#$%^&*(')\\_/-+=:;\"<.,.>?",	"~!@#$%^&*(')\\_/-+=:;\"<.,.>?"	]
 [ "",	""	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as Clob) from T_clob;
 % sys.t_clob,	sys.t_clob # table_name
 % v,	v # name
 % clob,	clob # type
-% 26,	26 # length
+% 27,	27 # length
 [ "0",	"0"	]
 [ "1",	"1"	]
 [ "0123456789",	"0123456789"	]
 [ "AaZz",	"AaZz"	]
-[ "~!@#$%^&*(')_/-+=:;\"<.,.>?",	"~!@#$%^&*(')_/-+=:;\"<.,.>?"	]
+[ "~!@#$%^&*(')\\_/-+=:;\"<.,.>?",	"~!@#$%^&*(')\\_/-+=:;\"<.,.>?"	]
 [ "",	""	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as Blob) from T_clob where v in ('0123456789');
