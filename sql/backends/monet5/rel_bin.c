@@ -1647,13 +1647,23 @@ exp2bin_args(backend *be, sql_exp *e, list *args)
 		} else if (e->f) {
 			return exps2bin_args(be, e->f, args);
 		} else if (e->r) {
+			char *nme;
 			sql_var_name *vname = (sql_var_name*) e->r;
-			const char *mname = vname->sname ? vname->sname : "%%";
-			char *nme = SA_NEW_ARRAY(sql->sa, char, strlen(mname) + strlen(vname->name) + 3);
 
-			if (!nme)
-				return NULL;
-			stpcpy(stpcpy(stpcpy(stpcpy(nme, "A"), mname), "%%"), vname->name);
+			if (vname->sname) { /* Declared variable */
+				char levelstr[16];
+
+				snprintf(levelstr, sizeof(levelstr), "%u", e->flag);
+				nme = SA_NEW_ARRAY(be->mvc->sa, char, strlen(levelstr) + strlen(vname->sname) + strlen(vname->name) + 4);
+				if (!nme)
+					return NULL;
+				stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(nme, "A"), levelstr), "%%"), vname->sname), "%%"), vname->name); /* mangle variable name */
+			} else { /* Parameter */
+				nme = SA_NEW_ARRAY(be->mvc->sa, char, strlen(vname->name) + 2);
+				if (!nme)
+					return NULL;
+				stpcpy(stpcpy(nme, "B"), vname->name); /* mangle variable name */
+			}
 			if (!list_find(args, nme, (fcmp)&alias_cmp)) {
 				stmt *s = stmt_var(be, vname->sname, vname->name, &e->tpe, 0, 0);
 
