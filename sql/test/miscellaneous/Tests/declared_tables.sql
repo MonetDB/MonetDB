@@ -29,6 +29,17 @@ BEGIN
     RETURN SELECT a FROM z;
 END;
 
+CREATE OR REPLACE FUNCTION testtruncate() RETURNS INT 
+BEGIN
+    DECLARE TABLE w (c int);
+    INSERT INTO w VALUES (1);
+    UPDATE w SET c = 2 WHERE c = 1;
+    TRUNCATE w;
+    INSERT INTO w VALUES (3);
+    DELETE FROM w WHERE c = 3;
+    RETURN SELECT c FROM w;
+END;
+
 SELECT testtruncate();
 SELECT testtruncate();
 

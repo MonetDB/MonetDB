@@ -42,8 +42,8 @@ stdout of test 'insert_quser` in directory 'sql/test/ssqq` itself:
 % . # table_name
 % single_value # name
 % int # type
-% 1 # length
-[ NULL	]
+% 2 # length
+[ -1	]
 #select * from quser;
 % sys.quser,	sys.quser,	sys.quser,	sys.quser,	sys.quser,	sys.quser # table_name
 % quser_id,	user_name,	uid,	emailaddress,	password,	enabled # name
@@ -81,8 +81,8 @@ stdout of test 'insert_quser` in directory 'sql/test/ssqq` itself:
 % . # table_name
 % single_value # name
 % int # type
-% 1 # length
-[ NULL	]
+% 2 # length
+[ -1	]
 #select * from quser;
 % sys.quser,	sys.quser,	sys.quser,	sys.quser,	sys.quser,	sys.quser # table_name
 % quser_id,	user_name,	uid,	emailaddress,	password,	enabled # name

@@ -77,6 +77,10 @@ MAPI  = (monetdb) /var/tmp/mtest-6061/.s.monetdb.31513
 QUERY = set id_result = insert_query(2, NULL, 0, NULL);
 ERROR = !INSERT INTO: NOT NULL constraint violated for column query.query_text
 CODE  = 40002
+MAPI  = (monetdb) /var/tmp/mtest-470302/.s.monetdb.36480
+QUERY = declare id_result int;
+ERROR = !Variable 'id_result' already declared
+CODE  = 42000
 
 # 11:37:20 >  
 # 11:37:20 >  Done.

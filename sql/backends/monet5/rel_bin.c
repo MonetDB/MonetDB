@@ -789,12 +789,12 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 
 				as = exp_bin(be, at, left, right, NULL, NULL, NULL, sel);
 
-				if (as && as->nrcols <= 0 && left && (a->func->base.name[0] != 'm' || en->next || en == attr->h)) 
+				if (as && as->nrcols <= 0 && left) 
 					as = stmt_const(be, bin_first_column(be, left), as);
 				if (en == attr->h && !en->next && exp_aggr_is_count(e))
 					as = exp_count_no_nil_arg(e, ext, at, as);
 				/* insert single value into a column */
-				if (as && as->nrcols <= 0 && !left && (a->func->base.name[0] != 'm' || en->next || en == attr->h))
+				if (as && as->nrcols <= 0 && !left)
 					as = const_column(be, as);
 
 				if (!as)
@@ -858,8 +858,8 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			node *n;
 			int first = 1;
 
-		       	ops = sa_list(sql->sa);
-		       	args = e->l;
+			ops = sa_list(sql->sa);
+			args = e->l;
 			for( n = args->h; n; n = n->next ) {
 				s = NULL;
 				if (!swapped)
