@@ -4873,7 +4873,6 @@ reset_schema(sql_trans *tr, sql_schema *fs, sql_schema *pfs)
 				n = t;
 			}
 		}
-		return ok;
 	}
 
 	/* apply possible renaming -> transaction rollbacks or when it starts, inherit from the previous transaction */
@@ -4890,7 +4889,7 @@ reset_schema(sql_trans *tr, sql_schema *fs, sql_schema *pfs)
 		ok = reset_changeset(tr, &fs->funcs, &pfs->funcs, &fs->base, (resetf) &reset_func, (dupfunc) &func_dup);
 	if (ok == LOG_OK)
 		ok = reset_changeset(tr, &fs->seqs, &pfs->seqs, &fs->base, (resetf) &reset_seq, (dupfunc) &seq_dup);
-	if (ok == LOG_OK)
+	if (!isTempSchema(fs) && ok == LOG_OK)
 		ok = reset_changeset(tr, &fs->tables, &pfs->tables, &fs->base, (resetf) &reset_table, (dupfunc) &table_dup);
 	return ok;
 }
