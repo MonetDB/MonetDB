@@ -760,8 +760,10 @@ sequential_block(sql_query *query, sql_subtype *restype, list *restypelist, dlis
 		case SQL_TRUNCATE:
 		case SQL_MERGE: {
 			sql_rel *r = rel_updates(query, s);
-			if (!r)
+			if (!r) {
+				stack_pop_frame(sql);
 				return NULL;
+			}
 			res = exp_rel(sql, r);
 		}	break;
 		default:
@@ -1398,8 +1400,10 @@ create_trigger(sql_query *query, dlist *qname, int time, symbol *trigger_event, 
 		if (old_name)
 			stack_update_rel_view(sql, old_name, new_name?rel_dup(rel):rel);
 	}
-	if (!(sq = sequential_block(query, NULL, NULL, stmts, NULL, 1)))
+	if (!(sq = sequential_block(query, NULL, NULL, stmts, NULL, 1))) {
+		stack_pop_frame(sql);
 		return NULL;
+	}
 	r = rel_psm_block(sql->sa, sq);
 
 	if (!instantiate)
