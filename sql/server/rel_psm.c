@@ -1401,7 +1401,8 @@ create_trigger(sql_query *query, dlist *qname, int time, symbol *trigger_event, 
 			stack_update_rel_view(sql, old_name, new_name?rel_dup(rel):rel);
 	}
 	if (!(sq = sequential_block(query, NULL, NULL, stmts, NULL, 1))) {
-		stack_pop_frame(sql);
+		if (!instantiate)
+			stack_pop_frame(sql);
 		return NULL;
 	}
 	r = rel_psm_block(sql->sa, sq);
