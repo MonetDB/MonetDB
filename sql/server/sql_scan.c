@@ -1262,11 +1262,12 @@ sql_get_next_token(YYSTYPE *yylval, void *parm)
 	} else if (token == STRING) {
 		char quote = *yylval->sval;
 		char *str = sa_alloc( c->sa, (lc->yycur-lc->yysval-2)*2 + 1 );
+		char *dst;
+
 		assert(quote == '"' || quote == '\'' || quote == 'E' || quote == 'e' || quote == 'U' || quote == 'u' || quote == 'X' || quote == 'x' || quote == 'R' || quote == 'r');
 
 		lc->rs->buf[lc->rs->pos + lc->yycur - 1] = 0;
 		switch (quote) {
-			char *dst;
 		case '"':
 			if (valid_ident(yylval->sval+1,str)) {
 				token = IDENT;
