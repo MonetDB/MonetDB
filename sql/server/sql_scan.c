@@ -499,6 +499,7 @@ scanner_init(struct scanner *s, bstream *rs, stream *ws)
 	*s = (struct scanner) {
 		.rs = rs,
 		.ws = ws,
+		.mode = LINE_N,
 	};
 }
 
