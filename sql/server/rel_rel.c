@@ -128,6 +128,7 @@ rel_create( sql_allocator *sa )
 	r->nrcols = 0;
 	r->flag = 0;
 	r->card = CARD_ATOM;
+	r->grouped = 0;
 	r->distinct = 0;
 	r->processed = 0;
 	r->dependent = 0;
