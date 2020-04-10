@@ -69,12 +69,34 @@ class Doc:
         f.close()
         return filename
 
-    def write_tmp(self, dir=None):
+    # Read contents of the given file, decompressing appropriately
+    def read(self, filename):
+        if not self.compression:
+            f = open(filename, 'rb')
+        elif self.compression == 'gz':
+            f = gzip.GzipFile(filename, 'rb', mtime=131875200)
+        elif self.compression == 'bz2':
+            f = bz2.BZ2File(filename, 'rb')
+        elif self.compression == 'xz':
+            f = lzma.LZMAFile(filename, 'rb')
+        elif self.compression == 'lz4':
+            f = lz4.frame.LZ4FrameFile(filename, 'rb')
+        else:
+            raise Exception("Unknown compression scheme: " + self.compression)
+
+        return f.read()
+
+    def pick_tmp_name(self, dir=None):
         prefix = "_streamtest_"
         suffix = "_" + self.name
         dir = dir or TMPDIR or None
         h, p = tempfile.mkstemp(suffix, prefix, dir)
         os.close(h)
+        os.remove(p)
+        return p
+
+    def write_tmp(self, dir=None):
+        p = self.pick_tmp_name(dir)
         return self.write(p)
 
     def verify(self, text, text_mode):

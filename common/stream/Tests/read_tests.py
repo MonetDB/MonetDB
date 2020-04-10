@@ -81,28 +81,15 @@ def test_reads(doc):
 	return failures
 
 
-def all_read_tests(filename_filter):
+def all_tests(filename_filter):
 	failures = 0
 	for d in gen_docs():
 		if not filename_filter(d.name):
 			continue
-
-		# rstream does not strip BOM
 		failures += test_reads(d)
 
 	return failures
 
-
-def main(kind, file):
-	failures = 0
-	if kind == "read":
-		docs = [d for d in gen_docs() if d.filename == file]
-		print(f"Found {len(docs)} matches.")
-		print()
-		for d in docs:
-			failures += test_reads(d)
-
-	return failures == 0
 
 if __name__ == "__main__":
 	docname = "small.txt.gz"
