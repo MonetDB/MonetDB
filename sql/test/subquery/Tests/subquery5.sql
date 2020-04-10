@@ -112,10 +112,12 @@ SELECT (SELECT MIN(t1.col5 - t2.col2) FROM another_T t2) FROM another_T t1 GROUP
 
 SELECT (SELECT SUM(SUM(1))) FROM another_t; --error, aggregate function calls cannot be nested
 
-SELECT (SELECT SUM(col2 - 1) GROUP BY SUM(col2 + 1)) FROM another_t;
+SELECT (SELECT SUM(SUM(t2.col1)) FROM another_t t2) FROM another_t t1; --error, aggregate function calls cannot be nested
+
+SELECT (SELECT CAST(SUM(col2 - 1) AS BIGINT) GROUP BY SUM(col2 + 1)) FROM another_t;
 	-- 2464
 
-SELECT (SELECT SUM(col1 + 1) GROUP BY SUM(col2 + 1)) FROM another_t;
+SELECT (SELECT CAST(SUM(col2 + 1) AS BIGINT) GROUP BY SUM(col2 + 1)) FROM another_t;
 	-- 1238
 
 DROP FUNCTION evilfunction(INT);

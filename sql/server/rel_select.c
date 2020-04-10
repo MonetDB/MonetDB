@@ -3360,7 +3360,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 
 			has_args = true;
 			if (gl && gl != ogl) {
-				if (groupby->grouped) {
+				if (gl->grouped) {
 					char *uaname = GDKmalloc(strlen(aname) + 1);
 					sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions cannot be nested",
 						uaname ? toUpperCopy(uaname, aname) : aname);
