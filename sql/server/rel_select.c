@@ -1078,8 +1078,8 @@ rel_var_ref(mvc *sql, const char *sname, const char *vname)
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_error(sql, 02, SQLSTATE(3F000) "SELECT: no such schema '%s'", sname);
 
-	if ((var = stack_find_var_frame(sql, s, vname, &level))) /* check if variable is known from the stack */
-		res = exp_param_or_declared(sql->sa, sa_strdup(sql->sa, var->sname), sa_strdup(sql->sa, var->name), &(var->var.tpe), level);
+	if (!sname && (var = stack_find_var_frame(sql, vname, &level))) /* check if variable is known from the stack */
+		res = exp_param_or_declared(sql->sa, NULL, sa_strdup(sql->sa, var->name), &(var->var.tpe), level);
 	else if (!sname && (a = sql_bind_param(sql, vname))) /* then if it is a parameter */
 		res = exp_param_or_declared(sql->sa, NULL, sa_strdup(sql->sa, vname), &(a->type), 1);
 	else if ((var = find_global_var(sql, s, vname))) /* then if it is a global var */
@@ -1221,8 +1221,8 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 			int level = 1;
 			sql_schema *s = cur_schema(sql);
 
-			if ((var = stack_find_var_frame(sql, s, name, &level))) /* check if variable is known from the stack */
-				exp = exp_param_or_declared(sql->sa, sa_strdup(sql->sa, var->sname), sa_strdup(sql->sa, var->name), &(var->var.tpe), level);
+			if ((var = stack_find_var_frame(sql, name, &level))) /* check if variable is known from the stack */
+				exp = exp_param_or_declared(sql->sa, NULL, sa_strdup(sql->sa, var->name), &(var->var.tpe), level);
 			else if ((a = sql_bind_param(sql, name))) /* then if it is a parameter */
 				exp = exp_param_or_declared(sql->sa, NULL, sa_strdup(sql->sa, name), &(a->type), 1);
 			else if ((var = find_global_var(sql, s, name))) /* then if it is a global var */
@@ -1293,17 +1293,12 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 				exp = rel_bind_column2(sql, *rel, tname, cname, f);
 			}
 		}
-		if (!exp) { /* If no column was found, try a variable */
+		if (!exp) { /* If no column was found, try a global variable */
 			sql_schema *s = mvc_bind_schema(sql, tname); /* search schema with table name, ugh */
 			sql_var *var = NULL;
-			int level = 1;
 
-			if (s) { /* cannot bound to UDF parameters on this case */
-				if ((var = stack_find_var_frame(sql, s, cname, &level))) /* check if variable is known from the stack */
-					exp = exp_param_or_declared(sql->sa, sa_strdup(sql->sa, var->sname), sa_strdup(sql->sa, var->name), &(var->var.tpe), level);
-				else if ((var = find_global_var(sql, s, cname))) /* then if it is a global var */
-					exp = exp_param_or_declared(sql->sa, sa_strdup(sql->sa, var->sname), sa_strdup(sql->sa, var->name), &(var->var.tpe), 0);
-			}
+			if (s && (var = find_global_var(sql, s, cname)))
+				exp = exp_param_or_declared(sql->sa, sa_strdup(sql->sa, var->sname), sa_strdup(sql->sa, var->name), &(var->var.tpe), 0);
 		}
 
 		if (!exp)

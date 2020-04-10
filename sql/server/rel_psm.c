@@ -66,6 +66,7 @@ psm_set_exp(sql_query *query, dnode *n)
 		const char *vname = qname_schema_object(qname);
 		sql_schema *s = cur_schema(sql);
 		sql_var *var = NULL;
+		sql_arg *a = NULL;
 
 		if (sname && !(s = mvc_bind_schema(sql, sname)))
 			return sql_error(sql, 02, SQLSTATE(3F000) "SET: No such schema '%s'", sname);
@@ -74,30 +75,18 @@ psm_set_exp(sql_query *query, dnode *n)
 			'parameter of the function' (ie in the param list)
 			or a local or global variable, declared earlier
 		*/
-
-		/* check if variable is known from the stack */
-		if (!(var = stack_find_var_frame(sql, s, vname, &level))) {
-			sql_arg *a = NULL;
-			/* then if it is a parameter */
-			if (!sname)
-				a = sql_bind_param(sql, vname);
-			if (!a) { 
-				/* then if it is a global var */
-				if (!(var = find_global_var(sql, s, vname)))
-					return sql_error(sql, 01, SQLSTATE(42000) "SET: Variable '%s%s%s' unknown", sname ? sname : "", sname ? "." : "", vname);
-				else {
-					tpe = &var->var.tpe;
-					level = 0;
-				}
-			} else {
-				tpe = &a->type;
-				level = 1;
-			}
-		} else
+		if (!sname && (var = stack_find_var_frame(sql, vname, &level))) { /* check if variable is known from the stack */
 			tpe = &var->var.tpe;
+		} else if (!sname && (a = sql_bind_param(sql, vname))) { /* then if it is a parameter */
+			tpe = &a->type;
+			level = 1;
+		} else if ((var = find_global_var(sql, s, vname))) { /* then if it is a global var */
+			tpe = &var->var.tpe;
+			level = 0;
+		} else
+			return sql_error(sql, 01, SQLSTATE(42000) "SET: Variable '%s%s%s' unknown", sname ? sname : "", sname ? "." : "", vname);
 
-		e = rel_value_exp2(query, &rel, val, sql_sel | sql_update_set, ek);
-		if (!e)
+		if (!(e = rel_value_exp2(query, &rel, val, sql_sel | sql_update_set, ek)))
 			return NULL;
 		if (e->card > CARD_AGGR) {
 			sql_subfunc *zero_or_one = sql_bind_func(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(e), NULL, F_AGGR);
@@ -107,7 +96,7 @@ psm_set_exp(sql_query *query, dnode *n)
 
 		if (!(e = rel_check_type(sql, tpe, rel, e, type_cast)))
 			return NULL;
-		res = exp_set(sql->sa, var ? sa_strdup(sql->sa, var->sname) : NULL, sa_strdup(sql->sa, vname), e, level);
+		res = exp_set(sql->sa, var && var->sname ? sa_strdup(sql->sa, var->sname) : NULL, sa_strdup(sql->sa, vname), e, level);
 	} else { /* multi assignment */
 		exp_kind ek = {type_relation, card_value, FALSE};
 		sql_rel *rel_val = rel_subquery(query, NULL, val, ek);
@@ -134,37 +123,28 @@ psm_set_exp(sql_query *query, dnode *n)
 			sql_exp *v = n->data;
 			sql_schema *s = cur_schema(sql);
 			sql_var *var = NULL;
+			sql_arg *a = NULL;
 
 			if (sname && !(s = mvc_bind_schema(sql, sname)))
 				return sql_error(sql, 02, SQLSTATE(3F000) "SET: No such schema '%s'", sname);
 
-			/* check if variable is known from the stack */
-			if (!(var = stack_find_var_frame(sql, s, vname, &level))) {
-				sql_arg *a = NULL;
-				/* then if it is a parameter */
-				if (!sname)
-					a = sql_bind_param(sql, vname);
-				if (!a) { 
-					/* then if it is a global var */
-					if (!(var = find_global_var(sql, s, vname)))
-						return sql_error(sql, 01, SQLSTATE(42000) "SET: Variable '%s%s%s' unknown", sname ? sname : "", sname ? "." : "", vname);
-					else {
-						tpe = &var->var.tpe;
-						level = 0;
-					}
-				} else {
-					tpe = &a->type;
-					level = 1;
-				}
-			} else
+			if (!sname && (var = stack_find_var_frame(sql, vname, &level))) { /* check if variable is known from the stack */
 				tpe = &var->var.tpe;
+			} else if (!sname && (a = sql_bind_param(sql, vname))) { /* then if it is a parameter */
+				tpe = &a->type;
+				level = 1;
+			} else if ((var = find_global_var(sql, s, vname))) { /* then if it is a global var */
+				tpe = &var->var.tpe;
+				level = 0;
+			} else
+				return sql_error(sql, 01, SQLSTATE(42000) "SET: Variable '%s%s%s' unknown", sname ? sname : "", sname ? "." : "", vname);
 
 			if (!exp_name(v)) 
 				exp_label(sql->sa, v, ++sql->label);
 			v = exp_ref(sql->sa, v);
 			if (!(v = rel_check_type(sql, tpe, rel_val, v, type_cast)))
 				return NULL;
-			append(b, exp_set(sql->sa, var ? sa_strdup(sql->sa, var->sname) : NULL, sa_strdup(sql->sa, vname), v, level));
+			append(b, exp_set(sql->sa, var && var->sname ? sa_strdup(sql->sa, var->sname) : NULL, sa_strdup(sql->sa, vname), v, level));
 		}
 		res = exp_rel(sql, rel_psm_block(sql->sa, b));
 	}
@@ -201,21 +181,30 @@ rel_psm_declare(mvc *sql, dnode *n, bool global)
 			sql_schema *s = cur_schema(sql);
 			sql_exp *r = NULL;
 			sql_arg *a;
-			sql_var *(*where_to_push)(mvc *, const char *, const char *, sql_subtype *) = global ? push_global_var : frame_push_var;
 
-			if (sname && !(s = mvc_bind_schema(sql, sname)))
-				return sql_error(sql, 02, SQLSTATE(3F000) "DECLARE: No such schema '%s'", sname);
-			if (global && find_global_var(sql, s, tname))
-				return sql_error(sql, 01, SQLSTATE(42000) "DECLARE: Variable '%s.%s' already declared on the global scope", s->base.name, tname);
-			if (!global && (a = sql_bind_param(sql, tname))) /* find if there's a parameter with the same name */
-				return sql_error(sql, 01, SQLSTATE(42000) "DECLARE: Variable '%s' declared as a parameter", tname);
-			/* check if we overwrite a scope local variable declare x; declare x; */
-			if (!global && frame_find_var(sql, s, tname))
-				return sql_error(sql, 01, SQLSTATE(42000) "DECLARE: Variable '%s.%s' already declared", s->base.name, tname);
-			/* variables are put on stack, globals on a separate list */
-			if (!where_to_push(sql, s->base.name, tname, ctype))
-				return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			r = exp_var(sql->sa, sa_strdup(sql->sa, s->base.name), sa_strdup(sql->sa, tname), ctype, global ? 0 : sql->frame);
+			if (global) {
+				if (sname && !(s = mvc_bind_schema(sql, sname)))
+					return sql_error(sql, 02, SQLSTATE(3F000) "DECLARE: No such schema '%s'", sname);
+				/* find if there's a global variable with the same name */
+				if (find_global_var(sql, s, tname))
+					return sql_error(sql, 01, SQLSTATE(42000) "DECLARE: Variable '%s.%s' already declared on the global scope", s->base.name, tname);
+				/* variables are put on stack, globals on a separate list */
+				if (!push_global_var(sql, s->base.name, tname, ctype))
+					return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			} else {
+				if (sname)
+					return sql_error(sql, 01, SQLSTATE(42000) "DECLARE: Function declared variables don't have a schema");
+				/* find if there's a parameter with the same name */
+				if ((a = sql_bind_param(sql, tname)))
+					return sql_error(sql, 01, SQLSTATE(42000) "DECLARE: Variable '%s' declared as a parameter", tname);
+				/* check if we overwrite a scope local variable declare x; declare x; */
+				if (frame_find_var(sql, tname))
+					return sql_error(sql, 01, SQLSTATE(42000) "DECLARE: Variable '%s.%s' already declared", s->base.name, tname);
+				/* variables are put on stack, globals on a separate list */
+				if (!frame_push_var(sql, tname, ctype))
+					return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			}
+			r = exp_var(sql->sa, global ? sa_strdup(sql->sa, s->base.name) : NULL, sa_strdup(sql->sa, tname), ctype, global ? 0 : sql->frame);
 			append(l, r);
 			ids = ids->next;
 		}
@@ -618,37 +607,28 @@ rel_select_into( sql_query *query, symbol *sq, exp_kind ek)
 		int level;
 		sql_var *var;
 		sql_subtype *tpe;
+		sql_arg *a = NULL;
 
 		if (sname && !(s = mvc_bind_schema(sql, sname)))
 			return sql_error(sql, 02, SQLSTATE(3F000) "SELECT INTO: No such schema '%s'", sname);
 
-		/* check if variable is known from the stack */
-		if (!(var = stack_find_var_frame(sql, s, vname, &level))) {
-			sql_arg *a = NULL;
-			/* then if it is a parameter */
-			if (!sname)
-				a = sql_bind_param(sql, vname);
-			if (!a) { 
-				/* then if it is a global var */
-				if (!(var = find_global_var(sql, s, vname)))
-					return sql_error(sql, 01, SQLSTATE(42000) "SELECT INTO: Variable '%s%s%s' unknown", sname ? sname : "", sname ? "." : "", vname);
-				else {
-					tpe = &var->var.tpe;
-					level = 0;
-				}
-			} else {
-				tpe = &a->type;
-				level = 1;
-			}
-		} else
+		if (!sname && (var = stack_find_var_frame(sql, vname, &level))) { /* check if variable is known from the stack */
 			tpe = &var->var.tpe;
+		} else if (!sname && (a = sql_bind_param(sql, vname))) { /* then if it is a parameter */
+			tpe = &a->type;
+			level = 1;
+		} else if ((var = find_global_var(sql, s, vname))) { /* then if it is a global var */
+			tpe = &var->var.tpe;
+			level = 0;
+		} else
+			return sql_error(sql, 01, SQLSTATE(42000) "SELECT INTO: Variable '%s%s%s' unknown", sname ? sname : "", sname ? "." : "", vname);
 
 		if (!exp_name(v))
 			exp_label(sql->sa, v, ++sql->label);
 		v = exp_ref(sql->sa, v);
 		if (!(v = rel_check_type(sql, tpe, r, v, type_equal)))
 			return NULL;
-		v = exp_set(sql->sa, var->sname ? sa_strdup(sql->sa, var->sname) : NULL, sa_strdup(sql->sa, var->name), v, level);
+		v = exp_set(sql->sa, var && var->sname ? sa_strdup(sql->sa, var->sname) : NULL, sa_strdup(sql->sa, vname), v, level);
 		list_append(nl, v);
 	}
 	return nl;

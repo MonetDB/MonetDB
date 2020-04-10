@@ -1650,19 +1650,18 @@ exp2bin_args(backend *be, sql_exp *e, list *args)
 			char *nme;
 			sql_var_name *vname = (sql_var_name*) e->r;
 
-			if (vname->sname) { /* Declared variable */
+			if (vname->sname) { /* Global variable */
+				nme = SA_NEW_ARRAY(be->mvc->sa, char, strlen(vname->sname) + strlen(vname->name) + 5);
+				if (!nme)
+					return NULL;
+				stpcpy(stpcpy(stpcpy(stpcpy(nme, "A0%%"), vname->sname), "%%"), vname->name); /* mangle variable name */
+			} else { /* Parameter or local variable */
 				char levelstr[16];
-
 				snprintf(levelstr, sizeof(levelstr), "%u", e->flag);
-				nme = SA_NEW_ARRAY(be->mvc->sa, char, strlen(levelstr) + strlen(vname->sname) + strlen(vname->name) + 4);
+				nme = SA_NEW_ARRAY(be->mvc->sa, char, strlen(levelstr) + strlen(vname->name) + 3);
 				if (!nme)
 					return NULL;
-				stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(nme, "A"), levelstr), "%%"), vname->sname), "%%"), vname->name); /* mangle variable name */
-			} else { /* Parameter */
-				nme = SA_NEW_ARRAY(be->mvc->sa, char, strlen(vname->name) + 2);
-				if (!nme)
-					return NULL;
-				stpcpy(stpcpy(nme, "B"), vname->name); /* mangle variable name */
+				stpcpy(stpcpy(stpcpy(stpcpy(nme, "A"), levelstr), "%%"), vname->name); /* mangle variable name */
 			}
 			if (!list_find(args, nme, (fcmp)&alias_cmp)) {
 				stmt *s = stmt_var(be, vname->sname, vname->name, &e->tpe, 0, 0);

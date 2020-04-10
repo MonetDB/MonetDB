@@ -340,38 +340,26 @@ stmt_var(backend *be, const char *sname, const char *varname, sql_subtype *t, in
 		setVarType(mb, getArg(q, 0), tt);
 		setVarUDFtype(mb, getArg(q, 0));
 	} else if (!declare) {
-		if (sname) { /* Declared variable */
-			char levelstr[16];
+		char levelstr[16];
 
-			snprintf(levelstr, sizeof(levelstr), "%d", level);
-			buf = SA_NEW_ARRAY(be->mvc->sa, char, strlen(levelstr) + strlen(sname) + strlen(varname) + 4);
-			if (!buf)
-				return NULL;
-			stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(buf, "A"), levelstr), "%%"), sname), "%%"), varname); /* mangle variable name */
-		} else { /* Parameter */
-			buf = SA_NEW_ARRAY(be->mvc->sa, char, strlen(varname) + 2);
-			if (!buf)
-				return NULL;
-			stpcpy(stpcpy(buf, "B"), varname); /* mangle variable name */
-		}
+		assert(!sname);
+		snprintf(levelstr, sizeof(levelstr), "%d", level);
+		buf = SA_NEW_ARRAY(be->mvc->sa, char, strlen(levelstr) + strlen(varname) + 3);
+		if (!buf)
+			return NULL;
+		stpcpy(stpcpy(stpcpy(stpcpy(buf, "A"), levelstr), "%%"), varname); /* mangle variable name */
 		q = newAssignment(mb);
 		q = pushArgumentId(mb, q, buf);
 	} else {
 		int tt = t->type->localtype;
-		if (sname) { /* Declared variable */
-			char levelstr[16];
+		char levelstr[16];
 
-			snprintf(levelstr, sizeof(levelstr), "%d", level);
-			buf = SA_NEW_ARRAY(be->mvc->sa, char, strlen(levelstr) + strlen(sname) + strlen(varname) + 4);
-			if (!buf)
-				return NULL;
-			stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(buf, "A"), levelstr), "%%"), sname), "%%"), varname); /* mangle variable name */
-		} else { /* Parameter */
-			buf = SA_NEW_ARRAY(be->mvc->sa, char, strlen(varname) + 2);
-			if (!buf)
-				return NULL;
-			stpcpy(stpcpy(buf, "B"), varname); /* mangle variable name */
-		}
+		assert(!sname);
+		snprintf(levelstr, sizeof(levelstr), "%d", level);
+		buf = SA_NEW_ARRAY(be->mvc->sa, char, strlen(levelstr) + strlen(varname) + 3);
+		if (!buf)
+			return NULL;
+		stpcpy(stpcpy(stpcpy(stpcpy(buf, "A"), levelstr), "%%"), varname); /* mangle variable name */
 
 		q = newInstruction(mb, NULL, NULL);
 		if (q == NULL) {
@@ -3802,26 +3790,19 @@ stmt_assign(backend *be, const char *sname, const char *varname, stmt *val, int 
 	if (val && val->nr < 0)
 		return NULL;
 	if (level != 0) {
-		char *buf;
+		char *buf,  levelstr[16];
 
 		if (!val) {
 			/* drop declared table */
 			assert(0);
 		}
-		if (sname) { /* Declared variable */
-			char levelstr[16];
 
-			snprintf(levelstr, sizeof(levelstr), "%d", level);
-			buf = SA_NEW_ARRAY(be->mvc->sa, char, strlen(levelstr) + strlen(sname) + strlen(varname) + 4);
-			if (!buf)
-				return NULL;
-			stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(buf, "A"), levelstr), "%%"), sname), "%%"), varname); /* mangle variable name */
-		} else { /* Parameter */
-			buf = SA_NEW_ARRAY(be->mvc->sa, char, strlen(varname) + 2);
-			if (!buf)
-				return NULL;
-			stpcpy(stpcpy(buf, "B"), varname); /* mangle variable name */
-		}
+		assert(!sname);
+		snprintf(levelstr, sizeof(levelstr), "%d", level);
+		buf = SA_NEW_ARRAY(be->mvc->sa, char, strlen(levelstr) + strlen(varname) + 3);
+		if (!buf)
+			return NULL;
+		stpcpy(stpcpy(stpcpy(stpcpy(buf, "A"), levelstr), "%%"), varname); /* mangle variable name */
 		q = newInstruction(mb, NULL, NULL);
 		if (q == NULL) {
 			return NULL;

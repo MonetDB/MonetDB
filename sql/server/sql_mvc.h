@@ -254,7 +254,7 @@ extern int init_global_variables(mvc *sql);
 extern sql_var *find_global_var(mvc *sql, sql_schema *s, const char *name);
 extern sql_var *push_global_var(mvc *sql, const char *sname, const char *name, sql_subtype *type);
 
-extern sql_var* frame_push_var(mvc *sql, const char *sname, const char *name, sql_subtype *type);
+extern sql_var* frame_push_var(mvc *sql, const char *name, sql_subtype *type);
 extern sql_local_table* frame_push_table(mvc *sql, sql_table *t);
 extern sql_rel_view* stack_push_rel_view(mvc *sql, const char *name, sql_rel *var);
 extern sql_window_definition* frame_push_window_def(mvc *sql, const char *name, dlist *wdef);
@@ -273,13 +273,13 @@ extern void clear_frame(mvc *sql, sql_frame *frame);
 extern void stack_pop_until(mvc *sql, int frame);
 
 /* find variable in the stack */
-extern sql_var *stack_find_var_frame(mvc *sql, sql_schema *s, const char *name, int *level);
+extern sql_var *stack_find_var_frame(mvc *sql, const char *name, int *level);
 extern sql_table *stack_find_table(mvc *sql, const char *name);
 extern sql_table *frame_find_table(mvc *sq, const char *name);
 extern sql_rel *stack_find_rel_view(mvc *sql, const char *name);
 
 /* find variable in the current frame */
-extern int frame_find_var(mvc *sql, sql_schema *s, const char *name);
+extern int frame_find_var(mvc *sql, const char *name);
 extern sql_rel *frame_find_rel_view(mvc *sql, const char *name);
 
 extern int stack_has_frame(mvc *sql, const char *name);

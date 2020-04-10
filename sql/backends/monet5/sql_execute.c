@@ -949,7 +949,7 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				sqlcleanup(m, 0);
 				return createException(SQL,"RAstatement2",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
-			append(ops, exp_var(m->sa, sa_strdup(m->sa, "sys"), sa_strdup(m->sa, vnme+1), &t, 0));
+			append(ops, exp_var(m->sa, NULL, sa_strdup(m->sa, vnme+1), &t, 0));
 		}
 		sig = strchr(p, (int)',');
 		if (sig)

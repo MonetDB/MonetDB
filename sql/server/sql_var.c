@@ -100,7 +100,7 @@ push_global_var(mvc *sql, const char *sname, const char *name, sql_subtype *type
 }
 
 sql_var*
-frame_push_var(mvc *sql, const char *sname, const char *name, sql_subtype *type)
+frame_push_var(mvc *sql, const char *name, sql_subtype *type)
 {
 	assert(sql->topframes > 0);
 	sql_frame *f = sql->frames[sql->topframes - 1];
@@ -112,11 +112,6 @@ frame_push_var(mvc *sql, const char *sname, const char *name, sql_subtype *type)
 		_DELETE(svar);
 		return NULL;
 	}
-	if (!(svar->sname = _STRDUP(sname))) {
-		_DELETE(svar->name);
-		_DELETE(svar);
-		return NULL;
-	}
 	atom_init(&(svar->var));
 	if (type) {
 		int tpe = type->type->localtype;
@@ -125,13 +120,11 @@ frame_push_var(mvc *sql, const char *sname, const char *name, sql_subtype *type)
 	}
 	if (!f->vars && !(f->vars = list_create(destroy_sql_var))) {
 		_DELETE(svar->name);
-		_DELETE(svar->sname);
 		_DELETE(svar);
 		return NULL;
 	}
 	if (!list_append(f->vars, svar)) {
 		_DELETE(svar->name);
-		_DELETE(svar->sname);
 		_DELETE(svar);
 		return NULL;
 	}
@@ -519,16 +512,15 @@ find_global_var(mvc *sql, sql_schema *s, const char *name)
 }
 
 int 
-frame_find_var(mvc *sql, sql_schema *s, const char *name)
+frame_find_var(mvc *sql, const char *name)
 {
 	assert(sql->topframes > 0);
-	const char *sname = s->base.name;
 	sql_frame *f = sql->frames[sql->topframes - 1];
 	if (f->vars) {
 		for (node *n = f->vars->h; n ; n = n->next) {
 			sql_var *var = (sql_var*) n->data;
-			assert(var->sname && var->name);
-			if (!strcmp(var->sname, sname) && !strcmp(var->name, name))
+			assert(var->name);
+			if (!strcmp(var->name, name))
 				return 1;
 		}
 	}
@@ -536,18 +528,16 @@ frame_find_var(mvc *sql, sql_schema *s, const char *name)
 }
 
 sql_var*
-stack_find_var_frame(mvc *sql, sql_schema *s, const char *name, int *level)
+stack_find_var_frame(mvc *sql, const char *name, int *level)
 {
-	const char *sname = s->base.name;
-
 	*level = 1; /* Level 0 is for globals */
 	for (int i = sql->topframes-1; i >= 0; i--) {
 		sql_frame *f = sql->frames[i];
 		if (f->vars) {
 			for (node *n = f->vars->h; n ; n = n->next) {
 				sql_var *var = (sql_var*) n->data;
-				assert(var->sname && var->name);
-				if (!strcmp(var->sname, sname) && !strcmp(var->name, name)) {
+				assert(var->name);
+				if (!strcmp(var->name, name)) {
 					*level = f->frame_number;
 					return var;
 				}

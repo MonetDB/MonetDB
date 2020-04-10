@@ -1344,9 +1344,9 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 			char *buf;
 
 			if (a->name) {
-				buf = SA_NEW_ARRAY(m->sa, char, strlen(a->name) + 2);
+				buf = SA_NEW_ARRAY(m->sa, char, strlen(a->name) + 4);
 				if (buf)
-					stpcpy(stpcpy(buf, "B"), a->name);  /* mangle variable name */
+					stpcpy(stpcpy(buf, "A1%%"), a->name);  /* mangle variable name */
 			} else {
 				buf = SA_NEW_ARRAY(m->sa, char, IDLENGTH);
 				if (buf)
