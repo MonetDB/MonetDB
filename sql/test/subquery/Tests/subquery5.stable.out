@@ -118,6 +118,18 @@ stdout of test 'subquery5` in directory 'sql/test/subquery` itself:
 % tinyint # type
 % 1 # length
 [ 1	]
+#SELECT (SELECT CAST(SUM(col2 - 1) AS BIGINT) GROUP BY SUM(col2 + 1)) FROM another_t;
+% .%3 # table_name
+% %3 # name
+% bigint # type
+% 4 # length
+[ 2464	]
+#SELECT (SELECT CAST(SUM(col2 + 1) AS BIGINT) GROUP BY SUM(col2 + 1)) FROM another_t;
+% .%3 # table_name
+% %3 # name
+% bigint # type
+% 4 # length
+[ 2472	]
 #DROP FUNCTION evilfunction(INT);
 #DROP TABLE tbl_ProductSales;
 #DROP TABLE another_T;

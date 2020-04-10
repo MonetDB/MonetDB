@@ -108,7 +108,7 @@ SELECT (SELECT col1 FROM another_t t1, another_t t2) FROM another_t t3; --error,
 
 SELECT (SELECT SUM(SUM(col2) + 1)) FROM another_t; --error, aggregate function calls cannot be nested
 
-SELECT (SELECT MIN(t1.col5 - t2.col2) FROM another_T t2) FROM another_T t1 GROUP BY col6; --error, subquery uses ungrouped column "t1.col5" from outer query
+SELECT (SELECT MIN(t1.col5 - col2) FROM another_T t2) FROM another_T t1 GROUP BY col6; --error, subquery uses ungrouped column "t1.col5" from outer query
 
 SELECT (SELECT SUM(SUM(1))) FROM another_t; --error, aggregate function calls cannot be nested
 
