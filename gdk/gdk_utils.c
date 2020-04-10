@@ -573,8 +573,8 @@ MT_init(void)
 	struct rlimit l;
 	/* address space (virtual memory) limit */
 	if (getrlimit(RLIMIT_AS, &l) == 0
-	    && l.rlim_cur != RLIM_INFINITY
-	    && l.rlim_cur < GDK_vm_maxsize) {
+	    && (size_t)l.rlim_cur != RLIM_INFINITY
+	    && (size_t)l.rlim_cur < GDK_vm_maxsize) {
 		GDK_vm_maxsize = l.rlim_cur;
 	}
 #endif

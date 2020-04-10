@@ -14,3 +14,4 @@ groupings
 HAVE_PYMONETDB?pk_fk_stress
 deallocate
 table_udf_missing_var
+create_func_temp
