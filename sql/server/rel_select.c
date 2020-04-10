@@ -3351,6 +3351,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 	if (args && args->data.sym) {
 		int ungrouped_col = -1, i, all_aggr = query_has_outer(query);
 		all_freevar = 1;
+		bool found_nested_aggr = false;
 		for (i = 0; args && args->data.sym; args = args->next, i++) {
 			int base = (!groupby || !is_project(groupby->op) || is_base(groupby->op) || is_processed(groupby));
 			bool found_one = false;
@@ -3401,10 +3402,10 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 			} else {
 				all_aggr &= (exp_card(e) <= CARD_AGGR && !exp_is_atom(e) && is_aggr(e->type) && !is_func(e->type) && (!groupby || !is_groupby(groupby->op) || !groupby->r || !exps_find_exp(groupby->r, e)));
 			}
-			all_freevar &= (exp_only_freevar(sql, e, &found_one) && found_one);
+			all_freevar &= (exp_only_freevar(query, e, &found_one, &found_nested_aggr) && found_one);
 			list_append(exps, e);
 		}
-		if (all_freevar && all_aggr)
+		if (all_freevar && (all_aggr || found_nested_aggr))
 			return sql_error(sql, 05, SQLSTATE(42000) "SELECT: aggregate function calls cannot be nested");
 		if (!all_freevar) {
 			if (all_aggr) {
