@@ -17,7 +17,13 @@ INCLUDES = ../utils \
 		   $(curl_CFLAGS)
 
 lib_stream  =  {
-	SOURCES = stream.c stream.h stream_socket.h
+	SOURCES = oldcode.c stream.c \
+		stdio_stream.c \
+		gz_stream.c bz2_stream.c xz_stream.c lz4_stream.c \
+		url_stream.c socket_stream.c \
+		iconv_stream.c \
+		misc.c \
+		stream.h stream_internal.h stream_socket.h
 	VERSION = $(STREAM_VERSION)
 	LIBS = WIN32?$(SOCKET_LIBS) \
 	       WIN32?$(zlib_LIBS) \
