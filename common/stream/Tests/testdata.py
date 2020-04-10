@@ -13,6 +13,7 @@ import tempfile
 
 
 BOM = b'\xEF\xBB\xBF'
+
 SRCDIR = os.environ.get(
     'TSTSRCDIR',
     os.path.dirname(os.path.abspath(sys.argv[0]))
