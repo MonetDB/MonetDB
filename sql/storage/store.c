@@ -4222,7 +4222,7 @@ static int
 rollforward_drop_column(sql_trans *tr, sql_column *c, int mode)
 {
 	if (isTable(c->t)) {
-		int p = (tr->parent == gtrans);
+		int p = (tr->parent == gtrans && !isTempTable(c->t));
 
 		if (p && mode == R_LOG)
 			return store_funcs.log_destroy_col(tr, c);
@@ -4238,7 +4238,7 @@ rollforward_drop_idx(sql_trans *tr, sql_idx * i, int mode)
 	int ok = LOG_OK;
 
 	if (isTable(i->t)) {
-		int p = (tr->parent == gtrans);
+		int p = (tr->parent == gtrans && !isTempTable(i->t));
 
 		if (p && mode == R_LOG)
 			ok = store_funcs.log_destroy_idx(tr, i);
@@ -4328,7 +4328,7 @@ rollforward_drop_table(sql_trans *tr, sql_table *t, int mode)
 	int ok = LOG_OK;
 
 	if (isTable(t)) {
-		int p = (tr->parent == gtrans);
+		int p = (tr->parent == gtrans && !isTempTable(t));
 
 		if (p && mode == R_LOG)
 			ok = store_funcs.log_destroy_del(tr, t);
@@ -4926,7 +4926,6 @@ reset_schema(sql_trans *tr, sql_schema *fs, sql_schema *pfs)
 				n = t;
 			}
 		}
-		return ok;
 	}
 
 	/* apply possible renaming -> transaction rollbacks or when it starts, inherit from the previous transaction */
@@ -4943,7 +4942,7 @@ reset_schema(sql_trans *tr, sql_schema *fs, sql_schema *pfs)
 		ok = reset_changeset(tr, &fs->funcs, &pfs->funcs, &fs->base, (resetf) &reset_func, (dupfunc) &func_dup);
 	if (ok == LOG_OK)
 		ok = reset_changeset(tr, &fs->seqs, &pfs->seqs, &fs->base, (resetf) &reset_seq, (dupfunc) &seq_dup);
-	if (ok == LOG_OK)
+	if (!isTempSchema(fs) && ok == LOG_OK)
 		ok = reset_changeset(tr, &fs->tables, &pfs->tables, &fs->base, (resetf) &reset_table, (dupfunc) &table_dup);
 	return ok;
 }
@@ -6020,10 +6019,10 @@ sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 		table_funcs.column_update_value(tr, cmin, rid, VALget(&vmin));
 		table_funcs.column_update_value(tr, cmax, rid, VALget(&vmax));
 		table_funcs.column_update_value(tr, wnulls, rid, &to_insert);
-		if (isGlobal(mt))
-			tr->schema_updates ++;
 	}
 
+	if (isGlobal(mt))
+		tr->schema_updates ++;
 	mt->s->base.wtime = mt->base.wtime = pt->s->base.wtime = pt->base.wtime = p->base.wtime = tr->wtime = tr->wstime;
 
 finish:
@@ -6116,10 +6115,10 @@ sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 		/* add merge table dependency */
 		sql_trans_create_dependency(tr, pt->base.id, mt->base.id, TABLE_DEPENDENCY);
 		table_funcs.table_insert(tr, sysobj, &mt->base.id, p->base.name, &p->base.id);
-	} else if (isGlobal(mt)) {
-		tr->schema_updates ++;
 	}
 
+	if (isGlobal(mt))
+		tr->schema_updates ++;
 	mt->s->base.wtime = mt->base.wtime = pt->s->base.wtime = pt->base.wtime = p->base.wtime = tr->wtime = tr->wstime;
 
 	return 0;

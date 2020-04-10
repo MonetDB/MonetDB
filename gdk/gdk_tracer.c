@@ -402,6 +402,19 @@ GDKtracer_log(const char *file, const char *func, int lineno,
 	va_list va;
 	char ts[TS_SIZE];
 	char *msg = NULL;
+	static char file_prefix[] = __FILE__;
+	static size_t prefix_length = (size_t) -1;
+
+	if (prefix_length == (size_t) -1) {
+		msg = strstr(file_prefix, "gdk" DIR_SEP_STR "gdk_tracer.c");
+		if (msg == NULL)
+			prefix_length = 0;
+		else
+			prefix_length = (size_t) (msg - file_prefix);
+	}
+	if (prefix_length != 0 &&
+	    strncmp(file, file_prefix, prefix_length) == 0)
+		file += prefix_length;
 
 	va_start(va, fmt);
 	bytes_written = snprintf(buffer, sizeof(buffer),

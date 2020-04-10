@@ -3759,7 +3759,7 @@ BATgroupcorrelation(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp, bool skip_
 	     (BATcount(e) == BATcount(b1) && (e->hseqbase == b1->hseqbase || e->hseqbase == b2->hseqbase))) &&
 	    (BATtdense(g) || (g->tkey && g->tnonil))) {
 		dbl v = dbl_nil;
-		return BATconstant(ngrp == 0 ? 0 : min, TYPE_dbl, &v, ngrp, TRANSIENT);
+		return BATconstant(min, TYPE_dbl, &v, ngrp, TRANSIENT);
 	}
 
 	delta1 = GDKmalloc(ngrp * sizeof(dbl));

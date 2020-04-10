@@ -74,10 +74,6 @@ MNDBPrepare(ODBCStmt *stmt,
 	}
 
 	fixODBCstring(StatementText, TextLength, SQLINTEGER, addStmtError, stmt, return SQL_ERROR);
-	/* TODO: convert ODBC escape sequences ( {d 'value'} or {t
-	 * 'value'} or {ts 'value'} or {escape 'e-char'} or {oj
-	 * outer-join} or {fn scalar-function} etc. ) to MonetDB SQL
-	 * syntax */
 	query = ODBCTranslateSQL(stmt->Dbc, StatementText, (size_t) TextLength,
 				 stmt->noScan);
 	if (query == NULL) {

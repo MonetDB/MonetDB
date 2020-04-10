@@ -491,8 +491,9 @@ fixdateheap(BAT *b, const char *anme)
 		TRC_CRITICAL(GDK, "GDKfilepath failed\n");
 		return GDK_FAIL;
 	}
-	/* coverity[null_returns] */
-	*strrchr(srcdir, DIR_SEP) = 0;
+	char *s;
+	if ((s = strrchr(srcdir, DIR_SEP)) != NULL)
+		*s = 0;
 
 	if ((bnme = strrchr(nme, DIR_SEP)) != NULL)
 		bnme++;
@@ -943,6 +944,7 @@ BBPreadEntries(FILE *fp, unsigned bbpversion)
 		if ((s = strchr(headname, '~')) != NULL && s == headname) {
 			int len = snprintf(logical, sizeof(logical), "tmp_%o", (unsigned) bid);
 			if (len == -1 || len >= (int) sizeof(logical)) {
+				BATdestroy(bn);
 				TRC_CRITICAL(GDK, "BBP logical filename directory is too large\n");
 				return GDK_FAIL;
 			}

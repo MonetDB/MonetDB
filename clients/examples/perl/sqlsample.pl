@@ -48,6 +48,9 @@ $dbh->do('insert into perl_table values ( 3, \'three\');');
   $sth->bind_param( 1,     7 , DBI::SQL_INTEGER() );
   $sth->bind_param( 2,'seven' );
   $sth->execute;
+  $sth->bind_param( 1,    42 , DBI::SQL_INTEGER() );
+  $sth->bind_param( 2,  '\\n' );
+  $sth->execute;
 }
 {
   my $sth = $dbh->prepare('select * from perl_table;');
