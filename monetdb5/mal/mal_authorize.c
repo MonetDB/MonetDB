@@ -158,7 +158,7 @@ AUTHcommit(void)
 	blist[7] = rt_hashedpwd->batCacheid;
 	assert(rt_deleted);
 	blist[8] = rt_deleted->batCacheid;
-	TMsubcommit_list(blist, NULL, 9, getBBPinfo());
+	TMsubcommit_list(blist, NULL, 9, getBBPlogno(), getBBPtransid());
 }
 
 /*

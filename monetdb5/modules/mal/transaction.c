@@ -35,7 +35,7 @@ mal_export str TRNsubcommit(bit *ret, bat *bid);
 str
 TRNglobal_sync(bit *ret)
 {
-	*ret = BBPsync(getBBPsize(), NULL, NULL, getBBPinfo()) == GDK_SUCCEED;
+	*ret = BBPsync(getBBPsize(), NULL, NULL, getBBPlogno(), getBBPtransid()) == GDK_SUCCEED;
 	return MAL_SUCCEED;
 }
 

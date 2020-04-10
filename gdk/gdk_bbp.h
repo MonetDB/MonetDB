@@ -54,7 +54,8 @@
 #define BBPTRIM_ALL	(((size_t)1) << (sizeof(size_t)*8 - 2))	/* very large positive size_t */
 
 gdk_export bat getBBPsize(void); /* current occupied size of BBP array */
-gdk_export int getBBPinfo(void); /* one integer of extra info in BBP.dir */
+gdk_export lng getBBPlogno(void); /* two lng of extra info in BBP.dir */
+gdk_export lng getBBPtransid(void);
 
 /* global calls */
 gdk_export gdk_return BBPaddfarm(const char *dirname, int rolemask);
@@ -70,7 +71,7 @@ gdk_export bat BBPindex(const char *nme);
 gdk_export BAT *BBPdescriptor(bat b);
 
 /* swapping interface */
-gdk_export gdk_return BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, int info);
+gdk_export gdk_return BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng transid);
 gdk_export int BBPfix(bat b);
 gdk_export int BBPunfix(bat b);
 gdk_export int BBPretain(bat b);

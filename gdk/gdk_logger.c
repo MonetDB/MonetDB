@@ -1799,7 +1799,7 @@ bm_subcommit(logger *lg, BAT *list_bid, BAT *list_nme, BAT *catalog_bid, BAT *ca
 		BATcommit(catalog_oid, BUN_NONE);
 	}
 	BATcommit(dcatalog, BUN_NONE);
-	res = TMsubcommit_list(n, cnts?sizes:NULL, i, lg->saved_id);
+	res = TMsubcommit_list(n, cnts?sizes:NULL, i, lg->saved_id, getBBPtransid());
 	GDKfree(n);
 	GDKfree(sizes);
 	if (res != GDK_SUCCEED)
@@ -2280,7 +2280,7 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 
 	lg->tid = 0;
 	/* get saved_id from bbp */
-	lg->saved_id = getBBPinfo();
+	lg->saved_id = getBBPlogno();
 	if (lg->saved_id == 0)
 		lg->saved_id = 1;
 	lg->input_log = NULL;

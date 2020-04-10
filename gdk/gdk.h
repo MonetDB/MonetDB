@@ -1841,7 +1841,7 @@ Tpos(BATiter *bi, BUN p)
 gdk_export gdk_return TMcommit(void);
 gdk_export void TMabort(void);
 gdk_export gdk_return TMsubcommit(BAT *bl);
-gdk_export gdk_return TMsubcommit_list(bat *restrict subcommit, BUN *restrict sizes, int cnt, int info);
+gdk_export gdk_return TMsubcommit_list(bat *restrict subcommit, BUN *restrict sizes, int cnt, lng logno, lng transid);
 
 /*
  * @- Delta Management

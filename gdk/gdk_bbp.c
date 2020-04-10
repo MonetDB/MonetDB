@@ -114,9 +114,10 @@ static void BBPuncacheit(bat bid, bool unloaddesc);
 static gdk_return BBPprepare(bool subcommit);
 static BAT *getBBPdescriptor(bat i, bool lock);
 static gdk_return BBPbackup(BAT *b, bool subcommit);
-static gdk_return BBPdir(int cnt, bat *restrict subcommit, BUN *restrict sizes, int info);
+static gdk_return BBPdir(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng transid);
 
-static int BBPinfo;		/* one integer of extra info in BBP.dir */
+static lng BBPlogno;		/* two lngs of extra info in BBP.dir */
+static lng BBPtransid;
 
 #ifdef HAVE_HGE
 /* start out by saying we have no hge, but as soon as we've seen one,
@@ -156,10 +157,16 @@ getBBPsize(void)
 	return (bat) ATOMIC_GET(&BBPsize);
 }
 
-int
-getBBPinfo(void)
+lng
+getBBPlogno(void)
 {
-	return BBPinfo;
+	return BBPlogno;
+}
+
+lng
+getBBPtransid(void)
+{
+	return BBPtransid;
 }
 
 
@@ -1108,7 +1115,7 @@ BBPheader(FILE *fp)
 			TRC_CRITICAL(GDK, "short BBP");
 			return 0;
 		}
-		if (sscanf(buf, "BBPinfo=%d", &BBPinfo) != 1) {
+		if (sscanf(buf, "BBPinfo=" LLSCN " " LLSCN, &BBPlogno, &BBPtransid) != 2) {
 			TRC_CRITICAL(GDK, "no info value found\n");
 			return 0;
 		}
@@ -1277,7 +1284,7 @@ BBPinit(void)
 				/* no BBP.bak (nor BBP.dir or BACKUP/BBP.dir):
 				 * create a new one */
 				TRC_DEBUG(IO_, "initializing BBP.\n");	/* BBPdir instead of BBPinit for backward compatibility of error messages */
-				if (BBPdir(0, NULL, NULL, 0) != GDK_SUCCEED) {
+				if (BBPdir(0, NULL, NULL, LL_CONSTANT(0), LL_CONSTANT(0)) != GDK_SUCCEED) {
 					GDKfree(bbpdirstr);
 					GDKfree(backupbbpdirstr);
 					goto bailout;
@@ -1523,14 +1530,14 @@ new_bbpentry(FILE *fp, bat i, BUN size)
 }
 
 static gdk_return
-BBPdir_header(FILE *f, int n, int info)
+BBPdir_header(FILE *f, int n, lng logno, lng transid)
 {
-	if (fprintf(f, "BBP.dir, GDKversion %u\n%d %d %d\nBBPsize=%d\nBBPinfo=%d\n",
+	if (fprintf(f, "BBP.dir, GDKversion %u\n%d %d %d\nBBPsize=%d\nBBPinfo=" LLFMT " " LLFMT "\n",
 		    GDKLIBRARY, SIZEOF_SIZE_T, SIZEOF_OID,
 #ifdef HAVE_HGE
 		    havehge ? SIZEOF_HGE :
 #endif
-		    SIZEOF_LNG, n, info) < 0 ||
+		    SIZEOF_LNG, n, logno, transid) < 0 ||
 	    ferror(f)) {
 		GDKsyserror("BBPdir_header: Writing BBP.dir header failed\n");
 		return GDK_FAIL;
@@ -1539,12 +1546,13 @@ BBPdir_header(FILE *f, int n, int info)
 }
 
 static gdk_return
-BBPdir_subcommit(int cnt, bat *restrict subcommit, BUN *restrict sizes, int info)
+BBPdir_subcommit(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng transid)
 {
 	FILE *obbpf, *nbbpf;
 	bat j = 1;
 	char buf[3000];
 	int n;
+	lng ologno, otransid;
 
 #ifndef NDEBUG
 	assert(subcommit != NULL);
@@ -1578,14 +1586,14 @@ BBPdir_subcommit(int cnt, bat *restrict subcommit, BUN *restrict sizes, int info
 		n = (bat) ATOMIC_GET(&BBPsize);
 	/* fourth line contains BBPinfo */
 	if (fgets(buf, sizeof(buf), obbpf) == NULL ||
-	    sscanf(buf, "BBPinfo=%d", &n) != 1) {
+	    sscanf(buf, "BBPinfo=" LLSCN " " LLSCN, &ologno, &otransid) != 2) {
 		GDKerror("BBPdir: cannot read BBPinfo in backup BBP.dir.");
 		goto bailout;
 	}
 
 	TRC_DEBUG(IO_, "writing BBP.dir (%d bats).\n", n);
 
-	if (BBPdir_header(nbbpf, n, info) != GDK_SUCCEED) {
+	if (BBPdir_header(nbbpf, n, logno, transid) != GDK_SUCCEED) {
 		goto bailout;
 	}
 	n = 0;
@@ -1661,20 +1669,20 @@ BBPdir_subcommit(int cnt, bat *restrict subcommit, BUN *restrict sizes, int info
 }
 
 gdk_return
-BBPdir(int cnt, bat *restrict subcommit, BUN *restrict sizes, int info)
+BBPdir(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng transid)
 {
 	FILE *fp;
 	bat i;
 
 	if (subcommit)
-		return BBPdir_subcommit(cnt, subcommit, sizes, info);
+		return BBPdir_subcommit(cnt, subcommit, sizes, logno, transid);
 
 	TRC_DEBUG(IO_, "writing BBP.dir (%d bats).\n", (int) (bat) ATOMIC_GET(&BBPsize));
 	if ((fp = GDKfilelocate(0, "BBP", "w", "dir")) == NULL) {
 		goto bailout;
 	}
 
-	if (BBPdir_header(fp, (bat) ATOMIC_GET(&BBPsize), info) != GDK_SUCCEED) {
+	if (BBPdir_header(fp, (bat) ATOMIC_GET(&BBPsize), logno, transid) != GDK_SUCCEED) {
 		goto bailout;
 	}
 
@@ -3144,7 +3152,7 @@ BBPbackup(BAT *b, bool subcommit)
  * The BBP.dir is also moved into the BAKDIR.
  */
 gdk_return
-BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, int info)
+BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno, lng transid)
 {
 	gdk_return ret = GDK_SUCCEED;
 	int t0 = 0, t1 = 0;
@@ -3222,7 +3230,7 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, int info)
 	TRC_DEBUG(PERF, "write time %d\n", (t0 = GDKms()) - t1);
 
 	if (ret == GDK_SUCCEED) {
-		ret = BBPdir(cnt, subcommit, sizes, info);
+		ret = BBPdir(cnt, subcommit, sizes, logno, transid);
 	}
 
 	TRC_DEBUG(PERF, "dir time %d, %d bats\n", (t1 = GDKms()) - t0, (bat) ATOMIC_GET(&BBPsize));
@@ -3247,7 +3255,8 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, int info)
 
 	/* AFTERMATH */
 	if (ret == GDK_SUCCEED) {
-		BBPinfo = info;	/* the new value */
+		BBPlogno = logno;	/* the new value */
+		BBPtransid = transid;
 		backup_files = subcommit ? (backup_files - backup_subdir) : 0;
 		backup_dir = backup_subdir = 0;
 		if (GDKremovedir(0, DELDIR) != GDK_SUCCEED)
