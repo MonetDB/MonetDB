@@ -122,17 +122,10 @@ rel_create( sql_allocator *sa )
 	if(!r)
 		return NULL;
 
+	*r = (sql_rel) {
+		.card = CARD_ATOM,
+	};
 	sql_ref_init(&r->ref);
-	r->l = r->r = NULL;
-	r->exps = NULL;
-	r->nrcols = 0;
-	r->flag = 0;
-	r->card = CARD_ATOM;
-	r->distinct = 0;
-	r->processed = 0;
-	r->dependent = 0;
-	r->subquery = 0;
-	r->p = NULL;
 	return r;
 }
 

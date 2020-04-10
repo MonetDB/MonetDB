@@ -33,14 +33,17 @@ Start a simple Monet SQL interaction
 data sources: dbi:monetdb:
 field[0]: 2, last index: 0
 field[0]: 3, last index: 0
-ERROR REPORTED: DBD::monetdb::st execute failed: 42000!syntax error, unexpected IDENT, expecting SELECT or '(' or VALUES in: "( xyz" at /home/niels/scratch/clients/usr/local/share/perl5/MonetDB/CLI/MapiPP.pm line 123.
+ERROR REPORTED: DBD::monetdb::st execute failed: 42000!syntax error, unexpected IDENT, expecting SELECT or '(' or VALUES in: "( xyz" at /usr/share/perl5/vendor_perl/MonetDB/CLI/MapiPP.pm line 123.
 bun: 3, three
 bun: 7, seven
-rows: 2, fields: 2
+bun: 42, \n
+rows: 3, fields: 2
 field[0,0]: 3
 field[0,1]: three
 field[1,0]: 7
 field[1,1]: seven
+field[2,0]: 42
+field[2,1]: \n
 head[0]: 3
 head[1]: 7
 field[0]: 3
