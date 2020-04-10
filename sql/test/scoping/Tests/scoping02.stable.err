@@ -39,6 +39,22 @@ MAPI  = (monetdb) /var/tmp/mtest-192174/.s.monetdb.36616
 QUERY = SELECT a FROM iambroken(); --error
 ERROR = !SELECT: no such table returning function 'iambroken'
 CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-467228/.s.monetdb.35826
+QUERY = CREATE OR REPLACE FUNCTION iambroken() RETURNS TABLE(a int) 
+        BEGIN
+        	DECLARE TABLE sys.atest (a int); --error, declared tables inside functions don't have a schema
+        	RETURN SELECT a FROM x;
+        END;
+ERROR = !DECLARE TABLE: Tables declared inside functions and procedures don't have a schema
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-467228/.s.monetdb.35826
+QUERY = CREATE OR REPLACE FUNCTION iambroken() RETURNS TABLE(a int) 
+        BEGIN
+        	DECLARE sys.atest int; --error, declared variables inside functions don't have a schema
+        	RETURN x;
+        END;
+ERROR = !DECLARE: Variables declared inside functions and procedures don't have a schema
+CODE  = 42000
 
 # 11:27:58 >  
 # 11:27:58 >  "Done."

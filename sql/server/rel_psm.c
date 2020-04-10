@@ -193,7 +193,7 @@ rel_psm_declare(mvc *sql, dnode *n, bool global)
 					return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			} else {
 				if (sname)
-					return sql_error(sql, 01, SQLSTATE(42000) "DECLARE: Function declared variables don't have a schema");
+					return sql_error(sql, 01, SQLSTATE(42000) "DECLARE: Variables declared inside functions and procedures don't have a schema");
 				/* find if there's a parameter with the same name */
 				if ((a = sql_bind_param(sql, tname)))
 					return sql_error(sql, 01, SQLSTATE(42000) "DECLARE: Variable '%s' declared as a parameter", tname);
@@ -222,6 +222,9 @@ rel_psm_declare_table(sql_query *query, dnode *n)
 	const char *sname = qname_schema(qname);
 	const char *name = qname_schema_object(qname);
 	sql_table *t;
+
+	if (sname)
+		return sql_error(sql, 01, SQLSTATE(42000) "DECLARE TABLE: Tables declared inside functions and procedures don't have a schema");
 
 	assert(n->next->next->next->type == type_int);
 	rel = rel_create_table(query, SQL_DECLARED_TABLE, sname, name, false, n->next->next->data.sym,
