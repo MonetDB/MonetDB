@@ -730,13 +730,13 @@ exp_var(sql_allocator *sa, const char *sname, const char *name, sql_subtype *typ
 }
 
 sql_exp * 
-exp_table(sql_allocator *sa, const char *sname, const char *name, sql_table *t, int level)
+exp_table(sql_allocator *sa, const char *name, sql_table *t, int level)
 {
 	sql_exp *e = exp_create(sa, e_psm);
 
 	if (e == NULL)
 		return NULL;
-	e->alias.rname = sname;
+	e->alias.rname = NULL;
 	e->alias.name = name;
 	e->f = t;
 	e->flag = PSM_VAR + SET_PSM_LEVEL(level);

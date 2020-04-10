@@ -1035,7 +1035,7 @@ rel_create_table(sql_query *query, int temp, const char *sname, const char *name
 		if (if_not_exists)
 			return rel_psm_block(sql->sa, new_exp_list(sql->sa));
 		return sql_error(sql, 02, SQLSTATE(42S01) "%s TABLE: name '%s' already in use", action, name);
-	} else if (!global && frame_find_table(sql, s, name)) {
+	} else if (!global && frame_find_table(sql, name)) {
 		assert(temp == SQL_DECLARED_TABLE);
 		if (if_not_exists)
 			return rel_psm_block(sql->sa, new_exp_list(sql->sa));

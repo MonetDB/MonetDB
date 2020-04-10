@@ -79,7 +79,7 @@ ERROR = !INSERT INTO: FOREIGN KEY constraint 'ssqq_queue.queue_query_id_fk' viol
 CODE  = 40002
 MAPI  = (monetdb) /var/tmp/mtest-470302/.s.monetdb.36480
 QUERY = declare id_result int;
-ERROR = !Variable 'id_result' already declared
+ERROR = !DECLARE: Variable 'sys.id_result' already declared on the global scope
 CODE  = 42000
 
 # 15:07:52 >  

@@ -135,7 +135,7 @@ extern stmt *stmt_none(backend *be);
 //#define VAR_DECLARE 1
 #define VAR_GLOBAL(f) ((f>>1)==1)
 extern stmt *stmt_var(backend *be, const char *sname, const char *varname, sql_subtype *t, int declare, int level);
-extern stmt *stmt_vars(backend *be, const char *sname, const char *varname, sql_table *t, int declare, int level);
+extern stmt *stmt_vars(backend *be, const char *varname, sql_table *t, int declare, int level);
 extern stmt *stmt_varnr(backend *be, int nr, sql_subtype *t);
 
 extern stmt *stmt_table(backend *be, stmt *cols, int temp);

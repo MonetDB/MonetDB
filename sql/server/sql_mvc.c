@@ -1056,7 +1056,7 @@ mvc_bind_schema(mvc *m, const char *sname)
 sql_table *
 mvc_bind_table(mvc *m, sql_schema *s, const char *tname)
 {
-	sql_table *t = stack_find_table(m, s, tname);
+	sql_table *t = stack_find_table(m, tname);
 
 	if (!t)
 		t = find_sql_table(s, tname);

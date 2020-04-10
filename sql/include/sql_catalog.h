@@ -125,7 +125,6 @@ typedef enum sql_dependency {
 #define PARTITION_LIST        2
 #define PARTITION_COLUMN      4
 #define PARTITION_EXPRESSION  8
-#define DECLARED_TABLE_ON_STACK  16
 
 #define STORAGE_MAX_VALUE_LENGTH 2048
 

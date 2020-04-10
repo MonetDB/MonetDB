@@ -406,13 +406,12 @@ stmt_var(backend *be, const char *sname, const char *varname, sql_subtype *t, in
 }
 
 stmt *
-stmt_vars(backend *be, const char *sname, const char *varname, sql_table *t, int declare, int level)
+stmt_vars(backend *be, const char *varname, sql_table *t, int declare, int level)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
 	int *l;
 
-	(void)sname;
 	(void)varname;
 	/* declared table */
 	if ((l = dump_table(be->mvc->sa, mb, t)) != NULL) {
@@ -539,7 +538,7 @@ stmt_tid(backend *be, sql_table *t, int partition)
 	MalBlkPtr mb = be->mb;
 	InstrPtr q;
 
-	if (isDeclaredTableOnStack(t) && t->data) { /* declared table */
+	if (!t->s && t->data) { /* declared table */
 		stmt *s = stmt_create(be->mvc->sa, st_tid);
 		int *l = t->data;
 
@@ -590,7 +589,7 @@ stmt_bat(backend *be, sql_column *c, int access, int partition)
 	InstrPtr q;
 
 	/* for read access tid.project(col) */
-	if (isDeclaredTableOnStack(c->t) && c->t->data) { /* declared table */
+	if (!c->t->s && c->t->data) { /* declared table */
 		stmt *s = stmt_create(be->mvc->sa, st_bat);
 		int *l = c->t->data;
 
@@ -719,7 +718,7 @@ stmt_append_col(backend *be, sql_column *c, stmt *b, int fake)
 	if (b->nr < 0)
 		return NULL;
 
-	if (isDeclaredTableOnStack(c->t) && c->t->data) { /* declared table */
+	if (!c->t->s && c->t->data) { /* declared table */
 		int *l = c->t->data;
 
 		if (c->colnr == 0) { /* append to tid column */
@@ -810,7 +809,7 @@ stmt_update_col(backend *be, sql_column *c, stmt *tids, stmt *upd)
 	if (tids->nr < 0 || upd->nr < 0)
 		return NULL;
 
-	if (isDeclaredTableOnStack(c->t) && c->t->data) { /* declared table */
+	if (!c->t->s && c->t->data) { /* declared table */
 		int *l = c->t->data;
 
 		q = newStmt(mb, batRef, replaceRef);
@@ -898,7 +897,7 @@ stmt_delete(backend *be, sql_table *t, stmt *tids)
 	if (tids->nr < 0)
 		return NULL;
 
-	if (isDeclaredTableOnStack(t) && t->data) { /* declared table */
+	if (!t->s && t->data) { /* declared table */
 		int *l = t->data;
 
 		q = newStmt(mb, batRef, deleteRef);
@@ -2795,7 +2794,7 @@ stmt_table_clear(backend *be, sql_table *t)
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
 
-	if (isDeclaredTableOnStack(t) && t->data) { /* declared table */
+	if (!t->s && t->data) { /* declared table */
 		int *l = t->data, cnt = list_length(t->columns.set)+1;
 
 		for (int i = 0; i < cnt; i++) {

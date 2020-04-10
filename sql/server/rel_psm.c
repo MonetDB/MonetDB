@@ -252,7 +252,7 @@ rel_psm_declare_table(sql_query *query, dnode *n)
 	t = (sql_table*)((atom*)((sql_exp*)baset->exps->t->data)->l)->data.val.pval;
 	if (!frame_push_table(sql, t))
 		return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	return exp_table(sql->sa, sa_strdup(sql->sa, t->s->base.name), sa_strdup(sql->sa, name), t, sql->frame);
+	return exp_table(sql->sa, sa_strdup(sql->sa, name), t, sql->frame);
 }
 
 /* [ label: ]
@@ -480,7 +480,7 @@ rel_psm_return( sql_query *query, sql_subtype *restype, list *restypelist, symbo
 		if (sname && !(s = mvc_bind_schema(sql, sname)))
 			return sql_error(sql, 02, SQLSTATE(3F000) "RETURN: no such schema '%s'", sname);
 
-		if ((t = stack_find_table(sql, s, tname))) {
+		if ((t = stack_find_table(sql, tname))) {
 			rel = rel_table(sql, ddl_create_table, s->base.name, t, SQL_DECLARED_TABLE);
 		} else if ((t = find_sql_table(s, tname))) {
 			rel = rel_basetable(sql, t, t->base.name);

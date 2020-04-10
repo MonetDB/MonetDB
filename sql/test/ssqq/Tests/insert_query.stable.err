@@ -79,7 +79,7 @@ ERROR = !INSERT INTO: NOT NULL constraint violated for column query.query_text
 CODE  = 40002
 MAPI  = (monetdb) /var/tmp/mtest-470302/.s.monetdb.36480
 QUERY = declare id_result int;
-ERROR = !Variable 'id_result' already declared
+ERROR = !DECLARE: Variable 'sys.id_result' already declared on the global scope
 CODE  = 42000
 
 # 11:37:20 >  

@@ -89,7 +89,7 @@ extern sql_exp * exp_alias_or_copy( mvc *sql, const char *tname, const char *cna
 extern sql_exp * exp_alias_ref(mvc *sql, sql_exp *e);
 extern sql_exp * exp_set(sql_allocator *sa, const char *sname, const char *name, sql_exp *val, int level);
 extern sql_exp * exp_var(sql_allocator *sa, const char *sname, const char *name, sql_subtype *type, int level);
-extern sql_exp * exp_table(sql_allocator *sa, const char *sname, const char *name, sql_table *t, int level);
+extern sql_exp * exp_table(sql_allocator *sa, const char *name, sql_table *t, int level);
 extern sql_exp * exp_return(sql_allocator *sa, sql_exp *val, int level);
 extern sql_exp * exp_while(sql_allocator *sa, sql_exp *cond, list *stmts);
 extern sql_exp * exp_exception(sql_allocator *sa, sql_exp *cond, const char *error_message);

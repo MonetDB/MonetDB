@@ -155,7 +155,7 @@ frame_push_table(mvc *sql, sql_table *t)
 	if (!slt)
 		return NULL;
 	slt->table = t;
-	t->properties |= DECLARED_TABLE_ON_STACK;
+	t->s = NULL;
 	if (!f->tables && !(f->tables = list_create(destroy_sql_local_table))) {
 		_DELETE(slt);
 		return NULL;
@@ -422,15 +422,14 @@ stack_pop_frame(mvc *sql)
 }
 
 sql_table *
-frame_find_table(mvc *sql, sql_schema *s, const char *name)
+frame_find_table(mvc *sql, const char *name)
 {
 	if (sql->topframes > 0) {
-		const char *sname = s->base.name;
 		sql_frame *f = sql->frames[sql->topframes - 1];
 		if (f->tables) {
 			for (node *n = f->tables->h; n ; n = n->next) {
 				sql_local_table *var = (sql_local_table*) n->data;
-				if (!strcmp(var->table->s->base.name, sname) && !strcmp(var->table->base.name, name))
+				if (!strcmp(var->table->base.name, name))
 					return var->table;
 			}
 		}
@@ -439,15 +438,14 @@ frame_find_table(mvc *sql, sql_schema *s, const char *name)
 }
 
 sql_table *
-stack_find_table(mvc *sql, sql_schema *s, const char *name)
+stack_find_table(mvc *sql, const char *name)
 {
-	const char *sname = s->base.name;
 	for (int i = sql->topframes-1; i >= 0; i--) {
 		sql_frame *f = sql->frames[i];
 		if (f->tables) {
 			for (node *n = f->tables->h; n ; n = n->next) {
 				sql_local_table *var = (sql_local_table*) n->data;
-				if (!strcmp(var->table->s->base.name, sname) && !strcmp(var->table->base.name, name))
+				if (!strcmp(var->table->base.name, name))
 					return var->table;
 			}
 		}

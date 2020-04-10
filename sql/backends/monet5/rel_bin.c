@@ -557,7 +557,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			return stmt_assign(be, exp_relname(e), exp_name(e), r, GET_PSM_LEVEL(e->flag));
 		} else if (e->flag & PSM_VAR) {
 			if (e->f)
-				return stmt_vars(be, exp_relname(e), exp_name(e), e->f, 1, GET_PSM_LEVEL(e->flag));
+				return stmt_vars(be, exp_name(e), e->f, 1, GET_PSM_LEVEL(e->flag));
 			else
 				return stmt_var(be, exp_relname(e), exp_name(e), &e->tpe, 1, GET_PSM_LEVEL(e->flag));
 		} else if (e->flag & PSM_RETURN) {
@@ -1127,7 +1127,7 @@ stmt_col( backend *be, sql_column *c, stmt *del, int part)
 
 	if (isTable(c->t) && c->t->access != TABLE_READONLY &&
 	   (!isNew(c) || !isNew(c->t) /* alter */) &&
-	   (c->t->persistence == SQL_PERSIST || !isDeclaredTableOnStack(c->t)) && !c->t->commit_action) {
+	   (c->t->persistence == SQL_PERSIST || c->t->s) && !c->t->commit_action) {
 		stmt *i = stmt_bat(be, c, RD_INS, 0);
 		stmt *u = stmt_bat(be, c, RD_UPD_ID, part);
 		sc = stmt_project_delta(be, sc, u, i);
@@ -1146,7 +1146,7 @@ stmt_idx( backend *be, sql_idx *i, stmt *del, int part)
 
 	if (isTable(i->t) && i->t->access != TABLE_READONLY &&
 	   (!isNew(i) || !isNew(i->t) /* alter */) &&
-	   (i->t->persistence == SQL_PERSIST || !isDeclaredTableOnStack(i->t)) && !i->t->commit_action) {
+	   (i->t->persistence == SQL_PERSIST || i->t->s) && !i->t->commit_action) {
 		stmt *ic = stmt_idxbat(be, i, RD_INS, 0);
 		stmt *u = stmt_idxbat(be, i, RD_UPD_ID, part);
 		sc = stmt_project_delta(be, sc, u, ic);
