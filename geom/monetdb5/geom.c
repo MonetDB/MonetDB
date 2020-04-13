@@ -2077,7 +2077,6 @@ geom_prelude(void *ret)
 	mbrNIL.ymax = flt_nil;
 	libgeom_init();
 	TYPE_mbr = malAtomSize(sizeof(mbr), "mbr");
-	geomcatalogfix_set(geom_catalog_upgrade);
 
 	return MAL_SUCCEED;
 }

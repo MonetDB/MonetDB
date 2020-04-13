@@ -273,15 +273,6 @@ typedef struct store_functions {
 	destroy_idx_fptr log_destroy_idx;
 	destroy_del_fptr log_destroy_del;
 
-	/* functions for snapshots */
-	create_col_fptr snapshot_create_col;
-	create_idx_fptr snapshot_create_idx;
-	create_del_fptr snapshot_create_del;
-
-	destroy_col_fptr snapshot_destroy_col;
-	destroy_idx_fptr snapshot_destroy_idx;
-	destroy_del_fptr snapshot_destroy_del;
-
 	snapshot_fptr save_snapshot;
 
 	/* rollforward the changes, first snapshot, then log and finaly apply */
@@ -306,7 +297,6 @@ sqlstore_export store_functions store_funcs;
 typedef int (*logger_create_fptr) (int debug, const char *logdir, int catalog_version);
 typedef void (*logger_destroy_fptr) (void);
 typedef int (*logger_flush_fptr) (void);
-typedef int (*logger_cleanup_fptr) (void);
 
 typedef int (*logger_changes_fptr)(void);
 typedef int (*logger_get_sequence_fptr) (int seq, lng *id);
@@ -331,13 +321,10 @@ typedef int (*log_sequence_fptr) (int seq, lng id);
 */
 typedef gdk_return (*logger_get_snapshot_files_fptr)(stream *plan);
 
-typedef void *(*log_find_table_value_fptr)(const char *, const char *, const void *, ...);
-
 typedef struct logger_functions {
 	logger_create_fptr create;
 	logger_destroy_fptr destroy;
 	logger_flush_fptr flush;
-	logger_cleanup_fptr cleanup;
 
 	logger_changes_fptr changes;
 	logger_get_sequence_fptr get_sequence;
@@ -348,7 +335,6 @@ typedef struct logger_functions {
 	log_tstart_fptr log_tstart;
 	log_tend_fptr log_tend;
 	log_sequence_fptr log_sequence;
-	log_find_table_value_fptr log_find_table_value;
 } logger_functions;
 
 sqlstore_export logger_functions logger_funcs;
@@ -382,7 +368,6 @@ extern sql_trans *sql_trans_create(backend_stack stk, sql_trans *parent, const c
 extern sql_trans *sql_trans_destroy(sql_trans *tr, bool try_spare);
 extern bool sql_trans_validate(sql_trans *tr);
 extern int sql_trans_commit(sql_trans *tr);
-extern int sql_save_snapshots(sql_trans *tr);
 
 extern sql_type *sql_trans_create_type(sql_trans *tr, sql_schema *s, const char *sqlname, int digits, int scale, int radix, const char *impl);
 extern int sql_trans_drop_type(sql_trans *tr, sql_schema * s, sqlid id, int drop_action);

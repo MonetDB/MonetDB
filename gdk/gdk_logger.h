@@ -17,6 +17,7 @@ typedef gdk_return (*postversionfix_fptr)(void *lg);
 typedef struct logger logger;
 
 typedef int log_bid;
+typedef int log_id;
 
 /*
  * @+ Sequence numbers
@@ -41,41 +42,33 @@ typedef int log_bid;
 #define LOG_BATGROUP_ID 5
 #define LOG_BATGROUP_END 6
 
+gdk_export gdk_return old_logger_load(int debug, const char *fn, const char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp); 
+
 gdk_export logger *logger_create(int debug, const char *fn, const char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp);
 gdk_export void logger_destroy(logger *lg);
-gdk_export gdk_return logger_exit(logger *lg);
-gdk_export gdk_return logger_restart(logger *lg);
 gdk_export gdk_return logger_flush(logger *lg); /* try too flush a part of the logs */
-gdk_export gdk_return logger_cleanup(logger *lg);
-gdk_export void logger_with_ids(logger *lg);
+
 gdk_export lng logger_changes(logger *lg);
 gdk_export int logger_sequence(logger *lg, int seq, lng *id);
 
 /* todo pass the transaction id */
-gdk_export gdk_return log_bat(logger *lg, BAT *b, const char *n, char tpe, oid id, lng offset);
-gdk_export gdk_return log_bat_clear(logger *lg, const char *n, char tpe, oid id);
-gdk_export gdk_return log_bat_persists(logger *lg, BAT *b, const char *n, char tpe, oid id);
-gdk_export gdk_return log_bat_transient(logger *lg, const char *n, char tpe, oid id);
-gdk_export gdk_return log_delta(logger *lg, BAT *uid, BAT *uval, const char *n, char tpe, oid id);
+gdk_export gdk_return log_bat(logger *lg, BAT *b, log_id id, lng offset);
+gdk_export gdk_return log_bat_clear(logger *lg, log_id id);
+gdk_export gdk_return log_bat_persists(logger *lg, BAT *b, log_id id);
+gdk_export gdk_return log_bat_transient(logger *lg, log_id id);
+gdk_export gdk_return log_delta(logger *lg, BAT *uid, BAT *uval, log_id id);
 
 /* insert/clear groups of bats */
-gdk_export gdk_return log_batgroup(logger *lg, char tpe, oid id, bool cleared, lng nr_inserted, lng offset_inserted, lng nr_deleted, lng offset_deleted);
+//gdk_export gdk_return log_batgroup(logger *lg, char tpe, oid id, bool cleared, lng nr_inserted, lng offset_inserted, lng nr_deleted, lng offset_deleted);
 /* mark end of batgroup insert or clear */
-gdk_export gdk_return log_batgroup_end(logger *lg, oid id);
+//gdk_export gdk_return log_batgroup_end(logger *lg, oid id);
 
 gdk_export gdk_return log_tstart(logger *lg);
 gdk_export gdk_return log_tend(logger *lg);
 gdk_export lng log_tid(logger *lg);	/* return the active transaction id */
-gdk_export gdk_return log_abort(logger *lg);
 
 gdk_export gdk_return log_sequence(logger *lg, int seq, lng id);
 
-gdk_export gdk_return logger_add_bat(logger *lg, BAT *b, const char *name, char tpe, oid id)
-	__attribute__ ((__warn_unused_result__));
-gdk_export gdk_return logger_del_bat(logger *lg, log_bid bid)
-	__attribute__ ((__warn_unused_result__));
-gdk_export log_bid logger_find_bat(logger *lg, const char *name, char tpe, oid id);
-gdk_export gdk_return logger_upgrade_bat(logger *lg, const char *name, char tpe, oid id)
-	__attribute__ ((__warn_unused_result__));
+gdk_export log_bid logger_find_bat(logger *lg, log_id id);
 
 #endif /*_LOGGER_H_*/

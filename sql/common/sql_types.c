@@ -1226,7 +1226,7 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_func(sa, "length", "blob", "nitems", FALSE, SCALE_NONE, 0, INT, 1, BLOB);
 	sql_create_func(sa, "octet_length", "blob", "nitems", FALSE, SCALE_NONE, 0, INT, 1, BLOB);
 
-	if (geomcatalogfix_get() != NULL) {
+	if (backend_has_module(&(int){0}, "geom")) { /* not the old version, change into check for module existence */
 		// the geom module is loaded 
 		GEOM = *t++ = sql_create_type(sa, "GEOMETRY", 0, SCALE_NONE, 0, EC_GEOM, "wkb");
 		/*POINT =*/ //*t++ = sql_create_type(sa, "POINT", 0, SCALE_FIX, 0, EC_GEOM, "wkb");

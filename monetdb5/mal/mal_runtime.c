@@ -203,7 +203,8 @@ runtimeProfileFinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 	MT_lock_set(&mal_delayLock);
 	for( i=qtail; i != qhead; i++){
 		if ( i >= qsize){
-			i = 0;
+			i = -1;
+			continue;
 		}
 		if ( QRYqueue[i].stk == stk){
 			if( stk->up){

@@ -998,6 +998,18 @@ backend_call(backend *be, Client c, cq *cq)
 }
 
 int
+monet5_has_module(ptr M, char *module)
+{
+	Client c;
+	int clientID = *(int*) M;
+
+	c = MCgetClient(clientID);
+	if (findModule(c->usermodule, module)) 
+		return 1;
+	return 0;
+}
+
+int
 monet5_resolve_function(ptr M, sql_func *f)
 {
 	Client c;

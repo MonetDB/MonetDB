@@ -70,14 +70,6 @@ bl_flush(void)
 }
 
 static int
-bl_cleanup(void)
-{
-	if (bat_logger)
-		return logger_cleanup(bat_logger) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
-	return LOG_OK;
-}
-
-static int
 bl_changes(void)
 {	
 	return (int) MIN(logger_changes(bat_logger), GDK_int_max);
@@ -114,50 +106,6 @@ static int
 bl_sequence(int seq, lng id)
 {
 	return log_sequence(bat_logger, seq, id) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
-}
-
-static void *
-bl_find_table_value(const char *tabnam, const char *tab, const void *val, ...)
-{
-	BAT *s = NULL;
-	BAT *b;
-	va_list va;
-
-	va_start(va, val);
-	do {
-		b = temp_descriptor(logger_find_bat(bat_logger, tab, 0, 0));
-		if (b == NULL) {
-			bat_destroy(s);
-			return NULL;
-		}
-		BAT *t = BATselect(b, s, val, val, 1, 1, 0);
-		bat_destroy(b);
-		bat_destroy(s);
-		if (t == NULL)
-			return NULL;
-		s = t;
-		if (BATcount(s) == 0) {
-			bat_destroy(s);
-			return NULL;
-		}
-	} while ((tab = va_arg(va, const char *)) != NULL &&
-		 (val = va_arg(va, const void *)) != NULL);
-	va_end(va);
-
-	oid o = BUNtoid(s, 0);
-	bat_destroy(s);
-
-	b = temp_descriptor(logger_find_bat(bat_logger, tabnam, 0, 0));
-	if (b == NULL)
-		return NULL;
-	BATiter bi = bat_iterator(b);
-	val = BUNtail(bi, o - b->hseqbase);
-	size_t sz = ATOMlen(b->ttype, val);
-	void *res = GDKmalloc(sz);
-	if (res)
-		memcpy(res, val, sz);
-	bat_destroy(b);
-	return res;
 }
 
 /* Write a plan entry to copy part of the given file.
@@ -517,13 +465,11 @@ bat_logger_init( logger_functions *lf )
 	lf->create = bl_create;
 	lf->destroy = bl_destroy;
 	lf->flush = bl_flush;
-	lf->cleanup = bl_cleanup;
 	lf->changes = bl_changes;
 	lf->get_sequence = bl_get_sequence;
 	lf->log_isnew = bl_log_isnew;
 	lf->log_tstart = bl_tstart;
 	lf->log_tend = bl_tend;
 	lf->log_sequence = bl_sequence;
-	lf->log_find_table_value = bl_find_table_value;
 	lf->get_snapshot_files = bl_snapshot;
 }
