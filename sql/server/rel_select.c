@@ -904,7 +904,8 @@ rel_values(sql_query *query, symbol *tableref)
 	}
 	/* loop to check types */
 	for (m = exps->h; m; m = m->next)
-		m->data = exp_values_set_supertype(sql, (sql_exp*) m->data);
+		if (!(m->data = exp_values_set_supertype(sql, (sql_exp*) m->data)))
+			return NULL;
 
 	r = rel_project(sql->sa, NULL, exps);
 	r->nrcols = list_length(exps);
@@ -2106,7 +2107,7 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 	/* list of values or subqueries */
 	if (n->type == type_list) {
 		sql_exp *values;
-		list *vals = sa_list(sql->sa);
+		list *vals = sa_list(sql->sa), *nvalues;
 
 		n = dl->h->next;
 		n = n->data.lval->h;
@@ -2131,14 +2132,15 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 
 		values = exp_values(sql->sa, vals);
 		exp_label(sql->sa, values, ++sql->label);
-		if (is_tuple) { 
-			values = exp_tuples_set_supertype(sql, exp_get_values(le), values);
-			list *nvalues = tuples_check_types(sql, exp_get_values(le), values);
-			if (!nvalues)
+		if (is_tuple) {
+			if (!(values = exp_tuples_set_supertype(sql, exp_get_values(le), values)))
+				return NULL;
+			if (!(nvalues = tuples_check_types(sql, exp_get_values(le), values)))
 				return NULL;
 			le->f = nvalues;
 		} else { /* if it's not a tuple, enforce coersion on the type for every element on the list */
-			values = exp_values_set_supertype(sql, values);
+			if (!(values = exp_values_set_supertype(sql, values)))
+				return NULL;
 			if (rel_binop_check_types(sql, rel ? *rel : NULL, le, values, 0) < 0)
 				return NULL;
 		}
