@@ -2034,11 +2034,10 @@ rel_exists_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 	le = rel_value_exp(query, rel, sc->data.sym, f, ek);
 	if (!le) 
 		return NULL;
-	e = exp_exist(query, rel ? *rel : NULL, le, sc->token == SQL_EXISTS);
-	if (e) {
-		/* only freevar should have CARD_AGGR */
-		e->card = CARD_ATOM;
-	}
+	if (!(e = exp_exist(query, rel ? *rel : NULL, le, sc->token == SQL_EXISTS)))
+		return NULL;
+	/* only freevar should have CARD_AGGR */
+	e->card = CARD_ATOM;
 	return e;
 }
 
@@ -2057,11 +2056,10 @@ rel_exists_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 	assert(!is_sql_sel(f));
 	if (sq) {
 		sql_exp *e = exp_rel(sql, sq);
-		e = exp_exist(query, rel, e, sc->token == SQL_EXISTS);
-		if (e) {
-			/* only freevar should have CARD_AGGR */
-			e->card = CARD_ATOM;
-		}
+		if (!(e = exp_exist(query, rel, e, sc->token == SQL_EXISTS)))
+			return NULL;
+		/* only freevar should have CARD_AGGR */
+		e->card = CARD_ATOM;
 		rel = rel_select_add_exp(sql->sa, rel, e);
 		return rel;
 	}
