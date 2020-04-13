@@ -3357,7 +3357,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 		for (i = 0; args && args->data.sym; args = args->next, i++) {
 			int base = (!groupby || !is_project(groupby->op) || is_base(groupby->op) || is_processed(groupby));
 			sql_rel *gl = base?groupby:groupby->l, *ogl = gl; /* handle case of subqueries without correlation */
-			sql_exp *e = rel_value_exp(query, &gl, args->data.sym, (f | sql_aggr)& ~sql_farg, ek), *a = NULL;
+			sql_exp *e = rel_value_exp(query, &gl, args->data.sym, (f | sql_aggr)& ~sql_farg, ek);
 			bool found_one_freevar = false;
 
 			has_args = true;
@@ -3386,15 +3386,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 				return e;
 			}
 
-			if (all_aggr) {
-				/* get expression from outer */
-				int aggr = 0;
-				if (a)
-					aggr = is_aggr(a->type);
-				all_aggr &= aggr;
-			} else {
-				all_aggr &= (exp_card(e) <= CARD_AGGR && !exp_is_atom(e) && is_aggr(e->type) && !is_func(e->type) && (!groupby || !is_groupby(groupby->op) || !groupby->r || !exps_find_exp(groupby->r, e)));
-			}
+			all_aggr &= (exp_card(e) <= CARD_AGGR && !exp_is_atom(e) && is_aggr(e->type) && !is_func(e->type) && (!groupby || !is_groupby(groupby->op) || !groupby->r || !exps_find_exp(groupby->r, e)));
 			exp_only_freevar(query, e, &all_freevar, &found_one_freevar, &found_nested_aggr, &ungrouped_cols);
 			all_freevar &= found_one_freevar; /* no uncorrelated variables must be found, plus at least one correlated variable to push this aggregate to an outer query */
 			list_append(exps, e);
