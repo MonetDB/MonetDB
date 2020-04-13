@@ -1430,189 +1430,194 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 	char *sname = qname_schema(qname);
 	char *tname = qname_schema_object(qname);
 	sql_schema *s = cur_schema(sql);
-	sql_table *t = NULL;
+	sql_table *t = NULL, *nt = NULL;
+	sql_rel *res = NULL, *r;
+	sql_exp **updates, *e;
 
 	if (sname && !(s = mvc_bind_schema(sql, sname))) {
 		if (if_exists)
 			return rel_psm_block(sql->sa, new_exp_list(sql->sa));
 		return sql_error(sql, 02, SQLSTATE(3F000) "ALTER TABLE: no such schema '%s'", sname);
 	}
-
-	if ((t = mvc_bind_table(sql, s, tname)) == NULL) {
-		if (mvc_bind_table(sql, tmp_schema(sql), tname) != NULL) 
-			return sql_error(sql, 02, SQLSTATE(42S02) "ALTER TABLE: not supported on TEMPORARY table '%s'", tname);
+	if (!sname)
+		t = stack_find_table(sql, tname);
+	if (!t)
+		t = mvc_bind_table(sql, s, tname);
+	if (!t) {
 		if (if_exists)
 			return rel_psm_block(sql->sa, new_exp_list(sql->sa));
 		return sql_error(sql, 02, SQLSTATE(42S02) "ALTER TABLE: no such table '%s' in schema '%s'", tname, s->base.name);
-	} else {
-		sql_rel *res = NULL, *r;
-		sql_table *nt = NULL;
-		sql_exp **updates, *e;
+	}
 
-		assert(te);
-		if (t->persistence != SQL_DECLARED_TABLE)
-			sname = s->base.name;
+	if (isDeclaredTable(t))
+		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: can't alter declared table '%s'", tname);
+	if (isTempSchema(t->s))
+		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: can't alter temporary table '%s'", tname);
 
-		if (te && (te->token == SQL_TABLE || te->token == SQL_DROP_TABLE)) {
-			dlist *nqname = te->data.lval->h->data.lval;
-			sql_schema *spt = NULL;
-			sql_table *pt = NULL;
-			char *nsname = qname_schema(nqname);
-			char *ntname = qname_schema_object(nqname);
+	assert(te);
+	if (t->persistence != SQL_DECLARED_TABLE)
+		sname = s->base.name;
 
-			/* partition sname */
-			if (!nsname)
-				nsname = sname;
+	if ((te->token == SQL_TABLE || te->token == SQL_DROP_TABLE)) {
+		dlist *nqname = te->data.lval->h->data.lval;
+		sql_schema *spt = NULL;
+		sql_table *pt = NULL;
+		char *nsname = qname_schema(nqname);
+		char *ntname = qname_schema_object(nqname);
 
-			if (nsname && !(spt=mvc_bind_schema(sql, nsname))) {
-				(void) sql_error(sql, 02, SQLSTATE(3F000) "ALTER TABLE: no such schema '%s'", sname);
+		/* partition sname */
+		if (!nsname)
+			nsname = sname;
+
+		if (nsname && !(spt = mvc_bind_schema(sql, nsname)))
+			return sql_error(sql, 02, SQLSTATE(3F000) "ALTER TABLE: no such schema '%s'", sname);
+		if (!nsname)
+			pt = stack_find_table(sql, ntname);
+		if (!pt && !(pt = mvc_bind_table(sql, spt, ntname)))
+			return sql_error(sql, 02, SQLSTATE(42S02) "ALTER TABLE: no such table '%s' in schema '%s'", ntname, spt->base.name);
+
+		if (isView(pt))
+			return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: can't add/drop a view into a %s",
+								TABLE_TYPE_DESCRIPTION(t->type, t->properties));
+		if (isDeclaredTable(pt))
+			return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: can't add/drop a declared table into a %s",
+								TABLE_TYPE_DESCRIPTION(t->type, t->properties));
+		if (isTempSchema(pt->s))
+			return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: can't add/drop a temporary table into a %s",
+								TABLE_TYPE_DESCRIPTION(t->type, t->properties));
+		if (strcmp(sname, nsname) != 0)
+			return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: all children tables of '%s.%s' must be "
+								"part of schema '%s'", sname, tname, sname);
+
+		if (te->token == SQL_TABLE) {
+			symbol *extra = dl->h->next->next->next->data.sym;
+
+			if (!extra) {
+				if (isRangePartitionTable(t)) {
+					return sql_error(sql, 02,SQLSTATE(42000) "ALTER TABLE: a range partition is required while adding under a %s",
+									 TABLE_TYPE_DESCRIPTION(t->type, t->properties));
+				} else if (isListPartitionTable(t)) {
+					return sql_error(sql, 02,SQLSTATE(42000) "ALTER TABLE: a value partition is required while adding under a %s",
+									 TABLE_TYPE_DESCRIPTION(t->type, t->properties));
+				}
+				return rel_alter_table(sql->sa, ddl_alter_table_add_table, sname, tname, nsname, ntname, 0);
+			}
+			if ((isMergeTable(pt) || isReplicaTable(pt)) && list_empty(pt->members.set))
+				return sql_error(sql, 02, SQLSTATE(42000) "The %s %s.%s should have at least one table associated",
+								 TABLE_TYPE_DESCRIPTION(pt->type, pt->properties), spt->base.name, pt->base.name);
+
+			if (extra->token == SQL_MERGE_PARTITION) { /* partition to hold null values only */
+				dlist* ll = extra->data.lval;
+				int update = ll->h->next->next->next->data.i_val;
+
+				if (isRangePartitionTable(t)) {
+					return rel_alter_table_add_partition_range(query, t, pt, sname, tname, nsname, ntname, NULL, NULL, true, update);
+				} else if (isListPartitionTable(t)) {
+					return rel_alter_table_add_partition_list(query, t, pt, sname, tname, nsname, ntname, NULL, true, update);
+				} else {
+					return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: cannot add a partition into a %s",
+									 TABLE_TYPE_DESCRIPTION(t->type, t->properties));
+				}
+			} else if (extra->token == SQL_PARTITION_RANGE) {
+				dlist* ll = extra->data.lval;
+				symbol* min = ll->h->data.sym, *max = ll->h->next->data.sym;
+				int nills = ll->h->next->next->data.i_val, update = ll->h->next->next->next->data.i_val;
+
+				if (!isRangePartitionTable(t)) {
+					return sql_error(sql, 02,SQLSTATE(42000) "ALTER TABLE: cannot add a range partition into a %s",
+									 TABLE_TYPE_DESCRIPTION(t->type, t->properties));
+				}
+
+				assert(nills == 0 || nills == 1);
+				return rel_alter_table_add_partition_range(query, t, pt, sname, tname, nsname, ntname, min, max, (bit) nills, update);
+			} else if (extra->token == SQL_PARTITION_LIST) {
+				dlist* ll = extra->data.lval, *values = ll->h->data.lval;
+				int nills = ll->h->next->data.i_val, update = ll->h->next->next->data.i_val;
+
+				if (!isListPartitionTable(t)) {
+					return sql_error(sql, 02,SQLSTATE(42000) "ALTER TABLE: cannot add a value partition into a %s",
+									 TABLE_TYPE_DESCRIPTION(t->type, t->properties));
+				}
+
+				assert(nills == 0 || nills == 1);
+				return rel_alter_table_add_partition_list(query, t, pt, sname, tname, nsname, ntname, values, (bit) nills, update);
+			}
+			assert(0);
+		} else {
+			int drop_action = te->data.lval->h->next->data.i_val;
+
+			return rel_alter_table(sql->sa, ddl_alter_table_del_table, sname, tname, nsname, ntname, drop_action);
+		}
+	}
+
+	/* read only or read write */
+	if (te->token == SQL_ALTER_TABLE) {
+		int state = te->data.i_val;
+
+		if (state == tr_readonly)
+			state = TABLE_READONLY;
+		else if (state == tr_append)
+			state = TABLE_APPENDONLY;
+		else
+			state = TABLE_WRITABLE;
+		return rel_alter_table(sql->sa, ddl_alter_table_set_access, sname, tname, NULL, NULL, state);
+	}
+
+	nt = dup_sql_table(sql->sa, t);
+	if (!nt || (table_element(query, te, s, nt, 1, t->persistence == SQL_DECLARED_TABLE, "ALTER TABLE") == SQL_ERR)) 
+		return NULL;
+
+	if (te->token == SQL_DROP_CONSTRAINT) {
+		dlist *l = te->data.lval;
+		char *kname = l->h->data.sval;
+		int drop_action = l->h->next->data.i_val;
+
+		sname = get_schema_name(sql, sname, tname);
+		return rel_drop(sql->sa, ddl_drop_constraint, sname, kname, drop_action, 0);
+	}
+
+	if (t->s && !nt->s)
+		nt->s = t->s;
+
+	res = rel_table(sql, ddl_alter_table, sname, nt, 0);
+
+	if (!isTable(nt))
+		return res;
+
+	/* New columns need update with default values. Add one more element for new column */
+	updates = SA_ZNEW_ARRAY(sql->sa, sql_exp*, (list_length(nt->columns.set) + 1));
+	e = exp_column(sql->sa, nt->base.name, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
+	r = rel_project(sql->sa, res, append(new_exp_list(sql->sa),e));
+	if (nt->columns.nelm) {
+		list *cols = new_exp_list(sql->sa);
+		for (node *n = nt->columns.nelm; n; n = n->next) {
+			sql_column *c = n->data;
+			if (c->def) {
+				char *d, *typestr = subtype2string2(&c->type);
+				if (!typestr)
+					return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				d = sql_message("select cast(%s as %s);", c->def, typestr);
+				_DELETE(typestr);
+				e = rel_parse_val(sql, d, sql->emode, NULL);
+				_DELETE(d);
+			} else {
+				e = exp_atom(sql->sa, atom_general(sql->sa, &c->type, NULL));
+			}
+			if (!e || (e = rel_check_type(sql, &c->type, r, e, type_equal)) == NULL) {
+				rel_destroy(r);
 				return NULL;
 			}
-			if ((pt = mvc_bind_table(sql, spt, ntname)) == NULL)
-				return sql_error(sql, 02, SQLSTATE(42S02) "ALTER TABLE: no such table '%s' in schema '%s'", ntname, spt->base.name);
+			list_append(cols, exp_column(sql->sa, nt->base.name, c->base.name, &c->type, CARD_MULTI, 0, 0));
 
-			if (te->token == SQL_TABLE) {
-				symbol *extra = dl->h->next->next->next->data.sym;
-
-				if (isView(pt))
-					return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: can't add a view into a %s",
-									 TABLE_TYPE_DESCRIPTION(t->type, t->properties));
-				if (isDeclaredTable(pt))
-					return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: can't add a declared table into a %s",
-									 TABLE_TYPE_DESCRIPTION(t->type, t->properties));
-				if (isTempSchema(pt->s))
-					return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: can't add a temporary table into a %s",
-									 TABLE_TYPE_DESCRIPTION(t->type, t->properties));
-				if (strcmp(sname, nsname) != 0)
-					return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: all children tables of '%s.%s' must be "
-									 "part of schema '%s'", sname, tname, sname);
-				if (!extra) {
-					if (isRangePartitionTable(t)) {
-						return sql_error(sql, 02,SQLSTATE(42000) "ALTER TABLE: a range partition is required while adding under a %s",
-										 TABLE_TYPE_DESCRIPTION(t->type, t->properties));
-					} else if (isListPartitionTable(t)) {
-						return sql_error(sql, 02,SQLSTATE(42000) "ALTER TABLE: a value partition is required while adding under a %s",
-										 TABLE_TYPE_DESCRIPTION(t->type, t->properties));
-					}
-					return rel_alter_table(sql->sa, ddl_alter_table_add_table, sname, tname, nsname, ntname, 0);
-				}
-				if ((isMergeTable(pt) || isReplicaTable(pt)) && list_empty(pt->members.set))
-					return sql_error(sql, 02, SQLSTATE(42000) "The %s %s.%s should have at least one table associated",
-									 TABLE_TYPE_DESCRIPTION(pt->type, pt->properties), spt->base.name, pt->base.name);
-
-				if (extra->token == SQL_MERGE_PARTITION) { //partition to hold null values only
-					dlist* ll = extra->data.lval;
-					int update = ll->h->next->next->next->data.i_val;
-
-					if (isRangePartitionTable(t)) {
-						return rel_alter_table_add_partition_range(query, t, pt, sname, tname, nsname, ntname, NULL, NULL, true, update);
-					} else if (isListPartitionTable(t)) {
-						return rel_alter_table_add_partition_list(query, t, pt, sname, tname, nsname, ntname, NULL, true, update);
-					} else {
-						return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: cannot add a partition into a %s",
-										 TABLE_TYPE_DESCRIPTION(t->type, t->properties));
-					}
-				} else if (extra->token == SQL_PARTITION_RANGE) {
-					dlist* ll = extra->data.lval;
-					symbol* min = ll->h->data.sym, *max = ll->h->next->data.sym;
-					int nills = ll->h->next->next->data.i_val, update = ll->h->next->next->next->data.i_val;
-
-					if (!isRangePartitionTable(t)) {
-						return sql_error(sql, 02,SQLSTATE(42000) "ALTER TABLE: cannot add a range partition into a %s",
-										 TABLE_TYPE_DESCRIPTION(t->type, t->properties));
-					}
-
-					assert(nills == 0 || nills == 1);
-					return rel_alter_table_add_partition_range(query, t, pt, sname, tname, nsname, ntname, min, max, (bit) nills, update);
-				} else if (extra->token == SQL_PARTITION_LIST) {
-					dlist* ll = extra->data.lval, *values = ll->h->data.lval;
-					int nills = ll->h->next->data.i_val, update = ll->h->next->next->data.i_val;
-
-					if (!isListPartitionTable(t)) {
-						return sql_error(sql, 02,SQLSTATE(42000) "ALTER TABLE: cannot add a value partition into a %s",
-										 TABLE_TYPE_DESCRIPTION(t->type, t->properties));
-					}
-
-					assert(nills == 0 || nills == 1);
-					return rel_alter_table_add_partition_list(query, t, pt, sname, tname, nsname, ntname, values, (bit) nills, update);
-				}
-				assert(0);
-			} else {
-				int drop_action = te->data.lval->h->next->data.i_val;
-
-				return rel_alter_table(sql->sa, ddl_alter_table_del_table, sname, tname, nsname, ntname, drop_action);
-			}
+			assert(!updates[c->colnr]);
+			exp_setname(sql->sa, e, c->t->base.name, c->base.name);
+			updates[c->colnr] = e;
 		}
-
-		/* read only or read write */
-		if (te && te->token == SQL_ALTER_TABLE) {
-			int state = te->data.i_val;
-
-			if (state == tr_readonly) 
-				state = TABLE_READONLY;
-			else if (state == tr_append) 
-				state = TABLE_APPENDONLY;
-			else
-				state = TABLE_WRITABLE;
-			return rel_alter_table(sql->sa, ddl_alter_table_set_access, sname, tname, NULL, NULL, state);
-		}
-
-		nt = dup_sql_table(sql->sa, t);
-		if (!nt || (te && table_element(query, te, s, nt, 1, t->persistence == SQL_DECLARED_TABLE, "ALTER TABLE") == SQL_ERR)) 
-			return NULL;
-
-		if (te->token == SQL_DROP_CONSTRAINT) {
-			dlist *l = te->data.lval;
-			char *kname = l->h->data.sval;
-			int drop_action = l->h->next->data.i_val;
-
-			sname = get_schema_name(sql, sname, tname);
-			return rel_drop(sql->sa, ddl_drop_constraint, sname, kname, drop_action, 0);
-		}
-
-		if (t->s && !nt->s)
-			nt->s = t->s;
-
-		res = rel_table(sql, ddl_alter_table, sname, nt, 0);
-
-		if (!isTable(nt))
-			return res;
-
-		/* New columns need update with default values. Add one more element for new column */
-		updates = SA_ZNEW_ARRAY(sql->sa, sql_exp*, (list_length(nt->columns.set) + 1));
-		e = exp_column(sql->sa, nt->base.name, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
-		r = rel_project(sql->sa, res, append(new_exp_list(sql->sa),e));
-		if (nt->columns.nelm) {
-			list *cols = new_exp_list(sql->sa);
-			for (node *n = nt->columns.nelm; n; n = n->next) {
-				sql_column *c = n->data;
-				if (c->def) {
-					char *d, *typestr = subtype2string2(&c->type);
-					if (!typestr)
-						return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					d = sql_message("select cast(%s as %s);", c->def, typestr);
-					_DELETE(typestr);
-					e = rel_parse_val(sql, d, sql->emode, NULL);
-					_DELETE(d);
-				} else {
-					e = exp_atom(sql->sa, atom_general(sql->sa, &c->type, NULL));
-				}
-				if (!e || (e = rel_check_type(sql, &c->type, r, e, type_equal)) == NULL) {
-					rel_destroy(r);
-					return NULL;
-				}
-				list_append(cols, exp_column(sql->sa, nt->base.name, c->base.name, &c->type, CARD_MULTI, 0, 0));
-
-				assert(!updates[c->colnr]);
-				exp_setname(sql->sa, e, c->t->base.name, c->base.name);
-				updates[c->colnr] = e;
-			}
-			res = rel_update(sql, res, r, updates, cols); 
-		} else { /* new indices or keys */
-			res = rel_update(sql, res, r, updates, NULL); 
-		}
-		return res;
+		res = rel_update(sql, res, r, updates, cols);
+	} else { /* new indices or keys */
+		res = rel_update(sql, res, r, updates, NULL);
 	}
+	return res;
 }
 
 static sql_rel *
