@@ -1056,10 +1056,11 @@ mvc_bind_schema(mvc *m, const char *sname)
 sql_table *
 mvc_bind_table(mvc *m, sql_schema *s, const char *tname)
 {
-	sql_table *t = stack_find_table(m, tname);
+	sql_table *t = find_sql_table(s, tname);
 
+	(void) m;
 	if (!t)
-		t = find_sql_table(s, tname);
+		return NULL;
 	TRC_DEBUG(SQL_TRANS, "Bind table: %s.%s\n", s->base.name, tname);
 	return t;
 }

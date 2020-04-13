@@ -52,7 +52,7 @@ static void
 sql_insert_priv(mvc *sql, sqlid auth_id, sqlid obj_id, int privilege, sqlid grantor, int grantable)
 {
 	sql_schema *ss = mvc_bind_schema(sql, "sys");
-	sql_table *pt = mvc_bind_table(sql, ss, "privileges");
+	sql_table *pt = find_sql_table(ss, "privileges");
 
 	table_funcs.table_insert(sql->session->tr, pt, &obj_id, &auth_id, &privilege, &grantor, &grantable);
 }
@@ -139,6 +139,10 @@ sql_grant_table_privs( mvc *sql, char *grantee, int privs, char *sname, char *tn
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		throw(SQL,"sql.grant_table",SQLSTATE(3F000) "GRANT: no such schema '%s'", sname);
+	if (!sname)
+		t = stack_find_table(sql, tname);
+	if (t)
+		throw(SQL,"sql.grant_table", SQLSTATE(42000) "GRANT: cannot grant privileges to a declared table");
 	if (!(t = mvc_bind_table(sql, s, tname)))
 		throw(SQL,"sql.grant_table",SQLSTATE(42S02) "GRANT: no such table '%s'", tname);
 
@@ -226,7 +230,7 @@ static void
 sql_delete_priv(mvc *sql, sqlid auth_id, sqlid obj_id, int privilege, sqlid grantor, int grantable)
 {
 	sql_schema *ss = mvc_bind_schema(sql, "sys");
-	sql_table *privs = mvc_bind_table(sql, ss, "privileges");
+	sql_table *privs = find_sql_table(ss, "privileges");
 	sql_column *priv_obj = find_sql_column(privs, "obj_id");
 	sql_column *priv_auth = find_sql_column(privs, "auth_id");
 	sql_column *priv_priv = find_sql_column(privs, "privileges");
@@ -280,6 +284,10 @@ sql_revoke_table_privs( mvc *sql, char *grantee, int privs, char *sname, char *t
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		throw(SQL,"sql.revoke_table", SQLSTATE(3F000) "REVOKE: no such schema '%s'", sname);
+	if (!sname)
+		t = stack_find_table(sql, tname);
+	if (t)
+		throw(SQL,"sql.grant_table", SQLSTATE(42000) "REVOKE: cannot revoke privileges to a declared table");
 	if (!(t = mvc_bind_table(sql, s, tname)))
 		throw(SQL,"sql.revoke_table", SQLSTATE(42S02) "REVOKE: no such table '%s'", tname);
 
@@ -390,8 +398,8 @@ sql_drop_role(mvc *m, str auth)
 {
 	sqlid role_id = sql_find_auth(m, auth);
 	sql_schema *sys = find_sql_schema(m->session->tr, "sys");
-	sql_table *auths = mvc_bind_table(m, sys, "auths");
-	sql_table *user_roles = mvc_bind_table(m, sys, "user_role");
+	sql_table *auths = find_sql_table(sys, "auths");
+	sql_table *user_roles = find_sql_table(sys, "user_role");
 	sql_trans *tr = m->session->tr;
 	rids *A;
 	oid rid;
@@ -806,9 +814,9 @@ static char *
 sql_drop_granted_users(mvc *sql, sqlid user_id, char *user, list *deleted_users)
 {
 	sql_schema *ss = mvc_bind_schema(sql, "sys");
-	sql_table *privs = mvc_bind_table(sql, ss, "privileges");
-	sql_table *user_roles = mvc_bind_table(sql, ss, "user_role");
-	sql_table *auths = mvc_bind_table(sql, ss, "auths");
+	sql_table *privs = find_sql_table(ss, "privileges");
+	sql_table *user_roles = find_sql_table(ss, "user_role");
+	sql_table *auths = find_sql_table(ss, "auths");
 	sql_trans *tr = sql->session->tr;
 	rids *A;
 	oid rid;

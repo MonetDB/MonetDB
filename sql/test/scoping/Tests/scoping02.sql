@@ -25,3 +25,30 @@ BEGIN
 END;
 
 DROP TABLE atest;
+
+CREATE TABLE sys.mytable (a int);
+INSERT INTO sys.mytable VALUES (1);
+
+CREATE OR REPLACE FUNCTION scoping01(i INT) RETURNS INT
+BEGIN
+	DECLARE TABLE mytable (a int);
+	INSERT INTO mytable VALUES (2);
+	IF i = 1 THEN
+		RETURN SELECT a FROM sys.mytable;
+	ELSE
+		RETURN SELECT a FROM mytable;
+	END IF;
+END;
+
+SELECT scoping01(vals) FROM (VALUES (1), (2)) AS vals(vals);
+	-- 1
+	-- 2
+
+DROP FUNCTION scoping01(INT);
+DROP TABLE sys.mytable;
+
+CREATE OR REPLACE FUNCTION iambroken() RETURNS INT
+BEGIN
+	DECLARE TABLE mytable (a int);
+	RETURN SELECT a FROM sys.mytable; --error table sys.mytable doesn't exist
+END;

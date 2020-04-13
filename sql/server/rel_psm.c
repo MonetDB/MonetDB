@@ -472,9 +472,9 @@ rel_psm_return( sql_query *query, sql_subtype *restype, list *restypelist, symbo
 		if (sname && !(s = mvc_bind_schema(sql, sname)))
 			return sql_error(sql, 02, SQLSTATE(3F000) "RETURN: no such schema '%s'", sname);
 
-		if ((t = stack_find_table(sql, tname))) {
+		if (!sname && (t = stack_find_table(sql, tname))) {
 			rel = rel_table(sql, ddl_create_table, s->base.name, t, SQL_DECLARED_TABLE);
-		} else if ((t = find_sql_table(s, tname))) {
+		} else if ((t = mvc_bind_table(sql, s, tname))) {
 			rel = rel_basetable(sql, t, t->base.name);
 			for (node *n = rel->exps->h ; n ; n = n->next) {
 				sql_exp *e = (sql_exp *) n->data;	
@@ -1304,8 +1304,14 @@ create_trigger(sql_query *query, dlist *qname, int time, symbol *trigger_event, 
 
 	if (create && !mvc_schema_privs(sql, ss))
 		return sql_error(sql, 02, SQLSTATE(42000) "%s TRIGGER: access denied for %s to schema '%s'", base, sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")), ss->base.name);
-	if (create && !(t = mvc_bind_table(sql, ss, tname)))
-		return sql_error(sql, 02, SQLSTATE(42000) "%s TRIGGER: unknown table '%s'", base, tname);
+	if (create) {
+		if (!sname)
+			t = stack_find_table(sql, tname);
+		if (t)
+			return sql_error(sql, 02, SQLSTATE(42000) "%s TRIGGER: declared tables cannot have triggers", base);
+		if (!(t = mvc_bind_table(sql, ss, tname)))
+			return sql_error(sql, 02, SQLSTATE(42000) "%s TRIGGER: unknown table '%s'", base, tname);
+	}
 	if (create && isView(t))
 		return sql_error(sql, 02, SQLSTATE(42000) "%s TRIGGER: cannot create trigger on view '%s'", base, tname);
 	if (triggerschema && strcmp(triggerschema, ss->base.name) != 0)
@@ -1522,13 +1528,18 @@ create_table_from_loader(sql_query *query, dlist *qname, symbol *fcall)
 	char *sname = qname_schema(qname);
 	char *tname = qname_schema_object(qname);
 	sql_subfunc *loader = NULL;
-	sql_rel* rel = NULL;
+	sql_rel *rel = NULL;
+	sql_table *t = NULL;
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_error(sql, 02, SQLSTATE(3F000) "CREATE TABLE FROM LOADER: no such schema '%s'", sname);
 	if (!mvc_schema_privs(sql, s))
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE TABLE FROM LOADER: insufficient privileges for user '%s' in schema '%s'", sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")), s->base.name);
-	if (mvc_bind_table(sql, s, tname))
+	if (!sname)
+		t = stack_find_table(sql, tname);
+	if (!t)
+		t = mvc_bind_table(sql, s, tname);
+	if (t)
 		return sql_error(sql, 02, SQLSTATE(42S01) "CREATE TABLE FROM LOADER: name '%s' already in use", tname);
 
 	rel = rel_loader_function(query, fcall, new_exp_list(sql->sa), &loader);

@@ -624,10 +624,14 @@ insert_into(sql_query *query, dlist *qname, dlist *columns, symbol *val_or_q)
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_error(sql, 02, SQLSTATE(3F000) "INSERT INTO: no such schema '%s'", sname);
-	t = mvc_bind_table(sql, s, tname);
-	if (!t && !sname) {
-		s = tmp_schema(sql);
+	if (!sname)
+		t = stack_find_table(sql, tname);
+	if (!t) {
 		t = mvc_bind_table(sql, s, tname);
+		if (!t && !sname) {
+			s = tmp_schema(sql);
+			t = mvc_bind_table(sql, s, tname);
+		}
 	}
 	if (insert_allowed(sql, t, tname, "INSERT INTO", "insert into") == NULL) 
 		return NULL;
@@ -1092,10 +1096,14 @@ update_table(sql_query *query, dlist *qname, str alias, dlist *assignmentlist, s
 
 	if (sname && !(s = mvc_bind_schema(sql,sname)))
 		return sql_error(sql, 02, SQLSTATE(3F000) "UPDATE: no such schema '%s'", sname);
-	t = mvc_bind_table(sql, s, tname);
-	if (!t && !sname) {
-		s = tmp_schema(sql);
+	if (!sname)
+		t = stack_find_table(sql, tname);
+	if (!t) {
 		t = mvc_bind_table(sql, s, tname);
+		if (!t && !sname) {
+			s = tmp_schema(sql);
+			t = mvc_bind_table(sql, s, tname);
+		}
 	}
 	if (update_allowed(sql, t, tname, "UPDATE", "update", 0) != NULL) {
 		sql_rel *r = NULL, *bt = rel_basetable(sql, t, t->base.name), *res = bt;
@@ -1179,15 +1187,19 @@ delete_table(sql_query *query, dlist *qname, str alias, symbol *opt_where)
 	mvc *sql = query->sql;
 	char *sname = qname_schema(qname);
 	char *tname = qname_schema_object(qname);
-	sql_schema *schema = cur_schema(sql);
+	sql_schema *s = cur_schema(sql);
 	sql_table *t = NULL;
 
-	if (sname && !(schema = mvc_bind_schema(sql, sname)))
+	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_error(sql, 02, SQLSTATE(3F000) "DELETE FROM: no such schema '%s'", sname);
-	t = mvc_bind_table(sql, schema, tname);
-	if (!t && !sname) {
-		schema = tmp_schema(sql);
-		t = mvc_bind_table(sql, schema, tname);
+	if (!sname)
+		t = stack_find_table(sql, tname);
+	if (!t) {
+		t = mvc_bind_table(sql, s, tname);
+		if (!t && !sname) {
+			s = tmp_schema(sql);
+			t = mvc_bind_table(sql, s, tname);
+		}
 	}
 	if (update_allowed(sql, t, tname, "DELETE FROM", "delete from", 1) != NULL) {
 		sql_rel *r = rel_basetable(sql, t, t->base.name);
@@ -1218,15 +1230,19 @@ truncate_table(mvc *sql, dlist *qname, int restart_sequences, int drop_action)
 {
 	char *sname = qname_schema(qname);
 	char *tname = qname_schema_object(qname);
-	sql_schema *schema = cur_schema(sql);
+	sql_schema *s = cur_schema(sql);
 	sql_table *t = NULL;
 
-	if (sname && !(schema = mvc_bind_schema(sql, sname)))
+	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_error(sql, 02, SQLSTATE(3F000) "TRUNCATE: no such schema '%s'", sname);
-	t = mvc_bind_table(sql, schema, tname);
-	if (!t && !sname) {
-		schema = tmp_schema(sql);
-		t = mvc_bind_table(sql, schema, tname);
+	if (!sname)
+		t = stack_find_table(sql, tname);
+	if (!t) {
+		t = mvc_bind_table(sql, s, tname);
+		if (!t && !sname) {
+			s = tmp_schema(sql);
+			t = mvc_bind_table(sql, s, tname);
+		}
 	}
 	if (update_allowed(sql, t, tname, "TRUNCATE", "truncate", 2) != NULL)
 		return rel_truncate(sql->sa, rel_basetable(sql, t, tname), restart_sequences, drop_action);
@@ -1299,10 +1315,14 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_error(sql, 02, SQLSTATE(3F000) "MERGE: no such schema '%s'", sname);
-	t = mvc_bind_table(sql, s, tname);
-	if (!t && !sname) {
-		s = tmp_schema(sql);
+	if (!sname)
+		t = stack_find_table(sql, tname);
+	if (!t) {
 		t = mvc_bind_table(sql, s, tname);
+		if (!t && !sname) {
+			s = tmp_schema(sql);
+			t = mvc_bind_table(sql, s, tname);
+		}
 	}
 	if (!t)
 		return sql_error(sql, 02, SQLSTATE(42S02) "MERGE: no such table '%s'", tname);
@@ -1576,10 +1596,14 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_error(sql, 02, SQLSTATE(3F000) "COPY INTO: no such schema '%s'", sname);
-	t = mvc_bind_table(sql, s, tname);
-	if (!t && !sname) {
-		s = tmp_schema(sql);
+	if (!sname)
+		t = stack_find_table(sql, tname);
+	if (!t) {
 		t = mvc_bind_table(sql, s, tname);
+		if (!t && !sname) {
+			s = tmp_schema(sql);
+			t = mvc_bind_table(sql, s, tname);
+		}
 	}
 	if (insert_allowed(sql, t, tname, "COPY INTO", "copy into") == NULL)
 		return NULL;
@@ -1786,10 +1810,14 @@ bincopyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, int co
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_error(sql, 02, SQLSTATE(3F000) "COPY INTO: no such schema '%s'", sname);
-	t = mvc_bind_table(sql, s, tname);
-	if (!t && !sname) {
-		s = tmp_schema(sql);
+	if (!sname)
+		t = stack_find_table(sql, tname);
+	if (!t) {
 		t = mvc_bind_table(sql, s, tname);
+		if (!t && !sname) {
+			s = tmp_schema(sql);
+			t = mvc_bind_table(sql, s, tname);
+		}
 	}
 	if (insert_allowed(sql, t, tname, "COPY INTO", "copy into") == NULL) 
 		return NULL;
@@ -1858,10 +1886,14 @@ copyfromloader(sql_query *query, dlist *qname, symbol *fcall)
 				"binary COPY INTO requires database administrator rights");
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_error(sql, 02, SQLSTATE(3F000) "COPY INTO: no such schema '%s'", sname);
-	t = mvc_bind_table(sql, s, tname);
-	if (!t && !sname) {
-		s = tmp_schema(sql);
+	if (!sname)
+		t = stack_find_table(sql, tname);
+	if (!t) {
 		t = mvc_bind_table(sql, s, tname);
+		if (!t && !sname) {
+			s = tmp_schema(sql);
+			t = mvc_bind_table(sql, s, tname);
+		}
 	}
 	//TODO the COPY LOADER INTO should return an insert relation (instead of ddl) to handle partitioned tables properly
 	if (insert_allowed(sql, t, tname, "COPY INTO", "copy into") == NULL)

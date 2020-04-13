@@ -513,10 +513,16 @@ table_foreign_key(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table *t)
 	char *rsname = qname_schema(n->data.lval);
 	char *rtname = qname_schema_object(n->data.lval);
 	sql_schema *fs = ss;
-	sql_table *ft;
+	sql_table *ft = NULL;
 
 	if (rsname && !(fs = mvc_bind_schema(sql, rsname))) {
 		(void) sql_error(sql, 02, SQLSTATE(3F000) "CONSTRAINT FOREIGN KEY: no such schema '%s'", rsname);
+		return SQL_ERR;
+	}
+	if (!rsname)
+		ft = stack_find_table(sql, rtname);
+	if (ft) {
+		(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: not possible to create a foreign key on a declared table");
 		return SQL_ERR;
 	}
 	ft = mvc_bind_table(sql, fs, rtname);
@@ -856,7 +862,10 @@ table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 		}
 		if (!os)
 			os = ss;
-		ot = mvc_bind_table(sql, os, name);
+		if (!sname)
+			ot = stack_find_table(sql, name);
+		if (!ot)
+			ot = mvc_bind_table(sql, os, name);
 		if (!ot) {
 			sql_error(sql, 02, SQLSTATE(3F000) "%s: no such table '%s'", action, name);
 			return SQL_ERR;
@@ -1031,7 +1040,7 @@ rel_create_table(sql_query *query, int temp, const char *sname, const char *name
 		}
 	}
 
-	if (global && find_sql_table(s, name)) {
+	if (global && mvc_bind_table(sql, s, name)) {
 		if (if_not_exists)
 			return rel_psm_block(sql->sa, new_exp_list(sql->sa));
 		return sql_error(sql, 02, SQLSTATE(42S01) "%s TABLE: name '%s' already in use", action, name);
@@ -1142,24 +1151,30 @@ rel_create_view(sql_query *query, sql_schema *ss, dlist *qname, dlist *column_sp
 	if (create && (!mvc_schema_privs(sql, s) && !(isTempSchema(s) && persistent == SQL_LOCAL_TEMP)))
 		return sql_error(sql, 02, SQLSTATE(42000) "%s VIEW: access denied for %s to schema '%s'", base, sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")), s->base.name);
 
-	if (create && (t = mvc_bind_table(sql, s, name)) != NULL) {
-		if (replace) {
-			if (!isView(t)) {
-				return sql_error(sql, 02, SQLSTATE(42000) "%s VIEW: unable to drop view '%s': is a table", base, name);
-			} else if (t->system) {
-				return sql_error(sql, 02, SQLSTATE(42000) "%s VIEW: cannot replace system view '%s'", base, name);
-			} else if (mvc_check_dependency(sql, t->base.id, VIEW_DEPENDENCY, NULL)) {
-				return sql_error(sql, 02, SQLSTATE(42000) "%s VIEW: cannot replace view '%s', there are database objects which depend on it", base, t->base.name);
-			} else {
-				str output;
-				if ((output = mvc_drop_table(sql, s, t, 0)) != MAL_SUCCEED) {
-					sql_error(sql, 02, SQLSTATE(42000) "%s", output);
-					freeException(output);
-					return NULL;
+	if (create) {
+		if (!sname)
+			t = stack_find_table(sql, name);
+		if (!t)
+			t = mvc_bind_table(sql, s, name);
+		if (t) {
+			if (replace) {
+				if (!isView(t)) {
+					return sql_error(sql, 02, SQLSTATE(42000) "%s VIEW: unable to drop view '%s': is a table", base, name);
+				} else if (t->system) {
+					return sql_error(sql, 02, SQLSTATE(42000) "%s VIEW: cannot replace system view '%s'", base, name);
+				} else if (mvc_check_dependency(sql, t->base.id, VIEW_DEPENDENCY, NULL)) {
+					return sql_error(sql, 02, SQLSTATE(42000) "%s VIEW: cannot replace view '%s', there are database objects which depend on it", base, t->base.name);
+				} else {
+					str output;
+					if ((output = mvc_drop_table(sql, s, t, 0)) != MAL_SUCCEED) {
+						sql_error(sql, 02, SQLSTATE(42000) "%s", output);
+						freeException(output);
+						return NULL;
+					}
 				}
+			} else {
+				return sql_error(sql, 02, SQLSTATE(42S01) "%s VIEW: name '%s' already in use", base, name);
 			}
-		} else {
-			return sql_error(sql, 02, SQLSTATE(42S01) "%s VIEW: name '%s' already in use", base, name);
 		}
 	}
 	if (ast) {
@@ -1424,7 +1439,7 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 	}
 
 	if ((t = mvc_bind_table(sql, s, tname)) == NULL) {
-		if (mvc_bind_table(sql, mvc_bind_schema(sql, "tmp"), tname) != NULL) 
+		if (mvc_bind_table(sql, tmp_schema(sql), tname) != NULL) 
 			return sql_error(sql, 02, SQLSTATE(42S02) "ALTER TABLE: not supported on TEMPORARY table '%s'", tname);
 		if (if_exists)
 			return rel_psm_block(sql->sa, new_exp_list(sql->sa));
@@ -1877,10 +1892,15 @@ rel_grant_privs(mvc *sql, sql_schema *cur, dlist *privs, dlist *grantees, int gr
 		char *sname = qname_schema(qname);
 		char *tname = qname_schema_object(qname);
 		sql_schema *s = cur;
+		sql_table *t = NULL;
 
 		if (sname && !(s = mvc_bind_schema(sql, sname)))
 			return sql_error(sql, 02, SQLSTATE(3F000) "GRANT: no such schema '%s'", sname);
-		if (s && mvc_bind_table(sql, s, tname))
+		if (!sname)
+			t = stack_find_table(sql, tname);
+		if (t)
+			return sql_error(sql, 02, SQLSTATE(42000) "GRANT: cannot grant privileges on a declared table");
+		if ((t = mvc_bind_table(sql, s, tname)))
 			token = SQL_TABLE;
 	}
 
@@ -2058,10 +2078,15 @@ rel_revoke_privs(mvc *sql, sql_schema *cur, dlist *privs, dlist *grantees, int g
 		char *sname = qname_schema(qname);
 		char *tname = qname_schema_object(qname);
 		sql_schema *s = cur;
+		sql_table *t = NULL;
 
 		if (sname && !(s = mvc_bind_schema(sql, sname))) 
-			return sql_error(sql, 02, SQLSTATE(3F000) "GRANT: no such schema '%s'", sname);
-		if (s && mvc_bind_table(sql, s, tname))
+			return sql_error(sql, 02, SQLSTATE(3F000) "REVOKE: no such schema '%s'", sname);
+		if (!sname)
+			t = stack_find_table(sql, tname);
+		if (t)
+			return sql_error(sql, 02, SQLSTATE(42000) "REVOKE: cannot grant privileges on a declared table");
+		if ((t = mvc_bind_table(sql, s, tname)))
 			token = SQL_TABLE;
 	}
 
@@ -2081,7 +2106,7 @@ rel_revoke_privs(mvc *sql, sql_schema *cur, dlist *privs, dlist *grantees, int g
 		return rel_revoke_func(sql, cur, obj_privs, qname, typelist, type, grantees, grant, grantor);
 	}
 	default:
-		return sql_error(sql, 02, SQLSTATE(M0M03) "Grant: unknown token %d", (int) token);
+		return sql_error(sql, 02, SQLSTATE(M0M03) "Revoke: unknown token %d", (int) token);
 	}
 }
 
@@ -2090,7 +2115,7 @@ static sql_rel *
 rel_create_index(mvc *sql, char *iname, idx_type itype, dlist *qname, dlist *column_list)
 {
 	sql_schema *s = cur_schema(sql);
-	sql_table *t, *nt;
+	sql_table *t = NULL, *nt;
 	sql_rel *r, *res;
 	sql_exp **updates, *e;
 	sql_idx *i;
@@ -2103,8 +2128,11 @@ rel_create_index(mvc *sql, char *iname, idx_type itype, dlist *qname, dlist *col
 	i = mvc_bind_idx(sql, s, iname);
 	if (i) 
 		return sql_error(sql, 02, SQLSTATE(42S11) "CREATE INDEX: name '%s' already in use", iname);
-	t = mvc_bind_table(sql, s, tname);
-	if (!t) {
+	if (!sname)
+		t = stack_find_table(sql, tname);
+	if (t)
+		return sql_error(sql, 02, SQLSTATE(42000) "CREATE INDEX: cannot create an index on a declared table");
+	if (!(t = mvc_bind_table(sql, s, tname))) {
 		return sql_error(sql, 02, SQLSTATE(42S02) "CREATE INDEX: no such table '%s'", tname);
 	} else if (isView(t) || isMergeTable(t) || isRemote(t)) {
 		return sql_error(sql, 02, SQLSTATE(42S02) "CREATE INDEX: cannot create index on %s '%s'", isView(t)?"view":
