@@ -1890,9 +1890,8 @@ rel_compare(sql_query *query, sql_rel *rel, symbol *sc, symbol *lo, symbol *ro, 
 	ls = rel_value_exp(query, &rel, lo, f, ek);
 	if (!ls)
 		return NULL;
-	if (ls && rel && exp_has_freevar(sql, ls) && (is_sql_sel(f) || is_sql_having(f))) {
+	if (ls && rel && exp_has_freevar(sql, ls) && (is_sql_sel(f) || is_sql_having(f)))
 		ls = rel_project_add_exp(sql, rel, ls);
-	}
 	if (quantifier)
 		ek.card = card_set;
 
@@ -5467,7 +5466,8 @@ join_on_column_name(sql_query *query, sql_rel *rel, sql_rel *t1, sql_rel *t2, in
 
 		if (re) {
 			found = 1;
-			rel = rel_compare_exp(query, rel, le, re, "=", NULL, TRUE, 0, 0);
+			if (!(rel = rel_compare_exp(query, rel, le, re, "=", NULL, TRUE, 0, 0)))
+				return NULL;
 			if (full) {
 				sql_exp *cond = rel_unop_(sql, rel, le, NULL, "isnull", card_value);
 				set_has_no_nil(cond);
@@ -5482,11 +5482,8 @@ join_on_column_name(sql_query *query, sql_rel *rel, sql_rel *t1, sql_rel *t2, in
 			append(outexps, le);
 		}
 	}
-	if (!found) {
-		sql_error(sql, 02, SQLSTATE(42000) "JOIN: no columns of tables '%s' and '%s' match", rel_name(t1)?rel_name(t1):"", rel_name(t2)?rel_name(t2):"");
-		rel_destroy(rel);
-		return NULL;
-	}
+	if (!found)
+		return sql_error(sql, 02, SQLSTATE(42000) "JOIN: no columns of tables '%s' and '%s' match", rel_name(t1)?rel_name(t1):"", rel_name(t2)?rel_name(t2):"");
 	for (n = r_exps->h; n; n = n->next) {
 		sql_exp *re = n->data;
 		if (r_nil)
@@ -5806,12 +5803,8 @@ rel_joinquery_(sql_query *query, sql_rel *rel, symbol *tab1, int natural, jt joi
 	if (!t1 || !t2)
 		return NULL;
 
-	if (!lateral && rel_name(t1) && rel_name(t2) && strcmp(rel_name(t1), rel_name(t2)) == 0) {
-		sql_error(sql, 02, SQLSTATE(42000) "SELECT: '%s' on both sides of the JOIN expression", rel_name(t1));
-		rel_destroy(t1);
-		rel_destroy(t2);
-		return NULL;
-	}
+	if (!lateral && rel_name(t1) && rel_name(t2) && strcmp(rel_name(t1), rel_name(t2)) == 0)
+		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: '%s' on both sides of the JOIN expression", rel_name(t1));
 
 	inner = rel = rel_crossproduct(sql->sa, t1, t2, op_join);
 	inner->op = op;
@@ -5838,12 +5831,10 @@ rel_joinquery_(sql_query *query, sql_rel *rel, symbol *tab1, int natural, jt joi
 			sql_exp *ls = rel_bind_column(sql, t1, nm, sql_where, 0);
 			sql_exp *rs = rel_bind_column(sql, t2, nm, sql_where, 0);
 
-			if (!ls || !rs) {
-				sql_error(sql, 02, SQLSTATE(42000) "JOIN: tables '%s' and '%s' do not have a matching column '%s'", rel_name(t1)?rel_name(t1):"", rel_name(t2)?rel_name(t2):"", nm);
-				rel_destroy(rel);
+			if (!ls || !rs)
+				return sql_error(sql, 02, SQLSTATE(42000) "JOIN: tables '%s' and '%s' do not have a matching column '%s'", rel_name(t1)?rel_name(t1):"", rel_name(t2)?rel_name(t2):"", nm);
+			if (!(rel = rel_compare_exp(query, rel, ls, rs, "=", NULL, TRUE, 0, 0)))
 				return NULL;
-			}
-			rel = rel_compare_exp(query, rel, ls, rs, "=", NULL, TRUE, 0, 0);
 			if (op != op_join) {
 				cond = rel_unop_(sql, rel, ls, NULL, "isnull", card_value);
 				set_has_no_nil(cond);

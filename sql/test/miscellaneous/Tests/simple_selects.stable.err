@@ -169,6 +169,10 @@ MAPI  = (monetdb) /var/tmp/mtest-881990/.s.monetdb.34703
 QUERY = declare table x (c int); --error table x already declared
 ERROR = !DECLARE TABLE: name 'x' already in use
 CODE  = 42S01
+MAPI  = (monetdb) /var/tmp/mtest-628208/.s.monetdb.31440
+QUERY = select * from myx natural full outer join myy; --error, types boolean(1,0) and sec_interval(13,0) are not equal
+ERROR = !types boolean(1,0) and sec_interval(13,0) are not equal for column 'a'
+CODE  = 42000
 
 # 17:31:38 >  
 # 17:31:38 >  "Done."
