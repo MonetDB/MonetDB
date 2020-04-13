@@ -5828,8 +5828,8 @@ rel_joinquery_(sql_query *query, sql_rel *rel, symbol *tab1, int natural, jt joi
 		for (; n; n = n->next) {
 			char *nm = n->data.sval;
 			sql_exp *cond;
-			sql_exp *ls = rel_bind_column(sql, t1, nm, sql_where, 0);
-			sql_exp *rs = rel_bind_column(sql, t2, nm, sql_where, 0);
+			sql_exp *ls = rel_bind_column(sql, t1, nm, sql_where | sql_join, 0);
+			sql_exp *rs = rel_bind_column(sql, t2, nm, sql_where | sql_join, 0);
 
 			if (!ls || !rs)
 				return sql_error(sql, 02, SQLSTATE(42000) "JOIN: tables '%s' and '%s' do not have a matching column '%s'", rel_name(t1)?rel_name(t1):"", rel_name(t2)?rel_name(t2):"", nm);
@@ -5955,7 +5955,7 @@ rel_unionjoinquery(sql_query *query, sql_rel *rel, symbol *q)
 	rexps = new_exp_list(sql->sa);
 	for (m = lexps->h; m; m = m->next) {
 		sql_exp *le = m->data;
-		sql_exp *rc = rel_bind_column(sql, rv, exp_name(le), sql_where, 0);
+		sql_exp *rc = rel_bind_column(sql, rv, exp_name(le), sql_where | sql_join, 0);
 
 		if (!rc && all)
 			break;
