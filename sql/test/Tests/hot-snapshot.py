@@ -108,6 +108,10 @@ def main():
             # uncommitted1 and uncommitted2 should not be present
             assert foo == [('committed1',)]
 
+            cur3.close()
+            conn3.close()
+            server.terminate()
+
     finally:
         if os.path.exists(mydbdir):
             shutil.rmtree(mydbdir)
