@@ -397,7 +397,7 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int dec
 		if (!t && c) {
 			mnstr_printf(fout, "dict(%s.%s)", c->t->base.name, c->base.name);
 		} else {
-			const char *sname = t->s->base.name; /* All tables, including declared ones have schema */
+			const char *sname = t->s ? t->s->base.name : NULL; /* All tables, but declared ones on the stack have schema */
 			const char *tname = t->base.name;
 
 			if (isRemote(t)) {
