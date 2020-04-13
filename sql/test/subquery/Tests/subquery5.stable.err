@@ -110,6 +110,14 @@ MAPI  = (monetdb) /var/tmp/mtest-92118/.s.monetdb.32004
 QUERY = SELECT (SELECT SUM(SUM(t2.col1)) FROM another_t t2) FROM another_t t1; --error, aggregate function calls cannot be nested
 ERROR = !SUM: aggregate functions cannot be nested
 CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-577635/.s.monetdb.34590
+QUERY = SELECT (VALUES(col1, col2)) FROM another_t; --error, subquery must return only one column
+ERROR = !SELECT: subquery must return only one column
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-577635/.s.monetdb.34590
+QUERY = SELECT (VALUES(col1), (col2)) FROM another_t; --error, more than one row returned by a subquery used as an expression
+ERROR = !Cardinality violation, scalar value expected
+CODE  = 21000
 
 # 08:41:39 >  
 # 08:41:39 >  "Done."

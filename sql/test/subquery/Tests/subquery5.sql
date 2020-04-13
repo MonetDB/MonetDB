@@ -120,6 +120,25 @@ SELECT (SELECT CAST(SUM(col2 - 1) AS BIGINT) GROUP BY SUM(col2 + 1)) FROM anothe
 SELECT (SELECT CAST(SUM(col2 + 1) AS BIGINT) GROUP BY SUM(col2 + 1)) FROM another_t;
 	-- 1238
 
+SELECT (WITH a AS (SELECT col1) SELECT a.col1 FROM a) FROM another_t;
+	-- 1
+	-- 11
+	-- 111
+	-- 1111
+
+SELECT (VALUES(col1)) FROM another_t;
+	-- 1
+	-- 11
+	-- 111
+	-- 1111
+
+SELECT CAST((VALUES(SUM(col1 + col2))) AS BIGINT) FROM another_t;
+	-- 3702
+
+SELECT (VALUES(col1, col2)) FROM another_t; --error, subquery must return only one column
+
+SELECT (VALUES(col1), (col2)) FROM another_t; --error, more than one row returned by a subquery used as an expression
+
 DROP FUNCTION evilfunction(INT);
 DROP TABLE tbl_ProductSales;
 DROP TABLE another_T;

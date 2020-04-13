@@ -5141,18 +5141,18 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 
 		if (is_psm_call(f))
 			return sql_error(sql, 02, SQLSTATE(42000) "CALL: subqueries not allowed inside CALL statements");
+		if (rel && *rel)
+			query_push_outer(query, *rel, f);
 		if (se->token == SQL_WITH) {
 			r = rel_with_query(query, se);
 		} else if (se->token == SQL_VALUES) {
 			r = rel_values(query, se);
 		} else {
 			assert(se->token == SQL_SELECT);
-			if (rel && *rel)
-				query_push_outer(query, *rel, f);
 			r = rel_subquery(query, NULL, se, ek);
-			if (rel && *rel)
-				*rel = query_pop_outer(query);
 		}
+		if (rel && *rel)
+			*rel = query_pop_outer(query);
 		if (!r)
 			return NULL;
 		if (ek.type == type_value && ek.card <= card_set && is_project(r->op) && list_length(r->exps) > 1) 
