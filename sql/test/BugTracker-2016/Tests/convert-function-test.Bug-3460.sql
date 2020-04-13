@@ -1027,7 +1027,7 @@ DROP TABLE T_dec;
 
 -- CHAR, VARCHAR, LONGVARCHAR, CLOB
 CREATE TABLE T_char (v CHAR(33));
-INSERT into T_char VALUES ('0'), ('1'), ('0123456789'), ('AaZz'), ('~!@#$%^&*('')\_/-+=:;"<.,.>?'), ('');
+INSERT into T_char VALUES ('0'), ('1'), ('0123456789'), ('AaZz'), (r'~!@#$%^&*('')\_/-+=:;"<.,.>?'), ('');
 INSERT into T_char VALUES (null);
 SELECT v FROM T_char ORDER BY v;
 
@@ -1117,7 +1117,7 @@ DROP TABLE T_char;
 
 -- VARCHAR
 CREATE TABLE T_varchar (v VARCHAR(33));
-INSERT into T_varchar VALUES ('0'), ('1'), ('0123456789'), ('AaZz'), ('~!@#$%^&*('')\_/-+=:;"<.,.>?'), ('');
+INSERT into T_varchar VALUES ('0'), ('1'), ('0123456789'), ('AaZz'), (r'~!@#$%^&*('')\_/-+=:;"<.,.>?'), ('');
 INSERT into T_varchar VALUES (null);
 SELECT v FROM T_varchar ORDER BY v;
 
@@ -1208,7 +1208,7 @@ DROP TABLE T_varchar;
 -- LONG VARCHAR is NOT (yet) supported
 /* disabled test for now, enable it when it is supported
 CREATE TABLE T_longvarchar (v LONG VARCHAR);
-INSERT into T_longvarchar VALUES ('0'), ('1'), ('0123456789'), ('AaZz'), ('~!@#$%^&*('')\_/-+=:;"<.,.>?'), ('');
+INSERT into T_longvarchar VALUES ('0'), ('1'), ('0123456789'), ('AaZz'), (r'~!@#$%^&*('')\_/-+=:;"<.,.>?'), ('');
 INSERT into T_longvarchar VALUES (null);
 SELECT v FROM T_longvarchar ORDER BY v;
 
@@ -1299,7 +1299,7 @@ DROP TABLE T_longvarchar;
 
 -- CLOB
 CREATE TABLE T_clob (v CLOB);
-INSERT into T_clob VALUES ('0'), ('1'), ('0123456789'), ('AaZz'), ('~!@#$%^&*('')\_/-+=:;"<.,.>?'), ('');
+INSERT into T_clob VALUES ('0'), ('1'), ('0123456789'), ('AaZz'), (r'~!@#$%^&*('')\_/-+=:;"<.,.>?'), ('');
 INSERT into T_clob VALUES (null);
 SELECT v FROM T_clob ORDER BY v;
 

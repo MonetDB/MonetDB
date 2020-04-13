@@ -122,7 +122,7 @@ QUERY = SELECT
             SUM(CAST(SUM(t1.col6 * CAST (NOT t1.col1 IN (SELECT t2.col2 FROM another_T t2 GROUP BY t2.col2) AS INTEGER)) < ANY (SELECT MAX(ColID + t1.col7 - t1.col2) FROM tbl_ProductSales) AS INT)) OVER (PARTITION BY SUM(t1.col5) ORDER BY (SELECT MIN(t1.col6 + t1.col5 - t2.col2) FROM another_T t2))
         FROM another_T t1
         GROUP BY t1.col7, t1.col6; --error, subquery uses ungrouped column "t1.col2" from outer query
-ERROR = !SELECT: cannot use non GROUP BY column 't1.col5' in query results without an aggregate function
+ERROR = !SELECT: subquery uses ungrouped column "t1.col5" from outer query
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-22911/.s.monetdb.35494
 QUERY = SELECT

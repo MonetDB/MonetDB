@@ -1594,7 +1594,15 @@ dumpGeometriesSingle(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry,
 		snprintf(newPath, lvlDigitsNum + 1, "%u", *lvl);
 	} else {
 		//remove the comma at the end of the path
+#ifdef STATIC_CODE_ANALYSIS
+		/* coverity complains about the allocated space being
+		 * too small, but we just want to reduce the length of
+		 * the string by one, so the length in the #else part
+		 * is exactly what we need */
+		newPath = GDKmalloc(pathLength + 1);
+#else
 		newPath = GDKmalloc(pathLength);
+#endif
 		if (newPath == NULL) {
 			GDKfree(singleWKB);
 			throw(MAL, "geom.Dump", SQLSTATE(HY013) MAL_MALLOC_FAIL);

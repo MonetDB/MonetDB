@@ -16,6 +16,7 @@
 #include "rel_exp.h"
 #include "rel_select.h"
 #include "rel_rewriter.h"
+#include "sql_query.h"
 #include "mal_errors.h" /* for SQLSTATE() */
  
 static void
@@ -170,88 +171,109 @@ rel_has_freevar(mvc *sql, sql_rel *rel)
 	return 0;
 }
 
-static int exps_only_freevar(mvc *sql, list *exps, bool *found_one);
-static int rel_only_freevar(mvc *sql, sql_rel *rel, bool *found_one);
+static void exps_only_freevar(sql_query *query, list *exps, unsigned int *all_freevar, bool *found_one_freevar, bool *found_aggr, list **ungrouped_cols);
+static void rel_only_freevar(sql_query *query, sql_rel *rel, unsigned int *all_freevar, bool *found_one_freevar, bool *found_aggr, list **ungrouped_cols);
 
-int /* look for expressions with either only freevars or atoms */
-exp_only_freevar(mvc *sql, sql_exp *e, bool *found_one)
+void /* look for expressions with either only freevars or atoms */
+exp_only_freevar(sql_query *query, sql_exp *e, unsigned int *all_freevar, bool *found_one_freevar, bool *found_aggr, list **ungrouped_cols)
 {
 	if (THRhighwater()) {
-		(void) sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
-		return 0;
+		(void) sql_error(query->sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
+		return ;
 	}
 
 	if (is_freevar(e)) {
-		*found_one = true;
-		return 1;
+		sql_rel *outer;
+
+		*found_one_freevar = true;
+		if (e->type == e_column) {
+			if ((outer = query_fetch_outer(query, is_freevar(e)-1))) {
+				sql_exp *a = rel_find_exp(outer, e);
+				if (a && is_aggr(a->type))
+					*found_aggr = true;
+				else {
+					if (!*ungrouped_cols)
+						*ungrouped_cols = new_exp_list(query->sql->sa);
+					list_append(*ungrouped_cols, e);
+				}
+			}
+		}
+		return ;
 	}
 	switch(e->type) {
 	case e_cmp:
 		if (e->flag == cmp_or || e->flag == cmp_filter) {
-			return (exps_only_freevar(sql, e->l, found_one) && exps_only_freevar(sql, e->r, found_one));
+			exps_only_freevar(query, e->l, all_freevar, found_one_freevar, found_aggr, ungrouped_cols);
+			exps_only_freevar(query, e->r, all_freevar, found_one_freevar, found_aggr, ungrouped_cols);
 		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
-			return (exp_only_freevar(sql, e->l, found_one) && exps_only_freevar(sql, e->r, found_one));
+			exp_only_freevar(query, e->l, all_freevar, found_one_freevar, found_aggr, ungrouped_cols);
+			exps_only_freevar(query, e->r, all_freevar, found_one_freevar, found_aggr, ungrouped_cols);
 		} else {
-			return (exp_only_freevar(sql, e->l, found_one) && exp_only_freevar(sql, e->r, found_one) && 
-					(!e->f || (e->f && exp_only_freevar(sql, e->f, found_one))));
+			exp_only_freevar(query, e->l, all_freevar, found_one_freevar, found_aggr, ungrouped_cols);
+			exp_only_freevar(query, e->r, all_freevar, found_one_freevar, found_aggr, ungrouped_cols);
+			if (e->f)
+				exp_only_freevar(query, e->f, all_freevar, found_one_freevar, found_aggr, ungrouped_cols);
 		}
+		break;
 	case e_convert:
-		return exp_only_freevar(sql, e->l, found_one);
+		exp_only_freevar(query, e->l, all_freevar, found_one_freevar, found_aggr, ungrouped_cols);
+		break;
 	case e_func:
 	case e_aggr:
 		if (e->l)
-			return exps_only_freevar(sql, e->l, found_one);
-		return 1;
+			exps_only_freevar(query, e->l, all_freevar, found_one_freevar, found_aggr, ungrouped_cols);
+		break;
 	case e_psm:
 		if (exp_is_rel(e))
-			return rel_only_freevar(sql, e->l, found_one);
-		return 1;
+			rel_only_freevar(query, e->l, all_freevar, found_one_freevar, found_aggr, ungrouped_cols);
+		break;
 	case e_atom:
-		return 1;
+		break;
 	case e_column:
-		return 0;
+		*all_freevar = 0;
+		break;
 	}
-	return 0;
 }
 
-int
-exps_only_freevar(mvc *sql, list *exps, bool *found_one)
+void
+exps_only_freevar(sql_query *query, list *exps, unsigned int *all_freevar, bool *found_one_freevar, bool *found_aggr, list **ungrouped_cols)
 {
-	int all_freevar = 1;
-
 	if (THRhighwater()) {
-		(void) sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
-		return 0;
+		(void) sql_error(query->sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
+		return ;
 	}
 	if (!exps)
-		return 0;
-	for (node *n = exps->h; n && all_freevar; n = n->next) {
-		sql_exp *e = n->data;
-		all_freevar &= exp_only_freevar(sql, e, found_one);
-	}
-	return all_freevar;
+		return ;
+	for (node *n = exps->h; n ; n = n->next)
+		exp_only_freevar(query, n->data, all_freevar, found_one_freevar, found_aggr, ungrouped_cols);
 }
 
-int
-rel_only_freevar(mvc *sql, sql_rel *rel, bool *found_one)
+void
+rel_only_freevar(sql_query *query, sql_rel *rel, unsigned int *all_freevar, bool *found_one_freevar, bool *found_aggr, list **ungrouped_cols)
 {
 	if (THRhighwater()) {
-		(void) sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
-		return 0;
+		(void) sql_error(query->sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
+		return ;
 	}
 
 	if (is_basetable(rel->op)) {
-		return 0;
+		return ;
 	} else if (is_base(rel->op)) {
-		return exps_only_freevar(sql, rel->exps, found_one) && (!rel->r || (rel->r && rel_only_freevar(sql, rel->r, found_one)));
+		exps_only_freevar(query, rel->exps, all_freevar, found_one_freevar, found_aggr, ungrouped_cols);
+		if (rel->r)
+			rel_only_freevar(query, rel->r, all_freevar, found_one_freevar, found_aggr, ungrouped_cols);
 	} else if (is_simple_project(rel->op) || is_groupby(rel->op) || is_select(rel->op) || is_topn(rel->op) || is_sample(rel->op)) {
-		if ((is_simple_project(rel->op) || is_groupby(rel->op)) && (rel->r && !exps_only_freevar(sql, rel->r, found_one)))
-			return 0;
-		return exps_only_freevar(sql, rel->exps, found_one) && (!rel->l || (rel->l && rel_only_freevar(sql, rel->l, found_one)));
+		if ((is_simple_project(rel->op) || is_groupby(rel->op)) && rel->r)
+			exps_only_freevar(query, rel->r, all_freevar, found_one_freevar, found_aggr, ungrouped_cols);
+		exps_only_freevar(query, rel->exps, all_freevar, found_one_freevar, found_aggr, ungrouped_cols);
+		if (rel->l)
+			rel_only_freevar(query, rel->l, all_freevar, found_one_freevar, found_aggr, ungrouped_cols);
 	} else if (is_join(rel->op) || is_set(rel->op) || is_semi(rel->op) || is_modify(rel->op)) {
-		return exps_only_freevar(sql, rel->exps, found_one) && rel_only_freevar(sql, rel->l, found_one) && rel_only_freevar(sql, rel->r, found_one);
+		exps_only_freevar(query, rel->exps, all_freevar, found_one_freevar, found_aggr, ungrouped_cols);
+		rel_only_freevar(query, rel->l, all_freevar, found_one_freevar, found_aggr, ungrouped_cols);
+		rel_only_freevar(query, rel->r, all_freevar, found_one_freevar, found_aggr, ungrouped_cols);
 	}
-	return 0;
+	return ;
 }
 
 static int 

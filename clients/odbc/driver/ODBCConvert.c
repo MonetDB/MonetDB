@@ -3197,6 +3197,7 @@ ODBCStore(ODBCStmt *stmt,
 	case SQL_WCHAR:
 	case SQL_WVARCHAR:
 	case SQL_WLONGVARCHAR:
+		assign(buf, bufpos, buflen, 'r', stmt); /* RAW string */
 		assign(buf, bufpos, buflen, '\'', stmt);
 		switch (ctype) {
 		case SQL_C_CHAR:
@@ -3205,22 +3206,11 @@ ODBCStore(ODBCStmt *stmt,
 			for (i = 0; i < slen; i++) {
 				unsigned char c = (unsigned char) sval[i];
 
-				if (c == 0) {
+				if (c == 0)
 					break;
-				} else if (c < 0x20 /* || c >= 0x7F */) {
-					assign(buf, bufpos, buflen, '\\', stmt);
-					assign(buf, bufpos, buflen, '0' + (c >> 6), stmt);
-					assign(buf, bufpos, buflen, '0' + ((c >> 3) & 0x7), stmt);
-					assign(buf, bufpos, buflen, '0' + (c & 0x7), stmt);
-				} else if (c == '\\') {
-					assign(buf, bufpos, buflen, '\\', stmt);
-					assign(buf, bufpos, buflen, '\\', stmt);
-				} else if (c == '\'') {
-					assign(buf, bufpos, buflen, '\\', stmt);
+				if (c == '\'')
 					assign(buf, bufpos, buflen, '\'', stmt);
-				} else {
-					assign(buf, bufpos, buflen, c, stmt);
-				}
+				assign(buf, bufpos, buflen, c, stmt);
 			}
 			break;
 		case SQL_C_BIT:

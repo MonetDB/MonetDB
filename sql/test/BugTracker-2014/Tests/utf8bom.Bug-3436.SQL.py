@@ -34,13 +34,13 @@ create table utf8bom (
     city string,
     id integer
 );
-copy into utf8bom from '%s' using delimiters ',','\\n','"';
+copy into utf8bom from r'%s' using delimiters ',',E'\\n','"';
 select * from utf8bom order by id;
 rollback;
 '''
 
 with process.client('sql', stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE) as c:
-    c.stdin.write(query % os.path.join(TSTTRGDIR, 'utf8bom.csv').replace('\\', r'\\'))
+    c.stdin.write(query % os.path.join(TSTTRGDIR, 'utf8bom.csv'))
     out, err = c.communicate()
     sys.stdout.write(out)
     sys.stderr.write(err)
