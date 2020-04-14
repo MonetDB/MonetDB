@@ -52,3 +52,18 @@ BEGIN
 	DECLARE TABLE mytable (a int);
 	RETURN SELECT a FROM sys.mytable; --error table sys.mytable doesn't exist
 END;
+
+CREATE OR REPLACE FUNCTION scoping02(i INT) RETURNS INT 
+BEGIN
+	IF i = 1 THEN
+		DECLARE i int; --valid, i is redeclared on another scope
+		RETURN i;
+	END IF;
+	RETURN i;
+END;
+
+SELECT scoping02(vals) FROM (VALUES (1), (2)) AS vals(vals);
+	-- NULL
+	-- 2
+
+DROP FUNCTION scoping02(INT);

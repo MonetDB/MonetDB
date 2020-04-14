@@ -195,7 +195,7 @@ rel_psm_declare(mvc *sql, dnode *n, bool global)
 				if (sname)
 					return sql_error(sql, 01, SQLSTATE(42000) "DECLARE: Variables declared inside functions and procedures don't have a schema");
 				/* find if there's a parameter with the same name */
-				if ((a = sql_bind_param(sql, tname)))
+				if (sql->frame == 1 && (a = sql_bind_param(sql, tname)))
 					return sql_error(sql, 01, SQLSTATE(42000) "DECLARE: Variable '%s' declared as a parameter", tname);
 				/* check if we overwrite a scope local variable declare x; declare x; */
 				if (frame_find_var(sql, tname))

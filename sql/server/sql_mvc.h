@@ -90,7 +90,7 @@ typedef struct sql_rel_view { /* CTEs */
 } sql_rel_view;
 
 typedef struct sql_var { /* Declared variables and parameters */
-	char *sname; /* Declared variables have a schema */
+	char *sname; /* Global variables have a schema */
 	char *name;
 	atom var;
 } sql_var;
