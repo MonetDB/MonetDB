@@ -534,7 +534,7 @@ BATimprints(BAT *b)
 		    !GDKinmemory()) {
 			MT_Id tid;
 			BBPfix(b->batCacheid);
-			char name[16];
+			char name[MT_NAME_LEN];
 			snprintf(name, sizeof(name), "impssync%d", b->batCacheid);
 			if (MT_create_thread(&tid, BATimpsync, b,
 					     MT_THR_DETACHED, name) < 0)

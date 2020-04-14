@@ -703,12 +703,12 @@ GDKinit(opt *set, int setlen)
 		}
 
 		for (i = 0; i <= BBP_BATMASK; i++) {
-			char name[16];
+			char name[MT_NAME_LEN];
 			snprintf(name, sizeof(name), "GDKswapLock%d", i);
 			MT_lock_init(&GDKbatLock[i].swap, name);
 		}
 		for (i = 0; i <= BBP_THREADMASK; i++) {
-			char name[16];
+			char name[MT_NAME_LEN];
 			snprintf(name, sizeof(name), "GDKcacheLock%d", i);
 			MT_lock_init(&GDKbbpLock[i].cache, name);
 			snprintf(name, sizeof(name), "GDKtrimLock%d", i);
