@@ -1375,7 +1375,7 @@ exp_fix_scale(mvc *sql, sql_subtype *ct, sql_exp *e, int both, int always)
 			res->scale = 0;
 			return exp_binop(sql->sa, e, exp_atom(sql->sa, a), c);
 		} else {
-			printf("scale_down missing (%s)\n", et->type->base.name);
+			TRC_CRITICAL(SQL_PARSER, "scale_down missing (%s)\n", et->type->base.name);
 		}
 	}
 	return e;
