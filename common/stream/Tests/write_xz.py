@@ -3,7 +3,10 @@
 import write_tests
 import sys
 
-filter = lambda f: f.endswith('.txt.xz')
+
+def filter(f):
+    return f.endswith('.txt.xz')
+
 
 if write_tests.all_tests(filter) != 0:
-	sys.exit(1)
+    sys.exit(1)
