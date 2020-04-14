@@ -101,6 +101,6 @@ def all_tests(filename_filter):
 
 
 # if __name__ == "__main__":
-# 	docname = "small.txt.gz"
-# 	doc = [d for d in gen_docs()][0]
-# 	test_write('rastream', True, doc)
+#   docname = "small.txt.gz"
+#   doc = [d for d in gen_docs()][0]
+#   test_write('rastream', True, doc)
