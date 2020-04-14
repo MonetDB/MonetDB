@@ -1,5 +1,4 @@
 -- experiments with variables used within and between schemas.
-START TRANSACTION;
 
 CREATE SCHEMA A;
 CREATE SCHEMA B;
@@ -46,5 +45,7 @@ SELECT B."Avar"; -- unknown
 SELECT A."Bvar"; -- unknown
 SELECT B."Bvar"; -- known
 
+SET SCHEMA "sys";
 
-ROLLBACK;
+DROP SCHEMA A CASCADE;
+DROP SCHEMA B CASCADE;
