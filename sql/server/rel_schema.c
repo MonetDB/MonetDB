@@ -526,6 +526,13 @@ table_foreign_key(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table *t)
 		return SQL_ERR;
 	}
 	ft = mvc_bind_table(sql, fs, rtname);
+	if (!ft && !rsname) {
+		sql_schema *save = fs;
+		fs = tmp_schema(sql);
+		ft = mvc_bind_table(sql, fs, name);
+		if (!ft)
+			fs = save;
+	}
 	/* self referenced table */
 	if (!ft && t->s == fs && strcmp(t->base.name, rtname) == 0)
 		ft = t;
@@ -866,6 +873,10 @@ table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 			ot = stack_find_table(sql, name);
 		if (!ot)
 			ot = mvc_bind_table(sql, os, name);
+		if (!ot && !sname) {
+			os = tmp_schema(sql);
+			ot = mvc_bind_table(sql, os, name);
+		}
 		if (!ot) {
 			sql_error(sql, 02, SQLSTATE(3F000) "%s: no such table '%s'", action, name);
 			return SQL_ERR;
@@ -1156,6 +1167,13 @@ rel_create_view(sql_query *query, sql_schema *ss, dlist *qname, dlist *column_sp
 			t = stack_find_table(sql, name);
 		if (!t)
 			t = mvc_bind_table(sql, s, name);
+		if (!t && !sname) {
+			sql_schema *save = s;
+			s = tmp_schema(sql);
+			t = mvc_bind_table(sql, s, name);
+			if (!t)
+				s = save;
+		}
 		if (t) {
 			if (replace) {
 				if (!isView(t)) {
@@ -1480,7 +1498,16 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 			return sql_error(sql, 02, SQLSTATE(3F000) "ALTER TABLE: no such schema '%s'", sname);
 		if (!nsname)
 			pt = stack_find_table(sql, ntname);
-		if (!pt && !(pt = mvc_bind_table(sql, spt, ntname)))
+		if (!pt)
+			pt = mvc_bind_table(sql, spt, ntname);
+		if (!pt && !nsname) {
+			sql_schema *save = spt;
+			spt = tmp_schema(sql);
+			pt = mvc_bind_table(sql, spt, ntname);
+			if (!spt)
+				spt = save;
+		}
+		if (!pt)
 			return sql_error(sql, 02, SQLSTATE(42S02) "ALTER TABLE: no such table '%s' in schema '%s'", ntname, spt->base.name);
 
 		if (isView(pt))
@@ -1912,7 +1939,12 @@ rel_grant_privs(mvc *sql, sql_schema *cur, dlist *privs, dlist *grantees, int gr
 			t = stack_find_table(sql, tname);
 		if (t)
 			return sql_error(sql, 02, SQLSTATE(42000) "GRANT: cannot grant privileges on a declared table");
-		if ((t = mvc_bind_table(sql, s, tname)))
+		t = mvc_bind_table(sql, s, tname);
+		if (!t && !sname) {
+			s = tmp_schema(sql);
+			t = mvc_bind_table(sql, s, tname);
+		}
+		if (t)
 			token = SQL_TABLE;
 	}
 
@@ -2098,7 +2130,12 @@ rel_revoke_privs(mvc *sql, sql_schema *cur, dlist *privs, dlist *grantees, int g
 			t = stack_find_table(sql, tname);
 		if (t)
 			return sql_error(sql, 02, SQLSTATE(42000) "REVOKE: cannot grant privileges on a declared table");
-		if ((t = mvc_bind_table(sql, s, tname)))
+		t = mvc_bind_table(sql, s, tname);
+		if (!t && !sname) {
+			s = tmp_schema(sql);
+			t = mvc_bind_table(sql, s, tname);
+		}
+		if (t)
 			token = SQL_TABLE;
 	}
 
@@ -2144,7 +2181,12 @@ rel_create_index(mvc *sql, char *iname, idx_type itype, dlist *qname, dlist *col
 		t = stack_find_table(sql, tname);
 	if (t)
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE INDEX: cannot create an index on a declared table");
-	if (!(t = mvc_bind_table(sql, s, tname))) {
+	t = mvc_bind_table(sql, s, tname);
+	if (!t && !sname) {
+		s = tmp_schema(sql);
+		t = mvc_bind_table(sql, s, tname);
+	}
+	if (!t) {
 		return sql_error(sql, 02, SQLSTATE(42S02) "CREATE INDEX: no such table '%s'", tname);
 	} else if (isView(t) || isMergeTable(t) || isRemote(t)) {
 		return sql_error(sql, 02, SQLSTATE(42S02) "CREATE INDEX: cannot create index on %s '%s'", isView(t)?"view":

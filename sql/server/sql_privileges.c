@@ -143,7 +143,12 @@ sql_grant_table_privs( mvc *sql, char *grantee, int privs, char *sname, char *tn
 		t = stack_find_table(sql, tname);
 	if (t)
 		throw(SQL,"sql.grant_table", SQLSTATE(42000) "GRANT: cannot grant privileges to a declared table");
-	if (!(t = mvc_bind_table(sql, s, tname)))
+	t = mvc_bind_table(sql, s, tname);
+	if (!t && !sname) {
+		s = tmp_schema(sql);
+		t = mvc_bind_table(sql, s, tname);
+	}
+	if (!t)
 		throw(SQL,"sql.grant_table",SQLSTATE(42S02) "GRANT: no such table '%s'", tname);
 
 	allowed = schema_privs(grantor, t->s);
@@ -288,7 +293,12 @@ sql_revoke_table_privs( mvc *sql, char *grantee, int privs, char *sname, char *t
 		t = stack_find_table(sql, tname);
 	if (t)
 		throw(SQL,"sql.grant_table", SQLSTATE(42000) "REVOKE: cannot revoke privileges to a declared table");
-	if (!(t = mvc_bind_table(sql, s, tname)))
+	t = mvc_bind_table(sql, s, tname);
+	if (!t && !sname) {
+		s = tmp_schema(sql);
+		t = mvc_bind_table(sql, s, tname);
+	}
+	if (!t)
 		throw(SQL,"sql.revoke_table", SQLSTATE(42S02) "REVOKE: no such table '%s'", tname);
 
 	allowed = schema_privs(grantor, t->s);
