@@ -4414,6 +4414,8 @@ rel_order_by(sql_query *query, sql_rel **R, symbol *orderby, int f)
 					if (!found) {
 						append(rel->exps, e);
 					} else {
+						if (!exp_name(found))
+							exp_label(sql->sa, found, ++sql->label);
 						e = found;
 					}
 					e = exp_ref(sql->sa, e);

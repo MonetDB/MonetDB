@@ -776,6 +776,8 @@ rel_update_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *updates)
 
 		/* FOR MATCH FULL/SIMPLE/PARTIAL see above */
 		/* Currently only the default MATCH SIMPLE is supported */
+		if (!exp_name(upd))
+			exp_label(sql->sa, upd, ++sql->label);
 		upd = exp_ref(sql->sa, upd);
 		lnl = exp_unop(sql->sa, upd, isnil);
 		set_has_no_nil(lnl);
