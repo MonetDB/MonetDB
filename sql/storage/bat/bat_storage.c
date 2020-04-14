@@ -1258,7 +1258,7 @@ load_bat(sql_delta *bat, int type, sqlid id)
 }
 
 static int
-log_create_delta(sql_delta *bat, oid id) 
+log_create_delta(sql_delta *bat, sqlid id) 
 {
 	int res = LOG_OK;
 	gdk_return ok;
@@ -1597,7 +1597,7 @@ create_del(sql_trans *tr, sql_table *t)
 }
 
 static int
-log_create_dbat( sql_dbat *bat, oid id)
+log_create_dbat( sql_dbat *bat, sqlid id)
 {
 	BAT *b;
 	gdk_return ok;
@@ -1627,7 +1627,7 @@ log_create_del(sql_trans *tr, sql_table *t)
 }
 
 static int
-log_destroy_delta(sql_trans *tr, sql_delta *b, oid id)
+log_destroy_delta(sql_trans *tr, sql_delta *b, sqlid id)
 {
 	gdk_return ok = GDK_SUCCEED;
 
@@ -1815,7 +1815,7 @@ destroy_del(sql_trans *tr, sql_table *t)
 }
 
 static int 
-log_destroy_dbat(sql_trans *tr, sql_dbat *bat, oid id)
+log_destroy_dbat(sql_trans *tr, sql_dbat *bat, sqlid id)
 {
 	gdk_return ok = GDK_SUCCEED;
 
@@ -2508,7 +2508,7 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 }
 
 static int 
-tr_log_delta( sql_trans *tr, sql_delta *cbat, int cleared, oid id)
+tr_log_delta( sql_trans *tr, sql_delta *cbat, int cleared, sqlid id)
 {
 	gdk_return ok = GDK_SUCCEED;
 	BAT *ins;
@@ -2550,7 +2550,7 @@ tr_log_delta( sql_trans *tr, sql_delta *cbat, int cleared, oid id)
 }
 
 static int
-tr_log_dbat(sql_trans *tr, sql_dbat *fdb, int cleared, oid id)
+tr_log_dbat(sql_trans *tr, sql_dbat *fdb, int cleared, sqlid id)
 {
 	gdk_return ok = GDK_SUCCEED;
 	BAT *db = NULL;

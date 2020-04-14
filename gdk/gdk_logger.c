@@ -456,7 +456,7 @@ la_bat_updates(logger *lg, logaction *la)
 				BATiter vi = bat_iterator(la->b);
 				BUN p, q;
 	
-				for (p=0, q = la->offset; p<(BUN)la->nr; p++, q++) {
+				for (p=0, q = (BUN)la->offset; p<(BUN)la->nr; p++, q++) {
 					const void *t = BUNtail(vi, p);
 	
 					if (q < cnt) {
@@ -473,7 +473,7 @@ la_bat_updates(logger *lg, logaction *la)
 				}
 			}
 		}
-		cnt = la->offset + la->nr;
+		cnt = (BUN)(la->offset + la->nr);
 		if (la_bat_update_count(lg, la->cid, cnt) != GDK_SUCCEED) 
 			return GDK_FAIL;
 	} else if (!lg->flushing && la->type == LOG_UPDATE) {
@@ -1226,9 +1226,9 @@ bm_subcommit(logger *lg)
 		n[i++] = col;
 	}
 	/* now commit catalog, so it's also up to date on disk */
-	sizes[i] = lg->cnt;
+	sizes[i] = (BUN)lg->cnt;
 	n[i++] = catalog_bid->batCacheid;
-	sizes[i] = lg->cnt;
+	sizes[i] = (BUN)lg->cnt;
 	n[i++] = catalog_id->batCacheid;
 	sizes[i] = BATcount(dcatalog); /* todo ! */
 	n[i++] = dcatalog->batCacheid;
