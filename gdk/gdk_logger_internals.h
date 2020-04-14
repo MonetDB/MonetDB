@@ -36,7 +36,8 @@ struct logger {
 	BAT *catalog_id;	/* object identifier is unique */
 	BAT *catalog_cnt;	/* count of ondisk buns (transient) */
 	BAT *dcatalog;		/* deleted from catalog table */
-	lng cnt;		/* number of persistent bats, incremented on log flushing */
+	BUN cnt;		/* number of persistent bats, incremented on log flushing */
+	BUN deleted;		/* number of destroyed persistent bats, needed for catalog vacuum */
 
 	BAT *seqs_id;		/* int id column */
 	BAT *seqs_val;		/* lng value column */

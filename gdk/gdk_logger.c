@@ -1173,7 +1173,7 @@ logger_switch_bat(BAT *old, BAT *new, const char *fn, const char *name)
 static gdk_return
 bm_get_counts(logger *lg)
 {
-	BUN p, q;
+	BUN p, q, deleted = 0;
 	const log_bid *bids = (const log_bid *) Tloc(lg->catalog_bid, 0);
 
 	BATloop(lg->catalog_bid, p, q) {
@@ -1183,10 +1183,14 @@ bm_get_counts(logger *lg)
 		if (BUNfnd(lg->dcatalog, &pos) == BUN_NONE) {
 			BAT *b = BBPquickdesc(bids[p], 1);
 			cnt = BATcount(b);
+		} else {
+			deleted++;
 		}
 		if (BUNappend(lg->catalog_cnt, &cnt, false) != GDK_SUCCEED)
 			return GDK_FAIL;
 	}
+	lg->deleted = deleted;
+	lg->cnt = BATcount(lg->catalog_bid);
 	return GDK_SUCCEED;
 }
 
@@ -1226,9 +1230,9 @@ bm_subcommit(logger *lg)
 		n[i++] = col;
 	}
 	/* now commit catalog, so it's also up to date on disk */
-	sizes[i] = (BUN)lg->cnt;
+	sizes[i] = lg->cnt;
 	n[i++] = catalog_bid->batCacheid;
-	sizes[i] = (BUN)lg->cnt;
+	sizes[i] = lg->cnt;
 	n[i++] = catalog_id->batCacheid;
 	sizes[i] = BATcount(dcatalog); /* todo ! */
 	n[i++] = dcatalog->batCacheid;
