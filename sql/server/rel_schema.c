@@ -1416,7 +1416,7 @@ get_schema_name( mvc *sql, char *sname, char *tname)
 	if (!sname) {
 		sql_schema *ss = cur_schema(sql);
 		sql_table *t = mvc_bind_table(sql, ss, tname);
-		if (!t)
+		if (!t && !sname)
 			ss = tmp_schema(sql);
 		sname = ss->base.name;
 	}
@@ -1443,6 +1443,13 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 		t = stack_find_table(sql, tname);
 	if (!t)
 		t = mvc_bind_table(sql, s, tname);
+	if (!t && !sname) {
+		sql_schema *save = s;
+		s = tmp_schema(sql);
+		t = mvc_bind_table(sql, s, tname);
+		if (!t)
+			s = save;
+	}
 	if (!t) {
 		if (if_exists)
 			return rel_psm_block(sql->sa, new_exp_list(sql->sa));
@@ -1450,9 +1457,9 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 	}
 
 	if (isDeclaredTable(t))
-		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: can't alter declared table '%s'", tname);
+		return sql_error(sql, 02, SQLSTATE(42S02) "ALTER TABLE: can't alter declared table '%s'", tname);
 	if (isTempSchema(t->s))
-		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: can't alter temporary table '%s'", tname);
+		return sql_error(sql, 02, SQLSTATE(42S02) "ALTER TABLE: can't alter temporary table '%s'", tname);
 
 	assert(te);
 	if (t->persistence != SQL_DECLARED_TABLE)

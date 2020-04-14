@@ -251,7 +251,7 @@ rel_with_query(sql_query *query, symbol *q )
 	symbol *next = d->next->data.sym;
 	sql_rel *rel;
 
-	if (!stack_push_frame(sql, "WITH"))
+	if (!stack_push_frame(sql, NULL))
 		return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	/* first handle all with's (ie inlined views) */
 	for (d = d->data.lval->h; d; d = d->next) {
@@ -6013,7 +6013,7 @@ rel_subquery(sql_query *query, sql_rel *rel, symbol *sq, exp_kind ek)
 	mvc *sql = query->sql;
 	int toplevel = 0;
 
-	if (!stack_push_frame(sql, "SELECT"))
+	if (!stack_push_frame(sql, NULL))
 		return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	if (!rel || (rel->op == op_project &&
