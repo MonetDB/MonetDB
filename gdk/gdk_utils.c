@@ -1570,7 +1570,7 @@ THRcreate(void (*f) (void *), void *arg, enum MT_thr_detach d, const char *name)
 	Thread s;
 	struct THRstart *t;
 	static ATOMIC_TYPE ctr = ATOMIC_VAR_INIT(0);
-	char semname[16];
+	char semname[32];
 	int len;
 
 	if ((t = GDKmalloc(sizeof(*t))) == NULL)
