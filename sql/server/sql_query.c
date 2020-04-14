@@ -16,12 +16,12 @@ sq_create( sql_allocator *sa, sql_rel *rel, int sql_state)
 	stacked_query *q = SA_NEW(sa, stacked_query);
 
 	assert(rel);
-	q->rel = rel;
-	q->sql_state = sql_state;
-	q->last_used = NULL;
-	q->used_card = 0;
-	q->grouped = is_groupby(rel->op);
-	q->groupby = 0; /* not used for groupby of inner */
+	*q = (stacked_query) {
+		.rel = rel,
+		.sql_state = sql_state,
+		.grouped = is_groupby(rel->op),
+		.groupby = 0, /* not used for groupby of inner */
+	};
 	return q;
 }
 
