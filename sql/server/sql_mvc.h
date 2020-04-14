@@ -122,7 +122,7 @@ typedef struct mvc {
 	int topframes;
 	int sizeframes;
 	int frame;
-	int use_views;
+	bool use_views;
 	atom **args;
 	int argc;
 	int argmax;
