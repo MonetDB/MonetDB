@@ -5062,20 +5062,20 @@ fi
 
 * Fri May 13 2011 Sjoerd Mullender <sjoerd@acm.org> - 11.3.3-20110517
 - gdk: Fixed a bug where large files (> 2GB) didn't always get deleted on
-Windows.
+  Windows.
 
 * Wed May 11 2011 Fabian Groffen <fabian@cwi.nl> - 11.3.3-20110517
 - java: Insertion via PreparedStatement and retrieval via ResultSet of timestamp
-and time fields with and without timezones was improved to better
-respect timezones, as partly indicated in bug #2781.
+  and time fields with and without timezones was improved to better
+  respect timezones, as partly indicated in bug #2781.
 
 * Wed May 11 2011 Sjoerd Mullender <sjoerd@acm.org> - 11.3.3-20110517
 - monetdb5: Fixed a bug in conversion from string to the URL type.  The bug was
-an incorrect call to free().
+  an incorrect call to free().
 
 * Wed Apr 27 2011 Sjoerd Mullender <sjoerd@acm.org> - 11.3.3-20110517
 - geom: Fixed various problems so that now all our tests work correctly on
-all our testing platforms.
+  all our testing platforms.
 
 * Thu Apr 21 2011 Sjoerd Mullender <sjoerd@acm.org> - 11.3.1-20110421
 - Rebuilt.
