@@ -9,6 +9,8 @@ select sys.optimizer;	-- can we find it there?
 select tmp.optimizer; 	-- should not be found
 
 -- the optimizer variable can be reassigned a value
+declare aux string;
+set aux = (select sys.optimizer);
 set optimizer = 'minimal_pipe';
 select optimizer;
 
@@ -43,12 +45,11 @@ create procedure poo2()
 begin
 	set sys.optimizer='volcano_pipe';	
 end;
--- returns: syntax error, unexpected END in: "end"
-
 
 create procedure poo4()
 begin
 	set optimizer='deep-pipe';
-	select optimizer;
+	select optimizer; --error, regular select statements not allowed inside procedures (disallowed by the parser)
 end;
--- returns : syntax error, unexpected END in: "end"
+
+set optimizer = (select sys.aux);

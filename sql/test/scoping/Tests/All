@@ -4,4 +4,5 @@ HAVE_PYMONETDB?scoping03
 
 schema_disambiguity
 ambiguity
+predefinedvariable
 simple_nested
