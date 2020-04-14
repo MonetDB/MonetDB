@@ -904,7 +904,8 @@ rel_values(sql_query *query, symbol *tableref)
 	}
 	/* loop to check types */
 	for (m = exps->h; m; m = m->next)
-		m->data = exp_values_set_supertype(sql, (sql_exp*) m->data);
+		if (!(m->data = exp_values_set_supertype(sql, (sql_exp*) m->data)))
+			return NULL;
 
 	r = rel_project(sql->sa, NULL, exps);
 	r->nrcols = list_length(exps);
@@ -1374,7 +1375,7 @@ exp_fix_scale(mvc *sql, sql_subtype *ct, sql_exp *e, int both, int always)
 			res->scale = 0;
 			return exp_binop(sql->sa, e, exp_atom(sql->sa, a), c);
 		} else {
-			printf("scale_down missing (%s)\n", et->type->base.name);
+			TRC_CRITICAL(SQL_PARSER, "scale_down missing (%s)\n", et->type->base.name);
 		}
 	}
 	return e;
@@ -1890,9 +1891,8 @@ rel_compare(sql_query *query, sql_rel *rel, symbol *sc, symbol *lo, symbol *ro, 
 	ls = rel_value_exp(query, &rel, lo, f, ek);
 	if (!ls)
 		return NULL;
-	if (ls && rel && exp_has_freevar(sql, ls) && (is_sql_sel(f) || is_sql_having(f))) {
+	if (ls && rel && exp_has_freevar(sql, ls) && (is_sql_sel(f) || is_sql_having(f)))
 		ls = rel_project_add_exp(sql, rel, ls);
-	}
 	if (quantifier)
 		ek.card = card_set;
 
@@ -2034,11 +2034,10 @@ rel_exists_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 	le = rel_value_exp(query, rel, sc->data.sym, f, ek);
 	if (!le) 
 		return NULL;
-	e = exp_exist(query, rel ? *rel : NULL, le, sc->token == SQL_EXISTS);
-	if (e) {
-		/* only freevar should have CARD_AGGR */
-		e->card = CARD_ATOM;
-	}
+	if (!(e = exp_exist(query, rel ? *rel : NULL, le, sc->token == SQL_EXISTS)))
+		return NULL;
+	/* only freevar should have CARD_AGGR */
+	e->card = CARD_ATOM;
 	return e;
 }
 
@@ -2057,11 +2056,10 @@ rel_exists_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 	assert(!is_sql_sel(f));
 	if (sq) {
 		sql_exp *e = exp_rel(sql, sq);
-		e = exp_exist(query, rel, e, sc->token == SQL_EXISTS);
-		if (e) {
-			/* only freevar should have CARD_AGGR */
-			e->card = CARD_ATOM;
-		}
+		if (!(e = exp_exist(query, rel, e, sc->token == SQL_EXISTS)))
+			return NULL;
+		/* only freevar should have CARD_AGGR */
+		e->card = CARD_ATOM;
 		rel = rel_select_add_exp(sql->sa, rel, e);
 		return rel;
 	}
@@ -2107,7 +2105,7 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 	/* list of values or subqueries */
 	if (n->type == type_list) {
 		sql_exp *values;
-		list *vals = sa_list(sql->sa);
+		list *vals = sa_list(sql->sa), *nvalues;
 
 		n = dl->h->next;
 		n = n->data.lval->h;
@@ -2132,14 +2130,15 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 
 		values = exp_values(sql->sa, vals);
 		exp_label(sql->sa, values, ++sql->label);
-		if (is_tuple) { 
-			values = exp_tuples_set_supertype(sql, exp_get_values(le), values);
-			list *nvalues = tuples_check_types(sql, exp_get_values(le), values);
-			if (!nvalues)
+		if (is_tuple) {
+			if (!(values = exp_tuples_set_supertype(sql, exp_get_values(le), values)))
+				return NULL;
+			if (!(nvalues = tuples_check_types(sql, exp_get_values(le), values)))
 				return NULL;
 			le->f = nvalues;
 		} else { /* if it's not a tuple, enforce coersion on the type for every element on the list */
-			values = exp_values_set_supertype(sql, values);
+			if (!(values = exp_values_set_supertype(sql, values)))
+				return NULL;
 			if (rel_binop_check_types(sql, rel ? *rel : NULL, le, values, 0) < 0)
 				return NULL;
 		}
@@ -5141,18 +5140,18 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 
 		if (is_psm_call(f))
 			return sql_error(sql, 02, SQLSTATE(42000) "CALL: subqueries not allowed inside CALL statements");
+		if (rel && *rel)
+			query_push_outer(query, *rel, f);
 		if (se->token == SQL_WITH) {
 			r = rel_with_query(query, se);
 		} else if (se->token == SQL_VALUES) {
 			r = rel_values(query, se);
 		} else {
 			assert(se->token == SQL_SELECT);
-			if (rel && *rel)
-				query_push_outer(query, *rel, f);
 			r = rel_subquery(query, NULL, se, ek);
-			if (rel && *rel)
-				*rel = query_pop_outer(query);
 		}
+		if (rel && *rel)
+			*rel = query_pop_outer(query);
 		if (!r)
 			return NULL;
 		if (ek.type == type_value && ek.card <= card_set && is_project(r->op) && list_length(r->exps) > 1) 
@@ -5467,7 +5466,8 @@ join_on_column_name(sql_query *query, sql_rel *rel, sql_rel *t1, sql_rel *t2, in
 
 		if (re) {
 			found = 1;
-			rel = rel_compare_exp(query, rel, le, re, "=", NULL, TRUE, 0, 0);
+			if (!(rel = rel_compare_exp(query, rel, le, re, "=", NULL, TRUE, 0, 0)))
+				return NULL;
 			if (full) {
 				sql_exp *cond = rel_unop_(sql, rel, le, NULL, "isnull", card_value);
 				set_has_no_nil(cond);
@@ -5482,11 +5482,8 @@ join_on_column_name(sql_query *query, sql_rel *rel, sql_rel *t1, sql_rel *t2, in
 			append(outexps, le);
 		}
 	}
-	if (!found) {
-		sql_error(sql, 02, SQLSTATE(42000) "JOIN: no columns of tables '%s' and '%s' match", rel_name(t1)?rel_name(t1):"", rel_name(t2)?rel_name(t2):"");
-		rel_destroy(rel);
-		return NULL;
-	}
+	if (!found)
+		return sql_error(sql, 02, SQLSTATE(42000) "JOIN: no columns of tables '%s' and '%s' match", rel_name(t1)?rel_name(t1):"", rel_name(t2)?rel_name(t2):"");
 	for (n = r_exps->h; n; n = n->next) {
 		sql_exp *re = n->data;
 		if (r_nil)
@@ -5806,12 +5803,8 @@ rel_joinquery_(sql_query *query, sql_rel *rel, symbol *tab1, int natural, jt joi
 	if (!t1 || !t2)
 		return NULL;
 
-	if (!lateral && rel_name(t1) && rel_name(t2) && strcmp(rel_name(t1), rel_name(t2)) == 0) {
-		sql_error(sql, 02, SQLSTATE(42000) "SELECT: '%s' on both sides of the JOIN expression", rel_name(t1));
-		rel_destroy(t1);
-		rel_destroy(t2);
-		return NULL;
-	}
+	if (!lateral && rel_name(t1) && rel_name(t2) && strcmp(rel_name(t1), rel_name(t2)) == 0)
+		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: '%s' on both sides of the JOIN expression", rel_name(t1));
 
 	inner = rel = rel_crossproduct(sql->sa, t1, t2, op_join);
 	inner->op = op;
@@ -5835,15 +5828,13 @@ rel_joinquery_(sql_query *query, sql_rel *rel, symbol *tab1, int natural, jt joi
 		for (; n; n = n->next) {
 			char *nm = n->data.sval;
 			sql_exp *cond;
-			sql_exp *ls = rel_bind_column(sql, t1, nm, sql_where, 0);
-			sql_exp *rs = rel_bind_column(sql, t2, nm, sql_where, 0);
+			sql_exp *ls = rel_bind_column(sql, t1, nm, sql_where | sql_join, 0);
+			sql_exp *rs = rel_bind_column(sql, t2, nm, sql_where | sql_join, 0);
 
-			if (!ls || !rs) {
-				sql_error(sql, 02, SQLSTATE(42000) "JOIN: tables '%s' and '%s' do not have a matching column '%s'", rel_name(t1)?rel_name(t1):"", rel_name(t2)?rel_name(t2):"", nm);
-				rel_destroy(rel);
+			if (!ls || !rs)
+				return sql_error(sql, 02, SQLSTATE(42000) "JOIN: tables '%s' and '%s' do not have a matching column '%s'", rel_name(t1)?rel_name(t1):"", rel_name(t2)?rel_name(t2):"", nm);
+			if (!(rel = rel_compare_exp(query, rel, ls, rs, "=", NULL, TRUE, 0, 0)))
 				return NULL;
-			}
-			rel = rel_compare_exp(query, rel, ls, rs, "=", NULL, TRUE, 0, 0);
 			if (op != op_join) {
 				cond = rel_unop_(sql, rel, ls, NULL, "isnull", card_value);
 				set_has_no_nil(cond);
@@ -5964,7 +5955,7 @@ rel_unionjoinquery(sql_query *query, sql_rel *rel, symbol *q)
 	rexps = new_exp_list(sql->sa);
 	for (m = lexps->h; m; m = m->next) {
 		sql_exp *le = m->data;
-		sql_exp *rc = rel_bind_column(sql, rv, exp_name(le), sql_where, 0);
+		sql_exp *rc = rel_bind_column(sql, rv, exp_name(le), sql_where | sql_join, 0);
 
 		if (!rc && all)
 			break;

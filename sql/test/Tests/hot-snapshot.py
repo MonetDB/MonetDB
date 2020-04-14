@@ -18,7 +18,6 @@ except ImportError:
 import os
 import shutil
 import socket
-import time
 import tarfile
 
 import pymonetdb
@@ -50,8 +49,6 @@ def main():
 
         # start the server
         with process.server(dbname=mydb, mapiport = mapi_port, stdin=process.PIPE) as server:
-            time.sleep(2)
-
             # connection 1 creates, inserts, commits and inserts uncommitted
             conn1 = pymonetdb.connect(
                 database=server.dbname, hostname='localhost',
@@ -84,7 +81,8 @@ def main():
             cur2.close()
             conn2.close()
             server.terminate()
-        time.sleep(1)
+            server.wait()
+
         shutil.rmtree(mydbdir)
 
         # and extract the tarname
@@ -111,6 +109,7 @@ def main():
             cur3.close()
             conn3.close()
             server.terminate()
+            server.wait()
 
     finally:
         if os.path.exists(mydbdir):

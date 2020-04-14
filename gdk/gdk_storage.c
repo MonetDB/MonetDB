@@ -705,7 +705,7 @@ BATmsync(BAT *b)
 			arg->h = &b->theap;
 			BBPfix(b->batCacheid);
 #ifdef MSYNC_BACKGROUND
-			char name[16];
+			char name[MT_NAME_LEN];
 			snprintf(name, sizeof(name), "msync%d", b->batCacheid);
 			if (MT_create_thread(&tid, BATmsyncImplementation, arg,
 					     MT_THR_DETACHED, name) < 0) {
@@ -724,7 +724,7 @@ BATmsync(BAT *b)
 			arg->h = b->tvheap;
 			BBPfix(b->batCacheid);
 #ifdef MSYNC_BACKGROUND
-			char name[16];
+			char name[MT_NAME_LEN];
 			snprintf(name, sizeof(name), "msync%d", b->batCacheid);
 			if (MT_create_thread(&tid, BATmsyncImplementation, arg,
 					     MT_THR_DETACHED, name) < 0) {

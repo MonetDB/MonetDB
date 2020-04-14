@@ -121,7 +121,7 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role)
 		bn->tvheap->parentid = bn->batCacheid;
 		bn->tvheap->farmid = BBPselectfarm(role, bn->ttype, varheap);
 	}
-	char name[16];
+	char name[MT_NAME_LEN];
 	snprintf(name, sizeof(name), "BATlock%d", bn->batCacheid); /* fits */
 	MT_lock_init(&bn->batIdxLock, name);
 	bn->batDirtydesc = true;

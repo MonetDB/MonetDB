@@ -910,7 +910,7 @@ BBPreadEntries(FILE *fp, unsigned bbpversion)
 		bn->batCount = (BUN) count;
 		bn->batInserted = bn->batCount;
 		bn->batCapacity = (BUN) capacity;
-		char name[16];
+		char name[MT_NAME_LEN];
 		snprintf(name, sizeof(name), "BATlock%d", bn->batCacheid); /* fits */
 		MT_lock_init(&bn->batIdxLock, name);
 

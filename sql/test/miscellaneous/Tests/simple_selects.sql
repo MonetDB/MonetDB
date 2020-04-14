@@ -139,3 +139,9 @@ SELECT 1, 2 INTO myvar; --error, number of variables don't match
 declare table x (a int);
 declare table x (c int); --error table x already declared
 drop table if exists x;
+
+create table myx (a boolean);
+create table myy (a interval second);
+select * from myx natural full outer join myy; --error, types boolean(1,0) and sec_interval(13,0) are not equal
+drop table myx;
+drop table myy;
