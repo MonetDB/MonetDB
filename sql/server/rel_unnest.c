@@ -2479,7 +2479,8 @@ rewrite_exists(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 						return NULL;
 
 				if (is_project(rel->op) && rel_has_freevar(sql, sq))
-					le = exp_exist(sql, le, ne, is_exists(sf));
+					if (!(le = exp_exist(sql, le, ne, is_exists(sf))))
+						return NULL;
 				if (exp_name(e))
 					exp_prop_alias(sql->sa, le, e);
 			} else { /* rewrite into semi/anti join */

@@ -104,35 +104,15 @@ compare2range( int l, int r )
 }
 
 static sql_exp * 
-exp_create(sql_allocator *sa, int type ) 
+exp_create(sql_allocator *sa, int type) 
 {
 	sql_exp *e = SA_NEW(sa, sql_exp);
 
-	if (e == NULL)
+	if (!e)
 		return NULL;
-	e->type = (expression_type)type;
-	e->alias.label = 0;
-	e->alias.name = NULL;
-	e->alias.rname = NULL;
-	e->f = e->l = e->r = NULL;
-	e->flag = 0;
-	e->card = 0;
-	e->freevar = 0;
-	e->intern = 0;
-	e->anti = 0;
-	e->semantics = 0;
-	e->ascending = 0;
-	e->nulls_last = 0;
-	e->distinct = 0;
-	e->zero_if_empty = 0;
-	e->need_no_nil = 0;
-	e->has_no_nil = 0;
-	e->base = 0;
-	e->ref = 0;
-	e->used = 0;
-	e->tpe.type = NULL;
-	e->tpe.digits = e->tpe.scale = 0;
-	e->p = NULL;
+	*e = (sql_exp) {
+		.type = (expression_type) type,
+	};
 	return e;
 }
 
@@ -2421,7 +2401,7 @@ exp_flatten(mvc *sql, sql_exp *e)
 	} else if (e->type == e_convert) {
 		atom *v = exp_flatten(sql, e->l); 
 
-		if (v && atom_cast(sql->sa, v, &e->tpe))
+		if (v && atom_cast(sql->sa, v, exp_subtype(e)))
 			return v;
 		return NULL;
 	} else if (e->type == e_func) {

@@ -494,7 +494,7 @@ DFLOWinitialize(void)
 		return -1;
 	}
 	for (i = 0; i < THREADS; i++) {
-		char name[16];
+		char name[MT_NAME_LEN];
 		snprintf(name, sizeof(name), "DFLOWsema%d", i);
 		MT_sema_init(&workers[i].s, 0, name);
 		workers[i].flag = IDLE;
@@ -514,7 +514,7 @@ DFLOWinitialize(void)
 		}
 		workers[i].flag = RUNNING;
 		ATOMIC_PTR_SET(&workers[i].cntxt, NULL);
-		char name[16];
+		char name[MT_NAME_LEN];
 		snprintf(name, sizeof(name), "DFLOWworker%d", i);
 		if ((workers[i].id = THRcreate(DFLOWworker, (void *) &workers[i], MT_THR_JOINABLE, name)) == 0) {
 			GDKfree(workers[i].errbuf);
@@ -837,7 +837,7 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 				ATOMIC_PTR_SET(&workers[i].cntxt, cntxt);
 			}
 			workers[i].flag = RUNNING;
-			char name[16];
+			char name[MT_NAME_LEN];
 			snprintf(name, sizeof(name), "DFLOWworker%d", i);
 			if ((workers[i].errbuf = GDKmalloc(GDKMAXERRLEN)) == NULL ||
 				(workers[i].id = THRcreate(DFLOWworker, (void *) &workers[i],

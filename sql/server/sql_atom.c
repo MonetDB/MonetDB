@@ -25,14 +25,15 @@ atom_init( atom *a )
 static atom *
 atom_create( sql_allocator *sa )
 {
-	atom *a;
-	a = SA_NEW(sa, atom);
-	if(!a)
-		return NULL;
+	atom *a = SA_NEW(sa, atom);
 
-	a->data = (ValRecord) {.vtype = TYPE_void,};
-	a->d = dbl_nil;
-	a->varid = -1;
+	if (!a)
+		return NULL;
+	*a = (atom) {
+		.data = (ValRecord) {.vtype = TYPE_void,},
+		.d = dbl_nil,
+		.varid = -1,
+	};
 	return a;
 }
 
