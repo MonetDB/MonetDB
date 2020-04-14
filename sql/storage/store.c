@@ -2071,10 +2071,10 @@ store_init(int debug, store_type store, int readonly, int singleuser, backend_st
 	return store_load(stk);
 }
 
+#if 0
 static int
 store_needs_vacuum( sql_trans *tr )
 {
-	return 0;
 	size_t max_dels = GDKdebug & FORCEMITOMASK ? 1 : 128;
 	sql_schema *s = find_sql_schema(tr, "sys");
 	node *n;
@@ -2116,6 +2116,7 @@ store_vacuum( sql_trans *tr )
 	}
 	return 0;
 }
+#endif
 
 // All this must only be accessed while holding the bs_lock.
 // The exception is flush_now, which can be set by anyone at any
@@ -2269,7 +2270,7 @@ store_apply_deltas(void)
 	trans_cleanup(gtrans);
 
 	res = logger_funcs.flush();
-	if (0 && /*gtrans->sa->nr > 40 &&*/ !(ATOMIC_GET(&nr_sessions)) /* only save when there are no dependencies on the gtrans */) { /* TODO need better estimate */
+	if (/* DISABLES CODE */ (0) && /*gtrans->sa->nr > 40 &&*/ !(ATOMIC_GET(&nr_sessions)) /* only save when there are no dependencies on the gtrans */) { /* TODO need better estimate */
 		sql_trans *ntrans = sql_trans_create(gtrans->stk, gtrans, NULL, false);
 
 		trans_init(ntrans, ntrans->stk, gtrans);
@@ -2358,7 +2359,6 @@ idle_manager(void)
 
 	MT_thread_setworking("sleeping");
 	while (!GDKexiting()) {
-		sql_session *s;
 		int t;
 
 		for (t = timeout; t > 0; t -= sleeptime) {
@@ -2369,12 +2369,13 @@ idle_manager(void)
 		/* cleanup any collected intermediate storage */
 		store_funcs.cleanup();
 		MT_lock_set(&bs_lock);
-		if (ATOMIC_GET(&store_nr_active) || GDKexiting() || !store_needs_vacuum(gtrans)) {
+		if (ATOMIC_GET(&store_nr_active) || GDKexiting() /*|| !store_needs_vacuum(gtrans)*/) {
 			MT_lock_unset(&bs_lock);
 			continue;
 		}
 
-		s = sql_session_create(gtrans->stk, 0);
+#if 0
+		sql_session *s = sql_session_create(gtrans->stk, 0);
 		if (!s) {
 			MT_lock_unset(&bs_lock);
 			continue;
@@ -2385,7 +2386,7 @@ idle_manager(void)
 			sql_trans_commit(s->tr);
 		sql_trans_end(s, 1);
 		sql_session_destroy(s);
-
+#endif
 		MT_lock_unset(&bs_lock);
 		MT_thread_setworking("sleeping");
 	}

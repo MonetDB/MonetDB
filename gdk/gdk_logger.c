@@ -434,7 +434,7 @@ la_bat_updates(logger *lg, logaction *la)
 
 		if (!lg->flushing) {
 			/* handle offset 0 ie clear */
-			if (0 && la->offset == 0 && cnt)
+			if (/* DISABLES CODE */ (0) && la->offset == 0 && cnt)
 				BATclear(b, true);
 			/* handle offset */
 			if (cnt <= (BUN)la->offset) {
@@ -602,7 +602,7 @@ logger_write_new_types(logger *lg, FILE *fp)
 		id++;
 	}
 	/* second the var sized types */
-	id=129; // start after nil 
+	id=-127; // start after nil 
 	for (int i=0;i<GDKatomcnt; i++) {
 		if (!ATOMvarsized(i))
 			continue;
@@ -1854,7 +1854,7 @@ logger_flush(logger *lg)
 
 		/* remove old log file */
 		if (res != LOG_ERR)
-			res = logger_cleanup(lg, lg->saved_id);
+			return logger_cleanup(lg, lg->saved_id);
 	}
 	return res == LOG_ERR ? GDK_FAIL : GDK_SUCCEED;
 }
