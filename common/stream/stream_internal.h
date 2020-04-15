@@ -214,3 +214,25 @@ stream *open_lz4rstream(const char *filename);
 stream *open_lz4wstream(const char *restrict filename, const char *restrict mode);
 stream *open_lz4rastream(const char *filename);
 stream *open_lz4wastream(const char *restrict filename, const char *restrict mode);
+
+
+/* Shared between bs2.c, bs.c and stream.c. 
+ * Have to look into this but I think it should all be in bs.c only, and
+ * bs2.c should be dropped.*/
+typedef struct bs bs;
+struct bs {
+	stream *s;		/* underlying stream */
+	unsigned nr;		/* how far we got in buf */
+	unsigned itotal;	/* amount available in current read block */
+	size_t blks;		/* read/writen blocks (possibly partial) */
+	size_t bytes;		/* read/writen bytes */
+	char buf[BLOCK];	/* the buffered data (minus the size of
+				 * size-short */
+};
+ssize_t bs_read(stream *restrict ss, void *restrict buf, size_t elmsize, size_t cnt);
+ssize_t bs_write(stream *restrict ss, const void *restrict buf, size_t elmsize, size_t cnt);
+void bs_clrerr(stream *s);
+void bs_destroy(stream *ss);
+
+ssize_t bs2_read(stream *restrict ss, void *restrict buf, size_t elmsize, size_t cnt);
+ssize_t bs2_write(stream *restrict ss, const void *restrict buf, size_t elmsize, size_t cnt);

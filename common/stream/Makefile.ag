@@ -17,10 +17,12 @@ INCLUDES = ../utils \
 		   $(curl_CFLAGS)
 
 lib_stream  =  {
-	SOURCES = oldcode.c stream.c \
+	SOURCES = stream.c rw.c bstream.c \
+		bs.c bs2.c \
 		stdio_stream.c \
 		gz_stream.c bz2_stream.c xz_stream.c lz4_stream.c \
 		url_stream.c socket_stream.c \
+		memio.c callback.c blackhole.c fwf.c \
 		iconv_stream.c \
 		misc.c \
 		stream.h stream_internal.h stream_socket.h

@@ -6,6 +6,49 @@
  * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
+
+/* stream
+ * ======
+ * Niels Nes
+ * An simple interface to streams
+ *
+ * Processing files, streams, and sockets is quite different on Linux
+ * and Windows platforms. To improve portability between both, we advise
+ * to replace the stdio actions with the stream functionality provided
+ * here.
+ *
+ * This interface can also be used to open 'non compressed, gzipped,
+ * bz2zipped' data files and sockets. Using this interface one could
+ * easily switch between the various underlying storage types.
+ *
+ * buffered streams
+ * ----------------
+ *
+ * The bstream (or buffered_stream) can be used for efficient reading of
+ * a stream. Reading can be done in large chunks and access can be done
+ * in smaller bits, by directly accessing the underlying buffer.
+ *
+ * Beware that a flush on a buffered stream emits an empty block to
+ * synchronize with the other side, telling it has reached the end of
+ * the sequence and can close its descriptors.
+ *
+ * bstream functions
+ * -----------------
+ *
+ * The bstream_create gets a read stream (rs) as input and the initial
+ * chunk size and creates a buffered stream from this. A spare byte is
+ * kept at the end of the buffer.  The bstream_read will at least read
+ * the next 'size' bytes. If the not read data (aka pos < len) together
+ * with the new data will not fit in the current buffer it is resized.
+ * The spare byte is kept.
+ *
+ * tee streams
+ * -----------
+ *
+ * A tee stream is a write stream that duplicates all output to two
+ * write streams of the same type (txt/bin).
+ */
+
 /* Generic stream handling code such as init and close */
 
 #include "monetdb_config.h"
@@ -512,3 +555,36 @@ open_wastream(const char *filename)
 	s->binary = false;
 	return s;
 }
+
+
+/* put here because it depends on both bs_read AND bs2_read */
+bool
+isa_block_stream(const stream *s)
+{
+	assert(s != NULL);
+	return s &&
+		((s->read == bs_read ||
+		  s->write == bs_write) ||
+		 (s->read == bs2_read ||
+		  s->write == bs2_write));
+}
+
+
+/* Put here because I need to think very carefully about this
+ * mnstr_read(,, 0, 0). */
+ssize_t
+mnstr_read_block(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
+{
+	ssize_t len = 0;
+	char x = 0;
+
+	if (s == NULL || buf == NULL)
+		return -1;
+	assert(s->read == bs_read || s->write == bs_write);
+	if ((len = mnstr_read(s, buf, elmsize, cnt)) < 0 ||
+	    mnstr_read(s, &x, 0, 0) < 0 /* read prompt */  ||
+	    x > 0)
+		return -1;
+	return len;
+}
+
