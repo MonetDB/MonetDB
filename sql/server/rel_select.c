@@ -5628,10 +5628,11 @@ rel_query(sql_query *query, sql_rel *rel, symbol *sq, int toplevel, exp_kind ek)
 
 	if (sn->from) {		/* keep variable list with tables and names */
 		dlist *fl = sn->from->data.lval;
-		dnode *n = NULL;
 		sql_rel *fnd = NULL;
+		list *names = new_exp_list(sql->sa);
 
-		for (n = fl->h; n ; n = n->next) {
+		for (dnode *n = fl->h; n ; n = n->next) {
+			char *nrame = NULL;
 			int lateral = check_is_lateral(n->data.sym);
 
 			/* just used current expression */
@@ -5647,6 +5648,14 @@ rel_query(sql_query *query, sql_rel *rel, symbol *sq, int toplevel, exp_kind ek)
 			}
 			if (!fnd)
 				break;
+			if ((nrame = (char*) rel_name(fnd))) {
+				if (list_find(names, nrame, (fcmp) &strcmp)) {
+					if (res)
+						rel_destroy(res);
+					return sql_error(sql, 01, SQLSTATE(42000) "SELECT: relation name \"%s\" specified more than once", nrame);
+				} else
+					list_append(names, nrame);
+			}
 			if (res) {
 				res = rel_crossproduct(sql->sa, res, fnd, op_join);
 				if (lateral)
@@ -5917,6 +5926,9 @@ rel_crossquery(sql_query *query, sql_rel *rel, symbol *q)
 		t2 = table_ref(query, rel, tab2, 0);
 	if (!t1 || !t2)
 		return NULL;
+
+	if (rel_name(t1) && rel_name(t2) && strcmp(rel_name(t1), rel_name(t2)) == 0)
+		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: '%s' on both sides of the CROSS JOIN expression", rel_name(t1));
 
 	return rel_crossproduct(sql->sa, t1, t2, op_join);
 }
