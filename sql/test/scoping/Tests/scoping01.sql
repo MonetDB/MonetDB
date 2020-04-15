@@ -1,8 +1,9 @@
---TODO transaction management
+-- temp tables precedence
+-- hash lookup for variables
+-- TODO transaction management
 -- Test variables with different schemas and scoping levels
--- Update rel_read and RAstatemet
--- Check what must be persisted
 -- upgrade drop dt_schema
+-- drop tables and variables?
 
 declare i integer;
 set i = 1234;
@@ -49,6 +50,8 @@ SELECT tests_scopes2(vals) FROM (VALUES (1),(2),(3)) AS vals(vals);
 	-- 1 --Local variables have precedence over global ones
 	-- 2 
 	-- 3
+
+with a(i) as (select 4) select i from tmp1, a; --error, ambiguous identifier 'i'
 
 DROP TABLE tmp1;
 DROP TABLE tmp2;
