@@ -337,7 +337,7 @@ stmt_var(backend *be, const char *sname, const char *varname, sql_subtype *t, in
 		buf = SA_NEW_ARRAY(be->mvc->sa, char, strlen(levelstr) + strlen(varname) + 3);
 		if (!buf)
 			return NULL;
-		stpcpy(stpcpy(stpcpy(stpcpy(buf, "A"), levelstr), "%%"), varname); /* mangle variable name */
+		stpcpy(stpcpy(stpcpy(stpcpy(buf, "A"), levelstr), "%"), varname); /* mangle variable name */
 		q = newAssignment(mb);
 		q = pushArgumentId(mb, q, buf);
 	} else {
@@ -349,7 +349,7 @@ stmt_var(backend *be, const char *sname, const char *varname, sql_subtype *t, in
 		buf = SA_NEW_ARRAY(be->mvc->sa, char, strlen(levelstr) + strlen(varname) + 3);
 		if (!buf)
 			return NULL;
-		stpcpy(stpcpy(stpcpy(stpcpy(buf, "A"), levelstr), "%%"), varname); /* mangle variable name */
+		stpcpy(stpcpy(stpcpy(stpcpy(buf, "A"), levelstr), "%"), varname); /* mangle variable name */
 
 		q = newInstruction(mb, NULL, NULL);
 		if (q == NULL) {
@@ -3792,7 +3792,7 @@ stmt_assign(backend *be, const char *sname, const char *varname, stmt *val, int 
 		buf = SA_NEW_ARRAY(be->mvc->sa, char, strlen(levelstr) + strlen(varname) + 3);
 		if (!buf)
 			return NULL;
-		stpcpy(stpcpy(stpcpy(stpcpy(buf, "A"), levelstr), "%%"), varname); /* mangle variable name */
+		stpcpy(stpcpy(stpcpy(stpcpy(buf, "A"), levelstr), "%"), varname); /* mangle variable name */
 		q = newInstruction(mb, NULL, NULL);
 		if (q == NULL) {
 			return NULL;
