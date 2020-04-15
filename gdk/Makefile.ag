@@ -23,7 +23,7 @@ lib_gdk = {
 		gdk_group.c \
 		gdk_join.c \
 		gdk_firstn.c \
-		gdk_logger.c gdk_logger.h gdk_logger_internals.h gdk_logger_old.c \
+		gdk_logger.c gdk_logger.h gdk_logger_internals.h gdk_logger_old.c gdk_geomlogger.h \
 		gdk_batop.c \
 		gdk_bat.c \
 		gdk_hash.c gdk_hash.h \
