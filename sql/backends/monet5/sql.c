@@ -4846,7 +4846,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 									goto bailout;
 
 								w = BATcheckmosaic(bn);
-								szz = bn->tmosaic && bn->tmosaic != (Heap *) 1 ? (lng) bn->tmosaic->free : lng_nil;
+								szz = bn->tmosaic && bn->tmosaic != (Heap *) 1? ((lng) bn->tmosaic->free + (lng) bn->tvmosaic->free) : lng_nil;
 								if( BUNappend(compressed, &szz, false) != GDK_SUCCEED)
 									goto bailout;
 								BBPunfix(bn->batCacheid);
@@ -4957,7 +4957,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 									if (BUNappend(oidx, &szz, false) != GDK_SUCCEED)
 										goto bailout;
 									w = BATcheckmosaic(bn);
-									szz = bn->tmosaic && bn->tmosaic != (Heap *) 1 ? (lng) bn->tmosaic->free : lng_nil;
+									szz = bn->tmosaic && bn->tmosaic != (Heap *) 1? ((lng) bn->tmosaic->free + (lng) bn->tvmosaic->free) : lng_nil;
 									if( BUNappend(compressed, &szz, false) != GDK_SUCCEED)
 										goto bailout;
 									BBPunfix(bn->batCacheid);
