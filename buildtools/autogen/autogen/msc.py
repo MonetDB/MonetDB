@@ -147,7 +147,7 @@ def msc_translate_dir(path, msc):
                  'libdir', 'libexecdir', 'localstatedir', 'mandir',
                  'oldincludedir', 'pkgbindir', 'pkgdatadir', 'pkgincludedir',
                  'pkglibdir', 'pkglocalstatedir', 'pkgsysconfdir', 'sbindir',
-                 'sharedstatedir', 'srcdir', 'sysconfdir', 'top_builddir',
+                 'srcdir', 'sysconfdir', 'top_builddir',
                  'top_srcdir', 'prefix'):
         dir = "$("+dir+")"
     if rest:
