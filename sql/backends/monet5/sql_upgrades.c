@@ -2734,6 +2734,11 @@ sql_update_jun2020(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 			"update sys._tables set system = true where schema_id = (select id from sys.schemas where name = 'logging')"
 			" and name = 'compinfo';\n");
 
+	/* 51_sys_schema_extensions */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"ALTER TABLE sys.keywords SET READ WRITE;\n"
+			"DELETE FROM sys.keywords where \"keyword\" = 'UNIONJOIN';\n");
+
 	pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
 	assert(pos < bufsize);

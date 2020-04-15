@@ -139,6 +139,26 @@ SELECT (VALUES(col1, col2)) FROM another_t; --error, subquery must return only o
 
 SELECT (VALUES(col1), (col2)) FROM another_t; --error, more than one row returned by a subquery used as an expression
 
+SELECT integers.i FROM (VALUES(4),(5),(6),(8)) AS integers(i), integers; --error table integers specified more than once
+
+SELECT integers.i FROM integers, (VALUES(4)) AS myt(i), (SELECT 1) AS integers(i); --error table integers specified more than once
+
+SELECT 1 FROM integers CROSS JOIN integers; --error table integers specified more than once
+
+SELECT * FROM integers i1 LEFT OUTER JOIN integers i2 ON i2.i = ANY(SELECT SUM(i2.i + i3.i) FROM integers i3) = NOT EXISTS(SELECT MIN(i1.i) OVER ());
+	-- 1 3
+	-- 1 2
+	-- 1 1
+	-- 2 3
+	-- 2 2
+	-- 2 1
+	-- 3 3
+	-- 3 2
+	-- 3 1
+	-- NULL 3
+	-- NULL 2
+	-- NULL 1
+
 DROP FUNCTION evilfunction(INT);
 DROP TABLE tbl_ProductSales;
 DROP TABLE another_T;

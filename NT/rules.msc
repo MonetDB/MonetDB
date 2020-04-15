@@ -218,7 +218,6 @@ sbindir = $(exec_prefix)\sbin
 libexecdir = $(exec_prefix)\libexec
 datadir = $(prefix)\share
 sysconfdir = $(prefix)\etc
-sharedstatedir = $(prefix)\com
 localstatedir = $(prefix)\var
 libdir = $(exec_prefix)\lib
 infodir = $(prefix)\info

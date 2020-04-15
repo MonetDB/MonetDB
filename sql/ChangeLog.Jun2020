@@ -1,6 +1,10 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Wed Apr 15 2020 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
+- Removed UNION JOIN statements. They were dropped by the SQL:2003
+  standard, plus MonetDB implementation was not fully compliant.
+
 * Wed Apr  1 2020 Sjoerd Mullender <sjoerd@acm.org>
 - The OFFSET value in the COPY INTO query now counts uninterpreted
   newlines.  Before it counted "unquoted record separators" which meant
