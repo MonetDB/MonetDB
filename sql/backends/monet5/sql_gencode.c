@@ -500,7 +500,7 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 			buf = tmp;
 		}
 
-		nr += snprintf(buf+nr, len-nr, "%s%s", next, n->next?"%%":"");
+		nr += snprintf(buf+nr, len-nr, "%s%s", next, n->next?"%":"");
 		GDKfree(next);
 	}
 	if (buf) {
