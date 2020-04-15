@@ -571,7 +571,8 @@ isa_block_stream(const stream *s)
 
 
 /* Put here because I need to think very carefully about this
- * mnstr_read(,, 0, 0). */
+ * mnstr_read(,, 0, 0). What would that mean?
+ */
 ssize_t
 mnstr_read_block(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 {
