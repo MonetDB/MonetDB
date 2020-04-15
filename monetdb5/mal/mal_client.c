@@ -273,7 +273,7 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	c->filetrans = false;
 	c->getquery = NULL;
 
-	char name[16];
+	char name[MT_NAME_LEN];
 	snprintf(name, sizeof(name), "Client%d->s", (int) (c - mal_clients));
 	MT_sema_init(&c->s, 0, name);
 	return c;

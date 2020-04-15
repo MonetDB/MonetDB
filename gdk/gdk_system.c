@@ -180,7 +180,7 @@ static struct winthread {
 	const char *working;	/* what we're currently doing */
 	ATOMIC_TYPE exited;
 	bool detached:1, waiting:1;
-	char threadname[16];
+	char threadname[MT_NAME_LEN];
 } *winthreads = NULL;
 static struct winthread mainthread = {
 	.threadname = "main thread",
@@ -509,7 +509,7 @@ static struct posthread {
 	MT_Sema *semawait;	/* semaphore we're waiting for */
 	struct posthread *joinwait; /* process we are joining with */
 	const char *working;	/* what we're currently doing */
-	char threadname[16];
+	char threadname[MT_NAME_LEN];
 	pthread_t tid;
 	MT_Id mtid;
 	ATOMIC_TYPE exited;

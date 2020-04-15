@@ -957,7 +957,7 @@ BAThash(BAT *b)
 		if (BBP_status(b->batCacheid) & BBPEXISTING && !b->theap.dirty && !GDKinmemory()) {
 			MT_Id tid;
 			BBPfix(b->batCacheid);
-			char name[16];
+			char name[MT_NAME_LEN];
 			snprintf(name, sizeof(name), "hashsync%d", b->batCacheid);
 			MT_lock_unset(&b->batIdxLock);
 			if (MT_create_thread(&tid, BAThashsync, b,

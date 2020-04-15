@@ -194,7 +194,7 @@ _create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *
 
 		for (n = rel_ops->h; n && !curBlk->errors; n = n->next) {
 			sql_exp *e = n->data;
-			sql_subtype *t = &e->tpe;
+			sql_subtype *t = exp_subtype(e);
 			int type = t->type->localtype;
 			int varid = 0;
 			char *buf;

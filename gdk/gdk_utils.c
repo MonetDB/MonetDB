@@ -711,12 +711,12 @@ GDKinit(opt *set, int setlen, int embedded)
 		}
 
 		for (i = 0; i <= BBP_BATMASK; i++) {
-			char name[16];
+			char name[MT_NAME_LEN];
 			snprintf(name, sizeof(name), "GDKswapLock%d", i);
 			MT_lock_init(&GDKbatLock[i].swap, name);
 		}
 		for (i = 0; i <= BBP_THREADMASK; i++) {
-			char name[16];
+			char name[MT_NAME_LEN];
 			snprintf(name, sizeof(name), "GDKcacheLock%d", i);
 			MT_lock_init(&GDKbbpLock[i].cache, name);
 			snprintf(name, sizeof(name), "GDKtrimLock%d", i);
@@ -1403,7 +1403,7 @@ THRcreate(void (*f) (void *), void *arg, enum MT_thr_detach d, const char *name)
 	Thread s;
 	struct THRstart *t;
 	static ATOMIC_TYPE ctr = ATOMIC_VAR_INIT(0);
-	char semname[16];
+	char semname[32];
 	int len;
 
 	if ((t = GDKmalloc(sizeof(*t))) == NULL)
