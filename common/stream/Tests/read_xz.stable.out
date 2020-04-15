@@ -150,6 +150,10 @@ Test read rstream block16385_bom.txt.xz OK
 
 Test read rastream block16385_bom.txt.xz OK
 
+Test read rstream crlf1024.txt.xz OK
+
+Test read rastream crlf1024.txt.xz OK
+
 # 14:14:06 >  
 # 14:14:06 >  "Done."
 # 14:14:06 >  

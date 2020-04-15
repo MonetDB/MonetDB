@@ -44,6 +44,12 @@ def gen_docs():
             size = base_size + delta
             yield from gen_bom_compr_variants(f'block{size}', input, size)
 
+    # \r at end of first block, \n at start of next
+    head = (1023 * b'a') + b'\r\n' + (20 * b'b') + b'\r\n' + (20 * b'c')
+    # word of wisdom: you have to test your tests
+    assert head[:1024].endswith(b'\r')
+    assert head[1024:].startswith(b'\n')
+    yield from gen_compr_variants('crlf1024.txt', head, None)
 
 def test_read(opener, text_mode, doc):
     filename = doc.write_tmp()

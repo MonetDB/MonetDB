@@ -71,7 +71,6 @@ class Doc:
         else:
             raise Exception("Unknown compression scheme: " + self.compression)
         f.write(self.content)
-        f.close()
         return filename
 
     # Read contents of the given file, decompressing appropriately
