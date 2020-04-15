@@ -131,7 +131,7 @@ static str monetdb_initialize(void) {
 		retval = GDKstrdup("BBPaddfarm failed");
 		goto cleanup;
 	}
-	if (GDKinit(set, setlen) != GDK_SUCCEED) {
+	if (GDKinit(set, setlen, 1) != GDK_SUCCEED) {
 		retval = GDKstrdup("GDKinit() failed");
 		goto cleanup;
 	}
@@ -269,7 +269,10 @@ static str monetdb_initialize(void) {
 		exit(1);
 	}
 
-	if (mal_init() != 0) { // mal_init() does not return meaningful codes on failure
+	char *modules[2];
+	modules[0] = "sql";
+	modules[1] = 0;
+	if (mal_init(modules, 1) != 0) { // mal_init() does not return meaningful codes on failure
 		retval = GDKstrdup("mal_init() failed");
 		goto cleanup;
 	}
