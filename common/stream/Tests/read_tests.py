@@ -94,6 +94,15 @@ def all_tests(filename_filter):
 
 
 if __name__ == "__main__":
-    docname = "small.txt.gz"
-    doc = [d for d in gen_docs()][0]
-    test_read('rastream', True, doc)
+    # generate test data for manual testing
+    if len(sys.argv) == 1:
+        for d in gen_docs():
+            print(d.name)
+    elif len(sys.argv) == 2:
+        for d in gen_docs():
+            if d.name == sys.argv[1]:
+                d.write(sys.stdout.buffer)
+    else:
+        print("Usage: python3 read_tests.py [TESTDATANAME]", file=sys.stderr)
+        sys.exit(1)
+

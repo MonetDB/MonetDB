@@ -51,18 +51,23 @@ class Doc:
         if length_limit != None:
             self.content = self.content[:length_limit]
 
-    # not sure if this is the right API
-    def write(self, filename):
+    def write(self, filename_or_fileobj):
+        if hasattr(filename_or_fileobj, "write"):
+            filename = None
+            fileobj = filename_or_fileobj
+        else:
+            filename = filename_or_fileobj
+            fileobj = open(filename, 'wb')
         if not self.compression:
-            f = open(filename, 'wb')
+            f = fileobj
         elif self.compression == 'gz':
-            f = gzip.GzipFile(filename, 'wb', mtime=131875200, compresslevel=1)
+            f = gzip.GzipFile(filename, 'wb', fileobj=fileobj, mtime=131875200, compresslevel=1)
         elif self.compression == 'bz2':
-            f = bz2.BZ2File(filename, 'wb', compresslevel=1)
+            f = bz2.BZ2File(fileobj, 'wb', compresslevel=1)
         elif self.compression == 'xz':
-            f = lzma.LZMAFile(filename, 'wb', preset=1)
-        elif self.compression == 'lz4':
-            f = lz4.frame.LZ4FrameFile(filename, 'wb', compression_level=1)
+            f = lzma.LZMAFile(fileobj, 'wb', preset=1)
+        elif self.compression == 'lz4': # ok
+            f = lz4.frame.LZ4FrameFile(fileobj, 'wb', compression_level=1)
         else:
             raise Exception("Unknown compression scheme: " + self.compression)
         f.write(self.content)
