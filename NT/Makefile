@@ -64,7 +64,6 @@ targetdirs:
 	if not exist "$(libexecdir)"		$(MKDIR) "$(libexecdir)"
 	if not exist "$(datadir)"		$(MKDIR) "$(datadir)"
 	if not exist "$(sysconfdir)"		$(MKDIR) "$(sysconfdir)"
-	if not exist "$(sharedstatedir)"	$(MKDIR) "$(sharedstatedir)"
 	if not exist "$(localstatedir)"		$(MKDIR) "$(localstatedir)"
 	if not exist "$(libdir)"		$(MKDIR) "$(libdir)"
 	if not exist "$(infodir)"		$(MKDIR) "$(infodir)"

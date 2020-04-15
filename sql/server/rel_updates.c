@@ -12,6 +12,7 @@
 #include "rel_select.h"
 #include "rel_rel.h"
 #include "rel_exp.h"
+#include "rel_schema.h"
 #include "sql_privileges.h"
 #include "rel_unnest.h"
 #include "rel_optimizer.h"
@@ -778,6 +779,8 @@ rel_update_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *updates)
 
 		/* FOR MATCH FULL/SIMPLE/PARTIAL see above */
 		/* Currently only the default MATCH SIMPLE is supported */
+		if (!exp_name(upd))
+			exp_label(sql->sa, upd, ++sql->label);
 		upd = exp_ref(sql->sa, upd);
 		lnl = exp_unop(sql->sa, upd, isnil);
 		set_has_no_nil(lnl);
@@ -1106,25 +1109,22 @@ update_table(sql_query *query, dlist *qname, str alias, dlist *assignmentlist, s
 		}
 	}
 	if (update_allowed(sql, t, tname, "UPDATE", "update", 0) != NULL) {
-		sql_rel *r = NULL, *bt = rel_basetable(sql, t, t->base.name), *res = bt;
+		sql_rel *r = NULL, *bt = rel_basetable(sql, t, alias ? alias : t->base.name), *res = bt;
 
-		if (alias)
-			for (node *nn = res->exps->h ; nn ; nn = nn->next)
-				exp_setname(sql->sa, (sql_exp*) nn->data, alias, NULL); //the last parameter is optional, hence NULL
 		if (opt_from) {
 			dlist *fl = opt_from->data.lval;
-			dnode *n = NULL;
-			sql_rel *fnd = NULL;
+			list *names = list_append(new_exp_list(sql->sa), (char*) rel_name(bt));
 
-			for (n = fl->h; n && res; n = n->next) {
-				fnd = table_ref(query, NULL, n->data.sym, 0);
+			for (dnode *n = fl->h; n && res; n = n->next) {
+				char *nrame = NULL;
+				sql_rel *fnd = table_ref(query, NULL, n->data.sym, 0);
+
 				if (fnd) {
-					if (alias) {
-						for (node *nn = fnd->exps->h ; nn ; nn = nn->next) {
-							sql_exp* ee = (sql_exp*) nn->data;
-							if (exp_relname(ee) && !strcmp(exp_relname(ee), alias))
-								return sql_error(sql, 02, SQLSTATE(42000) "UPDATE: multiple references into table '%s'", alias);
-						}
+					if ((nrame = (char*) rel_name(fnd))) {
+						if (list_find(names, nrame, (fcmp) &strcmp))
+							return sql_error(sql, 02, SQLSTATE(42000) "UPDATE: multiple references into table '%s'", nrame);
+						else
+							list_append(names, nrame);
 					}
 					res = rel_crossproduct(sql->sa, res, fnd, op_join);
 				} else
@@ -1202,16 +1202,13 @@ delete_table(sql_query *query, dlist *qname, str alias, symbol *opt_where)
 		}
 	}
 	if (update_allowed(sql, t, tname, "DELETE FROM", "delete from", 1) != NULL) {
-		sql_rel *r = rel_basetable(sql, t, t->base.name);
+		sql_rel *r = rel_basetable(sql, t, alias ? alias : t->base.name);
 
 		if (opt_where) {
 			sql_exp *e;
 
 			if (!table_privs(sql, t, PRIV_SELECT)) 
 				return sql_error(sql, 02, SQLSTATE(42000) "DELETE FROM: insufficient privileges for user '%s' to delete from table '%s'", sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")), tname);
-			if (alias)
-				for (node *nn = r->exps->h ; nn ; nn = nn->next)
-					exp_setname(sql->sa, (sql_exp*) nn->data, alias, NULL); //the last parameter is optional, hence NULL
 			if (!(r = rel_logical_exp(query, r, opt_where, sql_where)))
 				return NULL;
 			e = exp_column(sql->sa, rel_name(r), TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
@@ -1251,8 +1248,6 @@ truncate_table(mvc *sql, dlist *qname, int restart_sequences, int drop_action)
 
 #define MERGE_UPDATE_DELETE 1
 #define MERGE_INSERT        2
-
-extern sql_rel *rel_list(sql_allocator *sa, sql_rel *l, sql_rel *r);
 
 static sql_rel *
 validate_merge_update_delete(mvc *sql, sql_table *t, str alias, sql_rel *joined_table, tokens upd_token,
@@ -1304,12 +1299,13 @@ static sql_rel *
 merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol *search_cond, dlist *merge_list)
 {
 	mvc *sql = query->sql;
-	char *sname = qname_schema(qname), *tname = qname_schema_object(qname), *alias_name;
+	char *sname = qname_schema(qname), *tname = qname_schema_object(qname);
 	sql_schema *s = cur_schema(sql);
 	sql_table *t = NULL;
 	sql_rel *bt, *joined, *join_rel = NULL, *extra_project, *insert = NULL, *upd_del = NULL, *res = NULL, *extra_select;
 	sql_exp *nils, *project_first;
 	int processed = 0;
+	const char *bt_name;
 
 	assert(tref && search_cond && merge_list);
 
@@ -1331,17 +1327,14 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 	if (isMergeTable(t))
 		return sql_error(sql, 02, SQLSTATE(42000) "MERGE: merge statements not available for merge tables yet");
 
-	bt = rel_basetable(sql, t, t->base.name);
+	bt = rel_basetable(sql, t, alias ? alias : t->base.name);
 	joined = table_ref(query, NULL, tref, 0);
 	if (!bt || !joined)
 		return NULL;
 
-	if (alias)
-		for (node *nn = bt->exps->h ; nn ; nn = nn->next)
-			exp_setname(sql->sa, (sql_exp*) nn->data, alias, NULL); //the last parameter is optional, hence NULL
-	alias_name = alias ? alias : t->base.name;
-	if (rel_name(bt) && rel_name(joined) && strcmp(rel_name(bt), rel_name(joined)) == 0)
-		return sql_error(sql, 02, SQLSTATE(42000) "MERGE: '%s' on both sides of the joining condition", rel_name(bt));
+	bt_name = rel_name(bt);
+	if (rel_name(joined) && strcmp(bt_name, rel_name(joined)) == 0)
+		return sql_error(sql, 02, SQLSTATE(42000) "MERGE: '%s' on both sides of the joining condition", bt_name);
 
 	for (dnode *m = merge_list->h; m; m = m->next) {
 		symbol *sym = m->data.sym, *opt_search, *action;
@@ -1376,7 +1369,7 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 				//project columns of both bt and joined + oid
 				extra_project = rel_project(sql->sa, join_rel, rel_projections(sql, bt, NULL, 1, 0));
 				extra_project->exps = list_merge(extra_project->exps, rel_projections(sql, joined, NULL, 1, 0), (fdup)NULL);
-				list_append(extra_project->exps, exp_column(sql->sa, alias_name, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1));
+				list_append(extra_project->exps, exp_column(sql->sa, bt_name, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1));
 
 				//select bt values which are not null (they had a match in the join)
 				project_first = extra_project->exps->h->next->data; // this expression must come from bt!!
@@ -1391,7 +1384,7 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 				extra_project = rel_project(sql->sa, extra_select, rel_projections(sql, bt, NULL, 1, 0));
 				extra_project->exps = list_merge(extra_project->exps, rel_projections(sql, joined, NULL, 1, 0), (fdup)NULL);
 				list_append(extra_project->exps,
-					exp_column(sql->sa, alias_name, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1));
+					exp_column(sql->sa, bt_name, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1));
 				upd_del = update_generate_assignments(query, t, extra_project, rel_dup(bt), sts->h->data.lval, "MERGE");
 			} else if (uptdel == SQL_DELETE) {
 				if (!update_allowed(sql, t, tname, "MERGE", "delete", 1))
@@ -1407,7 +1400,7 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 
 				//project columns of bt + oid
 				extra_project = rel_project(sql->sa, join_rel, rel_projections(sql, bt, NULL, 1, 0));
-				list_append(extra_project->exps, exp_column(sql->sa, alias_name, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1));
+				list_append(extra_project->exps, exp_column(sql->sa, bt_name, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1));
 
 				//select bt values which are not null (they had a match in the join)
 				project_first = extra_project->exps->h->next->data; // this expression must come from bt!!
@@ -1420,7 +1413,7 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 
 				//the delete statement requires a projection on the right side, which will be the oid values
 				extra_project = rel_project(sql->sa, extra_select, list_append(new_exp_list(sql->sa),
-					exp_column(sql->sa, alias_name, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1)));
+					exp_column(sql->sa, bt_name, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1)));
 				upd_del = rel_delete(sql->sa, rel_dup(bt), extra_project);
 			} else {
 				assert(0);

@@ -1389,14 +1389,6 @@ sqllex(YYSTYPE * yylval, void *parm)
 		} else {
 			lc->yynext = next;
 		}
-	} else if (token == UNION) {
-		int next = sqllex(yylval, parm);
-
-		if (next == JOIN) {
-			token = UNIONJOIN;
-		} else {
-			lc->yynext = next;
-		}
 	} else if (token == SCOLON) {
 		/* ignore semi-colon(s) following a semi-colon */
 		if (lc->yylast == SCOLON) {

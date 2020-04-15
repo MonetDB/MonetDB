@@ -268,7 +268,6 @@ INSERT INTO sys.keywords (keyword) VALUES
   ('UNCOMMITTED'),
   ('UNENCRYPTED'),
   ('UNION'),
-  ('UNIONJOIN'),
   ('UNIQUE'),
   ('UPDATE'),
   ('USER'),

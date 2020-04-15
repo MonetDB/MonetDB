@@ -118,6 +118,18 @@ MAPI  = (monetdb) /var/tmp/mtest-577635/.s.monetdb.34590
 QUERY = SELECT (VALUES(col1), (col2)) FROM another_t; --error, more than one row returned by a subquery used as an expression
 ERROR = !Cardinality violation, scalar value expected
 CODE  = 21000
+MAPI  = (monetdb) /var/tmp/mtest-146231/.s.monetdb.30793
+QUERY = SELECT integers.i FROM (VALUES(4),(5),(6),(8)) AS integers(i), integers; --error table integers specified more than once
+ERROR = !SELECT: relation name "integers" specified more than once
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-146231/.s.monetdb.30793
+QUERY = SELECT integers.i FROM integers, (VALUES(4)) AS myt(i), (SELECT 1) AS integers(i); --error table integers specified more than once
+ERROR = !SELECT: relation name "integers" specified more than once
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-146231/.s.monetdb.30793
+QUERY = SELECT 1 FROM integers CROSS JOIN integers; --error table integers specified more than once
+ERROR = !SELECT: 'integers' on both sides of the CROSS JOIN expression
+CODE  = 42000
 
 # 08:41:39 >  
 # 08:41:39 >  "Done."

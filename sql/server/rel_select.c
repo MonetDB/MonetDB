@@ -160,7 +160,6 @@ rel_orderby(mvc *sql, sql_rel *l)
 static sql_rel * rel_setquery(sql_query *query, symbol *sq);
 static sql_rel * rel_joinquery(sql_query *query, sql_rel *rel, symbol *sq);
 static sql_rel * rel_crossquery(sql_query *query, sql_rel *rel, symbol *q);
-static sql_rel * rel_unionjoinquery(sql_query *query, sql_rel *rel, symbol *sq);
 
 static sql_rel *
 rel_table_optname(mvc *sql, sql_rel *sq, symbol *optname)
@@ -335,14 +334,6 @@ query_exp_optname(sql_query *query, sql_rel *r, symbol *q)
 	case SQL_CROSS:
 	{
 		sql_rel *tq = rel_crossquery(query, r, q);
-
-		if (!tq)
-			return NULL;
-		return rel_table_optname(sql, tq, q->data.lval->t->data.sym);
-	}
-	case SQL_UNIONJOIN:
-	{
-		sql_rel *tq = rel_unionjoinquery(query, r, q);
 
 		if (!tq)
 			return NULL;
@@ -4426,6 +4417,8 @@ rel_order_by(sql_query *query, sql_rel **R, symbol *orderby, int f)
 					if (!found) {
 						append(rel->exps, e);
 					} else {
+						if (!exp_name(found))
+							exp_label(sql->sa, found, ++sql->label);
 						e = found;
 					}
 					e = exp_ref(sql->sa, e);
@@ -5654,10 +5647,11 @@ rel_query(sql_query *query, sql_rel *rel, symbol *sq, int toplevel, exp_kind ek)
 
 	if (sn->from) {		/* keep variable list with tables and names */
 		dlist *fl = sn->from->data.lval;
-		dnode *n = NULL;
 		sql_rel *fnd = NULL;
+		list *names = new_exp_list(sql->sa);
 
-		for (n = fl->h; n ; n = n->next) {
+		for (dnode *n = fl->h; n ; n = n->next) {
+			char *nrame = NULL;
 			int lateral = check_is_lateral(n->data.sym);
 
 			/* just used current expression */
@@ -5673,6 +5667,14 @@ rel_query(sql_query *query, sql_rel *rel, symbol *sq, int toplevel, exp_kind ek)
 			}
 			if (!fnd)
 				break;
+			if ((nrame = (char*) rel_name(fnd))) {
+				if (list_find(names, nrame, (fcmp) &strcmp)) {
+					if (res)
+						rel_destroy(res);
+					return sql_error(sql, 01, SQLSTATE(42000) "SELECT: relation name \"%s\" specified more than once", nrame);
+				} else
+					list_append(names, nrame);
+			}
 			if (res) {
 				res = rel_crossproduct(sql->sa, res, fnd, op_join);
 				if (lateral)
@@ -5932,6 +5934,7 @@ rel_joinquery(sql_query *query, sql_rel *rel, symbol *q)
 static sql_rel *
 rel_crossquery(sql_query *query, sql_rel *rel, symbol *q)
 {
+	mvc *sql = query->sql;
 	dnode *n = q->data.lval->h;
 	symbol *tab1 = n->data.sym;
 	symbol *tab2 = n->next->data.sym;
@@ -5943,59 +5946,10 @@ rel_crossquery(sql_query *query, sql_rel *rel, symbol *q)
 	if (!t1 || !t2)
 		return NULL;
 
-	rel = rel_crossproduct(query->sql->sa, t1, t2, op_join);
-	return rel;
-}
-	
-static sql_rel *
-rel_unionjoinquery(sql_query *query, sql_rel *rel, symbol *q)
-{
-	mvc *sql = query->sql;
-	dnode *n = q->data.lval->h;
-	sql_rel *lv = table_ref(query, rel, n->data.sym, 0);
-	sql_rel *rv = NULL;
-	int all = n->next->data.i_val;
-	list *lexps, *rexps;
-	node *m;
-	int found = 0;
+	if (rel_name(t1) && rel_name(t2) && strcmp(rel_name(t1), rel_name(t2)) == 0)
+		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: '%s' on both sides of the CROSS JOIN expression", rel_name(t1));
 
-	if (lv)
-		rv = table_ref(query, rel, n->next->next->data.sym, 0);
-	assert(n->next->type == type_int);
-	if (!lv || !rv)
-		return NULL;
-
-	lexps = rel_projections(sql, lv, NULL, 1, 1);
-	/* find the matching columns (all should match?)
-	 * union these
-	 * if !all do a distinct operation at the end
-	 */
-	/* join all result columns ie join(lh,rh) on column_name */
-	rexps = new_exp_list(sql->sa);
-	for (m = lexps->h; m; m = m->next) {
-		sql_exp *le = m->data;
-		sql_exp *rc = rel_bind_column(sql, rv, exp_name(le), sql_where | sql_join, 0);
-
-		if (!rc && all)
-			break;
-		if (rc) {
-			found = 1;
-			append(rexps, rc);
-		}
-	}
-	if (!found) {
-		rel_destroy(rel);
-		return NULL;
-	}
-	lv = rel_project(sql->sa, lv, lexps);
-	rv = rel_project(sql->sa, rv, rexps);
-	rel = rel_setop(sql->sa, lv, rv, op_union);
-	rel->exps = rel_projections(sql, rel, NULL, 0, 1);
-	rel->nrcols = list_length(rel->exps);
-	set_processed(rel);
-	if (!all)
-		rel = rel_distinct(rel);
-	return rel;
+	return rel_crossproduct(sql->sa, t1, t2, op_join);
 }
 
 sql_rel *

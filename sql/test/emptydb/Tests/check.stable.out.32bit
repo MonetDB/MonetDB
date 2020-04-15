@@ -5642,7 +5642,6 @@ drop function pcre_replace(string, string, string, string);
 [ "UNCOMMITTED"	]
 [ "UNENCRYPTED"	]
 [ "UNION"	]
-[ "UNIONJOIN"	]
 [ "UNIQUE"	]
 [ "UPDATE"	]
 [ "USER"	]
