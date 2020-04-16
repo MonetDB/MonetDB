@@ -61,18 +61,18 @@
   above.
 
 * Tue Nov 19 2019 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
-- Updated user session procedures by adding te possibility to set properties
+- Updated user session procedures by adding the possibility to set properties
   based on a session identifier.
   Optimizer pipeline: sys.setoptimizer(int, string)
   Number of worker threads: sys.setworkerlimit(int, int)
   Memory limits (in MB): sys.setmemorylimit(int, int)
-  Query timeout: sys.setquerytimeout(int, int)
-  Session timeout: sys.setsessiontimeout(int, int)
+  Query timeout (in ms): sys.setquerytimeout(int, int)
+  Session timeout (in ms): sys.setsessiontimeout(int, int)
   The first argument corresponds to the id of the session to modify, and
   these procedures are bound to the monetdb user exclusively.
-  The version of the mentioned procedures with just the second argument were
-  also added, where the changes are reflected in the current user session,
-  and therefore available to every user.
+  The versions of the mentioned procedures with just the second argument were
+  added as well, where the changes are reflected in the current user session,
+  and therefore every user can call them.
 - The procedures sys.settimeout(bigint), sys.settimeout(bigint,bigint) 
   and sys.session(bigint) are now deprecated. Instead use sys.setquerytimeout
   and sys.setsessiontimeout mentioned above.
