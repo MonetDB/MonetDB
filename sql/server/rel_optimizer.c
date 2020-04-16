@@ -2045,6 +2045,24 @@ rel_push_topn_down(mvc *sql, sql_rel *rel, int *changes)
 
 		if (r && r->op == op_project && need_distinct(r)) 
 			return rel;
+
+		/* push topN under projections */
+
+		if (r && r->op == op_project && !need_distinct(r) && !rel_is_ref(r) && r->l && !r->r) {
+			sql_rel *x = r, *px = x;
+
+			while(x->op == op_project && !need_distinct(x) && !rel_is_ref(x) && x->l && !x->r) {
+				px = x;
+				x = x->l;
+			}
+
+			rel->l = x;
+			px->l = rel;
+			rel = r;
+			(*changes)++;
+			return rel;
+		}
+
 		/* duplicate topn direct under union */
 
 		if (r && r->exps && r->op == op_union && !(rel_is_ref(r)) && r->l) {
@@ -8994,10 +9012,8 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, int value_based_
 		rel = rel_visitor_bottomup(sql, rel, &rel_remove_empty_select, &e_changes); 
 	}
 
-	if (!changes && gp.cnt[op_topn]) {
+	if (gp.cnt[op_topn])
 		rel = rel_visitor_topdown(sql, rel, &rel_push_topn_down, &changes); 
-		changes = 0;
-	}
 
 	if (value_based_opt)
 		rel = rel_visitor_topdown(sql, rel, &rel_merge_table_rewrite, &changes);
