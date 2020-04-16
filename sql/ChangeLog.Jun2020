@@ -76,3 +76,4 @@
 - The procedures sys.settimeout(bigint), sys.settimeout(bigint,bigint) 
   and sys.session(bigint) are now deprecated. Instead use sys.setquerytimeout
   and sys.setsessiontimeout mentioned above.
+
