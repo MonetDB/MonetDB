@@ -265,7 +265,6 @@ static struct PIPELINES {
  * trace. It is a server wide property and can not be set dynamically,",
  * as it is intended for internal use.",
  */
-#include "opt_pipes.h"
 #include "optimizer_private.h"
 
 static MT_Lock pipeLock = MT_LOCK_INITIALIZER("pipeLock");
