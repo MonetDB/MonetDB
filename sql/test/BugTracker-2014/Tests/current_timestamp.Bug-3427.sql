@@ -36,9 +36,6 @@ set t = now();
 set t = current_timestamp;
 set t = current_time;
 rollback;
-set tt = now(); --error, tt is no longer in the scope
-set tt = current_time; --error, tt is no longer in the scope
-set tt = current_timestamp; --error, tt is no longer in the scope
 
 create table d(t timestamp default current_time, i integer);
 create table d(t time default current_timestamp, i integer);

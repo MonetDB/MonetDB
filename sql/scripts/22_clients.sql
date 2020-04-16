@@ -26,39 +26,51 @@ returns table(
 )
 external name sql.sessions;
 create view sys.sessions as select * from sys.sessions();
+-- we won't grant sys.sessions to the public
 
 -- routines to bring the system down quickly
 create procedure sys.shutdown(delay tinyint)
-external name sql.shutdown;
-
+	external name sql.shutdown;
+-- we won't grant sys.shutdown to the public
 create procedure sys.shutdown(delay tinyint, force bool)
-external name sql.shutdown;
+	external name sql.shutdown;
+-- we won't grant sys.shutdown to the public
 
 -- control the query and session time out. 
 -- As of December 2019, the procedures settimeout and setsession are deprecated.
 -- Use setquerytimeout and setsessiontimeout instead.
 create procedure sys.settimeout("query" bigint)
 	external name clients.settimeout;
+grant execute on procedure sys.settimeout(bigint) to public;
+
 create procedure sys.settimeout("query" bigint, "session" bigint)
 	external name clients.settimeout;
+grant execute on procedure sys.settimeout(bigint, bigint) to public;
+
 create procedure sys.setsession("timeout" bigint)
 	external name clients.setsession;
+grant execute on procedure sys.setsession(bigint) to public;
 
 -- control the session properties  session time out for the current user.
 create procedure sys.setoptimizer("optimizer" string)
 	external name clients.setoptimizer;
+grant execute on procedure sys.setoptimizer(string) to public;
 
 create procedure sys.setquerytimeout("query" int)
 	external name clients.setquerytimeout;
+grant execute on procedure sys.setquerytimeout(int) to public;
 
 create procedure sys.setsessiontimeout("timeout" int)
 	external name clients.setsessiontimeout;
+grant execute on procedure sys.setsessiontimeout(int) to public;
 
 create procedure sys.setworkerlimit("limit" int)
 	external name clients.setworkerlimit;
+grant execute on procedure sys.setworkerlimit(int) to public;
 
 create procedure sys.setmemorylimit("limit" int)
 	external name clients.setmemorylimit;
+grant execute on procedure sys.setmemorylimit(int) to public;
 
 -- The super user can change the properties of all sessions
 create procedure sys.setoptimizer("sessionid" int, "optimizer" string)

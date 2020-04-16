@@ -46,7 +46,7 @@ typedef union {
 #ifdef HAVE_UUID
 	uuid_t u;
 #else
-	unsigned char u[UUID_SIZE];
+	uint8_t u[UUID_SIZE];
 #endif
 } uuid;
 
@@ -84,10 +84,17 @@ UUIDprelude(void *ret)
 #ifdef HAVE_HGE
 	BATatoms[u].storage = TYPE_hge;
 #endif
+#ifdef HAVE_UUID
+	uuid_clear(uuid_nil.u);
+#endif
 	return MAL_SUCCEED;
 }
 
+#ifdef HAVE_UUID
+#define is_uuid_nil(x)	uuid_is_null((x)->u)
+#else
 #define is_uuid_nil(x)	(memcmp((x)->u, uuid_nil.u, UUID_SIZE) == 0)
+#endif
 
 /**
  * Returns the string representation of the given uuid value.
@@ -106,18 +113,21 @@ UUIDtoString(str *retval, size_t *len, const uuid *value, bool external)
 	}
 	if (is_uuid_nil(value)) {
 		if (external) {
-			snprintf(*retval, *len, "nil");
-			return 3;
+			return (ssize_t) strcpy_len(*retval, "nil", 4);
 		}
-		strcpy(*retval, str_nil);
-		return 1;
+		return (ssize_t) strcpy_len(*retval, str_nil, 2);
 	}
+#ifdef HAVE_UUID
+	uuid_unparse_lower(value->u, *retval);
+#else
 	snprintf(*retval, *len,
-			 "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x",
+			 "%02x%02x%02x%02x-%02x%02x-%02x%02x"
+			 "-%02x%02x-%02x%02x%02x%02x%02x%02x",
 			 value->u[0], value->u[1], value->u[2], value->u[3],
 			 value->u[4], value->u[5], value->u[6], value->u[7],
 			 value->u[8], value->u[9], value->u[10], value->u[11],
 			 value->u[12], value->u[13], value->u[14], value->u[15]);
+#endif
 	assert(strlen(*retval) == UUID_STRLEN);
 	return UUID_STRLEN;
 }
@@ -126,7 +136,6 @@ ssize_t
 UUIDfromString(const char *svalue, size_t *len, uuid **retval, bool external)
 {
 	const char *s = svalue;
-	int i, j;
 
 	if (*len < UUID_SIZE || *retval == NULL) {
 		GDKfree(*retval);
@@ -142,34 +151,37 @@ UUIDfromString(const char *svalue, size_t *len, uuid **retval, bool external)
 		**retval = uuid_nil;
 		return 1;
 	}
-	for (i = 0, j = 0; i < UUID_SIZE; i++) {
+	/* we don't use uuid_parse since we accept UUIDs without hyphens */
+	uuid u;
+	for (int i = 0, j = 0; i < UUID_SIZE; i++) {
 		/* on select locations we allow a '-' in the source string */
 		if (j == 8 || j == 12 || j == 16 || j == 20) {
 			if (*s == '-')
 				s++;
 		}
 		if (isdigit((unsigned char) *s))
-			(*retval)->u[i] = *s - '0';
+			u.u[i] = *s - '0';
 		else if ('a' <= *s && *s <= 'f')
-			(*retval)->u[i] = *s - 'a' + 10;
+			u.u[i] = *s - 'a' + 10;
 		else if ('A' <= *s && *s <= 'F')
-			(*retval)->u[i] = *s - 'A' + 10;
+			u.u[i] = *s - 'A' + 10;
 		else
 			goto bailout;
 		s++;
 		j++;
-		(*retval)->u[i] <<= 4;
+		u.u[i] <<= 4;
 		if (isdigit((unsigned char) *s))
-			(*retval)->u[i] |= *s - '0';
+			u.u[i] |= *s - '0';
 		else if ('a' <= *s && *s <= 'f')
-			(*retval)->u[i] |= *s - 'a' + 10;
+			u.u[i] |= *s - 'a' + 10;
 		else if ('A' <= *s && *s <= 'F')
-			(*retval)->u[i] |= *s - 'A' + 10;
+			u.u[i] |= *s - 'A' + 10;
 		else
 			goto bailout;
 		s++;
 		j++;
 	}
+	**retval = u;
 	return (ssize_t) (s - svalue);
 
   bailout:
@@ -180,7 +192,15 @@ UUIDfromString(const char *svalue, size_t *len, uuid **retval, bool external)
 int
 UUIDcompare(const uuid *l, const uuid *r)
 {
+	if (is_uuid_nil(r))
+		return !is_uuid_nil(l);
+	if (is_uuid_nil(l))
+		return -1;
+#ifdef HAVE_UUID
+	return uuid_compare(l->u, r->u);
+#else
 	return memcmp(l->u, r->u, UUID_SIZE);
+#endif
 }
 
 str
@@ -191,7 +211,6 @@ UUIDgenerateUuid(uuid **retval)
 #endif
 {
 	uuid *u;
-	int i = 0, r = 0;
 
 #ifdef HAVE_HGE
 	u = retval;
@@ -202,8 +221,6 @@ UUIDgenerateUuid(uuid **retval)
 #endif
 #ifdef HAVE_UUID
 	uuid_generate(u->u);
-	(void) i;
-	(void) r;
 #else
 #ifdef HAVE_OPENSSL
 	if (RAND_bytes(u->u, 16) < 0)
@@ -213,11 +230,15 @@ UUIDgenerateUuid(uuid **retval)
 #endif
 #endif
 		/* if it failed, use rand */
-		for (i = 0; i < UUID_SIZE;) {
-			r = rand() % 65536;
+		for (int i = 0; i < UUID_SIZE;) {
+			int r = rand();
 			u->u[i++] = (unsigned char) (r >> 8);
 			u->u[i++] = (unsigned char) r;
 		}
+	/* make sure this is a variant 1 UUID */
+	u->u[8] = (u->u[8] & 0x3F) | 0x80;
+	/* make sure this is version 4 (random UUID) */
+	u->u[6] = (u->u[6] & 0x0F) | 0x40;
 #endif
 	return MAL_SUCCEED;
 }

@@ -438,6 +438,9 @@ enum {
 #ifdef HAVE_HGE
 	TYPE_hge,
 #endif
+	TYPE_date,
+	TYPE_daytime,
+	TYPE_timestamp,
 	TYPE_str,
 	TYPE_any = 255,		/* limit types to <255! */
 };
@@ -520,7 +523,11 @@ typedef struct {
 	size_t free;		/* index where free area starts. */
 	size_t size;		/* size of the heap (bytes) */
 	char *base;		/* base pointer in memory. */
+#if SIZEOF_VOID_P == 4
 	char filename[32];	/* file containing image of the heap */
+#else
+	char filename[40];	/* file containing image of the heap */
+#endif
 
 	bte farmid;		/* id of farm where heap is located */
 	bool copied:1,		/* a copy of an existing map. */
@@ -707,10 +714,8 @@ typedef struct {
 /* assert that atom width is power of 2, i.e., width == 1<<shift */
 #define assert_shift_width(shift,width) assert(((shift) == 0 && (width) == 0) || ((unsigned)1<<(shift)) == (unsigned)(width))
 
-#define GDKLIBRARY_TALIGN	061036U	/* talign field in BBP.dir */
-#define GDKLIBRARY_NIL_NAN	061037U	/* flt/dbl NIL not represented by NaN */
 #define GDKLIBRARY_BLOB_SORT	061040U /* blob compare changed */
-#define GDKLIBRARY_OLDDATE	061041U
+#define GDKLIBRARY_OLDDATE	061041U /* the representation of times changed */
 #define GDKLIBRARY		061042U
 
 typedef struct BAT {
@@ -881,7 +886,8 @@ gdk_export gdk_return BATextend(BAT *b, BUN newcap)
 	__attribute__((__warn_unused_result__));
 
 /* internal */
-gdk_export uint8_t ATOMelmshift(int sz);
+gdk_export uint8_t ATOMelmshift(int sz)
+	__attribute__((__const__));
 
 gdk_export gdk_return GDKupgradevarheap(BAT *b, var_t v, bool copyall, bool mayshare)
 	__attribute__((__warn_unused_result__));
@@ -1411,10 +1417,17 @@ gdk_export BAT *BBPquickdesc(bat b, bool delaccess);
 
 /* Data Distilleries uses ICU for internationalization of some MonetDB error messages */
 
-gdk_export void GDKerror(_In_z_ _Printf_format_string_ const char *format, ...)
-	__attribute__((__format__(__printf__, 1, 2)));
-gdk_export void GDKsyserror(_In_z_ _Printf_format_string_ const char *format, ...)
-	__attribute__((__format__(__printf__, 1, 2)));
+#include "gdk_tracer.h"
+
+#define GDKerror(format, ...)					\
+	GDKtracer_log(__FILE__, __func__, __LINE__, M_ERROR,	\
+		      GDK, NULL, format, ##__VA_ARGS__)
+#define GDKsyserr(errno, format, ...)					\
+	GDKtracer_log(__FILE__, __func__, __LINE__, M_CRITICAL,		\
+		      GDK, GDKstrerror(errno, (char[64]){0}, 64),	\
+		      format, ##__VA_ARGS__)
+#define GDKsyserror(format, ...)	GDKsyserr(errno, format, ##__VA_ARGS__)
+
 #ifndef HAVE_EMBEDDED
 gdk_export _Noreturn void GDKfatal(_In_z_ _Printf_format_string_ const char *format, ...)
 	__attribute__((__format__(__printf__, 1, 2)));
@@ -1512,7 +1525,7 @@ Tputvalue(BAT *b, BUN p, const void *v, bool copyall)
 #endif
 		}
 	} else {
-		ATOMputFIX(b->ttype, Tloc(b, p), v);
+		return ATOMputFIX(b->ttype, Tloc(b, p), v);
 	}
 	return GDK_SUCCEED;
 }
@@ -1610,7 +1623,7 @@ bunfastappVAR(BAT *b, const void *v)
 {
 	if (BATcount(b) >= BATcapacity(b)) {
 		if (BATcount(b) == BUN_MAX) {
-			GDKerror("bunfastapp: too many elements to accommodate (" BUNFMT ")\n", BUN_MAX);
+			GDKerror("too many elements to accommodate (" BUNFMT ")\n", BUN_MAX);
 			return GDK_FAIL;
 		}
 		gdk_return rc = BATextend(b, BATgrows(b));
@@ -1711,10 +1724,10 @@ typedef struct threadStruct {
 				 * into this array + 1 (0 is
 				 * invalid) */
 	ATOMIC_TYPE pid;	/* thread id, 0 = unallocated */
-	str name;
+	char name[MT_NAME_LEN];
 	void *data[THREADDATA];
 	uintptr_t sp;
-} ThreadRec, *Thread;
+} *Thread;
 
 
 gdk_export int THRgettid(void);
@@ -1930,19 +1943,15 @@ gdk_export int ALIGNsynced(BAT *b1, BAT *b2);
 
 gdk_export void BATassertProps(BAT *b);
 
-#define BATPROPS_QUICK  0	/* only derive easy (non-resource consuming) properties */
-#define BATPROPS_ALL	1	/* derive all possible properties; no matter what cost (key=hash) */
-#define BATPROPS_CHECK  3	/* BATPROPS_ALL, but start from scratch and report illegally set properties */
-
 gdk_export BAT *VIEWcreate(oid seq, BAT *b);
 gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
 
-#define ALIGNapp(x, y, f, e)						\
+#define ALIGNapp(x, f, e)						\
 	do {								\
 		if (!(f) && ((x)->batRestricted == BAT_READ ||		\
 			     (x)->batSharecnt > 0)) {			\
-			GDKerror("%s: access denied to %s, aborting.\n", \
-				 (y), BATgetId(x));			\
+			GDKerror("access denied to %s, aborting.\n",	\
+				 BATgetId(x));				\
 			return (e);					\
 		}							\
 	} while (false)
@@ -2072,7 +2081,8 @@ gdk_export gdk_return BATbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl,
 	__attribute__((__warn_unused_result__));
 gdk_export gdk_return BATrangejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, bool li, bool hi, bool anti, bool symmetric, BUN estimate)
 	__attribute__((__warn_unused_result__));
-gdk_export BAT *BATproject(BAT *l, BAT *r);
+gdk_export BAT *BATproject(BAT *restrict l, BAT *restrict r);
+gdk_export BAT *BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2);
 gdk_export BAT *BATprojectchain(BAT **bats);
 
 gdk_export BAT *BATslice(BAT *b, BUN low, BUN high);

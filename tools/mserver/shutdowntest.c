@@ -47,7 +47,7 @@ static void* monetdb_connect(void) {
 	if (!monetdb_initialized) {
 		return NULL;
 	}
-	conn = MCinitClient((oid) 0, bstream_create(GDKstdin, 0), GDKstdout);
+	conn = MCinitClient(MAL_ADMIN, bstream_create(GDKstdin, 0), GDKstdout);
 	if (!MCvalid(conn)) {
 		return NULL;
 	}

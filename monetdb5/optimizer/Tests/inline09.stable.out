@@ -35,7 +35,7 @@ function user.qry():void;               	#[0] (0)  0
     X_9:bat[:str] := batstr.substring(X_9:bat[:str], 1:int, 5:int);	#[2] (0) STRbatsubstringcst 12 <- 12 13 14 
     X_12:bat[:str] := b:bat[:str];	#[1] (0)  15 <- 1 
     X_12:bat[:str] := batstr.substring(X_12:bat[:str], 1:int, 3:int);	#[4] (0) STRbatsubstringcst 15 <- 15 13 16 
-    X_14:bat[:str] := batcalc.+(X_9:bat[:str], X_12:bat[:str]);	#[5] (0) CMDbatADD 17 <- 12 15 
+    X_14:bat[:str] := batcalc.+(X_9:bat[:str], X_12:bat[:str], nil:BAT, nil:BAT);	#[5] (0) CMDbatADD 17 <- 12 15 23 24 
     z:bat[:str] := X_14:bat[:str];	#[6] (0)  5 <- 17 
 end user.qry;                           	#[9] (0)  
 

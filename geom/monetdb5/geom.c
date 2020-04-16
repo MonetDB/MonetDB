@@ -12,6 +12,7 @@
  */
 
 #include "geom.h"
+#include "gdk_logger.h"
 #include "mal_exception.h"
 
 int TYPE_mbr;
@@ -45,7 +46,7 @@ wkbNULLcopy(void)
 #ifdef HAVE_PROJ
 
 /** convert degrees to radians */
-static void
+static inline void
 degrees2radians(double *x, double *y, double *z)
 {
 	*x *= M_PI / 180.0;
@@ -54,7 +55,7 @@ degrees2radians(double *x, double *y, double *z)
 }
 
 /** convert radians to degrees */
-static void
+static inline void
 radians2degrees(double *x, double *y, double *z)
 {
 	*x *= 180.0 / M_PI;
@@ -1593,7 +1594,15 @@ dumpGeometriesSingle(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry,
 		snprintf(newPath, lvlDigitsNum + 1, "%u", *lvl);
 	} else {
 		//remove the comma at the end of the path
+#ifdef STATIC_CODE_ANALYSIS
+		/* coverity complains about the allocated space being
+		 * too small, but we just want to reduce the length of
+		 * the string by one, so the length in the #else part
+		 * is exactly what we need */
+		newPath = GDKmalloc(pathLength + 1);
+#else
 		newPath = GDKmalloc(pathLength);
+#endif
 		if (newPath == NULL) {
 			GDKfree(singleWKB);
 			throw(MAL, "geom.Dump", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -2063,6 +2072,8 @@ geoGetType(char **res, int *info, int *flag)
 /* NULL: generic nil mbr. */
 /* returns a pointer to a nil-mbr. */
 static mbr mbrNIL;		/* to be filled in */
+
+#include "gdk_geomlogger.h"
 
 str
 geom_prelude(void *ret)

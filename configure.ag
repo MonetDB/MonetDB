@@ -52,7 +52,7 @@ dnl  configure file, whereas comments starting with dnl are elided
 dnl  (including their trailing newline).
 
 AC_PREREQ([2.63b])
-AC_INIT([MonetDB], [11.36.0], [https://bugs.monetdb.org/], [MonetDB], [https://www.monetdb.org/])
+AC_INIT([MonetDB], [11.38.0], [https://bugs.monetdb.org/], [MonetDB], [https://www.monetdb.org/])
 AC_COPYRIGHT([Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.])
 AC_CONFIG_AUX_DIR([buildtools/conf])
 AC_CONFIG_MACRO_DIR([buildtools/conf])
@@ -536,40 +536,42 @@ AS_VAR_IF([enable_strict], [yes], [
 		MCHECK_ADD_FLAG([-Wall])
 		MCHECK_ADD_FLAG([-Wextra])
 		MCHECK_ADD_FLAG([-W])
-		MCHECK_ADD_FLAG([-Werror-implicit-function-declaration])
 
-		MCHECK_ADD_FLAG([-Wpointer-arith])
-		MCHECK_ADD_FLAG([-Wundef])
-		MCHECK_ADD_FLAG([-Wformat=2])
-		MCHECK_ADD_FLAG([-Wformat-overflow=1])
-		MCHECK_ADD_FLAG([-Wno-format-truncation])
-		MCHECK_ADD_FLAG([-Wno-format-nonliteral])
-dnl		MCHECK_ADD_FLAG([-Wformat-signedness]) -- numpy messes this up
 		AS_VAR_IF([target_os], [cygwin],
 			[MCHECK_ADD_FLAG([-Wno-error=suggest-attribute=format])],
 			[MCHECK_ADD_FLAG([-Wno-cast-function-type])])
+		MCHECK_ADD_FLAG([-Wduplicated-branches])
+		MCHECK_ADD_FLAG([-Wduplicated-cond])
+		MCHECK_ADD_FLAG([-Wformat=2])
+		MCHECK_ADD_FLAG([-Wformat-overflow=1])
+		dnl needed for lots of snprintf calls
+		MCHECK_ADD_FLAG([-Wno-format-truncation])
+		dnl needed for timestamp_to_str()
+		MCHECK_ADD_FLAG([-Wno-format-nonliteral])
+		MCHECK_ADD_FLAG([-Wformat-signedness])
 		MCHECK_ADD_FLAG([-Winit-self])
 		MCHECK_ADD_FLAG([-Winvalid-pch])
+		MCHECK_ADD_FLAG([-Wjump-misses-init])
+		MCHECK_ADD_FLAG([-Wlogical-op])
 		MCHECK_ADD_FLAG([-Wmissing-declarations])
 		MCHECK_ADD_FLAG([-Wmissing-format-attribute])
+		MCHECK_ADD_FLAG([-Wmissing-include-dirs])
+		MCHECK_ADD_FLAG([-Wmissing-noreturn])
 		MCHECK_ADD_FLAG([-Wmissing-prototypes])
-		# need this for clang 9.1.0 on Darwin:
-		MCHECK_ADD_FLAG([-Wno-missing-field-initializers])
+		MCHECK_ADD_FLAG([-Wnested-externs])
 		MCHECK_ADD_FLAG([-Wold-style-definition])
 		MCHECK_ADD_FLAG([-Wpacked])
+		MCHECK_ADD_FLAG([-Wpacked-bitfield-compat])
+		MCHECK_ADD_FLAG([-Wpointer-arith])
+		MCHECK_ADD_FLAG([-Wrestrict])
+		MCHECK_ADD_FLAG([-Wstack-protector])
+		MCHECK_ADD_FLAG([-fstack-protector-all])
+		MCHECK_ADD_FLAG([-fstrict-aliasing])
+		MCHECK_ADD_FLAG([-Wsync-nand])
+		MCHECK_ADD_FLAG([-Wundef])
+		MCHECK_ADD_FLAG([-Wuninitialized])
 		MCHECK_ADD_FLAG([-Wunknown-pragmas])
 		MCHECK_ADD_FLAG([-Wvariadic-macros])
-		MCHECK_ADD_FLAG([-fstack-protector-all])
-		MCHECK_ADD_FLAG([-Wstack-protector])
-		MCHECK_ADD_FLAG([-Wpacked-bitfield-compat])
-		MCHECK_ADD_FLAG([-Wsync-nand])
-		MCHECK_ADD_FLAG([-Wjump-misses-init])
-		MCHECK_ADD_FLAG([-Wmissing-include-dirs])
-		MCHECK_ADD_FLAG([-Wlogical-op])
-		MCHECK_ADD_FLAG([-Wduplicated-cond])
-		MCHECK_ADD_FLAG([-Wduplicated-branches])
-		MCHECK_ADD_FLAG([-Wrestrict])
-		MCHECK_ADD_FLAG([-Wnested-externs])
 
 		# since we use values of type "int8_t" as subscript,
 		# and int8_t may be defined as plain "char", we cannot
@@ -594,7 +596,6 @@ dnl		MCHECK_ADD_FLAG([-Wformat-signedness]) -- numpy messes this up
 		dnl  MCHECK_ADD_FLAG([-Wdisabled-optimization])
 		dnl  MCHECK_ADD_FLAG([-Wfloat-equal])
 		dnl  MCHECK_ADD_FLAG([-Winline])
-		dnl  MCHECK_ADD_FLAG([-Wmissing-noreturn])
 		dnl  MCHECK_ADD_FLAG([-Wpadded])
 		dnl  MCHECK_ADD_FLAG([-Wredundant-decls])
 		dnl  MCHECK_ADD_FLAG([-Wshadow])
@@ -807,6 +808,9 @@ AM_CONDITIONAL([HAVE_MAL_DEBUGGER], [test "x$enable_assert" != xno])
 
 AC_MSG_CHECKING([for --enable-optimize])
 AS_CASE([$enable_optimize], [yes], [
+	# if optimizing *and* enable-strict, use FORTIFY_SOURCE
+	AS_VAR_IF([enable_strict], [yes], [
+		MCHECK_ADD_FLAG([-D_FORTIFY_SOURCE=2])])
 	origCFLAGS="$CFLAGS"
 	# remove "-O2" as we add "-Ox" and some compilers don't like "-Oy -Ox" combinations
 	CFLAGS=`AS_ECHO([" $CFLAGS "]) | sed -e 's| -O2 | |g' -e 's|^ ||' -e 's| $||'`
@@ -2193,6 +2197,7 @@ AS_VAR_IF([ac_cv_func_fdatasync], [yes],
 	[AC_DEFINE([HAVE_FDATASYNC], 1, [If the system has a working fdatasync])])
 
 AC_FUNC_FSEEKO
+AC_FUNC_STRERROR_R
 # NOTE: these functions are in alphabetical order to ease maintenance
 save_LIBS="$LIBS"
 LIBS="$LIBS $MATH_LIBS"
@@ -2488,13 +2493,12 @@ stpcpy(char *restrict dst, const char *restrict src)
 }
 @%:@endif
 
-@%:@ifndef HAVE_STPCPY
-#ifndef HAVE_STRNCASECMP
-#ifdef WIN32
-#ifndef strncasecmp
-#define strncasecmp _strnicmp
-#endif
-#else
+@%:@ifndef HAVE_STRNCASECMP
+@%:@ifdef WIN32
+@%:@ifndef strncasecmp
+@%:@define strncasecmp _strnicmp
+@%:@endif
+@%:@else
 static inline int
 strncasecmp(const char *s1, const char *s2, size_t n)
 {
@@ -2513,8 +2517,7 @@ strncasecmp(const char *s1, const char *s2, size_t n)
 	}
 	return 0;
 }
-#endif
-#endif
+@%:@endif
 @%:@endif
 
 @%:@if defined(HAVE___INT128)

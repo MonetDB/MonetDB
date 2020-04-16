@@ -150,7 +150,7 @@ doChallenge(void *data)
 	memcpy(challenge, ((struct challengedata *) data)->challenge, sizeof(challenge));
 	GDKfree(data);
 	if (buf == NULL) {
-		TRC_CRITICAL(MAL_SERVER, MAL_MALLOC_FAIL "\n");
+		TRC_ERROR(MAL_SERVER, MAL_MALLOC_FAIL "\n");
 		close_stream(fdin);
 		close_stream(fdout);
 		return;
@@ -442,7 +442,7 @@ SERVERlistenThread(SOCKET *Sock)
 					(void) shutdown(msgsock, SHUT_WR);
 					closesocket(msgsock);
 					if (!cmsg || cmsg->cmsg_type != SCM_RIGHTS) {
-						TRC_ERROR(MAL_SERVER, "Expected file descriptor, but received something else\n");
+						TRC_CRITICAL(MAL_SERVER, "Expected file descriptor, but received something else\n");
 						continue;
 					}
 					/* HACK to avoid
@@ -456,7 +456,7 @@ SERVERlistenThread(SOCKET *Sock)
 				default:
 					/* some unknown state */
 					closesocket(msgsock);
-					TRC_ERROR(MAL_SERVER, "Unknown command type in first byte\n");
+					TRC_CRITICAL(MAL_SERVER, "Unknown command type in first byte\n");
 					continue;
 			}
 #endif
@@ -467,7 +467,7 @@ SERVERlistenThread(SOCKET *Sock)
 		data = GDKmalloc(sizeof(*data));
 		if( data == NULL){
 			closesocket(msgsock);
-			TRC_CRITICAL(MAL_SERVER, SQLSTATE(HY013) MAL_MALLOC_FAIL "\n");
+			TRC_ERROR(MAL_SERVER, MAL_MALLOC_FAIL "\n");
 			continue;
 		}
 		data->in = socket_rstream(msgsock, "Server read");
@@ -478,7 +478,7 @@ SERVERlistenThread(SOCKET *Sock)
 			mnstr_destroy(data->out);
 			GDKfree(data);
 			closesocket(msgsock);
-			TRC_CRITICAL(MAL_SERVER, "Cannot allocate stream\n");
+			TRC_ERROR(MAL_SERVER, "Cannot allocate stream\n");
 			continue;
 		}
 		s = block_stream(data->in);
@@ -491,7 +491,7 @@ SERVERlistenThread(SOCKET *Sock)
 			goto stream_alloc_fail;
 		}
 		data->out = s;
-		char name[16];
+		char name[MT_NAME_LEN];
 		snprintf(name, sizeof(name), "client%d",
 				 (int) ATOMIC_INC(&threadno));
 
@@ -503,7 +503,7 @@ SERVERlistenThread(SOCKET *Sock)
 			mnstr_destroy(data->out);
 			GDKfree(data);
 			closesocket(msgsock);
-			TRC_CRITICAL(MAL_SERVER, "Cannot fork new client thread\n");
+			TRC_ERROR(MAL_SERVER, "Cannot fork new client thread\n");
 			continue;
 		}
 	} while (!ATOMIC_GET(&serverexiting) && !GDKexiting());
@@ -514,7 +514,7 @@ SERVERlistenThread(SOCKET *Sock)
 		closesocket(usock);
 	return;
 error:
-	TRC_ERROR(MAL_SERVER, "Terminating listener: %s\n", msg);
+	TRC_CRITICAL(MAL_SERVER, "Terminating listener: %s\n", msg);
 	if (sock != INVALID_SOCKET)
 		closesocket(sock);
 	if (usock != INVALID_SOCKET)
@@ -585,7 +585,7 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 	if (port > 0) {
 		if (listenaddr && *listenaddr) {
 			int check = 0, e = errno;
-			char sport[16];
+			char sport[MT_NAME_LEN];
 			struct addrinfo *result = NULL, *rp = NULL, hints = (struct addrinfo) {
 				.ai_family = bind_ipv6 ? AF_INET6 : AF_INET,
 				.ai_socktype = SOCK_STREAM,
@@ -664,7 +664,7 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 #ifdef _MSC_VER
 					  wsaerror(WSAGetLastError())
 #else
-					  strerror(errno)
+					  GDKstrerror(errno, (char[128]){0}, 128)
 #endif
 				);
 			} while (1);
@@ -684,7 +684,7 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 #ifdef _MSC_VER
 					  wsaerror(WSAGetLastError())
 #else
-					  strerror(errno)
+					  GDKstrerror(errno, (char[128]){0}, 128)
 #endif
 				);
 			}
@@ -697,7 +697,7 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 #ifdef _MSC_VER
 				const char *err = wsaerror(WSAGetLastError());
 #else
-				const char *err = strerror(errno);
+				const char *err = GDKstrerror(errno, (char[128]){0}, 128);
 #endif
 				GDKfree(psock);
 				closesocket(sock);
@@ -755,7 +755,7 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 #ifdef _MSC_VER
 						  wsaerror(WSAGetLastError())
 #else
-						  strerror(errno)
+						  GDKstrerror(errno, (char[128]){0}, 128)
 #endif
 					);
 				} else {
@@ -772,7 +772,7 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 #ifdef _MSC_VER
 					  wsaerror(WSAGetLastError())
 #else
-					  strerror(errno)
+					  GDKstrerror(errno, (char[128]){0}, 128)
 #endif
 				);
 			}
@@ -789,7 +789,7 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 #ifdef _MSC_VER
 				  wsaerror(WSAGetLastError())
 #else
-				  strerror(errno)
+				  GDKstrerror(errno, (char[128]){0}, 128)
 #endif
 				);
 		}
@@ -826,7 +826,7 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 #ifdef _MSC_VER
 				  wsaerror(WSAGetLastError())
 #else
-				  strerror(errno)
+				  GDKstrerror(errno, (char[128]){0}, 128)
 #endif
 				);
 		}
@@ -869,7 +869,7 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 #ifdef _MSC_VER
 								wsaerror(WSAGetLastError())
 #else
-								strerror(errno)
+								GDKstrerror(errno, (char[128]){0}, 128)
 #endif
 				);
 			return e;
@@ -890,7 +890,7 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 #ifdef _MSC_VER
 								wsaerror(WSAGetLastError())
 #else
-								strerror(errno)
+								GDKstrerror(errno, (char[128]){0}, 128)
 #endif
 				);
 			return e;
@@ -933,14 +933,14 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 				host[sizeof(host) - 1] = '\0';
 			} else {
 				snprintf(host, sizeof(host),"[%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x]",
-						(int)server_ipv6.sin6_addr.s6_addr[0],  (int)server_ipv6.sin6_addr.s6_addr[1],
-						(int)server_ipv6.sin6_addr.s6_addr[2],  (int)server_ipv6.sin6_addr.s6_addr[3],
-						(int)server_ipv6.sin6_addr.s6_addr[4],  (int)server_ipv6.sin6_addr.s6_addr[5],
-						(int)server_ipv6.sin6_addr.s6_addr[6],  (int)server_ipv6.sin6_addr.s6_addr[7],
-						(int)server_ipv6.sin6_addr.s6_addr[8],  (int)server_ipv6.sin6_addr.s6_addr[9],
-						(int)server_ipv6.sin6_addr.s6_addr[10], (int)server_ipv6.sin6_addr.s6_addr[11],
-						(int)server_ipv6.sin6_addr.s6_addr[12], (int)server_ipv6.sin6_addr.s6_addr[13],
-						(int)server_ipv6.sin6_addr.s6_addr[14], (int)server_ipv6.sin6_addr.s6_addr[15]);
+						(uint8_t)server_ipv6.sin6_addr.s6_addr[0],  (uint8_t)server_ipv6.sin6_addr.s6_addr[1],
+						(uint8_t)server_ipv6.sin6_addr.s6_addr[2],  (uint8_t)server_ipv6.sin6_addr.s6_addr[3],
+						(uint8_t)server_ipv6.sin6_addr.s6_addr[4],  (uint8_t)server_ipv6.sin6_addr.s6_addr[5],
+						(uint8_t)server_ipv6.sin6_addr.s6_addr[6],  (uint8_t)server_ipv6.sin6_addr.s6_addr[7],
+						(uint8_t)server_ipv6.sin6_addr.s6_addr[8],  (uint8_t)server_ipv6.sin6_addr.s6_addr[9],
+						(uint8_t)server_ipv6.sin6_addr.s6_addr[10], (uint8_t)server_ipv6.sin6_addr.s6_addr[11],
+						(uint8_t)server_ipv6.sin6_addr.s6_addr[12], (uint8_t)server_ipv6.sin6_addr.s6_addr[13],
+						(uint8_t)server_ipv6.sin6_addr.s6_addr[14], (uint8_t)server_ipv6.sin6_addr.s6_addr[15]);
 			}
 		} else {
 			if (server_ipv4.sin_addr.s_addr == INADDR_ANY) {
@@ -1070,7 +1070,7 @@ SERVERclient(void *res, const Stream *In, const Stream *Out)
 		GDKfree(data);
 		throw(MAL, "mapi.SERVERclient", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	char name[16];
+	char name[MT_NAME_LEN];
 	snprintf(name, sizeof(name), "client%d",
 			 (int) ATOMIC_INC(&threadno));
 

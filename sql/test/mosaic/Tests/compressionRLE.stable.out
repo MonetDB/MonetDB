@@ -58,23 +58,23 @@ stdout of test 'compressionRLE` in directory 'sql/test/mosaic` itself:
 % clob # type
 % 168 # length
 function user.s14_0():void;
-    X_1:void := querylog.define("explain select * from tmp3rle;":str, "mosaic_pipe":str, 19:int);
-    X_22:bat[:str] := bat.pack("sys.tmp3rle":str, "sys.tmp3rle":str, "sys.tmp3rle":str, "sys.tmp3rle":str);
-    X_23:bat[:str] := bat.pack("i":str, "b":str, "f":str, "t":str);
-    X_24:bat[:str] := bat.pack("int":str, "boolean":str, "real":str, "timestamp":str);
-    X_25:bat[:int] := bat.pack(32:int, 1:int, 24:int, 7:int);
-    X_26:bat[:int] := bat.pack(0:int, 0:int, 0:int, 0:int);
+    X_1:void := querylog.define("explain select * from tmp3rle;":str, "mosaic_pipe":str, 20:int);
+    X_23:bat[:str] := bat.pack("sys.tmp3rle":str, "sys.tmp3rle":str, "sys.tmp3rle":str, "sys.tmp3rle":str);
+    X_24:bat[:str] := bat.pack("i":str, "b":str, "f":str, "t":str);
+    X_25:bat[:str] := bat.pack("int":str, "boolean":str, "real":str, "timestamp":str);
+    X_26:bat[:int] := bat.pack(32:int, 1:int, 24:int, 7:int);
+    X_27:bat[:int] := bat.pack(0:int, 0:int, 0:int, 0:int);
     X_4:int := sql.mvc();
     C_5:bat[:oid] := sql.tid(X_4:int, "sys":str, "tmp3rle":str);
-    X_8:bat[:int] := sql.bind(X_4:int, "sys":str, "tmp3rle":str, "i":str, 0:int);
-    X_11:bat[:int] := mosaic.projection(C_5:bat[:oid], X_8:bat[:int]);
+    X_11:bat[:int] := sql.bind(X_4:int, "sys":str, "tmp3rle":str, "i":str, 0:int);
+    X_18:bat[:int] := mosaic.projection(C_5:bat[:oid], X_11:bat[:int]);
     X_12:bat[:bit] := sql.bind(X_4:int, "sys":str, "tmp3rle":str, "b":str, 0:int);
-    X_14:bat[:bit] := mosaic.projection(C_5:bat[:oid], X_12:bat[:bit]);
-    X_15:bat[:flt] := sql.bind(X_4:int, "sys":str, "tmp3rle":str, "f":str, 0:int);
-    X_17:bat[:flt] := mosaic.projection(C_5:bat[:oid], X_15:bat[:flt]);
-    X_18:bat[:timestamp] := sql.bind(X_4:int, "sys":str, "tmp3rle":str, "t":str, 0:int);
-    X_20:bat[:timestamp] := mosaic.projection(C_5:bat[:oid], X_18:bat[:timestamp]);
-    sql.resultSet(X_22:bat[:str], X_23:bat[:str], X_24:bat[:str], X_25:bat[:int], X_26:bat[:int], X_11:bat[:int], X_14:bat[:bit], X_17:bat[:flt], X_20:bat[:timestamp]);
+    X_19:bat[:bit] := mosaic.projection(C_5:bat[:oid], X_12:bat[:bit]);
+    X_14:bat[:flt] := sql.bind(X_4:int, "sys":str, "tmp3rle":str, "f":str, 0:int);
+    X_20:bat[:flt] := mosaic.projection(C_5:bat[:oid], X_14:bat[:flt]);
+    X_16:bat[:timestamp] := sql.bind(X_4:int, "sys":str, "tmp3rle":str, "t":str, 0:int);
+    X_21:bat[:timestamp] := mosaic.projection(C_5:bat[:oid], X_16:bat[:timestamp]);
+    sql.resultSet(X_23:bat[:str], X_24:bat[:str], X_25:bat[:str], X_26:bat[:int], X_27:bat[:int], X_18:bat[:int], X_19:bat[:bit], X_20:bat[:flt], X_21:bat[:timestamp]);
 end user.s14_0;
 #inline               actions= 0 time=1 usec 
 #remap                actions= 0 time=3 usec 
@@ -188,17 +188,17 @@ end user.s14_0;
 % clob # type
 % 114 # length
 function user.s34_0():void;
-    X_1:void := querylog.define("explain select i from tmp3rle;":str, "mosaic_pipe":str, 13:int);
-    X_13:bat[:str] := bat.pack("sys.tmp3rle":str);
-    X_14:bat[:str] := bat.pack("i":str);
-    X_15:bat[:str] := bat.pack("int":str);
-    X_16:bat[:int] := bat.pack(32:int);
-    X_17:bat[:int] := bat.pack(0:int);
+    X_1:void := querylog.define("explain select i from tmp3rle;":str, "mosaic_pipe":str, 14:int);
+    X_14:bat[:str] := bat.pack("sys.tmp3rle":str);
+    X_15:bat[:str] := bat.pack("i":str);
+    X_16:bat[:str] := bat.pack("int":str);
+    X_17:bat[:int] := bat.pack(32:int);
+    X_18:bat[:int] := bat.pack(0:int);
     X_4:int := sql.mvc();
     C_5:bat[:oid] := sql.tid(X_4:int, "sys":str, "tmp3rle":str);
-    X_8:bat[:int] := sql.bind(X_4:int, "sys":str, "tmp3rle":str, "i":str, 0:int);
-    X_11:bat[:int] := mosaic.projection(C_5:bat[:oid], X_8:bat[:int]);
-    sql.resultSet(X_13:bat[:str], X_14:bat[:str], X_15:bat[:str], X_16:bat[:int], X_17:bat[:int], X_11:bat[:int]);
+    X_11:bat[:int] := sql.bind(X_4:int, "sys":str, "tmp3rle":str, "i":str, 0:int);
+    X_12:bat[:int] := mosaic.projection(C_5:bat[:oid], X_11:bat[:int]);
+    sql.resultSet(X_14:bat[:str], X_15:bat[:str], X_16:bat[:str], X_17:bat[:int], X_18:bat[:int], X_12:bat[:int]);
 end user.s34_0;
 #inline               actions= 0 time=0 usec 
 #remap                actions= 0 time=2 usec 
@@ -228,17 +228,17 @@ end user.s34_0;
 % clob # type
 % 114 # length
 function user.s36_0():void;
-    X_1:void := querylog.define("explain select b from tmp3rle;":str, "mosaic_pipe":str, 13:int);
-    X_13:bat[:str] := bat.pack("sys.tmp3rle":str);
-    X_14:bat[:str] := bat.pack("b":str);
-    X_15:bat[:str] := bat.pack("boolean":str);
-    X_16:bat[:int] := bat.pack(1:int);
-    X_17:bat[:int] := bat.pack(0:int);
+    X_1:void := querylog.define("explain select b from tmp3rle;":str, "mosaic_pipe":str, 14:int);
+    X_14:bat[:str] := bat.pack("sys.tmp3rle":str);
+    X_15:bat[:str] := bat.pack("b":str);
+    X_16:bat[:str] := bat.pack("boolean":str);
+    X_17:bat[:int] := bat.pack(1:int);
+    X_18:bat[:int] := bat.pack(0:int);
     X_4:int := sql.mvc();
     C_5:bat[:oid] := sql.tid(X_4:int, "sys":str, "tmp3rle":str);
-    X_8:bat[:bit] := sql.bind(X_4:int, "sys":str, "tmp3rle":str, "b":str, 0:int);
-    X_11:bat[:bit] := mosaic.projection(C_5:bat[:oid], X_8:bat[:bit]);
-    sql.resultSet(X_13:bat[:str], X_14:bat[:str], X_15:bat[:str], X_16:bat[:int], X_17:bat[:int], X_11:bat[:bit]);
+    X_11:bat[:bit] := sql.bind(X_4:int, "sys":str, "tmp3rle":str, "b":str, 0:int);
+    X_12:bat[:bit] := mosaic.projection(C_5:bat[:oid], X_11:bat[:bit]);
+    sql.resultSet(X_14:bat[:str], X_15:bat[:str], X_16:bat[:str], X_17:bat[:int], X_18:bat[:int], X_12:bat[:bit]);
 end user.s36_0;
 #inline               actions= 0 time=0 usec 
 #remap                actions= 0 time=1 usec 
@@ -268,17 +268,17 @@ end user.s36_0;
 % clob # type
 % 114 # length
 function user.s38_0():void;
-    X_1:void := querylog.define("explain select f from tmp3rle;":str, "mosaic_pipe":str, 13:int);
-    X_13:bat[:str] := bat.pack("sys.tmp3rle":str);
-    X_14:bat[:str] := bat.pack("f":str);
-    X_15:bat[:str] := bat.pack("real":str);
-    X_16:bat[:int] := bat.pack(24:int);
-    X_17:bat[:int] := bat.pack(0:int);
+    X_1:void := querylog.define("explain select f from tmp3rle;":str, "mosaic_pipe":str, 14:int);
+    X_14:bat[:str] := bat.pack("sys.tmp3rle":str);
+    X_15:bat[:str] := bat.pack("f":str);
+    X_16:bat[:str] := bat.pack("real":str);
+    X_17:bat[:int] := bat.pack(24:int);
+    X_18:bat[:int] := bat.pack(0:int);
     X_4:int := sql.mvc();
     C_5:bat[:oid] := sql.tid(X_4:int, "sys":str, "tmp3rle":str);
-    X_8:bat[:flt] := sql.bind(X_4:int, "sys":str, "tmp3rle":str, "f":str, 0:int);
-    X_11:bat[:flt] := mosaic.projection(C_5:bat[:oid], X_8:bat[:flt]);
-    sql.resultSet(X_13:bat[:str], X_14:bat[:str], X_15:bat[:str], X_16:bat[:int], X_17:bat[:int], X_11:bat[:flt]);
+    X_11:bat[:flt] := sql.bind(X_4:int, "sys":str, "tmp3rle":str, "f":str, 0:int);
+    X_12:bat[:flt] := mosaic.projection(C_5:bat[:oid], X_11:bat[:flt]);
+    sql.resultSet(X_14:bat[:str], X_15:bat[:str], X_16:bat[:str], X_17:bat[:int], X_18:bat[:int], X_12:bat[:flt]);
 end user.s38_0;
 #inline               actions= 0 time=0 usec 
 #remap                actions= 0 time=1 usec 
@@ -308,17 +308,17 @@ end user.s38_0;
 % clob # type
 % 120 # length
 function user.s40_0():void;
-    X_1:void := querylog.define("explain select t from tmp3rle;":str, "mosaic_pipe":str, 13:int);
-    X_13:bat[:str] := bat.pack("sys.tmp3rle":str);
-    X_14:bat[:str] := bat.pack("t":str);
-    X_15:bat[:str] := bat.pack("timestamp":str);
-    X_16:bat[:int] := bat.pack(7:int);
-    X_17:bat[:int] := bat.pack(0:int);
+    X_1:void := querylog.define("explain select t from tmp3rle;":str, "mosaic_pipe":str, 14:int);
+    X_14:bat[:str] := bat.pack("sys.tmp3rle":str);
+    X_15:bat[:str] := bat.pack("t":str);
+    X_16:bat[:str] := bat.pack("timestamp":str);
+    X_17:bat[:int] := bat.pack(7:int);
+    X_18:bat[:int] := bat.pack(0:int);
     X_4:int := sql.mvc();
     C_5:bat[:oid] := sql.tid(X_4:int, "sys":str, "tmp3rle":str);
-    X_8:bat[:timestamp] := sql.bind(X_4:int, "sys":str, "tmp3rle":str, "t":str, 0:int);
-    X_11:bat[:timestamp] := mosaic.projection(C_5:bat[:oid], X_8:bat[:timestamp]);
-    sql.resultSet(X_13:bat[:str], X_14:bat[:str], X_15:bat[:str], X_16:bat[:int], X_17:bat[:int], X_11:bat[:timestamp]);
+    X_11:bat[:timestamp] := sql.bind(X_4:int, "sys":str, "tmp3rle":str, "t":str, 0:int);
+    X_12:bat[:timestamp] := mosaic.projection(C_5:bat[:oid], X_11:bat[:timestamp]);
+    sql.resultSet(X_14:bat[:str], X_15:bat[:str], X_16:bat[:str], X_17:bat[:int], X_18:bat[:int], X_12:bat[:timestamp]);
 end user.s40_0;
 #inline               actions= 0 time=1 usec 
 #remap                actions= 0 time=0 usec 

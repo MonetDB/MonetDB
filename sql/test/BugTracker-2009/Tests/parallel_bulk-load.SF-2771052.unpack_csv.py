@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 import zipfile, os
 
 archive = 'parallel_bulk-load.SF-2771052.unpack_csv.zip'

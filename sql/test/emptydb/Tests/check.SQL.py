@@ -4,59 +4,59 @@ try:
 except ImportError:
     import process
 
-clt = process.client('sql', format='csv', echo=False,
-                     stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE)
+with process.client('sql', format='csv', echo=False,
+                     stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE) as clt:
 
-for c in 'ntvsf':
-    clt.stdin.write("select E'\\\\d%s';\n" % c)
+    for c in 'ntvsf':
+        clt.stdin.write("select E'\\\\d%s';\n" % c)
 
-for c in 'ntvsf':
-    clt.stdin.write("select E'\\\\dS%s';\n" % c)
+    for c in 'ntvsf':
+        clt.stdin.write("select E'\\\\dS%s';\n" % c)
 
-clt.stdin.write("select E'\\\\dn ' || name from sys.schemas order by name;\n")
+    clt.stdin.write("select E'\\\\dn ' || name from sys.schemas order by name;\n")
 
-clt.stdin.write("select E'\\\\dSt ' || s.name || '.' || t.name from sys._tables t, sys.schemas s where t.schema_id = s.id and t.query is null order by s.name, t.name;\n")
+    clt.stdin.write("select E'\\\\dSt ' || s.name || '.' || t.name from sys._tables t, sys.schemas s where t.schema_id = s.id and t.query is null order by s.name, t.name;\n")
 
-clt.stdin.write("select E'\\\\dSv ' || s.name || '.' || t.name from sys._tables t, sys.schemas s where t.schema_id = s.id and t.query is not null order by s.name, t.name;\n")
+    clt.stdin.write("select E'\\\\dSv ' || s.name || '.' || t.name from sys._tables t, sys.schemas s where t.schema_id = s.id and t.query is not null order by s.name, t.name;\n")
 
-clt.stdin.write("select distinct E'\\\\dSf ' || s.name || '.\"' || f.name || '\"' from sys.functions f, sys.schemas s where f.language between 1 and 2 and f.schema_id = s.id and s.name = 'sys' order by s.name, f.name;\n")
+    clt.stdin.write("select distinct E'\\\\dSf ' || s.name || '.\"' || f.name || '\"' from sys.functions f, sys.schemas s where f.language between 1 and 2 and f.schema_id = s.id and s.name = 'sys' order by s.name, f.name;\n")
 
-out, err = clt.communicate()
-out = re.sub('^"(.*)"$', r'\1', out, flags=re.MULTILINE).replace('"\n', '\n').replace('\n"', '\n').replace('""', '"').replace(r'\\', '\\')
+    out, err = clt.communicate()
+    out = re.sub('^"(.*)"$', r'\1', out, flags=re.MULTILINE).replace('"\n', '\n').replace('\n"', '\n').replace('""', '"').replace(r'\\', '\\')
 
-sys.stdout.write(out)
-sys.stderr.write(err)
+    sys.stdout.write(out)
+    sys.stderr.write(err)
 
-clt = process.client('sql', interactive=True,
-                     stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE)
+with process.client('sql', interactive=True,
+                     stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE) as clt:
 
-out, err = clt.communicate(out)
+    out, err = clt.communicate(out)
 
-# do some normalization of the output:
-# remove SQL comments and empty lines
-out = re.sub('^[ \t]*(?:--.*)?\n', '', out, flags=re.MULTILINE)
-out = re.sub('[\t ]*--.*', '', out)
-out = re.sub(r'/\*.*?\*/[\n\t ]*', '', out, flags=re.DOTALL)
+    # do some normalization of the output:
+    # remove SQL comments and empty lines
+    out = re.sub('^[ \t]*(?:--.*)?\n', '', out, flags=re.MULTILINE)
+    out = re.sub('[\t ]*--.*', '', out)
+    out = re.sub(r'/\*.*?\*/[\n\t ]*', '', out, flags=re.DOTALL)
 
-wsre = re.compile('[\n\t ]+')
-pos = 0
-nout = ''
-for res in re.finditer(r'\bbegin\b.*?\bend\b[\n\t ]*;', out, flags=re.DOTALL | re.IGNORECASE):
-    nout += out[pos:res.start(0)] + wsre.sub(' ', res.group(0)).replace('( ', '(').replace(' )', ')')
-    pos = res.end(0)
-nout += out[pos:]
-out = nout
+    wsre = re.compile('[\n\t ]+')
+    pos = 0
+    nout = ''
+    for res in re.finditer(r'\bbegin\b.*?\bend\b[\n\t ]*;', out, flags=re.DOTALL | re.IGNORECASE):
+        nout += out[pos:res.start(0)] + wsre.sub(' ', res.group(0)).replace('( ', '(').replace(' )', ')')
+        pos = res.end(0)
+    nout += out[pos:]
+    out = nout
 
-pos = 0
-nout = ''
-for res in re.finditer(r'(?<=\n)(?:create|select)\b.*?;', out, flags=re.DOTALL | re.IGNORECASE):
-    nout += out[pos:res.start(0)] + wsre.sub(' ', res.group(0)).replace('( ', '(').replace(' )', ')')
-    pos = res.end(0)
-nout += out[pos:]
-out = nout
+    pos = 0
+    nout = ''
+    for res in re.finditer(r'(?<=\n)(?:create|select)\b.*?;', out, flags=re.DOTALL | re.IGNORECASE):
+        nout += out[pos:res.start(0)] + wsre.sub(' ', res.group(0)).replace('( ', '(').replace(' )', ')')
+        pos = res.end(0)
+    nout += out[pos:]
+    out = nout
 
-sys.stdout.write(out)
-sys.stderr.write(err)
+    sys.stdout.write(out)
+    sys.stderr.write(err)
 
 # add queries to dump the system tables, but avoid dumping IDs since
 # they are too volatile, and if it makes sense, dump an identifier
@@ -151,7 +151,7 @@ select count(*) from sys.storagemodelinput;
 -- triggers
 select t.name, g.name, case g.time when 0 then 'BEFORE' when 1 then 'AFTER' when 2 then 'INSTEAD OF' end as time, case g.orientation when 0 then 'ROW' when 1 then 'STATEMENT' end as orientation, case g.event when 0 then 'insert' when 1 then 'DELETE' when 2 then 'UPDATE' end as event, g.old_name, g.new_name, g.condition, g.statement from sys.triggers g left outer join sys._tables t on g.table_id = t.id order by t.name, g.name;
 -- types
-select s.name, t.systemname, t.sqlname, t.digits, t.scale, t.radix, et.value as eclass from sys.types t left outer join sys.schemas s on s.id = t.schema_id left outer join (values (0, 'ANY'), (1, 'TABLE'), (2, 'BIT'), (3, 'CHAR'), (4, 'STRING'), (5, 'BLOB'), (6, 'POS'), (7, 'NUM'), (8, 'MONTH'), (9, 'SEC'), (10, 'DEC'), (11, 'FLT'), (12, 'TIME'), (13, 'DATE'), (14, 'TIMESTAMP'), (15, 'GEOM'), (16, 'EXTERNAL')) as et (id, value) on t.eclass = et.id order by s.name, t.systemname, t.sqlname, t.digits, t.scale, t.radix, eclass;
+select s.name, t.systemname, t.sqlname, t.digits, t.scale, t.radix, et.value as eclass from sys.types t left outer join sys.schemas s on s.id = t.schema_id left outer join (values (0, 'ANY'), (1, 'TABLE'), (2, 'BIT'), (3, 'CHAR'), (4, 'STRING'), (5, 'BLOB'), (6, 'POS'), (7, 'NUM'), (8, 'MONTH'), (9, 'SEC'), (10, 'DEC'), (11, 'FLT'), (12, 'TIME'), (13, 'TIME_TZ'), (14, 'DATE'), (15, 'TIMESTAMP'), (16, 'TIMESTAMP_TZ'), (17, 'GEOM'), (18, 'EXTERNAL')) as et (id, value) on t.eclass = et.id order by s.name, t.systemname, t.sqlname, t.digits, t.scale, t.radix, eclass;
 -- user_role
 select a1.name, a2.name from sys.auths a1, sys.auths a2, sys.user_role ur where a1.id = ur.login_id and a2.id = ur.role_id order by a1.name, a2.name;
 -- keywords
@@ -166,10 +166,10 @@ drop function pcre_replace(string, string, string, string);
 
 sys.stdout.write(out)
 
-clt = process.client('sql', interactive=True,
-                     stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE)
+with process.client('sql', interactive=True,
+                     stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE) as clt:
 
-out, err = clt.communicate(out)
+    out, err = clt.communicate(out)
 
-sys.stdout.write(out)
-sys.stderr.write(err)
+    sys.stdout.write(out)
+    sys.stderr.write(err)

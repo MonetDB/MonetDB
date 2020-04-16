@@ -31,10 +31,10 @@
 
 static SQLRETURN
 MNDBTables(ODBCStmt *stmt,
-	   SQLCHAR *CatalogName, SQLSMALLINT NameLength1,
-	   SQLCHAR *SchemaName, SQLSMALLINT NameLength2,
-	   SQLCHAR *TableName, SQLSMALLINT NameLength3,
-	   SQLCHAR *TableType, SQLSMALLINT NameLength4)
+	   const SQLCHAR *CatalogName, SQLSMALLINT NameLength1,
+	   const SQLCHAR *SchemaName, SQLSMALLINT NameLength2,
+	   const SQLCHAR *TableName, SQLSMALLINT NameLength3,
+	   const SQLCHAR *TableType, SQLSMALLINT NameLength4)
 {
 	RETCODE rc;
 	char *sch = NULL, *tab = NULL;

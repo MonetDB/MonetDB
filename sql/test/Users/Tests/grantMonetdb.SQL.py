@@ -10,16 +10,17 @@ except ImportError:
     import process
 
 def sql_test_client(user, passwd, input):
-    process.client(lang = "sql", user = user, passwd = passwd, communicate = True,
-                   stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE,
-                   input = input, port = int(os.getenv("MAPIPORT")))
+    with process.client(lang="sql", user=user, passwd=passwd, communicate=True,
+                        stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE,
+                        input=input, port=int(os.getenv("MAPIPORT"))) as c:
+        c.communicate()
 
-sql_test_client('monetdb', 'monetdb', input = """\
+sql_test_client('monetdb', 'monetdb', input="""\
 GRANT sysadmin TO alice;
 """)
 
 
-sql_test_client('alice', 'alice', input = """\
+sql_test_client('alice', 'alice', input="""\
 SET ROLE sysadmin;
 CREATE USER may WITH PASSWORD 'may' NAME 'May' SCHEMA library;
 GRANT ALL ON orders TO april;

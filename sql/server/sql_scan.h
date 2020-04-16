@@ -15,6 +15,11 @@
 
 typedef enum { LINE_1, LINE_N } prot;
 
+/* Currently, MonetDB interprets \ specially in strings.  This is
+ * contrary to the SQL standard.  Remove this define to revert to the
+ * standard interpretation. */
+#define SQL_STRINGS_USE_ESCAPES 1
+
 struct scanner {
 	bstream *rs;
 	stream *ws;
@@ -32,6 +37,15 @@ struct scanner {
 	prot mode;		/* which mode (line (1,N), blocked) */
 	char *schema;	/* Keep schema name of create statement, needed AUTO_INCREMENT, SERIAL */
 	char *errstr;	/* error message from the bowels of the scanner */
+#ifdef SQL_STRINGS_USE_ESCAPES
+	/* because we interpret \ in strings, we need state in the
+	 * scanner so that we Do The Right Thing (TM) when we get a
+	 * unicode string split up in multiple parts (i.e. U&'string1'
+	 * 'string2') where the second and subsequent string MUST NOT
+	 * undergo \ interpretation (luckily, when we get rid of this
+	 * interpretation-by-default, we can remove the state) */
+	bool next_string_is_raw;
+#endif
 };
 
 #define QUERY(scanner) (scanner.rs->buf+scanner.rs->pos)

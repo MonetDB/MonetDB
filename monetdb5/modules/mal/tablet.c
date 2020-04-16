@@ -464,8 +464,8 @@ output_file_default(Tablet *as, BAT *order, stream *fd)
 {
 	size_t len = BUFSIZ, locallen = BUFSIZ;
 	int res = 0;
-	char *buf = GDKzalloc(len);
-	char *localbuf = GDKzalloc(len);
+	char *buf = GDKmalloc(len);
+	char *localbuf = GDKmalloc(len);
 	BUN p, q;
 	oid id;
 	BUN i = 0;
@@ -494,8 +494,8 @@ output_file_dense(Tablet *as, stream *fd)
 {
 	size_t len = BUFSIZ, locallen = BUFSIZ;
 	int res = 0;
-	char *buf = GDKzalloc(len);
-	char *localbuf = GDKzalloc(len);
+	char *buf = GDKmalloc(len);
+	char *localbuf = GDKmalloc(len);
 	BUN i = 0;
 
 	if (buf == NULL || localbuf == NULL) {
@@ -520,7 +520,7 @@ output_file_ordered(Tablet *as, BAT *order, stream *fd)
 {
 	size_t len = BUFSIZ;
 	int res = 0;
-	char *buf = GDKzalloc(len);
+	char *buf = GDKmalloc(len);
 	BUN p, q;
 	BUN i = 0;
 	BUN offset = as->offset;
@@ -1067,7 +1067,7 @@ SQLworker(void *arg)
 	int j, piece;
 	lng t0;
 
-	GDKsetbuf(GDKzalloc(GDKMAXERRLEN));	/* where to leave errors */
+	GDKsetbuf(GDKmalloc(GDKMAXERRLEN));	/* where to leave errors */
 	GDKclrerr();
 	task->errbuf = GDKerrbuf;
 
@@ -1304,80 +1304,71 @@ SQLproducer(void *p)
 			goto reportlackofinput;
 		}
 		for (e = s; *e && e < end && cnt < task->maxrow;) {
-			/* tokenize the record completely the format of the input
-			 * should comply to the following grammar rule [
-			 * [[quote][[esc]char]*[quote]csep]*rsep]* where quote is
-			 * a single user defined character within the quoted
-			 * fields a character may be escaped with a backslash The
-			 * user should supply the correct number of fields.
-			 * In the first phase we simply break the lines at the
-			 * record boundary. */
+			/* tokenize the record completely
+			 *
+			 * The format of the input should comply to the following
+			 * grammar rule [ [[quote][[esc]char]*[quote]csep]*rsep]*
+			 * where quote is a single user-defined character.
+			 * Within the quoted fields a character may be escaped
+			 * with a backslash.  The correct number of fields should
+			 * be supplied.  In the first phase we simply break the
+			 * lines at the record boundary. */
 			int nutf = 0;
 			int m = 0;
 			bool bs = false;
 			char q = 0;
 			size_t i = 0;
 			while (*e) {
-				/* check for correctly encoded UTF-8 */
-				if (nutf > 0) {
-					if ((*e & 0xC0) != 0x80)
-						goto badutf8;
-					if (m != 0 && (*e & m) == 0)
-						goto badutf8;
-					m = 0;
-					nutf--;
-				} else if ((*e & 0xE0) == 0xC0) {
-					nutf = 1;
-					if ((e[0] & 0x1E) == 0)
-						goto badutf8;
-				} else if ((*e & 0xF0) == 0xE0) {
-					nutf = 2;
-					if ((e[0] & 0x0F) == 0)
-						m = 0x20;
-				} else if ((*e & 0xF8) == 0xF0) {
-					nutf = 3;
-					if ((e[0] & 0x07) == 0)
-						m = 0x30;
-				} else if ((*e & 0x80) != 0) {
-					goto badutf8;
-				}
-				/* check for quoting and the row separator */
-				if (bs) {
-					bs = false;
-				} else if (*e == '\\') {
-					bs = true;
-					i = 0;
-				} else if (*e == q) {
-					q = 0;
-				} else if (*e == quote) {
-					q = quote;
-					i = 0;
-				} else if (q == 0) {
-					i = rdfa[i][(unsigned char) *e];
-					if (i == rseplen)
+				if (task->skip > 0) {
+					/* no interpretation of data we're skipping, just
+					 * look for newline */
+					if (*e == '\n')
 						break;
+				} else {
+					/* check for correctly encoded UTF-8 */
+					if (nutf > 0) {
+						if ((*e & 0xC0) != 0x80)
+							goto badutf8;
+						if (m != 0 && (*e & m) == 0)
+							goto badutf8;
+						m = 0;
+						nutf--;
+					} else if ((*e & 0xE0) == 0xC0) {
+						nutf = 1;
+						if ((e[0] & 0x1E) == 0)
+							goto badutf8;
+					} else if ((*e & 0xF0) == 0xE0) {
+						nutf = 2;
+						if ((e[0] & 0x0F) == 0)
+							m = 0x20;
+					} else if ((*e & 0xF8) == 0xF0) {
+						nutf = 3;
+						if ((e[0] & 0x07) == 0)
+							m = 0x30;
+					} else if ((*e & 0x80) != 0) {
+						goto badutf8;
+					}
+					/* check for quoting and the row separator */
+					if (bs) {
+						bs = false;
+					} else if (*e == '\\') {
+						bs = true;
+						i = 0;
+					} else if (*e == q) {
+						q = 0;
+					} else if (*e == quote) {
+						q = quote;
+						i = 0;
+					} else if (q == 0) {
+						i = rdfa[i][(unsigned char) *e];
+						if (i == rseplen)
+							break;
+					}
 				}
 				e++;
 			}
 			if (*e == 0) {
 				partial = e - s;
-				e = NULL;		/* nonterminated record, we need more */
-			}
-			/* check for incomplete line and end of buffer condition */
-			if (e) {
-				rowno++;
-				/* found a complete record, do we need to skip it? */
-				if (--task->skip < 0 && cnt < task->maxrow) {
-					task->lines[cur][task->top[cur]++] = s;
-					cnt++;
-				}
-				*(e + 1 - rseplen) = 0;
-				s = ++e;
-				task->b->pos += (size_t) (e - base);
-				base = e;
-				if (task->top[cur] == task->limit)
-					break;
-			} else {
 				/* found an incomplete record, saved for next round */
 				if (s+partial < end) {
 					/* found a EOS in the input */
@@ -1386,6 +1377,22 @@ SQLproducer(void *p)
 					goto reportlackofinput;
 				}
 				break;
+			} else {
+				rowno++;
+				if (task->skip > 0) {
+					task->skip--;
+				} else {
+					if (cnt < task->maxrow) {
+						task->lines[cur][task->top[cur]++] = s;
+						cnt++;
+					}
+					*(e + 1 - rseplen) = 0;
+				}
+				s = ++e;
+				task->b->pos += (size_t) (e - base);
+				base = e;
+				if (task->top[cur] == task->limit)
+					break;
 			}
 		}
 
@@ -1506,7 +1513,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 	READERtask ptask[MAXWORKERS];
 	int threads = (!maxrow || maxrow > (1 << 16)) ? (GDKnr_threads < MAXWORKERS && GDKnr_threads > 1 ? GDKnr_threads - 1 : MAXWORKERS - 1) : 1;
 	lng lio = 0, tio, t1 = 0, total = 0, iototal = 0;
-	char name[16];
+	char name[MT_NAME_LEN];
 
 /*	TRC_DEBUG(MAL_SERVER, "Prepare copy work for '%d' threads col '%s' rec '%s' quot '%c'\n", threads, csep, rsep, quote);*/
 
@@ -1527,7 +1534,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 	assert(rsep);
 	assert(csep);
 	assert(maxrow < 0 || maxrow <= (lng) BUN_MAX);
-	task.fields = (char ***) GDKzalloc(as->nr_attrs * sizeof(char **));
+	task.fields = (char ***) GDKmalloc(as->nr_attrs * sizeof(char **));
 	task.cols = (int *) GDKzalloc(as->nr_attrs * sizeof(int));
 	task.time = (lng *) GDKzalloc(as->nr_attrs * sizeof(lng));
 	if (task.fields == NULL || task.cols == NULL || task.time == NULL) {
@@ -1536,13 +1543,13 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 	}
 	task.cur = 0;
 	for (i = 0; i < MAXBUFFERS; i++) {
-		task.base[i] = GDKzalloc(MAXROWSIZE(2 * b->size) + 2);
+		task.base[i] = GDKmalloc(MAXROWSIZE(2 * b->size) + 2);
 		task.rowlimit[i] = MAXROWSIZE(2 * b->size);
 		if (task.base[i] == 0) {
 			tablet_error(&task, lng_nil, int_nil, SQLSTATE(HY013) MAL_MALLOC_FAIL, "SQLload_file");
 			goto bailout;
 		}
-		task.base[i][b->size + 1] = 0;
+		task.base[i][0] = task.base[i][b->size + 1] = 0;
 		task.input[i] = task.base[i] + 1;	/* wrap the buffer with null bytes */
 	}
 	task.besteffort = best;
@@ -1588,7 +1595,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 	/* the record separator is considered a column */
 	task.limit = (int) (b->size / as->nr_attrs + as->nr_attrs);
 	for (i = 0; i < as->nr_attrs; i++) {
-		task.fields[i] = GDKzalloc(sizeof(char *) * task.limit);
+		task.fields[i] = GDKmalloc(sizeof(char *) * task.limit);
 		if (task.fields[i] == 0) {
 			if (task.as->error == NULL)
 				as->error = createException(MAL, "sql.copy_from", SQLSTATE(HY013) MAL_MALLOC_FAIL);

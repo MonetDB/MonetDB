@@ -41,7 +41,7 @@
 #include "sql_qc.h"
 #include "sql_mvc.h"
 #include "sql_atom.h"
-#include "mtime.h"
+#include "gdk_time.h"
 
 qc *
 qc_create(int clientid, int seqnr)

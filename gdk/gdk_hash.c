@@ -199,13 +199,13 @@ HASHcollisions(BAT *b, Hash *h, const char *func)
 				max = cnt;
 			total += cnt;
 		}
-	TRC_DEBUG(ACCELERATOR,
-		"%s(" ALGOBATFMT "): statistics " BUNFMT ", "
-		"entries " LLFMT ", nunique " BUNFMT ", nbucket " BUNFMT ", "
-		"max " LLFMT ", avg %2.6f;\n",
-		func, ALGOBATPAR(b), BATcount(b), entries,
-		h->nunique, h->nbucket, max,
-		entries == 0 ? 0 : total / entries);
+	TRC_DEBUG_ENDIF(ACCELERATOR,
+			"%s(" ALGOBATFMT "): statistics " BUNFMT ", "
+			"entries " LLFMT ", nunique " BUNFMT ", "
+			"nbucket " BUNFMT ", max " LLFMT ", avg %2.6f;\n",
+			func, ALGOBATPAR(b), BATcount(b), entries,
+			h->nunique, h->nbucket, max,
+			entries == 0 ? 0 : total / entries);
 }
 
 static gdk_return
@@ -712,7 +712,7 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 		if (is_oid_nil(b->tseqbase)) {
 			TRC_DEBUG(ACCELERATOR,
 				  "cannot create hash-table on void-NIL column.\n");
-			GDKerror("BAThash: no hash on void/nil column\n");
+			GDKerror("no hash on void/nil column\n");
 			return NULL;
 		}
 		TRC_DEBUG(ACCELERATOR,
@@ -957,7 +957,7 @@ BAThash(BAT *b)
 		if (BBP_status(b->batCacheid) & BBPEXISTING && !b->theap.dirty && !GDKinmemory()) {
 			MT_Id tid;
 			BBPfix(b->batCacheid);
-			char name[16];
+			char name[MT_NAME_LEN];
 			snprintf(name, sizeof(name), "hashsync%d", b->batCacheid);
 			MT_lock_unset(&b->batIdxLock);
 			if (MT_create_thread(&tid, BAThashsync, b,

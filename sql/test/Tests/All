@@ -48,6 +48,7 @@ cast_str2num
 big-example
 count
 
+mediumint
 decimal
 decimal2
 null
@@ -120,5 +121,7 @@ constant-not-in
 unicode
 
 window_functions
+
+sysqueue
 
 HAVE_PYMONETDB?hot-snapshot

@@ -35,8 +35,6 @@
 #ifndef _GDK_TRACER_H_
 #define _GDK_TRACER_H_
 
-#define MXW "20"
-
 #define GENERATE_ENUM(ENUM) ENUM,
 
 
@@ -49,7 +47,7 @@
 
 typedef enum {
 	FOREACH_ADPTR(GENERATE_ENUM)
-} ADAPTER;
+} adapter_t;
 
 
 
@@ -65,10 +63,7 @@ typedef enum {
 
 typedef enum {
 	FOREACH_LEVEL(GENERATE_ENUM)
-} LOG_LEVEL;
-
-gdk_export const char *LEVEL_STR[];
-
+} log_level_t;
 
 
 // LAYERS
@@ -82,7 +77,7 @@ gdk_export const char *LEVEL_STR[];
 
 typedef enum {
 	FOREACH_LAYER(GENERATE_ENUM)
-} LAYER;
+} layer_t;
 
 
 
@@ -107,7 +102,6 @@ typedef enum {
 	COMP( PERF )				\
 	COMP( TEM )				\
 	COMP( THRD )				\
-	COMP( TRACE )				\
 						\
 	COMP( GEOM )				\
 	COMP( LIDAR )				\
@@ -134,16 +128,14 @@ typedef enum {
 
 typedef enum {
 	FOREACH_COMP(GENERATE_ENUM)
-} COMPONENT;
-
-gdk_export const char *COMPONENT_STR[];
+} component_t;
 
 
 
 /*
  * Logging macros
  */
-gdk_export LOG_LEVEL LVL_PER_COMPONENT[];
+gdk_export log_level_t lvl_per_component[];
 
 // If the LOG_LEVEL of the message is one of the following: CRITICAL,
 // ERROR or WARNING it is logged no matter the component. In any other
@@ -152,32 +144,16 @@ gdk_export LOG_LEVEL LVL_PER_COMPONENT[];
 	(LOG_LEVEL == M_CRITICAL ||		\
 	 LOG_LEVEL == M_ERROR    ||		\
 	 LOG_LEVEL == M_WARNING  ||		\
-	 LVL_PER_COMPONENT[COMP] >= LOG_LEVEL)
+	 lvl_per_component[COMP] >= LOG_LEVEL)
 
-#define IF_GDK_TRACER_LOG(LOG_LEVEL, COMP)	\
-	if (GDK_TRACER_TEST(LOG_LEVEL, COMP))
 
 #define GDK_TRACER_LOG_BODY(LOG_LEVEL, COMP, MSG, ...)			\
-	GDKtracer_log(LOG_LEVEL,					\
-		      "%s "						\
-		      "%-"MXW"s "					\
-		      "%"MXW"s:%d "					\
-		      "%"MXW"s "					\
-		      "%-"MXW"s "					\
-		      "%-"MXW"s # "MSG,					\
-		      GDKtracer_get_timestamp("%Y-%m-%d %H:%M:%S",	\
-					      (char[20]){0}, 20),	\
-		      __FILE__,						\
-		      __func__,						\
-		      __LINE__,						\
-		      LEVEL_STR[LOG_LEVEL],				\
-		      COMPONENT_STR[COMP],				\
-		      MT_thread_getname(),				\
-		      ## __VA_ARGS__)
+	GDKtracer_log(__FILE__, __func__, __LINE__,			\
+		      LOG_LEVEL, COMP, NULL, MSG, ##__VA_ARGS__)
 
 #define GDK_TRACER_LOG(LOG_LEVEL, COMP, MSG, ...)			\
 	do {								\
-		IF_GDK_TRACER_LOG(LOG_LEVEL, COMP) {			\
+		if (GDK_TRACER_TEST(LOG_LEVEL, COMP)) {			\
 			GDK_TRACER_LOG_BODY(LOG_LEVEL, COMP, MSG,	\
 					    ## __VA_ARGS__);		\
 		}							\
@@ -185,20 +161,19 @@ gdk_export LOG_LEVEL LVL_PER_COMPONENT[];
 
 
 #define TRC_CRITICAL(COMP, MSG, ...)				\
-	GDK_TRACER_LOG(M_CRITICAL, COMP, MSG, ## __VA_ARGS__)
+	GDK_TRACER_LOG_BODY(M_CRITICAL, COMP, MSG, ## __VA_ARGS__)
 
 #define TRC_ERROR(COMP, MSG, ...)				\
-	GDK_TRACER_LOG(M_ERROR, COMP, MSG, ## __VA_ARGS__)
+	GDK_TRACER_LOG_BODY(M_ERROR, COMP, MSG, ## __VA_ARGS__)
 
 #define TRC_WARNING(COMP, MSG, ...)				\
-	GDK_TRACER_LOG(M_WARNING, COMP, MSG, ## __VA_ARGS__)
+	GDK_TRACER_LOG_BODY(M_WARNING, COMP, MSG, ## __VA_ARGS__)
 
 #define TRC_INFO(COMP, MSG, ...)				\
 	GDK_TRACER_LOG(M_INFO, COMP, MSG, ## __VA_ARGS__)
 
 #define TRC_DEBUG(COMP, MSG, ...)				\
 	GDK_TRACER_LOG(M_DEBUG, COMP, MSG, ## __VA_ARGS__)
-
 
 
 
@@ -216,19 +191,19 @@ gdk_export LOG_LEVEL LVL_PER_COMPONENT[];
     }
 */
 #define TRC_CRITICAL_IF(COMP)			\
-	IF_GDK_TRACER_LOG(M_CRITICAL, COMP)
+	/* if (GDK_TRACER_TEST(M_CRITICAL, COMP)) */
 
 #define TRC_ERROR_IF(COMP)			\
-	IF_GDK_TRACER_LOG(M_ERROR, COMP)
+	/* if (GDK_TRACER_TEST(M_ERROR, COMP)) */
 
 #define TRC_WARNING_IF(COMP)			\
-	IF_GDK_TRACER_LOG(M_WARNING, COMP)
+	/* if (GDK_TRACER_TEST(M_WARNING, COMP)) */
 
 #define TRC_INFO_IF(COMP)			\
-	IF_GDK_TRACER_LOG(M_INFO, COMP)
+	if (GDK_TRACER_TEST(M_INFO, COMP))
 
 #define TRC_DEBUG_IF(COMP)			\
-	IF_GDK_TRACER_LOG(M_DEBUG, COMP)
+	if (GDK_TRACER_TEST(M_DEBUG, COMP))
 
 
 #define TRC_CRITICAL_ENDIF(COMP, MSG, ...)				\
@@ -253,10 +228,6 @@ gdk_export LOG_LEVEL LVL_PER_COMPONENT[];
  * For the allowed log_levels, components and layers see the
  * LOG_LEVEL, COMPONENT and LAYER enum respectively.
  */
-// Returns the timestamp in the form of datetime
-gdk_export char *GDKtracer_get_timestamp(const char *fmt, char *buf, size_t sz);
-
-
 // Used for logrotate
 gdk_export void GDKtracer_reinit_basic(int sig);
 
@@ -288,8 +259,12 @@ gdk_export gdk_return GDKtracer_set_adapter(const char *adapter);
 gdk_export gdk_return GDKtracer_reset_adapter(void);
 
 
-gdk_export gdk_return GDKtracer_log(LOG_LEVEL level, const char *fmt, ...)
-	__attribute__((__format__(__printf__, 2, 3)));
+gdk_export void GDKtracer_log(const char *file, const char *func,
+			      int lineno, log_level_t lvl,
+			      component_t comp,
+			      const char *syserr,
+			      _In_z_ _Printf_format_string_ const char *format, ...)
+	__attribute__((__format__(__printf__, 7, 8)));
 
 
 gdk_export gdk_return GDKtracer_flush_buffer(void);

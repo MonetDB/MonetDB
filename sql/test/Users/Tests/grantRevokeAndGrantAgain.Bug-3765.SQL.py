@@ -12,11 +12,12 @@ except ImportError:
     import process
 
 def sql_test_client(user, passwd, input):
-    process.client(lang = "sql", user = user, passwd = passwd, communicate = True,
-                   stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE,
-                   input = input, port = int(os.getenv("MAPIPORT")))
+    with process.client(lang="sql", user=user, passwd=passwd, communicate=True,
+                        stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE,
+                        input=input, port=int(os.getenv("MAPIPORT"))) as c:
+        c.communicate()
 
-sql_test_client('monetdb', 'monetdb', input = """\
+sql_test_client('monetdb', 'monetdb', input="""\
 CREATE SCHEMA schemaTest;
 
 CREATE USER user_delete with password 'delete' name 'user can only delete' schema schemaTest;
@@ -40,7 +41,7 @@ GRANT SELECT on table schemaTest.testTable to user_select;
 
 """)
 
-sql_test_client('user_delete', 'delete', input = """\
+sql_test_client('user_delete', 'delete', input="""\
 DELETE FROM testTable where v1 = 2; -- should work
 
 -- Check all the other privileges (they should fail).
@@ -49,7 +50,7 @@ UPDATE testTable set v1 = 2 where v2 = 7; -- not enough privileges
 INSERT into testTable values (3, 3); -- not enough privileges
 """)
 
-sql_test_client('user_update', 'update', input = """\
+sql_test_client('user_update', 'update', input="""\
 -- Check insert.
 UPDATE testTable set v1 = 2 where v2 = 7;
 
@@ -59,7 +60,7 @@ INSERT into testTable values (3, 3); -- not enough privileges
 DELETE FROM testTable where v1 = 2; -- not enough privileges
 """)
 
-sql_test_client('user_insert', 'insert', input = """\
+sql_test_client('user_insert', 'insert', input="""\
 -- Check insert.
 INSERT into testTable values (3, 3);
 
@@ -69,7 +70,7 @@ UPDATE testTable set v1 = 2 where v2 = 7; -- not enough privileges
 DELETE FROM testTable where v1 = 2; -- not enough privileges
 """)
 
-sql_test_client('user_select', 'select', input = """\
+sql_test_client('user_select', 'select', input="""\
 -- Check insert.
 SELECT * FROM testTable;
 
@@ -79,7 +80,7 @@ UPDATE testTable set v1 = 2 where v2 = 7; -- not enough privileges
 DELETE FROM testTable where v1 = 2; -- not enough privileges
 """)
 
-sql_test_client('monetdb', 'monetdb', input = """\
+sql_test_client('monetdb', 'monetdb', input="""\
 SELECT * FROM schemaTest.testTable;
 
 REVOKE DELETE on schemaTest.testTable from user_delete;
@@ -89,25 +90,25 @@ REVOKE SELECT on schemaTest.testTable from user_select;
 """)
 
 # Next four transitions should not be allowed.
-sql_test_client('user_delete', 'delete', input = """\
+sql_test_client('user_delete', 'delete', input="""\
 DELETE from testTable where v2 = 666; -- not enough privileges
 """)
 
-sql_test_client('user_insert', 'insert', input = """\
+sql_test_client('user_insert', 'insert', input="""\
 INSERT into testTable values (666, 666); -- not enough privileges
 """)
 
-sql_test_client('user_update', 'update', input = """\
+sql_test_client('user_update', 'update', input="""\
 UPDATE testTable set v1 = 666 where v2 = 666; -- not enough privileges
 """)
 
-sql_test_client('user_select', 'select', input = """\
+sql_test_client('user_select', 'select', input="""\
 SELECT * FROM testTable where v1 = 666; -- not enough privileges
 """)
 #
 
 # Regrant the revoked permissions to the users.
-sql_test_client('monetdb', 'monetdb', input = """\
+sql_test_client('monetdb', 'monetdb', input="""\
 SELECT * from schemaTest.testTable;
 
 -- Grant delete rights.
@@ -118,18 +119,18 @@ GRANT SELECT on table schemaTest.testTable to user_select;
 """)
 
 # Next four transitions should be allowed.
-sql_test_client('user_delete', 'delete', input = """\
+sql_test_client('user_delete', 'delete', input="""\
 DELETE from testTable where v1 = 42; -- privilege granted
 """)
 
-sql_test_client('user_insert', 'insert', input = """\
+sql_test_client('user_insert', 'insert', input="""\
 INSERT into testTable values (42, 42); -- privilege granted
 """)
 
-sql_test_client('user_update', 'update', input = """\
+sql_test_client('user_update', 'update', input="""\
 UPDATE testTable set v1 = 42 where v2 = 42; -- privilege granted
 """)
 
-sql_test_client('user_select', 'select', input = """\
+sql_test_client('user_select', 'select', input="""\
 SELECT * FROM testTable where v1 = 42; -- privilege granted
 """)

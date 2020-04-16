@@ -258,7 +258,8 @@ supertype(sql_subtype *super, sql_subtype *r, sql_subtype *i)
 	return super;
 }
 
-char * toUpperCopy(char *dest, const char *src) 
+char *
+toUpperCopy(char *dest, const char *src) 
 {
 	size_t i, len;
 
@@ -275,7 +276,8 @@ char * toUpperCopy(char *dest, const char *src)
 	return(dest);
 }
 
-char *dlist2string(mvc *sql, dlist *l, int expression, char **err)
+char *
+dlist2string(mvc *sql, dlist *l, int expression, char **err)
 {
 	char *b = NULL;
 	dnode *n;
@@ -308,88 +310,121 @@ char *dlist2string(mvc *sql, dlist *l, int expression, char **err)
 	return b;
 }
 
-char *symbol2string(mvc *sql, symbol *se, int expression, char **err) /**/
+char *
+symbol2string(mvc *sql, symbol *se, int expression, char **err) /**/
 {
-	int len = 0;
-	char buf[BUFSIZ];
-
-	buf[0] = 0;
 	switch (se->token) {
 	case SQL_NOP: {
-		dnode *lst = se->data.lval->h;
-		dnode *ops = lst->next->next->data.lval->h;
-		char *op = qname_fname(lst->data.lval);
+		dnode *lst = se->data.lval->h, *ops = lst->next->next->data.lval->h, *aux;
+		const char *op = qname_fname(lst->data.lval), *sname = qname_schema(lst->data.lval);
+		int i = 0, nargs = 0;
+		char** inputs = NULL, *res;
+		size_t inputs_length = 0;
 
-		len = snprintf( buf+len, BUFSIZ-len, "%s(", op); 
-		for (; ops; ops = ops->next) {
-			char *tmp = symbol2string(sql, ops->data.sym, expression, err);
-			if (tmp == NULL)
+		if (!sname)
+			sname = sql->session->schema->base.name;
+
+		for (aux = ops; aux; aux = aux->next) nargs++;
+		inputs = GDKzalloc(nargs * sizeof(char**));
+
+		for (aux = ops; aux; aux = aux->next) {
+			if (!(inputs[i] = symbol2string(sql, aux->data.sym, expression, err))) {
+				for (int j = 0; j < i; j++)
+					GDKfree(inputs[j]);
+				GDKfree(inputs);
 				return NULL;
-			len = snprintf( buf+len, BUFSIZ-len, "%s%s", 
-				tmp, 
-				(ops->next)?",":"");
-			_DELETE(tmp);
+			}
+			inputs_length += strlen(inputs[i]);
+			i++;
 		}
-		len = snprintf( buf+len, BUFSIZ-len, ")"); 
+
+		if ((res = NEW_ARRAY(char, strlen(sname) + strlen(op) + inputs_length + 6 + (nargs - 1 /* commas */) + 2))) {
+			char *concat = stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(res, "\""), sname), "\".\""), op), "\"(");
+			i = 0;
+			for (aux = ops; aux; aux = aux->next) {
+				concat = stpcpy(concat, inputs[i]);
+				if (aux->next)
+					concat = stpcpy(concat, ",");
+				i++;
+			}
+			concat = stpcpy(concat, ")");
+		}
+
+		for (int j = 0; j < nargs; j++)
+			GDKfree(inputs[j]);
+		GDKfree(inputs);
+		return res;
 	} break;
 	case SQL_BINOP: {
 		dnode *lst = se->data.lval->h;
-		char *op = qname_fname(lst->data.lval);
-		char *l;
-		char *r;
-		l = symbol2string(sql, lst->next->next->data.sym, expression, err);
-		if (l == NULL)
-			return NULL;
-		r = symbol2string(sql, lst->next->next->next->data.sym, expression, err);
-		if (r == NULL) {
+		const char *op = qname_fname(lst->data.lval), *sname = qname_schema(lst->data.lval);
+		char *l = NULL, *r = NULL, *res;
+
+		if (!sname)
+			sname = sql->session->schema->base.name;
+		if (!(l = symbol2string(sql, lst->next->next->data.sym, expression, err)) || !(r = symbol2string(sql, lst->next->next->next->data.sym, expression, err))) {
 			_DELETE(l);
+			_DELETE(r);
 			return NULL;
 		}
-		len = snprintf( buf+len, BUFSIZ-len, "%s(%s,%s)", op, l, r); 
+
+		if ((res = NEW_ARRAY(char, strlen(sname) + strlen(op) + strlen(l) + strlen(r) + 9)))
+			stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(res, "\""), sname), "\".\""), op), "\"("), l), ","), r), ")");
+
 		_DELETE(l);
 		_DELETE(r);
+		return res;
 	} break;
 	case SQL_OP: {
 		dnode *lst = se->data.lval->h;
-		char *op = qname_fname(lst->data.lval);
-		len = snprintf( buf+len, BUFSIZ-len, "%s()", op ); 
+		const char *op = qname_fname(lst->data.lval), *sname = qname_schema(lst->data.lval);
+		char *res;
+
+		if (!sname)
+			sname = sql->session->schema->base.name;
+
+		if ((res = NEW_ARRAY(char, strlen(sname) + strlen(op) + 8)))
+			stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(res, "\""), sname), "\".\""), op), "\"()");
+
+		return res;
 	} break;
 	case SQL_UNOP: {
 		dnode *lst = se->data.lval->h;
-		char *op = qname_fname(lst->data.lval);
-		char *l = symbol2string(sql, lst->next->next->data.sym, expression, err);
-		if (l == NULL)
+		const char *op = qname_fname(lst->data.lval), *sname = qname_schema(lst->data.lval);
+		char *l = symbol2string(sql, lst->next->next->data.sym, expression, err), *res;
+
+		if (!sname)
+			sname = sql->session->schema->base.name;
+		if (!l)
 			return NULL;
-		len = snprintf( buf+len, BUFSIZ-len, "%s(%s)", op, l); 
+
+		if ((res = NEW_ARRAY(char, strlen(sname) + strlen(op) + strlen(l) + 8)))
+			stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(res, "\""), sname), "\".\""), op), "\"("), l), ")");
+
 		_DELETE(l);
-		break;
+		return res;
 	}
 	case SQL_PARAMETER:
-		strcpy(buf,"?");
-		break;
+		return _STRDUP("?");
 	case SQL_NULL:
-		strcpy(buf,"NULL");
-		break;
+		return _STRDUP("NULL");
 	case SQL_ATOM:{
 		AtomNode *an = (AtomNode *) se;
 		if (an && an->a) 
 			return atom2sql(an->a);
 		else
-			strcpy(buf,"NULL");
-		break;
+			return _STRDUP("NULL");
 	}
-	case SQL_NEXT:{
-		const char *seq = qname_table(se->data.lval);
-		const char *sname = qname_schema(se->data.lval);
-		const char *s;
+	case SQL_NEXT: {
+		const char *seq = qname_table(se->data.lval), *sname = qname_schema(se->data.lval);
+		char *res;
 
 		if (!sname)
 			sname = sql->session->schema->base.name;
-		s = sql_escape_ident(seq);
-		if(!s)
-			return NULL;
-		len = snprintf( buf+len, BUFSIZ-len, "next value for \"%s\".\"%s\"", sname, s);
-		c_delete(s);
+
+		if ((res = NEW_ARRAY(char, strlen("next value for \"") + strlen(sname) + strlen(seq) + 5)))
+			stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(res, "next value for \""), sname), "\".\""), seq), "\"");
+		return res;
 	}	break;
 	case SQL_IDENT:
 	case SQL_COLUMN: {
@@ -401,53 +436,48 @@ char *symbol2string(mvc *sql, symbol *se, int expression, char **err) /**/
 			return atom2sql(a);
 		} else if (expression && dlist_length(l) == 1 && l->h->type == type_string) {
 			/* when compiling an expression, a column of a table might be present in the symbol, so we need this case */
-			return _STRDUP(l->h->data.sval);
-		} else if (expression && dlist_length(l) == 2 && l->h->type == type_string && l->h->next->type == type_string) {
-			char *first = l->h->data.sval;
-			char *second = l->h->next->data.sval;
+			const char *op = l->h->data.sval;
 			char *res;
 
-			if(!first || !second) {
+			if ((res = NEW_ARRAY(char, strlen(op) + 3)))
+				stpcpy(stpcpy(stpcpy(res, "\""), op), "\"");
+			return res;
+		} else if (expression && dlist_length(l) == 2 && l->h->type == type_string && l->h->next->type == type_string) {
+			char *first = l->h->data.sval, *second = l->h->next->data.sval, *res;
+
+			if (!first || !second)
 				return NULL;
-			}
-			res = NEW_ARRAY(char, strlen(first) + strlen(second) + 2);
-			if (res) {
-				stpcpy(stpcpy(stpcpy(res, first), "."), second);
-			}
+			if ((res = NEW_ARRAY(char, strlen(first) + strlen(second) + 6)))
+				stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(res, "\""), first), "\".\""), second), "\"");
 			return res;
 		} else {
 			char *e = dlist2string(sql, l, expression, err);
 			if (e)
 				*err = e;
+			return NULL;
 		}
-		return NULL;
 	}
 	case SQL_CAST: {
 		dlist *dl = se->data.lval;
-		char *val;
-		char *tpe;
+		char *val = NULL, *tpe = NULL, *res;
 
-		val = symbol2string(sql, dl->h->data.sym, expression, err);
-		if (val == NULL)
-			return NULL;
-		tpe = subtype2string(&dl->h->next->data.typeval);
-		if (tpe == NULL) {
+		if (!(val = symbol2string(sql, dl->h->data.sym, expression, err)) || !(tpe = subtype2string(&dl->h->next->data.typeval))) {
 			_DELETE(val);
+			_DELETE(tpe);
 			return NULL;
 		}
-		len = snprintf( buf+len, BUFSIZ-len, "cast ( %s as %s )",
-				val, tpe);
+		if ((res = NEW_ARRAY(char, strlen(val) + strlen(tpe) + 11)))
+			stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(res, "cast("), val), " as "), tpe), ")");
 		_DELETE(val);
 		_DELETE(tpe);
-		break;
+		return res;
 	}
-	case SQL_AGGR:
-	case SQL_SELECT:
-	case SQL_CASE:
-	case SQL_COALESCE:
-	case SQL_NULLIF:
-	default:
-		return NULL;
+	default: {
+		const char *msg = "SQL feature not yet available for expressions and default values: ";
+		char *tok_str = token2string(se->token);
+		if ((*err = NEW_ARRAY(char, strlen(msg) + strlen(tok_str) + 1)))
+			stpcpy(stpcpy(*err, msg), tok_str);
 	}
-	return _STRDUP(buf);
+	}
+	return NULL;
 }

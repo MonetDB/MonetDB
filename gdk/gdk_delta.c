@@ -89,7 +89,7 @@ BATundo(BAT *b)
 	bunlast = BUNlast(b) - 1;
 	if (bunlast >= b->batInserted) {
 		BUN i = bunfirst;
-		int (*tunfix) (const void *) = BATatoms[b->ttype].atomUnfix;
+		gdk_return (*tunfix) (const void *) = BATatoms[b->ttype].atomUnfix;
 		void (*tatmdel) (Heap *, var_t *) = BATatoms[b->ttype].atomDel;
 
 		if (b->thash)
@@ -97,7 +97,7 @@ BATundo(BAT *b)
 		if (tunfix || tatmdel) {
 			for (p = bunfirst; p <= bunlast; p++, i++) {
 				if (tunfix)
-					(*tunfix) (BUNtail(bi, p));
+					(void) (*tunfix) (BUNtail(bi, p));
 				if (tatmdel)
 					(*tatmdel) (b->tvheap, (var_t *) BUNtloc(bi, p));
 			}

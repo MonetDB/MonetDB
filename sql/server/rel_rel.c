@@ -16,6 +16,37 @@
 #include "sql_mvc.h"
 
 
+void
+rel_set_exps(sql_rel *rel, list *exps)
+{
+	rel->exps = exps;
+	rel->nrcols = list_length(exps);
+}
+
+/* some projections results are order dependend (row_number etc) */
+int 
+project_unsafe(sql_rel *rel, int allow_identity)
+{
+	sql_rel *sub = rel->l;
+	node *n;
+
+	if (need_distinct(rel) || rel->r /* order by */)
+		return 1;
+	if (!rel->exps)
+		return 0;
+	/* projects without sub and projects around ddl's cannot be changed */
+	if (!sub || (sub && sub->op == op_ddl))
+		return 1;
+	for(n = rel->exps->h; n; n = n->next) {
+		sql_exp *e = n->data;
+
+		/* aggr func in project ! */
+		if (exp_unsafe(e, allow_identity))
+			return 1;
+	}
+	return 0;
+}
+
 /* we don't name relations directly, but sometimes we need the relation
    name. So we look it up in the first expression
 
@@ -91,17 +122,10 @@ rel_create( sql_allocator *sa )
 	if(!r)
 		return NULL;
 
+	*r = (sql_rel) {
+		.card = CARD_ATOM,
+	};
 	sql_ref_init(&r->ref);
-	r->l = r->r = NULL;
-	r->exps = NULL;
-	r->nrcols = 0;
-	r->flag = 0;
-	r->card = CARD_ATOM;
-	r->distinct = 0;
-	r->processed = 0;
-	r->dependent = 0;
-	r->subquery = 0;
-	r->p = NULL;
 	return r;
 }
 
@@ -427,7 +451,6 @@ rel_setop(sql_allocator *sa, sql_rel *l, sql_rel *r, operator_type setop)
 	sql_rel *rel = rel_create(sa);
 	if(!rel)
 		return NULL;
-
 	rel->l = l;
 	rel->r = r;
 	rel->op = setop;
@@ -437,8 +460,10 @@ rel_setop(sql_allocator *sa, sql_rel *l, sql_rel *r, operator_type setop)
 	} else {
 		rel->card = l->card;
 	}
-	if (l && r)
-		rel->nrcols = l->nrcols + r->nrcols;
+	if (l && r) {
+		assert(l->nrcols == r->nrcols);
+		rel->nrcols = l->nrcols;
+	}
 	return rel;
 }
 
@@ -874,8 +899,9 @@ rel_groupby(mvc *sql, sql_rel *l, list *groupbyexps )
 	rel->l = l;
 	rel->r = groupbyexps;
 	rel->exps = aggrs;
-	rel->nrcols = l->nrcols;
+	rel->nrcols = aggrs?list_length(aggrs):0;
 	rel->op = op_groupby;
+	rel->grouped = 1;
 	return rel;
 }
 
@@ -893,7 +919,10 @@ rel_project(sql_allocator *sa, sql_rel *l, list *e)
 	rel->card = exps_card(e);
 	if (l) {
 		rel->card = l->card;
-		rel->nrcols = l->nrcols;
+		if (e)
+			rel->nrcols = list_length(e);
+		else
+			rel->nrcols = l->nrcols;
 	}
 	if (e && !list_empty(e))
 		set_processed(rel);
@@ -945,6 +974,7 @@ rel_table_func(sql_allocator *sa, sql_rel *l, sql_exp *f, list *exps, int kind)
 	if(!rel)
 		return NULL;
 
+	assert(kind > 0);
 	rel->flag = kind;
 	rel->l = l; /* relation before call */
 	rel->r = f; /* expression (table func call) */
@@ -1393,6 +1423,7 @@ rel_or(mvc *sql, sql_rel *rel, sql_rel *l, sql_rel *r, list *oexps, list *lexps,
 		return NULL;
 	rel->exps = rel_projections(sql, rel, NULL, 1, 1);
 	set_processed(rel);
+	rel->nrcols = list_length(rel->exps);
 	rel = rel_distinct(rel);
 	if (!rel)
 		return NULL;
@@ -1534,6 +1565,55 @@ rel_in_rel(sql_rel *super, sql_rel *sub)
 	return 0;
 }
 
+sql_rel*
+rel_parent(sql_rel *rel)
+{
+	if (rel->l && (is_project(rel->op) || rel->op == op_topn || rel->op == op_sample)) {
+		sql_rel *l = rel->l;
+		if (is_project(l->op))
+			return l;
+	}
+	return rel;
+}
+
+sql_exp *
+lastexp(sql_rel *rel) 
+{
+	if (!is_processed(rel) || is_topn(rel->op) || is_sample(rel->op))
+		rel = rel_parent(rel);
+	assert(list_length(rel->exps));
+	assert(is_project(rel->op));
+	return rel->exps->t->data;
+}
+
+sql_rel *
+rel_zero_or_one(mvc *sql, sql_rel *rel, exp_kind ek)
+{
+	if (is_topn(rel->op))
+		rel = rel_project(sql->sa, rel, rel_projections(sql, rel, NULL, 1, 0));
+	if (ek.card < card_set && rel->card > CARD_ATOM) {
+		assert (is_simple_project(rel->op) || is_set(rel->op));
+		list *exps = rel->exps;
+		rel = rel_groupby(sql, rel, NULL);
+		for(node *n = exps->h; n; n=n->next) {
+			sql_exp *e = n->data;
+			if (!has_label(e))
+				exp_label(sql->sa, e, ++sql->label);
+			sql_subtype *t = exp_subtype(e); /* parameters don't have a type defined, for those use 'void' one */
+			sql_subfunc *zero_or_one = sql_bind_func(sql->sa, sql->session->schema, "zero_or_one", t ? t : sql_bind_localtype("void"), NULL, F_AGGR);
+
+			e = exp_ref(sql->sa, e);
+			e = exp_aggr1(sql->sa, e, zero_or_one, 0, 0, CARD_ATOM, has_nil(e));
+			(void)rel_groupby_add_aggr(sql, rel, e);
+		}
+	} else {
+		sql_exp *e = lastexp(rel);
+		if (!has_label(e))
+			exp_label(sql->sa, e, ++sql->label);
+	}
+	return rel;
+}
+
 static sql_rel *
 refs_find_rel(list *refs, sql_rel *rel)
 {
@@ -1564,7 +1644,7 @@ exps_deps(mvc *sql, list *exps, list *refs, list *l)
 }
 
 static int
-id_cmp(int *id1, int *id2)
+id_cmp(sqlid *id1, sqlid *id2)
 {
 	if (*id1 == *id2)
 		return 0;
@@ -1572,7 +1652,7 @@ id_cmp(int *id1, int *id2)
 }
 
 static list *
-cond_append(list *l, int *id)
+cond_append(list *l, sqlid *id)
 {
 	if (*id >= FUNC_OIDS && !list_find(l, id, (fcmp) &id_cmp))
 		 list_append(l, id);
@@ -1704,7 +1784,7 @@ rel_deps(mvc *sql, sql_rel *r, list *refs, list *l)
 		}
 	} break;
 	case op_table: {
-		if ((r->flag == 0 || r->flag == 1) && r->r) { /* table producing function, excluding rel_relational_func cases */
+		if ((IS_TABLE_PROD_FUNC(r->flag) || r->flag == TABLE_FROM_RELATION) && r->r) { /* table producing function, excluding rel_relational_func cases */
 			sql_exp *op = r->r;
 			sql_subfunc *f = op->f;
 			cond_append(l, &f->func->base.id);
@@ -1748,8 +1828,6 @@ rel_deps(mvc *sql, sql_rel *r, list *refs, list *l)
 				return rel_deps(sql, r->l, refs, l);
 			if (r->r)
 				return rel_deps(sql, r->r, refs, l);
-		} else if (r->flag == ddl_psm) {
-			break;
 		} else if (r->flag == ddl_create_seq || r->flag == ddl_alter_seq) {
 			if (r->l)
 				return rel_deps(sql, r->l, refs, l);
@@ -1782,109 +1860,114 @@ rel_dependencies(mvc *sql, sql_rel *r)
 	return l;
 }
 
-static list *exps_exp_visitor(mvc *sql, sql_rel *rel, list *exps, int depth, exp_rewrite_fptr exp_rewriter);
+static list *exps_exp_visitor(mvc *sql, sql_rel *rel, list *exps, int depth, exp_rewrite_fptr exp_rewriter, bool topdown);
 
-static list *
-exps_exps_exp_visitor(mvc *sql, sql_rel *rel, list *lists, int depth, exp_rewrite_fptr exp_rewriter) 
+static inline list *
+exps_exps_exp_visitor(mvc *sql, sql_rel *rel, list *lists, int depth, exp_rewrite_fptr exp_rewriter, bool topdown) 
 {
 	node *n;
 
 	if (list_empty(lists))
 		return lists;
 	for (n = lists->h; n; n = n->next) {
-		if (n->data && (n->data = exps_exp_visitor(sql, rel, n->data, depth, exp_rewriter)) == NULL)
+		if (n->data && (n->data = exps_exp_visitor(sql, rel, n->data, depth, exp_rewriter, topdown)) == NULL)
 			return NULL;
 	}
 	return lists;
 }
 
+static sql_rel *rel_exp_visitor(mvc *sql, sql_rel *rel, exp_rewrite_fptr exp_rewriter, bool topdown);
+
 static sql_exp *
-exp_visitor(mvc *sql, sql_rel *rel, sql_exp *e, int depth, exp_rewrite_fptr exp_rewriter) 
+exp_visitor(mvc *sql, sql_rel *rel, sql_exp *e, int depth, exp_rewrite_fptr exp_rewriter, bool topdown) 
 {
 	if (THRhighwater())
 		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
 	assert(e);
+	if (topdown && !(e = exp_rewriter(sql, rel, e, depth)))
+		return NULL;
+
 	switch(e->type) {
 	case e_column:
 		break;
 	case e_convert:
-		if  ((e->l = exp_visitor(sql, rel, e->l, depth+1, exp_rewriter)) == NULL)
+		if  ((e->l = exp_visitor(sql, rel, e->l, depth+1, exp_rewriter, topdown)) == NULL)
 			return NULL;
 		break;
 	case e_aggr:
 	case e_func: 
 		if (e->r) /* rewrite rank -r is list of lists */
-			if ((e->r = exps_exps_exp_visitor(sql, rel, e->r, depth+1, exp_rewriter)) == NULL)
+			if ((e->r = exps_exps_exp_visitor(sql, rel, e->r, depth+1, exp_rewriter, topdown)) == NULL)
 				return NULL;
 		if (e->l)
-			if ((e->l = exps_exp_visitor(sql, rel, e->l, depth+1, exp_rewriter)) == NULL)
+			if ((e->l = exps_exp_visitor(sql, rel, e->l, depth+1, exp_rewriter, topdown)) == NULL)
 				return NULL;
 		break;
 	case e_cmp:	
 		if (e->flag == cmp_or || e->flag == cmp_filter) {
-			if ((e->l = exps_exp_visitor(sql, rel, e->l, depth+1, exp_rewriter)) == NULL)
+			if ((e->l = exps_exp_visitor(sql, rel, e->l, depth+1, exp_rewriter, topdown)) == NULL)
 				return NULL;
-			if ((e->r = exps_exp_visitor(sql, rel, e->r, depth+1, exp_rewriter)) == NULL)
+			if ((e->r = exps_exp_visitor(sql, rel, e->r, depth+1, exp_rewriter, topdown)) == NULL)
 				return NULL;
 		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
-			if ((e->l = exp_visitor(sql, rel, e->l, depth+1, exp_rewriter)) == NULL)
+			if ((e->l = exp_visitor(sql, rel, e->l, depth+1, exp_rewriter, topdown)) == NULL)
 				return NULL;
-			if ((e->r = exps_exp_visitor(sql, rel, e->r, depth+1, exp_rewriter)) == NULL)
+			if ((e->r = exps_exp_visitor(sql, rel, e->r, depth+1, exp_rewriter, topdown)) == NULL)
 				return NULL;
 		} else {
-			if ((e->l = exp_visitor(sql, rel, e->l, depth+1, exp_rewriter)) == NULL)
+			if ((e->l = exp_visitor(sql, rel, e->l, depth+1, exp_rewriter, topdown)) == NULL)
 				return NULL;
-			if ((e->r = exp_visitor(sql, rel, e->r, depth+1, exp_rewriter)) == NULL)
+			if ((e->r = exp_visitor(sql, rel, e->r, depth+1, exp_rewriter, topdown)) == NULL)
 				return NULL;
-			if (e->f && (e->f = exp_visitor(sql, rel, e->f, depth+1, exp_rewriter)) == NULL)
+			if (e->f && (e->f = exp_visitor(sql, rel, e->f, depth+1, exp_rewriter, topdown)) == NULL)
 				return NULL;
 		}
 		break;
 	case e_psm:
 		if (e->flag & PSM_SET || e->flag & PSM_RETURN || e->flag & PSM_EXCEPTION) {
-			if ((e->l = exp_visitor(sql, rel, e->l, depth+1, exp_rewriter)) == NULL)
+			if ((e->l = exp_visitor(sql, rel, e->l, depth+1, exp_rewriter, topdown)) == NULL)
 				return NULL;
 		} else if (e->flag & PSM_VAR) {
 			return e;
 		} else if (e->flag & PSM_WHILE || e->flag & PSM_IF) {
-			if ((e->l = exp_visitor(sql, rel, e->l, depth+1, exp_rewriter)) == NULL)
+			if ((e->l = exp_visitor(sql, rel, e->l, depth+1, exp_rewriter, topdown)) == NULL)
 				return NULL;
-			if ((e->r = exps_exp_visitor(sql, rel, e->r, depth+1, exp_rewriter)) == NULL)
+			if ((e->r = exps_exp_visitor(sql, rel, e->r, depth+1, exp_rewriter, topdown)) == NULL)
 				return NULL;
-			if (e->flag == PSM_IF && e->f && (e->f = exps_exp_visitor(sql, rel, e->f, depth+1, exp_rewriter)) == NULL)
+			if (e->flag == PSM_IF && e->f && (e->f = exps_exp_visitor(sql, rel, e->f, depth+1, exp_rewriter, topdown)) == NULL)
 				return NULL;
 		} else if (e->flag & PSM_REL) {
-			if ((e->l = rel_exp_visitor(sql, e->l, exp_rewriter)) == NULL)
+			if ((e->l = rel_exp_visitor(sql, e->l, exp_rewriter, topdown)) == NULL)
 				return NULL;
 		}
 		break;
 	case e_atom:
 		if (e->f)
-			if ((e->f = exps_exp_visitor(sql, rel, e->f, depth+1, exp_rewriter)) == NULL)
+			if ((e->f = exps_exp_visitor(sql, rel, e->f, depth+1, exp_rewriter, topdown)) == NULL)
 				return NULL;
 		break;
 	}
-	return exp_rewriter(sql, rel, e, depth);
+	if (!topdown && !(e = exp_rewriter(sql, rel, e, depth)))
+		return NULL;
+	return e;
 }
 
-static list *
-exps_exp_visitor(mvc *sql, sql_rel *rel, list *exps, int depth, exp_rewrite_fptr exp_rewriter) 
+static inline list *
+exps_exp_visitor(mvc *sql, sql_rel *rel, list *exps, int depth, exp_rewrite_fptr exp_rewriter, bool topdown) 
 {
-	node *n;
-
 	if (list_empty(exps))
 		return exps;
-	for (n = exps->h; n; n = n->next) {
-		if (n->data && (n->data = exp_visitor(sql, rel, n->data, depth, exp_rewriter)) == NULL)
+	for (node *n = exps->h; n; n = n->next) {
+		if (n->data && (n->data = exp_visitor(sql, rel, n->data, depth, exp_rewriter, topdown)) == NULL)
 			return NULL;
 	}
 	list_hash_clear(exps);
 	return exps;
 }
 
-sql_rel *
-rel_exp_visitor(mvc *sql, sql_rel *rel, exp_rewrite_fptr exp_rewriter) 
+static inline sql_rel *
+rel_exp_visitor(mvc *sql, sql_rel *rel, exp_rewrite_fptr exp_rewriter, bool topdown) 
 {
 	if (THRhighwater())
 		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
@@ -1892,32 +1975,35 @@ rel_exp_visitor(mvc *sql, sql_rel *rel, exp_rewrite_fptr exp_rewriter)
 	if (!rel)
 		return rel;
 
-	if (rel->exps && (rel->exps = exps_exp_visitor(sql, rel, rel->exps, 0, exp_rewriter)) == NULL)
+	if (rel->exps && (rel->exps = exps_exp_visitor(sql, rel, rel->exps, 0, exp_rewriter, topdown)) == NULL)
 		return NULL;
-	if ((is_groupby(rel->op) || is_simple_project(rel->op)) && rel->r && (rel->r = exps_exp_visitor(sql, rel, rel->r, 0, exp_rewriter)) == NULL)
+	if ((is_groupby(rel->op) || is_simple_project(rel->op)) && rel->r && (rel->r = exps_exp_visitor(sql, rel, rel->r, 0, exp_rewriter, topdown)) == NULL)
 		return NULL;
 
 	switch(rel->op){
 	case op_basetable:
+		break;
 	case op_table:
-		return rel;
+		if (IS_TABLE_PROD_FUNC(rel->flag) || rel->flag == TABLE_FROM_RELATION) {
+			if (rel->l)
+				if ((rel->l = rel_exp_visitor(sql, rel->l, exp_rewriter, topdown)) == NULL)
+					return NULL;
+		}
+		break;
 	case op_ddl:
 		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq) {
 			if (rel->l)
-				if ((rel->l = rel_exp_visitor(sql, rel->l, exp_rewriter)) == NULL)
+				if ((rel->l = rel_exp_visitor(sql, rel->l, exp_rewriter, topdown)) == NULL)
 					return NULL;
 		} else if (rel->flag == ddl_list || rel->flag == ddl_exception) {
 			if (rel->l)
-				if ((rel->l = rel_exp_visitor(sql, rel->l, exp_rewriter)) == NULL)
+				if ((rel->l = rel_exp_visitor(sql, rel->l, exp_rewriter, topdown)) == NULL)
 					return NULL;
 			if (rel->r)
-				if ((rel->r = rel_exp_visitor(sql, rel->r, exp_rewriter)) == NULL)
+				if ((rel->r = rel_exp_visitor(sql, rel->r, exp_rewriter, topdown)) == NULL)
 					return NULL;
-		} else if (rel->flag == ddl_psm) {
-			break;
 		}
-		return rel;
-
+		break;
 	case op_insert:
 	case op_update:
 	case op_delete:
@@ -1933,10 +2019,10 @@ rel_exp_visitor(mvc *sql, sql_rel *rel, exp_rewrite_fptr exp_rewriter)
 	case op_inter:
 	case op_except:
 		if (rel->l)
-			if ((rel->l = rel_exp_visitor(sql, rel->l, exp_rewriter)) == NULL)
+			if ((rel->l = rel_exp_visitor(sql, rel->l, exp_rewriter, topdown)) == NULL)
 				return NULL;
 		if (rel->r)
-			if ((rel->r = rel_exp_visitor(sql, rel->r, exp_rewriter)) == NULL)
+			if ((rel->r = rel_exp_visitor(sql, rel->r, exp_rewriter, topdown)) == NULL)
 				return NULL;
 		break;
 	case op_select:
@@ -1946,11 +2032,23 @@ rel_exp_visitor(mvc *sql, sql_rel *rel, exp_rewrite_fptr exp_rewriter)
 	case op_groupby:
 	case op_truncate:
 		if (rel->l)
-			if ((rel->l = rel_exp_visitor(sql, rel->l, exp_rewriter)) == NULL)
+			if ((rel->l = rel_exp_visitor(sql, rel->l, exp_rewriter, topdown)) == NULL)
 				return NULL;
 		break;
 	}
 	return rel;
+}
+
+sql_rel *
+rel_exp_visitor_topdown(mvc *sql, sql_rel *rel, exp_rewrite_fptr exp_rewriter)
+{
+	return rel_exp_visitor(sql, rel, exp_rewriter, true);
+}
+
+sql_rel *
+rel_exp_visitor_bottomup(mvc *sql, sql_rel *rel, exp_rewrite_fptr exp_rewriter)
+{
+	return rel_exp_visitor(sql, rel, exp_rewriter, false);
 }
 
 static list *exps_rel_visitor(mvc *sql, list *exps, rel_rewrite_fptr rel_rewriter, int *changes, bool topdown);
@@ -2057,21 +2155,22 @@ rel_visitor(mvc *sql, sql_rel *rel, rel_rewrite_fptr rel_rewriter, int *changes,
 		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
 	if (!rel)
-		return rel;
+		return NULL;
 
-	if (topdown) {
-		if (!(rel = do_rel_visitor(sql, rel, rel_rewriter, changes, true)))
-			return rel;
-	}
+	if (topdown && !(rel = do_rel_visitor(sql, rel, rel_rewriter, changes, true)))
+		return NULL;
 
 	sql_rel *(*func)(mvc *, sql_rel *, rel_rewrite_fptr, int*) = topdown ? rel_visitor_topdown : rel_visitor_bottomup;
 
 	switch(rel->op){
 	case op_basetable:
+		break;
 	case op_table:
-		if (rel->op == op_table && rel->l && rel->flag != 2) 
-			if ((rel->l = func(sql, rel->l, rel_rewriter, changes)) == NULL)
-				return NULL;
+		if (IS_TABLE_PROD_FUNC(rel->flag) || rel->flag == TABLE_FROM_RELATION) {
+			if (rel->l)
+				if ((rel->l = func(sql, rel->l, rel_rewriter, changes)) == NULL)
+					return NULL;
+		}
 		break;
 	case op_ddl:
 		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq) {
@@ -2089,8 +2188,7 @@ rel_visitor(mvc *sql, sql_rel *rel, rel_rewrite_fptr rel_rewriter, int *changes,
 			if ((rel->exps = exps_rel_visitor(sql, rel->exps, rel_rewriter, changes, topdown)) == NULL)
 				return NULL;
 		}
-		return rel;
-
+		break;
 	case op_insert:
 	case op_update:
 	case op_delete:

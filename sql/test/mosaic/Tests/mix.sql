@@ -18,11 +18,10 @@ select * from mix0;
 
 -- analyse the impact of the various compression schemes
 alter table mix0 set read only;
-select * from mosaic_analysis('sys','mix0','i') order by factor desc;
+select technique, factor, json.filter(layout, 'blks') as blocks, json.filter(layout, 'elms') as elements from mosaic.analysis('sys','mix0','i', 'dict256 frame', '') order by factor desc;
 
 alter table mix0 alter column i set storage 'mosaic';
 select compressed from storage where "table"='mix0';
 select * from mosaic.layout('sys','mix0','i') ;
 
-drop table mix0;
-
+drop table mix0 cascade;

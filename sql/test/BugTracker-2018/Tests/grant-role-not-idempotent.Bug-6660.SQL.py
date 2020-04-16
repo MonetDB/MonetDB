@@ -6,10 +6,10 @@ except ImportError:
 
 
 def client(input, user, passwd):
-    c = process.client('sql', user=user, passwd=passwd, stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE)
-    out, err = c.communicate(input)
-    sys.stdout.write(out)
-    sys.stderr.write(err)
+    with process.client('sql', user=user, passwd=passwd, stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE) as c:
+        out, err = c.communicate(input)
+        sys.stdout.write(out)
+        sys.stderr.write(err)
 
 
 script1 = '''\

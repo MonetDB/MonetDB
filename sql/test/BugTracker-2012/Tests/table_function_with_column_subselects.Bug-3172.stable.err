@@ -33,7 +33,7 @@ ERROR = !CREATE UNION FUNCTION: external name sql.x not bound (sys.x)
 CODE  = 3F000
 MAPI  = (monetdb) /var/tmp/mtest-23419/.s.monetdb.31192
 QUERY = select * from x((select id from _tables), (select schema_id from _tables));
-ERROR = !SELECT: 'x' requires a single sub query
+ERROR = !SELECT: The input for the table returning function 'x' must be either a single sub query, or a list of values
 CODE  = 42000
 
 # 13:48:49 >  

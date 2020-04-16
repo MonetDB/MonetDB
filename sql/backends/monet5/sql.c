@@ -76,8 +76,11 @@ rel_no_mitosis(sql_rel *rel)
 		return 1;
 	if (is_topn(rel->op) || rel->op == op_project)
 		return rel_no_mitosis(rel->l);
-	if (is_modify(rel->op) && rel->card <= CARD_AGGR)
+	if (is_modify(rel->op) && rel->card <= CARD_AGGR) {
+		if (is_delete(rel->op))
+			return 1;
 		return rel_no_mitosis(rel->r);
+	}
 	if (is_select(rel->op) && rel_is_table(rel->l) && rel->exps) {
 		is_point = 0;
 		/* just one point expression makes this a point query */
@@ -154,7 +157,7 @@ sqlcleanup(mvc *c, int err)
 		if (!err) {
 			sql_trans_commit(c->session->tr);
 			/* write changes to disk */
-			sql_trans_end(c->session);
+			sql_trans_end(c->session, 1);
 			store_apply_deltas(true);
 			sql_trans_begin(c->session);
 		}
@@ -448,6 +451,12 @@ create_table_or_view(mvc *sql, char* sname, char *tname, sql_table *t, int temp)
 			mvc_create_dependencies(sql, id_l, nt->base.id, VIEW_DEPENDENCY);
 		}
 		sa_destroy(sql->sa);
+		if (!r) {
+			if (strlen(sql->errstr) > 6 && sql->errstr[5] == '!')
+				throw(SQL, "sql.catalog", "%s", sql->errstr);
+			else 
+				throw(SQL, "sql.catalog", SQLSTATE(42000) "%s", sql->errstr);
+		}
 	}
 	sql->sa = osa;
 	return MAL_SUCCEED;
@@ -1636,7 +1645,7 @@ mvc_grow_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	for(;cnt>0; cnt--, v++) {
 		if (BUNappend(tid, &v, false) != GDK_SUCCEED) {
 			BBPunfix(Tid);
-			throw(SQL, "sql", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			throw(SQL, "sql.grow", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 	}
 	BBPunfix(Tid);
@@ -2145,26 +2154,17 @@ DELTAproject(bat *result, const bat *sub, const bat *col, const bat *uid, const 
 		if (BATcount(c) == 0) {
 			res = i;
 			i = c;
+			tres = BATproject(s, res);
 		} else {
-			if ((res = COLcopy(c, c->ttype, true, TRANSIENT)) == NULL) {
-				BBPunfix(s->batCacheid);
-				BBPunfix(i->batCacheid);
-				BBPunfix(c->batCacheid);
-				throw(MAL, "sql.projectdelta", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			}
-			BBPunfix(c->batCacheid);
-			if (BATappend(res, i, NULL, false) != GDK_SUCCEED) {
-				BBPunfix(s->batCacheid);
-				BBPunfix(i->batCacheid);
-				throw(MAL, "sql.projectdelta", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			}
+			tres = BATproject2(s, c, i);
 		}
+	} else {
+		tres = BATproject(s, res);
 	}
 	if (i)
 		BBPunfix(i->batCacheid);
-
-	tres = BATproject(s, res);
 	BBPunfix(res->batCacheid);
+
 	if (tres == NULL) {
 		BBPunfix(s->batCacheid);
 		throw(MAL, "sql.projectdelta", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -2570,7 +2570,7 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	} else if (!onclient) {
 		if ((s = open_wastream(filename)) == NULL || mnstr_errnr(s)) {
 			msg=  createException(IO, "streams.open", SQLSTATE(42000) "could not open file '%s': %s",
-					      filename?filename:"stdout", strerror(errno));
+					      filename?filename:"stdout", GDKstrerror(errno, (char[128]){0}, 128));
 			close_stream(s);
 			goto wrapup_result_set1;
 		}
@@ -2769,7 +2769,7 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	} else if (!onclient) {
 		if ((s = open_wastream(filename)) == NULL || mnstr_errnr(s)) {
 			msg=  createException(IO, "streams.open", SQLSTATE(42000) "could not open file '%s': %s",
-					      filename?filename:"stdout", strerror(errno));
+					      filename?filename:"stdout", GDKstrerror(errno, (char[128]){0}, 128));
 			close_stream(s);
 			goto wrapup_result_set;
 		}
@@ -3105,7 +3105,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		} else {
 			ss = open_rastream(fname);
 			if (ss == NULL || mnstr_errnr(ss)) {
-				msg = createException(IO, "sql.copy_from", SQLSTATE(42000) "Cannot open file '%s': %s", fname, strerror(errno));
+				msg = createException(IO, "sql.copy_from", SQLSTATE(42000) "Cannot open file '%s': %s", fname, GDKstrerror(errno, (char[128]){0}, 128));
 				close_stream(ss);
 				return msg;
 			}
@@ -3545,6 +3545,11 @@ str
 second_interval_2_daytime(daytime *res, const lng *s, const int *digits)
 {
 	daytime d;
+
+	if (*s == lng_nil) {
+		*res = daytime_nil;
+		return MAL_SUCCEED;
+	}
 	d = daytime_add_usec(daytime_create(0, 0, 0, 0), *s * 1000);
 	return daytime_2time_daytime(res, &d, digits);
 }
@@ -3803,26 +3808,35 @@ str
 month_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int *ret = getArgReference_int(stk, pci, 0);
-	int k = digits2ek(*getArgReference_int(stk, pci, 2));
-	int r;
+	int k = digits2ek(*getArgReference_int(stk, pci, 2)), r = 0;
 
 	(void) cntxt;
-	(void) mb;
+	*ret = int_nil;
 	switch (getArgType(mb, pci, 1)) {
 	case TYPE_bte:
+		if (is_bte_nil(stk->stk[getArg(pci, 1)].val.btval))
+			return MAL_SUCCEED;
 		r = stk->stk[getArg(pci, 1)].val.btval;
 		break;
 	case TYPE_sht:
+		if (is_sht_nil(stk->stk[getArg(pci, 1)].val.shval))
+			return MAL_SUCCEED;
 		r = stk->stk[getArg(pci, 1)].val.shval;
 		break;
 	case TYPE_int:
+		if (is_int_nil(stk->stk[getArg(pci, 1)].val.ival))
+			return MAL_SUCCEED;
 		r = stk->stk[getArg(pci, 1)].val.ival;
 		break;
 	case TYPE_lng:
+		if (is_lng_nil(stk->stk[getArg(pci, 1)].val.lval))
+			return MAL_SUCCEED;
 		r = (int) stk->stk[getArg(pci, 1)].val.lval;
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
+		if (is_hge_nil(stk->stk[getArg(pci, 1)].val.hval))
+			return MAL_SUCCEED;
 		r = (int) stk->stk[getArg(pci, 1)].val.hval;
 		break;
 #endif
@@ -3846,7 +3860,7 @@ str
 second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	lng *ret = getArgReference_lng(stk, pci, 0), r;
-	int k = digits2ek(*getArgReference_int(stk, pci, 2)), scale = 0, isnil = 0;
+	int k = digits2ek(*getArgReference_int(stk, pci, 2)), scale = 0;
 
 	(void) cntxt;
 	if (pci->argc > 3)
@@ -3854,32 +3868,35 @@ second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	*ret = lng_nil;
 	switch (getArgType(mb, pci, 1)) {
 	case TYPE_bte:
+		if (is_bte_nil(stk->stk[getArg(pci, 1)].val.btval))
+			return MAL_SUCCEED;
 		r = stk->stk[getArg(pci, 1)].val.btval;
-		isnil = (stk->stk[getArg(pci, 1)].val.btval == bte_nil);
 		break;
 	case TYPE_sht:
+		if (is_sht_nil(stk->stk[getArg(pci, 1)].val.shval))
+			return MAL_SUCCEED;
 		r = stk->stk[getArg(pci, 1)].val.shval;
-		isnil = (stk->stk[getArg(pci, 1)].val.shval == sht_nil);
 		break;
 	case TYPE_int:
+		if (is_int_nil(stk->stk[getArg(pci, 1)].val.ival))
+			return MAL_SUCCEED;
 		r = stk->stk[getArg(pci, 1)].val.ival;
-		isnil = (stk->stk[getArg(pci, 1)].val.ival == int_nil);
 		break;
 	case TYPE_lng:
+		if (is_lng_nil(stk->stk[getArg(pci, 1)].val.lval))
+			return MAL_SUCCEED;
 		r = stk->stk[getArg(pci, 1)].val.lval;
-		isnil = (stk->stk[getArg(pci, 1)].val.lval == lng_nil);
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
+		if (is_hge_nil(stk->stk[getArg(pci, 1)].val.hval))
+			return MAL_SUCCEED;
 		r = (lng) stk->stk[getArg(pci, 1)].val.hval;
-		isnil = (stk->stk[getArg(pci, 1)].val.hval == hge_nil);
 		break;
 #endif
 	default:
 		throw(ILLARG, "calc.sec_interval", SQLSTATE(42000) "Illegal argument in second interval");
 	}
-	if (isnil) 
-		return MAL_SUCCEED;
 	switch (k) {
 	case iday:
 		r *= 24;
@@ -4131,7 +4148,6 @@ sql_rt_credentials_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (hashb) BBPunfix(hashb->batCacheid);
 	return msg;
 }
-
 
 str
 sql_querylog_catalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -4444,7 +4460,6 @@ vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, str (*func) (bat
 		return MAL_SUCCEED;
 	}
 
-
 	i = 0;
 	bids[i] = 0;
 	for (o = t->columns.set->h; o; o = o->next, i++) {
@@ -4613,7 +4628,6 @@ SQLdrop_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	return MAL_SUCCEED;
 }
-
 
 /* after an update on the optimizer catalog, we have to change
  * the internal optimizer pipe line administration
@@ -5564,4 +5578,172 @@ bailout:
 		BBPkeepref(*col = column->batCacheid);
 	}
 	return msg;
+}
+
+/* input id,row-input-values 
+ * for each id call function(with row-input-values) return table
+ * return for each id the table, ie id (*length of table) and table results
+ */
+str
+SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int arg = pci->retc;
+	str mod, fcn, ret = MAL_SUCCEED;
+	InstrPtr npci;
+
+	mod = *getArgReference_str(stk, pci, arg++);
+	fcn = *getArgReference_str(stk, pci, arg++);
+	npci = newStmt(mb, mod, fcn);
+
+	for (int i = 1; i < pci->retc; i++) {
+		int type = getArgType(mb, pci, i);
+
+		if (i==1)
+			getArg(npci, 0) = newTmpVariable(mb, type);
+		else
+			npci = pushReturn(mb, npci, newTmpVariable(mb, type));
+	}
+	for (int i = pci->retc+2+1; i < pci->argc; i++) {
+		int type = getBatType(getArgType(mb, pci, i));
+
+		npci = pushNil(mb, npci, type);
+	}
+	/* check program to get the proper malblk */
+	if (chkInstruction(cntxt->usermodule, mb, npci)) {
+		freeInstruction(npci);
+		return createException(MAL, "sql.unionfunc", SQLSTATE(42000) PROGRAM_GENERAL);
+	}
+
+	if (npci) {
+		BAT **res = NULL, **input = NULL;
+		BATiter *bi = NULL;
+		BUN cnt = 0;
+		int nrinput = pci->argc - 2 - pci->retc;
+		MalBlkPtr nmb = NULL;
+		MalStkPtr env = NULL;
+		InstrPtr q = NULL;
+
+		if (!(input = GDKzalloc(sizeof(BAT*) * nrinput))) {
+			ret = createException(MAL, "sql.unionfunc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto finalize;
+		}
+		if (!(bi = GDKmalloc(sizeof(BATiter) * nrinput))) {
+			ret = createException(MAL, "sql.unionfunc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto finalize;
+		}
+		assert(nrinput == pci->retc);
+		for (int i = 0, j = pci->retc+2; j < pci->argc; i++, j++) {
+			bat *b = getArgReference_bat(stk, pci, j);
+			if (!(input[i] = BATdescriptor(*b))) {
+				ret = createException(MAL, "sql.unionfunc", SQLSTATE(HY005) "Cannot access column descriptor");
+				goto finalize;
+			}
+			bi[i] = bat_iterator(input[i]);
+			cnt = BATcount(input[i]); 
+		}
+
+		/* create result bats */
+		if (!(res = GDKzalloc(sizeof(BAT*) * pci->retc))) {
+			ret = createException(MAL, "sql.unionfunc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto finalize;
+		}
+		for (int i = 0; i<pci->retc; i++) {
+			int type = getArgType(mb, pci, i);
+
+			if (!(res[i] = COLnew(0, getBatType(type), cnt, TRANSIENT))) {
+				ret = createException(MAL, "sql.unionfunc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto finalize;
+			}
+		}
+
+		if (!(nmb = copyMalBlk(npci->blk))) {
+			ret = createException(MAL, "sql.unionfunc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto finalize;
+		}
+		if (!(env = prepareMALstack(nmb, nmb->vsize))) { /* needed for result */
+			ret = createException(MAL, "sql.unionfunc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto finalize;
+		}
+
+		q = getInstrPtr(nmb, 0);
+
+		for (BUN cur = 0; cur<cnt && !ret; cur++ ) {
+			MalStkPtr nstk = prepareMALstack(nmb, nmb->vsize);
+			int i,ii;
+
+			if (!nstk) { /* needed for result */
+				ret = createException(MAL, "sql.unionfunc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			} else {
+				/* copy (input) arguments onto destination stack, skipping rowid col */
+				for (i = 1, ii = q->retc; ii < q->argc && !ret; ii++) {
+					ValPtr lhs = &nstk->stk[q->argv[ii]];
+					ptr rhs = (ptr)BUNtail(bi[i], cur);
+
+					assert(lhs->vtype != TYPE_bat);
+					if (VALset(lhs, input[i]->ttype, rhs) == NULL)
+						ret = createException(MAL, "sql.unionfunc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				}
+				if (!ret && ii == q->argc) {
+					BAT *fres = NULL;
+					ret = runMALsequence(cntxt, nmb, 1, nmb->stop, nstk, env /* copy result in nstk first instruction*/, q); 
+
+					if (!ret) {
+						/* insert into result */
+						if (!(fres = BATdescriptor(env->stk[q->argv[0]].val.bval)))
+							ret = createException(MAL, "sql.unionfunc", SQLSTATE(HY005) "Cannot access column descriptor");
+						else {
+							BAT *p = BATconstant(fres->hseqbase, res[0]->ttype, (ptr)BUNtail(bi[0], cur), BATcount(fres), TRANSIENT);
+
+							if (p) {
+								if (BATappend(res[0], p, NULL, FALSE) != GDK_SUCCEED)
+									ret = createException(MAL, "sql.unionfunc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+								BBPunfix(p->batCacheid);
+							} else {
+								ret = createException(MAL, "sql.unionfunc", OPERATION_FAILED);
+							}
+							BBPunfix(fres->batCacheid);
+						}
+						i=1;
+						for (ii = 0; i < pci->retc && !ret; i++) {
+							BAT *b;
+
+							if (!(b = BATdescriptor(env->stk[q->argv[ii]].val.bval)))
+								ret = createException(MAL, "sql.unionfunc", SQLSTATE(HY005) "Cannot access column descriptor");
+							else if (BATappend(res[i], b, NULL, FALSE) != GDK_SUCCEED)
+								ret = createException(MAL, "sql.unionfunc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+							if (b) {
+								BBPrelease(b->batCacheid); /* release ref from env stack */
+								BBPunfix(b->batCacheid);   /* free pointer */
+							}
+						}
+					}
+				}
+				GDKfree(nstk);
+			}
+		}
+finalize:
+		GDKfree(env);
+		if (nmb)
+			freeMalBlk(nmb);
+		if (res)
+			for (int i = 0; i<pci->retc; i++) {
+				bat *b = getArgReference_bat(stk, pci, i);
+				if (res[i]) {
+					*b = res[i]->batCacheid;
+					if (ret)
+						BBPunfix(*b);
+					else
+						BBPkeepref(*b);
+				}
+			}
+		GDKfree(res);
+		if (input)
+			for (int i = 0; i<nrinput; i++) {
+				if (input[i])
+					BBPunfix(input[i]->batCacheid);
+			}
+		GDKfree(input);
+		GDKfree(bi);
+	}
+	return ret;
 }

@@ -33,7 +33,7 @@ malBootstrap(void)
 	str msg = MAL_SUCCEED;
 	str bootfile = "mal_init";
 
-	c = MCinitClient((oid) 0, NULL, NULL);
+	c = MCinitClient(MAL_ADMIN, NULL, NULL);
 	if(c == NULL) {
 		throw(MAL, "malBootstrap", "Failed to initialize client");
 	}

@@ -13,36 +13,44 @@
 #include "sql_relation.h"
 #include "sql_semantic.h"
 
-#define sql_from     1
-#define sql_where    2
-#define sql_sel      4
-#define sql_having   8
-#define sql_orderby 16
-#define sql_groupby 32 //ORed
-#define sql_aggr    64 //ORed
-#define sql_farg   128 //ORed
-#define sql_window 256 //ORed
-#define sql_join   512 //ORed
-#define sql_outer 1024 //ORed
-#define sql_group_totals 2048 //ORed
+#define sql_from         (1 << 0)  //ORed
+#define sql_where        (1 << 1)
+#define sql_sel          (1 << 2)
+#define sql_having       (1 << 3)
+#define sql_orderby      (1 << 4)
+#define sql_groupby      (1 << 5)  //ORed
+#define sql_aggr         (1 << 6)  //ORed
+#define sql_farg         (1 << 7)  //ORed
+#define sql_window       (1 << 8)  //ORed
+#define sql_join         (1 << 9)  //ORed
+#define sql_outer        (1 << 10) //ORed
+#define sql_group_totals (1 << 11) //ORed
+#define sql_update_set   (1 << 12) //ORed
+#define sql_values       (1 << 13) //ORed
+#define psm_call         (1 << 14) //ORed
 
-#define is_sql_from(X)    ((X & sql_from) == sql_from)
-#define is_sql_where(X)   ((X & sql_where) == sql_where)
-#define is_sql_sel(X)     ((X & sql_sel) == sql_sel)
-#define is_sql_having(X)  ((X & sql_having) == sql_having)
-#define is_sql_orderby(X) ((X & sql_orderby) == sql_orderby)
-#define is_sql_groupby(X) ((X & sql_groupby) == sql_groupby)
-#define is_sql_aggr(X)    ((X & sql_aggr) == sql_aggr)
-#define is_sql_farg(X)    ((X & sql_farg) == sql_farg)
-#define is_sql_window(X)  ((X & sql_window) == sql_window)
-#define is_sql_join(X)    ((X & sql_join) == sql_join)
-#define is_sql_outer(X)   ((X & sql_outer) == sql_outer)
+#define is_sql_from(X)         ((X & sql_from) == sql_from)
+#define is_sql_where(X)        ((X & sql_where) == sql_where)
+#define is_sql_sel(X)          ((X & sql_sel) == sql_sel)
+#define is_sql_having(X)       ((X & sql_having) == sql_having)
+#define is_sql_orderby(X)      ((X & sql_orderby) == sql_orderby)
+#define is_sql_groupby(X)      ((X & sql_groupby) == sql_groupby)
+#define is_sql_aggr(X)         ((X & sql_aggr) == sql_aggr)
+#define is_sql_farg(X)         ((X & sql_farg) == sql_farg)
+#define is_sql_window(X)       ((X & sql_window) == sql_window)
+#define is_sql_join(X)         ((X & sql_join) == sql_join)
+#define is_sql_outer(X)        ((X & sql_outer) == sql_outer)
 #define is_sql_group_totals(X) ((X & sql_group_totals) == sql_group_totals)
+#define is_sql_update_set(X)   ((X & sql_update_set) == sql_update_set)
+#define is_sql_values(X)       ((X & sql_values) == sql_values)
+#define is_psm_call(X)         ((X & psm_call) == psm_call)
 
 #define is_updateble(rel) \
 	(rel->op == op_basetable || \
 	(rel->op == op_ddl && (rel->flag == ddl_create_table || rel->flag == ddl_alter_table)))
 
+extern void rel_set_exps(sql_rel *rel, list *exps);
+extern int project_unsafe(sql_rel *rel, int allow_identity);
 extern const char *rel_name( sql_rel *r );
 extern sql_rel *rel_distinct(sql_rel *l);
 
@@ -102,12 +110,16 @@ extern sql_rel *rel_add_identity2(mvc *sql, sql_rel *rel, sql_exp **exp);
 extern sql_exp * rel_find_column( sql_allocator *sa, sql_rel *rel, const char *tname, const char *cname );
 
 extern int rel_in_rel(sql_rel *super, sql_rel *sub);
+extern sql_rel *rel_parent(sql_rel *rel);
+extern sql_exp *lastexp(sql_rel *rel);
+extern sql_rel *rel_zero_or_one(mvc *sql, sql_rel *rel, exp_kind ek);
 
 extern list *rel_dependencies(mvc *sql, sql_rel *r);
 extern sql_exp * exps_find_match_exp(list *l, sql_exp *e);
 
 typedef sql_exp *(*exp_rewrite_fptr)(mvc *sql, sql_rel *rel, sql_exp *e, int depth /* depth of the nested expression */ );
-extern sql_rel *rel_exp_visitor(mvc *sql, sql_rel *rel, exp_rewrite_fptr exp_rewriter);
+extern sql_rel *rel_exp_visitor_topdown(mvc *sql, sql_rel *rel, exp_rewrite_fptr exp_rewriter);
+extern sql_rel *rel_exp_visitor_bottomup(mvc *sql, sql_rel *rel, exp_rewrite_fptr exp_rewriter);
 
 typedef sql_rel *(*rel_rewrite_fptr)(mvc *sql, sql_rel *rel, int *changes);
 extern sql_rel *rel_visitor_topdown(mvc *sql, sql_rel *rel, rel_rewrite_fptr rel_rewriter, int *changes);

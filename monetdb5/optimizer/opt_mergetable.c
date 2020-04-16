@@ -87,6 +87,16 @@ nr_of_bats(MalBlkPtr mb, InstrPtr p)
 	return cnt;
 }
 
+static int
+nr_of_nilbats(MalBlkPtr mb, InstrPtr p)
+{
+	int j,cnt=0;
+	for(j=p->retc; j<p->argc; j++)
+		if (getArgType(mb,p,j) == TYPE_bat) 
+			cnt++;
+	return cnt;
+}
+
 /* some mat's have intermediates (with intermediate result variables), therefor
  * we pass the old output mat variable */
 inline static int
@@ -582,6 +592,64 @@ mat_apply3(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n, int o, int mva
 }
 
 static int
+mat_apply4(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n, int o, int e, int mvar, int nvar, int ovar, int evar)
+{
+	int k, l;
+	InstrPtr *r = NULL;
+	r = (InstrPtr*) GDKmalloc(sizeof(InstrPtr)* p->retc);
+	if(!r)
+		return -1;
+	for(k=0; k < p->retc; k++) {
+		if((r[k] = newInstruction(mb, matRef, packRef)) == NULL) {
+			for(l=0; l < k; l++)
+				freeInstruction(r[l]);
+			GDKfree(r);
+			return -1;
+		}
+		getArg(r[k],0) = getArg(p,k);
+	}
+
+	for(k = 1; k < ml->v[m].mi->argc; k++) {
+		int tpe;
+		InstrPtr q = copyInstruction(p);
+		if(!q) {
+			GDKfree(r);
+			return -1;
+		}
+
+		for(l=0; l < p->retc; l++) {
+			tpe = getArgType(mb,p,l);
+			getArg(q, l) = newTmpVariable(mb, tpe);
+		}
+		getArg(q, mvar) = getArg(ml->v[m].mi, k);
+		getArg(q, nvar) = getArg(ml->v[n].mi, k);
+		getArg(q, ovar) = getArg(ml->v[o].mi, k);
+		getArg(q, evar) = getArg(ml->v[e].mi, k);
+		pushInstruction(mb, q);
+		for(l=0; l < p->retc; l++) {
+			if(setPartnr(ml, -1, getArg(q,l), k)) {
+				for(l=0; l < k; l++)
+					freeInstruction(r[l]);
+				GDKfree(r);
+				return -1;
+			}
+			r[l] = addArgument(mb, r[l], getArg(q, l));
+		}
+	}
+	for(k=0; k < p->retc; k++) {
+		if(mat_add_var(ml, r[k], NULL, getArg(r[k], 0), mat_type(ml->v, m),  -1, -1, 1)) {
+			for(l=0; l < k; l++)
+				freeInstruction(r[l]);
+			GDKfree(r);
+			return -1;
+		}
+		pushInstruction(mb, r[k]);
+	}
+	GDKfree(r);
+	return 0;
+}
+
+static int
 mat_setop(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n)
 {
 	int tpe = getArgType(mb,p, 0), k, j;
@@ -738,7 +806,7 @@ mat_projection(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n)
 }
 
 static int
-mat_join2(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n)
+mat_join2(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n, int lc, int rc)
 {
 	int tpe = getArgType(mb,p, 0), j,k, nr = 1;
 	InstrPtr l = newInstruction(mb, matRef, packRef);
@@ -774,6 +842,10 @@ mat_join2(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n)
 				getArg(q,1) = newTmpVariable(mb, tpe);
 				getArg(q,2) = getArg(mat[m].mi,k);
 				getArg(q,3) = getArg(mat[n].mi,j);
+				if (lc>=0)
+					getArg(q,4) = getArg(mat[lc].mi,k);
+				if (rc>=0)
+					getArg(q,5) = getArg(mat[rc].mi,j);
 				pushInstruction(mb,q);
 
 				if(propagatePartnr(ml, getArg(mat[m].mi, k), getArg(q,0), nr) ||
@@ -793,6 +865,7 @@ mat_join2(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n)
 		int mv = (m>=0)?m:n;
 		int av = (m<0);
 		int bv = (m>=0);
+		int mc = (lc>=0)?lc:rc;
 
 		for(k=1; k<mat[mv].mi->argc; k++) {
 			InstrPtr q = copyInstruction(p);
@@ -806,6 +879,8 @@ mat_join2(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n)
 			getArg(q,0) = newTmpVariable(mb, tpe);
 			getArg(q,1) = newTmpVariable(mb, tpe);
 			getArg(q,p->retc+av) = getArg(mat[mv].mi, k);
+			if (mc>=0)
+				getArg(q,p->retc+2+av) = getArg(mat[mc].mi, k);
 			pushInstruction(mb,q);
 
 			if(propagatePartnr(ml, getArg(mat[mv].mi, k), getArg(q,av), k) ||
@@ -1009,9 +1084,10 @@ mat_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m)
 	}
 	for(k=1; k< mat[m].mi->argc; k++) {
 		q = newInstruction(mb, NULL, NULL);
-		setModuleId(q,getModuleId(p));
 		if (isAvg)
 			setModuleId(q,batcalcRef);
+		else
+			setModuleId(q,getModuleId(p));
 		setFunctionId(q,getFunctionId(p));
 		getArg(q,0) = newTmpVariable(mb, tp);
 		if (isAvg) 
@@ -1073,6 +1149,8 @@ mat_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m)
 		getArg(x,0) = newTmpVariable(mb, newBatType(TYPE_dbl));
 		x = addArgument(mb, x, getArg(v, 0));
 		x = addArgument(mb, x, getArg(y, 0));
+		x = pushNil(mb, x, TYPE_bat);
+		x = pushNil(mb, x, TYPE_bat);
 		pushInstruction(mb, x);
 
 		/* dbl w = avg * x */
@@ -1080,6 +1158,8 @@ mat_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m)
 		getArg(w,0) = newTmpVariable(mb, battp);
 		w = addArgument(mb, w, getArg(r, 0));
 		w = addArgument(mb, w, getArg(x, 0));
+		w = pushNil(mb, w, TYPE_bat);
+		w = pushNil(mb, w, TYPE_bat);
 		pushInstruction(mb, w);
 
 		r = w;
@@ -1280,6 +1360,8 @@ mat_group_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int b, int g, int e)
 		getArg(r,0) = newTmpVariable(mb, newBatType(TYPE_dbl));
 		r = addArgument(mb, r, getArg(v, 0));
 		r = addArgument(mb, r, getArg(s, 0));
+		r = pushNil(mb, r, TYPE_bat);
+		r = pushNil(mb, r, TYPE_bat);
 		pushInstruction(mb,r);
 
 		/* dbl s = avg * r */
@@ -1287,6 +1369,8 @@ mat_group_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int b, int g, int e)
 		getArg(s,0) = newTmpVariable(mb, tp);
 		s = addArgument(mb, s, getArg(ai1, 0));
 		s = addArgument(mb, s, getArg(r, 0));
+		s = pushNil(mb, s, TYPE_bat);
+		s = pushNil(mb, s, TYPE_bat);
 		pushInstruction(mb,s);
 
 		ai1 = s;
@@ -1918,6 +2002,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
 	for( i=0; i<oldtop; i++){
 		int bats = 0;
+		int nilbats = 0;
 		InstrPtr r, cp;
 
 		p = old[i];
@@ -1944,6 +2029,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			continue;
 		}
 		bats = nr_of_bats(mb, p);
+		nilbats = nr_of_nilbats(mb, p);
 
 		/* (l,r) Join (L, R, ..)
 		 * 2 -> (l,r) equi/theta joins (l,r)
@@ -1951,11 +2037,13 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		 * NxM -> (l,r) filter-joins (l1,..,ln,r1,..,rm)
 		 */
 		if (match > 0 && isMatJoinOp(p) && 
-		    p->argc >= 3 && p->retc == 2 && bats >= 2) {
-			if (bats == 2) {
+		    p->argc >= 5 && p->retc == 2 && bats+nilbats >= 4) {
+			if (bats+nilbats == 4) {
 		   		m = is_a_mat(getArg(p,p->retc), &ml);
 		   		n = is_a_mat(getArg(p,p->retc+1), &ml);
-				if(mat_join2(mb, p, &ml, m, n)) {
+		   		o = is_a_mat(getArg(p,p->retc+2), &ml);
+		   		e = is_a_mat(getArg(p,p->retc+3), &ml);
+				if(mat_join2(mb, p, &ml, m, n, o, e)) {
 					msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					goto cleanup;
 				}
@@ -1968,13 +2056,13 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			actions++;
 			continue;
 		}
-		if (match > 0 && isMatLeftJoinOp(p) && p->argc >= 3 && p->retc == 2 &&
-				match == 1 && bats == 2) {
+		if (match > 0 && isMatLeftJoinOp(p) && p->argc >= 5 && p->retc == 2 &&
+				(match == 1 || match == 2) && bats+nilbats == 4) {
 		   	m = is_a_mat(getArg(p,p->retc), &ml);
-			n = -1;
+		   	o = is_a_mat(getArg(p,p->retc+2), &ml);
 
-			if (m >= 0) {
-				if(mat_join2(mb, p, &ml, m, n)) {
+			if ((match == 1 && m >= 0) || (match == 2 && m >= 0 && o >= 0)) {
+				if(mat_join2(mb, p, &ml, m, -1, o, -1)) {
 					msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					goto cleanup;
 				}
@@ -2192,6 +2280,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		}
 
 		/* select on insert, should use last tid only */
+		if (/* DISABLES CODE */ (0))
 		if (match == 1 && fm == 2 && isSelect(p) && p->retc == 1 &&
 		   (m=is_a_mat(getArg(p,fm), &ml)) >= 0 && 
 		   !ml.v[m].packed && /* not packed yet */ 
@@ -2224,6 +2313,19 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			continue;
 		}
 
+		if (match == 4 && bats == 4 && isMap2Op(p) &&  p->retc == 1 &&
+		   (m=is_a_mat(getArg(p,fm), &ml)) >= 0 &&
+		   (n=is_a_mat(getArg(p,fn), &ml)) >= 0 &&
+		   (o=is_a_mat(getArg(p,fo), &ml)) >= 0 &&
+		   (e=is_a_mat(getArg(p,fe), &ml)) >= 0){
+			assert(ml.v[m].mi->argc == ml.v[n].mi->argc); 
+			if(mat_apply4(mb, p, &ml, m, n, o, e, fm, fn, fo, fe)) {
+				msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto cleanup;
+			}
+			actions++;
+			continue;
+		}
 
 		if (match == 3 && bats == 3 && (isFragmentGroup(p) || isFragmentGroup2(p) || isMapOp(p)) &&  p->retc != 2 &&
 		   (m=is_a_mat(getArg(p,fm), &ml)) >= 0 &&

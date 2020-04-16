@@ -295,22 +295,20 @@ safetyBarrier(InstrPtr p, InstrPtr q)
 	return FALSE;
 }
 
-
 inline int
 isUpdateInstruction(InstrPtr p){
 	if ( getModuleId(p) == sqlRef &&
-	   ( getFunctionId(p) == inplaceRef ||
-		getFunctionId(p) == appendRef ||
+	   ( getFunctionId(p) == appendRef ||
 		getFunctionId(p) == updateRef ||
-		getFunctionId(p) == replaceRef ||
-		getFunctionId(p) == clear_tableRef))
+		getFunctionId(p) == deleteRef ||
+		getFunctionId(p) == growRef ||
+		getFunctionId(p) == clear_tableRef ||
+		getFunctionId(p) == setVariableRef))
 			return TRUE;
 	if ( getModuleId(p) == batRef &&
-	   ( getFunctionId(p) == inplaceRef ||
-		getFunctionId(p) == appendRef ||
-		getFunctionId(p) == updateRef ||
+	   ( getFunctionId(p) == appendRef ||
 		getFunctionId(p) == replaceRef ||
-		getFunctionId(p) == clear_tableRef))
+		getFunctionId(p) == deleteRef))
 			return TRUE;
 	return FALSE;
 }
@@ -492,6 +490,20 @@ isOrderDepenent(InstrPtr p)
 }
 
 inline int isMapOp(InstrPtr p){
+	if (isUnsafeFunction(p) || isSealedFunction(p))
+		return 0;
+	return	getModuleId(p) &&
+		((getModuleId(p) == malRef && getFunctionId(p) == multiplexRef) ||
+		 (getModuleId(p) == malRef && getFunctionId(p) == manifoldRef) ||
+		 (getModuleId(p) == batcalcRef) ||
+		 (getModuleId(p) != batcalcRef && getModuleId(p) != batRef && strncmp(getModuleId(p), "bat", 3) == 0) ||
+		 (getModuleId(p) == mkeyRef)) && !isOrderDepenent(p) &&
+		 getModuleId(p) != batrapiRef &&
+		 getModuleId(p) != batpyapi3Ref &&
+		 getModuleId(p) != batcapiRef;
+}
+
+inline int isMap2Op(InstrPtr p){
 	if (isUnsafeFunction(p) || isSealedFunction(p))
 		return 0;
 	return	getModuleId(p) &&

@@ -41,8 +41,6 @@ DELETE FROM TIMESTAMP_TBL;
 
 -- verify uniform transaction time within transaction block
 START TRANSACTION;
-DECLARE test_now timestamp(2);
-SET test_now = now;
 INSERT INTO TIMESTAMP_TBL VALUES (test_now);
 INSERT INTO TIMESTAMP_TBL VALUES (test_now);
 SELECT count(*) AS two FROM TIMESTAMP_TBL WHERE d1 <= cast(test_now as timestamp);

@@ -84,7 +84,7 @@ VIEWcreate(oid seq, BAT *b)
 	BAT *bn;
 	bat tp = 0;
 
-	BATcheck(b, "VIEWcreate", NULL);
+	BATcheck(b, NULL);
 
 	bn = BATcreatedesc(seq, b->ttype, FALSE, TRANSIENT);
 	if (bn == NULL)
@@ -158,7 +158,7 @@ BATmaterialize(BAT *b)
 	BUN p, q;
 	oid t, *x;
 
-	BATcheck(b, "BATmaterialize", GDK_FAIL);
+	BATcheck(b, GDK_FAIL);
 	assert(!isVIEW(b));
 	tt = b->ttype;
 	cnt = BATcapacity(b);
