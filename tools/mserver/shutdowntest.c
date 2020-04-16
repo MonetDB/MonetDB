@@ -309,7 +309,7 @@ cleanup:
 
 static void monetdb_shutdown(void) {
 	if (monetdb_initialized) {
-		mserver_reset();
+		mal_reset();
 		monetdb_initialized = 0;
 	}
 }

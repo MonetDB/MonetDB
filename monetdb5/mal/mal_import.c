@@ -35,9 +35,9 @@
 
 #define MAX_MAL_MODULES 128
 static int mal_modules = 0;
+static int mal_total_modules = 0;
 static str mal_module_name[MAX_MAL_MODULES] = {0};
 static unsigned char *mal_module_code[MAX_MAL_MODULES] = {0};
-
 
 static void 
 initModule(Client c, char *name) 
@@ -75,11 +75,11 @@ mal_register(str name, unsigned char *code)
 }
 
 str
-malIncludeDefault(Client c, int listing, int embedded)
+malIncludeDefault(Client c, int listing, int embedded, int first_module)
 {
 	int i;
 
-	for(i = 0; i<mal_modules; i++) {
+	for(i = first_module; i<mal_modules; i++) {
 		if (embedded && strcmp(mal_module_name[i], "mal_mapi") == 0) /* skip mapi in the embedded version */
 			continue;
 		str msg = malIncludeString(c, mal_module_name[i], (str)mal_module_code[i], listing);
@@ -87,27 +87,34 @@ malIncludeDefault(Client c, int listing, int embedded)
 			return msg;
 	}
 	/* execute preludes */
-	for(i = 0; i<mal_modules; i++) {
+	for(i = first_module; i<mal_modules; i++) {
 		if (strcmp(mal_module_name[i], "sql") == 0) /* skip sql should be last to startup */
 			continue;
 		initModule(c, mal_module_name[i]);
 	}
-	mal_modules = 0; /* reset for next set of modules */
 	return MAL_SUCCEED;
 }
 
 str
 malIncludeModules(Client c, char *modules[], int listing, int embedded)
 {
+	int old_modules = mal_modules, i;
 	str msg;
-
-	for(int i = 0; modules[i]; i++) {
+	
+	for(i = 0; modules[i]; i++) {
 		/* load library */
 		if ((msg = loadLibrary(modules[i], listing)) != NULL)
 			return msg;
 	}
+	/* only when the libraries are loaded the code is dynamically added, the second call this
+	 * isn't done. So here the mal_modules counter is reset for this 
+	 */
+	if (!mal_total_modules)
+		mal_total_modules = mal_modules;
+	else
+		mal_modules = mal_total_modules;
 	/* load the mal code for these modules and execute preludes */
-	if ((msg = malIncludeDefault(c, listing, embedded)) != NULL)
+	if ((msg = malIncludeDefault(c, listing, embedded, old_modules)) != NULL)
 		return msg;
 	for(int i = 0; modules[i]; i++) {
 		if (strcmp(modules[i], "sql") == 0) { /* start now */
@@ -115,6 +122,7 @@ malIncludeModules(Client c, char *modules[], int listing, int embedded)
 			break;
 		}
 	}
+	mal_modules = old_modules;
 	return MAL_SUCCEED;
 }
 

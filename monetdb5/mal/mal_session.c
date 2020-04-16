@@ -54,12 +54,10 @@ malBootstrap(char *modules[], int embedded)
 		MCfreeClient(c);
 		throw(MAL, "malBootstrap", "Failed to create client thread");
 	}
-	/* default modules, todo include 01_*mal files from the autoload part */
-	if ((msg = malIncludeDefault(c, 0, embedded)) != MAL_SUCCEED) {
+	if ((msg = malIncludeDefault(c, 0, embedded, 0)) != MAL_SUCCEED) {
 		MCfreeClient(c);
 		return msg;
 	}
-	/* here we use a array of module names, initialized by the outer part (embedded or mserver5) */
 	if ((msg = malIncludeModules(c, modules, 0, embedded)) != MAL_SUCCEED) {
 		MCfreeClient(c);
 		return msg;

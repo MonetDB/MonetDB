@@ -710,9 +710,9 @@ SQLinitClient(Client c)
 	str msg = MAL_SUCCEED;
 
 	MT_lock_set(&sql_contextLock);
-	if (SQLinitialized == 0) {// && (msg = SQLprelude(NULL)) != MAL_SUCCEED)
+	if (SQLinitialized == 0) {
 		MT_lock_unset(&sql_contextLock);
-		return msg;
+		throw(SQL, "SQLinitClient", SQLSTATE(42000) "Catalogue not available");
 	}
 	msg = SQLprepareClient(c, !GDKembedded());
 	MT_lock_unset(&sql_contextLock);

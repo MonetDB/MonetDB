@@ -15,7 +15,7 @@
 #include "mal_utils.h"
 
 mal_export void mal_register(str name, unsigned char *code);
-mal_export str malIncludeDefault(Client c, int listing, int embedded);
+mal_export str malIncludeDefault(Client c, int listing, int embedded, int first_module);
 mal_export str malIncludeModules(Client c, char *modules[], int listing, int embedded);
 mal_export str malIncludeString(Client c, const str name, const str mal, int listing);
 

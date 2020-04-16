@@ -79,7 +79,7 @@ mal_export MT_Lock  mal_oltpLock ;
 
 mal_export int mal_init(char *modules[], int embedded);
 mal_export _Noreturn void mal_exit(int status);
-mal_export void mserver_reset(void);
+mal_export void mal_reset(void);
 
 /* This should be here, but cannot, as "Client" isn't known, yet ... |-(
  * For now, we move the prototype declaration to src/mal/mal_client.c,

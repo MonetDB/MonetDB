@@ -88,7 +88,7 @@ int mal_init(char *modules[], int embedded){
  * activity first.
  * This function should be called after you have issued sql_reset();
  */
-void mserver_reset(void)
+void mal_reset(void)
 {
 	str err = 0;
 
@@ -141,6 +141,6 @@ void mserver_reset(void)
 
 void mal_exit(int status)
 {
-	mserver_reset();
+	mal_reset();
 	exit(status);				/* properly end GDK */
 }
