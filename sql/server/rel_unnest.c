@@ -1912,7 +1912,8 @@ rel_union_exps(mvc *sql, sql_exp **l, list *vals, int is_tuple)
 			if (sq->card > CARD_ATOM && rel_has_freevar(sql, sq) && is_project(sq->op) && !sq->l && sq->nrcols==1) {
 				/* needs check on projection */
 				sql_exp *vals = sq->exps->h->data;
-				sq = rel_union_exps(sql, l, exp_get_values(vals), is_tuple);
+				if (!(sq = rel_union_exps(sql, l, exp_get_values(vals), is_tuple)))
+					return NULL;
 			} else {
 				if (rel_convert_types(sql, NULL, NULL, l, &ve, 1, type_equal) < 0)
 					return NULL;
@@ -1976,7 +1977,8 @@ exp_in_compare(mvc *sql, sql_exp **l, list *vals, int anyequal)
 	if (vals_only)
 		return exp_in(sql->sa, *l, vals, anyequal?cmp_in:cmp_notin);
 
-	*l = exp_in_project(sql, l, vals, anyequal); 
+	if (!(*l = exp_in_project(sql, l, vals, anyequal)))
+		return NULL;
 	return exp_compare(sql->sa, *l, exp_atom_bool(sql->sa, 1), cmp_equal);
 }
 
@@ -2294,10 +2296,11 @@ rewrite_compare(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 					list *t = le->f;
 					list *l = sa_list(sql->sa);
 					list *r = sa_list(sql->sa);
+					int s1 = list_length(t), s2 = list_length(rsq->exps); /* subtract identity column */
 
 					/* find out list of right expression */
-					if (list_length(t) != list_length(rsq->exps))
-						return NULL;
+					if (s1 != s2)
+						return sql_error(sql, 02, SQLSTATE(42000) "Subquery has too %s columns", (s2 < s1) ? "few" : "many");
 					for (node *n = t->h, *m = rsq->exps->h; n && m; n = n->next, m = m->next ) {
 						sql_exp *le = n->data;
 						sql_exp *re = m->data;
