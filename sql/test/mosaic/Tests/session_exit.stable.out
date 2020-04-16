@@ -173,9 +173,9 @@ end user.s4_0;
 % compressed # name
 % bigint # type
 % 3 # length
-[ 286	]
-[ 548	]
-[ 548	]
+[ 302	]
+[ 564	]
+[ 564	]
 [ NULL	]
 #explain select * from tmp3;
 % .explain # table_name
@@ -340,9 +340,9 @@ end user.s14_0;
 % compressed # name
 % bigint # type
 % 3 # length
-[ 286	]
-[ 548	]
-[ 548	]
+[ 302	]
+[ 564	]
+[ 564	]
 [ NULL	]
 #explain select * from tmp3;
 % .explain # table_name

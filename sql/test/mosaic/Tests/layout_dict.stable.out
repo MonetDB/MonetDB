@@ -46,7 +46,7 @@ stdout of test 'layout_dict` in directory 'sql/test/mosaic` itself:
 % 3 # length
 [ NULL	]
 [ NULL	]
-[ 248	]
+[ 308	]
 [ NULL	]
 #select * from mosaic.layout('sys','tmp3rle','i') limit 25;
 % .%4,	.%4,	.%4,	.%4,	.%4,	.%4 # table_name

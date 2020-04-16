@@ -123,7 +123,7 @@ stdout of test 'layout_linear` in directory 'sql/test/mosaic` itself:
 % compressed # name
 % bigint # type
 % 3 # length
-[ 432	]
+[ 448	]
 #select * from mosaic.layout('sys','tmp3rle','i');
 % .%4,	.%4,	.%4,	.%4,	.%4,	.%4 # table_name
 % technique,	count,	inputsize,	outputsize,	properties,	bsn # name

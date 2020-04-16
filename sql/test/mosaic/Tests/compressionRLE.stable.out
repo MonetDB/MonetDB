@@ -178,10 +178,10 @@ end user.s14_0;
 % compressed # name
 % bigint # type
 % 3 # length
-[ 320	]
-[ 264	]
-[ 552	]
-[ 208	]
+[ 336	]
+[ 280	]
+[ 568	]
+[ 224	]
 #explain select i from tmp3rle;
 % .explain # table_name
 % mal # name

@@ -155,9 +155,9 @@ end user.s16_0;
 % compressed # name
 % bigint # type
 % 3 # length
-[ 286	]
-[ 548	]
-[ 548	]
+[ 302	]
+[ 564	]
+[ 564	]
 [ NULL	]
 #select cast(sum(i) as bigint) from tmp3;
 % sys.%1 # table_name
@@ -273,9 +273,9 @@ end user.s36_0;
 % compressed # name
 % bigint # type
 % 3 # length
-[ 286	]
-[ 548	]
-[ 548	]
+[ 302	]
+[ 564	]
+[ 564	]
 [ NULL	]
 #explain select count(*) from tmp3 where i <4;
 % .explain # table_name

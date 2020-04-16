@@ -134,10 +134,10 @@ stdout of test 'compressionRLE2` in directory 'sql/test/mosaic` itself:
 % compressed # name
 % bigint # type
 % 3 # length
-[ 320	]
-[ 264	]
+[ 336	]
+[ 280	]
 [ NULL	]
-[ 208	]
+[ 224	]
 #explain select * from tmp3rle;
 % .explain # table_name
 % mal # name

@@ -137,7 +137,7 @@ stdout of test 'mix` in directory 'sql/test/mosaic` itself:
 % compressed # name
 % bigint # type
 % 3 # length
-[ 308	]
+[ 332	]
 #select * from mosaic.layout('sys','mix0','i') ;
 % .%4,	.%4,	.%4,	.%4,	.%4,	.%4 # table_name
 % technique,	count,	inputsize,	outputsize,	properties,	bsn # name
