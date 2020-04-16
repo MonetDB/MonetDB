@@ -2358,10 +2358,12 @@ exp_copy( mvc *sql, sql_exp * e)
 	case e_atom:
 		if (e->l)
 			ne = exp_atom(sql->sa, e->l);
-		else if (!e->r)
-			ne = exp_atom_ref(sql->sa, e->flag, &e->tpe);
-		else 
+		else if (e->r)
 			ne = exp_param(sql->sa, e->r, &e->tpe, e->flag);
+		else if (e->f)
+			ne = exp_values(sql->sa, exps_copy(sql, e->f));
+		else 
+			ne = exp_atom_ref(sql->sa, e->flag, &e->tpe);
 		break;
 	case e_psm:
 		if (e->flag & PSM_SET) 
