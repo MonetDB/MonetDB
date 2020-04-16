@@ -5408,7 +5408,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 		for (n = obe->h ; n ; n = n->next) {
 			sql_exp *oexp = n->data, *nexp;
 
-			if (is_sql_sel(f) && pp->op == op_project && !is_processed(pp) && !rel_find_exp(pp, oexp)) {
+			if (is_sql_sel(f) && pp->op == op_project && !is_processed(pp) && !rel_find_exp(pp, oexp) && !exps_find_exp(pp->exps, oexp)) {
 				append(pp->exps, oexp);
 				if (!exp_name(oexp))
 					exp_label(sql->sa, oexp, ++sql->label);
