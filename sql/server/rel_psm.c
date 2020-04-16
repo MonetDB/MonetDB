@@ -1115,6 +1115,8 @@ rel_drop_func(mvc *sql, dlist *qname, dlist *typelist, int drop_action, sql_ftyp
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)) && !if_exists)
 		return sql_error(sql, 02, SQLSTATE(3F000) "DROP %s: no such schema '%s'", F, sname);
+	if (!mvc_schema_privs(sql, s))
+		return sql_error(sql, 02, SQLSTATE(42000) "DROP %s: insufficient privileges for user '%s' in schema '%s'", F, stack_get_string(sql, "current_user"), s->base.name);
 
 	if (s)
 		func = resolve_func(sql, s, name, typelist, type, "DROP", if_exists);
@@ -1141,7 +1143,9 @@ rel_drop_all_func(mvc *sql, dlist *qname, int drop_action, sql_ftype type)
 	FUNC_TYPE_STR(type)
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
-		return sql_error(sql, 02, SQLSTATE(3F000) "DROP %s: no such schema '%s'", F, sname);
+		return sql_error(sql, 02, SQLSTATE(3F000) "DROP ALL %s: no such schema '%s'", F, sname);
+	if (!mvc_schema_privs(sql, s))
+		return sql_error(sql, 02, SQLSTATE(42000) "DROP ALL %s: insufficient privileges for user '%s' in schema '%s'", F, stack_get_string(sql, "current_user"), s->base.name);
 
 	list_func = schema_bind_func(sql, s, name, type);
 	if (!list_func) 

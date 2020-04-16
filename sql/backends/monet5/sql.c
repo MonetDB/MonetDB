@@ -487,6 +487,10 @@ create_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *col
 		msg = sql_error(sql, 02, SQLSTATE(3F000) "CREATE TABLE: no such schema '%s'", sname);
 		goto cleanup;
 	}
+	if (!mvc_schema_privs(sql, s)) {
+		msg = sql_error(sql, 02, SQLSTATE(42000) "CREATE TABLE: Access denied for %s to schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
+		goto cleanup;
+	}
 	if (!(t = mvc_create_table(sql, s, tname, tt_table, 0, SQL_DECLARED_TABLE, CA_COMMIT, -1, 0))) {
 		msg = sql_error(sql, 02, SQLSTATE(3F000) "CREATE TABLE: could not create table '%s'", tname);
 		goto cleanup;
@@ -567,6 +571,10 @@ append_to_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *
 		sname = "sys";
 	if (!(s = mvc_bind_schema(sql, sname))) {
 		msg = sql_error(sql, 02, SQLSTATE(3F000) "CREATE TABLE: no such schema '%s'", sname);
+		goto cleanup;
+	}
+	if (!mvc_schema_privs(sql, s)) {
+		msg = sql_error(sql, 02, SQLSTATE(42000) "CREATE TABLE: Access denied for %s to schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
 		goto cleanup;
 	}
 	if (!(t = mvc_bind_table(sql, s, tname))) {
@@ -781,6 +789,8 @@ mvc_next_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	if (!(s = mvc_bind_schema(m, sname)))
 		throw(SQL, "sql.next_value", SQLSTATE(3F000) "Cannot find the schema %s", sname);
+	if (!mvc_schema_privs(m, s))
+		throw(SQL, "sql.next_value", SQLSTATE(42000) "Access denied for %s to schema '%s'", stack_get_string(m, "current_user"), s->base.name);
 	if (!(seq = find_sql_sequence(s, seqname)))
 		throw(SQL, "sql.next_value", SQLSTATE(HY050) "Failed to fetch sequence %s.%s", sname, seqname);
 
@@ -893,6 +903,10 @@ mvc_bat_next_get_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, 
 				msg = createException(SQL, call, SQLSTATE(3F000) "Cannot find the schema %s", nsname);
 				goto bailout;
 			}
+			if (bulk_func == seqbulk_next_value && !mvc_schema_privs(m, s)) {
+				msg = createException(SQL, call, SQLSTATE(42000) "Access denied for %s to schema '%s'", stack_get_string(m, "current_user"), s->base.name);
+				goto bailout;
+			}
 			if (!(seq = find_sql_sequence(s, nseqname)) || !(sb = seqbulk_create(seq, BATcount(it)))) {
 				msg = createException(SQL, call, SQLSTATE(HY050) "Cannot find the sequence %s.%s", nsname, nseqname);
 				goto bailout;
@@ -970,6 +984,8 @@ mvc_restart_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	if (!(s = mvc_bind_schema(m, sname)))
 		throw(SQL, "sql.restart", SQLSTATE(3F000) "Cannot find the schema %s", sname);
+	if (!mvc_schema_privs(m, s))
+		throw(SQL, "sql.restart", SQLSTATE(42000) "Access denied for %s to schema '%s'", stack_get_string(m, "current_user"), s->base.name);
 	if (!(seq = find_sql_sequence(s, seqname)))
 		throw(SQL, "sql.restart", SQLSTATE(HY050) "Failed to fetch sequence %s.%s", sname, seqname);
 	if (is_lng_nil(start))
@@ -1073,6 +1089,10 @@ mvc_bat_restart_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			seq = NULL;
 			if ((!s || strcmp(s->base.name, nsname) != 0) && !(s = mvc_bind_schema(m, nsname))) {
 				msg = createException(SQL, "sql.restart", SQLSTATE(3F000) "Cannot find the schema %s", nsname);
+				goto bailout;
+			}
+			if (!mvc_schema_privs(m, s)) {
+				msg = createException(SQL, "sql.restart", SQLSTATE(42000) "Access denied for %s to schema '%s'", stack_get_string(m, "current_user"), s->base.name);
 				goto bailout;
 			}
 			if (!(seq = find_sql_sequence(s, nseqname)) || !(sb = seqbulk_create(seq, BATcount(it)))) {
@@ -4613,6 +4633,8 @@ SQLdrop_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	s = mvc_bind_schema(m, sch);
 	if (s == NULL)
 		throw(SQL, "sql.drop_hash", SQLSTATE(3F000) "Schema missing %s",sch);
+	if (!mvc_schema_privs(m, s))
+		throw(SQL, "sql.drop_hash", SQLSTATE(42000) "Access denied for %s to schema '%s'", stack_get_string(m, "current_user"), s->base.name);
 	t = mvc_bind_table(m, s, tbl);
 	if (t == NULL)
 		throw(SQL, "sql.drop_hash", SQLSTATE(42S02) "Table missing %s.%s",sch, tbl);
