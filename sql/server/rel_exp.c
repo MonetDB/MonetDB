@@ -608,6 +608,14 @@ exp_propagate(sql_allocator *sa, sql_exp *ne, sql_exp *oe)
 }
 
 sql_exp *
+exp_ref(mvc *sql, sql_exp *e)
+{
+	if (!exp_name(e))
+		exp_label(sql->sa, e, ++sql->label);
+	return exp_propagate(sql->sa, exp_column(sql->sa, exp_relname(e), exp_name(e), exp_subtype(e), exp_card(e), has_nil(e), is_intern(e)), e);
+}
+
+sql_exp *
 exp_ref_save(mvc *sql, sql_exp *e)
 {
 	if (is_atom(e->type))
@@ -616,7 +624,7 @@ exp_ref_save(mvc *sql, sql_exp *e)
 		exp_label(sql->sa, e, ++sql->label);
 	if (e->type != e_column)
 		e->ref = 1;
-	sql_exp *ne = exp_ref(sql->sa, e);
+	sql_exp *ne = exp_ref(sql, e);
 	if (ne && is_freevar(e))
 		set_freevar(ne, is_freevar(e)-1);
 	return ne;
@@ -665,7 +673,7 @@ exp_alias_ref(mvc *sql, sql_exp *e)
 
 	if (!has_label(e)) 
 		exp_label(sql->sa, e, ++sql->label);
-	ne = exp_ref(sql->sa, e);
+	ne = exp_ref(sql, e);
 	exp_setname(sql->sa, ne, tname, cname);
 	return exp_propagate(sql->sa, ne, e);
 }
@@ -1805,7 +1813,7 @@ exp_rel_get_rel(sql_allocator *sa, sql_exp *e)
 }
 
 static list *
-exp_rel_update_exps(sql_allocator *sa, list *exps )
+exp_rel_update_exps(mvc *sql, list *exps)
 {
 	if (list_empty(exps))
 		return exps;
@@ -1813,14 +1821,14 @@ exp_rel_update_exps(sql_allocator *sa, list *exps )
 		sql_exp *e = n->data;
 
 		if (exp_has_rel(e))
-			n->data = exp_rel_update_exp(sa, e);
+			n->data = exp_rel_update_exp(sql, e);
 	}
 	list_hash_clear(exps);
 	return exps;
 }
 
 sql_exp *
-exp_rel_update_exp(sql_allocator *sa, sql_exp *e)
+exp_rel_update_exp(mvc *sql, sql_exp *e)
 {
 	if (!e)
 		return NULL;
@@ -1828,41 +1836,41 @@ exp_rel_update_exp(sql_allocator *sa, sql_exp *e)
 	switch(e->type){
 	case e_func:
 	case e_aggr: 
-		e->l = exp_rel_update_exps(sa, e->l);
+		e->l = exp_rel_update_exps(sql, e->l);
 		return e;
 	case e_cmp:
 		if (e->flag == cmp_or || e->flag == cmp_filter) {
 			if (exps_have_rel_exp(e->l))
-				e->l = exp_rel_update_exps(sa, e->l);
+				e->l = exp_rel_update_exps(sql, e->l);
 			if (exps_have_rel_exp(e->r))
-				e->r = exp_rel_update_exps(sa, e->r);
+				e->r = exp_rel_update_exps(sql, e->r);
 		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
 			if (exp_has_rel(e->l))
-				e->l = exp_rel_update_exp(sa, e->l);
+				e->l = exp_rel_update_exp(sql, e->l);
 			if (exps_have_rel_exp(e->r))
-				e->r = exp_rel_update_exps(sa, e->r);
+				e->r = exp_rel_update_exps(sql, e->r);
 		} else {
 			if (exp_has_rel(e->l))
-				e->l = exp_rel_update_exp(sa, e->l);
+				e->l = exp_rel_update_exp(sql, e->l);
 			if (exp_has_rel(e->r))
-				e->r = exp_rel_update_exp(sa, e->r);
+				e->r = exp_rel_update_exp(sql, e->r);
 			if (e->f && exp_has_rel(e->f))
-				e->f = exp_rel_update_exp(sa, e->f);
+				e->f = exp_rel_update_exp(sql, e->f);
 		}
 		return e;
 	case e_convert:
-		e->l = exp_rel_update_exp(sa, e->l);
+		e->l = exp_rel_update_exp(sql, e->l);
 		return e;
 	case e_psm:
 		if (exp_is_rel(e)) {
-			sql_rel *r = exp_rel_get_rel(sa, e);
+			sql_rel *r = exp_rel_get_rel(sql->sa, e);
 			e = r->exps->t->data;
-			return exp_ref(sa, e);
+			return exp_ref(sql, e);
 		}
 		return e;
 	case e_atom:
 		if (e->f && exps_have_rel_exp(e->f))
-			e->f = exp_rel_update_exps(sa, e->f);
+			e->f = exp_rel_update_exps(sql, e->f);
 		return e;
 	case e_column:
 		return e;
@@ -2250,16 +2258,16 @@ is_identity( sql_exp *e, sql_rel *r)
 }
 
 list *
-exps_alias( sql_allocator *sa, list *exps)
+exps_alias(mvc *sql, list *exps)
 {
 	node *n;
-	list *nl = new_exp_list(sa);
+	list *nl = new_exp_list(sql->sa);
 
 	for (n = exps->h; n; n = n->next) {
 		sql_exp *e = n->data, *ne;
 
 		assert(exp_name(e));
-		ne = exp_ref(sa, e);
+		ne = exp_ref(sql, e);
 		append(nl, ne);
 	}
 	return nl;
@@ -2358,11 +2366,8 @@ exp_copy( mvc *sql, sql_exp * e)
 	case e_psm:
 		if (e->flag & PSM_SET) 
 			ne = exp_set(sql->sa, e->alias.name, exp_copy(sql, e->l), GET_PSM_LEVEL(e->flag));
-		if (e->flag & PSM_REL) {
-			if (!exp_name(e))
-				exp_label(sql->sa, e, ++sql->label);
-			return exp_ref(sql->sa, e);
-		}
+		if (e->flag & PSM_REL)
+			return exp_ref(sql, e);
 		break;
 	}
 	if (!ne)

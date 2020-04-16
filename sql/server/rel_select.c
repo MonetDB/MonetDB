@@ -134,9 +134,7 @@ rel_lastexp(mvc *sql, sql_rel *rel )
 	}
 	assert(is_project(rel->op));
 	e = rel->exps->t->data;
-	if (!exp_name(e)) 
-		exp_label(sql->sa, e, ++sql->label);
-	return exp_ref(sql->sa, e);
+	return exp_ref(sql, e);
 }
 
 static sql_rel *
@@ -1196,7 +1194,7 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 					exp = rel_groupby_add_aggr(sql, outer, exp);
 					exp->card = CARD_ATOM;
 				} else if (is_groupby(outer->op) && is_sql_aggr(f) && exps_find_match_exp(outer->exps, exp))
-					exp = exp_ref(sql->sa, exp);
+					exp = exp_ref(sql, exp);
 				else
 					exp->card = CARD_ATOM;
 				set_freevar(exp, i);
@@ -1262,7 +1260,7 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 					exp = rel_groupby_add_aggr(sql, outer, exp);
 					exp->card = CARD_ATOM;
 				} else if (is_groupby(outer->op) && is_sql_aggr(f) && exps_find_match_exp(outer->exps, exp))
-					exp = exp_ref(sql->sa, exp);
+					exp = exp_ref(sql, exp);
 				else
 					exp->card = CARD_ATOM;
 				set_freevar(exp, i);
@@ -3566,11 +3564,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 		if (!group && !all_freevar)
 			return e;
 		if (all_freevar) {
-			if (is_simple_project(res->op)) {
-				assert(0);
-				e = rel_project_add_exp(sql, res, e);
-				e = exp_ref(sql->sa, e);
-			}
+			assert(!is_simple_project(res->op));
 			e->card = CARD_ATOM;
 			set_freevar(e, all_freevar-1);
 			return e;
@@ -3723,11 +3717,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 			return e;
 		if (all_freevar) {
 			exps_reset_freevar(exps);
-			if (is_simple_project(res->op)) {
-				assert(0);
-				e = rel_project_add_exp(sql, res, e);
-				e = exp_ref(sql->sa, e);
-			}
+			assert(!is_simple_project(res->op));
 			e->card = CARD_ATOM;
 			set_freevar(e, all_freevar-1);
 			return e;
@@ -4317,9 +4307,7 @@ rel_order_by_column_exp(sql_query *query, sql_rel **R, symbol *column_r, int f)
 		} else {
 			e = found;
 		}
-		if (!exp_name(e))
-			exp_label(sql->sa, e, ++sql->label);
-		e = exp_ref(sql->sa, e);
+		e = exp_ref(sql, e);
 	}
 	return e;
 }
@@ -4384,9 +4372,7 @@ rel_order_by(sql_query *query, sql_rel **R, symbol *orderby, int f)
 						e = exps_get_exp(rel->exps, nr);
 						if (!e)
 							return sql_error(sql, 02, SQLSTATE(42000) "SELECT: the order by column number (%d) is not in the number of projections range (%d)", nr, list_length(rel->exps));
-						if (!exp_name(e))
-							exp_label(sql->sa, e, ++sql->label);
-						e = exp_ref(sql->sa, e);
+						e = exp_ref(sql, e);
 						/* do not cache this query */
 						if (e)
 							scanner_reset_key(&sql->scanner);
@@ -4405,11 +4391,9 @@ rel_order_by(sql_query *query, sql_rel **R, symbol *orderby, int f)
 					if (!found) {
 						append(rel->exps, e);
 					} else {
-						if (!exp_name(found))
-							exp_label(sql->sa, found, ++sql->label);
 						e = found;
 					}
-					e = exp_ref(sql->sa, e);
+					e = exp_ref(sql, e);
 				}
 			}
 
@@ -4780,9 +4764,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 			in = rel_first_column(sql, p);
 			if (!in)
 				return NULL;
-			if (!exp_name(in))
-				exp_label(sql->sa, in, ++sql->label);
-			in = exp_ref(sql->sa, in);
+			in = exp_ref(sql, in);
 			append(fargs, in);
 			in = exp_ref_save(sql, in);
 		}
@@ -4865,9 +4847,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 			}
 
 			in = rel_first_column(sql, p);
-			if (!exp_name(in))
-				exp_label(sql->sa, in, ++sql->label);
-			in = exp_ref(sql->sa, in);
+			in = exp_ref(sql, in);
 			append(fargs, in);
 			append(fargs, exp_atom_bool(sql->sa, 0)); /* don't ignore nills */
 			in = exp_ref_save(sql, in);
@@ -5093,11 +5073,7 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 		if (sql->errstr[0] != '\0')
 			return NULL;
 		if (exp) {
-			sql_exp *res;
-
-			if (!exp_name(exp))
-				exp_label(sql->sa, exp, ++sql->label);
-			res = exp_ref(sql->sa, exp);
+			sql_exp *res = exp_ref(sql, exp);
 			res->card = (*rel)->card;
 			if (se->token == SQL_AGGR) {
 				dlist *l = se->data.lval;

@@ -164,9 +164,7 @@ rel_insert_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *inserts)
 		sql_exp *_is = list_fetch(ins->exps, c->c->colnr), *lnl, *rnl, *je; 
 		sql_exp *rtc = exp_column(sql->sa, rel_name(rt), rc->c->base.name, &rc->c->type, CARD_MULTI, rc->c->null, 0);
 
-		if (!exp_name(_is))
-			exp_label(sql->sa, _is, ++sql->label);
-		_is = exp_ref(sql->sa, _is);
+		_is = exp_ref(sql, _is);
 		lnl = exp_unop(sql->sa, _is, isnil);
 		set_has_no_nil(lnl);
 		rnl = exp_unop(sql->sa, _is, isnil);
@@ -330,7 +328,7 @@ rel_inserts(mvc *sql, sql_table *t, sql_rel *r, list *collist, size_t rowcount, 
 				if (e) {
 					if (inserts[c->colnr])
 						return sql_error(sql, 02, SQLSTATE(42000) "%s: column '%s' specified more than once", action, c->base.name);
-					inserts[c->colnr] = exp_ref(sql->sa, e);
+					inserts[c->colnr] = exp_ref(sql, e);
 				}
 			}
 		}
@@ -511,7 +509,7 @@ insert_generate_inserts(sql_query *query, sql_table *t, dlist *columns, symbol *
 							inner = r;
 						if (inner && !exp_name(ins) && !exp_is_atom(ins)) {
 							exp_label(sql->sa, ins, ++sql->label);
-							ins = exp_ref(sql->sa, ins);
+							ins = exp_ref(sql, ins);
 						}
 						list_append(vals_list, ins);
 					}
@@ -777,9 +775,7 @@ rel_update_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *updates)
 
 		/* FOR MATCH FULL/SIMPLE/PARTIAL see above */
 		/* Currently only the default MATCH SIMPLE is supported */
-		if (!exp_name(upd))
-			exp_label(sql->sa, upd, ++sql->label);
-		upd = exp_ref(sql->sa, upd);
+		upd = exp_ref(sql, upd);
 		lnl = exp_unop(sql->sa, upd, isnil);
 		set_has_no_nil(lnl);
 		rnl = exp_unop(sql->sa, upd, isnil);
@@ -1043,7 +1039,7 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 				if (!exp_name(v))
 					exp_label(sql->sa, v, ++sql->label);
 				if (!exp_is_atom(v) || outer)
-					v = exp_ref(sql->sa, v);
+					v = exp_ref(sql, v);
 				if (!v) /* check for NULL */
 					v = exp_atom(sql->sa, atom_general(sql->sa, &c->type, NULL));
 				if (!(v = update_check_column(sql, t, c, v, r, cname, action)))
@@ -1287,7 +1283,7 @@ validate_merge_update_delete(mvc *sql, sql_table *t, str alias, sql_rel *joined_
 	bf = sql_bind_func(sql->sa, sql->session->schema, ">", exp_subtype(aggr), exp_subtype(aggr), F_FUNC);
 	if (!bf)
 		return sql_error(sql, 02, SQLSTATE(42000) "MERGE: function '>' not found");
-	list_append(exps, exp_ref(sql->sa, aggr));
+	list_append(exps, exp_ref(sql, aggr));
 	list_append(exps, exp_atom_lng(sql->sa, 1));
 	bigger = exp_op(sql->sa, exps, bf);
 	exp_label(sql->sa, bigger, ++sql->label);
@@ -1298,7 +1294,7 @@ validate_merge_update_delete(mvc *sql, sql_table *t, str alias, sql_rel *joined_
 	(void) rel_groupby_add_aggr(sql, groupby, aggr);
 	exp_label(sql->sa, aggr, ++sql->label); //count all of them, if there is at least one, throw the exception
 
-	ex = exp_ref(sql->sa, aggr);
+	ex = exp_ref(sql, aggr);
 	snprintf(buf, BUFSIZ, "MERGE %s: Multiple rows in the input relation%s%s%s match the same row in the target %s '%s%s%s'",
 			 (upd_token == SQL_DELETE) ? "DELETE" : "UPDATE",
 			 join_rel_name ? " '" : "", join_rel_name ? join_rel_name : "", join_rel_name ? "'" : "",
@@ -1386,9 +1382,7 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 
 				//select bt values which are not null (they had a match in the join)
 				project_first = extra_project->exps->h->next->data; // this expression must come from bt!!
-				if (!exp_name(project_first))
-					exp_label(sql->sa, project_first, ++sql->label);
-				project_first = exp_ref(sql->sa, project_first);
+				project_first = exp_ref(sql, project_first);
 				nils = rel_unop_(sql, extra_project, project_first, NULL, "isnull", card_value);
 				set_has_no_nil(nils);
 				extra_select = rel_select(sql->sa, extra_project, exp_compare(sql->sa, nils, exp_atom_bool(sql->sa, 1), cmp_notequal));
@@ -1417,9 +1411,7 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 
 				//select bt values which are not null (they had a match in the join)
 				project_first = extra_project->exps->h->next->data; // this expression must come from bt!!
-				if (!exp_name(project_first))
-					exp_label(sql->sa, project_first, ++sql->label);
-				project_first = exp_ref(sql->sa, project_first);
+				project_first = exp_ref(sql, project_first);
 				nils = rel_unop_(sql, extra_project, project_first, NULL, "isnull", card_value);
 				set_has_no_nil(nils);
 				extra_select = rel_select(sql->sa, extra_project, exp_compare(sql->sa, nils, exp_atom_bool(sql->sa, 1), cmp_notequal));
@@ -1456,9 +1448,7 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 
 			//select bt values which are null (they didn't have match in the join)
 			project_first = extra_project->exps->h->next->data; // this expression must come from bt!!
-			if (!exp_name(project_first))
-				exp_label(sql->sa, project_first, ++sql->label);
-			project_first = exp_ref(sql->sa, project_first);
+			project_first = exp_ref(sql, project_first);
 			nils = rel_unop_(sql, extra_project, project_first, NULL, "isnull", card_value);
 			set_has_no_nil(nils);
 			extra_select = rel_select(sql->sa, extra_project, exp_compare(sql->sa, nils, exp_atom_bool(sql->sa, 1), cmp_equal));
@@ -1756,7 +1746,7 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 				ne = exp_op(sql->sa, args, f);
 				exp_setname(sql->sa, ne, exp_relname(e), exp_name(e));
 			} else {
-				ne = exp_ref(sql->sa, e); 
+				ne = exp_ref(sql, e); 
 			}
 			append(nexps, ne);
 			m = m->next;

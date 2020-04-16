@@ -1231,7 +1231,7 @@ exp_rename(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 		sql->errstr[0] = 0;
 		if (!e && exp_is_atom(ne))
 			return ne;
-		return exp_ref(sql->sa ,e);
+		return exp_ref(sql ,e);
 	case e_cmp: 
 		if (e->flag == cmp_or || e->flag == cmp_filter) {
 			list *l = exps_rename(sql, e->l, f, t);
@@ -1585,7 +1585,7 @@ rel_push_func_down(mvc *sql, sql_rel *rel, int *changes)
 								append(r->exps, e);
 							else
 								append(l->exps, e);
-							e = exp_ref(sql->sa, e);
+							e = exp_ref(sql, e);
 							n->data = e;
 							(*changes)++;
 						}
@@ -1598,7 +1598,7 @@ rel_push_func_down(mvc *sql, sql_rel *rel, int *changes)
 								append(r->exps, ne);
 							else
 								append(l->exps, ne);
-							ne = exp_ref(sql->sa, ne);
+							ne = exp_ref(sql, ne);
 							(*changes)++;
 						}
 						e->l = ne;
@@ -1612,7 +1612,7 @@ rel_push_func_down(mvc *sql, sql_rel *rel, int *changes)
 								append(r->exps, ne);
 							else
 								append(l->exps, ne);
-							ne = exp_ref(sql->sa, ne);
+							ne = exp_ref(sql, ne);
 							(*changes)++;
 						}
 						e->r = ne;
@@ -1627,7 +1627,7 @@ rel_push_func_down(mvc *sql, sql_rel *rel, int *changes)
 									append(r->exps, ne);
 								else
 									append(l->exps, ne);
-								ne = exp_ref(sql->sa, ne);
+								ne = exp_ref(sql, ne);
 								(*changes)++;
 							}
 							e->f = ne;
@@ -1740,7 +1740,7 @@ rel_push_count_down(mvc *sql, sql_rel *rel, int *changes)
 			sql_exp *cnt, *e = exp_aggr(sql->sa, NULL, cf, need_distinct(oce), need_no_nil(oce), oce->card, 0);
 
 			exp_label(sql->sa, e, ++sql->label);
-			cnt = exp_ref(sql->sa, e);
+			cnt = exp_ref(sql, e);
 			gbl = rel_groupby(sql, rel_dup(srel), NULL);
 			rel_groupby_add_aggr(sql, gbl, e);
 			append(args, cnt);
@@ -1752,7 +1752,7 @@ rel_push_count_down(mvc *sql, sql_rel *rel, int *changes)
 			sql_exp *cnt, *e = exp_aggr(sql->sa, NULL, cf, need_distinct(oce), need_no_nil(oce), oce->card, 0);
 
 			exp_label(sql->sa, e, ++sql->label);
-			cnt = exp_ref(sql->sa, e);
+			cnt = exp_ref(sql, e);
 			gbr = rel_groupby(sql, rel_dup(srel), NULL);
 			rel_groupby_add_aggr(sql, gbr, e);
 			append(args, cnt);
@@ -2126,7 +2126,7 @@ rel_push_topn_down(mvc *sql, sql_rel *rel, int *changes)
 			ur = rel_topn(sql->sa, ur, sum_limit_offset(sql, rel->exps));
 
 			u = rel_setop(sql->sa, ul, ur, op_union);
-			u->exps = exps_alias(sql->sa, r->exps); 
+			u->exps = exps_alias(sql, r->exps); 
 			u->nrcols = list_length(u->exps);
 			set_processed(u);
 			/* possibly add order by column */
@@ -2141,7 +2141,7 @@ rel_push_topn_down(mvc *sql, sql_rel *rel, int *changes)
 			rel_no_rename_exps(u->exps);
 			rel_destroy(ou);
 
-			ur = rel_project(sql->sa, u, exps_alias(sql->sa, r->exps));
+			ur = rel_project(sql->sa, u, exps_alias(sql, r->exps));
 			ur->r = r->r;
 			r->l = NULL;
 
@@ -2573,9 +2573,7 @@ rel_distinct_project2groupby(mvc *sql, sql_rel *rel, int *changes)
 		for (n = rel->exps->h; n; n = n->next) {
 			sql_exp *e = n->data, *ne;
 
-			if (!exp_name(e))
-				exp_label(sql->sa, e, ++sql->label);
-			ne = exp_ref(sql->sa, e);
+			ne = exp_ref(sql, e);
 			if (e->card > CARD_ATOM && !list_find_exp(gbe, ne)) /* no need to group by on constants, or the same column multiple times */
 				append(gbe, ne);
 			append(exps, ne);
@@ -2871,7 +2869,7 @@ exp_case_fixup( mvc *sql, sql_rel *rel, sql_exp *e, sql_exp *cc )
 			if (rel) {
 				exp_label(sql->sa, cond, ++sql->label);
 				append(rel->exps, cond);
-				cond = exp_ref(sql->sa, cond);
+				cond = exp_ref(sql, cond);
 			}
 			/* rewrite right hands of div */
 			ncond = cond;
@@ -3449,16 +3447,16 @@ rel_push_down_bounds(mvc *sql, sql_rel *rel, int *changes)
 					if (first1->type == e_func && exp_match_exp(first1, first2)) { /* push down only function calls to avoid infinite recursion */
 						rel->l = rel_project(sql->sa, rel->l, rel_projections(sql, rel->l, NULL, 1, 1));
 						first1 = rel_project_add_exp(sql, rel->l, first1);
-						args1->h->data = exp_ref(sql->sa, first1);
-						args2->h->data = exp_ref(sql->sa, first1);
+						args1->h->data = exp_ref(sql, first1);
+						args2->h->data = exp_ref(sql, first1);
 
 						if (list_length(args1) == 6 && list_length(args2) == 6) {
 							sql_exp *second1 = (sql_exp*) args1->h->next->data, *second2 = (sql_exp*) args2->h->next->data;
 
 							if (second1->type == e_func && exp_match_exp(second1, second2)) {
 								second1 = rel_project_add_exp(sql, rel->l, second1);
-								args1->h->next->data = exp_ref(sql->sa, second1);
-								args2->h->next->data = exp_ref(sql->sa, second1);
+								args1->h->next->data = exp_ref(sql, second1);
+								args2->h->next->data = exp_ref(sql, second1);
 							}
 						}
 
@@ -4178,7 +4176,7 @@ rel_push_aggr_down(mvc *sql, sql_rel *rel, int *changes)
 					continue;
 				ne = list_find_exp( u->exps, ne);
 				assert(ne);
-				ne = exp_ref(sql->sa, ne);
+				ne = exp_ref(sql, ne);
 				append(gbe, ne);
 			}
 		}
@@ -4195,7 +4193,7 @@ rel_push_aggr_down(mvc *sql, sql_rel *rel, int *changes)
 				/* union of aggr result may have nils 
 			   	 * because sum/count of empty set */
 				set_has_nil(e);
-				e = exp_ref(sql->sa, e);
+				e = exp_ref(sql, e);
 				ne = exp_aggr1(sql->sa, e, a, need_distinct(e), 1, e->card, 1);
 				if (/* DISABLES CODE */ (0) && cnt)
 					ne->p = prop_create(sql->sa, PROP_COUNT, ne->p);
@@ -4311,7 +4309,7 @@ gen_push_groupby_down(mvc *sql, sql_rel *rel, int *changes)
 				e = rel_find_exp(cr, ce->r);
 			if (!e)
 				return rel;
-			e = exp_ref(sql->sa, e);
+			e = exp_ref(sql, e);
 			list_append(gbe, e);
 		}
 		if (!left) 
@@ -4395,7 +4393,7 @@ rel_push_groupby_down(mvc *sql, sql_rel *rel, int *changes)
 
 					if (exp_refers(ge, a)) { 
 						sql_exp *sc = jr->exps->t->data;
-						sql_exp *e = exp_ref(sql->sa, sc);
+						sql_exp *e = exp_ref(sql, sc);
 						exp_setname(sql->sa, e, exp_relname(a), exp_name(a));
 						a = e;
 					}
@@ -4407,7 +4405,7 @@ rel_push_groupby_down(mvc *sql, sql_rel *rel, int *changes)
 					sql_exp *a = m->data;
 
 					if (exp_match_exp(a, ge) || exp_refers(ge, a)) {
-						a = exp_ref(sql->sa, ne);
+						a = exp_ref(sql, ne);
 						exp_setname(sql->sa, a, exp_relname(ne), exp_name(ne));
 						m->data = a;
 					}
@@ -5901,14 +5899,14 @@ rel_groupby_distinct(mvc *sql, sql_rel *rel, int *changes)
 						}
 					}
 				} else {
-					e = exp_ref(sql->sa, e);
+					e = exp_ref(sql, e);
 					append(ngbe, e);
 					append(exps, e);
 				}
 				if (e->type == e_aggr) /* aggregates must be copied */
 					e = exp_copy(sql, e);
 				else
-					e = exp_ref(sql->sa, e);
+					e = exp_ref(sql, e);
 				append(nexps, e);
 			}
 		}
@@ -5917,9 +5915,9 @@ rel_groupby_distinct(mvc *sql, sql_rel *rel, int *changes)
 		list_append(gbe, darg = exp_copy(sql, darg));
 		exp_label(sql->sa, darg, ++sql->label);
 
-		darg = exp_ref(sql->sa, darg);
+		darg = exp_ref(sql, darg);
 		list_append(exps, darg);
-		darg = exp_ref(sql->sa, darg);
+		darg = exp_ref(sql, darg);
 		arg->h->data = darg;
 		l = rel->l = rel_groupby(sql, rel->l, gbe);
 		l->exps = exps;
@@ -5954,7 +5952,7 @@ split_aggr_and_project(mvc *sql, list *aexps, sql_exp *e)
 		if (!exp_name(e))
 			exp_label(sql->sa, e, ++sql->label);
 		list_append(aexps, e);
-		return exp_ref(sql->sa, e);
+		return exp_ref(sql, e);
 	case e_cmp:
 		/* e_cmp's shouldn't exist in an aggr expression list */
 		assert(0);
@@ -7446,7 +7444,7 @@ add_exp_too_project(mvc *sql, sql_exp *e, sql_rel *rel)
 	} else {
 		e = n->data;
 	}
-	e = exp_ref(sql->sa, e);
+	e = exp_ref(sql, e);
 	return e;
 }
 
@@ -8376,7 +8374,7 @@ rel_add_dicts(mvc *sql, sql_rel *rel, int *changes)
 						vcols = sa_list(sql->sa);
 					append(vcols, vt);
 					e = exp_indexcol(sql, e, nme, nme, de, 0);
-					ne = exp_ref(sql->sa, e);
+					ne = exp_ref(sql, e);
 					append(vcols, ne);
 					append(vcols, n->data);
 					(*changes)++;
@@ -8402,12 +8400,12 @@ rel_add_dicts(mvc *sql, sql_rel *rel, int *changes)
 				rel = rel_crossproduct(sql->sa, rel, vt, op_join);
 				vti = vt->exps->h->data;
 				vtv = vt->exps->h->next->data;
-				vti = exp_ref(sql->sa, vti);
+				vti = exp_ref(sql, vti);
 				cmp = exp_compare(sql->sa, ic, vti, cmp_equal);
 				cmp->p = prop_create(sql->sa, PROP_FETCH, cmp->p);
 				rel_join_add_exp( sql->sa, rel, cmp);
 	
-				vtv = exp_ref(sql->sa, vtv);
+				vtv = exp_ref(sql, vtv);
 				exp_setname(sql->sa, vtv, rname, oname);
 				append(pexps, vtv);
 			}
@@ -9035,7 +9033,7 @@ rel_keep_renames(mvc *sql, sql_rel *rel)
 
 		exp_label(sql->sa, e, ++sql->label);
 		ie = e;
-		oe = exp_ref(sql->sa, ie);
+		oe = exp_ref(sql, ie);
 		exp_setname(sql->sa, oe, rname, name);
 		append(new_inner_exps, ie);
 		append(new_outer_exps, oe);

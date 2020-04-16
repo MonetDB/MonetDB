@@ -129,9 +129,7 @@ psm_set_exp(sql_query *query, dnode *n)
 			}
 
 			level = stack_find_frame(sql, vname);
-			if (!exp_name(v)) 
-				exp_label(sql->sa, v, ++sql->label);
-			v = exp_ref(sql->sa, v);
+			v = exp_ref(sql, v);
 			if (!(v = rel_check_type(sql, tpe, rel_val, v, type_cast)))
 				return NULL;
 			append(b, exp_set(sql->sa, vname, v, level));
@@ -444,7 +442,7 @@ rel_psm_return( sql_query *query, sql_subtype *restype, list *restypelist, symbo
 			rel = rel_zero_or_one(sql, rel, ek);
 			if (list_length(rel->exps) != 1)
 				return sql_error(sql, 02, SQLSTATE(42000) "RETURN: must return a single column");
-			res = exp_ref(sql->sa, (sql_exp*) rel->exps->t->data);
+			res = exp_ref(sql, (sql_exp*) rel->exps->t->data);
 			requires_proj = true;
 		}
 	}
@@ -478,11 +476,8 @@ rel_psm_return( sql_query *query, sql_subtype *restype, list *restypelist, symbo
 
 			if (!cname)
 				cname = sa_strdup(sql->sa, number2name(name, sizeof(name), ++sql->label));
-			if (!isproject) {
-				if (!exp_name(e))
-					exp_label(sql->sa, e, ++sql->label);
-				e = exp_ref(sql->sa, e);
-			}
+			if (!isproject)
+				e = exp_ref(sql, e);
 			e = rel_check_type(sql, &ce->type, oexps_rel, e, type_equal);
 			if (!e)
 				return NULL;
@@ -555,9 +550,7 @@ rel_select_into( sql_query *query, symbol *sq, exp_kind ek)
 			return sql_error(sql, 02, SQLSTATE(42000) "SELECT INTO: variable '%s' unknown", nme);
 		tpe = stack_find_type(sql, nme);
 		level = stack_find_frame(sql, nme);
-		if (!exp_name(v)) 
-			exp_label(sql->sa, v, ++sql->label);
-		v = exp_ref(sql->sa, v);
+		v = exp_ref(sql, v);
 		if (!(v = rel_check_type(sql, tpe, r, v, type_equal)))
 			return NULL;
 		v = exp_set(sql->sa, nme, v, level);
