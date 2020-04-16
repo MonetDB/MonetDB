@@ -59,7 +59,7 @@ static inline str MOSouterloopUncompressed_ID(TPE, NIL, NIL_SEMANTICS, LEFT_CI_N
 		oid lo = LEFT_CI_NEXT(lci);
 		TPE lval = vl[lo-l->hseqbase];
 #if !defined HAS_NO_NIL && defined NILS_DO_NOT_MATCH
-			if ((IS_NIL(TPE, lval))) {continue;};
+			if (IS_NIL(TPE, lval)) {continue;};
 #endif
 
 		while(task->start < task->stop ){

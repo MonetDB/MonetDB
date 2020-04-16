@@ -86,7 +86,7 @@ typedef struct {\
 		BitVectorChunk j= getBitVector(base,i,bits);\
         TPE lval = dict[j];\
 		if (HAS_NIL && !NIL_MATCHES) {\
-			if ((IS_NIL(TPE, lval))) {continue;};\
+			if (IS_NIL(TPE, lval)) {continue;};\
 		}\
 		INNER_LOOP_UNCOMPRESSED(HAS_NIL, TPE, RIGHT_CI_NEXT);\
 	}\
