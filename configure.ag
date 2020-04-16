@@ -559,6 +559,11 @@ AS_VAR_IF([enable_strict], [yes], [
 		MCHECK_ADD_FLAG([-Wmissing-noreturn])
 		MCHECK_ADD_FLAG([-Wmissing-prototypes])
 		MCHECK_ADD_FLAG([-Wnested-externs])
+		# apparently, we get warnings (hence errors) on some
+		# versions of Darwin:
+		AS_CASE([$CC_ver],
+			[clang-*],
+			[MCHECK_ADD_FLAG([-Wno-nullability-completeness])])
 		MCHECK_ADD_FLAG([-Wold-style-definition])
 		MCHECK_ADD_FLAG([-Wpacked])
 		MCHECK_ADD_FLAG([-Wpacked-bitfield-compat])
