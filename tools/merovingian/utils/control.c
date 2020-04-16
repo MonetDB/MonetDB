@@ -186,14 +186,20 @@ char* control_send(
 #ifdef HAVE_RIPEMD160_UPDATE
 					"RIPEMD160",
 #endif
+#ifdef HAVE_SHA512_UPDATE
+					"SHA512",
+#endif
+#ifdef HAVE_SHA384_UPDATE
+					"SHA384",
+#endif
 #ifdef HAVE_SHA256_UPDATE
 					"SHA256",
 #endif
+#ifdef HAVE_SHA224_UPDATE
+					"SHA224",
+#endif
 #ifdef HAVE_SHA1_UPDATE
 					"SHA1",
-#endif
-#ifdef HAVE_MD5_UPDATE
-					"MD5",
 #endif
 					NULL
 				};
@@ -289,11 +295,6 @@ char* control_send(
 #ifdef HAVE_SHA1_UPDATE
 				if (strcmp(shash, "SHA1") == 0) {
 					phash = mcrypt_SHA1Sum(pass, strlen(pass));
-				} else
-#endif
-#ifdef HAVE_MD5_UPDATE
-				if (strcmp(shash, "MD5") == 0) {
-					phash = mcrypt_MD5Sum(pass, strlen(pass));
 				} else
 #endif
 				{

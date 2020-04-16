@@ -13,9 +13,15 @@
 #ifndef HAVE_EMBEDDED
 /* only provide digest functions if not embedded */
 #ifdef HAVE_OPENSSL
+#ifdef HAVE_MD5_UPDATE
 #include <openssl/md5.h>
+#endif
+#if defined(HAVE_SHA256_UPDATE) || defined(HAVE_SHA1_UPDATE)
 #include <openssl/sha.h>
+#endif
+#ifdef HAVE_RIPEMD160_UPDATE
 #include <openssl/ripemd.h>
+#endif
 #else
 #ifdef HAVE_COMMONCRYPTO
 #define COMMON_DIGEST_FOR_OPENSSL
@@ -45,14 +51,20 @@ mcrypt_getHashAlgorithms(void)
 #ifdef HAVE_RIPEMD160_UPDATE
 		",RIPEMD160"
 #endif
+#ifdef HAVE_SHA512_UPDATE
+		",SHA512"
+#endif
+#ifdef HAVE_SHA384_UPDATE
+		",SHA384"
+#endif
 #ifdef HAVE_SHA256_UPDATE
 		",SHA256"
 #endif
+#ifdef HAVE_SHA224_UPDATE
+		",SHA224"
+#endif
 #ifdef HAVE_SHA1_UPDATE
 		",SHA1"
-#endif
-#ifdef HAVE_MD5_UPDATE
-		",MD5"
 #endif
 #ifdef HAVE_LIBSNAPPY
 		",COMPRESSION_SNAPPY"
@@ -64,6 +76,7 @@ mcrypt_getHashAlgorithms(void)
 	return algorithms;
 }
 
+#ifdef HAVE_MD5_UPDATE
 /**
  * Returns a malloced string representing the hex representation of
  * the MD5 hash of the given string.
@@ -71,7 +84,7 @@ mcrypt_getHashAlgorithms(void)
 char *
 mcrypt_MD5Sum(const char *string, size_t len)
 {
-#if !defined(HAVE_EMBEDDED) && defined(HAVE_MD5_UPDATE)
+#if !defined(HAVE_EMBEDDED)
 	MD5_CTX c;
 	unsigned char md[MD5_DIGEST_LENGTH];
 	char *ret;
@@ -96,10 +109,10 @@ mcrypt_MD5Sum(const char *string, size_t len)
 #else
 	(void) string;
 	(void) len;
-	fprintf(stderr, "No MD5 digest function available.\n");
 	return NULL;
 #endif
 }
+#endif
 
 /**
  * Returns a malloced string representing the hex representation of
@@ -133,7 +146,6 @@ mcrypt_SHA1Sum(const char *string, size_t len)
 #else
 	(void) string;
 	(void) len;
-	fprintf(stderr, "No SHA1 digest function available.\n");
 	return NULL;
 #endif
 }
@@ -173,7 +185,6 @@ mcrypt_SHA224Sum(const char *string, size_t len)
 #else
 	(void) string;
 	(void) len;
-	fprintf(stderr, "No SHA224 digest function available.\n");
 	return NULL;
 #endif
 }
@@ -215,7 +226,6 @@ mcrypt_SHA256Sum(const char *string, size_t len)
 #else
 	(void) string;
 	(void) len;
-	fprintf(stderr, "No SHA256 digest function available.\n");
 	return NULL;
 #endif
 }
@@ -261,7 +271,6 @@ mcrypt_SHA384Sum(const char *string, size_t len)
 #else
 	(void) string;
 	(void) len;
-	fprintf(stderr, "No SHA384 digest function available.\n");
 	return NULL;
 #endif
 }
