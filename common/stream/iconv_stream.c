@@ -20,7 +20,6 @@
 
 struct icstream {
 	iconv_t cd;
-	stream *s;
 	char buffer[BUFSIZ];
 	size_t buflen;
 	bool eof;
@@ -66,7 +65,7 @@ ic_write(stream *restrict s, const void *restrict buf, size_t elmsize, size_t cn
 				 * encountered flush what has been
 				 * converted */
 				if (outbytesleft < sizeof(ic->buffer) &&
-				    mnstr_write(ic->s, ic->buffer, 1, sizeof(ic->buffer) - outbytesleft) < 0) {
+				    mnstr_write(s->inner, ic->buffer, 1, sizeof(ic->buffer) - outbytesleft) < 0) {
 					goto bailout;
 				}
 				/* remember what hasn't been converted */
@@ -89,7 +88,7 @@ ic_write(stream *restrict s, const void *restrict buf, size_t elmsize, size_t cn
 				goto bailout;
 			}
 		}
-		if (mnstr_write(ic->s, ic->buffer, 1, sizeof(ic->buffer) - outbytesleft) < 0) {
+		if (mnstr_write(s->inner, ic->buffer, 1, sizeof(ic->buffer) - outbytesleft) < 0) {
 			goto bailout;
 		}
 	}
@@ -121,6 +120,7 @@ ic_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 	inbytesleft = ic->buflen;
 	outbuf = (char *) buf;
 	outbytesleft = elmsize * cnt;
+	exit(42);
 	if (outbytesleft == 0)
 		return 0;
 	while (outbytesleft > 0 && !ic->eof) {
@@ -130,7 +130,7 @@ ic_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 			return -1;
 		}
 
-		switch (mnstr_read(ic->s, ic->buffer + ic->buflen, 1, 1)) {
+		switch (mnstr_read(s->inner, ic->buffer + ic->buflen, 1, 1)) {
 		case 1:
 			/* expected: read one byte */
 			ic->buflen++;
@@ -152,7 +152,7 @@ ic_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 			goto exit_func;	/* double break */
 		default:
 			/* error */
-			s->errnr = ic->s->errnr;
+			s->errnr = s->inner->errnr;
 			return -1;
 		}
 		if (iconv(ic->cd, &inbuf, &inbytesleft, &outbuf, &outbytesleft) == (size_t) -1) {
@@ -211,11 +211,11 @@ ic_flush(stream *s)
 	if (ic->buflen > 0 ||
 	    iconv(ic->cd, NULL, NULL, &outbuf, &outbytesleft) == (size_t) -1 ||
 	    (outbytesleft < sizeof(ic->buffer) &&
-	     mnstr_write(ic->s, ic->buffer, 1, sizeof(ic->buffer) - outbytesleft) < 0)) {
+	     mnstr_write(s->inner, ic->buffer, 1, sizeof(ic->buffer) - outbytesleft) < 0)) {
 		s->errnr = MNSTR_WRITE_ERROR;
 		return -1;
 	}
-	return mnstr_flush(ic->s);
+	return mnstr_flush(s->inner);
 }
 
 static void
@@ -227,7 +227,7 @@ ic_close(stream *s)
 		if (!s->readonly)
 			ic_flush(s);
 		iconv_close(ic->cd);
-		close_stream(ic->s);
+		close_stream(s->inner);
 		free(s->stream_data.p);
 		s->stream_data.p = NULL;
 	}
@@ -240,39 +240,6 @@ ic_destroy(stream *s)
 	destroy_stream(s);
 }
 
-static void
-ic_update_timeout(stream *s)
-{
-	struct icstream *ic = (struct icstream *) s->stream_data.p;
-
-	if (ic && ic->s) {
-		ic->s->timeout = s->timeout;
-		ic->s->timeout_func = s->timeout_func;
-		if (ic->s->update_timeout)
-			ic->s->update_timeout(ic->s);
-	}
-}
-
-static int
-ic_isalive(const stream *s)
-{
-	struct icstream *ic = (struct icstream *) s->stream_data.p;
-
-	if (ic && ic->s) {
-		if (ic->s->isalive)
-			return ic->s->isalive(ic->s);
-		return 1;
-	}
-	return 0;
-}
-
-static void
-ic_clrerr(stream *s)
-{
-	if (s->stream_data.p)
-		mnstr_clearerr(((struct icstream *) s->stream_data.p)->s);
-}
-
 static stream *
 ic_open(iconv_t cd, stream *restrict ss, const char *restrict name)
 {
@@ -281,16 +248,13 @@ ic_open(iconv_t cd, stream *restrict ss, const char *restrict name)
 
 	if (ss->isutf8)
 		return ss;
-	if ((s = create_stream(name)) == NULL)
+	if ((s = create_wrapper_stream(name, ss)) == NULL)
 		return NULL;
 	s->read = ic_read;
 	s->write = ic_write;
 	s->close = ic_close;
 	s->destroy = ic_destroy;
-	s->clrerr = ic_clrerr;
 	s->flush = ic_flush;
-	s->update_timeout = ic_update_timeout;
-	s->isalive = ic_isalive;
 	ic = malloc(sizeof(struct icstream));
 	if (ic == NULL) {
 		mnstr_destroy(s);
@@ -299,7 +263,6 @@ ic_open(iconv_t cd, stream *restrict ss, const char *restrict name)
 	s->stream_data.p = ic;
 	*ic = (struct icstream) {
 		.cd = cd,
-		.s = ss,
 		.buflen = 0,
 		.eof = false,
 	};
