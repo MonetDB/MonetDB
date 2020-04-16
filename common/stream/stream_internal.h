@@ -141,6 +141,7 @@
 
 struct stream {
 	char *name;		/* name of the stream */
+	struct stream *inner; /* if this stream is a wrapper around another one */
 	bool swapbytes;		/* whether to swap bytes */
 	bool readonly;		/* only reading or only writing */
 	bool isutf8;		/* known to be UTF-8 due to BOM */
@@ -184,6 +185,7 @@ char *cvfilename(const char *filename);
 /* used to be static: */
 
 stream *create_stream(const char *name);
+stream *create_wrapper_stream(const char *name, stream *inner);
 void destroy_stream(stream *s);
 stream *open_stream(const char *restrict filename, const char *restrict flags);
 

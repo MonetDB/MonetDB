@@ -438,6 +438,126 @@ create_stream(const char *name)
 }
 
 
+static ssize_t
+wrapper_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
+{
+	return s->inner->read(s->inner, buf, elmsize, cnt);
+}
+
+
+static ssize_t
+wrapper_write(stream *restrict s, const void *restrict buf, size_t elmsize, size_t cnt)
+{
+	return s->inner->write(s->inner, buf, elmsize, cnt);
+}
+
+
+static void
+wrapper_close(stream *s)
+{
+	s->inner->close(s->inner);
+}
+
+
+static void
+wrapper_clrerr(stream *s)
+{
+	s->inner->clrerr(s->inner);
+}
+
+
+static char *
+wrapper_error(const stream *s)
+{
+	return s->inner->error(s->inner);
+}
+
+
+static void
+wrapper_destroy(stream *s)
+{
+	s->inner->destroy(s->inner);
+}
+
+
+static int
+wrapper_flush(stream *s)
+{
+	return s->inner->flush(s->inner);
+}
+
+
+static int
+wrapper_fsync(stream *s)
+{
+	return s->inner->fsync(s->inner);
+}
+
+
+static int
+wrapper_fgetpos(stream *s, fpos_t *restrict p)
+{
+	return s->inner->fgetpos(s->inner, p);
+}
+
+
+static int
+wrapper_fsetpos(stream *s, fpos_t *restrict p)
+{
+	return s->inner->fsetpos(s->inner, p);
+}
+
+
+static void
+wrapper_update_timeout(stream *s)
+{
+	s->inner->timeout = s->timeout;
+	s->inner->timeout_func = s->timeout_func;
+	s->inner->update_timeout(s->inner);
+}
+
+
+static int
+wrapper_isalive(const stream *s)
+{
+	return s->inner->isalive(s->inner);
+}
+
+
+stream *
+create_wrapper_stream(const char *name, stream *inner)
+{
+	if (inner == NULL)
+		return NULL;
+	if (name == NULL)
+		name = inner->name;
+	stream *s = create_stream(name);
+	if (s == NULL)
+		return NULL;
+
+
+	s->swapbytes = inner->swapbytes;
+	s->readonly = inner->readonly;
+	s->isutf8 = inner->isutf8;
+	s->binary = inner->binary;
+	s->timeout = inner->timeout;
+	s->inner = inner;
+
+	s->read = inner->read == NULL ? NULL : wrapper_read;
+	s->write = inner->write == NULL ? NULL : wrapper_write;
+	s->close = inner->close == NULL ? NULL : wrapper_close;
+	s->clrerr = inner->clrerr == NULL ? NULL : wrapper_clrerr;
+	s->error = inner->error == NULL ? NULL : wrapper_error;
+	s->destroy = inner->destroy == NULL ? NULL : wrapper_destroy;
+	s->flush = inner->flush == NULL ? NULL : wrapper_flush;
+	s->fsync = inner->fsync == NULL ? NULL : wrapper_fsync;
+	s->fgetpos = inner->fgetpos == NULL ? NULL : wrapper_fgetpos;
+	s->fsetpos = inner->fsetpos == NULL ? NULL : wrapper_fsetpos;
+	s->isalive = inner->isalive == NULL ? NULL : wrapper_isalive;
+	s->update_timeout = inner->update_timeout == NULL ? NULL : wrapper_update_timeout;
+
+	return s;
+}
 
 /* ------------------------------------------------------------------ */
 /* streams working on a disk file, compressed or not */
