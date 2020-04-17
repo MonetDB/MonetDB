@@ -10,14 +10,18 @@
 
 const char *USAGE =
 	"Usage:\n"
-	"    streamcat read  FILENAME R_OPENER\n"
-	"    streamcat write FILENAME W_OPENER\n"
+	"    streamcat read  FILENAME R_OPENER [R_WRAPPER..]\n"
+	"    streamcat write FILENAME W_OPENER [W_WRAPPER..]\n"
 	"With R_OPENER:\n"
 	"    - rstream           stream = open_rstream(filename)\n"
 	"    - rastream          stream = open_rastream(filename)\n"
 	"With W_OPENER:\n"
 	"    - wstream           stream = open_wstream(filename)\n"
 	"    - wastream          stream = open_wastream(filename)\n"
+	"With R_WRAPPER:\n"
+	"    - iconv:enc         stream = iconv_rstream(stream, enc)\n"
+	"With W_WRAPPER:\n"
+	"    - iconv:enc         stream = iconv_wstream(stream, enc)\n"
 	;
 
 
@@ -30,6 +34,10 @@ static stream *opener_rastream(char *filename);
 
 static stream *opener_wstream(char *filename);
 static stream *opener_wastream(char *filename);
+
+static stream *wrapper_read_iconv(stream *s, char *enc);
+
+static stream *wrapper_write_iconv(stream *s, char *enc);
 
 static void copy_to_stdout(stream *in);
 
@@ -98,6 +106,29 @@ int cmd_read(char *argv[])
 		croak(1, "Unknown opener '%s'", opener_name);
 
 	s = opener(filename);
+	if (s == NULL)
+		croak(2, "Opener %s did not return a stream", opener_name);
+
+	for (; *arg != NULL; arg++) {
+		char *wrapper_name = *arg;
+		char *parms = strchr(wrapper_name, ':');
+		stream *(*wrapper)(stream *s, char *parm) = NULL;
+
+		if (parms != NULL) {
+			*parms = '\0';
+			parms += 1;
+		}
+		if (strcmp(wrapper_name, "iconv") == 0) {
+			if (parms == NULL)
+				croak(1, "iconv wrapper needs a parameter");
+			wrapper = wrapper_read_iconv;
+		}
+		if (wrapper == NULL)
+			croak(1, "Unknown wrapper: %s", wrapper_name);
+		s = wrapper(s, parms);
+		if (s == NULL)
+			croak(2, "Wrapper %s did not return a stream", wrapper_name);
+	}
 
 	copy_to_stdout(s);
 	mnstr_close(s);
@@ -130,6 +161,29 @@ int cmd_write(char *argv[])
 		croak(1, "Unknown opener '%s'", opener_name);
 
 	s = opener(filename);
+	if (s == NULL)
+		croak(2, "Opener %s did not return a stream", opener_name);
+
+	for (; *arg != NULL; arg++) {
+		char *wrapper_name = *arg;
+		char *parms = strchr(wrapper_name, ':');
+		stream *(*wrapper)(stream *s, char *parm) = NULL;
+
+		if (parms != NULL) {
+			*parms = '\0';
+			parms += 1;
+		}
+		if (strcmp(wrapper_name, "iconv") == 0) {
+			if (parms == NULL)
+				croak(1, "iconv wrapper needs a parameter");
+			wrapper = wrapper_write_iconv;
+		}
+		if (wrapper == NULL)
+			croak(1, "Unknown wrapper: %s", wrapper_name);
+		s = wrapper(s, parms);
+		if (s == NULL)
+			croak(2, "Wrapper %s did not return a stream", wrapper_name);
+	}
 
 	copy_from_stdin(s);
 	mnstr_close(s);
@@ -237,4 +291,18 @@ opener_wastream(char *filename)
 	if (s == NULL)
 		croak(2, "Error opening file '%s': %s", filename, strerror(errno));
 	return s;
+}
+
+
+static stream *
+wrapper_read_iconv(stream *s, char *enc)
+{
+	return iconv_rstream(s, enc, "wrapper_read_iconv");
+}
+
+
+static stream *
+wrapper_write_iconv(stream *s, char *enc)
+{
+	return iconv_wstream(s, enc, "wrapper_write_iconv");
 }

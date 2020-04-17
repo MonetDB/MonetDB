@@ -1,0 +1,18 @@
+stdout of test 'read_iconv` in directory 'common/stream` itself:
+
+
+# 15:01:38 >  
+# 15:01:38 >  "/usr/bin/python3" "read_iconv.py" "read_iconv"
+# 15:01:38 >  
+
+Input with encoding 'utf-8' is b'M\xc3\xb8N\xc3\xabTDB'
+Output is b'M\xc3\xb8N\xc3\xabTDB'
+
+Input with encoding 'latin1' is b'M\xf8N\xebTDB'
+Output is b'M\xc3\xb8N\xc3\xabTDB'
+
+
+# 15:01:38 >  
+# 15:01:38 >  "Done."
+# 15:01:38 >  
+

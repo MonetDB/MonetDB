@@ -93,11 +93,7 @@ class Doc:
     def pick_tmp_name(self, dir=None):
         prefix = "_streamtest_"
         suffix = "_" + self.name
-        dir = dir or TMPDIR or None
-        h, p = tempfile.mkstemp(suffix, prefix, dir)
-        os.close(h)
-        os.remove(p)
-        return p
+        return pick_tmp_name(suffix, prefix, dir)
 
     def write_tmp(self, dir=None):
         p = self.pick_tmp_name(dir)
@@ -159,8 +155,17 @@ class Doc:
         return None
 
 
+def pick_tmp_name(suffix, prefix, dir=None):
+    dir = dir or TMPDIR or None
+    h, p = tempfile.mkstemp(suffix, prefix, dir)
+    os.close(h)
+    os.remove(p)
+    return p
+
+
+
 # test code
 if __name__ == "__main__":
-    d = Doc("banana")
+    d = Doc("banana", "banana")
     p = d.write_tmp()
     print(f"path to doc {d.name} is {p}")
