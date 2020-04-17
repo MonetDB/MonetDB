@@ -116,7 +116,7 @@ rel_destroy(sql_rel *rel)
 }
 
 sql_rel*
-rel_create( sql_allocator *sa )
+rel_create(sql_allocator *sa)
 {
 	sql_rel *r = SA_NEW(sa, sql_rel);
 	if(!r)
@@ -130,10 +130,10 @@ rel_create( sql_allocator *sa )
 }
 
 sql_rel *
-rel_copy( mvc *sql, sql_rel *i, int deep )
+rel_copy(mvc *sql, sql_rel *i, int deep)
 {
 	sql_rel *rel = rel_create(sql->sa);
-	if(!rel)
+	if (!rel)
 		return NULL;
 
 	rel->l = NULL;
@@ -149,28 +149,52 @@ rel_copy( mvc *sql, sql_rel *i, int deep )
 		rel->l = i->l;
 		rel->r = i->r;
 		break;
+	case op_project:
 	case op_groupby:
 		rel->l = rel_copy(sql, i->l, deep);
 		if (i->r) {
 			if (!deep) {
 				rel->r = list_dup(i->r, (fdup) NULL);
 			} else {
-				list* l = (list*)i->r;
+				list *l = (list*)i->r;
 				rel->r = list_new(l->sa, l->destroy);
-				for(node *n = l->h ; n ; n = n->next)
+				for (node *n = l->h ; n ; n = n->next)
 					list_append(rel->r, rel_copy(sql, (sql_rel *)n->data, deep));
 			}
 		}
 		break;
+	case op_ddl:
+		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq) {
+			if (i->l)
+				rel->l = rel_copy(sql, i->l, deep);
+		} else if (rel->flag == ddl_list || rel->flag == ddl_exception) {
+			if (i->l)
+				rel->l = rel_copy(sql, i->l, deep);
+			if (i->r)
+				rel->r = rel_copy(sql, i->r, deep);
+		}
+		break;
+	case op_select:
+	case op_topn:
+	case op_sample:
+	case op_truncate:
+		if (i->l)
+			rel->l = rel_copy(sql, i->l, deep);
+		break;
+	case op_insert:
+	case op_update:
+	case op_delete:
+
 	case op_join:
 	case op_left:
 	case op_right:
 	case op_full:
 	case op_semi:
 	case op_anti:
-	case op_project:
-	case op_select:
-	default:
+
+	case op_union:
+	case op_inter:
+	case op_except:
 		if (i->l)
 			rel->l = rel_copy(sql, i->l, deep);
 		if (i->r)
@@ -1819,7 +1843,7 @@ rel_deps(mvc *sql, sql_rel *r, list *refs, list *l)
 			return -1;
 		break;
 	case op_ddl:
-		if (r->flag == ddl_output) {
+		if (r->flag == ddl_output || r->flag == ddl_create_seq || r->flag == ddl_alter_seq) {
 			if (r->l)
 				return rel_deps(sql, r->l, refs, l);
 		} else if (r->flag == ddl_list || r->flag == ddl_exception) {
@@ -1827,9 +1851,6 @@ rel_deps(mvc *sql, sql_rel *r, list *refs, list *l)
 				return rel_deps(sql, r->l, refs, l);
 			if (r->r)
 				return rel_deps(sql, r->r, refs, l);
-		} else if (r->flag == ddl_create_seq || r->flag == ddl_alter_seq) {
-			if (r->l)
-				return rel_deps(sql, r->l, refs, l);
 		}
 		break;
 	}
