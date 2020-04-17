@@ -132,7 +132,12 @@ rel_create(sql_allocator *sa)
 sql_rel *
 rel_copy(mvc *sql, sql_rel *i, int deep)
 {
-	sql_rel *rel = rel_create(sql->sa);
+	sql_rel *rel;
+
+	if (THRhighwater())
+		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
+
+	rel = rel_create(sql->sa);
 	if (!rel)
 		return NULL;
 
@@ -1703,7 +1708,7 @@ exp_deps(mvc *sql, sql_exp *e, list *refs, list *l)
 		            exps_deps(sql, e->r, refs, l) != 0)
 				return -1;
 			if (e->flag & PSM_IF && e->f)
-		            return exps_deps(sql, e->r, refs, l);
+				return exps_deps(sql, e->r, refs, l);
 		} else if (e->flag & PSM_REL) {
 			sql_rel *rel = e->l;
 			return rel_deps(sql, rel, refs, l);
@@ -1821,7 +1826,11 @@ rel_deps(mvc *sql, sql_rel *r, list *refs, list *l)
 	case op_anti:
 	case op_union: 
 	case op_except: 
-	case op_inter: 
+	case op_inter:
+
+	case op_insert: 
+	case op_update: 
+	case op_delete:
 		if (rel_deps(sql, r->l, refs, l) != 0 ||
 		    rel_deps(sql, r->r, refs, l) != 0)
 			return -1;
@@ -1831,26 +1840,18 @@ rel_deps(mvc *sql, sql_rel *r, list *refs, list *l)
 	case op_groupby: 
 	case op_topn: 
 	case op_sample:
-		if (rel_deps(sql, r->l, refs, l) != 0)
-			return -1;
-		break;
-	case op_insert: 
-	case op_update: 
-	case op_delete:
 	case op_truncate:
-		if (rel_deps(sql, r->l, refs, l) != 0 ||
-		    rel_deps(sql, r->r, refs, l) != 0)
+		if (rel_deps(sql, r->l, refs, l) != 0)
 			return -1;
 		break;
 	case op_ddl:
 		if (r->flag == ddl_output || r->flag == ddl_create_seq || r->flag == ddl_alter_seq) {
-			if (r->l)
-				return rel_deps(sql, r->l, refs, l);
+			if (rel_deps(sql, r->l, refs, l) != 0)
+				return -1;
 		} else if (r->flag == ddl_list || r->flag == ddl_exception) {
-			if (r->l)
-				return rel_deps(sql, r->l, refs, l);
-			if (r->r)
-				return rel_deps(sql, r->r, refs, l);
+			if (rel_deps(sql, r->l, refs, l) != 0 ||
+				rel_deps(sql, r->r, refs, l) != 0)
+				return -1;
 		}
 		break;
 	}
@@ -1858,7 +1859,7 @@ rel_deps(mvc *sql, sql_rel *r, list *refs, list *l)
 		if (exps_deps(sql, r->exps, refs, l) != 0)
 			return -1;
 	}
-	if (is_groupby(r->op) && r->r) {
+	if ((is_simple_project(r->op) || is_groupby(r->op)) && r->r) {
 		if (exps_deps(sql, r->r, refs, l) != 0)
 			return -1;
 	}

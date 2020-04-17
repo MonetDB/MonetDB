@@ -2278,9 +2278,11 @@ exps_copy(mvc *sql, list *exps)
 {
 	list *nl;
 
+	if (THRhighwater())
+		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
+
 	if (!exps)
 		return NULL;
-
 	nl = new_exp_list(sql->sa);
 	for (node *n = exps->h; n; n = n->next) {
 		sql_exp *arg = n->data;
@@ -2297,6 +2299,9 @@ sql_exp *
 exp_copy(mvc *sql, sql_exp * e)
 {
 	sql_exp *l, *r, *r2, *ne = NULL;
+
+	if (THRhighwater())
+		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
 	if (!e)
 		return NULL;
