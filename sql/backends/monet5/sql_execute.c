@@ -966,7 +966,7 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		list *types_list = sa_list(m->sa);
 		str token, rest;
 
-		for (token = strtok_r(types, "%%", &rest); token; token = strtok_r(NULL, "%%", &rest))
+		for (token = strtok_r(types, "%", &rest); token; token = strtok_r(NULL, "%", &rest))
 			list_append(types_list, token);
 
 		if (list_length(types_list) != list_length(rel->exps))

@@ -126,7 +126,7 @@ _rel_partition(mvc *sql, sql_rel *rel)
 static int 
 has_groupby(sql_rel *rel)
 {
-	if (rel->op == op_groupby) 
+	if (is_groupby(rel->op)) 
 		return 1;
 	if (is_join(rel->op)) 
 		return has_groupby(rel->l) || has_groupby(rel->r);
@@ -140,20 +140,17 @@ rel_partition(mvc *sql, sql_rel *rel)
 {
 	if (THRhighwater())
 		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
-	(void)sql;
-	if (rel->op == op_basetable) {
+
+	if (is_basetable(rel->op)) {
 		rel->flag = REL_PARTITION;
-	} else if ((rel->op == op_topn || rel->op == op_sample || rel->op == op_select) && rel->l) {
+	} else if ((is_topn(rel->op) || is_sample(rel->op) || is_select(rel->op)) && rel->l) {
 		rel_partition(sql, rel->l);
 	} else if (is_modify(rel->op) && rel->card <= CARD_AGGR) {
 		if (rel->r)
 			rel_partition(sql, rel->r);
 	} else if (is_project(rel->op) && rel->l) {
 		rel_partition(sql, rel->l);
-	} else if (rel->op == op_semi && rel->l && rel->r) {
-		rel_partition(sql, rel->l);
-		rel_partition(sql, rel->r);
-	} else if (rel->op == op_anti && rel->l && rel->r) {
+	} else if (is_semi(rel->op) && rel->l && rel->r) {
 		rel_partition(sql, rel->l);
 		rel_partition(sql, rel->r);
 	} else if (is_join(rel->op)) {

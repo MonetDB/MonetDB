@@ -117,7 +117,7 @@ relational_func_create_result(mvc *sql, MalBlkPtr mb, InstrPtr q, sql_rel *f)
 
 	if (q == NULL)
 		return NULL;
-	if (is_topn(r->op))
+	if (is_topn(r->op) || is_sample(r->op))
 		r = r->l;
 	if (!is_project(r->op))
 		r = rel_project(sql->sa, r, rel_projections(sql, r, NULL, 1, 1));
@@ -320,7 +320,7 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 		return -1;
 	}
 
-	if (is_topn(r->op))
+	if (is_topn(r->op) || is_sample(r->op))
 		r = r->l;
 	if (!is_project(r->op))
 		r = rel_project(m->sa, r, rel_projections(m, r, NULL, 1, 1));
@@ -500,7 +500,7 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 			buf = tmp;
 		}
 
-		nr += snprintf(buf+nr, len-nr, "%s%s", next, n->next?"%%":"");
+		nr += snprintf(buf+nr, len-nr, "%s%s", next, n->next?"%":"");
 		GDKfree(next);
 	}
 	if (buf) {

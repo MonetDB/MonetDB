@@ -6,23 +6,22 @@
 
 module sql;
 
-pattern transaction_release(chain:int,name:str):void
+unsafe pattern transaction_release(chain:int,name:str):void
 address SQLtransaction_release
 comment "A transaction statement (type can be commit,release,rollback or start)";
 
-pattern transaction_commit(chain:int,name:str):void
+unsafe pattern transaction_commit(chain:int,name:str):void
 address SQLtransaction_commit
 comment "A transaction statement (type can be commit,release,rollback or start)";
 
-pattern transaction_rollback(chain:int,name:str):void
+unsafe pattern transaction_rollback(chain:int,name:str):void
 address SQLtransaction_rollback
 comment "A transaction statement (type can be commit,release,rollback or start)";
 
-pattern transaction_begin(chain:int,name:str):void
+unsafe pattern transaction_begin(chain:int,name:str):void
 address SQLtransaction_begin
 comment "A transaction statement (type can be commit,release,rollback or start)";
 
 unsafe pattern transaction()
 address SQLtransaction2
 comment "Start an autocommit transaction";
-

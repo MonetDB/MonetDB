@@ -498,13 +498,13 @@ MCstopClients(Client cntxt)
 int
 MCactiveClients(void)
 {
-	int idles = 0;
+	int active = 0;
 	Client cntxt = mal_clients;
 
 	for(cntxt = mal_clients;  cntxt<mal_clients+MAL_MAXCLIENTS; cntxt++){
-		idles += (cntxt->idle != 0 && cntxt->mode == RUNCLIENT);
+		active += (cntxt->idle == 0 && cntxt->mode == RUNCLIENT);
 	}
-	return idles;
+	return active;
 }
 
 void
