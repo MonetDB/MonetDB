@@ -1093,12 +1093,12 @@ rel_find_groupby(sql_rel *groupby)
 {
 	if (groupby && !is_processed(groupby) && !is_base(groupby->op)) { 
 		while(!is_processed(groupby) && !is_base(groupby->op)) {
-			if (groupby->op == op_groupby || !groupby->l)
+			if (is_groupby(groupby->op) || !groupby->l)
 				break;
 			if (groupby->l)
 				groupby = groupby->l;
 		}
-		if (groupby && groupby->op == op_groupby)
+		if (groupby && is_groupby(groupby->op))
 			return groupby;
 	}
 	return NULL;
@@ -1161,7 +1161,7 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 		if (!exp && inner)
 			if (!(exp = rel_bind_column(sql, inner, name, f, 0)) && sql->session->status == -ERR_AMBIGUOUS)
 				return NULL;
-		if (!exp && inner && is_sql_having(f) && inner->op == op_select)
+		if (!exp && inner && is_sql_having(f) && is_select(inner->op))
 			inner = inner->l;
 		if (!exp && inner && (is_sql_having(f) || is_sql_aggr(f)) && is_groupby(inner->op))
 			if (!(exp = rel_bind_column(sql, inner->l, name, f, 0)) && sql->session->status == -ERR_AMBIGUOUS)
@@ -1229,7 +1229,7 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 
 		if (!exp && rel && inner)
 			exp = rel_bind_column2(sql, inner, tname, cname, f);
-		if (!exp && inner && is_sql_having(f) && inner->op == op_select)
+		if (!exp && inner && is_sql_having(f) && is_select(inner->op))
 			inner = inner->l;
 		if (!exp && inner && (is_sql_having(f) || is_sql_aggr(f)) && is_groupby(inner->op))
 			exp = rel_bind_column2(sql, inner->l, tname, cname, f);
@@ -5323,7 +5323,7 @@ rel_having_limits_nodes(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind
 			single_value = 0;
 		}
 	
-		if (inner && inner->op == op_groupby)
+		if (inner && is_groupby(inner->op))
 			set_processed(inner);
 		inner = rel_logical_exp(query, inner, sn->having, sql_having | group_totals);
 

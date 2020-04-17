@@ -619,7 +619,7 @@ rel_project_add_exp( mvc *sql, sql_rel *rel, sql_exp *e)
 	*/
 	if (!exp_name(e))
 		exp_label(sql->sa, e, ++sql->label);
-	if (rel->op == op_project) {
+	if (is_simple_project(rel->op)) {
 		sql_rel *l = rel->l;
 		if (!rel->exps)
 			rel->exps = new_exp_list(sql->sa);
@@ -629,7 +629,7 @@ rel_project_add_exp( mvc *sql, sql_rel *rel, sql_exp *e)
 			rel->card = e->card;
 		append(rel->exps, e);
 		rel->nrcols++;
-	} else if (rel->op == op_groupby) {
+	} else if (is_groupby(rel->op)) {
 		return rel_groupby_add_aggr(sql, rel, e);
 	}
 	e = exp_ref(sql, e);
@@ -756,7 +756,7 @@ rel_select(sql_allocator *sa, sql_rel *l, sql_exp *e)
 		return l;
 	}
 		
-	if (l && l->op == op_select && !rel_is_ref(l)) { /* refine old select */
+	if (l && is_select(l->op) && !rel_is_ref(l)) { /* refine old select */
 		if (e)
 			rel_select_add_exp(sa, l, e);
 		return l;
@@ -1248,7 +1248,7 @@ rel_push_select(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *e)
 	}
 	if (!lrel)
 		return NULL;
-	if (p && p->op == op_select && !rel_is_ref(p)) { /* refine old select */
+	if (p && is_select(p->op) && !rel_is_ref(p)) { /* refine old select */
 		rel_select_add_exp(sql->sa, p, e);
 	} else {
 		sql_rel *n = rel_select(sql->sa, lrel, e);
@@ -1344,9 +1344,9 @@ rel_push_join(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2, sq
 
 	/* filter on columns of this relation */
 	if ((lrel == rrel && (!r2 || lrel == rrel2) && lrel->op != op_join) || rel_is_ref(p)) {
-		if (lrel->op == op_select && !rel_is_ref(lrel)) {
+		if (is_select(lrel->op) && !rel_is_ref(lrel)) {
 			rel_select_add_exp(sql->sa, lrel, e);
-		} else if (p && p->op == op_select && !rel_is_ref(p)) {
+		} else if (p && is_select(p->op) && !rel_is_ref(p)) {
 			rel_select_add_exp(sql->sa, p, e);
 		} else {
 			sql_rel *n = rel_select(sql->sa, lrel, e);
@@ -1387,7 +1387,7 @@ rel_or(mvc *sql, sql_rel *rel, sql_rel *l, sql_rel *r, list *oexps, list *lexps,
 	}
 
 	/* favor or expressions over union */
-	if (l->op == r->op && l->op == op_select &&
+	if (l->op == r->op && is_select(l->op) &&
 	    ll == rl && ll == rel && !rel_is_ref(l) && !rel_is_ref(r)) {
 		sql_exp *e = exp_or(sql->sa, l->exps, r->exps, 0);
 		list *nl = new_exp_list(sql->sa);
@@ -1398,7 +1398,7 @@ rel_or(mvc *sql, sql_rel *rel, sql_rel *l, sql_rel *r, list *oexps, list *lexps,
 
 		/* merge and expressions */
 		ll = l->l;
-		while (ll && ll->op == op_select && !rel_is_ref(ll)) {
+		while (ll && is_select(ll->op) && !rel_is_ref(ll)) {
 			list_merge(l->exps, ll->exps, (fdup)NULL);
 			l->l = ll->l;
 			ll->l = NULL;

@@ -232,7 +232,7 @@ rel_insert_idxs(mvc *sql, sql_table *t, const char* alias, sql_rel *inserts)
 		sql_idx *i = n->data;
 		sql_rel *ins = inserts->r;
 
-		if (ins->op == op_union) 
+		if (is_union(ins->op)) 
 			inserts->r = rel_project(sql->sa, ins, rel_projections(sql, ins, NULL, 0, 1));
 		if (hash_index(i->type) || i->type == no_idx) {
 			rel_insert_hash_idx(sql, alias, i, inserts);

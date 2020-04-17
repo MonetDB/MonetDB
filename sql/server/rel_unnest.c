@@ -968,7 +968,7 @@ push_up_select(mvc *sql, sql_rel *rel, list *ad)
 	sql_rel *r = rel->r;
 	int inner = 0;
 
-	if (rel && is_dependent(rel) && r && r->op == op_select) {
+	if (rel && is_dependent(rel) && r && is_select(r->op)) {
 		sql_rel *rl = r->l;
 
 		if (rl && rel_has_freevar(sql, rl)) {
@@ -983,7 +983,7 @@ push_up_select(mvc *sql, sql_rel *rel, list *ad)
 	if ((!inner || is_semi(rel->op)) && rel && is_dependent(rel)) {
 		sql_rel *r = rel->r;
 
-		if (r && r->op == op_select) { /* move into join */
+		if (r && is_select(r->op)) { /* move into join */
 			node *n;
 
 			for (n=r->exps->h; n; n = n->next) {
@@ -1051,7 +1051,7 @@ push_up_groupby(mvc *sql, sql_rel *rel, list *ad)
 		sql_rel *l = rel->l, *r = rel->r;
 
 		/* left of rel should be a set */ 
-		if (l && is_distinct_set(sql, l, ad) && r && r->op == op_groupby) {
+		if (l && is_distinct_set(sql, l, ad) && r && is_groupby(r->op)) {
 			list *sexps, *jexps, *a = rel_projections(sql, rel->l, NULL, 1, 1);
 			node *n;
 			sql_exp *id = NULL;
@@ -1132,7 +1132,7 @@ push_up_groupby(mvc *sql, sql_rel *rel, list *ad)
 						r->l = rel_dup(l->l);
 						rel_destroy(l);
 					}
-					if (l->op == op_groupby) { /* TODO: check if group by exps and distinct list are equal */
+					if (is_groupby(l->op)) { /* TODO: check if group by exps and distinct list are equal */
 						/* add aggr exps of r too l, replace r by l */ 
 						node *n;
 						for(n = r->exps->h; n; n = n->next) {
@@ -2659,7 +2659,7 @@ rewrite_groupings(mvc *sql, sql_rel *rel, int *changes)
 {
 	prop *found;
 
-	if (rel->op == op_groupby) {
+	if (is_groupby(rel->op)) {
 		/* ROLLUP, CUBE, GROUPING SETS cases */
 		if ((found = find_prop(rel->p, PROP_GROUPINGS))) {
 			list *sets = (list*) found->value;
