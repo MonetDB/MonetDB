@@ -2053,7 +2053,7 @@ rel_push_topn_and_sample_down(mvc *sql, sql_rel *rel, int *changes)
 		if (r && is_simple_project(r->op) && !need_distinct(r) && !rel_is_ref(r) && r->l && !r->r) {
 			sql_rel *x = r, *px = x;
 
-			while (x && is_simple_project(x->op) && !need_distinct(x) && !rel_is_ref(x) && x->l && !x->r) {
+			while (is_simple_project(x->op) && !need_distinct(x) && !rel_is_ref(x) && x->l && !x->r) {
 				px = x;
 				x = x->l;
 			}

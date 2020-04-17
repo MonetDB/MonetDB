@@ -943,16 +943,17 @@ push_up_project(mvc *sql, sql_rel *rel, list *ad)
 }
 
 static sql_rel *
-push_up_topn(mvc *sql, sql_rel *rel) 
+push_up_topn_and_sample(mvc *sql, sql_rel *rel) 
 {
 	/* a dependent semi/anti join with a project on the right side, could be removed */
 	if (rel && (is_semi(rel->op) || is_join(rel->op)) && is_dependent(rel)) {
 		sql_rel *r = rel->r;
 
-		if (r && is_topn(r->op)) {
-			/* remove old topn */
+		if (r && (is_topn(r->op) || is_sample(r->op))) {
+			/* remove old topn/sample */
+			sql_rel *(*func) (sql_allocator *, sql_rel *, list *) = is_topn(r->op) ? rel_topn : rel_sample;
 			rel->r = rel_dup(r->l);
-			rel = rel_topn(sql->sa, rel, r->exps);
+			rel = func(sql->sa, rel, r->exps);
 			rel_destroy(r);
 			return rel;
 		}
@@ -1460,8 +1461,8 @@ rel_unnest_dependent(mvc *sql, sql_rel *rel)
 				return rel_unnest_dependent(sql, rel);
 			}
 
-			if (r && is_topn(r->op)) {
-				rel = push_up_topn(sql, rel);
+			if (r && (is_topn(r->op) || is_sample(r->op))) {
+				rel = push_up_topn_and_sample(sql, rel);
 				return rel_unnest_dependent(sql, rel);
 			}
 
