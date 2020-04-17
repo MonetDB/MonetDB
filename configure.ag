@@ -314,14 +314,14 @@ AC_ARG_ENABLE([static-analysis],
 MONETDB5_PASSWDHASH="SHA512"
 AC_ARG_WITH([password-backend],
 	[AS_HELP_STRING([--with-password-backend=HASHALG],
-		[password hash algorithm, one of MD5, SHA1, RIPEMD160, SHA224, SHA256, SHA384, SHA512, defaults to SHA512])],
+		[password hash algorithm, one of SHA1, RIPEMD160, SHA224, SHA256, SHA384, SHA512, defaults to SHA512])],
 	[password_backend="$withval"])
 AS_CASE([$password_backend],
 	[yes|no|auto|""],
 		[],
-	[MD5|SHA1|RIPEMD160|SHA224|SHA256|SHA384|SHA512],
+	[SHA1|RIPEMD160|SHA224|SHA256|SHA384|SHA512],
 		[MONETDB5_PASSWDHASH="$password_backend"],
-	[AC_MSG_ERROR(['$password_backend' invalid, choose one of MD5, SHA1, RIPEMD160, SHA224, SHA256, SHA384, SHA512])])
+	[AC_MSG_ERROR(['$password_backend' invalid, choose one of SHA1, RIPEMD160, SHA224, SHA256, SHA384, SHA512])])
 AC_DEFINE_UNQUOTED([MONETDB5_PASSWDHASH], ["$MONETDB5_PASSWDHASH"],
 	[The used password hash algorithm])
 AC_DEFINE_UNQUOTED([MONETDB5_PASSWDHASH_TOKEN], [$MONETDB5_PASSWDHASH],
@@ -559,6 +559,11 @@ AS_VAR_IF([enable_strict], [yes], [
 		MCHECK_ADD_FLAG([-Wmissing-noreturn])
 		MCHECK_ADD_FLAG([-Wmissing-prototypes])
 		MCHECK_ADD_FLAG([-Wnested-externs])
+		# apparently, we get warnings (hence errors) on some
+		# versions of Darwin:
+		AS_CASE([$CC_ver],
+			[clang-*],
+			[MCHECK_ADD_FLAG([-Wno-nullability-completeness])])
 		MCHECK_ADD_FLAG([-Wold-style-definition])
 		MCHECK_ADD_FLAG([-Wpacked])
 		MCHECK_ADD_FLAG([-Wpacked-bitfield-compat])
@@ -1426,7 +1431,10 @@ AM_CONDITIONAL([HAVE_UUID], [test x"$have_uuid" != xno])
 AS_CASE([$host],
 [*-darwin*], [
 	AC_DEFINE([HAVE_COMMONCRYPTO], 1, [Define if you have the CommonCrypto library])
-	AC_CHECK_FUNC([CC_MD5_Update], [AC_DEFINE([HAVE_MD5_UPDATE], 1, [Define to 1 if you have the `MD5_Update' function.])])
+	# MD5 is deprecated and gives a warning message on Darwin 19.0.0
+	AS_CASE([$host],
+	[*-darwin1[[0-8]]*],
+		[AC_CHECK_FUNC([CC_MD5_Update], [AC_DEFINE([HAVE_MD5_UPDATE], 1, [Define to 1 if you have the `MD5_Update' function.])])])
 	AC_CHECK_FUNC([CC_RIPEMD160_Update], [AC_DEFINE([HAVE_RIPEMD160_UPDATE], 1, [Define to 1 if you have the `RIPEMD160_Update' function.])])
 	AC_CHECK_FUNC([CC_SHA1_Update], [AC_DEFINE([HAVE_SHA1_UPDATE], 1, [Define to 1 if you have the `SHA1_Update' function.])])
 	AC_CHECK_FUNC([CC_SHA224_Update], [AC_DEFINE([HAVE_SHA224_UPDATE], 1, [Define to 1 if you have the `SHA224_Update' function.])])

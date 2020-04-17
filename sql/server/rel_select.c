@@ -123,7 +123,7 @@ rel_lastexp(mvc *sql, sql_rel *rel )
 {
 	sql_exp *e;
 
-	if (!is_processed(rel) || is_topn(rel->op))
+	if (!is_processed(rel) || is_topn(rel->op) || is_sample(rel->op))
 		rel = rel_parent(rel);
 	assert(list_length(rel->exps));
 	if (rel->op == op_project) {
@@ -134,9 +134,7 @@ rel_lastexp(mvc *sql, sql_rel *rel )
 	}
 	assert(is_project(rel->op));
 	e = rel->exps->t->data;
-	if (!exp_name(e)) 
-		exp_label(sql->sa, e, ++sql->label);
-	return exp_ref(sql->sa, e);
+	return exp_ref(sql, e);
 }
 
 static sql_rel *
@@ -173,7 +171,7 @@ rel_table_optname(mvc *sql, sql_rel *sq, symbol *optname)
 		list *l = sa_list(sql->sa);
 
 		columnrefs = optname->data.lval->h->next->data.lval;
-		if (is_topn(sq->op) || (is_project(sq->op) && sq->r) || is_base(sq->op)) {
+		if (is_topn(sq->op) || is_sample(sq->op) || (is_project(sq->op) && sq->r) || is_base(sq->op)) {
 			sq = rel_project(sql->sa, sq, rel_projections(sql, sq, NULL, 1, 0));
 			osq = sq;
 		}
@@ -213,7 +211,7 @@ rel_table_optname(mvc *sql, sql_rel *sq, symbol *optname)
 			}
 		}
 	} else {
-		if (!is_project(sq->op) || is_topn(sq->op) || (is_project(sq->op) && sq->r)) {
+		if (!is_project(sq->op) || is_topn(sq->op) || is_sample(sq->op) || (is_project(sq->op) && sq->r)) {
 			sq = rel_project(sql->sa, sq, rel_projections(sql, sq, NULL, 1, 1));
 			osq = sq;
 		}
@@ -921,7 +919,7 @@ check_is_lateral(symbol *tableref)
 	}
 }
 
-static sql_rel *
+sql_rel *
 rel_reduce_on_column_privileges(mvc *sql, sql_rel *rel, sql_table *t)
 {
 	list *exps = sa_list(sql->sa);
@@ -930,9 +928,8 @@ rel_reduce_on_column_privileges(mvc *sql, sql_rel *rel, sql_table *t)
 		sql_exp *e = n->data;
 		sql_column *c = m->data;
 
-		if (column_privs(sql, c, PRIV_SELECT)) {
+		if (column_privs(sql, c, PRIV_SELECT))
 			append(exps, e);
-		}
 	}
 	if (!list_empty(exps)) {
 		rel->exps = exps;
@@ -1096,12 +1093,12 @@ rel_find_groupby(sql_rel *groupby)
 {
 	if (groupby && !is_processed(groupby) && !is_base(groupby->op)) { 
 		while(!is_processed(groupby) && !is_base(groupby->op)) {
-			if (groupby->op == op_groupby || !groupby->l)
+			if (is_groupby(groupby->op) || !groupby->l)
 				break;
 			if (groupby->l)
 				groupby = groupby->l;
 		}
-		if (groupby && groupby->op == op_groupby)
+		if (groupby && is_groupby(groupby->op))
 			return groupby;
 	}
 	return NULL;
@@ -1164,7 +1161,7 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 		if (!exp && inner)
 			if (!(exp = rel_bind_column(sql, inner, name, f, 0)) && sql->session->status == -ERR_AMBIGUOUS)
 				return NULL;
-		if (!exp && inner && is_sql_having(f) && inner->op == op_select)
+		if (!exp && inner && is_sql_having(f) && is_select(inner->op))
 			inner = inner->l;
 		if (!exp && inner && (is_sql_having(f) || is_sql_aggr(f)) && is_groupby(inner->op))
 			if (!(exp = rel_bind_column(sql, inner->l, name, f, 0)) && sql->session->status == -ERR_AMBIGUOUS)
@@ -1196,7 +1193,7 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 					exp = rel_groupby_add_aggr(sql, outer, exp);
 					exp->card = CARD_ATOM;
 				} else if (is_groupby(outer->op) && is_sql_aggr(f) && exps_find_match_exp(outer->exps, exp))
-					exp = exp_ref(sql->sa, exp);
+					exp = exp_ref(sql, exp);
 				else
 					exp->card = CARD_ATOM;
 				set_freevar(exp, i);
@@ -1232,7 +1229,7 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 
 		if (!exp && rel && inner)
 			exp = rel_bind_column2(sql, inner, tname, cname, f);
-		if (!exp && inner && is_sql_having(f) && inner->op == op_select)
+		if (!exp && inner && is_sql_having(f) && is_select(inner->op))
 			inner = inner->l;
 		if (!exp && inner && (is_sql_having(f) || is_sql_aggr(f)) && is_groupby(inner->op))
 			exp = rel_bind_column2(sql, inner->l, tname, cname, f);
@@ -1262,7 +1259,7 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 					exp = rel_groupby_add_aggr(sql, outer, exp);
 					exp->card = CARD_ATOM;
 				} else if (is_groupby(outer->op) && is_sql_aggr(f) && exps_find_match_exp(outer->exps, exp))
-					exp = exp_ref(sql->sa, exp);
+					exp = exp_ref(sql, exp);
 				else
 					exp->card = CARD_ATOM;
 				set_freevar(exp, i);
@@ -3566,11 +3563,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 		if (!group && !all_freevar)
 			return e;
 		if (all_freevar) {
-			if (is_simple_project(res->op)) {
-				assert(0);
-				e = rel_project_add_exp(sql, res, e);
-				e = exp_ref(sql->sa, e);
-			}
+			assert(!is_simple_project(res->op));
 			e->card = CARD_ATOM;
 			set_freevar(e, all_freevar-1);
 			return e;
@@ -3723,11 +3716,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 			return e;
 		if (all_freevar) {
 			exps_reset_freevar(exps);
-			if (is_simple_project(res->op)) {
-				assert(0);
-				e = rel_project_add_exp(sql, res, e);
-				e = exp_ref(sql->sa, e);
-			}
+			assert(!is_simple_project(res->op));
 			e->card = CARD_ATOM;
 			set_freevar(e, all_freevar-1);
 			return e;
@@ -3996,6 +3985,8 @@ rel_next_value_for( mvc *sql, symbol *se )
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_error(sql, 02, SQLSTATE(3F000) "NEXT VALUE FOR: no such schema '%s'", sname);
+	if (!mvc_schema_privs(sql, s))
+		return sql_error(sql, 02, SQLSTATE(42000) "NEXT VALUE FOR: access denied for %s to schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
 
 	if (!find_sql_sequence(s, seq) && !stack_find_rel_view(sql, seq))
 		return sql_error(sql, 02, SQLSTATE(42000) "NEXT VALUE FOR: no such sequence '%s'.'%s'", s->base.name, seq);
@@ -4317,9 +4308,7 @@ rel_order_by_column_exp(sql_query *query, sql_rel **R, symbol *column_r, int f)
 		} else {
 			e = found;
 		}
-		if (!exp_name(e))
-			exp_label(sql->sa, e, ++sql->label);
-		e = exp_ref(sql->sa, e);
+		e = exp_ref(sql, e);
 	}
 	return e;
 }
@@ -4384,9 +4373,7 @@ rel_order_by(sql_query *query, sql_rel **R, symbol *orderby, int f)
 						e = exps_get_exp(rel->exps, nr);
 						if (!e)
 							return sql_error(sql, 02, SQLSTATE(42000) "SELECT: the order by column number (%d) is not in the number of projections range (%d)", nr, list_length(rel->exps));
-						if (!exp_name(e))
-							exp_label(sql->sa, e, ++sql->label);
-						e = exp_ref(sql->sa, e);
+						e = exp_ref(sql, e);
 						/* do not cache this query */
 						if (e)
 							scanner_reset_key(&sql->scanner);
@@ -4405,11 +4392,9 @@ rel_order_by(sql_query *query, sql_rel **R, symbol *orderby, int f)
 					if (!found) {
 						append(rel->exps, e);
 					} else {
-						if (!exp_name(found))
-							exp_label(sql->sa, found, ++sql->label);
 						e = found;
 					}
-					e = exp_ref(sql->sa, e);
+					e = exp_ref(sql, e);
 				}
 			}
 
@@ -4780,9 +4765,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 			in = rel_first_column(sql, p);
 			if (!in)
 				return NULL;
-			if (!exp_name(in))
-				exp_label(sql->sa, in, ++sql->label);
-			in = exp_ref(sql->sa, in);
+			in = exp_ref(sql, in);
 			append(fargs, in);
 			in = exp_ref_save(sql, in);
 		}
@@ -4865,9 +4848,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 			}
 
 			in = rel_first_column(sql, p);
-			if (!exp_name(in))
-				exp_label(sql->sa, in, ++sql->label);
-			in = exp_ref(sql->sa, in);
+			in = exp_ref(sql, in);
 			append(fargs, in);
 			append(fargs, exp_atom_bool(sql->sa, 0)); /* don't ignore nills */
 			in = exp_ref_save(sql, in);
@@ -5093,11 +5074,7 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 		if (sql->errstr[0] != '\0')
 			return NULL;
 		if (exp) {
-			sql_exp *res;
-
-			if (!exp_name(exp))
-				exp_label(sql->sa, exp, ++sql->label);
-			res = exp_ref(sql->sa, exp);
+			sql_exp *res = exp_ref(sql, exp);
 			res->card = (*rel)->card;
 			if (se->token == SQL_AGGR) {
 				dlist *l = se->data.lval;
@@ -5346,7 +5323,7 @@ rel_having_limits_nodes(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind
 			single_value = 0;
 		}
 	
-		if (inner && inner->op == op_groupby)
+		if (inner && is_groupby(inner->op))
 			set_processed(inner);
 		inner = rel_logical_exp(query, inner, sn->having, sql_having | group_totals);
 
@@ -5746,10 +5723,9 @@ rel_setquery(sql_query *query, symbol *q)
 		if (t2 && distinct)
 			t2 = rel_distinct(t2);
 		res = rel_setquery_(query, t1, t2, corresponding, op_union );
-	}
-	if ( q->token == SQL_EXCEPT)
+	} else if ( q->token == SQL_EXCEPT)
 		res = rel_setquery_(query, t1, t2, corresponding, op_except );
-	if ( q->token == SQL_INTERSECT)
+	else if ( q->token == SQL_INTERSECT)
 		res = rel_setquery_(query, t1, t2, corresponding, op_inter );
 	if (res && distinct)
 		res = rel_distinct(res);

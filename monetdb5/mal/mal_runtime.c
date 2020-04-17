@@ -170,6 +170,7 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 	}
 
 	// add new invocation
+	cntxt->idle = 0;
 	QRYqueue[qhead].mb = mb;
 	QRYqueue[qhead].tag = qtag++;
 	QRYqueue[qhead].stk = stk;				// for status pause 'p'/running '0'/ quiting 'q'
@@ -220,6 +221,8 @@ runtimeProfileFinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 			QRYqueue[i].cntxt = 0;
 			QRYqueue[i].stk = 0;
 			QRYqueue[i].mb = 0;
+			// assume that the user is now idle
+			cntxt->idle = time(0);
 			break;
 		}
 	}

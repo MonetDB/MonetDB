@@ -31,11 +31,11 @@ unsafe pattern transaction()
 address SQLtransaction2
 comment "Start an autocommit transaction";
 
-pattern commit()
+unsafe pattern commit()
 address SQLcommit
 comment "Trigger the commit operation for a MAL block";
 
-pattern abort()
+unsafe pattern abort()
 address SQLabort
 comment "Trigger the abort operation for a MAL block";
 
@@ -60,19 +60,19 @@ pattern register(mod:str, fname:str, rel_stmt:str, sig:str, typ:str):int
 address RAstatement2
 comment "Compile the relational statement (rel_smt) and register it as mal function, mod.fname(signature)";
 
-command flush_log( ) :void
+unsafe command flush_log( ) :void
 address SQLflush_log
 comment "start flushing the write ahead log";
 
-command hot_snapshot(tarfile:str) :void
+unsafe command hot_snapshot(tarfile:str) :void
 address SQLhot_snapshot
 comment "Write db snapshot to the given tar(.gz) file";
 
-command resume_log_flushing( ) :void
+unsafe command resume_log_flushing( ) :void
 address SQLresume_log_flushing
 comment "Resume WAL log flushing";
 
-command suspend_log_flushing( ) :void
+unsafe command suspend_log_flushing( ) :void
 address SQLsuspend_log_flushing
 comment "Suspend WAL log flushing";
 
@@ -86,7 +86,7 @@ pattern assert(b:lng,msg:str):void
 address SQLassertLng
 comment "Generate an exception when b!=0";
 
-pattern setVariable(mvc:int, varname:str, value:any_1 ):int
+unsafe pattern setVariable(mvc:int, varname:str, value:any_1 ):int
 address setVariable
 comment "Set the value of a session variable";
 
@@ -98,19 +98,19 @@ unsafe pattern logfile(filename:str):void
 address mvc_logfile
 comment "Enable/disable saving the sql statement traces";
 
-pattern next_value( sname:str, sequence:str ):lng
+unsafe pattern next_value( sname:str, sequence:str ):lng
 address mvc_next_value
 comment "return the next value of the sequence";
 
-pattern batsql.next_value( sname:bat[:str], sequence:str ) :bat[:lng]
+unsafe pattern batsql.next_value( sname:bat[:str], sequence:str ) :bat[:lng]
 address mvc_bat_next_value
 comment "return the next value of the sequence";
 
-pattern batsql.next_value( sname:str, sequence:bat[:str] ) :bat[:lng]
+unsafe pattern batsql.next_value( sname:str, sequence:bat[:str] ) :bat[:lng]
 address mvc_bat_next_value
 comment "return the next value of sequences";
 
-pattern batsql.next_value( sname:bat[:str], sequence:bat[:str] ) :bat[:lng]
+unsafe pattern batsql.next_value( sname:bat[:str], sequence:bat[:str] ) :bat[:lng]
 address mvc_bat_next_value
 comment "return the next value of sequences";
 
@@ -422,13 +422,13 @@ pattern dump_trace()(
 address dump_trace
 comment "dump the trace statistics";
 
-pattern analyze(minmax:int, sample:lng):void
+unsafe pattern analyze(minmax:int, sample:lng):void
 address sql_analyze;
-pattern analyze(minmax:int, sample:lng, sch:str):void
+unsafe pattern analyze(minmax:int, sample:lng, sch:str):void
 address sql_analyze;
-pattern analyze(minmax:int, sample:lng, sch:str, tbl:str):void
+unsafe pattern analyze(minmax:int, sample:lng, sch:str, tbl:str):void
 address sql_analyze;
-pattern analyze(minmax:int, sample:lng, sch:str, tbl:str, col:str):void
+unsafe pattern analyze(minmax:int, sample:lng, sch:str, tbl:str, col:str):void
 address sql_analyze
 comment "Update the database statistics table";
 
@@ -516,11 +516,11 @@ pattern storage(sname:str, tname:str, cname:str)(
 address sql_storage
 comment "return a table with storage information for a particular column";
 
-pattern createorderindex(sch:str,tbl:str,col:str)
+unsafe pattern createorderindex(sch:str,tbl:str,col:str)
 address sql_createorderindex
 comment "Instantiate the order index on a column";
 
-pattern droporderindex(sch:str,tbl:str,col:str)
+unsafe pattern droporderindex(sch:str,tbl:str,col:str)
 address sql_droporderindex
 comment "Drop the order index on a column";
 
@@ -563,46 +563,45 @@ pattern querylog_calls()(
 address sql_querylog_calls
 comment "Obtain the query log calls";
 
-pattern querylog_empty()
+unsafe pattern querylog_empty()
 address sql_querylog_empty;
 
-command querylog_enable()
+unsafe command querylog_enable()
 address QLOGenable;
-command querylog_enable(thres:int)
+unsafe command querylog_enable(thres:int)
 address QLOGenableThreshold;
-command querylog_disable()
+unsafe command querylog_disable()
 address QLOGdisable;
-
 
 pattern sysmon_queue()(tag:bat[:lng], sessionid:bat[:int], user:bat[:str], started:bat[:timestamp], 
 status:bat[:str], query:bat[:str], finished:bat[:timestamp], workers:bat[:int], memory:bat[:int])
 address SYSMONqueue;
 
-pattern sysmon_pause(tag:bte)
+unsafe pattern sysmon_pause(tag:bte)
 address SYSMONpause;
-pattern sysmon_pause(tag:sht)
+unsafe pattern sysmon_pause(tag:sht)
 address SYSMONpause;
-pattern sysmon_pause(tag:int)
+unsafe pattern sysmon_pause(tag:int)
 address SYSMONpause;
-pattern sysmon_pause(tag:lng)
+unsafe pattern sysmon_pause(tag:lng)
 address SYSMONpause;
 
-pattern sysmon_resume(tag:bte)
+unsafe pattern sysmon_resume(tag:bte)
 address SYSMONresume;
-pattern sysmon_resume(tag:sht)
+unsafe pattern sysmon_resume(tag:sht)
 address SYSMONresume;
-pattern sysmon_resume(tag:int)
+unsafe pattern sysmon_resume(tag:int)
 address SYSMONresume;
-pattern sysmon_resume(tag:lng)
+unsafe pattern sysmon_resume(tag:lng)
 address SYSMONresume;
 
-pattern sysmon_stop(tag:bte)
+unsafe pattern sysmon_stop(tag:bte)
 address SYSMONstop;
-pattern sysmon_stop(tag:sht)
+unsafe pattern sysmon_stop(tag:sht)
 address SYSMONstop;
-pattern sysmon_stop(tag:int)
+unsafe pattern sysmon_stop(tag:int)
 address SYSMONstop;
-pattern sysmon_stop(tag:lng)
+unsafe pattern sysmon_stop(tag:lng)
 address SYSMONstop;
 
 pattern prepared_statements()(sessionid:bat[:int], user:bat[:str], statementid:bat[:int], statement:bat[:str], created:bat[:timestamp])
@@ -616,7 +615,7 @@ comment "Available prepared statements' arguments in the current session";
 
 pattern copy_rejects() (rowid:bat[:lng], fldid:bat[:int], msg:bat[:str], inp:bat[:str])
 address COPYrejects;
-pattern copy_rejects_clear()
+unsafe pattern copy_rejects_clear()
 address COPYrejects_clear;
 
 pattern calc.hash( v:bte ) :lng address MKEYhash; 
@@ -1048,19 +1047,19 @@ pattern calc.rowid(v:any_1, schema:str, table:str) :oid
 address sql_rowid
 comment "return the next rowid";
 
-pattern shrink(sch:str, tbl:str)
+unsafe pattern shrink(sch:str, tbl:str)
 address SQLshrink
 comment "Consolidate the deletion table over all columns using shrinking";
 
-pattern reuse(sch:str, tbl:str)
+unsafe pattern reuse(sch:str, tbl:str)
 address SQLreuse
 comment "Consolidate the deletion table over all columns reusing deleted slots";
 
-pattern vacuum(sch:str, tbl:str)
+unsafe pattern vacuum(sch:str, tbl:str)
 address SQLvacuum
 comment "Choose an approach to consolidate the deletions";
 
-pattern drop_hash(sch:str, tbl:str)
+unsafe pattern drop_hash(sch:str, tbl:str)
 address SQLdrop_hash
 comment "Drop hash indices for the given table";
 
@@ -1118,11 +1117,11 @@ command batcalc.strings(v:bat[:str]) :bat[:str]
 address BATSTRstrings
 comment "Return the strings";
 
-pattern update_tables():void 
+unsafe pattern update_tables():void 
 address SYSupdate_tables
 comment "Procedure triggered on update of the sys._tables table";
 
-pattern update_schemas():void 
+unsafe pattern update_schemas():void 
 address SYSupdate_schemas
 comment "Procedure triggered on update of the sys.schemas table";
 
