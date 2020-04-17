@@ -154,6 +154,23 @@ stdout of test 'subquery5` in directory 'sql/test/subquery` itself:
 % bigint # type
 % 4 # length
 [ 3702	]
+#SELECT * FROM integers i1 LEFT OUTER JOIN integers i2 ON i2.i = ANY(SELECT SUM(i2.i + i3.i) FROM integers i3) = NOT EXISTS(SELECT MIN(i1.i) OVER ());
+% .i1,	.i2 # table_name
+% i,	i # name
+% int,	int # type
+% 1,	1 # length
+[ 1,	1	]
+[ 1,	2	]
+[ 1,	3	]
+[ 2,	1	]
+[ 2,	2	]
+[ 2,	3	]
+[ 3,	1	]
+[ 3,	2	]
+[ 3,	3	]
+[ NULL,	1	]
+[ NULL,	2	]
+[ NULL,	3	]
 #DROP FUNCTION evilfunction(INT);
 #DROP TABLE tbl_ProductSales;
 #DROP TABLE another_T;

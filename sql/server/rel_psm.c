@@ -139,9 +139,7 @@ psm_set_exp(sql_query *query, dnode *n)
 			} else
 				return sql_error(sql, 01, SQLSTATE(42000) "SET: Variable '%s%s%s' unknown", sname ? sname : "", sname ? "." : "", vname);
 
-			if (!exp_name(v)) 
-				exp_label(sql->sa, v, ++sql->label);
-			v = exp_ref(sql->sa, v);
+			v = exp_ref(sql, v);
 			if (!(v = rel_check_type(sql, tpe, rel_val, v, type_cast)))
 				return NULL;
 			append(b, exp_set(sql->sa, var && var->sname ? sa_strdup(sql->sa, var->sname) : NULL, sa_strdup(sql->sa, vname), v, level));
@@ -505,7 +503,7 @@ rel_psm_return( sql_query *query, sql_subtype *restype, list *restypelist, symbo
 				rel = rel_zero_or_one(sql, rel, ek);
 				if (list_length(rel->exps) != 1)
 					return sql_error(sql, 02, SQLSTATE(42000) "RETURN: must return a single column");
-				res = exp_ref(sql->sa, (sql_exp*) rel->exps->t->data);
+				res = exp_ref(sql, (sql_exp*) rel->exps->t->data);
 				requires_proj = true;
 			}
 		}
@@ -541,11 +539,8 @@ rel_psm_return( sql_query *query, sql_subtype *restype, list *restypelist, symbo
 
 			if (!cname)
 				cname = sa_strdup(sql->sa, number2name(name, sizeof(name), ++sql->label));
-			if (!isproject) {
-				if (!exp_name(e))
-					exp_label(sql->sa, e, ++sql->label);
-				e = exp_ref(sql->sa, e);
-			}
+			if (!isproject)
+				e = exp_ref(sql, e);
 			e = rel_check_type(sql, &ce->type, oexps_rel, e, type_equal);
 			if (!e)
 				return NULL;
@@ -633,9 +628,7 @@ rel_select_into( sql_query *query, symbol *sq, exp_kind ek)
 		} else
 			return sql_error(sql, 01, SQLSTATE(42000) "SELECT INTO: Variable '%s%s%s' unknown", sname ? sname : "", sname ? "." : "", vname);
 
-		if (!exp_name(v))
-			exp_label(sql->sa, v, ++sql->label);
-		v = exp_ref(sql->sa, v);
+		v = exp_ref(sql, v);
 		if (!(v = rel_check_type(sql, tpe, r, v, type_equal)))
 			return NULL;
 		v = exp_set(sql->sa, var && var->sname ? sa_strdup(sql->sa, var->sname) : NULL, sa_strdup(sql->sa, vname), v, level);
@@ -1200,6 +1193,8 @@ rel_drop_func(mvc *sql, dlist *qname, dlist *typelist, int drop_action, sql_ftyp
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)) && !if_exists)
 		return sql_error(sql, 02, SQLSTATE(3F000) "DROP %s: no such schema '%s'", F, sname);
+	if (!mvc_schema_privs(sql, s))
+		return sql_error(sql, 02, SQLSTATE(42000) "DROP %s: insufficient privileges for user '%s' in schema '%s'", F, sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")), s->base.name);
 
 	if (s)
 		func = resolve_func(sql, s, name, typelist, type, "DROP", if_exists);
@@ -1226,7 +1221,9 @@ rel_drop_all_func(mvc *sql, dlist *qname, int drop_action, sql_ftype type)
 	FUNC_TYPE_STR(type)
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
-		return sql_error(sql, 02, SQLSTATE(3F000) "DROP %s: no such schema '%s'", F, sname);
+		return sql_error(sql, 02, SQLSTATE(3F000) "DROP ALL %s: no such schema '%s'", F, sname);
+	if (!mvc_schema_privs(sql, s))
+		return sql_error(sql, 02, SQLSTATE(42000) "DROP ALL %s: insufficient privileges for user '%s' in schema '%s'", F, sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")), s->base.name);
 
 	list_func = schema_bind_func(sql, s, name, type);
 	if (!list_func) 

@@ -11647,6 +11647,12 @@ BATcalcorcst(BAT *b, const ValRecord *v, BAT *s, BAT *r)
 		return NULL;
 	}
 
+	if (b->ttype == TYPE_bit && v->vtype == TYPE_bit && v->val.btval == 1) {
+		/* true OR anything (including NIL) equals true */
+		return BATconstant(ci.hseq, TYPE_bit, &(bit){1},
+				   ncand, TRANSIENT);
+	}
+
 	bn = COLnew(ci.hseq, b->ttype, ncand, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
@@ -11876,6 +11882,12 @@ BATcalcandcst(BAT *b, const ValRecord *v, BAT *s, BAT *r)
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
 		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
+	}
+
+	if (b->ttype == TYPE_bit && v->vtype == TYPE_bit && v->val.btval == 0) {
+		/* false AND anything (including NIL) equals false */
+		return BATconstant(ci.hseq, TYPE_bit, &(bit){0},
+				   ncand, TRANSIENT);
 	}
 
 	bn = COLnew(ci.hseq, b->ttype, ncand, TRANSIENT);
