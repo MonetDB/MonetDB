@@ -2039,7 +2039,7 @@ rewrite_anyequal(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 				}
 			}
 
-			if (is_project(rel->op) || depth > 0 || (!is_tuple && rsq && rel_has_freevar(sql, rsq) && !is_anyequal(sf))) {
+			if (is_project(rel->op) || (is_select(rel->op) && (depth > 0 || (!is_tuple && rsq && rel_has_freevar(sql, rsq) && !is_anyequal(sf))))) {
 				list *exps = NULL;
 				sql_exp *rid, *lid, *a = NULL;
 				sql_rel *sq = lsq;
