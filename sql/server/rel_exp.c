@@ -2274,16 +2274,15 @@ exps_alias(mvc *sql, list *exps)
 }
 
 list *
-exps_copy( mvc *sql, list *exps)
+exps_copy(mvc *sql, list *exps)
 {
-	node *n;
 	list *nl;
 
 	if (!exps)
-		return exps;
+		return NULL;
 
 	nl = new_exp_list(sql->sa);
-	for(n = exps->h; n; n = n->next) {
+	for (node *n = exps->h; n; n = n->next) {
 		sql_exp *arg = n->data;
 
 		arg = exp_copy(sql, arg);
@@ -2295,7 +2294,7 @@ exps_copy( mvc *sql, list *exps)
 }
 
 sql_exp *
-exp_copy( mvc *sql, sql_exp * e)
+exp_copy(mvc *sql, sql_exp * e)
 {
 	sql_exp *l, *r, *r2, *ne = NULL;
 
@@ -2308,51 +2307,39 @@ exp_copy( mvc *sql, sql_exp * e)
 		if (e->flag == cmp_or || e->flag == cmp_filter) {
 			list *l = exps_copy(sql, e->l);
 			list *r = exps_copy(sql, e->r);
-			if (l && r) {
-				if (e->flag == cmp_filter)
-					ne = exp_filter(sql->sa, l, r, e->f, is_anti(e));
-				else
-					ne = exp_or(sql->sa, l, r, is_anti(e));
-			}
+
+			if (e->flag == cmp_filter)
+				ne = exp_filter(sql->sa, l, r, e->f, is_anti(e));
+			else
+				ne = exp_or(sql->sa, l, r, is_anti(e));
 		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
 			sql_exp *l = exp_copy(sql, e->l);
 			list *r = exps_copy(sql, e->r);
 
-			if (l && r) 
-				ne = exp_in(sql->sa, l, r, e->flag);
+			ne = exp_in(sql->sa, l, r, e->flag);
 		} else {
 			l = exp_copy(sql, e->l);
 			r = exp_copy(sql, e->r);
 
 			if (e->f) {
 				r2 = exp_copy(sql, e->f);
-				if (l && r && r2)
-					ne = exp_compare2(sql->sa, l, r, r2, e->flag);
-			} else if (l && r) {
+				ne = exp_compare2(sql->sa, l, r, r2, e->flag);
+			} else {
 				ne = exp_compare(sql->sa, l, r, e->flag);
 			}
 		}
 		break;
 	case e_convert:
-		l = exp_copy(sql, e->l);
-		if (l)
-			ne = exp_convert(sql->sa, l, exp_fromtype(e), exp_totype(e));
+		ne = exp_convert(sql->sa, exp_copy(sql, e->l), exp_fromtype(e), exp_totype(e));
 		break;
 	case e_aggr:
 	case e_func: {
-		list *l = e->l, *nl = NULL;
+		list *l = exps_copy(sql, e->l);
 
-		if (!l) {
-			return e;
-		} else {
-			nl = exps_copy(sql, l);
-			if (!nl)
-				return NULL;
-		}
 		if (e->type == e_func)
-			ne = exp_op(sql->sa, nl, e->f);
+			ne = exp_op(sql->sa, l, e->f);
 		else 
-			ne = exp_aggr(sql->sa, nl, e->f, need_distinct(e), need_no_nil(e), e->card, has_nil(e));
+			ne = exp_aggr(sql->sa, l, e->f, need_distinct(e), need_no_nil(e), e->card, has_nil(e));
 		break;
 	}	
 	case e_atom:
@@ -2378,7 +2365,7 @@ exp_copy( mvc *sql, sql_exp * e)
 		} else if (e->flag & PSM_WHILE) {
 			ne = exp_while(sql->sa, exp_copy(sql, e->l), exps_copy(sql, e->r));
 		} else if (e->flag & PSM_IF) {
-			ne = exp_if(sql->sa, exp_copy(sql, e->l), exps_copy(sql, e->r), e->f ? exps_copy(sql, e->f) : NULL);
+			ne = exp_if(sql->sa, exp_copy(sql, e->l), exps_copy(sql, e->r), exps_copy(sql, e->f));
 		} else if (e->flag & PSM_REL) {
 			return exp_ref(sql, e);
 		} else if (e->flag & PSM_EXCEPTION) {
