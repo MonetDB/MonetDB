@@ -949,7 +949,7 @@ push_up_topn(mvc *sql, sql_rel *rel)
 	if (rel && (is_semi(rel->op) || is_join(rel->op)) && is_dependent(rel)) {
 		sql_rel *r = rel->r;
 
-		if (r && r->op == op_topn) {
+		if (r && is_topn(r->op)) {
 			/* remove old topn */
 			rel->r = rel_dup(r->l);
 			rel = rel_topn(sql->sa, rel, r->exps);

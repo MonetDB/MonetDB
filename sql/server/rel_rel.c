@@ -90,8 +90,8 @@ rel_destroy_(sql_rel *rel)
 	    is_semi(rel->op) ||
 	    is_select(rel->op) ||
 	    is_set(rel->op) ||
-	    rel->op == op_topn ||
-		rel->op == op_sample) {
+	    is_topn(rel->op) ||
+		is_sample(rel->op)) {
 		if (rel->l)
 			rel_destroy(rel->l);
 		if (rel->r)
@@ -358,7 +358,8 @@ rel_bind_column2( mvc *sql, sql_rel *rel, const char *tname, const char *cname, 
 		   is_sort(rel) ||
 		   is_semi(rel->op) ||
 		   is_select(rel->op) ||
-		   is_topn(rel->op)) {
+		   is_topn(rel->op) ||
+		   is_sample(rel->op)) {
 		if (rel->l)
 			return rel_bind_column2(sql, rel->l, tname, cname, f);
 	}
@@ -1566,7 +1567,7 @@ rel_in_rel(sql_rel *super, sql_rel *sub)
 sql_rel*
 rel_parent(sql_rel *rel)
 {
-	if (rel->l && (is_project(rel->op) || rel->op == op_topn || rel->op == op_sample)) {
+	if (rel->l && (is_project(rel->op) || is_topn(rel->op) || is_sample(rel->op))) {
 		sql_rel *l = rel->l;
 		if (is_project(l->op))
 			return l;
@@ -1587,7 +1588,7 @@ lastexp(sql_rel *rel)
 sql_rel *
 rel_zero_or_one(mvc *sql, sql_rel *rel, exp_kind ek)
 {
-	if (is_topn(rel->op))
+	if (is_topn(rel->op) || is_sample(rel->op))
 		rel = rel_project(sql->sa, rel, rel_projections(sql, rel, NULL, 1, 0));
 	if (ek.card < card_set && rel->card > CARD_ATOM) {
 		assert (is_simple_project(rel->op) || is_set(rel->op));

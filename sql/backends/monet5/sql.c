@@ -73,7 +73,7 @@ rel_no_mitosis(sql_rel *rel)
 
 	if (!rel || is_basetable(rel->op))
 		return 1;
-	if (is_topn(rel->op) || rel->op == op_project)
+	if (is_topn(rel->op) || is_sample(rel->op) || is_simple_project(rel->op))
 		return rel_no_mitosis(rel->l);
 	if (is_modify(rel->op) && rel->card <= CARD_AGGR) {
 		if (is_delete(rel->op))
@@ -5451,7 +5451,7 @@ SQLsession_prepared_statements_args(Client cntxt, MalBlkPtr mb, MalStkPtr stk, I
 			int arg_number = 0;
 			bte inout = ARG_OUT;
 
-			if (r && is_topn(r->op))
+			if (r && (is_topn(r->op) || is_sample(r->op)))
 				r = r->l;
 
 			if (r && is_project(r->op) && r->exps) {
