@@ -107,11 +107,14 @@ URL: https://www.monetdb.org/
 BugURL: https://bugs.monetdb.org/
 Source: https://www.monetdb.org/downloads/sources/Nov2019-SP3/%{name}-%{version}.tar.bz2
 
-# we need systemd for the _unitdir macro to exist
-# we need checkpolicy and selinux-policy-devel for the SELinux policy
+# The Fedora packaging document says we need systemd-rpm-macros for
+# the _unitdir and _tmpfilesdir macros to exist; however on RHEL 7
+# that doesn't exist and we need systemd, so instead we just require
+# the macro file that contains the definitions.
+# We need checkpolicy and selinux-policy-devel for the SELinux policy.
 %if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
 # RHEL >= 7, and all current Fedora
-BuildRequires: systemd
+BuildRequires: /usr/lib/rpm/macros.d/macros.systemd
 BuildRequires: checkpolicy
 BuildRequires: selinux-policy-devel
 BuildRequires: hardlink
