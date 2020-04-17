@@ -33,6 +33,7 @@
 #include "mal_authorize.h"
 #include "mal_private.h"
 
+
 #define MAX_MAL_MODULES 128
 static int mal_modules = 0;
 static int mal_total_modules = 0;
