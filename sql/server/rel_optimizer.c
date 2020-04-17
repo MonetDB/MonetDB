@@ -8251,7 +8251,8 @@ rel_split_outerjoin(mvc *sql, sql_rel *rel, int *changes)
 	       	e = rel->exps->h->data;
 		nll->exps = exps_copy(sql, e->l);
 		nlr->exps = exps_copy(sql, e->r);
-		nl = rel_or( sql, NULL, nll, nlr, NULL, NULL, NULL);
+		if (!(nl = rel_or( sql, NULL, nll, nlr, NULL, NULL, NULL)))
+			return NULL;
 
 		if (rel->op == op_left || rel->op == op_full) {
 			/* split in 2 anti joins */

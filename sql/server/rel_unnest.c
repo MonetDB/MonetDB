@@ -1765,14 +1765,17 @@ rewrite_or_exp(mvc *sql, sql_rel *rel, int *changes)
 
 					l = rel_select(sql->sa, l, NULL);
 					l->exps = e->l;
-					l = rewrite_or_exp(sql, l, changes);
+					if (!(l = rewrite_or_exp(sql, l, changes)))
+						return NULL;
 					r = rel_select(sql->sa, r, NULL);
 					r->exps = e->r;
-					r = rewrite_or_exp(sql, r, changes);
+					if (!(r = rewrite_or_exp(sql, r, changes)))
+						return NULL;
 
 					list *ls = rel_projections(sql, rel, NULL, 1, 1);
 					list *rs = rel_projections(sql, rel, NULL, 1, 1);
-					rel = rel_setop_check_types(sql, l, r, ls, rs, op_union);
+					if (!(rel = rel_setop_check_types(sql, l, r, ls, rs, op_union)))
+						return NULL;
 					rel = rel_distinct(rel);
 					rel_set_exps(rel, exps);
 					(*changes)++;
