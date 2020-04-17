@@ -2298,6 +2298,8 @@ exp_copy(mvc *sql, sql_exp * e)
 {
 	sql_exp *l, *r, *r2, *ne = NULL;
 
+	if (!e)
+		return NULL;
 	switch(e->type){
 	case e_column:
 		ne = exp_column(sql->sa, e->l, e->r, exp_subtype(e), e->card, has_nil(e), is_intern(e));
