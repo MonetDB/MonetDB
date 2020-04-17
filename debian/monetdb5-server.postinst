@@ -14,7 +14,8 @@ case "$1" in
 	    addgroup --system monetdb
 	fi
         if ! getent passwd monetdb > /dev/null; then
-            adduser --system --ingroup monetdb --home /var/lib/monetdb --disabled-password --shell /usr/sbin/nologin monetdb
+            adduser --system --ingroup monetdb --home /var/lib/monetdb \
+		    --disabled-password --shell /usr/sbin/nologin monetdb
         fi
 	# move database from old location to new location
 	if [ -d /var/MonetDB5/dbfarm -a -d /var/monetdb5/dbfarm -a ! /var/MonetDB5/dbfarm -ef /var/monetdb5/dbfarm ]; then
@@ -29,6 +30,9 @@ case "$1" in
 	mkdir -p /var/monetdb5/dbfarm
 	chown monetdb:monetdb /var/monetdb5 /var/monetdb5/dbfarm
 	chmod ug=rwx,g+s,o= /var/monetdb5 /var/monetdb5/dbfarm
+	mkdir -p /var/lib/monetdb
+	chown monetdb:monetdb /var/lib/monetdb
+	chmod ug=rwx,g+s,o= /var/lib/monetdb
     ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)

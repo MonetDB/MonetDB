@@ -519,15 +519,27 @@ package if you want to use the MonetDB database system.  If you want
 to use the SQL front end, you also need %{name}-SQL-server5.
 
 %pre -n MonetDB5-server
-getent group monetdb >/dev/null || groupadd -r monetdb
-getent passwd monetdb >/dev/null || \
-    useradd -r -g monetdb -d %{_localstatedir}/MonetDB -s /sbin/nologin \
-	-c "MonetDB Server" monetdb
+getent group monetdb >/dev/null || groupadd --system monetdb
+if getent passwd monetdb >/dev/null; then
+    case $(getent passwd monetdb | cut -d: -f6) in
+    %{_localstatedir}/MonetDB) # old value
+	# change home directory, but not using usermod
+	# usermod requires there not to be any running processes owned by the user
+	EDITOR='sed -i "/^monetdb:/s|:%{_localstatedir}/MonetDB:|:%{_localstatedir}/lib/monetdb:|"'
+	unset VISUAL
+	export EDITOR
+	/sbin/vipw > /dev/null
+	;;
+    esac
+else
+    useradd --system --gid monetdb --home-dir %{_localstatedir}/lib/monetdb \
+	--shell /sbin/nologin --comment "MonetDB Server" monetdb
+fi
 exit 0
 
 %files -n MonetDB5-server
 %defattr(-,root,root)
-%attr(750,monetdb,monetdb) %dir %{_localstatedir}/MonetDB
+%attr(2750,monetdb,monetdb) %dir %{_localstatedir}/lib/monetdb
 %attr(2770,monetdb,monetdb) %dir %{_localstatedir}/monetdb5
 %attr(2770,monetdb,monetdb) %dir %{_localstatedir}/monetdb5/dbfarm
 %{_bindir}/mserver5
@@ -910,7 +922,7 @@ mv %{buildroot}%{_sysconfdir}/tmpfiles.d/monetdbd.conf %{buildroot}%{_tmpfilesdi
 rmdir %{buildroot}%{_sysconfdir}/tmpfiles.d
 %endif
 
-install -d -m 0750 %{buildroot}%{_localstatedir}/MonetDB
+install -d -m 0750 %{buildroot}%{_localstatedir}/lib/monetdb
 install -d -m 0770 %{buildroot}%{_localstatedir}/monetdb5/dbfarm
 install -d -m 0775 %{buildroot}%{_localstatedir}/log/monetdb
 install -d -m 0775 %{buildroot}%{_rundir}/monetdb
