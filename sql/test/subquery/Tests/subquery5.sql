@@ -159,6 +159,36 @@ SELECT * FROM integers i1 LEFT OUTER JOIN integers i2 ON i2.i = ANY(SELECT SUM(i
 	-- NULL 2
 	-- NULL 1
 
+SELECT * FROM integers i1 RIGHT OUTER JOIN integers i2 ON i2.i = ANY(SELECT SUM(i2.i + i3.i) FROM integers i3) = NOT EXISTS(SELECT MIN(i1.i) OVER ());
+	-- 1 3
+	-- 1 2
+	-- 1 1
+	-- 2 3
+	-- 2 2
+	-- 2 1
+	-- 3 3
+	-- 3 2
+	-- 3 1
+	-- NULL 3
+	-- NULL 2
+	-- NULL 1
+	-- NULL NULL
+
+SELECT * FROM integers i1 FULL OUTER JOIN integers i2 ON i2.i = ANY(SELECT SUM(i2.i + i3.i) FROM integers i3) = NOT EXISTS(SELECT MIN(i1.i) OVER ());
+	-- 1 3
+	-- 1 2
+	-- 1 1
+	-- 2 3
+	-- 2 2
+	-- 2 1
+	-- 3 3
+	-- 3 2
+	-- 3 1
+	-- NULL 3
+	-- NULL 2
+	-- NULL 1
+	-- NULL NULL
+
 DROP FUNCTION evilfunction(INT);
 DROP TABLE tbl_ProductSales;
 DROP TABLE another_T;
