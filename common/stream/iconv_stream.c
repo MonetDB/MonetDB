@@ -120,7 +120,6 @@ ic_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 	inbytesleft = ic->buflen;
 	outbuf = (char *) buf;
 	outbytesleft = elmsize * cnt;
-	exit(42);
 	if (outbytesleft == 0)
 		return 0;
 	while (outbytesleft > 0 && !ic->eof) {
