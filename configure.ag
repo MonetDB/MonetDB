@@ -314,14 +314,14 @@ AC_ARG_ENABLE([static-analysis],
 MONETDB5_PASSWDHASH="SHA512"
 AC_ARG_WITH([password-backend],
 	[AS_HELP_STRING([--with-password-backend=HASHALG],
-		[password hash algorithm, one of MD5, SHA1, RIPEMD160, SHA224, SHA256, SHA384, SHA512, defaults to SHA512])],
+		[password hash algorithm, one of SHA1, RIPEMD160, SHA224, SHA256, SHA384, SHA512, defaults to SHA512])],
 	[password_backend="$withval"])
 AS_CASE([$password_backend],
 	[yes|no|auto|""],
 		[],
-	[MD5|SHA1|RIPEMD160|SHA224|SHA256|SHA384|SHA512],
+	[SHA1|RIPEMD160|SHA224|SHA256|SHA384|SHA512],
 		[MONETDB5_PASSWDHASH="$password_backend"],
-	[AC_MSG_ERROR(['$password_backend' invalid, choose one of MD5, SHA1, RIPEMD160, SHA224, SHA256, SHA384, SHA512])])
+	[AC_MSG_ERROR(['$password_backend' invalid, choose one of SHA1, RIPEMD160, SHA224, SHA256, SHA384, SHA512])])
 AC_DEFINE_UNQUOTED([MONETDB5_PASSWDHASH], ["$MONETDB5_PASSWDHASH"],
 	[The used password hash algorithm])
 AC_DEFINE_UNQUOTED([MONETDB5_PASSWDHASH_TOKEN], [$MONETDB5_PASSWDHASH],

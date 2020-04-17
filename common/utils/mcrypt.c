@@ -84,7 +84,7 @@ mcrypt_getHashAlgorithms(void)
 char *
 mcrypt_MD5Sum(const char *string, size_t len)
 {
-#if !defined(HAVE_EMBEDDED)
+#ifndef HAVE_EMBEDDED
 	MD5_CTX c;
 	unsigned char md[MD5_DIGEST_LENGTH];
 	char *ret;
@@ -114,6 +114,7 @@ mcrypt_MD5Sum(const char *string, size_t len)
 }
 #endif
 
+#ifdef HAVE_SHA1_UPDATE
 /**
  * Returns a malloced string representing the hex representation of
  * the SHA-1 hash of the given string.
@@ -121,7 +122,7 @@ mcrypt_MD5Sum(const char *string, size_t len)
 char *
 mcrypt_SHA1Sum(const char *string, size_t len)
 {
-#if !defined(HAVE_EMBEDDED) && defined(HAVE_SHA1_UPDATE)
+#ifndef HAVE_EMBEDDED
 	SHA_CTX c;
 	unsigned char md[SHA_DIGEST_LENGTH];
 	char *ret;
@@ -149,7 +150,9 @@ mcrypt_SHA1Sum(const char *string, size_t len)
 	return NULL;
 #endif
 }
+#endif
 
+#ifdef HAVE_SHA224_UPDATE
 /**
  * Returns a malloced string representing the hex representation of
  * the SHA-224 hash of the given string.
@@ -157,7 +160,7 @@ mcrypt_SHA1Sum(const char *string, size_t len)
 char *
 mcrypt_SHA224Sum(const char *string, size_t len)
 {
-#if !defined(HAVE_EMBEDDED) && defined(HAVE_SHA224_UPDATE)
+#ifndef HAVE_EMBEDDED
 	SHA256_CTX c;
 	unsigned char md[SHA224_DIGEST_LENGTH];
 	char *ret;
@@ -188,7 +191,9 @@ mcrypt_SHA224Sum(const char *string, size_t len)
 	return NULL;
 #endif
 }
+#endif
 
+#ifdef HAVE_SHA256_UPDATE
 /**
  * Returns a malloced string representing the hex representation of
  * the SHA-256 hash of the given string.
@@ -196,7 +201,7 @@ mcrypt_SHA224Sum(const char *string, size_t len)
 char *
 mcrypt_SHA256Sum(const char *string, size_t len)
 {
-#if !defined(HAVE_EMBEDDED) && defined(HAVE_SHA256_UPDATE)
+#ifndef HAVE_EMBEDDED
 	SHA256_CTX c;
 	unsigned char md[SHA256_DIGEST_LENGTH];
 	char *ret;
@@ -229,7 +234,9 @@ mcrypt_SHA256Sum(const char *string, size_t len)
 	return NULL;
 #endif
 }
+#endif
 
+#ifdef HAVE_SHA384_UPDATE
 /**
  * Returns a malloced string representing the hex representation of
  * the SHA-384 hash of the given string.
@@ -237,7 +244,7 @@ mcrypt_SHA256Sum(const char *string, size_t len)
 char *
 mcrypt_SHA384Sum(const char *string, size_t len)
 {
-#if !defined(HAVE_EMBEDDED) && defined(HAVE_SHA384_UPDATE)
+#ifndef HAVE_EMBEDDED
 	SHA512_CTX c;
 	unsigned char md[SHA384_DIGEST_LENGTH];
 	char *ret;
@@ -274,7 +281,9 @@ mcrypt_SHA384Sum(const char *string, size_t len)
 	return NULL;
 #endif
 }
+#endif
 
+#ifdef HAVE_SHA512_UPDATE
 /**
  * Returns a malloced string representing the hex representation of
  * the SHA-512 hash of the given string.
@@ -282,7 +291,7 @@ mcrypt_SHA384Sum(const char *string, size_t len)
 char *
 mcrypt_SHA512Sum(const char *string, size_t len)
 {
-#if !defined(HAVE_EMBEDDED) && defined(HAVE_SHA512_UPDATE)
+#ifndef HAVE_EMBEDDED
 	SHA512_CTX c;
 	unsigned char md[SHA512_DIGEST_LENGTH];
 	char *ret;
@@ -321,11 +330,12 @@ mcrypt_SHA512Sum(const char *string, size_t len)
 #else
 	(void) string;
 	(void) len;
-	fprintf(stderr, "No SHA512 digest function available.\n");
 	return NULL;
 #endif
 }
+#endif
 
+#ifdef HAVE_RIPEMD160_UPDATE
 /**
  * Returns a malloced string representing the hex representation of
  * the RIPEMD-160 hash of the given string.
@@ -333,7 +343,7 @@ mcrypt_SHA512Sum(const char *string, size_t len)
 char *
 mcrypt_RIPEMD160Sum(const char *string, size_t len)
 {
-#if !defined(HAVE_EMBEDDED) && defined(HAVE_RIPEMD160_UPDATE)
+#ifndef HAVE_EMBEDDED
 	RIPEMD160_CTX c;
 	unsigned char md[RIPEMD160_DIGEST_LENGTH];
 	char *ret;
@@ -358,10 +368,10 @@ mcrypt_RIPEMD160Sum(const char *string, size_t len)
 #else
 	(void) string;
 	(void) len;
-	fprintf(stderr, "No RIPEMD160 digest function available.\n");
 	return NULL;
 #endif
 }
+#endif
 
 /**
  * Returns a malloced string representing the hex representation of
@@ -377,7 +387,6 @@ mcrypt_BackendSum(const char *string, size_t len)
 #else
 	(void) string;
 	(void) len;
-	fprintf(stderr, "No digest function available.\n");
 	return NULL;
 #endif
 }
