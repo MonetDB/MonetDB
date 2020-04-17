@@ -769,13 +769,13 @@ JSONstringParser(const char *j, const char **next)
 
 static bool
 JSONintegerParser(const char *j, const char **next) {
-  if (*j == '-')
-    j++;
+	if (*j == '-')
+		j++;
 
-  // skipblancs(j);
-  if (!isdigit((unsigned char)*j)) {
-    *next = j;
-    return false;
+	// skipblancs(j);
+	if (!isdigit((unsigned char)*j)) {
+		*next = j;
+		return false;
 	}
 
 	if (*j == '0') {
@@ -784,7 +784,7 @@ JSONintegerParser(const char *j, const char **next) {
 	}
 
 	for(; *j; j++)
-		if (!(isdigit((unsigned char) *j) && *j != '0'))
+		if (!(isdigit((unsigned char) *j)))
 			break;
 	*next = j;
 
