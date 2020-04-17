@@ -2366,10 +2366,24 @@ exp_copy( mvc *sql, sql_exp * e)
 			ne = exp_atom_ref(sql->sa, e->flag, &e->tpe);
 		break;
 	case e_psm:
-		if (e->flag & PSM_SET) 
+		if (e->flag & PSM_SET) {
 			ne = exp_set(sql->sa, e->alias.name, exp_copy(sql, e->l), GET_PSM_LEVEL(e->flag));
-		if (e->flag & PSM_REL)
+		} else if (e->flag & PSM_VAR) {
+			if (e->f)
+				ne = exp_table(sql->sa, e->alias.name, e->f, GET_PSM_LEVEL(e->flag));
+			else
+				ne = exp_var(sql->sa, e->alias.name, &e->tpe, GET_PSM_LEVEL(e->flag));
+		} else if (e->flag & PSM_RETURN) {
+			ne = exp_return(sql->sa, exp_copy(sql, e->l), GET_PSM_LEVEL(e->flag));
+		} else if (e->flag & PSM_WHILE) {
+			ne = exp_while(sql->sa, exp_copy(sql, e->l), exps_copy(sql, e->r));
+		} else if (e->flag & PSM_IF) {
+			ne = exp_if(sql->sa, exp_copy(sql, e->l), exps_copy(sql, e->r), e->f ? exps_copy(sql, e->f) : NULL);
+		} else if (e->flag & PSM_REL) {
 			return exp_ref(sql, e);
+		} else if (e->flag & PSM_EXCEPTION) {
+			ne = exp_exception(sql->sa, exp_copy(sql, e->l), sa_strdup(sql->sa, (const char *) e->r));
+		}
 		break;
 	}
 	if (!ne)
