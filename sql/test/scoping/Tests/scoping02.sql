@@ -67,3 +67,11 @@ SELECT scoping02(vals) FROM (VALUES (1), (2)) AS vals(vals);
 	-- 2
 
 DROP FUNCTION scoping02(INT);
+
+CREATE TABLE "sys" ("current_schema" string);
+INSERT INTO "sys" VALUES ('astring');
+
+SELECT "sys"."current_schema" FROM "sys";
+	-- astring
+
+DROP TABLE "sys";
