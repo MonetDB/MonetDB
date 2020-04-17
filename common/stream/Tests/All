@@ -12,3 +12,4 @@ HAVE_LIBLZ4?write_xz
 
 read_iconv
 write_iconv
+
