@@ -210,7 +210,7 @@ create_range_partition_anti_rel(sql_query* query, sql_table *mt, sql_table *pt, 
 				anti_exp = anti_nils;
 		}
 	} else {
-		anti_exp = exp_compare(sql->sa, anti_nils, exp_atom_bool(sql->sa, 1), cmp_notequal);
+		anti_exp = exp_compare(sql->sa, anti_nils, exp_atom_bool(sql->sa, 0), cmp_equal);
 	}
 
 	anti_rel = rel_select(sql->sa, anti_rel, anti_exp);
@@ -252,7 +252,7 @@ create_list_partition_anti_rel(sql_query* query, sql_table *mt, sql_table *pt, b
 		}
 	} else {
 		assert(with_nills);
-		anti_exp = exp_compare(sql->sa, anti_nils, exp_atom_bool(sql->sa, 1), cmp_notequal);
+		anti_exp = exp_compare(sql->sa, anti_nils, exp_atom_bool(sql->sa, 0), cmp_equal);
 	}
 
 	anti_rel = rel_select(sql->sa, anti_rel, anti_exp);
@@ -694,7 +694,7 @@ rel_generate_subinserts(sql_query *query, sql_rel *rel, sql_table *t, int *chang
 				found_nils |= is_bit_nil(pt->with_nills);
 				if (pt->with_nills == false) { /* full range without nils */
 					sql_exp *nils = rel_unop_(sql, dup, le, NULL, "isnull", card_value);
-					nils = exp_compare(sql->sa, nils, exp_atom_bool(sql->sa, 1), cmp_notequal);
+					nils = exp_compare(sql->sa, nils, exp_atom_bool(sql->sa, 0), cmp_equal);
 					full_range = range = nils; /* ugh */
 				}
 			}
@@ -795,7 +795,7 @@ rel_generate_subinserts(sql_query *query, sql_rel *rel, sql_table *t, int *chang
 		} else if (!anti_exp) {
 			anti_nils = rel_unop_(sql, NULL, exp_copy(sql, anti_le), NULL, "isnull", card_value);
 			set_has_no_nil(anti_nils);
-			anti_exp = exp_compare(sql->sa, anti_nils, exp_atom_bool(sql->sa, 1), cmp_notequal);
+			anti_exp = exp_compare(sql->sa, anti_nils, exp_atom_bool(sql->sa, 0), cmp_equal);
 		}
 		//generate a count aggregation for the values not present in any of the partitions
 		anti_rel = rel_select(sql->sa, anti_rel, anti_exp);
@@ -911,7 +911,7 @@ rel_subtable_insert(sql_query *query, sql_rel *rel, sql_table *t, int *changes)
 				found_all_range_values = pt->with_nills != 1;
 				if (pt->with_nills == true) {
 					anti_nils = rel_unop_(sql, anti_dup, exp_copy(sql, anti_le), NULL, "isnull", card_value);
-					anti_exp = exp_compare(sql->sa, anti_nils, exp_atom_bool(sql->sa, 1), cmp_notequal);
+					anti_exp = exp_compare(sql->sa, anti_nils, exp_atom_bool(sql->sa, 0), cmp_equal);
 				}
 			} else {
 				sql_exp *e2 = create_table_part_atom_exp(sql, pt->tpe, pt->part.range.maxvalue);
@@ -957,7 +957,7 @@ rel_subtable_insert(sql_query *query, sql_rel *rel, sql_table *t, int *changes)
 		} else {
 			assert(pt->with_nills);
 			anti_nils = rel_unop_(sql, anti_dup, exp_copy(sql, anti_le), NULL, "isnull", card_value);
-			anti_exp = exp_compare(sql->sa, anti_nils, exp_atom_bool(sql->sa, 1), cmp_notequal);
+			anti_exp = exp_compare(sql->sa, anti_nils, exp_atom_bool(sql->sa, 0), cmp_equal);
 		}
 	} else {
 		assert(0);
