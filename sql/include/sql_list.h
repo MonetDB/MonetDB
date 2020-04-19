@@ -34,14 +34,14 @@ typedef struct list {
 typedef int (*traverse_func) (void *clientdata, int seqnr, void *data);
 
 extern list *list_create(fdestroy destroy);
-extern list *sa_list(sql_allocator *sa);
+sql_export list *sa_list(sql_allocator *sa);
 extern list *list_new(sql_allocator *sa, fdestroy destroy);
 
 extern void list_destroy(list *l);
-extern int list_length(list *l);
+sql_export int list_length(list *l);
 extern int list_empty(list *l);
 
-extern list *list_append(list *l, void *data);
+sql_export list *list_append(list *l, void *data);
 extern list *list_append_before(list *l, node *n, void *data);
 extern list *list_prepend(list *l, void *data);
 

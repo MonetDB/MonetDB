@@ -1,0 +1,13 @@
+#[[
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0.  If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+#]]
+
+if(NOT WIN32)
+  add_subdirectory(merovingian)
+endif()
+add_subdirectory(mserver)
+add_subdirectory(embedded)

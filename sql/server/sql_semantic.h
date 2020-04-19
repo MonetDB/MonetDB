@@ -19,7 +19,7 @@ typedef struct exp_kind_t {
 	bit reduce;	
 } exp_kind;
 
-extern sql_schema *cur_schema(mvc *sql);
+sql_export sql_schema *cur_schema(mvc *sql);
 extern sql_schema *tmp_schema(mvc *sql);
 extern char *qname_schema(dlist *qname);
 extern char *qname_table(dlist *qname);

@@ -54,10 +54,6 @@ malBootstrap(char *modules[], int embedded)
 		MCfreeClient(c);
 		throw(MAL, "malBootstrap", "Failed to create client thread");
 	}
-	if ((msg = malIncludeDefault(c, 0, embedded, 0)) != MAL_SUCCEED) {
-		MCfreeClient(c);
-		return msg;
-	}
 	if ((msg = malIncludeModules(c, modules, 0, embedded)) != MAL_SUCCEED) {
 		MCfreeClient(c);
 		return msg;

@@ -1,0 +1,166 @@
+#!@PYTHON@
+
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0.  If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
+
+import os
+import sys
+import argparse
+
+
+def open_convert_file(srcfile):
+    with open(srcfile, 'r') as f:
+        content = f.read()
+    return content
+
+
+def write_c_file(module_name, language, buffer_as_string, c_filename):
+    # [NOTE]: also escape the { and } character in the strings
+    with open(c_filename, 'w') as f:
+        f.write("unsigned char _{mod}_{lang}[] = {{{buf}0}};\n".format(
+            mod=module_name,
+            lang=language,
+            buf=buffer_as_string))
+        f.write("#include \"monetdb_config.h\"\n")
+        f.write("#include \"{lang}_import.h\"\n".format(lang=language))
+        f.write("#ifdef _MSC_VER\n")
+        f.write("#undef read\n")
+        f.write("#pragma section(\".CRT$XCU\",read)\n")
+        f.write("#endif\n")
+        f.write("LIB_STARTUP_FUNC(init_{mod}_{lang})\n"
+                "{{ {lang}_register(\"{mod}\", _{mod}"
+                "_{lang}); }}\n".format(mod=module_name, lang=language))
+
+def mal2c(content):
+    c_array = ""
+    for line in content.split('\n'):
+        if ((line.startswith("#") == False) and
+            (line.startswith("comment") == False) and
+            (line.startswith("include") == False) and
+            (len(line.strip()) > 0)):
+            array_line = ",".join(str(ord(c)) for c in line + "\n") + ","
+            c_array += array_line
+        if (line.startswith("comment")):
+            array_line = ",".join(str(ord(c)) for c in ";\n") + ","
+            c_array += array_line
+    return c_array
+
+
+def sql2c(content):
+    c_array = ""
+    for line in content.split('\n'):
+        if ((line.startswith("--") == False) and
+            (len(line.strip()) > 0)):
+            array_line = ",".join(str(ord(c)) for c in line + "\n") + ","
+            c_array += array_line
+    return c_array
+
+
+def create_c_sourcefile(srcfile, lang, mod, c_filename):
+    content = open_convert_file(srcfile)
+    if(lang == 'mal'):
+       # buffer_as_string = mal2c(content)
+       # buffer_as_string = copy2c(content)
+       buffer_as_string = txt2c(content, 0)
+    if(lang == 'sql'):
+       # buffer_as_string = sql2c(content)
+       # buffer_as_string = copy2c(content)
+       buffer_as_string = txt2c(content, 1)
+    write_c_file(mod, lang, buffer_as_string, c_filename)
+
+def copy2c(content):
+    return ",".join(str(ord(c)) for c in content) + ","
+
+    
+def txt2c(content, sql):
+    buffer = bytearray()
+
+    i = 0
+    cur_state = 0
+
+    endloop = len(content) - 1
+
+    # STATES 0 - OK, 1 in # comment, 2 between comment keyword and comment block (removing comments),
+    # 3 inside address comment block (removing comments),
+    # 4 inside whitespaces
+    while i < endloop:
+        c = content[i]
+
+        if cur_state == 1:  # inside an hashtag comment
+            if c == '\n':
+                cur_state = 0
+            i += 1
+            continue
+        elif cur_state == 2:  # before entering a MAL comment, and removing it
+            if c == '"':
+                cur_state = 3
+            i += 1
+            continue
+        elif cur_state == 3:  # inside a MAL comment, and removing it
+            if c == '\\':
+                i += 2
+            elif c == '"':
+                cur_state = 0
+                i += 1
+            else:
+                i += 1
+            continue
+        elif cur_state == 4:  # inside whitespaces
+            if c not in (' ', '\t', '\n'):
+                cur_state = 0
+                continue
+            i += 1
+            continue
+
+        if c == '#':
+            cur_state = 1
+            i += 1
+            continue
+        elif 0 and c == 'c' and i + 8 < endloop and content[i:i+7] == 'comment' and content[i-1].isspace() and content[i+7].isspace():
+            cur_state = 2
+            i += 6
+            continue
+        if sql != 0:
+            if i+2 < endloop and content[i:i+2] == '--':
+                i += 2
+                cur_state = 1 # remove comment
+                continue
+        if sql == 0 and c == 'i' and i + 8 < endloop and content[i:i+7] == 'include' and content[i-1].isspace() and content[i+7].isspace():
+                cur_state = 1 # remove include line from mal
+                i += 7
+                continue
+
+        buffer.append(ord(c))
+
+        if c in (' ', '\t', '\n'):
+            cur_state = 4
+        i += 1
+
+    if len(buffer) < 0: # nothing too add, ie return error
+        sys.exit(-1)
+    buffer_as_string = ",".join(str(c) for c in buffer) + ','
+    #return buffer
+    return buffer_as_string
+
+    
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("name", help="The name of the module to convert")
+    parser.add_argument("language",
+                        help="The language of the file to convert",
+                        choices=['mal', 'sql'])
+    parser.add_argument("filename", help="The name of the file to convert")
+    parser.add_argument("c_filename", help="The name of the c file to output")
+    args=parser.parse_args()
+
+    create_c_sourcefile(args.filename,
+                        args.language,
+                        args.name,
+                        args.c_filename)
+
+
+if __name__ == '__main__':
+    main()

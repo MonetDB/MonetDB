@@ -1,0 +1,63 @@
+#[[
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0.  If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+#]]
+
+if(HAVE_LIBR)
+  add_library(rapi MODULE)
+
+  set(include_mal_files
+    rapi)
+
+  create_include_object(
+    MAL_LANGUAGE
+    name_module "rapi"
+    modules_list ${include_mal_files})
+
+  target_sources(rapi
+    PRIVATE
+    rapi.c
+    rapi.h
+    converters.c.h
+    ${MONETDB_CURRENT_MAL_SOURCES})
+
+  target_include_directories(rapi
+    PRIVATE
+    $<TARGET_PROPERTY:mapi,INCLUDE_DIRECTORIES>
+    $<TARGET_PROPERTY:mal,INCLUDE_DIRECTORIES>
+    $<TARGET_PROPERTY:sql,INCLUDE_DIRECTORIES>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+    $<INSTALL_INTERFACE:${INCLUDEDIR}/monetdb>)
+
+  target_link_libraries(rapi 
+    PRIVATE
+    monetdb_config_header
+    mutils 
+    stream
+    gdk
+    monetdb5
+    sqlinclude
+    LibR::LibR)
+
+  target_compile_definitions(rapi 
+    PRIVATE 
+    LIBRAPI)
+
+  set_target_properties(rapi 
+    PROPERTIES 
+    OUTPUT_NAME 
+    _rapi)
+
+  install(TARGETS 
+    rapi 
+    DESTINATION 
+    ${CMAKE_INSTALL_LIBDIR}/monetdb5)
+
+  install(FILES 
+    rapi.R 
+    DESTINATION 
+    ${CMAKE_INSTALL_LIBDIR}/monetdb5)
+endif()

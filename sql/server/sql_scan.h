@@ -53,7 +53,7 @@ struct scanner {
 extern char *query_cleaned(const char *query);
 extern void scanner_init(struct scanner *s, bstream *rs, stream *ws);
 extern void scanner_reset_key(struct scanner *s);
-extern void scanner_query_processed(struct scanner *s);
+sql_export void scanner_query_processed(struct scanner *s);
 
 extern int scanner_init_keywords(void);
 #endif /* _SQL_SCAN_H_ */

@@ -1,0 +1,42 @@
+#[[
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0.  If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
+#]]
+
+configure_file(monetdbd.in
+  ${CMAKE_CURRENT_BINARY_DIR}/monetdbd
+  @ONLY)
+
+configure_file(monetdbd.service.in
+  ${CMAKE_CURRENT_BINARY_DIR}/monetdbd.service
+  @ONLY)
+
+configure_file(.merovingian_properties.in
+  ${CMAKE_CURRENT_BINARY_DIR}/.merovingian_properties
+  @ONLY)
+
+install(DIRECTORY
+  DESTINATION
+  ${CMAKE_INSTALL_SYSCONFDIR}/logrotate.d)
+
+install(FILES
+  ${CMAKE_CURRENT_BINARY_DIR}/monetdbd
+  DESTINATION ${SYSCONFDIR}/logrotate.d)
+
+install(DIRECTORY
+  DESTINATION
+  ${CMAKE_INSTALL_PREFIX}/lib/systemd/system)
+
+install(FILES
+  ${CMAKE_CURRENT_BINARY_DIR}/monetdbd.service
+  DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/systemd/system)
+
+install(DIRECTORY
+  DESTINATION ${CMAKE_INSTALL_LOCALSTATEDIR}/monetdb5/dbfarm)
+
+install(FILES
+  ${CMAKE_CURRENT_BINARY_DIR}/.merovingian_properties
+  DESTINATION ${CMAKE_INSTALL_LOCALSTATEDIR}/monetdb5/dbfarm)

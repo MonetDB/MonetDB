@@ -173,12 +173,21 @@ loadLibrary(str filename, int flag)
 			mod_path = NULL;
 	}
 	if (mod_path == NULL) {
-		if (flag)
-			throw(LOADER, "loadLibrary", RUNTIME_FILE_NOT_FOUND ":%s", s);
-		return MAL_SUCCEED;
+		int len;
+
+		len = snprintf(nme, FILENAME_MAX, "%s_%s%s", SO_PREFIX, s, SO_EXT);
+		if (len == -1 || len >= FILENAME_MAX)
+			throw(LOADER, "loadLibrary", RUNTIME_LOAD_ERROR "Library filename path is too large");
+
+		handle = mdlopen(nme, RTLD_NOW | RTLD_GLOBAL);
+		if (!handle) {
+			if (flag)
+				throw(LOADER, "loadLibrary", RUNTIME_FILE_NOT_FOUND ":%s", s);
+			return MAL_SUCCEED;
+		}
 	}
 
-	while (*mod_path) {
+	while (!handle && *mod_path) {
 		int len;
 		const char *p;
 
