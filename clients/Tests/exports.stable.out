@@ -2311,7 +2311,6 @@ void malEmbeddedReset(void);
 _Noreturn void malEmbeddedStop(int status);
 str malExtraModulesBoot(Client c, str extraMalModules[], char *mal_scripts);
 str malInclude(Client c, str name, int listing);
-str malIncludeDefault(Client c, int listing, int embedded, int first_module);
 str malIncludeModules(Client c, char *modules[], int listing, int embedded);
 str malIncludeString(Client c, const str name, const str mal, int listing);
 int malLibraryEnabled(str name);
