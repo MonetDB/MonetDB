@@ -6463,6 +6463,29 @@ drop table bam.files;
 drop schema bam;
 set schema "sys";
 
+Running database upgrade commands:
+set schema "sys";
+drop view sys.queue;
+drop function sys.queue;
+create function sys.queue()
+returns table(
+"tag" bigint,
+"sessionid" int,
+"username" string,
+"started" timestamp,
+"status" string,
+"query" string,
+"finished" timestamp,
+"workers" int,
+"memory" int)
+ external name sql.sysmon_queue;
+grant execute on function sys.queue to public;
+create view sys.queue as select * from sys.queue();
+grant select on sys.queue to public;
+update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name = 'queue' and type = 5;
+update sys._tables set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name = 'queue';
+set schema "sys";
+
 # MonetDB/SQL module loaded
 
 # 18:26:24 >  
