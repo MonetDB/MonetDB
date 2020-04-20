@@ -2,6 +2,12 @@ Introduction
 
 Say we have two single integer column tables foo and bar with the following content:
 
+create table foo (i int);
+insert into foo values (10), (40), (20), (5);
+
+create table bar (i int);
+insert into bar values (30), (20), (50), (40);
+
 select * from foo;
 +------+
 | i    |
