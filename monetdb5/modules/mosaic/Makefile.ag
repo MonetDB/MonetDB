@@ -24,7 +24,7 @@ lib_mosaic = {
 		mosaic_hdr.c mosaic_hdr.h \
 		mosaic_select_template.h \
 		mosaic_projection_template.h \
-		mosaic_join.h \
+		mosaic_join.h mosaic_join_templates.h \
 		mosaic_raw.c mosaic_raw.h mosaic_raw_templates.h \
 		mosaic_runlength.c mosaic_runlength.h mosaic_runlength_templates.h \
 		mosaic_dict.c mosaic_dict.h \
