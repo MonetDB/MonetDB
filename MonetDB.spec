@@ -648,6 +648,9 @@ Recommends: %{name}-SQL-server5-hugeint%{?_isa} = %{version}-%{release}
 %endif
 Suggests: %{name}-client%{?_isa} = %{version}-%{release}
 %endif
+%if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
+%systemd_requires
+%endif
 
 %description SQL-server5
 MonetDB is a database management system that is developed from a
@@ -657,6 +660,17 @@ accelerators.  It also has an SQL front end.
 
 This package contains the SQL front end for MonetDB.  If you want to
 use SQL with MonetDB, you will need to install this package.
+
+%if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
+%post SQL-server5
+%systemd_post monetdbd.service
+
+%preun SQL-server5
+%systemd_preun monetdbd.service
+
+%postun SQL-server5
+%systemd_postun_with_restart monetdbd.service
+%endif
 
 %files SQL-server5
 %defattr(-,root,root)
