@@ -1512,7 +1512,7 @@ str MTIMEcurrent_timestamp(timestamp *ret);
 str MTIMEdate_add_msec_interval(date *ret, const date *d, const lng *ms);
 str MTIMEdate_addmonths(date *ret, const date *d, const int *m);
 str MTIMEdate_date(date *dst, const date *src);
-str MTIMEdate_diff(lng *ret, const date *v1, const date *v2);
+str MTIMEdate_diff(int *ret, const date *v1, const date *v2);
 str MTIMEdate_diff_bulk(bat *ret, const bat *bid1, const bat *bid2);
 str MTIMEdate_extract_century(int *ret, const date *src);
 str MTIMEdate_extract_century_bulk(bat *ret, const bat *bid);
