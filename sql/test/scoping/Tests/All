@@ -1,6 +1,5 @@
 scoping01
 scoping02
-HAVE_PYMONETDB?scoping03
 
 schema_disambiguity
 ambiguity
