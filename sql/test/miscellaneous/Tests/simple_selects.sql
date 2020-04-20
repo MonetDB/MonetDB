@@ -121,12 +121,20 @@ drop table x;
 create table x (x int null not null); --error, multiple null constraints
 create table x (a int default '1' GENERATED ALWAYS AS IDENTITY); --error, multiple default values
 
+create table myvar (m bigint);
+INSERT INTO myvar VALUES ((SELECT COUNT(*) FROM sequences));
 create table x (a int GENERATED ALWAYS AS IDENTITY);
 alter table x alter a set default 1; --ok, remove sequence
+SELECT CAST(COUNT(*) - (SELECT m FROM myvar) AS BIGINT) FROM sequences; --the total count, cannot change
+drop table myvar;
 drop table x;
 
+create table myvar (m bigint);
+INSERT INTO myvar VALUES ((SELECT COUNT(*) FROM sequences));
 create table x (a int GENERATED ALWAYS AS IDENTITY);
 alter table x alter a drop default; --ok, remove sequence
+SELECT CAST(COUNT(*) - (SELECT m FROM myvar) AS BIGINT) FROM sequences; --the total count, cannot change
+drop table myvar;
 drop table x;
 
 create function myudf() returns int
