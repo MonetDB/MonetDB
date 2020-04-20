@@ -19,16 +19,14 @@
  */
 
 static bs *
-bs_create(stream *s)
+bs_create(void)
 {
 	/* should be a binary stream */
 	bs *ns;
 
 	if ((ns = malloc(sizeof(*ns))) == NULL)
 		return NULL;
-	*ns = (bs) {
-		.s = s,
-	};
+	*ns = (bs) {0};
 	return ns;
 }
 
@@ -86,8 +84,8 @@ bs_write(stream *restrict ss, const void *restrict buf, size_t elmsize, size_t c
 			 * there, it's not at this moment, so shift it
 			 * to the left */
 			blksize <<= 1;
-			if (!mnstr_writeSht(s->s, (int16_t) blksize) ||
-			    s->s->write(s->s, s->buf, 1, s->nr) != (ssize_t) s->nr) {
+			if (!mnstr_writeSht(ss->inner, (int16_t) blksize) ||
+			    ss->inner->write(ss->inner, s->buf, 1, s->nr) != (ssize_t) s->nr) {
 				ss->errnr = MNSTR_WRITE_ERROR;
 				s->nr = 0; /* data is lost due to error */
 				return -1;
@@ -138,9 +136,9 @@ bs_flush(stream *ss)
 		 * setting the low-order bit */
 		blksize |= 1;
 		/* allways flush (even empty blocks) needed for the protocol) */
-		if ((!mnstr_writeSht(s->s, (int16_t) blksize) ||
+		if ((!mnstr_writeSht(ss->inner, (int16_t) blksize) ||
 		     (s->nr > 0 &&
-		      s->s->write(s->s, s->buf, 1, s->nr) != (ssize_t) s->nr))) {
+		      ss->inner->write(ss->inner, s->buf, 1, s->nr) != (ssize_t) s->nr))) {
 			ss->errnr = MNSTR_WRITE_ERROR;
 			s->nr = 0; /* data is lost due to error */
 			return -1;
@@ -190,9 +188,9 @@ bs_read(stream *restrict ss, void *restrict buf, size_t elmsize, size_t cnt)
 
 		/* There is nothing more to read in the current block,
 		 * so read the count for the next block */
-		switch (mnstr_readSht(s->s, &blksize)) {
+		switch (mnstr_readSht(ss->inner, &blksize)) {
 		case -1:
-			ss->errnr = s->s->errnr;
+			ss->errnr = ss->inner->errnr;
 			return -1;
 		case 0:
 			return 0;
@@ -221,10 +219,10 @@ bs_read(stream *restrict ss, void *restrict buf, size_t elmsize, size_t cnt)
 		 * read it */
 		n = todo < s->itotal ? todo : s->itotal;
 		while (n > 0) {
-			ssize_t m = s->s->read(s->s, buf, 1, n);
+			ssize_t m = ss->inner->read(ss->inner, buf, 1, n);
 
 			if (m <= 0) {
-				ss->errnr = s->s->errnr;
+				ss->errnr = ss->inner->errnr;
 				return -1;
 			}
 #ifdef BSTREAM_DEBUG
@@ -256,9 +254,9 @@ bs_read(stream *restrict ss, void *restrict buf, size_t elmsize, size_t cnt)
 			 * if the previous was not the last one */
 			if (s->nr)
 				break;
-			switch (mnstr_readSht(s->s, &blksize)) {
+			switch (mnstr_readSht(ss->inner, &blksize)) {
 			case -1:
-				ss->errnr = s->s->errnr;
+				ss->errnr = ss->inner->errnr;
 				return -1;
 			case 0:
 				return 0;
@@ -290,31 +288,7 @@ bs_read(stream *restrict ss, void *restrict buf, size_t elmsize, size_t cnt)
 	return (ssize_t) (elmsize > 0 ? cnt / elmsize : 0);
 }
 
-static void
-bs_update_timeout(stream *ss)
-{
-	bs *s;
 
-	if ((s = ss->stream_data.p) != NULL && s->s) {
-		s->s->timeout = ss->timeout;
-		s->s->timeout_func = ss->timeout_func;
-		if (s->s->update_timeout)
-			s->s->update_timeout(s->s);
-	}
-}
-
-static int
-bs_isalive(const stream *ss)
-{
-	struct bs *s;
-
-	if ((s = ss->stream_data.p) != NULL && s->s) {
-		if (s->s->isalive)
-			return s->s->isalive(s->s);
-		return 1;
-	}
-	return 0;
-}
 
 static void
 bs_close(stream *ss)
@@ -327,8 +301,7 @@ bs_close(stream *ss)
 		return;
 	if (!ss->readonly && s->nr > 0)
 		bs_flush(ss);
-	if (s->s)
-		s->s->close(s->s);
+	mnstr_close(ss->inner);
 }
 
 void
@@ -339,8 +312,8 @@ bs_destroy(stream *ss)
 	s = (bs *) ss->stream_data.p;
 	assert(s);
 	if (s) {
-		if (s->s)
-			s->s->destroy(s->s);
+		if (ss->inner)
+			ss->inner->destroy(ss->inner);
 		free(s);
 	}
 	destroy_stream(ss);
@@ -350,14 +323,14 @@ void
 bs_clrerr(stream *s)
 {
 	if (s->stream_data.p)
-		mnstr_clearerr(((bs *) s->stream_data.p)->s);
+		mnstr_clearerr(s->inner);
 }
 
 stream *
 bs_stream(stream *s)
 {
 	assert(isa_block_stream(s));
-	return ((bs *) s->stream_data.p)->s;
+	return s->inner;
 }
 
 stream *
@@ -371,9 +344,9 @@ block_stream(stream *s)
 #ifdef STREAM_DEBUG
 	fprintf(stderr, "block_stream %s\n", s->name ? s->name : "<unnamed>");
 #endif
-	if ((ns = create_stream(s->name)) == NULL)
+	if ((ns = create_wrapper_stream(NULL, s)) == NULL)
 		return NULL;
-	if ((b = bs_create(s)) == NULL) {
+	if ((b = bs_create()) == NULL) {
 		destroy_stream(ns);
 		return NULL;
 	}
@@ -381,16 +354,11 @@ block_stream(stream *s)
 #ifdef WORDS_BIGENDIAN
 	s->swapbytes = true;
 #endif
-	ns->binary = s->binary;
-	ns->readonly = s->readonly;
-	ns->close = bs_close;
-	ns->clrerr = bs_clrerr;
-	ns->destroy = bs_destroy;
+
 	ns->flush = bs_flush;
 	ns->read = bs_read;
 	ns->write = bs_write;
-	ns->update_timeout = bs_update_timeout;
-	ns->isalive = bs_isalive;
+	ns->close = bs_close;
 	ns->stream_data.p = (void *) b;
 
 	return ns;

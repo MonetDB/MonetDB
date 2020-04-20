@@ -618,13 +618,13 @@ block_stream2(stream *s, size_t bufsiz, compression_method comp)
 		/* if passed in a block_stream instance, extract the
 		 * underlying stream */
 		os = s;
-		s = ((bs *) s->stream_data.p)->s;
+		s = s->inner;
 	}
 
 #ifdef STREAM_DEBUG
 	fprintf(stderr, "block_stream2 %s\n", s->name ? s->name : "<unnamed>");
 #endif
-	if ((ns = create_stream(s->name)) == NULL)
+	if ((ns = create_wrapper_stream(NULL, s)) == NULL)
 		return NULL;
 	if ((b = bs2_create(s, bufsiz, comp)) == NULL) {
 		destroy_stream(ns);
@@ -649,7 +649,7 @@ block_stream2(stream *s, size_t bufsiz, compression_method comp)
 	if (os != NULL) {
 		/* we extracted the underlying stream, destroy the old
 		 * shell */
-		((bs *) os->stream_data.p)->s = NULL;
+		os->inner = NULL;
 		bs_destroy(os);
 	}
 

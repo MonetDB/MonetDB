@@ -477,6 +477,7 @@ static void
 wrapper_destroy(stream *s)
 {
 	s->inner->destroy(s->inner);
+	destroy_stream(s);
 }
 
 

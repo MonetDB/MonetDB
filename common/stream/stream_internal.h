@@ -223,7 +223,6 @@ stream *open_lz4wastream(const char *restrict filename, const char *restrict mod
  * bs2.c should be dropped.*/
 typedef struct bs bs;
 struct bs {
-	stream *s;		/* underlying stream */
 	unsigned nr;		/* how far we got in buf */
 	unsigned itotal;	/* amount available in current read block */
 	size_t blks;		/* read/writen blocks (possibly partial) */
