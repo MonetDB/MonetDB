@@ -1484,6 +1484,9 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 	} else {
 		assert (cmptype != cmp_filter);
 		if (is_semantics) {
+			assert(cmptype == cmp_equal || cmptype == cmp_notequal);
+			if (cmptype == cmp_notequal)
+				anti = !anti;
 			q = newStmt(mb, algebraRef, selectRef);
 			q = pushArgument(mb, q, l);
 			if (sub && !op1->cand)

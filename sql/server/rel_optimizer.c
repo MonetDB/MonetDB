@@ -398,7 +398,7 @@ exp_count(int *cnt, sql_exp *e)
 			if (e->f)
 				exp_count(cnt, e->f);
 		}	
-       		flag = e->flag & (~CMP_BETWEEN);
+ 		flag = e->flag & (~CMP_BETWEEN);
 		switch (flag) {
 		case cmp_equal:
 			*cnt += 90;
@@ -7366,7 +7366,7 @@ rel_simplify_predicates(mvc *sql, sql_rel *rel, int *changes)
 					continue;
 				}
 			}
-			if (e->type == e_cmp && e->flag == cmp_equal) {
+			if (e->type == e_cmp && (e->flag == cmp_equal || e->flag == cmp_notequal)) {
 				sql_exp *l = e->l;
 				sql_exp *r = e->r;
 
