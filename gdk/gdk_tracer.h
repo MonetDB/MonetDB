@@ -230,33 +230,20 @@ gdk_export log_level_t lvl_per_component[];
 // Used for logrotate
 gdk_export void GDKtracer_reinit_basic(int sig);
 
-
 gdk_export gdk_return GDKtracer_stop(void);
 
-
 gdk_export gdk_return GDKtracer_set_component_level(const char *comp, const char *lvl);
-
-
+gdk_export const char *GDKtracer_get_component_level(const char *comp);
 gdk_export gdk_return GDKtracer_reset_component_level(const char *comp);
 
-
 gdk_export gdk_return GDKtracer_set_layer_level(const char *layer, const char *lvl);
-
-
 gdk_export gdk_return GDKtracer_reset_layer_level(const char *layer);
 
-
 gdk_export gdk_return GDKtracer_set_flush_level(const char *lvl);
-
-
 gdk_export gdk_return GDKtracer_reset_flush_level(void);
 
-
 gdk_export gdk_return GDKtracer_set_adapter(const char *adapter);
-
-
 gdk_export gdk_return GDKtracer_reset_adapter(void);
-
 
 gdk_export void GDKtracer_log(const char *file, const char *func,
 			      int lineno, log_level_t lvl,
@@ -265,9 +252,7 @@ gdk_export void GDKtracer_log(const char *file, const char *func,
 			      _In_z_ _Printf_format_string_ const char *format, ...)
 	__attribute__((__format__(__printf__, 7, 8)));
 
-
 gdk_export gdk_return GDKtracer_flush_buffer(void);
-
 
 gdk_export gdk_return GDKtracer_fill_comp_info(BAT *id, BAT *component, BAT *log_level);
 

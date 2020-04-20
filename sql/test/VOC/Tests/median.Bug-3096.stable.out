@@ -39,16 +39,16 @@ stdout of test 'median.Bug-3096` in directory 'sql/test/VOC` itself:
 #	"departure_date"    date,
 #	"departure_harbour" varchar(30),
 #select median(departure_date) - min(departure_date) from voyages;
-% sys. # table_name
+% sys.%3 # table_name
 % %3 # name
-% sec_interval # type
-% 5 # length
+% int # type
+% 1 # length
 [ NULL	]
 #select max(departure_date) - min(departure_date) from voyages;
-% sys. # table_name
+% sys.%3 # table_name
 % %3 # name
-% sec_interval # type
-% 5 # length
+% int # type
+% 1 # length
 [ NULL	]
 #drop table voyages;
 

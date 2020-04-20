@@ -151,13 +151,6 @@ NAMEBULK(bat *ret, const bat *bid)										\
 	return MAL_SUCCEED;													\
 }
 
-static inline lng
-interval_date_diff(date d1, date d2)
-{
-	int res = date_diff(d1, d2);
-	return is_int_nil(res) ? lng_nil : 24*3600*1000*(lng)res;
-}
-
 #define func2(NAME, NAMEBULK, MALFUNC, INTYPE1, INTYPE2, OUTTYPE, FUNC)	\
 mal_export str NAME(OUTTYPE *ret, const INTYPE1 *v1, const INTYPE2 *v2); \
 mal_export str NAMEBULK(bat *ret, const bat *bid1, const bat *bid2);	\
@@ -215,7 +208,7 @@ NAMEBULK(bat *ret, const bat *bid1, const bat *bid2)					\
 	return MAL_SUCCEED;													\
 }
 
-func2(MTIMEdate_diff, MTIMEdate_diff_bulk, "diff", date, date, lng, interval_date_diff)
+func2(MTIMEdate_diff, MTIMEdate_diff_bulk, "diff", date, date, int, date_diff)
 
 #define func2chk(NAME, NAMEBULK, MALFUNC, INTYPE1, INTYPE2, OUTTYPE, FUNC)	\
 mal_export str NAME(OUTTYPE *ret, const INTYPE1 *v1, const INTYPE2 *v2); \
