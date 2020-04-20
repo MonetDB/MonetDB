@@ -43,7 +43,8 @@ MNDBProcedures(ODBCStmt *stmt,
 
 	/* buffer for the constructed query to do meta data retrieval */
 	char *query = NULL;
-	char *query_end;
+	size_t querylen;
+	size_t pos = 0;
 	char *sch = NULL, *pro = NULL;
 
 	/* convert input string parameters to normal null terminated C strings */
@@ -104,18 +105,18 @@ MNDBProcedures(ODBCStmt *stmt,
 		}
 	}
 
-	query = malloc(1000 + strlen(stmt->Dbc->dbname) +
-			(sch ? strlen(sch) : 0) + (pro ? strlen(pro) : 0));
+	querylen = 1000 + strlen(stmt->Dbc->dbname) +
+		(sch ? strlen(sch) : 0) + (pro ? strlen(pro) : 0);
+	query = malloc(querylen);
 	if (query == NULL)
 		goto nomem;
-	query_end = query;
 
 /* see sql_catalog.h */
 #define F_FUNC 1
 #define F_PROC 2
 #define F_UNION 5
 #define FUNC_LANG_SQL 2
-	snprintf(query_end, 1000,
+	pos += snprintf(query + pos, querylen - pos,
 		 "select '%s' as procedure_cat, "
 			"s.name as procedure_schem, "
 			"p.name as procedure_name, "
@@ -134,37 +135,32 @@ MNDBProcedures(ODBCStmt *stmt,
 		 F_PROC, SQL_PT_PROCEDURE, SQL_PT_FUNCTION,
 		 stmt->Dbc->has_comment ? " left outer join sys.comments c on p.id = c.id" : "",
 		 FUNC_LANG_SQL, F_FUNC, F_PROC, F_UNION);
-	assert(strlen(query) < 800);
-	query_end += strlen(query_end);
+	assert(pos < 800);
 
 	/* Construct the selection condition query part */
 	if (NameLength1 > 0 && CatalogName != NULL) {
 		/* filtering requested on catalog name */
 		if (strcmp((char *) CatalogName, stmt->Dbc->dbname) != 0) {
 			/* catalog name does not match the database name, so return no rows */
-			sprintf(query_end, " and 1=2");
-			query_end += strlen(query_end);
+			pos += snprintf(query + pos, querylen - pos, " and 1=2");
 		}
 	}
 	if (sch) {
 		/* filtering requested on schema name */
-		sprintf(query_end, " and %s", sch);
-		query_end += strlen(query_end);
+		pos += snprintf(query + pos, querylen - pos, " and %s", sch);
 		free(sch);
 	}
 	if (pro) {
 		/* filtering requested on procedure name */
-		sprintf(query_end, " and %s", pro);
-		query_end += strlen(query_end);
+		pos += snprintf(query + pos, querylen - pos, " and %s", pro);
 		free(pro);
 	}
 
 	/* add the ordering (exclude procedure_cat as it is the same for all rows) */
-	strcpy(query_end, " order by procedure_schem, procedure_name");
-	query_end += strlen(query_end);
+	pos += strcpy_len(query + pos, " order by procedure_schem, procedure_name", querylen - pos);
 
 	/* query the MonetDB data dictionary tables */
-	rc = MNDBExecDirect(stmt, (SQLCHAR *) query, (SQLINTEGER) (query_end - query));
+	rc = MNDBExecDirect(stmt, (SQLCHAR *) query, (SQLINTEGER) pos);
 
 	free(query);
 

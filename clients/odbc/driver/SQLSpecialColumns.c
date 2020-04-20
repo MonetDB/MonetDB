@@ -92,7 +92,8 @@ MNDBSpecialColumns(ODBCStmt *stmt,
 
 	/* buffer for the constructed query to do meta data retrieval */
 	char *query = NULL;
-	char *query_end = NULL;
+	size_t querylen;
+	size_t pos = 0;
 	char *sch = NULL, *tab = NULL;
 
 	fixODBCstring(CatalogName, NameLength1, SQLSMALLINT, addStmtError, stmt, return SQL_ERROR);
@@ -198,14 +199,14 @@ MNDBSpecialColumns(ODBCStmt *stmt,
 		}
 
 		/* first create a string buffer (1000 extra bytes is plenty */
-		query = (char *) malloc(5000 + NameLength1 + NameLength2 + NameLength3);
+		querylen = 5000 + NameLength1 + NameLength2 + NameLength3;
+		query = malloc(querylen);
 		if (query == NULL)
 			goto nomem;
-		query_end = query;
 
 		/* Note: SCOPE is SQL_SCOPE_TRANSACTION */
 		/* Note: PSEUDO_COLUMN is SQL_PC_NOT_PSEUDO */
-		sprintf(query_end,
+		pos += snprintf(query + pos, querylen - pos,
 			"with sc as ("
 			"select t.id as table_id, k.type as type, "
 			       "cast(%d as smallint) as scope, "
@@ -246,8 +247,7 @@ MNDBSpecialColumns(ODBCStmt *stmt,
 #endif
 			/* pseudo_column: */
 			SQL_PC_NOT_PSEUDO);
-		assert(strlen(query) < 4300);
-		query_end += strlen(query_end);
+		assert(pos < 4300);
 		/* TODO: improve the SQL to get the correct result:
 		   - only one set of columns should be returned, also
 		     when multiple primary keys are available for this
@@ -266,30 +266,26 @@ MNDBSpecialColumns(ODBCStmt *stmt,
 			/* filtering requested on catalog name */
 			if (strcmp((char *) CatalogName, stmt->Dbc->dbname) != 0) {
 				/* catalog name does not match the database name, so return no rows */
-				sprintf(query_end, " and 1=2");
-				query_end += strlen(query_end);
+				pos += snprintf(query + pos, querylen - pos, " and 1=2");
 			}
 		}
 		if (sch) {
 			/* filtering requested on schema name */
-			sprintf(query_end, " and %s", sch);
-			query_end += strlen(query_end);
+			pos += snprintf(query + pos, querylen - pos, " and %s", sch);
 			free(sch);
 		}
 		if (tab) {
 			/* filtering requested on table name */
-			sprintf(query_end, " and %s", tab);
-			query_end += strlen(query_end);
+			pos += snprintf(query + pos, querylen - pos, " and %s", tab);
 			free(tab);
 		}
 
 		/* add an extra selection when SQL_NO_NULLS is requested */
 		if (Nullable == SQL_NO_NULLS) {
-			strcpy(query_end, " and c.\"null\" = false");
-			query_end += strlen(query_end);
+			pos += strcpy_len(query + pos, " and c.\"null\" = false", querylen - pos);
 		}
 
-		strcpy(query_end,
+		pos += strcpy_len(query + pos,
 		       "), "
 			"tid as ("
 			   "select t.id as tid "
@@ -304,8 +300,8 @@ MNDBSpecialColumns(ODBCStmt *stmt,
 			"where (sc.type = 0 and "
 			       "sc.table_id in (select tid from tid)) or "
 			      "(sc.type = 1 and "
-			       "sc.table_id not in (select tid from tid))");
-		query_end += strlen(query_end);
+			       "sc.table_id not in (select tid from tid))",
+			querylen - pos);
 
 		/* ordering on SCOPE not needed (since it is constant) */
 	} else {
@@ -324,11 +320,11 @@ MNDBSpecialColumns(ODBCStmt *stmt,
 			       "where 0 = 1");
 		if (query == NULL)
 			goto nomem;
-		query_end = query + strlen(query);
+		pos = strlen(query);
 	}
 
 	/* query the MonetDB data dictionary tables */
-	rc = MNDBExecDirect(stmt, (SQLCHAR *) query, (SQLINTEGER) (query_end - query));
+	rc = MNDBExecDirect(stmt, (SQLCHAR *) query, (SQLINTEGER) pos);
 
 	free(query);
 
