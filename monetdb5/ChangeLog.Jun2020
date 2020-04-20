@@ -1,6 +1,10 @@
 # ChangeLog file for MonetDB5
 # This file is updated with Maddlog
 
+* Mon Apr 20 2020 Sjoerd Mullender <sjoerd@acm.org>
+- The example module opt_sql_append is not installed in the binary
+  packages anymore.
+
 * Tue Dec  3 2019 Sjoerd Mullender <sjoerd@acm.org>
 - Removed function bat.setKey().
 
