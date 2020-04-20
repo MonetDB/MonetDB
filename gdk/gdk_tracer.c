@@ -293,6 +293,18 @@ GDKtracer_set_component_level(const char *comp, const char *lvl)
 	return GDK_SUCCEED;
 }
 
+const char *
+GDKtracer_get_component_level(const char *comp)
+{
+	component_t component = find_component(comp);
+
+	if (component == COMPONENTS_COUNT) {
+		GDKerror("unknown component\n");
+		return NULL;
+	}
+	return level_str[(int) lvl_per_component[component]];
+}
+
 
 gdk_return
 GDKtracer_reset_component_level(const char *comp)
