@@ -107,11 +107,14 @@ URL: https://www.monetdb.org/
 BugURL: https://bugs.monetdb.org/
 Source: https://www.monetdb.org/downloads/sources/Nov2019-SP3/%{name}-%{version}.tar.bz2
 
-# we need systemd for the _unitdir macro to exist
-# we need checkpolicy and selinux-policy-devel for the SELinux policy
+# The Fedora packaging document says we need systemd-rpm-macros for
+# the _unitdir and _tmpfilesdir macros to exist; however on RHEL 7
+# that doesn't exist and we need systemd, so instead we just require
+# the macro file that contains the definitions.
+# We need checkpolicy and selinux-policy-devel for the SELinux policy.
 %if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
 # RHEL >= 7, and all current Fedora
-BuildRequires: systemd
+BuildRequires: /usr/lib/rpm/macros.d/macros.systemd
 BuildRequires: checkpolicy
 BuildRequires: selinux-policy-devel
 BuildRequires: hardlink
@@ -519,15 +522,27 @@ package if you want to use the MonetDB database system.  If you want
 to use the SQL front end, you also need %{name}-SQL-server5.
 
 %pre -n MonetDB5-server
-getent group monetdb >/dev/null || groupadd -r monetdb
-getent passwd monetdb >/dev/null || \
-    useradd -r -g monetdb -d %{_localstatedir}/MonetDB -s /sbin/nologin \
-	-c "MonetDB Server" monetdb
+getent group monetdb >/dev/null || groupadd --system monetdb
+if getent passwd monetdb >/dev/null; then
+    case $(getent passwd monetdb | cut -d: -f6) in
+    %{_localstatedir}/MonetDB) # old value
+	# change home directory, but not using usermod
+	# usermod requires there not to be any running processes owned by the user
+	EDITOR='sed -i "/^monetdb:/s|:%{_localstatedir}/MonetDB:|:%{_localstatedir}/lib/monetdb:|"'
+	unset VISUAL
+	export EDITOR
+	/sbin/vipw > /dev/null
+	;;
+    esac
+else
+    useradd --system --gid monetdb --home-dir %{_localstatedir}/lib/monetdb \
+	--shell /sbin/nologin --comment "MonetDB Server" monetdb
+fi
 exit 0
 
 %files -n MonetDB5-server
 %defattr(-,root,root)
-%attr(750,monetdb,monetdb) %dir %{_localstatedir}/MonetDB
+%attr(2750,monetdb,monetdb) %dir %{_localstatedir}/lib/monetdb
 %attr(2770,monetdb,monetdb) %dir %{_localstatedir}/monetdb5
 %attr(2770,monetdb,monetdb) %dir %{_localstatedir}/monetdb5/dbfarm
 %{_bindir}/mserver5
@@ -633,6 +648,9 @@ Recommends: %{name}-SQL-server5-hugeint%{?_isa} = %{version}-%{release}
 %endif
 Suggests: %{name}-client%{?_isa} = %{version}-%{release}
 %endif
+%if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
+%systemd_requires
+%endif
 
 %description SQL-server5
 MonetDB is a database management system that is developed from a
@@ -642,6 +660,17 @@ accelerators.  It also has an SQL front end.
 
 This package contains the SQL front end for MonetDB.  If you want to
 use SQL with MonetDB, you will need to install this package.
+
+%if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
+%post SQL-server5
+%systemd_post monetdbd.service
+
+%preun SQL-server5
+%systemd_preun monetdbd.service
+
+%postun SQL-server5
+%systemd_postun_with_restart monetdbd.service
+%endif
 
 %files SQL-server5
 %defattr(-,root,root)
@@ -660,6 +689,7 @@ use SQL with MonetDB, you will need to install this package.
 %exclude %{_prefix}/lib/systemd/system/monetdbd.service
 %endif
 %config(noreplace) %attr(664,monetdb,monetdb) %{_localstatedir}/monetdb5/dbfarm/.merovingian_properties
+%verify(not mtime) %attr(664,monetdb,monetdb) %{_localstatedir}/monetdb5/dbfarm/.merovingian_lock
 %config(noreplace) %attr(644,root,root) %{_sysconfdir}/logrotate.d/monetdbd
 %{_libdir}/monetdb5/autoload/??_sql.mal
 %{_libdir}/monetdb5/lib_sql.so
@@ -910,7 +940,7 @@ mv %{buildroot}%{_sysconfdir}/tmpfiles.d/monetdbd.conf %{buildroot}%{_tmpfilesdi
 rmdir %{buildroot}%{_sysconfdir}/tmpfiles.d
 %endif
 
-install -d -m 0750 %{buildroot}%{_localstatedir}/MonetDB
+install -d -m 0750 %{buildroot}%{_localstatedir}/lib/monetdb
 install -d -m 0770 %{buildroot}%{_localstatedir}/monetdb5/dbfarm
 install -d -m 0775 %{buildroot}%{_localstatedir}/log/monetdb
 install -d -m 0775 %{buildroot}%{_rundir}/monetdb

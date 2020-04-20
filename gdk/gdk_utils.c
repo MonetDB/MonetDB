@@ -573,7 +573,7 @@ MT_init(void)
 	struct rlimit l;
 	/* address space (virtual memory) limit */
 	if (getrlimit(RLIMIT_AS, &l) == 0
-	    && (size_t)l.rlim_cur != RLIM_INFINITY
+	    && l.rlim_cur != (rlim_t)RLIM_INFINITY
 	    && (size_t)l.rlim_cur < GDK_vm_maxsize) {
 		GDK_vm_maxsize = l.rlim_cur;
 	}
@@ -657,6 +657,50 @@ GDKsetdebug(int debug)
 		GDKtracer_set_component_level("thrd", "debug");
 	else
 		GDKtracer_reset_component_level("thrd");
+}
+
+int
+GDKgetdebug(void)
+{
+	int debug = GDKdebug;
+	const char *lvl;
+	lvl = GDKtracer_get_component_level("accelerator");
+	if (lvl && strcmp(lvl, "debug") == 0)
+		debug |= ACCELMASK;
+	lvl = GDKtracer_get_component_level("algo");
+	if (lvl && strcmp(lvl, "debug") == 0)
+		debug |= ALGOMASK;
+	lvl = GDKtracer_get_component_level("alloc");
+	if (lvl && strcmp(lvl, "debug") == 0)
+		debug |= ALLOCMASK;
+	lvl = GDKtracer_get_component_level("bat");
+	if (lvl && strcmp(lvl, "debug") == 0)
+		debug |= BATMASK;
+	lvl = GDKtracer_get_component_level("check");
+	if (lvl && strcmp(lvl, "debug") == 0)
+		debug |= CHECKMASK;
+	lvl = GDKtracer_get_component_level("delta");
+	if (lvl && strcmp(lvl, "debug") == 0)
+		debug |= DELTAMASK;
+	lvl = GDKtracer_get_component_level("heap");
+	if (lvl && strcmp(lvl, "debug") == 0)
+		debug |= HEAPMASK;
+	lvl = GDKtracer_get_component_level("io");
+	if (lvl && strcmp(lvl, "debug") == 0)
+		debug |= IOMASK;
+	lvl = GDKtracer_get_component_level("par");
+	if (lvl && strcmp(lvl, "debug") == 0)
+		debug |= PARMASK;
+	lvl = GDKtracer_get_component_level("perf");
+	if (lvl && strcmp(lvl, "debug") == 0)
+		debug |= PERFMASK;
+	lvl = GDKtracer_get_component_level("tem");
+	if (lvl && strcmp(lvl, "debug") == 0)
+		debug |= TEMMASK;
+	lvl = GDKtracer_get_component_level("thrd");
+	if (lvl && strcmp(lvl, "debug") == 0)
+		debug |= THRDMASK;
+	return debug;
 }
 
 gdk_return

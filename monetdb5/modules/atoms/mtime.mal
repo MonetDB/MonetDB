@@ -379,7 +379,7 @@ comment "returns the date after a number of
 # address MTIMEdate_adddays
 # comment "returns the date after a number
 # 	of days (possibly negative).";
-command diff(val1:date, val2:date) :lng
+command diff(val1:date, val2:date) :int
 address MTIMEdate_diff
 comment "returns the number of days
 	between 'val1' and 'val2'.";

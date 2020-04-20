@@ -1372,7 +1372,7 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 				project_first = exp_ref(sql, project_first);
 				nils = rel_unop_(sql, extra_project, project_first, NULL, "isnull", card_value);
 				set_has_no_nil(nils);
-				extra_select = rel_select(sql->sa, extra_project, exp_compare(sql->sa, nils, exp_atom_bool(sql->sa, 1), cmp_notequal));
+				extra_select = rel_select(sql->sa, extra_project, exp_compare(sql->sa, nils, exp_atom_bool(sql->sa, 0), cmp_equal));
 
 				//the update statement requires a projection on the right side
 				extra_project = rel_project(sql->sa, extra_select, rel_projections(sql, bt, NULL, 1, 0));
@@ -1401,7 +1401,7 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 				project_first = exp_ref(sql, project_first);
 				nils = rel_unop_(sql, extra_project, project_first, NULL, "isnull", card_value);
 				set_has_no_nil(nils);
-				extra_select = rel_select(sql->sa, extra_project, exp_compare(sql->sa, nils, exp_atom_bool(sql->sa, 1), cmp_notequal));
+				extra_select = rel_select(sql->sa, extra_project, exp_compare(sql->sa, nils, exp_atom_bool(sql->sa, 0), cmp_equal));
 
 				//the delete statement requires a projection on the right side, which will be the oid values
 				extra_project = rel_project(sql->sa, extra_select, list_append(new_exp_list(sql->sa),

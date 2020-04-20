@@ -5016,7 +5016,7 @@ insert into sys.args values (12870, 1277, 'res_0', 'time', 7, 0, 0, 0);
 insert into sys.functions values (1278, 'localtimestamp', 'current_timestamp', 'sql', 0, 1, false, false, false, 2000, true);
 insert into sys.args values (12871, 1278, 'res_0', 'timestamp', 7, 0, 0, 0);
 insert into sys.functions values (1279, 'sql_sub', 'diff', 'mtime', 0, 1, false, false, false, 2000, true);
-insert into sys.args values (12872, 1279, 'res_0', 'sec_interval', 13, 0, 0, 0);
+insert into sys.args values (12872, 1279, 'res_0', 'int', 32, 0, 0, 0);
 insert into sys.args values (12873, 1279, 'arg_1', 'date', 0, 0, 1, 1);
 insert into sys.args values (12874, 1279, 'arg_2', 'date', 0, 0, 1, 2);
 insert into sys.functions values (1280, 'sql_sub', 'diff', 'mtime', 0, 1, false, false, false, 2000, true);
@@ -6417,6 +6417,29 @@ drop table bam.pg;
 drop table bam.export;
 drop table bam.files;
 drop schema bam;
+set schema "sys";
+
+Running database upgrade commands:
+set schema "sys";
+drop view sys.queue;
+drop function sys.queue;
+create function sys.queue()
+returns table(
+"tag" bigint,
+"sessionid" int,
+"username" string,
+"started" timestamp,
+"status" string,
+"query" string,
+"finished" timestamp,
+"workers" int,
+"memory" int)
+ external name sql.sysmon_queue;
+grant execute on function sys.queue to public;
+create view sys.queue as select * from sys.queue();
+grant select on sys.queue to public;
+update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name = 'queue' and type = 5;
+update sys._tables set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name = 'queue';
 set schema "sys";
 
 # MonetDB/SQL module loaded
