@@ -86,8 +86,8 @@ def main():
         shutil.rmtree(mydbdir)
 
         # and extract the tarname
-        tar = tarfile.open(tarname)
-        tar.extractall(dbfarm)
+        with tarfile.open(tarname) as tar:
+            tar.extractall(dbfarm)
 
         # and restart the server
         with process.server(dbname=mydb, mapiport = mapi_port, stdin=process.PIPE) as server:
