@@ -2751,13 +2751,14 @@ rel_schemas(sql_query *query, symbol *s)
 			   l->h->next->next->data.i_val); /* if exists */
 	} 	break;
 	case SQL_DECLARE_TABLE:
+		return sql_error(sql, 02, SQLSTATE(42000) "Tables cannot be declared on the global scope");
 	case SQL_CREATE_TABLE:
 	{
 		dlist *l = s->data.lval;
 		dlist *qname = l->h->next->data.lval;
 		char *sname = qname_schema(qname);
 		char *name = qname_schema_object(qname);
-		int temp = s->token == SQL_DECLARE_TABLE ? SQL_DECLARED_TABLE : l->h->data.i_val;
+		int temp = l->h->data.i_val;
 		dlist *credentials = l->h->next->next->next->next->next->data.lval;
 		char *username = credentials_username(credentials);
 		char *password = credentials_password(credentials);

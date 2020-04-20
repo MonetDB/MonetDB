@@ -16,43 +16,35 @@ BEGIN DECLARE i string; set i ='1'; return i; END;
 CREATE OR REPLACE FUNCTION foo() RETURNS INT
 BEGIN DECLARE i string; set i ='1'; return i; END;
 SELECT foo();
-    -- 1
 
 CREATE OR REPLACE FUNCTION Gvar() RETURNS string
 BEGIN DECLARE i string; set i ='function i'; return i; END;
 SELECT Gvar();
-    -- function i
 
 -- now scopes
 CREATE OR REPLACE FUNCTION foo() RETURNS string
 BEGIN DECLARE i string; set i =gvar; return i; END; --error, gvar was declared on sys schema, so it doesn't exist here
 SELECT foo();
-    -- 1
 
 CREATE OR REPLACE FUNCTION Gvar() RETURNS string
 BEGIN DECLARE i string; set i =gvar; return i; END; --error, gvar was declared on sys schema, so it doesn't exist here
 SELECT Gvar();
-    -- function i
 
 CREATE OR REPLACE FUNCTION foo() RETURNS string
 BEGIN DECLARE i string; set i = sys.gvar; return i; END;
 SELECT foo();
-    -- Gvar
 
 CREATE OR REPLACE FUNCTION Gvar() RETURNS string
 BEGIN DECLARE i string; set i =sys.gvar; return i; END;
 SELECT Gvar();
-    -- Gvar
 
 CREATE OR REPLACE FUNCTION foo() RETURNS string
 BEGIN DECLARE i string; set i = A.gvar; return i; END; --error, variable a.gvar doesn't exist
 SELECT foo();
-    -- Gvar
 
 CREATE OR REPLACE FUNCTION Gvar() RETURNS string
 BEGIN DECLARE i string; set i =A.gvar; return i; END; --error, variable a.gvar doesn't exist
 SELECT Gvar();
-    -- Gvar
 
 -- procedures
 CREATE OR REPLACE PROCEDURE foo() 

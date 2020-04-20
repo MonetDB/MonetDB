@@ -3,31 +3,27 @@
 -- TODO transaction management
 -- Test variables with different schemas and scoping levels
 -- upgrade drop dt_schema
--- drop tables and variables?
 
-declare i integer;
-set i = 1234;
-
-create table tmp1(i integer, s string);
+create table tmp1("optimizer" integer, s string);
 insert into tmp1 values(1,'hello'),(2,'world');
-select i from tmp1;
+select "optimizer" from tmp1;
 	-- 1
 	-- 2
 
-select sys.i, i from tmp1; --we declare variables in a schema, so to reference them we add the schema
-	-- 1234 1
-	-- 1234 2
+select sys."optimizer", "optimizer" from tmp1; --we declare variables in a schema, so to reference them we add the schema
+	-- default_pipe 1
+	-- default_pipe 2
 
-declare table tmp2(i integer, s string); --the same for declared tables
+CREATE table tmp2("optimizer" integer, s string);
 insert into tmp2 values(3,'another'),(4,'test');
 
-select tmp1.i, tmp2.i from sys.tmp1, sys.tmp2;
+select tmp1."optimizer", tmp2."optimizer" from sys.tmp1, sys.tmp2;
 	-- 1 3
 	-- 1 4
 	-- 2 3
 	-- 2 4
 
-SELECT MAX(i) FROM tmp1; --Table columns have precedence over global variables
+SELECT MAX("optimizer") FROM tmp1; --Table columns have precedence over global variables
 	-- 2
 
 CREATE OR REPLACE FUNCTION tests_scopes1(i INT) RETURNS INT 
@@ -39,10 +35,10 @@ END;
 SELECT tests_scopes1(vals) FROM (VALUES (1),(2),(3)) AS vals(vals); --will trigger error
 
 -- Create a function to test scoping order
-CREATE OR REPLACE FUNCTION tests_scopes2(i INT) RETURNS INT 
+CREATE OR REPLACE FUNCTION tests_scopes2("optimizer" INT) RETURNS INT 
 BEGIN
 	DECLARE j int;
-	SET j = i;
+	SET j = "optimizer";
 	RETURN j;
 END;
 
@@ -51,22 +47,18 @@ SELECT tests_scopes2(vals) FROM (VALUES (1),(2),(3)) AS vals(vals);
 	-- 2 
 	-- 3
 
-with a(i) as (select 4) select i from tmp1, a; --error, ambiguous identifier 'i'
+with a("optimizer") as (select 4) select "optimizer" from tmp1, a; --error, ambiguous identifier 'i'
 
 DROP TABLE tmp1;
 DROP TABLE tmp2;
 DROP FUNCTION tests_scopes1(INT);
 DROP FUNCTION tests_scopes2(INT);
 ------------------------------------------------------------------------------
-DECLARE "current_schema" string; --error, "current_schema" already declared
+DECLARE "current_schema" string; --error, cannot declare variables on the global scope
 DECLARE "sys"."current_schema" string; --error, "current_schema" already declared
 with a(a) as (select 1), a(a) as (select 2) select 1; --error, CTE a already declared
 with a(a) as (with a(a) as (select 1) select 2) select a from a; --allowed
 	-- 2
-
-DECLARE "aux" string;
-SET "aux" = (SELECT "optimizer");
-SET "optimizer" = 'default_pipe';
 
 CREATE OR REPLACE FUNCTION tests_scopes3(input INT) RETURNS STRING 
 BEGIN
@@ -80,13 +72,13 @@ END;
 SELECT tests_scopes3(0), tests_scopes3(1);
 	-- default_pipe default_pipe
 
-SET "optimizer" = (SELECT "aux");
+SET "optimizer" = 'default_pipe';
 DROP FUNCTION tests_scopes3(INT);
 ------------------------------------------------------------------------------
 create function tests_scopes4() returns int begin declare table y (a int, b int); return select y; end; --error, cannot project a declared table
 create function tests_scopes4() returns table (i integer, s string) begin return select tmp2; end; --error, cannot project a declared table
 
-declare table tmp2(i integer, s string); --the same for declared tables
+CREATE table tmp2(i integer, s string);
 insert into tmp2 values(3,'another'),(4,'test');
 
 create function tests_scopes4() returns table (i integer, s string) begin return tmp2; end; --possible, return the contents of tmp2
@@ -153,7 +145,7 @@ END;
 
 DROP FUNCTION scoping2(INT);
 -----------------------------------------------------------------------------
-DECLARE TABLE atest (a int);
+CREATE TABLE atest (a int);
 INSERT INTO atest VALUES (1);
 
 CREATE OR REPLACE FUNCTION scoping3() RETURNS TABLE(a int) 

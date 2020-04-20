@@ -9,8 +9,6 @@ select sys.optimizer;	-- can we find it there?
 select tmp.optimizer; 	-- should not be found
 
 -- the optimizer variable can be reassigned a value
-declare aux string;
-set aux = (select sys.optimizer);
 set optimizer = 'minimal_pipe';
 select optimizer;
 
@@ -52,4 +50,4 @@ begin
 	select optimizer; --error, regular select statements not allowed inside procedures (disallowed by the parser)
 end;
 
-set optimizer = (select sys.aux);
+set optimizer = 'default_pipe';

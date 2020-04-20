@@ -1,4 +1,4 @@
-DECLARE TABLE atest (a int);
+CREATE TABLE atest (a int);
 INSERT INTO atest VALUES (1);
 
 CREATE OR REPLACE FUNCTION iambroken() RETURNS TABLE(a int) 

@@ -3766,7 +3766,7 @@ trans_init(sql_trans *tr, backend_stack stk, sql_trans *otr)
 				t->base.stime = pt->base.wtime;
 				if (!istmp && !t->base.allocated)
 					t->data = NULL;
-				assert (istmp || isDeclaredTable(t) || !t->base.allocated);
+				assert (istmp || !t->base.allocated);
 
 				if (pt->base.id == t->base.id) {
 					node *i, *j;
@@ -3781,7 +3781,7 @@ trans_init(sql_trans *tr, backend_stack stk, sql_trans *otr)
 							c->base.stime = pc->base.wtime;
 							if (!istmp && !c->base.allocated)
 								c->data = NULL;
-							assert (istmp || isDeclaredTable(t) || !c->base.allocated);
+							assert (istmp || !c->base.allocated);
 						} else {
 							/* for now assert */
 							assert(0);
@@ -3797,7 +3797,7 @@ trans_init(sql_trans *tr, backend_stack stk, sql_trans *otr)
 							c->base.stime = pc->base.wtime;
 							if (!istmp && !c->base.allocated)
 								c->data = NULL;
-							assert (istmp || isDeclaredTable(t) || !c->base.allocated);
+							assert (istmp || !c->base.allocated);
 						} else {
 							/* for now assert */
 							assert(0);
@@ -3905,11 +3905,11 @@ conditional_table_dup(sql_trans *tr, int flags, sql_table *ot, sql_schema *s)
 	int p = (tr->parent == gtrans);
 
 	/* persistent columns need to be dupped */
-	if ((p && ot->persistence != SQL_LOCAL_TEMP) ||
+	if ((p && isGlobal(ot)) ||
 	    /* allways dup in recursive mode */
 	    tr->parent != gtrans)
 		return table_dup(tr, flags, ot, s);
-	else if (ot->persistence == SQL_LOCAL_TEMP){/* is local temp, may need to be cleared */
+	else if (!isGlobal(ot)) { /* is local temp, may need to be cleared */
 		if (ot->commit_action == CA_DELETE) {
 			sql_trans_clear_table(tr, ot);
 		} else if (ot->commit_action == CA_DROP) {

@@ -46,29 +46,27 @@ stdout of test 'ambiguity` in directory 'sql/test/scoping` itself:
 #SELECT foo();
 % . # table_name
 % %1 # name
-% clob # type
-% 4 # length
-[ "Gvar"	]
-#CREATE OR REPLACE FUNCTION Gvar() RETURNS string
-#BEGIN DECLARE i string; set i =sys.gvar; return i; END;
+% int # type
+% 1 # length
+[ 1	]
 #SELECT Gvar();
 % . # table_name
 % %1 # name
 % clob # type
-% 4 # length
-[ "Gvar"	]
+% 10 # length
+[ "function i"	]
 #SELECT foo();
 % . # table_name
 % %1 # name
-% clob # type
-% 4 # length
-[ "Gvar"	]
+% int # type
+% 1 # length
+[ 1	]
 #SELECT Gvar();
 % . # table_name
 % %1 # name
 % clob # type
-% 4 # length
-[ "Gvar"	]
+% 10 # length
+[ "function i"	]
 #CREATE OR REPLACE PROCEDURE foo() 
 #BEGIN DECLARE i string; set i = 'iassigned'; END;
 #CREATE OR REPLACE PROCEDURE gvar() 

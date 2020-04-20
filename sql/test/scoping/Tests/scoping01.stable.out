@@ -70,24 +70,24 @@ stdout of test 'scoping01` in directory 'sql/test/scoping` itself:
 [ 2	]
 #select i from tmp1;
 % sys.tmp1 # table_name
-% i # name
+% optimizer # name
 % int # type
 % 1 # length
 [ 1	]
 [ 2	]
 #select sys.i, i from tmp1; --we declare variables in a schema, so to reference them we add the schema
 % .,	sys.tmp1 # table_name
-% single_value,	i # name
-% int,	int # type
-% 4,	1 # length
-[ 1234,	1	]
-[ 1234,	2	]
-#declare table tmp2(i integer, s string); --the same for declared tables
+% single_value,	optimizer # name
+% varchar,	int # type
+% 12,	1 # length
+[ "default_pipe",	1	]
+[ "default_pipe",	2	]
+#CREATE table tmp2("optimizer" integer, s string);
 #insert into tmp2 values(3,'another'),(4,'test');
 [ 2	]
 #select tmp1.i, tmp2.i from sys.tmp1, sys.tmp2;
 % sys.tmp1,	sys.tmp2 # table_name
-% i,	i # name
+% optimizer,	optimizer # name
 % int,	int # type
 % 1,	1 # length
 [ 1,	3	]

@@ -28,14 +28,6 @@ stdout of test 'set-schema-mclient-msg.Bug-6754` in directory 'sql/test/BugTrack
 #set schema sys;
 #set schema json;
 #set role monetdb;
-#declare a int;
-#set a = 4;
-#select a;
-% . # table_name
-% single_value # name
-% int # type
-% 1 # length
-[ 4	]
 #set schema sys;
 #start transaction;
 #commit;

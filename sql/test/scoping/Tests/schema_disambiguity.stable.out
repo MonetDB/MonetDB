@@ -7,88 +7,10 @@ stdout of test 'schema_disambiguity` in directory 'sql/test/scoping` itself:
 
 #CREATE SCHEMA A;
 #CREATE SCHEMA B;
-#DECLARE "outer" string;
-#SET "outer" = 'outer';
-#SELECT "outer";
-% . # table_name
-% single_value # name
-% clob # type
-% 5 # length
-[ "outer"	]
-#SELECT sys."outer"; -- same as above
-% . # table_name
-% single_value # name
-% clob # type
-% 5 # length
-[ "outer"	]
 #SET SCHEMA A;
-#DECLARE "Avar" string;
-#SET "Avar" = 'Avar';
-#SELECT "Avar";
-% . # table_name
-% single_value # name
-% clob # type
-% 4 # length
-[ "Avar"	]
 #SET SCHEMA B;
-#DECLARE "Bvar" string;
-#SET "Bvar" = 'Bvar';
-#SELECT "Bvar";
-% . # table_name
-% single_value # name
-% clob # type
-% 4 # length
-[ "Bvar"	]
 #SET SCHEMA sys;
-#SELECT "outer"; -- should be known
-% . # table_name
-% single_value # name
-% clob # type
-% 5 # length
-[ "outer"	]
-#SELECT sys."outer";
-% . # table_name
-% single_value # name
-% clob # type
-% 5 # length
-[ "outer"	]
-#SELECT A."Avar"; -- known
-% . # table_name
-% single_value # name
-% clob # type
-% 4 # length
-[ "Avar"	]
-#SELECT B."Bvar"; -- known
-% . # table_name
-% single_value # name
-% clob # type
-% 4 # length
-[ "Bvar"	]
 #SET SCHEMA A;
-#SELECT "Avar";	-- known
-% . # table_name
-% single_value # name
-% clob # type
-% 4 # length
-[ "Avar"	]
-#SELECT sys."outer";
-% . # table_name
-% single_value # name
-% clob # type
-% 5 # length
-[ "outer"	]
-#SELECT A."Avar"; -- known
-% . # table_name
-% single_value # name
-% clob # type
-% 4 # length
-[ "Avar"	]
-#SELECT B."Bvar"; -- known
-% . # table_name
-% single_value # name
-% clob # type
-% 4 # length
-[ "Bvar"	]
 #SET SCHEMA "sys";
 #DROP SCHEMA A CASCADE;
 #DROP SCHEMA B CASCADE;

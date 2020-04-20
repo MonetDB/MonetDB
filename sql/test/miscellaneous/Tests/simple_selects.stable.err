@@ -161,13 +161,18 @@ MAPI  = (monetdb) /var/tmp/mtest-374801/.s.monetdb.38729
 QUERY = create table x (a int default '1' GENERATED ALWAYS AS IDENTITY); --error, multiple default values
 ERROR = !A default value for a column may be specified at most once
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-106925/.s.monetdb.39578
-QUERY = SELECT 1, 2 INTO myvar; --error, number of variables don't match
+MAPI  = (monetdb) /var/tmp/mtest-190980/.s.monetdb.35234
+QUERY = create function myudf() returns int
+        begin
+        declare myvar int;
+        SELECT 1, 2 INTO myvar; --error, number of variables don't match
+        return 1;
+        end;
 ERROR = !SELECT INTO: number of values doesn't match number of variables to set
 CODE  = 21S01
-MAPI  = (monetdb) /var/tmp/mtest-881990/.s.monetdb.34703
-QUERY = declare table x (c int); --error table x already declared
-ERROR = !DECLARE TABLE: name 'x' already in use
+MAPI  = (monetdb) /var/tmp/mtest-190980/.s.monetdb.35234
+QUERY = create table x (c int); --error table x already declared
+ERROR = !CREATE TABLE: name 'x' already in use
 CODE  = 42S01
 MAPI  = (monetdb) /var/tmp/mtest-628208/.s.monetdb.31440
 QUERY = select * from myx natural full outer join myy; --error, types boolean(1,0) and sec_interval(13,0) are not equal

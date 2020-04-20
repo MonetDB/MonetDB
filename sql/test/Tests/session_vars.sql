@@ -3,9 +3,9 @@ select current_schema;
 select current_user;
 select current_role;
 
-declare test_nr int;
-declare test_str varchar(1024);
-declare test_boolean boolean;
+declare test_nr int; --error, no variable declaration on the global scope
+declare test_str varchar(1024); --error, no variable declaration on the global scope
+declare test_boolean boolean; --error, no variable declaration on the global scope
 
 set test_nr = 1;
 set test_str = 'help';
@@ -36,4 +36,3 @@ select sys.test_boolean;
 select @test_nr; --error, @ annotation no longer exists
 select @test_str; --error, @ annotation no longer exists
 select @test_boolean; --error, @ annotation no longer exists
-

@@ -14,15 +14,7 @@ stdout of test 'metadataConsistency` in directory 'sql/test/Users` itself:
 % 3 # length
 [ "qdv"	]
 #create user "jtest" with unencrypted password 'wacht01' name 'Jan Test' schema "sys";
-#declare jtest_id int;
-#select id into jtest_id from sys.auths where name = 'jtest';
-#select jtest_id > 0;
-% . # table_name
-% %1 # name
-% boolean # type
-% 5 # length
-[ true	]
-#select privileges from sys.privileges where auth_id = jtest_id;
+#select privileges from sys.privileges where auth_id = (select id from sys.auths where name = 'jtest');
 % sys.privileges # table_name
 % privileges # name
 % int # type

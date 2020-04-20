@@ -165,7 +165,7 @@ rel_psm_call(sql_query * query, symbol *se)
 }
 
 static list *
-rel_psm_declare(mvc *sql, dnode *n, bool global)
+rel_psm_declare(mvc *sql, dnode *n)
 {
 	list *l = sa_list(sql->sa);
 
@@ -180,29 +180,18 @@ rel_psm_declare(mvc *sql, dnode *n, bool global)
 			sql_exp *r = NULL;
 			sql_arg *a;
 
-			if (global) {
-				if (sname && !(s = mvc_bind_schema(sql, sname)))
-					return sql_error(sql, 02, SQLSTATE(3F000) "DECLARE: No such schema '%s'", sname);
-				/* find if there's a global variable with the same name */
-				if (find_global_var(sql, s, tname))
-					return sql_error(sql, 01, SQLSTATE(42000) "DECLARE: Variable '%s.%s' already declared on the global scope", s->base.name, tname);
-				/* variables are put on stack, globals on a separate list */
-				if (!push_global_var(sql, s->base.name, tname, ctype))
-					return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			} else {
-				if (sname)
-					return sql_error(sql, 01, SQLSTATE(42000) "DECLARE: Variables declared inside functions and procedures don't have a schema");
-				/* find if there's a parameter with the same name */
-				if (sql->frame == 1 && (a = sql_bind_param(sql, tname)))
-					return sql_error(sql, 01, SQLSTATE(42000) "DECLARE: Variable '%s' declared as a parameter", tname);
-				/* check if we overwrite a scope local variable declare x; declare x; */
-				if (frame_find_var(sql, tname))
-					return sql_error(sql, 01, SQLSTATE(42000) "DECLARE: Variable '%s.%s' already declared", s->base.name, tname);
-				/* variables are put on stack, globals on a separate list */
-				if (!frame_push_var(sql, tname, ctype))
-					return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			}
-			r = exp_var(sql->sa, global ? sa_strdup(sql->sa, s->base.name) : NULL, sa_strdup(sql->sa, tname), ctype, global ? 0 : sql->frame);
+			if (sname)
+				return sql_error(sql, 01, SQLSTATE(42000) "DECLARE: Declared variables don't have a schema");
+			/* find if there's a parameter with the same name */
+			if (sql->frame == 1 && (a = sql_bind_param(sql, tname)))
+				return sql_error(sql, 01, SQLSTATE(42000) "DECLARE: Variable '%s' declared as a parameter", tname);
+			/* check if we overwrite a scope local variable declare x; declare x; */
+			if (frame_find_var(sql, tname))
+				return sql_error(sql, 01, SQLSTATE(42000) "DECLARE: Variable '%s.%s' already declared", s->base.name, tname);
+			/* variables are put on stack, globals on a separate list */
+			if (!frame_push_var(sql, tname, ctype))
+				return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			r = exp_var(sql->sa, NULL, sa_strdup(sql->sa, tname), ctype, sql->frame);
 			append(l, r);
 			ids = ids->next;
 		}
@@ -222,7 +211,7 @@ rel_psm_declare_table(sql_query *query, dnode *n)
 	sql_table *t;
 
 	if (sname)
-		return sql_error(sql, 01, SQLSTATE(42000) "DECLARE TABLE: Tables declared inside functions and procedures don't have a schema");
+		return sql_error(sql, 01, SQLSTATE(42000) "DECLARE TABLE: Declared tables don't have a schema");
 
 	assert(n->next->next->next->type == type_int);
 	rel = rel_create_table(query, SQL_DECLARED_TABLE, sname, name, false, n->next->next->data.sym,
@@ -699,7 +688,7 @@ sequential_block(sql_query *query, sql_subtype *restype, list *restypelist, dlis
 			res = psm_set_exp(query, s->data.lval->h);
 			break;
 		case SQL_DECLARE:
-			reslist = rel_psm_declare(sql, s->data.lval->h, false);
+			reslist = rel_psm_declare(sql, s->data.lval->h);
 			break;
 		case SQL_DECLARE_TABLE:
 		case SQL_CREATE_TABLE: 
@@ -1597,9 +1586,8 @@ rel_psm(sql_query *query, symbol *s)
 			
 		if (all)
 			ret = rel_drop_all_func(sql, qname, drop_action, type);
-		else {
+		else
 			ret = rel_drop_func(sql, qname, typelist, drop_action, type, if_exists);
-		}
 
 		sql->type = Q_SCHEMA;
 	}	break;
@@ -1608,9 +1596,7 @@ rel_psm(sql_query *query, symbol *s)
 		sql->type = Q_SCHEMA;
 		break;
 	case SQL_DECLARE:
-		ret = rel_psm_block(sql->sa, rel_psm_declare(sql, s->data.lval->h, true));
-		sql->type = Q_SCHEMA;
-		break;
+		return sql_error(sql, 02, SQLSTATE(42000) "Variables cannot be declared on the global scope");
 	case SQL_CALL:
 		ret = rel_psm_stmt(sql->sa, rel_psm_call(query, s->data.sym));
 		sql->type = Q_UPDATE;
