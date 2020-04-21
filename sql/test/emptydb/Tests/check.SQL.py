@@ -158,6 +158,16 @@ select a1.name, a2.name from sys.auths a1, sys.auths a2, sys.user_role ur where 
 select keyword from sys.keywords order by keyword;
 -- table_types
 select table_type_id, table_type_name from sys.table_types order by table_type_id, table_type_name;
+-- function_types
+select function_type_name, function_type_keyword from sys.function_types order by function_type_keyword, function_type_name;
+-- function_languages
+select language_name, language_keyword from sys.function_languages order by language_keyword nulls first, language_name;
+-- key_types
+select key_type_name from sys.key_types order by key_type_name;
+-- index_types
+select index_type_name from sys.index_types order by index_type_name;
+-- privilege_codes
+select privilege_code_name from sys.privilege_codes order by privilege_code_name;
 -- dependency_types
 select dependency_type_id, dependency_type_name from sys.dependency_types order by dependency_type_id, dependency_type_name;
 -- drop helper function
