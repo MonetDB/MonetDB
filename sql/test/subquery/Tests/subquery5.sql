@@ -195,6 +195,9 @@ SELECT 1 FROM integers i1 RIGHT OUTER JOIN integers i2 ON NOT EXISTS(SELECT 1);
 	-- 1
 	-- 1
 
+SELECT (SELECT 1 FROM integers i2 INNER JOIN integers i3 ON i1.i = 1) = (SELECT 1 FROM integers i2 INNER JOIN integers i3 ON MIN(i1.i) = 1) FROM integers i1;
+	--error, subquery uses ungrouped column "i1.i" from outer query
+
 DROP FUNCTION evilfunction(INT);
 DROP TABLE tbl_ProductSales;
 DROP TABLE another_T;
