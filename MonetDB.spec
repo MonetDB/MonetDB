@@ -649,7 +649,9 @@ Recommends: %{name}-SQL-server5-hugeint%{?_isa} = %{version}-%{release}
 Suggests: %{name}-client%{?_isa} = %{version}-%{release}
 %endif
 %if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
-%systemd_requires
+Requires(post): systemd
+Requires(preun): systemd
+Requires(postun): systemd
 %endif
 
 %description SQL-server5
