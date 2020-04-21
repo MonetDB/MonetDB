@@ -375,8 +375,6 @@ INSERT INTO sys.function_languages (language_id, language_name, language_keyword
 --  (5, 'J', 'J'), -- Javascript? not yet available for use
   (6, 'Python', 'PYTHON'),
   (7, 'Python Mapped', 'PYTHON_MAP'),
-  (8, 'Python2', 'PYTHON2'),
-  (9, 'Python2 Mapped', 'PYTHON2_MAP'),
   (10, 'Python3', 'PYTHON3'),
   (11, 'Python3 Mapped', 'PYTHON3_MAP'),
   (12, 'C++', 'CPP');

@@ -52,6 +52,12 @@
   through the SQL layer. Previously this feature was available via MAPI
   exclusively with the "release" command.
 
+* Fri Nov 29 2019 Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com>
+- Added support for raw strings using the syntax r'' or R''. This means
+  that C-like escapes will remain uninterpreted within those strings. For
+  instance SELECT r'\"' returns a string of length two. The user needs
+  to escape single quotes by doubling them: SELECT r''''.
+
 * Wed Nov 27 2019 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
 - Implemented ROLLUP, CUBE and GROUPING SETS from SQL:1999. They define
   grouping subsets used at GROUP BY clause in order to compute partial
@@ -76,4 +82,14 @@
 - The procedures sys.settimeout(bigint), sys.settimeout(bigint,bigint) 
   and sys.session(bigint) are now deprecated. Instead use sys.setquerytimeout
   and sys.setsessiontimeout mentioned above.
+
+* Fri Oct 25 2019 Joeri van Ruth <joeri.van.ruth@monetdbsolutions.com>
+- Added SQL function sys.hot_snapshot() which can be used to write
+  a snapshot of the database to a tar file. For example,
+  sys.hot_snapshot('/tmp/snapshot.tar'). If compression support is
+  compiled in, snapshots can also be compressed ('/tmp/snapshot.tar.gz').
+  The tar file expands to a single directory with the same name as the
+  database that was snapshotted. This directory can be passed directly
+  as the --dbpath argument of mserver5 or it can be copied into an
+  existing dbfarm and started from monetdbd.
 
