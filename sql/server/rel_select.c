@@ -1197,6 +1197,8 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 				else
 					exp->card = CARD_ATOM;
 				set_freevar(exp, i);
+				if (!is_sql_aggr(f) && !outer->grouped)
+					set_outer(outer);
 			}
 			if (exp && outer && is_join(outer->op))
 				set_dependent(outer);
@@ -1263,6 +1265,8 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 				else
 					exp->card = CARD_ATOM;
 				set_freevar(exp, i);
+				if (!is_sql_aggr(f) && !outer->grouped)
+					set_outer(outer);
 			}
 			if (exp && outer && is_join(outer->op))
 				set_dependent(outer);
@@ -3475,6 +3479,8 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 				sql_exp *lu = query_outer_last_used(query, all_freevar-1);
 				return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: subquery uses ungrouped column \"%s.%s\" from outer query", exp_relname(lu), exp_name(lu));
 			}
+			if (is_outer(groupby))
+				return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: subquery uses ungrouped column from outer query");
 		}
 	}
 
