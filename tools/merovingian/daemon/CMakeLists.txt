@@ -65,10 +65,10 @@ install(FILES
 
 install(DIRECTORY
   DESTINATION
-  ${CMAKE_INSTALL_LOCALSTATEDIR}/tmpfiles.d)
+  ${CMAKE_INSTALL_SYSCONFDIR}/tmpfiles.d)
 
 install(FILES
   ${CMAKE_SOURCE_DIR}/buildtools/conf/monetdbd.conf
-  DESTINATION ${CMAKE_INSTALL_LOCALSTATEDIR}/tmpfiles.d/monetdbd.conf)
+  DESTINATION ${CMAKE_INSTALL_SYSCONFDIR}/tmpfiles.d)
 
 add_subdirectory(config)
