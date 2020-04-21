@@ -2137,6 +2137,9 @@ exp_rel_visitor(mvc *sql, sql_exp *e, rel_rewrite_fptr rel_rewriter, int *change
 		}
 		break;
 	case e_atom:
+		if (e->f)
+			if ((e->f = exps_rel_visitor(sql, e->f, rel_rewriter, changes, topdown)) == NULL)
+				return NULL;
 		break;
 	}
 	return e;
