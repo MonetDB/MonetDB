@@ -32,11 +32,16 @@ void
 sql_stack_push(sql_stack *s, void *v)
 {
 	if (s->top >= s->size) {
+		void **nvalues;
 		size_t osz = s->size;
+
 		s->size *= 2;
-		s->values = SA_RENEW_ARRAY(s->sa, void*, s->values, s->size, osz);
-		if (s->values == NULL)
+		nvalues = SA_RENEW_ARRAY(s->sa, void*, s->values, s->size, osz);
+		if (nvalues == NULL) {
+			s->size = osz;
 			return;
+		}
+		s->values = nvalues;
 	}
 	s->values[s->top++] = v;
 }
