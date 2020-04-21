@@ -157,6 +157,25 @@ tmp_schema(mvc *sql)
 	return mvc_bind_schema(sql, "tmp");
 }
 
+sql_table *
+find_table_on_scope(mvc *sql, sql_schema **s, const char *sname, const char *tname)
+{
+	sql_table *t = NULL;
+
+	if (!sname) {
+		t = stack_find_table(sql, tname); /* first try a declared table from the stack */
+		if (!t) { /* then a temporary one */
+			sql_schema *tmp = tmp_schema(sql);
+			t = mvc_bind_table(sql, tmp, tname);
+			if (t)
+				*s = tmp;
+		}
+	}
+	if (!t) /* then a table from the provided schema */
+		t = mvc_bind_table(sql, *s, tname); 
+	return t;
+}
+
 char *
 qname_schema(dlist *qname)
 {

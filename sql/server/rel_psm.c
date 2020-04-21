@@ -458,28 +458,22 @@ rel_psm_return( sql_query *query, sql_subtype *restype, list *restypelist, symbo
 
 		if (sname && !(s = mvc_bind_schema(sql, sname)))
 			return sql_error(sql, 02, SQLSTATE(3F000) "RETURN: no such schema '%s'", sname);
+		if (!(t = find_table_on_scope(sql, &s, sname, tname)))
+			return sql_error(sql, 02, SQLSTATE(42S02) "RETURN: no such table '%s'", tname);
 
-		if (!sname && (t = stack_find_table(sql, tname))) {
+		if (isDeclaredTable(t)) {
 			rel = rel_table(sql, ddl_create_table, s->base.name, t, SQL_DECLARED_TABLE);
 		} else {
-			t = mvc_bind_table(sql, s, tname);
-			if (!t && !sname) {
-				s = tmp_schema(sql);
-				t = mvc_bind_table(sql, s, tname);
-			}
-			if (t) {
-				rel = rel_basetable(sql, t, t->base.name);
-				for (node *n = rel->exps->h ; n ; n = n->next) {
-					sql_exp *e = (sql_exp *) n->data;
-					const char *oname = e->r;
+			rel = rel_basetable(sql, t, t->base.name);
+			for (node *n = rel->exps->h ; n ; n = n->next) {
+				sql_exp *e = (sql_exp *) n->data;
+				const char *oname = e->r;
 
-					if (!strcmp(oname, TID)) {
-						list_remove_node(rel->exps, n);
-						break;
-					}
+				if (!strcmp(oname, TID)) {
+					list_remove_node(rel->exps, n);
+					break;
 				}
-			} else
-				return sql_error(sql, 02, SQLSTATE(42S02) "RETURN: no such table '%s'", tname);
+			}
 		}
 	} else { /* other cases */
 		res = rel_value_exp2(query, &rel, return_sym, sql_sel, ek);
@@ -1298,16 +1292,7 @@ create_trigger(sql_query *query, dlist *qname, int time, symbol *trigger_event, 
 	if (create && !mvc_schema_privs(sql, ss))
 		return sql_error(sql, 02, SQLSTATE(42000) "%s TRIGGER: access denied for %s to schema '%s'", base, sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")), ss->base.name);
 	if (create) {
-		if (!sname)
-			t = stack_find_table(sql, tname);
-		if (t)
-			return sql_error(sql, 02, SQLSTATE(42000) "%s TRIGGER: declared tables cannot have triggers", base);
-		t = mvc_bind_table(sql, ss, tname);
-		if (!t && !sname) {
-			ss = tmp_schema(sql);
-			t = mvc_bind_table(sql, ss, tname);
-		}
-		if (!t)
+		if (!(t = find_table_on_scope(sql, &ss, sname, tname)))
 			return sql_error(sql, 02, SQLSTATE(42000) "%s TRIGGER: unknown table '%s'", base, tname);
 	}
 	if (create && isView(t))
@@ -1348,7 +1333,7 @@ create_trigger(sql_query *query, dlist *qname, int time, symbol *trigger_event, 
 	}
 
 	if (!instantiate) {
-		t = mvc_bind_table(sql, ss, tname);
+		t = find_table_on_scope(sql, &ss, sname, tname);
 		if (!stack_push_frame(sql, "OLD-NEW"))
 			return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		/* we need to add the old and new tables */
@@ -1533,15 +1518,7 @@ create_table_from_loader(sql_query *query, dlist *qname, symbol *fcall)
 		return sql_error(sql, 02, SQLSTATE(3F000) "CREATE TABLE FROM LOADER: no such schema '%s'", sname);
 	if (!mvc_schema_privs(sql, s))
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE TABLE FROM LOADER: insufficient privileges for user '%s' in schema '%s'", sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")), s->base.name);
-	if (!sname)
-		t = stack_find_table(sql, tname);
-	if (!t)
-		t = mvc_bind_table(sql, s, tname);
-	if (!t && !sname) {
-		s = tmp_schema(sql);
-		t = mvc_bind_table(sql, s, tname);
-	}
-	if (t)
+	if ((t = find_table_on_scope(sql, &s, sname, tname)))
 		return sql_error(sql, 02, SQLSTATE(42S01) "CREATE TABLE FROM LOADER: name '%s' already in use", tname);
 
 	rel = rel_loader_function(query, fcall, new_exp_list(sql->sa), &loader);

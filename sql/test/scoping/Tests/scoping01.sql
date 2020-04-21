@@ -1,4 +1,3 @@
--- temp tables precedence
 -- hash lookup for variables
 -- TODO transaction management
 -- Test variables with different schemas and scoping levels

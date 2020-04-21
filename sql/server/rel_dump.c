@@ -1508,11 +1508,10 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 			*e = 0;
 			(*pos)++;
 			skipWS(r, pos);
-			s = mvc_bind_schema(sql, sname);
-			if (s)
-				t = mvc_bind_table(sql, s, tname);
-			if (!s || !t)
-				return sql_error(sql, -1, SQLSTATE(42000) "Table: missing '%s.%s'\n", sname, tname);
+			if (!(s = mvc_bind_schema(sql, sname)))
+				return sql_error(sql, -1, SQLSTATE(3F000) "No such schema '%s'\n", sname);
+			if (!(t = find_table_on_scope(sql, &s, sname, tname)))
+				return sql_error(sql, -1, SQLSTATE(42S02) "Table missing '%s.%s'\n", sname, tname);
 			if (isMergeTable(t))
 				return sql_error(sql, -1, SQLSTATE(42000) "Merge tables not supported under remote connections\n");
 			if (isRemote(t))

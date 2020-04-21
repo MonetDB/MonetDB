@@ -538,12 +538,7 @@ drop_table(mvc *sql, char *sname, char *tname, int drop_action, int if_exists)
 			return MAL_SUCCEED;
 		throw(SQL,"sql.drop_table",SQLSTATE(3F000) "DROP TABLE: no such schema '%s'", sname);
 	}
-	t = mvc_bind_table(sql, s, tname);
-	if (!t && !sname) {
-		s = tmp_schema(sql);
-		t = mvc_bind_table(sql, s, tname);
-	} 
-	if (!t) {
+	if (!(t = mvc_bind_table(sql, s, tname))) {
 		if (if_exists)
 			return MAL_SUCCEED;
 		throw(SQL,"sql.drop_table", SQLSTATE(42S02) "DROP TABLE: no such table '%s'", tname);

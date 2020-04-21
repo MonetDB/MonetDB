@@ -960,18 +960,10 @@ table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral)
 
 		if (sname && !(s = mvc_bind_schema(sql, sname)))
 			return sql_error(sql, 02, SQLSTATE(3F000) "SELECT: no such schema '%s'", sname);
-		if (!sname) {
+		if (!sname)
 			temp_table = stack_find_rel_view(sql, tname);
-			if (!temp_table)
-				t = stack_find_table(sql, tname);
-		}
-		if (!temp_table && !t) {
-			t = mvc_bind_table(sql, s, tname);
-			if (!t && !sname) {
-				s = tmp_schema(sql);
-				t = mvc_bind_table(sql, s, tname);
-			}
-		}
+		if (!temp_table)
+			t = find_table_on_scope(sql, &s, sname, tname);
 		if (!t && !temp_table) {
 			return sql_error(sql, 02, SQLSTATE(42S02) "SELECT: no such table '%s'", tname);
 		} else if (!temp_table && !table_privs(sql, t, PRIV_SELECT)) {
