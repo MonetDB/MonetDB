@@ -4160,14 +4160,14 @@ rel_push_aggr_down(mvc *sql, sql_rel *rel, int *changes)
 		ul->r = lgbe;
 		ul->nrcols = g->nrcols;
 		ul->card = g->card;
-		ul->exps = list_merge(exps_copy(sql, g->exps), exps_copy(sql, ul->r), (fdup)NULL);
+		ul->exps = exps_copy(sql, g->exps);
 		ul->nrcols = list_length(ul->exps);
 
 		ur = rel_groupby(sql, ur, NULL);
 		ur->r = rgbe;
 		ur->nrcols = g->nrcols;
 		ur->card = g->card;
-		ur->exps = list_merge(exps_copy(sql, g->exps), exps_copy(sql, ur->r), (fdup)NULL);
+		ur->exps = exps_copy(sql, g->exps);
 		ur->nrcols = list_length(ur->exps);
 
 		/* group by on primary keys which define the partioning scheme 
