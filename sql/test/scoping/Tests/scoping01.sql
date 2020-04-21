@@ -1,6 +1,5 @@
 -- hash lookup for variables
 -- TODO transaction management
--- Test variables with different schemas and scoping levels
 -- upgrade drop dt_schema
 
 create table tmp1("optimizer" integer, s string);

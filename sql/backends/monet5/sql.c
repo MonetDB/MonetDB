@@ -122,7 +122,7 @@ sql_symbol2relation(mvc *sql, symbol *sym)
 {
 	sql_rel *rel;
 	sql_query *query = query_create(sql);
-	int top = sql->topframes, nglobal_vars = list_length(sql->global_vars);
+	int top = sql->topframes;
 
 	/* On explain and plan modes, drop declared variables after generating the AST */
 	if (((sql->emod & mod_explain) || (sql->emode != m_normal && sql->emode != m_execute)) && !stack_push_frame(sql, NULL))
@@ -139,12 +139,8 @@ sql_symbol2relation(mvc *sql, symbol *sym)
 		sql->no_mitosis = 1;
 
 	/* On explain and plan modes, drop declared variables after generating the AST */
-	if ((sql->emod & mod_explain) || (sql->emode != m_normal && sql->emode != m_execute)) {
-		int number_new_globals = list_length(sql->global_vars) - nglobal_vars;
+	if ((sql->emod & mod_explain) || (sql->emode != m_normal && sql->emode != m_execute))
 		stack_pop_until(sql, top);
-		for (int i = 0 ; i < number_new_globals ; i++)
-			list_remove_node(sql->global_vars, sql->global_vars->t);
-	}
 	return rel;
 }
 
