@@ -1,6 +1,6 @@
 Source: monetdb
 Section: misc
-Priority: extra
+Priority: optional
 Maintainer: MonetDB BV <info@monetdb.org>
 Homepage: https://www.monetdb.org/
 Vcs-Browser: https://dev.monetdb.org/hg/MonetDB/
@@ -315,7 +315,7 @@ Description: MonetDB testing Python programs
 Package: monetdb-dbg
 Architecture: any
 Section: debug
-Priority: extra
+Priority: optional
 Depends: ${misc:Depends}
 Description: Debugging symbols for monetdb packages
  MonetDB is a database management system that is developed from a

@@ -19257,7 +19257,7 @@ stdout of test 'MAL-signatures` in directory 'clients` itself:
 [ "mtime",	"dayofyear",	"command mtime.dayofyear(d:date):int ",	"MTIMEdate_extract_dayofyear;",	"Returns N where d is the Nth day\n\tof the year (january 1 returns 1)"	]
 [ "mtime",	"decade",	"command mtime.decade(d:date):int ",	"MTIMEdate_extract_decade;",	"extracts decade from date."	]
 [ "mtime",	"decade",	"command mtime.decade(t:timestamp):int ",	"MTIMEtimestamp_decade;",	""	]
-[ "mtime",	"diff",	"command mtime.diff(val1:date, val2:date):lng ",	"MTIMEdate_diff;",	"returns the number of days\n\tbetween 'val1' and 'val2'."	]
+[ "mtime",	"diff",	"command mtime.diff(val1:date, val2:date):int ",	"MTIMEdate_diff;",	"returns the number of days\n\tbetween 'val1' and 'val2'."	]
 [ "mtime",	"diff",	"command mtime.diff(val1:daytime, val2:daytime):lng ",	"MTIMEdaytime_diff_msec;",	"returns the number of msec between 'val1' and 'val2'."	]
 [ "mtime",	"diff",	"command mtime.diff(val1:timestamp, val2:timestamp):lng ",	"MTIMEtimestamp_diff_msec;",	"returns the number of milliseconds\n\tbetween 'val1' and 'val2'."	]
 [ "mtime",	"epoch",	"command mtime.epoch(t:timestamp):int ",	"MTIMEseconds_since_epoch;",	"unix-time (epoch) support: seconds since epoch"	]

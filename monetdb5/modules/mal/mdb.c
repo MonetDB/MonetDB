@@ -191,8 +191,8 @@ MDBsetDebug(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	(void) mb;
 	(void) stk;
 	(void) p;
+	*ret = GDKgetdebug();
 	GDKsetdebug(*flg);
-	*ret = GDKdebug;
 	return MAL_SUCCEED;
 }
 
@@ -268,8 +268,8 @@ MDBsetDebugStr_(int *ret, str *flg)
 		debug ^= GRPforcemito;
 	else
 		throw(MAL, "mdb.setDebugStr", ILLEGAL_ARGUMENT);
+	*ret = GDKgetdebug();
 	GDKsetdebug(debug);
-	*ret = GDKdebug;
 
 	return MAL_SUCCEED;
 }

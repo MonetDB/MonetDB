@@ -5016,7 +5016,7 @@ insert into sys.args values (30215, 1277, 'res_0', 'time', 7, 0, 0, 0);
 insert into sys.functions values (1278, 'localtimestamp', 'current_timestamp', 'sql', 0, 1, false, false, false, 2000, true);
 insert into sys.args values (30216, 1278, 'res_0', 'timestamp', 7, 0, 0, 0);
 insert into sys.functions values (1279, 'sql_sub', 'diff', 'mtime', 0, 1, false, false, false, 2000, true);
-insert into sys.args values (30217, 1279, 'res_0', 'sec_interval', 13, 0, 0, 0);
+insert into sys.args values (30217, 1279, 'res_0', 'int', 32, 0, 0, 0);
 insert into sys.args values (30218, 1279, 'arg_1', 'date', 0, 0, 1, 1);
 insert into sys.args values (30219, 1279, 'arg_2', 'date', 0, 0, 1, 2);
 insert into sys.functions values (1280, 'sql_sub', 'diff', 'mtime', 0, 1, false, false, false, 2000, true);
@@ -6395,9 +6395,9 @@ DROP AGGREGATE var_pop(date);
 DROP AGGREGATE var_pop(time);
 DROP AGGREGATE var_pop(timestamp);
 ALTER TABLE sys.keywords SET READ WRITE;
-DELETE FROM sys.keywords where "keyword" IN ('NOCYCLE','NOMAXVALUE','NOMINVALUE','UNIONJOIN');
-insert into sys.keywords values ('ANALYZE'),('AT'),('AUTHORIZATION'),('CACHE'),('CENTURY'),('COLUMN'),('CLIENT'),('CUBE'),('CYCLE'),('DATA'),('DATE'),('DEBUG'),('DECADE'),('DEALLOCATE'),('DIAGNOSTICS'),('DISTINCT'),('DOW'),('DOY'),('EXEC'),('EXECUTE'),('EXPLAIN'),('FIRST'),('FWF'),('GROUPING'),('GROUPS'),('INCREMENT'),('INTERVAL'),('KEY'),('LANGUAGE'),('LARGE'),('LAST'),('LATERAL'),('LEVEL'),('LOADER'),('MATCH'),('MATCHED'),('MAXVALUE'),('MINVALUE'),('NAME'),('NO'),('NULLS'),('OBJECT'),('OPTIONS'),('PASSWORD'),('PLAN'),('PRECISION'),('PREP'),('PREPARE'),('QUARTER'),('RELEASE'),('REPLACE'),('ROLLUP'),('SCHEMA'),('SEED'),('SERVER'),('SESSION'),('SETS'),('SIZE'),('STATEMENT'),('TABLE'),('TEMP'),('TEMPORARY'),('TEXT'),('TIME'),('TIMESTAMP'),('TRACE'),('TYPE'),('UNIONJOIN'),('WEEK'),('YEAR'),('ZONE');
-create procedure hot_snapshot(tarfile string)
+DELETE FROM sys.keywords where keyword IN ('NOCYCLE','NOMAXVALUE','NOMINVALUE');
+insert into sys.keywords values ('ANALYZE'),('AT'),('AUTHORIZATION'),('CACHE'),('CENTURY'),('COLUMN'),('CLIENT'),('CUBE'),('CYCLE'),('DATA'),('DATE'),('DEBUG'),('DECADE'),('DEALLOCATE'),('DIAGNOSTICS'),('DISTINCT'),('DOW'),('DOY'),('EXEC'),('EXECUTE'),('EXPLAIN'),('FIRST'),('FWF'),('GROUPING'),('GROUPS'),('INCREMENT'),('INTERVAL'),('KEY'),('LANGUAGE'),('LARGE'),('LAST'),('LATERAL'),('LEVEL'),('LOADER'),('MATCH'),('MATCHED'),('MAXVALUE'),('MINVALUE'),('NAME'),('NO'),('NULLS'),('OBJECT'),('OPTIONS'),('PASSWORD'),('PLAN'),('PRECISION'),('PREP'),('PREPARE'),('QUARTER'),('RELEASE'),('REPLACE'),('ROLLUP'),('SCHEMA'),('SEED'),('SERVER'),('SESSION'),('SETS'),('SIZE'),('STATEMENT'),('TABLE'),('TEMP'),('TEMPORARY'),('TEXT'),('TIME'),('TIMESTAMP'),('TRACE'),('TYPE'),('WEEK'),('YEAR'),('ZONE');
+create procedure sys.hot_snapshot(tarfile string)
  external name sql.hot_snapshot;
 update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name in ('hot_snapshot') and type = 2;
 CREATE SCHEMA logging;

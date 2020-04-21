@@ -1,6 +1,11 @@
 # ChangeLog file for sql/src/backends/monet5/merovingian
 # This file is updated with mchangelog
 
+* Mon Apr 20 2020 Sjoerd Mullender <sjoerd@acm.org>
+- On Fedora and RHEL systems (not RHEL 6), if monetdbd runs under systemd,
+  when the package is updated, monetdbd (and hence any mserver5 process
+  it runs) is restarted.
+
 * Tue Feb 18 2020 Thodoris Zois <thodoris.zois@monetdbsolutions.com>
 - Added dbtrace mserver5 option to the daemon in order to set
   mserver5's output directory for the produced traces.
