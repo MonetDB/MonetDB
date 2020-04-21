@@ -33,7 +33,7 @@ sql_stack_push(sql_stack *s, void *v)
 {
 	if (s->top >= s->size) {
 		void **nvalues;
-		size_t osz = s->size;
+		int osz = s->size;
 
 		s->size *= 2;
 		nvalues = SA_RENEW_ARRAY(s->sa, void*, s->values, s->size, osz);
