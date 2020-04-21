@@ -16,10 +16,11 @@ sql_stack_new(sql_allocator *sa, int size)
 	if (s == NULL)
 		return NULL;
 
-	s -> sa = sa;
-	s -> size = size;
-	s -> top = 0;
-	s -> values = SA_NEW_ARRAY(sa, void*, size);
+	*s = (sql_stack) {
+		.sa = sa,
+		.size = size,
+		.values = SA_NEW_ARRAY(sa, void*, size),
+	};
 	if (s->values == NULL) {
 		_DELETE(s);
 		return NULL;
