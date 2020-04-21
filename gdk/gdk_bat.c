@@ -211,7 +211,7 @@ COLnew(oid hseq, int tt, BUN cap, role_t role)
 		GDKfree(bn->tvheap);
 		goto bailout;
 	}
-	TRC_DEBUG(ALGO, "COLnew()=" ALGOBATFMT "\n", ALGOBATPAR(bn));
+	TRC_DEBUG(ALGO, "-> " ALGOBATFMT "\n", ALGOBATPAR(bn));
 	return bn;
   bailout:
 	BBPclear(bn->batCacheid);
@@ -230,7 +230,9 @@ BATdense(oid hseq, oid tseq, BUN cnt)
 	if (bn != NULL) {
 		BATtseqbase(bn, tseq);
 		BATsetcount(bn, cnt);
-		TRC_DEBUG(ALGO, "BATdense()=" ALGOBATFMT "\n", ALGOBATPAR(bn));
+		TRC_DEBUG(ALGO, OIDFMT "," OIDFMT "," BUNFMT
+			  "-> " ALGOBATFMT "\n", hseq, tseq, cnt,
+			  ALGOBATPAR(bn));
 	}
 	return bn;
 }

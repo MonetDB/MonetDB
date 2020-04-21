@@ -146,7 +146,10 @@ BATmergecand(BAT *a, BAT *b)
 	bn->tkey = true;
 	bn->tnil = false;
 	bn->tnonil = true;
-	return virtualize(bn);
+	bn = virtualize(bn);
+	TRC_DEBUG(ALGO, ALGOBATFMT "," ALGOBATFMT " -> " ALGOBATFMT "\n",
+		  ALGOBATPAR(a), ALGOBATPAR(b), ALGOBATPAR(bn));
+	return bn;
 }
 
 /* intersect two candidate lists and produce a new one
@@ -218,7 +221,10 @@ BATintersectcand(BAT *a, BAT *b)
 	bn->tkey = true;
 	bn->tnil = false;
 	bn->tnonil = true;
-	return virtualize(bn);
+	bn = virtualize(bn);
+	TRC_DEBUG(ALGO, ALGOBATFMT "," ALGOBATFMT " -> " ALGOBATFMT "\n",
+		  ALGOBATPAR(a), ALGOBATPAR(b), ALGOBATPAR(bn));
+	return bn;
 }
 
 /* calculate the difference of two candidate lists and produce a new one
@@ -302,7 +308,10 @@ BATdiffcand(BAT *a, BAT *b)
 	bn->tkey = true;
 	bn->tnil = false;
 	bn->tnonil = true;
-	return virtualize(bn);
+	bn = virtualize(bn);
+	TRC_DEBUG(ALGO, ALGOBATFMT "," ALGOBATFMT " -> " ALGOBATFMT "\n",
+		  ALGOBATPAR(a), ALGOBATPAR(b), ALGOBATPAR(bn));
+	return bn;
 }
 
 /* return offset of first value in cand that is >= o */
