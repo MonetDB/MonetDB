@@ -813,6 +813,11 @@ read_exps(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos
 			if (!e && pexps) {
 				*pos = op;
 				e = exp_read(sql, lrel, rrel, pexps, r, pos, grp);
+				if (e) {
+					/* reset error */
+					sql->session->status = 0;
+					sql->errstr[0] = '\0';
+				}
 			}
 			if (!e)
 				return NULL;
