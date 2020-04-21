@@ -1,9 +1,22 @@
 # ChangeLog file for devel
 # This file is updated with Maddlog
 
+* Mon Apr 20 2020 Sjoerd Mullender <sjoerd@acm.org>
+- A new system to deal with debug output has been implemented.  There is
+  now an option --dbtrace to mserver5 that takes a file argument to which
+  debug output is written.  The default value is the file mdbtrace.log
+  inside the database directory.  This option can also be set through
+  the monetdb program.
+- The home directory of the automatically created monetdb user was
+  changed from /var/MonetDB to /var/lib/monetdb (RPM based systems
+  only).  This home directory is (currently) not used for anything,
+  though.
+- Python 2 support has been removed.  There is now only support for
+  using Python 3.
+
 * Tue Feb 18 2020 Thodoris Zois <thodoris.zois@monetdbsolutions.com>
 - Added mserver5 option (--dbtrace=<path>) in order to be able to
-  specify the output directory of the produced traces.
+  specify the output file any produced traces.
 
 * Thu Feb  6 2020 Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com>
 - Add port and host as fields in the .monetdb file.

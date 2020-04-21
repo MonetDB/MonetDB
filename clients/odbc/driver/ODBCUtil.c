@@ -335,127 +335,548 @@ static struct scalars {
 	int nargs;
 	const char *repl;
 } scalars[] = {
-	{"abs", 1, "sys.\"abs\"(\1)", },
-	{"acos", 1, "sys.\"acos\"(\1)", },
-	{"ascii", 1, "sys.\"ascii\"(\1)", },
-	{"asin", 1, "sys.\"asin\"(\1)", },
-	{"atan", 1, "sys.\"atan\"(\1)", },
-	{"atan2", 2, "sys.\"atan\"(\1,\2)", }, /* note: not atan2 */
-	{"bit_length", 1, NULL, },
-	{"ceiling", 1, "sys.\"ceiling\"(\1)", },
-	{"char", 1, "sys.\"code\"(\1)", },
-	{"character_length", 1, "sys.\"character_length\"(\1)", },
-	{"char_length", 1, "sys.\"char_length\"(\1)", },
-	{"concat", 2, "sys.\"concat\"(\1,\2)", },
-	{"convert", 2, NULL, },
-	{"cos", 1, "sys.\"cos\"(\1)", },
-	{"cot", 1, "sys.\"cot\"(\1)", },
-	{"curdate", 0, "sys.\"curdate\"()", },
-	{"current_date", 0, "sys.\"current_date\"()", },
-	{"current_time", 0, "sys.\"current_time\"()", },
-	{"current_time", 1, NULL, },
-	{"current_timestamp", 0, "sys.\"current_timestamp\"()", },
-	{"current_timestamp", 1, NULL, },
-	{"curtime", 0, "sys.\"curtime\"()", },
-	{"database", 0, NULL, },
-	{"dayname", 1, NULL, },
-	{"dayofmonth", 1, "sys.\"dayofmonth\"(\1)", },
-	{"dayofweek", 1, "sys.\"dayofweek\"(\1)", },
-	{"dayofyear", 1, "sys.\"dayofyear\"(\1)", },
-	{"degrees", 1, "sys.\"degrees\"(\1)", },
-	{"difference", 2, "sys.\"difference\"(\1,\2)", },
-	{"exp", 1, "sys.\"exp\"(\1)", },
-	{"extract", 1, "EXTRACT(\1)", }, /* include "X FROM " in argument */
-	{"floor", 1, "sys.\"floor\"(\1)", },
-	{"hour", 1, "sys.\"hour\"(\1)", },
-	{"ifnull", 2, "sys.\"coalesce\"(\1,\2)", },
-	{"insert", 4, "sys.\"insert\"(\1,\2,\3,\4)", },
-	{"lcase", 1, "sys.\"lcase\"(\1)", },
-	{"left", 2, "sys.\"left\"(\1,\2)", },
-	{"length", 1, "sys.\"length\"(\1)", },
-	{"locate", 2, "sys.\"locate\"(\1,\2)", },
-	{"locate", 3, "sys.\"locate\"(\1,\2,\3)", },
-	{"log10", 1, "sys.\"log10\"(\1)", },
-	{"log", 1, "sys.\"log\"(\1)", },
-	{"ltrim", 1, "sys.\"ltrim\"(\1)", },
-	{"minute", 1, "sys.\"minute\"(\1)", },
-	{"mod", 2, "sys.\"mod\"(\1,\2)", },
-	{"month", 1, "sys.\"month\"(\1)", },
-	{"monthname", 1, NULL, },
-	{"now", 0, "sys.\"now\"()", },
-	{"octet_length", 1, "sys.\"octet_length\"(\1)", },
-	{"pi", 0, "sys.\"pi\"()", },
-	{"position", 1, "POSITION(\1)", }, /* includes " IN str" in first argument. Note: POSITION is implemented in the parser. */
-	{"power", 2, "sys.\"power\"(\1,\2)", },
-	{"quarter", 1, "sys.\"quarter\"(\1)", },
-	{"radians", 1, "sys.\"radians\"(\1)", },
-	{"rand", 0, "sys.\"rand\"()", },
-	{"rand", 1, "sys.\"rand\"(\1)", },
-	{"repeat", 2, "sys.\"repeat\"(\1,\2)", },
-	{"replace", 3, "sys.\"replace\"(\1,\2,\3)", },
-	{"right", 2, "sys.\"right\"(\1,\2)", },
-	{"round", 2, "sys.\"round\"(\1,\2)", },
-	{"rtrim", 1, "sys.\"rtrim\"(\1)", },
-	{"second", 1, "sys.\"second\"(\1)", },
-	{"sign", 1, "sys.\"sign\"(\1)", },
-	{"sin", 1, "sys.\"sin\"(\1)", },
-	{"soundex", 1, "sys.\"soundex\"(\1)", },
-	{"space", 1, "sys.\"space\"(\1)", },
-	{"sqrt", 1, "sys.\"sqrt\"(\1)", },
-	{"substring", 3, "sys.\"substring\"(\1,\2,\3)", },
-	{"tan", 1, "sys.\"tan\"(\1)", },
-	{"timestampadd", 3, NULL, },
-	{"timestampdiff", 3, NULL, },
-	{"truncate", 2, "sys.\"ms_trunc\"(\1,\2)", },
-	{"ucase", 1, "sys.\"ucase\"(\1)", },
-	{"user", 0, NULL, },
-	{"week", 1, "sys.\"week\"(\1)", },
-	{"year", 1, "sys.\"year\"(\1)", },
-	{NULL, 0, NULL, },	/* sentinel */
+	{
+		.name = "abs",
+		.nargs = 1,
+		.repl = "sys.\"abs\"(\1)",
+	},
+	{
+		.name = "acos",
+		.nargs = 1,
+		.repl = "sys.\"acos\"(\1)",
+	},
+	{
+		.name = "ascii",
+		.nargs = 1,
+		.repl = "sys.\"ascii\"(\1)",
+	},
+	{
+		.name = "asin",
+		.nargs = 1,
+		.repl = "sys.\"asin\"(\1)",
+	},
+	{
+		.name = "atan",
+		.nargs = 1,
+		.repl = "sys.\"atan\"(\1)",
+	},
+	{
+		.name = "atan2",
+		.nargs = 2,
+		.repl = "sys.\"atan\"(\1,\2)", /* note: not atan2 */
+	},
+	{
+		.name = "bit_length",
+		.nargs = 1,
+		.repl = NULL,
+	},
+	{
+		.name = "ceiling",
+		.nargs = 1,
+		.repl = "sys.\"ceiling\"(\1)",
+	},
+	{
+		.name = "char",
+		.nargs = 1,
+		.repl = "sys.\"code\"(\1)",
+	},
+	{
+		.name = "character_length",
+		.nargs = 1,
+		.repl = "sys.\"character_length\"(\1)",
+	},
+	{
+		.name = "char_length",
+		.nargs = 1,
+		.repl = "sys.\"char_length\"(\1)",
+	},
+	{
+		.name = "concat",
+		.nargs = 2,
+		.repl = "sys.\"concat\"(\1,\2)",
+	},
+	{
+		.name = "convert",
+		.nargs = 2,
+		.repl = NULL,
+	},
+	{
+		.name = "cos",
+		.nargs = 1,
+		.repl = "sys.\"cos\"(\1)",
+	},
+	{
+		.name = "cot",
+		.nargs = 1,
+		.repl = "sys.\"cot\"(\1)",
+	},
+	{
+		.name = "curdate",
+		.nargs = 0,
+		.repl = "sys.\"curdate\"()",
+	},
+	{
+		.name = "current_date",
+		.nargs = 0,
+		.repl = "sys.\"current_date\"()",
+	},
+	{
+		.name = "current_time",
+		.nargs = 0,
+		.repl = "sys.\"current_time\"()",
+	},
+	{
+		.name = "current_time",
+		.nargs = 1,
+		.repl = NULL,
+	},
+	{
+		.name = "current_timestamp",
+		.nargs = 0,
+		.repl = "sys.\"current_timestamp\"()",
+	},
+	{
+		.name = "current_timestamp",
+		.nargs = 1,
+		.repl = NULL,
+	},
+	{
+		.name = "curtime",
+		.nargs = 0,
+		.repl = "sys.\"curtime\"()",
+	},
+	{
+		.name = "database",
+		.nargs = 0,
+		.repl = NULL,
+	},
+	{
+		.name = "dayname",
+		.nargs = 1,
+		.repl = NULL,
+	},
+	{
+		.name = "dayofmonth",
+		.nargs = 1,
+		.repl = "sys.\"dayofmonth\"(\1)",
+	},
+	{
+		.name = "dayofweek",
+		.nargs = 1,
+		.repl = "sys.\"dayofweek\"(\1)",
+	},
+	{
+		.name = "dayofyear",
+		.nargs = 1,
+		.repl = "sys.\"dayofyear\"(\1)",
+	},
+	{
+		.name = "degrees",
+		.nargs = 1,
+		.repl = "sys.\"degrees\"(\1)",
+	},
+	{
+		.name = "difference",
+		.nargs = 2,
+		.repl = "sys.\"difference\"(\1,\2)",
+	},
+	{
+		.name = "exp",
+		.nargs = 1,
+		.repl = "sys.\"exp\"(\1)",
+	},
+	{
+		.name = "extract",
+		.nargs = 1,
+		.repl = "EXTRACT(\1)", /* include "X FROM " in argument */
+	},
+	{
+		.name = "floor",
+		.nargs = 1,
+		.repl = "sys.\"floor\"(\1)",
+	},
+	{
+		.name = "hour",
+		.nargs = 1,
+		.repl = "sys.\"hour\"(\1)",
+	},
+	{
+		.name = "ifnull",
+		.nargs = 2,
+		.repl = "sys.\"coalesce\"(\1,\2)",
+	},
+	{
+		.name = "insert",
+		.nargs = 4,
+		.repl = "sys.\"insert\"(\1,\2,\3,\4)",
+	},
+	{
+		.name = "lcase",
+		.nargs = 1,
+		.repl = "sys.\"lcase\"(\1)",
+	},
+	{
+		.name = "left",
+		.nargs = 2,
+		.repl = "sys.\"left\"(\1,\2)",
+	},
+	{
+		.name = "length",
+		.nargs = 1,
+		.repl = "sys.\"length\"(\1)",
+	},
+	{
+		.name = "locate",
+		.nargs = 2,
+		.repl = "sys.\"locate\"(\1,\2)",
+	},
+	{
+		.name = "locate",
+		.nargs = 3,
+		.repl = "sys.\"locate\"(\1,\2,\3)",
+	},
+	{
+		.name = "log10",
+		.nargs = 1,
+		.repl = "sys.\"log10\"(\1)",
+	},
+	{
+		.name = "log",
+		.nargs = 1,
+		.repl = "sys.\"log\"(\1)",
+	},
+	{
+		.name = "ltrim",
+		.nargs = 1,
+		.repl = "sys.\"ltrim\"(\1)",
+	},
+	{
+		.name = "minute",
+		.nargs = 1,
+		.repl = "sys.\"minute\"(\1)",
+	},
+	{
+		.name = "mod",
+		.nargs = 2,
+		.repl = "sys.\"mod\"(\1,\2)",
+	},
+	{
+		.name = "month",
+		.nargs = 1,
+		.repl = "sys.\"month\"(\1)",
+	},
+	{
+		.name = "monthname",
+		.nargs = 1,
+		.repl = NULL,
+	},
+	{
+		.name = "now",
+		.nargs = 0,
+		.repl = "sys.\"now\"()",
+	},
+	{
+		.name = "octet_length",
+		.nargs = 1,
+		.repl = "sys.\"octet_length\"(\1)",
+	},
+	{
+		.name = "pi",
+		.nargs = 0,
+		.repl = "sys.\"pi\"()",
+	},
+	{
+		.name = "position",
+		.nargs = 1,
+		 /* includes " IN str" in first argument. Note:
+		  * POSITION is implemented in the parser. */
+		.repl = "POSITION(\1)",
+	},
+	{
+		.name = "power",
+		.nargs = 2,
+		.repl = "sys.\"power\"(\1,\2)",
+	},
+	{
+		.name = "quarter",
+		.nargs = 1,
+		.repl = "sys.\"quarter\"(\1)",
+	},
+	{
+		.name = "radians",
+		.nargs = 1,
+		.repl = "sys.\"radians\"(\1)",
+	},
+	{
+		.name = "rand",
+		.nargs = 0,
+		.repl = "sys.\"rand\"()",
+	},
+	{
+		.name = "rand",
+		.nargs = 1,
+		.repl = "sys.\"rand\"(\1)",
+	},
+	{
+		.name = "repeat",
+		.nargs = 2,
+		.repl = "sys.\"repeat\"(\1,\2)",
+	},
+	{
+		.name = "replace",
+		.nargs = 3,
+		.repl = "sys.\"replace\"(\1,\2,\3)",
+	},
+	{
+		.name = "right",
+		.nargs = 2,
+		.repl = "sys.\"right\"(\1,\2)",
+	},
+	{
+		.name = "round",
+		.nargs = 2,
+		.repl = "sys.\"round\"(\1,\2)",
+	},
+	{
+		.name = "rtrim",
+		.nargs = 1,
+		.repl = "sys.\"rtrim\"(\1)",
+	},
+	{
+		.name = "second",
+		.nargs = 1,
+		.repl = "sys.\"second\"(\1)",
+	},
+	{
+		.name = "sign",
+		.nargs = 1,
+		.repl = "sys.\"sign\"(\1)",
+	},
+	{
+		.name = "sin",
+		.nargs = 1,
+		.repl = "sys.\"sin\"(\1)",
+	},
+	{
+		.name = "soundex",
+		.nargs = 1,
+		.repl = "sys.\"soundex\"(\1)",
+	},
+	{
+		.name = "space",
+		.nargs = 1,
+		.repl = "sys.\"space\"(\1)",
+	},
+	{
+		.name = "sqrt",
+		.nargs = 1,
+		.repl = "sys.\"sqrt\"(\1)",
+	},
+	{
+		.name = "substring",
+		.nargs = 3,
+		.repl = "sys.\"substring\"(\1,\2,\3)",
+	},
+	{
+		.name = "tan",
+		.nargs = 1,
+		.repl = "sys.\"tan\"(\1)",
+	},
+	{
+		.name = "timestampadd",
+		.nargs = 3,
+		.repl = NULL,
+	},
+	{
+		.name = "timestampdiff",
+		.nargs = 3,
+		.repl = NULL,
+	},
+	{
+		.name = "truncate",
+		.nargs = 2,
+		.repl = "sys.\"ms_trunc\"(\1,\2)",
+	},
+	{
+		.name = "ucase",
+		.nargs = 1,
+		.repl = "sys.\"ucase\"(\1)",
+	},
+	{
+		.name = "user",
+		.nargs = 0,
+		.repl = NULL,
+	},
+	{
+		.name = "week",
+		.nargs = 1,
+		.repl = "sys.\"week\"(\1)",
+	},
+	{
+		.name = "year",
+		.nargs = 1,
+		.repl = "sys.\"year\"(\1)",
+	},
+	{
+		0		/* sentinel */
+	},
 };
 
 static struct convert {
 	const char *odbc;
 	const char *server;
 } convert[] = {
-	{ "SQL_BIGINT", "bigint", },
-	{ "SQL_BINARY", "binary large object", },
-	{ "SQL_BIT", "boolean", },
-	{ "SQL_CHAR", "character", },
-	{ "SQL_DATE", "date", },
-	{ "SQL_DECIMAL", "decimal(18,7)", },
-	{ "SQL_DOUBLE", "double", },
-	{ "SQL_FLOAT", "float", },
-	{ "SQL_GUID", "uuid", },
-	{ "SQL_HUGEINT", "hugeint", },
-	{ "SQL_INTEGER", "integer", },
-	{ "SQL_INTERVAL_DAY", "interval day", },
-	{ "SQL_INTERVAL_DAY_TO_HOUR", "interval day to hour", },
-	{ "SQL_INTERVAL_DAY_TO_MINUTE", "interval day to minute", },
-	{ "SQL_INTERVAL_DAY_TO_SECOND", "interval day to second", },
-	{ "SQL_INTERVAL_HOUR", "interval hour", },
-	{ "SQL_INTERVAL_HOUR_TO_MINUTE", "interval hour to minute", },
-	{ "SQL_INTERVAL_HOUR_TO_SECOND", "interval hour to second", },
-	{ "SQL_INTERVAL_MINUTE", "interval minute", },
-	{ "SQL_INTERVAL_MINUTE_TO_SECOND", "interval minute to second", },
-	{ "SQL_INTERVAL_MONTH", "interval month", },
-	{ "SQL_INTERVAL_SECOND", "interval second", },
-	{ "SQL_INTERVAL_YEAR", "interval year", },
-	{ "SQL_INTERVAL_YEAR_TO_MONTH", "interval year to month", },
-	{ "SQL_LONGVARBINARY", "binary large object", },
-	{ "SQL_LONGVARCHAR", "character large object", },
-	{ "SQL_NUMERIC", "numeric(18,7)", },
-	{ "SQL_REAL", "real", },
-	{ "SQL_SMALLINT", "smallint", },
-	{ "SQL_TIME", "time", },
-	{ "SQL_TIMESTAMP", "timestamp", },
-	{ "SQL_TINYINT", "tinyint", },
-	{ "SQL_VARBINARY", "binary large object", },
-	{ "SQL_VARCHAR", "character varying", },
-	{ "SQL_WCHAR", "character", },
-	{ "SQL_WLONGVARCHAR", "character large object", },
-	{ "SQL_WVARCHAR", "character varying", },
-	{ NULL, NULL, },	/* sentinel */
+	{
+		.odbc =  "SQL_BIGINT",
+		.server = "bigint",
+	},
+	{
+		.odbc =  "SQL_BINARY",
+		.server = "binary large object",
+	},
+	{
+		.odbc =  "SQL_BIT",
+		.server = "boolean",
+	},
+	{
+		.odbc =  "SQL_CHAR",
+		.server = "character",
+	},
+	{
+		.odbc =  "SQL_DATE",
+		.server = "date",
+	},
+	{
+		.odbc = "SQL_DECIMAL",
+		.server = "decimal(18,7)",
+	},
+	{
+		.odbc =  "SQL_DOUBLE",
+		.server = "double",
+	},
+	{
+		.odbc =  "SQL_FLOAT",
+		.server = "float",
+	},
+	{
+		.odbc =  "SQL_GUID",
+		.server = "uuid",
+	},
+	{
+		.odbc =  "SQL_HUGEINT",
+		.server = "hugeint",
+	},
+	{
+		.odbc =  "SQL_INTEGER",
+		.server = "integer",
+	},
+	{
+		.odbc =  "SQL_INTERVAL_DAY",
+		.server = "interval day",
+	},
+	{
+		.odbc =  "SQL_INTERVAL_DAY_TO_HOUR",
+		.server = "interval day to hour",
+	},
+	{
+		.odbc =  "SQL_INTERVAL_DAY_TO_MINUTE",
+		.server = "interval day to minute",
+	},
+	{
+		.odbc =  "SQL_INTERVAL_DAY_TO_SECOND",
+		.server = "interval day to second",
+	},
+	{
+		.odbc =  "SQL_INTERVAL_HOUR",
+		.server = "interval hour",
+	},
+	{
+		.odbc =  "SQL_INTERVAL_HOUR_TO_MINUTE",
+		.server = "interval hour to minute",
+	},
+	{
+		.odbc =  "SQL_INTERVAL_HOUR_TO_SECOND",
+		.server = "interval hour to second",
+	},
+	{
+		.odbc =  "SQL_INTERVAL_MINUTE",
+		.server = "interval minute",
+	},
+	{
+		.odbc =  "SQL_INTERVAL_MINUTE_TO_SECOND",
+		.server = "interval minute to second",
+	},
+	{
+		.odbc =  "SQL_INTERVAL_MONTH",
+		.server = "interval month",
+	},
+	{
+		.odbc =  "SQL_INTERVAL_SECOND",
+		.server = "interval second",
+	},
+	{
+		.odbc =  "SQL_INTERVAL_YEAR",
+		.server = "interval year",
+	},
+	{
+		.odbc =  "SQL_INTERVAL_YEAR_TO_MONTH",
+		.server = "interval year to month",
+	},
+	{
+		.odbc =  "SQL_LONGVARBINARY",
+		.server = "binary large object",
+	},
+	{
+		.odbc =  "SQL_LONGVARCHAR",
+		.server = "character large object",
+	},
+	{
+		.odbc = "SQL_NUMERIC",
+		.server = "numeric(18,7)",
+	},
+	{
+		.odbc =  "SQL_REAL",
+		.server = "real",
+	},
+	{
+		.odbc =  "SQL_SMALLINT",
+		.server = "smallint",
+	},
+	{
+		.odbc =  "SQL_TIME",
+		.server = "time",
+	},
+	{
+		.odbc =  "SQL_TIMESTAMP",
+		.server = "timestamp",
+	},
+	{
+		.odbc =  "SQL_TINYINT",
+		.server = "tinyint",
+	},
+	{
+		.odbc =  "SQL_VARBINARY",
+		.server = "binary large object",
+	},
+	{
+		.odbc =  "SQL_VARCHAR",
+		.server = "character varying",
+	},
+	{
+		.odbc =  "SQL_WCHAR",
+		.server = "character",
+	},
+	{
+		.odbc =  "SQL_WLONGVARCHAR",
+		.server = "character large object",
+	},
+	{
+		.odbc =  "SQL_WVARCHAR",
+		.server = "character varying",
+	},
+	{
+		0		/* sentinel */
+	},
 };
 
 char *
@@ -1332,8 +1753,8 @@ struct sql_types ODBC_sql_types[] = {
 		.fixed = SQL_FALSE,
 	},
 	{
-		.concise_type = 0,
-	},	/* sentinel */
+		0		/* sentinel */
+	},
 };
 
 struct sql_types ODBC_c_types[] = {
@@ -1688,8 +2109,8 @@ struct sql_types ODBC_c_types[] = {
 		.fixed = SQL_FALSE,
 	},
 	{
-		.concise_type = 0,
-	},	/* sentinel */
+		0		/* sentinel */
+	},
 };
 
 #ifdef ODBCDEBUG
