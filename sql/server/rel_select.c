@@ -1050,26 +1050,31 @@ table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral)
 	}
 }
 
+static inline sql_exp *
+rel_exp_variable_on_scope(mvc *sql, sql_schema *s, const char *sname, const char *vname)
+{
+	sql_var *var = NULL;
+	sql_arg *a = NULL;
+	int level = 1;
+
+	if (!sname && (var = stack_find_var_frame(sql, vname, &level))) /* check if variable is known from the stack */
+		return exp_param_or_declared(sql->sa, NULL, sa_strdup(sql->sa, var->name), &(var->var.tpe), level);
+	if (!sname && (a = sql_bind_param(sql, vname))) /* then if it is a parameter */
+		return exp_param_or_declared(sql->sa, NULL, sa_strdup(sql->sa, vname), &(a->type), 1);
+	if ((var = find_global_var(sql, s, vname))) /* then if it is a global var */
+		return exp_param_or_declared(sql->sa, sa_strdup(sql->sa, var->sname), sa_strdup(sql->sa, var->name), &(var->var.tpe), 0);
+	return NULL;
+}
+
 static sql_exp *
 rel_var_ref(mvc *sql, const char *sname, const char *vname)
 {
 	sql_schema *s = cur_schema(sql);
-	sql_var *var = NULL;
-	sql_arg *a = NULL;
-	int level = 1;
 	sql_exp *res = NULL;
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_error(sql, 02, SQLSTATE(3F000) "SELECT: no such schema '%s'", sname);
-
-	if (!sname && (var = stack_find_var_frame(sql, vname, &level))) /* check if variable is known from the stack */
-		res = exp_param_or_declared(sql->sa, NULL, sa_strdup(sql->sa, var->name), &(var->var.tpe), level);
-	else if (!sname && (a = sql_bind_param(sql, vname))) /* then if it is a parameter */
-		res = exp_param_or_declared(sql->sa, NULL, sa_strdup(sql->sa, vname), &(a->type), 1);
-	else if ((var = find_global_var(sql, s, vname))) /* then if it is a global var */
-		res = exp_param_or_declared(sql->sa, sa_strdup(sql->sa, var->sname), sa_strdup(sql->sa, var->name), &(var->var.tpe), 0);
-
-	if (!res)
+	if (!(res = rel_exp_variable_on_scope(sql, s, sname, vname)))
 		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: identifier '%s%s%s' unknown", sname ? sname : "", sname ? "." : "", vname);
 	return res;
 }
@@ -1200,17 +1205,8 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 				set_dependent(outer);
 		}
 		if (!exp) { /* If no column was found, try a variable or parameter */
-			sql_arg *a = NULL;
-			sql_var *var = NULL;
-			int level = 1;
 			sql_schema *s = cur_schema(sql);
-
-			if ((var = stack_find_var_frame(sql, name, &level))) /* check if variable is known from the stack */
-				exp = exp_param_or_declared(sql->sa, NULL, sa_strdup(sql->sa, var->name), &(var->var.tpe), level);
-			else if ((a = sql_bind_param(sql, name))) /* then if it is a parameter */
-				exp = exp_param_or_declared(sql->sa, NULL, sa_strdup(sql->sa, name), &(a->type), 1);
-			else if ((var = find_global_var(sql, s, name))) /* then if it is a global var */
-				exp = exp_param_or_declared(sql->sa, sa_strdup(sql->sa, var->sname), sa_strdup(sql->sa, var->name), &(var->var.tpe), 0);
+			exp = rel_exp_variable_on_scope(sql, s, NULL, name);
 		}
 
 		if (!exp)

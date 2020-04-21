@@ -48,6 +48,27 @@ rel_psm_stmt(sql_allocator *sa, sql_exp *e)
 	return NULL;
 }
 
+/* vname can be 
+	- 'parameter of the function' (ie in the param list)
+	- local variable, declared earlier
+	- global variable, also declared earlier
+*/
+static void*
+resolve_variable_on_scope(mvc *sql, sql_schema *s, const char *sname, const char *vname, sql_var **var, sql_arg **a, sql_subtype **tpe, int *level, const char *action)
+{
+	if (!sname && (*var = stack_find_var_frame(sql, vname, level))) { /* check if variable is known from the stack */
+		*tpe = &((*var)->var.tpe);
+	} else if (!sname && (*a = sql_bind_param(sql, vname))) { /* then if it is a parameter */
+		*tpe = &((*a)->type);
+		*level = 1;
+	} else if ((*var = find_global_var(sql, s, vname))) { /* then if it is a global var */
+		*tpe = &((*var)->var.tpe);
+		*level = 0;
+	} else
+		return sql_error(sql, 01, SQLSTATE(42000) "%s: Variable '%s%s%s' unknown", action, sname ? sname : "", sname ? "." : "", vname);
+	return level;
+}
+
 /* SET [ schema '.' ] variable = value and set ( [ schema1 '.' ] variable1, .., [ schemaN '.' ] variableN) = (query) */
 static sql_exp *
 psm_set_exp(sql_query *query, dnode *n)
@@ -71,21 +92,8 @@ psm_set_exp(sql_query *query, dnode *n)
 		if (sname && !(s = mvc_bind_schema(sql, sname)))
 			return sql_error(sql, 02, SQLSTATE(3F000) "SET: No such schema '%s'", sname);
 
-		/* vname can be 
-			'parameter of the function' (ie in the param list)
-			or a local or global variable, declared earlier
-		*/
-		if (!sname && (var = stack_find_var_frame(sql, vname, &level))) { /* check if variable is known from the stack */
-			tpe = &var->var.tpe;
-		} else if (!sname && (a = sql_bind_param(sql, vname))) { /* then if it is a parameter */
-			tpe = &a->type;
-			level = 1;
-		} else if ((var = find_global_var(sql, s, vname))) { /* then if it is a global var */
-			tpe = &var->var.tpe;
-			level = 0;
-		} else
-			return sql_error(sql, 01, SQLSTATE(42000) "SET: Variable '%s%s%s' unknown", sname ? sname : "", sname ? "." : "", vname);
-
+		if (!resolve_variable_on_scope(sql, s, sname, vname, &var, &a, &tpe, &level, "SET"))
+			return NULL;
 		if (!(e = rel_value_exp2(query, &rel, val, sql_sel | sql_update_set, ek)))
 			return NULL;
 		if (e->card > CARD_AGGR) {
@@ -128,16 +136,8 @@ psm_set_exp(sql_query *query, dnode *n)
 			if (sname && !(s = mvc_bind_schema(sql, sname)))
 				return sql_error(sql, 02, SQLSTATE(3F000) "SET: No such schema '%s'", sname);
 
-			if (!sname && (var = stack_find_var_frame(sql, vname, &level))) { /* check if variable is known from the stack */
-				tpe = &var->var.tpe;
-			} else if (!sname && (a = sql_bind_param(sql, vname))) { /* then if it is a parameter */
-				tpe = &a->type;
-				level = 1;
-			} else if ((var = find_global_var(sql, s, vname))) { /* then if it is a global var */
-				tpe = &var->var.tpe;
-				level = 0;
-			} else
-				return sql_error(sql, 01, SQLSTATE(42000) "SET: Variable '%s%s%s' unknown", sname ? sname : "", sname ? "." : "", vname);
+			if (!resolve_variable_on_scope(sql, s, sname, vname, &var, &a, &tpe, &level, "SET"))
+				return NULL;
 
 			v = exp_ref(sql, v);
 			if (!(v = rel_check_type(sql, tpe, rel_val, v, type_cast)))
@@ -600,16 +600,8 @@ rel_select_into( sql_query *query, symbol *sq, exp_kind ek)
 		if (sname && !(s = mvc_bind_schema(sql, sname)))
 			return sql_error(sql, 02, SQLSTATE(3F000) "SELECT INTO: No such schema '%s'", sname);
 
-		if (!sname && (var = stack_find_var_frame(sql, vname, &level))) { /* check if variable is known from the stack */
-			tpe = &var->var.tpe;
-		} else if (!sname && (a = sql_bind_param(sql, vname))) { /* then if it is a parameter */
-			tpe = &a->type;
-			level = 1;
-		} else if ((var = find_global_var(sql, s, vname))) { /* then if it is a global var */
-			tpe = &var->var.tpe;
-			level = 0;
-		} else
-			return sql_error(sql, 01, SQLSTATE(42000) "SELECT INTO: Variable '%s%s%s' unknown", sname ? sname : "", sname ? "." : "", vname);
+		if (!resolve_variable_on_scope(sql, s, sname, vname, &var, &a, &tpe, &level, "SELECT INTO"))
+			return NULL;
 
 		v = exp_ref(sql, v);
 		if (!(v = rel_check_type(sql, tpe, r, v, type_equal)))
