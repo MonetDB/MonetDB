@@ -931,6 +931,7 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		sql_find_subtype(&t, tnme, d, s);
 		a = atom_general(m->sa, &t, NULL);
+		a->isnull = 0; // disable NULL value optimizations ugh
 		/* the argument list may have holes and maybe out of order, ie
 		 * don't use sql_add_arg, but special numbered version
 		 * sql_set_arg(m, a, nr);
