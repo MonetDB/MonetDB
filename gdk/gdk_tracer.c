@@ -434,7 +434,7 @@ GDKtracer_log(const char *file, const char *func, int lineno,
 	pad = (pad > 40) ? 0 : 40 - pad;
 	bytes_written = snprintf(buffer, sizeof(buffer),
 				 "%s "		/* timestamp */
-				 "%8s "		/* level */
+				 "%10s "	/* level */
 				 "%-8s "	/* component */
 				 "%-20s "	/* thread name */
 				 "%s:%-5d %*s"	/* file, lineno, pad */
