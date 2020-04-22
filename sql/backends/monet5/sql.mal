@@ -283,7 +283,11 @@ pattern grow(tid:bat[:oid], :any_1):int
 address mvc_grow_wrap
 comment "Resize the tid column of a declared table.";
 
-pattern append(mvc:int, sname:str, tname:str, cname:str, ins:any):int
+unsafe pattern claim(mvc:int, sname:str, tname:str, cnt:lng):lng
+address mvc_claim_wrap
+comment "Claims slots for appending rows.";
+
+pattern append(mvc:int, sname:str, tname:str, cname:str, offset:lng, ins:any):int
 address mvc_append_wrap
 comment "Append to the column tname.cname (possibly optimized to replace the insert bat of tname.cname. Returns sequence number for order dependence.";
 

@@ -3930,7 +3930,7 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 {
 	mvc *sql = be->mvc;
 	list *l;
-	stmt *inserts = NULL, *insert = NULL, *s, *ddl = NULL, *pin = NULL, **updates, *ret = NULL;
+	stmt *inserts = NULL, *insert = NULL, *ddl = NULL, *pin = NULL, **updates, *ret = NULL, *cnt = NULL, *pos;
 	int idx_ins = 0, constraint = 1, len = 0;
 	node *n, *m;
 	sql_rel *tr = rel->l, *prel = rel->r;
@@ -3987,6 +3987,15 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 	if (!sql_insert_triggers(be, t, updates, 0)) 
 		return sql_error(sql, 02, SQLSTATE(27000) "INSERT INTO: triggers failed for table '%s'", t->base.name);
 
+	insert = inserts->op4.lval->h->data;
+	if (insert->nrcols == 0) {
+		cnt = stmt_atom_lng(be, 1);
+	} else {
+		cnt = stmt_aggr(be, insert, NULL, NULL, sql_bind_func(sql->sa, sql->session->schema, "count", sql_bind_localtype("void"), NULL, F_AGGR), 1, 0, 1);
+	}
+	insert = NULL;
+	pos = stmt_claim(be, t, cnt);
+
 	if (t->idxs.set)
 	for (n = t->idxs.set->h; n && m; n = n->next, m = m->next) {
 		stmt *is = m->data;
@@ -4004,7 +4013,7 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 		if (!insert)
 			insert = is;
 		if (is)
-			is = stmt_append_idx(be, i, is);
+			is = stmt_append_idx(be, i, pos, is);
 	}
 
 	for (n = t->columns.set->h, m = inserts->op4.lval->h; 
@@ -4013,7 +4022,7 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 		stmt *ins = m->data;
 		sql_column *c = n->data;
 
-		insert = stmt_append_col(be, c, ins, rel->flag);
+		insert = stmt_append_col(be, c, pos, ins, rel->flag);
 		append(l,insert);
 	}
 	if (!insert)
@@ -4031,12 +4040,7 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 		ret = ddl;
 		list_prepend(l, ddl);
 	} else {
-		if (insert->op1->nrcols == 0) {
-			s = stmt_atom_lng(be, 1);
-		} else {
-			s = stmt_aggr(be, insert->op1, NULL, NULL, sql_bind_func(sql->sa, sql->session->schema, "count", sql_bind_localtype("void"), NULL, F_AGGR), 1, 0, 1);
-		}
-		ret = s;
+		ret = cnt;
 	}
 
 	if (be->cur_append) /* building the total number of rows affected across all tables */

@@ -683,10 +683,11 @@ str LIDARattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* add row in the lidar_files catalog table */
 	col = mvc_bind_column(m, lidar_fl, "id");
 	fid = store_funcs.count_col(tr, col, 1) + 1;
+	size_t pos = store_funcs.claim_tab(m->session->tr, lidar_fl, 1);
 	store_funcs.append_col(m->session->tr,
-		mvc_bind_column(m, lidar_fl, "id"), &fid, TYPE_int);
+		mvc_bind_column(m, lidar_fl, "id"), pos, &fid, TYPE_int);
 	store_funcs.append_col(m->session->tr,
-		mvc_bind_column(m, lidar_fl, "name"), fname, TYPE_str);
+		mvc_bind_column(m, lidar_fl, "name"), pos, fname, TYPE_str);
 	/* table.id++ */
 	col = mvc_bind_column(m, lidar_tbl, "id");
 	tid = store_funcs.count_col(tr, col, 1) + 1;
@@ -736,48 +737,49 @@ str LIDARattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	Proj4 = LASSRS_GetProj4(LASHeader_GetSRS(header));
 
 	/* store data */
+	pos = store_funcs.claim_tab(m->session->tr, lidar_tbl, 1);
 	store_funcs.append_col(m->session->tr,
-			mvc_bind_column(m, lidar_tbl, "id"), &tid, TYPE_int);
+			mvc_bind_column(m, lidar_tbl, "id"), pos, &tid, TYPE_int);
 	store_funcs.append_col(m->session->tr,
-			mvc_bind_column(m, lidar_tbl, "file_id"), &fid, TYPE_int);
+			mvc_bind_column(m, lidar_tbl, "file_id"), pos, &fid, TYPE_int);
 	store_funcs.append_col(m->session->tr,
-			mvc_bind_column(m, lidar_tbl, "name"), tname_low, TYPE_str);
+			mvc_bind_column(m, lidar_tbl, "name"), pos, tname_low, TYPE_str);
 	store_funcs.append_col(m->session->tr,
-			mvc_bind_column(m, lidar_tbl, "FileSourceId"), &FileSourceId, TYPE_int);
+			mvc_bind_column(m, lidar_tbl, "FileSourceId"), pos, &FileSourceId, TYPE_int);
 	store_funcs.append_col(m->session->tr,
-			mvc_bind_column(m, lidar_tbl, "VersionMajor"), &VersionMajor, TYPE_str);
+			mvc_bind_column(m, lidar_tbl, "VersionMajor"), pos, &VersionMajor, TYPE_str);
 	store_funcs.append_col(m->session->tr,
-			mvc_bind_column(m, lidar_tbl, "VersionMinor"), &VersionMinor, TYPE_str);
+			mvc_bind_column(m, lidar_tbl, "VersionMinor"), pos, &VersionMinor, TYPE_str);
 	store_funcs.append_col(m->session->tr,
-			mvc_bind_column(m, lidar_tbl, "DataFormatId"), &DataFormatId, TYPE_str);
+			mvc_bind_column(m, lidar_tbl, "DataFormatId"), pos, &DataFormatId, TYPE_str);
 	store_funcs.append_col(m->session->tr,
-			mvc_bind_column(m, lidar_tbl, "CreationDOY"), &CreationDOY, TYPE_int);
+			mvc_bind_column(m, lidar_tbl, "CreationDOY"), pos, &CreationDOY, TYPE_int);
 	store_funcs.append_col(m->session->tr,
-			mvc_bind_column(m, lidar_tbl, "CreationYear"), &CreationYear, TYPE_int);
+			mvc_bind_column(m, lidar_tbl, "CreationYear"), pos, &CreationYear, TYPE_int);
 	store_funcs.append_col(m->session->tr,
-			mvc_bind_column(m, lidar_tbl, "RecordsCount"), &RecordsCount, TYPE_int);
+			mvc_bind_column(m, lidar_tbl, "RecordsCount"), pos, &RecordsCount, TYPE_int);
 	store_funcs.append_col(m->session->tr,
-			mvc_bind_column(m, lidar_tbl, "PointRecordsCount"), &PointRecordsCount, TYPE_int);
+			mvc_bind_column(m, lidar_tbl, "PointRecordsCount"), pos, &PointRecordsCount, TYPE_int);
 	store_funcs.append_col(m->session->tr,
-			mvc_bind_column(m, lidar_tbl, "DataOffset"), &DataOffset, TYPE_int);
+			mvc_bind_column(m, lidar_tbl, "DataOffset"), pos, &DataOffset, TYPE_int);
 	store_funcs.append_col(m->session->tr,
-			mvc_bind_column(m, lidar_tbl, "HeaderPadding"), &HeaderPadding, TYPE_int);
+			mvc_bind_column(m, lidar_tbl, "HeaderPadding"), pos, &HeaderPadding, TYPE_int);
 	store_funcs.append_col(m->session->tr,
-			mvc_bind_column(m, lidar_tbl, "Reserved"), &Reserved, TYPE_int);
+			mvc_bind_column(m, lidar_tbl, "Reserved"), pos, &Reserved, TYPE_int);
 	store_funcs.append_col(m->session->tr,
-			mvc_bind_column(m, lidar_tbl, "DataRecordLength"), &DataRecordLength, TYPE_int);
+			mvc_bind_column(m, lidar_tbl, "DataRecordLength"), pos, &DataRecordLength, TYPE_int);
 	store_funcs.append_col(m->session->tr,
-			mvc_bind_column(m, lidar_tbl, "HeaderSize"), &HeaderSize, TYPE_int);
+			mvc_bind_column(m, lidar_tbl, "HeaderSize"), pos, &HeaderSize, TYPE_int);
 	store_funcs.append_col(m->session->tr,
-			mvc_bind_column(m, lidar_tbl, "ByteSize"), &ByteSize, TYPE_int);
+			mvc_bind_column(m, lidar_tbl, "ByteSize"), pos, &ByteSize, TYPE_int);
 	store_funcs.append_col(m->session->tr,
-			mvc_bind_column(m, lidar_tbl, "BaseByteSize"), &BaseByteSize, TYPE_int);
+			mvc_bind_column(m, lidar_tbl, "BaseByteSize"), pos, &BaseByteSize, TYPE_int);
 	store_funcs.append_col(m->session->tr,
-			mvc_bind_column(m, lidar_tbl, "WKT"), WKT, TYPE_str);
+			mvc_bind_column(m, lidar_tbl, "WKT"), pos, WKT, TYPE_str);
 	store_funcs.append_col(m->session->tr,
-			mvc_bind_column(m, lidar_tbl, "WKT_CompoundOK"), WKT_CompoundOK, TYPE_str);
+			mvc_bind_column(m, lidar_tbl, "WKT_CompoundOK"), pos, WKT_CompoundOK, TYPE_str);
 	store_funcs.append_col(m->session->tr,
-			mvc_bind_column(m, lidar_tbl, "Proj4"), Proj4, TYPE_str);
+			mvc_bind_column(m, lidar_tbl, "Proj4"), pos, Proj4, TYPE_str);
 
 	/* add a lidar_column tuple */
 	col = mvc_bind_column(m, lidar_col, "id");
@@ -797,36 +799,37 @@ str LIDARattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	MaxZ = LASHeader_GetMaxZ(header);
 
 	/* store */
+	pos = store_funcs.claim_tab(m->session->tr, lidar_col, 1);
 	store_funcs.append_col(m->session->tr,
-			mvc_bind_column(m, lidar_col, "id"), &cid, TYPE_int);
+			mvc_bind_column(m, lidar_col, "id"), pos, &cid, TYPE_int);
 	store_funcs.append_col(m->session->tr,
-			mvc_bind_column(m, lidar_col, "file_id"), &fid, TYPE_int);
+			mvc_bind_column(m, lidar_col, "file_id"), pos, &fid, TYPE_int);
 	store_funcs.append_col(m->session->tr,
-			mvc_bind_column(m, lidar_col, "table_id"), &tid, TYPE_int);
+			mvc_bind_column(m, lidar_col, "table_id"), pos, &tid, TYPE_int);
 	store_funcs.append_col(m->session->tr,
-			mvc_bind_column(m, lidar_col, "ScaleX"), &ScaleX, TYPE_dbl);
+			mvc_bind_column(m, lidar_col, "ScaleX"), pos, &ScaleX, TYPE_dbl);
 	store_funcs.append_col(m->session->tr,
-			mvc_bind_column(m, lidar_col, "ScaleY"), &ScaleY, TYPE_dbl);
+			mvc_bind_column(m, lidar_col, "ScaleY"), pos, &ScaleY, TYPE_dbl);
 	store_funcs.append_col(m->session->tr,
-			mvc_bind_column(m, lidar_col, "ScaleZ"), &ScaleZ, TYPE_dbl);
+			mvc_bind_column(m, lidar_col, "ScaleZ"), pos, &ScaleZ, TYPE_dbl);
 	store_funcs.append_col(m->session->tr,
-			mvc_bind_column(m, lidar_col, "OffsetX"), &OffsetX, TYPE_dbl);
+			mvc_bind_column(m, lidar_col, "OffsetX"), pos, &OffsetX, TYPE_dbl);
 	store_funcs.append_col(m->session->tr,
-			mvc_bind_column(m, lidar_col, "OffsetY"), &OffsetY, TYPE_dbl);
+			mvc_bind_column(m, lidar_col, "OffsetY"), pos, &OffsetY, TYPE_dbl);
 	store_funcs.append_col(m->session->tr,
-			mvc_bind_column(m, lidar_col, "OffsetZ"), &OffsetZ, TYPE_dbl);
+			mvc_bind_column(m, lidar_col, "OffsetZ"), pos, &OffsetZ, TYPE_dbl);
 	store_funcs.append_col(m->session->tr,
-			mvc_bind_column(m, lidar_col, "MinX"), &MinX, TYPE_dbl);
+			mvc_bind_column(m, lidar_col, "MinX"), pos, &MinX, TYPE_dbl);
 	store_funcs.append_col(m->session->tr,
-			mvc_bind_column(m, lidar_col, "MinY"), &MinY, TYPE_dbl);
+			mvc_bind_column(m, lidar_col, "MinY"), pos, &MinY, TYPE_dbl);
 	store_funcs.append_col(m->session->tr,
-			mvc_bind_column(m, lidar_col, "MinZ"), &MinZ, TYPE_dbl);
+			mvc_bind_column(m, lidar_col, "MinZ"), pos, &MinZ, TYPE_dbl);
 	store_funcs.append_col(m->session->tr,
-			mvc_bind_column(m, lidar_col, "MaxX"), &MaxX, TYPE_dbl);
+			mvc_bind_column(m, lidar_col, "MaxX"), pos, &MaxX, TYPE_dbl);
 	store_funcs.append_col(m->session->tr,
-			mvc_bind_column(m, lidar_col, "MaxY"), &MaxY, TYPE_dbl);
+			mvc_bind_column(m, lidar_col, "MaxY"), pos, &MaxY, TYPE_dbl);
 	store_funcs.append_col(m->session->tr,
-			mvc_bind_column(m, lidar_col, "MaxZ"), &MaxZ, TYPE_dbl);
+			mvc_bind_column(m, lidar_col, "MaxZ"), pos, &MaxZ, TYPE_dbl);
 
 	/* create an SQL table to hold the LIDAR table */
 	cnum = 3;//x, y, z. TODO: Add all available columnt
@@ -1044,9 +1047,10 @@ str LIDARloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BATmode(x, false);
 	BATmode(y, false);
 	BATmode(z, false);
-	store_funcs.append_col(m->session->tr, colx, x, TYPE_bat);
-	store_funcs.append_col(m->session->tr, coly, y, TYPE_bat);
-	store_funcs.append_col(m->session->tr, colz, z, TYPE_bat);
+	size_t pos = store_funcs.claim_tab(m->session->tr, tbl, BATcount(x));
+	store_funcs.append_col(m->session->tr, colx, pos, x, TYPE_bat);
+	store_funcs.append_col(m->session->tr, coly, pos, y, TYPE_bat);
+	store_funcs.append_col(m->session->tr, colz, pos, z, TYPE_bat);
 
 	TRC_DEBUG(LIDAR, "Total time: %d ms\n", GDKms() - time0);
 	

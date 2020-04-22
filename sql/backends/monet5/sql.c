@@ -449,10 +449,45 @@ create_table_or_view(mvc *sql, char* sname, char *tname, sql_table *t, int temp)
 	return MAL_SUCCEED;
 }
 
+static size_t
+mvc_claim_slots(sql_trans *tr, sql_table *t, size_t cnt)
+{
+	return store_funcs.claim_tab(tr, t, cnt);
+}
+
+str
+mvc_claim_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	lng *res = getArgReference_lng(stk, pci, 0);
+	mvc *m = NULL;
+	str msg;
+	const char *sname = *getArgReference_str(stk, pci, 2);
+	const char *tname = *getArgReference_str(stk, pci, 3);
+	lng cnt = *(lng*)getArgReference_lng(stk, pci, 4);
+
+	sql_schema *s;
+	sql_table *t;
+
+	*res = 0;
+	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
+		return msg;
+	if ((msg = checkSQLContext(cntxt)) != NULL)
+		return msg;
+
+	s = mvc_bind_schema(m, sname);
+	if (s == NULL)
+		throw(SQL, "sql.claim", SQLSTATE(3F000) "Schema missing %s", sname);
+	t = mvc_bind_table(m, s, tname);
+	if (t == NULL)
+		throw(SQL, "sql.claim", SQLSTATE(42S02) "Table missing %s.%s", sname, tname);
+	*res = mvc_claim_slots(m->session->tr, t, cnt);
+	return MAL_SUCCEED;
+}
+
 str 
 create_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *columns, size_t ncols) 
 {
-	size_t i;
+	size_t i, pos = 0;
 	sql_table *t;
 	sql_schema *s;
 	mvc *sql = NULL;
@@ -511,6 +546,7 @@ create_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *col
 		msg = sql_error(sql, 02, SQLSTATE(3F000) "CREATE TABLE: could not bind table %s", tname);
 		goto cleanup;
 	}
+	pos = mvc_claim_slots(sql->session->tr, t, BATcount(columns[0].b));
 	for (i = 0; i < ncols; i++) {
 		BAT *b = columns[i].b;
 		sql_column *col = NULL;
@@ -519,7 +555,7 @@ create_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *col
 			msg = sql_error(sql, 02, SQLSTATE(3F000) "CREATE TABLE: could not bind column %s", columns[i].name);
 			goto cleanup;
 		}
-		if ((msg = mvc_append_column(sql->session->tr, col, b)) != MAL_SUCCEED)
+		if ((msg = mvc_append_column(sql->session->tr, col, pos, b)) != MAL_SUCCEED)
 			goto cleanup;
 	}
 
@@ -534,7 +570,7 @@ cleanup:
 str 
 append_to_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *columns, size_t ncols)
 {
-	size_t i;
+	size_t i, pos = 0;
 	sql_table *t;
 	sql_schema *s;
 	mvc *sql = NULL;
@@ -561,6 +597,7 @@ append_to_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *
 		msg = sql_error(sql, 02, SQLSTATE(3F000) "CREATE TABLE: could not bind table %s", tname);
 		goto cleanup;
 	}
+	pos = mvc_claim_slots(sql->session->tr, t, BATcount(columns[0].b));
 	for (i = 0; i < ncols; i++) {
 		BAT *b = columns[i].b;
 		sql_column *col = NULL;
@@ -569,7 +606,7 @@ append_to_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *
 			msg = sql_error(sql, 02, SQLSTATE(3F000) "CREATE TABLE: could not bind column %s", columns[i].name);
 			goto cleanup;
 		}
-		if ((msg = mvc_append_column(sql->session->tr, col, b)) != MAL_SUCCEED)
+		if ((msg = mvc_append_column(sql->session->tr, col, pos, b)) != MAL_SUCCEED)
 			goto cleanup;
 	}
 
@@ -1591,9 +1628,9 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-mvc_append_column(sql_trans *t, sql_column *c, BAT *ins)
+mvc_append_column(sql_trans *t, sql_column *c, size_t pos, BAT *ins)
 {
-	int res = store_funcs.append_col(t, c, ins, TYPE_bat);
+	int res = store_funcs.append_col(t, c, pos, ins, TYPE_bat);
 	if (res != 0)
 		throw(SQL, "sql.append", SQLSTATE(42000) "Cannot append values");
 	return MAL_SUCCEED;
@@ -1649,8 +1686,9 @@ mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	const char *sname = *getArgReference_str(stk, pci, 2);
 	const char *tname = *getArgReference_str(stk, pci, 3);
 	const char *cname = *getArgReference_str(stk, pci, 4);
-	ptr ins = getArgReference(stk, pci, 5);
-	int tpe = getArgType(mb, pci, 5);
+	lng pos = *(lng*)getArgReference_lng(stk, pci, 5);
+	ptr ins = getArgReference(stk, pci, 6);
+	int tpe = getArgType(mb, pci, 6);
 	sql_schema *s;
 	sql_table *t;
 	sql_column *c;
@@ -1685,11 +1723,11 @@ mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( b && BATcount(b) > 4096 && !b->batTransient)
 		BATmsync(b);
 	if (cname[0] != '%' && (c = mvc_bind_column(m, t, cname)) != NULL) {
-		store_funcs.append_col(m->session->tr, c, ins, tpe);
+		store_funcs.append_col(m->session->tr, c, pos, ins, tpe);
 	} else if (cname[0] == '%') {
 		sql_idx *i = mvc_bind_idx(m, s, cname + 1);
 		if (i)
-			store_funcs.append_idx(m->session->tr, i, ins, tpe);
+			store_funcs.append_idx(m->session->tr, i, pos, ins, tpe);
 	}
 	if (b) {
 		BBPunfix(b->batCacheid);
@@ -4413,6 +4451,7 @@ vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, str (*func) (bat
 	BAT *b, *del;
 	node *o;
 	int i, bids[2049];
+	size_t cnt = 0;
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
@@ -4461,6 +4500,7 @@ vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, str (*func) (bat
 				throw(SQL, name, SQLSTATE(HY005) "Cannot access column descriptor");
 			return msg;
 		}
+		cnt = BATcount(b);
 		BBPunfix(b->batCacheid);
 		if (i < 2048) {
 			bids[i] = bid;
@@ -4475,12 +4515,14 @@ vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, str (*func) (bat
 	BBPunfix(del->batCacheid);
 
 	mvc_clear_table(m, t);
+	size_t pos = store_funcs.claim_tab(tr, t, cnt);
+	assert(pos == 0);
 	for (o = t->columns.set->h, i = 0; o; o = o->next, i++) {
 		sql_column *c = o->data;
 		BAT *ins = BATdescriptor(bids[i]);	/* use the insert bat */
 
 		if( ins){
-			store_funcs.append_col(tr, c, ins, TYPE_bat);
+			store_funcs.append_col(tr, c, pos, ins, TYPE_bat);
 			BBPunfix(ins->batCacheid);
 		}
 		BBPrelease(bids[i]);

@@ -301,6 +301,7 @@ isUpdateInstruction(InstrPtr p){
 	   ( getFunctionId(p) == appendRef ||
 		getFunctionId(p) == updateRef ||
 		getFunctionId(p) == deleteRef ||
+		getFunctionId(p) == claimRef ||
 		getFunctionId(p) == growRef ||
 		getFunctionId(p) == clear_tableRef))
 			return TRUE;

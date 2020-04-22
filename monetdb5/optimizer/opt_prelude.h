@@ -68,6 +68,7 @@ mal_export  str bulk_rotate_xor_hashRef;
 mal_export  str calcRef;
 mal_export  str capiRef;
 mal_export  str catalogRef;
+mal_export  str claimRef;
 mal_export  str clear_tableRef;
 mal_export  str closeRef;
 mal_export  str columnBindRef;

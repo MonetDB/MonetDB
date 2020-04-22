@@ -68,6 +68,7 @@ typedef enum stmt_type {
 	st_semijoin,
 
 	st_export,
+	st_claim,
 	st_append,
 	st_table_clear,
 	st_exception,
@@ -145,8 +146,9 @@ extern stmt *stmt_bat(backend *be, sql_column *c, int access, int partition);
 extern stmt *stmt_idxbat(backend *be, sql_idx *i, int access, int partition);
 extern stmt *stmt_tid(backend *be, sql_table *t, int partition);
 
-extern stmt *stmt_append_col(backend *be, sql_column *c, stmt *b, int locked);
-extern stmt *stmt_append_idx(backend *be, sql_idx *i, stmt *b);
+extern stmt *stmt_claim(backend *be, sql_table *t, stmt *cnt);
+extern stmt *stmt_append_col(backend *be, sql_column *c, stmt *offset, stmt *b, int locked);
+extern stmt *stmt_append_idx(backend *be, sql_idx *i, stmt *offset, stmt *b);
 extern stmt *stmt_update_col(backend *be, sql_column *c, stmt *tids, stmt *upd);
 extern stmt *stmt_update_idx(backend *be, sql_idx *i, stmt *tids, stmt *upd);
 extern stmt *stmt_delete(backend *be, sql_table *t, stmt *b);

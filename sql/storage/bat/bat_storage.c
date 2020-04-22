@@ -671,7 +671,7 @@ update_idx(sql_trans *tr, sql_idx * i, void *tids, void *upd, int tpe)
 }
 
 static int
-delta_append_bat( sql_delta *bat, BAT *i ) 
+delta_append_bat( sql_delta *bat, size_t offset, BAT *i ) 
 {
 	int id = i->batCacheid;
 	BAT *b;
@@ -690,6 +690,7 @@ delta_append_bat( sql_delta *bat, BAT *i )
 		bat->cached = NULL;
 	}
 	assert(!c || BATcount(c) == bat->ibase);
+	assert(bat->ibase == offset);
 	if (BATcount(b) == 0 && BBP_refs(id) == 1 && BBP_lrefs(id) == 1 && !isVIEW(i) && i->ttype && i->batRole == PERSISTENT){
 		temp_destroy(bat->ibid);
 		bat->ibid = id;
@@ -731,7 +732,7 @@ delta_append_bat( sql_delta *bat, BAT *i )
 }
 
 static int
-delta_append_val( sql_delta *bat, void *i ) 
+delta_append_val( sql_delta *bat, size_t offset, void *i ) 
 {
 	BAT *b = temp_descriptor(bat->ibid);
 #ifndef NDEBUG
@@ -745,6 +746,7 @@ delta_append_val( sql_delta *bat, void *i )
 		bat->cached = NULL;
 	}
 	assert(!c || BATcount(c) == bat->ibase);
+	assert(bat->ibase == offset);
 	if (isEbat(b)) {
 		bat_destroy(b);
 		temp_destroy(bat->ibid);
@@ -846,7 +848,7 @@ dup_del(sql_trans *tr, sql_table *ot, sql_table *t)
 }
 
 static int 
-append_col(sql_trans *tr, sql_column *c, void *i, int tpe)
+append_col(sql_trans *tr, sql_column *c, size_t offset, void *i, int tpe)
 {
 	int ok = LOG_OK;
 	BAT *b = i;
@@ -866,14 +868,14 @@ append_col(sql_trans *tr, sql_column *c, void *i, int tpe)
 	assert(tr != gtrans);
 	c->t->s->base.rtime = c->t->base.rtime = tr->stime;
 	if (tpe == TYPE_bat)
-		ok = delta_append_bat(bat, i);
+		ok = delta_append_bat(bat, offset, i);
 	else
-		ok = delta_append_val(bat, i);
+		ok = delta_append_val(bat, offset, i);
 	return ok;
 }
 
 static int
-append_idx(sql_trans *tr, sql_idx * i, void *ib, int tpe)
+append_idx(sql_trans *tr, sql_idx * i, size_t offset, void *ib, int tpe)
 {
 	int ok = LOG_OK;
 	BAT *b = ib;
@@ -889,9 +891,9 @@ append_idx(sql_trans *tr, sql_idx * i, void *ib, int tpe)
 	/* appends only write */
 	bat->wtime = i->base.wtime = i->t->base.wtime = i->t->s->base.wtime = tr->wtime = tr->wstime;
 	if (tpe == TYPE_bat)
-		ok = delta_append_bat(bat, ib);
+		ok = delta_append_bat(bat, offset, ib);
 	else
-		ok = delta_append_val(bat, ib);
+		ok = delta_append_val(bat, offset, ib);
 	return ok;
 }
 
@@ -1032,6 +1034,31 @@ delete_tab(sql_trans *tr, sql_table * t, void *ib, int tpe)
 	else
 		ok = delta_delete_val(bat, *(oid*)ib);
 	return ok;
+}
+
+static size_t
+claim_tab(sql_trans *tr, sql_table *t, size_t cnt)
+{
+	sql_column *c = t->columns.set->h->data;
+	sql_delta *bat;
+	size_t res = 0;
+
+	if (bind_del_data(tr, t) == LOG_ERR)
+		return 0;
+	/* claim net cnt slots */
+
+	/* use (resizeable) array of locks like BBP */
+	store_lock();
+	(void)cnt;
+	/* for now bind col */
+	if (bind_col_data(tr, c) == LOG_ERR)
+		return 0;
+	bat = c->data;
+	res = bat->ibase;
+	/* inserts only write */
+	bat->wtime = t->base.wtime = t->s->base.wtime = tr->wtime = tr->wstime;
+	store_unlock();
+	return res;
 }
 
 static size_t
@@ -2677,6 +2704,7 @@ bat_storage_init( store_functions *sf)
 	sf->update_col = (update_col_fptr)&update_col;
 	sf->update_idx = (update_idx_fptr)&update_idx;
 	sf->delete_tab = (delete_tab_fptr)&delete_tab;
+	sf->claim_tab = (claim_tab_fptr)&claim_tab;
 
 	sf->count_del = (count_del_fptr)&count_del;
 	sf->count_upd = (count_upd_fptr)&count_upd;

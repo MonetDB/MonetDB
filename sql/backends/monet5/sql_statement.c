@@ -688,12 +688,12 @@ stmt_idxbat(backend *be, sql_idx *i, int access, int partition)
 }
 
 stmt *
-stmt_append_col(backend *be, sql_column *c, stmt *b, int fake)
+stmt_append_col(backend *be, sql_column *c, stmt *offset, stmt *b, int fake)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
 
-	if (b->nr < 0)
+	if (offset->nr < 0 || b->nr < 0)
 		return NULL;
 
 	if (!c->t->s && c->t->data) { /* declared table */
@@ -718,6 +718,7 @@ stmt_append_col(backend *be, sql_column *c, stmt *b, int fake)
 		q = pushSchema(mb, q, c->t);
 		q = pushStr(mb, q, c->t->base.name);
 		q = pushStr(mb, q, c->base.name);
+		q = pushArgument(mb, q, offset->nr);
 		q = pushArgument(mb, q, b->nr);
 		if (q == NULL)
 			return NULL;
@@ -733,6 +734,7 @@ stmt_append_col(backend *be, sql_column *c, stmt *b, int fake)
 			return NULL;
 		}
 		s->op1 = b;
+		s->op2 = offset;
 		s->op4.cval = c;
 		s->q = q;
 		s->nr = getDestVar(q);
@@ -742,12 +744,12 @@ stmt_append_col(backend *be, sql_column *c, stmt *b, int fake)
 }
 
 stmt *
-stmt_append_idx(backend *be, sql_idx *i, stmt *b)
+stmt_append_idx(backend *be, sql_idx *i, stmt *offset, stmt *b)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
 
-	if (b->nr < 0)
+	if (offset->nr < 0 || b->nr < 0)
 		return NULL;
 
 	q = newStmt(mb, sqlRef, appendRef);
@@ -758,6 +760,7 @@ stmt_append_idx(backend *be, sql_idx *i, stmt *b)
 	q = pushSchema(mb, q, i->t);
 	q = pushStr(mb, q, i->t->base.name);
 	q = pushStr(mb, q, sa_strconcat(be->mvc->sa, "%", i->base.name));
+	q = pushArgument(mb, q, offset->nr);
 	q = pushArgument(mb, q, b->nr);
 	if (q == NULL)
 		return NULL;
@@ -770,6 +773,7 @@ stmt_append_idx(backend *be, sql_idx *i, stmt *b)
 		}
 
 		s->op1 = b;
+		s->op2 = offset;
 		s->op4.idxval = i;
 		s->q = q;
 		s->nr = getDestVar(q);
@@ -2759,6 +2763,36 @@ stmt_append(backend *be, stmt *c, stmt *a)
 		s->op2 = a;
 		s->nrcols = c->nrcols;
 		s->key = c->key;
+		s->nr = getDestVar(q);
+		s->q = q;
+		return s;
+	}
+	return NULL;
+}
+
+stmt *
+stmt_claim(backend *be, sql_table *t, stmt *cnt)
+{
+	MalBlkPtr mb = be->mb;
+	InstrPtr q = NULL;
+
+	if (!t || cnt->nr < 0)
+		return NULL;
+	if (!t->s && t->data) /* declared table */
+		assert(0);
+	q = newStmt(mb, sqlRef, claimRef);
+	q = pushArgument(mb, q, be->mvc_var);
+	q = pushSchema(mb, q, t);
+	q = pushStr(mb, q, t->base.name);
+	q = pushArgument(mb, q, cnt->nr);
+	if (q) {
+		stmt *s = stmt_create(be->mvc->sa, st_claim);
+		if(!s) {
+			freeInstruction(q);
+			return NULL;
+		}
+		s->op1 = cnt;
+		s->op4.tval = t;
 		s->nr = getDestVar(q);
 		s->q = q;
 		return s;

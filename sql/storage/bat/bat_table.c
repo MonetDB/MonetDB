@@ -245,12 +245,13 @@ table_insert(sql_trans *tr, sql_table *t, ...)
 	int ok = LOG_OK;
 
 	va_start(va, t);
+	size_t offset = store_funcs.claim_tab(tr, t, 1);
 	for (; n; n = n->next) {
 		sql_column *c = n->data;
 		val = va_arg(va, void *);
 		if (!val)
 			break;
-		ok = store_funcs.append_col(tr, c, val, c->type.type->localtype);
+		ok = store_funcs.append_col(tr, c, offset, val, c->type.type->localtype);
 		if (ok != LOG_OK)
 			return ok;
 		cnt++;
@@ -598,9 +599,11 @@ table_vacuum(sql_trans *tr, sql_table *t)
 	BAT *tids = delta_cands(tr, t);
 	BAT **cols;
 	node *n;
+	size_t cnt = 0;
 
 	if (!tids)
 		return SQL_ERR;
+	cnt = BATcount(tids);
 	cols = NEW_ARRAY(BAT*, cs_size(&t->columns));
 	if (!cols) {
 		bat_destroy(tids);
@@ -626,11 +629,13 @@ table_vacuum(sql_trans *tr, sql_table *t)
 	}
 	BBPunfix(tids->batCacheid);
 	sql_trans_clear_table(tr, t);
+	size_t offset = store_funcs.claim_tab(tr, t, cnt);
+	assert(offset == 0);
 	for (n = t->columns.set->h; n; n = n->next) {
 		sql_column *c = n->data;
 		int ok;
 
-		ok = store_funcs.append_col(tr, c, cols[c->colnr], TYPE_bat);
+		ok = store_funcs.append_col(tr, c, offset, cols[c->colnr], TYPE_bat);
 		BBPunfix(cols[c->colnr]->batCacheid);
 		if (ok != LOG_OK) {
 			for (n = n->next; n; n = n->next) {
