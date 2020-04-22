@@ -139,9 +139,19 @@ has_groupby(sql_rel *rel)
 		return 0;
 	if (is_groupby(rel->op)) 
 		return 1;
-	if (is_join(rel->op)) 
+	if (is_join(rel->op) || is_semi(rel->op) || is_set(rel->op)) 
 		return has_groupby(rel->l) || has_groupby(rel->r);
-	if ((is_select(rel->op) || is_project(rel->op)) && rel->l) 
+	if (is_simple_project(rel->op) || is_select(rel->op) || is_topn(rel->op) || is_sample(rel->op)) 
+		return has_groupby(rel->l);
+	if (is_modify(rel->op)) 
+		return has_groupby(rel->r);
+	if (is_ddl(rel->op)) {
+		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq)
+			return has_groupby(rel->l);
+		if (rel->flag == ddl_list || rel->flag == ddl_exception)
+			return has_groupby(rel->l) || has_groupby(rel->r);
+	}
+	if (rel->op == op_table && (IS_TABLE_PROD_FUNC(rel->flag) || rel->flag == TABLE_FROM_RELATION))
 		return has_groupby(rel->l);
 	return 0;
 }
@@ -154,16 +164,13 @@ rel_partition(mvc *sql, sql_rel *rel)
 
 	if (is_basetable(rel->op)) {
 		rel->flag = REL_PARTITION;
-	} else if ((is_topn(rel->op) || is_sample(rel->op) || is_select(rel->op))) {
+	} else if (is_simple_project(rel->op) || is_select(rel->op) || is_groupby(rel->op) || is_topn(rel->op) || is_sample(rel->op)) {
 		if (rel->l)
 			rel_partition(sql, rel->l);
 	} else if (is_modify(rel->op)) {
 		if (rel->r && rel->card <= CARD_AGGR)
 			rel_partition(sql, rel->r);
-	} else if (is_project(rel->op)) {
-		if (rel->l)
-			rel_partition(sql, rel->l);
-	} else if (is_semi(rel->op)) {
+	} else if (is_semi(rel->op) || is_set(rel->op)) {
 		if (rel->l)
 			rel_partition(sql, rel->l);
 		if (rel->r)
