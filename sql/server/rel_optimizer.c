@@ -1028,7 +1028,7 @@ push_in_join_down(mvc *sql, list *rels, list *exps)
 			sql_rel *r = n->data;
 
 			restart = 0;
-			if ((is_union(r->op) || is_project(r->op)) && r->nrcols == 0) {
+			if (is_project(r->op) && r->nrcols == 0) {
 				/* next step find expression on this relation */
 				node *m;
 				sql_rel *l = NULL;
@@ -2977,37 +2977,57 @@ rel_case_fixup_top(mvc *sql, sql_rel *rel, int *changes)
 static list *
 rewrite_case_exps(mvc *sql, list *l, int *has_changes)
 {
-	node *n;
-
 	if (!l)
 		return l;
-	for(n = l->h; n; n = n->next) 
+	for (node *n = l->h; n; n = n->next) 
 		n->data = rewrite_case_exp(sql, n->data, has_changes);
 	return l;
 }
 
-
 static sql_exp *
 rewrite_case_exp(mvc *sql, sql_exp *e, int *has_changes)
 {
-	if (e->type != e_psm)
-		return e;
-	if (e->flag & PSM_VAR) 
-		return e;
-	if (e->flag & PSM_SET || e->flag & PSM_RETURN) {
+	switch(e->type) {
+	case e_atom:
+	case e_column:
+		break;
+	case e_convert:
 		e->l = rewrite_case_exp(sql, e->l, has_changes);
-	}
-	if (e->flag & PSM_WHILE || e->flag & PSM_IF) {
-		e->l = rewrite_case_exp(sql, e->l, has_changes);
+		break;
+	case e_aggr:
+	case e_func: 
+		e->l = rewrite_case_exps(sql, e->l, has_changes);
 		e->r = rewrite_case_exps(sql, e->r, has_changes);
-		if (e->f)
-			e->f = rewrite_case_exps(sql, e->f, has_changes);
-		return e;
+		break;
+	case e_cmp:	
+		if (e->flag == cmp_or || e->flag == cmp_filter) {
+			e->l = rewrite_case_exps(sql, e->l, has_changes);
+			e->r = rewrite_case_exps(sql, e->r, has_changes);
+		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
+			e->l = rewrite_case_exp(sql, e->l, has_changes);
+			e->r = rewrite_case_exps(sql, e->r, has_changes);
+		} else {
+			e->l = rewrite_case_exp(sql, e->l, has_changes);
+			e->r = rewrite_case_exp(sql, e->r, has_changes);
+			if (e->f)
+				e->f = rewrite_case_exp(sql, e->f, has_changes);
+		}
+		break;
+	case e_psm:
+		if (e->flag & PSM_SET || e->flag & PSM_RETURN || e->flag & PSM_EXCEPTION) {
+			e->l = rewrite_case_exp(sql, e->l, has_changes);
+		} else if (e->flag & PSM_VAR) {
+			return e;
+		} else if (e->flag & PSM_WHILE || e->flag & PSM_IF) {
+			e->l = rewrite_case_exp(sql, e->l, has_changes);
+			e->r = rewrite_case_exps(sql, e->r, has_changes);
+			if (e->flag == PSM_IF && e->f)
+				e->f = rewrite_case_exps(sql, e->f, has_changes);
+		} else if (e->flag & PSM_REL && e->l) {
+			e->l = rel_case_fixup_top(sql, e->l, has_changes);
+		}
+		break;
 	}
-	if ((e->flag & PSM_REL) && e->l)
-		e->l = rel_case_fixup_top(sql, e->l, has_changes);
-	if (e->flag & PSM_EXCEPTION)
-		e->l = rewrite_case_exp(sql, e->l, has_changes);
 	return e;
 }
 
@@ -3018,7 +3038,7 @@ rel_case_fixup(mvc *sql, sql_rel *rel, int top, int *changes)
 
 	if (!top && rel_is_ref(rel))
 		return rel;
-	if ((is_project(rel->op) || (rel->op == op_ddl && rel->flag == ddl_psm)) && rel->exps) {
+	if ((is_project(rel->op) || (is_ddl(rel->op) && rel->flag == ddl_psm)) && rel->exps) {
 		list *exps = rel->exps;
 		node *n;
 		int needed = 0;
@@ -3059,9 +3079,9 @@ rel_case_fixup(mvc *sql, sql_rel *rel, int top, int *changes)
 		}
 		if (is_ddl(rel->op) && rel->flag == ddl_psm)
 			rel->exps = rewrite_case_exps(sql, rel->exps, changes);
-		if (rel->l)
+		if ((!is_ddl(rel->op) || (is_ddl(rel->op) && (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq))) && rel->l)
 			rel->l = rel_case_fixup(sql, rel->l, is_topn(rel->op)?top:0, changes);
-		if (is_ddl(rel->op) && rel->r)
+		if (is_ddl(rel->op) && (rel->flag == ddl_list || rel->flag == ddl_exception) && rel->r)
 			rel->r = rel_case_fixup(sql, rel->r, is_ddl(rel->op)?top:0, changes);
 		return res;
 	} 
@@ -4160,14 +4180,14 @@ rel_push_aggr_down(mvc *sql, sql_rel *rel, int *changes)
 		ul->r = lgbe;
 		ul->nrcols = g->nrcols;
 		ul->card = g->card;
-		ul->exps = list_merge(exps_copy(sql, g->exps), exps_copy(sql, ul->r), (fdup)NULL);
+		ul->exps = exps_copy(sql, g->exps);
 		ul->nrcols = list_length(ul->exps);
 
 		ur = rel_groupby(sql, ur, NULL);
 		ur->r = rgbe;
 		ur->nrcols = g->nrcols;
 		ur->card = g->card;
-		ur->exps = list_merge(exps_copy(sql, g->exps), exps_copy(sql, ur->r), (fdup)NULL);
+		ur->exps = exps_copy(sql, g->exps);
 		ur->nrcols = list_length(ur->exps);
 
 		/* group by on primary keys which define the partioning scheme 
@@ -7522,18 +7542,17 @@ split_exp(mvc *sql, sql_exp *e, sql_rel *rel)
 		}
 		return e;
 	case e_cmp:	
-		if (e->flag == cmp_or) {
+		if (e->flag == cmp_or || e->flag == cmp_filter) {
 			split_exps(sql, e->l, rel);
 			split_exps(sql, e->r, rel);
-		} else if (e->flag == cmp_in || e->flag == cmp_notin || e->flag == cmp_filter) {
+		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
 			e->l = split_exp(sql, e->l, rel);
 			split_exps(sql, e->r, rel);
 		} else {
 			e->l = split_exp(sql, e->l, rel);
 			e->r = split_exp(sql, e->r, rel);
-			if (e->f) {
+			if (e->f)
 				e->f = split_exp(sql, e->f, rel);
-			}
 		}
 		return e;
 	case e_psm:
@@ -7632,18 +7651,17 @@ select_split_exp(mvc *sql, sql_exp *e, sql_rel *rel)
 		}
 		return e;
 	case e_cmp:	
-		if (e->flag == cmp_or) {
+		if (e->flag == cmp_or || e->flag == cmp_filter) {
 			select_split_exps(sql, e->l, rel);
 			select_split_exps(sql, e->r, rel);
-		} else if (e->flag == cmp_in || e->flag == cmp_notin || e->flag == cmp_filter) {
+		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
 			e->l = select_split_exp(sql, e->l, rel);
 			select_split_exps(sql, e->r, rel);
 		} else {
 			e->l = select_split_exp(sql, e->l, rel);
 			e->r = select_split_exp(sql, e->r, rel);
-			if (e->f) {
+			if (e->f)
 				e->f = select_split_exp(sql, e->f, rel);
-			}
 		}
 		return e;
 	case e_psm:
@@ -8758,7 +8776,7 @@ static sql_rel*
 exp_skip_output_parts(sql_rel *rel)
 {
 	while ((is_topn(rel->op) || is_project(rel->op) || is_sample(rel->op)) && rel->l) {
-		if (rel->op == op_groupby && list_empty(rel->r))
+		if (is_groupby(rel->op) && list_empty(rel->r))
 			return rel;			/* a group-by with no columns is a plain aggregate and hence always returns one row */
 		rel = rel->l;
 	}

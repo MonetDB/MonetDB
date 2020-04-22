@@ -456,8 +456,10 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 		BATtseqbase(bn, oid_nil);
 
   doreturn:
-	TRC_DEBUG(ALGO, "l=" ALGOBATFMT " r1=" ALGOBATFMT " -> " ALGOOPTBATFMT "%s%s " LLFMT "us\n",
-		  ALGOBATPAR(l), ALGOBATPAR(r1), ALGOOPTBATPAR(bn),
+	TRC_DEBUG(ALGO, "l=" ALGOBATFMT " r1=" ALGOBATFMT " r2=" ALGOOPTBATFMT
+		  " -> " ALGOOPTBATFMT "%s%s " LLFMT "us\n",
+		  ALGOBATPAR(l), ALGOBATPAR(r1), ALGOOPTBATPAR(r2),
+		  ALGOOPTBATPAR(bn),
 		  bn && bn->ttype == TYPE_str && bn->tvheap == r1->tvheap ? " sharing string heap" : "",
 		  msg, GDKusec() - t0);
 	return bn;

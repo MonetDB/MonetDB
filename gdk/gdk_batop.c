@@ -1189,7 +1189,7 @@ BAT *
 BATslice(BAT *b, BUN l, BUN h)
 {
 	BUN low = l;
-	BAT *bn;
+	BAT *bn = NULL;
 	BATiter bni, bi = bat_iterator(b);
 	oid foid;		/* first oid value if oid column */
 
@@ -1201,14 +1201,15 @@ BATslice(BAT *b, BUN l, BUN h)
 
 	if (l > BUN_MAX || h > BUN_MAX) {
 		GDKerror("boundary out of range\n");
-		return NULL;
+		goto doreturn;
 	}
 
 	if (b->ttype == TYPE_void && b->tvheap != NULL) {
 		/* slicing a candidate list with exceptions */
 		struct canditer ci;
 		canditer_init(&ci, NULL, b);
-		return canditer_slice(&ci, l, h);
+		bn = canditer_slice(&ci, l, h);
+		goto doreturn;
 	}
 	/* If the source BAT is readonly, then we can obtain a VIEW
 	 * that just reuses the memory of the source. */
@@ -1217,7 +1218,7 @@ BATslice(BAT *b, BUN l, BUN h)
 	     BBP_cache(VIEWtparent(b))->batRestricted == BAT_READ)) {
 		bn = VIEWcreate(b->hseqbase + low, b);
 		if (bn == NULL)
-			return NULL;
+			goto doreturn;
 		VIEWbounds(b, bn, l, h);
 	} else {
 		/* create a new BAT and put everything into it */
@@ -1226,7 +1227,7 @@ BATslice(BAT *b, BUN l, BUN h)
 
 		bn = COLnew((oid) (b->hseqbase + low), BATtdense(b) ? TYPE_void : b->ttype, h - l, TRANSIENT);
 		if (bn == NULL)
-			return NULL;
+			goto doreturn;
 
 		if (bn->ttype == TYPE_void ||
 		    (!bn->tvarsized &&
@@ -1242,7 +1243,8 @@ BATslice(BAT *b, BUN l, BUN h)
 			for (; p < q; p++) {
 				if (bunfastapp(bn, BUNtail(bi, p)) != GDK_SUCCEED) {
 					BBPreclaim(bn);
-					return NULL;
+					bn = NULL;
+					goto doreturn;
 				}
 			}
 		}
@@ -1295,9 +1297,10 @@ BATslice(BAT *b, BUN l, BUN h)
 		bn->trevsorted = b->trevsorted;
 		BATkey(bn, BATtkey(b));
 	}
-	TRC_DEBUG(ALGO, "BATslice(" ALGOBATFMT "," BUNFMT "," BUNFMT ")"
-		  "=" ALGOBATFMT "\n",
-		  ALGOBATPAR(b), l, h, ALGOBATPAR(bn));
+  doreturn:
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",lo=" BUNFMT ",hi=" BUNFMT " -> "
+		  ALGOOPTBATFMT "\n",
+		  ALGOBATPAR(b), l, h, ALGOOPTBATPAR(bn));
 	return bn;
 }
 

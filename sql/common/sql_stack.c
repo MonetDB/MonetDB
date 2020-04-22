@@ -16,10 +16,11 @@ sql_stack_new(sql_allocator *sa, int size)
 	if (s == NULL)
 		return NULL;
 
-	s -> sa = sa;
-	s -> size = size;
-	s -> top = 0;
-	s -> values = SA_NEW_ARRAY(sa, void*, size);
+	*s = (sql_stack) {
+		.sa = sa,
+		.size = size,
+		.values = SA_NEW_ARRAY(sa, void*, size),
+	};
 	if (s->values == NULL) {
 		_DELETE(s);
 		return NULL;
@@ -31,11 +32,16 @@ void
 sql_stack_push(sql_stack *s, void *v)
 {
 	if (s->top >= s->size) {
-		size_t osz = s->size;
+		void **nvalues;
+		int osz = s->size;
+
 		s->size *= 2;
-		s->values = SA_RENEW_ARRAY(s->sa, void*, s->values, s->size, osz);
-		if (s->values == NULL)
+		nvalues = SA_RENEW_ARRAY(s->sa, void*, s->values, s->size, osz);
+		if (nvalues == NULL) {
+			s->size = osz;
 			return;
+		}
+		s->values = nvalues;
 	}
 	s->values[s->top++] = v;
 }

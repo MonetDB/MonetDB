@@ -17,8 +17,9 @@ node_create(sql_allocator *sa, void *data)
 
 	if (n == NULL)
 		return NULL;
-	n->next = NULL;
-	n->data = data;
+	*n = (node) {
+		.data = data,
+	};
 	return n;
 }
 
