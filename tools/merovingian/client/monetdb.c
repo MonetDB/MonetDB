@@ -2007,7 +2007,7 @@ command_snapshot_create(int argc, char *argv[])
 		free(err);
 		exit(2);
 	}
-	sabdb *databases = globMatchDBS(argc, argv, &all, "snapshot");
+	sabdb *databases = globMatchDBS(NULL, argc, argv, &all, "snapshot");
 	msab_freeStatus(&all);
 	if (databases == NULL)
 		exit(1);
