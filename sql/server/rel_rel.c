@@ -96,7 +96,7 @@ rel_destroy_(sql_rel *rel)
 			rel_destroy(rel->l);
 		if (rel->r)
 			rel_destroy(rel->r);
-	} else if (is_project(rel->op)) {
+	} else if (is_simple_project(rel->op) || is_groupby(rel->op)) {
 		if (rel->l)
 			rel_destroy(rel->l);
 	} else if (is_modify(rel->op)) {
@@ -1588,7 +1588,7 @@ rel_in_rel(sql_rel *super, sql_rel *sub)
 		return 1;
 	if (is_join(super->op) || is_semi(super->op) || is_set(super->op) || is_modify(super->op) || is_ddl(super->op))
 		return rel_in_rel(super->l, sub) || rel_in_rel(super->r, sub);
-	if (is_select(super->op) || is_project(super->op) || is_topn(super->op) || is_sample(super->op))
+	if (is_select(super->op) || is_simple_project(super->op) || is_groupby(super->op) || is_topn(super->op) || is_sample(super->op))
 		return rel_in_rel(super->l, sub);
 	return 0;
 }

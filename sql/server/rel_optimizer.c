@@ -1028,7 +1028,7 @@ push_in_join_down(mvc *sql, list *rels, list *exps)
 			sql_rel *r = n->data;
 
 			restart = 0;
-			if ((is_union(r->op) || is_project(r->op)) && r->nrcols == 0) {
+			if (is_project(r->op) && r->nrcols == 0) {
 				/* next step find expression on this relation */
 				node *m;
 				sql_rel *l = NULL;
@@ -8758,7 +8758,7 @@ static sql_rel*
 exp_skip_output_parts(sql_rel *rel)
 {
 	while ((is_topn(rel->op) || is_project(rel->op) || is_sample(rel->op)) && rel->l) {
-		if (rel->op == op_groupby && list_empty(rel->r))
+		if (is_groupby(rel->op) && list_empty(rel->r))
 			return rel;			/* a group-by with no columns is a plain aggregate and hence always returns one row */
 		rel = rel->l;
 	}
