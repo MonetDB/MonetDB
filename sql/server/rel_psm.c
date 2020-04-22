@@ -1325,7 +1325,7 @@ create_trigger(sql_query *query, dlist *qname, int time, symbol *trigger_event, 
 	}
 
 	if (!instantiate) {
-		t = find_table_on_scope(sql, &ss, sname, tname);
+		t = mvc_bind_table(sql, ss, tname);
 		if (!stack_push_frame(sql, "OLD-NEW"))
 			return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		/* we need to add the old and new tables */
