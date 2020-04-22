@@ -750,11 +750,6 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 
 			/* make sure we use the correct capacity */
 			bn->batCapacity = (BUN) (bn->ttype ? bn->theap.size >> bn->tshift : 0);
-
-
-			/* first/inserted must point equally far into
-			 * the heap as in the source */
-			bn->batInserted = b->batInserted;
 		} else if (BATatoms[tt].atomFix || tt != TYPE_void || ATOMextern(tt)) {
 			/* case (4): one-by-one BUN insert (really slow) */
 			BUN p, q, r = 0;
