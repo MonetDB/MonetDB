@@ -38,7 +38,6 @@
 #define NEW_ARRAY( type, size ) (type*)GDKmalloc((size)*sizeof(type))
 #define RENEW_ARRAY( type,ptr,size) (type*)GDKrealloc((void*)ptr,(size)*sizeof(type))
 
-#define NEWADT( size ) (adt*)GDKmalloc(size)
 #define _DELETE( ptr )	do { GDKfree(ptr); ptr = NULL; } while (0)
 #define _STRDUP( ptr )	GDKstrdup((char*)ptr)
 
