@@ -383,7 +383,7 @@ pattern argRecord(a:any...):str
 address SQLargRecord
 comment "Glue together the calling sequence";
 
-pattern sql_variables():bat[:str]
+pattern sql_variables() (sname:bat[:str], name:bat[:str], type:bat[:str], value:bat[:str])
 address sql_variables
 comment "return the table with session variables";
 

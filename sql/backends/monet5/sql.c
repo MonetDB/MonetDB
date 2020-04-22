@@ -728,33 +728,82 @@ str
 sql_variables(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *m = NULL;
-	BAT *vars;
-	str msg;
-	bat *res = getArgReference_bat(stk, pci, 0);
-	sql_frame *f;
+	BAT *schemas, *names, *types, *values;
+	str msg = MAL_SUCCEED;
+	bat *s = getArgReference_bat(stk,pci,0);
+	bat *n = getArgReference_bat(stk,pci,1);
+	bat *t = getArgReference_bat(stk,pci,2);
+	bat *v = getArgReference_bat(stk,pci,3);
+	int nvars;
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
 
-	f = m->frames[m->topframes - 1];
-	vars = COLnew(0, TYPE_str, list_length(f->vars), TRANSIENT);
-	if (vars == NULL)
-		throw(SQL, "sql.variables", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	nvars = list_length(m->global_vars);
+	schemas = COLnew(0, TYPE_str, nvars, TRANSIENT);
+	names = COLnew(0, TYPE_str, nvars, TRANSIENT);
+	types = COLnew(0, TYPE_str, nvars, TRANSIENT);
+	values = COLnew(0, TYPE_str, nvars, TRANSIENT);
+	if (!schemas || !names || !types || !values) {
+		msg = createException(SQL, "sql.variables", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
 
-	if (f->vars) {
-		for (node *n = f->vars->h; n ; n = n->next) {
+	if (m->global_vars) {
+		for (node *n = m->global_vars->h; n ; n = n->next) {
 			sql_var *var = (sql_var*) n->data;
-			if (BUNappend(vars, var->name, false) != GDK_SUCCEED) {
-				BBPreclaim(vars);
-				throw(SQL, "sql.variables", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			atom value = var->var;
+			ValPtr myptr = &(value.data);
+			ValRecord val = (ValRecord) {.vtype = TYPE_void,};
+			gdk_return res;
+
+			if (value.tpe.type->localtype != TYPE_str) {
+				ptr ok = VALcopy(&val, myptr);
+				if (ok)
+					ok = VALconvert(TYPE_str, &val);
+				if (!ok) {
+					VALclear(&val);
+					msg = createException(SQL, "sql.variables", SQLSTATE(HY013) "Failed to convert variable '%s.%s' into a string", var->sname, var->name);
+					goto bailout;
+				}
+				myptr = &val;
+			}
+			res = BUNappend(values, VALget(myptr), false);
+			VALclear(&val);
+			if (res != GDK_SUCCEED) {
+				msg = createException(SQL, "sql.variables", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
+			if (BUNappend(schemas, var->sname, false) != GDK_SUCCEED) {
+				msg = createException(SQL, "sql.variables", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
+			if (BUNappend(names, var->name, false) != GDK_SUCCEED) {
+				msg = createException(SQL, "sql.variables", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
+			if (BUNappend(types, value.tpe.type->sqlname, false) != GDK_SUCCEED) {
+				msg = createException(SQL, "sql.variables", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
 			}
 		}
 	}
-	*res = vars->batCacheid;
-	BBPkeepref(vars->batCacheid);
-	return MAL_SUCCEED;
+
+bailout:
+	if (msg) {
+		BBPreclaim(schemas);
+		BBPreclaim(names);
+		BBPreclaim(types);
+		BBPreclaim(values);
+	} else {
+		BBPkeepref(*s = schemas->batCacheid);
+		BBPkeepref(*n = names->batCacheid);
+		BBPkeepref(*t = types->batCacheid);
+		BBPkeepref(*v = values->batCacheid);
+	}
+	return msg;
 }
 
 /* str mvc_logfile(int *d, str *filename); */

@@ -86,18 +86,21 @@ sql_create_env(mvc *m, sql_schema *s)
 	list *res, *ops;
 
 	res = sa_list(m->sa);
-	list_append(res, sql_create_arg(m->sa, "name", sql_bind_subtype(m->sa, "varchar", 1024, 0), ARG_OUT));  
-	list_append(res, sql_create_arg(m->sa, "value", sql_bind_subtype(m->sa, "varchar", 2048, 0), ARG_OUT));  
+	list_append(res, sql_create_arg(m->sa, "name", sql_bind_subtype(m->sa, "varchar", 1024, 0), ARG_OUT));
+	list_append(res, sql_create_arg(m->sa, "value", sql_bind_subtype(m->sa, "varchar", 2048, 0), ARG_OUT));
 
 	/* add function */
 	ops = sa_list(m->sa);
-	mvc_create_func(m, NULL, s, "env", ops, res, F_UNION, FUNC_LANG_SQL, "sql", "sql_environment", "CREATE FUNCTION env () RETURNS TABLE( name varchar(1024), value varchar(2048)) EXTERNAL NAME sql.sql_environment;", FALSE, FALSE, TRUE);
+	mvc_create_func(m, NULL, s, "env", ops, res, F_UNION, FUNC_LANG_SQL, "sql", "sql_environment", "CREATE FUNCTION \"sys\".\"env\"() RETURNS TABLE(\"name\" varchar(1024), \"value\" varchar(2048)) EXTERNAL NAME \"sql\".\"sql_environment\";", FALSE, FALSE, TRUE);
 
 	res = sa_list(m->sa);
-	list_append(res, sql_create_arg(m->sa, "name", sql_bind_subtype(m->sa, "varchar", 1024, 0), ARG_OUT));  
+	list_append(res, sql_create_arg(m->sa, "sname", sql_bind_localtype("str"), ARG_OUT));
+	list_append(res, sql_create_arg(m->sa, "name", sql_bind_localtype("str"), ARG_OUT));
+	list_append(res, sql_create_arg(m->sa, "type", sql_bind_localtype("str"), ARG_OUT));
+	list_append(res, sql_create_arg(m->sa, "value", sql_bind_localtype("str"), ARG_OUT));
 
 	/* add function */
 	ops = sa_list(m->sa);
-	mvc_create_func(m, NULL, s, "var", ops, res, F_UNION, FUNC_LANG_SQL, "sql", "sql_variables", "CREATE FUNCTION var() RETURNS TABLE( name varchar(1024)) EXTERNAL NAME sql.sql_variables;", FALSE, FALSE, TRUE);
+	mvc_create_func(m, NULL, s, "var", ops, res, F_UNION, FUNC_LANG_SQL, "sql", "sql_variables", "CREATE FUNCTION \"sys\".\"var\"() RETURNS TABLE(\"sname\" string, \"name\" string, \"type\" string, \"value\" string) EXTERNAL NAME \"sql\".\"sql_variables\";", FALSE, FALSE, TRUE);
 	return 0;
 }

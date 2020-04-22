@@ -1,6 +1,6 @@
 -- hash lookup for variables
 -- TODO transaction management
--- upgrade drop dt_schema
+-- upgrade drop dt_schema, re-create var F_UNION
 
 create table tmp1("optimizer" integer, s string);
 insert into tmp1 values(1,'hello'),(2,'world');

@@ -75,3 +75,5 @@ SELECT "sys"."current_schema" FROM "sys";
 	-- astring
 
 DROP TABLE "sys";
+
+SELECT * from sys.var() where "name" not in ('debug', 'cache', 'last_id', 'current_timezone');
