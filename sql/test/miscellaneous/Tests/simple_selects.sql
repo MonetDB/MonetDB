@@ -145,3 +145,5 @@ create table myy (a interval second);
 select * from myx natural full outer join myy; --error, types boolean(1,0) and sec_interval(13,0) are not equal
 drop table myx;
 drop table myy;
+
+create view iambad as select * from _tables sample 10; --error, sample inside views not supported

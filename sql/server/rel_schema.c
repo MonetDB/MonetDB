@@ -1179,8 +1179,9 @@ rel_create_view(sql_query *query, sql_schema *ss, dlist *qname, dlist *column_sp
 		if (ast->token == SQL_SELECT) {
 			SelectNode *sn = (SelectNode *) ast;
 
-			if (sn->limit)
-				return sql_error(sql, 01, SQLSTATE(42000) "%s VIEW: LIMIT not supported", base);
+			assert(!sn->limit || !sn->sample);
+			if (sn->limit || sn->sample)
+				return sql_error(sql, 01, SQLSTATE(42000) "%s VIEW: %s not supported", base, sn->limit ? "LIMIT" : "SAMPLE");
 		}
 
 		sq = schema_selects(query, s, ast);
