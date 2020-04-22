@@ -1,6 +1,20 @@
 # ChangeLog file for clients
 # This file is updated with Maddlog
 
+* Mon Apr 20 2020 Sjoerd Mullender <sjoerd@acm.org>
+- The monetdb-client-tools (Debian/Ubuntu) and MonetDB-client-tools
+  (Fedora/RHcontaining the stethoscope, tachograph, and tomograph has
+  been removed.  A completely new version of stethoscope will be released
+  to replace the old version.
+
+* Thu Apr 16 2020 Sjoerd Mullender <sjoerd@acm.org>
+- Removed the possibility of using the MD5 checksum for authentication
+  purposes.  It was never actively used but was there as an option.
+  Now the option has been removed.
+
+* Thu Feb  6 2020 Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com>
+- Add port and host as fields in the .monetdb file.
+
 * Fri Oct 25 2019 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
 - Added 'sessionid' column to system function sys.queue(), so each query
   gets tagged with the current session identifier

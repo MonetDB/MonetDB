@@ -257,9 +257,13 @@ This information can be used to determine memory footprint and variable life tim
 						logadd(",\"file\":\"%s\"", cv + 1);
 						GDKfree(cv);
 						total += cnt * d->twidth;
-						total += heapinfo(d->tvheap, d->batCacheid);
-						total += hashinfo(d->thash, d->batCacheid);
-						total += IMPSimprintsize(d);
+						/* keeping information about the individual auxiliary heaps is helpful during analysis. */
+						if( d->thash)
+							logadd(",\"hash\":" LLFMT, (lng) hashinfo(d->thash, d->batCacheid));
+						if( d->tvheap)
+							logadd(",\"vheap\":" LLFMT, (lng) heapinfo(d->tvheap, d->batCacheid));
+						if( d->timprints)
+							logadd(",\"imprints\":" LLFMT, (lng) IMPSimprintsize(d));
 					/* logadd("\"debug\":\"%s\",", d->debugmessages); */
 						BBPunfix(d->batCacheid);
 					}

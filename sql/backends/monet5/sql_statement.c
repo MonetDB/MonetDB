@@ -215,22 +215,12 @@ static stmt *
 stmt_create(sql_allocator *sa, st_type type)
 {
 	stmt *s = SA_NEW(sa, stmt);
-	if(!s)
-		return NULL;
 
-	s->type = type;
-	s->op1 = NULL;
-	s->op2 = NULL;
-	s->op3 = NULL;
-	s->op4.lval = NULL;
-	s->flag = 0;
-	s->nrcols = 0;
-	s->key = 0;
-	s->aggr = 0;
-	s->nr = 0;
-	s->partition = 0;
-	s->tname = s->cname = NULL;
-	s->cand = NULL;
+	if (!s)
+		return NULL;
+	*s = (stmt) {
+		.type = type,
+	};
 	return s;
 }
 
@@ -1498,6 +1488,9 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 	} else {
 		assert (cmptype != cmp_filter);
 		if (is_semantics) {
+			assert(cmptype == cmp_equal || cmptype == cmp_notequal);
+			if (cmptype == cmp_notequal)
+				anti = !anti;
 			q = newStmt(mb, algebraRef, selectRef);
 			q = pushArgument(mb, q, l);
 			if (sub && !op1->cand)

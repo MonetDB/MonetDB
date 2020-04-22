@@ -5904,18 +5904,28 @@ set schema "sys";
 
 Running database upgrade commands:
 set schema "sys";
-create procedure suspend_log_flushing()
- external name sql.suspend_log_flushing;
-create procedure resume_log_flushing()
- external name sql.resume_log_flushing;
-create procedure hot_snapshot(tarfile string)
- external name sql.hot_snapshot;
-update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name in ('suspend_log_flushing', 'resume_log_flushing', 'hot_snapshot') and type = 2;
 drop function isaURL(url);
 CREATE function isaURL(theUrl string) RETURNS BOOL
  EXTERNAL NAME url."isaURL";
 GRANT EXECUTE ON FUNCTION isaURL(string) TO PUBLIC;
 update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name = 'isaurl' and type = 1;
+drop function str_to_time(string, string);
+drop function time_to_str(time, string);
+drop function str_to_timestamp(string, string);
+drop function timestamp_to_str(timestamp, string);
+create function str_to_time(s string, format string) returns time with time zone
+ external name mtime."str_to_time";
+create function time_to_str(d time with time zone, format string) returns string
+ external name mtime."time_to_str";
+create function str_to_timestamp(s string, format string) returns timestamp with time zone
+ external name mtime."str_to_timestamp";
+create function timestamp_to_str(d timestamp with time zone, format string) returns string
+ external name mtime."timestamp_to_str";
+grant execute on function str_to_time to public;
+grant execute on function time_to_str to public;
+grant execute on function str_to_timestamp to public;
+grant execute on function timestamp_to_str to public;
+update sys.functions set system = true where name in ('str_to_time', 'str_to_timestamp', 'time_to_str', 'timestamp_to_str') and schema_id = (select id from sys.schemas where name = 'sys');
 drop view sys.tracelog;
 drop function sys.tracelog();
 create function sys.tracelog()
@@ -5927,6 +5937,24 @@ create function sys.tracelog()
 create view sys.tracelog as select * from sys.tracelog();
 update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name = 'tracelog' and type = 5;
 update sys._tables set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name = 'tracelog';
+drop function sys.epoch(bigint);
+drop function sys.epoch(int);
+drop function sys.epoch(timestamp);
+drop function sys.epoch(timestamp with time zone);
+create function sys.epoch(sec BIGINT) returns TIMESTAMP WITH TIME ZONE
+ external name mtime.epoch;
+create function sys.epoch(sec INT) returns TIMESTAMP WITH TIME ZONE
+ external name mtime.epoch;
+create function sys.epoch(ts TIMESTAMP WITH TIME ZONE) returns INT
+ external name mtime.epoch;
+create function sys.date_trunc(txt string, t timestamp with time zone)
+returns timestamp with time zone
+external name sql.date_trunc;
+grant execute on function sys.date_trunc(string, timestamp with time zone) to public;
+grant execute on function sys.epoch (BIGINT) to public;
+grant execute on function sys.epoch (INT) to public;
+grant execute on function sys.epoch (TIMESTAMP WITH TIME ZONE) to public;
+update sys.functions set system = true where name in ('epoch', 'date_trunc') and schema_id = (select id from sys.schemas where name = 'sys');
 drop view sys.sessions;
 drop function sys.sessions;
 create function sys.sessions()
@@ -6001,6 +6029,11 @@ grant select on sys.prepared_statements_args to public;
 update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name in ('sessions', 'prepared_statements', 'prepared_statements_args') and type = 5;
 update sys._tables set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name in ('sessions', 'prepared_statements', 'prepared_statements_args');
 update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name in ('setoptimizer', 'setquerytimeout', 'setsessiontimeout', 'setworkerlimit', 'setmemorylimit', 'setoptimizer', 'stopsession') and type = 2;
+create procedure sys.suspend_log_flushing()
+ external name sql.suspend_log_flushing;
+create procedure sys.resume_log_flushing()
+ external name sql.resume_log_flushing;
+update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name in ('suspend_log_flushing', 'resume_log_flushing') and type = 2;
 create function sys.debug(flag string) returns integer
  external name mdb."setDebug";
 create function sys.debugflags()
@@ -6050,54 +6083,6 @@ grant execute on procedure sys.resume(bigint) to public;
 grant execute on procedure sys.stop(bigint) to public;
 update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name = 'queue' and type = 5;
 update sys._tables set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name = 'queue';
-ALTER TABLE sys.keywords SET READ WRITE;
-DELETE FROM sys.keywords where "keyword" IN ('NOCYCLE','NOMAXVALUE','NOMINVALUE');
-insert into sys.keywords values ('ANALYZE'),('AT'),('AUTHORIZATION'),('CACHE'),('CENTURY'),('COLUMN'),('CLIENT'),('CUBE'),('CYCLE'),('DATA'),('DATE'),('DEBUG'),('DECADE'),('DEALLOCATE'),('DIAGNOSTICS'),('DISTINCT'),('DOW'),('DOY'),('EXEC'),('EXECUTE'),('EXPLAIN'),('FIRST'),('FWF'),('GROUPING'),('GROUPS'),('INCREMENT'),('INTERVAL'),('KEY'),('LANGUAGE'),('LARGE'),('LAST'),('LATERAL'),('LEVEL'),('LOADER'),('MATCH'),('MATCHED'),('MAXVALUE'),('MINVALUE'),('NAME'),('NO'),('NULLS'),('OBJECT'),('OPTIONS'),('PASSWORD'),('PLAN'),('PRECISION'),('PREP'),('PREPARE'),('QUARTER'),('RELEASE'),('REPLACE'),('ROLLUP'),('SCHEMA'),('SEED'),('SERVER'),('SESSION'),('SETS'),('SIZE'),('STATEMENT'),('TABLE'),('TEMP'),('TEMPORARY'),('TEXT'),('TIME'),('TIMESTAMP'),('TRACE'),('TYPE'),('UNIONJOIN'),('WEEK'),('YEAR'),('ZONE');
-commit;
-set schema "sys";
-
-Running database upgrade commands:
-set schema "sys";
-ALTER TABLE sys.keywords SET READ ONLY;
-set schema "sys";
-
-Running database upgrade commands:
-set schema "sys";
-drop function str_to_time(string, string);
-drop function time_to_str(time, string);
-drop function str_to_timestamp(string, string);
-drop function timestamp_to_str(timestamp, string);
-create function str_to_time(s string, format string) returns time with time zone
- external name mtime."str_to_time";
-create function time_to_str(d time with time zone, format string) returns string
- external name mtime."time_to_str";
-create function str_to_timestamp(s string, format string) returns timestamp with time zone
- external name mtime."str_to_timestamp";
-create function timestamp_to_str(d timestamp with time zone, format string) returns string
- external name mtime."timestamp_to_str";
-grant execute on function str_to_time to public;
-grant execute on function time_to_str to public;
-grant execute on function str_to_timestamp to public;
-grant execute on function timestamp_to_str to public;
-update sys.functions set system = true where name in ('str_to_time', 'str_to_timestamp', 'time_to_str', 'timestamp_to_str') and schema_id = (select id from sys.schemas where name = 'sys');
-drop function sys.epoch(bigint);
-drop function sys.epoch(int);
-drop function sys.epoch(timestamp);
-drop function sys.epoch(timestamp with time zone);
-create function sys.epoch(sec BIGINT) returns TIMESTAMP WITH TIME ZONE
- external name mtime.epoch;
-create function sys.epoch(sec INT) returns TIMESTAMP WITH TIME ZONE
- external name mtime.epoch;
-create function sys.epoch(ts TIMESTAMP WITH TIME ZONE) returns INT
- external name mtime.epoch;
-create function sys.date_trunc(txt string, t timestamp with time zone)
-returns timestamp with time zone
-external name sql.date_trunc;
-grant execute on function sys.date_trunc(string, timestamp with time zone) to public;
-grant execute on function sys.epoch (BIGINT) to public;
-grant execute on function sys.epoch (INT) to public;
-grant execute on function sys.epoch (TIMESTAMP WITH TIME ZONE) to public;
-update sys.functions set system = true where name in ('epoch', 'date_trunc') and schema_id = (select id from sys.schemas where name = 'sys');
 create window stddev_samp(val TINYINT) returns DOUBLE
  external name "sql"."stdev";
 GRANT EXECUTE ON WINDOW stddev_samp(TINYINT) TO PUBLIC;
@@ -6365,6 +6350,14 @@ DROP AGGREGATE var_samp(timestamp);
 DROP AGGREGATE var_pop(date);
 DROP AGGREGATE var_pop(time);
 DROP AGGREGATE var_pop(timestamp);
+ALTER TABLE sys.keywords SET READ WRITE;
+DELETE FROM sys.keywords where keyword IN ('NOCYCLE','NOMAXVALUE','NOMINVALUE');
+insert into sys.keywords values ('ANALYZE'),('AT'),('AUTHORIZATION'),('CACHE'),('CENTURY'),('COLUMN'),('CLIENT'),('CUBE'),('CYCLE'),('DATA'),('DATE'),('DEBUG'),('DECADE'),('DEALLOCATE'),('DIAGNOSTICS'),('DISTINCT'),('DOW'),('DOY'),('EXEC'),('EXECUTE'),('EXPLAIN'),('FIRST'),('FWF'),('GROUPING'),('GROUPS'),('INCREMENT'),('INTERVAL'),('KEY'),('LANGUAGE'),('LARGE'),('LAST'),('LATERAL'),('LEVEL'),('LOADER'),('MATCH'),('MATCHED'),('MAXVALUE'),('MINVALUE'),('NAME'),('NO'),('NULLS'),('OBJECT'),('OPTIONS'),('PASSWORD'),('PLAN'),('PRECISION'),('PREP'),('PREPARE'),('QUARTER'),('RELEASE'),('REPLACE'),('ROLLUP'),('SCHEMA'),('SEED'),('SERVER'),('SESSION'),('SETS'),('SIZE'),('STATEMENT'),('TABLE'),('TEMP'),('TEMPORARY'),('TEXT'),('TIME'),('TIMESTAMP'),('TRACE'),('TYPE'),('WEEK'),('YEAR'),('ZONE');
+ALTER TABLE sys.function_languages SET READ WRITE;
+DELETE FROM sys.function_languages where language_keyword IN ('PYTHON2','PYTHON2_MAP');
+create procedure sys.hot_snapshot(tarfile string)
+ external name sql.hot_snapshot;
+update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name in ('hot_snapshot') and type = 2;
 CREATE SCHEMA logging;
 CREATE PROCEDURE logging.flush()
  EXTERNAL NAME logging.flush;
@@ -6403,6 +6396,30 @@ set schema "sys";
 Running database upgrade commands:
 set schema "sys";
 ALTER TABLE sys.keywords SET READ ONLY;
+ALTER TABLE sys.function_languages SET READ ONLY;
+set schema "sys";
+
+Running database upgrade commands:
+set schema "sys";
+drop view sys.queue;
+drop function sys.queue;
+create function sys.queue()
+returns table(
+"tag" bigint,
+"sessionid" int,
+"username" string,
+"started" timestamp,
+"status" string,
+"query" string,
+"finished" timestamp,
+"workers" int,
+"memory" int)
+ external name sql.sysmon_queue;
+grant execute on function sys.queue to public;
+create view sys.queue as select * from sys.queue();
+grant select on sys.queue to public;
+update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name = 'queue' and type = 5;
+update sys._tables set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name = 'queue';
 set schema "sys";
 
 # MonetDB/SQL module loaded

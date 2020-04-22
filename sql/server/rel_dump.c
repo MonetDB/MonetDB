@@ -15,7 +15,9 @@
 #include "rel_exp.h"
 #include "rel_prop.h"
 #include "rel_updates.h"
+#include "rel_select.h"
 #include "rel_remote.h"
+#include "sql_privileges.h"
 #include "mal_errors.h"		/* for SQLSTATE() */
 
 static void
@@ -1431,6 +1433,7 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 
 	if (r[*pos] == 'u' && r[*pos+1] == 'p' && r[*pos+2] == 'd') {
 		sql_table *t;
+		list *nexps = new_exp_list(sql->sa);
 
 		*pos += (int) strlen("update");
 		skipWS(r, pos);
@@ -1449,7 +1452,19 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 
 		if (!(exps = read_exps(sql, lrel, rrel, NULL, r, pos, '[', 0))) /* columns to be updated */
 			return NULL;
-		return rel_update(sql, lrel, rrel, NULL, exps);
+
+		for (node *n = rel->exps->h ; n ; n = n->next) {
+			sql_exp *e = (sql_exp *) n->data;
+			sql_column *c = mvc_bind_column(sql, t, exp_name(e));
+
+			if (!c)
+				return sql_error(sql, -1, SQLSTATE(42S22) "UPDATE: no such column '%s.%s'\n", t->base.name, exp_name(e));
+			if (!(e = update_check_column(sql, t, c, e, rrel, c->base.name, "UPDATE")))
+				return NULL;
+			list_append(nexps, e);
+		}
+
+		return rel_update(sql, lrel, rrel, NULL, nexps);
 	}
 
 	if (r[*pos] == 'd') {
@@ -1497,6 +1512,8 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 			if (isReplicaTable(t))
 				return sql_error(sql, -1, SQLSTATE(42000) "Replica tables not supported under remote connections\n");
 			rel = rel_basetable(sql, t, tname);
+			if (!table_privs(sql, t, PRIV_SELECT) && !(rel = rel_reduce_on_column_privileges(sql, rel, t)))
+				return sql_error(sql, -1, SQLSTATE(42000) "Access denied for %s to table '%s.%s'\n", stack_get_string(sql, "current_user"), s->base.name, tname);
 
 			if (!r[*pos])
 				return rel;

@@ -1225,10 +1225,10 @@ sql_update_nov2019_sp1_hugeint(Client c, mvc *sql, const char *prev_schema, bool
 #endif
 
 static str
-sql_update_linear_hashing(Client c, mvc *sql, const char *prev_schema, bool *systabfixed)
+sql_update_jun2020(Client c, mvc *sql, const char *prev_schema, bool *systabfixed)
 {
 	sql_table *t;
-	size_t bufsize = 16384, pos = 0;
+	size_t bufsize = 32768, pos = 0;
 	char *err = NULL, *buf = GDKmalloc(bufsize);
 	sql_schema *sys = mvc_bind_schema(sql, "sys");
 
@@ -1241,15 +1241,7 @@ sql_update_linear_hashing(Client c, mvc *sql, const char *prev_schema, bool *sys
 		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	pos += snprintf(buf + pos, bufsize - pos,
-			"set schema \"sys\";\n"
-			"create procedure suspend_log_flushing()\n"
-			" external name sql.suspend_log_flushing;\n"
-			"create procedure resume_log_flushing()\n"
-			" external name sql.resume_log_flushing;\n"
-			"create procedure hot_snapshot(tarfile string)\n"
-			" external name sql.hot_snapshot;\n"
-			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
-			" and name in ('suspend_log_flushing', 'resume_log_flushing', 'hot_snapshot') and type = %d;\n", (int) F_PROC);
+			"set schema \"sys\";\n");
 
 	/* 12_url */
 	pos += snprintf(buf + pos, bufsize - pos,
@@ -1260,6 +1252,28 @@ sql_update_linear_hashing(Client c, mvc *sql, const char *prev_schema, bool *sys
 			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
 			" and name = 'isaurl' and type = %d;\n", (int) F_FUNC);
 
+	/* 13_date.sql */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"drop function str_to_time(string, string);\n"
+			"drop function time_to_str(time, string);\n"
+			"drop function str_to_timestamp(string, string);\n"
+			"drop function timestamp_to_str(timestamp, string);\n"
+			"create function str_to_time(s string, format string) returns time with time zone\n"
+			" external name mtime.\"str_to_time\";\n"
+			"create function time_to_str(d time with time zone, format string) returns string\n"
+			" external name mtime.\"time_to_str\";\n"
+			"create function str_to_timestamp(s string, format string) returns timestamp with time zone\n"
+			" external name mtime.\"str_to_timestamp\";\n"
+			"create function timestamp_to_str(d timestamp with time zone, format string) returns string\n"
+			" external name mtime.\"timestamp_to_str\";\n"
+			"grant execute on function str_to_time to public;\n"
+			"grant execute on function time_to_str to public;\n"
+			"grant execute on function str_to_timestamp to public;\n"
+			"grant execute on function timestamp_to_str to public;\n"
+			"update sys.functions set system = true where name in"
+			" ('str_to_time', 'str_to_timestamp', 'time_to_str', 'timestamp_to_str')"
+			" and schema_id = (select id from sys.schemas where name = 'sys');\n");
+
 	/* 16_tracelog */
 	t = mvc_bind_table(sql, sys, "tracelog");
 	t->system = 0; /* make it non-system else the drop view will fail */
@@ -1267,19 +1281,40 @@ sql_update_linear_hashing(Client c, mvc *sql, const char *prev_schema, bool *sys
 			"drop view sys.tracelog;\n"
 			"drop function sys.tracelog();\n"
 			"create function sys.tracelog()\n"
-			"	returns table (\n"
-			"		ticks bigint, -- time in microseconds\n"
-			"		stmt string  -- actual statement executed\n"
-			"	)\n"
+			" returns table (\n"
+			"  ticks bigint, -- time in microseconds\n"
+			"  stmt string  -- actual statement executed\n"
+			" )\n"
 			" external name sql.dump_trace;\n"
-			"create view sys.tracelog as select * from sys.tracelog();\n");
-
-	pos += snprintf(buf + pos, bufsize - pos,
+			"create view sys.tracelog as select * from sys.tracelog();\n"
 			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
 			" and name = 'tracelog' and type = %d;\n", (int) F_UNION);
 	pos += snprintf(buf + pos, bufsize - pos,
 			"update sys._tables set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
 			" and name = 'tracelog';\n");
+
+	/* 17_temporal.sql */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"drop function sys.epoch(bigint);\n"
+			"drop function sys.epoch(int);\n"
+			"drop function sys.epoch(timestamp);\n"
+			"drop function sys.epoch(timestamp with time zone);\n"
+			"create function sys.epoch(sec BIGINT) returns TIMESTAMP WITH TIME ZONE\n"
+			" external name mtime.epoch;\n"
+			"create function sys.epoch(sec INT) returns TIMESTAMP WITH TIME ZONE\n"
+			" external name mtime.epoch;\n"
+			"create function sys.epoch(ts TIMESTAMP WITH TIME ZONE) returns INT\n"
+			" external name mtime.epoch;\n"
+			"create function sys.date_trunc(txt string, t timestamp with time zone)\n"
+			"returns timestamp with time zone\n"
+			"external name sql.date_trunc;\n"
+			"grant execute on function sys.date_trunc(string, timestamp with time zone) to public;\n"
+			"grant execute on function sys.epoch (BIGINT) to public;\n"
+			"grant execute on function sys.epoch (INT) to public;\n"
+			"grant execute on function sys.epoch (TIMESTAMP WITH TIME ZONE) to public;\n"
+			"update sys.functions set system = true where name in"
+			" ('epoch', 'date_trunc')"
+			" and schema_id = (select id from sys.schemas where name = 'sys');\n");
 
 	/* 22_clients */
 	t = mvc_bind_table(sql, sys, "sessions");
@@ -1376,6 +1411,14 @@ sql_update_linear_hashing(Client c, mvc *sql, const char *prev_schema, bool *sys
 
 	/* 25_debug */
 	pos += snprintf(buf + pos, bufsize - pos,
+			"create procedure sys.suspend_log_flushing()\n"
+			" external name sql.suspend_log_flushing;\n"
+			"create procedure sys.resume_log_flushing()\n"
+			" external name sql.resume_log_flushing;\n"
+			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
+			" and name in ('suspend_log_flushing', 'resume_log_flushing') and type = %d;\n", (int) F_PROC);
+
+	pos += snprintf(buf + pos, bufsize - pos,
 			"create function sys.debug(flag string) returns integer\n"
 			" external name mdb.\"setDebug\";\n"
 			"create function sys.debugflags()\n"
@@ -1419,134 +1462,6 @@ sql_update_linear_hashing(Client c, mvc *sql, const char *prev_schema, bool *sys
 			"\"status\" string,\n"
 			"\"query\" string,\n"
 			"\"progress\" int,\n"
-			"\"workers\" int,\n"
-			"\"memory\" int)\n"
-			" external name sql.sysmon_queue;\n"
-			"grant execute on function sys.queue to public;\n"
-			"create view sys.queue as select * from sys.queue();\n"
-			"grant select on sys.queue to public;\n"
-
-			"drop procedure sys.pause(int);\n"
-			"drop procedure sys.resume(int);\n"
-			"drop procedure sys.stop(int);\n"
-
-			"grant execute on procedure sys.pause(bigint) to public;\n"
-			"grant execute on procedure sys.resume(bigint) to public;\n"
-			"grant execute on procedure sys.stop(bigint) to public;\n");
-
-	pos += snprintf(buf + pos, bufsize - pos,
-			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
-			" and name = 'queue' and type = %d;\n", (int) F_UNION);
-	pos += snprintf(buf + pos, bufsize - pos,
-			"update sys._tables set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
-			" and name = 'queue';\n");
-
-	/* 51_sys_schema_extensions */
-	pos += snprintf(buf + pos, bufsize - pos,
-			"ALTER TABLE sys.keywords SET READ WRITE;\n"
-			"DELETE FROM sys.keywords where \"keyword\" IN ('NOCYCLE','NOMAXVALUE','NOMINVALUE');\n"
-			"insert into sys.keywords values ('ANALYZE'),('AT'),('AUTHORIZATION'),('CACHE'),('CENTURY'),('COLUMN'),('CLIENT'),"
-			"('CUBE'),('CYCLE'),('DATA'),('DATE'),('DEBUG'),('DECADE'),('DEALLOCATE'),('DIAGNOSTICS'),('DISTINCT'),"
-			"('DOW'),('DOY'),('EXEC'),('EXECUTE'),('EXPLAIN'),('FIRST'),('FWF'),('GROUPING'),('GROUPS'),('INCREMENT'),"
-			"('INTERVAL'),('KEY'),('LANGUAGE'),('LARGE'),('LAST'),('LATERAL'),('LEVEL'),('LOADER'),('MATCH'),('MATCHED'),('MAXVALUE'),"
-			"('MINVALUE'),('NAME'),('NO'),('NULLS'),('OBJECT'),('OPTIONS'),('PASSWORD'),('PLAN'),('PRECISION'),('PREP'),('PREPARE'),"
-			"('QUARTER'),('RELEASE'),('REPLACE'),('ROLLUP'),('SCHEMA'),('SEED'),('SERVER'),('SESSION'),('SETS'),('SIZE'),"
-			"('STATEMENT'),('TABLE'),('TEMP'),('TEMPORARY'),('TEXT'),('TIME'),('TIMESTAMP'),('TRACE'),('TYPE'),('UNIONJOIN'),"
-			"('WEEK'),('YEAR'),('ZONE');\n");
-
-	pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
-	pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
-	assert(pos < bufsize);
-
-	printf("Running database upgrade commands:\n%s\n", buf);
-	err = SQLstatementIntern(c, &buf, "update", true, false, NULL);
-	if (err == MAL_SUCCEED) {
-		pos = snprintf(buf, bufsize, "set schema \"sys\";\n"
-			       "ALTER TABLE sys.keywords SET READ ONLY;\n");
-		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
-		assert(pos < bufsize);
-		printf("Running database upgrade commands:\n%s\n", buf);
-		err = SQLstatementIntern(c, &buf, "update", true, false, NULL);
-	}
-	GDKfree(buf);
-	return err;		/* usually MAL_SUCCEED */
-}
-
-static str
-sql_update_jun2020(Client c, mvc *sql, const char *prev_schema, bool *systabfixed)
-{
-	size_t bufsize = 32768, pos = 0;
-	char *err = NULL, *buf = GDKmalloc(bufsize);
-
-	if (!*systabfixed &&
-	    (err = sql_fix_system_tables(c, sql, prev_schema)) != NULL)
-		return err;
-	*systabfixed = true;
-
-	if (buf == NULL)
-		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-
-	pos += snprintf(buf + pos, bufsize - pos,
-			"set schema \"sys\";\n");
-
-	/* 13_date.sql */
-	pos += snprintf(buf + pos, bufsize - pos,
-			"drop function str_to_time(string, string);\n"
-			"drop function time_to_str(time, string);\n"
-			"drop function str_to_timestamp(string, string);\n"
-			"drop function timestamp_to_str(timestamp, string);\n"
-			"create function str_to_time(s string, format string) returns time with time zone\n"
-			" external name mtime.\"str_to_time\";\n"
-			"create function time_to_str(d time with time zone, format string) returns string\n"
-			" external name mtime.\"time_to_str\";\n"
-			"create function str_to_timestamp(s string, format string) returns timestamp with time zone\n"
-			" external name mtime.\"str_to_timestamp\";\n"
-			"create function timestamp_to_str(d timestamp with time zone, format string) returns string\n"
-			" external name mtime.\"timestamp_to_str\";\n"
-			"grant execute on function str_to_time to public;\n"
-			"grant execute on function time_to_str to public;\n"
-			"grant execute on function str_to_timestamp to public;\n"
-			"grant execute on function timestamp_to_str to public;\n"
-			"update sys.functions set system = true where name in"
-			" ('str_to_time', 'str_to_timestamp', 'time_to_str', 'timestamp_to_str')"
-			" and schema_id = (select id from sys.schemas where name = 'sys');\n");
-
-	/* 17_temporal.sql */
-	pos += snprintf(buf + pos, bufsize - pos,
-			"drop function sys.epoch(bigint);\n"
-			"drop function sys.epoch(int);\n"
-			"drop function sys.epoch(timestamp);\n"
-			"drop function sys.epoch(timestamp with time zone);\n"
-			"create function sys.epoch(sec BIGINT) returns TIMESTAMP WITH TIME ZONE\n"
-			" external name mtime.epoch;\n"
-			"create function sys.epoch(sec INT) returns TIMESTAMP WITH TIME ZONE\n"
-			" external name mtime.epoch;\n"
-			"create function sys.epoch(ts TIMESTAMP WITH TIME ZONE) returns INT\n"
-			" external name mtime.epoch;\n"
-			"create function sys.date_trunc(txt string, t timestamp with time zone)\n"
-			"returns timestamp with time zone\n"
-			"external name sql.date_trunc;\n"
-			"grant execute on function sys.date_trunc(string, timestamp with time zone) to public;\n"
-			"grant execute on function sys.epoch (BIGINT) to public;\n"
-			"grant execute on function sys.epoch (INT) to public;\n"
-			"grant execute on function sys.epoch (TIMESTAMP WITH TIME ZONE) to public;\n"
-			"update sys.functions set system = true where name in"
-			" ('epoch', 'date_trunc')"
-			" and schema_id = (select id from sys.schemas where name = 'sys');\n");
-
-	/* 26_sysmon */
-	pos += snprintf(buf + pos, bufsize - pos,
-			"drop view sys.queue;\n"
-			"drop function sys.queue;\n"
-			"create function sys.queue()\n"
-			"returns table(\n"
-			"\"tag\" bigint,\n"
-			"\"sessionid\" int,\n"
-			"\"username\" string,\n"
-			"\"started\" timestamp,\n"
-			"\"status\" string,\n"
-			"\"query\" string,\n"
-			"\"finished\" timestamp,\n"
 			"\"workers\" int,\n"
 			"\"memory\" int)\n"
 			" external name sql.sysmon_queue;\n"
@@ -1855,6 +1770,29 @@ sql_update_jun2020(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 			"DROP AGGREGATE var_pop(time);\n"
 			"DROP AGGREGATE var_pop(timestamp);\n");
 
+	/* 51_sys_schema_extensions */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"ALTER TABLE sys.keywords SET READ WRITE;\n"
+			"DELETE FROM sys.keywords where keyword IN ('NOCYCLE','NOMAXVALUE','NOMINVALUE');\n"
+			"insert into sys.keywords values ('ANALYZE'),('AT'),('AUTHORIZATION'),('CACHE'),('CENTURY'),('COLUMN'),('CLIENT'),"
+			"('CUBE'),('CYCLE'),('DATA'),('DATE'),('DEBUG'),('DECADE'),('DEALLOCATE'),('DIAGNOSTICS'),('DISTINCT'),"
+			"('DOW'),('DOY'),('EXEC'),('EXECUTE'),('EXPLAIN'),('FIRST'),('FWF'),('GROUPING'),('GROUPS'),('INCREMENT'),"
+			"('INTERVAL'),('KEY'),('LANGUAGE'),('LARGE'),('LAST'),('LATERAL'),('LEVEL'),('LOADER'),('MATCH'),('MATCHED'),('MAXVALUE'),"
+			"('MINVALUE'),('NAME'),('NO'),('NULLS'),('OBJECT'),('OPTIONS'),('PASSWORD'),('PLAN'),('PRECISION'),('PREP'),('PREPARE'),"
+			"('QUARTER'),('RELEASE'),('REPLACE'),('ROLLUP'),('SCHEMA'),('SEED'),('SERVER'),('SESSION'),('SETS'),('SIZE'),"
+			"('STATEMENT'),('TABLE'),('TEMP'),('TEMPORARY'),('TEXT'),('TIME'),('TIMESTAMP'),('TRACE'),('TYPE'),"
+			"('WEEK'),('YEAR'),('ZONE');\n");
+	pos += snprintf(buf + pos, bufsize - pos,
+			"ALTER TABLE sys.function_languages SET READ WRITE;\n"
+			"DELETE FROM sys.function_languages where language_keyword IN ('PYTHON2','PYTHON2_MAP');\n");
+
+	/* 58_hot_snapshot */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"create procedure sys.hot_snapshot(tarfile string)\n"
+			" external name sql.hot_snapshot;\n"
+			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
+			" and name in ('hot_snapshot') and type = %d;\n", (int) F_PROC);
+
 	/* 81_tracer.sql */
 	pos += snprintf(buf + pos, bufsize - pos,
 			"CREATE SCHEMA logging;\n"
@@ -1902,7 +1840,8 @@ sql_update_jun2020(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 	err = SQLstatementIntern(c, &buf, "update", true, false, NULL);
 	if (err == MAL_SUCCEED) {
 		pos = snprintf(buf, bufsize, "set schema \"sys\";\n"
-			       "ALTER TABLE sys.keywords SET READ ONLY;\n");
+			       "ALTER TABLE sys.keywords SET READ ONLY;\n"
+			       "ALTER TABLE sys.function_languages SET READ ONLY;\n");
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
 		assert(pos < bufsize);
 		printf("Running database upgrade commands:\n%s\n", buf);
@@ -1989,6 +1928,78 @@ sql_update_jun2020_bam(Client c, mvc *m, const char *prev_schema)
 
 	GDKfree(buf);
 	return err;
+}
+
+static str
+sql_update_default(Client c, mvc *sql, const char *prev_schema)
+{
+	size_t bufsize = 1024, pos = 0;
+	char *err = NULL, *buf = GDKmalloc(bufsize);
+	sql_schema *sys = mvc_bind_schema(sql, "sys");
+	res_table *output;
+	BAT *b;
+
+	if (buf == NULL)
+		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+
+	/* if column 6 of sys.queue is named "progress" we need to update */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"select name from sys._columns where table_id = (select id from sys._tables where name = 'queue' and schema_id = (select id from sys.schemas where name = 'sys')) and number = 6;\n");
+	err = SQLstatementIntern(c, &buf, "update", true, false, &output);
+	if (err) {
+		GDKfree(buf);
+		return err;
+	}
+	b = BATdescriptor(output->cols[0].b);
+	if (b) {
+		BATiter bi = bat_iterator(b);
+		if (BATcount(b) > 0 && strcmp(BUNtail(bi, 0), "progress") == 0) {
+			pos = 0;
+			pos += snprintf(buf + pos, bufsize - pos,
+					"set schema \"sys\";\n");
+
+			/* 26_sysmon */
+			sql_table *t;
+			t = mvc_bind_table(sql, sys, "queue");
+			t->system = 0; /* make it non-system else the drop view will fail */
+
+			pos += snprintf(buf + pos, bufsize - pos,
+					"drop view sys.queue;\n"
+					"drop function sys.queue;\n"
+					"create function sys.queue()\n"
+					"returns table(\n"
+					"\"tag\" bigint,\n"
+					"\"sessionid\" int,\n"
+					"\"username\" string,\n"
+					"\"started\" timestamp,\n"
+					"\"status\" string,\n"
+					"\"query\" string,\n"
+					"\"finished\" timestamp,\n"
+					"\"workers\" int,\n"
+					"\"memory\" int)\n"
+					" external name sql.sysmon_queue;\n"
+					"grant execute on function sys.queue to public;\n"
+					"create view sys.queue as select * from sys.queue();\n"
+					"grant select on sys.queue to public;\n");
+
+			pos += snprintf(buf + pos, bufsize - pos,
+					"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
+					" and name = 'queue' and type = %d;\n", (int) F_UNION);
+			pos += snprintf(buf + pos, bufsize - pos,
+					"update sys._tables set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
+					" and name = 'queue';\n");
+
+			pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
+			assert(pos < bufsize);
+
+			printf("Running database upgrade commands:\n%s\n", buf);
+			err = SQLstatementIntern(c, &buf, "update", true, false, NULL);
+		}
+		BBPunfix(b->batCacheid);
+	}
+	res_table_destroy(output);
+	GDKfree(buf);
+	return err;		/* usually MAL_SUCCEED */
 }
 
 int
@@ -2145,15 +2156,6 @@ SQLupgrades(Client c, mvc *m)
 #endif
 
 	if (!sql_bind_func(m->sa, s, "suspend_log_flushing", NULL, NULL, F_PROC)) {
-		if ((err = sql_update_linear_hashing(c, m, prev_schema, &systabfixed)) != NULL) {
-			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
-			freeException(err);
-			return -1;
-		}
-	}
-
-	sql_find_subtype(&tp, "tinyint", 0, 0);
-	if (!sql_bind_func(m->sa, s, "stddev_samp", &tp, NULL, F_ANALYTIC)) {
 		if ((err = sql_update_jun2020(c, m, prev_schema, &systabfixed)) != NULL) {
 			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 			freeException(err);
@@ -2162,6 +2164,12 @@ SQLupgrades(Client c, mvc *m)
 	}
 
 	if ((err = sql_update_jun2020_bam(c, m, prev_schema)) != NULL) {
+		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
+		freeException(err);
+		return -1;
+	}
+
+	if ((err = sql_update_default(c, m, prev_schema)) != NULL) {
 		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		freeException(err);
 		return -1;

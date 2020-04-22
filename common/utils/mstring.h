@@ -12,7 +12,8 @@
 #include <stdarg.h>		/* va_list etc. */
 #include <string.h>		/* strlen */
 
-#ifdef __GNUC__
+#if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ > 4))
+/* not on CentOS 6 (GCC 4.4.7) */
 #define GCC_Pragma(pragma)	_Pragma(pragma)
 #else
 #define GCC_Pragma(pragma)

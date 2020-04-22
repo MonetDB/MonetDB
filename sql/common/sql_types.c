@@ -131,17 +131,13 @@ bool is_commutative(const char *fnm)
 void
 base_init(sql_allocator *sa, sql_base * b, sqlid id, int flags, const char *name)
 {
-	b->id = id;
-
 	assert(sa);
-	b->wtime = 0;
-	b->rtime = 0;
-	b->stime = 0;
-	b->flags = flags;
-	b->name = NULL;
-	b->refcnt = 1;
-	if (name)
-		b->name = sa_strdup(sa,name);
+	*b = (sql_base) {
+		.id = id,
+		.flags = flags,
+		.refcnt = 1,
+		.name = (name) ? sa_strdup(sa, name) : NULL,
+	};
 }
 
 void
@@ -1741,7 +1737,7 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_func(sa, "localtime", "sql", "current_time", FALSE, SCALE_NONE, 0, TME, 0);
 	sql_create_func(sa, "localtimestamp", "sql", "current_timestamp", FALSE, SCALE_NONE, 0, TMESTAMP, 0);
 
-	sql_create_func(sa, "sql_sub", "mtime", "diff", FALSE, SCALE_FIX, 0, SECINT, 2, DTE, DTE);
+	sql_create_func(sa, "sql_sub", "mtime", "diff", FALSE, SCALE_FIX, 0, INT, 2, DTE, DTE);
 	sql_create_func(sa, "sql_sub", "mtime", "diff", FALSE, SCALE_NONE, 0, SECINT, 2, TMETZ, TMETZ);
 	sql_create_func(sa, "sql_sub", "mtime", "diff", FALSE, SCALE_FIX, 0, SECINT, 2, TME, TME);
 	sql_create_func(sa, "sql_sub", "mtime", "diff", FALSE, SCALE_NONE, 0, SECINT, 2, TMESTAMPTZ, TMESTAMPTZ);

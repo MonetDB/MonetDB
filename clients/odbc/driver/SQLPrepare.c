@@ -84,14 +84,15 @@ MNDBPrepare(ODBCStmt *stmt,
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLPrepare: \"%s\"\n", query);
 #endif
-	s = malloc(strlen(query) + 9);
+	size_t querylen = strlen(query) + 9;
+	s = malloc(querylen);
 	if (s == NULL) {
 		free(query);
 		/* Memory allocation error */
 		addStmtError(stmt, "HY001", NULL, 0);
 		return SQL_ERROR;
 	}
-	strcat(strcpy(s, "prepare "), query);
+	strconcat_len(s, querylen, "prepare ", query, NULL);
 	free(query);
 
 	ODBCResetStmt(stmt);

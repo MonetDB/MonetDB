@@ -73,7 +73,7 @@ rel_no_mitosis(sql_rel *rel)
 
 	if (!rel || is_basetable(rel->op))
 		return 1;
-	if (is_topn(rel->op) || rel->op == op_project)
+	if (is_topn(rel->op) || is_sample(rel->op) || is_simple_project(rel->op))
 		return rel_no_mitosis(rel->l);
 	if (is_modify(rel->op) && rel->card <= CARD_AGGR) {
 		if (is_delete(rel->op))
@@ -510,6 +510,10 @@ create_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *col
 		msg = sql_error(sql, 02, SQLSTATE(3F000) "CREATE TABLE: no such schema '%s'", sname);
 		goto cleanup;
 	}
+	if (!mvc_schema_privs(sql, s)) {
+		msg = sql_error(sql, 02, SQLSTATE(42000) "CREATE TABLE: Access denied for %s to schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
+		goto cleanup;
+	}
 	if (!(t = mvc_create_table(sql, s, tname, tt_table, 0, SQL_DECLARED_TABLE, CA_COMMIT, -1, 0))) {
 		msg = sql_error(sql, 02, SQLSTATE(3F000) "CREATE TABLE: could not create table '%s'", tname);
 		goto cleanup;
@@ -583,18 +587,18 @@ append_to_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *
 
 	/* for some reason we don't have an allocator here, so make one */
 	if (!(sql->sa = sa_create())) {
-		msg = sql_error(sql, 02, SQLSTATE(HY013) "CREATE TABLE: %s", MAL_MALLOC_FAIL);
+		msg = sql_error(sql, 02, SQLSTATE(HY013) "APPEND TABLE: %s", MAL_MALLOC_FAIL);
 		goto cleanup;
 	}
 
 	if (!sname)
 		sname = "sys";
 	if (!(s = mvc_bind_schema(sql, sname))) {
-		msg = sql_error(sql, 02, SQLSTATE(3F000) "CREATE TABLE: no such schema '%s'", sname);
+		msg = sql_error(sql, 02, SQLSTATE(3F000) "APPEND TABLE: no such schema '%s'", sname);
 		goto cleanup;
 	}
 	if (!(t = mvc_bind_table(sql, s, tname))) {
-		msg = sql_error(sql, 02, SQLSTATE(3F000) "CREATE TABLE: could not bind table %s", tname);
+		msg = sql_error(sql, 02, SQLSTATE(3F000) "APPEND TABLE: could not bind table %s", tname);
 		goto cleanup;
 	}
 	pos = mvc_claim_slots(sql->session->tr, t, BATcount(columns[0].b));
@@ -603,7 +607,7 @@ append_to_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *
 		sql_column *col = NULL;
 
 		if (!(col = mvc_bind_column(sql,t, columns[i].name))) {
-			msg = sql_error(sql, 02, SQLSTATE(3F000) "CREATE TABLE: could not bind column %s", columns[i].name);
+			msg = sql_error(sql, 02, SQLSTATE(3F000) "APPEND TABLE: could not bind column %s", columns[i].name);
 			goto cleanup;
 		}
 		if ((msg = mvc_append_column(sql->session->tr, col, pos, b)) != MAL_SUCCEED)
@@ -806,6 +810,8 @@ mvc_next_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	if (!(s = mvc_bind_schema(m, sname)))
 		throw(SQL, "sql.next_value", SQLSTATE(3F000) "Cannot find the schema %s", sname);
+	if (!mvc_schema_privs(m, s))
+		throw(SQL, "sql.next_value", SQLSTATE(42000) "Access denied for %s to schema '%s'", stack_get_string(m, "current_user"), s->base.name);
 	if (!(seq = find_sql_sequence(s, seqname)))
 		throw(SQL, "sql.next_value", SQLSTATE(HY050) "Failed to fetch sequence %s.%s", sname, seqname);
 
@@ -918,6 +924,10 @@ mvc_bat_next_get_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, 
 				msg = createException(SQL, call, SQLSTATE(3F000) "Cannot find the schema %s", nsname);
 				goto bailout;
 			}
+			if (bulk_func == seqbulk_next_value && !mvc_schema_privs(m, s)) {
+				msg = createException(SQL, call, SQLSTATE(42000) "Access denied for %s to schema '%s'", stack_get_string(m, "current_user"), s->base.name);
+				goto bailout;
+			}
 			if (!(seq = find_sql_sequence(s, nseqname)) || !(sb = seqbulk_create(seq, BATcount(it)))) {
 				msg = createException(SQL, call, SQLSTATE(HY050) "Cannot find the sequence %s.%s", nsname, nseqname);
 				goto bailout;
@@ -995,6 +1005,8 @@ mvc_restart_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	if (!(s = mvc_bind_schema(m, sname)))
 		throw(SQL, "sql.restart", SQLSTATE(3F000) "Cannot find the schema %s", sname);
+	if (!mvc_schema_privs(m, s))
+		throw(SQL, "sql.restart", SQLSTATE(42000) "Access denied for %s to schema '%s'", stack_get_string(m, "current_user"), s->base.name);
 	if (!(seq = find_sql_sequence(s, seqname)))
 		throw(SQL, "sql.restart", SQLSTATE(HY050) "Failed to fetch sequence %s.%s", sname, seqname);
 	if (is_lng_nil(start))
@@ -1098,6 +1110,10 @@ mvc_bat_restart_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			seq = NULL;
 			if ((!s || strcmp(s->base.name, nsname) != 0) && !(s = mvc_bind_schema(m, nsname))) {
 				msg = createException(SQL, "sql.restart", SQLSTATE(3F000) "Cannot find the schema %s", nsname);
+				goto bailout;
+			}
+			if (!mvc_schema_privs(m, s)) {
+				msg = createException(SQL, "sql.restart", SQLSTATE(42000) "Access denied for %s to schema '%s'", stack_get_string(m, "current_user"), s->base.name);
 				goto bailout;
 			}
 			if (!(seq = find_sql_sequence(s, nseqname)) || !(sb = seqbulk_create(seq, BATcount(it)))) {
@@ -4642,6 +4658,8 @@ SQLdrop_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	s = mvc_bind_schema(m, sch);
 	if (s == NULL)
 		throw(SQL, "sql.drop_hash", SQLSTATE(3F000) "Schema missing %s",sch);
+	if (!mvc_schema_privs(m, s))
+		throw(SQL, "sql.drop_hash", SQLSTATE(42000) "Access denied for %s to schema '%s'", stack_get_string(m, "current_user"), s->base.name);
 	t = mvc_bind_table(m, s, tbl);
 	if (t == NULL)
 		throw(SQL, "sql.drop_hash", SQLSTATE(42S02) "Table missing %s.%s",sch, tbl);
@@ -5454,7 +5472,7 @@ SQLsession_prepared_statements_args(Client cntxt, MalBlkPtr mb, MalStkPtr stk, I
 			int arg_number = 0;
 			bte inout = ARG_OUT;
 
-			if (r && is_topn(r->op))
+			if (r && (is_topn(r->op) || is_sample(r->op)))
 				r = r->l;
 
 			if (r && is_project(r->op) && r->exps) {

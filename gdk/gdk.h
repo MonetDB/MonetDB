@@ -1710,7 +1710,7 @@ typedef struct threadStruct {
 				 * into this array + 1 (0 is
 				 * invalid) */
 	ATOMIC_TYPE pid;	/* thread id, 0 = unallocated */
-	char name[16];
+	char name[MT_NAME_LEN];
 	void *data[THREADDATA];
 	uintptr_t sp;
 } *Thread;

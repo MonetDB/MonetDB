@@ -1,0 +1,9 @@
+# ChangeLog file for odbc
+# This file is updated with Maddlog
+
+* Mon Apr 20 2020 Sjoerd Mullender <sjoerd@acm.org>
+- The NUMERIC and FLOAT types are now handled fully.  Before only DECIMAL,
+  FLOAT, and DOUBLE were handled fully.
+- Some bugs were fixed in the passing back and forth between application
+  and server of values of type GUID (UUID).
+

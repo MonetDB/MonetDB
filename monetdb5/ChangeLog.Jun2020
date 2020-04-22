@@ -1,6 +1,14 @@
 # ChangeLog file for MonetDB5
 # This file is updated with Maddlog
 
+* Mon Apr 20 2020 Sjoerd Mullender <sjoerd@acm.org>
+- The example module opt_sql_append is not installed in the binary
+  packages anymore.
+
+* Tue Feb 18 2020 Thodoris Zois <thodoris.zois@monetdbsolutions.com>
+- Added mserver5 option (--dbtrace=<path>) in order to be able to
+  specify the output file any produced traces.
+
 * Tue Dec  3 2019 Sjoerd Mullender <sjoerd@acm.org>
 - Removed function bat.setKey().
 
@@ -22,4 +30,9 @@
 - algebra.join and algebra.leftjoin now have forms which return a single
   column.  The column that is returned is the left column of the two
   column version.
+
+* Sat Oct 12 2019 Martin Kersten <mk@cwi.nl>
+- The MAL profiler now assigns the SQL TRACE output to the client record
+  thereby avoiding the interaction with other queries, but loosing
+  insight of competing queries. The stethoscope should be used for that.
 

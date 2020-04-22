@@ -303,7 +303,8 @@ isUpdateInstruction(InstrPtr p){
 		getFunctionId(p) == deleteRef ||
 		getFunctionId(p) == claimRef ||
 		getFunctionId(p) == growRef ||
-		getFunctionId(p) == clear_tableRef))
+		getFunctionId(p) == clear_tableRef ||
+		getFunctionId(p) == setVariableRef))
 			return TRUE;
 	if ( getModuleId(p) == batRef &&
 	   ( getFunctionId(p) == appendRef ||

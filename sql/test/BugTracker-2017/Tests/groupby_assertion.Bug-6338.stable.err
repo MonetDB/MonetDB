@@ -36,7 +36,7 @@ QUERY = insert into source_attr select  'src_0',
                   c.type,null 
                        from sys.tables as T, sys.columns as C 
                        where T.id = C.table_id and T.name = 'source_ac_0';
-ERROR = !SELECT: cannot use non GROUP BY column 'c.type' in query results without an aggregate function
+ERROR = !SELECT: subquery uses ungrouped column from outer query
 CODE  = 42000
 
 # 16:45:11 >  
