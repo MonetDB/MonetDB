@@ -134,6 +134,8 @@ static void
 stream_xzclose(stream *s)
 {
 	xz_stream *xz = s->stream_data.p;
+	xz->strm.next_out = xz->buf;
+	xz->strm.avail_out = XZBUFSIZ;
 
 	if (xz) {
 		if (!s->readonly) {
