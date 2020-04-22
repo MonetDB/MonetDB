@@ -6473,6 +6473,8 @@ exp_mark_used(sql_rel *subrel, sql_exp *e, int local_proj)
 	case e_func: {
 		if (e->l)
 			nr += exps_mark_used(subrel, e->l, local_proj);
+		if (e->r)
+			nr += exps_mark_used(subrel, e->r, local_proj);
 		break;
 	}
 	case e_cmp:
@@ -6497,6 +6499,14 @@ exp_mark_used(sql_rel *subrel, sql_exp *e, int local_proj)
 			nr += exps_mark_used(subrel, e->f, local_proj);
 		return nr;
 	case e_psm:
+		if (e->flag & PSM_SET || e->flag & PSM_RETURN || e->flag & PSM_EXCEPTION) {
+			nr += exp_mark_used(subrel, e->l, local_proj);
+		} else if (e->flag & PSM_WHILE || e->flag & PSM_IF) {
+			nr += exp_mark_used(subrel, e->l, local_proj);
+			nr += exps_mark_used(subrel, e->r, local_proj);
+			if (e->flag == PSM_IF && e->f)
+				nr += exp_mark_used(subrel, e->l, local_proj);
+		}
 		e->used = 1;
 		break;
 	}
@@ -6531,7 +6541,7 @@ rel_exps_mark_used(sql_allocator *sa, sql_rel *rel, sql_rel *subrel)
 {
 	int nr = 0;
 
-	if (rel->r && (rel->op == op_project || rel->op  == op_groupby)) {
+	if (rel->r && (is_simple_project(rel->op) || is_groupby(rel->op))) {
 		list *l = rel->r;
 		node *n;
 
@@ -6572,7 +6582,7 @@ rel_exps_mark_used(sql_allocator *sa, sql_rel *rel, sql_rel *subrel)
 		sql_exp *e = subrel->exps->h->data;
 		e->used = 1;
 	}
-	if (rel->r && (rel->op == op_project || rel->op  == op_groupby)) {
+	if (rel->r && (is_simple_project(rel->op) || is_groupby(rel->op))) {
 		list *l = rel->r;
 		node *n;
 
@@ -6614,20 +6624,29 @@ rel_used(sql_rel *rel)
 {
 	if (!rel)
 		return;
-	if (is_join(rel->op) || is_set(rel->op) || is_semi(rel->op)) {
-		if (rel->l) 
-			rel_used(rel->l);
-		if (rel->r) 
-			rel_used(rel->r);
+	if (is_join(rel->op) || is_set(rel->op) || is_semi(rel->op) || is_modify(rel->op)) {
+		rel_used(rel->l);
+		rel_used(rel->r);
 	} else if (is_topn(rel->op) || is_select(rel->op) || is_sample(rel->op)) {
 		rel_used(rel->l);
 		rel = rel->l;
-	} else if (rel->op == op_table && rel->r) {
+	} else if (is_ddl(rel->op)) {
+		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq) {
+			rel_used(rel->l);
+		} else if (rel->flag == ddl_list || rel->flag == ddl_exception) {
+			rel_used(rel->l);
+			rel_used(rel->r);
+		} else if (rel->flag == ddl_psm) {
+			exps_used(rel->exps);
+		}
+	} else if (rel->op == op_table) {
+		if (IS_TABLE_PROD_FUNC(rel->flag) || rel->flag == TABLE_FROM_RELATION)
+			rel_used(rel->l);
 		exp_used(rel->r);
 	}
 	if (rel && rel->exps) {
 		exps_used(rel->exps);
-		if (rel->r && (rel->op == op_project || rel->op  == op_groupby))
+		if (rel->r && (is_simple_project(rel->op) || is_groupby(rel->op)))
 			exps_used(rel->r);
 	}
 }
@@ -6635,8 +6654,6 @@ rel_used(sql_rel *rel)
 static void
 rel_mark_used(mvc *sql, sql_rel *rel, int proj)
 {
-	(void)sql;
-
 	if (proj && (need_distinct(rel))) 
 		rel_used(rel);
 
@@ -6685,7 +6702,17 @@ rel_mark_used(mvc *sql, sql_rel *rel, int proj)
 
 	case op_insert:
 	case op_truncate:
+		break;
 	case op_ddl:
+		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq) {
+			if (rel->l)
+				rel_mark_used(sql, rel->l, 0);
+		} else if (rel->flag == ddl_list || rel->flag == ddl_exception) {
+			if (rel->l)
+				rel_mark_used(sql, rel->l, 0);
+			if (rel->r)
+				rel_mark_used(sql, rel->r, 0);
+		}
 		break;
 
 	case op_select:
@@ -6761,7 +6788,7 @@ rel_remove_unused(mvc *sql, sql_rel *rel)
 	}
 	/* fall through */
 	case op_table:
-		if (rel->exps && (rel->op != op_table || rel->flag != TABLE_PROD_FUNC) ) {
+		if (rel->exps && (rel->op != op_table || !IS_TABLE_PROD_FUNC(rel->flag))) {
 			node *n;
 			list *exps;
 
@@ -6787,6 +6814,8 @@ rel_remove_unused(mvc *sql, sql_rel *rel)
 				append(exps, rel->exps->h->data);
 			rel->exps = exps;
 		}
+		if (rel->op == op_table && (IS_TABLE_PROD_FUNC(rel->flag) || rel->flag == TABLE_FROM_RELATION))
+			rel->l = rel_remove_unused(sql, rel->l);
 		return rel;
 
 	case op_topn:
@@ -6843,7 +6872,17 @@ rel_remove_unused(mvc *sql, sql_rel *rel)
 	case op_full: 
 	case op_semi: 
 	case op_anti: 
+		return rel;
 	case op_ddl:
+		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq) {
+			if (rel->l)
+				rel->l = rel_remove_unused(sql, rel->l);
+		} else if (rel->flag == ddl_list || rel->flag == ddl_exception) {
+			if (rel->l)
+				rel->l = rel_remove_unused(sql, rel->l);
+			if (rel->r)
+				rel->r = rel_remove_unused(sql, rel->r);
+		}
 		return rel;
 	}
 	return rel;
@@ -6869,7 +6908,6 @@ rel_dce_refs(mvc *sql, sql_rel *rel, list *refs)
 
 	case op_basetable:
 	case op_insert:
-	case op_ddl:
 	case op_truncate:
 		break;
 
@@ -6895,6 +6933,17 @@ rel_dce_refs(mvc *sql, sql_rel *rel, list *refs)
 		if (rel->r)
 			rel_dce_refs(sql, rel->r, refs);
 		break;
+	case op_ddl:
+
+		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq) {
+			if (rel->l)
+				rel_dce_refs(sql, rel->l, refs);
+		} else if (rel->flag == ddl_list || rel->flag == ddl_exception) {
+			if (rel->l)
+				rel_dce_refs(sql, rel->l, refs);
+			if (rel->r)
+				rel_dce_refs(sql, rel->r, refs);
+		} break;
 	}
 
 	if (rel_is_ref(rel) && !list_find(refs, rel, NULL)) 
@@ -6921,8 +6970,6 @@ rel_dce_down(mvc *sql, sql_rel *rel, int skip_proj)
 		/* fall through */
 
 	case op_truncate:
-	case op_ddl:
-
 		return rel;
 
 	case op_insert:
@@ -6978,6 +7025,18 @@ rel_dce_down(mvc *sql, sql_rel *rel, int skip_proj)
 			rel->l = rel_dce_down(sql, rel->l, 0);
 		if (rel->r)
 			rel->r = rel_dce_down(sql, rel->r, 0);
+		return rel;
+
+	case op_ddl:
+		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq) {
+			if (rel->l)
+				rel->l = rel_dce_down(sql, rel->l, 0);
+		} else if (rel->flag == ddl_list || rel->flag == ddl_exception) {
+			if (rel->l)
+				rel->l = rel_dce_down(sql, rel->l, 0);
+			if (rel->r)
+				rel->r = rel_dce_down(sql, rel->r, 0);
+		}
 		return rel;
 	}
 	return rel;
