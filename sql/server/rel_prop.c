@@ -14,10 +14,11 @@ prop *
 prop_create( sql_allocator *sa, rel_prop kind, prop *pre )
 {
 	prop *p = SA_NEW(sa, prop);
-	
-	p->kind = kind;
-	p->value = 0;
-	p->p = pre;
+
+	*p = (prop) {
+		.kind = kind,
+		.p = pre,
+	};
 	return p;
 }
 

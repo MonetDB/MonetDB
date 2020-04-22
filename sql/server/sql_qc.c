@@ -47,13 +47,12 @@ qc *
 qc_create(int clientid, int seqnr)
 {
 	qc *r = MNEW(qc);
-	if(!r)
+	if (!r)
 		return NULL;
-	r->clientid = clientid;
-	r->id = seqnr;
-	r->nr = 0;
-
-	r->q = NULL;
+	*r = (qc) {
+		.clientid = clientid,
+		.id = seqnr,
+	};
 	return r;
 }
 
@@ -246,6 +245,7 @@ qc_insert(qc *cache, sql_allocator *sa, sql_rel *r, char *qname, symbol *s, atom
 	if (!n)
 		return NULL;
 
+	*n = (cq) {0};
 	n->id = cache->id++;
 	cache->nr++;
 
@@ -253,7 +253,6 @@ qc_insert(qc *cache, sql_allocator *sa, sql_rel *r, char *qname, symbol *s, atom
 	n->rel = r;
 	n->s = s;
 
-	n->params = NULL;
 	n->paramlen = paramlen;
 	if (paramlen) {
 		n->params = SA_NEW_ARRAY(sa, sql_subtype,paramlen);
@@ -269,8 +268,6 @@ qc_insert(qc *cache, sql_allocator *sa, sql_rel *r, char *qname, symbol *s, atom
 	}
 	n->prepared = prepared;
 	n->next = cache->q;
-	n->stk = 0;
-	n->code = NULL;
 	n->type = type;
 	n->key = key;
 	n->codestring = cmd;
