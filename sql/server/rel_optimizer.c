@@ -216,24 +216,44 @@ static void
 psm_exp_properties(mvc *sql, global_props *gp, sql_exp *e)
 {
 	/* only functions need fix up */
-	if (e->type == e_psm) {
-		if (e->flag & PSM_SET) {
-			psm_exp_properties(sql, gp, e->l);
-		} else if (e->flag & PSM_RETURN) {
-			psm_exp_properties(sql, gp, e->l);
-		} else if (e->flag & PSM_WHILE) {
+	switch(e->type) {
+	case e_atom:
+	case e_column:
+		break;
+	case e_convert:
+		psm_exp_properties(sql, gp, e->l);
+		break;
+	case e_aggr:
+	case e_func:
+		psm_exps_properties(sql, gp, e->l);
+		assert(!e->r);
+		break;
+	case e_cmp:	
+		if (e->flag == cmp_or || e->flag == cmp_filter) {
+			psm_exps_properties(sql, gp, e->l);
+			psm_exps_properties(sql, gp, e->r);
+		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
 			psm_exp_properties(sql, gp, e->l);
 			psm_exps_properties(sql, gp, e->r);
-		} else if (e->flag & PSM_IF) {
+		} else {
 			psm_exp_properties(sql, gp, e->l);
-			psm_exps_properties(sql, gp, e->r);
+			psm_exp_properties(sql, gp, e->r);
 			if (e->f)
-				psm_exps_properties(sql, gp, e->f);
-		} else if (e->flag & PSM_REL) {
-			rel_properties(sql, gp, e->l);
-		} else if (e->flag & PSM_EXCEPTION) {
-			psm_exp_properties(sql, gp, e->l);
+				psm_exp_properties(sql, gp, e->f);
 		}
+		break;
+	case e_psm:
+		if (e->flag & PSM_SET || e->flag & PSM_RETURN || e->flag & PSM_EXCEPTION) {
+			psm_exp_properties(sql, gp, e->l);
+		} else if (e->flag & PSM_WHILE || e->flag & PSM_IF) {
+			psm_exp_properties(sql, gp, e->l);
+			psm_exps_properties(sql, gp, e->r);
+			if (e->flag == PSM_IF && e->f)
+				psm_exps_properties(sql, gp, e->f);
+		} else if (e->flag & PSM_REL && e->l) {
+			rel_properties(sql, gp, e->l);
+		}
+		break;
 	}
 }
 
@@ -2995,9 +3015,9 @@ rewrite_case_exp(mvc *sql, sql_exp *e, int *has_changes)
 		e->l = rewrite_case_exp(sql, e->l, has_changes);
 		break;
 	case e_aggr:
-	case e_func: 
+	case e_func:
 		e->l = rewrite_case_exps(sql, e->l, has_changes);
-		e->r = rewrite_case_exps(sql, e->r, has_changes);
+		assert(!e->r);
 		break;
 	case e_cmp:	
 		if (e->flag == cmp_or || e->flag == cmp_filter) {
@@ -6473,8 +6493,7 @@ exp_mark_used(sql_rel *subrel, sql_exp *e, int local_proj)
 	case e_func: {
 		if (e->l)
 			nr += exps_mark_used(subrel, e->l, local_proj);
-		if (e->r)
-			nr += exps_mark_used(subrel, e->r, local_proj);
+		assert(!e->r);
 		break;
 	}
 	case e_cmp:
