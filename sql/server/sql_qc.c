@@ -241,11 +241,10 @@ cq *
 qc_insert(qc *cache, sql_allocator *sa, sql_rel *r, char *qname, symbol *s, atom **params, int paramlen, int key, mapi_query_t type, char *cmd, int no_mitosis, bool prepared)
 {
 	int i, namelen;
-	cq *n = MNEW(cq);
+	cq *n = ZNEW(cq);
 	if (!n)
 		return NULL;
 
-	*n = (cq) {0};
 	n->id = cache->id++;
 	cache->nr++;
 
