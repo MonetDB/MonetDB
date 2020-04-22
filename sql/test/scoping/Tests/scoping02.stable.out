@@ -82,7 +82,7 @@ stdout of test 'scoping02` in directory 'sql/test/scoping` itself:
 #DROP TABLE "sys";
 #SELECT * from sys.var() where "name" not in ('debug', 'cache', 'last_id', 'current_timezone');
 % .%1,	.%1,	.%1,	.%1 # table_name
-% sname,	name,	type,	value # name
+% schema,	name,	type,	value # name
 % char,	char,	char,	char # type
 % 3,	14,	7,	12 # length
 [ "sys",	"current_schema",	"varchar",	"sys"	]
