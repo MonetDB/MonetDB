@@ -1407,10 +1407,11 @@ insert_functions(sql_trans *tr, sql_table *sysfunc, sql_table *sysarg)
 			bit F = FALSE;
 			int number = 0, atype = (int) aggr->type, lang = (int) FUNC_LANG_INT;
 
+			bit semantics = f->semantics;
 			if (aggr->s)
-				table_funcs.table_insert(tr, sysfunc, &aggr->base.id, aggr->base.name, aggr->imp, aggr->mod, &lang, &atype, &F, &aggr->varres, &aggr->vararg, &aggr->s->base.id, &aggr->system);
+				table_funcs.table_insert(tr, sysfunc, &aggr->base.id, aggr->base.name, aggr->imp, aggr->mod, &lang, &atype, &semantics, &F, &aggr->varres, &aggr->vararg, &aggr->s->base.id, &aggr->system);
 			else
-				table_funcs.table_insert(tr, sysfunc, &aggr->base.id, aggr->base.name, aggr->imp, aggr->mod, &lang, &atype, &F, &aggr->varres, &aggr->vararg, &zero, &aggr->system);
+				table_funcs.table_insert(tr, sysfunc, &aggr->base.id, aggr->base.name, aggr->imp, aggr->mod, &lang, &atype, &semantics, &F, &aggr->varres, &aggr->vararg, &zero, &aggr->system);
 			
 			res = aggr->res->h->data;
 			id = next_oid();
@@ -5492,7 +5493,7 @@ sql_trans_create_func(sql_trans *tr, sql_schema *s, const char *func, list *args
 	t->s = s;
 
 	cs_add(&s->funcs, t, TR_NEW);
-	table_funcs.table_insert(tr, sysfunc, &t->base.id, t->base.name, query?query:t->imp, t->mod, &flang, &ftype, &se,
+	table_funcs.table_insert(tr, sysfunc, &t->base.id, t->base.name, query?query:t->imp, t->mod, &flang, &ftype, &t->semantics, &se,
 							 &t->varres, &t->vararg, &s->base.id, &t->system);
 	if (t->res) for (n = t->res->h; n; n = n->next, number++) {
 		sql_arg *a = n->data;
