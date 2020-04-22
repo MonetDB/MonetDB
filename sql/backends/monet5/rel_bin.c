@@ -2171,11 +2171,30 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 		if (list_length(rel->exps) > 1) {
 			for( en = rel->exps->h, i=0; en; en = en->next, i++) {
 				sql_exp *e = en->data;
-				if (e->type == e_cmp && (e->flag == cmp_equal || e->flag == cmp_filter)) {
-					if ( !((rel_find_exp(rel->l, e->l) && rel_find_exp(rel->l, e->r))  ||
-					       (rel_find_exp(rel->r, e->l) && rel_find_exp(rel->r, e->r)))) {
+
+				if (e->type == e_cmp) {
+					if (e->flag == cmp_equal && !((rel_find_exp(rel->l, e->l) && rel_find_exp(rel->l, e->r)) || (rel_find_exp(rel->r, e->l) && rel_find_exp(rel->r, e->r)))) {
 						append(jexps, e);
 						handled[i] = 1;
+					} else if (e->flag == cmp_filter) {
+						bool fll = true, flr = true, frl = true, frr = true;
+
+						for (node *n = ((list*)e->l)->h ; n ; n = n->next) {
+							sql_exp *ee = n->data;
+
+							fll &= rel_find_exp(rel->l, ee) != NULL;
+							frl &= rel_find_exp(rel->r, ee) != NULL;
+						}
+						for (node *n = ((list*)e->r)->h ; n ; n = n->next) {
+							sql_exp *ee = n->data;
+
+							flr &= rel_find_exp(rel->l, ee) != NULL;
+							frr &= rel_find_exp(rel->r, ee) != NULL;
+						}
+						if (!((fll && flr) || (frl && frr))) {
+							append(jexps, e);
+							handled[i] = 1;
+						}
 					}
 				}
 			}
