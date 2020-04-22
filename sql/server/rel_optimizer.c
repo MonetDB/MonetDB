@@ -7522,18 +7522,17 @@ split_exp(mvc *sql, sql_exp *e, sql_rel *rel)
 		}
 		return e;
 	case e_cmp:	
-		if (e->flag == cmp_or) {
+		if (e->flag == cmp_or || e->flag == cmp_filter) {
 			split_exps(sql, e->l, rel);
 			split_exps(sql, e->r, rel);
-		} else if (e->flag == cmp_in || e->flag == cmp_notin || e->flag == cmp_filter) {
+		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
 			e->l = split_exp(sql, e->l, rel);
 			split_exps(sql, e->r, rel);
 		} else {
 			e->l = split_exp(sql, e->l, rel);
 			e->r = split_exp(sql, e->r, rel);
-			if (e->f) {
+			if (e->f)
 				e->f = split_exp(sql, e->f, rel);
-			}
 		}
 		return e;
 	case e_psm:
@@ -7632,18 +7631,17 @@ select_split_exp(mvc *sql, sql_exp *e, sql_rel *rel)
 		}
 		return e;
 	case e_cmp:	
-		if (e->flag == cmp_or) {
+		if (e->flag == cmp_or || e->flag == cmp_filter) {
 			select_split_exps(sql, e->l, rel);
 			select_split_exps(sql, e->r, rel);
-		} else if (e->flag == cmp_in || e->flag == cmp_notin || e->flag == cmp_filter) {
+		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
 			e->l = select_split_exp(sql, e->l, rel);
 			select_split_exps(sql, e->r, rel);
 		} else {
 			e->l = select_split_exp(sql, e->l, rel);
 			e->r = select_split_exp(sql, e->r, rel);
-			if (e->f) {
+			if (e->f)
 				e->f = select_split_exp(sql, e->f, rel);
-			}
 		}
 		return e;
 	case e_psm:

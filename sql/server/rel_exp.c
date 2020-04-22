@@ -1928,9 +1928,9 @@ exp_has_func( sql_exp *e )
 			return exps_has_func(e->l);
 		return 0;
 	case e_cmp:
-		if (e->flag == cmp_or) {
+		if (e->flag == cmp_or || e->flag == cmp_filter) {
 			return (exps_has_func(e->l) || exps_has_func(e->r));
-		} else if (e->flag == cmp_in || e->flag == cmp_notin || e->flag == cmp_filter) {
+		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
 			return (exp_has_func(e->l) || exps_has_func(e->r));
 		} else {
 			return (exp_has_func(e->l) || exp_has_func(e->r) || 
