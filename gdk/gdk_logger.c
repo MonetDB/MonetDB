@@ -185,6 +185,7 @@ log_read_format(logger *l, logformat *data)
 static gdk_return
 log_write_format(logger *lg, logformat *data)
 {
+	assert(data->id || data->flag);
 	assert(!lg->inmemory);
 	if (mnstr_write(lg->output_log, &data->flag, 1, 1) == 1 &&
 	    mnstr_writeInt(lg->output_log, data->id))
@@ -350,20 +351,23 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, lng offset)
 
 			if (hv == NULL)
 				res = LOG_ERR;
-
 			for (; res == LOG_OK && nr > 0; nr--) {
 				void *h = rh(hv, lg->input_log, 1);
+
+				if ((uid && BUNappend(uid, h, true) != GDK_SUCCEED))
+					res = LOG_ERR;
+			}
+			nr = pnr;
+			for (; res == LOG_OK && nr > 0; nr--) {
 				void *t = rt(tv, lg->input_log, 1);
 
-				if (h == NULL)
-					res = LOG_EOF;
-				else if (t == NULL) {
+				if (t == NULL) {
 					if (strstr(GDKerrbuf, "malloc") == NULL)
 						res = LOG_EOF;
 					else
 						res = LOG_ERR;
-				} else if ((uid && BUNappend(uid, h, true) != GDK_SUCCEED) ||
-				   	(r && BUNappend(r, t, true) != GDK_SUCCEED))
+				}
+				if ((r && BUNappend(r, t, true) != GDK_SUCCEED))
 					res = LOG_ERR;
 				if (t != tv)
 					GDKfree(t);
@@ -484,31 +488,9 @@ la_bat_updates(logger *lg, logaction *la)
 			oid h = BUNtoid(la->uid, p);
 			const void *t = BUNtail(vi, p);
 
-			if (h < b->hseqbase || h >= b->hseqbase + BATcount(b)) {
-				/* if value doesn't exist, insert it;
-				 * if b void headed, maintain that by
-				 * inserting nils */
-				if (b->batCount == 0 && !is_oid_nil(h))
-					b->hseqbase = h;
-				if (!is_oid_nil(b->hseqbase) && !is_oid_nil(h)) {
-					const void *tv = ATOMnilptr(b->ttype);
-
-					while (b->hseqbase + b->batCount < h) {
-						if (BUNappend(b, tv, true) != GDK_SUCCEED) {
-							logbat_destroy(b);
-							return GDK_FAIL;
-						}
-					}
-				}
-				if (BUNappend(b, t, true) != GDK_SUCCEED) {
-					logbat_destroy(b);
-					return GDK_FAIL;
-				}
-			} else {
-				if (BUNreplace(b, h, t, true) != GDK_SUCCEED) {
-					logbat_destroy(b);
-					return GDK_FAIL;
-				}
+			if (BUNreplace(b, h, t, true) != GDK_SUCCEED) {
+				logbat_destroy(b);
+				return GDK_FAIL;
 			}
 		}
 	}
@@ -602,7 +584,7 @@ logger_write_new_types(logger *lg, FILE *fp)
 		id++;
 	}
 	/* second the var sized types */
-	id=-127; // start after nil 
+	id=-127; /* start after nil */
 	for (int i=0;i<GDKatomcnt; i++) {
 		if (!ATOMvarsized(i))
 			continue;
@@ -905,6 +887,11 @@ logger_read_transaction(logger *lg)
 	GDKdebug &= ~(CHECKMASK|PROPMASK);
 
 	while (err == LOG_OK && (ok=log_read_format(lg, &l))) {
+		if (l.flag == 0 && l.id == 0) {
+			err = LOG_EOF;
+			break;
+		}
+
 		if (lg->debug & 1) {
 			fprintf(stderr, "#logger_readlog: ");
 			if (l.flag > 0 &&
@@ -1711,8 +1698,8 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 		.postfuncp = postfuncp,
 
 		.id = 1,
-		.tid = (int)getBBPtransid(), 	/* get saved transaction id from bbp */
-		.saved_id = getBBPlogno(), 	/* get saved log numer from bbp */
+		.saved_id = getBBPlogno(), 		/* get saved log numer from bbp */
+		.saved_tid = (int)getBBPtransid(), 	/* get saved transaction id from bbp */
 	};
 
 	/* probably open file and check version first, then call call old logger code */
