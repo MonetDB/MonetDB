@@ -683,7 +683,7 @@ stmt_append_col(backend *be, sql_column *c, stmt *offset, stmt *b, int fake)
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
 
-	if (offset->nr < 0 || b->nr < 0)
+	if (b->nr < 0)
 		return NULL;
 
 	if (!c->t->s && c->t->data) { /* declared table */
@@ -700,6 +700,8 @@ stmt_append_col(backend *be, sql_column *c, stmt *offset, stmt *b, int fake)
 		q = pushBit(mb, q, TRUE);
 		getArg(q,0) = l[c->colnr+1]; 
 	} else if (!fake) {	/* fake append */
+		if (offset->nr < 0)
+			return NULL;
 		q = newStmt(mb, sqlRef, appendRef);
 		q = pushArgument(mb, q, be->mvc_var);
 		if (q == NULL)

@@ -1057,6 +1057,8 @@ claim_tab(sql_trans *tr, sql_table *t, size_t cnt)
 	res = bat->ibase;
 	/* inserts only write */
 	bat->wtime = t->base.wtime = t->s->base.wtime = tr->wtime = tr->wstime;
+	// for now we have to set write of column as well 
+	bat->wtime = c->base.wtime = c->t->base.wtime = c->t->s->base.wtime = tr->wtime = tr->wstime;
 	store_unlock();
 	return res;
 }

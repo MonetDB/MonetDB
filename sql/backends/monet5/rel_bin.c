@@ -3994,7 +3994,8 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 		cnt = stmt_aggr(be, insert, NULL, NULL, sql_bind_func(sql->sa, sql->session->schema, "count", sql_bind_localtype("void"), NULL, F_AGGR), 1, 0, 1);
 	}
 	insert = NULL;
-	pos = stmt_claim(be, t, cnt);
+	if (t->s) /* only not declared tables, need this */
+		pos = stmt_claim(be, t, cnt);
 
 	if (t->idxs.set)
 	for (n = t->idxs.set->h; n && m; n = n->next, m = m->next) {
