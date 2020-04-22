@@ -161,10 +161,7 @@ rel_copy(mvc *sql, sql_rel *i, int deep)
 			if (!deep) {
 				rel->r = list_dup(i->r, (fdup) NULL);
 			} else {
-				list *l = (list*)i->r;
-				rel->r = list_new(l->sa, l->destroy);
-				for (node *n = l->h ; n ; n = n->next)
-					list_append(rel->r, rel_copy(sql, (sql_rel *)n->data, deep));
+				rel->r = exps_copy(sql, i->r);
 			}
 		}
 		break;
