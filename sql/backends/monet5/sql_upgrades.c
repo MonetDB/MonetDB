@@ -2613,19 +2613,22 @@ sql_update_jun2020(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 	/* 51_sys_schema_extensions */
 	pos += snprintf(buf + pos, bufsize - pos,
 			"ALTER TABLE sys.keywords SET READ WRITE;\n"
-			"DELETE FROM sys.keywords where \"keyword\" IN ('NOCYCLE','NOMAXVALUE','NOMINVALUE','UNIONJOIN');\n"
+			"DELETE FROM sys.keywords where keyword IN ('NOCYCLE','NOMAXVALUE','NOMINVALUE');\n"
 			"insert into sys.keywords values ('ANALYZE'),('AT'),('AUTHORIZATION'),('CACHE'),('CENTURY'),('COLUMN'),('CLIENT'),"
 			"('CUBE'),('CYCLE'),('DATA'),('DATE'),('DEBUG'),('DECADE'),('DEALLOCATE'),('DIAGNOSTICS'),('DISTINCT'),"
 			"('DOW'),('DOY'),('EXEC'),('EXECUTE'),('EXPLAIN'),('FIRST'),('FWF'),('GROUPING'),('GROUPS'),('INCREMENT'),"
 			"('INTERVAL'),('KEY'),('LANGUAGE'),('LARGE'),('LAST'),('LATERAL'),('LEVEL'),('LOADER'),('MATCH'),('MATCHED'),('MAXVALUE'),"
 			"('MINVALUE'),('NAME'),('NO'),('NULLS'),('OBJECT'),('OPTIONS'),('PASSWORD'),('PLAN'),('PRECISION'),('PREP'),('PREPARE'),"
 			"('QUARTER'),('RELEASE'),('REPLACE'),('ROLLUP'),('SCHEMA'),('SEED'),('SERVER'),('SESSION'),('SETS'),('SIZE'),"
-			"('STATEMENT'),('TABLE'),('TEMP'),('TEMPORARY'),('TEXT'),('TIME'),('TIMESTAMP'),('TRACE'),('TYPE'),('UNIONJOIN'),"
+			"('STATEMENT'),('TABLE'),('TEMP'),('TEMPORARY'),('TEXT'),('TIME'),('TIMESTAMP'),('TRACE'),('TYPE'),"
 			"('WEEK'),('YEAR'),('ZONE');\n");
+	pos += snprintf(buf + pos, bufsize - pos,
+			"ALTER TABLE sys.function_languages SET READ WRITE;\n"
+			"DELETE FROM sys.function_languages where language_keyword IN ('PYTHON2','PYTHON2_MAP');\n");
 
 	/* 58_hot_snapshot */
 	pos += snprintf(buf + pos, bufsize - pos,
-			"create procedure hot_snapshot(tarfile string)\n"
+			"create procedure sys.hot_snapshot(tarfile string)\n"
 			" external name sql.hot_snapshot;\n"
 			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
 			" and name in ('hot_snapshot') and type = %d;\n", (int) F_PROC);
@@ -2677,7 +2680,8 @@ sql_update_jun2020(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 	err = SQLstatementIntern(c, &buf, "update", true, false, NULL);
 	if (err == MAL_SUCCEED) {
 		pos = snprintf(buf, bufsize, "set schema \"sys\";\n"
-			       "ALTER TABLE sys.keywords SET READ ONLY;\n");
+			       "ALTER TABLE sys.keywords SET READ ONLY;\n"
+			       "ALTER TABLE sys.function_languages SET READ ONLY;\n");
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
 		assert(pos < bufsize);
 		printf("Running database upgrade commands:\n%s\n", buf);

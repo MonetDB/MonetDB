@@ -515,12 +515,15 @@ rel_change_base_table(mvc* sql, sql_rel* rel, sql_table* oldt, sql_table* newt)
 			n->data = exp_change_column_table(sql, (sql_exp*) n->data, oldt, newt);
 
 	switch (rel->op) {
-		case op_ddl:
-			break;
-		case op_table:
 		case op_basetable:
 			if (rel->l == oldt)
 				rel->l = newt;
+			break;
+		case op_table:
+			if (IS_TABLE_PROD_FUNC(rel->flag) || rel->flag == TABLE_FROM_RELATION) {
+				if (rel->l)
+					rel->l = rel_change_base_table(sql, rel->l, oldt, newt);
+			}
 			break;
 		case op_join:
 		case op_left:
@@ -531,6 +534,9 @@ rel_change_base_table(mvc* sql, sql_rel* rel, sql_table* oldt, sql_table* newt)
 		case op_union:
 		case op_inter:
 		case op_except:
+		case op_insert:
+		case op_update:
+		case op_delete:
 			if (rel->l)
 				rel->l = rel_change_base_table(sql, rel->l, oldt, newt);
 			if (rel->r)
@@ -541,16 +547,21 @@ rel_change_base_table(mvc* sql, sql_rel* rel, sql_table* oldt, sql_table* newt)
 		case op_select:
 		case op_topn:
 		case op_sample:
+		case op_truncate:
 			if (rel->l)
 				rel->l = rel_change_base_table(sql, rel->l, oldt, newt);
 			break;
-		case op_insert:
-		case op_update:
-		case op_delete:
-		case op_truncate:
-			if (rel->r)
-				rel->r = rel_change_base_table(sql, rel->r, oldt, newt);
-			break;
+		case op_ddl:
+			if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq) {
+				if (rel->l)
+					rel->l = rel_change_base_table(sql, rel->l, oldt, newt);
+			} else if (rel->flag == ddl_list || rel->flag == ddl_exception) {
+				if (rel->l)
+					rel->l = rel_change_base_table(sql, rel->l, oldt, newt);
+				if (rel->r)
+					rel->r = rel_change_base_table(sql, rel->r, oldt, newt);
+			}
+		break;
 	}
 	return rel;
 }

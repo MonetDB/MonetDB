@@ -1942,9 +1942,9 @@ exp_has_func( sql_exp *e )
 			return exps_has_func(e->l);
 		return 0;
 	case e_cmp:
-		if (e->flag == cmp_or) {
+		if (e->flag == cmp_or || e->flag == cmp_filter) {
 			return (exps_has_func(e->l) || exps_has_func(e->r));
-		} else if (e->flag == cmp_in || e->flag == cmp_notin || e->flag == cmp_filter) {
+		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
 			return (exp_has_func(e->l) || exps_has_func(e->r));
 		} else {
 			return (exp_has_func(e->l) || exp_has_func(e->r) || 
@@ -2729,13 +2729,17 @@ rel_set_type_recurse(mvc *sql, sql_subtype *type, sql_rel *rel, const char **rel
 		return 0;
 
 	if (rel->exps)
-		for(node *n = rel->exps->h; n; n = n->next)
+		for (node *n = rel->exps->h; n; n = n->next)
 			exp_set_type_recurse(sql, type, (sql_exp*) n->data, relname, expname);
 
 	switch (rel->op) {
 		case op_basetable:
+		case op_truncate:
+			break;
 		case op_table:
-		case op_ddl:
+			if (IS_TABLE_PROD_FUNC(rel->flag) || rel->flag == TABLE_FROM_RELATION)
+				if (rel->l)
+					rel_set_type_recurse(sql, type, rel->l, relname, expname);
 			break;
 		case op_join:
 		case op_left:
@@ -2762,9 +2766,19 @@ rel_set_type_recurse(mvc *sql, sql_subtype *type, sql_rel *rel, const char **rel
 		case op_insert:
 		case op_update:
 		case op_delete:
-		case op_truncate:
 			if (rel->r)
 				rel_set_type_recurse(sql, type, rel->r, relname, expname);
+			break;
+		case op_ddl:
+			if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq) {
+				if (rel->l)
+					rel_set_type_recurse(sql, type, rel->l, relname, expname);
+			} else if (rel->flag == ddl_list || rel->flag == ddl_exception) {
+				if (rel->l)
+					rel_set_type_recurse(sql, type, rel->l, relname, expname);
+				if (rel->r)
+					rel_set_type_recurse(sql, type, rel->r, relname, expname);
+			}
 			break;
 	}
 	return 0;

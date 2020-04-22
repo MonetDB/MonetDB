@@ -95,7 +95,7 @@ rel_need_distinct_query(sql_rel *rel)
 {
 	int need_distinct = 0;
 
-	while (!need_distinct && rel && is_project(rel->op) && !is_groupby(rel->op))
+	while (!need_distinct && rel && is_simple_project(rel->op))
 		rel = rel->l;
 	if (!need_distinct && rel && is_groupby(rel->op) && rel->exps) {
 		node *n, *m;

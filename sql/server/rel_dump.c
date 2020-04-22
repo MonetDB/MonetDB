@@ -831,6 +831,11 @@ read_exps(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos
 			if (!e && pexps) {
 				*pos = op;
 				e = exp_read(sql, lrel, rrel, pexps, r, pos, grp);
+				if (e) {
+					/* reset error */
+					sql->session->status = 0;
+					sql->errstr[0] = '\0';
+				}
 			}
 			if (!e)
 				return NULL;
@@ -1051,6 +1056,18 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 					res->scale = lt->scale + rt->scale;
 				}
 			}
+			/* fix scale of div function */
+                        if (f && f->func->fix_scale == SCALE_DIV && list_length(exps) == 2) {
+                                sql_arg *ares = f->func->res->h->data;
+
+                                if (strcmp(f->func->imp, "/") == 0 && ares->type.type->scale == SCALE_FIX) {
+                                        sql_subtype *res = f->res->h->data;
+                                        sql_subtype *lt = ops->h->data;
+                                        sql_subtype *rt = ops->h->next->data;
+
+                                        res->scale = lt->scale - rt->scale;
+                                }
+                        }
 
 			if (f)
 				exp = exp_op( sql->sa, exps, f);

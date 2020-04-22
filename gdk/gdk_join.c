@@ -269,27 +269,26 @@ nomatch(BAT **r1p, BAT **r2p, BAT *l, BAT *r, struct canditer *restrict lci,
 			}
 			*r2p = r2;
 		}
-		*r1p = r1;
-		TRC_DEBUG(ALGO, "%s(l=%s,r=%s)=(" ALGOBATFMT "," ALGOOPTBATFMT ") " LLFMT "us -- nomatch\n",
-			  func, BATgetId(l), BATgetId(r),
-			  ALGOBATPAR(r1), ALGOOPTBATPAR(r2),
-			  GDKusec() - t0);
-		return GDK_SUCCEED;
-	}
-
-	r1 = canditer_slice(lci, 0, lci->ncand);
-	if (r2p) {
-		if ((r2 = BATconstant(0, TYPE_void, &oid_nil, lci->ncand, TRANSIENT)) == NULL) {
-			BBPreclaim(r1);
-			return GDK_FAIL;
+	} else {
+		r1 = canditer_slice(lci, 0, lci->ncand);
+		if (r2p) {
+			if ((r2 = BATconstant(0, TYPE_void, &oid_nil, lci->ncand, TRANSIENT)) == NULL) {
+				BBPreclaim(r1);
+				return GDK_FAIL;
+			}
+			*r2p = r2;
 		}
-		*r2p = r2;
 	}
 	*r1p = r1;
-	TRC_DEBUG(ALGO, "%s(l=%s,r=%s)=(" ALGOBATFMT "," ALGOOPTBATFMT ") " LLFMT "us -- nomatch\n",
-		  func, BATgetId(l), BATgetId(r),
+	TRC_DEBUG(ALGO, "l=" ALGOBATFMT ",r=" ALGOBATFMT ",sl=" ALGOOPTBATFMT
+		  ",nil_on_miss=%s,only_misses=%s"
+		  " - > " ALGOBATFMT "," ALGOOPTBATFMT
+		  " (%s -- " LLFMT "usec)\n",
+		  ALGOBATPAR(l), ALGOBATPAR(r), ALGOOPTBATPAR(lci->s),
+		  nil_on_miss ? "true" : "false",
+		  only_misses ? "true" : "false",
 		  ALGOBATPAR(r1), ALGOOPTBATPAR(r2),
-		  GDKusec() - t0);
+		  func, GDKusec() - t0);
 	return GDK_SUCCEED;
 }
 
@@ -315,7 +314,7 @@ selectjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	    (*ATOMcompare(l->ttype))(v, ATOMnilptr(l->ttype)) == 0) {
 		/* NIL doesn't match anything */
 		return nomatch(r1p, r2p, l, r, lci, false, false,
-			       __func__, t0);
+			       reason, t0);
 	}
 
 	bn = BATselect(r, rci->s, v, NULL, true, true, false);
@@ -325,7 +324,7 @@ selectjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	if (BATcount(bn) == 0) {
 		BBPunfix(bn->batCacheid);
 		return nomatch(r1p, r2p, l, r, lci, false, false,
-			       __func__, t0);
+			       reason, t0);
 	}
 	BAT *r1 = COLnew(0, TYPE_oid, lci->ncand * BATcount(bn), TRANSIENT);
 	if (r1 == NULL) {
@@ -398,14 +397,13 @@ selectjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		*r2p = r2;
 	}
 	BBPunfix(bn->batCacheid);
-	TRC_DEBUG(ALGO, "%s(l=" ALGOBATFMT ","
+	TRC_DEBUG(ALGO, "l=" ALGOBATFMT ","
 		  "r=" ALGOBATFMT ",sl=" ALGOOPTBATFMT ","
-		  "sr=" ALGOOPTBATFMT ",nil_matches=%d)%s %s "
-		  "-> (" ALGOBATFMT "," ALGOOPTBATFMT ") " LLFMT "us\n",
-		  __func__,
+		  "sr=" ALGOOPTBATFMT ",nil_matches=%s;%s %s "
+		  "-> " ALGOBATFMT "," ALGOOPTBATFMT " (" LLFMT "usec)\n",
 		  ALGOBATPAR(l), ALGOBATPAR(r),
 		  ALGOOPTBATPAR(lci->s), ALGOOPTBATPAR(rci->s),
-		  nil_matches,
+		  nil_matches ? "true" : "false",
 		  swapped ? " swapped" : "", reason,
 		  ALGOBATPAR(r1), ALGOOPTBATPAR(r2),
 		  GDKusec() - t0);
@@ -742,15 +740,15 @@ mergejoin_void(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	if (r2->tkey && r2->tsorted)
 		virtualize(r2);
   doreturn2:
-	TRC_DEBUG(ALGO, "%s(l=" ALGOBATFMT ","
+	TRC_DEBUG(ALGO, "l=" ALGOBATFMT ","
 		  "r=" ALGOBATFMT ",sl=" ALGOOPTBATFMT ","
 		  "sr=" ALGOOPTBATFMT ","
-		  "nil_on_miss=%d,only_misses=%d)%s %s "
-		  "-> (" ALGOBATFMT "," ALGOOPTBATFMT ") " LLFMT "us\n",
-		  __func__,
+		  "nil_on_miss=%s,only_misses=%s;%s %s "
+		  "-> " ALGOBATFMT "," ALGOOPTBATFMT " (" LLFMT "usec)\n",
 		  ALGOBATPAR(l), ALGOBATPAR(r),
 		  ALGOOPTBATPAR(lci->s), ALGOOPTBATPAR(rci->s),
-		  nil_on_miss, only_misses,
+		  nil_on_miss ? "true" : "false",
+		  only_misses ? "true" : "false",
 		  swapped ? " swapped" : "", reason,
 		  ALGOBATPAR(r1), ALGOOPTBATPAR(r2),
 		  GDKusec() - t0);
@@ -1039,13 +1037,11 @@ mergejoin_int(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 			r2->tseqbase = 0;
 		}
 	}
-	TRC_DEBUG(ALGO, "%s(l=" ALGOBATFMT ","
-		  "r=" ALGOBATFMT ","
-		  "nil_matches=%d)%s %s "
-		  "-> (" ALGOBATFMT "," ALGOOPTBATFMT ") " LLFMT "us\n",
-		  __func__,
+	TRC_DEBUG(ALGO, "l=" ALGOBATFMT "," "r=" ALGOBATFMT ","
+		  "nil_matches=%s;%s %s "
+		  "-> " ALGOBATFMT "," ALGOOPTBATFMT " (" LLFMT "usec)\n",
 		  ALGOBATPAR(l), ALGOBATPAR(r),
-		  nil_matches,
+		  nil_matches ? "true" : "false",
 		  swapped ? " swapped" : "", reason,
 		  ALGOBATPAR(r1), ALGOOPTBATPAR(r2),
 		  GDKusec() - t0);
@@ -1339,13 +1335,11 @@ mergejoin_lng(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 			r2->tseqbase = 0;
 		}
 	}
-	TRC_DEBUG(ALGO, "%s(l=" ALGOBATFMT ","
-		  "r=" ALGOBATFMT ","
-		  "nil_matches=%d)%s %s "
-		  "-> (" ALGOBATFMT "," ALGOOPTBATFMT ") " LLFMT "us\n",
-		  __func__,
+	TRC_DEBUG(ALGO, "l=" ALGOBATFMT "," "r=" ALGOBATFMT ","
+		  "nil_matches=%s;%s %s "
+		  "-> " ALGOBATFMT "," ALGOOPTBATFMT " (" LLFMT "usec)\n",
 		  ALGOBATPAR(l), ALGOBATPAR(r),
-		  nil_matches,
+		  nil_matches ? "true" : "false",
 		  swapped ? " swapped" : "", reason,
 		  ALGOBATPAR(r1), ALGOOPTBATPAR(r2),
 		  GDKusec() - t0);
@@ -1618,13 +1612,11 @@ mergejoin_cand(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 			r2->tseqbase = 0;
 		}
 	}
-	TRC_DEBUG(ALGO, "%s(l=" ALGOBATFMT ","
-		  "r=" ALGOBATFMT ","
-		  "nil_matches=%d)%s %s "
-		  "-> (" ALGOBATFMT "," ALGOOPTBATFMT ") " LLFMT "us\n",
-		  __func__,
+	TRC_DEBUG(ALGO, "l=" ALGOBATFMT "," "r=" ALGOBATFMT ","
+		  "nil_matches=%s;%s %s "
+		  "-> " ALGOBATFMT "," ALGOOPTBATFMT " (" LLFMT "usec)\n",
 		  ALGOBATPAR(l), ALGOBATPAR(r),
-		  nil_matches,
+		  nil_matches ? "true" : "false",
 		  swapped ? " swapped" : "", reason,
 		  ALGOBATPAR(r1), ALGOOPTBATPAR(r2),
 		  GDKusec() - t0);
@@ -2344,16 +2336,17 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 			r2->tseqbase = 0;
 		}
 	}
-	TRC_DEBUG(ALGO, "%s(l=" ALGOBATFMT ","
+	TRC_DEBUG(ALGO, "l=" ALGOBATFMT ","
 		  "r=" ALGOBATFMT ",sl=" ALGOOPTBATFMT ","
-		  "sr=" ALGOOPTBATFMT ",nil_matches=%d,"
-		  "nil_on_miss=%d,semi=%d,only_misses=%d,"
-		  "not_in=%d)%s %s "
-		  "-> (" ALGOBATFMT "," ALGOOPTBATFMT ") " LLFMT "us\n",
-		  __func__,
+		  "sr=" ALGOOPTBATFMT ","
+		  "nil_on_miss=%s,semi=%s,only_misses=%s,not_in=%s;%s %s "
+		  "-> " ALGOBATFMT "," ALGOOPTBATFMT " (" LLFMT "usec)\n",
 		  ALGOBATPAR(l), ALGOBATPAR(r),
 		  ALGOOPTBATPAR(lci->s), ALGOOPTBATPAR(rci->s),
-		  nil_matches, nil_on_miss, semi, only_misses, not_in,
+		  nil_on_miss ? "true" : "false",
+		  semi ? "true" : "false",
+		  only_misses ? "true" : "false",
+		  not_in ? "true" : "false",
 		  swapped ? " swapped" : "", reason,
 		  ALGOBATPAR(r1), ALGOOPTBATPAR(r2),
 		  GDKusec() - t0);
@@ -2778,16 +2771,18 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 			r2->tseqbase = 0;
 		}
 	}
-	TRC_DEBUG(ALGO, "%s(l=" ALGOBATFMT ","
-		  "r=" ALGOBATFMT ",sl=" ALGOOPTBATFMT ","
-		  "sr=" ALGOOPTBATFMT ",nil_matches=%d,"
-		  "nil_on_miss=%d,semi=%d,only_misses=%d,"
-		  "not_in=%d)%s %s "
-		  "-> (" ALGOBATFMT "," ALGOOPTBATFMT ") " LLFMT "us\n",
-		  __func__,
+	TRC_DEBUG(ALGO, "l=" ALGOBATFMT "," "r=" ALGOBATFMT
+		  ",sl=" ALGOOPTBATFMT "," "sr=" ALGOOPTBATFMT ","
+		  "nil_matches=%s,nil_on_miss=%s,semi=%s,only_misses=%s,"
+		  "not_in=%s;%s %s -> " ALGOBATFMT "," ALGOOPTBATFMT
+		  " (" LLFMT "usec)\n",
 		  ALGOBATPAR(l), ALGOBATPAR(r),
 		  ALGOOPTBATPAR(lci->s), ALGOOPTBATPAR(rci->s),
-		  nil_matches, nil_on_miss, semi, only_misses, not_in,
+		  nil_matches ? "true" : "false",
+		  nil_on_miss ? "true" : "false",
+		  semi ? "true" : "false",
+		  only_misses ? "true" : "false",
+		  not_in ? "true" : "false",
 		  swapped ? " swapped" : "", reason,
 		  ALGOBATPAR(r1), ALGOOPTBATPAR(r2),
 		  GDKusec() - t0);
@@ -2813,7 +2808,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 #define MASK_NE		(MASK_LT | MASK_GT)
 
 static gdk_return
-thetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int opcode, BUN estimate, lng t0)
+thetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int opcode, BUN estimate, const char *reason, lng t0)
 {
 	struct canditer lci, rci;
 	BUN lcnt, rcnt;
@@ -2830,14 +2825,6 @@ thetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int opcode, BU
 	bool lskipped = false;	/* whether we skipped values in l */
 	lng loff = 0, roff = 0;
 	oid lval = oid_nil, rval = oid_nil;
-
-	TRC_DEBUG(ALGO, "thetajoin(l=" ALGOBATFMT ","
-		  "r=" ALGOBATFMT ",sl=" ALGOOPTBATFMT ","
-		  "sr=" ALGOOPTBATFMT ",op=%s%s%s)\n",
-		  ALGOBATPAR(l), ALGOBATPAR(r), ALGOOPTBATPAR(sl), ALGOOPTBATPAR(sr),
-		  opcode & MASK_LT ? "<" : "",
-		  opcode & MASK_GT ? ">" : "",
-		  opcode & MASK_EQ ? "=" : "");
 
 	assert(ATOMtype(l->ttype) == ATOMtype(r->ttype));
 	assert(sl == NULL || sl->tsorted);
@@ -2974,389 +2961,16 @@ thetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int opcode, BU
 			r2->tseqbase = 0;
 		}
 	}
-	TRC_DEBUG(ALGO, "thetajoin(l=%s,r=%s)=(" ALGOBATFMT "," ALGOOPTBATFMT ") " LLFMT "us\n",
-		  BATgetId(l), BATgetId(r),
-		  ALGOBATPAR(r1), ALGOOPTBATPAR(r2),
-		  GDKusec() - t0);
-	return GDK_SUCCEED;
-
-  bailout:
-	BBPreclaim(r1);
-	BBPreclaim(r2);
-	return GDK_FAIL;
-}
-
-static gdk_return
-bandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
-	 const void *c1, const void *c2, bool li, bool hi, BUN estimate,
-	 lng t0)
-{
-	BUN lcnt, rcnt;
-	struct canditer lci, rci;
-	const char *lvals, *rvals;
-	int lwidth, rwidth;
-	int t;
-	const void *nil = ATOMnilptr(l->ttype);
-	int (*cmp)(const void *, const void *) = ATOMcompare(l->ttype);
-	const char *vl, *vr;
-	oid lastr = 0;		/* last value inserted into r2 */
-	BUN nr;
-	oid lo, ro;
-	bool lskipped = false;	/* whether we skipped values in l */
-	BUN nils = 0;		/* needed for XXX_WITH_CHECK macros */
-
-	assert(ATOMtype(l->ttype) == ATOMtype(r->ttype));
-	assert(sl == NULL || sl->tsorted);
-	assert(sr == NULL || sr->tsorted);
-
-	t = ATOMtype(l->ttype);
-	t = ATOMbasetype(t);
-
-	lcnt = canditer_init(&lci, l, sl);
-	rcnt = canditer_init(&rci, r, sr);
-
-	if (lcnt == 0 || rcnt == 0)
-		return nomatch(r1p, r2p, l, r, &lci,
-			       false, false, __func__, t0);
-
-	switch (t) {
-	case TYPE_bte:
-		if (is_bte_nil(*(const bte *)c1) ||
-		    is_bte_nil(*(const bte *)c2) ||
-		    -*(const bte *)c1 > *(const bte *)c2 ||
-		    ((!hi || !li) && -*(const bte *)c1 == *(const bte *)c2))
-			return nomatch(r1p, r2p, l, r, &lci,
-				       false, false, __func__, t0);
-		break;
-	case TYPE_sht:
-		if (is_sht_nil(*(const sht *)c1) ||
-		    is_sht_nil(*(const sht *)c2) ||
-		    -*(const sht *)c1 > *(const sht *)c2 ||
-		    ((!hi || !li) && -*(const sht *)c1 == *(const sht *)c2))
-			return nomatch(r1p, r2p, l, r, &lci,
-				       false, false, __func__, t0);
-		break;
-	case TYPE_int:
-		if (is_int_nil(*(const int *)c1) ||
-		    is_int_nil(*(const int *)c2) ||
-		    -*(const int *)c1 > *(const int *)c2 ||
-		    ((!hi || !li) && -*(const int *)c1 == *(const int *)c2))
-			return nomatch(r1p, r2p, l, r, &lci,
-				       false, false, __func__, t0);
-		break;
-	case TYPE_lng:
-		if (is_lng_nil(*(const lng *)c1) ||
-		    is_lng_nil(*(const lng *)c2) ||
-		    -*(const lng *)c1 > *(const lng *)c2 ||
-		    ((!hi || !li) && -*(const lng *)c1 == *(const lng *)c2))
-			return nomatch(r1p, r2p, l, r, &lci,
-				       false, false, __func__, t0);
-		break;
-#ifdef HAVE_HGE
-	case TYPE_hge:
-		if (is_hge_nil(*(const hge *)c1) ||
-		    is_hge_nil(*(const hge *)c2) ||
-		    -*(const hge *)c1 > *(const hge *)c2 ||
-		    ((!hi || !li) && -*(const hge *)c1 == *(const hge *)c2))
-			return nomatch(r1p, r2p, l, r, &lci,
-				       false, false, __func__, t0);
-		break;
-#endif
-	case TYPE_flt:
-		if (is_flt_nil(*(const flt *)c1) ||
-		    is_flt_nil(*(const flt *)c2) ||
-		    -*(const flt *)c1 > *(const flt *)c2 ||
-		    ((!hi || !li) && -*(const flt *)c1 == *(const flt *)c2))
-			return nomatch(r1p, r2p, l, r, &lci,
-				       false, false, __func__, t0);
-		break;
-	case TYPE_dbl:
-		if (is_dbl_nil(*(const dbl *)c1) ||
-		    is_dbl_nil(*(const dbl *)c2) ||
-		    -*(const dbl *)c1 > *(const dbl *)c2 ||
-		    ((!hi || !li) && -*(const dbl *)c1 == *(const dbl *)c2))
-			return nomatch(r1p, r2p, l, r, &lci,
-				       false, false, __func__, t0);
-		break;
-	default:
-		GDKerror("unsupported type\n");
-		return GDK_FAIL;
-	}
-
-	BUN maxsize = joininitresults(r1p, r2p, lcnt, rcnt, false, false,
-				      false, false, false, estimate);
-	if (maxsize == BUN_NONE)
-		return GDK_FAIL;
-	BAT *r1 = *r1p;
-	BAT *r2 = r2p ? *r2p : NULL;
-
-	lvals = (const char *) Tloc(l, 0);
-	rvals = (const char *) Tloc(r, 0);
-	assert(!r->tvarsized);
-	lwidth = l->twidth;
-	rwidth = r->twidth;
-
-	assert(lvals != NULL);
-	assert(rvals != NULL);
-
-	r1->tkey = true;
-	r1->tsorted = true;
-	r1->trevsorted = true;
-	if (r2) {
-		r2->tkey = true;
-		r2->tsorted = true;
-		r2->trevsorted = true;
-	}
-
-	/* nested loop implementation for band join */
-	for (BUN li = 0; li < lcnt; li++) {
-		lo = canditer_next(&lci);
-		vl = FVALUE(l, lo - l->hseqbase);
-		if (cmp(vl, nil) == 0)
-			continue;
-		nr = 0;
-		canditer_reset(&rci);
-		for (BUN ri = 0; ri < rcnt; ri++) {
-			ro = canditer_next(&rci);
-			vr = FVALUE(r, ro - r->hseqbase);
-			switch (ATOMtype(l->ttype)) {
-			case TYPE_bte: {
-				if (is_bte_nil(*(const bte *) vr))
-					continue;
-				sht v1 = (sht) *(const bte *) vr, v2;
-				v2 = v1;
-				v1 -= *(const bte *)c1;
-				if (*(const bte *)vl <= v1 &&
-				    (!li || *(const bte *)vl != v1))
-					continue;
-				v2 += *(const bte *)c2;
-				if (*(const bte *)vl >= v2 &&
-				    (!hi || *(const bte *)vl != v2))
-					continue;
-				break;
-			}
-			case TYPE_sht: {
-				if (is_sht_nil(*(const sht *) vr))
-					continue;
-				int v1 = (int) *(const sht *) vr, v2;
-				v2 = v1;
-				v1 -= *(const sht *)c1;
-				if (*(const sht *)vl <= v1 &&
-				    (!li || *(const sht *)vl != v1))
-					continue;
-				v2 += *(const sht *)c2;
-				if (*(const sht *)vl >= v2 &&
-				    (!hi || *(const sht *)vl != v2))
-					continue;
-				break;
-			}
-			case TYPE_int: {
-				if (is_int_nil(*(const int *) vr))
-					continue;
-				lng v1 = (lng) *(const int *) vr, v2;
-				v2 = v1;
-				v1 -= *(const int *)c1;
-				if (*(const int *)vl <= v1 &&
-				    (!li || *(const int *)vl != v1))
-					continue;
-				v2 += *(const int *)c2;
-				if (*(const int *)vl >= v2 &&
-				    (!hi || *(const int *)vl != v2))
-					continue;
-				break;
-			}
-#ifdef HAVE_HGE
-			case TYPE_lng: {
-				if (is_lng_nil(*(const lng *) vr))
-					continue;
-				hge v1 = (hge) *(const lng *) vr, v2;
-				v2 = v1;
-				v1 -= *(const lng *)c1;
-				if (*(const lng *)vl <= v1 &&
-				    (!li || *(const lng *)vl != v1))
-					continue;
-				v2 += *(const lng *)c2;
-				if (*(const lng *)vl >= v2 &&
-				    (!hi || *(const lng *)vl != v2))
-					continue;
-				break;
-			}
-#else
-#ifdef HAVE___INT128
-			case TYPE_lng: {
-				if (is_lng_nil(*(const lng *) vr))
-					continue;
-				__int128 v1 = (__int128) *(const lng *) vr, v2;
-				v2 = v1;
-				v1 -= *(const lng *)c1;
-				if (*(const lng *)vl <= v1 &&
-				    (!li || *(const lng *)vl != v1))
-					continue;
-				v2 += *(const lng *)c2;
-				if (*(const lng *)vl >= v2 &&
-				    (!hi || *(const lng *)vl != v2))
-					continue;
-				break;
-			}
-#else
-			case TYPE_lng: {
-				if (is_lng_nil(*(const lng *) vr))
-					continue;
-				lng v1, v2;
-				bool abort_on_error = true;
-				SUB_WITH_CHECK(*(const lng *)vr,
-					       *(const lng *)c1,
-					       lng, v1,
-					       GDK_lng_max,
-					       do{if(*(const lng*)c1<0)goto nolmatch;else goto lmatch1;}while(false));
-				if (*(const lng *)vl <= v1 &&
-				    (!li || *(const lng *)vl != v1))
-					continue;
-			  lmatch1:
-				ADD_WITH_CHECK(*(const lng *)vr,
-					       *(const lng *)c2,
-					       lng, v2,
-					       GDK_lng_max,
-					       do{if(*(const lng*)c2>0)goto nolmatch;else goto lmatch2;}while(false));
-				if (*(const lng *)vl >= v2 &&
-				    (!hi || *(const lng *)vl != v2))
-					continue;
-			  lmatch2:
-				break;
-			  nolmatch:
-				continue;
-			}
-#endif
-#endif
-#ifdef HAVE_HGE
-			case TYPE_hge: {
-				if (is_hge_nil(*(const hge *) vr))
-					continue;
-				hge v1, v2;
-				bool abort_on_error = true;
-				SUB_WITH_CHECK(*(const hge *)vr,
-					       *(const hge *)c1,
-					       hge, v1,
-					       GDK_hge_max,
-					       do{if(*(const hge*)c1<0)goto nohmatch;else goto hmatch1;}while(false));
-				if (*(const hge *)vl <= v1 &&
-				    (!li || *(const hge *)vl != v1))
-					continue;
-			  hmatch1:
-				ADD_WITH_CHECK(*(const hge *)vr,
-					       *(const hge *)c2,
-					       hge, v2,
-					       GDK_hge_max,
-					       do{if(*(const hge*)c2>0)goto nohmatch;else goto hmatch2;}while(false));
-				if (*(const hge *)vl >= v2 &&
-				    (!hi || *(const hge *)vl != v2))
-					continue;
-			  hmatch2:
-				break;
-			  nohmatch:
-				continue;
-			}
-#endif
-			case TYPE_flt: {
-				if (is_flt_nil(*(const flt *) vr))
-					continue;
-				dbl v1 = (dbl) *(const flt *) vr, v2;
-				v2 = v1;
-				v1 -= *(const flt *)c1;
-				if (*(const flt *)vl <= v1 &&
-				    (!li || *(const flt *)vl != v1))
-					continue;
-				v2 += *(const flt *)c2;
-				if (*(const flt *)vl >= v2 &&
-				    (!hi || *(const flt *)vl != v2))
-					continue;
-				break;
-			}
-			case TYPE_dbl: {
-				if (is_dbl_nil(*(const dbl *) vr))
-					continue;
-				dbl v1, v2;
-				bool abort_on_error = true;
-				SUB_WITH_CHECK(*(const dbl *)vr,
-					       *(const dbl *)c1,
-					       dbl, v1,
-					       GDK_dbl_max,
-					       do{if(*(const dbl*)c1<0)goto nodmatch;else goto dmatch1;}while(false));
-				if (*(const dbl *)vl <= v1 &&
-				    (!li || *(const dbl *)vl != v1))
-					continue;
-			  dmatch1:
-				ADD_WITH_CHECK(*(const dbl *)vr,
-					       *(const dbl *)c2,
-					       dbl, v2,
-					       GDK_dbl_max,
-					       do{if(*(const dbl*)c2>0)goto nodmatch;else goto dmatch2;}while(false));
-				if (*(const dbl *)vl >= v2 &&
-				    (!hi || *(const dbl *)vl != v2))
-					continue;
-			  dmatch2:
-				break;
-			  nodmatch:
-				continue;
-			}
-			}
-			if (maybeextend(r1, r2, 1, lci.next, lci.ncand, maxsize) != GDK_SUCCEED)
-				goto bailout;
-			if (BATcount(r1) > 0) {
-				if (r2 && lastr + 1 != ro)
-					r2->tseqbase = oid_nil;
-				if (nr == 0) {
-					r1->trevsorted = false;
-					if (r2 == NULL) {
-						/* nothing */
-					} else if (lastr > ro) {
-						r2->tsorted = false;
-						r2->tkey = false;
-					} else if (lastr < ro) {
-						r2->trevsorted = false;
-					} else {
-						r2->tkey = false;
-					}
-				}
-			}
-			APPEND(r1, lo);
-			if (r2) {
-				APPEND(r2, ro);
-			}
-			lastr = ro;
-			nr++;
-		}
-		if (nr > 1) {
-			r1->tkey = false;
-			r1->tseqbase = oid_nil;
-			if (r2) {
-				r2->trevsorted = false;
-			}
-		} else if (nr == 0) {
-			lskipped = BATcount(r1) > 0;
-		} else if (lskipped) {
-			r1->tseqbase = oid_nil;
-		}
-	}
-	/* also set other bits of heap to correct value to indicate size */
-	BATsetcount(r1, BATcount(r1));
-	if (r2) {
-		BATsetcount(r2, BATcount(r2));
-		assert(BATcount(r1) == BATcount(r2));
-	}
-	if (BATcount(r1) > 0) {
-		if (BATtdense(r1))
-			r1->tseqbase = ((oid *) r1->theap.base)[0];
-		if (r2 && BATtdense(r2))
-			r2->tseqbase = ((oid *) r2->theap.base)[0];
-	} else {
-		r1->tseqbase = 0;
-		if (r2) {
-			r2->tseqbase = 0;
-		}
-	}
-	TRC_DEBUG(ALGO, "BATbandjoin(l=%s,r=%s)=(" ALGOBATFMT "," ALGOOPTBATFMT ") " LLFMT "us\n",
-		  BATgetId(l), BATgetId(r),
+	TRC_DEBUG(ALGO, "l=" ALGOBATFMT "," "r=" ALGOBATFMT
+		  ",sl=" ALGOOPTBATFMT "," "sr=" ALGOOPTBATFMT ","
+		  "opcode=%s%s%s; %s -> " ALGOBATFMT "," ALGOOPTBATFMT
+		  " (" LLFMT "usec)\n",
+		  ALGOBATPAR(l), ALGOBATPAR(r),
+		  ALGOOPTBATPAR(sl), ALGOOPTBATPAR(sr),
+		  opcode & MASK_LT ? "<" : "",
+		  opcode & MASK_GT ? ">" : "",
+		  opcode & MASK_EQ ? "=" : "",
+		  reason,
 		  ALGOBATPAR(r1), ALGOOPTBATPAR(r2),
 		  GDKusec() - t0);
 	return GDK_SUCCEED;
@@ -3763,7 +3377,8 @@ BATthetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int op, boo
 	if (joinparamcheck(l, r, NULL, sl, sr, __func__) != GDK_SUCCEED)
 		return GDK_FAIL;
 
-	return thetajoin(r1p, r2p, l, r, sl, sr, opcode, estimate, t0);
+	return thetajoin(r1p, r2p, l, r, sl, sr, opcode, estimate,
+			 __func__, t0);
 }
 
 gdk_return
@@ -3978,14 +3593,21 @@ BATbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	    const void *c1, const void *c2, bool li, bool hi, BUN estimate)
 {
 	lng t0 = 0;
+	BUN lcnt, rcnt;
+	struct canditer lci, rci;
+	const char *lvals, *rvals;
+	int lwidth, rwidth;
+	int t;
+	const void *nil = ATOMnilptr(l->ttype);
+	int (*cmp)(const void *, const void *) = ATOMcompare(l->ttype);
+	const char *vl, *vr;
+	oid lastr = 0;		/* last value inserted into r2 */
+	BUN nr;
+	oid lo, ro;
+	bool lskipped = false;	/* whether we skipped values in l */
+	BUN nils = 0;		/* needed for XXX_WITH_CHECK macros */
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
-
-	TRC_DEBUG(ALGO, "BATbandjoin("
-		  "l=" ALGOBATFMT ",r=" ALGOBATFMT ","
-		  "sl=" ALGOOPTBATFMT ",sr=" ALGOOPTBATFMT ")\n",
-		  ALGOBATPAR(l), ALGOBATPAR(r),
-		  ALGOOPTBATPAR(sl), ALGOOPTBATPAR(sr));
 
 	*r1p = NULL;
 	if (r2p) {
@@ -3993,7 +3615,371 @@ BATbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	}
 	if (joinparamcheck(l, r, NULL, sl, sr, __func__) != GDK_SUCCEED)
 		return GDK_FAIL;
-	return bandjoin(r1p, r2p, l, r, sl, sr, c1, c2, li, hi, estimate, t0);
+
+	assert(ATOMtype(l->ttype) == ATOMtype(r->ttype));
+	assert(sl == NULL || sl->tsorted);
+	assert(sr == NULL || sr->tsorted);
+
+	t = ATOMtype(l->ttype);
+	t = ATOMbasetype(t);
+
+	lcnt = canditer_init(&lci, l, sl);
+	rcnt = canditer_init(&rci, r, sr);
+
+	if (lcnt == 0 || rcnt == 0)
+		return nomatch(r1p, r2p, l, r, &lci,
+			       false, false, __func__, t0);
+
+	switch (t) {
+	case TYPE_bte:
+		if (is_bte_nil(*(const bte *)c1) ||
+		    is_bte_nil(*(const bte *)c2) ||
+		    -*(const bte *)c1 > *(const bte *)c2 ||
+		    ((!hi || !li) && -*(const bte *)c1 == *(const bte *)c2))
+			return nomatch(r1p, r2p, l, r, &lci,
+				       false, false, __func__, t0);
+		break;
+	case TYPE_sht:
+		if (is_sht_nil(*(const sht *)c1) ||
+		    is_sht_nil(*(const sht *)c2) ||
+		    -*(const sht *)c1 > *(const sht *)c2 ||
+		    ((!hi || !li) && -*(const sht *)c1 == *(const sht *)c2))
+			return nomatch(r1p, r2p, l, r, &lci,
+				       false, false, __func__, t0);
+		break;
+	case TYPE_int:
+		if (is_int_nil(*(const int *)c1) ||
+		    is_int_nil(*(const int *)c2) ||
+		    -*(const int *)c1 > *(const int *)c2 ||
+		    ((!hi || !li) && -*(const int *)c1 == *(const int *)c2))
+			return nomatch(r1p, r2p, l, r, &lci,
+				       false, false, __func__, t0);
+		break;
+	case TYPE_lng:
+		if (is_lng_nil(*(const lng *)c1) ||
+		    is_lng_nil(*(const lng *)c2) ||
+		    -*(const lng *)c1 > *(const lng *)c2 ||
+		    ((!hi || !li) && -*(const lng *)c1 == *(const lng *)c2))
+			return nomatch(r1p, r2p, l, r, &lci,
+				       false, false, __func__, t0);
+		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		if (is_hge_nil(*(const hge *)c1) ||
+		    is_hge_nil(*(const hge *)c2) ||
+		    -*(const hge *)c1 > *(const hge *)c2 ||
+		    ((!hi || !li) && -*(const hge *)c1 == *(const hge *)c2))
+			return nomatch(r1p, r2p, l, r, &lci,
+				       false, false, __func__, t0);
+		break;
+#endif
+	case TYPE_flt:
+		if (is_flt_nil(*(const flt *)c1) ||
+		    is_flt_nil(*(const flt *)c2) ||
+		    -*(const flt *)c1 > *(const flt *)c2 ||
+		    ((!hi || !li) && -*(const flt *)c1 == *(const flt *)c2))
+			return nomatch(r1p, r2p, l, r, &lci,
+				       false, false, __func__, t0);
+		break;
+	case TYPE_dbl:
+		if (is_dbl_nil(*(const dbl *)c1) ||
+		    is_dbl_nil(*(const dbl *)c2) ||
+		    -*(const dbl *)c1 > *(const dbl *)c2 ||
+		    ((!hi || !li) && -*(const dbl *)c1 == *(const dbl *)c2))
+			return nomatch(r1p, r2p, l, r, &lci,
+				       false, false, __func__, t0);
+		break;
+	default:
+		GDKerror("unsupported type\n");
+		return GDK_FAIL;
+	}
+
+	BUN maxsize = joininitresults(r1p, r2p, lcnt, rcnt, false, false,
+				      false, false, false, estimate);
+	if (maxsize == BUN_NONE)
+		return GDK_FAIL;
+	BAT *r1 = *r1p;
+	BAT *r2 = r2p ? *r2p : NULL;
+
+	lvals = (const char *) Tloc(l, 0);
+	rvals = (const char *) Tloc(r, 0);
+	assert(!r->tvarsized);
+	lwidth = l->twidth;
+	rwidth = r->twidth;
+
+	assert(lvals != NULL);
+	assert(rvals != NULL);
+
+	r1->tkey = true;
+	r1->tsorted = true;
+	r1->trevsorted = true;
+	if (r2) {
+		r2->tkey = true;
+		r2->tsorted = true;
+		r2->trevsorted = true;
+	}
+
+	/* nested loop implementation for band join */
+	for (BUN li = 0; li < lcnt; li++) {
+		lo = canditer_next(&lci);
+		vl = FVALUE(l, lo - l->hseqbase);
+		if (cmp(vl, nil) == 0)
+			continue;
+		nr = 0;
+		canditer_reset(&rci);
+		for (BUN ri = 0; ri < rcnt; ri++) {
+			ro = canditer_next(&rci);
+			vr = FVALUE(r, ro - r->hseqbase);
+			switch (ATOMtype(l->ttype)) {
+			case TYPE_bte: {
+				if (is_bte_nil(*(const bte *) vr))
+					continue;
+				sht v1 = (sht) *(const bte *) vr, v2;
+				v2 = v1;
+				v1 -= *(const bte *)c1;
+				if (*(const bte *)vl <= v1 &&
+				    (!li || *(const bte *)vl != v1))
+					continue;
+				v2 += *(const bte *)c2;
+				if (*(const bte *)vl >= v2 &&
+				    (!hi || *(const bte *)vl != v2))
+					continue;
+				break;
+			}
+			case TYPE_sht: {
+				if (is_sht_nil(*(const sht *) vr))
+					continue;
+				int v1 = (int) *(const sht *) vr, v2;
+				v2 = v1;
+				v1 -= *(const sht *)c1;
+				if (*(const sht *)vl <= v1 &&
+				    (!li || *(const sht *)vl != v1))
+					continue;
+				v2 += *(const sht *)c2;
+				if (*(const sht *)vl >= v2 &&
+				    (!hi || *(const sht *)vl != v2))
+					continue;
+				break;
+			}
+			case TYPE_int: {
+				if (is_int_nil(*(const int *) vr))
+					continue;
+				lng v1 = (lng) *(const int *) vr, v2;
+				v2 = v1;
+				v1 -= *(const int *)c1;
+				if (*(const int *)vl <= v1 &&
+				    (!li || *(const int *)vl != v1))
+					continue;
+				v2 += *(const int *)c2;
+				if (*(const int *)vl >= v2 &&
+				    (!hi || *(const int *)vl != v2))
+					continue;
+				break;
+			}
+#ifdef HAVE_HGE
+			case TYPE_lng: {
+				if (is_lng_nil(*(const lng *) vr))
+					continue;
+				hge v1 = (hge) *(const lng *) vr, v2;
+				v2 = v1;
+				v1 -= *(const lng *)c1;
+				if (*(const lng *)vl <= v1 &&
+				    (!li || *(const lng *)vl != v1))
+					continue;
+				v2 += *(const lng *)c2;
+				if (*(const lng *)vl >= v2 &&
+				    (!hi || *(const lng *)vl != v2))
+					continue;
+				break;
+			}
+#else
+#ifdef HAVE___INT128
+			case TYPE_lng: {
+				if (is_lng_nil(*(const lng *) vr))
+					continue;
+				__int128 v1 = (__int128) *(const lng *) vr, v2;
+				v2 = v1;
+				v1 -= *(const lng *)c1;
+				if (*(const lng *)vl <= v1 &&
+				    (!li || *(const lng *)vl != v1))
+					continue;
+				v2 += *(const lng *)c2;
+				if (*(const lng *)vl >= v2 &&
+				    (!hi || *(const lng *)vl != v2))
+					continue;
+				break;
+			}
+#else
+			case TYPE_lng: {
+				if (is_lng_nil(*(const lng *) vr))
+					continue;
+				lng v1, v2;
+				bool abort_on_error = true;
+				SUB_WITH_CHECK(*(const lng *)vr,
+					       *(const lng *)c1,
+					       lng, v1,
+					       GDK_lng_max,
+					       do{if(*(const lng*)c1<0)goto nolmatch;else goto lmatch1;}while(false));
+				if (*(const lng *)vl <= v1 &&
+				    (!li || *(const lng *)vl != v1))
+					continue;
+			  lmatch1:
+				ADD_WITH_CHECK(*(const lng *)vr,
+					       *(const lng *)c2,
+					       lng, v2,
+					       GDK_lng_max,
+					       do{if(*(const lng*)c2>0)goto nolmatch;else goto lmatch2;}while(false));
+				if (*(const lng *)vl >= v2 &&
+				    (!hi || *(const lng *)vl != v2))
+					continue;
+			  lmatch2:
+				break;
+			  nolmatch:
+				continue;
+			}
+#endif
+#endif
+#ifdef HAVE_HGE
+			case TYPE_hge: {
+				if (is_hge_nil(*(const hge *) vr))
+					continue;
+				hge v1, v2;
+				bool abort_on_error = true;
+				SUB_WITH_CHECK(*(const hge *)vr,
+					       *(const hge *)c1,
+					       hge, v1,
+					       GDK_hge_max,
+					       do{if(*(const hge*)c1<0)goto nohmatch;else goto hmatch1;}while(false));
+				if (*(const hge *)vl <= v1 &&
+				    (!li || *(const hge *)vl != v1))
+					continue;
+			  hmatch1:
+				ADD_WITH_CHECK(*(const hge *)vr,
+					       *(const hge *)c2,
+					       hge, v2,
+					       GDK_hge_max,
+					       do{if(*(const hge*)c2>0)goto nohmatch;else goto hmatch2;}while(false));
+				if (*(const hge *)vl >= v2 &&
+				    (!hi || *(const hge *)vl != v2))
+					continue;
+			  hmatch2:
+				break;
+			  nohmatch:
+				continue;
+			}
+#endif
+			case TYPE_flt: {
+				if (is_flt_nil(*(const flt *) vr))
+					continue;
+				dbl v1 = (dbl) *(const flt *) vr, v2;
+				v2 = v1;
+				v1 -= *(const flt *)c1;
+				if (*(const flt *)vl <= v1 &&
+				    (!li || *(const flt *)vl != v1))
+					continue;
+				v2 += *(const flt *)c2;
+				if (*(const flt *)vl >= v2 &&
+				    (!hi || *(const flt *)vl != v2))
+					continue;
+				break;
+			}
+			case TYPE_dbl: {
+				if (is_dbl_nil(*(const dbl *) vr))
+					continue;
+				dbl v1, v2;
+				bool abort_on_error = true;
+				SUB_WITH_CHECK(*(const dbl *)vr,
+					       *(const dbl *)c1,
+					       dbl, v1,
+					       GDK_dbl_max,
+					       do{if(*(const dbl*)c1<0)goto nodmatch;else goto dmatch1;}while(false));
+				if (*(const dbl *)vl <= v1 &&
+				    (!li || *(const dbl *)vl != v1))
+					continue;
+			  dmatch1:
+				ADD_WITH_CHECK(*(const dbl *)vr,
+					       *(const dbl *)c2,
+					       dbl, v2,
+					       GDK_dbl_max,
+					       do{if(*(const dbl*)c2>0)goto nodmatch;else goto dmatch2;}while(false));
+				if (*(const dbl *)vl >= v2 &&
+				    (!hi || *(const dbl *)vl != v2))
+					continue;
+			  dmatch2:
+				break;
+			  nodmatch:
+				continue;
+			}
+			}
+			if (maybeextend(r1, r2, 1, lci.next, lci.ncand, maxsize) != GDK_SUCCEED)
+				goto bailout;
+			if (BATcount(r1) > 0) {
+				if (r2 && lastr + 1 != ro)
+					r2->tseqbase = oid_nil;
+				if (nr == 0) {
+					r1->trevsorted = false;
+					if (r2 == NULL) {
+						/* nothing */
+					} else if (lastr > ro) {
+						r2->tsorted = false;
+						r2->tkey = false;
+					} else if (lastr < ro) {
+						r2->trevsorted = false;
+					} else {
+						r2->tkey = false;
+					}
+				}
+			}
+			APPEND(r1, lo);
+			if (r2) {
+				APPEND(r2, ro);
+			}
+			lastr = ro;
+			nr++;
+		}
+		if (nr > 1) {
+			r1->tkey = false;
+			r1->tseqbase = oid_nil;
+			if (r2) {
+				r2->trevsorted = false;
+			}
+		} else if (nr == 0) {
+			lskipped = BATcount(r1) > 0;
+		} else if (lskipped) {
+			r1->tseqbase = oid_nil;
+		}
+	}
+	/* also set other bits of heap to correct value to indicate size */
+	BATsetcount(r1, BATcount(r1));
+	if (r2) {
+		BATsetcount(r2, BATcount(r2));
+		assert(BATcount(r1) == BATcount(r2));
+	}
+	if (BATcount(r1) > 0) {
+		if (BATtdense(r1))
+			r1->tseqbase = ((oid *) r1->theap.base)[0];
+		if (r2 && BATtdense(r2))
+			r2->tseqbase = ((oid *) r2->theap.base)[0];
+	} else {
+		r1->tseqbase = 0;
+		if (r2) {
+			r2->tseqbase = 0;
+		}
+	}
+	TRC_DEBUG(ALGO, "l=" ALGOBATFMT "," "r=" ALGOBATFMT
+		  ",sl=" ALGOOPTBATFMT "," "sr=" ALGOOPTBATFMT ","
+		  " -> " ALGOBATFMT "," ALGOOPTBATFMT
+		  " (" LLFMT "usec)\n",
+		  ALGOBATPAR(l), ALGOBATPAR(r),
+		  ALGOOPTBATPAR(sl), ALGOOPTBATPAR(sr),
+		  ALGOBATPAR(r1), ALGOOPTBATPAR(r2),
+		  GDKusec() - t0);
+	return GDK_SUCCEED;
+
+  bailout:
+	BBPreclaim(r1);
+	BBPreclaim(r2);
+	return GDK_FAIL;
 }
 
 gdk_return
@@ -4026,13 +4012,15 @@ BATrangejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *rl, BAT *rh,
 		if (!anti)
 			return nomatch(r1p, r2p, l, rl, &lci, false, false,
 				       __func__, t0);
-		return thetajoin(r1p, r2p, l, rh, sl, sr, MASK_GT, estimate, t0);
+		return thetajoin(r1p, r2p, l, rh, sl, sr, MASK_GT, estimate,
+				 __func__, t0);
 	}
 	if (rh->ttype == TYPE_void && is_oid_nil(rh->tseqbase)) {
 		if (!anti)
 			return nomatch(r1p, r2p, l, rl, &lci, false, false,
 				       __func__, t0);
-		return thetajoin(r1p, r2p, l, rl, sl, sr, MASK_LT, estimate, t0);
+		return thetajoin(r1p, r2p, l, rl, sl, sr, MASK_LT, estimate,
+				 __func__, t0);
 	}
 
 	if ((maxsize = joininitresults(&r1, r2p ? &r2 : NULL, sl ? BATcount(sl) : BATcount(l), sr ? BATcount(sr) : BATcount(rl), false, false, false, false, false, estimate)) == BUN_NONE)

@@ -580,7 +580,10 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	struct canditer ci;
 	oid maxgrp = oid_nil;	/* maximum value of g BAT (if subgrouping) */
 	PROPrec *prop;
+	lng t0 = 0;
+	const char *algomsg = "";
 
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 	if (b == NULL) {
 		GDKerror("b must exist\n");
 		return GDK_FAIL;
@@ -611,18 +614,6 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	}
 	if (b->tkey || cnt <= 1 || (g && (g->tkey || BATtdense(g)))) {
 		/* grouping is trivial: 1 element per group */
-		TRC_DEBUG(ALGO, "BATgroup(b=%s#" BUNFMT "[%s],"
-			  "s=%s#" BUNFMT ","
-			  "g=%s#" BUNFMT ","
-			  "e=%s#" BUNFMT ","
-			  "h=%s#" BUNFMT ",subsorted=%d): "
-			  "trivial case: 1 element per group\n",
-			  BATgetId(b), BATcount(b), ATOMname(b->ttype),
-			  s ? BATgetId(s) : "NULL", s ? BATcount(s) : 0,
-			  g ? BATgetId(g) : "NULL", g ? BATcount(g) : 0,
-			  e ? BATgetId(e) : "NULL", e ? BATcount(e) : 0,
-			  h ? BATgetId(h) : "NULL", h ? BATcount(h) : 0,
-			  subsorted);
 		gn = BATdense(hseqb, 0, BATcount(b));
 		if (gn == NULL)
 			goto error;
@@ -639,6 +630,16 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				goto error;
 			*histo = hn;
 		}
+		TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
+			  ",g=" ALGOOPTBATFMT ",e=" ALGOOPTBATFMT
+			  ",h=" ALGOOPTBATFMT ",subsorted=%s -> groups="
+			  ALGOOPTBATFMT ",extents=" ALGOOPTBATFMT
+			  ",histo=" ALGOOPTBATFMT " (1 element per group -- "
+			  LLFMT " usec)\n",
+			  ALGOBATPAR(b), ALGOOPTBATPAR(s), ALGOOPTBATPAR(g),
+			  ALGOOPTBATPAR(e), ALGOOPTBATPAR(h),
+			  subsorted ? "true" : "false", ALGOOPTBATPAR(gn),
+			  ALGOOPTBATPAR(en), ALGOOPTBATPAR(hn), GDKusec() - t0);
 		return GDK_SUCCEED;
 	}
 	assert(!BATtdense(b));
@@ -663,18 +664,6 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		/* all values are equal */
 		if (g == NULL || (BATordered(g) && BATordered_rev(g))) {
 			/* there's only a single group: 0 */
-			TRC_DEBUG(ALGO, "BATgroup(b=%s#" BUNFMT "[%s],"
-				  "s=%s#" BUNFMT ","
-				  "g=%s#" BUNFMT ","
-				  "e=%s#" BUNFMT ","
-				  "h=%s#" BUNFMT ",subsorted=%d): "
-				  "trivial case: single output group\n",
-				  BATgetId(b), BATcount(b), ATOMname(b->ttype),
-				  s ? BATgetId(s) : "NULL", s ? BATcount(s) : 0,
-				  g ? BATgetId(g) : "NULL", g ? BATcount(g) : 0,
-				  e ? BATgetId(e) : "NULL", e ? BATcount(e) : 0,
-				  h ? BATgetId(h) : "NULL", h ? BATcount(h) : 0,
-				  subsorted);
 			gn = BATconstant(hseqb, TYPE_oid, &(oid){0}, cnt, TRANSIENT);
 			if (gn == NULL)
 				goto error;
@@ -691,6 +680,18 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 					goto error;
 				*histo = hn;
 			}
+			TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
+				  ",g=" ALGOOPTBATFMT ",e=" ALGOOPTBATFMT
+				  ",h=" ALGOOPTBATFMT ",subsorted=%s -> groups="
+				  ALGOOPTBATFMT ",extents=" ALGOOPTBATFMT
+				  ",histo=" ALGOOPTBATFMT " (single group -- "
+				  LLFMT " usec)\n",
+				  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+				  ALGOOPTBATPAR(g), ALGOOPTBATPAR(e),
+				  ALGOOPTBATPAR(h),
+				  subsorted ? "true" : "false",
+				  ALGOOPTBATPAR(gn), ALGOOPTBATPAR(en),
+				  ALGOOPTBATPAR(hn), GDKusec() - t0);
 			return GDK_SUCCEED;
 		}
 		if ((extents == NULL || e != NULL) &&
@@ -701,18 +702,6 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			 * e/h available in order to copy them,
 			 * otherwise we will need to calculate them
 			 * which we will do using the "normal" case */
-			TRC_DEBUG(ALGO, "BATgroup(b=%s#" BUNFMT "[%s],"
-				  "s=%s#" BUNFMT ","
-				  "g=%s#" BUNFMT ","
-				  "e=%s#" BUNFMT ","
-				  "h=%s#" BUNFMT ",subsorted=%d): "
-				  "trivial case: copy input groups\n",
-				  BATgetId(b), BATcount(b), ATOMname(b->ttype),
-				  s ? BATgetId(s) : "NULL", s ? BATcount(s) : 0,
-				  g ? BATgetId(g) : "NULL", g ? BATcount(g) : 0,
-				  e ? BATgetId(e) : "NULL", e ? BATcount(e) : 0,
-				  h ? BATgetId(h) : "NULL", h ? BATcount(h) : 0,
-				  subsorted);
 			gn = COLcopy(g, g->ttype, false, TRANSIENT);
 			if (gn == NULL)
 				goto error;
@@ -735,6 +724,18 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 					goto error;
 				*histo = hn;
 			}
+			TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
+				  ",g=" ALGOOPTBATFMT ",e=" ALGOOPTBATFMT
+				  ",h=" ALGOOPTBATFMT ",subsorted=%s -> groups="
+				  ALGOOPTBATFMT ",extents=" ALGOOPTBATFMT
+				  ",histo=" ALGOOPTBATFMT " (copy groups -- "
+				  LLFMT " usec)\n",
+				  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+				  ALGOOPTBATPAR(g), ALGOOPTBATPAR(e),
+				  ALGOOPTBATPAR(h),
+				  subsorted ? "true" : "false",
+				  ALGOOPTBATPAR(gn), ALGOOPTBATPAR(en),
+				  ALGOOPTBATPAR(hn), GDKusec() - t0);
 			return GDK_SUCCEED;
 		}
 	}
@@ -807,19 +808,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	    ((BATordered(b) || BATordered_rev(b)) &&
 	     (g == NULL || BATordered(g) || BATordered_rev(g)))) {
 		/* we only need to compare each entry with the previous */
-		TRC_DEBUG(ALGO, "BATgroup(b=%s#" BUNFMT "[%s],"
-			  "s=%s#" BUNFMT ","
-			  "g=%s#" BUNFMT ","
-			  "e=%s#" BUNFMT ","
-			  "h=%s#" BUNFMT ",subsorted=%d): "
-			  "compare consecutive values\n",
-			  BATgetId(b), BATcount(b), ATOMname(b->ttype),
-			  s ? BATgetId(s) : "NULL", s ? BATcount(s) : 0,
-			  g ? BATgetId(g) : "NULL", g ? BATcount(g) : 0,
-			  e ? BATgetId(e) : "NULL", e ? BATcount(e) : 0,
-			  h ? BATgetId(h) : "NULL", h ? BATcount(h) : 0,
-			  subsorted);
-
+		algomsg = "compare consecutive values -- ";
 		switch (t) {
 		case TYPE_bte:
 			GRP_compare_consecutive_values_tpe(bte);
@@ -865,18 +854,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		 * last time we saw that group, so if the last time we
 		 * saw the old group of the current value is within
 		 * this range, we can reuse the new group */
-		TRC_DEBUG(ALGO, "BATgroup(b=%s#" BUNFMT "[%s],"
-			  "s=%s#" BUNFMT ","
-			  "g=%s#" BUNFMT ","
-			  "e=%s#" BUNFMT ","
-			  "h=%s#" BUNFMT ",subsorted=%d): "
-			  "subscan old groups\n",
-			  BATgetId(b), BATcount(b), ATOMname(b->ttype),
-			  s ? BATgetId(s) : "NULL", s ? BATcount(s) : 0,
-			  g ? BATgetId(g) : "NULL", g ? BATcount(g) : 0,
-			  e ? BATgetId(e) : "NULL", e ? BATcount(e) : 0,
-			  h ? BATgetId(h) : "NULL", h ? BATcount(h) : 0,
-			  subsorted);
+		algomsg = "subscan old groups -- ";
 		/* determine how many old groups there are */
 		if (e) {
 			j = BATcount(e) + (BUN) e->hseqbase;
@@ -936,6 +914,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		const unsigned char *restrict w = (const unsigned char *) Tloc(b, 0);
 		unsigned char v;
 
+		algomsg = "byte-sized groups -- ";
 		if (bgrps == NULL)
 			goto error;
 		memset(bgrps, 0xFF, 256);
@@ -967,6 +946,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		const unsigned short *restrict w = (const unsigned short *) Tloc(b, 0);
 		unsigned short v;
 
+		algomsg = "short-sized groups -- ";
 		if (sgrps == NULL)
 			goto error;
 		memset(sgrps, 0xFF, 65536 * sizeof(short));
@@ -1002,18 +982,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		 * since we may have to go through long lists of
 		 * duplicates in the hash table to find an old
 		 * group */
-		TRC_DEBUG(ALGO, "BATgroup(b=%s#" BUNFMT "[%s],"
-			  "s=%s#" BUNFMT ","
-			  "g=%s#" BUNFMT ","
-			  "e=%s#" BUNFMT ","
-			  "h=%s#" BUNFMT ",subsorted=%d): "
-			  "use existing hash table\n",
-			  BATgetId(b), BATcount(b), ATOMname(b->ttype),
-			  s ? BATgetId(s) : "NULL", s ? BATcount(s) : 0,
-			  g ? BATgetId(g) : "NULL", g ? BATcount(g) : 0,
-			  e ? BATgetId(e) : "NULL", e ? BATcount(e) : 0,
-			  h ? BATgetId(h) : "NULL", h ? BATcount(h) : 0,
-			  subsorted);
+		algomsg = "existing hash -- ";
 		if (b->thash == NULL && (parent = VIEWtparent(b)) != 0) {
 			/* b is a view on another bat (b2 for now).
 			 * calculate the bounds [lo, lo+BATcount(b))
@@ -1068,18 +1037,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		 * build an incomplete hash table on the fly--also see
 		 * BATassertProps for similar code; we also exploit if
 		 * g is clustered */
-		TRC_DEBUG(ALGO, "BATgroup(b=%s#" BUNFMT "[%s],"
-			  "s=%s#" BUNFMT ","
-			  "g=%s#" BUNFMT ","
-			  "e=%s#" BUNFMT ","
-			  "h=%s#" BUNFMT ",subsorted=%d): "
-			  "create partial hash table%s\n",
-			  BATgetId(b), BATcount(b), ATOMname(b->ttype),
-			  s ? BATgetId(s) : "NULL", s ? BATcount(s) : 0,
-			  g ? BATgetId(g) : "NULL", g ? BATcount(g) : 0,
-			  e ? BATgetId(e) : "NULL", e ? BATcount(e) : 0,
-			  h ? BATgetId(h) : "NULL", h ? BATcount(h) : 0,
-			  subsorted, gc ? " (g clustered)" : "");
+		algomsg = "new partial hash -- ";
 		nme = GDKinmemory() ? ":inmemory" : BBP_physical(b->batCacheid);
 		if (grps && !gc) {
 			/* we manipulate the hash value after having
@@ -1237,6 +1195,17 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	ngrp--;	     /* max value is one less than number of values */
 	BATsetprop(gn, GDK_MAX_VALUE, TYPE_oid, &ngrp);
 	*groups = gn;
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
+		  ",g=" ALGOOPTBATFMT ",e=" ALGOOPTBATFMT
+		  ",h=" ALGOOPTBATFMT ",subsorted=%s -> groups="
+		  ALGOOPTBATFMT ",extents=" ALGOOPTBATFMT
+		  ",histo=" ALGOOPTBATFMT " (%s" LLFMT " usec)\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+		  ALGOOPTBATPAR(g), ALGOOPTBATPAR(e),
+		  ALGOOPTBATPAR(h),
+		  subsorted ? "true" : "false",
+		  ALGOOPTBATPAR(gn), ALGOOPTBATPAR(en),
+		  ALGOOPTBATPAR(hn), algomsg, GDKusec() - t0);
 	return GDK_SUCCEED;
   error:
 	if (hs != NULL && hs != b->thash) {

@@ -48,7 +48,8 @@ MNDBForeignKeys(ODBCStmt *stmt,
 
 	/* buffer for the constructed query to do meta data retrieval */
 	char *query = NULL;
-	char *query_end = NULL;	/* pointer to end of built-up query */
+	size_t querylen;
+	size_t pos = 0;
 	char *psch = NULL, *ptab = NULL;
 	char *fsch = NULL, *ftab = NULL;
 
@@ -140,12 +141,12 @@ MNDBForeignKeys(ODBCStmt *stmt,
 
 	/* first create a string buffer (1200 extra bytes is plenty:
 	   we actually need just over 1000) */
-	query = malloc(1200 + (2 * strlen(stmt->Dbc->dbname)) +
-		       (psch ? strlen(psch) : 0) + (ptab ? strlen(ptab) : 0) +
-		       (fsch ? strlen(fsch) : 0) + (ftab ? strlen(ftab) : 0));
+	querylen = 1200 + (2 * strlen(stmt->Dbc->dbname)) +
+		(psch ? strlen(psch) : 0) + (ptab ? strlen(ptab) : 0) +
+		(fsch ? strlen(fsch) : 0) + (ftab ? strlen(ftab) : 0);
+	query = malloc(querylen);
 	if (query == NULL)
 		goto nomem;
-	query_end = query;
 
 	/* SQLForeignKeys returns a table with the following columns:
 	   VARCHAR      pktable_cat
@@ -164,7 +165,7 @@ MNDBForeignKeys(ODBCStmt *stmt,
 	   SMALLINT     deferrability
 	 */
 
-	sprintf(query_end,
+	pos += snprintf(query + pos, querylen - pos,
 		"select '%s' as pktable_cat, "
 		       "pks.name as pktable_schem, "
 		       "pkt.name as pktable_name, "
@@ -194,48 +195,41 @@ MNDBForeignKeys(ODBCStmt *stmt,
 		stmt->Dbc->dbname,
 		stmt->Dbc->dbname,
 		SQL_NO_ACTION, SQL_NO_ACTION, SQL_NOT_DEFERRABLE);
-	assert(strlen(query) < 1100);
-	query_end += strlen(query_end);
+	assert(pos < 1100);
 
 	/* Construct the selection condition query part */
 	if (NameLength1 > 0 && PKCatalogName != NULL) {
 		/* filtering requested on catalog name */
 		if (strcmp((char *) PKCatalogName, stmt->Dbc->dbname) != 0) {
 			/* catalog name does not match the database name, so return no rows */
-			sprintf(query_end, " and 1=2");
-			query_end += strlen(query_end);
+			pos += snprintf(query + pos, querylen - pos, " and 1=2");
 		}
 	}
 	if (psch) {
 		/* filtering requested on schema name */
-		sprintf(query_end, " and %s", psch);
-		query_end += strlen(query_end);
+		pos += snprintf(query + pos, querylen - pos, " and %s", psch);
 		free(psch);
 	}
 	if (ptab) {
 		/* filtering requested on table name */
-		sprintf(query_end, " and %s", ptab);
-		query_end += strlen(query_end);
+		pos += snprintf(query + pos, querylen - pos, " and %s", ptab);
 		free(ptab);
 	}
 	if (NameLength4 > 0 && FKCatalogName != NULL) {
 		/* filtering requested on catalog name */
 		if (strcmp((char *) FKCatalogName, stmt->Dbc->dbname) != 0) {
 			/* catalog name does not match the database name, so return no rows */
-			sprintf(query_end, " and 1=2");
-			query_end += strlen(query_end);
+			pos += snprintf(query + pos, querylen - pos, " and 1=2");
 		}
 	}
 	if (fsch) {
 		/* filtering requested on schema name */
-		sprintf(query_end, " and %s", fsch);
-		query_end += strlen(query_end);
+		pos += snprintf(query + pos, querylen - pos, " and %s", fsch);
 		free(fsch);
 	}
 	if (ftab) {
 		/* filtering requested on table name */
-		sprintf(query_end, " and %s", ftab);
-		query_end += strlen(query_end);
+		pos += snprintf(query + pos, querylen - pos, " and %s", ftab);
 		free(ftab);
 	}
 
@@ -244,13 +238,13 @@ MNDBForeignKeys(ODBCStmt *stmt,
 	/* add the ordering */
 	/* if PKTableName != NULL, selection on primary key, order
 	   on FK output columns, else order on PK output columns */
-	sprintf(query_end, " order by %stable_schem, %stable_name, key_seq",
-		PKTableName != NULL ? "fk" : "pk",
-		PKTableName != NULL ? "fk" : "pk");
-	query_end += strlen(query_end);
+	pos += snprintf(query + pos, querylen - pos,
+			" order by %stable_schem, %stable_name, key_seq",
+			PKTableName != NULL ? "fk" : "pk",
+			PKTableName != NULL ? "fk" : "pk");
 
 	/* query the MonetDB data dictionary tables */
-	rc = MNDBExecDirect(stmt, (SQLCHAR *) query, (SQLINTEGER) (query_end - query));
+	rc = MNDBExecDirect(stmt, (SQLCHAR *) query, (SQLINTEGER) pos);
 
 	free(query);
 
