@@ -367,22 +367,27 @@ distribute(mvc *sql, sql_rel *rel)
 		if (t && isRemote(t)) {
 			//TODO: check for allocation failure
 			char *local_name = sa_strconcat(sql->sa, sa_strconcat(sql->sa, t->s->base.name, "."), t->base.name);
-			if (!local_name) {
+			if (!local_name)
 				return NULL;
-			}
 
 			p = rel->p = prop_create(sql->sa, PROP_REMOTE, rel->p);
-			if (!p) {
+			if (!p)
 				return NULL;
-			}
 			p->value = local_name;
 		}
-		break;
-	}
+	} break;
 	case op_table:
-		if (IS_TABLE_PROD_FUNC(rel->flag) || rel->flag == TABLE_FROM_RELATION)
-			rel->l = distribute(sql, rel->l);
-		break;
+		if (IS_TABLE_PROD_FUNC(rel->flag) || rel->flag == TABLE_FROM_RELATION) {
+			l = rel->l = distribute(sql, rel->l);
+
+			if (l && (p = find_prop(l->p, PROP_REMOTE)) != NULL) {
+				l->p = prop_remove(l->p, p);
+				if (!find_prop(rel->p, PROP_REMOTE)) {
+					p->p = rel->p;
+					rel->p = p;
+				}
+			}
+		} break;
 	case op_join: 
 	case op_left: 
 	case op_right: 
@@ -417,8 +422,10 @@ distribute(mvc *sql, sql_rel *rel)
 		    strcmp(pl->value, pr->value) == 0) {
 			l->p = prop_remove(l->p, pl);
 			r->p = prop_remove(r->p, pr);
-			pl->p = rel->p;
-			rel->p = pl;
+			if (!find_prop(rel->p, PROP_REMOTE)) {
+				pl->p = rel->p;
+				rel->p = pl;
+			}
 		}
 		break;
 	case op_project:
@@ -426,32 +433,72 @@ distribute(mvc *sql, sql_rel *rel)
 	case op_groupby: 
 	case op_topn: 
 	case op_sample: 
-		rel->l = distribute(sql, rel->l);
-		l = rel->l;
+		l = rel->l = distribute(sql, rel->l);
+
 		if (l && (p = find_prop(l->p, PROP_REMOTE)) != NULL) {
 			l->p = prop_remove(l->p, p);
-			p->p = rel->p;
-			rel->p = p;
+			if (!find_prop(rel->p, PROP_REMOTE)) {
+				p->p = rel->p;
+				rel->p = p;
+			}
 		}
 		break;
 	case op_ddl: 
 		if ((rel->flag == ddl_psm || rel->flag == ddl_exception) && rel->exps)
 			rel->exps = exps_distribute(sql, rel->exps);
 		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq) {
-			rel->l = distribute(sql, rel->l);
+			l = rel->l = distribute(sql, rel->l);
+
+			if (l && (p = find_prop(l->p, PROP_REMOTE)) != NULL) {
+				l->p = prop_remove(l->p, p);
+				if (!find_prop(rel->p, PROP_REMOTE)) {
+					p->p = rel->p;
+					rel->p = p;
+				}
+			}
 		} else if (rel->flag == ddl_list || rel->flag == ddl_exception) {
-			rel->l = distribute(sql, rel->l);
-			rel->r = distribute(sql, rel->r);
+			l = rel->l = distribute(sql, rel->l);
+			r = rel->r = distribute(sql, rel->r);
+
+			if (l && (pl = find_prop(l->p, PROP_REMOTE)) != NULL &&
+				r && (pr = find_prop(r->p, PROP_REMOTE)) != NULL && 
+				strcmp(pl->value, pr->value) == 0) {
+				l->p = prop_remove(l->p, pl);
+				r->p = prop_remove(r->p, pr);
+				if (!find_prop(rel->p, PROP_REMOTE)) {
+					pl->p = rel->p;
+					rel->p = pl;
+				}
+			}
 		}
 		break;
 	case op_insert:
 	case op_update:
 	case op_delete:
-		rel->l = distribute(sql, rel->l);
-		rel->r = distribute(sql, rel->r);
+		l = rel->l = distribute(sql, rel->l);
+		r = rel->r = distribute(sql, rel->r);
+
+		if (l && (pl = find_prop(l->p, PROP_REMOTE)) != NULL &&
+			r && (pr = find_prop(r->p, PROP_REMOTE)) != NULL && 
+			strcmp(pl->value, pr->value) == 0) {
+			l->p = prop_remove(l->p, pl);
+			r->p = prop_remove(r->p, pr);
+			if (!find_prop(rel->p, PROP_REMOTE)) {
+				pl->p = rel->p;
+				rel->p = pl;
+			}
+		}
 		break;
 	case op_truncate:
-		rel->l = distribute(sql, rel->l);
+		l = rel->l = distribute(sql, rel->l);
+
+		if (l && (p = find_prop(l->p, PROP_REMOTE)) != NULL) {
+			l->p = prop_remove(l->p, p);
+			if (!find_prop(rel->p, PROP_REMOTE)) {
+				p->p = rel->p;
+				rel->p = p;
+			}
+		}
 		break;
 	}
 	return rel;
