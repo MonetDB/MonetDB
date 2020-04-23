@@ -142,6 +142,10 @@ MAPI  = (monetdb) /var/tmp/mtest-295615/.s.monetdb.33475
 QUERY = SELECT (VALUES(col1)), (VALUES(MAX(col2))) FROM another_t;
 ERROR = !SELECT: subquery uses ungrouped column from outer query
 CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-911579/.s.monetdb.32726
+QUERY = SELECT (SELECT 1 UNION SELECT 2) IN (SELECT 1) FROM integers i1;
+ERROR = !Cardinality violation, scalar value expected
+CODE  = 21000
 
 # 08:41:39 >  
 # 08:41:39 >  "Done."
