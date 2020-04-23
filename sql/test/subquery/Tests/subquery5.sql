@@ -228,6 +228,12 @@ SELECT (SELECT COVAR_SAMP(i1.i, i2.i) FROM integers i2) IN (SELECT MIN(i1.i)) FR
 SELECT (SELECT COVAR_POP(i1.i, 1)) IN (SELECT SUM(i1.i)) FROM integers i1;
 	-- False
 
+SELECT (SELECT MAX(i1.i + i2.i) FROM integers i2) = MIN(i1.i) FROM integers i1;
+	--error, subquery uses ungrouped column "i1.i" from outer query
+
+SELECT (SELECT i2.i FROM integers i2) IN (SELECT MIN(i1.i)) FROM integers i1;
+	--error, more than one row returned by a subquery used as an expression
+
 DROP FUNCTION evilfunction(INT);
 DROP TABLE tbl_ProductSales;
 DROP TABLE another_T;
