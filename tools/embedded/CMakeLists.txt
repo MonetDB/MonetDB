@@ -27,6 +27,10 @@ target_compile_definitions(embedded
   PRIVATE
   LIBEMBEDDED)
 
+set_target_properties(embedded
+  PROPERTIES
+  PUBLIC_HEADER monetdb_embedded.h)
+
 target_link_libraries(embedded
   PRIVATE
   monetdb_config_header
