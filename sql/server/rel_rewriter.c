@@ -47,38 +47,45 @@ exps_simplify_exp(mvc *sql, list *exps, int *changes)
 					sql_exp *ie = l->h->data; 
 	
 					if (exp_is_true(sql, ie)) {
+						(*changes)++;
 						continue;
 					} else if (exp_is_false(sql, ie)) {
+						(*changes)++;
 						nexps = list_merge(nexps, r, (fdup)NULL);
 						continue;
 					}
 				} else if (list_length(l) == 0) { /* left is true */
+					(*changes)++;
 					continue;
 				}
 				if (list_length(r) == 1) {
 					sql_exp *ie = r->h->data; 
 	
-					if (exp_is_true(sql, ie))
+					if (exp_is_true(sql, ie)) {
+						(*changes)++;
 						continue;
-					else if (exp_is_false(sql, ie)) {
+					} else if (exp_is_false(sql, ie)) {
 						nexps = list_merge(nexps, l, (fdup)NULL);
+						(*changes)++;
 						continue;
 					}
 				} else if (list_length(r) == 0) { /* right is true */
+					(*changes)++;
 					continue;
 				}
 			}
 			/* TRUE and X -> X */
 			if (exp_is_true(sql, e)) {
+				(*changes)++;
 				continue;
 			/* FALSE and X -> FALSE */
 			} else if (exp_is_false(sql, e)) {
+				(*changes)++;
 				return append(sa_list(sql->sa), e);
 			} else {
 				append(nexps, e);
 			}
 		}
-		(*changes)++;
 		return nexps;
 	}
 	return exps;
