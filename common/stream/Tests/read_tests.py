@@ -56,23 +56,24 @@ def test_read(opener, text_mode, doc):
     test = f"read {opener} {doc.name}"
 
     print()
+    print(f"Test: {test}")
 
     cmd = ['streamcat', 'read', filename, opener]
     results = subprocess.run(
         cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     if results.returncode != 0 or results.stderr:
         print(
-            f"Test {test}: streamcat returned with exit code {results.returncode}:\n{results.stderr or ''}")
+            f"\tFAIL: streamcat returned with exit code {results.returncode}:\n{results.stderr or ''}")
         return False
 
     output = results.stdout or b""
     complaint = doc.verify(output, text_mode)
 
     if complaint:
-        print(f"Test {test} failed: {complaint}")
+        print(f"\tFAIL: {complaint}")
         return False
     else:
-        print(f"Test {test} OK")
+        print(f"\tOK")
         os.remove(filename)
         return True
 

@@ -46,6 +46,7 @@ def test_write(opener, text_mode, doc):
     test = f"write {opener} {doc.name}"
 
     print()
+    print(f"Test: {test}")
 
     if os.path.exists(filename):
         os.remove(filename)
@@ -54,11 +55,11 @@ def test_write(opener, text_mode, doc):
     results = subprocess.run(cmd, input=doc.content, stderr=subprocess.PIPE)
     if results.returncode != 0 or results.stderr:
         print(
-            f"Test {test}: streamcat returned with exit code {results.returncode}:\n{results.stderr or ''}")
+            f"\tFAIL: streamcat returned with exit code {results.returncode}:\n{results.stderr or ''}")
         return False
 
     if not os.path.exists(filename):
-        print(f"Test {test} failed to create file '{filename}'")
+        print(f"\tFAIL: test failed to create file '{filename}'")
         return False
 
     # Trial run to rule out i/o errors
@@ -73,10 +74,10 @@ def test_write(opener, text_mode, doc):
     complaint = doc.verify(output, text_mode)
 
     if complaint:
-        print(f"Test {test} failed: {complaint}")
+        print(f"\tFAIL: {complaint}")
         return False
     else:
-        print(f"Test {test} OK")
+        print(f"\tOK")
         os.remove(filename)
         return True
 
@@ -100,7 +101,15 @@ def all_tests(filename_filter):
     return failures
 
 
-# if __name__ == "__main__":
-#   docname = "small.txt.gz"
-#   doc = [d for d in gen_docs()][0]
-#   test_write('rastream', True, doc)
+if __name__ == "__main__":
+    # generate test data for manual testing
+    if len(sys.argv) == 1:
+        for d in gen_docs():
+            print(d.name)
+    elif len(sys.argv) == 2:
+        for d in gen_docs():
+            if d.name == sys.argv[1]:
+                d.write(sys.stdout.buffer)
+    else:
+        print("Usage: python3 read_tests.py [TESTDATANAME]", file=sys.stderr)
+        sys.exit(1)
