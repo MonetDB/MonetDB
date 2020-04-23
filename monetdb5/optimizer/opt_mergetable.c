@@ -1942,7 +1942,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			int input = getArg(p, p->retc); /* argument one is first input */
 
 			if (group_input[input]) {
-				TRC_ERROR(MAL_OPTIMIZER, "Mergetable bailout on group input reuse in group statement\n");
+				TRC_WARNING(MAL_OPTIMIZER, "Mergetable bailout on group input reuse in group statement\n");
 				bailout = 1;
 			}
 
@@ -1950,7 +1950,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		}
 		if (getModuleId(p) == algebraRef && 
 		    getFunctionId(p) == selectNotNilRef ) {
-			TRC_ERROR(MAL_OPTIMIZER, "Mergetable bailout not nil ref\n");
+			TRC_WARNING(MAL_OPTIMIZER, "Mergetable bailout not nil ref\n");
 			bailout = 1;
 		}
 		if (isSample(p)) {
