@@ -3341,7 +3341,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 	exps = sa_list(sql->sa);
 	if (args && args->data.sym) {
 		int i, all_aggr = query_has_outer(query);
-		bool found_nested_aggr = false, arguments_correlated = true;
+		bool found_nested_aggr = false, arguments_correlated = true, all_const = true;
 		list *ungrouped_cols = NULL;
 
 		all_freevar = 1;
@@ -3379,11 +3379,14 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 
 			all_aggr &= (exp_card(e) <= CARD_AGGR && !exp_is_atom(e) && is_aggr(e->type) && !is_func(e->type) && (!groupby || !is_groupby(groupby->op) || !groupby->r || !exps_find_exp(groupby->r, e)));
 			exp_only_freevar(query, e, &arguments_correlated, &found_one_freevar, &found_nested_aggr, &ungrouped_cols);
-			all_freevar &= arguments_correlated && found_one_freevar; /* no uncorrelated variables must be found, plus at least one correlated variable to push this aggregate to an outer query */
+			all_freevar &= (arguments_correlated && found_one_freevar) || (is_atom(e->type)?all_freevar:0); /* no uncorrelated variables must be found, plus at least one correlated variable to push this aggregate to an outer query */
+			all_const &= is_atom(e->type);
 			list_append(exps, e);
 		}
 		if (all_aggr || ((arguments_correlated || all_freevar) && found_nested_aggr))
 			return sql_error(sql, 05, SQLSTATE(42000) "SELECT: aggregate function calls cannot be nested");
+		if (all_const)
+			all_freevar = 0;
 		if (!all_freevar) {
 			if (is_sql_groupby(f)) {
 				char *uaname = GDKmalloc(strlen(aname) + 1);
@@ -3425,19 +3428,23 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 					sql_rel *outer;
 					sql_exp *e = (sql_exp*) n->data;
 
-					if ((outer = query_fetch_outer(query, is_freevar(e)-1)) && outer->grouped) {
-						bool err = false, was_processed = false;
+					if ((outer = query_fetch_outer(query, is_freevar(e)-1))) {
+						if (outer->grouped) {
+							bool err = false, was_processed = false;
 
-						if (is_processed(outer)) {
-							was_processed = true;
-							reset_processed(outer);
+							if (is_processed(outer)) {
+								was_processed = true;
+								reset_processed(outer);
+							}
+							if (!is_groupby_col(outer, e))
+								err = true;
+							if (was_processed)
+								set_processed(outer);
+							if (err)
+								return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: subquery uses ungrouped column \"%s.%s\" from outer query", exp_relname(e), exp_name(e));
+						} else {
+							set_outer(outer);
 						}
-						if (!is_groupby_col(outer, e))
-							err = true;
-						if (was_processed)
-							set_processed(outer);
-						if (err)
-							return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: subquery uses ungrouped column \"%s.%s\" from outer query", exp_relname(e), exp_name(e));
 					}
 				}
 			}
