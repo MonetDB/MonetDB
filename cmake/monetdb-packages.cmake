@@ -11,7 +11,7 @@ set(CPACK_GENERATOR "TGZ;ZIP")
 
 list (APPEND CPACK_SOURCE_IGNORE_FILES "Tests")
 list (APPEND CPACK_SOURCE_IGNORE_FILES "\\\\.hg")
-list (APPEND CPACK_SOURCE_IGNORE_FILES "^test")
+list (APPEND CPACK_SOURCE_IGNORE_FILES "/test/")
 list (APPEND CPACK_SOURCE_IGNORE_FILES "benchmarks")
 
 include(monetdb-deb-packages)
