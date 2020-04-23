@@ -1,6 +1,10 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Thu Apr 23 2020 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
+- Updating the value of a sequence now requires privilege on its own
+  schema.
+
 * Thu Apr 16 2020 Sjoerd Mullender <sjoerd@acm.org>
 - The sys.querylog_enable(threshold integer) now actually enables the
   querylog and uses a threshold in milliseconds.
@@ -79,7 +83,7 @@
   The versions of the mentioned procedures with just the second argument were
   added as well, where the changes are reflected in the current user session,
   and therefore every user can call them.
-- The procedures sys.settimeout(bigint), sys.settimeout(bigint,bigint) 
+- The procedures sys.settimeout(bigint), sys.settimeout(bigint,bigint)
   and sys.session(bigint) are now deprecated. Instead use sys.setquerytimeout
   and sys.setsessiontimeout mentioned above.
 
