@@ -43,7 +43,11 @@ def gen_docs():
 def test_write(opener, text_mode, doc):
     # determine a file name to write to
     filename = doc.pick_tmp_name()
+
     test = f"write {opener} {doc.name}"
+
+    if not isinstance(opener, list):
+        opener = [opener]
 
     print()
     print(f"Test: {test}")
@@ -51,7 +55,7 @@ def test_write(opener, text_mode, doc):
     if os.path.exists(filename):
         os.remove(filename)
 
-    cmd = ['streamcat', 'write', filename, opener]
+    cmd = ['streamcat', 'write', filename, *opener]
     results = subprocess.run(cmd, input=doc.content, stderr=subprocess.PIPE)
     if results.returncode != 0 or results.stderr:
         print(
@@ -91,12 +95,28 @@ def test_writes(doc):
     return failures
 
 
+def test_big_writes(doc):
+    failures = 0
+
+    failures += not test_write(['wstream', 'blocksize:1000000'], False, doc)
+    failures += not test_write(['wastream', 'blocksize:1000000'], True, doc)
+
+    return failures
+
+
 def all_tests(filename_filter):
     failures = 0
     for d in gen_docs():
         if not filename_filter(d.name):
             continue
         failures += test_writes(d)
+
+    for d in gen_docs():
+        if not d.name.startswith('sherlock') or d.name.startswith('empty'):
+            continue
+        if not filename_filter(d.name):
+            continue
+        failures += test_big_writes(d)
 
     return failures
 

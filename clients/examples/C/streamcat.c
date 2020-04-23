@@ -20,8 +20,10 @@ const char *USAGE =
 	"    - wastream          stream = open_wastream(filename)\n"
 	"With R_WRAPPER:\n"
 	"    - iconv:enc         stream = iconv_rstream(stream, enc)\n"
+	"    - blocksize:N       Copy in blocks of this size\n"
 	"With W_WRAPPER:\n"
 	"    - iconv:enc         stream = iconv_wstream(stream, enc)\n"
+	"    - blocksize:N       Copy in blocks of this size\n"
 	;
 
 
@@ -39,9 +41,9 @@ static stream *wrapper_read_iconv(stream *s, char *enc);
 
 static stream *wrapper_write_iconv(stream *s, char *enc);
 
-static void copy_to_stdout(stream *in);
+static void copy_to_stdout(stream *in, size_t bufsize);
 
-static void copy_from_stdin(stream *out);
+static void copy_from_stdin(stream *out, size_t bufsize);
 
 _Noreturn static void croak(int status, const char *msg, ...)
 	__attribute__((__format__(__printf__, 2, 3)));
@@ -88,6 +90,7 @@ int cmd_read(char *argv[])
 	char *filename = NULL;
 	char *opener_name = NULL;
 	opener_fun opener;
+	size_t bufsize = 1024;
 
 	stream *s = NULL;
 
@@ -122,15 +125,24 @@ int cmd_read(char *argv[])
 			if (parms == NULL)
 				croak(1, "iconv wrapper needs a parameter");
 			wrapper = wrapper_read_iconv;
-		}
-		if (wrapper == NULL)
+		} else if (strcmp(wrapper_name, "blocksize") == 0) {
+			if (parms == NULL)
+				croak(1, "blocksize needs a parameter");
+			char *end;
+			long size = strtol(parms, &end, 10);
+			if (*end != '\0' || size <= 0)
+				croak(1, "invalid blocksize: %ld", size);
+			bufsize = size;
+		} else {
 			croak(1, "Unknown wrapper: %s", wrapper_name);
-		s = wrapper(s, parms);
+		}
+		if (wrapper != NULL)
+			s = wrapper(s, parms);
 		if (s == NULL)
 			croak(2, "Wrapper %s did not return a stream", wrapper_name);
 	}
 
-	copy_to_stdout(s);
+	copy_to_stdout(s, bufsize);
 	mnstr_close(s);
 
 	return 0;
@@ -143,6 +155,7 @@ int cmd_write(char *argv[])
 	char *filename = NULL;
 	char *opener_name = NULL;
 	opener_fun opener;
+	size_t bufsize = 1024;
 
 	stream *s = NULL;
 
@@ -177,35 +190,46 @@ int cmd_write(char *argv[])
 			if (parms == NULL)
 				croak(1, "iconv wrapper needs a parameter");
 			wrapper = wrapper_write_iconv;
-		}
-		if (wrapper == NULL)
+		} else if (strcmp(wrapper_name, "blocksize") == 0) {
+			if (parms == NULL)
+				croak(1, "blocksize needs a parameter");
+			char *end;
+			long size = strtol(parms, &end, 10);
+			if (*end != '\0' || size <= 0)
+				croak(1, "invalid blocksize: %ld", size);
+			bufsize = size;
+		} else {
 			croak(1, "Unknown wrapper: %s", wrapper_name);
-		s = wrapper(s, parms);
+		}
+		if (wrapper != NULL)
+			s = wrapper(s, parms);
 		if (s == NULL)
 			croak(2, "Wrapper %s did not return a stream", wrapper_name);
 	}
 
-	copy_from_stdin(s);
+	copy_from_stdin(s, bufsize);
 	mnstr_close(s);
 
 	return 0;
 }
 
 
-static void copy_to_stdout(stream *in)
+static void copy_to_stdout(stream *in, size_t bufsize)
 {
 	FILE *out;
-	char buf[1024];
+	char *buffer;
 	ssize_t nread;
 	size_t nwritten;
 	unsigned long total = 0;
+
+	buffer = malloc(bufsize);
 
 	// Try to get binary stdout on Windows
 	fflush(stdout);
 	out = fdopen(fileno(stdout), "wb");
 
 	while (1) {
-		nread = mnstr_read(in, buf, 1, sizeof(buf));
+		nread = mnstr_read(in, buffer, 1, bufsize);
 		if (nread < 0)
 			croak(2, "Error reading from stream after %lu bytes: %s", total, mnstr_error(in));
 		if (nread == 0) {
@@ -213,24 +237,28 @@ static void copy_to_stdout(stream *in)
 			break;
 		}
 		errno = 0;
-		nwritten = fwrite(buf, 1, nread, out);
+		nwritten = fwrite(buffer, 1, nread, out);
 		if (nwritten != (size_t)nread)
 			croak(2, "Write error after %lu bytes: %s", total + nwritten, strerror(errno));
 		total += nwritten;
 	}
+
+	free(buffer);
 
 	fflush(out);
 	// DO NOT fclose(out)!  It's an alias for stdout.
 }
 
 
-static void copy_from_stdin(stream *out)
+static void copy_from_stdin(stream *out, size_t bufsize)
 {
 	FILE *in;
-	char buf[1024];
+	char *buffer;
 	size_t nread;
 	ssize_t nwritten;
 	unsigned long total = 0;
+
+	buffer = malloc(bufsize);
 
 	// We can't flush stdin but it hasn't been used yet so with any
 	// luck, no input is buffered yet
@@ -238,18 +266,20 @@ static void copy_from_stdin(stream *out)
 
 	while (1) {
 		errno = 0;
-		nread = fread(buf, 1, sizeof(buf), in);
+		nread = fread(buffer, 1, bufsize, in);
 		if (nread == 0) {
 			if (errno != 0)
 				croak(2, "Error reading from stream after %lu bytes: %s", total, strerror(errno));
 			else
 				break;
 		}
-		nwritten = mnstr_write(out, buf, 1, nread);
+		nwritten = mnstr_write(out, buffer, 1, nread);
 		if ((size_t)nwritten != nread)
 			croak(2, "Write error after %lu bytes: %s", total + nwritten, mnstr_error(out));
 		total += nwritten;
 	}
+
+	free(buffer);
 
 	// DO NOT fclose(in)!  It's an alias for stdin.
 }

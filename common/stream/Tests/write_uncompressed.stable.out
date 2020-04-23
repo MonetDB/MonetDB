@@ -114,7 +114,13 @@ Test: write wstream block16385.txt
 Test: write wastream block16385.txt
 	OK
 
-# 13:18:03 >  
-# 13:18:03 >  "Done."
-# 13:18:03 >  
+Test: write ['wstream', 'blocksize:1000000'] sherlock.txt
+	OK
+
+Test: write ['wastream', 'blocksize:1000000'] sherlock.txt
+	OK
+
+# 10:20:11 >  
+# 10:20:11 >  "Done."
+# 10:20:11 >  
 

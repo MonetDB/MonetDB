@@ -114,7 +114,13 @@ Test: write wstream block16385.txt.lz4
 Test: write wastream block16385.txt.lz4
 	OK
 
-# 13:18:05 >  
-# 13:18:05 >  "Done."
-# 13:18:05 >  
+Test: write ['wstream', 'blocksize:1000000'] sherlock.txt.lz4
+	OK
+
+Test: write ['wastream', 'blocksize:1000000'] sherlock.txt.lz4
+	OK
+
+# 09:27:04 >  
+# 09:27:04 >  "Done."
+# 09:27:04 >  
 
