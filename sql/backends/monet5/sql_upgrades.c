@@ -2838,7 +2838,8 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema)
 					"\"name\" string,\n"
 					"\"type\" string,\n"
 					"\"value\" string)\n"
-					" external name \"sql\".\"sql_variables\";\n");
+					" external name \"sql\".\"sql_variables\";\n"
+					"grant execute on function \"sys\".\"var\" to public;\n");
 
 			pos += snprintf(buf + pos, bufsize - pos,
 					"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
