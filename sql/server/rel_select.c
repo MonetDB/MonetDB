@@ -1189,6 +1189,7 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 				}
 			}
 			if (exp) { 
+				int of = query_fetch_outer_state(query, i);
 				if (is_groupby(outer->op) && !is_sql_aggr(f)) {
 					exp = rel_groupby_add_aggr(sql, outer, exp);
 					exp->card = CARD_ATOM;
@@ -1197,7 +1198,7 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 				else
 					exp->card = CARD_ATOM;
 				set_freevar(exp, i);
-				if (!is_sql_aggr(f) && !outer->grouped)
+				if (!is_sql_where(of) && !is_sql_aggr(of) && !is_sql_aggr(f) && !outer->grouped)
 					set_outer(outer);
 			}
 			if (exp && outer && is_join(outer->op))
@@ -1257,6 +1258,7 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 				}
 			}
 			if (exp) {
+				int of = query_fetch_outer_state(query, i);
 				if (is_groupby(outer->op) && !is_sql_aggr(f)) {
 					exp = rel_groupby_add_aggr(sql, outer, exp);
 					exp->card = CARD_ATOM;
@@ -1265,7 +1267,7 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 				else
 					exp->card = CARD_ATOM;
 				set_freevar(exp, i);
-				if (!is_sql_aggr(f) && !outer->grouped)
+				if (!is_sql_where(of) && !is_sql_aggr(of) && !is_sql_aggr(f) && !outer->grouped)
 					set_outer(outer);
 			}
 			if (exp && outer && is_join(outer->op))
@@ -2129,9 +2131,14 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 				return NULL;
 			le->f = nvalues;
 		} else { /* if it's not a tuple, enforce coersion on the type for every element on the list */
+			sql_subtype super;
+			
 			if (!(values = exp_values_set_supertype(sql, values)))
 				return NULL;
 			if (rel_binop_check_types(sql, rel ? *rel : NULL, le, values, 0) < 0)
+				return NULL;
+			supertype(&super, exp_subtype(values), exp_subtype(le));
+			if ((le = rel_check_type(sql, &super, NULL, le, type_equal)) == NULL)
 				return NULL;
 		}
 		e = exp_in_func(sql, le, values, (sc->token == SQL_IN), is_tuple);
@@ -3489,7 +3496,8 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 			if (is_outer(groupby))
 				return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: subquery uses ungrouped column from outer query");
 		}
-	}
+	} else if (!subquery && groupby && is_outer(groupby) && !is_groupby(groupby->op))
+		return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: subquery uses ungrouped column from outer query");
 
 	/* find having select */
 	if (!subquery && groupby && !is_processed(groupby) && is_sql_having(f)) { 

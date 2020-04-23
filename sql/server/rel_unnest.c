@@ -2009,11 +2009,11 @@ rewrite_anyequal(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 			int is_tuple = 0;
 
 			/* possibly this is already done ? */
-			if (exp_has_rel(ile)) 
+			if (exp_has_rel(ile))
 				lsq = exp_rel_get_rel(sql->sa, ile); /* get subquery */
 
 			if (lsq)
-				le = lsq->exps->t->data;
+				le = exp_rel_update_exp(sql, ile);
 			else
 				le = ile; 
 
@@ -2076,7 +2076,7 @@ rewrite_anyequal(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 					if (on_right) {
 						sql_rel *join = rel->l; /* the introduced join */
 						join->r = rel_crossproduct(sql->sa, join->r, rsq, op_join);
-						le = exp_ref(sql, le);
+						set_dependent(join);
 					} else
 						(void)rewrite_inner(sql, rel, rsq, !is_tuple?op_join:is_anyequal(sf)?op_semi:op_anti);
 				}

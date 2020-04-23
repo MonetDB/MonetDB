@@ -158,6 +158,14 @@ MAPI  = (monetdb) /var/tmp/mtest-1308344/.s.monetdb.32497
 QUERY = SELECT (SELECT COVAR_SAMP(i1.i, i2.i) FROM integers i2) IN (SELECT MIN(i1.i)) FROM integers i1;
 ERROR = !SELECT: subquery uses ungrouped column from outer query
 CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-1624092/.s.monetdb.36695
+QUERY = SELECT (SELECT MAX(i1.i + i2.i) FROM integers i2) = MIN(i1.i) FROM integers i1;
+ERROR = !SELECT: subquery uses ungrouped column from outer query
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-1624092/.s.monetdb.36695
+QUERY = SELECT (SELECT i2.i FROM integers i2) IN (SELECT MIN(i1.i)) FROM integers i1;
+ERROR = !Cardinality violation, scalar value expected
+CODE  = 21000
 
 # 08:41:39 >  
 # 08:41:39 >  "Done."
