@@ -2051,6 +2051,7 @@ rewrite_anyequal(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 				sql_exp *rid, *lid, *a = NULL;
 				sql_rel *sq = lsq;
 				sql_subfunc *ea = sql_bind_func(sql->sa, sql->session->schema, is_anyequal(sf)?"anyequal":"allnotequal", exp_subtype(re), NULL, F_AGGR);
+				int on_right = (lsq != NULL);
 
 				/* we introduced extra selects */
 				assert(is_project(rel->op) || is_select(rel->op));
@@ -2071,10 +2072,23 @@ rewrite_anyequal(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 
 				if (sq)
 					(void)rewrite_inner(sql, rel, lsq, op_join);
-				if (rsq) 
-					(void)rewrite_inner(sql, rel, rsq, !is_tuple?op_join:is_anyequal(sf)?op_semi:op_anti);
+				if (rsq) {
+					if (on_right) {
+						sql_rel *join = rel->l; /* the introduced join */
+						join->r = rel_crossproduct(sql->sa, join->r, rsq, op_left);
+						set_dependent(join);
+						if (le->type != e_column)
+							le = exp_ref(sql, le);
+					} else
+						(void)rewrite_inner(sql, rel, rsq, !is_tuple?op_join:is_anyequal(sf)?op_semi:op_anti);
+				}
 
-				lsq = rel->l = rel_groupby(sql, rel->l, exp2list(sql->sa, lid)); 
+
+				if (on_right) {
+					sql_rel *join = rel->l; /* the introduced join */
+					lsq = join->r = rel_groupby(sql, join->r, exp2list(sql->sa, lid)); 
+				} else
+					lsq = rel->l = rel_groupby(sql, rel->l, exp2list(sql->sa, lid)); 
 				if (exps)
 					lsq->exps = exps;
 
@@ -2846,7 +2860,6 @@ rewrite_outer2inner_union(mvc *sql, sql_rel *rel, int *changes)
 	}
 	return rel;
 }
-
 
 sql_rel *
 rel_unnest(mvc *sql, sql_rel *rel)
