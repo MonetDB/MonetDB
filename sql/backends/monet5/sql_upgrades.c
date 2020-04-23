@@ -2470,25 +2470,7 @@ sql_update_jun2020(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 			" external name mdb.\"setDebug\";\n"
 			"create function sys.debugflags()\n"
 			" returns table(flag string, val bool)\n"
-			" external name mdb.\"getDebugFlags\";\n"
-			"create procedure sys.\"sleep\"(msecs tinyint)\n"
-			" external name \"alarm\".\"sleep\";\n"
-			"grant execute on procedure sys.\"sleep\"(tinyint) to public;\n"
-			"create procedure sys.\"sleep\"(msecs smallint)\n"
-			" external name \"alarm\".\"sleep\";\n"
-			"grant execute on procedure sys.\"sleep\"(smallint) to public;\n"
-			"create procedure sys.\"sleep\"(msecs int)\n"
-			" external name \"alarm\".\"sleep\";\n"
-			" grant execute on procedure sys.\"sleep\"(int) to public;\n"
-			"create function sys.\"sleep\"(msecs tinyint) returns tinyint\n"
-			" external name \"alarm\".\"sleep\";\n"
-			"grant execute on function sys.\"sleep\"(tinyint) to public;\n"
-			"create function sys.\"sleep\"(msecs smallint) returns smallint\n"
-			" external name \"alarm\".\"sleep\";\n"
-			"grant execute on function sys.\"sleep\"(smallint) to public;\n"
-			"create function sys.\"sleep\"(msecs int) returns int\n"
-			" external name \"alarm\".\"sleep\";\n"
-			" grant execute on function sys.\"sleep\"(int) to public;\n");
+			" external name mdb.\"getDebugFlags\";\n");
 	pos += snprintf(buf + pos, bufsize - pos,
 			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
 			" and name in ('debug', 'debugflags', 'sleep');\n");

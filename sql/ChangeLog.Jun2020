@@ -1,6 +1,10 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Thu Apr 23 2020 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
+- Updating the value of a sequence now requires privilege on its own
+  schema.
+
 * Thu Apr 16 2020 Sjoerd Mullender <sjoerd@acm.org>
 - The sys.querylog_enable(threshold integer) now actually enables the
   querylog and uses a threshold in milliseconds.
@@ -34,11 +38,6 @@
   defined on the backend engine, ie on this case MAL. At the current
   implementation, the backend code generation, creates two additional
   columns of lng type with the start and end offsets for each row.
-
-* Thu Jan 23 2020 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
-- Added sys.sleep(int n) procedure, which makes the client's thread to
-  sleep for n milliseconds. Also added the function version, where it
-  returns the input value as result.
 
 * Tue Dec 17 2019 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
 - Added prepared_statements_args view, which details the arguments for
@@ -79,7 +78,7 @@
   The versions of the mentioned procedures with just the second argument were
   added as well, where the changes are reflected in the current user session,
   and therefore every user can call them.
-- The procedures sys.settimeout(bigint), sys.settimeout(bigint,bigint) 
+- The procedures sys.settimeout(bigint), sys.settimeout(bigint,bigint)
   and sys.session(bigint) are now deprecated. Instead use sys.setquerytimeout
   and sys.setsessiontimeout mentioned above.
 
