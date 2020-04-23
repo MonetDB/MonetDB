@@ -644,7 +644,7 @@ setVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	const char *sname = *getArgReference_str(stk, pci, 2);
 	const char *varname = *getArgReference_str(stk, pci, 3);
 	int mtype = getArgType(mb, pci, 4);
-	ValRecord *src;
+	ValRecord *src = &stk->stk[getArg(pci, 4)];
 	sql_schema *s;
 	sql_var *var;
 
@@ -659,10 +659,15 @@ setVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	*res = 0;
 	if (mtype < 0 || mtype >= 255)
 		throw(SQL, "sql.setVariable", SQLSTATE(42100) "Variable type error");
-	if (!strcmp("sys", s->base.name) && !strcmp("optimizer", varname)) {
-		const char *newopt = *getArgReference_str(stk, pci, 4);
-		if (newopt) {
+
+	if ((var = find_global_var(m, s, varname))) {
+		if (VALisnil(src)) /* this applies to the default global variables only, but for now we don't have session globals */
+			throw(SQL, "sql.setVariable", SQLSTATE(42100) "Variable '%s.%s' cannot be NULL", sname, varname);
+
+		if (!strcmp("sys", s->base.name) && !strcmp("optimizer", varname)) {
+			const char *newopt = src->val.sval;
 			char buf[BUFSIZ];
+
 			if (!isOptimizerPipe(newopt) && strchr(newopt, (int) ';') == 0)
 				throw(SQL, "sql.setVariable", SQLSTATE(42100) "optimizer '%s' unknown", newopt);
 			(void) snprintf(buf, BUFSIZ, "user_%d", cntxt->idx);
@@ -673,24 +678,20 @@ setVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					throw(SQL, "sql.setVariable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			} else if (!sqlvar_set_string(find_global_var(m, s, varname), newopt))
 				throw(SQL, "sql.setVariable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		} else {
+#ifdef HAVE_HGE
+			hge sgn = val_get_number(src);
+#else
+			lng sgn = val_get_number(src);
+#endif
+			if ((msg = sql_update_var(m, s, varname, src->val.sval, sgn)))
+				return msg;
+			if (!sqlvar_set(var, src))
+				throw(SQL, "sql.setVariable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		return MAL_SUCCEED;
 	}
-	src = &stk->stk[getArg(pci, 4)];
-	if ((var = find_global_var(m, s, varname))) {
-#ifdef HAVE_HGE
-		hge sgn = val_get_number(src);
-#else
-		lng sgn = val_get_number(src);
-#endif
-		if ((msg = sql_update_var(m, s, varname, src->val.sval, sgn)))
-			return msg;
-		if (!sqlvar_set(var, src))
-			throw(SQL, "sql.setVariable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	} else {
-		throw(SQL, "sql.setVariable", SQLSTATE(42100) "Variable '%s.%s' unknown", sname, varname);
-	}
-	return MAL_SUCCEED;
+	throw(SQL, "sql.setVariable", SQLSTATE(42100) "Variable '%s.%s' unknown", sname, varname);
 }
 
 /* getVariable(int *ret, str *name) */

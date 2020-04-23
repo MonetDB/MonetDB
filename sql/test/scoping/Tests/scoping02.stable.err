@@ -63,6 +63,14 @@ QUERY = CREATE OR REPLACE FUNCTION iambroken() RETURNS INT
         END;
 ERROR = !SELECT: no such table 'mytable'
 CODE  = 42S02
+MAPI  = (monetdb) /var/tmp/mtest-461996/.s.monetdb.34756
+QUERY = set "current_schema" = null; --error, cannot be null
+ERROR = !Variable 'sys.current_schema' cannot be NULL
+CODE  = 42100
+MAPI  = (monetdb) /var/tmp/mtest-461996/.s.monetdb.34756
+QUERY = set "sys"."current_timezone" = null; --error, cannot be null
+ERROR = !Variable 'sys.current_timezone' cannot be NULL
+CODE  = 42100
 
 # 11:27:58 >  
 # 11:27:58 >  "Done."

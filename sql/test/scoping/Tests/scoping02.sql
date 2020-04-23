@@ -77,3 +77,6 @@ SELECT "sys"."current_schema" FROM "sys";
 DROP TABLE "sys";
 
 SELECT * from sys.var() where "name" not in ('debug', 'cache', 'last_id', 'current_timezone');
+
+set "current_schema" = null; --error, cannot be null
+set "sys"."current_timezone" = null; --error, cannot be null
