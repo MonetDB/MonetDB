@@ -514,7 +514,7 @@ SELECT
 FROM another_T; --error, more than one row returned by a subquery used as an expression
 
 SELECT
-	(SELECT i1.i FROM (VALUES (MIN(i1.i), MAX(i1.i))) as i2(i))
+	(SELECT i1.i FROM (VALUES (MIN(i1.i), MAX(i1.i))) as i2(i,j))
 FROM integers i1; --error, subquery uses ungrouped column "i1.i" from outer query
 
 SELECT
@@ -523,9 +523,10 @@ FROM integers i1;
 	-- 1
 
 SELECT
-	(SELECT i2.i FROM (VALUES (MIN(i1.i), MAX(i1.i))) as i2(i))
+	(SELECT i2.i FROM (VALUES (MIN(i1.i), MAX(i1.i))) as i2(i,j)),
+	(SELECT i2.j FROM (VALUES (MIN(i1.i), MAX(i1.i))) as i2(i,j))
 FROM integers i1;
-	-- 1
+	-- 1, 3
 
 SELECT
 	(SELECT i2.i FROM (VALUES (i1.i)) as i2(i))
@@ -548,7 +549,7 @@ SELECT
 FROM integers i1; --error, more than one row returned by a subquery used as an expression
 
 SELECT
-	(SELECT i2.i FROM (VALUES (i1.i, i1.i), (i1.i, i1.i)) as i2(i))
+	(SELECT i2.i FROM (VALUES (i1.i, i1.i), (i1.i, i1.i)) as i2(i,j))
 FROM integers i1; --error, more than one row returned by a subquery used as an expression
 
 SELECT i FROM integers ORDER BY (SELECT true);

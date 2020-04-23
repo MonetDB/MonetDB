@@ -175,8 +175,8 @@ rel_table_optname(mvc *sql, sql_rel *sq, symbol *optname)
 			sq = rel_project(sql->sa, sq, rel_projections(sql, sq, NULL, 1, 0));
 			osq = sq;
 		}
-		if (columnrefs && dlist_length(columnrefs) > list_length(sq->exps))
-			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: The number of aliases is longer than the number of columns (%d>%d)", dlist_length(columnrefs), sq->nrcols);
+		if (columnrefs && dlist_length(columnrefs) != list_length(sq->exps))
+			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: The number of aliases don't match the number of columns (%d != %d)", dlist_length(columnrefs), sq->nrcols);
 		if (columnrefs && sq->exps) {
 			dnode *d = columnrefs->h;
 
