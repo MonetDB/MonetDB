@@ -204,6 +204,9 @@ SELECT (SELECT i1.i) = (SELECT SUM(i1.i)) FROM integers i1;
 SELECT (VALUES(col1)), (VALUES(MAX(col2))) FROM another_t;
 	--error, subquery uses ungrouped column "another_t.col1" from outer query
 
+SELECT (SELECT CORR(MIN(i1.i), 1) FROM integers i2) FROM integers i1;
+	--error, aggregate function calls cannot be nested
+
 SELECT (SELECT 1) IN (SELECT 2 UNION SELECT 3) FROM integers i1;
 	-- False
 	-- False
