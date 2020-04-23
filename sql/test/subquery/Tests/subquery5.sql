@@ -234,6 +234,15 @@ SELECT (SELECT MAX(i1.i + i2.i) FROM integers i2) = MIN(i1.i) FROM integers i1;
 SELECT (SELECT i2.i FROM integers i2) IN (SELECT MIN(i1.i)) FROM integers i1;
 	--error, more than one row returned by a subquery used as an expression
 
+SELECT (SELECT 5) NOT IN (SELECT MIN(i1.i)) FROM integers i1;
+	-- True
+
+SELECT (SELECT 1) IN (SELECT i1.i) FROM integers i1;
+	-- True
+	-- False
+	-- False
+	-- NULL
+
 DROP FUNCTION evilfunction(INT);
 DROP TABLE tbl_ProductSales;
 DROP TABLE another_T;
