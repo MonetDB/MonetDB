@@ -204,6 +204,15 @@ SELECT (SELECT i1.i) = (SELECT SUM(i1.i)) FROM integers i1;
 SELECT (VALUES(col1)), (VALUES(MAX(col2))) FROM another_t;
 	--error, subquery uses ungrouped column "another_t.col1" from outer query
 
+SELECT (SELECT 1) IN (SELECT 2 UNION SELECT 3) FROM integers i1;
+	-- False
+	-- False
+	-- False
+	-- False
+
+SELECT (SELECT 1 UNION SELECT 2) IN (SELECT 1) FROM integers i1;
+	--error, more than one row returned by a subquery used as an expression
+
 SELECT (SELECT 1 FROM integers i2 INNER JOIN integers i3 ON MAX(i1.i) = 1) IN (SELECT 1 FROM integers i2 INNER JOIN integers i3 ON MIN(i1.i) = 1) FROM integers i1;
 	-- NULL
 
