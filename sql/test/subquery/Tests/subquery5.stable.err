@@ -142,6 +142,10 @@ MAPI  = (monetdb) /var/tmp/mtest-295615/.s.monetdb.33475
 QUERY = SELECT (VALUES(col1)), (VALUES(MAX(col2))) FROM another_t;
 ERROR = !SELECT: subquery uses ungrouped column from outer query
 CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-40632/.s.monetdb.32773
+QUERY = SELECT (SELECT CORR(MIN(i1.i), 1) FROM integers i2) FROM integers i1;
+ERROR = !SELECT: aggregate function calls cannot be nested
+CODE  = 42000
 
 # 08:41:39 >  
 # 08:41:39 >  "Done."

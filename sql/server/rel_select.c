@@ -3341,7 +3341,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 	exps = sa_list(sql->sa);
 	if (args && args->data.sym) {
 		int i, all_aggr = query_has_outer(query);
-		bool found_nested_aggr = false;
+		bool found_nested_aggr = false, arguments_correlated = true;
 		list *ungrouped_cols = NULL;
 
 		all_freevar = 1;
@@ -3378,11 +3378,11 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 			}
 
 			all_aggr &= (exp_card(e) <= CARD_AGGR && !exp_is_atom(e) && is_aggr(e->type) && !is_func(e->type) && (!groupby || !is_groupby(groupby->op) || !groupby->r || !exps_find_exp(groupby->r, e)));
-			exp_only_freevar(query, e, &all_freevar, &found_one_freevar, &found_nested_aggr, &ungrouped_cols);
-			all_freevar &= found_one_freevar; /* no uncorrelated variables must be found, plus at least one correlated variable to push this aggregate to an outer query */
+			exp_only_freevar(query, e, &arguments_correlated, &found_one_freevar, &found_nested_aggr, &ungrouped_cols);
+			all_freevar &= arguments_correlated && found_one_freevar; /* no uncorrelated variables must be found, plus at least one correlated variable to push this aggregate to an outer query */
 			list_append(exps, e);
 		}
-		if (all_aggr || (all_freevar && found_nested_aggr))
+		if (all_aggr || ((arguments_correlated || all_freevar) && found_nested_aggr))
 			return sql_error(sql, 05, SQLSTATE(42000) "SELECT: aggregate function calls cannot be nested");
 		if (!all_freevar) {
 			if (is_sql_groupby(f)) {
