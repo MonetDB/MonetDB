@@ -95,8 +95,11 @@ def test_writes(doc):
     return failures
 
 
-def test_big_writes(doc):
+def test_nonstd_writes(doc):
     failures = 0
+
+    failures += not test_write(['wstream', 'blocksize:2'], False, doc)
+    failures += not test_write(['wastream', 'blocksize:2'], True, doc)
 
     failures += not test_write(['wstream', 'blocksize:1000000'], False, doc)
     failures += not test_write(['wastream', 'blocksize:1000000'], True, doc)
@@ -116,7 +119,7 @@ def all_tests(filename_filter):
             continue
         if not filename_filter(d.name):
             continue
-        failures += test_big_writes(d)
+        failures += test_nonstd_writes(d)
 
     return failures
 

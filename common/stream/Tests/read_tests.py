@@ -53,12 +53,16 @@ def gen_docs():
 
 def test_read(opener, text_mode, doc):
     filename = doc.write_tmp()
+
     test = f"read {opener} {doc.name}"
+
+    if not isinstance(opener, list):
+        opener = [opener]
 
     print()
     print(f"Test: {test}")
 
-    cmd = ['streamcat', 'read', filename, opener]
+    cmd = ['streamcat', 'read', filename, *opener]
     results = subprocess.run(
         cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     if results.returncode != 0 or results.stderr:
@@ -90,6 +94,18 @@ def test_reads(doc):
     return failures
 
 
+def test_nonstd_reads(doc):
+    failures = 0
+
+    failures += not test_read(['rstream', 'blocksize:2'], False, doc)
+    failures += not test_read(['rastream', 'blocksize:2'], True, doc)
+
+    failures += not test_read(['rstream', 'blocksize:1000000'], False, doc)
+    failures += not test_read(['rastream', 'blocksize:1000000'], True, doc)
+
+    return failures
+
+
 def all_tests(filename_filter):
     failures = 0
     for d in gen_docs():
@@ -97,6 +113,12 @@ def all_tests(filename_filter):
             continue
         failures += test_reads(d)
 
+    for d in gen_docs():
+        if not d.name.startswith('sherlock') or d.name.startswith('empty'):
+            continue
+        if not filename_filter(d.name):
+            continue
+        failures += test_nonstd_reads(d)
     return failures
 
 

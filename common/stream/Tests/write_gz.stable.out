@@ -114,6 +114,12 @@ Test: write wstream block16385.txt.gz
 Test: write wastream block16385.txt.gz
 	OK
 
+Test: write ['wstream', 'blocksize:2'] sherlock.txt.gz
+	OK
+
+Test: write ['wastream', 'blocksize:2'] sherlock.txt.gz
+	OK
+
 Test: write ['wstream', 'blocksize:1000000'] sherlock.txt.gz
 	OK
 

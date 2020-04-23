@@ -228,7 +228,31 @@ Test: read rstream crlf1024.txt.xz
 Test: read rastream crlf1024.txt.xz
 	OK
 
-# 14:14:06 >  
-# 14:14:06 >  "Done."
-# 14:14:06 >  
+Test: read ['rstream', 'blocksize:2'] sherlock.txt.xz
+	OK
+
+Test: read ['rastream', 'blocksize:2'] sherlock.txt.xz
+	OK
+
+Test: read ['rstream', 'blocksize:1000000'] sherlock.txt.xz
+	OK
+
+Test: read ['rastream', 'blocksize:1000000'] sherlock.txt.xz
+	OK
+
+Test: read ['rstream', 'blocksize:2'] sherlock_bom.txt.xz
+	OK
+
+Test: read ['rastream', 'blocksize:2'] sherlock_bom.txt.xz
+	OK
+
+Test: read ['rstream', 'blocksize:1000000'] sherlock_bom.txt.xz
+	OK
+
+Test: read ['rastream', 'blocksize:1000000'] sherlock_bom.txt.xz
+	OK
+
+# 14:28:02 >  
+# 14:28:02 >  "Done."
+# 14:28:02 >  
 
