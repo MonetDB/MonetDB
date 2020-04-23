@@ -31,6 +31,12 @@ destroy_sql_var(void *data)
 	if (!(var = push_global_var(sql, sname, name, &ctype)) || !sqlvar_set(var, VALset(&src, ctype.type->localtype, (char*)(val)))) \
 		return -1;
 
+static int
+var_key(sql_var *v)
+{
+	return hash_key(v->name);
+}
+
 int
 init_global_variables(mvc *sql)
 {
@@ -64,6 +70,18 @@ init_global_variables(mvc *sql)
 	sql_find_subtype(&ctype, "bigint", 0, 0);
 	SQLglobal(sname, "last_id", &sql->last_id);
 	SQLglobal(sname, "rowcnt", &sql->rowcnt);
+
+	/* Use hash lookup for global variables. With 9 variables in total it's worth to hash instead of */
+	if (!(sql->global_vars->ht = hash_new(NULL, list_length(sql->global_vars), (fkeyvalue)&var_key)))
+		return -1;
+
+	for (node *n = sql->global_vars->h; n; n = n->next) {
+		sql_var *v = n->data;
+		int key = var_key(v);
+
+		if (!hash_add(sql->global_vars->ht, key, v))
+			return -1;
+	}
 
 	return 0;
 }
@@ -502,8 +520,12 @@ sql_var*
 find_global_var(mvc *sql, sql_schema *s, const char *name)
 {
 	const char *sname = s->base.name;
-	for (node *n = sql->global_vars->h; n ; n = n->next) {
-		sql_var *var = (sql_var*) n->data;
+	int key = hash_key(name); /* Using hash lookup */
+	sql_hash_e *he = sql->global_vars->ht->buckets[key&(sql->global_vars->ht->size-1)];
+
+	for (; he; he = he->chain) {
+		sql_var *var = (sql_var*) he->value;
+
 		assert(var->sname && var->name);
 		if (!strcmp(var->sname, sname) && !strcmp(var->name, name))
 			return var;

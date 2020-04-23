@@ -1,4 +1,3 @@
--- hash lookup for variables
 -- TODO transaction management
 -- upgrade drop dt_schema
 
