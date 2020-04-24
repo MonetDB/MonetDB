@@ -2562,14 +2562,6 @@ rewrite_ifthenelse(mvc *sql, sql_rel *rel, sql_exp *e, int depth, int *changes)
 	return e;
 }
 
-#define is_equal(sf) (strcmp(sf->func->base.name, "=") == 0)
-#define is_not_equal(sf) (strcmp(sf->func->base.name, "<>") == 0)
-#define is_gt(sf) (strcmp(sf->func->base.name, ">") == 0)
-#define is_gte(sf) (strcmp(sf->func->base.name, ">=") == 0)
-#define is_lt(sf) (strcmp(sf->func->base.name, "<") == 0)
-#define is_lte(sf) (strcmp(sf->func->base.name, "<=") == 0)
-#define is_or(sf) (strcmp(sf->func->base.name, "or") == 0)
-
 static list *
 rewrite_compare_exps(mvc *sql, list *exps, int* changes) 
 {
@@ -2579,37 +2571,10 @@ rewrite_compare_exps(mvc *sql, list *exps, int* changes)
 		sql_exp *e = n->data;
 
 		if (!is_compare(e->type)) {
-			bool rewritten = false;
-
-			if (e->type == e_func) {
-				sql_subfunc *sf = e->f;
-				list *l = e->l;
-
-				if (is_equal(sf) || is_not_equal(sf) || is_gt(sf) || is_gte(sf) || is_lt(sf) || is_lte(sf)) {
-					sql_exp *f = l->h->data;
-					sql_exp *s = l->h->next->data;
-					n->data = e = exp_compare(sql->sa, f, s, is_equal(sf)?cmp_equal:is_not_equal(sf)?cmp_notequal:is_gt(sf)?cmp_gt:is_gte(sf)?cmp_gte:is_lt(sf)?cmp_lt:cmp_lte);
-
-					rewritten = true;
-					(*changes)++;
-				} else if (is_or(sf)) {
-					sql_exp *f = l->h->data;
-					sql_exp *s = l->h->next->data;
-
-					list *l = rewrite_compare_exps(sql, list_append(new_exp_list(sql->sa), f), changes);
-					list *r = rewrite_compare_exps(sql, list_append(new_exp_list(sql->sa), s), changes);
-					n->data = e = exp_or(sql->sa, l, r, 0);
-
-					rewritten = true;
-					(*changes)++;
-				}
-			}
-
-			if (!rewritten) {
-				n->data = e = exp_compare(sql->sa, e, exp_atom_bool(sql->sa, 1), cmp_equal);
-				(*changes)++;
-			}
-		} else if (is_compare(e->type) && e->flag == cmp_or) {
+			n->data = e = exp_compare(sql->sa, e, exp_atom_bool(sql->sa, 1), cmp_equal);
+			(*changes)++;
+		}
+		if (is_compare(e->type) && e->flag == cmp_or) {
 			e->l = rewrite_compare_exps(sql, e->l, changes);
 			e->r = rewrite_compare_exps(sql, e->r, changes);
 		}
