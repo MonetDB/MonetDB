@@ -1995,13 +1995,12 @@ exp_in_compare(mvc *sql, sql_exp **l, list *vals, int anyequal)
 
 /* exp visitor */
 static sql_exp *
-rewrite_anyequal(mvc *sql, sql_rel *rel, sql_exp *e, int depth, int *changes)
+rewrite_anyequal(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 {
 	sql_subfunc *sf;
 	if (e->type != e_func)
 		return e;
 
-	(void) changes;
 	sf = e->f;
 	if (is_anyequal_func(sf) && !list_empty(e->l)) {
 		list *l = e->l;
@@ -2028,7 +2027,7 @@ rewrite_anyequal(mvc *sql, sql_rel *rel, sql_exp *e, int depth, int *changes)
 			if (!is_tuple && is_values(re) && !exps_have_rel_exp(re->f)) { /* exp_values */
 				list *vals = re->f;
 
-				if (depth == 0 && is_select(rel->op))
+				if (is_select(rel->op))
 					return exp_in_compare(sql, &le, vals, is_anyequal(sf));
 				else
 					return exp_in_project(sql, &le, vals, is_anyequal(sf));
@@ -2176,13 +2175,12 @@ compare_aggr_op( char *compare, int quantifier)
 /* exp visitor */
 /* rewrite compare expressions including quantifiers any and all */
 static sql_exp *
-rewrite_compare(mvc *sql, sql_rel *rel, sql_exp *e, int depth, int *changes)
+rewrite_compare(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 {
 	sql_subfunc *sf;
 	if (e->type != e_func || is_ddl(rel->op))
 		return e;
 
-	(void) changes;
 	sf = e->f;
 	if (is_compare_func(sf) && !list_empty(e->l)) {
 		list *l = e->l;
@@ -2456,13 +2454,12 @@ exp_exist(mvc *sql, sql_exp *le, sql_exp *ne, int exists)
 
 /* exp visitor */
 static sql_exp *
-rewrite_exists(mvc *sql, sql_rel *rel, sql_exp *e, int depth, int *changes)
+rewrite_exists(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 {
 	sql_subfunc *sf;
 	if (e->type != e_func)
 		return e;
 
-	(void) changes;
 	sf = e->f;
 	if (is_exists_func(sf) && !list_empty(e->l)) {
 		list *l = e->l;
@@ -2501,9 +2498,12 @@ rewrite_exists(mvc *sql, sql_rel *rel, sql_exp *e, int depth, int *changes)
 				if (rel_has_freevar(sql, sq))
 					ne = le;
 
-				if (exp_has_rel(ie)) 
-					if (!rewrite_exp_rel(sql, rel, ie, depth, changes))
+				if (exp_has_rel(ie)) {
+					int changes = 0;
+					if (!rewrite_exp_rel(sql, rel, ie, depth, &changes))
 						return NULL;
+					(void)changes;
+				}
 
 				if (is_project(rel->op) && rel_has_freevar(sql, sq))
 					if (!(le = exp_exist(sql, le, ne, is_exists(sf))))
@@ -2866,6 +2866,27 @@ rewrite_outer2inner_union(mvc *sql, sql_rel *rel, int *changes)
 	return rel;
 }
 
+static sql_exp *
+rewrite_complex(mvc *sql, sql_rel *rel, sql_exp *e, int depth, int *changes)
+{
+	sql_exp *res = NULL;
+
+	(void)changes;
+	if (e->type != e_func)
+		return e;
+
+	res = rewrite_anyequal(sql, rel, e, depth);
+	if (res && res != e)
+		return res;
+	res = rewrite_exists(sql, rel, e, depth);
+	if (res && res != e)
+		return res;
+	res = rewrite_compare(sql, rel, e, depth);
+	if (res && res != e)
+		return res;
+	return e;
+}
+
 sql_rel *
 rel_unnest(mvc *sql, sql_rel *rel)
 {
@@ -2881,9 +2902,9 @@ rel_unnest(mvc *sql, sql_rel *rel)
 	rel = rel_visitor_bottomup(sql, rel, &rewrite_aggregates, &changes);
 	rel = rel_exp_visitor_bottomup(sql, rel, &rewrite_rank, &changes);
 	rel = rel_visitor_bottomup(sql, rel, &rewrite_outer2inner_union, &changes);	
-	rel = rel_exp_visitor_bottomup(sql, rel, &rewrite_anyequal, &changes);
-	rel = rel_exp_visitor_bottomup(sql, rel, &rewrite_exists, &changes);
-	rel = rel_exp_visitor_bottomup(sql, rel, &rewrite_compare, &changes);
+
+	rel = rel_exp_visitor_bottomup(sql, rel, &rewrite_complex, &changes);
+
 	rel = rel_exp_visitor_bottomup(sql, rel, &rewrite_ifthenelse, &changes);	/* add isnull handling */
 	rel = rel_exp_visitor_bottomup(sql, rel, &rewrite_exp_rel, &changes);
 	rel = rel_visitor_bottomup(sql, rel, &rewrite_join2semi, &changes);	/* where possible convert anyequal functions into marks */
