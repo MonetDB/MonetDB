@@ -2568,6 +2568,7 @@ rewrite_ifthenelse(mvc *sql, sql_rel *rel, sql_exp *e, int depth, int *changes)
 #define is_gte(sf) (strcmp(sf->func->base.name, ">=") == 0)
 #define is_lt(sf) (strcmp(sf->func->base.name, "<") == 0)
 #define is_lte(sf) (strcmp(sf->func->base.name, "<=") == 0)
+#define is_or(sf) (strcmp(sf->func->base.name, "or") == 0)
 
 static list *
 rewrite_compare_exps(mvc *sql, list *exps, int* changes) 
@@ -2588,6 +2589,16 @@ rewrite_compare_exps(mvc *sql, list *exps, int* changes)
 					sql_exp *f = l->h->data;
 					sql_exp *s = l->h->next->data;
 					n->data = e = exp_compare(sql->sa, f, s, is_equal(sf)?cmp_equal:is_not_equal(sf)?cmp_notequal:is_gt(sf)?cmp_gt:is_gte(sf)?cmp_gte:is_lt(sf)?cmp_lt:cmp_lte);
+
+					rewritten = true;
+					(*changes)++;
+				} else if (is_or(sf)) {
+					sql_exp *f = l->h->data;
+					sql_exp *s = l->h->next->data;
+
+					list *l = rewrite_compare_exps(sql, list_append(new_exp_list(sql->sa), f), changes);
+					list *r = rewrite_compare_exps(sql, list_append(new_exp_list(sql->sa), s), changes);
+					n->data = e = exp_or(sql->sa, l, r, 0);
 
 					rewritten = true;
 					(*changes)++;

@@ -27,6 +27,16 @@ project (
 | | table(sys.myx) [ "myx"."x", "myx"."y" ] COUNT 
 | ) [ ("myx"."x" = uuid[char(32) "1aea00e5db6e0810b554fde31d961965"]) or ("myx"."y" * = uuid "NULL") ]
 ) [ "myx"."x", "myx"."y" ]
+#plan select * from myx where x in ('1aea00e5db6e0810b554fde31d961965', '1aea00e5db6e0810b554fde31d961966') or y = '1aea00e5db6e0810b554fde31d961967';
+% .plan # table_name
+% rel # name
+% clob # type
+% 207 # length
+project (
+| select (
+| | table(sys.myx) [ "myx"."x", "myx"."y" ] COUNT 
+| ) [ (("myx"."x" = uuid[char(32) "1aea00e5db6e0810b554fde31d961965"]) or ("myx"."x" = uuid[char(32) "1aea00e5db6e0810b554fde31d961966"])) or ("myx"."y" = uuid[char(32) "1aea00e5db6e0810b554fde31d961967"]) ]
+) [ "myx"."x", "myx"."y" ]
 #insert into myx values ('1aea00e5db6e0810b554fde31d961965', '1aea00e5db6e0810b554fde31d961967');
 [ 1	]
 #select * from myx where x in ('1aea00e5db6e0810b554fde31d961966') or y is not null;
