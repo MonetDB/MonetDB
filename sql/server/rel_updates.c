@@ -1383,7 +1383,8 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 				//select bt values which are not null (they had a match in the join)
 				project_first = extra_project->exps->h->next->data; // this expression must come from bt!!
 				project_first = exp_ref(sql, project_first);
-				nils = rel_unop_(sql, extra_project, project_first, NULL, "isnull", card_value);
+				if (!(nils = rel_unop_(sql, extra_project, project_first, NULL, "isnull", card_value)))
+					return NULL;
 				set_has_no_nil(nils);
 				extra_select = rel_select(sql->sa, extra_project, exp_compare(sql->sa, nils, exp_atom_bool(sql->sa, 0), cmp_equal));
 
@@ -1412,7 +1413,8 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 				//select bt values which are not null (they had a match in the join)
 				project_first = extra_project->exps->h->next->data; // this expression must come from bt!!
 				project_first = exp_ref(sql, project_first);
-				nils = rel_unop_(sql, extra_project, project_first, NULL, "isnull", card_value);
+				if (!(nils = rel_unop_(sql, extra_project, project_first, NULL, "isnull", card_value)))
+					return NULL;
 				set_has_no_nil(nils);
 				extra_select = rel_select(sql->sa, extra_project, exp_compare(sql->sa, nils, exp_atom_bool(sql->sa, 0), cmp_equal));
 
@@ -1449,7 +1451,8 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 			//select bt values which are null (they didn't have match in the join)
 			project_first = extra_project->exps->h->next->data; // this expression must come from bt!!
 			project_first = exp_ref(sql, project_first);
-			nils = rel_unop_(sql, extra_project, project_first, NULL, "isnull", card_value);
+			if (!(nils = rel_unop_(sql, extra_project, project_first, NULL, "isnull", card_value)))
+				return NULL;
 			set_has_no_nil(nils);
 			extra_select = rel_select(sql->sa, extra_project, exp_compare(sql->sa, nils, exp_atom_bool(sql->sa, 1), cmp_equal));
 
