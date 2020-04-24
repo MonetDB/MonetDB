@@ -243,6 +243,15 @@ SELECT (SELECT 1) IN (SELECT i1.i) FROM integers i1;
 	-- False
 	-- NULL
 
+SELECT SUM((SELECT MAX(i1.i + i2.i) FROM integers i2)) FROM integers i1;
+	-- 15
+
+SELECT CORR((SELECT i1.i FROM integers i2), (SELECT SUM(i1.i + i2.i) FROM integers i2)) FROM integers i1;
+	--error, more than one row returned by a subquery used as an expression
+
+SELECT i1.i FROM integers i1 WHERE (SELECT TRUE EXCEPT SELECT i1.i > 0);
+	-- NULL
+
 DROP FUNCTION evilfunction(INT);
 DROP TABLE tbl_ProductSales;
 DROP TABLE another_T;
