@@ -19,6 +19,7 @@ enum valtype {
 	BOOLEAN,
 	STR,
 	MURI,
+	LADDR,
 	OTHER
 };
 
