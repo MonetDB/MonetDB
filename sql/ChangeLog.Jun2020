@@ -25,8 +25,11 @@
   by range (before they weren't).
 
 * Wed Jan 29 2020 Sjoerd Mullender <sjoerd@acm.org>
-- Removed support for Python 2.  Python 2 itself is no longer supported.
-  Use Python 3 instead.
+- Removed support for Python 2.  Python 2 itself is no longer
+  supported.  Use Python 3 instead.  Functions that were declared as
+  LANGUAGE PYTHON2 or LANGUAGE PYTHON2_MAP are changed to LANGUAGE
+  PYTHON and LANGUAGE PYTHON_MAP respectively (without changing the
+  Python code).
 
 * Wed Jan 29 2020 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
 - Implemented 'covar_pop' and 'covar_samp' aggregate functions, as well

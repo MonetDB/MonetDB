@@ -5904,6 +5904,7 @@ set schema "sys";
 
 Running database upgrade commands:
 set schema "sys";
+update sys.functions set language = language - 2 where language in (8, 9);
 drop function isaURL(url);
 CREATE function isaURL(theUrl string) RETURNS BOOL
  EXTERNAL NAME url."isaURL";

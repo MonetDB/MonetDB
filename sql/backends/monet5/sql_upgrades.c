@@ -2296,6 +2296,11 @@ sql_update_jun2020(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 	pos += snprintf(buf + pos, bufsize - pos,
 			"set schema \"sys\";\n");
 
+	/* convert old PYTHON2 and PYTHON2_MAP to PYTHON and PYTHON_MAP
+	 * see also function load_func() in store.c */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"update sys.functions set language = language - 2 where language in (8, 9);\n");
+
 	/* 12_url */
 	pos += snprintf(buf + pos, bufsize - pos,
 			"drop function isaURL(url);\n"
