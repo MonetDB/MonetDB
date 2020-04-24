@@ -291,6 +291,8 @@ opener_rstream(char *filename)
 	stream *s = open_rstream(filename);
 	if (s == NULL)
 		croak(2, "Error opening file '%s': %s", filename, strerror(errno));
+	if (!mnstr_isbinary(s))
+		croak(2, "open_rastream returned binary stream");
 	return s;
 }
 
@@ -301,6 +303,8 @@ opener_rastream(char *filename)
 	stream *s = open_rastream(filename);
 	if (s == NULL)
 		croak(2, "Error opening file '%s': %s", filename, strerror(errno));
+	if (mnstr_isbinary(s))
+		croak(2, "open_rastream returned binary stream");
 	return s;
 }
 
