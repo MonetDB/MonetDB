@@ -18,7 +18,6 @@
 typedef struct xz_stream {
 	FILE *fp;
 	lzma_stream strm;
-	size_t todo;
 	uint8_t buf[XZBUFSIZ];
 } xz_stream;
 
@@ -36,8 +35,10 @@ typedef struct xz_stream {
  * Returns > 0 on succes, 0 on error.
  */
 static int
-pump_out(xz_stream *xz, lzma_action action)
+pump_out(stream *s, lzma_action action)
 {
+	xz_stream *xz = (xz_stream *) s->stream_data.p;
+
 	while (1) {
 		// Make sure there is room in the output buffer
 		if (xz->strm.avail_out == 0) {
@@ -91,71 +92,94 @@ pump_out(xz_stream *xz, lzma_action action)
 }
 
 
+/* Keep working lzma_code until the output buffer is full or the input stream
+ * is exhausted.
+ *
+ * We're moving data from the input stream to the input buffer to the
+ * lzma internal state to the output buffer. If the input stream is exhausted
+ * we still have to flush the input buffer and especially the internal state.
+ *
+ * The most trickly situation is if the output buffer goes full while this
+ * flushing takes place. We have to remember until next time that the internal
+ * state is not fully flushed. We do so by setting next_int to NULL after we
+ * have received LZMA_STREAM_END to signal we're fully done.
+ *
+ * Return the number of bytes stored into the output buffer, or -1 on error.
+ */
+static ssize_t
+pump_in(stream *s)
+{
+	xz_stream *xz = (xz_stream *) s->stream_data.p;
+	uint8_t *orig_out = xz->strm.next_out;
+
+	if (xz->strm.next_in == NULL) {
+		// Signals we're fully done with no data lingering in the internal
+		// state.
+		assert(xz->fp == NULL);
+		return 0;
+	}
+
+	while (1) {
+		// If the output buffer is full, return immediately.
+		if (xz->strm.avail_out == 0)
+			return xz->strm.next_out - orig_out;
+
+		// Refill the buffer if necessary and possible.
+		if (xz->strm.avail_in == 0 && xz->fp != NULL) {
+			size_t nread = fread(xz->buf, 1, XZBUFSIZ, xz->fp);
+			if (nread == 0) {
+				if (feof(xz->fp)) {
+					fclose(xz->fp);
+					xz->fp = NULL;
+				} else {
+					s->errnr = MNSTR_READ_ERROR;
+					return -1;
+				}
+			}
+			xz->strm.next_in = xz->buf;
+			xz->strm.avail_in = nread;
+		}
+
+		// If we have no input stream, we're flushing.
+		lzma_action action = xz->fp != NULL ? LZMA_RUN : LZMA_FINISH;
+		lzma_ret ret = lzma_code(&xz->strm, action);
+		switch (ret) {
+			case LZMA_OK:
+				// time for another round of output checking
+				// input filling
+				continue;
+			case LZMA_STREAM_END:
+				// fully done.
+				if (xz->fp != NULL)
+					fclose(xz->fp);
+				assert(xz->strm.avail_in == 0);
+				xz->strm.next_in = NULL; // to indicate we have seen LZMA_STREAM_END
+				return xz->strm.next_out - orig_out;
+			default:
+				s->errnr = MNSTR_READ_ERROR;
+				return -1;
+		}
+	}
+}
+
 static ssize_t
 stream_xzread(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 {
 	xz_stream *xz = s->stream_data.p;
-	size_t size = elmsize * cnt, origsize = size, ressize = 0;
-	uint8_t *outbuf = buf;
-	lzma_action action = LZMA_RUN;
+	size_t size = elmsize * cnt;
 
 	if (xz == NULL) {
 		s->errnr = MNSTR_READ_ERROR;
 		return -1;
 	}
 
-	xz->strm.next_in = xz->buf;
-	xz->strm.avail_in = xz->todo;
-	xz->strm.next_out = outbuf;
+	xz->strm.next_out = (uint8_t*) buf;
 	xz->strm.avail_out = size;
-	while (size && (xz->strm.avail_in || !feof(xz->fp))) {
-		lzma_ret ret;
-		size_t sz = (size > XZBUFSIZ) ? XZBUFSIZ : size;
-
-		if (xz->strm.avail_in == 0 &&
-		    (xz->strm.avail_in = fread(xz->buf, 1, sz, xz->fp)) == 0) {
-			s->errnr = MNSTR_READ_ERROR;
-			return -1;
-		}
-		xz->strm.next_in = xz->buf;
-		if (feof(xz->fp))
-			action = LZMA_FINISH;
-		ret = lzma_code(&xz->strm, action);
-		if (xz->strm.avail_out == 0 || ret == LZMA_STREAM_END) {
-			origsize -= xz->strm.avail_out;	/* remaining space */
-			xz->todo = xz->strm.avail_in;
-			if (xz->todo > 0)
-				memmove(xz->buf, xz->strm.next_in, xz->todo);
-			ressize = origsize;
-			break;
-		}
-		if (ret != LZMA_OK) {
-			s->errnr = MNSTR_READ_ERROR;
-			return -1;
-		}
-	}
-	if (ressize) {
-		/* when in text mode, convert \r\n line endings to
-		 * \n */
-		if (!s->binary) {
-			char *p1, *p2, *pe;
-
-			p1 = buf;
-			pe = p1 + ressize;
-			while (p1 < pe && *p1 != '\r')
-				p1++;
-			p2 = p1;
-			while (p1 < pe) {
-				if (*p1 == '\r' && p1[1] == '\n')
-					ressize--;
-				else
-					*p2++ = *p1;
-				p1++;
-			}
-		}
-		return (ssize_t) (ressize / elmsize);
-	}
-	return 0;
+	ssize_t nread = pump_in(s);
+	if (nread < 0)
+		return -1;
+	else
+		return nread / (ssize_t) elmsize;
 }
 
 static ssize_t
@@ -175,7 +199,7 @@ stream_xzwrite(stream *restrict s, const void *restrict buf, size_t elmsize, siz
 	xz->strm.next_in = buf;
 	xz->strm.avail_in = size;
 
-	if (pump_out(xz, LZMA_RUN))
+	if (pump_out(s, LZMA_RUN))
 		return (ssize_t) (size / elmsize);
 	else {
 		s->errnr = MNSTR_WRITE_ERROR;
@@ -192,13 +216,14 @@ stream_xzclose(stream *s)
 		if (!s->readonly) {
 			xz->strm.next_in = NULL;
 			xz->strm.avail_in = 0;
-			if (pump_out(xz, LZMA_FINISH)) {
+			if (pump_out(s, LZMA_FINISH)) {
 				fflush(xz->fp);
 			} else {
 				s->errnr = MNSTR_WRITE_ERROR;
 			}
 		}
-		fclose(xz->fp);
+		if (xz->fp)
+			fclose(xz->fp);
 		lzma_end(&xz->strm);
 		free(xz);
 	}
@@ -217,7 +242,7 @@ stream_xzflush(stream *s)
 
 	xz->strm.next_in = NULL;
 	xz->strm.avail_in = 0;
-	if (pump_out(xz, LZMA_FULL_BARRIER)) {
+	if (pump_out(s, LZMA_FULL_BARRIER)) {
 		fflush(xz->fp);
 	} else {
 		s->errnr = MNSTR_WRITE_ERROR;
@@ -283,24 +308,15 @@ open_xzstream(const char *restrict filename, const char *restrict flags)
 	s->close = stream_xzclose;
 	s->flush = stream_xzflush;
 	s->stream_data.p = (void *) xz;
-	xz->strm.next_out = xz->buf;
-	xz->strm.avail_out = XZBUFSIZ;
-	if (flags[0] == 'r' && flags[1] != 'b') {
-		char buf[UTF8BOMLENGTH];
-		if (stream_xzread(s, buf, 1, UTF8BOMLENGTH) == UTF8BOMLENGTH &&
-		    strncmp(buf, UTF8BOM, UTF8BOMLENGTH) == 0) {
-			s->isutf8 = true;
-		} else {
-			lzma_end(&xz->strm);
-			if (lzma_stream_decoder(&xz->strm, UINT64_MAX, LZMA_CONCATENATED) != LZMA_OK
-				|| fseek (xz->fp, 0L, SEEK_SET) < 0) {
-				fclose(xz->fp);
-				free(xz);
-				destroy_stream(s);
-				return NULL;
-			}
-			xz->todo = 0;
-		}
+	if (flags[0] == 'r') {
+		// input stream -> our buffer -> lzma_state -> caller buffer
+		xz->strm.next_in = xz->buf;
+		xz->strm.avail_in = 0;
+	} else {
+		assert(flags[0] == 'w');
+		// caller buffer -> lzma_state -> our buffer -> output stream
+		xz->strm.next_out = xz->buf;
+		xz->strm.avail_out = XZBUFSIZ;
 	}
 	return s;
 }
