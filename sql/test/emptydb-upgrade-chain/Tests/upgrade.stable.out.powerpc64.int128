@@ -5942,17 +5942,20 @@ GRANT EXECUTE ON AGGREGATE corr(HUGEINT, HUGEINT) TO PUBLIC;
 create function json.filter(js json, name hugeint)
 returns json external name json.filter;
 GRANT EXECUTE ON FUNCTION json.filter(json, hugeint) TO PUBLIC;
-update sys.functions set system = true where name in ('fuse', 'generate_series', 'stddev_samp', 'stddev_pop', 'var_samp', 'var_pop', 'median', 'median_avg', 'quantile', 'quantile_avg', 'corr') and schema_id = (select id from sys.schemas where name = 'sys');
-update sys.functions set system = true where name = 'filter' and schema_id = (select id from sys.schemas where name = 'json');
+update sys.functions set system = true where system <> true and name in ('fuse') and schema_id = (select id from sys.schemas where name = 'sys') and type = 1;
+update sys.functions set system = true where system <> true and name in ('generate_series') and schema_id = (select id from sys.schemas where name = 'sys') and type = 5;
+update sys.functions set system = true where system <> true and name in ('stddev_samp', 'stddev_pop', 'var_samp', 'var_pop', 'median', 'median_avg', 'quantile', 'quantile_avg', 'corr') and schema_id = (select id from sys.schemas where name = 'sys') and type = 3;
+update sys.functions set system = true where system <> true and name = 'filter' and schema_id = (select id from sys.schemas where name = 'json') and type = 1;
 set schema "sys";
 
 Running database upgrade commands:
 set schema "sys";
+update sys.functions set language = language - 2 where language in (8, 9);
 drop function isaURL(url);
 CREATE function isaURL(theUrl string) RETURNS BOOL
  EXTERNAL NAME url."isaURL";
 GRANT EXECUTE ON FUNCTION isaURL(string) TO PUBLIC;
-update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name = 'isaurl' and type = 1;
+update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'sys') and name = 'isaurl' and type = 1;
 drop function str_to_time(string, string);
 drop function time_to_str(time, string);
 drop function str_to_timestamp(string, string);
@@ -5969,7 +5972,7 @@ grant execute on function str_to_time to public;
 grant execute on function time_to_str to public;
 grant execute on function str_to_timestamp to public;
 grant execute on function timestamp_to_str to public;
-update sys.functions set system = true where name in ('str_to_time', 'str_to_timestamp', 'time_to_str', 'timestamp_to_str') and schema_id = (select id from sys.schemas where name = 'sys');
+update sys.functions set system = true where system <> true and name in ('str_to_time', 'str_to_timestamp', 'time_to_str', 'timestamp_to_str') and schema_id = (select id from sys.schemas where name = 'sys') and type = 1;
 drop view sys.tracelog;
 drop function sys.tracelog();
 create function sys.tracelog()
@@ -5979,7 +5982,7 @@ create function sys.tracelog()
 	)
 	external name sql.dump_trace;
 create view sys.tracelog as select * from sys.tracelog();
-update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name = 'tracelog' and type = 5;
+update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'sys') and name = 'tracelog' and type = 5;
 update sys._tables set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name = 'tracelog';
 drop function sys.epoch(bigint);
 drop function sys.epoch(int);
@@ -5998,7 +6001,7 @@ grant execute on function sys.date_trunc(string, timestamp with time zone) to pu
 grant execute on function sys.epoch (BIGINT) to public;
 grant execute on function sys.epoch (INT) to public;
 grant execute on function sys.epoch (TIMESTAMP WITH TIME ZONE) to public;
-update sys.functions set system = true where name in ('epoch', 'date_trunc') and schema_id = (select id from sys.schemas where name = 'sys');
+update sys.functions set system = true where system <> true and name in ('epoch', 'date_trunc') and schema_id = (select id from sys.schemas where name = 'sys') and type = 1;
 drop view sys.sessions;
 drop function sys.sessions;
 create function sys.sessions()
@@ -6070,38 +6073,21 @@ returns table(
 grant execute on function sys.prepared_statements_args to public;
 create view sys.prepared_statements_args as select * from sys.prepared_statements_args();
 grant select on sys.prepared_statements_args to public;
-update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name in ('sessions', 'prepared_statements', 'prepared_statements_args') and type = 5;
+update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'sys') and name in ('sessions', 'prepared_statements', 'prepared_statements_args') and type = 5;
 update sys._tables set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name in ('sessions', 'prepared_statements', 'prepared_statements_args');
-update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name in ('setoptimizer', 'setquerytimeout', 'setsessiontimeout', 'setworkerlimit', 'setmemorylimit', 'setoptimizer', 'stopsession') and type = 2;
+update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'sys') and name in ('setoptimizer', 'setquerytimeout', 'setsessiontimeout', 'setworkerlimit', 'setmemorylimit', 'setoptimizer', 'stopsession') and type = 2;
 create procedure sys.suspend_log_flushing()
  external name sql.suspend_log_flushing;
 create procedure sys.resume_log_flushing()
  external name sql.resume_log_flushing;
-update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name in ('suspend_log_flushing', 'resume_log_flushing') and type = 2;
+update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'sys') and name in ('suspend_log_flushing', 'resume_log_flushing') and type = 2;
 create function sys.debug(flag string) returns integer
  external name mdb."setDebug";
 create function sys.debugflags()
  returns table(flag string, val bool)
  external name mdb."getDebugFlags";
-create procedure sys."sleep"(msecs tinyint)
- external name "alarm"."sleep";
-grant execute on procedure sys."sleep"(tinyint) to public;
-create procedure sys."sleep"(msecs smallint)
- external name "alarm"."sleep";
-grant execute on procedure sys."sleep"(smallint) to public;
-create procedure sys."sleep"(msecs int)
- external name "alarm"."sleep";
- grant execute on procedure sys."sleep"(int) to public;
-create function sys."sleep"(msecs tinyint) returns tinyint
- external name "alarm"."sleep";
-grant execute on function sys."sleep"(tinyint) to public;
-create function sys."sleep"(msecs smallint) returns smallint
- external name "alarm"."sleep";
-grant execute on function sys."sleep"(smallint) to public;
-create function sys."sleep"(msecs int) returns int
- external name "alarm"."sleep";
- grant execute on function sys."sleep"(int) to public;
-update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name in ('debug', 'debugflags', 'sleep');
+update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'sys') and name in ('debug') and type = 1;
+update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'sys') and name in ('debugflags') and type = 5;
 drop view sys.queue;
 drop function sys.queue;
 create function sys.queue()
@@ -6125,7 +6111,7 @@ drop procedure sys.stop(int);
 grant execute on procedure sys.pause(bigint) to public;
 grant execute on procedure sys.resume(bigint) to public;
 grant execute on procedure sys.stop(bigint) to public;
-update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name = 'queue' and type = 5;
+update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'sys') and name = 'queue' and type = 5;
 update sys._tables set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name = 'queue';
 create window stddev_samp(val TINYINT) returns DOUBLE
  external name "sql"."stdev";
@@ -6381,7 +6367,7 @@ GRANT EXECUTE ON WINDOW sys.group_concat(STRING) TO PUBLIC;
 create window sys.group_concat(str STRING, sep STRING) returns STRING
  external name "sql"."str_group_concat";
 GRANT EXECUTE ON WINDOW sys.group_concat(STRING, STRING) TO PUBLIC;
-update sys.functions set system = true where name in ('stddev_samp', 'stddev_pop', 'var_samp', 'var_pop', 'covar_samp', 'covar_pop', 'corr', 'group_concat') and schema_id = (select id from sys.schemas where name = 'sys');
+update sys.functions set system = true where system <> true and name in ('stddev_samp', 'stddev_pop', 'var_samp', 'var_pop', 'covar_samp', 'covar_pop', 'corr', 'group_concat') and schema_id = (select id from sys.schemas where name = 'sys') and type in (6, 3);
 DROP AGGREGATE stddev_samp(date);
 DROP AGGREGATE stddev_samp(time);
 DROP AGGREGATE stddev_samp(timestamp);
@@ -6401,7 +6387,7 @@ ALTER TABLE sys.function_languages SET READ WRITE;
 DELETE FROM sys.function_languages where language_keyword IN ('PYTHON2','PYTHON2_MAP');
 create procedure sys.hot_snapshot(tarfile string)
  external name sql.hot_snapshot;
-update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name in ('hot_snapshot') and type = 2;
+update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'sys') and name in ('hot_snapshot') and type = 2;
 CREATE SCHEMA logging;
 CREATE PROCEDURE logging.flush()
  EXTERNAL NAME logging.flush;
@@ -6432,7 +6418,8 @@ GRANT EXECUTE ON FUNCTION logging.compinfo TO public;
 CREATE view logging.compinfo AS SELECT * FROM logging.compinfo();
 GRANT SELECT ON logging.compinfo TO public;
 update sys.schemas set system = true where name = 'logging';
-update sys.functions set system = true where name in ('flush', 'setcomplevel', 'resetcomplevel', 'setlayerlevel', 'resetlayerlevel', 'setflushlevel', 'resetflushlevel', 'setadapter', 'resetadapter', 'compinfo') and schema_id = (select id from sys.schemas where name = 'logging');
+update sys.functions set system = true where system <> true and name in ('flush', 'setcomplevel', 'resetcomplevel', 'setlayerlevel', 'resetlayerlevel', 'setflushlevel', 'resetflushlevel', 'setadapter', 'resetadapter') and schema_id = (select id from sys.schemas where name = 'logging') and type = 2;
+update sys.functions set system = true where system <> true and name in ('compinfo') and schema_id = (select id from sys.schemas where name = 'logging') and type = 5;
 update sys._tables set system = true where schema_id = (select id from sys.schemas where name = 'logging') and name = 'compinfo';
 commit;
 set schema "sys";

@@ -1060,6 +1060,12 @@ load_func(sql_trans *tr, sql_schema *s, sqlid fid, subrids *rs)
 	t->s = s;
 	t->fix_scale = SCALE_EQ;
 	t->sa = tr->sa;
+	/* convert old PYTHON2 and PYTHON2_MAP to PYTHON and PYTHON_MAP
+	 * see also function sql_update_jun2020() in sql_upgrades.c */
+	if ((int) t->lang == 8)		/* old FUNC_LANG_PY2 */
+		t->lang = FUNC_LANG_PY;
+	else if ((int) t->lang == 9)	/* old FUNC_LANG_MAP_PY2 */
+		t->lang = FUNC_LANG_MAP_PY;
 	if (t->lang != FUNC_LANG_INT) {
 		t->query = t->imp;
 		t->imp = NULL;

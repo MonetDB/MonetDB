@@ -175,8 +175,8 @@ rel_table_optname(mvc *sql, sql_rel *sq, symbol *optname)
 			sq = rel_project(sql->sa, sq, rel_projections(sql, sq, NULL, 1, 0));
 			osq = sq;
 		}
-		if (columnrefs && dlist_length(columnrefs) > list_length(sq->exps))
-			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: The number of aliases is longer than the number of columns (%d>%d)", dlist_length(columnrefs), sq->nrcols);
+		if (columnrefs && dlist_length(columnrefs) != list_length(sq->exps))
+			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: The number of aliases don't match the number of columns (%d != %d)", dlist_length(columnrefs), sq->nrcols);
 		if (columnrefs && sq->exps) {
 			dnode *d = columnrefs->h;
 
@@ -1189,6 +1189,7 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 				}
 			}
 			if (exp) { 
+				int of = query_fetch_outer_state(query, i);
 				if (is_groupby(outer->op) && !is_sql_aggr(f)) {
 					exp = rel_groupby_add_aggr(sql, outer, exp);
 					exp->card = CARD_ATOM;
@@ -1197,7 +1198,7 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 				else
 					exp->card = CARD_ATOM;
 				set_freevar(exp, i);
-				if (!is_sql_aggr(f) && !outer->grouped)
+				if (!is_sql_where(of) && !is_sql_aggr(of) && !is_sql_aggr(f) && !outer->grouped)
 					set_outer(outer);
 			}
 			if (exp && outer && is_join(outer->op))
@@ -1257,6 +1258,7 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 				}
 			}
 			if (exp) {
+				int of = query_fetch_outer_state(query, i);
 				if (is_groupby(outer->op) && !is_sql_aggr(f)) {
 					exp = rel_groupby_add_aggr(sql, outer, exp);
 					exp->card = CARD_ATOM;
@@ -1265,7 +1267,7 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 				else
 					exp->card = CARD_ATOM;
 				set_freevar(exp, i);
-				if (!is_sql_aggr(f) && !outer->grouped)
+				if (!is_sql_where(of) && !is_sql_aggr(of) && !is_sql_aggr(f) && !outer->grouped)
 					set_outer(outer);
 			}
 			if (exp && outer && is_join(outer->op))
@@ -2129,9 +2131,14 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 				return NULL;
 			le->f = nvalues;
 		} else { /* if it's not a tuple, enforce coersion on the type for every element on the list */
+			sql_subtype super;
+			
 			if (!(values = exp_values_set_supertype(sql, values)))
 				return NULL;
 			if (rel_binop_check_types(sql, rel ? *rel : NULL, le, values, 0) < 0)
+				return NULL;
+			supertype(&super, exp_subtype(values), exp_subtype(le));
+			if ((le = rel_check_type(sql, &super, NULL, le, type_equal)) == NULL)
 				return NULL;
 		}
 		e = exp_in_func(sql, le, values, (sc->token == SQL_IN), is_tuple);
@@ -2750,7 +2757,12 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 	case SQL_UNION:
 	case SQL_EXCEPT:
 	case SQL_INTERSECT: {
-		sql_rel *sq = rel_setquery(query, sc);
+		sql_rel *sq;
+		if (rel)
+			query_push_outer(query, rel, f);
+		sq = rel_setquery(query, sc);
+		if (rel)
+			rel = query_pop_outer(query);
 		if (!sq)
 			return NULL;
 		if (ek.card <= card_set && is_project(sq->op) && list_length(sq->exps) > 1)
@@ -3341,7 +3353,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 	exps = sa_list(sql->sa);
 	if (args && args->data.sym) {
 		int i, all_aggr = query_has_outer(query);
-		bool found_nested_aggr = false;
+		bool found_nested_aggr = false, arguments_correlated = true, all_const = true;
 		list *ungrouped_cols = NULL;
 
 		all_freevar = 1;
@@ -3378,12 +3390,15 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 			}
 
 			all_aggr &= (exp_card(e) <= CARD_AGGR && !exp_is_atom(e) && is_aggr(e->type) && !is_func(e->type) && (!groupby || !is_groupby(groupby->op) || !groupby->r || !exps_find_exp(groupby->r, e)));
-			exp_only_freevar(query, e, &all_freevar, &found_one_freevar, &found_nested_aggr, &ungrouped_cols);
-			all_freevar &= found_one_freevar; /* no uncorrelated variables must be found, plus at least one correlated variable to push this aggregate to an outer query */
+			exp_only_freevar(query, e, &arguments_correlated, &found_one_freevar, &found_nested_aggr, &ungrouped_cols);
+			all_freevar &= (arguments_correlated && found_one_freevar) || (is_atom(e->type)?all_freevar:0); /* no uncorrelated variables must be found, plus at least one correlated variable to push this aggregate to an outer query */
+			all_const &= is_atom(e->type);
 			list_append(exps, e);
 		}
-		if (all_aggr || (all_freevar && found_nested_aggr))
+		if (all_aggr || ((arguments_correlated || all_freevar) && found_nested_aggr))
 			return sql_error(sql, 05, SQLSTATE(42000) "SELECT: aggregate function calls cannot be nested");
+		if (all_const)
+			all_freevar = 0;
 		if (!all_freevar) {
 			if (is_sql_groupby(f)) {
 				char *uaname = GDKmalloc(strlen(aname) + 1);
@@ -3425,19 +3440,24 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 					sql_rel *outer;
 					sql_exp *e = (sql_exp*) n->data;
 
-					if ((outer = query_fetch_outer(query, is_freevar(e)-1)) && outer->grouped) {
-						bool err = false, was_processed = false;
+					if ((outer = query_fetch_outer(query, is_freevar(e)-1))) {
+						int of = query_fetch_outer_state(query, is_freevar(e)-1);
+						if (outer->grouped) {
+							bool err = false, was_processed = false;
 
-						if (is_processed(outer)) {
-							was_processed = true;
-							reset_processed(outer);
+							if (is_processed(outer)) {
+								was_processed = true;
+								reset_processed(outer);
+							}
+							if (!is_groupby_col(outer, e))
+								err = true;
+							if (was_processed)
+								set_processed(outer);
+							if (err)
+								return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: subquery uses ungrouped column \"%s.%s\" from outer query", exp_relname(e), exp_name(e));
+						} else if (!is_sql_aggr(of)) {
+							set_outer(outer);
 						}
-						if (!is_groupby_col(outer, e))
-							err = true;
-						if (was_processed)
-							set_processed(outer);
-						if (err)
-							return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: subquery uses ungrouped column \"%s.%s\" from outer query", exp_relname(e), exp_name(e));
 					}
 				}
 			}
@@ -3482,7 +3502,8 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 			if (is_outer(groupby))
 				return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: subquery uses ungrouped column from outer query");
 		}
-	}
+	} else if (!subquery && groupby && is_outer(groupby) && !is_groupby(groupby->op))
+		return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: subquery uses ungrouped column from outer query");
 
 	/* find having select */
 	if (!subquery && groupby && !is_processed(groupby) && is_sql_having(f)) { 

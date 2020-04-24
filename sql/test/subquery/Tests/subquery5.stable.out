@@ -216,6 +216,54 @@ stdout of test 'subquery5` in directory 'sql/test/subquery` itself:
 [ 1	]
 [ 1	]
 [ 1	]
+#SELECT (SELECT 1) IN (SELECT 2 UNION SELECT 3) FROM integers i1;
+% .%22 # table_name
+% %22 # name
+% boolean # type
+% 5 # length
+[ false	]
+[ false	]
+[ false	]
+[ false	]
+#SELECT (SELECT 1 FROM integers i2 INNER JOIN integers i3 ON MAX(i1.i) = 1) IN (SELECT 1 FROM integers i2 INNER JOIN integers i3 ON MIN(i1.i) = 1) FROM integers i1;
+% .%26 # table_name
+% %26 # name
+% boolean # type
+% 5 # length
+[ NULL	]
+#SELECT (SELECT COVAR_POP(i1.i, 1)) IN (SELECT SUM(i1.i)) FROM integers i1;
+% .%20 # table_name
+% %20 # name
+% boolean # type
+% 5 # length
+[ false	]
+#SELECT (SELECT 5) NOT IN (SELECT MIN(i1.i)) FROM integers i1;
+% .%15 # table_name
+% %15 # name
+% boolean # type
+% 5 # length
+[ true	]
+#SELECT (SELECT 1) IN (SELECT i1.i) FROM integers i1;
+% .%15 # table_name
+% %15 # name
+% boolean # type
+% 5 # length
+[ true	]
+[ false	]
+[ false	]
+[ NULL	]
+#SELECT SUM((SELECT MAX(i1.i + i2.i) FROM integers i2)) FROM integers i1;
+% .%2 # table_name
+% %2 # name
+% bigint # type
+% 2 # length
+[ 15	]
+#SELECT i1.i FROM integers i1 WHERE (SELECT TRUE EXCEPT SELECT i1.i > 0);
+% .i1 # table_name
+% i # name
+% int # type
+% 1 # length
+[ NULL	]
 #DROP FUNCTION evilfunction(INT);
 #DROP TABLE tbl_ProductSales;
 #DROP TABLE another_T;
