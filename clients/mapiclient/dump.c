@@ -2092,6 +2092,8 @@ dump_function(Mapi mid, stream *toConsole, const char *fid, bool hashge)
 				free(adigs);
 				free(ascal);
 			} while (mapi_fetch_row(hdl) != 0);
+			if (ftype == 5)
+				mnstr_printf(toConsole, ")");
 		}
 		if (flkey) {
 			mnstr_printf(toConsole, " LANGUAGE %s", flkey);
