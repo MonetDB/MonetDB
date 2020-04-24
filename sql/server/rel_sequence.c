@@ -88,12 +88,12 @@ rel_create_seq(
 	sql_sequence *seq = NULL;
 	char *name = qname_table(qname);
 	char *sname = qname_schema(qname);
-	sql_schema *s = NULL;
+	sql_schema *s = ss;
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_error(sql, 02, SQLSTATE(3F000) "CREATE SEQUENCE: no such schema '%s'", sname);
-	if (s == NULL)
-		s = ss;
+	if (!mvc_schema_privs(sql, s))
+		return sql_error(sql, 02, SQLSTATE(42000) "CREATE SEQUENCE: access denied for %s to schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
 	(void) tpe;
 	if (find_sql_sequence(s, name)) {
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE SEQUENCE: name '%s' already in use", name);
@@ -249,7 +249,7 @@ rel_alter_seq(
 	char* name = qname_table(qname);
 	char *sname = qname_schema(qname);
 	sql_sequence *seq;
-	sql_schema *s = NULL;
+	sql_schema *s = ss;
 
 	int start_type = start_list->h->data.i_val;
 	sql_rel *r = NULL;
@@ -258,8 +258,8 @@ rel_alter_seq(
 	assert(start_list->h->type == type_int);
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SEQUENCE: no such schema '%s'", sname);
-	if (!s)
-		s = ss;
+	if (!mvc_schema_privs(sql, s))
+		return sql_error(sql, 02, SQLSTATE(42000) "ALTER SEQUENCE: access denied for %s to schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
 	(void) tpe;
 	if (!(seq = find_sql_sequence(s, name))) {
 		return sql_error(sql, 02, SQLSTATE(42000) "ALTER SEQUENCE: no such sequence '%s'", name);

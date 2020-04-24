@@ -17,6 +17,8 @@ parse_dotmonetdb(DotMonetdb *dotfile)
 	FILE *config = NULL;
 	char buf[FILENAME_MAX];
 
+	if (dotfile == NULL)
+		return;
 	if ((cfile = getenv("DOTMONETDBFILE")) == NULL) {
 		/* no environment variable: use a default */
 		if ((config = fopen(".monetdb", "r")) == NULL) {
@@ -46,9 +48,7 @@ parse_dotmonetdb(DotMonetdb *dotfile)
 		cfile = strdup(cfile);
 	}
 
-        if (dotfile) {
-		*dotfile = (DotMonetdb) {0};
-        }
+	*dotfile = (DotMonetdb) {0};
 
 	if (config) {
 		int line = 0;

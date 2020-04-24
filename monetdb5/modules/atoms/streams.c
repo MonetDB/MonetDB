@@ -28,7 +28,7 @@ str mnstr_open_rstreamwrap(Stream *S, str *filename)
 		if (s)
 			close_stream(s);
 		throw(IO, "streams.open", "could not open file '%s': %s",
-				*filename, strerror(errnr));
+				*filename, GDKstrerror(errnr, (char[128]){0}, 128));
 	} else {
 		*(stream**)S = s;
 	}
@@ -44,7 +44,7 @@ str mnstr_open_wstreamwrap(Stream *S, str *filename)
 		if (s)
 			close_stream(s);
 		throw(IO, "streams.open", "could not open file '%s': %s",
-				*filename, strerror(errnr));
+				*filename, GDKstrerror(errnr, (char[128]){0}, 128));
 	} else {
 		*(stream**)S = s;
 	}
@@ -61,7 +61,7 @@ str mnstr_open_rastreamwrap(Stream *S, str *filename)
 		if (s)
 			close_stream(s);
 		throw(IO, "streams.open", "could not open file '%s': %s",
-				*filename, strerror(errnr));
+				*filename, GDKstrerror(errnr, (char[128]){0}, 128));
 	} else {
 		*(stream**)S = s;
 	}
@@ -78,7 +78,7 @@ str mnstr_open_wastreamwrap(Stream *S, str *filename)
 		if (s)
 			close_stream(s);
 		throw(IO, "streams.open", "could not open file '%s': %s",
-				*filename, strerror(errnr));
+				*filename, GDKstrerror(errnr, (char[128]){0}, 128));
 	} else {
 		*(stream**)S = s;
 	}

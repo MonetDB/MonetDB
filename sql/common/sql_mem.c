@@ -76,7 +76,8 @@ void *sa_realloc( sql_allocator *sa, void *p, size_t sz, size_t oldsz )
 {
 	void *r = sa_alloc(sa, sz);
 
-	memcpy(r, p, oldsz);
+	if (r)
+		memcpy(r, p, oldsz);
 	return r;
 }
 
@@ -95,6 +96,7 @@ void *sa_alloc( sql_allocator *sa, size_t sz )
 			tmp = RENEW_ARRAY(char*,sa->blks,sa->size);
 			if (tmp == NULL) {
 				sa->size /= 2; /* undo */
+				GDKfree(r);
 				return NULL;
 			}
 			sa->blks = tmp;

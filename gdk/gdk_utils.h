@@ -73,7 +73,9 @@ gdk_export size_t _MT_pagesize;
 gdk_export size_t GDK_mem_maxsize;	/* max allowed size of committed memory */
 gdk_export size_t GDK_vm_maxsize;	/* max allowed size of reserved vm */
 
-gdk_export void *GDKmmap(const char *path, int mode, size_t len);
+gdk_export void *GDKmmap(const char *path, int mode, size_t len)
+	__attribute__((__warn_unused_result__));
+gdk_export gdk_return GDKmunmap(void *addr, size_t len);
 
 gdk_export size_t GDKmem_cursize(void);	/* RAM/swapmem that MonetDB has claimed from OS */
 gdk_export size_t GDKvm_cursize(void);	/* current MonetDB VM address space usage */
@@ -116,7 +118,8 @@ gdk_export bool GDKexiting(void);
 
 gdk_export void GDKprepareExit(void);
 gdk_export void GDKreset(int status);
-gdk_export const char *GDKversion(void);
+gdk_export const char *GDKversion(void)
+	__attribute__((__const__));
 
 // these are used in embedded mode to jump out of GDKfatal
 gdk_export jmp_buf GDKfataljump;
@@ -146,7 +149,7 @@ gdk_export int GDKms(void);
 		size_t _size = (s);				\
 		void *_res = GDKmalloc(_size);			\
 		TRC_DEBUG(ALLOC, "GDKmalloc(%zu) -> %p\n",	\
-					_size, _res);		\
+			  _size, _res);				\
 		_res;						\
 	})
 #define GDKzalloc(s)						\
@@ -154,7 +157,7 @@ gdk_export int GDKms(void);
 		size_t _size = (s);				\
 		void *_res = GDKzalloc(_size);			\
 		TRC_DEBUG(ALLOC, "GDKzalloc(%zu) -> %p\n",	\
-					_size, _res);		\
+			  _size, _res);				\
 		_res;						\
 	})
 #define GDKrealloc(p, s)					\
@@ -163,7 +166,7 @@ gdk_export int GDKms(void);
 		size_t _size = (s);				\
 		void *_res = GDKrealloc(_ptr, _size);		\
 		TRC_DEBUG(ALLOC, "GDKrealloc(%p,%zu) -> %p\n",	\
-					_ptr, _size, _res);	\
+			  _ptr, _size, _res);			\
 		_res;						\
 	 })
 #define GDKfree(p)							\
@@ -178,7 +181,7 @@ gdk_export int GDKms(void);
 		const char *_str = (s);					\
 		void *_res = GDKstrdup(_str);				\
 		TRC_DEBUG(ALLOC, "GDKstrdup(len=%zu) -> %p\n",		\
-					_str ? strlen(_str) : 0, _res);	\
+			  _str ? strlen(_str) : 0, _res);		\
 		_res;							\
 	})
 #define GDKstrndup(s, n)					\
@@ -187,7 +190,7 @@ gdk_export int GDKms(void);
 		size_t _n = (n);				\
 		void *_res = GDKstrndup(_str, _n);		\
 		TRC_DEBUG(ALLOC, "GDKstrndup(len=%zu) -> %p\n", \
-					_n,	_res);		\
+			  _n,	_res);				\
 		_res;						\
 	})
 #define GDKmmap(p, m, l)						\
@@ -197,17 +200,26 @@ gdk_export int GDKms(void);
 		size_t _len = (l);					\
 		void *_res = GDKmmap(_path, _mode, _len);		\
 		TRC_DEBUG(ALLOC, "GDKmmap(%s,0x%x,%zu) -> %p\n",	\
-					_path ? _path : "NULL",		\
-					(unsigned) _mode, _len,		\
-					_res);				\
+			  _path ? _path : "NULL",			\
+			  (unsigned) _mode, _len,			\
+			  _res);					\
 		_res;							\
 	 })
+#define GDKmunmap(p, l)						\
+	({	void *_ptr = (p);				\
+		size_t _len = (l);				\
+		gdk_return _res = GDKmunmap(_ptr, _len);	\
+		TRC_DEBUG(ALLOC,				\
+			  "GDKmunmap(%p,%zu) -> %u\n",		\
+			  _ptr, _len, _res);			\
+		_res;						\
+	})
 #define malloc(s)					\
 	({						\
 		size_t _size = (s);			\
 		void *_res = malloc(_size);		\
 		TRC_DEBUG(ALLOC, "malloc(%zu) -> %p\n", \
-					_size, _res); 	\
+			  _size, _res);			\
 		_res;					\
 	})
 #define calloc(n, s)						\
@@ -216,7 +228,7 @@ gdk_export int GDKms(void);
 		size_t _size = (s);				\
 		void *_res = calloc(_nmemb,_size);		\
 		TRC_DEBUG(ALLOC, "calloc(%zu,%zu) -> %p\n",	\
-					_nmemb, _size, _res);	\
+			  _nmemb, _size, _res);			\
 		_res;						\
 	})
 #define realloc(p, s)						\
@@ -225,7 +237,7 @@ gdk_export int GDKms(void);
 		size_t _size = (s);				\
 		void *_res = realloc(_ptr, _size);		\
 		TRC_DEBUG(ALLOC, "realloc(%p,%zu) -> %p\n",	\
-					_ptr, _size, _res);	\
+			  _ptr, _size, _res);			\
 		_res;						\
 	 })
 #define free(p)						\
@@ -247,8 +259,7 @@ static inline void *
 GDKzalloc_debug(size_t size)
 {
 	void *res = GDKzalloc(size);
-	TRC_DEBUG(ALLOC, "GDKzalloc(%zu) -> %p\n",
-			   	  size, res);
+	TRC_DEBUG(ALLOC, "GDKzalloc(%zu) -> %p\n", size, res);
 	return res;
 }
 #define GDKzalloc(s)	GDKzalloc_debug((s))
@@ -256,8 +267,7 @@ static inline void *
 GDKrealloc_debug(void *ptr, size_t size)
 {
 	void *res = GDKrealloc(ptr, size);
-	TRC_DEBUG(ALLOC, "GDKrealloc(%p,%zu) -> %p\n",
-			   	ptr, size, res);
+	TRC_DEBUG(ALLOC, "GDKrealloc(%p,%zu) -> %p\n", ptr, size, res);
 	return res;
 }
 #define GDKrealloc(p, s)	GDKrealloc_debug((p), (s))
@@ -273,7 +283,7 @@ GDKstrdup_debug(const char *str)
 {
 	void *res = GDKstrdup(str);
 	TRC_DEBUG(ALLOC, "GDKstrdup(len=%zu) -> %p\n",
-			   	str ? strlen(str) : 0, res);
+		  str ? strlen(str) : 0, res);
 	return res;
 }
 #define GDKstrdup(s)	GDKstrdup_debug((s))
@@ -290,11 +300,19 @@ GDKmmap_debug(const char *path, int mode, size_t len)
 {
 	void *res = GDKmmap(path, mode, len);
 	TRC_DEBUG(ALLOC, "GDKmmap(%s,0x%x,%zu) -> %p\n",
-			   	path ? path : "NULL", mode, len,
-			   	res);
+		  path ? path : "NULL", (unsigned) mode, len, res);
 	return res;
 }
 #define GDKmmap(p, m, l)	GDKmmap_debug((p), (m), (l))
+static inline gdk_return
+GDKmunmap_debug(void *ptr, size_t len)
+{
+	gdk_return res = GDKmunmap(ptr, len);
+	TRC_DEBUG(ALLOC, "GDKmunmap(%p,%zu) -> %d\n",
+			   	  ptr, len, (int) res);
+	return res;
+}
+#define GDKmunmap(p, l)		GDKmunmap_debug((p), (l))
 static inline void *
 malloc_debug(size_t size)
 {

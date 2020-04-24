@@ -14,7 +14,7 @@
 #include "sql_result.h"
 #include "str.h"
 #include "tablet.h"
-#include "mtime.h"
+#include "gdk_time.h"
 #include "bat/res_table.h"
 #include "bat/bat_storage.h"
 #include "rel_exp.h"
@@ -870,7 +870,7 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 
 	if (locked) {
 		/* flush old changes to disk */
-		sql_trans_end(m->session);
+		sql_trans_end(m->session, 1);
 		store_apply_deltas(true);
 		sql_trans_begin(m->session);
 	}
@@ -1063,7 +1063,7 @@ mvc_export_prepare(mvc *c, stream *out, cq *q, str w)
 	if (!out)
 		return 0;
 
-	if (r && is_topn(r->op))
+	if (r && (is_topn(r->op) || is_sample(r->op)))
 		r = r->l;
 	if (r && is_project(r->op) && r->exps) {
 		unsigned int max2 = 10, max3 = 10;	/* to help calculate widths */
@@ -1283,14 +1283,14 @@ convert2str(mvc *m, sql_class eclass, int d, int sc, int has_tz, ptr p, int mtyp
 		(*buf)[1] = 0;
 	} else if (eclass == EC_DEC) {
 		l = dec_tostr((void *) (ptrdiff_t) sc, buf, &len2, mtype, p);
-	} else if (eclass == EC_TIME) {
+	} else if (eclass == EC_TIME || eclass == EC_TIME_TZ) {
 		struct time_res ts_res;
 		ts_res.has_tz = has_tz;
 		ts_res.fraction = d ? d - 1 : 0;
 		ts_res.timezone = m->timezone;
 		l = sql_time_tostr((void *) &ts_res, buf, &len2, mtype, p);
 
-	} else if (eclass == EC_TIMESTAMP) {
+	} else if (eclass == EC_TIMESTAMP || eclass == EC_TIMESTAMP_TZ) {
 		struct time_res ts_res;
 		ts_res.has_tz = has_tz;
 		ts_res.fraction = d ? d - 1 : 0;
@@ -1326,7 +1326,7 @@ export_value(mvc *m, stream *s, sql_class eclass, const char *sqlname, int d, in
 		l = dec_tostr((void *) (ptrdiff_t) sc, buf, len, mtype, p);
 		if (l > 0)
 			ok = (mnstr_write(s, *buf, l, 1) == 1);
-	} else if (eclass == EC_TIME) {
+	} else if (eclass == EC_TIME || eclass == EC_TIME_TZ) {
 		struct time_res ts_res;
 		ts_res.has_tz = (strcmp(sqlname, "timetz") == 0);
 		ts_res.fraction = d ? d - 1 : 0;
@@ -1334,7 +1334,7 @@ export_value(mvc *m, stream *s, sql_class eclass, const char *sqlname, int d, in
 		l = sql_time_tostr((void *) &ts_res, buf, len, mtype, p);
 		if (l >= 0)
 			ok = (mnstr_write(s, *buf, l, 1) == 1);
-	} else if (eclass == EC_TIMESTAMP) {
+	} else if (eclass == EC_TIMESTAMP || eclass == EC_TIMESTAMP_TZ) {
 		struct time_res ts_res;
 		ts_res.has_tz = (strcmp(sqlname, "timestamptz") == 0);
 		ts_res.fraction = d ? d - 1 : 0;
@@ -1428,9 +1428,11 @@ static int type_supports_binary_transfer(sql_type *type) {
 		type->eclass == EC_NUM ||
 		type->eclass == EC_DATE ||
 		type->eclass == EC_TIME ||
+		type->eclass == EC_TIME_TZ ||
 		type->eclass == EC_SEC ||
 		type->eclass == EC_MONTH ||
-		type->eclass == EC_TIMESTAMP;
+		type->eclass == EC_TIMESTAMP ||
+		type->eclass == EC_TIMESTAMP_TZ;
 }
 
 static int write_str_term(stream* s, const char* const val) {
@@ -1490,7 +1492,7 @@ mvc_export_table_prot10(backend *b, stream *s, res_table *t, BAT *order, BUN off
 		typelen = ATOMsize(mtype);
 		iterators[i] = bat_iterator(b);
 
-		if (type->eclass == EC_TIMESTAMP || type->eclass == EC_DATE) {
+		if (type->eclass == EC_TIMESTAMP || type->eclass == EC_TIMESTAMP_TZ || type->eclass == EC_DATE) {
 			// dates and timestamps are converted to Unix Timestamps
 			mtype = TYPE_lng;
 			typelen = sizeof(lng);
@@ -1654,7 +1656,7 @@ mvc_export_table_prot10(backend *b, stream *s, res_table *t, BAT *order, BUN off
 				if (c->type.type->eclass == EC_DEC) {
 					atom_size = ATOMsize(mtype);
 				}
-				if (c->type.type->eclass == EC_TIMESTAMP) {
+				if (c->type.type->eclass == EC_TIMESTAMP || c->type.type->eclass == EC_TIMESTAMP_TZ) {
 					// convert timestamp values to epoch
 					lng time;
 					size_t j = 0;
@@ -1729,7 +1731,7 @@ mvc_export_table_prot10(backend *b, stream *s, res_table *t, BAT *order, BUN off
 
 		assert(buf >= bs2_buffer(s).buf);
 		if (buf - bs2_buffer(s).buf > (lng) bsize) {
-			TRC_ERROR(SQL_RESULT, "Too many bytes in the buffer\b");
+			TRC_ERROR(SQL_EXECUTION, "Too many bytes in the buffer\b");
 			fres = -1;
 			goto cleanup;
 		}
@@ -1859,16 +1861,16 @@ mvc_export_table(backend *b, stream *s, res_table *t, BAT *order, BUN offset, BU
 			fmt[i].tostr = &dec_tostr;
 			fmt[i].frstr = &dec_frstr;
 			fmt[i].extra = (void *) (ptrdiff_t) c->type.scale;
-		} else if (c->type.type->eclass == EC_TIMESTAMP) {
+		} else if (c->type.type->eclass == EC_TIMESTAMP || c->type.type->eclass == EC_TIMESTAMP_TZ) {
 			struct time_res *ts_res = tres + (i - 1);
-			ts_res->has_tz = (strcmp(c->type.type->sqlname, "timestamptz") == 0);
+			ts_res->has_tz = EC_TEMP_TZ(c->type.type->eclass);
 			ts_res->fraction = c->type.digits ? c->type.digits - 1 : 0;
 			ts_res->timezone = m->timezone;
 
 			fmt[i].tostr = &sql_timestamp_tostr;
 			fmt[i].frstr = NULL;
 			fmt[i].extra = ts_res;
-		} else if (c->type.type->eclass == EC_TIME) {
+		} else if (c->type.type->eclass == EC_TIME || c->type.type->eclass == EC_TIME_TZ) {
 			struct time_res *ts_res = tres + (i - 1);
 			ts_res->has_tz = (strcmp(c->type.type->sqlname, "timetz") == 0);
 			ts_res->fraction = c->type.digits ? c->type.digits - 1 : 0;
@@ -2039,14 +2041,14 @@ get_print_width(int mtype, sql_class eclass, int digits, int scale, int tz, bat 
 		return count;
 	} else if (eclass == EC_DATE) {
 		return 10;
-	} else if (eclass == EC_TIME) {
+	} else if (eclass == EC_TIME || eclass == EC_TIME_TZ) {
 		count = 8;
 		if (tz)		/* time zone */
 			count += 6;	/* +03:30 */
 		if (digits > 1)	/* fractional seconds precision (including dot) */
 			count += digits;
 		return count;
-	} else if (eclass == EC_TIMESTAMP) {
+	} else if (eclass == EC_TIMESTAMP || eclass == EC_TIMESTAMP_TZ) {
 		count = 10 + 1 + 8;
 		if (tz)		/* time zone */
 			count += 6;	/* +03:30 */
@@ -2204,7 +2206,7 @@ mvc_export_head_prot10(backend *b, stream *s, int res_id, int only_header, int c
 			print_width = get_print_width(mtype, type->eclass, c->type.digits, c->type.scale, type_has_tz(&c->type), b->batCacheid, c->p);
 		}
 
-		if (type->eclass == EC_TIMESTAMP || type->eclass == EC_DATE) {
+		if (type->eclass == EC_TIMESTAMP || type->eclass == EC_TIMESTAMP_TZ || type->eclass == EC_DATE) {
 			// timestamps are converted to Unix Timestamps
 			mtype = TYPE_lng;
 			typelen = sizeof(lng);

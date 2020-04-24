@@ -9,7 +9,6 @@
 #include "monetdb_config.h"
 #include "store_sequence.h"
 #include "sql_storage.h"
-#include "gdk_logger.h"
 
 typedef struct store_sequence {
 	sqlid seqid;
@@ -59,10 +58,11 @@ sql_create_sequence(sql_sequence *seq )
 	if(!s)
 		return NULL;
 
-	s -> seqid = seq->base.id;
-	s -> called = 0;
-	s -> cur = seq->start; 	  
-	s -> cached = seq->start;
+	*s = (store_sequence) {
+		.seqid = seq->base.id,
+		.cur = seq->start,
+		.cached = seq->start,
+	};
 
 	if (!isNew(seq) && logger_funcs.get_sequence(seq->base.id, &id ))
 		s->cached = id;
@@ -174,9 +174,10 @@ seqbulk_create(sql_sequence *seq, BUN cnt)
 		return NULL;
 
 	store_lock();
-	sb->seq = seq;
-	sb->cnt = cnt;
-	sb->save = 0;
+	*sb = (seqbulk) {
+		.seq = seq,
+		.cnt = cnt,
+	};
 
 	for ( n = sql_seqs->h; n; n = n ->next ) {
 		s = n->data;

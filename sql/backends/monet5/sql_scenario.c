@@ -38,7 +38,7 @@
 #include "wlc.h"
 #include "wlr.h"
 #include "msabaoth.h"
-#include "mtime.h"
+#include "gdk_time.h"
 #include "optimizer.h"
 #include "opt_prelude.h"
 #include "opt_pipes.h"
@@ -136,10 +136,10 @@ SQLprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	tmp = SQLinit(cntxt);
 	if (tmp != MAL_SUCCEED) {
-		TRC_CRITICAL(SQL_SCENARIO, "Fatal error during initialization: %s\n", tmp);
+		TRC_CRITICAL(SQL_PARSER, "Fatal error during initialization: %s\n", tmp);
 		freeException(tmp);
 		if ((tmp = GDKerrbuf) && *tmp)
-			TRC_CRITICAL(SQL_SCENARIO, SQLSTATE(42000) "GDK reported: %s\n", tmp);
+			TRC_CRITICAL(SQL_PARSER, SQLSTATE(42000) "GDK reported: %s\n", tmp);
 		fflush(stderr);
 		exit(1);
 	}
@@ -425,11 +425,11 @@ SQLinit(Client c)
 
 		bstream_next(fdin);
 		if ( MCpushClientInput(c, fdin, 0, "") < 0)
-			TRC_ERROR(SQL_SCENARIO, "Could not switch client input stream\n");
+			TRC_ERROR(SQL_PARSER, "Could not switch client input stream\n");
 	}
 	if ((msg = SQLprepareClient(c, 0)) != NULL) {
 		MT_lock_unset(&sql_contextLock);
-		TRC_INFO(SQL_SCENARIO, "%s\n", msg);
+		TRC_INFO(SQL_PARSER, "%s\n", msg);
 		return msg;
 	}
 	be = c->sqlcontext;
@@ -545,7 +545,7 @@ SQLinit(Client c)
 			freeException(other);
 
 		if (msg)
-			TRC_INFO(SQL_SCENARIO, "%s\n", msg);
+			TRC_INFO(SQL_PARSER, "%s\n", msg);
 #endif
 	} else {		/* handle upgrades */
 		if (!m->sa)
@@ -1008,7 +1008,7 @@ SQLparser(Client c)
 	be = (backend *) c->sqlcontext;
 	if (be == 0) {
 		/* leave a message in the log */
-		TRC_ERROR(SQL_SCENARIO, "SQL state description is missing, cannot handle client!\n");
+		TRC_ERROR(SQL_PARSER, "SQL state description is missing, cannot handle client!\n");
 		/* stop here, instead of printing the exception below to the
 		 * client in an endless loop */
 		c->mode = FINISHCLIENT;
@@ -1350,8 +1350,6 @@ str
 SQLCacheRemove(Client c, str nme)
 {
 	Symbol s;
-
-	TRC_DEBUG(SQL_CACHE_TR, "SQLCache remove %s\n", nme);
 
 	s = findSymbolInModule(c->usermodule, nme);
 	if (s == NULL)

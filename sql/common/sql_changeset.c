@@ -12,11 +12,10 @@
 void
 cs_new(changeset * cs, sql_allocator *sa, fdestroy destroy)
 {
-	cs->sa = sa;
-	cs->destroy = destroy;
-	cs->set = NULL;
-	cs->dset = NULL;
-	cs->nelm = NULL;
+	*cs = (changeset) {
+		.sa = sa,
+		.destroy = destroy,
+	};
 }
 
 void

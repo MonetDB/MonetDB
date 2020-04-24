@@ -4,8 +4,8 @@ try:
 except ImportError:
     import process
 
-p = process.client('sqldump', stdout = process.PIPE, stderr = process.PIPE)
-dump, err = p.communicate()
+with process.client('sqldump', stdout=process.PIPE, stderr=process.PIPE) as p:
+    dump, err = p.communicate()
 
 f = open(os.path.join(os.environ['TSTTRGDIR'], 'dumpoutput.sql'), 'w')
 f.write(dump)

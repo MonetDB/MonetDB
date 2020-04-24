@@ -344,7 +344,6 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 		 * Also mark all variables that are subject to garbage control.
 		 * Beware, this is not yet effectuated in the interpreter.
 		 */
-		traceInstruction(MAL_MAL, mb, 0, p, LIST_MAL_DEBUG);
 
 		p->typechk = TYPE_RESOLVED;
 		for (i = 0; i < p->retc; i++) {
@@ -537,7 +536,7 @@ typeChecker(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 		 */
 		if (!isaSignature(p) && !getInstrPtr(mb, 0)->polymorphic) {
 			if (!silent) {
-				char *errsig;
+				char *errsig = NULL;
 				if (!malLibraryEnabled(p->modname)) {
 					mb->errors = createMalException(mb, idx, TYPE,
 										"'%s%s%s' library error in: %s",
@@ -545,13 +544,21 @@ typeChecker(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 										(getModuleId(p) ? "." : ""),
 										getFunctionId(p), malLibraryHowToEnable(p->modname));
 				} else {
-					errsig = instruction2str(mb,0,p, (LIST_MAL_NAME | LIST_MAL_TYPE | LIST_MAL_VALUE));
+					bool free_errsig = false, special_undefined = false;
+					errsig = malLibraryHowToEnable(p->modname);
+					if (!strcmp(errsig, "")) {
+						errsig = instruction2str(mb,0,p, (LIST_MAL_NAME | LIST_MAL_TYPE | LIST_MAL_VALUE));
+						free_errsig = true;
+					} else {
+						special_undefined = true;
+					}
 					mb->errors = createMalException(mb, idx, TYPE,
-										"'%s%s%s' undefined in: %s",
+										"'%s%s%s' undefined%s: %s",
 										(getModuleId(p) ? getModuleId(p) : ""),
 										(getModuleId(p) ? "." : ""),
-										getFunctionId(p), errsig?errsig:"failed instruction2str()");
-					GDKfree(errsig);
+										getFunctionId(p), special_undefined ? "" : " in", errsig?errsig:"failed instruction2str()");
+					if (free_errsig)
+						GDKfree(errsig);
 				}
 			} 
 			p->typechk = TYPE_UNKNOWN;

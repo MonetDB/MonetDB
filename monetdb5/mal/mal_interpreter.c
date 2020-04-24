@@ -563,7 +563,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				 * time and print the query */
 				if (ATOMIC_CAS(&cntxt->lastprint, &lp, t)) {
 					const char *q = cntxt->getquery ? cntxt->getquery(cntxt) : NULL;
-					TRC_INFO(MAL_INTERPRETER, "%s: query already running "LLFMT"s: %.200s\n",
+					TRC_INFO(MAL_SERVER, "%s: query already running "LLFMT"s: %.200s\n",
 							cntxt->mythread->name,
 							(lng) (time(0) - cntxt->lastcmd),
 							q ? q : "");
@@ -823,8 +823,10 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 		if ( pci->token != FACcall && ret== MAL_SUCCEED) {
 			for (i = 0; i < pci->retc; i++) {
 				lhs = &backup[i];
-				if (BATatoms[lhs->vtype].atomUnfix)
-					(*BATatoms[lhs->vtype].atomUnfix)(VALget(lhs));
+				if (BATatoms[lhs->vtype].atomUnfix &&
+					(*BATatoms[lhs->vtype].atomUnfix)(VALget(lhs)) != GDK_SUCCEED) {
+					ret = createException(MAL, "mal.propertyCheck", GDK_EXCEPTION);
+				}
 				if (ATOMextern(lhs->vtype) &&
 					lhs->val.pval &&
 					lhs->val.pval != ATOMnilptr(lhs->vtype) &&
@@ -1410,16 +1412,11 @@ void garbageCollector(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int flag)
 	int k;
 	ValPtr v;
 
-#ifdef STACKTRACE
-	if (cntxt) {
-		mnstr_printf(cntxt->fdout, "#--->stack before garbage collector\n");
-		printStack(cntxt->fdout, mb, stk, 0);
-	}
-#endif
 	assert(mb->vtop <= mb->vsize);
 	assert(stk->stktop <= stk->stksize);
 	(void) flag;
 	(void)mb;
+	(void)cntxt;
 	for (k = 0; k < stk->stktop; k++) {
 	//	if (isVarCleanup(mb, k) ){
 			garbageElement(cntxt, v = &stk->stk[k]);
@@ -1427,12 +1424,4 @@ void garbageCollector(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int flag)
 			v->val.ival = int_nil;
 	//	}
 	}
-#ifdef STACKTRACE
-	if (cntxt) {
-		mnstr_printf(cntxt->fdout, "#-->stack after garbage collector\n");
-		printStack(cntxt->fdout, mb, stk, 0);
-	}
-#else
-	(void)cntxt;
-#endif
 }

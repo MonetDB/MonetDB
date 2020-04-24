@@ -28,9 +28,9 @@ stdout of test 'seconds2timestamp` in directory 'sql/test/bugs` itself:
 #select epoch (1087488000);
 % . # table_name
 % %1 # name
-% timestamp # type
-% 26 # length
-[ 2004-06-17 16:00:00.000000	]
+% timestamptz # type
+% 32 # length
+[ 2004-06-17 16:00:00.000000+00:00	]
 #select epoch (timestamp '2004-06-17 16:00:00.000000');
 % . # table_name
 % %1 # name
@@ -52,15 +52,15 @@ stdout of test 'seconds2timestamp` in directory 'sql/test/bugs` itself:
 #select epoch(1203170400);
 % . # table_name
 % %1 # name
-% timestamp # type
-% 26 # length
-[ 2008-02-16 14:00:00.000000	]
+% timestamptz # type
+% 32 # length
+[ 2008-02-16 14:00:00.000000+00:00	]
 #select epoch(time1) from t10;
 % sys. # table_name
 % %1 # name
-% timestamp # type
-% 26 # length
-[ 2008-02-13 11:08:36.000000	]
+% timestamptz # type
+% 32 # length
+[ 2008-02-13 11:08:36.000000+00:00	]
 #select epoch(time2) from t10;
 % sys. # table_name
 % %1 # name

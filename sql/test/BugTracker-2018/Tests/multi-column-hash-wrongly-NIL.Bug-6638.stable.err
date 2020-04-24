@@ -31,8 +31,8 @@ stderr of test 'multi-column-hash-wrongly-NIL.Bug-6638` in directory 'sql/test/B
 MAPI  = (monetdb) /var/tmp/mtest-16700/.s.monetdb.33530
 QUERY = insert into r2 (a,b) values (2199023255552,0);
 ERROR = !INSERT INTO: UNIQUE constraint 'r2.ab_unique' violated
-CODE  = M0M29
-MAPI  = (monetdb) /var/tmp/mtest-16700/.s.monetdb.33530
+CODE  = 40002
+MAPI  = (monetdb) /var/tmp/mtest-225531/.s.monetdb.33874
 QUERY = select * from r2;
 ERROR = !Current transaction is aborted (please ROLLBACK)
 CODE  = 25005

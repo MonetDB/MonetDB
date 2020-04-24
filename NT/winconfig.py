@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
@@ -18,7 +18,6 @@ subs = [("@exec_prefix@", r'%prefix%'),
         ("@datadir@", r'%prefix%\share'),
         ("@datarootdir@", r'%prefix%\share'),
         ("@sysconfdir@", r'%prefix%\etc'),
-        ("@sharedstatedir@", r'%prefix%\com'),
         ("@localstatedir@", r'%prefix%\var'),
         ("@libdir@", r'%exec_prefix%\lib'),
         ("@infodir@", r'%prefix%\info'),

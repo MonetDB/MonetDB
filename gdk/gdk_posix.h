@@ -114,17 +114,10 @@
 #define MMAP_ASYNC		8192	/* asynchronous writes (default if ommitted) */
 #define MMAP_SYNC		16384	/* writing is done synchronously */
 
-#define MT_MMAP_LOG 27
-#define MT_MMAP_TILE (1<<MT_MMAP_LOG)
-#define MT_MMAP_BUFSIZE 4096
-
 /* in order to be sure of madvise and msync modes, pass them to mmap()
  * call as well */
 
 gdk_export size_t MT_getrss(void);
-
-gdk_export void *MT_mmap(const char *path, int mode, size_t len);
-gdk_export int MT_munmap(void *p, size_t len);
 
 gdk_export bool MT_path_absolute(const char *path);
 
@@ -193,5 +186,21 @@ gdk_export char *asctime_r(const struct tm *restrict, char *restrict);
 #ifndef HAVE_CTIME_R
 gdk_export char *ctime_r(const time_t *restrict, char *restrict);
 #endif
+#ifndef HAVE_STRERROR_R
+gdk_export int strerror_r(int errnum, char *buf, size_t buflen);
+#endif
+
+static inline const char *
+GDKstrerror(int errnum, char *buf, size_t buflen)
+{
+#ifdef STRERROR_R_CHAR_P
+	return strerror_r(errnum, buf, buflen);
+#else
+	if (strerror_r(errnum, buf, buflen) == 0)
+		return buf;
+	snprintf(buf, buflen, "Unknown error %d", errnum);
+	return buf;
+#endif
+}
 
 #endif /* GDK_POSIX_H */

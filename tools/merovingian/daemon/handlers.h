@@ -14,7 +14,7 @@
 void handler(int sig);
 void huphandler(int sig);
 void childhandler(void);
-void segvhandler(int sig);
+_Noreturn void segvhandler(int sig);
 void reinitialize(void);
 
 #endif

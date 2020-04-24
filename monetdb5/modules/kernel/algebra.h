@@ -56,6 +56,7 @@ mal_export str ALGcopy(bat *result, const bat *bid);
 mal_export str ALGunique2(bat *result, const bat *bid, const bat *sid);
 mal_export str ALGunique1(bat *result, const bat *bid);
 mal_export str ALGprojection(bat *result, const bat *lid, const bat *rid);
+mal_export str ALGprojection2(bat *result, const bat *lid, const bat *r1id, const bat *r2id);
 
 mal_export str ALGsort11(bat *result, const bat *bid, const bit *reverse, const bit *nilslast, const bit *stable);
 mal_export str ALGsort12(bat *result, bat *norder, const bat *bid, const bit *reverse, const bit *nilslast, const bit *stable);

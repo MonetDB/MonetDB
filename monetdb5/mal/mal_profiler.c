@@ -140,7 +140,7 @@ renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int
 	*/
 	if( !start && pci->calls > HIGHWATERMARK){
 		if( pci->calls == 10000 || pci->calls == 100000 || pci->calls == 1000000 || pci->calls == 10000000)
-			TRC_WARNING(MAL_MAL, "Too many calls: %d\n", pci->calls);
+			TRC_WARNING(MAL_SERVER, "Too many calls: %d\n", pci->calls);
 		return;
 	}
 
@@ -257,9 +257,13 @@ This information can be used to determine memory footprint and variable life tim
 						logadd(",\"file\":\"%s\"", cv + 1);
 						GDKfree(cv);
 						total += cnt * d->twidth;
-						total += heapinfo(d->tvheap, d->batCacheid);
-						total += hashinfo(d->thash, d->batCacheid);
-						total += IMPSimprintsize(d);
+						/* keeping information about the individual auxiliary heaps is helpful during analysis. */
+						if( d->thash)
+							logadd(",\"hash\":" LLFMT, (lng) hashinfo(d->thash, d->batCacheid));
+						if( d->tvheap)
+							logadd(",\"vheap\":" LLFMT, (lng) heapinfo(d->tvheap, d->batCacheid));
+						if( d->timprints)
+							logadd(",\"imprints\":" LLFMT, (lng) IMPSimprintsize(d));
 					/* logadd("\"debug\":\"%s\",", d->debugmessages); */
 						BBPunfix(d->batCacheid);
 					}
@@ -833,9 +837,6 @@ void initProfiler(void)
 
 void initHeartbeat(void)
 {
-#ifdef HAVE_EMBEDDED
-	return;
-#endif
 	ATOMIC_SET(&hbrunning, 1);
 	if (MT_create_thread(&hbthread, profilerHeartbeat, NULL, MT_THR_JOINABLE,
 						 "heartbeat") < 0) {

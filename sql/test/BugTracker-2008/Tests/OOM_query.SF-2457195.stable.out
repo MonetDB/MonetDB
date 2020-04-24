@@ -34,7 +34,7 @@ stdout of test 'OOM_query.SF-2457195` in directory 'sql/test/BugTracker-2008` it
 #(lower(lhs) like 'a%'),
 #(lower(lhs) like 'in%'),
 #(lower(lhs) like 'un%'),
-% sys.test,	sys.%2,	sys.%3,	sys.%4,	sys.%5,	sys.%6,	sys.%7,	sys.%10,	sys.%11,	sys.%12,	sys.%13,	sys.%14,	sys.%15,	sys.%16,	sys.%17 # table_name
+% sys.test,	sys.,	sys.,	sys.,	sys.,	sys.,	sys.,	sys.,	sys.,	sys.,	sys.,	sys.,	sys.,	sys.,	sys. # table_name
 % rhs,	%2,	%3,	%4,	%5,	%6,	%7,	%10,	%11,	%12,	%13,	%14,	%15,	%16,	%17 # name
 % varchar,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean # type
 % 5,	5,	5,	5,	5,	5,	5,	5,	5,	5,	5,	5,	5,	5,	5 # length
@@ -103,7 +103,7 @@ stdout of test 'OOM_query.SF-2457195` in directory 'sql/test/BugTracker-2008` it
 #(lower(lhs) like 'a%'),
 #(lower(lhs) like 'in%'),
 #(lower(lhs) like 'un%'),
-% sys.test,	sys.%2,	sys.%3,	sys.%4,	sys.%5,	sys.%6,	sys.%7,	sys.%10,	sys.%11,	sys.%12,	sys.%13,	sys.%14,	sys.%15,	sys.%16,	sys.%17 # table_name
+% sys.test,	sys.,	sys.,	sys.,	sys.,	sys.,	sys.,	sys.,	sys.,	sys.,	sys.,	sys.,	sys.,	sys.,	sys. # table_name
 % rhs,	%2,	%3,	%4,	%5,	%6,	%7,	%10,	%11,	%12,	%13,	%14,	%15,	%16,	%17 # name
 % varchar,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean,	boolean # type
 % 5,	5,	5,	5,	5,	5,	5,	5,	5,	5,	5,	5,	5,	5,	5 # length

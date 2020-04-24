@@ -57,6 +57,7 @@
 #include "gdk.h"
 #include "gdk_private.h"
 #include "gdk_logger.h"
+#include "gdk_logger_internals.h"
 #include <string.h>
 
 /*
@@ -92,6 +93,8 @@
 #endif
 #endif
 
+#define BATSIZE 0
+
 #define NAME(name,tpe,id) (name?name:"tpe id")
 
 #define LOG_DISABLED(lg) ((lg)->debug&128)
@@ -118,6 +121,30 @@ static const char *log_commands[] = {
 	"LOG_UPDATE_PAX",
 };
 
+typedef struct logaction {
+	int type;		/* type of change */
+	lng nr;
+	int ht;			/* vid(-1),void etc */
+	int tt;
+	lng id;
+	char *name;		/* optional */
+	char tpe;		/* tpe of column */
+	oid cid;		/* id of object */
+	BAT *b;			/* temporary bat with changes */
+	BAT *uid;		/* temporary bat with bun positions to update */
+} logaction;
+
+/* during the recover process a number of transactions could be active */
+typedef struct trans {
+	int tid;		/* transaction id */
+	int sz;			/* sz of the changes array */
+	int nr;			/* nr of changes */
+
+	logaction *changes;
+
+	struct trans *tr;
+} trans;
+
 typedef struct logformat_t {
 	char flag;
 	int tid;
@@ -126,10 +153,12 @@ typedef struct logformat_t {
 
 typedef enum {LOG_OK, LOG_EOF, LOG_ERR} log_return;
 
+#include "gdk_geomlogger.h"
+
 /* When reading an old format database, we may need to read the geom
  * Well-known Binary (WKB) type differently.  This variable is used to
  * indicate that to the function wkbREAD during reading of the log. */
-static int geomisoldversion;
+static bool geomisoldversion;
 
 static gdk_return bm_commit(logger *lg);
 static gdk_return tr_grow(trans *tr);
@@ -368,48 +397,6 @@ log_read_id(logger *lg, char *tpe, oid *id)
 	return LOG_OK;
 }
 
-#ifdef GDKLIBRARY_NIL_NAN
-static void *
-fltRead(void *dst, stream *s, size_t cnt)
-{
-	flt *ptr;
-	size_t i;
-
-	assert(!GDKinmemory());
-	if ((ptr = BATatoms[TYPE_flt].atomRead(dst, s, cnt)) == NULL)
-		return NULL;
-	for (i = 0; i < cnt; i++)
-		if (ptr[i] == GDK_flt_min)
-			ptr[i] = flt_nil;
-	return ptr;
-}
-
-static void *
-dblRead(void *dst, stream *s, size_t cnt)
-{
-	dbl *ptr;
-	size_t i;
-
-	assert(!GDKinmemory());
-	if ((ptr = BATatoms[TYPE_dbl].atomRead(dst, s, cnt)) == NULL)
-		return NULL;
-	for (i = 0; i < cnt; i++)
-		if (ptr[i] == GDK_dbl_min)
-			ptr[i] = dbl_nil;
-	return ptr;
-}
-
-static void *
-mbrRead(void *dst, stream *s, size_t cnt)
-{
-	/* an MBR consists of 4 flt values; here we don't care about
-	 * anything else, we just need to convert the old NIL to NaN
-	 * for all those values */
-	assert(!GDKinmemory());
-	return fltRead(dst, s, cnt * 4);
-}
-#endif
-
 #ifdef GDKLIBRARY_OLDDATE
 static void *
 dateRead(void *dst, stream *s, size_t cnt)
@@ -536,18 +523,8 @@ log_read_updates(logger *lg, trans *tr, logformat *l, char *name, int tpe, oid i
 
 		if (ATOMstorage(tt) < TYPE_str)
 			tv = lg->buf;
-#ifdef GDKLIBRARY_NIL_NAN
-		if (lg->convert_nil_nan) {
-			if (tt == TYPE_flt)
-				rt = fltRead;
-			else if (tt == TYPE_dbl)
-				rt = dblRead;
-			else if (tt > TYPE_str && strcmp(BATatoms[tt].name, "mbr") == 0)
-				rt = mbrRead;
-		}
-#endif
 #ifdef GDKLIBRARY_OLDDATE
-		if (lg->convert_date && tt > TYPE_str) {
+		if (lg->convert_date && tt >= TYPE_date) {
 			if (strcmp(BATatoms[tt].name, "date") == 0)
 				rt = dateRead;
 			else if (strcmp(BATatoms[tt].name, "daytime") == 0)
@@ -1765,7 +1742,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 	catalog_bid = BBPindex(bak);
 
 	if (bid != 0 && catalog_bid == 0) {
-		GDKerror("logger_load: ancient database, please upgrade "
+		GDKerror("ancient database, please upgrade "
 			 "first to Jan2014 (11.17.X) release");
 		goto error;
 	}
@@ -1776,10 +1753,10 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 		/* catalog does not exist, so the log file also
 		 * shouldn't exist */
 		if (fp != NULL) {
-			GDKerror("logger_load: there is no logger catalog, "
-				 "but there is a log file.\n"
+			GDKerror("there is no logger catalog, "
+				 "but there is a log file. "
 				 "Are you sure you are using the correct "
-				 "combination of database\n"
+				 "combination of database "
 				 "(--dbpath) and log directory "
 				 "(--set %s_logdir)?\n", fn);
 			goto error;
@@ -1791,7 +1768,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 		lg->catalog_oid = logbat_new(TYPE_lng, BATSIZE, PERSISTENT);
 		lg->dcatalog = logbat_new(TYPE_oid, BATSIZE, PERSISTENT);
 		if (lg->catalog_bid == NULL || lg->catalog_nme == NULL || lg->catalog_tpe == NULL || lg->catalog_oid == NULL || lg->dcatalog == NULL) {
-			GDKerror("logger_load: cannot create catalog bats");
+			GDKerror("cannot create catalog bats");
 			goto error;
 		}
 		if (debug & 1)
@@ -1826,12 +1803,12 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 
 		if (!lg->inmemory && !LOG_DISABLED(lg)) {
 			if (GDKcreatedir(filename) != GDK_SUCCEED) {
-				GDKerror("logger_load: cannot create directory for log file %s\n",
+				GDKerror("cannot create directory for log file %s\n",
 					 filename);
 				goto error;
 			}
 			if ((fp = fopen(filename, "w")) == NULL) {
-				GDKerror("logger_load: cannot create log file %s\n",
+				GDKerror("cannot create log file %s\n",
 					 filename);
 				goto error;
 			}
@@ -1839,7 +1816,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 			if (fprintf(fp, "%06d\n\n" LLFMT "\n", lg->version, lg->id) < 0) {
 				fclose(fp);
 				remove(filename);
-				GDKerror("logger_load: writing log file %s failed",
+				GDKerror("writing log file %s failed",
 					 filename);
 				goto error;
 			}
@@ -1855,7 +1832,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 				    ) ||
 			    fclose(fp) < 0) {
 				remove(filename);
-				GDKerror("logger_load: closing log file %s failed",
+				GDKerror("closing log file %s failed",
 					 filename);
 				goto error;
 			}
@@ -1888,7 +1865,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 
 		assert(!lg->inmemory);
 		if (b == NULL) {
-			GDKerror("logger_load: inconsistent database, catalog does not exist");
+			GDKerror("inconsistent database, catalog does not exist");
 			goto error;
 		}
 
@@ -1897,7 +1874,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 		n = BATdescriptor(catalog_nme);
 		if (n == NULL) {
 			BBPunfix(b->batCacheid);
-			GDKerror("logger_load: inconsistent database, catalog_nme does not exist");
+			GDKerror("inconsistent database, catalog_nme does not exist");
 			goto error;
 		}
 
@@ -1912,7 +1889,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 				BBPunfix(n->batCacheid);
 				if (t)
 					BBPunfix(t->batCacheid);
-				GDKerror("logger_load: inconsistent database, catalog_tpe does not exist");
+				GDKerror("inconsistent database, catalog_tpe does not exist");
 				goto error;
 			}
 			for(i=0;i<BATcount(n); i++) {
@@ -1935,7 +1912,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 				BBPunfix(t->batCacheid);
 				if (o)
 					BBPunfix(o->batCacheid);
-				GDKerror("logger_load: inconsistent database, catalog_oid does not exist");
+				GDKerror("inconsistent database, catalog_oid does not exist");
 				goto error;
 			}
 			for(i=0;i<BATcount(n); i++) {
@@ -1973,12 +1950,12 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 
 		/* the catalog exists, and so should the log file */
 		if (fp == NULL && !LOG_DISABLED(lg)) {
-			GDKerror("logger_load: there is a logger catalog, but no log file.\n"
-				 "Are you sure you are using the correct combination of database\n"
-				 "(--dbpath) and log directory (--set %s_logdir)?\n"
-				 "If you have done a recent update of the server, it may be that your\n"
-				 "logs are in an old location.  You should then either use\n"
-				 "--set %s_logdir=<path to old log directory> or move the old log\n"
+			GDKerror("there is a logger catalog, but no log file. "
+				 "Are you sure you are using the correct combination of database "
+				 "(--dbpath) and log directory (--set %s_logdir)? "
+				 "If you have done a recent update of the server, it may be that your "
+				 "logs are in an old location.  You should then either use "
+				 "--set %s_logdir=<path to old log directory> or move the old log "
 				 "directory to the new location (%s).\n",
 				 fn, fn, lg->dir);
 			BBPunfix(b->batCacheid);
@@ -2035,7 +2012,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 			goto error;
 		}
 		if (logger_add_bat(lg, lg->snapshots_bid, "snapshots_bid", 0, 0) != GDK_SUCCEED) {
-			GDKerror("logger_load: logger_add_bat for "
+			GDKerror("logger_add_bat for "
 				 "%s failed", bak);
 			goto error;
 		}
@@ -2045,7 +2022,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 			goto error;
 		}
 		if (logger_add_bat(lg, lg->snapshots_tid, "snapshots_tid", 0, 0) != GDK_SUCCEED) {
-			GDKerror("logger_load: logger_add_bat for "
+			GDKerror("logger_add_bat for "
 				 "%s failed", bak);
 			goto error;
 		}
@@ -2055,7 +2032,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 			goto error;
 		}
 		if (logger_add_bat(lg, lg->dsnapshots, "dsnapshots", 0, 0) != GDK_SUCCEED) {
-			GDKerror("logger_load: logger_add_bat for "
+			GDKerror("logger_add_bat for "
 				 "%s failed", bak);
 			goto error;
 		}
@@ -2071,12 +2048,12 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 		GDKdebug &= ~CHECKMASK;
 		lg->snapshots_bid = BATdescriptor(snapshots_bid);
 		if (lg->snapshots_bid == NULL) {
-			GDKerror("logger_load: inconsistent database, snapshots_bid does not exist");
+			GDKerror("inconsistent database, snapshots_bid does not exist");
 			goto error;
 		}
 		lg->snapshots_tid = BATdescriptor(snapshots_tid);
 		if (lg->snapshots_tid == NULL) {
-			GDKerror("logger_load: inconsistent database, snapshots_tid does not exist");
+			GDKerror("inconsistent database, snapshots_tid does not exist");
 			goto error;
 		}
 		GDKdebug = dbg;
@@ -2099,7 +2076,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 				goto error;
 			}
 			if (logger_add_bat(lg, lg->dsnapshots, "dsnapshots", 0, 0) != GDK_SUCCEED) {
-				GDKerror("logger_load: logger_add_bat for "
+				GDKerror("logger_add_bat for "
 					 "%s failed", bak);
 				goto error;
 			}
@@ -2148,9 +2125,6 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 	GDKdebug = dbg;
 
 	if (fp != NULL) {
-#ifdef GDKLIBRARY_NIL_NAN
-		char cvfile[FILENAME_MAX];
-#endif
 #ifdef GDKLIBRARY_OLDDATE
 		char cvfile1[FILENAME_MAX];
 #endif
@@ -2158,125 +2132,6 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 		if (check_version(lg, fp) != GDK_SUCCEED) {
 			goto error;
 		}
-
-#ifdef GDKLIBRARY_NIL_NAN
-		/* When a file *_nil-nan-convert exists in the
-		 * database, it was left there by the BBP
-		 * initialization code when it did a conversion of old
-		 * style NILs to NaNs.  If the file exists, we first
-		 * create a file called convert-nil-nan in the log
-		 * directory and we write the current log ID into that
-		 * file.  After this file is created, we delete the
-		 * *_nil-nan-convert file in the database.  We then
-		 * know that while reading the logs, we have to
-		 * convert old style NILs to NaNs (this is indicated
-		 * by setting the convert_nil_nan flag).  When we're
-		 * done reading the logs, we remove the file and
-		 * reset the flag.  If we get interrupted before we
-		 * have written this file, the file in the database
-		 * will still exist, so the next time we're started,
-		 * BBPinit will not convert NILs (that was done before
-		 * we got interrupted), but we will still know to
-		 * convert the NILs ourselves.  If we get interrupted
-		 * after we have deleted the file from the database,
-		 * we check whether the file convert-nil-nan exists
-		 * and if it contains the expected ID.  If it does, we
-		 * again know that we have to convert.  If the ID is
-		 * not what we expect, the conversion was apparently
-		 * done already, and so we can delete the file. */
-
-		{
-			FILE *fp1;
-			int len, curid;
-
-			len = snprintf(cvfile, sizeof(cvfile), "%sconvert-nil-nan",
-				 lg->dir);
-			if (len == -1 || len >= FILENAME_MAX) {
-				GDKerror("Convert-nil-nan filename path is too large\n");
-				goto error;
-			}
-			len = snprintf(bak, sizeof(bak), "%s_nil-nan-convert", fn);
-			if (len == -1 || len >= FILENAME_MAX) {
-				GDKerror("Convert-nil-nan filename path is too large\n");
-				goto error;
-			}
-			/* read the current log id without disturbing
-			 * the file pointer */
-#ifdef _MSC_VER
-			/* work around bug in Visual Studio runtime:
-			 * fgetpos may return incorrect value */
-			if ((fp1 = fopen(filename, "r")) == NULL)
-				goto error;
-			if (fgets(bak, sizeof(bak), fp1) == NULL ||
-			    fgets(bak, sizeof(bak), fp1) == NULL ||
-			    fscanf(fp1, "%d", &curid) != 1) {
-				fclose(fp1);
-				goto error;
-			}
-			fclose(fp1);
-#else
-			fpos_t off;
-			if (fgetpos(fp, &off) != 0)
-				goto error; /* should never happen */
-			if (fscanf(fp, "%d", &curid) != 1)
-				curid = -1; /* shouldn't happen? */
-			if (fsetpos(fp, &off) != 0)
-				goto error; /* should never happen */
-#endif
-
-			if ((fp1 = GDKfileopen(0, NULL, bak, NULL, "r")) != NULL) {
-				/* file indicating that we need to do
-				 * a NIL to NaN conversion exists;
-				 * record the fact in case we get
-				 * interrupted, and set the flag so
-				 * that we actually do what's asked */
-				fclose(fp1);
-				/* first create a versioned file using
-				 * the current log id */
-				if ((fp1 = GDKfileopen(farmid, NULL, cvfile, NULL, "w")) == NULL ||
-				    fprintf(fp1, "%d\n", curid) < 2 ||
-				    fflush(fp1) != 0 || /* make sure it's save on disk */
-#if defined(_MSC_VER)
-				    _commit(_fileno(fp1)) < 0 ||
-#elif defined(HAVE_FDATASYNC)
-				    fdatasync(fileno(fp1)) < 0 ||
-#elif defined(HAVE_FSYNC)
-				    fsync(fileno(fp1)) < 0 ||
-#endif
-				    fclose(fp1) != 0) {
-					GDKerror("logger_load: failed to write %s\n", cvfile);
-					goto error;
-				}
-				/* then remove the unversioned file
-				 * that gdk_bbp created (in this
-				 * order!) */
-				if (GDKunlink(0, NULL, bak, NULL) != GDK_SUCCEED) {
-					GDKerror("logger_load: failed to unlink %s\n", bak);
-					goto error;
-				}
-				/* set the flag that we need to convert */
-				lg->convert_nil_nan = true;
-			} else if ((fp1 = GDKfileopen(farmid, NULL, cvfile, NULL, "r")) != NULL) {
-				/* the versioned conversion file
-				 * exists: check version */
-				int newid;
-
-				if (fscanf(fp1, "%d", &newid) == 1 &&
-				    newid == curid) {
-					/* versions match, we need to
-					 * convert */
-					lg->convert_nil_nan = true;
-				}
-				fclose(fp1);
-				if (!lg->convert_nil_nan) {
-					/* no conversion, so we can
-					 * remove the versioned
-					 * file */
-					GDKunlink(0, NULL, cvfile, NULL);
-				}
-			}
-		}
-#endif
 
 #ifdef GDKLIBRARY_OLDDATE
 		/* When a file *_date-convert exists in the
@@ -2363,14 +2218,14 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 				    fsync(fileno(fp1)) < 0 ||
 #endif
 				    fclose(fp1) != 0) {
-					GDKerror("logger_load: failed to write %s\n", cvfile1);
+					GDKerror("failed to write %s\n", cvfile1);
 					goto error;
 				}
 				/* then remove the unversioned file
 				 * that gdk_bbp created (in this
 				 * order!) */
 				if (GDKunlink(0, NULL, bak, NULL) != GDK_SUCCEED) {
-					GDKerror("logger_load: failed to unlink %s\n", bak);
+					GDKerror("failed to unlink %s\n", bak);
 					goto error;
 				}
 				/* set the flag that we need to convert */
@@ -2401,14 +2256,6 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 		}
 		fclose(fp);
 		fp = NULL;
-#ifdef GDKLIBRARY_NIL_NAN
-		if (lg->convert_nil_nan) {
-			/* we converted, remove versioned file and
-			 * reset conversion flag */
-			GDKunlink(0, NULL, cvfile, NULL);
-			lg->convert_nil_nan = false;
-		}
-#endif
 #ifdef GDKLIBRARY_OLDDATE
 		if (lg->convert_date) {
 			/* we converted, remove versioned file and
@@ -2421,7 +2268,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 			goto error;
 
 		/* done reading the log, revert to "normal" behavior */
-		geomisoldversion = 0;
+		geomisoldversion = false;
 	}
 
 	return GDK_SUCCEED;
@@ -2477,9 +2324,6 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 	lg->id = 1;
 
 	lg->tid = 0;
-#ifdef GDKLIBRARY_NIL_NAN
-	lg->convert_nil_nan = false;
-#endif
 #ifdef GDKLIBRARY_OLDDATE
 	lg->convert_date = false;
 #endif
@@ -2689,7 +2533,7 @@ logger_exit(logger *lg)
 	} else {
 		fprintf(stderr, "!ERROR: logger_exit: could not create %s\n",
 			filename);
-		GDKerror("logger_exit: could not open %s\n", filename);
+		GDKerror("could not open %s\n", filename);
 		return GDK_FAIL;
 	}
 	return GDK_SUCCEED;
@@ -3218,8 +3062,7 @@ log_sequence_(logger *lg, int seq, lng val, int flush)
 	if (log_write_format(lg, &l) != GDK_SUCCEED ||
 	    !mnstr_writeLng(lg->log, val) ||
 	    (flush && mnstr_flush(lg->log)) ||
-	    (flush && !(GDKdebug & NOSYNCMASK) && mnstr_fsync(lg->log)) ||
-	    pre_allocate(lg) != GDK_SUCCEED) {
+	    (flush && !(GDKdebug & NOSYNCMASK) && mnstr_fsync(lg->log))) {
 		fprintf(stderr, "!ERROR: log_sequence_: write failed\n");
 		return GDK_FAIL;
 	}
@@ -3396,7 +3239,7 @@ logger_del_bat(logger *lg, log_bid bid)
 	assert(p != BUN_NONE);
 	if (p == BUN_NONE) {
 		logbat_destroy(b);
-		GDKerror("logger_del_bat: cannot find BAT\n");
+		GDKerror("cannot find BAT\n");
 		return GDK_FAIL;
 	}
 
@@ -3499,9 +3342,11 @@ geomsqlfix_get(void)
 void
 geomversion_set(void)
 {
-	geomisoldversion = 1;
+	geomisoldversion = true;
 }
-int geomversion_get(void)
+
+bool
+geomversion_get(void)
 {
 	return geomisoldversion;
 }

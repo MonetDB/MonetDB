@@ -63,8 +63,20 @@ Default value:
 .BR @localstatedir@/monetdb5/dbfarm/demo .
 .TP
 \fB\-\-dbextra=\fP\fIpath\fP
-Path where mserver5 should store transient data.  Default value is the
+Path where
+.I mserver5
+should store transient data.  Default value is the
 value of the
+.B \-\-dbpath
+option.
+.TP
+\fB\-\-dbtrace=\fP\fIpath\fP
+File name for the trace log file for
+.IR mserver5 .
+Default value is the
+file
+.B mdbtrace.log
+inside the directory specified with the
 .B \-\-dbpath
 option.
 .TP
@@ -87,7 +99,9 @@ Print list of options.
 Print version and compile configuration.
 .TP
 .B \-\-in\-memory
-Run mserver5 in-memory.
+Run
+.I mserver5
+in-memory.
 .B No
 data will be persisted.
 .TP
@@ -115,26 +129,19 @@ The value is an integer, which can be (a bit-wise OR of):
 .EX
           \fB1\fP = THRDMASK     = thread-specific debug output
           \fB2\fP = CHECKMASK    = property enforcing on new BATs
-          \fB4\fP = MEMMASK      = memory allocation
           \fB8\fP = PROPMASK     = property checking on all values:
                              tells about wrongly set properties
          \fB16\fP = IOMASK       = major IO activity
          \fB32\fP = BATMASK      = BAT handling
-.\"         \fB64\fP = PARSEMASK    = parser debugging
         \fB128\fP = PARMASK      = Thread management
-.\"        \fB256\fP = HEADLESSMASK = Warn about BAT heads that are not "headless-ready"
         \fB512\fP = TMMASK       = Transaction management
        \fB1024\fP = TEMMASK      = Locks and Triggers
-.\"       \fB2048\fP = DLMASK       = Dynamic loading
        \fB4096\fP = PERFMASK     = BBP Performance (?)
        \fB8192\fP = DELTAMASK    = Delta debugging (?)
       \fB16384\fP = LOADMASK     = Module loading
-.\"      \fB32768\fP = YACCMASK     = Yacc specific error messages
     \fB2097152\fP = ALGOMASK     = show join/select algorithm chosen
     \fB4194304\fP = ESTIMASK     = show result size estimations
                              (for join, select)
-.\"    \fB8388608\fP = XPROPMASK    = extended property checking:
-.\"                             tells also about not set properties
    \fB16777216\fP = NOSYNCMASK   = disable forcefully synchronizing files
                              to disk.  If this flag is set, there is
                              no guarantee that the database remains

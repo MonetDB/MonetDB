@@ -156,7 +156,6 @@ def _configure(str):
         ('${datarootdir}', '@QXdatarootdir@'),
         ('${datadir}', '@QXdatadir@'),
         ('${sysconfdir}', '@QXsysconfdir@'),
-##        ('${sharedstatedir}', '@QXsharedstatedir@'),
         ('${localstatedir}', '@QXlocalstatedir@'),
         ('${libdir}', '@QXlibdir@'),
         ('${includedir}', '@QXincludedir@'),
@@ -169,7 +168,6 @@ def _configure(str):
         ('${Qdatarootdir}', '@QXdatarootdir@'),
         ('${Qdatadir}', '@QXdatadir@'),
         ('${Qsysconfdir}', '@QXsysconfdir@'),
-##        ('${Qsharedstatedir}', '@QXsharedstatedir@'),
         ('${Qlocalstatedir}', '@QXlocalstatedir@'),
         ('${Qlibdir}', '@QXlibdir@'),
         ('${Qincludedir}', '@QXincludedir@'),
@@ -1150,8 +1148,11 @@ def SkipTest(env, TST, EXT, REASON, length) :
     if testweb:
         return None
 
-    f = openutf8(".%s.SKIPPED" % TST, "w")
-    f.write("\n%s  Warning:  %s\n\n" % (THISFILE, TEXT))
+    f = openutf8(".%s.SKIPPED.html" % TST, "w")
+    Element('html', {},
+            Element('body', {},
+                    Element('p', {},
+                            Text("%s Warning: %s" % (THISFILE, TEXT))))).write(f, newline=True)
     f.close()
     target = '%s_%s_body' % (DISTVER, TSTDIR)
     td = Element('td', {'class': 'header'},
@@ -1160,13 +1161,13 @@ def SkipTest(env, TST, EXT, REASON, length) :
                                'class': 'black'},
                          Text(TST)),
                  Element('br'),
-                 Element('a', {'href': '.%s.SKIPPED' % TST,
+                 Element('a', {'href': '.%s.SKIPPED.html' % TST,
                                'target': target},
                          Text('(skipped)')))
     if '_%s_BODY_' % TSTDIR not in env  or  \
        not env['_%s_BODY_' % TSTDIR][0]  or  \
        not env['_%s_BODY_' % TSTDIR][1]:
-        env['_%s_BODY_' % TSTDIR] = [".%s.SKIPPED" % TST, F_SKIP]
+        env['_%s_BODY_' % TSTDIR] = [".%s.SKIPPED.html" % TST, F_SKIP]
     CreateSrcIndex(env, TST, EXT)
     return td
 ### SkipTest(env, TST, EXT, REASON) #
@@ -1393,7 +1394,7 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
                         'times.lst', 'times.sql',
                         '.*.nosrc.index.html',
                         '.*.src.index.head.html', '.*.src.index.html',
-                        '*.FILTERED', '.*.SKIPPED',
+                        '*.FILTERED', '.*.SKIPPED.html',
                         '*.client.err', '*.client.out',
                         '*.err.diff.html', '*.err.head.html', '*.err.html',
                         '*.out.diff.html', '*.out.head.html', '*.out.html',
@@ -2855,12 +2856,15 @@ class ServerClass:
         return self.proc.poll()
 
     def terminate(self):
+        self.timer.cancel()
+        t = Timer(60, killProc, args = [self.proc, self.errfile, self.cmd])
+        t.start()
         if os.name == 'nt':
             self.proc.send_signal(signal.CTRL_BREAK_EVENT)
         else:
             self.proc.terminate()
         self.proc.wait()
-        self.timer.cancel()
+        t.cancel()
         self.code = returnCode(self.proc, self.errfile)
 
     def LaunchIt(self):
@@ -3204,8 +3208,8 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEO
                 fp.write('\n\n! Server not ready; skipping attempt to start client!\n\n')
         ClntOut.close()
         ClntErr.close()
-
-        if SERVER in ["MAL", "SQL"]:
+    finally:
+        if SERVER in ["MAL", "SQL"] and pSrvr is not None:
             if PSRVR is None and pSrvr.started:
                 pSrvr.terminate()
                 if procdebug:
@@ -3250,10 +3254,6 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEO
         if TestErr is not None:
             TestErr.write(Prompt('Done.'))
             TestErr.close()
-
-    finally:
-        if PSRVR is None and pSrvr is not None and pSrvr.started:
-            pSrvr.terminate()
 
     if returncode is None and pSrvr is not None:
         returncode = pSrvr.code # can still be None

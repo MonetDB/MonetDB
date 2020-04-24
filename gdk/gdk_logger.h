@@ -11,78 +11,10 @@
 
 #define LOGFILE "log"
 
-typedef struct logaction {
-	int type;		/* type of change */
-	lng nr;
-	int ht;			/* vid(-1),void etc */
-	int tt;
-	lng id;
-	char *name;		/* optional */
-	char tpe;		/* tpe of column */
-	oid cid;		/* id of object */
-	BAT *b;			/* temporary bat with changes */
-	BAT *uid;		/* temporary bat with bun positions to update */
-} logaction;
-
-/* during the recover process a number of transactions could be active */
-typedef struct trans {
-	int tid;		/* transaction id */
-	int sz;			/* sz of the changes array */
-	int nr;			/* nr of changes */
-
-	logaction *changes;
-
-	struct trans *tr;
-} trans;
-
 typedef gdk_return (*preversionfix_fptr)(int oldversion, int newversion);
 typedef gdk_return (*postversionfix_fptr)(void *lg);
 
-typedef struct logger {
-	int debug;
-	int version;
-	lng changes;
-	lng id;
-	int tid;
-	bool with_ids;
-	bool inmemory;
-#ifdef GDKLIBRARY_NIL_NAN
-	/* convert old style floating point NIL values to NaN */
-	bool convert_nil_nan;
-#endif
-#ifdef GDKLIBRARY_OLDDATE
-	/* convert old date values to new */
-	bool convert_date;
-#endif
-	char *fn;
-	char *dir;
-	char *local_dir; /* the directory in which the log is written */
-	preversionfix_fptr prefuncp;
-	postversionfix_fptr postfuncp;
-	stream *log;
-	lng end;		/* end of pre-allocated blocks for faster f(data)sync */
-	/* Store log_bids (int) to circumvent trouble with reference counting */
-	BAT *catalog_bid;	/* int bid column */
-	BAT *catalog_nme;	/* str name column */
-	BAT *catalog_tpe;	/* type of column */
-	BAT *catalog_oid;	/* object identifier of column (the pair type,oid is unique) */
-	BAT *dcatalog;		/* deleted from catalog table */
-	BAT *seqs_id;		/* int id column */
-	BAT *seqs_val;		/* lng value column */
-	BAT *dseqs;		/* deleted from seqs table */
-	BAT *snapshots_bid;	/* int bid column */
-	BAT *snapshots_tid;	/* int tid column */
-	BAT *dsnapshots;	/* deleted from snapshots table */
-	BAT *freed;		/* snapshots can be created and destroyed,
-				   in a single logger transaction.
-				   These snapshot bats should be freed
-				   directly (on transaction
-				   commit). */
-	void *buf;
-	size_t bufsize;
-} logger;
-
-#define BATSIZE 0
+typedef struct logger logger;
 
 typedef int log_bid;
 
@@ -135,16 +67,5 @@ gdk_export gdk_return logger_del_bat(logger *lg, log_bid bid)
 gdk_export log_bid logger_find_bat(logger *lg, const char *name, char tpe, oid id);
 gdk_export gdk_return logger_upgrade_bat(logger *lg, const char *name, char tpe, oid id)
 	__attribute__ ((__warn_unused_result__));
-
-typedef int (*geomcatalogfix_fptr)(void *, int);
-gdk_export void geomcatalogfix_set(geomcatalogfix_fptr);
-gdk_export geomcatalogfix_fptr geomcatalogfix_get(void);
-
-typedef str (*geomsqlfix_fptr)(int);
-gdk_export void geomsqlfix_set(geomsqlfix_fptr);
-gdk_export geomsqlfix_fptr geomsqlfix_get(void);
-
-gdk_export void geomversion_set(void);
-gdk_export int geomversion_get(void);
 
 #endif /*_LOGGER_H_*/

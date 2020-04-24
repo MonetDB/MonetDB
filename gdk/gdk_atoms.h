@@ -50,8 +50,8 @@ typedef struct {
 	int (*atomCmp) (const void *v1, const void *v2);
 	BUN (*atomHash) (const void *v);
 	/* optional functions */
-	int (*atomFix) (const void *atom);
-	int (*atomUnfix) (const void *atom);
+	gdk_return (*atomFix) (const void *atom);
+	gdk_return (*atomUnfix) (const void *atom);
 
 	/* varsized atom-only ADT functions */
 	var_t (*atomPut) (Heap *, var_t *off, const void *src);
@@ -266,8 +266,8 @@ gdk_export const ptr ptr_nil;
 #define ATOMvarsized(t)		(BATatoms[t].atomPut != NULL)
 #define ATOMlinear(t)		BATatoms[t].linear
 #define ATOMtype(t)		((t) == TYPE_void ? TYPE_oid : (t))
-#define ATOMfix(t,v)		do if (BATatoms[t].atomFix) BATatoms[t].atomFix(v); while (0)
-#define ATOMunfix(t,v)		do if (BATatoms[t].atomUnfix) BATatoms[t].atomUnfix(v); while (0)
+#define ATOMfix(t,v)		(BATatoms[t].atomFix ? BATatoms[t].atomFix(v) : GDK_SUCCEED)
+#define ATOMunfix(t,v)		(BATatoms[t].atomUnfix ? BATatoms[t].atomUnfix(v) : GDK_SUCCEED)
 
 /* The base type is the storage type if the comparison function, the
  * hash function, and the nil value are the same as those of the
@@ -296,11 +296,15 @@ ATOMputVAR(int type, Heap *heap, var_t *dst, const void *src)
 }
 
 
-static inline void
+static inline gdk_return __attribute__((__warn_unused_result__))
 ATOMputFIX(int type, void *dst, const void *src)
 {
+	gdk_return rc;
+
 	assert(BATatoms[type].atomPut == NULL);
-	ATOMfix(type, src);
+	rc = ATOMfix(type, src);
+	if (rc != GDK_SUCCEED)
+		return rc;
 	switch (ATOMsize(type)) {
 	case 0:		/* void */
 		break;
@@ -325,6 +329,7 @@ ATOMputFIX(int type, void *dst, const void *src)
 		memcpy(dst, src, ATOMsize(type));
 		break;
 	}
+	return GDK_SUCCEED;
 }
 
 static inline gdk_return __attribute__((__warn_unused_result__))
@@ -335,11 +340,11 @@ ATOMreplaceVAR(int type, Heap *heap, var_t *dst, const void *src)
 	assert(BATatoms[type].atomPut != NULL);
 	if ((*BATatoms[type].atomPut)(heap, &loc, src) == 0)
 		return GDK_FAIL;
-	ATOMunfix(type, dst);
+	if (ATOMunfix(type, dst) != GDK_SUCCEED)
+		return GDK_FAIL;
 	ATOMdel(type, heap, dst);
 	*dst = loc;
-	ATOMfix(type, src);
-	return GDK_SUCCEED;
+	return ATOMfix(type, src);
 }
 
 /* string heaps:

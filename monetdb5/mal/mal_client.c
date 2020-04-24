@@ -77,7 +77,7 @@ MCinit(void)
 	MAL_MAXCLIENTS = /* client connections */ maxclients;
 	mal_clients = GDKzalloc(sizeof(ClientRec) * MAL_MAXCLIENTS);
 	if( mal_clients == NULL){
-		TRC_CRITICAL(MAL_MAL, "Initialization failed: " MAL_MALLOC_FAIL "\n");
+		TRC_CRITICAL(MAL_SERVER, "Initialization failed: " MAL_MALLOC_FAIL "\n");
 		return false;
 	}
 	for (int i = 0; i < MAL_MAXCLIENTS; i++){
@@ -185,7 +185,6 @@ MCresetProfiler(stream *fdout)
 void
 MCexitClient(Client c)
 {
-	finishSessionProfiler(c);
 	MCresetProfiler(c->fdout);
 	if (c->father == NULL) { /* normal client */
 		if (c->fdout && c->fdout != GDKstdout)
@@ -217,7 +216,7 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	c->fdin = fin ? fin : bstream_create(GDKstdin, 0);
 	if ( c->fdin == NULL){
 		c->mode = FREECLIENT;
-		TRC_ERROR(MAL_MAL, "No stdin channel available\n");
+		TRC_ERROR(MAL_SERVER, "No stdin channel available\n");
 		return NULL;
 	}
 	c->yycur = 0;
@@ -275,7 +274,7 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	c->filetrans = false;
 	c->getquery = NULL;
 
-	char name[16];
+	char name[MT_NAME_LEN];
 	snprintf(name, sizeof(name), "Client%d->s", (int) (c - mal_clients));
 	MT_sema_init(&c->s, 0, name);
 	return c;
@@ -499,13 +498,13 @@ MCstopClients(Client cntxt)
 int
 MCactiveClients(void)
 {
-	int idles = 0;
+	int active = 0;
 	Client cntxt = mal_clients;
 
 	for(cntxt = mal_clients;  cntxt<mal_clients+MAL_MAXCLIENTS; cntxt++){
-		idles += (cntxt->idle != 0 && cntxt->mode == RUNCLIENT);
+		active += (cntxt->idle == 0 && cntxt->mode == RUNCLIENT);
 	}
-	return idles;
+	return active;
 }
 
 void
@@ -604,7 +603,6 @@ MCreadClient(Client c)
 	}
 	return 1;
 }
-
 
 int
 MCvalid(Client tc)

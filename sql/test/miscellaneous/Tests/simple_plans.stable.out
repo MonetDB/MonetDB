@@ -1,0 +1,58 @@
+stdout of test 'simple_plans` in directory 'sql/test/miscellaneous` itself:
+
+
+# 11:57:38 >  
+# 11:57:38 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-205942" "--port=30914"
+# 11:57:38 >  
+
+#start transaction;
+#create table myx (x uuid, y uuid);
+#plan select * from myx where x in ('1aea00e5db6e0810b554fde31d961965') or y = '1aea00e5db6e0810b554fde31d961965';
+% .plan # table_name
+% rel # name
+% clob # type
+% 138 # length
+project (
+| select (
+| | table(sys.myx) [ "myx"."x", "myx"."y" ] COUNT 
+| ) [ ("myx"."x" = uuid[char(32) "1aea00e5db6e0810b554fde31d961965"]) or ("myx"."y" = uuid[char(32) "1aea00e5db6e0810b554fde31d961965"]) ]
+) [ "myx"."x", "myx"."y" ]
+#plan select * from myx where x in ('1aea00e5db6e0810b554fde31d961965') or y is null;
+% .plan # table_name
+% rel # name
+% clob # type
+% 102 # length
+project (
+| select (
+| | table(sys.myx) [ "myx"."x", "myx"."y" ] COUNT 
+| ) [ ("myx"."x" = uuid[char(32) "1aea00e5db6e0810b554fde31d961965"]) or ("myx"."y" * = uuid "NULL") ]
+) [ "myx"."x", "myx"."y" ]
+#plan select * from myx where x in ('1aea00e5db6e0810b554fde31d961965', '1aea00e5db6e0810b554fde31d961966') or y = '1aea00e5db6e0810b554fde31d961967';
+% .plan # table_name
+% rel # name
+% clob # type
+% 207 # length
+project (
+| select (
+| | table(sys.myx) [ "myx"."x", "myx"."y" ] COUNT 
+| ) [ (("myx"."x" = uuid[char(32) "1aea00e5db6e0810b554fde31d961965"]) or ("myx"."x" = uuid[char(32) "1aea00e5db6e0810b554fde31d961966"])) or ("myx"."y" = uuid[char(32) "1aea00e5db6e0810b554fde31d961967"]) ]
+) [ "myx"."x", "myx"."y" ]
+#insert into myx values ('1aea00e5db6e0810b554fde31d961965', '1aea00e5db6e0810b554fde31d961967');
+[ 1	]
+#select * from myx where x in ('1aea00e5db6e0810b554fde31d961966') or y is not null;
+% sys.myx,	sys.myx # table_name
+% x,	y # name
+% uuid,	uuid # type
+% 36,	36 # length
+[ 1aea00e5-db6e-0810-b554-fde31d961965,	1aea00e5-db6e-0810-b554-fde31d961967	]
+#select * from myx where x in ('1aea00e5db6e0810b554fde31d961966') or y is null;
+% sys.myx,	sys.myx # table_name
+% x,	y # name
+% uuid,	uuid # type
+% 36,	36 # length
+#rollback;
+
+# 11:57:38 >  
+# 11:57:38 >  "Done."
+# 11:57:38 >  
+

@@ -59,8 +59,11 @@ typedef struct expression {
 	void *p;	/* properties for the optimizer */
 } sql_exp;
 
-#define TABLE_PROD_FUNC		0
-#define TABLE_FROM_RELATION	1
+#define TABLE_PROD_FUNC		1
+#define TABLE_FROM_RELATION	2
+#define TRIGGER_WRAPPER		4
+
+#define IS_TABLE_PROD_FUNC(X)  ((X & TABLE_PROD_FUNC) == TABLE_PROD_FUNC)
 
 /* or-ed with the above TABLE_PROD_FUNC */
 #define UPD_COMP		2
@@ -243,6 +246,9 @@ typedef enum operator_type {
 #define is_dependent(rel) 	((rel)->dependent)
 #define set_dependent(rel) 	(rel)->dependent = 1
 #define reset_dependent(rel) 	(rel)->dependent = 0
+#define is_outer(rel)		((rel)->outer)
+#define set_outer(rel)		(rel)->outer = 1
+#define reset_outer(rel)	(rel)->outer = 0
 
 #define is_freevar(e) 		((e)->freevar)
 #define set_freevar(e,level) 	(e)->freevar = level+1
@@ -264,6 +270,8 @@ typedef struct relation {
 	 dependent:1, 	/* dependent join */
 	 distinct:1,	
 	 processed:1,   /* fully processed or still in the process of building */
+	 outer:1,	/* used as outer (ungrouped) */
+	 grouped:1,	/* groupby processed all the group by exps */
 	 subquery:1;	/* is this part a subquery, this is needed for proper name binding */
 	void *p;	/* properties for the optimizer, distribution */
 } sql_rel;

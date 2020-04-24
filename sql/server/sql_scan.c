@@ -496,22 +496,11 @@ scanner_init_keywords(void)
 void
 scanner_init(struct scanner *s, bstream *rs, stream *ws)
 {
-	s->rs = rs;
-	s->ws = ws;
-	s->log = NULL;
-
-	s->yynext = 0;
-	s->yylast = 0;
-	s->yyval = 0;
-	s->yybak = 0;		/* keep backup of char replaced by EOS */
-	s->yycur = 0;
-
-	s->key = 0;		/* keep a hash key of the query */
-	s->started = 0;
-	s->as = 0;
-
-	s->mode = LINE_N;
-	s->schema = NULL;
+	*s = (struct scanner) {
+		.rs = rs,
+		.ws = ws,
+		.mode = LINE_N,
+	};
 }
 
 void
@@ -727,7 +716,6 @@ scanner_string(mvc *c, int quote, bool escapes)
 			break;
 		lc->yycur += pos;
 		/* check for quote escaped quote: Obscure SQL Rule */
-		/* TODO also handle double "" */
 		if (cur == quote && rs->buf[yycur + pos] == quote) {
 			if (escapes)
 				rs->buf[yycur + pos - 1] = '\\';
@@ -983,14 +971,13 @@ int scanner_symbol(mvc * c, int cur)
 			return cur;
 		return tokenize(c, cur);
 	case '\'':
-	case '"':
-		return scanner_string(c, cur,
-#if 0
-				      false
-#else
-				      cur == '\''
+#ifdef SQL_STRINGS_USE_ESCAPES
+		if (lc->next_string_is_raw || GDKgetenv_istrue("raw_strings"))
+			return scanner_string(c, cur, false);
+		return scanner_string(c, cur, true);
 #endif
-			);
+	case '"':
+		return scanner_string(c, cur, false);
 	case '{':
 		return scanner_body(c);
 	case '-':
@@ -1157,25 +1144,36 @@ tokenize(mvc * c, int cur)
 		} else if (iswdigit(cur)) {
 			return number(c, cur);
 		} else if (iswalpha(cur) || cur == '_') {
-			if ((cur == 'E' || cur == 'e') &&
-			    lc->rs->buf[lc->rs->pos + lc->yycur] == '\'') {
-				return scanner_string(c, scanner_getc(lc), true);
-			}
-			if ((cur == 'X' || cur == 'x') &&
-			    lc->rs->buf[lc->rs->pos + lc->yycur] == '\'') {
-				return scanner_string(c, scanner_getc(lc), true);
-			}
-			if ((cur == 'R' || cur == 'r') &&
-			    lc->rs->buf[lc->rs->pos + lc->yycur] == '\'') {
-				return scanner_string(c, scanner_getc(lc), false);
-			}
-
-			if ((cur == 'U' || cur == 'u') &&
-			    lc->rs->buf[lc->rs->pos + lc->yycur] == '&' &&
-			    (lc->rs->buf[lc->rs->pos + lc->yycur + 1] == '\'' ||
-			     lc->rs->buf[lc->rs->pos + lc->yycur + 1] == '"')) {
-				cur = scanner_getc(lc); /* '&' */
-				return scanner_string(c, scanner_getc(lc), false);
+			switch (cur) {
+			case 'e': /* string with escapes */
+			case 'E':
+				if (scanner_read_more(lc, 1) != EOF &&
+				    lc->rs->buf[lc->rs->pos + lc->yycur] == '\'') {
+					return scanner_string(c, scanner_getc(lc), true);
+				}
+				break;
+			case 'x': /* blob */
+			case 'X':
+			case 'r': /* raw string */
+			case 'R':
+				if (scanner_read_more(lc, 1) != EOF &&
+				    lc->rs->buf[lc->rs->pos + lc->yycur] == '\'') {
+					return scanner_string(c, scanner_getc(lc), false);
+				}
+				break;
+			case 'u': /* unicode string */
+			case 'U':
+				if (scanner_read_more(lc, 1) != EOF &&
+				    lc->rs->buf[lc->rs->pos + lc->yycur] == '&' &&
+				    scanner_read_more(lc, 2) != EOF &&
+				    (lc->rs->buf[lc->rs->pos + lc->yycur + 1] == '\'' ||
+				     lc->rs->buf[lc->rs->pos + lc->yycur + 1] == '"')) {
+					cur = scanner_getc(lc); /* '&' */
+					return scanner_string(c, scanner_getc(lc), false);
+				}
+				break;
+			default:
+				break;
 			}
 			return keyword_or_ident(c, cur);
 		} else if (iswpunct(cur)) {
@@ -1256,54 +1254,76 @@ sql_get_next_token(YYSTYPE *yylval, void *parm)
 		token = aTYPE;
 
 	if (token == IDENT || token == COMPARISON || token == FILTER_FUNC ||
-	    token == RANK || token == aTYPE || token == ALIAS)
+	    token == RANK || token == aTYPE || token == ALIAS) {
 		yylval->sval = sa_strndup(c->sa, yylval->sval, lc->yycur-lc->yysval);
-	else if (token == STRING) {
+#ifdef SQL_STRINGS_USE_ESCAPES
+		lc->next_string_is_raw = false;
+#endif
+	} else if (token == STRING) {
 		char quote = *yylval->sval;
 		char *str = sa_alloc( c->sa, (lc->yycur-lc->yysval-2)*2 + 1 );
+		char *dst;
+
 		assert(quote == '"' || quote == '\'' || quote == 'E' || quote == 'e' || quote == 'U' || quote == 'u' || quote == 'X' || quote == 'x' || quote == 'R' || quote == 'r');
 
 		lc->rs->buf[lc->rs->pos + lc->yycur - 1] = 0;
-		if (quote == '"') {
+		switch (quote) {
+		case '"':
 			if (valid_ident(yylval->sval+1,str)) {
 				token = IDENT;
 			} else {
 				sql_error(c, 1, SQLSTATE(42000) "Invalid identifier '%s'", yylval->sval+1);
 				return LEX_ERROR;
 			}
-		} else if (quote == 'E' || quote == 'e') {
+			break;
+		case 'e':
+		case 'E':
 			assert(yylval->sval[1] == '\'');
 			GDKstrFromStr((unsigned char *) str,
 				      (unsigned char *) yylval->sval + 2,
 				      lc->yycur-lc->yysval - 2);
 			quote = '\'';
-		} else if (quote == 'U' || quote == 'u') {
+			break;
+		case 'u':
+		case 'U':
 			assert(yylval->sval[1] == '&');
 			assert(yylval->sval[2] == '\'' || yylval->sval[2] == '"');
 			strcpy(str, yylval->sval + 3);
 			token = yylval->sval[2] == '\'' ? USTRING : UIDENT;
 			quote = yylval->sval[2];
-		} else if (quote == 'X' || quote == 'x') {
+#ifdef SQL_STRINGS_USE_ESCAPES
+			lc->next_string_is_raw = true;
+#endif
+			break;
+		case 'x':
+		case 'X':
 			assert(yylval->sval[1] == '\'');
-			char *dst = str;
+			dst = str;
 			for (char *src = yylval->sval + 2; *src; dst++)
 				if ((*dst = *src++) == '\'' && *src == '\'')
 					src++;
 			*dst = 0;
 			quote = '\'';
 			token = XSTRING;
-		} else if (quote == 'R' || quote == 'r') {
+#ifdef SQL_STRINGS_USE_ESCAPES
+			lc->next_string_is_raw = true;
+#endif
+			break;
+		case 'r':
+		case 'R':
 			assert(yylval->sval[1] == '\'');
-			char *dst = str;
+			dst = str;
 			for (char *src = yylval->sval + 2; *src; dst++)
 				if ((*dst = *src++) == '\'' && *src == '\'')
 					src++;
 			quote = '\'';
 			*dst = 0;
-		} else {
-			bool raw_strings = GDKgetenv_istrue("raw_strings");
-			if (raw_strings) {
-				char *dst = str;
+			break;
+		default:
+#ifdef SQL_STRINGS_USE_ESCAPES
+			if (GDKgetenv_istrue("raw_strings") ||
+			    lc->next_string_is_raw) {
+				dst = str;
 				for (char *src = yylval->sval + 1; *src; dst++)
 					if ((*dst = *src++) == '\'' && *src == '\'')
 						src++;
@@ -1313,11 +1333,23 @@ sql_get_next_token(YYSTYPE *yylval, void *parm)
 					      (unsigned char *)yylval->sval + 1,
 					      lc->yycur - lc->yysval - 1);
 			}
+#else
+			dst = str;
+			for (char *src = yylval->sval + 1; *src; dst++)
+				if ((*dst = *src++) == '\'' && *src == '\'')
+					src++;
+			*dst = 0;
+#endif
+			break;
 		}
 		yylval->sval = str;
 
 		/* reset original */
 		lc->rs->buf[lc->rs->pos+lc->yycur- 1] = quote;
+#ifdef SQL_STRINGS_USE_ESCAPES
+	} else {
+		lc->next_string_is_raw = false;
+#endif
 	}
 
 	return(token);
@@ -1352,14 +1384,6 @@ sqllex(YYSTYPE * yylval, void *parm)
 			token = NOT_LIKE;
 		} else if (next == ILIKE) {
 			token = NOT_ILIKE;
-		} else {
-			lc->yynext = next;
-		}
-	} else if (token == UNION) {
-		int next = sqllex(yylval, parm);
-
-		if (next == JOIN) {
-			token = UNIONJOIN;
 		} else {
 			lc->yynext = next;
 		}

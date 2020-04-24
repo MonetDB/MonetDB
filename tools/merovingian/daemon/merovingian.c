@@ -142,7 +142,7 @@ logFD(int fd, char *type, char *dbname, long long int pid, FILE *stream, int res
 	char *p, *q;
 	struct tm *tmp;
 	char mytime[20];
-	char writeident = 1;
+	bool writeident = true;
 
 	do {
 		if ((len = read(fd, buf, sizeof(buf) - 1)) <= 0)
@@ -153,19 +153,19 @@ logFD(int fd, char *type, char *dbname, long long int pid, FILE *stream, int res
 		tmp = localtime(&now);
 		strftime(mytime, sizeof(mytime), "%Y-%m-%d %H:%M:%S", tmp);
 		while ((p = strchr(q, '\n')) != NULL) {
-			if (writeident == 1)
+			if (writeident)
 				fprintf(stream, "%s %s %s[%lld]: ",
 						mytime, type, dbname, pid);
 			*p = '\0';
 			fprintf(stream, "%s\n", q);
 			q = p + 1;
-			writeident = 1;
+			writeident = true;
 		}
 		if ((int)(q - buf) < len) {
-			if (writeident == 1)
+			if (writeident)
 				fprintf(stream, "%s %s %s[%lld]: ",
 						mytime, type, dbname, pid);
-			writeident = 0;
+			writeident = false;
 			fprintf(stream, "%s\n", q);
 		}
 	} while (rest);
@@ -206,11 +206,14 @@ logListener(void *x)
 
 #ifdef HAVE_POLL
 		for (w = d; w != NULL; w = w->next) {
-			nfds += 2;
+			if (w->pid > 0)
+				nfds += 2;
 		}
 		pfd = malloc(nfds * sizeof(struct pollfd));
 		nfds = 0;
 		for (w = d; w != NULL; w = w->next) {
+			if (w->pid <= 0)
+				continue;
 			pfd[nfds++] = (struct pollfd) {.fd = w->out, .events = POLLIN};
 			if (w->out != w->err)
 				pfd[nfds++] = (struct pollfd) {.fd = w->err, .events = POLLIN};
@@ -218,6 +221,8 @@ logListener(void *x)
 		}
 #else
 		for (w = d; w != NULL; w = w->next) {
+			if (w->pid <= 0)
+				continue;
 			FD_SET(w->out, &readfds);
 			if (nfds < w->out)
 				nfds = w->out;
@@ -253,7 +258,7 @@ logListener(void *x)
 		w = d;
 		while (w != NULL) {
 			/* only look at records we've added in the previous loop */
-			if (w->flag & 1) {
+			if (w->pid > 0 && w->flag & 1) {
 #ifdef HAVE_POLL
 				for (int i = 0; i < nfds; i++) {
 					if (pfd[i].fd == w->out && pfd[i].revents & POLLIN)
@@ -312,7 +317,9 @@ static void *
 doTerminateProcess(void *p)
 {
 	dpair dp = p;
-	terminateProcess(dp->pid, strdup(dp->dbname), dp->type, 1);
+	pthread_mutex_lock(&dp->fork_lock);
+	terminateProcess(dp, dp->type);
+	pthread_mutex_unlock(&dp->fork_lock);
 	return NULL;
 }
 
@@ -366,6 +373,13 @@ main(int argc, char *argv[])
 
 		{"control",       strdup("false"),         0,                  BOOLEAN},
 		{"passphrase",    NULL,                    0,                  STR},
+
+		{"snapshotdir",   NULL,                    0,                  STR},
+#ifdef HAVE_LIBLZ4
+		{"snapshotcompression", strdup(".tar.lz4"), 0,                 STR},
+#else
+		{"snapshotcompression", strdup(".tar"),     0,                 STR},
+#endif
 
 		{ NULL,           NULL,                    0,                  INVALID}
 	};
@@ -556,7 +570,7 @@ main(int argc, char *argv[])
 #define MERO_EXIT(status)												\
 	do {																\
 		if (!merodontfork) {											\
-			char s = status;											\
+			char s = (char) status;										\
 			if (write(retfd, &s, 1) != 1 || close(retfd) != 0) {		\
 				Mfprintf(stderr, "could not write to parent\n");		\
 			}															\
@@ -578,7 +592,7 @@ main(int argc, char *argv[])
 #define MERO_EXIT_CLEAN(status)										\
 	do {															\
 		if (!merodontfork) {										\
-			char s = status;										\
+			char s = (char) status;									\
 			if (write(retfd, &s, 1) != 1 || close(retfd) != 0) {	\
 				Mfprintf(stderr, "could not write to parent\n");	\
 			}														\
@@ -716,6 +730,7 @@ main(int argc, char *argv[])
 	_mero_topdp->type = MERO;
 	_mero_topdp->dbname = NULL;
 	_mero_topdp->flag = 0;
+	pthread_mutex_init(&_mero_topdp->fork_lock, NULL);
 
 	/* where should our msg output go to? */
 	p = getConfVal(_mero_props, "logfile");
@@ -739,6 +754,7 @@ main(int argc, char *argv[])
 	}
 
 	d = _mero_topdp->next = &dpmero;
+	pthread_mutex_init(&d->fork_lock, NULL);
 
 	/* redirect stdout */
 	if (pipe2(pfd, O_CLOEXEC) == -1) {
@@ -799,6 +815,7 @@ main(int argc, char *argv[])
 
 	/* separate entry for the neighbour discovery service */
 	d = d->next = &dpdisc;
+	pthread_mutex_init(&d->fork_lock, NULL);
 	if (pipe2(pfd, O_CLOEXEC) == -1) {
 		Mfprintf(stderr, "unable to create pipe: %s\n",
 				strerror(errno));
@@ -837,6 +854,7 @@ main(int argc, char *argv[])
 
 	/* separate entry for the control runner */
 	d = d->next = &dpcont;
+	pthread_mutex_init(&d->fork_lock, NULL);
 	if (pipe2(pfd, O_CLOEXEC) == -1) {
 		Mfprintf(stderr, "unable to create pipe: %s\n",
 				strerror(errno));

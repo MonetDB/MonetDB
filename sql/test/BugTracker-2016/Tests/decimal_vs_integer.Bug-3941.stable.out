@@ -1,32 +1,9 @@
 stdout of test 'decimal_vs_integer.Bug-3941` in directory 'sql/test/BugTracker-2016` itself:
 
 
-# 15:01:29 >  
-# 15:01:29 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37542" "--set" "mapi_usock=/var/tmp/mtest-23330/.s.monetdb.37542" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/niels/scratch/rc-monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2016" "--set" "mal_listing=0" "--set" "embedded_r=yes"
-# 15:01:29 >  
-
-# MonetDB 5 server v11.21.12
-# This is an unreleased version
-# Serving database 'mTests_sql_test_BugTracker-2016', using 4 threads
-# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
-# Found 7.332 GiB available main-memory.
-# Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
-# Visit http://www.monetdb.org/ for further information
-# Listening for connection requests on mapi:monetdb://localhost.nes.nl:37542/
-# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-23330/.s.monetdb.37542
-# MonetDB/GIS module loaded
-# Start processing logs sql/sql_logs version 52200
-# Start reading the write-ahead log 'sql_logs/sql/log.11'
-# Finished reading the write-ahead log 'sql_logs/sql/log.11'
-# Finished processing logs sql/sql_logs
-# MonetDB/SQL module loaded
-# MonetDB/R   module loaded
-
-
-# 15:01:30 >  
-# 15:01:30 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23330" "--port=37542"
-# 15:01:30 >  
+# 09:23:08 >  
+# 09:23:08 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-21127" "--port=34996"
+# 09:23:08 >  
 
 #start transaction;
 #create table tmp(i decimal(8));
@@ -43,30 +20,32 @@ function user.s4_0():void;
 end user.s4_0;
 #inline               actions= 0 time=1 usec 
 #remap                actions= 0 time=1 usec 
-#costmodel            actions= 1 time=0 usec 
+#costmodel            actions= 1 time=1 usec 
 #coercion             actions= 0 time=1 usec 
-#aliases              actions= 1 time=3 usec 
-#evaluate             actions= 1 time=11 usec 
-#emptybind            actions= 3 time=9 usec 
+#aliases              actions= 1 time=4 usec 
+#evaluate             actions= 1 time=12 usec 
+#emptybind            actions= 2 time=10 usec 
 #pushselect           actions= 0 time=2 usec 
 #aliases              actions= 1 time=3 usec 
-#mergetable           actions= 0 time=15 usec 
-#deadcode             actions= 5 time=5 usec 
+#mitosis              actions=1 time=0 usec 
+#mergetable           actions= 0 time=18 usec 
+#deadcode             actions= 5 time=7 usec 
 #aliases              actions= 0 time=0 usec 
-#constants            actions= 1 time=4 usec 
-#commonTerms          actions= 0 time=1 usec 
-#projectionpath       actions= 0 time=1 usec 
-#deadcode             actions= 0 time=3 usec 
-#reorder              actions= 1 time=8 usec 
+#constants            actions= 1 time=6 usec 
+#commonTerms          actions= 0 time=3 usec 
+#projectionpath       actions= 0 time=2 usec 
+#deadcode             actions= 0 time=6 usec 
+#reorder              actions= 1 time=16 usec 
 #matpack              actions= 0 time=0 usec 
-#dataflow             actions= 0 time=4 usec 
+#dataflow             actions= 0 time=5 usec 
 #multiplex            actions= 0 time=1 usec 
 #profiler             actions= 1 time=0 usec 
-#candidates           actions= 1 time=0 usec 
-#deadcode             actions= 0 time=2 usec 
+#candidates           actions= 1 time=1 usec 
+#deadcode             actions= 0 time=4 usec 
+#postfix              actions= 0 time=2 usec 
 #wlc                  actions= 0 time=0 usec 
-#garbagecollector     actions= 1 time=5 usec 
-#total                actions=29 time=155 usec 
+#garbagecollector     actions= 1 time=34 usec 
+#total                actions=29 time=239 usec 
 #explain select count(*) from tmp where i = '20160222';
 % .explain # table_name
 % mal # name
@@ -78,32 +57,34 @@ function user.s6_0():void;
     X_19:lng := aggr.count(X_16:bat[:oid]);
     sql.resultSet("sys.%1":str, "%1":str, "bigint":str, 64:int, 0:int, 7:int, X_19:lng);
 end user.s6_0;
-#inline               actions= 0 time=0 usec 
+#inline               actions= 0 time=1 usec 
 #remap                actions= 0 time=1 usec 
 #costmodel            actions= 1 time=1 usec 
 #coercion             actions= 0 time=1 usec 
 #aliases              actions= 1 time=3 usec 
-#evaluate             actions= 1 time=9 usec 
-#emptybind            actions= 3 time=6 usec 
+#evaluate             actions= 1 time=16 usec 
+#emptybind            actions= 2 time=7 usec 
 #pushselect           actions= 0 time=2 usec 
 #aliases              actions= 1 time=3 usec 
-#mergetable           actions= 0 time=15 usec 
-#deadcode             actions= 5 time=5 usec 
+#mitosis              actions=1 time=1 usec 
+#mergetable           actions= 0 time=17 usec 
+#deadcode             actions= 5 time=6 usec 
 #aliases              actions= 0 time=0 usec 
-#constants            actions= 0 time=3 usec 
+#constants            actions= 0 time=5 usec 
 #commonTerms          actions= 0 time=2 usec 
 #projectionpath       actions= 0 time=1 usec 
-#deadcode             actions= 0 time=3 usec 
-#reorder              actions= 1 time=9 usec 
+#deadcode             actions= 0 time=6 usec 
+#reorder              actions= 1 time=15 usec 
 #matpack              actions= 0 time=0 usec 
-#dataflow             actions= 0 time=3 usec 
+#dataflow             actions= 0 time=4 usec 
 #multiplex            actions= 0 time=1 usec 
-#profiler             actions= 1 time=1 usec 
-#candidates           actions= 1 time=0 usec 
-#deadcode             actions= 0 time=3 usec 
+#profiler             actions= 1 time=0 usec 
+#candidates           actions= 1 time=1 usec 
+#deadcode             actions= 0 time=4 usec 
+#postfix              actions= 0 time=2 usec 
 #wlc                  actions= 0 time=0 usec 
-#garbagecollector     actions= 1 time=5 usec 
-#total                actions=29 time=140 usec 
+#garbagecollector     actions= 1 time=29 usec 
+#total                actions=29 time=215 usec 
 #explain select count(*) from tmp where i = 201602221;
 % .explain # table_name
 % mal # name
@@ -111,40 +92,46 @@ end user.s6_0;
 % 121 # length
 function user.s8_0():void;
     X_2:void := querylog.define("explain select count(*) from tmp where i = 201602221;":str, "default_pipe":str, 14:int);
-    X_12:bat[:int] := bat.new(nil:int);
+barrier X_81:bit := language.dataflow();
+    X_5:int := sql.mvc();
+    X_12:bat[:int] := sql.bind(X_5:int, "sys":str, "tmp":str, "i":str, 0:int);
     X_13:bat[:int] := batcalc.int(0:int, X_12:bat[:int], 9:int, 0:int);
-    C_19:bat[:oid] := algebra.thetaselect(X_13:bat[:int], 201602221:int, "==":str);
+    C_6:bat[:oid] := sql.tid(X_5:int, "sys":str, "tmp":str);
+    C_19:bat[:oid] := algebra.thetaselect(X_13:bat[:int], C_6:bat[:oid], 201602221:int, "==":str);
     X_22:lng := aggr.count(C_19:bat[:oid]);
+exit X_81:bit;
     sql.resultSet("sys.%1":str, "%1":str, "bigint":str, 64:int, 0:int, 7:int, X_22:lng);
 end user.s8_0;
 #inline               actions= 0 time=1 usec 
-#remap                actions= 1 time=6 usec 
-#costmodel            actions= 1 time=0 usec 
-#coercion             actions= 0 time=1 usec 
+#remap                actions= 1 time=7 usec 
+#costmodel            actions= 1 time=1 usec 
+#coercion             actions= 0 time=2 usec 
 #aliases              actions= 1 time=4 usec 
-#evaluate             actions= 1 time=8 usec 
-#emptybind            actions= 2 time=6 usec 
-#pushselect           actions= 0 time=3 usec 
-#aliases              actions= 1 time=3 usec 
-#mergetable           actions= 0 time=18 usec 
-#deadcode             actions= 4 time=5 usec 
+#evaluate             actions= 1 time=11 usec 
+#emptybind            actions= 1 time=7 usec 
+#pushselect           actions= 0 time=2 usec 
+#aliases              actions= 1 time=4 usec 
+#mitosis              actions=1 time=1 usec 
+#mergetable           actions= 0 time=19 usec 
+#deadcode             actions= 2 time=6 usec 
 #aliases              actions= 0 time=1 usec 
-#constants            actions= 2 time=4 usec 
+#constants            actions= 1 time=6 usec 
 #commonTerms          actions= 0 time=2 usec 
 #projectionpath       actions= 0 time=2 usec 
-#deadcode             actions= 0 time=3 usec 
-#reorder              actions= 1 time=10 usec 
-#matpack              actions= 0 time=0 usec 
-#dataflow             actions= 0 time=4 usec 
+#deadcode             actions= 0 time=5 usec 
+#reorder              actions= 1 time=13 usec 
+#matpack              actions= 0 time=8 usec 
+#dataflow             actions= 1 time=26 usec 
 #multiplex            actions= 0 time=1 usec 
 #profiler             actions= 1 time=1 usec 
-#candidates           actions= 1 time=0 usec 
-#deadcode             actions= 0 time=3 usec 
+#candidates           actions= 1 time=1 usec 
+#deadcode             actions= 0 time=5 usec 
+#postfix              actions= 0 time=3 usec 
 #wlc                  actions= 0 time=0 usec 
-#garbagecollector     actions= 1 time=6 usec 
-#total                actions=29 time=152 usec 
+#garbagecollector     actions= 1 time=19 usec 
+#total                actions=29 time=248 usec 
 
-# 15:01:30 >  
-# 15:01:30 >  "Done."
-# 15:01:30 >  
+# 09:23:08 >  
+# 09:23:08 >  "Done."
+# 09:23:08 >  
 

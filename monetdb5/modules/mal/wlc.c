@@ -162,7 +162,7 @@
 #include <time.h>
 #include "mal_builder.h"
 #include "wlc.h"
-#include "mtime.h"
+#include "gdk_time.h"
 
 MT_Lock     wlc_lock = MT_LOCK_INITIALIZER("wlc_lock");
 
@@ -270,6 +270,8 @@ str WLCsetConfig(void){
 	mnstr_printf(fd,"state=%d\n", wlc_state );
 	mnstr_printf(fd,"batches=%d\n", wlc_batches );
 	mnstr_printf(fd,"beat=%d\n", wlc_beat );
+	(void) mnstr_flush(wlc_fd);
+	(void) mnstr_fsync(wlc_fd);
 	close_stream(fd);
 	return MAL_SUCCEED;
 }
@@ -577,6 +579,7 @@ WLCpreparewrite(Client cntxt)
 		MT_lock_set(&wlc_lock);
 		printFunction(wlc_fd, cntxt->wlc, 0, LIST_MAL_CALL );
 		(void) mnstr_flush(wlc_fd);
+		(void) mnstr_fsync(wlc_fd);
 		// close file if no delay is allowed
 		if( wlc_beat == 0 )
 			msg = WLCcloselogger();

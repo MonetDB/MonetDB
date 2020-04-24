@@ -35,6 +35,8 @@ sql_drop_statistics(mvc *m, sql_table *t)
 	sys = mvc_bind_schema(m, "sys");
 	if (sys == NULL)
 		throw(SQL, "sql_drop_statistics", SQLSTATE(3F000) "Internal error");
+	if (!mvc_schema_privs(m, sys))
+		throw(SQL, "sql.sql_drop_statistics", SQLSTATE(42000) "Access denied for %s to schema '%s'", stack_get_string(m, "current_user"), sys->base.name);
 	sysstats = mvc_bind_table(m, sys, "statistics");
 	if (sysstats == NULL)
 		throw(SQL, "sql_drop_statistics", SQLSTATE(3F000) "No table sys.statistics");
@@ -85,6 +87,8 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sys = mvc_bind_schema(m, "sys");
 	if (sys == NULL)
 		throw(SQL, "sql.analyze", SQLSTATE(3F000) "Internal error: No schema sys");
+	if (!mvc_schema_privs(m, sys))
+		throw(SQL, "sql.analyze", SQLSTATE(42000) "Access denied for %s to schema '%s'", stack_get_string(m, "current_user"), sys->base.name);
 	sysstats = mvc_bind_table(m, sys, "statistics");
 	if (sysstats == NULL)
 		throw(SQL, "sql.analyze", SQLSTATE(3F000) "Internal error: No table sys.statistics");
@@ -103,7 +107,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		sch = *getArgReference_str(stk, pci, 3);
 	}
 
-	TRC_DEBUG(SQL_STATISTICS, "analyze %s.%s.%s sample " LLFMT "%s\n", (sch ? sch : ""), (tbl ? tbl : " "), (col ? col : " "), samplesize, (minmax)?"MinMax":"");
+	TRC_DEBUG(SQL_PARSER, "analyze %s.%s.%s sample " LLFMT "%s\n", (sch ? sch : ""), (tbl ? tbl : " "), (col ? col : " "), samplesize, (minmax)?"MinMax":"");
 
 	for (nsch = tr->schemas.set->h; nsch; nsch = nsch->next) {
 		sql_base *b = nsch->data;

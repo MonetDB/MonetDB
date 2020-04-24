@@ -15,6 +15,7 @@
 #include "mal_function.h"		/* for getPC() */
 #include "mal_utils.h"
 #include "mal_exception.h"
+#include "mal_private.h"
 
 /* If we encounter an error it can be left behind in the MalBlk
  * for the upper layers to abandon the track
@@ -27,19 +28,16 @@ addMalException(MalBlkPtr mb, str msg)
 	if( msg == NULL)
 		return;
 	if( mb->errors){
-		new = GDKzalloc(strlen(mb->errors) + strlen(msg) + 4);
+		size_t len = strlen(mb->errors) + strlen(msg) + 1;
+		new = GDKzalloc(len);
 		if (new == NULL)
 			// just stick to one error message, ignore rest
-			return ; 
-		strcpy(new, mb->errors);
-		strcat(new, msg);
+			return ;
+		strconcat_len(new, len, mb->errors, msg, NULL);
 		freeException(mb->errors);
 		mb->errors = new;
 	} else {
-		new = GDKstrdup(msg);
-		if( new == NULL)
-			return ; // just stick to one error message, ignore rest
-		mb->errors = new;
+		mb->errors = dupError(msg);
 	}
 }
 
@@ -463,7 +461,7 @@ newInstructionArgs(MalBlkPtr mb, str modnme, str fcnnme, int args)
 		 * Furthermore, failure to allocate such a small data structure indicates we are in serious trouble.
 		 * The only way out is declare it a fatal error, terminate the system to avoid crashes in all kind of places.
 		 */
-		GDKerror("newInstruction:" SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		GDKerror(SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		mal_exit(1);
 	}
 	p->maxarg = args;
@@ -1119,10 +1117,10 @@ defConstant(MalBlkPtr mb, int type, ValPtr cst)
 		setVarCleanup(mb, k);
 	else
 		clrVarCleanup(mb, k);
-	if(VALcopy( &getVarConstant(mb, k),cst) == NULL)
-		return -1;
-	if (ATOMextern(cst->vtype) && cst->val.pval)
-		VALclear(cst);
+	/* if cst is external, we give its allocated buffer away, so clear
+	 * it to avoid confusion */
+	getVarConstant(mb, k) = *cst;
+	VALempty(cst);
 	return k;
 }
 

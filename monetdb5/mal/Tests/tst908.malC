@@ -2,7 +2,7 @@
 
 function perftst( b:bat[:any_2],div:any_2):void;
 	io.print("perftst"); io.print(div);
-	reduce:= batcalc./(b,div);
+	reduce:= batcalc./(b,div,nil:bat);
 	io.print(reduce);
 end perftst;
 

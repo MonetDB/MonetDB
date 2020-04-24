@@ -182,17 +182,13 @@ typedef struct CLIENT {
 	const char *(*getquery)(struct CLIENT *);
 } *Client, ClientRec;
 
-mal_export bool    MCinit(void);
-
 mal_export int MAL_MAXCLIENTS;
 mal_export ClientRec *mal_clients;
 
 mal_export Client  MCgetClient(int id);
 mal_export Client  MCinitClient(oid user, bstream *fin, stream *fout);
-mal_export int     MCinitClientThread(Client c);
 mal_export Client  MCforkClient(Client father);
 mal_export void	   MCstopClients(Client c);
-mal_export int     MCshutdowninprogress(void);
 mal_export int	   MCactiveClients(void);
 mal_export void    MCcloseClient(Client c);
 mal_export str     MCsuspendClient(int id);
@@ -200,6 +196,4 @@ mal_export str     MCawakeClient(int id);
 mal_export int     MCpushClientInput(Client c, bstream *new_input, int listing, char *prompt);
 mal_export int	   MCvalid(Client c);
 
-mal_export str PROFinitClient(Client c);
-mal_export str PROFexitClient(Client c);
 #endif /* _MAL_CLIENT_H_ */

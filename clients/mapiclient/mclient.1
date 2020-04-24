@@ -169,8 +169,12 @@ All timings are reported on stderr.
 .br
 \fBNote\fP that the client-measured wall-clock time is reported per query
 \fBonly\fP when options \fB\-\-interactive\fP or \fB\-\-echo\fP are used,
-because only then does mclient send individual lines (statements) of the SQL
-script to the server. Otherwise, when mclient sends the SQL script in
+because only then does
+.I mclient
+send individual lines (statements) of the SQL
+script to the server. Otherwise, when
+.I mclient
+sends the SQL script in
 large(r) batch(es), only the total wall-clock time per batch is measured and
 reported. The server-measured detailed performance timings are always
 measured and reported per query.
@@ -454,7 +458,9 @@ is the name of the database.
 mclient \-d $db \-s \(dqCOPY INTO $table FROM '$file' USING DELIMITERS ',',E'\e\en','\e\(dq'\(dq
 .PP
 Efficiently import data from a CSV file into a table when the file is
-to be read by mclient (e.g. the server has no access to the file).
+to be read by
+.I mclient
+(e.g. the server has no access to the file).
 .I $file
 is the (absolute or relative) path name of the file,
 .I $table

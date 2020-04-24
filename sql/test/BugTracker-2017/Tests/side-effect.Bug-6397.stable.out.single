@@ -57,7 +57,7 @@ function user.s4_0():void;
     (X_23:bat[:oid], X_24:bat[:oid]) := algebra.crossproduct(X_21:bat[:lng], X_22:bat[:lng]);
     X_25:bat[:lng] := algebra.projection(X_23:bat[:oid], X_21:bat[:lng]);
     X_26:bat[:lng] := algebra.projection(X_24:bat[:oid], X_22:bat[:lng]);
-    X_27:bat[:lng] := batcalc.*(X_25:bat[:lng], X_26:bat[:lng]);
+    X_27:bat[:lng] := batcalc.*(X_25:bat[:lng], X_26:bat[:lng], nil:BAT, nil:BAT);
     sql.resultSet(X_31:bat[:str], X_32:bat[:str], X_33:bat[:str], X_34:bat[:int], X_35:bat[:int], X_27:bat[:lng]);
 end user.s4_0;
 #inline               actions= 0 time=1 usec 

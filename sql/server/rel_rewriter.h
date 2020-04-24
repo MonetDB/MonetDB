@@ -12,7 +12,7 @@
 #include "sql_relation.h"
 #include "sql_mvc.h"
 
-extern sql_exp *rewrite_simplify_exp(mvc *sql, sql_rel *rel, sql_exp *e, int depth);
+extern sql_exp *rewrite_simplify_exp(mvc *sql, sql_rel *rel, sql_exp *e, int depth, int *changes);
 extern sql_rel *rewrite_simplify(mvc *sql, sql_rel *rel, int *changes);
 extern sql_rel *rel_remove_empty_select(mvc *sql, sql_rel *rel, int *changes);
 

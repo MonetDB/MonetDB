@@ -35,27 +35,7 @@
 #ifndef _GDK_TRACER_H_
 #define _GDK_TRACER_H_
 
-#define INT_MAX_LEN ((__CHAR_BIT__ * sizeof(int) - 1) / 3  + 2)
-#define BUFFER_SIZE 64000
-
-#define DEFAULT_ADAPTER BASIC
-#define DEFAULT_LOG_LEVEL M_ERROR
-#define DEFAULT_FLUSH_LEVEL M_INFO
-
-#define FILE_NAME "mdbtrace.log"
-#define NAME_SEP '_'
-#define NULL_CHAR '\0'
-#define MXW "20"
-
-#define OPENFILE_FAILED "Failed to open "FILE_NAME
-#define GDKTRACER_FAILED "Failed to write logs"
-
-#define AS_STR(x) #x
-#define STR(x) AS_STR(x)
-
 #define GENERATE_ENUM(ENUM) ENUM,
-#define GENERATE_STRING(STRING) #STRING,
-#define GENERATE_LOG_LEVEL(COMP) DEFAULT_LOG_LEVEL,
 
 
 // ADAPTERS
@@ -67,7 +47,7 @@
 
 typedef enum {
 	FOREACH_ADPTR(GENERATE_ENUM)
-} ADAPTER;
+} adapter_t;
 
 
 
@@ -83,10 +63,7 @@ typedef enum {
 
 typedef enum {
 	FOREACH_LEVEL(GENERATE_ENUM)
-} LOG_LEVEL;
-
-gdk_export const char *LEVEL_STR[];
-
+} log_level_t;
 
 
 // LAYERS
@@ -100,7 +77,7 @@ gdk_export const char *LEVEL_STR[];
 
 typedef enum {
 	FOREACH_LAYER(GENERATE_ENUM)
-} LAYER;
+} layer_t;
 
 
 
@@ -125,42 +102,22 @@ typedef enum {
 	COMP( PERF )				\
 	COMP( TEM )				\
 	COMP( THRD )				\
-	COMP( TRACE )				\
 						\
 	COMP( GEOM )				\
 	COMP( LIDAR )				\
 	COMP( FITS )				\
 	COMP( SHP )				\
 						\
-	COMP( SQL_ATOM_TR )			\
-	COMP( SQL_STATISTICS )			\
-	COMP( SQL_ORDERIDX )			\
-	COMP( SQL_OPTIMIZER )			\
-	COMP( SQL_WLR )				\
-	COMP( SQL_USER )			\
-	COMP( SQL_SCENARIO )			\
-	COMP( SQL_CACHE_TR )			\
-	COMP( SQL_SYMBOL )			\
-	COMP( SQL_MVC )				\
+	COMP( SQL_PARSER )			\
+	COMP( SQL_TRANS )			\
+	COMP( SQL_REWRITER )			\
+	COMP( SQL_EXECUTION )			\
 	COMP( SQL_STORE )			\
-	COMP( SQL_UPGRADES )			\
-	COMP( SQL_RELATION )			\
-	COMP( SQL_RESULT )			\
-	COMP( SQL_STATEMENT )			\
-	COMP( SQL_BAT )				\
 						\
-	COMP( MAL_INTERPRETER )			\
 	COMP( MAL_WLC )				\
 	COMP( MAL_REMOTE )			\
-	COMP( MAL_ATOMS )			\
-	COMP( MAL_TABLET )			\
-	COMP( MAL_OLTP )			\
 	COMP( MAL_MAPI )			\
 	COMP( MAL_SERVER )			\
-	COMP( MAL_DATAFLOW )			\
-	COMP( MAL_MANIFOLD )			\
-	COMP( MAL_EXCEPTION )			\
-	COMP( MAL_MAL )				\
 						\
 	COMP( MAL_OPTIMIZER )			\
 						\
@@ -170,16 +127,14 @@ typedef enum {
 
 typedef enum {
 	FOREACH_COMP(GENERATE_ENUM)
-} COMPONENT;
-
-gdk_export const char *COMPONENT_STR[];
+} component_t;
 
 
 
 /*
  * Logging macros
  */
-gdk_export LOG_LEVEL LVL_PER_COMPONENT[];
+gdk_export log_level_t lvl_per_component[];
 
 // If the LOG_LEVEL of the message is one of the following: CRITICAL,
 // ERROR or WARNING it is logged no matter the component. In any other
@@ -188,32 +143,16 @@ gdk_export LOG_LEVEL LVL_PER_COMPONENT[];
 	(LOG_LEVEL == M_CRITICAL ||		\
 	 LOG_LEVEL == M_ERROR    ||		\
 	 LOG_LEVEL == M_WARNING  ||		\
-	 LVL_PER_COMPONENT[COMP] >= LOG_LEVEL)
+	 lvl_per_component[COMP] >= LOG_LEVEL)
 
-#define IF_GDK_TRACER_LOG(LOG_LEVEL, COMP)	\
-	if (GDK_TRACER_TEST(LOG_LEVEL, COMP))
 
 #define GDK_TRACER_LOG_BODY(LOG_LEVEL, COMP, MSG, ...)			\
-	GDKtracer_log(LOG_LEVEL,					\
-		      "%s "						\
-		      "%-"MXW"s "					\
-		      "%"MXW"s:%d "					\
-		      "%"MXW"s "					\
-		      "%-"MXW"s "					\
-		      "%-"MXW"s # "MSG,					\
-		      GDKtracer_get_timestamp("%Y-%m-%d %H:%M:%S",	\
-					      (char[20]){0}, 20),	\
-		      __FILE__,						\
-		      __func__,						\
-		      __LINE__,						\
-		      LEVEL_STR[LOG_LEVEL],				\
-		      COMPONENT_STR[COMP],				\
-		      MT_thread_getname(),				\
-		      ## __VA_ARGS__)
+	GDKtracer_log(__FILE__, __func__, __LINE__,			\
+		      LOG_LEVEL, COMP, NULL, MSG, ##__VA_ARGS__)
 
 #define GDK_TRACER_LOG(LOG_LEVEL, COMP, MSG, ...)			\
 	do {								\
-		IF_GDK_TRACER_LOG(LOG_LEVEL, COMP) {			\
+		if (GDK_TRACER_TEST(LOG_LEVEL, COMP)) {			\
 			GDK_TRACER_LOG_BODY(LOG_LEVEL, COMP, MSG,	\
 					    ## __VA_ARGS__);		\
 		}							\
@@ -221,20 +160,19 @@ gdk_export LOG_LEVEL LVL_PER_COMPONENT[];
 
 
 #define TRC_CRITICAL(COMP, MSG, ...)				\
-	GDK_TRACER_LOG(M_CRITICAL, COMP, MSG, ## __VA_ARGS__)
+	GDK_TRACER_LOG_BODY(M_CRITICAL, COMP, MSG, ## __VA_ARGS__)
 
 #define TRC_ERROR(COMP, MSG, ...)				\
-	GDK_TRACER_LOG(M_ERROR, COMP, MSG, ## __VA_ARGS__)
+	GDK_TRACER_LOG_BODY(M_ERROR, COMP, MSG, ## __VA_ARGS__)
 
 #define TRC_WARNING(COMP, MSG, ...)				\
-	GDK_TRACER_LOG(M_WARNING, COMP, MSG, ## __VA_ARGS__)
+	GDK_TRACER_LOG_BODY(M_WARNING, COMP, MSG, ## __VA_ARGS__)
 
 #define TRC_INFO(COMP, MSG, ...)				\
 	GDK_TRACER_LOG(M_INFO, COMP, MSG, ## __VA_ARGS__)
 
 #define TRC_DEBUG(COMP, MSG, ...)				\
 	GDK_TRACER_LOG(M_DEBUG, COMP, MSG, ## __VA_ARGS__)
-
 
 
 
@@ -252,19 +190,19 @@ gdk_export LOG_LEVEL LVL_PER_COMPONENT[];
     }
 */
 #define TRC_CRITICAL_IF(COMP)			\
-	IF_GDK_TRACER_LOG(M_CRITICAL, COMP)
+	/* if (GDK_TRACER_TEST(M_CRITICAL, COMP)) */
 
 #define TRC_ERROR_IF(COMP)			\
-	IF_GDK_TRACER_LOG(M_ERROR, COMP)
+	/* if (GDK_TRACER_TEST(M_ERROR, COMP)) */
 
 #define TRC_WARNING_IF(COMP)			\
-	IF_GDK_TRACER_LOG(M_WARNING, COMP)
+	/* if (GDK_TRACER_TEST(M_WARNING, COMP)) */
 
 #define TRC_INFO_IF(COMP)			\
-	IF_GDK_TRACER_LOG(M_INFO, COMP)
+	if (GDK_TRACER_TEST(M_INFO, COMP))
 
 #define TRC_DEBUG_IF(COMP)			\
-	IF_GDK_TRACER_LOG(M_DEBUG, COMP)
+	if (GDK_TRACER_TEST(M_DEBUG, COMP))
 
 
 #define TRC_CRITICAL_ENDIF(COMP, MSG, ...)				\
@@ -284,90 +222,37 @@ gdk_export LOG_LEVEL LVL_PER_COMPONENT[];
 
 
 
-// GDKtracer struct - Buffer and info
-typedef struct GDKtracer {
-	int id;
-	char buffer[BUFFER_SIZE];
-	int allocated_size;
-} gdk_tracer;
-
-
-
-/*
- * GDKtracer Stream Macros
- */
-// Exception
-#define GDK_TRACER_EXCEPTION(MSG, ...)					\
-	mnstr_printf(GDKstdout,						\
-		     "%s "						\
-		     "%-"MXW"s "					\
-		     "%"MXW"s:%d "					\
-		     "%"MXW"s "						\
-		     "%-"MXW"s "					\
-		     "%-"MXW"s # "MSG,					\
-		     GDKtracer_get_timestamp("%Y-%m-%d %H:%M:%S",	\
-					     (char[20]){0}, 20),	\
-		     __FILE__,						\
-		     __func__,						\
-		     __LINE__,						\
-		     STR(M_CRITICAL),					\
-		     STR(GDK_TRACER),					\
-		     MT_thread_getname(),				\
-		     ## __VA_ARGS__);
-
-
-#define GDK_TRACER_OSTREAM(MSG, ...)			\
-	mnstr_printf(GDKstdout, MSG, ## __VA_ARGS__)
-
-
-
-
 /*
  * GDKtracer API
  * For the allowed log_levels, components and layers see the
  * LOG_LEVEL, COMPONENT and LAYER enum respectively.
  */
-// Returns the timestamp in the form of datetime
-gdk_export char *GDKtracer_get_timestamp(const char *fmt, char *buf, size_t sz);
-
-
 // Used for logrotate
 gdk_export void GDKtracer_reinit_basic(int sig);
 
-
 gdk_export gdk_return GDKtracer_stop(void);
 
-
 gdk_export gdk_return GDKtracer_set_component_level(const char *comp, const char *lvl);
-
-
+gdk_export const char *GDKtracer_get_component_level(const char *comp);
 gdk_export gdk_return GDKtracer_reset_component_level(const char *comp);
 
-
 gdk_export gdk_return GDKtracer_set_layer_level(const char *layer, const char *lvl);
-
-
 gdk_export gdk_return GDKtracer_reset_layer_level(const char *layer);
 
-
 gdk_export gdk_return GDKtracer_set_flush_level(const char *lvl);
-
-
 gdk_export gdk_return GDKtracer_reset_flush_level(void);
 
-
 gdk_export gdk_return GDKtracer_set_adapter(const char *adapter);
-
-
 gdk_export gdk_return GDKtracer_reset_adapter(void);
 
-
-gdk_export gdk_return GDKtracer_log(LOG_LEVEL level, const char *fmt, ...)
-	__attribute__((format(printf, 2, 3)));
-
+gdk_export void GDKtracer_log(const char *file, const char *func,
+			      int lineno, log_level_t lvl,
+			      component_t comp,
+			      const char *syserr,
+			      _In_z_ _Printf_format_string_ const char *format, ...)
+	__attribute__((__format__(__printf__, 7, 8)));
 
 gdk_export gdk_return GDKtracer_flush_buffer(void);
-
 
 gdk_export gdk_return GDKtracer_fill_comp_info(BAT *id, BAT *component, BAT *log_level);
 

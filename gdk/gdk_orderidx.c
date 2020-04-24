@@ -57,8 +57,8 @@ BATidxsync(void *arg)
 				}
 			}
 			TRC_DEBUG(ACCELERATOR, "BATidxsync(%s): orderidx persisted"
-						" (" LLFMT " usec)%s\n",
-						BATgetId(b), GDKusec() - t0, failed);
+				  " (" LLFMT " usec)%s\n",
+				  BATgetId(b), GDKusec() - t0, failed);
 		}
 	}
 	MT_lock_unset(&b->batIdxLock);
@@ -169,7 +169,7 @@ persistOIDX(BAT *b)
 	    !GDKinmemory()) {
 		MT_Id tid;
 		BBPfix(b->batCacheid);
-		char name[16];
+		char name[MT_NAME_LEN];
 		snprintf(name, sizeof(name), "oidxsync%d", b->batCacheid);
 		if (MT_create_thread(&tid, BATidxsync, b,
 				     MT_THR_DETACHED, name) < 0)
@@ -354,8 +354,7 @@ GDKmergeidx(BAT *b, BAT**a, int n_ar)
 	case TYPE_dbl:
 		break;
 	default:
-		GDKerror("GDKmergeidx: type %s not supported.\n",
-			 ATOMname(b->ttype));
+		GDKerror("type %s not supported.\n", ATOMname(b->ttype));
 		return GDK_FAIL;
 	}
 	TRC_DEBUG(ACCELERATOR, "GDKmergeidx(" ALGOBATFMT ") create index\n", ALGOBATPAR(b));
@@ -480,7 +479,7 @@ GDKmergeidx(BAT *b, BAT**a, int n_ar)
 	    b->batInserted == b->batCount) {
 		MT_Id tid;
 		BBPfix(b->batCacheid);
-		char name[16];
+		char name[MT_NAME_LEN];
 		snprintf(name, sizeof(name), "oidxsync%d", b->batCacheid);
 		if (MT_create_thread(&tid, BATidxsync, b,
 				     MT_THR_DETACHED, name) < 0)

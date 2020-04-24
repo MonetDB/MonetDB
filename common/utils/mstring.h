@@ -12,6 +12,13 @@
 #include <stdarg.h>		/* va_list etc. */
 #include <string.h>		/* strlen */
 
+#if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ > 4))
+/* not on CentOS 6 (GCC 4.4.7) */
+#define GCC_Pragma(pragma)	_Pragma(pragma)
+#else
+#define GCC_Pragma(pragma)
+#endif
+
 /* copy at most (n-1) bytes from src to dst and add a terminating NULL
  * byte; return length of src (i.e. can be more than what is copied) */
 static inline size_t
@@ -23,6 +30,20 @@ strcpy_len(char *restrict dst, const char *restrict src, size_t n)
 				return i;
 		}
 		dst[n - 1] = 0;
+/* This code is correct, but GCC gives a warning in certain
+ * conditions, so we disable the warning temporarily.
+ * The warning happens e.g. in
+ *   strcpy_len(buf, "fixed string", sizeof(buf))
+ * where buf is larger than the string. In that case we never get here
+ * since return is executed in the loop above, but the compiler
+ * complains anyway about reading out-of-bounds.
+ * For GCC we use _Pragma to disable the warning (and hence error).
+ * Since other compilers may warn (and hence error out) on
+ * unrecognized pragmas, we use some preprocessor trickery. */
+GCC_Pragma("GCC diagnostic push")
+GCC_Pragma("GCC diagnostic ignored \"-Warray-bounds\"")
+		return n + strlen(src + n);
+GCC_Pragma("GCC diagnostic pop")
 	}
 	return strlen(src);
 }

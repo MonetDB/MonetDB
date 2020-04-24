@@ -149,7 +149,6 @@ typedef enum tokens {
 	SQL_TRUNCATE,
 	SQL_TYPE,
 	SQL_UNION,
-	SQL_UNIONJOIN,
 	SQL_UNIQUE,
 	SQL_UNOP,
 	SQL_UPDATE,
@@ -182,8 +181,7 @@ typedef enum jt {
 	jt_inner = 0,
 	jt_left = 1,
 	jt_right = 2,
-	jt_full = 3,
-	jt_union = 4
+	jt_full = 3
 } jt;
 
 #endif

@@ -15,7 +15,7 @@
  */
 #include "monetdb_config.h"
 #include "oltp.h"
-#include "mtime.h"
+#include "gdk_time.h"
 
 #define LOCKTIMEOUT (20 * 1000)
 #define LOCKDELAY 20
@@ -110,7 +110,7 @@ OLTPlock(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ( oltp_delay == FALSE )
 		return MAL_SUCCEED;
 
-	TRC_DEBUG(MAL_OLTP, "%6d lock request for client: %d, pc %d", GDKms(), cntxt->idx, pci->pc);
+	TRC_DEBUG(MAL_SERVER, "%6d lock request for client: %d, pc %d", GDKms(), cntxt->idx, pci->pc);
 
 	do{
 		MT_lock_set(&mal_oltpLock);
@@ -124,7 +124,7 @@ OLTPlock(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 
 		if( i  == pci->argc ){
-			TRC_DEBUG(MAL_OLTP, "OLTP '%6d' set lock for client: %d\n", GDKms(), cntxt->idx);
+			TRC_DEBUG(MAL_SERVER, "OLTP '%6d' set lock for client: %d\n", GDKms(), cntxt->idx);
 
 			for( i=1; i< pci->argc; i++){
 				lck= getVarConstant(mb, getArg(pci,i)).val.ival;
@@ -140,12 +140,12 @@ OLTPlock(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			return MAL_SUCCEED;
 		} else {
 			MT_lock_unset(&mal_oltpLock);
-			TRC_DEBUG(MAL_OLTP, "%d delay imposed for client: %d\n", GDKms(), cntxt->idx);
+			TRC_DEBUG(MAL_SERVER, "%d delay imposed for client: %d\n", GDKms(), cntxt->idx);
 			MT_sleep_ms(LOCKDELAY);
 		}
 	} while( clk - wait < LOCKTIMEOUT);
 
-	TRC_DEBUG(MAL_OLTP, "%6d proceed query for client: %d\n", GDKms(), cntxt->idx);
+	TRC_DEBUG(MAL_SERVER, "%6d proceed query for client: %d\n", GDKms(), cntxt->idx);
 
 	// if the time out is related to a copy_from query, we should not start it either.
 	sql = getName("sql");
@@ -153,7 +153,7 @@ OLTPlock(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	for( i = 0; i < mb->stop; i++)
 		if( getFunctionId(getInstrPtr(mb,i)) == cpy && getModuleId(getInstrPtr(mb,i)) == sql ){
-			TRC_DEBUG(MAL_OLTP, "%6d bail out a concurrent copy into: %d\n", GDKms(), cntxt->idx);
+			TRC_DEBUG(MAL_SERVER, "%6d bail out a concurrent copy into: %d\n", GDKms(), cntxt->idx);
 			throw(SQL,"oltp.lock","Conflicts with other write operations\n");
 		}
 	return MAL_SUCCEED;
@@ -173,7 +173,7 @@ OLTPrelease(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	MT_lock_set(&mal_oltpLock);
 	clk = GDKusec();
 
-	TRC_DEBUG(MAL_OLTP, "%6d release the locks: %d", GDKms(), cntxt->idx);
+	TRC_DEBUG(MAL_SERVER, "%6d release the locks: %d", GDKms(), cntxt->idx);
 
 	for( i=1; i< pci->argc; i++){
 		lck= getVarConstant(mb, getArg(pci,i)).val.ival;
@@ -187,7 +187,7 @@ OLTPrelease(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				if( delay > LOCKDELAY || delay < LOCKDELAY/10)
 					delay = LOCKDELAY;
 				oltp_locks[lck].retention = clk + delay;
-				TRC_DEBUG(MAL_OLTP, "Retention period for lock: %d " LLFMT"\n", lck, delay);
+				TRC_DEBUG(MAL_SERVER, "Retention period for lock: %d " LLFMT"\n", lck, delay);
 			}
 	}
 	MT_lock_unset(&mal_oltpLock);

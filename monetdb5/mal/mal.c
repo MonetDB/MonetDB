@@ -70,7 +70,7 @@ int mal_init(void){
 #ifndef NDEBUG
 		mdbExit();
 #endif
-		TRC_ERROR(MAL_MAL, "%s\n", err);
+		TRC_CRITICAL(MAL_SERVER, "%s\n", err);
 		freeException(err);
 		return -1;
 	}
@@ -94,16 +94,17 @@ void mserver_reset(void)
 
 	GDKprepareExit();
 	MCstopClients(0);
+	dropQRYqueue();
 	setHeartbeat(-1);
 	stopProfiler(0);
 	AUTHreset();
 	if (!GDKinmemory()) {
 		if ((err = msab_wildRetreat()) != NULL) {
-			TRC_ERROR(MAL_MAL, "%s\n", err);
+			TRC_ERROR(MAL_SERVER, "%s\n", err);
 			free(err);
 		}
 		if ((err = msab_registerStop()) != NULL) {
-			TRC_ERROR(MAL_MAL, "%s\n", err);
+			TRC_ERROR(MAL_SERVER, "%s\n", err);
 			free(err);
 		}
 	}

@@ -14,10 +14,11 @@ prop *
 prop_create( sql_allocator *sa, rel_prop kind, prop *pre )
 {
 	prop *p = SA_NEW(sa, prop);
-	
-	p->kind = kind;
-	p->value = 0;
-	p->p = pre;
+
+	*p = (prop) {
+		.kind = kind,
+		.p = pre,
+	};
 	return p;
 }
 
@@ -82,21 +83,21 @@ propkind2string( prop *p)
 char *
 propvalue2string( prop *p)
 {
-	char buf [BUFSIZ];
-
 	if (p->value) {
 		switch(p->kind) {
 		case PROP_JOINIDX: {
-			   sql_idx *i = p->value;
-
-			   snprintf(buf, BUFSIZ, "%s.%s.%s", i->t->s->base.name, i->t->base.name, i->base.name);
-			   return _STRDUP(buf);
-			}
+			sql_idx *i = p->value;
+			char *buf = NEW_ARRAY(char, strlen(i->t->s->base.name) + strlen(i->t->base.name) + strlen(i->base.name) + 3);
+			if (!buf)
+				return NULL;
+			stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(buf, i->t->s->base.name), "."), i->t->base.name), "."), i->base.name);
+			return buf;
+		}
 		case PROP_REMOTE: {
-			   char *uri = p->value;
+			char *uri = p->value;
 
-			   return _STRDUP(uri);
-			}
+			return _STRDUP(uri);
+		}
 		default:
 			break;
 		}

@@ -58,8 +58,8 @@ function user.foo():void;               	#[0] (0)  0
     io.print(srch:bat[:int]);           	#[27] (0) IOprint_val 32 <- 31 
     srch:bat[:int] := batstr.search(S:bat[:str], S:bat[:str]);	#[28] (0) STRbatstrSearch 31 <- 1 1 
     io.print(srch:bat[:int]);           	#[29] (0) IOprint_val 33 <- 31 
-    plus:bat[:str] := batcalc.+(S:bat[:str], S:bat[:str]);	#[30] (0) CMDbatADD 34 <- 1 1 
-    io.print(plus:bat[:str]);           	#[31] (0) IOprint_val 35 <- 34 
+    plus:bat[:str] := batcalc.+(S:bat[:str], S:bat[:str], nil:BAT, nil:BAT);	#[30] (0) CMDbatADD 34 <- 1 1 35 36 
+    io.print(plus:bat[:str]);	#[31] (0) IOprint_val 37 <- 34 
 end user.foo;                           	#[32] (0)  
 #--------------------------#
 # h	t  # name

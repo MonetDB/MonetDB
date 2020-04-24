@@ -22,6 +22,7 @@
  */
 #include "monetdb_config.h"
 #include "gdk.h"
+#include "gdk_time.h"
 #include "gdk_private.h"
 #include <math.h>
 
@@ -117,16 +118,24 @@ hgeHash(const hge *v)
 /*
  * @+ Standard Atoms
  */
-static int
+static gdk_return
 batFix(const bat *b)
 {
-	return BBPretain(*b);
+	if (!is_bat_nil(*b) && BBPretain(*b) == 0) {
+		GDKerror("batFix failed\n");
+		return GDK_FAIL;
+	}
+	return GDK_SUCCEED;
 }
 
-static int
+static gdk_return
 batUnfix(const bat *b)
 {
-	return BBPrelease(*b);
+	if (!is_bat_nil(*b) && BBPrelease(*b) < 0) {
+		GDKerror("batUnfix failed\n");
+		return GDK_FAIL;
+	}
+	return GDK_SUCCEED;
 }
 
 /*
@@ -169,7 +178,7 @@ ATOMallocate(const char *id)
 	int t;
 
 	if (strlen(id) >= IDLENGTH) {
-		GDKerror("ATOMallocate: name too long");
+		GDKerror("name too long");
 		return int_nil;
 	}
 
@@ -180,7 +189,7 @@ ATOMallocate(const char *id)
 		if (t == GDKatomcnt) {
 			if (GDKatomcnt == MAXATOMS) {
 				MT_lock_unset(&GDKthreadLock);
-				GDKerror("ATOMallocate: too many types");
+				GDKerror("too many types");
 				return int_nil;
 			}
 			GDKatomcnt++;
@@ -311,7 +320,7 @@ ATOMprint(int t, const void *p, stream *s)
 	if (p && t >= 0 && t < GDKatomcnt && (tostr = BATatoms[t].atomToStr)) {
 		size_t sz;
 
-		if (t != TYPE_bat && t < TYPE_str) {
+		if (t != TYPE_bat && t < TYPE_date) {
 			char buf[dblStrlen], *addr = buf;	/* use memory from stack */
 
 			sz = dblStrlen;
@@ -1231,8 +1240,8 @@ atomDesc BATatoms[MAXATOMS] = {
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) batWrite,
 		.atomCmp = (int (*)(const void *, const void *)) intCmp,
 		.atomHash = (BUN (*)(const void *)) intHash,
-		.atomFix = (int (*)(const void *)) batFix,
-		.atomUnfix = (int (*)(const void *)) batUnfix,
+		.atomFix = (gdk_return (*)(const void *)) batFix,
+		.atomUnfix = (gdk_return (*)(const void *)) batUnfix,
 	},
 	[TYPE_int] = {
 		.name = "int",
@@ -1341,6 +1350,45 @@ atomDesc BATatoms[MAXATOMS] = {
 		.atomHash = (BUN (*)(const void *)) hgeHash,
 	},
 #endif
+	[TYPE_date] = {
+		.name = "date",
+		.storage = TYPE_int,
+		.linear = true,
+		.size = sizeof(int),
+		.atomNull = (void *) &int_nil,
+		.atomFromStr = (ssize_t (*)(const char *, size_t *, void **, bool)) date_fromstr,
+		.atomToStr = (ssize_t (*)(char **, size_t *, const void *, bool)) date_tostr,
+		.atomRead = (void *(*)(void *, stream *, size_t)) intRead,
+		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) intWrite,
+		.atomCmp = (int (*)(const void *, const void *)) intCmp,
+		.atomHash = (BUN (*)(const void *)) intHash,
+	},
+	[TYPE_daytime] = {
+		.name = "daytime",
+		.storage = TYPE_lng,
+		.linear = true,
+		.size = sizeof(lng),
+		.atomNull = (void *) &lng_nil,
+		.atomFromStr = (ssize_t (*)(const char *, size_t *, void **, bool)) daytime_tz_fromstr,
+		.atomToStr = (ssize_t (*)(char **, size_t *, const void *, bool)) daytime_tostr,
+		.atomRead = (void *(*)(void *, stream *, size_t)) lngRead,
+		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) lngWrite,
+		.atomCmp = (int (*)(const void *, const void *)) lngCmp,
+		.atomHash = (BUN (*)(const void *)) lngHash,
+	},
+	[TYPE_timestamp] = {
+		.name = "timestamp",
+		.storage = TYPE_lng,
+		.linear = true,
+		.size = sizeof(lng),
+		.atomNull = (void *) &lng_nil,
+		.atomFromStr = (ssize_t (*)(const char *, size_t *, void **, bool)) timestamp_fromstr,
+		.atomToStr = (ssize_t (*)(char **, size_t *, const void *, bool)) timestamp_tostr,
+		.atomRead = (void *(*)(void *, stream *, size_t)) lngRead,
+		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) lngWrite,
+		.atomCmp = (int (*)(const void *, const void *)) lngCmp,
+		.atomHash = (BUN (*)(const void *)) lngHash,
+	},
 	[TYPE_str] = {
 		.name = "str",
 		.storage = TYPE_str,

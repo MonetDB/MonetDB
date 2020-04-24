@@ -106,7 +106,7 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 
 	/* check for overflow */
 	if (itemsize && nitems > (h->size / itemsize)) {
-		GDKerror("HEAPalloc: allocating more than heap can accomodate\n");
+		GDKerror("allocating more than heap can accomodate\n");
 		return GDK_FAIL;
 	}
 	if (GDKinmemory() ||
@@ -127,7 +127,7 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 		GDKfree(nme);
 	}
 	if (h->base == NULL) {
-		GDKerror("HEAPalloc: Insufficient space for HEAP of %zu bytes.", h->size);
+		GDKerror("Insufficient space for HEAP of %zu bytes.", h->size);
 		return GDK_FAIL;
 	}
 	h->newstorage = h->storage;
@@ -288,7 +288,7 @@ HEAPextend(Heap *h, size_t size, bool mayshare)
 	  failed:
 		*h = bak;
 	}
-	GDKerror("HEAPextend: failed to extend to %zu for %s%s%s: %s\n",
+	GDKerror("failed to extend to %zu for %s%s%s: %s\n",
 		 size, nme, ext ? "." : "", ext ? ext : "", failure);
 	return GDK_FAIL;
 }
@@ -303,9 +303,9 @@ HEAPshrink(Heap *h, size_t size)
 	if (h->storage == STORE_MEM) {
 		p = GDKrealloc(h->base, size);
 		TRC_DEBUG(HEAP, "Shrinking malloced "
-				"heap %zu %zu %p "
-				"%p\n", h->size, size,
-				h->base, p);
+			  "heap %zu %zu %p "
+			  "%p\n", h->size, size,
+			  h->base, p);
 	} else {
 		char *path;
 
@@ -328,11 +328,9 @@ HEAPshrink(Heap *h, size_t size)
 			      h->base, h->size, &size);
 		GDKfree(path);
 		TRC_DEBUG(HEAP, "Shrinking %s mmapped "
-				"heap (%s) %zu %zu %p "
-				"%p\n",
-				h->storage == STORE_MMAP ? "shared" : "privately",
-				h->filename, h->size, size,
-				h->base, p);
+			  "heap (%s) %zu %zu %p %p\n",
+			  h->storage == STORE_MMAP ? "shared" : "privately",
+			  h->filename, h->size, size, h->base, p);
 	}
 	if (p) {
 		h->size = size;
@@ -554,9 +552,7 @@ HEAPfree(Heap *h, bool rmheap)
 {
 	if (h->base) {
 		if (h->storage == STORE_MEM) {	/* plain memory */
-			TRC_DEBUG(HEAP, "HEAPfree %zu"
-					" %p\n",
-					h->size, h->base);
+			TRC_DEBUG(HEAP, "HEAPfree %zu %p\n", h->size, h->base);
 			GDKfree(h->base);
 		} else if (h->storage == STORE_CMEM) {
 			//heap is stored in regular C memory rather than GDK memory,so we call free()
@@ -569,10 +565,8 @@ HEAPfree(Heap *h, bool rmheap)
 					    h->filename);
 				assert(0);
 			}
-			TRC_DEBUG(HEAP, "munmap(base=%p, "
-					"size=%zu) = %d\n",
-					(void *)h->base,
-					h->size, (int) ret);
+			TRC_DEBUG(HEAP, "munmap(base=%p, size=%zu) = %d\n",
+				  (void *)h->base, h->size, (int) ret);
 		}
 	}
 	h->base = NULL;
@@ -630,8 +624,8 @@ HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, b
 		    (fd = GDKfdlocate(h->farmid, nme, "mrb+", ext)) >= 0) {
 			ret = ftruncate(fd, truncsize);
 			TRC_DEBUG(HEAP,
-					"ftruncate(file=%s.%s, size=%zu"
-					  ") = %d\n", nme, ext, truncsize, ret);
+				  "ftruncate(file=%s.%s, size=%zu) = %d\n",
+				  nme, ext, truncsize, ret);
 			close(fd);
 			if (ret == 0) {
 				h->size = truncsize;
@@ -639,9 +633,8 @@ HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, b
 		}
 	}
 
-	TRC_DEBUG(HEAP, "HEAPload(%s.%s,storage=%d,free=%zu"
-			",size=%zu)\n", nme, ext,
-			(int) h->storage, h->free, h->size);
+	TRC_DEBUG(HEAP, "HEAPload(%s.%s,storage=%d,free=%zu,size=%zu)\n",
+		  nme, ext, (int) h->storage, h->free, h->size);
 
 	/* On some OSs (WIN32,Solaris), it is prohibited to write to a
 	 * file that is open in MAP_PRIVATE (FILE_MAP_COPY) solution:
@@ -662,8 +655,8 @@ HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, b
 	t0 = GDKms();
 	ret = rename(srcpath, dstpath);
 	TRC_DEBUG(HEAP, "rename %s %s = %d %s (%dms)\n",
-			  srcpath, dstpath, ret, ret < 0 ? strerror(errno) : "",
-			  GDKms() - t0);
+		  srcpath, dstpath, ret, ret < 0 ? GDKstrerror(errno, (char[128]){0}, 128) : "",
+		  GDKms() - t0);
 	GDKfree(srcpath);
 	GDKfree(dstpath);
 
@@ -702,7 +695,7 @@ HEAPsave_intern(Heap *h, const char *nme, const char *ext, const char *suffix, b
 	long_str extension;
 
 	if (h->base == NULL) {
-		GDKerror("HEAPsave_intern: no heap to save\n");
+		GDKerror("no heap to save\n");
 		return GDK_FAIL;
 	}
 	if (h->storage != STORE_MEM && store == STORE_PRIV) {
@@ -715,9 +708,9 @@ HEAPsave_intern(Heap *h, const char *nme, const char *ext, const char *suffix, b
 		store = h->storage;
 	}
 	TRC_DEBUG(HEAP,
-			"(%s.%s,storage=%d,free=%zu,size=%zu,dosync=%s)\n",
-			  nme, ext, (int) h->newstorage, h->free, h->size,
-			  dosync?"true":"false");
+		  "(%s.%s,storage=%d,free=%zu,size=%zu,dosync=%s)\n",
+		  nme, ext, (int) h->newstorage, h->free, h->size,
+		  dosync?"true":"false");
 	return GDKsave(h->farmid, nme, ext, h->base, h->free, store, dosync);
 }
 
@@ -859,42 +852,6 @@ roundup_num(size_t number, int alignment)
 
 
 static void
-HEAP_printstatus(Heap *heap)
-{
-	HEADER *hheader = HEAP_index(heap, 0, HEADER);
-	size_t block, cur_free = hheader->head;
-	CHUNK *blockp;
-
-	TRC_DEBUG(TRACE,
-		"HEAP has head %zu and alignment %d and size %zu\n",
-		hheader->head, hheader->alignment, heap->free);
-
-	/* Walk the blocklist */
-	block = hheader->firstblock;
-
-	while (block < heap->free) {
-		blockp = HEAP_index(heap, block, CHUNK);
-
-		if (block == cur_free) {
-			TRC_DEBUG(TRACE,
-				"Free block at %p has size %zu and next %zu\n",
-				(void *)block,
-				blockp->size, blockp->next);
-
-			cur_free = blockp->next;
-			block += blockp->size;
-		} else {
-			size_t size = blocksize(hheader, blockp);
-
-			TRC_DEBUG(TRACE,
-				"Block at %zu with size %zu\n",
-				block, size);
-			block += size;
-		}
-	}
-}
-
-static void
 HEAP_empty(Heap *heap, size_t nprivate, int alignment)
 {
 	/* Find position of header block. */
@@ -917,11 +874,6 @@ HEAP_empty(Heap *heap, size_t nprivate, int alignment)
 	assert(heap->size - head <= VAR_MAX);
 	headp->size = (size_t) (heap->size - head);
 	headp->next = 0;
-	TRC_DEBUG_IF(TRACE)
-	{
-		TRC_DEBUG(TRACE, "We created the following heap\n");
-		HEAP_printstatus(heap);
-	}
 }
 
 void
@@ -957,8 +909,6 @@ HEAP_malloc(Heap *heap, size_t nbytes)
 	CHUNK *trailp;
 	HEADER *hheader = HEAP_index(heap, 0, HEADER);
 
-	TRC_DEBUG(TRACE, "Enter malloc with %zu bytes\n", nbytes);
-
 	/* add space for size field */
 	nbytes += hheader->alignment;
 	nbytes = roundup_8(nbytes);
@@ -974,11 +924,9 @@ HEAP_malloc(Heap *heap, size_t nbytes)
 	for (block = hheader->head; block != 0; block = blockp->next) {
 		blockp = HEAP_index(heap, block, CHUNK);
 
-		TRC_DEBUG(TRACE, "Block %zu is %zu bytes\n", block, blockp->size);
-		
 		assert(trail == 0 || block > trail);
 		if (trail != 0 && block <= trail) {
-			GDKerror("HEAP_malloc: Free list is not orderered\n");
+			GDKerror("Free list is not orderered\n");
 			return 0;
 		}
 
@@ -999,8 +947,6 @@ HEAP_malloc(Heap *heap, size_t nbytes)
 		assert(heap->free <= VAR_MAX);
 		block = (size_t) heap->free;	/* current end-of-heap */
 
-		TRC_DEBUG(TRACE, "No block found\n");
-
 		/* Increase the size of the heap. */
 		TRC_DEBUG(HEAP, "HEAPextend in HEAP_malloc %s %zu %zu\n", heap->filename, heap->size, newsize);
 		if (HEAPextend(heap, newsize, false) != GDK_SUCCEED)
@@ -1011,8 +957,6 @@ HEAP_malloc(Heap *heap, size_t nbytes)
 		blockp = HEAP_index(heap, block, CHUNK);
 		trailp = HEAP_index(heap, trail, CHUNK);
 
-		TRC_DEBUG(TRACE, "New block made at pos %zu with size %zu\n", block, heap->size - block);
-
 		blockp->next = 0;
 		assert(heap->free - block <= VAR_MAX);
 		blockp->size = (size_t) (heap->free - block);	/* determine size of allocated block */
@@ -1020,8 +964,6 @@ HEAP_malloc(Heap *heap, size_t nbytes)
 		/* Try to join the last block in the freelist and the
 		 * newly allocated memory */
 		if ((trail != 0) && (trail + trailp->size == block)) {
-			TRC_DEBUG(TRACE, "Glue newly generated block to adjacent last\n");
-
 			trailp->size += blockp->size;
 			trailp->next = blockp->next;
 
@@ -1072,7 +1014,7 @@ HEAP_free(Heap *heap, var_t mem)
 
 	assert(hheader->alignment == 8 || hheader->alignment == 4);
 	if (hheader->alignment != 8 && hheader->alignment != 4) {
-		GDKerror("HEAP_free: Heap structure corrupt\n");
+		GDKerror("Heap structure corrupt\n");
 		return;
 	}
 

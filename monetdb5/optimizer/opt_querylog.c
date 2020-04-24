@@ -8,7 +8,7 @@
 
 #include "monetdb_config.h"
 #include "opt_querylog.h"
-#include "mtime.h"
+#include "gdk_time.h"
 #include "querylog.h"
 
 str 

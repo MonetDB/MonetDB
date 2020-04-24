@@ -9,8 +9,6 @@
 #ifndef _GDK_DELTA_H_
 #define _GDK_DELTA_H_
 
-#include "gdk_tracer.h"
-
 /*
  * We make sure here that the BUNs section of a BAT at least starts 4
  * bytes from the BUN start.  This ensures that the first data item of
@@ -25,11 +23,11 @@ DELTAinit(BAT *b)
 	b->batInserted = 0;
 	b->tshift = ATOMelmshift(Tsize(b));
 	TRC_DEBUG(DELTA,
-			"%s free %zu ins " BUNFMT " base %p\n",
-			BBP_logical(b->batCacheid),
-			b->theap.free,
-			b->batInserted,
-			b->theap.base);
+		  "%s free %zu ins " BUNFMT " base %p\n",
+		  BBP_logical(b->batCacheid),
+		  b->theap.free,
+		  b->batInserted,
+		  b->theap.base);
 }
 
 /*

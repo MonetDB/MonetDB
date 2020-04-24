@@ -10,6 +10,8 @@ CREATE TABLE tab0(col0 INTEGER, col1 INTEGER, col2 INTEGER);
 INSERT INTO tab0 VALUES(97,1,99), (15,81,47), (87,21,10);
 CREATE TABLE tab1(col0 INTEGER, col1 INTEGER, col2 INTEGER);
 INSERT INTO tab1 VALUES (51,14,96), (85,5,59), (91,47,68);
+CREATE TABLE tab2(col0 INTEGER, col1 INTEGER, col2 INTEGER);
+INSERT INTO tab2 VALUES(64,77,40), (75,67,58), (46,51,23);
 
 SELECT CAST(+ col1 * - col1 AS BIGINT) AS col2 FROM tab0 GROUP BY col2, col0, col1 HAVING + - col0 / - AVG ( ALL + col2 ) - - - AVG ( DISTINCT + col0 ) + col0 IS NULL;
 SELECT DISTINCT + 40 / + + col0 AS col2 FROM tab0 GROUP BY col0, col0, col2 HAVING NOT ( NOT + - 80 BETWEEN NULL AND + - 73 ) OR NOT ( + col0 >= - COUNT ( * ) + - COUNT ( DISTINCT - col0 ) );
@@ -20,10 +22,62 @@ SELECT DISTINCT * FROM tab0 WHERE NOT - - 12 <> + + 96; --empty
 SELECT * FROM tab0 AS cor0 WHERE - 52 = + 32; --empty
 SELECT ALL * FROM tab0 WHERE 68 = - + 83; --empty
 
+SELECT * FROM tab2 AS cor0 WHERE NOT - ( - + 57 ) + - ( ( - - col2 ) ) BETWEEN + - col2 AND + col2;
+	-- 46 51 23
+
+SELECT col0 FROM tab2 WHERE - - col2;
+	-- 64
+	-- 75
+	-- 46
+
+PLAN SELECT DISTINCT col0, col1, col2, col0 FROM tab0;
+
+SELECT DISTINCT col0, col1, col2, col0 FROM tab0;
+	-- 97  1 99 97
+	-- 15 81 47 15
+	-- 87 21 10 87
+
+PLAN SELECT col0 FROM tab2 WHERE CAST(col2 AS BIGINT) = 40;
+
+SELECT col0 FROM tab2 WHERE CAST(col2 AS BIGINT) = 40;
+	-- 64
+
 SELECT 11 FROM tab1 AS cor0 LEFT JOIN tab0 ON 80 = 70;
 	-- 11
 	-- 11
 	-- 11
+
+SELECT col0 FROM tab0 ORDER BY tab0.col0;
+	-- 15
+	-- 87
+	-- 97
+
+SELECT DISTINCT 99 col2 FROM tab1 WHERE NOT - ( 43 ) + + 98 = + col2;
+	-- 99
+
+SELECT * FROM tab2 AS cor0 WHERE NOT - 59 + + 47 <> + ( + col0 );
+	-- empty
+
+SELECT CAST(+ col2 * col2 AS BIGINT) FROM tab2 AS cor0 WHERE NOT - CAST ( NULL AS INTEGER ) <> - - col1 AND NOT NULL NOT BETWEEN ( NULL ) AND - 91 - - + 27 * + col2;
+	-- empty
+
+SELECT + 2 FROM tab0 AS cor0 WHERE NOT - 29 IS NULL OR NOT NULL IS NULL AND NOT NULL BETWEEN + col1 - + 60 AND + 37 * + col1 + + col0;
+	-- 2
+	-- 2
+	-- 2
+
+SELECT * FROM tab0 WHERE NOT - col0 - col1 * col2 <= ( + col0 ) AND NOT ( + col2 + col1 - col1 ) NOT BETWEEN - col0 AND - col1 + - col2 / col1;
+	-- empty
+
+SELECT * FROM tab0 AS cor0 WHERE NOT col1 BETWEEN - col0 AND col0 + col1 * col1 AND - col1 BETWEEN col0 AND ( NULL ) OR NOT col0 * col0 + col0 <= NULL;
+	-- empty
+
+SELECT DISTINCT * FROM tab2 WHERE NOT ( - + 50 + ( 70 ) ) = + col2;
+	-- 64 77 40
+	-- 46 51 23
+	-- 75 67 58
+
+SELECT col0 FROM tab0 ORDER BY sys.tab0.col0; --error, TODO
 
 prepare select col0 from tab0 where (?) in (select col0 from tab0);
 prepare select col0 from tab0 where (?,?) in (select col0,col1 from tab0);
@@ -63,3 +117,4 @@ prepare select 1 from tab1 where (col0,col1) in (select ?,? from tab1);
 
 drop table tab0;
 drop table tab1;
+drop table tab2;

@@ -14,6 +14,8 @@ case "$1" in
 	chown monetdb:monetdb /var/log/monetdb /run/monetdb
 	chmod ug=rwx,o= /var/log/monetdb
 	chmod ug=rwx,o=rx /run/monetdb
+	chown monetdb:monetdb /var/monetdb5/dbfarm/.meovingian_*
+	chmod ug=rw,o=r /var/monetdb5/dbfarm/.merovingian_*
     ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)

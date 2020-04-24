@@ -52,3 +52,25 @@ DROP TABLE subtable2;
 DROP TABLE subtable3;
 DROP TABLE testme;
 DROP FUNCTION iamdummy;
+
+CREATE FUNCTION iamdummy(a int, b int, c int) RETURNS INT BEGIN RETURN a + b + c; END;
+CREATE MERGE TABLE testme(d int, e int, f int) PARTITION BY RANGE USING (iamdummy(d, e, f));
+SELECT column_id, expression FROM table_partitions;
+DROP TABLE testme;
+DROP FUNCTION iamdummy;
+
+/* Testing bad expressions */
+
+CREATE FUNCTION iamdummy(a int) RETURNS INT BEGIN RETURN SELECT a UNION ALL SELECT a; END;
+CREATE MERGE TABLE testme(a int) PARTITION BY RANGE USING (iamdummy(a));
+CREATE TABLE subtable1 (a int);
+ALTER TABLE testme ADD TABLE subtable1 AS PARTITION FROM RANGE MINVALUE TO RANGE MAXVALUE;
+INSERT INTO testme VALUES (1); --error, more than one row
+
+ALTER TABLE testme DROP TABLE subtable1;
+DROP TABLE testme;
+DROP TABLE subtable1;
+DROP FUNCTION iamdummy;
+
+CREATE MERGE TABLE testme(a int) PARTITION BY RANGE USING (SUM(a)); --error aggregations not allowed in expressions
+CREATE MERGE TABLE testme(a int) PARTITION BY RANGE USING (AVG(a) OVER ()); --error window functions not not allowed in expressions

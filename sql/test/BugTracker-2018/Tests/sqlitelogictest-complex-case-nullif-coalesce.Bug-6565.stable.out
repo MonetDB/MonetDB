@@ -27,7 +27,7 @@ stdout of test 'sqlitelogictest-complex-case-nullif-coalesce.Bug-6565` in direct
 #+ - 92 ELSE - ( - 47 ) END ) ) / - CAST ( NULL AS INTEGER ) + + NULLIF ( - COALESCE ( CAST ( - 35 AS INTEGER ), + 6,
 #CAST ( COUNT ( ALL 28 ) AS INT) ), 75 + 14 );
 % . # table_name
-% %12 # name
+% %13 # name
 % bigint # type
 % 1 # length
 [ NULL	]

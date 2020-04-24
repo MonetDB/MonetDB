@@ -36,10 +36,7 @@ BATcommit(BAT *b)
 	if (b == NULL)
 		return;
 	TRC_DEBUG(DELTA, "BATcommit1 %s free %zu ins " BUNFMT " base %p\n",
-			   BATgetId(b),
-			   b->theap.free,
-			   b->batInserted,
-			   b->theap.base);
+		  BATgetId(b), b->theap.free, b->batInserted, b->theap.base);
 	if (!BATdirty(b)) {
 		b->batDirtyflushed = false;
 	}
@@ -48,10 +45,7 @@ BATcommit(BAT *b)
 	}
 	b->batInserted = BUNlast(b);
 	TRC_DEBUG(DELTA, "BATcommit2 %s free %zu ins " BUNFMT " base %p\n",
-				BATgetId(b),
-				b->theap.free,
-				b->batInserted,
-				b->theap.base);
+		  BATgetId(b), b->theap.free, b->batInserted, b->theap.base);
 }
 
 /*
@@ -95,7 +89,7 @@ BATundo(BAT *b)
 	bunlast = BUNlast(b) - 1;
 	if (bunlast >= b->batInserted) {
 		BUN i = bunfirst;
-		int (*tunfix) (const void *) = BATatoms[b->ttype].atomUnfix;
+		gdk_return (*tunfix) (const void *) = BATatoms[b->ttype].atomUnfix;
 		void (*tatmdel) (Heap *, var_t *) = BATatoms[b->ttype].atomDel;
 
 		if (b->thash)
@@ -103,7 +97,7 @@ BATundo(BAT *b)
 		if (tunfix || tatmdel) {
 			for (p = bunfirst; p <= bunlast; p++, i++) {
 				if (tunfix)
-					(*tunfix) (BUNtail(bi, p));
+					(void) (*tunfix) (BUNtail(bi, p));
 				if (tatmdel)
 					(*tatmdel) (b->tvheap, (var_t *) BUNtloc(bi, p));
 			}

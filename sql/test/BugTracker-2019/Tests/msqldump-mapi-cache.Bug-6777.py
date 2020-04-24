@@ -5,8 +5,8 @@ try:
 except ImportError:
     import process
 
-c = process.client('sql', stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE)
-out, err = c.communicate('''
+with process.client('sql', stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE) as c:
+    out, err = c.communicate('''
 start transaction;
 create table dbgen_version
 (
@@ -640,16 +640,16 @@ alter table web_site add constraint web_d1 foreign key (web_close_date_sk) refer
 alter table web_site add constraint web_d2 foreign key (web_open_date_sk) references date_dim (d_date_sk);
 commit;
 ''')
-sys.stdout.write(out)
-sys.stderr.write(err)
+    sys.stdout.write(out)
+    sys.stderr.write(err)
 
-c = process.client('sqldump', stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
-out, err = c.communicate()
-sys.stdout.write(out)
-sys.stderr.write(err)
+with process.client('sqldump', stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE) as c:
+    out, err = c.communicate()
+    sys.stdout.write(out)
+    sys.stderr.write(err)
 
-c = process.client('sql', stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE)
-out, err = c.communicate('''
+with process.client('sql', stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE) as c:
+    out, err = c.communicate('''
 start transaction;
 drop table if exists dbgen_version cascade;
 drop table if exists customer_address cascade;
@@ -678,5 +678,5 @@ drop table if exists catalog_sales cascade;
 drop table if exists store_sales cascade;
 commit;
 ''')
-sys.stdout.write(out)
-sys.stderr.write(err)
+    sys.stdout.write(out)
+    sys.stderr.write(err)

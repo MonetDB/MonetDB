@@ -12,6 +12,7 @@
 
 
 #include "geom.h"
+#include "gdk_logger.h"
 
 static char *
 N(char *buf, const char *pre, const char *schema, const char *post)
