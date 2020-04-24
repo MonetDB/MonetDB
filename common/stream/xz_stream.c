@@ -15,11 +15,11 @@
 
 #ifdef HAVE_LIBLZMA
 #define XZBUFSIZ 64*1024
-typedef struct xz_stream {
+typedef struct xz_state {
 	FILE *fp;
 	lzma_stream strm;
 	uint8_t buf[XZBUFSIZ];
-} xz_stream;
+} xz_state;
 
 /* Keep calling lzma_code until the whole input buffer has been consumed
  * and all necessary output has been written.
@@ -37,7 +37,7 @@ typedef struct xz_stream {
 static int
 pump_out(stream *s, lzma_action action)
 {
-	xz_stream *xz = (xz_stream *) s->stream_data.p;
+	xz_state *xz = (xz_state *) s->stream_data.p;
 
 	while (1) {
 		// Make sure there is room in the output buffer
@@ -109,7 +109,7 @@ pump_out(stream *s, lzma_action action)
 static ssize_t
 pump_in(stream *s)
 {
-	xz_stream *xz = (xz_stream *) s->stream_data.p;
+	xz_state *xz = (xz_state *) s->stream_data.p;
 	uint8_t *orig_out = xz->strm.next_out;
 
 	if (xz->strm.next_in == NULL) {
@@ -165,7 +165,7 @@ pump_in(stream *s)
 static ssize_t
 stream_xzread(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 {
-	xz_stream *xz = s->stream_data.p;
+	xz_state *xz = s->stream_data.p;
 	size_t size = elmsize * cnt;
 
 	if (xz == NULL) {
@@ -185,7 +185,7 @@ stream_xzread(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt
 static ssize_t
 stream_xzwrite(stream *restrict s, const void *restrict buf, size_t elmsize, size_t cnt)
 {
-	xz_stream *xz = s->stream_data.p;
+	xz_state *xz = s->stream_data.p;
 	size_t size = elmsize * cnt;
 
 	if (size == 0)
@@ -210,7 +210,7 @@ stream_xzwrite(stream *restrict s, const void *restrict buf, size_t elmsize, siz
 static void
 stream_xzclose(stream *s)
 {
-	xz_stream *xz = s->stream_data.p;
+	xz_state *xz = s->stream_data.p;
 
 	if (xz) {
 		if (!s->readonly) {
@@ -233,7 +233,7 @@ stream_xzclose(stream *s)
 static int
 stream_xzflush(stream *s)
 {
-	xz_stream *xz = s->stream_data.p;
+	xz_state *xz = s->stream_data.p;
 
 	if (s->readonly)
 		return 0;
@@ -255,11 +255,11 @@ static stream *
 open_xzstream(const char *restrict filename, const char *restrict flags)
 {
 	stream *s;
-	xz_stream *xz;
+	xz_state *xz;
 	uint32_t preset = 0;
 	char fl[3];
 
-	if ((xz = calloc(1, sizeof(struct xz_stream))) == NULL)
+	if ((xz = calloc(1, sizeof(struct xz_state))) == NULL)
 		return NULL;
 	if (((flags[0] == 'r' &&
 	      lzma_stream_decoder(&xz->strm, UINT64_MAX, LZMA_CONCATENATED) != LZMA_OK)) ||
