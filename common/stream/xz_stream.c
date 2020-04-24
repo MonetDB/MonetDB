@@ -347,12 +347,8 @@ open_xzwstream(const char *restrict filename, const char *restrict mode)
 stream *
 open_xzrastream(const char *filename)
 {
-	stream *s;
-
-	if ((s = open_xzstream(filename, "r")) == NULL)
-		return NULL;
-	s->binary = false;
-	return s;
+	stream *s = open_xzstream(filename, "r");
+	return create_text_stream(s);
 }
 
 stream *
