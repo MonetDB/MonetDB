@@ -60,6 +60,11 @@ pre(const char *s1, const char *s2, char *buf)
 	snprintf(buf, 64, "%s%s", s1, s2);
 	return buf;
 }
+static inline const char *
+local_bool(bool i)
+{
+	return i ? "true" : "false";
+}
 static inline char *
 local_itoa(ssize_t i, char *buf)
 {
@@ -711,17 +716,17 @@ BKCinfo(bat *ret1, bat *ret2, const bat *bid)
 	    BUNappend(bk, "tident", false) != GDK_SUCCEED ||
 	    BUNappend(bv, b->tident, false) != GDK_SUCCEED ||
 	    BUNappend(bk, "tdense", false) != GDK_SUCCEED ||
-	    BUNappend(bv, local_itoa((ssize_t) BATtdense(b), buf), false) != GDK_SUCCEED ||
+	    BUNappend(bv, local_bool(BATtdense(b)), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "tseqbase", false) != GDK_SUCCEED ||
 	    BUNappend(bv, oidtostr(b->tseqbase, bf, sizeof(bf)), FALSE) != GDK_SUCCEED ||
 	    BUNappend(bk, "tsorted", false) != GDK_SUCCEED ||
-	    BUNappend(bv, local_itoa((ssize_t) BATtordered(b), buf), false) != GDK_SUCCEED ||
+	    BUNappend(bv, local_bool(BATtordered(b)), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "trevsorted", false) != GDK_SUCCEED ||
-	    BUNappend(bv, local_itoa((ssize_t) BATtrevordered(b), buf), false) != GDK_SUCCEED ||
+	    BUNappend(bv, local_bool(BATtrevordered(b)), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "tkey", false) != GDK_SUCCEED ||
-	    BUNappend(bv, local_itoa((ssize_t) b->tkey, buf), false) != GDK_SUCCEED ||
+	    BUNappend(bv, local_bool(b->tkey), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "tvarsized", false) != GDK_SUCCEED ||
-	    BUNappend(bv, local_itoa((ssize_t) b->tvarsized, buf), false) != GDK_SUCCEED ||
+	    BUNappend(bv, local_bool(b->tvarsized), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "tnosorted", false) != GDK_SUCCEED ||
 	    BUNappend(bv, local_utoa(b->tnosorted, buf), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "tnorevsorted", false) != GDK_SUCCEED ||
@@ -731,16 +736,16 @@ BKCinfo(bat *ret1, bat *ret2, const bat *bid)
 	    BUNappend(bk, "tnokey[1]", false) != GDK_SUCCEED ||
 	    BUNappend(bv, local_utoa(b->tnokey[1], buf), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "tnonil", false) != GDK_SUCCEED ||
-	    BUNappend(bv, local_utoa(b->tnonil, buf), false) != GDK_SUCCEED ||
+	    BUNappend(bv, local_bool(b->tnonil), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "tnil", false) != GDK_SUCCEED ||
-	    BUNappend(bv, local_utoa(b->tnil, buf), false) != GDK_SUCCEED ||
+	    BUNappend(bv, local_bool(b->tnil), false) != GDK_SUCCEED ||
 
 	    BUNappend(bk, "batInserted", false) != GDK_SUCCEED ||
 	    BUNappend(bv, local_utoa(b->batInserted, buf), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "ttop", false) != GDK_SUCCEED ||
 	    BUNappend(bv, local_utoa(b->theap.free, buf), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "batCopiedtodisk", false) != GDK_SUCCEED ||
-	    BUNappend(bv, local_itoa((ssize_t) b->batCopiedtodisk, buf), false) != GDK_SUCCEED ||
+	    BUNappend(bv, local_bool(b->batCopiedtodisk), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "batDirtydesc", false) != GDK_SUCCEED ||
 	    BUNappend(bv, b->batDirtydesc ? "dirty" : "clean", false) != GDK_SUCCEED ||
 

@@ -14361,6 +14361,51 @@ convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 		       oid candoff, bool abort_on_error, bool *reduce)
 {
 	switch (ATOMbasetype(stp)) {
+	case TYPE_msk:
+		switch (ATOMbasetype(dtp)) {
+		case TYPE_msk:
+			
+		case TYPE_bte:
+			if (dtp == TYPE_bit)
+				return convert_bte_bit(src, dst, ci, rv,
+						       candoff, reduce);
+			return convert_bte_bte(src, dst, ci, rv, candoff,
+					       reduce);
+		case TYPE_sht:
+			return convert_bte_sht(src, dst, ci, rv, candoff,
+					       reduce);
+		case TYPE_int:
+#if SIZEOF_OID == SIZEOF_INT
+			if (dtp == TYPE_oid)
+				return convert_bte_oid(src, dst, ci, rv,
+						       candoff, abort_on_error,
+						       reduce);
+#endif
+			return convert_bte_int(src, dst, ci, rv, candoff,
+					       reduce);
+		case TYPE_lng:
+#if SIZEOF_OID == SIZEOF_LNG
+			if (dtp == TYPE_oid)
+				return convert_bte_oid(src, dst, ci, rv,
+						       candoff, abort_on_error,
+						       reduce);
+#endif
+			return convert_bte_lng(src, dst, ci, rv, candoff,
+					       reduce);
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			return convert_bte_hge(src, dst, ci, rv, candoff,
+					       reduce);
+#endif
+		case TYPE_flt:
+			return convert_bte_flt(src, dst, ci, rv, candoff,
+					       reduce);
+		case TYPE_dbl:
+			return convert_bte_dbl(src, dst, ci, rv, candoff,
+					       reduce);
+		default:
+			return BUN_NONE + 1;
+		}
 	case TYPE_bte:
 		switch (ATOMbasetype(dtp)) {
 		case TYPE_bte:
@@ -14772,7 +14817,23 @@ VARconvert(ValPtr ret, const ValRecord *v, bool abort_on_error)
 	BUN nils = 0;
 	bool reduce;
 
-	if (ret->vtype == TYPE_str) {
+	if (ret->vtype == TYPE_msk) {
+		ValRecord tmp;
+		tmp.vtype = TYPE_bit;
+		if (VARconvert(&tmp, v, abort_on_error) != GDK_SUCCEED)
+			return GDK_FAIL;
+		if (is_bte_nil(tmp.val.btval)) {
+			GDKerror("22003!cannot convert nil to msk.\n");
+			nils = BUN_NONE;
+		}
+		ret->val.mval = tmp.val.btval;
+	} else if (v->vtype == TYPE_msk) {
+		ValRecord tmp;
+		tmp.vtype = TYPE_bit;
+		tmp.val.btval = v->val.mval;
+		if (VARconvert(ret, &tmp, abort_on_error) != GDK_SUCCEED)
+			return GDK_FAIL;
+	} else if (ret->vtype == TYPE_str) {
 		if (v->vtype == TYPE_void ||
 		    (*ATOMcompare(v->vtype))(VALptr(v),
 					     ATOMnilptr(v->vtype)) == 0) {

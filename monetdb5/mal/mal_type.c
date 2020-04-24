@@ -136,6 +136,10 @@ getAtomIndex(const char *nme, size_t len, int deftype)
 			if (qt("lng"))
 				return TYPE_lng;
 			break;
+		case 'm':
+			if (qt("msk"))
+				return TYPE_msk;
+			break;
 		case 'p':
 			if (qt("ptr"))
 				return TYPE_ptr;

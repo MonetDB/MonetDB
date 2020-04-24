@@ -184,7 +184,9 @@ COLnew(oid hseq, int tt, BUN cap, role_t role)
 	/* round up to multiple of BATTINY */
 	if (cap < BUN_MAX - BATTINY)
 		cap = (cap + BATTINY - 1) & ~(BATTINY - 1);
-	if (cap < BATTINY)
+	if (ATOMstorage(tt) == TYPE_msk && cap < 8*BATTINY)
+		cap = 8*BATTINY;
+	else if (cap < BATTINY)
 		cap = BATTINY;
 	/* limit the size */
 	if (cap > BUN_MAX)
@@ -196,6 +198,9 @@ COLnew(oid hseq, int tt, BUN cap, role_t role)
 
 	BATsetdims(bn);
 	bn->batCapacity = cap;
+
+	if (ATOMstorage(tt) == TYPE_msk)
+		cap /= 8;	/* 8 values per byte */
 
 	/* alloc the main heaps */
 	if (tt && HEAPalloc(&bn->theap, cap, bn->twidth) != GDK_SUCCEED) {
@@ -339,12 +344,16 @@ BATattach(int tt, const char *heapfile, role_t role)
 			GDKerror("heapfile size not integral number of atoms\n");
 			return NULL;
 		}
-		if ((size_t) (st.st_size / atomsize) > (size_t) BUN_MAX) {
+		if (ATOMstorage(tt) == TYPE_msk ?
+		    (st.st_size > (off_t) (BUN_MAX / 8)) :
+		    ((size_t) (st.st_size / atomsize) > (size_t) BUN_MAX)) {
 			fclose(f);
 			GDKerror("heapfile too large\n");
 			return NULL;
 		}
-		cap = (BUN) (st.st_size / atomsize);
+		cap = (BUN) (ATOMstorage(tt) == TYPE_msk ?
+			     st.st_size * 8 :
+			     st.st_size / atomsize);
 		bn = COLnew(0, tt, cap, role);
 		if (bn == NULL) {
 			fclose(f);
@@ -371,8 +380,8 @@ BATattach(int tt, const char *heapfile, role_t role)
 			bn->trevsorted = false;
 			bn->tkey = false;
 		} else {
-			bn->tsorted = true;
-			bn->trevsorted = true;
+			bn->tsorted = ATOMlinear(tt);
+			bn->trevsorted = ATOMlinear(tt);
 			bn->tkey = true;
 		}
 	}
@@ -415,6 +424,8 @@ BATgrows(BAT *b)
 		else
 			newcap = BUN_MAX;
 	}
+	if (ATOMstorage(b->ttype) == TYPE_msk) /* round up to multiple of 32 */
+		newcap = (newcap + 31) & ~(BUN)31;
 	return newcap;
 }
 
@@ -429,7 +440,7 @@ BATgrows(BAT *b)
 gdk_return
 BATextend(BAT *b, BUN newcap)
 {
-	size_t theap_size = newcap;
+	size_t theap_size;
 
 	assert(newcap <= BUN_MAX);
 	BATcheck(b, GDK_FAIL);
@@ -446,9 +457,14 @@ BATextend(BAT *b, BUN newcap)
 		return GDK_SUCCEED;
 	}
 
+	if (ATOMstorage(b->ttype) == TYPE_msk) {
+		newcap = (newcap + 31) & ~(BUN)31; /* round up to multiple of 32 */
+		theap_size = (size_t) (newcap / 8); /* in bytes */
+	} else {
+		theap_size = (size_t) newcap * Tsize(b);
+	}
 	b->batCapacity = newcap;
 
-	theap_size *= Tsize(b);
 	if (b->theap.base) {
 		TRC_DEBUG(HEAP, "HEAPextend in BATextend %s %zu %zu\n",
 			  b->theap.filename, b->theap.size, theap_size);
@@ -628,6 +644,7 @@ wrongtype(int t1, int t2)
 		if (t1 != t2) {
 			if (ATOMvarsized(t1) ||
 			    ATOMvarsized(t2) ||
+			    t1 == TYPE_msk || t2 == TYPE_msk ||
 			    ATOMsize(t1) != ATOMsize(t2) ||
 			    BATatoms[t1].atomFix ||
 			    BATatoms[t2].atomFix)
@@ -672,6 +689,7 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 	 * atom-types */
 	if (role == b->batRole &&
 	    b->batRestricted == BAT_READ &&
+	    ATOMstorage(b->ttype) != TYPE_msk && /* no view on TYPE_msk */
 	    (!VIEWtparent(b) ||
 	     BBP_cache(VIEWtparent(b))->batRestricted == BAT_READ) &&
 	    !writable) {
@@ -749,7 +767,12 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 				heapmove(bn->tvheap, &thp);
 
 			/* make sure we use the correct capacity */
-			bn->batCapacity = (BUN) (bn->ttype ? bn->theap.size >> bn->tshift : 0);
+			if (ATOMstorage(bn->ttype) == TYPE_msk)
+				bn->batCapacity = (BUN) (bn->theap.size * 8);
+			else if (bn->ttype)
+				bn->batCapacity = (BUN) (bn->theap.size >> bn->tshift);
+			else
+				bn->batCapacity = 0;
 		} else if (BATatoms[tt].atomFix || tt != TYPE_void || ATOMextern(tt)) {
 			/* case (4): one-by-one BUN insert (really slow) */
 			BUN p, q, r = 0;
@@ -775,6 +798,14 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 				*dst++ = cur;
 				cur += inc;
 			}
+		} else if (ATOMstorage(b->ttype) == TYPE_msk) {
+			/* convert number of bits to number of bytes,
+			 * and round the latter up to a multiple of
+			 * 4 (copy in units of 4 bytes) */
+			bn->theap.free = (bunstocopy + 7) / 8;
+			bn->theap.free = (bn->theap.free + 3) & ~(size_t)3;
+			bn->theap.dirty |= bunstocopy > 0;
+			memcpy(Tloc(bn, 0), Tloc(b, 0), bn->theap.free);
 		} else {
 			/* case (4): optimized for simple array copy */
 			bn->theap.free = bunstocopy * Tsize(bn);
@@ -897,6 +928,7 @@ static void
 setcolprops(BAT *b, const void *x)
 {
 	bool isnil = b->ttype != TYPE_void &&
+		ATOMnilptr(b->ttype) != NULL &&
 		ATOMcmp(b->ttype, x, ATOMnilptr(b->ttype)) == 0;
 	BATiter bi;
 	BUN pos;
@@ -1012,6 +1044,14 @@ setcolprops(BAT *b, const void *x)
 			assert(b->ttype == TYPE_oid);
 			b->tseqbase = oid_nil;
 		}
+	} else if (BATcount(b) == 1) {
+		/* we'll only check keyness with a single other value */
+		bi = bat_iterator(b);
+		prv = BUNtail(bi, 0);
+		b->tkey = ATOMcmp(b->ttype, prv, x) != 0;
+	} else {
+		/* no guarantees that we don't have duplicates */
+		b->tkey = false;
 	}
 	if (isnil) {
 		b->tnonil = false;
@@ -1118,7 +1158,8 @@ BUNdelete(BAT *b, oid o)
 	}
 	b->batDirtydesc = true;
 	val = BUNtail(bi, p);
-	if (ATOMcmp(b->ttype, ATOMnilptr(b->ttype), val) != 0) {
+	if (ATOMlinear(b->ttype) &&
+	    ATOMcmp(b->ttype, ATOMnilptr(b->ttype), val) != 0) {
 		if ((prop = BATgetprop(b, GDK_MAX_VALUE)) != NULL
 		    && ATOMcmp(b->ttype, VALptr(&prop->v), val) >= 0)
 			BATrmprop(b, GDK_MAX_VALUE);
@@ -1136,7 +1177,11 @@ BUNdelete(BAT *b, oid o)
 		if (b->ttype == TYPE_void &&
 		    BATmaterialize(b) != GDK_SUCCEED)
 			return GDK_FAIL;
-		memcpy(Tloc(b, p), Tloc(b, BUNlast(b) - 1), Tsize(b));
+		if (ATOMstorage(b->ttype) == TYPE_msk) {
+			mskSetVal(b, p, mskGet(b, BUNlast(b) - 1));
+		} else {
+			memcpy(Tloc(b, p), Tloc(b, BUNlast(b) - 1), Tsize(b));
+		}
 		/* no longer sorted */
 		b->tsorted = b->trevsorted = false;
 		b->theap.dirty = true;
@@ -1310,6 +1355,8 @@ BUNinplace(BAT *b, BUN p, const void *t, bool force)
 			break;
 #endif
 		}
+	} else if (ATOMstorage(b->ttype) == TYPE_msk) {
+		mskSetVal(b, p, * (msk *) t);
 	} else {
 		assert(BATatoms[b->ttype].atomPut == NULL);
 		if (ATOMfix(b->ttype, t) != GDK_SUCCEED)
@@ -1460,6 +1507,49 @@ slowfnd(BAT *b, const void *v)
 	return BUN_NONE;
 }
 
+static BUN
+mskfnd(BAT *b, msk v)
+{
+	BUN p, q;
+	uint32_t m;
+	if (* (msk *) v) {
+		/* find a 1 value */
+		for (p = 0, q = (BATcount(b) + 31) / 32; p < q; p++) {
+			if (((uint32_t *) b->theap.base)[p] != 0) {
+				/* there's at least one 1 bit */
+				m = ((uint32_t *) b->theap.base)[p];
+				for (q = 0; q < 32; q++) {
+					if (m & (1U << q)) {
+						q += p * 32;
+						if (q < BATcount(b))
+							return q;
+						break;
+					}
+				}
+				break;
+			}
+		}
+	} else {
+		/* find a 0 value */
+		for (p = 0, q = (BATcount(b) + 31) / 32; p < q; p++) {
+			if (((uint32_t *) b->theap.base)[p] != ~0U) {
+				/* there's at least one 0 bit */
+				m = ((uint32_t *) b->theap.base)[p];
+				for (q = 0; q < 32; q++) {
+					if ((m & (1U << q)) == 0) {
+						q += p * 32;
+						if (q < BATcount(b))
+							return q;
+						break;
+					}
+				}
+				break;
+			}
+		}
+	}
+	return BUN_NONE;
+}
+
 BUN
 BUNfnd(BAT *b, const void *v)
 {
@@ -1476,6 +1566,9 @@ BUNfnd(BAT *b, const void *v)
 	}
 	if (BATtvoid(b))
 		return BUNfndVOID(b, v);
+	if (ATOMstorage(b->ttype) == TYPE_msk) {
+		return mskfnd(b, *(msk*)v);
+	}
 	if (!BATcheckhash(b)) {
 		if (BATordered(b) || BATordered_rev(b))
 			return SORTfnd(b, v);
@@ -2179,7 +2272,12 @@ BATassertProps(BAT *b)
 	if (b->ttype != TYPE_void) {
 		assert(b->batCount <= b->batCapacity);
 		assert(b->theap.size >= b->theap.free);
-		assert(b->theap.size >> b->tshift >= b->batCapacity);
+		if (ATOMstorage(b->ttype) == TYPE_msk) {
+			/* 32 values per 4-byte word (that's not the
+			 * same as 8 values per byte...) */
+			assert(b->theap.size >= 4 * ((b->batCapacity + 31) / 32));
+		} else
+			assert(b->theap.size >> b->tshift >= b->batCapacity);
 	}
 
 	/* void and str imply varsized */
@@ -2306,7 +2404,10 @@ BATassertProps(BAT *b)
 			maxval = VALptr(&prop->v);
 		if ((prop = BATgetprop(b, GDK_MIN_VALUE)) != NULL)
 			minval = VALptr(&prop->v);
-		if (b->tsorted || b->trevsorted || !b->tkey) {
+		if (ATOMstorage(b->ttype) == TYPE_msk) {
+			/* for now, don't do extra checks for bit mask */
+			;
+		} else if (b->tsorted || b->trevsorted || !b->tkey) {
 			/* if sorted (either way), or we don't have to
 			 * prove uniqueness, we can do a simple
 			 * scan */

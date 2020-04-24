@@ -322,7 +322,7 @@ HASHgrowbucket(BAT *b)
 		BUN new = h->nbucket;
 		BUN old = new & h->mask1;
 		BATiter bi = bat_iterator(b);
-		BUN msk = h->mask1 + 1; /* == h->mask2 - h->mask1 */
+		BUN mask = h->mask1 + 1; /* == h->mask2 - h->mask1 */
 
 		assert(h->heapbckt.free == nbucket * h->width + HASH_HEADER_SIZE * SIZEOF_SIZE_T);
 		if (h->heapbckt.free + h->width > h->heapbckt.size) {
@@ -352,8 +352,8 @@ HASHgrowbucket(BAT *b)
 			do {
 				const void *v = BUNtail(bi, hb);
 				BUN hsh = ATOMhash(h->type, v);
-				assert((hsh & (msk - 1)) == old);
-				if (hsh & msk) {
+				assert((hsh & (mask - 1)) == old);
+				if (hsh & mask) {
 					/* move to new list */
 					if (lnew == HASHnil(h)) {
 						HASHput(h, new, hb);
