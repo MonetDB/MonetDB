@@ -1567,8 +1567,9 @@ rewrite_inner(mvc *sql, sql_rel *rel, sql_rel *inner, operator_type op)
 }
 
 static sql_exp *
-rewrite_exp_rel(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
+rewrite_exp_rel(mvc *sql, sql_rel *rel, sql_exp *e, int depth, int *changes)
 {
+	(void)changes;
 	(void)depth;
 	if (exp_has_rel(e) && !is_ddl(rel->op)) {
 		sql_exp *ne = rewrite_inner(sql, rel, exp_rel_get_rel(sql->sa, e), depth?op_left:op_join);
@@ -1587,7 +1588,7 @@ rewrite_exp_rel(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 		}
 	}
 	if (exp_is_rel(e) && is_ddl(rel->op))
-		if (!(e->l = rel_exp_visitor_bottomup(sql, e->l, &rewrite_exp_rel)))
+		if (!(e->l = rel_exp_visitor_bottomup(sql, e->l, &rewrite_exp_rel, changes)))
 			return NULL;
 	return e;
 }
@@ -1607,10 +1608,11 @@ rewrite_empty_project(mvc *sql, sql_rel *rel, int *changes)
 }
 
 static sql_exp *
-exp_reset_card(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
+exp_reset_card(mvc *sql, sql_rel *rel, sql_exp *e, int depth, int *changes)
 {
 	(void)sql;
 	(void)depth;
+	(void)changes;
 
 	if (!e || !rel || !rel->l)
 		return e;
@@ -1793,7 +1795,7 @@ rewrite_or_exp(mvc *sql, sql_rel *rel, int *changes)
 
 /* exp visitor */
 static sql_exp *
-rewrite_rank(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
+rewrite_rank(mvc *sql, sql_rel *rel, sql_exp *e, int depth, int *changes)
 {
 	sql_rel *rell = NULL;
 	int needed = 0;
@@ -1802,6 +1804,7 @@ rewrite_rank(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 		return e;
 
 	(void)depth;
+	(void)changes;
 	/* ranks/window functions only exist in the projection */
 	assert(is_simple_project(rel->op));
 	list *l = e->l, *r = e->r, *gbe = r->h->data, *obe = r->h->next->data;
@@ -1992,12 +1995,13 @@ exp_in_compare(mvc *sql, sql_exp **l, list *vals, int anyequal)
 
 /* exp visitor */
 static sql_exp *
-rewrite_anyequal(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
+rewrite_anyequal(mvc *sql, sql_rel *rel, sql_exp *e, int depth, int *changes)
 {
 	sql_subfunc *sf;
 	if (e->type != e_func)
 		return e;
 
+	(void) changes;
 	sf = e->f;
 	if (is_anyequal_func(sf) && !list_empty(e->l)) {
 		list *l = e->l;
@@ -2172,12 +2176,13 @@ compare_aggr_op( char *compare, int quantifier)
 /* exp visitor */
 /* rewrite compare expressions including quantifiers any and all */
 static sql_exp *
-rewrite_compare(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
+rewrite_compare(mvc *sql, sql_rel *rel, sql_exp *e, int depth, int *changes)
 {
 	sql_subfunc *sf;
 	if (e->type != e_func || is_ddl(rel->op))
 		return e;
 
+	(void) changes;
 	sf = e->f;
 	if (is_compare_func(sf) && !list_empty(e->l)) {
 		list *l = e->l;
@@ -2451,12 +2456,13 @@ exp_exist(mvc *sql, sql_exp *le, sql_exp *ne, int exists)
 
 /* exp visitor */
 static sql_exp *
-rewrite_exists(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
+rewrite_exists(mvc *sql, sql_rel *rel, sql_exp *e, int depth, int *changes)
 {
 	sql_subfunc *sf;
 	if (e->type != e_func)
 		return e;
 
+	(void) changes;
 	sf = e->f;
 	if (is_exists_func(sf) && !list_empty(e->l)) {
 		list *l = e->l;
@@ -2496,7 +2502,7 @@ rewrite_exists(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 					ne = le;
 
 				if (exp_has_rel(ie)) 
-					if (!rewrite_exp_rel(sql, rel, ie, depth))
+					if (!rewrite_exp_rel(sql, rel, ie, depth, changes))
 						return NULL;
 
 				if (is_project(rel->op) && rel_has_freevar(sql, sq))
@@ -2519,9 +2525,10 @@ rewrite_exists(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 
 /* exp visitor */
 static sql_exp *
-rewrite_ifthenelse(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
+rewrite_ifthenelse(mvc *sql, sql_rel *rel, sql_exp *e, int depth, int *changes)
 {
 	(void)depth;
+	(void)changes;
 	/* for ifthenelse and rank flatten referenced inner expressions */
 	if (e->ref) {
 		sql_rel *r = rel->l = rel_project(sql->sa, rel->l, rel_projections(sql, rel->l, NULL, 1, 1));
@@ -2890,19 +2897,19 @@ rel_unnest(mvc *sql, sql_rel *rel)
 
 	rel = rel_visitor_topdown(sql, rel, &rel_reset_subquery, &changes);
 	changes = 0;
-	rel = rel_exp_visitor_bottomup(sql, rel, &rewrite_simplify_exp);
+	rel = rel_exp_visitor_bottomup(sql, rel, &rewrite_simplify_exp, &changes);
 	rel = rel_visitor_bottomup(sql, rel, &rewrite_simplify, &changes);
 	rel = rel_visitor_bottomup(sql, rel, &rewrite_or_exp, &changes);
 	if (changes > 0)
 		rel = rel_visitor_bottomup(sql, rel, &rel_remove_empty_select, &changes);
 	rel = rel_visitor_bottomup(sql, rel, &rewrite_aggregates, &changes);
-	rel = rel_exp_visitor_bottomup(sql, rel, &rewrite_rank);
+	rel = rel_exp_visitor_bottomup(sql, rel, &rewrite_rank, &changes);
 	rel = rel_visitor_bottomup(sql, rel, &rewrite_outer2inner_union, &changes);	
-	rel = rel_exp_visitor_bottomup(sql, rel, &rewrite_anyequal);
-	rel = rel_exp_visitor_bottomup(sql, rel, &rewrite_exists);
-	rel = rel_exp_visitor_bottomup(sql, rel, &rewrite_compare);
-	rel = rel_exp_visitor_bottomup(sql, rel, &rewrite_ifthenelse);	/* add isnull handling */
-	rel = rel_exp_visitor_bottomup(sql, rel, &rewrite_exp_rel);
+	rel = rel_exp_visitor_bottomup(sql, rel, &rewrite_anyequal, &changes);
+	rel = rel_exp_visitor_bottomup(sql, rel, &rewrite_exists, &changes);
+	rel = rel_exp_visitor_bottomup(sql, rel, &rewrite_compare, &changes);
+	rel = rel_exp_visitor_bottomup(sql, rel, &rewrite_ifthenelse, &changes);	/* add isnull handling */
+	rel = rel_exp_visitor_bottomup(sql, rel, &rewrite_exp_rel, &changes);
 	rel = rel_visitor_bottomup(sql, rel, &rewrite_join2semi, &changes);	/* where possible convert anyequal functions into marks */
 	rel = rel_visitor_bottomup(sql, rel, &rewrite_compare_exp, &changes);	/* only allow for e_cmp in selects and  handling */
 	rel = rel_visitor_bottomup(sql, rel, &rewrite_remove_xp_project, &changes);	/* remove crossproducts with project ( project [ atom ] ) [ etc ] */
@@ -2915,6 +2922,6 @@ rel_unnest(mvc *sql, sql_rel *rel)
 	rel = rel_visitor_bottomup(sql, rel, &rewrite_remove_xp, &changes);	/* remove crossproducts with project [ atom ] */
 	rel = rel_visitor_bottomup(sql, rel, &rewrite_groupings, &changes);	/* transform group combinations into union of group relations */
 	rel = rel_visitor_bottomup(sql, rel, &rewrite_empty_project, &changes);
-	rel = rel_exp_visitor_bottomup(sql, rel, &exp_reset_card);
+	rel = rel_exp_visitor_bottomup(sql, rel, &exp_reset_card, &changes);
 	return rel;
 }

@@ -3747,7 +3747,7 @@ are_equality_exps( list *exps, sql_exp **L)
 	if (list_length(exps) == 1) {
 		sql_exp *e = exps->h->data, *le = e->l, *re = e->r;
 
-		if (e->type == e_cmp && e->flag == cmp_equal && le->card != CARD_ATOM && re->card == CARD_ATOM) {
+		if (e->type == e_cmp && e->flag == cmp_equal && le->card != CARD_ATOM && re->card == CARD_ATOM && !is_semantics(e)) {
 			if (!l) {
 				*L = l = le;
 				if (!is_column(le->type))
@@ -3755,7 +3755,7 @@ are_equality_exps( list *exps, sql_exp **L)
 			}
 			return (exp_match(l, le));
 		}
-		if (e->type == e_cmp && e->flag == cmp_or && !is_anti(e))
+		if (e->type == e_cmp && e->flag == cmp_or && !is_anti(e) && !is_semantics(e))
 			return (are_equality_exps(e->l, L) && 
 				are_equality_exps(e->r, L));
 	}
@@ -3904,7 +3904,7 @@ exps_merge_select_rse( mvc *sql, list *l, list *r )
 	for (n = l->h; n; n = n->next) {
 		sql_exp *e = n->data;
 	
-		if (e->type == e_cmp && e->flag == cmp_or && !is_anti(e)) {
+		if (e->type == e_cmp && e->flag == cmp_or && !is_anti(e) && !is_semantics(e)) {
 			list *nexps = exps_merge_select_rse(sql, e->l, e->r);
 			for (o = nexps->h; o; o = o->next) 
 				append(lexps, o->data);
@@ -3916,7 +3916,7 @@ exps_merge_select_rse( mvc *sql, list *l, list *r )
 	for (n = r->h; n; n = n->next) {
 		sql_exp *e = n->data;
 	
-		if (e->type == e_cmp && e->flag == cmp_or && !is_anti(e)) {
+		if (e->type == e_cmp && e->flag == cmp_or && !is_anti(e) && !is_semantics(e)) {
 			list *nexps = exps_merge_select_rse(sql, e->l, e->r);
 			for (o = nexps->h; o; o = o->next) 
 				append(rexps, o->data);
@@ -3931,14 +3931,14 @@ exps_merge_select_rse( mvc *sql, list *l, list *r )
 	for (n = lexps->h; n; n = n->next) {
 		sql_exp *le = n->data, *re, *fnd = NULL;
 
-		if (le->type != e_cmp || le->flag == cmp_or || is_anti(le))
+		if (le->type != e_cmp || le->flag == cmp_or || is_anti(le) || is_semantics(le))
 			continue;
 		for (m = rexps->h; !fnd && m; m = m->next) {
 			re = m->data;
 			if (exps_match_col_exps(le, re))
 				fnd = re;
 		}
-		if (fnd && is_anti(fnd))
+		if (fnd && (is_anti(fnd) || is_semantics(fnd)))
 			continue;
 		/* cases
 		 * 1) 2 values (cmp_equal)
@@ -4082,7 +4082,7 @@ rel_merge_rse(mvc *sql, sql_rel *rel, int *changes)
 		for (n=rel->exps->h; n; n = n->next) {
 			sql_exp *e = n->data;
 
-			if (e->type == e_cmp && e->flag == cmp_or && !is_anti(e)) {
+			if (e->type == e_cmp && e->flag == cmp_or && !is_anti(e) && !is_semantics(e)) {
 				/* possibly merge related expressions */
 				list *ps = exps_merge_select_rse(sql, e->l, e->r);
 				for (o = ps->h; o; o = o->next) 
@@ -7393,7 +7393,6 @@ rel_simplify_like_select(mvc *sql, sql_rel *rel, int *changes)
 					/* simple numbered argument */
 					} else if (!fmt->r && !fmt->f) {
 						fa = sql->args[fmt->flag];
-
 					}
 					if (fa && fa->data.vtype == TYPE_str && 
 					    !strchr(fa->data.val.sval, '%') &&
@@ -7436,113 +7435,108 @@ rel_simplify_like_select(mvc *sql, sql_rel *rel, int *changes)
 	return rel;
 }
 
-static sql_rel *
-rel_simplify_predicates(mvc *sql, sql_rel *rel, int *changes)
+static sql_exp *
+rel_simplify_predicates(mvc *sql, sql_rel *rel, sql_exp *e, int depth, int *changes)
 {
-	if ((is_select(rel->op) || is_join(rel->op) || is_semi(rel->op)) && rel->exps) {
-		node *n;
-		list *exps = sa_list(sql->sa);
+	(void) depth;
+	if (is_select(rel->op) || is_join(rel->op) || is_semi(rel->op)) {
+		if (is_atom(e->type) && ((!e->l && !e->r && !e->f) || e->r)) /* prepared statement parameter or argument */
+			return e;
+		if (is_atom(e->type) && e->l) { /* direct literal */
+			atom *a = e->l;
+			int flag = a->data.val.bval;
 
-		for (n = rel->exps->h; n; n = n->next) {
-			sql_exp *e = n->data;
+			/* remove simple select true expressions */
+			if (flag)
+				return e;
+		}
+		if (is_atom(e->type) && !e->l && !e->r) { /* numbered variable */
+			atom *a = sql->args[e->flag];
+			int flag = a->data.val.bval;
 
-			if (is_atom(e->type) && e->l) { /* direct literal */
-				atom *a = e->l;
-				int flag = a->data.val.bval;
-
-				/* remove simple select true expressions */
-				if (flag)
-					continue;
+			/* remove simple select true expressions */
+			if (flag) {
+				sql->caching = 0;
+				return e;
 			}
-			if (is_atom(e->type) && !e->l && !e->r) { /* numbered variable */
-				atom *a = sql->args[e->flag];
-				int flag = a->data.val.bval;
+		}
+		if (e->type == e_cmp && (e->flag == cmp_equal || e->flag == cmp_notequal)) {
+			sql_exp *l = e->l;
+			sql_exp *r = e->r;
 
-				/* remove simple select true expressions */
-				if (flag) {
-					sql->caching = 0;
-					continue;
-				}
-			}
-			if (e->type == e_cmp && (e->flag == cmp_equal || e->flag == cmp_notequal)) {
-				sql_exp *l = e->l;
-				sql_exp *r = e->r;
+			if (l->type == e_func) {
+				sql_subfunc *f = l->f;
 
-				if (l->type == e_func) {
-					sql_subfunc *f = l->f;
+				/* rewrite isnull(x) = TRUE/FALSE => x =/<> NULL */
+				if (is_select(rel->op) && !f->func->s && !strcmp(f->func->base.name, "isnull") && 
+						is_atom(r->type) && r->l) { /* direct literal */
+					atom *a = r->l;
+					int flag = a->data.val.bval;
+					list *args = l->l;
 
-					/* rewrite isnull(x) = TRUE/FALSE => x =/<> NULL */
-					if (is_select(rel->op) && !f->func->s && !strcmp(f->func->base.name, "isnull") && 
-					     is_atom(r->type) && r->l) { /* direct literal */
+					assert(list_length(args) == 1);
+					l = args->h->data;
+					if (exp_subtype(l)) {
+						r = exp_atom(sql->sa, atom_general(sql->sa, exp_subtype(l), NULL));
+						e = exp_compare(sql->sa, l, r, e->flag);
+						if (e && !flag)
+							set_anti(e);
+						if (e)
+							set_semantics(e);
+						(*changes)++;
+					}
+				} else if (!f->func->s && !strcmp(f->func->base.name, "not")) {
+					if (is_atom(r->type) && r->l) { /* direct literal */
 						atom *a = r->l;
-						int flag = a->data.val.bval;
 						list *args = l->l;
+						sql_exp *inner = args->h->data;
+						sql_subfunc *inf = inner->f;
 
 						assert(list_length(args) == 1);
-						l = args->h->data;
-						if (exp_subtype(l)) {
-							r = exp_atom(sql->sa, atom_general(sql->sa, exp_subtype(l), NULL));
-							e = exp_compare(sql->sa, l, r, e->flag);
-							if (e && !flag)
-								set_anti(e);
-							if (e)
-								set_semantics(e);
-						}
-					} else if (!f->func->s && !strcmp(f->func->base.name, "not")) {
-						if (is_atom(r->type) && r->l) { /* direct literal */
-							atom *a = r->l;
-							list *args = l->l;
-							sql_exp *inner = args->h->data;
-							sql_subfunc *inf = inner->f;
 
+						/* not(not(x)) = TRUE/FALSE => x = TRUE/FALSE */
+						if (inner->type == e_func && 
+							!inf->func->s && 
+							!strcmp(inf->func->base.name, "not")) {
+							int anti = is_anti(e);
+
+							args = inner->l;
 							assert(list_length(args) == 1);
+							l = args->h->data;
+							e = exp_compare(sql->sa, l, r, e->flag);
+							if (anti) set_anti(e);
+							(*changes)++;
+						/* rewrite not(=/<>(a,b)) = TRUE/FALSE => a=b of a<>b */
+						} else if (inner->type == e_func && 
+							!inf->func->s && 
+							(!strcmp(inf->func->base.name, "=") ||
+								!strcmp(inf->func->base.name, "<>"))) {
+							int flag = a->data.val.bval;
+							args = inner->l;
 
-							/* not(not(x)) = TRUE/FALSE => x = TRUE/FALSE */
-							if (inner->type == e_func && 
-							    !inf->func->s && 
-							    !strcmp(inf->func->base.name, "not")) {
-								int anti = is_anti(e);
+							if (!strcmp(inf->func->base.name, "<>"))
+								flag = !flag;
+							assert(list_length(args) == 2);
+							l = args->h->data;
+							r = args->h->next->data;
+							e = exp_compare(sql->sa, l, r, (!flag)?cmp_equal:cmp_notequal);
+							(*changes)++;
+						} else if (a && a->data.vtype == TYPE_bit) {
+							int anti = is_anti(e);
 
-								args = inner->l;
-								assert(list_length(args) == 1);
-								l = args->h->data;
-								e = exp_compare(sql->sa, l, r, e->flag);
-								if (anti) set_anti(e);
-							/* rewrite not(=/<>(a,b)) = TRUE/FALSE => a=b of a<>b */
-							} else if (inner->type == e_func && 
-							    !inf->func->s && 
-							    (!strcmp(inf->func->base.name, "=") ||
-							     !strcmp(inf->func->base.name, "<>"))) {
-								int flag = a->data.val.bval;
-								args = inner->l;
-
-								if (!strcmp(inf->func->base.name, "<>"))
-									flag = !flag;
-								assert(list_length(args) == 2);
-								l = args->h->data;
-								r = args->h->next->data;
-								e = exp_compare(sql->sa, l, r, (!flag)?cmp_equal:cmp_notequal);
-							} else if (a && a->data.vtype == TYPE_bit) {
-								int anti = is_anti(e);
-
-								/* change atom's value on right */
-								l = args->h->data;
-								a->data.val.bval = !a->data.val.bval;
-								e = exp_compare(sql->sa, l, r, e->flag);
-								if (anti) set_anti(e);
-								(*changes)++;
-							}
+							/* change atom's value on right */
+							l = args->h->data;
+							a->data.val.bval = !a->data.val.bval;
+							e = exp_compare(sql->sa, l, r, e->flag);
+							if (anti) set_anti(e);
+							(*changes)++;
 						}
 					}
 				}
-				list_append(exps, e);
-			} else {
-				list_append(exps, e);
 			}
 		}
-		rel->exps = exps;
 	}
-	return rel;
+	return e;
 }
 
 static void split_exps(mvc *sql, list *exps, sql_rel *rel);
@@ -8990,7 +8984,7 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, int value_based_
 	if ((gp.cnt[op_select] || gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full] || 
 		 gp.cnt[op_join] || gp.cnt[op_semi] || gp.cnt[op_anti]) && level <= 0)
 		if (value_based_opt)
-			rel = rel_visitor_bottomup(sql, rel, &rel_simplify_predicates, &changes);
+			rel = rel_exp_visitor_bottomup(sql, rel, &rel_simplify_predicates, &changes);
 
 	/* join's/crossproducts between a relation and a constant (row).
 	 * could be rewritten 

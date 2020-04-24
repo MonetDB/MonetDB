@@ -92,12 +92,12 @@ exps_simplify_exp(mvc *sql, list *exps, int *changes)
 }
 
 sql_exp *
-rewrite_simplify_exp(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
+rewrite_simplify_exp(mvc *sql, sql_rel *rel, sql_exp *e, int depth, int *changes)
 {
 	if (!e)
 		return e;
 
-	int changes = 0;
+	*changes = 0;
 	(void)sql; (void)rel; (void)depth; (void) changes;
 
 	sql_subfunc *sf = e->f;
@@ -131,8 +131,8 @@ rewrite_simplify_exp(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 		/* TRUE or X -> TRUE
 		 * FALSE or X -> X */
 		if (is_compare(e->type) && e->flag == cmp_or) {
-			list *l = e->l = exps_simplify_exp(sql, e->l, &changes);
-			list *r = e->r = exps_simplify_exp(sql, e->r, &changes); 
+			list *l = e->l = exps_simplify_exp(sql, e->l, changes);
+			list *r = e->r = exps_simplify_exp(sql, e->r, changes); 
 
 			sql->caching = 0;
 			if (list_length(l) == 1) {
