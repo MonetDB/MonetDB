@@ -166,6 +166,10 @@ MAPI  = (monetdb) /var/tmp/mtest-1624092/.s.monetdb.36695
 QUERY = SELECT (SELECT i2.i FROM integers i2) IN (SELECT MIN(i1.i)) FROM integers i1;
 ERROR = !Cardinality violation, scalar value expected
 CODE  = 21000
+MAPI  = (monetdb) /var/tmp/mtest-1772822/.s.monetdb.36930
+QUERY = SELECT CORR((SELECT i1.i FROM integers i2), (SELECT SUM(i1.i + i2.i) FROM integers i2)) FROM integers i1;
+ERROR = !zero_or_one: cardinality violation, scalar expression expected
+CODE  = M0M29
 
 # 08:41:39 >  
 # 08:41:39 >  "Done."

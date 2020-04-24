@@ -2757,7 +2757,12 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 	case SQL_UNION:
 	case SQL_EXCEPT:
 	case SQL_INTERSECT: {
-		sql_rel *sq = rel_setquery(query, sc);
+		sql_rel *sq;
+		if (rel)
+			query_push_outer(query, rel, f);
+		sq = rel_setquery(query, sc);
+		if (rel)
+			rel = query_pop_outer(query);
 		if (!sq)
 			return NULL;
 		if (ek.card <= card_set && is_project(sq->op) && list_length(sq->exps) > 1)
@@ -3436,6 +3441,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 					sql_exp *e = (sql_exp*) n->data;
 
 					if ((outer = query_fetch_outer(query, is_freevar(e)-1))) {
+						int of = query_fetch_outer_state(query, is_freevar(e)-1);
 						if (outer->grouped) {
 							bool err = false, was_processed = false;
 
@@ -3449,7 +3455,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 								set_processed(outer);
 							if (err)
 								return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: subquery uses ungrouped column \"%s.%s\" from outer query", exp_relname(e), exp_name(e));
-						} else {
+						} else if (!is_sql_aggr(of)) {
 							set_outer(outer);
 						}
 					}
