@@ -1793,12 +1793,13 @@ main(int argc, char *argv[])
 		/* a socket looks like /tmp/.s.merovingian.<tcpport>, try
 		 * finding such port.  If mero_host is set, it is the location
 		 * where we should search, which defaults to '/tmp' */
+		char *err;
 		if (mero_host == NULL)
 			mero_host = "/tmp";
 		/* first try the port given (or else its default) */
 		snprintf(buf, sizeof(buf), "%s/.s.merovingian.%d",
 			 mero_host, mero_port == -1 ? 50000 : mero_port);
-		if (control_ping(buf, -1, NULL) == 0) {
+		if ((err = control_ping(buf, -1, NULL)) == NULL) {
 			mero_host = buf;
 		} else {
 			/* if port wasn't given, we can try and search
@@ -1810,7 +1811,8 @@ main(int argc, char *argv[])
 
 				d = opendir(mero_host);
 				if (d == NULL) {
-					fprintf(stderr, "monetdb: cannot find a control socket, use -h and/or -p\n");
+					fprintf(stderr, "monetdb: %s: %s\n",
+							mero_host, strerror(errno));
 					exit(1);
 				}
 				while ((e = readdir(d)) != NULL) {
@@ -1820,10 +1822,14 @@ main(int argc, char *argv[])
 					if (stat(buf, &s) == -1)
 						continue;
 					if (S_ISSOCK(s.st_mode)) {
-						if (control_ping(buf, -1, NULL) == 0) {
+						char *nerr;
+						if ((nerr = control_ping(buf, -1, NULL)) == NULL) {
 							mero_host = buf;
+							free(err);
+							err = NULL;
 							break;
 						}
+						free(nerr);
 					}
 				}
 				closedir(d);
@@ -1831,7 +1837,7 @@ main(int argc, char *argv[])
 		}
 
 		if (mero_host != buf) {
-			fprintf(stderr, "monetdb: cannot find a control socket, use -h and/or -p\n");
+			fprintf(stderr, "monetdb: %s\n", err);
 			exit(1);
 		}
 		/* don't confuse control_send later on */
