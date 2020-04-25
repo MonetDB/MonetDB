@@ -103,7 +103,11 @@ getAddress(str fcnname)
 	 *
 	 * the first argument must be the same as the base name of the
 	 * library that is created in src/tools */
+#ifdef __APPLE__
 	dl = mdlopen(SO_PREFIX "monetdb5" SO_EXT, RTLD_NOW | RTLD_GLOBAL);
+#else
+	dl = dlopen(SO_PREFIX "monetdb5" SO_EXT, RTLD_NOW | RTLD_GLOBAL);
+#endif
 	if (dl == NULL) 
 		return NULL;
 
@@ -179,7 +183,11 @@ loadLibrary(str filename, int flag)
 		if (len == -1 || len >= FILENAME_MAX)
 			throw(LOADER, "loadLibrary", RUNTIME_LOAD_ERROR "Library filename path is too large");
 
+#ifdef __APPLE__
 		handle = mdlopen(nme, RTLD_NOW | RTLD_GLOBAL);
+#else
+		handle = dlopen(nme, RTLD_NOW | RTLD_GLOBAL);
+#endif
 		if (!handle) {
 			if (flag)
 				throw(LOADER, "loadLibrary", RUNTIME_FILE_NOT_FOUND ":%s", s);
