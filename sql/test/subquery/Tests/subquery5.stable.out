@@ -264,6 +264,23 @@ stdout of test 'subquery5` in directory 'sql/test/subquery` itself:
 % int # type
 % 1 # length
 [ NULL	]
+#SELECT (((SELECT MIN(i2.i + i1.i) FROM integers i2) IN (SELECT i1.i)) = EXISTS(SELECT i1.i)) = ANY(SELECT MIN(i1.i) = 1) FROM integers i1 GROUP BY i1.i;
+% .%50 # table_name
+% %50 # name
+% boolean # type
+% 5 # length
+[ false	]
+[ true	]
+[ true	]
+[ NULL	]
+#SELECT (((SELECT MIN(i2.i + i1.i) FROM integers i2) IN (SELECT i1.i)) = EXISTS(SELECT i1.i)) = ANY(SELECT MIN(i1.i) = 1) FROM integers i1 GROUP BY i1.i 
+#HAVING (((SELECT MIN(i2.i + i1.i) FROM integers i2) IN (SELECT i1.i)) = EXISTS(SELECT i1.i)) = ANY(SELECT MIN(i1.i) = 1);
+% .%62 # table_name
+% %62 # name
+% boolean # type
+% 5 # length
+[ true	]
+[ true	]
 #DROP FUNCTION evilfunction(INT);
 #DROP TABLE tbl_ProductSales;
 #DROP TABLE another_T;
