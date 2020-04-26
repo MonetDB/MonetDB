@@ -24,7 +24,7 @@ project(MonetDB VERSION "${MONETDB_VERSION}" LANGUAGES C)
 set(C_STANDARD_REQUIRED ON)
 set(CMAKE_C_STANDARD 99)
 
-if(NOT WIN32)
+if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.13.0")
   cmake_policy(SET CMP0076 OLD)
 endif()
 
@@ -416,3 +416,7 @@ include(monetdb-packages)
 
 include(CTest)
 add_subdirectory(ctest)
+
+if(CMAKE_SUMMARY)
+  monetdb_cmake_summary()
+endif()

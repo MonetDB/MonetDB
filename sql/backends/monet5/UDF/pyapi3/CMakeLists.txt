@@ -48,12 +48,13 @@ if(PY3INTEGRATION)
     $<TARGET_PROPERTY:malmodules,INCLUDE_DIRECTORIES>
     $<TARGET_PROPERTY:sql,INCLUDE_DIRECTORIES>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+    $<$<VERSION_LESS:${CMAKE_VERSION},3.14.0>:${NUMPY_INCLUDE_DIRS}>
     $<INSTALL_INTERFACE:${INCLUDEDIR}/monetdb>)
 
   target_link_libraries(pyapi3
     PRIVATE
     Python3::Python
-    Python3::NumPy
+    $<$<VERSION_GREATER_EQUAL:${CMAKE_VERSION},3.14.0>:Python3::NumPy>
     mutils
     stream
     gdk
