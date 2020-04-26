@@ -272,6 +272,18 @@ SELECT SUM(i1.i) FROM integers i1 HAVING (VALUES(SUM(i1.i)),(AVG(i1.i)) INTERSEC
 SELECT MAX(i1.i) FROM integers i1 HAVING (VALUES((AVG(i1.i))) EXCEPT VALUES(AVG(i1.i))) <> 0;
 	--empty
 
+SELECT (VALUES(SUM(i1.i)) UNION VALUES(AVG(i1.i))) FROM integers i1;
+	--error, more than one row returned by a subquery used as an expression
+
+SELECT ((SELECT SUM(i1.i)) UNION ALL (SELECT AVG(i1.i))) FROM integers i1;
+	--error, more than one row returned by a subquery used as an expression
+
+SELECT ((SELECT i1.i NOT IN (SELECT i1.i)) UNION (SELECT SUM(i1.i) IN (SELECT i1.i))) FROM integers i1;
+	--error, subquery uses ungrouped column "i1.i" from outer query
+
+SELECT (SELECT 6 EXCEPT (SELECT SUM(i1.i))) IN (SELECT 1) FROM integers i1; -- OPTmergetableImplementation: !ERROR: Mergetable bailout on group input reuse in group statement
+	-- NULL
+
 DROP FUNCTION evilfunction(INT);
 DROP TABLE tbl_ProductSales;
 DROP TABLE another_T;
