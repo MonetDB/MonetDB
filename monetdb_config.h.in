@@ -144,12 +144,12 @@
 #define ENABLE_MAPI 1
 #define HAVE_MAPI 1
 
-#cmakedefine HAVE_GEOM @HAVE_GEOM@
+#cmakedefine HAVE_GEOM @GEOS_FOUND@
 #cmakedefine HAVE_LIBPY3 @HAVE_LIBPY3@
 #cmakedefine HAVE_LIBR @HAVE_LIBR@
 #cmakedefine HAVE_FITS @HAVE_FITS@
 #cmakedefine HAVE_NETCDF @HAVE_NETCDF@
-#cmakedefine HAVE_SHP @HAVE_SHP@
+#cmakedefine HAVE_SHP @GDAL_FOUND@
 #cmakedefine HAVE_CUDF @HAVE_CUDF@
 
 /* Directory separator */

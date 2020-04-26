@@ -241,7 +241,7 @@ typedef volatile int ATOMIC_FLAG;
 /* the new way of doing this according to GCC (the old way, using
  * __sync_* primitives is not supported) */
 
-#if SIZEOF_SSIZE_T == 8
+#if SIZEOF_SIZE_T == 8
 typedef int64_t ATOMIC_BASE_TYPE;
 typedef volatile int64_t ATOMIC_TYPE;
 #else

@@ -7,6 +7,7 @@
 #]]
 
 find_package(BISON REQUIRED)
+
 if(${CMAKE_VERSION} VERSION_LESS "3.14.0")
   find_package(Python3 COMPONENTS Interpreter Development)
   find_package(NumPy)
@@ -26,7 +27,9 @@ endif(PY3INTEGRATION)
 if(WIN32)
   find_library(GETOPT_LIB "getopt.lib")
 endif()
+
 find_package(Iconv)
+
 if(WITH_LZMA)
   find_package(LibLZMA)
 
@@ -42,6 +45,7 @@ if(WITH_LZMA)
   endif ()
 
 endif()
+
 if(WITH_XML2)
   find_package(LibXml2)
   set(HAVE_LIBXML "${LIBXML2_FOUND}")
@@ -123,27 +127,19 @@ if(NETCDF)
 	endif()
 endif()
 
-if(GEOM)
-  find_package(Geos)
-  set(HAVE_GEOM "${GEOS_FOUND}")
-endif()
-
 find_package(KVM)
 set(HAVE_KVM "${KVM_FOUND}")
 
-if(SHP)
-	if(NOT HAVE_GEOM)
-		#message(FATAL_ERROR "geom module required for ESRI Shapefile vault")
-		message(STATUS "geom module required for ESRI Shapefile vault")
-	else()
-		find_package(GDAL)
+if(GEOM)
+  find_package(Geos)
+endif()
 
-		if(GDAL_FOUND)
-			set(HAVE_SHP "${GDAL_FOUND}")
-			#else()
-			#message(FATAL_ERROR "gdal library required for ESRI Shapefile vault")
-		endif()
-	endif()
+if(SHP)
+  if(NOT GEOS_FOUND)
+    message(STATUS "Disable SHP, geom module required for ESRI Shapefile vault")
+  else()
+    find_package(GDAL)
+  endif()
 endif()
 
 if(LIDAR)

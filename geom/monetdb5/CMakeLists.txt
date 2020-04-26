@@ -6,7 +6,7 @@
 # Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
 #]]
 
-if(HAVE_GEOM)
+if(GEOS_FOUND)
   add_library(geomodule MODULE)
 
   set(include_mal_files
@@ -23,7 +23,7 @@ if(HAVE_GEOM)
   create_include_object(
     SQL_LANGUAGE
     name_module "geomodule"
-    path "${CMAKE_SOURCE_DIR}/geom/sql/"
+    path "${CMAKE_SOURCE_DIR}/geom/sql"
     modules_list ${include_sql_files})
 
   set(geomodule_public_headers
@@ -55,7 +55,7 @@ if(HAVE_GEOM)
     gdk
     geomlib
     monetdb5
-		sql
+    sql
     monetdb_config_header)
 
   target_compile_definitions(geomodule

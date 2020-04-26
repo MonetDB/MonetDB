@@ -12,9 +12,16 @@ import argparse
 
 
 def open_convert_file(srcfile):
-    with open(srcfile, 'r') as f:
-        content = f.read()
-    return content
+    if os.path.isfile(srcfile):
+        with open(srcfile, 'r') as f:
+            try:
+                content = f.read()
+            except UnicodeDecodeError as err:
+                print("Conversion error: {0}".format(err))
+                sys.exit(1)
+        return content
+    else:
+        raise FileNotFoundError
 
 
 def write_c_file(module_name, language, buffer_as_string, c_filename):
@@ -156,10 +163,13 @@ def main():
     parser.add_argument("c_filename", help="The name of the c file to output")
     args=parser.parse_args()
 
-    create_c_sourcefile(args.filename,
-                        args.language,
-                        args.name,
-                        args.c_filename)
+    try:
+        create_c_sourcefile(args.filename,
+                            args.language,
+                            args.name,
+                            args.c_filename)
+    except FileNotFoundError:
+        print("Source file {0} not found.".format(args.name))
 
 
 if __name__ == '__main__':

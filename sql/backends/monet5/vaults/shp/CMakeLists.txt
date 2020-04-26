@@ -6,7 +6,7 @@
 # Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
 #]]
 
-if(HAVE_SHP)
+if(GDAL_FOUND)
   add_library(shp MODULE)
 
   set(include_mal_files
@@ -36,6 +36,7 @@ if(HAVE_SHP)
     $<TARGET_PROPERTY:mal,INCLUDE_DIRECTORIES>
     $<TARGET_PROPERTY:sql,INCLUDE_DIRECTORIES>
     $<TARGET_PROPERTY:geomlib,INCLUDE_DIRECTORIES>
+    $<$<VERSION_LESS:${CMAKE_VERSION},3.14.0>:${GDAL_INCLUDE_DIRS}>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
     $<INSTALL_INTERFACE:${INCLUDEDIR}/monetdb>)
 
@@ -47,7 +48,7 @@ if(HAVE_SHP)
     gdk
     monetdb5
     sqlinclude
-    GDAL::GDAL)
+    $<$<VERSION_GREATER_EQUAL:${CMAKE_VERSION},3.14.0>:GDAL::GDAL>)
 
   set_target_properties(shp 
     PROPERTIES 

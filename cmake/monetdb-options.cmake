@@ -63,9 +63,10 @@ option(ODBC
   "Compile the MonetDB ODBC driver (default=ON)"
   ON)
 
-# needs gdal
-option(SHP 
+cmake_dependent_option(SHP
   "Enable support for ESRI Shapefiles (default=ON)"
+  ON
+  GEOM
   ON)
 
 set(ENABLE_MAPI "YES" CACHE STRING "Enable MAPI (default=YES)") # Check with HAVE_MAPI
