@@ -503,14 +503,8 @@ insert_generate_inserts(sql_query *query, sql_table *t, dlist *columns, symbol *
 						sql_exp *ins = insert_value(query, c, &r, n->data.sym, action);
 						if (!ins)
 							return NULL;
-						if (r && inner)
-							inner = rel_crossproduct(sql->sa, inner, r, op_join);
-						else if (r)
-							inner = r;
-						if (inner && !exp_name(ins) && !exp_is_atom(ins)) {
+						if (!exp_name(ins))
 							exp_label(sql->sa, ins, ++sql->label);
-							ins = exp_ref(sql, ins);
-						}
 						list_append(vals_list, ins);
 					}
 				} else {

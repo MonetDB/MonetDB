@@ -2887,6 +2887,42 @@ rewrite_complex(mvc *sql, sql_rel *rel, sql_exp *e, int depth, int *changes)
 	return e;
 }
 
+/* rewrite project [ [multi values], [multi values2] , .. [] ] -> union ) */
+static sql_rel *
+rewrite_values(mvc *sql, sql_rel *rel, int *changes)
+{
+	(void)changes;
+	if (!is_simple_project(rel->op) || list_empty(rel->exps))
+		return rel;
+	sql_exp *e = rel->exps->h->data;
+
+	if (!is_values(e) || list_length(exp_get_values(e))<=1 || !rel_has_freevar(sql, rel))
+		return rel;
+
+	list *exps = sa_list(sql->sa);
+	sql_rel *cur = NULL;
+	list *vals = exp_get_values(e);
+	for(int i = 0; i<list_length(vals); i++) {
+		sql_rel *nrel = rel_project(sql->sa, NULL, sa_list(sql->sa));
+		for(node *n = rel->exps->h; n; n = n->next) {
+			sql_exp *e = n->data;
+			if (i == 0)
+				append(exps, exp_ref(sql, e));
+			list *vals = exp_get_values(e);
+			sql_exp *v = list_fetch(vals, i);
+			append(nrel->exps, v);
+			rel_set_exps(nrel, nrel->exps);
+		}
+		if (cur) {
+			nrel = rel_setop(sql->sa, cur, nrel, op_union);
+			rel_set_exps(nrel, exps);
+		}
+		cur = nrel;
+	}
+	rel = cur;
+	return rel;
+}
+
 sql_rel *
 rel_unnest(mvc *sql, sql_rel *rel)
 {
@@ -2903,9 +2939,12 @@ rel_unnest(mvc *sql, sql_rel *rel)
 	rel = rel_exp_visitor_bottomup(sql, rel, &rewrite_rank, &changes);
 	rel = rel_visitor_bottomup(sql, rel, &rewrite_outer2inner_union, &changes);	
 
+	// remove empty project/groupby ! 
+	rel = rel_visitor_bottomup(sql, rel, &rewrite_empty_project, &changes);
 	rel = rel_exp_visitor_bottomup(sql, rel, &rewrite_complex, &changes);
 
 	rel = rel_exp_visitor_bottomup(sql, rel, &rewrite_ifthenelse, &changes);	/* add isnull handling */
+	rel = rel_visitor_bottomup(sql, rel, &rewrite_values, &changes);
 	rel = rel_exp_visitor_bottomup(sql, rel, &rewrite_exp_rel, &changes);
 	rel = rel_visitor_bottomup(sql, rel, &rewrite_join2semi, &changes);	/* where possible convert anyequal functions into marks */
 	rel = rel_visitor_bottomup(sql, rel, &rewrite_compare_exp, &changes);	/* only allow for e_cmp in selects and  handling */
@@ -2919,6 +2958,7 @@ rel_unnest(mvc *sql, sql_rel *rel)
 	rel = rel_visitor_bottomup(sql, rel, &rewrite_remove_xp, &changes);	/* remove crossproducts with project [ atom ] */
 	rel = rel_visitor_bottomup(sql, rel, &rewrite_groupings, &changes);	/* transform group combinations into union of group relations */
 	rel = rel_visitor_bottomup(sql, rel, &rewrite_empty_project, &changes);
+	// needed again! 
 	rel = rel_exp_visitor_bottomup(sql, rel, &exp_reset_card, &changes);
 	return rel;
 }

@@ -36,7 +36,7 @@ stdout of test 'subquery3` in directory 'sql/test/subquery` itself:
 #FROM another_T t1
 #GROUP BY t1.col6, t1.col7;
 % . # table_name
-% %36 # name
+% %33 # name
 % boolean # type
 % 5 # length
 [ false	]
@@ -63,7 +63,7 @@ stdout of test 'subquery3` in directory 'sql/test/subquery` itself:
 #FROM another_T
 #GROUP BY col1, col2, col5;
 % .,	. # table_name
-% %53,	%54 # name
+% %55,	%56 # name
 % int,	int # type
 % 1,	1 # length
 [ 1,	0	]
@@ -193,8 +193,8 @@ stdout of test 'subquery3` in directory 'sql/test/subquery` itself:
 #    NOT SUM(t1.col2) * MIN(t1.col6 + t1.col6 - t1.col6 * t1.col6) NOT IN (SELECT MAX(t2.col6) FROM another_T t2 GROUP BY t1.col6 HAVING t1.col7 + MIN(t2.col8) < MAX(t2.col7 - t1.col6))
 #FROM another_T t1
 #GROUP BY t1.col7, t1.col6;
-% .%24 # table_name
-% %24 # name
+% .%23 # table_name
+% %23 # name
 % boolean # type
 % 5 # length
 [ false	]
