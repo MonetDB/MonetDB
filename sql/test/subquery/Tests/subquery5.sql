@@ -284,6 +284,9 @@ SELECT ((SELECT i1.i NOT IN (SELECT i1.i)) UNION (SELECT SUM(i1.i) IN (SELECT i1
 SELECT (SELECT 6 EXCEPT (SELECT SUM(i1.i))) IN (SELECT 1) FROM integers i1; -- OPTmergetableImplementation: !ERROR: Mergetable bailout on group input reuse in group statement
 	-- NULL
 
+SELECT (SELECT CASE WHEN MIN(i1.i) IS NULL THEN (SELECT i2.i FROM integers i2) ELSE MAX(i1.i) END) FROM integers i1;
+	-- 3
+
 DROP FUNCTION evilfunction(INT);
 DROP TABLE tbl_ProductSales;
 DROP TABLE another_T;

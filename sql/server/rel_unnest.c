@@ -2448,7 +2448,9 @@ exp_exist(mvc *sql, sql_exp *le, sql_exp *ne, int exists)
 		le = rel_nop_(sql, NULL, ne, exp_atom_bool(sql->sa, !exists), exp_atom_bool(sql->sa, exists), NULL, NULL, "ifthenelse", card_value);
 		return le;
 	} else {
-		return exp_unop(sql->sa, le, exists_func);
+		sql_exp *res = exp_unop(sql->sa, le, exists_func);
+		set_has_no_nil(res);
+		return res;
 	}
 }
 

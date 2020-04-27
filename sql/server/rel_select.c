@@ -2003,6 +2003,7 @@ exp_exist(sql_query *query, sql_rel *rel, sql_exp *le, int exists)
 	mvc *sql = query->sql;
 	sql_subfunc *exists_func = NULL;
 	sql_subtype *t;
+	sql_exp *res;
 
 	if (!exp_name(le))
 		exp_label(sql->sa, le, ++sql->label);
@@ -2017,7 +2018,9 @@ exp_exist(sql_query *query, sql_rel *rel, sql_exp *le, int exists)
 
 	if (!exists_func) 
 		return sql_error(sql, 02, SQLSTATE(42000) "exist operator on type %s missing", t->type->sqlname);
-	return exp_unop(sql->sa, le, exists_func);
+	res = exp_unop(sql->sa, le, exists_func);
+	set_has_no_nil(res);
+	return res;
 }
 
 static sql_exp *
