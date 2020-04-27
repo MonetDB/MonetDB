@@ -167,24 +167,6 @@ rewrite_simplify_exp(mvc *sql, sql_rel *rel, sql_exp *e, int depth, int *changes
 				return exp_atom_bool(sql->sa, 1);
 			}
 		}
-	} else if (is_func(e->type) && list_length(e->l) == 1 && is_null(sf)) {
-		list *args = e->l;
-		sql_exp *ie = args->h->data;
-
-		if (!has_nil(ie) || exp_is_false(sql, ie) || exp_is_true(sql, ie) || exp_is_not_null(sql, ie)) { /* is null on something that is never null, is always false */
-			ie = exp_atom_bool(sql->sa, 0);
-			if (exp_name(e))
-				exp_prop_alias(sql->sa, ie, e);
-			(*changes)++;
-			return ie;
-		}
-		if (exp_is_null(sql, ie)) { /* is null on something that is always null, is always true */
-			ie = exp_atom_bool(sql->sa, 1);
-			if (exp_name(e))
-				exp_prop_alias(sql->sa, ie, e);
-			(*changes)++;
-			return ie;
-		}
 	}
 	return e;
 }
