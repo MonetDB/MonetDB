@@ -266,7 +266,7 @@ HAVING (((SELECT MIN(i2.i + i1.i) FROM integers i2) IN (SELECT i1.i)) = EXISTS(S
 SELECT (VALUES (SUM(i1.i)),(AVG(i1.i)) INTERSECT VALUES(AVG(i1.i))) FROM integers i1;
 	-- 2.0
 
-SELECT SUM(i1.i) FROM integers i1 HAVING (VALUES(SUM(i1.i)),(AVG(i1.i)) INTERSECT VALUES(AVG(i1.i))) > 0;
+SELECT CAST(SUM(i1.i) AS BIGINT) FROM integers i1 HAVING (VALUES(SUM(i1.i)),(AVG(i1.i)) INTERSECT VALUES(AVG(i1.i))) > 0;
 	-- 6
 
 SELECT MAX(i1.i) FROM integers i1 HAVING (VALUES((AVG(i1.i))) EXCEPT VALUES(AVG(i1.i))) <> 0;
