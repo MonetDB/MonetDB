@@ -13380,22 +13380,20 @@ VARcalcbetween(ValPtr ret, const ValRecord *v, const ValRecord *lo,
 			l += incr2;					\
 		}							\
 	} while (0)
-#define IFTHENELSELOOP_oid()						\
-	do {								\
-		for (i = 0; i < cnt; i++) {				\
-			if (is_bit_nil(src[i])) {			\
-				((oid *) dst)[i] = oid_nil;		\
-				nils++;					\
-			} else if (src[i]) {				\
-				((oid *) dst)[i] = col1 ? ((oid *) col1)[k] : seq1; \
-			} else {					\
-				((oid *) dst)[i] = col2 ? ((oid *) col2)[k] : seq2; \
-			}						\
-			k += incr1;					\
-			l += incr2;					\
-			seq1 += incr1;					\
-			seq2 += incr2;					\
-		}							\
+#define IFTHENELSELOOP_msk(TYPE)				\
+	do {							\
+		for (i = 0; i < cnt; i++) {			\
+			if (n == 32) {				\
+				n = 0;				\
+				mask = src[i / 32];		\
+			}					\
+			((TYPE *) dst)[i] = mask & (1U << n) ?	\
+				((TYPE *) col1)[k] :		\
+				((TYPE *) col2)[l];		\
+			k += incr1;				\
+			l += incr2;				\
+			n++;					\
+		}						\
 	} while (0)
 
 static BAT *
@@ -13412,7 +13410,6 @@ BATcalcifthenelse_intern(BAT *b,
 	BUN nils = 0;
 	const void *nil;
 	const void *p;
-	const bit *src;
 	BUN cnt = b->batCount;
 
 	/* col1 and col2 can only be NULL for void columns */
@@ -13429,74 +13426,221 @@ BATcalcifthenelse_intern(BAT *b,
 	if (cnt == 0)
 		return bn;
 
-	src = (const bit *) Tloc(b, 0);
-
 	nil = ATOMnilptr(tpe);
 	dst = (void *) Tloc(bn, 0);
 	k = l = 0;
 	if (bn->tvarsized) {
 		assert((heap1 != NULL && width1 > 0) || (width1 == 0 && incr1 == 0));
 		assert((heap2 != NULL && width2 > 0) || (width2 == 0 && incr2 == 0));
-		for (i = 0; i < cnt; i++) {
-			if (is_bit_nil(src[i])) {
-				p = nil;
-				nils++;
-			} else if (src[i]) {
-				if (heap1)
-					p = heap1 + VarHeapVal(col1, k, width1);
-				else
-					p = col1;
-			} else {
-				if (heap2)
-					p = heap2 + VarHeapVal(col2, l, width2);
-				else
-					p = col2;
+		if (ATOMstorage(b->ttype) == TYPE_msk) {
+			const uint32_t *src = Tloc(b, 0);
+			BUN n = cnt / 32;
+			for (i = 0; i <= n; i++) {
+				BUN rem = i == n ? cnt % 32 : 32;
+				uint32_t mask = rem != 0 ? src[i] : 0;
+				for (BUN j = 0; j < rem; j++) {
+					if (mask & (1U << j)) {
+						if (heap1)
+							p = heap1 + VarHeapVal(col1, k, width1);
+						else
+							p = col1;
+					} else {
+						if (heap2)
+							p = heap2 + VarHeapVal(col2, l, width2);
+						else
+							p = col2;
+					}
+					if (tfastins_nocheckVAR(bn, i, p, Tsize(bn)) != GDK_SUCCEED) {
+						BBPreclaim(bn);
+						return NULL;
+					}
+					k += incr1;
+					l += incr2;
+				}
 			}
-			if (tfastins_nocheckVAR(bn, i, p, Tsize(bn)) != GDK_SUCCEED) {
-				BBPreclaim(bn);
-				return NULL;
+		} else {
+			const bit *src = Tloc(b, 0);
+			for (i = 0; i < cnt; i++) {
+				if (is_bit_nil(src[i])) {
+					p = nil;
+					nils++;
+				} else if (src[i]) {
+					if (heap1)
+						p = heap1 + VarHeapVal(col1, k, width1);
+					else
+						p = col1;
+				} else {
+					if (heap2)
+						p = heap2 + VarHeapVal(col2, l, width2);
+					else
+						p = col2;
+				}
+				if (tfastins_nocheckVAR(bn, i, p, Tsize(bn)) != GDK_SUCCEED) {
+					BBPreclaim(bn);
+					return NULL;
+				}
+				k += incr1;
+				l += incr2;
 			}
-			k += incr1;
-			l += incr2;
 		}
 	} else {
 		assert(heap1 == NULL);
 		assert(heap2 == NULL);
-		if (ATOMtype(tpe) == TYPE_oid) {
-			IFTHENELSELOOP_oid();
-		} else {
-			switch (bn->twidth) {
-			case 1:
-				IFTHENELSELOOP(bte);
-				break;
-			case 2:
-				IFTHENELSELOOP(sht);
-				break;
-			case 4:
-				IFTHENELSELOOP(int);
-				break;
-			case 8:
-				IFTHENELSELOOP(lng);
-				break;
-#ifdef HAVE_HGE
-			case 16:
-				IFTHENELSELOOP(hge);
-				break;
-#endif
-			default:
+		if (ATOMstorage(b->ttype) == TYPE_msk) {
+			const uint32_t *src = Tloc(b, 0);
+			uint32_t mask = 0;
+			BUN n = 32;
+			if (ATOMtype(tpe) == TYPE_oid) {
 				for (i = 0; i < cnt; i++) {
-					if (is_bit_nil(src[i])) {
-						p = nil;
-						nils++;
-					} else if (src[i]) {
-						p = ((const char *) col1) + k * width1;
-					} else {
-						p = ((const char *) col2) + l * width2;
+					if (n == 32) {
+						n = 0;
+						mask = src[i / 32];
 					}
-					memcpy(dst, p, bn->twidth);
-					dst = (void *) ((char *) dst + bn->twidth);
+					((oid *) dst)[i] = mask & (1U << n) ?
+						col1 ? ((oid *)col1)[k] : seq1 :
+						col2 ? ((oid *)col2)[l] : seq2;
 					k += incr1;
 					l += incr2;
+					seq1 += incr1;
+					seq2 += incr2;
+					n++;
+				}
+			} else if (ATOMstorage(tpe) == TYPE_msk) {
+				uint32_t v1, v2;
+				if (incr1) {
+					v1 = 0;
+				} else {
+					v1 = * (msk *) col1 ? ~0U : 0U;
+				}
+				if (incr2) {
+					v2 = 0;
+				} else {
+					v2 = * (msk *) col2 ? ~0U : 0U;
+				}
+				n = (cnt + 31) / 32;
+				for (i = 0; i < n; i++) {
+					if (incr1)
+						v1 = ((uint32_t *) col1)[i];
+					if (incr2)
+						v2 = ((uint32_t *) col2)[i];
+					((uint32_t *) dst)[i] = (src[i] & v1)
+						| (~src[i] & v2);
+				}
+			} else {
+				switch (bn->twidth) {
+				case 1:
+					IFTHENELSELOOP_msk(bte);
+					break;
+				case 2:
+					IFTHENELSELOOP_msk(sht);
+					break;
+				case 4:
+					IFTHENELSELOOP_msk(int);
+					break;
+				case 8:
+					IFTHENELSELOOP_msk(lng);
+					break;
+#ifdef HAVE_HGE
+				case 16:
+					IFTHENELSELOOP_msk(hge);
+					break;
+#endif
+				default:
+					for (i = 0; i < cnt; i++) {
+						if (n == 32) {
+							n = 0;
+							mask = src[i / 32];
+						}
+						if (mask & (1U << n))
+							p = ((const char *) col1) + k * width1;
+						else
+							p = ((const char *) col2) + l * width2;
+						memcpy(dst, p, bn->twidth);
+						dst = (void *) ((char *) dst + bn->twidth);
+						k += incr1;
+						l += incr2;
+						n++;
+					}
+				}
+			}
+		} else {
+			const bit *src = Tloc(b, 0);
+			if (ATOMtype(tpe) == TYPE_oid) {
+				for (i = 0; i < cnt; i++) {
+					if (is_bit_nil(src[i])) {
+						((oid *) dst)[i] = oid_nil;
+						nils++;
+					} else if (src[i]) {
+						((oid *) dst)[i] = col1 ? ((oid *) col1)[k] : seq1;
+					} else {
+						((oid *) dst)[i] = col2 ? ((oid *) col2)[k] : seq2;
+					}
+					k += incr1;
+					l += incr2;
+					seq1 += incr1;
+					seq2 += incr2;
+				}
+			} else if (ATOMstorage(tpe) == TYPE_msk) {
+				uint32_t v1, v2;
+				uint32_t *d = dst;
+				if (incr1) {
+					v1 = 0;
+				} else {
+					v1 = * (msk *) col1 ? ~0U : 0U;
+				}
+				if (incr2) {
+					v2 = 0;
+				} else {
+					v2 = * (msk *) col2 ? ~0U : 0U;
+				}
+				i = 0;
+				while (i < cnt) {
+					uint32_t mask = 0;
+					if (incr1)
+						v1 = ((uint32_t *) col1)[i/32];
+					if (incr2)
+						v2 = ((uint32_t *) col2)[i/32];
+					for (int n = 0; n < 32; n++) {
+						mask |= (uint32_t) (src[i] != 0) << n;
+						if (++i == cnt)
+							break;
+					}
+					*d++ = (mask & v1) | (~mask & v2);
+				}
+			} else {
+				switch (bn->twidth) {
+				case 1:
+					IFTHENELSELOOP(bte);
+					break;
+				case 2:
+					IFTHENELSELOOP(sht);
+					break;
+				case 4:
+					IFTHENELSELOOP(int);
+					break;
+				case 8:
+					IFTHENELSELOOP(lng);
+					break;
+#ifdef HAVE_HGE
+				case 16:
+					IFTHENELSELOOP(hge);
+					break;
+#endif
+				default:
+					for (i = 0; i < cnt; i++) {
+						if (is_bit_nil(src[i])) {
+							p = nil;
+							nils++;
+						} else if (src[i]) {
+							p = ((const char *) col1) + k * width1;
+						} else {
+							p = ((const char *) col2) + l * width2;
+						}
+						memcpy(dst, p, bn->twidth);
+						dst = (void *) ((char *) dst + bn->twidth);
+						k += incr1;
+						l += incr2;
+					}
 				}
 			}
 		}
@@ -13505,8 +13649,8 @@ BATcalcifthenelse_intern(BAT *b,
 	BATsetcount(bn, cnt);
 	bn->theap.dirty = true;
 
-	bn->tsorted = cnt <= 1 || nils == cnt;
-	bn->trevsorted = cnt <= 1 || nils == cnt;
+	bn->tsorted = ATOMlinear(tpe) && (cnt <= 1 || nils == cnt);
+	bn->trevsorted = ATOMlinear(tpe) && (cnt <= 1 || nils == cnt);
 	bn->tkey = cnt <= 1;
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0 && nonil1 && nonil2;

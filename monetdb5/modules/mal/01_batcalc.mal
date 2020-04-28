@@ -30679,3 +30679,19 @@ pattern ifthenelse(b:bat[:bit], b1:bat[:any_1], b2:bat[:any_1]) :bat[:any_1]
 address CMDifthen
 comment "If-then-else operation to assemble a conditional result";
 
+pattern ifthenelse(b:bat[:msk], v1:any_1, v2:any_1) :bat[:any_1]
+address CMDifthen
+comment "If-then-else operation to assemble a conditional result";
+
+pattern ifthenelse(b:bat[:msk], b1:bat[:any_1], v2:any_1) :bat[:any_1]
+address CMDifthen
+comment "If-then-else operation to assemble a conditional result";
+
+pattern ifthenelse(b:bat[:msk], v1:any_1, b2:bat[:any_1]) :bat[:any_1]
+address CMDifthen
+comment "If-then-else operation to assemble a conditional result";
+
+pattern ifthenelse(b:bat[:msk], b1:bat[:any_1], b2:bat[:any_1]) :bat[:any_1]
+address CMDifthen
+comment "If-then-else operation to assemble a conditional result";
+
