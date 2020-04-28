@@ -801,7 +801,7 @@ mskSetVal(BAT *b, BUN p, msk v)
 }
 
 static inline msk
-mskGet(BAT *b, BUN p)
+mskGetVal(BAT *b, BUN p)
 {
 	return ((uint32_t *) b->theap.base)[p / 32] & (1U << (p % 32));
 }
@@ -1818,7 +1818,7 @@ Tpos(BATiter *bi, BUN p)
 static inline void *
 Tmsk(BATiter *bi, BUN p)
 {
-	bi->tmsk = mskGet(bi->b, p);
+	bi->tmsk = mskGetVal(bi->b, p);
 	return &bi->tmsk;
 }
 

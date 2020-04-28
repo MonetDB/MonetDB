@@ -1178,7 +1178,7 @@ BUNdelete(BAT *b, oid o)
 		    BATmaterialize(b) != GDK_SUCCEED)
 			return GDK_FAIL;
 		if (ATOMstorage(b->ttype) == TYPE_msk) {
-			mskSetVal(b, p, mskGet(b, BUNlast(b) - 1));
+			mskSetVal(b, p, mskGetVal(b, BUNlast(b) - 1));
 		} else {
 			memcpy(Tloc(b, p), Tloc(b, BUNlast(b) - 1), Tsize(b));
 		}

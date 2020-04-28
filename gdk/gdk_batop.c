@@ -639,7 +639,7 @@ append_msk_bat(BAT *b, BAT *n, struct canditer *ci)
 				o = canditer_next(ci);
 				if (is_oid_nil(o))
 					break;
-				v |= (uint32_t) mskGet(n, o - n->hseqbase) << i;
+				v |= (uint32_t) mskGetVal(n, o - n->hseqbase) << i;
 			}
 			*bp++ = v;
 			v = 0;
@@ -929,7 +929,7 @@ BATdel(BAT *b, BAT *d)
 				 * how much this is used */
 				for (BUN i = 0; i < n; i++)
 					mskSetVal(b, o + i,
-						  mskGet(b, o + c + i));
+						  mskGetVal(b, o + c + i));
 			} else {
 				memmove(Tloc(b, o),
 					Tloc(b, o + c),
@@ -985,7 +985,7 @@ BATdel(BAT *b, BAT *d)
 					 * used */
 					for (BUN i = 0; i < n; i++) {
 						mskSetVal(b, pos + i,
-							  mskGet(b, opos + i));
+							  mskGetVal(b, opos + i));
 					}
 					pos += n;
 				} else {
@@ -1270,7 +1270,7 @@ BATreplace(BAT *b, BAT *p, BAT *n, bool force)
 				return GDK_FAIL;
 			}
 
-			mskSetVal(b, updid, mskGet(n, i));
+			mskSetVal(b, updid, mskGetVal(n, i));
 		}
 	} else {
 		for (BUN i = 0, j = BATcount(p); i < j; i++) {
@@ -1543,7 +1543,7 @@ BATkeyed(BAT *b)
 		if (BATcount(b) > 2)
 			return false;
 		/* there are exactly two values */
-		return mskGet(b, 0) != mskGet(b, 1);
+		return mskGetVal(b, 0) != mskGetVal(b, 1);
 	}
 	if (b->twidth < SIZEOF_BUN &&
 	    BATcount(b) > (BUN) 1 << (8 * b->twidth)) {
