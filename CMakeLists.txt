@@ -42,8 +42,8 @@ include(CheckTypeSize REQUIRED)
 
 include(TestBigEndian REQUIRED)
 
-include(monetdb-findpackages)
 include(monetdb-functions)
+include(monetdb-findpackages)
 monetdb_hg_revision()
 
 check_symbol_exists("opendir" "dirent.h" HAVE_DIRENT_H)
@@ -146,19 +146,20 @@ check_function_exists("uname" HAVE_UNAME)
 
 check_symbol_exists("semtimedop" "sys/types.h;sys/ipc.h;sys/sem.h" HAVE_SEMTIMEDOP) # Some libc versions on Linux distributions don't have it
 
+# Likely unused, because it contained typo's
 if(HAVE_PTHREAD_H)
-	check_function_exits("pthread_kill" HAVE_PTHREAD_KILL)
-	check_function_exits("pthread_sigmask" HAVE_PTHREAD_SIGMASK)
+  check_function_exists("pthread_kill" HAVE_PTHREAD_KILL)
+  check_function_exists("pthread_sigmask" HAVE_PTHREAD_SIGMASK)
 endif()
 
 # On C99, but we have to calculate the size
 check_type_size(size_t SIZEOF_SIZE_T LANGUAGE C)
 set(SIZEOF_VOID_P ${CMAKE_SIZEOF_VOID_P})
 if(HAVE_NETDB_H)
-	set(CMAKE_EXTRA_INCLUDE_FILES "netdb.h" "unistd.h")
+  set(CMAKE_EXTRA_INCLUDE_FILES "netdb.h" "unistd.h")
 endif()
 if(HAVE_WINSOCK_H)
-	set(CMAKE_EXTRA_INCLUDE_FILES "winsock.h")
+  set(CMAKE_EXTRA_INCLUDE_FILES "winsock.h")
 endif()
 check_type_size(socklen_t HAVE_SOCKLEN_T LANGUAGE C)
 
@@ -184,7 +185,7 @@ set(HAVE_VALGRIND ${VALGRIND_FOUND})
 
 set(SOCKET_LIBRARIES "")
 if (WIN32)
-	set(SOCKET_LIBRARIES "ws2_32")
+  set(SOCKET_LIBRARIES "ws2_32")
 endif()
 
 cmake_push_check_state()
@@ -201,10 +202,10 @@ if(COMMONCRYPTO_FOUND)
 
   add_library(OpenSSL::Crypto UNKNOWN IMPORTED)
   set_target_properties(OpenSSL::Crypto PROPERTIES
-      INTERFACE_INCLUDE_DIRECTORIES "${COMMONCRYPTO_INCLUDE_DIR}")
+    INTERFACE_INCLUDE_DIRECTORIES "${COMMONCRYPTO_INCLUDE_DIR}")
   set_target_properties(OpenSSL::Crypto PROPERTIES
-      IMPORTED_LINK_INTERFACE_LANGUAGES "C"
-      IMPORTED_LOCATION "${COMMONCRYPTO_LIBRARIES}")
+    IMPORTED_LINK_INTERFACE_LANGUAGES "C"
+    IMPORTED_LOCATION "${COMMONCRYPTO_LIBRARIES}")
 endif()
 if(OPENSSL_FOUND)
   #set(CMAKE_REQUIRED_INCLUDES "${OPENSSL_INCUDE_DIR}")
