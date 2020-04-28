@@ -509,6 +509,8 @@ open_stream(const char *restrict filename, const char *restrict flags)
 		destroy_stream(s);
 		return NULL;
 	}
+	s->readonly = flags[0] == 'r';
+	s->binary = flags[1] == 'b';
 	s->read = file_read;
 	s->write = file_write;
 	s->close = file_close;
