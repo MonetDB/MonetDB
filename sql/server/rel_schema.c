@@ -1395,6 +1395,7 @@ rel_create_schema(sql_query *query, dlist *auth_name, dlist *schema_elements, in
 			sql_rel *res = rel_semantic(query, n->data.sym);
 			if (!res) {
 				rel_destroy(ret);
+				sql->session->schema = os;
 				return NULL;
 			}
 			ret = rel_list(sql->sa, ret, res);
