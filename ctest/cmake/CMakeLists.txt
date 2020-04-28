@@ -1,0 +1,107 @@
+#[[
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0.  If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
+#]]
+
+project(MonetDB-unittest LANGUAGES C)
+
+include(os_release_info)
+
+if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+  get_os_release_info(LINUX_DISTRO LINUX_DISTRO_VERSION)
+endif()
+
+if (${LINUX_DISTRO} STREQUAL "debian")
+  if(${LINUX_DISTRO_VERSION} STREQUAL "9")
+    set(DETECT "1")
+    set(UNDETECT "0")
+  endif()
+  if(${LINUX_DISTRO_VERSION} STREQUAL "10")
+    set(DETECT "1")
+    set(UNDETECT "0")
+  endif()
+elseif (${LINUX_DISTRO} STREQUAL "ubuntu")
+  if(${LINUX_DISTRO_VERSION} STREQUAL "18")
+    set(DETECT "1")
+    set(UNDETECT "0")
+  endif()
+  if(${LINUX_DISTRO_VERSION} STREQUAL "19")
+    set(DETECT "1")
+    set(UNDETECT "0")
+  endif()
+  if(${LINUX_DISTRO_VERSION} STREQUAL "20")
+    set(DETECT "1")
+    set(UNDETECT "0")
+  endif()
+elseif(${LINUX_DISTRO} STREQUAL "fedora")
+  if(${LINUX_DISTRO_VERSION} STREQUAL "30")
+    set(DETECT "0")
+    set(UNDETECT "1")
+  endif()
+  if(${LINUX_DISTRO_VERSION} STREQUAL "31")
+    set(DETECT "0")
+    set(UNDETECT "1")
+  endif()
+else()
+  message(ERROR "Linux distro: ${LINUX_DISTRO} not known")
+  message(ERROR "Linux distro version: ${LINUX_DISTRO_VERSION} not known")
+endif()
+
+configure_file(test_detect_lzma.c.in
+  ${CMAKE_CURRENT_BINARY_DIR}/test_detect_lzma.c
+  @ONLY)
+
+add_executable(test_detect test_detect.c)
+target_link_libraries(test_detect
+  PRIVATE
+  monetdb_config_header)
+add_test(testDetect test_detect)
+
+add_executable(test_detect_pcre test_detect_pcre.c)
+target_link_libraries(test_detect_pcre
+  PRIVATE
+  monetdb_config_header)
+add_test(testDetectPcre test_detect_pcre)
+
+add_executable(test_detect_bz2 test_detect_bz2.c)
+target_link_libraries(test_detect_bz2
+  PRIVATE
+  monetdb_config_header)
+add_test(testDetectBz2 test_detect_bz2)
+
+add_executable(test_detect_curl test_detect_curl.c)
+target_link_libraries(test_detect_curl
+  PRIVATE
+  monetdb_config_header)
+add_test(testDetectCurl test_detect_curl)
+
+add_executable(test_detect_lzma)
+target_sources(test_detect_lzma
+  PRIVATE
+  ${CMAKE_CURRENT_BINARY_DIR}/test_detect_lzma.c)
+target_link_libraries(test_detect_lzma
+  PRIVATE
+  monetdb_config_header)
+add_test(testDetectLzma test_detect_lzma)
+
+add_executable(test_detect_libz test_detect_libz.c)
+target_link_libraries(test_detect_libz
+  PRIVATE
+  monetdb_config_header)
+add_test(testDetectLibz test_detect_libz)
+
+add_executable(test_detect_lz4 test_detect_lz4.c)
+target_link_libraries(test_detect_lz4
+  PRIVATE
+  monetdb_config_header)
+add_test(testDetectLz4 test_detect_lz4)
+
+add_executable(test_detect_proj test_detect_proj.c)
+target_link_libraries(test_detect_proj
+  PRIVATE
+  monetdb_config_header)
+add_test(testDetectProj test_detect_proj)
+
