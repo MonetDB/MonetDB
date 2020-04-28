@@ -1878,106 +1878,106 @@ rel_dependencies(mvc *sql, sql_rel *r)
 	return l;
 }
 
-static list *exps_exp_visitor(mvc *sql, sql_rel *rel, list *exps, int depth, exp_rewrite_fptr exp_rewriter, bool topdown);
+static list *exps_exp_visitor(mvc *sql, sql_rel *rel, list *exps, int depth, exp_rewrite_fptr exp_rewriter, int *changes, bool topdown);
 
 static inline list *
-exps_exps_exp_visitor(mvc *sql, sql_rel *rel, list *lists, int depth, exp_rewrite_fptr exp_rewriter, bool topdown) 
+exps_exps_exp_visitor(mvc *sql, sql_rel *rel, list *lists, int depth, exp_rewrite_fptr exp_rewriter, int *changes, bool topdown) 
 {
 	node *n;
 
 	if (list_empty(lists))
 		return lists;
 	for (n = lists->h; n; n = n->next) {
-		if (n->data && (n->data = exps_exp_visitor(sql, rel, n->data, depth, exp_rewriter, topdown)) == NULL)
+		if (n->data && (n->data = exps_exp_visitor(sql, rel, n->data, depth, exp_rewriter, changes, topdown)) == NULL)
 			return NULL;
 	}
 	return lists;
 }
 
-static sql_rel *rel_exp_visitor(mvc *sql, sql_rel *rel, exp_rewrite_fptr exp_rewriter, bool topdown);
+static sql_rel *rel_exp_visitor(mvc *sql, sql_rel *rel, exp_rewrite_fptr exp_rewriter, int *changes, bool topdown);
 
 static sql_exp *
-exp_visitor(mvc *sql, sql_rel *rel, sql_exp *e, int depth, exp_rewrite_fptr exp_rewriter, bool topdown) 
+exp_visitor(mvc *sql, sql_rel *rel, sql_exp *e, int depth, exp_rewrite_fptr exp_rewriter, int *changes, bool topdown) 
 {
 	if (THRhighwater())
 		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
 	assert(e);
-	if (topdown && !(e = exp_rewriter(sql, rel, e, depth)))
+	if (topdown && !(e = exp_rewriter(sql, rel, e, depth, changes)))
 		return NULL;
 
 	switch(e->type) {
 	case e_column:
 		break;
 	case e_convert:
-		if  ((e->l = exp_visitor(sql, rel, e->l, depth+1, exp_rewriter, topdown)) == NULL)
+		if  ((e->l = exp_visitor(sql, rel, e->l, depth+1, exp_rewriter, changes, topdown)) == NULL)
 			return NULL;
 		break;
 	case e_aggr:
 	case e_func: 
 		if (e->r) /* rewrite rank -r is list of lists */
-			if ((e->r = exps_exps_exp_visitor(sql, rel, e->r, depth+1, exp_rewriter, topdown)) == NULL)
+			if ((e->r = exps_exps_exp_visitor(sql, rel, e->r, depth+1, exp_rewriter, changes, topdown)) == NULL)
 				return NULL;
 		if (e->l)
-			if ((e->l = exps_exp_visitor(sql, rel, e->l, depth+1, exp_rewriter, topdown)) == NULL)
+			if ((e->l = exps_exp_visitor(sql, rel, e->l, depth+1, exp_rewriter, changes, topdown)) == NULL)
 				return NULL;
 		break;
 	case e_cmp:	
 		if (e->flag == cmp_or || e->flag == cmp_filter) {
-			if ((e->l = exps_exp_visitor(sql, rel, e->l, depth+1, exp_rewriter, topdown)) == NULL)
+			if ((e->l = exps_exp_visitor(sql, rel, e->l, depth+1, exp_rewriter, changes, topdown)) == NULL)
 				return NULL;
-			if ((e->r = exps_exp_visitor(sql, rel, e->r, depth+1, exp_rewriter, topdown)) == NULL)
+			if ((e->r = exps_exp_visitor(sql, rel, e->r, depth+1, exp_rewriter, changes, topdown)) == NULL)
 				return NULL;
 		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
-			if ((e->l = exp_visitor(sql, rel, e->l, depth+1, exp_rewriter, topdown)) == NULL)
+			if ((e->l = exp_visitor(sql, rel, e->l, depth+1, exp_rewriter, changes, topdown)) == NULL)
 				return NULL;
-			if ((e->r = exps_exp_visitor(sql, rel, e->r, depth+1, exp_rewriter, topdown)) == NULL)
+			if ((e->r = exps_exp_visitor(sql, rel, e->r, depth+1, exp_rewriter, changes, topdown)) == NULL)
 				return NULL;
 		} else {
-			if ((e->l = exp_visitor(sql, rel, e->l, depth+1, exp_rewriter, topdown)) == NULL)
+			if ((e->l = exp_visitor(sql, rel, e->l, depth+1, exp_rewriter, changes, topdown)) == NULL)
 				return NULL;
-			if ((e->r = exp_visitor(sql, rel, e->r, depth+1, exp_rewriter, topdown)) == NULL)
+			if ((e->r = exp_visitor(sql, rel, e->r, depth+1, exp_rewriter, changes, topdown)) == NULL)
 				return NULL;
-			if (e->f && (e->f = exp_visitor(sql, rel, e->f, depth+1, exp_rewriter, topdown)) == NULL)
+			if (e->f && (e->f = exp_visitor(sql, rel, e->f, depth+1, exp_rewriter, changes, topdown)) == NULL)
 				return NULL;
 		}
 		break;
 	case e_psm:
 		if (e->flag & PSM_SET || e->flag & PSM_RETURN || e->flag & PSM_EXCEPTION) {
-			if ((e->l = exp_visitor(sql, rel, e->l, depth+1, exp_rewriter, topdown)) == NULL)
+			if ((e->l = exp_visitor(sql, rel, e->l, depth+1, exp_rewriter, changes, topdown)) == NULL)
 				return NULL;
 		} else if (e->flag & PSM_VAR) {
 			return e;
 		} else if (e->flag & PSM_WHILE || e->flag & PSM_IF) {
-			if ((e->l = exp_visitor(sql, rel, e->l, depth+1, exp_rewriter, topdown)) == NULL)
+			if ((e->l = exp_visitor(sql, rel, e->l, depth+1, exp_rewriter, changes, topdown)) == NULL)
 				return NULL;
-			if ((e->r = exps_exp_visitor(sql, rel, e->r, depth+1, exp_rewriter, topdown)) == NULL)
+			if ((e->r = exps_exp_visitor(sql, rel, e->r, depth+1, exp_rewriter, changes, topdown)) == NULL)
 				return NULL;
-			if (e->flag == PSM_IF && e->f && (e->f = exps_exp_visitor(sql, rel, e->f, depth+1, exp_rewriter, topdown)) == NULL)
+			if (e->flag == PSM_IF && e->f && (e->f = exps_exp_visitor(sql, rel, e->f, depth+1, exp_rewriter, changes, topdown)) == NULL)
 				return NULL;
 		} else if (e->flag & PSM_REL) {
-			if ((e->l = rel_exp_visitor(sql, e->l, exp_rewriter, topdown)) == NULL)
+			if ((e->l = rel_exp_visitor(sql, e->l, exp_rewriter, changes, topdown)) == NULL)
 				return NULL;
 		}
 		break;
 	case e_atom:
 		if (e->f)
-			if ((e->f = exps_exp_visitor(sql, rel, e->f, depth+1, exp_rewriter, topdown)) == NULL)
+			if ((e->f = exps_exp_visitor(sql, rel, e->f, depth+1, exp_rewriter, changes, topdown)) == NULL)
 				return NULL;
 		break;
 	}
-	if (!topdown && !(e = exp_rewriter(sql, rel, e, depth)))
+	if (!topdown && !(e = exp_rewriter(sql, rel, e, depth, changes)))
 		return NULL;
 	return e;
 }
 
 static inline list *
-exps_exp_visitor(mvc *sql, sql_rel *rel, list *exps, int depth, exp_rewrite_fptr exp_rewriter, bool topdown) 
+exps_exp_visitor(mvc *sql, sql_rel *rel, list *exps, int depth, exp_rewrite_fptr exp_rewriter, int *changes, bool topdown) 
 {
 	if (list_empty(exps))
 		return exps;
 	for (node *n = exps->h; n; n = n->next) {
-		if (n->data && (n->data = exp_visitor(sql, rel, n->data, depth, exp_rewriter, topdown)) == NULL)
+		if (n->data && (n->data = exp_visitor(sql, rel, n->data, depth, exp_rewriter, changes, topdown)) == NULL)
 			return NULL;
 	}
 	list_hash_clear(exps);
@@ -1985,7 +1985,7 @@ exps_exp_visitor(mvc *sql, sql_rel *rel, list *exps, int depth, exp_rewrite_fptr
 }
 
 static inline sql_rel *
-rel_exp_visitor(mvc *sql, sql_rel *rel, exp_rewrite_fptr exp_rewriter, bool topdown) 
+rel_exp_visitor(mvc *sql, sql_rel *rel, exp_rewrite_fptr exp_rewriter, int *changes, bool topdown) 
 {
 	if (THRhighwater())
 		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
@@ -1993,9 +1993,9 @@ rel_exp_visitor(mvc *sql, sql_rel *rel, exp_rewrite_fptr exp_rewriter, bool topd
 	if (!rel)
 		return rel;
 
-	if (rel->exps && (rel->exps = exps_exp_visitor(sql, rel, rel->exps, 0, exp_rewriter, topdown)) == NULL)
+	if (rel->exps && (rel->exps = exps_exp_visitor(sql, rel, rel->exps, 0, exp_rewriter, changes, topdown)) == NULL)
 		return NULL;
-	if ((is_groupby(rel->op) || is_simple_project(rel->op)) && rel->r && (rel->r = exps_exp_visitor(sql, rel, rel->r, 0, exp_rewriter, topdown)) == NULL)
+	if ((is_groupby(rel->op) || is_simple_project(rel->op)) && rel->r && (rel->r = exps_exp_visitor(sql, rel, rel->r, 0, exp_rewriter, changes, topdown)) == NULL)
 		return NULL;
 
 	switch(rel->op){
@@ -2004,21 +2004,21 @@ rel_exp_visitor(mvc *sql, sql_rel *rel, exp_rewrite_fptr exp_rewriter, bool topd
 	case op_table:
 		if (IS_TABLE_PROD_FUNC(rel->flag) || rel->flag == TABLE_FROM_RELATION) {
 			if (rel->l)
-				if ((rel->l = rel_exp_visitor(sql, rel->l, exp_rewriter, topdown)) == NULL)
+				if ((rel->l = rel_exp_visitor(sql, rel->l, exp_rewriter, changes, topdown)) == NULL)
 					return NULL;
 		}
 		break;
 	case op_ddl:
 		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq) {
 			if (rel->l)
-				if ((rel->l = rel_exp_visitor(sql, rel->l, exp_rewriter, topdown)) == NULL)
+				if ((rel->l = rel_exp_visitor(sql, rel->l, exp_rewriter, changes, topdown)) == NULL)
 					return NULL;
 		} else if (rel->flag == ddl_list || rel->flag == ddl_exception) {
 			if (rel->l)
-				if ((rel->l = rel_exp_visitor(sql, rel->l, exp_rewriter, topdown)) == NULL)
+				if ((rel->l = rel_exp_visitor(sql, rel->l, exp_rewriter, changes, topdown)) == NULL)
 					return NULL;
 			if (rel->r)
-				if ((rel->r = rel_exp_visitor(sql, rel->r, exp_rewriter, topdown)) == NULL)
+				if ((rel->r = rel_exp_visitor(sql, rel->r, exp_rewriter, changes, topdown)) == NULL)
 					return NULL;
 		}
 		break;
@@ -2037,10 +2037,10 @@ rel_exp_visitor(mvc *sql, sql_rel *rel, exp_rewrite_fptr exp_rewriter, bool topd
 	case op_inter:
 	case op_except:
 		if (rel->l)
-			if ((rel->l = rel_exp_visitor(sql, rel->l, exp_rewriter, topdown)) == NULL)
+			if ((rel->l = rel_exp_visitor(sql, rel->l, exp_rewriter, changes, topdown)) == NULL)
 				return NULL;
 		if (rel->r)
-			if ((rel->r = rel_exp_visitor(sql, rel->r, exp_rewriter, topdown)) == NULL)
+			if ((rel->r = rel_exp_visitor(sql, rel->r, exp_rewriter, changes, topdown)) == NULL)
 				return NULL;
 		break;
 	case op_select:
@@ -2050,7 +2050,7 @@ rel_exp_visitor(mvc *sql, sql_rel *rel, exp_rewrite_fptr exp_rewriter, bool topd
 	case op_groupby:
 	case op_truncate:
 		if (rel->l)
-			if ((rel->l = rel_exp_visitor(sql, rel->l, exp_rewriter, topdown)) == NULL)
+			if ((rel->l = rel_exp_visitor(sql, rel->l, exp_rewriter, changes, topdown)) == NULL)
 				return NULL;
 		break;
 	}
@@ -2058,15 +2058,15 @@ rel_exp_visitor(mvc *sql, sql_rel *rel, exp_rewrite_fptr exp_rewriter, bool topd
 }
 
 sql_rel *
-rel_exp_visitor_topdown(mvc *sql, sql_rel *rel, exp_rewrite_fptr exp_rewriter)
+rel_exp_visitor_topdown(mvc *sql, sql_rel *rel, exp_rewrite_fptr exp_rewriter, int *changes)
 {
-	return rel_exp_visitor(sql, rel, exp_rewriter, true);
+	return rel_exp_visitor(sql, rel, exp_rewriter, changes, true);
 }
 
 sql_rel *
-rel_exp_visitor_bottomup(mvc *sql, sql_rel *rel, exp_rewrite_fptr exp_rewriter)
+rel_exp_visitor_bottomup(mvc *sql, sql_rel *rel, exp_rewrite_fptr exp_rewriter, int *changes)
 {
-	return rel_exp_visitor(sql, rel, exp_rewriter, false);
+	return rel_exp_visitor(sql, rel, exp_rewriter, changes, false);
 }
 
 static list *exps_rel_visitor(mvc *sql, list *exps, rel_rewrite_fptr rel_rewriter, int *changes, bool topdown);

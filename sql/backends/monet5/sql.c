@@ -3418,8 +3418,15 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 					goto bailout;
 				}
 				bstream *s = bstream_create(ss, 1 << 20);
-
-				c = BATattach_bstream(col->type.type->localtype, s, be->mvc->scanner.ws, cnt);
+				if (!s) {
+					msg = createException(SQL, "sql", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					goto bailout;
+				}
+				if (!(c = BATattach_bstream(col->type.type->localtype, s, be->mvc->scanner.ws, cnt))) {
+					bstream_destroy(s);
+					msg = createException(SQL, "sql", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					goto bailout;
+				}
 				mnstr_write(be->mvc->scanner.ws, PROMPT3, sizeof(PROMPT3)-1, 1);
 				mnstr_flush(be->mvc->scanner.ws);
 				be->mvc->scanner.rs->eof = s->eof;

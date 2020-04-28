@@ -924,6 +924,10 @@ exp_subtype( sql_exp *e )
 			return atom_type(a);
 		} else if (e->tpe.type) { /* atom reference */
 			return &e->tpe;
+		} else if (e->f) {
+			list *vals = exp_get_values(e);
+			if (!list_empty(vals))
+				return exp_subtype(vals->h->data);
 		}
 		break;
 	}

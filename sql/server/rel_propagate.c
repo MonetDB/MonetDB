@@ -81,7 +81,7 @@ rel_generate_anti_insert_expression(mvc *sql, sql_rel **anti_rel, sql_table *t)
 		*anti_rel = rel_project(sql->sa, *anti_rel, l);
 
 		inserts = (*anti_rel)->l;
-		if (inserts->op != op_project && inserts->op != op_basetable && inserts->op != op_table)
+		if (inserts->op != op_project && inserts->op != op_union && inserts->op != op_basetable && inserts->op != op_table)
 			inserts = inserts->l;
 		for (node *n = t->columns.set->h, *m = inserts->exps->h; n && m; n = n->next, m = m->next) {
 			sql_column *col = n->data;
@@ -622,20 +622,35 @@ rel_generate_subupdates(mvc *sql, sql_rel *rel, sql_table *t, int *changes)
 		sql_part *pt = (sql_part *) n->data;
 		sql_table *sub = find_sql_table(t->s, pt->base.name);
 		sql_rel *s1, *dup = NULL;
-		list *uexps = exps_copy(sql, rel->exps);
+		list *uexps = exps_copy(sql, rel->exps), *checked_updates = new_exp_list(sql->sa);
 
 		if (!update_allowed(sql, sub, sub->base.name, "UPDATE", "update", 0))
 			return NULL;
+
+		for (node *n = uexps->h ; n ; n = n->next) {
+			sql_exp *e = (sql_exp *) n->data;
+			const char *cname = exp_name(e);
+
+			if (strcmp(cname, TID) != 0) { /* Skip TID column */
+				sql_column *c = mvc_bind_column(sql, sub, cname);
+
+				if (!c)
+					return sql_error(sql, 02, SQLSTATE(42S22) "UPDATE: no such column '%s.%s'\n", sub->base.name, cname);
+				if (!(e = update_check_column(sql, sub, c, e, rel, c->base.name, "UPDATE")))
+					return NULL;
+			}
+			list_append(checked_updates, e);
+		}
 
 		if (rel->r) {
 			dup = rel_copy(sql, rel->r, 1);
 			dup = rel_change_base_table(sql, dup, t, sub);
 		}
 
-		for (node *ne = uexps->h ; ne ; ne = ne->next)
+		for (node *ne = checked_updates->h ; ne ; ne = ne->next)
 			ne->data = exp_change_column_table(sql, (sql_exp*) ne->data, t, sub);
 
-		s1 = rel_update(sql, rel_basetable(sql, sub, sub->base.name), dup, NULL, uexps);
+		s1 = rel_update(sql, rel_basetable(sql, sub, sub->base.name), dup, NULL, checked_updates);
 		if (just_one == 0) {
 			sel = rel_list(sql->sa, sel, s1);
 		} else {

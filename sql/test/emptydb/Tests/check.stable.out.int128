@@ -252,7 +252,6 @@ stdout of test 'check` in directory 'sql/test/emptydb` itself:
 \dSf sys."shpload"
 \dSf sys."shrink"
 \dSf sys."shutdown"
-\dSf sys."sleep"
 \dSf sys."st_area"
 \dSf sys."st_asbinary"
 \dSf sys."st_asewkt"
@@ -729,8 +728,6 @@ SYSTEM FUNCTION         sys.sign
 SYSTEM FUNCTION         sys.similarity
 SYSTEM FUNCTION         sys.sin
 SYSTEM FUNCTION         sys.sinh
-SYSTEM FUNCTION         sys.sleep
-SYSTEM PROCEDURE        sys.sleep
 SYSTEM FUNCTION         sys.soundex
 SYSTEM FUNCTION         sys.space
 SYSTEM FUNCTION         sys.splitpart
@@ -1232,12 +1229,6 @@ create procedure shpload(fid integer, filter geometry) external name shp.import;
 create procedure shrink(sys string, tab string) external name sql.shrink;
 create procedure sys.shutdown(delay tinyint) external name sql.shutdown;
 create procedure sys.shutdown(delay tinyint, force bool) external name sql.shutdown;
-create function sys."sleep"(msecs int) returns int external name "alarm"."sleep";
-create function sys."sleep"(msecs smallint) returns smallint external name "alarm"."sleep";
-create function sys."sleep"(msecs tinyint) returns tinyint external name "alarm"."sleep";
-create procedure sys."sleep"(msecs int) external name "alarm"."sleep";
-create procedure sys."sleep"(msecs smallint) external name "alarm"."sleep";
-create procedure sys."sleep"(msecs tinyint) external name "alarm"."sleep";
 create function st_area(geom geometry) returns double external name geom."Area";
 create function st_asbinary(geom geometry) returns string external name geom."AsBinary";
 create function st_asewkt(geom geometry) returns string external name geom."AsEWKT";
@@ -3622,12 +3613,6 @@ drop function pcre_replace(string, string, string, string);
 [ "sys.functions",	"sys",	"sin",	"SYSTEM",	"sin",	"mmath",	"Internal C",	"Scalar function",	false,	false,	false,	"res_0",	"real",	24,	0,	"out",	"arg_1",	"real",	24,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"sys",	"sinh",	"SYSTEM",	"sinh",	"mmath",	"Internal C",	"Scalar function",	false,	false,	false,	"res_0",	"double",	53,	0,	"out",	"arg_1",	"double",	53,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"sys",	"sinh",	"SYSTEM",	"sinh",	"mmath",	"Internal C",	"Scalar function",	false,	false,	false,	"res_0",	"real",	24,	0,	"out",	"arg_1",	"real",	24,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ "sys.functions",	"sys",	"sleep",	"SYSTEM",	"create function sys.\"sleep\"(msecs int) returns int external name \"alarm\".\"sleep\";",	"alarm",	"MAL",	"Scalar function",	false,	false,	false,	"result",	"int",	32,	0,	"out",	"msecs",	"int",	32,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ "sys.functions",	"sys",	"sleep",	"SYSTEM",	"create function sys.\"sleep\"(msecs smallint) returns smallint external name \"alarm\".\"sleep\";",	"alarm",	"MAL",	"Scalar function",	false,	false,	false,	"result",	"smallint",	16,	0,	"out",	"msecs",	"smallint",	16,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ "sys.functions",	"sys",	"sleep",	"SYSTEM",	"create function sys.\"sleep\"(msecs tinyint) returns tinyint external name \"alarm\".\"sleep\";",	"alarm",	"MAL",	"Scalar function",	false,	false,	false,	"result",	"tinyint",	8,	0,	"out",	"msecs",	"tinyint",	8,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ "sys.functions",	"sys",	"sleep",	"SYSTEM",	"create procedure sys.\"sleep\"(msecs int) external name \"alarm\".\"sleep\";",	"alarm",	"MAL",	"Procedure",	true,	false,	false,	"msecs",	"int",	32,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ "sys.functions",	"sys",	"sleep",	"SYSTEM",	"create procedure sys.\"sleep\"(msecs smallint) external name \"alarm\".\"sleep\";",	"alarm",	"MAL",	"Procedure",	true,	false,	false,	"msecs",	"smallint",	16,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ "sys.functions",	"sys",	"sleep",	"SYSTEM",	"create procedure sys.\"sleep\"(msecs tinyint) external name \"alarm\".\"sleep\";",	"alarm",	"MAL",	"Procedure",	true,	false,	false,	"msecs",	"tinyint",	8,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"sys",	"soundex",	"SYSTEM",	"soundex",	"txtsim",	"Internal C",	"Scalar function",	false,	false,	false,	"res_0",	"char",	0,	0,	"out",	"arg_1",	"char",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"sys",	"soundex",	"SYSTEM",	"soundex",	"txtsim",	"Internal C",	"Scalar function",	false,	false,	false,	"res_0",	"clob",	0,	0,	"out",	"arg_1",	"clob",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"sys",	"soundex",	"SYSTEM",	"soundex",	"txtsim",	"Internal C",	"Scalar function",	false,	false,	false,	"res_0",	"varchar",	0,	0,	"out",	"arg_1",	"varchar",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
@@ -5377,12 +5362,6 @@ drop function pcre_replace(string, string, string, string);
 [ "grant on function",	"settimeout",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"settimeout",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"setworkerlimit",	"public",	"EXECUTE",	"monetdb",	0	]
-[ "grant on function",	"sleep",	"public",	"EXECUTE",	"monetdb",	0	]
-[ "grant on function",	"sleep",	"public",	"EXECUTE",	"monetdb",	0	]
-[ "grant on function",	"sleep",	"public",	"EXECUTE",	"monetdb",	0	]
-[ "grant on function",	"sleep",	"public",	"EXECUTE",	"monetdb",	0	]
-[ "grant on function",	"sleep",	"public",	"EXECUTE",	"monetdb",	0	]
-[ "grant on function",	"sleep",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"st_area",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"st_asbinary",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"st_asewkt",	"public",	"EXECUTE",	"monetdb",	0	]

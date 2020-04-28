@@ -230,4 +230,15 @@ select
       limit 140) as subq_0 where false limit 61;
  -- empty result set
 
+select
+  1
+from tab1
+  left join tab2 as ref_5
+  right join (select 2) as subq_0
+  left join tab1 as ref_8
+  on (true)
+  on (exists (select ref_5.col0, ref_8.col2))
+  on (true);
+ -- 27 rows with 1
+
 ROLLBACK;

@@ -1480,12 +1480,16 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 
 		for (node *n = rel->exps->h ; n ; n = n->next) {
 			sql_exp *e = (sql_exp *) n->data;
-			sql_column *c = mvc_bind_column(sql, t, exp_name(e));
+			const char *cname = exp_name(e);
 
-			if (!c)
-				return sql_error(sql, -1, SQLSTATE(42S22) "UPDATE: no such column '%s.%s'\n", t->base.name, exp_name(e));
-			if (!(e = update_check_column(sql, t, c, e, rrel, c->base.name, "UPDATE")))
-				return NULL;
+			if (strcmp(cname, TID) != 0) { /* Skip TID column */
+				sql_column *c = mvc_bind_column(sql, t, cname);
+
+				if (!c)
+					return sql_error(sql, -1, SQLSTATE(42S22) "UPDATE: no such column '%s.%s'\n", t->base.name, cname);
+				if (!(e = update_check_column(sql, t, c, e, rrel, c->base.name, "UPDATE")))
+					return NULL;
+			}
 			list_append(nexps, e);
 		}
 

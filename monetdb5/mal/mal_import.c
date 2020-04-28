@@ -259,6 +259,7 @@ evalFile(str fname, int listing)
 	stream *fd;
 	str filename;
 	str msg = MAL_SUCCEED;
+	bstream *bs;
 
 	filename = malResolveFile(fname);
 	if (filename == NULL)
@@ -270,8 +271,12 @@ evalFile(str fname, int listing)
 			close_stream(fd);
 		throw(MAL,"mal.eval", "WARNING: could not open file '%s'\n", fname);
 	}
-
-	c= MCinitClient(MAL_ADMIN, bstream_create(fd, 128 * BLOCK),0);
+	if (!(bs = bstream_create(fd, 128 * BLOCK))) {
+		if (fd)
+			close_stream(fd);
+		throw(MAL,"mal.eval",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+	c= MCinitClient(MAL_ADMIN, bs, 0);
 	if( c == NULL){
 		throw(MAL,"mal.eval","Can not create user context");
 	}
