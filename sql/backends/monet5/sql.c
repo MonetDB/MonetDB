@@ -2051,7 +2051,7 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 				BBPunfix(u->batCacheid);
 				throw(MAL, "sql.delta", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			}
-			cminu = BATintersect(u, c_ids, NULL, NULL, false, BUN_NONE);
+			cminu = BATintersect(u, c_ids, NULL, NULL, false, false, BUN_NONE);
 			BBPunfix(c_ids->batCacheid);
 			if (cminu == NULL) {
 				BBPunfix(c->batCacheid);
@@ -2208,7 +2208,7 @@ DELTAproject(bat *result, const bat *sub, const bat *col, const bat *uid, const 
 		BAT *os, *ou;
 		/* figure out the positions in res that we have to
 		 * replace with values from u_val */
-		if (BATsemijoin(&ou, &os, u_id, s, NULL, NULL, false, BUN_NONE) != GDK_SUCCEED) {
+		if (BATsemijoin(&ou, &os, u_id, s, NULL, NULL, false, false, BUN_NONE) != GDK_SUCCEED) {
 			BBPunfix(s->batCacheid);
 			BBPunfix(res->batCacheid);
 			BBPunfix(u_id->batCacheid);

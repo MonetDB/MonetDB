@@ -1884,6 +1884,7 @@ stmt_tinter(backend *be, stmt *op1, stmt *op2)
 	q = pushNil(mb, q, TYPE_bat); /* left candidate */
 	q = pushNil(mb, q, TYPE_bat); /* right candidate */
 	q = pushBit(mb, q, FALSE);    /* nil matches */
+	q = pushBit(mb, q, FALSE);    /* max_one */
 	q = pushNil(mb, q, TYPE_lng); /* estimate */
 
 	if (q) {
@@ -2044,6 +2045,7 @@ stmt_semijoin(backend *be, stmt *op1, stmt *op2, stmt *lcand, stmt *rcand, int i
 	else
 		q = pushNil(mb, q, TYPE_bat);
 	q = pushBit(mb, q, is_semantics?TRUE:FALSE);
+	q = pushBit(mb, q, FALSE); /* max_one */
 	q = pushNil(mb, q, TYPE_lng);
 	if (q == NULL)
 		return NULL;
