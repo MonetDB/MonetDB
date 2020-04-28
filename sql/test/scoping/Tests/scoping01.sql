@@ -1,6 +1,3 @@
--- TODO transaction management
--- upgrade drop dt_schema
-
 create table tmp1("optimizer" integer, s string);
 insert into tmp1 values(1,'hello'),(2,'world');
 select "optimizer" from tmp1;
