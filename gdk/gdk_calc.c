@@ -13654,7 +13654,7 @@ BATcalcifthencstelsecst(BAT *b, const ValRecord *c1, const ValRecord *c2)
 
 #define convertimpl_copy(TYPE)						\
 static BUN								\
-convert_##TYPE##_##TYPE(const TYPE *src, TYPE *restrict dst,		\
+convert_##TYPE##_##TYPE(const TYPE *restrict src, TYPE *restrict dst,	\
 			struct canditer *restrict ci,			\
 			const bit *restrict rv,				\
 			oid candoff, bool *reduce)			\
@@ -13682,7 +13682,7 @@ convert_##TYPE##_##TYPE(const TYPE *src, TYPE *restrict dst,		\
 
 #define convertimpl_enlarge(TYPE1, TYPE2)				\
 static BUN								\
-convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst,	\
+convert_##TYPE1##_##TYPE2(const TYPE1 *restrict src, TYPE2 *restrict dst, \
 			  struct canditer *restrict ci,			\
 			  const bit *restrict rv,			\
 			  oid candoff, bool *reduce)			\
@@ -13716,7 +13716,7 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst,	\
 
 #define convertimpl_enlarge_float(TYPE1, TYPE2, MANT_DIG)		\
 static BUN								\
-convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst,	\
+convert_##TYPE1##_##TYPE2(const TYPE1 *restrict src, TYPE2 *restrict dst, \
 			  struct canditer *restrict ci,			\
 			  const bit *restrict rv,			\
 			  oid candoff, bool *reduce)			\
@@ -13758,7 +13758,7 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst,	\
 
 #define convertimpl_oid_enlarge(TYPE1)					\
 static BUN								\
-convert_##TYPE1##_oid(const TYPE1 *src, oid *restrict dst,		\
+convert_##TYPE1##_oid(const TYPE1 *restrict src, oid *restrict dst,	\
 		      struct canditer *restrict ci,			\
 		      const bit *restrict rv,				\
 		      oid candoff, bool abort_on_error, bool *reduce)	\
@@ -13807,7 +13807,7 @@ convert_##TYPE1##_oid(const TYPE1 *src, oid *restrict dst,		\
 
 #define convertimpl_oid_reduce(TYPE1)					\
 static BUN								\
-convert_##TYPE1##_oid(const TYPE1 *src, oid *restrict dst,		\
+convert_##TYPE1##_oid(const TYPE1 *restrict src, oid *restrict dst,	\
 		      struct canditer *restrict ci,			\
 		      const bit *restrict rv,				\
 		      oid candoff, bool abort_on_error, bool *reduce)	\
@@ -13858,7 +13858,7 @@ convert_##TYPE1##_oid(const TYPE1 *src, oid *restrict dst,		\
 
 #define convertimpl_reduce(TYPE1, TYPE2)				\
 static BUN								\
-convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst,	\
+convert_##TYPE1##_##TYPE2(const TYPE1 *restrict src, TYPE2 *restrict dst, \
 			  struct canditer *restrict ci,			\
 			  const bit *restrict rv,			\
 			  oid candoff, bool abort_on_error, bool *reduce) \
@@ -13918,7 +13918,7 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst,	\
 
 #define convertimpl_reduce_float(TYPE1, TYPE2)				\
 static BUN								\
-convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst,	\
+convert_##TYPE1##_##TYPE2(const TYPE1 *restrict src, TYPE2 *restrict dst, \
 			  struct canditer *restrict ci,			\
 			  const bit *restrict rv,			\
 			  oid candoff, bool abort_on_error, bool *reduce) \
@@ -13973,7 +13973,7 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst,	\
 
 #define convert2bit_impl(TYPE)						\
 static BUN								\
-convert_##TYPE##_bit(const TYPE *src, bit *restrict dst,		\
+convert_##TYPE##_bit(const TYPE *restrict src, bit *restrict dst,	\
 		     struct canditer *restrict ci,			\
 		     const bit *restrict rv,				\
 		     oid candoff, bool *reduce)				\
@@ -14001,6 +14001,119 @@ convert_##TYPE##_bit(const TYPE *src, bit *restrict dst,		\
 				nils++;					\
 			} else						\
 				dst[i] = (bit) (src[x] != 0);		\
+		}							\
+	}								\
+	return nils;							\
+}
+
+#define convertimpl_msk(TYPE)						\
+static BUN								\
+convert_##TYPE##_msk(const TYPE *restrict src, uint32_t *restrict dst,	\
+		struct canditer *restrict ci, const bit *restrict rv,	\
+		oid candoff, bool *reduce)				\
+{									\
+	BUN cnt = ci->ncand / 32;					\
+	BUN i, j, k;							\
+	uint32_t mask;							\
+	oid x;								\
+									\
+	*reduce = true;							\
+	k = 0;								\
+	if (ci->tpe == cand_dense) {					\
+		for (i = 0; i < cnt; i++) {				\
+			mask = 0;					\
+			for (j = 0; j < 32; j++) {			\
+				x = canditer_next_dense(ci) - candoff;	\
+				mask |= (uint32_t) ((rv == NULL || rv[k]) && !is_##TYPE##_nil(src[x]) && src[x] != 0) << j; \
+				k++;					\
+			}						\
+			dst[i] = mask;					\
+		}							\
+		cnt = ci->ncand % 32;					\
+		if (cnt > 0) {						\
+			mask = 0;					\
+			for (j = 0; j < cnt; j++) {			\
+				x = canditer_next_dense(ci) - candoff;	\
+				mask |= (uint32_t) ((rv == NULL || rv[i]) && !is_##TYPE##_nil(src[x]) && src[x] != 0) << j; \
+				k++;					\
+			}						\
+			dst[i] = mask;					\
+		}							\
+	} else {							\
+		for (i = 0; i < cnt; i++) {				\
+			mask = 0;					\
+			for (j = 0; j < 32; j++) {			\
+				x = canditer_next(ci) - candoff;	\
+				mask |= (uint32_t) ((rv == NULL || rv[k]) && !is_##TYPE##_nil(src[x]) && src[x] != 0) << j; \
+				k++;					\
+			}						\
+			dst[i] = mask;					\
+		}							\
+		cnt = ci->ncand % 32;					\
+		if (cnt > 0) {						\
+			mask = 0;					\
+			for (j = 0; j < cnt; j++) {			\
+				x = canditer_next(ci) - candoff;	\
+				mask |= (uint32_t) ((rv == NULL || rv[i]) && !is_##TYPE##_nil(src[x]) && src[x] != 0) << j; \
+				k++;					\
+			}						\
+			dst[i] = mask;					\
+		}							\
+	}								\
+	return 0;							\
+}									\
+									\
+static BUN								\
+convert_msk_##TYPE(const uint32_t *restrict src, TYPE *restrict dst,	\
+		struct canditer *restrict ci, const bit *restrict rv,	\
+		oid candoff, bool *reduce)				\
+{									\
+	BUN nils = 0;							\
+	BUN k;								\
+									\
+	*reduce = false;						\
+	if (ci->tpe == cand_dense) {					\
+		uint32_t mask;						\
+		BUN i = (ci->seq - candoff) / 32;			\
+		BUN cnt = (ci->seq + ci->ncand - candoff) / 32;		\
+		BUN first = (ci->seq - candoff) % 32;			\
+		BUN rem = (ci->seq + ci->ncand - candoff) % 32;		\
+		BUN j;							\
+		k = 0;							\
+		for (; i < cnt; i++) {					\
+			mask = src[i];					\
+			for (j = first; j < 32; j++) {			\
+				if (rv && !rv[k]) {			\
+					dst[k] = TYPE##_nil;		\
+					nils++;				\
+				} else {				\
+					dst[k] = (mask & (1U << j)) != 0; \
+				}					\
+				k++;					\
+			}						\
+			first = 0;					\
+		}							\
+		if (rem > first) {					\
+			mask = src[i];					\
+			for (j = first; j < rem; j++) {			\
+				if (rv && !rv[k]) {			\
+					dst[k] = TYPE##_nil;		\
+					nils++;				\
+				} else {				\
+					dst[k] = (mask & (1U << j)) != 0; \
+				}					\
+				k++;					\
+			}						\
+		}							\
+	} else {							\
+		for (k = 0; k < ci->ncand; k++) {			\
+			oid x = canditer_next(ci) - candoff;		\
+			if (rv != NULL && !rv[k]) {			\
+				dst[k] = TYPE##_nil;			\
+				nils++;					\
+			} else {					\
+				dst[k] = (src[x / 32] & (1U << (x % 32))) != 0;	\
+			}						\
 		}							\
 	}								\
 	return nils;							\
@@ -14100,6 +14213,16 @@ convert2bit_impl(hge)
 convert2bit_impl(flt)
 convert2bit_impl(dbl)
 
+convertimpl_msk(bte)
+convertimpl_msk(sht)
+convertimpl_msk(int)
+convertimpl_msk(lng)
+#ifdef HAVE_HGE
+convertimpl_msk(hge)
+#endif
+convertimpl_msk(flt)
+convertimpl_msk(dbl)
+
 static BUN
 convert_any_str(BAT *b, BAT *bn, struct canditer *restrict ci,
 		const bit *restrict rv)
@@ -14153,6 +14276,19 @@ convert_any_str(BAT *b, BAT *bn, struct canditer *restrict ci,
 					goto bunins_failed;
 			}
 		}
+	} else if (ATOMstorage(b->ttype) == TYPE_msk) {
+		for (i = 0; i < ci->ncand; i++) {
+			const char *v;
+			x = canditer_next(ci) - candoff;
+			if (rv != NULL && !rv[i]) {
+				nils++;
+				v = str_nil;
+			} else
+				v = mskGetVal(b, x) ? "1" : "0";
+			if (tfastins_nocheckVAR(bn, i, v,
+						bn->twidth) != GDK_SUCCEED)
+				goto bunins_failed;
+		}
 	} else {
 		for (i = 0; i < ci->ncand; i++) {
 			x = canditer_next(ci) - candoff;
@@ -14191,10 +14327,43 @@ convert_str_any(BAT *b, int tp, void *restrict dst,
 	ssize_t l;
 	ssize_t (*atomfromstr)(const char *, size_t *, ptr *, bool) = BATatoms[tp].atomFromStr;
 	BATiter bi = bat_iterator(b);
+	const char *s;
 
+	if (ATOMstorage(tp) == TYPE_msk) {
+		uint32_t mask = 0;
+		uint32_t *d = dst;
+		int j = 0;
+		for (BUN i = 0; i < ci->ncand; i++) {
+			oid x = canditer_next(ci) - candoff;
+			uint32_t v;
+			if (rv != NULL && !rv[i])
+				v = 0;
+			else {
+				s = BUNtvar(bi, x);
+				if (strcmp(s, "0") == 0)
+					v = 0;
+				else if (strcmp(s, "1") == 0)
+					v = 1;
+				else if (!abort_on_error)
+					v = 0;
+				else
+					goto conversion_failed;
+			}
+			mask |= v << j;
+			if (++j == 32) {
+				*d++ = mask;
+				j = 0;
+				mask = 0;
+			}
+		}
+		if (j > 0)
+			*d = mask;
+		return 0;
+					
+	}
 	for (BUN i = 0; i < ci->ncand; i++) {
 		oid x = canditer_next(ci) - candoff;
-		const char *s = BUNtvar(bi, x);
+		s = BUNtvar(bi, x);
 		if ((rv != NULL && !rv[i]) || strNil(s)) {
 			memcpy(dst, nil, len);
 			nils++;
@@ -14203,21 +14372,7 @@ convert_str_any(BAT *b, int tp, void *restrict dst,
 			if ((l = (*atomfromstr)(s, &len, &d, false)) < 0 ||
 			    l < (ssize_t) strlen(s)) {
 				if (abort_on_error) {
-					GDKclrerr();
-					size_t sz = escapedStrlen(s, NULL, NULL, '\'');
-					char *bf = GDKmalloc(sz + 1);
-					if (bf) {
-						escapedStr(bf, s, sz + 1, NULL, NULL, '\'');
-						GDKerror("22018!conversion of string "
-							 "'%s' to type %s failed.\n",
-							 bf, ATOMname(tp));
-						GDKfree(bf);
-					} else {
-						GDKerror("22018!conversion of string "
-							 "to type %s failed.\n",
-							 ATOMname(tp));
-					}
-					return BUN_NONE;
+					goto conversion_failed;
 				}
 				memcpy(dst, nil, len);
 			}
@@ -14228,6 +14383,23 @@ convert_str_any(BAT *b, int tp, void *restrict dst,
 		dst = (void *) ((char *) dst + len);
 	}
 	return nils;
+
+  conversion_failed:
+	GDKclrerr();
+	size_t sz = escapedStrlen(s, NULL, NULL, '\'');
+	char *bf = GDKmalloc(sz + 1);
+	if (bf) {
+		escapedStr(bf, s, sz + 1, NULL, NULL, '\'');
+		GDKerror("22018!conversion of string "
+			 "'%s' to type %s failed.\n",
+			 bf, ATOMname(tp));
+		GDKfree(bf);
+	} else {
+		GDKerror("22018!conversion of string "
+			 "to type %s failed.\n",
+			 ATOMname(tp));
+	}
+	return BUN_NONE;
 }
 
 static BUN
@@ -14356,58 +14528,46 @@ convert_void_any(oid seq, BAT *bn,
 }
 
 static BUN
-convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
+convert_typeswitchloop(const void *restrict src, int stp, void *restrict dst, int dtp,
 		       struct canditer *restrict ci, const bit *restrict rv,
 		       oid candoff, bool abort_on_error, bool *reduce)
 {
 	switch (ATOMbasetype(stp)) {
 	case TYPE_msk:
 		switch (ATOMbasetype(dtp)) {
-		case TYPE_msk:
-			
+		/* case TYPE_msk not needed: it is done with the help
+		 * of BATappend */
 		case TYPE_bte:
-			if (dtp == TYPE_bit)
-				return convert_bte_bit(src, dst, ci, rv,
-						       candoff, reduce);
-			return convert_bte_bte(src, dst, ci, rv, candoff,
+			return convert_bte_msk(src, dst, ci, rv, candoff,
 					       reduce);
 		case TYPE_sht:
-			return convert_bte_sht(src, dst, ci, rv, candoff,
+			return convert_sht_msk(src, dst, ci, rv, candoff,
 					       reduce);
 		case TYPE_int:
-#if SIZEOF_OID == SIZEOF_INT
-			if (dtp == TYPE_oid)
-				return convert_bte_oid(src, dst, ci, rv,
-						       candoff, abort_on_error,
-						       reduce);
-#endif
-			return convert_bte_int(src, dst, ci, rv, candoff,
+			return convert_int_msk(src, dst, ci, rv, candoff,
 					       reduce);
 		case TYPE_lng:
-#if SIZEOF_OID == SIZEOF_LNG
-			if (dtp == TYPE_oid)
-				return convert_bte_oid(src, dst, ci, rv,
-						       candoff, abort_on_error,
-						       reduce);
-#endif
-			return convert_bte_lng(src, dst, ci, rv, candoff,
+			return convert_lng_msk(src, dst, ci, rv, candoff,
 					       reduce);
 #ifdef HAVE_HGE
 		case TYPE_hge:
-			return convert_bte_hge(src, dst, ci, rv, candoff,
+			return convert_hge_msk(src, dst, ci, rv, candoff,
 					       reduce);
 #endif
 		case TYPE_flt:
-			return convert_bte_flt(src, dst, ci, rv, candoff,
+			return convert_flt_msk(src, dst, ci, rv, candoff,
 					       reduce);
 		case TYPE_dbl:
-			return convert_bte_dbl(src, dst, ci, rv, candoff,
+			return convert_dbl_msk(src, dst, ci, rv, candoff,
 					       reduce);
 		default:
 			return BUN_NONE + 1;
 		}
 	case TYPE_bte:
 		switch (ATOMbasetype(dtp)) {
+		case TYPE_msk:
+			return convert_msk_bte(src, dst, ci, rv, candoff,
+					       reduce);
 		case TYPE_bte:
 			if (dtp == TYPE_bit)
 				return convert_bte_bit(src, dst, ci, rv,
@@ -14451,6 +14611,9 @@ convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 		}
 	case TYPE_sht:
 		switch (ATOMbasetype(dtp)) {
+		case TYPE_msk:
+			return convert_msk_sht(src, dst, ci, rv, candoff,
+					       reduce);
 		case TYPE_bte:
 			if (dtp == TYPE_bit)
 				return convert_sht_bit(src, dst, ci, rv,
@@ -14494,6 +14657,9 @@ convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 		}
 	case TYPE_int:
 		switch (ATOMbasetype(dtp)) {
+		case TYPE_msk:
+			return convert_msk_int(src, dst, ci, rv, candoff,
+					       reduce);
 		case TYPE_bte:
 			if (dtp == TYPE_bit) {
 				return convert_int_bit(src, dst, ci, rv,
@@ -14538,6 +14704,9 @@ convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 		}
 	case TYPE_lng:
 		switch (ATOMbasetype(dtp)) {
+		case TYPE_msk:
+			return convert_msk_lng(src, dst, ci, rv, candoff,
+					       reduce);
 		case TYPE_bte:
 			if (dtp == TYPE_bit) {
 				return convert_lng_bit(src, dst, ci, rv,
@@ -14583,6 +14752,9 @@ convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 #ifdef HAVE_HGE
 	case TYPE_hge:
 		switch (ATOMbasetype(dtp)) {
+		case TYPE_msk:
+			return convert_msk_hge(src, dst, ci, rv, candoff,
+					       reduce);
 		case TYPE_bte:
 			if (dtp == TYPE_bit) {
 				return convert_hge_bit(src, dst, ci, rv,
@@ -14617,6 +14789,9 @@ convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 #endif
 	case TYPE_flt:
 		switch (ATOMbasetype(dtp)) {
+		case TYPE_msk:
+			return convert_msk_flt(src, dst, ci, rv, candoff,
+					       reduce);
 		case TYPE_bte:
 			if (dtp == TYPE_bit) {
 				return convert_flt_bit(src, dst, ci, rv,
@@ -14661,6 +14836,9 @@ convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 		}
 	case TYPE_dbl:
 		switch (ATOMbasetype(dtp)) {
+		case TYPE_msk:
+			return convert_msk_dbl(src, dst, ci, rv, candoff,
+					       reduce);
 		case TYPE_bte:
 			if (dtp == TYPE_bit) {
 				return convert_dbl_bit(src, dst, ci, rv,
@@ -14751,6 +14929,22 @@ BATconvert(BAT *b, BAT *s, BAT *r, int tp, bool abort_on_error)
 			 ATOMname(b->ttype), ATOMname(tp));
 		return NULL;
 	}
+	if (ATOMstorage(tp) == TYPE_msk) {
+		if (BATtdense(b)) {
+			/* dense to msk is easy: all values 1, except
+			 * maybe the first */
+			bn = BATconstant(ci.hseq, tp, &(msk){1}, ncand,
+					 TRANSIENT);
+			if (bn && b->tseqbase == 0)
+				mskClr(bn, 0);
+			return bn;
+		} else if (b->ttype == TYPE_void) {
+			/* void-nil to msk is easy: all values 0 */
+			bn = BATconstant(ci.hseq, tp, &(msk){0}, ncand,
+					 TRANSIENT);
+			return bn;
+		}
+	}
 
 	bn = COLnew(ci.hseq, tp, ncand, TRANSIENT);
 	if (bn == NULL)
@@ -14767,6 +14961,10 @@ BATconvert(BAT *b, BAT *s, BAT *r, int tp, bool abort_on_error)
 		nils = convert_str_any(b, tp, Tloc(bn, 0),
 				       &ci, rv, b->hseqbase,
 				       abort_on_error);
+	} else if (ATOMstorage(b->ttype) == TYPE_msk &&
+		   ATOMstorage(tp) == TYPE_msk) {
+		if (BATappend(bn, b, s, false) != GDK_SUCCEED)
+			nils = BUN_NONE + 2;
 	} else
 		nils = convert_typeswitchloop(Tloc(b, 0), b->ttype,
 					      Tloc(bn, 0), tp,
