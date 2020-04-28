@@ -17,7 +17,6 @@
 #ifdef HAVE_LIBLZMA
 #define XZBUFSIZ 64*1024
 typedef struct xz_state {
-	FILE *fp;
 	lzma_stream strm;
 	uint8_t buf[XZBUFSIZ];
 } xz_state;
@@ -75,26 +74,14 @@ static ssize_t
 ship_in(void *state, char *start, size_t count)
 {
 	stream *s = (stream*) state;
-	xz_state *xz =  (xz_state*) s->stream_data.p;
-
-	size_t nread = fread(start, 1, count, xz->fp);
-	if (nread == 0 && ferror(xz->fp))
-		return -1;
-	else
-		return (ssize_t)nread;
+	return mnstr_read(s->inner, start, 1, count);
 }
 
 static ssize_t
 ship_out(void *state, char *start, size_t count)
 {
 	stream *s = (stream*) state;
-	xz_state *xz =  (xz_state*) s->stream_data.p;
-
-	size_t nwritten = fwrite(start, 1, count, xz->fp);
-	if (nwritten == 0 && ferror(xz->fp))
-		return -1;
-	else
-		return (ssize_t)nwritten;
+	return mnstr_write(s->inner, start, 1, count);
 }
 
 
@@ -182,15 +169,15 @@ stream_xzclose(stream *s)
 			xz->strm.next_in = NULL;
 			xz->strm.avail_in = 0;
 			if (pump_out(s, PUMP_FINISH) == PUMP_END) {
-				fflush(xz->fp);
+				mnstr_flush(s->inner);
 			} else {
 				s->errnr = MNSTR_WRITE_ERROR;
 			}
 		}
-		if (xz->fp)
-			fclose(xz->fp);
+		mnstr_close(s->inner);
 		lzma_end(&xz->strm);
 		free(xz);
+		s->stream_data.p = NULL;
 	}
 	s->stream_data.p = NULL;
 }
@@ -208,104 +195,91 @@ stream_xzflush(stream *s)
 	xz->strm.next_in = NULL;
 	xz->strm.avail_in = 0;
 	if (pump_out(s, PUMP_FLUSH_ALL) == PUMP_OK) {
-		fflush(xz->fp);
+		mnstr_flush(s->inner);
+		return 0;
 	} else {
 		s->errnr = MNSTR_WRITE_ERROR;
+		return -1;
+	}
+}
+
+stream *
+xz_stream(stream *inner, int preset)
+{
+	if (inner == NULL)
+		return NULL;
+
+	xz_state *xz = calloc(1, sizeof(xz_state));
+	if (xz == NULL)
+		return NULL;
+
+	lzma_ret ret;
+	if (inner->readonly)
+		ret = lzma_stream_decoder(&xz->strm, UINT64_MAX, LZMA_CONCATENATED);
+	else
+		ret = lzma_easy_encoder(&xz->strm, preset, LZMA_CHECK_CRC64);
+	if (ret != LZMA_OK) {
+		free(xz);
+		return NULL;
 	}
 
-	return 0;
+	stream *s = create_wrapper_stream(NULL, inner);
+	if (s == NULL) {
+		free(xz);
+		return NULL;
+	}
+
+	s->stream_data.p = (void*) xz;
+	s->read = stream_xzread;
+	s->write = stream_xzwrite;
+	s->close = stream_xzclose;
+	s->flush = stream_xzflush;
+
+	if (s->readonly) {
+		xz->strm.next_in = xz->buf;
+		xz->strm.avail_in = 0;
+	} else {
+		xz->strm.next_out = xz->buf;
+		xz->strm.avail_out = XZBUFSIZ;
+	}
+
+	return s;
 }
 
 static stream *
 open_xzstream(const char *restrict filename, const char *restrict flags)
 {
-	stream *s;
-	xz_state *xz;
-	uint32_t preset = 0;
-	char fl[3];
+	stream *inner;
+	int preset = 0;
 
-	if ((xz = calloc(1, sizeof(struct xz_state))) == NULL)
+	inner = open_stream(filename, flags);
+	if (inner == NULL)
 		return NULL;
-	if (((flags[0] == 'r' &&
-	      lzma_stream_decoder(&xz->strm, UINT64_MAX, LZMA_CONCATENATED) != LZMA_OK)) ||
-	    (flags[0] == 'w' &&
-	     lzma_easy_encoder(&xz->strm, preset, LZMA_CHECK_CRC64) != LZMA_OK)) {
-		free(xz);
-		return NULL;
-	}
-	if ((s = create_stream(filename)) == NULL) {
-		free(xz);
-		return NULL;
-	}
-	fl[0] = flags[0];	/* 'r' or 'w' */
-	fl[1] = 'b';		/* always binary */
-	fl[2] = '\0';
-#ifdef HAVE__WFOPEN
-	{
-		wchar_t *wfname = utf8towchar(filename);
-		wchar_t *wflags = utf8towchar(fl);
-		if (wfname != NULL)
-			xz->fp = _wfopen(wfname, wflags);
-		else
-			xz->fp = NULL;
-		if (wfname)
-			free(wfname);
-		if (wflags)
-			free(wflags);
-	}
-#else
-	{
-		char *fname = cvfilename(filename);
-		if (fname) {
-			xz->fp = fopen(fname, fl);
-			free(fname);
-		} else
-			xz->fp = NULL;
-	}
-#endif
-	if (xz->fp == NULL) {
-		destroy_stream(s);
-		free(xz);
-		return NULL;
-	}
-	s->read = stream_xzread;
-	s->write = stream_xzwrite;
-	s->close = stream_xzclose;
-	s->flush = stream_xzflush;
-	s->stream_data.p = (void *) xz;
-	if (flags[0] == 'r') {
-		// input stream -> our buffer -> lzma_state -> caller buffer
-		xz->strm.next_in = xz->buf;
-		xz->strm.avail_in = 0;
-	} else {
-		assert(flags[0] == 'w');
-		// caller buffer -> lzma_state -> our buffer -> output stream
-		xz->strm.next_out = xz->buf;
-		xz->strm.avail_out = XZBUFSIZ;
-	}
-	return s;
+
+	return xz_stream(inner, preset);
 }
 
 stream *
 open_xzrstream(const char *filename)
 {
-	stream *s;
-
-	if ((s = open_xzstream(filename, "rb")) == NULL)
+	stream *s = open_xzstream(filename, "rb");
+	if (s == NULL)
 		return NULL;
-	s->binary = true;
+
+	assert(s->readonly == true);
+	assert(s->binary == true);
 	return s;
 }
 
 stream *
 open_xzwstream(const char *restrict filename, const char *restrict mode)
 {
-	stream *s;
-
-	if ((s = open_xzstream(filename, mode)) == NULL)
+	stream *s = open_xzstream(filename, mode);
+	if (s == NULL)
 		return NULL;
-	s->readonly = false;
-	s->binary = true;
+
+	assert(s->readonly == false);
+	assert(s->binary == true);
 	return s;
 }
 
@@ -313,18 +287,24 @@ stream *
 open_xzrastream(const char *filename)
 {
 	stream *s = open_xzstream(filename, "r");
-	return create_text_stream(s);
+	s = create_text_stream(s);
+	if (s == NULL)
+		return NULL;
+
+	assert(s->readonly == true);
+	assert(s->binary == false);
+	return s;
 }
 
 stream *
 open_xzwastream(const char *restrict filename, const char *restrict mode)
 {
-	stream *s;
-
-	if ((s = open_xzstream(filename, mode)) == NULL)
+	stream *s = open_xzstream(filename, mode);
+	s = create_text_stream(s);
+	if (s == NULL)
 		return NULL;
-	s->readonly = false;
-	s->binary = false;
+	assert(s->readonly == false);
+	assert(s->binary == false);
 	return s;
 }
 #else
