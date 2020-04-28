@@ -10,8 +10,11 @@
 
 const char *USAGE =
 	"Usage:\n"
-	"    streamcat read  FILENAME R_OPENER [R_WRAPPER..]\n"
-	"    streamcat write FILENAME W_OPENER [W_WRAPPER..]\n"
+	"    streamcat read  [-o FILE] FILE R_OPENER [R_WRAPPER..]\n"
+	"    streamcat write [-i FILE] FILE W_OPENER [W_WRAPPER..]\n"
+	"Options:\n"
+	"    -o FILE             use FILE instead of stdout\n"
+	"    -i FILE             use FILE instead of stdin\n"
 	"With R_OPENER:\n"
 	"    - rstream           stream = open_rstream(filename)\n"
 	"    - rastream          stream = open_rastream(filename)\n"
@@ -41,9 +44,9 @@ static stream *wrapper_read_iconv(stream *s, char *enc);
 
 static stream *wrapper_write_iconv(stream *s, char *enc);
 
-static void copy_to_stdout(stream *in, size_t bufsize);
+static void copy_stream_to_file(stream *in, FILE *out, size_t bufsize);
 
-static void copy_from_stdin(stream *out, size_t bufsize);
+static void copy_file_to_stream(FILE *in, stream *out, size_t bufsize);
 
 _Noreturn static void croak(int status, const char *msg, ...)
 	__attribute__((__format__(__printf__, 2, 3)));
@@ -93,14 +96,33 @@ int cmd_read(char *argv[])
 	size_t bufsize = 1024;
 
 	stream *s = NULL;
+	FILE *out = NULL;
+
+	if (*arg != NULL && arg[0][0] == '-') {
+		char *a = *arg++;
+		if (a[1] == 'o') {
+			if (*arg == NULL)
+				croak(1, "-o requires parameter");
+			char *name = *arg++;
+			out = fopen(name, "wb");
+			if (out == NULL)
+				croak(2, "could not open %s", name);
+		} else {
+			croak(1, "unknown option '%s'", a);
+		}
+	}
 
 	filename = *arg++;
 	if (filename == NULL)
 		croak(1, "Missing filename");
+	else if (filename[0] == '-')
+		croak(1, "Unexpected option: %s", filename);
 
 	opener_name = *arg++;
 	if (opener_name == NULL)
 		croak(1, "Missing opener");
+	else if (opener_name[0] == '-')
+		croak(1, "Unexpected option: %s", opener_name);
 	else if (strcmp(opener_name, "rstream") == 0)
 		opener = opener_rstream;
 	else if (strcmp(opener_name, "rastream") == 0)
@@ -113,6 +135,9 @@ int cmd_read(char *argv[])
 		croak(2, "Opener %s did not return a stream", opener_name);
 
 	for (; *arg != NULL; arg++) {
+		if (arg[0][0] == '-')
+			croak(1, "Unexpected option: %s", *arg);
+
 		char *wrapper_name = *arg;
 		char *parms = strchr(wrapper_name, ':');
 		stream *(*wrapper)(stream *s, char *parm) = NULL;
@@ -142,7 +167,13 @@ int cmd_read(char *argv[])
 			croak(2, "Wrapper %s did not return a stream", wrapper_name);
 	}
 
-	copy_to_stdout(s, bufsize);
+	if (out == NULL) {
+		// Try to get binary stdout on Windows
+		fflush(stdout);
+		out = fdopen(fileno(stdout), "wb");
+	}
+
+	copy_stream_to_file(s, out, bufsize);
 	mnstr_close(s);
 
 	return 0;
@@ -157,15 +188,34 @@ int cmd_write(char *argv[])
 	opener_fun opener;
 	size_t bufsize = 1024;
 
+	FILE *in = NULL;
 	stream *s = NULL;
+
+	if (*arg != NULL && arg[0][0] == '-') {
+		char *a = *arg++;
+		if (a[1] == 'i') {
+			if (*arg == NULL)
+				croak(1, "-i requires parameter");
+			char *name = *arg++;
+			in = fopen(name, "rb");
+			if (in == NULL)
+				croak(2, "could not open %s", name);
+		} else {
+			croak(1, "unknown option '%s'", a);
+		}
+	}
 
 	filename = *arg++;
 	if (filename == NULL)
 		croak(1, "Missing filename");
+	else if (filename[0] == '-')
+		croak(1, "Unexpected option: %s", filename);
 
 	opener_name = *arg++;
 	if (opener_name == NULL)
 		croak(1, "Missing opener");
+	else if (opener_name[0] == '-')
+		croak(1, "Unexpected option: %s", opener_name);
 	else if (strcmp(opener_name, "wstream") == 0)
 		opener = opener_wstream;
 	else if (strcmp(opener_name, "wastream") == 0)
@@ -178,6 +228,9 @@ int cmd_write(char *argv[])
 		croak(2, "Opener %s did not return a stream", opener_name);
 
 	for (; *arg != NULL; arg++) {
+		if (arg[0][0] == '-')
+			croak(1, "Unexpected option: %s", *arg);
+
 		char *wrapper_name = *arg;
 		char *parms = strchr(wrapper_name, ':');
 		stream *(*wrapper)(stream *s, char *parm) = NULL;
@@ -207,26 +260,27 @@ int cmd_write(char *argv[])
 			croak(2, "Wrapper %s did not return a stream", wrapper_name);
 	}
 
-	copy_from_stdin(s, bufsize);
+	if (in == NULL) {
+		// We can't flush stdin but it hasn't been used yet so with any
+		// luck, no input has been buffered yet
+		in = fdopen(fileno(stdin), "rb");
+	}
+
+	copy_file_to_stream(in, s, bufsize);
 	mnstr_close(s);
 
 	return 0;
 }
 
 
-static void copy_to_stdout(stream *in, size_t bufsize)
+static void copy_stream_to_file(stream *in, FILE *out, size_t bufsize)
 {
-	FILE *out;
 	char *buffer;
 	ssize_t nread;
 	size_t nwritten;
 	unsigned long total = 0;
 
 	buffer = malloc(bufsize);
-
-	// Try to get binary stdout on Windows
-	fflush(stdout);
-	out = fdopen(fileno(stdout), "wb");
 
 	while (1) {
 		nread = mnstr_read(in, buffer, 1, bufsize);
@@ -250,19 +304,14 @@ static void copy_to_stdout(stream *in, size_t bufsize)
 }
 
 
-static void copy_from_stdin(stream *out, size_t bufsize)
+static void copy_file_to_stream(FILE *in, stream *out, size_t bufsize)
 {
-	FILE *in;
 	char *buffer;
 	size_t nread;
 	ssize_t nwritten;
 	unsigned long total = 0;
 
 	buffer = malloc(bufsize);
-
-	// We can't flush stdin but it hasn't been used yet so with any
-	// luck, no input is buffered yet
-	in = fdopen(fileno(stdin), "rb");
 
 	while (1) {
 		errno = 0;
@@ -281,7 +330,8 @@ static void copy_from_stdin(stream *out, size_t bufsize)
 
 	free(buffer);
 
-	// DO NOT fclose(in)!  It's an alias for stdin.
+	// DO NOT fclose(in)!  It's often an alias for stdin.
+	// And if it isn't, who cares, we're about to shutdown anyway
 }
 
 
