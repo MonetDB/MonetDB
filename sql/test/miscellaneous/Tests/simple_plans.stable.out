@@ -11,31 +11,31 @@ stdout of test 'simple_plans` in directory 'sql/test/miscellaneous` itself:
 % .plan # table_name
 % rel # name
 % clob # type
-% 138 # length
+% 154 # length
 project (
 | select (
 | | table(sys.myx) [ "myx"."x", "myx"."y" ] COUNT 
-| ) [ ("myx"."x" = uuid[char(32) "1aea00e5db6e0810b554fde31d961965"]) or ("myx"."y" = uuid[char(32) "1aea00e5db6e0810b554fde31d961965"]) ]
+| ) [ ("myx"."x" in (uuid[char(32) "1aea00e5db6e0810b554fde31d961965"] as "%2"."%2")) or ("myx"."y" = uuid[char(32) "1aea00e5db6e0810b554fde31d961965"]) ]
 ) [ "myx"."x", "myx"."y" ]
 #plan select * from myx where x in ('1aea00e5db6e0810b554fde31d961965') or y is null;
 % .plan # table_name
 % rel # name
 % clob # type
-% 102 # length
+% 118 # length
 project (
 | select (
 | | table(sys.myx) [ "myx"."x", "myx"."y" ] COUNT 
-| ) [ ("myx"."x" = uuid[char(32) "1aea00e5db6e0810b554fde31d961965"]) or ("myx"."y" * = uuid "NULL") ]
+| ) [ ("myx"."x" in (uuid[char(32) "1aea00e5db6e0810b554fde31d961965"] as "%2"."%2")) or ("myx"."y" * = uuid "NULL") ]
 ) [ "myx"."x", "myx"."y" ]
 #plan select * from myx where x in ('1aea00e5db6e0810b554fde31d961965', '1aea00e5db6e0810b554fde31d961966') or y = '1aea00e5db6e0810b554fde31d961967';
 % .plan # table_name
 % rel # name
 % clob # type
-% 207 # length
+% 218 # length
 project (
 | select (
 | | table(sys.myx) [ "myx"."x", "myx"."y" ] COUNT 
-| ) [ (("myx"."x" = uuid[char(32) "1aea00e5db6e0810b554fde31d961965"]) or ("myx"."x" = uuid[char(32) "1aea00e5db6e0810b554fde31d961966"])) or ("myx"."y" = uuid[char(32) "1aea00e5db6e0810b554fde31d961967"]) ]
+| ) [ ("myx"."x" in (uuid[char(32) "1aea00e5db6e0810b554fde31d961965"] as "%2"."%2", uuid[char(32) "1aea00e5db6e0810b554fde31d961966"] as "%3"."%3")) or ("myx"."y" = uuid[char(32) "1aea00e5db6e0810b554fde31d961967"]) ]
 ) [ "myx"."x", "myx"."y" ]
 #insert into myx values ('1aea00e5db6e0810b554fde31d961965', '1aea00e5db6e0810b554fde31d961967');
 [ 1	]

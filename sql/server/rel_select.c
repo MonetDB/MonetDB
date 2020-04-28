@@ -1714,7 +1714,8 @@ rel_compare_exp_(sql_query *query, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_e
 				return NULL;
 			e = exp_compare_func(sql, ls, rs, rs2, compare_func((comp_type)type, quantifier?0:anti), quantifier);
 			if (anti && quantifier)
-				e = rel_unop_(sql, NULL, e, NULL, "not", card_value);
+				if (!(e = rel_unop_(sql, NULL, e, NULL, "not", card_value)))
+					return NULL;
 		}
 		return rel_select(sql->sa, rel, e);
 	} else if (!rs2) {
@@ -1758,7 +1759,7 @@ rel_compare_exp_(sql_query *query, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_e
 		else
 			return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column in query results without an aggregate function");
 	}
-	if (rs->card <= CARD_ATOM && (exp_is_atom(rs) || exp_has_freevar(sql, rs)) &&
+	if (rs->card <= CARD_ATOM && (exp_is_atom(rs) || exp_has_freevar(sql, rs) || exp_has_freevar(sql, ls)) &&
 	   (!rs2 || (rs2->card <= CARD_ATOM && (exp_is_atom(rs2) || exp_has_freevar(sql, rs2))))) {
 		if ((ls->card == rs->card && !rs2) || rel->processed)  /* bin compare op */
 			return rel_select(sql->sa, rel, e);
@@ -1885,7 +1886,7 @@ rel_compare(sql_query *query, sql_rel *rel, symbol *sc, symbol *lo, symbol *ro, 
 	ls = rel_value_exp(query, &rel, lo, f, ek);
 	if (!ls)
 		return NULL;
-	if (ls && rel && exp_has_freevar(sql, ls) && (is_sql_sel(f) || is_sql_having(f)))
+	if (ls && rel && exp_has_freevar(sql, ls) && is_sql_sel(f))
 		ls = rel_project_add_exp(sql, rel, ls);
 	if (quantifier)
 		ek.card = card_set;
@@ -2002,6 +2003,7 @@ exp_exist(sql_query *query, sql_rel *rel, sql_exp *le, int exists)
 	mvc *sql = query->sql;
 	sql_subfunc *exists_func = NULL;
 	sql_subtype *t;
+	sql_exp *res;
 
 	if (!exp_name(le))
 		exp_label(sql->sa, le, ++sql->label);
@@ -2016,7 +2018,9 @@ exp_exist(sql_query *query, sql_rel *rel, sql_exp *le, int exists)
 
 	if (!exists_func) 
 		return sql_error(sql, 02, SQLSTATE(42000) "exist operator on type %s missing", t->type->sqlname);
-	return exp_unop(sql->sa, le, exists_func);
+	res = exp_unop(sql->sa, le, exists_func);
+	set_has_no_nil(res);
+	return res;
 }
 
 static sql_exp *
@@ -2178,11 +2182,11 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 	{
 		symbol *lo = sc->data.lval->h->data.sym;
 		symbol *ro = sc->data.lval->h->next->data.sym;
+		sql_exp *ls, *rs;
 
-		sql_exp *ls = rel_logical_value_exp(query, rel, lo, f, ek);
-		sql_exp *rs = rel_logical_value_exp(query, rel, ro, f, ek);
-
-		if (!ls || !rs)
+		if (!(ls = rel_logical_value_exp(query, rel, lo, f, ek)))
+			return NULL;
+		if (!(rs = rel_logical_value_exp(query, rel, ro, f, ek)))
 			return NULL;
 		if (sc->token == SQL_OR)
 			return rel_binop_(sql, rel ? *rel : NULL, ls, rs, NULL, "or", card_value);
@@ -2303,8 +2307,7 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 		int insensitive = sc->data.lval->h->next->next->data.i_val;
 		int anti = (sc->token == SQL_NOT_LIKE) != (sc->data.lval->h->next->next->next->data.i_val != 0);
 		sql_subtype *st = sql_bind_localtype("str");
-		sql_exp *le = rel_value_exp(query, rel, lo, f, ek);
-		sql_exp *re, *ee = NULL;
+		sql_exp *le = rel_value_exp(query, rel, lo, f, ek), *re, *ee = NULL;
 		char *like = insensitive ? (anti ? "not_ilike" : "ilike") : (anti ? "not_like" : "like");
 		sql_schema *sys = mvc_bind_schema(sql, "sys");
 
@@ -2339,14 +2342,15 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 		int symmetric = sc->data.lval->h->next->data.i_val;
 		symbol *ro1 = sc->data.lval->h->next->next->data.sym;
 		symbol *ro2 = sc->data.lval->h->next->next->next->data.sym;
-		sql_exp *le = rel_value_exp(query, rel, lo, f, ek);
-		sql_exp *re1 = rel_value_exp(query, rel, ro1, f, ek);
-		sql_exp *re2 = rel_value_exp(query, rel, ro2, f, ek);
 		sql_subtype *t1, *t2, *t3;
-		sql_exp *e1 = NULL, *e2 = NULL;
-
+		sql_exp *le, *re1, *re2, *e1 = NULL, *e2 = NULL;
 		assert(sc->data.lval->h->next->type == type_int);
-		if (!le || !re1 || !re2) 
+
+		if (!(le = rel_value_exp(query, rel, lo, f, ek)))
+			return NULL;
+		if (!(re1 = rel_value_exp(query, rel, ro1, f, ek)))
+			return NULL;
+		if (!(re2 = rel_value_exp(query, rel, ro2, f, ek)))
 			return NULL;
 
 		t1 = exp_subtype(le);
@@ -2380,14 +2384,17 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 		}
 
 		if (sc->token == SQL_NOT_BETWEEN) {
-			e1 = rel_binop_(sql, rel ? *rel : NULL, le, re1, NULL, "<", card_value);
-			e2 = rel_binop_(sql, rel ? *rel : NULL, le, re2, NULL, ">", card_value);
+			if (!(e1 = rel_binop_(sql, rel ? *rel : NULL, le, re1, NULL, "<", card_value)))
+				return NULL;
+			if (!(e2 = rel_binop_(sql, rel ? *rel : NULL, le, re2, NULL, ">", card_value)))
+				return NULL;
 		} else {
-			e1 = rel_binop_(sql, rel ? *rel : NULL, le, re1, NULL, ">=", card_value);
-			e2 = rel_binop_(sql, rel ? *rel : NULL, le, re2, NULL, "<=", card_value);
+			if (!(e1 = rel_binop_(sql, rel ? *rel : NULL, le, re1, NULL, ">=", card_value)))
+				return NULL;
+			if (!(e2 = rel_binop_(sql, rel ? *rel : NULL, le, re2, NULL, "<=", card_value)))
+				return NULL;
 		}
-		if (!e1 || !e2)
-			return NULL;
+		assert(e1 && e2);
 		if (sc->token == SQL_NOT_BETWEEN) {
 			return rel_binop_(sql, rel ? *rel : NULL, e1, e2, NULL, "or", card_value);
 		} else {
@@ -2403,9 +2410,13 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 		if (!le)
 			return NULL;
 		le = rel_unop_(sql, rel ? *rel : NULL, le, NULL, "isnull", card_value);
+		if (!le)
+			return NULL;
 		set_has_no_nil(le);
 		if (sc->token != SQL_IS_NULL)
 			le = rel_unop_(sql, rel ? *rel : NULL, le, NULL, "not", card_value);
+		if (!le)
+			return NULL;
 		set_has_no_nil(le);
 		return le;
 	}
@@ -2413,7 +2424,7 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 		sql_exp *le = rel_logical_value_exp(query, rel, sc->data.sym, f, ek);
 
 		if (!le)
-			return le;
+			return NULL;
 		return rel_unop_(sql, rel ? *rel : NULL, le, NULL, "not", card_value);
 	}
 	case SQL_ATOM: {
@@ -2440,7 +2451,7 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 			return NULL;
 		if (ek.card <= card_set && is_project(sq->op) && list_length(sq->exps) > 1)
 			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: subquery must return only one column");
-		if (ek.card < card_set && sq->card >= CARD_MULTI && (is_sql_sel(f) | is_sql_where(f)) && rel && (!*rel || is_basetable((*rel)->op) || is_simple_project((*rel)->op)))
+		if (ek.card < card_set && sq->card >= CARD_MULTI && (is_sql_sel(f) | is_sql_having(f) | ( is_sql_where(f) && rel && (!*rel || is_basetable((*rel)->op) || is_simple_project((*rel)->op)))))
 			sq = rel_zero_or_one(sql, sq, ek);
 		return exp_rel(sql, sq);
 	}
@@ -2589,8 +2600,7 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 		int insensitive = sc->data.lval->h->next->next->data.i_val;
 		int anti = (sc->token == SQL_NOT_LIKE) != (sc->data.lval->h->next->next->next->data.i_val != 0);
 		sql_subtype *st = sql_bind_localtype("str");
-		sql_exp *le = rel_value_exp(query, &rel, lo, f, ek);
-		sql_exp *re, *ee = NULL;
+		sql_exp *le = rel_value_exp(query, &rel, lo, f, ek), *re, *ee = NULL;
 
 		if (!le)
 			return NULL;
@@ -2623,14 +2633,17 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 		int symmetric = sc->data.lval->h->next->data.i_val;
 		symbol *ro1 = sc->data.lval->h->next->next->data.sym;
 		symbol *ro2 = sc->data.lval->h->next->next->next->data.sym;
-		sql_exp *le = rel_value_exp(query, &rel, lo, f, ek);
-		sql_exp *re1 = rel_value_exp(query, &rel, ro1, f, ek);
-		sql_exp *re2 = rel_value_exp(query, &rel, ro2, f, ek);
+		sql_exp *le, *re1, *re2;
 		sql_subtype *t1, *t2, *t3;
 		int flag = 0;
 
 		assert(sc->data.lval->h->next->type == type_int);
-		if (!le || !re1 || !re2) 
+
+		if (!(le = rel_value_exp(query, &rel, lo, f, ek)))
+			return NULL;
+		if (!(re1 = rel_value_exp(query, &rel, ro1, f, ek)))
+			return NULL;
+		if (!(re2 = rel_value_exp(query, &rel, ro2, f, ek)))
 			return NULL;
 
 		t1 = exp_subtype(le);
@@ -2672,19 +2685,24 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 		if (le->card == CARD_ATOM) {
 			sql_exp *e1, *e2;
 			if (sc->token == SQL_NOT_BETWEEN) {
-				e1 = rel_binop_(sql, rel, le, re1, NULL, "<", card_value);
-				e2 = rel_binop_(sql, rel, le, re2, NULL, ">", card_value);
+				if (!(e1 = rel_binop_(sql, rel, le, re1, NULL, "<", card_value)))
+					return NULL;
+				if (!(e2 = rel_binop_(sql, rel, le, re2, NULL, ">", card_value)))
+					return NULL;
 			} else {
-				e1 = rel_binop_(sql, rel, le, re1, NULL, ">=", card_value);
-				e2 = rel_binop_(sql, rel, le, re2, NULL, "<=", card_value);
+				if (!(e1 = rel_binop_(sql, rel, le, re1, NULL, ">=", card_value)))
+					return NULL;
+				if (!(e2 = rel_binop_(sql, rel, le, re2, NULL, "<=", card_value)))
+					return NULL;
 			}
-			if (!e1 || !e2)
-				return NULL;
+			assert(e1 && e2);
 			if (sc->token == SQL_NOT_BETWEEN) {
 				e1 = rel_binop_(sql, rel, e1, e2, NULL, "or", card_value);
 			} else {
 				e1 = rel_binop_(sql, rel, e1, e2, NULL, "and", card_value);
 			}
+			if (!e1)
+				return NULL;
 			e2 = exp_atom_bool(sql->sa, 1);
 			rel = rel_select(sql->sa, rel, exp_compare(sql->sa,  e1, e2, cmp_equal));
 		} else if (sc->token == SQL_NOT_BETWEEN) {
@@ -2702,7 +2720,8 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 
 		if (!le)
 			return NULL;
-		le = rel_unop_(sql, rel, le, NULL, "isnull", card_value);
+		if (!(le = rel_unop_(sql, rel, le, NULL, "isnull", card_value)))
+			return NULL;
 		set_has_no_nil(le);
 		if (sc->token == SQL_IS_NULL)
 			re = exp_atom_bool(sql->sa, 1);
@@ -2727,8 +2746,7 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 
 		if (!le)
 			return NULL;
-		le = rel_unop_(sql, rel, le, NULL, "not", card_value);
-		if (le == NULL)
+		if (!(le = rel_unop_(sql, rel, le, NULL, "not", card_value)))
 			return NULL;
 		le = exp_compare(sql->sa, le, exp_atom_bool(sql->sa, 1), cmp_equal);
 		return rel_select(sql->sa, rel, le);
@@ -3195,9 +3213,9 @@ rel_binop(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 	if (sf)
 		return rel_aggr(query, rel, se, f);
 
-	l = rel_value_exp(query, rel, dl->next->next->data.sym, f|sql_farg, iek);
-	r = rel_value_exp(query, rel, dl->next->next->next->data.sym, f|sql_farg, iek);
-	if (!l || !r)
+	if (!(l = rel_value_exp(query, rel, dl->next->next->data.sym, f|sql_farg, iek)))
+		return NULL;
+	if (!(r = rel_value_exp(query, rel, dl->next->next->next->data.sym, f|sql_farg, iek)))
 		return NULL;
 	return rel_binop_(sql, rel ? *rel : NULL, l, r, s, fname, ek.card);
 }
@@ -3242,7 +3260,6 @@ rel_nop(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 	char *sname = qname_schema(l->data.lval);
 	sql_schema *s = cur_schema(sql);
 	exp_kind iek = {type_value, card_column, FALSE};
-	int err = 0;
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_error(sql, 02, SQLSTATE(3F000) "SELECT: no such schema '%s'", sname);
@@ -3256,7 +3273,7 @@ rel_nop(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 		sql_subtype *tpe;
 
 		if (!e) 
-			err = 1;
+			return NULL;
 		append(exps, e);
 		if (e) {
 			tpe = exp_subtype(e);
@@ -3265,8 +3282,6 @@ rel_nop(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 			append(tl, tpe);
 		}
 	}
-	if (err)
-		return NULL;
 	return _rel_nop(sql, s, fname, tl, rel ? *rel : NULL, exps, obj_type, nr_args, ek);
 }
 
@@ -3363,6 +3378,8 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 			sql_exp *e = rel_value_exp(query, &gl, args->data.sym, (f | sql_aggr)& ~sql_farg, ek);
 			bool found_one_freevar = false;
 
+			if (!e)
+				return NULL;
 			has_args = true;
 			if (gl && gl != ogl) {
 				if (gl->grouped) {
@@ -3378,8 +3395,6 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 				else
 					groupby = subquery = gl;
 			}
-			if (!e)
-				return NULL;
 			if (!exp_subtype(e)) { /* we also do not expect parameters here */
 				char *uaname = GDKmalloc(strlen(aname) + 1);
 				sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: parameters not allowed as arguments to aggregate functions",
@@ -3497,7 +3512,10 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 				return sql_error(sql, 05, SQLSTATE(42000) "SELECT: aggregate functions not allowed in functions in FROM");
 			if (card > CARD_AGGR) { /* used an expression before on the non grouped relation */
 				sql_exp *lu = query_outer_last_used(query, all_freevar-1);
-				return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: subquery uses ungrouped column \"%s.%s\" from outer query", exp_relname(lu), exp_name(lu));
+				if (lu->type == e_column)
+					return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: subquery uses ungrouped column \"%s.%s\" from outer query", (char*)lu->l, (char*)lu->r);
+				else
+					return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: subquery uses ungrouped column \"%s.%s\" from outer query", exp_relname(lu), exp_name(lu));
 			}
 			if (is_outer(groupby))
 				return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: subquery uses ungrouped column from outer query");
@@ -3805,13 +3823,14 @@ rel_case(sql_query *query, sql_rel **rel, tokens token, symbol *opt_cond, dlist 
 		if (token == SQL_NULLIF) {
 			sql_exp *e1, *e2;
 
-			e1 = rel_value_exp(query, rel, dn->data.sym, f, ek);
-			e2 = rel_value_exp(query, rel, dn->next->data.sym, f, ek);
-			if (e1 && e2) {
-				cond = rel_binop_(sql, rel ? *rel : NULL, e1, e2, NULL, "=", card_value);
-				result = exp_null(sql->sa, exp_subtype(e1));
-				else_exp = exp_ref_save(sql, e1);	/* ELSE case */
-			}
+			if (!(e1 = rel_value_exp(query, rel, dn->data.sym, f, ek)))
+				return NULL;
+			if (!(e2 = rel_value_exp(query, rel, dn->next->data.sym, f, ek)))
+				return NULL;
+
+			cond = rel_binop_(sql, rel ? *rel : NULL, e1, e2, NULL, "=", card_value);
+			result = exp_null(sql->sa, exp_subtype(e1));
+			else_exp = exp_ref_save(sql, e1);	/* ELSE case */
 			/* COALESCE(e1,e2) == CASE WHEN e1
 			   IS NOT NULL THEN e1 ELSE e2 END */
 		} else if (token == SQL_COALESCE) {
@@ -3821,23 +3840,31 @@ rel_case(sql_query *query, sql_rel **rel, tokens token, symbol *opt_cond, dlist 
 				sql_exp *le;
 
 				result = exp_ref_save(sql, cond);
-				le = rel_unop_(sql, rel ? *rel : NULL, cond, NULL, "isnull", card_value);
+				if (!(le = rel_unop_(sql, rel ? *rel : NULL, cond, NULL, "isnull", card_value)))
+					return NULL;
 				set_has_no_nil(le);
-				cond = rel_unop_(sql, rel ? *rel : NULL, le, NULL, "not", card_value);
+				if (!(cond = rel_unop_(sql, rel ? *rel : NULL, le, NULL, "not", card_value)))
+					return NULL;
 				set_has_no_nil(cond);
 			}
 		} else {
 			dlist *when = dn->data.sym->data.lval;
 
 			if (opt_cond) {
-				sql_exp *l = rel_value_exp(query, rel, opt_cond, f, ek);
-				sql_exp *r = rel_value_exp(query, rel, when->h->data.sym, f, ek);
-				if (!l || !r || rel_convert_types(sql, rel ? *rel : NULL, rel ? *rel : NULL, &l, &r, 1, type_equal) < 0)
+				sql_exp *l, *r;
+
+				if (!(l = rel_value_exp(query, rel, opt_cond, f, ek)))
+					return NULL;
+				if (!(r = rel_value_exp(query, rel, when->h->data.sym, f, ek)))
+					return NULL;
+				if (rel_convert_types(sql, rel ? *rel : NULL, rel ? *rel : NULL, &l, &r, 1, type_equal) < 0)
 					return NULL;
 				cond = rel_binop_(sql, rel ? *rel : NULL, l, r, NULL, "=", card_value);
 			} else {
 				cond = rel_logical_value_exp(query, rel, when->h->data.sym, f, ek);
 			}
+			if (!cond)
+				return NULL;
 			result = rel_value_exp(query, rel, when->h->next->data.sym, f, ek);
 		}
 		if (!cond || !result) 
@@ -3863,23 +3890,31 @@ rel_case(sql_query *query, sql_rel **rel, tokens token, symbol *opt_cond, dlist 
 				sql_exp *le;
 
 				result = exp_ref_save(sql, cond);
-				le = rel_unop_(sql, rel ? *rel : NULL, cond, NULL, "isnull", card_value);
+				if (!(le = rel_unop_(sql, rel ? *rel : NULL, cond, NULL, "isnull", card_value)))
+					return NULL;
 				set_has_no_nil(le);
-				cond = rel_unop_(sql, rel ? *rel : NULL, le, NULL, "not", card_value);
+				if (!(cond = rel_unop_(sql, rel ? *rel : NULL, le, NULL, "not", card_value)))
+					return NULL;
 				set_has_no_nil(cond);
 			}
 		} else {
 			dlist *when = dn->data.sym->data.lval;
 
 			if (opt_cond) {
-				sql_exp *l = rel_value_exp(query, rel, opt_cond, f, ek);
-				sql_exp *r = rel_value_exp(query, rel, when->h->data.sym, f, ek);
-				if (!l || !r || rel_convert_types(sql, rel ? *rel : NULL, rel ? *rel : NULL, &l, &r, 1, type_equal) < 0)
+				sql_exp *l, *r;
+
+				if (!(l = rel_value_exp(query, rel, opt_cond, f, ek)))
+					return NULL;
+				if (!(r = rel_value_exp(query, rel, when->h->data.sym, f, ek)))
+					return NULL;
+				if (rel_convert_types(sql, rel ? *rel : NULL, rel ? *rel : NULL, &l, &r, 1, type_equal) < 0)
 					return NULL;
 				cond = rel_binop_(sql, rel ? *rel : NULL, l, r, NULL, "=", card_value);
 			} else {
 				cond = rel_logical_value_exp(query, rel, when->h->data.sym, f, ek);
 			}
+			if (!cond)
+				return NULL;
 			result = rel_value_exp(query, rel, when->h->next->data.sym, f, ek);
 		}
 		if (!cond || !result) 
@@ -5467,8 +5502,11 @@ join_on_column_name(sql_query *query, sql_rel *rel, sql_rel *t1, sql_rel *t2, in
 				return NULL;
 			if (full) {
 				sql_exp *cond = rel_unop_(sql, rel, le, NULL, "isnull", card_value);
+				if (!cond)
+					return NULL;
 				set_has_no_nil(cond);
-				le = rel_nop_(sql, rel, cond, re, le, NULL, NULL, "ifthenelse", card_value);
+				if (!(le = rel_nop_(sql, rel, cond, re, le, NULL, NULL, "ifthenelse", card_value)))
+					return NULL;
 			}
 			exp_setname(sql->sa, le, nme, sa_strdup(sql->sa, nm));
 			append(outexps, le);
@@ -5841,11 +5879,13 @@ rel_joinquery_(sql_query *query, sql_rel *rel, symbol *tab1, int natural, jt joi
 			if (!(rel = rel_compare_exp(query, rel, ls, rs, "=", NULL, TRUE, 0, 0)))
 				return NULL;
 			if (op != op_join) {
-				cond = rel_unop_(sql, rel, ls, NULL, "isnull", card_value);
+				if (!(cond = rel_unop_(sql, rel, ls, NULL, "isnull", card_value)))
+					return NULL;
 				set_has_no_nil(cond);
 				if (rel_convert_types(sql, t1, t2, &ls, &rs, 1, type_equal) < 0)
 					return NULL;
-				ls = rel_nop_(sql, rel, cond, rs, ls, NULL, NULL, "ifthenelse", card_value);
+				if (!(ls = rel_nop_(sql, rel, cond, rs, ls, NULL, NULL, "ifthenelse", card_value)))
+					return NULL;
 			}
 			exp_setname(sql->sa, ls, rnme, nm);
 			append(outexps, ls);

@@ -503,14 +503,8 @@ insert_generate_inserts(sql_query *query, sql_table *t, dlist *columns, symbol *
 						sql_exp *ins = insert_value(query, c, &r, n->data.sym, action);
 						if (!ins)
 							return NULL;
-						if (r && inner)
-							inner = rel_crossproduct(sql->sa, inner, r, op_join);
-						else if (r)
-							inner = r;
-						if (inner && !exp_name(ins) && !exp_is_atom(ins)) {
+						if (!exp_name(ins))
 							exp_label(sql->sa, ins, ++sql->label);
-							ins = exp_ref(sql, ins);
-						}
 						list_append(vals_list, ins);
 					}
 				} else {
@@ -1349,6 +1343,7 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 		symbol *sym = m->data.sym, *opt_search, *action;
 		tokens token = sym->token;
 		dlist* dl = sym->data.lval, *sts;
+		list *nexps;
 		opt_search = dl->h->data.sym;
 		action = dl->h->next->data.sym;
 		sts = action->data.lval;
@@ -1376,19 +1371,26 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 				}
 
 				//project columns of both bt and joined + oid
-				extra_project = rel_project(sql->sa, join_rel, rel_projections(sql, bt, NULL, 1, 0));
+				nexps = rel_projections(sql, bt, NULL, 1, 0);
+				for (node *n = nexps->h ; n ; n = n->next) /* after going through the left outer join, a NOT NULL column may have NULL values */
+					set_has_nil((sql_exp*)n->data);
+				extra_project = rel_project(sql->sa, join_rel, nexps);
 				extra_project->exps = list_merge(extra_project->exps, rel_projections(sql, joined, NULL, 1, 0), (fdup)NULL);
 				list_append(extra_project->exps, exp_column(sql->sa, bt_name, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1));
 
 				//select bt values which are not null (they had a match in the join)
 				project_first = extra_project->exps->h->next->data; // this expression must come from bt!!
 				project_first = exp_ref(sql, project_first);
-				nils = rel_unop_(sql, extra_project, project_first, NULL, "isnull", card_value);
+				if (!(nils = rel_unop_(sql, extra_project, project_first, NULL, "isnull", card_value)))
+					return NULL;
 				set_has_no_nil(nils);
 				extra_select = rel_select(sql->sa, extra_project, exp_compare(sql->sa, nils, exp_atom_bool(sql->sa, 0), cmp_equal));
 
 				//the update statement requires a projection on the right side
-				extra_project = rel_project(sql->sa, extra_select, rel_projections(sql, bt, NULL, 1, 0));
+				nexps = rel_projections(sql, bt, NULL, 1, 0);
+				for (node *n = nexps->h ; n ; n = n->next) /* after going through the left outer join, a NOT NULL column may have NULL values */
+					set_has_nil((sql_exp*)n->data);
+				extra_project = rel_project(sql->sa, extra_select, nexps);
 				extra_project->exps = list_merge(extra_project->exps, rel_projections(sql, joined, NULL, 1, 0), (fdup)NULL);
 				list_append(extra_project->exps,
 					exp_column(sql->sa, bt_name, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1));
@@ -1406,13 +1408,17 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 				}
 
 				//project columns of bt + oid
-				extra_project = rel_project(sql->sa, join_rel, rel_projections(sql, bt, NULL, 1, 0));
+				nexps = rel_projections(sql, bt, NULL, 1, 0);
+				for (node *n = nexps->h ; n ; n = n->next) /* after going through the left outer join, a NOT NULL column may have NULL values */
+					set_has_nil((sql_exp*)n->data);
+				extra_project = rel_project(sql->sa, join_rel, nexps);
 				list_append(extra_project->exps, exp_column(sql->sa, bt_name, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1));
 
 				//select bt values which are not null (they had a match in the join)
 				project_first = extra_project->exps->h->next->data; // this expression must come from bt!!
 				project_first = exp_ref(sql, project_first);
-				nils = rel_unop_(sql, extra_project, project_first, NULL, "isnull", card_value);
+				if (!(nils = rel_unop_(sql, extra_project, project_first, NULL, "isnull", card_value)))
+					return NULL;
 				set_has_no_nil(nils);
 				extra_select = rel_select(sql->sa, extra_project, exp_compare(sql->sa, nils, exp_atom_bool(sql->sa, 0), cmp_equal));
 
@@ -1443,13 +1449,17 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 			}
 
 			//project columns of both
-			extra_project = rel_project(sql->sa, join_rel, rel_projections(sql, bt, NULL, 1, 0));
+			nexps = rel_projections(sql, bt, NULL, 1, 0);
+			for (node *n = nexps->h ; n ; n = n->next) /* after going through the left outer join, a NOT NULL column may have NULL values */
+				set_has_nil((sql_exp*)n->data);
+			extra_project = rel_project(sql->sa, join_rel, nexps);
 			extra_project->exps = list_merge(extra_project->exps, rel_projections(sql, joined, NULL, 1, 0), (fdup)NULL);
 
 			//select bt values which are null (they didn't have match in the join)
 			project_first = extra_project->exps->h->next->data; // this expression must come from bt!!
 			project_first = exp_ref(sql, project_first);
-			nils = rel_unop_(sql, extra_project, project_first, NULL, "isnull", card_value);
+			if (!(nils = rel_unop_(sql, extra_project, project_first, NULL, "isnull", card_value)))
+				return NULL;
 			set_has_no_nil(nils);
 			extra_select = rel_select(sql->sa, extra_project, exp_compare(sql->sa, nils, exp_atom_bool(sql->sa, 1), cmp_equal));
 

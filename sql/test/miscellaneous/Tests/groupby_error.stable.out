@@ -92,6 +92,12 @@ stdout of test 'groupby_error` in directory 'sql/test/miscellaneous` itself:
 % col0,	col1,	col2 # name
 % int,	int,	int # type
 % 1,	1,	1 # length
+#SELECT CAST(58 + + 78 + - COALESCE ( ( + CASE 68 WHEN - 77 - - 38 THEN NULL ELSE COUNT ( * ) END ), + 81 + - COUNT ( * ) + + CAST ( NULL AS INTEGER ), + + 34 * - 30 * + COUNT ( * ) ) * 15 * 38 AS BIGINT) AS col1;
+% . # table_name
+% col1 # name
+% bigint # type
+% 4 # length
+[ -434	]
 #SELECT * FROM tab0 AS cor0 WHERE NOT - 39 <> 11; --empty
 % sys.cor0,	sys.cor0,	sys.cor0 # table_name
 % col0,	col1,	col2 # name

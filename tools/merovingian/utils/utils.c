@@ -267,6 +267,16 @@ setConfVal(confkeyval *ckv, const char *val) {
 			}
 			/* TODO: check full URL? */
 		}; break;
+		case LADDR: {
+			if (strncmp(val, "127.0.0.1", strlen("127.0.0.1")) != 0 &&
+				strncmp(val, "0.0.0.0", strlen("0.0.0.0")) != 0) {
+				char buf[256];
+				snprintf(buf, sizeof(buf),
+						 "only valid values for %s are \"127.0.0.1\" or \"0.0.0.0\"\n",
+						 ckv->key);
+				return(strdup(buf));
+			}
+		}; break;
 		case STR:
 		case OTHER:
 			/* leave as is, not much to check */

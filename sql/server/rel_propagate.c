@@ -81,7 +81,7 @@ rel_generate_anti_insert_expression(mvc *sql, sql_rel **anti_rel, sql_table *t)
 		*anti_rel = rel_project(sql->sa, *anti_rel, l);
 
 		inserts = (*anti_rel)->l;
-		if (inserts->op != op_project && inserts->op != op_basetable && inserts->op != op_table)
+		if (inserts->op != op_project && inserts->op != op_union && inserts->op != op_basetable && inserts->op != op_table)
 			inserts = inserts->l;
 		for (node *n = t->columns.set->h, *m = inserts->exps->h; n && m; n = n->next, m = m->next) {
 			sql_column *col = n->data;

@@ -1268,7 +1268,10 @@ exp_rename(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 		sql->errstr[0] = 0;
 		if (!e && exp_is_atom(ne))
 			return ne;
-		return exp_ref(sql ,e);
+		ne = exp_ref(sql, e);
+		if (is_outerjoin(t->op))  /* TODO if e is found on the left side of the left join or the right of the right join the has_no_nil flag can be kept */
+			set_has_nil(ne);
+		return ne;
 	case e_cmp: 
 		if (e->flag == cmp_or || e->flag == cmp_filter) {
 			list *l = exps_rename(sql, e->l, f, t);
@@ -7460,30 +7463,42 @@ rel_simplify_predicates(mvc *sql, sql_rel *rel, sql_exp *e, int depth, int *chan
 				return e;
 			}
 		}
-		if (e->type == e_cmp && (e->flag == cmp_equal || e->flag == cmp_notequal)) {
+		if (is_compare(e->type) && is_theta_exp(e->flag)) {
 			sql_exp *l = e->l;
 			sql_exp *r = e->r;
 
-			if (l->type == e_func) {
+			if (is_func(l->type) && (e->flag == cmp_equal || e->flag == cmp_notequal)) {
 				sql_subfunc *f = l->f;
 
 				/* rewrite isnull(x) = TRUE/FALSE => x =/<> NULL */
-				if (is_select(rel->op) && !f->func->s && !strcmp(f->func->base.name, "isnull") && 
-						is_atom(r->type) && r->l) { /* direct literal */
-					atom *a = r->l;
-					int flag = a->data.val.bval;
+				if (is_select(rel->op) && !f->func->s && !strcmp(f->func->base.name, "isnull")) {
 					list *args = l->l;
+					sql_exp *ie = args->h->data;
 
-					assert(list_length(args) == 1);
-					l = args->h->data;
-					if (exp_subtype(l)) {
-						r = exp_atom(sql->sa, atom_general(sql->sa, exp_subtype(l), NULL));
-						e = exp_compare(sql->sa, l, r, e->flag);
-						if (e && !flag)
-							set_anti(e);
-						if (e)
-							set_semantics(e);
+					if (!has_nil(ie) || exp_is_not_null(sql, ie)) { /* is null on something that is never null, is always false */
+						ie = exp_atom_bool(sql->sa, 0);
 						(*changes)++;
+						e->l = ie;
+					} else if (exp_is_null(sql, ie)) { /* is null on something that is always null, is always true */
+						ie = exp_atom_bool(sql->sa, 1);
+						(*changes)++;
+						e->l = ie;
+					} else if (is_atom(r->type) && r->l) { /* direct literal */
+						atom *a = r->l;
+						int flag = a->data.val.bval;
+						list *args = l->l;
+
+						assert(list_length(args) == 1);
+						l = args->h->data;
+						if (exp_subtype(l)) {
+							r = exp_atom(sql->sa, atom_general(sql->sa, exp_subtype(l), NULL));
+							e = exp_compare(sql->sa, l, r, e->flag);
+							if (e && !flag)
+								set_anti(e);
+							if (e)
+								set_semantics(e);
+							(*changes)++;
+						}
 					}
 				} else if (!f->func->s && !strcmp(f->func->base.name, "not")) {
 					if (is_atom(r->type) && r->l) { /* direct literal */
@@ -7495,7 +7510,7 @@ rel_simplify_predicates(mvc *sql, sql_rel *rel, sql_exp *e, int depth, int *chan
 						assert(list_length(args) == 1);
 
 						/* not(not(x)) = TRUE/FALSE => x = TRUE/FALSE */
-						if (inner->type == e_func && 
+						if (is_func(inner->type) && 
 							!inf->func->s && 
 							!strcmp(inf->func->base.name, "not")) {
 							int anti = is_anti(e);
@@ -7507,7 +7522,7 @@ rel_simplify_predicates(mvc *sql, sql_rel *rel, sql_exp *e, int depth, int *chan
 							if (anti) set_anti(e);
 							(*changes)++;
 						/* rewrite not(=/<>(a,b)) = TRUE/FALSE => a=b of a<>b */
-						} else if (inner->type == e_func && 
+						} else if (is_func(inner->type) && 
 							!inf->func->s && 
 							(!strcmp(inf->func->base.name, "=") ||
 								!strcmp(inf->func->base.name, "<>"))) {
@@ -7532,6 +7547,21 @@ rel_simplify_predicates(mvc *sql, sql_rel *rel, sql_exp *e, int depth, int *chan
 							(*changes)++;
 						}
 					}
+				}
+			} else if (is_atom(l->type) && is_atom(r->type) && !is_semantics(e)) {
+				if (exp_is_null(sql, l) || exp_is_null(sql, r)) {
+					e = exp_null(sql->sa, exp_subtype(l));
+					(*changes)++;
+				} else if (l->l && r->l) {
+					int res = atom_cmp(l->l, r->l);
+
+					if (res == 0)
+						e = exp_atom_bool(sql->sa, (e->flag == cmp_equal || e->flag == cmp_gte || e->flag == cmp_lte) ? 1 : 0);
+					else if (res > 0)
+						e = exp_atom_bool(sql->sa, (e->flag == cmp_gt || e->flag == cmp_gte || e->flag == cmp_notequal) ? 1 : 0);
+					else
+						e = exp_atom_bool(sql->sa, (e->flag == cmp_lt || e->flag == cmp_lte || e->flag == cmp_notequal) ? 1 : 0);
+					(*changes)++;
 				}
 			}
 		}
