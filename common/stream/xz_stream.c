@@ -11,6 +11,7 @@
 #include "monetdb_config.h"
 #include "stream.h"
 #include "stream_internal.h"
+#include "pump.h"
 
 
 #ifdef HAVE_LIBLZMA
@@ -20,6 +21,7 @@ typedef struct xz_state {
 	lzma_stream strm;
 	uint8_t buf[XZBUFSIZ];
 } xz_state;
+
 
 /* Keep calling lzma_code until the whole input buffer has been consumed
  * and all necessary output has been written.
@@ -34,132 +36,95 @@ typedef struct xz_state {
  *
  * Returns > 0 on succes, 0 on error.
  */
-static int
-pump_out(stream *s, lzma_action action)
+static pump_result
+pumper(void *state, pump_action action)
 {
-	xz_state *xz = (xz_state *) s->stream_data.p;
+	stream *s = (stream*) state;
+	xz_state *xz = (xz_state*) s->stream_data.p;
 
-	while (1) {
-		// Make sure there is room in the output buffer
-		if (xz->strm.avail_out == 0) {
-			size_t nwritten = fwrite(xz->buf, 1, XZBUFSIZ, xz->fp);
-			if (nwritten != XZBUFSIZ) {
-				return 0;
-			}
-			xz->strm.next_out = xz->buf;
-			xz->strm.avail_out = XZBUFSIZ;
-		}
+	lzma_action a;
+	switch (action) {
+	case PUMP_WORK:
+		a = LZMA_RUN;
+		break;
+	case PUMP_FLUSH_DATA:
+		a = LZMA_SYNC_FLUSH;
+		break;
+	case PUMP_FLUSH_ALL:
+		a = LZMA_FULL_FLUSH;
+		break;
+	case PUMP_FINISH:
+		a = LZMA_FINISH;
+		break;
+	}
 
-		lzma_ret ret = lzma_code(&xz->strm, action);
-		if (ret != LZMA_OK && ret != LZMA_STREAM_END) {
-			// Some kind of error.
-			return 0;
-		}
+	lzma_ret ret = lzma_code(&xz->strm, a);
 
-		if (xz->strm.avail_in > 0) {
-			// Definitely not done yet. Flush the buffer and encode
-			// some more.
-			continue;
-		}
-
-		// Whether we are already done or not depends on the mode.
-		if (action == LZMA_RUN) {
-			assert(ret == LZMA_OK);
-			// More input will follow so we can leave the output buffer
-			// for later.
-			return 1;
-		}
-
-		// We need to flush all data out of the encoder and out of our
-		// buffer.
-		if (ret == LZMA_OK) {
-			// encoder requests another iteration
-			continue;
-		}
-
-		// That was it.  Flush the remainder of the buffer and exit.
-		size_t amount = xz->strm.next_out - xz->buf;
-		if (amount > 0) {
-			size_t nwritten = fwrite(xz->buf, 1, amount, xz->fp);
-			if (nwritten != amount) {
-				return 0;
-			}
-		}
-		xz->strm.next_out = xz->buf;
-		xz->strm.avail_out = XZBUFSIZ;
-		return 1;
+	switch (ret) {
+		case LZMA_OK:
+			return PUMP_OK;
+		case LZMA_STREAM_END:
+			return PUMP_END;
+		default:
+			return PUMP_ERROR;
 	}
 }
 
 
-/* Keep working lzma_code until the output buffer is full or the input stream
- * is exhausted.
- *
- * We're moving data from the input stream to the input buffer to the
- * lzma internal state to the output buffer. If the input stream is exhausted
- * we still have to flush the input buffer and especially the internal state.
- *
- * The most trickly situation is if the output buffer goes full while this
- * flushing takes place. We have to remember until next time that the internal
- * state is not fully flushed. We do so by setting next_int to NULL after we
- * have received LZMA_STREAM_END to signal we're fully done.
- *
- * Return the number of bytes stored into the output buffer, or -1 on error.
- */
+static ssize_t
+ship_in(void *state, char *start, size_t count)
+{
+	stream *s = (stream*) state;
+	xz_state *xz =  (xz_state*) s->stream_data.p;
+
+	size_t nread = fread(start, 1, count, xz->fp);
+	if (nread == 0 && ferror(xz->fp))
+		return -1;
+	else
+		return (ssize_t)nread;
+}
+
+static ssize_t
+ship_out(void *state, char *start, size_t count)
+{
+	stream *s = (stream*) state;
+	xz_state *xz =  (xz_state*) s->stream_data.p;
+
+	size_t nwritten = fwrite(start, 1, count, xz->fp);
+	if (nwritten == 0 && ferror(xz->fp))
+		return -1;
+	else
+		return (ssize_t)nwritten;
+}
+
+
+static pump_result
+pump_out(stream *s, pump_action action)
+{
+	xz_state *xz = (xz_state *) s->stream_data.p;
+
+	pump_buffer loc_buffer = { .start = (char*)&xz->buf, .count = XZBUFSIZ };
+	pump_buffer_location loc_win_in = { .start = (char**)&xz->strm.next_in, .count = &xz->strm.avail_in };
+	pump_buffer_location loc_win_out = { .start = (char**)&xz->strm.next_out, .count = &xz->strm.avail_out };
+	return generic_pump_out(s, action, loc_buffer, loc_win_in, loc_win_out, pumper, ship_out);
+}
+
 static ssize_t
 pump_in(stream *s)
 {
 	xz_state *xz = (xz_state *) s->stream_data.p;
-	uint8_t *orig_out = xz->strm.next_out;
 
-	if (xz->strm.next_in == NULL) {
-		// Signals we're fully done with no data lingering in the internal
-		// state.
-		assert(xz->fp == NULL);
-		return 0;
-	}
 
-	while (1) {
-		// If the output buffer is full, return immediately.
-		if (xz->strm.avail_out == 0)
-			return xz->strm.next_out - orig_out;
+	pump_buffer loc_buffer = { .start = (char*)&xz->buf, .count = XZBUFSIZ };
+	pump_buffer_location loc_win_in = { .start = (char**)&xz->strm.next_in, .count = &xz->strm.avail_in };
+	pump_buffer_location loc_win_out = { .start = (char**)&xz->strm.next_out, .count = &xz->strm.avail_out };
 
-		// Refill the buffer if necessary and possible.
-		if (xz->strm.avail_in == 0 && xz->fp != NULL) {
-			size_t nread = fread(xz->buf, 1, XZBUFSIZ, xz->fp);
-			if (nread == 0) {
-				if (feof(xz->fp)) {
-					fclose(xz->fp);
-					xz->fp = NULL;
-				} else {
-					s->errnr = MNSTR_READ_ERROR;
-					return -1;
-				}
-			}
-			xz->strm.next_in = xz->buf;
-			xz->strm.avail_in = nread;
-		}
-
-		// If we have no input stream, we're flushing.
-		lzma_action action = xz->fp != NULL ? LZMA_RUN : LZMA_FINISH;
-		lzma_ret ret = lzma_code(&xz->strm, action);
-		switch (ret) {
-			case LZMA_OK:
-				// time for another round of output checking
-				// input filling
-				continue;
-			case LZMA_STREAM_END:
-				// fully done.
-				if (xz->fp != NULL)
-					fclose(xz->fp);
-				assert(xz->strm.avail_in == 0);
-				xz->strm.next_in = NULL; // to indicate we have seen LZMA_STREAM_END
-				return xz->strm.next_out - orig_out;
-			default:
-				s->errnr = MNSTR_READ_ERROR;
-				return -1;
-		}
-	}
+	uint8_t *before = xz->strm.next_out;
+	pump_result ret = generic_pump_in(s, loc_buffer, loc_win_in, loc_win_out, pumper, ship_in);
+	uint8_t *after = xz->strm.next_out;
+	if (ret == PUMP_ERROR)
+		return -1;
+	return after - before;
 }
 
 static ssize_t
@@ -199,7 +164,7 @@ stream_xzwrite(stream *restrict s, const void *restrict buf, size_t elmsize, siz
 	xz->strm.next_in = buf;
 	xz->strm.avail_in = size;
 
-	if (pump_out(s, LZMA_RUN))
+	if (pump_out(s, PUMP_WORK) == PUMP_OK)
 		return (ssize_t) (size / elmsize);
 	else {
 		s->errnr = MNSTR_WRITE_ERROR;
@@ -216,7 +181,7 @@ stream_xzclose(stream *s)
 		if (!s->readonly) {
 			xz->strm.next_in = NULL;
 			xz->strm.avail_in = 0;
-			if (pump_out(s, LZMA_FINISH)) {
+			if (pump_out(s, PUMP_FINISH) == PUMP_END) {
 				fflush(xz->fp);
 			} else {
 				s->errnr = MNSTR_WRITE_ERROR;
@@ -242,7 +207,7 @@ stream_xzflush(stream *s)
 
 	xz->strm.next_in = NULL;
 	xz->strm.avail_in = 0;
-	if (pump_out(s, LZMA_FULL_BARRIER)) {
+	if (pump_out(s, PUMP_FLUSH_ALL) == PUMP_OK) {
 		fflush(xz->fp);
 	} else {
 		s->errnr = MNSTR_WRITE_ERROR;
