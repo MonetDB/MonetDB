@@ -1198,7 +1198,7 @@ create_trigger(sql_query *query, dlist *qname, int time, symbol *trigger_event, 
 	const char *triggername = qname_table(qname);
 	const char *sname = qname_schema(tqname);
 	const char *tname = qname_table(tqname);
-	sql_schema *ss = cur_schema(sql);
+	sql_schema *ss = cur_schema(sql), *old_schema = cur_schema(sql);
 	sql_table *t = NULL;
 	sql_trigger *st = NULL;
 	int instantiate = (sql->emode == m_instantiate);
@@ -1309,7 +1309,10 @@ create_trigger(sql_query *query, dlist *qname, int time, symbol *trigger_event, 
 		if (old_name)
 			stack_update_rel_view(sql, old_name, new_name?rel_dup(rel):rel);
 	}
-	if (!(sq = sequential_block(query, NULL, NULL, stmts, NULL, 1))) {
+	sql->session->schema = ss;
+	sq = sequential_block(query, NULL, NULL, stmts, NULL, 1);
+	sql->session->schema = old_schema;
+	if (!sq) {
 		if (!instantiate)
 			stack_pop_frame(sql);
 		return NULL;
