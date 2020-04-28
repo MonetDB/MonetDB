@@ -3714,6 +3714,9 @@ schema_dup(sql_trans *tr, int flags, sql_schema *os, sql_trans *o)
 		}
 		if (tr->parent == gtrans)
 			os->tables.nelm = NULL;
+
+		// Set the ->p member for each sql_table that is a child of some other merge table.
+		set_members(&s->tables);
 	}
 	if (os->funcs.set) {
 		for (n = os->funcs.set->h; n; n = n->next) {
