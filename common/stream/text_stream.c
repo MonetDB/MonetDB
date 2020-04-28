@@ -95,7 +95,6 @@ skip_bom(stream *s)
 stream *
 create_text_stream(stream *inner)
 {
-	assert(inner->readonly);
 	state *st = malloc(sizeof(state));
 	struct stream *s = create_wrapper_stream(NULL, inner);
 	if (st == NULL)
@@ -109,15 +108,18 @@ create_text_stream(stream *inner)
 	s->binary = false;
 	s->destroy = text_destroy;
 
-	// bool isutf8;		/* known to be UTF-8 due to BOM */
-	// ssize_t (*read)(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt);
-	// ssize_t (*write)(stream *restrict s, const void *restrict buf, size_t elmsize, size_t cnt);
-	// void (*close)(stream *s);
-	// void (*destroy)(stream *s);
-	// int (*flush)(stream *s);
+	// We're still a no-op so we can just fall back to
+	// whatever our inner is doing:
+	//     bool isutf8;    /* known to be UTF-8 due to BOM */
+	//     ssize_t (*read)(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt);
+	//     ssize_t (*write)(stream *restrict s, const void *restrict buf, size_t elmsize, size_t cnt);
+	//     void (*close)(stream *s);
+	//     void (*destroy)(stream *s);
+	//     int (*flush)(stream *s);
 
-	if (skip_bom(s) < 0)
-		goto bail;
+	if (s->readonly)
+		if (skip_bom(s) < 0)
+			goto bail;
 	return s;
 bail:
 	free(st);
