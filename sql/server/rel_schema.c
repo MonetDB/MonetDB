@@ -1381,9 +1381,7 @@ rel_create_schema(sql_query *query, dlist *auth_name, dlist *schema_elements, in
 		sql_schema *os = sql->session->schema;
 		dnode *n;
 		sql_schema *ss = SA_ZNEW(sql->sa, sql_schema);
-		sql_rel *ret;
-
-		ret = rel_create_schema_dll(sql->sa, name, auth, 0);
+		sql_rel *ret = rel_create_schema_dll(sql->sa, name, auth, 0);
 
 		ss->base.name = name;
 		ss->auth_id = auth_id;
