@@ -293,6 +293,10 @@ rel_properties(mvc *sql, global_props *gp, sql_rel *rel)
 	case op_union:
 	case op_inter:
 	case op_except:
+
+	case op_insert:
+	case op_update:
+	case op_delete:
 		if (rel->l)
 			rel_properties(sql, gp, rel->l);
 		if (rel->r)
@@ -303,21 +307,14 @@ rel_properties(mvc *sql, global_props *gp, sql_rel *rel)
 	case op_groupby:
 	case op_topn:
 	case op_sample:
+	case op_truncate:
 		if (rel->l)
 			rel_properties(sql, gp, rel->l);
-		break;
-	case op_insert:
-	case op_update:
-	case op_delete:
-		if (rel->r)
-			rel_properties(sql, gp, rel->r);
-		break;
-	case op_truncate:
 		break;
 	case op_ddl:
 		if (rel->flag == ddl_psm && rel->exps)
 			psm_exps_properties(sql, gp, rel->exps);
-		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq) {
+		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq || rel->flag == ddl_alter_table || rel->flag == ddl_create_table || rel->flag == ddl_create_view) {
 			if (rel->l)
 				rel_properties(sql, gp, rel->l);
 		} else if (rel->flag == ddl_list || rel->flag == ddl_exception) {
@@ -1196,7 +1193,7 @@ rel_join_order(mvc *sql, sql_rel *rel)
 		rel->l = rel_join_order(sql, rel->l);
 		break;
 	case op_ddl: 
-		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq) {
+		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq || rel->flag == ddl_alter_table || rel->flag == ddl_create_table || rel->flag == ddl_create_view) {
 			rel->l = rel_join_order(sql, rel->l);
 		} else if (rel->flag == ddl_list || rel->flag == ddl_exception) {
 			rel->l = rel_join_order(sql, rel->l);
@@ -3102,7 +3099,7 @@ rel_case_fixup(mvc *sql, sql_rel *rel, int top, int *changes)
 		}
 		if (is_ddl(rel->op) && rel->flag == ddl_psm)
 			rel->exps = rewrite_case_exps(sql, rel->exps, changes);
-		if ((!is_ddl(rel->op) || (is_ddl(rel->op) && (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq))) && rel->l)
+		if ((!is_ddl(rel->op) || (is_ddl(rel->op) && (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq || rel->flag == ddl_alter_table || rel->flag == ddl_create_table || rel->flag == ddl_create_view))) && rel->l)
 			rel->l = rel_case_fixup(sql, rel->l, is_topn(rel->op)?top:0, changes);
 		if (is_ddl(rel->op) && (rel->flag == ddl_list || rel->flag == ddl_exception) && rel->r)
 			rel->r = rel_case_fixup(sql, rel->r, is_ddl(rel->op)?top:0, changes);
@@ -6527,7 +6524,7 @@ exp_mark_used(sql_rel *subrel, sql_exp *e, int local_proj)
 			nr += exp_mark_used(subrel, e->l, local_proj);
 			nr += exps_mark_used(subrel, e->r, local_proj);
 			if (e->flag == PSM_IF && e->f)
-				nr += exp_mark_used(subrel, e->l, local_proj);
+				nr += exps_mark_used(subrel, e->f, local_proj);
 		}
 		e->used = 1;
 		break;
@@ -6653,7 +6650,7 @@ rel_used(sql_rel *rel)
 		rel_used(rel->l);
 		rel = rel->l;
 	} else if (is_ddl(rel->op)) {
-		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq) {
+		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq || rel->flag == ddl_alter_table || rel->flag == ddl_create_table || rel->flag == ddl_create_view) {
 			rel_used(rel->l);
 		} else if (rel->flag == ddl_list || rel->flag == ddl_exception) {
 			rel_used(rel->l);
@@ -6726,7 +6723,7 @@ rel_mark_used(mvc *sql, sql_rel *rel, int proj)
 	case op_truncate:
 		break;
 	case op_ddl:
-		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq) {
+		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq || rel->flag == ddl_alter_table || rel->flag == ddl_create_table || rel->flag == ddl_create_view) {
 			if (rel->l)
 				rel_mark_used(sql, rel->l, 0);
 		} else if (rel->flag == ddl_list || rel->flag == ddl_exception) {
@@ -6896,7 +6893,7 @@ rel_remove_unused(mvc *sql, sql_rel *rel)
 	case op_anti: 
 		return rel;
 	case op_ddl:
-		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq) {
+		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq || rel->flag == ddl_alter_table || rel->flag == ddl_create_table || rel->flag == ddl_create_view) {
 			if (rel->l)
 				rel->l = rel_remove_unused(sql, rel->l);
 		} else if (rel->flag == ddl_list || rel->flag == ddl_exception) {
@@ -6957,7 +6954,7 @@ rel_dce_refs(mvc *sql, sql_rel *rel, list *refs)
 		break;
 	case op_ddl:
 
-		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq) {
+		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq || rel->flag == ddl_alter_table || rel->flag == ddl_create_table || rel->flag == ddl_create_view) {
 			if (rel->l)
 				rel_dce_refs(sql, rel->l, refs);
 		} else if (rel->flag == ddl_list || rel->flag == ddl_exception) {
@@ -7050,7 +7047,7 @@ rel_dce_down(mvc *sql, sql_rel *rel, int skip_proj)
 		return rel;
 
 	case op_ddl:
-		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq) {
+		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq || rel->flag == ddl_alter_table || rel->flag == ddl_create_table || rel->flag == ddl_create_view) {
 			if (rel->l)
 				rel->l = rel_dce_down(sql, rel->l, 0);
 		} else if (rel->flag == ddl_list || rel->flag == ddl_exception) {

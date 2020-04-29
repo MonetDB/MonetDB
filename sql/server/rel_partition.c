@@ -89,7 +89,7 @@ find_basetables(mvc *sql, sql_rel *rel, list *tables )
 			find_basetables(sql, rel->l, tables);
 		break;
 	case op_ddl:
-		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq) {
+		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq/* || rel->flag == ddl_alter_table || rel->flag == ddl_create_table || rel->flag == ddl_create_view*/) {
 			if (rel->l)
 				find_basetables(sql, rel->l, tables);
 		} else if (rel->flag == ddl_list || rel->flag == ddl_exception) {
@@ -146,7 +146,7 @@ has_groupby(sql_rel *rel)
 	if (is_modify(rel->op)) 
 		return has_groupby(rel->r);
 	if (is_ddl(rel->op)) {
-		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq)
+		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq || rel->flag == ddl_alter_table || rel->flag == ddl_create_table || rel->flag == ddl_create_view)
 			return has_groupby(rel->l);
 		if (rel->flag == ddl_list || rel->flag == ddl_exception)
 			return has_groupby(rel->l) || has_groupby(rel->r);
@@ -184,7 +184,7 @@ rel_partition(mvc *sql, sql_rel *rel)
 		} else
 			_rel_partition(sql, rel);
 	} else if (is_ddl(rel->op)) {
-		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq) {
+		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq || rel->flag == ddl_alter_table || rel->flag == ddl_create_table || rel->flag == ddl_create_view) {
 			if (rel->l)
 				rel_partition(sql, rel->l);
 		} else if (rel->flag == ddl_list || rel->flag == ddl_exception) {

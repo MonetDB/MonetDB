@@ -166,7 +166,7 @@ rel_copy(mvc *sql, sql_rel *i, int deep)
 		}
 		break;
 	case op_ddl:
-		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq) {
+		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq || rel->flag == ddl_alter_table || rel->flag == ddl_create_table || rel->flag == ddl_create_view) {
 			if (i->l)
 				rel->l = rel_copy(sql, i->l, deep);
 		} else if (rel->flag == ddl_list || rel->flag == ddl_exception) {
@@ -1696,7 +1696,7 @@ exp_deps(mvc *sql, sql_exp *e, list *refs, list *l)
 
 	switch(e->type) {
 	case e_psm:
-		if (e->flag & PSM_SET || e->flag & PSM_RETURN) {
+		if (e->flag & PSM_SET || e->flag & PSM_RETURN || e->flag & PSM_EXCEPTION) {
 			return exp_deps(sql, e->l, refs, l);
 		} else if (e->flag & PSM_VAR) {
 			return 0;
@@ -1705,12 +1705,10 @@ exp_deps(mvc *sql, sql_exp *e, list *refs, list *l)
 		            exps_deps(sql, e->r, refs, l) != 0)
 				return -1;
 			if (e->flag & PSM_IF && e->f)
-				return exps_deps(sql, e->r, refs, l);
+				return exps_deps(sql, e->f, refs, l);
 		} else if (e->flag & PSM_REL) {
 			sql_rel *rel = e->l;
 			return rel_deps(sql, rel, refs, l);
-		} else if (e->flag & PSM_EXCEPTION) {
-			return exps_deps(sql, e->l, refs, l);
 		}
 	case e_atom: 
 	case e_column: 
@@ -1842,7 +1840,7 @@ rel_deps(mvc *sql, sql_rel *r, list *refs, list *l)
 			return -1;
 		break;
 	case op_ddl:
-		if (r->flag == ddl_output || r->flag == ddl_create_seq || r->flag == ddl_alter_seq) {
+		if (r->flag == ddl_output || r->flag == ddl_create_seq || r->flag == ddl_alter_seq || r->flag == ddl_alter_table || r->flag == ddl_create_table || r->flag == ddl_create_view) {
 			if (rel_deps(sql, r->l, refs, l) != 0)
 				return -1;
 		} else if (r->flag == ddl_list || r->flag == ddl_exception) {
@@ -2009,7 +2007,7 @@ rel_exp_visitor(mvc *sql, sql_rel *rel, exp_rewrite_fptr exp_rewriter, int *chan
 		}
 		break;
 	case op_ddl:
-		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq) {
+		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq || rel->flag == ddl_alter_table || rel->flag == ddl_create_table || rel->flag == ddl_create_view) {
 			if (rel->l)
 				if ((rel->l = rel_exp_visitor(sql, rel->l, exp_rewriter, changes, topdown)) == NULL)
 					return NULL;
@@ -2194,7 +2192,7 @@ rel_visitor(mvc *sql, sql_rel *rel, rel_rewrite_fptr rel_rewriter, int *changes,
 		}
 		break;
 	case op_ddl:
-		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq) {
+		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq || rel->flag == ddl_alter_table || rel->flag == ddl_create_table || rel->flag == ddl_create_view) {
 			if (rel->l)
 				if ((rel->l = func(sql, rel->l, rel_rewriter, changes)) == NULL)
 					return NULL;

@@ -40,46 +40,39 @@
 #include "sql_privileges.h"
 #include "mal_exception.h"
 
-#define SESSION_RW 0
-#define SESSION_RO 1
+#ifdef HAVE_HGE
+#define	VAR_UPCAST hge
+#else
+#define	VAR_UPCAST lng
+#endif
 
 str
-#ifdef HAVE_HGE
-sql_update_var(mvc *m, const char *name, char *sval, hge sgn)
-#else
-sql_update_var(mvc *m, const char *name, char *sval, lng sgn)
-#endif
+sql_update_var(mvc *m, const char *name, ValPtr ptr)
 {
-	if (strcmp(name, "debug") == 0) {
-#ifdef HAVE_HGE
-		assert((hge) GDK_int_min <= sgn && sgn <= (hge) GDK_int_max);
-#else
-		assert((lng) GDK_int_min <= sgn && sgn <= (lng) GDK_int_max);
-#endif
-		m->debug = (int) sgn;
-	} else if (strcmp(name, "current_schema") == 0) {
-		if (!mvc_set_schema(m, sval)) {
-			throw(SQL,"sql.update_var", SQLSTATE(3F000) "Schema (%s) missing\n", sval);
-		}
-	} else if (strcmp(name, "current_role") == 0) {
-		if (!mvc_set_role(m, sval)) {
-			throw(SQL,"sql.update_var", SQLSTATE(42000) "Role (%s) missing\n", sval);
-		}
-	} else if (strcmp(name, "current_timezone") == 0) {
-#ifdef HAVE_HGE
-		assert((hge) GDK_int_min <= sgn && sgn <= (hge) GDK_int_max);
-#else
-		assert((lng) GDK_int_min <= sgn && sgn <= (lng) GDK_int_max);
-#endif
-		m->timezone = (int) sgn;
-	} else if (strcmp(name, "cache") == 0) {
-#ifdef HAVE_HGE
-		assert((hge) GDK_int_min <= sgn && sgn <= (hge) GDK_int_max);
-#else
-		assert((lng) GDK_int_min <= sgn && sgn <= (lng) GDK_int_max);
-#endif
-		m->cache = (int) sgn;
-	} 
+	if (strcmp(name, "debug") == 0 || strcmp(name, "current_timezone") == 0 || strcmp(name, "cache") == 0) {
+		VAR_UPCAST sgn = val_get_number(ptr);
+
+		if (VALisnil(ptr))
+			throw(SQL,"sql.update_var", SQLSTATE(42000) "%s cannot be NULL\n", name);
+		if (sgn <= (VAR_UPCAST) GDK_int_min)
+			throw(SQL,"sql.update_var", SQLSTATE(42000) "Value too small for %s\n", name);
+		if (sgn > (VAR_UPCAST) GDK_int_max)
+			throw(SQL,"sql.update_var", SQLSTATE(42000) "Value too large for %s\n", name);
+
+		if (strcmp(name, "debug") == 0)
+			m->debug = (int) sgn;
+		else if (strcmp(name, "current_timezone") == 0)
+			m->timezone = (int) sgn;
+		else if (strcmp(name, "cache") == 0)
+			m->cache = (int) sgn;
+	} else if (strcmp(name, "current_schema") == 0 || strcmp(name, "current_role") == 0) {
+		if (VALisnil(ptr))
+			throw(SQL,"sql.update_var", SQLSTATE(42000) "%s cannot be NULL\n", name);
+		if (strcmp(name, "current_schema") == 0 && !mvc_set_schema(m, ptr->val.sval))
+			throw(SQL,"sql.update_var", SQLSTATE(3F000) "Schema (%s) missing\n", ptr->val.sval);
+		else if (strcmp(name, "current_role") == 0 && !mvc_set_role(m, ptr->val.sval))
+			throw(SQL,"sql.update_var", SQLSTATE(42000) "Role (%s) missing\n", ptr->val.sval);
+	}
 	return NULL;
 }
 

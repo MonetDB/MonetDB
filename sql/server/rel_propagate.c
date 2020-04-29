@@ -552,7 +552,7 @@ rel_change_base_table(mvc* sql, sql_rel* rel, sql_table* oldt, sql_table* newt)
 				rel->l = rel_change_base_table(sql, rel->l, oldt, newt);
 			break;
 		case op_ddl:
-			if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq) {
+			if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq || rel->flag == ddl_alter_table || rel->flag == ddl_create_table || rel->flag == ddl_create_view) {
 				if (rel->l)
 					rel->l = rel_change_base_table(sql, rel->l, oldt, newt);
 			} else if (rel->flag == ddl_list || rel->flag == ddl_exception) {

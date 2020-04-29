@@ -58,7 +58,7 @@ has_remote_or_replica( sql_rel *rel )
 			return 1;
 		break;
 	case op_ddl:
-		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq) {
+		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq /*|| rel->flag == ddl_alter_table || rel->flag == ddl_create_table || rel->flag == ddl_create_view*/) {
 			if (has_remote_or_replica( rel->l )) 
 				return 1;
 		} else if (rel->flag == ddl_list || rel->flag == ddl_exception) {
@@ -142,17 +142,16 @@ exp_replica(mvc *sql, sql_exp *e, char *uri)
 		}
 		break;
 	case e_psm:
-		if (e->flag & PSM_SET || e->flag & PSM_RETURN) 
+		if (e->flag & PSM_SET || e->flag & PSM_RETURN || e->flag & PSM_EXCEPTION) {
 			e->l = exp_replica(sql, e->l, uri);
-		else if (e->flag & PSM_WHILE || e->flag & PSM_IF) {
+		} else if (e->flag & PSM_WHILE || e->flag & PSM_IF) {
 			e->l = exp_replica(sql, e->l, uri);
 			e->r = exps_replica(sql, e->r, uri);
 			if (e->f)
 				e->f = exps_replica(sql, e->f, uri);
-		} else if (e->flag & PSM_REL)
+		} else if (e->flag & PSM_REL) {
 			e->l = replica(sql, e->l, uri);
-		else if (e->flag & PSM_EXCEPTION)
-			e->l = exp_replica(sql, e->l, uri);
+		}
 		break;
 	}
 	return e;
@@ -259,7 +258,7 @@ replica(mvc *sql, sql_rel *rel, char *uri)
 	case op_ddl: 
 		if ((rel->flag == ddl_psm || rel->flag == ddl_exception) && rel->exps)
 			rel->exps = exps_replica(sql, rel->exps, uri);
-		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq) {
+		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq /*|| rel->flag == ddl_alter_table || rel->flag == ddl_create_table || rel->flag == ddl_create_view*/) {
 			rel->l = replica(sql, rel->l, uri);
 		} else if (rel->flag == ddl_list || rel->flag == ddl_exception) {
 			rel->l = replica(sql, rel->l, uri);
@@ -309,17 +308,16 @@ exp_distribute(mvc *sql, sql_exp *e)
 		}
 		break;
 	case e_psm:
-		if (e->flag & PSM_SET || e->flag & PSM_RETURN) 
+		if (e->flag & PSM_SET || e->flag & PSM_RETURN || e->flag & PSM_EXCEPTION) {
 			e->l = exp_distribute(sql, e->l);
-		else if (e->flag & PSM_WHILE || e->flag & PSM_IF) {
+		} else if (e->flag & PSM_WHILE || e->flag & PSM_IF) {
 			e->l = exp_distribute(sql, e->l);
 			e->r = exps_distribute(sql, e->r);
 			if (e->f)
 				e->f = exps_distribute(sql, e->f);
-		} else if (e->flag & PSM_REL)
+		} else if (e->flag & PSM_REL) {
 			e->l = distribute(sql, e->l);
-		else if (e->flag & PSM_EXCEPTION)
-			e->l = exp_distribute(sql, e->l);
+		}
 		break;
 	}
 	return e;
@@ -446,7 +444,7 @@ distribute(mvc *sql, sql_rel *rel)
 	case op_ddl: 
 		if ((rel->flag == ddl_psm || rel->flag == ddl_exception) && rel->exps)
 			rel->exps = exps_distribute(sql, rel->exps);
-		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq) {
+		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq /*|| rel->flag == ddl_alter_table || rel->flag == ddl_create_table || rel->flag == ddl_create_view*/) {
 			l = rel->l = distribute(sql, rel->l);
 
 			if (l && (p = find_prop(l->p, PROP_REMOTE)) != NULL) {
@@ -603,7 +601,7 @@ rel_remote_func(mvc *sql, sql_rel *rel)
 	case op_ddl: 
 		if ((rel->flag == ddl_psm || rel->flag == ddl_exception) && rel->exps)
 			rel->exps = exps_remote_func(sql, rel->exps);
-		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq) {
+		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq /*|| rel->flag == ddl_alter_table || rel->flag == ddl_create_table || rel->flag == ddl_create_view*/) {
 			rel->l = rel_remote_func(sql, rel->l);
 		} else if (rel->flag == ddl_list || rel->flag == ddl_exception) {
 			rel->l = rel_remote_func(sql, rel->l);
