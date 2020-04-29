@@ -26,11 +26,8 @@
  *
  * All compression libraries we use have such an API but of course the
  * parameter types etc are always different.
- * This function encapsulates the logic of copying a whole buffer
- * out to a stream in a type-agnostic way.
  */
 
-/* Helper functions used to access the state in a generic way */
 
 typedef enum {
 	PUMP_OK,
@@ -38,179 +35,37 @@ typedef enum {
 	PUMP_ERROR,
 } pump_result;
 
+
 typedef enum {
-	PUMP_WORK,
+	PUMP_NO_FLUSH,
 	PUMP_FLUSH_DATA,
 	PUMP_FLUSH_ALL,
 	PUMP_FINISH,
 } pump_action;
 
-typedef pump_result (*pump_worker)(void *state, pump_action action);
-typedef ssize_t (*pump_io)(void *state, char *data, size_t len);
 
 typedef struct {
-	char *start;
+	void *start;
 	size_t count;
 } pump_buffer;
 
-typedef struct {
-	char **start;
-	size_t *count;
-} pump_buffer_location;
+// To be defined by the user
+typedef struct inner_state inner_state_t;
 
-// These helper functions help make sure we don't accidentally
-// write `buf.start == 0` where we meant `*buf.start == 0`.
+typedef pump_buffer (*buf_getter)(inner_state_t *inner_state);
+typedef void (*buf_setter)(inner_state_t *inner_state, pump_buffer buf);
 
-static inline char *
-start(pump_buffer_location b)
-{
-	return *b.start;
-}
+typedef pump_result (*pump_worker)(inner_state_t *inner_state, pump_action action);
 
-static inline size_t
-count(pump_buffer_location b)
-{
-	return *b.count;
-}
+typedef struct pump_state {
+	inner_state_t *inner_state;
+	buf_getter get_src_win;
+	buf_setter set_src_win;
+	buf_getter get_dst_win;
+	buf_setter set_dst_win;
+	buf_getter get_buffer;
+	pump_worker worker;
+	void (*finalizer)(inner_state_t *inner_state);
+} pump_state;
 
-static inline void
-set_count(pump_buffer_location b, size_t count)
-{
-	*b.count = count;
-}
-
-static inline void
-set_start(pump_buffer_location b, char *start)
-{
-	*b.start = start;
-}
-
-static inline void
-reset_buffer(pump_buffer_location b, pump_buffer buf)
-{
-	*b.start = buf.start;
-	*b.count = buf.count;
-}
-
-static inline pump_result
-generic_pump_out(
-	void *state,
-	pump_action action,
-	pump_buffer buffer,
-	pump_buffer_location window_in,
-	pump_buffer_location window_out,
-	pump_worker worker,
-	pump_io ship_out)
-{
-	while (1) {
-		// Make sure there is room in the output buffer
-		if (count(window_out) == 0) {
-			size_t amount = start(window_out) - buffer.start;
-			ssize_t nwritten = ship_out(state, buffer.start, amount);
-			if (nwritten != (ssize_t)amount)
-				return PUMP_ERROR;
-			reset_buffer(window_out, buffer);
-		}
-
-		// Try to make progress
-		pump_result ret = worker(state, action);
-		if (ret == PUMP_ERROR)
-			return PUMP_ERROR;
-
-		// There was no error but if input is still available, we definitely
-		// need another round
-		if (count(window_in) > 0)
-			continue;
-
-		// Though the input data has been consumed, some may still linger
-		// in the internal state.
-		if (action == PUMP_WORK) {
-			// Let it linger, we'll combine it with the next batch
-			assert(ret == PUMP_OK); // worker would never PUMP_END
-			return PUMP_OK;
-		}
-
-		// We are flushing or finishing or whatever.
-		// We may need to keep iterating to flush the internal state.
-		// Is there any internal state left?
-		if (ret == PUMP_OK)
-			// yes, there is
-			continue;
-
-		// All internal state has been drained.
-		// Now drain the output buffer
-		assert(ret == PUMP_END);
-		size_t amount = start(window_out) - buffer.start;
-		if (amount > 0) {
-			ssize_t nwritten = ship_out(state, buffer.start, amount);
-			if (nwritten != (ssize_t)amount)
-				return PUMP_ERROR;
-		}
-		reset_buffer(window_out, buffer);
-		return PUMP_END;
-	}
-}
-
-/* Similar to generic_pump_out, but for reading.
-*
-* In every iteration, fill the input buffer if empty, and let the worker try to
-* make progress. Stop iterating if the output buffer is full, when ship_in fails
-* or when it does not fill the whole buffer. The latter case is important when
-* we're reading for example from a socket. It's more important to return the
-* data that has come in so far than to wait until the output buffer is
-* completely full.
-*
-* Returns PUMP_END if the input is exhausted and no data lingers in the internal
-* state, PUMP_ERROR when the input has a failure or PUMP_OK otherwise.
- */
-static inline pump_result
-generic_pump_in(
-	void *state,
-	pump_buffer buffer,
-	pump_buffer_location window_in,
-	pump_buffer_location window_out,
-	pump_worker worker,
-	pump_io ship_in)
-{
-	char *orig_out = start(window_out); // nice for debugging
-	(void)orig_out;
-	while (1) {
-		if (count(window_out) == 0)
-			// Output buffer is sufficiently full.
-			return PUMP_OK;
-
-		// Handle input, if possible and necessary
-		if (start(window_in) != NULL && count(window_in) == 0) {
-			// start != NULL means we haven't encountered EOF yet
-			ssize_t nread = ship_in(state, buffer.start, buffer.count);
-			if (nread < 0)
-				// Error. Return directly, discarding any data lingering
-				// in the internal state.
-				return PUMP_ERROR;
-			if (nread == 0)
-				// Set to NULL so we'll remember next time.
-				// Maybe there is some data in the internal state we don't
-				// return immediately.
-				set_start(window_in, NULL);
-			else
-				// All good
-				set_start(window_in, buffer.start);
-			set_count(window_in, (ssize_t)nread);
-		}
-
-		// Try to make some progress
-		pump_action action = (start(window_in) != NULL) ? PUMP_WORK : PUMP_FINISH;
-		assert(count(window_out) > 0);
-		assert(count(window_in) > 0 || action == PUMP_FINISH);
-		pump_result ret = worker(state, action);
-		if (ret == PUMP_ERROR)
-			return PUMP_ERROR;
-
-		if (ret == PUMP_END)
-			// If you say so
-			return PUMP_END;
-
-		// If we get here we made some progress so we're ready for a new iteration.
-	}
-}
-
+stream *pump_stream(stream *inner, pump_state *state);

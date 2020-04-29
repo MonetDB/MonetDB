@@ -25,7 +25,8 @@ lib_stream  =  {
 		memio.c callback.c blackhole.c fwf.c \
 		iconv_stream.c \
 		misc.c text_stream.c \
-		stream.h stream_internal.h stream_socket.h
+		pump.c \
+		stream.h stream_internal.h stream_socket.h pump.h
 	VERSION = $(STREAM_VERSION)
 	LIBS = WIN32?$(SOCKET_LIBS) \
 	       WIN32?$(zlib_LIBS) \

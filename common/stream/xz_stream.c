@@ -15,35 +15,59 @@
 
 
 #ifdef HAVE_LIBLZMA
-#define XZBUFSIZ 64*1024
-typedef struct xz_state {
+
+struct inner_state {
 	lzma_stream strm;
-	uint8_t buf[XZBUFSIZ];
-} xz_state;
+	uint8_t buf[64*1024];
+};
 
-
-/* Keep calling lzma_code until the whole input buffer has been consumed
- * and all necessary output has been written.
- *
- * If action is LZMA_RUN, iteration ends when lzma_code() returns LZMA_OK
- * while the output buffer is not empty. The output buffers is not flushed
- * because we expect further invocations.
- *
- * If action is something else, for example LZMA_FINISH, iteration ends
- * when lzma_code() returns LZMA_STREAM_END and the out buffer is flushed
- * afterward.
- *
- * Returns > 0 on succes, 0 on error.
- */
-static pump_result
-pumper(void *state, pump_action action)
+static pump_buffer
+xz_get_src_win(inner_state_t *xz)
 {
-	stream *s = (stream*) state;
-	xz_state *xz = (xz_state*) s->stream_data.p;
+	return (pump_buffer) {
+		.start = (void*) xz->strm.next_in,
+		.count = xz->strm.avail_in,
+	};
+}
 
+static void
+xz_set_src_win(inner_state_t *xz, pump_buffer buf)
+{
+	xz->strm.next_in = buf.start;
+	xz->strm.avail_in = buf.count;
+}
+
+static pump_buffer
+xz_get_dst_win(inner_state_t *xz)
+{
+	return (pump_buffer) {
+		.start = xz->strm.next_out,
+		.count = xz->strm.avail_out,
+	};
+}
+
+static void
+xz_set_dst_win(inner_state_t *xz, pump_buffer buf)
+{
+	xz->strm.next_out = buf.start;
+	xz->strm.avail_out = buf.count;
+}
+
+static pump_buffer
+xz_get_buffer(inner_state_t *xz)
+{
+	return (pump_buffer) {
+		.start = xz->buf,
+		.count = sizeof(xz->buf),
+	};
+}
+
+static pump_result
+xz_work(inner_state_t *xz, pump_action action)
+{
 	lzma_action a;
 	switch (action) {
-	case PUMP_WORK:
+	case PUMP_NO_FLUSH:
 		a = LZMA_RUN;
 		break;
 	case PUMP_FLUSH_DATA:
@@ -55,6 +79,8 @@ pumper(void *state, pump_action action)
 	case PUMP_FINISH:
 		a = LZMA_FINISH;
 		break;
+	default:
+		assert(0 /* unknown action */);
 	}
 
 	lzma_ret ret = lzma_code(&xz->strm, a);
@@ -69,179 +95,54 @@ pumper(void *state, pump_action action)
 	}
 }
 
-
-static ssize_t
-ship_in(void *state, char *start, size_t count)
-{
-	stream *s = (stream*) state;
-	return mnstr_read(s->inner, start, 1, count);
-}
-
-static ssize_t
-ship_out(void *state, char *start, size_t count)
-{
-	stream *s = (stream*) state;
-	return mnstr_write(s->inner, start, 1, count);
-}
-
-
-static pump_result
-pump_out(stream *s, pump_action action)
-{
-	xz_state *xz = (xz_state *) s->stream_data.p;
-
-	pump_buffer loc_buffer = { .start = (char*)&xz->buf, .count = XZBUFSIZ };
-	pump_buffer_location loc_win_in = { .start = (char**)&xz->strm.next_in, .count = &xz->strm.avail_in };
-	pump_buffer_location loc_win_out = { .start = (char**)&xz->strm.next_out, .count = &xz->strm.avail_out };
-	return generic_pump_out(s, action, loc_buffer, loc_win_in, loc_win_out, pumper, ship_out);
-}
-
-static ssize_t
-pump_in(stream *s)
-{
-	xz_state *xz = (xz_state *) s->stream_data.p;
-
-
-	pump_buffer loc_buffer = { .start = (char*)&xz->buf, .count = XZBUFSIZ };
-	pump_buffer_location loc_win_in = { .start = (char**)&xz->strm.next_in, .count = &xz->strm.avail_in };
-	pump_buffer_location loc_win_out = { .start = (char**)&xz->strm.next_out, .count = &xz->strm.avail_out };
-
-	uint8_t *before = xz->strm.next_out;
-	pump_result ret = generic_pump_in(s, loc_buffer, loc_win_in, loc_win_out, pumper, ship_in);
-	uint8_t *after = xz->strm.next_out;
-	if (ret == PUMP_ERROR)
-		return -1;
-	return after - before;
-}
-
-static ssize_t
-stream_xzread(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
-{
-	xz_state *xz = s->stream_data.p;
-	size_t size = elmsize * cnt;
-
-	if (xz == NULL) {
-		s->errnr = MNSTR_READ_ERROR;
-		return -1;
-	}
-
-	xz->strm.next_out = (uint8_t*) buf;
-	xz->strm.avail_out = size;
-	ssize_t nread = pump_in(s);
-	if (nread < 0)
-		return -1;
-	else
-		return nread / (ssize_t) elmsize;
-}
-
-static ssize_t
-stream_xzwrite(stream *restrict s, const void *restrict buf, size_t elmsize, size_t cnt)
-{
-	xz_state *xz = s->stream_data.p;
-	size_t size = elmsize * cnt;
-
-	if (size == 0)
-		return cnt;
-
-	if (xz == NULL) {
-		s->errnr = MNSTR_WRITE_ERROR;
-		return -1;
-	}
-
-	xz->strm.next_in = buf;
-	xz->strm.avail_in = size;
-
-	if (pump_out(s, PUMP_WORK) == PUMP_OK)
-		return (ssize_t) (size / elmsize);
-	else {
-		s->errnr = MNSTR_WRITE_ERROR;
-		return -1;
-	}
-}
-
 static void
-stream_xzclose(stream *s)
+xz_finalizer(inner_state_t *xz)
 {
-	xz_state *xz = s->stream_data.p;
-
-	if (xz) {
-		if (!s->readonly) {
-			xz->strm.next_in = NULL;
-			xz->strm.avail_in = 0;
-			if (pump_out(s, PUMP_FINISH) == PUMP_END) {
-				mnstr_flush(s->inner);
-			} else {
-				s->errnr = MNSTR_WRITE_ERROR;
-			}
-		}
-		mnstr_close(s->inner);
-		lzma_end(&xz->strm);
-		free(xz);
-		s->stream_data.p = NULL;
-	}
-	s->stream_data.p = NULL;
+	lzma_end(&xz->strm);
+	free(xz);
 }
 
-static int
-stream_xzflush(stream *s)
-{
-	xz_state *xz = s->stream_data.p;
 
-	if (s->readonly)
-		return 0;
-	if (xz == NULL)
-		return -1;
 
-	xz->strm.next_in = NULL;
-	xz->strm.avail_in = 0;
-	if (pump_out(s, PUMP_FLUSH_ALL) == PUMP_OK) {
-		mnstr_flush(s->inner);
-		return 0;
-	} else {
-		s->errnr = MNSTR_WRITE_ERROR;
-		return -1;
-	}
-}
+
 
 stream *
 xz_stream(stream *inner, int preset)
 {
-	if (inner == NULL)
+	inner_state_t *xz = calloc(1, sizeof(inner_state_t));
+	pump_state *state = calloc(1, sizeof(pump_state));
+	if (xz == NULL || state == NULL) {
+		free(xz);
+		free(state);
 		return NULL;
+	}
 
-	xz_state *xz = calloc(1, sizeof(xz_state));
-	if (xz == NULL)
-		return NULL;
+	state->inner_state = xz;
+	state->get_src_win = xz_get_src_win;
+	state->set_src_win = xz_set_src_win;
+	state->get_dst_win = xz_get_dst_win;
+	state->set_dst_win = xz_set_dst_win;
+	state->get_buffer = xz_get_buffer;
+	state->worker = xz_work;
+	state->finalizer = xz_finalizer;
 
 	lzma_ret ret;
-	if (inner->readonly)
+	if (inner->readonly) {
 		ret = lzma_stream_decoder(&xz->strm, UINT64_MAX, LZMA_CONCATENATED);
-	else
-		ret = lzma_easy_encoder(&xz->strm, preset, LZMA_CHECK_CRC64);
-	if (ret != LZMA_OK) {
-		free(xz);
-		return NULL;
-	}
-
-	stream *s = create_wrapper_stream(NULL, inner);
-	if (s == NULL) {
-		free(xz);
-		return NULL;
-	}
-
-	s->stream_data.p = (void*) xz;
-	s->read = stream_xzread;
-	s->write = stream_xzwrite;
-	s->close = stream_xzclose;
-	s->flush = stream_xzflush;
-
-	if (s->readonly) {
-		xz->strm.next_in = xz->buf;
-		xz->strm.avail_in = 0;
 	} else {
-		xz->strm.next_out = xz->buf;
-		xz->strm.avail_out = XZBUFSIZ;
+		ret = lzma_easy_encoder(&xz->strm, preset, LZMA_CHECK_CRC64);
 	}
+
+	stream *s = pump_stream(inner, state);
+
+	if (ret != LZMA_OK || s == NULL) {
+		lzma_end(&xz->strm);
+		free(xz);
+		free(state);
+		return NULL;
+	}
+
+	s->stream_data.p = (void*) state;
 
 	return s;
 }
@@ -308,6 +209,14 @@ open_xzwastream(const char *restrict filename, const char *restrict mode)
 	return s;
 }
 #else
+
+stream *
+xz_stream(stream *inner, int preset)
+{
+	(void) inner;
+	(void) preset;
+	return NULL;
+}
 stream *open_xzrstream(const char *filename)
 {
 	return NULL;
