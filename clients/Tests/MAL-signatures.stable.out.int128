@@ -19651,7 +19651,7 @@ stdout of test 'MAL-signatures` in directory 'clients` itself:
 [ "sql",	"shutdown",	"pattern sql.shutdown(delay:sht, force:bit):str ",	"SQLshutdown_wrap;",	""	]
 [ "sql",	"single",	"pattern sql.single(x:any_2):bat[:any_2] ",	"CMDBATsingle;",	""	]
 [ "sql",	"sql_environment",	"inline function sql.sql_environment() (name:bat[:str], value:bat[:str]);",	"",	""	]
-[ "sql",	"sql_variables",	"pattern sql.sql_variables():bat[:str] ",	"sql_variables;",	"return the table with session variables"	]
+[ "sql",	"sql_variables",	"pattern sql.sql_variables() (sname:bat[:str], name:bat[:str], type:bat[:str], value:bat[:str]) ",	"sql_variables;",	"return the table with session variables"	]
 [ "sql",	"stdev",	"pattern sql.stdev(b:bte, s:lng, e:lng):dbl ",	"SQLstddev_samp;",	"return the standard deviation sample of groups"	]
 [ "sql",	"stdev",	"pattern sql.stdev(b:dbl, s:lng, e:lng):dbl ",	"SQLstddev_samp;",	"return the standard deviation sample of groups"	]
 [ "sql",	"stdev",	"pattern sql.stdev(b:flt, s:lng, e:lng):dbl ",	"SQLstddev_samp;",	"return the standard deviation sample of groups"	]
