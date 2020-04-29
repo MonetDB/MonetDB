@@ -639,7 +639,7 @@ setVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg;
 	const char *varname = *getArgReference_str(stk, pci, 2);
 	int mtype = getArgType(mb, pci, 3);
-	ValRecord *src;
+	ValPtr ptr;
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
@@ -653,35 +653,32 @@ setVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		const char *newopt = *getArgReference_str(stk, pci, 3);
 		if (newopt) {
 			char buf[BUFSIZ];
-			if (!isOptimizerPipe(newopt) && strchr(newopt, (int) ';') == 0) {
+
+			if (strNil(newopt))
+				throw(SQL, "sql.setVariable", SQLSTATE(42000) "optimizer cannot be NULL");
+			if (!isOptimizerPipe(newopt) && strchr(newopt, (int) ';') == 0)
 				throw(SQL, "sql.setVariable", SQLSTATE(42100) "optimizer '%s' unknown", newopt);
-			}
 			snprintf(buf, BUFSIZ, "user_%d", cntxt->idx);
 			if (!isOptimizerPipe(newopt) || strcmp(buf, newopt) == 0) {
 				msg = addPipeDefinition(cntxt, buf, newopt);
 				if (msg)
 					return msg;
 				if (stack_find_var(m, varname)) {
-					if(!stack_set_string(m, varname, buf))
+					if (!stack_set_string(m, varname, buf))
 						throw(SQL, "sql.setVariable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				}
 			} else if (stack_find_var(m, varname)) {
-				if(!stack_set_string(m, varname, newopt))
+				if (!stack_set_string(m, varname, newopt))
 					throw(SQL, "sql.setVariable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 		}
 		return MAL_SUCCEED;
 	}
-	src = &stk->stk[getArg(pci, 3)];
+	ptr = &stk->stk[getArg(pci, 3)];
 	if (stack_find_var(m, varname)) {
-#ifdef HAVE_HGE
-		hge sgn = val_get_number(src);
-#else
-		lng sgn = val_get_number(src);
-#endif
-		if ((msg = sql_update_var(m, varname, src->val.sval, sgn)) != NULL)
+		if ((msg = sql_update_var(m, varname, ptr)) != NULL)
 			return msg;
-		if(!stack_set_var(m, varname, src))
+		if (!stack_set_var(m, varname, ptr))
 			throw(SQL, "sql.setVariable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	} else {
 		throw(SQL, "sql.setVariable", SQLSTATE(42100) "variable '%s' unknown", varname);
