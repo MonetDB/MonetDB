@@ -2774,7 +2774,7 @@ rel_set_type_recurse(mvc *sql, sql_subtype *type, sql_rel *rel, const char **rel
 				rel_set_type_recurse(sql, type, rel->r, relname, expname);
 			break;
 		case op_ddl:
-			if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq) {
+			if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq || rel->flag == ddl_alter_table || rel->flag == ddl_create_table || rel->flag == ddl_create_view) {
 				if (rel->l)
 					rel_set_type_recurse(sql, type, rel->l, relname, expname);
 			} else if (rel->flag == ddl_list || rel->flag == ddl_exception) {

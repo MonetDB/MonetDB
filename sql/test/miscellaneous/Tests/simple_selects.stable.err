@@ -182,6 +182,18 @@ MAPI  = (monetdb) /var/tmp/mtest-753717/.s.monetdb.32140
 QUERY = create view iambad as select * from _tables sample 10; --error, sample inside views not supported
 ERROR = !CREATE VIEW: SAMPLE not supported
 CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-625509/.s.monetdb.34262
+QUERY = set "current_timezone" = null; --error, default global variables cannot be null
+ERROR = !Variable 'sys.current_timezone' cannot be NULL
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-625509/.s.monetdb.34262
+QUERY = set "current_timezone" = 111111111111111111111111; --error, value too big
+ERROR = !Value too large for 'sys.current_timezone'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-625509/.s.monetdb.34262
+QUERY = set "current_schema" = null; --error, default global variables cannot be null
+ERROR = !Variable 'sys.current_schema' cannot be NULL
+CODE  = 42000
 
 # 17:31:38 >  
 # 17:31:38 >  "Done."

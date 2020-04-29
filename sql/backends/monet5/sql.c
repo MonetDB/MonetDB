@@ -644,7 +644,6 @@ setVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	const char *sname = *getArgReference_str(stk, pci, 2);
 	const char *varname = *getArgReference_str(stk, pci, 3);
 	int mtype = getArgType(mb, pci, 4);
-	ValRecord *src = &stk->stk[getArg(pci, 4)];
 	sql_schema *s;
 	sql_var *var;
 
@@ -661,13 +660,12 @@ setVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "sql.setVariable", SQLSTATE(42100) "Variable type error");
 
 	if ((var = find_global_var(m, s, varname))) {
-		if (VALisnil(src)) /* this applies to the default global variables only, but for now we don't have session globals */
-			throw(SQL, "sql.setVariable", SQLSTATE(42100) "Variable '%s.%s' cannot be NULL", sname, varname);
-
 		if (!strcmp("sys", s->base.name) && !strcmp("optimizer", varname)) {
-			const char *newopt = src->val.sval;
+			const char *newopt = *getArgReference_str(stk, pci, 4);
 			char buf[BUFSIZ];
 
+			if (strNil(newopt))
+				throw(SQL, "sql.setVariable", SQLSTATE(42000) "Variable '%s.%s' cannot be NULL", sname, varname);
 			if (!isOptimizerPipe(newopt) && strchr(newopt, (int) ';') == 0)
 				throw(SQL, "sql.setVariable", SQLSTATE(42100) "optimizer '%s' unknown", newopt);
 			(void) snprintf(buf, BUFSIZ, "user_%d", cntxt->idx);
@@ -679,14 +677,11 @@ setVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			} else if (!sqlvar_set_string(find_global_var(m, s, varname), newopt))
 				throw(SQL, "sql.setVariable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		} else {
-#ifdef HAVE_HGE
-			hge sgn = val_get_number(src);
-#else
-			lng sgn = val_get_number(src);
-#endif
-			if ((msg = sql_update_var(m, s, varname, src->val.sval, sgn)))
+			ValPtr ptr = &stk->stk[getArg(pci, 4)];
+
+			if ((msg = sql_update_var(m, s, varname, ptr)))
 				return msg;
-			if (!sqlvar_set(var, src))
+			if (!sqlvar_set(var, ptr))
 				throw(SQL, "sql.setVariable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		return MAL_SUCCEED;
@@ -2115,7 +2110,7 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 				BBPunfix(u->batCacheid);
 				throw(MAL, "sql.delta", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			}
-			cminu = BATintersect(u, c_ids, NULL, NULL, false, BUN_NONE);
+			cminu = BATintersect(u, c_ids, NULL, NULL, false, false, BUN_NONE);
 			BBPunfix(c_ids->batCacheid);
 			if (cminu == NULL) {
 				BBPunfix(c->batCacheid);
@@ -2272,7 +2267,7 @@ DELTAproject(bat *result, const bat *sub, const bat *col, const bat *uid, const 
 		BAT *os, *ou;
 		/* figure out the positions in res that we have to
 		 * replace with values from u_val */
-		if (BATsemijoin(&ou, &os, u_id, s, NULL, NULL, false, BUN_NONE) != GDK_SUCCEED) {
+		if (BATsemijoin(&ou, &os, u_id, s, NULL, NULL, false, false, BUN_NONE) != GDK_SUCCEED) {
 			BBPunfix(s->batCacheid);
 			BBPunfix(res->batCacheid);
 			BBPunfix(u_id->batCacheid);

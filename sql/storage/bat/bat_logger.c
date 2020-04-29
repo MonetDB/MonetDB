@@ -270,7 +270,7 @@ bl_postversion(void *lg)
 				bat_destroy(cn);
 				return GDK_FAIL;
 			}
-			BAT *ts1 = BATintersect(tn, sn, ts, ss, 0, 2);
+			BAT *ts1 = BATintersect(tn, sn, ts, ss, false, false, 2);
 			bat_destroy(tn);
 			bat_destroy(sn);
 			bat_destroy(ts);
@@ -296,7 +296,7 @@ bl_postversion(void *lg)
 				bat_destroy(cn);
 				return GDK_FAIL;
 			}
-			BAT *cs1 = BATintersect(ct, tn, cs, ts1, 0, 2);
+			BAT *cs1 = BATintersect(ct, tn, cs, ts1, false, false, 2);
 			bat_destroy(ct);
 			bat_destroy(tn);
 			bat_destroy(ts1);
