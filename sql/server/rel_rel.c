@@ -1696,7 +1696,7 @@ exp_deps(mvc *sql, sql_exp *e, list *refs, list *l)
 
 	switch(e->type) {
 	case e_psm:
-		if (e->flag & PSM_SET || e->flag & PSM_RETURN) {
+		if (e->flag & PSM_SET || e->flag & PSM_RETURN || e->flag & PSM_EXCEPTION) {
 			return exp_deps(sql, e->l, refs, l);
 		} else if (e->flag & PSM_VAR) {
 			return 0;
@@ -1705,12 +1705,10 @@ exp_deps(mvc *sql, sql_exp *e, list *refs, list *l)
 		            exps_deps(sql, e->r, refs, l) != 0)
 				return -1;
 			if (e->flag & PSM_IF && e->f)
-				return exps_deps(sql, e->r, refs, l);
+				return exps_deps(sql, e->f, refs, l);
 		} else if (e->flag & PSM_REL) {
 			sql_rel *rel = e->l;
 			return rel_deps(sql, rel, refs, l);
-		} else if (e->flag & PSM_EXCEPTION) {
-			return exps_deps(sql, e->l, refs, l);
 		}
 	case e_atom: 
 	case e_column: 

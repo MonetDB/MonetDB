@@ -6527,7 +6527,7 @@ exp_mark_used(sql_rel *subrel, sql_exp *e, int local_proj)
 			nr += exp_mark_used(subrel, e->l, local_proj);
 			nr += exps_mark_used(subrel, e->r, local_proj);
 			if (e->flag == PSM_IF && e->f)
-				nr += exp_mark_used(subrel, e->l, local_proj);
+				nr += exps_mark_used(subrel, e->f, local_proj);
 		}
 		e->used = 1;
 		break;

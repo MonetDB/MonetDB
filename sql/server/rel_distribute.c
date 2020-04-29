@@ -142,17 +142,16 @@ exp_replica(mvc *sql, sql_exp *e, char *uri)
 		}
 		break;
 	case e_psm:
-		if (e->flag & PSM_SET || e->flag & PSM_RETURN) 
+		if (e->flag & PSM_SET || e->flag & PSM_RETURN || e->flag & PSM_EXCEPTION) {
 			e->l = exp_replica(sql, e->l, uri);
-		else if (e->flag & PSM_WHILE || e->flag & PSM_IF) {
+		} else if (e->flag & PSM_WHILE || e->flag & PSM_IF) {
 			e->l = exp_replica(sql, e->l, uri);
 			e->r = exps_replica(sql, e->r, uri);
 			if (e->f)
 				e->f = exps_replica(sql, e->f, uri);
-		} else if (e->flag & PSM_REL)
+		} else if (e->flag & PSM_REL) {
 			e->l = replica(sql, e->l, uri);
-		else if (e->flag & PSM_EXCEPTION)
-			e->l = exp_replica(sql, e->l, uri);
+		}
 		break;
 	}
 	return e;
@@ -309,17 +308,16 @@ exp_distribute(mvc *sql, sql_exp *e)
 		}
 		break;
 	case e_psm:
-		if (e->flag & PSM_SET || e->flag & PSM_RETURN) 
+		if (e->flag & PSM_SET || e->flag & PSM_RETURN || e->flag & PSM_EXCEPTION) {
 			e->l = exp_distribute(sql, e->l);
-		else if (e->flag & PSM_WHILE || e->flag & PSM_IF) {
+		} else if (e->flag & PSM_WHILE || e->flag & PSM_IF) {
 			e->l = exp_distribute(sql, e->l);
 			e->r = exps_distribute(sql, e->r);
 			if (e->f)
 				e->f = exps_distribute(sql, e->f);
-		} else if (e->flag & PSM_REL)
+		} else if (e->flag & PSM_REL) {
 			e->l = distribute(sql, e->l);
-		else if (e->flag & PSM_EXCEPTION)
-			e->l = exp_distribute(sql, e->l);
+		}
 		break;
 	}
 	return e;

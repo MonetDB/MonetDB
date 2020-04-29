@@ -4050,6 +4050,7 @@ drop function pcre_replace(string, string, string, string);
 % %4,	name,	name,	name,	name,	dependency_type_name # name
 % char,	varchar,	varchar,	varchar,	varchar,	varchar # type
 % 25,	3,	17,	3,	13,	8 # length
+[ "function used by function",	"sys",	"ms_trunc",	"sys",	"ms_round",	"FUNCTION"	]
 [ "function used by function",	"sys",	"st_numgeometries",	"sys",	"st_numpatches",	"FUNCTION"	]
 [ "function used by function",	"sys",	"st_geometryn",	"sys",	"st_patchn",	"FUNCTION"	]
 [ "function used by function",	"sys",	"getproj4",	"sys",	"st_transform",	"FUNCTION"	]
