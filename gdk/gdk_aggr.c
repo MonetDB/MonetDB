@@ -3135,6 +3135,8 @@ BATgroupquantile_avg(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 			delta = (dbl) x - mean;		\
 			mean += delta / n;		\
 			m2 += delta * ((dbl) x - mean);	\
+			if (isinf(m2))			\
+				goto overflow;		\
 		}					\
 	} while (0)
 
@@ -3182,6 +3184,9 @@ calcvariance(dbl *restrict avgp, const void *restrict values, BUN cnt, int tp, b
 	if (avgp)
 		*avgp = mean;
 	return m2 / (n - issample);
+  overflow:
+	GDKerror("22003!overflow in calculation.\n");
+	return dbl_nil;
 }
 
 dbl
