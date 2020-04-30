@@ -129,7 +129,6 @@ typedef struct VMOSAICHEADER{
  */
 
 #define CNT_BITS 24
-//#define MOSAICMAXCNT 10000
 #define MOSAICMAXCNT ((1 << CNT_BITS) - 1)
 
 typedef struct MOSAICBLK {

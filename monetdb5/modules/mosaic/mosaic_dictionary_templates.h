@@ -27,6 +27,7 @@ MOSprepareDictionaryContext_SIGNATURE(METHOD)
 		throw(MAL,"mosaic." STRINGIFY(METHOD) ,MAL_MALLOC_FAIL);
 	}
 	(*info)->previous_start = task->start;
+	(*info)->previous_limit = 0;
 
 	BAT *ngid = NULL, *next = NULL, *freq = NULL;
 	BAT* source_copy = NULL;
@@ -302,7 +303,6 @@ MOSestimate_SIGNATURE(METHOD, TPE) {
 			while (o + 1 < BATcount(selection_vector) && ssv_val[o] == ssv_val[o+1]) {
 				freq += increment[++o];
 			}
-			assert(val->cnt + freq < MOSAICMAXCNT);
 			val->cnt += freq;
 			delta_count += val->cnt ? 1 :0;
 		}
