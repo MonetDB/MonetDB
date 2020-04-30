@@ -136,7 +136,7 @@ stdout of test 'mix` in directory 'sql/test/mosaic` itself:
 % technique,	factor,	blocks,	elements # name
 % clob,	double,	json,	json # type
 % 14,	24,	29,	31 # length
-[ "dict256 frame ",	1.084,	"[[{\"dict256\":1},{\"frame\":1}]]",	"[[{\"dict256\":50},{\"frame\":40}]]"	]
+[ "dict256 frame ",	1.111,	"[[{\"dict256\":1},{\"frame\":1}]]",	"[[{\"dict256\":50},{\"frame\":40}]]"	]
 [ "frame ",	1.071,	"[[{\"frame\":3}]]",	"[[{\"frame\":90}]]"	]
 [ "dict256 ",	0.803,	"[[{\"dict256\":1}]]",	"[[{\"dict256\":90}]]"	]
 #alter table mix0 alter column i set storage 'mosaic';
@@ -145,17 +145,17 @@ stdout of test 'mix` in directory 'sql/test/mosaic` itself:
 % compressed # name
 % bigint # type
 % 3 # length
-[ 332	]
+[ 324	]
 #select * from mosaic.layout('sys','mix0','i') ;
 % .%4,	.%4,	.%4,	.%4,	.%4,	.%4 # table_name
 % technique,	count,	inputsize,	outputsize,	properties,	bsn # name
 % clob,	bigint,	bigint,	bigint,	json,	bigint # type
 % 7,	2,	4,	3,	91,	1 # length
-[ "header",	90,	2880,	308,	"{\"blks\":[{\"dict256\":1},{\"frame\":1}],\"elms\":[{\"dict256\":50},{\"frame\":40}],\"ratio\":1.0843374}",	0	]
-[ "dict256",	2,	8,	NULL,	"{\"bits per key\" : 2}",	0	]
+[ "header",	90,	2880,	300,	"{\"blks\":[{\"dict256\":1},{\"frame\":1}],\"elms\":[{\"dict256\":50},{\"frame\":40}],\"ratio\":1.1111112}",	0	]
+[ "dict256",	2,	8,	NULL,	"{\"bits per key\" : 1}",	0	]
 [ "frame",	40,	160,	88,	"{\"min\" : 0,\"offset size in bits\" : 14}",	1	]
-[ "dict256",	50,	200,	28,	NULL,	2	]
-#drop table mix0;
+[ "dict256",	50,	200,	20,	NULL,	2	]
+#drop table mix0 cascade;
 
 # 21:39:24 >  
 # 21:39:24 >  "Done."

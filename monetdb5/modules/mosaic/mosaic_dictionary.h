@@ -21,8 +21,9 @@ static const bool nil = true;
 
 #define calculateBits(RES, COUNT)\
 {\
-	unsigned char bits = 0;\
-	while ((COUNT) >> bits) {\
+	unsigned char bits = 1;\
+	if (COUNT)\
+	while ( ((COUNT) -1) >> bits ) {\
 		bits++;\
 	}\
 	(RES) = bits;\
