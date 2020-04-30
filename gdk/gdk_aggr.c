@@ -3135,6 +3135,8 @@ BATgroupquantile_avg(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 			delta = (dbl) x - mean;		\
 			mean += delta / n;		\
 			m2 += delta * ((dbl) x - mean);	\
+			if (isinf(m2))			\
+				goto overflow;		\
 		}					\
 	} while (0)
 
@@ -3182,6 +3184,9 @@ calcvariance(dbl *restrict avgp, const void *restrict values, BUN cnt, int tp, b
 	if (avgp)
 		*avgp = mean;
 	return m2 / (n - issample);
+  overflow:
+	GDKerror("22003!overflow in calculation.\n");
+	return dbl_nil;
 }
 
 dbl
@@ -3250,6 +3255,8 @@ BATcalcvariance_sample(dbl *avgp, BAT *b)
 			delta2 = (dbl) y - mean2;			\
 			mean2 += delta2 / n;				\
 			m2 += delta1 * ((dbl) y - mean2);		\
+			if (isinf(m2))			\
+				goto overflow;		\
 		}							\
 	} while (0)
 
@@ -3290,6 +3297,9 @@ calccovariance(const void *v1, const void *v2, BUN cnt, int tp, bool issample)
 	if (n <= (BUN) issample)
 		return dbl_nil;
 	return m2 / (n - issample);
+  overflow:
+	GDKerror("22003!overflow in calculation.\n");
+	return dbl_nil;
 }
 
 dbl
@@ -3335,6 +3345,8 @@ BATcalccovariance_sample(BAT *b1, BAT *b2)
 			up += delta1 * aux;				\
 			down1 += delta1 * ((dbl) x - mean1);		\
 			down2 += delta2 * aux;				\
+			if (isinf(up) || isinf(down1) || isinf(down2))		\
+				goto overflow;		\
 		}							\
 	} while (0)
 
@@ -3385,6 +3397,9 @@ BATcalccorrelation(BAT *b1, BAT *b2)
 	TRC_DEBUG(ALGO, "b1=" ALGOBATFMT ",b2=" ALGOBATFMT " (" LLFMT " usec)\n",
 		  ALGOBATPAR(b1), ALGOBATPAR(b2), GDKusec() - t0);
 	return aux;
+  overflow:
+	GDKerror("22003!overflow in calculation.\n");
+	return dbl_nil;
 }
 
 #define AGGR_STDEV(TYPE)						\
@@ -3418,6 +3433,8 @@ BATcalccorrelation(BAT *b1, BAT *b2)
 			} else if (cnts[i] == 1) {			\
 				dbls[i] = issample ? dbl_nil : 0;	\
 				nils2++;				\
+			} else if (isinf(m2[i])) {			\
+				goto overflow;		\
 			} else if (variance) {				\
 				dbls[i] = m2[i] / (cnts[i] - issample);	\
 			} else {					\
@@ -3588,7 +3605,8 @@ dogroupstdev(BAT **avgb, BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 		  ALGOOPTBATPAR(bn), ALGOOPTBATPAR(an),
 		  func, GDKusec() - t0);
 	return bn;
-
+  overflow:
+	GDKerror("22003!overflow in calculation.\n");
   alloc_fail:
 	if (an)
 		BBPreclaim(an);
@@ -3670,6 +3688,8 @@ BATgroupvariance_population(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 			} else if (cnts[i] == 1) {			\
 				dbls[i] = issample ? dbl_nil : 0;	\
 				nils2++;				\
+			} else if (isinf(m2[i])) {		\
+				goto overflow;		\
 			} else {					\
 				dbls[i] = m2[i] / (cnts[i] - issample);	\
 			}						\
@@ -3808,6 +3828,8 @@ dogroupcovariance(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp,
 		  ALGOOPTBATPAR(bn),
 		  func, GDKusec() - t0);
 	return bn;
+  overflow:
+	GDKerror("22003!overflow in calculation.\n");
   alloc_fail:
 	BBPreclaim(bn);
 	GDKfree(mean1);
@@ -3868,6 +3890,8 @@ BATgroupcovariance_population(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp, 
 			if (cnts[i] <= 1 || cnts[i] == BUN_NONE || down1[i] == 0 || down2[i] == 0) { \
 				dbls[i] = dbl_nil;			\
 				nils++;					\
+			} else if (isinf(up[i]) || isinf(down1[i]) || isinf(down2[i])) {	\
+				goto overflow;		\
 			} else {					\
 				dbls[i] = (up[i] / cnts[i]) / (sqrt(down1[i] / cnts[i]) * sqrt(down2[i] / cnts[i])); \
 				assert(!is_dbl_nil(dbls[i]));		\
@@ -4008,6 +4032,8 @@ BATgroupcorrelation(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp, bool skip_
 		  ALGOOPTBATPAR(bn),
 		  GDKusec() - t0);
 	return bn;
+  overflow:
+	GDKerror("22003!overflow in calculation.\n");
   alloc_fail:
 	BBPreclaim(bn);
 	GDKfree(mean1);

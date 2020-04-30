@@ -181,8 +181,8 @@ MAPI  = (monetdb) /var/tmp/mtest-440671/.s.monetdb.33654
 QUERY = set current_timezone = null; --error, default global variables cannot be null
 ERROR = !current_timezone cannot be NULL
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-440671/.s.monetdb.33654
-QUERY = set current_timezone = 111111111111111111111111; --error, value too big
+MAPI  = (monetdb) /var/tmp/mtest-50153/.s.monetdb.33369
+QUERY = set current_timezone = 11111111111111; --error, value too big
 ERROR = !Value too large for current_timezone
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-440671/.s.monetdb.33654
