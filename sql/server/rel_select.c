@@ -1759,7 +1759,7 @@ rel_compare_exp_(sql_query *query, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_e
 		else
 			return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column in query results without an aggregate function");
 	}
-	if (rs->card <= CARD_ATOM && (exp_is_atom(rs) || exp_has_freevar(sql, rs)) &&
+	if (rs->card <= CARD_ATOM && (exp_is_atom(rs) || exp_has_freevar(sql, rs) || exp_has_freevar(sql, ls)) &&
 	   (!rs2 || (rs2->card <= CARD_ATOM && (exp_is_atom(rs2) || exp_has_freevar(sql, rs2))))) {
 		if ((ls->card == rs->card && !rs2) || rel->processed)  /* bin compare op */
 			return rel_select(sql->sa, rel, e);
@@ -1886,7 +1886,7 @@ rel_compare(sql_query *query, sql_rel *rel, symbol *sc, symbol *lo, symbol *ro, 
 	ls = rel_value_exp(query, &rel, lo, f, ek);
 	if (!ls)
 		return NULL;
-	if (ls && rel && exp_has_freevar(sql, ls) && (is_sql_sel(f) || is_sql_having(f)))
+	if (ls && rel && exp_has_freevar(sql, ls) && is_sql_sel(f))
 		ls = rel_project_add_exp(sql, rel, ls);
 	if (quantifier)
 		ek.card = card_set;
@@ -2003,6 +2003,7 @@ exp_exist(sql_query *query, sql_rel *rel, sql_exp *le, int exists)
 	mvc *sql = query->sql;
 	sql_subfunc *exists_func = NULL;
 	sql_subtype *t;
+	sql_exp *res;
 
 	if (!exp_name(le))
 		exp_label(sql->sa, le, ++sql->label);
@@ -2017,7 +2018,9 @@ exp_exist(sql_query *query, sql_rel *rel, sql_exp *le, int exists)
 
 	if (!exists_func) 
 		return sql_error(sql, 02, SQLSTATE(42000) "exist operator on type %s missing", t->type->sqlname);
-	return exp_unop(sql->sa, le, exists_func);
+	res = exp_unop(sql->sa, le, exists_func);
+	set_has_no_nil(res);
+	return res;
 }
 
 static sql_exp *
@@ -2448,7 +2451,7 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 			return NULL;
 		if (ek.card <= card_set && is_project(sq->op) && list_length(sq->exps) > 1)
 			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: subquery must return only one column");
-		if (ek.card < card_set && sq->card >= CARD_MULTI && (is_sql_sel(f) | is_sql_where(f)) && rel && (!*rel || is_basetable((*rel)->op) || is_simple_project((*rel)->op)))
+		if (ek.card < card_set && sq->card >= CARD_MULTI && (is_sql_sel(f) | is_sql_having(f) | ( is_sql_where(f) && rel && (!*rel || is_basetable((*rel)->op) || is_simple_project((*rel)->op)))))
 			sq = rel_zero_or_one(sql, sq, ek);
 		return exp_rel(sql, sq);
 	}
@@ -3509,7 +3512,10 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 				return sql_error(sql, 05, SQLSTATE(42000) "SELECT: aggregate functions not allowed in functions in FROM");
 			if (card > CARD_AGGR) { /* used an expression before on the non grouped relation */
 				sql_exp *lu = query_outer_last_used(query, all_freevar-1);
-				return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: subquery uses ungrouped column \"%s.%s\" from outer query", exp_relname(lu), exp_name(lu));
+				if (lu->type == e_column)
+					return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: subquery uses ungrouped column \"%s.%s\" from outer query", (char*)lu->l, (char*)lu->r);
+				else
+					return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: subquery uses ungrouped column \"%s.%s\" from outer query", exp_relname(lu), exp_name(lu));
 			}
 			if (is_outer(groupby))
 				return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: subquery uses ungrouped column from outer query");

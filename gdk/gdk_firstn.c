@@ -1051,7 +1051,7 @@ BATfirstn_grouped(BAT **topn, BAT **gids, BAT *b, BAT *s, BUN n, bool asc, bool 
 
 			bn1 = bn;
 			BBPunfix(s->batCacheid);
-			bn = BATintersect(b, b, su, bn1, true, BUN_NONE);
+			bn = BATintersect(b, b, su, bn1, true, false, BUN_NONE);
 			BBPunfix(bn1->batCacheid);
 			if (bn == NULL)
 				return GDK_FAIL;
@@ -1128,7 +1128,7 @@ BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BU
 			BBPunfix(bn2->batCacheid);
 			return GDK_FAIL;
 		}
-		bn4 = BATintersect(s, bn2, NULL, NULL, false, BUN_NONE);
+		bn4 = BATintersect(s, bn2, NULL, NULL, false, false, BUN_NONE);
 		BBPunfix(bn2->batCacheid);
 		if (bn4 == NULL) {
 			BBPunfix(bn1->batCacheid);
@@ -1210,7 +1210,7 @@ BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BU
 	if (gids) {
 		BAT *bn1, *bn2, *bn3, *bn4, *bn5, *bn6, *bn7, *bn8;
 
-		if ((bn1 = BATintersect(s, bn, NULL, NULL, false, BUN_NONE)) == NULL) {
+		if ((bn1 = BATintersect(s, bn, NULL, NULL, false, false, BUN_NONE)) == NULL) {
 			BBPunfix(bn->batCacheid);
 			return  GDK_FAIL;
 		}

@@ -1,6 +1,11 @@
 # ChangeLog file for MonetDB5
 # This file is updated with Maddlog
 
+* Tue Apr 28 2020 Sjoerd Mullender <sjoerd@acm.org>
+- The functions algegra.intersect and algebra.semijoin have an extra
+  argument, bool max_one, which indicates that there must be no more
+  than one match in the join.
+
 * Mon Apr 20 2020 Sjoerd Mullender <sjoerd@acm.org>
 - The example module opt_sql_append is not installed in the binary
   packages anymore.

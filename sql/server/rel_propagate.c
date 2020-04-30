@@ -81,7 +81,7 @@ rel_generate_anti_insert_expression(mvc *sql, sql_rel **anti_rel, sql_table *t)
 		*anti_rel = rel_project(sql->sa, *anti_rel, l);
 
 		inserts = (*anti_rel)->l;
-		if (inserts->op != op_project && inserts->op != op_basetable && inserts->op != op_table)
+		if (inserts->op != op_project && inserts->op != op_union && inserts->op != op_basetable && inserts->op != op_table)
 			inserts = inserts->l;
 		for (node *n = t->columns.set->h, *m = inserts->exps->h; n && m; n = n->next, m = m->next) {
 			sql_column *col = n->data;
@@ -552,7 +552,7 @@ rel_change_base_table(mvc* sql, sql_rel* rel, sql_table* oldt, sql_table* newt)
 				rel->l = rel_change_base_table(sql, rel->l, oldt, newt);
 			break;
 		case op_ddl:
-			if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq) {
+			if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq || rel->flag == ddl_alter_table || rel->flag == ddl_create_table || rel->flag == ddl_create_view) {
 				if (rel->l)
 					rel->l = rel_change_base_table(sql, rel->l, oldt, newt);
 			} else if (rel->flag == ddl_list || rel->flag == ddl_exception) {
