@@ -1715,7 +1715,9 @@ GDKanalyticalavg(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
 				mean += delta / n;		\
 				m2 += delta * ((dbl) v - mean);	\
 			}						\
-			if (n > SAMPLE) { \
+			if (isinf(m2)) {	\
+				goto overflow;		\
+			} else if (n > SAMPLE) { \
 				*rb = OP; \
 			} else { \
 				*rb = dbl_nil; \
@@ -1776,6 +1778,9 @@ GDKanalytical_##NAME(BAT *r, BAT *b, BAT *s, BAT *e, int tpe) \
 	r->tnonil = nils == 0; \
 	r->tnil = nils > 0; \
 	return GDK_SUCCEED; \
+  overflow: \
+	GDKerror("22003!overflow in calculation.\n"); \
+	return GDK_FAIL; \
 }
 
 GDK_ANALYTICAL_STDEV_VARIANCE(stddev_samp, 1, sqrt(m2 / (n - 1)), "standard deviation")
@@ -1802,7 +1807,9 @@ GDK_ANALYTICAL_STDEV_VARIANCE(variance_pop, 0, m2 / n, "variance")
 				mean2 += delta2 / n;		\
 				m2 += delta1 * ((dbl) v2 - mean2);	\
 			}	\
-			if (n > SAMPLE) { \
+			if (isinf(m2)) {	\
+				goto overflow;		\
+			} else if (n > SAMPLE) { \
 				*rb = OP; \
 			} else { \
 				*rb = dbl_nil; \
@@ -1864,6 +1871,9 @@ GDKanalytical_##NAME(BAT *r, BAT *b1, BAT *b2, BAT *s, BAT *e, int tpe) \
 	r->tnonil = nils == 0; \
 	r->tnil = nils > 0; \
 	return GDK_SUCCEED; \
+  overflow: \
+	GDKerror("22003!overflow in calculation.\n"); \
+	return GDK_FAIL; \
 }
 
 GDK_ANALYTICAL_COVARIANCE(covariance_samp, 1, m2 / (n - 1))
@@ -1891,7 +1901,9 @@ GDK_ANALYTICAL_COVARIANCE(covariance_pop, 0, m2 / n)
 				down1 += delta1 * ((dbl) v1 - mean1);	\
 				down2 += delta2 * aux;	\
 			}	\
-			if (n != 0 && down1 != 0 && down2 != 0) { \
+			if (isinf(up) || isinf(down1) || isinf(down2)) {	\
+				goto overflow;	\
+			} else if (n != 0 && down1 != 0 && down2 != 0) { \
 				*rb = (up / n) / (sqrt(down1 / n) * sqrt(down2 / n)); \
 				assert(!is_dbl_nil(*rb)); \
 			} else { \
@@ -1950,4 +1962,7 @@ GDKanalytical_correlation(BAT *r, BAT *b1, BAT *b2, BAT *s, BAT *e, int tpe)
 	r->tnonil = nils == 0;
 	r->tnil = nils > 0;
 	return GDK_SUCCEED;
+  overflow:
+	GDKerror("22003!overflow in calculation.\n");
+	return GDK_FAIL;
 }
