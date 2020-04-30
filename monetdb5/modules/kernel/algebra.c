@@ -1263,7 +1263,7 @@ ALGstdev(dbl *res, const bat *bid)
 	stdev = BATcalcstdev_sample(NULL, b);
 	BBPunfix(b->batCacheid);
 	if (is_dbl_nil(stdev) && GDKerrbuf && GDKerrbuf[0])
-		throw(MAL, "aggr.stdev", SEMANTIC_TYPE_MISMATCH);
+		throw(MAL, "aggr.stdev", GDK_EXCEPTION);
 	*res = stdev;
 	return MAL_SUCCEED;
 }
@@ -1279,7 +1279,7 @@ ALGstdevp(dbl *res, const bat *bid)
 	stdev = BATcalcstdev_population(NULL, b);
 	BBPunfix(b->batCacheid);
 	if (is_dbl_nil(stdev) && GDKerrbuf && GDKerrbuf[0])
-		throw(MAL, "aggr.stdevp", SEMANTIC_TYPE_MISMATCH);
+		throw(MAL, "aggr.stdevp", GDK_EXCEPTION);
 	*res = stdev;
 	return MAL_SUCCEED;
 }
@@ -1298,7 +1298,7 @@ ALGvariance(dbl *res, const bat *bid)
 	variance = BATcalcvariance_sample(NULL, b);
 	BBPunfix(b->batCacheid);
 	if (is_dbl_nil(variance) && GDKerrbuf && GDKerrbuf[0])
-		throw(MAL, "aggr.variance", SEMANTIC_TYPE_MISMATCH);
+		throw(MAL, "aggr.variance", GDK_EXCEPTION);
 	*res = variance;
 	return MAL_SUCCEED;
 }
@@ -1314,7 +1314,7 @@ ALGvariancep(dbl *res, const bat *bid)
 	variance = BATcalcvariance_population(NULL, b);
 	BBPunfix(b->batCacheid);
 	if (is_dbl_nil(variance) && GDKerrbuf && GDKerrbuf[0])
-		throw(MAL, "aggr.variancep", SEMANTIC_TYPE_MISMATCH);
+		throw(MAL, "aggr.variancep", GDK_EXCEPTION);
 	*res = variance;
 	return MAL_SUCCEED;
 }
@@ -1339,7 +1339,7 @@ ALGcovariance(dbl *res, const bat *bid1, const bat *bid2)
 	BBPunfix(b1->batCacheid);
 	BBPunfix(b2->batCacheid);
 	if (is_dbl_nil(covariance) && GDKerrbuf && GDKerrbuf[0])
-		throw(MAL, "aggr.covariance", SEMANTIC_TYPE_MISMATCH);
+		throw(MAL, "aggr.covariance", GDK_EXCEPTION);
 	*res = covariance;
 	return MAL_SUCCEED;
 }
@@ -1361,7 +1361,7 @@ ALGcovariancep(dbl *res, const bat *bid1, const bat *bid2)
 	BBPunfix(b1->batCacheid);
 	BBPunfix(b2->batCacheid);
 	if (is_dbl_nil(covariance) && GDKerrbuf && GDKerrbuf[0])
-		throw(MAL, "aggr.covariancep", SEMANTIC_TYPE_MISMATCH);
+		throw(MAL, "aggr.covariancep", GDK_EXCEPTION);
 	*res = covariance;
 	return MAL_SUCCEED;
 }
@@ -1386,7 +1386,7 @@ ALGcorr(dbl *res, const bat *bid1, const bat *bid2)
 	BBPunfix(b1->batCacheid);
 	BBPunfix(b2->batCacheid);
 	if (is_dbl_nil(covariance) && GDKerrbuf && GDKerrbuf[0])
-		throw(MAL, "aggr.corr", SEMANTIC_TYPE_MISMATCH);
+		throw(MAL, "aggr.corr", GDK_EXCEPTION);
 	*res = covariance;
 	return MAL_SUCCEED;
 }
