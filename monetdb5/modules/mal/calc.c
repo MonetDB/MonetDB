@@ -618,7 +618,9 @@ CALCswitchbit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	ptr p;
 	ptr retval = getArgReference(stk, pci, 0);
-	bit b = *getArgReference_bit(stk, pci, 1);
+	bit b = stk->stk[getArg(pci, 1)].vtype == TYPE_msk
+		? (bit) *getArgReference_msk(stk, pci, 1)
+		: *getArgReference_bit(stk, pci, 1);
 	int t1 = getArgType(mb, pci, 2);
 	int t2 = getArgType(mb, pci, 3);
 

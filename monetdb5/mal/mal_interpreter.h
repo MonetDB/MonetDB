@@ -43,6 +43,12 @@ mal_export ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k);
 		assert((s)->stk[(pci)->argv[k]].vtype == TYPE_##TYPE);	\
 		(TYPE *) getArgReference((s), (pci), (k));				\
 	})
+#define getArgReference_msk(s, pci, k)				\
+	({												\
+		ValRecord *v = &(s)->stk[(pci)->argv[k]];	\
+		assert(v->vtype == TYPE_msk);				\
+		&v->val.mval;								\
+	})
 #define getArgReference_bit(s, pci, k)				\
 	({												\
 		ValRecord *v = &(s)->stk[(pci)->argv[k]];	\
@@ -119,6 +125,7 @@ mal_export ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k);
 	})
 #else
 #define getArgReference_TYPE(s, pci, k, TYPE)	((TYPE *) getArgReference(s, pci, k))
+#define getArgReference_msk(s, pci, k)	(&(s)->stk[(pci)->argv[k]].val.mval)
 #define getArgReference_bit(s, pci, k)	((bit *) &(s)->stk[(pci)->argv[k]].val.btval)
 #define getArgReference_sht(s, pci, k)	(&(s)->stk[(pci)->argv[k]].val.shval)
 #define getArgReference_bat(s, pci, k)	(&(s)->stk[(pci)->argv[k]].val.bval)

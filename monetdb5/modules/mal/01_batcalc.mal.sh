@@ -25,10 +25,16 @@ comment "Unary check for zero over the tail of the bat";
 pattern iszero(b:bat[:$tp],s:bat[:oid]) :bat[:bit]
 address CMDbatISZERO
 comment "Unary check for zero over the tail of the bat with candidates list";
+pattern iszero(b:bat[:$tp],s:bat[:msk]) :bat[:bit]
+address CMDbatISZERO
+comment "Unary check for zero over the tail of the bat with candidates list";
 pattern iszero(b:bat[:$tp],r:bat[:bit]) :bat[:bit]
 address CMDbatISZERO
 comment "Unary check for zero over the tail of the bat";
 pattern iszero(b:bat[:$tp],s:bat[:oid],r:bat[:bit]) :bat[:bit]
+address CMDbatISZERO
+comment "Unary check for zero over the tail of the bat with candidates list";
+pattern iszero(b:bat[:$tp],s:bat[:msk],r:bat[:bit]) :bat[:bit]
 address CMDbatISZERO
 comment "Unary check for zero over the tail of the bat with candidates list";
 
@@ -44,10 +50,16 @@ comment "Unary check for $func over the tail of the bat";
 pattern is$func(b:bat[:any],s:bat[:oid]) :bat[:bit]
 address CMDbatIS${func^^}
 comment "Unary check for $func over the tail of the bat with candidates list";
+pattern is$func(b:bat[:any],s:bat[:msk]) :bat[:bit]
+address CMDbatIS${func^^}
+comment "Unary check for $func over the tail of the bat with candidates list";
 pattern is$func(b:bat[:any],r:bat[:bit]) :bat[:bit]
 address CMDbatIS${func^^}
 comment "Unary check for $func over the tail of the bat";
 pattern is$func(b:bat[:any],s:bat[:oid],r:bat[:bit]) :bat[:bit]
+address CMDbatIS${func^^}
+comment "Unary check for $func over the tail of the bat with candidates list";
+pattern is$func(b:bat[:any],s:bat[:msk],r:bat[:bit]) :bat[:bit]
 address CMDbatIS${func^^}
 comment "Unary check for $func over the tail of the bat with candidates list";
 
@@ -64,10 +76,16 @@ comment "$com";
 pattern not(b:bat[:$tp],s:bat[:oid]) :bat[:$tp]
 address CMDbatNOT
 comment "$com with candidates list";
+pattern not(b:bat[:$tp],s:bat[:msk]) :bat[:$tp]
+address CMDbatNOT
+comment "$com with candidates list";
 pattern not(b:bat[:$tp],r:bat[:bit]) :bat[:$tp]
 address CMDbatNOT
 comment "$com";
 pattern not(b:bat[:$tp],s:bat[:oid],r:bat[:bit]) :bat[:$tp]
+address CMDbatNOT
+comment "$com with candidates list";
+pattern not(b:bat[:$tp],s:bat[:msk],r:bat[:bit]) :bat[:$tp]
 address CMDbatNOT
 comment "$com with candidates list";
 
@@ -84,10 +102,16 @@ comment "Unary sign (-1,0,1) over the tail of the bat";
 pattern sign(b:bat[:$tp],s:bat[:oid]) :bat[:bte]
 address CMDbatSIGN
 comment "Unary sign (-1,0,1) over the tail of the bat with candidates list";
+pattern sign(b:bat[:$tp],s:bat[:msk]) :bat[:bte]
+address CMDbatSIGN
+comment "Unary sign (-1,0,1) over the tail of the bat with candidates list";
 pattern sign(b:bat[:$tp],r:bat[:bit]) :bat[:bte]
 address CMDbatSIGN
 comment "Unary sign (-1,0,1) over the tail of the bat";
 pattern sign(b:bat[:$tp],s:bat[:oid],r:bat[:bit]) :bat[:bte]
+address CMDbatSIGN
+comment "Unary sign (-1,0,1) over the tail of the bat with candidates list";
+pattern sign(b:bat[:$tp],s:bat[:msk],r:bat[:bit]) :bat[:bte]
 address CMDbatSIGN
 comment "Unary sign (-1,0,1) over the tail of the bat with candidates list";
 
@@ -111,10 +135,16 @@ comment "$com";
 pattern $op(b:bat[:$tp],s:bat[:oid]) :bat[:$tp]
 address CMDbat${func}
 comment "$com with candidates list";
+pattern $op(b:bat[:$tp],s:bat[:msk]) :bat[:$tp]
+address CMDbat${func}
+comment "$com with candidates list";
 pattern $op(b:bat[:$tp],r:bat[:bit]) :bat[:$tp]
 address CMDbat${func}
 comment "$com";
 pattern $op(b:bat[:$tp],s:bat[:oid],r:bat[:bit]) :bat[:$tp]
+address CMDbat${func}
+comment "$com with candidates list";
+pattern $op(b:bat[:$tp],s:bat[:msk],r:bat[:bit]) :bat[:$tp]
 address CMDbat${func}
 comment "$com with candidates list";
 
@@ -138,10 +168,16 @@ comment "Return bat with ${func}imum value of each pair of inputs${funcx:+, igno
 pattern $func$funcx(b:bat[:any_1],v:any_1,s:bat[:oid]) :bat[:any_1]
 address CMDbat${func^^}$funcx
 comment "Return bat with ${func}imum value of each pair of inputs${funcx:+, ignoring nil values}";
+pattern $func$funcx(b:bat[:any_1],v:any_1,s:bat[:msk]) :bat[:any_1]
+address CMDbat${func^^}$funcx
+comment "Return bat with ${func}imum value of each pair of inputs${funcx:+, ignoring nil values}";
 pattern $func$funcx(v:any_1,b:bat[:any_1]) :bat[:any_1]
 address CMDbat${func^^}$funcx
 comment "Return bat with ${func}imum value of each pair of inputs${funcx:+, ignoring nil values}";
 pattern $func$funcx(v:any_1,b:bat[:any_1],s:bat[:oid]) :bat[:any_1]
+address CMDbat${func^^}$funcx
+comment "Return bat with ${func}imum value of each pair of inputs${funcx:+, ignoring nil values}";
+pattern $func$funcx(v:any_1,b:bat[:any_1],s:bat[:msk]) :bat[:any_1]
 address CMDbat${func^^}$funcx
 comment "Return bat with ${func}imum value of each pair of inputs${funcx:+, ignoring nil values}";
 pattern $func$funcx(b1:bat[:any_1],b2:bat[:any_1],r:bat[:bit]) :bat[:any_1]
@@ -156,10 +192,16 @@ comment "Return bat with ${func}imum value of each pair of inputs${funcx:+, igno
 pattern $func$funcx(b:bat[:any_1],v:any_1,s:bat[:oid],r:bat[:bit]) :bat[:any_1]
 address CMDbat${func^^}$funcx
 comment "Return bat with ${func}imum value of each pair of inputs${funcx:+, ignoring nil values}";
+pattern $func$funcx(b:bat[:any_1],v:any_1,s:bat[:msk],r:bat[:bit]) :bat[:any_1]
+address CMDbat${func^^}$funcx
+comment "Return bat with ${func}imum value of each pair of inputs${funcx:+, ignoring nil values}";
 pattern $func$funcx(v:any_1,b:bat[:any_1],r:bat[:bit]) :bat[:any_1]
 address CMDbat${func^^}$funcx
 comment "Return bat with ${func}imum value of each pair of inputs${funcx:+, ignoring nil values}";
 pattern $func$funcx(v:any_1,b:bat[:any_1],s:bat[:oid],r:bat[:bit]) :bat[:any_1]
+address CMDbat${func^^}$funcx
+comment "Return bat with ${func}imum value of each pair of inputs${funcx:+, ignoring nil values}";
+pattern $func$funcx(v:any_1,b:bat[:any_1],s:bat[:msk],r:bat[:bit]) :bat[:any_1]
 address CMDbat${func^^}$funcx
 comment "Return bat with ${func}imum value of each pair of inputs${funcx:+, ignoring nil values}";
 
@@ -191,13 +233,25 @@ comment "Return B1 $op B2 with candidates list, overflow causes NIL value";
 pattern $op(b:bat[:$tp1],v:$tp2,s:bat[:oid]) :bat[:$tp3]
 address CMDbat${name}signal
 comment "Return B $op V with candidates list, signal error on overflow";
+pattern $op(b:bat[:$tp1],v:$tp2,s:bat[:msk]) :bat[:$tp3]
+address CMDbat${name}signal
+comment "Return B $op V with candidates list, signal error on overflow";
 pattern ${name,,}_noerror(b:bat[:$tp1],v:$tp2,s:bat[:oid]) :bat[:$tp3]
+address CMDbat${name}
+comment "Return B $op V with candidates list, overflow causes NIL value";
+pattern ${name,,}_noerror(b:bat[:$tp1],v:$tp2,s:bat[:msk]) :bat[:$tp3]
 address CMDbat${name}
 comment "Return B $op V with candidates list, overflow causes NIL value";
 pattern $op(v:$tp1,b:bat[:$tp2],s:bat[:oid]) :bat[:$tp3]
 address CMDbat${name}signal
 comment "Return V $op B with candidates list, signal error on overflow";
+pattern $op(v:$tp1,b:bat[:$tp2],s:bat[:msk]) :bat[:$tp3]
+address CMDbat${name}signal
+comment "Return V $op B with candidates list, signal error on overflow";
 pattern ${name,,}_noerror(v:$tp1,b:bat[:$tp2],s:bat[:oid]) :bat[:$tp3]
+address CMDbat${name}
+comment "Return V $op B with candidates list, overflow causes NIL value";
+pattern ${name,,}_noerror(v:$tp1,b:bat[:$tp2],s:bat[:msk]) :bat[:$tp3]
 address CMDbat${name}
 comment "Return V $op B with candidates list, overflow causes NIL value";
 pattern $op(b1:bat[:$tp1],b2:bat[:$tp2],s1:bat[:oid],s2:bat[:oid],r:bat[:bit]) :bat[:$tp3]
@@ -209,13 +263,25 @@ comment "Return B1 $op B2 with candidates list, overflow causes NIL value";
 pattern $op(b:bat[:$tp1],v:$tp2,s:bat[:oid],r:bat[:bit]) :bat[:$tp3]
 address CMDbat${name}signal
 comment "Return B $op V with candidates list, signal error on overflow";
+pattern $op(b:bat[:$tp1],v:$tp2,s:bat[:msk],r:bat[:bit]) :bat[:$tp3]
+address CMDbat${name}signal
+comment "Return B $op V with candidates list, signal error on overflow";
 pattern ${name,,}_noerror(b:bat[:$tp1],v:$tp2,s:bat[:oid],r:bat[:bit]) :bat[:$tp3]
+address CMDbat${name}
+comment "Return B $op V with candidates list, overflow causes NIL value";
+pattern ${name,,}_noerror(b:bat[:$tp1],v:$tp2,s:bat[:msk],r:bat[:bit]) :bat[:$tp3]
 address CMDbat${name}
 comment "Return B $op V with candidates list, overflow causes NIL value";
 pattern $op(v:$tp1,b:bat[:$tp2],s:bat[:oid],r:bat[:bit]) :bat[:$tp3]
 address CMDbat${name}signal
 comment "Return V $op B with candidates list, signal error on overflow";
+pattern $op(v:$tp1,b:bat[:$tp2],s:bat[:msk],r:bat[:bit]) :bat[:$tp3]
+address CMDbat${name}signal
+comment "Return V $op B with candidates list, signal error on overflow";
 pattern ${name,,}_noerror(v:$tp1,b:bat[:$tp2],s:bat[:oid],r:bat[:bit]) :bat[:$tp3]
+address CMDbat${name}
+comment "Return V $op B with candidates list, overflow causes NIL value";
+pattern ${name,,}_noerror(v:$tp1,b:bat[:$tp2],s:bat[:msk],r:bat[:bit]) :bat[:$tp3]
 address CMDbat${name}
 comment "Return V $op B with candidates list, overflow causes NIL value";
 
@@ -228,7 +294,13 @@ comment "Return B1 $op B2 with candidates list, guarantee no overflow by returni
 pattern $op(b:bat[:$tp1],v:$tp2,s:bat[:oid]) :bat[:$tp3]
 address CMDbat${name}enlarge
 comment "Return B $op V with candidates list, guarantee no overflow by returning larger type";
+pattern $op(b:bat[:$tp1],v:$tp2,s:bat[:msk]) :bat[:$tp3]
+address CMDbat${name}enlarge
+comment "Return B $op V with candidates list, guarantee no overflow by returning larger type";
 pattern $op(v:$tp1,b:bat[:$tp2],s:bat[:oid]) :bat[:$tp3]
+address CMDbat${name}enlarge
+comment "Return V $op B with candidates list, guarantee no overflow by returning larger type";
+pattern $op(v:$tp1,b:bat[:$tp2],s:bat[:msk]) :bat[:$tp3]
 address CMDbat${name}enlarge
 comment "Return V $op B with candidates list, guarantee no overflow by returning larger type";
 pattern $op(b1:bat[:$tp1],b2:bat[:$tp2],s1:bat[:oid],s2:bat[:oid],r:bat[:bit]) :bat[:$tp3]
@@ -237,7 +309,13 @@ comment "Return B1 $op B2 with candidates list, guarantee no overflow by returni
 pattern $op(b:bat[:$tp1],v:$tp2,s:bat[:oid],r:bat[:bit]) :bat[:$tp3]
 address CMDbat${name}enlarge
 comment "Return B $op V with candidates list, guarantee no overflow by returning larger type";
+pattern $op(b:bat[:$tp1],v:$tp2,s:bat[:msk],r:bat[:bit]) :bat[:$tp3]
+address CMDbat${name}enlarge
+comment "Return B $op V with candidates list, guarantee no overflow by returning larger type";
 pattern $op(v:$tp1,b:bat[:$tp2],s:bat[:oid],r:bat[:bit]) :bat[:$tp3]
+address CMDbat${name}enlarge
+comment "Return V $op B with candidates list, guarantee no overflow by returning larger type";
+pattern $op(v:$tp1,b:bat[:$tp2],s:bat[:msk],r:bat[:bit]) :bat[:$tp3]
 address CMDbat${name}enlarge
 comment "Return V $op B with candidates list, guarantee no overflow by returning larger type";
 
@@ -255,7 +333,13 @@ comment "Return concatenation of B1 and B2 with candidates list";
 pattern +(b:bat[:str],v:str,s:bat[:oid]) :bat[:str]
 address CMDbatADD
 comment "Return concatenation of B and V with candidates list";
+pattern +(b:bat[:str],v:str,s:bat[:msk]) :bat[:str]
+address CMDbatADD
+comment "Return concatenation of B and V with candidates list";
 pattern +(v:str,b:bat[:str],s:bat[:oid]) :bat[:str]
+address CMDbatADD
+comment "Return concatenation of V and B with candidates list";
+pattern +(v:str,b:bat[:str],s:bat[:msk]) :bat[:str]
 address CMDbatADD
 comment "Return concatenation of V and B with candidates list";
 pattern +(b1:bat[:str],b2:bat[:str],s1:bat[:oid],s2:bat[:oid],r:bat[:bit]) :bat[:str]
@@ -264,7 +348,13 @@ comment "Return concatenation of B1 and B2 with candidates list";
 pattern +(b:bat[:str],v:str,s:bat[:oid],r:bat[:bit]) :bat[:str]
 address CMDbatADD
 comment "Return concatenation of B and V with candidates list";
+pattern +(b:bat[:str],v:str,s:bat[:msk],r:bat[:bit]) :bat[:str]
+address CMDbatADD
+comment "Return concatenation of B and V with candidates list";
 pattern +(v:str,b:bat[:str],s:bat[:oid],r:bat[:bit]) :bat[:str]
+address CMDbatADD
+comment "Return concatenation of V and B with candidates list";
+pattern +(v:str,b:bat[:str],s:bat[:msk],r:bat[:bit]) :bat[:str]
 address CMDbatADD
 comment "Return concatenation of V and B with candidates list";
 
@@ -286,13 +376,25 @@ comment "Return B1 / B2 with candidates list, overflow causes NIL value";
 pattern /(b:bat[:$tp1],v:$tp2,s:bat[:oid]) :bat[:$tp3]
 address CMDbatDIVsignal
 comment "Return B / V with candidates list, signal error on overflow";
+pattern /(b:bat[:$tp1],v:$tp2,s:bat[:msk]) :bat[:$tp3]
+address CMDbatDIVsignal
+comment "Return B / V with candidates list, signal error on overflow";
 pattern div_noerror(b:bat[:$tp1],v:$tp2,s:bat[:oid]) :bat[:$tp3]
+address CMDbatDIV
+comment "Return B / V with candidates list, overflow causes NIL value";
+pattern div_noerror(b:bat[:$tp1],v:$tp2,s:bat[:msk]) :bat[:$tp3]
 address CMDbatDIV
 comment "Return B / V with candidates list, overflow causes NIL value";
 pattern /(v:$tp1,b:bat[:$tp2],s:bat[:oid]) :bat[:$tp3]
 address CMDbatDIVsignal
 comment "Return V / B with candidates list, signal error on overflow";
+pattern /(v:$tp1,b:bat[:$tp2],s:bat[:msk]) :bat[:$tp3]
+address CMDbatDIVsignal
+comment "Return V / B with candidates list, signal error on overflow";
 pattern div_noerror(v:$tp1,b:bat[:$tp2],s:bat[:oid]) :bat[:$tp3]
+address CMDbatDIV
+comment "Return V / B with candidates list, overflow causes NIL value";
+pattern div_noerror(v:$tp1,b:bat[:$tp2],s:bat[:msk]) :bat[:$tp3]
 address CMDbatDIV
 comment "Return V / B with candidates list, overflow causes NIL value";
 pattern /(b1:bat[:$tp1],b2:bat[:$tp2],s1:bat[:oid],s2:bat[:oid],r:bat[:bit]) :bat[:$tp3]
@@ -304,13 +406,25 @@ comment "Return B1 / B2 with candidates list, overflow causes NIL value";
 pattern /(b:bat[:$tp1],v:$tp2,s:bat[:oid],r:bat[:bit]) :bat[:$tp3]
 address CMDbatDIVsignal
 comment "Return B / V with candidates list, signal error on overflow";
+pattern /(b:bat[:$tp1],v:$tp2,s:bat[:msk],r:bat[:bit]) :bat[:$tp3]
+address CMDbatDIVsignal
+comment "Return B / V with candidates list, signal error on overflow";
 pattern div_noerror(b:bat[:$tp1],v:$tp2,s:bat[:oid],r:bat[:bit]) :bat[:$tp3]
+address CMDbatDIV
+comment "Return B / V with candidates list, overflow causes NIL value";
+pattern div_noerror(b:bat[:$tp1],v:$tp2,s:bat[:msk],r:bat[:bit]) :bat[:$tp3]
 address CMDbatDIV
 comment "Return B / V with candidates list, overflow causes NIL value";
 pattern /(v:$tp1,b:bat[:$tp2],s:bat[:oid],r:bat[:bit]) :bat[:$tp3]
 address CMDbatDIVsignal
 comment "Return V / B with candidates list, signal error on overflow";
+pattern /(v:$tp1,b:bat[:$tp2],s:bat[:msk],r:bat[:bit]) :bat[:$tp3]
+address CMDbatDIVsignal
+comment "Return V / B with candidates list, signal error on overflow";
 pattern div_noerror(v:$tp1,b:bat[:$tp2],s:bat[:oid],r:bat[:bit]) :bat[:$tp3]
+address CMDbatDIV
+comment "Return V / B with candidates list, overflow causes NIL value";
+pattern div_noerror(v:$tp1,b:bat[:$tp2],s:bat[:msk],r:bat[:bit]) :bat[:$tp3]
 address CMDbatDIV
 comment "Return V / B with candidates list, overflow causes NIL value";
 
@@ -360,13 +474,25 @@ comment "Return B1 % B2 with candidates list, divide by zero causes NIL value";
 pattern %(b:bat[:$tp1],v:$tp2,s:bat[:oid]) :bat[:$tp3]
 address CMDbatMODsignal
 comment "Return B % V with candidates list, signal error on divide by zero";
+pattern %(b:bat[:$tp1],v:$tp2,s:bat[:msk]) :bat[:$tp3]
+address CMDbatMODsignal
+comment "Return B % V with candidates list, signal error on divide by zero";
 pattern mod_noerror(b:bat[:$tp1],v:$tp2,s:bat[:oid]) :bat[:$tp3]
+address CMDbatMOD
+comment "Return B % V with candidates list, divide by zero causes NIL value";
+pattern mod_noerror(b:bat[:$tp1],v:$tp2,s:bat[:msk]) :bat[:$tp3]
 address CMDbatMOD
 comment "Return B % V with candidates list, divide by zero causes NIL value";
 pattern %(v:$tp1,b:bat[:$tp2],s:bat[:oid]) :bat[:$tp3]
 address CMDbatMODsignal
 comment "Return V % B with candidates list, signal error on divide by zero";
+pattern %(v:$tp1,b:bat[:$tp2],s:bat[:msk]) :bat[:$tp3]
+address CMDbatMODsignal
+comment "Return V % B with candidates list, signal error on divide by zero";
 pattern mod_noerror(v:$tp1,b:bat[:$tp2],s:bat[:oid]) :bat[:$tp3]
+address CMDbatMOD
+comment "Return V % B with candidates list, divide by zero causes NIL value";
+pattern mod_noerror(v:$tp1,b:bat[:$tp2],s:bat[:msk]) :bat[:$tp3]
 address CMDbatMOD
 comment "Return V % B with candidates list, divide by zero causes NIL value";
 pattern %(b1:bat[:$tp1],b2:bat[:$tp2],s1:bat[:oid],s2:bat[:oid],r:bat[:bit]) :bat[:$tp3]
@@ -378,13 +504,25 @@ comment "Return B1 % B2 with candidates list, divide by zero causes NIL value";
 pattern %(b:bat[:$tp1],v:$tp2,s:bat[:oid],r:bat[:bit]) :bat[:$tp3]
 address CMDbatMODsignal
 comment "Return B % V with candidates list, signal error on divide by zero";
+pattern %(b:bat[:$tp1],v:$tp2,s:bat[:msk],r:bat[:bit]) :bat[:$tp3]
+address CMDbatMODsignal
+comment "Return B % V with candidates list, signal error on divide by zero";
 pattern mod_noerror(b:bat[:$tp1],v:$tp2,s:bat[:oid],r:bat[:bit]) :bat[:$tp3]
+address CMDbatMOD
+comment "Return B % V with candidates list, divide by zero causes NIL value";
+pattern mod_noerror(b:bat[:$tp1],v:$tp2,s:bat[:msk],r:bat[:bit]) :bat[:$tp3]
 address CMDbatMOD
 comment "Return B % V with candidates list, divide by zero causes NIL value";
 pattern %(v:$tp1,b:bat[:$tp2],s:bat[:oid],r:bat[:bit]) :bat[:$tp3]
 address CMDbatMODsignal
 comment "Return V % B with candidates list, signal error on divide by zero";
+pattern %(v:$tp1,b:bat[:$tp2],s:bat[:msk],r:bat[:bit]) :bat[:$tp3]
+address CMDbatMODsignal
+comment "Return V % B with candidates list, signal error on divide by zero";
 pattern mod_noerror(v:$tp1,b:bat[:$tp2],s:bat[:oid],r:bat[:bit]) :bat[:$tp3]
+address CMDbatMOD
+comment "Return V % B with candidates list, divide by zero causes NIL value";
+pattern mod_noerror(v:$tp1,b:bat[:$tp2],s:bat[:msk],r:bat[:bit]) :bat[:$tp3]
 address CMDbatMOD
 comment "Return V % B with candidates list, divide by zero causes NIL value";
 
@@ -409,10 +547,16 @@ comment "Return B ${op^^} V";
 pattern $op(b:bat[:$tp],v:$tp,s:bat[:oid]) :bat[:$tp]
 address CMDbat${op^^}
 comment "Return B ${op^^} V with candidates list";
+pattern $op(b:bat[:$tp],v:$tp,s:bat[:msk]) :bat[:$tp]
+address CMDbat${op^^}
+comment "Return B ${op^^} V with candidates list";
 pattern $op(v:$tp,b:bat[:$tp]) :bat[:$tp]
 address CMDbat${op^^}
 comment "Return V ${op^^} B";
 pattern $op(v:$tp,b:bat[:$tp],s:bat[:oid]) :bat[:$tp]
+address CMDbat${op^^}
+comment "Return V ${op^^} B with candidates list";
+pattern $op(v:$tp,b:bat[:$tp],s:bat[:msk]) :bat[:$tp]
 address CMDbat${op^^}
 comment "Return V ${op^^} B with candidates list";
 pattern ${op}(b1:bat[:$tp],b2:bat[:$tp],r:bat[:bit]) :bat[:$tp]
@@ -427,10 +571,16 @@ comment "Return B ${op^^} V";
 pattern $op(b:bat[:$tp],v:$tp,s:bat[:oid],r:bat[:bit]) :bat[:$tp]
 address CMDbat${op^^}
 comment "Return B ${op^^} V with candidates list";
+pattern $op(b:bat[:$tp],v:$tp,s:bat[:msk],r:bat[:bit]) :bat[:$tp]
+address CMDbat${op^^}
+comment "Return B ${op^^} V with candidates list";
 pattern $op(v:$tp,b:bat[:$tp],r:bat[:bit]) :bat[:$tp]
 address CMDbat${op^^}
 comment "Return V ${op^^} B";
 pattern $op(v:$tp,b:bat[:$tp],s:bat[:oid],r:bat[:bit]) :bat[:$tp]
+address CMDbat${op^^}
+comment "Return V ${op^^} B with candidates list";
+pattern $op(v:$tp,b:bat[:$tp],s:bat[:msk],r:bat[:bit]) :bat[:$tp]
 address CMDbat${op^^}
 comment "Return V ${op^^} B with candidates list";
 
@@ -463,10 +613,16 @@ comment "Return B $op V, raise error on out of range second operand";
 pattern $op(b:bat[:$tp1],v:$tp2,s:bat[:oid]) :bat[:$tp1]
 address CMDbat${func^^}signal
 comment "Return B $op V with candidates list, raise error on out of range second operand";
+pattern $op(b:bat[:$tp1],v:$tp2,s:bat[:msk]) :bat[:$tp1]
+address CMDbat${func^^}signal
+comment "Return B $op V with candidates list, raise error on out of range second operand";
 pattern ${func}_noerror(b:bat[:$tp1],v:$tp2) :bat[:$tp1]
 address CMDbat${func^^}
 comment "Return B $op V, out of range second operand causes NIL value";
 pattern ${func}_noerror(b:bat[:$tp1],v:$tp2,s:bat[:oid]) :bat[:$tp1]
+address CMDbat${func^^}
+comment "Return B $op V with candidates list, out of range second operand causes NIL value";
+pattern ${func}_noerror(b:bat[:$tp1],v:$tp2,s:bat[:msk]) :bat[:$tp1]
 address CMDbat${func^^}
 comment "Return B $op V with candidates list, out of range second operand causes NIL value";
 pattern $op(v:$tp1,b:bat[:$tp2]) :bat[:$tp1]
@@ -475,10 +631,16 @@ comment "Return V $op B, raise error on out of range second operand";
 pattern $op(v:$tp1,b:bat[:$tp2],s:bat[:oid]) :bat[:$tp1]
 address CMDbat${func^^}signal
 comment "Return V $op B with candidates list, raise error on out of range second operand";
+pattern $op(v:$tp1,b:bat[:$tp2],s:bat[:msk]) :bat[:$tp1]
+address CMDbat${func^^}signal
+comment "Return V $op B with candidates list, raise error on out of range second operand";
 pattern ${func}_noerror(v:$tp1,b:bat[:$tp2]) :bat[:$tp1]
 address CMDbat${func^^}
 comment "Return V $op B, out of range second operand causes NIL value";
 pattern ${func}_noerror(v:$tp1,b:bat[:$tp2],s:bat[:oid]) :bat[:$tp1]
+address CMDbat${func^^}
+comment "Return V $op B with candidates list, out of range second operand causes NIL value";
+pattern ${func}_noerror(v:$tp1,b:bat[:$tp2],s:bat[:msk]) :bat[:$tp1]
 address CMDbat${func^^}
 comment "Return V $op B with candidates list, out of range second operand causes NIL value";
 pattern $op(b1:bat[:$tp1],b2:bat[:$tp2],r:bat[:bit]) :bat[:$tp1]
@@ -499,10 +661,16 @@ comment "Return B $op V, raise error on out of range second operand";
 pattern $op(b:bat[:$tp1],v:$tp2,s:bat[:oid],r:bat[:bit]) :bat[:$tp1]
 address CMDbat${func^^}signal
 comment "Return B $op V with candidates list, raise error on out of range second operand";
+pattern $op(b:bat[:$tp1],v:$tp2,s:bat[:msk],r:bat[:bit]) :bat[:$tp1]
+address CMDbat${func^^}signal
+comment "Return B $op V with candidates list, raise error on out of range second operand";
 pattern ${func}_noerror(b:bat[:$tp1],v:$tp2,r:bat[:bit]) :bat[:$tp1]
 address CMDbat${func^^}
 comment "Return B $op V, out of range second operand causes NIL value";
 pattern ${func}_noerror(b:bat[:$tp1],v:$tp2,s:bat[:oid],r:bat[:bit]) :bat[:$tp1]
+address CMDbat${func^^}
+comment "Return B $op V with candidates list, out of range second operand causes NIL value";
+pattern ${func}_noerror(b:bat[:$tp1],v:$tp2,s:bat[:msk],r:bat[:bit]) :bat[:$tp1]
 address CMDbat${func^^}
 comment "Return B $op V with candidates list, out of range second operand causes NIL value";
 pattern $op(v:$tp1,b:bat[:$tp2],r:bat[:bit]) :bat[:$tp1]
@@ -511,10 +679,16 @@ comment "Return V $op B, raise error on out of range second operand";
 pattern $op(v:$tp1,b:bat[:$tp2],s:bat[:oid],r:bat[:bit]) :bat[:$tp1]
 address CMDbat${func^^}signal
 comment "Return V $op B with candidates list, raise error on out of range second operand";
+pattern $op(v:$tp1,b:bat[:$tp2],s:bat[:msk],r:bat[:bit]) :bat[:$tp1]
+address CMDbat${func^^}signal
+comment "Return V $op B with candidates list, raise error on out of range second operand";
 pattern ${func}_noerror(v:$tp1,b:bat[:$tp2],r:bat[:bit]) :bat[:$tp1]
 address CMDbat${func^^}
 comment "Return V $op B, out of range second operand causes NIL value";
 pattern ${func}_noerror(v:$tp1,b:bat[:$tp2],s:bat[:oid],r:bat[:bit]) :bat[:$tp1]
+address CMDbat${func^^}
+comment "Return V $op B with candidates list, out of range second operand causes NIL value";
+pattern ${func}_noerror(v:$tp1,b:bat[:$tp2],s:bat[:msk],r:bat[:bit]) :bat[:$tp1]
 address CMDbat${func^^}
 comment "Return V $op B with candidates list, out of range second operand causes NIL value";
 
@@ -541,10 +715,16 @@ comment "Return B $op V";
 pattern $op(b:bat[:$tp],v:$tp,s:bat[:oid]) :bat[:bit]
 address CMDbat${func^^}
 comment "Return B $op V with candidates list";
+pattern $op(b:bat[:$tp],v:$tp,s:bat[:msk]) :bat[:bit]
+address CMDbat${func^^}
+comment "Return B $op V with candidates list";
 pattern $op(v:$tp,b:bat[:$tp]) :bat[:bit]
 address CMDbat${func^^}
 comment "Return V $op B";
 pattern $op(v:$tp,b:bat[:$tp],s:bat[:oid]) :bat[:bit]
+address CMDbat${func^^}
+comment "Return V $op B with candidates list";
+pattern $op(v:$tp,b:bat[:$tp],s:bat[:msk]) :bat[:bit]
 address CMDbat${func^^}
 comment "Return V $op B with candidates list";
 pattern $op(b1:bat[:$tp],b2:bat[:$tp],r:bat[:bit]) :bat[:bit]
@@ -559,10 +739,16 @@ comment "Return B $op V";
 pattern $op(b:bat[:$tp],v:$tp,s:bat[:oid],r:bat[:bit]) :bat[:bit]
 address CMDbat${func^^}
 comment "Return B $op V with candidates list";
+pattern $op(b:bat[:$tp],v:$tp,s:bat[:msk],r:bat[:bit]) :bat[:bit]
+address CMDbat${func^^}
+comment "Return B $op V with candidates list";
 pattern $op(v:$tp,b:bat[:$tp],r:bat[:bit]) :bat[:bit]
 address CMDbat${func^^}
 comment "Return V $op B";
 pattern $op(v:$tp,b:bat[:$tp],s:bat[:oid],r:bat[:bit]) :bat[:bit]
+address CMDbat${func^^}
+comment "Return V $op B with candidates list";
+pattern $op(v:$tp,b:bat[:$tp],s:bat[:msk],r:bat[:bit]) :bat[:bit]
 address CMDbat${func^^}
 comment "Return V $op B with candidates list";
 
@@ -582,10 +768,16 @@ comment "Return B $op V";
 pattern $op(b:bat[:$tp],v:$tp,s:bat[:oid],nil_matches:bit) :bat[:bit]
 address CMDbat${func^^}
 comment "Return B $op V with candidates list";
+pattern $op(b:bat[:$tp],v:$tp,s:bat[:msk],nil_matches:bit) :bat[:bit]
+address CMDbat${func^^}
+comment "Return B $op V with candidates list";
 pattern $op(v:$tp,b:bat[:$tp],nil_matches:bit) :bat[:bit]
 address CMDbat${func^^}
 comment "Return V $op B";
 pattern $op(v:$tp,b:bat[:$tp],s:bat[:oid],nil_matches:bit) :bat[:bit]
+address CMDbat${func^^}
+comment "Return V $op B with candidates list";
+pattern $op(v:$tp,b:bat[:$tp],s:bat[:msk],nil_matches:bit) :bat[:bit]
 address CMDbat${func^^}
 comment "Return V $op B with candidates list";
 pattern $op(b1:bat[:$tp],b2:bat[:$tp],r:bat[:bit],nil_matches:bit) :bat[:bit]
@@ -600,10 +792,16 @@ comment "Return B $op V";
 pattern $op(b:bat[:$tp],v:$tp,s:bat[:oid],r:bat[:bit],nil_matches:bit) :bat[:bit]
 address CMDbat${func^^}
 comment "Return B $op V with candidates list";
+pattern $op(b:bat[:$tp],v:$tp,s:bat[:msk],r:bat[:bit],nil_matches:bit) :bat[:bit]
+address CMDbat${func^^}
+comment "Return B $op V with candidates list";
 pattern $op(v:$tp,b:bat[:$tp],r:bat[:bit],nil_matches:bit) :bat[:bit]
 address CMDbat${func^^}
 comment "Return V $op B";
 pattern $op(v:$tp,b:bat[:$tp],s:bat[:oid],r:bat[:bit],nil_matches:bit) :bat[:bit]
+address CMDbat${func^^}
+comment "Return V $op B with candidates list";
+pattern $op(v:$tp,b:bat[:$tp],s:bat[:msk],r:bat[:bit],nil_matches:bit) :bat[:bit]
 address CMDbat${func^^}
 comment "Return V $op B with candidates list";
 
@@ -626,10 +824,16 @@ comment "Return B $op V";
 pattern $op(b:bat[:$tp1],v:$tp2,s:bat[:oid]) :bat[:bit]
 address CMDbat${func^^}
 comment "Return B $op V with candidates list";
+pattern $op(b:bat[:$tp1],v:$tp2,s:bat[:msk]) :bat[:bit]
+address CMDbat${func^^}
+comment "Return B $op V with candidates list";
 pattern $op(v:$tp1,b:bat[:$tp2]) :bat[:bit]
 address CMDbat${func^^}
 comment "Return V $op B";
 pattern $op(v:$tp1,b:bat[:$tp2],s:bat[:oid]) :bat[:bit]
+address CMDbat${func^^}
+comment "Return V $op B with candidates list";
+pattern $op(v:$tp1,b:bat[:$tp2],s:bat[:msk]) :bat[:bit]
 address CMDbat${func^^}
 comment "Return V $op B with candidates list";
 pattern $op(b1:bat[:$tp1],b2:bat[:$tp2],r:bat[:bit]) :bat[:bit]
@@ -644,10 +848,16 @@ comment "Return B $op V";
 pattern $op(b:bat[:$tp1],v:$tp2,s:bat[:oid],r:bat[:bit]) :bat[:bit]
 address CMDbat${func^^}
 comment "Return B $op V with candidates list";
+pattern $op(b:bat[:$tp1],v:$tp2,s:bat[:msk],r:bat[:bit]) :bat[:bit]
+address CMDbat${func^^}
+comment "Return B $op V with candidates list";
 pattern $op(v:$tp1,b:bat[:$tp2],r:bat[:bit]) :bat[:bit]
 address CMDbat${func^^}
 comment "Return V $op B";
 pattern $op(v:$tp1,b:bat[:$tp2],s:bat[:oid],r:bat[:bit]) :bat[:bit]
+address CMDbat${func^^}
+comment "Return V $op B with candidates list";
+pattern $op(v:$tp1,b:bat[:$tp2],s:bat[:msk],r:bat[:bit]) :bat[:bit]
 address CMDbat${func^^}
 comment "Return V $op B with candidates list";
 
@@ -667,10 +877,16 @@ comment "Return B $op V";
 pattern $op(b:bat[:$tp1],v:$tp2,s:bat[:oid],nil_matches:bit) :bat[:bit]
 address CMDbat${func^^}
 comment "Return B $op V with candidates list";
+pattern $op(b:bat[:$tp1],v:$tp2,s:bat[:msk],nil_matches:bit) :bat[:bit]
+address CMDbat${func^^}
+comment "Return B $op V with candidates list";
 pattern $op(v:$tp1,b:bat[:$tp2],nil_matches:bit) :bat[:bit]
 address CMDbat${func^^}
 comment "Return V $op B";
 pattern $op(v:$tp1,b:bat[:$tp2],s:bat[:oid],nil_matches:bit) :bat[:bit]
+address CMDbat${func^^}
+comment "Return V $op B with candidates list";
+pattern $op(v:$tp1,b:bat[:$tp2],s:bat[:msk],nil_matches:bit) :bat[:bit]
 address CMDbat${func^^}
 comment "Return V $op B with candidates list";
 pattern $op(b1:bat[:$tp1],b2:bat[:$tp2],r:bat[:bit],nil_matches:bit) :bat[:bit]
@@ -685,10 +901,16 @@ comment "Return B $op V";
 pattern $op(b:bat[:$tp1],v:$tp2,s:bat[:oid],r:bat[:bit],nil_matches:bit) :bat[:bit]
 address CMDbat${func^^}
 comment "Return B $op V with candidates list";
+pattern $op(b:bat[:$tp1],v:$tp2,s:bat[:msk],r:bat[:bit],nil_matches:bit) :bat[:bit]
+address CMDbat${func^^}
+comment "Return B $op V with candidates list";
 pattern $op(v:$tp1,b:bat[:$tp2],r:bat[:bit],nil_matches:bit) :bat[:bit]
 address CMDbat${func^^}
 comment "Return V $op B";
 pattern $op(v:$tp1,b:bat[:$tp2],s:bat[:oid],r:bat[:bit],nil_matches:bit) :bat[:bit]
+address CMDbat${func^^}
+comment "Return V $op B with candidates list";
+pattern $op(v:$tp1,b:bat[:$tp2],s:bat[:msk],r:bat[:bit],nil_matches:bit) :bat[:bit]
 address CMDbat${func^^}
 comment "Return V $op B with candidates list";
 
@@ -719,7 +941,13 @@ comment "Return -1/0/1 if V </==/> B";
 pattern cmp(b:bat[:$tp],v:$tp,s:bat[:oid]) :bat[:bte]
 address CMDbatCMP
 comment "Return -1/0/1 if B </==/> V with candidates list";
+pattern cmp(b:bat[:$tp],v:$tp,s:bat[:msk]) :bat[:bte]
+address CMDbatCMP
+comment "Return -1/0/1 if B </==/> V with candidates list";
 pattern cmp(v:$tp,b:bat[:$tp],s:bat[:oid]) :bat[:bte]
+address CMDbatCMP
+comment "Return -1/0/1 if V </==/> B with candidates list";
+pattern cmp(v:$tp,b:bat[:$tp],s:bat[:msk]) :bat[:bte]
 address CMDbatCMP
 comment "Return -1/0/1 if V </==/> B with candidates list";
 pattern cmp(b1:bat[:$tp],b2:bat[:$tp],r:bat[:bit]) :bat[:bte]
@@ -737,7 +965,13 @@ comment "Return -1/0/1 if V </==/> B";
 pattern cmp(b:bat[:$tp],v:$tp,s:bat[:oid],r:bat[:bit]) :bat[:bte]
 address CMDbatCMP
 comment "Return -1/0/1 if B </==/> V with candidates list";
+pattern cmp(b:bat[:$tp],v:$tp,s:bat[:msk],r:bat[:bit]) :bat[:bte]
+address CMDbatCMP
+comment "Return -1/0/1 if B </==/> V with candidates list";
 pattern cmp(v:$tp,b:bat[:$tp],s:bat[:oid],r:bat[:bit]) :bat[:bte]
+address CMDbatCMP
+comment "Return -1/0/1 if V </==/> B with candidates list";
+pattern cmp(v:$tp,b:bat[:$tp],s:bat[:msk],r:bat[:bit]) :bat[:bte]
 address CMDbatCMP
 comment "Return -1/0/1 if V </==/> B with candidates list";
 
@@ -761,7 +995,13 @@ comment "Return -1/0/1 if V </==/> B";
 pattern cmp(b:bat[:$tp1],v:$tp2,s:bat[:oid]) :bat[:bte]
 address CMDbatCMP
 comment "Return -1/0/1 if B </==/> V with candidates list";
+pattern cmp(b:bat[:$tp1],v:$tp2,s:bat[:msk]) :bat[:bte]
+address CMDbatCMP
+comment "Return -1/0/1 if B </==/> V with candidates list";
 pattern cmp(v:$tp1,b:bat[:$tp2],s:bat[:oid]) :bat[:bte]
+address CMDbatCMP
+comment "Return -1/0/1 if V </==/> B with candidates list";
+pattern cmp(v:$tp1,b:bat[:$tp2],s:bat[:msk]) :bat[:bte]
 address CMDbatCMP
 comment "Return -1/0/1 if V </==/> B with candidates list";
 pattern cmp(b1:bat[:$tp1],b2:bat[:$tp2],r:bat[:bit]) :bat[:bte]
@@ -779,7 +1019,13 @@ comment "Return -1/0/1 if V </==/> B";
 pattern cmp(b:bat[:$tp1],v:$tp2,s:bat[:oid],r:bat[:bit]) :bat[:bte]
 address CMDbatCMP
 comment "Return -1/0/1 if B </==/> V with candidates list";
+pattern cmp(b:bat[:$tp1],v:$tp2,s:bat[:msk],r:bat[:bit]) :bat[:bte]
+address CMDbatCMP
+comment "Return -1/0/1 if B </==/> V with candidates list";
 pattern cmp(v:$tp1,b:bat[:$tp2],s:bat[:oid],r:bat[:bit]) :bat[:bte]
+address CMDbatCMP
+comment "Return -1/0/1 if V </==/> B with candidates list";
+pattern cmp(v:$tp1,b:bat[:$tp2],s:bat[:msk],r:bat[:bit]) :bat[:bte]
 address CMDbatCMP
 comment "Return -1/0/1 if V </==/> B with candidates list";
 
@@ -795,10 +1041,16 @@ comment "B between V1 and V2 (or vice versa)";
 pattern between(b:bat[:any_1],v1:bat[:any_1],v2:bat[:any_1],s:bat[:oid],s1:bat[:oid],s2:bat[:oid],sym:bit,linc:bit,hinc:bit,nils_false:bit,anti:bit) :bat[:bit]
 address CMDbatBETWEEN
 comment "B between V1 and V2 (or vice versa) with candidate list";
+pattern between(b:bat[:any_1],v1:bat[:any_1],v2:bat[:any_1],s:bat[:msk],s1:bat[:oid],s2:bat[:oid],sym:bit,linc:bit,hinc:bit,nils_false:bit,anti:bit) :bat[:bit]
+address CMDbatBETWEEN
+comment "B between V1 and V2 (or vice versa) with candidate list";
 pattern between(b:bat[:any_1],v1:bat[:any_1],v2:any_1,sym:bit,linc:bit,hinc:bit,nils_false:bit,anti:bit) :bat[:bit]
 address CMDbatBETWEEN
 comment "B between V1 and V2 (or vice versa)";
 pattern between(b:bat[:any_1],v1:bat[:any_1],v2:any_1,s:bat[:oid],s1:bat[:oid],sym:bit,linc:bit,hinc:bit,nils_false:bit,anti:bit) :bat[:bit]
+address CMDbatBETWEEN
+comment "B between V1 and V2 (or vice versa) with candidate list";
+pattern between(b:bat[:any_1],v1:bat[:any_1],v2:any_1,s:bat[:msk],s1:bat[:oid],sym:bit,linc:bit,hinc:bit,nils_false:bit,anti:bit) :bat[:bit]
 address CMDbatBETWEEN
 comment "B between V1 and V2 (or vice versa) with candidate list";
 pattern between(b:bat[:any_1],v1:any_1,v2:bat[:any_1],sym:bit,linc:bit,hinc:bit,nils_false:bit,anti:bit) :bat[:bit]
@@ -807,10 +1059,16 @@ comment "B between V1 and V2 (or vice versa)";
 pattern between(b:bat[:any_1],v1:any_1,v2:bat[:any_1],s:bat[:oid],s2:bat[:oid],sym:bit,linc:bit,hinc:bit,nils_false:bit,anti:bit) :bat[:bit]
 address CMDbatBETWEEN
 comment "B between V1 and V2 (or vice versa) with candidate list";
+pattern between(b:bat[:any_1],v1:any_1,v2:bat[:any_1],s:bat[:msk],s2:bat[:oid],sym:bit,linc:bit,hinc:bit,nils_false:bit,anti:bit) :bat[:bit]
+address CMDbatBETWEEN
+comment "B between V1 and V2 (or vice versa) with candidate list";
 pattern between(b:bat[:any_1],v1:any_1,v2:any_1,sym:bit,linc:bit,hinc:bit,nils_false:bit,anti:bit) :bat[:bit]
 address CMDbatBETWEEN
 comment "B between V1 and V2 (or vice versa)";
 pattern between(b:bat[:any_1],v1:any_1,v2:any_1,s:bat[:oid],sym:bit,linc:bit,hinc:bit,nils_false:bit,anti:bit) :bat[:bit]
+address CMDbatBETWEEN
+comment "B between V1 and V2 (or vice versa) with candidate list";
+pattern between(b:bat[:any_1],v1:any_1,v2:any_1,s:bat[:msk],sym:bit,linc:bit,hinc:bit,nils_false:bit,anti:bit) :bat[:bit]
 address CMDbatBETWEEN
 comment "B between V1 and V2 (or vice versa) with candidate list";
 
@@ -825,10 +1083,16 @@ comment "average of non-nil values of B with candidates list";
 pattern avg(b:bat[:$tp],s:bat[:oid]) :dbl
 address CMDcalcavg
 comment "average of non-nil values of B";
+pattern avg(b:bat[:$tp],s:bat[:msk]) :dbl
+address CMDcalcavg
+comment "average of non-nil values of B";
 pattern avg(b:bat[:$tp]) (:dbl, :lng)
 address CMDcalcavg
 comment "average and number of non-nil values of B";
 pattern avg(b:bat[:$tp],s:bat[:oid]) (:dbl, :lng)
+address CMDcalcavg
+comment "average and number of non-nil values of B with candidates list";
+pattern avg(b:bat[:$tp],s:bat[:msk]) (:dbl, :lng)
 address CMDcalcavg
 comment "average and number of non-nil values of B with candidates list";
 pattern avg(b:bat[:$tp],scale:int) :dbl
@@ -837,10 +1101,16 @@ comment "average of non-nil values of B with candidates list";
 pattern avg(b:bat[:$tp],s:bat[:oid],scale:int) :dbl
 address CMDcalcavg
 comment "average of non-nil values of B";
+pattern avg(b:bat[:$tp],s:bat[:msk],scale:int) :dbl
+address CMDcalcavg
+comment "average of non-nil values of B";
 pattern avg(b:bat[:$tp],scale:int) (:dbl, :lng)
 address CMDcalcavg
 comment "average and number of non-nil values of B";
 pattern avg(b:bat[:$tp],s:bat[:oid],scale:int) (:dbl, :lng)
+address CMDcalcavg
+comment "average and number of non-nil values of B with candidates list";
+pattern avg(b:bat[:$tp],s:bat[:msk],scale:int) (:dbl, :lng)
 address CMDcalcavg
 comment "average and number of non-nil values of B with candidates list";
 
@@ -856,10 +1126,16 @@ comment "cast from any to $tp1, signal error on overflow";
 pattern $tp1(b:bat[:any],s:bat[:oid]) :bat[:$tp1]
 address CMDconvertsignal_$tp1
 comment "cast from any to $tp1 with candidates list, signal error on overflow";
+pattern $tp1(b:bat[:any],s:bat[:msk]) :bat[:$tp1]
+address CMDconvertsignal_$tp1
+comment "cast from any to $tp1 with candidates list, signal error on overflow";
 pattern ${tp1}_noerror(b:bat[:any]) :bat[:$tp1]
 address CMDconvert_$tp1
 comment "cast from any to $tp1";
 pattern ${tp1}_noerror(b:bat[:any],s:bat[:oid]) :bat[:$tp1]
+address CMDconvert_$tp1
+comment "cast from any to $tp1 with candidates list";
+pattern ${tp1}_noerror(b:bat[:any],s:bat[:msk]) :bat[:$tp1]
 address CMDconvert_$tp1
 comment "cast from any to $tp1 with candidates list";
 pattern $tp1(b:bat[:any],r:bat[:bit]) :bat[:$tp1]
@@ -868,10 +1144,16 @@ comment "cast from any to $tp1, signal error on overflow";
 pattern $tp1(b:bat[:any],s:bat[:oid],r:bat[:bit]) :bat[:$tp1]
 address CMDconvertsignal_$tp1
 comment "cast from any to $tp1 with candidates list, signal error on overflow";
+pattern $tp1(b:bat[:any],s:bat[:msk],r:bat[:bit]) :bat[:$tp1]
+address CMDconvertsignal_$tp1
+comment "cast from any to $tp1 with candidates list, signal error on overflow";
 pattern ${tp1}_noerror(b:bat[:any],r:bat[:bit]) :bat[:$tp1]
 address CMDconvert_$tp1
 comment "cast from any to $tp1";
 pattern ${tp1}_noerror(b:bat[:any],s:bat[:oid],r:bat[:bit]) :bat[:$tp1]
+address CMDconvert_$tp1
+comment "cast from any to $tp1 with candidates list";
+pattern ${tp1}_noerror(b:bat[:any],s:bat[:msk],r:bat[:bit]) :bat[:$tp1]
 address CMDconvert_$tp1
 comment "cast from any to $tp1 with candidates list";
 
@@ -885,10 +1167,16 @@ comment "cast from $tp2 to $tp1, signal error on overflow";
 pattern $tp1(b:bat[:$tp2],s:bat[:oid]) :bat[:$tp1]
 address CMDconvertsignal_$tp1
 comment "cast from $tp2 to $tp1 with candidates list, signal error on overflow";
+pattern $tp1(b:bat[:$tp2],s:bat[:msk]) :bat[:$tp1]
+address CMDconvertsignal_$tp1
+comment "cast from $tp2 to $tp1 with candidates list, signal error on overflow";
 pattern ${tp1}_noerror(b:bat[:$tp2]) :bat[:$tp1]
 address CMDconvert_$tp1
 comment "cast from $tp2 to $tp1";
 pattern ${tp1}_noerror(b:bat[:$tp2],s:bat[:oid]) :bat[:$tp1]
+address CMDconvert_$tp1
+comment "cast from $tp2 to $tp1 with candidates list";
+pattern ${tp1}_noerror(b:bat[:$tp2],s:bat[:msk]) :bat[:$tp1]
 address CMDconvert_$tp1
 comment "cast from $tp2 to $tp1 with candidates list";
 pattern $tp1(b:bat[:$tp2],r:bat[:bit]) :bat[:$tp1]
@@ -897,10 +1185,16 @@ comment "cast from $tp2 to $tp1, signal error on overflow";
 pattern $tp1(b:bat[:$tp2],s:bat[:oid],r:bat[:bit]) :bat[:$tp1]
 address CMDconvertsignal_$tp1
 comment "cast from $tp2 to $tp1 with candidates list, signal error on overflow";
+pattern $tp1(b:bat[:$tp2],s:bat[:msk],r:bat[:bit]) :bat[:$tp1]
+address CMDconvertsignal_$tp1
+comment "cast from $tp2 to $tp1 with candidates list, signal error on overflow";
 pattern ${tp1}_noerror(b:bat[:$tp2],r:bat[:bit]) :bat[:$tp1]
 address CMDconvert_$tp1
 comment "cast from $tp2 to $tp1";
 pattern ${tp1}_noerror(b:bat[:$tp2],s:bat[:oid],r:bat[:bit]) :bat[:$tp1]
+address CMDconvert_$tp1
+comment "cast from $tp2 to $tp1 with candidates list";
+pattern ${tp1}_noerror(b:bat[:$tp2],s:bat[:msk],r:bat[:bit]) :bat[:$tp1]
 address CMDconvert_$tp1
 comment "cast from $tp2 to $tp1 with candidates list";
 
@@ -919,6 +1213,18 @@ address CMDifthen
 comment "If-then-else operation to assemble a conditional result";
 
 pattern ifthenelse(v:bit, b1:bat[:any_1], v2:any_1) :bat[:any_1]
+address CMDifthen
+comment "If-then-else operation to assemble a conditional result";
+
+pattern ifthenelse(v:msk, b1:bat[:any_1], b2:bat[:any_1]) :bat[:any_1]
+address CMDifthen
+comment "If-then-else operation to assemble a conditional result";
+
+pattern ifthenelse(v:msk, v1:any_1, b2:bat[:any_1]) :bat[:any_1]
+address CMDifthen
+comment "If-then-else operation to assemble a conditional result";
+
+pattern ifthenelse(v:msk, b1:bat[:any_1], v2:any_1) :bat[:any_1]
 address CMDifthen
 comment "If-then-else operation to assemble a conditional result";
 

@@ -5120,6 +5120,10 @@ pattern ifthenelse(b:bit,t:any_1,f:any_1):any_1
 address CALCswitchbit
 comment "If VALUE is true return MIDDLE else RIGHT";
 
+pattern ifthenelse(b:msk,t:any_1,f:any_1):any_1
+address CALCswitchbit
+comment "If VALUE is true return MIDDLE else RIGHT";
+
 command length(s:str) :int
 address CMDstrlength
 comment "Length of STRING";
@@ -5135,7 +5139,13 @@ comment "Calculate aggregate sum of B.";
 pattern sum(b:bat[:bte],s:bat[:oid]) :bte
 address CMDBATsum
 comment "Calculate aggregate sum of B with candidate list.";
+pattern sum(b:bat[:bte],s:bat[:msk]) :bte
+address CMDBATsum
+comment "Calculate aggregate sum of B with candidate list.";
 pattern sum(b:bat[:bte],s:bat[:oid],nil_if_empty:bit) :bte
+address CMDBATsum
+comment "Calculate aggregate sum of B with candidate list.";
+pattern sum(b:bat[:bte],s:bat[:msk],nil_if_empty:bit) :bte
 address CMDBATsum
 comment "Calculate aggregate sum of B with candidate list.";
 
@@ -5148,7 +5158,13 @@ comment "Calculate aggregate sum of B.";
 pattern sum(b:bat[:bte],s:bat[:oid]) :sht
 address CMDBATsum
 comment "Calculate aggregate sum of B with candidate list.";
+pattern sum(b:bat[:bte],s:bat[:msk]) :sht
+address CMDBATsum
+comment "Calculate aggregate sum of B with candidate list.";
 pattern sum(b:bat[:bte],s:bat[:oid],nil_if_empty:bit) :sht
+address CMDBATsum
+comment "Calculate aggregate sum of B with candidate list.";
+pattern sum(b:bat[:bte],s:bat[:msk],nil_if_empty:bit) :sht
 address CMDBATsum
 comment "Calculate aggregate sum of B with candidate list.";
 
@@ -5161,7 +5177,13 @@ comment "Calculate aggregate sum of B.";
 pattern sum(b:bat[:bte],s:bat[:oid]) :int
 address CMDBATsum
 comment "Calculate aggregate sum of B with candidate list.";
+pattern sum(b:bat[:bte],s:bat[:msk]) :int
+address CMDBATsum
+comment "Calculate aggregate sum of B with candidate list.";
 pattern sum(b:bat[:bte],s:bat[:oid],nil_if_empty:bit) :int
+address CMDBATsum
+comment "Calculate aggregate sum of B with candidate list.";
+pattern sum(b:bat[:bte],s:bat[:msk],nil_if_empty:bit) :int
 address CMDBATsum
 comment "Calculate aggregate sum of B with candidate list.";
 
@@ -5174,7 +5196,13 @@ comment "Calculate aggregate sum of B.";
 pattern sum(b:bat[:bte],s:bat[:oid]) :lng
 address CMDBATsum
 comment "Calculate aggregate sum of B with candidate list.";
+pattern sum(b:bat[:bte],s:bat[:msk]) :lng
+address CMDBATsum
+comment "Calculate aggregate sum of B with candidate list.";
 pattern sum(b:bat[:bte],s:bat[:oid],nil_if_empty:bit) :lng
+address CMDBATsum
+comment "Calculate aggregate sum of B with candidate list.";
+pattern sum(b:bat[:bte],s:bat[:msk],nil_if_empty:bit) :lng
 address CMDBATsum
 comment "Calculate aggregate sum of B with candidate list.";
 
@@ -5187,7 +5215,13 @@ comment "Calculate aggregate sum of B.";
 pattern sum(b:bat[:bte],s:bat[:oid]) :dbl
 address CMDBATsum
 comment "Calculate aggregate sum of B with candidate list.";
+pattern sum(b:bat[:bte],s:bat[:msk]) :dbl
+address CMDBATsum
+comment "Calculate aggregate sum of B with candidate list.";
 pattern sum(b:bat[:bte],s:bat[:oid],nil_if_empty:bit) :dbl
+address CMDBATsum
+comment "Calculate aggregate sum of B with candidate list.";
+pattern sum(b:bat[:bte],s:bat[:msk],nil_if_empty:bit) :dbl
 address CMDBATsum
 comment "Calculate aggregate sum of B with candidate list.";
 
@@ -5200,7 +5234,13 @@ comment "Calculate aggregate sum of B.";
 pattern sum(b:bat[:sht],s:bat[:oid]) :sht
 address CMDBATsum
 comment "Calculate aggregate sum of B with candidate list.";
+pattern sum(b:bat[:sht],s:bat[:msk]) :sht
+address CMDBATsum
+comment "Calculate aggregate sum of B with candidate list.";
 pattern sum(b:bat[:sht],s:bat[:oid],nil_if_empty:bit) :sht
+address CMDBATsum
+comment "Calculate aggregate sum of B with candidate list.";
+pattern sum(b:bat[:sht],s:bat[:msk],nil_if_empty:bit) :sht
 address CMDBATsum
 comment "Calculate aggregate sum of B with candidate list.";
 
@@ -5213,7 +5253,13 @@ comment "Calculate aggregate sum of B.";
 pattern sum(b:bat[:sht],s:bat[:oid]) :int
 address CMDBATsum
 comment "Calculate aggregate sum of B with candidate list.";
+pattern sum(b:bat[:sht],s:bat[:msk]) :int
+address CMDBATsum
+comment "Calculate aggregate sum of B with candidate list.";
 pattern sum(b:bat[:sht],s:bat[:oid],nil_if_empty:bit) :int
+address CMDBATsum
+comment "Calculate aggregate sum of B with candidate list.";
+pattern sum(b:bat[:sht],s:bat[:msk],nil_if_empty:bit) :int
 address CMDBATsum
 comment "Calculate aggregate sum of B with candidate list.";
 
@@ -5226,7 +5272,13 @@ comment "Calculate aggregate sum of B.";
 pattern sum(b:bat[:sht],s:bat[:oid]) :lng
 address CMDBATsum
 comment "Calculate aggregate sum of B with candidate list.";
+pattern sum(b:bat[:sht],s:bat[:msk]) :lng
+address CMDBATsum
+comment "Calculate aggregate sum of B with candidate list.";
 pattern sum(b:bat[:sht],s:bat[:oid],nil_if_empty:bit) :lng
+address CMDBATsum
+comment "Calculate aggregate sum of B with candidate list.";
+pattern sum(b:bat[:sht],s:bat[:msk],nil_if_empty:bit) :lng
 address CMDBATsum
 comment "Calculate aggregate sum of B with candidate list.";
 
@@ -5239,7 +5291,13 @@ comment "Calculate aggregate sum of B.";
 pattern sum(b:bat[:sht],s:bat[:oid]) :dbl
 address CMDBATsum
 comment "Calculate aggregate sum of B with candidate list.";
+pattern sum(b:bat[:sht],s:bat[:msk]) :dbl
+address CMDBATsum
+comment "Calculate aggregate sum of B with candidate list.";
 pattern sum(b:bat[:sht],s:bat[:oid],nil_if_empty:bit) :dbl
+address CMDBATsum
+comment "Calculate aggregate sum of B with candidate list.";
+pattern sum(b:bat[:sht],s:bat[:msk],nil_if_empty:bit) :dbl
 address CMDBATsum
 comment "Calculate aggregate sum of B with candidate list.";
 
@@ -5252,7 +5310,13 @@ comment "Calculate aggregate sum of B.";
 pattern sum(b:bat[:int],s:bat[:oid]) :int
 address CMDBATsum
 comment "Calculate aggregate sum of B with candidate list.";
+pattern sum(b:bat[:int],s:bat[:msk]) :int
+address CMDBATsum
+comment "Calculate aggregate sum of B with candidate list.";
 pattern sum(b:bat[:int],s:bat[:oid],nil_if_empty:bit) :int
+address CMDBATsum
+comment "Calculate aggregate sum of B with candidate list.";
+pattern sum(b:bat[:int],s:bat[:msk],nil_if_empty:bit) :int
 address CMDBATsum
 comment "Calculate aggregate sum of B with candidate list.";
 
@@ -5265,7 +5329,13 @@ comment "Calculate aggregate sum of B.";
 pattern sum(b:bat[:int],s:bat[:oid]) :lng
 address CMDBATsum
 comment "Calculate aggregate sum of B with candidate list.";
+pattern sum(b:bat[:int],s:bat[:msk]) :lng
+address CMDBATsum
+comment "Calculate aggregate sum of B with candidate list.";
 pattern sum(b:bat[:int],s:bat[:oid],nil_if_empty:bit) :lng
+address CMDBATsum
+comment "Calculate aggregate sum of B with candidate list.";
+pattern sum(b:bat[:int],s:bat[:msk],nil_if_empty:bit) :lng
 address CMDBATsum
 comment "Calculate aggregate sum of B with candidate list.";
 
@@ -5278,7 +5348,13 @@ comment "Calculate aggregate sum of B.";
 pattern sum(b:bat[:int],s:bat[:oid]) :dbl
 address CMDBATsum
 comment "Calculate aggregate sum of B with candidate list.";
+pattern sum(b:bat[:int],s:bat[:msk]) :dbl
+address CMDBATsum
+comment "Calculate aggregate sum of B with candidate list.";
 pattern sum(b:bat[:int],s:bat[:oid],nil_if_empty:bit) :dbl
+address CMDBATsum
+comment "Calculate aggregate sum of B with candidate list.";
+pattern sum(b:bat[:int],s:bat[:msk],nil_if_empty:bit) :dbl
 address CMDBATsum
 comment "Calculate aggregate sum of B with candidate list.";
 
@@ -5291,7 +5367,13 @@ comment "Calculate aggregate sum of B.";
 pattern sum(b:bat[:lng],s:bat[:oid]) :lng
 address CMDBATsum
 comment "Calculate aggregate sum of B with candidate list.";
+pattern sum(b:bat[:lng],s:bat[:msk]) :lng
+address CMDBATsum
+comment "Calculate aggregate sum of B with candidate list.";
 pattern sum(b:bat[:lng],s:bat[:oid],nil_if_empty:bit) :lng
+address CMDBATsum
+comment "Calculate aggregate sum of B with candidate list.";
+pattern sum(b:bat[:lng],s:bat[:msk],nil_if_empty:bit) :lng
 address CMDBATsum
 comment "Calculate aggregate sum of B with candidate list.";
 
@@ -5304,7 +5386,13 @@ comment "Calculate aggregate sum of B.";
 pattern sum(b:bat[:lng],s:bat[:oid]) :dbl
 address CMDBATsum
 comment "Calculate aggregate sum of B with candidate list.";
+pattern sum(b:bat[:lng],s:bat[:msk]) :dbl
+address CMDBATsum
+comment "Calculate aggregate sum of B with candidate list.";
 pattern sum(b:bat[:lng],s:bat[:oid],nil_if_empty:bit) :dbl
+address CMDBATsum
+comment "Calculate aggregate sum of B with candidate list.";
+pattern sum(b:bat[:lng],s:bat[:msk],nil_if_empty:bit) :dbl
 address CMDBATsum
 comment "Calculate aggregate sum of B with candidate list.";
 
@@ -5317,7 +5405,13 @@ comment "Calculate aggregate sum of B.";
 pattern sum(b:bat[:flt],s:bat[:oid]) :flt
 address CMDBATsum
 comment "Calculate aggregate sum of B with candidate list.";
+pattern sum(b:bat[:flt],s:bat[:msk]) :flt
+address CMDBATsum
+comment "Calculate aggregate sum of B with candidate list.";
 pattern sum(b:bat[:flt],s:bat[:oid],nil_if_empty:bit) :flt
+address CMDBATsum
+comment "Calculate aggregate sum of B with candidate list.";
+pattern sum(b:bat[:flt],s:bat[:msk],nil_if_empty:bit) :flt
 address CMDBATsum
 comment "Calculate aggregate sum of B with candidate list.";
 
@@ -5330,7 +5424,13 @@ comment "Calculate aggregate sum of B.";
 pattern sum(b:bat[:flt],s:bat[:oid]) :dbl
 address CMDBATsum
 comment "Calculate aggregate sum of B with candidate list.";
+pattern sum(b:bat[:flt],s:bat[:msk]) :dbl
+address CMDBATsum
+comment "Calculate aggregate sum of B with candidate list.";
 pattern sum(b:bat[:flt],s:bat[:oid],nil_if_empty:bit) :dbl
+address CMDBATsum
+comment "Calculate aggregate sum of B with candidate list.";
+pattern sum(b:bat[:flt],s:bat[:msk],nil_if_empty:bit) :dbl
 address CMDBATsum
 comment "Calculate aggregate sum of B with candidate list.";
 
@@ -5343,7 +5443,13 @@ comment "Calculate aggregate sum of B.";
 pattern sum(b:bat[:dbl],s:bat[:oid]) :dbl
 address CMDBATsum
 comment "Calculate aggregate sum of B with candidate list.";
+pattern sum(b:bat[:dbl],s:bat[:msk]) :dbl
+address CMDBATsum
+comment "Calculate aggregate sum of B with candidate list.";
 pattern sum(b:bat[:dbl],s:bat[:oid],nil_if_empty:bit) :dbl
+address CMDBATsum
+comment "Calculate aggregate sum of B with candidate list.";
+pattern sum(b:bat[:dbl],s:bat[:msk],nil_if_empty:bit) :dbl
 address CMDBATsum
 comment "Calculate aggregate sum of B with candidate list.";
 
@@ -5356,7 +5462,13 @@ comment "Calculate aggregate product of B.";
 pattern prod(b:bat[:bte],s:bat[:oid]) :bte
 address CMDBATprod
 comment "Calculate aggregate product of B with candidate list.";
+pattern prod(b:bat[:bte],s:bat[:msk]) :bte
+address CMDBATprod
+comment "Calculate aggregate product of B with candidate list.";
 pattern prod(b:bat[:bte],s:bat[:oid],nil_if_empty:bit) :bte
+address CMDBATprod
+comment "Calculate aggregate product of B with candidate list.";
+pattern prod(b:bat[:bte],s:bat[:msk],nil_if_empty:bit) :bte
 address CMDBATprod
 comment "Calculate aggregate product of B with candidate list.";
 
@@ -5369,7 +5481,13 @@ comment "Calculate aggregate product of B.";
 pattern prod(b:bat[:bte],s:bat[:oid]) :sht
 address CMDBATprod
 comment "Calculate aggregate product of B with candidate list.";
+pattern prod(b:bat[:bte],s:bat[:msk]) :sht
+address CMDBATprod
+comment "Calculate aggregate product of B with candidate list.";
 pattern prod(b:bat[:bte],s:bat[:oid],nil_if_empty:bit) :sht
+address CMDBATprod
+comment "Calculate aggregate product of B with candidate list.";
+pattern prod(b:bat[:bte],s:bat[:msk],nil_if_empty:bit) :sht
 address CMDBATprod
 comment "Calculate aggregate product of B with candidate list.";
 
@@ -5382,7 +5500,13 @@ comment "Calculate aggregate product of B.";
 pattern prod(b:bat[:bte],s:bat[:oid]) :int
 address CMDBATprod
 comment "Calculate aggregate product of B with candidate list.";
+pattern prod(b:bat[:bte],s:bat[:msk]) :int
+address CMDBATprod
+comment "Calculate aggregate product of B with candidate list.";
 pattern prod(b:bat[:bte],s:bat[:oid],nil_if_empty:bit) :int
+address CMDBATprod
+comment "Calculate aggregate product of B with candidate list.";
+pattern prod(b:bat[:bte],s:bat[:msk],nil_if_empty:bit) :int
 address CMDBATprod
 comment "Calculate aggregate product of B with candidate list.";
 
@@ -5395,7 +5519,13 @@ comment "Calculate aggregate product of B.";
 pattern prod(b:bat[:bte],s:bat[:oid]) :lng
 address CMDBATprod
 comment "Calculate aggregate product of B with candidate list.";
+pattern prod(b:bat[:bte],s:bat[:msk]) :lng
+address CMDBATprod
+comment "Calculate aggregate product of B with candidate list.";
 pattern prod(b:bat[:bte],s:bat[:oid],nil_if_empty:bit) :lng
+address CMDBATprod
+comment "Calculate aggregate product of B with candidate list.";
+pattern prod(b:bat[:bte],s:bat[:msk],nil_if_empty:bit) :lng
 address CMDBATprod
 comment "Calculate aggregate product of B with candidate list.";
 
@@ -5408,7 +5538,13 @@ comment "Calculate aggregate product of B.";
 pattern prod(b:bat[:bte],s:bat[:oid]) :dbl
 address CMDBATprod
 comment "Calculate aggregate product of B with candidate list.";
+pattern prod(b:bat[:bte],s:bat[:msk]) :dbl
+address CMDBATprod
+comment "Calculate aggregate product of B with candidate list.";
 pattern prod(b:bat[:bte],s:bat[:oid],nil_if_empty:bit) :dbl
+address CMDBATprod
+comment "Calculate aggregate product of B with candidate list.";
+pattern prod(b:bat[:bte],s:bat[:msk],nil_if_empty:bit) :dbl
 address CMDBATprod
 comment "Calculate aggregate product of B with candidate list.";
 
@@ -5421,7 +5557,13 @@ comment "Calculate aggregate product of B.";
 pattern prod(b:bat[:sht],s:bat[:oid]) :sht
 address CMDBATprod
 comment "Calculate aggregate product of B with candidate list.";
+pattern prod(b:bat[:sht],s:bat[:msk]) :sht
+address CMDBATprod
+comment "Calculate aggregate product of B with candidate list.";
 pattern prod(b:bat[:sht],s:bat[:oid],nil_if_empty:bit) :sht
+address CMDBATprod
+comment "Calculate aggregate product of B with candidate list.";
+pattern prod(b:bat[:sht],s:bat[:msk],nil_if_empty:bit) :sht
 address CMDBATprod
 comment "Calculate aggregate product of B with candidate list.";
 
@@ -5434,7 +5576,13 @@ comment "Calculate aggregate product of B.";
 pattern prod(b:bat[:sht],s:bat[:oid]) :int
 address CMDBATprod
 comment "Calculate aggregate product of B with candidate list.";
+pattern prod(b:bat[:sht],s:bat[:msk]) :int
+address CMDBATprod
+comment "Calculate aggregate product of B with candidate list.";
 pattern prod(b:bat[:sht],s:bat[:oid],nil_if_empty:bit) :int
+address CMDBATprod
+comment "Calculate aggregate product of B with candidate list.";
+pattern prod(b:bat[:sht],s:bat[:msk],nil_if_empty:bit) :int
 address CMDBATprod
 comment "Calculate aggregate product of B with candidate list.";
 
@@ -5447,7 +5595,13 @@ comment "Calculate aggregate product of B.";
 pattern prod(b:bat[:sht],s:bat[:oid]) :lng
 address CMDBATprod
 comment "Calculate aggregate product of B with candidate list.";
+pattern prod(b:bat[:sht],s:bat[:msk]) :lng
+address CMDBATprod
+comment "Calculate aggregate product of B with candidate list.";
 pattern prod(b:bat[:sht],s:bat[:oid],nil_if_empty:bit) :lng
+address CMDBATprod
+comment "Calculate aggregate product of B with candidate list.";
+pattern prod(b:bat[:sht],s:bat[:msk],nil_if_empty:bit) :lng
 address CMDBATprod
 comment "Calculate aggregate product of B with candidate list.";
 
@@ -5460,7 +5614,13 @@ comment "Calculate aggregate product of B.";
 pattern prod(b:bat[:sht],s:bat[:oid]) :dbl
 address CMDBATprod
 comment "Calculate aggregate product of B with candidate list.";
+pattern prod(b:bat[:sht],s:bat[:msk]) :dbl
+address CMDBATprod
+comment "Calculate aggregate product of B with candidate list.";
 pattern prod(b:bat[:sht],s:bat[:oid],nil_if_empty:bit) :dbl
+address CMDBATprod
+comment "Calculate aggregate product of B with candidate list.";
+pattern prod(b:bat[:sht],s:bat[:msk],nil_if_empty:bit) :dbl
 address CMDBATprod
 comment "Calculate aggregate product of B with candidate list.";
 
@@ -5473,7 +5633,13 @@ comment "Calculate aggregate product of B.";
 pattern prod(b:bat[:int],s:bat[:oid]) :int
 address CMDBATprod
 comment "Calculate aggregate product of B with candidate list.";
+pattern prod(b:bat[:int],s:bat[:msk]) :int
+address CMDBATprod
+comment "Calculate aggregate product of B with candidate list.";
 pattern prod(b:bat[:int],s:bat[:oid],nil_if_empty:bit) :int
+address CMDBATprod
+comment "Calculate aggregate product of B with candidate list.";
+pattern prod(b:bat[:int],s:bat[:msk],nil_if_empty:bit) :int
 address CMDBATprod
 comment "Calculate aggregate product of B with candidate list.";
 
@@ -5486,7 +5652,13 @@ comment "Calculate aggregate product of B.";
 pattern prod(b:bat[:int],s:bat[:oid]) :lng
 address CMDBATprod
 comment "Calculate aggregate product of B with candidate list.";
+pattern prod(b:bat[:int],s:bat[:msk]) :lng
+address CMDBATprod
+comment "Calculate aggregate product of B with candidate list.";
 pattern prod(b:bat[:int],s:bat[:oid],nil_if_empty:bit) :lng
+address CMDBATprod
+comment "Calculate aggregate product of B with candidate list.";
+pattern prod(b:bat[:int],s:bat[:msk],nil_if_empty:bit) :lng
 address CMDBATprod
 comment "Calculate aggregate product of B with candidate list.";
 
@@ -5499,7 +5671,13 @@ comment "Calculate aggregate product of B.";
 pattern prod(b:bat[:int],s:bat[:oid]) :dbl
 address CMDBATprod
 comment "Calculate aggregate product of B with candidate list.";
+pattern prod(b:bat[:int],s:bat[:msk]) :dbl
+address CMDBATprod
+comment "Calculate aggregate product of B with candidate list.";
 pattern prod(b:bat[:int],s:bat[:oid],nil_if_empty:bit) :dbl
+address CMDBATprod
+comment "Calculate aggregate product of B with candidate list.";
+pattern prod(b:bat[:int],s:bat[:msk],nil_if_empty:bit) :dbl
 address CMDBATprod
 comment "Calculate aggregate product of B with candidate list.";
 
@@ -5512,7 +5690,13 @@ comment "Calculate aggregate product of B.";
 pattern prod(b:bat[:lng],s:bat[:oid]) :lng
 address CMDBATprod
 comment "Calculate aggregate product of B with candidate list.";
+pattern prod(b:bat[:lng],s:bat[:msk]) :lng
+address CMDBATprod
+comment "Calculate aggregate product of B with candidate list.";
 pattern prod(b:bat[:lng],s:bat[:oid],nil_if_empty:bit) :lng
+address CMDBATprod
+comment "Calculate aggregate product of B with candidate list.";
+pattern prod(b:bat[:lng],s:bat[:msk],nil_if_empty:bit) :lng
 address CMDBATprod
 comment "Calculate aggregate product of B with candidate list.";
 
@@ -5525,7 +5709,13 @@ comment "Calculate aggregate product of B.";
 pattern prod(b:bat[:lng],s:bat[:oid]) :dbl
 address CMDBATprod
 comment "Calculate aggregate product of B with candidate list.";
+pattern prod(b:bat[:lng],s:bat[:msk]) :dbl
+address CMDBATprod
+comment "Calculate aggregate product of B with candidate list.";
 pattern prod(b:bat[:lng],s:bat[:oid],nil_if_empty:bit) :dbl
+address CMDBATprod
+comment "Calculate aggregate product of B with candidate list.";
+pattern prod(b:bat[:lng],s:bat[:msk],nil_if_empty:bit) :dbl
 address CMDBATprod
 comment "Calculate aggregate product of B with candidate list.";
 
@@ -5538,7 +5728,13 @@ comment "Calculate aggregate product of B.";
 pattern prod(b:bat[:flt],s:bat[:oid]) :flt
 address CMDBATprod
 comment "Calculate aggregate product of B with candidate list.";
+pattern prod(b:bat[:flt],s:bat[:msk]) :flt
+address CMDBATprod
+comment "Calculate aggregate product of B with candidate list.";
 pattern prod(b:bat[:flt],s:bat[:oid],nil_if_empty:bit) :flt
+address CMDBATprod
+comment "Calculate aggregate product of B with candidate list.";
+pattern prod(b:bat[:flt],s:bat[:msk],nil_if_empty:bit) :flt
 address CMDBATprod
 comment "Calculate aggregate product of B with candidate list.";
 
@@ -5551,7 +5747,13 @@ comment "Calculate aggregate product of B.";
 pattern prod(b:bat[:flt],s:bat[:oid]) :dbl
 address CMDBATprod
 comment "Calculate aggregate product of B with candidate list.";
+pattern prod(b:bat[:flt],s:bat[:msk]) :dbl
+address CMDBATprod
+comment "Calculate aggregate product of B with candidate list.";
 pattern prod(b:bat[:flt],s:bat[:oid],nil_if_empty:bit) :dbl
+address CMDBATprod
+comment "Calculate aggregate product of B with candidate list.";
+pattern prod(b:bat[:flt],s:bat[:msk],nil_if_empty:bit) :dbl
 address CMDBATprod
 comment "Calculate aggregate product of B with candidate list.";
 
@@ -5564,7 +5766,13 @@ comment "Calculate aggregate product of B.";
 pattern prod(b:bat[:dbl],s:bat[:oid]) :dbl
 address CMDBATprod
 comment "Calculate aggregate product of B with candidate list.";
+pattern prod(b:bat[:dbl],s:bat[:msk]) :dbl
+address CMDBATprod
+comment "Calculate aggregate product of B with candidate list.";
 pattern prod(b:bat[:dbl],s:bat[:oid],nil_if_empty:bit) :dbl
+address CMDBATprod
+comment "Calculate aggregate product of B with candidate list.";
+pattern prod(b:bat[:dbl],s:bat[:msk],nil_if_empty:bit) :dbl
 address CMDBATprod
 comment "Calculate aggregate product of B with candidate list.";
 
@@ -5577,7 +5785,13 @@ comment "Calculate aggregate string concatenate of B.";
 pattern str_group_concat(b:bat[:str],s:bat[:oid]) :str
 address CMDBATstr_group_concat
 comment "Calculate aggregate string concatenate of B with candidate list.";
+pattern str_group_concat(b:bat[:str],s:bat[:msk]) :str
+address CMDBATstr_group_concat
+comment "Calculate aggregate string concatenate of B with candidate list.";
 pattern str_group_concat(b:bat[:str],s:bat[:oid],nil_if_empty:bit) :str
+address CMDBATstr_group_concat
+comment "Calculate aggregate string concatenate of B with candidate list.";
+pattern str_group_concat(b:bat[:str],s:bat[:msk],nil_if_empty:bit) :str
 address CMDBATstr_group_concat
 comment "Calculate aggregate string concatenate of B with candidate list.";
 
@@ -5590,6 +5804,12 @@ comment "Calculate aggregate string concatenate of B with separator SEP.";
 pattern str_group_concat(b:bat[:str],sep:bat[:str],s:bat[:oid]) :str
 address CMDBATstr_group_concat
 comment "Calculate aggregate string concatenate of B with candidate list and separator SEP.";
+pattern str_group_concat(b:bat[:str],sep:bat[:str],s:bat[:msk]) :str
+address CMDBATstr_group_concat
+comment "Calculate aggregate string concatenate of B with candidate list and separator SEP.";
 pattern str_group_concat(b:bat[:str],sep:bat[:str],s:bat[:oid],nil_if_empty:bit) :str
+address CMDBATstr_group_concat
+comment "Calculate aggregate string concatenate of B with candidate list and separator SEP.";
+pattern str_group_concat(b:bat[:str],sep:bat[:str],s:bat[:msk],nil_if_empty:bit) :str
 address CMDBATstr_group_concat
 comment "Calculate aggregate string concatenate of B with candidate list and separator SEP.";

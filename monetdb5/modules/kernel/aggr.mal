@@ -25,6 +25,9 @@ comment "Grouped sum aggregate";
 command subsum(b:bat[:bte],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:bte]
 address AGGRsubsumcand_bte
 comment "Grouped sum aggregate with candidates list";
+command subsum(b:bat[:bte],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit) :bat[:bte]
+address AGGRsubsumcand_bte
+comment "Grouped sum aggregate with candidates list";
 
 command prod(b:bat[:bte],g:bat[:oid],e:bat[:any_1])
 		:bat[:bte]
@@ -36,6 +39,9 @@ address AGGRsubprod_bte
 comment "Grouped product aggregate";
 
 command subprod(b:bat[:bte],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:bte]
+address AGGRsubprodcand_bte
+comment "Grouped product aggregate with candidates list";
+command subprod(b:bat[:bte],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit) :bat[:bte]
 address AGGRsubprodcand_bte
 comment "Grouped product aggregate with candidates list";
 
@@ -51,6 +57,9 @@ comment "Grouped sum aggregate";
 command subsum(b:bat[:bte],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:sht]
 address AGGRsubsumcand_sht
 comment "Grouped sum aggregate with candidates list";
+command subsum(b:bat[:bte],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit) :bat[:sht]
+address AGGRsubsumcand_sht
+comment "Grouped sum aggregate with candidates list";
 
 command prod(b:bat[:bte],g:bat[:oid],e:bat[:any_1])
 		:bat[:sht]
@@ -62,6 +71,9 @@ address AGGRsubprod_sht
 comment "Grouped product aggregate";
 
 command subprod(b:bat[:bte],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:sht]
+address AGGRsubprodcand_sht
+comment "Grouped product aggregate with candidates list";
+command subprod(b:bat[:bte],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit) :bat[:sht]
 address AGGRsubprodcand_sht
 comment "Grouped product aggregate with candidates list";
 
@@ -77,6 +89,9 @@ comment "Grouped sum aggregate";
 command subsum(b:bat[:bte],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:int]
 address AGGRsubsumcand_int
 comment "Grouped sum aggregate with candidates list";
+command subsum(b:bat[:bte],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit) :bat[:int]
+address AGGRsubsumcand_int
+comment "Grouped sum aggregate with candidates list";
 
 command prod(b:bat[:bte],g:bat[:oid],e:bat[:any_1])
 		:bat[:int]
@@ -88,6 +103,9 @@ address AGGRsubprod_int
 comment "Grouped product aggregate";
 
 command subprod(b:bat[:bte],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:int]
+address AGGRsubprodcand_int
+comment "Grouped product aggregate with candidates list";
+command subprod(b:bat[:bte],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit) :bat[:int]
 address AGGRsubprodcand_int
 comment "Grouped product aggregate with candidates list";
 
@@ -103,6 +121,9 @@ comment "Grouped sum aggregate";
 command subsum(b:bat[:bte],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:lng]
 address AGGRsubsumcand_lng
 comment "Grouped sum aggregate with candidates list";
+command subsum(b:bat[:bte],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit) :bat[:lng]
+address AGGRsubsumcand_lng
+comment "Grouped sum aggregate with candidates list";
 
 command prod(b:bat[:bte],g:bat[:oid],e:bat[:any_1])
 		:bat[:lng]
@@ -114,6 +135,9 @@ address AGGRsubprod_lng
 comment "Grouped product aggregate";
 
 command subprod(b:bat[:bte],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:lng]
+address AGGRsubprodcand_lng
+comment "Grouped product aggregate with candidates list";
+command subprod(b:bat[:bte],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit) :bat[:lng]
 address AGGRsubprodcand_lng
 comment "Grouped product aggregate with candidates list";
 
@@ -134,6 +158,9 @@ comment "Grouped sum aggregate";
 command subsum(b:bat[:sht],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:sht]
 address AGGRsubsumcand_sht
 comment "Grouped sum aggregate with candidates list";
+command subsum(b:bat[:sht],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit) :bat[:sht]
+address AGGRsubsumcand_sht
+comment "Grouped sum aggregate with candidates list";
 
 command prod(b:bat[:sht],g:bat[:oid],e:bat[:any_1])
 		:bat[:sht]
@@ -145,6 +172,9 @@ address AGGRsubprod_sht
 comment "Grouped product aggregate";
 
 command subprod(b:bat[:sht],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:sht]
+address AGGRsubprodcand_sht
+comment "Grouped product aggregate with candidates list";
+command subprod(b:bat[:sht],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit) :bat[:sht]
 address AGGRsubprodcand_sht
 comment "Grouped product aggregate with candidates list";
 
@@ -160,6 +190,9 @@ comment "Grouped sum aggregate";
 command subsum(b:bat[:sht],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:int]
 address AGGRsubsumcand_int
 comment "Grouped sum aggregate with candidates list";
+command subsum(b:bat[:sht],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit) :bat[:int]
+address AGGRsubsumcand_int
+comment "Grouped sum aggregate with candidates list";
 
 command prod(b:bat[:sht],g:bat[:oid],e:bat[:any_1])
 		:bat[:int]
@@ -171,6 +204,9 @@ address AGGRsubprod_int
 comment "Grouped product aggregate";
 
 command subprod(b:bat[:sht],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:int]
+address AGGRsubprodcand_int
+comment "Grouped product aggregate with candidates list";
+command subprod(b:bat[:sht],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit) :bat[:int]
 address AGGRsubprodcand_int
 comment "Grouped product aggregate with candidates list";
 
@@ -186,6 +222,9 @@ comment "Grouped sum aggregate";
 command subsum(b:bat[:sht],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:lng]
 address AGGRsubsumcand_lng
 comment "Grouped sum aggregate with candidates list";
+command subsum(b:bat[:sht],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit) :bat[:lng]
+address AGGRsubsumcand_lng
+comment "Grouped sum aggregate with candidates list";
 
 command prod(b:bat[:sht],g:bat[:oid],e:bat[:any_1])
 		:bat[:lng]
@@ -197,6 +236,9 @@ address AGGRsubprod_lng
 comment "Grouped product aggregate";
 
 command subprod(b:bat[:sht],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:lng]
+address AGGRsubprodcand_lng
+comment "Grouped product aggregate with candidates list";
+command subprod(b:bat[:sht],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit) :bat[:lng]
 address AGGRsubprodcand_lng
 comment "Grouped product aggregate with candidates list";
 
@@ -217,6 +259,9 @@ comment "Grouped sum aggregate";
 command subsum(b:bat[:int],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:int]
 address AGGRsubsumcand_int
 comment "Grouped sum aggregate with candidates list";
+command subsum(b:bat[:int],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit) :bat[:int]
+address AGGRsubsumcand_int
+comment "Grouped sum aggregate with candidates list";
 
 command prod(b:bat[:int],g:bat[:oid],e:bat[:any_1])
 		:bat[:int]
@@ -228,6 +273,9 @@ address AGGRsubprod_int
 comment "Grouped product aggregate";
 
 command subprod(b:bat[:int],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:int]
+address AGGRsubprodcand_int
+comment "Grouped product aggregate with candidates list";
+command subprod(b:bat[:int],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit) :bat[:int]
 address AGGRsubprodcand_int
 comment "Grouped product aggregate with candidates list";
 
@@ -243,6 +291,9 @@ comment "Grouped sum aggregate";
 command subsum(b:bat[:int],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:lng]
 address AGGRsubsumcand_lng
 comment "Grouped sum aggregate with candidates list";
+command subsum(b:bat[:int],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit) :bat[:lng]
+address AGGRsubsumcand_lng
+comment "Grouped sum aggregate with candidates list";
 
 command prod(b:bat[:int],g:bat[:oid],e:bat[:any_1])
 		:bat[:lng]
@@ -254,6 +305,9 @@ address AGGRsubprod_lng
 comment "Grouped product aggregate";
 
 command subprod(b:bat[:int],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:lng]
+address AGGRsubprodcand_lng
+comment "Grouped product aggregate with candidates list";
+command subprod(b:bat[:int],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit) :bat[:lng]
 address AGGRsubprodcand_lng
 comment "Grouped product aggregate with candidates list";
 
@@ -274,6 +328,9 @@ comment "Grouped sum aggregate";
 command subsum(b:bat[:lng],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:lng]
 address AGGRsubsumcand_lng
 comment "Grouped sum aggregate with candidates list";
+command subsum(b:bat[:lng],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit) :bat[:lng]
+address AGGRsubsumcand_lng
+comment "Grouped sum aggregate with candidates list";
 
 command prod(b:bat[:lng],g:bat[:oid],e:bat[:any_1])
 		:bat[:lng]
@@ -285,6 +342,9 @@ address AGGRsubprod_lng
 comment "Grouped product aggregate";
 
 command subprod(b:bat[:lng],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:lng]
+address AGGRsubprodcand_lng
+comment "Grouped product aggregate with candidates list";
+command subprod(b:bat[:lng],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit) :bat[:lng]
 address AGGRsubprodcand_lng
 comment "Grouped product aggregate with candidates list";
 
@@ -300,6 +360,9 @@ comment "Grouped sum aggregate";
 command subsum(b:bat[:flt],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:flt]
 address AGGRsubsumcand_flt
 comment "Grouped sum aggregate with candidates list";
+command subsum(b:bat[:flt],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit) :bat[:flt]
+address AGGRsubsumcand_flt
+comment "Grouped sum aggregate with candidates list";
 
 command prod(b:bat[:flt],g:bat[:oid],e:bat[:any_1])
 		:bat[:flt]
@@ -311,6 +374,9 @@ address AGGRsubprod_flt
 comment "Grouped product aggregate";
 
 command subprod(b:bat[:flt],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:flt]
+address AGGRsubprodcand_flt
+comment "Grouped product aggregate with candidates list";
+command subprod(b:bat[:flt],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit) :bat[:flt]
 address AGGRsubprodcand_flt
 comment "Grouped product aggregate with candidates list";
 
@@ -326,6 +392,9 @@ comment "Grouped sum aggregate";
 command subsum(b:bat[:flt],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
 address AGGRsubsumcand_dbl
 comment "Grouped sum aggregate with candidates list";
+command subsum(b:bat[:flt],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
+address AGGRsubsumcand_dbl
+comment "Grouped sum aggregate with candidates list";
 
 command prod(b:bat[:flt],g:bat[:oid],e:bat[:any_1])
 		:bat[:dbl]
@@ -337,6 +406,9 @@ address AGGRsubprod_dbl
 comment "Grouped product aggregate";
 
 command subprod(b:bat[:flt],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
+address AGGRsubprodcand_dbl
+comment "Grouped product aggregate with candidates list";
+command subprod(b:bat[:flt],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
 address AGGRsubprodcand_dbl
 comment "Grouped product aggregate with candidates list";
 
@@ -352,6 +424,9 @@ comment "Grouped sum aggregate";
 command subsum(b:bat[:dbl],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
 address AGGRsubsumcand_dbl
 comment "Grouped sum aggregate with candidates list";
+command subsum(b:bat[:dbl],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
+address AGGRsubsumcand_dbl
+comment "Grouped sum aggregate with candidates list";
 
 command prod(b:bat[:dbl],g:bat[:oid],e:bat[:any_1])
 		:bat[:dbl]
@@ -363,6 +438,9 @@ address AGGRsubprod_dbl
 comment "Grouped product aggregate";
 
 command subprod(b:bat[:dbl],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
+address AGGRsubprodcand_dbl
+comment "Grouped product aggregate with candidates list";
+command subprod(b:bat[:dbl],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
 address AGGRsubprodcand_dbl
 comment "Grouped product aggregate with candidates list";
 
@@ -389,12 +467,18 @@ comment "Grouped average aggregate";
 command subavg(b:bat[:bte],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
 address AGGRsubavg1cand_dbl
 comment "Grouped average aggregate with candidates list";
+command subavg(b:bat[:bte],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
+address AGGRsubavg1cand_dbl
+comment "Grouped average aggregate with candidates list";
 
 command subavg(b:bat[:bte],g:bat[:oid],e:bat[:any_1],skip_nils:bit,abort_on_error:bit) (:bat[:dbl],:bat[:lng])
 address AGGRsubavg2_dbl
 comment "Grouped average aggregate, also returns count";
 
 command subavg(b:bat[:bte],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) (:bat[:dbl],:bat[:lng])
+address AGGRsubavg2cand_dbl
+comment "Grouped average aggregate with candidates list, also returns count";
+command subavg(b:bat[:bte],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit) (:bat[:dbl],:bat[:lng])
 address AGGRsubavg2cand_dbl
 comment "Grouped average aggregate with candidates list, also returns count";
 
@@ -405,12 +489,18 @@ comment "Grouped average aggregate";
 command subavg(b:bat[:bte],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit,scale:int) :bat[:dbl]
 address AGGRsubavg1scand_dbl
 comment "Grouped average aggregate with candidates list";
+command subavg(b:bat[:bte],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit,scale:int) :bat[:dbl]
+address AGGRsubavg1scand_dbl
+comment "Grouped average aggregate with candidates list";
 
 command subavg(b:bat[:bte],g:bat[:oid],e:bat[:any_1],skip_nils:bit,abort_on_error:bit,scale:int) (:bat[:dbl],:bat[:lng])
 address AGGRsubavg2s_dbl
 comment "Grouped average aggregate, also returns count";
 
 command subavg(b:bat[:bte],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit,scale:int) (:bat[:dbl],:bat[:lng])
+address AGGRsubavg2scand_dbl
+comment "Grouped average aggregate with candidates list, also returns count";
+command subavg(b:bat[:bte],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit,scale:int) (:bat[:dbl],:bat[:lng])
 address AGGRsubavg2scand_dbl
 comment "Grouped average aggregate with candidates list, also returns count";
 
@@ -425,6 +515,9 @@ comment "Grouped standard deviation (sample/non-biased) aggregate";
 command substdev(b:bat[:bte],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
 address AGGRsubstdevcand_dbl
 comment "Grouped standard deviation (sample/non-biased) aggregate with candidates list";
+command substdev(b:bat[:bte],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
+address AGGRsubstdevcand_dbl
+comment "Grouped standard deviation (sample/non-biased) aggregate with candidates list";
 
 command stdevp(b:bat[:bte], g:bat[:oid], e:bat[:any_1]):bat[:dbl]
 address AGGRstdevp3_dbl
@@ -435,6 +528,9 @@ address AGGRsubstdevp_dbl
 comment "Grouped standard deviation (population/biased) aggregate";
 
 command substdevp(b:bat[:bte],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
+address AGGRsubstdevpcand_dbl
+comment "Grouped standard deviation (population/biased) aggregate with candidates list";
+command substdevp(b:bat[:bte],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
 address AGGRsubstdevpcand_dbl
 comment "Grouped standard deviation (population/biased) aggregate with candidates list";
 
@@ -449,6 +545,9 @@ comment "Grouped variance (sample/non-biased) aggregate";
 command subvariance(b:bat[:bte],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
 address AGGRsubvariancecand_dbl
 comment "Grouped variance (sample/non-biased) aggregate with candidates list";
+command subvariance(b:bat[:bte],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
+address AGGRsubvariancecand_dbl
+comment "Grouped variance (sample/non-biased) aggregate with candidates list";
 
 command variancep(b:bat[:bte], g:bat[:oid], e:bat[:any_1]):bat[:dbl]
 address AGGRvariancep3_dbl
@@ -459,6 +558,9 @@ address AGGRsubvariancep_dbl
 comment "Grouped variance (population/biased) aggregate";
 
 command subvariancep(b:bat[:bte],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
+address AGGRsubvariancepcand_dbl
+comment "Grouped variance (population/biased) aggregate with candidates list";
+command subvariancep(b:bat[:bte],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
 address AGGRsubvariancepcand_dbl
 comment "Grouped variance (population/biased) aggregate with candidates list";
 
@@ -473,6 +575,9 @@ comment "Grouped covariance sample aggregate";
 command subcovariance(b1:bat[:bte],b2:bat[:bte],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
 address AGGRsubcovariancecand
 comment "Grouped covariance sample aggregate with candidate list";
+command subcovariance(b1:bat[:bte],b2:bat[:bte],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
+address AGGRsubcovariancecand
+comment "Grouped covariance sample aggregate with candidate list";
 
 command covariancep(b1:bat[:bte],b2:bat[:bte],g:bat[:oid],e:bat[:any_1]) :bat[:dbl]
 address AGGRcovariancep
@@ -485,6 +590,9 @@ comment "Grouped covariance population aggregate";
 command subcovariancep(b1:bat[:bte],b2:bat[:bte],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
 address AGGRsubcovariancepcand
 comment "Grouped covariance population aggregate with candidate list";
+command subcovariancep(b1:bat[:bte],b2:bat[:bte],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
+address AGGRsubcovariancepcand
+comment "Grouped covariance population aggregate with candidate list";
 
 command corr(b1:bat[:bte],b2:bat[:bte],g:bat[:oid],e:bat[:any_1]) :bat[:dbl]
 address AGGRcorr
@@ -495,6 +603,9 @@ address AGGRsubcorr
 comment "Grouped correlation aggregate";
 
 command subcorr(b1:bat[:bte],b2:bat[:bte],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
+address AGGRsubcorrcand
+comment "Grouped correlation aggregate with candidate list";
+command subcorr(b1:bat[:bte],b2:bat[:bte],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
 address AGGRsubcorrcand
 comment "Grouped correlation aggregate with candidate list";
 
@@ -521,12 +632,18 @@ comment "Grouped average aggregate";
 command subavg(b:bat[:sht],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
 address AGGRsubavg1cand_dbl
 comment "Grouped average aggregate with candidates list";
+command subavg(b:bat[:sht],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
+address AGGRsubavg1cand_dbl
+comment "Grouped average aggregate with candidates list";
 
 command subavg(b:bat[:sht],g:bat[:oid],e:bat[:any_1],skip_nils:bit,abort_on_error:bit) (:bat[:dbl],:bat[:lng])
 address AGGRsubavg2_dbl
 comment "Grouped average aggregate, also returns count";
 
 command subavg(b:bat[:sht],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) (:bat[:dbl],:bat[:lng])
+address AGGRsubavg2cand_dbl
+comment "Grouped average aggregate with candidates list, also returns count";
+command subavg(b:bat[:sht],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit) (:bat[:dbl],:bat[:lng])
 address AGGRsubavg2cand_dbl
 comment "Grouped average aggregate with candidates list, also returns count";
 
@@ -537,12 +654,18 @@ comment "Grouped average aggregate";
 command subavg(b:bat[:sht],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit,scale:int) :bat[:dbl]
 address AGGRsubavg1scand_dbl
 comment "Grouped average aggregate with candidates list";
+command subavg(b:bat[:sht],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit,scale:int) :bat[:dbl]
+address AGGRsubavg1scand_dbl
+comment "Grouped average aggregate with candidates list";
 
 command subavg(b:bat[:sht],g:bat[:oid],e:bat[:any_1],skip_nils:bit,abort_on_error:bit,scale:int) (:bat[:dbl],:bat[:lng])
 address AGGRsubavg2s_dbl
 comment "Grouped average aggregate, also returns count";
 
 command subavg(b:bat[:sht],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit,scale:int) (:bat[:dbl],:bat[:lng])
+address AGGRsubavg2scand_dbl
+comment "Grouped average aggregate with candidates list, also returns count";
+command subavg(b:bat[:sht],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit,scale:int) (:bat[:dbl],:bat[:lng])
 address AGGRsubavg2scand_dbl
 comment "Grouped average aggregate with candidates list, also returns count";
 
@@ -557,6 +680,9 @@ comment "Grouped standard deviation (sample/non-biased) aggregate";
 command substdev(b:bat[:sht],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
 address AGGRsubstdevcand_dbl
 comment "Grouped standard deviation (sample/non-biased) aggregate with candidates list";
+command substdev(b:bat[:sht],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
+address AGGRsubstdevcand_dbl
+comment "Grouped standard deviation (sample/non-biased) aggregate with candidates list";
 
 command stdevp(b:bat[:sht], g:bat[:oid], e:bat[:any_1]):bat[:dbl]
 address AGGRstdevp3_dbl
@@ -567,6 +693,9 @@ address AGGRsubstdevp_dbl
 comment "Grouped standard deviation (population/biased) aggregate";
 
 command substdevp(b:bat[:sht],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
+address AGGRsubstdevpcand_dbl
+comment "Grouped standard deviation (population/biased) aggregate with candidates list";
+command substdevp(b:bat[:sht],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
 address AGGRsubstdevpcand_dbl
 comment "Grouped standard deviation (population/biased) aggregate with candidates list";
 
@@ -581,6 +710,9 @@ comment "Grouped variance (sample/non-biased) aggregate";
 command subvariance(b:bat[:sht],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
 address AGGRsubvariancecand_dbl
 comment "Grouped variance (sample/non-biased) aggregate with candidates list";
+command subvariance(b:bat[:sht],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
+address AGGRsubvariancecand_dbl
+comment "Grouped variance (sample/non-biased) aggregate with candidates list";
 
 command variancep(b:bat[:sht], g:bat[:oid], e:bat[:any_1]):bat[:dbl]
 address AGGRvariancep3_dbl
@@ -591,6 +723,9 @@ address AGGRsubvariancep_dbl
 comment "Grouped variance (population/biased) aggregate";
 
 command subvariancep(b:bat[:sht],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
+address AGGRsubvariancepcand_dbl
+comment "Grouped variance (population/biased) aggregate with candidates list";
+command subvariancep(b:bat[:sht],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
 address AGGRsubvariancepcand_dbl
 comment "Grouped variance (population/biased) aggregate with candidates list";
 
@@ -605,6 +740,9 @@ comment "Grouped covariance sample aggregate";
 command subcovariance(b1:bat[:sht],b2:bat[:sht],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
 address AGGRsubcovariancecand
 comment "Grouped covariance sample aggregate with candidate list";
+command subcovariance(b1:bat[:sht],b2:bat[:sht],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
+address AGGRsubcovariancecand
+comment "Grouped covariance sample aggregate with candidate list";
 
 command covariancep(b1:bat[:sht],b2:bat[:sht],g:bat[:oid],e:bat[:any_1]) :bat[:dbl]
 address AGGRcovariancep
@@ -617,6 +755,9 @@ comment "Grouped covariance population aggregate";
 command subcovariancep(b1:bat[:sht],b2:bat[:sht],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
 address AGGRsubcovariancepcand
 comment "Grouped covariance population aggregate with candidate list";
+command subcovariancep(b1:bat[:sht],b2:bat[:sht],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
+address AGGRsubcovariancepcand
+comment "Grouped covariance population aggregate with candidate list";
 
 command corr(b1:bat[:sht],b2:bat[:sht],g:bat[:oid],e:bat[:any_1]) :bat[:dbl]
 address AGGRcorr
@@ -627,6 +768,9 @@ address AGGRsubcorr
 comment "Grouped correlation aggregate";
 
 command subcorr(b1:bat[:sht],b2:bat[:sht],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
+address AGGRsubcorrcand
+comment "Grouped correlation aggregate with candidate list";
+command subcorr(b1:bat[:sht],b2:bat[:sht],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
 address AGGRsubcorrcand
 comment "Grouped correlation aggregate with candidate list";
 
@@ -653,12 +797,18 @@ comment "Grouped average aggregate";
 command subavg(b:bat[:int],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
 address AGGRsubavg1cand_dbl
 comment "Grouped average aggregate with candidates list";
+command subavg(b:bat[:int],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
+address AGGRsubavg1cand_dbl
+comment "Grouped average aggregate with candidates list";
 
 command subavg(b:bat[:int],g:bat[:oid],e:bat[:any_1],skip_nils:bit,abort_on_error:bit) (:bat[:dbl],:bat[:lng])
 address AGGRsubavg2_dbl
 comment "Grouped average aggregate, also returns count";
 
 command subavg(b:bat[:int],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) (:bat[:dbl],:bat[:lng])
+address AGGRsubavg2cand_dbl
+comment "Grouped average aggregate with candidates list, also returns count";
+command subavg(b:bat[:int],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit) (:bat[:dbl],:bat[:lng])
 address AGGRsubavg2cand_dbl
 comment "Grouped average aggregate with candidates list, also returns count";
 
@@ -669,12 +819,18 @@ comment "Grouped average aggregate";
 command subavg(b:bat[:int],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit,scale:int) :bat[:dbl]
 address AGGRsubavg1scand_dbl
 comment "Grouped average aggregate with candidates list";
+command subavg(b:bat[:int],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit,scale:int) :bat[:dbl]
+address AGGRsubavg1scand_dbl
+comment "Grouped average aggregate with candidates list";
 
 command subavg(b:bat[:int],g:bat[:oid],e:bat[:any_1],skip_nils:bit,abort_on_error:bit,scale:int) (:bat[:dbl],:bat[:lng])
 address AGGRsubavg2s_dbl
 comment "Grouped average aggregate, also returns count";
 
 command subavg(b:bat[:int],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit,scale:int) (:bat[:dbl],:bat[:lng])
+address AGGRsubavg2scand_dbl
+comment "Grouped average aggregate with candidates list, also returns count";
+command subavg(b:bat[:int],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit,scale:int) (:bat[:dbl],:bat[:lng])
 address AGGRsubavg2scand_dbl
 comment "Grouped average aggregate with candidates list, also returns count";
 
@@ -689,6 +845,9 @@ comment "Grouped standard deviation (sample/non-biased) aggregate";
 command substdev(b:bat[:int],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
 address AGGRsubstdevcand_dbl
 comment "Grouped standard deviation (sample/non-biased) aggregate with candidates list";
+command substdev(b:bat[:int],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
+address AGGRsubstdevcand_dbl
+comment "Grouped standard deviation (sample/non-biased) aggregate with candidates list";
 
 command stdevp(b:bat[:int], g:bat[:oid], e:bat[:any_1]):bat[:dbl]
 address AGGRstdevp3_dbl
@@ -699,6 +858,9 @@ address AGGRsubstdevp_dbl
 comment "Grouped standard deviation (population/biased) aggregate";
 
 command substdevp(b:bat[:int],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
+address AGGRsubstdevpcand_dbl
+comment "Grouped standard deviation (population/biased) aggregate with candidates list";
+command substdevp(b:bat[:int],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
 address AGGRsubstdevpcand_dbl
 comment "Grouped standard deviation (population/biased) aggregate with candidates list";
 
@@ -713,6 +875,9 @@ comment "Grouped variance (sample/non-biased) aggregate";
 command subvariance(b:bat[:int],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
 address AGGRsubvariancecand_dbl
 comment "Grouped variance (sample/non-biased) aggregate with candidates list";
+command subvariance(b:bat[:int],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
+address AGGRsubvariancecand_dbl
+comment "Grouped variance (sample/non-biased) aggregate with candidates list";
 
 command variancep(b:bat[:int], g:bat[:oid], e:bat[:any_1]):bat[:dbl]
 address AGGRvariancep3_dbl
@@ -723,6 +888,9 @@ address AGGRsubvariancep_dbl
 comment "Grouped variance (population/biased) aggregate";
 
 command subvariancep(b:bat[:int],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
+address AGGRsubvariancepcand_dbl
+comment "Grouped variance (population/biased) aggregate with candidates list";
+command subvariancep(b:bat[:int],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
 address AGGRsubvariancepcand_dbl
 comment "Grouped variance (population/biased) aggregate with candidates list";
 
@@ -737,6 +905,9 @@ comment "Grouped covariance sample aggregate";
 command subcovariance(b1:bat[:int],b2:bat[:int],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
 address AGGRsubcovariancecand
 comment "Grouped covariance sample aggregate with candidate list";
+command subcovariance(b1:bat[:int],b2:bat[:int],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
+address AGGRsubcovariancecand
+comment "Grouped covariance sample aggregate with candidate list";
 
 command covariancep(b1:bat[:int],b2:bat[:int],g:bat[:oid],e:bat[:any_1]) :bat[:dbl]
 address AGGRcovariancep
@@ -749,6 +920,9 @@ comment "Grouped covariance population aggregate";
 command subcovariancep(b1:bat[:int],b2:bat[:int],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
 address AGGRsubcovariancepcand
 comment "Grouped covariance population aggregate with candidate list";
+command subcovariancep(b1:bat[:int],b2:bat[:int],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
+address AGGRsubcovariancepcand
+comment "Grouped covariance population aggregate with candidate list";
 
 command corr(b1:bat[:int],b2:bat[:int],g:bat[:oid],e:bat[:any_1]) :bat[:dbl]
 address AGGRcorr
@@ -759,6 +933,9 @@ address AGGRsubcorr
 comment "Grouped correlation aggregate";
 
 command subcorr(b1:bat[:int],b2:bat[:int],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
+address AGGRsubcorrcand
+comment "Grouped correlation aggregate with candidate list";
+command subcorr(b1:bat[:int],b2:bat[:int],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
 address AGGRsubcorrcand
 comment "Grouped correlation aggregate with candidate list";
 
@@ -785,12 +962,18 @@ comment "Grouped average aggregate";
 command subavg(b:bat[:lng],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
 address AGGRsubavg1cand_dbl
 comment "Grouped average aggregate with candidates list";
+command subavg(b:bat[:lng],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
+address AGGRsubavg1cand_dbl
+comment "Grouped average aggregate with candidates list";
 
 command subavg(b:bat[:lng],g:bat[:oid],e:bat[:any_1],skip_nils:bit,abort_on_error:bit) (:bat[:dbl],:bat[:lng])
 address AGGRsubavg2_dbl
 comment "Grouped average aggregate, also returns count";
 
 command subavg(b:bat[:lng],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) (:bat[:dbl],:bat[:lng])
+address AGGRsubavg2cand_dbl
+comment "Grouped average aggregate with candidates list, also returns count";
+command subavg(b:bat[:lng],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit) (:bat[:dbl],:bat[:lng])
 address AGGRsubavg2cand_dbl
 comment "Grouped average aggregate with candidates list, also returns count";
 
@@ -801,12 +984,18 @@ comment "Grouped average aggregate";
 command subavg(b:bat[:lng],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit,scale:int) :bat[:dbl]
 address AGGRsubavg1scand_dbl
 comment "Grouped average aggregate with candidates list";
+command subavg(b:bat[:lng],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit,scale:int) :bat[:dbl]
+address AGGRsubavg1scand_dbl
+comment "Grouped average aggregate with candidates list";
 
 command subavg(b:bat[:lng],g:bat[:oid],e:bat[:any_1],skip_nils:bit,abort_on_error:bit,scale:int) (:bat[:dbl],:bat[:lng])
 address AGGRsubavg2s_dbl
 comment "Grouped average aggregate, also returns count";
 
 command subavg(b:bat[:lng],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit,scale:int) (:bat[:dbl],:bat[:lng])
+address AGGRsubavg2scand_dbl
+comment "Grouped average aggregate with candidates list, also returns count";
+command subavg(b:bat[:lng],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit,scale:int) (:bat[:dbl],:bat[:lng])
 address AGGRsubavg2scand_dbl
 comment "Grouped average aggregate with candidates list, also returns count";
 
@@ -821,6 +1010,9 @@ comment "Grouped standard deviation (sample/non-biased) aggregate";
 command substdev(b:bat[:lng],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
 address AGGRsubstdevcand_dbl
 comment "Grouped standard deviation (sample/non-biased) aggregate with candidates list";
+command substdev(b:bat[:lng],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
+address AGGRsubstdevcand_dbl
+comment "Grouped standard deviation (sample/non-biased) aggregate with candidates list";
 
 command stdevp(b:bat[:lng], g:bat[:oid], e:bat[:any_1]):bat[:dbl]
 address AGGRstdevp3_dbl
@@ -831,6 +1023,9 @@ address AGGRsubstdevp_dbl
 comment "Grouped standard deviation (population/biased) aggregate";
 
 command substdevp(b:bat[:lng],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
+address AGGRsubstdevpcand_dbl
+comment "Grouped standard deviation (population/biased) aggregate with candidates list";
+command substdevp(b:bat[:lng],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
 address AGGRsubstdevpcand_dbl
 comment "Grouped standard deviation (population/biased) aggregate with candidates list";
 
@@ -845,6 +1040,9 @@ comment "Grouped variance (sample/non-biased) aggregate";
 command subvariance(b:bat[:lng],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
 address AGGRsubvariancecand_dbl
 comment "Grouped variance (sample/non-biased) aggregate with candidates list";
+command subvariance(b:bat[:lng],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
+address AGGRsubvariancecand_dbl
+comment "Grouped variance (sample/non-biased) aggregate with candidates list";
 
 command variancep(b:bat[:lng], g:bat[:oid], e:bat[:any_1]):bat[:dbl]
 address AGGRvariancep3_dbl
@@ -855,6 +1053,9 @@ address AGGRsubvariancep_dbl
 comment "Grouped variance (population/biased) aggregate";
 
 command subvariancep(b:bat[:lng],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
+address AGGRsubvariancepcand_dbl
+comment "Grouped variance (population/biased) aggregate with candidates list";
+command subvariancep(b:bat[:lng],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
 address AGGRsubvariancepcand_dbl
 comment "Grouped variance (population/biased) aggregate with candidates list";
 
@@ -869,6 +1070,9 @@ comment "Grouped covariance sample aggregate";
 command subcovariance(b1:bat[:lng],b2:bat[:lng],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
 address AGGRsubcovariancecand
 comment "Grouped covariance sample aggregate with candidate list";
+command subcovariance(b1:bat[:lng],b2:bat[:lng],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
+address AGGRsubcovariancecand
+comment "Grouped covariance sample aggregate with candidate list";
 
 command covariancep(b1:bat[:lng],b2:bat[:lng],g:bat[:oid],e:bat[:any_1]) :bat[:dbl]
 address AGGRcovariancep
@@ -881,6 +1085,9 @@ comment "Grouped covariance population aggregate";
 command subcovariancep(b1:bat[:lng],b2:bat[:lng],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
 address AGGRsubcovariancepcand
 comment "Grouped covariance population aggregate with candidate list";
+command subcovariancep(b1:bat[:lng],b2:bat[:lng],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
+address AGGRsubcovariancepcand
+comment "Grouped covariance population aggregate with candidate list";
 
 command corr(b1:bat[:lng],b2:bat[:lng],g:bat[:oid],e:bat[:any_1]) :bat[:dbl]
 address AGGRcorr
@@ -891,6 +1098,9 @@ address AGGRsubcorr
 comment "Grouped correlation aggregate";
 
 command subcorr(b1:bat[:lng],b2:bat[:lng],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
+address AGGRsubcorrcand
+comment "Grouped correlation aggregate with candidate list";
+command subcorr(b1:bat[:lng],b2:bat[:lng],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
 address AGGRsubcorrcand
 comment "Grouped correlation aggregate with candidate list";
 
@@ -917,12 +1127,18 @@ comment "Grouped average aggregate";
 command subavg(b:bat[:flt],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
 address AGGRsubavg1cand_dbl
 comment "Grouped average aggregate with candidates list";
+command subavg(b:bat[:flt],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
+address AGGRsubavg1cand_dbl
+comment "Grouped average aggregate with candidates list";
 
 command subavg(b:bat[:flt],g:bat[:oid],e:bat[:any_1],skip_nils:bit,abort_on_error:bit) (:bat[:dbl],:bat[:lng])
 address AGGRsubavg2_dbl
 comment "Grouped average aggregate, also returns count";
 
 command subavg(b:bat[:flt],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) (:bat[:dbl],:bat[:lng])
+address AGGRsubavg2cand_dbl
+comment "Grouped average aggregate with candidates list, also returns count";
+command subavg(b:bat[:flt],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit) (:bat[:dbl],:bat[:lng])
 address AGGRsubavg2cand_dbl
 comment "Grouped average aggregate with candidates list, also returns count";
 
@@ -933,12 +1149,18 @@ comment "Grouped average aggregate";
 command subavg(b:bat[:flt],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit,scale:int) :bat[:dbl]
 address AGGRsubavg1scand_dbl
 comment "Grouped average aggregate with candidates list";
+command subavg(b:bat[:flt],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit,scale:int) :bat[:dbl]
+address AGGRsubavg1scand_dbl
+comment "Grouped average aggregate with candidates list";
 
 command subavg(b:bat[:flt],g:bat[:oid],e:bat[:any_1],skip_nils:bit,abort_on_error:bit,scale:int) (:bat[:dbl],:bat[:lng])
 address AGGRsubavg2s_dbl
 comment "Grouped average aggregate, also returns count";
 
 command subavg(b:bat[:flt],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit,scale:int) (:bat[:dbl],:bat[:lng])
+address AGGRsubavg2scand_dbl
+comment "Grouped average aggregate with candidates list, also returns count";
+command subavg(b:bat[:flt],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit,scale:int) (:bat[:dbl],:bat[:lng])
 address AGGRsubavg2scand_dbl
 comment "Grouped average aggregate with candidates list, also returns count";
 
@@ -953,6 +1175,9 @@ comment "Grouped standard deviation (sample/non-biased) aggregate";
 command substdev(b:bat[:flt],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
 address AGGRsubstdevcand_dbl
 comment "Grouped standard deviation (sample/non-biased) aggregate with candidates list";
+command substdev(b:bat[:flt],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
+address AGGRsubstdevcand_dbl
+comment "Grouped standard deviation (sample/non-biased) aggregate with candidates list";
 
 command stdevp(b:bat[:flt], g:bat[:oid], e:bat[:any_1]):bat[:dbl]
 address AGGRstdevp3_dbl
@@ -963,6 +1188,9 @@ address AGGRsubstdevp_dbl
 comment "Grouped standard deviation (population/biased) aggregate";
 
 command substdevp(b:bat[:flt],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
+address AGGRsubstdevpcand_dbl
+comment "Grouped standard deviation (population/biased) aggregate with candidates list";
+command substdevp(b:bat[:flt],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
 address AGGRsubstdevpcand_dbl
 comment "Grouped standard deviation (population/biased) aggregate with candidates list";
 
@@ -977,6 +1205,9 @@ comment "Grouped variance (sample/non-biased) aggregate";
 command subvariance(b:bat[:flt],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
 address AGGRsubvariancecand_dbl
 comment "Grouped variance (sample/non-biased) aggregate with candidates list";
+command subvariance(b:bat[:flt],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
+address AGGRsubvariancecand_dbl
+comment "Grouped variance (sample/non-biased) aggregate with candidates list";
 
 command variancep(b:bat[:flt], g:bat[:oid], e:bat[:any_1]):bat[:dbl]
 address AGGRvariancep3_dbl
@@ -987,6 +1218,9 @@ address AGGRsubvariancep_dbl
 comment "Grouped variance (population/biased) aggregate";
 
 command subvariancep(b:bat[:flt],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
+address AGGRsubvariancepcand_dbl
+comment "Grouped variance (population/biased) aggregate with candidates list";
+command subvariancep(b:bat[:flt],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
 address AGGRsubvariancepcand_dbl
 comment "Grouped variance (population/biased) aggregate with candidates list";
 
@@ -1001,6 +1235,9 @@ comment "Grouped covariance sample aggregate";
 command subcovariance(b1:bat[:flt],b2:bat[:flt],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
 address AGGRsubcovariancecand
 comment "Grouped covariance sample aggregate with candidate list";
+command subcovariance(b1:bat[:flt],b2:bat[:flt],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
+address AGGRsubcovariancecand
+comment "Grouped covariance sample aggregate with candidate list";
 
 command covariancep(b1:bat[:flt],b2:bat[:flt],g:bat[:oid],e:bat[:any_1]) :bat[:dbl]
 address AGGRcovariancep
@@ -1013,6 +1250,9 @@ comment "Grouped covariance population aggregate";
 command subcovariancep(b1:bat[:flt],b2:bat[:flt],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
 address AGGRsubcovariancepcand
 comment "Grouped covariance population aggregate with candidate list";
+command subcovariancep(b1:bat[:flt],b2:bat[:flt],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
+address AGGRsubcovariancepcand
+comment "Grouped covariance population aggregate with candidate list";
 
 command corr(b1:bat[:flt],b2:bat[:flt],g:bat[:oid],e:bat[:any_1]) :bat[:dbl]
 address AGGRcorr
@@ -1023,6 +1263,9 @@ address AGGRsubcorr
 comment "Grouped correlation aggregate";
 
 command subcorr(b1:bat[:flt],b2:bat[:flt],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
+address AGGRsubcorrcand
+comment "Grouped correlation aggregate with candidate list";
+command subcorr(b1:bat[:flt],b2:bat[:flt],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
 address AGGRsubcorrcand
 comment "Grouped correlation aggregate with candidate list";
 
@@ -1049,12 +1292,18 @@ comment "Grouped average aggregate";
 command subavg(b:bat[:dbl],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
 address AGGRsubavg1cand_dbl
 comment "Grouped average aggregate with candidates list";
+command subavg(b:bat[:dbl],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
+address AGGRsubavg1cand_dbl
+comment "Grouped average aggregate with candidates list";
 
 command subavg(b:bat[:dbl],g:bat[:oid],e:bat[:any_1],skip_nils:bit,abort_on_error:bit) (:bat[:dbl],:bat[:lng])
 address AGGRsubavg2_dbl
 comment "Grouped average aggregate, also returns count";
 
 command subavg(b:bat[:dbl],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) (:bat[:dbl],:bat[:lng])
+address AGGRsubavg2cand_dbl
+comment "Grouped average aggregate with candidates list, also returns count";
+command subavg(b:bat[:dbl],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit) (:bat[:dbl],:bat[:lng])
 address AGGRsubavg2cand_dbl
 comment "Grouped average aggregate with candidates list, also returns count";
 
@@ -1065,12 +1314,18 @@ comment "Grouped average aggregate";
 command subavg(b:bat[:dbl],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit,scale:int) :bat[:dbl]
 address AGGRsubavg1scand_dbl
 comment "Grouped average aggregate with candidates list";
+command subavg(b:bat[:dbl],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit,scale:int) :bat[:dbl]
+address AGGRsubavg1scand_dbl
+comment "Grouped average aggregate with candidates list";
 
 command subavg(b:bat[:dbl],g:bat[:oid],e:bat[:any_1],skip_nils:bit,abort_on_error:bit,scale:int) (:bat[:dbl],:bat[:lng])
 address AGGRsubavg2s_dbl
 comment "Grouped average aggregate, also returns count";
 
 command subavg(b:bat[:dbl],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit,scale:int) (:bat[:dbl],:bat[:lng])
+address AGGRsubavg2scand_dbl
+comment "Grouped average aggregate with candidates list, also returns count";
+command subavg(b:bat[:dbl],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit,scale:int) (:bat[:dbl],:bat[:lng])
 address AGGRsubavg2scand_dbl
 comment "Grouped average aggregate with candidates list, also returns count";
 
@@ -1085,6 +1340,9 @@ comment "Grouped standard deviation (sample/non-biased) aggregate";
 command substdev(b:bat[:dbl],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
 address AGGRsubstdevcand_dbl
 comment "Grouped standard deviation (sample/non-biased) aggregate with candidates list";
+command substdev(b:bat[:dbl],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
+address AGGRsubstdevcand_dbl
+comment "Grouped standard deviation (sample/non-biased) aggregate with candidates list";
 
 command stdevp(b:bat[:dbl], g:bat[:oid], e:bat[:any_1]):bat[:dbl]
 address AGGRstdevp3_dbl
@@ -1095,6 +1353,9 @@ address AGGRsubstdevp_dbl
 comment "Grouped standard deviation (population/biased) aggregate";
 
 command substdevp(b:bat[:dbl],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
+address AGGRsubstdevpcand_dbl
+comment "Grouped standard deviation (population/biased) aggregate with candidates list";
+command substdevp(b:bat[:dbl],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
 address AGGRsubstdevpcand_dbl
 comment "Grouped standard deviation (population/biased) aggregate with candidates list";
 
@@ -1109,6 +1370,9 @@ comment "Grouped variance (sample/non-biased) aggregate";
 command subvariance(b:bat[:dbl],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
 address AGGRsubvariancecand_dbl
 comment "Grouped variance (sample/non-biased) aggregate with candidates list";
+command subvariance(b:bat[:dbl],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
+address AGGRsubvariancecand_dbl
+comment "Grouped variance (sample/non-biased) aggregate with candidates list";
 
 command variancep(b:bat[:dbl], g:bat[:oid], e:bat[:any_1]):bat[:dbl]
 address AGGRvariancep3_dbl
@@ -1119,6 +1383,9 @@ address AGGRsubvariancep_dbl
 comment "Grouped variance (population/biased) aggregate";
 
 command subvariancep(b:bat[:dbl],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
+address AGGRsubvariancepcand_dbl
+comment "Grouped variance (population/biased) aggregate with candidates list";
+command subvariancep(b:bat[:dbl],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
 address AGGRsubvariancepcand_dbl
 comment "Grouped variance (population/biased) aggregate with candidates list";
 
@@ -1133,6 +1400,9 @@ comment "Grouped covariance sample aggregate";
 command subcovariance(b1:bat[:dbl],b2:bat[:dbl],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
 address AGGRsubcovariancecand
 comment "Grouped covariance sample aggregate with candidate list";
+command subcovariance(b1:bat[:dbl],b2:bat[:dbl],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
+address AGGRsubcovariancecand
+comment "Grouped covariance sample aggregate with candidate list";
 
 command covariancep(b1:bat[:dbl],b2:bat[:dbl],g:bat[:oid],e:bat[:any_1]) :bat[:dbl]
 address AGGRcovariancep
@@ -1145,6 +1415,9 @@ comment "Grouped covariance population aggregate";
 command subcovariancep(b1:bat[:dbl],b2:bat[:dbl],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
 address AGGRsubcovariancepcand
 comment "Grouped covariance population aggregate with candidate list";
+command subcovariancep(b1:bat[:dbl],b2:bat[:dbl],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
+address AGGRsubcovariancepcand
+comment "Grouped covariance population aggregate with candidate list";
 
 command corr(b1:bat[:dbl],b2:bat[:dbl],g:bat[:oid],e:bat[:any_1]) :bat[:dbl]
 address AGGRcorr
@@ -1155,6 +1428,9 @@ address AGGRsubcorr
 comment "Grouped correlation aggregate";
 
 command subcorr(b1:bat[:dbl],b2:bat[:dbl],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
+address AGGRsubcorrcand
+comment "Grouped correlation aggregate with candidate list";
+command subcorr(b1:bat[:dbl],b2:bat[:dbl],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
 address AGGRsubcorrcand
 comment "Grouped correlation aggregate with candidate list";
 
@@ -1172,12 +1448,18 @@ comment "Grouped minimum aggregate";
 command submin(b:bat[:any_1],g:bat[:oid],e:bat[:any_2],s:bat[:oid],skip_nils:bit) :bat[:oid]
 address AGGRsubmincand
 comment "Grouped minimum aggregate with candidates list";
+command submin(b:bat[:any_1],g:bat[:oid],e:bat[:any_2],s:bat[:msk],skip_nils:bit) :bat[:oid]
+address AGGRsubmincand
+comment "Grouped minimum aggregate with candidates list";
 
 command submax(b:bat[:any_1],g:bat[:oid],e:bat[:any_2],skip_nils:bit) :bat[:oid]
 address AGGRsubmax
 comment "Grouped maximum aggregate";
 
 command submax(b:bat[:any_1],g:bat[:oid],e:bat[:any_2],s:bat[:oid],skip_nils:bit) :bat[:oid]
+address AGGRsubmaxcand
+comment "Grouped maximum aggregate with candidates list";
+command submax(b:bat[:any_1],g:bat[:oid],e:bat[:any_2],s:bat[:msk],skip_nils:bit) :bat[:oid]
 address AGGRsubmaxcand
 comment "Grouped maximum aggregate with candidates list";
 
@@ -1188,12 +1470,18 @@ comment "Grouped minimum aggregate";
 command submin(b:bat[:any_1],g:bat[:oid],e:bat[:any_2],s:bat[:oid],skip_nils:bit) :bat[:any_1]
 address AGGRsubmincand_val
 comment "Grouped minimum aggregate with candidates list";
+command submin(b:bat[:any_1],g:bat[:oid],e:bat[:any_2],s:bat[:msk],skip_nils:bit) :bat[:any_1]
+address AGGRsubmincand_val
+comment "Grouped minimum aggregate with candidates list";
 
 command submax(b:bat[:any_1],g:bat[:oid],e:bat[:any_2],skip_nils:bit) :bat[:any_1]
 address AGGRsubmax_val
 comment "Grouped maximum aggregate";
 
 command submax(b:bat[:any_1],g:bat[:oid],e:bat[:any_2],s:bat[:oid],skip_nils:bit) :bat[:any_1]
+address AGGRsubmaxcand_val
+comment "Grouped maximum aggregate with candidates list";
+command submax(b:bat[:any_1],g:bat[:oid],e:bat[:any_2],s:bat[:msk],skip_nils:bit) :bat[:any_1]
 address AGGRsubmaxcand_val
 comment "Grouped maximum aggregate with candidates list";
 
@@ -1217,6 +1505,9 @@ comment "Grouped count aggregate";
 command subcount(b:bat[:any_1],g:bat[:oid],e:bat[:any_2],s:bat[:oid],skip_nils:bit) :bat[:lng]
 address AGGRsubcountcand
 comment "Grouped count aggregate with candidates list";
+command subcount(b:bat[:any_1],g:bat[:oid],e:bat[:any_2],s:bat[:msk],skip_nils:bit) :bat[:lng]
+address AGGRsubcountcand
+comment "Grouped count aggregate with candidates list";
 
 
 command median(b:bat[:any_1]) :any_1
@@ -1228,6 +1519,9 @@ address AGGRsubmedian
 comment "Grouped median aggregate";
 
 command submedian(b:bat[:any_1],g:bat[:oid],e:bat[:any_2],s:bat[:oid],skip_nils:bit) :bat[:any_1]
+address AGGRsubmediancand
+comment "Grouped median aggregate with candidate list";
+command submedian(b:bat[:any_1],g:bat[:oid],e:bat[:any_2],s:bat[:msk],skip_nils:bit) :bat[:any_1]
 address AGGRsubmediancand
 comment "Grouped median aggregate with candidate list";
 
@@ -1243,6 +1537,9 @@ comment "Grouped quantile aggregate";
 command subquantile(b:bat[:any_1],q:bat[:dbl],g:bat[:oid],e:bat[:any_2],s:bat[:oid],skip_nils:bit) :bat[:any_1]
 address AGGRsubquantilecand
 comment "Grouped quantile aggregate with candidate list";
+command subquantile(b:bat[:any_1],q:bat[:dbl],g:bat[:oid],e:bat[:any_2],s:bat[:msk],skip_nils:bit) :bat[:any_1]
+address AGGRsubquantilecand
+comment "Grouped quantile aggregate with candidate list";
 
 command median_avg(b:bat[:any_1]) :dbl
 address AGGRmedian_avg
@@ -1253,6 +1550,9 @@ address AGGRsubmedian_avg
 comment "Grouped median aggregate";
 
 command submedian_avg(b:bat[:any_1],g:bat[:oid],e:bat[:any_2],s:bat[:oid],skip_nils:bit) :bat[:dbl]
+address AGGRsubmediancand_avg
+comment "Grouped median aggregate with candidate list";
+command submedian_avg(b:bat[:any_1],g:bat[:oid],e:bat[:any_2],s:bat[:msk],skip_nils:bit) :bat[:dbl]
 address AGGRsubmediancand_avg
 comment "Grouped median aggregate with candidate list";
 
@@ -1268,6 +1568,9 @@ comment "Grouped quantile aggregate";
 command subquantile_avg(b:bat[:any_1],q:bat[:dbl],g:bat[:oid],e:bat[:any_2],s:bat[:oid],skip_nils:bit) :bat[:dbl]
 address AGGRsubquantilecand_avg
 comment "Grouped quantile aggregate with candidate list";
+command subquantile_avg(b:bat[:any_1],q:bat[:dbl],g:bat[:oid],e:bat[:any_2],s:bat[:msk],skip_nils:bit) :bat[:dbl]
+address AGGRsubquantilecand_avg
+comment "Grouped quantile aggregate with candidate list";
 
 command str_group_concat(b:bat[:str],g:bat[:oid],e:bat[:any_1]) :bat[:str]
 address AGGRstr_group_concat
@@ -1280,6 +1583,9 @@ comment "Grouped string concat";
 command substr_group_concat(b:bat[:str],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:str]
 address AGGRsubstr_group_concatcand
 comment "Grouped string concat with candidates list";
+command substr_group_concat(b:bat[:str],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit) :bat[:str]
+address AGGRsubstr_group_concatcand
+comment "Grouped string concat with candidates list";
 
 command str_group_concat(b:bat[:str],sep:bat[:str],g:bat[:oid],e:bat[:any_1]) :bat[:str]
 address AGGRstr_group_concat_sep
@@ -1290,6 +1596,9 @@ address AGGRsubstr_group_concat_sep
 comment "Grouped string concat with custom separator";
 
 command substr_group_concat(b:bat[:str],sep:bat[:str],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:str]
+address AGGRsubstr_group_concatcand_sep
+comment "Grouped string concat with candidates list with custom separator";
+command substr_group_concat(b:bat[:str],sep:bat[:str],g:bat[:oid],e:bat[:any_1],s:bat[:msk],skip_nils:bit,abort_on_error:bit) :bat[:str]
 address AGGRsubstr_group_concatcand_sep
 comment "Grouped string concat with candidates list with custom separator";
 

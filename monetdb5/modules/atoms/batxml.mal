@@ -94,6 +94,9 @@ comment "Grouped aggregation of XML values.";
 command xml.subaggr(val:bat[:xml],g:bat[:oid],e:bat[:any_1],s:bat[:oid], skip_nils:bit) :bat[:xml]
 address AGGRsubxmlcand
 comment "Grouped aggregation of XML values with candidates list.";
+command xml.subaggr(val:bat[:xml],g:bat[:oid],e:bat[:any_1],s:bat[:msk], skip_nils:bit) :bat[:xml]
+address AGGRsubxmlcand
+comment "Grouped aggregation of XML values with candidates list.";
 
 module batcalc;
 command xml(src:bat[:str]):bat[:xml] address BATXMLstr2xml;

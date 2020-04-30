@@ -172,8 +172,14 @@ comment "Grouped aggregation of values.";
 command aggr.subjsonaggr(val:bat[:str],g:bat[:oid],e:bat[:any_1],s:bat[:oid], skip_nils:bit) :bat[:str]
 address JSONsubjsoncand
 comment "Grouped aggregation of values with candidates list.";
+command aggr.subjsonaggr(val:bat[:str],g:bat[:oid],e:bat[:any_1],s:bat[:msk], skip_nils:bit) :bat[:str]
+address JSONsubjsoncand
+comment "Grouped aggregation of values with candidates list.";
 
 command aggr.subjsonaggr(val:bat[:dbl],g:bat[:oid],e:bat[:any_1],s:bat[:oid], skip_nils:bit) :bat[:str]
+address JSONsubjsoncand
+comment "Grouped aggregation of values with candidates list.";
+command aggr.subjsonaggr(val:bat[:dbl],g:bat[:oid],e:bat[:any_1],s:bat[:msk], skip_nils:bit) :bat[:str]
 address JSONsubjsoncand
 comment "Grouped aggregation of values with candidates list.";
 
