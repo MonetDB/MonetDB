@@ -6,248 +6,236 @@
  * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
-/* streams working on a bzip2-compressed disk file */
+/* streams working on a lzma/xz-compressed disk file */
 
 #include "monetdb_config.h"
 #include "stream.h"
 #include "stream_internal.h"
+#include "pump.h"
 
 
 #ifdef HAVE_LIBBZ2
-struct bz {
-	BZFILE *b;
-	FILE *f;
+
+struct inner_state {
+	bz_stream strm;
+	int (*work)(bz_stream *strm, int flush);
+	int (*end)(bz_stream *strm);
+	bool eof_reached;
+	Bytef buf[64*1024];
 };
 
+
+static pump_buffer
+get_src_win(inner_state_t *inner_state)
+{
+	return (pump_buffer) {
+		.start = (void*) inner_state->strm.next_in,
+		.count = inner_state->strm.avail_in,
+	};
+}
+
 static void
-stream_bzclose(stream *s)
+set_src_win(inner_state_t *inner_state, pump_buffer buf)
 {
-	int err = BZ_OK;
-
-	if (s->stream_data.p) {
-		if (s->readonly)
-			BZ2_bzReadClose(&err, ((struct bz *) s->stream_data.p)->b);
-		else
-			BZ2_bzWriteClose(&err, ((struct bz *) s->stream_data.p)->b, 0, NULL, NULL);
-		fclose(((struct bz *) s->stream_data.p)->f);
-		free(s->stream_data.p);
-	}
-	s->stream_data.p = NULL;
+	inner_state->strm.next_in = buf.start;
+	inner_state->strm.avail_in = buf.count;
 }
 
-static ssize_t
-stream_bzread(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
+static pump_buffer
+get_dst_win(inner_state_t *inner_state)
 {
-	size_t size = elmsize * cnt;
-	int err;
-	void *punused;
-	int nunused;
-	char unused[BZ_MAX_UNUSED];
-	struct bz *bzp = s->stream_data.p;
-
-	if (bzp == NULL) {
-		s->errnr = MNSTR_READ_ERROR;
-		return -1;
-	}
-	if (size == 0)
-		return 0;
-	size = (size_t) BZ2_bzRead(&err, bzp->b, buf, size > ((size_t) 1 << 30) ? 1 << 30 : (int) size);
-	if (err == BZ_STREAM_END) {
-		/* end of stream, but not necessarily end of file: get
-		 * unused bits, close stream, and open again with the
-		 * saved unused bits */
-		BZ2_bzReadGetUnused(&err, bzp->b, &punused, &nunused);
-		if (err == BZ_OK && (nunused > 0 || !feof(bzp->f))) {
-			if (nunused > 0)
-				memcpy(unused, punused, nunused);
-			BZ2_bzReadClose(&err, bzp->b);
-			bzp->b = BZ2_bzReadOpen(&err, bzp->f, 0, 0, unused, nunused);
-		} else {
-			stream_bzclose(s);
-		}
-	}
-	if (err != BZ_OK) {
-		s->errnr = MNSTR_READ_ERROR;
-		return -1;
-	}
-	/* when in text mode, convert \r\n line endings to \n */
-	if (!s->binary) {
-		char *p1, *p2, *pe;
-
-		p1 = buf;
-		pe = p1 + size;
-		while (p1 < pe && *p1 != '\r')
-			p1++;
-		p2 = p1;
-		while (p1 < pe) {
-			if (*p1 == '\r' && p1[1] == '\n')
-				size--;
-			else
-				*p2++ = *p1;
-			p1++;
-		}
-	}
-	return (ssize_t) (size / elmsize);
+	return (pump_buffer) {
+		.start = inner_state->strm.next_out,
+		.count = inner_state->strm.avail_out,
+	};
 }
 
-static ssize_t
-stream_bzwrite(stream *restrict s, const void *restrict buf, size_t elmsize, size_t cnt)
+static void
+set_dst_win(inner_state_t *inner_state, pump_buffer buf)
 {
-	size_t size = elmsize * cnt;
-	int err;
-	struct bz *bzp = s->stream_data.p;
+	inner_state->strm.next_out = buf.start;
+	inner_state->strm.avail_out = buf.count;
+}
 
-	if (bzp == NULL) {
-		s->errnr = MNSTR_WRITE_ERROR;
-		return -1;
+static pump_buffer
+get_buffer(inner_state_t *inner_state)
+{
+	return (pump_buffer) {
+		.start = inner_state->buf,
+		.count = sizeof(inner_state->buf),
+	};
+}
+
+static pump_result
+work(inner_state_t *inner_state, pump_action action)
+{
+	if (inner_state->eof_reached)
+		return PUMP_END;
+
+	int a;
+	switch (action) {
+	case PUMP_NO_FLUSH:
+		a = BZ_RUN;
+		break;
+	case PUMP_FLUSH_DATA:
+		a = BZ_FLUSH;
+		break;
+	case PUMP_FLUSH_ALL:
+		a = BZ_FLUSH;
+		break;
+	case PUMP_FINISH:
+		a = BZ_FINISH;
+		break;
+	default:
+		assert(0 /* unknown action */);
 	}
-	if (size == 0)
-		return 0;
-	while (size > 0) {
-		int sz = size > (1 << 30) ? 1 << 30 : (int) size;
-		BZ2_bzWrite(&err, bzp->b, (void *) buf, sz);
-		if (err != BZ_OK) {
-			stream_bzclose(s);
-			s->errnr = MNSTR_WRITE_ERROR;
-			return -1;
-		}
-		size -= (size_t) sz;
+
+	int ret = inner_state->work(&inner_state->strm, a);
+
+	switch (ret) {
+		case BZ_OK:
+		case BZ_RUN_OK:
+		case BZ_FLUSH_OK:
+		case BZ_FINISH_OK:
+			// if you think it's ok, I think it's ok
+			return PUMP_OK;
+		case BZ_STREAM_END:
+			inner_state->eof_reached = true;
+			return PUMP_END;
+		default:
+			return PUMP_ERROR;
 	}
-	return (ssize_t) cnt;
+}
+
+static void
+finalizer(inner_state_t *inner_state)
+{
+	inner_state->end(&inner_state->strm);
+	free(inner_state);
+}
+
+static int
+BZ2_bzDecompress_wrapper(bz_stream *strm, int a)
+{
+	(void)a;
+	return BZ2_bzDecompress(strm);
+}
+
+stream *
+bz2_stream(stream *inner, int level)
+{
+	inner_state_t *bz = calloc(1, sizeof(inner_state_t));
+	pump_state *state = calloc(1, sizeof(pump_state));
+	if (bz == NULL || state == NULL) {
+		free(bz);
+		free(state);
+		return NULL;
+	}
+
+	state->inner_state = bz;
+	state->get_src_win = get_src_win;
+	state->set_src_win = set_src_win;
+	state->get_dst_win = get_dst_win;
+	state->set_dst_win = set_dst_win;
+	state->get_buffer = get_buffer;
+	state->worker = work;
+	state->finalizer = finalizer;
+
+	int ret;
+	if (inner->readonly) {
+		bz->work = BZ2_bzDecompress_wrapper;
+		bz->end = BZ2_bzDecompressEnd;
+		ret = BZ2_bzDecompressInit(&bz->strm, 0, 0);
+	} else {
+		bz->work = BZ2_bzCompress;
+		bz->end = BZ2_bzCompressEnd;
+		ret = BZ2_bzCompressInit(&bz->strm, level, 0, 0);
+	}
+
+	stream *s = pump_stream(inner, state);
+
+	if (ret != BZ_OK || s == NULL) {
+		bz->end(&bz->strm);
+		free(bz);
+		free(state);
+		return NULL;
+	}
+
+	s->stream_data.p = (void*) state;
+
+	return s;
 }
 
 static stream *
 open_bzstream(const char *restrict filename, const char *restrict flags)
 {
-	stream *s;
-	int err;
-	struct bz *bzp;
-	char fl[3];
+	stream *inner;
+	int preset = 6;
 
-	if ((bzp = malloc(sizeof(struct bz))) == NULL)
+	inner = open_stream(filename, flags);
+	if (inner == NULL)
 		return NULL;
-	if ((s = create_stream(filename)) == NULL) {
-		free(bzp);
-		return NULL;
-	}
-	*bzp = (struct bz) {0};
-	fl[0] = flags[0];	/* 'r' or 'w' */
-	fl[1] = 'b';		/* always binary */
-	fl[2] = '\0';
-#ifdef HAVE__WFOPEN
-	{
-		wchar_t *wfname = utf8towchar(filename);
-		wchar_t *wflags = utf8towchar(fl);
-		if (wfname != NULL && wflags != NULL)
-			bzp->f = _wfopen(wfname, wflags);
-		else
-			bzp->f = NULL;
-		if (wfname)
-			free(wfname);
-		if (wflags)
-			free(wflags);
-	}
-#else
-	{
-		char *fname = cvfilename(filename);
-		if (fname) {
-			bzp->f = fopen(fname, fl);
-			free(fname);
-		} else
-			bzp->f = NULL;
-	}
-#endif
-	if (bzp->f == NULL) {
-		destroy_stream(s);
-		free(bzp);
-		return NULL;
-	}
-	s->read = stream_bzread;
-	s->write = stream_bzwrite;
-	s->close = stream_bzclose;
-	s->flush = NULL;
-	s->stream_data.p = (void *) bzp;
-	if (flags[0] == 'r' && flags[1] != 'b') {
-		s->readonly = true;
-		bzp->b = BZ2_bzReadOpen(&err, bzp->f, 0, 0, NULL, 0);
-		if (err == BZ_STREAM_END) {
-			BZ2_bzReadClose(&err, bzp->b);
-			bzp->b = NULL;
-		} else {
-			char buf[UTF8BOMLENGTH];
 
-			if (stream_bzread(s, buf, 1, UTF8BOMLENGTH) == UTF8BOMLENGTH &&
-			    strncmp(buf, UTF8BOM, UTF8BOMLENGTH) == 0) {
-				s->isutf8 = true;
-			} else if (s->stream_data.p) {
-				bzp = s->stream_data.p;
-				BZ2_bzReadClose(&err, bzp->b);
-				rewind(bzp->f);
-				bzp->b = BZ2_bzReadOpen(&err, bzp->f, 0, 0, NULL, 0);
-			}
-		}
-	} else if (flags[0] == 'r') {
-		bzp->b = BZ2_bzReadOpen(&err, bzp->f, 0, 0, NULL, 0);
-		s->readonly = true;
-	} else {
-		bzp->b = BZ2_bzWriteOpen(&err, bzp->f, 9, 0, 30);
-		s->readonly = false;
-	}
-	if (err != BZ_OK) {
-		stream_bzclose(s);
-		destroy_stream(s);
-		return NULL;
-	}
-	return s;
+	return bz2_stream(inner, preset);
 }
 
 stream *
 open_bzrstream(const char *filename)
 {
-	stream *s;
-
-	if ((s = open_bzstream(filename, "rb")) == NULL)
+	stream *s = open_bzstream(filename, "rb");
+	if (s == NULL)
 		return NULL;
-	s->binary = true;
+
+	assert(s->readonly == true);
+	assert(s->binary == true);
 	return s;
 }
 
 stream *
 open_bzwstream(const char *restrict filename, const char *restrict mode)
 {
-	stream *s;
-
-	if ((s = open_bzstream(filename, mode)) == NULL)
+	stream *s = open_bzstream(filename, mode);
+	if (s == NULL)
 		return NULL;
-	s->readonly = false;
-	s->binary = true;
+
+	assert(s->readonly == false);
+	assert(s->binary == true);
 	return s;
 }
 
 stream *
 open_bzrastream(const char *filename)
 {
-	stream *s;
-
-	if ((s = open_bzstream(filename, "r")) == NULL)
+	stream *s = open_bzstream(filename, "r");
+	s = create_text_stream(s);
+	if (s == NULL)
 		return NULL;
-	s->binary = false;
+
+	assert(s->readonly == true);
+	assert(s->binary == false);
 	return s;
 }
 
 stream *
 open_bzwastream(const char *restrict filename, const char *restrict mode)
 {
-	stream *s;
-
-	if ((s = open_bzstream(filename, mode)) == NULL)
+	stream *s = open_bzstream(filename, mode);
+	s = create_text_stream(s);
+	if (s == NULL)
 		return NULL;
-	s->readonly = false;
-	s->binary = false;
+	assert(s->readonly == false);
+	assert(s->binary == false);
 	return s;
 }
 #else
 
+stream *
+bz2_stream(stream *inner, int preset)
+{
+	(void) inner;
+	(void) preset;
+	return NULL;
+}
 stream *open_bzrstream(const char *filename)
 {
 	return NULL;
@@ -267,7 +255,6 @@ stream *open_bzwastream(const char *filename, const char *mode)
 {
 	return NULL;
 }
-
 
 #endif
 
