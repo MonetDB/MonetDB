@@ -1992,6 +1992,7 @@ stmt_join_cand(backend *be, stmt *op1, stmt *op2, stmt *lcand, stmt *rcand, int 
 		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 		q = pushArgument(mb, q, op1->nr);
 		q = pushArgument(mb, q, op2->nr);
+		q = pushBit(mb, q, FALSE); /* max_one */
 		assert(!lcand && !rcand);
 		if (q == NULL)
 			return NULL;
