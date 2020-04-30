@@ -284,6 +284,28 @@ BATcalcnot(BAT *b, BAT *s, BAT *r)
 		return NULL;
 
 	switch (ATOMbasetype(b->ttype)) {
+	case TYPE_msk:
+		if (ci.tpe == cand_dense) {
+			const uint32_t *restrict src = Tloc(b, (ci.seq - b->hseqbase) / 32);
+			uint32_t *restrict dst = Tloc(bn, 0);
+			int bits = (ci.seq - b->hseqbase) % 32;
+			ncand = (ncand + 31) / 32;
+			if (bits == 0) {
+				for (i = 0; i < ncand; i++)
+					dst[i] = ~src[i];
+			} else {
+				for (i = 0; i < ncand; i++)
+					dst[i] = (~src[i] >> bits) | ~(src[i + 1] >> (32 - bits));
+			}
+			if (ci.ncand % 32 != 0)
+				dst[ci.ncand / 32] &= (1U << (ci.ncand % 32)) - 1;
+		} else {
+			for (i = 0; i < ci.ncand; i++) {
+				x = canditer_next(&ci) - b->hseqbase;
+				mskSetVal(bn, i, !mskGetVal(b, x));
+			}
+		}
+		break;
 	case TYPE_bte:
 		if (b->ttype == TYPE_bit) {
 			UNARY_2TYPE_FUNC(bit, bit, NOTBIT);
@@ -311,7 +333,7 @@ BATcalcnot(BAT *b, BAT *s, BAT *r)
 		return NULL;
 	}
 
-	BATsetcount(bn, ncand);
+	BATsetcount(bn, ci.ncand);
 
 	/* NOT reverses the order, but NILs mess it up */
 	bn->tsorted = nils == 0 && b->trevsorted;
@@ -338,6 +360,9 @@ VARcalcnot(ValPtr ret, const ValRecord *v)
 {
 	ret->vtype = v->vtype;
 	switch (ATOMbasetype(v->vtype)) {
+	case TYPE_msk:
+		ret->val.mval = !v->val.mval;
+		break;
 	case TYPE_bte:
 		if (is_bit_nil(v->val.btval))
 			ret->val.btval = bit_nil;

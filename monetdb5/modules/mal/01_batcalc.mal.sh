@@ -68,7 +68,7 @@ done
 echo
 
 com="Return the Boolean inverse"
-for tp in bit ${integer[@]}; do
+for tp in msk bit ${integer[@]}; do
     cat <<EOF
 pattern not(b:bat[:$tp]) :bat[:$tp]
 address CMDbatNOT

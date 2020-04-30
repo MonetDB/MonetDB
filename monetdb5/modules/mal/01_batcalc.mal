@@ -162,24 +162,43 @@ address CMDbatISNOTNIL
 comment "Unary check for notnil over the tail of the bat with candidates list";
 
 
+pattern not(b:bat[:msk]) :bat[:msk]
+address CMDbatNOT
+comment "Return the Boolean inverse";
+pattern not(b:bat[:msk],s:bat[:oid]) :bat[:msk]
+address CMDbatNOT
+comment "Return the Boolean inverse with candidates list";
+pattern not(b:bat[:msk],s:bat[:msk]) :bat[:msk]
+address CMDbatNOT
+comment "Return the Boolean inverse with candidates list";
+pattern not(b:bat[:msk],r:bat[:bit]) :bat[:msk]
+address CMDbatNOT
+comment "Return the Boolean inverse";
+pattern not(b:bat[:msk],s:bat[:oid],r:bat[:bit]) :bat[:msk]
+address CMDbatNOT
+comment "Return the Boolean inverse with candidates list";
+pattern not(b:bat[:msk],s:bat[:msk],r:bat[:bit]) :bat[:msk]
+address CMDbatNOT
+comment "Return the Boolean inverse with candidates list";
+
 pattern not(b:bat[:bit]) :bat[:bit]
 address CMDbatNOT
-comment "Return the Boolean inverse";
+comment "Unary bitwise not over the tail of the bat";
 pattern not(b:bat[:bit],s:bat[:oid]) :bat[:bit]
 address CMDbatNOT
-comment "Return the Boolean inverse with candidates list";
+comment "Unary bitwise not over the tail of the bat with candidates list";
 pattern not(b:bat[:bit],s:bat[:msk]) :bat[:bit]
 address CMDbatNOT
-comment "Return the Boolean inverse with candidates list";
+comment "Unary bitwise not over the tail of the bat with candidates list";
 pattern not(b:bat[:bit],r:bat[:bit]) :bat[:bit]
 address CMDbatNOT
-comment "Return the Boolean inverse";
+comment "Unary bitwise not over the tail of the bat";
 pattern not(b:bat[:bit],s:bat[:oid],r:bat[:bit]) :bat[:bit]
 address CMDbatNOT
-comment "Return the Boolean inverse with candidates list";
+comment "Unary bitwise not over the tail of the bat with candidates list";
 pattern not(b:bat[:bit],s:bat[:msk],r:bat[:bit]) :bat[:bit]
 address CMDbatNOT
-comment "Return the Boolean inverse with candidates list";
+comment "Unary bitwise not over the tail of the bat with candidates list";
 
 pattern not(b:bat[:bte]) :bat[:bte]
 address CMDbatNOT
@@ -45606,6 +45625,18 @@ address CMDifthen
 comment "If-then-else operation to assemble a conditional result";
 
 pattern ifthenelse(v:bit, b1:bat[:any_1], v2:any_1) :bat[:any_1]
+address CMDifthen
+comment "If-then-else operation to assemble a conditional result";
+
+pattern ifthenelse(v:msk, b1:bat[:any_1], b2:bat[:any_1]) :bat[:any_1]
+address CMDifthen
+comment "If-then-else operation to assemble a conditional result";
+
+pattern ifthenelse(v:msk, v1:any_1, b2:bat[:any_1]) :bat[:any_1]
+address CMDifthen
+comment "If-then-else operation to assemble a conditional result";
+
+pattern ifthenelse(v:msk, b1:bat[:any_1], v2:any_1) :bat[:any_1]
 address CMDifthen
 comment "If-then-else operation to assemble a conditional result";
 
