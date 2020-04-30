@@ -782,14 +782,12 @@ typedef struct BATiter {
 static inline void
 mskSet(BAT *b, BUN p)
 {
-	assert(ATOMstorage(b->ttype) == TYPE_msk);
 	((uint32_t *) b->theap.base)[p / 32] |= 1U << (p % 32);
 }
 
 static inline void
 mskClr(BAT *b, BUN p)
 {
-	assert(ATOMstorage(b->ttype) == TYPE_msk);
 	((uint32_t *) b->theap.base)[p / 32] &= ~(1U << (p % 32));
 }
 
@@ -805,7 +803,6 @@ mskSetVal(BAT *b, BUN p, msk v)
 static inline msk
 mskGetVal(BAT *b, BUN p)
 {
-	assert(ATOMstorage(b->ttype) == TYPE_msk);
 	return ((uint32_t *) b->theap.base)[p / 32] & (1U << (p % 32));
 }
 
@@ -1571,8 +1568,10 @@ static inline gdk_return __attribute__((__warn_unused_result__))
 tfastins_nocheck(BAT *b, BUN p, const void *v, int s)
 {
 	if (ATOMstorage(b->ttype) == TYPE_msk) {
-		if (p % 32 == 0)
+		if (p % 32 == 0) {
+			((uint32_t *) b->theap.base)[b->theap.free / 4] = 0;
 			b->theap.free += 4;
+		}
 	} else
 		b->theap.free += s;
 	return Tputvalue(b, p, v, false);

@@ -3149,10 +3149,10 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		 * lookups (also single scan, we assume some chains) */
 		rcost = (double) rci.ncand * 2 + lci.ncand * 1.1;
 	} else {
-		if (rci.noids > 0) {
+		if (rci.nvals > 0) {
 			/* if we need to do binary search on candidate
 			 * list, take that into account */
-			rcost *= log2((double) rci.noids) + 1;
+			rcost *= log2((double) rci.nvals) + 1;
 		}
 		/* all of this so far for each lookup of which we have
 		 * rci.ncand */
@@ -3192,10 +3192,10 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			 * lookups (also single scan, we assume some chains) */
 			lcost = (double) lci.ncand * 2 + rci.ncand * 1.1;
 		} else {
-			if (lci.noids > 0) {
+			if (lci.nvals > 0) {
 				/* if we need to do binary search on candidate
 				 * list, take that into account */
-				lcost *= log2((double) lci.noids) + 1;
+				lcost *= log2((double) lci.nvals) + 1;
 			}
 			/* all of this so far for each lookup of which we have
 			 * rci.ncand */
@@ -3487,16 +3487,16 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 		if (lci.ncand == BATcount(l) && !l->batTransient)
 			lcost *= 0.8;
 	} else {
-		if (lci.noids > 0) {
+		if (lci.nvals > 0) {
 			/* if we need to do binary search on candidate
 			 * list, take that into account */
-			lcost *= log2((double) lci.noids) + 1;
+			lcost *= log2((double) lci.nvals) + 1;
 		}
 		/* all of this so far for each lookup of which we have
 		 * rci.ncand */
 		lcost *= rci.ncand;
 		if (lci.ncand < BATcount(l) &&
-		    lci.noids > 0 &&
+		    lci.nvals > 0 &&
 		    lci.ncand * 2 + rci.ncand * 1.1 < lcost) {
 			/* it's cheaper to rebuild the hash table for
 			 * just the candidates (this saves on the
@@ -3528,16 +3528,16 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 		if (rci.ncand == BATcount(r) && !r->batTransient)
 			rcost *= 0.8;
 	} else {
-		if (rci.noids > 0) {
+		if (rci.nvals > 0) {
 			/* if we need to do binary search on candidate
 			 * list, take that into account */
-			rcost *= log2((double) rci.noids) + 1;
+			rcost *= log2((double) rci.nvals) + 1;
 		}
 		/* all of this so far for each lookup of which we have
 		 * rci.ncand */
 		rcost *= lci.ncand;
 		if (rci.ncand < BATcount(r) &&
-		    rci.noids > 0 &&
+		    rci.nvals > 0 &&
 		    2 * (rci.ncand + lci.ncand * 1.1) < rcost) {
 			/* it's cheaper to rebuild the hash table for
 			 * just the candidates (this saves on the

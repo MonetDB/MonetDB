@@ -184,9 +184,12 @@ COLnew(oid hseq, int tt, BUN cap, role_t role)
 	/* round up to multiple of BATTINY */
 	if (cap < BUN_MAX - BATTINY)
 		cap = (cap + BATTINY - 1) & ~(BATTINY - 1);
-	if (ATOMstorage(tt) == TYPE_msk && cap < 8*BATTINY)
-		cap = 8*BATTINY;
-	else if (cap < BATTINY)
+	if (ATOMstorage(tt) == TYPE_msk) {
+		if (cap < 8*BATTINY)
+			cap = 8*BATTINY;
+		else
+			cap = (cap + 31) & ~(BUN)31;
+	} else if (cap < BATTINY)
 		cap = BATTINY;
 	/* limit the size */
 	if (cap > BUN_MAX)
@@ -1179,6 +1182,8 @@ BUNdelete(BAT *b, oid o)
 			return GDK_FAIL;
 		if (ATOMstorage(b->ttype) == TYPE_msk) {
 			mskSetVal(b, p, mskGetVal(b, BUNlast(b) - 1));
+			/* don't leave garbage */
+			mskClr(b, BUNlast(b) - 1);
 		} else {
 			memcpy(Tloc(b, p), Tloc(b, BUNlast(b) - 1), Tsize(b));
 		}

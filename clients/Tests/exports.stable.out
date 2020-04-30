@@ -435,6 +435,8 @@ BUN canditer_search(struct canditer *ci, oid o, bool next);
 void canditer_setidx(struct canditer *ci, BUN p);
 BAT *canditer_slice(struct canditer *ci, BUN lo, BUN hi);
 BAT *canditer_slice2(struct canditer *ci, BUN lo1, BUN hi1, BUN lo2, BUN hi2);
+BAT *canditer_slice2val(struct canditer *ci, oid lo1, oid hi1, oid lo2, oid hi2);
+BAT *canditer_sliceval(struct canditer *ci, oid lo, oid hi);
 int closedir(DIR *dir);
 char *ctime_r(const time_t *restrict, char *restrict);
 date date_add_day(date dt, int days) __attribute__((__const__));
