@@ -1301,18 +1301,32 @@ create_trigger(sql_query *query, dlist *qname, int time, symbol *trigger_event, 
 
 	if (create) {
 		switch (trigger_event->token) {
-			case SQL_INSERT:
+			case SQL_INSERT: {
+				if (old_name)
+					return sql_error(sql, 02, SQLSTATE(42000) "%s TRIGGER: old name not allowed at insert events", base);
 				event = 0;
-				break;
-			case SQL_DELETE:
+			}	break;
+			case SQL_DELETE: {
+				if (new_name)
+					return sql_error(sql, 02, SQLSTATE(42000) "%s TRIGGER: new name not allowed at delete events", base);
 				event = 1;
-				break;
-			case SQL_TRUNCATE:
+			}	break;
+			case SQL_TRUNCATE: {
+				if (new_name)
+					return sql_error(sql, 02, SQLSTATE(42000) "%s TRIGGER: new name not allowed at truncate events", base);
 				event = 3;
-				break;
-			default:
+			}	break;
+			case SQL_UPDATE: {
+				if (old_name && new_name && !strcmp(old_name, new_name))
+					return sql_error(sql, 02, SQLSTATE(42000) "%s TRIGGER: old and new names cannot be the same", base);
+				if (!old_name && new_name && !strcmp("old", new_name))
+					return sql_error(sql, 02, SQLSTATE(42000) "%s TRIGGER: old and new names cannot be the same", base);
+				if (!new_name && old_name && !strcmp("new", old_name))
+					return sql_error(sql, 02, SQLSTATE(42000) "%s TRIGGER: old and new names cannot be the same", base);
 				event = 2;
-				break;
+			}	break;
+			default:
+				return sql_error(sql, 02, SQLSTATE(42000) "%s TRIGGER: invalid event: %s", base, token2string(trigger_event->token));
 		}
 		orientation = triggered_action->h->data.i_val;
 		q = query_cleaned(QUERY(sql->scanner));
@@ -1325,7 +1339,7 @@ create_trigger(sql_query *query, dlist *qname, int time, symbol *trigger_event, 
 
 	if (!instantiate) {
 		t = mvc_bind_table(sql, ss, tname);
-		if (!stack_push_frame(sql, "OLD-NEW"))
+		if (!stack_push_frame(sql, "%OLD-NEW"))
 			return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		/* we need to add the old and new tables */
 		if (new_name && !_stack_push_table(sql, new_name, t)) {

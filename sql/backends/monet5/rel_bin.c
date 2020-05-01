@@ -3900,7 +3900,7 @@ sql_insert_triggers(backend *be, sql_table *t, stmt **updates, int time)
 	for (n = t->triggers.set->h; n; n = n->next) {
 		sql_trigger *trigger = n->data;
 
-		if (!stack_push_frame(sql, "OLD-NEW"))
+		if (!stack_push_frame(sql, "%OLD-NEW"))
 			return 0;
 		if (trigger->event == 0 && trigger->time == time) {
 			const char *n = trigger->new_name;
@@ -4851,7 +4851,7 @@ sql_update_triggers(backend *be, sql_table *t, stmt *tids, stmt **updates, int t
 	for (n = t->triggers.set->h; n; n = n->next) {
 		sql_trigger *trigger = n->data;
 
-		if (!stack_push_frame(sql, "OLD-NEW"))
+		if (!stack_push_frame(sql, "%OLD-NEW"))
 			return 0;
 		if (trigger->event == 2 && trigger->time == time) {
 			/* add name for the 'inserted' to the stack */
@@ -5126,7 +5126,7 @@ sql_delete_triggers(backend *be, sql_table *t, stmt *tids, int time, int firing_
 	for (n = t->triggers.set->h; n; n = n->next) {
 		sql_trigger *trigger = n->data;
 
-		if (!stack_push_frame(sql, "OLD-NEW"))
+		if (!stack_push_frame(sql, "%OLD-NEW"))
 			return 0;
 		if (trigger->event == firing_type && trigger->time == time) {
 			/* add name for the 'deleted' to the stack */

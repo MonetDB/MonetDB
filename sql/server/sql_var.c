@@ -481,6 +481,29 @@ stack_find_rel_view(mvc *sql, const char *name)
 	return NULL;
 }
 
+int
+stack_find_rel_view_projection_columns(mvc *sql, const char *name, sql_rel **res)
+{
+	*res = NULL;
+
+	for (int i = sql->topframes-1; i >= 0; i--) {
+		sql_frame *f = sql->frames[i];
+		if (f->rel_views) {
+			for (node *n = f->rel_views->h; n ; n = n->next) {
+				sql_rel_view *var = (sql_rel_view*) n->data;
+
+				assert(var->name);
+				if (is_base(var->rel_view->op) && rel_bind_column(sql, var->rel_view, name, 0, 0)) {
+					if (*res)
+						return -1;
+					*res = var->rel_view;
+				}
+			}
+		}
+	}
+	return 0;
+}
+
 sql_rel *
 frame_find_rel_view(mvc *sql, const char *name)
 {

@@ -1207,10 +1207,24 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 			if (exp && outer && is_join(outer->op))
 				set_dependent(outer);
 		}
-		if (!exp) { /* If no column was found, try a variable or parameter */
-			sql_schema *s = cur_schema(sql);
-			exp = rel_exp_variable_on_scope(sql, s, NULL, name);
+
+		/* some views are just in the stack, like before and after updates views */
+		if (rel && sql->use_views) {
+			sql_rel *v = NULL;
+			int proj = stack_find_rel_view_projection_columns(sql, name, &v); /* trigger views are basetables relations, so those might conflict */
+
+			if (proj < 0 || (v && exp))
+				return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s' ambiguous", name);
+			if (v) {
+				if (*rel)
+					*rel = rel_crossproduct(sql->sa, *rel, v, op_join);
+				else
+					*rel = v;
+				exp = rel_bind_column(sql, *rel, name, f, 0);
+			}
 		}
+		if (!exp) /* If no column was found, try a variable or parameter */
+			exp = rel_exp_variable_on_scope(sql, cur_schema(sql), NULL, name);
 
 		if (!exp)
 			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: identifier '%s' unknown", name);
@@ -1266,12 +1280,13 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 				set_dependent(outer);
 		}
 
-		/* some views are just in the stack,
-		   like before and after updates views */
-		if (rel && !exp && sql->use_views) {
+		/* some views are just in the stack, like before and after updates views */
+		if (rel && sql->use_views) {
 			sql_rel *v = stack_find_rel_view(sql, tname);
 
-			if (v) {
+			if (v && exp && is_base(v->op)) /* trigger views are basetables relations, so those might conflict */
+				return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s.%s' ambiguous", tname, cname);
+			if (v && !exp) {
 				if (*rel)
 					*rel = rel_crossproduct(sql->sa, *rel, v, op_join);
 				else

@@ -10,7 +10,7 @@ insert into t_5_1 values(20, 'monet');
 
 create trigger test_5_1
 	after update on t_5_1
-	delete from t_5_1 where name = 'monetdb' and id = 10;
+	delete from t_5_1 where t_5_1.name = 'monetdb' and t_5_1.id = 10;
 
 -- first we need to know what to update (no id=11 jet)
 -- ie this trigger will no fire.

@@ -6,7 +6,7 @@ CREATE TRIGGER marketdata.calc_sdate BEFORE INSERT ON marketdata.quotes
 FOR EACH ROW 
 BEGIN ATOMIC
 -- select * from marketdata.quotes limit 1;
- update marketdata.quotes set i = i +2 where i < 2;
+ update marketdata.quotes set i = quotes.i +2 where quotes.i < 2;
 END;
 
 insert into marketdata.quotes (i) values (1);
