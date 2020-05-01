@@ -304,6 +304,24 @@ stdout of test 'subquery5` in directory 'sql/test/subquery` itself:
 % boolean # type
 % 5 # length
 [ NULL	]
+#SELECT (SELECT col1) IN (col2) FROM another_T;
+% .%14 # table_name
+% %14 # name
+% boolean # type
+% 5 # length
+[ false	]
+[ false	]
+[ false	]
+[ false	]
+#SELECT (col2) IN ((SELECT col2), MIN(col3)) FROM another_T GROUP BY col2;
+% .%20 # table_name
+% %20 # name
+% boolean # type
+% 5 # length
+[ true	]
+[ true	]
+[ true	]
+[ true	]
 #DROP FUNCTION evilfunction(INT);
 #DROP TABLE tbl_ProductSales;
 #DROP TABLE another_T;

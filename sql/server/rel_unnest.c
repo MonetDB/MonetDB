@@ -1933,6 +1933,7 @@ rel_union_exps(mvc *sql, sql_exp **l, list *vals, int is_tuple)
 					ve = exp_rel_update_exp(sql, ve);
 					sq = rel_project(sql->sa, sq, append(sa_list(sql->sa), ve));
 				}
+				exp_set_freevar(sql, ve, sq);
 			}
 		}
 		if (!u) {
@@ -2024,7 +2025,7 @@ rewrite_anyequal(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 				is_tuple = 1;
 
 			/* re should be a values list */
-			if (!is_tuple && is_values(re) && !exps_have_rel_exp(re->f)) { /* exp_values */
+			if (!lsq && !is_tuple && is_values(re) && !exps_have_rel_exp(re->f)) { /* exp_values */
 				list *vals = re->f;
 
 				if (is_select(rel->op))
@@ -2040,6 +2041,8 @@ rewrite_anyequal(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 					return NULL;
 				re = rsq->exps->t->data;
 
+				if (rsq && lsq)
+					exp_set_freevar(sql, re, rsq);
 				if (!is_tuple && !is_freevar(re)) {
 					re = exp_label(sql->sa, re, ++sql->label); /* unique name */
 					list_hash_clear(rsq->exps);
