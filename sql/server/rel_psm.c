@@ -440,7 +440,7 @@ rel_psm_return( sql_query *query, sql_subtype *restype, list *restypelist, symbo
 {
 	mvc *sql = query->sql;
 	exp_kind ek = {type_value, card_value, FALSE};
-	sql_exp *res;
+	sql_exp *res = NULL;
 	sql_rel *rel = NULL;
 	list *l = sa_list(sql->sa);
 	bool requires_proj = false;
@@ -467,9 +467,8 @@ rel_psm_return( sql_query *query, sql_subtype *restype, list *restypelist, symbo
 			rel = rel_basetable(sql, t, t->base.name);
 			for (node *n = rel->exps->h ; n ; n = n->next) {
 				sql_exp *e = (sql_exp *) n->data;
-				const char *oname = e->r;
 
-				if (!strcmp(oname, TID)) {
+				if (!strcmp(exp_name(e), TID)) { /* The TID column must not be in the return projection */
 					list_remove_node(rel->exps, n);
 					break;
 				}

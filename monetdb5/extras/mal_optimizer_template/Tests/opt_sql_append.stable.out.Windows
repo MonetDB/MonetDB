@@ -145,11 +145,12 @@ end user.s12_0;
 #wlc                  actions= 0 time=1 usec 
 #garbagecollector     actions= 1 time=58 usec 
 #total                actions=24 time=200 usec 
-#declare opt_pipe_name string;
-#set opt_pipe_name = ( select optimizer );
-#declare opt_pipe_def  string;
-#set opt_pipe_def  = ( select def from optimizers() where name = opt_pipe_name );
-#set optimizer = substring(opt_pipe_def,0,length(opt_pipe_def)-length('optimizer.garbageCollector();')) || 'optimizer.sql_append();optimizer.garbageCollector();';
+#start transaction;
+#create local temp table "opt_pipe_name" ("opt_pipe_name" string);
+#insert into "opt_pipe_name" values ((select optimizer));
+[ 1     ]
+#set optimizer = substring((select def from optimizers() where name = (select opt_pipe_name from "opt_pipe_name")),0,
+#                length((select def from optimizers() where name = (select opt_pipe_name from "opt_pipe_name")))-length('optimizer.garbageCollector();')) || 'optimizer.sql_append();optimizer.garbageCollector();';
 #select optimizer;
 % . # table_name
 % single_value # name
@@ -162,6 +163,7 @@ end user.s12_0;
 % clob # type
 % 603 # length
 [ "optimizer.inline();optimizer.remap();optimizer.costModel();optimizer.coercions();optimizer.aliases();optimizer.evaluate();optimizer.emptybind();optimizer.pushselect();optimizer.aliases();optimizer.mergetable();optimizer.deadcode();optimizer.aliases();optimizer.constants();optimizer.commonTerms();optimizer.projectionpath();optimizer.deadcode();optimizer.reorder();optimizer.matpack();optimizer.querylog();optimizer.multiplex();optimizer.generator();optimizer.profiler();optimizer.candidates();optimizer.deadcode();optimizer.postfix();optimizer.wlc();optimizer.sql_append();optimizer.garbageCollector();"	]
+#rollback;
 #explain copy into ttt from E'\\tmp/xyz';
 % .explain # table_name
 % mal # name
