@@ -79,8 +79,8 @@ pump_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 		return -1;
 	}
 
-	void *free_space = state->get_dst_win(inner_state).start;
-	ssize_t nread = (char*) free_space - (char*) buf;
+	char *free_space = state->get_dst_win(inner_state).start;
+	ssize_t nread = free_space - (char*) buf;
 
 	return nread / (ssize_t) elmsize;
 }
@@ -100,7 +100,7 @@ pump_write(stream *restrict s, const void *restrict buf, size_t elmsize, size_t 
 	pump_result ret = pump_out(s, PUMP_NO_FLUSH);
 	if (ret == PUMP_ERROR)
 		return -1;
-	ssize_t nwritten = (char*)state->get_src_win(inner_state).start - (char*)buf;
+	ssize_t nwritten = state->get_src_win(inner_state).start - (char*)buf;
 	return nwritten / (ssize_t) elmsize;
 }
 
@@ -218,7 +218,7 @@ pump_out(stream *restrict s, pump_action action)
 
 		// Make sure there is room in the output buffer
 		if (dst.count == 0) {
-			size_t amount = (char*)dst.start - (char*)buffer.start;
+			size_t amount = dst.start - buffer.start;
 			ssize_t nwritten = mnstr_write(s->inner, buffer.start, 1, amount);
 			if (nwritten != (ssize_t)amount)
 				return PUMP_ERROR;
@@ -258,7 +258,7 @@ pump_out(stream *restrict s, pump_action action)
 		// All internal state has been drained.
 		// Now drain the output buffer
 		assert(ret == PUMP_END);
-		size_t amount = (char*)dst.start - (char*)buffer.start;
+		size_t amount = dst.start - buffer.start;
 		if (amount > 0) {
 			ssize_t nwritten = mnstr_write(s->inner, buffer.start, 1, amount);
 			if (nwritten != (ssize_t)amount)

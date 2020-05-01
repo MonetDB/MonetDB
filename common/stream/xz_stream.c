@@ -25,7 +25,7 @@ static pump_buffer
 xz_get_src_win(inner_state_t *xz)
 {
 	return (pump_buffer) {
-		.start = (void*) xz->strm.next_in,
+		.start = (char*) xz->strm.next_in,
 		.count = xz->strm.avail_in,
 	};
 }
@@ -33,7 +33,7 @@ xz_get_src_win(inner_state_t *xz)
 static void
 xz_set_src_win(inner_state_t *xz, pump_buffer buf)
 {
-	xz->strm.next_in = buf.start;
+	xz->strm.next_in = (const uint8_t*)buf.start;
 	xz->strm.avail_in = buf.count;
 }
 
@@ -41,7 +41,7 @@ static pump_buffer
 xz_get_dst_win(inner_state_t *xz)
 {
 	return (pump_buffer) {
-		.start = xz->strm.next_out,
+		.start = (char*) xz->strm.next_out,
 		.count = xz->strm.avail_out,
 	};
 }
@@ -49,7 +49,7 @@ xz_get_dst_win(inner_state_t *xz)
 static void
 xz_set_dst_win(inner_state_t *xz, pump_buffer buf)
 {
-	xz->strm.next_out = buf.start;
+	xz->strm.next_out = (uint8_t*)buf.start;
 	xz->strm.avail_out = buf.count;
 }
 
@@ -57,7 +57,7 @@ static pump_buffer
 xz_get_buffer(inner_state_t *xz)
 {
 	return (pump_buffer) {
-		.start = xz->buf,
+		.start = (char*)xz->buf,
 		.count = sizeof(xz->buf),
 	};
 }

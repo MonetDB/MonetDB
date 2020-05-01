@@ -35,7 +35,7 @@ get_src_win(inner_state_t *inner_state)
 static void
 set_src_win(inner_state_t *inner_state, pump_buffer buf)
 {
-	inner_state->strm.next_in = buf.start;
+	inner_state->strm.next_in = (Bytef*)buf.start;
 	inner_state->strm.avail_in = buf.count;
 }
 
@@ -43,7 +43,7 @@ static pump_buffer
 get_dst_win(inner_state_t *inner_state)
 {
 	return (pump_buffer) {
-		.start = inner_state->strm.next_out,
+		.start = (char*)inner_state->strm.next_out,
 		.count = inner_state->strm.avail_out,
 	};
 }
@@ -51,7 +51,7 @@ get_dst_win(inner_state_t *inner_state)
 static void
 set_dst_win(inner_state_t *inner_state, pump_buffer buf)
 {
-	inner_state->strm.next_out = buf.start;
+	inner_state->strm.next_out = (Bytef*)buf.start;
 	inner_state->strm.avail_out = buf.count;
 }
 
@@ -59,7 +59,7 @@ static pump_buffer
 get_buffer(inner_state_t *inner_state)
 {
 	return (pump_buffer) {
-		.start = inner_state->buf,
+		.start = (char*)inner_state->buf,
 		.count = sizeof(inner_state->buf),
 	};
 }

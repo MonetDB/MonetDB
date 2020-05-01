@@ -61,7 +61,7 @@ static pump_buffer
 get_buffer(inner_state_t *inner_state)
 {
 	return (pump_buffer) {
-		.start = inner_state->buf,
+		.start = (char*)inner_state->buf,
 		.count = sizeof(inner_state->buf),
 	};
 }

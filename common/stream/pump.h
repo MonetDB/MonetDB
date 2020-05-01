@@ -45,7 +45,7 @@ typedef enum {
 
 
 typedef struct {
-	void *start;
+	char *start;
 	size_t count;
 } pump_buffer;
 
