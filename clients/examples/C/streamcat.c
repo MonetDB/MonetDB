@@ -1,5 +1,5 @@
-#include <monetdb_config.h>
-#include <stream.h>
+#include "monetdb_config.h"
+#include "stream.h"
 
 #include <errno.h>
 #include <stdarg.h>
@@ -26,7 +26,7 @@ const char *USAGE =
 	"    - blocksize:N       Copy in blocks of this size\n"
 	"With W_WRAPPER:\n"
 	"    - iconv:enc         stream = iconv_wstream(stream, enc)\n"
-	"    - blocksize:N       Copy in blocks of this size\n"
+	"    - blocksize:N       Copy out blocks of this size\n"
 	;
 
 

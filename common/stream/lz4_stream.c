@@ -364,21 +364,27 @@ lz4_stream(stream *inner, int preset)
 }
 stream *open_lz4rstream(const char *filename)
 {
+	(void) filename;
 	return NULL;
 }
 
 stream *open_lz4wstream(const char *filename, const char *mode)
 {
+	(void) filename;
+	(void) mode;
 	return NULL;
 }
 
 stream *open_lz4rastream(const char *filename)
 {
+	(void) filename;
 	return NULL;
 }
 
 stream *open_lz4wastream(const char *filename, const char *mode)
 {
+	(void) filename;
+	(void) mode;
 	return NULL;
 }
 
