@@ -162,6 +162,10 @@ validate_alter_table_add_table(mvc *sql, char* call, char *msname, char *mtname,
 	node *n = cs_find_id(&rmt->members, rpt->base.id);
 	if (isView(rpt))
 		throw(SQL,call,SQLSTATE(42000) "ALTER TABLE: can't add a view into a %s", errtable);
+	if (isDeclaredTable(rpt))
+		throw(SQL,call,SQLSTATE(42000) "ALTER TABLE: can't add a declared table into a %s", errtable);
+	if (isTempSchema(rpt->s))
+		throw(SQL,call,SQLSTATE(42000) "ALTER TABLE: can't add a temporary table into a %s", errtable);
 	if (ms->base.id != ps->base.id)
 		throw(SQL,call,SQLSTATE(42000) "ALTER TABLE: all children tables of '%s.%s' must be part of schema '%s'", msname, mtname, msname);
 	if (n && !update)
@@ -182,22 +186,25 @@ alter_table_add_table(mvc *sql, char *msname, char *mtname, char *psname, char *
 	sql_table *mt = NULL, *pt = NULL;
 	str msg = validate_alter_table_add_table(sql, "sql.alter_table_add_table", msname, mtname, psname, ptname, &mt, &pt, 0);
 
-	if (msg == MAL_SUCCEED)
+	if (msg == MAL_SUCCEED) {
+		if (isRangePartitionTable(mt))
+			return createException(SQL, "sql.alter_table_add_table",SQLSTATE(42000) "ALTER TABLE: a range partition is required while adding under a range partition table");
+		if (isListPartitionTable(mt))
+			return createException(SQL, "sql.alter_table_add_table",SQLSTATE(42000) "ALTER TABLE: a value partition is required while adding under a list partition table");
 		sql_trans_add_table(sql->session->tr, mt, pt);
-
+	}
 	return msg;
 }
 
 static char *
 alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psname, char *ptname, ptr min, ptr max,
-								int with_nills, int update)
+								bit with_nills, int update)
 {
 	sql_table *mt = NULL, *pt = NULL;
 	sql_part *err = NULL;
 	str msg = MAL_SUCCEED, err_min = NULL, err_max = NULL, conflict_err_min = NULL, conflict_err_max = NULL;
 	int tp1 = 0, errcode = 0, min_null = 0, max_null = 0;
 	size_t length = 0;
-	ssize_t (*atomtostr)(str *, size_t *, const void *, bool);
 	sql_subtype tpe;
 
 	if ((msg = validate_alter_table_add_table(sql, "sql.alter_table_add_range_partition", msname, mtname, psname, ptname,
@@ -206,11 +213,11 @@ alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psna
 	} else if (!isRangePartitionTable(mt)) {
 		msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000)
 									"ALTER TABLE: cannot add range partition into a %s table",
-									(mt->type == tt_merge_table)?"merge":"list partition");
+									(isListPartitionTable(mt))?"list partition":"merge");
 		goto finish;
 	} else if (!update && pt->p) {
 		msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000)
-							  "ALTER TABLE: table %s.%s is already part of another range partition table",
+							  "ALTER TABLE: table '%s.%s' is already part of another table",
 							  psname, ptname);
 		goto finish;
 	}
@@ -220,10 +227,7 @@ alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psna
 	min_null = ATOMcmp(tp1, min, ATOMnilptr(tp1)) == 0;
 	max_null = ATOMcmp(tp1, max, ATOMnilptr(tp1)) == 0;
 
-	if (max_null && min_null && !with_nills) {
-		msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000) "ALTER TABLE: range bound cannot be null");
-		goto finish;
-	} else if (!min_null && !max_null && ATOMcmp(tp1, min, max) > 0) {
+	if (!min_null && !max_null && ATOMcmp(tp1, min, max) > 0) {
 		msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000) "ALTER TABLE: minimum value is higher than maximum value");
 		goto finish;
 	}
@@ -245,26 +249,57 @@ alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psna
 			break;
 		case -4:
 			assert(err);
-			if (with_nills && err->with_nills) {
+			if (is_bit_nil(err->with_nills)) {
+				msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000)
+										"ALTER TABLE: conflicting partitions: table %s.%s stores every possible value", err->t->s->base.name, err->base.name);
+			} else if (with_nills && err->with_nills) {
 				msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000)
 										"ALTER TABLE: conflicting partitions: table %s.%s stores null values and only "
 										"one partition can store null values at the time", err->t->s->base.name, err->base.name);
 			} else {
-				atomtostr = BATatoms[tp1].atomToStr;
-				if (atomtostr(&conflict_err_min, &length, err->part.range.minvalue, true) < 0) {
+				ssize_t (*atomtostr)(str *, size_t *, const void *, bool) = BATatoms[tp1].atomToStr;
+				const void *nil = ATOMnilptr(tp1);
+				sql_table *errt = mvc_bind_table(sql, mt->s, err->base.name);
+
+				if (!ATOMcmp(tp1, nil, err->part.range.minvalue)) {
+					if (!(conflict_err_min = GDKstrdup("absolute min value")))
+						msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				} else if (atomtostr(&conflict_err_min, &length, err->part.range.minvalue, true) < 0) {
 					msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				} 
+				if (msg)
+					goto finish;
+
+				if (!ATOMcmp(tp1, nil, err->part.range.maxvalue)) {
+					if (!(conflict_err_max = GDKstrdup("absolute max value")))
+						msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				} else if (atomtostr(&conflict_err_max, &length, err->part.range.maxvalue, true) < 0) {
 					msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				}
+				if (msg)
+					goto finish;
+
+				if (!ATOMcmp(tp1, nil, min)) {
+					if (!(err_min = GDKstrdup("absolute min value")))
+						msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				} else if (atomtostr(&err_min, &length, min, true) < 0) {
 					msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				}
+				if (msg)
+					goto finish;
+
+				if (!ATOMcmp(tp1, nil, max)) {
+					if (!(err_max = GDKstrdup("absolute max value")))
+						msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				} else if (atomtostr(&err_max, &length, max, true) < 0) {
 					msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				} else {
-					sql_table *errt = mvc_bind_table(sql, mt->s, err->base.name);
-					msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000)
+				}
+				if (msg)
+					goto finish;
+
+				msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000)
 									  "ALTER TABLE: conflicting partitions: %s to %s and %s to %s from table %s.%s",
 									  err_min, err_max, conflict_err_min, conflict_err_max, errt->s->base.name, errt->base.name);
-				}
 			}
 			break;
 		default:
@@ -287,7 +322,7 @@ finish:
 
 static char *
 alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msname, char *mtname, char *psname,
-								char *ptname, int with_nills, int update)
+								char *ptname, bit with_nills, int update)
 {
 	sql_table *mt = NULL, *pt = NULL;
 	str msg = MAL_SUCCEED;
@@ -296,17 +331,18 @@ alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msn
 	list *values = list_new(sql->session->tr->sa, (fdestroy) NULL);
 	sql_subtype tpe;
 
+	assert(with_nills == false || with_nills == true); /* No nills allowed here */
 	if ((msg = validate_alter_table_add_table(sql, "sql.alter_table_add_value_partition", msname, mtname, psname, ptname,
 											 &mt, &pt, update))) {
 		return msg;
 	} else if (!isListPartitionTable(mt)) {
 		msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(42000)
 									"ALTER TABLE: cannot add value partition into a %s table",
-									(mt->type == tt_merge_table)?"merge":"range partition");
+									(isRangePartitionTable(mt))?"range partition":"merge");
 		goto finish;
 	} else if (!update && pt->p) {
 		msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(42000)
-							  "ALTER TABLE: table %s.%s is already part of another list partition table",
+							  "ALTER TABLE: table '%s.%s' is already part of another table",
 							  psname, ptname);
 		goto finish;
 	}
@@ -330,12 +366,11 @@ alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msn
 		}
 
 		nextv = SA_ZNEW(sql->session->tr->sa, sql_part_value); /* instantiate the part value */
-		nextv->tpe = tpe;
 		nextv->value = sa_alloc(sql->session->tr->sa, len);
 		memcpy(nextv->value, pnext, len);
 		nextv->length = len;
 
-		if (list_append_sorted(values, nextv, sql_values_list_element_validate_and_insert) != NULL) {
+		if (list_append_sorted(values, nextv, &tpe, sql_values_list_element_validate_and_insert) != NULL) {
 			msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(42000)
 									"ALTER TABLE: there are duplicated values in the list");
 			goto finish;
@@ -387,7 +422,7 @@ alter_table_del_table(mvc *sql, char *msname, char *mtname, char *psname, char *
 	if (!isMergeTable(mt) && !isReplicaTable(mt))
 		throw(SQL,"sql.alter_table_del_table",SQLSTATE(42S02) "ALTER TABLE: cannot drop table '%s.%s' to %s '%s.%s'", psname, ptname, errtable, msname, mtname);
 	if (!(n = cs_find_id(&mt->members, pt->base.id)))
-		throw(SQL,"sql.alter_table_del_table",SQLSTATE(42S02) "ALTER TABLE: table '%s.%s' isn't part of the MERGE TABLE '%s.%s'", ps->base.name, ptname, ms->base.name, mtname);
+		throw(SQL,"sql.alter_table_del_table",SQLSTATE(42S02) "ALTER TABLE: table '%s.%s' isn't part of %s '%s.%s'", ps->base.name, ptname, errtable, ms->base.name, mtname);
 
 	sql_trans_del_table(sql->session->tr, mt, pt, drop_action);
 	return MAL_SUCCEED;
@@ -1494,7 +1529,7 @@ SQLalter_add_range_partition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	char *ptname = SaveArgReference(stk, pci, 4);
 	ValRecord *min = &(stk)->stk[(pci)->argv[5]];
 	ValRecord *max = &(stk)->stk[(pci)->argv[6]];
-	int with_nills = *getArgReference_int(stk, pci, 7);
+	bit with_nills = *getArgReference_bit(stk, pci, 7);
 	int update = *getArgReference_int(stk, pci, 8);
 
 	initcontext();
@@ -1510,7 +1545,7 @@ SQLalter_add_value_partition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	char *mtname = SaveArgReference(stk, pci, 2);
 	char *psname = SaveArgReference(stk, pci, 3);
 	char *ptname = SaveArgReference(stk, pci, 4);
-	int with_nills = *getArgReference_int(stk, pci, 5);
+	bit with_nills = *getArgReference_bit(stk, pci, 5);
 	int update = *getArgReference_int(stk, pci, 6);
 
 	initcontext();
@@ -1652,6 +1687,10 @@ SQLrename_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			throw(SQL, "sql.rename_table", SQLSTATE(42S02) "ALTER TABLE: no such table '%s' in schema '%s'", otable_name, oschema_name);
 		if (t->system)
 			throw(SQL, "sql.rename_table", SQLSTATE(42000) "ALTER TABLE: cannot rename a system table");
+		if (isView(t))
+			throw(SQL, "sql.rename_table", SQLSTATE(42000) "ALTER TABLE: cannot rename a view");
+		if (isDeclaredTable(t))
+			throw(SQL, "sql.rename_table", SQLSTATE(42000) "ALTER TABLE: cannot rename a declared table");
 		if (mvc_check_dependency(sql, t->base.id, TABLE_DEPENDENCY, NULL))
 			throw (SQL,"sql.rename_table", SQLSTATE(2BM37) "ALTER TABLE: unable to rename table '%s' (there are database objects which depend on it)", otable_name);
 		if (strNil(ntable_name) || *ntable_name == '\0')
@@ -1672,10 +1711,12 @@ SQLrename_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			throw(SQL, "sql.rename_table", SQLSTATE(42S02) "ALTER TABLE: no such table '%s' in schema '%s'", otable_name, oschema_name);
 		if (t->system)
 			throw(SQL, "sql.rename_table", SQLSTATE(42000) "ALTER TABLE: cannot set schema of a system table");
-		if (isTempSchema(o) || isTempTable(t))
+		if (isTempSchema(o))
 			throw(SQL, "sql.rename_table", SQLSTATE(42000) "ALTER TABLE: not possible to change a temporary table schema");
 		if (isView(t))
 			throw(SQL, "sql.rename_table", SQLSTATE(42000) "ALTER TABLE: not possible to change schema of a view");
+		if (isDeclaredTable(t))
+			throw(SQL, "sql.rename_table", SQLSTATE(42000) "ALTER TABLE: not possible to change schema of a declared table");
 		if (mvc_check_dependency(sql, t->base.id, TABLE_DEPENDENCY, NULL))
 			throw(SQL, "sql.rename_table", SQLSTATE(2BM37) "ALTER TABLE: unable to set schema of table '%s' (there are database objects which depend on it)", otable_name);
 		if (t->members.set || t->triggers.set)
@@ -1720,6 +1761,8 @@ SQLrename_column(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "sql.rename_column", SQLSTATE(42000) "ALTER TABLE: cannot rename a column in a system table");
 	if (isView(t))
 		throw(SQL, "sql.rename_column", SQLSTATE(42000) "ALTER TABLE: cannot rename column '%s': '%s' is a view", old_name, table_name);
+	if (isDeclaredTable(t))
+		throw(SQL, "sql.rename_column", SQLSTATE(42000) "ALTER TABLE: cannot rename column in a declared table");
 	if (!(col = mvc_bind_column(sql, t, old_name)))
 		throw(SQL, "sql.rename_column", SQLSTATE(42S22) "ALTER TABLE: no such column '%s' in table '%s'", old_name, table_name);
 	if (mvc_check_dependency(sql, col->base.id, COLUMN_DEPENDENCY, NULL))

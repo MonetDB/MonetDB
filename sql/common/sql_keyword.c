@@ -48,10 +48,12 @@ keywords_insert(char *k, int token)
 			assert(strcmp(kw2->keyword, k) != 0);
 #endif
 
-		kw->keyword = k;
-		kw->len = len;
-		kw->token = token;
-		kw->next = keywords[bucket];
+		*kw = (keyword) {
+			.keyword = k,
+			.len = len,
+			.token = token,
+			.next = keywords[bucket],
+		};
 		keywords[bucket] = kw;
 		return 0;
 	} else {

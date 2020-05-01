@@ -4,8 +4,6 @@
 #
 # Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
 
-from __future__ import print_function
-
 import os
 import posixpath
 import sys
@@ -855,7 +853,7 @@ def am_translate_dir(path, am):
                'libdir', 'libexecdir', 'localstatedir', 'mandir',
                'oldincludedir', 'pkgbindir', 'pkgdatadir', 'pkgincludedir',
                'pkglibdir', 'pkglocalstatedir', 'pkgsysconfdir', 'sbindir',
-               'sharedstatedir', 'srcdir', 'sysconfdir', 'top_builddir',
+               'srcdir', 'sysconfdir', 'top_builddir',
                'top_srcdir', 'prefix'):
         dir = "$("+dir+")"
     dir = dir + rest

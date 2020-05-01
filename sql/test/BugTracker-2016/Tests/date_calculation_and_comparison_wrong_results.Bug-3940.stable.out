@@ -71,10 +71,10 @@ stdout of test 'date_calculation_and_comparison_wrong_results.Bug-3940` in direc
 % sys.,	sys. # table_name
 % %1,	%2 # name
 % day_interval,	boolean # type
-% 11,	5 # length
-[ 86400.000,	true	]
+% 5,	5 # length
+[ 0.001,	true	]
 [ 0.000,	true	]
-[ 2592000.000,	false	]
+[ 0.030,	true	]
 #DROP TABLE foo;
 
 # 23:40:42 >  

@@ -92,6 +92,12 @@ stdout of test 'groupby_error` in directory 'sql/test/miscellaneous` itself:
 % col0,	col1,	col2 # name
 % int,	int,	int # type
 % 1,	1,	1 # length
+#SELECT CAST(58 + + 78 + - COALESCE ( ( + CASE 68 WHEN - 77 - - 38 THEN NULL ELSE COUNT ( * ) END ), + 81 + - COUNT ( * ) + + CAST ( NULL AS INTEGER ), + + 34 * - 30 * + COUNT ( * ) ) * 15 * 38 AS BIGINT) AS col1;
+% . # table_name
+% col1 # name
+% bigint # type
+% 4 # length
+[ -434	]
 #SELECT * FROM tab0 AS cor0 WHERE NOT - 39 <> 11; --empty
 % sys.cor0,	sys.cor0,	sys.cor0 # table_name
 % col0,	col1,	col2 # name
@@ -126,6 +132,24 @@ stdout of test 'groupby_error` in directory 'sql/test/miscellaneous` itself:
 [ 64	]
 [ 75	]
 [ 46	]
+#PLAN SELECT DISTINCT col0, col1, col2, col0 FROM tab0;
+% .plan # table_name
+% rel # name
+% clob # type
+% 112 # length
+group by (
+| project (
+| | table(sys.tab0) [ "tab0"."col0", "tab0"."col1", "tab0"."col2" ] COUNT 
+| ) [ "tab0"."col0", "tab0"."col1", "tab0"."col2" ]
+) [ "tab0"."col0", "tab0"."col1", "tab0"."col2" ] [ "tab0"."col0", "tab0"."col1", "tab0"."col2", "tab0"."col0" ]
+#SELECT DISTINCT col0, col1, col2, col0 FROM tab0;
+% sys.tab0,	sys.tab0,	sys.tab0,	sys.tab0 # table_name
+% col0,	col1,	col2,	col0 # name
+% int,	int,	int,	int # type
+% 2,	2,	2,	2 # length
+[ 97,	1,	99,	97	]
+[ 15,	81,	47,	15	]
+[ 87,	21,	10,	87	]
 #PLAN SELECT col0 FROM tab2 WHERE CAST(col2 AS BIGINT) = 40;
 % .plan # table_name
 % rel # name
@@ -182,6 +206,16 @@ project (
 [ 2	]
 [ 2	]
 [ 2	]
+#SELECT * FROM tab0 WHERE NOT - col0 - col1 * col2 <= ( + col0 ) AND NOT ( + col2 + col1 - col1 ) NOT BETWEEN - col0 AND - col1 + - col2 / col1;
+% sys.tab0,	sys.tab0,	sys.tab0 # table_name
+% col0,	col1,	col2 # name
+% int,	int,	int # type
+% 1,	1,	1 # length
+#SELECT * FROM tab0 AS cor0 WHERE NOT col1 BETWEEN - col0 AND col0 + col1 * col1 AND - col1 BETWEEN col0 AND ( NULL ) OR NOT col0 * col0 + col0 <= NULL;
+% sys.cor0,	sys.cor0,	sys.cor0 # table_name
+% col0,	col1,	col2 # name
+% int,	int,	int # type
+% 1,	1,	1 # length
 #SELECT DISTINCT * FROM tab2 WHERE NOT ( - + 50 + ( 70 ) ) = + col2;
 % sys.tab2,	sys.tab2,	sys.tab2 # table_name
 % col0,	col1,	col2 # name

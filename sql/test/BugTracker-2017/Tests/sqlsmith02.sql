@@ -39,6 +39,6 @@ from
         on (ref_96.type = ref_156.name )
       on (ref_79.name = ref_157.systemname )
     left join sys.queue as ref_158
-    on (ref_125.depend_id = ref_158.progress )
+    on (ref_125.depend_id = ref_158.sessionid )
 where ref_38.table_id is NULL
 limit 63; 

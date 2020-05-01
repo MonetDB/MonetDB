@@ -81,6 +81,7 @@ static struct worker {
 	MT_Id id;
 	enum {IDLE, RUNNING, JOINING, EXITED} flag;
 	ATOMIC_PTR_TYPE cntxt; /* client we do work for (NULL -> any) */
+	char *errbuf;		   /* GDKerrbuf so that we can allocate before fork */
 	MT_Sema s;
 } workers[THREADS];
 
@@ -333,10 +334,10 @@ DFLOWworker(void *T)
 #ifdef _MSC_VER
 	srand((unsigned int) GDKusec());
 #endif
-	GDKsetbuf(GDKmalloc(GDKMAXERRLEN)); /* where to leave errors */
-	if( GDKerrbuf ) {
-		GDKclrerr();
-	}
+	assert(t->errbuf != NULL);
+	GDKsetbuf(t->errbuf);		/* where to leave errors */
+	t->errbuf = NULL;
+	GDKclrerr();
 		
 	cntxt = ATOMIC_PTR_GET(&t->cntxt);
 	if (cntxt) {
@@ -493,7 +494,7 @@ DFLOWinitialize(void)
 		return -1;
 	}
 	for (i = 0; i < THREADS; i++) {
-		char name[16];
+		char name[MT_NAME_LEN];
 		snprintf(name, sizeof(name), "DFLOWsema%d", i);
 		MT_sema_init(&workers[i].s, 0, name);
 		workers[i].flag = IDLE;
@@ -506,13 +507,20 @@ DFLOWinitialize(void)
 		limit = THREADS;
 	MT_lock_set(&dataflowLock);
 	for (i = 0; i < limit; i++) {
+		workers[i].errbuf = GDKmalloc(GDKMAXERRLEN);
+		if (workers[i].errbuf == NULL) {
+			TRC_CRITICAL(MAL_SERVER, "cannot allocate error buffer for worker");
+			continue;
+		}
 		workers[i].flag = RUNNING;
 		ATOMIC_PTR_SET(&workers[i].cntxt, NULL);
-		char name[16];
+		char name[MT_NAME_LEN];
 		snprintf(name, sizeof(name), "DFLOWworker%d", i);
-		if ((workers[i].id = THRcreate(DFLOWworker, (void *) &workers[i], MT_THR_JOINABLE, name)) == 0)
+		if ((workers[i].id = THRcreate(DFLOWworker, (void *) &workers[i], MT_THR_JOINABLE, name)) == 0) {
+			GDKfree(workers[i].errbuf);
+			workers[i].errbuf = NULL;
 			workers[i].flag = IDLE;
-		else
+		} else
 			created++;
 	}
 	MT_lock_unset(&dataflowLock);
@@ -829,11 +837,15 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 				ATOMIC_PTR_SET(&workers[i].cntxt, cntxt);
 			}
 			workers[i].flag = RUNNING;
-			char name[16];
+			char name[MT_NAME_LEN];
 			snprintf(name, sizeof(name), "DFLOWworker%d", i);
-			if ((workers[i].id = THRcreate(DFLOWworker, (void *) &workers[i], MT_THR_JOINABLE, name)) == 0) {
+			if ((workers[i].errbuf = GDKmalloc(GDKMAXERRLEN)) == NULL ||
+				(workers[i].id = THRcreate(DFLOWworker, (void *) &workers[i],
+										   MT_THR_JOINABLE, name)) == 0) {
 				/* cannot start new thread, run serially */
 				*ret = TRUE;
+				GDKfree(workers[i].errbuf);
+				workers[i].errbuf = NULL;
 				workers[i].flag = IDLE;
 				MT_lock_unset(&dataflowLock);
 				return MAL_SUCCEED;

@@ -32,8 +32,8 @@ stdout of test 'sessions_crash.Bug-3759` in directory 'sql/test/BugTracker-2015`
 % .%3 # table_name
 % %3 # name
 % bigint # type
-% 1 # length
-[ 1	]
+% 2 # length
+[ 71	]
 #select COUNT(*) from "sys"."rejects";
 % .%3 # table_name
 % %3 # name

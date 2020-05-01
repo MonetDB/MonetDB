@@ -31,11 +31,14 @@ typedef struct QRYQUEUE{
 	oid tag;
 	str query;
 	str status;
+	str username;
+	int idx;
+	int workers;
+	int memory;
 	time_t start;
-	int		progress;		/* percentage of MAL instructions handled */
-	lng runtime;
+	time_t finished;
 } *QueryQueue;
-mal_export lng qtop;
+mal_export size_t qhead, qtail, qsize;
 
 typedef struct WORKINGSET{
 	Client		cntxt;
@@ -50,7 +53,7 @@ mal_export void runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk);
 mal_export void runtimeProfileFinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk);
 mal_export void runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, RuntimeProfile prof);
 mal_export void runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, RuntimeProfile prof);
-mal_export void finishSessionProfiler(Client cntxt);
+mal_export void dropQRYqueue(void);
 mal_export lng getVolume(MalStkPtr stk, InstrPtr pci, int rd);
 mal_export lng getBatSpace(BAT *b);
 

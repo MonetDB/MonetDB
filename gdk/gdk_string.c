@@ -231,7 +231,7 @@ strPut(Heap *h, var_t *dst, const char *v)
 				if ((v[i] & 0xC0) != 0x80 ||
 				    (m != 0 && (v[i] & m) == 0)) {
 				  badutf8:
-					GDKerror("strPut: incorrectly encoded UTF-8");
+					GDKerror("incorrectly encoded UTF-8");
 					return 0;
 				}
 				m = 0;
@@ -286,7 +286,7 @@ strPut(Heap *h, var_t *dst, const char *v)
 		assert(newsize);
 
 		if (h->free + pad + len + extralen >= (size_t) VAR_MAX) {
-			GDKerror("strPut: string heaps gets larger than %zuGiB.\n", (size_t) VAR_MAX >> 30);
+			GDKerror("string heaps gets larger than %zuGiB.\n", (size_t) VAR_MAX >> 30);
 			return 0;
 		}
 		TRC_DEBUG(HEAP, "HEAPextend in strPut %s %zu %zu\n", h->filename, h->size, newsize);
@@ -788,9 +788,9 @@ strWrite(const char *a, stream *s, size_t cnt)
 
 static gdk_return
 concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
-			   BUN ngrp, struct canditer *restrict ci, BUN ncand,
-			   const oid *restrict gids, oid min, oid max, bool skip_nils,
-			   BAT *sep, const char *restrict separator, BUN *has_nils)
+	       BUN ngrp, struct canditer *restrict ci, BUN ncand,
+	       const oid *restrict gids, oid min, oid max, bool skip_nils,
+	       BAT *sep, const char *restrict separator, BUN *has_nils)
 {
 	oid gid;
 	BUN i, p, nils = 0;
@@ -839,6 +839,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 				}
 			}
 		} else { /* sep case */
+			assert(sep != NULL);
 			for (i = 0; i < ncand; i++) {
 				p = canditer_next(ci) - seqb;
 				s = BUNtvar(bi, p);
@@ -887,6 +888,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 					empty = false;
 				}
 			} else { /* sep case */
+				assert(sep != NULL);
 				for (i = 0; i < ncand; i++) {
 					p = canditer_next(ci) - seqb;
 					s = BUNtvar(bi, p);
@@ -941,7 +943,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 		 * are empty), set to NULL */
 		for (i = 0; i < ngrp; i++)
 			astrings[i] = (char *) str_nil;
-	
+
 		if (separator) {
 			for (p = 0; p < ncand; p++) {
 				i = canditer_next(ci) - seqb;
@@ -961,6 +963,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 				}
 			}
 		} else { /* sep case */
+			assert(sep != NULL);
 			for (p = 0; p < ncand; p++) {
 				i = canditer_next(ci) - seqb;
 				if (gids[i] >= min && gids[i] <= max) {
@@ -1001,6 +1004,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 					astrings[i] = NULL;
 			}
 		} else { /* sep case */
+			assert(sep != NULL);
 			for (i = 0; i < ngrp; i++) {
 				if (astrings[i] == NULL) {
 					if ((astrings[i] = GDKmalloc(lengths[i] + 1 - lastseplength[i])) == NULL) {
@@ -1036,6 +1040,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 				}
 			}
 		} else { /* sep case */
+			assert(sep != NULL);
 			for (p = 0; p < ncand; p++) {
 				i = canditer_next(ci) - seqb;
 				if (gids[i] >= min && gids[i] <= max) {
@@ -1073,7 +1078,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 		}
 	}
 
-finish:
+  finish:
 	if (has_nils)
 		*has_nils = nils;
 	GDKfree(lengths);
@@ -1092,8 +1097,8 @@ finish:
 }
 
 gdk_return
-BATstr_group_concat(ValPtr res, BAT *b, BAT *s, BAT *sep, bool skip_nils, 
-					bool abort_on_error, bool nil_if_empty, const char *restrict separator)
+BATstr_group_concat(ValPtr res, BAT *b, BAT *s, BAT *sep, bool skip_nils,
+		    bool abort_on_error, bool nil_if_empty, const char *restrict separator)
 {
 	BUN ncand;
 	struct canditer ci;
@@ -1116,13 +1121,13 @@ BATstr_group_concat(ValPtr res, BAT *b, BAT *s, BAT *sep, bool skip_nils,
 		return GDK_SUCCEED;
 	}
 
-	return concat_strings(NULL, res, b, b->hseqbase, 1, &ci, ncand, NULL, 0, 0, 
-						  skip_nils, sep, separator, NULL);
+	return concat_strings(NULL, res, b, b->hseqbase, 1, &ci, ncand, NULL, 0, 0,
+			      skip_nils, sep, separator, NULL);
 }
 
 BAT *
 BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, BAT *sep, bool skip_nils,
-						 bool abort_on_error, const char *restrict separator)
+			 bool abort_on_error, const char *restrict separator)
 {
 	BAT *bn = NULL;
 	oid min, max;
@@ -1136,11 +1141,11 @@ BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, BAT *sep, bool skip_nil
 
 	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp,
 				    &ci, &ncand)) !=NULL) {
-		GDKerror("BATgroupstr_group_concat: %s\n", err);
+		GDKerror("%s\n", err);
 		return NULL;
 	}
 	if (g == NULL) {
-		GDKerror("BATgroupstr_group_concat: b and g must be aligned\n");
+		GDKerror("b and g must be aligned\n");
 		return NULL;
 	}
 
@@ -1163,8 +1168,8 @@ BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, BAT *sep, bool skip_nil
 	}
 
 	res = concat_strings(&bn, NULL, b, b->hseqbase, ngrp, &ci, ncand,
-						 (const oid *) Tloc(g, 0), min, max, skip_nils, sep, 
-						 separator, &nils);
+			     (const oid *) Tloc(g, 0), min, max, skip_nils, sep,
+			     separator, &nils);
 	if (res != GDK_SUCCEED)
 		return NULL;
 
@@ -1186,7 +1191,7 @@ GDKanalytical_str_group_concat(BAT *r, BAT *b, BAT *sep, BAT *s, BAT *e, const c
 	end = (lng *) Tloc(e, 0);
 
 	if (b->ttype != TYPE_str || r->ttype != TYPE_str || (sep && sep->ttype != TYPE_str)) {
-		GDKerror("BATgroupstr_group_concat: only string type is supported\n");
+		GDKerror("only string type is supported\n");
 		return GDK_FAIL;
 	}
 
@@ -1218,6 +1223,7 @@ GDKanalytical_str_group_concat(BAT *r, BAT *b, BAT *sep, BAT *s, BAT *e, const c
 					empty = false;
 				}
 			} else { /* sep case */
+				assert(sep != NULL);
 				sl = BUNtvar(bis, (BUN) j);
 
 				if (!strNil(sb)) {
@@ -1257,6 +1263,7 @@ GDKanalytical_str_group_concat(BAT *r, BAT *b, BAT *sep, BAT *s, BAT *e, const c
 				offset += next_length;
 				empty = false;
 			} else { /* sep case */
+				assert(sep != NULL);
 				sl = BUNtvar(bis, (BUN) j);
 
 				if (strNil(sb))
@@ -1284,8 +1291,8 @@ GDKanalytical_str_group_concat(BAT *r, BAT *b, BAT *sep, BAT *s, BAT *e, const c
 	r->tnonil = true;
 	r->tnil = false;
 	return GDK_SUCCEED;
- allocation_error:
+  allocation_error:
 	GDKfree(single_str);
-	GDKerror("%s: malloc failure\n", __func__);
+	GDKerror("malloc failure\n");
 	return GDK_FAIL;
 }

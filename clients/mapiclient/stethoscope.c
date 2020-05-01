@@ -79,7 +79,7 @@ static FILE *trace ;
  * Tuple level reformatting
  */
 
-static void
+static _Noreturn void
 usageStethoscope(void)
 {
     fprintf(stderr, "stethoscope [options] \n");
@@ -210,20 +210,14 @@ main(int argc, char **argv)
 			break;
 		case '?':
 			usageStethoscope();
-			/* a bit of a hack: look at the option that the
-			   current `c' is based on and see if we recognize
-			   it: if -? or --help, exit with 0, else with -1 */
-			exit(strcmp(argv[optind - 1], "-?") == 0 || strcmp(argv[optind - 1], "--help") == 0 ? 0 : -1);
 		default:
 			usageStethoscope();
-			exit(-1);
 		}
 	}
 
 
 	if(dbname == NULL){
 		usageStethoscope();
-		exit(-1);
 	}
 
 	if(debug)

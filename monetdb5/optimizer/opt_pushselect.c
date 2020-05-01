@@ -296,168 +296,166 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		}
 	}
 
-	if ((!subselects.nr && !nr_topn && !nr_likes) || newMalBlkStmt(mb, mb->ssize) <0 ) {
-		GDKfree(vars);
-		goto wrapup;
-	}
-	pushInstruction(mb,old[0]);
-
-	for (i = 1; i < limit; i++) {
-		p = old[i];
-
-		/* rewrite batalgebra.like + select -> likeselect */
-		if (getModuleId(p) == algebraRef && p->retc == 1 && getFunctionId(p) == selectRef) { 
-			int var = getArg(p, 1);
-			InstrPtr q = mb->stmt[vars[var]]; /* BEWARE: the optimizer may not add or remove statements ! */
-
-			if (isLikeOp(q)) { /* TODO check if getArg(p, 3) value == TRUE */
-				InstrPtr r = newInstruction(mb, algebraRef, likeselectRef);
-				int has_cand = (getArgType(mb, p, 2) == newBatType(TYPE_oid)); 
-				int a, anti = (getFunctionId(q)[0] == 'n'), ignore_case = (getFunctionId(q)[anti?4:0] == 'i');
-
-				getArg(r,0) = getArg(p,0);
-				r = addArgument(mb, r, getArg(q, 1));
-				if (has_cand)
-					r = addArgument(mb, r, getArg(p, 2));
-				for(a = 2; a<q->argc; a++)
-					r = addArgument(mb, r, getArg(q, a));
-				if (r->argc < (4+has_cand))
-					r = pushStr(mb, r, ""); /* default esc */ 
-				if (r->argc < (5+has_cand))
-					r = pushBit(mb, r, ignore_case);
-				if (r->argc < (6+has_cand))
-					r = pushBit(mb, r, anti);
-				freeInstruction(p);
-				p = r;
-				actions++;
-			}
+	if (subselects.nr) {
+		if (newMalBlkStmt(mb, mb->ssize) <0 ) {
+			GDKfree(vars);
+			goto wrapup;
 		}
 
-		/* inject table ids into subselect 
-		 * s = subselect(c, C1..) => subselect(c, t, C1..)
-		 */
-		if (isSelect(p) && p->retc == 1) { 
-			int tid = 0;
+		pushInstruction(mb,old[0]);
 
-			if ((tid = subselect_find_tids(&subselects, getArg(p, 0))) >= 0) {
-				int lastbat = lastbat_arg(mb, p);
-				if (getArgType(mb, p, lastbat) == TYPE_bat) /* empty candidate list bat_nil */
-					getArg(p, lastbat) = tid;
-				else
-					p = PushArgument(mb, p, tid, lastbat+1);
-				/* make sure to resolve again */
-				p->token = ASSIGNsymbol; 
-				p->typechk = TYPE_UNKNOWN;
-        			p->fcn = NULL;
-        			p->blk = NULL;
-				actions++;
-			}
-		}
-		else if ( (GDKdebug & (1<<15)) &&
-			 isMatJoinOp(p) && p->retc == 2
-			 ) { 
-			int ltid = 0, rtid = 0, done = 0;
-			int range = 0;
+		for (i = 1; i < limit; i++) {
+			p = old[i];
 
-			if ((ltid = subselect_find_tids(&subselects, getArg(p, 0))) >= 0 && 
-			    (rtid = subselect_find_tids(&subselects, getArg(p, 1))) >= 0) {
-				p = PushArgument(mb, p, ltid, 4+range);
-				p = PushArgument(mb, p, rtid, 5+range);
-				done = 1;
-			} else if ((ltid = subselect_find_tids(&subselects, getArg(p, 0))) >= 0) { 
-				p = PushArgument(mb, p, ltid, 4+range);
-				p = PushNil(mb, p, 5+range, TYPE_bat); 
-				done = 1;
-			} else if ((rtid = subselect_find_tids(&subselects, getArg(p, 1))) >= 0) {
-				p = PushNil(mb, p, 4+range, TYPE_bat); 
-				p = PushArgument(mb, p, rtid, 5+range);
-				done = 1;
-			}
-			if (done) {
-				p = pushBit(mb, p, FALSE); /* do not match nils */
-				p = pushNil(mb, p, TYPE_lng); /* no estimate */
-
-				/* make sure to resolve again */
-				p->token = ASSIGNsymbol; 
-				p->typechk = TYPE_UNKNOWN;
-        			p->fcn = NULL;
-        			p->blk = NULL;
-				actions++;
-			}
-		}
-		/* Leftfetchjoins involving rewriten table ids need to be flattend
-		 * l = projection(t, c); => l = c;
-		 * and
-		 * l = projection(s, ntids); => l = s;
-		 */
-		else if (getModuleId(p) == algebraRef && getFunctionId(p) == projectionRef) {
-			int var = getArg(p, 1);
-			
-			if (subselect_find_subselect(&subselects, var) > 0) {
-				InstrPtr q = newAssignment(mb);
-
-				getArg(q, 0) = getArg(p, 0); 
-				(void) addArgument(mb, q, getArg(p, 2));
-				actions++;
-				freeInstruction(p);
-				continue;
-			} else { /* deletes/updates use table ids */
-				int var = getArg(p, 2);
+			/* rewrite batalgebra.like + select -> likeselect */
+			if (getModuleId(p) == algebraRef && p->retc == 1 && getFunctionId(p) == selectRef) { 
+				int var = getArg(p, 1);
 				InstrPtr q = mb->stmt[vars[var]]; /* BEWARE: the optimizer may not add or remove statements ! */
 
-				if (q->token == ASSIGNsymbol) {
-					var = getArg(q, 1);
-					q = mb->stmt[vars[var]]; 
-				}
-				if (subselect_find_subselect(&subselects, var) > 0) {
-					InstrPtr qq = newAssignment(mb);
-					/* TODO: check result */
+				if (isLikeOp(q)) { /* TODO check if getArg(p, 3) value == TRUE */
+					InstrPtr r = newInstruction(mb, algebraRef, likeselectRef);
+					int has_cand = (getArgType(mb, p, 2) == newBatType(TYPE_oid)); 
+					int a, anti = (getFunctionId(q)[0] == 'n'), ignore_case = (getFunctionId(q)[anti?4:0] == 'i');
 
-					getArg(qq, 0) = getArg(p, 0); 
-					(void) addArgument(mb, qq, getArg(p, 1));
+					getArg(r,0) = getArg(p,0);
+					r = addArgument(mb, r, getArg(q, 1));
+					if (has_cand)
+						r = addArgument(mb, r, getArg(p, 2));
+					for(a = 2; a<q->argc; a++)
+						r = addArgument(mb, r, getArg(q, a));
+					if (r->argc < (4+has_cand))
+						r = pushStr(mb, r, ""); /* default esc */ 
+					if (r->argc < (5+has_cand))
+						r = pushBit(mb, r, ignore_case);
+					if (r->argc < (6+has_cand))
+						r = pushBit(mb, r, anti);
+					freeInstruction(p);
+					p = r;
+					actions++;
+				}
+			}
+	
+			/* inject table ids into subselect 
+		  	 * s = subselect(c, C1..) => subselect(c, t, C1..)
+		 	 */
+			if (isSelect(p) && p->retc == 1) { 
+				int tid = 0;
+
+				if ((tid = subselect_find_tids(&subselects, getArg(p, 0))) >= 0) {
+					int lastbat = lastbat_arg(mb, p);
+					if (getArgType(mb, p, lastbat) == TYPE_bat) /* empty candidate list bat_nil */
+						getArg(p, lastbat) = tid;
+					else
+						p = PushArgument(mb, p, tid, lastbat+1);
+					/* make sure to resolve again */
+					p->token = ASSIGNsymbol; 
+					p->typechk = TYPE_UNKNOWN;
+        				p->fcn = NULL;
+        				p->blk = NULL;
+					actions++;
+				}
+			} else if ( (GDKdebug & (1<<15)) && isMatJoinOp(p) && p->retc == 2) { 
+				int ltid = 0, rtid = 0, done = 0;
+				int range = 0;
+
+				if ((ltid = subselect_find_tids(&subselects, getArg(p, 0))) >= 0 && 
+			    	    (rtid = subselect_find_tids(&subselects, getArg(p, 1))) >= 0) {
+					p = PushArgument(mb, p, ltid, 4+range);
+					p = PushArgument(mb, p, rtid, 5+range);
+					done = 1;
+				} else if ((ltid = subselect_find_tids(&subselects, getArg(p, 0))) >= 0) { 
+					p = PushArgument(mb, p, ltid, 4+range);
+					p = PushNil(mb, p, 5+range, TYPE_bat); 
+					done = 1;
+				} else if ((rtid = subselect_find_tids(&subselects, getArg(p, 1))) >= 0) {
+					p = PushNil(mb, p, 4+range, TYPE_bat); 
+					p = PushArgument(mb, p, rtid, 5+range);
+					done = 1;
+				}
+				if (done) {
+					p = pushBit(mb, p, FALSE); /* do not match nils */
+					p = pushNil(mb, p, TYPE_lng); /* no estimate */
+
+					/* make sure to resolve again */
+					p->token = ASSIGNsymbol; 
+					p->typechk = TYPE_UNKNOWN;
+        				p->fcn = NULL;
+        				p->blk = NULL;
+					actions++;
+				}
+			}
+			/* Leftfetchjoins involving rewriten table ids need to be flattend
+		  	 * l = projection(t, c); => l = c;
+		 	 * and
+		 	 * l = projection(s, ntids); => l = s;
+		 	 */
+			else if (getModuleId(p) == algebraRef && getFunctionId(p) == projectionRef) {
+				int var = getArg(p, 1);
+			
+				if (subselect_find_subselect(&subselects, var) > 0) {
+					InstrPtr q = newAssignment(mb);
+	
+					getArg(q, 0) = getArg(p, 0); 
+					(void) addArgument(mb, q, getArg(p, 2));
 					actions++;
 					freeInstruction(p);
 					continue;
-				}
-				/* c = sql.delta(b,uid,uval,ins);
-		 		 * l = projection(x, c); 
-		 		 * into
-		 		 * l = sql.projectdelta(x,b,uid,uval,ins);
-		 		 */
-				else if (getModuleId(q) == sqlRef && getFunctionId(q) == deltaRef && q->argc == 5) {
-					q = copyInstruction(q);
-					if( q == NULL){
-						for (; i<limit; i++) 
-							if (old[i])
-								pushInstruction(mb,old[i]);
-						GDKfree(slices);
-						GDKfree(rslices);
-						GDKfree(old);
-						GDKfree(vars);
-						throw(MAL,"optimizer.pushselect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					}
+				} else { /* deletes/updates use table ids */
+					int var = getArg(p, 2);
+					InstrPtr q = mb->stmt[vars[var]]; /* BEWARE: the optimizer may not add or remove statements ! */
 
-					setFunctionId(q, projectdeltaRef);
-					getArg(q, 0) = getArg(p, 0); 
-					q = PushArgument(mb, q, getArg(p, 1), 1);
-					freeInstruction(p);
-					p = q;
-					actions++;
+					if (q->token == ASSIGNsymbol) {
+						var = getArg(q, 1);
+						q = mb->stmt[vars[var]]; 
+					}
+					if (subselect_find_subselect(&subselects, var) > 0) {
+						InstrPtr qq = newAssignment(mb);
+						/* TODO: check result */
+
+						getArg(qq, 0) = getArg(p, 0); 
+						(void) addArgument(mb, qq, getArg(p, 1));
+						actions++;
+						freeInstruction(p);
+						continue;
+					}
+					/* c = sql.delta(b,uid,uval,ins);
+		 		 	 * l = projection(x, c); 
+		 		 	 * into
+		 		 	 * l = sql.projectdelta(x,b,uid,uval,ins);
+		 		 	 */
+					else if (getModuleId(q) == sqlRef && getFunctionId(q) == deltaRef && q->argc == 5) {
+						q = copyInstruction(q);
+						if( q == NULL){
+							for (; i<limit; i++) 
+								if (old[i])
+									pushInstruction(mb,old[i]);
+							GDKfree(old);
+							GDKfree(vars);
+							throw(MAL,"optimizer.pushselect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+						}
+	
+						setFunctionId(q, projectdeltaRef);
+						getArg(q, 0) = getArg(p, 0); 
+						q = PushArgument(mb, q, getArg(p, 1), 1);
+						freeInstruction(p);
+						p = q;
+						actions++;
+					}
 				}
 			}
+			pushInstruction(mb,p);
 		}
-		pushInstruction(mb,p);
-	}
-	for (; i<limit; i++) 
-		if (old[i])
-			pushInstruction(mb,old[i]);
-	for (; i<slimit; i++) 
-		if (old[i])
-			freeInstruction(old[i]);
-	GDKfree(old);
-	if (!push_down_delta) {
-		GDKfree(vars);
-		goto wrapup;
+		for (; i<limit; i++) 
+			if (old[i])
+				pushInstruction(mb,old[i]);
+		for (; i<slimit; i++) 
+			if (old[i])
+				freeInstruction(old[i]);
+		GDKfree(old);
+		if (!push_down_delta) {
+			GDKfree(vars);
+			goto wrapup;
+		}
 	}
 
 	/* now push selects through delta's */
@@ -469,7 +467,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	slices = (int*) GDKzalloc(sizeof(int)* mb->vtop);
 	rslices = (char*) GDKzalloc(sizeof(char)* mb->vtop);
 	oclean = (char*) GDKzalloc(sizeof(char)* mb->vtop);
-	if (!nvars || !slices || !rslices || !oclean || newMalBlkStmt(mb, mb->stop+(5*push_down_delta)) <0 ) {
+	if (!nvars || !slices || !rslices || !oclean || newMalBlkStmt(mb, mb->stop+(5*push_down_delta)+(2*nr_topn)) <0 ) {
 		mb->stmt = old;
 		GDKfree(vars);
 		GDKfree(nvars);
@@ -674,16 +672,38 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				oclean[i] = 1;
 				continue;
 			}
+		} else if (getModuleId(p) == algebraRef && getFunctionId(p) == projectionRef) {
+			int var = getArg(p, 2);
+			InstrPtr q = old[vars[var]];
+			
+			if (getModuleId(q) == sqlRef && getFunctionId(q) == deltaRef && q->argc == 5) {
+				q = copyInstruction(q);
+				if( q == NULL){
+					GDKfree(vars);
+					GDKfree(nvars);
+					GDKfree(slices);
+					GDKfree(rslices);
+					GDKfree(oclean);
+					GDKfree(old);
+					throw(MAL,"optimizer.pushselect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				}
+				setFunctionId(q, projectdeltaRef);
+				getArg(q, 0) = getArg(p, 0); 
+				q = PushArgument(mb, q, getArg(p, 1), 1);
+				p = q;
+				oclean[i] = 1;
+				actions++;
+			}
 		}
+		assert (p == old[i] || oclean[i]);
 		pushInstruction(mb,p);
 	}
 	for (j=1; j<i; j++)
 		if (old[j] && oclean[j])
 			freeInstruction(old[j]);
-	for (; i<limit; i++)
+	for (; i<slimit; i++)
 		if (old[i])
 			freeInstruction(old[i]);
-			//pushInstruction(mb,old[i]);
 	GDKfree(vars);
 	GDKfree(nvars);
 	GDKfree(slices);
@@ -691,19 +711,19 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	GDKfree(oclean);
 	GDKfree(old);
 
-    /* Defense line against incorrect plans */
-    if( actions > 0){
-        msg = chkTypes(cntxt->usermodule, mb, FALSE);
-        if (msg == MAL_SUCCEED) 
-        	msg = chkFlow(mb);
-        if( msg == MAL_SUCCEED) 
-		msg = chkDeclarations(mb);
-    }
+	/* Defense line against incorrect plans */
+	if (actions > 0) {
+		msg = chkTypes(cntxt->usermodule, mb, FALSE);
+		if (msg == MAL_SUCCEED) 
+			msg = chkFlow(mb);
+		if( msg == MAL_SUCCEED) 
+			msg = chkDeclarations(mb);
+    	}
 wrapup:
-    /* keep all actions taken as a post block comment */
+	/* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;
-    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","pushselect",actions, usec);
-    newComment(mb,buf);
+	snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","pushselect",actions, usec);
+	newComment(mb,buf);
 	if( actions > 0)
 		addtoMalBlkHistory(mb);
 	return msg;

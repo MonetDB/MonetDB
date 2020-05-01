@@ -129,9 +129,7 @@ psm_set_exp(sql_query *query, dnode *n)
 			}
 
 			level = stack_find_frame(sql, vname);
-			if (!exp_name(v)) 
-				exp_label(sql->sa, v, ++sql->label);
-			v = exp_ref(sql->sa, v);
+			v = exp_ref(sql, v);
 			if (!(v = rel_check_type(sql, tpe, rel_val, v, type_cast)))
 				return NULL;
 			append(b, exp_set(sql->sa, vname, v, level));
@@ -428,18 +426,35 @@ rel_psm_return( sql_query *query, sql_subtype *restype, list *restypelist, symbo
 	sql_exp *res;
 	sql_rel *rel = NULL;
 	list *l = sa_list(sql->sa);
+	bool requires_proj = false;
 
 	if (restypelist)
 		ek.card = card_relation;
+	else if (return_sym->token == SQL_TABLE)
+		return sql_error(sql, 02, SQLSTATE(42000) "RETURN: TABLE return not allowed for non table returning functions");
 	res = rel_value_exp2(query, &rel, return_sym, sql_sel, ek);
 	if (!res)
 		return NULL;
-	if (!rel && exp_is_rel(res))
+	if (!rel && exp_is_rel(res)) {
 		rel = exp_rel_get_rel(sql->sa, res);
+		if (rel && !restypelist && !is_groupby(rel->op)) { /* On regular functions return zero or 1 rows for every row */
+			rel->card = CARD_MULTI; 
+			rel = rel_zero_or_one(sql, rel, ek);
+			if (list_length(rel->exps) != 1)
+				return sql_error(sql, 02, SQLSTATE(42000) "RETURN: must return a single column");
+			res = exp_ref(sql, (sql_exp*) rel->exps->t->data);
+			requires_proj = true;
+		}
+	}
 	if (ek.card != card_relation && (!restype || (res = rel_check_type(sql, restype, rel, res, type_equal)) == NULL))
 		return (!restype)?sql_error(sql, 02, SQLSTATE(42000) "RETURN: return type does not match"):NULL;
 	else if (ek.card == card_relation && !rel)
 		return NULL;
+
+	if (requires_proj) {
+		rel = rel_project(sql->sa, rel, list_append(sa_list(sql->sa), res));
+		res = exp_rel(sql, rel);
+	}
 
 	if (rel && !is_ddl(rel->op) && ek.card == card_relation) {
 		list *exps = sa_list(sql->sa), *oexps = rel->exps;
@@ -451,6 +466,8 @@ rel_psm_return( sql_query *query, sql_subtype *restype, list *restypelist, symbo
 			oexps_rel = l;
 			oexps = l->exps;
 		}
+		if (list_length(oexps) != list_length(restypelist))
+			return sql_error(sql, 02, SQLSTATE(42000) "RETURN: number of columns do not match");
 		for (n = oexps->h, m = restypelist->h; n && m; n = n->next, m = m->next) {
 			sql_exp *e = n->data;
 			sql_arg *ce = m->data;
@@ -459,19 +476,19 @@ rel_psm_return( sql_query *query, sql_subtype *restype, list *restypelist, symbo
 
 			if (!cname)
 				cname = sa_strdup(sql->sa, number2name(name, sizeof(name), ++sql->label));
-			if (!isproject) 
-				e = exp_ref(sql->sa, e);
+			if (!isproject)
+				e = exp_ref(sql, e);
 			e = rel_check_type(sql, &ce->type, oexps_rel, e, type_equal);
 			if (!e)
 				return NULL;
 			append(exps, e);
 		}
 		if (isproject)
-			rel -> exps = exps;
+			rel->exps = exps;
 		else
 			rel = rel_project(sql->sa, rel, exps);
 		res = exp_rel(sql, rel);
-	} else if (rel && restypelist){ /* handle return table-var */
+	} else if (rel && restypelist) { /* handle return table-var */
 		list *exps = sa_list(sql->sa);
 		sql_table *t = rel_ddl_table_get(rel);
 		node *n, *m;
@@ -533,9 +550,7 @@ rel_select_into( sql_query *query, symbol *sq, exp_kind ek)
 			return sql_error(sql, 02, SQLSTATE(42000) "SELECT INTO: variable '%s' unknown", nme);
 		tpe = stack_find_type(sql, nme);
 		level = stack_find_frame(sql, nme);
-		if (!exp_name(v)) 
-			exp_label(sql->sa, v, ++sql->label);
-		v = exp_ref(sql->sa, v);
+		v = exp_ref(sql, v);
 		if (!(v = rel_check_type(sql, tpe, r, v, type_equal)))
 			return NULL;
 		v = exp_set(sql->sa, nme, v, level);
@@ -650,8 +665,10 @@ sequential_block (sql_query *query, sql_subtype *restype, list *restypelist, dli
 		case SQL_TRUNCATE:
 		case SQL_MERGE: {
 			sql_rel *r = rel_updates(query, s);
-			if (!r)
+			if (!r) {
+				stack_pop_frame(sql);
 				return NULL;
+			}
 			res = exp_rel(sql, r);
 		}	break;
 		default:
@@ -1098,6 +1115,8 @@ rel_drop_func(mvc *sql, dlist *qname, dlist *typelist, int drop_action, sql_ftyp
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)) && !if_exists)
 		return sql_error(sql, 02, SQLSTATE(3F000) "DROP %s: no such schema '%s'", F, sname);
+	if (!mvc_schema_privs(sql, s))
+		return sql_error(sql, 02, SQLSTATE(42000) "DROP %s: insufficient privileges for user '%s' in schema '%s'", F, stack_get_string(sql, "current_user"), s->base.name);
 
 	if (s)
 		func = resolve_func(sql, s, name, typelist, type, "DROP", if_exists);
@@ -1124,7 +1143,9 @@ rel_drop_all_func(mvc *sql, dlist *qname, int drop_action, sql_ftype type)
 	FUNC_TYPE_STR(type)
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
-		return sql_error(sql, 02, SQLSTATE(3F000) "DROP %s: no such schema '%s'", F, sname);
+		return sql_error(sql, 02, SQLSTATE(3F000) "DROP ALL %s: no such schema '%s'", F, sname);
+	if (!mvc_schema_privs(sql, s))
+		return sql_error(sql, 02, SQLSTATE(42000) "DROP ALL %s: insufficient privileges for user '%s' in schema '%s'", F, stack_get_string(sql, "current_user"), s->base.name);
 
 	list_func = schema_bind_func(sql, s, name, type);
 	if (!list_func) 
@@ -1177,7 +1198,7 @@ create_trigger(sql_query *query, dlist *qname, int time, symbol *trigger_event, 
 	const char *triggername = qname_table(qname);
 	const char *sname = qname_schema(tqname);
 	const char *tname = qname_table(tqname);
-	sql_schema *ss = cur_schema(sql);
+	sql_schema *ss = cur_schema(sql), *old_schema = cur_schema(sql);
 	sql_table *t = NULL;
 	sql_trigger *st = NULL;
 	int instantiate = (sql->emode == m_instantiate);
@@ -1288,8 +1309,14 @@ create_trigger(sql_query *query, dlist *qname, int time, symbol *trigger_event, 
 		if (old_name)
 			stack_update_rel_view(sql, old_name, new_name?rel_dup(rel):rel);
 	}
-	if (!(sq = sequential_block(query, NULL, NULL, stmts, NULL, 1)))
+	sql->session->schema = ss;
+	sq = sequential_block(query, NULL, NULL, stmts, NULL, 1);
+	sql->session->schema = old_schema;
+	if (!sq) {
+		if (!instantiate)
+			stack_pop_frame(sql);
 		return NULL;
+	}
 	r = rel_psm_block(sql->sa, sq);
 
 	if (!instantiate)
@@ -1437,10 +1464,8 @@ create_table_from_loader(sql_query *query, dlist *qname, symbol *fcall)
 	if (!rel || !loader)
 		return NULL;
 
-	loader->sname = sname ? sa_zalloc(sql->sa, strlen(sname) + 1) : NULL;
-	loader->tname = tname ? sa_zalloc(sql->sa, strlen(tname) + 1) : NULL;
-	if (sname) strcpy(loader->sname, sname);
-	if (tname) strcpy(loader->tname, tname);
+	loader->sname = sname ? sa_strdup(sql->sa, sname) : NULL;
+	loader->tname = tname ? sa_strdup(sql->sa, tname) : NULL;
 
 	return rel;
 }

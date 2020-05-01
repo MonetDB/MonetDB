@@ -2,7 +2,6 @@ import os
 import socket
 import sys
 import tempfile
-import shutil
 import pymonetdb
 
 try:
@@ -18,14 +17,10 @@ def freeport():
     sock.close()
     return port
 
-
-farm_dir = tempfile.mkdtemp()
-
-prt1 = freeport()
-os.makedirs(os.path.join(farm_dir, 'node1'))
-try:
-    prc1 = process.server(mapiport=prt1, dbname='node1', dbfarm=os.path.join(farm_dir, 'node1'), stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE)
-    try:
+with tempfile.TemporaryDirectory() as farm_dir:
+    prt1 = freeport()
+    os.makedirs(os.path.join(farm_dir, 'node1'))
+    with process.server(mapiport=prt1, dbname='node1', dbfarm=os.path.join(farm_dir, 'node1'), stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE) as prc1:
         conn1 = pymonetdb.connect(database='node1', port=prt1, autocommit=True)
         cur1 = conn1.cursor()
         cur1.execute("start transaction;")
@@ -37,8 +32,10 @@ try:
 
         prt2 = freeport()
         os.makedirs(os.path.join(farm_dir, 'node2'))
-        prc2 = process.server(mapiport=prt2, dbname='node2', dbfarm=os.path.join(farm_dir, 'node2'), stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE)
-        try:
+        with process.server(mapiport=prt2, dbname='node2',
+                            dbfarm=os.path.join(farm_dir, 'node2'),
+                            stdin=process.PIPE, stdout=process.PIPE,
+                            stderr=process.PIPE) as prc2:
             conn2 = pymonetdb.connect(database='node2', port=prt2, autocommit=True)
             cur2 = conn2.cursor()
             cur2.execute("create remote table tab1 (col1 clob, col2 int) on 'mapi:monetdb://localhost:"+str(prt1)+"/node1';")
@@ -70,13 +67,9 @@ try:
             conn1.close()
             cur2.close()
             conn2.close()
-        finally:
             out, err = prc2.communicate()
             sys.stdout.write(out)
             sys.stderr.write(err)
-    finally:
         out, err = prc1.communicate()
         sys.stdout.write(out)
         sys.stderr.write(err)
-finally:
-    shutil.rmtree(farm_dir)

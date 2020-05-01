@@ -61,40 +61,22 @@ dupError(const char *err)
 static str __attribute__((__format__(__printf__, 3, 0), __returns_nonnull__))
 createExceptionInternal(enum malexception type, const char *fcn, const char *format, va_list ap)
 {
-	char *message, local[GDKMAXERRLEN];
+	char local[GDKMAXERRLEN];
 	int len;
-	// if there is an error we allow memory allocation once again
 #ifndef NDEBUG
+	// if there is an error we allow memory allocation once again
 	GDKsetmallocsuccesscount(-1);
 #endif
-	message = GDKmalloc(GDKMAXERRLEN);
-	if (message == NULL){
-		/* Leave a message behind in the logging system */
-		len = snprintf(local, GDKMAXERRLEN - 1, "%s:%s:", exceptionNames[type], fcn);
-		len = vsnprintf(local + len, GDKMAXERRLEN -1, format, ap);
-		TRC_ERROR(MAL_SERVER, "%s\n", local);
-		return M5OutOfMemory;	/* last resort */
-	}
-	len = snprintf(message, GDKMAXERRLEN, "%s:%s:", exceptionNames[type], fcn);
-	if (len >= GDKMAXERRLEN)	/* shouldn't happen */
-		return message;
-	len += vsnprintf(message + len, GDKMAXERRLEN - len, format, ap);
-	/* realloc to reduce amount of allocated memory (GDKMAXERRLEN is
-	 * way more than what is normally needed) */
-	if (len < GDKMAXERRLEN) {
-		/* in the extremely unlikely case that GDKrealloc fails, the
-		 * original pointer is still valid, so use that and don't
-		 * overwrite */
-		char *newmsg = GDKrealloc(message, len + 1);
-		if (newmsg != NULL)
-			message = newmsg;
-	}
-	char *q = message;
+	len = snprintf(local, GDKMAXERRLEN - 1, "%s:%s:", exceptionNames[type], fcn);
+	len = vsnprintf(local + len, GDKMAXERRLEN -1, format, ap);
+	if (len < 0)
+		TRC_CRITICAL(MAL_SERVER, "called with bad arguments");
+	char *q = local;
 	for (char *p = strchr(q, '\n'); p; q = p + 1, p = strchr(q, '\n'))
 		TRC_ERROR(MAL_SERVER, "%.*s\n", (int) (p - q), q);
 	if (*q)
 		TRC_ERROR(MAL_SERVER, "%s\n", q);
-	return message;
+	return dupError(local);
 }
 
 /**

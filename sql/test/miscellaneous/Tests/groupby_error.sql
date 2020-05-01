@@ -16,6 +16,8 @@ INSERT INTO tab2 VALUES(64,77,40), (75,67,58), (46,51,23);
 SELECT CAST(+ col1 * - col1 AS BIGINT) AS col2 FROM tab0 GROUP BY col2, col0, col1 HAVING + - col0 / - AVG ( ALL + col2 ) - - - AVG ( DISTINCT + col0 ) + col0 IS NULL;
 SELECT DISTINCT + 40 / + + col0 AS col2 FROM tab0 GROUP BY col0, col0, col2 HAVING NOT ( NOT + - 80 BETWEEN NULL AND + - 73 ) OR NOT ( + col0 >= - COUNT ( * ) + - COUNT ( DISTINCT - col0 ) );
 SELECT ALL * FROM tab0 AS cor0 WHERE col2 NOT IN ( 22, 18, CAST ( NULL AS INTEGER ) + - 77 );
+SELECT CAST(58 + + 78 + - COALESCE ( ( + CASE 68 WHEN - 77 - - 38 THEN NULL ELSE COUNT ( * ) END ), + 81 + - COUNT ( * ) + + CAST ( NULL AS INTEGER ), + + 34 * - 30 * + COUNT ( * ) ) * 15 * 38 AS BIGINT) AS col1;
+	--434
 
 SELECT * FROM tab0 AS cor0 WHERE NOT - 39 <> 11; --empty
 SELECT DISTINCT * FROM tab0 WHERE NOT - - 12 <> + + 96; --empty
@@ -29,6 +31,13 @@ SELECT col0 FROM tab2 WHERE - - col2;
 	-- 64
 	-- 75
 	-- 46
+
+PLAN SELECT DISTINCT col0, col1, col2, col0 FROM tab0;
+
+SELECT DISTINCT col0, col1, col2, col0 FROM tab0;
+	-- 97  1 99 97
+	-- 15 81 47 15
+	-- 87 21 10 87
 
 PLAN SELECT col0 FROM tab2 WHERE CAST(col2 AS BIGINT) = 40;
 

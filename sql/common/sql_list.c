@@ -17,8 +17,9 @@ node_create(sql_allocator *sa, void *data)
 
 	if (n == NULL)
 		return NULL;
-	n->next = NULL;
-	n->data = data;
+	*n = (node) {
+		.data = data,
+	};
 	return n;
 }
 
@@ -175,7 +176,7 @@ list_append_with_validate(list *l, void *data, fvalidate cmp)
 }
 
 void*
-list_append_sorted(list *l, void *data, fcmpvalidate cmp)
+list_append_sorted(list *l, void *data, void *extra, fcmpvalidate cmp)
 {
 	node *n = node_create(l->sa, data), *m, *prev = NULL;
 	int first = 1, comp = 0;
@@ -188,7 +189,7 @@ list_append_sorted(list *l, void *data, fcmpvalidate cmp)
 		l->t = n;
 	} else {
 		for (m = l->h; m; m = m->next) {
-			err = cmp(m->data, data, &comp);
+			err = cmp(m->data, data, extra, &comp);
 			if(err)
 				return err;
 			if(comp < 0)

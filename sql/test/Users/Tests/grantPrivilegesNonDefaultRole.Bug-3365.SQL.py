@@ -11,11 +11,12 @@ except ImportError:
     import process
 
 def sql_test_client(user, passwd, input):
-    process.client(lang = "sql", user = user, passwd = passwd, communicate = True,
-                   stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE,
-                   input = input, port = int(os.getenv("MAPIPORT")))
+    with process.client(lang="sql", user=user, passwd=passwd, communicate=True,
+                        stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE,
+                        input=input, port=int(os.getenv("MAPIPORT"))) as c:
+        c.communicate()
 
-sql_test_client('monetdb', 'monetdb', input = """\
+sql_test_client('monetdb', 'monetdb', input="""\
 create role hr_role;
 create schema hr authorization hr_role;
 create user blake with password 'password' name 'Blake' schema "hr";
@@ -23,7 +24,7 @@ create user clark with password 'password' name 'Clark' schema "hr";
 grant hr_role to blake;
 """)
 
-sql_test_client('blake', 'password', input = """\
+sql_test_client('blake', 'password', input="""\
 set role hr_role;
 create table employees (id bigint,name varchar(20));
 grant select on employees to clark;

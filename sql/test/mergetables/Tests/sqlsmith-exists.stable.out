@@ -141,8 +141,8 @@ stdout of test 'sqlsmith-exists` in directory 'sql/test/mergetables` itself:
 # where ref_1.aa is null))
 # right join tab2 as ref_2
 # on (ref_0.col1 = ref_2.col0 );
-% . # table_name
-% single_value # name
+% .%27 # table_name
+% %27 # name
 % tinyint # type
 % 1 # length
 [ 1	]
@@ -161,8 +161,8 @@ stdout of test 'sqlsmith-exists` in directory 'sql/test/mergetables` itself:
 # tbl_ProductSales as ref_3
 # where ref_1.aa is null))
 # on (ref_0.col1 = ref_2.col0 );
-% . # table_name
-% single_value # name
+% .%41 # table_name
+% %41 # name
 % tinyint # type
 % 1 # length
 [ 1	]
@@ -198,7 +198,7 @@ stdout of test 'sqlsmith-exists` in directory 'sql/test/mergetables` itself:
 # where ref_1.aa is null))
 # on (ref_0.col1 = ref_2.col0 )
 # inner join tab0 as ref_4
-% sys.,	sys.,	.,	sys.,	sys.,	sys.,	sys.,	sys. # table_name
+% .,	.,	.,	.,	.,	.,	.,	. # table_name
 % c0,	c1,	c2,	c3,	c4,	c5,	c6,	c7 # name
 % int,	int,	int,	int,	int,	int,	int,	int # type
 % 1,	1,	1,	1,	1,	1,	1,	1 # length

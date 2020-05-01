@@ -99,7 +99,7 @@ static bool WriteTextToFile(FILE *f, const char *data)
 	return WriteDataToFile(f, data, strlen(data));
 }
 
-static void handler(int sig, siginfo_t *si, void *unused)
+static _Noreturn void handler(int sig, siginfo_t *si, void *unused)
 {
 	int tid = THRgettid();
 

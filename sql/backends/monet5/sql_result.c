@@ -870,7 +870,7 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 
 	if (locked) {
 		/* flush old changes to disk */
-		sql_trans_end(m->session);
+		sql_trans_end(m->session, 1);
 		store_apply_deltas(true);
 		sql_trans_begin(m->session);
 	}
@@ -1063,7 +1063,7 @@ mvc_export_prepare(mvc *c, stream *out, cq *q, str w)
 	if (!out)
 		return 0;
 
-	if (r && is_topn(r->op))
+	if (r && (is_topn(r->op) || is_sample(r->op)))
 		r = r->l;
 	if (r && is_project(r->op) && r->exps) {
 		unsigned int max2 = 10, max3 = 10;	/* to help calculate widths */

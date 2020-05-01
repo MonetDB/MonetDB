@@ -137,3 +137,26 @@ select corr(a1.aa, a1.bb) from analytics a1 where a1.bb > (select corr(a1.aa + a
 select corr(a1.aa, a1.bb) from analytics a1 group by bb having a1.bb > (select corr(MAX(a1.aa) + a2.aa, MIN(a1.aa) + a2.aa) from analytics a2);
 
 rollback;
+
+CREATE TABLE t0(c0 DOUBLE, c1 INT);
+INSERT INTO t0(c0,c1) VALUES(1E200, 1), (0, 1);
+
+SELECT VAR_POP(c0) FROM t0; --error, overflow
+SELECT STDDEV_POP(c0) FROM t0; --error, overflow
+SELECT COVAR_POP(c0,c0) FROM t0; --error, overflow
+SELECT CORR(c0,c0) FROM t0; --error, overflow
+
+SELECT VAR_POP(c0) FROM t0 GROUP BY c0;
+SELECT STDDEV_POP(c0) FROM t0 GROUP BY c0;
+SELECT CORR(c0,c0) FROM t0 GROUP BY c0;
+
+SELECT VAR_POP(c0) FROM t0 GROUP BY c1;--error, overflow
+SELECT STDDEV_POP(c0) FROM t0 GROUP BY c1; --error, overflow
+SELECT CORR(c0,c0) FROM t0 GROUP BY c1; --error, overflow
+
+SELECT VAR_SAMP(c0) OVER () FROM t0; --error, overflow
+SELECT STDDEV_SAMP(c0) OVER () FROM t0; --error, overflow
+SELECT COVAR_SAMP(c0,c0) OVER () FROM t0; --error, overflow
+SELECT CORR(c0,c0) OVER () FROM t0; --error, overflow
+
+DROP TABLE T0;

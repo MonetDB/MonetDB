@@ -94,19 +94,37 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 
 #define BINARY_3TYPE_FUNC(TYPE1, TYPE2, TYPE3, FUNC)			\
 	do {								\
-		for (k = 0; k < ci1->ncand; k++) {			\
-			x1 = canditer_next(ci1) - candoff1;		\
-			x2 = canditer_next(ci2) - candoff2;		\
-			i = x1 * incr1;					\
-			j = x2 * incr2;					\
-			TYPE1 v1 = ((const TYPE1 *) lft)[i];		\
-			TYPE2 v2 = ((const TYPE2 *) rgt)[j];		\
-			if ((rv != NULL && !rv[i]) ||			\
-			    is_##TYPE1##_nil(v1) || is_##TYPE2##_nil(v2)) { \
-				nils++;					\
-				((TYPE3 *) dst)[k] = TYPE3##_nil;	\
-			} else {					\
-				((TYPE3 *) dst)[k] = FUNC(v1, v2);	\
+		if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {	\
+			for (k = 0; k < ci1->ncand; k++) {		\
+				x1 = canditer_next_dense(ci1) - candoff1; \
+				x2 = canditer_next_dense(ci2) - candoff2; \
+				i = x1 * incr1;				\
+				j = x2 * incr2;				\
+				TYPE1 v1 = ((const TYPE1 *) lft)[i];	\
+				TYPE2 v2 = ((const TYPE2 *) rgt)[j];	\
+				if ((rv != NULL && !rv[i]) ||		\
+				    is_##TYPE1##_nil(v1) || is_##TYPE2##_nil(v2)) { \
+					nils++;				\
+					((TYPE3 *) dst)[k] = TYPE3##_nil; \
+				} else {				\
+					((TYPE3 *) dst)[k] = FUNC(v1, v2); \
+				}					\
+			}						\
+		} else {						\
+			for (k = 0; k < ci1->ncand; k++) {		\
+				x1 = canditer_next(ci1) - candoff1;	\
+				x2 = canditer_next(ci2) - candoff2;	\
+				i = x1 * incr1;				\
+				j = x2 * incr2;				\
+				TYPE1 v1 = ((const TYPE1 *) lft)[i];	\
+				TYPE2 v2 = ((const TYPE2 *) rgt)[j];	\
+				if ((rv != NULL && !rv[i]) ||		\
+				    is_##TYPE1##_nil(v1) || is_##TYPE2##_nil(v2)) { \
+					nils++;				\
+					((TYPE3 *) dst)[k] = TYPE3##_nil; \
+				} else {				\
+					((TYPE3 *) dst)[k] = FUNC(v1, v2); \
+				}					\
 			}						\
 		}							\
 	} while (0)
@@ -115,61 +133,119 @@ checkbats(BAT *b1, BAT *b2, const char *func)
  * when it is set */
 #define BINARY_3TYPE_FUNC_nilmatch(TYPE1, TYPE2, TYPE3, FUNC)		\
 	do {								\
-		for (k = 0; k < ci1->ncand; k++) {			\
-			x1 = canditer_next(ci1) - candoff1;		\
-			x2 = canditer_next(ci2) - candoff2;		\
-			i = x1 * incr1;					\
-			j = x2 * incr2;					\
-			TYPE1 v1 = ((const TYPE1 *) lft)[i];		\
-			TYPE2 v2 = ((const TYPE2 *) rgt)[j];		\
-			if ((rv != NULL && !rv[i]) ||			\
-			    is_##TYPE1##_nil(v1) || is_##TYPE2##_nil(v2)) { \
-				((TYPE3 *) dst)[k] = FUNC(is_##TYPE1##_nil(v1), is_##TYPE2##_nil(v2)); \
-			} else {					\
-				((TYPE3 *) dst)[k] = FUNC(v1, v2);	\
+		if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {	\
+			for (k = 0; k < ci1->ncand; k++) {		\
+				x1 = canditer_next_dense(ci1) - candoff1; \
+				x2 = canditer_next_dense(ci2) - candoff2; \
+				i = x1 * incr1;				\
+				j = x2 * incr2;				\
+				TYPE1 v1 = ((const TYPE1 *) lft)[i];	\
+				TYPE2 v2 = ((const TYPE2 *) rgt)[j];	\
+				if ((rv != NULL && !rv[i]) ||		\
+				    is_##TYPE1##_nil(v1) || is_##TYPE2##_nil(v2)) { \
+					((TYPE3 *) dst)[k] = FUNC(is_##TYPE1##_nil(v1), is_##TYPE2##_nil(v2)); \
+				} else {				\
+					((TYPE3 *) dst)[k] = FUNC(v1, v2); \
+				}					\
+			}						\
+		} else {						\
+			for (k = 0; k < ci1->ncand; k++) {		\
+				x1 = canditer_next(ci1) - candoff1;	\
+				x2 = canditer_next(ci2) - candoff2;	\
+				i = x1 * incr1;				\
+				j = x2 * incr2;				\
+				TYPE1 v1 = ((const TYPE1 *) lft)[i];	\
+				TYPE2 v2 = ((const TYPE2 *) rgt)[j];	\
+				if ((rv != NULL && !rv[i]) ||		\
+				    is_##TYPE1##_nil(v1) || is_##TYPE2##_nil(v2)) { \
+					((TYPE3 *) dst)[k] = FUNC(is_##TYPE1##_nil(v1), is_##TYPE2##_nil(v2)); \
+				} else {				\
+					((TYPE3 *) dst)[k] = FUNC(v1, v2); \
+				}					\
 			}						\
 		}							\
 	} while (0)
 
 #define BINARY_3TYPE_FUNC_nonil(TYPE1, TYPE2, TYPE3, FUNC)		\
 	do {								\
-		for (k = 0; k < ci1->ncand; k++) {			\
-			x1 = canditer_next(ci1) - candoff1;		\
-			x2 = canditer_next(ci2) - candoff2;		\
-			i = x1 * incr1;					\
-			j = x2 * incr2;					\
-			TYPE1 v1 = ((const TYPE1 *) lft)[i];		\
-			TYPE2 v2 = ((const TYPE2 *) rgt)[j];		\
-			((TYPE3 *) dst)[k] = FUNC(v1, v2);		\
+		if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {	\
+			for (k = 0; k < ci1->ncand; k++) {		\
+				x1 = canditer_next_dense(ci1) - candoff1; \
+				x2 = canditer_next_dense(ci2) - candoff2; \
+				i = x1 * incr1;				\
+				j = x2 * incr2;				\
+				TYPE1 v1 = ((const TYPE1 *) lft)[i];	\
+				TYPE2 v2 = ((const TYPE2 *) rgt)[j];	\
+				((TYPE3 *) dst)[k] = FUNC(v1, v2);	\
+			}						\
+		} else {						\
+			for (k = 0; k < ci1->ncand; k++) {		\
+				x1 = canditer_next(ci1) - candoff1;	\
+				x2 = canditer_next(ci2) - candoff2;	\
+				i = x1 * incr1;				\
+				j = x2 * incr2;				\
+				TYPE1 v1 = ((const TYPE1 *) lft)[i];	\
+				TYPE2 v2 = ((const TYPE2 *) rgt)[j];	\
+				((TYPE3 *) dst)[k] = FUNC(v1, v2);	\
+			}						\
 		}							\
 	} while (0)
 
 #define BINARY_3TYPE_FUNC_CHECK(TYPE1, TYPE2, TYPE3, FUNC, CHECK)	\
 	do {								\
-		for (k = 0; k < ci1->ncand; k++) {			\
-			x1 = canditer_next(ci1) - candoff1;		\
-			x2 = canditer_next(ci2) - candoff2;		\
-			i = x1 * incr1;					\
-			j = x2 * incr2;					\
-			TYPE1 v1 = ((const TYPE1 *) lft)[i];		\
-			TYPE2 v2 = ((const TYPE2 *) rgt)[j];		\
-			if ((rv != NULL && !rv[i]) ||			\
-			    is_##TYPE1##_nil(v1) || is_##TYPE2##_nil(v2)) { \
-				nils++;					\
-				((TYPE3 *) dst)[k] = TYPE3##_nil;	\
-			} else if (CHECK(v1, v2)) {			\
-				if (abort_on_error) {			\
-					GDKerror("%s: shift operand too large in " \
-						 #FUNC"("FMT##TYPE1","FMT##TYPE2").\n", \
-						 func,			\
-						 CST##TYPE1 v1,		\
-						 CST##TYPE2 v2);	\
-					goto checkfail;			\
+		if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {	\
+			for (k = 0; k < ci1->ncand; k++) {		\
+				x1 = canditer_next_dense(ci1) - candoff1; \
+				x2 = canditer_next_dense(ci2) - candoff2; \
+				i = x1 * incr1;				\
+				j = x2 * incr2;				\
+				TYPE1 v1 = ((const TYPE1 *) lft)[i];	\
+				TYPE2 v2 = ((const TYPE2 *) rgt)[j];	\
+				if ((rv != NULL && !rv[i]) ||		\
+				    is_##TYPE1##_nil(v1) || is_##TYPE2##_nil(v2)) { \
+					nils++;				\
+					((TYPE3 *) dst)[k] = TYPE3##_nil; \
+				} else if (CHECK(v1, v2)) {		\
+					if (abort_on_error) {		\
+						GDKerror("%s: shift operand too large in " \
+							 #FUNC"("FMT##TYPE1","FMT##TYPE2").\n", \
+							 func,		\
+							 CST##TYPE1 v1,	\
+							 CST##TYPE2 v2); \
+						goto checkfail;		\
+					}				\
+					((TYPE3 *)dst)[k] = TYPE3##_nil; \
+					nils++;				\
+				} else {				\
+					((TYPE3 *) dst)[k] = FUNC(v1, v2); \
 				}					\
-				((TYPE3 *)dst)[k] = TYPE3##_nil;	\
-				nils++;					\
-			} else {					\
-				((TYPE3 *) dst)[k] = FUNC(v1, v2);	\
+			}						\
+		} else {						\
+			for (k = 0; k < ci1->ncand; k++) {		\
+				x1 = canditer_next(ci1) - candoff1;	\
+				x2 = canditer_next(ci2) - candoff2;	\
+				i = x1 * incr1;				\
+				j = x2 * incr2;				\
+				TYPE1 v1 = ((const TYPE1 *) lft)[i];	\
+				TYPE2 v2 = ((const TYPE2 *) rgt)[j];	\
+				if ((rv != NULL && !rv[i]) ||		\
+				    is_##TYPE1##_nil(v1) || is_##TYPE2##_nil(v2)) { \
+					nils++;				\
+					((TYPE3 *) dst)[k] = TYPE3##_nil; \
+				} else if (CHECK(v1, v2)) {		\
+					if (abort_on_error) {		\
+						GDKerror("%s: shift operand too large in " \
+							 #FUNC"("FMT##TYPE1","FMT##TYPE2").\n", \
+							 func,		\
+							 CST##TYPE1 v1,	\
+							 CST##TYPE2 v2); \
+						goto checkfail;		\
+					}				\
+					((TYPE3 *)dst)[k] = TYPE3##_nil; \
+					nils++;				\
+				} else {				\
+					((TYPE3 *) dst)[k] = FUNC(v1, v2); \
+				}					\
 			}						\
 		}							\
 	} while (0)
@@ -183,6 +259,7 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 BAT *
 BATcalcnot(BAT *b, BAT *s, BAT *r)
 {
+	lng t0 = 0;
 	BAT *bn;
 	BUN nils = 0;
 	BUN i, ncand;
@@ -190,11 +267,12 @@ BATcalcnot(BAT *b, BAT *s, BAT *r)
 	struct canditer ci;
 	const bit *rv = r ? Tloc(r, 0) : NULL;
 
-	BATcheck(b, __func__, NULL);
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+
+	BATcheck(b, NULL);
 	ncand = canditer_init(&ci, b, s);
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 	if (ncand == 0)
@@ -229,8 +307,7 @@ BATcalcnot(BAT *b, BAT *s, BAT *r)
 #endif
 	default:
 		BBPunfix(bn->batCacheid);
-		GDKerror("%s: type %s not supported.\n",
-			 __func__, ATOMname(b->ttype));
+		GDKerror("type %s not supported.\n", ATOMname(b->ttype));
 		return NULL;
 	}
 
@@ -247,6 +324,11 @@ BATcalcnot(BAT *b, BAT *s, BAT *r)
 		b->tnil = true;
 		b->batDirtydesc = true;
 	}
+
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " s=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
 	return bn;
 }
@@ -291,8 +373,7 @@ VARcalcnot(ValPtr ret, const ValRecord *v)
 		break;
 #endif
 	default:
-		GDKerror("VARcalcnot: bad input type %s.\n",
-			 ATOMname(v->vtype));
+		GDKerror("bad input type %s.\n", ATOMname(v->vtype));
 		return GDK_FAIL;
 	}
 	return GDK_SUCCEED;
@@ -306,6 +387,7 @@ VARcalcnot(ValPtr ret, const ValRecord *v)
 BAT *
 BATcalcnegate(BAT *b, BAT *s, BAT *r)
 {
+	lng t0 = 0;
 	BAT *bn;
 	BUN nils = 0;
 	BUN i, ncand;
@@ -313,11 +395,12 @@ BATcalcnegate(BAT *b, BAT *s, BAT *r)
 	struct canditer ci;
 	const bit *rv = r ? Tloc(r, 0) : NULL;
 
-	BATcheck(b, __func__, NULL);
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+
+	BATcheck(b, NULL);
 	ncand = canditer_init(&ci, b, s);
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 	if (ncand == 0)
@@ -354,8 +437,7 @@ BATcalcnegate(BAT *b, BAT *s, BAT *r)
 		break;
 	default:
 		BBPunfix(bn->batCacheid);
-		GDKerror("%s: type %s not supported.\n", __func__,
-			 ATOMname(b->ttype));
+		GDKerror("type %s not supported.\n", ATOMname(b->ttype));
 		return NULL;
 	}
 
@@ -372,6 +454,11 @@ BATcalcnegate(BAT *b, BAT *s, BAT *r)
 		b->tnil = true;
 		b->batDirtydesc = true;
 	}
+
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " s=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
 	return bn;
 }
@@ -426,8 +513,7 @@ VARcalcnegate(ValPtr ret, const ValRecord *v)
 			ret->val.dval = -v->val.dval;
 		break;
 	default:
-		GDKerror("VARcalcnegate: bad input type %s.\n",
-			 ATOMname(v->vtype));
+		GDKerror("bad input type %s.\n", ATOMname(v->vtype));
 		return GDK_FAIL;
 	}
 	return GDK_SUCCEED;
@@ -439,6 +525,7 @@ VARcalcnegate(ValPtr ret, const ValRecord *v)
 BAT *
 BATcalcabsolute(BAT *b, BAT *s, BAT *r)
 {
+	lng t0 = 0;
 	BAT *bn;
 	BUN nils= 0;
 	BUN i, ncand;
@@ -446,11 +533,12 @@ BATcalcabsolute(BAT *b, BAT *s, BAT *r)
 	struct canditer ci;
 	const bit *rv = r ? Tloc(r, 0) : NULL;
 
-	BATcheck(b, __func__, NULL);
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+
+	BATcheck(b, NULL);
 	ncand = canditer_init(&ci, b, s);
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 	if (ncand == 0)
@@ -487,8 +575,7 @@ BATcalcabsolute(BAT *b, BAT *s, BAT *r)
 		break;
 	default:
 		BBPunfix(bn->batCacheid);
-		GDKerror("%s: bad input type %s.\n", __func__,
-			 ATOMname(b->ttype));
+		GDKerror("bad input type %s.\n", ATOMname(b->ttype));
 		return NULL;
 	}
 
@@ -507,6 +594,11 @@ BATcalcabsolute(BAT *b, BAT *s, BAT *r)
 		b->tnil = true;
 		b->batDirtydesc = true;
 	}
+
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " s=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
 	return bn;
 }
@@ -561,8 +653,7 @@ VARcalcabsolute(ValPtr ret, const ValRecord *v)
 			ret->val.dval = fabs(v->val.dval);
 		break;
 	default:
-		GDKerror("VARcalcabsolute: bad input type %s.\n",
-			 ATOMname(v->vtype));
+		GDKerror("bad input type %s.\n", ATOMname(v->vtype));
 		return GDK_FAIL;
 	}
 	return GDK_SUCCEED;
@@ -576,6 +667,7 @@ VARcalcabsolute(ValPtr ret, const ValRecord *v)
 BAT *
 BATcalciszero(BAT *b, BAT *s, BAT *r)
 {
+	lng t0 = 0;
 	BAT *bn;
 	BUN nils = 0;
 	BUN i, ncand;
@@ -583,11 +675,12 @@ BATcalciszero(BAT *b, BAT *s, BAT *r)
 	struct canditer ci;
 	const bit *rv = r ? Tloc(r, 0) : NULL;
 
-	BATcheck(b, __func__, NULL);
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+
+	BATcheck(b, NULL);
 	ncand = canditer_init(&ci, b, s);
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 	if (ncand == 0)
@@ -624,8 +717,7 @@ BATcalciszero(BAT *b, BAT *s, BAT *r)
 		break;
 	default:
 		BBPunfix(bn->batCacheid);
-		GDKerror("%s: bad input type %s.\n", __func__,
-			 ATOMname(b->ttype));
+		GDKerror("bad input type %s.\n", ATOMname(b->ttype));
 		return NULL;
 	}
 
@@ -641,6 +733,11 @@ BATcalciszero(BAT *b, BAT *s, BAT *r)
 		b->tnil = true;
 		b->batDirtydesc = true;
 	}
+
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " s=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
 	return bn;
 }
@@ -695,8 +792,7 @@ VARcalciszero(ValPtr ret, const ValRecord *v)
 			ret->val.btval = ISZERO(v->val.dval);
 		break;
 	default:
-		GDKerror("VARcalciszero: bad input type %s.\n",
-			 ATOMname(v->vtype));
+		GDKerror("bad input type %s.\n", ATOMname(v->vtype));
 		return GDK_FAIL;
 	}
 	return GDK_SUCCEED;
@@ -711,6 +807,7 @@ VARcalciszero(ValPtr ret, const ValRecord *v)
 BAT *
 BATcalcsign(BAT *b, BAT *s, BAT *r)
 {
+	lng t0 = 0;
 	BAT *bn;
 	BUN nils = 0;
 	BUN i, ncand;
@@ -718,11 +815,12 @@ BATcalcsign(BAT *b, BAT *s, BAT *r)
 	struct canditer ci;
 	const bit *rv = r ? Tloc(r, 0) : NULL;
 
-	BATcheck(b, __func__, NULL);
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+
+	BATcheck(b, NULL);
 	ncand = canditer_init(&ci, b, s);
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 	if (ncand == 0)
@@ -759,8 +857,7 @@ BATcalcsign(BAT *b, BAT *s, BAT *r)
 		break;
 	default:
 		BBPunfix(bn->batCacheid);
-		GDKerror("%s: bad input type %s.\n", __func__,
-			 ATOMname(b->ttype));
+		GDKerror("bad input type %s.\n", ATOMname(b->ttype));
 		return NULL;
 	}
 
@@ -779,6 +876,11 @@ BATcalcsign(BAT *b, BAT *s, BAT *r)
 		b->tnil = true;
 		b->batDirtydesc = true;
 	}
+
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " s=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
 	return bn;
 }
@@ -833,7 +935,7 @@ VARcalcsign(ValPtr ret, const ValRecord *v)
 			ret->val.btval = SIGN(v->val.dval);
 		break;
 	default:
-		GDKerror("VARcalcsign: bad input type %s.\n",
+		GDKerror("bad input type %s.\n",
 			 ATOMname(v->vtype));
 		return GDK_FAIL;
 	}
@@ -860,6 +962,7 @@ VARcalcsign(ValPtr ret, const ValRecord *v)
 static BAT *
 BATcalcisnil_implementation(BAT *b, BAT *s, BAT *r, bool notnil)
 {
+	lng t0 = 0;
 	BAT *bn;
 	BUN i, ncand;
 	oid x;
@@ -868,12 +971,13 @@ BATcalcisnil_implementation(BAT *b, BAT *s, BAT *r, bool notnil)
 	BUN nils = 0;
 	const bit *rv = r ? Tloc(r, 0) : NULL;
 
-	BATcheck(b, __func__, NULL);
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+
+	BATcheck(b, NULL);
 
 	ncand = canditer_init(&ci, b, s);
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 
@@ -942,6 +1046,11 @@ BATcalcisnil_implementation(BAT *b, BAT *s, BAT *r, bool notnil)
 	bn->tnonil = nils == 0;
 	bn->tkey = ncand <= 1;
 
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " s=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " notnil=%s -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(s), ALGOOPTBATPAR(r),
+		  notnil ? "true" : "false", ALGOOPTBATPAR(bn), GDKusec() - t0);
+
 	return bn;
 }
 
@@ -976,6 +1085,7 @@ VARcalcisnotnil(ValPtr ret, const ValRecord *v)
 BAT *
 BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r)
 {
+	lng t0 = 0;
 	BAT *bn;
 	BUN nils = 0;
 	BUN ncand;
@@ -985,23 +1095,24 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r)
 	int (*cmp)(const void *, const void *);
 	const bit *rv = r ? Tloc(r, 0) : NULL;
 
-	BATcheck(b1, __func__, NULL);
-	BATcheck(b2, __func__, NULL);
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+
+	BATcheck(b1, NULL);
+	BATcheck(b2, NULL);
 
 	if (ATOMtype(b1->ttype) != ATOMtype(b2->ttype)) {
-		GDKerror("%s: inputs have incompatible types\n", __func__);
+		GDKerror("inputs have incompatible types\n");
 		return NULL;
 	}
 
 	ncand = canditer_init(&ci1, b1, s1);
 	if (canditer_init(&ci2, b2, s2) != ncand ||
 	    ci1.hseq != ci2.hseq) {
-		GDKerror("%s: inputs not the same size.\n", __func__);
+		GDKerror("inputs not the same size.\n");
 		return NULL;
 	}
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 
@@ -1042,6 +1153,14 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r)
 		bn->tkey = false;
 		bn->tseqbase = oid_nil;
 	}
+
+	TRC_DEBUG(ALGO, "b1=" ALGOBATFMT "b2=" ALGOBATFMT
+		  " s1=" ALGOOPTBATFMT " s2=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b1), ALGOBATPAR(b2),
+		  ALGOOPTBATPAR(s1), ALGOOPTBATPAR(s2),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
+
 	return bn;
   bunins_failed:
 	BBPreclaim(bn);
@@ -1051,6 +1170,7 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r)
 BAT *
 BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r)
 {
+	lng t0 = 0;
 	BAT *bn;
 	BUN nils = 0;
 	BUN ncand;
@@ -1060,23 +1180,24 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r)
 	int (*cmp)(const void *, const void *);
 	const bit *rv = r ? Tloc(r, 0) : NULL;
 
-	BATcheck(b1, __func__, NULL);
-	BATcheck(b2, __func__, NULL);
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+
+	BATcheck(b1, NULL);
+	BATcheck(b2, NULL);
 
 	if (ATOMtype(b1->ttype) != ATOMtype(b2->ttype)) {
-		GDKerror("%s: inputs have incompatible types\n", __func__);
+		GDKerror("inputs have incompatible types\n");
 		return NULL;
 	}
 
 	ncand = canditer_init(&ci1, b1, s1);
 	if (canditer_init(&ci2, b2, s2) != ncand ||
 	    ci1.hseq != ci2.hseq) {
-		GDKerror("%s: inputs not the same size.\n", __func__);
+		GDKerror("inputs not the same size.\n");
 		return NULL;
 	}
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 
@@ -1121,6 +1242,14 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r)
 		bn->tkey = false;
 		bn->tseqbase = oid_nil;
 	}
+
+	TRC_DEBUG(ALGO, "b1=" ALGOBATFMT "b2=" ALGOBATFMT
+		  " s1=" ALGOOPTBATFMT " s2=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b1), ALGOBATPAR(b2),
+		  ALGOOPTBATPAR(s1), ALGOOPTBATPAR(s2),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
+
 	return bn;
   bunins_failed:
 	BBPreclaim(bn);
@@ -1130,6 +1259,7 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r)
 BAT *
 BATcalcmincst(BAT *b, const ValRecord *v, BAT *s, BAT *r)
 {
+	lng t0 = 0;
 	BAT *bn;
 	BUN nils = 0;
 	BUN ncand;
@@ -1142,17 +1272,18 @@ BATcalcmincst(BAT *b, const ValRecord *v, BAT *s, BAT *r)
 	int (*cmp)(const void *, const void *);
 	const bit *rv = r ? Tloc(r, 0) : NULL;
 
-	BATcheck(b, __func__, NULL);
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+
+	BATcheck(b, NULL);
 	if (ATOMtype(b->ttype) != v->vtype) {
-		GDKerror("%s: inputs have incompatible types\n", __func__);
+		GDKerror("inputs have incompatible types\n");
 		return NULL;
 	}
 
 	nil = ATOMnilptr(b->ttype);
 	ncand = canditer_init(&ci, b, s);
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 
@@ -1196,6 +1327,12 @@ BATcalcmincst(BAT *b, const ValRecord *v, BAT *s, BAT *r)
 		bn->tkey = false;
 		bn->tseqbase = oid_nil;
 	}
+
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " s=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
+
 	return bn;
   bunins_failed:
 	BBPreclaim(bn);
@@ -1211,6 +1348,7 @@ BATcalccstmin(const ValRecord *v, BAT *b, BAT *s, BAT *r)
 BAT *
 BATcalcmincst_no_nil(BAT *b, const ValRecord *v, BAT *s, BAT *r)
 {
+	lng t0 = 0;
 	BAT *bn;
 	BUN nils = 0;
 	BUN ncand;
@@ -1223,17 +1361,18 @@ BATcalcmincst_no_nil(BAT *b, const ValRecord *v, BAT *s, BAT *r)
 	int (*cmp)(const void *, const void *);
 	const bit *rv = r ? Tloc(r, 0) : NULL;
 
-	BATcheck(b, __func__, NULL);
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+
+	BATcheck(b, NULL);
 	if (ATOMtype(b->ttype) != v->vtype) {
-		GDKerror("%s: inputs have incompatible types\n", __func__);
+		GDKerror("inputs have incompatible types\n");
 		return NULL;
 	}
 
 	nil = ATOMnilptr(b->ttype);
 	ncand = canditer_init(&ci, b, s);
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 	if (ncand == 0)
@@ -1290,6 +1429,12 @@ BATcalcmincst_no_nil(BAT *b, const ValRecord *v, BAT *s, BAT *r)
 		bn->tkey = false;
 		bn->tseqbase = oid_nil;
 	}
+
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " s=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
+
 	return bn;
   bunins_failed:
 	BBPreclaim(bn);
@@ -1305,6 +1450,7 @@ BATcalccstmin_no_nil(const ValRecord *v, BAT *b, BAT *s, BAT *r)
 BAT *
 BATcalcmax(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r)
 {
+	lng t0 = 0;
 	BAT *bn;
 	BUN nils = 0;
 	BUN ncand;
@@ -1314,23 +1460,24 @@ BATcalcmax(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r)
 	int (*cmp)(const void *, const void *);
 	const bit *rv = r ? Tloc(r, 0) : NULL;
 
-	BATcheck(b1, __func__, NULL);
-	BATcheck(b2, __func__, NULL);
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+
+	BATcheck(b1, NULL);
+	BATcheck(b2, NULL);
 
 	if (ATOMtype(b1->ttype) != ATOMtype(b2->ttype)) {
-		GDKerror("%s: inputs have incompatible types\n", __func__);
+		GDKerror("inputs have incompatible types\n");
 		return NULL;
 	}
 
 	ncand = canditer_init(&ci1, b1, s1);
 	if (canditer_init(&ci2, b2, s2) != ncand ||
 	    ci1.hseq != ci2.hseq) {
-		GDKerror("%s: inputs not the same size.\n", __func__);
+		GDKerror("inputs not the same size.\n");
 		return NULL;
 	}
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 
@@ -1371,6 +1518,14 @@ BATcalcmax(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r)
 		bn->tkey = false;
 		bn->tseqbase = oid_nil;
 	}
+
+	TRC_DEBUG(ALGO, "b1=" ALGOBATFMT "b2=" ALGOBATFMT
+		  " s1=" ALGOOPTBATFMT " s2=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b1), ALGOBATPAR(b2),
+		  ALGOOPTBATPAR(s1), ALGOOPTBATPAR(s2),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
+
 	return bn;
   bunins_failed:
 	BBPreclaim(bn);
@@ -1380,6 +1535,7 @@ BATcalcmax(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r)
 BAT *
 BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r)
 {
+	lng t0 = 0;
 	BAT *bn;
 	BUN nils = 0;
 	BUN ncand;
@@ -1389,23 +1545,24 @@ BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r)
 	int (*cmp)(const void *, const void *);
 	const bit *rv = r ? Tloc(r, 0) : NULL;
 
-	BATcheck(b1, __func__, NULL);
-	BATcheck(b2, __func__, NULL);
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+
+	BATcheck(b1, NULL);
+	BATcheck(b2, NULL);
 
 	if (ATOMtype(b1->ttype) != ATOMtype(b2->ttype)) {
-		GDKerror("%s: inputs have incompatible types\n", __func__);
+		GDKerror("inputs have incompatible types\n");
 		return NULL;
 	}
 
 	ncand = canditer_init(&ci1, b1, s1);
 	if (canditer_init(&ci2, b2, s2) != ncand ||
 	    ci1.hseq != ci2.hseq) {
-		GDKerror("%s: inputs not the same size.\n", __func__);
+		GDKerror("inputs not the same size.\n");
 		return NULL;
 	}
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 
@@ -1455,6 +1612,14 @@ BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r)
 		bn->tkey = false;
 		bn->tseqbase = oid_nil;
 	}
+
+	TRC_DEBUG(ALGO, "b1=" ALGOBATFMT "b2=" ALGOBATFMT
+		  " s1=" ALGOOPTBATFMT " s2=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b1), ALGOBATPAR(b2),
+		  ALGOOPTBATPAR(s1), ALGOOPTBATPAR(s2),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
+
 	return bn;
   bunins_failed:
 	BBPreclaim(bn);
@@ -1464,6 +1629,7 @@ BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r)
 BAT *
 BATcalcmaxcst(BAT *b, const ValRecord *v, BAT *s, BAT *r)
 {
+	lng t0 = 0;
 	BAT *bn;
 	BUN nils = 0;
 	BUN ncand;
@@ -1476,17 +1642,18 @@ BATcalcmaxcst(BAT *b, const ValRecord *v, BAT *s, BAT *r)
 	int (*cmp)(const void *, const void *);
 	const bit *rv = r ? Tloc(r, 0) : NULL;
 
-	BATcheck(b, __func__, NULL);
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+
+	BATcheck(b, NULL);
 	if (ATOMtype(b->ttype) != v->vtype) {
-		GDKerror("%s: inputs have incompatible types\n", __func__);
+		GDKerror("inputs have incompatible types\n");
 		return NULL;
 	}
 
 	nil = ATOMnilptr(b->ttype);
 	ncand = canditer_init(&ci, b, s);
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 
@@ -1530,6 +1697,12 @@ BATcalcmaxcst(BAT *b, const ValRecord *v, BAT *s, BAT *r)
 		bn->tkey = false;
 		bn->tseqbase = oid_nil;
 	}
+
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " s=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
+
 	return bn;
   bunins_failed:
 	BBPreclaim(bn);
@@ -1545,6 +1718,7 @@ BATcalccstmax(const ValRecord *v, BAT *b, BAT *s, BAT *r)
 BAT *
 BATcalcmaxcst_no_nil(BAT *b, const ValRecord *v, BAT *s, BAT *r)
 {
+	lng t0 = 0;
 	BAT *bn;
 	BUN nils = 0;
 	BUN ncand;
@@ -1557,17 +1731,18 @@ BATcalcmaxcst_no_nil(BAT *b, const ValRecord *v, BAT *s, BAT *r)
 	int (*cmp)(const void *, const void *);
 	const bit *rv = r ? Tloc(r, 0) : NULL;
 
-	BATcheck(b, __func__, NULL);
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+
+	BATcheck(b, NULL);
 	if (ATOMtype(b->ttype) != v->vtype) {
-		GDKerror("%s: inputs have incompatible types\n", __func__);
+		GDKerror("inputs have incompatible types\n");
 		return NULL;
 	}
 
 	nil = ATOMnilptr(b->ttype);
 	ncand = canditer_init(&ci, b, s);
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 	if (ncand == 0)
@@ -1624,6 +1799,12 @@ BATcalcmaxcst_no_nil(BAT *b, const ValRecord *v, BAT *s, BAT *r)
 		bn->tkey = false;
 		bn->tseqbase = oid_nil;
 	}
+
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " s=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
+
 	return bn;
   bunins_failed:
 	BBPreclaim(bn);
@@ -1660,20 +1841,39 @@ add_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 {									\
 	BUN nils = 0;							\
 									\
-	for (BUN k = 0; k < ci1->ncand; k++) {				\
-		oid x1 = canditer_next(ci1) - candoff1;			\
-		oid x2 = canditer_next(ci2) - candoff2;			\
-		BUN i = x1 * incr1;					\
-		BUN j = x2 * incr2;					\
-		if ((rv != NULL && !rv[i]) ||				\
-		    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
-			dst[k] = TYPE3##_nil;				\
-			nils++;						\
-		} else {						\
-			ADD##IF##_WITH_CHECK(lft[i], rgt[j],		\
-					     TYPE3, dst[k],		\
-					     max,			\
-					     ON_OVERFLOW(TYPE1, TYPE2, "+")); \
+	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
+		for (BUN k = 0; k < ci1->ncand; k++) {			\
+			oid x1 = canditer_next_dense(ci1) - candoff1;	\
+			oid x2 = canditer_next_dense(ci2) - candoff2;	\
+			BUN i = x1 * incr1;				\
+			BUN j = x2 * incr2;				\
+			if ((rv != NULL && !rv[i]) ||			\
+			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
+				dst[k] = TYPE3##_nil;			\
+				nils++;					\
+			} else {					\
+				ADD##IF##_WITH_CHECK(lft[i], rgt[j],	\
+						     TYPE3, dst[k],	\
+						     max,		\
+						     ON_OVERFLOW(TYPE1, TYPE2, "+")); \
+			}						\
+		}							\
+	} else {							\
+		for (BUN k = 0; k < ci1->ncand; k++) {			\
+			oid x1 = canditer_next(ci1) - candoff1;		\
+			oid x2 = canditer_next(ci2) - candoff2;		\
+			BUN i = x1 * incr1;				\
+			BUN j = x2 * incr2;				\
+			if ((rv != NULL && !rv[i]) ||			\
+			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
+				dst[k] = TYPE3##_nil;			\
+				nils++;					\
+			} else {					\
+				ADD##IF##_WITH_CHECK(lft[i], rgt[j],	\
+						     TYPE3, dst[k],	\
+						     max,		\
+						     ON_OVERFLOW(TYPE1, TYPE2, "+")); \
+			}						\
 		}							\
 	}								\
 	return nils;							\
@@ -1693,22 +1893,43 @@ add_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 	BUN nils = 0;							\
 	const bool couldoverflow = (max < (TYPE3) GDK_##TYPE1##_max + (TYPE3) GDK_##TYPE2##_max); \
 									\
-	for (BUN k = 0; k < ci1->ncand; k++) {				\
-		oid x1 = canditer_next(ci1) - candoff1;			\
-		oid x2 = canditer_next(ci2) - candoff2;			\
-		BUN i = x1 * incr1;					\
-		BUN j = x2 * incr2;					\
-		if ((rv != NULL && !rv[i]) ||				\
-		    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
-			dst[k] = TYPE3##_nil;				\
-			nils++;						\
-		} else if (couldoverflow) {				\
-			ADD##IF##_WITH_CHECK(lft[i], rgt[j],		\
-					     TYPE3, dst[k],		\
-					     max,			\
-					     ON_OVERFLOW(TYPE1, TYPE2, "+")); \
-		} else {						\
-			dst[k] = (TYPE3) lft[i] + rgt[j];		\
+	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
+		for (BUN k = 0; k < ci1->ncand; k++) {			\
+			oid x1 = canditer_next_dense(ci1) - candoff1;	\
+			oid x2 = canditer_next_dense(ci2) - candoff2;	\
+			BUN i = x1 * incr1;				\
+			BUN j = x2 * incr2;				\
+			if ((rv != NULL && !rv[i]) ||			\
+			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
+				dst[k] = TYPE3##_nil;			\
+				nils++;					\
+			} else if (couldoverflow) {			\
+				ADD##IF##_WITH_CHECK(lft[i], rgt[j],	\
+						     TYPE3, dst[k],	\
+						     max,		\
+						     ON_OVERFLOW(TYPE1, TYPE2, "+")); \
+			} else {					\
+				dst[k] = (TYPE3) lft[i] + rgt[j];	\
+			}						\
+		}							\
+	} else {							\
+		for (BUN k = 0; k < ci1->ncand; k++) {			\
+			oid x1 = canditer_next(ci1) - candoff1;		\
+			oid x2 = canditer_next(ci2) - candoff2;		\
+			BUN i = x1 * incr1;				\
+			BUN j = x2 * incr2;				\
+			if ((rv != NULL && !rv[i]) ||			\
+			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
+				dst[k] = TYPE3##_nil;			\
+				nils++;					\
+			} else if (couldoverflow) {			\
+				ADD##IF##_WITH_CHECK(lft[i], rgt[j],	\
+						     TYPE3, dst[k],	\
+						     max,		\
+						     ON_OVERFLOW(TYPE1, TYPE2, "+")); \
+			} else {					\
+				dst[k] = (TYPE3) lft[i] + rgt[j];	\
+			}						\
 		}							\
 	}								\
 	return nils;							\
@@ -3308,24 +3529,26 @@ addstr_loop(BAT *b1, const char *l, BAT *b2, const char *r, BAT *bn,
 BAT *
 BATcalcadd(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r, int tp, bool abort_on_error)
 {
+	lng t0 = 0;
 	BAT *bn;
 	BUN nils;
 	BUN ncand;
 	struct canditer ci1, ci2;
 	const bit *rv = r ? Tloc(r, 0) : NULL;
 
-	BATcheck(b1, __func__, NULL);
-	BATcheck(b2, __func__, NULL);
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+
+	BATcheck(b1, NULL);
+	BATcheck(b2, NULL);
 
 	ncand = canditer_init(&ci1, b1, s1);
 	if (canditer_init(&ci2, b2, s2) != ncand ||
 	    ci1.hseq != ci2.hseq) {
-		GDKerror("%s: inputs not the same size.\n", __func__);
+		GDKerror("inputs not the same size.\n");
 		return NULL;
 	}
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 
@@ -3366,24 +3589,33 @@ BATcalcadd(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r, int tp, bool abort_on_err
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
+	TRC_DEBUG(ALGO, "b1=" ALGOBATFMT "b2=" ALGOBATFMT
+		  " s1=" ALGOOPTBATFMT " s2=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b1), ALGOBATPAR(b2),
+		  ALGOOPTBATPAR(s1), ALGOOPTBATPAR(s2),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
+
 	return bn;
 }
 
 BAT *
 BATcalcaddcst(BAT *b, const ValRecord *v, BAT *s, BAT *r, int tp, bool abort_on_error)
 {
+	lng t0 = 0;
 	BAT *bn;
 	BUN nils;
 	BUN ncand;
 	struct canditer ci;
 	const bit *rv = r ? Tloc(r, 0) : NULL;
 
-	BATcheck(b, __func__, NULL);
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+
+	BATcheck(b, NULL);
 
 	ncand = canditer_init(&ci, b, s);
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 
@@ -3424,24 +3656,31 @@ BATcalcaddcst(BAT *b, const ValRecord *v, BAT *s, BAT *r, int tp, bool abort_on_
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " s=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
+
 	return bn;
 }
 
 BAT *
 BATcalccstadd(const ValRecord *v, BAT *b, BAT *s, BAT *r, int tp, bool abort_on_error)
 {
+	lng t0 = 0;
 	BAT *bn;
 	BUN nils;
 	BUN ncand;
 	struct canditer ci;
 	const bit *rv = r ? Tloc(r, 0) : NULL;
 
-	BATcheck(b, __func__, NULL);
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+
+	BATcheck(b, NULL);
 
 	ncand = canditer_init(&ci, b, s);
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 
@@ -3482,6 +3721,11 @@ BATcalccstadd(const ValRecord *v, BAT *b, BAT *s, BAT *r, int tp, bool abort_on_
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " s=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
+
 	return bn;
 }
 
@@ -3511,18 +3755,20 @@ BATcalcincrdecr(BAT *b, BAT *s, BAT *r, bool abort_on_error,
 				      oid, oid, bool, const char *),
 		const char *func)
 {
+	lng t0 = 0;
 	BAT *bn;
 	BUN nils= 0;
 	BUN ncand;
 	struct canditer ci;
 	const bit *rv = r ? Tloc(r, 0) : NULL;
 
-	BATcheck(b, func, NULL);
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+
+	BATcheck(b, NULL);
 
 	ncand = canditer_init(&ci, b, s);
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 
@@ -3568,6 +3814,11 @@ BATcalcincrdecr(BAT *b, BAT *s, BAT *r, bool abort_on_error,
 		b->batDirtydesc = true;
 	}
 
+	TRC_DEBUG(ALGO, "%s: b=" ALGOBATFMT " s=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  func, ALGOBATPAR(b), ALGOOPTBATPAR(s),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
+
 	return bn;
 }
 
@@ -3608,20 +3859,39 @@ sub_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 {									\
 	BUN nils = 0;							\
 									\
-	for (BUN k = 0; k < ci1->ncand; k++) {				\
-		oid x1 = canditer_next(ci1) - candoff1;			\
-		oid x2 = canditer_next(ci2) - candoff2;			\
-		BUN i = x1 * incr1;					\
-		BUN j = x2 * incr2;					\
-		if ((rv != NULL && !rv[i]) ||				\
-		    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
-			dst[k] = TYPE3##_nil;				\
-			nils++;						\
-		} else {						\
-			SUB##IF##_WITH_CHECK(lft[i], rgt[j],		\
-					     TYPE3, dst[k],		\
-					     max,			\
-					     ON_OVERFLOW(TYPE1, TYPE2, "-")); \
+	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
+		for (BUN k = 0; k < ci1->ncand; k++) {			\
+			oid x1 = canditer_next_dense(ci1) - candoff1;	\
+			oid x2 = canditer_next_dense(ci2) - candoff2;	\
+			BUN i = x1 * incr1;				\
+			BUN j = x2 * incr2;				\
+			if ((rv != NULL && !rv[i]) ||			\
+			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
+				dst[k] = TYPE3##_nil;			\
+				nils++;					\
+			} else {					\
+				SUB##IF##_WITH_CHECK(lft[i], rgt[j],	\
+						     TYPE3, dst[k],	\
+						     max,		\
+						     ON_OVERFLOW(TYPE1, TYPE2, "-")); \
+			}						\
+		}							\
+	} else {							\
+		for (BUN k = 0; k < ci1->ncand; k++) {			\
+			oid x1 = canditer_next(ci1) - candoff1;		\
+			oid x2 = canditer_next(ci2) - candoff2;		\
+			BUN i = x1 * incr1;				\
+			BUN j = x2 * incr2;				\
+			if ((rv != NULL && !rv[i]) ||			\
+			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
+				dst[k] = TYPE3##_nil;			\
+				nils++;					\
+			} else {					\
+				SUB##IF##_WITH_CHECK(lft[i], rgt[j],	\
+						     TYPE3, dst[k],	\
+						     max,		\
+						     ON_OVERFLOW(TYPE1, TYPE2, "-")); \
+			}						\
 		}							\
 	}								\
 	return nils;							\
@@ -3641,22 +3911,43 @@ sub_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 	BUN nils = 0;							\
 	const bool couldoverflow = (max < (TYPE3) GDK_##TYPE1##_max + (TYPE3) GDK_##TYPE2##_max); \
 									\
-	for (BUN k = 0; k < ci1->ncand; k++) {				\
-		oid x1 = canditer_next(ci1) - candoff1;			\
-		oid x2 = canditer_next(ci2) - candoff2;			\
-		BUN i = x1 * incr1;					\
-		BUN j = x2 * incr2;					\
-		if ((rv != NULL && !rv[i]) ||				\
-		    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
-			dst[k] = TYPE3##_nil;				\
-			nils++;						\
-		} else if (couldoverflow) {				\
-			SUB##IF##_WITH_CHECK(lft[i], rgt[j],		\
-					     TYPE3, dst[k],		\
-					     max,			\
-					     ON_OVERFLOW(TYPE1, TYPE2, "-")); \
-		} else {						\
-			dst[k] = (TYPE3) lft[i] - rgt[j];		\
+	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
+		for (BUN k = 0; k < ci1->ncand; k++) {			\
+			oid x1 = canditer_next_dense(ci1) - candoff1;	\
+			oid x2 = canditer_next_dense(ci2) - candoff2;	\
+			BUN i = x1 * incr1;				\
+			BUN j = x2 * incr2;				\
+			if ((rv != NULL && !rv[i]) ||			\
+			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
+				dst[k] = TYPE3##_nil;			\
+				nils++;					\
+			} else if (couldoverflow) {			\
+				SUB##IF##_WITH_CHECK(lft[i], rgt[j],	\
+						     TYPE3, dst[k],	\
+						     max,		\
+						     ON_OVERFLOW(TYPE1, TYPE2, "-")); \
+			} else {					\
+				dst[k] = (TYPE3) lft[i] - rgt[j];	\
+			}						\
+		}							\
+	} else {							\
+		for (BUN k = 0; k < ci1->ncand; k++) {			\
+			oid x1 = canditer_next(ci1) - candoff1;		\
+			oid x2 = canditer_next(ci2) - candoff2;		\
+			BUN i = x1 * incr1;				\
+			BUN j = x2 * incr2;				\
+			if ((rv != NULL && !rv[i]) ||			\
+			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
+				dst[k] = TYPE3##_nil;			\
+				nils++;					\
+			} else if (couldoverflow) {			\
+				SUB##IF##_WITH_CHECK(lft[i], rgt[j],	\
+						     TYPE3, dst[k],	\
+						     max,		\
+						     ON_OVERFLOW(TYPE1, TYPE2, "-")); \
+			} else {					\
+				dst[k] = (TYPE3) lft[i] - rgt[j];	\
+			}						\
 		}							\
 	}								\
 	return nils;							\
@@ -5201,24 +5492,26 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 BAT *
 BATcalcsub(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r, int tp, bool abort_on_error)
 {
+	lng t0 = 0;
 	BAT *bn;
 	BUN nils;
 	BUN ncand;
 	struct canditer ci1, ci2;
 	const bit *rv = r ? Tloc(r, 0) : NULL;
 
-	BATcheck(b1, __func__, NULL);
-	BATcheck(b2, __func__, NULL);
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+
+	BATcheck(b1, NULL);
+	BATcheck(b2, NULL);
 
 	ncand = canditer_init(&ci1, b1, s1);
 	if (canditer_init(&ci2, b2, s2) != ncand ||
 	    ci1.hseq != ci2.hseq) {
-		GDKerror("%s: inputs not the same size.\n", __func__);
+		GDKerror("inputs not the same size.\n");
 		return NULL;
 	}
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 
@@ -5248,24 +5541,33 @@ BATcalcsub(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r, int tp, bool abort_on_err
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
+	TRC_DEBUG(ALGO, "b1=" ALGOBATFMT "b2=" ALGOBATFMT
+		  " s1=" ALGOOPTBATFMT " s2=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b1), ALGOBATPAR(b2),
+		  ALGOOPTBATPAR(s1), ALGOOPTBATPAR(s2),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
+
 	return bn;
 }
 
 BAT *
 BATcalcsubcst(BAT *b, const ValRecord *v, BAT *s, BAT *r, int tp, bool abort_on_error)
 {
+	lng t0 = 0;
 	BAT *bn;
 	BUN nils;
 	BUN ncand;
 	struct canditer ci;
 	const bit *rv = r ? Tloc(r, 0) : NULL;
 
-	BATcheck(b, __func__, NULL);
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+
+	BATcheck(b, NULL);
 
 	ncand = canditer_init(&ci, b, s);
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 
@@ -5302,24 +5604,31 @@ BATcalcsubcst(BAT *b, const ValRecord *v, BAT *s, BAT *r, int tp, bool abort_on_
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " s=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
+
 	return bn;
 }
 
 BAT *
 BATcalccstsub(const ValRecord *v, BAT *b, BAT *s, BAT *r, int tp, bool abort_on_error)
 {
+	lng t0 = 0;
 	BAT *bn;
 	BUN nils;
 	BUN ncand;
 	struct canditer ci;
 	const bit *rv = r ? Tloc(r, 0) : NULL;
 
-	BATcheck(b, __func__, NULL);
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+
+	BATcheck(b, NULL);
 
 	ncand = canditer_init(&ci, b, s);
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 
@@ -5356,6 +5665,11 @@ BATcalccstsub(const ValRecord *v, BAT *b, BAT *s, BAT *r, int tp, bool abort_on_
 	bn->tkey = ncand <= 1;
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
+
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " s=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
 	return bn;
 }
@@ -5414,21 +5728,41 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 {									\
 	BUN nils = 0;							\
 									\
-	for (BUN k = 0; k < ci1->ncand; k++) {				\
-		oid x1 = canditer_next(ci1) - candoff1;			\
-		oid x2 = canditer_next(ci2) - candoff2;			\
-		BUN i = x1 * incr1;					\
-		BUN j = x2 * incr2;					\
-		if ((rv != NULL && !rv[i]) ||				\
-		    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
-			dst[k] = TYPE3##_nil;				\
-			nils++;						\
-		} else {						\
-			MUL##IF##4_WITH_CHECK(lft[i], rgt[j],		\
-					      TYPE3, dst[k],		\
-					      max,			\
-					      TYPE4,			\
-					      ON_OVERFLOW(TYPE1, TYPE2, "*")); \
+	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
+		for (BUN k = 0; k < ci1->ncand; k++) {			\
+			oid x1 = canditer_next_dense(ci1) - candoff1;	\
+			oid x2 = canditer_next_dense(ci2) - candoff2;	\
+			BUN i = x1 * incr1;				\
+			BUN j = x2 * incr2;				\
+			if ((rv != NULL && !rv[i]) ||			\
+			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
+				dst[k] = TYPE3##_nil;			\
+				nils++;					\
+			} else {					\
+				MUL##IF##4_WITH_CHECK(lft[i], rgt[j],	\
+						      TYPE3, dst[k],	\
+						      max,		\
+						      TYPE4,		\
+						      ON_OVERFLOW(TYPE1, TYPE2, "*")); \
+			}						\
+		}							\
+	} else {							\
+		for (BUN k = 0; k < ci1->ncand; k++) {			\
+			oid x1 = canditer_next(ci1) - candoff1;		\
+			oid x2 = canditer_next(ci2) - candoff2;		\
+			BUN i = x1 * incr1;				\
+			BUN j = x2 * incr2;				\
+			if ((rv != NULL && !rv[i]) ||			\
+			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
+				dst[k] = TYPE3##_nil;			\
+				nils++;					\
+			} else {					\
+				MUL##IF##4_WITH_CHECK(lft[i], rgt[j],	\
+						      TYPE3, dst[k],	\
+						      max,		\
+						      TYPE4,		\
+						      ON_OVERFLOW(TYPE1, TYPE2, "*")); \
+			}						\
 		}							\
 	}								\
 	return nils;							\
@@ -5448,23 +5782,45 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 	BUN nils = 0;							\
 	const bool couldoverflow = (max < (TYPE3) GDK_##TYPE1##_max * (TYPE3) GDK_##TYPE2##_max); \
 									\
-	for (BUN k = 0; k < ci1->ncand; k++) {				\
-		oid x1 = canditer_next(ci1) - candoff1;			\
-		oid x2 = canditer_next(ci2) - candoff2;			\
-		BUN i = x1 * incr1;					\
-		BUN j = x2 * incr2;					\
-		if ((rv != NULL && !rv[i]) ||				\
-		    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
-			dst[k] = TYPE3##_nil;				\
-			nils++;						\
-		} else if (couldoverflow) {				\
-			MUL##IF##4_WITH_CHECK(lft[i], rgt[j],		\
-					      TYPE3, dst[k],		\
-					      max,			\
-					      TYPE3,			\
-					      ON_OVERFLOW(TYPE1, TYPE2, "*")); \
-		} else {						\
-			dst[k] = (TYPE3) lft[i] * rgt[j];		\
+	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
+		for (BUN k = 0; k < ci1->ncand; k++) {			\
+			oid x1 = canditer_next_dense(ci1) - candoff1;	\
+			oid x2 = canditer_next_dense(ci2) - candoff2;	\
+			BUN i = x1 * incr1;				\
+			BUN j = x2 * incr2;				\
+			if ((rv != NULL && !rv[i]) ||			\
+			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
+				dst[k] = TYPE3##_nil;			\
+				nils++;					\
+			} else if (couldoverflow) {			\
+				MUL##IF##4_WITH_CHECK(lft[i], rgt[j],	\
+						      TYPE3, dst[k],	\
+						      max,		\
+						      TYPE3,		\
+						      ON_OVERFLOW(TYPE1, TYPE2, "*")); \
+			} else {					\
+				dst[k] = (TYPE3) lft[i] * rgt[j];	\
+			}						\
+		}							\
+	} else {							\
+		for (BUN k = 0; k < ci1->ncand; k++) {			\
+			oid x1 = canditer_next(ci1) - candoff1;		\
+			oid x2 = canditer_next(ci2) - candoff2;		\
+			BUN i = x1 * incr1;				\
+			BUN j = x2 * incr2;				\
+			if ((rv != NULL && !rv[i]) ||			\
+			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
+				dst[k] = TYPE3##_nil;			\
+				nils++;					\
+			} else if (couldoverflow) {			\
+				MUL##IF##4_WITH_CHECK(lft[i], rgt[j],	\
+						      TYPE3, dst[k],	\
+						      max,		\
+						      TYPE3,		\
+						      ON_OVERFLOW(TYPE1, TYPE2, "*")); \
+			} else {					\
+				dst[k] = (TYPE3) lft[i] * rgt[j];	\
+			}						\
 		}							\
 	}								\
 	return nils;							\
@@ -5487,20 +5843,39 @@ mul_##TYPE1##_##TYPE2##_hge(const TYPE1 *lft, int incr1,		\
 {									\
 	BUN nils = 0;							\
 									\
-	for (BUN k = 0; k < ci1->ncand; k++) {				\
-		oid x1 = canditer_next(ci1) - candoff1;			\
-		oid x2 = canditer_next(ci2) - candoff2;			\
-		BUN i = x1 * incr1;					\
-		BUN j = x2 * incr2;					\
-		if ((rv != NULL && !rv[i]) ||				\
-		    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
-			dst[k] = hge_nil;				\
-			nils++;						\
-		} else {						\
-			HGEMUL_CHECK(lft[i], rgt[j],			\
-				     dst[k],				\
-				     max,				\
-				     ON_OVERFLOW(TYPE1, TYPE2, "*"));	\
+	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
+		for (BUN k = 0; k < ci1->ncand; k++) {			\
+			oid x1 = canditer_next_dense(ci1) - candoff1;	\
+			oid x2 = canditer_next_dense(ci2) - candoff2;	\
+			BUN i = x1 * incr1;				\
+			BUN j = x2 * incr2;				\
+			if ((rv != NULL && !rv[i]) ||			\
+			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
+				dst[k] = hge_nil;			\
+				nils++;					\
+			} else {					\
+				HGEMUL_CHECK(lft[i], rgt[j],		\
+					     dst[k],			\
+					     max,			\
+					     ON_OVERFLOW(TYPE1, TYPE2, "*")); \
+			}						\
+		}							\
+	} else {							\
+		for (BUN k = 0; k < ci1->ncand; k++) {			\
+			oid x1 = canditer_next(ci1) - candoff1;		\
+			oid x2 = canditer_next(ci2) - candoff2;		\
+			BUN i = x1 * incr1;				\
+			BUN j = x2 * incr2;				\
+			if ((rv != NULL && !rv[i]) ||			\
+			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
+				dst[k] = hge_nil;			\
+				nils++;					\
+			} else {					\
+				HGEMUL_CHECK(lft[i], rgt[j],		\
+					     dst[k],			\
+					     max,			\
+					     ON_OVERFLOW(TYPE1, TYPE2, "*")); \
+			}						\
 		}							\
 	}								\
 	return nils;							\
@@ -5521,20 +5896,39 @@ mul_##TYPE1##_##TYPE2##_lng(const TYPE1 *lft, int incr1,		\
 {									\
 	BUN nils = 0;							\
 									\
-	for (BUN k = 0; k < ci1->ncand; k++) {				\
-		oid x1 = canditer_next(ci1) - candoff1;			\
-		oid x2 = canditer_next(ci2) - candoff2;			\
-		BUN i = x1 * incr1;					\
-		BUN j = x2 * incr2;					\
-		if ((rv != NULL && !rv[i]) ||				\
-		    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
-			dst[k] = lng_nil;				\
-			nils++;						\
-		} else {						\
-			LNGMUL_CHECK(lft[i], rgt[j],			\
-				     dst[k],				\
-				     max,				\
-				     ON_OVERFLOW(TYPE1, TYPE2, "*"));	\
+	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
+		for (BUN k = 0; k < ci1->ncand; k++) {			\
+			oid x1 = canditer_next_dense(ci1) - candoff1;	\
+			oid x2 = canditer_next_dense(ci2) - candoff2;	\
+			BUN i = x1 * incr1;				\
+			BUN j = x2 * incr2;				\
+			if ((rv != NULL && !rv[i]) ||			\
+			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
+				dst[k] = lng_nil;			\
+				nils++;					\
+			} else {					\
+				LNGMUL_CHECK(lft[i], rgt[j],		\
+					     dst[k],			\
+					     max,			\
+					     ON_OVERFLOW(TYPE1, TYPE2, "*")); \
+			}						\
+		}							\
+	} else {							\
+		for (BUN k = 0; k < ci1->ncand; k++) {			\
+			oid x1 = canditer_next(ci1) - candoff1;		\
+			oid x2 = canditer_next(ci2) - candoff2;		\
+			BUN i = x1 * incr1;				\
+			BUN j = x2 * incr2;				\
+			if ((rv != NULL && !rv[i]) ||			\
+			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
+				dst[k] = lng_nil;			\
+				nils++;					\
+			} else {					\
+				LNGMUL_CHECK(lft[i], rgt[j],		\
+					     dst[k],			\
+					     max,			\
+					     ON_OVERFLOW(TYPE1, TYPE2, "*")); \
+			}						\
 		}							\
 	}								\
 	return nils;							\
@@ -5551,27 +5945,50 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 				struct canditer *restrict ci2,		\
 				const bit *restrict rv,			\
 				oid candoff1, oid candoff2,		\
-				bool abort_on_error)	\
+				bool abort_on_error)			\
 {									\
 	BUN nils = 0;							\
 									\
-	for (BUN k = 0; k < ci1->ncand; k++) {				\
-		oid x1 = canditer_next(ci1) - candoff1;			\
-		oid x2 = canditer_next(ci2) - candoff2;			\
-		BUN i = x1 * incr1;					\
-		BUN j = x2 * incr2;					\
-		if ((rv != NULL && !rv[i]) ||				\
-		    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
-			dst[k] = TYPE3##_nil;				\
-			nils++;						\
-		} else {						\
-			/* only check for overflow, not for underflow */ \
-			dst[k] = (TYPE3) (lft[i] * rgt[j]);		\
-			if (isinf(dst[k]) || ABSOLUTE(dst[k]) > max) {	\
-				if (abort_on_error)			\
-					ON_OVERFLOW(TYPE1, TYPE2, "*");	\
+	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
+		for (BUN k = 0; k < ci1->ncand; k++) {			\
+			oid x1 = canditer_next_dense(ci1) - candoff1;	\
+			oid x2 = canditer_next_dense(ci2) - candoff2;	\
+			BUN i = x1 * incr1;				\
+			BUN j = x2 * incr2;				\
+			if ((rv != NULL && !rv[i]) ||			\
+			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
+			} else {					\
+				/* only check for overflow, not for underflow */ \
+				dst[k] = (TYPE3) (lft[i] * rgt[j]);	\
+				if (isinf(dst[k]) || ABSOLUTE(dst[k]) > max) { \
+					if (abort_on_error)		\
+						ON_OVERFLOW(TYPE1, TYPE2, "*");	\
+					dst[k] = TYPE3##_nil;		\
+					nils++;				\
+				}					\
+			}						\
+		}							\
+	} else {							\
+		for (BUN k = 0; k < ci1->ncand; k++) {			\
+			oid x1 = canditer_next(ci1) - candoff1;		\
+			oid x2 = canditer_next(ci2) - candoff2;		\
+			BUN i = x1 * incr1;				\
+			BUN j = x2 * incr2;				\
+			if ((rv != NULL && !rv[i]) ||			\
+			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
+				dst[k] = TYPE3##_nil;			\
+				nils++;					\
+			} else {					\
+				/* only check for overflow, not for underflow */ \
+				dst[k] = (TYPE3) (lft[i] * rgt[j]);	\
+				if (isinf(dst[k]) || ABSOLUTE(dst[k]) > max) { \
+					if (abort_on_error)		\
+						ON_OVERFLOW(TYPE1, TYPE2, "*");	\
+					dst[k] = TYPE3##_nil;		\
+					nils++;				\
+				}					\
 			}						\
 		}							\
 	}								\
@@ -7129,14 +7546,17 @@ BATcalcmuldivmod(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r, int tp,
 				       oid, oid, bool, const char *),
 		 const char *func)
 {
+	lng t0 = 0;
 	BAT *bn;
 	BUN nils;
 	BUN ncand;
 	struct canditer ci1, ci2;
 	const bit *rv = r ? Tloc(r, 0) : NULL;
 
-	BATcheck(b1, func, NULL);
-	BATcheck(b2, func, NULL);
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+
+	BATcheck(b1, NULL);
+	BATcheck(b2, NULL);
 
 	ncand = canditer_init(&ci1, b1, s1);
 	if (canditer_init(&ci2, b2, s2) != ncand ||
@@ -7145,8 +7565,7 @@ BATcalcmuldivmod(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r, int tp,
 		return NULL;
 	}
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 
@@ -7175,6 +7594,13 @@ BATcalcmuldivmod(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r, int tp,
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
+	TRC_DEBUG(ALGO, "%s: b1=" ALGOBATFMT "b2=" ALGOBATFMT
+		  " s1=" ALGOOPTBATFMT " s2=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  func, ALGOBATPAR(b1), ALGOBATPAR(b2),
+		  ALGOOPTBATPAR(s1), ALGOOPTBATPAR(s2),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
+
 	return bn;
 }
 
@@ -7188,18 +7614,20 @@ BATcalcmul(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r, int tp, bool abort_on_err
 BAT *
 BATcalcmulcst(BAT *b, const ValRecord *v, BAT *s, BAT *r, int tp, bool abort_on_error)
 {
+	lng t0 = 0;
 	BAT *bn;
 	BUN nils;
 	BUN ncand;
 	struct canditer ci;
 	const bit *rv = r ? Tloc(r, 0) : NULL;
 
-	BATcheck(b, __func__, NULL);
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+
+	BATcheck(b, NULL);
 
 	ncand = canditer_init(&ci, b, s);
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 
@@ -7246,24 +7674,31 @@ BATcalcmulcst(BAT *b, const ValRecord *v, BAT *s, BAT *r, int tp, bool abort_on_
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " s=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
+
 	return bn;
 }
 
 BAT *
 BATcalccstmul(const ValRecord *v, BAT *b, BAT *s, BAT *r, int tp, bool abort_on_error)
 {
+	lng t0 = 0;
 	BAT *bn;
 	BUN nils;
 	BUN ncand;
 	struct canditer ci;
 	const bit *rv = r ? Tloc(r, 0) : NULL;
 
-	BATcheck(b, __func__, NULL);
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+
+	BATcheck(b, NULL);
 
 	ncand = canditer_init(&ci, b, s);
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 
@@ -7310,6 +7745,11 @@ BATcalccstmul(const ValRecord *v, BAT *b, BAT *s, BAT *r, int tp, bool abort_on_
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " s=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
+
 	return bn;
 }
 
@@ -7344,27 +7784,54 @@ div_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 {									\
 	BUN nils = 0;							\
 									\
-	for (BUN k = 0; k < ci1->ncand; k++) {				\
-		oid x1 = canditer_next(ci1) - candoff1;			\
-		oid x2 = canditer_next(ci2) - candoff2;			\
-		BUN i = x1 * incr1;					\
-		BUN j = x2 * incr2;					\
-		if ((rv != NULL && !rv[i]) ||				\
-		    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
-			dst[k] = TYPE3##_nil;				\
-			nils++;						\
-		} else if (rgt[j] == 0) {				\
-			if (abort_on_error)				\
-				return BUN_NONE + 1;			\
-			dst[k] = TYPE3##_nil;				\
-			nils++;						\
-		} else {						\
-			dst[k] = (TYPE3) (lft[i] / rgt[j]);		\
-			if (dst[k] < -max || dst[k] > max) {		\
-				if (abort_on_error)			\
-					return BUN_NONE + 2;		\
+	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
+		for (BUN k = 0; k < ci1->ncand; k++) {			\
+			oid x1 = canditer_next_dense(ci1) - candoff1;	\
+			oid x2 = canditer_next_dense(ci2) - candoff2;	\
+			BUN i = x1 * incr1;				\
+			BUN j = x2 * incr2;				\
+			if ((rv != NULL && !rv[i]) ||			\
+			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
+			} else if (rgt[j] == 0) {			\
+				if (abort_on_error)			\
+					return BUN_NONE + 1;		\
+				dst[k] = TYPE3##_nil;			\
+				nils++;					\
+			} else {					\
+				dst[k] = (TYPE3) (lft[i] / rgt[j]);	\
+				if (dst[k] < -max || dst[k] > max) {	\
+					if (abort_on_error)		\
+						return BUN_NONE + 2;	\
+					dst[k] = TYPE3##_nil;		\
+					nils++;				\
+				}					\
+			}						\
+		}							\
+	} else {							\
+		for (BUN k = 0; k < ci1->ncand; k++) {			\
+			oid x1 = canditer_next(ci1) - candoff1;		\
+			oid x2 = canditer_next(ci2) - candoff2;		\
+			BUN i = x1 * incr1;				\
+			BUN j = x2 * incr2;				\
+			if ((rv != NULL && !rv[i]) ||			\
+			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
+				dst[k] = TYPE3##_nil;			\
+				nils++;					\
+			} else if (rgt[j] == 0) {			\
+				if (abort_on_error)			\
+					return BUN_NONE + 1;		\
+				dst[k] = TYPE3##_nil;			\
+				nils++;					\
+			} else {					\
+				dst[k] = (TYPE3) (lft[i] / rgt[j]);	\
+				if (dst[k] < -max || dst[k] > max) {	\
+					if (abort_on_error)		\
+						return BUN_NONE + 2;	\
+					dst[k] = TYPE3##_nil;		\
+					nils++;				\
+				}					\
 			}						\
 		}							\
 	}								\
@@ -7384,33 +7851,66 @@ div_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 {									\
 	BUN nils = 0;							\
 									\
-	for (BUN k = 0; k < ci1->ncand; k++) {				\
-		oid x1 = canditer_next(ci1) - candoff1;			\
-		oid x2 = canditer_next(ci2) - candoff2;			\
-		BUN i = x1 * incr1;					\
-		BUN j = x2 * incr2;					\
-		if ((rv != NULL && !rv[i]) ||				\
-		    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
-			dst[k] = TYPE3##_nil;				\
-			nils++;						\
-		} else if (rgt[j] == 0 ||				\
-			   (ABSOLUTE(rgt[j]) < 1 &&			\
-			    GDK_##TYPE3##_max * ABSOLUTE(rgt[j]) < lft[i])) { \
-			/* only check for overflow, not for underflow */ \
-			if (abort_on_error) {				\
-				if (rgt[j] == 0)			\
-					return BUN_NONE + 1;		\
-				ON_OVERFLOW(TYPE1, TYPE2, "/");		\
-			}						\
-			dst[k] = TYPE3##_nil;				\
-			nils++;						\
-		} else {						\
-			dst[k] = (TYPE3) lft[i] / rgt[j];		\
-			if (dst[k] < -max || dst[k] > max) {		\
-				if (abort_on_error)			\
-					return BUN_NONE + 2;		\
+	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
+		for (BUN k = 0; k < ci1->ncand; k++) {			\
+			oid x1 = canditer_next_dense(ci1) - candoff1;	\
+			oid x2 = canditer_next_dense(ci2) - candoff2;	\
+			BUN i = x1 * incr1;				\
+			BUN j = x2 * incr2;				\
+			if ((rv != NULL && !rv[i]) ||			\
+			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
+			} else if (rgt[j] == 0 ||			\
+				   (ABSOLUTE(rgt[j]) < 1 &&		\
+				    GDK_##TYPE3##_max * ABSOLUTE(rgt[j]) < lft[i])) { \
+				/* only check for overflow, not for underflow */ \
+				if (abort_on_error) {			\
+					if (rgt[j] == 0)		\
+						return BUN_NONE + 1;	\
+					ON_OVERFLOW(TYPE1, TYPE2, "/");	\
+				}					\
+				dst[k] = TYPE3##_nil;			\
+				nils++;					\
+			} else {					\
+				dst[k] = (TYPE3) lft[i] / rgt[j];	\
+				if (dst[k] < -max || dst[k] > max) {	\
+					if (abort_on_error)		\
+						return BUN_NONE + 2;	\
+					dst[k] = TYPE3##_nil;		\
+					nils++;				\
+				}					\
+			}						\
+		}							\
+	} else {							\
+		for (BUN k = 0; k < ci1->ncand; k++) {			\
+			oid x1 = canditer_next(ci1) - candoff1;		\
+			oid x2 = canditer_next(ci2) - candoff2;		\
+			BUN i = x1 * incr1;				\
+			BUN j = x2 * incr2;				\
+			if ((rv != NULL && !rv[i]) ||			\
+			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
+				dst[k] = TYPE3##_nil;			\
+				nils++;					\
+			} else if (rgt[j] == 0 ||			\
+				   (ABSOLUTE(rgt[j]) < 1 &&		\
+				    GDK_##TYPE3##_max * ABSOLUTE(rgt[j]) < lft[i])) { \
+				/* only check for overflow, not for underflow */ \
+				if (abort_on_error) {			\
+					if (rgt[j] == 0)		\
+						return BUN_NONE + 1;	\
+					ON_OVERFLOW(TYPE1, TYPE2, "/");	\
+				}					\
+				dst[k] = TYPE3##_nil;			\
+				nils++;					\
+			} else {					\
+				dst[k] = (TYPE3) lft[i] / rgt[j];	\
+				if (dst[k] < -max || dst[k] > max) {	\
+					if (abort_on_error)		\
+						return BUN_NONE + 2;	\
+					dst[k] = TYPE3##_nil;		\
+					nils++;				\
+				}					\
 			}						\
 		}							\
 	}								\
@@ -9086,18 +9586,20 @@ BATcalcdiv(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r, int tp, bool abort_on_err
 BAT *
 BATcalcdivcst(BAT *b, const ValRecord *v, BAT *s, BAT *r, int tp, bool abort_on_error)
 {
+	lng t0 = 0;
 	BAT *bn;
 	BUN nils;
 	BUN ncand;
 	struct canditer ci;
 	const bit *rv = r ? Tloc(r, 0) : NULL;
 
-	BATcheck(b, __func__, NULL);
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+
+	BATcheck(b, NULL);
 
 	ncand = canditer_init(&ci, b, s);
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 
@@ -9147,24 +9649,31 @@ BATcalcdivcst(BAT *b, const ValRecord *v, BAT *s, BAT *r, int tp, bool abort_on_
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " s=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
+
 	return bn;
 }
 
 BAT *
 BATcalccstdiv(const ValRecord *v, BAT *b, BAT *s, BAT *r, int tp, bool abort_on_error)
 {
+	lng t0 = 0;
 	BAT *bn;
 	BUN nils;
 	BUN ncand;
 	struct canditer ci;
 	const bit *rv = r ? Tloc(r, 0) : NULL;
 
-	BATcheck(b, __func__, NULL);
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+
+	BATcheck(b, NULL);
 
 	ncand = canditer_init(&ci, b, s);
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 	if (ncand == 0)
@@ -9198,6 +9707,11 @@ BATcalccstdiv(const ValRecord *v, BAT *b, BAT *s, BAT *r, int tp, bool abort_on_
 	bn->tkey = ncand <= 1;
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
+
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " s=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
 	return bn;
 }
@@ -9233,22 +9747,43 @@ mod_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 {									\
 	BUN nils = 0;							\
 									\
-	for (BUN k = 0; k < ci1->ncand; k++) {				\
-		oid x1 = canditer_next(ci1) - candoff1;			\
-		oid x2 = canditer_next(ci2) - candoff2;			\
-		BUN i = x1 * incr1;					\
-		BUN j = x2 * incr2;					\
-		if ((rv != NULL && !rv[i]) ||				\
-		    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
-			dst[k] = TYPE3##_nil;				\
-			nils++;						\
-		} else if (rgt[j] == 0) {				\
-			if (abort_on_error)				\
-				return BUN_NONE + 1;			\
-			dst[k] = TYPE3##_nil;				\
-			nils++;						\
-		} else {						\
-			dst[k] = (TYPE3) lft[i] % rgt[j];		\
+	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
+		for (BUN k = 0; k < ci1->ncand; k++) {			\
+			oid x1 = canditer_next_dense(ci1) - candoff1;	\
+			oid x2 = canditer_next_dense(ci2) - candoff2;	\
+			BUN i = x1 * incr1;				\
+			BUN j = x2 * incr2;				\
+			if ((rv != NULL && !rv[i]) ||			\
+			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
+				dst[k] = TYPE3##_nil;			\
+				nils++;					\
+			} else if (rgt[j] == 0) {			\
+				if (abort_on_error)			\
+					return BUN_NONE + 1;		\
+				dst[k] = TYPE3##_nil;			\
+				nils++;					\
+			} else {					\
+				dst[k] = (TYPE3) lft[i] % rgt[j];	\
+			}						\
+		}							\
+	} else {							\
+		for (BUN k = 0; k < ci1->ncand; k++) {			\
+			oid x1 = canditer_next(ci1) - candoff1;		\
+			oid x2 = canditer_next(ci2) - candoff2;		\
+			BUN i = x1 * incr1;				\
+			BUN j = x2 * incr2;				\
+			if ((rv != NULL && !rv[i]) ||			\
+			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
+				dst[k] = TYPE3##_nil;			\
+				nils++;					\
+			} else if (rgt[j] == 0) {			\
+				if (abort_on_error)			\
+					return BUN_NONE + 1;		\
+				dst[k] = TYPE3##_nil;			\
+				nils++;					\
+			} else {					\
+				dst[k] = (TYPE3) lft[i] % rgt[j];	\
+			}						\
 		}							\
 	}								\
 	return nils;							\
@@ -9267,23 +9802,45 @@ mod_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 {									\
 	BUN nils = 0;							\
 									\
-	for (BUN k = 0; k < ci1->ncand; k++) {				\
-		oid x1 = canditer_next(ci1) - candoff1;			\
-		oid x2 = canditer_next(ci2) - candoff2;			\
-		BUN i = x1 * incr1;					\
-		BUN j = x2 * incr2;					\
-		if ((rv != NULL && !rv[i]) ||				\
-		    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
-			dst[k] = TYPE3##_nil;				\
-			nils++;						\
-		} else if (rgt[j] == 0) {				\
-			if (abort_on_error)				\
-				return BUN_NONE + 1;			\
-			dst[k] = TYPE3##_nil;				\
-			nils++;						\
-		} else {						\
-			dst[k] = (TYPE3) FUNC((TYPE3) lft[i],		\
-					      (TYPE3) rgt[j]);		\
+	if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {		\
+		for (BUN k = 0; k < ci1->ncand; k++) {			\
+			oid x1 = canditer_next_dense(ci1) - candoff1;	\
+			oid x2 = canditer_next_dense(ci2) - candoff2;	\
+			BUN i = x1 * incr1;				\
+			BUN j = x2 * incr2;				\
+			if ((rv != NULL && !rv[i]) ||			\
+			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
+				dst[k] = TYPE3##_nil;			\
+				nils++;					\
+			} else if (rgt[j] == 0) {			\
+				if (abort_on_error)			\
+					return BUN_NONE + 1;		\
+				dst[k] = TYPE3##_nil;			\
+				nils++;					\
+			} else {					\
+				dst[k] = (TYPE3) FUNC((TYPE3) lft[i],	\
+						      (TYPE3) rgt[j]);	\
+			}						\
+		}							\
+	} else {							\
+		for (BUN k = 0; k < ci1->ncand; k++) {			\
+			oid x1 = canditer_next(ci1) - candoff1;		\
+			oid x2 = canditer_next(ci2) - candoff2;		\
+			BUN i = x1 * incr1;				\
+			BUN j = x2 * incr2;				\
+			if ((rv != NULL && !rv[i]) ||			\
+			    is_##TYPE1##_nil(lft[i]) || is_##TYPE2##_nil(rgt[j])) { \
+				dst[k] = TYPE3##_nil;			\
+				nils++;					\
+			} else if (rgt[j] == 0) {			\
+				if (abort_on_error)			\
+					return BUN_NONE + 1;		\
+				dst[k] = TYPE3##_nil;			\
+				nils++;					\
+			} else {					\
+				dst[k] = (TYPE3) FUNC((TYPE3) lft[i],	\
+						      (TYPE3) rgt[j]);	\
+			}						\
 		}							\
 	}								\
 	return nils;							\
@@ -10573,18 +11130,20 @@ BATcalcmod(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r, int tp, bool abort_on_err
 BAT *
 BATcalcmodcst(BAT *b, const ValRecord *v, BAT *s, BAT *r, int tp, bool abort_on_error)
 {
+	lng t0 = 0;
 	BAT *bn;
 	BUN nils;
 	BUN ncand;
 	struct canditer ci;
 	const bit *rv = r ? Tloc(r, 0) : NULL;
 
-	BATcheck(b, __func__, NULL);
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+
+	BATcheck(b, NULL);
 
 	ncand = canditer_init(&ci, b, s);
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 
@@ -10616,24 +11175,31 @@ BATcalcmodcst(BAT *b, const ValRecord *v, BAT *s, BAT *r, int tp, bool abort_on_
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " s=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
+
 	return bn;
 }
 
 BAT *
 BATcalccstmod(const ValRecord *v, BAT *b, BAT *s, BAT *r, int tp, bool abort_on_error)
 {
+	lng t0 = 0;
 	BAT *bn;
 	BUN nils;
 	BUN ncand;
 	struct canditer ci;
 	const bit *rv = r ? Tloc(r, 0) : NULL;
 
-	BATcheck(b, __func__, NULL);
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+
+	BATcheck(b, NULL);
 
 	ncand = canditer_init(&ci, b, s);
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 	bn = COLnew(ci.hseq, tp, ncand, TRANSIENT);
@@ -10663,6 +11229,11 @@ BATcalccstmod(const ValRecord *v, BAT *b, BAT *s, BAT *r, int tp, bool abort_on_
 	bn->tkey = ncand <= 1;
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
+
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " s=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
 	return bn;
 }
@@ -10753,29 +11324,31 @@ xor_typeswitchloop(const void *lft, int incr1,
 BAT *
 BATcalcxor(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r)
 {
+	lng t0 = 0;
 	BAT *bn;
 	BUN nils;
 	BUN ncand;
 	struct canditer ci1, ci2;
 	const bit *rv = r ? Tloc(r, 0) : NULL;
 
-	BATcheck(b1, __func__, NULL);
-	BATcheck(b2, __func__, NULL);
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+
+	BATcheck(b1, NULL);
+	BATcheck(b2, NULL);
 
 	if (ATOMbasetype(b1->ttype) != ATOMbasetype(b2->ttype)) {
-		GDKerror("%s: incompatible input types.\n", __func__);
+		GDKerror("incompatible input types.\n");
 		return NULL;
 	}
 
 	ncand = canditer_init(&ci1, b1, s1);
 	if (canditer_init(&ci2, b2, s2) != ncand ||
 	    ci1.hseq != ci2.hseq) {
-		GDKerror("%s: inputs not the same size.\n", __func__);
+		GDKerror("inputs not the same size.\n");
 		return NULL;
 	}
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 
@@ -10808,29 +11381,38 @@ BATcalcxor(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r)
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
+	TRC_DEBUG(ALGO, "b1=" ALGOBATFMT "b2=" ALGOBATFMT
+		  " s1=" ALGOOPTBATFMT " s2=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b1), ALGOBATPAR(b2),
+		  ALGOOPTBATPAR(s1), ALGOOPTBATPAR(s2),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
+
 	return bn;
 }
 
 BAT *
 BATcalcxorcst(BAT *b, const ValRecord *v, BAT *s, BAT *r)
 {
+	lng t0 = 0;
 	BAT *bn;
 	BUN nils;
 	BUN ncand;
 	struct canditer ci;
 	const bit *rv = r ? Tloc(r, 0) : NULL;
 
-	BATcheck(b, __func__, NULL);
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+
+	BATcheck(b, NULL);
 
 	if (ATOMbasetype(b->ttype) != ATOMbasetype(v->vtype)) {
-		GDKerror("%s: incompatible input types.\n", __func__);
+		GDKerror("incompatible input types.\n");
 		return NULL;
 	}
 
 	ncand = canditer_init(&ci, b, s);
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 
@@ -10863,6 +11445,11 @@ BATcalcxorcst(BAT *b, const ValRecord *v, BAT *s, BAT *r)
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " s=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
+
 	return bn;
 }
 
@@ -10876,7 +11463,7 @@ gdk_return
 VARcalcxor(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 {
 	if (ATOMbasetype(lft->vtype) != ATOMbasetype(rgt->vtype)) {
-		GDKerror("VARcalccstxor: incompatible input types.\n");
+		GDKerror("incompatible input types.\n");
 		return GDK_FAIL;
 	}
 
@@ -10970,29 +11557,31 @@ or_typeswitchloop(const void *lft, int incr1,
 BAT *
 BATcalcor(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r)
 {
+	lng t0 = 0;
 	BAT *bn;
 	BUN nils;
 	BUN ncand;
 	struct canditer ci1, ci2;
 	const bit *rv = r ? Tloc(r, 0) : NULL;
 
-	BATcheck(b1, __func__, NULL);
-	BATcheck(b2, __func__, NULL);
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+
+	BATcheck(b1, NULL);
+	BATcheck(b2, NULL);
 
 	if (ATOMbasetype(b1->ttype) != ATOMbasetype(b2->ttype)) {
-		GDKerror("%s: incompatible input types.\n", __func__);
+		GDKerror("incompatible input types.\n");
 		return NULL;
 	}
 
 	ncand = canditer_init(&ci1, b1, s1);
 	if (canditer_init(&ci2, b2, s2) != ncand ||
 	    ci1.hseq != ci2.hseq) {
-		GDKerror("%s: inputs not the same size.\n", __func__);
+		GDKerror("inputs not the same size.\n");
 		return NULL;
 	}
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 
@@ -11023,30 +11612,45 @@ BATcalcor(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r)
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
+	TRC_DEBUG(ALGO, "b1=" ALGOBATFMT "b2=" ALGOBATFMT
+		  " s1=" ALGOOPTBATFMT " s2=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b1), ALGOBATPAR(b2),
+		  ALGOOPTBATPAR(s1), ALGOOPTBATPAR(s2),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
+
 	return bn;
 }
 
 BAT *
 BATcalcorcst(BAT *b, const ValRecord *v, BAT *s, BAT *r)
 {
+	lng t0 = 0;
 	BAT *bn;
 	BUN nils;
 	BUN ncand;
 	struct canditer ci;
 	const bit *rv = r ? Tloc(r, 0) : NULL;
 
-	BATcheck(b, __func__, NULL);
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+
+	BATcheck(b, NULL);
 
 	if (ATOMbasetype(b->ttype) != ATOMbasetype(v->vtype)) {
-		GDKerror("%s: incompatible input types.\n", __func__);
+		GDKerror("incompatible input types.\n");
 		return NULL;
 	}
 
 	ncand = canditer_init(&ci, b, s);
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
+	}
+
+	if (b->ttype == TYPE_bit && v->vtype == TYPE_bit && v->val.btval == 1) {
+		/* true OR anything (including NIL) equals true */
+		return BATconstant(ci.hseq, TYPE_bit, &(bit){1},
+				   ncand, TRANSIENT);
 	}
 
 	bn = COLnew(ci.hseq, b->ttype, ncand, TRANSIENT);
@@ -11078,6 +11682,11 @@ BATcalcorcst(BAT *b, const ValRecord *v, BAT *s, BAT *r)
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " s=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
+
 	return bn;
 }
 
@@ -11091,7 +11700,7 @@ gdk_return
 VARcalcor(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 {
 	if (ATOMbasetype(lft->vtype) != ATOMbasetype(rgt->vtype)) {
-		GDKerror("VARcalccstor: incompatible input types.\n");
+		GDKerror("incompatible input types.\n");
 		return GDK_FAIL;
 	}
 
@@ -11185,29 +11794,31 @@ and_typeswitchloop(const void *lft, int incr1,
 BAT *
 BATcalcand(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r)
 {
+	lng t0 = 0;
 	BAT *bn;
 	BUN nils;
 	BUN ncand;
 	struct canditer ci1, ci2;
 	const bit *rv = r ? Tloc(r, 0) : NULL;
 
-	BATcheck(b1, __func__, NULL);
-	BATcheck(b2, __func__, NULL);
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+
+	BATcheck(b1, NULL);
+	BATcheck(b2, NULL);
 
 	if (ATOMbasetype(b1->ttype) != ATOMbasetype(b2->ttype)) {
-		GDKerror("%s: incompatible input types.\n", __func__);
+		GDKerror("incompatible input types.\n");
 		return NULL;
 	}
 
 	ncand = canditer_init(&ci1, b1, s1);
 	if (canditer_init(&ci2, b2, s2) != ncand ||
 	    ci1.hseq != ci2.hseq) {
-		GDKerror("%s: inputs not the same size.\n", __func__);
+		GDKerror("inputs not the same size.\n");
 		return NULL;
 	}
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 
@@ -11238,30 +11849,45 @@ BATcalcand(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r)
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
+	TRC_DEBUG(ALGO, "b1=" ALGOBATFMT "b2=" ALGOBATFMT
+		  " s1=" ALGOOPTBATFMT " s2=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b1), ALGOBATPAR(b2),
+		  ALGOOPTBATPAR(s1), ALGOOPTBATPAR(s2),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
+
 	return bn;
 }
 
 BAT *
 BATcalcandcst(BAT *b, const ValRecord *v, BAT *s, BAT *r)
 {
+	lng t0 = 0;
 	BAT *bn;
 	BUN nils;
 	BUN ncand;
 	struct canditer ci;
 	const bit *rv = r ? Tloc(r, 0) : NULL;
 
-	BATcheck(b, __func__, NULL);
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+
+	BATcheck(b, NULL);
 
 	if (ATOMbasetype(b->ttype) != ATOMbasetype(v->vtype)) {
-		GDKerror("%s: incompatible input types.\n", __func__);
+		GDKerror("incompatible input types.\n");
 		return NULL;
 	}
 
 	ncand = canditer_init(&ci, b, s);
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
+	}
+
+	if (b->ttype == TYPE_bit && v->vtype == TYPE_bit && v->val.btval == 0) {
+		/* false AND anything (including NIL) equals false */
+		return BATconstant(ci.hseq, TYPE_bit, &(bit){0},
+				   ncand, TRANSIENT);
 	}
 
 	bn = COLnew(ci.hseq, b->ttype, ncand, TRANSIENT);
@@ -11293,6 +11919,11 @@ BATcalcandcst(BAT *b, const ValRecord *v, BAT *s, BAT *r)
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " s=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
+
 	return bn;
 }
 
@@ -11306,7 +11937,7 @@ gdk_return
 VARcalcand(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 {
 	if (ATOMbasetype(lft->vtype) != ATOMbasetype(rgt->vtype)) {
-		GDKerror("VARcalccstand: incompatible input types.\n");
+		GDKerror("incompatible input types.\n");
 		return GDK_FAIL;
 	}
 
@@ -11515,24 +12146,26 @@ lsh_typeswitchloop(const void *lft, int tp1, int incr1,
 BAT *
 BATcalclsh(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r, bool abort_on_error)
 {
+	lng t0 = 0;
 	BAT *bn;
 	BUN nils;
 	BUN ncand;
 	struct canditer ci1, ci2;
 	const bit *rv = r ? Tloc(r, 0) : NULL;
 
-	BATcheck(b1, __func__, NULL);
-	BATcheck(b2, __func__, NULL);
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+
+	BATcheck(b1, NULL);
+	BATcheck(b2, NULL);
 
 	ncand = canditer_init(&ci1, b1, s1);
 	if (canditer_init(&ci2, b2, s2) != ncand ||
 	    ci1.hseq != ci2.hseq) {
-		GDKerror("%s: inputs not the same size.\n", __func__);
+		GDKerror("inputs not the same size.\n");
 		return NULL;
 	}
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 
@@ -11561,24 +12194,33 @@ BATcalclsh(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r, bool abort_on_error)
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
+	TRC_DEBUG(ALGO, "b1=" ALGOBATFMT "b2=" ALGOBATFMT
+		  " s1=" ALGOOPTBATFMT " s2=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b1), ALGOBATPAR(b2),
+		  ALGOOPTBATPAR(s1), ALGOOPTBATPAR(s2),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
+
 	return bn;
 }
 
 BAT *
 BATcalclshcst(BAT *b, const ValRecord *v, BAT *s, BAT *r, bool abort_on_error)
 {
+	lng t0 = 0;
 	BAT *bn;
 	BUN nils;
 	BUN ncand;
 	struct canditer ci;
 	const bit *rv = r ? Tloc(r, 0) : NULL;
 
-	BATcheck(b, __func__, NULL);
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+
+	BATcheck(b, NULL);
 
 	ncand = canditer_init(&ci, b, s);
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 
@@ -11610,24 +12252,31 @@ BATcalclshcst(BAT *b, const ValRecord *v, BAT *s, BAT *r, bool abort_on_error)
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " s=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
+
 	return bn;
 }
 
 BAT *
 BATcalccstlsh(const ValRecord *v, BAT *b, BAT *s, BAT *r, bool abort_on_error)
 {
+	lng t0 = 0;
 	BAT *bn;
 	BUN nils;
 	BUN ncand;
 	struct canditer ci;
 	const bit *rv = r ? Tloc(r, 0) : NULL;
 
-	BATcheck(b, __func__, NULL);
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+
+	BATcheck(b, NULL);
 
 	ncand = canditer_init(&ci, b, s);
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 
@@ -11658,6 +12307,11 @@ BATcalccstlsh(const ValRecord *v, BAT *b, BAT *s, BAT *r, bool abort_on_error)
 	bn->tkey = ncand <= 1;
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
+
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " s=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
 	return bn;
 }
@@ -11856,24 +12510,26 @@ rsh_typeswitchloop(const void *lft, int tp1, int incr1,
 BAT *
 BATcalcrsh(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r, bool abort_on_error)
 {
+	lng t0 = 0;
 	BAT *bn;
 	BUN nils;
 	BUN ncand;
 	struct canditer ci1, ci2;
 	const bit *rv = r ? Tloc(r, 0) : NULL;
 
-	BATcheck(b1, __func__, NULL);
-	BATcheck(b2, __func__, NULL);
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+
+	BATcheck(b1, NULL);
+	BATcheck(b2, NULL);
 
 	ncand = canditer_init(&ci1, b1, s1);
 	if (canditer_init(&ci2, b2, s2) != ncand ||
 	    ci1.hseq != ci2.hseq) {
-		GDKerror("%s: inputs not the same size.\n", __func__);
+		GDKerror("inputs not the same size.\n");
 		return NULL;
 	}
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 
@@ -11902,24 +12558,33 @@ BATcalcrsh(BAT *b1, BAT *b2, BAT *s1, BAT *s2, BAT *r, bool abort_on_error)
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
+	TRC_DEBUG(ALGO, "b1=" ALGOBATFMT "b2=" ALGOBATFMT
+		  " s1=" ALGOOPTBATFMT " s2=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b1), ALGOBATPAR(b2),
+		  ALGOOPTBATPAR(s1), ALGOOPTBATPAR(s2),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
+
 	return bn;
 }
 
 BAT *
 BATcalcrshcst(BAT *b, const ValRecord *v, BAT *s, BAT *r, bool abort_on_error)
 {
+	lng t0 = 0;
 	BAT *bn;
 	BUN nils;
 	BUN ncand;
 	struct canditer ci;
 	const bit *rv = r ? Tloc(r, 0) : NULL;
 
-	BATcheck(b, __func__, NULL);
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+
+	BATcheck(b, NULL);
 
 	ncand = canditer_init(&ci, b, s);
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 
@@ -11951,24 +12616,31 @@ BATcalcrshcst(BAT *b, const ValRecord *v, BAT *s, BAT *r, bool abort_on_error)
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " s=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
+
 	return bn;
 }
 
 BAT *
 BATcalccstrsh(const ValRecord *v, BAT *b, BAT *s, BAT *r, bool abort_on_error)
 {
+	lng t0 = 0;
 	BAT *bn;
 	BUN nils;
 	BUN ncand;
 	struct canditer ci;
 	const bit *rv = r ? Tloc(r, 0) : NULL;
 
-	BATcheck(b, __func__, NULL);
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+
+	BATcheck(b, NULL);
 
 	ncand = canditer_init(&ci, b, s);
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 
@@ -11999,6 +12671,11 @@ BATcalccstrsh(const ValRecord *v, BAT *b, BAT *s, BAT *r, bool abort_on_error)
 	bn->tkey = ncand <= 1;
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
+
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " s=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
 	return bn;
 }
@@ -12246,7 +12923,7 @@ VARcalcrsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
 			   between3(v, hi, hinc, lo, linc, TYPE))	\
 		     : between3(v, lo, linc, hi, hinc, TYPE))))
 
-#define BETWEEN_LOOP_TYPE(TYPE)						\
+#define BETWEEN_LOOP_TYPE(TYPE, canditer_next)				\
 	do {								\
 		for (l = 0; l < ci->ncand; l++) {			\
 			x1 = canditer_next(ci) - seqbase1;		\
@@ -12301,27 +12978,48 @@ BATcalcbetween_intern(const void *src, int incr1, const char *hp1, int wd1,
 
 	switch (tp) {
 	case TYPE_bte:
-		BETWEEN_LOOP_TYPE(bte);
+		if (ci->tpe == cand_dense && cilo->tpe == cand_dense && cihi->tpe == cand_dense)
+			BETWEEN_LOOP_TYPE(bte, canditer_next_dense);
+		else
+			BETWEEN_LOOP_TYPE(bte, canditer_next);
 		break;
 	case TYPE_sht:
-		BETWEEN_LOOP_TYPE(sht);
+		if (ci->tpe == cand_dense && cilo->tpe == cand_dense && cihi->tpe == cand_dense)
+			BETWEEN_LOOP_TYPE(sht, canditer_next_dense);
+		else
+			BETWEEN_LOOP_TYPE(sht, canditer_next);
 		break;
 	case TYPE_int:
-		BETWEEN_LOOP_TYPE(int);
+		if (ci->tpe == cand_dense && cilo->tpe == cand_dense && cihi->tpe == cand_dense)
+			BETWEEN_LOOP_TYPE(int, canditer_next_dense);
+		else
+			BETWEEN_LOOP_TYPE(int, canditer_next);
 		break;
 	case TYPE_lng:
-		BETWEEN_LOOP_TYPE(lng);
+		if (ci->tpe == cand_dense && cilo->tpe == cand_dense && cihi->tpe == cand_dense)
+			BETWEEN_LOOP_TYPE(lng, canditer_next_dense);
+		else
+			BETWEEN_LOOP_TYPE(lng, canditer_next);
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
-		BETWEEN_LOOP_TYPE(hge);
+		if (ci->tpe == cand_dense && cilo->tpe == cand_dense && cihi->tpe == cand_dense)
+			BETWEEN_LOOP_TYPE(hge, canditer_next_dense);
+		else
+			BETWEEN_LOOP_TYPE(hge, canditer_next);
 		break;
 #endif
 	case TYPE_flt:
-		BETWEEN_LOOP_TYPE(flt);
+		if (ci->tpe == cand_dense && cilo->tpe == cand_dense && cihi->tpe == cand_dense)
+			BETWEEN_LOOP_TYPE(flt, canditer_next_dense);
+		else
+			BETWEEN_LOOP_TYPE(flt, canditer_next);
 		break;
 	case TYPE_dbl:
-		BETWEEN_LOOP_TYPE(dbl);
+		if (ci->tpe == cand_dense && cilo->tpe == cand_dense && cihi->tpe == cand_dense)
+			BETWEEN_LOOP_TYPE(dbl, canditer_next_dense);
+		else
+			BETWEEN_LOOP_TYPE(dbl, canditer_next);
 		break;
 	default:
 		assert(tp != TYPE_oid);
@@ -12376,29 +13074,31 @@ BAT *
 BATcalcbetween(BAT *b, BAT *lo, BAT *hi, BAT *s, BAT *slo, BAT *shi, BAT *r,
 	       bool symmetric, bool linc, bool hinc, bool nils_false, bool anti)
 {
+	lng t0 = 0;
 	BAT *bn;
 	BUN ncand;
 	struct canditer ci, cilo, cihi;
 	const bit *rv = r ? Tloc(r, 0) : NULL;
 
-	BATcheck(b, __func__, NULL);
-	BATcheck(lo, __func__, NULL);
-	BATcheck(hi, __func__, NULL);
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+
+	BATcheck(b, NULL);
+	BATcheck(lo, NULL);
+	BATcheck(hi, NULL);
 
 	ncand = canditer_init(&ci, b, s);
 	if (canditer_init(&cilo, lo, slo) != ncand ||
 	    ci.hseq != cilo.hseq) {
-		GDKerror("%s: inputs not the same size.\n", __func__);
+		GDKerror("inputs not the same size.\n");
 		return NULL;
 	}
 	if (canditer_init(&cihi, hi, shi) != ncand ||
 	    ci.hseq != cihi.hseq) {
-		GDKerror("%s: inputs not the same size.\n", __func__);
+		GDKerror("inputs not the same size.\n");
 		return NULL;
 	}
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 
@@ -12427,6 +13127,13 @@ BATcalcbetween(BAT *b, BAT *lo, BAT *hi, BAT *s, BAT *slo, BAT *shi, BAT *r,
 				   symmetric, anti, linc, hinc,
 				   nils_false, __func__);
 
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT "lo=" ALGOBATFMT "hi=" ALGOBATFMT
+		  " s=" ALGOOPTBATFMT "slo=" ALGOOPTBATFMT "shi=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b), ALGOBATPAR(lo), ALGOBATPAR(hi),
+		  ALGOOPTBATPAR(s), ALGOOPTBATPAR(slo), ALGOOPTBATPAR(shi),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
+
 	return bn;
 }
 
@@ -12436,37 +13143,47 @@ BATcalcbetweencstcst(BAT *b, const ValRecord *lo, const ValRecord *hi,
 		     bool symmetric, bool linc, bool hinc, bool nils_false,
 		     bool anti)
 {
+	lng t0 = 0;
+	BAT *bn;
 	struct canditer ci;
 	const bit *rv = r ? Tloc(r, 0) : NULL;
 
-	BATcheck(b, __func__, NULL);
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+
+	BATcheck(b, NULL);
 
 	if (ATOMbasetype(b->ttype) != ATOMbasetype(lo->vtype) ||
 	    ATOMbasetype(b->ttype) != ATOMbasetype(hi->vtype)) {
-		GDKerror("%s: incompatible input types.\n", __func__);
+		GDKerror("incompatible input types.\n");
 		return NULL;
 	}
 
 	canditer_init(&ci, b, s);
 	if (r && (BATcount(r) != ci.ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 
-	return BATcalcbetween_intern(Tloc(b, 0), 1,
-				     b->tvheap ? b->tvheap->base : NULL,
-				     b->twidth,
-				     VALptr(lo), 0, NULL, 0,
-				     VALptr(hi), 0, NULL, 0,
-				     b->ttype,
-				     &ci,
-				     &(struct canditer){.tpe=cand_dense, .ncand=ci.ncand},
-				     &(struct canditer){.tpe=cand_dense, .ncand=ci.ncand},
-				     rv,
-				     b->hseqbase, 0, 0, symmetric, anti,
-				     linc, hinc, nils_false,
-				     __func__);
+	bn = BATcalcbetween_intern(Tloc(b, 0), 1,
+				   b->tvheap ? b->tvheap->base : NULL,
+				   b->twidth,
+				   VALptr(lo), 0, NULL, 0,
+				   VALptr(hi), 0, NULL, 0,
+				   b->ttype,
+				   &ci,
+				   &(struct canditer){.tpe=cand_dense, .ncand=ci.ncand},
+				   &(struct canditer){.tpe=cand_dense, .ncand=ci.ncand},
+				   rv,
+				   b->hseqbase, 0, 0, symmetric, anti,
+				   linc, hinc, nils_false,
+				   __func__);
+
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " s=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
+
+	return bn;
 }
 
 BAT *
@@ -12474,49 +13191,61 @@ BATcalcbetweenbatcst(BAT *b, BAT *lo, const ValRecord *hi, BAT *s, BAT *slo, BAT
 		     bool symmetric, bool linc, bool hinc, bool nils_false,
 		     bool anti)
 {
+	lng t0 = 0;
+	BAT *bn;
 	struct canditer ci, cilo;
 	BUN ncand;
 	const bit *rv = r ? Tloc(r, 0) : NULL;
 
-	BATcheck(b, __func__, NULL);
-	BATcheck(lo, __func__, NULL);
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+
+	BATcheck(b, NULL);
+	BATcheck(lo, NULL);
 
 	if (checkbats(b, lo, __func__) != GDK_SUCCEED)
 		return NULL;
 
 	if (ATOMbasetype(b->ttype) != ATOMbasetype(hi->vtype)) {
-		GDKerror("%s: incompatible input types.\n", __func__);
+		GDKerror("incompatible input types.\n");
 		return NULL;
 	}
 
 	ncand = canditer_init(&ci, b, s);
 	if (canditer_init(&cilo, lo, slo) != ncand ||
 	    ci.hseq != cilo.hseq) {
-		GDKerror("%s: inputs not the same size.\n", __func__);
+		GDKerror("inputs not the same size.\n");
 		return NULL;
 	}
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 
-	return BATcalcbetween_intern(Tloc(b, 0), 1,
-				     b->tvheap ? b->tvheap->base : NULL,
-				     b->twidth,
-				     Tloc(lo, 0), 1,
-				     lo->tvheap ? lo->tvheap->base : NULL,
-				     lo->twidth,
-				     VALptr(hi), 0, NULL, 0,
-				     b->ttype,
-				     &ci,
-				     &cilo,
-				     &(struct canditer){.tpe=cand_dense, .ncand=ncand},
-				     rv,
-				     b->hseqbase, lo->hseqbase, 0,
-				     symmetric, anti,
-				     linc, hinc, nils_false,
-				     __func__);
+	bn = BATcalcbetween_intern(Tloc(b, 0), 1,
+				   b->tvheap ? b->tvheap->base : NULL,
+				   b->twidth,
+				   Tloc(lo, 0), 1,
+				   lo->tvheap ? lo->tvheap->base : NULL,
+				   lo->twidth,
+				   VALptr(hi), 0, NULL, 0,
+				   b->ttype,
+				   &ci,
+				   &cilo,
+				   &(struct canditer){.tpe=cand_dense, .ncand=ncand},
+				   rv,
+				   b->hseqbase, lo->hseqbase, 0,
+				   symmetric, anti,
+				   linc, hinc, nils_false,
+				   __func__);
+
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT "lo=" ALGOBATFMT
+		  " s=" ALGOOPTBATFMT "slo=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b), ALGOBATPAR(lo),
+		  ALGOOPTBATPAR(s), ALGOOPTBATPAR(slo),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
+
+	return bn;
 }
 
 BAT *
@@ -12524,46 +13253,58 @@ BATcalcbetweencstbat(BAT *b, const ValRecord *lo, BAT *hi, BAT *s, BAT *shi, BAT
 		     bool symmetric, bool linc, bool hinc, bool nils_false,
 		     bool anti)
 {
+	lng t0 = 0;
+	BAT *bn;
 	struct canditer ci, cihi;
 	BUN ncand;
 	const bit *rv = r ? Tloc(r, 0) : NULL;
 
-	BATcheck(b, __func__, NULL);
-	BATcheck(hi, __func__, NULL);
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+
+	BATcheck(b, NULL);
+	BATcheck(hi, NULL);
 
 	if (ATOMbasetype(b->ttype) != ATOMbasetype(lo->vtype)) {
-		GDKerror("%s: incompatible input types.\n", __func__);
+		GDKerror("incompatible input types.\n");
 		return NULL;
 	}
 
 	ncand = canditer_init(&ci, b, s);
 	if (canditer_init(&cihi, hi, shi) != ncand ||
 	    ci.hseq != cihi.hseq) {
-		GDKerror("%s: inputs not the same size.\n", __func__);
+		GDKerror("inputs not the same size.\n");
 		return NULL;
 	}
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 
-	return BATcalcbetween_intern(Tloc(b, 0), 1,
-				     b->tvheap ? b->tvheap->base : NULL,
-				     b->twidth,
-				     VALptr(lo), 0, NULL, 0,
-				     Tloc(hi, 0), 1,
-				     hi->tvheap ? hi->tvheap->base : NULL,
-				     hi->twidth,
-				     b->ttype,
-				     &ci,
-				     &(struct canditer){.tpe=cand_dense, .ncand=ncand},
-				     &cihi,
-				     rv,
-				     b->hseqbase, 0, hi->hseqbase,
-				     symmetric, anti,
-				     linc, hinc, nils_false,
-				     __func__);
+	bn = BATcalcbetween_intern(Tloc(b, 0), 1,
+				   b->tvheap ? b->tvheap->base : NULL,
+				   b->twidth,
+				   VALptr(lo), 0, NULL, 0,
+				   Tloc(hi, 0), 1,
+				   hi->tvheap ? hi->tvheap->base : NULL,
+				   hi->twidth,
+				   b->ttype,
+				   &ci,
+				   &(struct canditer){.tpe=cand_dense, .ncand=ncand},
+				   &cihi,
+				   rv,
+				   b->hseqbase, 0, hi->hseqbase,
+				   symmetric, anti,
+				   linc, hinc, nils_false,
+				   __func__);
+
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT "hi=" ALGOBATFMT
+		  " s=" ALGOOPTBATFMT "shi=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b), ALGOBATPAR(hi),
+		  ALGOOPTBATPAR(s), ALGOOPTBATPAR(shi),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
+
+	return bn;
 }
 
 gdk_return
@@ -12577,11 +13318,11 @@ VARcalcbetween(ValPtr ret, const ValRecord *v, const ValRecord *lo,
 
 	t = v->vtype;
 	if (t != lo->vtype || t != hi->vtype) {
-		GDKerror("VARcalcbetween: incompatible input types.\n");
+		GDKerror("incompatible input types.\n");
 		return GDK_FAIL;
 	}
 	if (!ATOMlinear(t)) {
-		GDKerror("VARcalcbetween: non-linear input type.\n");
+		GDKerror("non-linear input type.\n");
 		return GDK_FAIL;
 	}
 
@@ -12776,77 +13517,125 @@ BATcalcifthenelse_intern(BAT *b,
 BAT *
 BATcalcifthenelse(BAT *b, BAT *b1, BAT *b2)
 {
-	BATcheck(b, __func__, NULL);
-	BATcheck(b1, __func__, NULL);
-	BATcheck(b2, __func__, NULL);
+	lng t0 = 0;
+	BAT *bn;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+
+	BATcheck(b, NULL);
+	BATcheck(b1, NULL);
+	BATcheck(b2, NULL);
 
 	if (checkbats(b, b1, __func__) != GDK_SUCCEED)
 		return NULL;
 	if (checkbats(b, b2, __func__) != GDK_SUCCEED)
 		return NULL;
 	if (b->ttype != TYPE_bit || ATOMtype(b1->ttype) != ATOMtype(b2->ttype)) {
-		GDKerror("%s: \"then\" and \"else\" BATs have different types.\n", __func__);
+		GDKerror("\"then\" and \"else\" BATs have different types.\n");
 		return NULL;
 	}
-	return BATcalcifthenelse_intern(b,
-					Tloc(b1, 0), 1, b1->tvheap ? b1->tvheap->base : NULL, b1->twidth, b1->tnonil, b1->tseqbase,
-					Tloc(b2, 0), 1, b2->tvheap ? b2->tvheap->base : NULL, b2->twidth, b2->tnonil, b2->tseqbase,
-					b1->ttype);
+	bn = BATcalcifthenelse_intern(b,
+				      Tloc(b1, 0), 1, b1->tvheap ? b1->tvheap->base : NULL, b1->twidth, b1->tnonil, b1->tseqbase,
+				      Tloc(b2, 0), 1, b2->tvheap ? b2->tvheap->base : NULL, b2->twidth, b2->tnonil, b2->tseqbase,
+				      b1->ttype);
+
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " b1=" ALGOBATFMT " b2=" ALGOBATFMT
+		  " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b), ALGOBATPAR(b1), ALGOBATPAR(b2),
+		  ALGOOPTBATPAR(bn), GDKusec() - t0);
+
+	return bn;
 }
 
 BAT *
 BATcalcifthenelsecst(BAT *b, BAT *b1, const ValRecord *c2)
 {
-	BATcheck(b, __func__, NULL);
-	BATcheck(b1, __func__, NULL);
-	BATcheck(c2, __func__, NULL);
+	lng t0 = 0;
+	BAT *bn;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+
+	BATcheck(b, NULL);
+	BATcheck(b1, NULL);
+	BATcheck(c2, NULL);
 
 	if (checkbats(b, b1, __func__) != GDK_SUCCEED)
 		return NULL;
 	if (b->ttype != TYPE_bit || ATOMtype(b1->ttype) != ATOMtype(c2->vtype)) {
-		GDKerror("%s: \"then\" and \"else\" BATs have different types.\n", __func__);
+		GDKerror("\"then\" and \"else\" BATs have different types.\n");
 		return NULL;
 	}
-	return BATcalcifthenelse_intern(b,
-					Tloc(b1, 0), 1, b1->tvheap ? b1->tvheap->base : NULL, b1->twidth, b1->tnonil, b1->tseqbase,
-					VALptr(c2), 0, NULL, 0, !VALisnil(c2), 0,
-					b1->ttype);
+	bn = BATcalcifthenelse_intern(b,
+				      Tloc(b1, 0), 1, b1->tvheap ? b1->tvheap->base : NULL, b1->twidth, b1->tnonil, b1->tseqbase,
+				      VALptr(c2), 0, NULL, 0, !VALisnil(c2), 0,
+				      b1->ttype);
+
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " b1=" ALGOBATFMT
+		  " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b), ALGOBATPAR(b1),
+		  ALGOOPTBATPAR(bn), GDKusec() - t0);
+
+	return bn;
 }
 
 BAT *
 BATcalcifthencstelse(BAT *b, const ValRecord *c1, BAT *b2)
 {
-	BATcheck(b, __func__, NULL);
-	BATcheck(c1, __func__, NULL);
-	BATcheck(b2, __func__, NULL);
+	lng t0 = 0;
+	BAT *bn;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+
+	BATcheck(b, NULL);
+	BATcheck(c1, NULL);
+	BATcheck(b2, NULL);
 
 	if (checkbats(b, b2, __func__) != GDK_SUCCEED)
 		return NULL;
 	if (b->ttype != TYPE_bit || ATOMtype(b2->ttype) != ATOMtype(c1->vtype)) {
-		GDKerror("%s: \"then\" and \"else\" BATs have different types.\n", __func__);
+		GDKerror("\"then\" and \"else\" BATs have different types.\n");
 		return NULL;
 	}
-	return BATcalcifthenelse_intern(b,
-					VALptr(c1), 0, NULL, 0, !VALisnil(c1), 0,
-					Tloc(b2, 0), 1, b2->tvheap ? b2->tvheap->base : NULL, b2->twidth, b2->tnonil, b2->tseqbase,
-					c1->vtype);
+	bn = BATcalcifthenelse_intern(b,
+				      VALptr(c1), 0, NULL, 0, !VALisnil(c1), 0,
+				      Tloc(b2, 0), 1, b2->tvheap ? b2->tvheap->base : NULL, b2->twidth, b2->tnonil, b2->tseqbase,
+				      c1->vtype);
+
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " b2=" ALGOBATFMT
+		  " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b), ALGOBATPAR(b2),
+		  ALGOOPTBATPAR(bn), GDKusec() - t0);
+
+	return bn;
 }
 
 BAT *
 BATcalcifthencstelsecst(BAT *b, const ValRecord *c1, const ValRecord *c2)
 {
-	BATcheck(b, __func__, NULL);
-	BATcheck(c1, __func__, NULL);
-	BATcheck(c2, __func__, NULL);
+	lng t0 = 0;
+	BAT *bn;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+
+	BATcheck(b, NULL);
+	BATcheck(c1, NULL);
+	BATcheck(c2, NULL);
 
 	if (b->ttype != TYPE_bit || ATOMtype(c1->vtype) != ATOMtype(c2->vtype)) {
-		GDKerror("%s: \"then\" and \"else\" BATs have different types.\n", __func__);
+		GDKerror("\"then\" and \"else\" BATs have different types.\n");
 		return NULL;
 	}
-	return BATcalcifthenelse_intern(b,
-					VALptr(c1), 0, NULL, 0, !VALisnil(c1), 0,
-					VALptr(c2), 0, NULL, 0, !VALisnil(c2), 0,
-					c1->vtype);
+	bn = BATcalcifthenelse_intern(b,
+				      VALptr(c1), 0, NULL, 0, !VALisnil(c1), 0,
+				      VALptr(c2), 0, NULL, 0, !VALisnil(c2), 0,
+				      c1->vtype);
+
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT
+		  " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b),
+		  ALGOOPTBATPAR(bn), GDKusec() - t0);
+
+	return bn;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -13415,9 +14204,19 @@ convert_str_any(BAT *b, int tp, void *restrict dst,
 			    l < (ssize_t) strlen(s)) {
 				if (abort_on_error) {
 					GDKclrerr();
-					GDKerror("22018!conversion of string "
-						 "'%s' to type %s failed.\n",
-						 s, ATOMname(tp));
+					size_t sz = escapedStrlen(s, NULL, NULL, '\'');
+					char *bf = GDKmalloc(sz + 1);
+					if (bf) {
+						escapedStr(bf, s, sz + 1, NULL, NULL, '\'');
+						GDKerror("22018!conversion of string "
+							 "'%s' to type %s failed.\n",
+							 bf, ATOMname(tp));
+						GDKfree(bf);
+					} else {
+						GDKerror("22018!conversion of string "
+							 "to type %s failed.\n",
+							 ATOMname(tp));
+					}
 					return BUN_NONE;
 				}
 				memcpy(dst, nil, len);
@@ -13867,6 +14666,7 @@ convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 BAT *
 BATconvert(BAT *b, BAT *s, BAT *r, int tp, bool abort_on_error)
 {
+	lng t0 = 0;
 	BAT *bn;
 	BUN nils = 0;	/* in case no conversion defined */
 	struct canditer ci;
@@ -13877,15 +14677,16 @@ BATconvert(BAT *b, BAT *s, BAT *r, int tp, bool abort_on_error)
 	 * value */
 	bool reduce = false;
 
-	BATcheck(b, __func__, NULL);
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+
+	BATcheck(b, NULL);
 	if (tp == TYPE_void)
 		tp = TYPE_oid;
 
 	cnt = BATcount(b);
 	ncand = canditer_init(&ci, b, s);
 	if (r && (BATcount(r) != ncand || r->ttype != TYPE_bit)) {
-		GDKerror("%s: r bat not the correct size or of wrong type\n",
-			 __func__);
+		GDKerror("r bat not the correct size or of wrong type\n");
 		return NULL;
 	}
 	if (ncand == 0 || (b->ttype == TYPE_void && is_oid_nil(b->tseqbase)))
@@ -13900,7 +14701,7 @@ BATconvert(BAT *b, BAT *s, BAT *r, int tp, bool abort_on_error)
 		return COLcopy(b, tp, false, TRANSIENT);
 	}
 	if (ATOMstorage(tp) == TYPE_ptr) {
-		GDKerror("BATconvert: type combination (convert(%s)->%s) "
+		GDKerror("type combination (convert(%s)->%s) "
 			 "not supported.\n",
 			 ATOMname(b->ttype), ATOMname(tp));
 		return NULL;
@@ -13930,11 +14731,11 @@ BATconvert(BAT *b, BAT *s, BAT *r, int tp, bool abort_on_error)
 	if (nils >= BUN_NONE) {
 		BBPunfix(bn->batCacheid);
 		if (nils == BUN_NONE + 1) {
-			GDKerror("%s: type combination (convert(%s)->%s) "
-				 "not supported.\n", __func__,
+			GDKerror("type combination (convert(%s)->%s) "
+				 "not supported.\n",
 				 ATOMname(b->ttype), ATOMname(tp));
 		} else if (nils == BUN_NONE + 2) {
-			GDKerror("%s: could not insert value into BAT.\n", __func__);
+			GDKerror("could not insert value into BAT.\n");
 		}
 		return NULL;
 	}
@@ -13955,6 +14756,11 @@ BATconvert(BAT *b, BAT *s, BAT *r, int tp, bool abort_on_error)
 		bn->tkey = b->tkey && nils <= 1;
 	else
 		bn->tkey = false;
+
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT " s=" ALGOOPTBATFMT
+		  " r=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT " " LLFMT "usec\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+		  ALGOOPTBATPAR(r), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
 	return bn;
 }
@@ -14024,9 +14830,19 @@ VARconvert(ValPtr ret, const ValRecord *v, bool abort_on_error)
 				if (ATOMextern(ret->vtype))
 					GDKfree(p);
 				GDKclrerr();
-				GDKerror("22018!conversion of string "
-					 "'%s' to type %s failed.\n",
-					 v->val.sval, ATOMname(ret->vtype));
+				size_t sz = escapedStrlen(v->val.sval, NULL, NULL, '\'');
+				char *bf = GDKmalloc(sz + 1);
+				if (bf) {
+					escapedStr(bf, v->val.sval, sz + 1, NULL, NULL, '\'');
+					GDKerror("22018!conversion of string "
+						 "'%s' to type %s failed.\n",
+						 bf, ATOMname(ret->vtype));
+					GDKfree(bf);
+				} else {
+					GDKerror("22018!conversion of string "
+						 "to type %s failed.\n",
+						 ATOMname(ret->vtype));
+				}
 				nils = BUN_NONE;
 			} else {
 				/* now give value obtained to ret */
@@ -14045,7 +14861,7 @@ VARconvert(ValPtr ret, const ValRecord *v, bool abort_on_error)
 					      0, abort_on_error, &reduce);
 	}
 	if (nils == BUN_NONE + 1) {
-		GDKerror("VARconvert: conversion from type %s to type %s "
+		GDKerror("conversion from type %s to type %s "
 			 "unsupported.\n",
 			 ATOMname(v->vtype), ATOMname(ret->vtype));
 		return GDK_FAIL;

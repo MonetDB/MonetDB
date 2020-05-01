@@ -63,7 +63,7 @@ GDKfilepath(int farmid, const char *dir, const char *name, const char *ext)
 	assert(farmid == NOFARM ||
 	       (farmid >= 0 && farmid < MAXFARMS && BBPfarms[farmid].dirname));
 	if (MT_path_absolute(name)) {
-		GDKerror("GDKfilepath: name should not be absolute\n");
+		GDKerror("name should not be absolute\n");
 		return NULL;
 	}
 	if (dir && *dir == DIR_SEP)
@@ -105,7 +105,7 @@ GDKcreatedir(const char *dir)
 	assert(!GDKinmemory());
 	assert(MT_path_absolute(dir));
 	if (strlen(dir) >= FILENAME_MAX) {
-		GDKerror("GDKcreatedir: directory name too long\n");
+		GDKerror("directory name too long\n");
 		return GDK_FAIL;
 	}
 	strcpy(path, dir);	/* we know this fits (see above) */
@@ -119,12 +119,10 @@ GDKcreatedir(const char *dir)
 			mkdir(path, MONETDB_DIRMODE) < 0) {
 			if (errno != EEXIST) {
 				GDKsyserror("GDKcreatedir: cannot create directory %s\n", path);
-				TRC_DEBUG(IO_, "mkdir(%s) failed\n", path);
 				return GDK_FAIL;
 			}
 			if ((dirp = opendir(path)) == NULL) {
 				GDKsyserror("GDKcreatedir: %s not a directory\n", path);
-				TRC_DEBUG(IO_, "opendir(%s) failed\n", path);
 				return GDK_FAIL;
 			}
 			/* it's a directory, we can continue */
@@ -290,7 +288,6 @@ GDKunlink(int farmid, const char *dir, const char *nme, const char *ext)
 		/* if file already doesn't exist, we don't care */
 		if (remove(path) != 0 && errno != ENOENT) {
 			GDKsyserror("GDKunlink(%s)\n", path);
-			TRC_DEBUG(IO_, "Remove %s = -1\n", path);
 			GDKfree(path);
 			return GDK_FAIL;
 		}
@@ -311,7 +308,7 @@ GDKmove(int farmid, const char *dir1, const char *nme1, const char *ext1, const 
 	int ret, t0 = GDKms();
 
 	if ((nme1 == NULL) || (*nme1 == 0)) {
-		GDKerror("GDKmove: no file specified\n");
+		GDKerror("no file specified\n");
 		return GDK_FAIL;
 	}
 	path1 = GDKfilepath(farmid, dir1, nme1, ext1);
@@ -488,14 +485,14 @@ GDKsave(int farmid, const char *nme, const char *ext, void *buf, size_t size, st
 				/* do not tolerate corrupt heap images
 				 * (BBPrecover on restart will kill
 				 * them) */
-				GDKerror("GDKsave: could not remove: name=%s, "
+				GDKerror("could not remove: name=%s, "
 					 "ext=%s, mode %d\n", nme,
 					 ext ? ext : "", (int) mode);
 				return GDK_FAIL;
 			}
 		} else {
 			err = -1;
-			GDKerror("GDKsave: failed name=%s, ext=%s, mode %d\n",
+			GDKerror("failed name=%s, ext=%s, mode %d\n",
 				 nme, ext ? ext : "", (int) mode);
 		}
 	}
@@ -562,7 +559,7 @@ GDKload(int farmid, const char *nme, const char *ext, size_t size, size_t *maxsi
 			}
 			close(fd);
 		} else {
-			GDKerror("GDKload: cannot open: name=%s, ext=%s\n", nme, ext ? ext : "");
+			GDKerror("cannot open: name=%s, ext=%s\n", nme, ext ? ext : "");
 		}
 	} else {
 		char *path = NULL;
@@ -627,7 +624,7 @@ DESCload(int i)
 
 	tt = b->ttype;
 	if ((tt < 0 && (tt = ATOMindex(s = ATOMunknown_name(tt))) < 0)) {
-		GDKerror("DESCload: atom '%s' unknown, in BAT '%s'.\n", s, nme);
+		GDKerror("atom '%s' unknown, in BAT '%s'.\n", s, nme);
 		return NULL;
 	}
 	b->ttype = tt;
@@ -708,7 +705,7 @@ BATmsync(BAT *b)
 			arg->h = &b->theap;
 			BBPfix(b->batCacheid);
 #ifdef MSYNC_BACKGROUND
-			char name[16];
+			char name[MT_NAME_LEN];
 			snprintf(name, sizeof(name), "msync%d", b->batCacheid);
 			if (MT_create_thread(&tid, BATmsyncImplementation, arg,
 					     MT_THR_DETACHED, name) < 0) {
@@ -727,7 +724,7 @@ BATmsync(BAT *b)
 			arg->h = b->tvheap;
 			BBPfix(b->batCacheid);
 #ifdef MSYNC_BACKGROUND
-			char name[16];
+			char name[MT_NAME_LEN];
 			snprintf(name, sizeof(name), "msync%d", b->batCacheid);
 			if (MT_create_thread(&tid, BATmsyncImplementation, arg,
 					     MT_THR_DETACHED, name) < 0) {
@@ -757,14 +754,14 @@ BATsave(BAT *bd)
 	bool dosync = (BBP_status(b->batCacheid) & BBPPERSISTENT) != 0;
 
 	assert(!GDKinmemory());
-	BATcheck(b, "BATsave", GDK_FAIL);
+	BATcheck(b, GDK_FAIL);
 
 	assert(b->batCacheid > 0);
 	/* views cannot be saved, but make an exception for
 	 * force-remapped views */
 	if (isVIEW(b) &&
 	    !(b->theap.copied && b->theap.storage == STORE_MMAP)) {
-		GDKerror("BATsave: %s is a view on %s; cannot be saved\n", BATgetId(b), BBPname(VIEWtparent(b)));
+		GDKerror("%s is a view on %s; cannot be saved\n", BATgetId(b), BBPname(VIEWtparent(b)));
 		return GDK_FAIL;
 	}
 	if (!BATdirty(b)) {

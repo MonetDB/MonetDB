@@ -361,7 +361,7 @@ main(int argc, char *argv[])
 		{"pidfile",       strdup("merovingian.pid"), 0,                STR},
 
 		{"sockdir",       strdup("/tmp"),          0,                  STR},
-		{"listenaddr",    strdup("localhost"),     0,                  STR},
+		{"listenaddr",    strdup("localhost"),     0,                  LADDR},
 		{"port",          strdup(MERO_PORT),       atoi(MERO_PORT),    INT},
 		{"ipv6",          strdup("false"),         0,                  BOOLEAN},
 
@@ -373,6 +373,13 @@ main(int argc, char *argv[])
 
 		{"control",       strdup("false"),         0,                  BOOLEAN},
 		{"passphrase",    NULL,                    0,                  STR},
+
+		{"snapshotdir",   NULL,                    0,                  STR},
+#ifdef HAVE_LIBLZ4
+		{"snapshotcompression", strdup(".tar.lz4"), 0,                 STR},
+#else
+		{"snapshotcompression", strdup(".tar"),     0,                 STR},
+#endif
 
 		{ NULL,           NULL,                    0,                  INVALID}
 	};
@@ -563,7 +570,7 @@ main(int argc, char *argv[])
 #define MERO_EXIT(status)												\
 	do {																\
 		if (!merodontfork) {											\
-			int s = status;												\
+			char s = (char) status;										\
 			if (write(retfd, &s, 1) != 1 || close(retfd) != 0) {		\
 				Mfprintf(stderr, "could not write to parent\n");		\
 			}															\
@@ -585,7 +592,7 @@ main(int argc, char *argv[])
 #define MERO_EXIT_CLEAN(status)										\
 	do {															\
 		if (!merodontfork) {										\
-			int s = status;											\
+			char s = (char) status;									\
 			if (write(retfd, &s, 1) != 1 || close(retfd) != 0) {	\
 				Mfprintf(stderr, "could not write to parent\n");	\
 			}														\

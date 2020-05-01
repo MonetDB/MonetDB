@@ -15,7 +15,9 @@
 #include "rel_exp.h"
 #include "rel_prop.h"
 #include "rel_updates.h"
+#include "rel_select.h"
 #include "rel_remote.h"
+#include "sql_privileges.h"
 #include "mal_errors.h"		/* for SQLSTATE() */
 
 static void
@@ -811,6 +813,11 @@ read_exps(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos
 			if (!e && pexps) {
 				*pos = op;
 				e = exp_read(sql, lrel, rrel, pexps, r, pos, grp);
+				if (e) {
+					/* reset error */
+					sql->session->status = 0;
+					sql->errstr[0] = '\0';
+				}
 			}
 			if (!e)
 				return NULL;
@@ -1031,6 +1038,18 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 					res->scale = lt->scale + rt->scale;
 				}
 			}
+			/* fix scale of div function */
+                        if (f && f->func->fix_scale == SCALE_DIV && list_length(exps) == 2) {
+                                sql_arg *ares = f->func->res->h->data;
+
+                                if (strcmp(f->func->imp, "/") == 0 && ares->type.type->scale == SCALE_FIX) {
+                                        sql_subtype *res = f->res->h->data;
+                                        sql_subtype *lt = ops->h->data;
+                                        sql_subtype *rt = ops->h->next->data;
+
+                                        res->scale = lt->scale - rt->scale;
+                                }
+                        }
 
 			if (f)
 				exp = exp_op( sql->sa, exps, f);
@@ -1431,6 +1450,7 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 
 	if (r[*pos] == 'u' && r[*pos+1] == 'p' && r[*pos+2] == 'd') {
 		sql_table *t;
+		list *nexps = new_exp_list(sql->sa);
 
 		*pos += (int) strlen("update");
 		skipWS(r, pos);
@@ -1449,7 +1469,23 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 
 		if (!(exps = read_exps(sql, lrel, rrel, NULL, r, pos, '[', 0))) /* columns to be updated */
 			return NULL;
-		return rel_update(sql, lrel, rrel, NULL, exps);
+
+		for (node *n = rel->exps->h ; n ; n = n->next) {
+			sql_exp *e = (sql_exp *) n->data;
+			const char *cname = exp_name(e);
+
+			if (strcmp(cname, TID) != 0) { /* Skip TID column */
+				sql_column *c = mvc_bind_column(sql, t, cname);
+
+				if (!c)
+					return sql_error(sql, -1, SQLSTATE(42S22) "UPDATE: no such column '%s.%s'\n", t->base.name, cname);
+				if (!(e = update_check_column(sql, t, c, e, rrel, c->base.name, "UPDATE")))
+					return NULL;
+			}
+			list_append(nexps, e);
+		}
+
+		return rel_update(sql, lrel, rrel, NULL, nexps);
 	}
 
 	if (r[*pos] == 'd') {
@@ -1497,6 +1533,8 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 			if (isReplicaTable(t))
 				return sql_error(sql, -1, SQLSTATE(42000) "Replica tables not supported under remote connections\n");
 			rel = rel_basetable(sql, t, tname);
+			if (!table_privs(sql, t, PRIV_SELECT) && !(rel = rel_reduce_on_column_privileges(sql, rel, t)))
+				return sql_error(sql, -1, SQLSTATE(42000) "Access denied for %s to table '%s.%s'\n", stack_get_string(sql, "current_user"), s->base.name, tname);
 
 			if (!r[*pos])
 				return rel;

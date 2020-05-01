@@ -104,6 +104,25 @@ stdout of test 'session_vars` in directory 'sql/test` itself:
 % varchar # type
 % 7 # length
 [ "monetdb"	]
+#set test_str = 1;
+#select @test_nr;
+% . # table_name
+% single_value # name
+% int # type
+% 1 # length
+[ 1	]
+#select @test_str;
+% . # table_name
+% single_value # name
+% varchar # type
+% 1 # length
+[ "1"	]
+#select @test_boolean;
+% . # table_name
+% single_value # name
+% boolean # type
+% 5 # length
+[ true	]
 
 # 12:30:00 >  
 # 12:30:00 >  Done.

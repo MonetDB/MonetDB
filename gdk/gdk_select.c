@@ -44,8 +44,7 @@ virtualize(BAT *bn)
 	     * (const oid *) Tloc(bn, 0) + BATcount(bn) - 1 ==
 	     * (const oid *) Tloc(bn, BUNlast(bn) - 1))) {
 		/* column is dense, replace by virtual oid */
-		TRC_DEBUG(ALGO, "%s(bn=" ALGOBATFMT ",seq="OIDFMT")\n",
-			  __func__,
+		TRC_DEBUG(ALGO, ALGOBATFMT ",seq=" OIDFMT "\n",
 			  ALGOBATPAR(bn),
 			  BATcount(bn) > 0 ? * (const oid *) Tloc(bn, 0) : 0);
 		if (BATcount(bn) == 0)
@@ -99,10 +98,9 @@ hashselect(BAT *b, struct canditer *restrict ci, BAT *bn,
 	if (phash) {
 		BAT *b2 = BBPdescriptor(VIEWtparent(b));
 		*algo = "hashselect on parent";
-		TRC_DEBUG(ALGO, "%s(" ALGOBATFMT "): "
-			  "using parent(" ALGOBATFMT ") "
+		TRC_DEBUG(ALGO, ALGOBATFMT
+			  " using parent(" ALGOBATFMT ") "
 			  "for hash\n",
-			  __func__,
 			  ALGOBATPAR(b),
 			  ALGOBATPAR(b2));
 		d = (BUN) ((b->theap.base - b2->theap.base) >> b->tshift);
@@ -165,8 +163,8 @@ hashselect(BAT *b, struct canditer *restrict ci, BAT *bn,
 
 /* Imprints select code */
 
-/* inner check */
-#define impscheck(canditer_next,TEST,ADD)				\
+/* inner check, non-dense canditer */
+#define impscheck(TEST,ADD)						\
 	do {								\
 		const oid e = (oid) (i+limit-pr_off+hseq);		\
 		if (im[icnt] & mask) {					\
@@ -195,13 +193,43 @@ hashselect(BAT *b, struct canditer *restrict ci, BAT *bn,
 		}							\
 	} while (false)
 
+/* inner check, dense canditer */
+#define impscheck_dense(TEST,ADD)					\
+	do {								\
+		const oid e = (oid) (i+limit-pr_off+hseq);		\
+		if (im[icnt] & mask) {					\
+			if ((im[icnt] & ~innermask) == 0) {		\
+				while (p < ci->ncand && o < e) {	\
+					v = src[o-hseq];		\
+					ADD;				\
+					cnt++;				\
+					p++;				\
+					o = canditer_next_dense(ci);	\
+				}					\
+			} else {					\
+				while (p < ci->ncand && o < e) {	\
+					v = src[o-hseq];		\
+					ADD;				\
+					cnt += (TEST) != 0;		\
+					p++;				\
+					o = canditer_next_dense(ci);	\
+				}					\
+			}						\
+		} else {						\
+			BUN skip_sz = MIN(ci->ncand - p, e - o);	\
+			p += skip_sz;					\
+			o += skip_sz;					\
+			ci->next += skip_sz;				\
+		}							\
+	} while (false)
+
 /* main loop for imprints */
 /*
  * icnt is the iterator for imprints
  * dcnt is the iterator for dictionary entries
  * i    is the iterator for the values in imprints
  */
-#define impsloop(canditer_next,TEST,ADD)				\
+#define impsloop(ISDENSE,TEST,ADD)					\
 	do {								\
 		BUN dcnt, icnt, limit, i;				\
 		const cchdc_t *restrict d = (cchdc_t *) imprints->dict;	\
@@ -227,12 +255,12 @@ hashselect(BAT *b, struct canditer *restrict ci, BAT *bn,
 				for (;					\
 				     icnt < l && i <= w - hseq + pr_off; \
 				     icnt++) {				\
-					impscheck(canditer_next,TEST,ADD); \
+					impscheck##ISDENSE(TEST,ADD);	\
 					i += limit;			\
 				}					\
 			}						\
 			else {						\
-				impscheck(canditer_next,TEST,ADD);	\
+				impscheck##ISDENSE(TEST,ADD);		\
 				i += limit;				\
 				icnt++;					\
 			}						\
@@ -246,7 +274,7 @@ hashselect(BAT *b, struct canditer *restrict ci, BAT *bn,
 	} while (false)
 
 /* construct the mask */
-#define impsmask(canditer_next,TEST,B)					\
+#define impsmask(ISDENSE,TEST,B)					\
 	do {								\
 		const uint##B##_t *restrict im = (uint##B##_t *) imprints->imps; \
 		uint##B##_t mask = 0, innermask;			\
@@ -275,13 +303,13 @@ hashselect(BAT *b, struct canditer *restrict ci, BAT *bn,
 			innermask = IMPSunsetBit(B, innermask, 0);	\
 									\
 		if (BATcapacity(bn) < maximum) {			\
-			impsloop(canditer_next, TEST,			\
+			impsloop(ISDENSE, TEST,				\
 				 buninsfix(bn, dst, cnt, o,		\
 					   (BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p) \
 						  * (dbl) (ci->ncand-p) * 1.1 + 1024), \
 					   BATcapacity(bn) + ci->ncand - p, BUN_NONE)); \
 		} else {						\
-			impsloop(canditer_next, TEST, quickins(dst, cnt, o, bn)); \
+			impsloop(ISDENSE, TEST, quickins(dst, cnt, o, bn)); \
 		}							\
 	} while (false)
 
@@ -307,15 +335,15 @@ hashselect(BAT *b, struct canditer *restrict ci, BAT *bn,
 	} while (false)
 
 /* choose number of bits */
-#define bitswitch(canditer_next, TEST, TYPE)				\
+#define bitswitch(ISDENSE, TEST, TYPE)					\
 	do {								\
 		assert(imprints);					\
-		*algo = "imprints select " #TEST " (" #canditer_next ")"; \
+		*algo = "imprints select " #TEST " (canditer_next" #ISDENSE ")"; \
 		switch (imprints->bits) {				\
-		case 8:  checkMINMAX(8, TYPE); impsmask(canditer_next,TEST,8); break; \
-		case 16: checkMINMAX(16, TYPE); impsmask(canditer_next,TEST,16); break; \
-		case 32: checkMINMAX(32, TYPE); impsmask(canditer_next,TEST,32); break; \
-		case 64: checkMINMAX(64, TYPE); impsmask(canditer_next,TEST,64); break; \
+		case 8:  checkMINMAX(8, TYPE); impsmask(ISDENSE,TEST,8); break; \
+		case 16: checkMINMAX(16, TYPE); impsmask(ISDENSE,TEST,16); break; \
+		case 32: checkMINMAX(32, TYPE); impsmask(ISDENSE,TEST,32); break; \
+		case 64: checkMINMAX(64, TYPE); impsmask(ISDENSE,TEST,64); break; \
 		default: assert(0); break;				\
 		}							\
 	} while (false)
@@ -398,17 +426,17 @@ hashselect(BAT *b, struct canditer *restrict ci, BAT *bn,
 #define MAXVALUEflt	GDK_flt_max
 #define MAXVALUEdbl	GDK_dbl_max
 
-#define choose(NAME, canditer_next, TEST, TYPE)			\
-	do {							\
-		if (use_imprints) {				\
-			bitswitch(canditer_next, TEST, TYPE);	\
-		} else {					\
-			scanloop(NAME, canditer_next, TEST);	\
-		}						\
+#define choose(NAME, ISDENSE, TEST, TYPE)				\
+	do {								\
+		if (use_imprints) {					\
+			bitswitch(ISDENSE, TEST, TYPE);			\
+		} else {						\
+			scanloop(NAME, canditer_next##ISDENSE, TEST);	\
+		}							\
 	} while (false)
 
 /* definition of type-specific core scan select function */
-#define scanfunc(NAME, TYPE, canditer_next)				\
+#define scanfunc(NAME, TYPE, ISDENSE)					\
 static BUN								\
 NAME##_##TYPE(BAT *b, struct canditer *restrict ci, BAT *bn,		\
 	      const TYPE *tl, const TYPE *th, bool li, bool hi,		\
@@ -452,21 +480,21 @@ NAME##_##TYPE(BAT *b, struct canditer *restrict ci, BAT *bn,		\
 	if (equi) {							\
 		assert(!use_imprints);					\
 		if (lnil)						\
-			scanloop(NAME, canditer_next, is_##TYPE##_nil(v)); \
+			scanloop(NAME, canditer_next##ISDENSE, is_##TYPE##_nil(v)); \
 		else							\
-			scanloop(NAME, canditer_next, v == vl);		\
+			scanloop(NAME, canditer_next##ISDENSE, v == vl); \
 	} else if (anti) {						\
 		if (b->tnonil) {					\
-			choose(NAME, canditer_next, (v <= vl || v >= vh), TYPE); \
+			choose(NAME, ISDENSE, (v <= vl || v >= vh), TYPE); \
 		} else {						\
-			choose(NAME, canditer_next, !is_##TYPE##_nil(v) && (v <= vl || v >= vh), TYPE); \
+			choose(NAME, ISDENSE, !is_##TYPE##_nil(v) && (v <= vl || v >= vh), TYPE); \
 		}							\
 	} else if (b->tnonil && vl == minval) {				\
-		choose(NAME, canditer_next, v <= vh, TYPE);		\
+		choose(NAME, ISDENSE, v <= vh, TYPE);			\
 	} else if (vh == maxval) {					\
-		choose(NAME, canditer_next, v >= vl, TYPE);		\
+		choose(NAME, ISDENSE, v >= vl, TYPE);			\
 	} else {							\
-		choose(NAME, canditer_next, v >= vl && v <= vh, TYPE);	\
+		choose(NAME, ISDENSE, v >= vl && v <= vh, TYPE);	\
 	}								\
 	return cnt;							\
 }
@@ -633,23 +661,23 @@ fullscan_str(BAT *b, struct canditer *restrict ci, BAT *bn,
 
 /* scan select type switch */
 #ifdef HAVE_HGE
-#define scanfunc_hge(NAME, canditer_next)	\
-	scanfunc(NAME, hge, canditer_next)
+#define scanfunc_hge(NAME, ISDENSE)		\
+	scanfunc(NAME, hge, ISDENSE)
 #else
-#define scanfunc_hge(NAME, canditer_next)
+#define scanfunc_hge(NAME, ISDENSE)
 #endif
-#define scan_sel(NAME, canditer_next)		\
-	scanfunc(NAME, bte, canditer_next)	\
-	scanfunc(NAME, sht, canditer_next)	\
-	scanfunc(NAME, int, canditer_next)	\
-	scanfunc(NAME, flt, canditer_next)	\
-	scanfunc(NAME, dbl, canditer_next)	\
-	scanfunc(NAME, lng, canditer_next)	\
-	scanfunc_hge(NAME, canditer_next)
+#define scan_sel(NAME, ISDENSE)			\
+	scanfunc(NAME, bte, ISDENSE)		\
+	scanfunc(NAME, sht, ISDENSE)		\
+	scanfunc(NAME, int, ISDENSE)		\
+	scanfunc(NAME, flt, ISDENSE)		\
+	scanfunc(NAME, dbl, ISDENSE)		\
+	scanfunc(NAME, lng, ISDENSE)		\
+	scanfunc_hge(NAME, ISDENSE)
 
 /* scan/imprints select */
-scan_sel(fullscan, canditer_next)
-scan_sel(densescan, canditer_next_dense)
+scan_sel(fullscan, )
+scan_sel(densescan, _dense)
 
 
 static BAT *
@@ -1008,23 +1036,24 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	} vl, vh;
 	lng t0 = GDKusec();
 
-	BATcheck(b, "BATselect", NULL);
-	BATcheck(tl, "BATselect: tl value required", NULL);
+	BATcheck(b, NULL);
+	if (tl == NULL) {
+		GDKerror("tl value required");
+		return NULL;
+	}
 
 	if (s && !BATtordered(s)) {
-		GDKerror("BATselect: invalid argument: "
-			 "s must be sorted.\n");
+		GDKerror("invalid argument: s must be sorted.\n");
 		return NULL;
 	}
 
 	if (canditer_init(&ci, b, s) == 0) {
 		/* trivially empty result */
 		bn = BATdense(0, 0, 0);
-		TRC_DEBUG(ALGO, "%s(b=" ALGOBATFMT
-			  ",s=" ALGOOPTBATFMT ",anti=%d)=" ALGOOPTBATFMT
+		TRC_DEBUG(ALGO, "b=" ALGOBATFMT
+			  ",s=" ALGOOPTBATFMT ",anti=%d -> " ALGOOPTBATFMT
 			  " (" LLFMT " usec): "
 			  "trivially empty\n",
-			  __func__,
 			  ALGOBATPAR(b), ALGOOPTBATPAR(s), anti,
 			  ALGOOPTBATPAR(bn), GDKusec() - t0);
 		return bn;
@@ -1041,11 +1070,10 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		 * want an interval that's open on at least one
 		 * side */
 		bn = BATdense(0, 0, 0);
-		TRC_DEBUG(ALGO, "%s(b=" ALGOBATFMT
-			  ",s=" ALGOOPTBATFMT ",li=%d,hi=%d,anti=%d)=" ALGOOPTBATFMT
-			  " (" LLFMT " usec): "
+		TRC_DEBUG(ALGO, "b=" ALGOBATFMT
+			  ",s=" ALGOOPTBATFMT ",li=%d,hi=%d,anti=%d -> "
+			  ALGOOPTBATFMT " (" LLFMT " usec): "
 			  "empty interval\n",
-			  __func__,
 			  ALGOBATPAR(b), ALGOOPTBATPAR(s),
 			  li, hi, anti, ALGOOPTBATPAR(bn), GDKusec() - t0);
 		return bn;
@@ -1080,10 +1108,9 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			hval = ti;
 			lnil = ATOMcmp(t, tl, nil) == 0;
 			anti = false;
-			TRC_DEBUG(ALGO, "%s(b=" ALGOBATFMT
-				  ",s=" ALGOOPTBATFMT ",anti=%d): "
+			TRC_DEBUG(ALGO, "b=" ALGOBATFMT
+				  ",s=" ALGOOPTBATFMT ",anti=%d "
 				  "anti: switch ranges...\n",
-				  __func__,
 				  ALGOBATPAR(b), ALGOOPTBATPAR(s),
 				  anti);
 		} else if (!lval && !hval) {
@@ -1091,11 +1118,10 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			 * values are in range; we must return all
 			 * other non-nil values, i.e. nothing */
 			bn = BATdense(0, 0, 0);
-			TRC_DEBUG(ALGO, "%s(b=" ALGOBATFMT
-				  ",s=" ALGOOPTBATFMT ",anti=%d)=" ALGOOPTBATFMT
-				  " (" LLFMT " usec): "
+			TRC_DEBUG(ALGO, "b=" ALGOBATFMT
+				  ",s=" ALGOOPTBATFMT ",anti=%d -> "
+				  ALGOOPTBATFMT " (" LLFMT " usec): "
 				  "anti: nil-nil range, nonil\n",
-				  __func__,
 				  ALGOBATPAR(b), ALGOOPTBATPAR(s),
 				  anti, ALGOOPTBATPAR(bn), GDKusec() - t0);
 			return bn;
@@ -1107,10 +1133,9 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			anti = false;
 			lval = false;
 			hval = false;
-			TRC_DEBUG(ALGO, "%s(b=" ALGOBATFMT
-				  ",s=" ALGOOPTBATFMT ",anti=0): "
+			TRC_DEBUG(ALGO, "b=" ALGOBATFMT
+				  ",s=" ALGOOPTBATFMT ",anti=0 "
 				  "anti-nil...\n",
-				  __func__,
 				  ALGOBATPAR(b), ALGOOPTBATPAR(s));
 		} else if (equi) {
 			equi = false;
@@ -1121,11 +1146,10 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 				anti = false;
 				lval = false;
 				hval = false;
-				TRC_DEBUG(ALGO, "%s(b="
+				TRC_DEBUG(ALGO, "b="
 					  ALGOBATFMT ",s="
-					  ALGOOPTBATFMT ",anti=0): "
+					  ALGOOPTBATFMT ",anti=0 "
 					  "anti-nothing...\n",
-					  __func__,
 					  ALGOBATPAR(b),
 					  ALGOOPTBATPAR(s));
 			}
@@ -1136,10 +1160,9 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			anti = false;
 			lval = false;
 			hval = false;
-			TRC_DEBUG(ALGO, "%s(b=" ALGOBATFMT
-				  ",s=" ALGOOPTBATFMT ",anti=0): "
+			TRC_DEBUG(ALGO, "b=" ALGOBATFMT
+				  ",s=" ALGOOPTBATFMT ",anti=0 "
 				  "anti-nil...\n",
-				  __func__,
 				  ALGOBATPAR(b), ALGOOPTBATPAR(s));
 		}
 	}
@@ -1150,11 +1173,10 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	if (hval && (equi ? !li || !hi : ATOMcmp(t, tl, th) > 0)) {
 		/* empty range */
 		bn = BATdense(0, 0, 0);
-		TRC_DEBUG(ALGO, "%s(b=" ALGOBATFMT
-			  ",s=" ALGOOPTBATFMT ",anti=%d)=" ALGOOPTBATFMT
-			  " (" LLFMT " usec): "
+		TRC_DEBUG(ALGO, "b=" ALGOBATFMT
+			  ",s=" ALGOOPTBATFMT ",anti=%d -> " ALGOOPTBATFMT
+			  " (" LLFMT " usec) "
 			  "empty range\n",
-			  __func__,
 			  ALGOBATPAR(b), ALGOOPTBATPAR(s), anti,
 			  ALGOOPTBATPAR(bn), GDKusec() - t0);
 		return bn;
@@ -1162,11 +1184,10 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	if (equi && lnil && b->tnonil) {
 		/* return all nils, but there aren't any */
 		bn = BATdense(0, 0, 0);
-		TRC_DEBUG(ALGO, "%s(b=" ALGOBATFMT
-			  ",s=" ALGOOPTBATFMT ",anti=%d)=" ALGOOPTBATFMT
+		TRC_DEBUG(ALGO, "b=" ALGOBATFMT
+			  ",s=" ALGOOPTBATFMT ",anti=%d -> " ALGOOPTBATFMT
 			  " (" LLFMT " usec): "
 			  "equi-nil, nonil\n",
-			  __func__,
 			  ALGOBATPAR(b), ALGOOPTBATPAR(s), anti,
 			  ALGOOPTBATPAR(bn), GDKusec() - t0);
 		return bn;
@@ -1176,11 +1197,10 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		/* return all non-nils from a BAT that doesn't have
 		 * any: i.e. return everything */
 		bn = canditer_slice(&ci, 0, ci.ncand);
-		TRC_DEBUG(ALGO, "%s(b=" ALGOBATFMT
-			  ",s=" ALGOOPTBATFMT ",anti=%d)=" ALGOOPTBATFMT
+		TRC_DEBUG(ALGO, "b=" ALGOBATFMT
+			  ",s=" ALGOOPTBATFMT ",anti=%d -> " ALGOOPTBATFMT
 			  " (" LLFMT " usec): "
 			  "everything, nonil\n",
-			  __func__,
 			  ALGOBATPAR(b), ALGOOPTBATPAR(s), anti,
 			  ALGOOPTBATPAR(bn), GDKusec() - t0);
 		return bn;
@@ -1203,11 +1223,11 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 						 * left over for
 						 * anti */
 						bn = BATdense(0, 0, 0);
-						TRC_DEBUG(ALGO, "%s(b=" ALGOBATFMT
-							  ",s=" ALGOOPTBATFMT ",anti=%d)=" ALGOOPTBATFMT
+						TRC_DEBUG(ALGO, "b=" ALGOBATFMT
+							  ",s=" ALGOOPTBATFMT ",anti=%d -> " ALGOOPTBATFMT
 							  " (" LLFMT " usec): "
 							  "nothing, out of range\n",
-							  __func__, ALGOBATPAR(b), ALGOOPTBATPAR(s), anti, ALGOOPTBATPAR(bn), GDKusec() - t0);
+							  ALGOBATPAR(b), ALGOOPTBATPAR(s), anti, ALGOOPTBATPAR(bn), GDKusec() - t0);
 						return bn;
 					}
 				}
@@ -1223,12 +1243,11 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 				/* smallest value in BAT larger than
 				 * what we're looking for */
 				bn = BATdense(0, 0, 0);
-				TRC_DEBUG(ALGO, "%s(b="
+				TRC_DEBUG(ALGO, "b="
 					  ALGOBATFMT ",s="
-					  ALGOOPTBATFMT ",anti=%d)=" ALGOOPTBATFMT
+					  ALGOOPTBATFMT ",anti=%d -> " ALGOOPTBATFMT
 					  " (" LLFMT " usec): "
 					  "nothing, out of range\n",
-					  __func__,
 					  ALGOBATPAR(b),
 					  ALGOOPTBATPAR(s), anti,
 					  ALGOOPTBATPAR(bn), GDKusec() - t0);
@@ -1241,12 +1260,11 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 				/* largest value in BAT smaller than
 				 * what we're looking for */
 				bn = BATdense(0, 0, 0);
-				TRC_DEBUG(ALGO, "%s(b="
+				TRC_DEBUG(ALGO, "b="
 					  ALGOBATFMT ",s="
-					  ALGOOPTBATFMT ",anti=%d)=" ALGOOPTBATFMT
+					  ALGOOPTBATFMT ",anti=%d -> " ALGOOPTBATFMT
 					  " (" LLFMT " usec): "
 					  "nothing, out of range\n",
-					  __func__,
 					  ALGOBATPAR(b),
 					  ALGOOPTBATPAR(s), anti,
 					  ALGOOPTBATPAR(bn), GDKusec() - t0);
@@ -1503,9 +1521,8 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		}
 
 		bn = virtualize(bn);
-		TRC_DEBUG(ALGO, "%s(b=" ALGOBATFMT ",anti=%s)="
+		TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",anti=%s -> "
 			  ALGOOPTBATFMT " %s (" LLFMT " usec)\n",
-			  __func__,
 			  ALGOBATPAR(b), anti ? "true" : "false",
 			  ALGOOPTBATPAR(bn), algo,
 			  GDKusec() - t0);
@@ -1621,9 +1638,8 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	}
 
 	bn = virtualize(bn);
-	TRC_DEBUG(ALGO, "%s(b=" ALGOBATFMT ",s=" ALGOOPTBATFMT",anti=%s)=" ALGOOPTBATFMT
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT",anti=%s -> " ALGOOPTBATFMT
 		  " %s (" LLFMT " usec)\n",
-		  __func__,
 		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
 		  anti ? "true" : "false",
 		  ALGOOPTBATPAR(bn), algo,
@@ -1652,9 +1668,9 @@ BATthetaselect(BAT *b, BAT *s, const void *val, const char *op)
 {
 	const void *nil;
 
-	BATcheck(b, "BATthetaselect", NULL);
-	BATcheck(val, "BATthetaselect", NULL);
-	BATcheck(op, "BATthetaselect", NULL);
+	BATcheck(b, NULL);
+	BATcheck(val, NULL);
+	BATcheck(op, NULL);
 
 	nil = ATOMnilptr(b->ttype);
 	if (ATOMcmp(b->ttype, val, nil) == 0)
@@ -1691,7 +1707,7 @@ BATthetaselect(BAT *b, BAT *s, const void *val, const char *op)
 			return BATselect(b, s, val, nil, true, false, false);
 		}
 	}
-	GDKerror("BATthetaselect: unknown operator.\n");
+	GDKerror("unknown operator.\n");
 	return NULL;
 }
 
@@ -1759,11 +1775,10 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 	assert(rl->ttype != TYPE_void || !is_oid_nil(rl->tseqbase));
 	assert(rh->ttype != TYPE_void || !is_oid_nil(rh->tseqbase));
 
-	TRC_DEBUG(ALGO, "%s(l=" ALGOBATFMT ","
+	TRC_DEBUG(ALGO, "l=" ALGOBATFMT ","
 		  "rl=" ALGOBATFMT ",rh=" ALGOBATFMT ","
 		  "sl=" ALGOOPTBATFMT ",sr=" ALGOOPTBATFMT ","
-		  "anti=%s,symmetric=%s)\n",
-		  __func__,
+		  "anti=%s,symmetric=%s\n",
 		  ALGOBATPAR(l),
 		  ALGOBATPAR(rl),
 		  ALGOBATPAR(rh),
@@ -2180,7 +2195,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 			}
 			default:
 				ncnt = BUN_NONE;
-				GDKerror("BATrangejoin: unsupported type\n");
+				GDKerror("unsupported type\n");
 				assert(0);
 			}
 			if (ncnt == BUN_NONE)
@@ -2328,9 +2343,8 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 		if (BATtdense(r2))
 			r2->tseqbase = cnt > 0 ? dst2[0] : 0;
 	}
-	TRC_DEBUG(ALGO, "%s(l=%s,rl=%s,rh=%s)="
+	TRC_DEBUG(ALGO, "l=%s,rl=%s,rh=%s -> "
 		  "(" ALGOBATFMT "," ALGOOPTBATFMT ")\n",
-		  __func__,
 		  BATgetId(l), BATgetId(rl), BATgetId(rh),
 		  ALGOBATPAR(r1), ALGOOPTBATPAR(r2));
 	return GDK_SUCCEED;

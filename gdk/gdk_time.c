@@ -609,6 +609,24 @@ date_fromstr(const char *buf, size_t *len, date **d, bool external)
 	return parse_date(buf, *d, external);
 }
 
+static ssize_t
+do_date_tostr(char *buf, size_t len, const date *val, bool external)
+{
+	assert(len >= 15);
+	if (is_date_nil(*val)) {
+		if (external) {
+			strcpy(buf, "nil");
+			return 3;
+		}
+		strcpy(buf, str_nil);
+		return 1;
+	}
+	return (ssize_t) snprintf(buf, len, "%d-%02d-%02d",
+				  date_extract_year(*val),
+				  date_extract_month(*val),
+				  date_extract_day(*val));
+}
+
 ssize_t
 date_tostr(str *buf, size_t *len, const date *val, bool external)
 {
@@ -620,18 +638,7 @@ date_tostr(str *buf, size_t *len, const date *val, bool external)
 			return -1;
 		*len = 15;
 	}
-	if (is_date_nil(*val)) {
-		if (external) {
-			strcpy(*buf, "nil");
-			return 3;
-		}
-		strcpy(*buf, str_nil);
-		return 1;
-	}
-	return (ssize_t) snprintf(*buf, *len, "%d-%02d-%02d",
-				  date_extract_year(*val),
-				  date_extract_month(*val),
-				  date_extract_day(*val));
+	return do_date_tostr(*buf, *len, val, external);
 }
 
 static ssize_t
@@ -765,26 +772,23 @@ daytime_tz_fromstr(const char *buf, size_t *len, daytime **ret, bool external)
 	return (ssize_t) (s - buf);
 }
 
-ssize_t
-daytime_precision_tostr(str *buf, size_t *len, const daytime dt,
-			int precision, bool external)
+static ssize_t
+do_daytime_precision_tostr(char *buf, size_t len, const daytime dt,
+			   int precision, bool external)
 {
 	int hour, min, sec, usec;
 
 	if (precision < 0)
 		precision = 0;
-	if (*len < 10 + (size_t) precision || *buf == NULL) {
-		GDKfree(*buf);
-		*buf = (str) GDKmalloc(*len = 10 + (size_t) precision);
-		if( *buf == NULL)
-			return -1;
+	if (len < 10 + (size_t) precision) {
+		return -1;
 	}
 	if (is_daytime_nil(dt)) {
 		if (external) {
-			strcpy(*buf, "nil");
+			strcpy(buf, "nil");
 			return 3;
 		}
-		strcpy(*buf, str_nil);
+		strcpy(buf, str_nil);
 		return 1;
 	}
 	usec = (int) (dt % 1000000);
@@ -794,20 +798,35 @@ daytime_precision_tostr(str *buf, size_t *len, const daytime dt,
 	sec %= 60;
 
 	if (precision == 0)
-		return snprintf(*buf, *len, "%02d:%02d:%02d", hour, min, sec);
+		return snprintf(buf, len, "%02d:%02d:%02d", hour, min, sec);
 	else if (precision < 6) {
 		for (int i = 6; i > precision; i--)
 			usec /= 10;
-		return snprintf(*buf, *len, "%02d:%02d:%02d.%0*d", hour, min, sec, precision, usec);
+		return snprintf(buf, len, "%02d:%02d:%02d.%0*d", hour, min, sec, precision, usec);
 	} else {
-		ssize_t l = snprintf(*buf, *len, "%02d:%02d:%02d.%06d", hour, min, sec, usec);
+		ssize_t l = snprintf(buf, len, "%02d:%02d:%02d.%06d", hour, min, sec, usec);
 		while (precision > 6) {
 			precision--;
-			(*buf)[l++] = '0';
+			buf[l++] = '0';
 		}
-		(*buf)[l] = '\0';
+		buf[l] = '\0';
 		return l;
 	}
+}
+
+ssize_t
+daytime_precision_tostr(str *buf, size_t *len, const daytime dt,
+			int precision, bool external)
+{
+	if (precision < 0)
+		precision = 0;
+	if (*len < 10 + (size_t) precision || *buf == NULL) {
+		GDKfree(*buf);
+		*buf = (str) GDKmalloc(*len = 10 + (size_t) precision);
+		if( *buf == NULL)
+			return -1;
+	}
+	return do_daytime_precision_tostr(*buf, *len, dt, precision, external);
 }
 
 ssize_t
@@ -915,8 +934,7 @@ ssize_t
 timestamp_precision_tostr(str *buf, size_t *len, timestamp val, int precision, bool external)
 {
 	ssize_t len1, len2;
-	size_t big = 128;
-	char buf1[128], buf2[128], *s = *buf, *s1 = buf1, *s2 = buf2;
+	char buf1[128], buf2[128];
 	date dt;
 	daytime tm;
 
@@ -937,8 +955,9 @@ timestamp_precision_tostr(str *buf, size_t *len, timestamp val, int precision, b
 
 	dt = ts_date(val);
 	tm = ts_time(val);
-	len1 = date_tostr(&s1, &big, &dt, false);
-	len2 = daytime_precision_tostr(&s2, &big, tm, precision, false);
+	len1 = do_date_tostr(buf1, sizeof(buf1), &dt, false);
+	len2 = do_daytime_precision_tostr(buf2, sizeof(buf2), tm,
+					  precision, false);
 	if (len1 < 0 || len2 < 0)
 		return -1;
 
@@ -948,13 +967,7 @@ timestamp_precision_tostr(str *buf, size_t *len, timestamp val, int precision, b
 		if( *buf == NULL)
 			return -1;
 	}
-	s = *buf;
-	strcpy(s, buf1);
-	s += len1;
-	*s++ = ' ';
-	strcpy(s, buf2);
-	s += len2;
-	return (ssize_t) (s - *buf);
+	return (ssize_t) strconcat_len(*buf, *len, buf1, " ", buf2, NULL);
 }
 
 ssize_t

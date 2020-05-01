@@ -214,4 +214,31 @@ select
  on (ref_1.bb is null);
  -- empty result set
 
+select
+  subq_0.c2 as c0, 
+  subq_0.c2 as c1, 
+  subq_0.c3 as c2, 
+  subq_0.c1 as c3 from 
+  (select distinct 
+      ref_0.col1 as c0, 
+      ref_0.col1 as c1, 
+      ref_0.col0 as c2, 
+      ref_0.col2 as c3
+      from 
+        tab1 as ref_0
+      where ref_0.col1 is null
+      limit 140) as subq_0 where false limit 61;
+ -- empty result set
+
+select
+  1
+from tab1
+  left join tab2 as ref_5
+  right join (select 2) as subq_0
+  left join tab1 as ref_8
+  on (true)
+  on (exists (select ref_5.col0, ref_8.col2))
+  on (true);
+ -- 27 rows with 1
+
 ROLLBACK;

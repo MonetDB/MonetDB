@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 import os
 import pymonetdb
 
@@ -27,7 +25,7 @@ def query(conn, sql, result=False):
 create1 = """-- some comment
 START TRANSACTION;
 CREATE TABLE a(i integer);
-COPY 1 RECORDS INTO a FROM STDIN USING DELIMITERS ',','\\n','"';
+COPY 1 RECORDS INTO a FROM STDIN USING DELIMITERS ',',E'\\n','"';
 42
 COMMIT;
 """
@@ -35,10 +33,10 @@ COMMIT;
 create2 = """-- some comment
 START TRANSACTION;
 CREATE TABLE b(i integer);
-COPY 1 RECORDS INTO b FROM STDIN USING DELIMITERS ',','\\n','"';
+COPY 1 RECORDS INTO b FROM STDIN USING DELIMITERS ',',E'\\n','"';
 42
 CREATE TABLE c(i integer);
-COPY 2 RECORDS INTO c FROM STDIN USING DELIMITERS ',','\\n','"';
+COPY 2 RECORDS INTO c FROM STDIN USING DELIMITERS ',',E'\\n','"';
 42
 84
 COMMIT;

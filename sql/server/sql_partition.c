@@ -10,6 +10,7 @@
 
 #include "sql_partition.h"
 #include "rel_rel.h"
+#include "rel_exp.h"
 #include "sql_mvc.h"
 #include "sql_catalog.h"
 #include "sql_relation.h"
@@ -100,9 +101,14 @@ rel_find_table_columns(mvc* sql, sql_rel* rel, sql_table *t, list *cols)
 			exp_find_table_columns(sql, (sql_exp*) n->data, t, cols);
 
 	switch (rel->op) {
-		case op_table:
 		case op_basetable:
-		case op_ddl:
+		case op_truncate:
+			break;
+		case op_table:
+			if (IS_TABLE_PROD_FUNC(rel->flag) || rel->flag == TABLE_FROM_RELATION) {
+				if (rel->l)
+					rel_find_table_columns(sql, rel->l, t, cols);
+			}
 			break;
 		case op_join:
 		case op_left:
@@ -129,9 +135,19 @@ rel_find_table_columns(mvc* sql, sql_rel* rel, sql_table *t, list *cols)
 		case op_insert:
 		case op_update:
 		case op_delete:
-		case op_truncate:
 			if (rel->r)
 				rel_find_table_columns(sql, rel->r, t, cols);
+			break;
+		case op_ddl: 
+			if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq || rel->flag == ddl_alter_table || rel->flag == ddl_create_table || rel->flag == ddl_create_view) {
+				if (rel->l)
+					rel_find_table_columns(sql, rel->l, t, cols);
+			} else if (rel->flag == ddl_list || rel->flag == ddl_exception) {
+				if (rel->l)
+					rel_find_table_columns(sql, rel->l, t, cols);
+				if (rel->r)
+					rel_find_table_columns(sql, rel->r, t, cols);
+			}
 			break;
 	}
 }
@@ -217,50 +233,8 @@ exp_find_table_columns(mvc *sql, sql_exp *e, sql_table *t, list *cols)
 	}
 }
 
-static str
-find_expression_type(sql_exp *e, sql_subtype *tpe)
-{
-	switch (e->type) {
-		case e_convert: {
-			assert(list_length(e->r) == 2);
-			*tpe = *(sql_subtype *)list_fetch(e->r, 1);
-		} break;
-		case e_atom: {
-			if (e->l) {
-				atom *a = e->l;
-				*tpe = a->tpe;
-			} else if (e->r) {
-				*tpe = e->tpe;
-			} else if (e->f) {
-				throw(SQL,"sql.partition", SQLSTATE(42000) "List of values not allowed in expressions");
-			} else {
-				throw(SQL,"sql.partition", SQLSTATE(42000) "Variables/parameters are not allowed in expressions");
-			}
-		} break;
-		case e_func: {
-			sql_subfunc *f = e->f;
-			sql_func *func = f->func;
-			if (list_length(func->res) != 1)
-				throw(SQL,"sql.partition", SQLSTATE(42000) "An expression should return a single value");
-			*tpe = *(sql_subtype *)f->res->h->data;
-		} 	break;
-		case e_cmp: {
-			sql_subtype *other = sql_bind_localtype("bit");
-			*tpe = *other;
-		} break;
-		case e_column: {
-			*tpe = e->tpe;
-		} break;
-		case e_psm:
-			throw(SQL,"sql.partition", SQLSTATE(42000) "PSM calls are not allowed in expressions");
-		case e_aggr:
-			throw(SQL,"sql.partition", SQLSTATE(42000) "Aggregation functions are not allowed in expressions");
-	}
-	return NULL;
-}
-
 str
-bootstrap_partition_expression(mvc* sql, sql_allocator *rsa, sql_table *mt, int instantiate)
+bootstrap_partition_expression(mvc *sql, sql_allocator *rsa, sql_table *mt, int instantiate)
 {
 	sql_exp *exp;
 	char *query, *msg = NULL;
@@ -288,9 +262,7 @@ bootstrap_partition_expression(mvc* sql, sql_allocator *rsa, sql_table *mt, int 
 		mt->part.pexp->cols = sa_list(rsa);
 	exp_find_table_columns(sql, exp, mt, mt->part.pexp->cols);
 
-	if ((msg = find_expression_type(exp, &(mt->part.pexp->type))) != NULL)
-		return msg;
-
+	mt->part.pexp->type = *exp_subtype(exp);
 	sql_ec = mt->part.pexp->type.type->eclass;
 	if (!(sql_ec == EC_BIT || EC_VARCHAR(sql_ec) || EC_TEMP(sql_ec) || sql_ec == EC_POS || sql_ec == EC_NUM ||
 		 EC_INTERVAL(sql_ec)|| sql_ec == EC_DEC || sql_ec == EC_BLOB)) {
@@ -306,8 +278,7 @@ bootstrap_partition_expression(mvc* sql, sql_allocator *rsa, sql_table *mt, int 
 
 	if (instantiate) {
 		r = rel_project(sql->sa, r, NULL);
-		r->exps = sa_list(sql->sa);
-		list_append(r->exps, exp);
+		exp = rel_project_add_exp(sql, r, exp);
 
 		if (r)
 			r = sql_processrelation(sql, r, 0);
@@ -339,45 +310,48 @@ find_partition_type(sql_subtype *tpe, sql_table *mt)
 }
 
 str
-initialize_sql_parts(mvc* sql, sql_table *mt)
+initialize_sql_parts(mvc *sql, sql_table *mt)
 {
 	str res = NULL;
 	sql_subtype found;
 	int localtype;
+	sql_trans *tr = sql->session->tr;
 
-	if (isPartitionedByExpressionTable(mt) && (res = bootstrap_partition_expression(sql, sql->session->tr->sa, mt, 0)) != NULL)
+	if (isPartitionedByExpressionTable(mt) && (res = bootstrap_partition_expression(sql, tr->sa, mt, 0)) != NULL)
 		return res;
+
 	find_partition_type(&found, mt);
 	localtype = found.type->localtype;
+	if (isPartitionedByExpressionTable(mt)) /* Propagate type to outer transaction table */
+		mt->po->part.pexp->type = mt->part.pexp->type;
 
 	if (localtype != TYPE_str && mt->members.set && list_length(mt->members.set)) {
-		list *new = sa_list(sql->session->tr->sa), *old = sa_list(sql->session->tr->sa);
+		list *new = sa_list(tr->sa), *old = sa_list(tr->sa);
 
 		for (node *n = mt->members.set->h; n; n = n->next) {
-			sql_part* next = (sql_part*) n->data, *p = SA_ZNEW(sql->session->tr->sa, sql_part);
-			sql_table* pt = find_sql_table(mt->s, next->base.name);
+			sql_part *next = (sql_part*) n->data, *p = SA_ZNEW(tr->sa, sql_part);
+			sql_table *pt = find_sql_table(mt->s, next->base.name);
 
-			base_init(sql->session->tr->sa, &p->base, pt->base.id, TR_NEW, pt->base.name);
+			base_init(tr->sa, &p->base, pt->base.id, TR_NEW, pt->base.name);
 			p->t = mt;
 			assert(isMergeTable(mt) || isReplicaTable(mt));
-			dup_sql_type(sql->session->tr, mt->s, &found, &(p->tpe));
+			p->tpe = found;
 			p->with_nills = next->with_nills;
 
 			if (isListPartitionTable(mt)) {
-				p->part.values = sa_list(sql->session->tr->sa);
+				p->part.values = sa_list(tr->sa);
 
 				for (node *m = next->part.values->h; m; m = m->next) {
-					sql_part_value *v = (sql_part_value*) m->data, *nv = SA_ZNEW(sql->session->tr->sa, sql_part_value);
+					sql_part_value *v = (sql_part_value*) m->data, *nv = SA_ZNEW(tr->sa, sql_part_value);
 					ValRecord vvalue;
 					ptr ok;
 
-					dup_sql_type(sql->session->tr, mt->s, &found, &(nv->tpe));
 					vvalue = (ValRecord) {.vtype = TYPE_void,};
 					ok = VALinit(&vvalue, TYPE_str, v->value);
 					if (ok)
 						ok = VALconvert(localtype, &vvalue);
 					if (ok) {
-						nv->value = sa_alloc(sql->session->tr->sa, vvalue.len);
+						nv->value = sa_alloc(tr->sa, vvalue.len);
 						memcpy(nv->value, VALget(&vvalue), vvalue.len);
 						nv->length = vvalue.len;
 					}
@@ -404,9 +378,8 @@ initialize_sql_parts(mvc* sql, sql_table *mt)
 						const void *nil_ptr = ATOMnilptr(tpe);
 						size_t nil_len = ATOMlen(tpe, nil_ptr);
 
-						assert(p->with_nills && next->with_nills);
-						p->part.range.minvalue = sa_alloc(sql->session->tr->sa, nil_len);
-						p->part.range.maxvalue = sa_alloc(sql->session->tr->sa, nil_len);
+						p->part.range.minvalue = sa_alloc(tr->sa, nil_len);
+						p->part.range.maxvalue = sa_alloc(tr->sa, nil_len);
 						memcpy(p->part.range.minvalue, nil_ptr, nil_len);
 						memcpy(p->part.range.maxvalue, nil_ptr, nil_len);
 						p->part.range.minlength = nil_len;
@@ -416,8 +389,8 @@ initialize_sql_parts(mvc* sql, sql_table *mt)
 						if (ok)
 							ok = VALconvert(localtype, &vmax);
 						if (ok) {
-							p->part.range.minvalue = sa_alloc(sql->session->tr->sa, vmin.len);
-							p->part.range.maxvalue = sa_alloc(sql->session->tr->sa, vmax.len);
+							p->part.range.minvalue = sa_alloc(tr->sa, vmin.len);
+							p->part.range.maxvalue = sa_alloc(tr->sa, vmax.len);
 							memcpy(p->part.range.minvalue, VALget(&vmin), vmin.len);
 							memcpy(p->part.range.maxvalue, VALget(&vmax), vmax.len);
 							p->part.range.minlength = vmin.len;
@@ -436,17 +409,11 @@ initialize_sql_parts(mvc* sql, sql_table *mt)
 			list_append(new, p);
 			list_append(old, next);
 		}
-		for (node *n = old->h; n; n = n->next) { //remove the old
-			sql_part* next = (sql_part*) n->data;
-			sql_table* pt = find_sql_table(mt->s, next->base.name);
-
-			pt->p = NULL;
-			cs_del(&mt->members, n, next->base.flags);
-			sql_trans_drop_dependency(sql->session->tr, next->base.id, mt->base.id, TABLE_DEPENDENCY);
-		}
+		for (node *n = old->h; n; n = n->next) /* remove the old */
+			cs_del(&mt->members, n, 0);
 		for (node *n = new->h; n; n = n->next) {
-			sql_part* next = (sql_part*) n->data;
-			sql_table* pt = find_sql_table(mt->s, next->base.name);
+			sql_part *next = (sql_part*) n->data;
+			sql_table *pt = find_sql_table(mt->s, next->base.name);
 			sql_part *err = NULL;
 
 			pt->p = mt;
@@ -463,11 +430,14 @@ initialize_sql_parts(mvc* sql, sql_table *mt)
 									  SQLSTATE(42000) "Internal error while bootstrapping partitioned tables");
 				goto finish;
 			}
-			pt->s->base.wtime = pt->base.wtime = sql->session->tr->wtime = sql->session->tr->wstime;
-			sql_trans_create_dependency(sql->session->tr, pt->base.id, mt->base.id, TABLE_DEPENDENCY);
+			pt->s->base.wtime = pt->base.wtime = tr->wtime = tr->wstime;
+			if (isGlobal(pt))
+				tr->schema_updates++;
 		}
-		mt->s->base.wtime = mt->base.wtime = sql->session->tr->wtime = sql->session->tr->wstime;
 	}
+	mt->s->base.wtime = mt->base.wtime = tr->wtime = tr->wstime;
+	if (isGlobal(mt))
+		tr->schema_updates++;
 finish:
 	return res;
 }

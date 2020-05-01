@@ -18,10 +18,22 @@
 
 #include <math.h>
 
+static void __attribute__((__format__(__printf__, 1, 2)))
+geomerror(_In_z_ _Printf_format_string_ const char *fmt, ...)
+{
+	va_list va;
+	char err[256];
+	va_start(va, fmt);
+	vsnprintf(err, sizeof(err), fmt, va);
+	GDKtracer_log(__FILE__, __func__, __LINE__, M_CRITICAL,
+		      GDK, NULL, "%s", err);
+	va_end(va);
+}
+
 void
 libgeom_init(void)
 {
-	initGEOS((GEOSMessageHandler) GDKerror, (GEOSMessageHandler) GDKerror);
+	initGEOS((GEOSMessageHandler) geomerror, (GEOSMessageHandler) geomerror);
 	GEOS_setWKBByteOrder(1);	/* NDR (little endian) */
 	printf("# MonetDB/GIS module loaded\n");
 	fflush(stdout);		/* make merovingian see this *now* */

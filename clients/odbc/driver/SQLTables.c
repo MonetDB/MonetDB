@@ -110,7 +110,8 @@ MNDBTables(ODBCStmt *stmt,
 			       "from sys.table_types order by table_type");
 	} else {
 		/* no special case argument values */
-		char *query_end;
+		size_t querylen;
+		size_t pos = 0;
 
 		if (stmt->Dbc->sql_attr_metadata_id == SQL_FALSE) {
 			if (NameLength2 > 0) {
@@ -145,14 +146,14 @@ MNDBTables(ODBCStmt *stmt,
 		}
 
 		/* construct the query now */
-		query = (char *) malloc(2000 + strlen(stmt->Dbc->dbname) +
-					(sch ? strlen(sch) : 0) + (tab ? strlen(tab) : 0) +
-					((NameLength4 + 1) / 5) * 67);
+		querylen = 2000 + strlen(stmt->Dbc->dbname) +
+			(sch ? strlen(sch) : 0) + (tab ? strlen(tab) : 0) +
+			((NameLength4 + 1) / 5) * 67;
+		query = malloc(querylen);
 		if (query == NULL)
 			goto nomem;
-		query_end = query;
 
-		sprintf(query_end,
+		pos += snprintf(query + pos, querylen - pos,
 		       "select '%s' as table_cat, "
 			      "s.name as table_schem, "
 			      "t.name as table_name, "
@@ -166,8 +167,7 @@ MNDBTables(ODBCStmt *stmt,
 			stmt->Dbc->dbname,
 			stmt->Dbc->has_comment ? "c.remark" : "cast(null as varchar(1))",
 			stmt->Dbc->has_comment ? " left outer join sys.comments c on c.id = t.id" : "");
-		assert(strlen(query) < 1900);
-		query_end += strlen(query_end);
+		assert(pos < 1900);
 
 		/* dependent on the input parameter values we must add a
 		   variable selection condition dynamically */
@@ -177,20 +177,17 @@ MNDBTables(ODBCStmt *stmt,
 			/* filtering requested on catalog name */
 			if (strcmp((char *) CatalogName, stmt->Dbc->dbname) != 0) {
 				/* catalog name does not match the database name, so return no rows */
-				sprintf(query_end, " and 1=2");
-				query_end += strlen(query_end);
+				pos += snprintf(query + pos, querylen - pos, " and 1=2");
 			}
 		}
 		if (sch) {
 			/* filtering requested on schema name */
-			sprintf(query_end, " and %s", sch);
-			query_end += strlen(query_end);
+			pos += snprintf(query + pos, querylen - pos, " and %s", sch);
 			free(sch);
 		}
 		if (tab) {
 			/* filtering requested on table name */
-			sprintf(query_end, " and %s", tab);
-			query_end += strlen(query_end);
+			pos += snprintf(query + pos, querylen - pos, " and %s", tab);
 			free(tab);
 		}
 
@@ -200,8 +197,7 @@ MNDBTables(ODBCStmt *stmt,
 			int i;
 			size_t j;
 
-			strcpy(query_end, " and tt.table_type_name in (");
-			query_end += strlen(query_end);
+			pos += strcpy_len(query + pos, " and tt.table_type_name in (", querylen - pos);
 			for (j = 0, i = 0; i < NameLength4 + 1; i++) {
 				if (i == NameLength4 || TableType[i] == ',') {
 					if (j > 0 && buf[j - 1] == ' ')
@@ -211,7 +207,7 @@ MNDBTables(ODBCStmt *stmt,
 						continue;
 					}
 					buf[j] = 0;
-					query_end += snprintf(query_end, 38, "'%s',", buf);
+					pos += snprintf(query + pos, querylen - pos, "'%s',", buf);
  					j = 0;
 				} else if (j < sizeof(buf) &&
 					   TableType[i] != '\'' &&
@@ -219,19 +215,18 @@ MNDBTables(ODBCStmt *stmt,
 					    (j > 0 && buf[j - 1] != ' ')))
 					buf[j++] = TableType[i];
 			}
-			if (query_end[-1] == ',') {
-				query_end[-1] = ')';
+			if (query[pos - 1] == ',') {
+				query[pos - 1] = ')';
 			} else {
 				/* no extra tests added, so remove
 				 * clause completely */
-				query_end -= 28;
+				pos -= 28;
 			}
-			*query_end = 0;
+			query[pos] = 0;
 		}
 
 		/* add the ordering */
-		strcpy(query_end, " order by table_type, table_schem, table_name");
-		query_end += strlen(query_end);
+		pos += strcpy_len(query + pos, " order by table_type, table_schem, table_name", querylen - pos);
 	}
 
 	/* query the MonetDB data dictionary tables */

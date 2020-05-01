@@ -447,7 +447,7 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			pushInstruction(mb, sum);
 			pushInstruction(mb, cnt);
 
-			t = newInstruction(mb, batcalcRef, putName("=="));
+			t = newInstruction(mb, batcalcRef, eqRef);
 			getArg(t,0) = newTmpVariable(mb, newBatType(TYPE_bit));
 			t = addArgument(mb, t, getDestVar(cnt));
 			t = pushLng(mb, t, 0);
@@ -460,7 +460,7 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			pushInstruction(mb, t);
 			sum = t;
 
-			t = newInstruction(mb, batcalcRef, putName("ifthenelse"));
+			t = newInstruction(mb, batcalcRef, ifthenelseRef);
 			getArg(t,0) = newTmpVariable(mb, getArgType(mb, p, 0));
 			t = addArgument(mb, t, getDestVar(iszero));
 			t = pushNil(mb, t, TYPE_dbl);

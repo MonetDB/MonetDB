@@ -20,19 +20,18 @@
 str
 SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	BAT *tag, *sessionid, *user, *started, *status, *query, *progress, *workers, *memory;
+	BAT *tag, *sessionid, *user, *started, *status, *query, *finished, *workers, *memory;
 	bat *t = getArgReference_bat(stk,pci,0);
 	bat *s = getArgReference_bat(stk,pci,1);
 	bat *u = getArgReference_bat(stk,pci,2);
 	bat *sd = getArgReference_bat(stk,pci,3);
 	bat *ss = getArgReference_bat(stk,pci,4);
 	bat *q = getArgReference_bat(stk,pci,5);
-	bat *p = getArgReference_bat(stk,pci,6);
+	bat *f = getArgReference_bat(stk,pci,6);
 	bat *w = getArgReference_bat(stk,pci,7);
 	bat *m = getArgReference_bat(stk,pci,8);
-	lng i, qtag;
+	lng qtag;
 	int wrk, mem, sz;
-	str usr = 0;
 	timestamp tsn;
 	str msg = MAL_SUCCEED;
 
@@ -45,61 +44,69 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	started = COLnew(0, TYPE_timestamp, sz, TRANSIENT);
 	status = COLnew(0, TYPE_str, sz, TRANSIENT);
 	query = COLnew(0, TYPE_str, sz, TRANSIENT);
-	progress = COLnew(0, TYPE_int, sz, TRANSIENT);
+	finished = COLnew(0, TYPE_timestamp, sz, TRANSIENT);
 	workers = COLnew(0, TYPE_int, sz, TRANSIENT);
 	memory = COLnew(0, TYPE_int, sz, TRANSIENT);
-	if ( tag == NULL || sessionid == NULL || user == NULL || query == NULL || started == NULL || progress == NULL || workers == NULL || memory == NULL){
+	if ( tag == NULL || sessionid == NULL || user == NULL || query == NULL || started == NULL || finished == NULL || workers == NULL || memory == NULL){
 		BBPreclaim(tag);
 		BBPreclaim(sessionid);
 		BBPreclaim(user);
 		BBPreclaim(started);
 		BBPreclaim(status);
 		BBPreclaim(query);
-		BBPreclaim(progress);
+		BBPreclaim(finished);
 		BBPreclaim(workers);
 		BBPreclaim(memory);
 		throw(MAL, "SYSMONqueue", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	MT_lock_set(&mal_delayLock);
-	for ( i = 0; i< qtop; i++)
-	if( QRYqueue[i].query && (cntxt->user == MAL_ADMIN || QRYqueue[i].cntxt->user == cntxt->user)) {
-		qtag = (lng) QRYqueue[i].tag;
-		if (BUNappend(tag, &qtag, false) != GDK_SUCCEED)
-			goto bailout;
-		msg = AUTHgetUsername(&usr, QRYqueue[i].cntxt);
-		if (msg != MAL_SUCCEED)
-			goto bailout;
-
-		if (BUNappend(user, usr, false) != GDK_SUCCEED) {
-			GDKfree(usr);
-			goto bailout;
+	for (size_t i = qtail; i != qhead; i++){
+		if ( i == qsize){
+			i = 0;
+			if( i == qhead)
+				break;
 		}
-		GDKfree(usr);
+		if( QRYqueue[i].query && (cntxt->user == MAL_ADMIN || cntxt->idx == QRYqueue[i].idx) ){
+			qtag = (lng) QRYqueue[i].tag;
+			if (BUNappend(tag, &qtag, false) != GDK_SUCCEED)
+				goto bailout;
 
-		if (BUNappend(sessionid, &(QRYqueue[i].cntxt->idx), false) != GDK_SUCCEED) {
-			goto bailout;
+			if (BUNappend(user, QRYqueue[i].username, false) != GDK_SUCCEED) {
+				goto bailout;
+			}
+
+			if (BUNappend(sessionid, &(QRYqueue[i].idx), false) != GDK_SUCCEED) {
+				goto bailout;
+			}
+
+			if (BUNappend(query, QRYqueue[i].query, false) != GDK_SUCCEED ||
+				BUNappend(status, QRYqueue[i].status, false) != GDK_SUCCEED)
+				goto bailout;
+
+			/* convert number of seconds into a timestamp */
+			tsn = timestamp_fromtime(QRYqueue[i].start);
+			if (is_timestamp_nil(tsn)) {
+				msg = createException(MAL, "SYSMONqueue", SQLSTATE(22003) "cannot convert time");
+				goto bailout;
+			}
+			if (BUNappend(started, &tsn, false) != GDK_SUCCEED)
+				goto bailout;
+
+			tsn = timestamp_fromtime(QRYqueue[i].finished);
+			if (is_timestamp_nil(tsn)) {
+				msg = createException(MAL, "SYSMONqueue", SQLSTATE(22003) "cannot convert time");
+				goto bailout;
+			}
+			if (BUNappend(finished, &tsn, false) != GDK_SUCCEED)
+				goto bailout;
+
+			wrk = QRYqueue[i].workers;
+			mem = QRYqueue[i].memory;
+			if ( BUNappend(workers, &wrk, false) != GDK_SUCCEED ||
+				 BUNappend(memory, &mem, false) != GDK_SUCCEED)
+				goto bailout;
 		}
-
-		if (BUNappend(query, QRYqueue[i].query, false) != GDK_SUCCEED ||
-			BUNappend(status, QRYqueue[i].status, false) != GDK_SUCCEED)
-			goto bailout;
-
-		/* convert number of seconds into a timestamp */
-		tsn = timestamp_fromtime(QRYqueue[i].start);
-		if (is_timestamp_nil(tsn)) {
-			msg = createException(MAL, "SYSMONqueue", SQLSTATE(22003) "cannot convert time");
-			goto bailout;
-		}
-		if (BUNappend(started, &tsn, false) != GDK_SUCCEED)
-			goto bailout;
-
-		wrk = QRYqueue[i].stk->workers;
-		mem = (int) (QRYqueue[i].stk->memory / LL_CONSTANT(1048576)); /* Convert to MB */
-		if (BUNappend(progress, &QRYqueue[i].progress, false) != GDK_SUCCEED ||
-		    BUNappend(workers, &wrk, false) != GDK_SUCCEED ||
-			BUNappend(memory, &mem, false) != GDK_SUCCEED)
-			goto bailout;
 	}
 	MT_lock_unset(&mal_delayLock);
 	BBPkeepref( *t =tag->batCacheid);
@@ -108,7 +115,7 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPkeepref( *sd =started->batCacheid);
 	BBPkeepref( *ss =status->batCacheid);
 	BBPkeepref( *q =query->batCacheid);
-	BBPkeepref( *p =progress->batCacheid);
+	BBPkeepref( *f =finished->batCacheid);
 	BBPkeepref( *w =workers->batCacheid);
 	BBPkeepref( *m =memory->batCacheid);
 	return MAL_SUCCEED;
@@ -121,7 +128,7 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPunfix(started->batCacheid);
 	BBPunfix(status->batCacheid);
 	BBPunfix(query->batCacheid);
-	BBPunfix(progress->batCacheid);
+	BBPunfix(finished->batCacheid);
 	BBPunfix(workers->batCacheid);
 	BBPunfix(memory->batCacheid);
 	return msg ? msg : createException(MAL, "SYSMONqueue", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -147,12 +154,18 @@ SYSMONpause(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (tag < 1)
 		throw(MAL, "SYSMONpause", SQLSTATE(42000) "Tag must be positive");
 	MT_lock_set(&mal_delayLock);
-	for (lng i = 0; QRYqueue[i].tag; i++)
-		if( (lng) QRYqueue[i].tag == tag && (QRYqueue[i].cntxt->user == cntxt->user || cntxt->user == MAL_ADMIN)){
+	for (size_t i = qtail; i != qhead; i++){
+		if( i == qsize){
+			i = 0;
+			if( i == qhead)
+				break;
+		}
+		if( (lng) QRYqueue[i].tag == tag && cntxt->user == MAL_ADMIN && QRYqueue[i].stk){
 			QRYqueue[i].stk->status = 'p';
 			QRYqueue[i].status = "paused";
 			set = true;
 		}
+	}
 	MT_lock_unset(&mal_delayLock);
 	return set ? MAL_SUCCEED : createException(MAL, "SYSMONpause", SQLSTATE(42000) "Tag " LLFMT " unknown", tag);
 }
@@ -177,12 +190,18 @@ SYSMONresume(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (tag < 1)
 		throw(MAL, "SYSMONresume", SQLSTATE(42000) "Tag must be positive");
 	MT_lock_set(&mal_delayLock);
-	for (lng i = 0; QRYqueue[i].tag; i++)
-		if( (lng)QRYqueue[i].tag == tag && (QRYqueue[i].cntxt->user == cntxt->user || cntxt->user == MAL_ADMIN)){
+	for (size_t i = qtail; i == qhead; i++){
+		if( i == qsize){
+			i = 0;
+			if ( i== qhead)
+				break;
+		}
+		if( (lng)QRYqueue[i].tag == tag && cntxt->user == MAL_ADMIN && QRYqueue[i].stk){
 			QRYqueue[i].stk->status = 0;
 			QRYqueue[i].status = "running";
 			set = true;
 		}
+	}
 	MT_lock_unset(&mal_delayLock);
 	return set ? MAL_SUCCEED : createException(MAL, "SYSMONresume", SQLSTATE(42000) "Tag " LLFMT " unknown", tag);
 }
@@ -207,12 +226,18 @@ SYSMONstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (tag < 1)
 		throw(MAL, "SYSMONstop", SQLSTATE(42000) "Tag must be positive");
 	MT_lock_set(&mal_delayLock);
-	for (lng i = 0; QRYqueue[i].tag; i++)
-		if( (lng) QRYqueue[i].tag == tag && (QRYqueue[i].cntxt->user == cntxt->user || cntxt->user == MAL_ADMIN)){
+	for (size_t i = qtail; i != qhead; i++){
+		if( i == qsize){
+			i = 0;
+			if( i == qhead)
+				break;	
+		}
+		if( (lng) QRYqueue[i].tag == tag && cntxt->user == MAL_ADMIN && QRYqueue[i].stk){
 			QRYqueue[i].stk->status = 'q';
 			QRYqueue[i].status = "stopping";
 			set = true;
 		}
+	}
 	MT_lock_unset(&mal_delayLock);
 	return set ? MAL_SUCCEED : createException(MAL, "SYSMONstop", SQLSTATE(42000) "Tag " LLFMT " unknown", tag);
 }

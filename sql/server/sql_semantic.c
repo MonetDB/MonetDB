@@ -472,13 +472,12 @@ symbol2string(mvc *sql, symbol *se, int expression, char **err) /**/
 		_DELETE(tpe);
 		return res;
 	}
-	case SQL_AGGR:
-	case SQL_SELECT:
-	case SQL_CASE:
-	case SQL_COALESCE:
-	case SQL_NULLIF:
-	default:
-		return NULL;
+	default: {
+		const char *msg = "SQL feature not yet available for expressions and default values: ";
+		char *tok_str = token2string(se->token);
+		if ((*err = NEW_ARRAY(char, strlen(msg) + strlen(tok_str) + 1)))
+			stpcpy(stpcpy(*err, msg), tok_str);
+	}
 	}
 	return NULL;
 }

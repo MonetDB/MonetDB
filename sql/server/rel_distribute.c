@@ -29,6 +29,9 @@ has_remote_or_replica( sql_rel *rel )
 		break;
 	}
 	case op_table:
+		if (IS_TABLE_PROD_FUNC(rel->flag) || rel->flag == TABLE_FROM_RELATION)
+			if (has_remote_or_replica( rel->l )) 
+				return 1;
 		break;
 	case op_join: 
 	case op_left: 
@@ -42,7 +45,7 @@ has_remote_or_replica( sql_rel *rel )
 	case op_inter: 
 	case op_except: 
 		if (has_remote_or_replica( rel->l ) ||
-		    has_remote_or_replica( rel->r ))
+			has_remote_or_replica( rel->r ))
 			return 1;
 		break;
 	case op_project:
@@ -50,18 +53,25 @@ has_remote_or_replica( sql_rel *rel )
 	case op_groupby: 
 	case op_topn: 
 	case op_sample: 
+	case op_truncate: 
 		if (has_remote_or_replica( rel->l )) 
 			return 1;
 		break;
-	case op_ddl: 
-		if (has_remote_or_replica( rel->l )) 
+	case op_ddl:
+		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq /*|| rel->flag == ddl_alter_table || rel->flag == ddl_create_table || rel->flag == ddl_create_view*/) {
+			if (has_remote_or_replica( rel->l )) 
+				return 1;
+		} else if (rel->flag == ddl_list || rel->flag == ddl_exception) {
+			if (has_remote_or_replica( rel->l ) ||
+				has_remote_or_replica( rel->r ))
 			return 1;
-		/* fall through */
+		}
+		break;
 	case op_insert:
 	case op_update:
 	case op_delete:
-	case op_truncate:
-		if (rel->r && has_remote_or_replica( rel->r )) 
+		if (has_remote_or_replica( rel->l ) ||
+			has_remote_or_replica( rel->r ))
 			return 1;
 		break;
 	}
@@ -105,23 +115,45 @@ static sql_rel * replica(mvc *sql, sql_rel *rel, char *uri);
 static sql_exp *
 exp_replica(mvc *sql, sql_exp *e, char *uri) 
 {
-	if (e->type != e_psm)
-		return e;
-	if (e->flag & PSM_VAR) 
-		return e;
-	if (e->flag & PSM_SET || e->flag & PSM_RETURN) 
+	switch(e->type) {
+	case e_column:
+	case e_atom:
+		break;
+	case e_convert:
 		e->l = exp_replica(sql, e->l, uri);
-	if (e->flag & PSM_WHILE || e->flag & PSM_IF) {
-		e->l = exp_replica(sql, e->l, uri);
+		break;
+	case e_aggr:
+	case e_func: 
+		e->l = exps_replica(sql, e->l, uri);
 		e->r = exps_replica(sql, e->r, uri);
-		if (e->f)
-			e->f = exps_replica(sql, e->f, uri);
-		return e;
+		break;
+	case e_cmp:	
+		if (e->flag == cmp_or || e->flag == cmp_filter) {
+			e->l = exps_replica(sql, e->l, uri);
+			e->r = exps_replica(sql, e->r, uri);
+		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
+			e->l = exp_replica(sql, e->l, uri);
+			e->r = exps_replica(sql, e->r, uri);
+		} else {
+			e->l = exp_replica(sql, e->l, uri);
+			e->r = exps_replica(sql, e->r, uri);
+			if (e->f)
+				e->f = exps_replica(sql, e->f, uri);
+		}
+		break;
+	case e_psm:
+		if (e->flag & PSM_SET || e->flag & PSM_RETURN || e->flag & PSM_EXCEPTION) {
+			e->l = exp_replica(sql, e->l, uri);
+		} else if (e->flag & PSM_WHILE || e->flag & PSM_IF) {
+			e->l = exp_replica(sql, e->l, uri);
+			e->r = exps_replica(sql, e->r, uri);
+			if (e->f)
+				e->f = exps_replica(sql, e->f, uri);
+		} else if (e->flag & PSM_REL) {
+			e->l = replica(sql, e->l, uri);
+		}
+		break;
 	}
-	if (e->flag & PSM_REL)
-		e->l = replica(sql, e->l, uri);
-	if (e->flag & PSM_EXCEPTION)
-		e->l = exp_replica(sql, e->l, uri);
 	return e;
 }
 
@@ -145,7 +177,7 @@ replica(mvc *sql, sql_rel *rel, char *uri)
 
 	if (rel_is_ref(rel)) {
 		if (has_remote_or_replica(rel)) {
-			sql_rel *nrel = rel_copy(sql, rel, 0);
+			sql_rel *nrel = rel_copy(sql, rel, 1);
 
 			if (nrel && rel->p)
 				nrel->p = prop_copy(sql->sa, rel->p);
@@ -196,9 +228,10 @@ replica(mvc *sql, sql_rel *rel, char *uri)
 				}
 			}
 		}
-		break;
-	}
+	} break;
 	case op_table:
+		if (IS_TABLE_PROD_FUNC(rel->flag) || rel->flag == TABLE_FROM_RELATION)
+			rel->l = replica(sql, rel->l, uri);
 		break;
 	case op_join: 
 	case op_left: 
@@ -219,19 +252,23 @@ replica(mvc *sql, sql_rel *rel, char *uri)
 	case op_groupby: 
 	case op_topn: 
 	case op_sample: 
+	case op_truncate: 
 		rel->l = replica(sql, rel->l, uri);
 		break;
 	case op_ddl: 
 		if ((rel->flag == ddl_psm || rel->flag == ddl_exception) && rel->exps)
 			rel->exps = exps_replica(sql, rel->exps, uri);
-		rel->l = replica(sql, rel->l, uri);
-		if (rel->r)
+		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq /*|| rel->flag == ddl_alter_table || rel->flag == ddl_create_table || rel->flag == ddl_create_view*/) {
+			rel->l = replica(sql, rel->l, uri);
+		} else if (rel->flag == ddl_list || rel->flag == ddl_exception) {
+			rel->l = replica(sql, rel->l, uri);
 			rel->r = replica(sql, rel->r, uri);
+		}
 		break;
 	case op_insert:
 	case op_update:
 	case op_delete:
-	case op_truncate:
+		rel->l = replica(sql, rel->l, uri);
 		rel->r = replica(sql, rel->r, uri);
 		break;
 	}
@@ -244,23 +281,45 @@ static sql_rel * distribute(mvc *sql, sql_rel *rel);
 static sql_exp *
 exp_distribute(mvc *sql, sql_exp *e) 
 {
-	if (e->type != e_psm)
-		return e;
-	if (e->flag & PSM_VAR) 
-		return e;
-	if (e->flag & PSM_SET || e->flag & PSM_RETURN) 
+	switch(e->type) {
+	case e_column:
+	case e_atom:
+		break;
+	case e_convert:
 		e->l = exp_distribute(sql, e->l);
-	if (e->flag & PSM_WHILE || e->flag & PSM_IF) {
-		e->l = exp_distribute(sql, e->l);
+		break;
+	case e_aggr:
+	case e_func: 
+		e->l = exps_distribute(sql, e->l);
 		e->r = exps_distribute(sql, e->r);
-		if (e->f)
-			e->f = exps_distribute(sql, e->f);
-		return e;
+		break;
+	case e_cmp:	
+		if (e->flag == cmp_or || e->flag == cmp_filter) {
+			e->l = exps_distribute(sql, e->l);
+			e->r = exps_distribute(sql, e->r);
+		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
+			e->l = exp_distribute(sql, e->l);
+			e->r = exps_distribute(sql, e->r);
+		} else {
+			e->l = exp_distribute(sql, e->l);
+			e->r = exps_distribute(sql, e->r);
+			if (e->f)
+				e->f = exps_distribute(sql, e->f);
+		}
+		break;
+	case e_psm:
+		if (e->flag & PSM_SET || e->flag & PSM_RETURN || e->flag & PSM_EXCEPTION) {
+			e->l = exp_distribute(sql, e->l);
+		} else if (e->flag & PSM_WHILE || e->flag & PSM_IF) {
+			e->l = exp_distribute(sql, e->l);
+			e->r = exps_distribute(sql, e->r);
+			if (e->f)
+				e->f = exps_distribute(sql, e->f);
+		} else if (e->flag & PSM_REL) {
+			e->l = distribute(sql, e->l);
+		}
+		break;
 	}
-	if (e->flag & PSM_REL)
-		e->l = distribute(sql, e->l);
-	if (e->flag & PSM_EXCEPTION)
-		e->l = exp_distribute(sql, e->l);
 	return e;
 }
 
@@ -287,7 +346,7 @@ distribute(mvc *sql, sql_rel *rel)
 
 	if (rel_is_ref(rel)) {
 		if (has_remote_or_replica(rel)) {
-			sql_rel *nrel = rel_copy(sql, rel, 0);
+			sql_rel *nrel = rel_copy(sql, rel, 1);
 
 			if (nrel && rel->p)
 				nrel->p = prop_copy(sql->sa, rel->p);
@@ -306,20 +365,27 @@ distribute(mvc *sql, sql_rel *rel)
 		if (t && isRemote(t)) {
 			//TODO: check for allocation failure
 			char *local_name = sa_strconcat(sql->sa, sa_strconcat(sql->sa, t->s->base.name, "."), t->base.name);
-			if (!local_name) {
+			if (!local_name)
 				return NULL;
-			}
 
 			p = rel->p = prop_create(sql->sa, PROP_REMOTE, rel->p);
-			if (!p) {
+			if (!p)
 				return NULL;
-			}
 			p->value = local_name;
 		}
-		break;
-	}
+	} break;
 	case op_table:
-		break;
+		if (IS_TABLE_PROD_FUNC(rel->flag) || rel->flag == TABLE_FROM_RELATION) {
+			l = rel->l = distribute(sql, rel->l);
+
+			if (l && (p = find_prop(l->p, PROP_REMOTE)) != NULL) {
+				l->p = prop_remove(l->p, p);
+				if (!find_prop(rel->p, PROP_REMOTE)) {
+					p->p = rel->p;
+					rel->p = p;
+				}
+			}
+		} break;
 	case op_join: 
 	case op_left: 
 	case op_right: 
@@ -354,8 +420,10 @@ distribute(mvc *sql, sql_rel *rel)
 		    strcmp(pl->value, pr->value) == 0) {
 			l->p = prop_remove(l->p, pl);
 			r->p = prop_remove(r->p, pr);
-			pl->p = rel->p;
-			rel->p = pl;
+			if (!find_prop(rel->p, PROP_REMOTE)) {
+				pl->p = rel->p;
+				rel->p = pl;
+			}
 		}
 		break;
 	case op_project:
@@ -363,26 +431,72 @@ distribute(mvc *sql, sql_rel *rel)
 	case op_groupby: 
 	case op_topn: 
 	case op_sample: 
-		rel->l = distribute(sql, rel->l);
-		l = rel->l;
+		l = rel->l = distribute(sql, rel->l);
+
 		if (l && (p = find_prop(l->p, PROP_REMOTE)) != NULL) {
 			l->p = prop_remove(l->p, p);
-			p->p = rel->p;
-			rel->p = p;
+			if (!find_prop(rel->p, PROP_REMOTE)) {
+				p->p = rel->p;
+				rel->p = p;
+			}
 		}
 		break;
 	case op_ddl: 
 		if ((rel->flag == ddl_psm || rel->flag == ddl_exception) && rel->exps)
 			rel->exps = exps_distribute(sql, rel->exps);
-		rel->l = distribute(sql, rel->l);
-		if (rel->r)
-			rel->r = distribute(sql, rel->r);
+		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq /*|| rel->flag == ddl_alter_table || rel->flag == ddl_create_table || rel->flag == ddl_create_view*/) {
+			l = rel->l = distribute(sql, rel->l);
+
+			if (l && (p = find_prop(l->p, PROP_REMOTE)) != NULL) {
+				l->p = prop_remove(l->p, p);
+				if (!find_prop(rel->p, PROP_REMOTE)) {
+					p->p = rel->p;
+					rel->p = p;
+				}
+			}
+		} else if (rel->flag == ddl_list || rel->flag == ddl_exception) {
+			l = rel->l = distribute(sql, rel->l);
+			r = rel->r = distribute(sql, rel->r);
+
+			if (l && (pl = find_prop(l->p, PROP_REMOTE)) != NULL &&
+				r && (pr = find_prop(r->p, PROP_REMOTE)) != NULL && 
+				strcmp(pl->value, pr->value) == 0) {
+				l->p = prop_remove(l->p, pl);
+				r->p = prop_remove(r->p, pr);
+				if (!find_prop(rel->p, PROP_REMOTE)) {
+					pl->p = rel->p;
+					rel->p = pl;
+				}
+			}
+		}
 		break;
 	case op_insert:
 	case op_update:
 	case op_delete:
+		l = rel->l = distribute(sql, rel->l);
+		r = rel->r = distribute(sql, rel->r);
+
+		if (l && (pl = find_prop(l->p, PROP_REMOTE)) != NULL &&
+			r && (pr = find_prop(r->p, PROP_REMOTE)) != NULL && 
+			strcmp(pl->value, pr->value) == 0) {
+			l->p = prop_remove(l->p, pl);
+			r->p = prop_remove(r->p, pr);
+			if (!find_prop(rel->p, PROP_REMOTE)) {
+				pl->p = rel->p;
+				rel->p = pl;
+			}
+		}
+		break;
 	case op_truncate:
-		rel->r = distribute(sql, rel->r);
+		l = rel->l = distribute(sql, rel->l);
+
+		if (l && (p = find_prop(l->p, PROP_REMOTE)) != NULL) {
+			l->p = prop_remove(l->p, p);
+			if (!find_prop(rel->p, PROP_REMOTE)) {
+				p->p = rel->p;
+				rel->p = p;
+			}
+		}
 		break;
 	}
 	return rel;
@@ -394,23 +508,46 @@ static sql_rel * rel_remote_func(mvc *sql, sql_rel *rel);
 static sql_exp *
 exp_remote_func(mvc *sql, sql_exp *e) 
 {
-	if (e->type != e_psm)
-		return e;
-	if (e->flag & PSM_VAR) 
-		return e;
-	if (e->flag & PSM_SET || e->flag & PSM_RETURN) 
+	switch(e->type) {
+	case e_column:
+	case e_atom:
+		break;
+	case e_convert:
 		e->l = exp_remote_func(sql, e->l);
-	if (e->flag & PSM_WHILE || e->flag & PSM_IF) {
-		e->l = exp_remote_func(sql, e->l);
+		break;
+	case e_aggr:
+	case e_func: 
+		e->l = exps_remote_func(sql, e->l);
 		e->r = exps_remote_func(sql, e->r);
-		if (e->f)
-			e->f = exps_remote_func(sql, e->f);
-		return e;
+		break;
+	case e_cmp:	
+		if (e->flag == cmp_or || e->flag == cmp_filter) {
+			e->l = exps_remote_func(sql, e->l);
+			e->r = exps_remote_func(sql, e->r);
+		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
+			e->l = exp_remote_func(sql, e->l);
+			e->r = exps_remote_func(sql, e->r);
+		} else {
+			e->l = exp_remote_func(sql, e->l);
+			e->r = exps_remote_func(sql, e->r);
+			if (e->f)
+				e->f = exps_remote_func(sql, e->f);
+		}
+		break;
+	case e_psm:
+		if (e->flag & PSM_SET || e->flag & PSM_RETURN) 
+			e->l = exp_remote_func(sql, e->l);
+		else if (e->flag & PSM_WHILE || e->flag & PSM_IF) {
+			e->l = exp_remote_func(sql, e->l);
+			e->r = exps_remote_func(sql, e->r);
+			if (e->f)
+				e->f = exps_remote_func(sql, e->f);
+		} else if (e->flag & PSM_REL)
+			e->l = rel_remote_func(sql, e->l);
+		else if (e->flag & PSM_EXCEPTION)
+			e->l = exp_remote_func(sql, e->l);
+		break;
 	}
-	if (e->flag & PSM_REL)
-		e->l = rel_remote_func(sql, e->l);
-	if (e->flag & PSM_EXCEPTION)
-		e->l = exp_remote_func(sql, e->l);
 	return e;
 }
 
@@ -434,7 +571,11 @@ rel_remote_func(mvc *sql, sql_rel *rel)
 
 	switch (rel->op) {
 	case op_basetable: 
+	case op_truncate:
+		break;
 	case op_table:
+		if (IS_TABLE_PROD_FUNC(rel->flag) || rel->flag == TABLE_FROM_RELATION)
+			rel->l = rel_remote_func(sql, rel->l);
 		break;
 	case op_join: 
 	case op_left: 
@@ -460,14 +601,16 @@ rel_remote_func(mvc *sql, sql_rel *rel)
 	case op_ddl: 
 		if ((rel->flag == ddl_psm || rel->flag == ddl_exception) && rel->exps)
 			rel->exps = exps_remote_func(sql, rel->exps);
-		rel->l = rel_remote_func(sql, rel->l);
-		if (rel->r)
+		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq /*|| rel->flag == ddl_alter_table || rel->flag == ddl_create_table || rel->flag == ddl_create_view*/) {
+			rel->l = rel_remote_func(sql, rel->l);
+		} else if (rel->flag == ddl_list || rel->flag == ddl_exception) {
+			rel->l = rel_remote_func(sql, rel->l);
 			rel->r = rel_remote_func(sql, rel->r);
+		}
 		break;
 	case op_insert:
 	case op_update:
 	case op_delete:
-	case op_truncate:
 		rel->r = rel_remote_func(sql, rel->r);
 		break;
 	}

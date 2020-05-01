@@ -185,7 +185,6 @@ MCresetProfiler(stream *fdout)
 void
 MCexitClient(Client c)
 {
-	finishSessionProfiler(c);
 	MCresetProfiler(c->fdout);
 	if (c->father == NULL) { /* normal client */
 		if (c->fdout && c->fdout != GDKstdout)
@@ -275,7 +274,7 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	c->filetrans = false;
 	c->getquery = NULL;
 
-	char name[16];
+	char name[MT_NAME_LEN];
 	snprintf(name, sizeof(name), "Client%d->s", (int) (c - mal_clients));
 	MT_sema_init(&c->s, 0, name);
 	return c;
@@ -499,13 +498,13 @@ MCstopClients(Client cntxt)
 int
 MCactiveClients(void)
 {
-	int idles = 0;
+	int active = 0;
 	Client cntxt = mal_clients;
 
 	for(cntxt = mal_clients;  cntxt<mal_clients+MAL_MAXCLIENTS; cntxt++){
-		idles += (cntxt->idle != 0 && cntxt->mode == RUNCLIENT);
+		active += (cntxt->idle == 0 && cntxt->mode == RUNCLIENT);
 	}
-	return idles;
+	return active;
 }
 
 void

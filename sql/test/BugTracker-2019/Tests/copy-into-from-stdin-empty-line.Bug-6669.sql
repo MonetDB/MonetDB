@@ -1,7 +1,7 @@
 start transaction;
 
 create table foo (bar int, baz varchar(10));
-copy into foo from stdin delimiters ',', '\n', '''';
+copy into foo from stdin delimiters ',', E'\n', '''';
 5,'aa5aa'
 0,'aa0aa'
 
