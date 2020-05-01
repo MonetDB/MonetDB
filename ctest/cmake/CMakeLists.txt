@@ -6,6 +6,8 @@
 # Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
 #]]
 
+# For now these tests only work on special docker containers.
+
 project(MonetDB-unittest LANGUAGES C)
 
 include(os_release_info)

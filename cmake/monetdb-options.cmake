@@ -141,3 +141,7 @@ option(WITH_ZLIB
 option(CMAKE_SUMMARY
   "Show a summary of the cmake configuration (for debug purposes)"
   OFF)
+
+option(CMAKE_UNITTESTS
+  "Build and run the unittest for the build system"
+  OFF)
