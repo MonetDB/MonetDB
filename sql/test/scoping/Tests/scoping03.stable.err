@@ -29,6 +29,12 @@ QUERY = create or replace trigger mytrigger2
         	for each statement insert into fun2 values( a, 'value' ); --error, identifier "a" is ambiguous, it could be either for old row or new row
 ERROR = !SELECT: identifier 'a' ambiguous
 CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-689045/.s.monetdb.32789
+QUERY = create or replace trigger mytrigger2
+        	after delete on fun referencing old row as "fun3"
+        	for each statement update fun2 fun3 set b = (select a from fun3); --error, identifier "a" is ambiguous, it could be either for old row or table to update
+ERROR = !SELECT: identifier 'a' ambiguous
+CODE  = 42000
 
 # 18:15:52 >  
 # 18:15:52 >  "Done."
