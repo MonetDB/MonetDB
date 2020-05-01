@@ -23,6 +23,16 @@
 #define FE_OVERFLOW			0
 #endif
 
+static inline bool
+chkmsk(const bit *rv, const uint32_t *mrv, BUN i)
+{
+	if (rv)
+		return rv[i];
+	if (mrv)
+		return (mrv[i / 32] & 1U << (i % 32)) != 0;
+	return true;
+}
+
 static str
 CMDscienceUNARY(MalStkPtr stk, InstrPtr pci,
 				float (*ffunc)(float), double (*dfunc)(double),
@@ -31,6 +41,7 @@ CMDscienceUNARY(MalStkPtr stk, InstrPtr pci,
 	bat bid;
 	BAT *bn, *b, *s = NULL, *r = NULL;
 	const bit *rv;
+	const uint32_t *mrv;
 	struct canditer ci;
 	oid x;
 	BUN i;
@@ -83,7 +94,8 @@ CMDscienceUNARY(MalStkPtr stk, InstrPtr pci,
 		goto doreturn;
 	}
 
-	rv = r ? Tloc(r, 0) : NULL;
+	rv = r && r->ttype == TYPE_bit ? Tloc(r, 0) : NULL;
+	mrv = r && r->ttype == TYPE_msk ? Tloc(r, 0) : NULL;
 
 	errno = 0;
 	feclearexcept(FE_ALL_EXCEPT);
@@ -93,7 +105,7 @@ CMDscienceUNARY(MalStkPtr stk, InstrPtr pci,
 		flt *restrict fdst = (flt *) Tloc(bn, 0);
 		for (i = 0; i < ci.ncand; i++) {
 			x = canditer_next(&ci) - b->hseqbase;
-			if ((rv != NULL && !rv[i]) || is_flt_nil(fsrc[x])) {
+			if (!chkmsk(rv, mrv, i) || is_flt_nil(fsrc[x])) {
 				fdst[i] = flt_nil;
 				nils++;
 			} else {
@@ -107,7 +119,7 @@ CMDscienceUNARY(MalStkPtr stk, InstrPtr pci,
 		dbl *restrict ddst = (dbl *) Tloc(bn, 0);
 		for (i = 0; i < ci.ncand; i++) {
 			x = canditer_next(&ci) - b->hseqbase;
-			if ((rv != NULL && !rv[i]) || is_dbl_nil(dsrc[x])) {
+			if (!chkmsk(rv, mrv, i) || is_dbl_nil(dsrc[x])) {
 				ddst[i] = dbl_nil;
 				nils++;
 			} else {
@@ -162,6 +174,7 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 	int tp1, tp2;
 	struct canditer ci1 = (struct canditer){0}, ci2 = (struct canditer){0};
 	const bit *rv;
+	const uint32_t *mrv;
 	oid x1, x2;
 	BUN i;
 	BUN nils = 0;
@@ -259,7 +272,8 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 		goto doreturn;
 	}
 
-	rv = r ? Tloc(r, 0) : NULL;
+	rv = r && r->ttype == TYPE_bit ? Tloc(r, 0) : NULL;
+	mrv = r && r->ttype == TYPE_msk ? Tloc(r, 0) : NULL;
 
 	errno = 0;
 	feclearexcept(FE_ALL_EXCEPT);
@@ -272,7 +286,7 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 			for (i = 0; i < ci1.ncand; i++) {
 				x1 = canditer_next(&ci1) - b1->hseqbase;
 				x2 = canditer_next(&ci2) - b2->hseqbase;
-				if ((rv != NULL && !rv[i]) ||
+				if (!chkmsk(rv, mrv, i) ||
 					is_flt_nil(fsrc1[x1]) ||
 					is_flt_nil(fsrc2[x2])) {
 					fdst[i] = flt_nil;
@@ -287,7 +301,7 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 			flt *restrict fdst = (flt *) Tloc(bn, 0);
 			for (i = 0; i < ci1.ncand; i++) {
 				x1 = canditer_next(&ci1) - b1->hseqbase;
-				if ((rv != NULL && !rv[i]) ||
+				if (!chkmsk(rv, mrv, i) ||
 					is_flt_nil(fsrc1[x1])) {
 					fdst[i] = flt_nil;
 					nils++;
@@ -301,7 +315,7 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 			flt *restrict fdst = (flt *) Tloc(bn, 0);
 			for (i = 0; i < ci2.ncand; i++) {
 				x2 = canditer_next(&ci2) - b2->hseqbase;
-				if ((rv != NULL && !rv[i]) ||
+				if (!chkmsk(rv, mrv, i) ||
 					is_flt_nil(fsrc2[x2])) {
 					fdst[i] = flt_nil;
 					nils++;
@@ -319,7 +333,7 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 			for (i = 0; i < ci1.ncand; i++) {
 				x1 = canditer_next(&ci1) - b1->hseqbase;
 				x2 = canditer_next(&ci2) - b2->hseqbase;
-				if ((rv != NULL && !rv[i]) ||
+				if (!chkmsk(rv, mrv, i) ||
 					is_dbl_nil(dsrc1[x1]) ||
 					is_dbl_nil(dsrc2[x2])) {
 					ddst[i] = dbl_nil;
@@ -334,7 +348,7 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 			dbl *restrict ddst = (dbl *) Tloc(bn, 0);
 			for (i = 0; i < ci1.ncand; i++) {
 				x1 = canditer_next(&ci1) - b1->hseqbase;
-				if ((rv != NULL && !rv[i]) ||
+				if (!chkmsk(rv, mrv, i) ||
 					is_dbl_nil(dsrc1[x1])) {
 					ddst[i] = dbl_nil;
 					nils++;
@@ -348,7 +362,7 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 			dbl *restrict ddst = (dbl *) Tloc(bn, 0);
 			for (i = 0; i < ci2.ncand; i++) {
 				x2 = canditer_next(&ci2) - b2->hseqbase;
-				if ((rv != NULL && !rv[i]) ||
+				if (!chkmsk(rv, mrv, i) ||
 					is_dbl_nil(dsrc2[x2])) {
 					ddst[i] = dbl_nil;
 					nils++;
