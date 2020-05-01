@@ -142,8 +142,6 @@ xz_stream(stream *inner, int preset)
 		return NULL;
 	}
 
-	s->stream_data.p = (void*) state;
-
 	return s;
 }
 

@@ -149,7 +149,7 @@ pump_in(stream *restrict s)
 	pump_state *state = (pump_state *) s->stream_data.p;
 	inner_state_t *inner_state = state->inner_state;
 
-	void *before = state->get_dst_win(inner_state).start;
+	char *before = state->get_dst_win(inner_state).start;
 	(void) before; // nice while in the debugger
 
 	pump_buffer buffer = state->get_buffer(inner_state);

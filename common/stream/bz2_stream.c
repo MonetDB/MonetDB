@@ -161,8 +161,6 @@ bz2_stream(stream *inner, int level)
 		return NULL;
 	}
 
-	s->stream_data.p = (void*) state;
-
 	return s;
 }
 
