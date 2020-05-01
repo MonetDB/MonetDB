@@ -66,6 +66,7 @@ typedef struct pump_state {
 	buf_getter get_buffer;
 	pump_worker worker;
 	void (*finalizer)(inner_state_t *inner_state);
+	size_t elbow_room;
 } pump_state;
 
 stream *pump_stream(stream *inner, pump_state *state);

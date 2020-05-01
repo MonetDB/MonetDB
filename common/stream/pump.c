@@ -52,7 +52,10 @@ pump_stream(stream *inner, pump_state *state)
 	} else {
 		// from inbufs through pumper to dst buffer to inner stream.
 		// This means the out window is our whole buffer.
-		state->set_dst_win(inner_state, buf);
+		// Check for NULL in case caller has already initialized it
+		// and written something
+		if (state->get_dst_win(inner_state).start == NULL)
+			state->set_dst_win(inner_state, buf);
 	}
 
 	s->stream_data.p = (void*) state;
@@ -217,7 +220,8 @@ pump_out(stream *restrict s, pump_action action)
 		pump_buffer src = state->get_src_win(inner_state);
 
 		// Make sure there is room in the output buffer
-		if (dst.count == 0) {
+		assert(state->elbow_room <= buffer.count);
+		if (dst.count == 0 || dst.count < state->elbow_room) {
 			size_t amount = dst.start - buffer.start;
 			ssize_t nwritten = mnstr_write(s->inner, buffer.start, 1, amount);
 			if (nwritten != (ssize_t)amount)

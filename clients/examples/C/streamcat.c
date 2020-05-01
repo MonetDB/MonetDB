@@ -323,8 +323,12 @@ static void copy_file_to_stream(FILE *in, stream *out, size_t bufsize)
 				break;
 		}
 		nwritten = mnstr_write(out, buffer, 1, nread);
+		if (nwritten < 0)
+			croak(2, "Write error after %lu bytes: %s", total, mnstr_error(out));
 		if ((size_t)nwritten != nread)
-			croak(2, "Write error after %lu bytes: %s", total + nwritten, mnstr_error(out));
+			croak(2, "Partial write (%lu/%lu bytes) after %lu bytes: %s",
+				(unsigned long)nwritten,  (unsigned long)nread,
+				total + nwritten, mnstr_error(out));
 		total += nwritten;
 	}
 

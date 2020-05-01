@@ -6,380 +6,368 @@
  * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
-/* streams working on a lz4-compressed disk file */
+/* streams working on a lzma/xz-compressed disk file */
 
 #include "monetdb_config.h"
 #include "stream.h"
 #include "stream_internal.h"
+#include "pump.h"
 
 
 #ifdef HAVE_LIBLZ4
-#define LZ4DECOMPBUFSIZ 128*1024
-typedef struct lz4_stream {
-	FILE *fp;
-	size_t total_processing;
-	size_t ring_buffer_size;
-	void* ring_buffer;
+
+#define READ_CHUNK (1024)
+#define WRITE_CHUNK (1024)
+
+struct inner_state {
+	pump_buffer src_win;
+	pump_buffer dst_win;
+	pump_buffer buffer;
 	union {
-		LZ4F_compressionContext_t comp_context;
-		LZ4F_decompressionContext_t dec_context;
-	} context;
-} lz4_stream;
+		LZ4F_cctx *c;
+		LZ4F_dctx *d;
+	} ctx;
+	LZ4F_preferences_t compression_prefs;
+	bool finished;
+};
 
-static ssize_t
-stream_lz4read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
+static pump_buffer
+get_src_win(inner_state_t *inner_state)
 {
-	lz4_stream *lz4 = s->stream_data.p;
-	size_t size = elmsize * cnt, total_read = 0, total_decompressed, ret, remaining_to_decompress;
-
-	if (lz4 == NULL || size <= 0) {
-		s->errnr = MNSTR_READ_ERROR;
-		return -1;
-	}
-
-	while (total_read < size) {
-		if (lz4->total_processing == lz4->ring_buffer_size) {
-			if(feof(lz4->fp)) {
-				break;
-			} else {
-				lz4->ring_buffer_size = fread(lz4->ring_buffer, 1, LZ4_COMPRESSBOUND(LZ4DECOMPBUFSIZ), lz4->fp);
-				if (lz4->ring_buffer_size == 0 || ferror(lz4->fp)) {
-					s->errnr = MNSTR_READ_ERROR;
-					return -1;
-				}
-				lz4->total_processing = 0;
-			}
-		}
-
-		remaining_to_decompress = size - total_read;
-		total_decompressed = lz4->ring_buffer_size - lz4->total_processing;
-		ret = LZ4F_decompress(lz4->context.dec_context, (char*)buf + total_read, &remaining_to_decompress,
-				      (char*)lz4->ring_buffer + lz4->total_processing, &total_decompressed, NULL);
-		if(LZ4F_isError(ret)) {
-			s->errnr = MNSTR_WRITE_ERROR;
-			return -1;
-		}
-
-		lz4->total_processing += total_decompressed;
-		total_read += remaining_to_decompress;
-	}
-
-	/* when in text mode, convert \r\n line endings to \n */
-	if (!s->binary) {
-		char *p1, *p2, *pe;
-
-		p1 = buf;
-		pe = p1 + total_read;
-		while (p1 < pe && *p1 != '\r')
-			p1++;
-		p2 = p1;
-		while (p1 < pe) {
-			if (*p1 == '\r' && p1[1] == '\n')
-				total_read--;
-			else
-				*p2++ = *p1;
-			p1++;
-		}
-	}
-	return (ssize_t) (total_read / elmsize);
-}
-
-static ssize_t
-stream_lz4write(stream *restrict s, const void *restrict buf, size_t elmsize, size_t cnt)
-{
-	lz4_stream *lz4 = s->stream_data.p;
-	size_t ret, size = elmsize * cnt, total_written = 0, next_batch, next_attempt, available, real_written;
-
-	if (lz4 == NULL || size > LZ4_MAX_INPUT_SIZE || size <= 0) {
-		s->errnr = MNSTR_WRITE_ERROR;
-		return -1;
-	}
-
-	while (total_written < size) {
-		next_batch = size - total_written;
-		available = lz4->ring_buffer_size - lz4->total_processing;
-		do {
-			next_attempt = LZ4F_compressBound(next_batch, NULL); /* lz4->ring_buffer must be at least 65548 bytes */
-			if(next_attempt > available) {
-				next_batch >>= 1;
-			} else {
-				break;
-			}
-			if(next_batch == 0)
-				break;
-		} while(1);
-		assert(next_batch > 0);
-
-		ret = LZ4F_compressUpdate(lz4->context.comp_context, ((char*)lz4->ring_buffer) + lz4->total_processing,
-					  available, ((char*)buf) + total_written, next_batch, NULL);
-		if(LZ4F_isError(ret)) {
-			s->errnr = MNSTR_WRITE_ERROR;
-			return -1;
-		} else {
-			lz4->total_processing += ret;
-		}
-
-		if(lz4->total_processing == lz4->ring_buffer_size) {
-			real_written = fwrite((void *)lz4->ring_buffer, 1, lz4->total_processing, lz4->fp);
-			if (real_written == 0) {
-				s->errnr = MNSTR_WRITE_ERROR;
-				return -1;
-			}
-			lz4->total_processing = 0;
-		}
-		total_written += next_batch;
-	}
-
-	return (ssize_t) (total_written / elmsize);
+	return inner_state->src_win;
 }
 
 static void
-stream_lz4close(stream *s)
+set_src_win(inner_state_t *inner_state, pump_buffer buf)
 {
-	lz4_stream *lz4 = s->stream_data.p;
-
-	if (lz4) {
-		if (!s->readonly) {
-			size_t ret, real_written;
-
-			if (lz4->total_processing > 0 && lz4->total_processing < lz4->ring_buffer_size) { /* compress remaining */
-				real_written = fwrite(lz4->ring_buffer, 1, lz4->total_processing, lz4->fp);
-				if (real_written == 0) {
-					s->errnr = MNSTR_WRITE_ERROR;
-					return ;
-				}
-				lz4->total_processing = 0;
-			} /* finish compression */
-			ret = LZ4F_compressEnd(lz4->context.comp_context, lz4->ring_buffer, lz4->ring_buffer_size, NULL);
-			if(LZ4F_isError(ret)) {
-				s->errnr = MNSTR_WRITE_ERROR;
-				return ;
-			}
-			assert(ret < LZ4DECOMPBUFSIZ);
-			lz4->total_processing = ret;
-
-			real_written = fwrite(lz4->ring_buffer, 1, lz4->total_processing, lz4->fp);
-			if (real_written == 0) {
-				s->errnr = MNSTR_WRITE_ERROR;
-				return ;
-			}
-			lz4->total_processing = 0;
-
-			fflush(lz4->fp);
-		}
-		if(!s->readonly) {
-			(void) LZ4F_freeCompressionContext(lz4->context.comp_context);
-		} else {
-			(void) LZ4F_freeDecompressionContext(lz4->context.dec_context);
-		}
-		fclose(lz4->fp);
-		free(lz4->ring_buffer);
-		free(lz4);
-	}
-	s->stream_data.p = NULL;
+	inner_state->src_win = buf;
 }
 
-static int
-stream_lz4flush(stream *s)
+static pump_buffer
+get_dst_win(inner_state_t *inner_state)
 {
-	lz4_stream *lz4 = s->stream_data.p;
-	size_t real_written, ret;
+	return inner_state->dst_win;
+}
 
-	if (lz4 == NULL)
-		return -1;
-	if (!s->readonly) {
-		if (lz4->total_processing > 0 && lz4->total_processing < lz4->ring_buffer_size) { /* compress remaining */
-			real_written = fwrite(lz4->ring_buffer, 1, lz4->total_processing, lz4->fp);
-			if (real_written == 0) {
-				s->errnr = MNSTR_WRITE_ERROR;
-				return -1;
-			}
-			lz4->total_processing = 0;
-		}
-		ret = LZ4F_flush(lz4->context.comp_context, lz4->ring_buffer, lz4->ring_buffer_size, NULL); /* flush it */
-		if(LZ4F_isError(ret)) {
-			s->errnr = MNSTR_WRITE_ERROR;
-			return -1;
-		}
-		lz4->total_processing = ret;
-		real_written = fwrite(lz4->ring_buffer, 1, lz4->total_processing, lz4->fp);
-		if (real_written == 0) {
-			s->errnr = MNSTR_WRITE_ERROR;
-			return -1;
-		}
-		lz4->total_processing = 0;
+static void
+set_dst_win(inner_state_t *inner_state, pump_buffer buf)
+{
+	inner_state->dst_win = buf;
+}
 
-		if(fflush(lz4->fp))
-			return -1;
+static pump_buffer
+get_buffer(inner_state_t *inner_state)
+{
+	return inner_state->buffer;
+}
+
+static pump_result
+decomp(inner_state_t *inner_state, pump_action action)
+{
+	LZ4F_errorCode_t ret;
+
+	if (inner_state->src_win.count == 0 && action == PUMP_FINISH)
+		inner_state->finished = true;
+	if (inner_state->finished)
+		return PUMP_END;
+
+	LZ4F_decompressOptions_t opts = {0};
+	size_t nsrc = inner_state->src_win.count; // amount available
+	size_t ndst = inner_state->dst_win.count; // space available
+	ret = LZ4F_decompress(
+		inner_state->ctx.d,
+		inner_state->dst_win.start, &ndst,
+		inner_state->src_win.start, &nsrc,
+		&opts);
+	// Now nsrc has become the amount consumed, ndst the amount produced!
+	inner_state->src_win.start += nsrc;
+	inner_state->src_win.count -= nsrc;
+	inner_state->dst_win.start += ndst;
+	inner_state->dst_win.count -= ndst;
+
+	if (LZ4F_isError(ret))
+		return PUMP_ERROR;
+	else
+		return PUMP_OK;
+}
+
+static void
+decomp_end(inner_state_t *inner_state)
+{
+	LZ4F_freeDecompressionContext(inner_state->ctx.d);
+	free(inner_state->buffer.start);
+	free(inner_state);
+}
+
+
+static pump_result
+compr(inner_state_t *inner_state, pump_action action)
+{
+	LZ4F_compressOptions_t opts = {0};
+	size_t consumed;
+	LZ4F_errorCode_t produced;
+
+	if (inner_state->finished)
+		return PUMP_END;
+	
+	size_t chunk = inner_state->src_win.count;
+	if (chunk > WRITE_CHUNK)
+		chunk = WRITE_CHUNK;
+
+	switch (action) {
+
+		case PUMP_NO_FLUSH:
+			produced = LZ4F_compressUpdate(
+				inner_state->ctx.c,
+				inner_state->dst_win.start,
+				inner_state->dst_win.count,
+				inner_state->src_win.start,
+				chunk,
+				&opts);
+			consumed = chunk;
+			break;
+
+		case PUMP_FLUSH_ALL:
+		case PUMP_FLUSH_DATA:
+			// FLUSH_ALL not supported yet, just flush the data
+			produced = LZ4F_flush(
+				inner_state->ctx.c,
+				inner_state->dst_win.start,
+				inner_state->dst_win.count,
+				&opts);
+			consumed = 0;
+			break;
+
+		case PUMP_FINISH:
+			produced = LZ4F_compressEnd(
+				inner_state->ctx.c,
+				inner_state->dst_win.start,
+				inner_state->dst_win.count,
+				&opts);
+			consumed = 0;
+			inner_state->finished = true;
+			break;
 	}
-	return 0;
+
+	if (LZ4F_isError(produced))
+		return PUMP_ERROR;
+
+	inner_state->src_win.start += consumed;
+	inner_state->src_win.count -= consumed;
+	inner_state->dst_win.start += produced;
+	inner_state->dst_win.count -= produced;
+
+	return PUMP_OK;
+}
+
+static void
+compr_end(inner_state_t *inner_state)
+{
+	LZ4F_freeDecompressionContext(inner_state->ctx.d);
+	free(inner_state->buffer.start);
+	free(inner_state);
+}
+
+static stream *
+setup_decompression(stream *inner, pump_state *state)
+{
+	inner_state_t *inner_state = state->inner_state;
+	void *buf = malloc(READ_CHUNK);
+	if (buf == NULL)
+		return NULL;
+
+	inner_state->buffer = (pump_buffer) { .start = buf, .count = READ_CHUNK };
+	inner_state->src_win = inner_state->buffer;
+	inner_state->src_win.count = 0;
+
+	LZ4F_errorCode_t ret = LZ4F_createDecompressionContext(
+		&inner_state->ctx.d, LZ4F_VERSION);
+	if (LZ4F_isError(ret)) {
+		free(buf);
+		return NULL;
+	}
+
+	state->worker = decomp;
+	state->finalizer = decomp_end;
+
+	stream *s = pump_stream(inner, state);
+	if (s == NULL) {
+		free(buf);
+		return NULL;
+	}
+
+	return s;
+}
+
+static stream *
+setup_compression(stream *inner, pump_state *state, int level)
+{
+	inner_state_t *inner_state = state->inner_state;
+	LZ4F_errorCode_t ret;
+
+	// When pumping data into the compressor, the output buffer must be
+	// sufficiently large to hold all output caused by the current input. We
+	// will restrict our writes to be at most WRITE_CHUCK large and allocate
+	// a buffer that can accomodate even the worst case amount of output
+	// caused by input of that size.
+
+	// The required size depends on the preferences so we set those first.
+	inner_state->compression_prefs = (LZ4F_preferences_t)LZ4F_INIT_PREFERENCES;
+	inner_state->compression_prefs.compressionLevel = level;
+
+	// Set up a buffer that can hold the largest output block plus the initial
+	// header frame.
+	size_t bound = LZ4F_compressBound(WRITE_CHUNK, &inner_state->compression_prefs);
+	size_t bufsize = bound + LZ4F_HEADER_SIZE_MAX;
+	char *buffer = malloc(bufsize);
+	if (buffer == NULL)
+		return NULL;
+	inner_state->buffer = (pump_buffer) { .start = buffer, .count = bufsize };
+	inner_state->dst_win = inner_state->buffer;
+	state->elbow_room = bound;
+
+	ret = LZ4F_createCompressionContext(&inner_state->ctx.c, LZ4F_VERSION);
+	if (LZ4F_isError(ret)) {
+		free(buffer);
+		return NULL;
+	}
+
+	// Write the header frame.
+	size_t nwritten = LZ4F_compressBegin(
+		inner_state->ctx.c,
+		inner_state->dst_win.start,
+		inner_state->dst_win.count,
+		&inner_state->compression_prefs
+	);
+	if (LZ4F_isError(nwritten)) {
+		LZ4F_freeCompressionContext(inner_state->ctx.c);
+		free(buffer);
+		return NULL;
+	}
+	inner_state->dst_win.start += nwritten;
+	inner_state->dst_win.count -= nwritten;
+
+	state->worker = compr;
+	state->finalizer = compr_end;
+
+	stream *s = pump_stream(inner, state);
+	if (s == NULL) {
+		free(buffer);
+		return NULL;
+	}
+
+	return s;
+}
+
+stream *
+lz4_stream(stream *inner, int level)
+{
+	inner_state_t *inner_state = calloc(1, sizeof(inner_state_t));
+	pump_state *state = calloc(1, sizeof(pump_state));
+	if (inner_state == NULL || state == NULL) {
+		free(inner_state);
+		free(state);
+		return NULL;
+	}
+
+	state->inner_state = inner_state;
+	state->get_src_win = get_src_win;
+	state->set_src_win = set_src_win;
+	state->get_dst_win = get_dst_win;
+	state->set_dst_win = set_dst_win;
+	state->get_buffer = get_buffer;
+
+	stream *s;
+	if (inner->readonly)
+		s = setup_decompression(inner, state);
+	else
+		s = setup_compression(inner, state, level);
+
+	if (s == NULL) {
+		free(inner_state);
+		free(state);
+		return NULL;
+	}
+
+	return s;
 }
 
 static stream *
 open_lz4stream(const char *restrict filename, const char *restrict flags)
 {
-	stream *s;
-	lz4_stream *lz4;
-	LZ4F_errorCode_t error_code;
-	char fl[3];
-	size_t buffer_size = (flags[0] == 'r') ? LZ4_COMPRESSBOUND(LZ4DECOMPBUFSIZ) : LZ4DECOMPBUFSIZ;
+	stream *inner;
+	int preset = 6;
 
-	if ((lz4 = malloc(sizeof(struct lz4_stream))) == NULL)
+	inner = open_stream(filename, flags);
+	if (inner == NULL)
 		return NULL;
-	*lz4 = (struct lz4_stream) {
-		.ring_buffer = malloc(buffer_size),
-		.total_processing = (flags[0] == 'r') ? buffer_size : 0,
-		.ring_buffer_size = buffer_size,
-	};
-	if (lz4->ring_buffer == NULL) {
-		free(lz4);
-		return NULL;
-	}
 
-	if(flags[0] == 'w') {
-		error_code = LZ4F_createCompressionContext(&(lz4->context.comp_context), LZ4F_VERSION);
-	} else {
-		error_code = LZ4F_createDecompressionContext(&(lz4->context.dec_context), LZ4F_VERSION);
-	}
-	if(LZ4F_isError(error_code)) {
-		free(lz4->ring_buffer);
-		free(lz4);
-		return NULL;
-	}
-
-	if ((s = create_stream(filename)) == NULL) {
-		if(flags[0] == 'w') {
-			(void) LZ4F_freeCompressionContext(lz4->context.comp_context);
-		} else {
-			(void) LZ4F_freeDecompressionContext(lz4->context.dec_context);
-		}
-		free(lz4->ring_buffer);
-		free(lz4);
-		return NULL;
-	}
-	fl[0] = flags[0];	/* 'r' or 'w' */
-	fl[1] = 'b';		/* always binary */
-	fl[2] = '\0';
-#ifdef HAVE__WFOPEN
-	{
-		wchar_t *wfname = utf8towchar(filename);
-		wchar_t *wflags = utf8towchar(fl);
-		if (wfname != NULL)
-			lz4->fp = _wfopen(wfname, wflags);
-		else
-			lz4->fp = NULL;
-		if (wfname)
-			free(wfname);
-		if (wflags)
-			free(wflags);
-	}
-#else
-	{
-		char *fname = cvfilename(filename);
-		if (fname) {
-			lz4->fp = fopen(fname, fl);
-			free(fname);
-		} else
-			lz4->fp = NULL;
-	}
-#endif
-	if (lz4->fp == NULL) {
-		destroy_stream(s);
-		if(flags[0] == 'w') {
-			(void) LZ4F_freeCompressionContext(lz4->context.comp_context);
-		} else {
-			(void) LZ4F_freeDecompressionContext(lz4->context.dec_context);
-		}
-		free(lz4->ring_buffer);
-		free(lz4);
-		return NULL;
-	}
-	s->read = stream_lz4read;
-	s->write = stream_lz4write;
-	s->close = stream_lz4close;
-	s->flush = stream_lz4flush;
-	s->stream_data.p = (void *) lz4;
-
-	if(flags[0] == 'w') { /* start compression by writting the headers */
-		size_t nwritten = LZ4F_compressBegin(lz4->context.comp_context, lz4->ring_buffer, lz4->ring_buffer_size, NULL);
-		assert(nwritten < LZ4DECOMPBUFSIZ);
-		if(LZ4F_isError(nwritten)) {
-			(void) LZ4F_freeCompressionContext(lz4->context.comp_context);
-			free(lz4->ring_buffer);
-			free(lz4);
-			return NULL;
-		} else {
-			lz4->total_processing += nwritten;
-		}
-	} else if (flags[0] == 'r' && flags[1] != 'b') { /* check for utf-8 encoding */
-		char buf[UTF8BOMLENGTH];
-		if (stream_lz4read(s, buf, 1, UTF8BOMLENGTH) == UTF8BOMLENGTH &&
-		    strncmp(buf, UTF8BOM, UTF8BOMLENGTH) == 0) {
-			s->isutf8 = true;
-		} else {
-			rewind(lz4->fp);
-			lz4->total_processing = buffer_size;
-			lz4->ring_buffer_size = buffer_size;
-			LZ4F_resetDecompressionContext(lz4->context.dec_context);
-			mnstr_clearerr(s);
-		}
-	}
-	return s;
+	return lz4_stream(inner, preset);
 }
 
 stream *
 open_lz4rstream(const char *filename)
 {
-	stream *s;
-
-	if ((s = open_lz4stream(filename, "rb")) == NULL)
+	stream *s = open_lz4stream(filename, "rb");
+	if (s == NULL)
 		return NULL;
-	s->binary = true;
+
+	assert(s->readonly == true);
+	assert(s->binary == true);
 	return s;
 }
 
 stream *
 open_lz4wstream(const char *restrict filename, const char *restrict mode)
 {
-	stream *s;
-
-	if ((s = open_lz4stream(filename, mode)) == NULL)
+	stream *s = open_lz4stream(filename, mode);
+	if (s == NULL)
 		return NULL;
-	s->readonly = false;
-	s->binary = true;
+
+	assert(s->readonly == false);
+	assert(s->binary == true);
 	return s;
 }
 
 stream *
 open_lz4rastream(const char *filename)
 {
-	stream *s;
-
-	if ((s = open_lz4stream(filename, "r")) == NULL)
+	stream *s = open_lz4stream(filename, "r");
+	s = create_text_stream(s);
+	if (s == NULL)
 		return NULL;
-	s->binary = false;
+
+	assert(s->readonly == true);
+	assert(s->binary == false);
 	return s;
 }
 
 stream *
 open_lz4wastream(const char *restrict filename, const char *restrict mode)
 {
-	stream *s;
-
-	if ((s = open_lz4stream(filename, mode)) == NULL)
+	stream *s = open_lz4stream(filename, mode);
+	s = create_text_stream(s);
+	if (s == NULL)
 		return NULL;
-	s->readonly = false;
-	s->binary = false;
+	assert(s->readonly == false);
+	assert(s->binary == false);
 	return s;
 }
 #else
 
+stream *
+lz4_stream(stream *inner, int preset)
+{
+	(void) inner;
+	(void) preset;
+	return NULL;
+}
 stream *open_lz4rstream(const char *filename)
 {
 	return NULL;
 }
 
-stream *open_lz4wstream(const char *restrict filename, const char *restrict mode)
+stream *open_lz4wstream(const char *filename, const char *mode)
 {
 	return NULL;
 }
@@ -389,12 +377,10 @@ stream *open_lz4rastream(const char *filename)
 	return NULL;
 }
 
-stream *open_lz4wastream(const char *restrict filename, const char *restrict mode)
+stream *open_lz4wastream(const char *filename, const char *mode)
 {
 	return NULL;
 }
-
-
 
 #endif
 
