@@ -916,9 +916,9 @@ gdk_export BUN ORDERfndlast(BAT *b, const void *v);
 gdk_export BUN BUNfnd(BAT *b, const void *right);
 
 #define BUNfndVOID(b, v)						\
-	((is_oid_nil(*(const oid*)(v)) ^ is_oid_nil((b)->tseqbase)) |	\
+	(((is_oid_nil(*(const oid*)(v)) ^ is_oid_nil((b)->tseqbase)) |	\
 		(*(const oid*)(v) < (b)->tseqbase) |			\
-		(*(const oid*)(v) >= (b)->tseqbase + (b)->batCount) ?	\
+		(*(const oid*)(v) >= (b)->tseqbase + (b)->batCount)) ?	\
 	 BUN_NONE :							\
 	 (BUN) (*(const oid*)(v) - (b)->tseqbase))
 
