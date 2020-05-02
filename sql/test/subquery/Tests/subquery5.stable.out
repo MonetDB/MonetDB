@@ -18,8 +18,8 @@ stdout of test 'subquery5` in directory 'sql/test/subquery` itself:
 #    (SELECT MIN(col1) WHERE SUM(col2) > 1),
 #    CAST(SUM((SELECT col1 FROM tbl_ProductSales GROUP BY col2)) AS BIGINT)
 #FROM another_T GROUP BY col2;
-% .%2,	.%5 # table_name
-% %2,	%5 # name
+% .%2,	.%4 # table_name
+% %2,	%4 # name
 % int,	bigint # type
 % 4,	4 # length
 [ 1,	1	]
@@ -30,8 +30,8 @@ stdout of test 'subquery5` in directory 'sql/test/subquery` itself:
 #    CAST(SUM((SELECT col1 FROM tbl_ProductSales GROUP BY col2)) OVER () AS BIGINT), 
 #    CAST(SUM((SELECT SUM(ColID) FROM tbl_ProductSales GROUP BY col2)) OVER () AS BIGINT)
 #FROM another_T;
-% .%11,	.%22 # table_name
-% %11,	%22 # name
+% .%10,	.%20 # table_name
+% %10,	%20 # name
 % bigint,	bigint # type
 % 4,	2 # length
 [ 1234,	40	]
@@ -107,8 +107,8 @@ stdout of test 'subquery5` in directory 'sql/test/subquery` itself:
 [ 0	]
 [ 0	]
 #SELECT (SELECT 1 GROUP BY SUM(col2 + 1)) FROM another_t;
-% .%3 # table_name
-% %3 # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 1 # length
 [ 1	]
@@ -119,14 +119,14 @@ stdout of test 'subquery5` in directory 'sql/test/subquery` itself:
 % 1 # length
 [ 1	]
 #SELECT (SELECT CAST(SUM(col2 - 1) AS BIGINT) GROUP BY SUM(col2 + 1)) FROM another_t;
-% .%3 # table_name
-% %3 # name
+% .%2 # table_name
+% %2 # name
 % bigint # type
 % 4 # length
 [ 2464	]
 #SELECT (SELECT CAST(SUM(col2 + 1) AS BIGINT) GROUP BY SUM(col2 + 1)) FROM another_t;
-% .%3 # table_name
-% %3 # name
+% .%2 # table_name
+% %2 # name
 % bigint # type
 % 4 # length
 [ 2472	]
@@ -226,8 +226,8 @@ stdout of test 'subquery5` in directory 'sql/test/subquery` itself:
 [ false	]
 [ false	]
 #SELECT (SELECT 1 FROM integers i2 INNER JOIN integers i3 ON MAX(i1.i) = 1) IN (SELECT 1 FROM integers i2 INNER JOIN integers i3 ON MIN(i1.i) = 1) FROM integers i1;
-% .%26 # table_name
-% %26 # name
+% .%25 # table_name
+% %25 # name
 % boolean # type
 % 5 # length
 [ NULL	]
@@ -282,8 +282,8 @@ stdout of test 'subquery5` in directory 'sql/test/subquery` itself:
 [ true	]
 [ true	]
 #SELECT (VALUES (SUM(i1.i)),(AVG(i1.i)) INTERSECT VALUES(AVG(i1.i))) FROM integers i1;
-% .%17 # table_name
-% %17 # name
+% .%16 # table_name
+% %16 # name
 % double # type
 % 24 # length
 [ 2	]
@@ -322,6 +322,12 @@ stdout of test 'subquery5` in directory 'sql/test/subquery` itself:
 [ true	]
 [ true	]
 [ true	]
+#SELECT (SELECT CASE WHEN MIN(i1.i) IS NULL THEN (SELECT i2.i FROM integers i2) ELSE MAX(i1.i) END) FROM integers i1;
+% .%4 # table_name
+% %4 # name
+% int # type
+% 1 # length
+[ 3	]
 #DROP FUNCTION evilfunction(INT);
 #DROP TABLE tbl_ProductSales;
 #DROP TABLE another_T;

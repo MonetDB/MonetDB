@@ -372,11 +372,15 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int dec
 		mnstr_printf(fout, "\n%cREF %d (%d)", decorate?'=':' ', nr, cnt);
 	}
 
+	print_indent(sql, fout, depth, decorate);
+
+	if (is_single(rel))
+		mnstr_printf(fout, "single ");
+
 	switch (rel->op) {
 	case op_basetable: {
 		sql_table *t = rel->l;
 		sql_column *c = rel->r;
-		print_indent(sql, fout, depth, decorate);
 
 		if (!t && c) {
 			mnstr_printf(fout, "dict(%s.%s)", c->t->base.name, c->base.name);
@@ -407,7 +411,6 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int dec
 			exps_print(sql, fout, rel->exps, depth, refs, 1, 0);
 	} 	break;
 	case op_table:
-		print_indent(sql, fout, depth, decorate);
 		mnstr_printf(fout, "table (");
 
 		if (rel->r)
@@ -424,7 +427,6 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int dec
 			exps_print(sql, fout, rel->exps, depth, refs, 1, 0);
 		break;
 	case op_ddl:
-		print_indent(sql, fout, depth, decorate);
 		mnstr_printf(fout, "ddl");
 		if (rel->l)
 			rel_print_(sql, fout, rel->l, depth+1, refs, decorate);
@@ -461,7 +463,7 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int dec
 			r = "except";
 		else if (!rel->exps && rel->op == op_join)
 			r = "crossproduct";
-		print_indent(sql, fout, depth, decorate);
+
 		if (is_dependent(rel)) 
 			mnstr_printf(fout, "dependent ");
 		if (need_distinct(rel))
@@ -502,7 +504,7 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int dec
 			r = "top N";
 		if (rel->op == op_sample)
 			r = "sample";
-		print_indent(sql, fout, depth, decorate);
+
 		if (rel->l) {
 			if (need_distinct(rel))
 				mnstr_printf(fout, "distinct ");
@@ -527,7 +529,6 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int dec
 	case op_delete:
 	case op_truncate: {
 
-		print_indent(sql, fout, depth, decorate);
 		if (rel->op == op_insert)
 			mnstr_printf(fout, "insert(");
 		else if (rel->op == op_update)

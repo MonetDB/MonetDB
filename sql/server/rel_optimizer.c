@@ -1130,7 +1130,7 @@ reorder_join(mvc *sql, sql_rel *rel)
 		return rel;
 	rel->exps = NULL; /* should be all crosstables by now */
  	rels = sa_list(sql->sa);
-	if (is_outerjoin(rel->op)) {
+	if (is_outerjoin(rel->op) || is_single(rel)) {
 		sql_rel *l, *r;
 		int cnt = 0;
 		/* try to use an join index also for outer joins */
@@ -4596,7 +4596,7 @@ rel_push_select_down(mvc *sql, sql_rel *rel, int *changes)
 		int left = r->op == op_join || r->op == op_left;
 		int right = r->op == op_join || r->op == op_right;
 
-		if (r->op == op_full)
+		if (r->op == op_full || is_single(r))
 			return rel;
 
 		/* introduce selects under the join (if needed) */
@@ -5087,7 +5087,7 @@ rel_join_push_exps_down(mvc *sql, sql_rel *rel, int *changes)
 static sql_rel *
 rel_push_join_down_union(mvc *sql, sql_rel *rel, int *changes)
 {
-	if ((is_join(rel->op) && !is_outerjoin(rel->op)) || is_semi(rel->op)) {
+	if ((is_join(rel->op) && !is_outerjoin(rel->op) && !is_single(rel)) || is_semi(rel->op)) {
 		sql_rel *l = rel->l, *r = rel->r, *ol = l, *or = r;
 		list *exps = rel->exps;
 		sql_exp *je = !list_empty(exps)?exps->h->data:NULL;
