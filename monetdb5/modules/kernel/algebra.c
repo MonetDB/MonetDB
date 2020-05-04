@@ -748,7 +748,7 @@ ALGunique1(bat *result, const bat *bid)
 }
 
 str
-ALGcrossproduct2( bat *l, bat *r, const bat *left, const bat *right)
+ALGcrossproduct2(bat *l, bat *r, const bat *left, const bat *right, const bit *max_one)
 {
 	BAT *L, *R, *bn1, *bn2;
 	gdk_return ret;
@@ -760,7 +760,8 @@ ALGcrossproduct2( bat *l, bat *r, const bat *left, const bat *right)
 		BBPunfix(L->batCacheid);
 		throw(MAL, "algebra.crossproduct", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
-	ret = BATsubcross(&bn1, &bn2, L, R, NULL, NULL);
+	ret = BATsubcross(&bn1, &bn2, L, R, NULL, NULL,
+					  max_one && !is_bit_nil(*max_one) && *max_one);
 	BBPunfix(L->batCacheid);
 	BBPunfix(R->batCacheid);
 	if (ret != GDK_SUCCEED)

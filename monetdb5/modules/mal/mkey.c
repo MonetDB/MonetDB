@@ -39,6 +39,18 @@ MKEYrotate(lng *res, const lng *val, const int *n)
 	return MAL_SUCCEED;
 }
 
+#if defined(__GNUC__) && __GNUC__ == 10
+/* There is a bug in GCC 10.0.1 (at least 10.0.1-0.13) where the loops
+ * where this function is inserted is optimized incorrectly, resulting
+ * in incorrect results.  By adding a call to what is in essence a
+ * dummy function we force the optimizer to simplify its optimization
+ * and we get the correct results. */
+#define WORK_AROUND_GNUC_BUG()	GDKclrerr()
+#else
+/* no need to do this thing of not gcc 10 */
+#define WORK_AROUND_GNUC_BUG()	((void) 0)
+#endif
+
 str
 MKEYhash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
@@ -267,35 +279,45 @@ MKEYbulk_rotate_xor_hash(bat *res, const bat *hid, const int *nbits, const bat *
 	switch (ATOMstorage(b->ttype)) {
 	case TYPE_bte: {
 		const bte *restrict v = (const bte *) Tloc(b, 0);
-		for (BUN i = 0; i < n; i++)
+		for (BUN i = 0; i < n; i++) {
 			r[i] = GDK_ROTATE(h[i], lbit, rbit) ^ MKEYHASH_bte(v + i);
+			WORK_AROUND_GNUC_BUG();
+		}
 		break;
 	}
 	case TYPE_sht: {
 		const sht *restrict v = (const sht *) Tloc(b, 0);
-		for (BUN i = 0; i < n; i++)
+		for (BUN i = 0; i < n; i++) {
 			r[i] = GDK_ROTATE(h[i], lbit, rbit) ^ MKEYHASH_sht(v + i);
+			WORK_AROUND_GNUC_BUG();
+		}
 		break;
 	}
 	case TYPE_int:
 	case TYPE_flt: {
 		const int *restrict v = (const int *) Tloc(b, 0);
-		for (BUN i = 0; i < n; i++)
+		for (BUN i = 0; i < n; i++) {
 			r[i] = GDK_ROTATE(h[i], lbit, rbit) ^ MKEYHASH_int(v + i);
+			WORK_AROUND_GNUC_BUG();
+		}
 		break;
 	}
 	case TYPE_lng:
 	case TYPE_dbl: {
 		const lng *restrict v = (const lng *) Tloc(b, 0);
-		for (BUN i = 0; i < n; i++)
+		for (BUN i = 0; i < n; i++) {
 			r[i] = GDK_ROTATE(h[i], lbit, rbit) ^ MKEYHASH_lng(v + i);
+			WORK_AROUND_GNUC_BUG();
+		}
 		break;
 	}
 #ifdef HAVE_HGE
 	case TYPE_hge: {
 		const hge *restrict v = (const hge *) Tloc(b, 0);
-		for (BUN i = 0; i < n; i++)
+		for (BUN i = 0; i < n; i++) {
 			r[i] = GDK_ROTATE(h[i], lbit, rbit) ^ MKEYHASH_hge(v + i);
+			WORK_AROUND_GNUC_BUG();
+		}
 		break;
 	}
 #endif

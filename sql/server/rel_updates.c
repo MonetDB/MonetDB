@@ -464,10 +464,7 @@ insert_generate_inserts(sql_query *query, sql_table *t, dlist *columns, symbol *
 
 	if (val_or_q->token == SQL_VALUES) {
 		dlist *rowlist = val_or_q->data.lval;
-		dlist *values;
-		dnode *o;
 		list *exps = new_exp_list(sql->sa);
-		sql_rel *inner = NULL;
 
 		if (!rowlist->h) {
 			r = rel_project(sql->sa, NULL, NULL);
@@ -475,8 +472,8 @@ insert_generate_inserts(sql_query *query, sql_table *t, dlist *columns, symbol *
 				collist = NULL;
 		}
 
-		for (o = rowlist->h; o; o = o->next, rowcount++) {
-			values = o->data.lval;
+		for (dnode *o = rowlist->h; o; o = o->next, rowcount++) {
+			dlist *values = o->data.lval;
 
 			if (dlist_length(values) != list_length(collist)) {
 				return sql_error(sql, 02, SQLSTATE(21S01) "%s: number of values doesn't match number of columns of table '%s'", action, t->base.name);
@@ -499,8 +496,8 @@ insert_generate_inserts(sql_query *query, sql_table *t, dlist *columns, symbol *
 						sql_exp *vals = v->data;
 						list *vals_list = vals->f;
 						sql_column *c = m->data;
-						sql_rel *r = NULL;
 						sql_exp *ins = insert_value(query, c, &r, n->data.sym, action);
+
 						if (!ins)
 							return NULL;
 						if (!exp_name(ins))
@@ -511,14 +508,10 @@ insert_generate_inserts(sql_query *query, sql_table *t, dlist *columns, symbol *
 					/* only allow correlation in a single row of values */
 					for (n = values->h, m = collist->h; n && m; n = n->next, m = m->next) {
 						sql_column *c = m->data;
-						sql_rel *r = NULL;
 						sql_exp *ins = insert_value(query, c, &r, n->data.sym, action);
+
 						if (!ins)
 							return NULL;
-						if (r && inner)
-							inner = rel_crossproduct(sql->sa, inner, r, op_join);
-						else if (r)
-							inner = r;
 						if (!exp_name(ins))
 							exp_label(sql->sa, ins, ++sql->label);
 						list_append(exps, ins);
@@ -527,7 +520,7 @@ insert_generate_inserts(sql_query *query, sql_table *t, dlist *columns, symbol *
 			}
 		}
 		if (collist)
-			r = rel_project(sql->sa, inner, exps);
+			r = rel_project(sql->sa, r, exps);
 	} else {
 		exp_kind ek = {type_value, card_relation, TRUE};
 
