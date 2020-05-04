@@ -4738,7 +4738,7 @@ cascade_updates(backend *be, sql_table *t, stmt *rows, stmt **updates)
 		if (i->key) {
 			if (!(sql->cascade_action && list_find_id(sql->cascade_action, i->key->base.id))) {
 				sql_key *k = i->key;
-				int *local_id = SA_NEW(sql->sa, int);
+				sqlid *local_id = SA_NEW(sql->sa, sqlid);
 				if (!sql->cascade_action) 
 					sql->cascade_action = sa_list(sql->sa);
 				*local_id = i->key->base.id;
@@ -5216,7 +5216,7 @@ sql_delete_keys(backend *be, sql_table *t, stmt *rows, list *l, char* which, int
 
 		if (k->type == pkey || k->type == ukey) {
 			if (!(sql->cascade_action && list_find_id(sql->cascade_action, k->base.id))) {
-				int *local_id = SA_NEW(sql->sa, int);
+				sqlid *local_id = SA_NEW(sql->sa, sqlid);
 				if (!sql->cascade_action) 
 					sql->cascade_action = sa_list(sql->sa);
 
