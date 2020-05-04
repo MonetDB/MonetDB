@@ -2311,7 +2311,19 @@ sql_update_jun2020(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 
 			"grant execute on procedure sys.pause(bigint) to public;\n"
 			"grant execute on procedure sys.resume(bigint) to public;\n"
-			"grant execute on procedure sys.stop(bigint) to public;\n");
+			"grant execute on procedure sys.stop(bigint) to public;\n"
+
+			"create function sys.user_statistics() returns table(\n"
+				"username string,\n"
+				"querycount bigint,\n"
+				"totalticks bigint,\n"
+				"started timestamp,\n"
+				"finished timestamp,\n"
+				"maxquery string,\n"
+				"maxticks bigint\n"
+			")\n"
+			"external name sql.sysmon_statistics;\n"
+	);
 
 	pos += snprintf(buf + pos, bufsize - pos,
 			"update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'sys')"

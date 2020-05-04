@@ -27,8 +27,42 @@
 
 
 QueryQueue QRYqueue = NULL;
+UserStats  USRstats;
+lng        usize = 0;
+
 size_t qsize = 0, qhead = 0, qtail = 0;
 static oid qtag= 1;		// A unique query identifier
+
+static
+str
+updateUserStats(Client cntxt, lng ticks, time_t started, time_t finished, str query)
+{
+	int idx = (int) cntxt->idx;
+
+	if(idx > MAL_MAXCLIENTS){
+	}
+
+	if(usize == 0){
+		USRstats = (UserStats) GDKzalloc( sizeof (struct USERSTAT) * (size_t) (usize= MAL_MAXCLIENTS));
+	}
+	if(idx > usize){
+		USRstats = (UserStats) GDKrealloc( USRstats, sizeof (struct USERSTAT) * (size_t) (usize += MAL_MAXCLIENTS));
+	}
+	if( USRstats == NULL){
+	}
+	USRstats[idx].username= strdup(cntxt->username);
+	USRstats[idx].querycount++;
+	USRstats[idx].totalticks += ticks;
+	if( ticks > USRstats[idx].maxticks && query){
+		USRstats[idx].started = started;
+		USRstats[idx].finished = finished;
+		USRstats[idx].maxticks = ticks;
+		if( USRstats[idx].maxquery)
+			GDKfree(USRstats[idx].maxquery);
+		USRstats[idx].maxquery= strdup(query);
+	}
+	return MAL_SUCCEED;
+}
 
 void
 mal_runtime_reset(void)
@@ -155,7 +189,7 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 			paused += (QRYqueue[i].status[0] == 'p' || QRYqueue[i].status[0] == 'r'); /* running, prepared or paused */
 	}
 	assert(qhead < qsize);
-	if( (int) (qsize - paused) < MAL_MAXCLIENTS){
+	if( qsize - paused < (size_t) MAL_MAXCLIENTS){
 		qsize += MAL_MAXCLIENTS;
 		QRYqueue = (QueryQueue) GDKrealloc( QRYqueue, sizeof (struct QRYQUEUE) * qsize);
 		if ( QRYqueue == NULL){
@@ -184,6 +218,7 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 	QRYqueue[qhead].workers = (int) stk->workers;
 	QRYqueue[qhead].status = "running";
 	QRYqueue[qhead].cntxt = cntxt;
+	QRYqueue[qhead].ticks = GDKusec();
 	stk->tag = mb->tag = QRYqueue[qhead].tag;
 	advanceQRYqueue();
 	MT_lock_unset(&mal_delayLock);
@@ -213,6 +248,7 @@ runtimeProfileFinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 				mb->tag = stk->tag;
 				break;
 			}
+			updateUserStats(cntxt, QRYqueue[i].ticks, QRYqueue[i].start, QRYqueue[i].finished, QRYqueue[i].query);
 			QRYqueue[i].status = "finished";
 			QRYqueue[i].finished = time(0);
 			QRYqueue[i].cntxt = 0;

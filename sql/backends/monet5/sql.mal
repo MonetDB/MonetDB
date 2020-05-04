@@ -577,6 +577,10 @@ pattern sysmon_queue()(tag:bat[:lng], sessionid:bat[:int], user:bat[:str], start
 status:bat[:str], query:bat[:str], finished:bat[:timestamp], workers:bat[:int], memory:bat[:int])
 address SYSMONqueue;
 
+pattern user_statistics()(usr:bat[:str], qrycnt:bat[:lng], totalticks:bat[:lng], started:bat[:timestamp],
+finished:bat[:timestamp], maxqry:bat[:str], maxticks:bat[:lng])
+address SYSMONstatistics;
+
 unsafe pattern sysmon_pause(tag:bte)
 address SYSMONpause;
 unsafe pattern sysmon_pause(tag:sht)

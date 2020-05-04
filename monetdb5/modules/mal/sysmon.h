@@ -15,5 +15,6 @@ mal_export str SYSMONpause(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 mal_export str SYSMONresume(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str SYSMONstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str SYSMONstatistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif /* _SYSMON_H */

@@ -1,3 +1,8 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Thu Apr  2 2020 Martin Kersten <mk@cwi.nl>
+- Extended the system monitor with a table-returning function
+  user_statistics() which keeps some statistics for each SQL user, e.g. the
+  user's query count, total time spent, and maximal query seen.
+
