@@ -9,6 +9,6 @@ create or replace trigger mytrigger2
 insert into fun values (1, 'a');
 delete from fun;
 select c, d from fun2;
-	--empty
+	-- 1 'a'
 
 rollback;

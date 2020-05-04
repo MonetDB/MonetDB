@@ -5256,9 +5256,6 @@ sql_delete(backend *be, sql_table *t, stmt *rows)
 		return sql_error(sql, 02, SQLSTATE(42000) "DELETE: failed to delete indexes for table '%s'", t->base.name);
 
 	if (rows) { 
-		sql_subtype to;
-
-		sql_find_subtype(&to, "oid", 0, 0);
 		list_append(l, stmt_delete(be, t, rows));
 	} else { /* delete all */
 		/* first column */
